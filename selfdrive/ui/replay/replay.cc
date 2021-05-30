@@ -9,61 +9,6 @@ const int SEGMENT_LENGTH = 60;  // 60s
 const int FORWARD_SEGS = 2;
 const int BACKWARD_SEGS = 2;
 
-// class Replay::Segment
-class Replay::Segment {
- public:
-  Segment(int seg_num, const SegmentFiles &files);
-  ~Segment();
-
- public:
-  const int seg_num;
-  LogReader *log = nullptr;
-  FrameReader *frames[MAX_CAMERAS] = {};
-  std::atomic<bool> loaded = false;
-  std::atomic<int> loading = 0;
-};
-
-Replay::Segment::Segment(int seg_num, const SegmentFiles &files) : seg_num(seg_num) {
-  // fallback to qlog if rlog not exists.
-  const QString &log_file = files.rlog.isEmpty() ? files.qlog : files.rlog;
-  if (log_file.isEmpty()) {
-    qDebug() << "no log file in segment " << seg_num;
-    return;
-  }
-
-  loading = 1;
-  log = new LogReader(log_file);
-  QObject::connect(log, &LogReader::finished, [=](bool success) {
-    --loading;
-    loaded = loading == 0;
-  });
-
-  // start framereader threads
-  auto read_cam_frames = [=](CameraType type, const QString &file) {
-    if (!file.isEmpty()) {
-      loading += 1;
-      FrameReader *fr = frames[type] = new FrameReader(file.toStdString());
-      QObject::connect(fr, &FrameReader::finished, [=](bool success) {
-        --loading;
-        loaded = loading == 0;
-      });
-      fr->start();
-    }
-  };
-
-  // fallback to qcamera if camera not exists.
-  const QString &camera = files.camera.isEmpty() ? files.qcamera : files.camera;
-  read_cam_frames(RoadCam, camera);
-  read_cam_frames(DriverCam, files.dcamera);
-  read_cam_frames(WideRoadCam, files.wcamera);
-}
-
-Replay::Segment::~Segment() {
-  qDebug() << QString("remove segment %1").arg(seg_num);
-  delete log;
-  for (auto f : frames) delete f;
-}
-
 // class Replay
 
 Replay::Replay(SubMaster *sm, QObject *parent) : sm_(sm), QObject(parent) {
@@ -86,31 +31,21 @@ Replay::Replay(SubMaster *sm, QObject *parent) : sm_(sm), QObject(parent) {
   if (sm_ == nullptr) {
     pm_ = new PubMaster(s);
   }
-
-  device_id_ = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
-  context_ = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id_, NULL, NULL, &err));
 }
 
 Replay::~Replay() {
   clear();
   delete pm_;
-  delete vipc_server_;
-  CL_CHECK(clReleaseContext(context_));
 }
 
 void Replay::clear() {
   std::unique_lock lk(segment_lock_);
 
+  camera_server_.stop();
   segments_.clear();
-  for (int i = 0; i < std::size(frame_queues_); ++i) {
-    delete frame_queues_[i];
-    frame_queues_[i] = nullptr;
-  }
-
   current_ts_ = 0;
   seek_ts_ = 0;
   current_segment_ = seek_ts_ = 0;
-  road_cam_width_ = road_cam_height_ = 0;
 }
 
 bool Replay::load(const QString &routeName) {
@@ -143,53 +78,15 @@ bool Replay::load(const Route &route) {
 }
 
 // return nullptr if segment is not loaded
-std::shared_ptr<Replay::Segment> Replay::getSegment(int n) {
+std::shared_ptr<Segment> Replay::getSegment(int n) {
   std::unique_lock lk(segment_lock_);
   auto it = segments_.find(n);
   return (it != segments_.end() && it->second->loaded) ? it->second : nullptr;
 }
 
-void Replay::ensureVipcServer(const Segment *seg) {
-  static VisionStreamType stream_types[] = {
-      [RoadCam] = VISION_STREAM_RGB_BACK,
-      [DriverCam] = VISION_STREAM_RGB_FRONT,
-      [WideRoadCam] = VISION_STREAM_RGB_WIDE,
-  };
-
-  if (vipc_server_) {
-    const FrameReader *fr = seg->frames[RoadCam];
-    if (fr && fr->valid() && (fr->width != road_cam_width_ || fr->height != road_cam_height_)) {
-      // restart vipc server if road camera size changed.(switch between qcameras and cameras)
-      delete vipc_server_;
-      vipc_server_ = nullptr;
-    }
-  }
-  if (!vipc_server_) {
-    for (auto cam_type : ALL_CAMERAS) {
-      const FrameReader *fr = seg->frames[cam_type];
-      if (!fr || !fr->valid()) continue;
-
-      if (!vipc_server_) {
-        vipc_server_ = new VisionIpcServer("camerad", device_id_, context_);
-      }
-
-      vipc_server_->create_buffers(stream_types[cam_type], UI_BUF_COUNT, true, fr->width, fr->height);
-      if (cam_type == RoadCam) {
-        road_cam_width_ = fr->width;
-        road_cam_height_ = fr->height;
-      }
-
-      frame_queues_[cam_type] = new SafeQueue<const EncodeIdx *>();
-      QThread *t = QThread::create(&Replay::cameraThread, this, cam_type, stream_types[cam_type]);
-      connect(t, &QThread::finished, t, &QThread::deleteLater);
-      t->start();
-    }
-    if (vipc_server_) {
-      vipc_server_->start_listener();
-      qDebug() << "start vipc server";
-    }
-  }
-}
+// void Replay::ensureVipcServer(const Segment *seg) {
+ 
+// }
 
 void Replay::seekTo(int to_ts) {
   std::unique_lock lk(segment_lock_);
@@ -219,7 +116,7 @@ void Replay::relativeSeek(int ts) {
 
 void Replay::pushFrame(CameraType cam_type, int seg_num, uint32_t frame_id) {
   // do nothing if no video stream for this type
-  if (!frame_queues_[cam_type]) return;
+  if (!camera_server_.hasCamera(cam_type)) return;
 
   // find encodeIdx in adjacent segments_.
   const EncodeIdx *eidx = nullptr;
@@ -227,7 +124,7 @@ void Replay::pushFrame(CameraType cam_type, int seg_num, uint32_t frame_id) {
   for (auto n : search_in) {
     auto seg = getSegment(n);
     if (seg && (eidx = seg->log->getFrameEncodeIdx(cam_type, frame_id))) {
-      frame_queues_[cam_type]->push(eidx);
+      camera_server_.pushFrame(cam_type, seg, eidx->segmentId);
       return;
     }
   }
@@ -260,24 +157,6 @@ void Replay::segmentQueueThread() {
   }
 }
 
-void Replay::cameraThread(CameraType cam_type, VisionStreamType stream_type) {
-  while (!exit_) {
-    const EncodeIdx *eidx = nullptr;
-    if (!frame_queues_[cam_type]->try_pop(eidx, 50)) continue;
-
-    std::shared_ptr<Segment> seg = getSegment(eidx->segmentNum);
-    if (!seg) continue;
-
-    FrameReader *frm = seg->frames[cam_type];
-    if (uint8_t *data = frm->get(eidx->segmentId)) {
-      VisionIpcBufExtra extra = {};
-      VisionBuf *buf = vipc_server_->get_buffer(stream_type);
-      memcpy(buf->addr, data, frm->getRGBSize());
-      vipc_server_->send(buf, &extra, false);
-    }
-  }
-}
-
 void Replay::streamThread() {
   QElapsedTimer timer;
   timer.start();
@@ -292,7 +171,7 @@ void Replay::streamThread() {
       continue;
     }
 
-    ensureVipcServer(seg.get());
+    camera_server_.ensureServer(seg.get());
     const Events &events = seg->log->events();
 
     // TODO: use initData's logMonoTime
@@ -370,4 +249,136 @@ void Replay::streamThread() {
       }
     }
   }
+}
+
+// class Replay::Segment
+
+Segment::Segment(int seg_num, const SegmentFiles &files) : seg_num(seg_num) {
+  // fallback to qlog if rlog not exists.
+  const QString &log_file = files.rlog.isEmpty() ? files.qlog : files.rlog;
+  if (log_file.isEmpty()) {
+    qDebug() << "no log file in segment " << seg_num;
+    return;
+  }
+
+  loading = 1;
+  log = new LogReader(log_file);
+  QObject::connect(log, &LogReader::finished, [=](bool success) {
+    --loading;
+    loaded = loading == 0;
+  });
+
+  // start framereader threads
+  auto read_cam_frames = [=](CameraType type, const QString &file) {
+    if (!file.isEmpty()) {
+      loading += 1;
+      FrameReader *fr = frames[type] = new FrameReader(file.toStdString());
+      QObject::connect(fr, &FrameReader::finished, [=](bool success) {
+        --loading;
+        loaded = loading == 0;
+      });
+      fr->start();
+    }
+  };
+
+  // fallback to qcamera if camera not exists.
+  const QString &camera = files.camera.isEmpty() ? files.qcamera : files.camera;
+  read_cam_frames(RoadCam, camera);
+  read_cam_frames(DriverCam, files.dcamera);
+  read_cam_frames(WideRoadCam, files.wcamera);
+}
+
+Segment::~Segment() {
+  qDebug() << QString("remove segment %1").arg(seg_num);
+  delete log;
+  for (auto f : frames) delete f;
+}
+
+// class CameraServer
+
+CameraServer::CameraServer() {
+   device_id_ = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
+  context_ = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id_, NULL, NULL, &err));
+}
+
+CameraServer::~CameraServer() {
+  delete vipc_server_;
+  CL_CHECK(clReleaseContext(context_));
+}
+
+void CameraServer::ensureServer(Segment *seg) {
+  static VisionStreamType stream_types[] = {
+      [RoadCam] = VISION_STREAM_RGB_BACK,
+      [DriverCam] = VISION_STREAM_RGB_FRONT,
+      [WideRoadCam] = VISION_STREAM_RGB_WIDE,
+  };
+
+  if (vipc_server_) {
+    const FrameReader *fr = seg->frames[RoadCam];
+    if (fr && fr->valid() && (fr->width != road_cam_width_ || fr->height != road_cam_height_)) {
+      // restart vipc server if road camera size changed.(switch between qcameras and cameras)
+      stop();
+    }
+  }
+  if (!vipc_server_) {
+    for (auto cam_type : ALL_CAMERAS) {
+      const FrameReader *fr = seg->frames[cam_type];
+      if (!fr || !fr->valid()) continue;
+
+      if (!vipc_server_) {
+        vipc_server_ = new VisionIpcServer("camerad", device_id_, context_);
+      }
+
+      vipc_server_->create_buffers(stream_types[cam_type], UI_BUF_COUNT, true, fr->width, fr->height);
+      if (cam_type == RoadCam) {
+        road_cam_width_ = fr->width;
+        road_cam_height_ = fr->height;
+      }
+
+      frame_queues_[cam_type] = new SafeQueue<std::pair<std::shared_ptr<Segment>, uint32_t>>();
+      threads_.push_back(std::thread(&CameraServer::cameraThread, this, cam_type, stream_types[cam_type]));
+    }
+    if (vipc_server_) {
+      vipc_server_->start_listener();
+      qDebug() << "start vipc server";
+    }
+  }
+}
+
+void CameraServer::cameraThread(CameraType cam_type, VisionStreamType stream_type) {
+  while (!exit_) {
+    std::pair<std::shared_ptr<Segment>, uint32_t> frame;
+    if (!frame_queues_[cam_type]->try_pop(frame, 20)) continue;
+
+    auto [seg, segmentId] = frame;
+
+    FrameReader *frm = seg->frames[cam_type];
+    if (uint8_t *data = frm->get(segmentId)) {
+      VisionIpcBufExtra extra = {};
+      VisionBuf *buf = vipc_server_->get_buffer(stream_type);
+      memcpy(buf->addr, data, frm->getRGBSize());
+      vipc_server_->send(buf, &extra, false);
+    }
+  }
+  qDebug() << "camera " << cam_type << " stopped ";
+}
+
+void CameraServer::stop() {
+  if (!vipc_server_) return;
+
+  qDebug() << "stop camera server";
+  exit_ = true;
+  for (auto &t : threads_) {
+    t.join();
+  }
+  exit_ = false;
+  threads_.clear();
+  for (int i = 0; i < std::size(frame_queues_); ++i) {
+    delete frame_queues_[i];
+    frame_queues_[i] = nullptr;
+  }
+
+  delete vipc_server_;
+  vipc_server_ = nullptr;
+  road_cam_width_ = road_cam_height_ = 0;
 }

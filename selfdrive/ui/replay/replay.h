@@ -16,6 +16,36 @@
 #include "selfdrive/ui/replay/filereader.h"
 #include "selfdrive/ui/replay/framereader.h"
 
+class Segment {
+ public:
+  Segment(int seg_num, const SegmentFiles &files);
+  ~Segment();
+
+  const int seg_num;
+  LogReader *log = nullptr;
+  FrameReader *frames[MAX_CAMERAS] = {};
+  std::atomic<bool> loaded = false;
+  std::atomic<int> loading = 0;
+};
+
+class CameraServer {
+public:
+  CameraServer();
+  ~CameraServer();
+  void stop();
+  void cameraThread(CameraType cam_type, VisionStreamType stream_type);
+  void ensureServer(Segment *seg);
+  bool hasCamera(CameraType type) const { return frame_queues_[type] != nullptr; }
+  void pushFrame(CameraType type, std::shared_ptr<Segment> seg, uint32_t segmentId) { frame_queues_[type]->push({seg, segmentId}); }
+  cl_device_id device_id_ = nullptr;
+  cl_context context_ = nullptr;
+  VisionIpcServer *vipc_server_ = nullptr;
+  int road_cam_width_ = 0, road_cam_height_ = 0;
+  SafeQueue<std::pair<std::shared_ptr<Segment>, uint32_t>> *frame_queues_[MAX_CAMERAS] = {};
+  std::atomic<bool> exit_ = false;
+  std::vector<std::thread> threads_;
+};
+
 class Replay : public QObject {
   Q_OBJECT
 
@@ -29,15 +59,12 @@ public:
   void clear();
 
 private:
-  class Segment;
-
   std::shared_ptr<Segment> getSegment(int n);
 
   void streamThread();
   void segmentQueueThread();
   void cameraThread(CameraType cam_type, VisionStreamType stream_type);
   
-  void ensureVipcServer(const Segment *segment);
   void pushFrame(CameraType type, int seg_id, uint32_t frame_id);
 
   std::atomic<int64_t> current_ts_ = 0, seek_ts_ = 0;
@@ -54,11 +81,7 @@ private:
   std::map<int, std::shared_ptr<Segment>> segments_;
   
   // vipc server
-  cl_device_id device_id_ = nullptr;
-  cl_context context_ = nullptr;
-  VisionIpcServer *vipc_server_ = nullptr;
-  int road_cam_width_ = 0, road_cam_height_ = 0;
-  SafeQueue<const EncodeIdx *> *frame_queues_[MAX_CAMERAS] = {};
+  CameraServer camera_server_;
 
   // TODO: quit replay gracefully
   std::atomic<bool> exit_ = false;
