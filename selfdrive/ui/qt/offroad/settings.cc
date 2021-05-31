@@ -101,7 +101,6 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
 
 DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
   QVBoxLayout *device_layout = new QVBoxLayout;
-
   Params params = Params();
 
   QString dongle = QString::fromStdString(params.get("DongleId", false));
@@ -209,30 +208,49 @@ DeveloperPanel::DeveloperPanel(QWidget* parent) : QFrame(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   setLayout(main_layout);
   setStyleSheet(R"(QLabel {font-size: 50px;})");
+
+  fs_watch = new QFileSystemWatcher(this);
+  QObject::connect(fs_watch, &QFileSystemWatcher::fileChanged, [=](const QString path) {
+    updateLabels();
+  });
 }
 
 void DeveloperPanel::showEvent(QShowEvent *event) {
+  updateLabels();
+}
+
+void DeveloperPanel::updateLabels() {
   Params params = Params();
   std::string brand = params.getBool("Passive") ? "dashcam" : "openpilot";
   QList<QPair<QString, std::string>> dev_params = {
-    {"Git Branch", params.get("GitBranch", false)},
-    {"Git Commit", params.get("GitCommit", false).substr(0, 10)},
-    {"Panda Firmware", params.get("PandaFirmwareHex", false)},
+    {"Git Branch", params.get("GitBranch")},
+    {"Git Commit", params.get("GitCommit").substr(0, 10)},
+    {"Panda Firmware", params.get("PandaFirmwareHex")},
     {"OS Version", Hardware::get_os_version()},
   };
 
-  QString version = QString::fromStdString(brand + " v" + params.get("Version", false).substr(0, 14)).trimmed();
-  QDateTime lastUpdateDate = QDateTime::fromString(QString::fromStdString(params.get("LastUpdateTime", false)), Qt::ISODate);
-  QString lastUpdateTime = timeAgo(lastUpdateDate);
+  QString version = QString::fromStdString(brand + " v" + params.get("Version").substr(0, 14)).trimmed();
+  QString lastUpdateTime = "";
+
+  std::string last_update_param = params.get("LastUpdateTime");
+  if (!last_update_param.empty()){
+    QDateTime lastUpdateDate = QDateTime::fromString(QString::fromStdString(last_update_param + "Z"), Qt::ISODate);
+    lastUpdateTime = timeAgo(lastUpdateDate);
+  }
 
   if (labels.size() < dev_params.size()) {
-    versionLbl = new LabelControl("Version", version, QString::fromStdString(params.get("ReleaseNotes", false)).trimmed());
+    versionLbl = new LabelControl("Version", version, QString::fromStdString(params.get("ReleaseNotes")).trimmed());
     layout()->addWidget(versionLbl);
     layout()->addWidget(horizontal_line());
 
-    lastUpdateTimeLbl = new LabelControl("Last Update Check", lastUpdateTime, "The last time openpilot checked for an update.");
+    lastUpdateTimeLbl = new LabelControl("Last Update Check", lastUpdateTime, "The last time openpilot checked for an update. Updates are only checked while off-road.");
     connect(lastUpdateTimeLbl, &LabelControl::showDescription, [=]() {
-      std::system("pkill -1 -f selfdrive.updated");
+      Params params = Params();
+      if (params.getBool("IsOffroad")) {
+        fs_watch->addPath(QString::fromStdString(params.getParamsPath()) + "/d/LastUpdateTime");
+        lastUpdateTimeLbl->setText("checking...");
+        std::system("pkill -1 -f selfdrive.updated");
+      }
     });
     layout()->addWidget(lastUpdateTimeLbl);
     layout()->addWidget(horizontal_line());
