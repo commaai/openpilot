@@ -1,27 +1,19 @@
-#include <errno.h>
 #include <ftw.h>
-#include <inttypes.h>
-#include <pthread.h>
 #include <string.h>
 #include <sys/resource.h>
 #include <unistd.h>
 
 #include <atomic>
 #include <cassert>
-#include <condition_variable>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
-#include <mutex>
-#include <random>
 #include <string>
 #include <thread>
 
 #include "cereal/messaging/messaging.h"
 #include "cereal/services.h"
-#include "cereal/visionipc/visionipc.h"
 #include "cereal/visionipc/visionipc_client.h"
-#include "selfdrive/camerad/cameras/camera_common.h"
 #include "selfdrive/common/params.h"
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/timing.h"
