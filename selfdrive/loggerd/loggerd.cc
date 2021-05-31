@@ -111,7 +111,8 @@ void encoder_thread(const LogCameraInfo *ci, int cam_idx) {
   const LogCameraInfo &cam_info = *ci;
   set_thread_name(cam_info.filename);
 
-  int cnt = 0, cur_seg = -1;
+  uint32_t cnt = 0;
+  int cur_seg = -1;
   LoggerHandle *lh = NULL;
   std::vector<Encoder *> encoders;
   VisionIpcClient vipc_client = VisionIpcClient("camerad", cam_info.stream_type, false);
