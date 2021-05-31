@@ -12,6 +12,7 @@ import cereal.messaging as messaging
 from cereal.services import service_list
 from common.basedir import BASEDIR
 from common.timeout import Timeout
+from common.params import Params
 from selfdrive.hardware import TICI
 from selfdrive.loggerd.config import ROOT
 from selfdrive.test.helpers import set_params_enabled
@@ -97,6 +98,11 @@ class TestOnroad(unittest.TestCase):
     os.environ['SKIP_FW_QUERY'] = "1"
     os.environ['FINGERPRINT'] = "TOYOTA COROLLA TSS2 2019"
     set_params_enabled()
+
+    # Make sure athena isn't running
+    Params().delete("DongleId")
+    Params().delete("AthenadPid")
+    subprocess.check_call(["pkill", "-9", "-f", "athena"])
 
     logger_root = Path(ROOT)
     initial_segments = set()
