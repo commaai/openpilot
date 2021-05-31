@@ -2,7 +2,7 @@
 
 #include "ae_gray_test.h"
 
-#include <assert.h>
+#include <cassert>
 
 #include <cmath>
 #include <cstring>

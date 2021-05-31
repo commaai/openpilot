@@ -1,6 +1,6 @@
 #pragma once
 
-#include <assert.h>
+#include <cassert>
 #include <pthread.h>
 #include <stdint.h>
 #include <stdio.h>
