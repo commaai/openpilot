@@ -73,7 +73,6 @@ void Replay::stop() {
   segments_.clear();
   current_ts_ = seek_ts_ = 0;
   current_segment_ = -1;
-  qInfo() << "******stopped";
 }
 
 void Replay::relativeSeek(int ts) {
@@ -108,20 +107,16 @@ void Replay::queueSegment(int segment) {
   static int prev_segment = -1;
   if (prev_segment == segment) return;
 
-  QList<int> seg_nums = route_.segments().keys();
-  int idx = std::max(seg_nums.indexOf(segment), 0);
-  for (int i = 0; i < seg_nums.size(); ++i) {
-    const int n = seg_nums[i];
-    const int start_idx = std::max(idx - BACKWARD_SEGS, 0);
-    const int end_idx = std::min(idx + FORWARD_SEGS, (int)seg_nums.size() - 1);
-    if (i >= start_idx && i <= end_idx) {
-      // add segment
+  auto &rs = route_.segments();
+  const int pos = std::distance(rs.begin(), rs.find(segment));
+  int i = 0;
+  for (auto it = rs.begin(); it != rs.end(); ++it, ++i) {
+    int n = it.key();
+    if (i >= pos - BACKWARD_SEGS && i <= pos + FORWARD_SEGS) {
       if (segments_.find(n) == segments_.end()) {
-        segments_[n] = std::make_shared<Segment>(i, route_.segments()[n]);
-        qDebug() << "queue segment " << n;
+        segments_[n] = std::make_shared<Segment>(n, rs[n]);
       }
     } else {
-      // remove segment
       segments_.erase(n);
     }
   }
