@@ -137,6 +137,18 @@ void Replay::pushFrame(CameraType cam_type, int seg_num, uint32_t frame_id) {
   qDebug() << "failed to find eidx for frame " << frame_id << " in segment " << seg_num;
 }
 
+const std::string &Replay::eventName(const cereal::Event::Reader &e) {
+  auto it = eventNameMap.find(e.which());
+  if (it == eventNameMap.end()) {
+    std::string type;
+    KJ_IF_MAYBE(e_, static_cast<capnp::DynamicStruct::Reader>(e).which()) {
+      type = e_->getProto().getName();
+    }
+    it = eventNameMap.insert(it, {e.which(), type});
+  }
+  return it->second;
+}
+
 void Replay::streamThread() {
   QElapsedTimer timer;
   timer.start();
@@ -171,14 +183,10 @@ void Replay::streamThread() {
     int current_seek_ts_ = seek_ts_;
     while (!exit_ && current_seek_ts_ == seek_ts_ && eit != events.end()) {
       cereal::Event::Reader e = (*eit)->event();
-      std::string type;
-      KJ_IF_MAYBE(e_, static_cast<capnp::DynamicStruct::Reader>(e).which()) {
-        type = e_->getProto().getName();
-      }
-
       uint64_t tm = e.getLogMonoTime();
       current_ts_ = std::max(tm - route_start_ts, (unsigned long)0) / 1e9;
 
+      const std::string &type = eventName(e);
       if (socks_.find(type) != socks_.end()) {
         if (std::abs(current_ts_ - last_print) > 5.0) {
           last_print = current_ts_;
