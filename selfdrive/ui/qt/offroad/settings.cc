@@ -243,11 +243,14 @@ void DeveloperPanel::updateLabels() {
     layout()->addWidget(versionLbl);
     layout()->addWidget(horizontal_line());
 
-    lastUpdateTimeLbl = new LabelControl("Last Update Check", lastUpdateTime, "The last time openpilot checked for an update.");
+    lastUpdateTimeLbl = new LabelControl("Last Update Check", lastUpdateTime, "The last time openpilot checked for an update. Updates are only checked while off-road.");
     connect(lastUpdateTimeLbl, &LabelControl::showDescription, [=]() {
-      fs_watch->addPath(QString::fromStdString(params.get_params_path()) + "/d/LastUpdateTime");
-      lastUpdateTimeLbl->setText("checking...");
-      std::system("pkill -1 -f selfdrive.updated");
+      Params params = Params();
+      if (params.getBool("IsOffroad")) {
+        fs_watch->addPath(QString::fromStdString(params.getParamsPath()) + "/d/LastUpdateTime");
+        lastUpdateTimeLbl->setText("checking...");
+        std::system("pkill -1 -f selfdrive.updated");
+      }
     });
     layout()->addWidget(lastUpdateTimeLbl);
     layout()->addWidget(horizontal_line());
