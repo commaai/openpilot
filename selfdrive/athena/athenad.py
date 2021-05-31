@@ -213,6 +213,8 @@ def startLocalProxy(global_end_event, remote_ws_uri, local_port):
     if local_port not in LOCAL_PORT_WHITELIST:
       raise Exception("Requested local port not whitelisted")
 
+    cloudlog.debug("athena.startLocalProxy.starting")
+
     params = Params()
     dongle_id = params.get("DongleId").decode('utf8')
     identity_token = Api(dongle_id).get_token()
@@ -233,6 +235,7 @@ def startLocalProxy(global_end_event, remote_ws_uri, local_port):
     for thread in threads:
       thread.start()
 
+    cloudlog.debug("athena.startLocalProxy.started")
     return {"success": 1}
   except Exception as e:
     cloudlog.exception("athenad.startLocalProxy.exception")
