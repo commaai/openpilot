@@ -5,12 +5,10 @@ from common.params import Params
 from common.numpy_fast import interp
 
 import cereal.messaging as messaging
-from common.realtime import sec_since_boot
 from selfdrive.swaglog import cloudlog
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.speed_smoother import speed_smoother
 from selfdrive.controls.lib.longcontrol import LongCtrlState
-from selfdrive.controls.lib.fcw import FCWChecker
 from selfdrive.controls.lib.long_mpc import LongitudinalMpc
 from selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX
 
@@ -62,6 +60,7 @@ class Planner():
 
     self.mpc1 = LongitudinalMpc(1)
     self.mpc2 = LongitudinalMpc(2)
+    self.fcw = False
 
     self.v_acc_start = 0.0
     self.a_acc_start = 0.0
@@ -75,10 +74,8 @@ class Planner():
     self.a_cruise = 0.0
 
     self.longitudinalPlanSource = 'cruise'
-    self.fcw_checker = FCWChecker()
     self.path_x = np.arange(192)
 
-    self.fcw = False
 
     self.params = Params()
     self.first_loop = True
@@ -108,7 +105,6 @@ class Planner():
     self.v_acc_future = min([self.mpc1.v_mpc_future, self.mpc2.v_mpc_future, v_cruise_setpoint])
 
   def update(self, sm, CP):
-    cur_time = sec_since_boot()
     v_ego = sm['carState'].vEgo
 
     long_control_state = sm['controlsState'].longControlState
@@ -166,19 +162,10 @@ class Planner():
 
     self.choose_solution(v_cruise_setpoint, enabled)
 
-    # determine fcw
-    if self.mpc1.new_lead:
-      self.fcw_checker.reset_lead(cur_time)
-
-    blinkers = sm['carState'].leftBlinker or sm['carState'].rightBlinker
-    self.fcw = self.fcw_checker.update(self.mpc1.mpc_solution, cur_time,
-                                       sm['controlsState'].active,
-                                       v_ego, sm['carState'].aEgo,
-                                       lead_0.x[0], lead_0.v[0], lead_0.a[0],
-                                       lead_0.y[0], 0.0,
-                                       lead_0.prob > .9, blinkers) and not sm['carState'].brakePressed
+    # TODO throw FCW if brake predictions exceed capability
+    self.fcw = False
     if self.fcw:
-      cloudlog.info("FCW triggered %s", self.fcw_checker.counters)
+      cloudlog.info("FCW triggered")
 
     # Interpolate 0.05 seconds and save as starting point for next iteration
     a_acc_sol = self.a_acc_start + (CP.radarTimeStep / LON_MPC_STEP) * (self.a_acc - self.a_acc_start)

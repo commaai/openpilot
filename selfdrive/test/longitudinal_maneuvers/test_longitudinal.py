@@ -181,6 +181,9 @@ maneuvers = [
                            (CB.RES_ACCEL, 2.2), (0.0, 2.3)],
     checks=[check_engaged, check_no_collision],
   ),
+]
+
+'''
   Maneuver(
     "fcw: traveling at 30 m/s and approaching lead traveling at 20m/s",
     duration=15.,
@@ -225,9 +228,6 @@ maneuvers = [
     cruise_button_presses=[],
     checks=[check_fcw],
   )
-]
-
-'''
   Maneuver(
     'steady state following a car at 20m/s, then lead decel to 0mph at 1m/s^2',
     duration=50.,
