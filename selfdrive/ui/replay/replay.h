@@ -52,7 +52,6 @@ private:
     int width, height;
     VisionStreamType stream_type;
     SafeQueue<std::pair<std::shared_ptr<Segment>, uint32_t>> queue;
-
   };
   CameraState *camera_states_[MAX_CAMERAS] = {};
   void cameraThread(CameraType cam_type, CameraState *s);
@@ -85,7 +84,6 @@ private:
 
   // segments
   Route route_;
-  std::mutex mutex_;
   std::map<int, std::shared_ptr<Segment>> segments_;
     
   // vipc server

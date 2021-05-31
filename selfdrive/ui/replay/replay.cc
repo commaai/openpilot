@@ -47,8 +47,7 @@ bool Replay::start(const QString &routeName) {
 }
 
 bool Replay::start(const Route &route) {
-  stop();
-
+  assert(!stream_thread_.joinable());
   if (!route.segments().size()) return false;
 
   route_ = route;
@@ -63,7 +62,6 @@ bool Replay::start(const Route &route) {
 void Replay::stop() {
   if (!stream_thread_.joinable()) return;
 
-  std::unique_lock lk(mutex_);
   // wait until threads finished
   camera_server_.stop();
   exit_ = true;
@@ -80,7 +78,6 @@ void Replay::relativeSeek(int ts) {
 }
 
 void Replay::seekTo(int to_ts) {
-  std::unique_lock lk(mutex_);
   const auto &rs = route_.segments();
   if (!rs.size()) return;
 
