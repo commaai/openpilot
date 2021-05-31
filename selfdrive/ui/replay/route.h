@@ -3,7 +3,7 @@
 #include <QMap>
 #include <QString>
 
-struct SegmentFiles {
+struct SegmentFile {
   QString rlog;
   QString qlog;
   QString camera;
@@ -29,9 +29,9 @@ public:
   bool loadSegments(const QMap<int, QMap<QString, QString>> &segment_paths);
 
   inline const QString &name() const { return route_; };
-  inline const QMap<int, SegmentFiles> segments() const { return segments_; }
+  inline const QMap<int, SegmentFile> segments() const { return segments_; }
 
  private:
   QString route_;
-  QMap<int, SegmentFiles> segments_;
+  QMap<int, SegmentFile> segments_;
 };

@@ -109,13 +109,13 @@ bool Route::loadSegments(const QMap<int, QMap<QString, QString>> &segment_paths)
 
   for (int seg_num : segment_paths.keys()) {
     auto &paths = segment_paths[seg_num];
-    SegmentFiles &files = segments_[seg_num];
-    files.rlog = paths.value("logs");
-    files.qlog = paths.value("qlogs");
-    files.camera = paths.value("cameras");
-    files.dcamera = paths.value("dcameras");
-    files.wcamera = paths.value("ecameras");
-    files.qcamera = paths.value("qcameras");
+    SegmentFile &file = segments_[seg_num];
+    file.rlog = paths.value("logs");
+    file.qlog = paths.value("qlogs");
+    file.camera = paths.value("cameras");
+    file.dcamera = paths.value("dcameras");
+    file.wcamera = paths.value("ecameras");
+    file.qcamera = paths.value("qcameras");
   }
   return true;
 }

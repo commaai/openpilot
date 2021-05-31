@@ -1,24 +1,17 @@
 #pragma once
 
 #include <set>
-#include <mutex>
-
-#include <QReadWriteLock>
-#include <QThread>
-
-#include <capnp/dynamic.h>
 
 #include "cereal/visionipc/visionipc_server.h"
 #include "selfdrive/common/queue.h"
 #include "selfdrive/common/util.h"
-
-#include "selfdrive/ui/replay/route.h"
 #include "selfdrive/ui/replay/filereader.h"
 #include "selfdrive/ui/replay/framereader.h"
+#include "selfdrive/ui/replay/route.h"
 
 class Segment {
  public:
-  Segment(int seg_num, const SegmentFiles &files);
+  Segment(int seg_num, const SegmentFile &file);
   ~Segment();
 
   const int seg_num;
@@ -26,12 +19,12 @@ class Segment {
   FrameReader *frames[MAX_CAMERAS] = {};
   std::atomic<bool> loaded = false;
 
-private:
+ private:
   std::atomic<int> loading = 0;
 };
 
 class CameraServer {
-public:
+ public:
   CameraServer();
   ~CameraServer();
   void stop();
@@ -41,13 +34,13 @@ public:
     camera_states_[type]->queue.push({seg, segmentId});
   }
 
-private:
+ private:
   cl_device_id device_id_ = nullptr;
   cl_context context_ = nullptr;
   VisionIpcServer *vipc_server_ = nullptr;
   std::atomic<bool> exit_ = false;
 
-  struct CameraState{
+  struct CameraState {
     std::thread thread;
     int width, height;
     VisionStreamType stream_type;
@@ -57,8 +50,8 @@ private:
   void cameraThread(CameraType cam_type, CameraState *s);
 };
 
-class Replay  {
-public:
+class Replay {
+ public:
   Replay(SubMaster *sm = nullptr);
   ~Replay();
   bool start(const QString &routeName);
@@ -66,8 +59,9 @@ public:
   void seekTo(int to_ts);
   void relativeSeek(int ts);
   void stop();
+  bool running() { return stream_thread_.joinable(); }
 
-private:
+ private:
   std::shared_ptr<Segment> getSegment(int segment);
   void queueSegment(int segment);
 
@@ -85,7 +79,7 @@ private:
   // segments
   Route route_;
   std::map<int, std::shared_ptr<Segment>> segments_;
-    
+
   // vipc server
   CameraServer camera_server_;
 

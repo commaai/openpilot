@@ -1,5 +1,7 @@
 #include "selfdrive/ui/replay/replay.h"
 
+#include <capnp/dynamic.h>
+
 #include "cereal/services.h"
 #include "selfdrive/camerad/cameras/camera_common.h"
 #include "selfdrive/common/timing.h"
@@ -47,7 +49,7 @@ bool Replay::start(const QString &routeName) {
 }
 
 bool Replay::start(const Route &route) {
-  assert(!stream_thread_.joinable());
+  assert(!running());
   if (!route.segments().size()) return false;
 
   route_ = route;
@@ -60,7 +62,7 @@ bool Replay::start(const Route &route) {
 
 
 void Replay::stop() {
-  if (!stream_thread_.joinable()) return;
+  if (!running()) return;
 
   // wait until threads finished
   camera_server_.stop();
@@ -229,9 +231,9 @@ void Replay::streamThread() {
 
 // class Segment
 
-Segment::Segment(int seg_num, const SegmentFiles &files) : seg_num(seg_num) {
+Segment::Segment(int seg_num, const SegmentFile &file) : seg_num(seg_num) {
   // fallback to qlog if rlog not exists.
-  const QString &log_file = files.rlog.isEmpty() ? files.qlog : files.rlog;
+  const QString &log_file = file.rlog.isEmpty() ? file.qlog : file.rlog;
   if (log_file.isEmpty()) {
     qDebug() << "no log file in segment " << seg_num;
     return;
@@ -248,9 +250,9 @@ Segment::Segment(int seg_num, const SegmentFiles &files) : seg_num(seg_num) {
 
   // start framereader threads
   // fallback to qcamera if camera not exists.
-  std::pair<CameraType, QString> cam_files[] = {{RoadCam, files.camera.isEmpty() ? files.qcamera : files.camera},
-                                                {DriverCam, files.dcamera},
-                                                {WideRoadCam, files.wcamera}};
+  std::pair<CameraType, QString> cam_files[] = {{RoadCam, file.camera.isEmpty() ? file.qcamera : file.camera},
+                                                {DriverCam, file.dcamera},
+                                                {WideRoadCam, file.wcamera}};
   for (const auto &[cam_type, file] : cam_files) {
     if (!file.isEmpty()) {
       loading += 1;
@@ -287,17 +289,17 @@ void CameraServer::ensureServerForSegment(Segment *seg) {
   };
 
   if (vipc_server_) {
-    // restart vipc server if camera changed. such as switched between qcameras and cameras.
+    // restart vipc server if frame changed. such as switched between qcameras and cameras.
     for (auto cam_type : ALL_CAMERAS) {
       const FrameReader *fr = seg->frames[cam_type];
       CameraState *state = camera_states_[cam_type];
-      bool camera_changed = false;
+      bool frame_changed = false;
       if (fr && fr->valid()) {
-        camera_changed = !state || state->width != fr->width || state->height != fr->height; 
+        frame_changed = !state || state->width != fr->width || state->height != fr->height; 
       } else if (state != nullptr) {
-        camera_changed = true;
+        frame_changed = true;
       }
-      if (camera_changed) {
+      if (frame_changed) {
         qDebug() << "restart vipc server";
         stop();
         break;
