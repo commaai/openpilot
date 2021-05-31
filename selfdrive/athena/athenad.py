@@ -82,7 +82,7 @@ def jsonrpc_handler(end_event):
     try:
       data = recv_queue.get(timeout=1)
       if "method" in data:
-        cloudlog.debug(f"athena.jsonrpc_handler.call_method {data['method']}")
+        cloudlog.debug(f"athena.jsonrpc_handler.call_method {data}")
         response = JSONRPCResponseManager.handle(data, dispatcher)
         send_queue.put_nowait(response.json)
       elif "result" in data and "id" in data:
