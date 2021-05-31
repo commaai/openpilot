@@ -210,7 +210,6 @@ DeveloperPanel::DeveloperPanel(QWidget* parent) : QFrame(parent) {
   setStyleSheet(R"(QLabel {font-size: 50px;})");
 
   fs_watch = new QFileSystemWatcher(this);
-
   QObject::connect(fs_watch, &QFileSystemWatcher::fileChanged, [=](const QString path) {
     updateLabels();
   });
