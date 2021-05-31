@@ -69,7 +69,7 @@ class Replay {
   void streamThread();
   void pushFrame(CameraType type, int seg_id, uint32_t frame_id);
 
-  std::atomic<int64_t> current_ts_ = 0, seek_ts_ = 0;
+  std::atomic<int64_t> current_ts_ = 0, seek_ts_ = 0; // ms
   std::atomic<int> current_segment_ = -1;
   std::unordered_map<cereal::Event::Which, std::string> eventNameMap;
 

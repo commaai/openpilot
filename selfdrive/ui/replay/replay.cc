@@ -153,9 +153,6 @@ const std::string &Replay::eventSocketName(const cereal::Event::Reader &e) {
 }
 
 void Replay::streamThread() {
-  QElapsedTimer timer;
-  timer.start();
-
   uint64_t route_start_ts = 0;
   int64_t last_print = 0;
   while (!exit_) {
@@ -170,36 +167,34 @@ void Replay::streamThread() {
 
     const Events &events = seg->log->events();
     // TODO: use initData's logMonoTime
-    if (route_start_ts == 0) {
+    if (route_start_ts == 0 && !events.empty()) {
       route_start_ts = events[0]->mono_time;
     }
 
-    uint64_t t0 = route_start_ts + (seek_ts_ * 1e9);
-    auto eit = std::lower_bound(events.begin(), events.end(), t0,
+    uint64_t evt_start_tm = route_start_ts + (seek_ts_ * 1e9);
+    auto eit = std::lower_bound(events.begin(), events.end(), evt_start_tm,
                                 [](const Event *evt, uint64_t v) { return evt->mono_time < v; });
     if (eit != events.end()) {
-      // set t0 to current event's mono_time
-      t0 = (*eit)->mono_time;
-      seek_ts_ = (t0 - route_start_ts) / 1e9;
+      // set evt_start_tm to current event's mono_time
+      evt_start_tm = (*eit)->mono_time;
+      seek_ts_ = (evt_start_tm - route_start_ts) / 1e9;
     }
     qDebug() << "unlogging at" << seek_ts_;
-    uint64_t t0r = timer.nsecsElapsed();
+    uint64_t loop_start_tm = nanos_since_boot();
     int current_seek_ts_ = seek_ts_;
     while (!exit_ && current_seek_ts_ == seek_ts_ && eit != events.end()) {
       cereal::Event::Reader e = (*eit)->event();
       const std::string &sock_name = eventSocketName(e);
       if (!sock_name.empty()) {
-        uint64_t tm = (*eit)->mono_time;
-        current_ts_ = std::max(tm - route_start_ts, (unsigned long)0) / 1e9;
-
+        current_ts_ = std::max((*eit)->mono_time - route_start_ts, (unsigned long)0) / 1e9;
         if (std::abs(current_ts_ - last_print) > 5.0) {
           last_print = current_ts_;
           qInfo() << "at " << last_print << "| segment:" << seg->seg_num;
         }
 
         // keep time
-        long etime = tm - t0;
-        long rtime = timer.nsecsElapsed() - t0r;
+        long etime = (*eit)->mono_time - evt_start_tm;
+        long rtime = nanos_since_boot() - loop_start_tm;
         long us_behind = ((etime - rtime) * 1e-3) + 0.5;
         if (us_behind > 0 && us_behind < 1e6) {
           QThread::usleep(us_behind);
