@@ -10,10 +10,13 @@ from selfdrive.swaglog import cloudlog
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.speed_smoother import speed_smoother
 from selfdrive.controls.lib.longcontrol import LongCtrlState
+from selfdrive.controls.lib.events import Events
 from selfdrive.controls.lib.fcw import FCWChecker
 from selfdrive.controls.lib.long_mpc import LongitudinalMpc
 from selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX
 from selfdrive.controls.lib.turn_controller import TurnController
+from selfdrive.controls.lib.speed_limit_controller import SpeedLimitController
+
 
 LON_MPC_STEP = 0.2  # first step is 0.2s
 AWARENESS_DECEL = -0.2     # car smoothly decel at .2m/s^2 when user is distracted
@@ -107,6 +110,7 @@ class Planner():
     self.mpc1 = LongitudinalMpc(1)
     self.mpc2 = LongitudinalMpc(2)
     self.turn_controller = TurnController(CP)
+    self.speed_limit_controller = SpeedLimitController(CP)
 
     self.v_acc_start = 0.0
     self.a_acc_start = 0.0
@@ -134,6 +138,7 @@ class Planner():
     self.dp_following_profile_ctrl = False
     self.dp_following_profile = 3
     self.dp_following_dist = 1.8 # default val
+    self.events = Events()
 
   def choose_solution(self, v_cruise_setpoint, enabled, lead_1, lead_2, steeringAngleDeg):
     center_x = -2.5 # Wheel base 2.5m
@@ -155,6 +160,8 @@ class Planner():
         solutions['mpc2'] = self.mpc2.v_mpc
       if self.turn_controller.is_active:
         solutions['turn'] = self.turn_controller.v_turn
+      if self.speed_limit_controller.is_active:
+        solutions['limit'] = self.speed_limit_controller.v_limit
 
       slowest = min(solutions, key=solutions.get)
 
@@ -172,10 +179,15 @@ class Planner():
       elif slowest == 'turn':
         self.v_acc = self.turn_controller.v_turn
         self.a_acc = self.turn_controller.a_turn
+      elif slowest == 'limit':
+        self.v_acc = self.speed_limit_controller.v_limit
+        self.a_acc = self.speed_limit_controller.a_limit
 
     self.v_acc_future = min([self.mpc1.v_mpc_future, self.mpc2.v_mpc_future, v_cruise_setpoint])
     if self.turn_controller.is_active:
       self.v_acc_future = min(self.v_acc_future, self.turn_controller.v_turn_future)
+    if self.speed_limit_controller.is_active:
+      self.v_acc_future = min(self.v_acc_future, self.speed_limit_controller.v_limit_future)
 
   def update(self, sm, CP):
     """Gets called when new radarState is available"""
@@ -191,6 +203,7 @@ class Planner():
 
     lead_1 = sm['radarState'].leadOne
     lead_2 = sm['radarState'].leadTwo
+    self.events = Events()
 
     enabled = (long_control_state == LongCtrlState.pid) or (long_control_state == LongCtrlState.stopping)
     following = lead_1.status and lead_1.dRel < 45.0 and lead_1.vLeadK > v_ego and lead_1.aLeadK > 0.0
@@ -228,6 +241,9 @@ class Planner():
 
       # cruise speed can't be negative even is user is distracted
       self.v_cruise = max(self.v_cruise, 0.)
+      # update speed limit solution calculation.
+      self.speed_limit_controller.update(enabled, self.v_acc_start, self.a_acc_start, sm['carState'],
+                                         v_cruise_setpoint, accel_limits_turns, jerk_limits, self.events)
     else:
       starting = long_control_state == LongCtrlState.starting
       a_ego = min(sm['carState'].aEgo, 0.0)
@@ -242,6 +258,7 @@ class Planner():
       # dp reset
       self.v_model = reset_speed
       self.a_model = reset_accel
+      self.speed_limit_controller.deactivate()  # Deactivate speed limit controller to provide no solution.
 
     self.mpc1.set_cur_state(self.v_acc_start, self.a_acc_start)
     self.mpc2.set_cur_state(self.v_acc_start, self.a_acc_start)
@@ -298,6 +315,8 @@ class Planner():
 
     longitudinalPlan.turnControllerState = self.turn_controller.state
     longitudinalPlan.turnAcc = float(self.turn_controller.a_turn)
+    longitudinalPlan.speedLimitControlState = self.speed_limit_controller.state
+    longitudinalPlan.eventsDEPRECATED = self.events.to_msg()
 
     longitudinalPlan.processingDelay = (plan_send.logMonoTime / 1e9) - sm.rcv_time['radarState']
 

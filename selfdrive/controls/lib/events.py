@@ -527,6 +527,30 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
     ET.PERMANENT: NormalPermanentAlert("Localizer unstable", "Contact Support"),
   },
 
+  EventName.speedLimitActive: {
+    ET.WARNING: Alert(
+      "Cruise set to speed limit",
+      "",
+      AlertStatus.normal, AlertSize.small,
+      Priority.LOW, VisualAlert.none, AudibleAlert.chimePrompt, 1., 0., 2.),
+  },
+
+  EventName.speedLimitDecrease: {
+    ET.WARNING: Alert(
+      "Decreasing speed to match new speed limit",
+      "",
+      AlertStatus.normal, AlertSize.small,
+      Priority.LOW, VisualAlert.none, AudibleAlert.chimePrompt, 1., 0., 2.),
+  },
+
+  EventName.speedLimitIncrease: {
+    ET.WARNING: Alert(
+      "Higher speed limit detected",
+      "Increasing vehicle speed after short delay",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOW, VisualAlert.none, AudibleAlert.chimePrompt, 1., 0., 2.),
+  },
+
   # ********** events that affect controls state transitions **********
 
   EventName.pcmEnable: {

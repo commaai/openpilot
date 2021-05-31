@@ -196,6 +196,9 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"RecordFrontLock", PERSISTENT},  // for the internal fleet
     {"ReleaseNotes", PERSISTENT},
     {"ShouldDoUpdate", CLEAR_ON_MANAGER_START},
+    {"SpeedLimitControl", PERSISTENT},
+    {"SpeedLimitDelayIncrease", PERSISTENT},
+    {"SpeedLimitPercOffset", PERSISTENT},
     {"SubscriberInfo", PERSISTENT},
     {"SshEnabled", PERSISTENT},
     {"TermsVersion", PERSISTENT},
