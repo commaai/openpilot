@@ -101,7 +101,6 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
 
 DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
   QVBoxLayout *device_layout = new QVBoxLayout;
-
   Params params = Params();
 
   QString dongle = QString::fromStdString(params.get("DongleId", false));
@@ -209,9 +208,21 @@ DeveloperPanel::DeveloperPanel(QWidget* parent) : QFrame(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   setLayout(main_layout);
   setStyleSheet(R"(QLabel {font-size: 50px;})");
+
+
+  QFileSystemWatcher *fs_watch = new QFileSystemWatcher(this);
+  fs_watch->addPath(QString::fromStdString(Params().get_params_path()) + "/d/LastUpdateTime");
+
+  QObject::connect(fs_watch, &QFileSystemWatcher::fileChanged, [=](const QString path) {
+    updateLabels();
+  });
 }
 
 void DeveloperPanel::showEvent(QShowEvent *event) {
+  updateLabels();
+}
+
+void DeveloperPanel::updateLabels() {
   Params params = Params();
   std::string brand = params.getBool("Passive") ? "dashcam" : "openpilot";
   QList<QPair<QString, std::string>> dev_params = {
@@ -233,6 +244,7 @@ void DeveloperPanel::showEvent(QShowEvent *event) {
     lastUpdateTimeLbl = new LabelControl("Last Update Check", lastUpdateTime, "The last time openpilot checked for an update.");
     connect(lastUpdateTimeLbl, &LabelControl::showDescription, [=]() {
       std::system("pkill -1 -f selfdrive.updated");
+      lastUpdateTimeLbl->setText("checking...");
     });
     layout()->addWidget(lastUpdateTimeLbl);
     layout()->addWidget(horizontal_line());

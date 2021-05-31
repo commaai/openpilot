@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QButtonGroup>
+#include <QFileSystemWatcher>
 #include <QFrame>
 #include <QLabel>
 #include <QPushButton>
@@ -8,6 +9,7 @@
 #include <QStackedWidget>
 #include <QTimer>
 #include <QWidget>
+
 
 #include "selfdrive/ui/qt/widgets/controls.h"
 
@@ -39,6 +41,7 @@ private:
   QList<LabelControl *> labels;
   LabelControl *versionLbl;
   LabelControl *lastUpdateTimeLbl;
+  void updateLabels();
 };
 
 class SettingsWindow : public QFrame {
