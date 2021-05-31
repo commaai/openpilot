@@ -97,18 +97,15 @@ void LogReader::parseEvents(kj::ArrayPtr<const capnp::word> words) {
   while (!exit_ && words.size() > 0) {
     try {
       std::unique_ptr<Event> evt = std::make_unique<Event>(words);
-      cereal::Event::Reader event = evt->event();
-      evt->mono_time = event.getLogMonoTime();
-
-      switch (event.which()) {
+      switch (evt->event.which()) {
         case cereal::Event::ROAD_ENCODE_IDX:
-          insertEidx(RoadCam, event.getRoadEncodeIdx());
+          insertEidx(RoadCam, evt->event.getRoadEncodeIdx());
           break;
         case cereal::Event::DRIVER_ENCODE_IDX:
-          insertEidx(DriverCam, event.getDriverEncodeIdx());
+          insertEidx(DriverCam, evt->event.getDriverEncodeIdx());
           break;
         case cereal::Event::WIDE_ROAD_ENCODE_IDX:
-          insertEidx(WideRoadCam, event.getWideRoadEncodeIdx());
+          insertEidx(WideRoadCam, evt->event.getWideRoadEncodeIdx());
           break;
         default:
           break;

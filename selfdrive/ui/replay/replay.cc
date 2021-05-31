@@ -183,39 +183,46 @@ void Replay::streamThread() {
     uint64_t loop_start_tm = nanos_since_boot();
     int current_seek_ts_ = seek_ts_;
     while (!exit_ && current_seek_ts_ == seek_ts_ && eit != events.end()) {
-      cereal::Event::Reader e = (*eit)->event();
-      const std::string &sock_name = eventSocketName(e);
+      Event *evt = (*eit);
+      const std::string &sock_name = eventSocketName(evt->event);
       if (!sock_name.empty()) {
-        current_ts_ = std::max((*eit)->mono_time - route_start_ts, (unsigned long)0) / 1e9;
+        current_ts_ = std::max(evt->mono_time - route_start_ts, (unsigned long)0) / 1e9;
         if (std::abs(current_ts_ - last_print) > 5.0) {
           last_print = current_ts_;
           qInfo() << "at " << last_print << "| segment:" << seg->seg_num;
         }
 
         // keep time
-        long etime = (*eit)->mono_time - evt_start_tm;
+        long etime = evt->mono_time - evt_start_tm;
         long rtime = nanos_since_boot() - loop_start_tm;
         long us_behind = ((etime - rtime) * 1e-3) + 0.5;
         if (us_behind > 0 && us_behind < 1e6) {
           QThread::usleep(us_behind);
           //qDebug() << "sleeping" << us_behind << etime << timer.nsecsElapsed();
         }
+
         // publish frames
-        if (e.which() == cereal::Event::ROAD_CAMERA_STATE) {
-          pushFrame(RoadCam, seg->seg_num, e.getRoadCameraState().getFrameId());
-        } else if (e.which() == cereal::Event::DRIVER_CAMERA_STATE) {
-          pushFrame(DriverCam, seg->seg_num, e.getDriverCameraState().getFrameId());
-        } else if (e.which() == cereal::Event::WIDE_ROAD_CAMERA_STATE) {
-          pushFrame(WideRoadCam, seg->seg_num, e.getWideRoadCameraState().getFrameId());
+        switch (evt->event.which()) {
+          case cereal::Event::ROAD_CAMERA_STATE:
+            pushFrame(RoadCam, seg->seg_num, evt->event.getRoadCameraState().getFrameId());
+            break;
+          case cereal::Event::DRIVER_CAMERA_STATE:
+            pushFrame(DriverCam, seg->seg_num, evt->event.getDriverCameraState().getFrameId());
+            break;
+          case cereal::Event::WIDE_ROAD_CAMERA_STATE:
+            pushFrame(WideRoadCam, seg->seg_num, evt->event.getWideRoadCameraState().getFrameId());
+            break;
+          default:
+            break;
         }
 
         // publish msg
         if (sm_ == nullptr) {
-          auto bytes = (*eit)->bytes();
+          auto bytes = evt->bytes();
           pm_->send(sock_name.c_str(), (capnp::byte *)bytes.begin(), bytes.size());
         } else {
           // TODO: subMaster is not thread safe.
-          sm_->update_msgs(nanos_since_boot(), {{sock_name, e}});
+          sm_->update_msgs(nanos_since_boot(), {{sock_name, evt->event}});
         }
       }
 
@@ -299,11 +306,11 @@ void CameraServer::ensureServerForSegment(Segment *seg) {
     // restart vipc server if frame changed. such as switched between qcameras and cameras.
     for (auto cam_type : ALL_CAMERAS) {
       const FrameReader *fr = seg->frames[cam_type];
-      CameraState *state = camera_states_[cam_type];
+      const CameraState *s = camera_states_[cam_type];
       bool frame_changed = false;
       if (fr && fr->valid()) {
-        frame_changed = !state || state->width != fr->width || state->height != fr->height; 
-      } else if (state != nullptr) {
+        frame_changed = !s || s->width != fr->width || s->height != fr->height; 
+      } else if (s) {
         frame_changed = true;
       }
       if (frame_changed) {
@@ -344,7 +351,7 @@ void CameraServer::cameraThread(CameraType cam_type, CameraServer::CameraState *
     auto &[seg, segmentId] = frame;
     FrameReader *frm = seg->frames[cam_type];
     if (frm->width != s->width || frm->height != s->height) {
-      // eidx is not in the same segment with different size(qcamera/camera)
+      // eidx is not in the same segment with different frame size(qcamera/camera)
       continue;
     }
 

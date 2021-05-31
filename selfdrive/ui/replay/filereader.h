@@ -48,13 +48,15 @@ class Event {
  public:
   Event(const kj::ArrayPtr<const capnp::word> &amsg) : reader(amsg) {
     words = kj::ArrayPtr<const capnp::word>(amsg.begin(), reader.getEnd());
+    event = reader.getRoot<cereal::Event>();
+    mono_time = event.getLogMonoTime();
   }
-  inline cereal::Event::Reader event() { return reader.getRoot<cereal::Event>(); }
   inline kj::ArrayPtr<const capnp::byte> bytes() const { return words.asBytes(); }
 
   uint64_t mono_time;
   kj::ArrayPtr<const capnp::word> words;
   capnp::FlatArrayMessageReader reader;
+  cereal::Event::Reader event;
 };
 
 typedef std::vector<Event*> Events;
