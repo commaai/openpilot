@@ -21,7 +21,7 @@ class StreamingDecompressor:
     self.eof = False
     self.sha256 = hashlib.sha256()
 
-  def read(self, length: int) -> None:
+  def read(self, length: int) -> bytes:
     while len(self.buf) < length:
       self.req.raise_for_status()
 
