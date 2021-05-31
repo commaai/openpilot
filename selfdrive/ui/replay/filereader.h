@@ -52,11 +52,12 @@ class Event {
   inline cereal::Event::Reader event() { return reader.getRoot<cereal::Event>(); }
   inline kj::ArrayPtr<const capnp::byte> bytes() const { return words.asBytes(); }
 
+  uint64_t mono_time;
   kj::ArrayPtr<const capnp::word> words;
   capnp::FlatArrayMessageReader reader;
 };
 
-typedef QMultiMap<uint64_t, Event*> Events;
+typedef std::vector<Event*> Events;
 typedef std::unordered_map<uint32_t, EncodeIdx> EncodeIdxMap;
 
 class LogReader : public QObject {

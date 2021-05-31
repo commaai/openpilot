@@ -137,12 +137,15 @@ void Replay::pushFrame(CameraType cam_type, int seg_num, uint32_t frame_id) {
   qDebug() << "failed to find eidx for frame " << frame_id << " in segment " << seg_num;
 }
 
-const std::string &Replay::eventName(const cereal::Event::Reader &e) {
+const std::string &Replay::eventSocketName(const cereal::Event::Reader &e) {
   auto it = eventNameMap.find(e.which());
   if (it == eventNameMap.end()) {
     std::string type;
     KJ_IF_MAYBE(e_, static_cast<capnp::DynamicStruct::Reader>(e).which()) {
       type = e_->getProto().getName();
+    }
+    if (socks_.find(type) == socks_.end()) {
+      type = "";
     }
     it = eventNameMap.insert(it, {e.which(), type});
   }
@@ -168,14 +171,15 @@ void Replay::streamThread() {
     const Events &events = seg->log->events();
     // TODO: use initData's logMonoTime
     if (route_start_ts == 0) {
-      route_start_ts = events.firstKey();
+      route_start_ts = events[0]->mono_time;
     }
 
     uint64_t t0 = route_start_ts + (seek_ts_ * 1e9);
-    auto eit = events.lowerBound(t0);
+    auto eit = std::lower_bound(events.begin(), events.end(), t0,
+                                [](const Event *evt, uint64_t v) { return evt->mono_time < v; });
     if (eit != events.end()) {
-      // set t0 to current event's tm.
-      t0 = eit.key();
+      // set t0 to current event's mono_time
+      t0 = (*eit)->mono_time;
       seek_ts_ = (t0 - route_start_ts) / 1e9;
     }
     qDebug() << "unlogging at" << seek_ts_;
@@ -183,11 +187,11 @@ void Replay::streamThread() {
     int current_seek_ts_ = seek_ts_;
     while (!exit_ && current_seek_ts_ == seek_ts_ && eit != events.end()) {
       cereal::Event::Reader e = (*eit)->event();
-      uint64_t tm = e.getLogMonoTime();
-      current_ts_ = std::max(tm - route_start_ts, (unsigned long)0) / 1e9;
+      const std::string &sock_name = eventSocketName(e);
+      if (!sock_name.empty()) {
+        uint64_t tm = (*eit)->mono_time;
+        current_ts_ = std::max(tm - route_start_ts, (unsigned long)0) / 1e9;
 
-      const std::string &type = eventName(e);
-      if (socks_.find(type) != socks_.end()) {
         if (std::abs(current_ts_ - last_print) > 5.0) {
           last_print = current_ts_;
           qInfo() << "at " << last_print << "| segment:" << seg->seg_num;
@@ -213,10 +217,10 @@ void Replay::streamThread() {
         // publish msg
         if (sm_ == nullptr) {
           auto bytes = (*eit)->bytes();
-          pm_->send(type.c_str(), (capnp::byte *)bytes.begin(), bytes.size());
+          pm_->send(sock_name.c_str(), (capnp::byte *)bytes.begin(), bytes.size());
         } else {
           // TODO: subMaster is not thread safe.
-          sm_->update_msgs(nanos_since_boot(), {{type, e}});
+          sm_->update_msgs(nanos_since_boot(), {{sock_name, e}});
         }
       }
 

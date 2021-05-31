@@ -64,7 +64,7 @@ class Replay {
  private:
   std::shared_ptr<Segment> getSegment(int segment);
   void queueSegment(int segment);
-  const std::string &eventName(const cereal::Event::Reader &e);
+  const std::string &eventSocketName(const cereal::Event::Reader &e);
 
   void streamThread();
   void pushFrame(CameraType type, int seg_id, uint32_t frame_id);
