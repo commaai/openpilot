@@ -234,8 +234,6 @@ selfdrive/controls/lib/fcw.py
 selfdrive/controls/lib/long_mpc.py
 selfdrive/controls/lib/long_mpc_model.py
 
-selfdrive/controls/lib/cluster/*
-
 selfdrive/controls/lib/lateral_mpc/lib_mpc_export/*
 selfdrive/controls/lib/lateral_mpc/.gitignore
 selfdrive/controls/lib/lateral_mpc/SConscript
