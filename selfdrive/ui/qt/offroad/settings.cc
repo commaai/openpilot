@@ -211,9 +211,11 @@ DeveloperPanel::DeveloperPanel(QWidget* parent) : QFrame(parent) {
 
 
   QFileSystemWatcher *fs_watch = new QFileSystemWatcher(this);
-  fs_watch->addPath(QString::fromStdString(Params().get_params_path()) + "/d/LastUpdateTime");
+  QString update_param_path = QString::fromStdString(Params().get_params_path()) + "/d/LastUpdateTime";
+  fs_watch->addPath(update_param_path);
 
   QObject::connect(fs_watch, &QFileSystemWatcher::fileChanged, [=](const QString path) {
+    fs_watch->addPath(update_param_path); // Add again after the param was renamed
     updateLabels();
   });
 }
