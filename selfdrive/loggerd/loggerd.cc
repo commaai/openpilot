@@ -254,7 +254,6 @@ int main(int argc, char** argv) {
 
   uint64_t msg_count = 0;
   uint64_t bytes_count = 0;
-  AlignedBuffer aligned_buf;
   double start_tms = millis_since_boot();
   while (!do_exit) {
     // poll for new messages on all sockets
