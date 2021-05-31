@@ -43,7 +43,6 @@ namespace {
 constexpr int MAIN_FPS = 20;
 const int MAIN_BITRATE = Hardware::TICI() ? 10000000 : 5000000;
 const int DCAM_BITRATE = Hardware::TICI() ? MAIN_BITRATE : 2500000;
-const int NO_CAMERA_PATIENCE = 500; // fall back to time-based rotation if all cameras are dead
 const int SEGMENT_LENGTH = getenv("LOGGERD_TEST") ? atoi(getenv("LOGGERD_SEGMENT_LENGTH")) : 60;
 
 ExitHandler do_exit;
@@ -111,29 +110,10 @@ struct LoggerdState {
   Context *ctx;
   LoggerState logger = {};
   char segment_path[4096];
-  std::mutex rotate_lock;
-  std::condition_variable rotate_cv;
   std::atomic<int> rotate_segment;
-  std::atomic<double> last_camera_seen_tms;
-  std::atomic<int> waiting_rotate;
-  int max_waiting = 0;
   double last_rotate_tms = 0.;
 };
 LoggerdState s;
-
-void trigger_rotate() {
-  {
-    std::unique_lock lk(s.rotate_lock);
-    int segment = -1;
-    int err = logger_next(&s.logger, LOG_ROOT.c_str(), s.segment_path, sizeof(s.segment_path), &segment);
-    assert(err == 0);
-    s.rotate_segment = segment;
-    s.waiting_rotate = 0;
-    s.last_rotate_tms = millis_since_boot();
-  }
-  s.rotate_cv.notify_all();
-  LOGW("rotated to %s", s.segment_path);
-}
 
 void encoder_thread(const LogCameraInfo *ci, int cam_idx) {
   const LogCameraInfo &cam_info = *ci;
@@ -168,14 +148,6 @@ void encoder_thread(const LogCameraInfo *ci, int cam_idx) {
       VisionBuf* buf = vipc_client.recv(&extra);
       if (buf == nullptr) continue;
 
-      s.last_camera_seen_tms = millis_since_boot();
-      // Decide if we should rotate
-      if ((cnt > 0 && (cnt % (SEGMENT_LENGTH * MAIN_FPS)) == 0) && cam_info.bitrate == MAIN_BITRATE) {
-        ++s.waiting_rotate;
-        // wait logger rotate to new segment
-        std::unique_lock lk(s.rotate_lock);
-        s.rotate_cv.wait(lk, [&] { return s.rotate_segment != cur_seg || do_exit; });
-      }
       if (do_exit) break;
 
       // rotate the encoder if the logger is on a newer segment
@@ -240,6 +212,15 @@ void clear_locks() {
   ftw(LOG_ROOT.c_str(), clear_locks_fn, 16);
 }
 
+void logger_rotate() {
+  int segment = -1;
+  int err = logger_next(&s.logger, LOG_ROOT.c_str(), s.segment_path, sizeof(s.segment_path), &segment);
+  assert(err == 0);
+  s.rotate_segment = segment;
+  s.last_rotate_tms = millis_since_boot();
+  LOGW("rotated to %s", s.segment_path);
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
@@ -268,21 +249,20 @@ int main(int argc, char** argv) {
 
   // init logger
   logger_init(&s.logger, "rlog", true);
-  trigger_rotate();
+  logger_rotate();
 
   // init encoders
   std::vector<std::thread> encoder_threads;
   for (int i = 0; i < std::size(cameras_logged); ++i) {
     if (cameras_logged[i].enabled) {
       encoder_threads.push_back(std::thread(encoder_thread, &cameras_logged[i], i));
-      s.max_waiting += (cameras_logged[i].bitrate == MAIN_BITRATE);
     }
   }
 
   uint64_t msg_count = 0;
   uint64_t bytes_count = 0;
   AlignedBuffer aligned_buf;
-  double start_tms = s.last_camera_seen_tms = millis_since_boot();
+  double start_tms = millis_since_boot();
   while (!do_exit) {
     // poll for new messages on all sockets
     for (auto sock : poller->poll(1000)) {
@@ -301,21 +281,12 @@ int main(int argc, char** argv) {
       }
     }
 
-    bool new_segment = (s.waiting_rotate == s.max_waiting);
-    if (!new_segment) {
-      double tms = millis_since_boot();
-      if ((tms - s.last_rotate_tms) > SEGMENT_LENGTH * 1000 && (tms - s.last_camera_seen_tms) > NO_CAMERA_PATIENCE) {
-        LOGW("no camera packet seen. auto rotating");
-        new_segment = true;
-      }
-    }
-    if (new_segment && !do_exit) {
-      trigger_rotate();
+    if ((millis_since_boot() - s.last_rotate_tms) > SEGMENT_LENGTH * 1000 && !do_exit) {
+      logger_rotate();
     }
   }
 
   LOGW("closing encoders");
-  s.rotate_cv.notify_all();
   for (auto &t : encoder_threads) t.join();
 
   LOGW("closing logger");
