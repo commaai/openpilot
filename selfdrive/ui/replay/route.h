@@ -30,10 +30,6 @@ public:
 
   inline const QString &name() const { return route_; };
   inline const QMap<int, SegmentFiles> segments() const { return segments_; }
-  inline int maxSegmentNum() { return segments_.lastKey(); }
-  int nextSegNum(int n) const;
-  int prevSegNum(int n) const;
-  inline int segmentCount() { return segments_.size(); }
 
  private:
   QString route_;

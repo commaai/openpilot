@@ -119,13 +119,3 @@ bool Route::loadSegments(const QMap<int, QMap<QString, QString>> &segment_paths)
   }
   return true;
 }
-
-int Route::nextSegNum(int n) const {
-  auto it = segments_.upperBound(n);
-  return it != segments_.end() ? it.key() : -1;
-}
-
-int Route::prevSegNum(int n) const {
-  auto it = segments_.lowerBound(n);
-  return it != segments_.end() ? it.key() : -1;
-}

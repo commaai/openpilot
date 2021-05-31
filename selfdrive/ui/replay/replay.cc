@@ -81,14 +81,15 @@ void Replay::relativeSeek(int ts) {
 
 void Replay::seekTo(int to_ts) {
   std::unique_lock lk(mutex_);
-  if (!route_.segments().size()) return;
+  const auto &rs = route_.segments();
+  if (!rs.size()) return;
 
-  int seg_num = std::clamp(to_ts / SEGMENT_LENGTH, 0, route_.maxSegmentNum());
+  int seg_num = std::clamp(to_ts / SEGMENT_LENGTH, 0, rs.lastKey());
   // skip to next or prev segment if seg_num is missing
-  if (!route_.segments().contains(seg_num)) {
-    int n = seg_num > current_segment_ ? route_.nextSegNum(seg_num) : route_.prevSegNum(seg_num);
-    if (n != -1) {
-      seg_num = n;
+  if (!rs.contains(seg_num)) {
+    auto it = seg_num > current_segment_ ? rs.upperBound(seg_num) : rs.lowerBound(seg_num);
+    if (it != rs.end()) {
+      seg_num = it.key();
     }
   }
   seek_ts_ = to_ts;
@@ -107,17 +108,15 @@ void Replay::queueSegment(int segment) {
   static int prev_segment = -1;
   if (prev_segment == segment) return;
 
-  auto &rs = route_.segments();
-  const int pos = std::distance(rs.begin(), rs.find(segment));
+  const auto &rs = route_.segments();
+  const int cur_idx = std::distance(rs.begin(), rs.find(segment));
   int i = 0;
   for (auto it = rs.begin(); it != rs.end(); ++it, ++i) {
     int n = it.key();
-    if (i >= pos - BACKWARD_SEGS && i <= pos + FORWARD_SEGS) {
-      if (segments_.find(n) == segments_.end()) {
-        segments_[n] = std::make_shared<Segment>(n, rs[n]);
-      }
-    } else {
-      segments_.erase(n);
+    if (i < cur_idx - BACKWARD_SEGS || i > cur_idx + FORWARD_SEGS) {
+      segments_.erase(n);  
+    } else if (segments_.find(n) == segments_.end()) {
+      segments_[n] = std::make_shared<Segment>(n, rs[n]);
     }
   }
   prev_segment = segment;
@@ -220,8 +219,9 @@ void Replay::streamThread() {
     if (current_seek_ts_ == seek_ts_ && eit == events.end()) {
       // move to the next segment
       seek_ts_ = current_ts_.load();
-      if (int n = route_.nextSegNum(current_segment_); n != -1) {
-        current_segment_ = n;
+      auto next_it = route_.segments().upperBound(current_segment_);
+      if (next_it != route_.segments().end()) {
+        current_segment_ = next_it.key();
         qDebug() << "move to next segment " << current_segment_;
       } else {
         qDebug() << "reach the end of segments";
