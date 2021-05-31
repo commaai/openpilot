@@ -42,6 +42,8 @@ private:
   LabelControl *versionLbl;
   LabelControl *lastUpdateTimeLbl;
   void updateLabels();
+
+  QFileSystemWatcher *fs_watch;
 };
 
 class SettingsWindow : public QFrame {

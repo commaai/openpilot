@@ -43,7 +43,7 @@ public:
     return get(key.c_str(), block);
   }
 
-  inline std::string get_params_path() {
+  inline std::string get_params_path() const {
     return params_path;
   }
 
