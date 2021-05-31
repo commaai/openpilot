@@ -43,6 +43,10 @@ public:
     return get(key.c_str(), block);
   }
 
+  inline std::string getParamsPath() {
+    return params_path;
+  }
+
   template <class T>
   std::optional<T> get(const char *key, bool block = false) {
     std::istringstream iss(get(key, block));

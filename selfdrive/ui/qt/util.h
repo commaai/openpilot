@@ -22,7 +22,7 @@ inline void clearLayout(QLayout* layout) {
 }
 
 inline QString timeAgo(const QDateTime &date) {
-  int diff = date.secsTo(QDateTime::currentDateTime());
+  int diff = date.secsTo(QDateTime::currentDateTimeUtc());
 
   QString s;
   if (diff < 60) {
