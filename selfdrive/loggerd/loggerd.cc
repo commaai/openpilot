@@ -38,8 +38,6 @@
 #define Encoder RawLogger
 #endif
 
-ExitHandler do_exit;
-
 namespace {
 
 constexpr int MAIN_FPS = 20;
@@ -50,6 +48,8 @@ const int DCAM_BITRATE = Hardware::TICI() ? MAIN_BITRATE : 2500000;
 #define NO_CAMERA_PATIENCE 500 // fall back to time-based rotation if all cameras are dead
 
 const int SEGMENT_LENGTH = getenv("LOGGERD_TEST") ? atoi(getenv("LOGGERD_SEGMENT_LENGTH")) : 60;
+
+ExitHandler do_exit;
 
 LogCameraInfo cameras_logged[LOG_CAMERA_ID_MAX] = {
   [LOG_CAMERA_ID_FCAMERA] = {
@@ -470,7 +470,7 @@ int main(int argc, char** argv) {
   LOGW("closing logger");
   logger_close(&s.logger, &do_exit);
 
-  if (do_exit.powerFailure()){
+  if (do_exit.power_failure){
     LOGE("power failure");
     sync();
   }

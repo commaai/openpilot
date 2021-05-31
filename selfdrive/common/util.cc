@@ -2,9 +2,7 @@
 
 #include <errno.h>
 
-#include <atomic>
 #include <cassert>
-#include <csignal>
 #include <cstring>
 #include <dirent.h>
 #include <fstream>
@@ -175,43 +173,3 @@ bool time_valid(struct tm sys_time){
 }
 
 }  // namespace util
-
-
-// class ExitHandler
-
-#ifndef sighandler_t
-typedef void (*sighandler_t)(int sig);
-#endif
-
-class ExitHandlerHelper {
-public:
-  static void set_do_exit(int sig) {
-#ifndef __APPLE__
-    power_failure = (sig == SIGPWR);
-#endif
-    do_exit = true;
-  }
-  inline static std::atomic<bool> do_exit = false;
-  inline static std::atomic<bool> power_failure = false;
-};
-
-ExitHandler::ExitHandler() {
-  std::signal(SIGINT, (sighandler_t)ExitHandlerHelper::set_do_exit);
-  std::signal(SIGTERM, (sighandler_t)ExitHandlerHelper::set_do_exit);
-#ifndef __APPLE__
-  std::signal(SIGPWR, (sighandler_t)ExitHandlerHelper::set_do_exit);
-#endif
-}
-
-ExitHandler::operator bool() { 
-  return ExitHandlerHelper::do_exit; 
-}
-
-ExitHandler& ExitHandler::operator=(bool v) {
-  ExitHandlerHelper::do_exit = v;
-  return *this;
-}
-
-bool ExitHandler::powerFailure() {
-  return ExitHandlerHelper::power_failure;
-}

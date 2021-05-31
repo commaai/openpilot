@@ -4,12 +4,18 @@
 #include <unistd.h>
 
 #include <algorithm>
+#include <atomic>
 #include <chrono>
+#include <csignal>
 #include <ctime>
 #include <map>
 #include <memory>
 #include <string>
 #include <thread>
+
+#ifndef sighandler_t
+typedef void (*sighandler_t)(int sig);
+#endif
 
 void set_thread_name(const char* name);
 
