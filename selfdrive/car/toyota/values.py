@@ -1,11 +1,8 @@
 # flake8: noqa
 
-from selfdrive.config import Conversions as CV
 from selfdrive.car import dbc_dict
 from cereal import car
-
 Ecu = car.CarParams.Ecu
-MIN_ACC_SPEED = 19. * CV.MPH_TO_MS  # for non-stop-and-go cars (eg. needing gas interceptor)
 
 class CarControllerParams:
   ACCEL_HYST_GAP = 0.02  # don't change accel command for small oscilalitons within this value
