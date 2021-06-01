@@ -1,3 +1,5 @@
+#include <cassert>
+
 #include <kaitai/kaitaistream.h>
 
 #include "cereal/messaging/messaging.h"
