@@ -4,7 +4,7 @@ from selfdrive.car import apply_toyota_steer_torque_limits, create_gas_command, 
 from selfdrive.car.toyota.toyotacan import create_steer_command, create_ui_command, \
                                            create_accel_command, create_acc_cancel_command, \
                                            create_fcw_command, create_lta_steer_command
-from selfdrive.car.toyota.values import Ecu, CAR, STATIC_MSGS, NO_STOP_TIMER_CAR, TSS2_CAR, CarControllerParams
+from selfdrive.car.toyota.values import Ecu, CAR, STATIC_MSGS, NO_STOP_TIMER_CAR, TSS2_CAR, CarControllerParams, MIN_ACC_SPEED
 from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -49,15 +49,14 @@ class CarController():
     # *** compute control surfaces ***
 
     # gas and brake
+    apply_gas = 0.
+    apply_accel = actuators.gas - actuators.brake
 
-    apply_gas = clip(actuators.gas, 0., 1.)
-
-    if CS.CP.enableGasInterceptor:
-      # send only negative accel if interceptor is detected. otherwise, send the regular value
+    if CS.CP.enableGasInterceptor and enabled and CS.out.vEgo < MIN_ACC_SPEED:
+      # only send negative accel if interceptor is detected. gas handles acceleration
       # +0.06 offset to reduce ABS pump usage when OP is engaged
+      apply_gas = clip(actuators.gas, 0., 1.)
       apply_accel = 0.06 - actuators.brake
-    else:
-      apply_accel = actuators.gas - actuators.brake
 
     apply_accel, self.accel_steady = accel_hysteresis(apply_accel, self.accel_steady, enabled)
     apply_accel = clip(apply_accel * CarControllerParams.ACCEL_SCALE, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
@@ -119,10 +118,10 @@ class CarController():
       else:
         can_sends.append(create_accel_command(self.packer, 0, pcm_cancel_cmd, False, lead))
 
-    if (frame % 2 == 0) and (CS.CP.enableGasInterceptor):
+    if CS.CP.enableGasInterceptor and frame % 2 == 0:
       # send exactly zero if apply_gas is zero. Interceptor will send the max between read value and apply_gas.
       # This prevents unexpected pedal range rescaling
-      can_sends.append(create_gas_command(self.packer, apply_gas, frame//2))
+      can_sends.append(create_gas_command(self.packer, apply_gas, frame // 2))
 
     # ui mesg is at 100Hz but we send asap if:
     # - there is something to display
