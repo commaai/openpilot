@@ -213,7 +213,7 @@ DeveloperPanel::DeveloperPanel(QWidget* parent) : QFrame(parent) {
   QObject::connect(fs_watch, &QFileSystemWatcher::fileChanged, [=](const QString path) {
     int update_failed_count = Params().get<int>("UpdateFailedCount").value_or(0);
     if (path.contains("UpdateFailedCount") && update_failed_count > 0) {
-      lastUpdateTimeLbl->setText("failed fetching update");
+      lastUpdateTimeLbl->setText("failed to fetch update");
     } else if (path.contains("LastUpdateTime")) {
       updateLabels();
     }
