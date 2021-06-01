@@ -1,5 +1,7 @@
+import matplotlib
+matplotlib.use("TkAgg")
+import matplotlib.pyplot as plt
 import numpy as np
-
 
 MIN_ACC_SPEED = 8.49376
 
@@ -27,4 +29,14 @@ hybrid_kiV.append(np.interp(MIN_ACC_SPEED, orig_kiBP, stock_kiV))
 hybrid_kiV.append(stock_kiV[-1])  # all v's above MIN_ACC_SPEED
 print(np.round(hybrid_kiV, 3).tolist())
 
+plt.figure()
+plt.plot(orig_kpBP, stock_kpV)
+plt.plot(orig_kpBP, pedal_kpV)
+plt.plot(hybrid_kpBP, hybrid_kpV, '--')
 
+plt.figure()
+plt.plot(orig_kiBP, stock_kiV)
+plt.plot(orig_kiBP, pedal_kiV)
+plt.plot(hybrid_kiBP, hybrid_kiV, '--')
+
+plt.show()
