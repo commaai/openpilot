@@ -1,14 +1,18 @@
 #!/usr/bin/env python3
+import json
 import os
-import time
 import subprocess
+import time
+import numpy as np
 import unittest
+from collections import Counter
 from pathlib import Path
 
 import cereal.messaging as messaging
 from cereal.services import service_list
 from common.basedir import BASEDIR
 from common.timeout import Timeout
+from common.params import Params
 from selfdrive.hardware import TICI
 from selfdrive.loggerd.config import ROOT
 from selfdrive.test.helpers import set_params_enabled
@@ -18,7 +22,7 @@ from tools.lib.logreader import LogReader
 PROCS = {
   "selfdrive.controls.controlsd": 50.0,
   "./loggerd": 45.0,
-  "./locationd": 3.5,
+  "./locationd": 9.1,
   "selfdrive.controls.plannerd": 20.0,
   "./_ui": 15.0,
   "selfdrive.locationd.paramsd": 9.1,
@@ -71,7 +75,7 @@ def check_cpu_usage(first_proc, last_proc):
       cpu_usage = cpu_time / dt * 100.
       if cpu_usage > max(normal_cpu_usage * 1.1, normal_cpu_usage + 5.0):
         # TODO: fix high CPU when playing sounds constantly in UI
-        if proc_name == "./_ui" and cpu_usage < 40.:
+        if proc_name == "./_ui" and cpu_usage < 50.:
           continue
         result += f"Warning {proc_name} using more CPU than normal\n"
         r = False
@@ -94,6 +98,11 @@ class TestOnroad(unittest.TestCase):
     os.environ['SKIP_FW_QUERY'] = "1"
     os.environ['FINGERPRINT'] = "TOYOTA COROLLA TSS2 2019"
     set_params_enabled()
+
+    # Make sure athena isn't running
+    Params().delete("DongleId")
+    Params().delete("AthenadPid")
+    subprocess.check_call(["pkill", "-9", "-f", "athena"])
 
     logger_root = Path(ROOT)
     initial_segments = set()
@@ -128,12 +137,28 @@ class TestOnroad(unittest.TestCase):
 
     cls.lr = list(LogReader(os.path.join(str(cls.segments[1]), "rlog.bz2")))
 
+  def test_cloudlog_size(self):
+    msgs = [m for m in self.lr if m.which() == 'logMessage']
+
+    total_size = sum(len(m.as_builder().to_bytes()) for m in msgs)
+    self.assertLess(total_size, 3.5e5)
+
+    cnt = Counter([json.loads(m.logMessage)['filename'] for m in msgs])
+    big_logs = [f for f, n in cnt.most_common(3) if n / sum(cnt.values()) > 30.]
+    self.assertEqual(len(big_logs), 0, f"Log spam: {big_logs}")
+
   def test_cpu_usage(self):
     proclogs = [m for m in self.lr if m.which() == 'procLog']
     self.assertGreater(len(proclogs), service_list['procLog'].frequency * 45, "insufficient samples")
     cpu_ok = check_cpu_usage(proclogs[0], proclogs[-1])
     self.assertTrue(cpu_ok)
 
+  def test_model_timings(self):
+    cfgs = [("modelV2", 0.035, 0.03), ("driverState", 0.022, 0.018)]
+    for (s, instant_max, avg_max) in cfgs:
+      ts = [getattr(getattr(m, s), "modelExecutionTime") for m in self.lr if m.which() == s]
+      self.assertLess(min(ts), instant_max, f"high '{s}' execution time: {min(ts)}")
+      self.assertLess(np.mean(ts), avg_max, f"high avg '{s}' execution time: {np.mean(ts)}")
 
 if __name__ == "__main__":
   unittest.main()

@@ -36,7 +36,7 @@ EOF"""
 
 def phone_steps(String device_type, steps) {
   lock(resource: "", label: device_type, inversePrecedence: true, variable: 'device_ip', quantity: 1) {
-    timeout(time: 60, unit: 'MINUTES') {
+    timeout(time: 90, unit: 'MINUTES') {
       phone(device_ip, "git checkout", readFile("selfdrive/test/setup_device_ci.sh"),)
       steps.each { item ->
         phone(device_ip, item[0], item[1])
@@ -52,7 +52,7 @@ pipeline {
     TEST_DIR = "/data/openpilot"
   }
   options {
-      timeout(time: 1, unit: 'HOURS')
+      timeout(time: 2, unit: 'HOURS')
   }
 
   stages {
@@ -78,7 +78,7 @@ pipeline {
       when {
         not {
           anyOf {
-            branch 'master-ci'; branch 'devel'; branch 'devel-staging'; branch 'release2'; branch 'release2-staging'; branch 'dashcam'; branch 'dashcam-staging'; branch 'testing-closet*'
+            branch 'master-ci'; branch 'devel'; branch 'devel-staging'; branch 'release2'; branch 'release2-staging'; branch 'dashcam'; branch 'dashcam-staging'; branch 'testing-closet*'; branch 'hotfix-*'
           }
         }
       }
@@ -138,8 +138,8 @@ pipeline {
                 stage('Replay Tests') {
                   steps {
                     phone_steps("eon2", [
-                      ["build QCOM_REPLAY", "SCONS_CACHE=1 QCOM_REPLAY=1 scons -j4"],
-                      ["camerad/modeld replay", "cd selfdrive/test/process_replay && ./camera_replay.py"],
+                      ["build", "cd selfdrive/manager && ./build.py"],
+                      ["model replay", "cd selfdrive/test/process_replay && ./model_replay.py"],
                     ])
                   }
                 }
@@ -147,7 +147,7 @@ pipeline {
                 stage('HW + Unit Tests') {
                   steps {
                     phone_steps("eon", [
-                      ["build", "SCONS_CACHE=1 scons -j4"],
+                      ["build", "cd selfdrive/manager && ./build.py"],
                       ["test athena", "nosetests -s selfdrive/athena/tests/test_athenad_old.py"],
                       ["test sounds", "nosetests -s selfdrive/test/test_sounds.py"],
                       ["test boardd loopback", "nosetests -s selfdrive/boardd/tests/test_boardd_loopback.py"],
@@ -163,7 +163,7 @@ pipeline {
                 stage('Power Consumption Tests') {
                   steps {
                     lock(resource: "", label: "c2-zookeeper", inversePrecedence: true, variable: 'device_ip', quantity: 1) {
-                      timeout(time: 60, unit: 'MINUTES') {
+                      timeout(time: 90, unit: 'MINUTES') {
                         sh script: "/home/batman/tools/zookeeper/enable_and_wait.py $device_ip 120", label: "turn on device"
                         phone(device_ip, "git checkout", readFile("selfdrive/test/setup_device_ci.sh"),)
                         phone(device_ip, "build", "SCONS_CACHE=1 scons -j4 && sync")
@@ -186,7 +186,7 @@ pipeline {
                   }
                   steps {
                     phone_steps("tici", [
-                      ["build", "SCONS_CACHE=1 scons -j16"],
+                      ["build", "cd selfdrive/manager && ./build.py"],
                       ["test loggerd", "python selfdrive/loggerd/tests/test_loggerd.py"],
                       ["test encoder", "LD_LIBRARY_PATH=/usr/local/lib python selfdrive/loggerd/tests/test_encoder.py"],
                       ["onroad tests", "cd selfdrive/test/ && ./test_onroad.py"],
@@ -198,7 +198,7 @@ pipeline {
                 stage('camerad') {
                   steps {
                     phone_steps("eon-party", [
-                      ["build", "SCONS_CACHE=1 scons -j16"],
+                      ["build", "cd selfdrive/manager && ./build.py"],
                       ["test camerad", "python selfdrive/camerad/test/test_camerad.py"],
                       ["test exposure", "python selfdrive/camerad/test/test_exposure.py"],
                     ])
@@ -208,7 +208,7 @@ pipeline {
                 stage('Tici camerad') {
                   steps {
                     phone_steps("tici-party", [
-                      ["build", "SCONS_CACHE=1 scons -j16"],
+                      ["build", "cd selfdrive/manager && ./build.py"],
                       ["test camerad", "python selfdrive/camerad/test/test_camerad.py"],
                       ["test exposure", "python selfdrive/camerad/test/test_exposure.py"],
                     ])

@@ -1,7 +1,9 @@
 #include <QApplication>
+#include <QSslConfiguration>
 
-#include "qt/window.hpp"
-#include "qt/qt_window.hpp"
+#include "selfdrive/hardware/hw.h"
+#include "selfdrive/ui/qt/qt_window.h"
+#include "selfdrive/ui/qt/window.h"
 
 int main(int argc, char *argv[]) {
   QSurfaceFormat fmt;
@@ -14,9 +16,12 @@ int main(int argc, char *argv[]) {
 #endif
   QSurfaceFormat::setDefaultFormat(fmt);
 
-#ifdef QCOM
-  QApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
-#endif
+  if (Hardware::EON()) {
+    QApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
+    QSslConfiguration ssl = QSslConfiguration::defaultConfiguration();
+    ssl.setCaCertificates(QSslCertificate::fromPath("/usr/etc/tls/cert.pem"));
+    QSslConfiguration::setDefaultConfiguration(ssl);
+  }
 
   QApplication a(argc, argv);
   MainWindow w;

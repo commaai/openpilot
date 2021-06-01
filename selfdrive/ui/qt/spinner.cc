@@ -1,18 +1,19 @@
-#include <stdio.h>
-#include <string>
-#include <iostream>
+#include "spinner.h"
 
+#include <stdio.h>
+#include <iostream>
+#include <string>
+
+#include <QApplication>
+#include <QGridLayout>
+#include <QPainter>
 #include <QString>
 #include <QTransform>
-#include <QGridLayout>
-#include <QApplication>
-#include <QPainter>
 
-#include "spinner.hpp"
-#include "qt_window.hpp"
 #include "selfdrive/hardware/hw.h"
+#include "selfdrive/ui/qt/qt_window.h"
 
-TrackWidget::TrackWidget(QWidget *parent) : QOpenGLWidget(parent) {
+TrackWidget::TrackWidget(QWidget *parent) : QWidget(parent) {
   setFixedSize(spinner_size);
   setAutoFillBackground(false);
 
@@ -94,7 +95,7 @@ Spinner::Spinner(QWidget *parent) {
   )");
 
   notifier = new QSocketNotifier(fileno(stdin), QSocketNotifier::Read);
-  QObject::connect(notifier, SIGNAL(activated(int)), this, SLOT(update(int)));
+  QObject::connect(notifier, &QSocketNotifier::activated, this, &Spinner::update);
 };
 
 void Spinner::update(int n) {

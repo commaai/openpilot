@@ -1,9 +1,10 @@
+#include "lsm6ds3_gyro.h"
+
 #include <cassert>
 #include <cmath>
-#include "common/swaglog.h"
-#include "common/timing.h"
 
-#include "lsm6ds3_gyro.hpp"
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/common/timing.h"
 
 #define DEG2RAD(x) ((x) * M_PI / 180.0)
 
@@ -44,13 +45,13 @@ void LSM6DS3_Gyro::get_event(cereal::SensorEventData::Builder &event){
   int len = read_register(LSM6DS3_GYRO_I2C_REG_OUTX_L_G, buffer, sizeof(buffer));
   assert(len == sizeof(buffer));
 
-  float scale = 250.0f / (1 << 15);
+  float scale = 8.75 / 1000.0;
   float x = DEG2RAD(read_16_bit(buffer[0], buffer[1]) * scale);
   float y = DEG2RAD(read_16_bit(buffer[2], buffer[3]) * scale);
   float z = DEG2RAD(read_16_bit(buffer[4], buffer[5]) * scale);
 
   event.setSource(cereal::SensorEventData::SensorSource::LSM6DS3);
-  event.setVersion(1);
+  event.setVersion(2);
   event.setSensor(SENSOR_GYRO_UNCALIBRATED);
   event.setType(SENSOR_TYPE_GYROSCOPE_UNCALIBRATED);
   event.setTimestamp(start_time);

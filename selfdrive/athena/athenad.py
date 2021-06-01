@@ -17,7 +17,7 @@ from typing import Any
 
 import requests
 from jsonrpc import JSONRPCResponseManager, dispatcher
-from websocket import ABNF, WebSocketTimeoutException, create_connection
+from websocket import ABNF, WebSocketTimeoutException, WebSocketException, create_connection
 
 import cereal.messaging as messaging
 from cereal.services import service_list
@@ -29,8 +29,7 @@ from selfdrive.hardware import HARDWARE, PC
 from selfdrive.loggerd.config import ROOT
 from selfdrive.loggerd.xattr_cache import getxattr, setxattr
 from selfdrive.swaglog import cloudlog, SWAGLOG_DIR
-import selfdrive.crash as crash
-from selfdrive.version import dirty, origin, branch, commit
+from selfdrive.version import get_version, get_git_remote, get_git_branch, get_git_commit
 
 ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
 HANDLER_THREADS = int(os.getenv('HANDLER_THREADS', "4"))
@@ -38,6 +37,7 @@ LOCAL_PORT_WHITELIST = set([8022])
 
 LOG_ATTR_NAME = 'user.upload'
 LOG_ATTR_VALUE_MAX_UNIX_TIME = int.to_bytes(2147483647, 4, sys.byteorder)
+RECONNECT_TIMEOUT_S = 70
 
 dispatcher["echo"] = lambda s: s
 recv_queue: Any = queue.Queue()
@@ -53,12 +53,12 @@ def handle_long_poll(ws):
   end_event = threading.Event()
 
   threads = [
-    threading.Thread(target=ws_recv, args=(ws, end_event)),
-    threading.Thread(target=ws_send, args=(ws, end_event)),
-    threading.Thread(target=upload_handler, args=(end_event,)),
-    threading.Thread(target=log_handler, args=(end_event,)),
+    threading.Thread(target=ws_recv, args=(ws, end_event), name='ws_recv'),
+    threading.Thread(target=ws_send, args=(ws, end_event), name='wc_send'),
+    threading.Thread(target=upload_handler, args=(end_event,), name='upload_handler'),
+    threading.Thread(target=log_handler, args=(end_event,), name='log_handler'),
   ] + [
-    threading.Thread(target=jsonrpc_handler, args=(end_event,))
+    threading.Thread(target=jsonrpc_handler, args=(end_event,), name=f'worker_{x}')
     for x in range(HANDLER_THREADS)
   ]
 
@@ -72,7 +72,9 @@ def handle_long_poll(ws):
     raise
   finally:
     for thread in threads:
+      cloudlog.debug(f"athena.joining {thread.name}")
       thread.join()
+
 
 def jsonrpc_handler(end_event):
   dispatcher["startLocalProxy"] = partial(startLocalProxy, end_event)
@@ -80,6 +82,7 @@ def jsonrpc_handler(end_event):
     try:
       data = recv_queue.get(timeout=1)
       if "method" in data:
+        cloudlog.debug(f"athena.jsonrpc_handler.call_method {data}")
         response = JSONRPCResponseManager.handle(data, dispatcher)
         send_queue.put_nowait(response.json)
       elif "result" in data and "id" in data:
@@ -129,6 +132,27 @@ def getMessage(service=None, timeout=1000):
     raise TimeoutError
 
   return ret.to_dict()
+
+
+@dispatcher.add_method
+def getVersion():
+  return {
+    "version": get_version(),
+    "remote": get_git_remote(),
+    "branch": get_git_branch(),
+    "commit": get_git_commit(),
+  }
+
+
+@dispatcher.add_method
+def setNavDestination(latitude=0, longitude=0):
+  destination = {
+    "latitude": latitude,
+    "longitude": longitude,
+  }
+  Params().put("NavDestination", json.dumps(destination))
+
+  return {"success": 1}
 
 
 @dispatcher.add_method
@@ -190,6 +214,8 @@ def startLocalProxy(global_end_event, remote_ws_uri, local_port):
     if local_port not in LOCAL_PORT_WHITELIST:
       raise Exception("Requested local port not whitelisted")
 
+    cloudlog.debug("athena.startLocalProxy.starting")
+
     params = Params()
     dongle_id = params.get("DongleId").decode('utf8')
     identity_token = Api(dongle_id).get_token()
@@ -210,6 +236,7 @@ def startLocalProxy(global_end_event, remote_ws_uri, local_port):
     for thread in threads:
       thread.start()
 
+    cloudlog.debug("athena.startLocalProxy.started")
     return {"success": 1}
   except Exception as e:
     cloudlog.exception("athenad.startLocalProxy.exception")
@@ -282,7 +309,6 @@ def log_handler(end_event):
 
   log_files = []
   last_scan = 0
-  log_retries = 0
   while not end_event.is_set():
     try:
       try:
@@ -294,7 +320,8 @@ def log_handler(end_event):
           try:
             setxattr(log_path, LOG_ATTR_NAME, LOG_ATTR_VALUE_MAX_UNIX_TIME)
           except OSError:
-            pass # file could be deleted by log rotation
+            pass  # file could be deleted by log rotation
+
       except queue.Empty:
         pass
 
@@ -324,14 +351,10 @@ def log_handler(end_event):
           }
           log_send_queue.put_nowait(json.dumps(jsonrpc))
       except OSError:
-        pass # file could be deleted by log rotation
-      log_retries = 0
+        pass  # file could be deleted by log rotation
+
     except Exception:
       cloudlog.exception("athena.log_handler.exception")
-      log_retries += 1
-
-    if log_retries != 0:
-      time.sleep(backoff(log_retries))
 
 
 def ws_proxy_recv(ws, local_sock, ssock, end_event, global_end_event):
@@ -345,8 +368,11 @@ def ws_proxy_recv(ws, local_sock, ssock, end_event, global_end_event):
       cloudlog.exception("athenad.ws_proxy_recv.exception")
       break
 
+  cloudlog.debug("athena.ws_proxy_recv closing sockets")
   ssock.close()
   local_sock.close()
+  cloudlog.debug("athena.ws_proxy_recv done closing sockets")
+
   end_event.set()
 
 
@@ -370,10 +396,13 @@ def ws_proxy_send(ws, local_sock, signal_sock, end_event):
       cloudlog.exception("athenad.ws_proxy_send.exception")
       end_event.set()
 
+  cloudlog.debug("athena.ws_proxy_send closing sockets")
   signal_sock.close()
+  cloudlog.debug("athena.ws_proxy_send done closing sockets")
 
 
 def ws_recv(ws, end_event):
+  last_ping = int(sec_since_boot() * 1e9)
   while not end_event.is_set():
     try:
       opcode, data = ws.recv_data(control_frame=True)
@@ -382,9 +411,13 @@ def ws_recv(ws, end_event):
           data = data.decode("utf-8")
         recv_queue.put_nowait(data)
       elif opcode == ABNF.OPCODE_PING:
-        Params().put("LastAthenaPingTime", str(int(sec_since_boot() * 1e9)))
+        last_ping = int(sec_since_boot() * 1e9)
+        Params().put("LastAthenaPingTime", str(last_ping))
     except WebSocketTimeoutException:
-      pass
+      ns_since_last_ping = int(sec_since_boot() * 1e9) - last_ping
+      if ns_since_last_ping > RECONNECT_TIMEOUT_S * 1e9:
+        cloudlog.exception("athenad.wc_recv.timeout")
+        end_event.set()
     except Exception:
       cloudlog.exception("athenad.ws_recv.exception")
       end_event.set()
@@ -412,29 +445,28 @@ def backoff(retries):
 def main():
   params = Params()
   dongle_id = params.get("DongleId", encoding='utf-8')
-  crash.init()
-  crash.bind_user(id=dongle_id)
-  crash.bind_extra(dirty=dirty, origin=origin, branch=branch, commit=commit,
-                   device=HARDWARE.get_device_type())
 
   ws_uri = ATHENA_HOST + "/ws/v2/" + dongle_id
-
   api = Api(dongle_id)
 
   conn_retries = 0
   while 1:
     try:
+      cloudlog.event("athenad.main.connecting_ws", ws_uri=ws_uri)
       ws = create_connection(ws_uri,
                              cookie="jwt=" + api.get_token(),
-                             enable_multithread=True)
+                             enable_multithread=True,
+                             timeout=1.0)
       cloudlog.event("athenad.main.connected_ws", ws_uri=ws_uri)
       ws.settimeout(1)
       conn_retries = 0
       handle_long_poll(ws)
     except (KeyboardInterrupt, SystemExit):
       break
+    except (ConnectionError, TimeoutError, WebSocketException):
+      conn_retries += 1
+      params.delete("LastAthenaPingTime")
     except Exception:
-      crash.capture_exception()
       cloudlog.exception("athenad.main.exception")
 
       conn_retries += 1

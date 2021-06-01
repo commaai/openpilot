@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
@@ -11,18 +10,16 @@
 #include <math.h>
 #include <atomic>
 
-#include "common/util.h"
-#include "common/swaglog.h"
-#include "camera_qcom2.h"
-
 #include "media/cam_defs.h"
 #include "media/cam_isp.h"
 #include "media/cam_isp_ife.h"
 #include "media/cam_sensor_cmn_header.h"
 #include "media/cam_sensor.h"
 #include "media/cam_sync.h"
-
 #include "sensor2_i2c.h"
+
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/camerad/cameras/camera_qcom2.h"
 
 #define FRAME_WIDTH  1928
 #define FRAME_HEIGHT 1208
@@ -276,7 +273,7 @@ void sensors_init(int video0_fd, int sensor_fd, int camera_num) {
   power->count = 1;
   power->cmd_type = CAMERA_SENSOR_CMD_TYPE_PWR_UP;
   power->power_settings[0].power_seq_type = 0;
-  power->power_settings[0].config_val_low = 24000000; //Hz
+  power->power_settings[0].config_val_low = 19200000; //Hz
   power = power_set_wait(power, 10);
 
   // 8,1 is this reset?

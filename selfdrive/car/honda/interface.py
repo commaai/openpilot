@@ -2,10 +2,9 @@
 import numpy as np
 from cereal import car
 from common.numpy_fast import clip, interp
-from common.realtime import DT_CTRL
 from selfdrive.swaglog import cloudlog
 from selfdrive.config import Conversions as CV
-from selfdrive.car.honda.values import CruiseButtons, CAR, HONDA_BOSCH
+from selfdrive.car.honda.values import CruiseButtons, CAR, HONDA_BOSCH, HONDA_BOSCH_ALT_BRAKE_SIGNAL
 from selfdrive.car import STD_CARGO_KG, CivicParams, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
 from selfdrive.controls.lib.longitudinal_planner import _A_CRUISE_MAX_V_FOLLOWING
 from selfdrive.car.interfaces import CarInterfaceBase
@@ -197,8 +196,6 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate in (CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH):
       stop_and_go = True
-      if not candidate == CAR.ACCORDH:  # Hybrid uses same brake msg as hatch
-        ret.safetyParam = 1  # Accord(ICE), CRV 5G, and RDX 3G use an alternate user brake msg
       ret.mass = 3279. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.83
       ret.centerToFront = ret.wheelbase * 0.39
@@ -245,7 +242,6 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate == CAR.CRV_5G:
       stop_and_go = True
-      ret.safetyParam = 1  # Accord(ICE), CRV 5G, and RDX 3G use an alternate user brake msg
       ret.mass = 3410. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.66
       ret.centerToFront = ret.wheelbase * 0.41
@@ -267,7 +263,6 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate == CAR.CRV_HYBRID:
       stop_and_go = True
-      ret.safetyParam = 1  # Accord(ICE), CRV 5G, and RDX 3G use an alternate user brake msg
       ret.mass = 1667. + STD_CARGO_KG  # mean of 4 models in kg
       ret.wheelbase = 2.66
       ret.centerToFront = ret.wheelbase * 0.41
@@ -324,7 +319,6 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate == CAR.ACURA_RDX_3G:
       stop_and_go = True
-      ret.safetyParam = 1  # Accord(ICE), CRV 5G, and RDX 3G use an alternate user brake msg
       ret.mass = 4068. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.75
       ret.centerToFront = ret.wheelbase * 0.41
@@ -410,6 +404,10 @@ class CarInterface(CarInterfaceBase):
     else:
       raise ValueError("unsupported car %s" % candidate)
 
+    # These cars use alternate user brake msg (0x1BE)
+    if candidate in HONDA_BOSCH_ALT_BRAKE_SIGNAL:
+      ret.safetyParam = 1
+
     # min speed to enable ACC. if car can do stop and go, then set enabling speed
     # to a negative value, so it won't matter. Otherwise, add 0.5 mph margin to not
     # conflict with PCM acc
@@ -450,10 +448,6 @@ class CarInterface(CarInterfaceBase):
 
     ret.canValid = self.cp.can_valid and self.cp_cam.can_valid and (self.cp_body is None or self.cp_body.can_valid)
     ret.yawRate = self.VM.yaw_rate(ret.steeringAngleDeg * CV.DEG_TO_RAD, ret.vEgo)
-    # FIXME: read sendcan for brakelights
-    brakelights_threshold = 0.02 if self.CS.CP.carFingerprint == CAR.CIVIC else 0.1
-    ret.brakeLights = bool(self.CS.brake_switch or
-                           c.actuators.brake > brakelights_threshold)
 
     buttonEvents = []
 

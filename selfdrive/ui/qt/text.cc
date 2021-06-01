@@ -1,13 +1,13 @@
-#include <QLabel>
-#include <QWidget>
-#include <QScrollBar>
-#include <QPushButton>
-#include <QVBoxLayout>
 #include <QApplication>
+#include <QLabel>
+#include <QPushButton>
+#include <QScrollBar>
+#include <QVBoxLayout>
+#include <QWidget>
 
-#include "qt_window.hpp"
 #include "selfdrive/hardware/hw.h"
-#include "widgets/scrollview.hpp"
+#include "selfdrive/ui/qt/qt_window.h"
+#include "selfdrive/ui/qt/widgets/scrollview.h"
 
 int main(int argc, char *argv[]) {
   QApplication a(argc, argv);
@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
   });
 #else
   btn->setText("Exit");
-  QObject::connect(btn, SIGNAL(released()), &a, SLOT(quit()));
+  QObject::connect(btn, &QPushButton::released, &a, &QApplication::quit);
 #endif
   layout->addWidget(btn, 0, 0, Qt::AlignRight | Qt::AlignBottom);
 

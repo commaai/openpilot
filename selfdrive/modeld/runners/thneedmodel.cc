@@ -1,4 +1,5 @@
 #include "thneedmodel.h"
+
 #include <assert.h>
 
 ThneedModel::ThneedModel(const char *path, float *loutput, size_t loutput_size, int runtime) {

@@ -1,13 +1,13 @@
-#include <cstdio>
-#include <cstdlib>
 #include <unistd.h>
-
 #include <zmq.h>
 
-#include "common/visionipc.h"
-#include "common/timing.h"
-#include "common/util.h"
-#include "RawLogger.h"
+#include <cstdio>
+#include <cstdlib>
+
+#include "selfdrive/common/timing.h"
+#include "selfdrive/common/util.h"
+#include "selfdrive/common/visionipc.h"
+#include "selfdrive/loggerd/raw_logger.h"
 
 int main() {
   int err;

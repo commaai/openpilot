@@ -5,7 +5,7 @@ from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from selfdrive.config import Conversions as CV
 from selfdrive.car.interfaces import CarStateBase
-from selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, SPEED_FACTOR, HONDA_BOSCH
+from selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, SPEED_FACTOR, HONDA_BOSCH, HONDA_BOSCH_ALT_BRAKE_SIGNAL
 
 def calc_cruise_offset(offset, speed):
   # euristic formula so that speed is controlled to ~ 0.3m/s below pid_speed
@@ -81,23 +81,25 @@ def get_can_signals(CP):
       ("GEARBOX", 100),
     ]
 
-  if CP.carFingerprint in HONDA_BOSCH:
-    # Civic is only bosch to use the same brake message as other hondas.
-    if CP.carFingerprint not in (CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_HYBRID, CAR.INSIGHT):
-      signals += [("BRAKE_PRESSED", "BRAKE_MODULE", 0)]
-      checks += [("BRAKE_MODULE", 50)]
+  if CP.carFingerprint in HONDA_BOSCH_ALT_BRAKE_SIGNAL:
+    signals += [("BRAKE_PRESSED", "BRAKE_MODULE", 0)]
+    checks += [("BRAKE_MODULE", 50)]
 
+  if CP.carFingerprint in HONDA_BOSCH:
     signals += [
       ("CAR_GAS", "GAS_PEDAL_2", 0),
       ("MAIN_ON", "SCM_FEEDBACK", 0),
       ("CRUISE_CONTROL_LABEL", "ACC_HUD", 0),
       ("EPB_STATE", "EPB_STATUS", 0),
-      ("CRUISE_SPEED", "ACC_HUD", 0)
+      ("CRUISE_SPEED", "ACC_HUD", 0),
+      ("ACCEL_COMMAND", "ACC_CONTROL", 0),
+      ("AEB_STATUS", "ACC_CONTROL", 0),
     ]
     checks += [
       ("ACC_HUD", 10),
       ("EPB_STATUS", 50),
       ("GAS_PEDAL_2", 100),
+      ("ACC_CONTROL", 50),
     ]
     if CP.openpilotLongitudinalControl:
       signals += [("BRAKE_ERROR_1", "STANDSTILL", 1),
@@ -115,6 +117,7 @@ def get_can_signals(CP):
       checks += [("CRUISE_PARAMS", 10)]
     else:
       checks += [("CRUISE_PARAMS", 50)]
+
   if CP.carFingerprint in (CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G):
     signals += [("DRIVERS_DOOR_OPEN", "SCM_FEEDBACK", 1)]
   elif CP.carFingerprint == CAR.ODYSSEY_CHN:
@@ -198,7 +201,7 @@ class CarState(CarStateBase):
 
     self.user_gas, self.user_gas_pressed = 0., 0
     self.brake_switch_prev = 0
-    self.brake_switch_ts = 0
+    self.brake_switch_prev_ts = 0
     self.cruise_setting = 0
     self.v_cruise_pcm_prev = 0
     self.cruise_mode = 0
@@ -299,33 +302,29 @@ class CarState(CarStateBase):
     ret.steeringTorqueEps = cp.vl["STEER_MOTOR_TORQUE"]['MOTOR_TORQUE']
     ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD[self.CP.carFingerprint]
 
-    self.brake_switch = cp.vl["POWERTRAIN_DATA"]['BRAKE_SWITCH'] != 0
-
     if self.CP.carFingerprint in HONDA_BOSCH:
       self.cruise_mode = cp.vl["ACC_HUD"]['CRUISE_CONTROL_LABEL']
       ret.cruiseState.standstill = cp.vl["ACC_HUD"]['CRUISE_SPEED'] == 252.
       ret.cruiseState.speedOffset = calc_cruise_offset(0, ret.vEgo)
-      if self.CP.carFingerprint in (CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.ACCORDH, CAR.CRV_HYBRID, CAR.INSIGHT):
-        ret.brakePressed = cp.vl["POWERTRAIN_DATA"]['BRAKE_PRESSED'] != 0 or \
-                          (self.brake_switch and self.brake_switch_prev and
-                          cp.ts["POWERTRAIN_DATA"]['BRAKE_SWITCH'] != self.brake_switch_ts)
-        self.brake_switch_prev = self.brake_switch
-        self.brake_switch_ts = cp.ts["POWERTRAIN_DATA"]['BRAKE_SWITCH']
-      else:
-        ret.brakePressed = cp.vl["BRAKE_MODULE"]['BRAKE_PRESSED'] != 0
       # On set, cruise set speed pulses between 254~255 and the set speed prev is set to avoid this.
       ret.cruiseState.speed = self.v_cruise_pcm_prev if cp.vl["ACC_HUD"]['CRUISE_SPEED'] > 160.0 else cp.vl["ACC_HUD"]['CRUISE_SPEED'] * CV.KPH_TO_MS
       self.v_cruise_pcm_prev = ret.cruiseState.speed
     else:
       ret.cruiseState.speedOffset = calc_cruise_offset(cp.vl["CRUISE_PARAMS"]['CRUISE_SPEED_OFFSET'], ret.vEgo)
       ret.cruiseState.speed = cp.vl["CRUISE"]['CRUISE_SPEED_PCM'] * CV.KPH_TO_MS
+
+    self.brake_switch = cp.vl["POWERTRAIN_DATA"]['BRAKE_SWITCH'] != 0
+    if self.CP.carFingerprint in HONDA_BOSCH_ALT_BRAKE_SIGNAL:
+      ret.brakePressed = cp.vl["BRAKE_MODULE"]['BRAKE_PRESSED'] != 0
+    else:
       # brake switch has shown some single time step noise, so only considered when
       # switch is on for at least 2 consecutive CAN samples
+      # panda safety only checks BRAKE_PRESSED signal
       ret.brakePressed = bool(cp.vl["POWERTRAIN_DATA"]['BRAKE_PRESSED'] or
-                              (self.brake_switch and self.brake_switch_prev and
-                               cp.ts["POWERTRAIN_DATA"]['BRAKE_SWITCH'] != self.brake_switch_ts))
+                              (self.brake_switch and self.brake_switch_prev and cp.ts["POWERTRAIN_DATA"]['BRAKE_SWITCH'] != self.brake_switch_prev_ts))
+
       self.brake_switch_prev = self.brake_switch
-      self.brake_switch_ts = cp.ts["POWERTRAIN_DATA"]['BRAKE_SWITCH']
+      self.brake_switch_prev_ts = cp.ts["POWERTRAIN_DATA"]['BRAKE_SWITCH']
 
     ret.brake = cp.vl["VSA_STATUS"]['USER_BRAKE']
     ret.cruiseState.enabled = cp.vl["POWERTRAIN_DATA"]['ACC_STATUS'] != 0
@@ -341,7 +340,7 @@ class CarState(CarStateBase):
     self.is_metric = not cp.vl["HUD_SETTING"]['IMPERIAL_UNIT'] if self.CP.carFingerprint in (CAR.CIVIC) else False
 
     if self.CP.carFingerprint in HONDA_BOSCH:
-      ret.stockAeb = bool(cp_cam.vl["ACC_CONTROL"]["AEB_STATUS"] and cp_cam.vl["ACC_CONTROL"]["ACCEL_COMMAND"] < -1e-5)
+      ret.stockAeb = bool(cp.vl["ACC_CONTROL"]["AEB_STATUS"] and cp.vl["ACC_CONTROL"]["ACCEL_COMMAND"] < -1e-5)
     else:
       ret.stockAeb = bool(cp_cam.vl["BRAKE_COMMAND"]["AEB_REQ_1"] and cp_cam.vl["BRAKE_COMMAND"]["COMPUTER_BRAKE"] > 1e-5)
 
@@ -376,13 +375,7 @@ class CarState(CarStateBase):
     if CP.carFingerprint in [CAR.CRV, CAR.CRV_EU, CAR.ACURA_RDX, CAR.ODYSSEY_CHN]:
       checks = [(0x194, 100)]
 
-    if CP.carFingerprint in HONDA_BOSCH:
-      signals += [("ACCEL_COMMAND", "ACC_CONTROL", 0),
-                  ("AEB_STATUS", "ACC_CONTROL", 0)]
-      checks += [
-        ("ACC_CONTROL", 0), # TODO: fix freq, this seems to be on the wrong bus
-      ]
-    else:
+    if CP.carFingerprint not in HONDA_BOSCH:
       signals += [("COMPUTER_BRAKE", "BRAKE_COMMAND", 0),
                   ("AEB_REQ_1", "BRAKE_COMMAND", 0),
                   ("FCW", "BRAKE_COMMAND", 0),
@@ -404,10 +397,9 @@ class CarState(CarStateBase):
       signals = [("BSM_ALERT", "BSM_STATUS_RIGHT", 0),
                  ("BSM_ALERT", "BSM_STATUS_LEFT", 0)]
 
-      # TODO: get freqs
       checks = [
-        ("BSM_STATUS_LEFT", 0),
-        ("BSM_STATUS_RIGHT", 0),
+        ("BSM_STATUS_LEFT", 3),
+        ("BSM_STATUS_RIGHT", 3),
       ]
       bus_body = 0 # B-CAN is forwarded to ACC-CAN radar side (CAN 0 on fake ethernet port)
       return CANParser(DBC[CP.carFingerprint]['body'], signals, checks, bus_body)

@@ -72,6 +72,7 @@ pre-commit = "*"
 mypy = "*"
 parameterized = "*"
 ft4222 = "*"
+hypothesis = "*"
 
 [packages]
 atomicwrites = "*"
