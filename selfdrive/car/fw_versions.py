@@ -221,7 +221,7 @@ def match_fw_to_car_exact(fw_versions_dict):
         continue
 
       # On some Toyota models, the engine can show on two different addresses
-      if ecu_type == Ecu.engine and candidate in [TOYOTA.CAMRY, TOYOTA.COROLLA_TSS2, TOYOTA.CHR, TOYOTA.LEXUS_IS, TOYOTA.AVALON] and found_version is None:
+      if ecu_type == Ecu.engine and candidate in [TOYOTA.CAMRY, TOYOTA.COROLLA_TSS2, TOYOTA.CHR, TOYOTA.LEXUS_IS] and found_version is None:
         continue
 
       # Ignore non essential ecus
