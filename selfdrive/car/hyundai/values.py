@@ -571,7 +571,7 @@ FW_VERSIONS = {
     (Ecu.esp, 0x7d1, None): [
       b'\xf1\x8758910-AB800\xf1\x00CN ESC \t 101 \x10\x03 58910-AB800\xf1\xa01.01',
       b'\xf1\x8758910-AB800\xf1\x00CN ESC \t 101 \x20\x03 58910-AB800\xf1\xa01.01',
-      b'\xf1\x00CN ESC \t 101 \020\003 58910-AB800',
+      b'\xf1\x00CN ESC \t 101 \x10\x03 58910-AB800',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x00HT6WA280BLHT6VA640A1CCN0N20NS5\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
