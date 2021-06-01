@@ -18,25 +18,25 @@ extern "C" {
 #include <libswscale/swscale.h>
 }
 
-class FrameReader : public QThread {
+class FrameReader : public QObject {
   Q_OBJECT
 
 public:
-  FrameReader(const std::string &url);
+  FrameReader(const std::string &url, QObject *parent = nullptr);
   ~FrameReader();
-  void run() override;
   uint8_t *get(int idx);
   bool valid() const { return valid_; }
   int getRGBSize() const { return width * height * 3; }
 
   int width = 0, height = 0;
 
- signals:
+signals:
   void finished(bool success);
 
- private:
-  void processFrames();
-  void decodeFrames();
+private:
+  void process();
+  bool processFrames();
+  void decodeThread();
   AVFrame *toRGB(AVFrame *frm);
 
   struct Frame {
@@ -57,4 +57,6 @@ public:
   std::atomic<bool> exit_ = false;
   bool valid_ = false;
   std::string url_;
+  QThread *process_thread_;
+  std::thread decode_thread_;
 };

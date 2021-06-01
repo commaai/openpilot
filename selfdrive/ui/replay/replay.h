@@ -10,21 +10,22 @@
 #include "selfdrive/ui/replay/route.h"
 
 class Segment {
- public:
+public:
   Segment(int seg_num, const SegmentFile &file);
   ~Segment();
+  bool loaded() { return loading > 0; }
+  bool valid() const { return !loading && log != nullptr; }
 
   const int seg_num;
   LogReader *log = nullptr;
   FrameReader *frames[MAX_CAMERAS] = {};
-  std::atomic<bool> loaded = false;
 
- private:
+private:
   std::atomic<int> loading = 0;
 };
 
 class CameraServer {
- public:
+public:
   CameraServer();
   ~CameraServer();
   void stop();
@@ -34,7 +35,7 @@ class CameraServer {
     camera_states_[type]->queue.push({seg, segmentId});
   }
 
- private:
+private:
   cl_device_id device_id_ = nullptr;
   cl_context context_ = nullptr;
   VisionIpcServer *vipc_server_ = nullptr;
@@ -51,7 +52,7 @@ class CameraServer {
 };
 
 class Replay {
- public:
+public:
   Replay(SubMaster *sm = nullptr);
   ~Replay();
   bool start(const QString &routeName);
@@ -61,15 +62,17 @@ class Replay {
   void stop();
   bool running() { return stream_thread_.joinable(); }
 
- private:
+private:
   std::shared_ptr<Segment> getSegment(int segment);
   void queueSegment(int segment);
+  void nextSegment(int n);
+  void prevSegment(int n);
   const std::string &eventSocketName(const cereal::Event::Reader &e);
 
   void streamThread();
   void pushFrame(CameraType type, int seg_id, uint32_t frame_id);
 
-  std::atomic<int64_t> current_ts_ = 0, seek_ts_ = 0; // ms
+  std::atomic<int64_t> current_ts_ = 0, seek_ts_ = 0;  // ms
   std::atomic<int> current_segment_ = -1;
   std::unordered_map<cereal::Event::Which, std::string> eventNameMap;
 

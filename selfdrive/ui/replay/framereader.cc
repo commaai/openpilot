@@ -6,6 +6,7 @@
 #include <QDebug>
 
 #include "selfdrive/common/timing.h"
+
 static int ffmpeg_lockmgr_cb(void **arg, enum AVLockOp op) {
   std::mutex *mutex = (std::mutex *)*arg;
   switch (op) {
@@ -38,14 +39,21 @@ class AVInitializer {
 
 static AVInitializer av_initializer;
 
-FrameReader::FrameReader(const std::string &url) : url_(url) {}
+FrameReader::FrameReader(const std::string &url, QObject *parent) : url_(url), QObject(parent) {
+  process_thread_ = QThread::create(&FrameReader::process, this);
+  connect(process_thread_, &QThread::finished, process_thread_, &QThread::deleteLater);
+  process_thread_->start();
+}
 
 FrameReader::~FrameReader() {
   // wait until thread is finished.
   exit_ = true;
+  process_thread_->wait();
   cv_decode_.notify_one();
   cv_frame_.notify_all();
-  wait();
+  if (decode_thread_.joinable()) {
+    decode_thread_.join();
+  }
 
   // free all.
   for (auto &f : frames_) {
@@ -56,16 +64,19 @@ FrameReader::~FrameReader() {
   sws_freeContext(sws_ctx_);
 }
 
-void FrameReader::run() {
-  processFrames();
-  decodeFrames();
+void FrameReader::process() {
+  bool success = processFrames();
+  if (success) {
+    decode_thread_ = std::thread(&FrameReader::decodeThread, this);
+  }
+  emit finished(success);
 }
 
-void FrameReader::processFrames() {
+bool FrameReader::processFrames() {
   if (avformat_open_input(&pFormatCtx_, url_.c_str(), NULL, NULL) != 0) {
-    qDebug() << "error loading " <<  url_.c_str();
+    qDebug() << "error loading " << url_.c_str();
     emit finished(false);
-    return;
+    return false;
   }
   avformat_find_stream_info(pFormatCtx_, NULL);
   av_dump_format(pFormatCtx_, 0, url_.c_str(), 0);
@@ -85,11 +96,11 @@ void FrameReader::processFrames() {
   height = pCodecCtxOrig->height;
 
   sws_ctx_ = sws_getContext(width, height, AV_PIX_FMT_YUV420P,
-                           width, height, AV_PIX_FMT_BGR24,
-                           SWS_BILINEAR, NULL, NULL, NULL);
+                            width, height, AV_PIX_FMT_BGR24,
+                            SWS_BILINEAR, NULL, NULL, NULL);
   assert(sws_ctx_ != NULL);
 
-  frames_.reserve(60 * 20); // 20fps, one minute
+  frames_.reserve(60 * 20);  // 20fps, one minute
   do {
     Frame &frame = frames_.emplace_back();
     if (av_read_frame(pFormatCtx_, &frame.pkt) < 0) {
@@ -100,10 +111,10 @@ void FrameReader::processFrames() {
 
   qDebug() << "framereader reader " << frames_.size() << " frames";
   valid_ = !exit_;
-  emit finished(valid_);
+  return !exit_;
 }
 
-void FrameReader::decodeFrames() {
+void FrameReader::decodeThread() {
   int idx = 0;
   while (!exit_) {
     const int from = std::max(idx, -10);
@@ -160,9 +171,9 @@ uint8_t *FrameReader::get(int idx) {
   cv_decode_.notify_one();
   double t1 = millis_since_boot();
   cv_frame_.wait(lk, [=] { return exit_ || frames_[idx].picture != nullptr || frames_[idx].failed; });
-  if (double dt =  millis_since_boot() - t1; dt > 20)  {
-    qDebug() << "slow get frame " << idx << ", time: " <<  dt << "ms";
+  if (double dt = millis_since_boot() - t1; dt > 20) {
+    qDebug() << "slow get frame " << idx << ", time: " << dt << "ms";
   }
-  
+
   return frames_[idx].picture ? frames_[idx].picture->data[0] : nullptr;
 }

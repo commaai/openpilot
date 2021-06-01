@@ -63,13 +63,14 @@ void FileReader::abort() {
 // class LogReader
 
 LogReader::LogReader(const QString &file) {
+  thread_ = new QThread(this);
+  moveToThread(thread_);
+  connect(thread_, &QThread::started, this, &LogReader::start);
+  
   file_reader_ = new FileReader(file, this);
   connect(file_reader_, &FileReader::finished, this, &LogReader::fileReady);
   connect(file_reader_, &FileReader::failed, [=](const QString &err) { qInfo() << err; });
 
-  thread_ = new QThread(this);
-  connect(thread_, &QThread::started, this, &LogReader::start);
-  moveToThread(thread_);
   thread_->start();
 }
 

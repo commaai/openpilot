@@ -1,15 +1,14 @@
 #pragma once
 
-#include <vector>
-#include <unordered_map>
+#include <capnp/serialize.h>
 
 #include <QElapsedTimer>
 #include <QMultiMap>
 #include <QNetworkAccessManager>
 #include <QString>
 #include <QThread>
-
-#include <capnp/serialize.h>
+#include <unordered_map>
+#include <vector>
 
 #include "cereal/gen/cpp/log.capnp.h"
 
@@ -45,7 +44,7 @@ struct EncodeIdx {
 };
 
 class Event {
- public:
+public:
   Event(const kj::ArrayPtr<const capnp::word> &amsg) : reader(amsg) {
     words = kj::ArrayPtr<const capnp::word>(amsg.begin(), reader.getEnd());
     event = reader.getRoot<cereal::Event>();
@@ -59,7 +58,7 @@ class Event {
   cereal::Event::Reader event;
 };
 
-typedef std::vector<Event*> Events;
+typedef std::vector<Event *> Events;
 typedef std::unordered_map<uint32_t, EncodeIdx> EncodeIdxMap;
 
 class LogReader : public QObject {

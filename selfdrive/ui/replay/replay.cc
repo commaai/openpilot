@@ -60,7 +60,6 @@ bool Replay::start(const Route &route) {
   return true;
 }
 
-
 void Replay::stop() {
   if (!running()) return;
 
@@ -99,7 +98,13 @@ void Replay::seekTo(int to_ts) {
 // return nullptr if segment is not loaded
 std::shared_ptr<Segment> Replay::getSegment(int segment) {
   auto it = segments_.find(segment);
-  return (it != segments_.end() && it->second->loaded) ? it->second : nullptr;
+  return (it != segments_.end() && it->second->loaded()) ? it->second : nullptr;
+}
+
+void Replay::nextSegment(int n) {
+}
+
+void Replay::prevSegment(int n) {
 }
 
 // maintain the segment window
@@ -113,7 +118,7 @@ void Replay::queueSegment(int segment) {
   for (auto it = rs.begin(); it != rs.end(); ++it, ++i) {
     int n = it.key();
     if (i < cur_idx - BACKWARD_SEGS || i > cur_idx + FORWARD_SEGS) {
-      segments_.erase(n);  
+      segments_.erase(n);
     } else if (segments_.find(n) == segments_.end()) {
       segments_[n] = std::make_shared<Segment>(n, rs[n]);
     }
@@ -253,14 +258,15 @@ Segment::Segment(int seg_num, const SegmentFile &file) : seg_num(seg_num) {
     return;
   }
 
-  auto onFinished = [=](bool success) {
-    --loading;
-    loaded = loading == 0;
-  };
-
   loading = 1;
   log = new LogReader(log_file);
-  QObject::connect(log, &LogReader::finished, onFinished);
+  QObject::connect(log, &LogReader::finished, [=](bool success) {
+    if (!success) {
+      log->deleteLater();
+      log = nullptr;
+    }
+    --loading;
+  });
 
   // start framereader threads
   // fallback to qcamera if camera not exists.
@@ -271,8 +277,13 @@ Segment::Segment(int seg_num, const SegmentFile &file) : seg_num(seg_num) {
     if (!file.isEmpty()) {
       loading += 1;
       FrameReader *fr = frames[cam_type] = new FrameReader(file.toStdString());
-      QObject::connect(fr, &FrameReader::finished, onFinished);
-      fr->start();
+      QObject::connect(fr, &FrameReader::finished, [=, type = cam_type](bool success) {
+        if (!success) {
+          frames[type] = nullptr;
+          fr->deleteLater();
+        }
+        --loading;
+      });
     }
   }
 }
@@ -309,7 +320,7 @@ void CameraServer::ensureServerForSegment(Segment *seg) {
       const CameraState *s = camera_states_[cam_type];
       bool frame_changed = false;
       if (fr && fr->valid()) {
-        frame_changed = !s || s->width != fr->width || s->height != fr->height; 
+        frame_changed = !s || s->width != fr->width || s->height != fr->height;
       } else if (s) {
         frame_changed = true;
       }
@@ -329,7 +340,7 @@ void CameraServer::ensureServerForSegment(Segment *seg) {
         vipc_server_ = new VisionIpcServer("camerad", device_id_, context_);
       }
       vipc_server_->create_buffers(stream_types[cam_type], UI_BUF_COUNT, true, fr->width, fr->height);
-      
+
       CameraState *state = new CameraState;
       state->width = fr->width;
       state->height = fr->height;
@@ -341,6 +352,25 @@ void CameraServer::ensureServerForSegment(Segment *seg) {
       vipc_server_->start_listener();
     }
   }
+}
+
+void CameraServer::stop() {
+  if (!vipc_server_) return;
+
+  // stop camera threads
+  exit_ = true;
+  for (int i = 0; i < std::size(camera_states_); ++i) {
+    if (CameraState *state = camera_states_[i]) {
+      camera_states_[i] = nullptr;
+      state->thread.join();
+      delete state;
+    }
+  }
+  exit_ = false;
+
+  // stop vipc server
+  delete vipc_server_;
+  vipc_server_ = nullptr;
 }
 
 void CameraServer::cameraThread(CameraType cam_type, CameraServer::CameraState *s) {
@@ -363,23 +393,4 @@ void CameraServer::cameraThread(CameraType cam_type, CameraServer::CameraState *
     }
   }
   qDebug() << "camera thread " << cam_type << " stopped ";
-}
-
-void CameraServer::stop() {
-  if (!vipc_server_) return;
-
-  // stop camera threads
-  exit_ = true;
-  for (int i = 0; i < std::size(camera_states_); ++i) {
-    if (CameraState *state = camera_states_[i]) {
-      camera_states_[i] = nullptr;
-      state->thread.join();
-      delete state;
-    }
-  }
-  exit_ = false;
-
-  // stop vipc server
-  delete vipc_server_;
-  vipc_server_ = nullptr;
 }
