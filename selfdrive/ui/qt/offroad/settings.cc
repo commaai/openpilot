@@ -243,7 +243,7 @@ void DeveloperPanel::updateLabels() {
     layout()->addWidget(versionLbl);
     layout()->addWidget(horizontal_line());
 
-    lastUpdateTimeLbl = new LabelControl("Last Update Check", lastUpdateTime, "The last time openpilot checked for an update. Updates are only checked while off-road.");
+    lastUpdateTimeLbl = new LabelControl("Last Update Check", lastUpdateTime, "The last time openpilot checked for an update. Updates are only checked while car is off.");
     connect(lastUpdateTimeLbl, &LabelControl::showDescription, [=]() {
       Params params = Params();
       if (params.getBool("IsOffroad")) {
