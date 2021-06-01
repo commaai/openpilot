@@ -342,8 +342,14 @@ class CarInterface(CarInterfaceBase):
     ret.communityFeature = ret.enableGasInterceptor or ret.enableDsu or smartDsu
 
     if ret.enableGasInterceptor:
-      ret.gasMaxBP = [0., MIN_ACC_SPEED, MIN_ACC_SPEED]
-      ret.gasMaxV = [0.2, 0.48, 0.5]
+      ret.gasMaxBP = [0., MIN_ACC_SPEED]
+      ret.gasMaxV = [0.2, 0.5]
+
+      ret.longitudinalTuning.kiBP = [0., MIN_ACC_SPEED, MIN_ACC_SPEED, 35.]
+      ret.longitudinalTuning.kiV = [0.18, 0.165, 0.496, 0.36]
+
+      ret.longitudinalTuning.kpBP = [0., 5., MIN_ACC_SPEED, MIN_ACC_SPEED, 35.]
+      ret.longitudinalTuning.kpV = [1.2, 0.8, 0.765, 2.295, 1.5]
 
     return ret
 
