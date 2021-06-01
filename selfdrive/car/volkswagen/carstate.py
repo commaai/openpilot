@@ -14,6 +14,7 @@ class CarState(CarStateBase):
       self.shifter_values = can_define.dv["Getriebe_11"]["GE_Fahrstufe"]
     elif CP.transmissionType == TransmissionType.direct:
       self.shifter_values = can_define.dv["EV_Gearshift"]["GearPosition"]
+    self.hca_status_values = can_define.dv["LH_EPS_03"]["EPS_HCA_Status"]
     self.buttonStates = BUTTON_STATES.copy()
 
   def update(self, pt_cp, cam_cp, trans_type):
@@ -36,6 +37,11 @@ class CarState(CarStateBase):
     ret.steeringTorque = pt_cp.vl["LH_EPS_03"]["EPS_Lenkmoment"] * (1, -1)[int(pt_cp.vl["LH_EPS_03"]["EPS_VZ_Lenkmoment"])]
     ret.steeringPressed = abs(ret.steeringTorque) > CarControllerParams.STEER_DRIVER_ALLOWANCE
     ret.yawRate = pt_cp.vl["ESP_02"]["ESP_Gierrate"] * (1, -1)[int(pt_cp.vl["ESP_02"]["ESP_VZ_Gierrate"])] * CV.DEG_TO_RAD
+
+    # Verify EPS readiness to accept steering commands
+    hca_status = self.hca_status_values.get(pt_cp.vl["LH_EPS_03"]["EPS_HCA_Status"])
+    ret.steerError = hca_status in ["disabled", "fault"]
+    ret.steerWarning = hca_status in ["initializing", "rejected"]
 
     # Update gas, brakes, and gearshift.
     ret.gas = pt_cp.vl["Motor_20"]["MO_Fahrpedalrohwert_01"] / 100.0
@@ -140,10 +146,6 @@ class CarState(CarStateBase):
     # Pick up the GRA_ACC_01 CAN message counter so we can sync to it for
     # later cruise-control button spamming.
     self.graMsgBusCounter = pt_cp.vl["GRA_ACC_01"]["COUNTER"]
-
-    # Check to make sure the electric power steering rack is configured to
-    # accept and respond to HCA_01 messages and has not encountered a fault.
-    self.steeringFault = not pt_cp.vl["LH_EPS_03"]["EPS_HCA_Status"]
 
     # Additional safety checks performed in CarInterface.
     self.parkingBrakeSet = bool(pt_cp.vl["Kombi_01"]["KBI_Handbremse"])  # FIXME: need to include an EPB check as well
