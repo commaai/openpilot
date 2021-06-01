@@ -214,7 +214,7 @@ class Plant():
     else:
       steer_torque = 0.0
 
-    distance_lead = self.distance_lead_prev + v_lead * self.ts
+    distance_lead = self.distance_lead_prev + v_lead[0] * self.ts
 
     # ******** run the car ********
     speed, acceleration = car_plant(self.distance_prev, self.speed_prev, grade, gas, brake)
@@ -230,7 +230,7 @@ class Plant():
     # *** radar model ***
     if self.lead_relevancy:
       d_rel = np.maximum(0., distance_lead - distance)
-      v_rel = v_lead - speed
+      v_rel = v_lead[0] - speed
     else:
       d_rel = 200.
       v_rel = 0.
@@ -399,7 +399,7 @@ class Plant():
 
       if self.lead_relevancy:
         d_rel = np.maximum(0., distance_lead - distance)
-        v_rel = v_lead - speed
+        v_rel = v_lead[0] - speed
         prob = 1.0
       else:
         d_rel = 200.
@@ -407,10 +407,15 @@ class Plant():
         prob = 0.0
 
       lead = log.ModelDataV2.LeadDataV3.new_message()
-      lead.x = [float(d_rel + i*v_lead) for i in range(0,12,2)]
+      lead_x = [float(d_rel),]
+      for i in range(5):
+        lead_x.append(lead_x[-1] + 2.0*v_lead[i])
+      lead.x = [float(x) for x in lead_x]
+      #lead.x = [float(d_rel + i*v_lead[0]) for i in range(0,12,2)]
       lead.y = [0.0 for i in range(0,12,2)]
-      lead.v = [float(v_lead) for i in range(0,12,2)]
+      lead.v = [float(v) for v in v_lead]
       lead.a = [0.0 for i in range(0,12,2)]
+      #lead.v = [float(v_lead[0]) for i in range(0,12,2)]
 
       lead.prob = prob
       md.modelV2.leads = [lead, lead]

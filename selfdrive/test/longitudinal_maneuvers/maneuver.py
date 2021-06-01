@@ -43,16 +43,16 @@ class Maneuver():
         print("current button changed to {0}".format(current_button))
 
       grade = np.interp(plant.current_time(), self.grade_breakpoints, self.grade_values)
-      speed_lead = np.interp(plant.current_time(), self.speed_lead_breakpoints, self.speed_lead_values)
+      speeds_lead = np.interp(plant.current_time() + np.arange(0.,12.,2.), self.speed_lead_breakpoints, self.speed_lead_values)
 
       # distance, speed, acceleration, distance_lead, brake, gas, steer_torque, fcw, controls_state= plant.step(speed_lead, current_button, grade)
-      log = plant.step(speed_lead, current_button, grade)
+      log = plant.step(speeds_lead, current_button, grade)
 
       if log['controls_state_msgs']:
         last_controls_state = log['controls_state_msgs'][-1]
 
       d_rel = log['distance_lead'] - log['distance'] if self.lead_relevancy else 200.
-      v_rel = speed_lead - log['speed'] if self.lead_relevancy else 0.
+      v_rel = speeds_lead[0] - log['speed'] if self.lead_relevancy else 0.
       log['d_rel'] = d_rel
       log['v_rel'] = v_rel
 
@@ -65,7 +65,7 @@ class Maneuver():
           distance=log['distance'], speed=log['speed'], acceleration=log['acceleration'],
           up_accel_cmd=last_controls_state.upAccelCmd, ui_accel_cmd=last_controls_state.uiAccelCmd,
           uf_accel_cmd=last_controls_state.ufAccelCmd,
-          d_rel=d_rel, v_rel=v_rel, v_lead=speed_lead,
+          d_rel=d_rel, v_rel=v_rel, v_lead=speeds_lead[0],
           v_target_lead=last_controls_state.vTargetLead, pid_speed=last_controls_state.vPid,
           cruise_speed=last_controls_state.vCruise,
           a_target=last_controls_state.aTarget,
