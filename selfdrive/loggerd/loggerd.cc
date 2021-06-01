@@ -468,7 +468,7 @@ int main(int argc, char** argv) {
   for (auto &t : encoder_threads) t.join();
 
   LOGW("closing logger");
-  logger_close(&s.logger);
+  logger_close(&s.logger, &do_exit);
 
   if (do_exit.power_failure){
     LOGE("power failure");

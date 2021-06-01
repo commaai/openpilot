@@ -174,8 +174,6 @@ private:
   int awake_timeout = 0;
   float accel_prev = 0;
   float gyro_prev = 0;
-  float brightness_b = 0;
-  float brightness_m = 0;
   float last_brightness = 0;
   FirstOrderFilter brightness_filter;
 

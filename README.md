@@ -99,6 +99,7 @@ Supported Cars
 | Lexus     | RX Hybrid 2020                | All               | openpilot        | 0mph               | 0mph              |
 | Lexus     | UX Hybrid 2019                | All               | openpilot        | 0mph               | 0mph              |
 | Toyota    | Avalon 2016-21                | TSS-P             | Stock<sup>3</sup>| 20mph<sup>1</sup>  | 0mph              |
+| Toyota    | Avalon Hybrid 2019            | TSS-P             | Stock<sup>3</sup>| 20mph<sup>1</sup>  | 0mph              |
 | Toyota    | Camry 2018-20                 | All               | Stock            | 0mph<sup>4</sup>   | 0mph              |
 | Toyota    | Camry 2021                    | All               | openpilot        | 0mph               | 0mph              |
 | Toyota    | Camry Hybrid 2018-20          | All               | Stock            | 0mph<sup>4</sup>   | 0mph              |
@@ -134,7 +135,7 @@ Community Maintained Cars and Features
 
 | Make      | Model (US Market Reference)   | Supported Package | ACC              | No ACC accel below | No ALC below |
 | ----------| ------------------------------| ------------------| -----------------| -------------------| -------------|
-| Audi      | A3 2014-17                    | Prestige          | Stock            | 0mph               | 0mph         |
+| Audi      | A3 2014-18                    | Prestige          | Stock            | 0mph               | 0mph         |
 | Audi      | A3 Sportback e-tron 2017-18   | Prestige          | Stock            | 0mph               | 0mph         |
 | Buick     | Regal 2018<sup>1</sup>        | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
 | Cadillac  | ATS 2018<sup>1</sup>          | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
@@ -168,12 +169,14 @@ Community Maintained Cars and Features
 | Kia       | Sorento 2018-19               | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Kia       | Stinger 2018                  | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Kia       | Ceed 2019                     | SCC + LKAS        | Stock            | 0mph               | 0mph         |
-| Nissan    | Altima 2020                   | ProPILOT          | Stock            | 0mph               | 0mph         |
+| Nissan    | Altima 2019-20                | ProPILOT          | Stock            | 0mph               | 0mph         |
 | Nissan    | Leaf 2018-20                  | ProPILOT          | Stock            | 0mph               | 0mph         |
 | Nissan    | Rogue 2018-20                 | ProPILOT          | Stock            | 0mph               | 0mph         |
 | Nissan    | X-Trail 2017                  | ProPILOT          | Stock            | 0mph               | 0mph         |
 | SEAT      | Ateca 2018                    | Driver Assistance | Stock            | 0mph               | 0mph         |
+| SEAT      | Leon 2017, 2020               | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Škoda     | Kodiaq 2018                   | Driver Assistance | Stock            | 0mph               | 0mph         |
+| Škoda     | Octavia 2015, 2019            | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Škoda     | Scala 2020                    | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Škoda     | Superb 2015-18                | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Subaru    | Ascent 2019                   | EyeSight          | Stock            | 0mph               | 0mph         |
