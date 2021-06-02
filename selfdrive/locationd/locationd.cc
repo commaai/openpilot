@@ -15,6 +15,7 @@ const double ALTITUDE_SANITY_CHECK = 10000; // m
 const double MIN_STD_SANITY_CHECK = 1e-5; // m or rad
 const double VALID_TIME_SINCE_RESET = 1.0; // s
 const double VALID_POS_STD = 50.0; // m
+const double MAX_RESET_TRACKER = 5.0;
 
 static VectorXd floatlist2vector(const capnp::List<float, capnp::Kind::PRIMITIVE>::Reader& floatlist) {
   VectorXd res(floatlist.size());
@@ -156,6 +157,7 @@ void Localizer::build_live_location(cereal::LiveLocationKalman::Builder& fix) {
 
   fix.setPosenetOK(!(std_spike && this->car_speed > 5.0));
   fix.setDeviceStable(!this->device_fell);
+  fix.setExcessiveResets(this->reset_tracker > MAX_RESET_TRACKER);
   this->device_fell = false;
 
   //fix.setGpsWeek(this->time.week);
@@ -366,6 +368,11 @@ void Localizer::time_check(double current_time) {
   }
 }
 
+void Localizer::update_reset_tracker() {
+  // reset tracker is tuned to trigger when over 1reset/10s over 2min period
+  this->reset_tracker *= .99995;
+}
+
 void Localizer::reset_kalman(double current_time, VectorXd init_orient, VectorXd init_pos) {
   // too nonlinear to init on completely wrong
   VectorXd init_x = this->kf->get_initial_x();
@@ -375,6 +382,7 @@ void Localizer::reset_kalman(double current_time, VectorXd init_orient, VectorXd
 
   this->kf->init_state(init_x, init_P, current_time);
   this->last_reset_time = current_time;
+  this->reset_tracker += 1.0;
 }
 
 void Localizer::handle_msg_bytes(const char *data, const size_t size) {
@@ -401,6 +409,7 @@ void Localizer::handle_msg(const cereal::Event::Reader& log) {
     this->handle_live_calib(t, log.getLiveCalibration());
   }
   this->finite_check();
+  this->update_reset_tracker();
 }
 
 kj::ArrayPtr<capnp::byte> Localizer::get_message_bytes(MessageBuilder& msg_builder, uint64_t logMonoTime,
