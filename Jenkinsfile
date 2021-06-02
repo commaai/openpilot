@@ -127,7 +127,7 @@ pipeline {
                 stage('Devel Tests') {
                   steps {
                     phone_steps("eon-build", [
-                      ["build devel", "cd release && SCONS_CACHE=1 DEVEL_TEST=1 ./build_devel.sh"],
+                      ["build devel", "cd release && DEVEL_TEST=1 ./build_devel.sh"],
                       ["test manager", "python selfdrive/manager/test/test_manager.py"],
                       ["onroad tests", "cd selfdrive/test/ && ./test_onroad.py"],
                       ["test car interfaces", "cd selfdrive/car/tests/ && ./test_car_interfaces.py"],
@@ -166,7 +166,7 @@ pipeline {
                       timeout(time: 90, unit: 'MINUTES') {
                         sh script: "/home/batman/tools/zookeeper/enable_and_wait.py $device_ip 120", label: "turn on device"
                         phone(device_ip, "git checkout", readFile("selfdrive/test/setup_device_ci.sh"),)
-                        phone(device_ip, "build", "SCONS_CACHE=1 scons -j4 && sync")
+                        phone(device_ip, "build", "scons -j4 && sync")
                         sh script: "/home/batman/tools/zookeeper/disable.py $device_ip", label: "turn off device"
                         sh script: "/home/batman/tools/zookeeper/enable_and_wait.py $device_ip 120", label: "turn on device"
                         sh script: "/home/batman/tools/zookeeper/check_consumption.py 60 3", label: "idle power consumption after boot"
