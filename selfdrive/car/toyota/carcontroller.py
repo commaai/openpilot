@@ -36,7 +36,7 @@ class CarController():
     self.steer_rate_limited = False
 
     self.can_use_pedal = True
-    self.pedal_hyst_gap = 2 * CV.MPH_TO_MS
+    self.pedal_hyst_gap = 2.5 * CV.MPH_TO_MS
 
     self.fake_ecus = set()
     if CP.enableCamera:
