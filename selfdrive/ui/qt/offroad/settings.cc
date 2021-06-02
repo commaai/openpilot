@@ -260,6 +260,7 @@ void DeveloperPanel::updateLabels() {
         updateButton->setText("Checking...");
         updateButton->setEnabled(false);
       }
+      std::system("pkill -1 -f selfdrive.updated");
     }, "", this);
     layout()->addWidget(updateButton);
     layout()->addWidget(horizontal_line());
