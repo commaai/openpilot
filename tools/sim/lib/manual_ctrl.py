@@ -91,7 +91,7 @@ button_names = {
 axis_map = []
 button_map = []
 
-def wheel_poll_thread(q: 'Queue') -> NoReturn:
+def wheel_poll_thread(q: 'Queue[str]') -> NoReturn:
   # Open the joystick device.
   fn = '/dev/input/js0'
   print('Opening %s...' % fn)
@@ -183,6 +183,6 @@ def wheel_poll_thread(q: 'Queue') -> NoReturn:
 
 if __name__ == '__main__':
   from multiprocessing import Process, Queue
-  q = Queue()
+  q: Queue[str] = Queue()
   p = Process(target=wheel_poll_thread, args=(q,))
   p.start()

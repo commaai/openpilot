@@ -35,7 +35,7 @@ def getch() -> str:
     termios.tcsetattr(STDIN_FD, termios.TCSADRAIN, old_settings)
   return ch
 
-def keyboard_poll_thread(q: 'Queue') -> NoReturn:
+def keyboard_poll_thread(q: 'Queue[str]') -> NoReturn:
   while True:
     c = getch()
     # print("got %s" % c)
@@ -56,14 +56,14 @@ def keyboard_poll_thread(q: 'Queue') -> NoReturn:
     elif c == 'q':
       exit(0)
 
-def test(q: 'Queue') -> NoReturn:
+def test(q: 'Queue[str]') -> NoReturn:
   while True:
     print([q.get_nowait() for _ in range(q.qsize())] or None)
     time.sleep(0.25)
 
 if __name__ == '__main__':
   from multiprocessing import Process, Queue
-  q = Queue()
+  q: Queue[str] = Queue()
   p = Process(target=test, args=(q,))
   p.daemon = True
   p.start()
