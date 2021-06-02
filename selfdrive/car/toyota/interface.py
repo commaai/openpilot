@@ -23,7 +23,6 @@ class CarInterface(CarInterfaceBase):
 
     ret.steerActuatorDelay = 0.12  # Default delay, Prius has larger delay
     ret.steerLimitTimer = 0.4
-    ret.minAccSpeed = 19. * CV.MPH_TO_MS
 
     # Improved longitudinal tune
     if candidate in [CAR.COROLLA_TSS2, CAR.COROLLAH_TSS2, CAR.RAV4_TSS2, CAR.RAV4H_TSS2, CAR.LEXUS_NX_TSS2, CAR.LEXUS_ESH_TSS2]:
@@ -336,7 +335,8 @@ class CarInterface(CarInterfaceBase):
 
     # min speed to enable ACC. if car can do stop and go, then set enabling speed
     # to a negative value, so it won't matter.
-    ret.minEnableSpeed = -1. if (stop_and_go or ret.enableGasInterceptor) else ret.minAccSpeed
+    min_acc_speed = 19. * CV.MPH_TO_MS
+    ret.minEnableSpeed = -1. if (stop_and_go or ret.enableGasInterceptor) else min_acc_speed
 
     # removing the DSU disables AEB and it's considered a community maintained feature
     # intercepting the DSU is a community feature since it requires unofficial hardware
@@ -344,11 +344,11 @@ class CarInterface(CarInterfaceBase):
 
     if ret.enableGasInterceptor:
       # Keeps same pedal tuning below MIN_ACC_SPEED, with stock tuning above
-      ret.gasMaxBP = [0., ret.minAccSpeed]
+      ret.gasMaxBP = [0., min_acc_speed]
       ret.gasMaxV = [0.2, 0.5]
-      ret.longitudinalTuning.kpBP = [0., 5., ret.minAccSpeed, ret.minAccSpeed, 35.]
+      ret.longitudinalTuning.kpBP = [0., 5., min_acc_speed, min_acc_speed, 35.]
       ret.longitudinalTuning.kpV = [1.2, 0.8, 0.765, 2.295, 1.5]
-      ret.longitudinalTuning.kiBP = [0., ret.minAccSpeed, ret.minAccSpeed, 35.]
+      ret.longitudinalTuning.kiBP = [0., min_acc_speed, min_acc_speed, 35.]
       ret.longitudinalTuning.kiV = [0.18, 0.165, 0.496, 0.36]
 
     return ret
