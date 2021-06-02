@@ -163,8 +163,8 @@ class Planner():
       cloudlog.info("FCW triggered")
 
     # Interpolate 0.05 seconds and save as starting point for next iteration
-    self.v_desired = self.a_desired + (DT_MDL / LON_MPC_STEP) * (self.a_acc - self.a_desired)
-    self.a_desired = self.v_desired + DT_MDL * self.a_desired
+    self.a_desired = self.a_desired + (DT_MDL / LON_MPC_STEP) * (self.a_acc - self.a_desired)
+    self.v_desired = self.v_desired + DT_MDL * self.a_desired
 
 
   def publish(self, sm, pm):
