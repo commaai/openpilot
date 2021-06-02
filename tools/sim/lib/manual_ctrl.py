@@ -117,8 +117,8 @@ def wheel_poll_thread(q: 'Queue[str]') -> NoReturn:
   buf = array.array('B', [0] * 0x40)
   ioctl(jsdev, 0x80406a32, buf)  # JSIOCGAXMAP
 
-  for axis in buf[:num_axes]:
-      axis_name = axis_names.get(axis, 'unknown(0x%02x)' % axis)
+  for _axis in buf[:num_axes]:
+      axis_name = axis_names.get(_axis, 'unknown(0x%02x)' % _axis)
       axis_map.append(axis_name)
       axis_states[axis_name] = 0.0
 
