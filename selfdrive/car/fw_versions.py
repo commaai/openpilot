@@ -76,7 +76,14 @@ MAZDA_VERSION_RESPONSE =  bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40
 
 # brand, request, response, response offset
 REQUESTS = [
-  # Hyundai
+  # Chrysler
+  (
+    "chrysler",
+    [UDS_VERSION_REQUEST],
+    [UDS_VERSION_RESPONSE],
+    DEFAULT_RX_OFFSET,
+  ),
+    # Hyundai
   (
     "hyundai",
     [HYUNDAI_VERSION_REQUEST_SHORT],
