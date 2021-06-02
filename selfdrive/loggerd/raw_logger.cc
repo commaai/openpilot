@@ -1,24 +1,24 @@
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
-#include <cstdio>
-#include <cstdlib>
-#include <cassert>
+#include "selfdrive/loggerd/raw_logger.h"
 
 #include <fcntl.h>
 #include <unistd.h>
 
+#include <cassert>
+#include <cstdio>
+#include <cstdlib>
+
 #define __STDC_CONSTANT_MACROS
 
 extern "C" {
-#include <libavutil/imgutils.h>
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
+#include <libavutil/imgutils.h>
 }
 
-#include "common/swaglog.h"
-#include "common/util.h"
-
-#include "raw_logger.h"
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/common/util.h"
 
 RawLogger::RawLogger(const char* filename, int width, int height, int fps,
                      int bitrate, bool h265, bool downscale)

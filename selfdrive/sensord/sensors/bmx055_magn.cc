@@ -1,12 +1,13 @@
-#include <cassert>
-#include <cstdio>
-#include <algorithm>
+#include "bmx055_magn.h"
+
 #include <unistd.h>
 
-#include "common/swaglog.h"
-#include "common/util.h"
+#include <algorithm>
+#include <cassert>
+#include <cstdio>
 
-#include "bmx055_magn.hpp"
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/common/util.h"
 
 static int16_t compensate_x(trim_data_t trim_data, int16_t mag_data_x, uint16_t data_rhall) {
   uint16_t process_comp_x0 = data_rhall;
@@ -215,17 +216,21 @@ bool BMX055_Magn::parse_xyz(uint8_t buffer[8], int16_t *x, int16_t *y, int16_t *
 void BMX055_Magn::get_event(cereal::SensorEventData::Builder &event){
   uint64_t start_time = nanos_since_boot();
   uint8_t buffer[8];
-  int16_t x, y, z;
+  int16_t _x, _y, x, y, z;
 
   int len = read_register(BMX055_MAGN_I2C_REG_DATAX_LSB, buffer, sizeof(buffer));
   assert(len == sizeof(buffer));
 
-  if (parse_xyz(buffer, &x, &y, &z)){
+  if (parse_xyz(buffer, &_x, &_y, &z)){
     event.setSource(cereal::SensorEventData::SensorSource::BMX055);
-    event.setVersion(1);
+    event.setVersion(2);
     event.setSensor(SENSOR_MAGNETOMETER_UNCALIBRATED);
     event.setType(SENSOR_TYPE_MAGNETIC_FIELD_UNCALIBRATED);
     event.setTimestamp(start_time);
+
+    // Move magnetometer into same reference frame as accel/gryo
+    x = -_y;
+    y = _x;
 
     // Axis convention
     x = -x;

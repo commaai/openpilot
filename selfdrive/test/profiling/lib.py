@@ -34,7 +34,7 @@ class PubSocket():
 
 
 class SubMaster(messaging.SubMaster):
-  def __init__(self, msgs, trigger, services):  # pylint: disable=super-init-not-called
+  def __init__(self, msgs, trigger, services, check_averag_freq=False):  # pylint: disable=super-init-not-called
     self.frame = 0
     self.data = {}
     self.ignore_alive = []
@@ -47,6 +47,7 @@ class SubMaster(messaging.SubMaster):
     self.logMonoTime = {}
     self.sock = {}
     self.freq = {}
+    self.check_average_freq = check_averag_freq
 
     # TODO: specify multiple triggers for service like plannerd that poll on more than one service
     cur_msgs = []

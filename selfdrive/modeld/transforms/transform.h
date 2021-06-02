@@ -1,7 +1,6 @@
 #pragma once
 
 #include <inttypes.h>
-#include <stdbool.h>
 
 #define CL_USE_DEPRECATED_OPENCL_1_2_APIS
 #ifdef __APPLE__
@@ -10,7 +9,7 @@
 #include <CL/cl.h>
 #endif
 
-#include "common/mat.h"
+#include "selfdrive/common/mat.h"
 
 typedef struct {
   cl_kernel krnl;
