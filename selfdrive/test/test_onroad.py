@@ -102,7 +102,7 @@ class TestOnroad(unittest.TestCase):
     # Make sure athena isn't running
     Params().delete("DongleId")
     Params().delete("AthenadPid")
-    subprocess.check_call(["pkill", "-9", "-f", "athena"])
+    os.system("pkill -9 -f athena")
 
     logger_root = Path(ROOT)
     initial_segments = set()
