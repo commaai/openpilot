@@ -55,7 +55,7 @@ bool Replay::start(const Route &route) {
   route_ = route;
   current_segment_ = route_.segments().firstKey();
 
-  qInfo() << "replay route " << route_.name() << " from " << current_segment_ << ", total segments:" << route.segments().size();
+  qDebug() << "replay route " << route_.name() << " from " << current_segment_ << ", total segments:" << route.segments().size();
   stream_thread_ = std::thread(&Replay::streamThread, this);
   return true;
 }
@@ -83,16 +83,12 @@ void Replay::seekTo(int to_ts) {
   if (!rs.size()) return;
 
   int seg_num = std::clamp(to_ts / SEGMENT_LENGTH, 0, rs.lastKey());
-  // skip to next or prev segment if seg_num is missing
-  if (!rs.contains(seg_num)) {
-    auto it = seg_num > current_segment_ ? rs.upperBound(seg_num) : rs.lowerBound(seg_num);
-    if (it != rs.end()) {
-      seg_num = it.key();
-    }
+  seg_num = getNextSegmentId(seg_num, seg_num > current_segment_);
+  if (seg_num > 0) {
+    seek_ts_ = to_ts;
+    current_segment_ = seg_num;
+    qDebug() << "seeking to " << seek_ts_;
   }
-  seek_ts_ = to_ts;
-  current_segment_ = seg_num;
-  qInfo() << "seeking to " << seek_ts_;
 }
 
 // return nullptr if segment is not loaded
@@ -101,10 +97,13 @@ std::shared_ptr<Segment> Replay::getSegment(int segment) {
   return (it != segments_.end() && it->second->loaded()) ? it->second : nullptr;
 }
 
-void Replay::nextSegment(int n) {
-}
+int Replay::getNextSegmentId(int n, bool forword) {
+  // skip to next or prev segment if n is missing
+  const auto &rs = route_.segments();
+  if (rs.contains(n)) return n;
 
-void Replay::prevSegment(int n) {
+  auto it = forword ? rs.upperBound(n) : rs.lowerBound(n);
+  return it != rs.end() ? it.key() : -1;
 }
 
 // maintain the segment window
@@ -236,11 +235,10 @@ void Replay::streamThread() {
 
     if (current_seek_ts_ == seek_ts_ && eit == events.end()) {
       // move to the next segment
-      seek_ts_ = current_ts_.load();
-      auto next_it = route_.segments().upperBound(current_segment_);
-      if (next_it != route_.segments().end()) {
-        current_segment_ = next_it.key();
-        qDebug() << "move to next segment " << current_segment_;
+      if (int n = getNextSegmentId(current_segment_ + 1); n > 0) {
+        seek_ts_ = current_ts_.load();
+        current_segment_ = n;
+        qDebug() << "move to next segment " << n;
       } else {
         qDebug() << "reach the end of segments";
       }
@@ -260,13 +258,7 @@ Segment::Segment(int seg_num, const SegmentFile &file) : seg_num(seg_num) {
 
   loading = 1;
   log = new LogReader(log_file);
-  QObject::connect(log, &LogReader::finished, [=](bool success) {
-    if (!success) {
-      log->deleteLater();
-      log = nullptr;
-    }
-    --loading;
-  });
+  QObject::connect(log, &LogReader::finished, [=]() { --loading; });
 
   // start framereader threads
   // fallback to qcamera if camera not exists.
@@ -277,13 +269,7 @@ Segment::Segment(int seg_num, const SegmentFile &file) : seg_num(seg_num) {
     if (!file.isEmpty()) {
       loading += 1;
       FrameReader *fr = frames[cam_type] = new FrameReader(file.toStdString());
-      QObject::connect(fr, &FrameReader::finished, [=, type = cam_type](bool success) {
-        if (!success) {
-          frames[type] = nullptr;
-          fr->deleteLater();
-        }
-        --loading;
-      });
+      QObject::connect(fr, &FrameReader::finished, [=]() { --loading; });
     }
   }
 }
@@ -381,7 +367,7 @@ void CameraServer::cameraThread(CameraType cam_type, CameraServer::CameraState *
     auto &[seg, segmentId] = frame;
     FrameReader *frm = seg->frames[cam_type];
     if (frm->width != s->width || frm->height != s->height) {
-      // eidx is not in the same segment with different frame size(qcamera/camera)
+      // eidx is not in the same segment with different frame size
       continue;
     }
 

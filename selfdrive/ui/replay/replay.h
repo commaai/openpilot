@@ -13,8 +13,8 @@ class Segment {
 public:
   Segment(int seg_num, const SegmentFile &file);
   ~Segment();
-  bool loaded() { return loading > 0; }
-  bool valid() const { return !loading && log != nullptr; }
+  bool loaded() { return !loading; }
+  bool valid() const { return !loading && log->valid(); }
 
   const int seg_num;
   LogReader *log = nullptr;
@@ -65,8 +65,7 @@ public:
 private:
   std::shared_ptr<Segment> getSegment(int segment);
   void queueSegment(int segment);
-  void nextSegment(int n);
-  void prevSegment(int n);
+  int getNextSegmentId(int n, bool forword = true);
   const std::string &eventSocketName(const cereal::Event::Reader &e);
 
   void streamThread();
