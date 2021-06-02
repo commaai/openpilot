@@ -41,6 +41,7 @@ private:
   QList<LabelControl *> labels;
   LabelControl *versionLbl;
   LabelControl *lastUpdateTimeLbl;
+  ButtonControl *updateButton;
   void updateLabels();
 
   QFileSystemWatcher *fs_watch;
