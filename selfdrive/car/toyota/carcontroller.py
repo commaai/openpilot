@@ -36,7 +36,7 @@ class CarController():
     self.steer_rate_limited = False
 
     self.can_use_pedal = True
-    self.pedal_hyst_gap = 2.5 * CV.MPH_TO_MS
+    self.pedal_hyst_gap = 3. * CV.MPH_TO_MS
     self.min_acc_speed = 19. * CV.MPH_TO_MS
 
     self.fake_ecus = set()
@@ -56,12 +56,12 @@ class CarController():
     apply_gas = 0.
     apply_accel = actuators.gas - actuators.brake
 
-    if CS.out.vEgo > self.min_acc_speed + self.pedal_hyst_gap:
-      self.can_use_pedal = False
-    elif CS.out.vEgo < self.min_acc_speed - self.pedal_hyst_gap:
+    if CS.out.vEgo < self.min_acc_speed:
       self.can_use_pedal = True
+    elif CS.out.vEgo > self.min_acc_speed + self.pedal_hyst_gap:
+      self.can_use_pedal = False
 
-    if CS.CP.enableGasInterceptor and enabled and CS.out.vEgo < self.min_acc_speed and self.can_use_pedal:
+    if CS.CP.enableGasInterceptor and enabled and self.can_use_pedal:
       # only send negative accel if interceptor is detected. gas handles acceleration
       # +0.06 offset to reduce ABS pump usage when OP is engaged
       apply_gas = clip(actuators.gas, 0., 1.)

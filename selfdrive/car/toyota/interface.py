@@ -346,10 +346,11 @@ class CarInterface(CarInterfaceBase):
       # Keeps same pedal tuning below MIN_ACC_SPEED, with stock tuning above
       ret.gasMaxBP = [0., min_acc_speed]
       ret.gasMaxV = [0.2, 0.5]
+      min_acc_speed += 3. * CV.MPH_TO_MS  # never use stock tuning with interceptor
       ret.longitudinalTuning.kpBP = [0., 5., min_acc_speed, min_acc_speed, 35.]
-      ret.longitudinalTuning.kpV = [1.2, 0.8, 0.765, 2.295, 1.5]
+      ret.longitudinalTuning.kpV = [1.2, 0.8, 0.752, 2.255, 1.5]
       ret.longitudinalTuning.kiBP = [0., min_acc_speed, min_acc_speed, 35.]
-      ret.longitudinalTuning.kiV = [0.18, 0.165, 0.496, 0.36]
+      ret.longitudinalTuning.kiV = [0.18, 0.163, 0.489, 0.36]
 
     return ret
 
