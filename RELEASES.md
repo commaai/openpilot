@@ -7,6 +7,7 @@ Version 0.8.5 (2021-XX-XX)
  * Toyota Avalon Hybrid 2019 support thanks to jbates9011!
  * SEAT Leon 2017 & 2020 support thanks to jyoung8607!
  * Škoda Octavia 2015 & 2019 support thanks to jyoung8607!
+ * Toyota: improved longitudinal above 25 mph when using a comma pedal
 
 Version 0.8.4 (2021-05-17)
 ========================
