@@ -12,7 +12,7 @@ TORQUE_SAMPLES = 12
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
-    can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
+    can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
 
     self.lkas_hud_msg = None
     self.lkas_hud_info_msg = None
@@ -216,7 +216,7 @@ class CarState(CarStateBase):
         ("LKAS_SETTINGS", 10),
         ("PROPILOT_HUD", 50),
       ]
-      return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 1)
+      return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 1)
 
     signals += [
       ("STEER_TORQUE_DRIVER", "STEER_TORQUE_SENSOR", 0),
@@ -225,7 +225,7 @@ class CarState(CarStateBase):
       ("STEER_TORQUE_SENSOR", 100),
     ]
 
-    return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
+    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 0)
 
   @staticmethod
   def get_adas_can_parser(CP):
@@ -337,7 +337,7 @@ class CarState(CarStateBase):
         ("LKAS", 100),
       ]
 
-    return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
+    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 2)
 
   @staticmethod
   def get_cam_can_parser(CP):
@@ -358,7 +358,7 @@ class CarState(CarStateBase):
       checks += [
         ("STEER_TORQUE_SENSOR", 100),
       ]
-      return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
+      return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 0)
 
 
-    return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 1)
+    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 1)
