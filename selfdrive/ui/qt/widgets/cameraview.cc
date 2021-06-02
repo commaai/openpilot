@@ -93,7 +93,6 @@ CameraViewWidget::~CameraViewWidget() {
 void CameraViewWidget::initializeGL() {
   initializeOpenGLFunctions();
 
-  QRect video_rect = {0, 0, width(), height()};
   gl_shader = std::make_unique<GLShader>(frame_vertex_shader, frame_fragment_shader);
   GLint frame_pos_loc = glGetAttribLocation(gl_shader->prog, "aPosition");
   GLint frame_texcoord_loc = glGetAttribLocation(gl_shader->prog, "aTexCoord");
@@ -132,12 +131,12 @@ void CameraViewWidget::initializeGL() {
     if (stream_type == VISION_STREAM_RGB_WIDE) {
       zoom_ *= 0.5;
     }
-    float zx = zoom_ * 2 * intrinsic_matrix.v[2] / video_rect.width();
-    float zy = zoom_ * 2 * intrinsic_matrix.v[5] / video_rect.height();
+    float zx = zoom_ * 2 * intrinsic_matrix.v[2] / width();
+    float zy = zoom_ * 2 * intrinsic_matrix.v[5] / height();
 
     const mat4 frame_transform = {{
       zx, 0.0, 0.0, 0.0,
-      0.0, zy, 0.0, -y_offset / video_rect.height() * 2,
+      0.0, zy, 0.0, -y_offset / height() * 2,
       0.0, 0.0, 1.0, 0.0,
       0.0, 0.0, 0.0, 1.0,
     }};
@@ -163,8 +162,7 @@ void CameraViewWidget::paintGL() {
     return;
   }
 
-  QRect video_rect = {0, 0, width(), height()};
-  glViewport(video_rect.left(), video_rect.top(), video_rect.width(), video_rect.height());
+  glViewport(0, 0, width(), height());
 
   glBindVertexArray(frame_vao);
   glActiveTexture(GL_TEXTURE0);
