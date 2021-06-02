@@ -2,8 +2,10 @@
 import numpy as np
 from cereal import car
 from common.numpy_fast import clip, interp
+from common.realtime import DT_CTRL
 from selfdrive.swaglog import cloudlog
 from selfdrive.config import Conversions as CV
+from selfdrive.controls.lib.events import ET
 from selfdrive.car.honda.values import CruiseButtons, CAR, HONDA_BOSCH, HONDA_BOSCH_ALT_BRAKE_SIGNAL
 from selfdrive.car import STD_CARGO_KG, CivicParams, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
 from selfdrive.controls.lib.longitudinal_planner import _A_CRUISE_MAX_V_FOLLOWING
@@ -72,6 +74,9 @@ def get_compute_gb_acura():
 class CarInterface(CarInterfaceBase):
   def __init__(self, CP, CarController, CarState):
     super().__init__(CP, CarController, CarState)
+
+    self.last_enable_pressed = 0
+    self.last_enable_sent = 0
 
     if self.CS.CP.carFingerprint == CAR.ACURA_ILX:
       self.compute_gb = get_compute_gb_acura()
@@ -483,7 +488,7 @@ class CarInterface(CarInterfaceBase):
     ret.buttonEvents = buttonEvents
 
     # events
-    events = self.create_common_events(ret, pcm_enable=False)
+    events = self.create_common_events(ret, pcm_enable=self.CP.enableCruise)
     if self.CS.brake_error:
       events.add(EventName.brakeUnavailable)
     if self.CS.brake_hold and self.CS.CP.openpilotLongitudinalControl:
@@ -506,15 +511,22 @@ class CarInterface(CarInterfaceBase):
     if self.CS.CP.minEnableSpeed > 0 and ret.vEgo < 0.001:
       events.add(EventName.manualRestart)
 
+    cur_time = self.frame * DT_CTRL
+    enable_pressed = False
     # handle button presses
     for b in ret.buttonEvents:
+
       # do enable on both accel and decel buttons
       if b.type in [ButtonType.accelCruise, ButtonType.decelCruise] and not b.pressed:
-        events.add(EventName.buttonEnable)
+        self.last_enable_pressed = cur_time
+        enable_pressed = True
 
       # do disable on button down
-      if b.type == ButtonType.cancel and b.pressed:
+      if b.type == "cancel" and b.pressed:
         events.add(EventName.buttonCancel)
+
+    if not self.CP.enableCruise and enable_pressed:
+      events.add(EventName.buttonEnable)
 
     ret.events = events.to_msg()
 
