@@ -209,7 +209,12 @@ DeveloperPanel::DeveloperPanel(QWidget* parent) : QFrame(parent) {
 
   fs_watch = new QFileSystemWatcher(this);
   QObject::connect(fs_watch, &QFileSystemWatcher::fileChanged, [=](const QString path) {
-    updateLabels();
+    int update_failed_count = Params().get<int>("UpdateFailedCount").value_or(0);
+    if (path.contains("UpdateFailedCount") && update_failed_count > 0) {
+      lastUpdateTimeLbl->setText("failed to fetch update");
+    } else if (path.contains("LastUpdateTime")) {
+      updateLabels();
+    }
   });
 }
 
@@ -246,6 +251,7 @@ void DeveloperPanel::updateLabels() {
       Params params = Params();
       if (params.getBool("IsOffroad")) {
         fs_watch->addPath(QString::fromStdString(params.getParamsPath()) + "/d/LastUpdateTime");
+        fs_watch->addPath(QString::fromStdString(params.getParamsPath()) + "/d/UpdateFailedCount");
         lastUpdateTimeLbl->setText("checking...");
         std::system("pkill -1 -f selfdrive.updated");
       }
