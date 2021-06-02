@@ -1,5 +1,3 @@
-from collections import defaultdict
-from selfdrive.test.longitudinal_maneuvers.maneuverplots import ManeuverPlot
 from selfdrive.test.longitudinal_maneuvers.plant import Plant
 import numpy as np
 
@@ -30,10 +28,6 @@ class Maneuver():
       distance_lead=self.distance_lead
     )
 
-    logs = defaultdict(list)
-    last_controls_state = None
-    plot = ManeuverPlot(self.title)
-
     buttons_sorted = sorted(self.cruise_button_presses, key=lambda a: a[1])
     current_button = 0
     while plant.current_time() < self.duration:
@@ -48,38 +42,16 @@ class Maneuver():
       # distance, speed, acceleration, distance_lead, brake, gas, steer_torque, fcw, controls_state= plant.step(speed_lead, current_button, grade)
       log = plant.step(speeds_lead, current_button, grade)
 
-      if log['controls_state_msgs']:
-        last_controls_state = log['controls_state_msgs'][-1]
 
       d_rel = log['distance_lead'] - log['distance'] if self.lead_relevancy else 200.
       v_rel = speeds_lead[0] - log['speed'] if self.lead_relevancy else 0.
       log['d_rel'] = d_rel
       log['v_rel'] = v_rel
 
-      if last_controls_state:
-        # print(last_controls_state)
-        #develop plots
-        plot.add_data(
-          time=plant.current_time(),
-          gas=log['gas'], brake=log['brake'], steer_torque=log['steer_torque'],
-          distance=log['distance'], speed=log['speed'], acceleration=log['acceleration'],
-          up_accel_cmd=last_controls_state.upAccelCmd, ui_accel_cmd=last_controls_state.uiAccelCmd,
-          uf_accel_cmd=last_controls_state.ufAccelCmd,
-          d_rel=d_rel, v_rel=v_rel, v_lead=speeds_lead[0],
-          v_target_lead=last_controls_state.vTargetLead, pid_speed=last_controls_state.vPid,
-          cruise_speed=last_controls_state.vCruise,
-          a_target=last_controls_state.aTarget,
-          fcw=log['fcw'])
-
-        for k, v in log.items():
-          logs[k].append(v)
-
     valid = True
-    for check in self.checks:
-      c = check(logs)
-      if not c:
-        print(check.__name__ + " not valid!")
-      valid = valid and c
+    if d_rel < 1.0:
+      print("Crashed!!!!")
+      valid = False
 
     print("maneuver end", valid)
-    return (plot, valid)
+    return (None, valid)

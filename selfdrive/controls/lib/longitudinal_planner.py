@@ -104,6 +104,7 @@ class Planner():
 
   def update(self, sm, CP):
     v_ego = sm['carState'].vEgo
+    self.v_desired = np.clip(self.v_desired, v_ego - 3.0, v_ego + 3.0)
 
     v_cruise_kph = sm['controlsState'].vCruise
     v_cruise_kph = min(v_cruise_kph, V_CRUISE_MAX)
