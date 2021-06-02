@@ -13,7 +13,7 @@ const int BACKWARD_SEGS = 2;
 
 // class Replay
 
-Replay::Replay(SubMaster *sm) : sm_(sm) {
+Replay::Replay(SubMaster *sm, QObject *parent) : sm_(sm), QObject(parent) {
   QStringList block = QString(getenv("BLOCK")).split(",");
   qDebug() << "blocklist" << block;
   QStringList allow = QString(getenv("ALLOW")).split(",");
@@ -68,9 +68,18 @@ void Replay::stop() {
   camera_server_.stop();
   exit_ = true;
   stream_thread_.join();
+  queue_thread_.join();
   exit_ = false;
 
   segments_.clear();
+  for (auto cam_type : ALL_CAMERAS) {
+    encoderIdx_[cam_type].clear();
+  }
+  for (Event *e : events_) {
+    delete e;
+  }
+  events_.clear();
+
   current_ts_ = seek_ts_ = 0;
   current_segment_ = 0;
   route_start_ts_ = 0;
@@ -92,7 +101,7 @@ void Replay::seekTo(int to_ts) {
 // return nullptr if segment is not loaded
 std::shared_ptr<Segment> Replay::getSegment(int segment) {
   auto it = segments_.find(segment);
-  return (it != segments_.end() && it->second->loaded()) ? it->second : nullptr;
+  return (it != segments_.end() && !it->second->loading()) ? it->second : nullptr;
 }
 
 void Replay::pushFrame(CameraType cam_type, uint32_t frame_id) {
@@ -168,7 +177,11 @@ void Replay::queueSegmentThread() {
         }
       } else if (segments_.find(n) == segments_.end()) {
         std::unique_lock lk(mutex_);
-        segments_[n] = std::make_shared<Segment>(n, rs[n], *this);
+
+        segments_[n] = std::make_shared<Segment>(n, rs[n]);
+        connect(segments_[n].get(), &Segment::loaded, [=] {
+          mergeEvents(segments_[n]->log);
+        });
       }
     }
     prev_segment = segment;
@@ -180,7 +193,7 @@ void Replay::streamThread() {
   while (!exit_) {
     mutex_.lock();
     std::shared_ptr<Segment> seg = getSegment(current_segment_);
-    auto eit = events_.lowerBound(route_start_ts_ + seek_ts_ * 1e9);
+    auto eit = events_.upperBound(route_start_ts_ + seek_ts_ * 1e9);
     if (!seg || eit == events_.end()) {
       mutex_.unlock();
       qDebug() << "waiting for events";
@@ -201,7 +214,8 @@ void Replay::streamThread() {
     qDebug() << "unlogging at" << seek_ts_;
     uint64_t loop_start_tm = nanos_since_boot();
     int current_seek_ts_ = seek_ts_;
-    while (!exit_ && current_seek_ts_ == seek_ts_ && !updating_events && eit != events_.end()) {
+    // while (!exit_ && current_seek_ts_ == seek_ts_ && !updating_events && eit != events_.end()) {
+    while (!exit_ && current_seek_ts_ == seek_ts_ && eit != events_.end()) {
       Event *evt = (*eit);
       uint64_t mono_time = evt->event.getLogMonoTime();
       current_ts_ = std::max(mono_time - route_start_ts_, (uint64_t)0) / 1e9;
@@ -255,18 +269,21 @@ void Replay::streamThread() {
   }
 }
 
-void Replay::mergeEvents(const Events &events, EncodeIdxMap encoderIdx[]) {
+void Replay::mergeEvents(LogReader *log) {
   std::unique_lock lk(mutex_);
+  // double t1 = millis_since_boot();
   updating_events = true;
-  events_.unite(events);
+  events_.unite(log->events);
   for (auto cam_type : ALL_CAMERAS) {
-    encoderIdx_[cam_type].merge(encoderIdx[cam_type]);
+    encoderIdx_[cam_type].merge(log->encoderIdx[cam_type]);
   }
+  // double t2 = millis_since_boot();
+  // qInfo() << "merge time: " << t2 - t1;
 }
 
 // class Segment
 
-Segment::Segment(int seg_num, const SegmentFile &file, Replay &replay) : seg_num(seg_num) {
+Segment::Segment(int seg_num, const SegmentFile &file, QObject *parent) : seg_num(seg_num), QObject(parent) {
   // fallback to qlog if rlog not exists.
   const QString &log_file = file.rlog.isEmpty() ? file.qlog : file.rlog;
   if (log_file.isEmpty()) {
@@ -274,13 +291,10 @@ Segment::Segment(int seg_num, const SegmentFile &file, Replay &replay) : seg_num
     return;
   }
 
-  loading = 1;
+  loading_ = 1;
   log = new LogReader(log_file);
-  QObject::connect(log, &LogReader::finished, [&](bool success, const Events &events, EncodeIdxMap encoderIdx[]) {
-    if (success) {
-      replay.mergeEvents(events, encoderIdx);
-    }
-    --loading;
+  QObject::connect(log, &LogReader::finished, [&](bool success) {
+    if (--loading_ == 0) emit loaded();
   });
 
   // start framereader threads
@@ -290,9 +304,9 @@ Segment::Segment(int seg_num, const SegmentFile &file, Replay &replay) : seg_num
                                                 {WideRoadCam, file.wcamera}};
   for (const auto &[cam_type, file] : cam_files) {
     if (!file.isEmpty()) {
-      loading += 1;
+      loading_ += 1;
       FrameReader *fr = frames[cam_type] = new FrameReader(file.toStdString());
-      QObject::connect(fr, &FrameReader::finished, [=]() { --loading; });
+      QObject::connect(fr, &FrameReader::finished, [=]() { if(--loading_ == 0) emit loaded(); });
     }
   }
 }

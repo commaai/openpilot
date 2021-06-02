@@ -9,19 +9,23 @@
 #include "selfdrive/ui/replay/framereader.h"
 #include "selfdrive/ui/replay/route.h"
 
-class Replay;
-class Segment {
+class Segment : public QObject {
+  Q_OBJECT
+
 public:
-  Segment(int seg_num, const SegmentFile &file, Replay &replay);
+  Segment(int seg_num, const SegmentFile &file, QObject *parent = nullptr);
   ~Segment();
-  bool loaded() { return !loading; }
+  bool loading() { return loading_ > 0; }
 
   const int seg_num;
+  LogReader *log = nullptr;
   FrameReader *frames[MAX_CAMERAS] = {};
 
+signals:
+  void loaded();
+
 private:
-  LogReader *log = nullptr;
-  std::atomic<int> loading = 0;
+  std::atomic<int> loading_ = 0;
 };
 
 class CameraServer {
@@ -51,9 +55,11 @@ private:
   void cameraThread(CameraType cam_type, CameraState *s);
 };
 
-class Replay {
+class Replay : public QObject {
+  Q_OBJECT
+
 public:
-  Replay(SubMaster *sm = nullptr);
+  Replay(SubMaster *sm = nullptr, QObject *parent = nullptr);
   ~Replay();
   bool start(const QString &routeName);
   bool start(const Route &route);
@@ -67,7 +73,7 @@ private:
   void streamThread();
 
   void pushFrame(CameraType type, uint32_t frame_id);
-  void mergeEvents(const Events &events, EncodeIdxMap encoderIdx[]);
+  void mergeEvents(LogReader *log);
   std::shared_ptr<Segment> getSegment(int segment);
   void removeSegment(int segment);
   const std::string &eventSocketName(const cereal::Event::Reader &e);
@@ -86,10 +92,10 @@ private:
 
   // segments
   Route route_;
-  Events events_;
-  EncodeIdxMap encoderIdx_[MAX_CAMERAS] = {};
   std::mutex mutex_;
   std::map<int, std::shared_ptr<Segment>> segments_;
+  Events events_;
+  EncodeIdxMap encoderIdx_[MAX_CAMERAS] = {};
 
   // vipc server
   CameraServer camera_server_;

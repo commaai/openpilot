@@ -69,13 +69,14 @@ void FrameReader::process() {
   if (success) {
     decode_thread_ = std::thread(&FrameReader::decodeThread, this);
   }
-  emit finished(success);
+  if (!exit_) {
+    emit finished(success);
+  }
 }
 
 bool FrameReader::processFrames() {
   if (avformat_open_input(&pFormatCtx_, url_.c_str(), NULL, NULL) != 0) {
     qDebug() << "error loading " << url_.c_str();
-    emit finished(false);
     return false;
   }
   avformat_find_stream_info(pFormatCtx_, NULL);

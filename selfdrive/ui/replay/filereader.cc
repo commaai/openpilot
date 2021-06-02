@@ -68,12 +68,10 @@ LogReader::LogReader(const QString &file) {
   connect(thread_, &QThread::started, this, &LogReader::start);
   
   file_reader_ = new FileReader(file, this);
-  connect(file_reader_, &FileReader::finished, this, &LogReader::fileReady);
+  connect(file_reader_, &FileReader::finished, this, &LogReader::parseEvents);
   connect(file_reader_, &FileReader::failed, [=](const QString &err) { qInfo() << err; });
 
   thread_->start();
-
-  raw_ = std::make_shared<std::vector<uint8_t>>();
 }
 
 LogReader::~LogReader() {
@@ -92,18 +90,22 @@ void LogReader::start() {
   file_reader_->read();
 }
 
-void LogReader::parseEvents(kj::ArrayPtr<const capnp::word> words) {
+void LogReader::parseEvents(const QByteArray &dat) {
+  std::shared_ptr<std::vector<uint8_t>> raw = std::make_shared<std::vector<uint8_t>>();
+  raw->resize(1024 * 1024 * 64);
+  if (!decompressBZ2(*raw, dat.data(), dat.size())) {
+    qWarning() << "bz2 decompress failed";
+  }
 
-  EncodeIdxMap encoderIdx[MAX_CAMERAS] = {};
   auto insertEidx = [&](CameraType type, const cereal::EncodeIndex::Reader &e) {
     encoderIdx[type][e.getFrameId()] = {e.getSegmentNum(), e.getSegmentId()};
   };
 
-  Events events;
   valid_ = true;
+  kj::ArrayPtr<const capnp::word> words((const capnp::word *)raw->data(), raw->size() / sizeof(capnp::word));
   while (!exit_ && words.size() > 0) {
     try {
-      std::unique_ptr<Event> evt = std::make_unique<Event>(words, raw_);
+      std::unique_ptr<Event> evt = std::make_unique<Event>(words, raw);
       switch (evt->event.which()) {
         case cereal::Event::ROAD_ENCODE_IDX:
           insertEidx(RoadCam, evt->event.getRoadEncodeIdx());
@@ -126,13 +128,7 @@ void LogReader::parseEvents(kj::ArrayPtr<const capnp::word> words) {
       break;
     }
   }
-  emit finished(valid_ && !exit_, events, encoderIdx);
-}
-
-void LogReader::fileReady(const QByteArray &dat) {
-  raw_->resize(1024 * 1024 * 64);
-  if (!decompressBZ2(*raw_, dat.data(), dat.size())) {
-    qWarning() << "bz2 decompress failed";
+  if (!exit_) {
+    emit finished(valid_);
   }
-  parseEvents({(const capnp::word *)raw_->data(), raw_->size() / sizeof(capnp::word)});
 }

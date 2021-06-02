@@ -49,11 +49,11 @@ public:
     words = kj::ArrayPtr<const capnp::word>(amsg.begin(), reader.getEnd());
     event = reader.getRoot<cereal::Event>();
   }
-  ~Event() {
-    if (raw.use_count() == 1) {
-      qDebug() << "delete raw" << i++;
-    }
-  }
+  // ~Event() {
+  //   if (raw.use_count() == 1) {
+  //     qDebug() << "delete raw" << i++;
+  //   }
+  // }
   inline kj::ArrayPtr<const capnp::byte> bytes() const { return words.asBytes(); }
 
   kj::ArrayPtr<const capnp::word> words;
@@ -75,17 +75,17 @@ public:
   ~LogReader();
   inline bool valid() const { return valid_; }
 
+  Events events;
+  EncodeIdxMap encoderIdx[MAX_CAMERAS] = {};
+
 signals:
-  void finished(bool success, const Events &events, EncodeIdxMap encoderIdx[]);
+  void finished(bool success);
 
 private:
   void start();
-  void fileReady(const QByteArray &dat);
-  void parseEvents(kj::ArrayPtr<const capnp::word> words);
+  void parseEvents(const QByteArray &dat);
 
   FileReader *file_reader_ = nullptr;
-  std::shared_ptr<std::vector<uint8_t>> raw_;
-  
 
   std::atomic<bool> exit_ = false;
   std::atomic<bool> valid_ = false;
