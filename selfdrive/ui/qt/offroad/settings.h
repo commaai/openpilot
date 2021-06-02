@@ -30,10 +30,10 @@ public:
   explicit TogglesPanel(QWidget *parent = nullptr);
 };
 
-class DeveloperPanel : public QFrame {
+class SoftwarePanel : public QFrame {
   Q_OBJECT
 public:
-  explicit DeveloperPanel(QWidget* parent = nullptr);
+  explicit SoftwarePanel(QWidget* parent = nullptr);
 
 protected:
   void showEvent(QShowEvent *event) override;
