@@ -1,4 +1,4 @@
-Import('env', 'arch', 'SHARED', 'QCOM_REPLAY')
+Import('env', 'arch', 'SHARED')
 
 if SHARED:
   fxn = env.SharedLibrary

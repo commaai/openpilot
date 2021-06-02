@@ -2,8 +2,6 @@
 
 #include <QtNetwork>
 
-#include "tools/clib/framereader.h"
-
 FileReader::FileReader(const QString& file_) : file(file_) {
 }
 

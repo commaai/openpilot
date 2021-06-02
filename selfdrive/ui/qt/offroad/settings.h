@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QButtonGroup>
+#include <QFileSystemWatcher>
 #include <QFrame>
 #include <QLabel>
 #include <QPushButton>
@@ -8,6 +9,7 @@
 #include <QStackedWidget>
 #include <QTimer>
 #include <QWidget>
+
 
 #include "selfdrive/ui/qt/widgets/controls.h"
 
@@ -35,7 +37,15 @@ public:
 
 protected:
   void showEvent(QShowEvent *event) override;
+
+private:
   QList<LabelControl *> labels;
+  LabelControl *versionLbl;
+  LabelControl *lastUpdateTimeLbl;
+  ButtonControl *updateButton;
+  void updateLabels();
+
+  QFileSystemWatcher *fs_watch;
 };
 
 class SettingsWindow : public QFrame {
@@ -45,8 +55,8 @@ public:
   explicit SettingsWindow(QWidget *parent = 0) : QFrame(parent) {};
 
 protected:
-  void hideEvent(QHideEvent *event);
-  void showEvent(QShowEvent *event);
+  void hideEvent(QHideEvent *event) override;
+  void showEvent(QShowEvent *event) override;
 
 signals:
   void closeSettings();

@@ -29,7 +29,8 @@ SeekAbsoluteTime = namedtuple("SeekAbsoluteTime", ("secs",))
 SeekRelativeTime = namedtuple("SeekRelativeTime", ("secs",))
 TogglePause = namedtuple("TogglePause", ())
 StopAndQuit = namedtuple("StopAndQuit", ())
-VIPC_TYP = "vipc"
+VIPC_RGB = "rgb"
+VIPC_YUV = "yuv"
 
 
 class UnloggerWorker(object):
@@ -121,8 +122,13 @@ class UnloggerWorker(object):
           smsg.roadCameraState.image = bts
 
           extra = (smsg.roadCameraState.frameId, smsg.roadCameraState.timestampSof, smsg.roadCameraState.timestampEof)
-          data_socket.send_pyobj((cookie, VIPC_TYP, msg.logMonoTime, route_time, extra), flags=zmq.SNDMORE)
+          data_socket.send_pyobj((cookie, VIPC_RGB, msg.logMonoTime, route_time, extra), flags=zmq.SNDMORE)
           data_socket.send(bts, copy=False)
+
+          img_yuv = self._frame_reader.get(frame_id, pix_fmt="yuv420p")
+          if img_yuv is not None:
+            data_socket.send_pyobj((cookie, VIPC_YUV, msg.logMonoTime, route_time, extra), flags=zmq.SNDMORE)
+            data_socket.send(img_yuv.flatten().tobytes(), copy=False)
 
       data_socket.send_pyobj((cookie, typ, msg.logMonoTime, route_time), flags=zmq.SNDMORE)
       data_socket.send(smsg.to_bytes(), copy=False)
@@ -166,6 +172,7 @@ def _get_vipc_server(length):
 
   vipc_server = VisionIpcServer("camerad")
   vipc_server.create_buffers(VisionStreamType.VISION_STREAM_RGB_BACK, 4, True, w, h)
+  vipc_server.create_buffers(VisionStreamType.VISION_STREAM_YUV_BACK, 40, False, w, h)
   vipc_server.start_listener()
   return vipc_server
 
@@ -259,7 +266,7 @@ def unlogger_thread(command_address, forward_commands_address, data_address, run
         print("at", route_time)
         printed_at = route_time
 
-      if typ not in send_funcs and typ != 'vipc':
+      if typ not in send_funcs and typ not in [VIPC_RGB, VIPC_YUV]:
         if typ in address_mapping:
           # Remove so we don't keep printing warnings.
           address = address_mapping.pop(typ)
@@ -288,13 +295,15 @@ def unlogger_thread(command_address, forward_commands_address, data_address, run
 
       # Send message.
       try:
-        if typ == VIPC_TYP and (not no_visionipc):
-          if vipc_server is None:
-            vipc_server = _get_vipc_server(len(msg_bytes))
+        if typ in [VIPC_RGB, VIPC_YUV]:
+          if not no_visionipc:
+            if vipc_server is None:
+              vipc_server = _get_vipc_server(len(msg_bytes))
 
-          i, sof, eof = extra[0]
-          vipc_server.send(VisionStreamType.VISION_STREAM_RGB_BACK, msg_bytes, i, sof, eof)
-        if typ != VIPC_TYP:
+            i, sof, eof = extra[0]
+            stream = VisionStreamType.VISION_STREAM_RGB_BACK if typ == VIPC_RGB else VisionStreamType.VISION_STREAM_YUV_BACK
+            vipc_server.send(stream, msg_bytes, i, sof, eof)
+        else:
           send_funcs[typ](msg_bytes)
       except MultiplePublishersError:
         del send_funcs[typ]
