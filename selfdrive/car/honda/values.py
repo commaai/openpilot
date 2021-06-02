@@ -1238,8 +1238,8 @@ FW_VERSIONS = {
 }
 
 DBC = {
-  CAR.ACCORD: dbc_dict('honda_accord_s2t_2018_can_generated', None),
-  CAR.ACCORDH: dbc_dict('honda_accord_s2t_2018_can_generated', None),
+  CAR.ACCORD: dbc_dict('honda_accord_2018_can_generated', None),
+  CAR.ACCORDH: dbc_dict('honda_accord_2018_can_generated', None),
   CAR.ACURA_ILX: dbc_dict('acura_ilx_2016_can_generated', 'acura_ilx_2016_nidec'),
   CAR.ACURA_RDX: dbc_dict('acura_rdx_2018_can_generated', 'acura_ilx_2016_nidec'),
   CAR.ACURA_RDX_3G: dbc_dict('acura_rdx_2020_can_generated', None),
