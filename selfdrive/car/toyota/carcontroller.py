@@ -35,7 +35,7 @@ class CarController():
     self.standstill_req = False
     self.steer_rate_limited = False
 
-    self.use_interceptor = CP.enableGasInterceptort
+    self.use_interceptor = CP.enableGasInterceptor
     self.pedal_hyst_gap = 3. * CV.MPH_TO_MS
 
     self.fake_ecus = set()
