@@ -6,6 +6,7 @@ from selfdrive.car.toyota.toyotacan import create_steer_command, create_ui_comma
                                            create_fcw_command, create_lta_steer_command
 from selfdrive.car.toyota.values import Ecu, CAR, STATIC_MSGS, NO_STOP_TIMER_CAR, TSS2_CAR, CarControllerParams
 from opendbc.can.packer import CANPacker
+from selfdrive.config import Conversions as CV
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
@@ -52,7 +53,7 @@ class CarController():
     apply_gas = 0.
     apply_accel = actuators.gas - actuators.brake
 
-    if CS.CP.enableGasInterceptor and enabled and CS.out.vEgo < CS.CP.minEnableSpeed:
+    if CS.CP.enableGasInterceptor and enabled and CS.out.vEgo < 19. * CV.MPH_TO_MS:
       # only send negative accel if interceptor is detected. gas handles acceleration
       # +0.06 offset to reduce ABS pump usage when OP is engaged
       apply_gas = clip(actuators.gas, 0., 1.)
