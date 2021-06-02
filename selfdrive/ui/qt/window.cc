@@ -20,6 +20,9 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   QObject::connect(settingsWindow, &SettingsWindow::closeSettings, this, &MainWindow::closeSettings);
   QObject::connect(&qs, &QUIState::offroadTransition, settingsWindow, &SettingsWindow::offroadTransition);
   QObject::connect(settingsWindow, &SettingsWindow::reviewTrainingGuide, this, &MainWindow::reviewTrainingGuide);
+  QObject::connect(settingsWindow, &SettingsWindow::showDriverView, [=] {
+    homeWindow->showDriverView(true);
+  });
 
   onboardingWindow = new OnboardingWindow(this);
   onboardingDone = onboardingWindow->isOnboardingDone();

@@ -21,6 +21,7 @@ public:
   explicit DevicePanel(QWidget* parent = nullptr);
 signals:
   void reviewTrainingGuide();
+  void showDriverView();
 };
 
 class TogglesPanel : public QWidget {
@@ -61,6 +62,7 @@ signals:
   void closeSettings();
   void offroadTransition(bool offroad);
   void reviewTrainingGuide();
+  void showDriverView();
 
 private:
   QPushButton *sidebar_alert_widget;
