@@ -223,13 +223,10 @@ env = Environment(
 if GetOption('compile_db'):
   env.CompilationDatabase('compile_commands.json')
 
-if os.environ.get('SCONS_CACHE'):
-  cache_dir = '/tmp/scons_cache'
-  if TICI:
-    cache_dir = '/data/scons_cache'
-
-  CacheDir(cache_dir)
-  Clean(["."], cache_dir)
+# Setup cache dir
+cache_dir = '/data/scons_cache' if TICI else '/tmp/scons_cache'
+CacheDir(cache_dir)
+Clean(["."], cache_dir)
 
 node_interval = 5
 node_count = 0
