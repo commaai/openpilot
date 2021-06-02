@@ -1,15 +1,23 @@
 #!/usr/bin/env python3
 
 import sys
-
+import os
 import numpy as np
-import sympy as sp
 
 from selfdrive.locationd.models.constants import ObservationKind
-from rednose.helpers.ekf_sym import EKF_sym, gen_code
+
+import sympy as sp
+import inspect
 from rednose.helpers.sympy_helpers import euler_rotate, quat_matrix_r, quat_rotate
+from rednose.helpers.ekf_sym import gen_code
 
 EARTH_GM = 3.986005e14  # m^3/s^2 (gravitational constant * mass of earth)
+
+
+def numpy2eigenstring(arr):
+  assert(len(arr.shape) == 1)
+  arr_str = np.array2string(arr, precision=20, separator=',')[1:-1].replace(' ', '').replace('\n', '')
+  return f"(Eigen::VectorXd({len(arr)}) << {arr_str}).finished()"
 
 
 class States():
@@ -47,8 +55,8 @@ class LiveKalman():
 
   # state covariance
   initial_P_diag = np.array([1e16, 1e16, 1e16,
-                             1e6, 1e6, 1e6,
-                             1e4, 1e4, 1e4,
+                             10**2, 10**2, 10**2,
+                             10**2, 10**2, 10**2,
                              1**2, 1**2, 1**2,
                              0.05**2, 0.05**2, 0.05**2,
                              0.02**2,
@@ -56,14 +64,24 @@ class LiveKalman():
                              (0.01)**2, (0.01)**2, (0.01)**2])
 
   # process noise
-  Q = np.diag([0.03**2, 0.03**2, 0.03**2,
-               0.001**2, 0.001**2, 0.001**2,
-               0.01**2, 0.01**2, 0.01**2,
-               0.1**2, 0.1**2, 0.1**2,
-               (0.005 / 100)**2, (0.005 / 100)**2, (0.005 / 100)**2,
-               (0.02 / 100)**2,
-               3**2, 3**2, 3**2,
-               (0.05 / 60)**2, (0.05 / 60)**2, (0.05 / 60)**2])
+  Q_diag = np.array([0.03**2, 0.03**2, 0.03**2,
+                     0.001**2, 0.001**2, 0.001**2,
+                     0.01**2, 0.01**2, 0.01**2,
+                     0.1**2, 0.1**2, 0.1**2,
+                     (0.005 / 100)**2, (0.005 / 100)**2, (0.005 / 100)**2,
+                     (0.02 / 100)**2,
+                     3**2, 3**2, 3**2,
+                     (0.05 / 60)**2, (0.05 / 60)**2, (0.05 / 60)**2])
+
+  obs_noise_diag = {ObservationKind.ODOMETRIC_SPEED: np.array([0.2**2]),
+                    ObservationKind.PHONE_GYRO: np.array([0.025**2, 0.025**2, 0.025**2]),
+                    ObservationKind.PHONE_ACCEL: np.array([.5**2, .5**2, .5**2]),
+                    ObservationKind.CAMERA_ODO_ROTATION: np.array([0.05**2, 0.05**2, 0.05**2]),
+                    ObservationKind.IMU_FRAME: np.array([0.05**2, 0.05**2, 0.05**2]),
+                    ObservationKind.NO_ROT: np.array([0.005**2, 0.005**2, 0.005**2]),
+                    ObservationKind.ECEF_POS: np.array([5**2, 5**2, 5**2]),
+                    ObservationKind.ECEF_VEL: np.array([.5**2, .5**2, .5**2]),
+                    ObservationKind.ECEF_ORIENTATION_FROM_GPS: np.array([.2**2, .2**2, .2**2, .2**2])}
 
   @staticmethod
   def generate_code(generated_dir):
@@ -189,99 +207,37 @@ class LiveKalman():
                [h_phone_rot_sym, ObservationKind.CAMERA_ODO_ROTATION, None],
                [h_imu_frame_sym, ObservationKind.IMU_FRAME, None]]
 
-    gen_code(generated_dir, name, f_sym, dt, state_sym, obs_eqs, dim_state, dim_state_err, eskf_params)
+    # this returns a sympy routine for the jacobian of the observation function of the local vel
+    in_vec = sp.MatrixSymbol('in_vec', 6, 1)  # roll, pitch, yaw, vx, vy, vz
+    h = euler_rotate(in_vec[0], in_vec[1], in_vec[2]).T*(sp.Matrix([in_vec[3], in_vec[4], in_vec[5]]))
+    extra_routines = [('H', h.jacobian(in_vec), [in_vec])]
 
-  def __init__(self, generated_dir):
-    self.dim_state = self.initial_x.shape[0]
-    self.dim_state_err = self.initial_P_diag.shape[0]
+    gen_code(generated_dir, name, f_sym, dt, state_sym, obs_eqs, dim_state, dim_state_err, eskf_params, extra_routines=extra_routines)
 
-    self.obs_noise = {ObservationKind.ODOMETRIC_SPEED: np.atleast_2d(0.2**2),
-                      ObservationKind.PHONE_GYRO: np.diag([0.025**2, 0.025**2, 0.025**2]),
-                      ObservationKind.PHONE_ACCEL: np.diag([.5**2, .5**2, .5**2]),
-                      ObservationKind.CAMERA_ODO_ROTATION: np.diag([0.05**2, 0.05**2, 0.05**2]),
-                      ObservationKind.IMU_FRAME: np.diag([0.05**2, 0.05**2, 0.05**2]),
-                      ObservationKind.NO_ROT: np.diag([0.00025**2, 0.00025**2, 0.00025**2]),
-                      ObservationKind.ECEF_POS: np.diag([5**2, 5**2, 5**2]),
-                      ObservationKind.ECEF_VEL: np.diag([.5**2, .5**2, .5**2]),
-                      ObservationKind.ECEF_ORIENTATION_FROM_GPS: np.diag([.2**2, .2**2, .2**2, .2**2])}
+    # write constants to extra header file for use in cpp
+    live_kf_header = "#pragma once\n\n"
+    live_kf_header += "#include <unordered_map>\n"
+    live_kf_header += "#include <eigen3/Eigen/Dense>\n\n"
+    for state, slc in inspect.getmembers(States, lambda x: type(x) == slice):
+      assert(slc.step is None)  # unsupported
+      live_kf_header += f'#define STATE_{state}_START {slc.start}\n'
+      live_kf_header += f'#define STATE_{state}_END {slc.stop}\n'
+      live_kf_header += f'#define STATE_{state}_LEN {slc.stop - slc.start}\n'
+    live_kf_header += "\n"
 
-    # init filter
-    self.filter = EKF_sym(generated_dir, self.name, self.Q, self.initial_x, np.diag(self.initial_P_diag), self.dim_state, self.dim_state_err, max_rewind_age=0.2)
+    for kind, val in inspect.getmembers(ObservationKind, lambda x: type(x) == int):
+      live_kf_header += f'#define OBSERVATION_{kind} {val}\n'
+    live_kf_header += "\n"
 
-  @property
-  def x(self):
-    return self.filter.state()
+    live_kf_header += f"static const Eigen::VectorXd live_initial_x = {numpy2eigenstring(LiveKalman.initial_x)};\n"
+    live_kf_header += f"static const Eigen::VectorXd live_initial_P_diag = {numpy2eigenstring(LiveKalman.initial_P_diag)};\n"
+    live_kf_header += f"static const Eigen::VectorXd live_Q_diag = {numpy2eigenstring(LiveKalman.Q_diag)};\n"
+    live_kf_header += "static const std::unordered_map<int, Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> live_obs_noise_diag = {\n"
+    for kind, noise in LiveKalman.obs_noise_diag.items():
+      live_kf_header += f"  {{ {kind}, {numpy2eigenstring(noise)} }},\n"
+    live_kf_header += "};\n\n"
 
-  @property
-  def t(self):
-    return self.filter.filter_time
-
-  @property
-  def P(self):
-    return self.filter.covs()
-
-  def rts_smooth(self, estimates):
-    return self.filter.rts_smooth(estimates, norm_quats=True)
-
-  def init_state(self, state, covs_diag=None, covs=None, filter_time=None):
-    if covs_diag is not None:
-      P = np.diag(covs_diag)
-    elif covs is not None:
-      P = covs
-    else:
-      P = self.filter.covs()
-    self.filter.init_state(state, P, filter_time)
-
-  def predict_and_observe(self, t, kind, meas, R=None):
-    if len(meas) > 0:
-      meas = np.atleast_2d(meas)
-    if kind == ObservationKind.CAMERA_ODO_TRANSLATION:
-      r = self.predict_and_update_odo_trans(meas, t, kind)
-    elif kind == ObservationKind.CAMERA_ODO_ROTATION:
-      r = self.predict_and_update_odo_rot(meas, t, kind)
-    elif kind == ObservationKind.ODOMETRIC_SPEED:
-      r = self.predict_and_update_odo_speed(meas, t, kind)
-    else:
-      if R is None:
-        R = self.get_R(kind, len(meas))
-      elif len(R.shape) == 2:
-        R = R[None]
-      r = self.filter.predict_and_update_batch(t, kind, meas, R)
-
-    # Normalize quats
-    quat_norm = np.linalg.norm(self.filter.x[3:7, 0])
-    self.filter.x[States.ECEF_ORIENTATION, 0] = self.filter.x[States.ECEF_ORIENTATION, 0] / quat_norm
-
-    return r
-
-  def get_R(self, kind, n):
-    obs_noise = self.obs_noise[kind]
-    dim = obs_noise.shape[0]
-    R = np.zeros((n, dim, dim))
-    for i in range(n):
-      R[i, :, :] = obs_noise
-    return R
-
-  def predict_and_update_odo_speed(self, speed, t, kind):
-    z = np.array(speed)
-    R = np.zeros((len(speed), 1, 1))
-    for i, _ in enumerate(z):
-      R[i, :, :] = np.diag([0.2**2])
-    return self.filter.predict_and_update_batch(t, kind, z, R)
-
-  def predict_and_update_odo_trans(self, trans, t, kind):
-    z = trans[:, :3]
-    R = np.zeros((len(trans), 3, 3))
-    for i, _ in enumerate(z):
-        R[i, :, :] = np.diag(trans[i, 3:]**2)
-    return self.filter.predict_and_update_batch(t, kind, z, R)
-
-  def predict_and_update_odo_rot(self, rot, t, kind):
-    z = rot[:, :3]
-    R = np.zeros((len(rot), 3, 3))
-    for i, _ in enumerate(z):
-        R[i, :, :] = np.diag(rot[i, 3:]**2)
-    return self.filter.predict_and_update_batch(t, kind, z, R)
+    open(os.path.join(generated_dir, "live_kf_constants.h"), 'w').write(live_kf_header)
 
 
 if __name__ == "__main__":

@@ -1,16 +1,16 @@
+#include "keyboard.h"
+
+#include <QButtonGroup>
 #include <QDebug>
-#include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QPushButton>
-#include <QButtonGroup>
 #include <QStackedLayout>
-
-#include "keyboard.hpp"
+#include <QVBoxLayout>
 
 const int DEFAULT_STRETCH = 1;
 const int SPACEBAR_STRETCH = 3;
 
-KeyboardLayout::KeyboardLayout(QWidget *parent, std::vector<QVector<QString>> layout) : QWidget(parent) {
+KeyboardLayout::KeyboardLayout(QWidget* parent, const std::vector<QVector<QString>>& layout) : QWidget(parent) {
   QVBoxLayout* vlayout = new QVBoxLayout;
   vlayout->setMargin(0);
   vlayout->setSpacing(35);
@@ -41,6 +41,9 @@ KeyboardLayout::KeyboardLayout(QWidget *parent, std::vector<QVector<QString>> la
   }
 
   setStyleSheet(R"(
+    * {
+      outline: none;
+    }
     QPushButton {
       font-size: 65px;
       margin: 0px;

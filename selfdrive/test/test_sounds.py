@@ -4,7 +4,7 @@ import subprocess
 
 from cereal import log, car
 import cereal.messaging as messaging
-from selfdrive.test.helpers import phone_only, with_processes
+from selfdrive.test.helpers import phone_only, with_processes, set_params_enabled
 from common.realtime import DT_CTRL
 from selfdrive.hardware import HARDWARE
 
@@ -13,14 +13,14 @@ AudibleAlert = car.CarControl.HUDControl.AudibleAlert
 SOUNDS = {
   # sound: total writes
   AudibleAlert.none: 0,
-  AudibleAlert.chimeEngage: 85,
-  AudibleAlert.chimeDisengage: 85,
-  AudibleAlert.chimeError: 85,
-  AudibleAlert.chimePrompt: 85,
-  AudibleAlert.chimeWarning1: 80,
-  AudibleAlert.chimeWarning2: 107,
-  AudibleAlert.chimeWarning2Repeat: 177,
-  AudibleAlert.chimeWarningRepeat: 240,
+  AudibleAlert.chimeEngage: 173,
+  AudibleAlert.chimeDisengage: 173,
+  AudibleAlert.chimeError: 173,
+  AudibleAlert.chimePrompt: 173,
+  AudibleAlert.chimeWarning1: 163,
+  AudibleAlert.chimeWarning2: 216,
+  AudibleAlert.chimeWarning2Repeat: 470,
+  AudibleAlert.chimeWarningRepeat: 468,
 }
 
 def get_total_writes():
@@ -36,7 +36,7 @@ def test_sound_card_init():
 @phone_only
 @with_processes(['ui', 'camerad'])
 def test_alert_sounds():
-
+  set_params_enabled()
   pm = messaging.PubMaster(['deviceState', 'controlsState'])
 
   # make sure they're all defined
@@ -70,3 +70,4 @@ def test_alert_sounds():
     tolerance = (expected_writes % 100) * 2
     actual_writes = get_total_writes() - start_writes
     assert abs(expected_writes - actual_writes) <= tolerance, f"{alert_sounds[sound]}: expected {expected_writes} writes, got {actual_writes}"
+    #print(f"{alert_sounds[sound]}: expected {expected_writes} writes, got {actual_writes}")

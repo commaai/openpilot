@@ -1,7 +1,8 @@
 Import('env', 'arch', 'cereal', 'messaging', 'common', 'gpucommon', 'visionipc')
 lenv = env.Clone()
 
-libs = [cereal, messaging, common, 'OpenCL', 'SNPE', 'symphony-cpu', 'capnp', 'zmq', 'kj', 'yuv', gpucommon, visionipc]
+libs = [cereal, messaging, common, visionipc, gpucommon,
+        'OpenCL', 'SNPE', 'symphony-cpu', 'capnp', 'zmq', 'kj', 'yuv']
 
 def get_dlsym_offset():
   """Returns the offset between dlopen and dlsym in libdl.so"""
@@ -36,12 +37,13 @@ if arch == "aarch64" or arch == "larch64":
 else:
   libs += ['pthread']
 
-  # for onnx support
-  common_src += ['runners/onnxmodel.cc']
+  if not GetOption('snpe'):
+    # for onnx support
+    common_src += ['runners/onnxmodel.cc']
 
-  # tell runners to use onnx
-  lenv['CFLAGS'].append("-DUSE_ONNX_MODEL")
-  lenv['CXXFLAGS'].append("-DUSE_ONNX_MODEL")
+    # tell runners to use onnx
+    lenv['CFLAGS'].append("-DUSE_ONNX_MODEL")
+    lenv['CXXFLAGS'].append("-DUSE_ONNX_MODEL")
 
   if arch == "Darwin":
     # fix OpenCL
@@ -55,10 +57,9 @@ else:
 
 common_model = lenv.Object(common_src)
 
-
 # build thneed model
 if arch == "aarch64" or arch == "larch64":
-  compiler = lenv.Program('thneed/compile', ["thneed/compile.cc" ]+common_model, LIBS=libs)
+  compiler = lenv.Program('thneed/compile', ["thneed/compile.cc"]+common_model, LIBS=libs)
   cmd = f"cd {Dir('.').abspath} && {compiler[0].abspath} ../../models/supercombo.dlc ../../models/supercombo.thneed --binary"
 
   lib_paths = ':'.join([Dir(p).abspath for p in lenv["LIBPATH"]])

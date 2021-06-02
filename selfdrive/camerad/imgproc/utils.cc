@@ -1,7 +1,9 @@
-#include "utils.h"
+#include "selfdrive/camerad/imgproc/utils.h"
+
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
+
 #include <algorithm>
 #include <cmath>
 
@@ -16,7 +18,7 @@ uint16_t get_lapmap_one(const int16_t *lap, int x_pitch, int y_pitch) {
   int16_t max = 0;
   int sum = 0;
   for (int i = 0; i < size; ++i) {
-    const int16_t v = lap[i % x_pitch + (i / x_pitch) * x_pitch];
+    const int16_t v = lap[i];
     sum += v;
     if (v > max) max = v;
   }
@@ -26,7 +28,7 @@ uint16_t get_lapmap_one(const int16_t *lap, int x_pitch, int y_pitch) {
   // var of roi
   int var = 0;
   for (int i = 0; i < size; ++i) {
-    var += std::pow(lap[i % x_pitch + (i / x_pitch) * x_pitch] - mean, 2);
+    var += std::pow(lap[i] - mean, 2);
   }
 
   const float fvar = (float)var / size;

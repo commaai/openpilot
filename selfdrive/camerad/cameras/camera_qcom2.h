@@ -1,29 +1,28 @@
 #pragma once
 
 #include <stdint.h>
-#include <stdbool.h>
 #include <pthread.h>
 
-#include "camera_common.h"
-#include "media/cam_req_mgr.h"
+#include <media/cam_req_mgr.h>
+
+#include "selfdrive/camerad/cameras/camera_common.h"
+#include "selfdrive/common/util.h"
 
 #define FRAME_BUF_COUNT 4
 
 #define ANALOG_GAIN_MAX_IDX 10 // 0xF is bypass
 #define EXPOSURE_TIME_MIN 2 // with HDR, fastest ss
-#define EXPOSURE_TIME_MAX 1757 // with HDR, slowest ss
-
-#define HLC_THRESH 222
-#define HLC_A 80
-#define HISTO_CEIL_K 5
+#define EXPOSURE_TIME_MAX 1904 // with HDR, slowest ss
 
 #define EF_LOWPASS_K 0.35
 
 #define DEBAYER_LOCAL_WORKSIZE 16
 
 typedef struct CameraState {
+  MultiCameraState *multi_cam_state;
   CameraInfo ci;
 
+  std::mutex exp_lock;
   float analog_gain_frac;
   uint16_t analog_gain;
   bool dc_gain_enabled;
@@ -32,18 +31,10 @@ typedef struct CameraState {
   int exposure_time_max;
   float ef_filtered;
 
-  int device_iommu;
-  int cdm_iommu;
-
-  int video0_fd;
-  int video1_fd;
-  int isp_fd;
-
-  int sensor_fd;
-  int csiphy_fd;
+  unique_fd sensor_fd;
+  unique_fd csiphy_fd;
 
   int camera_num;
-
 
   uint32_t session_handle;
 
@@ -70,9 +61,12 @@ typedef struct CameraState {
 typedef struct MultiCameraState {
   int device;
 
-  int video0_fd;
-  int video1_fd;
-  int isp_fd;
+  unique_fd video0_fd;
+  unique_fd video1_fd;
+  unique_fd isp_fd;
+  int device_iommu;
+  int cdm_iommu;
+
 
   CameraState road_cam;
   CameraState wide_road_cam;

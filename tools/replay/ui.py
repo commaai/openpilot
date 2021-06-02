@@ -13,7 +13,7 @@ import cereal.messaging as messaging
 from common.basedir import BASEDIR
 from selfdrive.config import UIParams as UP
 from tools.replay.lib.ui_helpers import (_BB_TO_FULL_FRAME, _FULL_FRAME_SIZE,
-                                         _INTRINSICS, BLACK, GREEN, RED,
+                                         _INTRINSICS, BLACK, GREEN,
                                          YELLOW, Calibration,
                                          get_blank_lid_overlay, init_plots,
                                          maybe_update_radar_points, plot_lead,
@@ -143,7 +143,7 @@ def ui_thread(addr, frame_address):
 
     plot_arr[:-1] = plot_arr[1:]
     plot_arr[-1, name_to_arr_idx['angle_steers']] = sm['carState'].steeringAngleDeg
-    plot_arr[-1, name_to_arr_idx['angle_steers_des']] = sm['carControl'].actuators.steeringAngleDeg
+    plot_arr[-1, name_to_arr_idx['angle_steers_des']] = sm['controlsState'].steeringAngleDesiredDeg
     plot_arr[-1, name_to_arr_idx['angle_steers_k']] = angle_steers_k
     plot_arr[-1, name_to_arr_idx['gas']] = sm['carState'].gas
     plot_arr[-1, name_to_arr_idx['computer_gas']] = sm['carControl'].actuators.gas
@@ -193,7 +193,6 @@ def ui_thread(addr, frame_address):
 
     lines = [
       info_font.render("ENABLED", True, GREEN if sm['controlsState'].enabled else BLACK),
-      info_font.render("BRAKE LIGHTS", True, RED if sm['carState'].brakeLights else BLACK),
       info_font.render("SPEED: " + str(round(sm['carState'].vEgo, 1)) + " m/s", True, YELLOW),
       info_font.render("LONG CONTROL STATE: " + str(sm['controlsState'].longControlState), True, YELLOW),
       info_font.render("LONG MPC SOURCE: " + str(sm['longitudinalPlan'].longitudinalPlanSource), True, YELLOW),

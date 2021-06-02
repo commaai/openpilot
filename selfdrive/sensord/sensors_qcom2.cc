@@ -1,27 +1,24 @@
-#include <vector>
-#include <chrono>
-#include <thread>
 #include <sys/resource.h>
 
-#include "messaging.hpp"
-#include "common/i2c.h"
-#include "common/timing.h"
-#include "common/util.h"
-#include "common/swaglog.h"
+#include <chrono>
+#include <thread>
+#include <vector>
 
-#include "sensors/sensor.hpp"
-#include "sensors/constants.hpp"
-
-#include "sensors/bmx055_accel.hpp"
-#include "sensors/bmx055_gyro.hpp"
-#include "sensors/bmx055_magn.hpp"
-#include "sensors/bmx055_temp.hpp"
-
-#include "sensors/lsm6ds3_accel.hpp"
-#include "sensors/lsm6ds3_gyro.hpp"
-#include "sensors/lsm6ds3_temp.hpp"
-
-#include "sensors/light_sensor.hpp"
+#include "cereal/messaging/messaging.h"
+#include "selfdrive/common/i2c.h"
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/common/timing.h"
+#include "selfdrive/common/util.h"
+#include "selfdrive/sensord/sensors/bmx055_accel.h"
+#include "selfdrive/sensord/sensors/bmx055_gyro.h"
+#include "selfdrive/sensord/sensors/bmx055_magn.h"
+#include "selfdrive/sensord/sensors/bmx055_temp.h"
+#include "selfdrive/sensord/sensors/constants.h"
+#include "selfdrive/sensord/sensors/light_sensor.h"
+#include "selfdrive/sensord/sensors/lsm6ds3_accel.h"
+#include "selfdrive/sensord/sensors/lsm6ds3_gyro.h"
+#include "selfdrive/sensord/sensors/lsm6ds3_temp.h"
+#include "selfdrive/sensord/sensors/sensor.h"
 
 #define I2C_BUS_IMU 1
 
@@ -93,6 +90,6 @@ int sensor_loop() {
 }
 
 int main(int argc, char *argv[]) {
-  setpriority(PRIO_PROCESS, 0, -13);
+  setpriority(PRIO_PROCESS, 0, -18);
   return sensor_loop();
 }

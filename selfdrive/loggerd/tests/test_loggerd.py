@@ -76,9 +76,11 @@ class TestLoggerd(unittest.TestCase):
 
   def test_init_data_values(self):
     os.environ["CLEAN"] = random.choice(["0", "1"])
-    os.environ["DONGLE_ID"] = ''.join(random.choice(string.printable) for n in range(random.randint(1, 100)))
 
+    dongle  = ''.join(random.choice(string.printable) for n in range(random.randint(1, 100)))
     fake_params = [
+      # param, initData field, value
+      ("DongleId", "dongleId", dongle),
       ("GitCommit", "gitCommit", "commit"),
       ("GitBranch", "gitBranch", "branch"),
       ("GitRemote", "gitRemote", "remote"),
@@ -91,7 +93,6 @@ class TestLoggerd(unittest.TestCase):
     initData = lr[0].initData
 
     self.assertTrue(initData.dirty != bool(os.environ["CLEAN"]))
-    self.assertEqual(initData.dongleId, os.environ["DONGLE_ID"])
     self.assertEqual(initData.version, VERSION)
 
     if os.path.isfile("/proc/cmdline"):
@@ -152,12 +153,12 @@ class TestLoggerd(unittest.TestCase):
     assert abs(boot.wallTimeNanos - time.time_ns()) < 5*1e9 # within 5s
     assert boot.launchLog == launch_log
 
-    for field, path in [("lastKmsg", "console-ramoops"), ("lastPmsg", "pmsg-ramoops-0")]:
-      path = Path(os.path.join("/sys/fs/pstore/", path))
-      val = b""
+    for fn in ["console-ramoops", "pmsg-ramoops-0"]:
+      path = Path(os.path.join("/sys/fs/pstore/", fn))
       if path.is_file():
-        val = open(path, "rb").read()
-      self.assertEqual(getattr(boot, field), val)
+        expected_val = open(path, "rb").read()
+        bootlog_val = [e.value for e in boot.pstore.entries if e.key == fn][0]
+        self.assertEqual(expected_val, bootlog_val)
 
   def test_qlog(self):
     qlog_services = [s for s in CEREAL_SERVICES if service_list[s].decimation is not None]

@@ -10,6 +10,7 @@ venv/
 .vscode*
 model2.png
 a.out
+.hypothesis
 
 *.dylib
 *.DSYM
@@ -48,6 +49,7 @@ selfdrive/loggerd/bootlog
 selfdrive/sensord/_gpsd
 selfdrive/sensord/_sensord
 selfdrive/camerad/camerad
+selfdrive/camerad/test/ae_gray_test
 selfdrive/modeld/_modeld
 selfdrive/modeld/_dmonitoringmodeld
 /src/
@@ -58,8 +60,7 @@ notebooks
 xx
 hyperthneed
 panda_jungle
-apks
-openpilot-apks
+provisioning
 
 .coverage*
 coverage.xml

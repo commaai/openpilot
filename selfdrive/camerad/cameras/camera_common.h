@@ -1,20 +1,20 @@
 #pragma once
 
-#include <stdlib.h>
-#include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
+
 #include <memory>
 #include <thread>
-#include "common/mat.h"
-#include "common/swaglog.h"
-#include "common/queue.h"
-#include "visionbuf.h"
-#include "common/visionimg.h"
-#include "messaging.hpp"
-#include "transforms/rgb_to_yuv.h"
 
-#include "visionipc.h"
-#include "visionipc_server.h"
+#include "cereal/messaging/messaging.h"
+#include "cereal/visionipc/visionbuf.h"
+#include "cereal/visionipc/visionipc.h"
+#include "cereal/visionipc/visionipc_server.h"
+#include "selfdrive/camerad/transforms/rgb_to_yuv.h"
+#include "selfdrive/common/mat.h"
+#include "selfdrive/common/queue.h"
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/common/visionimg.h"
 
 #define CAMERA_ID_IMX298 0
 #define CAMERA_ID_IMX179 1
@@ -34,6 +34,10 @@
 #define LOG_CAMERA_ID_ECAMERA 2
 #define LOG_CAMERA_ID_QCAMERA 3
 #define LOG_CAMERA_ID_MAX 4
+
+#define HLC_THRESH 222
+#define HLC_A 80
+#define HISTO_CEIL_K 5
 
 const bool env_send_driver = getenv("SEND_DRIVER") != NULL;
 const bool env_send_road = getenv("SEND_ROAD") != NULL;
@@ -81,8 +85,6 @@ typedef struct CameraExpInfo {
   float grey_frac;
 } CameraExpInfo;
 
-extern CameraInfo cameras_supported[CAMERA_ID_MAX];
-
 struct MultiCameraState;
 struct CameraState;
 
@@ -92,11 +94,10 @@ private:
   CameraState *camera_state;
   cl_kernel krnl_debayer;
 
-  RGBToYUVState rgb_to_yuv_state;
+  std::unique_ptr<Rgb2Yuv> rgb2yuv;
 
-  FrameMetadata yuv_metas[YUV_COUNT];
   VisionStreamType rgb_type, yuv_type;
-  
+
   int cur_buf_idx;
 
   SafeQueue<int> safe_queue;
@@ -112,7 +113,7 @@ public:
   std::unique_ptr<VisionBuf[]> camera_bufs;
   std::unique_ptr<FrameMetadata[]> camera_bufs_metadata;
   int rgb_width, rgb_height, rgb_stride;
-  
+
   mat3 yuv_transform;
 
   CameraBuf() = default;
@@ -127,7 +128,7 @@ typedef void (*process_thread_cb)(MultiCameraState *s, CameraState *c, int cnt);
 
 void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data);
 kj::Array<uint8_t> get_frame_image(const CameraBuf *b);
-void set_exposure_target(CameraState *c, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip);
+float set_exposure_target(const CameraBuf *b, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip, int analog_gain, bool hist_ceil, bool hl_weighted);
 std::thread start_process_thread(MultiCameraState *cameras, CameraState *cs, process_thread_cb callback);
 void common_process_driver_camera(SubMaster *sm, PubMaster *pm, CameraState *c, int cnt);
 

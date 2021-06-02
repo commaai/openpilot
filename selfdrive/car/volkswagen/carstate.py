@@ -16,7 +16,7 @@ class CarState(CarStateBase):
       self.shifter_values = can_define.dv["EV_Gearshift"]['GearPosition']
     self.buttonStates = BUTTON_STATES.copy()
 
-  def update(self, pt_cp, trans_type):
+  def update(self, pt_cp, cam_cp, trans_type):
     ret = car.CarState.new_message()
     # Update vehicle speed and acceleration from ABS wheel speeds.
     ret.wheelSpeeds.fl = pt_cp.vl["ESP_19"]['ESP_VL_Radgeschw_02'] * CV.KPH_TO_MS
@@ -42,7 +42,6 @@ class CarState(CarStateBase):
     ret.gasPressed = ret.gas > 0
     ret.brake = pt_cp.vl["ESP_05"]['ESP_Bremsdruck'] / 250.0  # FIXME: this is pressure in Bar, not sure what OP expects
     ret.brakePressed = bool(pt_cp.vl["ESP_05"]['ESP_Fahrer_bremst'])
-    ret.brakeLights = bool(pt_cp.vl["ESP_05"]['ESP_Status_Bremsdruck'])
 
     # Update gear and/or clutch position data.
     if trans_type == TransmissionType.automatic:
@@ -80,8 +79,17 @@ class CarState(CarStateBase):
     # detection box is dynamic based on speed and road curvature.
     # Refer to VW Self Study Program 890253: Volkswagen Driver Assist Systems,
     # pages 32-35.
-    ret.leftBlindspot = bool(pt_cp.vl["SWA_01"]["SWA_Infostufe_SWA_li"]) or bool(pt_cp.vl["SWA_01"]["SWA_Warnung_SWA_li"])
-    ret.rightBlindspot = bool(pt_cp.vl["SWA_01"]["SWA_Infostufe_SWA_re"]) or bool(pt_cp.vl["SWA_01"]["SWA_Warnung_SWA_re"])
+    if self.CP.enableBsm:
+      ret.leftBlindspot = bool(pt_cp.vl["SWA_01"]["SWA_Infostufe_SWA_li"]) or bool(pt_cp.vl["SWA_01"]["SWA_Warnung_SWA_li"])
+      ret.rightBlindspot = bool(pt_cp.vl["SWA_01"]["SWA_Infostufe_SWA_re"]) or bool(pt_cp.vl["SWA_01"]["SWA_Warnung_SWA_re"])
+
+    # Consume factory LDW data relevant for factory SWA (Lane Change Assist)
+    # and capture it for forwarding to the blind spot radar controller
+    self.ldw_lane_warning_left = bool(cam_cp.vl["LDW_02"]["LDW_SW_Warnung_links"])
+    self.ldw_lane_warning_right = bool(cam_cp.vl["LDW_02"]["LDW_SW_Warnung_rechts"])
+    self.ldw_side_dlc_tlc = bool(cam_cp.vl["LDW_02"]["LDW_Seite_DLCTLC"])
+    self.ldw_dlc = cam_cp.vl["LDW_02"]["LDW_DLC"]
+    self.ldw_tlc = cam_cp.vl["LDW_02"]["LDW_TLC"]
 
     # Stock FCW is considered active if the release bit for brake-jerk warning
     # is set. Stock AEB considered active if the partial braking or target
@@ -108,7 +116,7 @@ class CarState(CarStateBase):
 
     # Update ACC setpoint. When the setpoint is zero or there's an error, the
     # radar sends a set-speed of ~90.69 m/s / 203mph.
-    ret.cruiseState.speed = pt_cp.vl["ACC_02"]['SetSpeed']
+    ret.cruiseState.speed = pt_cp.vl["ACC_02"]['ACC_Wunschgeschw'] * CV.KPH_TO_MS
     if ret.cruiseState.speed > 90:
       ret.cruiseState.speed = 0
 
@@ -168,7 +176,6 @@ class CarState(CarStateBase):
       ("AB_Gurtschloss_FA", "Airbag_02", 0),        # Seatbelt status, driver
       ("AB_Gurtschloss_BF", "Airbag_02", 0),        # Seatbelt status, passenger
       ("ESP_Fahrer_bremst", "ESP_05", 0),           # Brake pedal pressed
-      ("ESP_Status_Bremsdruck", "ESP_05", 0),       # Brakes applied
       ("ESP_Bremsdruck", "ESP_05", 0),              # Brake pressure applied
       ("MO_Fahrpedalrohwert_01", "Motor_20", 0),    # Accelerator pedal value
       ("MO_Kuppl_schalter", "Motor_14", 0),         # Clutch switch
@@ -179,13 +186,6 @@ class CarState(CarStateBase):
       ("KBI_MFA_v_Einheit_02", "Einheiten_01", 0),  # MPH vs KMH speed display
       ("KBI_Handbremse", "Kombi_01", 0),            # Manual handbrake applied
       ("TSK_Status", "TSK_06", 0),                  # ACC engagement status from drivetrain coordinator
-      ("TSK_Fahrzeugmasse_02", "Motor_16", 0),      # Estimated vehicle mass from drivetrain coordinator
-      ("ACC_Status_ACC", "ACC_06", 0),              # ACC engagement status
-      ("ACC_Typ", "ACC_06", 0),                     # ACC type (follow to stop, stop&go)
-      ("SetSpeed", "ACC_02", 0),                    # ACC set speed
-      ("AWV2_Freigabe", "ACC_10", 0),               # FCW brake jerk release
-      ("ANB_Teilbremsung_Freigabe", "ACC_10", 0),   # AEB partial braking release
-      ("ANB_Zielbremsung_Freigabe", "ACC_10", 0),   # AEB target braking release
       ("GRA_Hauptschalter", "GRA_ACC_01", 0),       # ACC button, on/off
       ("GRA_Abbrechen", "GRA_ACC_01", 0),           # ACC button, cancel
       ("GRA_Tip_Setzen", "GRA_ACC_01", 0),          # ACC button, set
@@ -197,10 +197,6 @@ class CarState(CarStateBase):
       ("GRA_Tip_Stufe_2", "GRA_ACC_01", 0),         # unknown related to stalk type
       ("GRA_ButtonTypeInfo", "GRA_ACC_01", 0),      # unknown related to stalk type
       ("COUNTER", "GRA_ACC_01", 0),                 # GRA_ACC_01 CAN message counter
-      ("SWA_Infostufe_SWA_li", "SWA_01", 0),        # Blind spot object info, left
-      ("SWA_Warnung_SWA_li", "SWA_01", 0),          # Blind spot object warning, left
-      ("SWA_Infostufe_SWA_re", "SWA_01", 0),        # Blind spot object info, right
-      ("SWA_Warnung_SWA_re", "SWA_01", 0),          # Blind spot object warning, right
     ]
 
     checks = [
@@ -210,17 +206,14 @@ class CarState(CarStateBase):
       ("ESP_19", 100),      # From J104 ABS/ESP controller
       ("ESP_05", 50),       # From J104 ABS/ESP controller
       ("ESP_21", 50),       # From J104 ABS/ESP controller
-      ("ACC_06", 50),       # From J428 ACC radar control module
-      ("ACC_10", 50),       # From J428 ACC radar control module
       ("Motor_20", 50),     # From J623 Engine control module
       ("TSK_06", 50),       # From J623 Engine control module
-      ("GRA_ACC_01", 33),   # From J??? steering wheel control buttons
-      ("ACC_02", 17),       # From J428 ACC radar control module
+      ("ESP_02", 50),       # From J104 ABS/ESP controller
+      ("GRA_ACC_01", 33),   # From J533 CAN gateway (via LIN from steering wheel controls)
       ("Gateway_72", 10),   # From J533 CAN gateway (aggregated data)
       ("Motor_14", 10),     # From J623 Engine control module
       ("Airbag_02", 5),     # From J234 Airbag control module
       ("Kombi_01", 2),      # From J285 Instrument cluster
-      ("Motor_16", 2),      # From J623 Engine control module
       ("Einheiten_01", 1),  # From J??? not known if gateway, cluster, or BCM
     ]
 
@@ -235,17 +228,26 @@ class CarState(CarStateBase):
                   ("BCM1_Rueckfahrlicht_Schalter", "Gateway_72", 0)]  # Reverse light from BCM
       checks += [("Motor_14", 10)]  # From J623 Engine control module
 
-    return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, CANBUS.pt)
+    # TODO: Detect ACC radar bus location
+    signals += MqbExtraSignals.fwd_radar_signals
+    checks += MqbExtraSignals.fwd_radar_checks
+    # TODO: Detect BSM radar bus location
+    if CP.enableBsm:
+      signals += MqbExtraSignals.bsm_radar_signals
+      checks += MqbExtraSignals.bsm_radar_checks
 
-  # A single signal is monitored from the camera CAN bus, and then ignored,
-  # so the presence of CAN traffic can be verified with cam_cp.valid.
+    return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, CANBUS.pt)
 
   @staticmethod
   def get_cam_can_parser(CP):
 
     signals = [
       # sig_name, sig_address, default
-      ("LDW_Status_LED_gruen", "LDW_02", 0),            # Lane Assist status LED
+      ("LDW_SW_Warnung_links", "LDW_02", 0),          # Blind spot in warning mode on left side due to lane departure
+      ("LDW_SW_Warnung_rechts", "LDW_02", 0),         # Blind spot in warning mode on right side due to lane departure
+      ("LDW_Seite_DLCTLC", "LDW_02", 0),              # Direction of most likely lane departure (left or right)
+      ("LDW_DLC", "LDW_02", 0),                       # Lane departure, distance to line crossing
+      ("LDW_TLC", "LDW_02", 0),                       # Lane departure, time to line crossing
     ]
 
     checks = [
@@ -254,3 +256,25 @@ class CarState(CarStateBase):
     ]
 
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, CANBUS.cam)
+
+class MqbExtraSignals:
+  # Additional signal and message lists for optional or bus-portable controllers
+  fwd_radar_signals = [
+    ("ACC_Wunschgeschw", "ACC_02", 0),              # ACC set speed
+    ("AWV2_Freigabe", "ACC_10", 0),                 # FCW brake jerk release
+    ("ANB_Teilbremsung_Freigabe", "ACC_10", 0),     # AEB partial braking release
+    ("ANB_Zielbremsung_Freigabe", "ACC_10", 0),     # AEB target braking release
+  ]
+  fwd_radar_checks = [
+    ("ACC_10", 50),                                 # From J428 ACC radar control module
+    ("ACC_02", 17),                                 # From J428 ACC radar control module
+  ]
+  bsm_radar_signals = [
+    ("SWA_Infostufe_SWA_li", "SWA_01", 0),          # Blind spot object info, left
+    ("SWA_Warnung_SWA_li", "SWA_01", 0),            # Blind spot object warning, left
+    ("SWA_Infostufe_SWA_re", "SWA_01", 0),          # Blind spot object info, right
+    ("SWA_Warnung_SWA_re", "SWA_01", 0),            # Blind spot object warning, right
+  ]
+  bsm_radar_checks = [
+    ("SWA_01", 20),                                 # From J1086 Lane Change Assist
+  ]

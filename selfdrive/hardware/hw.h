@@ -1,60 +1,18 @@
 #pragma once
 
-#include <cstdlib>
-#include <fstream>
-
-#include <common/util.h>
+#include "selfdrive/hardware/base.h"
 
 #ifdef QCOM
+#include "selfdrive/hardware/eon/hardware.h"
 #define Hardware HardwareEon
 #elif QCOM2
+#include "selfdrive/hardware/tici/hardware.h"
 #define Hardware HardwareTici
 #else
-#define Hardware HardwareNone
+class HardwarePC : public HardwareNone {
+public:
+  static std::string get_os_version() { return "openpilot for PC"; }
+  static bool PC() { return true; }
+};
+#define Hardware HardwarePC
 #endif
-
-
-// no-op base hw class
-class HardwareNone {
-public:
-  static std::string get_os_version() { return "openpilot for PC"; };
-
-  static void reboot() {};
-  static void poweroff() {};
-  static void set_brightness(int percent) {};
-};
-
-class HardwareEon : public HardwareNone {
-public:
-  static std::string get_os_version() {
-    return "NEOS " + util::read_file("/VERSION");
-  };
-
-  static void reboot() { std::system("reboot"); };
-  static void poweroff() { std::system("LD_LIBRARY_PATH= svc power shutdown"); };
-  static void set_brightness(int percent) {
-    std::ofstream brightness_control("/sys/class/leds/lcd-backlight/brightness");
-    if (brightness_control.is_open()) {
-      brightness_control << (int)(percent * (255/100.)) << "\n";
-      brightness_control.close();
-    }
-  };
-};
-
-class HardwareTici : public HardwareNone {
-public:
-  static std::string get_os_version() {
-    return "AGNOS " + util::read_file("/VERSION");
-  };
-
-  static void reboot() { std::system("sudo reboot"); };
-  static void poweroff() { std::system("sudo poweroff"); };
-  static void set_brightness(int percent) {
-    std::ofstream brightness_control("/sys/class/backlight/panel0-backlight/brightness");
-    if (brightness_control.is_open()) {
-      brightness_control << (percent * (int)(1023/100.)) << "\n";
-      brightness_control.close();
-    }
-  };
-};
-

@@ -6,7 +6,8 @@ from selfdrive.controls.lib.drive_helpers import MPC_COST_LAT, MPC_N, CAR_ROTATI
 import math
 
 libmpc = libmpc_py.libmpc
-libmpc.init(MPC_COST_LAT.PATH, MPC_COST_LAT.HEADING, 1.)
+libmpc.init()
+libmpc.set_weights(MPC_COST_LAT.PATH, MPC_COST_LAT.HEADING, 1.)
 
 cur_state = libmpc_py.ffi.new("state_t *")
 cur_state[0].x = 0.0

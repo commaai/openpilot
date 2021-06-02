@@ -1,6 +1,36 @@
-Version 0.8.3 (2021-XX-XX)
+Version 0.8.5 (2021-XX-XX)
 ========================
+ * NEOS update: improved reliability and stability
+ * Smart model-based Forward Collision Warning
+ * Hyundai Elantra 2021 support thanks to CruiseBrantley!
+ * Lexus UX Hybrid 2019-2020 support thanks to brianhaugen2!
+ * Toyota Avalon Hybrid 2019 support thanks to jbates9011!
+ * SEAT Leon 2017 & 2020 support thanks to jyoung8607!
+ * Škoda Octavia 2015 & 2019 support thanks to jyoung8607!
+
+Version 0.8.4 (2021-05-17)
+========================
+ * Delay controls start until system is ready
+ * Fuzzy car identification, enabled with Community Features toggle
+ * Localizer optimized for increased precision and less CPU usage
+ * Retuned lateral control to be more aggressive when model is confident
+ * Toyota Mirai 2021 support
+ * Lexus NX 300 2020 support thanks to goesreallyfast!
+ * Volkswagen Atlas 2018-19 support thanks to jyoung8607!
+
+Version 0.8.3 (2021-04-01)
+========================
+ * New model
+   * Trained on new diverse dataset from 2000+ users from 30+ countries
+   * Trained with improved segnet from the comma-pencil community project
+   * 🥬 Dramatically improved end-to-end lateral performance 🥬
+ * Toggle added to disable the use of lanelines
+ * NEOS update: update packages and support for new UI
+ * New offroad UI based on Qt
+ * Default SSH key only used for setup
  * Kia Ceed 2019 support thanks to ZanZaD13!
+ * Kia Seltos 2021 support thanks to speedking456!
+ * Added support for many Volkswagen and Škoda models thanks to jyoung8607!
 
 Version 0.8.2 (2021-02-26)
 ========================

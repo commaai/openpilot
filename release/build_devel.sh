@@ -51,6 +51,11 @@ echo "[-] copying files T=$SECONDS"
 cd $SOURCE_DIR
 cp -pR --parents $(cat release/files_common) $TARGET_DIR/
 
+# test files
+if [ ! -z "$DEVEL_TEST" ]; then
+  cp -pR --parents tools/ $TARGET_DIR/
+fi
+
 # in the directory
 cd $TARGET_DIR
 
@@ -62,17 +67,7 @@ git status
 git commit -a -m "openpilot v$VERSION release"
 
 # Run build
-SCONS_CACHE=1 scons -j3
-
-echo "[-] testing panda build T=$SECONDS"
-pushd panda/board/
-make bin
-popd
-
-echo "[-] testing pedal build T=$SECONDS"
-pushd panda/board/pedal
-make obj/comma.bin
-popd
+selfdrive/manager/build.py
 
 if [ ! -z "$CI_PUSH" ]; then
   echo "[-] Pushing to $CI_PUSH T=$SECONDS"

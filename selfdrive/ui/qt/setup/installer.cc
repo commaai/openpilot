@@ -1,8 +1,10 @@
 #include <time.h>
 #include <unistd.h>
+
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <map>
 
 #ifndef BRANCH
 #define BRANCH "master"
@@ -37,14 +39,21 @@ int fresh_clone() {
   err = std::system("mv /data/tmppilot /data/openpilot");
   if (err) return 1;
 
-#ifdef SSH_KEYS
+#ifdef INTERNAL
   err = std::system("mkdir -p /data/params/d/");
   if (err) return 1;
 
-  std::ofstream param;
-  param.open("/data/params/d/GithubSshKeys");
-  param << SSH_KEYS;
-  param.close();
+  std::map<std::string, std::string> params = {
+    {"SshEnabled", "1"},
+    {"RecordFrontLock", "1"},
+    {"GithubSshKeys", SSH_KEYS},
+  };
+  for (const auto& [key, value] : params) {
+    std::ofstream param;
+    param.open("/data/params/d/RecordFrontLock" + key);
+    param << value;
+    param.close();
+  }
 #endif
 
   return 0;

@@ -77,12 +77,6 @@
   <plugin status="idle" ID="ROS Topic Re-Publisher"/>
  </Plugins>
  <!-- - - - - - - - - - - - - - - -->
- <previouslyLoaded_Datafiles>
-  <fileInfo filename="/home/batman/openpilot/tools/plotjuggler/tmps2q85e2d.rlog" prefix="">
-   <selected_datasources value=""/>
-   <plugin ID="DataLoad Rlog"/>
-  </fileInfo>
- </previouslyLoaded_Datafiles>
  <!-- - - - - - - - - - - - - - - -->
  <customMathEquations>
   <snippet name="dv/dt">
