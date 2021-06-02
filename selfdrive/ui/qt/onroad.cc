@@ -93,8 +93,7 @@ void OnroadAlerts::updateState(const UIState &s) {
 
   // TODO: add blinking back if performant
   //float alpha = 0.375 * cos((millis_since_boot() / 1000) * 2 * M_PI * blinking_rate) + 0.625;
-  auto c = bg_colors[s.status];
-  bg.setRgbF(c.r, c.g, c.b, c.a);
+  bg = bg_colors[s.status];
 }
 
 void OnroadAlerts::offroadTransition(bool offroad) {
@@ -227,7 +226,7 @@ void NvgWindow::paintGL() {
 
   double cur_draw_t = millis_since_boot();
   double dt = cur_draw_t - prev_draw_t;
-  if (dt > 66 && !QUIState::ui_state.scene.driver_view) {
+  if (dt > 66) {
     // warn on sub 15fps
     LOGW("slow frame time: %.2f", dt);
   }
