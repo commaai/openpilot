@@ -56,16 +56,18 @@ class CarController():
     apply_gas = 0.
     apply_accel = actuators.gas - actuators.brake
 
-    if CS.out.vEgo < self.min_acc_speed:
-      self.can_use_pedal = True
-    elif CS.out.vEgo > self.min_acc_speed + self.pedal_hyst_gap:
-      self.can_use_pedal = False
+    if CS.CP.enableGasInterceptor:
+      # handle hysteresis when around the minimum acc speed
+      if CS.out.vEgo < self.min_acc_speed:
+        self.can_use_pedal = True
+      elif CS.out.vEgo > self.min_acc_speed + self.pedal_hyst_gap:
+        self.can_use_pedal = False
 
-    if CS.CP.enableGasInterceptor and enabled and self.can_use_pedal:
-      # only send negative accel if interceptor is detected. gas handles acceleration
-      # +0.06 offset to reduce ABS pump usage when OP is engaged
-      apply_gas = clip(actuators.gas, 0., 1.)
-      apply_accel = 0.06 - actuators.brake
+      if self.can_use_pedal and enabled:
+        # only send negative accel when using interceptor. gas handles acceleration
+        # +0.06 offset to reduce ABS pump usage when OP is engaged
+        apply_gas = clip(actuators.gas, 0., 1.)
+        apply_accel = 0.06 - actuators.brake
 
     apply_accel, self.accel_steady = accel_hysteresis(apply_accel, self.accel_steady, enabled)
     apply_accel = clip(apply_accel * CarControllerParams.ACCEL_SCALE, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
