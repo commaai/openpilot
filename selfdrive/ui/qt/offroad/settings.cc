@@ -212,7 +212,7 @@ DeveloperPanel::DeveloperPanel(QWidget* parent) : QFrame(parent) {
     int update_failed_count = Params().get<int>("UpdateFailedCount").value_or(0);
     if (path.contains("UpdateFailedCount") && update_failed_count > 0) {
       lastUpdateTimeLbl->setText("failed to fetch update");
-      updateButton->setText("Failed");
+      updateButton->setText("CHECK");
       updateButton->setEnabled(true);
     } else if (path.contains("LastUpdateTime")) {
       updateLabels();
@@ -252,12 +252,12 @@ void DeveloperPanel::updateLabels() {
     layout()->addWidget(lastUpdateTimeLbl);
     layout()->addWidget(horizontal_line());
 
-    updateButton = new ButtonControl("Check for Update", "Check", "", [=]() {
+    updateButton = new ButtonControl("Check for Update", "CHECK", "", [=]() {
       Params params = Params();
       if (params.getBool("IsOffroad")) {
         fs_watch->addPath(QString::fromStdString(params.getParamsPath()) + "/d/LastUpdateTime");
         fs_watch->addPath(QString::fromStdString(params.getParamsPath()) + "/d/UpdateFailedCount");
-        updateButton->setText("Checking...");
+        updateButton->setText("CHECKING");
         updateButton->setEnabled(false);
       }
       std::system("pkill -1 -f selfdrive.updated");
@@ -267,7 +267,7 @@ void DeveloperPanel::updateLabels() {
   } else {
     versionLbl->setText(version);
     lastUpdateTimeLbl->setText(lastUpdateTime);
-    updateButton->setText("Check");
+    updateButton->setText("CHECK");
     updateButton->setEnabled(true);
   }
 
