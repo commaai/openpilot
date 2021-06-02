@@ -1,12 +1,9 @@
 #!/usr/bin/env python3
-import cereal.messaging as messaging
 from opendbc.can.packer import CANPacker
 from selfdrive.boardd.boardd_api_impl import can_list_to_can_capnp  # pylint: disable=no-name-in-module,import-error
 from selfdrive.car.honda.values import FINGERPRINTS, CAR
 from selfdrive.car import crc8_pedal
 
-from selfdrive.test.longitudinal_maneuvers.plant import get_car_can_parser
-cp = get_car_can_parser()
 
 packer = CANPacker("honda_civic_touring_2016_can_generated")
 rpacker = CANPacker("acura_ilx_2016_nidec")
@@ -17,7 +14,7 @@ def can_function(pm, speed, angle, idx, cruise_button, is_engaged):
 
   # *** powertrain bus ***
 
-  speed = speed * 3.6 # convert m/s to kph
+  speed = speed * 3.6  # convert m/s to kph
   msg.append(packer.make_can_msg("ENGINE_DATA", 0, {"XMISSION_SPEED": speed}, idx))
   msg.append(packer.make_can_msg("WHEEL_SPEEDS", 0, {
     "WHEEL_SPEED_FL": speed,
@@ -66,24 +63,3 @@ def can_function(pm, speed, angle, idx, cruise_button, is_engaged):
       msg.append([k, 0, b'\x00'*v, 0])
 
   pm.send('can', can_list_to_can_capnp(msg))
-
-def sendcan_function(sendcan):
-  sc = messaging.drain_sock_raw(sendcan)
-  cp.update_strings(sc, sendcan=True)
-
-  if cp.vl[0x1fa]['COMPUTER_BRAKE_REQUEST']:
-    brake = cp.vl[0x1fa]['COMPUTER_BRAKE'] / 1024.
-  else:
-    brake = 0.0
-
-  if cp.vl[0x200]['GAS_COMMAND'] > 0:
-    gas = ( cp.vl[0x200]['GAS_COMMAND'] + 83.3 ) / (0.253984064 * 2**16)
-  else:
-    gas = 0.0
-
-  if cp.vl[0xe4]['STEER_TORQUE_REQUEST']:
-    steer_torque = cp.vl[0xe4]['STEER_TORQUE']/3840
-  else:
-    steer_torque = 0.0
-
-  return gas, brake, steer_torque

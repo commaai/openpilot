@@ -1,15 +1,12 @@
 #!/usr/bin/env python3
 import os
-
+from selfdrive.test.process_replay.test_processes import get_segment
 from selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
 from selfdrive.manager.process_config import managed_processes
 from common.file_helpers import mkdirs_exists_ok
 from common.params import Params
-from tools.lib.route import Route
 from tools.lib.logreader import LogReader
 import unittest
-import matplotlib
-matplotlib.use('svg')
 
 
 
@@ -25,8 +22,7 @@ def check_engaged(log):
   return log['controls_state_msgs'][-1][-1].active
 
 def put_default_car_params():
-  r = Route('0982d79ebb0de295|2021-01-08--10-13-10')
-  cp = [m for m in LogReader(r.qlog_paths()[0]) if m.which() == 'carParams']
+  cp = [m for m in LogReader(get_segment('0982d79ebb0de295|2021-01-08--10-13-10--0')) if m.which() == 'carParams']
   Params().put("CarParams", cp[0].carParams.as_builder().to_bytes())
 
 
@@ -167,15 +163,13 @@ class LongitudinalControl(unittest.TestCase):
 
 def run_maneuver_worker(k):
   man = maneuvers[k]
-  output_dir = os.path.join(os.getcwd(), 'out/longitudinal')
 
   def run(self):
     print(man.title)
     put_default_car_params()
     managed_processes['plannerd'].start()
 
-    plot, valid = man.evaluate()
-    plot.write_plot(output_dir, "maneuver" + str(k + 1).zfill(2))
+    _, valid = man.evaluate()
 
     managed_processes['plannerd'].stop()
     self.assertTrue(valid)
