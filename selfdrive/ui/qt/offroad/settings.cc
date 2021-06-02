@@ -212,6 +212,8 @@ DeveloperPanel::DeveloperPanel(QWidget* parent) : QFrame(parent) {
     int update_failed_count = Params().get<int>("UpdateFailedCount").value_or(0);
     if (path.contains("UpdateFailedCount") && update_failed_count > 0) {
       lastUpdateTimeLbl->setText("failed to fetch update");
+      updateButton->setText("CHECK");
+      updateButton->setEnabled(true);
     } else if (path.contains("LastUpdateTime")) {
       updateLabels();
     }
@@ -246,21 +248,27 @@ void DeveloperPanel::updateLabels() {
     layout()->addWidget(versionLbl);
     layout()->addWidget(horizontal_line());
 
-    lastUpdateTimeLbl = new LabelControl("Last Update Check", lastUpdateTime, "The last time openpilot checked for an update. Updates are only checked while car is off.");
-    connect(lastUpdateTimeLbl, &LabelControl::showDescription, [=]() {
+    lastUpdateTimeLbl = new LabelControl("Last Update Check", lastUpdateTime, "The last time openpilot successfully checked for an update. The updater only runs while the car is off.");
+    layout()->addWidget(lastUpdateTimeLbl);
+    layout()->addWidget(horizontal_line());
+
+    updateButton = new ButtonControl("Check for Update", "CHECK", "", [=]() {
       Params params = Params();
       if (params.getBool("IsOffroad")) {
         fs_watch->addPath(QString::fromStdString(params.getParamsPath()) + "/d/LastUpdateTime");
         fs_watch->addPath(QString::fromStdString(params.getParamsPath()) + "/d/UpdateFailedCount");
-        lastUpdateTimeLbl->setText("checking...");
-        std::system("pkill -1 -f selfdrive.updated");
+        updateButton->setText("CHECKING");
+        updateButton->setEnabled(false);
       }
-    });
-    layout()->addWidget(lastUpdateTimeLbl);
+      std::system("pkill -1 -f selfdrive.updated");
+    }, "", this);
+    layout()->addWidget(updateButton);
     layout()->addWidget(horizontal_line());
   } else {
     versionLbl->setText(version);
     lastUpdateTimeLbl->setText(lastUpdateTime);
+    updateButton->setText("CHECK");
+    updateButton->setEnabled(true);
   }
 
   for (int i = 0; i < dev_params.size(); i++) {
