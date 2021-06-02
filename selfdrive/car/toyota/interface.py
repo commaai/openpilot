@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from cereal import car
 from selfdrive.config import Conversions as CV
-from selfdrive.car.toyota.values import Ecu, CAR, TSS2_CAR, NO_DSU_CAR, MIN_ACC_SPEED, CarControllerParams
+from selfdrive.car.toyota.values import Ecu, CAR, TSS2_CAR, NO_DSU_CAR, MIN_ACC_SPEED, PEDAL_HYST_GAP, CarControllerParams
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
 from selfdrive.swaglog import cloudlog
 from selfdrive.car.interfaces import CarInterfaceBase
@@ -345,10 +345,10 @@ class CarInterface(CarInterfaceBase):
       # Keeps same pedal tuning below MIN_ACC_SPEED with stock tuning above
       ret.gasMaxBP = [0., MIN_ACC_SPEED]
       ret.gasMaxV = [0.2, 0.5]
-      ret.longitudinalTuning.kpBP = [0., 5., MIN_ACC_SPEED, MIN_ACC_SPEED, 35.]
-      ret.longitudinalTuning.kpV = [1.2, 0.8, 0.765, 2.295, 1.5]
-      ret.longitudinalTuning.kiBP = [0., MIN_ACC_SPEED, MIN_ACC_SPEED, 35.]
-      ret.longitudinalTuning.kiV = [0.18, 0.165, 0.496, 0.36]
+      ret.longitudinalTuning.kpBP = [0., 5., MIN_ACC_SPEED, MIN_ACC_SPEED + PEDAL_HYST_GAP, 35.]
+      ret.longitudinalTuning.kpV = [1.2, 0.8, 0.765, 2.255, 1.5]
+      ret.longitudinalTuning.kiBP = [0., MIN_ACC_SPEED, MIN_ACC_SPEED + PEDAL_HYST_GAP, 35.]
+      ret.longitudinalTuning.kiV = [0.18, 0.165, 0.489, 0.36]
 
     return ret
 

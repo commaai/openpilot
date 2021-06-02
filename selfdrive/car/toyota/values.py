@@ -4,8 +4,9 @@ from cereal import car
 from selfdrive.car import dbc_dict
 from selfdrive.config import Conversions as CV
 
-MIN_ACC_SPEED = 19. * CV.MPH_TO_MS
 Ecu = car.CarParams.Ecu
+MIN_ACC_SPEED = 19. * CV.MPH_TO_MS
+PEDAL_HYST_GAP = 3. * CV.MPH_TO_MS
 
 class CarControllerParams:
   ACCEL_HYST_GAP = 0.02  # don't change accel command for small oscilalitons within this value

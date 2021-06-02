@@ -4,8 +4,8 @@ from selfdrive.car import apply_toyota_steer_torque_limits, create_gas_command, 
 from selfdrive.car.toyota.toyotacan import create_steer_command, create_ui_command, \
                                            create_accel_command, create_acc_cancel_command, \
                                            create_fcw_command, create_lta_steer_command
-from selfdrive.car.toyota.values import Ecu, CAR, STATIC_MSGS, NO_STOP_TIMER_CAR, TSS2_CAR, MIN_ACC_SPEED, CarControllerParams
-from selfdrive.config import Conversions as CV
+from selfdrive.car.toyota.values import Ecu, CAR, STATIC_MSGS, NO_STOP_TIMER_CAR, TSS2_CAR, \
+                                        MIN_ACC_SPEED, PEDAL_HYST_GAP, CarControllerParams
 from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -34,9 +34,7 @@ class CarController():
     self.last_standstill = False
     self.standstill_req = False
     self.steer_rate_limited = False
-
-    self.use_interceptor = CP.enableGasInterceptor
-    self.pedal_hyst_gap = 3. * CV.MPH_TO_MS
+    self.use_interceptor = False
 
     self.fake_ecus = set()
     if CP.enableCamera:
@@ -59,7 +57,7 @@ class CarController():
       # handle hysteresis when around the minimum acc speed
       if CS.out.vEgo < MIN_ACC_SPEED:
         self.use_interceptor = True
-      elif CS.out.vEgo > MIN_ACC_SPEED + self.pedal_hyst_gap:
+      elif CS.out.vEgo > MIN_ACC_SPEED + PEDAL_HYST_GAP:
         self.use_interceptor = False
 
       if self.use_interceptor and enabled:
@@ -128,7 +126,7 @@ class CarController():
       else:
         can_sends.append(create_accel_command(self.packer, 0, pcm_cancel_cmd, False, lead))
 
-    if CS.CP.enableGasInterceptor and frame % 2 == 0:
+    if frame % 2 == 0 and CS.CP.enableGasInterceptor:
       # send exactly zero if apply_gas is zero. Interceptor will send the max between read value and apply_gas.
       # This prevents unexpected pedal range rescaling
       can_sends.append(create_gas_command(self.packer, apply_gas, frame // 2))
