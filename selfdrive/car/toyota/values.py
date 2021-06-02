@@ -1,7 +1,10 @@
 # flake8: noqa
 
-from selfdrive.car import dbc_dict
 from cereal import car
+from selfdrive.car import dbc_dict
+from selfdrive.config import Conversions as CV
+
+MIN_ACC_SPEED = 19. * CV.MPH_TO_MS
 Ecu = car.CarParams.Ecu
 
 class CarControllerParams:

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from cereal import car
 from selfdrive.config import Conversions as CV
-from selfdrive.car.toyota.values import Ecu, CAR, TSS2_CAR, NO_DSU_CAR, CarControllerParams
+from selfdrive.car.toyota.values import Ecu, CAR, TSS2_CAR, NO_DSU_CAR, MIN_ACC_SPEED, CarControllerParams
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
 from selfdrive.swaglog import cloudlog
 from selfdrive.car.interfaces import CarInterfaceBase
@@ -335,22 +335,20 @@ class CarInterface(CarInterfaceBase):
 
     # min speed to enable ACC. if car can do stop and go, then set enabling speed
     # to a negative value, so it won't matter.
-    min_acc_speed = 19. * CV.MPH_TO_MS
-    ret.minEnableSpeed = -1. if (stop_and_go or ret.enableGasInterceptor) else min_acc_speed
+    ret.minEnableSpeed = -1. if (stop_and_go or ret.enableGasInterceptor) else MIN_ACC_SPEED
 
     # removing the DSU disables AEB and it's considered a community maintained feature
     # intercepting the DSU is a community feature since it requires unofficial hardware
     ret.communityFeature = ret.enableGasInterceptor or ret.enableDsu or smartDsu
 
     if ret.enableGasInterceptor:
-      # Keeps same pedal tuning below MIN_ACC_SPEED + hysteresis gap, with stock tuning above
-      ret.gasMaxBP = [0., min_acc_speed]
+      # Keeps same pedal tuning below MIN_ACC_SPEED with stock tuning above
+      ret.gasMaxBP = [0., MIN_ACC_SPEED]
       ret.gasMaxV = [0.2, 0.5]
-      min_acc_speed += 3. * CV.MPH_TO_MS
-      ret.longitudinalTuning.kpBP = [0., 5., min_acc_speed, min_acc_speed, 35.]
-      ret.longitudinalTuning.kpV = [1.2, 0.8, 0.752, 2.255, 1.5]
-      ret.longitudinalTuning.kiBP = [0., min_acc_speed, min_acc_speed, 35.]
-      ret.longitudinalTuning.kiV = [0.18, 0.163, 0.489, 0.36]
+      ret.longitudinalTuning.kpBP = [0., 5., MIN_ACC_SPEED, MIN_ACC_SPEED, 35.]
+      ret.longitudinalTuning.kpV = [1.2, 0.8, 0.765, 2.295, 1.5]
+      ret.longitudinalTuning.kiBP = [0., MIN_ACC_SPEED, MIN_ACC_SPEED, 35.]
+      ret.longitudinalTuning.kiV = [0.18, 0.165, 0.496, 0.36]
 
     return ret
 

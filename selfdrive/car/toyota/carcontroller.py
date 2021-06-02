@@ -4,9 +4,9 @@ from selfdrive.car import apply_toyota_steer_torque_limits, create_gas_command, 
 from selfdrive.car.toyota.toyotacan import create_steer_command, create_ui_command, \
                                            create_accel_command, create_acc_cancel_command, \
                                            create_fcw_command, create_lta_steer_command
-from selfdrive.car.toyota.values import Ecu, CAR, STATIC_MSGS, NO_STOP_TIMER_CAR, TSS2_CAR, CarControllerParams
-from opendbc.can.packer import CANPacker
+from selfdrive.car.toyota.values import Ecu, CAR, STATIC_MSGS, NO_STOP_TIMER_CAR, TSS2_CAR, MIN_ACC_SPEED, CarControllerParams
 from selfdrive.config import Conversions as CV
+from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
@@ -35,9 +35,8 @@ class CarController():
     self.standstill_req = False
     self.steer_rate_limited = False
 
-    self.can_use_pedal = True
+    self.use_interceptor = True
     self.pedal_hyst_gap = 3. * CV.MPH_TO_MS
-    self.min_acc_speed = 19. * CV.MPH_TO_MS
 
     self.fake_ecus = set()
     if CP.enableCamera:
@@ -58,12 +57,12 @@ class CarController():
 
     if CS.CP.enableGasInterceptor:
       # handle hysteresis when around the minimum acc speed
-      if CS.out.vEgo < self.min_acc_speed:
-        self.can_use_pedal = True
-      elif CS.out.vEgo > self.min_acc_speed + self.pedal_hyst_gap:
-        self.can_use_pedal = False
+      if CS.out.vEgo < MIN_ACC_SPEED:
+        self.use_interceptor = True
+      elif CS.out.vEgo > MIN_ACC_SPEED + self.pedal_hyst_gap:
+        self.use_interceptor = False
 
-      if self.can_use_pedal and enabled:
+      if self.use_interceptor and enabled:
         # only send negative accel when using interceptor. gas handles acceleration
         # +0.06 offset to reduce ABS pump usage when OP is engaged
         apply_gas = clip(actuators.gas, 0., 1.)
