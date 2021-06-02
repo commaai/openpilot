@@ -9,18 +9,18 @@
 #include "selfdrive/ui/replay/framereader.h"
 #include "selfdrive/ui/replay/route.h"
 
+class Replay;
 class Segment {
 public:
-  Segment(int seg_num, const SegmentFile &file);
+  Segment(int seg_num, const SegmentFile &file, Replay &replay);
   ~Segment();
   bool loaded() { return !loading; }
-  bool valid() const { return !loading && log->valid(); }
 
   const int seg_num;
-  LogReader *log = nullptr;
   FrameReader *frames[MAX_CAMERAS] = {};
 
 private:
+  LogReader *log = nullptr;
   std::atomic<int> loading = 0;
 };
 
@@ -57,22 +57,26 @@ public:
   ~Replay();
   bool start(const QString &routeName);
   bool start(const Route &route);
-  void seekTo(int to_ts);
   void relativeSeek(int ts);
+  void seekTo(int to_ts);
   void stop();
   bool running() { return stream_thread_.joinable(); }
 
 private:
+  void queueSegmentThread();
+  void streamThread();
+
+  void pushFrame(CameraType type, uint32_t frame_id);
+  void mergeEvents(const Events &events, EncodeIdxMap encoderIdx[]);
   std::shared_ptr<Segment> getSegment(int segment);
-  void queueSegment(int segment);
-  int getNextSegmentId(int n, bool forword = true);
+  void removeSegment(int segment);
   const std::string &eventSocketName(const cereal::Event::Reader &e);
 
-  void streamThread();
-  void pushFrame(CameraType type, int seg_id, uint32_t frame_id);
 
-  std::atomic<int64_t> current_ts_ = 0, seek_ts_ = 0;  // ms
-  std::atomic<int> current_segment_ = -1;
+  std::atomic<int> current_ts_ = 0, seek_ts_ = 0;  // ms
+  std::atomic<int> current_segment_ = 0;
+  std::atomic<bool> updating_events = false;
+  std::atomic<uint64_t> route_start_ts_ = 0;
   std::unordered_map<cereal::Event::Which, std::string> eventNameMap;
 
   // messaging
@@ -82,11 +86,15 @@ private:
 
   // segments
   Route route_;
+  Events events_;
+  EncodeIdxMap encoderIdx_[MAX_CAMERAS] = {};
+  std::mutex mutex_;
   std::map<int, std::shared_ptr<Segment>> segments_;
 
   // vipc server
   CameraServer camera_server_;
 
   std::atomic<bool> exit_ = false;
-  std::thread stream_thread_;
+  std::thread stream_thread_, queue_thread_;
+  friend class Segment;
 };

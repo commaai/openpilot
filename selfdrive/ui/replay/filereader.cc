@@ -63,7 +63,7 @@ void FileReader::abort() {
 // class LogReader
 
 LogReader::LogReader(const QString &file) {
-  thread_ = new QThread(this);
+  thread_ = new QThread();
   moveToThread(thread_);
   connect(thread_, &QThread::started, this, &LogReader::start);
   
@@ -72,6 +72,8 @@ LogReader::LogReader(const QString &file) {
   connect(file_reader_, &FileReader::failed, [=](const QString &err) { qInfo() << err; });
 
   thread_->start();
+
+  raw_ = std::make_shared<std::vector<uint8_t>>();
 }
 
 LogReader::~LogReader() {
@@ -80,9 +82,10 @@ LogReader::~LogReader() {
   file_reader_->abort();
   thread_->quit();
   thread_->wait();
+  thread_->deleteLater();
 
   // free all
-  for (auto e : events_) delete e;
+  // for (auto e : events_) delete e;
 }
 
 void LogReader::start() {
@@ -90,14 +93,17 @@ void LogReader::start() {
 }
 
 void LogReader::parseEvents(kj::ArrayPtr<const capnp::word> words) {
-  auto insertEidx = [=](CameraType type, const cereal::EncodeIndex::Reader &e) {
-    encoderIdx_[type][e.getFrameId()] = {e.getSegmentNum(), e.getSegmentId()};
+
+  EncodeIdxMap encoderIdx[MAX_CAMERAS] = {};
+  auto insertEidx = [&](CameraType type, const cereal::EncodeIndex::Reader &e) {
+    encoderIdx[type][e.getFrameId()] = {e.getSegmentNum(), e.getSegmentId()};
   };
 
+  Events events;
   valid_ = true;
   while (!exit_ && words.size() > 0) {
     try {
-      std::unique_ptr<Event> evt = std::make_unique<Event>(words);
+      std::unique_ptr<Event> evt = std::make_unique<Event>(words, raw_);
       switch (evt->event.which()) {
         case cereal::Event::ROAD_ENCODE_IDX:
           insertEidx(RoadCam, evt->event.getRoadEncodeIdx());
@@ -112,7 +118,7 @@ void LogReader::parseEvents(kj::ArrayPtr<const capnp::word> words) {
           break;
       }
       words = kj::arrayPtr(evt->reader.getEnd(), words.end());
-      events_.push_back(evt.release());
+      events.insert(evt->event.getLogMonoTime(), evt.release());
     } catch (const kj::Exception &e) {
       // partial messages trigger this
       // qDebug() << e.getDescription().cStr();
@@ -120,18 +126,13 @@ void LogReader::parseEvents(kj::ArrayPtr<const capnp::word> words) {
       break;
     }
   }
-
-  // sort events by LogMonoTime
-  std::sort(events_.begin(), events_.end(), [](const Event* l, const Event* r) {
-    return l->mono_time < r->mono_time;
-  });
-  emit finished(valid_ && !exit_);
+  emit finished(valid_ && !exit_, events, encoderIdx);
 }
 
 void LogReader::fileReady(const QByteArray &dat) {
-  raw_.resize(1024 * 1024 * 64);
-  if (!decompressBZ2(raw_, dat.data(), dat.size())) {
+  raw_->resize(1024 * 1024 * 64);
+  if (!decompressBZ2(*raw_, dat.data(), dat.size())) {
     qWarning() << "bz2 decompress failed";
   }
-  parseEvents({(const capnp::word *)raw_.data(), raw_.size() / sizeof(capnp::word)});
+  parseEvents({(const capnp::word *)raw_->data(), raw_->size() / sizeof(capnp::word)});
 }

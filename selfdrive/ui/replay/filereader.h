@@ -45,20 +45,26 @@ struct EncodeIdx {
 
 class Event {
 public:
-  Event(const kj::ArrayPtr<const capnp::word> &amsg) : reader(amsg) {
+  Event(const kj::ArrayPtr<const capnp::word> &amsg, std::shared_ptr<std::vector<uint8_t>> raw) : reader(amsg), raw(raw) {
     words = kj::ArrayPtr<const capnp::word>(amsg.begin(), reader.getEnd());
     event = reader.getRoot<cereal::Event>();
-    mono_time = event.getLogMonoTime();
+  }
+  ~Event() {
+    if (raw.use_count() == 1) {
+      qDebug() << "delete raw" << i++;
+    }
   }
   inline kj::ArrayPtr<const capnp::byte> bytes() const { return words.asBytes(); }
 
-  uint64_t mono_time;
   kj::ArrayPtr<const capnp::word> words;
   capnp::FlatArrayMessageReader reader;
   cereal::Event::Reader event;
+private:
+  std::shared_ptr<std::vector<uint8_t>> raw;
+  inline static int i = 0;
 };
 
-typedef std::vector<Event *> Events;
+typedef QMultiMap<uint64_t, Event *> Events;
 typedef std::unordered_map<uint32_t, EncodeIdx> EncodeIdxMap;
 
 class LogReader : public QObject {
@@ -68,14 +74,9 @@ public:
   LogReader(const QString &file);
   ~LogReader();
   inline bool valid() const { return valid_; }
-  inline const Events &events() const { return events_; }
-  const EncodeIdx *getFrameEncodeIdx(CameraType type, uint32_t frame_id) const {
-    auto it = encoderIdx_[type].find(frame_id);
-    return it != encoderIdx_[type].end() ? &it->second : nullptr;
-  }
 
 signals:
-  void finished(bool success);
+  void finished(bool success, const Events &events, EncodeIdxMap encoderIdx[]);
 
 private:
   void start();
@@ -83,9 +84,8 @@ private:
   void parseEvents(kj::ArrayPtr<const capnp::word> words);
 
   FileReader *file_reader_ = nullptr;
-  std::vector<uint8_t> raw_;
-  Events events_;
-  EncodeIdxMap encoderIdx_[MAX_CAMERAS] = {};
+  std::shared_ptr<std::vector<uint8_t>> raw_;
+  
 
   std::atomic<bool> exit_ = false;
   std::atomic<bool> valid_ = false;
