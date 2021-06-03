@@ -177,7 +177,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"IsRHD", PERSISTENT},
     {"IsTakingSnapshot", CLEAR_ON_MANAGER_START},
     {"IsUpdateAvailable", CLEAR_ON_MANAGER_START},
-    {"IsUploadRawEnabled", PERSISTENT},
+    {"UploadRaw", PERSISTENT},
     {"LastAthenaPingTime", PERSISTENT},
     {"LastGPSPosition", PERSISTENT},
     {"LastUpdateException", PERSISTENT},
