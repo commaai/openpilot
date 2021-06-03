@@ -340,8 +340,9 @@ class CarInterface(CarInterfaceBase):
       default_kiV = [0.54, 0.36]
       pedal_kpV = [1.2, 0.8, 0.5]
       pedal_kiV = [0.18, 0.12]
+
+      # Default longitudinal tune
       if not ret.enableGasInterceptor:
-        # Default longitudinal tune
         ret.longitudinalTuning.deadzoneBP = [0., 9.]
         ret.longitudinalTuning.deadzoneV = [0., .15]
         ret.longitudinalTuning.kpBP = default_kpBP
@@ -349,7 +350,7 @@ class CarInterface(CarInterfaceBase):
         ret.longitudinalTuning.kpV = default_kpV
         ret.longitudinalTuning.kiV = default_kiV
       else:
-        # Same pedal tuning below MIN_ACC_SPEED and ramps to stock tuning using the hysteresis gap
+        # Transitions from original pedal tuning to default tuning around MIN_ACC_SPEED
         ret.gasMaxBP = [0., MIN_ACC_SPEED]
         ret.gasMaxV = [0.2, 0.5]
 
