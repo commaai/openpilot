@@ -40,7 +40,6 @@ class CarController():
     self.apply_steer_last = 0
     self.car_fingerprint = CP.carFingerprint
     self.steer_rate_limited = False
-    self.steer_wind_down = False
     self.last_resume_frame = 0
 
   def update(self, enabled, CS, frame, actuators, pcm_cancel_cmd, visual_alert,
@@ -59,10 +58,6 @@ class CarController():
 
     if not lkas_active:
       apply_steer = 0
-      if self.apply_steer_last != 0:
-        self.steer_wind_down = True
-    if lkas_active or CS.out.steeringPressed:
-      self.steer_wind_down = False
 
     self.apply_steer_last = apply_steer
 
@@ -72,7 +67,7 @@ class CarController():
 
     can_sends = []
     can_sends.append(create_lkas11(self.packer, frame, self.car_fingerprint, apply_steer, lkas_active,
-                                   self.steer_wind_down, CS.lkas11, sys_warning, sys_state, enabled,
+                                   CS.lkas11, sys_warning, sys_state, enabled,
                                    left_lane, right_lane,
                                    left_lane_warning, right_lane_warning))
 
