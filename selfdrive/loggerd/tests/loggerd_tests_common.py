@@ -56,7 +56,7 @@ class MockParams():
   def __init__(self):
     self.params = {
       "DongleId": b"0000000000000000",
-      "IsUploadRawEnabled": b"1",
+      "UploadRaw": b"1",
       "IsOffroad": b"1",
     }
 
