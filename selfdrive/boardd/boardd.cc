@@ -304,7 +304,7 @@ void panda_state_thread(bool spoofing_started) {
 
     // clear VIN, CarParams, and set new safety on car start
     if (ignition && !ignition_last) {
-      params.clearAll(CLEAR_ON_IGNITION);
+      params.clearAll(CLEAR_ON_IGNITION_ON);
 
       if (!safety_setter_thread_running) {
         safety_setter_thread_running = true;
@@ -312,6 +312,8 @@ void panda_state_thread(bool spoofing_started) {
       } else {
         LOGW("Safety setter thread already running");
       }
+    } else if (!ignition && ignition_last) {
+      params.clearAll(CLEAR_ON_IGNITION_OFF);
     }
 
     // Write to rtc once per minute when no ignition present
