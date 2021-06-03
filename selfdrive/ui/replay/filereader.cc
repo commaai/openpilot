@@ -67,7 +67,7 @@ LogReader::LogReader(const QString &file) {
   moveToThread(thread_);
   connect(thread_, &QThread::started, this, &LogReader::start);
   
-  file_reader_ = new FileReader(file, this);
+  file_reader_ = new FileReader(file);
   connect(file_reader_, &FileReader::finished, this, &LogReader::parseEvents);
   connect(file_reader_, &FileReader::failed, [=](const QString &err) { qInfo() << err; });
 
@@ -81,9 +81,6 @@ LogReader::~LogReader() {
   thread_->quit();
   thread_->wait();
   thread_->deleteLater();
-
-  // free all
-  // for (auto e : events_) delete e;
 }
 
 void LogReader::start() {
@@ -120,7 +117,7 @@ void LogReader::parseEvents(const QByteArray &dat) {
           break;
       }
       words = kj::arrayPtr(evt->reader.getEnd(), words.end());
-      events.insert(evt->event.getLogMonoTime(), evt.release());
+      events.push_back(evt.release());
     } catch (const kj::Exception &e) {
       // partial messages trigger this
       // qDebug() << e.getDescription().cStr();
@@ -129,6 +126,9 @@ void LogReader::parseEvents(const QByteArray &dat) {
     }
   }
   if (!exit_) {
+    std::sort(events.begin(), events.end(), [=](const Event* l, const Event*r) {
+      return l->mono_time < r->mono_time;// && l->which < r->which;
+    });
     emit finished(valid_);
   }
 }

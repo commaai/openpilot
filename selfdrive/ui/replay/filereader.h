@@ -16,7 +16,7 @@ class FileReader : public QObject {
   Q_OBJECT
 
 public:
-  FileReader(const QString &fn, QObject *parent);
+  FileReader(const QString &fn, QObject *parent = nullptr);
   void read();
   void abort();
 
@@ -48,6 +48,8 @@ public:
   Event(const kj::ArrayPtr<const capnp::word> &amsg, std::shared_ptr<std::vector<uint8_t>> raw) : reader(amsg), raw(raw) {
     words = kj::ArrayPtr<const capnp::word>(amsg.begin(), reader.getEnd());
     event = reader.getRoot<cereal::Event>();
+    which = event.which();
+    mono_time = event.getLogMonoTime();
   }
   // ~Event() {
   //   if (raw.use_count() == 1) {
@@ -59,12 +61,13 @@ public:
   kj::ArrayPtr<const capnp::word> words;
   capnp::FlatArrayMessageReader reader;
   cereal::Event::Reader event;
+  uint64_t mono_time;
+  cereal::Event::Which which;
 private:
   std::shared_ptr<std::vector<uint8_t>> raw;
   inline static int i = 0;
 };
 
-typedef QMultiMap<uint64_t, Event *> Events;
 typedef std::unordered_map<uint32_t, EncodeIdx> EncodeIdxMap;
 
 class LogReader : public QObject {
@@ -75,7 +78,8 @@ public:
   ~LogReader();
   inline bool valid() const { return valid_; }
 
-  Events events;
+  // Events events;
+  std::vector<Event *> events;
   EncodeIdxMap encoderIdx[MAX_CAMERAS] = {};
 
 signals:

@@ -75,7 +75,6 @@ private:
   void pushFrame(CameraType type, uint32_t frame_id);
   void mergeEvents(LogReader *log);
   std::shared_ptr<Segment> getSegment(int segment);
-  void removeSegment(int segment);
   const std::string &eventSocketName(const cereal::Event::Reader &e);
 
 
@@ -94,7 +93,7 @@ private:
   Route route_;
   std::mutex mutex_;
   std::map<int, std::shared_ptr<Segment>> segments_;
-  Events events_;
+  std::unique_ptr<std::vector<Event*>> events_;
   EncodeIdxMap encoderIdx_[MAX_CAMERAS] = {};
 
   // vipc server
