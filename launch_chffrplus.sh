@@ -96,6 +96,7 @@ function two_init {
 function tici_init {
   sudo su -c 'echo "performance" > /sys/class/devfreq/soc:qcom,memlat-cpu0/governor'
   sudo su -c 'echo "performance" > /sys/class/devfreq/soc:qcom,memlat-cpu4/governor'
+  nmcli connection modify --temporary lte gsm.auto-config yes
 
   # set success flag for current boot slot
   sudo abctl --set_success
@@ -164,6 +165,9 @@ function tici_init {
 function launch {
   # Remove orphaned git lock if it exists on boot
   [ -f "$DIR/.git/index.lock" ] && rm -f $DIR/.git/index.lock
+
+  # Pull time from panda
+  $DIR/selfdrive/boardd/set_time.py
 
   # Check to see if there's a valid overlay-based update available. Conditions
   # are as follows:

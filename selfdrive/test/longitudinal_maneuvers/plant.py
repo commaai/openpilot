@@ -150,7 +150,7 @@ class Plant():
     # lead car
     self.distance_lead, self.distance_lead_prev = distance_lead , distance_lead
 
-    self.rk = Ratekeeper(rate, print_delay_threshold=100)
+    self.rk = Ratekeeper(rate, print_delay_threshold=100.0)
     self.ts = 1./rate
 
     self.cp = get_car_can_parser()
@@ -176,12 +176,9 @@ class Plant():
     return float(self.rk.frame) / self.rate
 
   def step(self, v_lead=0.0, cruise_buttons=None, grade=0.0, publish_model=True):
-    gen_signals, gen_checks = get_can_signals(CP)
+    gen_signals, _ = get_can_signals(CP)
     sgs = [s[0] for s in gen_signals]
     msgs = [s[1] for s in gen_signals]
-    cks_msgs = set(check[0] for check in gen_checks)
-    cks_msgs.add(0x18F)
-    cks_msgs.add(0x30C)
 
     # ******** get messages sent to the car ********
     can_strings = messaging.drain_sock_raw(Plant.sendcan, wait_for_one=self.response_seen)
@@ -353,12 +350,17 @@ class Plant():
       can_msgs.append([0x400, 0, radar_state_msg, 1])
       can_msgs.append([0x445, 0, radar_msg, 1])
 
-    # add camera msg so controlsd thinks it's alive
+      radar_messages = list(range(0x430, 0x43A)) + list(range(0x440, 0x445))
+      for m in radar_messages:
+        can_msgs.append([m, 0, b'\x00'*8, 1])
+
     msg_struct["COUNTER"] = self.frame % 4
-    msg = honda.lookup_msg_id(0xe4)
-    msg_data = honda.encode(msg, msg_struct)
-    msg_data = fix(msg_data, 0xe4)
-    can_msgs.append([0xe4, 0, msg_data, 2])
+    camera_messages = [0x1FA, 0x30C, 0xE4]
+    for m in camera_messages:
+      msg = honda.lookup_msg_id(m)
+      msg_data = honda.encode(msg, msg_struct)
+      msg_data = fix(msg_data, m)
+      can_msgs.append([m, 0, msg_data, 2])
 
     # Fake sockets that controlsd subscribes to
     live_parameters = messaging.new_message('liveParameters')

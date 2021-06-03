@@ -39,7 +39,7 @@ def can_function(pm, speed, angle, idx, cruise_button, is_engaged):
   msg.append(packer.make_can_msg("STEER_STATUS", 0, {}, idx))
   msg.append(packer.make_can_msg("STEERING_SENSORS", 0, {"STEER_ANGLE": angle}, idx))
   msg.append(packer.make_can_msg("VSA_STATUS", 0, {}, idx))
-  msg.append(packer.make_can_msg("STANDSTILL", 0, {}, idx))
+  msg.append(packer.make_can_msg("STANDSTILL", 0, {"WHEELS_MOVING": 1 if speed >= 1.0 else 0}, idx))
   msg.append(packer.make_can_msg("STEER_MOTOR_TORQUE", 0, {}, idx))
   msg.append(packer.make_can_msg("EPB_STATUS", 0, {}, idx))
   msg.append(packer.make_can_msg("DOORS_STATUS", 0, {}, idx))

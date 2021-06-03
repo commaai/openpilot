@@ -1,7 +1,5 @@
 #pragma once
 
-#include <stdbool.h>
-
 // Pin definitions
 #ifdef QCOM2
   #define GPIO_HUB_RST_N        30

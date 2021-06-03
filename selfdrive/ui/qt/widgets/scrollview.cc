@@ -1,5 +1,6 @@
+#include "scrollview.h"
+
 #include <QScrollBar>
-#include "scrollview.hpp"
 
 ScrollView::ScrollView(QWidget *w, QWidget *parent) : QScrollArea(parent){
   setWidget(w);
@@ -39,4 +40,8 @@ ScrollView::ScrollView(QWidget *w, QWidget *parent) : QScrollArea(parent){
 
   scroller->grabGesture(this->viewport(), QScroller::LeftMouseButtonGesture);
   scroller->setScrollerProperties(sp);
+}
+
+void ScrollView::hideEvent(QHideEvent *e){
+  verticalScrollBar()->setValue(0);
 }

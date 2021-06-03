@@ -1,23 +1,21 @@
-#include "camera_webcam.h"
+#include "selfdrive/camerad/cameras/camera_webcam.h"
 
-#include <unistd.h>
 #include <assert.h>
 #include <string.h>
-#include <pthread.h>
-
-#include "common/util.h"
-#include "common/timing.h"
-#include "common/clutil.h"
-#include "common/swaglog.h"
+#include <unistd.h>
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wundefined-inline"
-#include <opencv2/opencv.hpp>
-#include <opencv2/highgui.hpp>
 #include <opencv2/core.hpp>
+#include <opencv2/highgui.hpp>
+#include <opencv2/opencv.hpp>
 #include <opencv2/videoio.hpp>
 #pragma clang diagnostic pop
 
+#include "selfdrive/common/clutil.h"
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/common/timing.h"
+#include "selfdrive/common/util.h"
 
 // id of the video capturing device
 const int ROAD_CAMERA_ID = getenv("ROADCAM_ID") ? atoi(getenv("ROADCAM_ID")) : 1;
@@ -60,7 +58,7 @@ void camera_close(CameraState *s) {
 }
 
 void camera_init(VisionIpcServer * v, CameraState *s, int camera_id, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType rgb_type, VisionStreamType yuv_type) {
-  assert(camera_id < ARRAYSIZE(cameras_supported));
+  assert(camera_id < std::size(cameras_supported));
   s->ci = cameras_supported[camera_id];
   assert(s->ci.frame_width != 0);
 

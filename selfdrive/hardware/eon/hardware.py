@@ -81,7 +81,7 @@ class Android(HardwareBase):
 
   def get_serial(self):
     ret = getprop("ro.serialno")
-    if ret == "":
+    if len(ret) == 0:
       ret = "cccccccc"
     return ret
 
@@ -129,6 +129,9 @@ class Android(HardwareBase):
       'sim_state': sim_state,
       'data_connected': cell_data_connected
     }
+
+  def get_network_info(self):
+    return None
 
   def get_network_type(self):
     wifi_check = parse_service_call_string(service_call(["connectivity", "2"]))
@@ -352,3 +355,6 @@ class Android(HardwareBase):
   def set_screen_brightness(self, percentage):
     with open("/sys/class/leds/lcd-backlight/brightness", "w") as f:
       f.write(str(int(percentage * 2.55)))
+
+  def set_power_save(self, enabled):
+    pass

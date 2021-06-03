@@ -1,6 +1,8 @@
 import os
+from enum import IntEnum
 import subprocess
 from pathlib import Path
+from smbus2 import SMBus
 
 from cereal import log
 from selfdrive.hardware.base import HardwareBase, ThermalConfig
@@ -16,7 +18,20 @@ MM_MODEM = MM + ".Modem"
 MM_MODEM_SIMPLE = MM + ".Modem.Simple"
 MM_SIM = MM + ".Sim"
 
-MM_MODEM_STATE_CONNECTED = 11
+class MM_MODEM_STATE(IntEnum):
+       FAILED        = -1
+       UNKNOWN       = 0
+       INITIALIZING  = 1
+       LOCKED        = 2
+       DISABLED      = 3
+       DISABLING     = 4
+       ENABLING      = 5
+       ENABLED       = 6
+       SEARCHING     = 7
+       REGISTERED    = 8
+       DISCONNECTING = 9
+       CONNECTING    = 10
+       CONNECTED     = 11
 
 TIMEOUT = 0.1
 
@@ -27,6 +42,14 @@ NetworkStrength = log.DeviceState.NetworkStrength
 MM_MODEM_ACCESS_TECHNOLOGY_UMTS = 1 << 5
 MM_MODEM_ACCESS_TECHNOLOGY_LTE = 1 << 14
 
+AMP_I2C_BUS = 0
+AMP_ADDRESS = 0x10
+
+def write_amplifier_reg(reg, val, offset, mask):
+  with SMBus(AMP_I2C_BUS) as bus:
+    v = bus.read_byte_data(AMP_ADDRESS, reg, force=True)
+    v = (v & (~mask)) | ((val << offset) & mask)
+    bus.write_byte_data(AMP_ADDRESS, reg, v, force=True)
 
 class Tici(HardwareBase):
   def __init__(self):
@@ -108,7 +131,7 @@ class Tici(HardwareBase):
         'mcc_mnc': str(sim.Get(MM_SIM, 'OperatorIdentifier', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)),
         'network_type': ["Unknown"],
         'sim_state': ["READY"],
-        'data_connected': modem.Get(MM_MODEM, 'State', dbus_interface=DBUS_PROPS, timeout=TIMEOUT) == MM_MODEM_STATE_CONNECTED,
+        'data_connected': modem.Get(MM_MODEM, 'State', dbus_interface=DBUS_PROPS, timeout=TIMEOUT) == MM_MODEM_STATE.CONNECTED,
       }
 
   def get_subscriber_info(self):
@@ -119,6 +142,36 @@ class Tici(HardwareBase):
       return ""
 
     return str(self.get_modem().Get(MM_MODEM, 'EquipmentIdentifier', dbus_interface=DBUS_PROPS, timeout=TIMEOUT))
+
+  def get_network_info(self):
+    modem = self.get_modem()
+    try:
+      info = modem.Command("AT+QNWINFO", int(TIMEOUT * 1000), dbus_interface=MM_MODEM, timeout=TIMEOUT)
+      extra = modem.Command('AT+QENG="servingcell"', int(TIMEOUT * 1000), dbus_interface=MM_MODEM, timeout=TIMEOUT)
+      state = modem.Get(MM_MODEM, 'State', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
+    except Exception:
+      return None
+
+    if info and info.startswith('+QNWINFO: '):
+      info = info.replace('+QNWINFO: ', '').replace('"', '').split(',')
+      extra = "" if extra is None else extra.replace('+QENG: "servingcell",', '').replace('"', '')
+      state = "" if state is None else MM_MODEM_STATE(state).name
+
+      if len(info) != 4:
+        return None
+
+      technology, operator, band, channel = info
+
+      return({
+        'technology': technology,
+        'operator': operator,
+        'band': band,
+        'channel': int(channel),
+        'extra': extra,
+        'state': state,
+      })
+    else:
+      return None
 
   def parse_strength(self, percentage):
       if percentage < 25:
@@ -191,3 +244,17 @@ class Tici(HardwareBase):
         f.write(str(int(percentage * 10.23)))
     except Exception:
       pass
+
+  def set_power_save(self, enabled):
+    # amplifier, 100mW at idle
+    write_amplifier_reg(0x51, 0b0 if enabled else 0b1, 7, 0b10000000)
+
+    # offline big cluster, leave core 4 online for boardd
+    for i in range(5, 8):
+      # TODO: fix permissions with udev
+      val = "0" if enabled else "1"
+      os.system(f"sudo su -c 'echo {val} > /sys/devices/system/cpu/cpu{i}/online'")
+
+if __name__ == "__main__":
+  import sys
+  Tici().set_power_save(bool(int(sys.argv[1])))

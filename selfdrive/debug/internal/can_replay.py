@@ -7,9 +7,8 @@ from tqdm import tqdm
 os.environ['TESTING_CLOSET'] = '1'
 os.environ['FILEREADER_CACHE'] = '1'
 
-from common.realtime import config_realtime_process, Ratekeeper
+from common.realtime import config_realtime_process, Ratekeeper, DT_CTRL
 from selfdrive.boardd.boardd import can_capnp_to_can_list
-from selfdrive.pandad import set_panda_power
 from tools.lib.logreader import LogReader
 
 from panda import Panda
@@ -28,6 +27,10 @@ for i in tqdm(list(range(1, NUM_SEGS+1))):
   lr = LogReader(log_url)
   CAN_MSGS += [can_capnp_to_can_list(m.can) for m in lr if m.which() == 'can']
 
+# set both to cycle ignition
+IGN_ON = int(os.getenv("ON", "0"))
+IGN_OFF = int(os.getenv("OFF", "0"))
+
 def send_thread(sender, core):
   config_realtime_process(core, 55)
 
@@ -42,9 +45,21 @@ def send_thread(sender, core):
     sender.set_safety_mode(Panda.SAFETY_ALLOUTPUT)
   sender.set_can_loopback(False)
 
+  ignition = None
+  if IGN_ON > 0 and IGN_OFF > 0:
+    ignition = True
+    print(f"Cycling ignition: on for {IGN_ON}s, off for {IGN_OFF}s")
+
   log_idx = 0
-  rk = Ratekeeper(100)
+  rk = Ratekeeper(1 / DT_CTRL, print_delay_threshold=None)
   while True:
+    # handle ignition cycling
+    if ignition is not None:
+      ign = (rk.frame*DT_CTRL) % (IGN_ON + IGN_OFF) < IGN_ON
+      if ign != ignition:
+        ignition = ign
+        sender.set_ignition(ignition)
+
     snd = CAN_MSGS[log_idx]
     log_idx = (log_idx + 1) % len(CAN_MSGS)
     snd = list(filter(lambda x: x[-1] <= 2, snd))
@@ -78,7 +93,6 @@ def connect():
     time.sleep(1)
 
 if __name__ == "__main__":
-  set_panda_power(False)
   time.sleep(1)
 
   if "FLASH" in os.environ and PandaJungle is not None:

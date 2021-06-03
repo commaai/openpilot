@@ -1,18 +1,19 @@
-#include <stdio.h>
-#include <string>
-#include <iostream>
+#include "spinner.h"
 
+#include <stdio.h>
+#include <iostream>
+#include <string>
+
+#include <QApplication>
+#include <QGridLayout>
+#include <QPainter>
 #include <QString>
 #include <QTransform>
-#include <QGridLayout>
-#include <QApplication>
-#include <QPainter>
-#include "spinner.hpp"
-#include "qt_window.hpp"
 
-// TrackWidget
+#include "selfdrive/hardware/hw.h"
+#include "selfdrive/ui/qt/qt_window.h"
 
-TrackWidget::TrackWidget(QWidget *parent) {
+TrackWidget::TrackWidget(QWidget *parent) : QWidget(parent) {
   setFixedSize(spinner_size);
   setAutoFillBackground(false);
 
@@ -56,7 +57,7 @@ Spinner::Spinner(QWidget *parent) {
   main_layout->setSpacing(0);
   main_layout->setMargin(200);
 
-  main_layout->addWidget(new TrackWidget(), 0, 0, Qt::AlignHCenter | Qt::AlignVCenter);
+  main_layout->addWidget(new TrackWidget(this), 0, 0, Qt::AlignHCenter | Qt::AlignVCenter);
 
   text = new QLabel();
   text->setVisible(false);
@@ -94,7 +95,7 @@ Spinner::Spinner(QWidget *parent) {
   )");
 
   notifier = new QSocketNotifier(fileno(stdin), QSocketNotifier::Read);
-  QObject::connect(notifier, SIGNAL(activated(int)), this, SLOT(update(int)));
+  QObject::connect(notifier, &QSocketNotifier::activated, this, &Spinner::update);
 };
 
 void Spinner::update(int n) {
@@ -113,6 +114,19 @@ void Spinner::update(int n) {
 }
 
 int main(int argc, char *argv[]) {
+  QSurfaceFormat fmt;
+#ifdef __APPLE__
+  fmt.setVersion(3, 2);
+  fmt.setProfile(QSurfaceFormat::OpenGLContextProfile::CoreProfile);
+  fmt.setRenderableType(QSurfaceFormat::OpenGL);
+#else
+  fmt.setRenderableType(QSurfaceFormat::OpenGLES);
+#endif
+  QSurfaceFormat::setDefaultFormat(fmt);
+
+  Hardware::set_display_power(true);
+  Hardware::set_brightness(65);
+
   QApplication a(argc, argv);
   Spinner spinner;
   setMainWindow(&spinner);

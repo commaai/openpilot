@@ -1,4 +1,5 @@
-#include "window.hpp"
+#include "window.h"
+
 #include "selfdrive/hardware/hw.h"
 
 MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
@@ -7,24 +8,42 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
 
   homeWindow = new HomeWindow(this);
   main_layout->addWidget(homeWindow);
+  QObject::connect(homeWindow, &HomeWindow::openSettings, this, &MainWindow::openSettings);
+  QObject::connect(homeWindow, &HomeWindow::closeSettings, this, &MainWindow::closeSettings);
+  QObject::connect(&qs, &QUIState::uiUpdate, homeWindow, &HomeWindow::update);
+  QObject::connect(&qs, &QUIState::offroadTransition, homeWindow, &HomeWindow::offroadTransition);
+  QObject::connect(&qs, &QUIState::offroadTransition, homeWindow, &HomeWindow::offroadTransitionSignal);
+  QObject::connect(&device, &Device::displayPowerChanged, homeWindow, &HomeWindow::displayPowerChanged);
 
   settingsWindow = new SettingsWindow(this);
   main_layout->addWidget(settingsWindow);
+  QObject::connect(settingsWindow, &SettingsWindow::closeSettings, this, &MainWindow::closeSettings);
+  QObject::connect(&qs, &QUIState::offroadTransition, settingsWindow, &SettingsWindow::offroadTransition);
+  QObject::connect(settingsWindow, &SettingsWindow::reviewTrainingGuide, this, &MainWindow::reviewTrainingGuide);
+  QObject::connect(settingsWindow, &SettingsWindow::showDriverView, [=] {
+    homeWindow->showDriverView(true);
+  });
 
   onboardingWindow = new OnboardingWindow(this);
+  onboardingDone = onboardingWindow->isOnboardingDone();
   main_layout->addWidget(onboardingWindow);
 
-  QObject::connect(homeWindow, SIGNAL(openSettings()), this, SLOT(openSettings()));
-  QObject::connect(homeWindow, SIGNAL(closeSettings()), this, SLOT(closeSettings()));
-  QObject::connect(homeWindow, SIGNAL(offroadTransition(bool)), this, SLOT(offroadTransition(bool)));
-  QObject::connect(homeWindow, SIGNAL(offroadTransition(bool)), settingsWindow, SIGNAL(offroadTransition(bool)));
-  QObject::connect(settingsWindow, SIGNAL(closeSettings()), this, SLOT(closeSettings()));
-  QObject::connect(settingsWindow, SIGNAL(reviewTrainingGuide()), this, SLOT(reviewTrainingGuide()));
-
-  // start at onboarding
   main_layout->setCurrentWidget(onboardingWindow);
-  QObject::connect(onboardingWindow, SIGNAL(onboardingDone()), this, SLOT(closeSettings()));
+  QObject::connect(onboardingWindow, &OnboardingWindow::onboardingDone, [=](){
+    onboardingDone = true;
+    closeSettings();
+  });
   onboardingWindow->updateActiveScreen();
+
+  device.setAwake(true, true);
+  QObject::connect(&qs, &QUIState::uiUpdate, &device, &Device::update);
+  QObject::connect(&qs, &QUIState::offroadTransition, this, &MainWindow::offroadTransition);
+  QObject::connect(&device, &Device::displayPowerChanged, this, &MainWindow::closeSettings);
+
+  // load fonts
+  QFontDatabase::addApplicationFont("../assets/fonts/opensans_regular.ttf");
+  QFontDatabase::addApplicationFont("../assets/fonts/opensans_bold.ttf");
+  QFontDatabase::addApplicationFont("../assets/fonts/opensans_semibold.ttf");
 
   // no outline to prevent the focus rectangle
   setLayout(main_layout);
@@ -47,10 +66,13 @@ void MainWindow::openSettings() {
 }
 
 void MainWindow::closeSettings() {
-  main_layout->setCurrentWidget(homeWindow);
+  if(onboardingDone) {
+    main_layout->setCurrentWidget(homeWindow);
+  }
 }
 
 void MainWindow::reviewTrainingGuide() {
+  onboardingDone = false;
   main_layout->setCurrentWidget(onboardingWindow);
   onboardingWindow->updateActiveScreen();
 }
@@ -58,12 +80,12 @@ void MainWindow::reviewTrainingGuide() {
 bool MainWindow::eventFilter(QObject *obj, QEvent *event){
   // wake screen on tap
   if (event->type() == QEvent::MouseButtonPress) {
-    homeWindow->glWindow->wake();
+    device.setAwake(true, true);
   }
 
-  // filter out touches while in android activity
 #ifdef QCOM
-  const QList<QEvent::Type> filter_events = {QEvent::MouseButtonPress, QEvent::MouseMove, QEvent::TouchBegin, QEvent::TouchUpdate, QEvent::TouchEnd};
+  // filter out touches while in android activity
+  const static QSet<QEvent::Type> filter_events({QEvent::MouseButtonPress, QEvent::MouseMove, QEvent::TouchBegin, QEvent::TouchUpdate, QEvent::TouchEnd});
   if (HardwareEon::launched_activity && filter_events.contains(event->type())) {
     HardwareEon::check_activity();
     if (HardwareEon::launched_activity) {

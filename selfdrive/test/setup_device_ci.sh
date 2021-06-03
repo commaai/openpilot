@@ -26,11 +26,11 @@ if [ ! -d "$SOURCE_DIR" ]; then
   git clone --depth 1 https://github.com/commaai/openpilot.git "$SOURCE_DIR"
 fi
 
-# clear stale build cache
-find /tmp/scons_cache/* -mtime +2 -exec ls '{}' \; || true
-
-# this can get really big on the CI devices
-rm -rf /data/core
+if [ -f "/EON" ]; then
+  rm -rf /data/core
+  rm -rf /data/neoupdate
+  rm -rf /data/safe_staging
+fi
 
 # set up environment
 cd $SOURCE_DIR

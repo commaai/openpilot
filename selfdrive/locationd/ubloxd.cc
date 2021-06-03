@@ -1,8 +1,11 @@
-#include "messaging.hpp"
-#include "common/util.h"
-#include "common/swaglog.h"
+#include <cassert>
 
-#include "ublox_msg.h"
+#include <kaitai/kaitaistream.h>
+
+#include "cereal/messaging/messaging.h"
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/common/util.h"
+#include "selfdrive/locationd/ublox_msg.h"
 
 ExitHandler do_exit;
 using namespace ublox;
@@ -12,12 +15,13 @@ int main() {
   AlignedBuffer aligned_buf;
   UbloxMsgParser parser;
 
+  PubMaster pm({"ubloxGnss", "gpsLocationExternal"});
+
   Context * context = Context::create();
   SubSocket * subscriber = SubSocket::create(context, "ubloxRaw");
   assert(subscriber != NULL);
   subscriber->setTimeout(100);
 
-  PubMaster pm({"ubloxGnss", "gpsLocationExternal"});
 
   while (!do_exit) {
     Message * msg = subscriber->receive();
@@ -35,57 +39,21 @@ int main() {
     const uint8_t *data = ubloxRaw.begin();
     size_t len = ubloxRaw.size();
     size_t bytes_consumed = 0;
+
     while(bytes_consumed < len && !do_exit) {
       size_t bytes_consumed_this_time = 0U;
       if(parser.add_data(data + bytes_consumed, (uint32_t)(len - bytes_consumed), bytes_consumed_this_time)) {
-        // New message available
-        if(parser.msg_class() == CLASS_NAV) {
-          if(parser.msg_id() == MSG_NAV_PVT) {
-            //LOGD("MSG_NAV_PVT");
-            auto words = parser.gen_solution();
-            if(words.size() > 0) {
-              auto bytes = words.asBytes();
-              pm.send("gpsLocationExternal", bytes.begin(), bytes.size());
-            }
-          } else
-            LOGW("Unknown nav msg id: 0x%02X", parser.msg_id());
-        } else if(parser.msg_class() == CLASS_RXM) {
-          if(parser.msg_id() == MSG_RXM_RAW) {
-            //LOGD("MSG_RXM_RAW");
-            auto words = parser.gen_raw();
-            if(words.size() > 0) {
-              auto bytes = words.asBytes();
-              pm.send("ubloxGnss", bytes.begin(), bytes.size());
-            }
-          } else if(parser.msg_id() == MSG_RXM_SFRBX) {
-            //LOGD("MSG_RXM_SFRBX");
-            auto words = parser.gen_nav_data();
-            if(words.size() > 0) {
-              auto bytes = words.asBytes();
-              pm.send("ubloxGnss", bytes.begin(), bytes.size());
-            }
-          } else
-            LOGW("Unknown rxm msg id: 0x%02X", parser.msg_id());
-        } else if(parser.msg_class() == CLASS_MON) {
-          if(parser.msg_id() == MSG_MON_HW) {
-            //LOGD("MSG_MON_HW");
-            auto words = parser.gen_mon_hw();
-            if(words.size() > 0) {
-              auto bytes = words.asBytes();
-              pm.send("ubloxGnss", bytes.begin(), bytes.size());
-            }
-          } else if(parser.msg_id() == MSG_MON_HW2) {
-            //LOGD("MSG_MON_HW2");
-            auto words = parser.gen_mon_hw2();
-            if(words.size() > 0) {
-              auto bytes = words.asBytes();
-              pm.send("ubloxGnss", bytes.begin(), bytes.size());
-            }
-          } else {
-            LOGW("Unknown mon msg id: 0x%02X", parser.msg_id());
+
+        try {
+          auto msg = parser.gen_msg();
+          if (msg.second.size() > 0) {
+            auto bytes = msg.second.asBytes();
+            pm.send(msg.first.c_str(), bytes.begin(), bytes.size());
           }
-        } else
-          LOGW("Unknown msg class: 0x%02X", parser.msg_class());
+        } catch (const std::exception& e) {
+          LOGE("Error parsing ublox message %s", e.what());
+        }
+
         parser.reset();
       }
       bytes_consumed += bytes_consumed_this_time;

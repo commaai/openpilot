@@ -1,10 +1,13 @@
+#include "commonmodel.h"
+
 #include <assert.h>
 #include <math.h>
+
 #include <algorithm>
-#include "commonmodel.h"
-#include "common/clutil.h"
-#include "common/mat.h"
-#include "common/timing.h"
+
+#include "selfdrive/common/clutil.h"
+#include "selfdrive/common/mat.h"
+#include "selfdrive/common/timing.h"
 
 void frame_init(ModelFrame* frame, int width, int height,
                       cl_device_id device_id, cl_context context) {

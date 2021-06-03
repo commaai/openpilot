@@ -1,4 +1,4 @@
-#include "controls.hpp"
+#include "controls.h"
 
 QFrame *horizontal_line(QWidget *parent) {
   QFrame *line = new QFrame(parent);
@@ -57,4 +57,10 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
 
   setLayout(vlayout);
   setStyleSheet("background-color: transparent;");
+}
+
+void AbstractControl::hideEvent(QHideEvent *e){
+  if(description != nullptr){
+    description->hide();
+  }
 }
