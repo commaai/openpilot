@@ -141,7 +141,7 @@ class CarInterface(CarInterfaceBase):
 
     # Accord 1.5T CVT has different gearbox message
     if candidate == CAR.ACCORD and 0x191 in fingerprint[0]:
-      ret.transmissionType = TransmissionType.direct  # FIXME: no cvt trans type
+      ret.transmissionType = TransmissionType.cvt
 
     cloudlog.warning("ECU Camera Simulated: %r", ret.enableCamera)
     cloudlog.warning("ECU Gas Interceptor: %r", ret.enableGasInterceptor)

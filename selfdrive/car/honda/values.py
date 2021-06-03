@@ -202,9 +202,9 @@ FW_VERSIONS = {
       b'57114-TVE-H250\x00\x00',
     ],
     (Ecu.eps, 0x18da30f1, None): [
-      b'39990-TVA,A150\x00\x00',  # modified firmware
-      b'39990-TVA-A150\x00\x00',  # Are these two different steerRatio?
-      b'39990-TVA-A160\x00\x00',  # Sport, Sport 2.0T and Touring 2.0T have different ratios
+      b'39990-TVA,A150\x00\x00',
+      b'39990-TVA-A150\x00\x00',
+      b'39990-TVA-A160\x00\x00',
       b'39990-TVA-A340\x00\x00',
       b'39990-TVA-X030\x00\x00',
       b'39990-TVA-A140\x00\x00',

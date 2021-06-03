@@ -22,7 +22,7 @@ def calc_cruise_offset(offset, speed):
   return min(_K0 + _K1 * speed + _K2 * speed * offset, 0.)
 
 
-def get_can_signals(CP, gearbox_name="GEARBOX"):
+def get_can_signals(CP, gearbox_msg="GEARBOX"):
   # this function generates lists for signal, messages and initial values
   signals = [
     ("XMISSION_SPEED", "ENGINE_DATA", 0),
@@ -36,7 +36,7 @@ def get_can_signals(CP, gearbox_name="GEARBOX"):
     ("STEER_TORQUE_SENSOR", "STEER_STATUS", 0),
     ("LEFT_BLINKER", "SCM_FEEDBACK", 0),
     ("RIGHT_BLINKER", "SCM_FEEDBACK", 0),
-    ("GEAR", gearbox_name, 0),
+    ("GEAR", gearbox_msg, 0),
     ("SEATBELT_DRIVER_LAMP", "SEATBELT_STATUS", 1),
     ("SEATBELT_DRIVER_LATCHED", "SEATBELT_STATUS", 0),
     ("BRAKE_PRESSED", "POWERTRAIN_DATA", 0),
@@ -46,7 +46,7 @@ def get_can_signals(CP, gearbox_name="GEARBOX"):
     ("USER_BRAKE", "VSA_STATUS", 0),
     ("BRAKE_HOLD_ACTIVE", "VSA_STATUS", 0),
     ("STEER_STATUS", "STEER_STATUS", 5),
-    ("GEAR_SHIFTER", gearbox_name, 0),
+    ("GEAR_SHIFTER", gearbox_msg, 0),
     ("PEDAL_GAS", "POWERTRAIN_DATA", 0),
     ("CRUISE_SETTING", "SCM_BUTTONS", 0),
     ("ACC_STATUS", "POWERTRAIN_DATA", 0),
@@ -77,11 +77,11 @@ def get_can_signals(CP, gearbox_name="GEARBOX"):
 
   if CP.carFingerprint in (CAR.CRV_HYBRID, CAR.CIVIC_BOSCH_DIESEL, CAR.ACURA_RDX_3G):
     checks += [
-      (gearbox_name, 50),
+      (gearbox_msg, 50),
     ]
   else:
     checks += [
-      (gearbox_name, 100),
+      (gearbox_msg, 100),
     ]
 
   if CP.carFingerprint in HONDA_BOSCH_ALT_BRAKE_SIGNAL:
@@ -199,11 +199,11 @@ class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
-    self.gearbox_name = "GEARBOX"
-    if CP.carFingerprint == CAR.ACCORD and CP.transmissionType == TransmissionType.direct:
-      self.gearbox_name = "GEARBOX_15T"
+    self.gearbox_msg = "GEARBOX"
+    if CP.carFingerprint == CAR.ACCORD and CP.transmissionType == TransmissionType.cvt:
+      self.gearbox_msg = "GEARBOX_15T"
 
-    self.shifter_values = can_define.dv[self.gearbox_name]["GEAR_SHIFTER"]
+    self.shifter_values = can_define.dv[self.gearbox_msg]["GEAR_SHIFTER"]
     self.steer_status_values = defaultdict(lambda: "UNKNOWN", can_define.dv["STEER_STATUS"]["STEER_STATUS"])
 
     self.user_gas, self.user_gas_pressed = 0., 0
@@ -286,7 +286,7 @@ class CarState(CarStateBase):
       self.park_brake = 0  # TODO
       main_on = cp.vl["SCM_BUTTONS"]["MAIN_ON"]
 
-    gear = int(cp.vl[self.gearbox_name]["GEAR_SHIFTER"])
+    gear = int(cp.vl[self.gearbox_msg]["GEAR_SHIFTER"])
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(gear, None))
 
     self.pedal_gas = cp.vl["POWERTRAIN_DATA"]["PEDAL_GAS"]
@@ -368,7 +368,7 @@ class CarState(CarStateBase):
     return ret
 
   def get_can_parser(self, CP):
-    signals, checks = get_can_signals(CP, self.gearbox_name)
+    signals, checks = get_can_signals(CP, self.gearbox_msg)
     bus_pt = 1 if CP.carFingerprint in HONDA_BOSCH else 0
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, bus_pt)
 
