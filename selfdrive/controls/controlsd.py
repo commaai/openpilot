@@ -59,10 +59,10 @@ class Controls:
 
     self.sm = sm
     if self.sm is None:
-      ignore = ['driverCameraState', 'managerState'] if SIMULATION else None
+      ignore = ['driverCameraState', 'managerState'] if SIMULATION else ['testJoystick']
       self.sm = messaging.SubMaster(['deviceState', 'pandaState', 'modelV2', 'liveCalibration',
                                      'driverMonitoringState', 'longitudinalPlan', 'lateralPlan', 'liveLocationKalman',
-                                     'managerState', 'liveParameters', 'radarState'] + self.camera_packets,
+                                     'managerState', 'liveParameters', 'radarState', 'testJoystick'] + self.camera_packets,
                                      ignore_alive=ignore, ignore_avg_freq=['radarState', 'longitudinalPlan'])
 
     self.can_sock = can_sock
@@ -84,6 +84,7 @@ class Controls:
     self.is_metric = params.get_bool("IsMetric")
     self.is_ldw_enabled = params.get_bool("IsLdwEnabled")
     self.enable_lte_onroad = params.get_bool("EnableLteOnroad")
+    self.debug_mode = params.get_bool("JoystickDebugMode")
     community_feature_toggle = params.get_bool("CommunityFeaturesToggle")
     openpilot_enabled_toggle = params.get_bool("OpenpilotEnabledToggle")
     passive = params.get_bool("Passive") or not openpilot_enabled_toggle
@@ -190,6 +191,10 @@ class Controls:
     # TODO: make tici threshold the same
     if self.sm['deviceState'].memoryUsagePercent > (90 if TICI else 65):
       self.events.add(EventName.lowMemory)
+
+    # Permanent alert for joystick debug mode
+    if self.debug_mode:
+      self.events.add(EventName.joystickDebug)
 
     # Alert if fan isn't spinning for 5 seconds
     if self.sm['pandaState'].pandaType in [PandaType.uno, PandaType.dos]:
@@ -444,11 +449,22 @@ class Controls:
     a_acc_sol = long_plan.aStart + (dt / LON_MPC_STEP) * (long_plan.aTarget - long_plan.aStart)
     v_acc_sol = long_plan.vStart + dt * (a_acc_sol + long_plan.aStart) / 2.0
 
-    # Gas/Brake PID loop
-    actuators.gas, actuators.brake = self.LoC.update(self.active, CS, v_acc_sol, long_plan.vTargetFuture, a_acc_sol, self.CP)
+    if not self.debug_mode:
+      # Gas/Brake PID loop
+      actuators.gas, actuators.brake = self.LoC.update(self.active, CS, v_acc_sol, long_plan.vTargetFuture, a_acc_sol, self.CP)
 
-    # Steering PID loop and lateral MPC
-    actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(self.active, CS, self.CP, self.VM, params, lat_plan)
+      # Steering PID loop and lateral MPC
+      actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(self.active, CS, self.CP, self.VM, params, lat_plan)
+    else:
+      # in joystick debug mode, create dummy lac_log
+      _, _, lac_log = self.LaC.update(self.active, CS, self.CP, self.VM, params, lat_plan)
+      if len(self.sm['testJoystick'].axes):
+        gb = clip(self.sm['testJoystick'].axes[0], -1, 1)
+        actuators.gas, actuators.brake = max(gb, 0), max(-gb, 0)
+
+        steer = clip(self.sm['testJoystick'].axes[1], -1, 1)
+        # max angle is 45 for angle-based cars
+        actuators.steer, actuators.steeringAngleDeg = steer, steer * 45.
 
     # Check for difference between desired angle and angle for angle based control
     angle_control_saturated = self.CP.steerControlType == car.CarParams.SteerControlType.angle and \
@@ -482,6 +498,10 @@ class Controls:
 
     CC.cruiseControl.override = True
     CC.cruiseControl.cancel = not self.CP.enableCruise or (not self.enabled and CS.cruiseState.enabled)
+
+    if self.debug_mode and len(self.sm['testJoystick'].buttons):
+      CC.enabled = self.sm['testJoystick'].buttons[1]
+      CC.cruiseControl.cancel = self.sm['testJoystick'].buttons[0]
 
     # Some override values for Honda
     # brake discount removes a sharp nonlinearity
@@ -521,7 +541,12 @@ class Controls:
     alerts = self.events.create_alerts(self.current_alert_types, [self.CP, self.sm, self.is_metric])
     self.AM.add_many(self.sm.frame, alerts, self.enabled)
     self.AM.process_alerts(self.sm.frame, clear_event)
-    CC.hudControl.visualAlert = self.AM.visual_alert
+
+    if self.debug_mode and len(self.sm['testJoystick'].buttons) and \
+      self.sm['testJoystick'].buttons[2]:
+      CC.hudControl.visualAlert = 'steerRequired'
+    else:
+      CC.hudControl.visualAlert = self.AM.visual_alert
 
     if not self.read_only and self.initialized:
       # send car controls over can
