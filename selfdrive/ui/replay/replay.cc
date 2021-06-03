@@ -11,7 +11,7 @@ const int SEGMENT_LENGTH = 60;  // 60s
 const int FORWARD_SEGS = 2;
 const int BACKWARD_SEGS = 2;
 
-static inline QString format_tms(int seconds) {
+static inline QString format_seconds(int seconds) {
   QTime time(0, 0, 0);
   auto a = time.addSecs(seconds);
   return a.toString("hh:mm:ss");
@@ -203,7 +203,7 @@ void Replay::streamThread() {
       route_start_ts_ = evt_start_tm;
     }
     // current_ts_ = (evt_start_tm - route_start_ts_) / 1e9;
-    qDebug() << "unlogging at" << format_tms(seek_ts_);
+    qDebug() << "unlogging at" << format_seconds(seek_ts_);
     uint64_t loop_start_tm = nanos_since_boot();
     int current_seek_ts = seek_ts_;
     while (!exit_ && current_seek_ts == seek_ts_ && !updating_events && eit != events_->end()) {
@@ -215,7 +215,7 @@ void Replay::streamThread() {
       if (!sock_name.empty()) {
         if (current_ts_ - last_print > 5.0) {
           last_print = current_ts_;
-          qInfo() << "at " << format_tms(last_print);
+          qInfo() << "at " << format_seconds(last_print);
         }
 
         // keep time

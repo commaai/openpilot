@@ -72,6 +72,7 @@ LogReader::LogReader(const QString &file) {
   connect(file_reader_, &FileReader::failed, [=](const QString &err) { qInfo() << err; });
 
   thread_->start();
+  qDebug() << "read log " << file;
 }
 
 LogReader::~LogReader() {
