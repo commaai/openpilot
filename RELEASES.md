@@ -2,6 +2,7 @@ Version 0.8.5 (2021-XX-XX)
 ========================
  * NEOS update: improved reliability and stability
  * Smart model-based Forward Collision Warning
+ * Improved longitudinal control on Toyotas with a comma pedal
  * Hyundai Elantra 2021 support thanks to CruiseBrantley!
  * Lexus UX Hybrid 2019-2020 support thanks to brianhaugen2!
  * Toyota Avalon Hybrid 2019 support thanks to jbates9011!
