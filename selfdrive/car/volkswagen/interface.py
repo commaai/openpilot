@@ -30,7 +30,7 @@ class CarInterface(CarInterfaceBase):
       ret.carName = "volkswagen"
       ret.radarOffCan = True
       ret.safetyModel = car.CarParams.SafetyModel.volkswagen
-      ret.steerActuatorDelay = 0.05
+      ret.steerActuatorDelay = 0.25
 
       if 0xAD in fingerprint[0]:
         # Getriebe_11 detected: traditional automatic or DSG gearbox

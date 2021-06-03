@@ -21,7 +21,7 @@ class CarInterface(CarInterfaceBase):
     ret.carName = "toyota"
     ret.safetyModel = car.CarParams.SafetyModel.toyota
 
-    ret.steerActuatorDelay = 0.12  # Default delay, Prius has larger delay
+    ret.steerActuatorDelay = 0.42  # Default delay, Prius has larger delay
     ret.steerLimitTimer = 0.4
 
     # Improved longitudinal tune
@@ -65,7 +65,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.indi.timeConstantV = [1.0]
       ret.lateralTuning.indi.actuatorEffectivenessBP = [0.]
       ret.lateralTuning.indi.actuatorEffectivenessV = [1.0]
-      ret.steerActuatorDelay = 0.3
+      ret.steerActuatorDelay = 0.5
 
     elif candidate in [CAR.RAV4, CAR.RAV4H]:
       stop_and_go = True if (candidate in CAR.RAV4H) else False

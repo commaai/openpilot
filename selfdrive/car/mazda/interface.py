@@ -25,7 +25,7 @@ class CarInterface(CarInterfaceBase):
 
     ret.radarOffCan = True
 
-    ret.steerActuatorDelay = 0.1
+    ret.steerActuatorDelay = 0.3
     ret.steerRateCost = 1.0
     ret.steerLimitTimer = 0.8
     tire_stiffness_factor = 0.70   # not optimized yet
