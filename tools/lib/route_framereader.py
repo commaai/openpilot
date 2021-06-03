@@ -9,7 +9,7 @@ class _FrameReaderDict(dict):
     if cache_paths is None:
       cache_paths = {}
     if not isinstance(cache_paths, dict):
-      cache_paths = {k: v for k, v in enumerate(cache_paths)}
+      cache_paths = dict(enumerate(cache_paths))
 
     self._camera_paths = camera_paths
     self._cache_paths = cache_paths
