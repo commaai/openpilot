@@ -51,6 +51,10 @@ public:
     which = event.which();
     mono_time = event.getLogMonoTime();
   }
+  friend inline bool operator<(const Event& l, const Event& r) {
+    return l.mono_time < r.mono_time || (l.mono_time == r.mono_time && l.which < r.which);
+  }
+
   // ~Event() {
   //   if (raw.use_count() == 1) {
   //     qDebug() << "delete raw" << i++;

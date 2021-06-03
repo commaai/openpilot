@@ -164,12 +164,23 @@ void Replay::queueSegmentThread() {
 
 void Replay::streamThread() {
   int last_print = 0;
+  cereal::Event::Which which;
   while (!exit_) {
     mutex_.lock();
+    std::vector<Event*>::iterator eit;
     std::shared_ptr<Segment> seg = getSegment(current_segment_);
-    auto eit = std::upper_bound(events_->begin(), events_->end(), route_start_ts_ + seek_ts_ * 1e9, [](uint64_t v, const Event* e) {
-      return v < e->mono_time;
-    });
+    if (updating_events && current_ts_ > route_start_ts_) {
+      // Make sure not to send duplicate events
+      eit = std::upper_bound(events_->begin(), events_->end(), route_start_ts_ + current_ts_ * 1e9, [&](uint64_t v, const Event *e) {
+        return v < e->mono_time && which < e->which;
+      });
+    } else {
+      // seeking
+      eit = std::upper_bound(events_->begin(), events_->end(), route_start_ts_ + seek_ts_ * 1e9, [](uint64_t v, const Event* e) {
+        return v < e->mono_time;
+      });
+    }
+    updating_events = false;
     if (!seg || eit == events_->end()) {
       mutex_.unlock();
       qDebug() << "waiting for events";
@@ -180,13 +191,12 @@ void Replay::streamThread() {
 
     camera_server_.ensureServerForSegment(seg.get());
     
-    // set evt_start_tm to current event's mono_time
     uint64_t evt_start_tm = (*eit)->mono_time;
     // TODO: use initData's logMonoTime
     if (route_start_ts_ == 0) {
       route_start_ts_ = evt_start_tm;
     }
-    current_ts_ = (evt_start_tm - route_start_ts_) / 1e9;
+    // current_ts_ = (evt_start_tm - route_start_ts_) / 1e9;
     qDebug() << "unlogging at" << seek_ts_;
     uint64_t loop_start_tm = nanos_since_boot();
     int current_seek_ts = seek_ts_;
@@ -194,6 +204,7 @@ void Replay::streamThread() {
       Event *evt = (*eit);
       uint64_t mono_time = evt->mono_time;
       current_ts_ = std::max(mono_time - route_start_ts_, (uint64_t)0) / 1e9;
+      which = evt->which;
       const std::string &sock_name = eventSocketName(evt->event);
       if (!sock_name.empty()) {
         if (std::abs(current_ts_ - last_print) > 5.0) {
@@ -211,7 +222,7 @@ void Replay::streamThread() {
         }
 
         // publish frames
-        switch (evt->event.which()) {
+        switch (which) {
           case cereal::Event::ROAD_CAMERA_STATE:
             pushFrame(RoadCam, evt->event.getRoadCameraState().getFrameId());
             break;
@@ -237,19 +248,15 @@ void Replay::streamThread() {
       current_segment_ = current_ts_ / SEGMENT_LENGTH;
       ++eit;
     }
-    if (updating_events) {
-      updating_events = false;
-      seek_ts_ = current_ts_.load();
-    }
   }
 }
 
 void Replay::mergeEvents(LogReader *log) {
   // double t1 = millis_since_boot();
   // remove segments
-  uint64_t max = route_start_ts_ + (current_segment_ -BACKWARD_SEGS-1) * SEGMENT_LENGTH * 1e9;
-  uint64_t min = route_start_ts_ + (current_segment_ +FORWARD_SEGS+1) * SEGMENT_LENGTH * 1e9;
-  auto begin_it = std::lower_bound(events_->begin(), events_->end(), max, [](const Event* e, uint64_t v){
+  uint64_t max_tm = route_start_ts_ + (current_segment_ - BACKWARD_SEGS - 1) * SEGMENT_LENGTH * 1e9;
+  uint64_t min_tm = route_start_ts_ + (current_segment_ + FORWARD_SEGS + 1) * SEGMENT_LENGTH * 1e9;
+  auto begin_it = std::lower_bound(events_->begin(), events_->end(), max_tm, [](const Event *e, uint64_t v) {
     return e->mono_time < v;
   });
   if (begin_it == events_->end()) {
@@ -257,22 +264,22 @@ void Replay::mergeEvents(LogReader *log) {
   }
   for (auto it = events_->begin(); it != begin_it; ++it) {
     delete *it;
+    *it = nullptr;
   }
 
-  auto end_it = std::upper_bound(begin_it, events_->end(), min, [](uint64_t v, const Event* e){
+  auto end_it = std::upper_bound(begin_it, events_->end(), min_tm, [](uint64_t v, const Event *e) {
     return v < e->mono_time;
   });
   for (auto it = end_it; it != events_->end(); ++it) {
     delete *it;
+    *it = nullptr;
   }
 
   // merge segment
-  std::vector<Event*> *dst = new std::vector<Event*>;
+  std::vector<Event *> *dst = new std::vector<Event *>;
   dst->reserve((end_it - begin_it) + log->events.size());
-  std::merge(begin_it, end_it, log->events.begin(), 
-  log->events.end(), std::back_inserter(*dst), [](const Event*l, const Event *r){
-    return l->mono_time < r->mono_time;// && l->which < r->which;
-  });
+  std::merge(begin_it, end_it, log->events.begin(), log->events.end(),
+             std::back_inserter(*dst), [](const Event *l, const Event *r) { return *l < *r; });
 
   std::unique_lock lk(mutex_);
   updating_events = true;

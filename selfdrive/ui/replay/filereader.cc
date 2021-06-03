@@ -127,7 +127,7 @@ void LogReader::parseEvents(const QByteArray &dat) {
   }
   if (!exit_) {
     std::sort(events.begin(), events.end(), [=](const Event* l, const Event*r) {
-      return l->mono_time < r->mono_time;// && l->which < r->which;
+      return *l < *r;
     });
     emit finished(valid_);
   }
