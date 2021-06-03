@@ -200,11 +200,9 @@ class CarState(CarStateBase):
     super().__init__(CP)
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
     self.gearbox_name = "GEARBOX"
-    if CP.carFingerprint == CAR.ACCORD:
-      if CP.transmissionType == TransmissionType.automatic:
-        self.gearbox_name = "GEARBOX_2T"
-      else:  # 1.5T CVT
-        self.gearbox_name = "GEARBOX_15T"
+    if CP.carFingerprint == CAR.ACCORD and CP.transmissionType == TransmissionType.direct:
+      self.gearbox_name = "GEARBOX_15T"
+
     self.shifter_values = can_define.dv[self.gearbox_name]["GEAR_SHIFTER"]
     self.steer_status_values = defaultdict(lambda: "UNKNOWN", can_define.dv["STEER_STATUS"]["STEER_STATUS"])
 

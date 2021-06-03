@@ -139,13 +139,9 @@ class CarInterface(CarInterfaceBase):
     if candidate == CAR.CRV_5G:
       ret.enableBsm = 0x12f8bfa7 in fingerprint[0]
 
-    if candidate == CAR.ACCORD:
-      if 0x1a3 in fingerprint[0]:  # Accord 2T Automatic
-        ret.transmissionType = TransmissionType.automatic
-      elif 0x191 in fingerprint[0]:  # Accord 1.5T CVT
-        ret.transmissionType = TransmissionType.direct  # FIXME: no cvt trans type
-      else:
-        raise ValueError("Honda Accord transmission type not known")
+    # Accord 1.5T CVT has different gearbox message
+    if candidate == CAR.ACCORD and 0x191 in fingerprint[0]:
+      ret.transmissionType = TransmissionType.direct  # FIXME: no cvt trans type
 
     cloudlog.warning("ECU Camera Simulated: %r", ret.enableCamera)
     cloudlog.warning("ECU Gas Interceptor: %r", ret.enableGasInterceptor)
