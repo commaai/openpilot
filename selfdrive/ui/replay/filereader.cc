@@ -62,7 +62,7 @@ void FileReader::abort() {
 
 // class LogReader
 
-LogReader::LogReader(const QString &file) {
+LogReader::LogReader(const QString &file, QObject *parent) : QObject(parent) {
   thread_ = new QThread();
   moveToThread(thread_);
   connect(thread_, &QThread::started, this, &LogReader::start);
@@ -130,6 +130,7 @@ void LogReader::parseEvents(const QByteArray &dat) {
     std::sort(events.begin(), events.end(), [=](const Event* l, const Event*r) {
       return *l < *r;
     });
+    qInfo() << "*********" <<  QThread::currentThreadId() ;
     emit finished(valid_);  
   }
 }

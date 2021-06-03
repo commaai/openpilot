@@ -78,7 +78,7 @@ class LogReader : public QObject {
   Q_OBJECT
 
 public:
-  LogReader(const QString &file);
+  LogReader(const QString &file, QObject *parent = nullptr);
   ~LogReader();
   inline bool valid() const { return valid_; }
 

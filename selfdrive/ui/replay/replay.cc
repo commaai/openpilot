@@ -145,6 +145,12 @@ const std::string &Replay::eventSocketName(const cereal::Event::Reader &e) {
   return it->second;
 }
 
+void Replay::doMergeEvent() {
+  qInfo() << "*********2" << QThread::currentThreadId();
+  Segment* sender = qobject_cast<Segment*>(QObject::sender());
+  mergeEvents(sender->log);
+}
+
 // maintain the segment window
 void Replay::queueSegmentThread() {
   static int prev_segment = -1;
@@ -164,9 +170,7 @@ void Replay::queueSegmentThread() {
         if (segments_.find(n) == segments_.end()) {
           std::unique_lock lk(mutex_);
           segments_[n] = std::make_shared<Segment>(n, rs[n]);
-          connect(segments_[n].get(), &Segment::loaded, [=] {
-            mergeEvents(segments_[n]->log);
-          });
+          connect(segments_[n].get(), &Segment::loaded, this, &Replay::doMergeEvent);
         }
       }
     }
@@ -285,7 +289,6 @@ void Replay::streamThread() {
 void Replay::mergeEvents(LogReader *log) {
   // double t1 = millis_since_boot();
   // remove segments
-  std::unique_lock lk(merge_mutex_);
   // qInfo() << "mergeEvents start log size " << log->events.size() << " my size " << events_->size();
   uint64_t max_tm = route_start_ts_ + (current_segment_ - BACKWARD_SEGS) * SEGMENT_LENGTH * 1e9;
   uint64_t min_tm = route_start_ts_ + (current_segment_ + FORWARD_SEGS + 1) * SEGMENT_LENGTH * 1e9;
@@ -347,7 +350,7 @@ Segment::Segment(int seg_num, const SegmentFile &file, QObject *parent) : seg_nu
   for (const auto &[cam_type, file] : cam_files) {
     if (!file.isEmpty()) {
       loading_ += 1;
-      FrameReader *fr = frames[cam_type] = new FrameReader(file.toStdString());
+      FrameReader *fr = frames[cam_type] = new FrameReader(file.toStdString(), this);
       QObject::connect(fr, &FrameReader::finished, [=]() { if(--loading_ == 0) emit loaded(); });
     }
   }

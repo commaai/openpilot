@@ -67,7 +67,8 @@ public:
   void seek(int seconds);
   void stop();
   bool running() { return stream_thread_.joinable(); }
-
+public slots:
+  void doMergeEvent();
 private:
   QString elapsedTime(uint64_t ns);
   void seekTo(uint64_t to_ts);
@@ -94,7 +95,6 @@ private:
   // segments
   Route route_;
   std::mutex mutex_;
-  std::mutex merge_mutex_;
   std::atomic<bool> events_changed_ = false;
   std::map<int, std::shared_ptr<Segment>> segments_;
   std::vector<Event*> *events_;

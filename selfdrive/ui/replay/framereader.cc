@@ -69,9 +69,9 @@ void FrameReader::process() {
   if (success) {
     decode_thread_ = std::thread(&FrameReader::decodeThread, this);
   }
-  // if (!exit_) {
+  if (!exit_) {
     emit finished(success);
-  // }
+  }
 }
 
 bool FrameReader::processFrames() {
