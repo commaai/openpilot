@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from cereal import car
+from common.numpy_fast import interp
 from selfdrive.config import Conversions as CV
 from selfdrive.car.toyota.values import Ecu, CAR, TSS2_CAR, NO_DSU_CAR, MIN_ACC_SPEED, PEDAL_HYST_GAP, CarControllerParams
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
@@ -23,26 +24,6 @@ class CarInterface(CarInterfaceBase):
 
     ret.steerActuatorDelay = 0.12  # Default delay, Prius has larger delay
     ret.steerLimitTimer = 0.4
-
-    # Improved longitudinal tune
-    if candidate in [CAR.COROLLA_TSS2, CAR.COROLLAH_TSS2, CAR.RAV4_TSS2, CAR.RAV4H_TSS2, CAR.LEXUS_NX_TSS2, CAR.LEXUS_ESH_TSS2]:
-      ret.longitudinalTuning.deadzoneBP = [0., 8.05]
-      ret.longitudinalTuning.deadzoneV = [.0, .14]
-      ret.longitudinalTuning.kpBP = [0., 5., 20.]
-      ret.longitudinalTuning.kpV = [1.3, 1.0, 0.7]
-      ret.longitudinalTuning.kiBP = [0., 5., 12., 20., 27.]
-      ret.longitudinalTuning.kiV = [.35, .23, .20, .17, .1]
-      ret.stoppingBrakeRate = 0.1 # reach stopping target smoothly
-      ret.startingBrakeRate = 2.0 # release brakes fast
-      ret.startAccel = 1.2 # Accelerate from 0 faster
-    else:
-      # Default longitudinal tune
-      ret.longitudinalTuning.deadzoneBP = [0., 9.]
-      ret.longitudinalTuning.deadzoneV = [0., .15]
-      ret.longitudinalTuning.kpBP = [0., 5., 35.]
-      ret.longitudinalTuning.kiBP = [0., 35.]
-      ret.longitudinalTuning.kpV = [3.6, 2.4, 1.5]
-      ret.longitudinalTuning.kiV = [0.54, 0.36]
 
     if candidate not in [CAR.PRIUS, CAR.RAV4, CAR.RAV4H]:  # These cars use LQR/INDI
       ret.lateralTuning.init('pid')
@@ -341,14 +322,44 @@ class CarInterface(CarInterfaceBase):
     # intercepting the DSU is a community feature since it requires unofficial hardware
     ret.communityFeature = ret.enableGasInterceptor or ret.enableDsu or smartDsu
 
-    if ret.enableGasInterceptor:
-      # Same pedal tuning below MIN_ACC_SPEED and ramps to stock tuning using the hysteresis gap
-      ret.gasMaxBP = [0., MIN_ACC_SPEED]
-      ret.gasMaxV = [0.2, 0.5]
-      ret.longitudinalTuning.kpBP = [0., 5., MIN_ACC_SPEED, MIN_ACC_SPEED + PEDAL_HYST_GAP, 35.]
-      ret.longitudinalTuning.kpV = [1.2, 0.8, 0.765, 2.255, 1.5]
-      ret.longitudinalTuning.kiBP = [0., MIN_ACC_SPEED, MIN_ACC_SPEED + PEDAL_HYST_GAP, 35.]
-      ret.longitudinalTuning.kiV = [0.18, 0.165, 0.489, 0.36]
+    # Improved longitudinal tune
+    if candidate in [CAR.COROLLA_TSS2, CAR.COROLLAH_TSS2, CAR.RAV4_TSS2, CAR.RAV4H_TSS2, CAR.LEXUS_NX_TSS2, CAR.LEXUS_UXH_TSS2]:
+      ret.longitudinalTuning.deadzoneBP = [0., 8.05]
+      ret.longitudinalTuning.deadzoneV = [.0, .14]
+      ret.longitudinalTuning.kpBP = [0., 5., 20.]
+      ret.longitudinalTuning.kpV = [1.3, 1.0, 0.7]
+      ret.longitudinalTuning.kiBP = [0., 5., 12., 20., 27.]
+      ret.longitudinalTuning.kiV = [.35, .23, .20, .17, .1]
+      ret.stoppingBrakeRate = 0.1  # reach stopping target smoothly
+      ret.startingBrakeRate = 2.0  # release brakes fast
+      ret.startAccel = 1.2  # Accelerate from 0 faster
+    else:
+      default_kpBP = [0., 5., 35.]
+      default_kiBP = [0., 35.]
+      default_kpV = [3.6, 2.4, 1.5]
+      default_kiV = [0.54, 0.36]
+      pedal_kpV = [1.2, 0.8, 0.5]
+      pedal_kiV = [0.18, 0.12]
+      if not ret.enableGasInterceptor:
+        # Default longitudinal tune
+        ret.longitudinalTuning.deadzoneBP = [0., 9.]
+        ret.longitudinalTuning.deadzoneV = [0., .15]
+        ret.longitudinalTuning.kpBP = default_kpBP
+        ret.longitudinalTuning.kiBP = default_kiBP
+        ret.longitudinalTuning.kpV = default_kpV
+        ret.longitudinalTuning.kiV = default_kiV
+      else:
+        # Same pedal tuning below MIN_ACC_SPEED and ramps to stock tuning using the hysteresis gap
+        ret.gasMaxBP = [0., MIN_ACC_SPEED]
+        ret.gasMaxV = [0.2, 0.5]
+
+        ret.longitudinalTuning.kpBP = [*default_kpBP[:2], MIN_ACC_SPEED, MIN_ACC_SPEED + PEDAL_HYST_GAP, default_kpBP[2]]
+        ret.longitudinalTuning.kpV = [*pedal_kpV[:2], interp(MIN_ACC_SPEED, default_kpBP, pedal_kpV),
+                                      interp(MIN_ACC_SPEED + PEDAL_HYST_GAP, default_kpBP, default_kpV), default_kpV[2]]
+
+        ret.longitudinalTuning.kiBP = [default_kiBP[0], MIN_ACC_SPEED, MIN_ACC_SPEED + PEDAL_HYST_GAP, default_kiBP[1]]
+        ret.longitudinalTuning.kiV = [pedal_kiV[0], interp(MIN_ACC_SPEED, default_kiBP, pedal_kiV),
+                                      interp(MIN_ACC_SPEED + PEDAL_HYST_GAP, default_kiBP, default_kiV), default_kiV[1]]
 
     return ret
 
