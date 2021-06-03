@@ -22,7 +22,7 @@ def calc_cruise_offset(offset, speed):
   return min(_K0 + _K1 * speed + _K2 * speed * offset, 0.)
 
 
-def get_can_signals(CP, gearbox_name):
+def get_can_signals(CP, gearbox_name="GEARBOX"):
   # this function generates lists for signal, messages and initial values
   signals = [
     ("XMISSION_SPEED", "ENGINE_DATA", 0),
