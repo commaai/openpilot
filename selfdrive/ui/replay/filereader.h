@@ -55,11 +55,11 @@ public:
     return l.mono_time < r.mono_time || (l.mono_time == r.mono_time && l.which < r.which);
   }
 
-  // ~Event() {
-  //   if (raw.use_count() == 1) {
-  //     qDebug() << "delete raw" << i++;
-  //   }
-  // }
+  ~Event() {
+    if (raw.use_count() == 1) {
+      qDebug() << "delete raw ***********" << i++;
+    }
+  }
   inline kj::ArrayPtr<const capnp::byte> bytes() const { return words.asBytes(); }
 
   kj::ArrayPtr<const capnp::word> words;

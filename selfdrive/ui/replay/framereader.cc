@@ -49,7 +49,7 @@ FrameReader::~FrameReader() {
   // wait until thread is finished.
   exit_ = true;
   process_thread_->wait();
-  cv_decode_.notify_one();
+  cv_decode_.notify_all();
   cv_frame_.notify_all();
   if (decode_thread_.joinable()) {
     decode_thread_.join();
@@ -110,7 +110,6 @@ bool FrameReader::processFrames() {
     }
   } while (!exit_);
 
-  qDebug() << "framereader reader " << frames_.size() << " frames";
   valid_ = !exit_;
   return !exit_;
 }
@@ -118,8 +117,8 @@ bool FrameReader::processFrames() {
 void FrameReader::decodeThread() {
   int idx = 0;
   while (!exit_) {
-    const int from = std::max(idx, -10);
-    const int to = std::min(idx + 20, (int)frames_.size());
+    const int from = std::max(idx, 0);
+    const int to = std::min(idx + 15, (int)frames_.size());
     for (int i = from; i < to && !exit_; ++i) {
       Frame &frame = frames_[i];
       if (frame.picture != nullptr || frame.failed) continue;
@@ -138,7 +137,7 @@ void FrameReader::decodeThread() {
       std::unique_lock lk(mutex_);
       frame.picture = picture;
       frame.failed = !picture;
-      cv_frame_.notify_one();
+      cv_frame_.notify_all();
     }
 
     // sleep & wait

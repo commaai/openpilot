@@ -32,7 +32,7 @@ Replay::Replay(SubMaster *sm, QObject *parent) : sm_(sm), QObject(parent) {
   if (sm_ == nullptr) {
     pm_ = new PubMaster(s);
   }
-  events_ = std::make_unique<std::vector<Event*>>();
+  events_ = new std::vector<Event *>();
 }
 
 Replay::~Replay() {
@@ -86,7 +86,7 @@ void Replay::stop() {
   route_start_ts_ = 0;
 }
 
-QString Replay::formatNS(uint64_t ns) {
+QString Replay::elapsedTime(uint64_t ns) {
   QTime time(0, 0, 0);
   auto a = time.addSecs((ns - route_start_ts_) / 1e9);
   return a.toString("hh:mm:ss");
@@ -104,10 +104,12 @@ void Replay::seekTo(uint64_t to_ts) {
   const auto &rs = route_.segments();
   if (!rs.size()) return;
 
+  std::unique_lock lk(mutex_);
   seek_ts_ = to_ts;
   int seconds = (to_ts - route_start_ts_) / 1e9;
   current_segment_ = std::clamp(seconds / SEGMENT_LENGTH, 0, rs.lastKey());
-  qDebug() << "seeking to " << formatNS(to_ts);
+  events_changed_ = true;
+  qDebug() << "seeking to " << elapsedTime(to_ts);
 }
 
 // return nullptr if segment is not loaded
@@ -172,44 +174,65 @@ void Replay::queueSegmentThread() {
   }
 }
 
+// std::vector<Event *>::iterator Replay::currentEvent() {
+//   std::vector<Event *>::iterator eit;
+//   // std::unique_lock lk(mutex_);
+//   if (events_changed_ && current_ts_ > route_start_ts_) {
+//     // Make sure not to send duplicate events
+//     eit = std::upper_bound(events_->begin(), events_->end(), current_ts_, [&](uint64_t v, const Event *e) {
+//       return v < e->mono_time || (v == e->mono_time && which < e->which);
+//     });
+//   } else {
+//     // seeking
+//     eit = std::upper_bound(events_->begin(), events_->end(), seek_ts_, [](uint64_t v, const Event *e) {
+//       return v < e->mono_time;
+//     });
+//   }
+//   events_changed_ = false;
+//   std::shared_ptr<Segment> seg = ;
+//   if (eit == events_->end() || (seg = getSegment(current_segment_)) == nullptr) {
+//     return events_->end();
+//   }
+//   return eit;
+// }
+
 void Replay::streamThread() {
   uint64_t last_print = 0;
+  uint64_t prev_seek_ts = 0;
   cereal::Event::Which which;
+
   while (!exit_) {
+    // double t1 = millis_since_boot();
     mutex_.lock();
-    std::vector<Event*>::iterator eit;
     std::shared_ptr<Segment> seg = getSegment(current_segment_);
-    if (updating_events && current_ts_ > route_start_ts_) {
-      // Make sure not to send duplicate events
-      eit = std::upper_bound(events_->begin(), events_->end(), current_ts_, [&](uint64_t v, const Event *e) {
-        return v < e->mono_time || (v==e->mono_time && which < e->which);
-      });
-    } else {
-      // seeking
-      eit = std::upper_bound(events_->begin(), events_->end(), seek_ts_, [](uint64_t v, const Event* e) {
-        return v < e->mono_time;
-      });
+    uint64_t search_ts = current_ts_;
+    if (prev_seek_ts != seek_ts_) {
+      which = cereal::Event::INIT_DATA;  // 0
+      search_ts = prev_seek_ts = seek_ts_;
     }
-    updating_events = false;
+    auto eit = std::upper_bound(events_->begin(), events_->end(), search_ts, [&](uint64_t v, const Event *e) {
+      return v < e->mono_time || (v == e->mono_time && which < e->which);
+    });
     if (!seg || eit == events_->end()) {
       mutex_.unlock();
       qDebug() << "waiting for events";
       QThread::msleep(100);
       continue;
     }
+    events_changed_ = false;
+    camera_server_.ensureServerForSegment(seg.get());
     mutex_.unlock();
 
-    camera_server_.ensureServerForSegment(seg.get());
-    
     uint64_t evt_start_tm = (*eit)->mono_time;
     // TODO: use initData's logMonoTime
     if (route_start_ts_ == 0) {
       route_start_ts_ = evt_start_tm;
     }
-    qDebug() << "unlogging at" << formatNS(seek_ts_) << " " << (*eit)->mono_time << " " << (*eit)->which << " " << current_segment_;
     uint64_t loop_start_tm = nanos_since_boot();
-    uint64_t current_seek_ts = seek_ts_;
-    while (!exit_ && current_seek_ts == seek_ts_ && !updating_events && eit != events_->end()) {
+    while (!exit_) {
+      std::unique_lock lk(mutex_);
+      if (events_changed_ || eit == events_->end()) break;
+
       Event *evt = (*eit);
       current_ts_ = evt->mono_time;
       which = evt->which;
@@ -217,7 +240,7 @@ void Replay::streamThread() {
       if (!sock_name.empty()) {
         if ((current_ts_ - last_print) > 5 * 1e9) {
           last_print = current_ts_;
-          qInfo() << "at " << formatNS(last_print);
+          qInfo() << "at segment " << current_segment_ << ": " << elapsedTime(last_print);
         }
 
         // keep time
@@ -253,7 +276,7 @@ void Replay::streamThread() {
           sm_->update_msgs(nanos_since_boot(), {{sock_name, evt->event}});
         }
       }
-      current_segment_ = (current_ts_-route_start_ts_)/1e9 / SEGMENT_LENGTH;
+      current_segment_ = (current_ts_ - route_start_ts_) / 1e9 / SEGMENT_LENGTH;
       ++eit;
     }
   }
@@ -262,6 +285,8 @@ void Replay::streamThread() {
 void Replay::mergeEvents(LogReader *log) {
   // double t1 = millis_since_boot();
   // remove segments
+  std::unique_lock lk(merge_mutex_);
+  // qInfo() << "mergeEvents start log size " << log->events.size() << " my size " << events_->size();
   uint64_t max_tm = route_start_ts_ + (current_segment_ - BACKWARD_SEGS) * SEGMENT_LENGTH * 1e9;
   uint64_t min_tm = route_start_ts_ + (current_segment_ + FORWARD_SEGS + 1) * SEGMENT_LENGTH * 1e9;
   auto begin_it = std::lower_bound(events_->begin(), events_->end(), max_tm, [](const Event *e, uint64_t v) {
@@ -289,12 +314,12 @@ void Replay::mergeEvents(LogReader *log) {
   std::merge(begin_it, end_it, log->events.begin(), log->events.end(),
              std::back_inserter(*dst), [](const Event *l, const Event *r) { return *l < *r; });
 
-  std::unique_lock lk(mutex_);
-  updating_events = true;
+  std::unique_lock events_lock(mutex_);
+  events_changed_ = true;
   for (auto cam_type : ALL_CAMERAS) {
     encoderIdx_[cam_type].merge(log->encoderIdx[cam_type]);
   }
-  events_.reset(dst);
+  events_ = dst;
   // qInfo() << "merge array " << millis_since_boot() - t1 << "size " << events_->size();
 }
 

@@ -130,7 +130,6 @@ void LogReader::parseEvents(const QByteArray &dat) {
     std::sort(events.begin(), events.end(), [=](const Event* l, const Event*r) {
       return *l < *r;
     });
-    
+    emit finished(valid_);  
   }
-  emit finished(valid_);
 }

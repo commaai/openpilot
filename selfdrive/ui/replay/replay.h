@@ -69,10 +69,11 @@ public:
   bool running() { return stream_thread_.joinable(); }
 
 private:
-  QString formatNS(uint64_t ns);
+  QString elapsedTime(uint64_t ns);
   void seekTo(uint64_t to_ts);
   void queueSegmentThread();
   void streamThread();
+  std::vector<Event *>::iterator currentEvent();
 
   void pushFrame(CameraType type, uint32_t frame_id);
   void mergeEvents(LogReader *log);
@@ -82,7 +83,6 @@ private:
 
   std::atomic<uint64_t> current_ts_ = 0, seek_ts_ = 0;  // ms
   std::atomic<int> current_segment_ = 0;
-  std::atomic<bool> updating_events = false;
   std::atomic<uint64_t> route_start_ts_ = 0;
   std::unordered_map<cereal::Event::Which, std::string> eventNameMap;
 
@@ -94,8 +94,10 @@ private:
   // segments
   Route route_;
   std::mutex mutex_;
+  std::mutex merge_mutex_;
+  std::atomic<bool> events_changed_ = false;
   std::map<int, std::shared_ptr<Segment>> segments_;
-  std::unique_ptr<std::vector<Event*>> events_;
+  std::vector<Event*> *events_;
   EncodeIdxMap encoderIdx_[MAX_CAMERAS] = {};
 
   // vipc server
