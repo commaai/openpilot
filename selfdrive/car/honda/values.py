@@ -34,8 +34,7 @@ VISUAL_HUD = {
   VisualAlert.speedTooHigh: 8}
 
 class CAR:
-  ACCORD = "HONDA ACCORD 2T 2018"
-  ACCORD_15 = "HONDA ACCORD 1.5T 2018"
+  ACCORD = "HONDA ACCORD 2018"
   ACCORDH = "HONDA ACCORD HYBRID 2018"
   CIVIC = "HONDA CIVIC 2016"
   CIVIC_BOSCH = "HONDA CIVIC (BOSCH) 2019"
@@ -62,9 +61,6 @@ DIAG_MSGS = {1600: 5, 1601: 8}
 FINGERPRINTS = {
   CAR.ACCORD: [{
     148: 8, 228: 5, 304: 8, 330: 8, 344: 8, 380: 8, 399: 7, 419: 8, 420: 8, 427: 3, 432: 7, 441: 5, 446: 3, 450: 8, 464: 8, 477: 8, 479: 8, 495: 8, 545: 6, 662: 4, 773: 7, 777: 8, 780: 8, 804: 8, 806: 8, 808: 8, 829: 5, 862: 8, 884: 8, 891: 8, 927: 8, 929: 8, 1302: 8, 1600: 5, 1601: 8, 1652: 8
-  }],
-  CAR.ACCORD_15: [{
-    148: 8, 228: 5, 304: 8, 330: 8, 344: 8, 380: 8, 399: 7, 401: 8, 420: 8, 427: 3, 432: 7, 441: 5, 446: 3, 450: 8, 464: 8, 477: 8, 479: 8, 495: 8, 545: 6, 662: 4, 773: 7, 777: 8, 780: 8, 804: 8, 806: 8, 808: 8, 829: 5, 862: 8, 884: 8, 891: 8, 927: 8, 929: 8, 1302: 8, 1600: 5, 1601: 8, 1652: 8
   }],
   CAR.ACCORDH: [{
     148: 8, 228: 5, 304: 8, 330: 8, 344: 8, 380: 8, 387: 8, 388: 8, 399: 7, 419: 8, 420: 8, 427: 3, 432: 7, 441: 5, 450: 8, 464: 8, 477: 8, 479: 8, 495: 8, 525: 8, 545: 6, 662: 4, 773: 7, 777: 8, 780: 8, 804: 8, 806: 8, 808: 8, 829: 5, 862: 8, 884: 8, 891: 8, 927: 8, 929: 8, 1302: 8, 1600: 5, 1601: 8, 1652: 8
@@ -153,6 +149,19 @@ FW_VERSIONS = {
       b'37805-6B2-A820\x00\x00',
       b'37805-6B2-A920\x00\x00',
       b'37805-6B2-M520\x00\x00',
+      b'37805-6A0-9520\x00\x00',
+      b'37805-6A0-9620\x00\x00',
+      b'37805-6A0-9720\x00\x00',
+      b'37805-6A0-A540\x00\x00',
+      b'37805-6A0-A550\x00\x00',
+      b'37805-6A0-A650\x00\x00',
+      b'37805-6A0-A740\x00\x00',
+      b'37805-6A0-A750\x00\x00',
+      b'37805-6A0-A840\x00\x00',
+      b'37805-6A0-A850\x00\x00',
+      b'37805-6A0-C540\x00\x00',
+      b'37805-6A1-H650\x00\x00',
+      b'37805-6M4-B730\x00\x00',
     ],
     (Ecu.shiftByWire, 0x18da0bf1, None): [
       b'54008-TVC-A910\x00\x00',
@@ -164,25 +173,43 @@ FW_VERSIONS = {
       b'28102-6B8-A800\x00\x00',
       b'28102-6B8-C570\x00\x00',
       b'28102-6B8-M520\x00\x00',
+      b'28101-6A7-A220\x00\x00',
+      b'28101-6A7-A230\x00\x00',
+      b'28101-6A7-A320\x00\x00',
+      b'28101-6A7-A330\x00\x00',
+      b'28101-6A7-A410\x00\x00',
+      b'28101-6A7-A510\x00\x00',
+      b'28101-6A9-H140\x00\x00',
+      b'28101-6A9-H420\x00\x00',
     ],
     (Ecu.electricBrakeBooster, 0x18da2bf1, None): [
       b'46114-TVA-A060\x00\x00',
       b'46114-TVA-A080\x00\x00',
       b'46114-TVA-A120\x00\x00',
       b'46114-TVA-A320\x00\x00',
+      b'46114-TVA-A050\x00\x00',
+      b'46114-TVE-H550\x00\x00',
+      b'46114-TVE-H560\x00\x00',
     ],
     (Ecu.vsa, 0x18da28f1, None): [
       b'57114-TVA-C040\x00\x00',
       b'57114-TVA-C050\x00\x00',
       b'57114-TVA-C060\x00\x00',
       b'57114-TVA-C530\x00\x00',
+      b'57114-TVA-B040\x00\x00',
+      b'57114-TVA-B050\x00\x00',
+      b'57114-TVA-B060\x00\x00',
+      b'57114-TVE-H250\x00\x00',
     ],
     (Ecu.eps, 0x18da30f1, None): [
-      b'39990-TVA,A150\x00\x00', # modified firmware
+      b'39990-TVA,A150\x00\x00',
       b'39990-TVA-A150\x00\x00',
       b'39990-TVA-A160\x00\x00',
       b'39990-TVA-A340\x00\x00',
       b'39990-TVA-X030\x00\x00',
+      b'39990-TVA-A140\x00\x00',
+      b'39990-TVE-H130\x00\x00',
+      b'39990-TBX-H120\x00\x00',
     ],
     (Ecu.unknown, 0x18da3af1, None): [
       b'39390-TVA-A020\x00\x00',
@@ -191,6 +218,8 @@ FW_VERSIONS = {
       b'77959-TVA-A460\x00\x00',
       b'77959-TVA-L420\x00\x00',
       b'77959-TVA-X330\x00\x00',
+      b'77959-TVA-H230\x00\x00',
+      b'77959-TBX-H230\x00\x00',
     ],
     (Ecu.combinationMeter, 0x18da60f1, None): [
       b'78109-TVA-A210\x00\x00',
@@ -205,71 +234,11 @@ FW_VERSIONS = {
       b'78109-TVC-L010\x00\x00',
       b'78109-TVC-L210\x00\x00',
       b'78109-TVC-M510\x00\x00',
-    ],
-    (Ecu.hud, 0x18da61f1, None): [
-      b'78209-TVA-A010\x00\x00',
-    ],
-    (Ecu.fwdRadar, 0x18dab0f1, None): [
-      b'36802-TVA-A160\x00\x00',
-      b'36802-TVA-A170\x00\x00',
-      b'36802-TVC-A330\x00\x00',
-      b'36802-TWA-A070\x00\x00',
-    ],
-    (Ecu.fwdCamera, 0x18dab5f1, None): [
-      b'36161-TVA-A060\x00\x00',
-      b'36161-TVC-A330\x00\x00',
-      b'36161-TWA-A070\x00\x00',
-    ],
-    (Ecu.gateway, 0x18daeff1, None): [
-      b'38897-TVA-A010\x00\x00',
-      b'38897-TVA-A020\x00\x00',
-    ],
-  },
-  CAR.ACCORD_15: {
-    (Ecu.programmedFuelInjection, 0x18da10f1, None): [
-      b'37805-6A0-9520\x00\x00',
-      b'37805-6A0-9620\x00\x00',
-      b'37805-6A0-9720\x00\x00',
-      b'37805-6A0-A540\x00\x00',
-      b'37805-6A0-A550\x00\x00',
-      b'37805-6A0-A640\x00\x00',
-      b'37805-6A0-A650\x00\x00',
-      b'37805-6A0-A740\x00\x00',
-      b'37805-6A0-A750\x00\x00',
-      b'37805-6A0-A840\x00\x00',
-      b'37805-6A0-A850\x00\x00',
-      b'37805-6A0-C540\x00\x00',
-      b'37805-6A1-H650\x00\x00',
-      b'37805-6M4-B730\x00\x00',
-    ],
-    (Ecu.transmission, 0x18da1ef1, None): [
-      b'28101-6A7-A220\x00\x00',
-      b'28101-6A7-A230\x00\x00',
-      b'28101-6A7-A320\x00\x00',
-      b'28101-6A7-A330\x00\x00',
-      b'28101-6A7-A410\x00\x00',
-      b'28101-6A7-A510\x00\x00',
-      b'28101-6A9-H140\x00\x00',
-      b'28101-6A9-H420\x00\x00',
-    ],
-    (Ecu.gateway, 0x18daeff1, None): [
-      b'38897-TVA-A230\x00\x00',
-    ],
-    (Ecu.electricBrakeBooster, 0x18da2bf1, None): [
-      b'46114-TVA-A050\x00\x00',
-      b'46114-TVA-A060\x00\x00',
-      b'46114-TVA-A080\x00\x00',
-      b'46114-TVA-A120\x00\x00',
-      b'46114-TVE-H550\x00\x00',
-      b'46114-TVE-H560\x00\x00',
-    ],
-    (Ecu.combinationMeter, 0x18da60f1, None): [
       b'78109-TBX-H310\x00\x00',
       b'78109-TVA-A010\x00\x00',
       b'78109-TVA-A020\x00\x00',
       b'78109-TVA-A110\x00\x00',
       b'78109-TVA-A120\x00\x00',
-      b'78109-TVA-A210\x00\x00',
       b'78109-TVA-A220\x00\x00',
       b'78109-TVA-A310\x00\x00',
       b'78109-TVA-C010\x00\x00',
@@ -281,35 +250,26 @@ FW_VERSIONS = {
     (Ecu.hud, 0x18da61f1, None): [
       b'78209-TVA-A010\x00\x00',
     ],
-    (Ecu.fwdCamera, 0x18dab5f1, None): [
-      b'36161-TVA-A060\x00\x00',
-      b'36161-TVE-H050\x00\x00',
-      b'36161-TBX-H130\x00\x00',
-    ],
-    (Ecu.srs, 0x18da53f1, None): [
-      b'77959-TVA-A460\x00\x00',
-      b'77959-TVA-H230\x00\x00',
-      b'77959-TBX-H230\x00\x00',
-    ],
-    (Ecu.vsa, 0x18da28f1, None): [
-      b'57114-TVA-B040\x00\x00',
-      b'57114-TVA-B050\x00\x00',
-      b'57114-TVA-B060\x00\x00',
-      b'57114-TVE-H250\x00\x00',
-    ],
     (Ecu.fwdRadar, 0x18dab0f1, None): [
-      b'36802-TVA-A150\x00\x00',
       b'36802-TVA-A160\x00\x00',
       b'36802-TVA-A170\x00\x00',
+      b'36802-TVC-A330\x00\x00',
+      b'36802-TWA-A070\x00\x00',
+      b'36802-TVA-A150\x00\x00',
       b'36802-TVE-H070\x00\x00',
       b'36802-TBX-H140\x00\x00',
     ],
-    (Ecu.eps, 0x18da30f1, None): [
-      b'39990-TVA-A140\x00\x00',
-      b'39990-TVA-A150\x00\x00',  # Are these two different steerRatio?
-      b'39990-TVA-A160\x00\x00',  # Sport, Sport 2.0T and Touring 2.0T have different ratios
-      b'39990-TVE-H130\x00\x00',
-      b'39990-TBX-H120\x00\x00',
+    (Ecu.fwdCamera, 0x18dab5f1, None): [
+      b'36161-TVA-A060\x00\x00',
+      b'36161-TVC-A330\x00\x00',
+      b'36161-TWA-A070\x00\x00',
+      b'36161-TVE-H050\x00\x00',
+      b'36161-TBX-H130\x00\x00',
+    ],
+    (Ecu.gateway, 0x18daeff1, None): [
+      b'38897-TVA-A010\x00\x00',
+      b'38897-TVA-A020\x00\x00',
+      b'38897-TVA-A230\x00\x00',
     ],
   },
   CAR.ACCORDH: {
@@ -1278,9 +1238,8 @@ FW_VERSIONS = {
 }
 
 DBC = {
-  CAR.ACCORD: dbc_dict('honda_accord_s2t_2018_can_generated', None),
-  CAR.ACCORD_15: dbc_dict('honda_accord_lx15t_2018_can_generated', None),
-  CAR.ACCORDH: dbc_dict('honda_accord_s2t_2018_can_generated', None),
+  CAR.ACCORD: dbc_dict('honda_accord_2018_can_generated', None),
+  CAR.ACCORDH: dbc_dict('honda_accord_2018_can_generated', None),
   CAR.ACURA_ILX: dbc_dict('acura_ilx_2016_can_generated', 'acura_ilx_2016_nidec'),
   CAR.ACURA_RDX: dbc_dict('acura_rdx_2018_can_generated', 'acura_ilx_2016_nidec'),
   CAR.ACURA_RDX_3G: dbc_dict('acura_rdx_2020_can_generated', None),
@@ -1303,7 +1262,6 @@ DBC = {
 
 STEER_THRESHOLD = {
   CAR.ACCORD: 1200,
-  CAR.ACCORD_15: 1200,
   CAR.ACCORDH: 1200,
   CAR.ACURA_ILX: 1200,
   CAR.ACURA_RDX: 400,
@@ -1327,7 +1285,6 @@ STEER_THRESHOLD = {
 
 SPEED_FACTOR = {
   CAR.ACCORD: 1.,
-  CAR.ACCORD_15: 1.,
   CAR.ACCORDH: 1.,
   CAR.ACURA_ILX: 1.,
   CAR.ACURA_RDX: 1.,
@@ -1349,5 +1306,5 @@ SPEED_FACTOR = {
   CAR.INSIGHT: 1.,
 }
 
-HONDA_BOSCH = set([CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_5G, CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G])
-HONDA_BOSCH_ALT_BRAKE_SIGNAL = set([CAR.ACCORD, CAR.ACCORD_15, CAR.CRV_5G, CAR.ACURA_RDX_3G])
+HONDA_BOSCH = set([CAR.ACCORD, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_5G, CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G])
+HONDA_BOSCH_ALT_BRAKE_SIGNAL = set([CAR.ACCORD, CAR.CRV_5G, CAR.ACURA_RDX_3G])
