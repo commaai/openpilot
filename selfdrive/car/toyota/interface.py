@@ -21,7 +21,7 @@ class CarInterface(CarInterfaceBase):
     ret.carName = "toyota"
     ret.safetyModel = car.CarParams.SafetyModel.toyota
 
-    ret.steerActuatorDelay = 0.42  # Default delay, Prius has larger delay
+    ret.steerActuatorDelay = 0.32  # Default delay, Prius has larger delay
     ret.steerLimitTimer = 0.4
 
     # Improved longitudinal tune
