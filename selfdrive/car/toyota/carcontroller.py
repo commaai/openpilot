@@ -50,8 +50,8 @@ class CarController():
     # *** compute control surfaces ***
 
     # gas and brake
-    apply_gas = 0.
-    apply_accel = actuators.gas - actuators.brake
+    interceptor_gas_cmd = 0.
+    pcm_accel_cmd = actuators.gas - actuators.brake
 
     if CS.CP.enableGasInterceptor:
       # handle hysteresis when around the minimum acc speed
@@ -63,11 +63,11 @@ class CarController():
       if self.use_interceptor and enabled:
         # only send negative accel when using interceptor. gas handles acceleration
         # +0.06 offset to reduce ABS pump usage when OP is engaged
-        apply_gas = clip(actuators.gas, 0., 1.)
-        apply_accel = 0.06 - actuators.brake
+        interceptor_gas_cmd = clip(actuators.gas, 0., 1.)
+        pcm_accel_cmd = 0.06 - actuators.brake
 
-    apply_accel, self.accel_steady = accel_hysteresis(apply_accel, self.accel_steady, enabled)
-    apply_accel = clip(apply_accel * CarControllerParams.ACCEL_SCALE, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
+    pcm_accel_cmd, self.accel_steady = accel_hysteresis(pcm_accel_cmd, self.accel_steady, enabled)
+    pcm_accel_cmd = clip(pcm_accel_cmd * CarControllerParams.ACCEL_SCALE, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
 
     # steer torque
     new_steer = int(round(actuators.steer * CarControllerParams.STEER_MAX))
@@ -93,7 +93,7 @@ class CarController():
       self.standstill_req = False
 
     self.last_steer = apply_steer
-    self.last_accel = apply_accel
+    self.last_accel = pcm_accel_cmd
     self.last_standstill = CS.out.standstill
 
     can_sends = []
@@ -122,14 +122,14 @@ class CarController():
       if pcm_cancel_cmd and CS.CP.carFingerprint == CAR.LEXUS_IS:
         can_sends.append(create_acc_cancel_command(self.packer))
       elif CS.CP.openpilotLongitudinalControl:
-        can_sends.append(create_accel_command(self.packer, apply_accel, pcm_cancel_cmd, self.standstill_req, lead))
+        can_sends.append(create_accel_command(self.packer, pcm_accel_cmd, pcm_cancel_cmd, self.standstill_req, lead))
       else:
         can_sends.append(create_accel_command(self.packer, 0, pcm_cancel_cmd, False, lead))
 
     if frame % 2 == 0 and CS.CP.enableGasInterceptor:
-      # send exactly zero if apply_gas is zero. Interceptor will send the max between read value and apply_gas.
+      # send exactly zero if gas cmd is zero. Interceptor will send the max between read value and gas cmd.
       # This prevents unexpected pedal range rescaling
-      can_sends.append(create_gas_command(self.packer, apply_gas, frame // 2))
+      can_sends.append(create_gas_command(self.packer, interceptor_gas_cmd, frame // 2))
 
     # ui mesg is at 100Hz but we send asap if:
     # - there is something to display
