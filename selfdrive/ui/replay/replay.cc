@@ -11,12 +11,6 @@ const int SEGMENT_LENGTH = 60;  // 60s
 const int FORWARD_SEGS = 2;
 const int BACKWARD_SEGS = 2;
 
-static inline QString format_seconds(int seconds) {
-  QTime time(0, 0, 0);
-  auto a = time.addSecs(seconds);
-  return a.toString("hh:mm:ss");
-}
-
 // class Replay
 
 Replay::Replay(SubMaster *sm, QObject *parent) : sm_(sm), QObject(parent) {
@@ -92,17 +86,28 @@ void Replay::stop() {
   route_start_ts_ = 0;
 }
 
-void Replay::relativeSeek(int ts) {
-  seekTo(current_ts_ + ts);
+QString Replay::formatNS(uint64_t ns) {
+  QTime time(0, 0, 0);
+  auto a = time.addSecs((ns - route_start_ts_) / 1e9);
+  return a.toString("hh:mm:ss");
 }
 
-void Replay::seekTo(int to_ts) {
+void Replay::relativeSeek(int seconds) {
+  seekTo(current_ts_ + seconds * 1e9);
+}
+
+void Replay::seek(int seconds) {
+  seekTo(route_start_ts_ + seconds * 1e9);
+}
+
+void Replay::seekTo(uint64_t to_ts) {
   const auto &rs = route_.segments();
   if (!rs.size()) return;
 
   seek_ts_ = to_ts;
-  current_segment_ = std::clamp(to_ts / SEGMENT_LENGTH, 0, rs.lastKey());
-  qDebug() << "seeking to " << seek_ts_;
+  int seconds = (to_ts - route_start_ts_) / 1e9;
+  current_segment_ = std::clamp(seconds / SEGMENT_LENGTH, 0, rs.lastKey());
+  qDebug() << "seeking to " << formatNS(to_ts);
 }
 
 // return nullptr if segment is not loaded
@@ -152,11 +157,10 @@ void Replay::queueSegmentThread() {
     const int cur_idx = std::distance(rs.begin(), rs.find(segment));
     int i = 0;
     for (auto it = rs.begin(); it != rs.end(); ++it, ++i) {
-      int n = it.key();
       if (i >= cur_idx - BACKWARD_SEGS && i <= cur_idx + FORWARD_SEGS) {
+        int n = it.key();
         if (segments_.find(n) == segments_.end()) {
           std::unique_lock lk(mutex_);
-
           segments_[n] = std::make_shared<Segment>(n, rs[n]);
           connect(segments_[n].get(), &Segment::loaded, [=] {
             mergeEvents(segments_[n]->log);
@@ -169,7 +173,7 @@ void Replay::queueSegmentThread() {
 }
 
 void Replay::streamThread() {
-  int last_print = 0;
+  uint64_t last_print = 0;
   cereal::Event::Which which;
   while (!exit_) {
     mutex_.lock();
@@ -177,12 +181,12 @@ void Replay::streamThread() {
     std::shared_ptr<Segment> seg = getSegment(current_segment_);
     if (updating_events && current_ts_ > route_start_ts_) {
       // Make sure not to send duplicate events
-      eit = std::upper_bound(events_->begin(), events_->end(), route_start_ts_ + current_ts_ * 1e9, [&](uint64_t v, const Event *e) {
-        return v < e->mono_time && which < e->which;
+      eit = std::upper_bound(events_->begin(), events_->end(), current_ts_, [&](uint64_t v, const Event *e) {
+        return v < e->mono_time || (v==e->mono_time && which < e->which);
       });
     } else {
       // seeking
-      eit = std::upper_bound(events_->begin(), events_->end(), route_start_ts_ + seek_ts_ * 1e9, [](uint64_t v, const Event* e) {
+      eit = std::upper_bound(events_->begin(), events_->end(), seek_ts_, [](uint64_t v, const Event* e) {
         return v < e->mono_time;
       });
     }
@@ -202,24 +206,22 @@ void Replay::streamThread() {
     if (route_start_ts_ == 0) {
       route_start_ts_ = evt_start_tm;
     }
-    // current_ts_ = (evt_start_tm - route_start_ts_) / 1e9;
-    qDebug() << "unlogging at" << format_seconds(seek_ts_);
+    qDebug() << "unlogging at" << formatNS(seek_ts_) << " " << (*eit)->mono_time << " " << (*eit)->which << " " << current_segment_;
     uint64_t loop_start_tm = nanos_since_boot();
-    int current_seek_ts = seek_ts_;
+    uint64_t current_seek_ts = seek_ts_;
     while (!exit_ && current_seek_ts == seek_ts_ && !updating_events && eit != events_->end()) {
       Event *evt = (*eit);
-      uint64_t mono_time = evt->mono_time;
-      current_ts_ = std::max(mono_time - route_start_ts_, (uint64_t)0) / 1e9;
+      current_ts_ = evt->mono_time;
       which = evt->which;
       const std::string &sock_name = eventSocketName(evt->event);
       if (!sock_name.empty()) {
-        if (current_ts_ - last_print > 5.0) {
+        if ((current_ts_ - last_print) > 5 * 1e9) {
           last_print = current_ts_;
-          qInfo() << "at " << format_seconds(last_print);
+          qInfo() << "at " << formatNS(last_print);
         }
 
         // keep time
-        long etime = mono_time - evt_start_tm;
+        long etime = current_ts_ - evt_start_tm;
         long rtime = nanos_since_boot() - loop_start_tm;
         long us_behind = ((etime - rtime) * 1e-3) + 0.5;
         if (us_behind > 0 && us_behind < 1e6) {
@@ -251,7 +253,7 @@ void Replay::streamThread() {
           sm_->update_msgs(nanos_since_boot(), {{sock_name, evt->event}});
         }
       }
-      current_segment_ = current_ts_ / SEGMENT_LENGTH;
+      current_segment_ = (current_ts_-route_start_ts_)/1e9 / SEGMENT_LENGTH;
       ++eit;
     }
   }
@@ -260,7 +262,7 @@ void Replay::streamThread() {
 void Replay::mergeEvents(LogReader *log) {
   // double t1 = millis_since_boot();
   // remove segments
-  uint64_t max_tm = route_start_ts_ + (current_segment_ - BACKWARD_SEGS - 1) * SEGMENT_LENGTH * 1e9;
+  uint64_t max_tm = route_start_ts_ + (current_segment_ - BACKWARD_SEGS) * SEGMENT_LENGTH * 1e9;
   uint64_t min_tm = route_start_ts_ + (current_segment_ + FORWARD_SEGS + 1) * SEGMENT_LENGTH * 1e9;
   auto begin_it = std::lower_bound(events_->begin(), events_->end(), max_tm, [](const Event *e, uint64_t v) {
     return e->mono_time < v;

@@ -36,9 +36,9 @@ void keyboardThread(Replay *replay) {
       try {
         if (r[0] == '#') {
           r.erase(0, 1);
-          replay->seekTo(std::stoi(r) * 60);
+          replay->seek(std::stoi(r) * 60);
         } else {
-          replay->seekTo(std::stoi(r));
+          replay->seek(std::stoi(r));
         }
       } catch (std::invalid_argument) {
         qDebug() << "invalid argument";

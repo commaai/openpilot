@@ -63,12 +63,14 @@ public:
   ~Replay();
   bool start(const QString &routeName);
   bool start(const Route &route);
-  void relativeSeek(int ts);
-  void seekTo(int to_ts);
+  void relativeSeek(int seconds);
+  void seek(int seconds);
   void stop();
   bool running() { return stream_thread_.joinable(); }
 
 private:
+  QString formatNS(uint64_t ns);
+  void seekTo(uint64_t to_ts);
   void queueSegmentThread();
   void streamThread();
 
@@ -78,7 +80,7 @@ private:
   const std::string &eventSocketName(const cereal::Event::Reader &e);
 
 
-  std::atomic<int> current_ts_ = 0, seek_ts_ = 0;  // ms
+  std::atomic<uint64_t> current_ts_ = 0, seek_ts_ = 0;  // ms
   std::atomic<int> current_segment_ = 0;
   std::atomic<bool> updating_events = false;
   std::atomic<uint64_t> route_start_ts_ = 0;
