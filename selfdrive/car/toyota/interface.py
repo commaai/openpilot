@@ -350,7 +350,7 @@ class CarInterface(CarInterfaceBase):
         ret.longitudinalTuning.kpV = default_kpV
         ret.longitudinalTuning.kiV = default_kiV
       else:
-        # Transitions from original pedal tuning to default tuning around MIN_ACC_SPEED
+        # Transitions from original pedal tuning at MIN_ACC_SPEED to default tuning at MIN_ACC_SPEED + hysteresis gap
         ret.gasMaxBP = [0., MIN_ACC_SPEED]
         ret.gasMaxV = [0.2, 0.5]
 
