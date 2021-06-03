@@ -288,6 +288,8 @@ class Controls:
         self.events.add(EventName.cameraMalfunction)
       if self.sm['modelV2'].frameDropPerc > 20:
         self.events.add(EventName.modeldLagging)
+      if self.sm['liveLocationKalman'].excessiveResets:
+        self.events.add(EventName.localizerMalfunction)
 
       # Check if all manager processes are running
       not_running = set(p.name for p in self.sm['managerState'].processes if not p.running)

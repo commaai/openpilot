@@ -491,6 +491,10 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
     ET.PERMANENT: NormalPermanentAlert("GPS Malfunction", "Contact Support"),
   },
 
+  EventName.localizerMalfunction: {
+    ET.PERMANENT: NormalPermanentAlert("Localizer unstable", "Contact Support"),
+  },
+
   # ********** events that affect controls state transitions **********
 
   EventName.pcmEnable: {
