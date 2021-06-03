@@ -13,6 +13,7 @@ A_ACC_MAX = max(_A_CRUISE_MAX_V_FOLLOWING)
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
+TransmissionType = car.CarParams.TransmissionType
 
 
 def compute_gb_honda(accel, speed):
@@ -133,6 +134,10 @@ class CarInterface(CarInterfaceBase):
     if candidate == CAR.CRV_5G:
       ret.enableBsm = 0x12f8bfa7 in fingerprint[0]
 
+    # Accord 1.5T CVT has different gearbox message
+    if candidate == CAR.ACCORD and 0x191 in fingerprint[0]:
+      ret.transmissionType = TransmissionType.cvt
+
     cloudlog.warning("ECU Camera Simulated: %r", ret.enableCamera)
     cloudlog.warning("ECU Gas Interceptor: %r", ret.enableGasInterceptor)
 
@@ -191,7 +196,7 @@ class CarInterface(CarInterfaceBase):
       ret.longitudinalTuning.kiBP = [0., 35.]
       ret.longitudinalTuning.kiV = [0.18, 0.12]
 
-    elif candidate in (CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH):
+    elif candidate in (CAR.ACCORD, CAR.ACCORDH):
       stop_and_go = True
       ret.mass = 3279. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.83
