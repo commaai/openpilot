@@ -50,6 +50,9 @@ void HomeWindow::offroadTransition(bool offroad) {
   if (offroad) {
     slayout->setCurrentWidget(home);
   } else {
+    if (onroad->map != nullptr){
+      onroad->map->setVisible(!Params().get("NavDestination").empty());
+    }
     slayout->setCurrentWidget(onroad);
   }
   sidebar->setVisible(offroad);
