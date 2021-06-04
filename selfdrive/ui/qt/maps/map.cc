@@ -271,6 +271,7 @@ void MapWindow::routeCalculated(QGeoRouteReply *reply) {
 void MapWindow::clearRoute() {
   segment = QGeoRouteSegment(); // Clear route
   m_map->setLayoutProperty("navLayer", "visibility", "none");
+  m_map->setPitch(MIN_PITCH);
 }
 
 
