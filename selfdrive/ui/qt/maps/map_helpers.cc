@@ -1,4 +1,8 @@
+#include <QJsonDocument>
+#include <QJsonObject>
+
 #include "selfdrive/ui/qt/maps/map_helpers.h"
+#include "selfdrive/common/params.h"
 
 
 QGeoCoordinate to_QGeoCoordinate(const QMapbox::Coordinate &in) {
@@ -83,4 +87,20 @@ float minimum_distance(QGeoCoordinate a, QGeoCoordinate b, QGeoCoordinate p) {
   const float t = std::clamp(dot(ap, ab) / dot(ab, ab), 0.0f, 1.0f);
   const QGeoCoordinate projection = add(a, mul(ab, t));
   return projection.distanceTo(p);
+}
+
+std::optional<QMapbox::Coordinate> coordinate_from_param(std::string param) {
+  QString json_str = QString::fromStdString(Params().get(param));
+  if (json_str.isEmpty()) return {};
+
+  QJsonDocument doc = QJsonDocument::fromJson(json_str.toUtf8());
+  if (doc.isNull()) return {};
+
+  QJsonObject json = doc.object();
+  if (json["latitude"].isDouble() && json["longitude"].isDouble()){
+    QMapbox::Coordinate coord(json["latitude"].toDouble(), json["longitude"].toDouble());
+    return coord;
+  } else {
+    return {};
+  }
 }

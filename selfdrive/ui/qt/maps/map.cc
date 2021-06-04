@@ -1,8 +1,6 @@
 #include <cmath>
 
 #include <QDebug>
-#include <QJsonDocument>
-#include <QJsonObject>
 
 #include "selfdrive/common/util.h"
 #include "selfdrive/common/swaglog.h"
@@ -52,6 +50,12 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings) {
     assert(routing_manager);
   }
   connect(routing_manager, SIGNAL(finished(QGeoRouteReply*)), this, SLOT(routeCalculated(QGeoRouteReply*)));
+
+  auto last_gps_position = coordinate_from_param("LastGPSPosition");
+  if (last_gps_position) {
+    last_position = *last_gps_position;
+  }
+
 
   grabGesture(Qt::GestureType::PinchGesture);
 }
@@ -263,20 +267,13 @@ void MapWindow::routeCalculated(QGeoRouteReply *reply) {
 bool MapWindow::shouldRecompute(){
   if (!gps_ok) return false; // Don't recompute when gps drifts in tunnels
 
-  QString nav_destination_json = QString::fromStdString(Params().get("NavDestination"));
-  if (nav_destination_json.isEmpty()) return false;
+  auto new_destination = coordinate_from_param("NavDestination");
+  if (!new_destination) return false;
 
-  QJsonDocument doc = QJsonDocument::fromJson(nav_destination_json.toUtf8());
-  if (doc.isNull()) return false;
-
-  QJsonObject json = doc.object();
-  if (json["latitude"].isDouble() && json["longitude"].isDouble()){
-    QMapbox::Coordinate new_destination(json["latitude"].toDouble(), json["longitude"].toDouble());
-    if (new_destination != nav_destination){
-      nav_destination = new_destination;
-      setVisible(true); // Show map on destination set/change
-      return true;
-    }
+  if (*new_destination != nav_destination){
+    nav_destination = *new_destination;
+    setVisible(true); // Show map on destination set/change
+    return true;
   }
 
   if (!segment.isValid()){
