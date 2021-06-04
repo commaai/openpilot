@@ -237,6 +237,7 @@ void MapWindow::paintGL() {
 
 void MapWindow::calculateRoute(QMapbox::Coordinate destination) {
   QGeoRouteRequest request(to_QGeoCoordinate(last_position), to_QGeoCoordinate(destination));
+  request.setFeatureWeight(QGeoRouteRequest::TrafficFeature, QGeoRouteRequest::AvoidFeatureWeight);
   routing_manager->calculateRoute(request);
 }
 
