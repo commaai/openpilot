@@ -231,7 +231,7 @@ def debug_mode_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -
   axes = sm['testJoystick'].axes
   gb, steer = list(axes)[:2] if len(axes) else (0., 0.)
   return Alert(
-    "WARNING: Joystick debug mode active",
+    "Joystick Mode",
     f"Gas: {round(gb * 100., 1)}%, steer: {round(steer * 100., 1)}%",
     AlertStatus.normal, AlertSize.mid,
     Priority.LOWEST, VisualAlert.none, AudibleAlert.none, 0., 0., .1)
