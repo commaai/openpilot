@@ -4,8 +4,6 @@
 #include <fcntl.h>
 #include <math.h>
 #include <poll.h>
-#include <pthread.h>
-#include <stdbool.h>
 #include <stdio.h>
 #include <sys/ioctl.h>
 #include <unistd.h>

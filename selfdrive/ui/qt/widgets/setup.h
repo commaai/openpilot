@@ -16,7 +16,7 @@ public:
 private:
   QLabel* qrCode;
   void updateQrCode(QString text);
-  void showEvent(QShowEvent *event);
+  void showEvent(QShowEvent *event) override;
 
 private slots:
   void refresh();

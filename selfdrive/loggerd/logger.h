@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cassert>
 #include <pthread.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -83,7 +84,7 @@ int logger_next(LoggerState *s, const char* root_path,
                             char* out_segment_path, size_t out_segment_path_len,
                             int* out_part);
 LoggerHandle* logger_get_handle(LoggerState *s);
-void logger_close(LoggerState *s);
+void logger_close(LoggerState *s, ExitHandler *exit_handler=nullptr);
 void logger_log(LoggerState *s, uint8_t* data, size_t data_size, bool in_qlog);
 
 void lh_log(LoggerHandle* h, uint8_t* data, size_t data_size, bool in_qlog);

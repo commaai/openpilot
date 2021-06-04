@@ -2,7 +2,6 @@
 
 #include <assert.h>
 #include <errno.h>
-#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -76,6 +75,7 @@ kj::Array<capnp::word> logger_build_init_data() {
   }
 
   init.setKernelVersion(util::read_file("/proc/version"));
+  init.setOsVersion(util::read_file("/VERSION"));
 
 #ifdef QCOM
   {
@@ -130,10 +130,11 @@ void log_init_data(LoggerState *s) {
 }
 
 
-static void log_sentinel(LoggerState *s, cereal::Sentinel::SentinelType type) {
+static void log_sentinel(LoggerState *s, cereal::Sentinel::SentinelType type, int signal=0) {
   MessageBuilder msg;
   auto sen = msg.initEvent().initSentinel();
   sen.setType(type);
+  sen.setSignal(signal);
   auto bytes = msg.toBytes();
 
   logger_log(s, bytes.begin(), bytes.size(), true);
@@ -244,8 +245,9 @@ void logger_log(LoggerState *s, uint8_t* data, size_t data_size, bool in_qlog) {
   pthread_mutex_unlock(&s->lock);
 }
 
-void logger_close(LoggerState *s) {
-  log_sentinel(s, cereal::Sentinel::SentinelType::END_OF_ROUTE);
+void logger_close(LoggerState *s, ExitHandler *exit_handler) {
+  int signal = exit_handler == nullptr ? 0 : exit_handler->signal.load();
+  log_sentinel(s, cereal::Sentinel::SentinelType::END_OF_ROUTE, signal);
 
   pthread_mutex_lock(&s->lock);
   if (s->cur_handle) {

@@ -9,8 +9,8 @@ class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
 
-    can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
-    self.shifter_values = can_define.dv["GEAR"]['GEAR']
+    can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
+    self.shifter_values = can_define.dv["GEAR"]["GEAR"]
 
     self.cruise_speed = 0
     self.acc_active_last = False
@@ -21,43 +21,42 @@ class CarState(CarStateBase):
   def update(self, cp, cp_cam):
 
     ret = car.CarState.new_message()
-    ret.wheelSpeeds.fl = cp.vl["WHEEL_SPEEDS"]['FL'] * CV.KPH_TO_MS
-    ret.wheelSpeeds.fr = cp.vl["WHEEL_SPEEDS"]['FR'] * CV.KPH_TO_MS
-    ret.wheelSpeeds.rl = cp.vl["WHEEL_SPEEDS"]['RL'] * CV.KPH_TO_MS
-    ret.wheelSpeeds.rr = cp.vl["WHEEL_SPEEDS"]['RR'] * CV.KPH_TO_MS
+    ret.wheelSpeeds.fl = cp.vl["WHEEL_SPEEDS"]["FL"] * CV.KPH_TO_MS
+    ret.wheelSpeeds.fr = cp.vl["WHEEL_SPEEDS"]["FR"] * CV.KPH_TO_MS
+    ret.wheelSpeeds.rl = cp.vl["WHEEL_SPEEDS"]["RL"] * CV.KPH_TO_MS
+    ret.wheelSpeeds.rr = cp.vl["WHEEL_SPEEDS"]["RR"] * CV.KPH_TO_MS
     ret.vEgoRaw = (ret.wheelSpeeds.fl + ret.wheelSpeeds.fr + ret.wheelSpeeds.rl + ret.wheelSpeeds.rr) / 4.
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
 
     # Match panda speed reading
-    speed_kph = cp.vl["ENGINE_DATA"]['SPEED']
+    speed_kph = cp.vl["ENGINE_DATA"]["SPEED"]
     ret.standstill = speed_kph < .1
 
-    can_gear = int(cp.vl["GEAR"]['GEAR'])
+    can_gear = int(cp.vl["GEAR"]["GEAR"])
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(can_gear, None))
 
-    ret.leftBlinker = cp.vl["BLINK_INFO"]['LEFT_BLINK'] == 1
-    ret.rightBlinker = cp.vl["BLINK_INFO"]['RIGHT_BLINK'] == 1
+    ret.leftBlinker = cp.vl["BLINK_INFO"]["LEFT_BLINK"] == 1
+    ret.rightBlinker = cp.vl["BLINK_INFO"]["RIGHT_BLINK"] == 1
 
-    ret.steeringAngleDeg = cp.vl["STEER"]['STEER_ANGLE']
-    ret.steeringTorque = cp.vl["STEER_TORQUE"]['STEER_TORQUE_SENSOR']
+    ret.steeringAngleDeg = cp.vl["STEER"]["STEER_ANGLE"]
+    ret.steeringTorque = cp.vl["STEER_TORQUE"]["STEER_TORQUE_SENSOR"]
     ret.steeringPressed = abs(ret.steeringTorque) > LKAS_LIMITS.STEER_THRESHOLD
 
-    ret.steeringTorqueEps = cp.vl["STEER_TORQUE"]['STEER_TORQUE_MOTOR']
-    ret.steeringRateDeg = cp.vl["STEER_RATE"]['STEER_ANGLE_RATE']
+    ret.steeringTorqueEps = cp.vl["STEER_TORQUE"]["STEER_TORQUE_MOTOR"]
+    ret.steeringRateDeg = cp.vl["STEER_RATE"]["STEER_ANGLE_RATE"]
 
-    ret.brakePressed = cp.vl["PEDALS"]['BRAKE_ON'] == 1
-    ret.brake = cp.vl["BRAKE"]['BRAKE_PRESSURE']
-    ret.brakeLights = ret.brakePressed
+    ret.brakePressed = cp.vl["PEDALS"]["BRAKE_ON"] == 1
+    ret.brake = cp.vl["BRAKE"]["BRAKE_PRESSURE"]
 
-    ret.seatbeltUnlatched = cp.vl["SEATBELT"]['DRIVER_SEATBELT'] == 0
-    ret.doorOpen = any([cp.vl["DOORS"]['FL'], cp.vl["DOORS"]['FR'],
-                        cp.vl["DOORS"]['BL'], cp.vl["DOORS"]['BR']])
+    ret.seatbeltUnlatched = cp.vl["SEATBELT"]["DRIVER_SEATBELT"] == 0
+    ret.doorOpen = any([cp.vl["DOORS"]["FL"], cp.vl["DOORS"]["FR"],
+                        cp.vl["DOORS"]["BL"], cp.vl["DOORS"]["BR"]])
 
-    ret.gas = cp.vl["ENGINE_DATA"]['PEDAL_GAS']
+    ret.gas = cp.vl["ENGINE_DATA"]["PEDAL_GAS"]
     ret.gasPressed = ret.gas > 0
 
-    ret.leftBlindspot = cp.vl["BSM"]['LEFT_BS1'] == 1
-    ret.rightBlindspot = cp.vl["BSM"]['RIGHT_BS1'] == 1
+    ret.leftBlindspot = cp.vl["BSM"]["LEFT_BS1"] == 1
+    ret.rightBlindspot = cp.vl["BSM"]["RIGHT_BS1"] == 1
 
     # LKAS is enabled at 52kph going up and disabled at 45kph going down
     if speed_kph > LKAS_LIMITS.ENABLE_SPEED:
@@ -66,13 +65,13 @@ class CarState(CarStateBase):
       self.lkas_allowed = False
 
     # if any of the cruize buttons is pressed force state update
-    if any([cp.vl["CRZ_BTNS"]['RES'],
-                cp.vl["CRZ_BTNS"]['SET_P'],
-                cp.vl["CRZ_BTNS"]['SET_M']]):
+    if any([cp.vl["CRZ_BTNS"]["RES"],
+                cp.vl["CRZ_BTNS"]["SET_P"],
+                cp.vl["CRZ_BTNS"]["SET_M"]]):
       self.cruise_speed = ret.vEgoRaw
 
     ret.cruiseState.available = True
-    ret.cruiseState.enabled = cp.vl["CRZ_CTRL"]['CRZ_ACTIVE'] == 1
+    ret.cruiseState.enabled = cp.vl["CRZ_CTRL"]["CRZ_ACTIVE"] == 1
     ret.cruiseState.speed = self.cruise_speed
 
     if ret.cruiseState.enabled:
@@ -86,12 +85,12 @@ class CarState(CarStateBase):
         self.low_speed_alert = False
 
     # On if no driver torque the last 5 seconds
-    ret.steerWarning = cp.vl["STEER_RATE"]['HANDS_OFF_5_SECONDS'] == 1
+    ret.steerWarning = cp.vl["STEER_RATE"]["HANDS_OFF_5_SECONDS"] == 1
 
     self.acc_active_last = ret.cruiseState.enabled
 
     self.cam_lkas = cp_cam.vl["CAM_LKAS"]
-    ret.steerError = cp_cam.vl["CAM_LKAS"]['ERR_BIT_1'] == 1
+    ret.steerError = cp_cam.vl["CAM_LKAS"]["ERR_BIT_1"] == 1
 
     return ret
 
@@ -158,7 +157,7 @@ class CarState(CarStateBase):
         ("BSM", 10),
       ]
 
-    return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
+    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 0)
 
   @staticmethod
   def get_cam_can_parser(CP):
@@ -185,4 +184,4 @@ class CarState(CarStateBase):
         ("CAM_LKAS",      16),
       ]
 
-    return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
+    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 2)

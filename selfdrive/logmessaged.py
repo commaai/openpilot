@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 import zmq
+from typing import NoReturn
+
 import cereal.messaging as messaging
 from common.logging_extra import SwagLogFileFormatter
 from selfdrive.swaglog import get_file_handler
 
 
-def main():
+def main() -> NoReturn:
   log_handler = get_file_handler()
   log_handler.setFormatter(SwagLogFileFormatter(None))
   log_level = 20  # logging.INFO

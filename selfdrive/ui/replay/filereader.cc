@@ -2,8 +2,6 @@
 
 #include <QtNetwork>
 
-#include "tools/clib/framereader.h"
-
 FileReader::FileReader(const QString& file_) : file(file_) {
 }
 
@@ -119,8 +117,6 @@ void LogReader::mergeEvents(int dled) {
   *events += events_local;
   eidx->unite(eidx_local);
   events_lock->unlock();
-
-  printf("parsed %d into %d events with offset %d\n", dled, events->size(), event_offset);
 }
 
 void LogReader::readyRead() {
@@ -135,7 +131,6 @@ void LogReader::readyRead() {
       qWarning() << "bz2 decompress failed";
       break;
     }
-    qDebug() << "got" << dat.size() << "with" << bStream.avail_out << "size" << raw.size();
   }
 
   int dled = raw.size() - bStream.avail_out;

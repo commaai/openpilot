@@ -7,6 +7,7 @@
 #include <QTimer>
 #include <QWidget>
 
+#include "selfdrive/ui/qt/offroad/driverview.h"
 #include "selfdrive/ui/qt/onroad.h"
 #include "selfdrive/ui/qt/sidebar.h"
 #include "selfdrive/ui/qt/widgets/offroad_alerts.h"
@@ -52,6 +53,7 @@ signals:
 
 public slots:
   void offroadTransition(bool offroad);
+  void showDriverView(bool show);
 
 protected:
   void mousePressEvent(QMouseEvent* e) override;
@@ -60,5 +62,6 @@ private:
   Sidebar *sidebar;
   OffroadHome *home;
   OnroadWindow *onroad;
+  DriverViewWindow *driver_view;
   QStackedLayout *slayout;
 };

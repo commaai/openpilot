@@ -31,6 +31,7 @@ public:
   void reset_kalman(double current_time, Eigen::VectorXd init_orient, Eigen::VectorXd init_pos);
   void finite_check(double current_time = NAN);
   void time_check(double current_time = NAN);
+  void update_reset_tracker();
 
   kj::ArrayPtr<capnp::byte> get_message_bytes(MessageBuilder& msg_builder, uint64_t logMonoTime,
     bool inputsOK, bool sensorsOK, bool gpsOK);
@@ -55,11 +56,13 @@ private:
   bool calibrated = false;
 
   double car_speed = 0.0;
+  double last_reset_time = NAN;
   std::deque<double> posenet_stds;
 
   std::unique_ptr<LocalCoord> converter;
 
   int64_t unix_timestamp_millis = 0;
   double last_gps_fix = 0;
+  double reset_tracker = 0.0;
   bool device_fell = false;
 };

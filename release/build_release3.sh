@@ -65,7 +65,7 @@ popd
 
 # Build
 export PYTHONPATH="$BUILD_DIR"
-SCONS_CACHE=1 scons -j$(nproc)
+scons -j$(nproc)
 
 # Run tests
 #python selfdrive/manager/test/test_manager.py

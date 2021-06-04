@@ -51,6 +51,10 @@ class HardwareBase:
     pass
 
   @abstractmethod
+  def get_network_info(self):
+    pass
+
+  @abstractmethod
   def get_network_type(self):
     pass
 
