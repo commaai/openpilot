@@ -66,6 +66,7 @@ LogReader::LogReader(const QString &file, QObject *parent) : QObject(parent) {
   thread_ = new QThread();
   moveToThread(thread_);
   connect(thread_, &QThread::started, this, &LogReader::start);
+  connect(thread_, &QThread::finished, thread_, &QThread::deleteLater);
   
   file_reader_ = new FileReader(file);
   connect(file_reader_, &FileReader::finished, this, &LogReader::parseEvents);
@@ -81,7 +82,10 @@ LogReader::~LogReader() {
   file_reader_->abort();
   thread_->quit();
   thread_->wait();
-  thread_->deleteLater();
+
+  for (auto e : events) {
+    delete e;
+  }
 }
 
 void LogReader::start() {

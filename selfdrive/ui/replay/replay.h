@@ -82,9 +82,8 @@ private:
   const std::string &eventSocketName(const cereal::Event::Reader &e);
 
 
-  std::atomic<uint64_t> current_ts_ = 0, seek_ts_ = 0;  // ms
+  std::atomic<uint64_t> route_start_ts_, current_ts_ = 0, seek_ts_ = 0;  // ns
   std::atomic<int> current_segment_ = 0;
-  std::atomic<uint64_t> route_start_ts_ = 0;
   std::unordered_map<cereal::Event::Which, std::string> eventNameMap;
 
   // messaging
@@ -98,7 +97,6 @@ private:
   std::atomic<bool> events_changed_ = false;
   std::map<int, std::shared_ptr<Segment>> segments_;
   std::vector<Event*> *events_;
-  // EncodeIdxMap encoderIdx_[MAX_CAMERAS] = {};
 
   // vipc server
   CameraServer camera_server_;

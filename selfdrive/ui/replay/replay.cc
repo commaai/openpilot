@@ -119,6 +119,7 @@ std::shared_ptr<Segment> Replay::getSegment(int segment) {
 }
 
 void Replay::pushFrame(int cur_seg_num, CameraType cam_type, uint32_t frame_id) {
+  // search encodeIdx in adjacent segments.
   int search_in[] = {cur_seg_num, cur_seg_num - 1, cur_seg_num + 1};
   for (auto n : search_in) {
     if (auto seg = getSegment(n)) {
@@ -216,19 +217,15 @@ void Replay::streamThread() {
     evt_start_tm = (*eit)->mono_time;
     uint64_t loop_start_tm = nanos_since_boot();
     while (!exit_) {
-      Event *evt;
       {
         std::unique_lock lk(mutex_);
         if (events_changed_ || eit == events_->end()) break;
-
-        evt = (*eit);
       }
-
+      const Event *evt = (*eit);
       const std::string &sock_name = eventSocketName(evt->event);
       if (!sock_name.empty()) {
         current_which = evt->which;
         current_ts_ = evt->mono_time;
-
         if ((current_ts_ - last_print) > 5 * 1e9) {
           last_print = current_ts_;
           qInfo() << "at segment " << current_segment_ << ": " << elapsedTime(last_print);
@@ -276,9 +273,10 @@ void Replay::streamThread() {
 void Replay::mergeEvents(Segment *seg) {
   // double t1 = millis_since_boot();
   LogReader *log = seg->log;
+  if (log->events.empty()) return;
+
   auto log_event_begin_it = log->events.begin();
   if (auto e = (*log_event_begin_it); e->which == cereal::Event::INIT_DATA) {
-    // get route start tm from INIT_DATA
     route_start_ts_ = e->mono_time;
     // don't merge INIT_DATA
     log_event_begin_it += 1;
@@ -303,13 +301,6 @@ void Replay::mergeEvents(Segment *seg) {
   std::merge(begin_merge_it, end_merge_it, log_event_begin_it, log->events.end(),
              std::back_inserter(*dst), [](const Event *l, const Event *r) { return *l < *r; });
 
-  std::vector<Event *> *prev_event = events_;
-  {
-    std::unique_lock events_lock(mutex_);
-    events_ = dst;
-    seg->loaded = true;
-  }
-
   // remove segments
   for (auto it = segments_.begin(); it != segments_.end();) {
     if (auto &e = it->second->log->events; !e.empty()) {
@@ -320,7 +311,12 @@ void Replay::mergeEvents(Segment *seg) {
     }
     ++it;
   }
-  delete prev_event;
+
+  std::unique_lock events_lock(mutex_);
+  delete events_;
+  events_ = dst;
+  seg->loaded = true;
+  events_changed_ = true;
   // qInfo() << "merge array " << millis_since_boot() - t1 << "Ksize " << events_->size();
 }
 
@@ -355,9 +351,9 @@ Segment::Segment(int seg_num, const SegmentFile &file, QObject *parent) : seg_nu
 }
 
 Segment::~Segment() {
-  qDebug() << QString("remove segment %1").arg(seg_num);
   delete log;
   for (auto f : frames) delete f;
+  qDebug() << QString("remove segment %1").arg(seg_num);
 }
 
 // class CameraServer

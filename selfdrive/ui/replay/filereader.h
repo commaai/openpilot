@@ -85,10 +85,10 @@ private:
   void start();
   void parseEvents(const QByteArray &dat);
 
-  FileReader *file_reader_ = nullptr;
-
   std::atomic<bool> exit_ = false;
   std::atomic<bool> valid_ = false;
-  QThread *thread_ = nullptr;
   std::vector<uint8_t> raw_;
+
+  FileReader *file_reader_ = nullptr;
+  QThread *thread_ = nullptr;
 };

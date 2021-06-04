@@ -58,9 +58,15 @@ FrameReader::~FrameReader() {
   // free all.
   for (auto &f : frames_) {
     if (f.picture) av_frame_free(&f.picture);
+    av_free_packet(&f.pkt);
   }
+  if (frmRgb_) {
+    av_frame_free(&frmRgb_);
+    av_free(rgbFrmBuffer_);
+  }
+  avcodec_close(pCodecCtx_);
   avcodec_free_context(&pCodecCtx_);
-  avformat_free_context(pFormatCtx_);
+  avformat_close_input(&pFormatCtx_);
   sws_freeContext(sws_ctx_);
 }
 
@@ -126,17 +132,13 @@ void FrameReader::decodeThread() {
       int gotFrame;
       AVFrame *pFrame = av_frame_alloc();
       avcodec_decode_video2(pCodecCtx_, pFrame, &gotFrame, &frame.pkt);
-      av_free_packet(&frame.pkt);
-
-      AVFrame *picture = gotFrame ? toRGB(pFrame) : nullptr;
-      av_frame_free(&pFrame);
-
-      if (!picture) {
-        qDebug() << "failed to decode frame " << i << " in " << url_.c_str();
+      if (!gotFrame) {
+        av_frame_free(&pFrame);
+        pFrame = nullptr;
       }
       std::unique_lock lk(mutex_);
-      frame.picture = picture;
-      frame.failed = !picture;
+      frame.picture = pFrame;
+      frame.failed = !gotFrame;
       cv_frame_.notify_all();
     }
 
@@ -148,17 +150,19 @@ void FrameReader::decodeThread() {
   }
 }
 
-AVFrame *FrameReader::toRGB(AVFrame *frm) {
+uint8_t *FrameReader::toRGB(AVFrame *frm) {
   int numBytes = avpicture_get_size(AV_PIX_FMT_BGR24, frm->width, frm->height);
   if (numBytes > 0) {
-    uint8_t *buffer = (uint8_t *)av_malloc(numBytes * sizeof(uint8_t));
-    AVFrame *frmRgb = av_frame_alloc();
-    if (avpicture_fill((AVPicture *)frmRgb, buffer, AV_PIX_FMT_BGR24, frm->width, frm->height) > 0 &&
-        sws_scale(sws_ctx_, (uint8_t const *const *)frm->data, frm->linesize, 0, frm->height,
-                  frmRgb->data, frmRgb->linesize) > 0) {
-      return frmRgb;
+    if (!frmRgb_) {
+      rgbFrmBuffer_ = (uint8_t *)av_malloc(numBytes * sizeof(uint8_t));
+      frmRgb_ = av_frame_alloc();
+      int ret = avpicture_fill((AVPicture *)frmRgb_, rgbFrmBuffer_, AV_PIX_FMT_BGR24, frm->width, frm->height);
+      assert(ret > 0);
     }
-    av_frame_free(&frmRgb);
+    if (sws_scale(sws_ctx_, (uint8_t const *const *)frm->data, frm->linesize, 0, frm->height,
+                  frmRgb_->data, frmRgb_->linesize) > 0) {
+      return frmRgb_->data[0];
+    }
   }
   return nullptr;
 }
@@ -174,6 +178,5 @@ uint8_t *FrameReader::get(int idx) {
   if (double dt = millis_since_boot() - t1; dt > 20) {
     qDebug() << "slow get frame " << idx << ", time: " << dt << "ms";
   }
-
-  return frames_[idx].picture ? frames_[idx].picture->data[0] : nullptr;
+  return frames_[idx].picture ? toRGB(frames_[idx].picture) : nullptr;
 }

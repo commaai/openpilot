@@ -37,7 +37,7 @@ private:
   void process();
   bool processFrames();
   void decodeThread();
-  AVFrame *toRGB(AVFrame *frm);
+  uint8_t *toRGB(AVFrame *frm);
 
   struct Frame {
     AVPacket pkt = {};
@@ -48,6 +48,8 @@ private:
 
   AVFormatContext *pFormatCtx_ = NULL;
   AVCodecContext *pCodecCtx_ = NULL;
+  AVFrame *frmRgb_ = nullptr;
+  uint8_t *rgbFrmBuffer_ = nullptr;
   struct SwsContext *sws_ctx_ = NULL;
 
   std::mutex mutex_;
