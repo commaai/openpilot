@@ -1,4 +1,4 @@
-Version 0.8.5 (2021-05-11)
+Version 0.8.5 (2021-06-11)
 ========================
  * NEOS update: improved reliability and stability
  * Smart model-based Forward Collision Warning
