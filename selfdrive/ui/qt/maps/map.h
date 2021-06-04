@@ -58,7 +58,6 @@ private:
 
   // Route
   bool gps_ok = false;
-  bool has_route = false;
   QGeoServiceProvider *geoservice_provider;
   QGeoRoutingManager *routing_manager;
   QGeoRoute route;
@@ -67,7 +66,12 @@ private:
   QMapbox::Coordinate last_position = QMapbox::Coordinate(37.7393118509158, -122.46471285025565);
   QMapbox::Coordinate nav_destination;
   double last_maneuver_distance = 1000;
+
+  // Route recompute
+  int recompute_backoff = 0;
+  int recompute_countdown = 0;
   void calculateRoute(QMapbox::Coordinate destination);
+  void clearRoute();
   bool shouldRecompute();
 
 private slots:
