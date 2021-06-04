@@ -450,6 +450,18 @@ def backoff(retries):
   return random.randrange(0, min(128, int(2 ** retries)))
 
 
+def manage_tokens(api):
+  try:
+    params = Params()
+    mapbox = api.get(f"/v1/tokens/mapbox/{api.dongle_id}/", timeout=5.0)
+    if mapbox.status_code == 200:
+      params.put("MapboxToken", mapbox.json()["token"])
+    else:
+      params.delete("MapboxToken")
+  except Exception:
+    cloudlog.exception("Failed to update tokens")
+
+
 def main():
   params = Params()
   dongle_id = params.get("DongleId", encoding='utf-8')
@@ -465,8 +477,11 @@ def main():
                              cookie="jwt=" + api.get_token(),
                              enable_multithread=True,
                              timeout=1.0)
-      cloudlog.event("athenad.main.connected_ws", ws_uri=ws_uri)
       ws.settimeout(1)
+      cloudlog.event("athenad.main.connected_ws", ws_uri=ws_uri)
+
+      manage_tokens(api)
+
       conn_retries = 0
       handle_long_poll(ws)
     except (KeyboardInterrupt, SystemExit):
