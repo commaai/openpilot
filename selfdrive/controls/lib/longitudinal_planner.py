@@ -139,7 +139,7 @@ class Planner():
     self.lead_mpc2.update(sm['carState'], lead_1)
     v_cruise_clipped = np.clip(v_cruise, v_ego - 10.0, v_ego + 5.0)
     self.cruise_mpc.update(v_ego, a_ego,
-                           v_cruise_clipped * np.arange(0.,10.,0),
+                           v_cruise_clipped * np.arange(0.,10.,1.0),
                            v_cruise_clipped * np.ones(10),
                            np.zeros(10))
 
