@@ -14,7 +14,7 @@ In general, the WASD keys control gas and brakes and steering torque in 5% incre
 Using a joystick:
 ---
 
-In order to use a joystick over the network, we need to run joystickd locally from your laptop and have it send `testJoystick` ZMQ packets that are republished on the comma two as msgq so that controlsd can receive them. First connect a compatible joystick to your PC; joystickd uses [inputs](https://pypi.org/project/inputs).
+In order to use a joystick over the network, we need to run joystickd locally from your laptop and have it send `testJoystick` ZMQ packets over the network to the comma two. First connect a compatible joystick to your PC; joystickd uses [inputs](https://pypi.org/project/inputs) which supports many common gamepads and joysticks.
 
 1. Connect a joystick to your laptop, tell cereal to publish using ZMQ, and start joystickd:
    ```shell
@@ -26,8 +26,13 @@ In order to use a joystick over the network, we need to run joystickd locally fr
    ```shell
    cereal/messaging/bridge --reverse -ip {LAPTOP_IP}
    ```
+4. Finally, since we aren't running joystickd on the comma two, we need to write a parameter to let controlsd know to start in debug mode:
+   ```shell
+   echo -n "1" > /data/params/d/JoystickDebugMode
+   ```
 
 ---
+Now start your car and openpilot should go into debug mode with an alert!
 
 - `joystickd.py` runs a deamon that reads inputs from a keyboard or joystick and publishes them over zmq or msgq.
 - openpilot's [`controlsd`](https://github.com/commaai/openpilot/blob/master/selfdrive/controls/controlsd.py) reads a parameter that joystickd sets on startup and switches into a debug mode, receiving steering and acceleration inputs from the joystick instead of from the standard controllers.
