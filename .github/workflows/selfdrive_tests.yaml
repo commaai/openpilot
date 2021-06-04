@@ -301,7 +301,7 @@ jobs:
     - name: Test car models
       run: |
         ${{ env.RUN }} "scons -j$(nproc) && \
-                        FILEREADER_CACHE=1 coverage run --parallel-mode -m nose --processes=4 --process-timeout=60 \
+                        FILEREADER_CACHE=1 coverage run --parallel-mode -m nose --processes=4 --process-timeout=120 \
                                            selfdrive/test/test_models.py && \
                         coverage combine"
     - name: Upload coverage to Codecov
