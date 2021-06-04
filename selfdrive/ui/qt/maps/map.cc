@@ -203,7 +203,7 @@ void MapWindow::timerUpdate() {
         // Clear route if driving away from destination
         float d = segment.maneuver().position().distanceTo(to_QGeoCoordinate(last_position));
         if (d > REROUTE_DISTANCE) {
-          segment = QGeoRouteSegment();
+          clearRoute();
         }
       }
     }
@@ -262,18 +262,26 @@ void MapWindow::routeCalculated(QGeoRouteReply *reply) {
     navSource["type"] = "geojson";
     navSource["data"] = QVariant::fromValue<QMapbox::Feature>(feature);
     m_map->updateSource("navSource", navSource);
-    has_route = true;
+    m_map->setLayoutProperty("navLayer", "visibility", "visible");
   }
 
   reply->deleteLater();
 }
 
+void MapWindow::clearRoute() {
+  segment = QGeoRouteSegment(); // Clear route
+  m_map->setLayoutProperty("navLayer", "visibility", "none");
+}
+
 
 bool MapWindow::shouldRecompute(){
-  if (!gps_ok && segment.isValid()) return false; // Don't recompute when gps drifts in tunnels
-
   auto new_destination = coordinate_from_param("NavDestination");
-  if (!new_destination) return false;
+  if (!new_destination) {
+    clearRoute();
+    return false;
+  }
+
+  if (!gps_ok && segment.isValid()) return false; // Don't recompute when gps drifts in tunnels
 
   if (*new_destination != nav_destination){
     nav_destination = *new_destination;

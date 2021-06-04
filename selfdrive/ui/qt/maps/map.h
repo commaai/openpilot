@@ -58,7 +58,6 @@ private:
 
   // Route
   bool gps_ok = false;
-  bool has_route = false;
   QGeoServiceProvider *geoservice_provider;
   QGeoRoutingManager *routing_manager;
   QGeoRoute route;
@@ -72,6 +71,7 @@ private:
   int recompute_backoff = 0;
   int recompute_countdown = 0;
   void calculateRoute(QMapbox::Coordinate destination);
+  void clearRoute();
   bool shouldRecompute();
 
 private slots:
