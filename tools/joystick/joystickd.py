@@ -10,6 +10,7 @@ from dataclasses import dataclass
 
 from common.numpy_fast import clip
 from common.params import Params
+from inputs import get_gamepad
 from selfdrive.controls.lib.pid import apply_deadzone
 from tools.lib.kbhit import KBHit
 
@@ -122,6 +123,4 @@ def joystick_thread(use_keyboard):
 if __name__ == "__main__":
   args = sys.argv[1:]
   use_keyboard = len(args) and args[0] == '--keyboard'
-  if not use_keyboard:
-    from inputs import get_gamepad
   joystick_thread(use_keyboard=use_keyboard)
