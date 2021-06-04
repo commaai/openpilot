@@ -24,7 +24,7 @@ In order to use a joystick over the network, we need to run joystickd locally fr
 2. Start a WiFi hotspot on your comma two, connect your laptop to it, and open a new ssh shell.
 3. On your comma two, run unbridge with your laptop's IP address. This republishes `testJoystick` sent from your laptop so that openpilot can receive the messages:
    ```shell
-   cereal/messaging/bridge --reverse -ip {LAPTOP_IP}
+   cereal/messaging/bridge --reverse --ip {LAPTOP_IP}
    ```
 4. Finally, since we aren't running joystickd on the comma two, we need to write a parameter to let controlsd know to start in debug mode:
    ```shell
@@ -32,7 +32,7 @@ In order to use a joystick over the network, we need to run joystickd locally fr
    ```
 
 ---
-Now start your car and openpilot should go into debug mode with an alert!
+Now start your car and openpilot should go into debug mode with an alert on startup!
 
 - `joystickd.py` runs a deamon that reads inputs from a keyboard or joystick and publishes them over zmq or msgq.
 - openpilot's [`controlsd`](https://github.com/commaai/openpilot/blob/master/selfdrive/controls/controlsd.py) reads a parameter that joystickd sets on startup and switches into a debug mode, receiving steering and acceleration inputs from the joystick instead of from the standard controllers.
