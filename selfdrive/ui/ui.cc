@@ -129,6 +129,11 @@ static void update_state(UIState *s) {
   SubMaster &sm = *(s->sm);
   UIScene &scene = s->scene;
 
+  // update engageability and DM icons at 2Hz
+  if (sm.frame % (UI_FREQ / 2) == 0) {
+    scene.engageable = sm["controlsState"].getControlsState().getEngageable();
+    scene.dm_active = sm["driverMonitoringState"].getDriverMonitoringState().getIsActiveMode();
+  }
   if (sm.updated("radarState")) {
     std::optional<cereal::ModelDataV2::XYZTData::Reader> line;
     if (sm.rcv_frame("modelV2") > 0) {
