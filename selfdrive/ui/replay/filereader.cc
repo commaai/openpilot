@@ -89,9 +89,8 @@ void LogReader::start() {
 }
 
 void LogReader::parseEvents(const QByteArray &dat) {
-  std::shared_ptr<std::vector<uint8_t>> raw = std::make_shared<std::vector<uint8_t>>();
-  raw->resize(1024 * 1024 * 64);
-  if (!decompressBZ2(*raw, dat.data(), dat.size())) {
+  raw_.resize(1024 * 1024 * 64);
+  if (!decompressBZ2(raw_, dat.data(), dat.size())) {
     qWarning() << "bz2 decompress failed";
   }
 
@@ -100,10 +99,10 @@ void LogReader::parseEvents(const QByteArray &dat) {
   };
 
   valid_ = true;
-  kj::ArrayPtr<const capnp::word> words((const capnp::word *)raw->data(), raw->size() / sizeof(capnp::word));
+  kj::ArrayPtr<const capnp::word> words((const capnp::word *)raw_.data(), raw_.size() / sizeof(capnp::word));
   while (!exit_ && words.size() > 0) {
     try {
-      std::unique_ptr<Event> evt = std::make_unique<Event>(words, raw);
+      std::unique_ptr<Event> evt = std::make_unique<Event>(words);
       switch (evt->event.which()) {
         case cereal::Event::ROAD_ENCODE_IDX:
           insertEidx(RoadCam, evt->event.getRoadEncodeIdx());
@@ -130,7 +129,6 @@ void LogReader::parseEvents(const QByteArray &dat) {
     std::sort(events.begin(), events.end(), [=](const Event* l, const Event*r) {
       return *l < *r;
     });
-    qInfo() << "*********" <<  QThread::currentThreadId() ;
     emit finished(valid_);  
   }
 }

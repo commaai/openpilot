@@ -45,7 +45,7 @@ struct EncodeIdx {
 
 class Event {
 public:
-  Event(const kj::ArrayPtr<const capnp::word> &amsg, std::shared_ptr<std::vector<uint8_t>> raw) : reader(amsg), raw(raw) {
+  Event(const kj::ArrayPtr<const capnp::word> &amsg) : reader(amsg) {
     words = kj::ArrayPtr<const capnp::word>(amsg.begin(), reader.getEnd());
     event = reader.getRoot<cereal::Event>();
     which = event.which();
@@ -55,21 +55,13 @@ public:
     return l.mono_time < r.mono_time || (l.mono_time == r.mono_time && l.which < r.which);
   }
 
-  ~Event() {
-    if (raw.use_count() == 1) {
-      qDebug() << "delete raw ***********" << i++;
-    }
-  }
   inline kj::ArrayPtr<const capnp::byte> bytes() const { return words.asBytes(); }
 
-  kj::ArrayPtr<const capnp::word> words;
-  capnp::FlatArrayMessageReader reader;
-  cereal::Event::Reader event;
   uint64_t mono_time;
   cereal::Event::Which which;
-private:
-  std::shared_ptr<std::vector<uint8_t>> raw;
-  inline static int i = 0;
+  cereal::Event::Reader event;
+  capnp::FlatArrayMessageReader reader;
+  kj::ArrayPtr<const capnp::word> words;
 };
 
 typedef std::unordered_map<uint32_t, EncodeIdx> EncodeIdxMap;
@@ -98,4 +90,5 @@ private:
   std::atomic<bool> exit_ = false;
   std::atomic<bool> valid_ = false;
   QThread *thread_ = nullptr;
+  std::vector<uint8_t> raw_;
 };

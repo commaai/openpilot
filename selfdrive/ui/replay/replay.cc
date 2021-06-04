@@ -38,6 +38,7 @@ Replay::Replay(SubMaster *sm, QObject *parent) : sm_(sm), QObject(parent) {
 Replay::~Replay() {
   stop();
   delete pm_;
+  delete events_;
 }
 
 bool Replay::start(const QString &routeName) {
@@ -55,6 +56,7 @@ bool Replay::start(const Route &route) {
 
   route_ = route;
   current_segment_ = route_.segments().firstKey();
+  qInfo() << "current segment " << current_segment_;
 
   qDebug() << "replay route " << route_.name() << " from " << current_segment_ << ", total segments:" << route.segments().size();
   queue_thread_ = std::thread(&Replay::queueSegmentThread, this);
@@ -72,15 +74,9 @@ void Replay::stop() {
   queue_thread_.join();
   exit_ = false;
 
-  segments_.clear();
-  for (auto cam_type : ALL_CAMERAS) {
-    encoderIdx_[cam_type].clear();
-  }
-  for (Event *e : *events_) {
-    delete e;
-  }
+  // clear all
   events_->clear();
-
+  segments_.clear();
   current_ts_ = seek_ts_ = 0;
   current_segment_ = 0;
   route_start_ts_ = 0;
@@ -92,17 +88,21 @@ QString Replay::elapsedTime(uint64_t ns) {
   return a.toString("hh:mm:ss");
 }
 
-void Replay::relativeSeek(int seconds) {
-  seekTo(current_ts_ + seconds * 1e9);
+void Replay::seek(int seconds) {
+  if (route_start_ts_ > 0) {
+    seekTo(route_start_ts_ + seconds * 1e9);
+  }
 }
 
-void Replay::seek(int seconds) {
-  seekTo(route_start_ts_ + seconds * 1e9);
+void Replay::relativeSeek(int seconds) {
+  if (current_ts_ > 0) {
+    seekTo(current_ts_ + seconds * 1e9);
+  }
 }
 
 void Replay::seekTo(uint64_t to_ts) {
   const auto &rs = route_.segments();
-  if (!rs.size()) return;
+  if (rs.isEmpty()) return;
 
   std::unique_lock lk(mutex_);
   seek_ts_ = to_ts;
@@ -115,17 +115,18 @@ void Replay::seekTo(uint64_t to_ts) {
 // return nullptr if segment is not loaded
 std::shared_ptr<Segment> Replay::getSegment(int segment) {
   auto it = segments_.find(segment);
-  return (it != segments_.end() && !it->second->loading()) ? it->second : nullptr;
+  return (it != segments_.end() && it->second->loaded) ? it->second : nullptr;
 }
 
-void Replay::pushFrame(CameraType cam_type, uint32_t frame_id) {
-  if (!camera_server_.hasCamera(cam_type)) return;
-
-  auto eidx = encoderIdx_[cam_type].find(frame_id);
-  if (eidx != encoderIdx_[cam_type].end()) {
-    auto seg = getSegment(eidx->second.segmentNum);
-    if (seg) {
-      camera_server_.pushFrame(cam_type, seg, eidx->second.segmentId);
+void Replay::pushFrame(int cur_seg_num, CameraType cam_type, uint32_t frame_id) {
+  int search_in[] = {cur_seg_num, cur_seg_num - 1, cur_seg_num + 1};
+  for (auto n : search_in) {
+    if (auto seg = getSegment(n)) {
+      if (auto eidx = seg->log->encoderIdx[cam_type].find(frame_id); eidx != seg->log->encoderIdx[cam_type].end()) {
+        camera_server_.ensureServerForSegment(seg.get());
+        camera_server_.pushFrame(cam_type, seg, eidx->second.segmentId);
+        break;
+      }
     }
   }
 }
@@ -146,9 +147,8 @@ const std::string &Replay::eventSocketName(const cereal::Event::Reader &e) {
 }
 
 void Replay::doMergeEvent() {
-  qInfo() << "*********2" << QThread::currentThreadId();
-  Segment* sender = qobject_cast<Segment*>(QObject::sender());
-  mergeEvents(sender->log);
+  Segment *sender = qobject_cast<Segment *>(QObject::sender());
+  mergeEvents(sender);
 }
 
 // maintain the segment window
@@ -157,7 +157,7 @@ void Replay::queueSegmentThread() {
   while (!exit_) {
     int segment = current_segment_;
     if (prev_segment == segment) {
-      QThread::msleep(100);
+      QThread::msleep(20);
       continue;
     }
 
@@ -165,12 +165,12 @@ void Replay::queueSegmentThread() {
     const int cur_idx = std::distance(rs.begin(), rs.find(segment));
     int i = 0;
     for (auto it = rs.begin(); it != rs.end(); ++it, ++i) {
+      int n = it.key();
       if (i >= cur_idx - BACKWARD_SEGS && i <= cur_idx + FORWARD_SEGS) {
-        int n = it.key();
         if (segments_.find(n) == segments_.end()) {
           std::unique_lock lk(mutex_);
           segments_[n] = std::make_shared<Segment>(n, rs[n]);
-          connect(segments_[n].get(), &Segment::loaded, this, &Replay::doMergeEvent);
+          connect(segments_[n].get(), &Segment::finishedRead, this, &Replay::doMergeEvent);
         }
       }
     }
@@ -178,94 +178,81 @@ void Replay::queueSegmentThread() {
   }
 }
 
-// std::vector<Event *>::iterator Replay::currentEvent() {
-//   std::vector<Event *>::iterator eit;
-//   // std::unique_lock lk(mutex_);
-//   if (events_changed_ && current_ts_ > route_start_ts_) {
-//     // Make sure not to send duplicate events
-//     eit = std::upper_bound(events_->begin(), events_->end(), current_ts_, [&](uint64_t v, const Event *e) {
-//       return v < e->mono_time || (v == e->mono_time && which < e->which);
-//     });
-//   } else {
-//     // seeking
-//     eit = std::upper_bound(events_->begin(), events_->end(), seek_ts_, [](uint64_t v, const Event *e) {
-//       return v < e->mono_time;
-//     });
-//   }
-//   events_changed_ = false;
-//   std::shared_ptr<Segment> seg = ;
-//   if (eit == events_->end() || (seg = getSegment(current_segment_)) == nullptr) {
-//     return events_->end();
-//   }
-//   return eit;
-// }
+std::vector<Event *>::iterator Replay::getEvent(uint64_t tm, cereal::Event::Which which) {
+  std::unique_lock lk(mutex_);
+  events_changed_ = false;
+  std::vector<Event *>::iterator eit = events_->end();
+  if (!events_->empty()) {
+    // make sure current segment is loaded
+    assert(route_start_ts_ != 0);
+    int segment = tm == 0 ? 0 : std::max(tm - route_start_ts_, (uint64_t)0) / 1e9 / SEGMENT_LENGTH;
+    if (getSegment(segment)) {
+      eit = std::upper_bound(events_->begin(), events_->end(), tm, [&](uint64_t v, const Event *e) {
+        return v < e->mono_time || (v == e->mono_time && which < e->which);
+      });
+    }
+  }
+  return eit;
+}
 
 void Replay::streamThread() {
   uint64_t last_print = 0;
   uint64_t prev_seek_ts = 0;
-  cereal::Event::Which which;
+  uint64_t evt_start_tm = 0;
+  cereal::Event::Which current_which;
 
   while (!exit_) {
-    // double t1 = millis_since_boot();
-    mutex_.lock();
-    std::shared_ptr<Segment> seg = getSegment(current_segment_);
-    uint64_t search_ts = current_ts_;
+    uint64_t seek_to = current_ts_;
     if (prev_seek_ts != seek_ts_) {
-      which = cereal::Event::INIT_DATA;  // 0
-      search_ts = prev_seek_ts = seek_ts_;
+      current_which = cereal::Event::INIT_DATA;  // 0
+      seek_to = prev_seek_ts = seek_ts_;
     }
-    auto eit = std::upper_bound(events_->begin(), events_->end(), search_ts, [&](uint64_t v, const Event *e) {
-      return v < e->mono_time || (v == e->mono_time && which < e->which);
-    });
-    if (!seg || eit == events_->end()) {
-      mutex_.unlock();
+    auto eit = getEvent(seek_to, current_which);
+    if (eit == events_->end()) {
       qDebug() << "waiting for events";
       QThread::msleep(100);
       continue;
     }
-    events_changed_ = false;
-    camera_server_.ensureServerForSegment(seg.get());
-    mutex_.unlock();
-
-    uint64_t evt_start_tm = (*eit)->mono_time;
-    // TODO: use initData's logMonoTime
-    if (route_start_ts_ == 0) {
-      route_start_ts_ = evt_start_tm;
-    }
+    evt_start_tm = (*eit)->mono_time;
     uint64_t loop_start_tm = nanos_since_boot();
     while (!exit_) {
-      std::unique_lock lk(mutex_);
-      if (events_changed_ || eit == events_->end()) break;
+      Event *evt;
+      {
+        std::unique_lock lk(mutex_);
+        if (events_changed_ || eit == events_->end()) break;
 
-      Event *evt = (*eit);
-      current_ts_ = evt->mono_time;
-      which = evt->which;
+        evt = (*eit);
+      }
+
       const std::string &sock_name = eventSocketName(evt->event);
       if (!sock_name.empty()) {
+        current_which = evt->which;
+        current_ts_ = evt->mono_time;
+
         if ((current_ts_ - last_print) > 5 * 1e9) {
           last_print = current_ts_;
           qInfo() << "at segment " << current_segment_ << ": " << elapsedTime(last_print);
         }
 
         // keep time
-        long etime = current_ts_ - evt_start_tm;
-        long rtime = nanos_since_boot() - loop_start_tm;
-        long us_behind = ((etime - rtime) * 1e-3) + 0.5;
+        uint64_t etime = current_ts_ - evt_start_tm;
+        uint64_t rtime = nanos_since_boot() - loop_start_tm;
+        uint64_t us_behind = ((etime - rtime) * 1e-3) + 0.5;
         if (us_behind > 0 && us_behind < 1e6) {
           QThread::usleep(us_behind);
           //qDebug() << "sleeping" << us_behind << etime << timer.nsecsElapsed();
         }
 
         // publish frames
-        switch (which) {
+        switch (current_which) {
           case cereal::Event::ROAD_CAMERA_STATE:
-            pushFrame(RoadCam, evt->event.getRoadCameraState().getFrameId());
+            pushFrame(current_segment_, RoadCam, evt->event.getRoadCameraState().getFrameId());
             break;
           case cereal::Event::DRIVER_CAMERA_STATE:
-            pushFrame(DriverCam, evt->event.getDriverCameraState().getFrameId());
+            pushFrame(current_segment_, DriverCam, evt->event.getDriverCameraState().getFrameId());
             break;
           case cereal::Event::WIDE_ROAD_CAMERA_STATE:
-            pushFrame(WideRoadCam, evt->event.getWideRoadCameraState().getFrameId());
+            pushFrame(current_segment_, WideRoadCam, evt->event.getWideRoadCameraState().getFrameId());
             break;
           default:
             break;
@@ -286,44 +273,55 @@ void Replay::streamThread() {
   }
 }
 
-void Replay::mergeEvents(LogReader *log) {
+void Replay::mergeEvents(Segment *seg) {
   // double t1 = millis_since_boot();
-  // remove segments
-  // qInfo() << "mergeEvents start log size " << log->events.size() << " my size " << events_->size();
-  uint64_t max_tm = route_start_ts_ + (current_segment_ - BACKWARD_SEGS) * SEGMENT_LENGTH * 1e9;
-  uint64_t min_tm = route_start_ts_ + (current_segment_ + FORWARD_SEGS + 1) * SEGMENT_LENGTH * 1e9;
-  auto begin_it = std::lower_bound(events_->begin(), events_->end(), max_tm, [](const Event *e, uint64_t v) {
+  LogReader *log = seg->log;
+  auto log_event_begin_it = log->events.begin();
+  if (auto e = (*log_event_begin_it); e->which == cereal::Event::INIT_DATA) {
+    // get route start tm from INIT_DATA
+    route_start_ts_ = e->mono_time;
+    // don't merge INIT_DATA
+    log_event_begin_it += 1;
+  }
+  assert(route_start_ts_ != 0);
+
+  uint64_t min_tm = route_start_ts_ + std::max(current_segment_ - BACKWARD_SEGS, 0) * SEGMENT_LENGTH * 1e9;
+  uint64_t max_tm = route_start_ts_ + (current_segment_ + FORWARD_SEGS + 1) * SEGMENT_LENGTH * 1e9;
+  auto begin_merge_it = std::lower_bound(events_->begin(), events_->end(), min_tm, [](const Event *e, uint64_t v) {
     return e->mono_time < v;
   });
-  if (begin_it == events_->end()) {
-    begin_it = events_->begin();
+  if (begin_merge_it == events_->end()) {
+    begin_merge_it = events_->begin();
   }
-  for (auto it = events_->begin(); it != begin_it; ++it) {
-    delete *it;
-    *it = nullptr;
-  }
-
-  auto end_it = std::upper_bound(begin_it, events_->end(), min_tm, [](uint64_t v, const Event *e) {
+  auto end_merge_it = std::upper_bound(begin_merge_it, events_->end(), max_tm, [](uint64_t v, const Event *e) {
     return v < e->mono_time;
   });
-  for (auto it = end_it; it != events_->end(); ++it) {
-    delete *it;
-    *it = nullptr;
-  }
 
   // merge segment
   std::vector<Event *> *dst = new std::vector<Event *>;
-  dst->reserve((end_it - begin_it) + log->events.size());
-  std::merge(begin_it, end_it, log->events.begin(), log->events.end(),
+  dst->reserve((end_merge_it - begin_merge_it) + log->events.size());
+  std::merge(begin_merge_it, end_merge_it, log_event_begin_it, log->events.end(),
              std::back_inserter(*dst), [](const Event *l, const Event *r) { return *l < *r; });
 
-  std::unique_lock events_lock(mutex_);
-  events_changed_ = true;
-  for (auto cam_type : ALL_CAMERAS) {
-    encoderIdx_[cam_type].merge(log->encoderIdx[cam_type]);
+  std::vector<Event *> *prev_event = events_;
+  {
+    std::unique_lock events_lock(mutex_);
+    events_ = dst;
+    seg->loaded = true;
   }
-  events_ = dst;
-  // qInfo() << "merge array " << millis_since_boot() - t1 << "size " << events_->size();
+
+  // remove segments
+  for (auto it = segments_.begin(); it != segments_.end();) {
+    if (auto &e = it->second->log->events; !e.empty()) {
+      if (e.back()->mono_time < min_tm || e.front()->mono_time > max_tm) {
+        it = segments_.erase(it);
+        continue;
+      }
+    }
+    ++it;
+  }
+  delete prev_event;
+  // qInfo() << "merge array " << millis_since_boot() - t1 << "Ksize " << events_->size();
 }
 
 // class Segment
@@ -339,7 +337,7 @@ Segment::Segment(int seg_num, const SegmentFile &file, QObject *parent) : seg_nu
   loading_ = 1;
   log = new LogReader(log_file);
   QObject::connect(log, &LogReader::finished, [&](bool success) {
-    if (--loading_ == 0) emit loaded();
+    if (--loading_ == 0) emit finishedRead();
   });
 
   // start framereader threads
@@ -351,7 +349,7 @@ Segment::Segment(int seg_num, const SegmentFile &file, QObject *parent) : seg_nu
     if (!file.isEmpty()) {
       loading_ += 1;
       FrameReader *fr = frames[cam_type] = new FrameReader(file.toStdString(), this);
-      QObject::connect(fr, &FrameReader::finished, [=]() { if(--loading_ == 0) emit loaded(); });
+      QObject::connect(fr, &FrameReader::finished, [=]() { if(--loading_ == 0) emit finishedRead(); });
     }
   }
 }
@@ -375,6 +373,10 @@ CameraServer::~CameraServer() {
 }
 
 void CameraServer::ensureServerForSegment(Segment *seg) {
+  if (seg->seg_num == segment) return;
+
+  segment = seg->seg_num;
+
   static VisionStreamType stream_types[] = {
       [RoadCam] = VISION_STREAM_RGB_BACK,
       [DriverCam] = VISION_STREAM_RGB_FRONT,
@@ -422,6 +424,12 @@ void CameraServer::ensureServerForSegment(Segment *seg) {
   }
 }
 
+void CameraServer::pushFrame(CameraType type, std::shared_ptr<Segment> seg, uint32_t segmentId) {
+  if (camera_states_[type]) {
+    camera_states_[type]->queue.push({seg, segmentId});
+  }
+}
+
 void CameraServer::stop() {
   if (!vipc_server_) return;
 
@@ -439,6 +447,7 @@ void CameraServer::stop() {
   // stop vipc server
   delete vipc_server_;
   vipc_server_ = nullptr;
+  segment = -1;
 }
 
 void CameraServer::cameraThread(CameraType cam_type, CameraServer::CameraState *s) {

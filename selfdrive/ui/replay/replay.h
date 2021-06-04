@@ -15,14 +15,13 @@ class Segment : public QObject {
 public:
   Segment(int seg_num, const SegmentFile &file, QObject *parent = nullptr);
   ~Segment();
-  bool loading() { return loading_ > 0; }
 
   const int seg_num;
   LogReader *log = nullptr;
   FrameReader *frames[MAX_CAMERAS] = {};
-
+  std::atomic<bool> loaded = false;
 signals:
-  void loaded();
+  void finishedRead();
 
 private:
   std::atomic<int> loading_ = 0;
@@ -35,15 +34,14 @@ public:
   void stop();
   void ensureServerForSegment(Segment *seg);
   inline bool hasCamera(CameraType type) const { return camera_states_[type] != nullptr; }
-  inline void pushFrame(CameraType type, std::shared_ptr<Segment> seg, uint32_t segmentId) {
-    camera_states_[type]->queue.push({seg, segmentId});
-  }
+  void pushFrame(CameraType type, std::shared_ptr<Segment> seg, uint32_t segmentId);
 
 private:
   cl_device_id device_id_ = nullptr;
   cl_context context_ = nullptr;
   VisionIpcServer *vipc_server_ = nullptr;
   std::atomic<bool> exit_ = false;
+  int segment = -1;
 
   struct CameraState {
     std::thread thread;
@@ -54,6 +52,7 @@ private:
   CameraState *camera_states_[MAX_CAMERAS] = {};
   void cameraThread(CameraType cam_type, CameraState *s);
 };
+
 
 class Replay : public QObject {
   Q_OBJECT
@@ -74,10 +73,11 @@ private:
   void seekTo(uint64_t to_ts);
   void queueSegmentThread();
   void streamThread();
+  std::vector<Event*>::iterator getEvent(uint64_t tm, cereal::Event::Which which);
   std::vector<Event *>::iterator currentEvent();
 
-  void pushFrame(CameraType type, uint32_t frame_id);
-  void mergeEvents(LogReader *log);
+  void pushFrame(int cur_seg_num, CameraType type, uint32_t frame_id);
+  void mergeEvents(Segment *seg);
   std::shared_ptr<Segment> getSegment(int segment);
   const std::string &eventSocketName(const cereal::Event::Reader &e);
 
@@ -98,7 +98,7 @@ private:
   std::atomic<bool> events_changed_ = false;
   std::map<int, std::shared_ptr<Segment>> segments_;
   std::vector<Event*> *events_;
-  EncodeIdxMap encoderIdx_[MAX_CAMERAS] = {};
+  // EncodeIdxMap encoderIdx_[MAX_CAMERAS] = {};
 
   // vipc server
   CameraServer camera_server_;
