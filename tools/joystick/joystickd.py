@@ -3,6 +3,7 @@
 # This process publishes joystick events. Such events can be subscribed by
 # mocked car controller scripts.
 
+import argparse
 import sys
 import cereal.messaging as messaging
 
@@ -86,7 +87,6 @@ class Joystick:
 
 def joystick_thread(use_keyboard):
   Params().put_bool("JoystickDebugMode", True)
-
   joystick = Joystick(use_keyboard=use_keyboard)
   joystick_sock = messaging.pub_sock('testJoystick')
 
@@ -99,25 +99,25 @@ def joystick_thread(use_keyboard):
           '- `E`: Toggle enabled\n'
           '- `T`: Steer required HUD')
   else:
-    print('Using joystick!')
+    print('\nUsing joystick!')
 
   # Receive joystick/key events and send testJoystick msg
-  try:
-    while 1:
-      joystick.update()
+  while True:
+    joystick.update()
+    print('\n' + ', '.join([f'{name}: {v}' for name, v in joystick.axes_values.items()]))
+    print(', '.join([f'{name}: {v}' for name, v in joystick.btn_states.items()]))
 
-      dat = messaging.new_message('testJoystick')
-      dat.testJoystick.axes = [joystick.axes_values[a] for a in AXES]
-      dat.testJoystick.buttons = [joystick.btn_states[btn] for btn in BUTTONS]
-      joystick_sock.send(dat.to_bytes())
-
-      print('\n' + ', '.join([f'{name}: {v}' for name, v in joystick.axes_values.items()]))
-      print(', '.join([f'{name}: {v}' for name, v in joystick.btn_states.items()]))
-  except KeyboardInterrupt:
-    print('Interrupted, shutting down!')
+    dat = messaging.new_message('testJoystick')
+    dat.testJoystick.axes = [joystick.axes_values[a] for a in AXES]
+    dat.testJoystick.buttons = [joystick.btn_states[btn] for btn in BUTTONS]
+    joystick_sock.send(dat.to_bytes())
 
 
 if __name__ == "__main__":
-  args = sys.argv[1:]
-  use_keyboard = len(args) and args[0] == '--keyboard'
-  joystick_thread(use_keyboard=use_keyboard)
+  parser = argparse.ArgumentParser(
+    description="Publishes joystick events from keyboard or joystick to control your car",
+    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+  parser.add_argument("--keyboard", action="store_true", help="Use your keyboard over ssh to control joystickd")
+  args = parser.parse_args(sys.argv[1:])
+
+  joystick_thread(use_keyboard=args.keyboard)
