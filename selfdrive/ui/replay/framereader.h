@@ -26,22 +26,21 @@ public:
   ~FrameReader();
   bool get(int idx, void* addr);
   bool valid() const { return valid_; }
-  // int getRGBSize() const { return width * height * 3; }
 
   int width = 0, height = 0;
 
 signals:
-  void finished(bool success);
+  void finished();
 
 private:
   void process();
   bool processFrames();
   void decodeThread();
-  bool toRGB(AVFrame *frm, void *addr);
+  bool toRGB(AVFrame *f, void *addr);
 
   struct Frame {
     AVPacket pkt = {};
-    AVFrame *picture = nullptr;
+    AVFrame *frame = nullptr;
     bool failed = false;
   };
   std::vector<Frame> frames_;

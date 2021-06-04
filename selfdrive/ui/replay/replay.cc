@@ -461,7 +461,6 @@ void CameraServer::cameraThread(CameraType cam_type, CameraServer::CameraState *
     VisionBuf *buf = vipc_server_->get_buffer(s->stream_type);
     if (frm->get(segmentId, buf->addr)) {
       VisionIpcBufExtra extra = {};
-      // memcpy(buf->addr, data, frm->getRGBSize());
       vipc_server_->send(buf, &extra, false);
     }
   }
