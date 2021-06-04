@@ -18,17 +18,20 @@ In order to use a joystick over the network, we need to run joystickd locally fr
 
 1. Connect a joystick to your laptop, tell cereal to publish using ZMQ, and start joystickd:
    ```shell
+   # ON YOUR LAPTOP
    export ZMQ=1
    tools/joystick/joystickd.py
    ```
-2. Start a WiFi hotspot on your comma two, connect your laptop to it, and open a new ssh shell.
-3. On your comma two, run unbridge with your laptop's IP address. This republishes `testJoystick` sent from your laptop so that openpilot can receive the messages:
+2. Connect your laptop to your comma two's WiFi hotspot and open a new ssh shell.
+3. Since we aren't running joystickd on the comma two, we need to write a parameter to let controlsd know to start in debug mode (resets on ignition off):
    ```shell
-   cereal/messaging/bridge --reverse --ip {LAPTOP_IP}
-   ```
-4. Finally, since we aren't running joystickd on the comma two, we need to write a parameter to let controlsd know to start in debug mode:
-   ```shell
+   # ON YOUR COMMA TWO
    echo -n "1" > /data/params/d/JoystickDebugMode
+   ```
+4. Run unbridge with your laptop's IP address. This republishes `testJoystick` sent from your laptop so that openpilot can receive the messages:
+   ```shell
+   # ON YOUR COMMA TWO
+   cereal/messaging/bridge --reverse --ip {LAPTOP_IP}
    ```
 
 ---
