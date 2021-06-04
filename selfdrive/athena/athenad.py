@@ -25,7 +25,7 @@ from common.api import Api
 from common.basedir import PERSIST
 from common.params import Params
 from common.realtime import sec_since_boot
-from selfdrive.hardware import HARDWARE, PC
+from selfdrive.hardware import HARDWARE, PC, TICI
 from selfdrive.loggerd.config import ROOT
 from selfdrive.loggerd.xattr_cache import getxattr, setxattr
 from selfdrive.swaglog import cloudlog, SWAGLOG_DIR
@@ -451,6 +451,9 @@ def backoff(retries):
 
 
 def manage_tokens(api):
+  if not TICI:
+    return
+
   try:
     params = Params()
     mapbox = api.get(f"/v1/tokens/mapbox/{api.dongle_id}/", timeout=5.0)
