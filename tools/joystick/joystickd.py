@@ -17,7 +17,6 @@ from tools.lib.kbhit import KBHit
 AXES = ['gb', 'steer']
 BUTTONS = ['cancel', 'engaged_toggle', 'steer_required']
 AXES_INCREMENT = 0.05  # 5% of full actuation each key press
-POLL_RATE = int(1000 / 10.)  # 10 hz
 kb = KBHit()
 
 
@@ -36,11 +35,9 @@ class Joystick:
     self.btn_states = {btn: False for btn in BUTTONS}
 
     self.buttons = {'r': 'reset', 'c': 'cancel', 'e': 'engaged_toggle', 't': 'steer_required'}
-    if self.use_keyboard:
-      self.axes = {'gb': ['w', 's'], 'steer': ['a', 'd']}  # first key is positive
-    else:
+    self.axes = {'gb': ['w', 's', 'ABS_Y'], 'steer': ['a', 'd', 'ABS_X']}
+    if not self.use_keyboard:
       self.max_axis_value = 255  # tune based on your joystick, 0 to this
-      self.axes = {'ABS_X': 'steer', 'ABS_Y': 'gb'}
       self.button_map = {'BTN_TRIGGER': 'cancel', 'BTN_THUMB': 'engaged_toggle',
                          'BTN_TOP': 'steer_required', 'BTN_THUMB2': 'reset'}
 
@@ -51,7 +48,7 @@ class Joystick:
       if key in self.axes['gb'] + self.axes['steer']:  # if axis event
         event.type = 'axis'
         event.axis = 'gb' if key in self.axes['gb'] else 'steer'
-        if self.axes[event.axis].index(key) == 0:
+        if key in ['w', 'a']:  # these keys are positive
           event.value = self.axes_values[event.axis] + AXES_INCREMENT
         else:
           event.value = self.axes_values[event.axis] - AXES_INCREMENT
@@ -62,11 +59,11 @@ class Joystick:
 
     else:  # Joystick
       joystick_event = get_gamepad()[0]
-      if joystick_event.code in self.axes:
+      if joystick_event.code in self.axes['gb'] + self.axes['steer']:
         event.type = 'axis'
-        event.axis = self.axes[joystick_event.code]
+        event.axis = 'gb' if joystick_event.code in self.axes['gb'] else 'steer'
         v = ((joystick_event.state / self.max_axis_value) - 0.5) * 2  # normalize value from -1 to 1
-        event.value = apply_deadzone(-v, 0.05) / (1 - 0.05)  # compensate for deadzone
+        event.value = apply_deadzone(-v, AXES_INCREMENT) / (1 - AXES_INCREMENT)  # compensate for deadzone
 
       # some buttons send events on rising and falling so only allow one state
       elif joystick_event.code in self.button_map and joystick_event.state == 0:
