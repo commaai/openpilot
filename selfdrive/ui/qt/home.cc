@@ -50,9 +50,6 @@ void HomeWindow::offroadTransition(bool offroad) {
   if (offroad) {
     slayout->setCurrentWidget(home);
   } else {
-    if (onroad->map != nullptr){
-      onroad->map->setVisible(!Params().get("NavDestination").empty());
-    }
     slayout->setCurrentWidget(onroad);
   }
   sidebar->setVisible(offroad);
@@ -72,6 +69,8 @@ void HomeWindow::showDriverView(bool show) {
 void HomeWindow::mousePressEvent(QMouseEvent* e) {
   // Handle sidebar collapsing
   if (onroad->isVisible() && (!sidebar->isVisible() || e->x() > sidebar->width())) {
+
+    // TODO: Handle this without exposing pointer to map widget
     // Hide map first if visible, then hide sidebar
     if (onroad->map != nullptr && onroad->map->isVisible()){
       onroad->map->setVisible(false);

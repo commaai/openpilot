@@ -87,6 +87,8 @@ private:
   OnroadAlerts *alerts;
   NvgWindow *nvg;
   QStackedLayout *layout;
+  QHBoxLayout* split;
+  void _offroadTransition(bool offroad);
 
 signals:
   void update(const UIState &s);
