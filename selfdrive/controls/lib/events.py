@@ -233,7 +233,7 @@ def debug_mode_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -
   return Alert(
     "Joystick Mode",
     f"Gas: {round(gb * 100., 1)}%, steer: {round(steer * 100., 1)}%",
-    AlertStatus.normal, AlertSize.mid,
+    AlertStatus.userPrompt, AlertSize.mid,
     Priority.LOWEST, VisualAlert.none, AudibleAlert.none, 0., 0., .1)
 
 
