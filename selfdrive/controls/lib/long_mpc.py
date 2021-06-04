@@ -14,7 +14,7 @@ class LongitudinalMpc():
   def __init__(self, mpc_id):
     self.mpc_id = mpc_id
 
-    self.setup_mpc()
+    self.reset_mpc()
     self.v_mpc = 0.0
     self.v_mpc_future = 0.0
     self.a_mpc = 0.0
@@ -27,7 +27,7 @@ class LongitudinalMpc():
     self.n_its = 0
     self.duration = 0
 
-  def setup_mpc(self):
+  def reset_mpc(self):
     ffi, self.libmpc = libmpc_py.get_libmpc(self.mpc_id)
     self.libmpc.init(MPC_COST_LONG.TTC, MPC_COST_LONG.DISTANCE,
                      MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
@@ -89,10 +89,8 @@ class LongitudinalMpc():
         cloudlog.warning("Longitudinal mpc %d reset - backwards: %s crashing: %s nan: %s" % (
                           self.mpc_id, backwards, crashing, nans))
 
-      self.libmpc.init(MPC_COST_LONG.TTC, MPC_COST_LONG.DISTANCE,
-                       MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
+      self.reset_mpc()
       self.cur_state[0].v_ego = v_ego
-      self.cur_state[0].a_ego = 0.0
       self.v_mpc = v_ego
       self.a_mpc = CS.aEgo
       self.prev_lead_status = False

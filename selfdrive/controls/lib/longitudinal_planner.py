@@ -10,6 +10,7 @@ from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.speed_smoother import speed_smoother
 from selfdrive.controls.lib.longcontrol import LongCtrlState
 from selfdrive.controls.lib.long_mpc import LongitudinalMpc
+from selfdrive.controls.lib.long_mpc_model import LongitudinalMpcModel
 from selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX
 
 LON_MPC_STEP = 0.2  # first step is 0.2s
@@ -58,52 +59,42 @@ class Planner():
   def __init__(self, CP):
     self.CP = CP
 
-    self.mpc1 = LongitudinalMpc(1)
-    self.mpc2 = LongitudinalMpc(2)
+    self.lead_mpc1 = LongitudinalMpc(1)
+    self.lead_mpc2 = LongitudinalMpc(2)
+    self.cruise_mpc = LongitudinalMpcModel()
     self.fcw = False
 
     self.v_desired = 0.0
     self.a_desired = 0.0
-    self.v_acc_next = 0.0
-    self.a_acc_next = 0.0
-
-    self.v_acc = 0.0
-    self.v_acc_future = 0.0
-    self.a_acc = 0.0
-    self.v_cruise = 0.0
-    self.a_cruise = 0.0
-
     self.longitudinalPlanSource = 'cruise'
-
-
-    self.first_loop = True
 
   def choose_solution(self, v_cruise_setpoint, enabled):
     if enabled:
       solutions = {'cruise': self.v_cruise}
-      if self.mpc1.lead_status:
-        solutions['mpc1'] = self.mpc1.v_mpc
-      if self.mpc2.lead_status:
-        solutions['mpc2'] = self.mpc2.v_mpc
+      if self.lead_mpc1.lead_status:
+        solutions['mpc1'] = self.lead_mpc1.v_mpc
+      if self.lead_mpc2.lead_status:
+        solutions['mpc2'] = self.lead_mpc2.v_mpc
 
       slowest = min(solutions, key=solutions.get)
 
       self.longitudinalPlanSource = slowest
       # Choose lowest of MPC and cruise
       if slowest == 'mpc1':
-        self.v_acc = self.mpc1.v_mpc
-        self.a_acc = self.mpc1.a_mpc
+        self.v_acc = self.lead_mpc1.v_mpc
+        self.a_acc = self.lead_mpc1.a_mpc
       elif slowest == 'mpc2':
-        self.v_acc = self.mpc2.v_mpc
-        self.a_acc = self.mpc2.a_mpc
+        self.v_acc = self.lead_mpc2.v_mpc
+        self.a_acc = self.lead_mpc2.a_mpc
       elif slowest == 'cruise':
         self.v_acc = self.v_cruise
         self.a_acc = self.a_cruise
 
-    self.v_acc_future = min([self.mpc1.v_mpc_future, self.mpc2.v_mpc_future, v_cruise_setpoint])
+    self.v_acc_future = min([self.lead_mpc1.v_mpc_future, self.lead_mpc2.v_mpc_future, v_cruise_setpoint])
 
   def update(self, sm, CP):
     v_ego = sm['carState'].vEgo
+    a_ego = sm['carState'].aEgo
     self.v_desired = np.clip(self.v_desired, v_ego - 3.0, v_ego + 3.0)
 
     v_cruise_kph = sm['controlsState'].vCruise
@@ -121,7 +112,11 @@ class Planner():
     following = lead_0.prob > .5 and lead_0.x[0] < 45.0 and lead_0.v[0] > v_ego and lead_0.a[0] > 0.0
 
     # Calculate speed for normal cruise control
-    if enabled and not sm['carState'].gasPressed:
+    if not enabled or sm['carState'].gasPressed:
+      starting = long_control_state == LongCtrlState.starting
+      self.v_desired = self.CP.minSpeedCan if starting else v_ego
+      self.a_desired = self.CP.startAccel if starting else min(0.0, a_ego)
+    else:
       accel_limits = [float(x) for x in calc_cruise_accel_limits(v_ego, following)]
       jerk_limits = [min(-0.1, accel_limits[0]), max(0.1, accel_limits[1])]  # TODO: make a separate lookup for jerk tuning
       accel_limits_turns = limit_accel_in_turns(v_ego, sm['carState'].steeringAngleDeg, accel_limits, self.CP)
@@ -137,24 +132,16 @@ class Planner():
                                                     jerk_limits[1], jerk_limits[0],
                                                     LON_MPC_STEP)
 
-      # cruise speed can't be negative even is user is distracted
-      self.v_cruise = max(self.v_cruise, 0.)
-    else:
-      starting = long_control_state == LongCtrlState.starting
-      a_ego = min(sm['carState'].aEgo, 0.0)
-      reset_speed = self.CP.minSpeedCan if starting else v_ego
-      reset_accel = self.CP.startAccel if starting else a_ego
-      self.v_acc = reset_speed
-      self.a_acc = reset_accel
-      self.v_desired = reset_speed
-      self.a_desired = reset_accel
-      self.v_cruise = reset_speed
-      self.a_cruise = reset_accel
-
-    self.mpc1.set_cur_state(self.v_desired, self.a_desired)
-    self.mpc2.set_cur_state(self.v_desired, self.a_desired)
-    self.mpc1.update(sm['carState'], lead_0)
-    self.mpc2.update(sm['carState'], lead_1)
+    self.lead_mpc1.set_cur_state(self.v_desired, self.a_desired)
+    self.lead_mpc2.set_cur_state(self.v_desired, self.a_desired)
+    self.cruise_mpc.set_cur_state(self.v_desired, self.a_desired)
+    self.lead_mpc1.update(sm['carState'], lead_0)
+    self.lead_mpc2.update(sm['carState'], lead_1)
+    v_cruise_clipped = np.clip(v_cruise, v_ego - 10.0, v_ego + 5.0)
+    self.cruise_mpc.update(v_ego, a_ego,
+                           v_cruise_clipped * np.arange(0.,10.,0),
+                           v_cruise_clipped * np.ones(10),
+                           np.zeros(10))
 
     self.choose_solution(v_cruise, enabled)
 
@@ -184,7 +171,7 @@ class Planner():
     longitudinalPlan.vTarget = float(self.v_acc)
     longitudinalPlan.aTarget = float(self.a_acc)
     longitudinalPlan.vTargetFuture = float(self.v_acc_future)
-    longitudinalPlan.hasLead = self.mpc1.lead_status
+    longitudinalPlan.hasLead = self.lead_mpc1.lead_status
     longitudinalPlan.longitudinalPlanSource = self.longitudinalPlanSource
     longitudinalPlan.fcw = self.fcw
 

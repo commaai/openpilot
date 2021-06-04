@@ -67,32 +67,6 @@ void init(double xCost, double vCost, double aCost, double accelCost, double jer
 
 }
 
-void init_with_simulation(double v_ego){
-  int i;
-
-  double x_ego = 0.0;
-
-  double dt = 0.2;
-  double t = 0.0;
-
-  for (i = 0; i < N + 1; ++i){
-    if (i > 4){
-      dt = 0.6;
-    }
-
-    acadoVariables.x[i*NX] = x_ego;
-    acadoVariables.x[i*NX+1] = v_ego;
-    acadoVariables.x[i*NX+2] = 0;
-    acadoVariables.x[i*NX+3] = t;
-
-    x_ego += v_ego * dt;
-    t += dt;
-  }
-
-  for (i = 0; i < NU * N; ++i)  acadoVariables.u[ i ] = 0.0;
-  for (i = 0; i < NY * N; ++i)  acadoVariables.y[ i ] = 0.0;
-  for (i = 0; i < NYN; ++i)  acadoVariables.yN[ i ] = 0.0;
-}
 
 int run_mpc(state_t * x0, log_t * solution,
             double x_poly[4], double v_poly[4], double a_poly[4]){
