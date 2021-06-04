@@ -24,9 +24,9 @@ class FrameReader : public QObject {
 public:
   FrameReader(const std::string &url, QObject *parent = nullptr);
   ~FrameReader();
-  uint8_t *get(int idx);
+  bool get(int idx, void* addr);
   bool valid() const { return valid_; }
-  int getRGBSize() const { return width * height * 3; }
+  // int getRGBSize() const { return width * height * 3; }
 
   int width = 0, height = 0;
 
@@ -37,7 +37,7 @@ private:
   void process();
   bool processFrames();
   void decodeThread();
-  uint8_t *toRGB(AVFrame *frm);
+  bool toRGB(AVFrame *frm, void *addr);
 
   struct Frame {
     AVPacket pkt = {};
@@ -49,7 +49,6 @@ private:
   AVFormatContext *pFormatCtx_ = NULL;
   AVCodecContext *pCodecCtx_ = NULL;
   AVFrame *frmRgb_ = nullptr;
-  uint8_t *rgbFrmBuffer_ = nullptr;
   struct SwsContext *sws_ctx_ = NULL;
 
   std::mutex mutex_;

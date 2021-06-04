@@ -62,7 +62,6 @@ FrameReader::~FrameReader() {
   }
   if (frmRgb_) {
     av_frame_free(&frmRgb_);
-    av_free(rgbFrmBuffer_);
   }
   avcodec_close(pCodecCtx_);
   avcodec_free_context(&pCodecCtx_);
@@ -150,25 +149,24 @@ void FrameReader::decodeThread() {
   }
 }
 
-uint8_t *FrameReader::toRGB(AVFrame *frm) {
+bool FrameReader::toRGB(AVFrame *frm, void *addr) {
   int numBytes = avpicture_get_size(AV_PIX_FMT_BGR24, frm->width, frm->height);
   if (numBytes > 0) {
     if (!frmRgb_) {
-      rgbFrmBuffer_ = (uint8_t *)av_malloc(numBytes * sizeof(uint8_t));
       frmRgb_ = av_frame_alloc();
-      int ret = avpicture_fill((AVPicture *)frmRgb_, rgbFrmBuffer_, AV_PIX_FMT_BGR24, frm->width, frm->height);
-      assert(ret > 0);
     }
+    int ret = avpicture_fill((AVPicture *)frmRgb_, (uint8_t *)addr, AV_PIX_FMT_BGR24, frm->width, frm->height);
+    assert(ret > 0);
     if (sws_scale(sws_ctx_, (uint8_t const *const *)frm->data, frm->linesize, 0, frm->height,
                   frmRgb_->data, frmRgb_->linesize) > 0) {
-      return frmRgb_->data[0];
+      return true;
     }
   }
-  return nullptr;
+  return false;
 }
 
-uint8_t *FrameReader::get(int idx) {
-  if (!valid_ || idx < 0 || idx >= frames_.size()) return nullptr;
+bool FrameReader::get(int idx, void *addr) {
+  if (!valid_ || idx < 0 || idx >= frames_.size()) return false;
 
   std::unique_lock lk(mutex_);
   decode_idx_ = idx;
@@ -178,5 +176,5 @@ uint8_t *FrameReader::get(int idx) {
   if (double dt = millis_since_boot() - t1; dt > 20) {
     qDebug() << "slow get frame " << idx << ", time: " << dt << "ms";
   }
-  return frames_[idx].picture ? toRGB(frames_[idx].picture) : nullptr;
+  return frames_[idx].picture ? toRGB(frames_[idx].picture, addr) : false;
 }
