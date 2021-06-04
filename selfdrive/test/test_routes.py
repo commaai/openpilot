@@ -20,6 +20,7 @@ non_tested_cars = [
   HYUNDAI.ELANTRA_GT_I30,
   HYUNDAI.GENESIS_G90,
   HYUNDAI.KIA_OPTIMA_H,
+  HYUNDAI.IONIQ_PHEV_2020,
 ]
 
 TestRoute = namedtuple('TestRoute', ['route', 'car_fingerprint'])
@@ -73,6 +74,7 @@ routes = [
   TestRoute("b2a38c712dcf90bd|2020-05-18--18-12-48", HYUNDAI.SONATA_LF),
   TestRoute("5875672fc1d4bf57|2020-07-23--21-33-28", HYUNDAI.KIA_SORENTO),
   TestRoute("9c917ba0d42ffe78|2020-04-17--12-43-19", HYUNDAI.PALISADE),
+  TestRoute("cfad75360cd08054|2021-03-16--18-48-19", HYUNDAI.IONIQ_PHEV_2020),
   TestRoute("2c5cf2dd6102e5da|2020-12-17--16-06-44", HYUNDAI.IONIQ_EV_2020),
   TestRoute("610ebb9faaad6b43|2020-06-13--15-28-36", HYUNDAI.IONIQ_EV_LTD),
   TestRoute("2c5cf2dd6102e5da|2020-06-26--16-00-08", HYUNDAI.IONIQ),
