@@ -124,7 +124,7 @@ def joystick_thread(use_keyboard):
   send_thread_proc.start()
 
   if use_keyboard:
-    print('\nGas/brake control: `W` and `Sa` keys')
+    print('\nGas/brake control: `W` and `S` keys')
     print('Steer control: `A` and `D` keys')
     print('Buttons:\n'
           '- `R`: Resets axes values\n'
@@ -151,8 +151,5 @@ if __name__ == "__main__":
   args = sys.argv[1:]
   use_keyboard = len(args) and args[0] == '--keyboard'
   if not use_keyboard:
-    try:
-      from inputs import get_gamepad
-    except ImportError:
-      use_keyboard = True
+    from inputs import get_gamepad
   joystick_thread(use_keyboard=use_keyboard)
