@@ -7,6 +7,7 @@
 #include "selfdrive/common/util.h"
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/params.h"
+#include "selfdrive/ui/ui.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/maps/map_helpers.h"
 #include "selfdrive/ui/qt/maps/map.h"
@@ -99,8 +100,6 @@ void MapWindow::initLayers() {
 }
 
 void MapWindow::timerUpdate() {
-  if (!isVisible()) return;
-
   initLayers();
 
   sm->update(0);
@@ -114,12 +113,18 @@ void MapWindow::timerUpdate() {
 
     auto coordinate = QMapbox::Coordinate(pos.getValue()[0], pos.getValue()[1]);
 
-    if (location.getStatus() == cereal::LiveLocationKalman::Status::VALID){
+    if (location.getStatus() == cereal::LiveLocationKalman::Status::VALID) {
       last_position = coordinate;
       gps_ok = location.getGpsOK();
 
-      if (sm->frame % 10 == 0 && shouldRecompute()){
-        calculateRoute(nav_destination);
+      if (sm->frame % 10 == 0) {
+        if (recompute_countdown == 0 && shouldRecompute()) {
+          recompute_countdown = std::pow(2, recompute_backoff);
+          recompute_backoff = std::min(7, recompute_backoff + 1);
+          calculateRoute(nav_destination);
+        } else {
+          recompute_countdown = std::max(0, recompute_countdown - 1);
+        }
       }
 
       if (segment.isValid()) {
@@ -144,10 +149,22 @@ void MapWindow::timerUpdate() {
             emit distanceChanged(next_maneuver_distance);
             m_map->setPitch(MAX_PITCH); // TODO: smooth pitching based on maneuver distance
 
+            // Switch to next route segment
             if (next_maneuver_distance < REROUTE_DISTANCE && next_maneuver_distance > last_maneuver_distance){
               segment = next_segment;
+
+              recompute_backoff = std::max(0, recompute_backoff - 1);
+              recompute_countdown = 0;
             }
             last_maneuver_distance = next_maneuver_distance;
+          }
+        } else {
+          Params().remove("NavDestination");
+
+          // Clear route if driving away from destination
+          float d = segment.maneuver().position().distanceTo(to_QGeoCoordinate(last_position));
+          if (d > REROUTE_DISTANCE) {
+            segment = QGeoRouteSegment();
           }
         }
       }
@@ -210,6 +227,8 @@ void MapWindow::initializeGL() {
 }
 
 void MapWindow::paintGL() {
+  if (!isVisible()) return;
+
   m_map->resize(size() / MAP_SCALE);
   m_map->setFramebufferObject(defaultFramebufferObject(), size());
   m_map->render();
@@ -254,6 +273,7 @@ bool MapWindow::shouldRecompute(){
     QMapbox::Coordinate new_destination(json["latitude"].toDouble(), json["longitude"].toDouble());
     if (new_destination != nav_destination){
       nav_destination = new_destination;
+      setVisible(true); // Show map on destination set/change
       return true;
     }
   }
@@ -385,16 +405,27 @@ MapInstructions::MapInstructions(QWidget * parent) : QWidget(parent){
 void MapInstructions::updateDistance(float d){
   QString distance_str;
 
-  float miles = d * METER_2_MILE;
-  float feet = d * METER_2_FOOT;
-
-  if (feet > 500){
-    distance_str.setNum(miles, 'f', 1);
-    distance_str += " miles";
+  if (QUIState::ui_state.scene.is_metric) {
+    if (d > 500) {
+      distance_str.setNum(d / 1000, 'f', 1);
+      distance_str += " km";
+    } else {
+      distance_str.setNum(50 * int(d / 50));
+      distance_str += " m";
+    }
   } else {
-    distance_str.setNum(50 * int(feet / 50));
-    distance_str += " feet";
+    float miles = d * METER_2_MILE;
+    float feet = d * METER_2_FOOT;
+
+    if (feet > 500) {
+      distance_str.setNum(miles, 'f', 1);
+      distance_str += " miles";
+    } else {
+      distance_str.setNum(50 * int(feet / 50));
+      distance_str += " feet";
+    }
   }
+
   distance->setText(distance_str);
 }
 
