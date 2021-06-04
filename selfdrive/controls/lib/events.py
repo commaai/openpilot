@@ -220,7 +220,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
 
   # ********** events only containing alerts displayed in all states **********
 
-  EventName.debugAlert: {
+  EventName.joystickDebug: {
     ET.PERMANENT: Alert(
       "DEBUG ALERT",
       "",
