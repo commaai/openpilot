@@ -1,13 +1,7 @@
 #!/usr/bin/env python
-
-# This process publishes joystick events. Such events can be subscribed by
-# mocked car controller scripts.
-
 import argparse
 import sys
 import cereal.messaging as messaging
-
-from dataclasses import dataclass
 
 from common.numpy_fast import clip
 from common.params import Params
@@ -20,13 +14,12 @@ BUTTONS = ['cancel', 'engaged_toggle', 'steer_required']
 AXES_INCREMENT = 0.05  # 5% of full actuation each key press
 kb = KBHit()
 
-
-@dataclass
 class Event:
-  type = None
-  axis = None
-  button = None
-  value = 0
+  def __init__(self, _type=None, axis=None, button=None, value=0.):
+    self.type = _type
+    self.axis = axis
+    self.button = button
+    self.value = value
 
 
 class Joystick:
@@ -86,7 +79,7 @@ class Joystick:
 
 
 def joystick_thread(use_keyboard):
-  Params().put_bool("JoystickDebugMode", True)
+  Params().put_bool('JoystickDebugMode', True)
   joystick = Joystick(use_keyboard=use_keyboard)
   joystick_sock = messaging.pub_sock('testJoystick')
 
@@ -113,11 +106,11 @@ def joystick_thread(use_keyboard):
     joystick_sock.send(dat.to_bytes())
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
   parser = argparse.ArgumentParser(
-    description="Publishes joystick events from keyboard or joystick to control your car",
+    description='Publishes joystick events from keyboard or joystick to control your car',
     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-  parser.add_argument("--keyboard", action="store_true", help="Use your keyboard over ssh to control joystickd")
+  parser.add_argument('--keyboard', action='store_true', help='Use your keyboard over ssh to control joystickd')
   args = parser.parse_args(sys.argv[1:])
 
   joystick_thread(use_keyboard=args.keyboard)
