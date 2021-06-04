@@ -21,6 +21,7 @@ from common.transformations.camera import eon_f_frame_size, tici_f_frame_size
 from tools.lib.kbhit import KBHit
 from tools.lib.logreader import MultiLogIterator
 from tools.lib.route import Route
+from tools.lib.framereader import rgb24toyuv420
 from tools.lib.route_framereader import RouteFrameReader
 
 # Commands.
@@ -115,20 +116,24 @@ class UnloggerWorker(object):
           print("FRAME(%d) LAG -- %.2f ms" % (frame_id, fr_time*1000.0))
 
         if img is not None:
+
+          extra = (smsg.roadCameraState.frameId, smsg.roadCameraState.timestampSof, smsg.roadCameraState.timestampEof)
+
+          # send YUV frame
+          if os.getenv("YUV") is not None:
+            img_yuv = rgb24toyuv420(img)
+            data_socket.send_pyobj((cookie, VIPC_YUV, msg.logMonoTime, route_time, extra), flags=zmq.SNDMORE)
+            data_socket.send(img_yuv.flatten().tobytes(), copy=False)
+
           img = img[:, :, ::-1]  # Convert RGB to BGR, which is what the camera outputs
           img = img.flatten()
           bts = img.tobytes()
 
           smsg.roadCameraState.image = bts
 
-          extra = (smsg.roadCameraState.frameId, smsg.roadCameraState.timestampSof, smsg.roadCameraState.timestampEof)
+          # send RGB frame
           data_socket.send_pyobj((cookie, VIPC_RGB, msg.logMonoTime, route_time, extra), flags=zmq.SNDMORE)
           data_socket.send(bts, copy=False)
-
-          img_yuv = self._frame_reader.get(frame_id, pix_fmt="yuv420p")
-          if img_yuv is not None:
-            data_socket.send_pyobj((cookie, VIPC_YUV, msg.logMonoTime, route_time, extra), flags=zmq.SNDMORE)
-            data_socket.send(img_yuv.flatten().tobytes(), copy=False)
 
       data_socket.send_pyobj((cookie, typ, msg.logMonoTime, route_time), flags=zmq.SNDMORE)
       data_socket.send(smsg.to_bytes(), copy=False)
