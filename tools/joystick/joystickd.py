@@ -4,11 +4,8 @@
 # mocked car controller scripts.
 
 import sys
-import zmq
-import multiprocessing
 import cereal.messaging as messaging
 
-from uuid import uuid4
 from dataclasses import dataclass
 
 from common.numpy_fast import clip
@@ -68,8 +65,7 @@ class Joystick:
         event.type = 'axis'
         event.axis = self.axes[joystick_event.code]
         v = ((joystick_event.state / self.max_axis_value) - 0.5) * 2  # normalize value from -1 to 1
-        dz_comp = 1 / (1 - 0.03)
-        event.value = apply_deadzone(-v, 0.03) * dz_comp
+        event.value = apply_deadzone(-v, 0.05) / (1 - 0.05)  # compensate for deadzone
 
       # some buttons send events on rising and falling so only allow one state
       elif joystick_event.code in self.button_map and joystick_event.state == 0:
@@ -90,38 +86,11 @@ class Joystick:
         self.btn_states[event.button] = not self.btn_states[event.button]
 
 
-def send_thread(command_address, joystick):
-  zmq.Context._instance = None
-  context = zmq.Context.instance()
-
-  command_sock = context.socket(zmq.PULL)
-  command_sock.bind(command_address)
-
-  poller = zmq.Poller()
-  poller.register(command_sock, zmq.POLLIN)
-  joystick_sock = messaging.pub_sock('testJoystick')
-
-  while True:
-    for sock in dict(poller.poll(POLL_RATE)):
-      msg = sock.recv_pyobj()
-
-      dat = messaging.new_message('testJoystick')
-      dat.testJoystick.axes = [msg.axes_values[a] for a in AXES]
-      dat.testJoystick.buttons = [msg.btn_states[btn] for btn in BUTTONS]
-
-      joystick_sock.send(dat.to_bytes())
-
-
 def joystick_thread(use_keyboard):
   Params().put_bool("JoystickDebugMode", True)
+
   joystick = Joystick(use_keyboard=use_keyboard)
-  command_address = "ipc:///tmp/{}".format(uuid4())
-
-  command_sock = zmq.Context.instance().socket(zmq.PUSH)
-  command_sock.connect(command_address)
-
-  send_thread_proc = multiprocessing.Process(target=send_thread, args=(command_address, joystick))
-  send_thread_proc.start()
+  joystick_sock = messaging.pub_sock('testJoystick')
 
   if use_keyboard:
     print('\nGas/brake control: `W` and `S` keys')
@@ -134,17 +103,20 @@ def joystick_thread(use_keyboard):
   else:
     print('Using joystick!')
 
-  # Receive joystick/key events and send to joystick send thread
+  # Receive joystick/key events and send testJoystick msg
   try:
     while 1:
       joystick.update()
-      print()
-      print(', '.join([f'{name}: {v}' for name, v in joystick.axes_values.items()]))
+
+      dat = messaging.new_message('testJoystick')
+      dat.testJoystick.axes = [joystick.axes_values[a] for a in AXES]
+      dat.testJoystick.buttons = [joystick.btn_states[btn] for btn in BUTTONS]
+      joystick_sock.send(dat.to_bytes())
+
+      print('\n' + ', '.join([f'{name}: {v}' for name, v in joystick.axes_values.items()]))
       print(', '.join([f'{name}: {v}' for name, v in joystick.btn_states.items()]))
-      command_sock.send_pyobj(joystick)
   except KeyboardInterrupt:
     print('Interrupted, shutting down!')
-    send_thread_proc.terminate()
 
 
 if __name__ == "__main__":
