@@ -265,7 +265,7 @@ void MapWindow::routeCalculated(QGeoRouteReply *reply) {
 
 
 bool MapWindow::shouldRecompute(){
-  if (!gps_ok) return false; // Don't recompute when gps drifts in tunnels
+  if (!gps_ok && segment.isValid()) return false; // Don't recompute when gps drifts in tunnels
 
   auto new_destination = coordinate_from_param("NavDestination");
   if (!new_destination) return false;
