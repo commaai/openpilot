@@ -2,7 +2,7 @@
 
 **Hardware needed**: [comma two devkit](https://comma.ai/shop/products/comma-two-devkit), laptop, joystick (optional)
 
-With joystickd, you can connect your laptop to your comma two over the network and debug controls using a joystick or a keyboard, however a joystick is recommended for more precise control.
+With joystickd, you can connect your laptop to your comma two over the network and debug controls using a joystick or keyboard, however a joystick is recommended for more precise control.
 
 Using a keyboard:
 ---
