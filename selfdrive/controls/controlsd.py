@@ -458,7 +458,7 @@ class Controls:
     else:
       # in joystick debug mode, create dummy lac_log
       _, _, lac_log = self.LaC.update(self.active, CS, self.CP, self.VM, params, lat_plan)
-      if len(self.sm['testJoystick'].axes):
+      if len(self.sm['testJoystick'].axes) and self.sm['testJoystick'].buttons[1]:  # only when engaged
         gb = clip(self.sm['testJoystick'].axes[0], -1, 1)
         actuators.gas, actuators.brake = max(gb, 0), max(-gb, 0)
 
