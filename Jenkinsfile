@@ -139,7 +139,7 @@ pipeline {
                   steps {
                     phone_steps("eon2", [
                       ["build", "cd selfdrive/manager && ./build.py"],
-                      ["model replay", "cd selfdrive/test/process_replay && ./model_replay.py"],
+                      ["model replay", "cd selfdrive/test/process_replay && UPLOAD=1 ./model_replay.py"],
                     ])
                   }
                 }

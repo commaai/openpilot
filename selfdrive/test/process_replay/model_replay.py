@@ -120,17 +120,18 @@ if __name__ == "__main__":
     results[TEST_ROUTE]["modeld"] = compare_logs(cmp_log, log_msgs, tolerance=tolerance, ignore_fields=ignore)
     diff1, diff2, failed = format_diff(results, ref_commit)
 
-    print(diff2)
-    print('-------------')
-    print('-------------')
-    print('-------------')
-    print('-------------')
-    print('-------------')
+    if len(diff2):
+      print(diff2)
+      print('-------------')
+      print('-------------')
+      print('-------------')
+      print('-------------')
+      print('-------------')
     print(diff1)
     with open("model_diff.txt", "w") as f:
       f.write(diff2)
 
-  if update or failed:
+  if update or (failed and os.getenv("UPLOAD") is not None):
     from selfdrive.test.openpilotci import upload_file
 
     print("Uploading new refs")
