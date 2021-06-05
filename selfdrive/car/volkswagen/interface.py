@@ -46,6 +46,7 @@ class CarInterface(CarInterfaceBase):
     # Global tuning defaults, can be overridden per-vehicle
 
     ret.steerRateCost = 1.0
+    ret.steerAnglePrecision = 0.15
     ret.steerLimitTimer = 0.4
     ret.steerRatio = 15.6  # Let the params learner figure this out
     tire_stiffness_factor = 1.0  # Let the params learner figure this out
