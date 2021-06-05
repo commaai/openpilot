@@ -17,7 +17,7 @@ class CameraServer {
 public:
   CameraServer();
   ~CameraServer();
-  void ensure(FrameReader *frs[]);
+  void ensure(FrameReader *frs[MAX_CAMERAS]);
   void pushFrame(CameraType type, FrameReader *fr, uint32_t encodeFrameId);
   void stop();
 

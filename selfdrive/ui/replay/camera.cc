@@ -13,7 +13,7 @@ static const VisionStreamType stream_types[] = {
 // class CameraServer::CameraState
 
 class CameraServer::CameraState {
- public:
+public:
   CameraState(VisionIpcServer *server, CameraType type, const FrameReader *f)
       : vipc_server(server), width(f->width), height(f->height), stream_type(stream_types[type]) {
     vipc_server->create_buffers(stream_type, UI_BUF_COUNT, true, width, height);
@@ -26,7 +26,7 @@ class CameraServer::CameraState {
   }
 
   inline bool frameChanged(const FrameReader *f) const {
-    return width != f->width || height != f->height;
+    return !f || width != f->width || height != f->height;
   }
 
   void run() {
@@ -50,10 +50,10 @@ class CameraServer::CameraState {
 
   int width, height;
   VisionStreamType stream_type;
-  SafeQueue<std::pair<FrameReader *, uint32_t>> queue;
-  VisionIpcServer *vipc_server = nullptr;
   std::thread thread;
   std::atomic<bool> exit = false;
+  VisionIpcServer *vipc_server = nullptr;
+  SafeQueue<std::pair<FrameReader *, uint32_t>> queue;
 };
 
 // class CameraServer
@@ -68,13 +68,13 @@ CameraServer::~CameraServer() {
   CL_CHECK(clReleaseContext(context_));
 }
 
-void CameraServer::ensure(FrameReader *frs[]) {
+void CameraServer::ensure(FrameReader *frs[MAX_CAMERAS]) {
   if (vipc_server_) {
     // restart vipc server if frame changed. such as switched between qcameras and cameras.
     for (auto cam_type : ALL_CAMERAS) {
       const FrameReader *f = frs[cam_type];
       auto &cs = camera_states_[cam_type];
-      if (f && (!cs || cs->frameChanged(f)) || (!f && cs)) {
+      if ((cs && cs->frameChanged(f)) || (!cs && f)) {
         stop();
         break;
       }
@@ -103,13 +103,13 @@ void CameraServer::pushFrame(CameraType type, FrameReader *fr, uint32_t encodeFr
 }
 
 void CameraServer::stop() {
-  if (vipc_server_) {
-    // stop camera threads
-    for (auto &cs : camera_states_) {
-      delete cs;
-      cs = nullptr;
-    }
-    delete vipc_server_;
-    vipc_server_ = nullptr;
+  if (!vipc_server_) return;
+
+  // stop camera threads
+  for (auto &cs : camera_states_) {
+    delete cs;
+    cs = nullptr;
   }
+  delete vipc_server_;
+  vipc_server_ = nullptr;
 }
