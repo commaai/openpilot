@@ -60,7 +60,8 @@ class CarState(CarStateBase):
       ret.gas = cp.vl["E_EMS11"]["Accel_Pedal_Pos"] / 256.
     else:
       ret.gas = cp.vl["EMS12"]["PV_AV_CAN"] / 100
-    ret.gasPressed = cp.vl["TCS13"]["DriverOverride"] == 1
+      ret.gasPressed = bool(cp.vl["EMS16"]["CF_Ems_AclAct"])
+    ret.gasPressed = ret.gasPressed or cp.vl["TCS13"]["DriverOverride"] == 1  # TCS msg not available on manuals
 
     # TODO: refactor gear parsing in function
     # Gear Selection via Cluster - For those Kia/Hyundai which are not fully discovered, we can use the Cluster Indicator for Gear Selection,
