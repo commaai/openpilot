@@ -136,7 +136,6 @@ class Planner():
 
     # Interpolate 0.05 seconds and save as starting point for next iteration
     a_prev = self.a_desired
-    print(self.a_desired_trajectory)
     self.a_desired = np.interp(DT_MDL, t_idxs[:MPC_N+1], self.a_desired_trajectory)
     self.a_desired = np.clip(self.a_desired, accel_limits_turns[0], accel_limits_turns[1])
     self.v_desired = self.v_desired + DT_MDL * (self.a_desired + a_prev)/2.0
