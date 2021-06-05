@@ -9,10 +9,12 @@ from inputs import get_gamepad
 from selfdrive.controls.lib.pid import apply_deadzone
 from tools.lib.kbhit import KBHit
 
-AXES = ['gb', 'steer']
-BUTTONS = ['cancel', 'engaged_toggle', 'steer_required']
+AXES = {'gb': ['w', 's', 'ABS_Y'], 'steer': ['a', 'd', 'ABS_X']}
+BUTTONS = {'cancel': ['c', 'BTN_TRIGGER'], 'engaged_toggle': ['e', 'BTN_THUMB'], 'steer_required': ['t', 'BTN_TOP']}
 AXES_INCREMENT = 0.05  # 5% of full actuation each key press
+MAX_AXIS_VALUE = 255  # tune based on your joystick, 0 to this
 kb = KBHit()
+
 
 class Event:
   def __init__(self, _type=None, axis=None, button=None, value=0.):
@@ -27,42 +29,36 @@ class Joystick:
     self.use_keyboard = use_keyboard
     self.axes_values = {ax: 0. for ax in AXES}
     self.btn_states = {btn: False for btn in BUTTONS}
-
-    self.buttons = {'r': 'reset', 'c': 'cancel', 'e': 'engaged_toggle', 't': 'steer_required'}
-    self.axes = {'gb': ['w', 's', 'ABS_Y'], 'steer': ['a', 'd', 'ABS_X']}
-    if not self.use_keyboard:
-      self.max_axis_value = 255  # tune based on your joystick, 0 to this
-      self.button_map = {'BTN_TRIGGER': 'cancel', 'BTN_THUMB': 'engaged_toggle',
-                         'BTN_TOP': 'steer_required', 'BTN_THUMB2': 'reset'}
+    self.buttons = dict(BUTTONS, **{'reset': ['r', 'BTN_THUMB2']})  # adds reset option
 
   def get_event(self):
     event = Event()
     if self.use_keyboard:
       key = kb.getch().lower()
-      if key in self.axes['gb'] + self.axes['steer']:  # if axis event
+      if key in AXES['gb'] + AXES['steer']:
         event.type = 'axis'
-        event.axis = 'gb' if key in self.axes['gb'] else 'steer'
+        event.axis = 'gb' if key in AXES['gb'] else 'steer'
         if key in ['w', 'a']:  # these keys are positive
           event.value = self.axes_values[event.axis] + AXES_INCREMENT
         else:
           event.value = self.axes_values[event.axis] - AXES_INCREMENT
 
-      elif key in self.buttons:  # if button event
+      elif len(btn := [_btn for _btn, keys in self.buttons.items() if key in keys]):
         event.type = 'button'
-        event.button = self.buttons[key]
+        event.button = btn[0]
 
     else:  # Joystick
       joystick_event = get_gamepad()[0]
-      if joystick_event.code in self.axes['gb'] + self.axes['steer']:
+      if joystick_event.code in AXES['gb'] + AXES['steer']:
         event.type = 'axis'
-        event.axis = 'gb' if joystick_event.code in self.axes['gb'] else 'steer'
-        v = ((joystick_event.state / self.max_axis_value) - 0.5) * 2  # normalize value from -1 to 1
+        event.axis = 'gb' if joystick_event.code in AXES['gb'] else 'steer'
+        v = ((joystick_event.state / MAX_AXIS_VALUE) - 0.5) * 2  # normalize value from -1 to 1
         event.value = apply_deadzone(-v, AXES_INCREMENT) / (1 - AXES_INCREMENT)  # compensate for deadzone
 
-      # some buttons send events on rising and falling so only allow one state
-      elif joystick_event.code in self.button_map and joystick_event.state == 0:
+      elif len(btn := [_btn for _btn, codes in self.buttons.items() if joystick_event.code in codes]) \
+              and joystick_event.state == 0:  # only allow falling edge
         event.type = 'button'
-        event.button = self.button_map[joystick_event.code]
+        event.button = btn[0]
 
     return event  # returns empty Event if not mapped axis or button
 
@@ -87,7 +83,7 @@ def joystick_thread(use_keyboard):
     print('\nGas/brake control: `W` and `S` keys')
     print('Steer control: `A` and `D` keys')
     print('Buttons:\n'
-          '- `R`: Resets axes values\n'
+          '- `R`: Resets axes and buttons\n'
           '- `C`: Cancel cruise control\n'
           '- `E`: Toggle enabled\n'
           '- `T`: Steer required HUD')
