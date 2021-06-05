@@ -167,8 +167,6 @@ class CarInterface(CarInterfaceBase):
     # Vehicle health and operation safety checks
     if self.CS.parkingBrakeSet:
       events.add(EventName.parkBrake)
-    if self.CS.steeringFault:
-      events.add(EventName.steerTempUnavailable)
 
     ret.events = events.to_msg()
     ret.buttonEvents = buttonEvents
