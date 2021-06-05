@@ -379,6 +379,7 @@ void panda_state_thread(bool spoofing_started) {
     ps.setFanSpeedRpm(fan_speed_rpm);
     ps.setFaultStatus(cereal::PandaState::FaultStatus(pandaState.fault_status));
     ps.setPowerSaveEnabled((bool)(pandaState.power_save_enabled));
+    ps.setHeartbeatLost((bool)(pandaState.heartbeat_lost));
     ps.setHarnessStatus(cereal::PandaState::HarnessStatus(pandaState.car_harness_status));
 
     // Convert faults bitset to capnp list
