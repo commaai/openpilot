@@ -41,6 +41,11 @@ def update_panda() -> None:
 
     time.sleep(1)
 
+  # check panda heatlh
+  health = panda.health()
+  if health["heartbeat_lost"]:
+    cloudlog.event("heartbeat lost", deviceState=health)
+
   fw_signature = get_expected_signature()
 
   try:
