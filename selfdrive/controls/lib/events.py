@@ -460,7 +460,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       "Car Detected in Blindspot",
       "Monitor Other Vehicles",
       AlertStatus.userPrompt, AlertSize.mid,
-      Priority.LOWER, VisualAlert.steerRequired, AudibleAlert.chimeError, .0, .1, .1),
+      Priority.LOWER, VisualAlert.steerRequired, AudibleAlert.chimePrompt, .1, .1, .1),
   },
 
   EventName.laneChange: {
