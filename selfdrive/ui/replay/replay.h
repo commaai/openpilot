@@ -4,6 +4,7 @@
 #include <termios.h>
 
 #include <QJsonArray>
+#include <QReadWriteLock>
 #include <QThread>
 
 #include <capnp/dynamic.h>
@@ -35,6 +36,7 @@ public slots:
   void keyboardThread();
   void segmentQueueThread();
   void parseResponse(const QString &response);
+  void mergeEvents();
 
 private:
   float last_print = 0;
@@ -50,7 +52,7 @@ private:
   // logs
   Events events;
   QReadWriteLock events_lock;
-  QMap<int, QPair<int, int>> eidx;
+  EncodeIdxMap eidx[MAX_CAMERAS];
 
   HttpRequest *http;
   QJsonArray camera_paths;
