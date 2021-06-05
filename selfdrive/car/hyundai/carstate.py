@@ -1,6 +1,6 @@
 import copy
 from cereal import car
-from selfdrive.car.hyundai.values import DBC, STEER_THRESHOLD, FEATURES, ELECTRIC_CAR, HYBRID_CAR
+from selfdrive.car.hyundai.values import DBC, STEER_THRESHOLD, FEATURES, EV_HYBRID, ALT_EV_HYBRID
 from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
 from selfdrive.config import Conversions as CV
@@ -56,11 +56,11 @@ class CarState(CarStateBase):
     ret.brake = 0
     ret.brakePressed = cp.vl["TCS13"]["DriverBraking"] != 0
 
-    if self.CP.carFingerprint in ELECTRIC_CAR:
+    if self.CP.carFingerprint in EV_HYBRID:
       ret.gas = cp.vl["E_EMS11"]["Accel_Pedal_Pos"] / 256.
       ret.gasPressed = ret.gas > 0
-    elif self.CP.carFingerprint in HYBRID_CAR:
-      ret.gas = cp.vl["EV_PC4"]['CR_Vcu_AccPedDep_Pc']  # TODO: should be percentage, remove me
+    elif self.CP.carFingerprint in ALT_EV_HYBRID:
+      ret.gas = cp.vl["EV_PC4"]['CR_Vcu_AccPedDep_Pc']  # TODO: see if we can just use the above, and close this PR
       ret.gasPressed = ret.gas > 0
     else:
       ret.gas = cp.vl["EMS12"]["PV_AV_CAN"] / 100  # car and user  # TODO: check this comment
@@ -231,14 +231,14 @@ class CarState(CarStateBase):
       ]
       checks += [("LCA11", 50)]
 
-    if CP.carFingerprint in ELECTRIC_CAR:
+    if CP.carFingerprint in EV_HYBRID:
       signals += [
         ("Accel_Pedal_Pos", "E_EMS11", 0),
       ]
       checks += [
         ("E_EMS11", 50),
       ]
-    elif CP.carFingerprint in HYBRID_CAR:
+    elif CP.carFingerprint in ALT_EV_HYBRID:
       signals += [
         ("CR_Vcu_AccPedDep_Pc", "EV_PC4", 0),
       ]
