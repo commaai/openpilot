@@ -17,11 +17,12 @@ kb = KBHit()
 
 
 class Event:
-  def __init__(self, _type=None, axis=None, button=None, value=0.):
+  def __init__(self, _type=None, axis=None, button=None, value=0., state=0):
     self.type = _type
     self.axis = axis
     self.button = button
     self.value = value
+    self.state = state
 
 
 class Joystick:
@@ -34,31 +35,26 @@ class Joystick:
   def get_event(self):
     event = Event()
     if self.use_keyboard:
-      key = kb.getch().lower()
-      if key in AXES['gb'] + AXES['steer']:
-        event.type = 'axis'
-        event.axis = 'gb' if key in AXES['gb'] else 'steer'
-        if key in ['w', 'a']:  # these keys are positive
-          event.value = self.axes_values[event.axis] + AXES_INCREMENT
-        else:
-          event.value = self.axes_values[event.axis] - AXES_INCREMENT
-
-      elif len(btn := [_btn for _btn, keys in self.buttons.items() if key in keys]):
-        event.type = 'button'
-        event.button = btn[0]
-
-    else:  # Joystick
+      key = kb.getch().lower()  # TODO: better name
+    else:
       joystick_event = get_gamepad()[0]
-      if joystick_event.code in AXES['gb'] + AXES['steer']:
-        event.type = 'axis'
-        event.axis = 'gb' if joystick_event.code in AXES['gb'] else 'steer'
-        v = ((joystick_event.state / MAX_AXIS_VALUE) - 0.5) * 2  # normalize value from -1 to 1
-        event.value = apply_deadzone(-v, AXES_INCREMENT) / (1 - AXES_INCREMENT)  # compensate for deadzone
+      key = joystick_event.code
+      event.state = joystick_event.state
 
-      elif len(btn := [_btn for _btn, codes in self.buttons.items() if joystick_event.code in codes]) \
-              and joystick_event.state == 0:  # only allow falling edge
-        event.type = 'button'
-        event.button = btn[0]
+    if len(btn := [_btn for _btn, keys in self.buttons.items() if key in keys]) \
+         and event.state == 0:  # only allow falling edge
+      event.type = 'button'
+      event.button = btn[0]
+
+    elif key in AXES['gb'] + AXES['steer']:
+      event.type = 'axis'
+      event.axis = 'gb' if key in AXES['gb'] else 'steer'
+
+      if self.use_keyboard:
+        event.value += AXES_INCREMENT if key in ['w', 'a'] else -AXES_INCREMENT
+      else:
+        v = ((event.state / MAX_AXIS_VALUE) - 0.5) * 2  # normalize value from -1 to 1
+        event.value = apply_deadzone(-v, AXES_INCREMENT) / (1 - AXES_INCREMENT)
 
     return event  # returns empty Event if not mapped axis or button
 
