@@ -29,7 +29,7 @@ public:
   bool loadSegments(const QMap<int, QMap<QString, QString>> &segment_paths);
 
   inline const QString &name() const { return route_; };
-  inline const QMap<int, SegmentFile> segments() const { return segments_; }
+  inline const QMap<int, SegmentFile> &segments() const { return segments_; }
 
  private:
   QString route_;

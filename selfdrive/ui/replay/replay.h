@@ -43,26 +43,23 @@ public slots:
   void doMergeEvent();
 private:
   QString elapsedTime(uint64_t ns);
-  void seekTo(uint64_t to_ts);
+  void seekTo(uint64_t to_ts, cereal::Event::Which which = cereal::Event::INIT_DATA);
   void queueSegmentThread();
   void streamThread();
-  std::vector<Event*>::iterator getEvent(uint64_t tm, cereal::Event::Which which);
+  std::optional<std::pair<std::vector<Event *>::iterator, uint64_t>> findEvent(uint64_t tm, cereal::Event::Which which);
   std::vector<Event *>::iterator currentEvent();
 
   void pushFrame(int cur_seg_num, CameraType type, uint32_t frame_id);
   void mergeEvents(Segment *seg);
   std::shared_ptr<Segment> getSegment(int segment);
-  const std::string &eventSocketName(const cereal::Event::Reader &e);
+  const std::string &eventSocketName(const Event *e);
 
-
-  std::atomic<uint64_t> route_start_ts_, current_ts_ = 0, seek_ts_ = 0;  // ns
-  std::atomic<int> current_segment_ = 0;
-  std::unordered_map<cereal::Event::Which, std::string> eventNameMap;
 
   // messaging
   SubMaster *sm_ = nullptr;
   PubMaster *pm_ = nullptr;
   std::set<std::string> socks_;
+  std::unordered_map<cereal::Event::Which, std::string> eventNameMap;
 
   // segments
   Route route_;
@@ -70,11 +67,13 @@ private:
   std::atomic<bool> events_changed_ = false;
   std::map<int, std::shared_ptr<Segment>> segments_;
   std::vector<Event*> *events_;
+  std::atomic<uint64_t> route_start_ts_, current_ts_ = 0;  // ns
+  cereal::Event::Which current_which_ = cereal::Event::INIT_DATA;
+  std::atomic<int> current_segment_ = 0;
 
-  // vipc server
+  // camera server
   CameraServer camera_server_;
 
   std::atomic<bool> exit_ = false;
   std::thread stream_thread_, queue_thread_;
-  friend class Segment;
 };
