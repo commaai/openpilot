@@ -33,6 +33,7 @@ def create_es_lkas(packer, es_lkas_msg, visual_alert, left_line, right_line, lef
   if visual_alert == VisualAlert.steerRequired:
     values["Keep_Hands_On_Wheel"] = 1
 
+  # Ensure we don't overwrite potentially more important alerts from stock (e.g. FCW)
   if visual_alert == VisualAlert.ldw and values["LKAS_Alert"] == 0:
     if left_lane_depart:
       values["LKAS_Alert"] = 12 # Left lane departure dash alert
