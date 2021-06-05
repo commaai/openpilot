@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 import argparse
-import sys
-import cereal.messaging as messaging
 
+import cereal.messaging as messaging
 from common.numpy_fast import clip
 from common.params import Params
 from inputs import get_gamepad
@@ -13,16 +12,8 @@ AXES = {'gb': ['w', 's', 'ABS_Y'], 'steer': ['a', 'd', 'ABS_X']}
 BUTTONS = {'cancel': ['c', 'BTN_TRIGGER'], 'engaged_toggle': ['e', 'BTN_THUMB'], 'steer_required': ['t', 'BTN_TOP']}
 AXES_INCREMENT = 0.05  # 5% of full actuation each key press
 MAX_AXIS_VALUE = 255  # tune based on your joystick, 0 to this
+
 kb = KBHit()
-
-
-class Event:
-  def __init__(self, _type=None, axis=None, button=None, value=0., state=0):
-    self.type = _type
-    self.axis = axis
-    self.button = button
-    self.value = value
-    self.state = state
 
 
 class Joystick:
@@ -32,48 +23,40 @@ class Joystick:
     self.btn_states = {btn: False for btn in BUTTONS}
     self.buttons = dict(BUTTONS, **{'reset': ['r', 'BTN_THUMB2']})  # adds reset option
 
-  def get_event(self):
-    event = Event()
+  def update(self):
     if self.use_keyboard:
-      key = kb.getch().lower()  # TODO: better name
+      key = kb.getch().lower()
+      state = 0
     else:
       joystick_event = get_gamepad()[0]
       key = joystick_event.code
-      event.state = joystick_event.state
+      state = joystick_event.state
 
-    if len(btn := [_btn for _btn, keys in self.buttons.items() if key in keys]) \
-         and event.state == 0:  # only allow falling edge
-      event.type = 'button'
-      event.button = btn[0]
-
-    elif key in AXES['gb'] + AXES['steer']:
-      event.type = 'axis'
-      event.axis = 'gb' if key in AXES['gb'] else 'steer'
-
-      if self.use_keyboard:
-        event.value += AXES_INCREMENT if key in ['w', 'a'] else -AXES_INCREMENT
-      else:
-        v = ((event.state / MAX_AXIS_VALUE) - 0.5) * 2  # normalize value from -1 to 1
-        event.value = apply_deadzone(-v, AXES_INCREMENT) / (1 - AXES_INCREMENT)
-
-    return event  # returns empty Event if not mapped axis or button
-
-  def update(self):
-    event = self.get_event()
-    if event.type == 'axis':
-      self.axes_values[event.axis] = round(clip(event.value, -1., 1.), 3)
-    elif event.type == 'button':
-      if event.button == 'reset':
+    # Button event
+    btn = [_btn for _btn in self.buttons if key in self.buttons[_btn]]
+    if len(btn) and state == 0:  # only allow falling edge
+      if (btn := btn[0]) == 'reset':
         self.axes_values = {ax: 0. for ax in AXES}
         self.btn_states = {btn: False for btn in BUTTONS}
       else:
-        self.btn_states[event.button] = not self.btn_states[event.button]
+        self.btn_states[btn] = not self.btn_states[btn]
+
+    # Axis event
+    elif key in AXES['gb'] + AXES['steer']:
+      axis = 'gb' if key in AXES['gb'] else 'steer'
+      if self.use_keyboard:
+        value = self.axes_values[axis] + (AXES_INCREMENT if key in ['w', 'a'] else -AXES_INCREMENT)  # these keys are positive
+      else:
+        norm = ((state / MAX_AXIS_VALUE) - 0.5) * 2
+        value = apply_deadzone(-norm, AXES_INCREMENT) / (1 - AXES_INCREMENT)  # center is noisy
+
+      self.axes_values[axis] = round(clip(value, -1., 1.), 3)
 
 
 def joystick_thread(use_keyboard):
   Params().put_bool('JoystickDebugMode', True)
-  joystick = Joystick(use_keyboard=use_keyboard)
   joystick_sock = messaging.pub_sock('testJoystick')
+  joystick = Joystick(use_keyboard=use_keyboard)
 
   if use_keyboard:
     print('\nGas/brake control: `W` and `S` keys')
@@ -84,25 +67,25 @@ def joystick_thread(use_keyboard):
           '- `E`: Toggle enabled\n'
           '- `T`: Steer required HUD')
   else:
-    print('\nUsing joystick!')
+    print('\nUsing joystick, don\'t forget to run unbridge on your device!')
 
   # Receive joystick/key events and send testJoystick msg
   while True:
     joystick.update()
-    print('\n' + ', '.join([f'{name}: {v}' for name, v in joystick.axes_values.items()]))
-    print(', '.join([f'{name}: {v}' for name, v in joystick.btn_states.items()]))
-
     dat = messaging.new_message('testJoystick')
     dat.testJoystick.axes = [joystick.axes_values[a] for a in AXES]
     dat.testJoystick.buttons = [joystick.btn_states[btn] for btn in BUTTONS]
     joystick_sock.send(dat.to_bytes())
 
+    print('\n' + ', '.join([f'{name}: {v}' for name, v in joystick.axes_values.items()]))
+    print(', '.join([f'{name}: {v}' for name, v in joystick.btn_states.items()]))
+
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(
-    description='Publishes joystick events from keyboard or joystick to control your car',
+    description='Publishes events from your joystick to control your car',
     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-  parser.add_argument('--keyboard', action='store_true', help='Use your keyboard over ssh to control joystickd')
-  args = parser.parse_args(sys.argv[1:])
+  parser.add_argument('--keyboard', action='store_true', help='Use your keyboard over ssh instead of a joystick')
+  args = parser.parse_args()
 
   joystick_thread(use_keyboard=args.keyboard)
