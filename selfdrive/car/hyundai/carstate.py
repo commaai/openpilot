@@ -1,6 +1,6 @@
 import copy
 from cereal import car
-from selfdrive.car.hyundai.values import DBC, STEER_THRESHOLD, FEATURES, EV_HYBRID
+from selfdrive.car.hyundai.values import DBC, STEER_THRESHOLD, FEATURES, ELECTRIC_CAR, HYBRID_CAR
 from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
 from selfdrive.config import Conversions as CV
@@ -56,12 +56,15 @@ class CarState(CarStateBase):
     ret.brake = 0
     ret.brakePressed = cp.vl["TCS13"]["DriverBraking"] != 0
 
-    if self.CP.carFingerprint in EV_HYBRID:
+    if self.CP.carFingerprint in ELECTRIC_CAR:
       ret.gas = cp.vl["E_EMS11"]["Accel_Pedal_Pos"] / 256.
+      ret.gasPressed = ret.gas > 0
+    elif self.CP.carFingerprint in HYBRID_CAR:
+      ret.gas = cp.vl["EV_PC4"]['CR_Vcu_AccPedDep_Pc']  # TODO: should be percentage, remove me
+      ret.gasPressed = ret.gas > 0
     else:
-      ret.gas = cp.vl["EMS12"]["PV_AV_CAN"] / 100
+      ret.gas = cp.vl["EMS12"]["PV_AV_CAN"] / 100  # car and user  # TODO: check this comment
       ret.gasPressed = bool(cp.vl["EMS16"]["CF_Ems_AclAct"])
-    ret.gasPressed = ret.gasPressed or cp.vl["TCS13"]["DriverOverride"] == 1  # TCS msg not available on manuals
 
     # TODO: refactor gear parsing in function
     # Gear Selection via Cluster - For those Kia/Hyundai which are not fully discovered, we can use the Cluster Indicator for Gear Selection,
@@ -181,7 +184,6 @@ class CarState(CarStateBase):
       ("DriverBraking", "TCS13", 0),
       ("StandStill", "TCS13", 0),
       ("PBRAKE_ACT", "TCS13", 0),
-      ("DriverOverride", "TCS13", 0),
 
       ("ESC_Off_Step", "TCS15", 0),
       ("AVH_LAMP", "TCS15", 0),
@@ -229,12 +231,19 @@ class CarState(CarStateBase):
       ]
       checks += [("LCA11", 50)]
 
-    if CP.carFingerprint in EV_HYBRID:
+    if CP.carFingerprint in ELECTRIC_CAR:
       signals += [
         ("Accel_Pedal_Pos", "E_EMS11", 0),
       ]
       checks += [
         ("E_EMS11", 50),
+      ]
+    elif CP.carFingerprint in HYBRID_CAR:
+      signals += [
+        ("CR_Vcu_AccPedDep_Pc", "EV_PC4", 0),
+      ]
+      checks += [
+        ("EV_PC4", 100),  # TODO: checked from cabana from an optima hybrid, make sure it's correct
       ]
     else:
       signals += [
