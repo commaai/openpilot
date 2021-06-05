@@ -12,6 +12,7 @@
 #include "cereal/visionipc/visionipc_server.h"
 #include "selfdrive/common/util.h"
 #include "selfdrive/ui/qt/api.h"
+#include "selfdrive/ui/replay/camera.h"
 #include "selfdrive/ui/replay/filereader.h"
 #include "selfdrive/ui/replay/framereader.h"
 
@@ -64,5 +65,6 @@ private:
   SubMaster *sm;
   PubMaster *pm;
   QVector<std::string> socks;
-  VisionIpcServer *vipc_server = nullptr;
+
+  CameraServer camera_server;
 };

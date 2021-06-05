@@ -215,6 +215,11 @@ void Replay::stream() {
       QThread::msleep(10);
     }
 
+    // TODO : publish all frames
+    FrameReader *temp_frs[MAX_CAMERAS] = {};
+    temp_frs[RoadCam] = frs[current_segment];
+    camera_server.ensure(temp_frs);
+
     uint64_t t0r = timer.nsecsElapsed();
     while ((eit != events.end()) && seek_ts < 0) {
       cereal::Event::Reader e = (*eit)->event;
@@ -252,23 +257,7 @@ void Replay::stream() {
             EncodeIdx &e = it_->second;
             if (frs.find(e.segmentNum) != frs.end()) {
               auto frm = frs[e.segmentNum];
-              if (vipc_server == nullptr) {
-                cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
-                cl_context context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
-
-                vipc_server = new VisionIpcServer("camerad", device_id, context);
-                vipc_server->create_buffers(VisionStreamType::VISION_STREAM_RGB_BACK, UI_BUF_COUNT,
-                                            true, frm->width, frm->height);
-                vipc_server->start_listener();
-              }
-
-              uint8_t *dat = frm->get(e.frameEncodeId);
-              if (dat) {
-                VisionIpcBufExtra extra = {};
-                VisionBuf *buf = vipc_server->get_buffer(VisionStreamType::VISION_STREAM_RGB_BACK);
-                memcpy(buf->addr, dat, frm->getRGBSize());
-                vipc_server->send(buf, &extra, false);
-              }
+              camera_server.pushFrame(RoadCam, frm, e.frameEncodeId);
             }
           }
         }
