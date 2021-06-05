@@ -82,7 +82,6 @@ signals:
   void finished(bool success);
 
 private:
-  void start();
   void parseEvents(const QByteArray &dat);
 
   std::atomic<bool> exit_ = false;
@@ -90,5 +89,5 @@ private:
   std::vector<uint8_t> raw_;
 
   FileReader *file_reader_ = nullptr;
-  QThread *thread_ = nullptr;
+  QThread thread_;
 };

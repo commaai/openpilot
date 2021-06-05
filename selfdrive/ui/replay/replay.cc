@@ -331,7 +331,7 @@ Segment::Segment(int seg_num, const SegmentFile &file, QObject *parent) : seg_nu
   }
 
   loading_ = 1;
-  log = new LogReader(log_file);
+  log = new LogReader(log_file, this);
   QObject::connect(log, &LogReader::finished, [&](bool success) {
     if (--loading_ == 0) emit finishedRead();
   });
@@ -351,8 +351,6 @@ Segment::Segment(int seg_num, const SegmentFile &file, QObject *parent) : seg_nu
 }
 
 Segment::~Segment() {
-  delete log;
-  for (auto f : frames) delete f;
   qDebug() << QString("remove segment %1").arg(seg_num);
 }
 

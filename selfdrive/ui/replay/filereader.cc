@@ -29,7 +29,9 @@ static bool decompressBZ2(std::vector<uint8_t> &dest, const char srcData[], size
 
 // class FileReader
 
-FileReader::FileReader(const QString &fn, QObject *parent) : url_(fn), QObject(parent) {}
+FileReader::FileReader(const QString &fn, QObject *parent) : url_(fn), QObject(parent) {
+  
+}
 
 void FileReader::read() {
   if (url_.isLocalFile()) {
@@ -63,33 +65,29 @@ void FileReader::abort() {
 // class LogReader
 
 LogReader::LogReader(const QString &file, QObject *parent) : QObject(parent) {
-  thread_ = new QThread();
-  moveToThread(thread_);
-  connect(thread_, &QThread::started, this, &LogReader::start);
-  connect(thread_, &QThread::finished, thread_, &QThread::deleteLater);
-  
   file_reader_ = new FileReader(file);
-  connect(file_reader_, &FileReader::finished, this, &LogReader::parseEvents);
-  connect(file_reader_, &FileReader::failed, [=](const QString &err) { qInfo() << err; });
-
-  thread_->start();
-  qDebug() << "read log " << file;
+  file_reader_->moveToThread(&thread_);
+  connect(&thread_, &QThread::started, file_reader_, &FileReader::read);
+  connect(&thread_, &QThread::finished, file_reader_, &FileReader::deleteLater);
+  connect(file_reader_, &FileReader::finished, [=](const QByteArray &dat) {
+    parseEvents(dat);
+  });
+  connect(file_reader_, &FileReader::failed, [=](const QString &err) {
+    qDebug() << err;
+  });
+  thread_.start();
 }
 
 LogReader::~LogReader() {
   // wait until thread is finished.
   exit_ = true;
   file_reader_->abort();
-  thread_->quit();
-  thread_->wait();
+  thread_.quit();
+  thread_.wait();
 
   for (auto e : events) {
     delete e;
   }
-}
-
-void LogReader::start() {
-  file_reader_->read();
 }
 
 void LogReader::parseEvents(const QByteArray &dat) {
