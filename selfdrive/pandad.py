@@ -41,7 +41,7 @@ def update_panda() -> None:
 
     time.sleep(1)
 
-  # check panda heatlh
+  # check heatlh for lost heartbeat
   health = panda.health()
   if health["heartbeat_lost"]:
     cloudlog.event("heartbeat lost", deviceState=health)
