@@ -97,13 +97,13 @@ class Planner():
       starting = long_control_state == LongCtrlState.starting
       self.v_desired = self.CP.minSpeedCan if starting else v_ego
       self.a_desired = self.CP.startAccel if starting else min(0.0, a_ego)
-    else:
-      accel_limits = [float(x) for x in calc_cruise_accel_limits(v_ego, following)]
-      accel_limits_turns = limit_accel_in_turns(v_ego, sm['carState'].steeringAngleDeg, accel_limits, self.CP)
-      if force_slow_decel:
-        # if required so, force a smooth deceleration
-        accel_limits_turns[1] = min(accel_limits_turns[1], AWARENESS_DECEL)
-        accel_limits_turns[0] = min(accel_limits_turns[0], accel_limits_turns[1])
+
+    accel_limits = [float(x) for x in calc_cruise_accel_limits(v_ego, following)]
+    accel_limits_turns = limit_accel_in_turns(v_ego, sm['carState'].steeringAngleDeg, accel_limits, self.CP)
+    if force_slow_decel:
+      # if required so, force a smooth deceleration
+      accel_limits_turns[1] = min(accel_limits_turns[1], AWARENESS_DECEL)
+      accel_limits_turns[0] = min(accel_limits_turns[0], accel_limits_turns[1])
 
     self.lead_mpc1.set_cur_state(self.v_desired, self.a_desired)
     self.lead_mpc2.set_cur_state(self.v_desired, self.a_desired)
@@ -118,15 +118,15 @@ class Planner():
 
     next_a = self.cruise_mpc.mpc_solution.a_ego[1]
     self.longitudinalPlanSource = 'cruise'
-    self.a_desired_trajectory = np.interp(t_idxs[MPC_N+1], mpc_t, self.cruise_mpc.mpc_solution.a_ego)
+    self.a_desired_trajectory = np.interp(t_idxs[:MPC_N+1], mpc_t, list(self.cruise_mpc.mpc_solution.a_ego))
     if self.lead_mpc1.lead_status and self.lead_mpc1.mpc_solution.a_ego[1] < next_a:
       self.longitudinalPlanSource = 'mpc1'
       next_a = self.lead_mpc1.mpc_solution.a_ego[1]
-      self.a_desired_trajectory = np.interp(t_idxs[MPC_N+1], mpc_t, self.lead_mpc1.mpc_solution.a_ego)
+      self.a_desired_trajectory = np.interp(t_idxs[:MPC_N+1], mpc_t, list(self.lead_mpc1.mpc_solution.a_ego))
     if self.lead_mpc2.lead_status and self.lead_mpc2.mpc_solution.a_ego[1] < next_a:
       self.longitudinalPlanSource = 'mpc2'
       next_a = self.lead_mpc2.mpc_solution.a_ego[1]
-      self.a_desired_trajectory = np.interp(t_idxs[MPC_N+1], mpc_t, self.lead_mpc2.mpc_solution.a_ego)
+      self.a_desired_trajectory = np.interp(t_idxs[:MPC_N+1], mpc_t, list(self.lead_mpc2.mpc_solution.a_ego))
 
 
     # TODO throw FCW if brake predictions exceed capability
@@ -136,7 +136,8 @@ class Planner():
 
     # Interpolate 0.05 seconds and save as starting point for next iteration
     a_prev = self.a_desired
-    self.a_desired = np.interp(DT_MDL, t_idxs[MPC_N+1], self.a_desired_trajectory)
+    print(self.a_desired_trajectory)
+    self.a_desired = np.interp(DT_MDL, t_idxs[:MPC_N+1], self.a_desired_trajectory)
     self.a_desired = np.clip(self.a_desired, accel_limits_turns[0], accel_limits_turns[1])
     self.v_desired = self.v_desired + DT_MDL * (self.a_desired + a_prev)/2.0
 
