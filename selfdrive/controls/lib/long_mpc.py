@@ -15,17 +15,12 @@ class LongitudinalMpc():
     self.mpc_id = mpc_id
 
     self.reset_mpc()
-    self.v_mpc = 0.0
-    self.v_mpc_future = 0.0
-    self.a_mpc = 0.0
-    self.v_cruise = 0.0
     self.lead_status = False
     self.prev_lead_x = 0.0
     self.new_lead = False
 
     self.last_cloudlog_t = 0.0
     self.n_its = 0
-    self.duration = 0
 
   def reset_mpc(self):
     ffi, self.libmpc = libmpc_py.get_libmpc(self.mpc_id)
@@ -68,15 +63,6 @@ class LongitudinalMpc():
     lead_v_interp = np.interp(mpc_t, model_t, lead.v)
     self.n_its = self.libmpc.run_mpc(self.cur_state, self.mpc_solution,
                                      list(lead_x_interp), list(lead_v_interp))
-    self.duration = int((sec_since_boot() - t) * 1e9)
-
-    #print(list(self.mpc_solution[0].v_ego))
-    #print(list(self.mpc_solution[0].a_ego))
-    #raise RuntimeError()
-    # Get solution. MPC timestep is 0.2 s, so interpolation to 0.05 s is needed
-    self.v_mpc = self.mpc_solution[0].v_ego[1]
-    self.a_mpc = self.mpc_solution[0].a_ego[1]
-    self.v_mpc_future = self.mpc_solution[0].v_ego[10]
 
     # Reset if NaN or goes through lead car
     crashing = any(lead - ego < -50 for (lead, ego) in zip(lead_x_interp, self.mpc_solution[0].x_ego))
@@ -91,6 +77,4 @@ class LongitudinalMpc():
 
       self.reset_mpc()
       self.cur_state[0].v_ego = v_ego
-      self.v_mpc = v_ego
-      self.a_mpc = CS.aEgo
       self.prev_lead_status = False
