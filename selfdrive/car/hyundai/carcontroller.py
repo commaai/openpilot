@@ -74,7 +74,7 @@ class CarController():
     if pcm_cancel_cmd:
       can_sends.append(create_clu11(self.packer, frame, CS.clu11, Buttons.CANCEL))
     elif CS.out.cruiseState.standstill:
-      # send resume at a max freq of 10Hz - fix with stop n go hack
+      # send resume at a max freq of 10Hz
       if (frame - self.last_resume_frame) * DT_CTRL > 0.1:
         # send 25 messages at a time to increases the likelihood of resume being accepted
         can_sends.extend([create_clu11(self.packer, frame, CS.clu11, Buttons.RES_ACCEL)] * 25)
