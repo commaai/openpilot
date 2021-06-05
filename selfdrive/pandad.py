@@ -41,11 +41,6 @@ def update_panda() -> None:
 
     time.sleep(1)
 
-  # check heatlh for lost heartbeat
-  health = panda.health()
-  if health["heartbeat_lost"]:
-    cloudlog.event("heartbeat lost", deviceState=health)
-
   fw_signature = get_expected_signature()
 
   try:
@@ -82,12 +77,18 @@ def update_panda() -> None:
     cloudlog.info("Version mismatch after flashing, exiting")
     raise AssertionError
 
-  cloudlog.info("Resetting panda")
-  panda.reset()
-
 
 def main() -> None:
   update_panda()
+
+  # check heatlh for lost heartbeat
+  panda = Panda()
+  health = panda.health()
+  if health["heartbeat_lost"]:
+    cloudlog.event("heartbeat lost", deviceState=health)
+
+  cloudlog.info("Resetting panda")
+  panda.reset()
 
   os.chdir(os.path.join(BASEDIR, "selfdrive/boardd"))
   os.execvp("./boardd", ["./boardd"])
