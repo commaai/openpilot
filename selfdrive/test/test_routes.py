@@ -158,7 +158,8 @@ routes = [
 
   TestRoute("32a319f057902bb3|2020-04-27--15-18-58", MAZDA.CX5),
   TestRoute("10b5a4b380434151|2020-08-26--17-11-45", MAZDA.CX9),
-  TestRoute("74f1038827005090|2020-08-26--20-05-50", MAZDA.Mazda3),
+  TestRoute("74f1038827005090|2020-08-26--20-05-50", MAZDA.MAZDA3),
+  TestRoute("fb53c640f499b73d|2021-06-01--04-17-56", MAZDA.MAZDA6),
 ]
 
 forced_dashcam_routes = [
@@ -171,4 +172,6 @@ forced_dashcam_routes = [
   "10b5a4b380434151|2020-08-26--17-11-45",
   # Mazda3
   "74f1038827005090|2020-08-26--20-05-50",
+  # Mazda6
+  "fb53c640f499b73d|2021-06-01--04-17-56",
 ]
