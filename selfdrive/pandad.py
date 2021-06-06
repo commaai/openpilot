@@ -18,7 +18,7 @@ def get_expected_signature() -> bytes:
     return b""
 
 
-def update_panda() -> None:
+def update_panda() -> Panda:
   panda = None
   panda_dfu = None
 
@@ -77,12 +77,13 @@ def update_panda() -> None:
     cloudlog.info("Version mismatch after flashing, exiting")
     raise AssertionError
 
+  return panda
+
 
 def main() -> None:
-  update_panda()
+  panda = update_panda()
 
-  # check heatlh for lost heartbeat
-  panda = Panda()
+  # check health for lost heartbeat
   health = panda.health()
   if health["heartbeat_lost"]:
     cloudlog.event("heartbeat lost", deviceState=health)
