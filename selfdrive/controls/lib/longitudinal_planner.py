@@ -17,13 +17,13 @@ AWARENESS_DECEL = -0.2     # car smoothly decel at .2m/s^2 when user is distract
 
 # lookup tables VS speed to determine min and max accels in cruise
 # make sure these accelerations are smaller than mpc limits
-_A_CRUISE_MIN_V = [-1.0, -1.0, -1.0, -1.0, -1.0]
+_A_CRUISE_MIN_V = [-1.2, -1.2, -1.2, -1.2, -1.2]
 _A_CRUISE_MIN_BP = [  0.,  5.,  10., 20.,  40.]
 
 # need fast accel at very low speed for stop and go
 # make sure these accelerations are smaller than mpc limits
-_A_CRUISE_MAX_V = [1.2, 1.2, 0.80, .80]
-_A_CRUISE_MAX_V_FOLLOWING = [1.6, 1.6, 0.80, .80]
+_A_CRUISE_MAX_V = [1.2, 1.2, 1.2, 1.2]
+_A_CRUISE_MAX_V_FOLLOWING = [1.2, 1.2 ,1.2, 1.2]
 _A_CRUISE_MAX_BP = [0.,  6.4, 22.5, 40.]
 
 # Lookup table for turns
@@ -58,9 +58,11 @@ class Planner():
   def __init__(self, CP):
     self.CP = CP
 
-    self.lead_mpc1 = LongitudinalMpc(1)
-    self.lead_mpc2 = LongitudinalMpc(2)
-    self.cruise_mpc = LongitudinalMpcModel()
+    # TODO these names are bad, but log names need to change first
+    self.mpcs = {}
+    self.mpcs['mpc1'] = LongitudinalMpc(1)
+    self.mpcs['mpc2'] = LongitudinalMpc(2)
+    self.mpcs['cruise'] = LongitudinalMpcModel()
     self.fcw = False
 
     self.v_desired = 0.0
@@ -105,39 +107,34 @@ class Planner():
       accel_limits_turns[1] = min(accel_limits_turns[1], AWARENESS_DECEL)
       accel_limits_turns[0] = min(accel_limits_turns[0], accel_limits_turns[1])
 
-    self.lead_mpc1.set_cur_state(self.v_desired, self.a_desired)
-    self.lead_mpc2.set_cur_state(self.v_desired, self.a_desired)
-    self.cruise_mpc.set_cur_state(self.v_desired, self.a_desired)
-    self.lead_mpc1.update(sm['carState'], lead_0)
-    self.lead_mpc2.update(sm['carState'], lead_1)
+    for key in self.mpcs:
+      self.mpcs[key].set_cur_state(self.v_desired, self.a_desired)
+    self.mpcs['mpc1'].update(sm['carState'], lead_0)
+    self.mpcs['mpc2'].update(sm['carState'], lead_1)
     v_cruise_clipped = np.clip(v_cruise, v_ego - 10.0, v_ego + 5.0)
-    self.cruise_mpc.update(v_ego, a_ego,
+    self.mpcs['cruise'].update(v_ego, a_ego,
                            v_cruise_clipped * np.arange(0.,10.,1.0),
                            v_cruise_clipped * np.ones(10),
                            np.zeros(10))
 
-    next_a = self.cruise_mpc.mpc_solution.a_ego[1]
-    self.longitudinalPlanSource = 'cruise'
-    self.a_desired_trajectory = np.interp(t_idxs[:MPC_N+1], mpc_t, list(self.cruise_mpc.mpc_solution.a_ego))
-    if self.lead_mpc1.lead_status and self.lead_mpc1.mpc_solution.a_ego[1] < next_a:
-      self.longitudinalPlanSource = 'mpc1'
-      next_a = self.lead_mpc1.mpc_solution.a_ego[1]
-      self.a_desired_trajectory = np.interp(t_idxs[:MPC_N+1], mpc_t, list(self.lead_mpc1.mpc_solution.a_ego))
-    if self.lead_mpc2.lead_status and self.lead_mpc2.mpc_solution.a_ego[1] < next_a:
-      self.longitudinalPlanSource = 'mpc2'
-      next_a = self.lead_mpc2.mpc_solution.a_ego[1]
-      self.a_desired_trajectory = np.interp(t_idxs[:MPC_N+1], mpc_t, list(self.lead_mpc2.mpc_solution.a_ego))
+    next_a = np.inf
+    for key in self.mpcs:
+      if self.mpcs[key].mpc_solution.a_ego[1] < next_a:
+        self.longitudinalPlanSource = key
+        self.a_desired_trajectory = np.interp(t_idxs[:MPC_N+1], mpc_t, list(self.mpcs[key].mpc_solution.a_ego))
+        next_a = self.mpcs[key].mpc_solution.a_ego[1]
 
-
-    # TODO throw FCW if brake predictions exceed capability
-    self.fcw = False
+    # Throw FCW if brake predictions exceed capability
+    self.fcw = bool(np.any(self.a_desired_trajectory < -3.0))
     if self.fcw:
       cloudlog.info("FCW triggered")
 
     # Interpolate 0.05 seconds and save as starting point for next iteration
     a_prev = self.a_desired
     self.a_desired = np.interp(DT_MDL, t_idxs[:MPC_N+1], self.a_desired_trajectory)
-    self.a_desired = np.clip(self.a_desired, accel_limits_turns[0], accel_limits_turns[1])
+    # clip cruise accel
+    if self.longitudinalPlanSource == 'cruise':
+      self.a_desired = np.clip(self.a_desired, accel_limits_turns[0], accel_limits_turns[1])
     self.v_desired = self.v_desired + DT_MDL * (self.a_desired + a_prev)/2.0
 
 
@@ -153,7 +150,7 @@ class Planner():
     longitudinalPlan.vStart = float(self.v_desired)
     longitudinalPlan.aStart = float(self.a_desired)
     longitudinalPlan.vTargetFuture = float(self.v_desired + self.a_desired*3.0)
-    longitudinalPlan.hasLead = self.lead_mpc1.lead_status
+    longitudinalPlan.hasLead = self.mpcs['mpc1'].lead_status
     longitudinalPlan.longitudinalPlanSource = self.longitudinalPlanSource
     longitudinalPlan.fcw = self.fcw
 
