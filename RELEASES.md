@@ -7,7 +7,7 @@ Version 0.8.5 (2021-06-11)
  * Hyundai Elantra 2021 support thanks to CruiseBrantley!
  * Lexus UX Hybrid 2019-2020 support thanks to brianhaugen2!
  * Toyota Avalon Hybrid 2019 support thanks to jbates9011!
- * SEAT Leon 2017 & 2020 support thanks to jyoung8607!
+ * SEAT Leon 2014-2020 support thanks to jyoung8607!
  * Škoda Octavia 2015 & 2019 support thanks to jyoung8607!
 
 Version 0.8.4 (2021-05-17)
