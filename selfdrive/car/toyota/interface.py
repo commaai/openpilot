@@ -170,7 +170,7 @@ class CarInterface(CarInterfaceBase):
       stop_and_go = True
       ret.safetyParam = 73
       ret.wheelbase = 2.68986
-      ret.steerRatio = 16.0
+      ret.steerRatio = 14.3 #https://www.toyota.com/content/ebrochure/2021/rav4_ebrochure.pdf
       tire_stiffness_factor = 0.7933
       ret.mass = 3370. * CV.LB_TO_KG + STD_CARGO_KG
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0., 30.], [0., 30.]]
@@ -181,7 +181,7 @@ class CarInterface(CarInterfaceBase):
       stop_and_go = True
       ret.safetyParam = 73
       ret.wheelbase = 2.68986
-      ret.steerRatio = 16.0
+      ret.steerRatio = 14.4 #https://www.toyota.com/content/ebrochure/2021/rav4_ebrochure.pdf
       tire_stiffness_factor = 0.7933
       ret.mass = 3800. * CV.LB_TO_KG + STD_CARGO_KG
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0., 30.], [0., 30.]]
