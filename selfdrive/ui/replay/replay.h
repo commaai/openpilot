@@ -14,11 +14,13 @@ class Segment : public QObject {
 
 public:
   Segment(int seg_num, const SegmentFile &file, QObject *parent = nullptr);
-  ~Segment();
+  ~Segment() {
+    qInfo() << "********delete segment " << seg_num;
+  }
 
   const int seg_num;
   LogReader *log = nullptr;
-  FrameReader *frames[MAX_CAMERAS] = {};
+  std::shared_ptr<FrameReader> frames[MAX_CAMERAS] = {};
   std::atomic<bool> loaded = false;
 signals:
   void finishedRead();
@@ -39,19 +41,18 @@ public:
   void seek(int seconds);
   void stop();
   bool running() { return stream_thread_.joinable(); }
+
 public slots:
-  void doMergeEvent();
+  void mergeEvents();
+
 private:
   QString elapsedTime(uint64_t ns);
-  void seekTo(uint64_t to_ts, cereal::Event::Which which = cereal::Event::INIT_DATA);
+  void seekTo(uint64_t to_ts);
   void queueSegmentThread();
   void streamThread();
-  std::optional<std::pair<std::vector<Event *>::iterator, uint64_t>> findEvent(uint64_t tm, cereal::Event::Which which);
-  std::vector<Event *>::iterator currentEvent();
-
+  std::pair<int, int> queueSegmentRange();
   void pushFrame(int cur_seg_num, CameraType type, uint32_t frame_id);
-  void mergeEvents(Segment *seg);
-  std::shared_ptr<Segment> getSegment(int segment);
+  const Segment* getSegment(int segment);
   const std::string &eventSocketName(const Event *e);
 
 
@@ -63,17 +64,18 @@ private:
 
   // segments
   Route route_;
-  std::mutex mutex_;
-  std::atomic<bool> events_changed_ = false;
-  std::map<int, std::shared_ptr<Segment>> segments_;
-  std::vector<Event*> *events_;
-  std::atomic<uint64_t> route_start_ts_, current_ts_ = 0;  // ns
-  cereal::Event::Which current_which_ = cereal::Event::INIT_DATA;
+  std::mutex events_mutex_, segment_mutex_;
+  std::condition_variable cv_;
+  std::map<int, Segment*> segments_;
+  std::unique_ptr<std::vector<Event*>> events_;
+
+  uint64_t seek_ts_ = 0;
   std::atomic<int> current_segment_ = 0;
+  std::atomic<uint64_t> route_start_ts_, current_ts_ = 0;  // ns
 
   // camera server
   CameraServer camera_server_;
 
-  std::atomic<bool> exit_ = false;
+  std::atomic<bool> exit_ = false, loading_events_ = false;
   std::thread stream_thread_, queue_thread_;
 };

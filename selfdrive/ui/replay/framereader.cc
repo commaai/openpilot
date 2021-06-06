@@ -26,7 +26,7 @@ static int ffmpeg_lockmgr_cb(void **arg, enum AVLockOp op) {
 }
 
 class AVInitializer {
- public:
+public:
   AVInitializer() {
     int ret = av_lockmgr_register(ffmpeg_lockmgr_cb);
     assert(ret >= 0);
@@ -57,8 +57,12 @@ FrameReader::~FrameReader() {
 
   // free all.
   for (auto &f : frames_) {
-    if (f.frame) av_frame_free(&f.frame);
     av_free_packet(&f.pkt);
+    if (f.data) delete[] f.data;
+  }
+  while (!buffer_pool.empty()) {
+    delete[] buffer_pool.front();
+    buffer_pool.pop();
   }
   av_frame_free(&frmRgb_);
   avcodec_close(pCodecCtx_);
@@ -123,22 +127,39 @@ void FrameReader::decodeThread() {
   int idx = 0;
   while (!exit_) {
     const int from = std::max(idx, 0);
-    const int to = std::min(idx + 15, (int)frames_.size());
-    for (int i = from; i < to && !exit_; ++i) {
+    const int to = std::min(idx + 20, (int)frames_.size());
+    for (int i = 0; i < frames_.size(); ++i) {
       Frame &frame = frames_[i];
-      if (frame.frame || frame.failed) continue;
+      if (i >= from && i < to) {
+        if (frame.data || frame.failed) continue;
 
-      int gotFrame;
-      AVFrame *pFrame = av_frame_alloc();
-      avcodec_decode_video2(pCodecCtx_, pFrame, &gotFrame, &frame.pkt);
-      if (!gotFrame) {
+        int gotFrame;
+        AVFrame *pFrame = av_frame_alloc();
+        avcodec_decode_video2(pCodecCtx_, pFrame, &gotFrame, &frame.pkt);
+        uint8_t *dat = nullptr;
+        if (gotFrame) {
+          if (!buffer_pool.empty()) {
+            dat = buffer_pool.front();
+            buffer_pool.pop();
+          } else {
+            dat = new uint8_t[getRGBSize()];
+          }
+          if (!toRGB(pFrame, dat)) {
+            delete [] dat;
+            dat = nullptr;
+          }
+        }
         av_frame_free(&pFrame);
-        pFrame = nullptr;
+
+        std::unique_lock lk(mutex_);
+        frame.failed = !dat;
+        frame.data = dat;
+        cv_frame_.notify_all();
+      } else if (frame.data) {
+        buffer_pool.push(frame.data);
+        frame.data = nullptr;
+        frame.failed = false;
       }
-      std::unique_lock lk(mutex_);
-      frame.frame = pFrame;
-      frame.failed = !gotFrame;
-      cv_frame_.notify_all();
     }
 
     // sleep & wait
@@ -152,16 +173,17 @@ void FrameReader::decodeThread() {
 bool FrameReader::toRGB(AVFrame *f, void *addr) {
   int ret = avpicture_fill((AVPicture *)frmRgb_, (uint8_t *)addr, AV_PIX_FMT_BGR24, f->width, f->height);
   assert(ret > 0);
-  return sws_scale(sws_ctx_, (uint8_t const *const *)f->data, f->linesize, 0,
+  return sws_scale(sws_ctx_, (const uint8_t **)f->data, f->linesize, 0,
                    f->height, frmRgb_->data, frmRgb_->linesize) > 0;
 }
 
-bool FrameReader::get(int idx, void *addr) {
-  if (!valid_ || idx < 0 || idx >= frames_.size()) return false;
-
-  std::unique_lock lk(mutex_);
-  decode_idx_ = idx;
-  cv_decode_.notify_one();
-  cv_frame_.wait(lk, [=] { return exit_ || frames_[idx].frame || frames_[idx].failed; });
-  return frames_[idx].frame ? toRGB(frames_[idx].frame, addr) : false;
+uint8_t *FrameReader::get(int idx) {
+  if (!valid_ || idx < 0 || idx >= frames_.size()) return nullptr;
+  {
+    std::unique_lock lk(mutex_);
+    decode_idx_ = idx;
+    cv_decode_.notify_one();
+    cv_frame_.wait(lk, [=] { return exit_ || frames_[idx].data || frames_[idx].failed; });
+  }
+  return frames_[idx].data;
 }

@@ -17,8 +17,8 @@ class CameraServer {
 public:
   CameraServer();
   ~CameraServer();
-  void ensure(FrameReader *frs[MAX_CAMERAS]);
-  void pushFrame(CameraType type, FrameReader *fr, uint32_t encodeFrameId);
+  void ensure(const std::shared_ptr<FrameReader> frs[MAX_CAMERAS]);
+  void pushFrame(CameraType type, std::shared_ptr<FrameReader> fr, uint32_t encodeFrameId);
   void stop();
 
  private:

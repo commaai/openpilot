@@ -70,6 +70,7 @@ public:
 
   // Events events;
   std::vector<Event *> events;
+  uint64_t route_start_ts = 0;
   EncodeIdxMap encoderIdx[MAX_CAMERAS] = {};
 
 signals:

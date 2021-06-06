@@ -2,14 +2,14 @@
 
 #include <unistd.h>
 
+#include <QThread>
 #include <atomic>
 #include <condition_variable>
 #include <mutex>
+#include <queue>
 #include <string>
 #include <thread>
 #include <vector>
-
-#include <QThread>
 
 // independent of QT, needs ffmpeg
 extern "C" {
@@ -24,7 +24,8 @@ class FrameReader : public QObject {
 public:
   FrameReader(const std::string &url, QObject *parent = nullptr);
   ~FrameReader();
-  bool get(int idx, void* addr);
+  uint8_t *get(int idx);
+  int getRGBSize() { return width * height * 3; }
   bool valid() const { return valid_; }
 
   int width = 0, height = 0;
@@ -40,7 +41,7 @@ private:
 
   struct Frame {
     AVPacket pkt = {};
-    AVFrame *frame = nullptr;
+    uint8_t *data = nullptr;
     bool failed = false;
   };
   std::vector<Frame> frames_;
@@ -48,6 +49,7 @@ private:
   AVFormatContext *pFormatCtx_ = NULL;
   AVCodecContext *pCodecCtx_ = NULL;
   AVFrame *frmRgb_ = nullptr;
+  std::queue<uint8_t *> buffer_pool;
   struct SwsContext *sws_ctx_ = NULL;
 
   std::mutex mutex_;

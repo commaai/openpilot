@@ -31,19 +31,23 @@ public:
 
   void run() {
     while (!exit) {
-      std::pair<FrameReader *, uint32_t> frame;
+      std::pair<std::shared_ptr<FrameReader>, uint32_t> frame;
       if (!queue.try_pop(frame, 20)) continue;
 
-      auto &[fr, segmentId] = frame;
-      if (frameChanged(fr)) {
+      auto &[fr, encodeId] = frame;
+      if (frameChanged(fr.get())) {
         // eidx is not in the same segment with different frame size
         continue;
       }
 
       VisionBuf *buf = vipc_server->get_buffer(stream_type);
-      if (fr->get(segmentId, buf->addr)) {
+      if (uint8_t* dat = fr->get(encodeId)) {
         VisionIpcBufExtra extra = {};
+        // qInfo() << "send frame " << encodeId;
+        memcpy(buf->addr, dat, fr->getRGBSize());
         vipc_server->send(buf, &extra, false);
+      } else {
+        qDebug() << "failed get frame " << encodeId;
       }
     }
   }
@@ -53,7 +57,7 @@ public:
   std::thread thread;
   std::atomic<bool> exit = false;
   VisionIpcServer *vipc_server = nullptr;
-  SafeQueue<std::pair<FrameReader *, uint32_t>> queue;
+  SafeQueue<std::pair<std::shared_ptr<FrameReader>, uint32_t>> queue;
 };
 
 // class CameraServer
@@ -68,13 +72,13 @@ CameraServer::~CameraServer() {
   CL_CHECK(clReleaseContext(context_));
 }
 
-void CameraServer::ensure(FrameReader *frs[MAX_CAMERAS]) {
+void CameraServer::ensure(const std::shared_ptr<FrameReader> frs[MAX_CAMERAS]) {
   if (vipc_server_) {
     // restart vipc server if frame changed. such as switched between qcameras and cameras.
     for (auto cam_type : ALL_CAMERAS) {
-      const FrameReader *f = frs[cam_type];
+      auto &f = frs[cam_type];
       auto &cs = camera_states_[cam_type];
-      if ((cs && cs->frameChanged(f)) || (!cs && f)) {
+      if ((cs && cs->frameChanged(f.get())) || (!cs && f)) {
         stop();
         break;
       }
@@ -82,13 +86,13 @@ void CameraServer::ensure(FrameReader *frs[MAX_CAMERAS]) {
   }
   if (!vipc_server_) {
     for (auto cam_type : ALL_CAMERAS) {
-      const FrameReader *f = frs[cam_type];
+      auto &f = frs[cam_type];
       if (!f || !f->valid()) continue;
 
       if (!vipc_server_) {
         vipc_server_ = new VisionIpcServer("camerad", device_id_, context_);
       }
-      camera_states_[cam_type] = new CameraState(vipc_server_, cam_type, f);
+      camera_states_[cam_type] = new CameraState(vipc_server_, cam_type, f.get());
     }
     if (vipc_server_) {
       vipc_server_->start_listener();
@@ -96,7 +100,7 @@ void CameraServer::ensure(FrameReader *frs[MAX_CAMERAS]) {
   }
 }
 
-void CameraServer::pushFrame(CameraType type, FrameReader *fr, uint32_t encodeFrameId) {
+void CameraServer::pushFrame(CameraType type, std::shared_ptr<FrameReader> fr, uint32_t encodeFrameId) {
   if (auto &cs = camera_states_[type]) {
     cs->queue.push({fr, encodeFrameId});
   }

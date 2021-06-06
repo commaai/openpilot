@@ -1,6 +1,7 @@
 #include "selfdrive/ui/replay/filereader.h"
 
 #include <bzlib.h>
+
 #include <QtNetwork>
 
 #include "selfdrive/common/timing.h"
@@ -104,7 +105,14 @@ void LogReader::parseEvents(const QByteArray &dat) {
   while (!exit_ && words.size() > 0) {
     try {
       std::unique_ptr<Event> evt = std::make_unique<Event>(words);
-      switch (evt->event.which()) {
+      words = kj::arrayPtr(evt->reader.getEnd(), words.end());
+
+      if (evt->which == cereal::Event::INIT_DATA) {
+        route_start_ts = evt->mono_time;
+        continue;
+      }
+
+      switch (evt->which) {
         case cereal::Event::ROAD_ENCODE_IDX:
           insertEidx(RoadCam, evt->event.getRoadEncodeIdx());
           break;
@@ -117,7 +125,7 @@ void LogReader::parseEvents(const QByteArray &dat) {
         default:
           break;
       }
-      words = kj::arrayPtr(evt->reader.getEnd(), words.end());
+
       events.push_back(evt.release());
     } catch (const kj::Exception &e) {
       // partial messages trigger this
@@ -126,10 +134,9 @@ void LogReader::parseEvents(const QByteArray &dat) {
       break;
     }
   }
-  if (!exit_) {
-    std::sort(events.begin(), events.end(), [=](const Event* l, const Event*r) {
-      return *l < *r;
-    });
-    emit finished(valid_);  
+
+  if (!exit_ && !events.empty()) {
+    std::sort(events.begin(), events.end(), [=](const Event *l, const Event *r) { return *l < *r; });
+    emit finished(valid_);
   }
 }
