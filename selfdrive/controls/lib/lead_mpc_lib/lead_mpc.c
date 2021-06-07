@@ -1,6 +1,6 @@
 #include "acado_common.h"
 #include "acado_auxiliary_functions.h"
-
+#include "selfdrive/common/modeldata.h"
 #include <stdio.h>
 #include <math.h>
 
@@ -51,10 +51,7 @@ void init(double ttcCost, double distanceCost, double accelerationCost, double j
   // Set weights
 
   for (i = 0; i < N; i++) {
-    int f = 1;
-    if (i > 4){
-      f = STEP_MULTIPLIER;
-    }
+    double f = 20 * (T_IDXS[i+1] - T_IDXS[i]);
     // Setup diagonal entries
     acadoVariables.W[NY*NY*i + (NY+1)*0] = ttcCost * f; // exponential cost for time-to-collision (ttc)
     acadoVariables.W[NY*NY*i + (NY+1)*1] = distanceCost * f; // desired distance

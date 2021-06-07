@@ -1,5 +1,6 @@
 #include "acado_common.h"
 #include "acado_auxiliary_functions.h"
+#include "common/modeldata.h"
 
 #include <stdio.h>
 #include <math.h>
@@ -46,13 +47,10 @@ void init(double xCost, double vCost, double aCost, double jerkCost){
 
   /* MPC: initialize the current state feedback. */
   for (i = 0; i < NX; ++i) acadoVariables.x0[ i ] = 0.0;
+  
   // Set weights
-
   for (i = 0; i < N; i++) {
-    int f = 1;
-    if (i > 4){
-      f = STEP_MULTIPLIER;
-    }
+    double f = 20 * (T_IDXS[i+1] - T_IDXS[i]);
     // Setup diagonal entries
     acadoVariables.W[NY*NY*i + (NY+1)*0] = xCost * f;
     acadoVariables.W[NY*NY*i + (NY+1)*1] = vCost * f;
@@ -87,7 +85,6 @@ int run_mpc(state_t * x0, log_t * solution,
   acadoVariables.x[0] = acadoVariables.x0[0] = x0->x_ego;
   acadoVariables.x[1] = acadoVariables.x0[1] = x0->v_ego;
   acadoVariables.x[2] = acadoVariables.x0[2] = x0->a_ego;
-  acadoVariables.x[3] = acadoVariables.x0[3] = 0;
 
   acado_preparationStep();
   acado_feedbackStep();
@@ -96,7 +93,6 @@ int run_mpc(state_t * x0, log_t * solution,
     solution->x_ego[i] = acadoVariables.x[i*NX];
     solution->v_ego[i] = acadoVariables.x[i*NX+1];
     solution->a_ego[i] = acadoVariables.x[i*NX+2];
-    solution->t[i] = acadoVariables.x[i*NX+3];
 
     if (i < N){
       solution->j_ego[i] = acadoVariables.u[i];

@@ -20,7 +20,6 @@ int main( )
   f << dot(x_ego) == v_ego;
   f << dot(v_ego) == a_ego;
   f << dot(a_ego) == j_ego;
-  f << dot(t) == 1;
 
   // Running cost
   Function h;
@@ -60,7 +59,7 @@ int main( )
   mpc.set( DISCRETIZATION_TYPE, MULTIPLE_SHOOTING );
   mpc.set( INTEGRATOR_TYPE, INT_RK4 );
   mpc.set( NUM_INTEGRATOR_STEPS, 2500);
-  mpc.set( MAX_NUM_QP_ITERATIONS, 5000);
+  mpc.set( MAX_NUM_QP_ITERATIONS, 500);
   mpc.set( CG_USE_VARIABLE_WEIGHTING_MATRIX, YES);
 
   mpc.set( SPARSE_QP_SOLUTION, CONDENSING );
