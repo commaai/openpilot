@@ -6,7 +6,7 @@ import cereal.messaging as messaging
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.longitudinal_planner import calc_cruise_accel_limits
 from selfdrive.controls.lib.speed_smoother import speed_smoother
-from selfdrive.controls.lib.long_mpc import LongitudinalMpc
+from selfdrive.controls.lib.lead_mpc import LeadMpc
 
 
 def RW(v_ego, v_l):
@@ -32,7 +32,7 @@ def run_following_distance_simulation(v_lead, t_end=200.0):
 
   v_cruise_setpoint = v_lead + 10.
 
-  mpc = LongitudinalMpc(1)
+  mpc = LeadMpc(0)
 
   first = True
   while t < t_end:
@@ -49,19 +49,21 @@ def run_following_distance_simulation(v_lead, t_end=200.0):
     CS.carState.vEgo = v_ego
     CS.carState.aEgo = a_ego
 
-    # Setup lead packet
+    # Setup model packet
+    model = messaging.new_message('modelV2')
     lead = log.ModelDataV2.LeadDataV3.new_message()
     lead.prob = .75
     lead.x = [x_lead - x_ego + i*v_lead + 2.0 for i in range(0,12,2)]
     lead.v = [v_lead for i in range(6)]
     lead.a = [0.0 for i in range(6)]
+    model.modelV2.leads = [lead, lead, lead]
 
     # Run MPC
     mpc.set_cur_state(v_ego, a_ego)
     if first:  # Make sure MPC is converged on first timestep
       for _ in range(20):
-        mpc.update(CS.carState, lead)
-    mpc.update(CS.carState, lead)
+        mpc.update(CS.carState, model.modelV2, 0)
+    mpc.update(CS.carState, model.modelV2, 0)
 
     # Choose slowest of two solutions
     if v_cruise < mpc.mpc_solution.v_ego[1]:
