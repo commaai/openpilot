@@ -4,7 +4,6 @@
 
 #define deg2rad(d) (d/180.0*M_PI)
 
-const int N_steps = 16;
 using namespace std;
 
 int main( )
@@ -65,9 +64,9 @@ int main( )
   // QN(2,2) = 1.0;
   // QN(3,3) = 1.0;
 
-  double T_IDXS_ARR[N_steps + 1];
-  memcpy(T_IDXS_ARR, T_IDXS, (N_steps + 1) * sizeof(double));
-  Grid times(N_steps + 1, T_IDXS_ARR);
+  double T_IDXS_ARR[LAT_MPC_N + 1];
+  memcpy(T_IDXS_ARR, T_IDXS, (LAT_MPC_N + 1) * sizeof(double));
+  Grid times(LAT_MPC_N + 1, T_IDXS_ARR);
   OCP ocp(times);
   ocp.subjectTo(f);
 

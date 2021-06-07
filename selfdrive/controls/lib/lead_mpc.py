@@ -2,10 +2,12 @@ import os
 import math
 
 import numpy as np
+from selfdrive.modeld.constants import T_IDXS
 from selfdrive.swaglog import cloudlog
 from common.realtime import sec_since_boot
 from selfdrive.controls.lib.lead_mpc_lib import libmpc_py
 from selfdrive.controls.lib.drive_helpers import MPC_COST_LONG
+from selfdrive.controls.lib.drive_helpers import LON_MPC_N
 
 LOG_MPC = os.environ.get('LOG_MPC', False)
 
@@ -57,9 +59,8 @@ class LeadMpc():
     # Calculate mpc
     t = sec_since_boot()
     model_t = [0., 2., 4., 6., 8., 10.]
-    mpc_t = [0.0, .2, .4, .6, .8] + list(np.arange(1.0, 10.1, .6))
-    lead_x_interp = np.interp(mpc_t, model_t, lead.x) - 2.0
-    lead_v_interp = np.interp(mpc_t, model_t, lead.v)
+    lead_x_interp = np.interp(T_IDXS[LON_MPC_N+1], model_t, lead.x) - 2.0
+    lead_v_interp = np.interp(T_IDXS[LON_MPC_N+1], model_t, lead.v)
     self.n_its = self.libmpc.run_mpc(self.cur_state, self.mpc_solution,
                                      list(lead_x_interp), list(lead_v_interp))
 

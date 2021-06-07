@@ -5,11 +5,12 @@ from common.numpy_fast import interp
 
 import cereal.messaging as messaging
 from common.realtime import DT_MDL
+from selfdrive.modeld.constants import T_IDXS
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.longcontrol import LongCtrlState
 from selfdrive.controls.lib.lead_mpc import LeadMpc
 from selfdrive.controls.lib.long_mpc import LongitudinalMpc
-from selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, MPC_N
+from selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, CONTROL_N
 
 LON_MPC_STEP = 0.2  # first step is 0.2s
 AWARENESS_DECEL = -0.2     # car smoothly decel at .2m/s^2 when user is distracted
@@ -85,8 +86,6 @@ class Planner():
     force_slow_decel = sm['controlsState'].forceDecel
 
     lead_0 = sm['modelV2'].leads[0]
-    t_idxs = np.array(sm['modelV2'].position.t)
-    mpc_t = [0.0, .2, .4, .6, .8] + list(np.arange(1.0, 10.1, .6))
 
     # Calculate speed for normal cruise control
     enabled = (long_control_state == LongCtrlState.pid) or (long_control_state == LongCtrlState.stopping)
@@ -110,10 +109,10 @@ class Planner():
     for key in self.mpcs:
       self.mpcs[key].set_cur_state(self.v_desired, self.a_desired)
       self.mpcs[key].update(sm['carState'], sm['modelV2'], v_cruise)
-      if self.mpcs[key].status and self.mpcs[key].mpc_solution.a_ego[1] < next_a:
+      if self.mpcs[key].status and self.mpcs[key].mpc_solution.a_ego[5] < next_a:
         self.longitudinalPlanSource = key
-        self.a_desired_trajectory = np.interp(t_idxs[:MPC_N+1], mpc_t, list(self.mpcs[key].mpc_solution.a_ego))
-        next_a = self.mpcs[key].mpc_solution.a_ego[1]
+        self.a_desired_trajectory = list(self.mpcs[key].mpc_solution.a_ego[CONTROL_N + 1])
+        next_a = self.mpcs[key].mpc_solution.a_ego[5]
 
     # Throw FCW if brake predictions exceed capability
     self.fcw = (bool(np.any(self.a_desired_trajectory < -3.0)) and
@@ -122,7 +121,7 @@ class Planner():
 
     # Interpolate 0.05 seconds and save as starting point for next iteration
     a_prev = self.a_desired
-    self.a_desired = np.interp(DT_MDL, t_idxs[:MPC_N+1], self.a_desired_trajectory)
+    self.a_desired = np.interp(DT_MDL, T_IDXS[:CONTROL_N+1], self.a_desired_trajectory)
     self.v_desired = self.v_desired + DT_MDL * (self.a_desired + a_prev)/2.0
 
 

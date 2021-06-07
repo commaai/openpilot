@@ -1,6 +1,5 @@
 #include <acado_code_generation.hpp>
-
-const int controlHorizon = 50;
+#include "selfdrive/common/modeldata.h"
 
 using namespace std;
 
@@ -49,21 +48,10 @@ int main( )
   // Weights are defined in mpc.
   BMatrix QN(3,3); QN.setAll(true);
 
-  // Non uniform time grid
-  // First 5 timesteps are 0.2, after that it's 0.6
-  DMatrix numSteps(20, 1);
-  for (int i = 0; i < 5; i++){
-    numSteps(i) = 1;
-  }
-  for (int i = 5; i < 20; i++){
-    numSteps(i) = 3;
-  }
-
-  // Setup Optimal Control Problem
-  const double tStart = 0.0;
-  const double tEnd   = 10.0;
-
-  OCP ocp( tStart, tEnd, numSteps);
+  double T_IDXS_ARR[LON_MPC_N + 1];
+  memcpy(T_IDXS_ARR, T_IDXS, (LON_MPC_N + 1) * sizeof(double));
+  Grid times(LON_MPC_N + 1, T_IDXS_ARR);
+  OCP ocp(times);
   ocp.subjectTo(f);
 
   ocp.minimizeLSQ(Q, h);
@@ -76,7 +64,7 @@ int main( )
   mpc.set( HESSIAN_APPROXIMATION, GAUSS_NEWTON );
   mpc.set( DISCRETIZATION_TYPE, MULTIPLE_SHOOTING );
   mpc.set( INTEGRATOR_TYPE, INT_RK4 );
-  mpc.set( NUM_INTEGRATOR_STEPS, controlHorizon);
+  mpc.set( NUM_INTEGRATOR_STEPS, 2500);
   mpc.set( MAX_NUM_QP_ITERATIONS, 500);
   mpc.set( CG_USE_VARIABLE_WEIGHTING_MATRIX, YES);
 

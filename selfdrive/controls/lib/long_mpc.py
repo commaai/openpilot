@@ -4,6 +4,8 @@ import math
 from selfdrive.swaglog import cloudlog
 from common.realtime import sec_since_boot
 from selfdrive.controls.lib.longitudinal_mpc_lib import libmpc_py
+from selfdrive.controls.lib.drive_helpers import LON_MPC_N
+from selfdrive.modeld.constants import T_IDXS
 
 
 class LongitudinalMpc():
@@ -38,10 +40,9 @@ class LongitudinalMpc():
 
   def update(self, carstate, model, v_cruise):
     v_cruise_clipped = np.clip(v_cruise, self.cur_state[0].v_ego - 10., self.cur_state[0].v_ego + 10.0)
-    mpc_t = [0.0, .2, .4, .6, .8] + list(np.arange(1.0, 10.1, .6))
-    poss = v_cruise_clipped * np.array(mpc_t)
-    speeds = v_cruise_clipped * np.ones(len(mpc_t))
-    accels = np.zeros(len(mpc_t))
+    poss = v_cruise_clipped * np.array(T_IDXS[:LON_MPC_N+1])
+    speeds = v_cruise_clipped * np.ones(LON_MPC_N+1)
+    accels = np.zeros(LON_MPC_N+1)
 
     # Calculate mpc
     self.libmpc.run_mpc(self.cur_state, self.mpc_solution,
