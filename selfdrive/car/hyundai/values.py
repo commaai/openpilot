@@ -607,9 +607,8 @@ FEATURES = {
   "use_fca": set([CAR.SONATA, CAR.ELANTRA, CAR.ELANTRA_2021, CAR.ELANTRA_GT_I30, CAR.KIA_STINGER, CAR.IONIQ, CAR.IONIQ_EV_2020, CAR.KONA_EV, CAR.KIA_FORTE, CAR.KIA_NIRO_EV, CAR.PALISADE, CAR.GENESIS_G70, CAR.KONA, CAR.SANTA_FE, CAR.KIA_SELTOS]),
 }
 
-# Ensure that all cars in PHEV are also in EV_HYBRID
-EV_HYBRID = set([CAR.IONIQ_EV_2020, CAR.IONIQ_EV_LTD, CAR.KONA_EV, CAR.KIA_NIRO_EV, CAR.IONIQ, CAR.KIA_OPTIMA_H])
-PHEV: Set[str] = set([])  # uses a different gas signal
+PHEV: Set[str] = set()  # these cars use a different gas signal
+EV_HYBRID = PHEV | set([CAR.IONIQ_EV_2020, CAR.IONIQ_EV_LTD, CAR.KONA_EV, CAR.KIA_NIRO_EV, CAR.IONIQ, CAR.KIA_OPTIMA_H])
 
 DBC = {
   CAR.ELANTRA: dbc_dict('hyundai_kia_generic', None),
