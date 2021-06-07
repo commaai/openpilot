@@ -85,11 +85,9 @@ class Planner():
     long_control_state = sm['controlsState'].longControlState
     force_slow_decel = sm['controlsState'].forceDecel
 
-
     lead_0 = sm['modelV2'].leads[0]
     t_idxs = np.array(sm['modelV2'].position.t)
     mpc_t = [0.0, .2, .4, .6, .8] + list(np.arange(1.0, 10.1, .6))
-
 
     # Calculate speed for normal cruise control
     enabled = (long_control_state == LongCtrlState.pid) or (long_control_state == LongCtrlState.stopping)
@@ -123,9 +121,6 @@ class Planner():
     # Interpolate 0.05 seconds and save as starting point for next iteration
     a_prev = self.a_desired
     self.a_desired = np.interp(DT_MDL, t_idxs[:MPC_N+1], self.a_desired_trajectory)
-    # clip cruise accel
-    if self.longitudinalPlanSource == 'cruise':
-      self.a_desired = np.clip(self.a_desired, accel_limits_turns[0], accel_limits_turns[1])
     self.v_desired = self.v_desired + DT_MDL * (self.a_desired + a_prev)/2.0
 
 
