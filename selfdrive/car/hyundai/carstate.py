@@ -58,10 +58,10 @@ class CarState(CarStateBase):
 
     if self.CP.carFingerprint in EV_HYBRID:
       gas_signal = "CR_Vcu_AccPedDep_Pc" if self.CP.carFingerprint in PHEV else "Accel_Pedal_Pc"
-      ret.gas = cp.vl["E_EMS11"][gas_signal]
+      ret.gas = cp.vl["E_EMS11"][gas_signal] / 100.
       ret.gasPressed = ret.gas > 0
     else:
-      ret.gas = cp.vl["EMS12"]["PV_AV_CAN"] / 100
+      ret.gas = cp.vl["EMS12"]["PV_AV_CAN"] / 100.
       ret.gasPressed = bool(cp.vl["EMS16"]["CF_Ems_AclAct"])
 
     # TODO: refactor gear parsing in function
