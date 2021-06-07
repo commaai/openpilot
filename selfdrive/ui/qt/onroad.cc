@@ -55,7 +55,7 @@ void OnroadWindow::offroadTransition(bool offroad) {
       settings.setAccessToken(token.trimmed());
 
       MapWindow * m = new MapWindow(settings);
-      QObject::connect(this, &OnroadWindow::offroadTransition, m, &MapWindow::offroadTransition);
+      QObject::connect(this, &OnroadWindow::offroadTransitionSignal, m, &MapWindow::offroadTransition);
       split->addWidget(m);
 
       map = m;
