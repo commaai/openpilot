@@ -15,7 +15,7 @@ class LongitudinalMpc():
 
   def reset_mpc(self):
     self.libmpc = libmpc_py.libmpc
-    self.libmpc.init(0.0, 1.0, 1.0, .0, 10.0)
+    self.libmpc.init(0.0, 1.0, 1.0, 10.0)
 
     self.mpc_solution = libmpc_py.ffi.new("log_t *")
     self.cur_state = libmpc_py.ffi.new("state_t *")
@@ -23,6 +23,12 @@ class LongitudinalMpc():
     self.cur_state[0].x_ego = 0
     self.cur_state[0].v_ego = 0
     self.cur_state[0].a_ego = 0
+    self.min_a = -1.2
+    self.max_a = 1.2
+
+  def set_accel_limits(self, min_a, max_a):
+    self.min_a = min_a
+    self.max_a = max_a
 
   def set_cur_state(self, v, a):
     self.cur_state[0].x_ego = 0.0
@@ -30,17 +36,16 @@ class LongitudinalMpc():
     self.cur_state[0].a_ego = a
 
   def update(self, carstate, model, v_cruise):
-    v_ego = carstate.vEgo
-    v_cruise_clipped = np.clip(v_cruise, v_ego - 10.0, v_ego + 5.0)
-    poss = v_cruise_clipped * np.arange(0.,10.,1.0)
-    speeds = v_cruise_clipped * np.ones(10)
-    accels = np.zeros(10)
-    x_poly = list(map(float, np.polyfit(self.ts, poss, 3)))
-    v_poly = list(map(float, np.polyfit(self.ts, speeds, 3)))
-    a_poly = list(map(float, np.polyfit(self.ts, accels, 3)))
+    v_cruise_clipped = np.clip(v_cruise, self.cur_state[0].v_ego - 10., self.cur_state[0].v_ego + 10.0)
+    mpc_t = [0.0, .2, .4, .6, .8] + list(np.arange(1.0, 10.1, .6))
+    poss = v_cruise_clipped * np.array(mpc_t)
+    speeds = v_cruise_clipped * np.ones(len(mpc_t))
+    accels = np.zeros(len(mpc_t))
 
     # Calculate mpc
-    self.libmpc.run_mpc(self.cur_state, self.mpc_solution, x_poly, v_poly, a_poly)
+    self.libmpc.run_mpc(self.cur_state, self.mpc_solution,
+                        list(poss), list(speeds), list(accels),
+                        self.min_a, self.max_a)
 
     # Reset if NaN or goes through lead car
     nans = any(math.isnan(x) for x in self.mpc_solution[0].v_ego)

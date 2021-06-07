@@ -90,21 +90,21 @@ class Planner():
     t_idxs = np.array(sm['modelV2'].position.t)
     mpc_t = [0.0, .2, .4, .6, .8] + list(np.arange(1.0, 10.1, .6))
 
-    enabled = (long_control_state == LongCtrlState.pid) or (long_control_state == LongCtrlState.stopping)
-    following = lead_0.prob > .5 and lead_0.x[0] < 45.0 and lead_0.v[0] > v_ego and lead_0.a[0] > 0.0
 
     # Calculate speed for normal cruise control
+    enabled = (long_control_state == LongCtrlState.pid) or (long_control_state == LongCtrlState.stopping)
     if not enabled or sm['carState'].gasPressed:
-      starting = long_control_state == LongCtrlState.starting
-      self.v_desired = self.CP.minSpeedCan if starting else v_ego
-      self.a_desired = self.CP.startAccel if starting else min(0.0, a_ego)
+      self.v_desired = v_ego
+      self.a_desired = a_ego
 
+    following = lead_0.prob > .5 and lead_0.x[0] < 45.0 and lead_0.v[0] > v_ego and lead_0.a[0] > 0.0
     accel_limits = [float(x) for x in calc_cruise_accel_limits(v_ego, following)]
     accel_limits_turns = limit_accel_in_turns(v_ego, sm['carState'].steeringAngleDeg, accel_limits, self.CP)
     if force_slow_decel:
       # if required so, force a smooth deceleration
       accel_limits_turns[1] = min(accel_limits_turns[1], AWARENESS_DECEL)
       accel_limits_turns[0] = min(accel_limits_turns[0], accel_limits_turns[1])
+    self.mpcs['cruise'].set_accel_limits(accel_limits_turns[0], accel_limits_turns[1])
 
     next_a = np.inf
     for key in self.mpcs:

@@ -84,16 +84,6 @@ rk_eta[23] = 0.0000000000000000e+00;
 acadoWorkspace.rk_xxx[24] = rk_eta[24];
 acadoWorkspace.rk_xxx[25] = rk_eta[25];
 acadoWorkspace.rk_xxx[26] = rk_eta[26];
-acadoWorkspace.rk_xxx[27] = rk_eta[27];
-acadoWorkspace.rk_xxx[28] = rk_eta[28];
-acadoWorkspace.rk_xxx[29] = rk_eta[29];
-acadoWorkspace.rk_xxx[30] = rk_eta[30];
-acadoWorkspace.rk_xxx[31] = rk_eta[31];
-acadoWorkspace.rk_xxx[32] = rk_eta[32];
-acadoWorkspace.rk_xxx[33] = rk_eta[33];
-acadoWorkspace.rk_xxx[34] = rk_eta[34];
-acadoWorkspace.rk_xxx[35] = rk_eta[35];
-acadoWorkspace.rk_xxx[36] = rk_eta[36];
 
 for (run1 = 0; run1 < 1; ++run1)
 {

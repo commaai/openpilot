@@ -31,7 +31,7 @@ typedef struct {
   double cost;
 } log_t;
 
-void init(double xCost, double vCost, double aCost, double accelCost, double jerkCost){
+void init(double xCost, double vCost, double aCost, double jerkCost){
   acado_initializeSolver();
   int    i;
   const int STEP_MULTIPLIER = 3;
@@ -57,37 +57,32 @@ void init(double xCost, double vCost, double aCost, double accelCost, double jer
     acadoVariables.W[NY*NY*i + (NY+1)*0] = xCost * f;
     acadoVariables.W[NY*NY*i + (NY+1)*1] = vCost * f;
     acadoVariables.W[NY*NY*i + (NY+1)*2] = aCost * f;
-    acadoVariables.W[NY*NY*i + (NY+1)*3] = accelCost * f;
-    acadoVariables.W[NY*NY*i + (NY+1)*4] = jerkCost * f;
+    acadoVariables.W[NY*NY*i + (NY+1)*3] = jerkCost * f;
   }
   acadoVariables.WN[(NYN+1)*0] = xCost * STEP_MULTIPLIER;
   acadoVariables.WN[(NYN+1)*1] = vCost * STEP_MULTIPLIER;
   acadoVariables.WN[(NYN+1)*2] = aCost * STEP_MULTIPLIER;
-  acadoVariables.WN[(NYN+1)*3] = accelCost * STEP_MULTIPLIER;
 
 }
 
 
 int run_mpc(state_t * x0, log_t * solution,
-            double x_poly[4], double v_poly[4], double a_poly[4]){
+            double target_x[N+1], double target_v[N+1], double target_a[N+1],
+            double min_a, double max_a){
   int i;
 
   for (i = 0; i < N + 1; ++i){
-    acadoVariables.od[i*NOD+0] = x_poly[0];
-    acadoVariables.od[i*NOD+1] = x_poly[1];
-    acadoVariables.od[i*NOD+2] = x_poly[2];
-    acadoVariables.od[i*NOD+3] = x_poly[3];
-
-    acadoVariables.od[i*NOD+4] = v_poly[0];
-    acadoVariables.od[i*NOD+5] = v_poly[1];
-    acadoVariables.od[i*NOD+6] = v_poly[2];
-    acadoVariables.od[i*NOD+7] = v_poly[3];
-
-    acadoVariables.od[i*NOD+8] = a_poly[0];
-    acadoVariables.od[i*NOD+9] = a_poly[1];
-    acadoVariables.od[i*NOD+10] = a_poly[2];
-    acadoVariables.od[i*NOD+11] = a_poly[3];
+    acadoVariables.od[i*NOD] = min_a;
+    acadoVariables.od[i*NOD+1] = max_a;
   }
+  for (i = 0; i < N; i+= 1){
+    acadoVariables.y[NY*i + 0] = target_x[i];
+    acadoVariables.y[NY*i + 1] = target_v[i];
+    acadoVariables.y[NY*i + 2] = target_a[i];
+  }
+  acadoVariables.yN[0] = target_x[N];
+  acadoVariables.yN[1] = target_v[N];
+  acadoVariables.yN[2] = target_a[N];
 
   acadoVariables.x[0] = acadoVariables.x0[0] = x0->x_ego;
   acadoVariables.x[1] = acadoVariables.x0[1] = x0->v_ego;

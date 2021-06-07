@@ -13,10 +13,7 @@ int main( )
   DifferentialEquation f;
 
   DifferentialState x_ego, v_ego, a_ego, t;
-
-  OnlineData x_poly_r0, x_poly_r1, x_poly_r2, x_poly_r3;
-  OnlineData v_poly_r0, v_poly_r1, v_poly_r2, v_poly_r3;
-  OnlineData a_poly_r0, a_poly_r1, a_poly_r2, a_poly_r3;
+  OnlineData min_a, max_a;
 
   Control j_ego;
 
@@ -26,30 +23,24 @@ int main( )
   f << dot(a_ego) == j_ego;
   f << dot(t) == 1;
 
-  auto poly_x = x_poly_r0*(t*t*t) + x_poly_r1*(t*t) + x_poly_r2*t + x_poly_r3;
-  auto poly_v = v_poly_r0*(t*t*t) + v_poly_r1*(t*t) + v_poly_r2*t + v_poly_r3;
-  auto poly_a = a_poly_r0*(t*t*t) + a_poly_r1*(t*t) + a_poly_r2*t + a_poly_r3;
-
   // Running cost
   Function h;
-  h << x_ego - poly_x;
-  h << v_ego - poly_v;
-  h << a_ego - poly_a;
-  h << a_ego * (0.1 * v_ego + 1.0);
+  h << x_ego;
+  h << v_ego;
+  h << a_ego;
   h << j_ego * (0.1 * v_ego + 1.0);
 
   // Weights are defined in mpc.
-  BMatrix Q(5,5); Q.setAll(true);
+  BMatrix Q(4,4); Q.setAll(true);
 
   // Terminal cost
   Function hN;
-  hN << x_ego - poly_x;
-  hN << v_ego - poly_v;
-  hN << a_ego - poly_a;
-  hN << a_ego * (0.1 * v_ego + 1.0);
+  hN << x_ego;
+  hN << v_ego;
+  hN << a_ego;
 
   // Weights are defined in mpc.
-  BMatrix QN(4,4); QN.setAll(true);
+  BMatrix QN(3,3); QN.setAll(true);
 
   // Non uniform time grid
   // First 5 timesteps are 0.2, after that it's 0.6
@@ -71,8 +62,10 @@ int main( )
   ocp.minimizeLSQ(Q, h);
   ocp.minimizeLSQEndTerm(QN, hN);
 
-  //ocp.subjectTo( 0.0 <= v_ego);
-  ocp.setNOD(12);
+  ocp.subjectTo( 0.0 <= v_ego);
+  ocp.subjectTo( 0.0 <= a_ego - min_a);
+  ocp.subjectTo( a_ego - max_a <= 0.0);
+  ocp.setNOD(2);
 
   OCPexport mpc(ocp);
   mpc.set( HESSIAN_APPROXIMATION, GAUSS_NEWTON );

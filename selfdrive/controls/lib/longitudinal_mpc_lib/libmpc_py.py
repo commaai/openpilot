@@ -12,21 +12,24 @@ ffi.cdef("""
 typedef struct {
 double x_ego, v_ego, a_ego;
 } state_t;
+int N = 20;
 
 
 typedef struct {
-double x_ego[21];
-double v_ego[21];
-double a_ego[21];
-double t[21];
-double j_ego[20];
+double x_ego[N+1];
+double v_ego[N+1];
+double a_ego[N+1];
+double t[N+1];
+double j_ego[N];
 double cost;
 } log_t;
 
 
-void init(double xCost, double vCost, double aCost, double accelCost, double jerkCost);
+void init(double xCost, double vCost, double aCost, double jerkCost);
 void init_with_simulation(double v_ego);
-int run_mpc(state_t * x0, log_t * solution, double x_poly[4], double v_poly[4], double a_poly[4]);
+int run_mpc(state_t * x0, log_t * solution,
+            double target_x[N+1], double target_v[N+1], double target_a[N+1],
+            double min_a, double max_a);
 """)
 
 libmpc = ffi.dlopen(libmpc_fn)
