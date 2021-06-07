@@ -13,6 +13,7 @@ VisualAlert = car.CarControl.HUDControl.VisualAlert
 AudibleAlert = car.CarControl.HUDControl.AudibleAlert
 EventName = car.CarEvent.EventName
 
+
 # Alert priorities
 class Priority(IntEnum):
   LOWEST = 0
@@ -21,6 +22,7 @@ class Priority(IntEnum):
   MID = 3
   HIGH = 4
   HIGHEST = 5
+
 
 # Event types
 class ET:
@@ -32,6 +34,7 @@ class ET:
   SOFT_DISABLE = 'softDisable'
   IMMEDIATE_DISABLE = 'immediateDisable'
   PERMANENT = 'permanent'
+
 
 # get event name from enum
 EVENT_NAME = {v: k for k, v in EventName.schema.enumerants.items()}
@@ -56,7 +59,7 @@ class Events:
     self.events.append(event_name)
 
   def clear(self):
-    self.events_prev = {k: (v+1 if k in self.events else 0) for k, v in self.events_prev.items()}
+    self.events_prev = {k: (v + 1 if k in self.events else 0) for k, v in self.events_prev.items()}
     self.events = self.static_events.copy()
 
   def any(self, event_type):
@@ -94,9 +97,10 @@ class Events:
       event = car.CarEvent.new_message()
       event.name = event_name
       for event_type in EVENTS.get(event_name, {}).keys():
-        setattr(event, event_type , True)
+        setattr(event, event_type, True)
       ret.append(event)
     return ret
+
 
 class Alert:
   def __init__(self,
@@ -138,6 +142,7 @@ class Alert:
   def __gt__(self, alert2) -> bool:
     return self.alert_priority > alert2.alert_priority
 
+
 class NoEntryAlert(Alert):
   def __init__(self, alert_text_2, audible_alert=AudibleAlert.chimeError,
                visual_alert=VisualAlert.none, duration_hud_alert=2.):
@@ -161,6 +166,7 @@ class ImmediateDisableAlert(Alert):
                      Priority.HIGHEST, VisualAlert.steerRequired,
                      AudibleAlert.chimeWarningRepeat, 2.2, 3., 4.),
 
+
 class EngagementAlert(Alert):
   def __init__(self, audible_alert=True):
     super().__init__("", "",
@@ -168,14 +174,15 @@ class EngagementAlert(Alert):
                      Priority.MID, VisualAlert.none,
                      audible_alert, .2, 0., 0.),
 
+
 class NormalPermanentAlert(Alert):
   def __init__(self, alert_text_1: str, alert_text_2: str, duration_text: float = 0.2):
     super().__init__(alert_text_1, alert_text_2,
                      AlertStatus.normal, AlertSize.mid if len(alert_text_2) else AlertSize.small,
                      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., duration_text),
 
-# ********** alert callback functions **********
 
+# ********** alert callback functions **********
 def below_steer_speed_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
   speed = int(round(CP.minSteerSpeed * (CV.MS_TO_KPH if metric else CV.MS_TO_MPH)))
   unit = "km/h" if metric else "mph"
@@ -184,6 +191,7 @@ def below_steer_speed_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: 
     "Steer Unavailable Below %d %s" % (speed, unit),
     AlertStatus.userPrompt, AlertSize.mid,
     Priority.MID, VisualAlert.steerRequired, AudibleAlert.none, 0., 0.4, .3)
+
 
 def calibration_incomplete_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
   speed = int(MIN_SPEED_FILTER * (CV.MS_TO_KPH if metric else CV.MS_TO_MPH))
@@ -194,6 +202,7 @@ def calibration_incomplete_alert(CP: car.CarParams, sm: messaging.SubMaster, met
     AlertStatus.normal, AlertSize.mid,
     Priority.LOWEST, VisualAlert.none, AudibleAlert.none, 0., 0., .2)
 
+
 def no_gps_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
   gps_integrated = sm['pandaState'].pandaType in [log.PandaState.PandaType.uno, log.PandaState.PandaType.dos]
   return Alert(
@@ -202,11 +211,13 @@ def no_gps_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Al
     AlertStatus.normal, AlertSize.mid,
     Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2, creation_delay=300.)
 
+
 def wrong_car_mode_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
   text = "Cruise Mode Disabled"
   if CP.carName == "honda":
     text = "Main Switch Off"
   return NoEntryAlert(text, duration_hud_alert=0.)
+
 
 def startup_fuzzy_fingerprint_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
   return Alert(
@@ -214,6 +225,7 @@ def startup_fuzzy_fingerprint_alert(CP: car.CarParams, sm: messaging.SubMaster, 
     f"Closest Match: {CP.carFingerprint.title()[:40]}",
     AlertStatus.userPrompt, AlertSize.mid,
     Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 15.)
+
 
 EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, bool], Alert]]]] = {
   # ********** events with no alerts **********
@@ -508,7 +520,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
     ET.PERMANENT: NormalPermanentAlert("Fan Malfunction", "Contact Support"),
   },
 
-  # Camera is not output frames at a constant framerate
+  # Camera is not outputting frames at a constant framerate
   EventName.cameraMalfunction: {
     ET.PERMANENT: NormalPermanentAlert("Camera Malfunction", "Contact Support"),
   },
@@ -680,7 +692,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
 
   EventName.radarFault: {
     ET.SOFT_DISABLE: SoftDisableAlert("Radar Error: Restart the Car"),
-    ET.NO_ENTRY : NoEntryAlert("Radar Error: Restart the Car"),
+    ET.NO_ENTRY: NoEntryAlert("Radar Error: Restart the Car"),
   },
 
   # Every frame from the camera should be processed by the model. If modeld
@@ -688,7 +700,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
   # thrown when over 20% of frames are dropped.
   EventName.modeldLagging: {
     ET.SOFT_DISABLE: SoftDisableAlert("Driving model lagging"),
-    ET.NO_ENTRY : NoEntryAlert("Driving model lagging"),
+    ET.NO_ENTRY: NoEntryAlert("Driving model lagging"),
   },
 
   # Besides predicting the path, lane lines and lead car data the model also
@@ -711,7 +723,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
   EventName.lowMemory: {
     ET.SOFT_DISABLE: SoftDisableAlert("Low Memory: Reboot Your Device"),
     ET.PERMANENT: NormalPermanentAlert("Low Memory", "Reboot your Device"),
-    ET.NO_ENTRY : NoEntryAlert("Low Memory: Reboot Your Device",
+    ET.NO_ENTRY: NoEntryAlert("Low Memory: Reboot Your Device",
                                audible_alert=AudibleAlert.chimeDisengage),
   },
 
@@ -824,7 +836,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       "No close lead car",
       AlertStatus.normal, AlertSize.mid,
       Priority.HIGH, VisualAlert.none, AudibleAlert.chimeDisengage, .4, 2., 3.),
-    ET.NO_ENTRY : NoEntryAlert("No Close Lead Car"),
+    ET.NO_ENTRY: NoEntryAlert("No Close Lead Car"),
   },
 
   EventName.speedTooLow: {
