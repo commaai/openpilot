@@ -5,7 +5,6 @@ from common.numpy_fast import interp
 
 import cereal.messaging as messaging
 from common.realtime import DT_MDL
-from selfdrive.swaglog import cloudlog
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.longcontrol import LongCtrlState
 from selfdrive.controls.lib.lead_mpc import LeadMpc
@@ -115,8 +114,6 @@ class Planner():
 
     # Throw FCW if brake predictions exceed capability
     self.fcw = bool(np.any(self.a_desired_trajectory < -3.0))
-    if self.fcw:
-      cloudlog.info("FCW triggered")
 
     # Interpolate 0.05 seconds and save as starting point for next iteration
     a_prev = self.a_desired
