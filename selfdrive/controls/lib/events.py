@@ -268,6 +268,14 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
     ET.PERMANENT: startup_fuzzy_fingerprint_alert,
   },
 
+  EventName.startupNoFw: {
+    ET.PERMANENT: Alert(
+      "Car Unrecognized",
+      "Check All Connections",
+      AlertStatus.userPrompt, AlertSize.mid,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 15.),
+  },
+
   EventName.dashcamMode: {
     ET.PERMANENT: Alert(
       "Dashcam Mode",
