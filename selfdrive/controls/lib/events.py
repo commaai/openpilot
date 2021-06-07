@@ -318,7 +318,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       Priority.LOW, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
   },
 
-  # Openpilot doesn't recognize the car. This switches openpilot into a
+  # openpilot doesn't recognize the car. This switches openpilot into a
   # read-only mode. This can be solved by adding your fingerprint.
   # See https://github.com/commaai/openpilot/wiki/Fingerprinting for more information
   EventName.carUnrecognized: {
@@ -373,7 +373,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       Priority.LOWEST, VisualAlert.none, AudibleAlert.none, .0, .0, .1, creation_delay=1.),
   },
 
-  # Openpilot tries to learn certain parameters about your car by observing
+  # openpilot tries to learn certain parameters about your car by observing
   # how the car behaves to steering inputs from both human and openpilot driving.
   # This includes:
   # - steer ratio: gear ratio of the steering rack. Steering angle divided by tire angle
