@@ -25,16 +25,16 @@ In order to use a joystick over the network, we need to run joystickd locally fr
    # ON YOUR COMMA TWO
    echo -n "1" > /data/params/d/JoystickDebugMode
    ```
-2. Run unbridge with your laptop's IP address. This republishes the `testJoystick` packets sent from your laptop so that openpilot can receive them:
+2. Run bridge with your laptop's IP address. This republishes the `testJoystick` packets sent from your laptop so that openpilot can receive them:
    ```shell
    # ON YOUR COMMA TWO
-   cereal/messaging/bridge --reverse --ip {LAPTOP_IP}
+   ./cereal/messaging/bridge {LAPTOP_IP} testJoystick
    ```
 3. Finally, start joystickd on your laptop and tell it to publish ZMQ packets over the network:
    ```shell
    # ON YOUR LAPTOP
    export ZMQ=1
-   tools/joystick/joystickd.py
+   ./tools/joystick/joystickd.py
    ```
 
 ---
