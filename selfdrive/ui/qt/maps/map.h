@@ -68,6 +68,7 @@ private:
   double last_maneuver_distance = 1000;
 
   // Route recompute
+  QTimer* recompute_timer;
   int recompute_backoff = 0;
   int recompute_countdown = 0;
   void calculateRoute(QMapbox::Coordinate destination);
@@ -77,6 +78,10 @@ private:
 private slots:
   void timerUpdate();
   void routeCalculated(QGeoRouteReply *reply);
+  void recomputeRoute();
+
+public slots:
+  void offroadTransition(bool offroad);
 
 signals:
   void distanceChanged(float distance);

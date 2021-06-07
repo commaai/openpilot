@@ -31,6 +31,10 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings) {
   timer = new QTimer(this);
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(timerUpdate()));
 
+  recompute_timer = new QTimer(this);
+  recompute_timer->start(1000);
+  QObject::connect(recompute_timer, SIGNAL(timeout()), this, SLOT(recomputeRoute()));
+
   // Instructions
   map_instructions = new MapInstructions(this);
   connect(this, SIGNAL(instructionsChanged(QMap<QString, QVariant>)),
@@ -153,18 +157,6 @@ void MapWindow::timerUpdate() {
       }
     }
 
-    // Recompute route if needed
-    if (sm->frame % 10 == 0) {
-      if (recompute_countdown == 0 && shouldRecompute()) {
-        recompute_countdown = std::pow(2, recompute_backoff);
-        recompute_backoff = std::min(7, recompute_backoff + 1);
-        calculateRoute(nav_destination);
-      } else {
-        recompute_countdown = std::max(0, recompute_countdown - 1);
-      }
-    }
-
-
     // Show route instructions
     if (segment.isValid()) {
       auto cur_maneuver = segment.maneuver();
@@ -244,7 +236,36 @@ void MapWindow::paintGL() {
 }
 
 
+void MapWindow::recomputeRoute() {
+  bool should_recompute = shouldRecompute();
+  auto new_destination = coordinate_from_param("NavDestination");
+
+  if (!new_destination) {
+    clearRoute();
+    return;
+  }
+
+  if (*new_destination != nav_destination){
+    setVisible(true); // Show map on destination set/change
+    should_recompute = true;
+  }
+
+  if (!gps_ok && segment.isValid()) return; // Don't recompute when gps drifts in tunnels
+
+  // Only do API request when map is loaded
+  if (!m_map.isNull()) {
+    if (recompute_countdown == 0 && should_recompute) {
+      recompute_countdown = std::pow(2, recompute_backoff);
+      recompute_backoff = std::min(7, recompute_backoff + 1);
+      calculateRoute(*new_destination);
+    } else {
+      recompute_countdown = std::max(0, recompute_countdown - 1);
+    }
+  }
+}
+
 void MapWindow::calculateRoute(QMapbox::Coordinate destination) {
+  nav_destination = destination;
   QGeoRouteRequest request(to_QGeoCoordinate(last_position), to_QGeoCoordinate(destination));
   request.setFeatureWeight(QGeoRouteRequest::TrafficFeature, QGeoRouteRequest::AvoidFeatureWeight);
   routing_manager->calculateRoute(request);
@@ -269,27 +290,17 @@ void MapWindow::routeCalculated(QGeoRouteReply *reply) {
 }
 
 void MapWindow::clearRoute() {
-  segment = QGeoRouteSegment(); // Clear route
-  m_map->setLayoutProperty("navLayer", "visibility", "none");
-  m_map->setPitch(MIN_PITCH);
+  segment = QGeoRouteSegment();
+  nav_destination = QMapbox::Coordinate();
+
+  if (!m_map.isNull()) {
+    m_map->setLayoutProperty("navLayer", "visibility", "none");
+    m_map->setPitch(MIN_PITCH);
+  }
 }
 
 
 bool MapWindow::shouldRecompute(){
-  auto new_destination = coordinate_from_param("NavDestination");
-  if (!new_destination) {
-    clearRoute();
-    return false;
-  }
-
-  if (!gps_ok && segment.isValid()) return false; // Don't recompute when gps drifts in tunnels
-
-  if (*new_destination != nav_destination){
-    nav_destination = *new_destination;
-    setVisible(true); // Show map on destination set/change
-    return true;
-  }
-
   if (!segment.isValid()){
     return true;
   }
@@ -301,6 +312,9 @@ bool MapWindow::shouldRecompute(){
   for (size_t i = 0; i < path.size() - 1; i++){
     auto a = path[i];
     auto b = path[i+1];
+    if (a.distanceTo(b) < 1.0) {
+      continue;
+    }
     min_d = std::min(min_d, minimum_distance(a, b, cur));
   }
   return min_d > REROUTE_DISTANCE;
@@ -361,6 +375,13 @@ void MapWindow::pinchTriggered(QPinchGesture *gesture) {
     // TODO: figure out why gesture centerPoint doesn't work
     m_map->scaleBy(gesture->scaleFactor(), {width() / 2.0 / MAP_SCALE, height() / 2.0 / MAP_SCALE});
     zoom_counter = PAN_TIMEOUT;
+  }
+}
+
+void MapWindow::offroadTransition(bool offroad) {
+  if (!offroad) {
+    auto dest = coordinate_from_param("NavDestination");
+    setVisible(dest.has_value());
   }
 }
 
