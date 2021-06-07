@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-import threading
 import time
+import multiprocessing
 
 import cereal.messaging as messaging
+from cereal.visionipc.visionipc_pyx import VisionIpcServer, VisionStreamType  # pylint: disable=no-name-in-module, import-error
 from common.realtime import Ratekeeper
+from common.transformations.camera import eon_f_frame_size, eon_d_frame_size
 from selfdrive.manager.process import ensure_running
 from selfdrive.manager.process_config import managed_processes
 from tools.lib.route import Route
@@ -17,22 +19,31 @@ def replay_service(s, dt, msgs):
     pm.send(s, m.as_builder())
     rk.keep_time()
 
-# TODO: send real frames
 def replay_cameras():
   pm = messaging.PubMaster(["roadCameraState", "driverCameraState"])
+  cameras = [
+    ("roadCameraState", eon_f_frame_size, VisionStreamType.VISION_STREAM_YUV_BACK, 1),
+    ("driverCameraState", eon_d_frame_size, VisionStreamType.VISION_STREAM_YUV_FRONT, 2),
+  ]
+  vipc_server = VisionIpcServer("camerad")
+  for (_, size, stream, __) in cameras:
+    vipc_server.create_buffers(stream, 40, False, size[0], size[1])
+  vipc_server.start_listener()
+
   rk = Ratekeeper(1 / 0.05, print_delay_threshold=None)
-
-  frame = 0
   while True:
-    m = messaging.new_message("roadCameraState")
-    m.roadCameraState.frameId = frame
-    pm.send("roadCameraState", m)
+    for (pkt, size, stream, decimation) in cameras:
+      if rk.frame % decimation != 0:
+        continue
 
-    m = messaging.new_message("driverCameraState")
-    m.driverCameraState.frameId = frame
-    pm.send("driverCameraState", m)
+      # TODO: send real frames from log
+      m = messaging.new_message(pkt)
+      msg = getattr(m, pkt)
+      msg.frameId = rk.frame // decimation
+      pm.send(pkt, m)
 
-    frame += 1
+      img = b"\x00" * int(size[0]*size[1]*3/2)  # yuv img
+      vipc_server.send(stream, img, msg.frameId, msg.timestampSof, msg.timestampEof)
     rk.keep_time()
 
 def regen_segment(route, seg):
@@ -42,30 +53,35 @@ def regen_segment(route, seg):
 
   fake_daemons = {
     'sensord': [
-      threading.Thread(target=replay_service, args=('sensorEvents', 0.01, lr)),
+      multiprocessing.Process(target=replay_service, args=('sensorEvents', 0.01, lr)),
     ],
     'pandad': [
-      threading.Thread(target=replay_service, args=('can', 0.01, lr)),
-      threading.Thread(target=replay_service, args=('pandaState', 0.01, lr)),
+      multiprocessing.Process(target=replay_service, args=('can', 0.01, lr)),
+      multiprocessing.Process(target=replay_service, args=('pandaState', 0.01, lr)),
     ],
     'camerad': [
-      threading.Thread(target=replay_cameras),
+      multiprocessing.Process(target=replay_cameras),
     ],
   }
 
+  # TODO: fix locationd
   # startup procs
-  ensure_running(managed_processes.values(), started=True, not_run=fake_daemons)
+  ignore = list(fake_daemons.keys()) + ['ui', 'locationd', 'manage_athenad', 'uploader']
+  ensure_running(managed_processes.values(), started=True, not_run=ignore)
   for threads in fake_daemons.values():
     for t in threads:
       t.start()
 
+  # TODO: ensure all procs are running
   # run for 10s
   time.sleep(10)
 
   # kill everything
   for p in managed_processes.values():
     p.stop()
-
+  for procs in fake_daemons.values():
+    for p in procs:
+      p.terminate()
 
 if __name__ == "__main__":
   regen_segment("ef895f46af5fd73f|2021-05-22--14-06-35", 15)
