@@ -3,7 +3,11 @@ import os
 import time
 import multiprocessing
 
+# run DM procs
+os.environ["USE_WEBCAM"] = "1"
+
 import cereal.messaging as messaging
+from cereal.services import service_list
 from cereal.visionipc.visionipc_pyx import VisionIpcServer, VisionStreamType  # pylint: disable=no-name-in-module, import-error
 from common.params import Params
 from common.realtime import Ratekeeper
@@ -14,9 +18,9 @@ from selfdrive.manager.process_config import managed_processes
 from tools.lib.route import Route
 from tools.lib.logreader import LogReader
 
-def replay_service(s, dt, msgs):
+def replay_service(s, msgs):
   pm = messaging.PubMaster([s, ])
-  rk = Ratekeeper(1 / dt, print_delay_threshold=None)
+  rk = Ratekeeper(service_list[s].frequency, print_delay_threshold=None)
   s_msgs = [m for m in msgs if m.which() == s]
   for m in s_msgs:
     pm.send(s, m.as_builder())
@@ -83,23 +87,30 @@ def regen_segment(route, seg):
 
   fake_daemons = {
     'sensord': [
-      multiprocessing.Process(target=replay_service, args=('sensorEvents', 0.01, lr)),
+      multiprocessing.Process(target=replay_service, args=('sensorEvents', lr)),
     ],
     'pandad': [
-      multiprocessing.Process(target=replay_service, args=('can', 0.01, lr)),
-      multiprocessing.Process(target=replay_service, args=('pandaState', 0.5, lr)),
+      multiprocessing.Process(target=replay_service, args=('can', lr)),
+      multiprocessing.Process(target=replay_service, args=('pandaState', lr)),
     ],
     'managerState': [
-      multiprocessing.Process(target=replay_service, args=('managerState', 0.5, lr)),
+      multiprocessing.Process(target=replay_service, args=('managerState', lr)),
     ],
     'camerad': [
       multiprocessing.Process(target=replay_cameras),
     ],
+
+    # TODO: fix these and run them
+    'paramsd': [
+      multiprocessing.Process(target=replay_service, args=('liveParameters', lr)),
+    ],
+    'locationd': [
+      multiprocessing.Process(target=replay_service, args=('liveLocationKalman', lr)),
+    ],
   }
 
-  # TODO: fix locationd
   # startup procs
-  ignore = list(fake_daemons.keys()) + ['ui', 'manage_athenad', 'uploader', 'locationd']
+  ignore = list(fake_daemons.keys()) + ['ui', 'manage_athenad', 'uploader']
   ensure_running(managed_processes.values(), started=True, not_run=ignore)
   for threads in fake_daemons.values():
     for t in threads:
