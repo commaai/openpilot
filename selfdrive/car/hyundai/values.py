@@ -607,8 +607,9 @@ FEATURES = {
   "use_fca": set([CAR.SONATA, CAR.ELANTRA, CAR.ELANTRA_2021, CAR.ELANTRA_GT_I30, CAR.KIA_STINGER, CAR.IONIQ, CAR.IONIQ_EV_2020, CAR.KONA_EV, CAR.KIA_FORTE, CAR.KIA_NIRO_EV, CAR.PALISADE, CAR.GENESIS_G70, CAR.KONA, CAR.SANTA_FE, CAR.KIA_SELTOS]),
 }
 
+# TODO: add ALL ev/hev/phev cars to EV_HYBRID, but only add cars to PHEV if they use the different gas signal
 EV_HYBRID = set([CAR.IONIQ_EV_2020, CAR.IONIQ_EV_LTD, CAR.KONA_EV, CAR.KIA_NIRO_EV, CAR.IONIQ, CAR.KIA_OPTIMA_H])
-ALT_EV_HYBRID: Set[str] = set([])  # these EV/hybrids cars use a different gas signal
+PHEV: Set[str] = set([])  # these EV/hybrids cars use a different gas signal
 
 DBC = {
   CAR.ELANTRA: dbc_dict('hyundai_kia_generic', None),
@@ -618,18 +619,18 @@ DBC = {
   CAR.GENESIS_G80: dbc_dict('hyundai_kia_generic', None),
   CAR.GENESIS_G90: dbc_dict('hyundai_kia_generic', None),
   CAR.HYUNDAI_GENESIS: dbc_dict('hyundai_kia_generic', None),
-  CAR.IONIQ_EV_2020: dbc_dict('hyundai_electric_generated', None),
-  CAR.IONIQ_EV_LTD: dbc_dict('hyundai_electric_generated', None),
-  CAR.IONIQ: dbc_dict('hyundai_electric_generated', None),
+  CAR.IONIQ_EV_2020: dbc_dict('hyundai_kia_generic', None),
+  CAR.IONIQ_EV_LTD: dbc_dict('hyundai_kia_generic', None),
+  CAR.IONIQ: dbc_dict('hyundai_kia_generic', None),
   CAR.KIA_FORTE: dbc_dict('hyundai_kia_generic', None),
-  CAR.KIA_NIRO_EV: dbc_dict('hyundai_electric_generated', None),
+  CAR.KIA_NIRO_EV: dbc_dict('hyundai_kia_generic', None),
   CAR.KIA_OPTIMA: dbc_dict('hyundai_kia_generic', None),
-  CAR.KIA_OPTIMA_H: dbc_dict('hyundai_electric_generated', None),
+  CAR.KIA_OPTIMA_H: dbc_dict('hyundai_kia_generic', None),
   CAR.KIA_SELTOS: dbc_dict('hyundai_kia_generic', None),
   CAR.KIA_SORENTO: dbc_dict('hyundai_kia_generic', None),
   CAR.KIA_STINGER: dbc_dict('hyundai_kia_generic', None),
   CAR.KONA: dbc_dict('hyundai_kia_generic', None),
-  CAR.KONA_EV: dbc_dict('hyundai_electric_generated', None),
+  CAR.KONA_EV: dbc_dict('hyundai_kia_generic', None),
   CAR.SANTA_FE: dbc_dict('hyundai_kia_generic', None),
   CAR.SONATA: dbc_dict('hyundai_kia_generic', None),
   CAR.SONATA_LF: dbc_dict('hyundai_kia_generic', None),
