@@ -35,7 +35,7 @@ class LeadMpc():
     self.cur_state[0].a_ego = a
 
   def update(self, carstate, model, v_cruise):
-    lead = model['leads'][self.lead_id]
+    lead = model.leads[self.lead_id]
     v_ego = carstate.vEgo
 
     # Setup current mpc state

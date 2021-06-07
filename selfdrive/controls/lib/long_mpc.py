@@ -30,7 +30,7 @@ class LongitudinalMpc():
     self.cur_state[0].a_ego = a
 
   def update(self, carstate, model, v_cruise):
-    v_ego = carstate.v_ego
+    v_ego = carstate.vEgo
     v_cruise_clipped = np.clip(v_cruise, v_ego - 10.0, v_ego + 5.0)
     poss = v_cruise_clipped * np.arange(0.,10.,1.0)
     speeds = v_cruise_clipped * np.ones(10)
