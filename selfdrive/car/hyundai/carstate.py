@@ -60,10 +60,10 @@ class CarState(CarStateBase):
       gas_signal = "CR_Vcu_AccPedDep_Pc" if self.CP.carFingerprint in PHEV else "Accel_Pedal_Pos"
       ret.gas = cp.vl["E_EMS11"][gas_signal]
       if self.CP.carFingerprint not in PHEV:
-        ret.gas /= 256.  # TODO: want to make this a percentage in the dbc?
+        ret.gas /= 256.
       ret.gasPressed = ret.gas > 0
     else:
-      ret.gas = cp.vl["EMS12"]["PV_AV_CAN"] / 100  # car and user  # TODO: check this comment
+      ret.gas = cp.vl["EMS12"]["PV_AV_CAN"] / 100
       ret.gasPressed = bool(cp.vl["EMS16"]["CF_Ems_AclAct"])
 
     # TODO: refactor gear parsing in function
