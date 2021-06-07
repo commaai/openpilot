@@ -63,7 +63,7 @@ def joystick_thread(use_keyboard):
     print('Buttons:\n'
           '- `R`: Resets axes and buttons\n'
           '- `C`: Cancel cruise control\n'
-          '- `E`: Toggle enabled\n'
+          '- `E`: Toggle cruise state enabled\n'
           '- `T`: Steer required HUD')
   else:
     print('\nUsing joystick, don\'t forget to run unbridge on your device!')
