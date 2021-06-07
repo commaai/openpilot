@@ -33,10 +33,10 @@ def manager_init():
   default_params = [
     ("CompletedTrainingVersion", "0"),
     ("HasAcceptedTerms", "0"),
-    ("LastUpdateTime", datetime.datetime.utcnow().isoformat().encode('utf8')),
     ("OpenpilotEnabledToggle", "1"),
   ]
-
+  if not PC:
+    default_params.append(("LastUpdateTime", datetime.datetime.utcnow().isoformat().encode('utf8')))
   if TICI:
     default_params.append(("EnableLteOnroad", "1"))
 
