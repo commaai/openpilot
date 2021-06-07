@@ -57,7 +57,6 @@ class CarState(CarStateBase):
     ret.brakePressed = cp.vl["TCS13"]["DriverBraking"] != 0
 
     if self.CP.carFingerprint in EV_HYBRID:
-      # Accel_Pedal_Pos is speed on PHEVs
       gas_signal = "CR_Vcu_AccPedDep_Pc" if self.CP.carFingerprint in PHEV else "Accel_Pedal_Pos"
       ret.gas = cp.vl["E_EMS11"][gas_signal]
       if self.CP.carFingerprint not in PHEV:
