@@ -84,7 +84,7 @@ if __name__ == '__main__':
   parser = argparse.ArgumentParser(
     description='Publishes events from your joystick to control your car',
     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-  parser.add_argument('--keyboard', action='store_true', help='Use your keyboard over ssh instead of a joystick')
+  parser.add_argument('--keyboard', action='store_true', help='Use your keyboard instead of a joystick')
   args = parser.parse_args()
 
   joystick_thread(use_keyboard=args.keyboard)
