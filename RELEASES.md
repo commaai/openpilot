@@ -1,3 +1,18 @@
+Version 0.8.5 (2021-06-11)
+========================
+ * NEOS update: improved reliability and stability with better voltage regulator configuration
+ * Smart model-based Forward Collision Warning
+ * CAN-based fingerprinting moved behind community features toggle
+ * Improved longitudinal control on Toyotas with a comma pedal
+ * Improved auto-brightness using road-facing camera
+ * Added "Software" settings page with updater controls
+ * Audi Q2 2018 support thanks to jyoung8607!
+ * Hyundai Elantra 2021 support thanks to CruiseBrantley!
+ * Lexus UX Hybrid 2019-2020 support thanks to brianhaugen2!
+ * Toyota Avalon Hybrid 2019 support thanks to jbates9011!
+ * SEAT Leon 2017 & 2020 support thanks to jyoung8607!
+ * Škoda Octavia 2015 & 2019 support thanks to jyoung8607!
+
 Version 0.8.4 (2021-05-17)
 ========================
  * Delay controls start until system is ready

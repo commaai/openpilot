@@ -1,4 +1,4 @@
-Import('env', 'envCython', 'arch', 'QCOM_REPLAY')
+Import('env', 'envCython', 'arch')
 
 import shutil
 
@@ -54,7 +54,7 @@ vipc_sources = [
   'visionipc/visionbuf.cc',
 ]
 
-if arch in ["aarch64", "larch64"] and (not QCOM_REPLAY):
+if arch in ["aarch64", "larch64"]:
   vipc_sources += ['visionipc/visionbuf_ion.cc']
 else:
   vipc_sources += ['visionipc/visionbuf_cl.cc']
@@ -64,6 +64,8 @@ vipc = env.Library('visionipc', vipc_objects)
 
 
 libs = envCython["LIBS"]+["OpenCL", "zmq", vipc, messaging_lib]
+if arch == "aarch64":
+  libs += ["adreno_utils"]
 if arch == "Darwin":
   del libs[libs.index('OpenCL')]
   envCython['FRAMEWORKS'] += ['OpenCL']

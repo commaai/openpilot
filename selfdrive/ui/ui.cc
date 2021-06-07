@@ -5,7 +5,6 @@
 #include <unistd.h>
 
 #include <cmath>
-#include <iostream>
 
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
@@ -17,7 +16,7 @@
 
 #define BACKLIGHT_DT 0.25
 #define BACKLIGHT_TS 2.00
-#define BACKLIGHT_OFFROAD 50
+#define BACKLIGHT_OFFROAD 75
 
 
 // Projects a point in car to space to the corresponding point in full frame
@@ -72,7 +71,6 @@ static void update_leads(UIState *s, const cereal::RadarState::Reader &radar_sta
       // negative because radarState uses left positive convention
       calib_frame_to_full_frame(s, lead_data.getDRel(), -lead_data.getYRel(), z + 1.22, &s->scene.lead_vertices[i]);
     }
-    s->scene.lead_data[i] = lead_data;
   }
 }
 
@@ -114,8 +112,9 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
   }
 
   // update path
-  if (scene.lead_data[0].getStatus()) {
-    const float lead_d = scene.lead_data[0].getDRel() * 2.;
+  auto lead_one = (*s->sm)["radarState"].getRadarState().getLeadOne();
+  if (lead_one.getStatus()) {
+    const float lead_d = lead_one.getDRel() * 2.;
     max_distance = std::clamp((float)(lead_d - fmin(lead_d * 0.35, 10.)), 0.0f, max_distance);
   }
   max_idx = get_path_length_idx(model_position, max_distance);
@@ -123,19 +122,17 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
 }
 
 static void update_sockets(UIState *s){
-  SubMaster &sm = *(s->sm);
-  sm.update(0);
+  s->sm->update(0);
 }
 
 static void update_state(UIState *s) {
   SubMaster &sm = *(s->sm);
-
   UIScene &scene = s->scene;
-  if (scene.started && sm.updated("controlsState")) {
-    scene.controls_state = sm["controlsState"].getControlsState();
-  }
-  if (sm.updated("carState")) {
-    scene.car_state = sm["carState"].getCarState();
+
+  // update engageability and DM icons at 2Hz
+  if (sm.frame % (UI_FREQ / 2) == 0) {
+    scene.engageable = sm["controlsState"].getControlsState().getEngageable();
+    scene.dm_active = sm["driverMonitoringState"].getDriverMonitoringState().getIsActiveMode();
   }
   if (sm.updated("radarState")) {
     std::optional<cereal::ModelDataV2::XYZTData::Reader> line;
@@ -164,9 +161,6 @@ static void update_state(UIState *s) {
   if (sm.updated("modelV2")) {
     update_model(s, sm["modelV2"].getModelV2());
   }
-  if (sm.updated("deviceState")) {
-    scene.deviceState = sm["deviceState"].getDeviceState();
-  }
   if (sm.updated("pandaState")) {
     auto pandaState = sm["pandaState"].getPandaState();
     scene.pandaType = pandaState.getPandaType();
@@ -180,23 +174,14 @@ static void update_state(UIState *s) {
       scene.satelliteCount = data.getMeasurementReport().getNumMeas();
     }
   }
-  if (sm.updated("liveLocationKalman")) {
-    scene.gpsOK = sm["liveLocationKalman"].getLiveLocationKalman().getGpsOK();
+  if (sm.updated("gpsLocationExternal")) {
+    scene.gpsAccuracy = sm["gpsLocationExternal"].getGpsLocationExternal().getAccuracy();
   }
   if (sm.updated("carParams")) {
     scene.longitudinal_control = sm["carParams"].getCarParams().getOpenpilotLongitudinalControl();
   }
-  if (sm.updated("driverState")) {
-    scene.driver_state = sm["driverState"].getDriverState();
-  }
-  if (sm.updated("driverMonitoringState")) {
-    scene.dmonitoring_state = sm["driverMonitoringState"].getDriverMonitoringState();
-  }
   if (sm.updated("sensorEvents")) {
     for (auto sensor : sm["sensorEvents"].getSensorEvents()) {
-      if (!Hardware::TICI() && sensor.which() == cereal::SensorEventData::LIGHT) {
-        scene.light_sensor = sensor.getLight();
-      }
       if (!scene.started && sensor.which() == cereal::SensorEventData::ACCELERATION) {
         auto accel = sensor.getAcceleration().getV();
         if (accel.totalSize().wordCount){ // TODO: sometimes empty lists are received. Figure out why
@@ -210,12 +195,20 @@ static void update_state(UIState *s) {
       }
     }
   }
-  if (Hardware::TICI() && sm.updated("roadCameraState")) {
+  if (sm.updated("roadCameraState")) {
     auto camera_state = sm["roadCameraState"].getRoadCameraState();
-    float gain = camera_state.getGainFrac() * (camera_state.getGlobalGain() > 100 ? 2.5 : 1.0) / 10.0;
-    scene.light_sensor = std::clamp<float>((1023.0 / 1757.0) * (1757.0 - camera_state.getIntegLines()) * (1.0 - gain), 0.0, 1023.0);
+
+    float max_lines = Hardware::EON() ? 5408 : 1757;
+    float gain = camera_state.getGainFrac();
+
+    if (Hardware::TICI()) {
+      // gainFrac can go up to 4, with another 2.5x multiplier based on globalGain. Scale back to 0 - 1
+      gain *= (camera_state.getGlobalGain() > 100 ? 2.5 : 1.0) / 10.0;
+    }
+
+    scene.light_sensor = std::clamp<float>((1023.0 / max_lines) * (max_lines - camera_state.getIntegLines() * gain), 0.0, 1023.0);
   }
-  scene.started = scene.deviceState.getStarted() || scene.driver_view;
+  scene.started = sm["deviceState"].getDeviceState().getStarted();
 }
 
 static void update_params(UIState *s) {
@@ -245,13 +238,14 @@ static void update_vision(UIState *s) {
 
 static void update_status(UIState *s) {
   if (s->scene.started && s->sm->updated("controlsState")) {
-    auto alert_status = s->scene.controls_state.getAlertStatus();
+    auto controls_state = (*s->sm)["controlsState"].getControlsState();
+    auto alert_status = controls_state.getAlertStatus();
     if (alert_status == cereal::ControlsState::AlertStatus::USER_PROMPT) {
       s->status = STATUS_WARNING;
     } else if (alert_status == cereal::ControlsState::AlertStatus::CRITICAL) {
       s->status = STATUS_ALERT;
     } else {
-      s->status = s->scene.controls_state.getEnabled() ? STATUS_ENGAGED : STATUS_DISENGAGED;
+      s->status = controls_state.getEnabled() ? STATUS_ENGAGED : STATUS_DISENGAGED;
     }
   }
 
@@ -262,9 +256,18 @@ static void update_status(UIState *s) {
       s->status = STATUS_DISENGAGED;
       s->scene.started_frame = s->sm->frame;
 
-      s->scene.is_rhd = Params().getBool("IsRHD");
       s->scene.end_to_end = Params().getBool("EndToEndToggle");
-      s->vipc_client = s->scene.driver_view ? s->vipc_client_front : s->vipc_client_rear;
+      s->wide_camera = Hardware::TICI() ? Params().getBool("EnableWideCamera") : false;
+
+      // Update intrinsics matrix after possible wide camera toggle change
+      ui_resize(s, s->fb_w, s->fb_h);
+
+      // Choose vision ipc client
+      if (s->wide_camera){
+        s->vipc_client = s->vipc_client_wide;
+      } else {
+        s->vipc_client = s->vipc_client_rear;
+      }
     } else {
       s->vipc_client->connected = false;
     }
@@ -276,10 +279,8 @@ static void update_status(UIState *s) {
 QUIState::QUIState(QObject *parent) : QObject(parent) {
   ui_state.sm = std::make_unique<SubMaster, const std::initializer_list<const char *>>({
     "modelV2", "controlsState", "liveCalibration", "radarState", "deviceState", "liveLocationKalman",
-    "pandaState", "carParams", "driverState", "driverMonitoringState", "sensorEvents", "carState", "ubloxGnss",
-#ifdef QCOM2
-    "roadCameraState",
-#endif
+    "pandaState", "carParams", "driverMonitoringState", "sensorEvents", "carState", "ubloxGnss",
+    "gpsLocationExternal", "roadCameraState",
   });
 
   ui_state.fb_w = vwp_w;
@@ -288,8 +289,9 @@ QUIState::QUIState(QObject *parent) : QObject(parent) {
   ui_state.last_frame = nullptr;
   ui_state.wide_camera = Hardware::TICI() ? Params().getBool("EnableWideCamera") : false;
 
-  ui_state.vipc_client_rear = new VisionIpcClient("camerad", ui_state.wide_camera ? VISION_STREAM_RGB_WIDE : VISION_STREAM_RGB_BACK, true);
-  ui_state.vipc_client_front = new VisionIpcClient("camerad", VISION_STREAM_RGB_FRONT, true);
+  ui_state.vipc_client_rear = new VisionIpcClient("camerad", VISION_STREAM_RGB_BACK, true);
+  ui_state.vipc_client_wide = new VisionIpcClient("camerad", VISION_STREAM_RGB_WIDE, true);
+
   ui_state.vipc_client = ui_state.vipc_client_rear;
 
   // update timer
@@ -319,8 +321,6 @@ void QUIState::update() {
 }
 
 Device::Device(QObject *parent) : brightness_filter(BACKLIGHT_OFFROAD, BACKLIGHT_TS, BACKLIGHT_DT), QObject(parent) {
-  brightness_b = Params(true).get<float>("BRIGHTNESS_B").value_or(10.0);
-  brightness_m = Params(true).get<float>("BRIGHTNESS_M").value_or(0.1);
 }
 
 void Device::update(const UIState &s) {
@@ -345,8 +345,10 @@ void Device::setAwake(bool on, bool reset) {
 }
 
 void Device::updateBrightness(const UIState &s) {
+  float brightness_b = 10;
+  float brightness_m = 0.1;
   float clipped_brightness = std::min(100.0f, (s.scene.light_sensor * brightness_m) + brightness_b);
-  if (Hardware::TICI() && !s.scene.started) {
+  if (!s.scene.started) {
     clipped_brightness = BACKLIGHT_OFFROAD;
   }
 

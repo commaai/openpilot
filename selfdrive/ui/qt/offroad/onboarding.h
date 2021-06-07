@@ -64,12 +64,31 @@ protected:
 
 private:
   QPushButton *accept_btn;
+  QPushButton *decline_btn;
 
 public slots:
   void enableAccept();
 
 signals:
   void acceptedTerms();
+  void declinedTerms();
+};
+
+class DeclinePage : public QFrame {
+  Q_OBJECT
+
+public:
+  explicit DeclinePage(QWidget *parent = 0) : QFrame(parent) {};
+
+protected:
+  void showEvent(QShowEvent *event) override;
+
+private:
+  QPushButton *back_btn;
+  QPushButton *uninstall_btn;
+
+signals:
+  void getBack();
 };
 
 class OnboardingWindow : public QStackedWidget {

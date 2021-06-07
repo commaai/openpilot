@@ -3,7 +3,6 @@
 #include <stdlib.h>
 
 #include <algorithm>
-#include <iostream>
 #include <set>
 
 #include "selfdrive/common/params.h"

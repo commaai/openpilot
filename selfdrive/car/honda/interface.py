@@ -2,11 +2,9 @@
 import numpy as np
 from cereal import car
 from common.numpy_fast import clip, interp
-from common.realtime import DT_CTRL
 from selfdrive.swaglog import cloudlog
 from selfdrive.config import Conversions as CV
-from selfdrive.controls.lib.events import ET
-from selfdrive.car.honda.values import CruiseButtons, CAR, HONDA_BOSCH
+from selfdrive.car.honda.values import CruiseButtons, CAR, HONDA_BOSCH, HONDA_BOSCH_ALT_BRAKE_SIGNAL
 from selfdrive.car import STD_CARGO_KG, CivicParams, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
 from selfdrive.controls.lib.longitudinal_planner import _A_CRUISE_MAX_V_FOLLOWING
 from selfdrive.car.interfaces import CarInterfaceBase
@@ -15,6 +13,7 @@ A_ACC_MAX = max(_A_CRUISE_MAX_V_FOLLOWING)
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
+TransmissionType = car.CarParams.TransmissionType
 
 
 def compute_gb_honda(accel, speed):
@@ -74,9 +73,6 @@ def get_compute_gb_acura():
 class CarInterface(CarInterfaceBase):
   def __init__(self, CP, CarController, CarState):
     super().__init__(CP, CarController, CarState)
-
-    self.last_enable_pressed = 0
-    self.last_enable_sent = 0
 
     if self.CS.CP.carFingerprint == CAR.ACURA_ILX:
       self.compute_gb = get_compute_gb_acura()
@@ -138,6 +134,10 @@ class CarInterface(CarInterfaceBase):
     if candidate == CAR.CRV_5G:
       ret.enableBsm = 0x12f8bfa7 in fingerprint[0]
 
+    # Accord 1.5T CVT has different gearbox message
+    if candidate == CAR.ACCORD and 0x191 in fingerprint[0]:
+      ret.transmissionType = TransmissionType.cvt
+
     cloudlog.warning("ECU Camera Simulated: %r", ret.enableCamera)
     cloudlog.warning("ECU Gas Interceptor: %r", ret.enableGasInterceptor)
 
@@ -196,10 +196,8 @@ class CarInterface(CarInterfaceBase):
       ret.longitudinalTuning.kiBP = [0., 35.]
       ret.longitudinalTuning.kiV = [0.18, 0.12]
 
-    elif candidate in (CAR.ACCORD, CAR.ACCORD_15, CAR.ACCORDH):
+    elif candidate in (CAR.ACCORD, CAR.ACCORDH):
       stop_and_go = True
-      if not candidate == CAR.ACCORDH:  # Hybrid uses same brake msg as hatch
-        ret.safetyParam = 1  # Accord(ICE), CRV 5G, and RDX 3G use an alternate user brake msg
       ret.mass = 3279. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.83
       ret.centerToFront = ret.wheelbase * 0.39
@@ -246,7 +244,6 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate == CAR.CRV_5G:
       stop_and_go = True
-      ret.safetyParam = 1  # Accord(ICE), CRV 5G, and RDX 3G use an alternate user brake msg
       ret.mass = 3410. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.66
       ret.centerToFront = ret.wheelbase * 0.41
@@ -324,7 +321,6 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate == CAR.ACURA_RDX_3G:
       stop_and_go = True
-      ret.safetyParam = 1  # Accord(ICE), CRV 5G, and RDX 3G use an alternate user brake msg
       ret.mass = 4068. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.75
       ret.centerToFront = ret.wheelbase * 0.41
@@ -410,6 +406,10 @@ class CarInterface(CarInterfaceBase):
     else:
       raise ValueError("unsupported car %s" % candidate)
 
+    # These cars use alternate user brake msg (0x1BE)
+    if candidate in HONDA_BOSCH_ALT_BRAKE_SIGNAL:
+      ret.safetyParam = 1
+
     # min speed to enable ACC. if car can do stop and go, then set enabling speed
     # to a negative value, so it won't matter. Otherwise, add 0.5 mph margin to not
     # conflict with PCM acc
@@ -450,10 +450,6 @@ class CarInterface(CarInterfaceBase):
 
     ret.canValid = self.cp.can_valid and self.cp_cam.can_valid and (self.cp_body is None or self.cp_body.can_valid)
     ret.yawRate = self.VM.yaw_rate(ret.steeringAngleDeg * CV.DEG_TO_RAD, ret.vEgo)
-    # FIXME: read sendcan for brakelights
-    brakelights_threshold = 0.02 if self.CS.CP.carFingerprint == CAR.CIVIC else 0.1
-    ret.brakeLights = bool(self.CS.brake_switch or
-                           c.actuators.brake > brakelights_threshold)
 
     buttonEvents = []
 
@@ -492,7 +488,7 @@ class CarInterface(CarInterfaceBase):
     ret.buttonEvents = buttonEvents
 
     # events
-    events = self.create_common_events(ret, pcm_enable=False)
+    events = self.create_common_events(ret, pcm_enable=self.CP.enableCruise)
     if self.CS.brake_error:
       events.add(EventName.brakeUnavailable)
     if self.CS.brake_hold and self.CS.CP.openpilotLongitudinalControl:
@@ -515,33 +511,17 @@ class CarInterface(CarInterfaceBase):
     if self.CS.CP.minEnableSpeed > 0 and ret.vEgo < 0.001:
       events.add(EventName.manualRestart)
 
-    cur_time = self.frame * DT_CTRL
-    enable_pressed = False
     # handle button presses
     for b in ret.buttonEvents:
 
       # do enable on both accel and decel buttons
       if b.type in [ButtonType.accelCruise, ButtonType.decelCruise] and not b.pressed:
-        self.last_enable_pressed = cur_time
-        enable_pressed = True
+        if not self.CP.enableCruise:
+          events.add(EventName.buttonEnable)
 
       # do disable on button down
-      if b.type == "cancel" and b.pressed:
+      if b.type == ButtonType.cancel and b.pressed:
         events.add(EventName.buttonCancel)
-
-    if self.CP.enableCruise:
-      # KEEP THIS EVENT LAST! send enable event if button is pressed and there are
-      # NO_ENTRY events, so controlsd will display alerts. Also not send enable events
-      # too close in time, so a no_entry will not be followed by another one.
-      # TODO: button press should be the only thing that triggers enable
-      if ((cur_time - self.last_enable_pressed) < 0.2 and
-          (cur_time - self.last_enable_sent) > 0.2 and
-          ret.cruiseState.enabled) or \
-         (enable_pressed and events.any(ET.NO_ENTRY)):
-        events.add(EventName.buttonEnable)
-        self.last_enable_sent = cur_time
-    elif enable_pressed:
-      events.add(EventName.buttonEnable)
 
     ret.events = events.to_msg()
 

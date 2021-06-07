@@ -273,7 +273,7 @@ void sensors_init(int video0_fd, int sensor_fd, int camera_num) {
   power->count = 1;
   power->cmd_type = CAMERA_SENSOR_CMD_TYPE_PWR_UP;
   power->power_settings[0].power_seq_type = 0;
-  power->power_settings[0].config_val_low = 24000000; //Hz
+  power->power_settings[0].config_val_low = 19200000; //Hz
   power = power_set_wait(power, 10);
 
   // 8,1 is this reset?

@@ -36,7 +36,6 @@ def get_attr_from_cars(attr, result=dict, combine_brands=True):
 
 FW_VERSIONS = get_attr_from_cars('FW_VERSIONS')
 _FINGERPRINTS = get_attr_from_cars('FINGERPRINTS')
-IGNORED_FINGERPRINTS = get_attr_from_cars('IGNORED_FINGERPRINTS', list)
 
 _DEBUG_ADDRESS = {1880: 8}   # reserved for debug purposes
 
@@ -59,9 +58,6 @@ def eliminate_incompatible_cars(msg, candidate_cars):
   compatible_cars = []
 
   for car_name in candidate_cars:
-    if car_name in IGNORED_FINGERPRINTS:
-      continue
-
     car_fingerprints = _FINGERPRINTS[car_name]
 
     for fingerprint in car_fingerprints:
@@ -76,4 +72,9 @@ def eliminate_incompatible_cars(msg, candidate_cars):
 
 def all_known_cars():
   """Returns a list of all known car strings."""
+  return list({*FW_VERSIONS.keys(), *_FINGERPRINTS.keys()})
+
+
+def all_legacy_fingerprint_cars():
+  """Returns a list of all known car strings, FPv1 only."""
   return list(_FINGERPRINTS.keys())

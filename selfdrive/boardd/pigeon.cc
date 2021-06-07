@@ -6,10 +6,12 @@
 #include <unistd.h>
 
 #include <cassert>
+#include <optional>
 
 #include "selfdrive/common/gpio.h"
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
+#include "selfdrive/locationd/ublox_msg.h"
 
 // Termios on macos doesn't define all baud rate constants
 #ifndef B460800
@@ -22,7 +24,8 @@ extern ExitHandler do_exit;
 
 const std::string ack = "\xb5\x62\x05\x01\x02\x00";
 const std::string nack = "\xb5\x62\x05\x00\x02\x00";
-
+const std::string sos_ack = "\xb5\x62\x09\x14\x08\x00\x02\x00\x00\x00\x01\x00\x00\x00";
+const std::string sos_nack = "\xb5\x62\x09\x14\x08\x00\x02\x00\x00\x00\x00\x00\x00\x00";
 
 Pigeon * Pigeon::connect(Panda * p){
   PandaPigeon * pigeon = new PandaPigeon();
@@ -38,7 +41,7 @@ Pigeon * Pigeon::connect(const char * tty){
   return pigeon;
 }
 
-bool Pigeon::wait_for_ack(){
+bool Pigeon::wait_for_ack(std::string ack, std::string nack){
   std::string s;
   while (!do_exit){
     s += receive();
@@ -57,6 +60,10 @@ bool Pigeon::wait_for_ack(){
     util::sleep_for(1); // Allow other threads to be scheduled
   }
   return false;
+}
+
+bool Pigeon::wait_for_ack(){
+  return wait_for_ack(ack, nack);
 }
 
 bool Pigeon::send_with_ack(std::string cmd){
@@ -110,11 +117,32 @@ void Pigeon::init() {
     if (!send_with_ack("\xB5\x62\x06\x01\x03\x00\x0A\x09\x01\x1E\x70"s)) continue;
     if (!send_with_ack("\xB5\x62\x06\x01\x03\x00\x0A\x0B\x01\x20\x74"s)) continue;
 
+    auto time = util::get_time();
+    if (util::time_valid(time)){
+      LOGW("Sending current time to ublox");
+      send(ublox::build_ubx_mga_ini_time_utc(time));
+    }
 
     LOGW("panda GPS on");
     return;
   }
   LOGE("failed to initialize panda GPS");
+}
+
+void Pigeon::stop(){
+  LOGW("Storing almanac in ublox flash");
+
+  // Controlled GNSS stop
+  send("\xB5\x62\x06\x04\x04\x00\x00\x00\x08\x00\x16\x74"s);
+
+  // Store almanac in flash
+  send("\xB5\x62\x09\x14\x04\x00\x00\x00\x00\x00\x21\xEC"s);
+
+  if (wait_for_ack(sos_ack, sos_nack)) {
+    LOGW("Done storing almanac");
+  } else {
+    LOGE("Error storing almanac");
+  }
 }
 
 void PandaPigeon::connect(Panda * p) {

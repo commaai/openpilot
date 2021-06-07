@@ -37,6 +37,8 @@ Sidebar::Sidebar(QWidget *parent) : QFrame(parent) {
   home_img = QImage("../assets/images/button_home.png").scaled(180, 180, Qt::KeepAspectRatio, Qt::SmoothTransformation);
   settings_img = QImage("../assets/images/button_settings.png").scaled(settings_btn.width(), settings_btn.height(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);;
 
+  connect(this, &Sidebar::valueChanged, [=] { update(); });
+
   setFixedWidth(300);
   setMinimumHeight(vwp_h);
   setStyleSheet("background-color: rgb(57, 57, 57);");
@@ -48,44 +50,44 @@ void Sidebar::mousePressEvent(QMouseEvent *event) {
   }
 }
 
-void Sidebar::update(const UIState &s) {
-  if (s.sm->frame % (6*UI_FREQ) == 0) {
-    connect_str = "OFFLINE";
-    connect_status = warning_color;
-    auto last_ping = params.get<float>("LastAthenaPingTime");
-    if (last_ping) {
-      bool online = nanos_since_boot() - *last_ping < 70e9;
-      connect_str = online ? "ONLINE" : "ERROR";
-      connect_status = online ? good_color : danger_color;
-    }
-    repaint();
+void Sidebar::updateState(const UIState &s) {
+  auto &sm = *(s.sm);
+
+  auto deviceState = sm["deviceState"].getDeviceState();
+  setProperty("netType", network_type[deviceState.getNetworkType()]);
+  setProperty("netStrength", signal_imgs[deviceState.getNetworkStrength()]);
+
+  auto last_ping = deviceState.getLastAthenaPingTime();
+  if (last_ping == 0) {
+    setProperty("connectStr", "OFFLINE");
+    setProperty("connectStatus", warning_color);
+  } else {
+    bool online = nanos_since_boot() - last_ping < 80e9;
+    setProperty("connectStr",  online ? "ONLINE" : "ERROR");
+    setProperty("connectStatus", online ? good_color : danger_color);
   }
 
-  net_type = s.scene.deviceState.getNetworkType();
-  strength = s.scene.deviceState.getNetworkStrength();
-
-  temp_status = danger_color;
-  auto ts = s.scene.deviceState.getThermalStatus();
+  QColor tempStatus = danger_color;
+  auto ts = deviceState.getThermalStatus();
   if (ts == cereal::DeviceState::ThermalStatus::GREEN) {
-    temp_status = good_color;
+    tempStatus = good_color;
   } else if (ts == cereal::DeviceState::ThermalStatus::YELLOW) {
-    temp_status = warning_color;
+    tempStatus = warning_color;
   }
-  temp_val = (int)s.scene.deviceState.getAmbientTempC();
+  setProperty("tempStatus", tempStatus);
+  setProperty("tempVal", (int)deviceState.getAmbientTempC());
 
-  panda_str = "VEHICLE\nONLINE";
-  panda_status = good_color;
+  QString pandaStr = "VEHICLE\nONLINE";
+  QColor pandaStatus = good_color;
   if (s.scene.pandaType == cereal::PandaState::PandaType::UNKNOWN) {
-    panda_status = danger_color;
-    panda_str = "NO\nPANDA";
+    pandaStatus = danger_color;
+    pandaStr = "NO\nPANDA";
   } else if (Hardware::TICI() && s.scene.started) {
-    panda_str = QString("SAT CNT\n%1").arg(s.scene.satelliteCount);
-    panda_status = s.scene.gpsOK ? good_color : warning_color;
+    pandaStr = QString("SATS %1\nACC %2").arg(s.scene.satelliteCount).arg(fmin(10, s.scene.gpsAccuracy), 0, 'f', 2);
+    pandaStatus = sm["liveLocationKalman"].getLiveLocationKalman().getGpsOK() ? good_color : warning_color;
   }
-
-  if (s.sm->updated("deviceState") || s.sm->updated("pandaState")) {
-    repaint();
-  }
+  setProperty("pandaStr", pandaStr);
+  setProperty("pandaStatus", pandaStatus);
 }
 
 void Sidebar::paintEvent(QPaintEvent *event) {
@@ -100,11 +102,11 @@ void Sidebar::paintEvent(QPaintEvent *event) {
   p.drawImage(60, 1080 - 180 - 40, home_img);
 
   // network
-  p.drawImage(58, 196, signal_imgs[strength]);
+  p.drawImage(58, 196, net_strength);
   configFont(p, "Open Sans", 35, "Regular");
   p.setPen(QColor(0xff, 0xff, 0xff));
   const QRect r = QRect(50, 247, 100, 50);
-  p.drawText(r, Qt::AlignCenter, network_type[net_type]);
+  p.drawText(r, Qt::AlignCenter, net_type);
 
   // metrics
   drawMetric(p, "TEMP", QString("%1°C").arg(temp_val), temp_status, 338);

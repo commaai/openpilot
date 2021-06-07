@@ -19,15 +19,16 @@ class CarInterface(CarInterfaceBase):
 
     if candidate in PREGLOBAL_CARS:
       ret.safetyModel = car.CarParams.SafetyModel.subaruLegacy
+      ret.enableBsm = 0x25c in fingerprint[0]
     else:
       ret.safetyModel = car.CarParams.SafetyModel.subaru
+      ret.enableBsm = 0x228 in fingerprint[0]
 
     # Subaru port is a community feature, since we don't own one to test
     ret.communityFeature = True
     ret.dashcamOnly = candidate in PREGLOBAL_CARS
 
     ret.enableCamera = True
-    ret.enableBsm = 0x228 in fingerprint[0]
 
     ret.steerRateCost = 0.7
     ret.steerLimitTimer = 0.4

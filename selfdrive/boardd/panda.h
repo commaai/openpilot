@@ -1,7 +1,5 @@
 #pragma once
 
-#include <pthread.h>
-
 #include <atomic>
 #include <cstdint>
 #include <ctime>
@@ -38,6 +36,7 @@ struct __attribute__((packed)) health_t {
   int16_t safety_param;
   uint8_t fault_status;
   uint8_t power_save_enabled;
+  uint8_t heartbeat_lost;
 };
 
 
@@ -54,6 +53,7 @@ class Panda {
   ~Panda();
 
   std::atomic<bool> connected = true;
+  std::atomic<bool> comms_healthy = true;
   cereal::PandaState::PandaType hw_type = cereal::PandaState::PandaType::UNKNOWN;
   bool has_rtc = false;
 

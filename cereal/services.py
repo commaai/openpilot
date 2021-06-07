@@ -2,7 +2,7 @@
 import os
 from typing import Optional
 
-EON = os.path.isfile('/EON')
+TICI = os.path.isfile('/TICI')
 RESERVED_PORT = 8022  # sshd
 STARTING_PORT = 8001
 
@@ -55,10 +55,10 @@ services = {
   "thumbnail": (True, 0.2, 1),
   "carEvents": (True, 1., 1),
   "carParams": (True, 0.02, 1),
-  "driverCameraState": (True, 10. if EON else 20., 1),
-  "driverEncodeIdx": (True, 10. if EON else 20., 1),
-  "driverState": (True, 10. if EON else 20., 1),
-  "driverMonitoringState": (True, 10. if EON else 20., 1),
+  "driverCameraState": (True, 10. if not TICI else 20., 1),
+  "driverEncodeIdx": (True, 10. if not TICI else 20., 1),
+  "driverState": (True, 10. if not TICI else 20., 1),
+  "driverMonitoringState": (True, 10. if not TICI else 20., 1),
   "offroadLayout": (False, 0.),
   "wideRoadEncodeIdx": (True, 20., 1),
   "wideRoadCameraState": (True, 20., 1),
@@ -83,7 +83,7 @@ def build_header():
   for k, v in service_list.items():
     should_log = "true" if v.should_log else "false"
     decimation = -1 if v.decimation is None else v.decimation
-    h += '  { .name = "%s", .port = %d, .should_log = %s, .frequency = %d, .decimation = %d },\n' % \
+    h += '  { "%s", %d, %s, %d, %d },\n' % \
          (k, v.port, should_log, v.frequency, decimation)
   h += "};\n"
   h += "#endif\n"

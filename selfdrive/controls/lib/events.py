@@ -169,10 +169,10 @@ class EngagementAlert(Alert):
                      audible_alert, .2, 0., 0.),
 
 class NormalPermanentAlert(Alert):
-  def __init__(self, alert_text_1, alert_text_2):
+  def __init__(self, alert_text_1: str, alert_text_2: str, duration_text: float = 0.2):
     super().__init__(alert_text_1, alert_text_2,
                      AlertStatus.normal, AlertSize.mid if len(alert_text_2) else AlertSize.small,
-                     Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., .2),
+                     Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., duration_text),
 
 # ********** alert callback functions **********
 
@@ -220,7 +220,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
 
   # ********** events only containing alerts displayed in all states **********
 
-  EventName.debugAlert: {
+  EventName.joystickDebug: {
     ET.PERMANENT: Alert(
       "DEBUG ALERT",
       "",
@@ -266,6 +266,14 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
 
   EventName.startupFuzzyFingerprint: {
     ET.PERMANENT: startup_fuzzy_fingerprint_alert,
+  },
+
+  EventName.startupNoFw: {
+    ET.PERMANENT: Alert(
+      "Car Unrecognized",
+      "Check All Connections",
+      AlertStatus.userPrompt, AlertSize.mid,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 15.),
   },
 
   EventName.dashcamMode: {
@@ -459,8 +467,8 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
     ET.WARNING: Alert(
       "Car Detected in Blindspot",
       "Monitor Other Vehicles",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.none, .0, .1, .1),
+      AlertStatus.userPrompt, AlertSize.mid,
+      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.chimePrompt, .1, .1, .1),
   },
 
   EventName.laneChange: {
@@ -489,6 +497,10 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
 
   EventName.gpsMalfunction: {
     ET.PERMANENT: NormalPermanentAlert("GPS Malfunction", "Contact Support"),
+  },
+
+  EventName.localizerMalfunction: {
+    ET.PERMANENT: NormalPermanentAlert("Localizer unstable", "Contact Support"),
   },
 
   # ********** events that affect controls state transitions **********
@@ -670,6 +682,27 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
 
   EventName.controlsMismatch: {
     ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("Controls Mismatch"),
+  },
+
+  EventName.roadCameraError: {
+    ET.PERMANENT: NormalPermanentAlert("Road Camera Error", "",
+                                       duration_text=10.),
+  },
+
+  EventName.driverCameraError: {
+    ET.PERMANENT: NormalPermanentAlert("Driver Camera Error", "",
+                                       duration_text=10.),
+  },
+
+  EventName.wideRoadCameraError: {
+    ET.PERMANENT: NormalPermanentAlert("Wide Road Camera Error", "",
+                                       duration_text=10.),
+  },
+
+  EventName.usbError: {
+    ET.SOFT_DISABLE: SoftDisableAlert("USB Error: Reboot Your Device"),
+    ET.PERMANENT: NormalPermanentAlert("USB Error: Reboot Your Device", ""),
+    ET.NO_ENTRY: NoEntryAlert("USB Error: Reboot Your Device"),
   },
 
   EventName.canError: {

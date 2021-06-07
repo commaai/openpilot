@@ -76,13 +76,17 @@ BO_ 212 Wheel_Speeds: 8 XXX
 BO_ 320 Throttle: 8 XXX
  SG_ Throttle_Pedal : 0|8@1+ (0.392157,0) [0|255] "" XXX
  SG_ Counter : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ Signal1 : 12|2@1+ (1,0) [0|7] "" XXX
  SG_ Not_Full_Throttle : 14|1@1+ (1,0) [0|1] "" XXX
+ SG_ Signal2 : 15|1@1+ (1,0) [0|1] "" XXX
  SG_ Engine_RPM : 16|14@1+ (1,0) [0|32767] "" XXX
  SG_ Off_Throttle : 30|1@1+ (1,0) [0|1] "" XXX
+ SG_ Signal3 : 31|1@1+ (1,0) [0|1] "" XXX
  SG_ Throttle_Cruise : 32|8@1+ (1,0) [0|255] "" XXX
  SG_ Throttle_Combo : 40|8@1+ (1,0) [0|255] "" XXX
  SG_ Throttle_Body : 48|8@1+ (1,0) [0|255] "" XXX
  SG_ Off_Throttle_2 : 56|1@1+ (1,0) [0|1] "" XXX
+ SG_ Signal4 : 57|7@1+ (1,0) [0|127] "" XXX
 
 BO_ 321 Engine: 8 XXX
  SG_ Engine_Torque : 0|15@1+ (1,0) [0|255] "" XXX
@@ -124,7 +128,7 @@ BO_ 338 Stalk: 8 XXX
 BO_ 352 ES_Brake: 8 XXX
  SG_ Brake_Pressure : 0|16@1+ (1,0) [0|255] "" XXX
  SG_ Brake_Light : 20|1@1+ (1,0) [0|1] "" XXX
- SG_ ES_Error : 21|1@1+ (1,0) [0|1] "" XXX
+ SG_ Cruise_Fault : 21|1@1+ (1,0) [0|1] "" XXX
  SG_ Brake_On : 22|1@1+ (1,0) [0|1] "" XXX
  SG_ Cruise_Activated : 23|1@1+ (1,0) [0|1] "" XXX
  SG_ Counter : 48|3@1+ (1,0) [0|7] "" XXX
@@ -136,17 +140,17 @@ BO_ 353 ES_CruiseThrottle: 8 XXX
  SG_ Cruise_Activated : 16|1@1+ (1,0) [0|1] "" XXX
  SG_ Signal2 : 17|3@1+ (1,0) [0|7] "" XXX
  SG_ Brake_On : 20|1@1+ (1,0) [0|1] "" XXX
- SG_ DistanceSwap : 21|1@1+ (1,0) [0|1] "" XXX
+ SG_ Distance_Swap : 21|1@1+ (1,0) [0|1] "" XXX
  SG_ Standstill : 22|1@1+ (1,0) [0|1] "" XXX
  SG_ Signal3 : 23|1@1+ (1,0) [0|1] "" XXX
- SG_ CloseDistance : 24|8@1+ (0.0196,0) [0|255] "m" XXX
+ SG_ Close_Distance : 24|8@1+ (0.0196,0) [0|255] "m" XXX
  SG_ Signal4 : 32|9@1+ (1,0) [0|255] "" XXX
  SG_ Standstill_2 : 41|1@1+ (1,0) [0|1] "" XXX
- SG_ ES_Error : 42|1@1+ (1,0) [0|1] "" XXX
+ SG_ Cruise_Fault : 42|1@1+ (1,0) [0|1] "" XXX
  SG_ Signal5 : 43|1@1+ (1,0) [0|1] "" XXX
  SG_ Counter : 44|3@1+ (1,0) [0|7] "" XXX
  SG_ Signal6 : 47|1@1+ (1,0) [0|1] "" XXX
- SG_ Button : 48|3@1+ (1,0) [0|7] "" XXX
+ SG_ Cruise_Button : 48|3@1+ (1,0) [0|7] "" XXX
  SG_ Signal7 : 51|5@1+ (1,0) [0|31] "" XXX
  SG_ Checksum : 56|8@1+ (1,0) [0|255] "" XXX
 
@@ -213,6 +217,9 @@ BO_ 864 Engine_Temp: 8 XXX
 
 BO_ 866 Fuel: 8 XXX
 
+BO_ 977 Dash_State2: 8 XXX
+  SG_ Units : 15|1@1+ (1,0) [0|1] "" XXX
+
 BO_ 1745 Dash_State: 8 XXX
  SG_ Units : 15|1@1+ (1,0) [0|1] "" XXX
 
@@ -220,7 +227,7 @@ CM_ SG_ 320 Off_Throttle_2 "Less sensitive";
 CM_ SG_ 320 Throttle_Body "Throttle related";
 CM_ SG_ 328 Gear "15 = P, 14 = R, 0 = N, 1-6=gear";
 CM_ SG_ 328 Gear_2 "15 = P, 14 = R, 0 = N, 1-6=gear";
-CM_ SG_ 353 Button "1 = main, 2 = set shallow, 3 = set deep, 4 = resume shallow, 5 resume deep";
+CM_ SG_ 353 Cruise_Button "1 = main, 2 = set shallow, 3 = set deep, 4 = resume shallow, 5 resume deep";
 CM_ SG_ 354 RPM "20hz version of Transmission_Engine under Transmission";
 CM_ SG_ 359 Sig1Right_Depart "right depart, hill steep and seatbelt disengage";
 CM_ SG_ 359 LKAS_Inactive_2017 "1 when not steering, 0 when lkas steering";
@@ -252,22 +259,22 @@ BO_ 358 ES_DashStatus: 8 XXX
  SG_ Signal1 : 18|1@1+ (1,0) [0|1] "" XXX
  SG_ WHEELS_MOVING_2015 : 19|1@1+ (1,0) [0|1] "" XXX
  SG_ Driver_Input : 20|1@1+ (1,0) [0|1] "" XXX
- SG_ Distance_Bars : 21|3@1+ (1,0) [0|7] "" XXX
+ SG_ Cruise_Distance : 21|3@1+ (1,0) [0|7] "" XXX
  SG_ Cruise_Set_Speed : 24|8@1+ (1,0) [0|255] "" XXX
- SG_ ES_Error : 32|1@1+ (1,0) [0|1] "" XXX
+ SG_ Cruise_Fault : 32|1@1+ (1,0) [0|1] "" XXX
  SG_ Cruise_On_2 : 34|1@1+ (1,0) [0|1] "" XXX
  SG_ Counter : 37|3@1+ (1,0) [0|7] "" XXX
  SG_ Steep_Hill_Disengage : 44|1@1+ (1,0) [0|3] "" XXX
- SG_ Lead_Car : 46|1@1+ (1,0) [0|1] "" XXX
- SG_ Obstacle_Distance : 48|4@1+ (5,0) [0|15] "m" XXX
+ SG_ Car_Follow : 46|1@1+ (1,0) [0|1] "" XXX
+ SG_ Far_Distance : 48|4@1+ (5,0) [0|15] "m" XXX
 
 BO_ 881 Steering_Torque: 8 XXX
  SG_ Steering_Motor_Flat : 0|10@1+ (32,0) [0|1000] "" XXX
  SG_ Steer_Torque_Output : 16|11@1- (-32,0) [-1000|1000] "" XXX
- SG_ LKA_Lockout : 27|1@1+ (1,0) [0|1] "" XXX
+ SG_ Steer_Error_1 : 27|1@1+ (1,0) [0|1] "" XXX
  SG_ Steer_Torque_Sensor : 29|11@1- (-1,0) [-1000|1000] "" XXX
  SG_ Steering_Angle : 40|16@1- (-0.033,0) [-600|600] "" XXX
 
 CM_ SG_ 358 Disengage_Alert "seatbelt and steep hill disengage";
-CM_ SG_ 358 ES_Error "No engagement until restart";
-CM_ SG_ 358 Lead_Car "front car detected";
+CM_ SG_ 358 Cruise_Fault "No engagement until restart";
+CM_ SG_ 358 Car_Follow "lead car detected";

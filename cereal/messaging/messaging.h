@@ -66,13 +66,13 @@ public:
 
 class SubMaster {
 public:
-  SubMaster(const std::initializer_list<const char *> &service_list,
-            const char *address = nullptr, const std::initializer_list<const char *> &ignore_alive = {});
+  SubMaster(const std::vector<const char *> &service_list,
+            const char *address = nullptr, const std::vector<const char *> &ignore_alive = {});
   void update(int timeout = 1000);
   void update_msgs(uint64_t current_time, std::vector<std::pair<std::string, cereal::Event::Reader>> messages);
-  inline bool allAlive(const std::initializer_list<const char *> &service_list = {}) { return all_(service_list, false, true); }
-  inline bool allValid(const std::initializer_list<const char *> &service_list = {}) { return all_(service_list, true, false); }
-  inline bool allAliveAndValid(const std::initializer_list<const char *> &service_list = {}) { return all_(service_list, true, true); }
+  inline bool allAlive(const std::vector<const char *> &service_list = {}) { return all_(service_list, false, true); }
+  inline bool allValid(const std::vector<const char *> &service_list = {}) { return all_(service_list, true, false); }
+  inline bool allAliveAndValid(const std::vector<const char *> &service_list = {}) { return all_(service_list, true, true); }
   void drain();
   ~SubMaster();
 
@@ -82,10 +82,10 @@ public:
   bool valid(const char *name) const;
   uint64_t rcv_frame(const char *name) const;
   uint64_t rcv_time(const char *name) const;
-  cereal::Event::Reader &operator[](const char *name);
+  cereal::Event::Reader &operator[](const char *name) const;
 
 private:
-  bool all_(const std::initializer_list<const char *> &service_list, bool valid, bool alive);
+  bool all_(const std::vector<const char *> &service_list, bool valid, bool alive);
   Poller *poller_ = nullptr;
   struct SubMessage;
   std::map<SubSocket *, SubMessage *> messages_;
@@ -117,7 +117,7 @@ private:
 
 class PubMaster {
 public:
-  PubMaster(const std::initializer_list<const char *> &service_list);
+  PubMaster(const std::vector<const char *> &service_list);
   inline int send(const char *name, capnp::byte *data, size_t size) { return sockets_.at(name)->send((char *)data, size); }
   int send(const char *name, MessageBuilder &msg);
   ~PubMaster();

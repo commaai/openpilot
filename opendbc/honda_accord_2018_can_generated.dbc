@@ -380,7 +380,7 @@ CM_ SG_ 577 LINE_DASHED "1 = line is dashed";
 CM_ SG_ 577 LINE_SOLID "1 = line is solid";
 VAL_ 399 STEER_STATUS 6 "tmp_fault" 5 "fault_1" 4 "no_torque_alert_2" 3 "low_speed_lockout" 2 "no_torque_alert_1" 0 "normal" ;
 
-CM_ "honda_accord_lx15t_2018_can.dbc starts here";
+CM_ "honda_accord_2018_can.dbc starts here";
 
 
 BO_ 304 GAS_PEDAL_2: 8 PCM
@@ -389,8 +389,14 @@ BO_ 304 GAS_PEDAL_2: 8 PCM
  SG_ CAR_GAS : 39|8@0+ (1,0) [0|255] "" EON
  SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
  SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" EON
- 
-BO_ 401 GEARBOX: 8 PCM
+
+BO_ 419 GEARBOX: 8 PCM
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|3] "" EON
+ SG_ GEAR_SHIFTER : 29|6@0+ (1,0) [0|63] "" EON
+ SG_ GEAR : 7|8@0+ (1,0) [0|255] "" EON
+
+BO_ 401 GEARBOX_15T: 8 PCM
  SG_ GEAR_SHIFTER : 5|6@0+ (1,0) [0|63] "" EON
  SG_ BOH : 45|6@0+ (1,0) [0|63] "" XXX
  SG_ GEAR2 : 31|8@0+ (1,0) [0|1] "" XXX
@@ -430,6 +436,7 @@ BO_ 1302 ODOMETER: 8 XXX
  SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
  SG_ CHECKSUM : 59|4@0+ (1,0) [0|3] "" EON
 
+VAL_ 419 GEAR_SHIFTER  32 "D" 8 "R" 4 "P" ;
 VAL_ 401 GEAR_SHIFTER 32 "L" 16 "S" 8 "D" 4 "N" 2 "R" 1 "P" ;
 VAL_ 401 GEAR 7 "L" 10 "S" 4 "D" 3 "N" 2 "R" 1 "P" ;
 VAL_ 545 ECON_ON_2 0 "off" 3 "on" ;

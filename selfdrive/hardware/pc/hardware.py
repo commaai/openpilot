@@ -32,6 +32,9 @@ class Pc(HardwareBase):
   def get_subscriber_info(self):
     return ""
 
+  def get_network_info(self):
+    return None
+
   def get_network_type(self):
     return NetworkType.wifi
 

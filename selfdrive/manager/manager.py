@@ -33,12 +33,12 @@ def manager_init():
   default_params = [
     ("CompletedTrainingVersion", "0"),
     ("HasAcceptedTerms", "0"),
-    ("LastUpdateTime", datetime.datetime.utcnow().isoformat().encode('utf8')),
     ("OpenpilotEnabledToggle", "1"),
   ]
-
+  if not PC:
+    default_params.append(("LastUpdateTime", datetime.datetime.utcnow().isoformat().encode('utf8')))
   if TICI:
-    default_params.append(("IsUploadRawEnabled", "1"))
+    default_params.append(("EnableLteOnroad", "1"))
 
   if params.get_bool("RecordFrontLock"):
     params.put_bool("RecordFront", True)
@@ -117,7 +117,7 @@ def manager_thread():
   params = Params()
 
   ignore = []
-  if params.get("DongleId") == UNREGISTERED_DONGLE_ID:
+  if params.get("DongleId", encoding='utf8') == UNREGISTERED_DONGLE_ID:
     ignore += ["manage_athenad", "uploader"]
   if os.getenv("NOBOARD") is not None:
     ignore.append("pandad")
