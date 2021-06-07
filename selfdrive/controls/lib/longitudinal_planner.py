@@ -8,8 +8,8 @@ from common.realtime import DT_MDL
 from selfdrive.swaglog import cloudlog
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.longcontrol import LongCtrlState
+from selfdrive.controls.lib.lead_mpc import LeadMpc
 from selfdrive.controls.lib.long_mpc import LongitudinalMpc
-from selfdrive.controls.lib.long_mpc_model import LongitudinalMpcModel
 from selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, MPC_N
 
 LON_MPC_STEP = 0.2  # first step is 0.2s
@@ -60,9 +60,9 @@ class Planner():
 
     # TODO these names are bad, but log names need to change first
     self.mpcs = {}
-    self.mpcs['mpc1'] = LongitudinalMpc(1)
-    self.mpcs['mpc2'] = LongitudinalMpc(2)
-    self.mpcs['cruise'] = LongitudinalMpcModel()
+    self.mpcs['mpc1'] = LeadMpc(1)
+    self.mpcs['mpc2'] = LeadMpc(2)
+    self.mpcs['cruise'] = LongitudinalMpc()
     self.fcw = False
 
     self.v_desired = 0.0

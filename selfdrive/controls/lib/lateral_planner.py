@@ -4,7 +4,7 @@ import numpy as np
 from common.realtime import sec_since_boot, DT_MDL
 from common.numpy_fast import interp, clip
 from selfdrive.swaglog import cloudlog
-from selfdrive.controls.lib.lateral_mpc import libmpc_py
+from selfdrive.controls.lib.lateral_mpc_lib import libmpc_py
 from selfdrive.controls.lib.drive_helpers import MPC_COST_LAT, MPC_N, CAR_ROTATION_RADIUS
 from selfdrive.controls.lib.lane_planner import LanePlanner, TRAJECTORY_SIZE
 from selfdrive.config import Conversions as CV
