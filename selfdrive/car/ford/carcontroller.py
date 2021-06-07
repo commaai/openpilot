@@ -4,6 +4,7 @@ from selfdrive.car import make_can_msg
 from selfdrive.car.ford.fordcan import create_steer_command, create_lkas_ui, spam_cancel_button
 from opendbc.can.packer import CANPacker
 
+VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 MAX_STEER_DELTA = 1
 TOGGLE_DEBUG = False
@@ -22,7 +23,7 @@ class CarController():
   def update(self, enabled, CS, frame, actuators, visual_alert, pcm_cancel):
 
     can_sends = []
-    steer_alert = visual_alert == car.CarControl.HUDControl.VisualAlert.steerRequired
+    steer_alert = visual_alert in [VisualAlert.steerRequired, VisualAlert.ldw]
 
     apply_steer = actuators.steer
 

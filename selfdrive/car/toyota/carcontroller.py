@@ -135,7 +135,7 @@ class CarController():
     # - there is something to display
     # - there is something to stop displaying
     fcw_alert = hud_alert == VisualAlert.fcw
-    steer_alert = hud_alert == VisualAlert.steerRequired
+    steer_alert = hud_alert in [VisualAlert.steerRequired, VisualAlert.ldw]
 
     send_ui = False
     if ((fcw_alert or steer_alert) and not self.alert_active) or \
