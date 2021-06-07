@@ -31,7 +31,7 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
   slayout->addWidget(onroad);
 
   QObject::connect(this, &HomeWindow::update, onroad, &OnroadWindow::update);
-  QObject::connect(this, &HomeWindow::offroadTransitionSignal, onroad, &OnroadWindow::offroadTransition);
+  QObject::connect(this, &HomeWindow::offroadTransitionSignal, onroad, &OnroadWindow::offroadTransitionSignal);
 
   home = new OffroadHome();
   slayout->addWidget(home);

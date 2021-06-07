@@ -88,9 +88,11 @@ private:
   NvgWindow *nvg;
   QStackedLayout *layout;
   QHBoxLayout* split;
-  void _offroadTransition(bool offroad);
 
 signals:
   void update(const UIState &s);
+  void offroadTransitionSignal(bool offroad);
+
+private slots:
   void offroadTransition(bool offroad);
 };

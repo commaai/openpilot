@@ -32,8 +32,8 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   alerts = new OnroadAlerts(this);
   alerts->setAttribute(Qt::WA_TransparentForMouseEvents, true);
   QObject::connect(this, &OnroadWindow::update, alerts, &OnroadAlerts::updateState);
-  QObject::connect(this, &OnroadWindow::offroadTransition, alerts, &OnroadAlerts::offroadTransition);
-  QObject::connect(this, &OnroadWindow::offroadTransition, [=](bool offroad) {_offroadTransition(offroad);});
+  QObject::connect(this, &OnroadWindow::offroadTransitionSignal, alerts, &OnroadAlerts::offroadTransition);
+  QObject::connect(this, &OnroadWindow::offroadTransitionSignal, this, &OnroadWindow::offroadTransition);
   layout->addWidget(alerts);
 
   // setup stacking order
@@ -44,7 +44,7 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 }
 
 
-void OnroadWindow::_offroadTransition(bool offroad) {
+void OnroadWindow::offroadTransition(bool offroad) {
 #ifdef ENABLE_MAPS
   if (!offroad) {
     QString token = QString::fromStdString(Params().get("MapboxToken"));
