@@ -13,8 +13,6 @@ BUTTONS = {'cancel': ['c', 'BTN_TRIGGER'], 'engaged_toggle': ['e', 'BTN_THUMB'],
 AXES_INCREMENT = 0.05  # 5% of full actuation each key press
 MAX_AXIS_VALUE = 255  # tune based on your joystick, 0 to this
 
-kb = KBHit()
-
 
 class Joystick:
   def __init__(self, use_keyboard=True):
@@ -22,10 +20,11 @@ class Joystick:
     self.axes_values = {ax: 0. for ax in AXES}
     self.btn_states = {btn: False for btn in BUTTONS}
     self.buttons = dict(BUTTONS, **{'reset': ['r', 'BTN_THUMB2']})  # adds reset option
+    self.kb = KBHit()
 
   def update(self):
     if self.use_keyboard:
-      key = kb.getch().lower()
+      key = self.kb.getch().lower()
       state = 0
     else:
       joystick_event = get_gamepad()[0]
