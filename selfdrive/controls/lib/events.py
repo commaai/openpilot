@@ -248,6 +248,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 15.),
   },
 
+  # Car is recognized, but marked as dashcam only
   EventName.startupNoControl: {
     ET.PERMANENT: Alert(
       "Dashcam mode",
@@ -256,6 +257,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 15.),
   },
 
+  # Car is not recognized
   EventName.startupNoCar: {
     ET.PERMANENT: Alert(
       "Dashcam mode for unsupported car",
@@ -264,6 +266,14 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 15.),
   },
 
+  # openpilot uses the version strings from various ECUs to detect the correct car model.
+  # Usually all ECUs are recognized and an exact match to a car model can be made. Sometimes
+  # one or two ECUs have unrecognized versions, but the others are present in the database.
+  # If openpilot is confident about the match to a car model, it fingerprints anyway.
+  # In this case an alert is thrown since there is a small change the wrong car was detected
+  # and the user should pay extra attention.
+  # This alert can be prevented by adding all ECU firmware version to openpilot:
+  # https://github.com/commaai/openpilot/wiki/Fingerprinting
   EventName.startupFuzzyFingerprint: {
     ET.PERMANENT: startup_fuzzy_fingerprint_alert,
   },
