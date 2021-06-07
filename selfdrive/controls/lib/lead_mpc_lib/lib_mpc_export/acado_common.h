@@ -187,8 +187,8 @@ real_t objAuxVar[ 13 ];
 /** Row vector of size: 6 */
 real_t objValueIn[ 6 ];
 
-/** Row vector of size: 20 */
-real_t objValueOut[ 20 ];
+/** Row vector of size: 16 */
+real_t objValueOut[ 16 ];
 
 /** Matrix of size: 60 x 3 (row major format) */
 real_t Q1[ 180 ];

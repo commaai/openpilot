@@ -28,7 +28,7 @@ int main( )
   h << x_ego;
   h << v_ego;
   h << a_ego;
-  h << j_ego * (0.1 * v_ego + 1.0);
+  h << j_ego;
 
   // Weights are defined in mpc.
   BMatrix Q(4,4); Q.setAll(true);

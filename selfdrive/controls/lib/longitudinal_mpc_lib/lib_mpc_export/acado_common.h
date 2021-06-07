@@ -184,8 +184,8 @@ real_t evGu[ 80 ];
 /** Row vector of size: 7 */
 real_t objValueIn[ 7 ];
 
-/** Row vector of size: 24 */
-real_t objValueOut[ 24 ];
+/** Row vector of size: 4 */
+real_t objValueOut[ 4 ];
 
 /** Matrix of size: 80 x 4 (row major format) */
 real_t Q1[ 320 ];

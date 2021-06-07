@@ -87,27 +87,7 @@ const real_t* u = in + 4;
 out[0] = xd[0];
 out[1] = xd[1];
 out[2] = xd[2];
-out[3] = (u[0]*(((real_t)(1.0000000000000001e-01)*xd[1])+(real_t)(1.0000000000000000e+00)));
-out[4] = (real_t)(1.0000000000000000e+00);
-out[5] = (real_t)(0.0000000000000000e+00);
-out[6] = (real_t)(0.0000000000000000e+00);
-out[7] = (real_t)(0.0000000000000000e+00);
-out[8] = (real_t)(0.0000000000000000e+00);
-out[9] = (real_t)(1.0000000000000000e+00);
-out[10] = (real_t)(0.0000000000000000e+00);
-out[11] = (real_t)(0.0000000000000000e+00);
-out[12] = (real_t)(0.0000000000000000e+00);
-out[13] = (real_t)(0.0000000000000000e+00);
-out[14] = (real_t)(1.0000000000000000e+00);
-out[15] = (real_t)(0.0000000000000000e+00);
-out[16] = (real_t)(0.0000000000000000e+00);
-out[17] = (u[0]*(real_t)(1.0000000000000001e-01));
-out[18] = (real_t)(0.0000000000000000e+00);
-out[19] = (real_t)(0.0000000000000000e+00);
-out[20] = (real_t)(0.0000000000000000e+00);
-out[21] = (real_t)(0.0000000000000000e+00);
-out[22] = (real_t)(0.0000000000000000e+00);
-out[23] = (((real_t)(1.0000000000000001e-01)*xd[1])+(real_t)(1.0000000000000000e+00));
+out[3] = u[0];
 }
 
 void acado_evaluateLSQEndTerm(const real_t* in, real_t* out)
@@ -120,49 +100,57 @@ out[1] = xd[1];
 out[2] = xd[2];
 }
 
-void acado_setObjQ1Q2( real_t* const tmpFx, real_t* const tmpObjS, real_t* const tmpQ1, real_t* const tmpQ2 )
+void acado_setObjQ1Q2( real_t* const tmpObjS, real_t* const tmpQ1, real_t* const tmpQ2 )
 {
-tmpQ2[0] = + tmpFx[0]*tmpObjS[0] + tmpFx[4]*tmpObjS[4] + tmpFx[8]*tmpObjS[8] + tmpFx[12]*tmpObjS[12];
-tmpQ2[1] = + tmpFx[0]*tmpObjS[1] + tmpFx[4]*tmpObjS[5] + tmpFx[8]*tmpObjS[9] + tmpFx[12]*tmpObjS[13];
-tmpQ2[2] = + tmpFx[0]*tmpObjS[2] + tmpFx[4]*tmpObjS[6] + tmpFx[8]*tmpObjS[10] + tmpFx[12]*tmpObjS[14];
-tmpQ2[3] = + tmpFx[0]*tmpObjS[3] + tmpFx[4]*tmpObjS[7] + tmpFx[8]*tmpObjS[11] + tmpFx[12]*tmpObjS[15];
-tmpQ2[4] = + tmpFx[1]*tmpObjS[0] + tmpFx[5]*tmpObjS[4] + tmpFx[9]*tmpObjS[8] + tmpFx[13]*tmpObjS[12];
-tmpQ2[5] = + tmpFx[1]*tmpObjS[1] + tmpFx[5]*tmpObjS[5] + tmpFx[9]*tmpObjS[9] + tmpFx[13]*tmpObjS[13];
-tmpQ2[6] = + tmpFx[1]*tmpObjS[2] + tmpFx[5]*tmpObjS[6] + tmpFx[9]*tmpObjS[10] + tmpFx[13]*tmpObjS[14];
-tmpQ2[7] = + tmpFx[1]*tmpObjS[3] + tmpFx[5]*tmpObjS[7] + tmpFx[9]*tmpObjS[11] + tmpFx[13]*tmpObjS[15];
-tmpQ2[8] = + tmpFx[2]*tmpObjS[0] + tmpFx[6]*tmpObjS[4] + tmpFx[10]*tmpObjS[8] + tmpFx[14]*tmpObjS[12];
-tmpQ2[9] = + tmpFx[2]*tmpObjS[1] + tmpFx[6]*tmpObjS[5] + tmpFx[10]*tmpObjS[9] + tmpFx[14]*tmpObjS[13];
-tmpQ2[10] = + tmpFx[2]*tmpObjS[2] + tmpFx[6]*tmpObjS[6] + tmpFx[10]*tmpObjS[10] + tmpFx[14]*tmpObjS[14];
-tmpQ2[11] = + tmpFx[2]*tmpObjS[3] + tmpFx[6]*tmpObjS[7] + tmpFx[10]*tmpObjS[11] + tmpFx[14]*tmpObjS[15];
-tmpQ2[12] = + tmpFx[3]*tmpObjS[0] + tmpFx[7]*tmpObjS[4] + tmpFx[11]*tmpObjS[8] + tmpFx[15]*tmpObjS[12];
-tmpQ2[13] = + tmpFx[3]*tmpObjS[1] + tmpFx[7]*tmpObjS[5] + tmpFx[11]*tmpObjS[9] + tmpFx[15]*tmpObjS[13];
-tmpQ2[14] = + tmpFx[3]*tmpObjS[2] + tmpFx[7]*tmpObjS[6] + tmpFx[11]*tmpObjS[10] + tmpFx[15]*tmpObjS[14];
-tmpQ2[15] = + tmpFx[3]*tmpObjS[3] + tmpFx[7]*tmpObjS[7] + tmpFx[11]*tmpObjS[11] + tmpFx[15]*tmpObjS[15];
-tmpQ1[0] = + tmpQ2[0]*tmpFx[0] + tmpQ2[1]*tmpFx[4] + tmpQ2[2]*tmpFx[8] + tmpQ2[3]*tmpFx[12];
-tmpQ1[1] = + tmpQ2[0]*tmpFx[1] + tmpQ2[1]*tmpFx[5] + tmpQ2[2]*tmpFx[9] + tmpQ2[3]*tmpFx[13];
-tmpQ1[2] = + tmpQ2[0]*tmpFx[2] + tmpQ2[1]*tmpFx[6] + tmpQ2[2]*tmpFx[10] + tmpQ2[3]*tmpFx[14];
-tmpQ1[3] = + tmpQ2[0]*tmpFx[3] + tmpQ2[1]*tmpFx[7] + tmpQ2[2]*tmpFx[11] + tmpQ2[3]*tmpFx[15];
-tmpQ1[4] = + tmpQ2[4]*tmpFx[0] + tmpQ2[5]*tmpFx[4] + tmpQ2[6]*tmpFx[8] + tmpQ2[7]*tmpFx[12];
-tmpQ1[5] = + tmpQ2[4]*tmpFx[1] + tmpQ2[5]*tmpFx[5] + tmpQ2[6]*tmpFx[9] + tmpQ2[7]*tmpFx[13];
-tmpQ1[6] = + tmpQ2[4]*tmpFx[2] + tmpQ2[5]*tmpFx[6] + tmpQ2[6]*tmpFx[10] + tmpQ2[7]*tmpFx[14];
-tmpQ1[7] = + tmpQ2[4]*tmpFx[3] + tmpQ2[5]*tmpFx[7] + tmpQ2[6]*tmpFx[11] + tmpQ2[7]*tmpFx[15];
-tmpQ1[8] = + tmpQ2[8]*tmpFx[0] + tmpQ2[9]*tmpFx[4] + tmpQ2[10]*tmpFx[8] + tmpQ2[11]*tmpFx[12];
-tmpQ1[9] = + tmpQ2[8]*tmpFx[1] + tmpQ2[9]*tmpFx[5] + tmpQ2[10]*tmpFx[9] + tmpQ2[11]*tmpFx[13];
-tmpQ1[10] = + tmpQ2[8]*tmpFx[2] + tmpQ2[9]*tmpFx[6] + tmpQ2[10]*tmpFx[10] + tmpQ2[11]*tmpFx[14];
-tmpQ1[11] = + tmpQ2[8]*tmpFx[3] + tmpQ2[9]*tmpFx[7] + tmpQ2[10]*tmpFx[11] + tmpQ2[11]*tmpFx[15];
-tmpQ1[12] = + tmpQ2[12]*tmpFx[0] + tmpQ2[13]*tmpFx[4] + tmpQ2[14]*tmpFx[8] + tmpQ2[15]*tmpFx[12];
-tmpQ1[13] = + tmpQ2[12]*tmpFx[1] + tmpQ2[13]*tmpFx[5] + tmpQ2[14]*tmpFx[9] + tmpQ2[15]*tmpFx[13];
-tmpQ1[14] = + tmpQ2[12]*tmpFx[2] + tmpQ2[13]*tmpFx[6] + tmpQ2[14]*tmpFx[10] + tmpQ2[15]*tmpFx[14];
-tmpQ1[15] = + tmpQ2[12]*tmpFx[3] + tmpQ2[13]*tmpFx[7] + tmpQ2[14]*tmpFx[11] + tmpQ2[15]*tmpFx[15];
+tmpQ2[0] = +tmpObjS[0];
+tmpQ2[1] = +tmpObjS[1];
+tmpQ2[2] = +tmpObjS[2];
+tmpQ2[3] = +tmpObjS[3];
+tmpQ2[4] = +tmpObjS[4];
+tmpQ2[5] = +tmpObjS[5];
+tmpQ2[6] = +tmpObjS[6];
+tmpQ2[7] = +tmpObjS[7];
+tmpQ2[8] = +tmpObjS[8];
+tmpQ2[9] = +tmpObjS[9];
+tmpQ2[10] = +tmpObjS[10];
+tmpQ2[11] = +tmpObjS[11];
+tmpQ2[12] = 0.0;
+;
+tmpQ2[13] = 0.0;
+;
+tmpQ2[14] = 0.0;
+;
+tmpQ2[15] = 0.0;
+;
+tmpQ1[0] = + tmpQ2[0];
+tmpQ1[1] = + tmpQ2[1];
+tmpQ1[2] = + tmpQ2[2];
+tmpQ1[3] = 0.0;
+;
+tmpQ1[4] = + tmpQ2[4];
+tmpQ1[5] = + tmpQ2[5];
+tmpQ1[6] = + tmpQ2[6];
+tmpQ1[7] = 0.0;
+;
+tmpQ1[8] = + tmpQ2[8];
+tmpQ1[9] = + tmpQ2[9];
+tmpQ1[10] = + tmpQ2[10];
+tmpQ1[11] = 0.0;
+;
+tmpQ1[12] = + tmpQ2[12];
+tmpQ1[13] = + tmpQ2[13];
+tmpQ1[14] = + tmpQ2[14];
+tmpQ1[15] = 0.0;
+;
 }
 
-void acado_setObjR1R2( real_t* const tmpFu, real_t* const tmpObjS, real_t* const tmpR1, real_t* const tmpR2 )
+void acado_setObjR1R2( real_t* const tmpObjS, real_t* const tmpR1, real_t* const tmpR2 )
 {
-tmpR2[0] = + tmpFu[0]*tmpObjS[0] + tmpFu[1]*tmpObjS[4] + tmpFu[2]*tmpObjS[8] + tmpFu[3]*tmpObjS[12];
-tmpR2[1] = + tmpFu[0]*tmpObjS[1] + tmpFu[1]*tmpObjS[5] + tmpFu[2]*tmpObjS[9] + tmpFu[3]*tmpObjS[13];
-tmpR2[2] = + tmpFu[0]*tmpObjS[2] + tmpFu[1]*tmpObjS[6] + tmpFu[2]*tmpObjS[10] + tmpFu[3]*tmpObjS[14];
-tmpR2[3] = + tmpFu[0]*tmpObjS[3] + tmpFu[1]*tmpObjS[7] + tmpFu[2]*tmpObjS[11] + tmpFu[3]*tmpObjS[15];
-tmpR1[0] = + tmpR2[0]*tmpFu[0] + tmpR2[1]*tmpFu[1] + tmpR2[2]*tmpFu[2] + tmpR2[3]*tmpFu[3];
+tmpR2[0] = +tmpObjS[12];
+tmpR2[1] = +tmpObjS[13];
+tmpR2[2] = +tmpObjS[14];
+tmpR2[3] = +tmpObjS[15];
+tmpR1[0] = + tmpR2[3];
 }
 
 void acado_setObjQN1QN2( real_t* const tmpObjSEndTerm, real_t* const tmpQN1, real_t* const tmpQN2 )
@@ -223,9 +211,9 @@ acadoWorkspace.Dy[runObj * 4 + 1] = acadoWorkspace.objValueOut[1];
 acadoWorkspace.Dy[runObj * 4 + 2] = acadoWorkspace.objValueOut[2];
 acadoWorkspace.Dy[runObj * 4 + 3] = acadoWorkspace.objValueOut[3];
 
-acado_setObjQ1Q2( &(acadoWorkspace.objValueOut[ 4 ]), &(acadoVariables.W[ runObj * 16 ]), &(acadoWorkspace.Q1[ runObj * 16 ]), &(acadoWorkspace.Q2[ runObj * 16 ]) );
+acado_setObjQ1Q2( &(acadoVariables.W[ runObj * 16 ]), &(acadoWorkspace.Q1[ runObj * 16 ]), &(acadoWorkspace.Q2[ runObj * 16 ]) );
 
-acado_setObjR1R2( &(acadoWorkspace.objValueOut[ 20 ]), &(acadoVariables.W[ runObj * 16 ]), &(acadoWorkspace.R1[ runObj ]), &(acadoWorkspace.R2[ runObj * 4 ]) );
+acado_setObjR1R2( &(acadoVariables.W[ runObj * 16 ]), &(acadoWorkspace.R1[ runObj ]), &(acadoWorkspace.R2[ runObj * 4 ]) );
 
 }
 acadoWorkspace.objValueIn[0] = acadoVariables.x[80];
