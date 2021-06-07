@@ -8,6 +8,7 @@ from cereal.visionipc.visionipc_pyx import VisionIpcServer, VisionStreamType  # 
 from common.params import Params
 from common.realtime import Ratekeeper
 from common.transformations.camera import eon_f_frame_size, eon_d_frame_size
+from selfdrive.car.fingerprints import FW_VERSIONS
 from selfdrive.manager.process import ensure_running
 from selfdrive.manager.process_config import managed_processes
 from tools.lib.route import Route
@@ -67,6 +68,18 @@ def regen_segment(route, seg):
 
   process_replay_dir = os.path.dirname(os.path.abspath(__file__))
   os.environ["LOG_ROOT"] = process_replay_dir
+  os.environ["SIMULATION"] = "1"
+
+  os.environ['SKIP_FW_QUERY'] = ""
+  os.environ['FINGERPRINT'] = ""
+  for msg in lr:
+    if msg.which() == 'carParams':
+      car_fingerprint = msg.carParams.carFingerprint
+      if len(msg.carParams.carFw) and (car_fingerprint in FW_VERSIONS):
+        params.put("CarParamsCache", msg.carParams.as_builder().to_bytes())
+      else:
+        os.environ['SKIP_FW_QUERY'] = "1"
+        os.environ['FINGERPRINT'] = car_fingerprint
 
   fake_daemons = {
     'sensord': [
@@ -86,14 +99,13 @@ def regen_segment(route, seg):
 
   # TODO: fix locationd
   # startup procs
-  ignore = list(fake_daemons.keys()) + ['ui', 'manage_athenad', 'uploader']
+  ignore = list(fake_daemons.keys()) + ['ui', 'manage_athenad', 'uploader', 'locationd']
   ensure_running(managed_processes.values(), started=True, not_run=ignore)
   for threads in fake_daemons.values():
     for t in threads:
       t.start()
 
   # TODO: ensure all procs are running
-  # run for 10s
   time.sleep(60)
 
   # kill everything
