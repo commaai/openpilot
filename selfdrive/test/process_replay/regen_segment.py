@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
+import os
 import time
 import multiprocessing
 
 import cereal.messaging as messaging
 from cereal.visionipc.visionipc_pyx import VisionIpcServer, VisionStreamType  # pylint: disable=no-name-in-module, import-error
+from common.params import Params
 from common.realtime import Ratekeeper
 from common.transformations.camera import eon_f_frame_size, eon_d_frame_size
 from selfdrive.manager.process import ensure_running
@@ -51,13 +53,31 @@ def regen_segment(route, seg):
   r = Route(route)
   lr = list(LogReader(r.log_paths()[seg]))
 
+  # setup env
+  params = Params()
+  params.clear_all()
+  params.put_bool("Passive", False)
+  params.put_bool("OpenpilotEnabledToggle", True)
+  params.put_bool("CommunityFeaturesToggle", True)
+  params.put_bool("CommunityFeaturesToggle", True)
+  cal = messaging.new_message('liveCalibration')
+  cal.liveCalibration.validBlocks = 20
+  cal.liveCalibration.rpyCalib = [0.0, 0.0, 0.0]
+  params.put("CalibrationParams", cal.to_bytes())
+
+  process_replay_dir = os.path.dirname(os.path.abspath(__file__))
+  os.environ["LOG_ROOT"] = process_replay_dir
+
   fake_daemons = {
     'sensord': [
       multiprocessing.Process(target=replay_service, args=('sensorEvents', 0.01, lr)),
     ],
     'pandad': [
       multiprocessing.Process(target=replay_service, args=('can', 0.01, lr)),
-      multiprocessing.Process(target=replay_service, args=('pandaState', 0.01, lr)),
+      multiprocessing.Process(target=replay_service, args=('pandaState', 0.5, lr)),
+    ],
+    'managerState': [
+      multiprocessing.Process(target=replay_service, args=('managerState', 0.5, lr)),
     ],
     'camerad': [
       multiprocessing.Process(target=replay_cameras),
@@ -66,7 +86,7 @@ def regen_segment(route, seg):
 
   # TODO: fix locationd
   # startup procs
-  ignore = list(fake_daemons.keys()) + ['ui', 'locationd', 'manage_athenad', 'uploader']
+  ignore = list(fake_daemons.keys()) + ['ui', 'manage_athenad', 'uploader']
   ensure_running(managed_processes.values(), started=True, not_run=ignore)
   for threads in fake_daemons.values():
     for t in threads:
@@ -74,7 +94,7 @@ def regen_segment(route, seg):
 
   # TODO: ensure all procs are running
   # run for 10s
-  time.sleep(10)
+  time.sleep(60)
 
   # kill everything
   for p in managed_processes.values():
@@ -84,4 +104,4 @@ def regen_segment(route, seg):
       p.terminate()
 
 if __name__ == "__main__":
-  regen_segment("ef895f46af5fd73f|2021-05-22--14-06-35", 15)
+  regen_segment("ef895f46af5fd73f|2021-05-22--14-06-35", 10)
