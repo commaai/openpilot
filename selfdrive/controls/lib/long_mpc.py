@@ -11,6 +11,7 @@ class LongitudinalMpc():
     self.reset_mpc()
     self.last_cloudlog_t = 0.0
     self.ts = list(range(10))
+    self.status = True
 
 
   def reset_mpc(self):

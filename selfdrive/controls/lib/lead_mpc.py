@@ -15,7 +15,7 @@ class LeadMpc():
     self.lead_id = lead_id
 
     self.reset_mpc()
-    self.lead_status = False
+    self.status = False
 
     self.last_cloudlog_t = 0.0
     self.n_its = 0
@@ -42,7 +42,7 @@ class LeadMpc():
     self.cur_state[0].x_ego = 0.0
 
     if lead is not None:
-      self.lead_status = lead.prob > 0.5
+      self.status = lead.prob > 0.5
       x_lead = lead.x[0]
       v_lead = max(0.0, lead.v[0])
       a_lead = lead.a[0]

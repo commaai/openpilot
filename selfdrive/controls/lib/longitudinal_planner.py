@@ -101,19 +101,24 @@ class Planner():
       # if required so, force a smooth deceleration
       accel_limits_turns[1] = min(accel_limits_turns[1], AWARENESS_DECEL)
       accel_limits_turns[0] = min(accel_limits_turns[0], accel_limits_turns[1])
+    # clip limits, cannot init MPC outside of bounds
+    accel_limits_turns[0] = min(accel_limits_turns[0], self.a_desired)
+    accel_limits_turns[1] = max(accel_limits_turns[1], self.a_desired)
     self.mpcs['cruise'].set_accel_limits(accel_limits_turns[0], accel_limits_turns[1])
 
     next_a = np.inf
     for key in self.mpcs:
       self.mpcs[key].set_cur_state(self.v_desired, self.a_desired)
       self.mpcs[key].update(sm['carState'], sm['modelV2'], v_cruise)
-      if self.mpcs[key].mpc_solution.a_ego[1] < next_a:
+      if self.mpcs[key].status and self.mpcs[key].mpc_solution.a_ego[1] < next_a:
         self.longitudinalPlanSource = key
         self.a_desired_trajectory = np.interp(t_idxs[:MPC_N+1], mpc_t, list(self.mpcs[key].mpc_solution.a_ego))
         next_a = self.mpcs[key].mpc_solution.a_ego[1]
 
     # Throw FCW if brake predictions exceed capability
-    self.fcw = bool(np.any(self.a_desired_trajectory < -3.0))
+    self.fcw = (bool(np.any(self.a_desired_trajectory < -3.0)) and
+                sm['modelV2'].leads[0].prob > .9 and
+                sm['modelV2'].leads[0].prob > .9)
 
     # Interpolate 0.05 seconds and save as starting point for next iteration
     a_prev = self.a_desired
@@ -133,7 +138,7 @@ class Planner():
     longitudinalPlan.vStart = float(self.v_desired)
     longitudinalPlan.aStart = float(self.a_desired)
     longitudinalPlan.vTargetFuture = float(self.v_desired + self.a_desired*3.0)
-    longitudinalPlan.hasLead = self.mpcs['mpc1'].lead_status
+    longitudinalPlan.hasLead = self.mpcs['mpc1'].status
     longitudinalPlan.longitudinalPlanSource = self.longitudinalPlanSource
     longitudinalPlan.fcw = self.fcw
 
