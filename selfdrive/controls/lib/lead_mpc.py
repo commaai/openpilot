@@ -11,19 +11,17 @@ LOG_MPC = os.environ.get('LOG_MPC', False)
 
 
 class LeadMpc():
-  def __init__(self, mpc_id):
-    self.mpc_id = mpc_id
+  def __init__(self, lead_id):
+    self.lead_id = lead_id
 
     self.reset_mpc()
     self.lead_status = False
-    self.prev_lead_x = 0.0
-    self.new_lead = False
 
     self.last_cloudlog_t = 0.0
     self.n_its = 0
 
   def reset_mpc(self):
-    ffi, self.libmpc = libmpc_py.get_libmpc(self.mpc_id)
+    ffi, self.libmpc = libmpc_py.get_libmpc(self.lead_id)
     self.libmpc.init(MPC_COST_LONG.TTC, MPC_COST_LONG.DISTANCE,
                      MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
 
@@ -36,8 +34,9 @@ class LeadMpc():
     self.cur_state[0].v_ego = v
     self.cur_state[0].a_ego = a
 
-  def update(self, CS, lead):
-    v_ego = CS.vEgo
+  def update(self, carstate, model, v_cruise):
+    lead = model['leads'][self.lead_id]
+    v_ego = carstate.vEgo
 
     # Setup current mpc state
     self.cur_state[0].x_ego = 0.0
@@ -73,8 +72,7 @@ class LeadMpc():
       if t > self.last_cloudlog_t + 5.0:
         self.last_cloudlog_t = t
         cloudlog.warning("Longitudinal mpc %d reset - backwards: %s crashing: %s nan: %s" % (
-                          self.mpc_id, backwards, crashing, nans))
+                          self.lead_id, backwards, crashing, nans))
 
       self.reset_mpc()
       self.cur_state[0].v_ego = v_ego
-      self.prev_lead_status = False

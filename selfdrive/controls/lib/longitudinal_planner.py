@@ -60,8 +60,8 @@ class Planner():
 
     # TODO these names are bad, but log names need to change first
     self.mpcs = {}
-    self.mpcs['mpc1'] = LeadMpc(1)
-    self.mpcs['mpc2'] = LeadMpc(2)
+    self.mpcs['mpc1'] = LeadMpc(0)
+    self.mpcs['mpc2'] = LeadMpc(1)
     self.mpcs['cruise'] = LongitudinalMpc()
     self.fcw = False
 
@@ -87,7 +87,6 @@ class Planner():
 
 
     lead_0 = sm['modelV2'].leads[0]
-    lead_1 = sm['modelV2'].leads[1]
     t_idxs = np.array(sm['modelV2'].position.t)
     mpc_t = [0.0, .2, .4, .6, .8] + list(np.arange(1.0, 10.1, .6))
 
@@ -107,18 +106,10 @@ class Planner():
       accel_limits_turns[1] = min(accel_limits_turns[1], AWARENESS_DECEL)
       accel_limits_turns[0] = min(accel_limits_turns[0], accel_limits_turns[1])
 
-    for key in self.mpcs:
-      self.mpcs[key].set_cur_state(self.v_desired, self.a_desired)
-    self.mpcs['mpc1'].update(sm['carState'], lead_0)
-    self.mpcs['mpc2'].update(sm['carState'], lead_1)
-    v_cruise_clipped = np.clip(v_cruise, v_ego - 10.0, v_ego + 5.0)
-    self.mpcs['cruise'].update(v_ego, a_ego,
-                           v_cruise_clipped * np.arange(0.,10.,1.0),
-                           v_cruise_clipped * np.ones(10),
-                           np.zeros(10))
-
     next_a = np.inf
     for key in self.mpcs:
+      self.mpcs[key].set_cur_state(self.v_desired, self.a_desired)
+      self.mpcs[key].update(sm['carState'], sm['modelV2'], v_cruise)
       if self.mpcs[key].mpc_solution.a_ego[1] < next_a:
         self.longitudinalPlanSource = key
         self.a_desired_trajectory = np.interp(t_idxs[:MPC_N+1], mpc_t, list(self.mpcs[key].mpc_solution.a_ego))
