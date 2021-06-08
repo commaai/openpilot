@@ -61,6 +61,7 @@ private:
   // Position
   QMapbox::Coordinate last_position = QMapbox::Coordinate(37.7393118509158, -122.46471285025565);
   std::optional<float> last_bearing;
+  QMapbox::Coordinate last_position = QMapbox::Coordinate(37.7393118509158, -122.46471285025565);
 
   // Route
   bool gps_ok = false;
@@ -69,6 +70,7 @@ private:
   QGeoRoute route;
   QGeoRouteSegment segment;
   QWidget* map_instructions;
+  QWidget* map_eta;
   QMapbox::Coordinate nav_destination;
   double last_maneuver_distance = 1000;
 
@@ -110,4 +112,21 @@ public:
 public slots:
   void updateDistance(float d);
   void updateInstructions(QMap<QString, QVariant> banner);
+};
+
+class MapETA : public QWidget {
+  Q_OBJECT
+
+private:
+  QLabel *eta;
+  QLabel *time;
+  QLabel *time_unit;
+  QLabel *distance;
+  QLabel *distance_unit;
+
+public:
+  MapETA(QWidget * parent=nullptr);
+
+public slots:
+  void updateETA(float minutes, float distance);
 };

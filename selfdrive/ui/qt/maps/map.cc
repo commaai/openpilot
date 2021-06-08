@@ -43,6 +43,12 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings) {
           map_instructions, SLOT(updateDistance(float)));
   map_instructions->setFixedWidth(width());
 
+  map_eta = new MapETA(this);
+
+  const int h = 150;
+  const int w = 450;
+  map_eta->setGeometry(0, 1080 - h, w, h);
+
   // Routing
   QVariantMap parameters;
   parameters["mapbox.access_token"] = m_settings.accessToken();
@@ -223,7 +229,7 @@ void MapWindow::initializeGL() {
 
   // TODO: Get from last gps position param
   m_map->setCoordinateZoom(last_position, MAX_ZOOM);
-  m_map->setMargins({0, 350, 0, 0});
+  m_map->setMargins({0, 350, 0, 50});
   m_map->setPitch(MIN_PITCH);
   m_map->setStyleUrl("mapbox://styles/pd0wm/cknuhcgvr0vs817o1akcx6pek"); // Larger fonts
 
@@ -564,4 +570,72 @@ void MapInstructions::updateInstructions(QMap<QString, QVariant> banner){
   secondary->setText(secondary_str);
   adjustSize();
   last_banner = banner;
+}
+
+MapETA::MapETA(QWidget * parent) : QWidget(parent){
+  QHBoxLayout *layout_outer = new QHBoxLayout;
+  layout_outer->setContentsMargins(20, 25, 20, 25);
+
+  {
+    QVBoxLayout *layout = new QVBoxLayout;
+    eta = new QLabel("12:26");
+    eta->setAlignment(Qt::AlignCenter);
+
+    auto eta_unit = new QLabel("eta");
+    eta_unit->setAlignment(Qt::AlignCenter);
+
+    layout->addStretch();
+    layout->addWidget(eta);
+    layout->addWidget(eta_unit);
+    layout->addStretch();
+    layout_outer->addLayout(layout);
+  }
+  {
+    QVBoxLayout *layout = new QVBoxLayout;
+    time = new QLabel("22");
+    time->setStyleSheet(R"(color: green; )");
+    time->setAlignment(Qt::AlignCenter);
+
+    time_unit = new QLabel("min");
+    time_unit->setStyleSheet(R"(color: green; )");
+    time_unit->setAlignment(Qt::AlignCenter);
+
+    layout->addStretch();
+    layout->addWidget(time);
+    layout->addWidget(time_unit);
+    layout->addStretch();
+    layout_outer->addLayout(layout);
+  }
+  {
+    QVBoxLayout *layout = new QVBoxLayout;
+    distance = new QLabel("22.4");
+    distance->setAlignment(Qt::AlignCenter);
+    distance_unit = new QLabel("mi");
+    distance_unit->setAlignment(Qt::AlignCenter);
+
+    layout->addStretch();
+    layout->addWidget(distance);
+    layout->addWidget(distance_unit);
+    layout->addStretch();
+    layout_outer->addLayout(layout);
+  }
+
+  setLayout(layout_outer);
+  setStyleSheet(R"(
+    * {
+      color: white;
+      font-family: "Inter";
+      font-size: 45px;
+    }
+  )");
+
+  QPalette pal = palette();
+  pal.setColor(QPalette::Background, QColor(0, 0, 0, 150));
+  setAutoFillBackground(true);
+  setPalette(pal);
+}
+
+
+void MapETA::updateETA(float minutes, float distance) {
+
 }
