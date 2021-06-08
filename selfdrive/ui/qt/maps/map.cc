@@ -37,17 +37,17 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings) {
 
   // Instructions
   map_instructions = new MapInstructions(this);
-  connect(this, SIGNAL(instructionsChanged(QMap<QString, QVariant>)),
-          map_instructions, SLOT(updateInstructions(QMap<QString, QVariant>)));
-  connect(this, SIGNAL(distanceChanged(float)),
-          map_instructions, SLOT(updateDistance(float)));
+  connect(this, &MapWindow::instructionsChanged, map_instructions, &MapInstructions::updateInstructions);
+  connect(this, &MapWindow::distanceChanged, map_instructions, &MapInstructions::updateDistance);
   map_instructions->setFixedWidth(width());
 
   map_eta = new MapETA(this);
+  connect(this, &MapWindow::ETAChanged, map_eta, &MapETA::updateETA);
 
   const int h = 150;
   const int w = 450;
   map_eta->setGeometry(0, 1080 - h, w, h);
+  map_eta->setVisible(false);
 
   // Routing
   QVariantMap parameters;
@@ -227,7 +227,6 @@ void MapWindow::resizeGL(int w, int h) {
 void MapWindow::initializeGL() {
   m_map.reset(new QMapboxGL(nullptr, m_settings, size(), 1));
 
-  // TODO: Get from last gps position param
   m_map->setCoordinateZoom(last_position, MAX_ZOOM);
   m_map->setMargins({0, 350, 0, 50});
   m_map->setPitch(MIN_PITCH);
@@ -261,6 +260,22 @@ void MapWindow::recomputeRoute() {
   }
 
   if (!gps_ok && segment.isValid()) return; // Don't recompute when gps drifts in tunnels
+
+  // Update ETA
+  if (!should_recompute) {
+    // TODO: compute progress in current segment instead of using all
+    float total_distance = 0;
+    float total_time = 0;
+
+    auto s = segment;
+    while (s.isValid()) {
+      total_distance += s.distance();
+      total_time += s.travelTime();
+
+      s = s.nextRouteSegment();
+    }
+    emit ETAChanged(total_time, total_distance);
+  }
 
   // Only do API request when map is loaded
   if (!m_map.isNull()) {
@@ -316,6 +331,9 @@ void MapWindow::clearRoute() {
     m_map->setLayoutProperty("navLayer", "visibility", "none");
     m_map->setPitch(MIN_PITCH);
   }
+
+  map_instructions->setVisible(false);
+  map_eta->setVisible(false);
 }
 
 
@@ -608,9 +626,9 @@ MapETA::MapETA(QWidget * parent) : QWidget(parent){
   }
   {
     QVBoxLayout *layout = new QVBoxLayout;
-    distance = new QLabel("22.4");
+    distance = new QLabel;
     distance->setAlignment(Qt::AlignCenter);
-    distance_unit = new QLabel("mi");
+    distance_unit = new QLabel;
     distance_unit->setAlignment(Qt::AlignCenter);
 
     layout->addStretch();
@@ -636,6 +654,19 @@ MapETA::MapETA(QWidget * parent) : QWidget(parent){
 }
 
 
-void MapETA::updateETA(float minutes, float distance) {
+void MapETA::updateETA(float s, float d) {
+  setVisible(true);
+  QString distance_str;
+  if (QUIState::ui_state.scene.is_metric) {
+    distance_str.setNum(d / 1000, 'f', 1);
+    distance_unit->setText("km");
+  } else {
+    distance_str.setNum(d * METER_2_MILE, 'f', 1);
+    distance_unit->setText("mi");
+  }
+  distance->setText(distance_str);
+
+
+  // TODO: update color based on traffic conditions
 
 }
