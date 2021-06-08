@@ -50,9 +50,9 @@ private:
   QThread *queue_thread;
 
   // logs
-  Events events;
+  QMultiMap<uint64_t, Event*> events;
   QReadWriteLock events_lock;
-  EncodeIdxMap eidx[MAX_CAMERAS];
+  std::unordered_map<uint32_t, EncodeIdx> eidx[MAX_CAMERAS];
 
   HttpRequest *http;
   QJsonArray camera_paths;

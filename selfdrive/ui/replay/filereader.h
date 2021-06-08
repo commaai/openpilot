@@ -61,9 +61,6 @@ public:
   kj::ArrayPtr<const capnp::word> words;
 };
 
-typedef QMultiMap<uint64_t, Event*> Events;
-typedef std::unordered_map<uint32_t, EncodeIdx> EncodeIdxMap;
-
 class LogReader : public QObject {
   Q_OBJECT
 
@@ -72,9 +69,8 @@ public:
   ~LogReader();
   inline bool valid() const { return valid_; }
 
-  // Events events;
-  Events events;
-  EncodeIdxMap eidx[MAX_CAMERAS] = {};
+  QMultiMap<uint64_t, Event*> events;
+  std::unordered_map<uint32_t, EncodeIdx> eidx[MAX_CAMERAS] = {};
 
 signals:
   void finished(bool success);
