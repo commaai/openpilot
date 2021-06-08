@@ -114,6 +114,44 @@ void Replay::seekTo(uint64_t to_ts) {
   qInfo() << "seeking to" << elapsedTime(to_ts);
 }
 
+std::pair<int, int> Replay::queueSegmentRange() {
+  const auto &rs = route_.segments();
+  int cur_idx = std::distance(rs.begin(), rs.lowerBound(current_segment_));
+  int i = 0, min = rs.firstKey(), max = rs.lastKey();
+  for (auto it = rs.begin(); it != rs.end(); ++it, ++i) {
+    if (i <= cur_idx - BACKWARD_SEGS) {
+      min = it.key();
+    } else if (i >= cur_idx + FORWARD_SEGS) {
+      max = it.key();
+      break;
+    }
+  }
+  return {min, max};
+}
+
+// maintain the segment window
+void Replay::queueSegmentThread() {
+  while (!exit_) {
+    auto [min, max] = queueSegmentRange();
+    for (auto it = route_.segments().lowerBound(min); it != route_.segments().upperBound(max); ++it) {
+      int n = it.key();
+      std::unique_lock lk(segment_mutex_);
+      if (segments_.find(n) == segments_.end()) {
+        segments_[n] = std::make_unique<Segment>(n, it.value());
+        connect(segments_[n].get(), &Segment::finishedRead, this, &Replay::mergeEvents);
+      }
+    }
+    QThread::msleep(50);
+  }
+}
+
+// return nullptr if segment is not loaded
+const Segment *Replay::getSegment(int segment) {
+  std::unique_lock lk(segment_mutex_);
+  auto it = segments_.find(segment);
+  return (it != segments_.end() && it->second->loaded) ? it->second.get() : nullptr;
+}
+
 const std::string &Replay::eventSocketName(const Event *e) {
   auto it = eventNameMap.find(e->which);
   if (it == eventNameMap.end()) {
@@ -177,44 +215,6 @@ void Replay::mergeEvents() {
   }
 }
 
-std::pair<int, int> Replay::queueSegmentRange() {
-  const auto &rs = route_.segments();
-  int cur_idx = std::distance(rs.begin(), rs.lowerBound(current_segment_));
-  int i = 0, min = rs.firstKey(), max = rs.lastKey();
-  for (auto it = rs.begin(); it != rs.end(); ++it, ++i) {
-    if (i <= cur_idx - BACKWARD_SEGS) {
-      min = it.key();
-    } else if (i >= cur_idx + FORWARD_SEGS) {
-      max = it.key();
-      break;
-    }
-  }
-  return {min, max};
-}
-
-// maintain the segment window
-void Replay::queueSegmentThread() {
-  while (!exit_) {
-    auto [min, max] = queueSegmentRange();
-    for (auto it = route_.segments().lowerBound(min); it != route_.segments().upperBound(max); ++it) {
-      int n = it.key();
-      std::unique_lock lk(segment_mutex_);
-      if (segments_.find(n) == segments_.end()) {
-        segments_[n] = std::make_unique<Segment>(n, it.value());
-        connect(segments_[n].get(), &Segment::finishedRead, this, &Replay::mergeEvents);
-      }
-    }
-    QThread::msleep(50);
-  }
-}
-
-// return nullptr if segment is not loaded
-const Segment *Replay::getSegment(int segment) {
-  std::unique_lock lk(segment_mutex_);
-  auto it = segments_.find(segment);
-  return (it != segments_.end() && it->second->loaded) ? it->second.get() : nullptr;
-}
-
 void Replay::pushFrame(int cur_seg_num, CameraType cam_type, uint32_t frame_id) {
   // search encodeIdx in adjacent segments.
   for (int n : {cur_seg_num, cur_seg_num - 1, cur_seg_num + 1}) {
@@ -259,6 +259,7 @@ void Replay::streamThread() {
       seek_ts_ = 0;
     }
     uint64_t loop_start_ts = nanos_since_boot();
+    int prev_segment = current_segment_;
     while (!exit_ && !loading_events_ && eit != events_->end()) {
       const Event *e = (*eit);
       const std::string &sock_name = eventSocketName(e);
@@ -266,7 +267,11 @@ void Replay::streamThread() {
         current_which = e->which;
         current_ts_ = e->mono_time;
         current_segment_ = (e->mono_time - route_start_ts_) / 1e9 / SEGMENT_LENGTH;
-
+        if (prev_segment != current_segment_) {
+          camera_server_.ensure(getSegment(current_segment_)->frames);
+          prev_segment = current_segment_;
+        }
+        
         if ((e->mono_time - last_print_ts) > 5 * 1e9) {
           last_print_ts = e->mono_time;
           qInfo().noquote() << "at" << elapsedTime(last_print_ts);
