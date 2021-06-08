@@ -22,13 +22,12 @@ class Joystick:
       self.buttons = {'BTN_TRIGGER': 'cancel', 'BTN_THUMB': 'engaged_toggle', 'BTN_TOP': 'steer_required', 'BTN_THUMB2': 'reset'}
       self.axes = {'ABS_Y': 'gb', 'ABS_X': 'steer'}
 
-    self.axes_values = {ax: 0. for ax in self.axes.values()}
-    self.btn_states = {btn: False for btn in self.buttons.values() if btn != 'reset'}
+    self.handle_button('reset')
 
   def handle_button(self, btn_name):
     if btn_name == 'reset':
-      self.axes_values = {ax: 0. for ax in self.axes_values}
-      self.btn_states = {btn: False for btn in self.btn_states}
+      self.axes_values = {ax: 0. for ax in self.axes.values()}
+      self.btn_states = {btn: False for btn in self.buttons.values() if btn != 'reset'}
     else:
       self.btn_states[btn_name] = not self.btn_states[btn_name]
 
