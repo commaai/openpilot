@@ -14,6 +14,8 @@ class LongitudinalMpc():
     self.last_cloudlog_t = 0.0
     self.ts = list(range(10))
     self.status = True
+    self.min_a = -1.2
+    self.max_a = 1.2
 
 
   def reset_mpc(self):
@@ -26,14 +28,13 @@ class LongitudinalMpc():
     self.cur_state[0].x_ego = 0
     self.cur_state[0].v_ego = 0
     self.cur_state[0].a_ego = 0
-    self.min_a = -1.2
-    self.max_a = 1.2
 
   def set_accel_limits(self, min_a, max_a):
     self.min_a = min_a
     self.max_a = max_a
 
   def set_cur_state(self, v, a):
+    assert v >= 0.0
     self.cur_state[0].x_ego = 0.0
     self.cur_state[0].v_ego = v
     self.cur_state[0].a_ego = a

@@ -68,7 +68,6 @@ int run_mpc(state_t * x0, log_t * solution,
             double target_x[N+1], double target_v[N+1], double target_a[N+1],
             double min_a, double max_a){
   int i;
-
   for (i = 0; i < N + 1; ++i){
     acadoVariables.od[i*NOD] = min_a;
     acadoVariables.od[i*NOD+1] = max_a;
@@ -77,14 +76,15 @@ int run_mpc(state_t * x0, log_t * solution,
     acadoVariables.y[NY*i + 0] = target_x[i];
     acadoVariables.y[NY*i + 1] = target_v[i];
     acadoVariables.y[NY*i + 2] = target_a[i];
+    acadoVariables.y[NY*i + 3] = 0.0;
   }
   acadoVariables.yN[0] = target_x[N];
   acadoVariables.yN[1] = target_v[N];
   acadoVariables.yN[2] = target_a[N];
 
-  acadoVariables.x[0] = acadoVariables.x0[0] = x0->x_ego;
-  acadoVariables.x[1] = acadoVariables.x0[1] = x0->v_ego;
-  acadoVariables.x[2] = acadoVariables.x0[2] = x0->a_ego;
+  acadoVariables.x0[0] = x0->x_ego;
+  acadoVariables.x0[1] = x0->v_ego;
+  acadoVariables.x0[2] = x0->a_ego;
 
   acado_preparationStep();
   acado_feedbackStep();

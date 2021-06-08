@@ -75,8 +75,6 @@ class Planner():
     v_ego = sm['carState'].vEgo
     a_ego = sm['carState'].aEgo
 
-    # Prevent divergence, smooth in current v_ego
-    self.v_desired = self.alpha * self.v_desired + (1 - self.alpha) * v_ego
 
     v_cruise_kph = sm['controlsState'].vCruise
     v_cruise_kph = min(v_cruise_kph, V_CRUISE_MAX)
@@ -87,11 +85,14 @@ class Planner():
 
     lead_0 = sm['modelV2'].leads[0]
 
-    # Calculate speed for normal cruise control
     enabled = (long_control_state == LongCtrlState.pid) or (long_control_state == LongCtrlState.stopping)
     if not enabled or sm['carState'].gasPressed:
       self.v_desired = v_ego
       self.a_desired = a_ego
+
+    # Prevent divergence, smooth in current v_ego
+    self.v_desired = self.alpha * self.v_desired + (1 - self.alpha) * v_ego
+    self.v_desired = max(0.0, self.v_desired)
 
     following = lead_0.prob > .5 and lead_0.x[0] < 45.0 and lead_0.v[0] > v_ego and lead_0.a[0] > 0.0
     accel_limits = [float(x) for x in calc_cruise_accel_limits(v_ego, following)]
