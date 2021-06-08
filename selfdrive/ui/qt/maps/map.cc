@@ -44,8 +44,8 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings) {
   map_eta = new MapETA(this);
   connect(this, &MapWindow::ETAChanged, map_eta, &MapETA::updateETA);
 
-  const int h = 150;
-  const int w = 450;
+  const int h = 180;
+  const int w = 500;
   map_eta->setGeometry(0, 1080 - h, w, h);
   map_eta->setVisible(false);
 
@@ -657,7 +657,7 @@ MapETA::MapETA(QWidget * parent) : QWidget(parent){
     * {
       color: white;
       font-family: "Inter";
-      font-size: 45px;
+      font-size: 55px;
     }
   )");
 
