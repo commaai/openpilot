@@ -11,6 +11,8 @@
 #include <thread>
 #include <vector>
 
+#include <QThread>
+
 // independent of QT, needs ffmpeg
 extern "C" {
 #include <libavcodec/avcodec.h>
