@@ -118,14 +118,18 @@ void MapWindow::timerUpdate() {
     // Update map location, orientation and zoom on valid localizer output
     if (location.getStatus() == cereal::LiveLocationKalman::Status::VALID) {
       auto pos = location.getPositionGeodetic();
-      float velocity = location.getVelocityCalibrated().getValue()[0];
       auto orientation = location.getOrientationNED();
+
+      float velocity = location.getVelocityCalibrated().getValue()[0];
+      float bearing = RAD2DEG(orientation.getValue()[2]);
       auto coordinate = QMapbox::Coordinate(pos.getValue()[0], pos.getValue()[1]);
+
       last_position = coordinate;
+      last_bearing = bearing;
 
       if (pan_counter == 0){
         m_map->setCoordinate(coordinate);
-        m_map->setBearing(RAD2DEG(orientation.getValue()[2]));
+        m_map->setBearing(bearing);
       } else {
         pan_counter--;
       }
@@ -268,6 +272,13 @@ void MapWindow::calculateRoute(QMapbox::Coordinate destination) {
   nav_destination = destination;
   QGeoRouteRequest request(to_QGeoCoordinate(last_position), to_QGeoCoordinate(destination));
   request.setFeatureWeight(QGeoRouteRequest::TrafficFeature, QGeoRouteRequest::AvoidFeatureWeight);
+
+  if (last_bearing) {
+    QVariantMap params;
+    params["bearing"] = *last_bearing;
+    request.setWaypointsMetadata({params});
+  }
+
   routing_manager->calculateRoute(request);
 }
 
@@ -383,6 +394,7 @@ void MapWindow::offroadTransition(bool offroad) {
     auto dest = coordinate_from_param("NavDestination");
     setVisible(dest.has_value());
   }
+  last_bearing = {};
 }
 
 MapInstructions::MapInstructions(QWidget * parent) : QWidget(parent){
