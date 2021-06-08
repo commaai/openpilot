@@ -3,10 +3,23 @@
 #include <QDebug>
 #include <QHBoxLayout>
 #include <QLabel>
-#include <QPixmap>
+#include <QPainter>
 
 #include "selfdrive/ui/qt/widgets/scrollview.h"
 #include "selfdrive/ui/qt/util.h"
+
+
+void NetworkStrengthWidget::paintEvent(QPaintEvent* event) {
+  QPainter p(this);
+  p.setRenderHint(QPainter::Antialiasing);
+  p.setPen(Qt::NoPen);
+  const QColor gray(0x54, 0x54, 0x54);
+  for (int i = 0, x = 0; i < 5; ++i) {
+    p.setBrush(i < strength_ ? Qt::white : gray);
+    p.drawEllipse(x, 0, 15, 15);
+    x += 20;
+  }
+}
 
 // Networking functions
 
@@ -202,14 +215,9 @@ void WifiUI::refresh() {
     ssid_label->setStyleSheet("font-size: 55px;");
     hlayout->addWidget(ssid_label, 1, Qt::AlignLeft);
 
-    // TODO: don't use images for this
     // strength indicator
     unsigned int strength_scale = network.strength / 17;
-    QPixmap pix("../assets/images/network_" + QString::number(strength_scale) + ".png");
-    QLabel *icon = new QLabel();
-    icon->setPixmap(pix.scaledToWidth(100, Qt::SmoothTransformation));
-    icon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
-    hlayout->addWidget(icon, 0, Qt::AlignRight);
+    hlayout->addWidget(new NetworkStrengthWidget(strength_scale), 0, Qt::AlignRight);
 
     // connect button
     QPushButton* btn = new QPushButton(network.security_type == SecurityType::UNSUPPORTED ? "Unsupported" : (network.connected == ConnectedType::CONNECTED ? "Connected" : (network.connected == ConnectedType::CONNECTING ? "Connecting" : "Connect")));

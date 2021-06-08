@@ -11,6 +11,17 @@
 #include "selfdrive/ui/qt/widgets/ssh_keys.h"
 #include "selfdrive/ui/qt/widgets/toggle.h"
 
+class NetworkStrengthWidget : public QWidget {
+  Q_OBJECT
+
+public:
+  explicit NetworkStrengthWidget(int strength, QWidget* parent = nullptr) : strength_(strength), QWidget(parent) { setFixedSize(100, 15); }
+
+private:
+  void paintEvent(QPaintEvent* event) override;
+  int strength_ = 0;
+};
+
 class WifiUI : public QWidget {
   Q_OBJECT
 
