@@ -2,13 +2,13 @@
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
-#include <assert.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <poll.h>
 #include <math.h>
 #include <atomic>
+#include <cassert>
 
 #include "media/cam_defs.h"
 #include "media/cam_isp.h"

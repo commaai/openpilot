@@ -1,6 +1,7 @@
-#include <assert.h>
 #include <stdio.h>
 #include <string.h>
+
+#include <cassert>
 
 #define CL_USE_DEPRECATED_OPENCL_1_2_APIS
 #ifdef __APPLE__

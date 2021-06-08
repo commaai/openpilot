@@ -1,6 +1,5 @@
 #include "selfdrive/loggerd/logger.h"
 
-#include <assert.h>
 #include <errno.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -10,6 +9,7 @@
 #include <time.h>
 #include <unistd.h>
 
+#include <cassert>
 #include <fstream>
 #include <iostream>
 #include <streambuf>

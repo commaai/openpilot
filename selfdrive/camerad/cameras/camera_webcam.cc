@@ -1,8 +1,9 @@
 #include "selfdrive/camerad/cameras/camera_webcam.h"
 
-#include <assert.h>
 #include <string.h>
 #include <unistd.h>
+
+#include <cassert>
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wundefined-inline"

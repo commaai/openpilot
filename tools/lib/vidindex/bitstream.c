@@ -1,5 +1,5 @@
 #include <stdbool.h>
-#include <assert.h>
+#include <cassert>
 
 #include "bitstream.h"
 

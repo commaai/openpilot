@@ -1,9 +1,9 @@
 #include "selfdrive/ui/ui.h"
 
-#include <assert.h>
 #include <stdio.h>
 #include <unistd.h>
 
+#include <cassert>
 #include <cmath>
 
 #include "selfdrive/common/swaglog.h"

@@ -1,9 +1,9 @@
 #include "commonmodel.h"
 
-#include <assert.h>
 #include <math.h>
 
 #include <algorithm>
+#include <cassert>
 
 #include "selfdrive/common/clutil.h"
 #include "selfdrive/common/mat.h"

@@ -1,4 +1,3 @@
-#include <assert.h>
 #include <cutils/log.h>
 #include <hardware/sensors.h>
 #include <stdint.h>
@@ -12,6 +11,7 @@
 #include <unistd.h>
 #include <utils/Timers.h>
 
+#include <cassert>
 #include <map>
 #include <set>
 

@@ -1,7 +1,7 @@
 #include "selfdrive/ui/replay/framereader.h"
 
-#include <assert.h>
 #include <unistd.h>
+#include <cassert>
 
 #include <QDebug>
 

@@ -1,6 +1,6 @@
-#include "rgb_to_yuv.h"
+#include "selfdrive/camerad/transforms/rgb_to_yuv.h"
 
-#include <assert.h>
+#include <cassert>
 
 Rgb2Yuv::Rgb2Yuv(cl_context ctx, cl_device_id device_id, int width, int height, int rgb_stride) {
   assert(width % 2 == 0 && height % 2 == 0);

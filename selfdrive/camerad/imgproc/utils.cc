@@ -1,10 +1,10 @@
 #include "selfdrive/camerad/imgproc/utils.h"
 
-#include <assert.h>
 #include <stdio.h>
 #include <string.h>
 
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 
 const int16_t lapl_conv_krnl[9] = {0, 1, 0,

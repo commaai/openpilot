@@ -4,8 +4,8 @@
 
 #include "swaglog.h"
 
-#include <assert.h>
 #include <string.h>
+#include <cassert>
 #include <mutex>
 #include <string>
 

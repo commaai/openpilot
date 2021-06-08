@@ -1,10 +1,10 @@
 #include "selfdrive/common/clutil.h"
 
-#include <assert.h>
 #include <inttypes.h>
 #include <string.h>
 #include <sys/stat.h>
 
+#include <cassert>
 #include <iostream>
 #include <memory>
 #include <vector>
