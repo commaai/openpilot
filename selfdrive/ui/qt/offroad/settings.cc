@@ -318,6 +318,9 @@ void SettingsWindow::showEvent(QShowEvent *event) {
     nav_btns->buttons()[0]->setChecked(true);
     return;
   }
+}
+
+SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
 
   // setup two main layouts
   QVBoxLayout *sidebar_layout = new QVBoxLayout();
