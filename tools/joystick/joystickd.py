@@ -50,8 +50,8 @@ class Joystick:
     elif key in self.axes:
       axis = self.axes[key]
       if self.use_keyboard:
-        sign = 1 if key in ['w', 'a'] else -1  # these keys increment the axes positively
-        self.axes_values[axis] = clip(self.axes_values[axis] + AXES_INCREMENT * sign, -1, 1)
+        incr = AXES_INCREMENT if key in ['w', 'a'] else -AXES_INCREMENT  # these keys increment the axes positively
+        self.axes_values[axis] = clip(self.axes_values[axis] + incr, -1, 1)
       else:
         norm = interp(state, [0, MAX_AXIS_VALUE], [-1., 1.])
         self.axes_values[axis] = norm if abs(norm) > 0.05 else 0.  # center can be noisy, deadzone of 5%
