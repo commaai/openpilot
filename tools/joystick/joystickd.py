@@ -46,7 +46,7 @@ class Joystick:
       if joystick_event.code in self.buttons and joystick_event.state == 0:  # state 0 is falling edge
         self.handle_button(self.buttons[joystick_event.code])
       elif joystick_event.code in self.axes:
-        norm = interp(joystick_event.state, [0, MAX_AXIS_VALUE], [-1., 1.])
+        norm = -interp(joystick_event.state, [0, MAX_AXIS_VALUE], [-1., 1.])
         self.axes_values[self.axes[joystick_event.code]] = norm if abs(norm) > 0.05 else 0.  # center can be noisy, deadzone of 5%
 
     dat = messaging.new_message('testJoystick')
@@ -62,18 +62,17 @@ def joystick_thread(use_keyboard):
 
   if use_keyboard:
     print('\nGas/brake control: `W` and `S` keys')
-    print('Steer control: `A` and `D` keys')
+    print('Steering control: `A` and `D` keys')
     print('Buttons:\n'
           '- `R`: Resets axes and buttons\n'
           '- `C`: Cancel cruise control\n'
           '- `E`: Toggle cruise state enabled\n'
           '- `T`: Steer required HUD')
   else:
-    print('\nUsing joystick, don\'t forget to run unbridge on your device!')
+    print('\nUsing joystick, make sure to run bridge on your device!')
 
-  # Receive joystick/key events and send testJoystick msg
   while True:
-    dat = joystick.update()
+    dat = joystick.update()  # receives joystick/key events and returns testJoystick packet
     joystick_sock.send(dat.to_bytes())
     print('\n' + ', '.join([f'{name}: {round(v, 3)}' for name, v in joystick.axes_values.items()]))
     print(', '.join([f'{name}: {v}' for name, v in joystick.btn_states.items()]))
