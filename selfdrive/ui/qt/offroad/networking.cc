@@ -9,7 +9,7 @@
 #include "selfdrive/ui/qt/util.h"
 
 
-void NetWorkStrengthWidget::paintEvent(QPaintEvent* event) {
+void NetworkStrengthWidget::paintEvent(QPaintEvent* event) {
   QPainter p(this);
   p.setRenderHint(QPainter::Antialiasing);
   p.setPen(Qt::NoPen);
@@ -217,7 +217,7 @@ void WifiUI::refresh() {
 
     // strength indicator
     unsigned int strength_scale = network.strength / 17;
-    NetWorkStrengthWidget *strength  = new NetWorkStrengthWidget(strength_scale);
+    NetworkStrengthWidget *strength  = new NetworkStrengthWidget(strength_scale);
     hlayout->addWidget(strength, 0, Qt::AlignRight);
 
     // connect button
