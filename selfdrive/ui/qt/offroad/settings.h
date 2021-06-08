@@ -52,7 +52,7 @@ class SettingsWindow : public QFrame {
   Q_OBJECT
 
 public:
-  explicit SettingsWindow(QWidget *parent = 0) : QFrame(parent) {};
+  explicit SettingsWindow(QWidget *parent = 0);
 
 protected:
   void hideEvent(QHideEvent *event) override;
