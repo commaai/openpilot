@@ -2,7 +2,6 @@
 
 #include <unistd.h>
 
-#include <QThread>
 #include <atomic>
 #include <condition_variable>
 #include <mutex>
@@ -10,6 +9,8 @@
 #include <string>
 #include <thread>
 #include <vector>
+
+#include <QThread>
 
 // independent of QT, needs ffmpeg
 extern "C" {
