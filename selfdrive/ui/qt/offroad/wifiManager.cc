@@ -64,7 +64,7 @@ bool compare_by_strength(const Network &a, const Network &b) {
   return a.strength > b.strength;
 }
 
-WifiManager::WifiManager(QWidget* parent) {
+WifiManager::WifiManager(QWidget* parent) : QWidget(parent) {
   qDBusRegisterMetaType<Connection>();
   qDBusRegisterMetaType<IpConfig>();
   connecting_to_network = "";
