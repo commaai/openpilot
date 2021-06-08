@@ -763,8 +763,6 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
 
   # This alert can be thrown for the following reasons:
   # - No CAN data received at all
-  # - CAN data is received, but some messages don't have valid checksums
-  # - CAN data is received, but some message have the wrong counter
   # - CAN data is received, but some message are not received at the right frequency
   # If you're not writing a new car port, this is usually cause by faulty wiring
   EventName.canError: {
