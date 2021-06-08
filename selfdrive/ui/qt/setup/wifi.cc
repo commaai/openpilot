@@ -16,7 +16,7 @@ void WifiSetup::finish() {
   qApp->exit();
 }
 
-WifiSetup::WifiSetup(QWidget *parent) {
+WifiSetup::WifiSetup(QWidget *parent) : QWidget(parent) {
   QHBoxLayout *main_layout = new QHBoxLayout();
 
   QPushButton *finish_btn = new QPushButton("Exit");

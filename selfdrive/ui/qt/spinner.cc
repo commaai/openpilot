@@ -52,7 +52,7 @@ void TrackWidget::paintEvent(QPaintEvent *event) {
 
 // Spinner
 
-Spinner::Spinner(QWidget *parent) {
+Spinner::Spinner(QWidget *parent) : QWidget(parent) {
   QGridLayout *main_layout = new QGridLayout();
   main_layout->setSpacing(0);
   main_layout->setMargin(200);
