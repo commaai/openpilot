@@ -1,6 +1,6 @@
 #include "selfdrive/ui/qt/spinner.h"
 
-#include <stdio.h>
+#include <cstdio>
 #include <iostream>
 #include <string>
 

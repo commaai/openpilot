@@ -1,8 +1,8 @@
 #pragma once
 
 #include <stdint.h>
-#include <stdio.h>
 
+#include <cstdio>
 #include <vector>
 
 #include <OMX_Component.h>

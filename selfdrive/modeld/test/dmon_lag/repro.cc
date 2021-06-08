@@ -1,6 +1,5 @@
 // clang++ -O2 repro.cc && ./a.out
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <time.h>
@@ -8,6 +7,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <cstdio>
 #include <cstring>
 
 static inline double millis_since_boot() {

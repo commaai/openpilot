@@ -1,9 +1,9 @@
 #include "selfdrive/camerad/imgproc/utils.h"
 
 #include <assert.h>
-#include <stdio.h>
 
 #include <algorithm>
+#include <cstdio>
 #include <cmath>
 #include <cstring>
 

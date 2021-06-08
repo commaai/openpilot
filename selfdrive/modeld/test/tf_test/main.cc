@@ -1,6 +1,6 @@
-#include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <cstdio>
 #include "tensorflow/c/c_api.h"
 
 void* read_file(const char* path, size_t* out_len) {

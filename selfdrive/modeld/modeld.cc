@@ -1,6 +1,6 @@
-#include <stdio.h>
 #include <stdlib.h>
 
+#include <cstdio>
 #include <mutex>
 
 #include <eigen3/Eigen/Dense>

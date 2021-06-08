@@ -4,10 +4,11 @@
 
 #include <assert.h>
 #include <fcntl.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <unistd.h>
+
+#include <cstdio>
 
 #include <OMX_Component.h>
 #include <OMX_IndexExt.h>

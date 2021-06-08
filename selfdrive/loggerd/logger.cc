@@ -3,12 +3,12 @@
 #include <assert.h>
 #include <errno.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <time.h>
 #include <unistd.h>
 
+#include <cstdio>
 #include <cstring>
 #include <fstream>
 #include <iostream>

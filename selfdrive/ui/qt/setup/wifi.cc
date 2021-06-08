@@ -1,8 +1,9 @@
 #include "selfdrive/ui/qt/setup/wifi.h"
 
 #include <curl/curl.h>
-#include <stdio.h>
 #include <stdlib.h>
+
+#include <cstdio>
 
 #include <QApplication>
 #include <QLabel>

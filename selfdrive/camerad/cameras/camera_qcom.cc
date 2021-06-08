@@ -4,12 +4,13 @@
 #include <fcntl.h>
 #include <math.h>
 #include <poll.h>
-#include <stdio.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
 
 #include <algorithm>
 #include <atomic>
+
+#include <cstdio>
 
 #include <cutils/properties.h>
 #include <linux/media.h>

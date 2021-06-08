@@ -1,7 +1,6 @@
 #include <errno.h>
 #include <sched.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <sys/cdefs.h>
 #include <sys/resource.h>
@@ -12,6 +11,7 @@
 #include <atomic>
 #include <bitset>
 #include <cassert>
+#include <cstdio>
 #include <thread>
 #include <unordered_map>
 
