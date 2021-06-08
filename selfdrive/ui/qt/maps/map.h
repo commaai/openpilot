@@ -57,7 +57,7 @@ public:
   MapETA(QWidget * parent=nullptr);
 
 public slots:
-  void updateETA(float seconds, float distance);
+  void updateETA(float seconds, float seconds_typical, float distance);
 };
 
 class MapWindow : public QOpenGLWidget {
@@ -129,6 +129,6 @@ public slots:
 signals:
   void distanceChanged(float distance);
   void instructionsChanged(QMap<QString, QVariant> banner);
-  void ETAChanged(float s, float d);
+  void ETAChanged(float seconds, float seconds_typical, float distance);
 };
 

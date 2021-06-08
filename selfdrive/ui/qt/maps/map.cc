@@ -246,6 +246,12 @@ void MapWindow::paintGL() {
   m_map->render();
 }
 
+static float get_time_typical(const QGeoRouteSegment &segment){
+  auto maneuver = segment.maneuver();
+  auto attrs = maneuver.extendedAttributes();
+  return attrs.contains("mapbox.duration_typical") ? attrs["mapbox.duration_typical"].toDouble() : segment.travelTime();
+}
+
 
 void MapWindow::recomputeRoute() {
   bool should_recompute = shouldRecompute();
@@ -268,15 +274,18 @@ void MapWindow::recomputeRoute() {
     float progress = distance_along_geometry(segment.path(), to_QGeoCoordinate(last_position)) / segment.distance();
     float total_distance = segment.distance() * (1.0 - progress);
     float total_time = segment.travelTime() * (1.0 - progress);
+    float total_time_typical = get_time_typical(segment) * (1.0 - progress);
 
     auto s = segment.nextRouteSegment();
     while (s.isValid()) {
       total_distance += s.distance();
       total_time += s.travelTime();
+      total_time_typical += get_time_typical(s);
 
       s = s.nextRouteSegment();
     }
-    emit ETAChanged(total_time, total_distance);
+
+    emit ETAChanged(total_time, total_time_typical, total_distance);
   }
 
   // Only do API request when map is loaded
@@ -656,7 +665,7 @@ MapETA::MapETA(QWidget * parent) : QWidget(parent){
 }
 
 
-void MapETA::updateETA(float s, float d) {
+void MapETA::updateETA(float s, float s_typical, float d) {
   setVisible(true);
 
   // ETA
@@ -667,7 +676,17 @@ void MapETA::updateETA(float s, float d) {
   QString time_str;
   time_str.setNum(int(s / 60.0));
   time->setText(time_str);
-  // TODO: update color based on traffic conditions
+
+  if (s / s_typical > 1.5) {
+    time_unit->setStyleSheet(R"(color: red; )");
+    time->setStyleSheet(R"(color: red; )");
+  } else if (s / s_typical > 1.2) {
+    time_unit->setStyleSheet(R"(color: orange; )");
+    time->setStyleSheet(R"(color: orange; )");
+  } else {
+    time_unit->setStyleSheet(R"(color: green; )");
+    time->setStyleSheet(R"(color: green; )");
+  }
 
   // Distance
   QString distance_str;
