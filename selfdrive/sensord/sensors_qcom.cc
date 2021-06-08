@@ -2,7 +2,6 @@
 #include <cutils/log.h>
 #include <hardware/sensors.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <sys/cdefs.h>
 #include <sys/resource.h>
 #include <sys/time.h>
@@ -11,6 +10,7 @@
 #include <utils/Timers.h>
 
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <map>
 #include <set>

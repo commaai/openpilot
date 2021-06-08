@@ -1,8 +1,8 @@
-#include <stdlib.h>
 #include <sys/resource.h>
 #include <limits.h>
 
 #include <cstdio>
+#include <cstdlib>
 
 #include "cereal/visionipc/visionipc_client.h"
 #include "selfdrive/common/swaglog.h"

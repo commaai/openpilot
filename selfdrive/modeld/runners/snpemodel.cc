@@ -2,9 +2,8 @@
 
 #include "selfdrive/modeld/runners/snpemodel.h"
 
-#include <stdlib.h>
-
 #include <cassert>
+#include <cstdlib>
 #include <cstring>
 
 #include "selfdrive/common/util.h"

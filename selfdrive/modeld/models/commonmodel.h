@@ -1,7 +1,7 @@
 #pragma once
 
 #include <float.h>
-#include <stdlib.h>
+#include <cstdlib>
 
 #define CL_USE_DEPRECATED_OPENCL_1_2_APIS
 #ifdef __APPLE__

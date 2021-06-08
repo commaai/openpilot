@@ -6,8 +6,8 @@
 
 #include <CL/cl.h>
 #include <stdint.h>
-#include <stdlib.h>
 
+#include <cstdlib>
 #include <memory>
 #include <string>
 #include <vector>
