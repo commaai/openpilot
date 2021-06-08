@@ -22,6 +22,10 @@
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/camerad/cameras/sensor2_i2c.h"
 
+#define FRAME_WIDTH  1928
+#define FRAME_HEIGHT 1208
+//#define FRAME_STRIDE 1936 // for 8 bit output
+#define FRAME_STRIDE 2416  // for 10 bit output
 //#define FRAME_STRIDE 1936 // for 8 bit output
 
 #define MIPI_SETTLE_CNT 33  // Calculated by camera_freqs.py
