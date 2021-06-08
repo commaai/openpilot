@@ -18,7 +18,7 @@
 #undef Status
 #endif
 
-#include "visionipc/visionbuf.h"
+#include "cereal/visionipc/visionbuf.h"
 
 class EGLImageTexture {
  public:
