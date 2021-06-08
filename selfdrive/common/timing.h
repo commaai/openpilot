@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cstdint>
-#include <time.h>
+#include <ctime>
 
 #ifdef __APPLE__
 #define CLOCK_BOOTTIME CLOCK_MONOTONIC

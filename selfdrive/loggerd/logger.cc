@@ -2,7 +2,6 @@
 
 #include <errno.h>
 #include <sys/stat.h>
-#include <time.h>
 #include <unistd.h>
 
 #include <cassert>
@@ -11,6 +10,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
+#include <ctime>
 #include <iostream>
 #include <streambuf>
 #ifdef QCOM
