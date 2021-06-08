@@ -1,7 +1,8 @@
+#include "selfdrive/ui/qt/maps/map_helpers.h"
+
 #include <QJsonDocument>
 #include <QJsonObject>
 
-#include "selfdrive/ui/qt/maps/map_helpers.h"
 #include "selfdrive/common/params.h"
 
 

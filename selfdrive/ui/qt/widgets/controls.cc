@@ -1,4 +1,4 @@
-#include "controls.h"
+#include "selfdrive/ui/qt/widgets/controls.h"
 
 QFrame *horizontal_line(QWidget *parent) {
   QFrame *line = new QFrame(parent);

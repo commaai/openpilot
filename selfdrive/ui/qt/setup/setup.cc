@@ -1,4 +1,4 @@
-#include "setup.h"
+#include "selfdrive/ui/qt/setup/setup.h"
 
 #include <stdio.h>
 #include <stdlib.h>

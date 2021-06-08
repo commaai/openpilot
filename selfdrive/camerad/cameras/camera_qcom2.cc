@@ -1,3 +1,5 @@
+#include "selfdrive/camerad/cameras/camera_qcom2.h"
+
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
@@ -19,7 +21,6 @@
 #include "sensor2_i2c.h"
 
 #include "selfdrive/common/swaglog.h"
-#include "selfdrive/camerad/cameras/camera_qcom2.h"
 
 #define FRAME_WIDTH  1928
 #define FRAME_HEIGHT 1208

@@ -1,4 +1,4 @@
-#include "thneedmodel.h"
+#include "selfdrive/modeld/runners/thneedmodel.h"
 
 #include <assert.h>
 

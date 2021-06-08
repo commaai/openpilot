@@ -1,4 +1,4 @@
-#include "onboarding.h"
+#include "selfdrive/ui/qt/offroad/onboarding.h"
 
 #include <QDesktopWidget>
 #include <QLabel>
