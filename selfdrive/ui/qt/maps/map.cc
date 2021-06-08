@@ -180,6 +180,8 @@ void MapWindow::timerUpdate() {
           emit instructionsChanged(banner[0].toMap());
         }
 
+        float distance = segment.distance() - distance_along_geometry(segment.path(), to_QGeoCoordinate(last_position));
+        emit distanceChanged(distance);
       }
 
       auto next_segment = segment.nextRouteSegment();
@@ -187,7 +189,7 @@ void MapWindow::timerUpdate() {
         auto next_maneuver = next_segment.maneuver();
         if (next_maneuver.isValid()){
           float next_maneuver_distance = next_maneuver.position().distanceTo(to_QGeoCoordinate(last_position));
-          emit distanceChanged(next_maneuver_distance);
+          // emit distanceChanged(next_maneuver_distance);
           m_map->setPitch(MAX_PITCH); // TODO: smooth pitching based on maneuver distance
 
           // Switch to next route segment
@@ -263,11 +265,11 @@ void MapWindow::recomputeRoute() {
 
   // Update ETA
   if (!should_recompute) {
-    // TODO: compute progress in current segment instead of using all
-    float total_distance = 0;
-    float total_time = 0;
+    float progress = distance_along_geometry(segment.path(), to_QGeoCoordinate(last_position)) / segment.distance();
+    float total_distance = segment.distance() * (1.0 - progress);
+    float total_time = segment.travelTime() * (1.0 - progress);
 
-    auto s = segment;
+    auto s = segment.nextRouteSegment();
     while (s.isValid()) {
       total_distance += s.distance();
       total_time += s.travelTime();
