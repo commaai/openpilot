@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include <QGeoCoordinate>
 #include <QGeoManeuver>
 #include <QGeoRouteRequest>
@@ -56,6 +58,10 @@ private:
   int pan_counter = 0;
   int zoom_counter = 0;
 
+  // Position
+  QMapbox::Coordinate last_position = QMapbox::Coordinate(37.7393118509158, -122.46471285025565);
+  std::optional<float> last_bearing;
+
   // Route
   bool gps_ok = false;
   QGeoServiceProvider *geoservice_provider;
@@ -63,7 +69,6 @@ private:
   QGeoRoute route;
   QGeoRouteSegment segment;
   QWidget* map_instructions;
-  QMapbox::Coordinate last_position = QMapbox::Coordinate(37.7393118509158, -122.46471285025565);
   QMapbox::Coordinate nav_destination;
   double last_maneuver_distance = 1000;
 
