@@ -50,17 +50,17 @@ class FCWChecker():
     self.last_min_a = min(mpc_solution_a)
     self.v_lead_max = max(self.v_lead_max, v_lead)
 
-    self.common_counters['blinkers'] = self.common_counters['blinkers'] + 10.0 / (20 * 3.0) if not blinkers else 0
-    self.common_counters['v_ego'] = self.common_counters['v_ego'] + 1 if v_ego > 5.0 else 0
+    self.common_counters['blinkers'] += 10.0 / (20 * 3.0) if not blinkers else 0
+    self.common_counters['v_ego'] += 1 if v_ego > 5.0 else 0
 
     if (fcw_lead > 0.99):
       ttc = self.calc_ttc(v_ego, a_ego, x_lead, v_lead, a_lead)
-      self.counters['ttc'] = self.counters['ttc'] + 1 if ttc < 2.5 else 0
-      self.counters['v_lead_max'] = self.counters['v_lead_max'] + 1 if self.v_lead_max > 2.5 else 0
-      self.counters['v_ego_lead'] = self.counters['v_ego_lead'] + 1 if v_ego > v_lead else 0
-      self.counters['lead_seen'] = self.counters['lead_seen'] + 0.33
-      self.counters['y_lead'] = self.counters['y_lead'] + 1 if abs(y_lead) < 1.0 else 0
-      self.counters['vlat_lead'] = self.counters['vlat_lead'] + 1 if abs(vlat_lead) < 0.4 else 0
+      self.counters['ttc'] += 1 if ttc < 2.5 else 0
+      self.counters['v_lead_max'] += 1 if self.v_lead_max > 2.5 else 0
+      self.counters['v_ego_lead'] += 1 if v_ego > v_lead else 0
+      self.counters['lead_seen'] += 0.33
+      self.counters['y_lead'] += 1 if abs(y_lead) < 1.0 else 0
+      self.counters['vlat_lead'] += 1 if abs(vlat_lead) < 0.4 else 0
 
       a_thr = interp(v_lead, _FCW_A_ACT_BP, _FCW_A_ACT_V)
       a_delta = min(mpc_solution_a[:15]) - min(0.0, a_ego)
