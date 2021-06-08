@@ -204,7 +204,7 @@ void Replay::queueSegmentThread() {
         connect(segments_[n].get(), &Segment::finishedRead, this, &Replay::mergeEvents);
       }
     }
-    QThread::msleep(20);
+    QThread::msleep(50);
   }
 }
 
