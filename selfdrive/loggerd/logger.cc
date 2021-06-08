@@ -2,13 +2,13 @@
 
 #include <assert.h>
 #include <errno.h>
-#include <stdlib.h>
 #include <sys/stat.h>
 #include <time.h>
 #include <unistd.h>
 
 #include <cstdint>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <fstream>
 #include <iostream>
