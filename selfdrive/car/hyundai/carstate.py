@@ -57,8 +57,8 @@ class CarState(CarStateBase):
     ret.brakePressed = cp.vl["TCS13"]["DriverBraking"] != 0
 
     if self.CP.carFingerprint in EV_HYBRID_CAR:
-      gas_signal = "CR_Vcu_AccPedDep_Pc" if self.CP.carFingerprint in HYBRID_CAR else "Accel_Pedal_Pc"
-      ret.gas = cp.vl["E_EMS11"][gas_signal] / 100.
+      gas_signal = "CR_Vcu_AccPedDep_Pos" if self.CP.carFingerprint in HYBRID_CAR else "Accel_Pedal_Pos"
+      ret.gas = cp.vl["E_EMS11"][gas_signal] / 254.
       ret.gasPressed = ret.gas > 0
     else:
       ret.gas = cp.vl["EMS12"]["PV_AV_CAN"] / 100.
@@ -230,7 +230,7 @@ class CarState(CarStateBase):
       checks += [("LCA11", 50)]
 
     if CP.carFingerprint in EV_HYBRID_CAR:
-      gas_signal = "CR_Vcu_AccPedDep_Pc" if CP.carFingerprint in HYBRID_CAR else "Accel_Pedal_Pc"
+      gas_signal = "CR_Vcu_AccPedDep_Pos" if CP.carFingerprint in HYBRID_CAR else "Accel_Pedal_Pos"
       signals.append((gas_signal, "E_EMS11", 0))
       checks.append(("E_EMS11", 50))
     else:
