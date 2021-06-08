@@ -13,7 +13,7 @@ static const VisionStreamType stream_types[] = {
 // class CameraServer::CameraState
 
 class CameraServer::CameraState {
-public:
+ public:
   CameraState(VisionIpcServer *server, CameraType type, const FrameReader *f)
       : vipc_server(server), width(f->width), height(f->height), stream_type(stream_types[type]) {
     vipc_server->create_buffers(stream_type, UI_BUF_COUNT, true, width, height);
@@ -41,7 +41,7 @@ public:
       }
 
       VisionBuf *buf = vipc_server->get_buffer(stream_type);
-      if (uint8_t* dat = fr->get(encodeId)) {
+      if (uint8_t *dat = fr->get(encodeId)) {
         VisionIpcBufExtra extra = {};
         // qInfo() << "send frame " << encodeId;
         memcpy(buf->addr, dat, fr->getRGBSize());

@@ -19,6 +19,7 @@ public:
   LogReader *log = nullptr;
   std::shared_ptr<FrameReader> frames[MAX_CAMERAS] = {};
   std::atomic<bool> loaded = false;
+
 signals:
   void finishedRead();
 
@@ -52,7 +53,6 @@ private:
   const Segment* getSegment(int segment);
   const std::string &eventSocketName(const Event *e);
 
-
   // messaging
   SubMaster *sm_ = nullptr;
   PubMaster *pm_ = nullptr;
@@ -64,7 +64,7 @@ private:
   std::mutex events_mutex_, segment_mutex_;
   std::condition_variable cv_;
   std::map<int, std::unique_ptr<Segment>> segments_;
-  std::unique_ptr<std::vector<Event*>> events_;
+  std::unique_ptr<std::vector<Event *>> events_;
 
   uint64_t seek_ts_ = 0;
   std::atomic<int> current_segment_ = 0;

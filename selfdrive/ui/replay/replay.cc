@@ -102,7 +102,6 @@ void Replay::seekTo(uint64_t to_ts) {
     qInfo() << "can't seek to" << elapsedTime(to_ts) << ": segment" << segment << "does not exist.";
     return;
   }
-
   loading_events_ = true;
   {
     std::unique_lock lk(events_mutex_);
@@ -167,15 +166,14 @@ const std::string &Replay::eventSocketName(const Event *e) {
 void Replay::mergeEvents() {
   Segment *seg = qobject_cast<Segment *>(QObject::sender());
   const LogReader *log = seg->log;
-
   if (route_start_ts_ == 0) {
     route_start_ts_ = log->route_start_ts;
   }
 
+  // merge segment
   auto [min_seg, max_seg] = queueSegmentRange();
   uint64_t min_tm = route_start_ts_ + min_seg * SEGMENT_LENGTH * 1e9;
   uint64_t max_tm = route_start_ts_ + (max_seg + 1) * SEGMENT_LENGTH * 1e9;
-
   auto begin_merge_it = std::lower_bound(events_->begin(), events_->end(), min_tm, [](const Event *e, uint64_t v) {
     return e->mono_time < v;
   });
@@ -185,13 +183,12 @@ void Replay::mergeEvents() {
   auto end_merge_it = std::upper_bound(begin_merge_it, events_->end(), max_tm, [](uint64_t v, const Event *e) {
     return v < e->mono_time;
   });
-
-  // merge segment
   std::vector<Event *> *dst = new std::vector<Event *>;
   dst->reserve((end_merge_it - begin_merge_it) + log->events.size());
   std::merge(begin_merge_it, end_merge_it, log->events.begin(), log->events.end(),
              std::back_inserter(*dst), [](const Event *l, const Event *r) { return *l < *r; });
 
+  // notify stream thread
   loading_events_ = true;
   {
     std::unique_lock events_lock(events_mutex_);

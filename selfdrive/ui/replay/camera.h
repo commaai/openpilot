@@ -12,7 +12,6 @@ enum CameraType {
 
 const CameraType ALL_CAMERAS[] = {RoadCam, DriverCam, WideRoadCam};
 const int MAX_CAMERAS = std::size(ALL_CAMERAS);
-
 class CameraServer {
 public:
   CameraServer();

@@ -26,7 +26,7 @@ static int ffmpeg_lockmgr_cb(void **arg, enum AVLockOp op) {
 }
 
 class AVInitializer {
- public:
+public:
   AVInitializer() {
     int ret = av_lockmgr_register(ffmpeg_lockmgr_cb);
     assert(ret >= 0);
