@@ -217,8 +217,7 @@ void WifiUI::refresh() {
 
     // strength indicator
     unsigned int strength_scale = network.strength / 17;
-    NetworkStrengthWidget *strength  = new NetworkStrengthWidget(strength_scale);
-    hlayout->addWidget(strength, 0, Qt::AlignRight);
+    hlayout->addWidget(new NetworkStrengthWidget(strength_scale), 0, Qt::AlignRight);
 
     // connect button
     QPushButton* btn = new QPushButton(network.security_type == SecurityType::UNSUPPORTED ? "Unsupported" : (network.connected == ConnectedType::CONNECTED ? "Connected" : (network.connected == ConnectedType::CONNECTING ? "Connecting" : "Connect")));
