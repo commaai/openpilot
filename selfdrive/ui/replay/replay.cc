@@ -257,9 +257,10 @@ void Replay::stream() {
                 vipc_server->start_listener();
               }
 
-              VisionIpcBufExtra extra = {};
               VisionBuf *buf = vipc_server->get_buffer(VisionStreamType::VISION_STREAM_RGB_BACK);
-              if (frm->get(pp.second, buf->addr)) {
+              if (uint8_t *dat = frm->get(pp.second)) {
+                VisionIpcBufExtra extra = {};
+                memcpy(buf->addr, dat, frm->getRGBSize());
                 vipc_server->send(buf, &extra, false);
               }
             }
