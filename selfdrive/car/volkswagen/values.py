@@ -62,6 +62,7 @@ class CAR:
   PASSAT_MK8 = "VOLKSWAGEN PASSAT 8TH GEN"    # Chassis 3G, Mk8 Passat and variants
   TIGUAN_MK2 = "VOLKSWAGEN TIGUAN 2ND GEN"    # Chassis AD/BW, Mk2 VW Tiguan and variants
   AUDI_A3_MK3 = "AUDI A3 3RD GEN"             # Chassis 8V/FF, Mk3 Audi A3 and variants
+  AUDI_Q2_MK1 = "AUDI Q2 1ST GEN"             # Chassis GA, Mk1 Audi Q2 (RoW) and Q2L (China only)
   SEAT_ATECA_MK1 = "SEAT ATECA 1ST GEN"       # Chassis 5F, Mk1 SEAT Ateca and CUPRA Ateca
   SEAT_LEON_MK3 = "SEAT LEON 3RD GEN"         # Chassis 5F, Mk3 SEAT Leon and variants
   SKODA_KODIAQ_MK1 = "SKODA KODIAQ 1ST GEN"   # Chassis NS, Mk1 Skoda Kodiaq
@@ -100,6 +101,7 @@ FW_VERSIONS = {
       b'\xf1\x8704E906016AD\xf1\x895758',
       b'\xf1\x8704E906023AG\xf1\x891726',
       b'\xf1\x8704E906023BN\xf1\x894518',
+      b'\xf1\x8704E906024K \xf1\x896811',
       b'\xf1\x8704E906027GR\xf1\x892394',
       b'\xf1\x8704E906027MA\xf1\x894958',
       b'\xf1\x8704L906026NF\xf1\x899528',
@@ -115,6 +117,7 @@ FW_VERSIONS = {
       b'\xf1\x875G0906259Q \xf1\x890002',
       b'\xf1\x875G0906259Q \xf1\x892313',
       b'\xf1\x878V0906259J \xf1\x890003',
+      b'\xf1\x878V0906259K \xf1\x890001',
       b'\xf1\x878V0906259P \xf1\x890001',
       b'\xf1\x878V0906259Q \xf1\x890002',
       b'\xf1\x878V0906264F \xf1\x890003',
@@ -123,12 +126,14 @@ FW_VERSIONS = {
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x8709G927749AP\xf1\x892943',
+      b'\xf1\x8709S927158A \xf1\x893585',
       b'\xf1\x870CW300041H \xf1\x891010',
       b'\xf1\x870CW300042F \xf1\x891604',
       b'\xf1\x870CW300045  \xf1\x894531',
       b'\xf1\x870CW300047D \xf1\x895261',
       b'\xf1\x870CW300048J \xf1\x890611',
       b'\xf1\x870D9300012  \xf1\x894913',
+      b'\xf1\x870D9300012  \xf1\x894937',
       b'\xf1\x870D9300014M \xf1\x895004',
       b'\xf1\x870D9300020S \xf1\x895201',
       b'\xf1\x870D9300040S \xf1\x894311',
@@ -184,6 +189,7 @@ FW_VERSIONS = {
       b'\xf1\x875QM909144A \xf1\x891072\xf1\x82\x0521A20B03A1',
       b'\xf1\x875QN909144A \xf1\x895081\xf1\x82\00571A01A18A1',
       b'\xf1\x875QN909144A \xf1\x895081\xf1\x82\x0571A01A17A1',
+      b'\xf1\x875QM909144B \xf1\x891081\xf1\x82\00521A00442A1',
     ],
     (Ecu.fwdRadar, 0x757, None): [
       b'\xf1\x875Q0907572A \xf1\x890141\xf1\x82\00101',
@@ -281,12 +287,14 @@ FW_VERSIONS = {
       b'\xf1\x8704E906023AN\xf1\x893695',
       b'\xf1\x8704E906023AR\xf1\x893440',
       b'\xf1\x8704E906023BL\xf1\x895190',
+      b'\xf1\x8704E906027CJ\xf1\x897798',
       b'\xf1\x8704L997022N \xf1\x899459',
       b'\xf1\x875G0906259L \xf1\x890002',
       b'\xf1\x878V0906264B \xf1\x890003',
       b'\xf1\x878V0907115B \xf1\x890007',
     ],
     (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x870CW300044T \xf1\x895245',
       b'\xf1\x870CW300048  \xf1\x895201',
       b'\xf1\x870D9300013B \xf1\x894931',
       b'\xf1\x870D9300041N \xf1\x894512',
@@ -300,9 +308,11 @@ FW_VERSIONS = {
       b'\xf1\x875Q0959655J \xf1\x890825\xf1\x82\023111112111111--171115141112221291163221',
       b'\xf1\x875Q0959655J \xf1\x890830\xf1\x82\023121111111211--261117141112231291163221',
       b'\xf1\x875Q0959655J \xf1\x890830\xf1\x82\x13121111111111--341117141212231291163221',
+      b'\xf1\x875Q0959655N \xf1\x890361\xf1\x82\0211212001112110004110411111421149114',
       b'\xf1\x875Q0959655N \xf1\x890361\xf1\x82\0211212001112111104110411111521159114',
     ],
     (Ecu.eps, 0x712, None): [
+      b'\xf1\x875Q0909144P \xf1\x891043\xf1\x82\00503G00303A0',
       b'\xf1\x875Q0909144P \xf1\x891043\xf1\x82\00503G00803A0',
       b'\xf1\x875Q0909144R \xf1\x891061\xf1\x82\00516G00804A1',
       b'\xf1\x875Q0909144T \xf1\x891072\xf1\x82\00521G00807A1',
@@ -310,6 +320,24 @@ FW_VERSIONS = {
     (Ecu.fwdRadar, 0x757, None): [
       b'\xf1\x875Q0907572D \xf1\x890304\xf1\x82\00101',
       b'\xf1\x875Q0907572G \xf1\x890571',
+      b'\xf1\x875Q0907572H \xf1\x890620',
+    ],
+  },
+  CAR.AUDI_Q2_MK1: {
+    (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x8704E906027JT\xf1\x894145',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x870CW300041F \xf1\x891006',
+    ],
+    (Ecu.srs, 0x715, None): [
+      b'\xf1\x875Q0959655BD\xf1\x890336\xf1\x82\x1311111111111100311211011231129321312111',
+    ],
+    (Ecu.eps, 0x712, None): [
+      b'\xf1\x873Q0909144K \xf1\x895072\xf1\x82\x0571F60511A1',
+    ],
+    (Ecu.fwdRadar, 0x757, None): [
+      b'\xf1\x872Q0907572M \xf1\x890233',
     ],
   },
   CAR.SEAT_ATECA_MK1: {
@@ -331,18 +359,27 @@ FW_VERSIONS = {
   },
   CAR.SEAT_LEON_MK3: {
     (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x8704L906021EL\xf1\x897542',
+      b'\xf1\x8704L906026BP\xf1\x891198',
       b'\xf1\x8705E906018AS\xf1\x899596',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x870CW300050J \xf1\x891908',
+      b'\xf1\x870D9300042M \xf1\x895016',
     ],
     (Ecu.srs, 0x715, None): [
+      b'\xf1\x873Q0959655AC\xf1\x890189\xf1\x82\r11110011110011021511110200',
+      b'\xf1\x873Q0959655AS\xf1\x890200\xf1\x82\r12110012120012021612110200',
       b'\xf1\x873Q0959655CM\xf1\x890720\xf1\x82\0161312001313001305171311052900',
     ],
     (Ecu.eps, 0x712, None): [
       b'\xf1\x875Q0909144AB\xf1\x891082\xf1\x82\00521N01342A1',
+      b'\xf1\x875Q0909144P \xf1\x891043\xf1\x82\00511N01805A0',
+      b'\xf1\x875Q0909144T \xf1\x891072\xf1\x82\00521N05808A1',
     ],
     (Ecu.fwdRadar, 0x757, None): [
+      b'\xf1\x875Q0907572B \xf1\x890200\xf1\x82\00101',
+      b'\xf1\x875Q0907572H \xf1\x890620',
       b'\xf1\x875Q0907572P \xf1\x890682',
     ],
   },
@@ -445,6 +482,7 @@ DBC = {
   CAR.PASSAT_MK8: dbc_dict('vw_mqb_2010', None),
   CAR.TIGUAN_MK2: dbc_dict('vw_mqb_2010', None),
   CAR.AUDI_A3_MK3: dbc_dict('vw_mqb_2010', None),
+  CAR.AUDI_Q2_MK1: dbc_dict('vw_mqb_2010', None),
   CAR.SEAT_ATECA_MK1: dbc_dict('vw_mqb_2010', None),
   CAR.SEAT_LEON_MK3: dbc_dict('vw_mqb_2010', None),
   CAR.SKODA_KODIAQ_MK1: dbc_dict('vw_mqb_2010', None),

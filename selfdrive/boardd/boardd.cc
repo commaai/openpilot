@@ -304,7 +304,7 @@ void panda_state_thread(bool spoofing_started) {
 
     // clear VIN, CarParams, and set new safety on car start
     if (ignition && !ignition_last) {
-      params.clearAll(CLEAR_ON_IGNITION);
+      params.clearAll(CLEAR_ON_IGNITION_ON);
 
       if (!safety_setter_thread_running) {
         safety_setter_thread_running = true;
@@ -312,6 +312,8 @@ void panda_state_thread(bool spoofing_started) {
       } else {
         LOGW("Safety setter thread already running");
       }
+    } else if (!ignition && ignition_last) {
+      params.clearAll(CLEAR_ON_IGNITION_OFF);
     }
 
     // Write to rtc once per minute when no ignition present
@@ -377,6 +379,8 @@ void panda_state_thread(bool spoofing_started) {
     ps.setFanSpeedRpm(fan_speed_rpm);
     ps.setFaultStatus(cereal::PandaState::FaultStatus(pandaState.fault_status));
     ps.setPowerSaveEnabled((bool)(pandaState.power_save_enabled));
+    ps.setHeartbeatLost((bool)(pandaState.heartbeat_lost));
+    ps.setHarnessStatus(cereal::PandaState::HarnessStatus(pandaState.car_harness_status));
 
     // Convert faults bitset to capnp list
     std::bitset<sizeof(pandaState.faults) * 8> fault_bits(pandaState.faults);

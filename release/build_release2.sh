@@ -49,7 +49,7 @@ popd
 # Build stuff
 ln -sfn /data/openpilot /data/pythonpath
 export PYTHONPATH="/data/openpilot:/data/openpilot/pyextra"
-SCONS_CACHE=1 scons -j3
+scons -j3
 
 # Run tests
 python selfdrive/manager/test/test_manager.py

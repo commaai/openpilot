@@ -6,12 +6,13 @@ import requests
 import struct
 import subprocess
 import os
+from typing import Generator
 
 from common.spinner import Spinner
 
 
 class StreamingDecompressor:
-  def __init__(self, url):
+  def __init__(self, url: str) -> None:
     self.buf = b""
 
     self.req = requests.get(url, stream=True, headers={'Accept-Encoding': None})
@@ -20,7 +21,7 @@ class StreamingDecompressor:
     self.eof = False
     self.sha256 = hashlib.sha256()
 
-  def read(self, length):
+  def read(self, length: int) -> bytes:
     while len(self.buf) < length:
       self.req.raise_for_status()
 
@@ -38,8 +39,9 @@ class StreamingDecompressor:
     self.sha256.update(result)
     return result
 
-
-def unsparsify(f):
+SPARSE_CHUNK_FMT = struct.Struct('H2xI4x')
+def unsparsify(f: StreamingDecompressor) -> Generator[bytes, None, None]:
+  # https://source.android.com/devices/bootloader/images#sparse-format
   magic = struct.unpack("I", f.read(4))[0]
   assert(magic == 0xed26ff3a)
 
@@ -48,20 +50,16 @@ def unsparsify(f):
   minor = struct.unpack("H", f.read(2))[0]
   assert(major == 1 and minor == 0)
 
-  # Header sizes
-  _ = struct.unpack("H", f.read(2))[0]
-  _ = struct.unpack("H", f.read(2))[0]
+  f.read(2)  # file header size
+  f.read(2)  # chunk header size
 
   block_sz = struct.unpack("I", f.read(4))[0]
-  _ = struct.unpack("I", f.read(4))[0]
+  f.read(4)  # total blocks
   num_chunks = struct.unpack("I", f.read(4))[0]
-  _ = struct.unpack("I", f.read(4))[0]
+  f.read(4)  # crc checksum
 
   for _ in range(num_chunks):
-    chunk_type = struct.unpack("H", f.read(2))[0]
-    _ = struct.unpack("H", f.read(2))[0]
-    out_blocks = struct.unpack("I", f.read(4))[0]
-    _ = struct.unpack("I", f.read(4))[0]
+    chunk_type, out_blocks = SPARSE_CHUNK_FMT.unpack(f.read(12))
 
     if chunk_type == 0xcac1:  # Raw
       # TODO: yield in smaller chunks. Yielding only block_sz is too slow. Largest observed data chunk is 252 MB.

@@ -16,6 +16,7 @@
 #include "selfdrive/ui/qt/widgets/ssh_keys.h"
 #include "selfdrive/ui/qt/widgets/toggle.h"
 #include "selfdrive/ui/ui.h"
+#include "selfdrive/ui/qt/util.h"
 
 TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *toggles_list = new QVBoxLayout();
@@ -48,13 +49,11 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "../assets/offroad/icon_shell.png",
                                   this));
 
-  if (!Hardware::TICI()) {
-    toggles.append(new ParamControl("IsUploadRawEnabled",
-                                    "Upload Raw Logs",
-                                    "Upload full logs and full resolution video by default while on WiFi. If not enabled, individual logs can be marked for upload at my.comma.ai/useradmin.",
-                                    "../assets/offroad/icon_network.png",
-                                    this));
-  }
+  toggles.append(new ParamControl("UploadRaw",
+                                  "Upload Raw Logs",
+                                  "Upload full logs and full resolution video by default while on WiFi. If not enabled, individual logs can be marked for upload at my.comma.ai/useradmin.",
+                                  "../assets/offroad/icon_network.png",
+                                  this));
 
   ParamControl *record_toggle = new ParamControl("RecordFront",
                                                  "Record and Upload Driver Camera",
@@ -100,7 +99,6 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
 
 DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
   QVBoxLayout *device_layout = new QVBoxLayout;
-
   Params params = Params();
 
   QString dongle = QString::fromStdString(params.get("DongleId", false));
@@ -115,10 +113,7 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
 
   offroad_btns.append(new ButtonControl("Driver Camera", "PREVIEW",
                                         "Preview the driver facing camera to help optimize device mounting position for best driver monitoring experience. (vehicle must be off)",
-                                        [=]() {
-                                           Params().putBool("IsDriverViewEnabled", true);
-                                           QUIState::ui_state.scene.driver_view = true;
-                                        }, "", this));
+                                        [=]() { emit showDriverView(); }, "", this));
 
   QString resetCalibDesc = "openpilot requires the device to be mounted within 4° left or right and within 5° up or down. openpilot is continuously calibrating, resetting is rarely required.";
   ButtonControl *resetCalibBtn = new ButtonControl("Reset Calibration", "RESET", resetCalibDesc, [=]() {
@@ -204,22 +199,74 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
   )");
 }
 
-DeveloperPanel::DeveloperPanel(QWidget* parent) : QFrame(parent) {
+SoftwarePanel::SoftwarePanel(QWidget* parent) : QFrame(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   setLayout(main_layout);
   setStyleSheet(R"(QLabel {font-size: 50px;})");
+
+  fs_watch = new QFileSystemWatcher(this);
+  QObject::connect(fs_watch, &QFileSystemWatcher::fileChanged, [=](const QString path) {
+    int update_failed_count = Params().get<int>("UpdateFailedCount").value_or(0);
+    if (path.contains("UpdateFailedCount") && update_failed_count > 0) {
+      lastUpdateTimeLbl->setText("failed to fetch update");
+      updateButton->setText("CHECK");
+      updateButton->setEnabled(true);
+    } else if (path.contains("LastUpdateTime")) {
+      updateLabels();
+    }
+  });
 }
 
-void DeveloperPanel::showEvent(QShowEvent *event) {
+void SoftwarePanel::showEvent(QShowEvent *event) {
+  updateLabels();
+}
+
+void SoftwarePanel::updateLabels() {
   Params params = Params();
   std::string brand = params.getBool("Passive") ? "dashcam" : "openpilot";
   QList<QPair<QString, std::string>> dev_params = {
-    {"Version", brand + " v" + params.get("Version", false).substr(0, 14)},
-    {"Git Branch", params.get("GitBranch", false)},
-    {"Git Commit", params.get("GitCommit", false).substr(0, 10)},
-    {"Panda Firmware", params.get("PandaFirmwareHex", false)},
+    {"Git Branch", params.get("GitBranch")},
+    {"Git Commit", params.get("GitCommit").substr(0, 10)},
+    {"Panda Firmware", params.get("PandaFirmwareHex")},
     {"OS Version", Hardware::get_os_version()},
   };
+
+  QString version = QString::fromStdString(brand + " v" + params.get("Version").substr(0, 14)).trimmed();
+  QString lastUpdateTime = "";
+
+  std::string last_update_param = params.get("LastUpdateTime");
+  if (!last_update_param.empty()){
+    QDateTime lastUpdateDate = QDateTime::fromString(QString::fromStdString(last_update_param + "Z"), Qt::ISODate);
+    lastUpdateTime = timeAgo(lastUpdateDate);
+  }
+
+  if (labels.size() < dev_params.size()) {
+    versionLbl = new LabelControl("Version", version, QString::fromStdString(params.get("ReleaseNotes")).trimmed());
+    layout()->addWidget(versionLbl);
+    layout()->addWidget(horizontal_line());
+
+    lastUpdateTimeLbl = new LabelControl("Last Update Check", lastUpdateTime, "The last time openpilot successfully checked for an update. The updater only runs while the car is off.");
+    layout()->addWidget(lastUpdateTimeLbl);
+    layout()->addWidget(horizontal_line());
+
+    updateButton = new ButtonControl("Check for Update", "CHECK", "", [=]() {
+      Params params = Params();
+      if (params.getBool("IsOffroad")) {
+        fs_watch->addPath(QString::fromStdString(params.getParamsPath()) + "/d/LastUpdateTime");
+        fs_watch->addPath(QString::fromStdString(params.getParamsPath()) + "/d/UpdateFailedCount");
+        updateButton->setText("CHECKING");
+        updateButton->setEnabled(false);
+      }
+      std::system("pkill -1 -f selfdrive.updated");
+    }, "", this);
+    layout()->addWidget(updateButton);
+    layout()->addWidget(horizontal_line());
+  } else {
+    versionLbl->setText(version);
+    lastUpdateTimeLbl->setText(lastUpdateTime);
+    updateButton->setText("CHECK");
+    updateButton->setEnabled(true);
+  }
 
   for (int i = 0; i < dev_params.size(); i++) {
     const auto &[name, value] = dev_params[i];
@@ -298,12 +345,13 @@ void SettingsWindow::showEvent(QShowEvent *event) {
   // setup panels
   DevicePanel *device = new DevicePanel(this);
   QObject::connect(device, &DevicePanel::reviewTrainingGuide, this, &SettingsWindow::reviewTrainingGuide);
+  QObject::connect(device, &DevicePanel::showDriverView, this, &SettingsWindow::showDriverView);
 
   QPair<QString, QWidget *> panels[] = {
     {"Device", device},
     {"Network", network_panel(this)},
     {"Toggles", new TogglesPanel(this)},
-    {"Developer", new DeveloperPanel()},
+    {"Software", new SoftwarePanel()},
   };
 
   sidebar_layout->addSpacing(45);

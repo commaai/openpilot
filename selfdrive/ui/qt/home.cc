@@ -31,11 +31,17 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
   slayout->addWidget(onroad);
 
   QObject::connect(this, &HomeWindow::update, onroad, &OnroadWindow::update);
-  QObject::connect(this, &HomeWindow::offroadTransitionSignal, onroad, &OnroadWindow::offroadTransition);
+  QObject::connect(this, &HomeWindow::offroadTransitionSignal, onroad, &OnroadWindow::offroadTransitionSignal);
 
   home = new OffroadHome();
   slayout->addWidget(home);
   QObject::connect(this, &HomeWindow::openSettings, home, &OffroadHome::refresh);
+
+  driver_view = new DriverViewWindow(this);
+  connect(driver_view, &DriverViewWindow::done, [=] {
+    showDriverView(false);
+  });
+  slayout->addWidget(driver_view);
 
   setLayout(layout);
 }
@@ -50,16 +56,21 @@ void HomeWindow::offroadTransition(bool offroad) {
   emit offroadTransitionSignal(offroad);
 }
 
-void HomeWindow::mousePressEvent(QMouseEvent* e) {
-  // TODO: make a nice driver view widget
-  if (QUIState::ui_state.scene.driver_view) {
-    Params().putBool("IsDriverViewEnabled", false);
-    QUIState::ui_state.scene.driver_view = false;
-    return;
+void HomeWindow::showDriverView(bool show) {
+  if (show) {
+    emit closeSettings();
+    slayout->setCurrentWidget(driver_view);
+  } else {
+    slayout->setCurrentWidget(home);
   }
+  sidebar->setVisible(show == false);
+}
 
+void HomeWindow::mousePressEvent(QMouseEvent* e) {
   // Handle sidebar collapsing
   if (onroad->isVisible() && (!sidebar->isVisible() || e->x() > sidebar->width())) {
+
+    // TODO: Handle this without exposing pointer to map widget
     // Hide map first if visible, then hide sidebar
     if (onroad->map != nullptr && onroad->map->isVisible()){
       onroad->map->setVisible(false);

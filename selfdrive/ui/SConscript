@@ -22,7 +22,7 @@ if arch == "Darwin":
 widgets_src = ["qt/widgets/input.cc", "qt/widgets/drive_stats.cc",
                "qt/widgets/ssh_keys.cc", "qt/widgets/toggle.cc", "qt/widgets/controls.cc",
                "qt/widgets/offroad_alerts.cc", "qt/widgets/setup.cc", "qt/widgets/keyboard.cc",
-               "qt/widgets/scrollview.cc", "#phonelibs/qrcode/QrCode.cc", "qt/api.cc",
+               "qt/widgets/scrollview.cc", "qt/widgets/cameraview.cc", "#phonelibs/qrcode/QrCode.cc", "qt/api.cc",
                "qt/request_repeater.cc"]
 
 if arch != 'aarch64':
@@ -43,7 +43,7 @@ qt_env.Program("qt/spinner", ["qt/spinner.cc"], LIBS=base_libs)
 # build main UI
 qt_src = ["main.cc", "ui.cc", "paint.cc", "qt/sidebar.cc", "qt/onroad.cc",
           "qt/window.cc", "qt/home.cc", "qt/offroad/settings.cc",
-          "qt/offroad/onboarding.cc", "#phonelibs/nanovg/nanovg.c"]
+          "qt/offroad/onboarding.cc", "qt/offroad/driverview.cc", "#phonelibs/nanovg/nanovg.c"]
 
 qt_env.Program("_ui", qt_src, LIBS=qt_libs)
 

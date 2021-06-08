@@ -24,7 +24,7 @@ signals:
 
 protected:
   AbstractControl(const QString &title, const QString &desc = "", const QString &icon = "", QWidget *parent = nullptr);
-  void hideEvent(QHideEvent *e);
+  void hideEvent(QHideEvent *e) override;
 
   QSize minimumSizeHint() const override {
     QSize size = QFrame::minimumSizeHint();

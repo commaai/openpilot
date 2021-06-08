@@ -248,9 +248,9 @@ def bridge(q):
     # 3. Send current carstate to op via can
 
     cruise_button = 0
-    throttle_out = steer_out = brake_out = 0
+    throttle_out = steer_out = brake_out = 0.0
     throttle_op = steer_op = brake_op = 0
-    throttle_manual = steer_manual = brake_manual = 0
+    throttle_manual = steer_manual = brake_manual = 0.0
 
     # --------------Step 1-------------------------------
     if not q.empty():
@@ -259,24 +259,24 @@ def bridge(q):
       if m[0] == "steer":
         steer_manual = float(m[1])
         is_openpilot_engaged = False
-      if m[0] == "throttle":
+      elif m[0] == "throttle":
         throttle_manual = float(m[1])
         is_openpilot_engaged = False
-      if m[0] == "brake":
+      elif m[0] == "brake":
         brake_manual = float(m[1])
         is_openpilot_engaged = False
-      if m[0] == "reverse":
+      elif m[0] == "reverse":
         #in_reverse = not in_reverse
         cruise_button = CruiseButtons.CANCEL
         is_openpilot_engaged = False
-      if m[0] == "cruise":
+      elif m[0] == "cruise":
         if m[1] == "down":
           cruise_button = CruiseButtons.DECEL_SET
           is_openpilot_engaged = True
-        if m[1] == "up":
+        elif m[1] == "up":
           cruise_button = CruiseButtons.RES_ACCEL
           is_openpilot_engaged = True
-        if m[1] == "cancel":
+        elif m[1] == "cancel":
           cruise_button = CruiseButtons.CANCEL
           is_openpilot_engaged = False
 
@@ -368,9 +368,10 @@ if __name__ == "__main__":
   # make sure params are in a good state
   set_params_enabled()
 
-  params = Params()
-  params.delete("Offroad_ConnectivityNeeded")
-  params.put("CalibrationParams", '{"calib_radians": [0,0,0], "valid_blocks": 20}')
+  msg = messaging.new_message('liveCalibration')
+  msg.liveCalibration.validBlocks = 20
+  msg.liveCalibration.rpyCalib = [0.0, 0.0, 0.0]
+  Params().put("CalibrationParams", msg.to_bytes())
 
   from multiprocessing import Process, Queue
   q: Any = Queue()

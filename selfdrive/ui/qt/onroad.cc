@@ -19,22 +19,11 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   nvg = new NvgWindow(this);
   QObject::connect(this, &OnroadWindow::update, nvg, &NvgWindow::update);
 
-  QHBoxLayout* split = new QHBoxLayout();
+  split = new QHBoxLayout();
   split->setContentsMargins(0, 0, 0, 0);
   split->setSpacing(0);
   split->addWidget(nvg);
 
-#ifdef ENABLE_MAPS
-  QString token = QString::fromStdString(Params().get("MapboxToken"));
-  if (!token.isEmpty()){
-    QMapboxGLSettings settings;
-    settings.setCacheDatabasePath("/tmp/mbgl-cache.db");
-    settings.setCacheDatabaseMaximumSize(20 * 1024 * 1024);
-    settings.setAccessToken(token.trimmed());
-    map = new MapWindow(settings);
-    split->addWidget(map);
-  }
-#endif
 
   QWidget * split_wrapper = new QWidget;
   split_wrapper->setLayout(split);
@@ -43,7 +32,8 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   alerts = new OnroadAlerts(this);
   alerts->setAttribute(Qt::WA_TransparentForMouseEvents, true);
   QObject::connect(this, &OnroadWindow::update, alerts, &OnroadAlerts::updateState);
-  QObject::connect(this, &OnroadWindow::offroadTransition, alerts, &OnroadAlerts::offroadTransition);
+  QObject::connect(this, &OnroadWindow::offroadTransitionSignal, alerts, &OnroadAlerts::offroadTransition);
+  QObject::connect(this, &OnroadWindow::offroadTransitionSignal, this, &OnroadWindow::offroadTransition);
   layout->addWidget(alerts);
 
   // setup stacking order
@@ -51,6 +41,28 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 
   setLayout(layout);
   setAttribute(Qt::WA_OpaquePaintEvent);
+}
+
+
+void OnroadWindow::offroadTransition(bool offroad) {
+#ifdef ENABLE_MAPS
+  if (!offroad) {
+    QString token = QString::fromStdString(Params().get("MapboxToken"));
+    if (map == nullptr && !token.isEmpty()){
+      QMapboxGLSettings settings;
+      settings.setCacheDatabasePath("/data/mbgl-cache.db");
+      settings.setCacheDatabaseMaximumSize(20 * 1024 * 1024);
+      settings.setAccessToken(token.trimmed());
+
+      MapWindow * m = new MapWindow(settings);
+      QObject::connect(this, &OnroadWindow::offroadTransitionSignal, m, &MapWindow::offroadTransition);
+      split->addWidget(m);
+
+      map = m;
+    }
+
+  }
+#endif
 }
 
 // ***** onroad widgets *****
@@ -93,8 +105,7 @@ void OnroadAlerts::updateState(const UIState &s) {
 
   // TODO: add blinking back if performant
   //float alpha = 0.375 * cos((millis_since_boot() / 1000) * 2 * M_PI * blinking_rate) + 0.625;
-  auto c = bg_colors[s.status];
-  bg.setRgbF(c.r, c.g, c.b, c.a);
+  bg = bg_colors[s.status];
 }
 
 void OnroadAlerts::offroadTransition(bool offroad) {
@@ -227,7 +238,7 @@ void NvgWindow::paintGL() {
 
   double cur_draw_t = millis_since_boot();
   double dt = cur_draw_t - prev_draw_t;
-  if (dt > 66 && !QUIState::ui_state.scene.driver_view) {
+  if (dt > 66) {
     // warn on sub 15fps
     LOGW("slow frame time: %.2f", dt);
   }

@@ -3,6 +3,7 @@ import json
 import os
 import subprocess
 import time
+import numpy as np
 import unittest
 from collections import Counter
 from pathlib import Path
@@ -11,6 +12,7 @@ import cereal.messaging as messaging
 from cereal.services import service_list
 from common.basedir import BASEDIR
 from common.timeout import Timeout
+from common.params import Params
 from selfdrive.hardware import TICI
 from selfdrive.loggerd.config import ROOT
 from selfdrive.test.helpers import set_params_enabled
@@ -97,6 +99,11 @@ class TestOnroad(unittest.TestCase):
     os.environ['FINGERPRINT'] = "TOYOTA COROLLA TSS2 2019"
     set_params_enabled()
 
+    # Make sure athena isn't running
+    Params().delete("DongleId")
+    Params().delete("AthenadPid")
+    os.system("pkill -9 -f athena")
+
     logger_root = Path(ROOT)
     initial_segments = set()
     if logger_root.exists():
@@ -146,6 +153,12 @@ class TestOnroad(unittest.TestCase):
     cpu_ok = check_cpu_usage(proclogs[0], proclogs[-1])
     self.assertTrue(cpu_ok)
 
+  def test_model_timings(self):
+    cfgs = [("modelV2", 0.035, 0.03), ("driverState", 0.022, 0.018)]
+    for (s, instant_max, avg_max) in cfgs:
+      ts = [getattr(getattr(m, s), "modelExecutionTime") for m in self.lr if m.which() == s]
+      self.assertLess(min(ts), instant_max, f"high '{s}' execution time: {min(ts)}")
+      self.assertLess(np.mean(ts), avg_max, f"high avg '{s}' execution time: {np.mean(ts)}")
 
 if __name__ == "__main__":
   unittest.main()

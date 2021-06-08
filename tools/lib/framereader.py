@@ -196,7 +196,7 @@ def rgb24toyuv420(rgb):
   img = np.dot(rgb.reshape(-1, 3), yuv_from_rgb.T).reshape(rgb.shape)
 
   y_len = img.shape[0] * img.shape[1]
-  uv_len = y_len / 4
+  uv_len = y_len // 4
 
   ys = img[:, :, 0]
   us = (img[::2, ::2, 1] + img[1::2, ::2, 1] + img[::2, 1::2, 1] + img[1::2, 1::2, 1]) / 4 + 128

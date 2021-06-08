@@ -2,7 +2,12 @@
 
 #include <errno.h>
 
+#include <cassert>
+#include <cstring>
+#include <dirent.h>
+#include <fstream>
 #include <sstream>
+#include <iomanip>
 
 #ifdef __linux__
 #include <sys/prctl.h>
@@ -97,5 +102,74 @@ int write_file(const char* path, const void* data, size_t size, int flags, mode_
   return (n >= 0 && (size_t)n == size) ? 0 : -1;
 }
 
+std::string readlink(const std::string &path) {
+  char buff[4096];
+  ssize_t len = ::readlink(path.c_str(), buff, sizeof(buff)-1);
+  if (len != -1) {
+    buff[len] = '\0';
+    return std::string(buff);
+  }
+  return "";
+}
+
+bool file_exists(const std::string& fn) {
+  std::ifstream f(fn);
+  return f.good();
+}
+
+std::string getenv_default(const char* env_var, const char * suffix, const char* default_val) {
+  const char* env_val = getenv(env_var);
+  if (env_val != NULL){
+    return std::string(env_val) + std::string(suffix);
+  } else {
+    return std::string(default_val);
+  }
+}
+
+std::string tohex(const uint8_t *buf, size_t buf_size) {
+  std::unique_ptr<char[]> hexbuf(new char[buf_size * 2 + 1]);
+  for (size_t i = 0; i < buf_size; i++) {
+    sprintf(&hexbuf[i * 2], "%02x", buf[i]);
+  }
+  hexbuf[buf_size * 2] = 0;
+  return std::string(hexbuf.get(), hexbuf.get() + buf_size * 2);
+}
+
+std::string hexdump(const std::string& in) {
+    std::stringstream ss;
+    ss << std::hex << std::setfill('0');
+    for (size_t i = 0; i < in.size(); i++) {
+        ss << std::setw(2) << static_cast<unsigned int>(static_cast<unsigned char>(in[i]));
+    }
+    return ss.str();
+}
+
+std::string base_name(std::string const &path) {
+  size_t pos = path.find_last_of("/");
+  if (pos == std::string::npos) return path;
+  return path.substr(pos + 1);
+}
+
+std::string dir_name(std::string const &path) {
+  size_t pos = path.find_last_of("/");
+  if (pos == std::string::npos) return "";
+  return path.substr(0, pos);
+}
+
+struct tm get_time(){
+  time_t rawtime;
+  time(&rawtime);
+
+  struct tm sys_time;
+  gmtime_r(&rawtime, &sys_time);
+
+  return sys_time;
+}
+
+bool time_valid(struct tm sys_time){
+  int year = 1900 + sys_time.tm_year;
+  int month = 1 + sys_time.tm_mon;
+  return (year > 2020) || (year == 2020 && month >= 10);
+}
 
 }  // namespace util
