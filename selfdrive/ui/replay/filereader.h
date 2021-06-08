@@ -1,14 +1,15 @@
 #pragma once
 
-#include <capnp/serialize.h>
+#include <unordered_map>
+#include <vector>
 
 #include <QElapsedTimer>
 #include <QMultiMap>
 #include <QNetworkAccessManager>
 #include <QString>
 #include <QThread>
-#include <unordered_map>
-#include <vector>
+
+#include <capnp/serialize.h>
 
 #include "cereal/gen/cpp/log.capnp.h"
 
