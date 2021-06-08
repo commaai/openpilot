@@ -2,8 +2,8 @@
 
 #include <cassert>
 #include <pthread.h>
-#include <stdint.h>
 
+#include <cstdint>
 #include <cstdio>
 #include <memory>
 

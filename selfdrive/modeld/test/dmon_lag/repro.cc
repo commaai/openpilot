@@ -1,11 +1,11 @@
 // clang++ -O2 repro.cc && ./a.out
 
-#include <stdint.h>
 #include <time.h>
 #include <sched.h>
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>

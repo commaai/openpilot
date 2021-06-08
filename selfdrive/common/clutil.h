@@ -1,6 +1,6 @@
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
 #include <cstdlib>
 
 #ifdef __APPLE__

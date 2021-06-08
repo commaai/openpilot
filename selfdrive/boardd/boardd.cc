@@ -1,6 +1,5 @@
 #include <errno.h>
 #include <sched.h>
-#include <stdint.h>
 #include <sys/cdefs.h>
 #include <sys/resource.h>
 #include <sys/types.h>
@@ -10,6 +9,7 @@
 #include <atomic>
 #include <bitset>
 #include <cassert>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <thread>

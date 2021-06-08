@@ -1,7 +1,6 @@
 #include <assert.h>
 #include <cutils/log.h>
 #include <hardware/sensors.h>
-#include <stdint.h>
 #include <sys/cdefs.h>
 #include <sys/resource.h>
 #include <sys/time.h>
@@ -9,6 +8,7 @@
 #include <unistd.h>
 #include <utils/Timers.h>
 
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
