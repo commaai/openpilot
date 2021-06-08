@@ -1,4 +1,4 @@
-#include "scrollview.h"
+#include "selfdrive/ui/qt/widgets/scrollview.h"
 
 #include <QScrollBar>
 

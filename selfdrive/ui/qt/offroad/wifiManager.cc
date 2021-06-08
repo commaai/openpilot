@@ -1,4 +1,4 @@
-#include "wifiManager.h"
+#include "selfdrive/ui/qt/offroad/wifiManager.h"
 
 #include <stdlib.h>
 

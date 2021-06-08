@@ -1,4 +1,4 @@
-#include "drive_stats.h"
+#include "selfdrive/ui/qt/widgets/drive_stats.h"
 
 #include <QDebug>
 #include <QJsonDocument>

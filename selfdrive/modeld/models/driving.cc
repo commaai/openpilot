@@ -1,5 +1,4 @@
-
-#include "driving.h"
+#include "selfdrive/modeld/models/driving.h"
 
 #include <assert.h>
 #include <fcntl.h>

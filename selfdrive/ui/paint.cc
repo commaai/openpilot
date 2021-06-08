@@ -1,4 +1,4 @@
-#include "paint.h"
+#include "selfdrive/ui/paint.h"
 
 #include <assert.h>
 

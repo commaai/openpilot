@@ -1,4 +1,4 @@
-#include "commonmodel.h"
+#include "selfdrive/modeld/models/commonmodel.h"
 
 #include <assert.h>
 #include <math.h>
