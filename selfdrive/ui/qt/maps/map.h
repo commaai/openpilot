@@ -117,6 +117,7 @@ private:
   void calculateRoute(QMapbox::Coordinate destination);
   void clearRoute();
   bool shouldRecompute();
+  void updateETA();
 
 private slots:
   void timerUpdate();

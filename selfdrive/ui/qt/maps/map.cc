@@ -265,10 +265,24 @@ void MapWindow::recomputeRoute() {
     should_recompute = true;
   }
 
+  if (!should_recompute) updateETA(); // ETA is updated after recompute
+
   if (!gps_ok && segment.isValid()) return; // Don't recompute when gps drifts in tunnels
 
-  // Update ETA
-  if (!should_recompute) {
+  // Only do API request when map is loaded
+  if (!m_map.isNull()) {
+    if (recompute_countdown == 0 && should_recompute) {
+      recompute_countdown = std::pow(2, recompute_backoff);
+      recompute_backoff = std::min(7, recompute_backoff + 1);
+      calculateRoute(*new_destination);
+    } else {
+      recompute_countdown = std::max(0, recompute_countdown - 1);
+    }
+  }
+}
+
+void MapWindow::updateETA() {
+  if (segment.isValid()) {
     float progress = distance_along_geometry(segment.path(), to_QGeoCoordinate(last_position)) / segment.distance();
     float total_distance = segment.distance() * (1.0 - progress);
     float total_time = segment.travelTime() * (1.0 - progress);
@@ -284,17 +298,6 @@ void MapWindow::recomputeRoute() {
     }
 
     emit ETAChanged(total_time, total_time_typical, total_distance);
-  }
-
-  // Only do API request when map is loaded
-  if (!m_map.isNull()) {
-    if (recompute_countdown == 0 && should_recompute) {
-      recompute_countdown = std::pow(2, recompute_backoff);
-      recompute_backoff = std::min(7, recompute_backoff + 1);
-      calculateRoute(*new_destination);
-    } else {
-      recompute_countdown = std::max(0, recompute_countdown - 1);
-    }
   }
 }
 
@@ -327,6 +330,8 @@ void MapWindow::routeCalculated(QGeoRouteReply *reply) {
     navSource["data"] = QVariant::fromValue<QMapbox::Feature>(feature);
     m_map->updateSource("navSource", navSource);
     m_map->setLayoutProperty("navLayer", "visibility", "visible");
+
+    updateETA();
   }
 
   reply->deleteLater();
