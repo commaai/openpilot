@@ -76,19 +76,11 @@ void Replay::addSegment(int n) {
   QObject::connect(t, &QThread::started, lrs[n], &LogReader::process);
   t->start();
 
-  QThread *frame_thread = QThread::create([=]{
-    FrameReader *frame_reader = new FrameReader(qPrintable(camera_paths.at(n).toString()));
-    frame_reader->process();
-    frs.insert(n, frame_reader);
-  });
-  QObject::connect(frame_thread, &QThread::finished, frame_thread, &QThread::deleteLater);
-  frame_thread->start();
-  
-  
+  frs[n] = new FrameReader(qPrintable(camera_paths.at(n).toString()), this);
 }
 
 void Replay::removeSegment(int n) {
-  // TODO: fix FrameReader and LogReader destructors
+  // TODO: fix LogReader destructors
   /*
   if (lrs.contains(n)) {
     auto lr = lrs.take(n);
@@ -255,8 +247,6 @@ void Replay::stream() {
             auto pp = *it_;
             if (frs.find(pp.first) != frs.end()) {
               auto frm = frs[pp.first];
-              auto data = frm->get(pp.second);
-
               if (vipc_server == nullptr) {
                 cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
                 cl_context context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
@@ -267,10 +257,13 @@ void Replay::stream() {
                 vipc_server->start_listener();
               }
 
-              VisionIpcBufExtra extra = {};
-              VisionBuf *buf = vipc_server->get_buffer(VisionStreamType::VISION_STREAM_RGB_BACK);
-              memcpy(buf->addr, data, frm->getRGBSize());
-              vipc_server->send(buf, &extra, false);
+              uint8_t *dat = frm->get(pp.second);
+              if (dat) {
+                VisionIpcBufExtra extra = {};
+                VisionBuf *buf = vipc_server->get_buffer(VisionStreamType::VISION_STREAM_RGB_BACK);
+                memcpy(buf->addr, dat, frm->getRGBSize());
+                vipc_server->send(buf, &extra, false);
+              }
             }
           }
         }
