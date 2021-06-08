@@ -1,10 +1,10 @@
 #include "selfdrive/modeld/runners/onnxmodel.h"
 
 #include <poll.h>
-#include <signal.h>
 #include <unistd.h>
 
 #include <cassert>
+#include <csignal>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
