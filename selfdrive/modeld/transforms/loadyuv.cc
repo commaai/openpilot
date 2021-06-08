@@ -1,6 +1,6 @@
 #include "selfdrive/modeld/transforms/loadyuv.h"
 
-#include <assert.h>
+#include <cassert>
 #include <cstdio>
 #include <cstring>
 

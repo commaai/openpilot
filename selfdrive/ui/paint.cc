@@ -1,8 +1,7 @@
 #include "selfdrive/ui/paint.h"
 
-#include <assert.h>
-
 #include <algorithm>
+#include <cassert>
 
 #ifdef __APPLE__
 #include <OpenGL/gl3.h>

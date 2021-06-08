@@ -2,11 +2,11 @@
 
 #include "selfdrive/loggerd/omx_encoder.h"
 
-#include <assert.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include <cassert>
 #include <cstdlib>
 #include <cstdio>
 

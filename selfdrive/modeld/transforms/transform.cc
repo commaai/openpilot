@@ -1,6 +1,6 @@
 #include "selfdrive/modeld/transforms/transform.h"
 
-#include <assert.h>
+#include <cassert>
 #include <cstring>
 
 #include "selfdrive/common/clutil.h"

@@ -1,7 +1,6 @@
 #include "selfdrive/common/glutil.h"
 
-#include <assert.h>
-
+#include <cassert>
 #include <cstdio>
 #include <cstdlib>
 #include <string>

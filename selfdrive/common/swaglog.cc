@@ -4,7 +4,7 @@
 
 #include "selfdrive/common/swaglog.h"
 
-#include <assert.h>
+#include <cassert>
 #include <cstring>
 #include <mutex>
 #include <string>

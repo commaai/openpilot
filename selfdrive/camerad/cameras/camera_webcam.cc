@@ -1,8 +1,8 @@
 #include "selfdrive/camerad/cameras/camera_webcam.h"
 
-#include <assert.h>
 #include <unistd.h>
 
+#include <cassert>
 #include <cstring>
 
 #pragma clang diagnostic push

@@ -1,4 +1,3 @@
-#include <assert.h>
 #include <cutils/log.h>
 #include <hardware/sensors.h>
 #include <sys/cdefs.h>
@@ -8,6 +7,7 @@
 #include <unistd.h>
 #include <utils/Timers.h>
 
+#include <cassert>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>

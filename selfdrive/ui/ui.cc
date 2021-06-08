@@ -1,8 +1,8 @@
 #include "selfdrive/ui/ui.h"
 
-#include <assert.h>
 #include <unistd.h>
 
+#include <cassert>
 #include <cmath>
 #include <cstdio>
 

@@ -1,5 +1,4 @@
-#include <assert.h>
-
+#include <cassert>
 #include <cstdio>
 #include <cstdlib>
 #include "tensorflow/c/c_api.h"

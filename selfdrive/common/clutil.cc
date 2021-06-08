@@ -1,8 +1,8 @@
 #include "selfdrive/common/clutil.h"
 
-#include <assert.h>
 #include <sys/stat.h>
 
+#include <cassert>
 #include <cstring>
 #include <iostream>
 #include <memory>

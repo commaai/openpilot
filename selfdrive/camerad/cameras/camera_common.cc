@@ -1,7 +1,8 @@
 #include "selfdrive/camerad/cameras/camera_common.h"
 
-#include <assert.h>
 #include <unistd.h>
+
+#include <cassert>
 #include <cstdio>
 #include <chrono>
 #include <thread>
