@@ -1,6 +1,5 @@
 #include <errno.h>
 #include <ftw.h>
-#include <inttypes.h>
 #include <pthread.h>
 #include <sys/resource.h>
 #include <unistd.h>

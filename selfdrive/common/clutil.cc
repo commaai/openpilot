@@ -1,7 +1,6 @@
 #include "selfdrive/common/clutil.h"
 
 #include <assert.h>
-#include <inttypes.h>
 #include <sys/stat.h>
 
 #include <cstring>
