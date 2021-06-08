@@ -1,11 +1,11 @@
 #include "selfdrive/common/i2c.h"
 
 #include <fcntl.h>
-#include <stdio.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
 
 #include <cassert>
+#include <cstdio>
 #include <stdexcept>
 
 #include "selfdrive/common/swaglog.h"

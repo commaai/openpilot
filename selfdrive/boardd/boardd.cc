@@ -1,8 +1,4 @@
-#include <errno.h>
 #include <sched.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <sys/cdefs.h>
 #include <sys/resource.h>
 #include <sys/types.h>
@@ -12,6 +8,10 @@
 #include <atomic>
 #include <bitset>
 #include <cassert>
+#include <cerrno>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
 #include <thread>
 #include <unordered_map>
 

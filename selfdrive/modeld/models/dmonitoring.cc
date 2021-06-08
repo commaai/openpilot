@@ -1,6 +1,6 @@
 #include "selfdrive/modeld/models/dmonitoring.h"
 
-#include <string.h>
+#include <cstring>
 
 #include "libyuv.h"
 

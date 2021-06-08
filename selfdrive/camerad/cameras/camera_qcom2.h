@@ -1,7 +1,8 @@
 #pragma once
 
-#include <stdint.h>
 #include <pthread.h>
+
+#include <cstdint>
 
 #include <media/cam_req_mgr.h>
 

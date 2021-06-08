@@ -1,4 +1,4 @@
-#include <string.h>
+#include <cstring>
 
 #include "selfdrive/modeld/runners/snpemodel.h"
 #include "selfdrive/modeld/thneed/thneed.h"

@@ -1,9 +1,9 @@
-#include <assert.h>
 #include <poll.h>
-#include <stdio.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include <cassert>
+#include <cstdio>
 #include <thread>
 
 #include "libyuv.h"

@@ -1,8 +1,7 @@
 #pragma once
 
-#include <stdint.h>
-
 #include <atomic>
+#include <cstdint>
 #include <memory>
 
 #include "cereal/messaging/messaging.h"
