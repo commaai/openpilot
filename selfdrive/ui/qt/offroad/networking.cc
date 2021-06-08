@@ -1,4 +1,4 @@
-#include "networking.h"
+#include "selfdrive/ui/qt/offroad/networking.h"
 
 #include <QDebug>
 #include <QHBoxLayout>

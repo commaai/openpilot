@@ -1,4 +1,4 @@
-#include "wifi.h"
+#include "selfdrive/ui/qt/setup/wifi.h"
 
 #include <curl/curl.h>
 #include <stdio.h>

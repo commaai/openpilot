@@ -1,4 +1,4 @@
-#include "window.h"
+#include "selfdrive/ui/qt/window.h"
 
 #include "selfdrive/hardware/hw.h"
 

@@ -1,4 +1,4 @@
-#include "settings.h"
+#include "selfdrive/ui/qt/offroad/settings.h"
 
 #include <cassert>
 #include <string>

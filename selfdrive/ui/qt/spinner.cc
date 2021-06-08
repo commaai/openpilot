@@ -1,4 +1,4 @@
-#include "spinner.h"
+#include "selfdrive/ui/qt/spinner.h"
 
 #include <stdio.h>
 #include <iostream>

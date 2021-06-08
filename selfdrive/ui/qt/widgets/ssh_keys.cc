@@ -1,4 +1,4 @@
-#include "ssh_keys.h"
+#include "selfdrive/ui/qt/widgets/ssh_keys.h"
 
 #include <QHBoxLayout>
 #include <QNetworkReply>

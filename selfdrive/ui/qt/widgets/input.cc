@@ -1,4 +1,4 @@
-#include "input.h"
+#include "selfdrive/ui/qt/widgets/input.h"
 
 #include <QPushButton>
 

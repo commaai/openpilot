@@ -1,3 +1,5 @@
+#include "selfdrive/ui/qt/maps/map.h"
+
 #include <cmath>
 
 #include <QDebug>
@@ -8,7 +10,6 @@
 #include "selfdrive/ui/ui.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/maps/map_helpers.h"
-#include "selfdrive/ui/qt/maps/map.h"
 
 
 const int PAN_TIMEOUT = 100;

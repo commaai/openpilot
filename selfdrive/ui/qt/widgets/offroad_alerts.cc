@@ -1,4 +1,4 @@
-#include "offroad_alerts.h"
+#include "selfdrive/ui/qt/widgets/offroad_alerts.h"
 
 #include <QHBoxLayout>
 #include <QJsonDocument>
