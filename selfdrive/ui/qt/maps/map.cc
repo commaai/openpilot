@@ -182,6 +182,7 @@ void MapWindow::timerUpdate() {
 
         float distance = segment.distance() - distance_along_geometry(segment.path(), to_QGeoCoordinate(last_position));
         emit distanceChanged(distance);
+        m_map->setPitch(MAX_PITCH); // TODO: smooth pitching based on maneuver distance
       }
 
       auto next_segment = segment.nextRouteSegment();
@@ -189,9 +190,6 @@ void MapWindow::timerUpdate() {
         auto next_maneuver = next_segment.maneuver();
         if (next_maneuver.isValid()){
           float next_maneuver_distance = next_maneuver.position().distanceTo(to_QGeoCoordinate(last_position));
-          // emit distanceChanged(next_maneuver_distance);
-          m_map->setPitch(MAX_PITCH); // TODO: smooth pitching based on maneuver distance
-
           // Switch to next route segment
           if (next_maneuver_distance < REROUTE_DISTANCE && next_maneuver_distance > last_maneuver_distance){
             segment = next_segment;
