@@ -37,7 +37,7 @@ private:
   void process();
   bool processFrames();
   void decodeThread();
-  bool toRGB(AVFrame *f, void *addr);
+  uint8_t *decodeFrame(AVPacket *pkt);
 
   struct Frame {
     AVPacket pkt = {};

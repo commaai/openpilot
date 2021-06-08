@@ -26,7 +26,7 @@ static int ffmpeg_lockmgr_cb(void **arg, enum AVLockOp op) {
 }
 
 class AVInitializer {
-public:
+ public:
   AVInitializer() {
     int ret = av_lockmgr_register(ffmpeg_lockmgr_cb);
     assert(ret >= 0);
@@ -123,37 +123,31 @@ bool FrameReader::processFrames() {
   return valid_;
 }
 
+uint8_t *FrameReader::get(int idx) {
+  if (!valid_ || idx < 0 || idx >= frames_.size()) return nullptr;
+  {
+    std::unique_lock lk(mutex_);
+    decode_idx_ = idx;
+    cv_decode_.notify_one();
+    cv_frame_.wait(lk, [=] { return exit_ || frames_[idx].data || frames_[idx].failed; });
+  }
+  return frames_[idx].data;
+}
+
 void FrameReader::decodeThread() {
   int idx = 0;
   while (!exit_) {
     const int from = std::max(idx, 0);
     const int to = std::min(idx + 20, (int)frames_.size());
-    for (int i = 0; i < frames_.size(); ++i) {
+    for (int i = 0; i < frames_.size() && !exit_; ++i) {
       Frame &frame = frames_[i];
       if (i >= from && i < to) {
         if (frame.data || frame.failed) continue;
 
-        int gotFrame;
-        AVFrame *pFrame = av_frame_alloc();
-        avcodec_decode_video2(pCodecCtx_, pFrame, &gotFrame, &frame.pkt);
-        uint8_t *dat = nullptr;
-        if (gotFrame) {
-          if (!buffer_pool.empty()) {
-            dat = buffer_pool.front();
-            buffer_pool.pop();
-          } else {
-            dat = new uint8_t[getRGBSize()];
-          }
-          if (!toRGB(pFrame, dat)) {
-            delete [] dat;
-            dat = nullptr;
-          }
-        }
-        av_frame_free(&pFrame);
-
+        uint8_t *dat = decodeFrame(&frame.pkt);
         std::unique_lock lk(mutex_);
-        frame.failed = !dat;
         frame.data = dat;
+        frame.failed = !dat;
         cv_frame_.notify_all();
       } else if (frame.data) {
         buffer_pool.push(frame.data);
@@ -170,20 +164,28 @@ void FrameReader::decodeThread() {
   }
 }
 
-bool FrameReader::toRGB(AVFrame *f, void *addr) {
-  int ret = avpicture_fill((AVPicture *)frmRgb_, (uint8_t *)addr, AV_PIX_FMT_BGR24, f->width, f->height);
-  assert(ret > 0);
-  return sws_scale(sws_ctx_, (const uint8_t **)f->data, f->linesize, 0,
-                   f->height, frmRgb_->data, frmRgb_->linesize) > 0;
-}
+uint8_t *FrameReader::decodeFrame(AVPacket *pkt) {
+  int gotFrame;
+  AVFrame *f = av_frame_alloc();
+  avcodec_decode_video2(pCodecCtx_, f, &gotFrame, pkt);
 
-uint8_t *FrameReader::get(int idx) {
-  if (!valid_ || idx < 0 || idx >= frames_.size()) return nullptr;
-  {
-    std::unique_lock lk(mutex_);
-    decode_idx_ = idx;
-    cv_decode_.notify_one();
-    cv_frame_.wait(lk, [=] { return exit_ || frames_[idx].data || frames_[idx].failed; });
+  uint8_t *dat = nullptr;
+  if (gotFrame) {
+    if (!buffer_pool.empty()) {
+      dat = buffer_pool.front();
+      buffer_pool.pop();
+    } else {
+      dat = new uint8_t[getRGBSize()];
+    }
+
+    int ret = avpicture_fill((AVPicture *)frmRgb_, dat, AV_PIX_FMT_BGR24, f->width, f->height);
+    assert(ret > 0);
+    if (sws_scale(sws_ctx_, (const uint8_t **)f->data, f->linesize, 0,
+                  f->height, frmRgb_->data, frmRgb_->linesize) <= 0) {
+      delete[] dat;
+      dat = nullptr;
+    }
   }
-  return frames_[idx].data;
+  av_frame_free(&f);
+  return dat;
 }
