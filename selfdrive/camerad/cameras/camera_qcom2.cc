@@ -1,6 +1,5 @@
 #include "selfdrive/camerad/cameras/camera_qcom2.h"
 
-#include <errno.h>
 #include <fcntl.h>
 #include <poll.h>
 #include <sys/ioctl.h>
@@ -9,6 +8,7 @@
 
 #include <atomic>
 #include <cassert>
+#include <cerrno>
 #include <cmath>
 #include <cstdio>
 #include <cstring>

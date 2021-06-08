@@ -1,4 +1,3 @@
-#include <errno.h>
 #include <ftw.h>
 #include <pthread.h>
 #include <sys/resource.h>
@@ -6,6 +5,7 @@
 
 #include <atomic>
 #include <cassert>
+#include <cerrno>
 #include <condition_variable>
 #include <cstdint>
 #include <cstdio>

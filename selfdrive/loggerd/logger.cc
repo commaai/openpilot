@@ -1,16 +1,16 @@
 #include "selfdrive/loggerd/logger.h"
 
-#include <errno.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
 #include <cassert>
+#include <cerrno>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <fstream>
 #include <ctime>
+#include <fstream>
 #include <iostream>
 #include <streambuf>
 #ifdef QCOM

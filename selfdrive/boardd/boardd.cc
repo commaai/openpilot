@@ -1,4 +1,3 @@
-#include <errno.h>
 #include <sched.h>
 #include <sys/cdefs.h>
 #include <sys/resource.h>
@@ -9,6 +8,7 @@
 #include <atomic>
 #include <bitset>
 #include <cassert>
+#include <cerrno>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>

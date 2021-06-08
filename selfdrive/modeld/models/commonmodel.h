@@ -1,6 +1,6 @@
 #pragma once
 
-#include <float.h>
+#include <cfloat>
 #include <cstdlib>
 
 #define CL_USE_DEPRECATED_OPENCL_1_2_APIS
