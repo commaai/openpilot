@@ -15,7 +15,7 @@ class NetWorkStrengthWidget : public QWidget {
   Q_OBJECT
 
 public:
-  explicit NetWorkStrengthWidget(int strength, QWidget* parent = nullptr) : strength_(strength), QWidget(parent) {setFixedSize(100,15);}
+  explicit NetWorkStrengthWidget(int strength, QWidget* parent = nullptr) : strength_(strength), QWidget(parent) { setFixedSize(100, 15); }
 
 private:
   void paintEvent(QPaintEvent* event) override;
