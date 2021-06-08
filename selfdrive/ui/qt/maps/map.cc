@@ -466,10 +466,10 @@ void MapInstructions::updateDistance(float d){
 
     if (feet > 500) {
       distance_str.setNum(miles, 'f', 1);
-      distance_str += " miles";
+      distance_str += " mi";
     } else {
       distance_str.setNum(50 * int(feet / 50));
-      distance_str += " feet";
+      distance_str += " ft";
     }
   }
 
