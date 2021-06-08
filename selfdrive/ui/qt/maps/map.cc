@@ -656,6 +656,18 @@ MapETA::MapETA(QWidget * parent) : QWidget(parent){
 
 void MapETA::updateETA(float s, float d) {
   setVisible(true);
+
+  // ETA
+  auto eta_time = QDateTime::currentDateTime().addSecs(s).time();
+  eta->setText(eta_time.toString("HH:mm"));
+
+  // Minutes
+  QString time_str;
+  time_str.setNum(int(s / 60.0));
+  time->setText(time_str);
+  // TODO: update color based on traffic conditions
+
+  // Distance
   QString distance_str;
   if (QUIState::ui_state.scene.is_metric) {
     distance_str.setNum(d / 1000, 'f', 1);
@@ -665,8 +677,4 @@ void MapETA::updateETA(float s, float d) {
     distance_unit->setText("mi");
   }
   distance->setText(distance_str);
-
-
-  // TODO: update color based on traffic conditions
-
 }
