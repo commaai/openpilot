@@ -20,7 +20,7 @@
 #include "media/cam_sensor_cmn_header.h"
 #include "media/cam_sync.h"
 #include "selfdrive/common/swaglog.h"
-#include "sensor2_i2c.h"
+#include "selfdrive/camerad/cameras/sensor2_i2c.h"
 
 //#define FRAME_STRIDE 1936 // for 8 bit output
 
