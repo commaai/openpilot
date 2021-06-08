@@ -269,13 +269,15 @@ void MapWindow::recomputeRoute() {
 }
 
 void MapWindow::calculateRoute(QMapbox::Coordinate destination) {
+  LOGW("calculating route");
   nav_destination = destination;
   QGeoRouteRequest request(to_QGeoCoordinate(last_position), to_QGeoCoordinate(destination));
   request.setFeatureWeight(QGeoRouteRequest::TrafficFeature, QGeoRouteRequest::AvoidFeatureWeight);
 
   if (last_bearing) {
     QVariantMap params;
-    params["bearing"] = *last_bearing;
+    int bearing = ((int)(*last_bearing) + 360) % 360;
+    params["bearing"] = bearing;
     request.setWaypointsMetadata({params});
   }
 
