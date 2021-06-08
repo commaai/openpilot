@@ -46,7 +46,7 @@ const mat4 device_transform = {{
 mat4 get_driver_view_transform() {
   const float driver_view_ratio = 1.333;
   mat4 transform;
-  if (Hardware::TICI()) {
+  if (HARDWARE.TICI()) {
     // from dmonitoring.cc
     const int full_width_tici = 1928;
     const int full_height_tici = 1208;
@@ -126,7 +126,7 @@ void CameraViewWidget::initializeGL() {
   if (stream_type == VISION_STREAM_RGB_FRONT) {
     frame_mat = matmul(device_transform, get_driver_view_transform());
   } else {
-    auto intrinsic_matrix = stream_type == VISION_STREAM_RGB_WIDE ? ecam_intrinsic_matrix : fcam_intrinsic_matrix;
+    auto intrinsic_matrix = stream_type == VISION_STREAM_RGB_WIDE ? HARDWARE.wide_road_cam_intrinsic_matrix() : HARDWARE.road_cam_intrinsic_matrix();
     float zoom_ = zoom / intrinsic_matrix.v[0];
     if (stream_type == VISION_STREAM_RGB_WIDE) {
       zoom_ *= 0.5;
@@ -168,7 +168,7 @@ void CameraViewWidget::paintGL() {
   glActiveTexture(GL_TEXTURE0);
 
   glBindTexture(GL_TEXTURE_2D, texture[latest_frame->idx]->frame_tex);
-  if (!Hardware::EON()) {
+  if (!HARDWARE.EON()) {
     // this is handled in ion on QCOM
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, latest_frame->width, latest_frame->height,
                   0, GL_RGB, GL_UNSIGNED_BYTE, latest_frame->addr);

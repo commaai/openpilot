@@ -63,7 +63,7 @@ void DriverViewScene::paintEvent(QPaintEvent* event) {
 
   // blackout
   const int blackout_x_r = valid_rect.right();
-  const QRect& blackout_rect = Hardware::TICI() ? rect() : rect2;
+  const QRect& blackout_rect = HARDWARE.TICI() ? rect() : rect2;
   const int blackout_w_r = blackout_rect.right() - valid_rect.right();
   const int blackout_x_l = blackout_rect.left();
   const int blackout_w_l = valid_rect.left() - blackout_x_l;

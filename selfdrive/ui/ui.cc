@@ -198,10 +198,10 @@ static void update_state(UIState *s) {
   if (sm.updated("roadCameraState")) {
     auto camera_state = sm["roadCameraState"].getRoadCameraState();
 
-    float max_lines = Hardware::EON() ? 5408 : 1757;
+    float max_lines = HARDWARE.EON() ? 5408 : 1757;
     float gain = camera_state.getGainFrac();
 
-    if (Hardware::TICI()) {
+    if (HARDWARE.TICI()) {
       // gainFrac can go up to 4, with another 2.5x multiplier based on globalGain. Scale back to 0 - 1
       gain *= (camera_state.getGlobalGain() > 100 ? 2.5 : 1.0) / 10.0;
     }
