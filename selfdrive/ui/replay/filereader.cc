@@ -3,8 +3,6 @@
 #include <bzlib.h>
 #include <QtNetwork>
 
-#include "selfdrive/common/timing.h"
-
 static bool decompressBZ2(std::vector<uint8_t> &dest, const char srcData[], size_t srcSize,
                           size_t outputSizeIncrement = 0x100000U) {
   bz_stream strm = {};
