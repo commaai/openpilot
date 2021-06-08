@@ -623,7 +623,7 @@ FEATURES = {
   "use_fca": set([CAR.SONATA, CAR.ELANTRA, CAR.ELANTRA_2021, CAR.ELANTRA_GT_I30, CAR.KIA_STINGER, CAR.IONIQ, CAR.IONIQ_EV_2020, CAR.KONA_EV, CAR.KIA_FORTE, CAR.KIA_NIRO_EV, CAR.PALISADE, CAR.GENESIS_G70, CAR.KONA, CAR.SANTA_FE, CAR.KIA_SELTOS]),
 }
 
-ALT_GAS_CAR: Set[str] = set()  # these cars use a different gas signal, thought to be 2020+ year hev/phev
+ALT_GAS_CAR: Set[str] = set()  # these cars use a different gas signal
 EV_HYBRID = ALT_GAS_CAR | set([CAR.IONIQ_EV_2020, CAR.IONIQ_EV_LTD, CAR.IONIQ, CAR.KONA_EV, CAR.KIA_NIRO_EV])
 
 DBC = {
