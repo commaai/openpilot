@@ -1,10 +1,7 @@
 #pragma once
 
-<<<<<<< HEAD
 #include "cereal/visionipc/visionbuf.h"
 
-=======
->>>>>>> cleanup include paths
 #ifdef __APPLE__
 #include <OpenGL/gl3.h>
 #else
@@ -17,8 +14,6 @@
 #include <EGL/eglext.h>
 #undef Status
 #endif
-
-#include "cereal/visionipc/visionbuf.h"
 
 class EGLImageTexture {
  public:
