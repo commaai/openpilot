@@ -624,7 +624,7 @@ FEATURES = {
 }
 
 ALT_GAS_CAR: Set[str] = set()  # these cars use a different gas signal, thought to be 2020+ year hev/phev
-EV_HYBRID = ALT_GAS_CAR | set([CAR.IONIQ_EV_2020, CAR.IONIQ_EV_LTD, CAR.KONA_EV, CAR.KIA_NIRO_EV, CAR.IONIQ, CAR.KIA_OPTIMA_H])
+EV_HYBRID = ALT_GAS_CAR | set([CAR.IONIQ_EV_2020, CAR.IONIQ_EV_LTD, CAR.IONIQ, CAR.KONA_EV, CAR.KIA_NIRO_EV])
 
 DBC = {
   CAR.ELANTRA: dbc_dict('hyundai_kia_generic', None),
