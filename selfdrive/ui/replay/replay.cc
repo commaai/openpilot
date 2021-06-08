@@ -247,21 +247,11 @@ void Replay::stream() {
         if (type == "roadCameraState") {
           auto fr = e.getRoadCameraState();
 
-<<<<<<< HEAD
-          auto it_ = eidx.find(fr.getFrameId());
-          if (it_ != eidx.end()) {
-            auto pp = *it_;
-            if (frs.find(pp.first) != frs.end()) {
-              auto frm = frs[pp.first];
-=======
           auto it_ = eidx[RoadCam].find(fr.getFrameId());
           if (it_ != eidx[RoadCam].end()) {
             EncodeIdx &e = it_->second;
             if (frs.find(e.segmentNum) != frs.end()) {
               auto frm = frs[e.segmentNum];
-              auto data = frm->get(e.frameEncodeId);
-
->>>>>>> refactor logreader
               if (vipc_server == nullptr) {
                 cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
                 cl_context context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
@@ -272,7 +262,7 @@ void Replay::stream() {
                 vipc_server->start_listener();
               }
 
-              uint8_t *dat = frm->get(pp.second);
+              uint8_t *dat = frm->get(e.frameEncodeId);
               if (dat) {
                 VisionIpcBufExtra extra = {};
                 VisionBuf *buf = vipc_server->get_buffer(VisionStreamType::VISION_STREAM_RGB_BACK);

@@ -50,7 +50,11 @@ void FileReader::startHttpRequest() {
   request.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
   reply_ = qnam->get(request);
   connect(reply_, &QNetworkReply::finished, [=]() {
-    emit !reply_->error() ? finished(reply_->readAll()) : failed(reply_->errorString());
+    if (!reply_->error()) {
+      emit finished(reply_->readAll());
+    } else {
+      emit failed(reply_->errorString());
+    }
     reply_->deleteLater();
     reply_ = nullptr;
   });
@@ -120,8 +124,6 @@ void LogReader::parseEvents(const QByteArray &dat) {
       words = kj::arrayPtr(evt->reader.getEnd(), words.end());
       events.insert(evt->mono_time, evt.release());
     } catch (const kj::Exception &e) {
-      // partial messages trigger this
-      // qDebug() << e.getDescription().cStr();
       valid_ = false;
       break;
     }
