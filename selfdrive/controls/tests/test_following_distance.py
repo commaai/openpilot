@@ -66,10 +66,10 @@ def run_following_distance_simulation(v_lead, t_end=200.0):
     mpc.update(CS.carState, model.modelV2, 0)
 
     # Choose slowest of two solutions
-    if v_cruise < mpc.mpc_solution.v_ego[1]:
+    if v_cruise < mpc.mpc_solution.v_ego[5]:
       v_ego, a_ego = v_cruise, a_cruise
     else:
-      v_ego, a_ego = mpc.mpc_solution.v_ego[1], mpc.mpc_solution.a_ego[1]
+      v_ego, a_ego = mpc.mpc_solution.v_ego[5], mpc.mpc_solution.a_ego[5]
 
     # Update state
     x_lead += v_lead * dt
