@@ -2,10 +2,10 @@
 
 #include <dlfcn.h>
 #include <errno.h>
-#include <string.h>
 #include <sys/mman.h>
 
 #include <cassert>
+#include <cstring>
 #include <map>
 #include <string>
 

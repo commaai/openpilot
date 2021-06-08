@@ -7,12 +7,12 @@
 #include <dirent.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <sys/file.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
 #include <csignal>
+#include <cstring>
 #include <mutex>
 #include <unordered_map>
 

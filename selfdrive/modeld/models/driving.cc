@@ -2,8 +2,9 @@
 
 #include <assert.h>
 #include <fcntl.h>
-#include <string.h>
 #include <unistd.h>
+
+#include <cstring>
 
 #include <eigen3/Eigen/Dense>
 

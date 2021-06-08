@@ -2,7 +2,6 @@
 #include <ftw.h>
 #include <inttypes.h>
 #include <pthread.h>
-#include <string.h>
 #include <sys/resource.h>
 #include <unistd.h>
 
@@ -12,6 +11,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <mutex>
 #include <random>
 #include <string>

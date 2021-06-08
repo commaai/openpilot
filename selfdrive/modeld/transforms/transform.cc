@@ -1,7 +1,7 @@
 #include "selfdrive/modeld/transforms/transform.h"
 
 #include <assert.h>
-#include <string.h>
+#include <cstring>
 
 #include "selfdrive/common/clutil.h"
 

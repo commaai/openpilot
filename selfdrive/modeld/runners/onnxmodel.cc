@@ -4,10 +4,10 @@
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
 
 #include <cassert>
+#include <cstring>
 #include <stdexcept>
 #include <string>
 

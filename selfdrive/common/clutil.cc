@@ -2,9 +2,9 @@
 
 #include <assert.h>
 #include <inttypes.h>
-#include <string.h>
 #include <sys/stat.h>
 
+#include <cstring>
 #include <iostream>
 #include <memory>
 #include <vector>

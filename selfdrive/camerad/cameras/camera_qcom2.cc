@@ -1,7 +1,6 @@
 #include "selfdrive/camerad/cameras/camera_qcom2.h"
 
 #include <stdio.h>
-#include <string.h>
 #include <errno.h>
 #include <unistd.h>
 #include <assert.h>
@@ -11,6 +10,7 @@
 #include <poll.h>
 #include <math.h>
 #include <atomic>
+#include <cstring>
 
 #include "media/cam_defs.h"
 #include "media/cam_isp.h"
