@@ -48,23 +48,21 @@ mat4 get_driver_view_transform() {
   mat4 transform;
   if (HARDWARE.TICI()) {
     // from dmonitoring.cc
-    const int full_width_tici = 1928;
-    const int full_height_tici = 1208;
     const int adapt_width_tici = 668;
     const int crop_x_offset = 32;
     const int crop_y_offset = -196;
-    const float yscale = full_height_tici * driver_view_ratio / adapt_width_tici;
-    const float xscale = yscale*(1080)/(2160)*full_width_tici/full_height_tici;
+    const float yscale = HARDWARE.driver_cam_size[1] * driver_view_ratio / adapt_width_tici;
+    const float xscale = yscale * (HARDWARE.screen_size[1] / HARDWARE.screen_size[0] * HARDWARE.driver_cam_size[0]) / HARDWARE.driver_cam_size[1];
     transform = (mat4){{
-      xscale,  0.0, 0.0, xscale*crop_x_offset/full_width_tici*2,
-      0.0,  yscale, 0.0, yscale*crop_y_offset/full_height_tici*2,
+      xscale,  0.0, 0.0, xscale * crop_x_offset / HARDWARE.driver_cam_size[0] * 2,
+      0.0,  yscale, 0.0, yscale * crop_y_offset / HARDWARE.driver_cam_size[1] * 2,
       0.0,  0.0, 1.0, 0.0,
       0.0,  0.0, 0.0, 1.0,
     }};
   } else {
     // frame from 4/3 to 16/9 display
     transform = (mat4){{
-      driver_view_ratio*(1080)/(1920),  0.0, 0.0, 0.0,
+      driver_view_ratio * (HARDWARE.screen_size[1] / HARDWARE.screen_size[0]),  0.0, 0.0, 0.0,
       0.0,  1.0, 0.0, 0.0,
       0.0,  0.0, 1.0, 0.0,
       0.0,  0.0, 0.0, 1.0,

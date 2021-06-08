@@ -22,7 +22,7 @@ public:
   virtual void reboot() {}
   virtual void poweroff() {}
   virtual void set_brightness(int percent) {}
-  virtual void set_display_power(bool on) {}
+  static inline void set_display_power(bool on) {}
 
   virtual bool get_ssh_enabled() { return false; }
   virtual void set_ssh_enabled(bool enabled) {}

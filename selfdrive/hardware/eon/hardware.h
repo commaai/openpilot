@@ -1,11 +1,14 @@
 #pragma once
 
-#include <cstdlib>
-#include <fstream>
-
+#include <hardware/hwcomposer_defs.h>
+#ifndef _USING_LIBCXX
+#define _USING_LIBCXX
+#endif
 #include <gui/ISurfaceComposer.h>
 #include <gui/SurfaceComposerClient.h>
-#include <hardware/hwcomposer_defs.h>
+
+#include <cstdlib>
+#include <fstream>
 
 #include "selfdrive/common/util.h"
 #include "selfdrive/hardware/base.h"
@@ -18,28 +21,40 @@ public:
   }
 
   inline bool EON() override { return true; }
-  inline std::string get_os_version() override { return "NEOS " + util::read_file("/VERSION");};
-  void reboot() override { std::system("reboot"); };
-  void poweroff() override { std::system("LD_LIBRARY_PATH= svc power shutdown"); };
+
+  inline std::string get_os_version() override {
+    return "NEOS " + util::read_file("/VERSION");
+  }
+
+  void reboot() override {
+    std::system("reboot");
+  }
+
+  void poweroff() override {
+    std::system("LD_LIBRARY_PATH= svc power shutdown");
+  }
+
   void set_brightness(int percent) override {
     std::ofstream brightness_control("/sys/class/leds/lcd-backlight/brightness");
     if (brightness_control.is_open()) {
-      brightness_control << (int)(percent * (255/100.)) << "\n";
+      brightness_control << (int)(percent * (255 / 100.)) << "\n";
       brightness_control.close();
     }
-  };
-  void set_display_power(bool on) override {
+  }
+
+  static inline void set_display_power(bool on) {
     auto dtoken = android::SurfaceComposerClient::getBuiltInDisplay(android::ISurfaceComposer::eDisplayIdMain);
     android::SurfaceComposerClient::setDisplayPowerMode(dtoken, on ? HWC_POWER_MODE_NORMAL : HWC_POWER_MODE_OFF);
-  };
+  }
 
   bool get_ssh_enabled() override {
     return std::system("getprop persist.neos.ssh | grep -qF '1'") == 0;
-  };
+  }
+
   void set_ssh_enabled(bool enabled) override {
     std::string cmd = util::string_format("setprop persist.neos.ssh %d", enabled ? 1 : 0);
     std::system(cmd.c_str());
-  };
+  }
 
   // android only
   bool launched_activity = false;
@@ -49,7 +64,7 @@ public:
   }
 
   void close_activities() {
-    if(launched_activity){
+    if (launched_activity) {
       std::system("pm disable com.android.settings && pm enable com.android.settings");
     }
   }
@@ -63,9 +78,11 @@ public:
     }
     launched_activity = true;
   }
+
   void launch_wifi() {
     launch_activity("com.android.settings/.wifi.WifiPickerActivity", "-a android.net.wifi.PICK_WIFI_NETWORK");
   }
+
   void launch_tethering() {
     launch_activity("com.android.settings/.TetherSettings");
   }
