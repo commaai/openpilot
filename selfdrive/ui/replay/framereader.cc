@@ -10,17 +10,17 @@
 static int ffmpeg_lockmgr_cb(void **arg, enum AVLockOp op) {
   std::mutex *mutex = (std::mutex *)*arg;
   switch (op) {
-    case AV_LOCK_CREATE:
-      mutex = new std::mutex();
-      break;
-    case AV_LOCK_OBTAIN:
-      mutex->lock();
-      break;
-    case AV_LOCK_RELEASE:
-      mutex->unlock();
-    case AV_LOCK_DESTROY:
-      delete mutex;
-      break;
+  case AV_LOCK_CREATE:
+    mutex = new std::mutex();
+    break;
+  case AV_LOCK_OBTAIN:
+    mutex->lock();
+    break;
+  case AV_LOCK_RELEASE:
+    mutex->unlock();
+  case AV_LOCK_DESTROY:
+    delete mutex;
+    break;
   }
   return 0;
 }
@@ -58,7 +58,9 @@ FrameReader::~FrameReader() {
   // free all.
   for (auto &f : frames_) {
     av_free_packet(&f.pkt);
-    if (f.data) delete[] f.data;
+    if (f.data) {
+      delete[] f.data;
+    }
   }
   while (!buffer_pool.empty()) {
     delete[] buffer_pool.front();
@@ -124,13 +126,17 @@ bool FrameReader::processFrames() {
 }
 
 uint8_t *FrameReader::get(int idx) {
-  if (!valid_ || idx < 0 || idx >= frames_.size()) return nullptr;
+  if (!valid_ || idx < 0 || idx >= frames_.size()) {
+    return nullptr;
+  }
+
   {
     std::unique_lock lk(mutex_);
     decode_idx_ = idx;
     cv_decode_.notify_one();
     cv_frame_.wait(lk, [=] { return exit_ || frames_[idx].data || frames_[idx].failed; });
   }
+
   return frames_[idx].data;
 }
 
