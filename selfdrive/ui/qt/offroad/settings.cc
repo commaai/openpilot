@@ -304,7 +304,7 @@ QWidget * network_panel(QWidget * parent) {
 
   layout->addStretch(1);
 
-  QWidget *w = new QWidget;
+  QWidget *w = new QWidget(parent);
   w->setLayout(layout);
 #else
   Networking *w = new Networking(parent);
@@ -354,7 +354,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     {"Device", device},
     {"Network", network_panel(this)},
     {"Toggles", new TogglesPanel(this)},
-    {"Software", new SoftwarePanel()},
+    {"Software", new SoftwarePanel(this)},
   };
 
   sidebar_layout->addSpacing(45);
