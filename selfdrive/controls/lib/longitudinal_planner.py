@@ -111,17 +111,17 @@ class Planner():
       self.mpcs[key].update(sm['carState'], sm['modelV2'], v_cruise)
       if self.mpcs[key].status and self.mpcs[key].mpc_solution.a_ego[5] < next_a:
         self.longitudinalPlanSource = key
-        self.a_desired_trajectory = list(self.mpcs[key].mpc_solution.a_ego[CONTROL_N + 1])
+        self.a_desired_trajectory = list(self.mpcs[key].mpc_solution.a_ego)[:CONTROL_N]
         next_a = self.mpcs[key].mpc_solution.a_ego[5]
 
     # Throw FCW if brake predictions exceed capability
-    self.fcw = (bool(np.any(self.a_desired_trajectory < -3.0)) and
+    self.fcw = (bool(np.any(np.array(self.a_desired_trajectory) < -3.0)) and
                 sm['modelV2'].leads[0].prob > .9 and
                 sm['modelV2'].leads[0].prob > .9)
 
     # Interpolate 0.05 seconds and save as starting point for next iteration
     a_prev = self.a_desired
-    self.a_desired = np.interp(DT_MDL, T_IDXS[:CONTROL_N+1], self.a_desired_trajectory)
+    self.a_desired = np.interp(DT_MDL, T_IDXS[:CONTROL_N], self.a_desired_trajectory)
     self.v_desired = self.v_desired + DT_MDL * (self.a_desired + a_prev)/2.0
 
 
