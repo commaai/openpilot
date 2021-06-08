@@ -2,7 +2,7 @@
 import argparse
 
 import cereal.messaging as messaging
-from common.numpy_fast import clip
+from common.numpy_fast import interp, clip
 from common.params import Params
 from inputs import get_gamepad
 from selfdrive.controls.lib.pid import apply_deadzone
@@ -51,12 +51,11 @@ class Joystick:
     elif key in self.axes:
       axis = self.axes[key]
       if self.use_keyboard:
-        increment = AXES_INCREMENT if key in ['w', 'a'] else -AXES_INCREMENT  # these keys increment the axes positively
-        value = self.axes_values[axis] + increment
+        sign = 1 if key in ['w', 'a'] else -1  # these keys increment the axes positively
+        value = self.axes_values[axis] + AXES_INCREMENT * sign
       else:
-        norm = ((state / MAX_AXIS_VALUE) - 0.5) * 2
+        norm = interp(state, [0, MAX_AXIS_VALUE], [-1., 1.])
         value = apply_deadzone(-norm, 0.05) / (1 - 0.05)  # center can be noisy, deadzone of 5%
-
       self.axes_values[axis] = round(clip(value, -1., 1.), 3)
 
     dat = messaging.new_message('testJoystick')
