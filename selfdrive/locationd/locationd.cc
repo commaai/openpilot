@@ -1,6 +1,8 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 
+#include <cmath>
+
 #include "locationd.h"
 
 using namespace EKFS;
@@ -357,11 +359,11 @@ void Localizer::finite_check(double current_time) {
 }
 
 void Localizer::time_check(double current_time) {
-  if (isnan(this->last_reset_time)) {
+  if (std::isnan(this->last_reset_time)) {
     this->last_reset_time = current_time;
   }
   double filter_time = this->kf->get_filter_time();
-  bool big_time_gap = !isnan(filter_time) && (current_time - filter_time > 10);
+  bool big_time_gap = !std::isnan(filter_time) && (current_time - filter_time > 10);
   if (big_time_gap){
     LOGE("Time gap of over 10s detected, kalman reset");
     this->reset_kalman(current_time);

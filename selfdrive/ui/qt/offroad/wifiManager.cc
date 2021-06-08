@@ -1,9 +1,8 @@
 #include "selfdrive/ui/qt/offroad/wifiManager.h"
 
-#include <stdlib.h>
-
 #include <algorithm>
 #include <set>
+#include <cstdlib>
 
 #include "selfdrive/common/params.h"
 #include "selfdrive/common/swaglog.h"

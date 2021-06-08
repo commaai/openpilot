@@ -1,10 +1,10 @@
 #include "selfdrive/ui/replay/framereader.h"
 
-#include <assert.h>
 #include <unistd.h>
 
-#include <QDebug>
+#include <cassert>
 
+#include <QDebug>
 
 static int ffmpeg_lockmgr_cb(void **arg, enum AVLockOp op) {
   std::mutex *mutex = (std::mutex *)*arg;

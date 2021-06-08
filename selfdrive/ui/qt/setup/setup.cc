@@ -1,7 +1,7 @@
 #include "selfdrive/ui/qt/setup/setup.h"
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 
 #include <QApplication>
 #include <QLabel>

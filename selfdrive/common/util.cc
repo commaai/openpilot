@@ -1,8 +1,7 @@
 #include "selfdrive/common/util.h"
 
-#include <errno.h>
-
 #include <cassert>
+#include <cerrno>
 #include <cstring>
 #include <dirent.h>
 #include <fstream>

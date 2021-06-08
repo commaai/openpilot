@@ -1,11 +1,11 @@
 #include <fcntl.h>
 #include <getopt.h>
-#include <math.h>
 #include <memory.h>
-#include <signal.h>
 #include <unistd.h>
 
 #include <cassert>
+#include <cmath>
+#include <csignal>
 #include <cstdint>
 #include <cstdlib>
 #include <fstream>

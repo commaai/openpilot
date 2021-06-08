@@ -1,10 +1,10 @@
 #include "selfdrive/ui/ui.h"
 
-#include <assert.h>
-#include <stdio.h>
 #include <unistd.h>
 
+#include <cassert>
 #include <cmath>
+#include <cstdio>
 
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
