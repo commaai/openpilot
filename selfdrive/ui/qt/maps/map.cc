@@ -672,10 +672,15 @@ void MapETA::updateETA(float s, float s_typical, float d) {
   auto eta_time = QDateTime::currentDateTime().addSecs(s).time();
   eta->setText(eta_time.toString("HH:mm"));
 
-  // Minutes
-  QString time_str;
-  time_str.setNum(int(s / 60.0));
-  time->setText(time_str);
+  // Remaining time
+  if (s < 3600) {
+    time->setText(QString::number(int(s / 60)));
+    time_unit->setText("min");
+  } else {
+    int hours = int(s) / 3600;
+    time->setText(QString::number(hours) + ":" + QString::number(int((s - hours * 3600) / 60)));
+    time_unit->setText("hr");
+  }
 
   if (s / s_typical > 1.5) {
     time_unit->setStyleSheet(R"(color: red; )");
@@ -690,12 +695,15 @@ void MapETA::updateETA(float s, float s_typical, float d) {
 
   // Distance
   QString distance_str;
+  float num = 0;
   if (QUIState::ui_state.scene.is_metric) {
-    distance_str.setNum(d / 1000, 'f', 1);
+    num = d / 1000.0;
     distance_unit->setText("km");
   } else {
-    distance_str.setNum(d * METER_2_MILE, 'f', 1);
+    num = d * METER_2_MILE;
     distance_unit->setText("mi");
   }
+
+  distance_str.setNum(num, 'f', num < 100 ? 1 : 0);
   distance->setText(distance_str);
 }
