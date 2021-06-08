@@ -282,7 +282,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
   # Usually all ECUs are recognized and an exact match to a car model can be made. Sometimes
   # one or two ECUs have unrecognized versions, but the others are present in the database.
   # If openpilot is confident about the match to a car model, it fingerprints anyway.
-  # In this case an alert is thrown since there is a small change the wrong car was detected
+  # In this case an alert is thrown since there is a small chance the wrong car was detected
   # and the user should pay extra attention.
   # This alert can be prevented by adding all ECU firmware version to openpilot:
   # https://github.com/commaai/openpilot/wiki/Fingerprinting
@@ -642,6 +642,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
   # For example if the device is pointed too much to the left or the right.
   # Usually this can only be solved by removing the mount from the windshield completely,
   # and attaching while making sure the device is pointed straight forward and is level.
+  # See https://comma.ai/setup for more information
   EventName.calibrationInvalid: {
     ET.PERMANENT: NormalPermanentAlert("Calibration Invalid", "Remount Device and Recalibrate"),
     ET.SOFT_DISABLE: SoftDisableAlert("Calibration Invalid: Remount Device & Recalibrate"),
