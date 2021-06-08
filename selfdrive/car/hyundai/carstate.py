@@ -1,6 +1,6 @@
 import copy
 from cereal import car
-from selfdrive.car.hyundai.values import DBC, STEER_THRESHOLD, FEATURES, EV_HYBRID, ALT_GAS_CAR
+from selfdrive.car.hyundai.values import DBC, STEER_THRESHOLD, FEATURES, EV_HYBRID_CAR, HYBRID_CAR
 from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
 from selfdrive.config import Conversions as CV
@@ -56,8 +56,8 @@ class CarState(CarStateBase):
     ret.brake = 0
     ret.brakePressed = cp.vl["TCS13"]["DriverBraking"] != 0
 
-    if self.CP.carFingerprint in EV_HYBRID:
-      gas_signal = "CR_Vcu_AccPedDep_Pc" if self.CP.carFingerprint in ALT_GAS_CAR else "Accel_Pedal_Pc"
+    if self.CP.carFingerprint in EV_HYBRID_CAR:
+      gas_signal = "CR_Vcu_AccPedDep_Pc" if self.CP.carFingerprint in HYBRID_CAR else "Accel_Pedal_Pc"
       ret.gas = cp.vl["E_EMS11"][gas_signal] / 100.
       ret.gasPressed = ret.gas > 0
     else:
@@ -229,8 +229,8 @@ class CarState(CarStateBase):
       ]
       checks += [("LCA11", 50)]
 
-    if CP.carFingerprint in EV_HYBRID:
-      gas_signal = "CR_Vcu_AccPedDep_Pc" if CP.carFingerprint in ALT_GAS_CAR else "Accel_Pedal_Pc"
+    if CP.carFingerprint in EV_HYBRID_CAR:
+      gas_signal = "CR_Vcu_AccPedDep_Pc" if CP.carFingerprint in HYBRID_CAR else "Accel_Pedal_Pc"
       signals.append((gas_signal, "E_EMS11", 0))
       checks.append(("E_EMS11", 50))
     else:

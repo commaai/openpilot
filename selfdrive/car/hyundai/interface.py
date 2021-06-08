@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from cereal import car
 from selfdrive.config import Conversions as CV
-from selfdrive.car.hyundai.values import CAR, ALT_GAS_CAR
+from selfdrive.car.hyundai.values import CAR, EV_HYBRID_CAR, HYBRID_CAR
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
 
@@ -225,9 +225,13 @@ class CarInterface(CarInterfaceBase):
                      CAR.GENESIS_G70, CAR.GENESIS_G80, CAR.KIA_CEED, CAR.ELANTRA]:
       ret.safetyModel = car.CarParams.SafetyModel.hyundaiLegacy
 
-    # these cars use an alternate gas signal
-    if candidate in ALT_GAS_CAR:
+    # set appropriate safety param for gas signal
+    if candidate in HYBRID_CAR:
       ret.safetyParam = 1
+    elif candidate in EV_HYBRID_CAR:
+      ret.safetyParam = 2
+    else:
+      ret.safetyParam = 0
 
     ret.centerToFront = ret.wheelbase * 0.4
 
