@@ -24,6 +24,41 @@
 #include <QPixmap>
 
 #include "cereal/messaging/messaging.h"
+class MapInstructions : public QWidget {
+  Q_OBJECT
+
+private:
+  QLabel *distance;
+  QLabel *primary;
+  QLabel *secondary;
+  QLabel *icon_01;
+  QHBoxLayout *lane_layout;
+  QMap<QString, QVariant> last_banner;
+
+public:
+  MapInstructions(QWidget * parent=nullptr);
+
+public slots:
+  void updateDistance(float d);
+  void updateInstructions(QMap<QString, QVariant> banner);
+};
+
+class MapETA : public QWidget {
+  Q_OBJECT
+
+private:
+  QLabel *eta;
+  QLabel *time;
+  QLabel *time_unit;
+  QLabel *distance;
+  QLabel *distance_unit;
+
+public:
+  MapETA(QWidget * parent=nullptr);
+
+public slots:
+  void updateETA(float seconds, float seconds_typical, float distance);
+};
 
 class MapWindow : public QOpenGLWidget {
   Q_OBJECT
@@ -68,7 +103,10 @@ private:
   QGeoRoutingManager *routing_manager;
   QGeoRoute route;
   QGeoRouteSegment segment;
-  QWidget* map_instructions;
+
+  MapInstructions* map_instructions;
+  MapETA* map_eta;
+
   QMapbox::Coordinate nav_destination;
   double last_maneuver_distance = 1000;
 
@@ -79,6 +117,7 @@ private:
   void calculateRoute(QMapbox::Coordinate destination);
   void clearRoute();
   bool shouldRecompute();
+  void updateETA();
 
 private slots:
   void timerUpdate();
@@ -91,23 +130,6 @@ public slots:
 signals:
   void distanceChanged(float distance);
   void instructionsChanged(QMap<QString, QVariant> banner);
+  void ETAChanged(float seconds, float seconds_typical, float distance);
 };
 
-class MapInstructions : public QWidget {
-  Q_OBJECT
-
-private:
-  QLabel *distance;
-  QLabel *primary;
-  QLabel *secondary;
-  QLabel *icon_01;
-  QHBoxLayout *lane_layout;
-  QMap<QString, QVariant> last_banner;
-
-public:
-  MapInstructions(QWidget * parent=nullptr);
-
-public slots:
-  void updateDistance(float d);
-  void updateInstructions(QMap<QString, QVariant> banner);
-};

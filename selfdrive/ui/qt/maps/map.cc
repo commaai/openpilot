@@ -37,11 +37,17 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings) {
 
   // Instructions
   map_instructions = new MapInstructions(this);
-  connect(this, SIGNAL(instructionsChanged(QMap<QString, QVariant>)),
-          map_instructions, SLOT(updateInstructions(QMap<QString, QVariant>)));
-  connect(this, SIGNAL(distanceChanged(float)),
-          map_instructions, SLOT(updateDistance(float)));
+  connect(this, &MapWindow::instructionsChanged, map_instructions, &MapInstructions::updateInstructions);
+  connect(this, &MapWindow::distanceChanged, map_instructions, &MapInstructions::updateDistance);
   map_instructions->setFixedWidth(width());
+
+  map_eta = new MapETA(this);
+  connect(this, &MapWindow::ETAChanged, map_eta, &MapETA::updateETA);
+
+  const int h = 180;
+  const int w = 500;
+  map_eta->setGeometry(0, 1080 - h, w, h);
+  map_eta->setVisible(false);
 
   // Routing
   QVariantMap parameters;
@@ -174,6 +180,9 @@ void MapWindow::timerUpdate() {
           emit instructionsChanged(banner[0].toMap());
         }
 
+        float distance = segment.distance() - distance_along_geometry(segment.path(), to_QGeoCoordinate(last_position));
+        emit distanceChanged(distance);
+        m_map->setPitch(MAX_PITCH); // TODO: smooth pitching based on maneuver distance
       }
 
       auto next_segment = segment.nextRouteSegment();
@@ -181,9 +190,6 @@ void MapWindow::timerUpdate() {
         auto next_maneuver = next_segment.maneuver();
         if (next_maneuver.isValid()){
           float next_maneuver_distance = next_maneuver.position().distanceTo(to_QGeoCoordinate(last_position));
-          emit distanceChanged(next_maneuver_distance);
-          m_map->setPitch(MAX_PITCH); // TODO: smooth pitching based on maneuver distance
-
           // Switch to next route segment
           if (next_maneuver_distance < REROUTE_DISTANCE && next_maneuver_distance > last_maneuver_distance){
             segment = next_segment;
@@ -221,9 +227,8 @@ void MapWindow::resizeGL(int w, int h) {
 void MapWindow::initializeGL() {
   m_map.reset(new QMapboxGL(nullptr, m_settings, size(), 1));
 
-  // TODO: Get from last gps position param
   m_map->setCoordinateZoom(last_position, MAX_ZOOM);
-  m_map->setMargins({0, 350, 0, 0});
+  m_map->setMargins({0, 350, 0, 50});
   m_map->setPitch(MIN_PITCH);
   m_map->setStyleUrl("mapbox://styles/pd0wm/cknuhcgvr0vs817o1akcx6pek"); // Larger fonts
 
@@ -237,6 +242,12 @@ void MapWindow::paintGL() {
   m_map->resize(size() / MAP_SCALE);
   m_map->setFramebufferObject(defaultFramebufferObject(), size());
   m_map->render();
+}
+
+static float get_time_typical(const QGeoRouteSegment &segment){
+  auto maneuver = segment.maneuver();
+  auto attrs = maneuver.extendedAttributes();
+  return attrs.contains("mapbox.duration_typical") ? attrs["mapbox.duration_typical"].toDouble() : segment.travelTime();
 }
 
 
@@ -254,6 +265,8 @@ void MapWindow::recomputeRoute() {
     should_recompute = true;
   }
 
+  if (!should_recompute) updateETA(); // ETA is updated after recompute
+
   if (!gps_ok && segment.isValid()) return; // Don't recompute when gps drifts in tunnels
 
   // Only do API request when map is loaded
@@ -265,6 +278,26 @@ void MapWindow::recomputeRoute() {
     } else {
       recompute_countdown = std::max(0, recompute_countdown - 1);
     }
+  }
+}
+
+void MapWindow::updateETA() {
+  if (segment.isValid()) {
+    float progress = distance_along_geometry(segment.path(), to_QGeoCoordinate(last_position)) / segment.distance();
+    float total_distance = segment.distance() * (1.0 - progress);
+    float total_time = segment.travelTime() * (1.0 - progress);
+    float total_time_typical = get_time_typical(segment) * (1.0 - progress);
+
+    auto s = segment.nextRouteSegment();
+    while (s.isValid()) {
+      total_distance += s.distance();
+      total_time += s.travelTime();
+      total_time_typical += get_time_typical(s);
+
+      s = s.nextRouteSegment();
+    }
+
+    emit ETAChanged(total_time, total_time_typical, total_distance);
   }
 }
 
@@ -297,6 +330,8 @@ void MapWindow::routeCalculated(QGeoRouteReply *reply) {
     navSource["data"] = QVariant::fromValue<QMapbox::Feature>(feature);
     m_map->updateSource("navSource", navSource);
     m_map->setLayoutProperty("navLayer", "visibility", "visible");
+
+    updateETA();
   }
 
   reply->deleteLater();
@@ -310,6 +345,9 @@ void MapWindow::clearRoute() {
     m_map->setLayoutProperty("navLayer", "visibility", "none");
     m_map->setPitch(MIN_PITCH);
   }
+
+  map_instructions->setVisible(false);
+  map_eta->setVisible(false);
 }
 
 
@@ -466,10 +504,10 @@ void MapInstructions::updateDistance(float d){
 
     if (feet > 500) {
       distance_str.setNum(miles, 'f', 1);
-      distance_str += " miles";
+      distance_str += " mi";
     } else {
       distance_str.setNum(50 * int(feet / 50));
-      distance_str += " feet";
+      distance_str += " ft";
     }
   }
 
@@ -564,4 +602,111 @@ void MapInstructions::updateInstructions(QMap<QString, QVariant> banner){
   secondary->setText(secondary_str);
   adjustSize();
   last_banner = banner;
+}
+
+MapETA::MapETA(QWidget * parent) : QWidget(parent){
+  QHBoxLayout *layout_outer = new QHBoxLayout;
+  layout_outer->setContentsMargins(20, 25, 20, 25);
+
+  {
+    QVBoxLayout *layout = new QVBoxLayout;
+    eta = new QLabel("12:26");
+    eta->setAlignment(Qt::AlignCenter);
+
+    auto eta_unit = new QLabel("eta");
+    eta_unit->setAlignment(Qt::AlignCenter);
+
+    layout->addStretch();
+    layout->addWidget(eta);
+    layout->addWidget(eta_unit);
+    layout->addStretch();
+    layout_outer->addLayout(layout);
+  }
+  {
+    QVBoxLayout *layout = new QVBoxLayout;
+    time = new QLabel("22");
+    time->setStyleSheet(R"(color: green; )");
+    time->setAlignment(Qt::AlignCenter);
+
+    time_unit = new QLabel("min");
+    time_unit->setStyleSheet(R"(color: green; )");
+    time_unit->setAlignment(Qt::AlignCenter);
+
+    layout->addStretch();
+    layout->addWidget(time);
+    layout->addWidget(time_unit);
+    layout->addStretch();
+    layout_outer->addLayout(layout);
+  }
+  {
+    QVBoxLayout *layout = new QVBoxLayout;
+    distance = new QLabel;
+    distance->setAlignment(Qt::AlignCenter);
+    distance_unit = new QLabel;
+    distance_unit->setAlignment(Qt::AlignCenter);
+
+    layout->addStretch();
+    layout->addWidget(distance);
+    layout->addWidget(distance_unit);
+    layout->addStretch();
+    layout_outer->addLayout(layout);
+  }
+
+  setLayout(layout_outer);
+  setStyleSheet(R"(
+    * {
+      color: white;
+      font-family: "Inter";
+      font-size: 55px;
+    }
+  )");
+
+  QPalette pal = palette();
+  pal.setColor(QPalette::Background, QColor(0, 0, 0, 150));
+  setAutoFillBackground(true);
+  setPalette(pal);
+}
+
+
+void MapETA::updateETA(float s, float s_typical, float d) {
+  setVisible(true);
+
+  // ETA
+  auto eta_time = QDateTime::currentDateTime().addSecs(s).time();
+  eta->setText(eta_time.toString("HH:mm"));
+
+  // Remaining time
+  if (s < 3600) {
+    time->setText(QString::number(int(s / 60)));
+    time_unit->setText("min");
+  } else {
+    int hours = int(s) / 3600;
+    time->setText(QString::number(hours) + ":" + QString::number(int((s - hours * 3600) / 60)));
+    time_unit->setText("hr");
+  }
+
+  if (s / s_typical > 1.5) {
+    time_unit->setStyleSheet(R"(color: red; )");
+    time->setStyleSheet(R"(color: red; )");
+  } else if (s / s_typical > 1.2) {
+    time_unit->setStyleSheet(R"(color: orange; )");
+    time->setStyleSheet(R"(color: orange; )");
+  } else {
+    time_unit->setStyleSheet(R"(color: green; )");
+    time->setStyleSheet(R"(color: green; )");
+  }
+
+  // Distance
+  QString distance_str;
+  float num = 0;
+  if (QUIState::ui_state.scene.is_metric) {
+    num = d / 1000.0;
+    distance_unit->setText("km");
+  } else {
+    num = d * METER_2_MILE;
+    distance_unit->setText("mi");
+  }
+
+  distance_str.setNum(num, 'f', num < 100 ? 1 : 0);
+  distance->setText(distance_str);
 }
