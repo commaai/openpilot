@@ -31,7 +31,7 @@ Replay::Replay(SubMaster *sm, QObject *parent) : sm_(sm), QObject(parent) {
   if (sm_ == nullptr) {
     pm_ = new PubMaster(s);
   }
-  events_ = std::make_unique<std::vector<Event*>>();
+  events_ = std::make_unique<std::vector<Event *>>();
 }
 
 Replay::~Replay() {
@@ -72,9 +72,6 @@ void Replay::stop() {
 
   // clear all
   events_->clear();
-  for (auto [n, seg] : segments_) {
-    delete seg;
-  }
   segments_.clear();
   current_ts_ = route_start_ts_ = seek_ts_ = 0;
   current_segment_ = 0;
@@ -133,14 +130,14 @@ void Replay::mergeEvents() {
   Segment *seg = qobject_cast<Segment *>(QObject::sender());
   const LogReader *log = seg->log;
 
-  if (route_start_ts_ == 0 ) {
+  if (route_start_ts_ == 0) {
     route_start_ts_ = log->route_start_ts;
   }
 
   auto [min_seg, max_seg] = queueSegmentRange();
   uint64_t min_tm = route_start_ts_ + min_seg * SEGMENT_LENGTH * 1e9;
   uint64_t max_tm = route_start_ts_ + (max_seg + 1) * SEGMENT_LENGTH * 1e9;
-  
+
   auto begin_merge_it = std::lower_bound(events_->begin(), events_->end(), min_tm, [](const Event *e, uint64_t v) {
     return e->mono_time < v;
   });
@@ -162,36 +159,33 @@ void Replay::mergeEvents() {
     std::unique_lock events_lock(events_mutex_);
     events_.reset(dst);
     seg->loaded = true;
-    loading_events_ = false; 
-
+    loading_events_ = false;
   }
   cv_.notify_one();
 
-  // remove segments
+  // erase segments
   auto it = segments_.begin();
   while (it != segments_.end()) {
-    if (auto seg = it->second; seg->loaded) {
-      if (auto &e = seg->log->events; e.back()->mono_time < min_tm || e.front()->mono_time > max_tm) {
-        qDebug() << "erase segment " << it->first;
-        delete it->second;
-        it = segments_.erase(it);
-        continue;
-      }
+    auto &seg = it->second;
+    auto &e = seg->log->events;
+    if (seg->loaded && (e.back()->mono_time < min_tm || e.front()->mono_time > max_tm)) {
+      qDebug() << "erase segment " << it->first;
+      it = segments_.erase(it);
+    } else {
+      ++it;
     }
-    ++it;
   }
 }
 
 std::pair<int, int> Replay::queueSegmentRange() {
   const auto &rs = route_.segments();
   int cur_idx = std::distance(rs.begin(), rs.lowerBound(current_segment_));
-  int i = 0, min = 0, max = rs.size() - 1;
+  int i = 0, min = rs.firstKey(), max = rs.lastKey();
   for (auto it = rs.begin(); it != rs.end(); ++it, ++i) {
     if (i <= cur_idx - BACKWARD_SEGS) {
-      min = i;
-    }
-    if (i >= cur_idx + FORWARD_SEGS) {
-      max = i;
+      min = it.key();
+    } else if (i >= cur_idx + FORWARD_SEGS) {
+      max = it.key();
       break;
     }
   }
@@ -206,8 +200,8 @@ void Replay::queueSegmentThread() {
       int n = it.key();
       std::unique_lock lk(segment_mutex_);
       if (segments_.find(n) == segments_.end()) {
-        segments_[n] = new Segment(n, it.value());
-        connect(segments_[n], &Segment::finishedRead, this, &Replay::mergeEvents);
+        segments_[n] = std::make_unique<Segment>(n, it.value());
+        connect(segments_[n].get(), &Segment::finishedRead, this, &Replay::mergeEvents);
       }
     }
     QThread::msleep(20);
@@ -215,10 +209,10 @@ void Replay::queueSegmentThread() {
 }
 
 // return nullptr if segment is not loaded
-const Segment* Replay::getSegment(int segment) {
+const Segment *Replay::getSegment(int segment) {
   std::unique_lock lk(segment_mutex_);
   auto it = segments_.find(segment);
-  return (it != segments_.end() && it->second->loaded) ? it->second : nullptr;
+  return (it != segments_.end() && it->second->loaded) ? it->second.get() : nullptr;
 }
 
 void Replay::pushFrame(int cur_seg_num, CameraType cam_type, uint32_t frame_id) {
@@ -264,16 +258,14 @@ void Replay::streamThread() {
       ++eit;
       seek_ts_ = 0;
     }
-    qInfo() << "unlogger at " << elapsedTime(evt_start_ts);
     uint64_t loop_start_ts = nanos_since_boot();
-    while(!exit_ && !loading_events_ && eit != events_->end()) {
+    while (!exit_ && !loading_events_ && eit != events_->end()) {
       const Event *e = (*eit);
       const std::string &sock_name = eventSocketName(e);
       if (!sock_name.empty()) {
         current_which = e->which;
         current_ts_ = e->mono_time;
         current_segment_ = (e->mono_time - route_start_ts_) / 1e9 / SEGMENT_LENGTH;
-        
 
         if ((e->mono_time - last_print_ts) > 5 * 1e9) {
           last_print_ts = e->mono_time;

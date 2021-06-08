@@ -14,9 +14,6 @@ class Segment : public QObject {
 
 public:
   Segment(int seg_num, const SegmentFile &file, QObject *parent = nullptr);
-  ~Segment() {
-    qInfo() << "********delete segment " << seg_num;
-  }
 
   const int seg_num;
   LogReader *log = nullptr;
@@ -48,9 +45,9 @@ public slots:
 private:
   QString elapsedTime(uint64_t ns);
   void seekTo(uint64_t to_ts);
+  std::pair<int, int> queueSegmentRange();
   void queueSegmentThread();
   void streamThread();
-  std::pair<int, int> queueSegmentRange();
   void pushFrame(int cur_seg_num, CameraType type, uint32_t frame_id);
   const Segment* getSegment(int segment);
   const std::string &eventSocketName(const Event *e);
@@ -66,7 +63,7 @@ private:
   Route route_;
   std::mutex events_mutex_, segment_mutex_;
   std::condition_variable cv_;
-  std::map<int, Segment*> segments_;
+  std::map<int, std::unique_ptr<Segment>> segments_;
   std::unique_ptr<std::vector<Event*>> events_;
 
   uint64_t seek_ts_ = 0;
