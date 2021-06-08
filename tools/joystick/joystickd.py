@@ -7,8 +7,6 @@ from common.params import Params
 from inputs import get_gamepad
 from tools.lib.kbhit import KBHit
 
-AXES = ['gb', 'steer']
-BUTTONS = ['cancel', 'engaged_toggle', 'steer_required']
 AXES_INCREMENT = 0.05  # 5% of full actuation each key press
 MAX_AXIS_VALUE = 255  # tune based on your joystick, 0 to this
 
@@ -16,16 +14,16 @@ MAX_AXIS_VALUE = 255  # tune based on your joystick, 0 to this
 class Joystick:
   def __init__(self, use_keyboard=True):
     self.use_keyboard = use_keyboard
-    self.axes_values = {ax: 0. for ax in AXES}
-    self.btn_states = {btn: False for btn in BUTTONS}
-
+    self.kb = KBHit()
     if self.use_keyboard:
-      self.kb = KBHit()
       self.buttons = {'c': 'cancel', 'e': 'engaged_toggle', 't': 'steer_required', 'r': 'reset'}
       self.axes = {'w': 'gb', 's': 'gb', 'a': 'steer', 'd': 'steer'}
     else:
       self.buttons = {'BTN_TRIGGER': 'cancel', 'BTN_THUMB': 'engaged_toggle', 'BTN_TOP': 'steer_required', 'BTN_THUMB2': 'reset'}
       self.axes = {'ABS_Y': 'gb', 'ABS_X': 'steer'}
+
+    self.axes_values = {ax: 0. for ax in self.axes.values()}
+    self.btn_states = {btn: False for btn in self.buttons.values() if btn != 'reset'}
 
   def update(self):
     # Get key or joystick event
@@ -41,8 +39,8 @@ class Joystick:
     if key in self.buttons and state == 0:
       btn_name = self.buttons[key]
       if btn_name == 'reset':
-        self.axes_values = {ax: 0. for ax in AXES}
-        self.btn_states = {btn: False for btn in BUTTONS}
+        self.axes_values = {ax: 0. for ax in self.axes_values}
+        self.btn_states = {btn: False for btn in self.btn_states}
       else:
         self.btn_states[btn_name] = not self.btn_states[btn_name]
 
@@ -57,8 +55,8 @@ class Joystick:
         self.axes_values[axis] = norm if abs(norm) > 0.05 else 0.  # center can be noisy, deadzone of 5%
 
     dat = messaging.new_message('testJoystick')
-    dat.testJoystick.axes = [round(self.axes_values[a], 3) for a in AXES]
-    dat.testJoystick.buttons = [self.btn_states[btn] for btn in BUTTONS]
+    dat.testJoystick.axes = [self.axes_values[a] for a in self.axes_values]
+    dat.testJoystick.buttons = [self.btn_states[btn] for btn in self.btn_states]
     return dat
 
 
@@ -82,7 +80,7 @@ def joystick_thread(use_keyboard):
   while True:
     dat = joystick.update()
     joystick_sock.send(dat.to_bytes())
-    print('\n' + ', '.join([f'{name}: {v}' for name, v in joystick.axes_values.items()]))
+    print('\n' + ', '.join([f'{name}: {round(v, 3)}' for name, v in joystick.axes_values.items()]))
     print(', '.join([f'{name}: {v}' for name, v in joystick.btn_states.items()]))
 
 
