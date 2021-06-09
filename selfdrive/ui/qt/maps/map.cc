@@ -625,12 +625,10 @@ MapETA::MapETA(QWidget * parent) : QWidget(parent){
   }
   {
     QVBoxLayout *layout = new QVBoxLayout;
-    time = new QLabel("22");
-    time->setStyleSheet(R"(color: green; )");
+    time = new QLabel;
     time->setAlignment(Qt::AlignCenter);
 
-    time_unit = new QLabel("min");
-    time_unit->setStyleSheet(R"(color: green; )");
+    time_unit = new QLabel;
     time_unit->setAlignment(Qt::AlignCenter);
 
     layout->addStretch();
@@ -687,14 +685,14 @@ void MapETA::updateETA(float s, float s_typical, float d) {
   }
 
   if (s / s_typical > 1.5) {
-    time_unit->setStyleSheet(R"(color: red; )");
-    time->setStyleSheet(R"(color: red; )");
+    time_unit->setStyleSheet(R"(color: #c92231; )");
+    time->setStyleSheet(R"(color: #c92231; )");
   } else if (s / s_typical > 1.2) {
-    time_unit->setStyleSheet(R"(color: orange; )");
-    time->setStyleSheet(R"(color: orange; )");
+    time_unit->setStyleSheet(R"(color: #da6f25; )");
+    time->setStyleSheet(R"(color: #da6f25; )");
   } else {
-    time_unit->setStyleSheet(R"(color: green; )");
-    time->setStyleSheet(R"(color: green; )");
+    time_unit->setStyleSheet(R"(color: #178644; )");
+    time->setStyleSheet(R"(color: #178644; )");
   }
 
   // Distance
