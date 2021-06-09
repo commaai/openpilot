@@ -16,9 +16,6 @@ enum ParamKeyType {
 };
 
 class Params {
-private:
-  std::string params_path;
-
 public:
   Params(bool persistent_param = false);
   Params(const std::string &path);
@@ -76,4 +73,9 @@ public:
   inline int putBool(const std::string &key, bool val) {
     return putBool(key.c_str(), val);
   }
+
+private:
+  void ensureParamsPath(const std::string &path);
+
+  std::string params_path;
 };

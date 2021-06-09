@@ -61,8 +61,8 @@ void SshControl::getUserKeys(const QString &username) {
   HttpRequest *request = new HttpRequest(this, "https://github.com/" + username + ".keys", "", false);
   QObject::connect(request, &HttpRequest::receivedResponse, [=](const QString &resp) {
     if (!resp.isEmpty()) {
-      qParams.Put("GithubUsername", username);
-      qParams.Put("GithubSshKeys", resp);
+      qParams.put("GithubUsername", username);
+      qParams.put("GithubSshKeys", resp);
     } else {
       ConfirmationDialog::alert("Username '" + username + "' has no keys on GitHub");
     }

@@ -117,11 +117,11 @@ class ParamControl : public ToggleControl {
 
 public:
   ParamControl(const QString &param, const QString &title, const QString &desc, const QString &icon, QWidget *parent = nullptr) : ToggleControl(title, desc, icon, false, parent) {
-    if (qParams.getBool(param.toStdString().c_str())) {
+    if (qParams.getBool(param)) {
       toggle.togglePosition();
     }
     QObject::connect(this, &ToggleControl::toggleFlipped, [=](bool state) {
-      qParams.putBool(param.toStdString().c_str(), state);
+      qParams.putBool(param, state);
     });
   }
 };

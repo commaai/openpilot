@@ -68,11 +68,17 @@ class QParams : public Params {
   inline QString Get(const char *key, bool block = false) {
     return QString::fromStdString(Params::get(key, block));
   }
-  inline int Put(const char *key, const QString &val) {
+  inline int put(const char *key, const QString &val) {
     return Params::put(key, val.toStdString());
   }
-  inline int Put(const QString &key, const QString &val) {
-    return Put(qPrintable(key), val);
+  inline int put(const QString &key, const QString &val) {
+    return put(qPrintable(key), val);
+  }
+  inline bool getBool(const QString &key) {
+    return Params::getBool(qPrintable(key));
+  }
+  inline int putBool(const QString &key, bool val) {
+    return Params::putBool(qPrintable(key), val);
   }
 };
 

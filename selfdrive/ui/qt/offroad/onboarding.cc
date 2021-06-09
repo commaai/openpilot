@@ -174,13 +174,13 @@ OnboardingWindow::OnboardingWindow(QWidget *parent) : QStackedWidget(parent) {
   addWidget(terms);
 
   connect(terms, &TermsPage::acceptedTerms, [=]() {
-    qParams.Put("HasAcceptedTerms", current_terms_version);
+    qParams.put("HasAcceptedTerms", current_terms_version);
     updateActiveScreen();
   });
 
   TrainingGuide* tr = new TrainingGuide(this);
   connect(tr, &TrainingGuide::completedTraining, [=]() {
-    qParams.Put("CompletedTrainingVersion", current_training_version);
+    qParams.put("CompletedTrainingVersion", current_training_version);
     updateActiveScreen();
   });
   addWidget(tr);

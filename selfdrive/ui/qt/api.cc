@@ -121,7 +121,7 @@ void HttpRequest::requestFinished() {
     if (reply->error() == QNetworkReply::NoError) {
       // save to cache
       if (!cache_key.isEmpty()) {
-        qParams.Put(cache_key, response);
+        qParams.put(cache_key, response);
       }
       emit receivedResponse(response);
     } else {

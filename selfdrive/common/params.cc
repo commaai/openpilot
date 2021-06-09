@@ -33,10 +33,6 @@
 
 namespace {
 
-const std::string default_params_path = Hardware::PC() ? util::getenv_default("HOME", "/.comma/params", "/data/params")
-                                                       : "/data/params";
-const std::string persistent_params_path = Hardware::PC() ? default_params_path : "/persist/comma/params";
-
 volatile sig_atomic_t params_do_exit = 0;
 void params_sig_handler(int signal) {
   params_do_exit = 1;
@@ -223,12 +219,23 @@ std::unordered_map<std::string, uint32_t> keys = {
 
 } // namespace
 
-Params::Params(bool persistent_param) : Params(persistent_param ? persistent_params_path : default_params_path) {}
+Params::Params(bool persistent_param) {
+  static const std::string default_path = Hardware::PC() ? util::getenv_default("HOME", "/.comma/params", "/data/params")
+                                                         : "/data/params";
+  static const std::string persistent_path = Hardware::PC() ? default_path : "/persist/comma/params";
 
-Params::Params(const std::string &path) : params_path(path) {
-  if (!ensure_params_path(params_path, params_path + "/d")) {
+  ensureParamsPath(persistent_param ? persistent_path : default_path);
+}
+
+Params::Params(const std::string &path) {
+  ensureParamsPath(path);
+}
+
+void Params::ensureParamsPath(const std::string &path) {
+  if (!ensure_params_path(path, path + "/d")) {
     throw std::runtime_error(util::string_format("Failed to ensure params path, errno=%d", errno));
   }
+  params_path = path;
 }
 
 bool Params::checkKey(const std::string &key) {
