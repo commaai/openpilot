@@ -47,7 +47,7 @@ void OnroadWindow::offroadTransition(bool offroad) {
     QString token = QString::fromStdString(Params().get("MapboxToken"));
     if (map == nullptr && !token.isEmpty()) {
       QMapboxGLSettings settings;
-      if (!Hardware::PC()) {
+      if (!HARDWARE.PC()) {
         settings.setCacheDatabasePath("/data/mbgl-cache.db");
       }
       settings.setCacheDatabaseMaximumSize(20 * 1024 * 1024);
