@@ -55,36 +55,40 @@ public:
     std::string cmd = util::string_format("setprop persist.neos.ssh %d", enabled ? 1 : 0);
     std::system(cmd.c_str());
   }
+};
 
-  // android only
-  void check_activity() {
+class EonActivity {
+public:
+  void check() {
     int ret = std::system("dumpsys SurfaceFlinger --list | grep -Fq 'com.android.settings'");
-    launched_activity = ret == 0;
+    launched = ret == 0;
   }
 
-  void close_activities() {
-    if (launched_activity) {
+  void close() {
+    if (launched) {
       std::system("pm disable com.android.settings && pm enable com.android.settings");
     }
   }
 
-  void launch_activity(std::string activity, std::string opts = "") {
-    if (!launched_activity) {
+  void launch(std::string activity, std::string opts = "") {
+    if (!launched) {
       std::string cmd = "am start -n " + activity + " " + opts +
                         " --ez extra_prefs_show_button_bar true \
                          --es extra_prefs_set_next_text ''";
       std::system(cmd.c_str());
     }
-    launched_activity = true;
+    launched = true;
   }
 
   void launch_wifi() {
-    launch_activity("com.android.settings/.wifi.WifiPickerActivity", "-a android.net.wifi.PICK_WIFI_NETWORK");
+    launch("com.android.settings/.wifi.WifiPickerActivity", "-a android.net.wifi.PICK_WIFI_NETWORK");
   }
 
   void launch_tethering() {
-    launch_activity("com.android.settings/.TetherSettings");
+    launch("com.android.settings/.TetherSettings");
   }
 
-  bool launched_activity = false;
+  bool launched = false;
 };
+
+static inline EonActivity Activity;

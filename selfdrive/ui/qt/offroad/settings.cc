@@ -269,11 +269,11 @@ QWidget * network_panel(QWidget * parent) {
 
   // wifi + tethering buttons
   layout->addWidget(new ButtonControl("WiFi Settings", "OPEN", "",
-                                      [=]() { HARDWARE.launch_wifi(); }));
+                                      [=]() { Activity.launch_wifi(); }));
   layout->addWidget(horizontal_line());
 
   layout->addWidget(new ButtonControl("Tethering Settings", "OPEN", "",
-                                      [=]() { HARDWARE.launch_tethering(); }));
+                                      [=]() { Activity.launch_tethering(); }));
   layout->addWidget(horizontal_line());
 
   // SSH key management
@@ -395,7 +395,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
 
 void SettingsWindow::hideEvent(QHideEvent *event) {
 #ifdef QCOM
-  HARDWARE.close_activities();
+  Activity.close();
 #endif
 
   // TODO: this should be handled by the Dialog classes
