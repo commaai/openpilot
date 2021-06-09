@@ -41,7 +41,7 @@ Pigeon * Pigeon::connect(const char * tty){
   return pigeon;
 }
 
-bool Pigeon::wait_for_ack(std::string ack, std::string nack){
+bool Pigeon::wait_for_ack(const std::string &ack, const std::string &nack){
   std::string s;
   while (!do_exit){
     s += receive();
@@ -66,7 +66,7 @@ bool Pigeon::wait_for_ack(){
   return wait_for_ack(ack, nack);
 }
 
-bool Pigeon::send_with_ack(std::string cmd){
+bool Pigeon::send_with_ack(const std::string &cmd){
   send(cmd);
   return wait_for_ack();
 }
