@@ -45,8 +45,8 @@ DriveStats::DriveStats(QWidget* parent) : QWidget(parent) {
     main_layout->addWidget(unitLabel("HOURS"), row + 1, 2, Qt::AlignLeft);
   };
 
-  add_stats_layouts("ALL TIME", all_);
-  add_stats_layouts("PAST WEEK", week_);
+  add_stats_layouts(tr("ALL TIME"), all_);
+  add_stats_layouts(tr("PAST WEEK"), week_);
 
   std::string dongle_id = Params().get("DongleId");
   if (util::is_valid_dongle_id(dongle_id)) {
