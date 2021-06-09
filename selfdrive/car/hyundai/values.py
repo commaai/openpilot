@@ -436,14 +436,24 @@ FW_VERSIONS = {
     ],
   },
   CAR.VELOSTER: {
-    (Ecu.fwdRadar, 0x7d0, None): [b'\xf1\x00JS__ SCC H-CUP      1.00 1.02 95650-J3200         ', ],
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00JS__ SCC H-CUP      1.00 1.02 95650-J3200         ',
+      b'\xf1\x00JS__ SCC HNCUP      1.00 1.02 95650-J3100         ',
+    ],
     (Ecu.esp, 0x7d1, None): [b'\xf1\x00\x00\x00\x00\x00\x00\x00', ],
-    (Ecu.engine, 0x7e0, None): [b'\x01TJS-JNU06F200H0A', ],
+    (Ecu.engine, 0x7e0, None): [
+      b'\x01TJS-JNU06F200H0A',
+      b'\x01TJS-JDK06F200H0A',
+    ],
     (Ecu.eps, 0x7d4, None): [b'\xf1\x00JSL MDPS C 1.00 1.03 56340-J3000 8308', ],
-    (Ecu.fwdCamera, 0x7c4, None): [b'\xf1\x00JS  LKAS AT USA LHD 1.00 1.02 95740-J3000 K32', ],
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00JS  LKAS AT USA LHD 1.00 1.02 95740-J3000 K32',
+      b'\xf1\x00JS  LKAS AT KOR LHD 1.00 1.03 95740-J3000 K33',
+    ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x816U2V8051\x00\x00\xf1\x006U2V0_C2\x00\x006U2V8051\x00\x00DJS0T16NS1\xba\x02\xb8\x80',
       b'\xf1\x816U2V8051\x00\x00\xf1\x006U2V0_C2\x00\x006U2V8051\x00\x00DJS0T16NS1\x00\x00\x00\x00',
+      b'\xf1\x816U2V8051\x00\x00\xf1\x006U2V0_C2\x00\x006U2V8051\x00\x00DJS0T16KS2\016\xba\036\xa2',
     ],
   },
   CAR.GENESIS_G70: {
