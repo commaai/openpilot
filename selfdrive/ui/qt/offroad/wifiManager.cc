@@ -4,8 +4,8 @@
 #include <set>
 #include <cstdlib>
 
-#include "selfdrive/common/params.h"
 #include "selfdrive/common/swaglog.h"
+#include "selfdrive/ui/qt/util.h"
 
 /**
  * We are using a NetworkManager DBUS API : https://developer.gnome.org/NetworkManager/1.26/spec.html
@@ -85,9 +85,9 @@ WifiManager::WifiManager(QWidget* parent) : QWidget(parent) {
 
   // Set tethering ssid as "weedle" + first 4 characters of a dongle id
   tethering_ssid = "weedle";
-  std::string bytes = Params().get("DongleId");
-  if (bytes.length() >= 4) {
-    tethering_ssid+="-"+QString::fromStdString(bytes.substr(0,4));
+  QString bytes = qParams.Get("DongleId");
+  if (bytes.size() >= 4) {
+    tethering_ssid += "-" + bytes.left(4);
   }
 
   // Create dbus interface for tethering button. This populates the introspection cache,

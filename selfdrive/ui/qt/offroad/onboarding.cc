@@ -7,9 +7,9 @@
 #include <QQuickWidget>
 #include <QVBoxLayout>
 
-#include "selfdrive/common/params.h"
 #include "selfdrive/common/util.h"
 #include "selfdrive/ui/qt/home.h"
+#include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/widgets/input.h"
 
 
@@ -139,7 +139,7 @@ void DeclinePage::showEvent(QShowEvent *event) {
 
   QObject::connect(uninstall_btn, &QPushButton::released, [=]() {
     if (ConfirmationDialog::confirm("Are you sure you want to uninstall?", this)) {
-      Params().putBool("DoUninstall", true);
+      qParams.putBool("DoUninstall", true);
     }
   });
 
@@ -167,21 +167,20 @@ void OnboardingWindow::updateActiveScreen() {
 }
 
 OnboardingWindow::OnboardingWindow(QWidget *parent) : QStackedWidget(parent) {
-  params = Params();
-  current_terms_version = params.get("TermsVersion", false);
-  current_training_version = params.get("TrainingVersion", false);
+  current_terms_version = qParams.Get("TermsVersion", false);
+  current_training_version = qParams.Get("TrainingVersion", false);
 
   TermsPage* terms = new TermsPage(this);
   addWidget(terms);
 
   connect(terms, &TermsPage::acceptedTerms, [=]() {
-    Params().put("HasAcceptedTerms", current_terms_version);
+    qParams.Put("HasAcceptedTerms", current_terms_version);
     updateActiveScreen();
   });
 
   TrainingGuide* tr = new TrainingGuide(this);
   connect(tr, &TrainingGuide::completedTraining, [=]() {
-    Params().put("CompletedTrainingVersion", current_training_version);
+    qParams.Put("CompletedTrainingVersion", current_training_version);
     updateActiveScreen();
   });
   addWidget(tr);
@@ -217,8 +216,8 @@ OnboardingWindow::OnboardingWindow(QWidget *parent) : QStackedWidget(parent) {
 }
 
 void OnboardingWindow::updateOnboardingStatus() {
-  accepted_terms = params.get("HasAcceptedTerms", false).compare(current_terms_version) == 0;
-  training_done = params.get("CompletedTrainingVersion", false).compare(current_training_version) == 0;
+  accepted_terms = qParams.Get("HasAcceptedTerms", false) == current_terms_version;
+  training_done = qParams.Get("CompletedTrainingVersion", false) == current_training_version;
 }
 
 bool OnboardingWindow::isOnboardingDone() {

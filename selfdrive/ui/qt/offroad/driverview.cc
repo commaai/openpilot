@@ -31,12 +31,12 @@ DriverViewScene::DriverViewScene(QWidget* parent) : sm({"driverState"}), QWidget
 
 void DriverViewScene::showEvent(QShowEvent* event) {
   frame_updated = false;
-  is_rhd = params.getBool("IsRHD");
-  params.putBool("IsDriverViewEnabled", true);
+  is_rhd = qParams.getBool("IsRHD");
+  qParams.putBool("IsDriverViewEnabled", true);
 }
 
 void DriverViewScene::hideEvent(QHideEvent* event) {
-  params.putBool("IsDriverViewEnabled", false);
+  qParams.putBool("IsDriverViewEnabled", false);
 }
 
 void DriverViewScene::frameUpdated() {

@@ -10,8 +10,8 @@
 #include <QVBoxLayout>
 #include <QrCode.hpp>
 
-#include "selfdrive/common/params.h"
 #include "selfdrive/ui/qt/request_repeater.h"
+#include "selfdrive/ui/qt/util.h"
 
 using qrcodegen::QrCode;
 
@@ -32,9 +32,8 @@ void PairingQRWidget::showEvent(QShowEvent *event) {
 }
 
 void PairingQRWidget::refresh() {
-  Params params;
-  QString IMEI = QString::fromStdString(params.get("IMEI"));
-  QString serial = QString::fromStdString(params.get("HardwareSerial"));
+  QString IMEI = qParams.Get("IMEI");
+  QString serial = qParams.Get("HardwareSerial");
 
   if (std::min(IMEI.length(), serial.length()) <= 5) {
     qrCode->setText("Error getting serial: contact support");
@@ -103,7 +102,7 @@ PrimeUserWidget::PrimeUserWidget(QWidget* parent) : QWidget(parent) {
   )");
 
   // set up API requests
-  QString dongleId = QString::fromStdString(Params().get("DongleId"));
+  QString dongleId = qParams.Get("DongleId");
   if (!dongleId.length()) {
     return;
   }
@@ -239,8 +238,7 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
   setSizePolicy(sp_retain);
 
   // set up API requests
-  QString dongleId = QString::fromStdString(Params().get("DongleId"));
-  QString url = "https://api.commadotai.com/v1.1/devices/" + dongleId + "/";
+  QString url = "https://api.commadotai.com/v1.1/devices/" + qParams.Get("DongleId") + "/";
   RequestRepeater* repeater = new RequestRepeater(this, url, "ApiCache_Device", 5);
 
   QObject::connect(repeater, &RequestRepeater::receivedResponse, this, &SetupWidget::replyFinished);

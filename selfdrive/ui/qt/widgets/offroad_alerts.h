@@ -7,7 +7,6 @@
 #include <QPushButton>
 #include <QVBoxLayout>
 
-#include "selfdrive/common/params.h"
 #include "selfdrive/ui/qt/widgets/scrollview.h"
 
 class OffroadAlert : public QFrame {
@@ -21,8 +20,7 @@ public:
 private:
   void updateAlerts();
 
-  Params params;
-  std::map<std::string, QLabel*> alerts;
+  std::map<QString, QLabel*> alerts;
 
   QLabel releaseNotes;
   QPushButton rebootBtn;

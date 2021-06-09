@@ -5,8 +5,8 @@
 #include <QJsonObject>
 #include <QVBoxLayout>
 
-#include "selfdrive/common/params.h"
 #include "selfdrive/ui/qt/request_repeater.h"
+#include "selfdrive/ui/qt/util.h"
 
 const double MILE_TO_KM = 1.60934;
 
@@ -42,7 +42,7 @@ void DriveStats::parseResponse(const QString& response) {
 }
 
 DriveStats::DriveStats(QWidget* parent) : QWidget(parent) {
-  metric = Params().getBool("IsMetric");
+  metric = qParams.getBool("IsMetric");
   QString distance_unit = metric ? "KM" : "MILES";
 
   auto add_stats_layouts = [&](QGridLayout* gl, StatsLabels& labels, int row, const QString &distance_unit) {
@@ -60,8 +60,7 @@ DriveStats::DriveStats(QWidget* parent) : QWidget(parent) {
   gl->addWidget(new QLabel("PAST WEEK"), 6, 0, 1, 3);
   add_stats_layouts(gl, week_, 7, distance_unit);
 
-  QString dongleId = QString::fromStdString(Params().get("DongleId"));
-  QString url = "https://api.commadotai.com/v1.1/devices/" + dongleId + "/stats";
+  QString url = "https://api.commadotai.com/v1.1/devices/" + qParams.Get("DongleId") + "/stats";
   RequestRepeater *repeater = new RequestRepeater(this, url, "ApiCache_DriveStats", 30);
   QObject::connect(repeater, &RequestRepeater::receivedResponse, this, &DriveStats::parseResponse);
 

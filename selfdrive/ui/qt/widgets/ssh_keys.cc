@@ -3,8 +3,8 @@
 #include <QHBoxLayout>
 #include <QNetworkReply>
 
-#include "selfdrive/common/params.h"
 #include "selfdrive/ui/qt/api.h"
+#include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/widgets/input.h"
 
 SshControl::SshControl() : AbstractControl("SSH Keys", "Warning: This grants SSH access to all public keys in your GitHub settings. Never enter a GitHub username other than your own. A comma employee will NEVER ask you to add their GitHub username.", "") {
@@ -36,8 +36,8 @@ SshControl::SshControl() : AbstractControl("SSH Keys", "Warning: This grants SSH
         getUserKeys(username);
       }
     } else {
-      params.remove("GithubUsername");
-      params.remove("GithubSshKeys");
+      qParams.remove("GithubUsername");
+      qParams.remove("GithubSshKeys");
       refresh();
     }
   });
@@ -46,9 +46,9 @@ SshControl::SshControl() : AbstractControl("SSH Keys", "Warning: This grants SSH
 }
 
 void SshControl::refresh() {
-  QString param = QString::fromStdString(params.get("GithubSshKeys"));
+  QString param = qParams.Get("GithubSshKeys");
   if (param.length()) {
-    username_label.setText(QString::fromStdString(params.get("GithubUsername")));
+    username_label.setText(qParams.Get("GithubUsername"));
     btn.setText("REMOVE");
   } else {
     username_label.setText("");
@@ -61,8 +61,8 @@ void SshControl::getUserKeys(const QString &username) {
   HttpRequest *request = new HttpRequest(this, "https://github.com/" + username + ".keys", "", false);
   QObject::connect(request, &HttpRequest::receivedResponse, [=](const QString &resp) {
     if (!resp.isEmpty()) {
-      params.put("GithubUsername", username.toStdString());
-      params.put("GithubSshKeys", resp.toStdString());
+      qParams.Put("GithubUsername", username);
+      qParams.Put("GithubSshKeys", resp);
     } else {
       ConfirmationDialog::alert("Username '" + username + "' has no keys on GitHub");
     }

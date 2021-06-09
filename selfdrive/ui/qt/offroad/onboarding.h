@@ -7,8 +7,6 @@
 #include <QTextEdit>
 #include <QWidget>
 
-#include "selfdrive/common/params.h"
-
 class TrainingGuide : public QFrame {
   Q_OBJECT
 
@@ -99,9 +97,8 @@ public:
   bool isOnboardingDone();
 
 private:
-  Params params;
-  std::string current_terms_version;
-  std::string current_training_version;
+  QString current_terms_version;
+  QString current_training_version;
   bool accepted_terms = false;
   bool training_done = false;
   void updateOnboardingStatus();

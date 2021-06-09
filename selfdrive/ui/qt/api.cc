@@ -12,9 +12,9 @@
 #include <QTimer>
 #include <QWidget>
 
-#include "selfdrive/common/params.h"
 #include "selfdrive/common/util.h"
 #include "selfdrive/hardware/hw.h"
+#include "selfdrive/ui/qt/util.h"
 
 const std::string private_key_path =
     Hardware::PC() ? util::getenv_default("HOME", "/.comma/persist/comma/id_rsa", "/persist/comma/id_rsa")
@@ -45,13 +45,11 @@ QByteArray CommaApi::rsa_sign(const QByteArray &data) {
 }
 
 QString CommaApi::create_jwt(const QVector<QPair<QString, QJsonValue>> &payloads, int expiry) {
-  QString dongle_id = QString::fromStdString(Params().get("DongleId"));
-
   QJsonObject header;
   header.insert("alg", "RS256");
 
   QJsonObject payload;
-  payload.insert("identity", dongle_id);
+  payload.insert("identity", qParams.Get("DongleId"));
 
   auto t = QDateTime::currentSecsSinceEpoch();
   payload.insert("nbf", t);
@@ -84,8 +82,8 @@ HttpRequest::HttpRequest(QObject *parent, const QString &requestURL, const QStri
   sendRequest(requestURL);
 
   if (!cache_key.isEmpty()) {
-    if (std::string cached_resp = Params().get(cache_key.toStdString()); !cached_resp.empty()) {
-      QTimer::singleShot(0, [=]() { emit receivedResponse(QString::fromStdString(cached_resp)); });
+    if (QString cached_resp = qParams.Get(cache_key); !cached_resp.isEmpty()) {
+      QTimer::singleShot(0, [=]() { emit receivedResponse(cached_resp); });
     }
   }
 }
@@ -123,12 +121,12 @@ void HttpRequest::requestFinished() {
     if (reply->error() == QNetworkReply::NoError) {
       // save to cache
       if (!cache_key.isEmpty()) {
-        Params().put(cache_key.toStdString(), response.toStdString());
+        qParams.Put(cache_key, response);
       }
       emit receivedResponse(response);
     } else {
       if (!cache_key.isEmpty()) {
-        Params().remove(cache_key.toStdString());
+        qParams.remove(cache_key.toStdString());
       }
       qDebug() << reply->errorString();
       emit failedResponse(reply->errorString());

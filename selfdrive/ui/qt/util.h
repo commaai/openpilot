@@ -5,14 +5,6 @@
 #include "selfdrive/common/params.h"
 
 
-inline QString getBrand() {
-  return Params().getBool("Passive") ? "dashcam" : "openpilot";
-}
-
-inline QString getBrandVersion() {
-  return getBrand() + " v" + QString::fromStdString(Params().get("Version")).left(14).trimmed();
-}
-
 inline void configFont(QPainter &p, const QString &family, int size, const QString &style) {
   QFont f(family);
   f.setPixelSize(size);
@@ -64,4 +56,32 @@ inline void setQtSurfaceFormat() {
   fmt.setRenderableType(QSurfaceFormat::OpenGLES);
 #endif
   QSurfaceFormat::setDefaultFormat(fmt);
+}
+
+class QParams : public Params {
+  public:
+  QParams(bool persistent_param = false) : Params(persistent_param) {}
+  QParams(const QString &path) : Params(path.toStdString()) {}
+  inline QString Get(const QString &key, bool block = false) {
+    return QString::fromStdString(Params::get(qPrintable(key), block));
+  }
+  inline QString Get(const char *key, bool block = false) {
+    return QString::fromStdString(Params::get(key, block));
+  }
+  inline int Put(const char *key, const QString &val) {
+    return Params::put(key, val.toStdString());
+  }
+  inline int Put(const QString &key, const QString &val) {
+    return Put(qPrintable(key), val);
+  }
+};
+
+static inline QParams qParams;
+
+inline QString getBrand() {
+  return qParams.getBool("Passive") ? "dashcam" : "openpilot";
+}
+
+inline QString getBrandVersion() {
+  return getBrand() + " v" + qParams.Get("Version").left(14).trimmed();
 }

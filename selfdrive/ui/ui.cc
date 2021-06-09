@@ -13,6 +13,7 @@
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/paint.h"
 #include "selfdrive/ui/qt/qt_window.h"
+#include "selfdrive/ui/qt/util.h"
 
 #define BACKLIGHT_DT 0.25
 #define BACKLIGHT_TS 2.00
@@ -215,7 +216,7 @@ static void update_params(UIState *s) {
   const uint64_t frame = s->sm->frame;
   UIScene &scene = s->scene;
   if (frame % (5*UI_FREQ) == 0) {
-    scene.is_metric = Params().getBool("IsMetric");
+    scene.is_metric = qParams.getBool("IsMetric");
   }
 }
 
@@ -256,8 +257,8 @@ static void update_status(UIState *s) {
       s->status = STATUS_DISENGAGED;
       s->scene.started_frame = s->sm->frame;
 
-      s->scene.end_to_end = Params().getBool("EndToEndToggle");
-      s->wide_camera = Hardware::TICI() ? Params().getBool("EnableWideCamera") : false;
+      s->scene.end_to_end = qParams.getBool("EndToEndToggle");
+      s->wide_camera = Hardware::TICI() ? qParams.getBool("EnableWideCamera") : false;
 
       // Update intrinsics matrix after possible wide camera toggle change
       if (s->vg) {
@@ -289,7 +290,7 @@ QUIState::QUIState(QObject *parent) : QObject(parent) {
   ui_state.fb_h = vwp_h;
   ui_state.scene.started = false;
   ui_state.last_frame = nullptr;
-  ui_state.wide_camera = Hardware::TICI() ? Params().getBool("EnableWideCamera") : false;
+  ui_state.wide_camera = Hardware::TICI() ? qParams.getBool("EnableWideCamera") : false;
 
   ui_state.vipc_client_rear = new VisionIpcClient("camerad", VISION_STREAM_RGB_BACK, true);
   ui_state.vipc_client_wide = new VisionIpcClient("camerad", VISION_STREAM_RGB_WIDE, true);

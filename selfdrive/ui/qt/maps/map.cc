@@ -203,7 +203,7 @@ void MapWindow::timerUpdate() {
           last_maneuver_distance = next_maneuver_distance;
         }
       } else {
-        Params().remove("NavDestination");
+        qParams.remove("NavDestination");
 
         // Clear route if driving away from destination
         float d = segment.maneuver().position().distanceTo(to_QGeoCoordinate(last_position));

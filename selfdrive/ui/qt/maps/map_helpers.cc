@@ -3,7 +3,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 
-#include "selfdrive/common/params.h"
+#include "selfdrive/ui/qt/util.h"
 
 
 QGeoCoordinate to_QGeoCoordinate(const QMapbox::Coordinate &in) {
@@ -114,8 +114,8 @@ float distance_along_geometry(QList<QGeoCoordinate> geometry, QGeoCoordinate pos
   return total_distance_closest;
 }
 
-std::optional<QMapbox::Coordinate> coordinate_from_param(std::string param) {
-  QString json_str = QString::fromStdString(Params().get(param));
+std::optional<QMapbox::Coordinate> coordinate_from_param(const QString &param) {
+  QString json_str = qParams.Get(param);
   if (json_str.isEmpty()) return {};
 
   QJsonDocument doc = QJsonDocument::fromJson(json_str.toUtf8());

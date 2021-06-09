@@ -11,7 +11,6 @@
 #include "selfdrive/ui/qt/maps/map_settings.h"
 #endif
 
-#include "selfdrive/common/params.h"
 #include "selfdrive/common/util.h"
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
@@ -79,7 +78,7 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                     "../assets/offroad/icon_openpilot.png",
                                     this));
     QObject::connect(toggles.back(), &ToggleControl::toggleFlipped, [=](bool state) {
-      Params().remove("CalibrationParams");
+      qParams.remove("CalibrationParams");
     });
 
     toggles.append(new ParamControl("EnableLteOnroad",
@@ -89,7 +88,7 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                     this));
   }
 
-  bool record_lock = Params().getBool("RecordFrontLock");
+  bool record_lock = qParams.getBool("RecordFrontLock");
   record_toggle->setEnabled(!record_lock);
 
   for(ParamControl *toggle : toggles) {
@@ -104,13 +103,12 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
 
 DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
   QVBoxLayout *device_layout = new QVBoxLayout;
-  Params params = Params();
 
-  QString dongle = QString::fromStdString(params.get("DongleId", false));
+  QString dongle = qParams.Get("DongleId", false);
   device_layout->addWidget(new LabelControl("Dongle ID", dongle));
   device_layout->addWidget(horizontal_line());
 
-  QString serial = QString::fromStdString(params.get("HardwareSerial", false));
+  QString serial = qParams.Get("HardwareSerial", false);
   device_layout->addWidget(new LabelControl("Serial", serial));
 
   // offroad-only buttons
@@ -123,12 +121,12 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
   QString resetCalibDesc = "openpilot requires the device to be mounted within 4° left or right and within 5° up or down. openpilot is continuously calibrating, resetting is rarely required.";
   ButtonControl *resetCalibBtn = new ButtonControl("Reset Calibration", "RESET", resetCalibDesc, [=]() {
     if (ConfirmationDialog::confirm("Are you sure you want to reset calibration?", this)) {
-      Params().remove("CalibrationParams");
+      qParams.remove("CalibrationParams");
     }
   }, "", this);
   connect(resetCalibBtn, &ButtonControl::showDescription, [=]() {
     QString desc = resetCalibDesc;
-    std::string calib_bytes = Params().get("CalibrationParams");
+    std::string calib_bytes = qParams.get("CalibrationParams");
     if (!calib_bytes.empty()) {
       try {
         AlignedBuffer aligned_buf;
@@ -152,14 +150,14 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
   offroad_btns.append(new ButtonControl("Review Training Guide", "REVIEW",
                                         "Review the rules, features, and limitations of openpilot", [=]() {
     if (ConfirmationDialog::confirm("Are you sure you want to review the training guide?", this)) {
-      Params().remove("CompletedTrainingVersion");
+      qParams.remove("CompletedTrainingVersion");
       emit reviewTrainingGuide();
     }
   }, "", this));
 
   offroad_btns.append(new ButtonControl("Uninstall " + getBrand(), "UNINSTALL", "", [=]() {
     if (ConfirmationDialog::confirm("Are you sure you want to uninstall?", this)) {
-      Params().putBool("DoUninstall", true);
+      qParams.putBool("DoUninstall", true);
     }
   }, "", this));
 
@@ -210,7 +208,7 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : QWidget(parent) {
 
   fs_watch = new QFileSystemWatcher(this);
   QObject::connect(fs_watch, &QFileSystemWatcher::fileChanged, [=](const QString path) {
-    int update_failed_count = Params().get<int>("UpdateFailedCount").value_or(0);
+    int update_failed_count = qParams.get<int>("UpdateFailedCount").value_or(0);
     if (path.contains("UpdateFailedCount") && update_failed_count > 0) {
       lastUpdateTimeLbl->setText("failed to fetch update");
       updateButton->setText("CHECK");
@@ -226,23 +224,23 @@ void SoftwarePanel::showEvent(QShowEvent *event) {
 }
 
 void SoftwarePanel::updateLabels() {
-  Params params = Params();
-  QList<QPair<QString, std::string>> dev_params = {
-    {"Git Branch", params.get("GitBranch")},
-    {"Git Commit", params.get("GitCommit").substr(0, 10)},
-    {"OS Version", Hardware::get_os_version()},
+  QList<QPair<QString, QString>> dev_params = {
+    {"Git Branch", qParams.Get("GitBranch")},
+    {"Git Commit", qParams.Get("GitCommit").left(10)},
+    {"Panda Firmware", qParams.Get("PandaFirmwareHex")},
+    {"OS Version", QString::fromStdString(Hardware::get_os_version())},
   };
 
   QString lastUpdateTime = "";
 
-  std::string last_update_param = params.get("LastUpdateTime");
-  if (!last_update_param.empty()) {
-    QDateTime lastUpdateDate = QDateTime::fromString(QString::fromStdString(last_update_param + "Z"), Qt::ISODate);
+  QString last_update_param = qParams.Get("LastUpdateTime");
+  if (!last_update_param.isEmpty()) {
+    QDateTime lastUpdateDate = QDateTime::fromString(last_update_param + "Z", Qt::ISODate);
     lastUpdateTime = timeAgo(lastUpdateDate);
   }
 
   if (labels.size() < dev_params.size()) {
-    versionLbl = new LabelControl("Version", getBrandVersion(), QString::fromStdString(params.get("ReleaseNotes")).trimmed());
+    versionLbl = new LabelControl("Version", getBrandVersion(), qParams.Get("ReleaseNotes").trimmed());
     layout()->addWidget(versionLbl);
     layout()->addWidget(horizontal_line());
 
@@ -251,10 +249,9 @@ void SoftwarePanel::updateLabels() {
     layout()->addWidget(horizontal_line());
 
     updateButton = new ButtonControl("Check for Update", "CHECK", "", [=]() {
-      Params params = Params();
-      if (params.getBool("IsOffroad")) {
-        fs_watch->addPath(QString::fromStdString(params.getParamsPath()) + "/d/LastUpdateTime");
-        fs_watch->addPath(QString::fromStdString(params.getParamsPath()) + "/d/UpdateFailedCount");
+      if (qParams.getBool("IsOffroad")) {
+        fs_watch->addPath(QString::fromStdString(qParams.getParamsPath()) + "/d/LastUpdateTime");
+        fs_watch->addPath(QString::fromStdString(qParams.getParamsPath()) + "/d/UpdateFailedCount");
         updateButton->setText("CHECKING");
         updateButton->setEnabled(false);
       }
@@ -271,11 +268,10 @@ void SoftwarePanel::updateLabels() {
 
   for (int i = 0; i < dev_params.size(); i++) {
     const auto &[name, value] = dev_params[i];
-    QString val = QString::fromStdString(value).trimmed();
     if (labels.size() > i) {
-      labels[i]->setText(val);
+      labels[i]->setText(value);
     } else {
-      labels.push_back(new LabelControl(name, val));
+      labels.push_back(new LabelControl(name, value));
       layout()->addWidget(labels[i]);
       if (i < (dev_params.size() - 1)) {
         layout()->addWidget(horizontal_line());

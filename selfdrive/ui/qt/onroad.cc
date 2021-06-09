@@ -47,7 +47,7 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 void OnroadWindow::offroadTransition(bool offroad) {
 #ifdef ENABLE_MAPS
   if (!offroad) {
-    QString token = QString::fromStdString(Params().get("MapboxToken"));
+    QString token = qParams.Get("MapboxToken");
     if (map == nullptr && !token.isEmpty()) {
       QMapboxGLSettings settings;
       if (!Hardware::PC()) {

@@ -25,8 +25,6 @@ public:
   SshControl();
 
 private:
-  Params params;
-
   QPushButton btn;
   QLabel username_label;
 

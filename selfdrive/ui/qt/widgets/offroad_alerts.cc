@@ -7,6 +7,7 @@
 
 #include "selfdrive/common/util.h"
 #include "selfdrive/hardware/hw.h"
+#include "selfdrive/ui/qt/util.h"
 
 OffroadAlert::OffroadAlert(QWidget* parent) : QFrame(parent) {
   QVBoxLayout *layout = new QVBoxLayout;
@@ -73,7 +74,7 @@ void OffroadAlert::refresh() {
     QJsonObject obj = QJsonDocument::fromJson(json.toUtf8()).object();
     for (auto &k : obj.keys()) {
       QLabel *l = new QLabel(this);
-      alerts[k.toStdString()] = l;
+      alerts[k] = l;
       int severity = obj[k].toObject()["severity"].toInt();
 
       l->setMargin(60);
@@ -89,7 +90,7 @@ void OffroadAlert::refresh() {
 
   rebootBtn.setVisible(updateAvailable);
   releaseNotesScroll->setVisible(updateAvailable);
-  releaseNotes.setText(QString::fromStdString(params.get("ReleaseNotes")));
+  releaseNotes.setText(qParams.Get("ReleaseNotes"));
 
   alertsScroll->setVisible(!updateAvailable);
   for (const auto& [k, label] : alerts) {
@@ -99,11 +100,11 @@ void OffroadAlert::refresh() {
 
 void OffroadAlert::updateAlerts() {
   alertCount = 0;
-  updateAvailable = params.getBool("UpdateAvailable");
+  updateAvailable = qParams.getBool("UpdateAvailable");
   for (const auto& [key, label] : alerts) {
-    auto bytes = params.get(key.c_str());
+    auto bytes = qParams.Get(key);
     if (bytes.size()) {
-      QJsonDocument doc_par = QJsonDocument::fromJson(QByteArray(bytes.data(), bytes.size()));
+      QJsonDocument doc_par = QJsonDocument::fromJson(bytes.toUtf8());
       QJsonObject obj = doc_par.object();
       label->setText(obj.value("text").toString());
       alertCount++;
