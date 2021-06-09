@@ -57,7 +57,7 @@ int main( )
   ocp.minimizeLSQ(Q, h);
   ocp.minimizeLSQEndTerm(QN, hN);
 
-  ocp.subjectTo( 1e-3 <= v_ego);
+  ocp.subjectTo( 0.0 <= v_ego);
   ocp.setNOD(2);
 
   OCPexport mpc(ocp);

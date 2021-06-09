@@ -34,10 +34,12 @@ class LongitudinalMpc():
     self.max_a = max_a
 
   def set_cur_state(self, v, a):
-    assert v >= 0.0
+    v_safe = max(v, 1e-3)
+    a_safe = min(a, self.max_a - 1e-3)
+    a_safe = max(a_safe, self.min_a + 1e-3)
     self.cur_state[0].x_ego = 0.0
-    self.cur_state[0].v_ego = v
-    self.cur_state[0].a_ego = a
+    self.cur_state[0].v_ego = v_safe
+    self.cur_state[0].a_ego = a_safe
 
   def update(self, carstate, model, v_cruise):
     v_cruise_clipped = np.clip(v_cruise, self.cur_state[0].v_ego - 10., self.cur_state[0].v_ego + 10.0)

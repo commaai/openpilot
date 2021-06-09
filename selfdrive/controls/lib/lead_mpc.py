@@ -33,9 +33,10 @@ class LeadMpc():
     self.cur_state[0].a_ego = 0
 
   def set_cur_state(self, v, a):
-    assert v >= 0.0
-    self.cur_state[0].v_ego = v
-    self.cur_state[0].a_ego = a
+    v_safe = max(v, 1e-3)
+    a_safe = a
+    self.cur_state[0].v_ego = v_safe
+    self.cur_state[0].a_ego = a_safe
 
   def update(self, carstate, model, v_cruise):
     lead = model.leads[self.lead_id]
