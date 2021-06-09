@@ -17,11 +17,11 @@ class Joystick:
     if self.use_keyboard:
       self.kb = KBHit()
       self.buttons = {'c': 'cancel', 'e': 'engaged_toggle', 't': 'steer_required', 'r': 'reset'}
-      self.axes = {'w': 'gb', 's': 'gb', 'a': 'steer', 'd': 'steer'}
+      axes_buttons = {'gb': ['w', 's'], 'steer': ['a', 'd']}
+      self.axes = {key: ax for ax in axes_buttons for key in axes_buttons[ax]}
     else:
       self.buttons = {'BTN_TRIGGER': 'cancel', 'BTN_THUMB': 'engaged_toggle', 'BTN_TOP': 'steer_required', 'BTN_THUMB2': 'reset'}
       self.axes = {'ABS_Y': 'gb', 'ABS_X': 'steer'}
-
     self.handle_button('reset')
 
   def handle_button(self, btn_name):
