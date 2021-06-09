@@ -35,9 +35,9 @@ public:
   QString ipv4_address;
 
   void refreshNetworks();
-  void connect(Network ssid);
-  void connect(Network ssid, QString password);
-  void connect(Network ssid, QString username, QString password);
+  void connect(const Network &ssid);
+  void connect(const Network &ssid, const QString &password);
+  void connect(const Network &ssid, const QString &username, const QString &password);
   void disconnect();
 
   // Tethering functions
@@ -47,8 +47,8 @@ public:
 
   bool activate_tethering_connection();
   void addTetheringConnection();
-  bool activate_wifi_connection(QString ssid);
-  void changeTetheringPassword(QString newPassword);
+  bool activate_wifi_connection(const QString &ssid);
+  void changeTetheringPassword(const QString &newPassword);
 
 private:
   QVector<QByteArray> seen_ssids;
@@ -62,21 +62,21 @@ private:
   QString get_adapter();
   QString get_ipv4_address();
   QList<Network> get_networks();
-  void connect(QByteArray ssid, QString username, QString password, SecurityType security_type);
+  void connect(const QByteArray &ssid, const QString &username, const QString &password, SecurityType security_type);
   QString get_active_ap();
-  void deactivate_connections(QString ssid);
-  void clear_connections(QString ssid);
+  void deactivate_connections(const QString &ssid);
+  void clear_connections(const QString &ssid);
   QVector<QDBusObjectPath> get_active_connections();
   uint get_wifi_device_state();
-  QByteArray get_property(QString network_path, QString property);
-  unsigned int get_ap_strength(QString network_path);
-  SecurityType getSecurityType(QString ssid);
+  QByteArray get_property(const QString &network_path, const QString &property);
+  unsigned int get_ap_strength(const QString &network_path);
+  SecurityType getSecurityType(const QString &ssid);
   QVector<QDBusObjectPath> list_connections();
 
 private slots:
   void change(unsigned int new_state, unsigned int previous_state, unsigned int change_reason);
 signals:
-  void wrongPassword(QString ssid);
-  void successfulConnection(QString ssid);
+  void wrongPassword(const QString &ssid);
+  void successfulConnection(const QString &ssid);
   void refresh();
 };

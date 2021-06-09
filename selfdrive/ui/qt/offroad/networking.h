@@ -36,7 +36,7 @@ private:
   bool tetheringEnabled;
 
 signals:
-  void connectToNetwork(Network n);
+  void connectToNetwork(const Network &n);
 
 public slots:
   void refresh();
@@ -81,8 +81,8 @@ private:
   void attemptInitialization();
 
 private slots:
-  void connectToNetwork(Network n);
+  void connectToNetwork(const Network &n);
   void refresh();
-  void wrongPassword(QString ssid);
+  void wrongPassword(const QString &ssid);
 };
 
