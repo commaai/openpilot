@@ -10,8 +10,6 @@
 #include "selfdrive/common/util.h"
 #include "selfdrive/camerad/cameras/camera_common.h"
 
-// needed by camera_common.cc
-ExitHandler do_exit;
 
 void camera_autoexposure(CameraState *s, float grey_frac) {}
 
