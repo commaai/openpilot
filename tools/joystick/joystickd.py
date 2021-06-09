@@ -16,11 +16,11 @@ class Joystick:
     self.use_keyboard = use_keyboard
     if self.use_keyboard:
       self.kb = KBHit()
-      self.buttons = {'c': 'cancel', 'e': 'engaged_toggle', 't': 'steer_required', 'r': 'reset'}
+      self.buttons = {'c': 'cancel', 'e': 'engaged_toggle', 'r': 'reset'}
       axes_buttons = {'gb': ['w', 's'], 'steer': ['a', 'd']}
       self.axes = {key: ax for ax in axes_buttons for key in axes_buttons[ax]}
     else:
-      self.buttons = {'BTN_TRIGGER': 'cancel', 'BTN_THUMB': 'engaged_toggle', 'BTN_TOP': 'steer_required', 'BTN_THUMB2': 'reset'}
+      self.buttons = {'BTN_TRIGGER': 'cancel', 'BTN_THUMB': 'engaged_toggle', 'BTN_THUMB2': 'reset'}
       self.axes = {'ABS_Y': 'gb', 'ABS_X': 'steer'}
     self.handle_button('reset')
 
@@ -66,8 +66,7 @@ def joystick_thread(use_keyboard):
     print('Buttons:\n'
           '- `R`: Resets axes and buttons\n'
           '- `C`: Cancel cruise control\n'
-          '- `E`: Toggle cruise state enabled\n'
-          '- `T`: Steer required HUD')
+          '- `E`: Toggle cruise state enabled')
   else:
     print('\nUsing joystick, make sure to run bridge on your device!')
 

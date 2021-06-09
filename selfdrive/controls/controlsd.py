@@ -458,7 +458,7 @@ class Controls:
     else:
       # in joystick debug mode, create dummy lac_log
       _, _, lac_log = self.LaC.update(self.active, CS, self.CP, self.VM, params, lat_plan)
-      if len(self.sm['testJoystick'].axes) and self.sm['testJoystick'].buttons[1]:  # only when engaged
+      if self.sm.rcv_frame['testJoystick'] != 0 and self.sm['testJoystick'].buttons[1]:  # only when engaged
         gb = clip(self.sm['testJoystick'].axes[0], -1, 1)
         actuators.gas, actuators.brake = max(gb, 0), max(-gb, 0)
 
@@ -499,7 +499,7 @@ class Controls:
     CC.cruiseControl.override = True
     CC.cruiseControl.cancel = not self.CP.enableCruise or (not self.enabled and CS.cruiseState.enabled)
 
-    if self.debug_mode and len(self.sm['testJoystick'].buttons):
+    if self.debug_mode and self.sm.rcv_frame['testJoystick'] != 0:
       CC.enabled = self.sm['testJoystick'].buttons[1]
       CC.cruiseControl.cancel = self.sm['testJoystick'].buttons[0]
 
@@ -541,12 +541,7 @@ class Controls:
     alerts = self.events.create_alerts(self.current_alert_types, [self.CP, self.sm, self.is_metric])
     self.AM.add_many(self.sm.frame, alerts, self.enabled)
     self.AM.process_alerts(self.sm.frame, clear_event)
-
-    if self.debug_mode and len(self.sm['testJoystick'].buttons) and \
-      self.sm['testJoystick'].buttons[2]:
-      CC.hudControl.visualAlert = 'steerRequired'
-    else:
-      CC.hudControl.visualAlert = self.AM.visual_alert
+    CC.hudControl.visualAlert = self.AM.visual_alert
 
     if not self.read_only and self.initialized:
       # send car controls over can
