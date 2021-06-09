@@ -468,6 +468,7 @@ class Controls:
         lac_log.active = True
         lac_log.steeringAngleDeg = CS.steeringAngleDeg
         lac_log.output = steer
+        lac_log.saturated = abs(steer) >= 0.9
 
     # Check for difference between desired angle and angle for angle based control
     angle_control_saturated = self.CP.steerControlType == car.CarParams.SteerControlType.angle and \
