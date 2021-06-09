@@ -184,7 +184,7 @@ QList<Network> WifiManager::get_networks() {
   return r;
 }
 
-SecurityType WifiManager::getSecurityType(QString path) {
+SecurityType WifiManager::getSecurityType(const QString &path) {
   int sflag = get_property(path, "Flags").toInt();
   int wpaflag = get_property(path, "WpaFlags").toInt();
   int rsnflag = get_property(path, "RsnFlags").toInt();
@@ -202,22 +202,22 @@ SecurityType WifiManager::getSecurityType(QString path) {
   }
 }
 
-void WifiManager::connect(Network n) {
+void WifiManager::connect(const Network &n) {
   return connect(n, "", "");
 }
 
-void WifiManager::connect(Network n, QString password) {
+void WifiManager::connect(const Network &n, const QString &password) {
   return connect(n, "", password);
 }
 
-void WifiManager::connect(Network n, QString username, QString password) {
+void WifiManager::connect(const Network &n, const QString &username, const QString &password) {
   connecting_to_network = n.ssid;
   // disconnect();
   clear_connections(n.ssid); //Clear all connections that may already exist to the network we are connecting
   connect(n.ssid, username, password, n.security_type);
 }
 
-void WifiManager::connect(QByteArray ssid, QString username, QString password, SecurityType security_type) {
+void WifiManager::connect(const QByteArray &ssid, const QString &username, const QString &password, SecurityType security_type) {
   Connection connection;
   connection["connection"]["type"] = "802-11-wireless";
   connection["connection"]["uuid"] = QUuid::createUuid().toString().remove('{').remove('}');
@@ -243,7 +243,7 @@ void WifiManager::connect(QByteArray ssid, QString username, QString password, S
   activate_wifi_connection(QString(ssid));
 }
 
-void WifiManager::deactivate_connections(QString ssid) {
+void WifiManager::deactivate_connections(const QString &ssid) {
   for (QDBusObjectPath active_connection_raw : get_active_connections()) {
     QString active_connection = active_connection_raw.path();
     QDBusInterface nm(nm_service, active_connection, props_iface, bus);
@@ -279,7 +279,7 @@ QVector<QDBusObjectPath> WifiManager::get_active_connections() {
   return conns;
 }
 
-void WifiManager::clear_connections(QString ssid) {
+void WifiManager::clear_connections(const QString &ssid) {
   for(QDBusObjectPath path : list_connections()){
     QDBusInterface nm2(nm_service, path.path(), nm_settings_conn_iface, bus);
     nm2.setTimeout(dbus_timeout);
@@ -327,7 +327,7 @@ QString WifiManager::get_active_ap() {
   return r.path();
 }
 
-QByteArray WifiManager::get_property(QString network_path ,QString property) {
+QByteArray WifiManager::get_property(const QString &network_path , const QString &property) {
   QDBusInterface device_props(nm_service, network_path, props_iface, bus);
   device_props.setTimeout(dbus_timeout);
 
@@ -335,7 +335,7 @@ QByteArray WifiManager::get_property(QString network_path ,QString property) {
   return get_response<QByteArray>(response);
 }
 
-unsigned int WifiManager::get_ap_strength(QString network_path) {
+unsigned int WifiManager::get_ap_strength(const QString &network_path) {
   QDBusInterface device_props(nm_service, network_path, props_iface, bus);
   device_props.setTimeout(dbus_timeout);
 
@@ -409,7 +409,7 @@ QVector<QDBusObjectPath> WifiManager::list_connections(){
   return connections;
 }
 
-bool WifiManager::activate_wifi_connection(QString ssid){
+bool WifiManager::activate_wifi_connection(const QString &ssid){
   QString devicePath = get_adapter();
 
   for(QDBusObjectPath path : list_connections()){
@@ -514,7 +514,7 @@ bool WifiManager::tetheringEnabled() {
   return get_property(active_ap, "Ssid") == tethering_ssid;
 }
 
-void WifiManager::changeTetheringPassword(QString newPassword){
+void WifiManager::changeTetheringPassword(const QString &newPassword) {
   tetheringPassword = newPassword;
   clear_connections(tethering_ssid.toUtf8());
   addTetheringConnection();

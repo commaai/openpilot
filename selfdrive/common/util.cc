@@ -76,7 +76,7 @@ std::string read_file(const std::string& fn) {
   return buffer.str();
 }
 
-int read_files_in_dir(std::string path, std::map<std::string, std::string> *contents) {
+int read_files_in_dir(const std::string &path, std::map<std::string, std::string> *contents) {
   DIR *d = opendir(path.c_str());
   if (!d) return -1;
 

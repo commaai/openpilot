@@ -106,7 +106,7 @@ void Networking::refresh(){
   an->refresh();
 }
 
-void Networking::connectToNetwork(Network n) {
+void Networking::connectToNetwork(const Network &n) {
   if (n.security_type == SecurityType::OPEN) {
     wifi->connect(n);
   } else if (n.security_type == SecurityType::WPA) {
@@ -115,7 +115,7 @@ void Networking::connectToNetwork(Network n) {
   }
 }
 
-void Networking::wrongPassword(QString ssid) {
+void Networking::wrongPassword(const QString &ssid) {
   for (Network n : wifi->seen_networks) {
     if (n.ssid == ssid) {
       QString pass = InputDialog::getText("Wrong password for \"" + n.ssid +"\"", 8);
