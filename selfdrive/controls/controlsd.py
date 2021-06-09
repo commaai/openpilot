@@ -456,8 +456,7 @@ class Controls:
       # Steering PID loop and lateral MPC
       actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(self.active, CS, self.CP, self.VM, params, lat_plan)
     else:
-      # in joystick debug mode, create dummy lac_log
-      _, _, lac_log = self.LaC.update(self.active, CS, self.CP, self.VM, params, lat_plan)
+      lac_log = log.ControlsState.LateralDebugState.new_message()
       if self.sm.rcv_frame['testJoystick'] != 0 and self.sm['testJoystick'].buttons[1]:  # only when engaged
         gb = clip(self.sm['testJoystick'].axes[0], -1, 1)
         actuators.gas, actuators.brake = max(gb, 0), max(-gb, 0)
@@ -465,6 +464,10 @@ class Controls:
         steer = clip(self.sm['testJoystick'].axes[1], -1, 1)
         # max angle is 45 for angle-based cars
         actuators.steer, actuators.steeringAngleDeg = steer, steer * 45.
+
+        lac_log.active = True
+        lac_log.steeringAngleDeg = CS.steeringAngleDeg
+        lac_log.output = steer
 
     # Check for difference between desired angle and angle for angle based control
     angle_control_saturated = self.CP.steerControlType == car.CarParams.SteerControlType.angle and \
@@ -593,7 +596,9 @@ class Controls:
     controlsState.forceDecel = bool(force_decel)
     controlsState.canErrorCounter = self.can_error_counter
 
-    if self.CP.steerControlType == car.CarParams.SteerControlType.angle:
+    if self.debug_mode:
+      controlsState.lateralControlState.debugState = lac_log
+    elif self.CP.steerControlType == car.CarParams.SteerControlType.angle:
       controlsState.lateralControlState.angleState = lac_log
     elif self.CP.lateralTuning.which() == 'pid':
       controlsState.lateralControlState.pidState = lac_log
