@@ -12,6 +12,7 @@
 
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/qt/qt_window.h"
+#include "selfdrive/ui/qt/util.h"
 
 TrackWidget::TrackWidget(QWidget *parent) : QWidget(parent) {
   setFixedSize(spinner_size);
@@ -114,15 +115,7 @@ void Spinner::update(int n) {
 }
 
 int main(int argc, char *argv[]) {
-  QSurfaceFormat fmt;
-#ifdef __APPLE__
-  fmt.setVersion(3, 2);
-  fmt.setProfile(QSurfaceFormat::OpenGLContextProfile::CoreProfile);
-  fmt.setRenderableType(QSurfaceFormat::OpenGL);
-#else
-  fmt.setRenderableType(QSurfaceFormat::OpenGLES);
-#endif
-  QSurfaceFormat::setDefaultFormat(fmt);
+  setQtSurfaceFormat();
 
   Hardware::set_display_power(true);
   Hardware::set_brightness(65);
