@@ -164,7 +164,7 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
 
   // draw background + gradient
   p.setPen(Qt::NoPen);
-  p.setCompositionMode(QPainter::CompositionMode_DestinationOver);
+  p.setCompositionMode(QPainter::CompositionMode_SourceOver);
 
   p.setBrush(QBrush(bg));
   p.drawRect(r);
