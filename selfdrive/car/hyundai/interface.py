@@ -227,9 +227,9 @@ class CarInterface(CarInterfaceBase):
 
     # set appropriate safety param for gas signal
     if candidate in HYBRID_CAR:
-      ret.safetyParam = 1
-    elif candidate in EV_HYBRID_CAR:
       ret.safetyParam = 2
+    elif candidate in EV_HYBRID_CAR:
+      ret.safetyParam = 1
     else:
       ret.safetyParam = 0
 
