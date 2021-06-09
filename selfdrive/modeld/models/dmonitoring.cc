@@ -7,9 +7,6 @@
 #include "selfdrive/common/mat.h"
 #include "selfdrive/common/params.h"
 #include "selfdrive/common/timing.h"
-#ifndef _USING_LIBCXX
-#define _USING_LIBCXX
-#endif
 #include "selfdrive/hardware/hw.h"
 
 #define MODEL_WIDTH 320

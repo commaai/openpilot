@@ -57,7 +57,6 @@ public:
   }
 
   // android only
-  bool launched_activity = false;
   void check_activity() {
     int ret = std::system("dumpsys SurfaceFlinger --list | grep -Fq 'com.android.settings'");
     launched_activity = ret == 0;
@@ -86,4 +85,6 @@ public:
   void launch_tethering() {
     launch_activity("com.android.settings/.TetherSettings");
   }
+
+  bool launched_activity = false;
 };

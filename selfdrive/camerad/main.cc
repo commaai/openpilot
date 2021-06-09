@@ -13,6 +13,7 @@
 #include "selfdrive/common/params.h"
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
+#include "selfdrive/hardware/hw.h"
 
 #ifdef QCOM
 #include "selfdrive/camerad/cameras/camera_qcom.h"
@@ -23,8 +24,6 @@
 #else
 #include "selfdrive/camerad/cameras/camera_frame_stream.h"
 #endif
-
-#include "selfdrive/hardware/hw.h"
 
 ExitHandler do_exit;
 
