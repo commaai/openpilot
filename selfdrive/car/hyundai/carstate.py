@@ -229,8 +229,12 @@ class CarState(CarStateBase):
       checks += [("LCA11", 50)]
 
     if CP.carFingerprint in EV_CAR:
-      signals.append(("Accel_Pedal_Pos", "E_EMS11", 0))
-      checks.append(("E_EMS11", 50))
+      signals += [
+        ("Accel_Pedal_Pos", "E_EMS11", 0),
+      ]
+      checks += [
+        ("E_EMS11", 50),
+      ]
     else:
       signals += [
         ("PV_AV_CAN", "EMS12", 0),
