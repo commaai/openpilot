@@ -59,7 +59,7 @@ inline void setQtSurfaceFormat() {
 }
 
 class QParams : public Params {
-  public:
+public:
   QParams(bool persistent_param = false) : Params(persistent_param) {}
   QParams(const QString &path) : Params(path.toStdString()) {}
   inline QString Get(const QString &key, bool block = false) {
@@ -68,14 +68,15 @@ class QParams : public Params {
   inline QString Get(const char *key, bool block = false) {
     return QString::fromStdString(Params::get(key, block));
   }
+  inline bool getBool(const QString &key) {
+    return Params::getBool(qPrintable(key));
+  }
+
   inline int put(const char *key, const QString &val) {
     return Params::put(key, val.toStdString());
   }
   inline int put(const QString &key, const QString &val) {
     return put(qPrintable(key), val);
-  }
-  inline bool getBool(const QString &key) {
-    return Params::getBool(qPrintable(key));
   }
   inline int putBool(const QString &key, bool val) {
     return Params::putBool(qPrintable(key), val);

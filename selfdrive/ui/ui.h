@@ -19,7 +19,6 @@
 #include "selfdrive/common/glutil.h"
 #include "selfdrive/common/mat.h"
 #include "selfdrive/common/modeldata.h"
-#include "selfdrive/common/params.h"
 #include "selfdrive/common/util.h"
 #include "selfdrive/common/visionimg.h"
 
