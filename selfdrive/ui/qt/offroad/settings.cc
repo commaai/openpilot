@@ -6,6 +6,11 @@
 #ifndef QCOM
 #include "selfdrive/ui/qt/offroad/networking.h"
 #endif
+
+#ifdef ENABLE_MAPS
+#include "selfdrive/ui/qt/maps/map_settings.h"
+#endif
+
 #include "selfdrive/common/params.h"
 #include "selfdrive/common/util.h"
 #include "selfdrive/hardware/hw.h"
@@ -350,33 +355,39 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   QObject::connect(device, &DevicePanel::reviewTrainingGuide, this, &SettingsWindow::reviewTrainingGuide);
   QObject::connect(device, &DevicePanel::showDriverView, this, &SettingsWindow::showDriverView);
 
-  QPair<QString, QWidget *> panels[] = {
+  QList<QPair<QString, QWidget *>> panels = {
     {"Device", device},
     {"Network", network_panel(this)},
     {"Toggles", new TogglesPanel(this)},
     {"Software", new SoftwarePanel(this)},
   };
 
-  sidebar_layout->addSpacing(45);
+#ifdef ENABLE_MAPS
+  if (!Params().get("MapboxToken").empty()){
+    panels.push_back({"Navigation", new MapPanel(this)});
+  }
+#endif
+  const int padding = panels.size() > 3 ? 25 : 35;
+
   nav_btns = new QButtonGroup();
   for (auto &[name, panel] : panels) {
     QPushButton *btn = new QPushButton(name);
     btn->setCheckable(true);
     btn->setChecked(nav_btns->buttons().size() == 0);
-    btn->setStyleSheet(R"(
+    btn->setStyleSheet(QString(R"(
       QPushButton {
         color: grey;
         border: none;
         background: none;
         font-size: 65px;
         font-weight: 500;
-        padding-top: 35px;
-        padding-bottom: 35px;
+        padding-top: %1px;
+        padding-bottom: %1px;
       }
       QPushButton:checked {
         color: white;
       }
-    )");
+    )").arg(padding));
 
     nav_btns->addButton(btn);
     sidebar_layout->addWidget(btn, 0, Qt::AlignRight);
