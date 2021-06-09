@@ -174,6 +174,8 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
   QLinearGradient g(0, r.y(), 0, r.bottom());
   g.setColorAt(0, QColor::fromRgbF(0, 0, 0, 0.05));
   g.setColorAt(1, QColor::fromRgbF(0, 0, 0, 0.35));
+
+  p.setCompositionMode(QPainter::CompositionMode_DestinationOver);
   p.setBrush(QBrush(g));
   p.fillRect(r, g);
   p.setCompositionMode(QPainter::CompositionMode_SourceOver);
