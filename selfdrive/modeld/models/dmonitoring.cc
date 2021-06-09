@@ -160,8 +160,8 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
   ret.sg_prob = s->output[33];
   ret.poor_vision = s->output[34];
   ret.partial_face = s->output[35];
-  ret.distracted_pose = s->output[36];
-  ret.distracted_eyes = s->output[37];
+  ret.distracted_pose = 1 - s->output[38];
+  ret.distracted_eyes = s->output[39];
   ret.dsp_execution_time = (t2 - t1) / 1000.;
   return ret;
 }

@@ -30,7 +30,7 @@ _BLINK_THRESHOLD_SLACK = 0.65
 _BLINK_THRESHOLD_STRICT = 0.5
 _PITCH_WEIGHT = 1.35  # pitch matters a lot more
 _POSESTD_THRESHOLD = 0.14
-_E2E_POSE_THRESHOLD = 0.9
+_E2E_POSE_THRESHOLD = 0.75
 _E2E_EYES_THRESHOLD = 0.75
 _METRIC_THRESHOLD = 0.4
 _METRIC_THRESHOLD_SLACK = 0.55
@@ -196,9 +196,7 @@ class DriverStatus():
     self.blink.left_blink = driver_state.leftBlinkProb * (driver_state.leftEyeProb > _EYE_THRESHOLD) * (driver_state.sunglassesProb < _SG_THRESHOLD)
     self.blink.right_blink = driver_state.rightBlinkProb * (driver_state.rightEyeProb > _EYE_THRESHOLD) * (driver_state.sunglassesProb < _SG_THRESHOLD)
 
-    self.driver_distracted = (self._is_driver_distracted(self.pose, self.blink) > 0 and
-                              driver_state.faceProb > _FACE_THRESHOLD and self.pose.low_std) or \
-                             ((driver_state.distractedPose > _E2E_POSE_THRESHOLD or driver_state.distractedEyes > _E2E_EYES_THRESHOLD) and
+    self.driver_distracted = ((driver_state.distractedPose > _E2E_POSE_THRESHOLD or driver_state.distractedEyes > _E2E_EYES_THRESHOLD) and
                               (self.face_detected and not self.face_partial))
     self.driver_distraction_filter.update(self.driver_distracted)
 
