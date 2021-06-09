@@ -25,7 +25,7 @@ class LeadMpc():
   def reset_mpc(self):
     ffi, self.libmpc = libmpc_py.get_libmpc(self.lead_id)
     self.libmpc.init(MPC_COST_LONG.TTC, MPC_COST_LONG.DISTANCE,
-                     0.0, MPC_COST_LONG.JERK)
+                     MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
 
     self.mpc_solution = ffi.new("log_t *")
     self.cur_state = ffi.new("state_t *")
@@ -60,6 +60,7 @@ class LeadMpc():
     # Calculate mpc
     t = sec_since_boot()
     model_t = [0., 2., 4., 6., 8., 10.]
+    # -2m to since measurements are from the camera
     lead_x_interp = np.interp(T_IDXS[:LON_MPC_N+1], model_t, lead.x) - 2.0
     lead_v_interp = np.interp(T_IDXS[:LON_MPC_N+1], model_t, lead.v)
     self.n_its = self.libmpc.run_mpc(self.cur_state, self.mpc_solution,
