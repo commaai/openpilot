@@ -63,7 +63,7 @@ PrimeUserWidget::PrimeUserWidget(QWidget* parent) : QWidget(parent) {
   mainLayout = new QVBoxLayout(this);
   mainLayout->setMargin(30);
 
-  QLabel* commaPrime = new QLabel("COMMA PRIME");
+  QLabel* commaPrime = new QLabel(tr("COMMA PRIME"));
   mainLayout->addWidget(commaPrime, 0, Qt::AlignTop);
 
   username = new QLabel();
@@ -72,7 +72,7 @@ PrimeUserWidget::PrimeUserWidget(QWidget* parent) : QWidget(parent) {
 
   mainLayout->addSpacing(100);
 
-  QLabel* commaPoints = new QLabel("COMMA POINTS");
+  QLabel* commaPoints = new QLabel(tr("COMMA POINTS"));
   commaPoints->setStyleSheet(R"(
     color: #b8b8b8;
   )");
@@ -120,9 +120,9 @@ PrimeAdWidget::PrimeAdWidget(QWidget* parent) : QWidget(parent) {
   main_layout->setMargin(30);
   main_layout->setSpacing(15);
 
-  main_layout->addWidget(new QLabel("Upgrade now"), 1, Qt::AlignTop);
+  main_layout->addWidget(new QLabel(tr("Upgrade now")), 1, Qt::AlignTop);
 
-  QLabel* description = new QLabel("Become a comma prime member at my.comma.ai and get premium features!");
+  QLabel* description = new QLabel(tr("Become a comma prime member at my.comma.ai and get premium features!"));
   description->setStyleSheet(R"(
     font-size: 50px;
     color: #b8b8b8;
@@ -130,7 +130,7 @@ PrimeAdWidget::PrimeAdWidget(QWidget* parent) : QWidget(parent) {
   description->setWordWrap(true);
   main_layout->addWidget(description, 2, Qt::AlignTop);
 
-  QVector<QString> features = {"✓ REMOTE ACCESS", "✓ 14 DAYS OF STORAGE", "✓ DEVELOPER PERKS"};
+  QVector<QString> features = {tr("✓ REMOTE ACCESS"), tr("✓ 14 DAYS OF STORAGE"), tr("✓ DEVELOPER PERKS")};
   for (auto &f: features) {
     QLabel* feature = new QLabel(f);
     feature->setStyleSheet(R"(font-size: 40px;)");
@@ -158,7 +158,7 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
 
   finishRegistationLayout->addWidget(registrationDescription);
 
-  QPushButton* finishButton = new QPushButton("Finish setup");
+  QPushButton* finishButton = new QPushButton(tr("Finish setup"));
   finishButton->setFixedHeight(200);
   finishButton->setStyleSheet(R"(
     border-radius: 30px;

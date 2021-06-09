@@ -40,9 +40,9 @@ DriveStats::DriveStats(QWidget* parent) : QWidget(parent) {
     main_layout->addWidget(labels.distance = numberLabel(), row, 1, Qt::AlignLeft);
     main_layout->addWidget(labels.hours = numberLabel(), row, 2, Qt::AlignLeft);
 
-    main_layout->addWidget(unitLabel("DRIVES"), row + 1, 0, Qt::AlignLeft);
+    main_layout->addWidget(unitLabel(tr("DRIVES")), row + 1, 0, Qt::AlignLeft);
     main_layout->addWidget(labels.distance_unit = unitLabel(getDistanceUnit()), row + 1, 1, Qt::AlignLeft);
-    main_layout->addWidget(unitLabel("HOURS"), row + 1, 2, Qt::AlignLeft);
+    main_layout->addWidget(unitLabel(tr("HOURS")), row + 1, 2, Qt::AlignLeft);
   };
 
   add_stats_layouts(tr("ALL TIME"), all_);

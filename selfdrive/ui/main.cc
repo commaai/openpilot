@@ -18,8 +18,6 @@ int main(int argc, char *argv[]) {
 
   QApplication a(argc, argv);
 
-//  QLocale curLocale(QLocale("fr_FR"));
-//  QLocale::setDefault(curLocale);
   QTranslator translator;
   if (!translator.load("main_fr", "translations")) {
     qDebug() << "Failed to load translation!";
