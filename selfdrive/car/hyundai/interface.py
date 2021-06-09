@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from cereal import car
 from selfdrive.config import Conversions as CV
-from selfdrive.car.hyundai.values import CAR, EV_HYBRID_CAR, HYBRID_CAR
+from selfdrive.car.hyundai.values import CAR, EV_CAR, HYBRID_CAR
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
 
@@ -228,10 +228,8 @@ class CarInterface(CarInterfaceBase):
     # set appropriate safety param for gas signal
     if candidate in HYBRID_CAR:
       ret.safetyParam = 2
-    elif candidate in EV_HYBRID_CAR:
+    elif candidate in EV_CAR:
       ret.safetyParam = 1
-    else:
-      ret.safetyParam = 0
 
     ret.centerToFront = ret.wheelbase * 0.4
 
