@@ -607,7 +607,6 @@ void MapInstructions::updateInstructions(QMap<QString, QVariant> banner){
 MapETA::MapETA(QWidget * parent) : QWidget(parent){
   QHBoxLayout *layout_outer = new QHBoxLayout;
   layout_outer->setContentsMargins(20, 25, 20, 25);
-  layout_outer->setSpacing(20);
 
   {
     QVBoxLayout *layout = new QVBoxLayout;
@@ -623,6 +622,7 @@ MapETA::MapETA(QWidget * parent) : QWidget(parent){
     layout->addStretch();
     layout_outer->addLayout(layout);
   }
+  layout_outer->addSpacing(30);
   {
     QVBoxLayout *layout = new QVBoxLayout;
     time = new QLabel;
@@ -637,6 +637,7 @@ MapETA::MapETA(QWidget * parent) : QWidget(parent){
     layout->addStretch();
     layout_outer->addLayout(layout);
   }
+  layout_outer->addSpacing(30);
   {
     QVBoxLayout *layout = new QVBoxLayout;
     distance = new QLabel;
