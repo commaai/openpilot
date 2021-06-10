@@ -172,17 +172,20 @@ void MapWindow::timerUpdate() {
       auto cur_maneuver = segment.maneuver();
       auto attrs = cur_maneuver.extendedAttributes();
       if (cur_maneuver.isValid() && attrs.contains("mapbox.banner_instructions")){
+        float along_geometry = distance_along_geometry(segment.path(), to_QGeoCoordinate(last_position));
+        float distance = std::max(0.0f, float(segment.distance()) - along_geometry);
+        emit distanceChanged(distance);
+
+        m_map->setPitch(MAX_PITCH); // TODO: smooth pitching based on maneuver distance
 
         auto banner = attrs["mapbox.banner_instructions"].toList();
         if (banner.size()){
-          // TOOD: Only show when traveled distanceAlongGeometry since the start
           map_instructions->setVisible(true);
-          emit instructionsChanged(banner[0].toMap());
-        }
 
-        float distance = segment.distance() - distance_along_geometry(segment.path(), to_QGeoCoordinate(last_position));
-        emit distanceChanged(distance);
-        m_map->setPitch(MAX_PITCH); // TODO: smooth pitching based on maneuver distance
+          auto banner_0 = banner[0].toMap();
+          float show_at = banner_0["distance_along_geometry"].toDouble();
+          emit instructionsChanged(banner_0, distance < show_at);
+        }
       }
 
       auto next_segment = segment.nextRouteSegment();
@@ -514,7 +517,7 @@ void MapInstructions::updateDistance(float d){
   distance->setText(distance_str);
 }
 
-void MapInstructions::updateInstructions(QMap<QString, QVariant> banner){
+void MapInstructions::updateInstructions(QMap<QString, QVariant> banner, bool full){
   // Need multiple calls to adjustSize for it to properly resize
   // seems like it takes a little bit of time for the images to change and
   // the size can only be changed afterwards
@@ -550,7 +553,7 @@ void MapInstructions::updateInstructions(QMap<QString, QVariant> banner){
     }
   }
 
-  if (banner.contains("secondary")){
+  if (banner.contains("secondary") && full){
     auto s = banner["secondary"].toMap();
     secondary_str += s["text"].toString();
   }
@@ -558,7 +561,7 @@ void MapInstructions::updateInstructions(QMap<QString, QVariant> banner){
   clearLayout(lane_layout);
   bool has_lanes = false;
 
-  if (banner.contains("sub")){
+  if (banner.contains("sub") && full){
     auto s = banner["sub"].toMap();
     auto components = s["components"].toList();
     for (auto &c : components) {

@@ -42,7 +42,7 @@ public:
 
 public slots:
   void updateDistance(float d);
-  void updateInstructions(QMap<QString, QVariant> banner);
+  void updateInstructions(QMap<QString, QVariant> banner, bool full);
 };
 
 class MapETA : public QWidget {
@@ -132,7 +132,7 @@ public slots:
 
 signals:
   void distanceChanged(float distance);
-  void instructionsChanged(QMap<QString, QVariant> banner);
+  void instructionsChanged(QMap<QString, QVariant> banner, bool full);
   void ETAChanged(float seconds, float seconds_typical, float distance);
 };
 
