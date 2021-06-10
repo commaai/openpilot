@@ -278,6 +278,31 @@ QVector<QDBusObjectPath> WifiManager::get_active_connections() {
   return conns;
 }
 
+bool WifiManager::isKnownNetwork(const QString &ssid) {  // TODO: gotta be a simpler way to do this, i'll check once it works
+  for(QDBusObjectPath path : list_connections()){
+    QDBusInterface nm2(nm_service, path.path(), nm_settings_conn_iface, bus);
+    nm2.setTimeout(dbus_timeout);
+
+    QDBusMessage response = nm2.call("GetSettings");
+
+    const QDBusArgument &dbusArg = response.arguments().at(0).value<QDBusArgument>();
+
+    QMap<QString, QMap<QString,QVariant>> map;
+    dbusArg >> map;
+    for (auto &inner : map) {
+      for (auto &val : inner) {
+        QString key = inner.key(val);
+        if (key == "ssid") {
+          if (val == ssid) {
+            return true;
+          }
+        }
+      }
+    }
+  }
+  return false;
+}
+
 void WifiManager::forgetConnection(const QString &ssid) {
   for(QDBusObjectPath path : list_connections()){
     QDBusInterface nm2(nm_service, path.path(), nm_settings_conn_iface, bus);

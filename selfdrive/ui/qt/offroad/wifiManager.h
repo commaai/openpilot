@@ -34,11 +34,15 @@ public:
   QVector<Network> seen_networks;
   QString ipv4_address;
 
+  // Network functions
   void refreshNetworks();
+  void forgetConnection(const QString &ssid);
   void connect(const Network &ssid);
   void connect(const Network &ssid, const QString &password);
   void connect(const Network &ssid, const QString &username, const QString &password);
   void disconnect();
+
+  bool isKnownNetwork(const QString &ssid);
 
   // Tethering functions
   void enableTethering();
@@ -65,7 +69,6 @@ private:
   void connect(const QByteArray &ssid, const QString &username, const QString &password, SecurityType security_type);
   QString get_active_ap();
   void deactivate_connections(const QString &ssid);
-  void forgetConnection(const QString &ssid);
   QVector<QDBusObjectPath> get_active_connections();
   uint get_wifi_device_state();
   QByteArray get_property(const QString &network_path, const QString &property);
