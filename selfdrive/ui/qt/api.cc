@@ -126,7 +126,7 @@ void HttpRequest::requestFinished() {
       emit receivedResponse(response);
     } else {
       if (!cache_key.isEmpty()) {
-        qParams.remove(cache_key.toStdString());
+        qParams.remove(cache_key);
       }
       qDebug() << reply->errorString();
       emit failedResponse(reply->errorString());

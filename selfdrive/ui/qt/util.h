@@ -81,6 +81,10 @@ public:
   inline int putBool(const QString &key, bool val) {
     return Params::putBool(qPrintable(key), val);
   }
+
+  inline int remove(const QString &key) {
+    return Params::remove(qPrintable(key));
+  }
 };
 
 static inline QParams qParams;
