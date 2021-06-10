@@ -38,9 +38,7 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   QObject::connect(signalMap(), &SignalMap::reviewTrainingGuide, this, &MainWindow::reviewTrainingGuide);
   QObject::connect(signalMap(), &SignalMap::closeSettings, this, &MainWindow::closeSettings);
   QObject::connect(signalMap(), &SignalMap::openSettings, this, &MainWindow::openSettings);
-  QObject::connect(signalMap(), &SignalMap::showDriverView, [=] {
-    homeWindow->showDriverView(true);
-  });
+  QObject::connect(signalMap(), &SignalMap::showDriverView, [=] { homeWindow->showDriverView(true); });
 
   // load fonts
   QFontDatabase::addApplicationFont("../assets/fonts/opensans_regular.ttf");
