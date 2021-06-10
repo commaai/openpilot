@@ -688,8 +688,6 @@ void MapETA::updateETA(float s, float s_typical, float d) {
     time_unit->setText("hr");
   }
 
-  s = s_typical * 1.6;
-
   if (s / s_typical > 1.5) {
     time_unit->setStyleSheet(R"(color: #DA3025; )");
     time->setStyleSheet(R"(color: #DA3025; )");
