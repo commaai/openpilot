@@ -234,6 +234,7 @@ void WifiUI::refresh() {
     hlayout->addWidget(btn, 0, Qt::AlignRight);
 
     connectButtons->addButton(btn, i);
+    ssidButtons->addButton(ssid_button, i);
 
     vlayout->addLayout(hlayout, 1);
     // Don't add the last horizontal line
@@ -256,7 +257,7 @@ void WifiUI::handleSsidButton(QAbstractButton* button) {
   qDebug() << ssidButtons->id(btn);
   if (ConfirmationDialog::confirm("Do you want to forget this network?", this)) {
     qDebug() << "Removing network!";
+    Network n = wifi->seen_networks[ssidButtons->id(btn)];
+    emit forgetNetwork(n);
   }
-  Network n = wifi->seen_networks[ssidButtons->id(btn)];
-  emit forgetNetwork(n);
 }

@@ -203,7 +203,24 @@ SecurityType WifiManager::getSecurityType(const QString &path) {
 }
 
 void WifiManager::forget(const Network &n) {
-  clear_connections(n.ssid);
+//  clear_connections(n.ssid);
+  qDebug() << "in forget()";
+  for (QDBusObjectPath active_connection_raw : get_active_connections()) {
+    QString active_connection = active_connection_raw.path();
+    qDebug() << active_connection;
+//    QDBusInterface nm(nm_service, active_connection, props_iface, bus);
+//    nm.setTimeout(dbus_timeout);
+//
+//    QDBusObjectPath pth = get_response<QDBusObjectPath>(nm.call("Get", connection_iface, "SpecificObject"));
+//    if (pth.path() != "" && pth.path() != "/") {
+//      QString Ssid = get_property(pth.path(), "Ssid");
+//      if (Ssid == ssid) {
+//        QDBusInterface nm2(nm_service, nm_path, nm_iface, bus);
+//        nm2.setTimeout(dbus_timeout);
+//        nm2.call("DeactivateConnection", QVariant::fromValue(active_connection_raw));// TODO change to disconnect
+//      }
+//    }
+  }
 }
 
 void WifiManager::connect(const Network &n) {
@@ -265,7 +282,7 @@ void WifiManager::deactivate_connections(const QString &ssid) {
   }
 }
 
-QVector<QDBusObjectPath> WifiManager::get_active_connections() {
+QVector<QDBusObjectPath> WifiManager::get_active_connections() {  // TODO: rename to get_connections and have it return all known connections if active=false
   QDBusInterface nm(nm_service, nm_path, props_iface, bus);
   nm.setTimeout(dbus_timeout);
 
