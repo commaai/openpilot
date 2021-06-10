@@ -68,7 +68,7 @@ def joystick_thread(use_keyboard):
           '- `R`: Resets axes\n'
           '- `C`: Cancel cruise control')
   else:
-    print('\nUsing joystick, make sure to run bridge on your device!')
+    print('\nUsing joystick, make sure to run bridge on your device if running over the network!')
 
   while True:
     dat = joystick.update()  # receives joystick/key events and returns testJoystick packet
