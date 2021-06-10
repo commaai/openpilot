@@ -413,11 +413,16 @@ class Controls:
 
     # Check if actuators are enabled
     self.active = self.state == State.enabled or self.state == State.softDisabling
-    if self.active:
-      self.current_alert_types.append(ET.WARNING)
 
     # Check if openpilot is engaged
     self.enabled = self.active or self.state == State.preEnabled
+    
+    if self.joystick_mode and self.sm.rcv_frame['testJoystick'] != 0:
+      self.active = self.sm['testJoystick'].buttons[1]
+      self.enabled = self.sm['testJoystick'].buttons[1]
+    
+    if self.active:
+      self.current_alert_types.append(ET.WARNING)
 
   def state_control(self, CS):
     """Given the state, this function returns an actuators packet"""
@@ -504,7 +509,7 @@ class Controls:
     CC.cruiseControl.cancel = not self.CP.enableCruise or (not self.enabled and CS.cruiseState.enabled)
 
     if self.joystick_mode and self.sm.rcv_frame['testJoystick'] != 0:
-      CC.enabled = self.sm['testJoystick'].buttons[1]
+      # CC.enabled = self.sm['testJoystick'].buttons[1]
       CC.cruiseControl.cancel = self.sm['testJoystick'].buttons[0]
 
     # Some override values for Honda
