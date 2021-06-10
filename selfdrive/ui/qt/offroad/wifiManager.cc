@@ -203,24 +203,7 @@ SecurityType WifiManager::getSecurityType(const QString &path) {
 }
 
 void WifiManager::forget(const Network &n) {
-//  clear_connections(n.ssid);
-  qDebug() << "in forget()";
-  for (QDBusObjectPath active_connection_raw : get_active_connections()) {
-    QString active_connection = active_connection_raw.path();
-    qDebug() << active_connection;
-//    QDBusInterface nm(nm_service, active_connection, props_iface, bus);
-//    nm.setTimeout(dbus_timeout);
-//
-//    QDBusObjectPath pth = get_response<QDBusObjectPath>(nm.call("Get", connection_iface, "SpecificObject"));
-//    if (pth.path() != "" && pth.path() != "/") {
-//      QString Ssid = get_property(pth.path(), "Ssid");
-//      if (Ssid == ssid) {
-//        QDBusInterface nm2(nm_service, nm_path, nm_iface, bus);
-//        nm2.setTimeout(dbus_timeout);
-//        nm2.call("DeactivateConnection", QVariant::fromValue(active_connection_raw));// TODO change to disconnect
-//      }
-//    }
-  }
+  clear_connections(n.ssid);
 }
 
 void WifiManager::connect(const Network &n) {

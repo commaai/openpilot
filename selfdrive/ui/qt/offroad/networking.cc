@@ -63,6 +63,7 @@ void Networking::attemptInitialization(){
 
   wifiWidget = new WifiUI(this, wifi);
   connect(wifiWidget, &WifiUI::connectToNetwork, this, &Networking::connectToNetwork);
+  connect(wifiWidget, &WifiUI::forgetNetwork, this, &Networking::forgetNetwork);
   vlayout->addWidget(new ScrollView(wifiWidget, this), 1);
 
   QWidget* wifiScreen = new QWidget(this);
