@@ -85,6 +85,8 @@ class CarInterface(CarInterfaceBase):
 
     if self.CS.CP.carFingerprint == CAR.ACURA_ILX:
       self.compute_gb = get_compute_gb_acura()
+    elif self.CS.CP.carFingerprint in HONDA_BOSCH:
+      self.compute_gb = compute_gb_honda_bosch
     else:
       self.compute_gb = compute_gb_honda_nidec
 
