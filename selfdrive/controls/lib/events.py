@@ -247,7 +247,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
     ET.PERMANENT: Alert(
       "Joystick Mode",
       "",
-      AlertStatus.userPrompt, AlertSize.small,
+      AlertStatus.normal, AlertSize.small,
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 0.1),
   },
 
