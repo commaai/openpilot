@@ -557,7 +557,7 @@ struct Updater {
     // TODO: this should be generic between android versions
     // IPowerManager.reboot(confirm=false, reason="recovery", wait=true)
     system("service call power 16 i32 0 s16 recovery i32 1");
-    while(1) pause();
+    while (true) pause();
 
     // execl("/system/bin/reboot", "recovery");
     // set_error("failed to reboot into recovery");

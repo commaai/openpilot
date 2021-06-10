@@ -93,7 +93,7 @@ float trial() {
 }
 
 int main() {
-  while (1) {
+  while (true) {
     float ret = trial();
     printf("got %f\n", ret);
   }

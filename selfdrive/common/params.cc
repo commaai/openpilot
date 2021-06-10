@@ -268,7 +268,7 @@ int Params::put(const char* key, const char* value, size_t value_size) {
     // fsync parent directory
     path = params_path + "/d";
     result = fsync_dir(path.c_str());
-  } while(0);
+  } while (false);
 
   close(tmp_fd);
   remove(tmp_path.c_str());
