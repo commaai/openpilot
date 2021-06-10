@@ -40,7 +40,7 @@ private:
   std::string alert_type;
   cereal::ControlsState::AlertSize alert_size;
 
-public slots:
+private slots:
   void updateState(const UIState &s);
   void offroadTransition(bool offroad);
 };
@@ -62,7 +62,7 @@ protected:
 private:
   double prev_draw_t = 0;
 
-public slots:
+private slots:
   void update(const UIState &s);
 };
 

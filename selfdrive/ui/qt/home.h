@@ -30,7 +30,7 @@ private:
   OffroadAlert* alerts_widget;
   QPushButton* alert_notification;
 
-public slots:
+private slots:
   void closeAlerts();
   void openAlerts();
   void refresh();
@@ -41,9 +41,6 @@ class HomeWindow : public QWidget {
 
 public:
   explicit HomeWindow(QWidget* parent = 0);
-
-public slots:
-  void offroadTransition(bool offroad);
   void showDriverView(bool show);
 
 protected:
@@ -55,4 +52,7 @@ private:
   OnroadWindow *onroad;
   DriverViewWindow *driver_view;
   QStackedLayout *slayout;
+
+private slots:
+  void offroadTransition(bool offroad);
 };
