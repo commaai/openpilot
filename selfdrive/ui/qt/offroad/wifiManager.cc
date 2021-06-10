@@ -202,10 +202,6 @@ SecurityType WifiManager::getSecurityType(const QString &path) {
   }
 }
 
-void WifiManager::forget(const Network &n) {
-  clear_connections(n.ssid);
-}
-
 void WifiManager::connect(const Network &n) {
   return connect(n, "", "");
 }
@@ -216,8 +212,7 @@ void WifiManager::connect(const Network &n, const QString &password) {
 
 void WifiManager::connect(const Network &n, const QString &username, const QString &password) {
   connecting_to_network = n.ssid;
-  // disconnect();
-  clear_connections(n.ssid); //Clear all connections that may already exist to the network we are connecting
+  disconnect();
   connect(n.ssid, username, password, n.security_type);
 }
 
@@ -259,13 +254,13 @@ void WifiManager::deactivate_connections(const QString &ssid) {
       if (Ssid == ssid) {
         QDBusInterface nm2(nm_service, nm_path, nm_iface, bus);
         nm2.setTimeout(dbus_timeout);
-        nm2.call("DeactivateConnection", QVariant::fromValue(active_connection_raw));// TODO change to disconnect
+        nm2.call("DeactivateConnection", QVariant::fromValue(active_connection_raw));  // deactivate is disconnect
       }
     }
   }
 }
 
-QVector<QDBusObjectPath> WifiManager::get_active_connections() {  // TODO: rename to get_connections and have it return all known connections if active=false
+QVector<QDBusObjectPath> WifiManager::get_active_connections() {
   QDBusInterface nm(nm_service, nm_path, props_iface, bus);
   nm.setTimeout(dbus_timeout);
 
@@ -283,7 +278,7 @@ QVector<QDBusObjectPath> WifiManager::get_active_connections() {  // TODO: renam
   return conns;
 }
 
-void WifiManager::clear_connections(const QString &ssid) {
+void WifiManager::forgetConnection(const QString &ssid) {
   for(QDBusObjectPath path : list_connections()){
     QDBusInterface nm2(nm_service, path.path(), nm_settings_conn_iface, bus);
     nm2.setTimeout(dbus_timeout);
@@ -520,6 +515,6 @@ bool WifiManager::tetheringEnabled() {
 
 void WifiManager::changeTetheringPassword(const QString &newPassword) {
   tetheringPassword = newPassword;
-  clear_connections(tethering_ssid.toUtf8());
+  forgetConnection(tethering_ssid.toUtf8());
   addTetheringConnection();
 }

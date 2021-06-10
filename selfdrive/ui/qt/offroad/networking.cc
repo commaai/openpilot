@@ -117,7 +117,7 @@ void Networking::connectToNetwork(const Network &n) {
 }
 
 void Networking::forgetNetwork(const Network &n) {
-  wifi->forget(n);
+  wifi->forgetConnection(n);
 }
 
 void Networking::wrongPassword(const QString &ssid) {
@@ -222,7 +222,7 @@ void WifiUI::refresh() {
     QPushButton *ssid_button = new QPushButton(QString::fromUtf8(network.ssid));
     ssid_button->setStyleSheet("font-size: 55px; background-color: transparent");
     ssid_button->setFlat(true);
-    hlayout->addWidget(ssid_button, 1, Qt::AlignLeft);  // TODO: make label clickable for network options
+    hlayout->addWidget(ssid_button, 1, Qt::AlignLeft);
 
     // strength indicator
     unsigned int strength_scale = network.strength / 17;
