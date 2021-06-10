@@ -35,7 +35,7 @@ void Sidebar::drawMetric(QPainter &p, const QString &label, const QString &val, 
 
 Sidebar::Sidebar(QWidget *parent) : QFrame(parent) {
   home_img = QImage("../assets/images/button_home.png").scaled(180, 180, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-  settings_img = QImage("../assets/images/button_settings.png").scaled(settings_btn.width(), settings_btn.height(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);;
+  settings_img = QImage("../assets/images/button_settings.png").scaled(settings_btn.width(), settings_btn.height(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
 
   connect(this, &Sidebar::valueChanged, [=] { update(); });
 
