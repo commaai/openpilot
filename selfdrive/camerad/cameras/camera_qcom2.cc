@@ -538,7 +538,7 @@ static int open_v4l_by_name_and_index(const char name[], int index, int flags) {
   char nbuf[0x100];
   int v4l_index = 0;
   int cnt_index = index;
-  while (1) {
+  while (true) {
     snprintf(nbuf, sizeof(nbuf), "/sys/class/video4linux/v4l-subdev%d/name", v4l_index);
     FILE *f = fopen(nbuf, "rb");
     if (f == NULL) return -1;
