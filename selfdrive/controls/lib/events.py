@@ -234,7 +234,7 @@ def joystick_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> 
     "Joystick Mode",
     f"Gas: {round(gb * 100., 1)}%, Steer: {round(steer * 100., 1)}%",
     AlertStatus.normal, AlertSize.mid,
-    Priority.LOWEST, VisualAlert.none, AudibleAlert.none, 0., 0., .1)
+    Priority.LOW, VisualAlert.none, AudibleAlert.none, 0., 0., .1)
 
 
 EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, bool], Alert]]]] = {
