@@ -227,7 +227,7 @@ def startup_fuzzy_fingerprint_alert(CP: car.CarParams, sm: messaging.SubMaster, 
     Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 15.)
 
 
-def debug_mode_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
+def joystick_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
   axes = sm['testJoystick'].axes
   gb, steer = list(axes)[:2] if len(axes) else (0., 0.)
   return Alert(
@@ -243,11 +243,11 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
   # ********** events only containing alerts displayed in all states **********
 
   EventName.joystickDebug: {
-    ET.WARNING: debug_mode_alert,
+    ET.WARNING: joystick_alert,
     ET.PERMANENT: Alert(
       "Joystick Mode",
       "",
-      AlertStatus.userPrompt, AlertSize.mid,
+      AlertStatus.userPrompt, AlertSize.small,
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 0.1),
   },
 

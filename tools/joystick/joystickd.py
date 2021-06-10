@@ -16,27 +16,24 @@ class Joystick:
     self.use_keyboard = use_keyboard
     if self.use_keyboard:
       self.kb = KBHit()
-      self.buttons = {'c': 'cancel', 'e': 'engaged_toggle', 'r': 'reset'}
-      axes_buttons = {'gb': ['w', 's'], 'steer': ['a', 'd']}
-      self.axes = {key: ax for ax in axes_buttons for key in axes_buttons[ax]}
+      self.buttons = {'c': 'cancel', 'r': 'reset'}
+      axes = {'gb': ['w', 's'], 'steer': ['a', 'd']}
+      self.axes = {key: ax for ax in axes for key in axes[ax]}
     else:
-      self.buttons = {'BTN_TRIGGER': 'cancel', 'BTN_THUMB': 'engaged_toggle', 'BTN_THUMB2': 'reset'}
+      self.buttons = {'BTN_TRIGGER': 'cancel'}
       self.axes = {'ABS_Y': 'gb', 'ABS_X': 'steer'}
-    self.handle_button('reset')
-
-  def handle_button(self, btn_name):
-    if btn_name == 'reset':
-      self.axes_values = {ax: 0. for ax in self.axes.values()}
-      self.btn_states = {btn: False for btn in self.buttons.values() if btn != 'reset'}
-    else:
-      self.btn_states[btn_name] = not self.btn_states[btn_name]
+    self.axes_values = {ax: 0. for ax in self.axes.values()}
 
   def update(self):
     # Get key or joystick event
+    self.cancel = False
     if self.use_keyboard:
       key = self.kb.getch().lower()
       if key in self.buttons:
-        self.handle_button(self.buttons[key])
+        if self.buttons[key] == 'reset':
+          self.axes_values = {ax: 0. for ax in self.axes.values()}
+        else:
+          self.cancel = True
       elif key in self.axes:
         incr = AXES_INCREMENT if key in ['w', 'a'] else -AXES_INCREMENT  # these keys increment the axes positively
         self.axes_values[self.axes[key]] = clip(self.axes_values[self.axes[key]] + incr, -1, 1)
@@ -44,14 +41,14 @@ class Joystick:
     else:  # Joystick
       joystick_event = get_gamepad()[0]
       if joystick_event.code in self.buttons and joystick_event.state == 0:  # state 0 is falling edge
-        self.handle_button(self.buttons[joystick_event.code])
+        self.cancel = True
       elif joystick_event.code in self.axes:
         norm = -interp(joystick_event.state, [0, MAX_AXIS_VALUE], [-1., 1.])
         self.axes_values[self.axes[joystick_event.code]] = norm if abs(norm) > 0.05 else 0.  # center can be noisy, deadzone of 5%
 
     dat = messaging.new_message('testJoystick')
     dat.testJoystick.axes = [self.axes_values[a] for a in self.axes_values]
-    dat.testJoystick.buttons = [self.btn_states[btn] for btn in self.btn_states]
+    dat.testJoystick.buttons = [self.cancel]
     return dat
 
 
@@ -64,9 +61,8 @@ def joystick_thread(use_keyboard):
     print('\nGas/brake control: `W` and `S` keys')
     print('Steering control: `A` and `D` keys')
     print('Buttons:\n'
-          '- `R`: Resets axes and buttons\n'
-          '- `C`: Cancel cruise control\n'
-          '- `E`: Toggle cruise state enabled')
+          '- `R`: Resets axes\n'
+          '- `C`: Cancel cruise control')
   else:
     print('\nUsing joystick, make sure to run bridge on your device!')
 
@@ -74,7 +70,8 @@ def joystick_thread(use_keyboard):
     dat = joystick.update()  # receives joystick/key events and returns testJoystick packet
     joystick_sock.send(dat.to_bytes())
     print('\n' + ', '.join([f'{name}: {round(v, 3)}' for name, v in joystick.axes_values.items()]))
-    print(', '.join([f'{name}: {v}' for name, v in joystick.btn_states.items()]))
+    if joystick.cancel:
+      print('Sent PCM cancel request!')
 
 
 if __name__ == '__main__':
