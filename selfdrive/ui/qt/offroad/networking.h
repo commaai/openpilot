@@ -33,6 +33,7 @@ private:
   QVBoxLayout *vlayout;
 
   QButtonGroup *connectButtons;
+  QButtonGroup *ssidButtons;
   bool tetheringEnabled;
 
 signals:
@@ -40,7 +41,8 @@ signals:
 
 public slots:
   void refresh();
-  void handleButton(QAbstractButton* m_button);
+  void handleConnectButton(QAbstractButton* m_button);
+  void handleSsidButton(QAbstractButton* m_button);
 };
 
 class AdvancedNetworking : public QWidget {

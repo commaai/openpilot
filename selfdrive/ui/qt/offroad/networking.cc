@@ -199,21 +199,25 @@ WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi)
 }
 
 void WifiUI::refresh() {
+  qDebug() << "WifiUI::refresh()";
   wifi->request_scan();
   wifi->refreshNetworks();
   clearLayout(vlayout);
 
   connectButtons = new QButtonGroup(this); // TODO check if this is a leak
-  QObject::connect(connectButtons, qOverload<QAbstractButton*>(&QButtonGroup::buttonClicked), this, &WifiUI::handleButton);
+  ssidButtons = new QButtonGroup(this);
+  QObject::connect(connectButtons, qOverload<QAbstractButton*>(&QButtonGroup::buttonClicked), this, &WifiUI::handleConnectButton);
+  QObject::connect(ssidButtons, qOverload<QAbstractButton*>(&QButtonGroup::buttonClicked), this, &WifiUI::handleSsidButton);
 
   int i = 0;
   for (Network &network : wifi->seen_networks) {
     QHBoxLayout *hlayout = new QHBoxLayout;
     hlayout->addSpacing(50);
 
-    QLabel *ssid_label = new QLabel(QString::fromUtf8(network.ssid));
-    ssid_label->setStyleSheet("font-size: 55px;");
-    hlayout->addWidget(ssid_label, 1, Qt::AlignLeft);
+    QPushButton *ssid_button = new QPushButton(QString::fromUtf8(network.ssid));
+    ssid_button->setStyleSheet("font-size: 55px; background-color: transparent");
+    ssid_button->setFlat(true);
+    hlayout->addWidget(ssid_button, 1, Qt::AlignLeft);  // TODO: make label clickable for network options
 
     // strength indicator
     unsigned int strength_scale = network.strength / 17;
@@ -237,8 +241,15 @@ void WifiUI::refresh() {
   vlayout->addStretch(3);
 }
 
-void WifiUI::handleButton(QAbstractButton* button) {
+void WifiUI::handleConnectButton(QAbstractButton* button) {
   QPushButton* btn = static_cast<QPushButton*>(button);
   Network n = wifi->seen_networks[connectButtons->id(btn)];
   emit connectToNetwork(n);
+}
+
+void WifiUI::handleSsidButton(QAbstractButton* button) {
+  QPushButton* btn = static_cast<QPushButton*>(button);
+  qDebug() << ssidButtons->id(btn);
+//  Network n = wifi->seen_networks[connectButtons->id(btn)];
+//  emit connectToNetwork(n);  // TODO: emit delete network
 }
