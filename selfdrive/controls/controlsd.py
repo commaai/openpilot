@@ -161,6 +161,7 @@ class Controls:
       self.events.add(EventName.dashcamMode, static=True)
     elif self.joystick_mode:
       self.events.add(EventName.joystickDebug, static=True)
+      self.startup_event = None
 
     # controlsd is driven by can recv, expected at 100Hz
     self.rk = Ratekeeper(100, print_delay_threshold=None)
