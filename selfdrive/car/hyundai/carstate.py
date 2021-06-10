@@ -233,9 +233,9 @@ class CarState(CarStateBase):
 
     if CP.carFingerprint in (HYBRID_CAR | EV_CAR):
       if CP.carFingerprint in HYBRID_CAR:
-        signals.append(("E_EMS11", "CR_Vcu_AccPedDep_Pos", 0))
+        signals.append(("CR_Vcu_AccPedDep_Pos", "E_EMS11", 0))
       else:
-        signals.append(("E_EMS11", "Accel_Pedal_Pos", 0))
+        signals.append(("Accel_Pedal_Pos", "E_EMS11", 0))
       checks += [
         ("E_EMS11", 50),
       ]
