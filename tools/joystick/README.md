@@ -7,7 +7,7 @@ With joystickd, you can connect your laptop to your comma two over the network a
 Using a keyboard:
 ---
 
-To get started, ssh into your comma two and start joystickd with the following command:
+To get started, ssh into your comma device and start joystickd with the following command:
 
 ```shell
 tools/joystick/joystickd.py --keyboard
@@ -18,16 +18,16 @@ The available buttons and axes will print showing their key mappings. In general
 Using a joystick:
 ---
 
-In order to use a joystick over the network, we need to run joystickd locally from your laptop and have it send `testJoystick` ZMQ packets over the network to the comma two. First connect a compatible joystick to your PC; joystickd uses [inputs](https://pypi.org/project/inputs) which supports many common gamepads and joysticks.
+In order to use a joystick over the network, we need to run joystickd locally from your laptop and have it send `testJoystick` ZMQ packets over the network to the comma device. First connect a compatible joystick to your PC; joystickd uses [inputs](https://pypi.org/project/inputs) which supports many common gamepads and joysticks.
 
-1. Connect your laptop to your comma two's hotspot and open a new ssh shell. Since joystickd is being run on your laptop, we need to write a parameter to let controlsd know to start in joystick debug mode:
+1. Connect your laptop to your comma device's hotspot and open a new ssh shell. Since joystickd is being run on your laptop, we need to write a parameter to let controlsd know to start in joystick debug mode:
    ```shell
-   # ON YOUR COMMA TWO
+   # ON YOUR COMMA DEVICE
    echo -n "1" > /data/params/d/JoystickDebugMode
    ```
 2. Run bridge with your laptop's IP address. This republishes the `testJoystick` packets sent from your laptop so that openpilot can receive them:
    ```shell
-   # ON YOUR COMMA TWO
+   # ON YOUR COMMA DEVICE
    cereal/messaging/bridge {LAPTOP_IP} testJoystick
    ```
 3. Finally, start joystickd on your laptop and tell it to publish ZMQ packets over the network:

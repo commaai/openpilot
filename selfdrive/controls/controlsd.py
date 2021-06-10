@@ -157,6 +157,8 @@ class Controls:
       self.events.add(EventName.carUnrecognized, static=True)
     elif self.read_only:
       self.events.add(EventName.dashcamMode, static=True)
+    elif self.debug_mode:
+      self.events.add(EventName.joystickDebug, static=True)
 
     # controlsd is driven by can recv, expected at 100Hz
     self.rk = Ratekeeper(100, print_delay_threshold=None)
@@ -191,10 +193,6 @@ class Controls:
     # TODO: make tici threshold the same
     if self.sm['deviceState'].memoryUsagePercent > (90 if TICI else 65):
       self.events.add(EventName.lowMemory)
-
-    # Permanent alert for joystick debug mode
-    if self.debug_mode:
-      self.events.add(EventName.joystickDebug)
 
     # Alert if fan isn't spinning for 5 seconds
     if self.sm['pandaState'].pandaType in [PandaType.uno, PandaType.dos]:
