@@ -167,8 +167,8 @@ void OnboardingWindow::updateActiveScreen() {
 }
 
 OnboardingWindow::OnboardingWindow(QWidget *parent) : QStackedWidget(parent) {
-  current_terms_version = qParams.Get("TermsVersion", false);
-  current_training_version = qParams.Get("TrainingVersion", false);
+  current_terms_version = qParams.Get("TermsVersion");
+  current_training_version = qParams.Get("TrainingVersion");
 
   TermsPage* terms = new TermsPage(this);
   addWidget(terms);

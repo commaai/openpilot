@@ -104,12 +104,10 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
 DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
   QVBoxLayout *device_layout = new QVBoxLayout;
 
-  QString dongle = qParams.Get("DongleId");
-  device_layout->addWidget(new LabelControl("Dongle ID", dongle));
+  device_layout->addWidget(new LabelControl("Dongle ID", qParams.Get("DongleId")));
   device_layout->addWidget(horizontal_line());
 
-  QString serial = qParams.Get("HardwareSerial");
-  device_layout->addWidget(new LabelControl("Serial", serial));
+  device_layout->addWidget(new LabelControl("Serial", qParams.Get("HardwareSerial")));
 
   // offroad-only buttons
   QList<ButtonControl*> offroad_btns;
