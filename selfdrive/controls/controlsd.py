@@ -463,7 +463,7 @@ class Controls:
       actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(self.active, CS, self.CP, self.VM, params, lat_plan)
     else:
       lac_log = log.ControlsState.LateralDebugState.new_message()
-      if self.sm.rcv_frame['testJoystick'] != 0 and self.sm['testJoystick'].buttons[1]:  # only when engaged
+      if self.sm.rcv_frame['testJoystick'] != 0 and self.sm['testJoystick'].buttons[1]:  # only when engaged  # TODO: check self.active
         gb = clip(self.sm['testJoystick'].axes[0], -1, 1)
         actuators.gas, actuators.brake = max(gb, 0), max(-gb, 0)
 
