@@ -21,34 +21,38 @@ class Joystick:
       self.axes = {key: ax for ax in axes for key in axes[ax]}
     else:
       self.buttons = {'BTN_TRIGGER': 'cancel'}
-      self.axes = {'ABS_Y': 'gb', 'ABS_X': 'steer'}
+      self.axes = {'ABS_Y': 'gb', 'ABS_RZ': 'steer'}
     self.axes_values = {ax: 0. for ax in self.axes.values()}
 
   def update(self):
     # Get key or joystick event
-    self.cancel = False
+    cancel = False
     if self.use_keyboard:
       key = self.kb.getch().lower()
       if key in self.buttons:
         if self.buttons[key] == 'reset':
           self.axes_values = {ax: 0. for ax in self.axes.values()}
         else:
-          self.cancel = True
+          cancel = True
       elif key in self.axes:
         incr = AXES_INCREMENT if key in ['w', 'a'] else -AXES_INCREMENT  # these keys increment the axes positively
         self.axes_values[self.axes[key]] = clip(self.axes_values[self.axes[key]] + incr, -1, 1)
+      else:
+        return None
 
     else:  # Joystick
       joystick_event = get_gamepad()[0]
       if joystick_event.code in self.buttons and joystick_event.state == 0:  # state 0 is falling edge
-        self.cancel = True
+        cancel = True
       elif joystick_event.code in self.axes:
         norm = -interp(joystick_event.state, [0, MAX_AXIS_VALUE], [-1., 1.])
         self.axes_values[self.axes[joystick_event.code]] = norm if abs(norm) > 0.05 else 0.  # center can be noisy, deadzone of 5%
+      else:
+        return None
 
     dat = messaging.new_message('testJoystick')
     dat.testJoystick.axes = [self.axes_values[a] for a in self.axes_values]
-    dat.testJoystick.buttons = [self.cancel]
+    dat.testJoystick.buttons = [cancel]
     return dat
 
 
@@ -68,10 +72,11 @@ def joystick_thread(use_keyboard):
 
   while True:
     dat = joystick.update()  # receives joystick/key events and returns testJoystick packet
-    joystick_sock.send(dat.to_bytes())
-    print('\n' + ', '.join([f'{name}: {round(v, 3)}' for name, v in joystick.axes_values.items()]))
-    if joystick.cancel:
-      print('Sent PCM cancel request!')
+    if dat is not None:
+      joystick_sock.  send(dat.to_bytes())
+      print('\n' + ', '.join([f'{name}: {round(v, 3)}' for name, v in joystick.axes_values.items()]))
+      if dat.testJoystick.buttons[0]:
+        print('Sent PCM cancel request!')
 
 
 if __name__ == '__main__':
