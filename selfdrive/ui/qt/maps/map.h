@@ -23,7 +23,9 @@
 #include <QMap>
 #include <QPixmap>
 
+#include "selfdrive/common/params.h"
 #include "cereal/messaging/messaging.h"
+
 class MapInstructions : public QWidget {
   Q_OBJECT
 
@@ -52,6 +54,7 @@ private:
   QLabel *time_unit;
   QLabel *distance;
   QLabel *distance_unit;
+  Params params;
 
 public:
   MapETA(QWidget * parent=nullptr);

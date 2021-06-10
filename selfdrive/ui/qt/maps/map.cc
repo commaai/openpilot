@@ -6,7 +6,6 @@
 
 #include "selfdrive/common/util.h"
 #include "selfdrive/common/swaglog.h"
-#include "selfdrive/common/params.h"
 #include "selfdrive/ui/ui.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/maps/map_helpers.h"
@@ -46,8 +45,8 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings) {
   connect(this, &MapWindow::ETAChanged, map_eta, &MapETA::updateETA);
 
   const int h = 180;
-  const int w = 500;
-  map_eta->setGeometry(0, 1080 - h, w, h);
+  map_eta->setFixedHeight(h);
+  map_eta->move(0, 1080 - h);
   map_eta->setVisible(false);
 
   // Routing
@@ -608,10 +607,11 @@ void MapInstructions::updateInstructions(QMap<QString, QVariant> banner){
 MapETA::MapETA(QWidget * parent) : QWidget(parent){
   QHBoxLayout *layout_outer = new QHBoxLayout;
   layout_outer->setContentsMargins(20, 25, 20, 25);
+  layout_outer->setSpacing(20);
 
   {
     QVBoxLayout *layout = new QVBoxLayout;
-    eta = new QLabel("12:26");
+    eta = new QLabel;
     eta->setAlignment(Qt::AlignCenter);
 
     auto eta_unit = new QLabel("eta");
@@ -672,7 +672,11 @@ void MapETA::updateETA(float s, float s_typical, float d) {
 
   // ETA
   auto eta_time = QDateTime::currentDateTime().addSecs(s).time();
-  eta->setText(eta_time.toString("HH:mm"));
+  if (params.getBool("NavSettingTime24h")) {
+    eta->setText(eta_time.toString("HH:mm"));
+  } else {
+    eta->setText(eta_time.toString("h:mm a"));
+  }
 
   // Remaining time
   if (s < 3600) {
@@ -680,7 +684,7 @@ void MapETA::updateETA(float s, float s_typical, float d) {
     time_unit->setText("min");
   } else {
     int hours = int(s) / 3600;
-    time->setText(QString::number(hours) + ":" + QString::number(int((s - hours * 3600) / 60)));
+    time->setText(QString::number(hours) + ":" + QString::number(int((s - hours * 3600) / 60)).rightJustified(2, '0'));
     time_unit->setText("hr");
   }
 
@@ -708,4 +712,6 @@ void MapETA::updateETA(float s, float s_typical, float d) {
 
   distance_str.setNum(num, 'f', num < 100 ? 1 : 0);
   distance->setText(distance_str);
+
+  adjustSize();
 }
