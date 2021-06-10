@@ -175,7 +175,7 @@ void OffroadHome::refresh() {
 
   alerts_widget->refresh();
   if (!alerts_widget->alertCount && !alerts_widget->updateAvailable) {
-    emit closeAlerts();
+    closeAlerts();
     alert_notification->setVisible(false);
     return;
   }
