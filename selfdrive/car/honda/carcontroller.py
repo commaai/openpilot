@@ -179,6 +179,10 @@ class CarController():
           accel = actuators.gas - actuators.brake
           stopping = accel < 0 and CS.out.vEgo < 0.3
           starting = accel > 0 and CS.out.vEgo < 0.3
+
+          # Prevent rolling backwards
+          accel = -1.0 if stopping else accel
+
           apply_accel = interp(accel, BOSCH_ACCEL_LOOKUP_BP, BOSCH_ACCEL_LOOKUP_V)
           apply_gas = interp(accel, BOSCH_GAS_LOOKUP_BP, BOSCH_GAS_LOOKUP_V)
           can_sends.extend(hondacan.create_acc_commands(self.packer, enabled, apply_accel, apply_gas, idx, stopping, starting, CS.CP.carFingerprint))
