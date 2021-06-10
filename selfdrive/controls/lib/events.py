@@ -233,7 +233,7 @@ def debug_mode_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -
   return Alert(
     "Joystick Mode",
     f"Gas: {round(gb * 100., 1)}%, Steer: {round(steer * 100., 1)}%",
-    AlertStatus.userPrompt, AlertSize.mid,
+    AlertStatus.normal, AlertSize.mid,
     Priority.LOWEST, VisualAlert.none, AudibleAlert.none, 0., 0., .1)
 
 
@@ -243,7 +243,12 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
   # ********** events only containing alerts displayed in all states **********
 
   EventName.joystickDebug: {
-    ET.PERMANENT: debug_mode_alert,
+    ET.WARNING: debug_mode_alert,
+    ET.PERMANENT: Alert(
+      "Joystick Mode",
+      "",
+      AlertStatus.userPrompt, AlertSize.mid,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 0.1),
   },
 
   EventName.controlsInitializing: {
