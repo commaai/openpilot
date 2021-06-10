@@ -46,7 +46,6 @@ EventName = car.CarEvent.EventName
 class Controls:
   def __init__(self, sm=None, pm=None, can_sock=None):
     config_realtime_process(4 if TICI else 3, Priority.CTRL_HIGH)
-    params = Params()
 
     # Setup sockets
     self.pm = pm
@@ -58,6 +57,7 @@ class Controls:
     if TICI:
       self.camera_packets.append("wideRoadCameraState")
 
+    params = Params()
     self.joystick_mode = params.get_bool("JoystickDebugMode")
     joystick_packet = ['testJoystick'] if self.joystick_mode else []
 
