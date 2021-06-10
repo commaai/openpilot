@@ -12,7 +12,6 @@
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/widgets/drive_stats.h"
 #include "selfdrive/ui/qt/widgets/setup.h"
-#include "selfdrive/ui/qt/util.h"
 
 // HomeWindow: the container for the offroad and onroad UIs
 
@@ -22,8 +21,13 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
   main_layout->setSpacing(0);
 
   sidebar = new Sidebar(this);
+<<<<<<< HEAD
   main_layout->addWidget(sidebar);
   
+=======
+  layout->addWidget(sidebar);
+
+>>>>>>> cleanup
   slayout = new QStackedLayout();
   main_layout->addLayout(slayout);
 
@@ -32,7 +36,7 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
 
   home = new OffroadHome();
   slayout->addWidget(home);
-  
+
   driver_view = new DriverViewWindow(this);
   connect(driver_view, &DriverViewWindow::done, [=] { showDriverView(false); });
   slayout->addWidget(driver_view);

@@ -22,14 +22,14 @@ void clearLayout(QLayout* layout);
 QString timeAgo(const QDateTime &date);
 void setQtSurfaceFormat();
 
-class SignalMap : public QObject{
+class SignalMap : public QObject {
   Q_OBJECT
 
 public:
   explicit SignalMap(QObject *parent) : QObject(parent) {}
 
 signals:
-  void offroadTransition(bool);
+  void offroadTransition(bool offroad);
   void reviewTrainingGuide();
   void openSettings();
   void closeSettings();

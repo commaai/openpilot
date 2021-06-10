@@ -1,6 +1,6 @@
 #include "selfdrive/ui/qt/util.h"
 
-void configFont(QPainter &p, const QString &family, int size, const QString &style) {
+void configFont(QPainter& p, const QString& family, int size, const QString& style) {
   QFont f(family);
   f.setPixelSize(size);
   f.setStyleName(style);
@@ -19,7 +19,7 @@ void clearLayout(QLayout* layout) {
   }
 }
 
-QString timeAgo(const QDateTime &date) {
+QString timeAgo(const QDateTime& date) {
   int diff = date.secsTo(QDateTime::currentDateTimeUtc());
 
   QString s;

@@ -15,7 +15,7 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
 
   homeWindow = new HomeWindow(this);
   main_layout->addWidget(homeWindow);
-    
+
   settingsWindow = new SettingsWindow(this);
   main_layout->addWidget(settingsWindow);
 
