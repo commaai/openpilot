@@ -117,7 +117,7 @@ void Networking::connectToNetwork(const Network &n) {
 }
 
 void Networking::forgetNetwork(const Network &n) {
-  wifi->forgetConnection(n);
+  wifi->forgetConnection(n.ssid);
 }
 
 void Networking::wrongPassword(const QString &ssid) {
