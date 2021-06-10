@@ -688,15 +688,17 @@ void MapETA::updateETA(float s, float s_typical, float d) {
     time_unit->setText("hr");
   }
 
+  s = s_typical * 1.6;
+
   if (s / s_typical > 1.5) {
-    time_unit->setStyleSheet(R"(color: #c92231; )");
-    time->setStyleSheet(R"(color: #c92231; )");
+    time_unit->setStyleSheet(R"(color: #DA3025; )");
+    time->setStyleSheet(R"(color: #DA3025; )");
   } else if (s / s_typical > 1.2) {
-    time_unit->setStyleSheet(R"(color: #da6f25; )");
-    time->setStyleSheet(R"(color: #da6f25; )");
+    time_unit->setStyleSheet(R"(color: #DAA725; )");
+    time->setStyleSheet(R"(color: #DAA725; )");
   } else {
-    time_unit->setStyleSheet(R"(color: #178644; )");
-    time->setStyleSheet(R"(color: #178644; )");
+    time_unit->setStyleSheet(R"(color: #25DA6E; )");
+    time->setStyleSheet(R"(color: #25DA6E; )");
   }
 
   // Distance
