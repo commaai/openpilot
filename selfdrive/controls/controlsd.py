@@ -84,7 +84,7 @@ class Controls:
     self.is_metric = params.get_bool("IsMetric")
     self.is_ldw_enabled = params.get_bool("IsLdwEnabled")
     self.enable_lte_onroad = params.get_bool("EnableLteOnroad")
-    self.debug_mode = params.get_bool("JoystickDebugMode")
+    self.joystick_mode = params.get_bool("JoystickDebugMode")
     community_feature_toggle = params.get_bool("CommunityFeaturesToggle")
     openpilot_enabled_toggle = params.get_bool("OpenpilotEnabledToggle")
     passive = params.get_bool("Passive") or not openpilot_enabled_toggle
@@ -157,7 +157,7 @@ class Controls:
       self.events.add(EventName.carUnrecognized, static=True)
     elif self.read_only:
       self.events.add(EventName.dashcamMode, static=True)
-    elif self.debug_mode:
+    elif self.joystick_mode:
       self.events.add(EventName.joystickDebug, static=True)
 
     # controlsd is driven by can recv, expected at 100Hz
@@ -447,7 +447,7 @@ class Controls:
     a_acc_sol = long_plan.aStart + (dt / LON_MPC_STEP) * (long_plan.aTarget - long_plan.aStart)
     v_acc_sol = long_plan.vStart + dt * (a_acc_sol + long_plan.aStart) / 2.0
 
-    if not self.debug_mode:
+    if not self.joystick_mode:
       # Gas/Brake PID loop
       actuators.gas, actuators.brake = self.LoC.update(self.active, CS, v_acc_sol, long_plan.vTargetFuture, a_acc_sol, self.CP)
 
@@ -501,7 +501,7 @@ class Controls:
     CC.cruiseControl.override = True
     CC.cruiseControl.cancel = not self.CP.enableCruise or (not self.enabled and CS.cruiseState.enabled)
 
-    if self.debug_mode and self.sm.rcv_frame['testJoystick'] != 0:
+    if self.joystick_mode and self.sm.rcv_frame['testJoystick'] != 0:
       CC.enabled = self.sm['testJoystick'].buttons[1]
       CC.cruiseControl.cancel = self.sm['testJoystick'].buttons[0]
 
@@ -595,7 +595,7 @@ class Controls:
     controlsState.forceDecel = bool(force_decel)
     controlsState.canErrorCounter = self.can_error_counter
 
-    if self.debug_mode:
+    if self.joystick_mode:
       controlsState.lateralControlState.debugState = lac_log
     elif self.CP.steerControlType == car.CarParams.SteerControlType.angle:
       controlsState.lateralControlState.angleState = lac_log
