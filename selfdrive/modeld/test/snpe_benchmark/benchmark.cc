@@ -182,7 +182,7 @@ int main(int argc, char* argv[]) {
   }
 
   if (argc == 2) {
-    while(1) test(argv[1]);
+    while (true) test(argv[1]);
   } else if (argc == 3) {
     testrun(argv[1]);
   }
