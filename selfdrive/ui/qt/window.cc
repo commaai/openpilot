@@ -15,17 +15,9 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
 
   homeWindow = new HomeWindow(this);
   main_layout->addWidget(homeWindow);
-  connect(signalMap(), &SignalMap::offroadTransition, homeWindow, &HomeWindow::offroadTransition);
-  
+    
   settingsWindow = new SettingsWindow(this);
   main_layout->addWidget(settingsWindow);
-  QObject::connect(signalMap(), &SignalMap::reviewTrainingGuide, this, &MainWindow::reviewTrainingGuide);
-  QObject::connect(signalMap(), &SignalMap::showDriverView, [=] {
-    homeWindow->showDriverView(true);
-  });
-
-  QObject::connect(signalMap(), &SignalMap::closeSettings, this, &MainWindow::closeSettings);
-  QObject::connect(signalMap(), &SignalMap::openSettings, this, &MainWindow::openSettings);
 
   onboardingWindow = new OnboardingWindow(this);
   onboardingDone = onboardingWindow->isOnboardingDone();
@@ -39,9 +31,16 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   onboardingWindow->updateActiveScreen();
 
   device.setAwake(true, true);
-  QObject::connect(&qs, &QUIState::uiUpdate, &device, &Device::update);
-  QObject::connect(&qs, &QUIState::offroadTransition, this, &MainWindow::offroadTransition);
-  QObject::connect(&device, &Device::displayPowerChanged, this, &MainWindow::closeSettings);
+
+  QObject::connect(signalMap(), &SignalMap::uiUpdate, &device, &Device::update);
+  QObject::connect(signalMap(), &SignalMap::offroadTransition, this, &MainWindow::offroadTransition);
+  QObject::connect(signalMap(), &SignalMap::displayPowerChanged, this, &MainWindow::closeSettings);
+  QObject::connect(signalMap(), &SignalMap::reviewTrainingGuide, this, &MainWindow::reviewTrainingGuide);
+  QObject::connect(signalMap(), &SignalMap::closeSettings, this, &MainWindow::closeSettings);
+  QObject::connect(signalMap(), &SignalMap::openSettings, this, &MainWindow::openSettings);
+  QObject::connect(signalMap(), &SignalMap::showDriverView, [=] {
+    homeWindow->showDriverView(true);
+  });
 
   // load fonts
   QFontDatabase::addApplicationFont("../assets/fonts/opensans_regular.ttf");

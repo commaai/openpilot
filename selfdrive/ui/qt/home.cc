@@ -32,13 +32,12 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
 
   home = new OffroadHome();
   slayout->addWidget(home);
-  QObject::connect(signalMap(), &SignalMap::openSettings, home, &OffroadHome::refresh);
-
+  
   driver_view = new DriverViewWindow(this);
-  connect(driver_view, &DriverViewWindow::done, [=] {
-    showDriverView(false);
-  });
+  connect(driver_view, &DriverViewWindow::done, [=] { showDriverView(false); });
   slayout->addWidget(driver_view);
+
+  connect(signalMap(), &SignalMap::offroadTransition, this, &HomeWindow::offroadTransition);
 }
 
 void HomeWindow::offroadTransition(bool offroad) {
@@ -141,6 +140,8 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
      color: white;
     }
   )");
+
+  QObject::connect(signalMap(), &SignalMap::openSettings, this, &OffroadHome::refresh);
 }
 
 void OffroadHome::showEvent(QShowEvent *event) {

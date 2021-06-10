@@ -38,6 +38,8 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   alerts->raise();
 
   setAttribute(Qt::WA_OpaquePaintEvent);
+
+  QObject::connect(signalMap(), &SignalMap::offroadTransition, this, &OnroadWindow::offroadTransition);
 }
 
 
@@ -81,6 +83,9 @@ OnroadAlerts::OnroadAlerts(QWidget *parent) : QWidget(parent) {
     sounds[alert].first.setSource(QUrl::fromLocalFile(fn));
     sounds[alert].second = loops ? QSoundEffect::Infinite : 0;
   }
+
+  QObject::connect(signalMap(), &SignalMap::uiUpdate, this, &OnroadAlerts::updateState);
+  QObject::connect(signalMap(), &SignalMap::offroadTransition, this, &OnroadAlerts::offroadTransition);
 }
 
 void OnroadAlerts::updateState(const UIState &s) {
@@ -215,6 +220,7 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
 
 NvgWindow::NvgWindow(QWidget *parent) : QOpenGLWidget(parent) {
   setAttribute(Qt::WA_OpaquePaintEvent);
+  QObject::connect(signalMap(), &SignalMap::uiUpdate, this, &NvgWindow::update);
 }
 
 NvgWindow::~NvgWindow() {
