@@ -38,6 +38,7 @@ private:
 
 signals:
   void connectToNetwork(const Network &n);
+  void forgetNetwork(const Network &n);
 
 public slots:
   void refresh();
@@ -84,6 +85,7 @@ private:
 
 private slots:
   void connectToNetwork(const Network &n);
+  void forgetNetwork(const Network &n);
   void refresh();
   void wrongPassword(const QString &ssid);
 };

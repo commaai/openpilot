@@ -35,6 +35,7 @@ public:
   QString ipv4_address;
 
   void refreshNetworks();
+  void forget(const Network &ssid);
   void connect(const Network &ssid);
   void connect(const Network &ssid, const QString &password);
   void connect(const Network &ssid, const QString &username, const QString &password);

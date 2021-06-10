@@ -115,6 +115,10 @@ void Networking::connectToNetwork(const Network &n) {
   }
 }
 
+void Networking::forgetNetwork(const Network &n) {
+  wifi->forget(n);
+}
+
 void Networking::wrongPassword(const QString &ssid) {
   for (Network n : wifi->seen_networks) {
     if (n.ssid == ssid) {
@@ -250,6 +254,9 @@ void WifiUI::handleConnectButton(QAbstractButton* button) {
 void WifiUI::handleSsidButton(QAbstractButton* button) {
   QPushButton* btn = static_cast<QPushButton*>(button);
   qDebug() << ssidButtons->id(btn);
-//  Network n = wifi->seen_networks[connectButtons->id(btn)];
-//  emit connectToNetwork(n);  // TODO: emit delete network
+  if (ConfirmationDialog::confirm("Do you want to forget this network?", this)) {
+    qDebug() << "Removing network!";
+  }
+  Network n = wifi->seen_networks[ssidButtons->id(btn)];
+  emit forgetNetwork(n);
 }

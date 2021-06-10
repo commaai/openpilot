@@ -202,6 +202,10 @@ SecurityType WifiManager::getSecurityType(const QString &path) {
   }
 }
 
+void WifiManager::forget(const Network &n) {
+  clear_connections(n.ssid);
+}
+
 void WifiManager::connect(const Network &n) {
   return connect(n, "", "");
 }
