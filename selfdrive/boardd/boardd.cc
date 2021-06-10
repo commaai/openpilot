@@ -181,7 +181,7 @@ static bool usb_retry_connect() {
 
 void can_recv(PubMaster &pm) {
   kj::Array<capnp::word> can_data;
-  panda->can_receive(can_data);
+  if (panda->can_receive(can_data) <= 0) return;
   auto bytes = can_data.asBytes();
   pm.send("can", bytes.begin(), bytes.size());
 }

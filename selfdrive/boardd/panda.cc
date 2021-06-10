@@ -288,7 +288,7 @@ int Panda::can_receive(kj::Array<capnp::word>& out_buf) {
   int recv = usb_bulk_read(0x81, (unsigned char*)data, RECV_SIZE);
 
   // Not sure if this can happen
-  if (recv < 0) recv = 0;
+  if (recv <= 0) return 0;
 
   if (recv == RECV_SIZE) {
     LOGW("Receive buffer full");
