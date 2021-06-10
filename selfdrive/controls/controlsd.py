@@ -417,9 +417,9 @@ class Controls:
     # Check if openpilot is engaged
     self.enabled = self.active or self.state == State.preEnabled
     
-    if self.joystick_mode and self.sm.rcv_frame['testJoystick'] != 0:
-      self.active = self.sm['testJoystick'].buttons[1]
-      self.enabled = self.sm['testJoystick'].buttons[1]
+#     if self.joystick_mode and self.sm.rcv_frame['testJoystick'] != 0:  # TODO: remove
+#       self.active = self.sm['testJoystick'].buttons[1]
+#       self.enabled = self.sm['testJoystick'].buttons[1]
     
     if self.active:
       self.current_alert_types.append(ET.WARNING)
@@ -510,7 +510,7 @@ class Controls:
 
     if self.joystick_mode and self.sm.rcv_frame['testJoystick'] != 0:
       # CC.enabled = self.sm['testJoystick'].buttons[1]
-      CC.cruiseControl.cancel = self.sm['testJoystick'].buttons[0]
+      CC.cruiseControl.cancel = self.sm['testJoystick'].buttons[0] or CC.cruiseControl.cancel
 
     # Some override values for Honda
     # brake discount removes a sharp nonlinearity
