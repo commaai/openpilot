@@ -3,28 +3,29 @@
 #include <QFontDatabase>
 
 #include "selfdrive/hardware/hw.h"
+#include "selfdrive/ui/qt/util.h"
 
 MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   main_layout = new QStackedLayout(this);
   main_layout->setMargin(0);
 
+  QObject::connect(&qs, &QUIState::uiUpdate, signalMap(), &SignalMap::uiUpdate);
+  QObject::connect(&qs, &QUIState::offroadTransition, signalMap(), &SignalMap::offroadTransition);
+  QObject::connect(&device, &Device::displayPowerChanged, signalMap(), &SignalMap::displayPowerChanged);
+
   homeWindow = new HomeWindow(this);
   main_layout->addWidget(homeWindow);
-  QObject::connect(homeWindow, &HomeWindow::openSettings, this, &MainWindow::openSettings);
-  QObject::connect(homeWindow, &HomeWindow::closeSettings, this, &MainWindow::closeSettings);
-  QObject::connect(&qs, &QUIState::uiUpdate, homeWindow, &HomeWindow::update);
-  QObject::connect(&qs, &QUIState::offroadTransition, homeWindow, &HomeWindow::offroadTransition);
-  QObject::connect(&qs, &QUIState::offroadTransition, homeWindow, &HomeWindow::offroadTransitionSignal);
-  QObject::connect(&device, &Device::displayPowerChanged, homeWindow, &HomeWindow::displayPowerChanged);
-
+  connect(signalMap(), &SignalMap::offroadTransition, homeWindow, &HomeWindow::offroadTransition);
+  
   settingsWindow = new SettingsWindow(this);
   main_layout->addWidget(settingsWindow);
-  QObject::connect(settingsWindow, &SettingsWindow::closeSettings, this, &MainWindow::closeSettings);
-  QObject::connect(&qs, &QUIState::offroadTransition, settingsWindow, &SettingsWindow::offroadTransition);
-  QObject::connect(settingsWindow, &SettingsWindow::reviewTrainingGuide, this, &MainWindow::reviewTrainingGuide);
-  QObject::connect(settingsWindow, &SettingsWindow::showDriverView, [=] {
+  QObject::connect(signalMap(), &SignalMap::reviewTrainingGuide, this, &MainWindow::reviewTrainingGuide);
+  QObject::connect(signalMap(), &SignalMap::showDriverView, [=] {
     homeWindow->showDriverView(true);
   });
+
+  QObject::connect(signalMap(), &SignalMap::closeSettings, this, &MainWindow::closeSettings);
+  QObject::connect(signalMap(), &SignalMap::openSettings, this, &MainWindow::openSettings);
 
   onboardingWindow = new OnboardingWindow(this);
   onboardingDone = onboardingWindow->isOnboardingDone();

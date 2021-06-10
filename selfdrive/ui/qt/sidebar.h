@@ -19,13 +19,6 @@ class Sidebar : public QFrame {
 public:
   explicit Sidebar(QWidget* parent = 0);
 
-signals:
-  void openSettings();
-  void valueChanged();
-
-public slots:
-  void updateState(const UIState &s);
-
 protected:
   void paintEvent(QPaintEvent *event) override;
   void mousePressEvent(QMouseEvent *event) override;
@@ -56,4 +49,10 @@ private:
   QColor temp_status = warning_color;
   QString net_type;
   int net_strength = 0;
+
+signals:
+  void valueChanged();
+
+private slots:
+  void updateState(const UIState &s);
 };

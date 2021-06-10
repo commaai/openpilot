@@ -23,7 +23,7 @@ widgets_src = ["qt/widgets/input.cc", "qt/widgets/drive_stats.cc",
                "qt/widgets/ssh_keys.cc", "qt/widgets/toggle.cc", "qt/widgets/controls.cc",
                "qt/widgets/offroad_alerts.cc", "qt/widgets/setup.cc", "qt/widgets/keyboard.cc",
                "qt/widgets/scrollview.cc", "qt/widgets/cameraview.cc", "#phonelibs/qrcode/QrCode.cc", "qt/api.cc",
-               "qt/request_repeater.cc"]
+               "qt/request_repeater.cc", "qt/util.cc"]
 
 if arch != 'aarch64':
   widgets_src += ["qt/offroad/networking.cc", "qt/offroad/wifiManager.cc"]

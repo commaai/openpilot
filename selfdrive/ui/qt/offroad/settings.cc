@@ -114,7 +114,7 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
 
   offroad_btns.append(new ButtonControl("Driver Camera", "PREVIEW",
                                         "Preview the driver facing camera to help optimize device mounting position for best driver monitoring experience. (vehicle must be off)",
-                                        [=]() { emit showDriverView(); }, "", this));
+                                        [=]() { emit signalMap()->showDriverView(); }, "", this));
 
   QString resetCalibDesc = "openpilot requires the device to be mounted within 4° left or right and within 5° up or down. openpilot is continuously calibrating, resetting is rarely required.";
   ButtonControl *resetCalibBtn = new ButtonControl("Reset Calibration", "RESET", resetCalibDesc, [=]() {
@@ -149,7 +149,7 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
                                         "Review the rules, features, and limitations of openpilot", [=]() {
     if (ConfirmationDialog::confirm("Are you sure you want to review the training guide?", this)) {
       Params().remove("CompletedTrainingVersion");
-      emit reviewTrainingGuide();
+      emit signalMap()->reviewTrainingGuide();
     }
   }, "", this));
 
@@ -161,8 +161,8 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
 
   for(auto &btn : offroad_btns) {
     main_layout->addWidget(horizontal_line());
-    QObject::connect(parent, SIGNAL(offroadTransition(bool)), btn, SLOT(setEnabled(bool)));
-    main_layout->addWidget(btn);
+    QObject::connect(signalMap(), &SignalMap::offroadTransition, btn, &QPushButton::setEnabled);
+    device_layout->addWidget(btn);
   }
 
   // power buttons
@@ -318,12 +318,10 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   close_btn->setFixedSize(200, 200);
   sidebar_layout->addSpacing(45);
   sidebar_layout->addWidget(close_btn, 0, Qt::AlignCenter);
-  QObject::connect(close_btn, &QPushButton::released, this, &SettingsWindow::closeSettings);
+  QObject::connect(close_btn, &QPushButton::released, signalMap(), &SignalMap::closeSettings);
 
   // setup panels
   DevicePanel *device = new DevicePanel(this);
-  QObject::connect(device, &DevicePanel::reviewTrainingGuide, this, &SettingsWindow::reviewTrainingGuide);
-  QObject::connect(device, &DevicePanel::showDriverView, this, &SettingsWindow::showDriverView);
 
   QList<QPair<QString, QWidget *>> panels = {
     {"Device", device},

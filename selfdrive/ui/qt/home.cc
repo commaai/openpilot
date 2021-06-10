@@ -12,6 +12,7 @@
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/widgets/drive_stats.h"
 #include "selfdrive/ui/qt/widgets/setup.h"
+#include "selfdrive/ui/qt/util.h"
 
 // HomeWindow: the container for the offroad and onroad UIs
 
@@ -22,21 +23,16 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
 
   sidebar = new Sidebar(this);
   main_layout->addWidget(sidebar);
-  QObject::connect(this, &HomeWindow::update, sidebar, &Sidebar::updateState);
-  QObject::connect(sidebar, &Sidebar::openSettings, this, &HomeWindow::openSettings);
-
+  
   slayout = new QStackedLayout();
   main_layout->addLayout(slayout);
 
   onroad = new OnroadWindow(this);
   slayout->addWidget(onroad);
 
-  QObject::connect(this, &HomeWindow::update, onroad, &OnroadWindow::update);
-  QObject::connect(this, &HomeWindow::offroadTransitionSignal, onroad, &OnroadWindow::offroadTransitionSignal);
-
   home = new OffroadHome();
   slayout->addWidget(home);
-  QObject::connect(this, &HomeWindow::openSettings, home, &OffroadHome::refresh);
+  QObject::connect(signalMap(), &SignalMap::openSettings, home, &OffroadHome::refresh);
 
   driver_view = new DriverViewWindow(this);
   connect(driver_view, &DriverViewWindow::done, [=] {
@@ -52,12 +48,11 @@ void HomeWindow::offroadTransition(bool offroad) {
     slayout->setCurrentWidget(onroad);
   }
   sidebar->setVisible(offroad);
-  emit offroadTransitionSignal(offroad);
 }
 
 void HomeWindow::showDriverView(bool show) {
   if (show) {
-    emit closeSettings();
+    emit signalMap()->closeSettings();
     slayout->setCurrentWidget(driver_view);
   } else {
     slayout->setCurrentWidget(home);

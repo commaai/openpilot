@@ -80,10 +80,6 @@ private:
   QStackedLayout *main_layout;
   QHBoxLayout* split;
 
-signals:
-  void update(const UIState &s);
-  void offroadTransitionSignal(bool offroad);
-
 private slots:
   void offroadTransition(bool offroad);
 };

@@ -44,11 +44,13 @@ Sidebar::Sidebar(QWidget *parent) : QFrame(parent) {
   setFixedWidth(300);
   setMinimumHeight(vwp_h);
   setStyleSheet("background-color: rgb(57, 57, 57);");
+
+  QObject::connect(signalMap(), &SignalMap::uiUpdate, this, &Sidebar::updateState);
 }
 
 void Sidebar::mousePressEvent(QMouseEvent *event) {
   if (settings_btn.contains(event->pos())) {
-    emit openSettings();
+    emit signalMap()->openSettings();
   }
 }
 
