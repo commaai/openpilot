@@ -29,7 +29,6 @@ class Keyboard:
       self.axes_values[axis] = clip(self.axes_values[axis] + incr, -1, 1)
     else:
       return False
-
     return True
 
 
@@ -47,12 +46,9 @@ class Joystick:
       self.cancel = True
     elif event[0] in self.axes_values:
       norm = -interp(event[1], [0, self.max_axis_value], [-1., 1.])
-      if abs(norm) <= 0.05:
-        return False
       self.axes_values[event[0]] = norm if abs(norm) > 0.05 else 0.  # center can be noisy, deadzone of 5%
     else:
       return False
-
     return True
 
 
@@ -68,7 +64,6 @@ def joystick_thread(use_keyboard):
       dat.testJoystick.axes = [joystick.axes_values[a] for a in joystick.axes_values]
       dat.testJoystick.buttons = [joystick.cancel]
       joystick_sock.send(dat.to_bytes())
-
       print('\n' + ', '.join([f'{name}: {round(v, 3)}' for name, v in joystick.axes_values.items()]))
 
 
