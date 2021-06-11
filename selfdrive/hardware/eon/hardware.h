@@ -3,9 +3,14 @@
 #include <cstdlib>
 #include <fstream>
 
-#include <gui/ISurfaceComposer.h>
-#include <gui/SurfaceComposerClient.h>
 #include <hardware/hwcomposer_defs.h>
+
+#ifndef _USING_LIBCXX
+#define _USING_LIBCXX
+#endif
+#include <gui/SurfaceComposerClient.h>
+#include <gui/ISurfaceComposer.h>
+#undef _USING_LIBCXX
 
 #include "selfdrive/common/util.h"
 #include "selfdrive/hardware/base.h"
