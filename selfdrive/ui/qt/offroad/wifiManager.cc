@@ -278,28 +278,11 @@ QVector<QDBusObjectPath> WifiManager::get_active_connections() {
   return conns;
 }
 
-bool WifiManager::isKnownNetwork(const QString &ssid) {  // TODO: gotta be a simpler way to do this, i'll check once it works
-  for(QDBusObjectPath path : list_connections()){
-    QDBusInterface nm2(nm_service, path.path(), nm_settings_conn_iface, bus);
-    nm2.setTimeout(dbus_timeout);
-
-    QDBusMessage response = nm2.call("GetSettings");
-
-    const QDBusArgument &dbusArg = response.arguments().at(0).value<QDBusArgument>();
-
-    QMap<QString, QMap<QString,QVariant>> map;
-    dbusArg >> map;
-    for (auto &inner : map) {
-      for (auto &val : inner) {
-        QString key = inner.key(val);
-        if (key == "ssid") {
-          if (val == ssid) {
-            return true;
-          }
-        }
-      }
-    }
+bool WifiManager::isKnownNetwork(const QString &ssid) {
+  for (QPair<QString, QDBusObjectPath> conn : list_connections_ssid()) {
+    if (conn.first == ssid) return true;
   }
+  qDebug() << "not a known network!";
   return false;
 }
 
@@ -416,10 +399,8 @@ void WifiManager::disconnect() {
   }
 }
 
-//QMap<QString, QMap<QString,QVariant>>
-QVector<QMap<QString, QDBusObjectPath>> WifiManager::list_connections_ssid() {
-//  QVector<QDBusObjectPath> connections;
-  QVector<QMap<QString, QDBusObjectPath>> connections;
+QVector<QPair<QString, QDBusObjectPath>> WifiManager::list_connections_ssid() {
+  QVector<QPair<QString, QDBusObjectPath>> connections;
   QDBusInterface nm(nm_service, nm_settings_path, nm_settings_iface, bus);
   nm.setTimeout(dbus_timeout);
 
@@ -438,7 +419,6 @@ QVector<QMap<QString, QDBusObjectPath>> WifiManager::list_connections_ssid() {
     const QDBusArgument &dbusArg = response.arguments().at(0).value<QDBusArgument>();
 
     QString ssid;
-
     QMap<QString, QMap<QString,QVariant>> map;
     dbusArg >> map;
     for (auto &inner : map) {
@@ -450,7 +430,8 @@ QVector<QMap<QString, QDBusObjectPath>> WifiManager::list_connections_ssid() {
       }
     }
     QMap<QString, QDBusObjectPath> conn;
-    conn[ssid] = path;
+    conn.first = ssid;
+    conn.second = path;
     connections.push_back(conn);
   }
   return connections;
