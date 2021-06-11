@@ -128,8 +128,8 @@ class LateralMpc():
   def set_weights(self, path_weight, heading_weight, steer_rate_weight):
     W = np.diag([path_weight, heading_weight, steer_rate_weight])
     for i in range(N):
-      self.solver.cost_set(i, 'W', W)
-    self.solver.cost_set(N, 'W', W[:2,:2])
+      self.solver.cost_set(i, 'W', 20 * (T_IDXS[i+1] - T_IDXS[i]) * W)
+    self.solver.cost_set(N, 'W', 3*W[:2,:2])
 
   def run(self, x0, v_ego, car_rotation_radius, y_pts, heading_pts):
     self.solver.constraints_set(0, "lbx", x0)
