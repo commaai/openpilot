@@ -280,8 +280,12 @@ QVector<QDBusObjectPath> WifiManager::get_active_connections() {
 
 bool WifiManager::isKnownNetwork(const QString &ssid) {
   for (QPair<QString, QDBusObjectPath> conn : list_connections_ssid()) {
-    if (conn.first == ssid) return true;
+    if (conn.first == ssid) {
+      qDebug() << "known network!";
+      return true;
+    }
   }
+  qDebug() << "unknown network!";
   return false;
 }
 
@@ -385,17 +389,8 @@ void WifiManager::disconnect() {
 
 QVector<QPair<QString, QDBusObjectPath>> WifiManager::list_connections_ssid() {
   QVector<QPair<QString, QDBusObjectPath>> connections;
-  QDBusInterface nm(nm_service, nm_settings_path, nm_settings_iface, bus);
-  nm.setTimeout(dbus_timeout);
 
-  QDBusMessage response = nm.call("ListConnections");
-  QVariant first =  response.arguments().at(0);
-  const QDBusArgument &args = first.value<QDBusArgument>();
-  args.beginArray();
-  while (!args.atEnd()) {
-    QDBusObjectPath path;
-    args >> path;
-
+  for(QDBusObjectPath path : list_connections()){
     QDBusInterface nm2(nm_service, path.path(), nm_settings_conn_iface, bus);
     nm2.setTimeout(dbus_timeout);
 
