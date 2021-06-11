@@ -216,7 +216,7 @@ void WifiManager::connect(const Network &n, const QString &password) {
 
 void WifiManager::connect(const Network &n, const QString &username, const QString &password) {
   connecting_to_network = n.ssid;
-  disconnect();
+  disconnect();  // Clear all connections that may already exist to the network we are connecting to
   connect(n.ssid, username, password, n.security_type);
 }
 
@@ -284,12 +284,8 @@ QVector<QDBusObjectPath> WifiManager::get_active_connections() {
 
 bool WifiManager::isKnownNetwork(const QString &ssid) {
   for (QPair<QString, QDBusObjectPath> conn : list_connections_ssid()) {
-    if (conn.first == ssid) {
-      qDebug() << "known network!";
-      return true;
-    }
+    if (conn.first == ssid) return true;
   }
-  qDebug() << "unknown network!";
   return false;
 }
 
@@ -441,31 +437,18 @@ QVector<QDBusObjectPath> WifiManager::list_connections(){
 bool WifiManager::activate_wifi_connection(const QString &ssid){
   QString devicePath = get_adapter();
 
-  for(QDBusObjectPath path : list_connections()){
-    QDBusInterface nm2(nm_service, path.path(), nm_settings_conn_iface, bus);
-    nm2.setTimeout(dbus_timeout);
+  for (QPair<QString, QDBusObjectPath> conn : list_connections_ssid()) {
+    if (conn.first == ssid) {
+      QDBusInterface nm3(nm_service, nm_path, nm_iface, bus);
+      nm3.setTimeout(dbus_timeout);
+      nm3.call("ActivateConnection", QVariant::fromValue(conn.second.path()), QVariant::fromValue(QDBusObjectPath(devicePath)), QVariant::fromValue(QDBusObjectPath("/")));
 
-    QDBusMessage response = nm2.call("GetSettings");
-    const QDBusArgument &dbusArg = response.arguments().at(0).value<QDBusArgument>();
-
-    QMap<QString, QMap<QString,QVariant>> map;
-    dbusArg >> map;
-    for (auto &inner : map) {
-      for (auto &val : inner) {
-        QString key = inner.key(val);
-        if (key == "ssid") {
-          if (val == ssid) {
-            QDBusInterface nm3(nm_service, nm_path, nm_iface, bus);
-            nm3.setTimeout(dbus_timeout);
-            nm3.call("ActivateConnection", QVariant::fromValue(path), QVariant::fromValue(QDBusObjectPath(devicePath)), QVariant::fromValue(QDBusObjectPath("/")));
-            return true;
-          }
-        }
-      }
+      return true;
     }
   }
   return false;
 }
+
 //Functions for tethering
 bool WifiManager::activate_tethering_connection(){
   QString devicePath = get_adapter();
