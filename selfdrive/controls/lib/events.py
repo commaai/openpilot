@@ -232,7 +232,7 @@ def joystick_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> 
   gb, steer = list(axes)[:2] if len(axes) else (0., 0.)
   return Alert(
     "Joystick Mode",
-    f"Gas: {round(gb * 100., 1)}%, Steer: {round(steer * 100., 1)}%",
+    f"Gas: {round(gb * 100.)}%, Steer: {round(steer * 100.)}%",
     AlertStatus.normal, AlertSize.mid,
     Priority.LOW, VisualAlert.none, AudibleAlert.none, 0., 0., .1)
 

@@ -504,7 +504,7 @@ class Controls:
     CC.cruiseControl.override = True
     CC.cruiseControl.cancel = not self.CP.enableCruise or (not self.enabled and CS.cruiseState.enabled)
 
-    if self.joystick_mode and self.sm.rcv_frame['testJoystick'] > 0:
+    if self.joystick_mode and self.sm.rcv_frame['testJoystick'] > 0 and self.sm['testJoystick'].buttons[0]:
       CC.cruiseControl.cancel = True
 
     # Some override values for Honda
