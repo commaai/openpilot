@@ -79,10 +79,8 @@ class DeclinePage : public QFrame {
 public:
   explicit DeclinePage(QWidget *parent = 0) : QFrame(parent) {};
 
-protected:
-  void showEvent(QShowEvent *event) override;
-
 private:
+  void showEvent(QShowEvent *event) override;
   QPushButton *back_btn;
   QPushButton *uninstall_btn;
 
@@ -95,20 +93,18 @@ class OnboardingWindow : public QStackedWidget {
 
 public:
   explicit OnboardingWindow(QWidget *parent = 0);
-  bool isOnboardingDone();
 
 private:
+  void showEvent(QShowEvent *event) override;
+  void updateActiveScreen();
+  void initWidgets();
+
   Params params;
   std::string current_terms_version;
   std::string current_training_version;
   bool accepted_terms = false;
   bool training_done = false;
-  void updateOnboardingStatus();
 
 signals:
   void onboardingDone();
-  void resetTrainingGuide();
-
-public slots:
-  void updateActiveScreen();
 };

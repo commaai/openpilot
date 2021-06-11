@@ -149,8 +149,6 @@ void DeclinePage::showEvent(QShowEvent *event) {
 }
 
 void OnboardingWindow::updateActiveScreen() {
-  updateOnboardingStatus();
-
   if (!accepted_terms) {
     setCurrentIndex(0);
   } else if (!training_done) {
@@ -161,32 +159,30 @@ void OnboardingWindow::updateActiveScreen() {
 }
 
 OnboardingWindow::OnboardingWindow(QWidget *parent) : QStackedWidget(parent) {
-  params = Params();
-  current_terms_version = params.get("TermsVersion", false);
-  current_training_version = params.get("TrainingVersion", false);
+  current_terms_version = params.get("TermsVersion");
+  current_training_version = params.get("TrainingVersion");
+}
 
+void OnboardingWindow::initWidgets() {
   TermsPage* terms = new TermsPage(this);
   addWidget(terms);
-
   connect(terms, &TermsPage::acceptedTerms, [=]() {
+    accepted_terms = true;
     Params().put("HasAcceptedTerms", current_terms_version);
     updateActiveScreen();
   });
+  connect(terms, &TermsPage::declinedTerms, [=]() { setCurrentIndex(2); });
 
   TrainingGuide* tr = new TrainingGuide(this);
+  addWidget(tr);
   connect(tr, &TrainingGuide::completedTraining, [=]() {
+    training_done = true;
     Params().put("CompletedTrainingVersion", current_training_version);
     updateActiveScreen();
   });
-  addWidget(tr);
 
   DeclinePage* declinePage = new DeclinePage(this);
   addWidget(declinePage);
-
-  connect(terms, &TermsPage::declinedTerms, [=]() {
-    setCurrentIndex(2);
-  });
-
   connect(declinePage, &DeclinePage::getBack, [=]() {
     updateActiveScreen();
   });
@@ -206,16 +202,19 @@ OnboardingWindow::OnboardingWindow(QWidget *parent) : QStackedWidget(parent) {
       background-color: #222222;
     }
   )");
+}
+
+void OnboardingWindow::showEvent(QShowEvent *event) {
+  accepted_terms = params.get("HasAcceptedTerms") == current_terms_version;
+  training_done = params.get("CompletedTrainingVersion") == current_training_version;
+  if (accepted_terms && training_done) {
+    emit onboardingDone();
+    return;
+  }
+
+  if (count() == 0) {
+    initWidgets();
+  }
 
   updateActiveScreen();
-}
-
-void OnboardingWindow::updateOnboardingStatus() {
-  accepted_terms = params.get("HasAcceptedTerms", false).compare(current_terms_version) == 0;
-  training_done = params.get("CompletedTrainingVersion", false).compare(current_training_version) == 0;
-}
-
-bool OnboardingWindow::isOnboardingDone() {
-  updateOnboardingStatus();
-  return accepted_terms && training_done;
 }

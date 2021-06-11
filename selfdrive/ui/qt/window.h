@@ -25,11 +25,8 @@ private:
   HomeWindow *homeWindow;
   SettingsWindow *settingsWindow;
   OnboardingWindow *onboardingWindow;
-  bool onboardingDone = false;
 
 public slots:
-  void offroadTransition(bool offroad);
   void openSettings();
   void closeSettings();
-  void reviewTrainingGuide();
 };
