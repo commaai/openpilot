@@ -458,7 +458,7 @@ class Controls:
       actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(self.active, CS, self.CP, self.VM, params, lat_plan)
     else:
       lac_log = log.ControlsState.LateralDebugState.new_message()
-      if self.sm.rcv_frame['testJoystick'] != 0 and self.active:
+      if self.sm.rcv_frame['testJoystick'] > 0 and self.active:
         gb = clip(self.sm['testJoystick'].axes[0], -1, 1)
         actuators.gas, actuators.brake = max(gb, 0), max(-gb, 0)
 
@@ -504,8 +504,8 @@ class Controls:
     CC.cruiseControl.override = True
     CC.cruiseControl.cancel = not self.CP.enableCruise or (not self.enabled and CS.cruiseState.enabled)
 
-    if self.joystick_mode and self.sm.rcv_frame['testJoystick'] != 0:
-      CC.cruiseControl.cancel = self.sm['testJoystick'].buttons[0] or CC.cruiseControl.cancel
+    if self.joystick_mode and self.sm.rcv_frame['testJoystick'] > 0:
+      CC.cruiseControl.cancel = True
 
     # Some override values for Honda
     # brake discount removes a sharp nonlinearity
