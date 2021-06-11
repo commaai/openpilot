@@ -164,6 +164,8 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   vlayout->addWidget(new SshToggle());
   vlayout->addWidget(horizontal_line(), 0);
   vlayout->addWidget(new SshControl());
+  vlayout->addWidget(horizontal_line(), 0);
+  vlayout->addWidget(new TetherToggle());
 
   vlayout->addStretch(1);
   setLayout(vlayout);

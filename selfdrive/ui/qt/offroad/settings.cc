@@ -19,6 +19,7 @@
 #include "selfdrive/ui/qt/widgets/offroad_alerts.h"
 #include "selfdrive/ui/qt/widgets/scrollview.h"
 #include "selfdrive/ui/qt/widgets/ssh_keys.h"
+#include "selfdrive/ui/qt/widgets/tether.h"
 #include "selfdrive/ui/qt/widgets/toggle.h"
 #include "selfdrive/ui/ui.h"
 #include "selfdrive/ui/qt/util.h"
@@ -306,6 +307,8 @@ QWidget * network_panel(QWidget * parent) {
   layout->addWidget(new SshToggle());
   layout->addWidget(horizontal_line());
   layout->addWidget(new SshControl());
+  layout->addWidget(horizontal_line());
+  layout->addWidget(new TetherToggle());
 
   layout->addStretch(1);
 

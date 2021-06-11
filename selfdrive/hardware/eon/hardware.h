@@ -42,6 +42,27 @@ public:
     std::system(cmd.c_str());
   };
 
+  static bool get_tether_enabled() {
+    return std::system("getprop persist.neos.tether | grep -qF '1'") == 0;
+  };
+
+  static void set_tether_enabled(bool enabled) {
+    std::string cmd = util::string_format("setprop persist.neos.tether %d", enabled ? 1 : 0);
+    std::system(cmd.c_str());
+  };
+
+  static void toggle_tether(bool car_started) {
+    std::string cmd;
+    if(get_tether_enabled()) {
+      if(car_started) {
+        cmd = "service call wifi 37 i32 0 i32 1";
+      } else {
+        cmd = "service call wifi 37 i32 0 i32 0";
+      }
+      std::system(cmd.c_str());
+    }
+  };
+
   // android only
   inline static bool launched_activity = false;
   static void check_activity() {

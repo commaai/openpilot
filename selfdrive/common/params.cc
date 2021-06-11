@@ -198,6 +198,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"ShouldDoUpdate", CLEAR_ON_MANAGER_START},
     {"SubscriberInfo", PERSISTENT},
     {"SshEnabled", PERSISTENT},
+    {"TetherEnabled", PERSISTENT},
     {"TermsVersion", PERSISTENT},
     {"Timezone", PERSISTENT},
     {"TrainingVersion", PERSISTENT},
