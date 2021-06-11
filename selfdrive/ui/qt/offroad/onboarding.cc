@@ -207,7 +207,7 @@ void OnboardingWindow::initWidgets() {
 void OnboardingWindow::showEvent(QShowEvent *event) {
   accepted_terms = params.get("HasAcceptedTerms") == current_terms_version;
   training_done = params.get("CompletedTrainingVersion") == current_training_version;
-  if (accepted_terms && training_done) {
+  if (accepted_terms && (training_done || params.getBool("Passive"))) {
     emit onboardingDone();
     return;
   }
