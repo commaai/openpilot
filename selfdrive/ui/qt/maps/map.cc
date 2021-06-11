@@ -22,7 +22,7 @@ const float MAP_SCALE = 2;
 
 
 MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings) {
-  if (DRAW_MODEL_PATH){
+  if (DRAW_MODEL_PATH) {
     sm = new SubMaster({"liveLocationKalman", "modelV2"});
   } else {
     sm = new SubMaster({"liveLocationKalman"});
@@ -55,7 +55,7 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings) {
 
   geoservice_provider = new QGeoServiceProvider("mapbox", parameters);
   routing_manager = geoservice_provider->routingManager();
-  if (routing_manager == nullptr){
+  if (routing_manager == nullptr) {
     qDebug() << geoservice_provider->errorString();
     assert(routing_manager);
   }
@@ -76,7 +76,7 @@ MapWindow::~MapWindow() {
 
 void MapWindow::initLayers() {
   // This doesn't work from initializeGL
-  if (!m_map->layerExists("modelPathLayer")){
+  if (!m_map->layerExists("modelPathLayer")) {
     QVariantMap modelPath;
     modelPath["id"] = "modelPathLayer";
     modelPath["type"] = "line";
@@ -86,7 +86,7 @@ void MapWindow::initLayers() {
     m_map->setPaintProperty("modelPathLayer", "line-width", 5.0);
     m_map->setLayoutProperty("modelPathLayer", "line-cap", "round");
   }
-  if (!m_map->layerExists("navLayer")){
+  if (!m_map->layerExists("navLayer")) {
     QVariantMap nav;
     nav["id"] = "navLayer";
     nav["type"] = "line";
@@ -96,7 +96,7 @@ void MapWindow::initLayers() {
     m_map->setPaintProperty("navLayer", "line-width", 7.5);
     m_map->setLayoutProperty("navLayer", "line-cap", "round");
   }
-  if (!m_map->layerExists("carPosLayer")){
+  if (!m_map->layerExists("carPosLayer")) {
     m_map->addImage("label-arrow", QImage("../assets/images/triangle.svg"));
 
     QVariantMap carPos;
@@ -133,14 +133,14 @@ void MapWindow::timerUpdate() {
       last_position = coordinate;
       last_bearing = bearing;
 
-      if (pan_counter == 0){
+      if (pan_counter == 0) {
         m_map->setCoordinate(coordinate);
         m_map->setBearing(bearing);
       } else {
         pan_counter--;
       }
 
-      if (zoom_counter == 0){
+      if (zoom_counter == 0) {
         static FirstOrderFilter velocity_filter(velocity, 10, 0.1);
         m_map->setZoom(util::map_val<float>(velocity_filter.update(velocity), 0, 30, MAX_ZOOM, MIN_ZOOM));
       } else {
@@ -171,7 +171,7 @@ void MapWindow::timerUpdate() {
     if (segment.isValid()) {
       auto cur_maneuver = segment.maneuver();
       auto attrs = cur_maneuver.extendedAttributes();
-      if (cur_maneuver.isValid() && attrs.contains("mapbox.banner_instructions")){
+      if (cur_maneuver.isValid() && attrs.contains("mapbox.banner_instructions")) {
         float along_geometry = distance_along_geometry(segment.path(), to_QGeoCoordinate(last_position));
         float distance = std::max(0.0f, float(segment.distance()) - along_geometry);
         emit distanceChanged(distance);
@@ -179,7 +179,7 @@ void MapWindow::timerUpdate() {
         m_map->setPitch(MAX_PITCH); // TODO: smooth pitching based on maneuver distance
 
         auto banner = attrs["mapbox.banner_instructions"].toList();
-        if (banner.size()){
+        if (banner.size()) {
           map_instructions->setVisible(true);
 
           auto banner_0 = banner[0].toMap();
@@ -189,12 +189,12 @@ void MapWindow::timerUpdate() {
       }
 
       auto next_segment = segment.nextRouteSegment();
-      if (next_segment.isValid()){
+      if (next_segment.isValid()) {
         auto next_maneuver = next_segment.maneuver();
-        if (next_maneuver.isValid()){
+        if (next_maneuver.isValid()) {
           float next_maneuver_distance = next_maneuver.position().distanceTo(to_QGeoCoordinate(last_position));
           // Switch to next route segment
-          if (next_maneuver_distance < REROUTE_DISTANCE && next_maneuver_distance > last_maneuver_distance){
+          if (next_maneuver_distance < REROUTE_DISTANCE && next_maneuver_distance > last_maneuver_distance) {
             segment = next_segment;
 
             recompute_backoff = std::max(0, recompute_backoff - 1);
@@ -217,7 +217,7 @@ void MapWindow::timerUpdate() {
 
   update();
 
-  if (!segment.isValid()){
+  if (!segment.isValid()) {
     map_instructions->setVisible(false);
   }
 
@@ -247,7 +247,7 @@ void MapWindow::paintGL() {
   m_map->render();
 }
 
-static float get_time_typical(const QGeoRouteSegment &segment){
+static float get_time_typical(const QGeoRouteSegment &segment) {
   auto maneuver = segment.maneuver();
   auto attrs = maneuver.extendedAttributes();
   return attrs.contains("mapbox.duration_typical") ? attrs["mapbox.duration_typical"].toDouble() : segment.travelTime();
@@ -263,7 +263,7 @@ void MapWindow::recomputeRoute() {
     return;
   }
 
-  if (*new_destination != nav_destination){
+  if (*new_destination != nav_destination) {
     setVisible(true); // Show map on destination set/change
     should_recompute = true;
   }
@@ -354,8 +354,8 @@ void MapWindow::clearRoute() {
 }
 
 
-bool MapWindow::shouldRecompute(){
-  if (!segment.isValid()){
+bool MapWindow::shouldRecompute() {
+  if (!segment.isValid()) {
     return true;
   }
 
@@ -363,7 +363,7 @@ bool MapWindow::shouldRecompute(){
   float min_d = REROUTE_DISTANCE + 1;
   auto path = segment.path();
   auto cur = to_QGeoCoordinate(last_position);
-  for (size_t i = 0; i < path.size() - 1; i++){
+  for (size_t i = 0; i < path.size() - 1; i++) {
     auto a = path[i];
     auto b = path[i+1];
     if (a.distanceTo(b) < 1.0) {
@@ -381,7 +381,7 @@ void MapWindow::mousePressEvent(QMouseEvent *ev) {
   ev->accept();
 }
 
-void MapWindow::mouseMoveEvent(QMouseEvent *ev){
+void MapWindow::mouseMoveEvent(QMouseEvent *ev) {
   QPointF delta = ev->localPos() - m_lastPos;
 
   if (!delta.isNull()) {
@@ -409,7 +409,7 @@ void MapWindow::wheelEvent(QWheelEvent *ev) {
 }
 
 bool MapWindow::event(QEvent *event) {
-  if (event->type() == QEvent::Gesture){
+  if (event->type() == QEvent::Gesture) {
     return gestureEvent(static_cast<QGestureEvent*>(event));
   }
 
@@ -417,7 +417,7 @@ bool MapWindow::event(QEvent *event) {
 }
 
 bool MapWindow::gestureEvent(QGestureEvent *event) {
-  if (QGesture *pinch = event->gesture(Qt::PinchGesture)){
+  if (QGesture *pinch = event->gesture(Qt::PinchGesture)) {
     pinchTriggered(static_cast<QPinchGesture *>(pinch));
   }
   return true;
@@ -440,7 +440,7 @@ void MapWindow::offroadTransition(bool offroad) {
   last_bearing = {};
 }
 
-MapInstructions::MapInstructions(QWidget * parent) : QWidget(parent){
+MapInstructions::MapInstructions(QWidget * parent) : QWidget(parent) {
   QHBoxLayout *layout_outer = new QHBoxLayout;
   layout_outer->setContentsMargins(11, 50, 11, 11);
   {
@@ -490,7 +490,7 @@ MapInstructions::MapInstructions(QWidget * parent) : QWidget(parent){
   setPalette(pal);
 }
 
-void MapInstructions::updateDistance(float d){
+void MapInstructions::updateDistance(float d) {
   QString distance_str;
 
   if (QUIState::ui_state.scene.is_metric) {
@@ -517,7 +517,7 @@ void MapInstructions::updateDistance(float d){
   distance->setText(distance_str);
 }
 
-void MapInstructions::updateInstructions(QMap<QString, QVariant> banner, bool full){
+void MapInstructions::updateInstructions(QMap<QString, QVariant> banner, bool full) {
   // Need multiple calls to adjustSize for it to properly resize
   // seems like it takes a little bit of time for the images to change and
   // the size can only be changed afterwards
@@ -530,9 +530,9 @@ void MapInstructions::updateInstructions(QMap<QString, QVariant> banner, bool fu
   primary_str += p["text"].toString();
 
   // Show arrow with direction
-  if (p.contains("type")){
+  if (p.contains("type")) {
     QString fn = "../assets/navigation/direction_" + p["type"].toString();
-    if (p.contains("modifier")){
+    if (p.contains("modifier")) {
       fn += "_" + p["modifier"].toString();
     }
     fn +=  + ".png";
@@ -548,12 +548,12 @@ void MapInstructions::updateInstructions(QMap<QString, QVariant> banner, bool fu
   QString icon_fn;
   for (auto &c : components) {
     auto cc = c.toMap();
-    if (cc["type"].toString() == "icon"){
+    if (cc["type"].toString() == "icon") {
       icon_fn = cc["imageBaseURL"].toString() + "@3x.png";
     }
   }
 
-  if (banner.contains("secondary") && full){
+  if (banner.contains("secondary") && full) {
     auto s = banner["secondary"].toMap();
     secondary_str += s["text"].toString();
   }
@@ -561,12 +561,12 @@ void MapInstructions::updateInstructions(QMap<QString, QVariant> banner, bool fu
   clearLayout(lane_layout);
   bool has_lanes = false;
 
-  if (banner.contains("sub") && full){
+  if (banner.contains("sub") && full) {
     auto s = banner["sub"].toMap();
     auto components = s["components"].toList();
     for (auto &c : components) {
       auto cc = c.toMap();
-      if (cc["type"].toString() == "lane"){
+      if (cc["type"].toString() == "lane") {
         has_lanes = true;
 
         bool left = false;
@@ -574,7 +574,7 @@ void MapInstructions::updateInstructions(QMap<QString, QVariant> banner, bool fu
         bool right = false;
         bool active = cc["active"].toBool();
 
-        for (auto &dir : cc["directions"].toList()){
+        for (auto &dir : cc["directions"].toList()) {
           auto d = dir.toString();
           left |= d.contains("left");
           straight |= d.contains("straight");
@@ -585,7 +585,7 @@ void MapInstructions::updateInstructions(QMap<QString, QVariant> banner, bool fu
         QString fn = "../assets/navigation/direction_";
         if (left) {
           fn += "turn_left";
-        } else if (right){
+        } else if (right) {
           fn += "turn_right";
         } else if (straight) {
           fn += "turn_straight";
@@ -607,7 +607,7 @@ void MapInstructions::updateInstructions(QMap<QString, QVariant> banner, bool fu
   last_banner = banner;
 }
 
-MapETA::MapETA(QWidget * parent) : QWidget(parent){
+MapETA::MapETA(QWidget * parent) : QWidget(parent) {
   QHBoxLayout *layout_outer = new QHBoxLayout;
   layout_outer->setContentsMargins(20, 25, 20, 25);
 

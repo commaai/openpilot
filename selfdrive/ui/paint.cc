@@ -434,7 +434,7 @@ void ui_nvg_init(UIState *s) {
   ui_resize(s, s->fb_w, s->fb_h);
 }
 
-void ui_resize(UIState *s, int width, int height){
+void ui_resize(UIState *s, int width, int height) {
   s->fb_w = width;
   s->fb_h = height;
 

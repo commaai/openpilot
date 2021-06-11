@@ -10,7 +10,7 @@
 
 const std::string watchdog_fn_prefix = "/dev/shm/wd_";  // + <pid>
 
-bool watchdog_kick(){
+bool watchdog_kick() {
   std::string fn = watchdog_fn_prefix + std::to_string(getpid());
   std::string cur_t = std::to_string(nanos_since_boot());
 

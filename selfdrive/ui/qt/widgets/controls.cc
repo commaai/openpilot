@@ -59,8 +59,8 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
   setStyleSheet("background-color: transparent;");
 }
 
-void AbstractControl::hideEvent(QHideEvent *e){
-  if(description != nullptr){
+void AbstractControl::hideEvent(QHideEvent *e) {
+  if(description != nullptr) {
     description->hide();
   }
 }

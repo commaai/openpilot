@@ -7,7 +7,7 @@
 
 Eigen::Matrix<float, MODEL_PATH_DISTANCE, POLYFIT_DEGREE> vander;
 
-void poly_init(){
+void poly_init() {
   // Build Vandermonde matrix
   for(int i = 0; i < MODEL_PATH_DISTANCE; i++) {
     for(int j = 0; j < POLYFIT_DEGREE; j++) {

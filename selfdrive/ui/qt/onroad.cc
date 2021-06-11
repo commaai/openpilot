@@ -48,7 +48,7 @@ void OnroadWindow::offroadTransition(bool offroad) {
 #ifdef ENABLE_MAPS
   if (!offroad) {
     QString token = QString::fromStdString(Params().get("MapboxToken"));
-    if (map == nullptr && !token.isEmpty()){
+    if (map == nullptr && !token.isEmpty()) {
       QMapboxGLSettings settings;
       if (!Hardware::PC()) {
         settings.setCacheDatabasePath("/data/mbgl-cache.db");
@@ -227,7 +227,7 @@ void NvgWindow::initializeGL() {
 
 void NvgWindow::update(const UIState &s) {
   // Connecting to visionIPC requires opengl to be current
-  if (s.vipc_client->connected){
+  if (s.vipc_client->connected) {
     makeCurrent();
   }
   repaint();

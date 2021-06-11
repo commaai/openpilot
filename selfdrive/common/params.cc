@@ -42,9 +42,9 @@ void params_sig_handler(int signal) {
   params_do_exit = 1;
 }
 
-int fsync_dir(const char* path){
+int fsync_dir(const char* path) {
   int fd = HANDLE_EINTR(open(path, O_RDONLY, 0755));
-  if (fd < 0){
+  if (fd < 0) {
     return -1;
   }
 
