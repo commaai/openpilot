@@ -34,9 +34,9 @@ class LongitudinalMpc():
     self.max_a = max_a
 
   def set_cur_state(self, v, a):
-    v_safe = max(v, 1e-3)
-    a_safe = min(a, self.max_a - 1e-3)
-    a_safe = max(a_safe, self.min_a + 1e-3)
+    v_safe = max(v, 1e-2)
+    a_safe = min(a, self.max_a - 1e-2)
+    a_safe = max(a_safe, self.min_a + 1e-2)
     self.cur_state[0].x_ego = 0.0
     self.cur_state[0].v_ego = v_safe
     self.cur_state[0].a_ego = a_safe
