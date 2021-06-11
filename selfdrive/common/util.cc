@@ -57,23 +57,22 @@ std::string read_file(const std::string& fn) {
   std::ifstream ifs(fn, std::ios::binary | std::ios::ate);
   if (ifs) {
     std::ifstream::pos_type pos = ifs.tellg();
+    ifs.seekg(0, std::ios::beg);
     if (pos != std::ios::beg) {
       std::string result;
       result.resize(pos);
-      ifs.seekg(0, std::ios::beg);
       ifs.read(result.data(), pos);
       if (ifs) {
         return result;
       }
+    } else {
+      // fallback for files created on read, e.g. procfs
+      std::stringstream buffer;
+      buffer << ifs.rdbuf();
+      return buffer.str();
     }
   }
-  ifs.close();
-
-  // fallback for files created on read, e.g. procfs
-  std::ifstream f(fn);
-  std::stringstream buffer;
-  buffer << f.rdbuf();
-  return buffer.str();
+  return std::string();
 }
 
 int read_files_in_dir(const std::string &path, std::map<std::string, std::string> *contents) {
