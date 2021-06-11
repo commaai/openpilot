@@ -415,7 +415,47 @@ void WifiManager::disconnect() {
     deactivate_connections(get_property(active_ap, "Ssid"));
   }
 }
-QMap<QString, QMap<QString,QVariant>>
+
+//QMap<QString, QMap<QString,QVariant>>
+QVector<QMap<QString, QDBusObjectPath>> WifiManager::list_connections_ssid() {
+//  QVector<QDBusObjectPath> connections;
+  QVector<QMap<QString, QDBusObjectPath>> connections;
+  QDBusInterface nm(nm_service, nm_settings_path, nm_settings_iface, bus);
+  nm.setTimeout(dbus_timeout);
+
+  QDBusMessage response = nm.call("ListConnections");
+  QVariant first =  response.arguments().at(0);
+  const QDBusArgument &args = first.value<QDBusArgument>();
+  args.beginArray();
+  while (!args.atEnd()) {
+    QDBusObjectPath path;
+    args >> path;
+
+    QDBusInterface nm2(nm_service, path.path(), nm_settings_conn_iface, bus);
+    nm2.setTimeout(dbus_timeout);
+
+    QDBusMessage response = nm2.call("GetSettings");
+    const QDBusArgument &dbusArg = response.arguments().at(0).value<QDBusArgument>();
+
+    QString ssid;
+
+    QMap<QString, QMap<QString,QVariant>> map;
+    dbusArg >> map;
+    for (auto &inner : map) {
+      for (auto &val : inner) {
+        QString key = inner.key(val);
+        if (key == "ssid") {
+          ssid = val.toString();
+        }
+      }
+    }
+    QMap<QString, QDBusObjectPath> conn;
+    conn[ssid] = path;
+    connections.push_back(conn);
+  }
+  return connections;
+}
+
 QVector<QDBusObjectPath> WifiManager::list_connections(){
   QVector<QDBusObjectPath> connections;
   QDBusInterface nm(nm_service, nm_settings_path, nm_settings_iface, bus);
