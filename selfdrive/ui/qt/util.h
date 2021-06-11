@@ -34,7 +34,7 @@ signals:
   void openSettings();
   void closeSettings();
   void showDriverView();
-  void displayPowerChanged();
+  void displayPowerChanged(bool on);
   void uiUpdate(const UIState &s);
 };
 
