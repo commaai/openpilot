@@ -15,45 +15,39 @@ IDX_N = 33
 T_IDXS = np.array([index_function(idx, max_val=10.0) for idx in range(IDX_N)], dtype=np.float64)
 
 def gen_lat_model():
-    model_name = 'lat'
+    model = AcadosModel()
+    model.name = 'lat'
+
     # set up states & controls
     x_ego = SX.sym('x_ego')
     y_ego = SX.sym('y_ego')
     psi_ego = SX.sym('psi_ego')
     curv_ego = SX.sym('curv_ego')
-    x = vertcat(x_ego, y_ego, psi_ego, curv_ego)
+    model.x = vertcat(x_ego, y_ego, psi_ego, curv_ego)
 
     # controls
     curv_rate = SX.sym('curv_rate')
-    u = vertcat(curv_rate)
+    model.u = vertcat(curv_rate)
 
     # xdot
     x_ego_dot = SX.sym('x_ego_dot')
     y_ego_dot = SX.sym('y_ego_dot')
     psi_ego_dot = SX.sym('psi_ego_dot')
     curv_ego_dot = SX.sym('curv_ego_dot')
-    xdot = vertcat(x_ego_dot, y_ego_dot, psi_ego_dot, curv_ego_dot)
+    model.xdot = vertcat(x_ego_dot, y_ego_dot, psi_ego_dot, curv_ego_dot)
 
     # live parameters
     rotation_radius = SX.sym('rotation_radius')
     v_ego = SX.sym('v_ego')
-    p = vertcat(v_ego, rotation_radius)
+    model.p = vertcat(v_ego, rotation_radius)
 
     # dynamics model
     f_expl = vertcat(v_ego * cos(psi_ego) - rotation_radius * sin(psi_ego) * (v_ego * curv_ego),
                      v_ego * sin(psi_ego) + rotation_radius * cos(psi_ego) * (v_ego * curv_ego),
                      v_ego * curv_ego,
                      curv_rate)
-
-    f_impl = xdot - f_expl
-    model = AcadosModel()
-    model.f_impl_expr = f_impl
+    model.f_impl_expr = model.xdot - f_expl
     model.f_expl_expr = f_expl
-    model.x = x
-    model.xdot = xdot
-    model.u = u
-    model.p = p
-    model.name = model_name
     return model
 
 
