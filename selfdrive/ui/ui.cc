@@ -260,7 +260,9 @@ static void update_status(UIState *s) {
       s->wide_camera = Hardware::TICI() ? Params().getBool("EnableWideCamera") : false;
 
       // Update intrinsics matrix after possible wide camera toggle change
-      ui_resize(s, s->fb_w, s->fb_h);
+      if (s->vg) {
+        ui_resize(s, s->fb_w, s->fb_h);
+      }
 
       // Choose vision ipc client
       if (s->wide_camera) {
