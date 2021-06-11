@@ -52,18 +52,22 @@ void Networking::attemptInitialization(){
   QVBoxLayout* vlayout = new QVBoxLayout;
 
   if (show_advanced) {
-    QPushButton* advancedSettings = new QPushButton("Advanced");
-    advancedSettings->setStyleSheet("margin-right: 30px;");
-    advancedSettings->setFixedSize(350, 100);
-    connect(advancedSettings, &QPushButton::released, [=](){ s->setCurrentWidget(an); });
-    vlayout->addSpacing(10);
-    vlayout->addWidget(advancedSettings, 0, Qt::AlignRight);
-    vlayout->addSpacing(10);
+    QHBoxLayout* menu_bar = new QHBoxLayout;
 
-    QPushButton *forget_btn = new QPushButton("Forget");
-    forget_btn->setStyleSheet("background-color: #E22C2C; margin-right: 30px;");
-    forget_btn->setFixedSize(350, 100);
-    vlayout->addWidget(forget_btn, 0, Qt::AlignRight);
+    QPushButton* advancedBtn = new QPushButton("Advanced");
+    advancedBtn->setStyleSheet("margin-right: 30px;");
+    advancedBtn->setFixedSize(350, 100);
+    connect(advancedBtn, &QPushButton::released, [=](){ s->setCurrentWidget(an); });
+    menu_bar->addWidget(advancedBtn, 0, Qt::AlignRight);
+
+    QPushButton *forgetBtn = new QPushButton("Forget");
+    forgetBtn->setStyleSheet("background-color: #E22C2C; margin-right: 30px;");
+    forgetBtn->setFixedSize(350, 100);
+    menu_bar->addWidget(forgetBtn, 0, Qt::AlignRight);
+
+    vlayout->addSpacing(10);
+    vlayout->addLayout(menu_bar, 1);
+    vlayout->addSpacing(10);
   }
 
   wifiWidget = new WifiUI(this, wifi);

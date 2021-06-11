@@ -291,6 +291,7 @@ bool WifiManager::isKnownNetwork(const QString &ssid) {
 
 void WifiManager::forgetConnection(const QString &ssid) {
   disconnect();
+
   for (QDBusObjectPath path : list_connections()) {
     if (ssid_from_path(path) == ssid) {
       QDBusInterface nm2(nm_service, path.path(), nm_settings_conn_iface, bus);
@@ -428,7 +429,6 @@ QVector<QDBusObjectPath> WifiManager::list_connections() {
 
 bool WifiManager::activate_wifi_connection(const QString &ssid) {
   QString devicePath = get_adapter();
-
   for (QDBusObjectPath path : list_connections()) {
     if (ssid_from_path(path) == ssid) {
       QDBusInterface nm3(nm_service, nm_path, nm_iface, bus);
