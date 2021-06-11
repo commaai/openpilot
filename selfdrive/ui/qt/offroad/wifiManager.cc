@@ -203,7 +203,11 @@ SecurityType WifiManager::getSecurityType(const QString &path) {
 }
 
 void WifiManager::connect(const Network &n) {
-  return connect(n, "", "");
+  if (isKnownNetwork(n.ssid)) {
+    activate_wifi_connection(n.ssid);
+  } else {
+    return connect(n, "", "");
+  }
 }
 
 void WifiManager::connect(const Network &n, const QString &password) {
