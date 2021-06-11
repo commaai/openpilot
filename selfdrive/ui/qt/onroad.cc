@@ -116,7 +116,7 @@ void OnroadAlerts::offroadTransition(bool offroad) {
 
 void OnroadAlerts::updateAlert(const QString &t1, const QString &t2, float blink_rate,
                                const std::string &type, cereal::ControlsState::AlertSize size, AudibleAlert sound) {
-  if (alert_type.compare(type) == 0 && text1.compare(t1) == 0) {
+  if (alert_type.compare(type) == 0 && text1.compare(t1) == 0 && text2.compare(t2) == 0) {
     return;
   }
 
