@@ -74,7 +74,7 @@ private:
   QByteArray get_property(const QString &network_path, const QString &property);
   unsigned int get_ap_strength(const QString &network_path);
   SecurityType getSecurityType(const QString &ssid);
-  QVector<QPair<QString, QDBusObjectPath>> list_connections();
+  QVector<QDBusObjectPath> list_connections();
   QString ssid_from_path(const QDBusObjectPath &path);
 
 private slots:
