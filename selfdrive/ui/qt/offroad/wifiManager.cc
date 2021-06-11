@@ -282,30 +282,14 @@ bool WifiManager::isKnownNetwork(const QString &ssid) {
   for (QPair<QString, QDBusObjectPath> conn : list_connections_ssid()) {
     if (conn.first == ssid) return true;
   }
-  qDebug() << "not a known network!";
   return false;
 }
 
 void WifiManager::forgetConnection(const QString &ssid) {
-  for(QDBusObjectPath path : list_connections()){
-    QDBusInterface nm2(nm_service, path.path(), nm_settings_conn_iface, bus);
-    nm2.setTimeout(dbus_timeout);
-
-    QDBusMessage response = nm2.call("GetSettings");
-
-    const QDBusArgument &dbusArg = response.arguments().at(0).value<QDBusArgument>();
-
-    QMap<QString, QMap<QString,QVariant>> map;
-    dbusArg >> map;
-    for (auto &inner : map) {
-      for (auto &val : inner) {
-        QString key = inner.key(val);
-        if (key == "ssid") {
-          if (val == ssid) {
-            nm2.call("Delete");
-          }
-        }
-      }
+  for (QPair<QString, QDBusObjectPath> conn : list_connections_ssid()) {
+    if (conn.first == ssid) {
+      QDBusInterface nm2(nm_service, conn.second.path(), nm_settings_conn_iface, bus);
+      nm2.call("Delete");
     }
   }
 }
