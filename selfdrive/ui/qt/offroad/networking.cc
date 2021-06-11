@@ -59,6 +59,11 @@ void Networking::attemptInitialization(){
     vlayout->addSpacing(10);
     vlayout->addWidget(advancedSettings, 0, Qt::AlignRight);
     vlayout->addSpacing(10);
+
+    QPushButton *forget_btn = new QPushButton("Forget");
+    forget_btn->setStyleSheet("background-color: #E22C2C; margin-right: 30px;");
+    forget_btn->setFixedSize(350, 100);
+    vlayout->addWidget(forget_btn, 0, Qt::AlignRight);
   }
 
   wifiWidget = new WifiUI(this, wifi);
@@ -210,7 +215,7 @@ void WifiUI::refresh() {
   clearLayout(vlayout);
 
   connectButtons = new QButtonGroup(this); // TODO check if this is a leak
-  QObject::connect(connectButtons, qOverload<QAbstractButton*>(&QButtonGroup::buttonClicked), this, &WifiUI::handleConnectButton);
+  QObject::connect(connectButtons, qOverload<QAbstractButton*>(&QButtonGroup::buttonClicked), this, &WifiUI::handleButton);
 
   int i = 0;
   for (Network &network : wifi->seen_networks) {
@@ -256,7 +261,7 @@ void WifiUI::refresh() {
   vlayout->addStretch(3);
 }
 
-void WifiUI::handleConnectButton(QAbstractButton* button) {
+void WifiUI::handleButton(QAbstractButton* button) {
   QPushButton* btn = static_cast<QPushButton*>(button);
   Network n = wifi->seen_networks[connectButtons->id(btn)];
   emit connectToNetwork(n);

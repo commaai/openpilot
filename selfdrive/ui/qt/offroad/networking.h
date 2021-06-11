@@ -41,7 +41,7 @@ signals:
 
 public slots:
   void refresh();
-  void handleConnectButton(QAbstractButton* m_button);
+  void handleButton(QAbstractButton* m_button);
 };
 
 class AdvancedNetworking : public QWidget {
