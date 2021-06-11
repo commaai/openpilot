@@ -75,8 +75,6 @@ def joystick_thread(use_keyboard):
     if dat is not None:
       joystick_sock.  send(dat.to_bytes())
       print('\n' + ', '.join([f'{name}: {round(v, 3)}' for name, v in joystick.axes_values.items()]))
-      if dat.testJoystick.buttons[0]:
-        print('Sent PCM cancel request!')
 
 
 if __name__ == '__main__':
