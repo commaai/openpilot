@@ -289,31 +289,31 @@ void SoftwarePanel::updateLabels() {
 }
 
 QWidget * network_panel(QWidget * parent) {
-#ifdef QCOM
-  QVBoxLayout *layout = new QVBoxLayout;
-  layout->setSpacing(30);
-
-  // wifi + tethering buttons
-  layout->addWidget(new ButtonControl("WiFi Settings", "OPEN", "",
-                                      [=]() { HardwareEon::launch_wifi(); }));
-  layout->addWidget(horizontal_line());
-
-  layout->addWidget(new ButtonControl("Tethering Settings", "OPEN", "",
-                                      [=]() { HardwareEon::launch_tethering(); }));
-  layout->addWidget(horizontal_line());
-
-  // SSH key management
-  layout->addWidget(new SshToggle());
-  layout->addWidget(horizontal_line());
-  layout->addWidget(new SshControl());
-
-  layout->addStretch(1);
-
-  QWidget *w = new QWidget(parent);
-  w->setLayout(layout);
-#else
+//#ifdef QCOM
+//  QVBoxLayout *layout = new QVBoxLayout;
+//  layout->setSpacing(30);
+//
+//  // wifi + tethering buttons
+//  layout->addWidget(new ButtonControl("WiFi Settings", "OPEN", "",
+//                                      [=]() { HardwareEon::launch_wifi(); }));
+//  layout->addWidget(horizontal_line());
+//
+//  layout->addWidget(new ButtonControl("Tethering Settings", "OPEN", "",
+//                                      [=]() { HardwareEon::launch_tethering(); }));
+//  layout->addWidget(horizontal_line());
+//
+//  // SSH key management
+//  layout->addWidget(new SshToggle());
+//  layout->addWidget(horizontal_line());
+//  layout->addWidget(new SshControl());
+//
+//  layout->addStretch(1);
+//
+//  QWidget *w = new QWidget(parent);
+//  w->setLayout(layout);
+//#else
   Networking *w = new Networking(parent);
-#endif
+//#endif
   return w;
 }
 

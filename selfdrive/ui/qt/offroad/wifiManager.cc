@@ -288,7 +288,7 @@ void WifiManager::forgetConnection(const QString &ssid) {
   }
 }
 
-void WifiManager::request_scan() {
+void WifiManager::requestScan() {
   QDBusInterface nm(nm_service, adapter, wireless_device_iface, bus);
   nm.setTimeout(dbus_timeout);
   nm.call("RequestScan",  QVariantMap());
