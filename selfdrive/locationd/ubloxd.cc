@@ -25,7 +25,7 @@ int main() {
 
   while (!do_exit) {
     Message * msg = subscriber->receive();
-    if (!msg){
+    if (!msg) {
       if (errno == EINTR) {
         do_exit = true;
       }

@@ -163,7 +163,7 @@ bool CameraBuf::acquire() {
 }
 
 void CameraBuf::release() {
-  if (release_callback){
+  if (release_callback) {
     release_callback((void*)camera_state, cur_buf_idx);
   }
 }

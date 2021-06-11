@@ -27,11 +27,11 @@ PairingQRWidget::PairingQRWidget(QWidget* parent) : QWidget(parent) {
   connect(timer, &QTimer::timeout, this, &PairingQRWidget::refresh);
 }
 
-void PairingQRWidget::showEvent(QShowEvent *event){
+void PairingQRWidget::showEvent(QShowEvent *event) {
   refresh();
 }
 
-void PairingQRWidget::refresh(){
+void PairingQRWidget::refresh() {
   Params params;
   QString IMEI = QString::fromStdString(params.get("IMEI"));
   QString serial = QString::fromStdString(params.get("HardwareSerial"));
@@ -254,7 +254,7 @@ void SetupWidget::parseError(const QString &response) {
   mainLayout->setCurrentIndex(0);
 }
 
-void SetupWidget::showQrCode(){
+void SetupWidget::showQrCode() {
   showQr = true;
   mainLayout->setCurrentIndex(1);
 }

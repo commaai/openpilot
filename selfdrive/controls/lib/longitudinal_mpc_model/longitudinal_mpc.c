@@ -31,7 +31,7 @@ typedef struct {
   double cost;
 } log_t;
 
-void init(double xCost, double vCost, double aCost, double accelCost, double jerkCost){
+void init(double xCost, double vCost, double aCost, double accelCost, double jerkCost) {
   acado_initializeSolver();
   int    i;
   const int STEP_MULTIPLIER = 3;
@@ -50,7 +50,7 @@ void init(double xCost, double vCost, double aCost, double accelCost, double jer
 
   for (i = 0; i < N; i++) {
     int f = 1;
-    if (i > 4){
+    if (i > 4) {
       f = STEP_MULTIPLIER;
     }
     // Setup diagonal entries
@@ -67,7 +67,7 @@ void init(double xCost, double vCost, double aCost, double accelCost, double jer
 
 }
 
-void init_with_simulation(double v_ego){
+void init_with_simulation(double v_ego) {
   int i;
 
   double x_ego = 0.0;
@@ -75,8 +75,8 @@ void init_with_simulation(double v_ego){
   double dt = 0.2;
   double t = 0.0;
 
-  for (i = 0; i < N + 1; ++i){
-    if (i > 4){
+  for (i = 0; i < N + 1; ++i) {
+    if (i > 4) {
       dt = 0.6;
     }
 
@@ -95,10 +95,10 @@ void init_with_simulation(double v_ego){
 }
 
 int run_mpc(state_t * x0, log_t * solution,
-            double x_poly[4], double v_poly[4], double a_poly[4]){
+            double x_poly[4], double v_poly[4], double a_poly[4]) {
   int i;
 
-  for (i = 0; i < N + 1; ++i){
+  for (i = 0; i < N + 1; ++i) {
     acadoVariables.od[i*NOD+0] = x_poly[0];
     acadoVariables.od[i*NOD+1] = x_poly[1];
     acadoVariables.od[i*NOD+2] = x_poly[2];
@@ -123,13 +123,13 @@ int run_mpc(state_t * x0, log_t * solution,
   acado_preparationStep();
   acado_feedbackStep();
 
-  for (i = 0; i <= N; i++){
+  for (i = 0; i <= N; i++) {
     solution->x_ego[i] = acadoVariables.x[i*NX];
     solution->v_ego[i] = acadoVariables.x[i*NX+1];
     solution->a_ego[i] = acadoVariables.x[i*NX+2];
     solution->t[i] = acadoVariables.x[i*NX+3];
 
-    if (i < N){
+    if (i < N) {
       solution->j_ego[i] = acadoVariables.u[i];
     }
   }

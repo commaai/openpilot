@@ -74,7 +74,7 @@ int InputDialog::exec() {
   return QDialog::exec();
 }
 
-void InputDialog::show(){
+void InputDialog::show() {
   setMainWindow(this);
 }
 
@@ -84,7 +84,7 @@ void InputDialog::handleInput(const QString &s) {
   }
 
   if (!QString::compare(s,"⏎")) {
-    if (line->text().length() >= minLength){
+    if (line->text().length() >= minLength) {
       done(QDialog::Accepted);
       emitText(line->text());
     } else {
@@ -102,14 +102,14 @@ void InputDialog::handleInput(const QString &s) {
   line->insert(s.left(1));
 }
 
-void InputDialog::setMessage(const QString &message, bool clearInputField){
+void InputDialog::setMessage(const QString &message, bool clearInputField) {
   label->setText(message);
-  if (clearInputField){
+  if (clearInputField) {
     line->setText("");
   }
 }
 
-void InputDialog::setMinLength(int length){
+void InputDialog::setMinLength(int length) {
   minLength = length;
 }
 

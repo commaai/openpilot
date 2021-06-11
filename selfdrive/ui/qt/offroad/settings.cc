@@ -92,8 +92,8 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
   bool record_lock = Params().getBool("RecordFrontLock");
   record_toggle->setEnabled(!record_lock);
 
-  for(ParamControl *toggle : toggles){
-    if(toggles_list->count() != 0){
+  for(ParamControl *toggle : toggles) {
+    if(toggles_list->count() != 0) {
       toggles_list->addWidget(horizontal_line());
     }
     toggles_list->addWidget(toggle);
@@ -164,7 +164,7 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
     }
   }, "", this));
 
-  for(auto &btn : offroad_btns){
+  for(auto &btn : offroad_btns) {
     device_layout->addWidget(horizontal_line());
     QObject::connect(parent, SIGNAL(offroadTransition(bool)), btn, SLOT(setEnabled(bool)));
     device_layout->addWidget(btn);
@@ -240,7 +240,7 @@ void SoftwarePanel::updateLabels() {
   QString lastUpdateTime = "";
 
   std::string last_update_param = params.get("LastUpdateTime");
-  if (!last_update_param.empty()){
+  if (!last_update_param.empty()) {
     QDateTime lastUpdateDate = QDateTime::fromString(QString::fromStdString(last_update_param + "Z"), Qt::ISODate);
     lastUpdateTime = timeAgo(lastUpdateDate);
   }
@@ -363,7 +363,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   };
 
 #ifdef ENABLE_MAPS
-  if (!Params().get("MapboxToken").empty()){
+  if (!Params().get("MapboxToken").empty()) {
     panels.push_back({"Navigation", new MapPanel(this)});
   }
 #endif
@@ -424,15 +424,15 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   )");
 }
 
-void SettingsWindow::hideEvent(QHideEvent *event){
+void SettingsWindow::hideEvent(QHideEvent *event) {
 #ifdef QCOM
   HardwareEon::close_activities();
 #endif
 
   // TODO: this should be handled by the Dialog classes
   QList<QWidget*> children = findChildren<QWidget *>();
-  for(auto &w : children){
-    if(w->metaObject()->superClass()->className() == QString("QDialog")){
+  for(auto &w : children) {
+    if(w->metaObject()->superClass()->className() == QString("QDialog")) {
       w->close();
     }
   }
