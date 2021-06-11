@@ -284,8 +284,26 @@ QVector<QDBusObjectPath> WifiManager::get_active_connections() {
 }
 
 bool WifiManager::isKnownNetwork(const QString &ssid) {
-  for (QDBusObjectPath path : list_connections()) {
-    if (ssid_from_path(path) == ssid) return true;
+  for(QDBusObjectPath path : list_connections()) {
+    QDBusInterface nm2(nm_service, path.path(), nm_settings_conn_iface, bus);
+    nm2.setTimeout(dbus_timeout);
+
+    QDBusMessage response = nm2.call("GetSettings");
+
+    const QDBusArgument &dbusArg = response.arguments().at(0).value<QDBusArgument>();
+
+    QMap<QString, QMap<QString,QVariant>> map;
+    dbusArg >> map;
+    for (auto &inner : map) {
+      for (auto &val : inner) {
+        QString key = inner.key(val);
+        if (key == "ssid") {
+          if (val == ssid) {
+            return true;
+          }
+        }
+      }
+    }
   }
   return false;
 }
@@ -401,27 +419,6 @@ void WifiManager::disconnect() {
   if (active_ap != "" && active_ap != "/") {
     deactivate_connections(get_property(active_ap, "Ssid"));
   }
-}
-
-QString WifiManager::ssid_from_path(const QDBusObjectPath &path) {
-  QDBusInterface nm2(nm_service, path.path(), nm_settings_conn_iface, bus);
-  nm2.setTimeout(dbus_timeout);
-
-  QDBusMessage response = nm2.call("GetSettings");
-  const QDBusArgument &dbusArg = response.arguments().at(0).value<QDBusArgument>();
-
-  QString ssid;
-  QMap<QString, QMap<QString,QVariant>> map;
-  dbusArg >> map;
-  for (auto &inner : map) {
-    for (auto &val : inner) {
-      QString key = inner.key(val);
-      if (key == "ssid") {
-        return val.toString();
-      }
-    }
-  }
-  return "";  // shouldn't ever happen
 }
 
 QVector<QDBusObjectPath> WifiManager::list_connections() {
