@@ -4,17 +4,16 @@
 
 
 MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
-  QVBoxLayout *layout = new QVBoxLayout;
+  QVBoxLayout *main_layout = new QVBoxLayout(this);
   Params params = Params();
 
   QString dongle = QString::fromStdString(params.get("DongleId", false));
   // TODO: Add buttons for home/work shortcuts
 
-  layout->addWidget(new ParamControl("NavSettingTime24h",
+  main_layout->addWidget(new ParamControl("NavSettingTime24h",
                                     "Show ETA in 24h format",
                                     "Use 24h format instead of am/pm",
                                     "",
                                     this));
-  layout->addStretch();
-  setLayout(layout);
+  main_layout->addStretch();
 }

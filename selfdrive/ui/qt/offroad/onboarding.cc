@@ -58,7 +58,7 @@ void TermsPage::showEvent(QShowEvent *event) {
     return;
   }
 
-  QVBoxLayout *main_layout = new QVBoxLayout;
+  QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setMargin(40);
   main_layout->setSpacing(40);
 
@@ -93,7 +93,6 @@ void TermsPage::showEvent(QShowEvent *event) {
   buttons->addWidget(accept_btn);
   QObject::connect(accept_btn, &QPushButton::released, this, &TermsPage::acceptedTerms);
 
-  setLayout(main_layout);
   setStyleSheet(R"(
     QPushButton {
       padding: 50px;
@@ -115,7 +114,7 @@ void DeclinePage::showEvent(QShowEvent *event) {
     return;
   }
 
-  QVBoxLayout *main_layout = new QVBoxLayout;
+  QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setMargin(40);
   main_layout->setSpacing(40);
 
@@ -143,7 +142,6 @@ void DeclinePage::showEvent(QShowEvent *event) {
     }
   });
 
-  setLayout(main_layout);
   setStyleSheet(R"(
     QPushButton {
       padding: 50px;
