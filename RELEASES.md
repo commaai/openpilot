@@ -1,5 +1,6 @@
 Version 0.8.6 (2021-XX-XX)
 ========================
+ * Hyundai Ioniq PHEV 2020 support thanks to YawWashout!
 
 Version 0.8.5 (2021-06-11)
 ========================
