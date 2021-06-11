@@ -35,12 +35,12 @@ public:
   QString ipv4_address;
 
   void refreshNetworks();
+  bool isKnownNetwork(const QString &ssid);
+
   void connect(const Network &ssid);
   void connect(const Network &ssid, const QString &password);
   void connect(const Network &ssid, const QString &username, const QString &password);
   void disconnect();
-
-  bool isKnownNetwork(const QString &ssid);
 
   // Tethering functions
   void enableTethering();
