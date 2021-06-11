@@ -9,4 +9,5 @@ public:
 
 private:
   QTimer *timer;
+  QString prevResp;
 };
