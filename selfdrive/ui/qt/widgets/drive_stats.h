@@ -1,6 +1,5 @@
 #pragma once
 
-#include <QGridLayout>
 #include <QJsonDocument>
 #include <QLabel>
 
@@ -15,7 +14,6 @@ private:
   void updateStats();
   inline QString getDistanceUnit() const { return metric_ ? "KM" : "MILES"; }
 
-  QGridLayout* main_layout_ = nullptr;
   bool metric_;
   QJsonDocument stats_;
   struct StatsLabels {

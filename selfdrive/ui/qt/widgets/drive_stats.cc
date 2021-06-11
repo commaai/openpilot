@@ -1,6 +1,7 @@
 #include "selfdrive/ui/qt/widgets/drive_stats.h"
 
 #include <QDebug>
+#include <QGridLayout>
 #include <QJsonObject>
 #include <QVBoxLayout>
 
@@ -28,23 +29,23 @@ QLabel* unitLabel(const QString& name) {
 DriveStats::DriveStats(QWidget* parent) : QWidget(parent) {
   metric_ = Params().getBool("IsMetric");
 
-  main_layout_ = new QGridLayout(this);
-  main_layout_->setMargin(0);
+  QGridLayout* main_layout = new QGridLayout(this);
+  main_layout->setMargin(0);
 
   auto add_stats_layouts = [=](StatsLabels& labels, int row) {
-    main_layout_->addWidget(labels.routes = numberLabel(), row, 0, Qt::AlignLeft);
-    main_layout_->addWidget(unitLabel("DRIVES"), row + 1, 0, Qt::AlignLeft);
+    main_layout->addWidget(labels.routes = numberLabel(), row, 0, Qt::AlignLeft);
+    main_layout->addWidget(unitLabel("DRIVES"), row + 1, 0, Qt::AlignLeft);
 
-    main_layout_->addWidget(labels.distance = numberLabel(), row, 1, Qt::AlignLeft);
-    main_layout_->addWidget(labels.distance_unit = unitLabel(getDistanceUnit()), row + 1, 1, Qt::AlignLeft);
+    main_layout->addWidget(labels.distance = numberLabel(), row, 1, Qt::AlignLeft);
+    main_layout->addWidget(labels.distance_unit = unitLabel(getDistanceUnit()), row + 1, 1, Qt::AlignLeft);
 
-    main_layout_->addWidget(labels.hours = numberLabel(), row, 2, Qt::AlignLeft);
-    main_layout_->addWidget(unitLabel("HOURS"), row + 1, 2, Qt::AlignLeft);
+    main_layout->addWidget(labels.hours = numberLabel(), row, 2, Qt::AlignLeft);
+    main_layout->addWidget(unitLabel("HOURS"), row + 1, 2, Qt::AlignLeft);
   };
 
-  main_layout_->addWidget(new QLabel("ALL TIME"), 0, 0, 1, 3);
+  main_layout->addWidget(new QLabel("ALL TIME"), 0, 0, 1, 3);
   add_stats_layouts(all_, 1);
-  main_layout_->addWidget(new QLabel("PAST WEEK"), 3, 0, 1, 3);
+  main_layout->addWidget(new QLabel("PAST WEEK"), 3, 0, 1, 3);
   add_stats_layouts(week_, 4);
 
   QString dongleId = QString::fromStdString(Params().get("DongleId"));
