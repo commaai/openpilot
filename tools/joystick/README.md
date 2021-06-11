@@ -22,17 +22,17 @@ In order to use a joystick over the network, we need to run joystickd locally fr
 
 1. Connect your laptop to your comma device's hotspot and open a new ssh shell. Since joystickd is being run on your laptop, we need to write a parameter to let controlsd know to start in joystick debug mode:
    ```shell
-   # ON YOUR COMMA DEVICE
+   # on your comma device
    echo -n "1" > /data/params/d/JoystickDebugMode
    ```
 2. Run bridge with your laptop's IP address. This republishes the `testJoystick` packets sent from your laptop so that openpilot can receive them:
    ```shell
-   # ON YOUR COMMA DEVICE
+   # on your comma device
    cereal/messaging/bridge {LAPTOP_IP} testJoystick
    ```
 3. Finally, start joystickd on your laptop and tell it to publish ZMQ packets over the network:
    ```shell
-   # ON YOUR LAPTOP
+   # on your comma device
    export ZMQ=1
    tools/joystick/joystickd.py
    ```
