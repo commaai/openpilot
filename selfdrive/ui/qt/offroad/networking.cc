@@ -29,14 +29,16 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent), s
   QLabel* warning = new QLabel("Network manager is inactive!");
   warning->setAlignment(Qt::AlignCenter);
   warning->setStyleSheet(R"(font-size: 65px;)");
-
   s->addWidget(warning);
   setLayout(s);
 
-  QTimer* timer = new QTimer(this);
-  QObject::connect(timer, &QTimer::timeout, this, &Networking::refresh);
-  timer->start(5000);
   attemptInitialization();
+  refresh(true);  // refresh once on init to cache wifi networks
+
+  // TODO: we can also add another timer that refreshes much less often in the background
+  QTimer* timer = new QTimer(this);
+  QObject::connect(timer, &QTimer::timeout, this, [=](){ refresh(false); });
+  timer->start(5000);
 }
 
 void Networking::attemptInitialization() {
@@ -47,7 +49,7 @@ void Networking::attemptInitialization() {
     return;
   }
 
-  connect(wifi, &WifiManager::wrongPassword, this, &Networking::wrongPassword);
+  connect(wifiManager, &WifiManager::wrongPassword, this, &Networking::wrongPassword);
 
   QVBoxLayout* vlayout = new QVBoxLayout;
 
@@ -92,8 +94,8 @@ void Networking::attemptInitialization() {
   ui_setup_complete = true;
 }
 
-void Networking::refresh() {
-  if (!this->isVisible()) {  // TODO: make this refresh on startup once so networks are ready
+void Networking::refresh(bool force) {
+  if (!this->isVisible() && !force) {
     return;
   }
   if (!ui_setup_complete) {
@@ -213,6 +215,7 @@ void WifiUI::refresh() {
     hlayout->addSpacing(50);
 
     QLabel *ssid_label = new QLabel(QString::fromUtf8(network.ssid));
+    qDebug() << QString::fromUtf8(network.ssid);
     ssid_label->setStyleSheet("font-size: 55px;");
     hlayout->addWidget(ssid_label, 1, Qt::AlignLeft);
 

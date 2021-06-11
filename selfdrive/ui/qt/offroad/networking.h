@@ -26,10 +26,10 @@ class WifiUI : public QWidget {
   Q_OBJECT
 
 public:
-  explicit WifiUI(QWidget *parent = 0, WifiManager* wifi = 0);
+  explicit WifiUI(QWidget *parent = 0, WifiManager* wifiManager = 0);
 
 private:
-  WifiManager *wifi = nullptr;
+  WifiManager *wifiManager = nullptr;
   QVBoxLayout *vlayout;
 
   QButtonGroup *connectButtons;
@@ -46,12 +46,12 @@ public slots:
 class AdvancedNetworking : public QWidget {
   Q_OBJECT
 public:
-  explicit AdvancedNetworking(QWidget* parent = 0, WifiManager* wifi = 0);
+  explicit AdvancedNetworking(QWidget* parent = 0, WifiManager* wifiManager = 0);
 
 private:
   LabelControl* ipLabel;
   ButtonControl* editPasswordButton;
-  WifiManager* wifi = nullptr;
+  WifiManager* wifiManager = nullptr;
 
 signals:
   void backPress();
@@ -77,12 +77,12 @@ private:
   Network selectedNetwork;
 
   WifiUI* wifiWidget;
-  WifiManager* wifi = nullptr;
+  WifiManager* wifiManager = nullptr;
   void attemptInitialization();
 
 private slots:
   void connectToNetwork(const Network &n);
-  void refresh();
+  void refresh(bool force);
   void wrongPassword(const QString &ssid);
 };
 
