@@ -54,16 +54,28 @@ void Networking::attemptInitialization(){
   if (show_advanced) {
     QHBoxLayout* menu_bar = new QHBoxLayout;
 
+    QPushButton *forgetBtn = new QPushButton("Forget");
+    forgetBtn->setStyleSheet("background-color: #E22C2C; margin-right: 30px;");
+    forgetBtn->setFixedSize(350, 100);
+    menu_bar->addWidget(forgetBtn, 0, Qt::AlignRight);
+
     QPushButton* advancedBtn = new QPushButton("Advanced");
     advancedBtn->setStyleSheet("margin-right: 30px;");
     advancedBtn->setFixedSize(350, 100);
     connect(advancedBtn, &QPushButton::released, [=](){ s->setCurrentWidget(an); });
     menu_bar->addWidget(advancedBtn, 0, Qt::AlignRight);
 
-    QPushButton *forgetBtn = new QPushButton("Forget");
-    forgetBtn->setStyleSheet("background-color: #E22C2C; margin-right: 30px;");
-    forgetBtn->setFixedSize(350, 100);
-    menu_bar->addWidget(forgetBtn, 0, Qt::AlignRight);
+    // forget button
+    if (network.connected == ConnectedType::CONNECTED) {
+      QPushButton *forget_btn = new QPushButton("Forget");
+      forget_btn->setStyleSheet("background-color: #E22C2C;");
+      hlayout->addWidget(forget_btn, 0, Qt::AlignRight);
+      QObject::connect(forget_btn, &QPushButton::released, [=]() {
+        if (ConfirmationDialog::confirm("Are you sure you want to forget " + QString::fromUtf8(network.ssid) + "?", this)) {
+          emit forgetNetwork(network);
+        }
+      });
+    }
 
     vlayout->addSpacing(10);
     vlayout->addLayout(menu_bar, 1);
@@ -229,18 +241,6 @@ void WifiUI::refresh() {
     QLabel *ssid_label = new QLabel(QString::fromUtf8(network.ssid));
     ssid_label->setStyleSheet("font-size: 55px;");
     hlayout->addWidget(ssid_label, 1, Qt::AlignLeft);
-
-    // forget button
-    if (network.connected == ConnectedType::CONNECTED) {
-      QPushButton *forget_btn = new QPushButton("Forget");
-      forget_btn->setStyleSheet("background-color: #E22C2C;");
-      hlayout->addWidget(forget_btn, 0, Qt::AlignRight);
-      QObject::connect(forget_btn, &QPushButton::released, [=]() {
-        if (ConfirmationDialog::confirm("Are you sure you want to forget " + QString::fromUtf8(network.ssid) + "?", this)) {
-          emit forgetNetwork(network);
-        }
-      });
-    }
 
     // strength indicator
     unsigned int strength_scale = network.strength / 17;
