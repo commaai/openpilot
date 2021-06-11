@@ -32,7 +32,7 @@ In order to use a joystick over the network, we need to run joystickd locally fr
    ```
 3. Finally, start joystickd on your laptop and tell it to publish ZMQ packets over the network:
    ```shell
-   # on your comma device
+   # on your laptop
    export ZMQ=1
    tools/joystick/joystickd.py
    ```
