@@ -429,7 +429,7 @@ QVector<QPair<QString, QDBusObjectPath>> WifiManager::list_connections_ssid() {
         }
       }
     }
-    QMap<QString, QDBusObjectPath> conn;
+    QPair<QString, QDBusObjectPath> conn;
     conn.first = ssid;
     conn.second = path;
     connections.push_back(conn);
