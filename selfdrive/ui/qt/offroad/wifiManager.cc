@@ -294,6 +294,7 @@ bool WifiManager::isKnownNetwork(const QString &ssid) {
 }
 
 void WifiManager::forgetConnection(const QString &ssid) {
+  disconnect();
   for (QPair<QString, QDBusObjectPath> conn : list_connections_ssid()) {
     if (conn.first == ssid) {
       QDBusInterface nm2(nm_service, conn.second.path(), nm_settings_conn_iface, bus);

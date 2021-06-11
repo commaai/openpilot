@@ -224,6 +224,18 @@ void WifiUI::refresh() {
     ssid_button->setFlat(true);
     hlayout->addWidget(ssid_button, 1, Qt::AlignLeft);
 
+    // forget button
+    if (network.connected == ConnectedType::CONNECTED) {
+      QPushButton *forget_btn = new QPushButton("Forget");
+      forget_btn->setStyleSheet("background-color: #E22C2C;");
+      hlayout->addWidget(forget_btn, 0, Qt::AlignRight);
+      QObject::connect(forget_btn, &QPushButton::released, [=]() {
+        if (ConfirmationDialog::confirm("Are you sure you want to forget " + QString::fromUtf8(network.ssid) + "?", this)) {
+          emit forgetNetwork(network);
+        }
+      });
+    }
+
     // strength indicator
     unsigned int strength_scale = network.strength / 17;
     hlayout->addWidget(new NetworkStrengthWidget(strength_scale), 0, Qt::AlignRight);
@@ -232,16 +244,6 @@ void WifiUI::refresh() {
     QPushButton* btn = new QPushButton(network.security_type == SecurityType::UNSUPPORTED ? "Unsupported" : (network.connected == ConnectedType::CONNECTED ? "Connected" : (network.connected == ConnectedType::CONNECTING ? "Connecting" : "Connect")));
     btn->setDisabled(network.connected == ConnectedType::CONNECTED || network.connected == ConnectedType::CONNECTING || network.security_type == SecurityType::UNSUPPORTED);
     btn->setFixedWidth(350);
-
-    QPushButton *forget_btn = new QPushButton("Forget");
-    forget_btn->setStyleSheet("background-color: #E22C2C;");
-    hlayout->addWidget(forget_btn, 0, Qt::AlignRight);
-    QObject::connect(forget_btn, &QPushButton::released, [=]() {
-      if (ConfirmationDialog::confirm("Are you sure you want to forget " + QString::fromUtf8(network.ssid) + "?", this)) {
-        Network n = wifi->seen_networks[ssidButtons->id(btn)];
-        emit forgetNetwork(n);
-      }
-    });
 
     hlayout->addWidget(btn, 0, Qt::AlignRight);
 
