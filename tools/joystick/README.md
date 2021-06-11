@@ -2,9 +2,9 @@
 
 **Hardware needed**: [comma two devkit](https://comma.ai/shop/products/comma-two-devkit), laptop, joystick (optional)
 
-With joystickd, you can connect your laptop to your comma two over the network and debug controls using a joystick or keyboard, however a joystick is recommended for more precise control.
+With joystickd, you can connect your laptop to your comma device over the network and debug controls using a joystick or keyboard, however a joystick is recommended for more precise control.
 
-Using a keyboard:
+Using a keyboard
 ---
 
 To get started, ssh into your comma device and start joystickd with the following command:
@@ -15,7 +15,7 @@ tools/joystick/joystickd.py --keyboard
 
 The available buttons and axes will print showing their key mappings. In general, the WASD keys control gas and brakes and steering torque in 5% increments.
 
-Using a joystick:
+Using a joystick
 ---
 
 In order to use a joystick over the network, we need to run joystickd locally from your laptop and have it send `testJoystick` ZMQ packets over the network to the comma device. First connect a compatible joystick to your PC; joystickd uses [inputs](https://pypi.org/project/inputs) which supports many common gamepads and joysticks.
