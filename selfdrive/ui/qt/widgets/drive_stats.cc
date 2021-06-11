@@ -56,20 +56,17 @@ DriveStats::DriveStats(QWidget* parent) : QWidget(parent) {
   setStyleSheet(R"(QLabel {font-size: 48px; font-weight: 500;})");
 }
 
-
 void DriveStats::updateStats() {
   auto update = [=](const QJsonObject& obj, StatsLabels& labels) {
     labels.routes->setText(QString::number((int)obj["routes"].toDouble()));
     labels.distance->setText(QString::number(int(obj["distance"].toDouble() * (metric_ ? MILE_TO_KM : 1))));
+    labels.distance_unit->setText(getDistanceUnit());
     labels.hours->setText(QString::number((int)(obj["minutes"].toDouble() / 60)));
   };
 
   QJsonObject json = stats_.object();
   update(json["all"].toObject(), all_);
   update(json["week"].toObject(), week_);
-
-  all_.distance_unit->setText(getDistanceUnit());
-  week_.distance_unit->setText(getDistanceUnit());
 }
 
 void DriveStats::parseResponse(const QString& response) {
