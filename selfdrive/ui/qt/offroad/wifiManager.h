@@ -39,6 +39,7 @@ public:
   void connect(const Network &ssid, const QString &password);
   void connect(const Network &ssid, const QString &username, const QString &password);
   void disconnect();
+  void forgetConnection(const QString &ssid);
 
   // Tethering functions
   void enableTethering();
@@ -65,7 +66,6 @@ private:
   void connect(const QByteArray &ssid, const QString &username, const QString &password, SecurityType security_type);
   QString get_active_ap();
   void deactivate_connections(const QString &ssid);
-  void clear_connections(const QString &ssid);
   QVector<QDBusObjectPath> get_active_connections();
   uint get_wifi_device_state();
   QByteArray get_property(const QString &network_path, const QString &property);
