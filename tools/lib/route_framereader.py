@@ -16,7 +16,7 @@ class _FrameReaderDict(dict):
     self._framereader_kwargs = framereader_kwargs
 
   def __missing__(self, key):
-    if self._camera_paths.get(key) is not None:
+    if self._camera_paths.get(key, None) is not None:
       frame_reader = FrameReader(self._camera_paths[key],
                                  self._cache_paths.get(key), **self._framereader_kwargs)
       self[key] = frame_reader
@@ -37,9 +37,9 @@ class RouteFrameReader(object):
                 will also be used for frame position indices.
     """
     if not isinstance(camera_paths, dict):
-      camera_paths = {int(k.split('?')[0].split('/')[-2]): k for k in camera_paths}
+      camera_paths = {int(k.split('?')[0].split('/')[-2]): k for k in camera_paths if k is not None}
 
-    self._first_camera_idx = min(key for key, value in camera_paths.items() if value is not None)
+    self._first_camera_idx = min(camera_paths.keys())
     self._frame_readers = _FrameReaderDict(camera_paths, cache_paths, kwargs)
     self._frame_id_lookup = frame_id_lookup
 
