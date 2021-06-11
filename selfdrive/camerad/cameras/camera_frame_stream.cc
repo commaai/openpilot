@@ -50,7 +50,7 @@ void run_frame_stream(CameraState &camera, const char* frame_pkt) {
   size_t buf_idx = 0;
   while (!do_exit) {
     sm.update(1000);
-    if(sm.updated(frame_pkt)){
+    if(sm.updated(frame_pkt)) {
       auto msg = static_cast<capnp::DynamicStruct::Reader>(sm[frame_pkt]);
       auto frame = msg.get(frame_pkt).as<capnp::DynamicStruct>();
       camera.buf.camera_bufs_metadata[buf_idx] = {

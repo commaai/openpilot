@@ -172,7 +172,7 @@ void encoder_thread(int cam_idx) {
   VisionIpcClient vipc_client = VisionIpcClient("camerad", cam_info.stream_type, false);
 
   while (!do_exit) {
-    if (!vipc_client.connect(false)){
+    if (!vipc_client.connect(false)) {
       util::sleep_for(100);
       continue;
     }
@@ -198,7 +198,7 @@ void encoder_thread(int cam_idx) {
     while (!do_exit) {
       VisionIpcBufExtra extra;
       VisionBuf* buf = vipc_client.recv(&extra);
-      if (buf == nullptr){
+      if (buf == nullptr) {
         continue;
       }
 
@@ -381,7 +381,7 @@ int main(int argc, char** argv) {
       Message * last_msg = nullptr;
       while (!do_exit) {
         Message * msg = sock->receive(true);
-        if (!msg){
+        if (!msg) {
           break;
         }
         delete last_msg;
@@ -469,7 +469,7 @@ int main(int argc, char** argv) {
   LOGW("closing logger");
   logger_close(&s.logger, &do_exit);
 
-  if (do_exit.power_failure){
+  if (do_exit.power_failure) {
     LOGE("power failure");
     sync();
   }

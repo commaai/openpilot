@@ -5,7 +5,7 @@ extern "C" {
 }
 
 
-int main(int argc, const char* argv[]){
+int main(int argc, const char* argv[]) {
   const int n = 11;
   const int m = 3;
   double* pts = new double[n*m]{59.26000137, -9.35999966, -5.42500019,
@@ -25,7 +25,7 @@ int main(int argc, const char* argv[]){
 
   cluster_points_centroid(n, m, pts, 2.5 * 2.5, idx);
 
-  for (int i = 0; i < n; i++){
+  for (int i = 0; i < n; i++) {
     assert(idx[i] == correct_idx[i]);
   }
 
