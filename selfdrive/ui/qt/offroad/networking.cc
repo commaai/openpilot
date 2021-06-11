@@ -210,19 +210,16 @@ void WifiUI::refresh() {
   clearLayout(vlayout);
 
   connectButtons = new QButtonGroup(this); // TODO check if this is a leak
-  ssidButtons = new QButtonGroup(this);
   QObject::connect(connectButtons, qOverload<QAbstractButton*>(&QButtonGroup::buttonClicked), this, &WifiUI::handleConnectButton);
-  QObject::connect(ssidButtons, qOverload<QAbstractButton*>(&QButtonGroup::buttonClicked), this, &WifiUI::handleSsidButton);
 
   int i = 0;
   for (Network &network : wifi->seen_networks) {
     QHBoxLayout *hlayout = new QHBoxLayout;
     hlayout->addSpacing(50);
 
-    QPushButton *ssid_button = new QPushButton(QString::fromUtf8(network.ssid));
-    ssid_button->setStyleSheet("font-size: 55px; background-color: transparent");
-    ssid_button->setFlat(true);
-    hlayout->addWidget(ssid_button, 1, Qt::AlignLeft);
+    QLabel *ssid_label = new QLabel(QString::fromUtf8(network.ssid));
+    ssid_label->setStyleSheet("font-size: 55px;");
+    hlayout->addWidget(ssid_label, 1, Qt::AlignLeft);
 
     // forget button
     if (network.connected == ConnectedType::CONNECTED) {
@@ -248,7 +245,6 @@ void WifiUI::refresh() {
     hlayout->addWidget(btn, 0, Qt::AlignRight);
 
     connectButtons->addButton(btn, i);
-    ssidButtons->addButton(ssid_button, i);
 
     vlayout->addLayout(hlayout, 1);
     // Don't add the last horizontal line
@@ -264,14 +260,4 @@ void WifiUI::handleConnectButton(QAbstractButton* button) {
   QPushButton* btn = static_cast<QPushButton*>(button);
   Network n = wifi->seen_networks[connectButtons->id(btn)];
   emit connectToNetwork(n);
-}
-
-void WifiUI::handleSsidButton(QAbstractButton* button) {
-  QPushButton* btn = static_cast<QPushButton*>(button);
-  qDebug() << ssidButtons->id(btn);
-  if (ConfirmationDialog::confirm("Do you want to forget this network?", this)) {
-    qDebug() << "Removing network!";
-    Network n = wifi->seen_networks[ssidButtons->id(btn)];
-    emit forgetNetwork(n);
-  }
 }
