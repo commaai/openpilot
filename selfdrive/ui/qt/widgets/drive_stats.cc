@@ -32,21 +32,21 @@ DriveStats::DriveStats(QWidget* parent) : QWidget(parent) {
   QGridLayout* main_layout = new QGridLayout(this);
   main_layout->setMargin(0);
 
-  auto add_stats_layouts = [=](StatsLabels& labels, int row) {
+  auto add_stats_layouts = [=](const QString &title, StatsLabels& labels) {
+    int row = main_layout->rowCount();
+    main_layout->addWidget(new QLabel(title), row++, 0, 1, 3);
+
     main_layout->addWidget(labels.routes = numberLabel(), row, 0, Qt::AlignLeft);
-    main_layout->addWidget(unitLabel("DRIVES"), row + 1, 0, Qt::AlignLeft);
-
     main_layout->addWidget(labels.distance = numberLabel(), row, 1, Qt::AlignLeft);
-    main_layout->addWidget(labels.distance_unit = unitLabel(getDistanceUnit()), row + 1, 1, Qt::AlignLeft);
-
     main_layout->addWidget(labels.hours = numberLabel(), row, 2, Qt::AlignLeft);
+
+    main_layout->addWidget(unitLabel("DRIVES"), row + 1, 0, Qt::AlignLeft);
+    main_layout->addWidget(labels.distance_unit = unitLabel(getDistanceUnit()), row + 1, 1, Qt::AlignLeft);
     main_layout->addWidget(unitLabel("HOURS"), row + 1, 2, Qt::AlignLeft);
   };
 
-  main_layout->addWidget(new QLabel("ALL TIME"), 0, 0, 1, 3);
-  add_stats_layouts(all_, 1);
-  main_layout->addWidget(new QLabel("PAST WEEK"), 3, 0, 1, 3);
-  add_stats_layouts(week_, 4);
+  add_stats_layouts("ALL TIME", all_);
+  add_stats_layouts("PAST WEEK", week_);
 
   QString dongleId = QString::fromStdString(Params().get("DongleId"));
   QString url = "https://api.commadotai.com/v1.1/devices/" + dongleId + "/stats";
