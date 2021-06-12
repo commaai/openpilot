@@ -9,7 +9,6 @@
 extern ExitHandler do_exit;
 
 const char *BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/";
-
 const std::string road_camera_route = "0c94aa1e1296d7c6|2021-05-05--19-48-37";
 const std::string driver_camera_route = "534ccd8a0950a00c|2021-06-08--12-15-37";
 
@@ -38,9 +37,10 @@ void camera_init(VisionIpcServer *v, CameraState *s, int camera_id, unsigned int
   }
 
   CameraInfo ci = {
-      .frame_width = s->frame_reader->width,
-      .frame_height = s->frame_reader->height,
-      .frame_stride = s->frame_reader->width * 3};
+    .frame_width = s->frame_reader->width,
+    .frame_height = s->frame_reader->height,
+    .frame_stride = s->frame_reader->width * 3,
+  };
   s->ci = ci;
   s->camera_num = camera_id;
   s->fps = fps;
@@ -60,23 +60,23 @@ void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_i
 }
 
 static void run_camera(CameraState *s) {
-  uint32_t cam_frame_id = 0, frame_id = 0;
+  uint32_t stream_frame_id = 0, frame_id = 0;
   size_t buf_idx = 0;
   while (!do_exit) {
-    uint8_t *dat = s->frame_reader->get(cam_frame_id);
+    uint8_t *dat = s->frame_reader->get(stream_frame_id);
     if (dat) {
       s->buf.camera_bufs_metadata[buf_idx] = {.frame_id = frame_id};
       auto &buf = s->buf.camera_bufs[buf_idx];
       CL_CHECK(clEnqueueWriteBuffer(buf.copy_q, buf.buf_cl, CL_TRUE, 0, s->frame_reader->getRGBSize(), dat, 0, NULL, NULL));
       s->buf.queue(buf_idx);
       ++frame_id;
-      ++cam_frame_id;
+      ++stream_frame_id;
       buf_idx = (buf_idx + 1) % FRAME_BUF_COUNT;
-      util::sleep_for(1000 / s->fps);
     } else {
       // loop
-      cam_frame_id = 0;
+      stream_frame_id = 0;
     }
+    util::sleep_for(1000 / s->fps);
   }
 }
 
