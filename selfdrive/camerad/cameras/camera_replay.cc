@@ -23,16 +23,16 @@ std::string get_url(std::string route_name, const std::string &camera, int segme
 }
 
 void camera_init(VisionIpcServer *v, CameraState *s, int camera_id, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType rgb_type, VisionStreamType yuv_type, const std::string &url) {
-  s->frame_reader = new FrameReader(url);
-  if (!s->frame_reader->process()) {
+  s->frame = new FrameReader(url);
+  if (!s->frame->process()) {
     printf("failed to load stream from %s", url.c_str());
     assert(0);
   }
 
   CameraInfo ci = {
-      .frame_width = s->frame_reader->width,
-      .frame_height = s->frame_reader->height,
-      .frame_stride = s->frame_reader->width * 3,
+      .frame_width = s->frame->width,
+      .frame_height = s->frame->height,
+      .frame_stride = s->frame->width * 3,
   };
   s->ci = ci;
   s->camera_num = camera_id;
@@ -41,38 +41,37 @@ void camera_init(VisionIpcServer *v, CameraState *s, int camera_id, unsigned int
 }
 
 void camera_close(CameraState *s) {
-  delete s->frame_reader;
+  delete s->frame;
 }
 
 void run_camera(CameraState *s) {
   uint32_t stream_frame_id = 0, frame_id = 0;
   size_t buf_idx = 0;
   while (!do_exit) {
-    uint8_t *dat = s->frame_reader->get(stream_frame_id);
+    if (stream_frame_id == s->frame->getFrameCount()) {
+      // loop stream
+      stream_frame_id = 0;
+    }
+    uint8_t *dat = s->frame->get(stream_frame_id++);
     if (dat) {
       s->buf.camera_bufs_metadata[buf_idx] = {.frame_id = frame_id};
       auto &buf = s->buf.camera_bufs[buf_idx];
-      CL_CHECK(clEnqueueWriteBuffer(buf.copy_q, buf.buf_cl, CL_TRUE, 0, s->frame_reader->getRGBSize(), dat, 0, NULL, NULL));
+      CL_CHECK(clEnqueueWriteBuffer(buf.copy_q, buf.buf_cl, CL_TRUE, 0, s->frame->getRGBSize(), dat, 0, NULL, NULL));
       s->buf.queue(buf_idx);
       ++frame_id;
       buf_idx = (buf_idx + 1) % FRAME_BUF_COUNT;
-    } else if (frame_id == s->frame_reader->getFrameCount()) {
-      // loop stream
-      stream_frame_id = 0;
-      continue;
     }
-    ++stream_frame_id;
     util::sleep_for(1000 / s->fps);
   }
 }
 
 void road_camera_thread(CameraState *s) {
-  set_thread_name("pc_road_camera_thread");
+  set_thread_name("replay_road_camera_thread");
   run_camera(s);
 }
 
 void driver_camera_thread(CameraState *s) {
-  set_thread_name("pc_driver_camera_thread");
+  set_thread_name("replay_driver_camera_thread");
   run_camera(s);
 }
 

@@ -13,7 +13,7 @@ typedef struct CameraState {
   float digital_gain = 0;
 
   CameraBuf buf;
-  FrameReader *frame_reader = nullptr;
+  FrameReader *frame = nullptr;
 } CameraState;
 
 typedef struct MultiCameraState {
