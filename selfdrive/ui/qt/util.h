@@ -2,6 +2,17 @@
 
 #include <QtWidgets>
 
+#include "selfdrive/common/params.h"
+
+
+inline QString getBrand() {
+  return Params().getBool("Passive") ? "dashcam" : "openpilot";
+}
+
+inline QString getBrandVersion() {
+  return getBrand() + " v" + QString::fromStdString(Params().get("Version")).left(14).trimmed();
+}
+
 inline void configFont(QPainter &p, const QString &family, int size, const QString &style) {
   QFont f(family);
   f.setPixelSize(size);
