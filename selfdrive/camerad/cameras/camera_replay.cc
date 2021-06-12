@@ -1,4 +1,4 @@
-#include "selfdrive/camerad/cameras/camera_pc.h"
+#include "selfdrive/camerad/cameras/camera_replay.h"
 
 #include <cassert>
 #include <thread>

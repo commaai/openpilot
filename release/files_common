@@ -367,8 +367,8 @@ selfdrive/camerad/snapshot/*
 selfdrive/camerad/include/*
 selfdrive/camerad/cameras/camera_common.h
 selfdrive/camerad/cameras/camera_common.cc
-selfdrive/camerad/cameras/camera_pc.cc
-selfdrive/camerad/cameras/camera_pc.cc
+selfdrive/camerad/cameras/camera_replay.cc
+selfdrive/camerad/cameras/camera_replay.cc
 selfdrive/camerad/cameras/camera_qcom.cc
 selfdrive/camerad/cameras/camera_qcom.h
 selfdrive/camerad/cameras/debayer.cl

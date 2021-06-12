@@ -19,7 +19,7 @@ else:
   else:
     libs += ['avutil', 'avcodec', 'avformat', 'swscale']
     env['CXXFLAGS'] += ["-Wno-deprecated-declarations"]
-    cameras = ['cameras/camera_pc.cc']
+    cameras = ['cameras/camera_replay.cc']
 
   if arch == "Darwin":
     del libs[libs.index('OpenCL')]
