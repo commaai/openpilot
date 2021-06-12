@@ -58,7 +58,7 @@ void run_camera(CameraState *s) {
       ++stream_frame_id;
       buf_idx = (buf_idx + 1) % FRAME_BUF_COUNT;
     } else {
-      // loop
+      // loop stream
       stream_frame_id = 0;
     }
     util::sleep_for(1000 / s->fps);
