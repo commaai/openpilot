@@ -17,10 +17,10 @@ typedef struct CameraState {
   CameraInfo ci;
 
   int fps;
-  float digital_gain;
+  float digital_gain = 0;
 
   CameraBuf buf;
-  FrameReader *frame_reader;
+  FrameReader *frame_reader = nullptr;
 } CameraState;
 
 typedef struct MultiCameraState {
