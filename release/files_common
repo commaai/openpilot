@@ -190,6 +190,16 @@ selfdrive/debug/*.py
 selfdrive/common/SConscript
 selfdrive/common/version.h
 
+<<<<<<< HEAD
+=======
+selfdrive/common/framebuffer.h
+selfdrive/common/framebuffer.cc
+selfdrive/common/framereader.h
+selfdrive/common/framereader.cc
+selfdrive/common/glutil.cc
+selfdrive/common/glutil.h
+selfdrive/common/touch.[c,h]
+>>>>>>> start refactor
 selfdrive/common/swaglog.h
 selfdrive/common/swaglog.cc
 selfdrive/common/util.cc
@@ -359,6 +369,8 @@ selfdrive/camerad/cameras/camera_common.h
 selfdrive/camerad/cameras/camera_common.cc
 selfdrive/camerad/cameras/camera_frame_stream.cc
 selfdrive/camerad/cameras/camera_frame_stream.h
+selfdrive/camerad/cameras/camera_pc.cc
+selfdrive/camerad/cameras/camera_pc.cc
 selfdrive/camerad/cameras/camera_qcom.cc
 selfdrive/camerad/cameras/camera_qcom.h
 selfdrive/camerad/cameras/debayer.cl

@@ -7,7 +7,8 @@
 #include <CL/cl.h>
 #endif
 
-#include "camera_common.h"
+#include "selfdrive/camerad/cameras/camera_common.h"
+#include "selfdrive/common/framereader.h"
 
 #define FRAME_BUF_COUNT 16
 
@@ -19,6 +20,7 @@ typedef struct CameraState {
   float digital_gain;
 
   CameraBuf buf;
+  FrameReader *frame_reader;
 } CameraState;
 
 typedef struct MultiCameraState {

@@ -17,7 +17,9 @@ else:
     env.Append(CFLAGS = '-DWEBCAM')
     env.Append(CPPPATH = '/usr/local/include/opencv4')
   else:
-    cameras = ['cameras/camera_frame_stream.cc']
+    libs += ['avutil', 'avcodec', 'avformat', 'swscale']
+    env['CXXFLAGS'] += ["-Wno-deprecated-declarations"]
+    cameras = ['cameras/camera_pc.cc']
 
   if arch == "Darwin":
     del libs[libs.index('OpenCL')]
