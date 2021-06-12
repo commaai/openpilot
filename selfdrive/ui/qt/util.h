@@ -17,6 +17,14 @@ inline QString getBrandVersion() {
   return getBrand() + " v" + QString::fromStdString(Params().get("Version")).left(14).trimmed();
 }
 
+inline QString getBrand() {
+  return Params().getBool("Passive") ? "dashcam" : "openpilot";
+}
+
+inline QString getBrandVersion() {
+  return getBrand() + " v" + QString::fromStdString(Params().get("Version")).left(14).trimmed();
+}
+
 void configFont(QPainter &p, const QString &family, int size, const QString &style);
 void clearLayout(QLayout* layout);
 QString timeAgo(const QDateTime &date);
