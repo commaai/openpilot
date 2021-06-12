@@ -289,31 +289,31 @@ void SoftwarePanel::updateLabels() {
 }
 
 QWidget * network_panel(QWidget * parent) {
-//#ifdef QCOM
-//  QVBoxLayout *layout = new QVBoxLayout;
-//  layout->setSpacing(30);
-//
-//  // wifi + tethering buttons
-//  layout->addWidget(new ButtonControl("WiFi Settings", "OPEN", "",
-//                                      [=]() { HardwareEon::launch_wifi(); }));
-//  layout->addWidget(horizontal_line());
-//
-//  layout->addWidget(new ButtonControl("Tethering Settings", "OPEN", "",
-//                                      [=]() { HardwareEon::launch_tethering(); }));
-//  layout->addWidget(horizontal_line());
-//
-//  // SSH key management
-//  layout->addWidget(new SshToggle());
-//  layout->addWidget(horizontal_line());
-//  layout->addWidget(new SshControl());
-//
-//  layout->addStretch(1);
-//
-//  QWidget *w = new QWidget(parent);
-//  w->setLayout(layout);
-//#else
+#ifdef QCOM
+  QVBoxLayout *layout = new QVBoxLayout;
+  layout->setSpacing(30);
+
+  // wifi + tethering buttons
+  layout->addWidget(new ButtonControl("WiFi Settings", "OPEN", "",
+                                      [=]() { HardwareEon::launch_wifi(); }));
+  layout->addWidget(horizontal_line());
+
+  layout->addWidget(new ButtonControl("Tethering Settings", "OPEN", "",
+                                      [=]() { HardwareEon::launch_tethering(); }));
+  layout->addWidget(horizontal_line());
+
+  // SSH key management
+  layout->addWidget(new SshToggle());
+  layout->addWidget(horizontal_line());
+  layout->addWidget(new SshControl());
+
+  layout->addStretch(1);
+
+  QWidget *w = new QWidget(parent);
+  w->setLayout(layout);
+#else
   Networking *w = new Networking(parent);
-//#endif
+#endif
   return w;
 }
 
@@ -392,6 +392,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     nav_btns->addButton(btn);
     sidebar_layout->addWidget(btn, 0, Qt::AlignRight);
 
+//    int left_margin = name != "Network" ? 50 : 0;  // Network panel handles its own margin // TODO
     panel->setContentsMargins(50, 25, 50, 25);
 
     ScrollView *panel_frame = new ScrollView(panel, this);

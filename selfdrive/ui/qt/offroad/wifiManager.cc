@@ -398,6 +398,32 @@ QString WifiManager::ssid_from_path(const QDBusObjectPath &path) {
   return "";  // shouldn't ever happen
 }
 
+// TODO: remove once other PR to add this is merged in, then rebase
+bool WifiManager::isKnownNetwork(const QString &ssid) {
+  for(QDBusObjectPath path : list_connections()) {
+    QDBusInterface nm2(nm_service, path.path(), nm_settings_conn_iface, bus);
+    nm2.setTimeout(dbus_timeout);
+
+    QDBusMessage response = nm2.call("GetSettings");
+
+    const QDBusArgument &dbusArg = response.arguments().at(0).value<QDBusArgument>();
+
+    QMap<QString, QMap<QString,QVariant>> map;
+    dbusArg >> map;
+    for (auto &inner : map) {
+      for (auto &val : inner) {
+        QString key = inner.key(val);
+        if (key == "ssid") {
+          if (val == ssid) {
+            return true;
+          }
+        }
+      }
+    }
+  }
+  return false;
+}
+
 QVector<QDBusObjectPath> WifiManager::list_connections() {
   QVector<QDBusObjectPath> connections;
   QDBusInterface nm(nm_service, nm_settings_path, nm_settings_iface, bus);

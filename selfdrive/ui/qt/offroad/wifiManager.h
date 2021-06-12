@@ -34,6 +34,7 @@ public:
   QVector<Network> seen_networks;
   QString ipv4_address;
 
+  bool isKnownNetwork(const QString &ssid);  // TODO: remove once other PR to add this is merged in, then rebase
   void refreshNetworks();
   void connect(const Network &ssid);
   void connect(const Network &ssid, const QString &password);

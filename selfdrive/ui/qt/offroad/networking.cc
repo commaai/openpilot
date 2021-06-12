@@ -1,3 +1,4 @@
+//#include <random>
 #include "selfdrive/ui/qt/offroad/networking.h"
 
 #include <QDebug>
@@ -38,7 +39,7 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent), s
   // TODO: we can also add another timer that refreshes much less often in the background
   QTimer* timer = new QTimer(this);
   QObject::connect(timer, &QTimer::timeout, this, [=](){ refresh(false); });
-  timer->start(5000);
+  timer->start(2000);
 }
 
 void Networking::attemptInitialization() {
@@ -54,9 +55,10 @@ void Networking::attemptInitialization() {
   QVBoxLayout* vlayout = new QVBoxLayout;
 
   if (show_advanced) {
-    QPushButton* advancedSettings = new QPushButton("Advanced");
-    advancedSettings->setStyleSheet("margin-right: 30px;");
-    advancedSettings->setFixedSize(350, 100);
+    QPushButton* advancedSettings = new QPushButton("More Settings");  // TODO: fixup the name of the advanced settings class and button
+    // TODO: make it so we don't have to hard code a weird margin, the connect buttons don't need this (yes, it's 9 px)
+    advancedSettings->setStyleSheet("margin-right: 9px;");
+    advancedSettings->setFixedSize(425, 100);
     connect(advancedSettings, &QPushButton::released, [=]() { s->setCurrentWidget(an); });
     vlayout->addSpacing(10);
     vlayout->addWidget(advancedSettings, 0, Qt::AlignRight);
@@ -212,10 +214,30 @@ void WifiUI::refresh() {
   int i = 0;
   for (Network &network : wifiManager->seen_networks) {
     QHBoxLayout *hlayout = new QHBoxLayout;
-    hlayout->addSpacing(50);
+
+    if (wifiManager->isKnownNetwork(network.ssid)) {
+      QPushButton *forgetBtn = new QPushButton("\U0000274c");
+      forgetBtn->setFlat(true);
+      forgetBtn->setStyleSheet("QPushButton { border-radius: 0px; padding: 0px; font-size: 55px; background-color: transparent; color: #E22C2C; }");
+      forgetBtn->setFixedWidth(75);
+
+      QObject::connect(forgetBtn, &QPushButton::released, [=]() {
+        if (ConfirmationDialog::confirm("Are you sure you want to forget " + QString::fromUtf8(network.ssid) + "?", this)) {
+          wifiManager->forgetConnection(network.ssid);
+        }
+      });
+
+      hlayout->addWidget(forgetBtn, 0, Qt::AlignLeft);
+    } else {
+      // TODO should be a label, but spacing is off
+      QPushButton *securityLabel = new QPushButton(rand() % 2 ? "\U0001F512" : "\U0001F513");
+
+      securityLabel->setStyleSheet("QPushButton { border-radius: 0px; padding: 0px; background-color: transparent; font-size: 55px }");
+      securityLabel->setFixedWidth(75);
+      hlayout->addWidget(securityLabel, 0, Qt::AlignLeft);
+    }
 
     QLabel *ssid_label = new QLabel(QString::fromUtf8(network.ssid));
-    qDebug() << QString::fromUtf8(network.ssid);
     ssid_label->setStyleSheet("font-size: 55px;");
     hlayout->addWidget(ssid_label, 1, Qt::AlignLeft);
 
