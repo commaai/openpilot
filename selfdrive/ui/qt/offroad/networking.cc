@@ -216,8 +216,8 @@ void WifiUI::refresh() {
 
     if (wifiManager->isKnownNetwork(network.ssid)) {
       QPushButton *forgetBtn = new QPushButton("\U0000274c");
-      forgetBtn->setFlat(true);
-      forgetBtn->setStyleSheet("QPushButton { border-radius: 0px; padding: 0px; font-size: 55px; background-color: transparent; color: #E22C2C; }");
+//      forgetBtn->setFlat(true);
+      forgetBtn->setStyleSheet("QPushButton { padding: 0px; font-size: 55px; background-color: #E22C2C; color: #dddddd }");
       forgetBtn->setFixedWidth(75);
 
       QObject::connect(forgetBtn, &QPushButton::released, [=]() {
