@@ -279,7 +279,7 @@ QVector<QDBusObjectPath> WifiManager::get_active_connections() {
 }
 
 void WifiManager::forgetConnection(const QString &ssid) {
-  disconnect();
+  disconnect(ssid, true);  // only disconnects if forgetting current network
   for (QDBusObjectPath path : list_connections()) {
     if (ssid_from_path(path) == ssid) {
       QDBusInterface nm2(nm_service, path.path(), nm_settings_conn_iface, bus);
@@ -370,10 +370,13 @@ void WifiManager::change(unsigned int new_state, unsigned int previous_state, un
   }
 }
 
-void WifiManager::disconnect() {
+void WifiManager::disconnect(const QString &ssid, bool check_ssid) {
   QString active_ap = get_active_ap();
   if (active_ap != "" && active_ap != "/") {
-    deactivate_connections(get_property(active_ap, "Ssid"));
+    const QString active_ssid = get_property(active_ap, "Ssid");
+    if ((check_ssid && active_ssid == ssid) || (!check_ssid)) {
+      deactivate_connections(get_property(active_ap, "Ssid"));
+    }
   }
 }
 

@@ -1,4 +1,3 @@
-//#include <random>
 #include "selfdrive/ui/qt/offroad/networking.h"
 
 #include <QDebug>
@@ -39,7 +38,7 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent), s
   // TODO: we can also add another timer that refreshes much less often in the background
   QTimer* timer = new QTimer(this);
   QObject::connect(timer, &QTimer::timeout, this, [=](){ refresh(false); });
-  timer->start(2000);
+  timer->start(5000);
 }
 
 void Networking::attemptInitialization() {
@@ -58,7 +57,7 @@ void Networking::attemptInitialization() {
     QPushButton* advancedSettings = new QPushButton("More Settings");  // TODO: fixup the name of the advanced settings class and button
     // TODO: make it so we don't have to hard code a weird margin, the connect buttons don't need this (yes, it's 9 px)
     advancedSettings->setStyleSheet("margin-right: 9px;");
-    advancedSettings->setFixedSize(425, 100);
+    advancedSettings->setFixedSize(500, 100);
     connect(advancedSettings, &QPushButton::released, [=]() { s->setCurrentWidget(an); });
     vlayout->addSpacing(10);
     vlayout->addWidget(advancedSettings, 0, Qt::AlignRight);
@@ -96,7 +95,7 @@ void Networking::attemptInitialization() {
   ui_setup_complete = true;
 }
 
-void Networking::refresh(bool force) {
+void Networking::refresh(bool force) {  // TODO why does this take almost a second to finish?
   if (!this->isVisible() && !force) {
     return;
   }
@@ -230,7 +229,7 @@ void WifiUI::refresh() {
       hlayout->addWidget(forgetBtn, 0, Qt::AlignLeft);
     } else {
       // TODO should be a label, but spacing is off
-      QPushButton *securityLabel = new QPushButton(rand() % 2 ? "\U0001F512" : "\U0001F513");
+      QPushButton *securityLabel = new QPushButton((network.security_type == SecurityType::WPA) ? "\U0001F512" : "\U0001F513");
 
       securityLabel->setStyleSheet("QPushButton { border-radius: 0px; padding: 0px; background-color: transparent; font-size: 55px }");
       securityLabel->setFixedWidth(75);

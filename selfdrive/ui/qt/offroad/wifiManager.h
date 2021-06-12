@@ -39,7 +39,7 @@ public:
   void connect(const Network &ssid);
   void connect(const Network &ssid, const QString &password);
   void connect(const Network &ssid, const QString &username, const QString &password);
-  void disconnect();
+  void disconnect(const QString &ssid = "", bool check_ssid = false);
   void forgetConnection(const QString &ssid);
 
   // Tethering functions
