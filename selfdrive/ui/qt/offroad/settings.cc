@@ -230,7 +230,6 @@ void SoftwarePanel::updateLabels() {
   QList<QPair<QString, std::string>> dev_params = {
     {"Git Branch", params.get("GitBranch")},
     {"Git Commit", params.get("GitCommit").substr(0, 10)},
-    {"Panda Firmware", params.get("PandaFirmwareHex")},
     {"OS Version", Hardware::get_os_version()},
   };
 
