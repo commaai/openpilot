@@ -17,7 +17,7 @@ extern "C" {
 #define FRAME_BUF_COUNT 16
 
 class FrameReader {
- public:
+public:
   FrameReader(const std::string &url);
   bool process();
   ~FrameReader();
@@ -27,7 +27,7 @@ class FrameReader {
 
   int width = 0, height = 0;
 
- private:
+private:
   bool processFrames();
   void decodeThread();
   uint8_t *decodeFrame(AVPacket *pkt);
