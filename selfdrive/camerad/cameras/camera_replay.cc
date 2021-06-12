@@ -55,12 +55,13 @@ void run_camera(CameraState *s) {
       CL_CHECK(clEnqueueWriteBuffer(buf.copy_q, buf.buf_cl, CL_TRUE, 0, s->frame_reader->getRGBSize(), dat, 0, NULL, NULL));
       s->buf.queue(buf_idx);
       ++frame_id;
-      ++stream_frame_id;
       buf_idx = (buf_idx + 1) % FRAME_BUF_COUNT;
-    } else {
+    } else if (frame_id == s->frame_reader->getFrameCount()) {
       // loop stream
       stream_frame_id = 0;
+      continue;
     }
+    ++stream_frame_id;
     util::sleep_for(1000 / s->fps);
   }
 }
