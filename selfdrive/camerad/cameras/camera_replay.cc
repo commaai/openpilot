@@ -10,19 +10,8 @@ extern ExitHandler do_exit;
 
 const char *BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/";
 
-const std::string road_camera_routes[] = {
-    "0c94aa1e1296d7c6|2021-05-05--19-48-37",
-    "91dfedae61d7bd75|2021-05-22--20-07-52",
-    "420a8e183f1aed48|2020-03-05--07-15-29",
-    "43a685a66291579b|2021-05-27--19-47-29",
-    "378472f830ee7395|2021-05-28--07-38-43",
-    "8190c7275a24557b|2020-01-29--08-33-58",
-    "3d84727705fecd04|2021-05-25--08-38-56",
-};
-
-const std::string driver_camera_routes[] = {
-    "534ccd8a0950a00c|2021-06-08--12-15-37",
-};
+const std::string road_camera_route = "0c94aa1e1296d7c6|2021-05-05--19-48-37";
+const std::string driver_camera_route = "534ccd8a0950a00c|2021-06-08--12-15-37";
 
 std::string get_url(std::string route_name, const std::string &camera, int segment_num) {
   std::replace(route_name.begin(), route_name.end(), '|', '/');
@@ -65,27 +54,29 @@ void cameras_close(MultiCameraState *s) {
 
 void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
   camera_init(v, &s->road_cam, CAMERA_ID_LGC920, 20, device_id, ctx,
-              VISION_STREAM_RGB_BACK, VISION_STREAM_YUV_BACK, get_url(road_camera_routes[0], "fcamera", 0));
+              VISION_STREAM_RGB_BACK, VISION_STREAM_YUV_BACK, get_url(road_camera_route, "fcamera", 0));
   camera_init(v, &s->driver_cam, CAMERA_ID_LGC615, 10, device_id, ctx,
-              VISION_STREAM_RGB_FRONT, VISION_STREAM_YUV_FRONT, get_url(driver_camera_routes[0], "dcamera", 0));
+              VISION_STREAM_RGB_FRONT, VISION_STREAM_YUV_FRONT, get_url(driver_camera_route, "dcamera", 0));
 }
 
 static void run_camera(CameraState *s) {
-  uint32_t frame_id = 0;
+  uint32_t cam_frame_id = 0, frame_id = 0;
   size_t buf_idx = 0;
   while (!do_exit) {
-    uint8_t *dat = s->frame_reader->get(frame_id);
+    uint8_t *dat = s->frame_reader->get(cam_frame_id);
     if (dat) {
       s->buf.camera_bufs_metadata[buf_idx] = {.frame_id = frame_id};
-
       auto &buf = s->buf.camera_bufs[buf_idx];
       CL_CHECK(clEnqueueWriteBuffer(buf.copy_q, buf.buf_cl, CL_TRUE, 0, s->frame_reader->getRGBSize(), dat, 0, NULL, NULL));
-
       s->buf.queue(buf_idx);
+      ++frame_id;
+      ++cam_frame_id;
+      buf_idx = (buf_idx + 1) % FRAME_BUF_COUNT;
+      util::sleep_for(1000 / s->fps);
+    } else {
+      // loop
+      cam_frame_id = 0;
     }
-    ++frame_id;
-    buf_idx = (buf_idx + 1) % FRAME_BUF_COUNT;
-    util::sleep_for(1000 / s->fps);
   }
 }
 
