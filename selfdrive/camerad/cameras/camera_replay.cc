@@ -13,6 +13,7 @@ void camera_autoexposure(CameraState *s, float grey_frac) {}
 namespace {
 
 const char *BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/";
+
 const std::string road_camera_route = "0c94aa1e1296d7c6|2021-05-05--19-48-37";
 const std::string driver_camera_route = "534ccd8a0950a00c|2021-06-08--12-15-37";
 
@@ -94,7 +95,6 @@ void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) {
 
 }  // namespace
 
-
 void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
   camera_init(v, &s->road_cam, CAMERA_ID_LGC920, 20, device_id, ctx,
               VISION_STREAM_RGB_BACK, VISION_STREAM_YUV_BACK, get_url(road_camera_route, "fcamera", 0));
@@ -109,7 +109,6 @@ void cameras_close(MultiCameraState *s) {
   camera_close(&s->road_cam);
   camera_close(&s->driver_cam);
 }
-
 
 void cameras_run(MultiCameraState *s) {
   std::vector<std::thread> threads;

@@ -1,12 +1,5 @@
 #pragma once
 
-#define CL_USE_DEPRECATED_OPENCL_1_2_APIS
-#ifdef __APPLE__
-#include <OpenCL/cl.h>
-#else
-#include <CL/cl.h>
-#endif
-
 #include "selfdrive/camerad/cameras/camera_common.h"
 #include "selfdrive/common/framereader.h"
 
@@ -27,6 +20,6 @@ typedef struct MultiCameraState {
   CameraState road_cam;
   CameraState driver_cam;
 
-  SubMaster *sm;
-  PubMaster *pm;
+  SubMaster *sm = nullptr;
+  PubMaster *pm = nullptr;
 } MultiCameraState;
