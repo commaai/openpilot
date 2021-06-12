@@ -3,11 +3,8 @@
 
 using namespace std;
 
-#define G 9.81
-#define TR 1.8
-
-#define RW(v_ego, v_l) (v_ego * TR - (v_l - v_ego) * TR + v_ego*v_ego/(2*G) - v_l*v_l / (2*G))
-#define NORM_RW_ERROR(v_ego, v_l, p) ((RW(v_ego, v_l) + 4.0 - p)/(sqrt(v_ego + 0.5) + 0.1))
+#define MAX_BRAKE 7.
+#define T_REACT 2.0
 
 int main( )
 {
@@ -21,8 +18,13 @@ int main( )
 
   Control j_ego;
 
-  auto desired = 4.0 + RW(v_ego, v_l);
+  auto ego_stop_time = v_l/MAX_BRAKE;
+  auto ego_stop_dist = v_ego*ego_stop_time - (MAX_BRAKE * ego_stop_time*ego_stop_time)/2;
+  auto lead_stop_time = v_l/MAX_BRAKE;
+  auto lead_stop_dist = v_l*lead_stop_time - (MAX_BRAKE * lead_stop_time*lead_stop_time)/2;
+  auto d_desired = 4.0 + v_ego * T_REACT - lead_stop_dist + ego_stop_dist;
   auto d_l = x_l - x_ego;
+  auto d_l_err = d_desired - d_l;
 
   // Equations of motion
   f << dot(x_ego) == v_ego;
@@ -31,8 +33,8 @@ int main( )
 
   // Running cost
   Function h;
-  h << exp(0.3 * NORM_RW_ERROR(v_ego, v_l, d_l)) - 1;
-  h << (d_l - desired) / (0.05 * v_ego + 0.5);
+  h << exp(0.3 * d_l_err / sqrt(v_ego + .5));
+  h << (d_l_err) / (0.05 * v_ego + 0.5);
   h << a_ego * (0.1 * v_ego + 1.0);
   h << j_ego * (0.1 * v_ego + 1.0);
 
@@ -41,8 +43,8 @@ int main( )
 
   // Terminal cost
   Function hN;
-  hN << exp(0.3 * NORM_RW_ERROR(v_ego, v_l, d_l)) - 1;
-  hN << (d_l - desired) / (0.05 * v_ego + 0.5);
+  hN << exp(0.3 * d_l_err / sqrt(v_ego + .5));
+  hN << (d_l_err) / (0.05 * v_ego + 0.5);
   hN << a_ego;
 
   // Weights are defined in mpc.

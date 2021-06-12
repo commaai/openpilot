@@ -21,8 +21,8 @@ class MPC_COST_LAT:
 class MPC_COST_LONG:
   TTC = 5.0
   DISTANCE = 0.1
-  ACCELERATION = 10.0
-  JERK = 20.0
+  ACCELERATION = 0.0
+  JERK = 100.0
 
 
 def rate_limit(new_value, last_value, dw_step, up_step):
