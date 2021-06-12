@@ -284,26 +284,8 @@ QVector<QDBusObjectPath> WifiManager::get_active_connections() {
 }
 
 bool WifiManager::isKnownNetwork(const QString &ssid) {
-  for(QDBusObjectPath path : list_connections()) {
-    QDBusInterface nm2(nm_service, path.path(), nm_settings_conn_iface, bus);
-    nm2.setTimeout(dbus_timeout);
-
-    QDBusMessage response = nm2.call("GetSettings");
-
-    const QDBusArgument &dbusArg = response.arguments().at(0).value<QDBusArgument>();
-
-    QMap<QString, QMap<QString,QVariant>> map;
-    dbusArg >> map;
-    for (auto &inner : map) {
-      for (auto &val : inner) {
-        QString key = inner.key(val);
-        if (key == "ssid") {
-          if (val == ssid) {
-            return true;
-          }
-        }
-      }
-    }
+  for (const QDBusObjectPath path : list_connections()) {
+    if (ssid_from_path(path) == ssid) return true;
   }
   return false;
 }
@@ -421,6 +403,27 @@ void WifiManager::disconnect() {
   }
 }
 
+QString WifiManager::ssid_from_path(const QDBusObjectPath &path) {
+  QDBusInterface nm2(nm_service, path.path(), nm_settings_conn_iface, bus);
+  nm2.setTimeout(dbus_timeout);
+
+  QDBusMessage response = nm2.call("GetSettings");
+  const QDBusArgument &dbusArg = response.arguments().at(0).value<QDBusArgument>();
+
+  QString ssid;
+  QMap<QString, QMap<QString,QVariant>> map;
+  dbusArg >> map;
+  for (auto &inner : map) {
+    for (auto &val : inner) {
+      QString key = inner.key(val);
+      if (key == "ssid") {
+        return val.toString();
+      }
+    }
+  }
+  return "";
+}
+
 QVector<QDBusObjectPath> WifiManager::list_connections() {
   QVector<QDBusObjectPath> connections;
   QDBusInterface nm(nm_service, nm_settings_path, nm_settings_iface, bus);
@@ -441,56 +444,27 @@ QVector<QDBusObjectPath> WifiManager::list_connections() {
 bool WifiManager::activate_wifi_connection(const QString &ssid) {
   QString devicePath = get_adapter();
 
-  for(QDBusObjectPath path : list_connections()) {
-    QDBusInterface nm2(nm_service, path.path(), nm_settings_conn_iface, bus);
-    nm2.setTimeout(dbus_timeout);
-
-    QDBusMessage response = nm2.call("GetSettings");
-    const QDBusArgument &dbusArg = response.arguments().at(0).value<QDBusArgument>();
-
-    QMap<QString, QMap<QString,QVariant>> map;
-    dbusArg >> map;
-    for (auto &inner : map) {
-      for (auto &val : inner) {
-        QString key = inner.key(val);
-        if (key == "ssid") {
-          if (val == ssid) {
-            QDBusInterface nm3(nm_service, nm_path, nm_iface, bus);
-            nm3.setTimeout(dbus_timeout);
-            nm3.call("ActivateConnection", QVariant::fromValue(path), QVariant::fromValue(QDBusObjectPath(devicePath)), QVariant::fromValue(QDBusObjectPath("/")));
-            return true;
-          }
-        }
-      }
+  for (QDBusObjectPath path : list_connections()) {
+    if (ssid_from_path(path) == ssid) {
+      QDBusInterface nm3(nm_service, nm_path, nm_iface, bus);
+      nm3.setTimeout(dbus_timeout);
+      nm3.call("ActivateConnection", QVariant::fromValue(path), QVariant::fromValue(QDBusObjectPath(devicePath)), QVariant::fromValue(QDBusObjectPath("/")));
+      return true;
     }
   }
   return false;
 }
+
 //Functions for tethering
 bool WifiManager::activate_tethering_connection() {
   QString devicePath = get_adapter();
 
-  for(QDBusObjectPath path : list_connections()) {
-    QDBusInterface nm2(nm_service, path.path(), nm_settings_conn_iface, bus);
-    nm2.setTimeout(dbus_timeout);
-
-    QDBusMessage response = nm2.call("GetSettings");
-    const QDBusArgument &dbusArg = response.arguments().at(0).value<QDBusArgument>();
-
-    QMap<QString, QMap<QString,QVariant>> map;
-    dbusArg >> map;
-    for (auto &inner : map) {
-      for (auto &val : inner) {
-        QString key = inner.key(val);
-        if (key == "ssid") {
-          if (val == tethering_ssid.toUtf8()) {
-            QDBusInterface nm3(nm_service, nm_path, nm_iface, bus);
-            nm3.setTimeout(dbus_timeout);
-            nm3.call("ActivateConnection", QVariant::fromValue(path), QVariant::fromValue(QDBusObjectPath(devicePath)), QVariant::fromValue(QDBusObjectPath("/")));
-            return true;
-          }
-        }
-      }
+  for (QDBusObjectPath path : list_connections()) {
+    if (ssid_from_path(path) == tethering_ssid.toUtf8()) {
+      QDBusInterface nm3(nm_service, nm_path, nm_iface, bus);
+      nm3.setTimeout(dbus_timeout);
+      nm3.call("ActivateConnection", QVariant::fromValue(path), QVariant::fromValue(QDBusObjectPath(devicePath)), QVariant::fromValue(QDBusObjectPath("/")));
+      return true;
     }
   }
   return false;
