@@ -291,25 +291,10 @@ bool WifiManager::isKnownNetwork(const QString &ssid) {
 }
 
 void WifiManager::clear_connections(const QString &ssid) {
-  for(QDBusObjectPath path : list_connections()) {
-    QDBusInterface nm2(nm_service, path.path(), nm_settings_conn_iface, bus);
-    nm2.setTimeout(dbus_timeout);
-
-    QDBusMessage response = nm2.call("GetSettings");
-
-    const QDBusArgument &dbusArg = response.arguments().at(0).value<QDBusArgument>();
-
-    QMap<QString, QMap<QString,QVariant>> map;
-    dbusArg >> map;
-    for (auto &inner : map) {
-      for (auto &val : inner) {
-        QString key = inner.key(val);
-        if (key == "ssid") {
-          if (val == ssid) {
-            nm2.call("Delete");
-          }
-        }
-      }
+  for (const QDBusObjectPath path : list_connections()) {
+    if (ssid_from_path(path) == ssid) {
+      QDBusInterface nm2(nm_service, path.path(), nm_settings_conn_iface, bus);
+      nm2.call("Delete");
     }
   }
 }
@@ -459,7 +444,7 @@ bool WifiManager::activate_wifi_connection(const QString &ssid) {
 bool WifiManager::activate_tethering_connection() {
   QString devicePath = get_adapter();
 
-  for (QDBusObjectPath path : list_connections()) {
+  for (const QDBusObjectPath path : list_connections()) {
     if (ssid_from_path(path) == tethering_ssid.toUtf8()) {
       QDBusInterface nm3(nm_service, nm_path, nm_iface, bus);
       nm3.setTimeout(dbus_timeout);
