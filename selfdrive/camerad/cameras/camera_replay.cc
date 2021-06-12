@@ -97,10 +97,10 @@ void cameras_run(MultiCameraState *s) {
   std::vector<std::thread> threads;
   threads.push_back(start_process_thread(s, &s->road_cam, process_road_camera));
   threads.push_back(start_process_thread(s, &s->driver_cam, process_driver_camera));
-  std::thread road_cam_thread = std::thread(road_camera_thread, &s->road_cam);
-  driver_camera_thread(&s->driver_cam);
+  threads.push_back(std::thread(driver_camera_thread, &s->driver_cam));
 
-  road_cam_thread.join();
+  road_camera_thread(&s->driver_cam);
+
   for (auto &t : threads) t.join();
 
   cameras_close(s);
