@@ -203,11 +203,7 @@ SecurityType WifiManager::getSecurityType(const QString &path) {
 }
 
 void WifiManager::connect(const Network &n) {
-  if (isKnownNetwork(n.ssid)) {
-    activate_wifi_connection(n.ssid);
-  } else {
-    return connect(n, "", "");
-  }
+  return connect(n, "", "");
 }
 
 void WifiManager::connect(const Network &n, const QString &password) {
@@ -216,8 +212,6 @@ void WifiManager::connect(const Network &n, const QString &password) {
 
 void WifiManager::connect(const Network &n, const QString &username, const QString &password) {
   connecting_to_network = n.ssid;
-  // disconnect();
-  clear_connections(n.ssid); //Clear all connections that may already exist to the network we are connecting
   connect(n.ssid, username, password, n.security_type);
 }
 
@@ -244,7 +238,7 @@ void WifiManager::connect(const QByteArray &ssid, const QString &username, const
   nm_settings.setTimeout(dbus_timeout);
 
   nm_settings.call("AddConnection", QVariant::fromValue(connection));
-  activate_wifi_connection(QString(ssid));
+  activateWifiConnection(QString(ssid));
 }
 
 void WifiManager::deactivate_connections(const QString &ssid) {
@@ -285,18 +279,17 @@ QVector<QDBusObjectPath> WifiManager::get_active_connections() {
 
 bool WifiManager::isKnownNetwork(const QString &ssid) {
   for (const QDBusObjectPath path : list_connections()) {
-    if (ssid_from_path(path) == ssid) return true;
+    if (ssid_from_path(path) == ssid) {
+      return true;
+    }
   }
   return false;
 }
 
 void WifiManager::clear_connections(const QString &ssid) {
-  for (const QDBusObjectPath path : list_connections()) {
-    if (ssid_from_path(path) == ssid) {
-      QDBusInterface nm2(nm_service, path.path(), nm_settings_conn_iface, bus);
-      nm2.call("Delete");
-    }
-  }
+  QDBusObjectPath path = path_from_ssid(ssid);
+  QDBusInterface nm2(nm_service, path.path(), nm_settings_conn_iface, bus);
+  nm2.call("Delete");
 }
 
 void WifiManager::request_scan() {
@@ -409,6 +402,16 @@ QString WifiManager::ssid_from_path(const QDBusObjectPath &path) {
   return "";
 }
 
+QDBusObjectPath WifiManager::path_from_ssid(const QString &ssid) {  // ensure ssid is a known connection before calling this function
+  for (const QDBusObjectPath path : list_connections()) {
+    if (ssid_from_path(path) == ssid) {
+      return path;
+    }
+  }
+  QDBusObjectPath path;
+  return path;
+}
+
 QVector<QDBusObjectPath> WifiManager::list_connections() {
   QVector<QDBusObjectPath> connections;
   QDBusInterface nm(nm_service, nm_settings_path, nm_settings_iface, bus);
@@ -426,34 +429,16 @@ QVector<QDBusObjectPath> WifiManager::list_connections() {
   return connections;
 }
 
-bool WifiManager::activate_wifi_connection(const QString &ssid) {
+void WifiManager::activateWifiConnection(const QString &ssid) {
   QString devicePath = get_adapter();
+  QDBusObjectPath path = path_from_ssid(ssid);
 
-  for (const QDBusObjectPath path : list_connections()) {
-    if (ssid_from_path(path) == ssid) {
-      QDBusInterface nm3(nm_service, nm_path, nm_iface, bus);
-      nm3.setTimeout(dbus_timeout);
-      nm3.call("ActivateConnection", QVariant::fromValue(path), QVariant::fromValue(QDBusObjectPath(devicePath)), QVariant::fromValue(QDBusObjectPath("/")));
-      return true;
-    }
-  }
-  return false;
+  QDBusInterface nm3(nm_service, nm_path, nm_iface, bus);
+  nm3.setTimeout(dbus_timeout);
+  nm3.call("ActivateConnection", QVariant::fromValue(path), QVariant::fromValue(QDBusObjectPath(devicePath)), QVariant::fromValue(QDBusObjectPath("/")));
 }
 
-//Functions for tethering
-bool WifiManager::activate_tethering_connection() {
-  QString devicePath = get_adapter();
-
-  for (const QDBusObjectPath path : list_connections()) {
-    if (ssid_from_path(path) == tethering_ssid.toUtf8()) {
-      QDBusInterface nm3(nm_service, nm_path, nm_iface, bus);
-      nm3.setTimeout(dbus_timeout);
-      nm3.call("ActivateConnection", QVariant::fromValue(path), QVariant::fromValue(QDBusObjectPath(devicePath)), QVariant::fromValue(QDBusObjectPath("/")));
-      return true;
-    }
-  }
-  return false;
-}
+// Functions for tethering
 void WifiManager::addTetheringConnection() {
   Connection connection;
   connection["connection"]["id"] = "Hotspot";
@@ -486,11 +471,10 @@ void WifiManager::addTetheringConnection() {
 }
 
 void WifiManager::enableTethering() {
-  if(activate_tethering_connection()) {
-    return;
+  if (!isKnownNetwork(tethering_ssid.toUtf8())) {
+    addTetheringConnection();
   }
-  addTetheringConnection();
-  activate_tethering_connection();
+  activateWifiConnection(tethering_ssid.toUtf8());
 }
 
 void WifiManager::disableTethering() {
@@ -504,6 +488,8 @@ bool WifiManager::tetheringEnabled() {
 
 void WifiManager::changeTetheringPassword(const QString &newPassword) {
   tetheringPassword = newPassword;
-  clear_connections(tethering_ssid.toUtf8());
+  if (isKnownNetwork(tethering_ssid.toUtf8())) {
+    clear_connections(tethering_ssid.toUtf8());
+  }
   addTetheringConnection();
 }

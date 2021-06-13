@@ -47,9 +47,8 @@ public:
   void disableTethering();
   bool tetheringEnabled();
 
-  bool activate_tethering_connection();
   void addTetheringConnection();
-  bool activate_wifi_connection(const QString &ssid);
+  void activateWifiConnection(const QString &ssid);
   void changeTetheringPassword(const QString &newPassword);
 
 private:
@@ -74,6 +73,7 @@ private:
   unsigned int get_ap_strength(const QString &network_path);
   SecurityType getSecurityType(const QString &ssid);
   QString ssid_from_path(const QDBusObjectPath &path);
+  QDBusObjectPath path_from_ssid(const QString &ssid);
   QVector<QDBusObjectPath> list_connections();
 
 private slots:
