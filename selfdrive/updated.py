@@ -371,7 +371,7 @@ def main():
     # Don't run updater while onroad or if the time's wrong
     time_wrong = datetime.datetime.utcnow().year < 2019
     is_onroad = not params.get_bool("IsOffroad")
-    if is_onroad or time_wrong:
+    if (is_onroad and EON) or time_wrong:
       wait_helper.sleep(30)
       cloudlog.info("not running updater, not offroad")
       continue
