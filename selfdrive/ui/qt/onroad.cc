@@ -17,8 +17,7 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 
   // old UI on bottom
   nvg = new NvgWindow(this);
-  QObject::connect(signalMap(), &SignalMap::uiUpdate, nvg, &NvgWindow::update);
-
+  
   QWidget * split_wrapper = new QWidget;
   split = new QHBoxLayout(split_wrapper);
   split->setContentsMargins(0, 0, 0, 0);
@@ -29,9 +28,6 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 
   alerts = new OnroadAlerts(this);
   alerts->setAttribute(Qt::WA_TransparentForMouseEvents, true);
-  QObject::connect(signalMap(), &SignalMap::uiUpdate, alerts, &OnroadAlerts::updateState);
-  QObject::connect(signalMap(), &SignalMap::offroadTransition, alerts, &OnroadAlerts::offroadTransition);
-  QObject::connect(signalMap(), &SignalMap::offroadTransition, this, &OnroadWindow::offroadTransition);
   main_layout->addWidget(alerts);
 
   // setup stacking order

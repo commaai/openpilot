@@ -160,9 +160,9 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
   }, "", this));
 
   for(auto &btn : offroad_btns) {
-    main_layout->addWidget(horizontal_line());
     QObject::connect(signalMap(), &SignalMap::offroadTransition, btn, &QPushButton::setEnabled);
-    device_layout->addWidget(btn);
+    main_layout->addWidget(horizontal_line());
+    main_layout->addWidget(btn);
   }
 
   // power buttons

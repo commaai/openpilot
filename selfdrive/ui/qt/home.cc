@@ -21,13 +21,8 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
   main_layout->setSpacing(0);
 
   sidebar = new Sidebar(this);
-<<<<<<< HEAD
   main_layout->addWidget(sidebar);
   
-=======
-  layout->addWidget(sidebar);
-
->>>>>>> cleanup
   slayout = new QStackedLayout();
   main_layout->addLayout(slayout);
 
