@@ -17,7 +17,7 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 
   // old UI on bottom
   nvg = new NvgWindow(this);
-  
+
   QWidget * split_wrapper = new QWidget;
   split = new QHBoxLayout(split_wrapper);
   split->setContentsMargins(0, 0, 0, 0);

@@ -22,7 +22,7 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
 
   sidebar = new Sidebar(this);
   main_layout->addWidget(sidebar);
-  
+
   slayout = new QStackedLayout();
   main_layout->addLayout(slayout);
 
