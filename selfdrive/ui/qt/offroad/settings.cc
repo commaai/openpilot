@@ -207,11 +207,11 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : QWidget(parent) {
   gitBranchLbl = new LabelControl("Git Branch");
   gitCommitLbl = new LabelControl("Git Commit");
   osVersionLbl = new LabelControl("OS Version");
-  versionLbl = new LabelControl("Version", "", QString::fromStdString(Params().get("ReleaseNotes")).trimmed());
+  versionLbl = new LabelControl("Version", "", QString::fromStdString(params.get("ReleaseNotes")).trimmed());
   lastUpdateLbl = new LabelControl("Last Update Check", "", "The last time openpilot successfully checked for an update. The updater only runs while the car is off.");
   updateBtn = new ButtonControl("Check for Update", "", "", [=]() {
-    if (Params().getBool("IsOffroad")) {
-      const QString paramsPath = QString::fromStdString(Params().getParamsPath());
+    if (params.getBool("IsOffroad")) {
+      const QString paramsPath = QString::fromStdString(params.getParamsPath());
       fs_watch->addPath(paramsPath + "/d/LastUpdateTime");
       fs_watch->addPath(paramsPath + "/d/UpdateFailedCount");
       updateBtn->setText("CHECKING");
@@ -233,7 +233,7 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : QWidget(parent) {
 
   fs_watch = new QFileSystemWatcher(this);
   QObject::connect(fs_watch, &QFileSystemWatcher::fileChanged, [=](const QString path) {
-    int update_failed_count = Params().get<int>("UpdateFailedCount").value_or(0);
+    int update_failed_count = params.get<int>("UpdateFailedCount").value_or(0);
     if (path.contains("UpdateFailedCount") && update_failed_count > 0) {
       lastUpdateLbl->setText("failed to fetch update");
       updateBtn->setText("CHECK");
@@ -250,7 +250,8 @@ void SoftwarePanel::showEvent(QShowEvent *event) {
 
 void SoftwarePanel::updateLabels() {
   QString lastUpdate = "";
-  if (auto tm = Params().get("LastUpdateTime"); !tm.empty()) {
+  auto tm = params.get("LastUpdateTime");
+  if (!tm.empty()) {
     lastUpdate = timeAgo(QDateTime::fromString(QString::fromStdString(tm + "Z"), Qt::ISODate));
   }
 
@@ -258,8 +259,8 @@ void SoftwarePanel::updateLabels() {
   lastUpdateLbl->setText(lastUpdate);
   updateBtn->setText("CHECK");
   updateBtn->setEnabled(true);
-  gitBranchLbl->setText(QString::fromStdString(Params().get("GitBranch")));
-  gitCommitLbl->setText(QString::fromStdString(Params().get("GitCommit")).left(10));
+  gitBranchLbl->setText(QString::fromStdString(params.get("GitBranch")));
+  gitCommitLbl->setText(QString::fromStdString(params.get("GitCommit")).left(10));
   osVersionLbl->setText(QString::fromStdString(Hardware::get_os_version()));
 }
 

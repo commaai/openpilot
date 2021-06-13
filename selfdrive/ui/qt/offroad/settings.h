@@ -46,6 +46,7 @@ private:
   LabelControl *lastUpdateLbl;
   ButtonControl *updateBtn;
 
+  Params params;
   QFileSystemWatcher *fs_watch;
 };
 
