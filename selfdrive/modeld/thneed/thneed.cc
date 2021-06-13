@@ -1,13 +1,16 @@
-#include <cassert>
-#include <sys/mman.h>
+#include "selfdrive/modeld/thneed/thneed.h"
+
 #include <dlfcn.h>
+#include <sys/mman.h>
+
+#include <cassert>
+#include <cerrno>
+#include <cstring>
 #include <map>
 #include <string>
-#include <string.h>
-#include <errno.h>
-#include "common/timing.h"
-#include "common/clutil.h"
-#include "thneed.h"
+
+#include "selfdrive/common/clutil.h"
+#include "selfdrive/common/timing.h"
 
 //#define RUN_DISASSEMBLER
 //#define RUN_OPTIMIZER

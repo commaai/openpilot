@@ -5,8 +5,8 @@
 #include <log/logger.h>
 #include <log/logprint.h>
 
-#include "common/util.h"
-#include "messaging.h"
+#include "cereal/messaging/messaging.h"
+#include "selfdrive/common/util.h"
 
 int main() {
   setpriority(PRIO_PROCESS, 0, -15);

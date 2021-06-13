@@ -37,6 +37,10 @@ AddOption('--mpc-generate',
           action='store_true',
           help='regenerates the mpc sources')
 
+AddOption('--snpe',
+          action='store_true',
+          help='use SNPE on PC')
+
 AddOption('--external-sconscript',
           action='store',
           metavar='FILE',
@@ -51,7 +55,6 @@ if arch == "aarch64" and TICI:
   arch = "larch64"
 
 USE_WEBCAM = os.getenv("USE_WEBCAM") is not None
-QCOM_REPLAY = arch == "aarch64" and os.getenv("QCOM_REPLAY") is not None
 
 lenv = {
   "PATH": os.environ['PATH'],
@@ -83,6 +86,9 @@ if arch == "aarch64" or arch == "larch64":
       "#phonelibs/libyuv/larch64/lib",
       "/usr/lib/aarch64-linux-gnu"
     ]
+    cpppath += [
+      "#selfdrive/camerad/include",
+    ]
     cflags = ["-DQCOM2", "-mcpu=cortex-a57"]
     cxxflags = ["-DQCOM2", "-mcpu=cortex-a57"]
     rpath = ["/usr/local/lib"]
@@ -92,13 +98,9 @@ if arch == "aarch64" or arch == "larch64":
       "#phonelibs/libyuv/lib",
       "/system/vendor/lib64"
     ]
-    cflags = ["-DQCOM", "-mcpu=cortex-a57"]
-    cxxflags = ["-DQCOM", "-mcpu=cortex-a57"]
+    cflags = ["-DQCOM", "-D_USING_LIBCXX", "-mcpu=cortex-a57"]
+    cxxflags = ["-DQCOM", "-D_USING_LIBCXX", "-mcpu=cortex-a57"]
     rpath = []
-
-    if QCOM_REPLAY:
-      cflags += ["-DQCOM_REPLAY"]
-      cxxflags += ["-DQCOM_REPLAY"]
 else:
   cflags = []
   cxxflags = []
@@ -125,6 +127,7 @@ else:
     libpath = [
       "#phonelibs/snpe/x86_64-linux-clang",
       "#phonelibs/libyuv/x64/lib",
+      "#phonelibs/mapbox-gl-native-qt/x86_64",
       "#cereal",
       "#selfdrive/common",
       "/usr/lib",
@@ -175,7 +178,6 @@ env = Environment(
 
   CPPPATH=cpppath + [
     "#",
-    "#selfdrive",
     "#phonelibs/catch2/include",
     "#phonelibs/bzip2",
     "#phonelibs/libyuv/include",
@@ -188,20 +190,11 @@ env = Environment(
     "#phonelibs/android_system_core/include",
     "#phonelibs/linux/include",
     "#phonelibs/snpe/include",
+    "#phonelibs/mapbox-gl-native-qt/include",
     "#phonelibs/nanovg",
     "#phonelibs/qrcode",
     "#phonelibs",
-    "#selfdrive/boardd",
-    "#selfdrive/common",
-    "#selfdrive/camerad",
-    "#selfdrive/camerad/include",
-    "#selfdrive/loggerd/include",
-    "#selfdrive/modeld",
-    "#selfdrive/sensord",
-    "#selfdrive/ui",
     "#cereal",
-    "#cereal/messaging",
-    "#cereal/visionipc",
     "#opendbc/can",
   ],
 
@@ -228,15 +221,10 @@ env = Environment(
 if GetOption('compile_db'):
   env.CompilationDatabase('compile_commands.json')
 
-if os.environ.get('SCONS_CACHE'):
-  cache_dir = '/tmp/scons_cache'
-  if TICI:
-    cache_dir = '/data/scons_cache'
-
-  if QCOM_REPLAY:
-    cache_dir = '/tmp/scons_cache_qcom_replay'
-
-  CacheDir(cache_dir)
+# Setup cache dir
+cache_dir = '/data/scons_cache' if TICI else '/tmp/scons_cache'
+CacheDir(cache_dir)
+Clean(["."], cache_dir)
 
 node_interval = 5
 node_count = 0
@@ -278,7 +266,7 @@ Export('envCython')
 
 # Qt build environment
 qt_env = env.Clone()
-qt_modules = ["Widgets", "Gui", "Core", "Network", "Concurrent", "Multimedia", "Quick", "Qml", "QuickWidgets"]
+qt_modules = ["Widgets", "Gui", "Core", "Network", "Concurrent", "Multimedia", "Quick", "Qml", "QuickWidgets", "Location", "Positioning"]
 if arch != "aarch64":
   qt_modules += ["DBus"]
 
@@ -344,7 +332,7 @@ if GetOption("clazy"):
   qt_env['ENV']['CLAZY_IGNORE_DIRS'] = qt_dirs[0]
   qt_env['ENV']['CLAZY_CHECKS'] = ','.join(checks)
 
-Export('env', 'qt_env', 'arch', 'real_arch', 'SHARED', 'USE_WEBCAM', 'QCOM_REPLAY')
+Export('env', 'qt_env', 'arch', 'real_arch', 'SHARED', 'USE_WEBCAM')
 
 # cereal and messaging are shared with the system
 SConscript(['cereal/SConscript'])

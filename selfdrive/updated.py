@@ -281,17 +281,12 @@ def check_git_fetch_result(fetch_txt):
 
 def check_for_update() -> Tuple[bool, bool]:
   setup_git_options(OVERLAY_MERGED)
-  fetch_output = None
   try:
-    fetch_output = run(["git", "fetch", "--dry-run"], OVERLAY_MERGED, low_priority=True)
-    return True, check_git_fetch_result(fetch_output)
+    git_fetch_output = run(["git", "fetch", "--dry-run"], OVERLAY_MERGED, low_priority=True)
+    return True, check_git_fetch_result(git_fetch_output)
   except subprocess.CalledProcessError:
-    # check for internet
-    if fetch_output is not None and fetch_output.startswith("fatal: unable to access") and \
-       "Could not resolve host:" in str(fetch_output):
-      return False, False
+    return False, False
 
-    raise
 
 def fetch_update(wait_helper: WaitTimeHelper) -> bool:
   cloudlog.info("attempting git fetch inside staging overlay")
@@ -376,7 +371,7 @@ def main():
     # Don't run updater while onroad or if the time's wrong
     time_wrong = datetime.datetime.utcnow().year < 2019
     is_onroad = not params.get_bool("IsOffroad")
-    if is_onroad or time_wrong:
+    if (is_onroad and EON) or time_wrong:
       wait_helper.sleep(30)
       cloudlog.info("not running updater, not offroad")
       continue

@@ -1,6 +1,7 @@
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
+
 #include <sys/types.h>
 
 class I2CBus {

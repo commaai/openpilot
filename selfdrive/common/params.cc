@@ -1,21 +1,24 @@
-#include "common/params.h"
+#include "selfdrive/common/params.h"
 
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif  // _GNU_SOURCE
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
 #include <dirent.h>
 #include <sys/file.h>
 #include <sys/stat.h>
-#include <mutex>
+#include <unistd.h>
+
 #include <csignal>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <mutex>
 #include <unordered_map>
-#include "common/util.h"
-#include "common/swaglog.h"
+
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/common/util.h"
+#include "selfdrive/hardware/hw.h"
 
 // keep trying if x gets interrupted by a signal
 #define HANDLE_EINTR(x)                                       \
@@ -30,22 +33,18 @@
 
 namespace {
 
-#if defined(QCOM) || defined(QCOM2)
-const std::string default_params_path = "/data/params";
-const std::string persistent_params_path = "/persist/comma/params";
-#else
-const std::string default_params_path = util::getenv_default("HOME", "/.comma/params", "/data/params");
-const std::string persistent_params_path = default_params_path;
-#endif
+const std::string default_params_path = Hardware::PC() ? util::getenv_default("HOME", "/.comma/params", "/data/params")
+                                                       : "/data/params";
+const std::string persistent_params_path = Hardware::PC() ? default_params_path : "/persist/comma/params";
 
 volatile sig_atomic_t params_do_exit = 0;
 void params_sig_handler(int signal) {
   params_do_exit = 1;
 }
 
-int fsync_dir(const char* path){
+int fsync_dir(const char* path) {
   int fd = HANDLE_EINTR(open(path, O_RDONLY, 0755));
-  if (fd < 0){
+  if (fd < 0) {
     return -1;
   }
 
@@ -149,11 +148,11 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"AthenadPid", PERSISTENT},
     {"CalibrationParams", PERSISTENT},
     {"CarBatteryCapacity", PERSISTENT},
-    {"CarParams", CLEAR_ON_MANAGER_START | CLEAR_ON_PANDA_DISCONNECT | CLEAR_ON_IGNITION},
+    {"CarParams", CLEAR_ON_MANAGER_START | CLEAR_ON_PANDA_DISCONNECT | CLEAR_ON_IGNITION_ON},
     {"CarParamsCache", CLEAR_ON_MANAGER_START | CLEAR_ON_PANDA_DISCONNECT},
-    {"CarVin", CLEAR_ON_MANAGER_START | CLEAR_ON_PANDA_DISCONNECT | CLEAR_ON_IGNITION},
+    {"CarVin", CLEAR_ON_MANAGER_START | CLEAR_ON_PANDA_DISCONNECT | CLEAR_ON_IGNITION_ON},
     {"CommunityFeaturesToggle", PERSISTENT},
-    {"ControlsReady", CLEAR_ON_MANAGER_START | CLEAR_ON_PANDA_DISCONNECT | CLEAR_ON_IGNITION},
+    {"ControlsReady", CLEAR_ON_MANAGER_START | CLEAR_ON_PANDA_DISCONNECT | CLEAR_ON_IGNITION_ON},
     {"EnableLteOnroad", PERSISTENT},
     {"EndToEndToggle", PERSISTENT},
     {"CompletedTrainingVersion", PERSISTENT},
@@ -175,15 +174,19 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"IsLdwEnabled", PERSISTENT},
     {"IsMetric", PERSISTENT},
     {"IsOffroad", CLEAR_ON_MANAGER_START},
+    {"IsOnroad", PERSISTENT},
     {"IsRHD", PERSISTENT},
     {"IsTakingSnapshot", CLEAR_ON_MANAGER_START},
     {"IsUpdateAvailable", CLEAR_ON_MANAGER_START},
-    {"IsUploadRawEnabled", PERSISTENT},
+    {"UploadRaw", PERSISTENT},
     {"LastAthenaPingTime", PERSISTENT},
     {"LastGPSPosition", PERSISTENT},
     {"LastUpdateException", PERSISTENT},
     {"LastUpdateTime", PERSISTENT},
     {"LiveParameters", PERSISTENT},
+    {"MapboxToken", PERSISTENT},
+    {"NavDestination", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_OFF},
+    {"NavSettingTime24h", PERSISTENT},
     {"OpenpilotEnabledToggle", PERSISTENT},
     {"PandaFirmware", CLEAR_ON_MANAGER_START | CLEAR_ON_PANDA_DISCONNECT},
     {"PandaFirmwareHex", CLEAR_ON_MANAGER_START | CLEAR_ON_PANDA_DISCONNECT},
@@ -212,7 +215,10 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"Offroad_NeosUpdate", CLEAR_ON_MANAGER_START},
     {"Offroad_UpdateFailed", CLEAR_ON_MANAGER_START},
     {"Offroad_HardwareUnsupported", CLEAR_ON_MANAGER_START},
+    {"Offroad_UnofficialHardware", CLEAR_ON_MANAGER_START},
+    {"Offroad_NvmeMissing", CLEAR_ON_MANAGER_START},
     {"ForcePowerDown", CLEAR_ON_MANAGER_START},
+    {"JoystickDebugMode", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_OFF},
 };
 
 } // namespace
@@ -264,7 +270,7 @@ int Params::put(const char* key, const char* value, size_t value_size) {
     // fsync parent directory
     path = params_path + "/d";
     result = fsync_dir(path.c_str());
-  } while(0);
+  } while (false);
 
   close(tmp_fd);
   remove(tmp_path.c_str());
@@ -315,18 +321,7 @@ int Params::readAll(std::map<std::string, std::string> *params) {
   std::lock_guard<FileLock> lk(file_lock);
 
   std::string key_path = params_path + "/d";
-  DIR *d = opendir(key_path.c_str());
-  if (!d) return -1;
-
-  struct dirent *de = NULL;
-  while ((de = readdir(d))) {
-    if (isalnum(de->d_name[0])) {
-      (*params)[de->d_name] = util::read_file(key_path + "/" + de->d_name);
-    }
-  }
-
-  closedir(d);
-  return 0;
+  return util::read_files_in_dir(key_path, params);
 }
 
 void Params::clearAll(ParamKeyType key_type) {

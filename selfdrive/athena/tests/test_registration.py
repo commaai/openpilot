@@ -8,7 +8,7 @@ from pathlib import Path
 from unittest import mock
 
 from common.params import Params
-from selfdrive.athena.registration import register
+from selfdrive.athena.registration import register, UNREGISTERED_DONGLE_ID
 from selfdrive.athena.tests.helpers import MockResponse
 
 
@@ -64,23 +64,14 @@ class TestRegistration(unittest.TestCase):
       self.assertEqual(m.call_count, 1)
     self.assertEqual(self.params.get("DongleId", encoding='utf-8'), dongle)
 
-  def test_unregistered_pc(self):
+  def test_unregistered(self):
     # no keys, no dongle id
-    with mock.patch("selfdrive.athena.registration.api_get", autospec=True) as m, \
-         mock.patch("selfdrive.athena.registration.PC", new=True):
+    with mock.patch("selfdrive.athena.registration.api_get", autospec=True) as m:
       m.return_value = MockResponse(None, 402)
       dongle = register()
-      self.assertGreater(len(dongle), 0)
       self.assertEqual(m.call_count, 1)
+      self.assertEqual(dongle, UNREGISTERED_DONGLE_ID)
     self.assertEqual(self.params.get("DongleId", encoding='utf-8'), dongle)
-
-  def test_unregistered_non_pc(self):
-    # no keys, no dongle id
-    with mock.patch("selfdrive.athena.registration.api_get", autospec=True) as m, \
-         mock.patch("selfdrive.athena.registration.PC", new=False):
-      m.return_value = MockResponse(None, 402)
-      self.assertIs(register(), None)
-      self.assertEqual(m.call_count, 1)
 
 
 if __name__ == "__main__":

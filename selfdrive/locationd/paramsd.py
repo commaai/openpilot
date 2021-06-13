@@ -8,10 +8,14 @@ import numpy as np
 import cereal.messaging as messaging
 from cereal import car
 from common.params import Params, put_nonblocking
+from common.realtime import DT_MDL
+from common.numpy_fast import clip
 from selfdrive.locationd.models.car_kf import CarKalman, ObservationKind, States
 from selfdrive.locationd.models.constants import GENERATED_DIR
 from selfdrive.swaglog import cloudlog
 
+
+MAX_ANGLE_OFFSET_DELTA = 20 * DT_MDL  # Max 20 deg/s
 
 class ParamsLearner:
   def __init__(self, CP, steer_ratio, stiffness_factor, angle_offset):
@@ -34,13 +38,12 @@ class ParamsLearner:
 
   def handle_log(self, t, which, msg):
     if which == 'liveLocationKalman':
-
       yaw_rate = msg.angularVelocityCalibrated.value[2]
       yaw_rate_std = msg.angularVelocityCalibrated.std[2]
+
       yaw_rate_valid = msg.angularVelocityCalibrated.valid
-      yaw_rate_valid = yaw_rate_valid and math.isfinite(yaw_rate)
-      yaw_rate_valid = yaw_rate_valid and math.isfinite(yaw_rate_std)
-      yaw_rate_valid = yaw_rate_valid and yaw_rate_std < 1e6
+      yaw_rate_valid = yaw_rate_valid and 0 < yaw_rate_std < 10  # rad/s
+      yaw_rate_valid = yaw_rate_valid and abs(yaw_rate) < 1  # rad/s
 
       if self.active:
         if msg.inputsOK and msg.posenetOK and yaw_rate_valid:
@@ -122,6 +125,9 @@ def main(sm=None, pm=None):
 
   learner = ParamsLearner(CP, params['steerRatio'], params['stiffnessFactor'], math.radians(params['angleOffsetAverageDeg']))
 
+  angle_offset_average = params['angleOffsetAverageDeg']
+  angle_offset = angle_offset_average
+
   while True:
     sm.update()
 
@@ -137,6 +143,9 @@ def main(sm=None, pm=None):
         learner = ParamsLearner(CP, CP.steerRatio, 1.0, 0.0)
         x = learner.kf.x
 
+      angle_offset_average = clip(math.degrees(x[States.ANGLE_OFFSET]), angle_offset_average - MAX_ANGLE_OFFSET_DELTA, angle_offset_average + MAX_ANGLE_OFFSET_DELTA)
+      angle_offset = clip(math.degrees(x[States.ANGLE_OFFSET] + x[States.ANGLE_OFFSET_FAST]), angle_offset - MAX_ANGLE_OFFSET_DELTA, angle_offset + MAX_ANGLE_OFFSET_DELTA)
+
       msg = messaging.new_message('liveParameters')
       msg.logMonoTime = sm.logMonoTime['carState']
 
@@ -144,8 +153,8 @@ def main(sm=None, pm=None):
       msg.liveParameters.sensorValid = True
       msg.liveParameters.steerRatio = float(x[States.STEER_RATIO])
       msg.liveParameters.stiffnessFactor = float(x[States.STIFFNESS])
-      msg.liveParameters.angleOffsetAverageDeg = math.degrees(x[States.ANGLE_OFFSET])
-      msg.liveParameters.angleOffsetDeg = msg.liveParameters.angleOffsetAverageDeg + math.degrees(x[States.ANGLE_OFFSET_FAST])
+      msg.liveParameters.angleOffsetAverageDeg = angle_offset_average
+      msg.liveParameters.angleOffsetDeg = angle_offset
       msg.liveParameters.valid = all((
         abs(msg.liveParameters.angleOffsetAverageDeg) < 10.0,
         abs(msg.liveParameters.angleOffsetDeg) < 10.0,

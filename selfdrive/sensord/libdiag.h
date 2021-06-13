@@ -1,5 +1,4 @@
-#ifndef LIBDIAG_H
-#define LIBDIAG_H
+#pragma once
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -35,6 +34,4 @@ int diag_send_dci_async_req(int client_id, unsigned char buf[], int bytes, unsig
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

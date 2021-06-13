@@ -1,16 +1,16 @@
+#include "ublox_msg.h"
+
+#include <unistd.h>
+
+#include <cassert>
+#include <chrono>
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
-#include <unistd.h>
-#include <cmath>
 #include <ctime>
-#include <chrono>
-#include <iostream>
-#include <cassert>
 #include <unordered_map>
 
-#include "common/swaglog.h"
-
-#include "ublox_msg.h"
+#include "selfdrive/common/swaglog.h"
 
 const double gpsPi = 3.1415926535898;
 #define UBLOX_MSG_SIZE(hdr) (*(uint16_t *)&hdr[4])
@@ -302,6 +302,7 @@ kj::Array<capnp::word> UbloxMsgParser::gen_mon_hw(ubx_t::mon_hw_t *msg) {
   MessageBuilder msg_builder;
   auto hwStatus = msg_builder.initEvent().initUbloxGnss().initHwStatus();
   hwStatus.setNoisePerMS(msg->noise_per_ms());
+  hwStatus.setFlags(msg->flags());
   hwStatus.setAgcCnt(msg->agc_cnt());
   hwStatus.setAStatus((cereal::UbloxGnss::HwStatus::AntennaSupervisorState) msg->a_status());
   hwStatus.setAPower((cereal::UbloxGnss::HwStatus::AntennaPowerStatus) msg->a_power());

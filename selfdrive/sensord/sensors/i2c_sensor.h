@@ -1,10 +1,11 @@
 #pragma once
 
 #include <cstdint>
+
 #include "cereal/gen/cpp/log.capnp.h"
-#include "common/i2c.h"
-#include "sensors/sensor.h"
-#include "sensors/constants.h"
+#include "selfdrive/common/i2c.h"
+#include "selfdrive/sensord/sensors/constants.h"
+#include "selfdrive/sensord/sensors/sensor.h"
 
 int16_t read_12_bit(uint8_t lsb, uint8_t msb);
 int16_t read_16_bit(uint8_t lsb, uint8_t msb);

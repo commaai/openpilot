@@ -1,27 +1,26 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <stdbool.h>
-#include <string.h>
-#include <assert.h>
-#include <time.h>
-#include <errno.h>
-#include <unistd.h>
-#include <sys/stat.h>
+#include "selfdrive/loggerd/logger.h"
 
-#include <iostream>
+#include <sys/stat.h>
+#include <unistd.h>
+
+#include <cassert>
+#include <cerrno>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <ctime>
 #include <fstream>
+#include <iostream>
 #include <streambuf>
 #ifdef QCOM
 #include <cutils/properties.h>
 #endif
 
-#include "common/swaglog.h"
-#include "common/params.h"
-#include "common/version.h"
-#include "messaging.h"
-#include "logger.h"
-
+#include "cereal/messaging/messaging.h"
+#include "selfdrive/common/params.h"
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/common/version.h"
 
 // ***** logging helpers *****
 
@@ -53,9 +52,9 @@ kj::Array<capnp::word> logger_build_init_data() {
   MessageBuilder msg;
   auto init = msg.initEvent().initInitData();
 
-  if (util::file_exists("/EON")) {
+  if (Hardware::EON()) {
     init.setDeviceType(cereal::InitData::DeviceType::NEO);
-  } else if (util::file_exists("/TICI")) {
+  } else if (Hardware::TICI()) {
     init.setDeviceType(cereal::InitData::DeviceType::TICI);
   } else {
     init.setDeviceType(cereal::InitData::DeviceType::PC);
@@ -76,6 +75,7 @@ kj::Array<capnp::word> logger_build_init_data() {
   }
 
   init.setKernelVersion(util::read_file("/proc/version"));
+  init.setOsVersion(util::read_file("/VERSION"));
 
 #ifdef QCOM
   {
@@ -130,10 +130,11 @@ void log_init_data(LoggerState *s) {
 }
 
 
-static void log_sentinel(LoggerState *s, cereal::Sentinel::SentinelType type) {
+static void log_sentinel(LoggerState *s, cereal::Sentinel::SentinelType type, int signal=0) {
   MessageBuilder msg;
   auto sen = msg.initEvent().initSentinel();
   sen.setType(type);
+  sen.setSignal(signal);
   auto bytes = msg.toBytes();
 
   logger_log(s, bytes.begin(), bytes.size(), true);
@@ -244,8 +245,9 @@ void logger_log(LoggerState *s, uint8_t* data, size_t data_size, bool in_qlog) {
   pthread_mutex_unlock(&s->lock);
 }
 
-void logger_close(LoggerState *s) {
-  log_sentinel(s, cereal::Sentinel::SentinelType::END_OF_ROUTE);
+void logger_close(LoggerState *s, ExitHandler *exit_handler) {
+  int signal = exit_handler == nullptr ? 0 : exit_handler->signal.load();
+  log_sentinel(s, cereal::Sentinel::SentinelType::END_OF_ROUTE, signal);
 
   pthread_mutex_lock(&s->lock);
   if (s->cur_handle) {

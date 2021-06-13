@@ -9,6 +9,8 @@ from selfdrive.loggerd.uploader import listdir_by_creation
 MIN_BYTES = 5 * 1024 * 1024 * 1024
 MIN_PERCENT = 10
 
+DELETE_LAST = ['boot', 'crash']
+
 
 def deleter_thread(exit_event):
   while not exit_event.is_set():
@@ -17,7 +19,7 @@ def deleter_thread(exit_event):
 
     if out_of_percent or out_of_bytes:
       # remove the earliest directory we can
-      dirs = listdir_by_creation(ROOT)
+      dirs = sorted(listdir_by_creation(ROOT), key=lambda x: x in DELETE_LAST)
       for delete_dir in dirs:
         delete_path = os.path.join(ROOT, delete_dir)
 

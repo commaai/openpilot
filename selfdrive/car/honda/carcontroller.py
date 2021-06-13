@@ -62,7 +62,7 @@ def process_hud_alert(hud_alert):
   # priority is: FCW, steer required, all others
   if hud_alert == VisualAlert.fcw:
     fcw_display = VISUAL_HUD[hud_alert.raw]
-  elif hud_alert == VisualAlert.steerRequired:
+  elif hud_alert in [VisualAlert.steerRequired, VisualAlert.ldw]:
     steer_required = VISUAL_HUD[hud_alert.raw]
   else:
     acc_alert = VISUAL_HUD[hud_alert.raw]
@@ -100,6 +100,10 @@ class CarController():
     if not enabled and CS.out.cruiseState.enabled:
       # send pcm acc cancel cmd if drive is disabled but pcm is still on, or if the system can't be activated
       pcm_cancel_cmd = True
+
+    # Never send cancel command if we never enter cruise state (no cruise if pedal)
+    # Cancel cmd causes brakes to release at a standstill causing grinding
+    pcm_cancel_cmd = pcm_cancel_cmd and CS.CP.enableCruise
 
     # *** rate limit after the enable check ***
     self.brake_last = rate_limit(brake, self.brake_last, -2., DT_CTRL)

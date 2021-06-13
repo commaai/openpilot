@@ -1,6 +1,7 @@
 import time
 from collections import defaultdict
 from functools import partial
+from typing import Optional
 
 import cereal.messaging as messaging
 from selfdrive.swaglog import cloudlog
@@ -8,7 +9,7 @@ from selfdrive.boardd.boardd import can_list_to_can_capnp
 from panda.python.uds import CanClient, IsoTpMessage, FUNCTIONAL_ADDRS, get_rx_addr_for_tx_addr
 
 
-class IsoTpParallelQuery():
+class IsoTpParallelQuery:
   def __init__(self, sendcan, logcan, bus, addrs, request, response, response_offset=0x8, functional_addr=False, debug=False):
     self.sendcan = sendcan
     self.logcan = logcan
@@ -103,7 +104,7 @@ class IsoTpParallelQuery():
         break
 
       for tx_addr, msg in msgs.items():
-        dat = msg.recv()
+        dat: Optional[bytes] = msg.recv()
 
         if not dat:
           continue
@@ -121,7 +122,7 @@ class IsoTpParallelQuery():
             request_done[tx_addr] = True
         else:
           request_done[tx_addr] = True
-          cloudlog.warning(f"iso-tp query bad response: 0x{bytes.hex(dat)}")
+          cloudlog.warning(f"iso-tp query bad response: 0x{dat.hex()}")
 
       if time.time() - start_time > timeout:
         break

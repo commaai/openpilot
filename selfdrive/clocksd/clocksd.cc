@@ -1,8 +1,9 @@
-#include <stdio.h>
-#include <stdint.h>
-#include <unistd.h>
 #include <sys/resource.h>
 #include <sys/time.h>
+#include <unistd.h>
+
+#include <cstdint>
+#include <cstdio>
 
 // Apple doesn't have timerfd
 #ifdef __APPLE__
@@ -14,9 +15,9 @@
 #include <cassert>
 #include <chrono>
 
-#include "messaging.h"
-#include "common/timing.h"
-#include "common/util.h"
+#include "cereal/messaging/messaging.h"
+#include "selfdrive/common/timing.h"
+#include "selfdrive/common/util.h"
 
 ExitHandler do_exit;
 
@@ -52,7 +53,7 @@ int main() {
     if (err < 0) break;
 #else
   // Just run at 1Hz on apple
-  while (!do_exit){
+  while (!do_exit) {
     util::sleep_for(1000);
 #endif
 

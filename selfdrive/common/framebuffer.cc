@@ -1,15 +1,15 @@
-#include "framebuffer.h"
-#include "util.h"
+#include "selfdrive/common/framebuffer.h"
+
 #include <cstdio>
 #include <cassert>
+
+#include "selfdrive/common/util.h"
 
 #include <ui/DisplayInfo.h>
 
 #include <gui/ISurfaceComposer.h>
 #include <gui/Surface.h>
 #include <gui/SurfaceComposerClient.h>
-
-
 #include <GLES2/gl2.h>
 #include <EGL/eglext.h>
 

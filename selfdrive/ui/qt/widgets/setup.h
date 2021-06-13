@@ -5,7 +5,7 @@
 #include <QVBoxLayout>
 #include <QWidget>
 
-#include "api.h"
+#include "selfdrive/ui/qt/api.h"
 
 class PairingQRWidget : public QWidget {
   Q_OBJECT
@@ -15,8 +15,8 @@ public:
 
 private:
   QLabel* qrCode;
-  void updateQrCode(QString text);
-  void showEvent(QShowEvent *event);
+  void updateQrCode(const QString &text);
+  void showEvent(QShowEvent *event) override;
 
 private slots:
   void refresh();

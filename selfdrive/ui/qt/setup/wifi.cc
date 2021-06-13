@@ -1,22 +1,24 @@
-#include <stdio.h>
-#include <stdlib.h>
+#include "selfdrive/ui/qt/setup/wifi.h"
+
 #include <curl/curl.h>
 
+#include <cstdio>
+#include <cstdlib>
+
+#include <QApplication>
 #include <QLabel>
 #include <QVBoxLayout>
-#include <QApplication>
 
-#include "wifi.h"
-#include "offroad/networking.h"
-#include "widgets/input.h"
-#include "qt_window.h"
+#include "selfdrive/ui/qt/offroad/networking.h"
+#include "selfdrive/ui/qt/qt_window.h"
+#include "selfdrive/ui/qt/widgets/input.h"
 
 void WifiSetup::finish() {
   qApp->exit();
 }
 
-WifiSetup::WifiSetup(QWidget *parent) {
-  QHBoxLayout *main_layout = new QHBoxLayout();
+WifiSetup::WifiSetup(QWidget *parent) : QWidget(parent) {
+  QHBoxLayout *main_layout = new QHBoxLayout(this);
 
   QPushButton *finish_btn = new QPushButton("Exit");
   finish_btn->setFixedSize(400, 200);
@@ -27,10 +29,9 @@ WifiSetup::WifiSetup(QWidget *parent) {
   QWidget* n = new Networking(this, true);
 
   // Next 5 lines to keep the same stylesheet on the networking widget
-  QLayout* backgroundLayout = new QVBoxLayout();
-  backgroundLayout->addWidget(n);
   QWidget* q = new QWidget();
-  q->setLayout(backgroundLayout);
+  QLayout* backgroundLayout = new QVBoxLayout(q);
+  backgroundLayout->addWidget(n);
   q->setStyleSheet(R"(
   * {
     background-color: #292929;
@@ -38,7 +39,6 @@ WifiSetup::WifiSetup(QWidget *parent) {
   )");
   main_layout->addWidget(q, 1);
 
-  setLayout(main_layout);
   setStyleSheet(R"(
     * {
       background-color: black;

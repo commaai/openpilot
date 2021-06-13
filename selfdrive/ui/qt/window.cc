@@ -1,8 +1,9 @@
-#include "window.h"
+#include "selfdrive/ui/qt/window.h"
+
 #include "selfdrive/hardware/hw.h"
 
 MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
-  main_layout = new QStackedLayout;
+  main_layout = new QStackedLayout(this);
   main_layout->setMargin(0);
 
   homeWindow = new HomeWindow(this);
@@ -19,12 +20,19 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   QObject::connect(settingsWindow, &SettingsWindow::closeSettings, this, &MainWindow::closeSettings);
   QObject::connect(&qs, &QUIState::offroadTransition, settingsWindow, &SettingsWindow::offroadTransition);
   QObject::connect(settingsWindow, &SettingsWindow::reviewTrainingGuide, this, &MainWindow::reviewTrainingGuide);
+  QObject::connect(settingsWindow, &SettingsWindow::showDriverView, [=] {
+    homeWindow->showDriverView(true);
+  });
 
   onboardingWindow = new OnboardingWindow(this);
+  onboardingDone = onboardingWindow->isOnboardingDone();
   main_layout->addWidget(onboardingWindow);
 
   main_layout->setCurrentWidget(onboardingWindow);
-  QObject::connect(onboardingWindow, &OnboardingWindow::onboardingDone, this, &MainWindow::closeSettings);
+  QObject::connect(onboardingWindow, &OnboardingWindow::onboardingDone, [=]() {
+    onboardingDone = true;
+    closeSettings();
+  });
   onboardingWindow->updateActiveScreen();
 
   device.setAwake(true, true);
@@ -32,8 +40,12 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   QObject::connect(&qs, &QUIState::offroadTransition, this, &MainWindow::offroadTransition);
   QObject::connect(&device, &Device::displayPowerChanged, this, &MainWindow::closeSettings);
 
+  // load fonts
+  QFontDatabase::addApplicationFont("../assets/fonts/opensans_regular.ttf");
+  QFontDatabase::addApplicationFont("../assets/fonts/opensans_bold.ttf");
+  QFontDatabase::addApplicationFont("../assets/fonts/opensans_semibold.ttf");
+
   // no outline to prevent the focus rectangle
-  setLayout(main_layout);
   setStyleSheet(R"(
     * {
       font-family: Inter;
@@ -42,8 +54,8 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   )");
 }
 
-void MainWindow::offroadTransition(bool offroad){
-  if(!offroad){
+void MainWindow::offroadTransition(bool offroad) {
+  if(!offroad) {
     closeSettings();
   }
 }
@@ -53,15 +65,18 @@ void MainWindow::openSettings() {
 }
 
 void MainWindow::closeSettings() {
-  main_layout->setCurrentWidget(homeWindow);
+  if(onboardingDone) {
+    main_layout->setCurrentWidget(homeWindow);
+  }
 }
 
 void MainWindow::reviewTrainingGuide() {
+  onboardingDone = false;
   main_layout->setCurrentWidget(onboardingWindow);
   onboardingWindow->updateActiveScreen();
 }
 
-bool MainWindow::eventFilter(QObject *obj, QEvent *event){
+bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
   // wake screen on tap
   if (event->type() == QEvent::MouseButtonPress) {
     device.setAwake(true, true);
@@ -69,7 +84,7 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event){
 
 #ifdef QCOM
   // filter out touches while in android activity
-  const QList<QEvent::Type> filter_events = {QEvent::MouseButtonPress, QEvent::MouseMove, QEvent::TouchBegin, QEvent::TouchUpdate, QEvent::TouchEnd};
+  const static QSet<QEvent::Type> filter_events({QEvent::MouseButtonPress, QEvent::MouseMove, QEvent::TouchBegin, QEvent::TouchUpdate, QEvent::TouchEnd});
   if (HardwareEon::launched_activity && filter_events.contains(event->type())) {
     HardwareEon::check_activity();
     if (HardwareEon::launched_activity) {

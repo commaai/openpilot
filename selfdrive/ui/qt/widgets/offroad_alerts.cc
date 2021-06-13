@@ -1,23 +1,22 @@
-#include <QVBoxLayout>
-#include <QHBoxLayout>
-#include <QJsonObject>
-#include <QJsonDocument>
+#include "selfdrive/ui/qt/widgets/offroad_alerts.h"
 
-#include "offroad_alerts.h"
-#include "selfdrive/hardware/hw.h"
+#include <QHBoxLayout>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QVBoxLayout>
+
 #include "selfdrive/common/util.h"
+#include "selfdrive/hardware/hw.h"
 
 OffroadAlert::OffroadAlert(QWidget* parent) : QFrame(parent) {
-  QVBoxLayout *layout = new QVBoxLayout;
-  layout->setMargin(50);
-  layout->setSpacing(30);
+  QVBoxLayout *main_layout = new QVBoxLayout(this);
+  main_layout->setMargin(50);
+  main_layout->setSpacing(30);
 
   QWidget *alerts_widget = new QWidget(this);
-  alerts_layout = new QVBoxLayout;
+  alerts_layout = new QVBoxLayout(alerts_widget);
   alerts_layout->setMargin(0);
   alerts_layout->setSpacing(30);
-  alerts_layout->addStretch(1);
-  alerts_widget->setLayout(alerts_layout);
   alerts_widget->setStyleSheet("background-color: transparent;");
 
   // release notes
@@ -27,14 +26,14 @@ OffroadAlert::OffroadAlert(QWidget* parent) : QFrame(parent) {
   releaseNotes.setAlignment(Qt::AlignTop);
 
   releaseNotesScroll = new ScrollView(&releaseNotes, this);
-  layout->addWidget(releaseNotesScroll);
+  main_layout->addWidget(releaseNotesScroll);
 
   alertsScroll = new ScrollView(alerts_widget, this);
-  layout->addWidget(alertsScroll);
+  main_layout->addWidget(alertsScroll);
 
   // bottom footer, dismiss + reboot buttons
   QHBoxLayout *footer_layout = new QHBoxLayout();
-  layout->addLayout(footer_layout);
+  main_layout->addLayout(footer_layout);
 
   QPushButton *dismiss_btn = new QPushButton("Dismiss");
   dismiss_btn->setFixedSize(400, 125);
@@ -47,7 +46,6 @@ OffroadAlert::OffroadAlert(QWidget* parent) : QFrame(parent) {
   footer_layout->addWidget(&rebootBtn, 0, Qt::AlignBottom | Qt::AlignRight);
   QObject::connect(&rebootBtn, &QPushButton::released, [=]() { Hardware::reboot(); });
 
-  setLayout(layout);
   setStyleSheet(R"(
     * {
       font-size: 48px;
@@ -82,6 +80,7 @@ void OffroadAlert::refresh() {
       l->setVisible(false);
       alerts_layout->addWidget(l);
     }
+    alerts_layout->addStretch(1);
   }
 
   updateAlerts();

@@ -110,7 +110,9 @@ void VisionOverlay::offroadTransition(bool offroad) {
 }
 
 void VisionOverlay::update(const UIState &s) {
-  auto v = s.scene.car_state.getVEgo() * (metric ? 3.6 : 2.2369363);
+  auto &sm = *(s.sm);
+
+  auto v = sm["carState"].getCarState().getVEgo() * (metric ? 3.6 : 2.2369363);
   speed->setText(QString::number((int)v));
   speed_unit->setText(metric ? "km/h" : "mph");
 
@@ -120,8 +122,10 @@ void VisionOverlay::update(const UIState &s) {
     speed->setFixedHeight(fm.tightBoundingRect("0123456789").height());
   }
 
+  auto cs = sm["controlsState"].getControlsState();
+
   const int SET_SPEED_NA = 255;
-  auto vcruise = s.scene.controls_state.getVCruise();
+  auto vcruise = cs.getVCruise();
   if (vcruise != 0 && vcruise != SET_SPEED_NA) {
     auto max = vcruise * (metric ? 1 : 0.6225);
     maxspeed->setText(QString::number((int)max));
@@ -129,10 +133,10 @@ void VisionOverlay::update(const UIState &s) {
     maxspeed->setText("N/A");
   }
 
-  float dm_alpha = s.scene.dmonitoring_state.getIsActiveMode() ? 1.0 : 0.2;
-  monitoring->setVisible(s.scene.controls_state.getAlertSize() == cereal::ControlsState::AlertSize::NONE);
+  float dm_alpha = sm["driverMonitoringState"].getDriverMonitoringState().getIsActiveMode() ? 1.0 : 0.2;
+  monitoring->setVisible(cs.getAlertSize() == cereal::ControlsState::AlertSize::NONE);
   monitoring->setBackground(QColor(0, 0, 0, 70), dm_alpha);
 
   wheel->setBackground(bg_colors[s.status]);
-  wheel->setVisible(s.scene.controls_state.getEngageable());
+  wheel->setVisible(cs.getEngageable());
 }

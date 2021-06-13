@@ -1,13 +1,13 @@
 #pragma once
 
-#include <QLabel>
-#include <QString>
-#include <QWidget>
 #include <QDialog>
+#include <QLabel>
 #include <QLineEdit>
+#include <QString>
 #include <QVBoxLayout>
+#include <QWidget>
 
-#include "keyboard.h"
+#include "selfdrive/ui/qt/widgets/keyboard.h"
 
 class InputDialog : public QDialog {
   Q_OBJECT
@@ -25,7 +25,7 @@ private:
   QLineEdit *line;
   Keyboard *k;
   QLabel *label;
-  QVBoxLayout *layout;
+  QVBoxLayout *main_layout;
 
 public slots:
   int exec() override;
@@ -49,7 +49,7 @@ public:
 
 private:
   QLabel *prompt;
-  QVBoxLayout *layout;
+  QVBoxLayout *main_layout;
 
 public slots:
   int exec() override;

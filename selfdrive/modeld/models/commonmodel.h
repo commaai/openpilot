@@ -1,4 +1,8 @@
 #pragma once
+
+#include <cfloat>
+#include <cstdlib>
+
 #define CL_USE_DEPRECATED_OPENCL_1_2_APIS
 #ifdef __APPLE__
 #include <OpenCL/cl.h>
@@ -6,11 +10,9 @@
 #include <CL/cl.h>
 #endif
 
-#include <float.h>
-#include <stdlib.h>
-#include "common/mat.h"
-#include "transforms/transform.h"
-#include "transforms/loadyuv.h"
+#include "selfdrive/common/mat.h"
+#include "selfdrive/modeld/transforms/loadyuv.h"
+#include "selfdrive/modeld/transforms/transform.h"
 
 const bool send_raw_pred = getenv("SEND_RAW_PRED") != NULL;
 

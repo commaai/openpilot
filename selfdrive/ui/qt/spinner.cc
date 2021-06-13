@@ -1,16 +1,18 @@
-#include <stdio.h>
-#include <string>
-#include <iostream>
+#include "selfdrive/ui/qt/spinner.h"
 
+#include <cstdio>
+#include <iostream>
+#include <string>
+
+#include <QApplication>
+#include <QGridLayout>
+#include <QPainter>
 #include <QString>
 #include <QTransform>
-#include <QGridLayout>
-#include <QApplication>
-#include <QPainter>
 
-#include "spinner.h"
-#include "qt_window.h"
 #include "selfdrive/hardware/hw.h"
+#include "selfdrive/ui/qt/qt_window.h"
+#include "selfdrive/ui/qt/util.h"
 
 TrackWidget::TrackWidget(QWidget *parent) : QWidget(parent) {
   setFixedSize(spinner_size);
@@ -51,8 +53,8 @@ void TrackWidget::paintEvent(QPaintEvent *event) {
 
 // Spinner
 
-Spinner::Spinner(QWidget *parent) {
-  QGridLayout *main_layout = new QGridLayout();
+Spinner::Spinner(QWidget *parent) : QWidget(parent) {
+  QGridLayout *main_layout = new QGridLayout(this);
   main_layout->setSpacing(0);
   main_layout->setMargin(200);
 
@@ -69,7 +71,6 @@ Spinner::Spinner(QWidget *parent) {
   progress_bar->setFixedHeight(20);
   main_layout->addWidget(progress_bar, 1, 0, Qt::AlignHCenter);
 
-  setLayout(main_layout);
   setStyleSheet(R"(
     Spinner {
       background-color: black;
@@ -113,15 +114,7 @@ void Spinner::update(int n) {
 }
 
 int main(int argc, char *argv[]) {
-  QSurfaceFormat fmt;
-#ifdef __APPLE__
-  fmt.setVersion(3, 2);
-  fmt.setProfile(QSurfaceFormat::OpenGLContextProfile::CoreProfile);
-  fmt.setRenderableType(QSurfaceFormat::OpenGL);
-#else
-  fmt.setRenderableType(QSurfaceFormat::OpenGLES);
-#endif
-  QSurfaceFormat::setDefaultFormat(fmt);
+  setQtSurfaceFormat();
 
   Hardware::set_display_power(true);
   Hardware::set_brightness(65);

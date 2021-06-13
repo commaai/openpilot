@@ -1,5 +1,9 @@
 #pragma once
 
+#include <openssl/bio.h>
+#include <openssl/pem.h>
+#include <openssl/rsa.h>
+
 #include <QCryptographicHash>
 #include <QJsonValue>
 #include <QNetworkReply>
@@ -8,11 +12,7 @@
 #include <QString>
 #include <QVector>
 #include <QWidget>
-
 #include <atomic>
-#include <openssl/bio.h>
-#include <openssl/pem.h>
-#include <openssl/rsa.h>
 
 class CommaApi : public QObject {
   Q_OBJECT

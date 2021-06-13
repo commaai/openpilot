@@ -1,15 +1,14 @@
-#include <QLabel>
-#include <QWidget>
-#include <QPushButton>
-#include <QHBoxLayout>
-#include <QVBoxLayout>
 #include <QApplication>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QPushButton>
+#include <QVBoxLayout>
+#include <QWidget>
 
-#include "qt_window.h"
+#include "selfdrive/ui/qt/qt_window.h"
 
 #define USERDATA "/dev/disk/by-partlabel/userdata"
 #define NVME "/dev/nvme0n1"
-
 
 bool do_reset() {
   std::vector<const char*> cmds = {
@@ -32,21 +31,21 @@ int main(int argc, char *argv[]) {
   QWidget window;
   setMainWindow(&window);
 
-  QVBoxLayout *layout = new QVBoxLayout();
-  layout->setContentsMargins(125, 125, 125, 125);
+  QVBoxLayout *main_layout = new QVBoxLayout(&window);
+  main_layout->setContentsMargins(125, 125, 125, 125);
 
   QLabel *title = new QLabel("System Reset");
   title->setStyleSheet(R"(
     font-weight: 500;
     font-size: 100px;
   )");
-  layout->addWidget(title, 0, Qt::AlignTop);
+  main_layout->addWidget(title, 0, Qt::AlignTop);
 
   QLabel *body = new QLabel("System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.");
   body->setWordWrap(true);
   body->setAlignment(Qt::AlignCenter);
   body->setStyleSheet("font-size: 65px;");
-  layout->addWidget(body, 1, Qt::AlignCenter);
+  main_layout->addWidget(body, 1, Qt::AlignCenter);
 
   QHBoxLayout *btn_layout = new QHBoxLayout();
 
@@ -75,9 +74,8 @@ int main(int argc, char *argv[]) {
     }
   });
 
-  layout->addLayout(btn_layout);
+  main_layout->addLayout(btn_layout);
 
-  window.setLayout(layout);
   window.setStyleSheet(R"(
     * {
       color: white;

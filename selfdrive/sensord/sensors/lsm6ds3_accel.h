@@ -1,6 +1,6 @@
 #pragma once
 
-#include "sensors/i2c_sensor.h"
+#include "selfdrive/sensord/sensors/i2c_sensor.h"
 
 // Address of the chip on the bus
 #define LSM6DS3_ACCEL_I2C_ADDR       0x6A

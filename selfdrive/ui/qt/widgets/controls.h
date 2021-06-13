@@ -6,11 +6,10 @@
 #include <QPushButton>
 #include <QVBoxLayout>
 
-#include "common/params.h"
-#include "toggle.h"
+#include "selfdrive/common/params.h"
+#include "selfdrive/ui/qt/widgets/toggle.h"
 
 QFrame *horizontal_line(QWidget *parent = nullptr);
-
 class AbstractControl : public QFrame {
   Q_OBJECT
 
@@ -24,7 +23,7 @@ signals:
 
 protected:
   AbstractControl(const QString &title, const QString &desc = "", const QString &icon = "", QWidget *parent = nullptr);
-  void hideEvent(QHideEvent *e);
+  void hideEvent(QHideEvent *e) override;
 
   QSize minimumSizeHint() const override {
     QSize size = QFrame::minimumSizeHint();
@@ -42,7 +41,7 @@ class LabelControl : public AbstractControl {
   Q_OBJECT
 
 public:
-  LabelControl(const QString &title, const QString &text, const QString &desc = "", QWidget *parent = nullptr) : AbstractControl(title, desc, "", parent) {
+  LabelControl(const QString &title, const QString &text = "", const QString &desc = "", QWidget *parent = nullptr) : AbstractControl(title, desc, "", parent) {
     label.setText(text);
     label.setAlignment(Qt::AlignRight | Qt::AlignVCenter);
     hlayout->addWidget(&label);

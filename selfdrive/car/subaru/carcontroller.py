@@ -10,12 +10,12 @@ class CarController():
     self.es_distance_cnt = -1
     self.es_accel_cnt = -1
     self.es_lkas_cnt = -1
-    self.fake_button_prev = 0
+    self.cruise_button_prev = 0
     self.steer_rate_limited = False
 
     self.packer = CANPacker(DBC[CP.carFingerprint]['pt'])
 
-  def update(self, enabled, CS, frame, actuators, pcm_cancel_cmd, visual_alert, left_line, right_line):
+  def update(self, enabled, CS, frame, actuators, pcm_cancel_cmd, visual_alert, left_line, right_line, left_lane_depart, right_lane_depart):
 
     can_sends = []
 
@@ -48,19 +48,19 @@ class CarController():
         # 1 = main, 2 = set shallow, 3 = set deep, 4 = resume shallow, 5 = resume deep
         # disengage ACC when OP is disengaged
         if pcm_cancel_cmd:
-          fake_button = 1
+          cruise_button = 1
         # turn main on if off and past start-up state
         elif not CS.out.cruiseState.available and CS.ready:
-          fake_button = 1
+          cruise_button = 1
         else:
-          fake_button = CS.button
+          cruise_button = CS.cruise_button
 
         # unstick previous mocked button press
-        if fake_button == 1 and self.fake_button_prev == 1:
-          fake_button = 0
-        self.fake_button_prev = fake_button
+        if cruise_button == 1 and self.cruise_button_prev == 1:
+          cruise_button = 0
+        self.cruise_button_prev = cruise_button
 
-        can_sends.append(subarucan.create_es_throttle_control(self.packer, fake_button, CS.es_accel_msg))
+        can_sends.append(subarucan.create_es_throttle_control(self.packer, cruise_button, CS.es_accel_msg))
         self.es_accel_cnt = CS.es_accel_msg["Counter"]
 
     else:
@@ -69,7 +69,7 @@ class CarController():
         self.es_distance_cnt = CS.es_distance_msg["Counter"]
 
       if self.es_lkas_cnt != CS.es_lkas_msg["Counter"]:
-        can_sends.append(subarucan.create_es_lkas(self.packer, CS.es_lkas_msg, visual_alert, left_line, right_line))
+        can_sends.append(subarucan.create_es_lkas(self.packer, CS.es_lkas_msg, visual_alert, left_line, right_line, left_lane_depart, right_lane_depart))
         self.es_lkas_cnt = CS.es_lkas_msg["Counter"]
 
     return can_sends

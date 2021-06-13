@@ -1,11 +1,11 @@
 #pragma once
 
-#include "visionbuf.h"
+#include "cereal/visionipc/visionbuf.h"
 
 #ifdef __APPLE__
-  #include <OpenGL/gl3.h>
+#include <OpenGL/gl3.h>
 #else
-  #include <GLES3/gl3.h>
+#include <GLES3/gl3.h>
 #endif
 
 #ifdef QCOM

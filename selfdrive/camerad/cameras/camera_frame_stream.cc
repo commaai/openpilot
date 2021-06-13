@@ -1,12 +1,12 @@
-#include "camera_frame_stream.h"
+#include "selfdrive/camerad/cameras/camera_frame_stream.h"
 
 #include <unistd.h>
 #include <cassert>
 
 #include <capnp/dynamic.h>
 
-#include "messaging.h"
-#include "common/util.h"
+#include "cereal/messaging/messaging.h"
+#include "selfdrive/common/util.h"
 
 #define FRAME_WIDTH 1164
 #define FRAME_HEIGHT 874
@@ -50,7 +50,7 @@ void run_frame_stream(CameraState &camera, const char* frame_pkt) {
   size_t buf_idx = 0;
   while (!do_exit) {
     sm.update(1000);
-    if(sm.updated(frame_pkt)){
+    if(sm.updated(frame_pkt)) {
       auto msg = static_cast<capnp::DynamicStruct::Reader>(sm[frame_pkt]);
       auto frame = msg.get(frame_pkt).as<capnp::DynamicStruct>();
       camera.buf.camera_bufs_metadata[buf_idx] = {

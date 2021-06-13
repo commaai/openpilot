@@ -1,3 +1,5 @@
+#include "selfdrive/ui/qt/api.h"
+
 #include <QDateTime>
 #include <QDebug>
 #include <QFile>
@@ -5,20 +7,18 @@
 #include <QJsonObject>
 #include <QNetworkReply>
 #include <QNetworkRequest>
-#include <QString>
-#include <QWidget>
-#include <QTimer>
 #include <QRandomGenerator>
+#include <QString>
+#include <QTimer>
+#include <QWidget>
 
-#include "api.h"
-#include "common/params.h"
-#include "common/util.h"
+#include "selfdrive/common/params.h"
+#include "selfdrive/common/util.h"
+#include "selfdrive/hardware/hw.h"
 
-#if defined(QCOM) || defined(QCOM2)
-const std::string private_key_path = "/persist/comma/id_rsa";
-#else
-const std::string private_key_path = util::getenv_default("HOME", "/.comma/persist/comma/id_rsa", "/persist/comma/id_rsa");
-#endif
+const std::string private_key_path =
+    Hardware::PC() ? util::getenv_default("HOME", "/.comma/persist/comma/id_rsa", "/persist/comma/id_rsa")
+                   : "/persist/comma/id_rsa";
 
 QByteArray CommaApi::rsa_sign(const QByteArray &data) {
   auto file = QFile(private_key_path.c_str());
@@ -90,7 +90,7 @@ HttpRequest::HttpRequest(QObject *parent, const QString &requestURL, const QStri
   }
 }
 
-void HttpRequest::sendRequest(const QString &requestURL){
+void HttpRequest::sendRequest(const QString &requestURL) {
   QString token;
   if(create_jwt) {
     token = CommaApi::create_jwt();
@@ -110,12 +110,12 @@ void HttpRequest::sendRequest(const QString &requestURL){
   connect(reply, &QNetworkReply::finished, this, &HttpRequest::requestFinished);
 }
 
-void HttpRequest::requestTimeout(){
+void HttpRequest::requestTimeout() {
   reply->abort();
 }
 
 // This function should always emit something
-void HttpRequest::requestFinished(){
+void HttpRequest::requestFinished() {
   if (reply->error() != QNetworkReply::OperationCanceledError) {
     networkTimer->stop();
     QString response = reply->readAll();

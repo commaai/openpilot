@@ -1,13 +1,15 @@
 #pragma once
 
-#include <QWidget>
+#include <QButtonGroup>
+#include <QFileSystemWatcher>
 #include <QFrame>
-#include <QTimer>
 #include <QLabel>
 #include <QPushButton>
-#include <QButtonGroup>
 #include <QScrollArea>
 #include <QStackedWidget>
+#include <QTimer>
+#include <QWidget>
+
 
 #include "selfdrive/ui/qt/widgets/controls.h"
 
@@ -19,6 +21,7 @@ public:
   explicit DevicePanel(QWidget* parent = nullptr);
 signals:
   void reviewTrainingGuide();
+  void showDriverView();
 };
 
 class TogglesPanel : public QWidget {
@@ -27,30 +30,41 @@ public:
   explicit TogglesPanel(QWidget *parent = nullptr);
 };
 
-class DeveloperPanel : public QFrame {
+class SoftwarePanel : public QWidget {
   Q_OBJECT
 public:
-  explicit DeveloperPanel(QWidget* parent = nullptr);
+  explicit SoftwarePanel(QWidget* parent = nullptr);
 
-protected:
+private:
   void showEvent(QShowEvent *event) override;
-  QList<LabelControl *> labels;
+  void updateLabels();
+
+  LabelControl *gitBranchLbl;
+  LabelControl *gitCommitLbl;
+  LabelControl *osVersionLbl;
+  LabelControl *versionLbl;
+  LabelControl *lastUpdateLbl;
+  ButtonControl *updateBtn;
+
+  Params params;
+  QFileSystemWatcher *fs_watch;
 };
 
 class SettingsWindow : public QFrame {
   Q_OBJECT
 
 public:
-  explicit SettingsWindow(QWidget *parent = 0) : QFrame(parent) {};
+  explicit SettingsWindow(QWidget *parent = 0);
 
 protected:
-  void hideEvent(QHideEvent *event);
-  void showEvent(QShowEvent *event);
+  void hideEvent(QHideEvent *event) override;
+  void showEvent(QShowEvent *event) override;
 
 signals:
   void closeSettings();
   void offroadTransition(bool offroad);
   void reviewTrainingGuide();
+  void showDriverView();
 
 private:
   QPushButton *sidebar_alert_widget;

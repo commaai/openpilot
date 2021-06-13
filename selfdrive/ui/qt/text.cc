@@ -1,13 +1,13 @@
-#include <QLabel>
-#include <QWidget>
-#include <QScrollBar>
-#include <QPushButton>
-#include <QVBoxLayout>
 #include <QApplication>
+#include <QLabel>
+#include <QPushButton>
+#include <QScrollBar>
+#include <QVBoxLayout>
+#include <QWidget>
 
-#include "qt_window.h"
 #include "selfdrive/hardware/hw.h"
-#include "widgets/scrollview.h"
+#include "selfdrive/ui/qt/qt_window.h"
+#include "selfdrive/ui/qt/widgets/scrollview.h"
 
 int main(int argc, char *argv[]) {
   QApplication a(argc, argv);
@@ -17,18 +17,18 @@ int main(int argc, char *argv[]) {
   Hardware::set_display_power(true);
   Hardware::set_brightness(65);
 
-  QGridLayout *layout = new QGridLayout;
-  layout->setMargin(50);
+  QGridLayout *main_layout = new QGridLayout(&window);
+  main_layout->setMargin(50);
 
   QLabel *label = new QLabel(argv[1]);
   label->setWordWrap(true);
   label->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
   ScrollView *scroll = new ScrollView(label);
   scroll->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-  layout->addWidget(scroll, 0, 0, Qt::AlignTop);
+  main_layout->addWidget(scroll, 0, 0, Qt::AlignTop);
 
   // Scroll to the bottom
-  QObject::connect(scroll->verticalScrollBar(), &QAbstractSlider::rangeChanged, [=](){
+  QObject::connect(scroll->verticalScrollBar(), &QAbstractSlider::rangeChanged, [=]() {
     scroll->verticalScrollBar()->setValue(scroll->verticalScrollBar()->maximum());
   });
 
@@ -42,9 +42,8 @@ int main(int argc, char *argv[]) {
   btn->setText("Exit");
   QObject::connect(btn, &QPushButton::released, &a, &QApplication::quit);
 #endif
-  layout->addWidget(btn, 0, 0, Qt::AlignRight | Qt::AlignBottom);
+  main_layout->addWidget(btn, 0, 0, Qt::AlignRight | Qt::AlignBottom);
 
-  window.setLayout(layout);
   window.setStyleSheet(R"(
     * {
       outline: none;

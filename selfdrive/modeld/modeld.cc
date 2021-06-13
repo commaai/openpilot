@@ -1,16 +1,17 @@
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include <mutex>
+
 #include <eigen3/Eigen/Dense>
 
-#include "visionipc_client.h"
-#include "common/swaglog.h"
-#include "common/clutil.h"
-#include "common/util.h"
-#include "common/params.h"
-
-#include "models/driving.h"
-#include "messaging.h"
+#include "cereal/messaging/messaging.h"
+#include "cereal/visionipc/visionipc_client.h"
+#include "selfdrive/common/clutil.h"
+#include "selfdrive/common/params.h"
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/common/util.h"
+#include "selfdrive/hardware/hw.h"
+#include "selfdrive/modeld/models/driving.h"
 
 ExitHandler do_exit;
 // globals
@@ -41,10 +42,10 @@ void calibration_thread(bool wide_camera) {
 
   while (!do_exit) {
     sm.update(100);
-    if(sm.updated("liveCalibration")){
+    if(sm.updated("liveCalibration")) {
       auto extrinsic_matrix = sm["liveCalibration"].getLiveCalibration().getExtrinsicMatrix();
       Eigen::Matrix<float, 3, 4> extrinsic_matrix_eigen;
-      for (int i = 0; i < 4*3; i++){
+      for (int i = 0; i < 4*3; i++) {
         extrinsic_matrix_eigen(i / 4, i % 4) = extrinsic_matrix[i];
       }
 
@@ -133,17 +134,12 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client) {
 int main(int argc, char **argv) {
   set_realtime_priority(54);
 
-#ifdef QCOM
-  set_core_affinity(2);
-#elif QCOM2
-  set_core_affinity(7);
-#endif
-
-  bool wide_camera = false;
-
-#ifdef QCOM2
-  wide_camera = Params().getBool("EnableWideCamera");
-#endif
+  if (Hardware::EON()) {
+    set_core_affinity(2);
+  } else if (Hardware::TICI()) {
+    set_core_affinity(7);  
+  }
+  bool wide_camera = Hardware::TICI() ? Params().getBool("EnableWideCamera") : false;
 
   // start calibration thread
   std::thread thread = std::thread(calibration_thread, wide_camera);

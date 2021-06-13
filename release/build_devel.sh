@@ -67,7 +67,7 @@ git status
 git commit -a -m "openpilot v$VERSION release"
 
 # Run build
-SCONS_CACHE=1 scons -j3
+selfdrive/manager/build.py
 
 if [ ! -z "$CI_PUSH" ]; then
   echo "[-] Pushing to $CI_PUSH T=$SECONDS"

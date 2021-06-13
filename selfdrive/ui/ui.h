@@ -4,25 +4,24 @@
 #include <map>
 #include <memory>
 #include <string>
-#include <sstream>
+
+#include <QObject>
+#include <QTimer>
+#include <QColor>
 
 #include "nanovg.h"
 
-#include "camerad/cameras/camera_common.h"
-#include "common/mat.h"
-#include "common/visionimg.h"
-#include "common/modeldata.h"
-#include "common/params.h"
-#include "common/glutil.h"
-#include "common/util.h"
+#include "cereal/messaging/messaging.h"
+#include "cereal/visionipc/visionipc.h"
+#include "cereal/visionipc/visionipc_client.h"
 #include "common/transformations/orientation.hpp"
-#include "messaging.h"
-#include "visionipc.h"
-#include "visionipc_client.h"
-
-#include <QColor>
-#include <QObject>
-#include <QTimer>
+#include "selfdrive/camerad/cameras/camera_common.h"
+#include "selfdrive/common/glutil.h"
+#include "selfdrive/common/mat.h"
+#include "selfdrive/common/modeldata.h"
+#include "selfdrive/common/params.h"
+#include "selfdrive/common/util.h"
+#include "selfdrive/common/visionimg.h"
 
 #define COLOR_BLACK nvgRGBA(0, 0, 0, 255)
 #define COLOR_BLACK_ALPHA(x) nvgRGBA(0, 0, 0, x)
@@ -31,6 +30,11 @@
 #define COLOR_RED_ALPHA(x) nvgRGBA(201, 34, 49, x)
 #define COLOR_YELLOW nvgRGBA(218, 202, 37, 255)
 #define COLOR_RED nvgRGBA(201, 34, 49, 255)
+
+// TODO: this is also hardcoded in common/transformations/camera.py
+// TODO: choose based on frame input size
+const float y_offset = Hardware::TICI() ? 150.0 : 0.0;
+const float zoom = Hardware::TICI() ? 2912.8 : 2138.5;
 
 typedef struct Rect {
   int x, y, w, h;
@@ -49,12 +53,6 @@ const int footer_h = 280;
 
 const int UI_FREQ = 20;   // Hz
 
-typedef enum NetStatus {
-  NET_CONNECTED,
-  NET_DISCONNECTED,
-  NET_ERROR,
-} NetStatus;
-
 typedef enum UIStatus {
   STATUS_DISENGAGED,
   STATUS_ENGAGED,
@@ -62,11 +60,11 @@ typedef enum UIStatus {
   STATUS_ALERT,
 } UIStatus;
 
-static std::map<UIStatus, QColor> bg_colors = {
-  {STATUS_DISENGAGED, QColor(0x17, 0x33, 0x49, 0xc8)},
-  {STATUS_ENGAGED, QColor(0x17, 0x86, 0x44, 0xf1)},
-  {STATUS_WARNING, QColor(0xDA, 0x6F, 0x25, 0xf1)},
-  {STATUS_ALERT, QColor(0xC9, 0x22, 0x31, 0xf1)},
+const QColor bg_colors [] = {
+  [STATUS_DISENGAGED] =  QColor(0x17, 0x33, 0x49, 0xc8),
+  [STATUS_ENGAGED] = QColor(0x17, 0x86, 0x44, 0xf1),
+  [STATUS_WARNING] = QColor(0xDA, 0x6F, 0x25, 0xf1),
+  [STATUS_ALERT] = QColor(0xC9, 0x22, 0x31, 0xf1),
 };
 
 typedef struct {
@@ -83,22 +81,11 @@ typedef struct UIScene {
   mat3 view_from_calib;
   bool world_objects_visible;
 
-  bool is_rhd;
-  bool driver_view;
-
   cereal::PandaState::PandaType pandaType;
-  NetStatus athenaStatus;
-
-  cereal::DeviceState::Reader deviceState;
-  cereal::RadarState::LeadData::Reader lead_data[2];
-  cereal::CarState::Reader car_state;
-  cereal::ControlsState::Reader controls_state;
-  cereal::DriverState::Reader driver_state;
-  cereal::DriverMonitoringState::Reader dmonitoring_state;
 
   // gps
   int satelliteCount;
-  bool gpsOK;
+  float gpsAccuracy;
 
   // modelV2
   float lane_line_probs[4];
@@ -106,6 +93,8 @@ typedef struct UIScene {
   line_vertices_data track_vertices;
   line_vertices_data lane_line_vertices[4];
   line_vertices_data road_edge_vertices[2];
+
+  bool is_metric;
 
   // lead
   vertex_data lead_vertices[2];
@@ -117,8 +106,8 @@ typedef struct UIScene {
 
 typedef struct UIState {
   VisionIpcClient * vipc_client;
-  VisionIpcClient * vipc_client_front;
   VisionIpcClient * vipc_client_rear;
+  VisionIpcClient * vipc_client_wide;
   VisionBuf * last_frame;
 
   // framebuffer
@@ -139,8 +128,8 @@ typedef struct UIState {
   std::unique_ptr<GLShader> gl_shader;
   std::unique_ptr<EGLImageTexture> texture[UI_BUF_COUNT];
 
-  GLuint frame_vao[2], frame_vbo[2], frame_ibo[2];
-  mat4 rear_frame_mat, front_frame_mat;
+  GLuint frame_vao, frame_vbo, frame_ibo;
+  mat4 rear_frame_mat;
 
   bool awake;
 
@@ -189,8 +178,6 @@ private:
   int awake_timeout = 0;
   float accel_prev = 0;
   float gyro_prev = 0;
-  float brightness_b = 0;
-  float brightness_m = 0;
   float last_brightness = 0;
   FirstOrderFilter brightness_filter;
 

@@ -3,15 +3,15 @@
 #include <cstdlib>
 #include <fstream>
 
-#include "selfdrive/common/util.h"
 #include "selfdrive/common/params.h"
+#include "selfdrive/common/util.h"
 #include "selfdrive/hardware/base.h"
 
 class HardwareTici : public HardwareNone {
 public:
   static constexpr float MAX_VOLUME = 0.5;
   static constexpr float MIN_VOLUME = 0.4;
-
+  static bool TICI() { return true; }
   static std::string get_os_version() {
     return "AGNOS " + util::read_file("/VERSION");
   };

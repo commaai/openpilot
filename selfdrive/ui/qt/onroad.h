@@ -1,4 +1,5 @@
 #pragma once
+
 #include <map>
 
 #include <QSoundEffect>
@@ -8,7 +9,7 @@
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/ui.h"
 #include "selfdrive/ui/qt/onroad/hud.h"
-
+#include "selfdrive/ui/qt/qt_window.h"
 
 typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
 
@@ -24,14 +25,11 @@ protected:
   void paintEvent(QPaintEvent*) override;
 
 private:
-  QColor bg;
-  QLabel *title, *msg;
-  QVBoxLayout *layout;
-
-  void updateAlert(const QString &text1, const QString &text2, float blink_rate,
+  void stopSounds();
+  void playSound(AudibleAlert alert);
+  void updateAlert(const QString &t1, const QString &t2, float blink_rate,
                    const std::string &type, cereal::ControlsState::AlertSize size, AudibleAlert sound);
 
-  // sounds
   std::map<AudibleAlert, std::pair<QString, bool>> sound_map {
     // AudibleAlert, (file path, inf loop)
     {AudibleAlert::CHIME_DISENGAGE, {"../assets/sounds/disengaged.wav", false}},
@@ -43,16 +41,17 @@ private:
     {AudibleAlert::CHIME_ERROR, {"../assets/sounds/error.wav", false}},
     {AudibleAlert::CHIME_PROMPT, {"../assets/sounds/error.wav", false}}
   };
-  float volume = Hardware::MIN_VOLUME;
-  float blinking_rate = 0;
-  std::string alert_type;
-  std::map<AudibleAlert, QSoundEffect> sounds;
 
-  void playSound(AudibleAlert alert);
-  void stopSounds();
+  QColor bg;
+  float volume = Hardware::MIN_VOLUME;
+  std::map<AudibleAlert, QSoundEffect> sounds;
+  float blinking_rate = 0;
+  QString text1, text2;
+  std::string alert_type;
+  cereal::ControlsState::AlertSize alert_size;
 
 public slots:
-  void update(const UIState &s);
+  void updateState(const UIState &s);
   void offroadTransition(bool offroad);
 };
 
@@ -62,12 +61,13 @@ class NvgWindow : public QOpenGLWidget, protected QOpenGLFunctions {
 
 public:
   using QOpenGLWidget::QOpenGLWidget;
-  explicit NvgWindow(QWidget* parent = 0) : QOpenGLWidget(parent) {};
+  explicit NvgWindow(QWidget* parent = 0);
   ~NvgWindow();
 
 protected:
   void paintGL() override;
   void initializeGL() override;
+  void resizeGL(int w, int h) override;
 
 private:
   double prev_draw_t = 0;
@@ -82,16 +82,24 @@ class OnroadWindow : public QWidget {
 
 public:
   OnroadWindow(QWidget* parent = 0);
+  QWidget *map = nullptr;
 
 protected:
   void paintEvent(QPaintEvent *event) override;
 
 private:
   QColor bg;
-  QStackedLayout *layout;
+
+  OnroadAlerts *alerts;
+  NvgWindow *nvg;
+  QStackedLayout *main_layout;
+  QHBoxLayout* split;
 
 signals:
   void update(const UIState &s);
+  void offroadTransitionSignal(bool offroad);
+
+private slots:
   void offroadTransition(bool offroad);
 
 public slots:

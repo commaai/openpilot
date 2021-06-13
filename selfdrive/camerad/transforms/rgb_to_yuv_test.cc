@@ -1,18 +1,19 @@
-#include <memory.h>
-#include <iostream>
-#include <getopt.h>
-#include <math.h>
-#include <fstream>
-#include <cstdlib>
-#include <vector>
-#include <string>
-#include <iomanip>
-#include <thread>
 #include <fcntl.h>
-#include <signal.h>
+#include <getopt.h>
+#include <memory.h>
 #include <unistd.h>
+
 #include <cassert>
+#include <cmath>
+#include <csignal>
 #include <cstdint>
+#include <cstdlib>
+#include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <string>
+#include <thread>
+#include <vector>
 
 #ifdef ANDROID
 
@@ -26,13 +27,11 @@
 
 #endif
 
-#include <libyuv.h>
-
 #include <CL/cl.h>
 
-#include "clutil.h"
-#include "rgb_to_yuv.h"
-
+#include "libyuv.h"
+#include "selfdrive/camerad/transforms/rgb_to_yuv.h"
+#include "selfdrive/common/clutil.h"
 
 static inline double millis_since_boot() {
   struct timespec t;
@@ -146,8 +145,8 @@ int main(int argc, char** argv) {
   int counter = 0;
   srand (time(NULL));
 
-  for (int i = 0; i < 100; i++){
-    for (int i = 0; i < width * height * 3; i++){
+  for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < width * height * 3; i++) {
       rgb_frame[i] = (uint8_t)rand();
     }
 

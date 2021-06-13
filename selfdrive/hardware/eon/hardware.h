@@ -15,6 +15,7 @@ public:
   static constexpr float MAX_VOLUME = 1.0;
   static constexpr float MIN_VOLUME = 0.5;
 
+  static bool EON() { return true; }
   static std::string get_os_version() {
     return "NEOS " + util::read_file("/VERSION");
   };
@@ -49,7 +50,7 @@ public:
   }
 
   static void close_activities() {
-    if(launched_activity){
+    if(launched_activity) {
       std::system("pm disable com.android.settings && pm enable com.android.settings");
     }
   }
