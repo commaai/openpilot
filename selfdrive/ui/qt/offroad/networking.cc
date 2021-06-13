@@ -105,7 +105,7 @@ void Networking::refresh() {
 
 void Networking::connectToNetwork(const Network &n) {
   if (wifi->isKnownNetwork(n.ssid)) {
-    activateWifiConnection(n.ssid);
+    wifi->activateWifiConnection(n.ssid);
   } else if (n.security_type == SecurityType::OPEN) {
     wifi->connect(n);
   } else if (n.security_type == SecurityType::WPA) {
