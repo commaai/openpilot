@@ -1,10 +1,7 @@
 #include "selfdrive/ui/replay/filereader.h"
 
 #include <bzlib.h>
-
 #include <QtNetwork>
-
-#include "selfdrive/common/timing.h"
 
 static bool decompressBZ2(std::vector<uint8_t> &dest, const char srcData[], size_t srcSize,
                           size_t outputSizeIncrement = 0x100000U) {
@@ -51,7 +48,11 @@ void FileReader::startHttpRequest() {
   request.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
   reply_ = qnam->get(request);
   connect(reply_, &QNetworkReply::finished, [=]() {
-    emit !reply_->error() ? finished(reply_->readAll()) : failed(reply_->errorString());
+    if (!reply_->error()) {
+      emit finished(reply_->readAll());
+    } else {
+      emit failed(reply_->errorString());
+    }
     reply_->deleteLater();
     reply_ = nullptr;
   });

@@ -50,7 +50,7 @@ public:
   }
 
   static void close_activities() {
-    if(launched_activity){
+    if(launched_activity) {
       std::system("pm disable com.android.settings && pm enable com.android.settings");
     }
   }

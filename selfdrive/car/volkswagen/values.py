@@ -267,15 +267,19 @@ FW_VERSIONS = {
   },
   CAR.TIGUAN_MK2: {
     (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x8704L906027G \xf1\x899893',
       b'\xf1\x8783A907115B \xf1\x890005',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x8709G927158DT\xf1\x893698',
+      b'\xf1\x870DL300013A \xf1\x893005',
     ],
     (Ecu.srs, 0x715, None): [
       b'\xf1\x875Q0959655BM\xf1\x890403\xf1\x82\02316143231313500314641011750179333423100',
+      b'\xf1\x875Q0959655BT\xf1\x890403\xf1\x82\02331310031333336313140013950399333423100',
     ],
     (Ecu.eps, 0x712, None): [
+      b'\xf1\x875QF909144B \xf1\x895582\xf1\x82\00571A60634A1',
       b'\xf1\x875QM909144C \xf1\x891082\xf1\x82\00521A60804A1',
     ],
     (Ecu.fwdRadar, 0x757, None): [
@@ -412,21 +416,26 @@ FW_VERSIONS = {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8704E906027HD\xf1\x893742',
       b'\xf1\x8704L906021DT\xf1\x898127',
+      b'\xf1\x8704L906026BS\xf1\x891541',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x870CW300043B \xf1\x891601',
+      b'\xf1\x870D9300041J \xf1\x894902',
       b'\xf1\x870D9300041P \xf1\x894507',
     ],
     (Ecu.srs, 0x715, None): [
       b'\xf1\x873Q0959655AC\xf1\x890200\xf1\x82\r11120011100010022212110200',
+      b'\xf1\x873Q0959655AS\xf1\x890200\xf1\x82\r11120011100010022212110200',
       b'\xf1\x873Q0959655CN\xf1\x890720\xf1\x82\x0e3221003221002105755331052100',
     ],
     (Ecu.eps, 0x712, None): [
+      b'\xf1\x873Q0909144J \xf1\x895063\xf1\x82\00566A01513A1',
       b'\xf1\x875Q0909144AB\xf1\x891082\xf1\x82\x0521T00403A1',
       b'\xf1\x875Q0909144R \xf1\x891061\xf1\x82\x0516A00604A1',
     ],
     (Ecu.fwdRadar, 0x757, None): [
       b'\xf1\x875Q0907572D \xf1\x890304\xf1\x82\x0101',
+      b'\xf1\x875Q0907572F \xf1\x890400\xf1\x82\00101',
       b'\xf1\x875Q0907572P \xf1\x890682',
     ],
   },

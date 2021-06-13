@@ -12,34 +12,31 @@
 #endif
 
 OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
-  layout = new QStackedLayout(this);
-  layout->setStackingMode(QStackedLayout::StackAll);
+  main_layout = new QStackedLayout(this);
+  main_layout->setStackingMode(QStackedLayout::StackAll);
 
   // old UI on bottom
   nvg = new NvgWindow(this);
   QObject::connect(this, &OnroadWindow::update, nvg, &NvgWindow::update);
 
-  split = new QHBoxLayout();
+  QWidget * split_wrapper = new QWidget;
+  split = new QHBoxLayout(split_wrapper);
   split->setContentsMargins(0, 0, 0, 0);
   split->setSpacing(0);
   split->addWidget(nvg);
 
-
-  QWidget * split_wrapper = new QWidget;
-  split_wrapper->setLayout(split);
-  layout->addWidget(split_wrapper);
+  main_layout->addWidget(split_wrapper);
 
   alerts = new OnroadAlerts(this);
   alerts->setAttribute(Qt::WA_TransparentForMouseEvents, true);
   QObject::connect(this, &OnroadWindow::update, alerts, &OnroadAlerts::updateState);
   QObject::connect(this, &OnroadWindow::offroadTransitionSignal, alerts, &OnroadAlerts::offroadTransition);
   QObject::connect(this, &OnroadWindow::offroadTransitionSignal, this, &OnroadWindow::offroadTransition);
-  layout->addWidget(alerts);
+  main_layout->addWidget(alerts);
 
   // setup stacking order
   alerts->raise();
 
-  setLayout(layout);
   setAttribute(Qt::WA_OpaquePaintEvent);
 }
 
@@ -48,9 +45,11 @@ void OnroadWindow::offroadTransition(bool offroad) {
 #ifdef ENABLE_MAPS
   if (!offroad) {
     QString token = QString::fromStdString(Params().get("MapboxToken"));
-    if (map == nullptr && !token.isEmpty()){
+    if (map == nullptr && !token.isEmpty()) {
       QMapboxGLSettings settings;
-      settings.setCacheDatabasePath("/data/mbgl-cache.db");
+      if (!Hardware::PC()) {
+        settings.setCacheDatabasePath("/data/mbgl-cache.db");
+      }
       settings.setCacheDatabaseMaximumSize(20 * 1024 * 1024);
       settings.setAccessToken(token.trimmed());
 
@@ -114,7 +113,7 @@ void OnroadAlerts::offroadTransition(bool offroad) {
 
 void OnroadAlerts::updateAlert(const QString &t1, const QString &t2, float blink_rate,
                                const std::string &type, cereal::ControlsState::AlertSize size, AudibleAlert sound) {
-  if (alert_type.compare(type) == 0 && text1.compare(t1) == 0) {
+  if (alert_type.compare(type) == 0 && text1.compare(t1) == 0 && text2.compare(t2) == 0) {
     return;
   }
 
@@ -164,7 +163,7 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
 
   // draw background + gradient
   p.setPen(Qt::NoPen);
-  p.setCompositionMode(QPainter::CompositionMode_DestinationOver);
+  p.setCompositionMode(QPainter::CompositionMode_SourceOver);
 
   p.setBrush(QBrush(bg));
   p.drawRect(r);
@@ -172,6 +171,8 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
   QLinearGradient g(0, r.y(), 0, r.bottom());
   g.setColorAt(0, QColor::fromRgbF(0, 0, 0, 0.05));
   g.setColorAt(1, QColor::fromRgbF(0, 0, 0, 0.35));
+
+  p.setCompositionMode(QPainter::CompositionMode_DestinationOver);
   p.setBrush(QBrush(g));
   p.fillRect(r, g);
   p.setCompositionMode(QPainter::CompositionMode_SourceOver);
@@ -223,7 +224,7 @@ void NvgWindow::initializeGL() {
 
 void NvgWindow::update(const UIState &s) {
   // Connecting to visionIPC requires opengl to be current
-  if (s.vipc_client->connected){
+  if (s.vipc_client->connected) {
     makeCurrent();
   }
   repaint();

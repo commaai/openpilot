@@ -1,4 +1,4 @@
-#include "input.h"
+#include "selfdrive/ui/qt/widgets/input.h"
 
 #include <QPushButton>
 
@@ -6,9 +6,9 @@
 #include "selfdrive/hardware/hw.h"
 
 InputDialog::InputDialog(const QString &prompt_text, QWidget *parent) : QDialog(parent) {
-  layout = new QVBoxLayout();
-  layout->setContentsMargins(50, 50, 50, 50);
-  layout->setSpacing(20);
+  main_layout = new QVBoxLayout(this);
+  main_layout->setContentsMargins(50, 50, 50, 50);
+  main_layout->setSpacing(20);
 
   // build header
   QHBoxLayout *header_layout = new QHBoxLayout();
@@ -30,10 +30,10 @@ InputDialog::InputDialog(const QString &prompt_text, QWidget *parent) : QDialog(
   QObject::connect(cancel_btn, &QPushButton::released, this, &InputDialog::reject);
   QObject::connect(cancel_btn, &QPushButton::released, this, &InputDialog::cancel);
 
-  layout->addLayout(header_layout);
+  main_layout->addLayout(header_layout);
 
   // text box
-  layout->addSpacing(20);
+  main_layout->addSpacing(20);
   line = new QLineEdit();
   line->setStyleSheet(R"(
     border: none;
@@ -42,11 +42,11 @@ InputDialog::InputDialog(const QString &prompt_text, QWidget *parent) : QDialog(
     font-weight: 500;
     padding: 10px;
   )");
-  layout->addWidget(line, 1, Qt::AlignTop);
+  main_layout->addWidget(line, 1, Qt::AlignTop);
 
   k = new Keyboard(this);
   QObject::connect(k, &Keyboard::emitButton, this, &InputDialog::handleInput);
-  layout->addWidget(k, 2, Qt::AlignBottom);
+  main_layout->addWidget(k, 2, Qt::AlignBottom);
 
   setStyleSheet(R"(
     * {
@@ -55,7 +55,6 @@ InputDialog::InputDialog(const QString &prompt_text, QWidget *parent) : QDialog(
     }
   )");
 
-  setLayout(layout);
 }
 
 QString InputDialog::getText(const QString &prompt, int minLength) {
@@ -74,7 +73,7 @@ int InputDialog::exec() {
   return QDialog::exec();
 }
 
-void InputDialog::show(){
+void InputDialog::show() {
   setMainWindow(this);
 }
 
@@ -84,7 +83,7 @@ void InputDialog::handleInput(const QString &s) {
   }
 
   if (!QString::compare(s,"⏎")) {
-    if (line->text().length() >= minLength){
+    if (line->text().length() >= minLength) {
       done(QDialog::Accepted);
       emitText(line->text());
     } else {
@@ -102,34 +101,34 @@ void InputDialog::handleInput(const QString &s) {
   line->insert(s.left(1));
 }
 
-void InputDialog::setMessage(const QString &message, bool clearInputField){
+void InputDialog::setMessage(const QString &message, bool clearInputField) {
   label->setText(message);
-  if (clearInputField){
+  if (clearInputField) {
     line->setText("");
   }
 }
 
-void InputDialog::setMinLength(int length){
+void InputDialog::setMinLength(int length) {
   minLength = length;
 }
 
 ConfirmationDialog::ConfirmationDialog(const QString &prompt_text, const QString &confirm_text, const QString &cancel_text,
                                        QWidget *parent):QDialog(parent) {
   setWindowFlags(Qt::Popup);
-  layout = new QVBoxLayout();
-  layout->setMargin(25);
+  main_layout = new QVBoxLayout(this);
+  main_layout->setMargin(25);
 
   prompt = new QLabel(prompt_text, this);
   prompt->setWordWrap(true);
   prompt->setAlignment(Qt::AlignHCenter);
   prompt->setStyleSheet(R"(font-size: 55px; font-weight: 400;)");
-  layout->addWidget(prompt, 1, Qt::AlignTop | Qt::AlignHCenter);
+  main_layout->addWidget(prompt, 1, Qt::AlignTop | Qt::AlignHCenter);
 
   // cancel + confirm buttons
   QHBoxLayout *btn_layout = new QHBoxLayout();
   btn_layout->setSpacing(20);
   btn_layout->addStretch(1);
-  layout->addLayout(btn_layout);
+  main_layout->addLayout(btn_layout);
 
   if (cancel_text.length()) {
     QPushButton* cancel_btn = new QPushButton(cancel_text);
@@ -158,8 +157,6 @@ ConfirmationDialog::ConfirmationDialog(const QString &prompt_text, const QString
       background-color: #44444400;
     }
   )");
-
-  setLayout(layout);
 }
 
 bool ConfirmationDialog::alert(const QString &prompt_text, QWidget *parent) {

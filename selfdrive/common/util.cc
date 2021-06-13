@@ -1,8 +1,7 @@
 #include "selfdrive/common/util.h"
 
-#include <errno.h>
-
 #include <cassert>
+#include <cerrno>
 #include <cstring>
 #include <dirent.h>
 #include <fstream>
@@ -77,7 +76,7 @@ std::string read_file(const std::string& fn) {
   return buffer.str();
 }
 
-int read_files_in_dir(std::string path, std::map<std::string, std::string> *contents) {
+int read_files_in_dir(const std::string &path, std::map<std::string, std::string> *contents) {
   DIR *d = opendir(path.c_str());
   if (!d) return -1;
 
@@ -119,7 +118,7 @@ bool file_exists(const std::string& fn) {
 
 std::string getenv_default(const char* env_var, const char * suffix, const char* default_val) {
   const char* env_val = getenv(env_var);
-  if (env_val != NULL){
+  if (env_val != NULL) {
     return std::string(env_val) + std::string(suffix);
   } else {
     return std::string(default_val);
@@ -156,7 +155,7 @@ std::string dir_name(std::string const &path) {
   return path.substr(0, pos);
 }
 
-struct tm get_time(){
+struct tm get_time() {
   time_t rawtime;
   time(&rawtime);
 
@@ -166,7 +165,7 @@ struct tm get_time(){
   return sys_time;
 }
 
-bool time_valid(struct tm sys_time){
+bool time_valid(struct tm sys_time) {
   int year = 1900 + sys_time.tm_year;
   int month = 1 + sys_time.tm_mon;
   return (year > 2020) || (year == 2020 && month >= 10);

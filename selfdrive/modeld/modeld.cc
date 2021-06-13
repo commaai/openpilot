@@ -1,6 +1,5 @@
-#include <stdio.h>
-#include <stdlib.h>
-
+#include <cstdio>
+#include <cstdlib>
 #include <mutex>
 
 #include <eigen3/Eigen/Dense>
@@ -43,10 +42,10 @@ void calibration_thread(bool wide_camera) {
 
   while (!do_exit) {
     sm.update(100);
-    if(sm.updated("liveCalibration")){
+    if(sm.updated("liveCalibration")) {
       auto extrinsic_matrix = sm["liveCalibration"].getLiveCalibration().getExtrinsicMatrix();
       Eigen::Matrix<float, 3, 4> extrinsic_matrix_eigen;
-      for (int i = 0; i < 4*3; i++){
+      for (int i = 0; i < 4*3; i++) {
         extrinsic_matrix_eigen(i / 4, i % 4) = extrinsic_matrix[i];
       }
 

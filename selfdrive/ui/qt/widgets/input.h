@@ -25,7 +25,7 @@ private:
   QLineEdit *line;
   Keyboard *k;
   QLabel *label;
-  QVBoxLayout *layout;
+  QVBoxLayout *main_layout;
 
 public slots:
   int exec() override;
@@ -49,7 +49,7 @@ public:
 
 private:
   QLabel *prompt;
-  QVBoxLayout *layout;
+  QVBoxLayout *main_layout;
 
 public slots:
   int exec() override;

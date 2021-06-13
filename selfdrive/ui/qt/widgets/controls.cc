@@ -1,4 +1,4 @@
-#include "controls.h"
+#include "selfdrive/ui/qt/widgets/controls.h"
 
 QFrame *horizontal_line(QWidget *parent) {
   QFrame *line = new QFrame(parent);
@@ -15,8 +15,8 @@ QFrame *horizontal_line(QWidget *parent) {
 }
 
 AbstractControl::AbstractControl(const QString &title, const QString &desc, const QString &icon, QWidget *parent) : QFrame(parent) {
-  QVBoxLayout *vlayout = new QVBoxLayout();
-  vlayout->setMargin(0);
+  QVBoxLayout *main_layout = new QVBoxLayout(this);
+  main_layout->setMargin(0);
 
   hlayout = new QHBoxLayout;
   hlayout->setMargin(0);
@@ -36,7 +36,7 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
   title_label->setStyleSheet("font-size: 50px; font-weight: 400; text-align: left;");
   hlayout->addWidget(title_label);
 
-  vlayout->addLayout(hlayout);
+  main_layout->addLayout(hlayout);
 
   // description
   if (!desc.isEmpty()) {
@@ -45,7 +45,7 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
     description->setStyleSheet("font-size: 40px; color:grey");
     description->setWordWrap(true);
     description->setVisible(false);
-    vlayout->addWidget(description);
+    main_layout->addWidget(description);
 
     connect(title_label, &QPushButton::clicked, [=]() {
       if (!description->isVisible()) {
@@ -55,12 +55,11 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
     });
   }
 
-  setLayout(vlayout);
   setStyleSheet("background-color: transparent;");
 }
 
-void AbstractControl::hideEvent(QHideEvent *e){
-  if(description != nullptr){
+void AbstractControl::hideEvent(QHideEvent *e) {
+  if(description != nullptr) {
     description->hide();
   }
 }

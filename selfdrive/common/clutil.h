@@ -1,8 +1,7 @@
 #pragma once
 
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdint>
+#include <cstdlib>
 
 #ifdef __APPLE__
 #include <OpenCL/cl.h>

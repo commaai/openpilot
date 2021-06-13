@@ -1,8 +1,4 @@
-#include <errno.h>
 #include <sched.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <sys/cdefs.h>
 #include <sys/resource.h>
 #include <sys/types.h>
@@ -12,6 +8,10 @@
 #include <atomic>
 #include <bitset>
 #include <cassert>
+#include <cerrno>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
 #include <thread>
 #include <unordered_map>
 
@@ -51,7 +51,7 @@ void safety_setter_thread() {
 
   // switch to SILENT when CarVin param is read
   while (true) {
-    if (do_exit || !panda->connected){
+    if (do_exit || !panda->connected) {
       safety_setter_thread_running = false;
       return;
     };
@@ -72,7 +72,7 @@ void safety_setter_thread() {
   std::string params;
   LOGW("waiting for params to set safety model");
   while (true) {
-    if (do_exit || !panda->connected){
+    if (do_exit || !panda->connected) {
       safety_setter_thread_running = false;
       return;
     };
@@ -124,7 +124,7 @@ bool usb_connect() {
     // Convert to hex for offroad
     char fw_sig_hex_buf[16] = {0};
     const uint8_t *fw_sig_buf = fw_sig->data();
-    for (size_t i = 0; i < 8; i++){
+    for (size_t i = 0; i < 8; i++) {
       fw_sig_hex_buf[2*i] = NIBBLE_TO_HEX((uint8_t)fw_sig_buf[i] >> 4);
       fw_sig_hex_buf[2*i+1] = NIBBLE_TO_HEX((uint8_t)fw_sig_buf[i] & 0xF);
     }
@@ -146,7 +146,7 @@ bool usb_connect() {
   }
 #endif
 
-  if (tmp_panda->has_rtc){
+  if (tmp_panda->has_rtc) {
     setenv("TZ","UTC",1);
     struct tm sys_time = util::get_time();
     struct tm rtc_time = tmp_panda->get_rtc();
@@ -199,7 +199,7 @@ void can_send_thread(bool fake_send) {
   while (!do_exit && panda->connected) {
     Message * msg = subscriber->receive();
 
-    if (!msg){
+    if (!msg) {
       if (errno == EINTR) {
         do_exit = true;
       }
@@ -211,7 +211,7 @@ void can_send_thread(bool fake_send) {
 
     //Dont send if older than 1 second
     if (nanos_since_boot() - event.getLogMonoTime() < 1e9) {
-      if (!fake_send){
+      if (!fake_send) {
         panda->can_send(event.getSendcan());
       }
     }
@@ -241,7 +241,7 @@ void can_recv_thread() {
     if (remaining > 0) {
       std::this_thread::sleep_for(std::chrono::nanoseconds(remaining));
     } else {
-      if (ignition){
+      if (ignition) {
         LOGW("missed cycles (%d) %lld", (int)-1*remaining/dt, remaining);
       }
       next_frame_time = cur_time;
@@ -292,7 +292,7 @@ void panda_state_thread(bool spoofing_started) {
 
 #ifndef __x86_64__
     bool power_save_desired = !ignition;
-    if (pandaState.power_save_enabled != power_save_desired){
+    if (pandaState.power_save_enabled != power_save_desired) {
       panda->set_power_saving(power_save_desired);
     }
 
@@ -317,12 +317,12 @@ void panda_state_thread(bool spoofing_started) {
     }
 
     // Write to rtc once per minute when no ignition present
-    if ((panda->has_rtc) && !ignition && (no_ignition_cnt % 120 == 1)){
+    if ((panda->has_rtc) && !ignition && (no_ignition_cnt % 120 == 1)) {
       // Write time to RTC if it looks reasonable
       setenv("TZ","UTC",1);
       struct tm sys_time = util::get_time();
 
-      if (util::time_valid(sys_time)){
+      if (util::time_valid(sys_time)) {
         struct tm rtc_time = panda->get_rtc();
         double seconds = difftime(mktime(&rtc_time), mktime(&sys_time));
 
@@ -388,7 +388,7 @@ void panda_state_thread(bool spoofing_started) {
 
     size_t i = 0;
     for (size_t f = size_t(cereal::PandaState::FaultType::RELAY_MALFUNCTION);
-        f <= size_t(cereal::PandaState::FaultType::INTERRUPT_RATE_TIM9); f++){
+        f <= size_t(cereal::PandaState::FaultType::INTERRUPT_RATE_TIM9); f++) {
       if (fault_bits.test(f)) {
         faults.set(i, cereal::PandaState::FaultType(f));
         i++;
@@ -415,11 +415,11 @@ void hardware_control_thread() {
     cnt++;
     sm.update(1000); // TODO: what happens if EINTR is sent while in sm.update?
 
-    if (!Hardware::PC() && sm.updated("deviceState")){
+    if (!Hardware::PC() && sm.updated("deviceState")) {
       // Charging mode
       bool charging_disabled = sm["deviceState"].getDeviceState().getChargingDisabled();
-      if (charging_disabled != prev_charging_disabled){
-        if (charging_disabled){
+      if (charging_disabled != prev_charging_disabled) {
+        if (charging_disabled) {
           panda->set_usb_power_mode(cereal::PandaState::UsbPowerMode::CLIENT);
           LOGW("TURN OFF CHARGING!\n");
         } else {
@@ -432,15 +432,15 @@ void hardware_control_thread() {
 
     // Other pandas don't have fan/IR to control
     if (panda->hw_type != cereal::PandaState::PandaType::UNO && panda->hw_type != cereal::PandaState::PandaType::DOS) continue;
-    if (sm.updated("deviceState")){
+    if (sm.updated("deviceState")) {
       // Fan speed
       uint16_t fan_speed = sm["deviceState"].getDeviceState().getFanSpeedPercentDesired();
-      if (fan_speed != prev_fan_speed || cnt % 100 == 0){
+      if (fan_speed != prev_fan_speed || cnt % 100 == 0) {
         panda->set_fan_speed(fan_speed);
         prev_fan_speed = fan_speed;
       }
     }
-    if (sm.updated("driverCameraState")){
+    if (sm.updated("driverCameraState")) {
       auto event = sm["driverCameraState"];
       int cur_integ_lines = event.getDriverCameraState().getIntegLines();
       last_front_frame_t = event.getLogMonoTime();
@@ -455,11 +455,11 @@ void hardware_control_thread() {
     }
     // Disable ir_pwr on front frame timeout
     uint64_t cur_t = nanos_since_boot();
-    if (cur_t - last_front_frame_t > 1e9){
+    if (cur_t - last_front_frame_t > 1e9) {
       ir_pwr = 0;
     }
 
-    if (ir_pwr != prev_ir_pwr || cnt % 100 == 0 || ir_pwr >= 50.0){
+    if (ir_pwr != prev_ir_pwr || cnt % 100 == 0 || ir_pwr >= 50.0) {
       panda->set_ir_pwr(ir_pwr);
       prev_ir_pwr = ir_pwr;
     }
@@ -492,10 +492,10 @@ void pigeon_thread() {
 
     // Parse message header
     if (ignition && recv.length() >= 3) {
-      if (recv[0] == (char)ublox::PREAMBLE1 && recv[1] == (char)ublox::PREAMBLE2){
+      if (recv[0] == (char)ublox::PREAMBLE1 && recv[1] == (char)ublox::PREAMBLE2) {
         const char msg_cls = recv[2];
         uint64_t t = nanos_since_boot();
-        if (t > last_recv_time[msg_cls]){
+        if (t > last_recv_time[msg_cls]) {
           last_recv_time[msg_cls] = t;
         }
       }
@@ -512,12 +512,12 @@ void pigeon_thread() {
     }
 
     // Check based on null bytes
-    if (ignition && recv.length() > 0 && recv[0] == (char)0x00){
+    if (ignition && recv.length() > 0 && recv[0] == (char)0x00) {
       need_reset = true;
       LOGW("received invalid ublox message while onroad, resetting panda GPS");
     }
 
-    if (recv.length() > 0){
+    if (recv.length() > 0) {
       pigeon_publish_raw(pm, recv);
     }
 
@@ -559,7 +559,7 @@ int main() {
   err = set_core_affinity(Hardware::TICI() ? 4 : 3);
   LOG("set affinity returns %d", err);
 
-  while (!do_exit){
+  while (!do_exit) {
     std::vector<std::thread> threads;
     threads.push_back(std::thread(panda_state_thread, getenv("STARTED") != nullptr));
 

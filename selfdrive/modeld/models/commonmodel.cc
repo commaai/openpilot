@@ -1,9 +1,8 @@
-#include "commonmodel.h"
-
-#include <assert.h>
-#include <math.h>
+#include "selfdrive/modeld/models/commonmodel.h"
 
 #include <algorithm>
+#include <cassert>
+#include <cmath>
 
 #include "selfdrive/common/clutil.h"
 #include "selfdrive/common/mat.h"

@@ -1,10 +1,10 @@
 #include "selfdrive/ui/replay/framereader.h"
 
-#include <assert.h>
 #include <unistd.h>
 
-#include <QDebug>
+#include <cassert>
 
+#include <QDebug>
 
 static int ffmpeg_lockmgr_cb(void **arg, enum AVLockOp op) {
   std::mutex *mutex = (std::mutex *)*arg;
@@ -143,7 +143,7 @@ void FrameReader::decodeThread() {
   int idx = 0;
   while (!exit_) {
     const int from = std::max(idx, 0);
-    const int to = std::min(idx + 20, (int)frames_.size());
+    const int to = std::min(from + 20, (int)frames_.size());
     for (int i = 0; i < frames_.size() && !exit_; ++i) {
       Frame &frame = frames_[i];
       if (i >= from && i < to) {
