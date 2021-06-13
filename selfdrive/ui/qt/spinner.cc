@@ -54,7 +54,7 @@ void TrackWidget::paintEvent(QPaintEvent *event) {
 // Spinner
 
 Spinner::Spinner(QWidget *parent) : QWidget(parent) {
-  QGridLayout *main_layout = new QGridLayout();
+  QGridLayout *main_layout = new QGridLayout(this);
   main_layout->setSpacing(0);
   main_layout->setMargin(200);
 
@@ -71,7 +71,6 @@ Spinner::Spinner(QWidget *parent) : QWidget(parent) {
   progress_bar->setFixedHeight(20);
   main_layout->addWidget(progress_bar, 1, 0, Qt::AlignHCenter);
 
-  setLayout(main_layout);
   setStyleSheet(R"(
     Spinner {
       background-color: black;

@@ -65,6 +65,5 @@ DriveStats::DriveStats(QWidget* parent) : QWidget(parent) {
   RequestRepeater *repeater = new RequestRepeater(this, url, "ApiCache_DriveStats", 30);
   QObject::connect(repeater, &RequestRepeater::receivedResponse, this, &DriveStats::parseResponse);
 
-  setLayout(gl);
   setStyleSheet(R"(QLabel {font-size: 48px; font-weight: 500;})");
 }
