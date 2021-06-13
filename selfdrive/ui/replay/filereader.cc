@@ -129,8 +129,6 @@ void LogReader::parseEvents(const QByteArray &dat) {
 
       events.push_back(evt.release());
     } catch (const kj::Exception &e) {
-      // partial messages trigger this
-      // qDebug() << e.getDescription().cStr();
       valid_ = false;
       break;
     }

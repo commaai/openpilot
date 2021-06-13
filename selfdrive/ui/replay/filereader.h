@@ -1,6 +1,5 @@
 #pragma once
 
-#include <capnp/serialize.h>
 
 #include <QElapsedTimer>
 #include <QMultiMap>
@@ -9,6 +8,8 @@
 #include <QThread>
 #include <unordered_map>
 #include <vector>
+
+#include <capnp/serialize.h>
 
 #include "cereal/gen/cpp/log.capnp.h"
 
@@ -34,7 +35,7 @@ private:
 
 struct EncodeIdx {
   int segmentNum;
-  uint32_t segmentId;
+  uint32_t frameEncodeId;
 };
 
 class Event {
@@ -45,7 +46,7 @@ public:
     which = event.which();
     mono_time = event.getLogMonoTime();
   }
-  friend inline bool operator<(const Event& l, const Event& r) {
+  friend inline bool operator<(const Event &l, const Event &r) {
     return l.mono_time < r.mono_time || (l.mono_time == r.mono_time && l.which < r.which);
   }
 
@@ -58,8 +59,6 @@ public:
   kj::ArrayPtr<const capnp::word> words;
 };
 
-typedef std::unordered_map<uint32_t, EncodeIdx> EncodeIdxMap;
-
 class LogReader : public QObject {
   Q_OBJECT
 
@@ -68,10 +67,9 @@ public:
   ~LogReader();
   inline bool valid() const { return valid_; }
 
-  // Events events;
   std::vector<Event *> events;
   uint64_t route_start_ts = 0;
-  EncodeIdxMap encoderIdx[MAX_CAMERAS] = {};
+  std::unordered_map<uint32_t, EncodeIdx> encoderIdx[MAX_CAMERAS] = {};
 
 signals:
   void finished(bool success);
