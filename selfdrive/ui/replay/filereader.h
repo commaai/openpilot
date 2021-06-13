@@ -1,70 +1,87 @@
 #pragma once
 
-#include <thread>
+#include <unordered_map>
+#include <vector>
 
 #include <QElapsedTimer>
 #include <QMultiMap>
 #include <QNetworkAccessManager>
-#include <QReadWriteLock>
 #include <QString>
-#include <QVector>
-#include <QWidget>
+#include <QThread>
 
-#include <bzlib.h>
 #include <capnp/serialize.h>
-#include <kj/io.h>
-#include "cereal/gen/cpp/log.capnp.h"
 
-#include "tools/clib/channel.h"
+#include "cereal/gen/cpp/log.capnp.h"
 
 class FileReader : public QObject {
   Q_OBJECT
 
 public:
-  FileReader(const QString& file_);
-  void startRequest(const QUrl &url);
-  ~FileReader();
-  virtual void readyRead();
-  void httpFinished();
-  virtual void done() {};
+  FileReader(const QString &fn, QObject *parent = nullptr);
+  void read();
+  void abort();
 
-public slots:
-  void process();
-
-protected:
-  QNetworkReply *reply;
+signals:
+  void finished(const QByteArray &dat);
+  void failed(const QString &err);
 
 private:
-  QNetworkAccessManager *qnam;
-  QElapsedTimer timer;
-  QString file;
+  void startHttpRequest();
+  QNetworkReply *reply_ = nullptr;
+  QUrl url_;
 };
 
-typedef QMultiMap<uint64_t, cereal::Event::Reader> Events;
+enum CameraType {
+  RoadCam = 0,
+  DriverCam,
+  WideRoadCam
+};
+const CameraType ALL_CAMERAS[] = {RoadCam, DriverCam, WideRoadCam};
+const int MAX_CAMERAS = std::size(ALL_CAMERAS);
 
-class LogReader : public FileReader {
-Q_OBJECT
+struct EncodeIdx {
+  int segmentNum;
+  uint32_t frameEncodeId;
+};
+
+class Event {
 public:
-  LogReader(const QString& file, Events *, QReadWriteLock* events_lock_, QMap<int, QPair<int, int> > *eidx_);
-  ~LogReader();
+  Event(const kj::ArrayPtr<const capnp::word> &amsg) : reader(amsg) {
+    words = kj::ArrayPtr<const capnp::word>(amsg.begin(), reader.getEnd());
+    event = reader.getRoot<cereal::Event>();
+    which = event.which();
+    mono_time = event.getLogMonoTime();
+  }
+  inline kj::ArrayPtr<const capnp::byte> bytes() const { return words.asBytes(); }
 
-  void readyRead();
-  void done() { is_done = true; };
-  bool is_done = false;
+  uint64_t mono_time;
+  cereal::Event::Which which;
+  cereal::Event::Reader event;
+  capnp::FlatArrayMessageReader reader;
+  kj::ArrayPtr<const capnp::word> words;
+};
+
+class LogReader : public QObject {
+  Q_OBJECT
+
+public:
+  LogReader(const QString &file, QObject *parent = nullptr);
+  ~LogReader();
+  inline bool valid() const { return valid_; }
+
+  QMultiMap<uint64_t, Event*> events;
+  std::unordered_map<uint32_t, EncodeIdx> eidx[MAX_CAMERAS] = {};
+
+signals:
+  void finished(bool success);
 
 private:
-  bz_stream bStream;
+  void parseEvents(const QByteArray &dat);
 
-  // backing store
-  QByteArray raw;
+  std::atomic<bool> exit_ = false;
+  std::atomic<bool> valid_ = false;
+  std::vector<uint8_t> raw_;
 
-  std::thread *parser;
-  int event_offset;
-  channel<int> cdled;
-
-  // global
-  void mergeEvents(int dled);
-  Events *events;
-  QReadWriteLock* events_lock;
-  QMap<int, QPair<int, int> > *eidx;
+  FileReader *file_reader_ = nullptr;
+  QThread thread_;
 };
