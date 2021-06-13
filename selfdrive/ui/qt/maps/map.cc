@@ -452,7 +452,7 @@ MapInstructions::MapInstructions(QWidget * parent) : QWidget(parent) {
   }
 
   {
-    QWidget * w = new QWidget;
+    QWidget *w = new QWidget;
     QVBoxLayout *layout = new QVBoxLayout(w);
 
     distance = new QLabel;
