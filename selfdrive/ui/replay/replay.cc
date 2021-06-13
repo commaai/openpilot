@@ -69,11 +69,11 @@ void Replay::addSegment(int n) {
     return;
   }
 
-  lrs[n] = new LogReader(log_paths.at(n).toString(), this);
+  lrs[n] = new LogReader(log_paths.at(n).toString());
   // this is a queued connection, mergeEvents is executed in the main thread.
   QObject::connect(lrs[n], &LogReader::finished, this, &Replay::mergeEvents);
 
-  frs[n] = new FrameReader(qPrintable(camera_paths.at(n).toString()), this);
+  frs[n] = new FrameReader(qPrintable(camera_paths.at(n).toString()));
 }
 
 void Replay::removeSegment(int n) {
