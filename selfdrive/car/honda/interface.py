@@ -135,7 +135,7 @@ class CarInterface(CarInterfaceBase):
       ret.enableBsm = 0x12f8bfa7 in fingerprint[0]
 
     # Accord 1.5T CVT has different gearbox message
-    if candidate == CAR.ACCORD and 0x191 in fingerprint[0]:
+    if candidate == CAR.ACCORD and 0x191 in fingerprint[1]:
       ret.transmissionType = TransmissionType.cvt
 
     cloudlog.warning("ECU Camera Simulated: %r", ret.enableCamera)
