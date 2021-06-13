@@ -290,19 +290,19 @@ QUIState::QUIState(QObject *parent) : QObject(parent) {
   QObject::connect(timer, &QTimer::timeout, this, &QUIState::update);
   timer->start(0);
 
-  const std::map<QString, bool*> toogleMap = {
+  const std::map<QString, bool*> toggleMap = {
     {"IsMetric", &ui_state.scene.is_metric},
     {"EndToEndToggle", &ui_state.scene.end_to_end},
     {"EnableWideCamera", &ui_state.wide_camera},
   };
 
   Params params;
-  for (auto [paramName, pValue] : toogleMap) {
+  for (auto [paramName, pValue] : toggleMap) {
     *pValue = params.getBool(paramName.toStdString());
   }
   QObject::connect(signalMap(), &SignalMap::toggleParameter, [=](const QString &paramName, bool state) {
-    auto it = toogleMap.find(paramName);
-    if (it != toogleMap.end()) {
+    auto it = toggleMap.find(paramName);
+    if (it != toggleMap.end()) {
       *(it->second) = state;
     }
   });
