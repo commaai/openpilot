@@ -19,7 +19,6 @@ TEST_CASE("util::read_file") {
 
   auto read_directory = [=](const std::string &dir, const std::string &path_suffix = "") {
     DIR *d = opendir(dir.c_str());
-    assert(d);
     struct dirent *de = nullptr;
     while ((de = readdir(d))) {
       if (!isalnum(de->d_name[0])) continue;
