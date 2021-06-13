@@ -241,7 +241,7 @@ void WifiManager::connect(const QByteArray &ssid, const QString &username, const
   activateWifiConnection(QString(ssid));
 }
 
-void WifiManager::deactivate_connections(const QString &ssid) {
+void WifiManager::disconnectNetwork(const QString &ssid) {
   for (QDBusObjectPath active_connection_raw : get_active_connections()) {
     QString active_connection = active_connection_raw.path();
     QDBusInterface nm(nm_service, active_connection, props_iface, bus);
@@ -286,7 +286,7 @@ bool WifiManager::isKnownNetwork(const QString &ssid) {
   return false;
 }
 
-void WifiManager::clear_connections(const QString &ssid) {
+void WifiManager::forgetNetwork(const QString &ssid) {
   QDBusObjectPath path = path_from_ssid(ssid);
   QDBusInterface nm2(nm_service, path.path(), nm_settings_conn_iface, bus);
   nm2.call("Delete");
@@ -377,7 +377,7 @@ void WifiManager::change(unsigned int new_state, unsigned int previous_state, un
 void WifiManager::disconnect() {
   QString active_ap = get_active_ap();
   if (active_ap != "" && active_ap != "/") {
-    deactivate_connections(get_property(active_ap, "Ssid"));
+    disconnectNetwork(get_property(active_ap, "Ssid"));
   }
 }
 
@@ -478,7 +478,7 @@ void WifiManager::enableTethering() {
 }
 
 void WifiManager::disableTethering() {
-  deactivate_connections(tethering_ssid.toUtf8());
+  disconnectNetwork(tethering_ssid.toUtf8());
 }
 
 bool WifiManager::tetheringEnabled() {
@@ -489,7 +489,7 @@ bool WifiManager::tetheringEnabled() {
 void WifiManager::changeTetheringPassword(const QString &newPassword) {
   tetheringPassword = newPassword;
   if (isKnownNetwork(tethering_ssid.toUtf8())) {
-    clear_connections(tethering_ssid.toUtf8());
+    forgetNetwork(tethering_ssid.toUtf8());
   }
   addTetheringConnection();
 }
