@@ -206,7 +206,7 @@ void Replay::stream() {
 
     uint64_t t0 = route_start_ts + (seek_ts * 1e9);
     seek_ts = -1;
-    qDebug() << "unlogging at" << (t0 - route_start_ts) / 1e9;
+    qDebug() << "unlogging at" << int((t0 - route_start_ts) / 1e9);
 
     // wait until we have events within 1s of the current time
     auto eit = events.lowerBound(t0);
@@ -230,7 +230,7 @@ void Replay::stream() {
         float timestamp = (tm - route_start_ts)/1e9;
         if (std::abs(timestamp - last_print) > 5.0) {
           last_print = timestamp;
-          qInfo() << "at " << last_print;
+          qInfo() << "at " << int(last_print) << "s";
         }
 
         // keep time
