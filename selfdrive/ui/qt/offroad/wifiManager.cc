@@ -402,13 +402,13 @@ QString WifiManager::ssid_from_path(const QDBusObjectPath &path) {
   return "";
 }
 
-QDBusObjectPath WifiManager::path_from_ssid(const QString &ssid) {  // ensure ssid is a known connection before calling this function
-  for (const QDBusObjectPath path : list_connections()) {
-    if (ssid_from_path(path) == ssid) {
-      return path;
+QDBusObjectPath WifiManager::path_from_ssid(const QString &ssid) {
+  QDBusObjectPath path;  // returns uninitialized path if network is not known
+  for (const QDBusObjectPath _path : list_connections()) {
+    if (ssid_from_path(_path) == ssid) {
+      path = _path;
     }
   }
-  QDBusObjectPath path;
   return path;
 }
 
