@@ -35,16 +35,18 @@ class SoftwarePanel : public QWidget {
 public:
   explicit SoftwarePanel(QWidget* parent = nullptr);
 
-protected:
-  void showEvent(QShowEvent *event) override;
-
 private:
-  QList<LabelControl *> labels;
-  LabelControl *versionLbl;
-  LabelControl *lastUpdateTimeLbl;
-  ButtonControl *updateButton;
+  void showEvent(QShowEvent *event) override;
   void updateLabels();
 
+  LabelControl *gitBranchLbl;
+  LabelControl *gitCommitLbl;
+  LabelControl *osVersionLbl;
+  LabelControl *versionLbl;
+  LabelControl *lastUpdateLbl;
+  ButtonControl *updateBtn;
+
+  Params params;
   QFileSystemWatcher *fs_watch;
 };
 
