@@ -10,7 +10,7 @@ static const VisionStreamType stream_types[] = {
     [WideRoadCam] = VISION_STREAM_RGB_WIDE,
 };
 
-// class CameraServer::CameraState
+// CameraServer::CameraState
 
 class CameraServer::CameraState {
 public:
@@ -57,7 +57,7 @@ public:
   SafeQueue<std::pair<FrameReader *, uint32_t>> queue;
 };
 
-// class CameraServer
+// CameraServer
 
 CameraServer::CameraServer() {
   device_id_ = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
