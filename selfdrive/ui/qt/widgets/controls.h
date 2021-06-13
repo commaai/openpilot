@@ -7,7 +7,7 @@
 
 #include "selfdrive/common/params.h"
 #include "selfdrive/ui/qt/widgets/toggle.h"
-
+#include "selfdrive/ui/qt/util.h"
 QFrame *horizontal_line(QWidget *parent = nullptr);
 class AbstractControl : public QFrame {
   Q_OBJECT
@@ -120,6 +120,7 @@ public:
     }
     QObject::connect(this, &ToggleControl::toggleFlipped, [=](bool state) {
       params.putBool(param.toStdString().c_str(), state);
+      emit signalMap()->toggleParameter(param, state);
     });
   }
 

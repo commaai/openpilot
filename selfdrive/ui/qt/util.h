@@ -44,6 +44,8 @@ signals:
   void showDriverView();
   void displayPowerChanged(bool on);
   void uiUpdate(const UIState &s);
+
+  void toggleParameter(const QString &, bool);
 };
 
 inline SignalMap *signalMap() {
