@@ -266,7 +266,7 @@ void Replay::stream() {
         if (sm == nullptr) {
           auto bytes = (*eit)->bytes();
           pm->send(type.c_str(), (capnp::byte *)bytes.begin(), bytes.size());
-        } else {
+      } else {
           std::vector<std::pair<std::string, cereal::Event::Reader>> messages;
           messages.push_back({type, e});
           sm->update_msgs(nanos_since_boot(), messages);
