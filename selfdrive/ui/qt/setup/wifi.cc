@@ -18,7 +18,7 @@ void WifiSetup::finish() {
 }
 
 WifiSetup::WifiSetup(QWidget *parent) : QWidget(parent) {
-  QHBoxLayout *main_layout = new QHBoxLayout();
+  QHBoxLayout *main_layout = new QHBoxLayout(this);
 
   QPushButton *finish_btn = new QPushButton("Exit");
   finish_btn->setFixedSize(400, 200);
@@ -29,10 +29,9 @@ WifiSetup::WifiSetup(QWidget *parent) : QWidget(parent) {
   QWidget* n = new Networking(this, true);
 
   // Next 5 lines to keep the same stylesheet on the networking widget
-  QLayout* backgroundLayout = new QVBoxLayout();
-  backgroundLayout->addWidget(n);
   QWidget* q = new QWidget();
-  q->setLayout(backgroundLayout);
+  QLayout* backgroundLayout = new QVBoxLayout(q);
+  backgroundLayout->addWidget(n);
   q->setStyleSheet(R"(
   * {
     background-color: #292929;
@@ -40,7 +39,6 @@ WifiSetup::WifiSetup(QWidget *parent) : QWidget(parent) {
   )");
   main_layout->addWidget(q, 1);
 
-  setLayout(main_layout);
   setStyleSheet(R"(
     * {
       background-color: black;

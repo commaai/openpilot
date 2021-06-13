@@ -24,7 +24,7 @@
 #include "selfdrive/ui/qt/util.h"
 
 TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
-  QVBoxLayout *toggles_list = new QVBoxLayout();
+  QVBoxLayout *main_layout = new QVBoxLayout(this);
 
   QList<ParamControl*> toggles;
 
@@ -93,25 +93,23 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
   record_toggle->setEnabled(!record_lock);
 
   for(ParamControl *toggle : toggles) {
-    if(toggles_list->count() != 0) {
-      toggles_list->addWidget(horizontal_line());
+    if(main_layout->count() != 0) {
+      main_layout->addWidget(horizontal_line());
     }
-    toggles_list->addWidget(toggle);
+    main_layout->addWidget(toggle);
   }
-
-  setLayout(toggles_list);
 }
 
 DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
-  QVBoxLayout *device_layout = new QVBoxLayout;
+  QVBoxLayout *main_layout = new QVBoxLayout(this);
   Params params = Params();
 
   QString dongle = QString::fromStdString(params.get("DongleId", false));
-  device_layout->addWidget(new LabelControl("Dongle ID", dongle));
-  device_layout->addWidget(horizontal_line());
+  main_layout->addWidget(new LabelControl("Dongle ID", dongle));
+  main_layout->addWidget(horizontal_line());
 
   QString serial = QString::fromStdString(params.get("HardwareSerial", false));
-  device_layout->addWidget(new LabelControl("Serial", serial));
+  main_layout->addWidget(new LabelControl("Serial", serial));
 
   // offroad-only buttons
   QList<ButtonControl*> offroad_btns;
@@ -164,9 +162,9 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
   }, "", this));
 
   for(auto &btn : offroad_btns) {
-    device_layout->addWidget(horizontal_line());
+    main_layout->addWidget(horizontal_line());
     QObject::connect(parent, SIGNAL(offroadTransition(bool)), btn, SLOT(setEnabled(bool)));
-    device_layout->addWidget(btn);
+    main_layout->addWidget(btn);
   }
 
   // power buttons
@@ -190,9 +188,8 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
     }
   });
 
-  device_layout->addLayout(power_layout);
+  main_layout->addLayout(power_layout);
 
-  setLayout(device_layout);
   setStyleSheet(R"(
     QPushButton {
       padding: 0;
@@ -204,8 +201,7 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
 }
 
 SoftwarePanel::SoftwarePanel(QWidget* parent) : QWidget(parent) {
-  QVBoxLayout *main_layout = new QVBoxLayout(this);
-  setLayout(main_layout);
+  setLayout(new QVBoxLayout());
   setStyleSheet(R"(QLabel {font-size: 50px;})");
 
   fs_watch = new QFileSystemWatcher(this);
@@ -286,7 +282,8 @@ void SoftwarePanel::updateLabels() {
 
 QWidget * network_panel(QWidget * parent) {
 #ifdef QCOM
-  QVBoxLayout *layout = new QVBoxLayout;
+  QWidget *w = new QWidget(parent);
+  QVBoxLayout *layout = new QVBoxLayout(w);
   layout->setSpacing(30);
 
   // wifi + tethering buttons
@@ -304,9 +301,6 @@ QWidget * network_panel(QWidget * parent) {
   layout->addWidget(new SshControl());
 
   layout->addStretch(1);
-
-  QWidget *w = new QWidget(parent);
-  w->setLayout(layout);
 #else
   Networking *w = new Networking(parent);
 #endif
@@ -324,7 +318,8 @@ void SettingsWindow::showEvent(QShowEvent *event) {
 SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
 
   // setup two main layouts
-  QVBoxLayout *sidebar_layout = new QVBoxLayout();
+  sidebar_widget = new QWidget;
+  QVBoxLayout *sidebar_layout = new QVBoxLayout(sidebar_widget);
   sidebar_layout->setMargin(0);
   panel_widget = new QStackedWidget();
   panel_widget->setStyleSheet(R"(
@@ -400,15 +395,12 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   sidebar_layout->setContentsMargins(50, 50, 100, 50);
 
   // main settings layout, sidebar + main panel
-  QHBoxLayout *settings_layout = new QHBoxLayout();
+  QHBoxLayout *main_layout = new QHBoxLayout(this);
 
-  sidebar_widget = new QWidget;
-  sidebar_widget->setLayout(sidebar_layout);
   sidebar_widget->setFixedWidth(500);
-  settings_layout->addWidget(sidebar_widget);
-  settings_layout->addWidget(panel_widget);
+  main_layout->addWidget(sidebar_widget);
+  main_layout->addWidget(panel_widget);
 
-  setLayout(settings_layout);
   setStyleSheet(R"(
     * {
       color: white;
