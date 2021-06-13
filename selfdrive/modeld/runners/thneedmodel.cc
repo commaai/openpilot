@@ -1,6 +1,6 @@
-#include "thneedmodel.h"
+#include "selfdrive/modeld/runners/thneedmodel.h"
 
-#include <assert.h>
+#include <cassert>
 
 ThneedModel::ThneedModel(const char *path, float *loutput, size_t loutput_size, int runtime) {
   thneed = new Thneed(true);

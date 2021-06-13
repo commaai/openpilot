@@ -1,8 +1,8 @@
-#include "scrollview.h"
+#include "selfdrive/ui/qt/widgets/scrollview.h"
 
 #include <QScrollBar>
 
-ScrollView::ScrollView(QWidget *w, QWidget *parent) : QScrollArea(parent){
+ScrollView::ScrollView(QWidget *w, QWidget *parent) : QScrollArea(parent) {
   setWidget(w);
   setWidgetResizable(true);
   setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -42,6 +42,6 @@ ScrollView::ScrollView(QWidget *w, QWidget *parent) : QScrollArea(parent){
   scroller->setScrollerProperties(sp);
 }
 
-void ScrollView::hideEvent(QHideEvent *e){
+void ScrollView::hideEvent(QHideEvent *e) {
   verticalScrollBar()->setValue(0);
 }

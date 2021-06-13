@@ -1,10 +1,10 @@
+#include "selfdrive/modeld/models/driving.h"
 
-#include "driving.h"
-
-#include <assert.h>
 #include <fcntl.h>
-#include <string.h>
 #include <unistd.h>
+
+#include <cassert>
+#include <cstring>
 
 #include <eigen3/Eigen/Dense>
 

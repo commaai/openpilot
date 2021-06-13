@@ -35,7 +35,7 @@ void Sidebar::drawMetric(QPainter &p, const QString &label, const QString &val, 
 
 Sidebar::Sidebar(QWidget *parent) : QFrame(parent) {
   home_img = QImage("../assets/images/button_home.png").scaled(180, 180, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-  settings_img = QImage("../assets/images/button_settings.png").scaled(settings_btn.width(), settings_btn.height(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);;
+  settings_img = QImage("../assets/images/button_settings.png").scaled(settings_btn.width(), settings_btn.height(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
 
   connect(this, &Sidebar::valueChanged, [=] { update(); });
 
@@ -55,7 +55,7 @@ void Sidebar::updateState(const UIState &s) {
 
   auto deviceState = sm["deviceState"].getDeviceState();
   setProperty("netType", network_type[deviceState.getNetworkType()]);
-  setProperty("netStrength", signal_imgs[deviceState.getNetworkStrength()]);
+  setProperty("netStrength", (int)deviceState.getNetworkStrength());
 
   auto last_ping = deviceState.getLastAthenaPingTime();
   if (last_ping == 0) {
@@ -102,7 +102,14 @@ void Sidebar::paintEvent(QPaintEvent *event) {
   p.drawImage(60, 1080 - 180 - 40, home_img);
 
   // network
-  p.drawImage(58, 196, net_strength);
+  int x = 58;
+  const QColor gray(0x54, 0x54, 0x54);
+  for (int i = 0; i < 5; ++i) {
+    p.setBrush(i < net_strength ? Qt::white : gray);
+    p.drawEllipse(x, 196, 27, 27);
+    x += 37;
+  }
+
   configFont(p, "Open Sans", 35, "Regular");
   p.setPen(QColor(0xff, 0xff, 0xff));
   const QRect r = QRect(50, 247, 100, 50);

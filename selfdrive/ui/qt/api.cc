@@ -90,7 +90,7 @@ HttpRequest::HttpRequest(QObject *parent, const QString &requestURL, const QStri
   }
 }
 
-void HttpRequest::sendRequest(const QString &requestURL){
+void HttpRequest::sendRequest(const QString &requestURL) {
   QString token;
   if(create_jwt) {
     token = CommaApi::create_jwt();
@@ -110,12 +110,12 @@ void HttpRequest::sendRequest(const QString &requestURL){
   connect(reply, &QNetworkReply::finished, this, &HttpRequest::requestFinished);
 }
 
-void HttpRequest::requestTimeout(){
+void HttpRequest::requestTimeout() {
   reply->abort();
 }
 
 // This function should always emit something
-void HttpRequest::requestFinished(){
+void HttpRequest::requestFinished() {
   if (reply->error() != QNetworkReply::OperationCanceledError) {
     networkTimer->stop();
     QString response = reply->readAll();

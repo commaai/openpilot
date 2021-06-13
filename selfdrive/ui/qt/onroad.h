@@ -86,7 +86,7 @@ public:
 private:
   OnroadAlerts *alerts;
   NvgWindow *nvg;
-  QStackedLayout *layout;
+  QStackedLayout *main_layout;
   QHBoxLayout* split;
 
 signals:

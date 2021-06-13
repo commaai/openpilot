@@ -98,8 +98,8 @@ if arch == "aarch64" or arch == "larch64":
       "#phonelibs/libyuv/lib",
       "/system/vendor/lib64"
     ]
-    cflags = ["-DQCOM", "-mcpu=cortex-a57"]
-    cxxflags = ["-DQCOM", "-mcpu=cortex-a57"]
+    cflags = ["-DQCOM", "-D_USING_LIBCXX", "-mcpu=cortex-a57"]
+    cxxflags = ["-DQCOM", "-D_USING_LIBCXX", "-mcpu=cortex-a57"]
     rpath = []
 else:
   cflags = []
@@ -195,8 +195,6 @@ env = Environment(
     "#phonelibs/qrcode",
     "#phonelibs",
     "#cereal",
-    "#cereal/messaging",
-    "#cereal/visionipc",
     "#opendbc/can",
   ],
 

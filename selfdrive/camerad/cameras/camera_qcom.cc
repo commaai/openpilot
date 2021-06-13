@@ -1,15 +1,15 @@
 #include "selfdrive/camerad/cameras/camera_qcom.h"
 
-#include <assert.h>
 #include <fcntl.h>
-#include <math.h>
 #include <poll.h>
-#include <stdio.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
 
 #include <algorithm>
 #include <atomic>
+#include <cassert>
+#include <cmath>
+#include <cstdio>
 
 #include <cutils/properties.h>
 #include <linux/media.h>
@@ -848,7 +848,7 @@ static void parse_autofocus(CameraState *s, uint8_t *d) {
 
 static std::optional<float> get_accel_z(SubMaster *sm) {
   sm->update(0);
-  if(sm->updated("sensorEvents")){
+  if(sm->updated("sensorEvents")) {
     for (auto event : (*sm)["sensorEvents"].getSensorEvents()) {
       if (event.which() == cereal::SensorEventData::ACCELERATION) {
         if (auto v = event.getAcceleration().getV(); v.size() >= 3)

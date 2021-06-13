@@ -23,3 +23,4 @@ QMapbox::CoordinatesCollections coordinate_list_to_collection(QList<QGeoCoordina
 
 float minimum_distance(QGeoCoordinate a, QGeoCoordinate b, QGeoCoordinate p);
 std::optional<QMapbox::Coordinate> coordinate_from_param(std::string param);
+float distance_along_geometry(QList<QGeoCoordinate> geometry, QGeoCoordinate pos);

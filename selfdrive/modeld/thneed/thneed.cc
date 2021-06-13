@@ -1,11 +1,11 @@
 #include "selfdrive/modeld/thneed/thneed.h"
 
 #include <dlfcn.h>
-#include <errno.h>
-#include <string.h>
 #include <sys/mman.h>
 
 #include <cassert>
+#include <cerrno>
+#include <cstring>
 #include <map>
 #include <string>
 

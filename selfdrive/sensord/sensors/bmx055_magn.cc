@@ -65,7 +65,7 @@ static int16_t compensate_z(trim_data_t trim_data, int16_t mag_data_z, uint16_t 
 
 BMX055_Magn::BMX055_Magn(I2CBus *bus) : I2CSensor(bus) {}
 
-int BMX055_Magn::init(){
+int BMX055_Magn::init() {
   int ret;
   uint8_t buffer[1];
   uint8_t trim_x1y1[2] = {0};
@@ -79,7 +79,7 @@ int BMX055_Magn::init(){
 
   // suspend -> sleep
   ret = set_register(BMX055_MAGN_I2C_REG_PWR_0, 0x01);
-  if(ret < 0){
+  if(ret < 0) {
     LOGE("Enabling power failed: %d", ret);
     goto fail;
   }
@@ -87,12 +87,12 @@ int BMX055_Magn::init(){
 
   // read chip ID
   ret = read_register(BMX055_MAGN_I2C_REG_ID, buffer, 1);
-  if(ret < 0){
+  if(ret < 0) {
     LOGE("Reading chip ID failed: %d", ret);
     goto fail;
   }
 
-  if(buffer[0] != BMX055_MAGN_CHIP_ID){
+  if(buffer[0] != BMX055_MAGN_CHIP_ID) {
     LOGE("Chip ID wrong. Got: %d, Expected %d", buffer[0], BMX055_MAGN_CHIP_ID);
     return -1;
   }
@@ -139,12 +139,12 @@ int BMX055_Magn::init(){
   // Chose NXY = 7, NZ = 12, which gives 125 Hz,
   // and has the same ratio as the high accuracy preset
   ret = set_register(BMX055_MAGN_I2C_REG_REPXY, (7 - 1) / 2);
-  if (ret < 0){
+  if (ret < 0) {
     goto fail;
   }
 
   ret = set_register(BMX055_MAGN_I2C_REG_REPZ, 12 - 1);
-  if (ret < 0){
+  if (ret < 0) {
     goto fail;
   }
 
@@ -155,7 +155,7 @@ int BMX055_Magn::init(){
   return ret;
 }
 
-bool BMX055_Magn::perform_self_test(){
+bool BMX055_Magn::perform_self_test() {
   uint8_t buffer[8];
   int16_t x, y;
   int16_t neg_z, pos_z;
@@ -189,16 +189,16 @@ bool BMX055_Magn::perform_self_test(){
   int16_t diff = pos_z - neg_z;
   bool passed = (diff > 180) && (diff < 240);
 
-  if (!passed){
+  if (!passed) {
     LOGE("self test failed: neg %d pos %d diff %d", neg_z, pos_z, diff);
   }
 
   return passed;
 }
 
-bool BMX055_Magn::parse_xyz(uint8_t buffer[8], int16_t *x, int16_t *y, int16_t *z){
+bool BMX055_Magn::parse_xyz(uint8_t buffer[8], int16_t *x, int16_t *y, int16_t *z) {
   bool ready = buffer[6] & 0x1;
-  if (ready){
+  if (ready) {
     int16_t mdata_x = (int16_t) (((int16_t)buffer[1] << 8) | buffer[0]) >> 3;
     int16_t mdata_y = (int16_t) (((int16_t)buffer[3] << 8) | buffer[2]) >> 3;
     int16_t mdata_z = (int16_t) (((int16_t)buffer[5] << 8) | buffer[4]) >> 1;
@@ -213,7 +213,7 @@ bool BMX055_Magn::parse_xyz(uint8_t buffer[8], int16_t *x, int16_t *y, int16_t *
 }
 
 
-void BMX055_Magn::get_event(cereal::SensorEventData::Builder &event){
+void BMX055_Magn::get_event(cereal::SensorEventData::Builder &event) {
   uint64_t start_time = nanos_since_boot();
   uint8_t buffer[8];
   int16_t _x, _y, x, y, z;
@@ -221,7 +221,7 @@ void BMX055_Magn::get_event(cereal::SensorEventData::Builder &event){
   int len = read_register(BMX055_MAGN_I2C_REG_DATAX_LSB, buffer, sizeof(buffer));
   assert(len == sizeof(buffer));
 
-  if (parse_xyz(buffer, &_x, &_y, &z)){
+  if (parse_xyz(buffer, &_x, &_y, &z)) {
     event.setSource(cereal::SensorEventData::SensorSource::BMX055);
     event.setVersion(2);
     event.setSensor(SENSOR_MAGNETOMETER_UNCALIBRATED);

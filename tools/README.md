@@ -66,7 +66,7 @@ Test openpilots performance in a simulated environment. The [CARLA simulator](ht
 Review video and log data from routes and stream CAN messages to your device.
 
 
-[Debug car controls](carcontrols)
+[Debug car controls](joystick)
 -------------
 
 Use a joystick to control your car.
