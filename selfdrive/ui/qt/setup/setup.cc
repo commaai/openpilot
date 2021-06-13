@@ -56,7 +56,9 @@ QLabel * title_label(QString text) {
 }
 
 QWidget * Setup::build_page(QString title, QWidget *content, bool next, bool prev) {
-  QVBoxLayout *main_layout = new QVBoxLayout();
+  QWidget *widget = new QWidget();
+  QVBoxLayout *main_layout = new QVBoxLayout(widget);
+
   main_layout->setMargin(50);
   main_layout->addWidget(title_label(title), 0, Qt::AlignLeft | Qt::AlignTop);
 
@@ -77,9 +79,6 @@ QWidget * Setup::build_page(QString title, QWidget *content, bool next, bool pre
   }
 
   main_layout->addLayout(nav_layout, 0);
-
-  QWidget *widget = new QWidget();
-  widget->setLayout(main_layout);
   return widget;
 }
 
@@ -96,7 +95,8 @@ QWidget * Setup::network_setup() {
 }
 
 QWidget * Setup::software_selection() {
-  QVBoxLayout *main_layout = new QVBoxLayout();
+  QWidget *widget = new QWidget();
+  QVBoxLayout *main_layout = new QVBoxLayout(widget);
 
   QPushButton *dashcam_btn = new QPushButton("Dashcam");
   main_layout->addWidget(dashcam_btn);
@@ -114,23 +114,19 @@ QWidget * Setup::software_selection() {
       this->download(input_url);
     }
   });
-
-  QWidget *widget = new QWidget();
-  widget->setLayout(main_layout);
   return build_page("Choose Software", widget, false, true);
 }
 
 QWidget * Setup::downloading() {
-  QVBoxLayout *main_layout = new QVBoxLayout();
-  main_layout->addWidget(title_label("Downloading..."), 0, Qt::AlignCenter);
-
   QWidget *widget = new QWidget();
-  widget->setLayout(main_layout);
+  QVBoxLayout *main_layout = new QVBoxLayout(widget);
+  main_layout->addWidget(title_label("Downloading..."), 0, Qt::AlignCenter);
   return widget;
 }
 
 QWidget * Setup::download_failed() {
-  QVBoxLayout *main_layout = new QVBoxLayout();
+  QWidget *widget = new QWidget();
+  QVBoxLayout *main_layout = new QVBoxLayout(widget);
   main_layout->setContentsMargins(50, 50, 50, 50);
   main_layout->addWidget(title_label("Download Failed"), 0, Qt::AlignLeft | Qt::AlignTop);
 
@@ -157,9 +153,6 @@ QWidget * Setup::download_failed() {
   });
 
   main_layout->addLayout(nav_layout, 0);
-
-  QWidget *widget = new QWidget();
-  widget->setLayout(main_layout);
   return widget;
 }
 

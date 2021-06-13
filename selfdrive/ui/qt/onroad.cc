@@ -12,34 +12,31 @@
 #endif
 
 OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
-  layout = new QStackedLayout(this);
-  layout->setStackingMode(QStackedLayout::StackAll);
+  main_layout = new QStackedLayout(this);
+  main_layout->setStackingMode(QStackedLayout::StackAll);
 
   // old UI on bottom
   nvg = new NvgWindow(this);
   QObject::connect(this, &OnroadWindow::update, nvg, &NvgWindow::update);
 
-  split = new QHBoxLayout();
+  QWidget * split_wrapper = new QWidget;
+  split = new QHBoxLayout(split_wrapper);
   split->setContentsMargins(0, 0, 0, 0);
   split->setSpacing(0);
   split->addWidget(nvg);
 
-
-  QWidget * split_wrapper = new QWidget;
-  split_wrapper->setLayout(split);
-  layout->addWidget(split_wrapper);
+  main_layout->addWidget(split_wrapper);
 
   alerts = new OnroadAlerts(this);
   alerts->setAttribute(Qt::WA_TransparentForMouseEvents, true);
   QObject::connect(this, &OnroadWindow::update, alerts, &OnroadAlerts::updateState);
   QObject::connect(this, &OnroadWindow::offroadTransitionSignal, alerts, &OnroadAlerts::offroadTransition);
   QObject::connect(this, &OnroadWindow::offroadTransitionSignal, this, &OnroadWindow::offroadTransition);
-  layout->addWidget(alerts);
+  main_layout->addWidget(alerts);
 
   // setup stacking order
   alerts->raise();
 
-  setLayout(layout);
   setAttribute(Qt::WA_OpaquePaintEvent);
 }
 

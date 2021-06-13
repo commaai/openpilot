@@ -3,7 +3,7 @@
 #include "selfdrive/hardware/hw.h"
 
 MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
-  main_layout = new QStackedLayout;
+  main_layout = new QStackedLayout(this);
   main_layout->setMargin(0);
 
   homeWindow = new HomeWindow(this);
@@ -46,7 +46,6 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   QFontDatabase::addApplicationFont("../assets/fonts/opensans_semibold.ttf");
 
   // no outline to prevent the focus rectangle
-  setLayout(main_layout);
   setStyleSheet(R"(
     * {
       font-family: Inter;

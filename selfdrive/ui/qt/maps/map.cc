@@ -441,18 +441,19 @@ void MapWindow::offroadTransition(bool offroad) {
 }
 
 MapInstructions::MapInstructions(QWidget * parent) : QWidget(parent) {
-  QHBoxLayout *layout_outer = new QHBoxLayout;
-  layout_outer->setContentsMargins(11, 50, 11, 11);
+  QHBoxLayout *main_layout = new QHBoxLayout(this);
+  main_layout->setContentsMargins(11, 50, 11, 11);
   {
     QVBoxLayout *layout = new QVBoxLayout;
     icon_01 = new QLabel;
     layout->addWidget(icon_01);
     layout->addStretch();
-    layout_outer->addLayout(layout);
+    main_layout->addLayout(layout);
   }
 
   {
-    QVBoxLayout *layout = new QVBoxLayout;
+    QWidget *w = new QWidget;
+    QVBoxLayout *layout = new QVBoxLayout(w);
 
     distance = new QLabel;
     distance->setStyleSheet(R"(font-size: 75px; )");
@@ -471,12 +472,9 @@ MapInstructions::MapInstructions(QWidget * parent) : QWidget(parent) {
     lane_layout = new QHBoxLayout;
     layout->addLayout(lane_layout);
 
-    QWidget * w = new QWidget;
-    w->setLayout(layout);
-    layout_outer->addWidget(w);
+    main_layout->addWidget(w);
   }
 
-  setLayout(layout_outer);
   setStyleSheet(R"(
     * {
       color: white;
@@ -608,8 +606,8 @@ void MapInstructions::updateInstructions(QMap<QString, QVariant> banner, bool fu
 }
 
 MapETA::MapETA(QWidget * parent) : QWidget(parent) {
-  QHBoxLayout *layout_outer = new QHBoxLayout;
-  layout_outer->setContentsMargins(20, 25, 20, 25);
+  QHBoxLayout *main_layout = new QHBoxLayout(this);
+  main_layout->setContentsMargins(20, 25, 20, 25);
 
   {
     QVBoxLayout *layout = new QVBoxLayout;
@@ -623,9 +621,9 @@ MapETA::MapETA(QWidget * parent) : QWidget(parent) {
     layout->addWidget(eta);
     layout->addWidget(eta_unit);
     layout->addStretch();
-    layout_outer->addLayout(layout);
+    main_layout->addLayout(layout);
   }
-  layout_outer->addSpacing(30);
+  main_layout->addSpacing(30);
   {
     QVBoxLayout *layout = new QVBoxLayout;
     time = new QLabel;
@@ -638,9 +636,9 @@ MapETA::MapETA(QWidget * parent) : QWidget(parent) {
     layout->addWidget(time);
     layout->addWidget(time_unit);
     layout->addStretch();
-    layout_outer->addLayout(layout);
+    main_layout->addLayout(layout);
   }
-  layout_outer->addSpacing(30);
+  main_layout->addSpacing(30);
   {
     QVBoxLayout *layout = new QVBoxLayout;
     distance = new QLabel;
@@ -652,10 +650,9 @@ MapETA::MapETA(QWidget * parent) : QWidget(parent) {
     layout->addWidget(distance);
     layout->addWidget(distance_unit);
     layout->addStretch();
-    layout_outer->addLayout(layout);
+    main_layout->addLayout(layout);
   }
 
-  setLayout(layout_outer);
   setStyleSheet(R"(
     * {
       color: white;
