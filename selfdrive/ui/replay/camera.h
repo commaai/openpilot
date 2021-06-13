@@ -4,6 +4,7 @@
 #include "selfdrive/common/queue.h"
 #include "selfdrive/ui/replay/framereader.h"
 
+// TODO: move this to camerad
 enum CameraType {
   RoadCam = 0,
   DriverCam,
