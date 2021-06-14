@@ -123,7 +123,7 @@ FW_VERSIONS = {
       b'\xf1\x878V0906264F \xf1\x890003',
       b'\xf1\x878V0906264L \xf1\x890002',
       b'\xf1\x878V0906264M \xf1\x890001',
-      b'\xf1\x878V09C0BB01 \xf1\x890001',
+      b'\xf1\x878V09C0BB01 \xf1\x890001',  # Malformed ECU SW part number due to COBB/EQT tune
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x8709G927749AP\xf1\x892943',
