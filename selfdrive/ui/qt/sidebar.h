@@ -42,14 +42,6 @@ private:
     {cereal::DeviceState::NetworkType::CELL5_G, "5G"}
   };
 
-  const QMap<cereal::DeviceState::NetworkStrength, int> strength_map = {
-    {cereal::DeviceState::NetworkStrength::UNKNOWN, 0},
-    {cereal::DeviceState::NetworkStrength::POOR, 1},
-    {cereal::DeviceState::NetworkStrength::MODERATE, 3},
-    {cereal::DeviceState::NetworkStrength::GOOD, 4},
-    {cereal::DeviceState::NetworkStrength::GREAT, 5}
-  };
-
   const QRect settings_btn = QRect(50, 35, 200, 117);
   const QColor good_color = QColor(255, 255, 255);
   const QColor warning_color = QColor(218, 202, 37);
