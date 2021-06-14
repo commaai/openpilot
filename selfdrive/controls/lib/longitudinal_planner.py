@@ -57,11 +57,9 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
 class Planner():
   def __init__(self, CP):
     self.CP = CP
-
-    # TODO these names are bad, but log names need to change first
     self.mpcs = {}
-    self.mpcs['mpc1'] = LeadMpc(0)
-    self.mpcs['mpc2'] = LeadMpc(1)
+    self.mpcs['lead0'] = LeadMpc(0)
+    self.mpcs['lead1'] = LeadMpc(1)
     self.mpcs['cruise'] = LongitudinalMpc()
     self.fcw = False
 
@@ -112,6 +110,7 @@ class Planner():
       self.mpcs[key].update(sm['carState'], sm['modelV2'], v_cruise)
       if self.mpcs[key].status and self.mpcs[key].mpc_solution.a_ego[5] < next_a:
         self.longitudinalPlanSource = key
+        self.v_desired_trajectory = list(self.mpcs[key].mpc_solution.v_ego)[:CONTROL_N]
         self.a_desired_trajectory = list(self.mpcs[key].mpc_solution.a_ego)[:CONTROL_N]
         next_a = self.mpcs[key].mpc_solution.a_ego[5]
 
@@ -131,16 +130,14 @@ class Planner():
     plan_send.valid = sm.all_alive_and_valid(service_list=['carState', 'controlsState'])
 
     longitudinalPlan = plan_send.longitudinalPlan
-    longitudinalPlan.mdMonoTime = sm.logMonoTime['modelV2']
-    longitudinalPlan.radarStateMonoTime = 0
+    longitudinalPlan.modelMonoTime = sm.logMonoTime['modelV2']
+    longitudinalPlan.processingDelay = (plan_send.logMonoTime / 1e9) - sm.logMonoTime['modelV2']
 
-    longitudinalPlan.vStart = float(self.v_desired)
-    longitudinalPlan.aStart = float(self.a_desired)
-    longitudinalPlan.vTargetFuture = float(self.v_desired + self.a_desired*3.0)
-    longitudinalPlan.hasLead = self.mpcs['mpc1'].status
+    longitudinalPlan.speeds = self.v_desired_trajectory
+    longitudinalPlan.accels = self.a_desired_trajectory
+
+    longitudinalPlan.hasLead = self.mpcs['lead0'].status
     longitudinalPlan.longitudinalPlanSource = self.longitudinalPlanSource
     longitudinalPlan.fcw = self.fcw
-
-    longitudinalPlan.processingDelay = (plan_send.logMonoTime / 1e9) - sm.logMonoTime['modelV2']
 
     pm.send('longitudinalPlan', plan_send)

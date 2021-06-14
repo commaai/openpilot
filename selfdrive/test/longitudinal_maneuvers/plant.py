@@ -103,8 +103,8 @@ class Plant():
       time.sleep(0.01)
       if self.sm.updated['longitudinalPlan']:
         plan = self.sm['longitudinalPlan']
-        self.speed = plan.vStart
-        self.acceleration = plan.aStart
+        self.speed = plan.speeds[5]
+        self.acceleration = plan.accels[5]
         fcw = plan.fcw
         break
 
