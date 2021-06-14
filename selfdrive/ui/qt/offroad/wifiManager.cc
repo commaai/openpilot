@@ -253,7 +253,7 @@ void WifiManager::disconnectNetwork(const QString &ssid) {
       if (Ssid == ssid) {
         QDBusInterface nm2(nm_service, nm_path, nm_iface, bus);
         nm2.setTimeout(dbus_timeout);
-        nm2.call("DeactivateConnection", QVariant::fromValue(active_connection_raw));// TODO change to disconnect
+        nm2.call("DeactivateConnection", QVariant::fromValue(active_connection_raw));
       }
     }
   }
@@ -381,27 +381,6 @@ void WifiManager::disconnect() {
   }
 }
 
-QString WifiManager::ssid_from_path(const QDBusObjectPath &path) {  // TODO: remove me
-  QDBusInterface nm2(nm_service, path.path(), nm_settings_conn_iface, bus);
-  nm2.setTimeout(dbus_timeout);
-
-  QDBusMessage response = nm2.call("GetSettings");
-  const QDBusArgument &dbusArg = response.arguments().at(0).value<QDBusArgument>();
-
-  QString ssid;
-  QMap<QString, QMap<QString,QVariant>> map;
-  dbusArg >> map;
-  for (auto &inner : map) {
-    for (auto &val : inner) {
-      QString key = inner.key(val);
-      if (key == "ssid") {
-        return val.toString();
-      }
-    }
-  }
-  return "";
-}
-
 QDBusObjectPath WifiManager::path_from_ssid(const QString &ssid) {
   QDBusObjectPath path;  // returns uninitialized path if network is not known
   for (auto const& [conn_ssid, conn_path] : listConnections()) {
@@ -424,7 +403,18 @@ QVector<QPair<QString, QDBusObjectPath>> WifiManager::listConnections() {
   while (!args.atEnd()) {
     QDBusObjectPath path;
     args >> path;
-    connections.push_back(qMakePair(ssid_from_path(path), path));
+
+    // Get ssid
+    QDBusInterface nm2(nm_service, path.path(), nm_settings_conn_iface, bus);
+    nm2.setTimeout(dbus_timeout);
+
+    QDBusMessage response = nm2.call("GetSettings");
+    const QDBusArgument &dbusArg = response.arguments().at(0).value<QDBusArgument>();
+    QMap<QString, QMap<QString, QVariant>> map;
+    dbusArg >> map;
+
+    const QString ssid = map.value("802-11-wireless").value("ssid").toString();
+    connections.push_back(qMakePair(ssid, path));
   }
   return connections;
 }
