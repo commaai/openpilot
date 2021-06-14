@@ -484,17 +484,14 @@ void WifiManager::addTetheringConnection() {
   connection["802-11-wireless-security"]["proto"] = QStringList("rsn");
   connection["802-11-wireless-security"]["psk"] = tetheringPassword;
 
+  connection["ipv4"]["method"] = "shared";
   QMap<QString,QVariant> address;
   address["address"] = "192.168.43.1";
   address["prefix"] = 24u;
   connection["ipv4"]["address-data"] = QVariant::fromValue(IpConfig() << address);
-
-  connection["ipv4"]["method"] = "shared";
   connection["ipv4"]["gateway"] = "192.168.43.1";
   connection["ipv4"]["route-metric"] = 1100;
-
   connection["ipv6"]["method"] = "ignore";
-  connection["ipv6"]["route-metric"] = 1100;
 
   QDBusInterface nm_settings(nm_service, nm_settings_path, nm_settings_iface, bus);
   nm_settings.setTimeout(dbus_timeout);
