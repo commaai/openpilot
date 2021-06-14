@@ -242,7 +242,7 @@ void WifiManager::connect(const QByteArray &ssid, const QString &username, const
   activateWifiConnection(QString(ssid));
 }
 
-void WifiManager::disconnectNetwork(const QString &ssid) {
+void WifiManager::deactivateConnection(const QString &ssid) {
   for (QDBusObjectPath active_connection_raw : get_active_connections()) {
     QString active_connection = active_connection_raw.path();
     QDBusInterface nm(nm_service, active_connection, props_iface, bus);
@@ -378,7 +378,7 @@ void WifiManager::change(unsigned int new_state, unsigned int previous_state, un
 void WifiManager::disconnect() {
   QString active_ap = get_active_ap();
   if (active_ap != "" && active_ap != "/") {
-    disconnectNetwork(get_property(active_ap, "Ssid"));
+    deactivateConnection(get_property(active_ap, "Ssid"));
   }
 }
 
@@ -469,7 +469,7 @@ void WifiManager::enableTethering() {
 }
 
 void WifiManager::disableTethering() {
-  disconnectNetwork(tethering_ssid.toUtf8());
+  deactivateConnection(tethering_ssid.toUtf8());
 }
 
 bool WifiManager::tetheringEnabled() {

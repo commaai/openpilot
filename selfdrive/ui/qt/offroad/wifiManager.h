@@ -65,7 +65,7 @@ private:
   QList<Network> get_networks();
   void connect(const QByteArray &ssid, const QString &username, const QString &password, SecurityType security_type);
   QString get_active_ap();
-  void disconnectNetwork(const QString &ssid);
+  void deactivateConnection(const QString &ssid);
   void forgetNetwork(const QString &ssid);
   QVector<QDBusObjectPath> get_active_connections();
   uint get_wifi_device_state();
