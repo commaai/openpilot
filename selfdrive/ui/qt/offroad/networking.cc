@@ -104,7 +104,9 @@ void Networking::refresh() {
 }
 
 void Networking::connectToNetwork(const Network &n) {
-  if (n.security_type == SecurityType::OPEN) {
+  if (wifi->isKnownNetwork(n.ssid)) {
+    wifi->activateWifiConnection(n.ssid);
+  } else if (n.security_type == SecurityType::OPEN) {
     wifi->connect(n);
   } else if (n.security_type == SecurityType::WPA) {
     QString pass = InputDialog::getText("Enter password for \"" + n.ssid + "\"", 8);
