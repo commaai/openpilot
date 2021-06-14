@@ -1,5 +1,7 @@
 #include "selfdrive/ui/qt/widgets/cameraview.h"
 
+#include <QDebug>
+
 #include "selfdrive/ui/qt/qt_window.h"
 
 namespace {
@@ -75,24 +77,52 @@ mat4 get_driver_view_transform() {
 
 } // namespace
 
-CameraViewWidget::CameraViewWidget(VisionStreamType stream_type, QWidget* parent) : stream_type(stream_type), QOpenGLWidget(parent) {
+CameraViewWidget::CameraViewWidget(VisionStreamType stream_type, QWidget* parent) :  QOpenGLWidget(parent) {
   setAttribute(Qt::WA_OpaquePaintEvent);
+  thread_ = new QThread();
+  render_ = new Render(stream_type, this);
+  render_->moveToThread(thread_);
+  connect(thread_, &QThread::finished, render_, &QObject::deleteLater);
+  connect(render_, &Render::contextWanted, this, &CameraViewWidget::moveContextToThread);
 
-  timer = new QTimer(this);
-  connect(timer, &QTimer::timeout, this, &CameraViewWidget::updateFrame);
+  connect(this, &QOpenGLWidget::aboutToResize, [=] {  render_->renderMutex_.lock(); });
+  connect(this, &QOpenGLWidget::resized, [=] {  render_->renderMutex_.unlock(); });
+  connect(this, &CameraViewWidget::aboutToCompose, [=] { render_->renderMutex_.lock(); });
+  connect(this, &CameraViewWidget::frameSwapped, [=] {
+    render_->renderMutex_.unlock();
+    if (render_->frameUpdated()) {
+      emit frameUpdated();
+    }
+    emit renderRequested(false);
+  });
+  
+  connect(this, &CameraViewWidget::renderRequested, render_, &Render::render);
+
+  thread_->start();
 }
 
 CameraViewWidget::~CameraViewWidget() {
-  makeCurrent();
-  if (isValid()) {
-    glDeleteVertexArrays(1, &frame_vao);
-    glDeleteBuffers(1, &frame_vbo);
-    glDeleteBuffers(1, &frame_ibo);
-  }
-  doneCurrent();
+  render_->exiting_ = true;
+  thread_->quit();
+  thread_->wait();
+  delete thread_;
 }
 
-void CameraViewWidget::initializeGL() {
+void CameraViewWidget::moveContextToThread() {
+  std::unique_lock lk(render_->renderMutex_);
+  context()->moveToThread(thread_);
+  render_->grabCond_.notify_one();
+}
+
+void CameraViewWidget::hideEvent(QHideEvent *event) {
+  emit renderRequested(true);
+}
+
+// class Render
+
+Render::Render(VisionStreamType stream_type, CameraViewWidget *w) : stream_type(stream_type), glWindow_(w) {}
+
+void Render::initialize() {
   initializeOpenGLFunctions();
 
   gl_shader = std::make_unique<GLShader>(frame_vertex_shader, frame_fragment_shader);
@@ -133,12 +163,12 @@ void CameraViewWidget::initializeGL() {
     if (stream_type == VISION_STREAM_RGB_WIDE) {
       zoom_ *= 0.5;
     }
-    float zx = zoom_ * 2 * intrinsic_matrix.v[2] / width();
-    float zy = zoom_ * 2 * intrinsic_matrix.v[5] / height();
+    float zx = zoom_ * 2 * intrinsic_matrix.v[2] / glWindow_->width();
+    float zy = zoom_ * 2 * intrinsic_matrix.v[5] / glWindow_->height();
 
     const mat4 frame_transform = {{
       zx, 0.0, 0.0, 0.0,
-      0.0, zy, 0.0, -y_offset / height() * 2,
+      0.0, zy, 0.0, -y_offset / glWindow_->height() * 2,
       0.0, 0.0, 1.0, 0.0,
       0.0, 0.0, 0.0, 1.0,
     }};
@@ -147,47 +177,46 @@ void CameraViewWidget::initializeGL() {
   vipc_client = std::make_unique<VisionIpcClient>("camerad", stream_type, true);
 }
 
-void CameraViewWidget::showEvent(QShowEvent *event) {
-  timer->start(0);
-}
-
-void CameraViewWidget::hideEvent(QHideEvent *event) {
-  timer->stop();
-  vipc_client->connected = false;
-  latest_frame = nullptr;
-}
-
-void CameraViewWidget::paintGL() {
-  if (!latest_frame) {
-    glClearColor(0, 0, 0, 1.0);
-    glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+void Render::render(bool cleanup) {
+  QOpenGLContext *ctx = glWindow_->context();
+  if (!ctx) {  // QOpenGLWidget not yet initialized
+    return;
+  }
+  // move the context to this thread.
+  std::unique_lock lk(renderMutex_);
+  emit contextWanted();
+  grabCond_.wait(lk, [=] {
+    return glWindow_->context()->thread() == QThread::currentThread() || exiting_;
+  });
+  if (exiting_) {
     return;
   }
 
-  glViewport(0, 0, width(), height());
+  // Make the context (and an offscreen surface) current for this thread. The
+  // QOpenGLWidget's fbo is bound in the context.
+  glWindow_->makeCurrent();
 
-  glBindVertexArray(frame_vao);
-  glActiveTexture(GL_TEXTURE0);
-
-  glBindTexture(GL_TEXTURE_2D, texture[latest_frame->idx]->frame_tex);
-  if (!Hardware::EON()) {
-    // this is handled in ion on QCOM
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, latest_frame->width, latest_frame->height,
-                  0, GL_RGB, GL_UNSIGNED_BYTE, latest_frame->addr);
+  if (!inited_) {
+    inited_ = true;
+    initialize();
   }
 
-  glUseProgram(gl_shader->prog);
-  glUniform1i(gl_shader->getUniformLocation("uTexture"), 0);
-  glUniformMatrix4fv(gl_shader->getUniformLocation("uTransform"), 1, GL_TRUE, frame_mat.v);
+  if (cleanup) {
+    vipc_client->connected = false;
+    latest_frame = nullptr;
+  } else {
+    updateFrame();
+  }
+  draw();
 
-  assert(glGetError() == GL_NO_ERROR);
-  glEnableVertexAttribArray(0);
-  glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, (const void *)0);
-  glDisableVertexAttribArray(0);
-  glBindVertexArray(0);
+  // context back to the gui thread.
+  glWindow_->doneCurrent();
+  glWindow_->context()->moveToThread(glWindow_->thread());
+  // Schedule composition.update() will be invoked on the gui thread.
+  QMetaObject::invokeMethod(glWindow_, "update");
 }
 
-void CameraViewWidget::updateFrame() {
+void Render::updateFrame() {
   if (!vipc_client->connected && vipc_client->connect(false)) {
     // init vision
     for (int i = 0; i < vipc_client->num_buffers; i++) {
@@ -210,10 +239,39 @@ void CameraViewWidget::updateFrame() {
     VisionBuf *buf = vipc_client->recv();
     if (buf != nullptr) {
       latest_frame = buf;
-      update();
-      emit frameUpdated();
     } else {
       LOGE("visionIPC receive timeout");
+      QThread::msleep(50);
     }
   }
+}
+
+void Render::draw() {
+  if (!latest_frame) {
+    glClearColor(0, 0, 0, 1.0);
+    glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+    return;
+  }
+
+  glViewport(0, 0, glWindow_->width(), glWindow_->height());
+
+  glBindVertexArray(frame_vao);
+  glActiveTexture(GL_TEXTURE0);
+
+  glBindTexture(GL_TEXTURE_2D, texture[latest_frame->idx]->frame_tex);
+  if (!Hardware::EON()) {
+    // this is handled in ion on QCOM
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, latest_frame->width, latest_frame->height,
+                 0, GL_RGB, GL_UNSIGNED_BYTE, latest_frame->addr);
+  }
+
+  glUseProgram(gl_shader->prog);
+  glUniform1i(gl_shader->getUniformLocation("uTexture"), 0);
+  glUniformMatrix4fv(gl_shader->getUniformLocation("uTransform"), 1, GL_TRUE, frame_mat.v);
+
+  assert(glGetError() == GL_NO_ERROR);
+  glEnableVertexAttribArray(0);
+  glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, (const void *)0);
+  glDisableVertexAttribArray(0);
+  glBindVertexArray(0);
 }
