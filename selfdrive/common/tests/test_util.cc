@@ -84,6 +84,7 @@ TEST_CASE("util::read_file") {
       write(fd, data.data(), data.size() * sizeof(uint8_t));
       file_content.insert(file_content.end(), data.begin(), data.end());
       std::string ret = util::read_file(filename);
+      REQUIRE(ret.size() == file_content.size());
       REQUIRE(memcmp(ret.data(), file_content.data(), file_content.size() * sizeof(uint8_t)) == 0);
     }
     close(fd);
