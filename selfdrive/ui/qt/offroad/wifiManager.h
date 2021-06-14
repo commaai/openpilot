@@ -74,7 +74,7 @@ private:
   SecurityType getSecurityType(const QString &ssid);
   QString ssid_from_path(const QDBusObjectPath &path);
   QDBusObjectPath path_from_ssid(const QString &ssid);
-  QVector<QDBusObjectPath> list_connections();
+  QVector<QPair<QString, QDBusObjectPath>> listConnections();
 
 private slots:
   void change(unsigned int new_state, unsigned int previous_state, unsigned int change_reason);

@@ -278,8 +278,8 @@ QVector<QDBusObjectPath> WifiManager::get_active_connections() {
 }
 
 bool WifiManager::isKnownNetwork(const QString &ssid) {
-  for (const QDBusObjectPath path : list_connections()) {
-    if (ssid_from_path(path) == ssid) {
+  for (auto const& [conn_ssid, conn_path] : listConnections()) {
+    if (conn_ssid == ssid) {
       return true;
     }
   }
@@ -381,7 +381,7 @@ void WifiManager::disconnect() {
   }
 }
 
-QString WifiManager::ssid_from_path(const QDBusObjectPath &path) {
+QString WifiManager::ssid_from_path(const QDBusObjectPath &path) {  // TODO: remove me
   QDBusInterface nm2(nm_service, path.path(), nm_settings_conn_iface, bus);
   nm2.setTimeout(dbus_timeout);
 
@@ -404,16 +404,16 @@ QString WifiManager::ssid_from_path(const QDBusObjectPath &path) {
 
 QDBusObjectPath WifiManager::path_from_ssid(const QString &ssid) {
   QDBusObjectPath path;  // returns uninitialized path if network is not known
-  for (const QDBusObjectPath _path : list_connections()) {
-    if (ssid_from_path(_path) == ssid) {
-      path = _path;
+  for (auto const& [conn_ssid, conn_path] : listConnections()) {
+    if (conn_ssid == ssid) {
+      path = conn_path;
     }
   }
   return path;
 }
 
-QVector<QDBusObjectPath> WifiManager::list_connections() {
-  QVector<QDBusObjectPath> connections;
+QVector<QPair<QString, QDBusObjectPath>> WifiManager::listConnections() {
+  QVector<QPair<QString, QDBusObjectPath>> connections;
   QDBusInterface nm(nm_service, nm_settings_path, nm_settings_iface, bus);
   nm.setTimeout(dbus_timeout);
 
@@ -424,7 +424,7 @@ QVector<QDBusObjectPath> WifiManager::list_connections() {
   while (!args.atEnd()) {
     QDBusObjectPath path;
     args >> path;
-    connections.push_back(path);
+    connections.push_back(qMakePair(ssid_from_path(path), path));
   }
   return connections;
 }
