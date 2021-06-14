@@ -82,6 +82,11 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1715 + STD_CARGO_KG
       ret.wheelbase = 2.74
 
+    elif candidate == CAR.TOURAN_MK2:
+      # Average of SWB and LWB variants
+      ret.mass = 1516 + STD_CARGO_KG
+      ret.wheelbase = 2.79
+
     elif candidate == CAR.AUDI_A3_MK3:
       # Averages of all 8V A3 variants
       ret.mass = 1335 + STD_CARGO_KG
