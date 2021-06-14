@@ -133,8 +133,8 @@ class CarState(CarStateBase):
     self.buttonStates["setCruise"] = bool(pt_cp.vl["GRA_ACC_01"]["GRA_Tip_Setzen"])
     self.buttonStates["resumeCruise"] = bool(pt_cp.vl["GRA_ACC_01"]["GRA_Tip_Wiederaufnahme"])
     self.buttonStates["gapAdjustCruise"] = bool(pt_cp.vl["GRA_ACC_01"]["GRA_Verstellung_Zeitluecke"])
-    ret.leftBlinker = bool(pt_cp.vl["Gateway_72"]["BH_Blinker_li"])
-    ret.rightBlinker = bool(pt_cp.vl["Gateway_72"]["BH_Blinker_re"])
+    ret.leftBlinker = bool(pt_cp.vl["Blinkmodi_02"]["Comfort_Signal_Left"])
+    ret.rightBlinker = bool(pt_cp.vl["Blinkmodi_02"]["Comfort_Signal_Right"])
 
     # Read ACC hardware button type configuration info that has to pass thru
     # to the radar. Ends up being different for steering wheel buttons vs
@@ -173,8 +173,8 @@ class CarState(CarStateBase):
       ("ZV_HFS_offen", "Gateway_72", 0),            # Door open, rear left
       ("ZV_HBFS_offen", "Gateway_72", 0),           # Door open, rear right
       ("ZV_HD_offen", "Gateway_72", 0),             # Trunk or hatch open
-      ("BH_Blinker_li", "Gateway_72", 0),           # Left turn signal on
-      ("BH_Blinker_re", "Gateway_72", 0),           # Right turn signal on
+      ("Comfort_Signal_Left", "Blinkmodi_02", 0),   # Left turn signal including comfort blink interval
+      ("Comfort_Signal_Right", "Blinkmodi_02", 0),  # Right turn signal including comfort blink interval
       ("AB_Gurtschloss_FA", "Airbag_02", 0),        # Seatbelt status, driver
       ("AB_Gurtschloss_BF", "Airbag_02", 0),        # Seatbelt status, passenger
       ("ESP_Fahrer_bremst", "ESP_05", 0),           # Brake pedal pressed
@@ -216,6 +216,7 @@ class CarState(CarStateBase):
       ("Motor_14", 10),     # From J623 Engine control module
       ("Airbag_02", 5),     # From J234 Airbag control module
       ("Kombi_01", 2),      # From J285 Instrument cluster
+      ("Blinkmodi_02", 1),  # From J519 BCM (sent at 1Hz when no lights active, 50Hz when active)
       ("Einheiten_01", 1),  # From J??? not known if gateway, cluster, or BCM
     ]
 
