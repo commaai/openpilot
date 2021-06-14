@@ -31,7 +31,7 @@ TEST_CASE("util::read_file") {
     return buffer.str();
   };
 
-  auto test_read_proc = [=]() {
+  SECTION( "read /proc" ) {
     DIR *d = opendir("/proc");
     struct dirent *de = nullptr;
     while ((de = readdir(d))) {
@@ -41,9 +41,8 @@ TEST_CASE("util::read_file") {
       REQUIRE(ret1 == ret2);
     }
     closedir(d);
-  };
-
-  auto test_read_file = []() {
+  }
+  SECTION( "read normal file" ) {
     std::vector<std::string> test_data;
     test_data.push_back(""); // test read empty file
     // continue reading to 64kb
@@ -61,8 +60,11 @@ TEST_CASE("util::read_file") {
       REQUIRE(ret == file_content);
     }
     close(fd);
-  };
-
-  test_read_proc();
-  test_read_file();
+  }
+  SECTION( "read non-exits file" ) {
+    for (int i = 0; i < 5; ++i) {
+      std::string ret = util::read_file(random_string(5));
+      REQUIRE(ret == "");
+    }
+  }
 }
