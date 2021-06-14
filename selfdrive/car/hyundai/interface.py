@@ -27,7 +27,6 @@ class CarInterface(CarInterfaceBase):
     ret.steerLimitTimer = 0.4
     tire_stiffness_factor = 1.
 
-    ret.stoppingControl = True
     ret.startAccel = 1.0
 
     if candidate == CAR.SANTA_FE:
