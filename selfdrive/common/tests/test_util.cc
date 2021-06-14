@@ -54,7 +54,7 @@ TEST_CASE("util::read_file") {
     char filename[] = "/tmp/test_read_XXXXXX";
     int fd = mkstemp(filename);
     std::string file_content;
-    for (auto data : test_data) {
+    for (auto &data : test_data) {
       write(fd, data.c_str(), data.size());
       file_content += data;
       std::string ret = util::read_file(filename);
