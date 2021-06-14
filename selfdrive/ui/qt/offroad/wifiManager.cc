@@ -488,6 +488,7 @@ void WifiManager::addTetheringConnection() {
   QMap<QString,QVariant> address;
   address["address"] = "192.168.43.1";
   address["prefix"] = 24u;
+  connection["ipv4"]["dns-priority"] = "1100";
   connection["ipv4"]["address-data"] = QVariant::fromValue(IpConfig() << address);
   connection["ipv4"]["gateway"] = "192.168.43.1";
   connection["ipv6"]["method"] = "ignore";
