@@ -55,7 +55,7 @@ void Sidebar::updateState(const UIState &s) {
 
   auto deviceState = sm["deviceState"].getDeviceState();
   setProperty("netType", network_type[deviceState.getNetworkType()]);
-  setProperty("netStrength", (int)deviceState.getNetworkStrength());
+  setProperty("netStrength", strength_map[deviceState.getNetworkStrength()]);
 
   auto last_ping = deviceState.getLastAthenaPingTime();
   if (last_ping == 0) {
