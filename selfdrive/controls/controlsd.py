@@ -11,7 +11,6 @@ from selfdrive.config import Conversions as CV
 from selfdrive.swaglog import cloudlog
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.car.car_helpers import get_car, get_startup_event, get_one_can
-from selfdrive.controls.lib.lane_planner import CAMERA_OFFSET
 from selfdrive.controls.lib.drive_helpers import update_v_cruise, initialize_v_cruise
 from selfdrive.controls.lib.longcontrol import LongControl, STARTING_TARGET_SPEED
 from selfdrive.controls.lib.latcontrol_pid import LatControlPID
@@ -24,6 +23,8 @@ from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.controls.lib.longitudinal_planner import LON_MPC_STEP
 from selfdrive.locationd.calibrationd import Calibration
 from selfdrive.hardware import HARDWARE, TICI
+from selfdrive.controls.lib.dynamic_follow.df_manager import dfManager
+from common.op_params import opParams
 
 LDW_MIN_SPEED = 31 * CV.MPH_TO_MS
 LANE_DEPARTURE_THRESHOLD = 0.1
@@ -46,6 +47,7 @@ EventName = car.CarEvent.EventName
 class Controls:
   def __init__(self, sm=None, pm=None, can_sock=None):
     config_realtime_process(4 if TICI else 3, Priority.CTRL_HIGH)
+    self.op_params = opParams()
 
     # Setup sockets
     self.pm = pm
@@ -68,6 +70,13 @@ class Controls:
                                      'driverMonitoringState', 'longitudinalPlan', 'lateralPlan', 'liveLocationKalman',
                                      'managerState', 'liveParameters', 'radarState'] + self.camera_packets + joystick_packet,
                                      ignore_alive=ignore, ignore_avg_freq=['radarState', 'longitudinalPlan'])
+
+    self.sm_smiskol = messaging.SubMaster(['radarState', 'dynamicFollowData', 'liveTracks', 'dynamicFollowButton',
+                                           'laneSpeed', 'dynamicCameraOffset', 'modelLongButton'])
+
+    self.op_params = opParams()
+    self.df_manager = dfManager()
+    self.last_model_long = False
 
     self.can_sock = can_sock
     if can_sock is None:
@@ -305,8 +314,53 @@ class Controls:
 
     # Only allow engagement with brake pressed when stopped behind another stopped car
     if CS.brakePressed and self.sm['longitudinalPlan'].vTargetFuture >= STARTING_TARGET_SPEED \
-      and self.CP.openpilotLongitudinalControl and CS.vEgo < 0.3:
+      and self.CP.openpilotLongitudinalControl and CS.vEgo < 0.3 and not self.last_model_long:
       self.events.add(EventName.noTarget)
+
+    self.add_stock_additions_alerts(CS)
+
+  def add_stock_additions_alerts(self, CS):
+    self.AM.SA_set_frame(self.sm.frame)
+    self.AM.SA_set_enabled(self.enabled)
+    # alert priority is defined by code location, keeping is highest, then lane speed alert, then auto-df alert
+    if self.sm_smiskol['modelLongButton'].enabled != self.last_model_long:
+      extra_text_1 = 'disabled!' if self.last_model_long else 'enabled!'
+      extra_text_2 = '' if self.last_model_long else ', model may behave unexpectedly'
+      self.AM.SA_add('modelLongAlert', extra_text_1=extra_text_1, extra_text_2=extra_text_2)
+      return
+
+    if self.sm_smiskol['dynamicCameraOffset'].keepingLeft:
+      self.AM.SA_add('laneSpeedKeeping', extra_text_1='LEFT', extra_text_2='Oncoming traffic in right lane')
+      return
+    elif self.sm_smiskol['dynamicCameraOffset'].keepingRight:
+      self.AM.SA_add('laneSpeedKeeping', extra_text_1='RIGHT', extra_text_2='Oncoming traffic in left lane')
+      return
+
+    ls_state = self.sm_smiskol['laneSpeed'].state
+    if ls_state != '':
+      self.AM.SA_add('lsButtonAlert', extra_text_1=ls_state)
+      return
+
+    faster_lane = self.sm_smiskol['laneSpeed'].fastestLane
+    if faster_lane in ['left', 'right']:
+      ls_alert = 'laneSpeedAlert'
+      if not self.sm_smiskol['laneSpeed'].new:
+        ls_alert += 'Silent'
+      self.AM.SA_add(ls_alert, extra_text_1='{} lane faster'.format(faster_lane).upper(), extra_text_2='Change lanes to faster {} lane'.format(faster_lane))
+      return
+
+    df_out = self.df_manager.update()
+    if df_out.changed:
+      df_alert = 'dfButtonAlert'
+      if df_out.is_auto and df_out.last_is_auto:
+        # only show auto alert if engaged, not hiding auto, and time since lane speed alert not showing
+        if CS.cruiseState.enabled and not self.op_params.get('hide_auto_df_alerts'):
+          df_alert += 'Silent'
+          self.AM.SA_add(df_alert, extra_text_1=df_out.model_profile_text + ' (auto)')
+          return
+      else:
+        self.AM.SA_add(df_alert, extra_text_1=df_out.user_profile_text, extra_text_2='Dynamic follow: {} profile active'.format(df_out.user_profile_text))
+        return
 
   def data_sample(self):
     """Receive data from sockets and update carState"""
@@ -316,6 +370,7 @@ class Controls:
     CS = self.CI.update(self.CC, can_strs)
 
     self.sm.update(0)
+    self.sm_smiskol.update(0)
 
     all_valid = CS.canValid and self.sm.all_alive_and_valid()
     if not self.initialized and (all_valid or self.sm.frame * DT_CTRL > 2.0):
@@ -451,11 +506,14 @@ class Controls:
     v_acc_sol = long_plan.vStart + dt * (a_acc_sol + long_plan.aStart) / 2.0
 
     if not self.joystick_mode:
+      extras_loc = {'lead_one': self.sm_smiskol['radarState'].leadOne, 'mpc_TR': self.sm_smiskol['dynamicFollowData'].mpcTR,  # TODO: just pass the services
+                    'live_tracks': self.sm_smiskol['liveTracks'], 'has_lead': long_plan.hasLead}
+
       # Gas/Brake PID loop
       actuators.gas, actuators.brake = self.LoC.update(self.active, CS, v_acc_sol, long_plan.vTargetFuture, a_acc_sol, self.CP)
 
       # Steering PID loop and lateral MPC
-      actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(self.active, CS, self.CP, self.VM, params, lat_plan)
+      actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(self.active, CS, self.CP, self.VM, params, lat_plan, extras_loc)
     else:
       lac_log = log.ControlsState.LateralDebugState.new_message()
       if self.sm.rcv_frame['testJoystick'] > 0 and self.active:
@@ -532,6 +590,7 @@ class Controls:
     if len(meta.desirePrediction) and ldw_allowed:
       l_lane_change_prob = meta.desirePrediction[Desire.laneChangeLeft - 1]
       r_lane_change_prob = meta.desirePrediction[Desire.laneChangeRight - 1]
+      CAMERA_OFFSET = self.sm['lateralPlan'].cameraOffset
       l_lane_close = left_lane_visible and (self.sm['modelV2'].laneLines[1].y[0] > -(1.08 + CAMERA_OFFSET))
       r_lane_close = right_lane_visible and (self.sm['modelV2'].laneLines[2].y[0] < (1.08 - CAMERA_OFFSET))
 
@@ -546,6 +605,8 @@ class Controls:
     self.AM.add_many(self.sm.frame, alerts, self.enabled)
     self.AM.process_alerts(self.sm.frame, clear_event)
     CC.hudControl.visualAlert = self.AM.visual_alert
+
+    self.last_model_long = self.sm_smiskol['modelLongButton'].enabled
 
     if not self.read_only and self.initialized:
       # send car controls over can
@@ -588,7 +649,7 @@ class Controls:
     controlsState.vPid = float(self.LoC.v_pid)
     controlsState.vCruise = float(self.v_cruise_kph)
     controlsState.upAccelCmd = float(self.LoC.pid.p)
-    controlsState.uiAccelCmd = float(self.LoC.pid.i)
+    controlsState.uiAccelCmd = float(self.LoC.pid.id)
     controlsState.ufAccelCmd = float(self.LoC.pid.f)
     controlsState.vTargetLead = float(v_acc)
     controlsState.aTarget = float(a_acc)

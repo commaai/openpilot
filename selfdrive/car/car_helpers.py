@@ -1,7 +1,7 @@
 import os
 from common.params import Params
 from common.basedir import BASEDIR
-from selfdrive.version import comma_remote, tested_branch
+from selfdrive.version import comma_remote, tested_branch, smiskol_remote
 from selfdrive.car.fingerprints import eliminate_incompatible_cars, all_legacy_fingerprint_cars
 from selfdrive.car.vin import get_vin, VIN_UNKNOWN
 from selfdrive.car.fw_versions import get_fw_versions, match_fw_to_car
@@ -14,7 +14,7 @@ EventName = car.CarEvent.EventName
 
 
 def get_startup_event(car_recognized, controller_available, fuzzy_fingerprint, fw_seen):
-  if comma_remote and tested_branch:
+  if (comma_remote or smiskol_remote) and tested_branch:
     event = EventName.startup
   else:
     event = EventName.startupMaster
