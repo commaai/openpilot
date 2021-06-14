@@ -148,8 +148,6 @@ void OnroadAlerts::stopSounds() {
 }
 
 void OnroadAlerts::paintEvent(QPaintEvent *event) {
-  QPainter p(this);
-
   if (alert_size == cereal::ControlsState::AlertSize::NONE) {
     return;
   }
@@ -160,6 +158,8 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
   };
   int h = alert_sizes[alert_size];
   QRect r = QRect(0, height() - h, width(), h);
+
+  QPainter p(this);
 
   // draw background + gradient
   p.setPen(Qt::NoPen);
