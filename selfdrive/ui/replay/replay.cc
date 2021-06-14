@@ -218,7 +218,7 @@ void Replay::pushFrame(int cur_seg_num, CameraType cam_type, uint32_t frame_id) 
     if (auto seg = getSegment(n)) {
       auto eidxMap = seg->log->encoderIdx[cam_type];
       if (auto eidx = eidxMap.find(frame_id); eidx != eidxMap.end()) {
-        camera_server_.pushFrame(cam_type, seg->frames[cam_type], eidx->second.segmentId);
+        camera_server_.pushFrame(cam_type, seg->frames[cam_type], eidx->second.frameEncodeId);
         break;
       }
     }
