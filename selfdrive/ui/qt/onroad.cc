@@ -152,7 +152,7 @@ void OnroadAlerts::stopSounds() {
   for (auto &kv : sounds) {
     // Only stop repeating sounds
     auto &[sound, loops] = kv.second;
-   if (sound.loopsRemaining() == QSoundEffect::Infinite) {
+    if (sound.loopsRemaining() == QSoundEffect::Infinite) {
       sound.stop();
     }
   }
