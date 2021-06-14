@@ -212,7 +212,8 @@ void WifiManager::connect(const Network &n, const QString &password) {
 
 void WifiManager::connect(const Network &n, const QString &username, const QString &password) {
   connecting_to_network = n.ssid;
-  disconnect();
+  // disconnect();
+  forgetNetwork(n.ssid); //Clear all connections that may already exist to the network we are connecting
   connect(n.ssid, username, password, n.security_type);
 }
 
@@ -279,18 +280,15 @@ QVector<QDBusObjectPath> WifiManager::get_active_connections() {
 }
 
 bool WifiManager::isKnownNetwork(const QString &ssid) {
-  for (auto const& [conn_ssid, conn_path] : listConnections()) {
-    if (conn_ssid == ssid) {
-      return true;
-    }
-  }
-  return false;
+  return !pathFromSsid(ssid).path().isEmpty();
 }
 
 void WifiManager::forgetNetwork(const QString &ssid) {
   QDBusObjectPath path = pathFromSsid(ssid);
-  QDBusInterface nm2(nm_service, path.path(), nm_settings_conn_iface, bus);
-  nm2.call("Delete");
+  if (!path.path().isEmpty()) {
+    QDBusInterface nm2(nm_service, path.path(), nm_settings_conn_iface, bus);
+    nm2.call("Delete");
+  }
 }
 
 void WifiManager::request_scan() {
@@ -421,15 +419,13 @@ QVector<QPair<QString, QDBusObjectPath>> WifiManager::listConnections() {
 }
 
 void WifiManager::activateWifiConnection(const QString &ssid) {
-  QString devicePath = get_adapter();
   QDBusObjectPath path = pathFromSsid(ssid);
-  if (path.path().isEmpty()) {
-    return;
+  if (!path.path().isEmpty()) {
+    QString devicePath = get_adapter();
+    QDBusInterface nm3(nm_service, nm_path, nm_iface, bus);
+    nm3.setTimeout(dbus_timeout);
+    nm3.call("ActivateConnection", QVariant::fromValue(path), QVariant::fromValue(QDBusObjectPath(devicePath)), QVariant::fromValue(QDBusObjectPath("/")));
   }
-
-  QDBusInterface nm3(nm_service, nm_path, nm_iface, bus);
-  nm3.setTimeout(dbus_timeout);
-  nm3.call("ActivateConnection", QVariant::fromValue(path), QVariant::fromValue(QDBusObjectPath(devicePath)), QVariant::fromValue(QDBusObjectPath("/")));
 }
 
 // Functions for tethering
