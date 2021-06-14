@@ -212,6 +212,7 @@ void WifiManager::connect(const Network &n, const QString &password) {
 
 void WifiManager::connect(const Network &n, const QString &username, const QString &password) {
   connecting_to_network = n.ssid;
+  disconnect();
   connect(n.ssid, username, password, n.security_type);
 }
 
