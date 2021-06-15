@@ -352,14 +352,14 @@ Directory Structure
         ├── camerad         # Driver to capture images from the camera sensors
         ├── car             # Car specific code to read states and control actuators
         ├── common          # Shared C/C++ code for the daemons
-        ├── controls        # Perception, planning and controls
+        ├── controls        # Planning and controls
         ├── debug           # Tools to help you debug and do car ports
-        ├── locationd       # Soon to be home of precise location
+        ├── locationd       # Precise localization and vehicle parameter estimation
         ├── logcatd         # Android logcat as a service
         ├── loggerd         # Logger and uploader of car data
         ├── modeld          # Driving and monitoring model runners
         ├── proclogd        # Logs information from proc
-        ├── sensord         # IMU / GPS interface code
+        ├── sensord         # IMU interface code
         ├── test            # Unit tests, system tests and a car simulator
         └── ui              # The UI
 
