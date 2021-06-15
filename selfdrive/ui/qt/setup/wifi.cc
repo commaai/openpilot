@@ -6,7 +6,6 @@
 #include <cstdlib>
 
 #include <QApplication>
-#include <QLabel>
 #include <QVBoxLayout>
 
 #include "selfdrive/ui/qt/offroad/networking.h"

@@ -1,5 +1,7 @@
 #include "selfdrive/ui/qt/widgets/toggle.h"
 
+#include <QPainter>
+
 Toggle::Toggle(QWidget *parent) : QAbstractButton(parent),
 _height(80),
 _height_rect(60),

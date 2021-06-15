@@ -1,6 +1,5 @@
 #include "selfdrive/ui/qt/offroad/onboarding.h"
 
-#include <QDesktopWidget>
 #include <QLabel>
 #include <QPainter>
 #include <QQmlContext>
@@ -11,7 +10,6 @@
 #include "selfdrive/common/util.h"
 #include "selfdrive/ui/qt/home.h"
 #include "selfdrive/ui/qt/widgets/input.h"
-
 
 void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
   QPoint touch = QPoint(e->x(), e->y()) - imageCorner;

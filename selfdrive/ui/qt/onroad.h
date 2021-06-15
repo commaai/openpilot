@@ -2,13 +2,16 @@
 
 #include <map>
 
+#include <QOpenGLFunctions>
+#include <QOpenGLWidget>
 #include <QSoundEffect>
-#include <QtWidgets>
+#include <QStackedLayout>
+#include <QWidget>
 
 #include "cereal/gen/cpp/log.capnp.h"
 #include "selfdrive/hardware/hw.h"
-#include "selfdrive/ui/ui.h"
 #include "selfdrive/ui/qt/qt_window.h"
+#include "selfdrive/ui/ui.h"
 
 typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
 
