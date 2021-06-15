@@ -8,7 +8,8 @@ class MapPanel : public QWidget {
 public:
   explicit MapPanel(QWidget* parent = nullptr);
 
-  void parseResponse(const QString& response);
+  void navigateTo(const QJsonObject &place);
+  void parseResponse(const QString &response);
 
 private:
   QPushButton *home_button, *work_button;

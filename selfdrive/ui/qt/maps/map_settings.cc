@@ -57,7 +57,7 @@ static QString shorten(const QString &str, int max_len) {
   return str.size() > max_len ? str.left(max_len).trimmed() + "…" : str;
 }
 
-void MapPanel::parseResponse(const QString& response) {
+void MapPanel::parseResponse(const QString &response) {
   QJsonDocument doc = QJsonDocument::fromJson(response.trimmed().toUtf8());
   if (doc.isNull()) {
     qDebug() << "JSON Parse failed on navigation locations";
@@ -66,7 +66,6 @@ void MapPanel::parseResponse(const QString& response) {
 
   for (auto location : doc.array()) {
     auto obj = location.toObject();
-    qDebug() << obj;
 
     auto type = obj["save_type"].toString();
     auto label = obj["label"].toString();
@@ -78,11 +77,22 @@ void MapPanel::parseResponse(const QString& response) {
         home_address->setText(shorten(name, 15) + "\n" + shorten(details, 50));
         home_address->setStyleSheet(R"(font-size: 30px; color: white;)");
         home_button->setIcon(QPixmap("../assets/navigation/home.png"));
+        QObject::connect(home_button, &QPushButton::clicked, [=]() {
+          navigateTo(obj);
+        });
       } else if (label == "work") {
         work_address->setText(shorten(name, 15) + "\n" + shorten(details, 50));
         work_address->setStyleSheet(R"(font-size: 30px; color: white;)");
         work_button->setIcon(QPixmap("../assets/navigation/work.png"));
+        QObject::connect(work_button, &QPushButton::clicked, [=]() {
+          navigateTo(obj);
+        });
       }
     }
   }
+}
+
+void MapPanel::navigateTo(const QJsonObject &place) {
+  QJsonDocument doc(place);
+  Params().put("NavDestination", doc.toJson().toStdString());
 }
