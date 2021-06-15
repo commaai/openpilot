@@ -61,6 +61,7 @@ class CAR:
   JETTA_MK7 = "VOLKSWAGEN JETTA 7TH GEN"      # Chassis BU, Mk7 Jetta
   PASSAT_MK8 = "VOLKSWAGEN PASSAT 8TH GEN"    # Chassis 3G, Mk8 Passat and variants
   TIGUAN_MK2 = "VOLKSWAGEN TIGUAN 2ND GEN"    # Chassis AD/BW, Mk2 VW Tiguan and variants
+  TOURAN_MK2 = "VOLKSWAGEN TOURAN 2ND GEN"    # Chassis 1T, Mk2 VW Touran and variants
   AUDI_A3_MK3 = "AUDI A3 3RD GEN"             # Chassis 8V/FF, Mk3 Audi A3 and variants
   AUDI_Q2_MK1 = "AUDI Q2 1ST GEN"             # Chassis GA, Mk1 Audi Q2 (RoW) and Q2L (China only)
   SEAT_ATECA_MK1 = "SEAT ATECA 1ST GEN"       # Chassis 5F, Mk1 SEAT Ateca and CUPRA Ateca
@@ -298,6 +299,23 @@ FW_VERSIONS = {
       b'\xf1\x872Q0907572R \xf1\x890372',
     ],
   },
+  CAR.TOURAN_MK2: {
+    (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x8704L906026HM\xf1\x893017',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x870CW300041E \xf1\x891005',
+    ],
+    (Ecu.srs, 0x715, None): [
+      b'\xf1\x875Q0959655AS\xf1\x890318\xf1\x82\023363500213533353141324C4732479333313100',
+    ],
+    (Ecu.eps, 0x712, None): [
+      b'\xf1\x875Q0909143P \xf1\x892051\xf1\x820531B0062105',
+    ],
+    (Ecu.fwdRadar, 0x757, None): [
+      b'\xf1\x873Q0907572C \xf1\x890195',
+    ],
+  },
   CAR.AUDI_A3_MK3: {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8704E906023AN\xf1\x893695',
@@ -502,6 +520,7 @@ DBC = {
   CAR.JETTA_MK7: dbc_dict('vw_mqb_2010', None),
   CAR.PASSAT_MK8: dbc_dict('vw_mqb_2010', None),
   CAR.TIGUAN_MK2: dbc_dict('vw_mqb_2010', None),
+  CAR.TOURAN_MK2: dbc_dict('vw_mqb_2010', None),
   CAR.AUDI_A3_MK3: dbc_dict('vw_mqb_2010', None),
   CAR.AUDI_Q2_MK1: dbc_dict('vw_mqb_2010', None),
   CAR.SEAT_ATECA_MK1: dbc_dict('vw_mqb_2010', None),
