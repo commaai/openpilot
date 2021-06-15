@@ -1,19 +1,5 @@
 #include "selfdrive/ui/qt/widgets/controls.h"
 
-QFrame *horizontal_line(QWidget *parent) {
-  QFrame *line = new QFrame(parent);
-  line->setFrameShape(QFrame::StyledPanel);
-  line->setStyleSheet(R"(
-    margin-left: 40px;
-    margin-right: 40px;
-    border-width: 1px;
-    border-bottom-style: solid;
-    border-color: gray;
-  )");
-  line->setFixedHeight(2);
-  return line;
-}
-
 AbstractControl::AbstractControl(const QString &title, const QString &desc, const QString &icon, QWidget *parent) : QFrame(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setMargin(0);

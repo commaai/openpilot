@@ -8,7 +8,6 @@
 #include "selfdrive/common/params.h"
 #include "selfdrive/ui/qt/widgets/toggle.h"
 
-QFrame *horizontal_line(QWidget *parent = nullptr);
 class AbstractControl : public QFrame {
   Q_OBJECT
 
