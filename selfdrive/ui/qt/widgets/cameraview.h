@@ -22,9 +22,8 @@ public:
   ~CameraViewWidget();
 
 signals:
- void hide();
- void renderRequested(bool cleanup);
  void frameUpdated();
+ void renderRequested(bool cleanup);
 
 public slots:
   void moveContextToThread();
