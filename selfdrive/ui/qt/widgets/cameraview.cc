@@ -241,7 +241,7 @@ void Render::updateFrame() {
       latest_frame = buf;
     } else {
       LOGE("visionIPC receive timeout");
-      QThread::msleep(50);
+      QThread::msleep(20);
     }
   }
 }
