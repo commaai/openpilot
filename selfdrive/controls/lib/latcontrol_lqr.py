@@ -102,4 +102,4 @@ class LatControlLQR():
     lqr_log.output = output_steer
     lqr_log.lqrOutput = lqr_output
     lqr_log.saturated = saturated
-    return output_steer, 0, lqr_log
+    return output_steer, desired_angle, lqr_log

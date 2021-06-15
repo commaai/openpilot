@@ -146,4 +146,4 @@ class LatControlINDI():
       check_saturation = (CS.vEgo > 10.) and not CS.steeringRateLimited and not CS.steeringPressed
       indi_log.saturated = self._check_saturation(self.output_steer, check_saturation, steers_max)
 
-    return float(self.output_steer), 0, indi_log
+    return float(self.output_steer), steers_des, indi_log

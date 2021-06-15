@@ -140,6 +140,8 @@ class Controls:
     self.events_prev = []
     self.current_alert_types = [ET.PERMANENT]
     self.logged_comm_issue = False
+    self.v_target = 0.0
+    self.a_target = 0.0
 
     # TODO: no longer necessary, aside from process replay
     self.sm['liveParameters'].valid = True
@@ -440,7 +442,7 @@ class Controls:
       self.LoC.reset(v_pid=CS.vEgo)
 
     # Gas/Brake PID loop
-    actuators.gas, actuators.brake = self.LoC.update(self.active, CS, self.CP, long_plan)
+    actuators.gas, actuators.brake, self.v_target, self.a_target = self.LoC.update(self.active, CS, self.CP, long_plan)
 
     # Steering PID loop and lateral MPC
     actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(self.active, CS, self.CP, self.VM, params, lat_plan)
@@ -484,7 +486,8 @@ class Controls:
     brake_discount = (1.0 - clip(actuators.brake * 3., 0.0, 1.0))
     speed_override = max(0.0, (self.LoC.v_pid + CS.cruiseState.speedOffset) * brake_discount)
     CC.cruiseControl.speedOverride = float(speed_override if self.CP.enableCruise else 0.0)
-    CC.cruiseControl.accelOverride = self.CI.calc_accel_override(CS.aEgo, self.sm['longitudinalPlan'].accels[5], CS.vEgo, self.sm['longitudinalPlan'].speeds[5])
+    CC.cruiseControl.accelOverride = self.CI.calc_accel_override(CS.aEgo, self.a_target,
+                                                                 CS.vEgo, self.v_target)
 
     CC.hudControl.setSpeed = float(self.v_cruise_kph * CV.KPH_TO_MS)
     CC.hudControl.speedVisible = self.enabled
@@ -529,12 +532,8 @@ class Controls:
 
     # Curvature & Steering angle
     params = self.sm['liveParameters']
-    lat_plan = self.sm['lateralPlan']
-
     steer_angle_without_offset = math.radians(CS.steeringAngleDeg - params.angleOffsetAverageDeg)
     curvature = -self.VM.calc_curvature(steer_angle_without_offset, CS.vEgo)
-    angle_steers_des = math.degrees(self.VM.get_steer_from_curvature(-lat_plan.curvature, CS.vEgo))
-    angle_steers_des += params.angleOffsetDeg
 
     # controlsState
     dat = messaging.new_message('controlsState')
@@ -553,7 +552,7 @@ class Controls:
     controlsState.enabled = self.enabled
     controlsState.active = self.active
     controlsState.curvature = curvature
-    controlsState.steeringAngleDesiredDeg = angle_steers_des
+    controlsState.steeringAngleDesiredDeg = actuators.steeringAngleDeg
     controlsState.state = self.state
     controlsState.engageable = not self.events.any(ET.NO_ENTRY)
     controlsState.longControlState = self.LoC.long_control_state
