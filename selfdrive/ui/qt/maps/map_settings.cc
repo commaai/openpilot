@@ -44,7 +44,6 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
   main_layout->addWidget(horizontal_line());
 
   QString dongle = QString::fromStdString(params.get("DongleId", false));
-  // TODO: Add buttons for home/work shortcuts
 
   main_layout->addWidget(new ParamControl("NavSettingTime24h",
                                     "Show ETA in 24h format",
