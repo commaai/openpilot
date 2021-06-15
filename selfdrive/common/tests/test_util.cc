@@ -36,6 +36,9 @@ TEST_CASE("util::read_file") {
     REQUIRE(ret == content);
     close(fd);
   }
+  SECTION("read directory") {
+    REQUIRE(util::read_file(".").empty());
+  }
   SECTION("read non-existant file") {
     std::string ret = util::read_file("does_not_exist");
     REQUIRE(ret.empty());
