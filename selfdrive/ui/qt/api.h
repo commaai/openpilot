@@ -5,12 +5,11 @@
 #include <openssl/rsa.h>
 
 #include <QCryptographicHash>
+#include <QJsonObject>
 #include <QJsonValue>
 #include <QNetworkReply>
 #include <QNetworkRequest>
-#include <QPair>
 #include <QString>
-#include <QVector>
 #include <QWidget>
 #include <atomic>
 
@@ -19,7 +18,7 @@ class CommaApi : public QObject {
 
 public:
   static QByteArray rsa_sign(const QByteArray &data);
-  static QString create_jwt(const QVector<QPair<QString, QJsonValue>> &payloads = {}, int expiry = 3600);
+  static QString create_jwt(const QJsonObject &payloads = {}, int expiry = 3600);
 };
 
 /**
