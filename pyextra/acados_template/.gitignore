@@ -1,4 +1,1 @@
-*.egg-info
-__pycache__
-.eggs
-dist
+__pycache__/

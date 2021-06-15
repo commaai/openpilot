@@ -4,13 +4,13 @@ DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
 
 ARCHNAME="x86_64"
 if [ -f /TICI ]; then
-	ARCHNAME="larch64"
+  ARCHNAME="larch64"
 elif [ -f /EON ]; then
-	ARCHNAME="aarch64"
+  ARCHNAME="aarch64"
 fi
 
 if [ ! -d acados/ ]; then
-	git clone https://github.com/acados/acados.git $DIR/acados
+  git clone https://github.com/acados/acados.git $DIR/acados
 fi
 cd acados
 git fetch
@@ -28,5 +28,9 @@ cmake -DACADOS_INSTALL_DIR=$INSTALL_DIR -DACADOS_WITH_QPOASES=ON ..
 make install
 rm -rf $INSTALL_DIR/cmake
 
-# setup python
-cp -r $DIR/acados/interfaces/acados_template/ $DIR/../../pyextra
+# setup acados for dev
+if [ -z "$SKIP_EXTRAS" ]; then
+  # setup python
+  pip3 install -e $DIR/acados/interfaces/acados_template
+  #cp -r $DIR/acados/interfaces/acados_template/acados_template/ $DIR/../../pyextra
+fi

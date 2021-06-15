@@ -1,5 +1,0 @@
-# cargo
-target/
-Cargo.lock
-# vim
-.*.sw[a-z]
