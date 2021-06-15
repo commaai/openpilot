@@ -3,10 +3,13 @@
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
 
 ARCHNAME="x86_64"
+BLAS_TARGET="X64_AUTOMATIC"
 if [ -f /TICI ]; then
   ARCHNAME="larch64"
+  BLAS_TARGET="ARMV8A_ARM_CORTEX_A57"
 elif [ -f /EON ]; then
   ARCHNAME="aarch64"
+  BLAS_TARGET="ARMV8A_ARM_CORTEX_A57"
 fi
 
 if [ ! -d acados/ ]; then
@@ -17,20 +20,17 @@ git fetch
 git checkout 0334f7c7f67a52ee511037fa691552c1805493ea
 git submodule update --recursive --init
 
-INSTALL_DIR="$DIR/$ARCHNAME"
-rm -rf $INSTALL_DIR
-mkdir -p $INSTALL_DIR
-
 # build
 mkdir -p build
 cd build
-cmake -DACADOS_INSTALL_DIR=$INSTALL_DIR -DACADOS_WITH_QPOASES=ON ..
-make install
-rm -rf $INSTALL_DIR/cmake
+cmake -DACADOS_WITH_QPOASES=ON -UBLASFEO_TARGET -DBLASFEO_TARGET=$BLAS_TARGET ..
+make -j4 install
 
-# setup acados for dev
+INSTALL_DIR="$DIR/$ARCHNAME"
+rm -rf $INSTALL_DIR
+mkdir -p $INSTALL_DIR
+cp -r $DIR/acados/lib $INSTALL_DIR
+
 if [ -z "$SKIP_EXTRAS" ]; then
-  # setup python
   pip3 install -e $DIR/acados/interfaces/acados_template
-  #cp -r $DIR/acados/interfaces/acados_template/acados_template/ $DIR/../../pyextra
 fi
