@@ -5,9 +5,9 @@
 #include <QLabel>
 #include <QPainter>
 
-#include "selfdrive/ui/qt/widgets/scrollview.h"
 #include "selfdrive/ui/qt/util.h"
-
+#include "selfdrive/ui/qt/widgets/controls.h"
+#include "selfdrive/ui/qt/widgets/scrollview.h"
 
 void NetworkStrengthWidget::paintEvent(QPaintEvent* event) {
   QPainter p(this);
@@ -116,11 +116,11 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   connect(back, &QPushButton::released, [=]() { emit backPress(); });
   main_layout->addWidget(back, 0, Qt::AlignLeft);
 
+  ListWidget *list = new ListWidget(this);
   // Enable tethering layout
   ToggleControl *tetheringToggle = new ToggleControl("Enable Tethering", "", "", wifi->isTetheringEnabled());
   main_layout->addWidget(tetheringToggle);
   QObject::connect(tetheringToggle, &ToggleControl::toggleFlipped, this, &AdvancedNetworking::toggleTethering);
-  main_layout->addWidget(horizontal_line(), 0);
 
   // Change tethering password
   ButtonControl *editPasswordButton = new ButtonControl("Tethering Password", "EDIT");
@@ -130,19 +130,17 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
       wifi->changeTetheringPassword(pass);
     }
   });
-  main_layout->addWidget(editPasswordButton, 0);
-  main_layout->addWidget(horizontal_line(), 0);
+  list->addWidget(editPasswordButton);
 
   // IP address
   ipLabel = new LabelControl("IP Address", wifi->ipv4_address);
-  main_layout->addWidget(ipLabel, 0);
-  main_layout->addWidget(horizontal_line(), 0);
+  list->addWidget(ipLabel);
 
   // SSH keys
-  main_layout->addWidget(new SshToggle());
-  main_layout->addWidget(horizontal_line(), 0);
-  main_layout->addWidget(new SshControl());
+  list->addWidget(new SshToggle());
+  list->addWidget(new SshControl());
 
+  main_layout->addWidget(list);
   main_layout->addStretch(1);
 }
 
@@ -170,6 +168,7 @@ WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi)
 void WifiUI::refresh() {
   clearLayout(main_layout);
 
+  ListWidget *list = new ListWidget(this);
   int i = 0;
   for (Network &network : wifi->seen_networks) {
     QHBoxLayout *hlayout = new QHBoxLayout;
@@ -214,13 +213,9 @@ void WifiUI::refresh() {
     btn->setFixedWidth(350);
     QObject::connect(btn, &QPushButton::clicked, this, [=]() { emit connectToNetwork(network); });
 
-    hlayout->addWidget(btn, 0, Qt::AlignRight);
-    main_layout->addLayout(hlayout, 1);
-    // Don't add the last horizontal line
-    if (i+1 < wifi->seen_networks.size()) {
-      main_layout->addWidget(horizontal_line(), 0);
-    }
-    i++;
+    list->addLayout(hlayout);
+    ++i;
   }
+  main_layout->addWidget(list);
   main_layout->addStretch(3);
 }

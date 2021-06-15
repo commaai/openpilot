@@ -109,3 +109,24 @@ public:
 private:
   Params params;
 };
+
+class ListWidget : public QWidget {
+  Q_OBJECT
+ public:
+  explicit ListWidget(QWidget *p = nullptr) : QWidget(p), layout_(this) {}
+  inline void addWidget(QWidget *w) { layout_.addWidget(w); }
+  inline void addLayout(QLayout *layout) { layout_.addLayout(layout); }
+  inline void setSpacing(int spacing) { layout_.setSpacing(spacing); }
+
+ private:
+  void paintEvent(QPaintEvent *) override {
+    QPainter p(this);
+    p.setPen(Qt::gray);
+    for (int i = 0; i < layout_.count() - 1; ++i) {
+      QRect r = layout_.itemAt(i)->geometry();
+      int bottom = r.bottom() + layout_.spacing() / 2;
+      p.drawLine(r.left() + 40, bottom, r.right() - 40, bottom);
+    }
+  }
+  QVBoxLayout layout_;
+};
