@@ -42,6 +42,8 @@ TEST_CASE("util::read_file") {
   }
   SECTION("read non-permission") {
     REQUIRE(util::read_file("/proc/kmsg").empty());
-    REQUIRE(util::read_file("/etc/shadow").empty());
+    std::string ret = util::read_file("/etc/shadow");
+    INFO("/etc/shadow is " << ret);
+    REQUIRE(ret.empty());
   }
 }
