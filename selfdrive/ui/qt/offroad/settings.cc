@@ -209,8 +209,6 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
     addWidget(w);
   }
 
-  setStyleSheet(R"(QLabel {font-size: 50px;})");
-
   fs_watch = new QFileSystemWatcher(this);
   QObject::connect(fs_watch, &QFileSystemWatcher::fileChanged, [=](const QString path) {
     int update_failed_count = params.get<int>("UpdateFailedCount").value_or(0);
@@ -351,7 +349,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     nav_btns->addButton(btn);
     sidebar_layout->addWidget(btn, 0, Qt::AlignRight);
 
-    panel->setContentsMargins(50, 25, 50, 25);
+    panel->setContentsMargins(50, 50, 50, 50);
 
     ScrollView *panel_frame = new ScrollView(panel, this);
     panel_widget->addWidget(panel_frame);
