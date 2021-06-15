@@ -1,5 +1,7 @@
 #include "selfdrive/ui/qt/sidebar.h"
 
+#include <QMouseEvent>
+
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/common/util.h"
 #include "selfdrive/hardware/hw.h"
