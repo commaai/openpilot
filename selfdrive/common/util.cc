@@ -155,6 +155,10 @@ std::string dir_name(std::string const &path) {
   return path.substr(0, pos);
 }
 
+bool is_valid_dongle_id(std::string const& dongle_id) {
+  return !dongle_id.empty() && dongle_id != "UnregisteredDevice";
+}
+
 struct tm get_time() {
   time_t rawtime;
   time(&rawtime);
