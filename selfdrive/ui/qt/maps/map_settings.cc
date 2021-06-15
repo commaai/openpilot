@@ -1,36 +1,33 @@
 #include "map_settings.h"
 
 #include "selfdrive/ui/qt/widgets/controls.h"
-
+#include "selfdrive/common/util.h"
 
 MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   Params params = Params();
 
-  QPixmap home_pix("../assets/navigation/home_inactive.png");
-  QPixmap work_pix("../assets/navigation/work.png");
-
   QHBoxLayout *home_layout = new QHBoxLayout;
-  QLabel *home_icon = new QLabel;
-  home_icon->setPixmap(home_pix);
+  home_icon = new QLabel;
+  home_icon->setPixmap(QPixmap("../assets/navigation/home_inactive.png"));
   home_icon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
   home_layout->addWidget(home_icon);
 
-  QLabel *home_address = new QLabel("No home\nlocation set");
+  home_address = new QLabel("No home\nlocation set");
   home_address->setWordWrap(true);
   home_address->setStyleSheet(R"(font-size: 30px; color: grey;)");
   home_layout->addSpacing(20);
   home_layout->addWidget(home_address);
 
   QHBoxLayout *work_layout = new QHBoxLayout;
-  QLabel *work_icon = new QLabel;
-  work_icon->setPixmap(work_pix);
+  work_icon = new QLabel;
+  work_icon->setPixmap(QPixmap("../assets/navigation/work_inactive.png"));
   work_icon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
   work_layout->addWidget(work_icon);
 
-  QLabel *work_address = new QLabel("41 Santa Monica Way, San Francisco, CA");
+  work_address = new QLabel("No work\nlocation set");
   work_address->setWordWrap(true);
-  work_address->setStyleSheet(R"(font-size: 30px;)");
+  work_address->setStyleSheet(R"(font-size: 30px; color: grey;)");
   work_layout->addSpacing(20);
   work_layout->addWidget(work_address);
 
@@ -51,4 +48,40 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
                                     "",
                                     this));
   main_layout->addStretch();
+  parseResponse(QString::fromStdString(util::read_file("/home/batman/example_response.txt")));
+}
+
+static QString shorten(const QString &str, int max_len) {
+  return str.size() > max_len ? str.left(max_len).trimmed() + "…" : str;
+}
+
+void MapPanel::parseResponse(const QString& response) {
+  QJsonDocument doc = QJsonDocument::fromJson(response.trimmed().toUtf8());
+  if (doc.isNull()) {
+    qDebug() << "JSON Parse failed on navigation locations";
+    return;
+  }
+
+  for (auto location : doc.array()) {
+    auto obj = location.toObject();
+    qDebug() << obj;
+
+    auto type = obj["save_type"].toString();
+    auto label = obj["label"].toString();
+    auto name = obj["place_name"].toString();
+    auto details = obj["place_details"].toString();
+
+    if (type == "favorite") {
+
+      if (label == "home") {
+        home_address->setText(shorten(name, 15) + "\n" + shorten(details, 50));
+        home_address->setStyleSheet(R"(font-size: 30px; color: white;)");
+        home_icon->setPixmap(QPixmap("../assets/navigation/home.png"));
+      } else if (label == "work") {
+        work_address->setText(shorten(name, 15) + "\n" + shorten(details, 50));
+        work_address->setStyleSheet(R"(font-size: 30px; color: white;)");
+        work_icon->setPixmap(QPixmap("../assets/navigation/work.png"));
+      }
+    }
+  }
 }
