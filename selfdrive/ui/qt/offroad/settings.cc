@@ -205,8 +205,8 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
   });
 
   QWidget *widgets[] = {versionLbl, lastUpdateLbl, updateBtn, gitBranchLbl, gitCommitLbl, osVersionLbl};
-  for (int i = 0; i < std::size(widgets); ++i) {
-    addWidget(widgets[i]);
+  for (QWidget* w : widgets) {
+    addWidget(w);
   }
 
   setStyleSheet(R"(QLabel {font-size: 50px;})");
