@@ -174,7 +174,7 @@ void WifiUI::refresh() {
   for (Network &network : wifi->seen_networks) {
     QHBoxLayout *hlayout = new QHBoxLayout;
 
-    QLabel *ssid_label = new QLabel(truncate(QString::fromUtf8(network.ssid), 18));
+    QLabel *ssid_label = new QLabel(truncate(QString::fromUtf8(network.ssid), 22));
     ssid_label->setStyleSheet("font-size: 55px;");
     hlayout->addWidget(ssid_label, 1, Qt::AlignLeft);
 
