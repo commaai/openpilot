@@ -70,6 +70,15 @@ class CAR:
   SKODA_SUPERB_MK3 = "SKODA SUPERB 3RD GEN"   # Chassis 3V/NP, Mk3 Skoda Superb and variants
   SKODA_OCTAVIA_MK3 = "SKODA OCTAVIA 3RD GEN" # Chassis NE, Mk3 Skoda Octavia and variants
 
+# All supported cars should return FW from the engine, srs, eps, and fwdRadar. Cars
+# with a manual trans won't return transmission firmware, but all other cars will.
+#
+# The 0xF187 SW part number query should return in the form of N[NX][NX] NNN NNN [X[X]],
+# where N=number, X=letter, and the trailing two letters are optional. Performance
+# tuners sometimes tamper with that field (e.g. 8V0 9C0 BB0 1 from COBB/EQT). Tampered
+# ECU SW part numbers are invalid for vehicle ID and compatibility checks. Try to have
+# them repaired by the tuner before including them in openpilot.
+
 FW_VERSIONS = {
   CAR.ATLAS_MK1: {
     (Ecu.engine, 0x7e0, None): [
@@ -123,6 +132,7 @@ FW_VERSIONS = {
       b'\xf1\x878V0906264F \xf1\x890003',
       b'\xf1\x878V0906264L \xf1\x890002',
       b'\xf1\x878V0906264M \xf1\x890001',
+      b'\xf1\x878V09C0BB01 \xf1\x890001',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x8709G927749AP\xf1\x892943',
@@ -134,6 +144,7 @@ FW_VERSIONS = {
       b'\xf1\x870CW300048J \xf1\x890611',
       b'\xf1\x870D9300012  \xf1\x894913',
       b'\xf1\x870D9300012  \xf1\x894937',
+      b'\xf1\x870D9300012  \xf1\x895045',
       b'\xf1\x870D9300014M \xf1\x895004',
       b'\xf1\x870D9300020S \xf1\x895201',
       b'\xf1\x870D9300040S \xf1\x894311',
@@ -171,6 +182,7 @@ FW_VERSIONS = {
       b'\xf1\x873Q0909144F \xf1\x895043\xf1\x82\00561A01612A0',
       b'\xf1\x873Q0909144H \xf1\x895061\xf1\x82\00566A0J612A1',
       b'\xf1\x873Q0909144J \xf1\x895063\xf1\x82\00566A00514A1',
+      b'\xf1\x873Q0909144J \xf1\x895063\xf1\x82\00566A0J712A1',
       b'\xf1\x873Q0909144K \xf1\x895072\xf1\x82\00571A0J714A1',
       b'\xf1\x873Q0909144L \xf1\x895081\xf1\x82\x0571A0JA15A1',
       b'\xf1\x873Q0909144M \xf1\x895082\xf1\x82\00571A01A18A1',
