@@ -8,7 +8,7 @@
 #include "selfdrive/ui/qt/widgets/scrollview.h"
 #include "selfdrive/ui/qt/util.h"
 
-QMutex mutex;
+//QMutex mutex;
 
 void NetworkStrengthWidget::paintEvent(QPaintEvent* event) {
   QPainter p(this);
@@ -27,18 +27,29 @@ void NetworkStrengthWidget::paintEvent(QPaintEvent* event) {
 
 //WifiWorker::WifiWorker(WifiManager* wifi) : WifiManager(wifi) {}
 
-void WifiWorker::run() {
-  while (true) {
-    QThread::msleep(500);
-    qDebug() << "refreshing wifi in thread!";
-    QMutexLocker locker(&mutex);
-    wifi->request_scan();
-    wifi->refreshNetworks();
-    emit update();
-  }
-//  emit resultReady("ello to you to!");
-}
+//void WifiWorker::run() {
+//  while (true) {
+//    QThread::msleep(500);
+//    qDebug() << "refreshing wifi in thread!";
+//    QMutexLocker locker(&mutex);
+//    wifi->request_scan();
+//    wifi->refreshNetworks();
+//    emit update();
+//  }
+//}
 
+//void WifiWorker::connectToNetwork(const Network &n) {
+//  qDebug() << "HERE, WOOOO";
+//  QMutexLocker locker(&mutex);
+//  if (wifi->isKnownNetwork(n.ssid)) {
+//    wifi->activateWifiConnection(n.ssid);
+//  } else if (n.security_type == SecurityType::OPEN) {
+//    wifi->connect(n);
+//  } else if (n.security_type == SecurityType::WPA) {
+//    QString pass = InputDialog::getText("Enter password for \"" + n.ssid + "\"", 8);
+//    wifi->connect(n, pass);
+//  }
+//}
 
 // Networking functions
 
@@ -51,10 +62,9 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent), s
 
   main_layout->addWidget(warning);
 
-//  QTimer* timer = new QTimer(this);
-//  QObject::connect(timer, &QTimer::timeout, this, [=](){ emit refreshNetworks(); qDebug() << "emitted";});  // TODO cause a wifimanager refresh here
-//  QObject::connect(timer, &QTimer::timeout, this, &Networking::refresh);
-//  timer->start(500);
+  QTimer* timer = new QTimer(this);
+  QObject::connect(timer, &QTimer::timeout, this, [=](){ emit refreshWifiManager(); });  // TODO cause a wifimanager refresh here
+  timer->start(1000);
   attemptInitialization();
 }
 
@@ -78,20 +88,14 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent), s
 void Networking::attemptInitialization() {
   // Checks if network manager is active
   try {
-    wifi = new WifiManager(this);
-
-    WifiWorker *wifiWorker = new WifiWorker(wifi);
-    wifiWorker->moveToThread(&wifiThread);
-    connect(&wifiThread, SIGNAL(finished()), wifiWorker, SLOT(deleteLater()));
-    connect(this, SIGNAL(startWifiThread()), wifiWorker, SLOT(run()));
-    connect(wifiWorker, SIGNAL(update()), this, SLOT(update()));
+    wifiManager = new WifiManager();
   } catch (std::exception &e) {
     return;
   }
+  wifiManager->moveToThread(&wifiThread);
 
-  connect(wifi, &WifiManager::wrongPassword, this, &Networking::wrongPassword);
+  connect(wifiManager, &WifiManager::wrongPassword, this, &Networking::wrongPassword);
 //  connect(this, &Networking::refreshNetworks, wifi, &WifiManager::refreshNetworks);
-//  connect(wifi, &WifiManager::refreshed, this, &Networking::refreshed);
 
   QWidget* wifiScreen = new QWidget(this);
   QVBoxLayout* vlayout = new QVBoxLayout(wifiScreen);
@@ -104,9 +108,9 @@ void Networking::attemptInitialization() {
     vlayout->addWidget(advancedSettings, 0, Qt::AlignRight);
     vlayout->addSpacing(10);
   }
+  WifiManager* wifi = new WifiManager();
 
   wifiWidget = new WifiUI(this, wifi);
-  connect(wifiWidget, &WifiUI::connectToNetwork, this, &Networking::connectToNetwork);
   vlayout->addWidget(new ScrollView(wifiWidget, this), 1);
 
   main_layout->addWidget(wifiScreen);
@@ -115,9 +119,28 @@ void Networking::attemptInitialization() {
   connect(an, &AdvancedNetworking::backPress, [=]() { main_layout->setCurrentWidget(wifiScreen); });
   main_layout->addWidget(an);
 
-  // Start wifi polling thread
+
+  // Set up and start wifi polling thread
+//  WifiWorker *wifiWorker = new WifiManager();
+  qRegisterMetaType<Network>("Network");
+  qRegisterMetaType<QVector<Network>>("QVector<Network>");
+
+  connect(&wifiThread, &QThread::finished, wifiManager, &QObject::deleteLater);
+
+  connect(this, &Networking::refreshWifiManager, wifiManager, &WifiManager::refreshAll);
+  connect(wifiManager, &WifiManager::updateNetworking, this, &Networking::refresh);
+  connect(wifiManager, &WifiManager::tetheringStateChange, an, &AdvancedNetworking::tetheringStateChange);
+
+  // Sub classes to wifi manager signals
+  connect(wifiWidget, &WifiUI::connectToNetwork, wifiManager, &WifiManager::connectToNetwork);
+  connect(an, &AdvancedNetworking::enableTethering, wifiManager, &WifiManager::enableTethering);
+  connect(an, &AdvancedNetworking::disableTethering, wifiManager, &WifiManager::disableTethering);
+//  connect(wifiManager, &WifiManager::updateAdvancedNetworking, an, &AdvancedNetworking::refresh);
+
+//  connect(wifiWidget, &WifiUI::connectToNetwork, wifiWorker, &WifiWorker::connectToNetwork);
+
   wifiThread.start();
-  emit startWifiThread();
+//  emit startWifiThread();
 
   setStyleSheet(R"(
     QPushButton {
@@ -138,12 +161,8 @@ void Networking::attemptInitialization() {
   ui_setup_complete = true;
 }
 
-void Networking::refreshed() {
-  qDebug() << "finished refresh!";
-}
-
-void Networking::update() {
-  qDebug() << "Networking::update()";
+void Networking::refresh(const QVector<Network> seen_networks, const QString ipv4_address) {  // TODO: set up timer again to call this, sending a signal to the wifi thread to run once and reinitialize if needed
+  qDebug() << "Networking::refresh()";
 //  if (!this->isVisible()) {
 //    return;
 //  }
@@ -154,28 +173,17 @@ void Networking::update() {
 //    }
 //  }
 
-  wifiWidget->refresh();  // TODO: rename update
-  an->refresh();  // TODO and here
-}
-
-void Networking::connectToNetwork(const Network &n) {
-  if (wifi->isKnownNetwork(n.ssid)) {
-    wifi->activateWifiConnection(n.ssid);
-  } else if (n.security_type == SecurityType::OPEN) {
-    wifi->connect(n);
-  } else if (n.security_type == SecurityType::WPA) {
-    QString pass = InputDialog::getText("Enter password for \"" + n.ssid + "\"", 8);
-    wifi->connect(n, pass);
-  }
-  mutex.unlock();
+  // TODO: emit signal to wifi manager thread here
+  wifiWidget->refresh(seen_networks);
+  an->refresh(ipv4_address);
 }
 
 void Networking::wrongPassword(const QString &ssid) {
-  QMutexLocker locker(&mutex);
-  for (Network n : wifi->seen_networks) {
+//  QMutexLocker locker(&mutex);
+  for (Network n : wifiManager->seen_networks) {
     if (n.ssid == ssid) {
       QString pass = InputDialog::getText("Wrong password for \"" + n.ssid +"\"", 8);
-      wifi->connect(n, pass);
+      wifiManager->connect(n, pass);
       return;
     }
   }
@@ -196,7 +204,8 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   main_layout->addWidget(back, 0, Qt::AlignLeft);
 
   // Enable tethering layout
-  ToggleControl *tetheringToggle = new ToggleControl("Enable Tethering", "", "", wifi->tetheringEnabled());
+//  ToggleControl *tetheringToggle = new ToggleControl("Enable Tethering", "", "", wifi->tetheringEnabled());
+  tetheringToggle = new ToggleControl("Enable Tethering", "", "", false);
   main_layout->addWidget(tetheringToggle);
   QObject::connect(tetheringToggle, &ToggleControl::toggleFlipped, this, &AdvancedNetworking::toggleTethering);
   main_layout->addWidget(horizontal_line(), 0);
@@ -224,20 +233,27 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   main_layout->addStretch(1);
 }
 
-void AdvancedNetworking::refresh() {
-  QMutexLocker locker(&mutex);
-  ipLabel->setText(wifi->ipv4_address);
+void AdvancedNetworking::refresh(const QString ipv4_address) {
+//  QMutexLocker locker(&mutex);
+  ipLabel->setText(ipv4_address);
   update();
 }
 
 void AdvancedNetworking::toggleTethering(bool enable) {
-  QMutexLocker locker(&mutex);
+//  QMutexLocker locker(&mutex);
+  tetheringToggle->setDisabled(true);
   if (enable) {
-    wifi->enableTethering();
+//    wifi->enableTethering();
+    emit enableTethering();
   } else {
-    wifi->disableTethering();
+//    wifi->disableTethering();
+    emit disableTethering();
   }
-  editPasswordButton->setEnabled(!enable);
+  editPasswordButton->setEnabled(!enable);  // TODO allow editing of password. on change, restart tethering
+}
+
+void AdvancedNetworking::tetheringStateChange() {
+  tetheringToggle->setDisabled(false);  // on any state change, enable toggle button
 }
 
 
@@ -253,18 +269,20 @@ WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi)
   main_layout->setSpacing(25);
 }
 
-void WifiUI::refresh() {
+void WifiUI::refresh(const QVector<Network> _seen_networks) {
   clearLayout(main_layout);
 
   connectButtons = new QButtonGroup(this); // TODO check if this is a leak
   QObject::connect(connectButtons, qOverload<QAbstractButton*>(&QButtonGroup::buttonClicked), this, &WifiUI::handleButton);
 
-  mutex.lock();
-  QVector<Network> seen_networks = wifi->seen_networks;
-  mutex.unlock();
+//  mutex.lock();
+//  QVector<Network> seen_networks = wifi->seen_networks;
+//  mutex.unlock();
+  seen_networks.clear();
+  seen_networks = _seen_networks;
 
   int i = 0;
-  for (Network &network : seen_networks) {
+  for (const Network &network : seen_networks) {
     QHBoxLayout *hlayout = new QHBoxLayout;
     hlayout->addSpacing(50);
 
@@ -294,9 +312,24 @@ void WifiUI::refresh() {
   main_layout->addStretch(3);
 }
 
+//void WifiUI::handleButtonNew(QPu)
+
 void WifiUI::handleButton(QAbstractButton* button) {
-  mutex.lock();
+//  QMutexLocker locker(&mutex);
   QPushButton* btn = static_cast<QPushButton*>(button);
-  Network n = wifi->seen_networks[connectButtons->id(btn)];
-  emit connectToNetwork(n);
+  btn->setDisabled(true);
+  btn->setText("Connecting");
+//  const Network n = wifi->seen_networks[connectButtons->id(btn)];
+  const Network n = seen_networks[connectButtons->id(btn)];
+
+  QString pass;
+  if (n.security_type == SecurityType::WPA && !n.known) {
+    pass = InputDialog::getText("Enter password for \"" + n.ssid + "\"", 8);
+    if (pass.isEmpty()) {
+      return;
+    }
+  }
+
+  qDebug() << "emitting connectToNetwork!";
+  emit connectToNetwork(n, pass);
 }

@@ -27,6 +27,7 @@ class WifiUI : public QWidget {
 
 public:
   explicit WifiUI(QWidget *parent = 0, WifiManager* wifi = 0);
+  void refresh(QVector<Network> _seen_networks);
 
 private:
   WifiManager *wifi = nullptr;
@@ -35,11 +36,12 @@ private:
   QButtonGroup *connectButtons;
   bool tetheringEnabled;
 
+  QVector<Network> seen_networks;
+
 signals:
-  void connectToNetwork(const Network &n);
+  void connectToNetwork(const Network n, const QString pass);
 
 public slots:
-  void refresh();
   void handleButton(QAbstractButton* m_button);
 };
 
@@ -47,6 +49,8 @@ class AdvancedNetworking : public QWidget {
   Q_OBJECT
 public:
   explicit AdvancedNetworking(QWidget* parent = 0, WifiManager* wifi = 0);
+  void refresh(const QString ipv4_address);
+  ToggleControl *tetheringToggle;
 
 private:
   LabelControl* ipLabel;
@@ -55,10 +59,12 @@ private:
 
 signals:
   void backPress();
+  void enableTethering();
+  void disableTethering();
 
 public slots:
   void toggleTethering(bool enable);
-  void refresh();
+  void tetheringStateChange();
 };
 
 class Networking : public QWidget {
@@ -80,41 +86,41 @@ private:
   Network selectedNetwork;
 
   WifiUI* wifiWidget;
-  WifiManager* wifi = nullptr;
+  WifiManager* wifiManager = nullptr;
   void attemptInitialization();
-
-public slots:
-  void update();
-
-private slots:
-  void connectToNetwork(const Network &n);
-  void refreshed();
-  void wrongPassword(const QString &ssid);
 
 signals:
   void refreshNetworks();
-  void startWifiThread();
-
-};
-
-
-class WifiWorker : public QObject
-{
-    Q_OBJECT
-    QThread wifiThread;
-
-public:
-  WifiManager* wifi = nullptr;
-  WifiWorker(WifiManager* _wifi) {
-    wifi = _wifi;
-  }
+  void refreshWifiManager();
 
 public slots:
-    void run();
+  void refresh(const QVector<Network> seen_networks, const QString ipv4_address);
 
-signals:
-    void update();
+private slots:
+//  void connectToNetwork(const Network &n);
+  void wrongPassword(const QString &ssid);
+
 };
+
+
+//class WifiWorker : public QObject
+//{
+//    Q_OBJECT
+//    QThread wifiThread;
+//
+//public:
+//  WifiManager* wifi = nullptr;
+//  WifiWorker(WifiManager* _wifi) {
+//    wifi = _wifi;
+//  }
+//
+//public slots:
+//    void run();
+////    void connectToNetwork(const Network &n);
+//
+//signals:
+//    void update();
+//};
 
 
 //class Controller : public QObject

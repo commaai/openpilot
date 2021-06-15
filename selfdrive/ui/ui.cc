@@ -366,7 +366,7 @@ void Device::updateBrightness(const UIState &s) {
 }
 
 void Device::updateWakefulness(const UIState &s) {
-  awake_timeout = std::max(awake_timeout - 1, 0);
+//  awake_timeout = std::max(awake_timeout - 1, 0);
 
   bool should_wake = s.scene.started || s.scene.ignition;
   if (!should_wake) {

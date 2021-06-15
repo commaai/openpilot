@@ -55,6 +55,8 @@ T get_response(QDBusMessage response) {
   }
 }
 
+QMutex mutex;  // TODO: class variable?
+
 bool compare_by_strength(const Network &a, const Network &b) {
   if (a.connected == ConnectedType::CONNECTED) return true;
   if (b.connected == ConnectedType::CONNECTED) return false;
@@ -63,7 +65,7 @@ bool compare_by_strength(const Network &a, const Network &b) {
   return a.strength > b.strength;
 }
 
-WifiManager::WifiManager(QWidget* parent) : QWidget(parent) {
+WifiManager::WifiManager() : QObject() {
   qDBusRegisterMetaType<Connection>();
   qDBusRegisterMetaType<IpConfig>();
   connecting_to_network = "";
@@ -96,9 +98,16 @@ WifiManager::WifiManager(QWidget* parent) : QWidget(parent) {
   QDBusInterface(nm_service, nm_settings_path, nm_settings_iface, bus);
 }
 
+void WifiManager::refreshAll() {
+  QMutexLocker locker(&mutex);
+  request_scan();
+  refreshNetworks();
+  emit updateNetworking(seen_networks, ipv4_address);
+}
+
 void WifiManager::refreshNetworks() {
 //  QThread::sleep(1);
-  qDebug() << "refreshNetworks() from signal";
+//  qDebug() << "refreshNetworks() from signal";
   seen_networks.clear();
   seen_ssids.clear();
   ipv4_address = get_ipv4_address();
@@ -109,7 +118,6 @@ void WifiManager::refreshNetworks() {
     seen_ssids.push_back(network.ssid);
     seen_networks.push_back(network);
   }
-  emit refreshed();
 }
 
 QString WifiManager::get_ipv4_address() {
@@ -174,7 +182,7 @@ QList<Network> WifiManager::get_networks() {
         ctype = ConnectedType::CONNECTED;
       }
     }
-    Network network = {path.path(), ssid, strength, ctype, security};
+    Network network = {path.path(), ssid, strength, ctype, security, isKnownNetwork(ssid)};
 
     if (ssid.length()) {
       r.push_back(network);
@@ -201,6 +209,19 @@ SecurityType WifiManager::getSecurityType(const QString &path) {
     return SecurityType::WPA;
   } else {
     return SecurityType::UNSUPPORTED;
+  }
+}
+
+void WifiManager::connectToNetwork(const Network n, const QString pass) {
+  QMutexLocker locker(&mutex);
+  qDebug() << "WIFIMANAGER::connectToNetwork";
+  QThread::sleep(2);
+  if (isKnownNetwork(n.ssid)) {
+    activateWifiConnection(n.ssid);
+  } else if (n.security_type == SecurityType::OPEN) {
+    connect(n);
+  } else if (n.security_type == SecurityType::WPA && !pass.isEmpty()) {
+    connect(n, pass);
   }
 }
 
@@ -464,14 +485,20 @@ void WifiManager::addTetheringConnection() {
 }
 
 void WifiManager::enableTethering() {
+  QMutexLocker locker(&mutex);
+  qDebug() << "Enabling tethering";
   if (!isKnownNetwork(tethering_ssid.toUtf8())) {
     addTetheringConnection();
   }
   activateWifiConnection(tethering_ssid.toUtf8());
+  emit tetheringStateChange();  // re-enables tethering toggle
 }
 
 void WifiManager::disableTethering() {
+  QMutexLocker locker(&mutex);
+  qDebug() << "Disabling tethering";
   deactivateConnection(tethering_ssid.toUtf8());
+  emit tetheringStateChange();
 }
 
 bool WifiManager::tetheringEnabled() {

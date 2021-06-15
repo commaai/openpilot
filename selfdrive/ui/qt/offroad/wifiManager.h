@@ -23,12 +23,14 @@ struct Network {
   unsigned int strength;
   ConnectedType connected;
   SecurityType security_type;
+  bool known;
 };
 
-class WifiManager : public QWidget {
+class WifiManager : public QObject {
   Q_OBJECT
+
 public:
-  explicit WifiManager(QWidget* parent);
+  explicit WifiManager();
 
   void request_scan();
   QVector<Network> seen_networks;
@@ -43,8 +45,6 @@ public:
   void disconnect();
 
   // Tethering functions
-  void enableTethering();
-  void disableTethering();
   bool tetheringEnabled();
 
   void addTetheringConnection();
@@ -75,11 +75,24 @@ private:
   QDBusObjectPath pathFromSsid(const QString &ssid);
   QVector<QPair<QString, QDBusObjectPath>> listConnections();
 
+signals:  // Signals to communicate with Networking UI
+  void wrongPassword(const QString &ssid);
+  void successfulConnection(const QString &ssid);
+
+  void updateNetworking(const QVector<Network> seen_networks, const QString ipv4_address);
+
+  // Advanced networking signals
+  void tetheringStateChange();
+
+//  void updateWifi(const QVector<Network> seen_networks);
+//  void updateAdvancedNetworking(const QString);  // TODO: change to &reference?
+
+public slots:
+  void connectToNetwork(const Network n, const QString pass);
+  void refreshAll();
+  void enableTethering();
+  void disableTethering();
+
 private slots:
   void change(unsigned int new_state, unsigned int previous_state, unsigned int change_reason);
-signals:
-  void wrongPassword(const QString &ssid);
-  void refreshed();
-  void successfulConnection(const QString &ssid);
-  void refresh();
 };
