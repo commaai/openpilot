@@ -3,7 +3,7 @@ import os
 from selfdrive.manager.process import PythonProcess, NativeProcess, DaemonProcess
 from selfdrive.hardware import EON, TICI, PC
 
-WEBCAM = os.getenv("WEBCAM") is not None
+WEBCAM = os.getenv("USE_WEBCAM") is not None
 
 procs = [
   DaemonProcess("manage_athenad", "selfdrive.athena.manage_athenad", "AthenadPid"),

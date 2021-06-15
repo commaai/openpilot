@@ -69,26 +69,19 @@ void Replay::addSegment(int n) {
     return;
   }
 
-  QThread *t = new QThread;
-  lrs.insert(n, new LogReader(log_paths.at(n).toString(), &events, &events_lock, &eidx));
+  lrs[n] = new LogReader(log_paths.at(n).toString());
+  // this is a queued connection, mergeEvents is executed in the main thread.
+  QObject::connect(lrs[n], &LogReader::finished, this, &Replay::mergeEvents);
 
-  lrs[n]->moveToThread(t);
-  QObject::connect(t, &QThread::started, lrs[n], &LogReader::process);
-  t->start();
-
-  frs.insert(n, new FrameReader(qPrintable(camera_paths.at(n).toString())));
+  frs[n] = new FrameReader(qPrintable(camera_paths.at(n).toString()));
 }
 
 void Replay::removeSegment(int n) {
-  // TODO: fix FrameReader and LogReader destructors
+  // TODO: fix LogReader destructors
   /*
   if (lrs.contains(n)) {
     auto lr = lrs.take(n);
     delete lr;
-  }
-  if (frs.contains(n)) {
-    auto fr = frs.take(n);
-    delete fr;
   }
 
   events_lock.lockForWrite();
@@ -102,6 +95,18 @@ void Replay::removeSegment(int n) {
   }
   events_lock.unlock();
   */
+  if (frs.contains(n)) {
+    auto fr = frs.take(n);
+    delete fr;
+  }
+}
+
+void Replay::mergeEvents() {
+  LogReader *log = qobject_cast<LogReader *>(sender());
+  events += log->events;
+  for (CameraType cam_type : ALL_CAMERAS) {
+    eidx[cam_type].merge(log->eidx[cam_type]);
+  }
 }
 
 void Replay::start(){
@@ -201,7 +206,7 @@ void Replay::stream() {
 
     uint64_t t0 = route_start_ts + (seek_ts * 1e9);
     seek_ts = -1;
-    qDebug() << "unlogging at" << (t0 - route_start_ts) / 1e9;
+    qDebug() << "unlogging at" << int((t0 - route_start_ts) / 1e9);
 
     // wait until we have events within 1s of the current time
     auto eit = events.lowerBound(t0);
@@ -212,7 +217,7 @@ void Replay::stream() {
 
     uint64_t t0r = timer.nsecsElapsed();
     while ((eit != events.end()) && seek_ts < 0) {
-      cereal::Event::Reader e = (*eit);
+      cereal::Event::Reader e = (*eit)->event;
       std::string type;
       KJ_IF_MAYBE(e_, static_cast<capnp::DynamicStruct::Reader>(e).which()) {
         type = e_->getProto().getName();
@@ -225,7 +230,7 @@ void Replay::stream() {
         float timestamp = (tm - route_start_ts)/1e9;
         if (std::abs(timestamp - last_print) > 5.0) {
           last_print = timestamp;
-          qInfo() << "at " << last_print;
+          qInfo() << "at " << int(last_print) << "s";
         }
 
         // keep time
@@ -242,13 +247,11 @@ void Replay::stream() {
         if (type == "roadCameraState") {
           auto fr = e.getRoadCameraState();
 
-          auto it_ = eidx.find(fr.getFrameId());
-          if (it_ != eidx.end()) {
-            auto pp = *it_;
-            if (frs.find(pp.first) != frs.end()) {
-              auto frm = frs[pp.first];
-              auto data = frm->get(pp.second);
-
+          auto it_ = eidx[RoadCam].find(fr.getFrameId());
+          if (it_ != eidx[RoadCam].end()) {
+            EncodeIdx &e = it_->second;
+            if (frs.find(e.segmentNum) != frs.end()) {
+              auto frm = frs[e.segmentNum];
               if (vipc_server == nullptr) {
                 cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
                 cl_context context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
@@ -259,21 +262,21 @@ void Replay::stream() {
                 vipc_server->start_listener();
               }
 
-              VisionIpcBufExtra extra = {};
-              VisionBuf *buf = vipc_server->get_buffer(VisionStreamType::VISION_STREAM_RGB_BACK);
-              memcpy(buf->addr, data, frm->getRGBSize());
-              vipc_server->send(buf, &extra, false);
+              uint8_t *dat = frm->get(e.frameEncodeId);
+              if (dat) {
+                VisionIpcBufExtra extra = {};
+                VisionBuf *buf = vipc_server->get_buffer(VisionStreamType::VISION_STREAM_RGB_BACK);
+                memcpy(buf->addr, dat, frm->getRGBSize());
+                vipc_server->send(buf, &extra, false);
+              }
             }
           }
         }
 
         // publish msg
         if (sm == nullptr) {
-          capnp::MallocMessageBuilder msg;
-          msg.setRoot(e);
-          auto words = capnp::messageToFlatArray(msg);
-          auto bytes = words.asBytes();
-          pm->send(type.c_str(), (unsigned char*)bytes.begin(), bytes.size());
+          auto bytes = (*eit)->bytes();
+          pm->send(type.c_str(), (capnp::byte *)bytes.begin(), bytes.size());
         } else {
           std::vector<std::pair<std::string, cereal::Event::Reader>> messages;
           messages.push_back({type, e});

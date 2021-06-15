@@ -1,3 +1,5 @@
+#include <cassert>
+
 #include <kaitai/kaitaistream.h>
 
 #include "cereal/messaging/messaging.h"
@@ -23,7 +25,7 @@ int main() {
 
   while (!do_exit) {
     Message * msg = subscriber->receive();
-    if (!msg){
+    if (!msg) {
       if (errno == EINTR) {
         do_exit = true;
       }

@@ -5,7 +5,7 @@ import numpy as np
 from tools.lib.logreader import LogReader
 from tools.lib.framereader import FrameReader
 from tools.lib.cache import cache_path_for_file_path
-from selfdrive.test.process_replay.camera_replay import camera_replay
+from selfdrive.test.process_replay.model_replay import model_replay
 
 
 if __name__ == "__main__":
@@ -15,7 +15,7 @@ if __name__ == "__main__":
   calib = np.load(os.path.expanduser('~/calib.npy'))
 
   try:
-    msgs = camera_replay(list(lr), fr, desire=desire, calib=calib)
+    msgs = model_replay(list(lr), fr, desire=desire, calib=calib)
   finally:
     cache_path = cache_path_for_file_path(os.path.expanduser('~/fcamera.hevc'))
     if os.path.isfile(cache_path):

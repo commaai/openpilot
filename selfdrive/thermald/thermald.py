@@ -171,6 +171,9 @@ def thermald_thread():
 
   thermal_config = HARDWARE.get_thermal_config()
 
+  if params.get_bool("IsOnroad"):
+    cloudlog.event("onroad flag not cleared")
+
   # CPR3 logging
   if EON:
     base_path = "/sys/kernel/debug/cpr3-regulator/"
@@ -356,6 +359,7 @@ def thermald_thread():
     # Handle offroad/onroad transition
     should_start = all(startup_conditions.values())
     if should_start != should_start_prev or (count == 0):
+      params.put_bool("IsOnroad", should_start)
       params.put_bool("IsOffroad", not should_start)
       HARDWARE.set_power_save(not should_start)
       if TICI and not params.get_bool("EnableLteOnroad"):

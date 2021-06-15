@@ -73,7 +73,7 @@ Supported Cars
 | Honda     | Civic Sedan/Coupe 2016-18     | Honda Sensing     | openpilot        | 0mph               | 12mph             |
 | Honda     | Civic Sedan/Coupe 2019-20     | All               | Stock            | 0mph               | 2mph<sup>2</sup>  |
 | Honda     | CR-V 2015-16                  | Touring           | openpilot        | 25mph<sup>1</sup>  | 12mph             |
-| Honda     | CR-V 2017-20                  | Honda Sensing     | Stock            | 0mph               | 12mph             |
+| Honda     | CR-V 2017-21                  | Honda Sensing     | Stock            | 0mph               | 12mph             |
 | Honda     | CR-V Hybrid 2017-2019         | Honda Sensing     | Stock            | 0mph               | 12mph             |
 | Honda     | Fit 2018-19                   | Honda Sensing     | openpilot        | 25mph<sup>1</sup>  | 12mph             |
 | Honda     | HR-V 2019-20                  | Honda Sensing     | openpilot        | 25mph<sup>1</sup>  | 12mph             |
@@ -92,12 +92,14 @@ Supported Cars
 | Lexus     | IS 2017-2019                  | All               | Stock            | 22mph              | 0mph              |
 | Lexus     | NX 2018                       | All               | Stock<sup>3</sup>| 0mph               | 0mph              |
 | Lexus     | NX 2020                       | All               | openpilot        | 0mph               | 0mph              |
-| Lexus     | NX Hybrid 2018                | All               | Stock<sup>3</sup>| 0mph               | 0mph              |
+| Lexus     | NX Hybrid 2018-19             | All               | Stock<sup>3</sup>| 0mph               | 0mph              |
 | Lexus     | RX 2016-18                    | All               | Stock<sup>3</sup>| 0mph               | 0mph              |
 | Lexus     | RX 2020-21                    | All               | openpilot        | 0mph               | 0mph              |
 | Lexus     | RX Hybrid 2016-19             | All               | Stock<sup>3</sup>| 0mph               | 0mph              |
 | Lexus     | RX Hybrid 2020                | All               | openpilot        | 0mph               | 0mph              |
+| Lexus     | UX Hybrid 2019                | All               | openpilot        | 0mph               | 0mph              |
 | Toyota    | Avalon 2016-21                | TSS-P             | Stock<sup>3</sup>| 20mph<sup>1</sup>  | 0mph              |
+| Toyota    | Avalon Hybrid 2019            | TSS-P             | Stock<sup>3</sup>| 20mph<sup>1</sup>  | 0mph              |
 | Toyota    | Camry 2018-20                 | All               | Stock            | 0mph<sup>4</sup>   | 0mph              |
 | Toyota    | Camry 2021                    | All               | openpilot        | 0mph               | 0mph              |
 | Toyota    | Camry Hybrid 2018-20          | All               | Stock            | 0mph<sup>4</sup>   | 0mph              |
@@ -133,8 +135,9 @@ Community Maintained Cars and Features
 
 | Make      | Model (US Market Reference)   | Supported Package | ACC              | No ACC accel below | No ALC below |
 | ----------| ------------------------------| ------------------| -----------------| -------------------| -------------|
-| Audi      | A3 2014-17                    | Prestige          | Stock            | 0mph               | 0mph         |
+| Audi      | A3 2014-18                    | Prestige          | Stock            | 0mph               | 0mph         |
 | Audi      | A3 Sportback e-tron 2017-18   | Prestige          | Stock            | 0mph               | 0mph         |
+| Audi      | Q2 2018                       | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Buick     | Regal 2018<sup>1</sup>        | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
 | Cadillac  | ATS 2018<sup>1</sup>          | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
 | Chevrolet | Malibu 2017<sup>1</sup>       | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
@@ -152,11 +155,12 @@ Community Maintained Cars and Features
 | Hyundai   | Genesis 2015-16               | SCC + LKAS        | Stock            | 19mph              | 37mph        |
 | Hyundai   | Ioniq Electric 2019           | SCC + LKAS        | Stock            | 0mph               | 32mph        |
 | Hyundai   | Ioniq Electric 2020           | SCC + LKAS        | Stock            | 0mph               | 0mph         |
+| Hyundai   | Ioniq PHEV 2020               | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Hyundai   | Kona 2020                     | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Hyundai   | Kona EV 2019                  | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Hyundai   | Santa Fe 2019-20              | All               | Stock            | 0mph               | 0mph         |
 | Hyundai   | Sonata 2018-2019              | SCC + LKAS        | Stock            | 0mph               | 0mph         |
-| Hyundai   | Veloster 2019                 | SCC + LKAS        | Stock            | 5mph               | 0mph         |
+| Hyundai   | Veloster 2019-20              | SCC + LKAS        | Stock            | 5mph               | 0mph         |
 | Jeep      | Grand Cherokee 2016-18        | Adaptive Cruise   | Stock            | 0mph               | 9mph         |
 | Jeep      | Grand Cherokee 2019-20        | Adaptive Cruise   | Stock            | 0mph               | 39mph        |
 | Kia       | Forte 2018-2021               | SCC + LKAS        | Stock            | 0mph               | 0mph         |
@@ -167,12 +171,15 @@ Community Maintained Cars and Features
 | Kia       | Sorento 2018-19               | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Kia       | Stinger 2018                  | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Kia       | Ceed 2019                     | SCC + LKAS        | Stock            | 0mph               | 0mph         |
-| Nissan    | Altima 2020                   | ProPILOT          | Stock            | 0mph               | 0mph         |
+| Nissan    | Altima 2019-20                | ProPILOT          | Stock            | 0mph               | 0mph         |
 | Nissan    | Leaf 2018-20                  | ProPILOT          | Stock            | 0mph               | 0mph         |
 | Nissan    | Rogue 2018-20                 | ProPILOT          | Stock            | 0mph               | 0mph         |
 | Nissan    | X-Trail 2017                  | ProPILOT          | Stock            | 0mph               | 0mph         |
 | SEAT      | Ateca 2018                    | Driver Assistance | Stock            | 0mph               | 0mph         |
+| SEAT      | Leon 2014-2020                | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Škoda     | Kodiaq 2018                   | Driver Assistance | Stock            | 0mph               | 0mph         |
+| Škoda     | Octavia 2015, 2019            | Driver Assistance | Stock            | 0mph               | 0mph         |
+| Škoda     | Octavia RS 2016               | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Škoda     | Scala 2020                    | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Škoda     | Superb 2015-18                | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Subaru    | Ascent 2019                   | EyeSight          | Stock            | 0mph               | 0mph         |
@@ -191,6 +198,7 @@ Community Maintained Cars and Features
 | Volkswagen| Jetta GLI 2021                | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Passat 2016-17<sup>2</sup>    | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Tiguan 2020                   | Driver Assistance | Stock            | 0mph               | 0mph         |
+| Volkswagen| Touran 2017                   | Driver Assistance | Stock            | 0mph               | 0mph         |
 
 <sup>1</sup>Requires an [OBD-II car harness](https://comma.ai/shop/products/comma-car-harness) and [community built ASCM harness](https://github.com/commaai/openpilot/wiki/GM#hardware). ***NOTE: disconnecting the ASCM disables Automatic Emergency Braking (AEB).*** <br />
 <sup>2</sup>Only includes the MQB Passat sold outside of North America. The NMS Passat made in Chattanooga TN is not yet supported.
@@ -344,14 +352,14 @@ Directory Structure
         ├── camerad         # Driver to capture images from the camera sensors
         ├── car             # Car specific code to read states and control actuators
         ├── common          # Shared C/C++ code for the daemons
-        ├── controls        # Perception, planning and controls
+        ├── controls        # Planning and controls
         ├── debug           # Tools to help you debug and do car ports
-        ├── locationd       # Soon to be home of precise location
+        ├── locationd       # Precise localization and vehicle parameter estimation
         ├── logcatd         # Android logcat as a service
         ├── loggerd         # Logger and uploader of car data
         ├── modeld          # Driving and monitoring model runners
         ├── proclogd        # Logs information from proc
-        ├── sensord         # IMU / GPS interface code
+        ├── sensord         # IMU interface code
         ├── test            # Unit tests, system tests and a car simulator
         └── ui              # The UI
 

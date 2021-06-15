@@ -2,10 +2,10 @@
 #define _GNU_SOURCE
 #endif
 
-#include "swaglog.h"
+#include "selfdrive/common/swaglog.h"
 
-#include <assert.h>
-#include <string.h>
+#include <cassert>
+#include <cstring>
 #include <mutex>
 #include <string>
 

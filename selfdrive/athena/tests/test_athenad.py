@@ -174,6 +174,14 @@ class TestAthenadMethods(unittest.TestCase):
     keys = dispatcher["getSshAuthorizedKeys"]()
     self.assertEqual(keys, MockParams().params["GithubSshKeys"].decode('utf-8'))
 
+  def test_getVersion(self):
+    resp = dispatcher["getVersion"]()
+    keys = ["version", "remote", "branch", "commit"]
+    self.assertEqual(list(resp.keys()), keys)
+    for k in keys:
+      self.assertIsInstance(resp[k], str, f"{k} is not a string")
+      self.assertTrue(len(resp[k]) > 0, f"{k} has no value")
+
   def test_jsonrpc_handler(self):
     end_event = threading.Event()
     thread = threading.Thread(target=athenad.jsonrpc_handler, args=(end_event,))

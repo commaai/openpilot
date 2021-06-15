@@ -1,4 +1,4 @@
-#include <string.h>
+#include <cstring>
 
 #include "libyuv.h"
 
@@ -6,6 +6,7 @@
 #include "selfdrive/common/params.h"
 #include "selfdrive/common/timing.h"
 #include "selfdrive/hardware/hw.h"
+
 #include "selfdrive/modeld/models/dmonitoring.h"
 
 #define MODEL_WIDTH 320
@@ -161,11 +162,13 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
   ret.partial_face = s->output[35];
   ret.distracted_pose = s->output[36];
   ret.distracted_eyes = s->output[37];
+  ret.eyes_on_road = s->output[38];
+  ret.phone_use = s->output[39];
   ret.dsp_execution_time = (t2 - t1) / 1000.;
   return ret;
 }
 
-void dmonitoring_publish(PubMaster &pm, uint32_t frame_id, const DMonitoringResult &res, float execution_time, kj::ArrayPtr<const float> raw_pred){
+void dmonitoring_publish(PubMaster &pm, uint32_t frame_id, const DMonitoringResult &res, float execution_time, kj::ArrayPtr<const float> raw_pred) {
   // make msg
   MessageBuilder msg;
   auto framed = msg.initEvent().initDriverState();
@@ -187,6 +190,8 @@ void dmonitoring_publish(PubMaster &pm, uint32_t frame_id, const DMonitoringResu
   framed.setPartialFace(res.partial_face);
   framed.setDistractedPose(res.distracted_pose);
   framed.setDistractedEyes(res.distracted_eyes);
+  framed.setEyesOnRoad(res.eyes_on_road);
+  framed.setPhoneUse(res.phone_use);
   if (send_raw_pred) {
     framed.setRawPredictions(raw_pred.asBytes());
   }

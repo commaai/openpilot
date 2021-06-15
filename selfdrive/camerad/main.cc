@@ -1,9 +1,9 @@
-#include <assert.h>
 #include <poll.h>
-#include <stdio.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include <cassert>
+#include <cstdio>
 #include <thread>
 
 #include "libyuv.h"
@@ -15,7 +15,7 @@
 #include "selfdrive/common/util.h"
 #include "selfdrive/hardware/hw.h"
 
-#if defined(QCOM) && !defined(QCOM_REPLAY)
+#ifdef QCOM
 #include "selfdrive/camerad/cameras/camera_qcom.h"
 #elif QCOM2
 #include "selfdrive/camerad/cameras/camera_qcom2.h"

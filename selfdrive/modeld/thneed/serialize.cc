@@ -1,5 +1,4 @@
-#include <assert.h>
-
+#include <cassert>
 #include <set>
 
 #include "json11.hpp"

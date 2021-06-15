@@ -4,6 +4,7 @@
 #include <termios.h>
 
 #include <QJsonArray>
+#include <QReadWriteLock>
 #include <QThread>
 
 #include <capnp/dynamic.h>
@@ -12,7 +13,7 @@
 #include "selfdrive/common/util.h"
 #include "selfdrive/ui/qt/api.h"
 #include "selfdrive/ui/replay/filereader.h"
-#include "tools/clib/framereader.h"
+#include "selfdrive/ui/replay/framereader.h"
 
 
 constexpr int FORWARD_SEGS = 2;
@@ -35,22 +36,23 @@ public slots:
   void keyboardThread();
   void segmentQueueThread();
   void parseResponse(const QString &response);
+  void mergeEvents();
 
 private:
   float last_print = 0;
   uint64_t route_start_ts;
   std::atomic<int> seek_ts = 0;
   std::atomic<int> current_ts = 0;
-  std::atomic<int> current_segment;
+  std::atomic<int> current_segment = 0;
 
   QThread *thread;
   QThread *kb_thread;
   QThread *queue_thread;
 
   // logs
-  Events events;
+  QMultiMap<uint64_t, Event*> events;
   QReadWriteLock events_lock;
-  QMap<int, QPair<int, int>> eidx;
+  std::unordered_map<uint32_t, EncodeIdx> eidx[MAX_CAMERAS];
 
   HttpRequest *http;
   QJsonArray camera_paths;
