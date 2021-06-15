@@ -7,6 +7,7 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
   hlayout = new QHBoxLayout;
   hlayout->setMargin(0);
   hlayout->setSpacing(20);
+  hlayout->addSpacerItem(new QSpacerItem(1, 120));
 
   // left icon
   if (!icon.isEmpty()) {
