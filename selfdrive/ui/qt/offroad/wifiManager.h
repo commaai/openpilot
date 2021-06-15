@@ -79,6 +79,7 @@ private slots:
   void change(unsigned int new_state, unsigned int previous_state, unsigned int change_reason);
 signals:
   void wrongPassword(const QString &ssid);
+  void refreshed();
   void successfulConnection(const QString &ssid);
   void refresh();
 };

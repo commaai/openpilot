@@ -97,6 +97,8 @@ WifiManager::WifiManager(QWidget* parent) : QWidget(parent) {
 }
 
 void WifiManager::refreshNetworks() {
+//  QThread::sleep(1);
+  qDebug() << "refreshNetworks() from signal";
   seen_networks.clear();
   seen_ssids.clear();
   ipv4_address = get_ipv4_address();
@@ -107,7 +109,7 @@ void WifiManager::refreshNetworks() {
     seen_ssids.push_back(network.ssid);
     seen_networks.push_back(network);
   }
-
+  emit refreshed();
 }
 
 QString WifiManager::get_ipv4_address() {

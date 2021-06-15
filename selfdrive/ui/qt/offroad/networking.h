@@ -63,16 +63,19 @@ public slots:
 
 class Networking : public QWidget {
   Q_OBJECT
+  QThread wifiThread;
 
 public:
   explicit Networking(QWidget* parent = 0, bool show_advanced = true);
 
 private:
+//    QThread *wifi_thread;
   QStackedLayout* main_layout = nullptr; // nm_warning, wifiScreen, advanced
   QWidget* wifiScreen = nullptr;
   AdvancedNetworking* an = nullptr;
   bool ui_setup_complete = false;
   bool show_advanced;
+
 
   Network selectedNetwork;
 
@@ -80,9 +83,59 @@ private:
   WifiManager* wifi = nullptr;
   void attemptInitialization();
 
+public slots:
+  void update();
+
 private slots:
   void connectToNetwork(const Network &n);
-  void refresh();
+  void refreshed();
   void wrongPassword(const QString &ssid);
+
+signals:
+  void refreshNetworks();
+  void startWifiThread();
+
 };
 
+
+class WifiWorker : public QObject
+{
+    Q_OBJECT
+    QThread wifiThread;
+
+public:
+  WifiManager* wifi = nullptr;
+  WifiWorker(WifiManager* _wifi) {
+    wifi = _wifi;
+  }
+
+public slots:
+    void run();
+
+signals:
+    void update();
+};
+
+
+//class Controller : public QObject
+//{
+//    Q_OBJECT
+//    QThread workerThread;
+//public:
+//    Controller() {
+//        Worker *worker = new Worker;
+//        worker->moveToThread(&workerThread);
+//        connect(&workerThread, SIGNAL(finished()), worker, SLOT(deleteLater()));
+//        connect(this, SIGNAL(operate(QString)), worker, SLOT(doWork(QString)));
+//        connect(worker, SIGNAL(resultReady(QString)), this, SLOT(handleResults(QString)));
+//        workerThread.start();
+//    }
+//    ~Controller() {
+//        workerThread.quit();
+//        workerThread.wait();
+//    }
+//public slots:
+//    void handleResults(const QString &);
+//signals:
+//    void operate(const QString &);
+//};
