@@ -11,9 +11,29 @@
 
 #include "selfdrive/ui/qt/widgets/controls.h"
 
+class ListWidget : public QWidget {
+  Q_OBJECT
+ public:
+  explicit ListWidget(QWidget *p = nullptr) : QWidget(p), layout_(this) {}
+  inline void addWidget(QWidget *w) { layout_.addWidget(w); }
+  inline void setSpacing(int spacing) { layout_.setSpacing(spacing); }
+
+ private:
+  void paintEvent(QPaintEvent *) override {
+    QPainter p(this);
+    p.setPen(Qt::gray);
+    for (int i = 0; i < layout_.count() - 1; ++i) {
+      QRect r = layout_.itemAt(i)->widget()->frameGeometry();
+      int bottom = r.bottom() + layout_.spacing() / 2;
+      p.drawLine(r.left() + 40, bottom, r.right() - 40, bottom);
+    }
+  }
+  QVBoxLayout layout_;
+};
+
 // ********** settings window + top-level panels **********
 
-class DevicePanel : public QWidget {
+class DevicePanel : public ListWidget {
   Q_OBJECT
 public:
   explicit DevicePanel(QWidget* parent = nullptr);
@@ -22,13 +42,13 @@ signals:
   void showDriverView();
 };
 
-class TogglesPanel : public QWidget {
+class TogglesPanel : public ListWidget {
   Q_OBJECT
 public:
   explicit TogglesPanel(QWidget *parent = nullptr);
 };
 
-class SoftwarePanel : public QWidget {
+class SoftwarePanel : public ListWidget {
   Q_OBJECT
 public:
   explicit SoftwarePanel(QWidget* parent = nullptr);
