@@ -73,8 +73,11 @@ class CAR:
 # All supported cars should return FW from the engine, srs, eps, and fwdRadar. Cars
 # with a manual trans won't return transmission firmware, but all other cars will.
 #
-# Most aftermarket performance tuners won't alter the engine or transmission FW as
-# seen by UDS diagnostics, but a few may (COBB Accessport + EQT sometimes do this).
+# The 0xF187 SW part number query should return in the form of N[NX][NX] NNN NNN [X[X]],
+# where N=number, X=letter, and the trailing two letters are optional. Performance
+# tuners sometimes tamper with that field (e.g. 8V0 9C0 BB0 1 from COBB/EQT). Tampered
+# ECU SW part numbers are invalid for vehicle ID and compatibility checks. Try to have
+# them repaired by the tuner before including them in openpilot.
 
 FW_VERSIONS = {
   CAR.ATLAS_MK1: {
@@ -129,7 +132,7 @@ FW_VERSIONS = {
       b'\xf1\x878V0906264F \xf1\x890003',
       b'\xf1\x878V0906264L \xf1\x890002',
       b'\xf1\x878V0906264M \xf1\x890001',
-      b'\xf1\x878V09C0BB01 \xf1\x890001',  # Corrupted by COBB/EQT tune
+      b'\xf1\x878V09C0BB01 \xf1\x890001',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x8709G927749AP\xf1\x892943',
