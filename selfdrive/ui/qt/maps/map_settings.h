@@ -1,6 +1,7 @@
 #pragma once
 #include <QWidget>
 #include <QLabel>
+#include <QPushButton>
 
 class MapPanel : public QWidget {
   Q_OBJECT
@@ -10,6 +11,6 @@ public:
   void parseResponse(const QString& response);
 
 private:
-  QLabel *home_address, *home_icon;
-  QLabel *work_address, *work_icon;
+  QPushButton *home_button, *work_button;
+  QLabel *home_address, *work_address;
 };

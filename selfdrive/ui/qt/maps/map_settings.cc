@@ -7,11 +7,12 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   Params params = Params();
 
+  // Home
   QHBoxLayout *home_layout = new QHBoxLayout;
-  home_icon = new QLabel;
-  home_icon->setPixmap(QPixmap("../assets/navigation/home_inactive.png"));
-  home_icon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
-  home_layout->addWidget(home_icon);
+  home_button = new QPushButton;
+  home_button->setIcon(QPixmap("../assets/navigation/home_inactive.png"));
+  home_button->setIconSize(QSize(200, 200));
+  home_layout->addWidget(home_button);
 
   home_address = new QLabel("No home\nlocation set");
   home_address->setWordWrap(true);
@@ -19,11 +20,12 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
   home_layout->addSpacing(20);
   home_layout->addWidget(home_address);
 
+  // Work
   QHBoxLayout *work_layout = new QHBoxLayout;
-  work_icon = new QLabel;
-  work_icon->setPixmap(QPixmap("../assets/navigation/work_inactive.png"));
-  work_icon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
-  work_layout->addWidget(work_icon);
+  work_button = new QPushButton;
+  work_button->setIcon(QPixmap("../assets/navigation/work_inactive.png"));
+  work_button->setIconSize(QSize(200, 200));
+  work_layout->addWidget(work_button);
 
   work_address = new QLabel("No work\nlocation set");
   work_address->setWordWrap(true);
@@ -31,6 +33,7 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
   work_layout->addSpacing(20);
   work_layout->addWidget(work_address);
 
+  // Home & Work layout
   QHBoxLayout *home_work_layout = new QHBoxLayout;
   home_work_layout->addLayout(home_layout, 1);
   home_work_layout->addSpacing(50);
@@ -40,8 +43,7 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
   main_layout->addSpacing(50);
   main_layout->addWidget(horizontal_line());
 
-  QString dongle = QString::fromStdString(params.get("DongleId", false));
-
+  // Settings
   main_layout->addWidget(new ParamControl("NavSettingTime24h",
                                     "Show ETA in 24h format",
                                     "Use 24h format instead of am/pm",
@@ -72,15 +74,14 @@ void MapPanel::parseResponse(const QString& response) {
     auto details = obj["place_details"].toString();
 
     if (type == "favorite") {
-
       if (label == "home") {
         home_address->setText(shorten(name, 15) + "\n" + shorten(details, 50));
         home_address->setStyleSheet(R"(font-size: 30px; color: white;)");
-        home_icon->setPixmap(QPixmap("../assets/navigation/home.png"));
+        home_button->setIcon(QPixmap("../assets/navigation/home.png"));
       } else if (label == "work") {
         work_address->setText(shorten(name, 15) + "\n" + shorten(details, 50));
         work_address->setStyleSheet(R"(font-size: 30px; color: white;)");
-        work_icon->setPixmap(QPixmap("../assets/navigation/work.png"));
+        work_button->setIcon(QPixmap("../assets/navigation/work.png"));
       }
     }
   }
