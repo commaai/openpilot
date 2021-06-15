@@ -39,7 +39,7 @@ TEST_CASE("util::read_file") {
   SECTION("read directory") {
     REQUIRE(util::read_file(".").empty());
   }
-  SECTION("read non-existant file") {
+  SECTION("read non-existent file") {
     std::string ret = util::read_file("does_not_exist");
     REQUIRE(ret.empty());
   }
