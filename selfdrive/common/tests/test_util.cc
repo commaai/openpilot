@@ -11,24 +11,12 @@
 #include "catch2/catch.hpp"
 #include "selfdrive/common/util.h"
 
-std::string random_string(size_t length) {
-  auto randchar = []() -> char {
-    const char charset[] =
-        "0123456789"
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        "abcdefghijklmnopqrstuvwxyz";
-    const size_t max_index = (sizeof(charset) - 1);
-    return charset[rand() % max_index];
-  };
-  std::string str(length, 0);
-  std::generate_n(str.begin(), length, randchar);
-  return str;
-}
-
-template <typename OutputIt>
-void random_bytes(OutputIt first, OutputIt last) {
-  std::independent_bits_engine<std::default_random_engine, CHAR_BIT, unsigned char> rbe;
-  std::generate(first, last, std::ref(rbe));
+std::string random_bytes(int size) {
+  std::random_device rd;
+  std::independent_bits_engine<std::default_random_engine, CHAR_BIT, unsigned char> rbe(rd());
+  std::string bytes(size+1, '\0');
+  std::generate(bytes.begin(), bytes.end(), std::ref(rbe));
+  return bytes;
 }
 
 TEST_CASE("util::read_file") {
@@ -50,17 +38,17 @@ TEST_CASE("util::read_file") {
     }
     closedir(d);
   }
-  SECTION("read ascii file") {
+  SECTION("read file") {
     std::vector<std::string> test_data;
     test_data.push_back("");  // test read empty file
-    // continue reading to 64kb
     for (int i = 0; i < 64; ++i) {
-      test_data.push_back(random_string(1024));
+      test_data.push_back(random_bytes(1024));
     }
 
     char filename[] = "/tmp/test_read_XXXXXX";
     int fd = mkstemp(filename);
     std::string file_content;
+    // continue writing&reading to 64kb
     for (auto &data : test_data) {
       write(fd, data.c_str(), data.size());
       file_content += data;
@@ -69,30 +57,8 @@ TEST_CASE("util::read_file") {
     }
     close(fd);
   }
-  SECTION("read binary file") {
-    std::vector<std::vector<uint8_t>> test_data;
-    for (int i = 0; i < 64; ++i) {
-      auto &dat = test_data.emplace_back();
-      dat.resize(1024);
-      random_bytes(dat.begin(), dat.end());
-    }
-
-    char filename[] = "/tmp/test_read_XXXXXX";
-    int fd = mkstemp(filename);
-    std::vector<uint8_t> file_content;
-    for (auto &data : test_data) {
-      write(fd, data.data(), data.size() * sizeof(uint8_t));
-      file_content.insert(file_content.end(), data.begin(), data.end());
-      std::string ret = util::read_file(filename);
-      REQUIRE(ret.size() == file_content.size());
-      REQUIRE(memcmp(ret.data(), file_content.data(), file_content.size() * sizeof(uint8_t)) == 0);
-    }
-    close(fd);
-  }
   SECTION("read non-existant file") {
-    for (int i = 0; i < 5; ++i) {
-      std::string ret = util::read_file("does_not_exist");
-      REQUIRE(ret.empty());
-    }
+    std::string ret = util::read_file("does_not_exist");
+    REQUIRE(ret.empty());
   }
 }
