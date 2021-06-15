@@ -20,7 +20,6 @@ class CameraViewWidget : public QOpenGLWidget {
 public:
   explicit CameraViewWidget(VisionStreamType stream_type, QWidget* parent = nullptr);
   ~CameraViewWidget();
-  std::atomic<bool> frameSwapped_ = false;
 
 signals:
  void hide();
