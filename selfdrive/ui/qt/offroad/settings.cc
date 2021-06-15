@@ -248,7 +248,9 @@ QWidget * network_panel(QWidget * parent) {
 #ifdef QCOM
   QWidget *w = new QWidget(parent);
   QVBoxLayout *layout = new QVBoxLayout(w);
-  ListWidget *list = new ListWidget(parent);
+  layout->setMargin(0);
+
+  ListWidget *list = new ListWidget();
   list->setSpacing(30);
   // wifi + tethering buttons
   auto wifiBtn = new ButtonControl("WiFi Settings", "OPEN");
