@@ -97,6 +97,11 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1205 + STD_CARGO_KG
       ret.wheelbase = 2.61
 
+    elif candidate == CAR.AUDI_Q3_MK2:
+      # Averages of all 8U/F3/FS Q3 variants
+      ret.mass = 1623 + STD_CARGO_KG
+      ret.wheelbase = 2.68
+
     elif candidate == CAR.SEAT_ATECA_MK1:
       # Averages of all 5F Ateca variants
       ret.mass = 1900 + STD_CARGO_KG

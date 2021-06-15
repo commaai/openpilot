@@ -1,5 +1,6 @@
 Version 0.8.6 (2021-XX-XX)
 ========================
+ * Audi Q3 2020 support thanks to jyoung8607!
  * Hyundai Ioniq PHEV 2020 support thanks to YawWashout!
  * Škoda Octavia RS 2016 support thanks to jyoung8607!
  * Volkswagen Touran 2017 support thanks to jyoung8607!
