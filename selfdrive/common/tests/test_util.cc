@@ -89,10 +89,10 @@ TEST_CASE("util::read_file") {
     }
     close(fd);
   }
-  SECTION("read non-exits file") {
+  SECTION("read non-existant file") {
     for (int i = 0; i < 5; ++i) {
-      std::string ret = util::read_file(random_string(5));
-      REQUIRE(ret == "");
+      std::string ret = util::read_file("does_not_exist");
+      REQUIRE(ret.empty());
     }
   }
 }
