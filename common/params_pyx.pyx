@@ -57,13 +57,12 @@ cdef class Params:
 
     return key
 
-  def get(self, key, block=False, encoding=None):
+  def get(self, key, bool block=False, encoding=None):
     cdef string k = self.check_key(key)
-    cdef bool b = block
 
     cdef string val
     with nogil:
-      val = self.p.get(k, b)
+      val = self.p.get(k, block)
 
     if val == b"":
       if block:
@@ -97,11 +96,10 @@ cdef class Params:
     with nogil:
       self.p.put(k, dat_bytes)
 
-  def put_bool(self, key, val):
+  def put_bool(self, key, bool val):
     cdef string k = self.check_key(key)
-    cdef bool b = val
     with nogil:
-      self.p.putBool(k, b)
+      self.p.putBool(k, val)
 
   def delete(self, key):
     cdef string k = self.check_key(key)
