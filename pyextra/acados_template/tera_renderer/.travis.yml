@@ -1,0 +1,30 @@
+language: rust
+
+matrix:
+  allow_failures:
+  - rust: nightly
+  fast_finish: true
+
+os:
+- linux
+- osx
+- windows
+
+script:
+  - cargo build --verbose --release;
+
+before_deploy:
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then mv target/release/t_renderer "target/release/t_renderer-$TRAVIS_TAG-$TRAVIS_OS_NAME"; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then mv target/release/t_renderer "target/release/t_renderer-$TRAVIS_TAG-$TRAVIS_OS_NAME"; fi
+  - if [ "$TRAVIS_OS_NAME" = "windows" ]; then powershell Rename-Item "target\\release\\t_renderer.exe" -NewName "t_renderer-$TRAVIS_TAG-$TRAVIS_OS_NAME"; fi
+
+deploy:
+  provider: releases
+  api_key:
+    secure: r7KHEiBFuDCTPZcTYrzXZWk/80UEQ085avicgRpsurhoGqsOS2dl020Iyo7XbmzYLLnrWmXvdGf6k+C0F3yP6nOyyPef+8DVb0JmmJzRz05n+g0a4FWWQbEusKfb7nsPzLK6wtiphyCwfns3YE+BLGzak1whTTC6lpii0wfk6L8L+VnT1UzJYlUYHnBhZmOEixuxd55DCkOMwhMGLudAtmk1D6bJCynyUIngwCui2NxbFT4qz+o/Rmgs7nLahWOXnbLkeWXzWEatq62A5r0n4hfH/OsTVyJlOcpjl596ccVC313+v1EwAlODcEh3e2N9mBjzNtmF0XaBAkKwJyeqs5ubNKtFuu5LlBUbRcxMmSIRt/IunzPP/snA9I08iQaxbHcQkrhGTo0DXUoWEb7bBFZM7iOp0aK8S6F9+jvgGyow4YTwEsE/ZsAgcLXva4k+VDK9OuO7y+6Ybfzj/0kCkric15teeA5vzNCeJMJLV0LmLRukpGebwdzgBI9a5ywQ65egwkmZJMFbQXfm6b/+r7zkyclGCnG+Kh6K+AfFOirvbHh1TYdTq0oe/l4bDNmfPq7i0IEDpcs+NcLDnC+TxHBsegrloZrtNKOnmvCjn2F3mwwf88WiC/vz6Cqn2rzQUXHOb79LPJoGvZSZ3EjWGxoFJHmB72C19AlNC2wVCxk=
+  skip_cleanup: true
+  file_glob: true 
+  file: target/release/t_renderer-*
+  on:
+    tags: true
+    # repo: acados/tera_renderer

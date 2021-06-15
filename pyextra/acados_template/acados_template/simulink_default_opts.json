@@ -1,0 +1,36 @@
+{
+    "outputs": {
+        "u0": 1,
+        "utraj": 0,
+        "xtraj": 0,
+        "solver_status": 1,
+        "KKT_residual": 1,
+        "x1": 1,
+        "CPU_time": 1,
+        "sqp_iter": 1
+    },
+    "inputs": {
+        "lbx_0": 1,
+        "ubx_0": 1,
+        "parameter_traj": 1,
+        "y_ref_0": 1,
+        "y_ref": 1,
+        "y_ref_e": 1,
+        "lbx": 1,
+        "ubx": 1,
+        "lbx_e": 1,
+        "ubx_e": 1,
+        "lbu": 1,
+        "ubu": 1,
+        "lg": 1,
+        "ug": 1,
+        "lh": 1,
+        "uh": 1,
+        "cost_W_0": 0,
+        "cost_W": 0,
+        "cost_W_e": 0,
+        "x_init": 0,
+        "u_init": 0
+    },
+    "samplingtime": "t0"
+}
