@@ -70,6 +70,12 @@ class CAR:
   SKODA_SUPERB_MK3 = "SKODA SUPERB 3RD GEN"   # Chassis 3V/NP, Mk3 Skoda Superb and variants
   SKODA_OCTAVIA_MK3 = "SKODA OCTAVIA 3RD GEN" # Chassis NE, Mk3 Skoda Octavia and variants
 
+# All supported cars should return FW from the engine, srs, eps, and fwdRadar. Cars
+# with a manual trans won't return transmission firmware, but all other cars will.
+#
+# Most aftermarket performance tuners won't alter the engine or transmission FW as
+# seen by UDS diagnostics, but a few may (COBB Accessport + EQT sometimes do this).
+
 FW_VERSIONS = {
   CAR.ATLAS_MK1: {
     (Ecu.engine, 0x7e0, None): [
@@ -123,7 +129,7 @@ FW_VERSIONS = {
       b'\xf1\x878V0906264F \xf1\x890003',
       b'\xf1\x878V0906264L \xf1\x890002',
       b'\xf1\x878V0906264M \xf1\x890001',
-      b'\xf1\x878V09C0BB01 \xf1\x890001',  # Malformed ECU SW part number due to COBB/EQT tune
+      b'\xf1\x878V09C0BB01 \xf1\x890001',  # Corrupted by COBB/EQT tune
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x8709G927749AP\xf1\x892943',
