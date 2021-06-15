@@ -20,41 +20,20 @@ std::string random_bytes(int size) {
 }
 
 TEST_CASE("util::read_file") {
-  auto read_file = [](const std::string &fn) -> std::string {
-    std::ifstream f(fn);
-    std::stringstream buffer;
-    buffer << f.rdbuf();
-    return buffer.str();
-  };
-
   SECTION("read /proc") {
-    DIR *d = opendir("/proc");
-    struct dirent *de = nullptr;
-    while ((de = readdir(d))) {
-      const std::string path = util::string_format("/proc/%s/cmdline", de->d_name);
-      std::string ret1 = util::read_file(path);
-      std::string ret2 = read_file(path);
-      REQUIRE(ret1 == ret2);
-    }
-    closedir(d);
+    std::string ret = util::read_file("/proc/self/cmdline");
+    REQUIRE(ret.find("test_util") != std::string::npos);
   }
   SECTION("read file") {
-    std::vector<std::string> test_data;
-    test_data.push_back("");  // test read empty file
-    for (int i = 0; i < 64; ++i) {
-      test_data.push_back(random_bytes(1024));
-    }
-
     char filename[] = "/tmp/test_read_XXXXXX";
     int fd = mkstemp(filename);
-    std::string file_content;
-    // continue writing&reading to 64kb
-    for (auto &data : test_data) {
-      write(fd, data.c_str(), data.size());
-      file_content += data;
-      std::string ret = util::read_file(filename);
-      REQUIRE(ret == file_content);
-    }
+
+    REQUIRE(util::read_file(filename).empty());
+    
+    std::string content = random_bytes(64 * 1024);
+    write(fd, content.c_str(), content.size());
+    std::string ret = util::read_file(filename);
+    REQUIRE(ret == content);
     close(fd);
   }
   SECTION("read non-existant file") {
