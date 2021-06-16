@@ -30,6 +30,7 @@ INSTALL_DIR="$DIR/$ARCHNAME"
 rm -rf $INSTALL_DIR
 mkdir -p $INSTALL_DIR
 cp -r $DIR/acados/lib $INSTALL_DIR
+rm $INSTALL_DIR/lib/*.json
 
 if [ -z "$SKIP_EXTRAS" ]; then
   pip3 install -e $DIR/acados/interfaces/acados_template

@@ -1,8 +1,0 @@
-{
-	"openmp": "",
-	"qpoases": "-lqpOASES_e",
-	"qpdunes": "",
-	"osqp": "",
-	"hpmpc": "",
-	"ooqp": ""
-}
