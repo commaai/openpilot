@@ -81,6 +81,7 @@ void MapPanel::parseResponse(const QString &response) {
         home_button->setIcon(QPixmap("../assets/navigation/home.png"));
         QObject::connect(home_button, &QPushButton::clicked, [=]() {
           navigateTo(obj);
+          emit closeSettings();
         });
       } else if (label == "work") {
         work_address->setText(shorten(name, 15) + "\n" + shorten(details, 50));
@@ -88,6 +89,7 @@ void MapPanel::parseResponse(const QString &response) {
         work_button->setIcon(QPixmap("../assets/navigation/work.png"));
         QObject::connect(work_button, &QPushButton::clicked, [=]() {
           navigateTo(obj);
+          emit closeSettings();
         });
       }
     }

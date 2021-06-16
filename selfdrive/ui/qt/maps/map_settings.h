@@ -17,4 +17,7 @@ public:
 private:
   QPushButton *home_button, *work_button;
   QLabel *home_address, *work_address;
+
+signals:
+  void closeSettings();
 };
