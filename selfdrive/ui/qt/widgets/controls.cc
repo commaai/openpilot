@@ -21,7 +21,7 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
 
   // title
   title_label = new QPushButton(title);
-  title_label->setStyleSheet("font-size: 50px; font-weight: 400; text-align: left;background-color:transparent");
+  title_label->setStyleSheet("font-size: 50px; font-weight: 400; text-align: left;background-color: transparent");
   hlayout->addWidget(title_label);
 
   main_layout->addLayout(hlayout);

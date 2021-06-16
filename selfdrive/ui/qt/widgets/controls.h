@@ -112,7 +112,7 @@ private:
 class ListWidget : public QWidget {
   Q_OBJECT
  public:
-  explicit ListWidget(QWidget *p = nullptr) : QWidget(p), layout_(this) {
+  explicit ListWidget(QWidget *parent = 0) : QWidget(parent), layout_(this) {
     layout_.setMargin(0);
     // default spacing is 25
     setSpacing(25);
