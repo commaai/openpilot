@@ -15,11 +15,11 @@ class ElidedLabel : public QFrame {
 
  public:
   ElidedLabel(QWidget *parent = 0) : ElidedLabel("", parent) {}
-  explicit ElidedLabel(const QString &text, QWidget *parent = 0) : content_(text), QFrame(parent) {}
+  explicit ElidedLabel(const QString &text, QWidget *parent = 0) : content_(text.trimmed()), QFrame(parent) {}
   void setAlignment(size_t alignment) { alignment_ = alignment; }
   const QString &text() const { return content_; }
   void setText(const QString &text) {
-    content_ = text;
+    content_ = text.trimmed();
     update();
   }
 

@@ -250,8 +250,8 @@ void SoftwarePanel::updateLabels() {
   updateBtn->setText("CHECK");
   updateBtn->setEnabled(true);
   gitBranchLbl->setText(QString::fromStdString(params.get("GitBranch")));
-  gitCommitLbl->setText(QString::fromStdString(params.get("GitCommit")).left(10));
-  osVersionLbl->setText(QString::fromStdString(Hardware::get_os_version()).trimmed());
+  gitCommitLbl->setText(QString::fromStdString(params.get("GitCommit")));
+  osVersionLbl->setText(QString::fromStdString(Hardware::get_os_version()));
 }
 
 QWidget * network_panel(QWidget * parent) {
