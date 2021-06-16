@@ -176,7 +176,7 @@ void WifiUI::refresh() {
 
     ElidedLabel *ssid_label = new ElidedLabel(network.ssid);
     ssid_label->setStyleSheet("font-size: 55px;");
-    hlayout->addWidget(ssid_label, 0, Qt::AlignLeft);
+    hlayout->addWidget(ssid_label, 1, Qt::AlignLeft);
 
     if (wifi->isKnownConnection(network.ssid) && !wifi->isTetheringEnabled()) {
       QPushButton *forgetBtn = new QPushButton();

@@ -9,7 +9,7 @@
 #include "selfdrive/ui/qt/widgets/toggle.h"
 
 QFrame *horizontal_line(QWidget *parent = nullptr);
-#include <QDebug>
+
 class ElidedLabel : public QFrame {
   Q_OBJECT
 
@@ -20,10 +20,7 @@ class ElidedLabel : public QFrame {
   }
   void setAlignment(size_t alignment) { alignment_ = alignment; }
   const QString &text() const { return content_; }
-  QSize sizeHint() const override {
-    // 1000 is big engoush
-    return QSize(1000, 80);
-  }
+  QSize sizeHint() const override { return QSize(1000, 80); }
   void setText(const QString &text) {
     content_ = text.trimmed();
     elidedText_ = "";
