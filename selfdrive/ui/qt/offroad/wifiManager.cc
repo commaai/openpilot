@@ -68,6 +68,7 @@ void WifiThread::run() {
   while (!isInterruptionRequested()) {
 //    qDebug() << "WifiThread::run()";
 //    mutex.lock();
+    qDebug() << wifi->connecting_to_network;
     wifi->request_scan();
     wifi->refreshNetworks();
     emit updateNetworking(wifi->seen_networks, wifi->ipv4_address);
@@ -146,8 +147,6 @@ void WifiManager::start() {
 }
 
 void WifiManager::refreshNetworks() {
-//  QThread::sleep(1);
-//  qDebug() << "refreshNetworks() from signal";
   seen_networks.clear();
   seen_ssids.clear();
   ipv4_address = get_ipv4_address();
@@ -199,17 +198,15 @@ QList<Network> WifiManager::get_networks() {
   QDBusInterface nm(nm_service, adapter, wireless_device_iface, bus);
   nm.setTimeout(dbus_timeout);
 
-  QDBusMessage response = nm.call("GetAllAccessPoints");
-  QVariant first = response.arguments().at(0);
-
   QString active_ap = get_active_ap();
-  const QDBusArgument &args = first.value<QDBusArgument>();
-  args.beginArray();
-  while (!args.atEnd()) {
-    QDBusObjectPath path;
-    args >> path;
+  QDBusReply<QList<QDBusObjectPath>> response = nm.call("GetAllAccessPoints");
 
+  foreach (const QDBusObjectPath& path, response.value()) {  // TODO: can we replace with for (path : response.value()) { } ?
     QByteArray ssid = get_property(path.path(), "Ssid");
+    if (ssid.isEmpty()) {
+      continue;
+    }
+
     unsigned int strength = get_ap_strength(path.path());
     SecurityType security = getSecurityType(path.path());
     ConnectedType ctype;
@@ -222,13 +219,10 @@ QList<Network> WifiManager::get_networks() {
         ctype = ConnectedType::CONNECTED;
       }
     }
-    Network network = {path.path(), ssid, strength, ctype, security, isKnownNetwork(ssid)};
 
-    if (ssid.length()) {
-      r.push_back(network);
-    }
+    Network network = {path.path(), ssid, strength, ctype, security, isKnownNetwork(ssid)};
+    r.push_back(network);
   }
-  args.endArray();
 
   std::sort(r.begin(), r.end(), compare_by_strength);
   return r;

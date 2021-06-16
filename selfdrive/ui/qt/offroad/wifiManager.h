@@ -35,6 +35,7 @@ public:
   void request_scan();
   QVector<Network> seen_networks;
   QString ipv4_address;
+  QString connecting_to_network;
 
   void refreshNetworks();
   bool isKnownNetwork(const QString &ssid);
@@ -58,7 +59,6 @@ private:
   QString adapter;//Path to network manager wifi-device
   QDBusConnection bus = QDBusConnection::systemBus();
   unsigned int raw_adapter_state;//Connection status https://developer.gnome.org/NetworkManager/1.26/nm-dbus-types.html#NMDeviceState
-  QString connecting_to_network;
   QString tethering_ssid;
   QString tetheringPassword = "swagswagcommma";
 
