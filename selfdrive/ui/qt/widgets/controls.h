@@ -29,11 +29,6 @@ class ElidedLabel : public QFrame {
   QString content_;
 };
 
-inline QString elideString(QWidget *w, const QString &str, int width = 0, Qt::TextElideMode mode = Qt::ElideRight) {
-  QFontMetrics fm(w->font());
-  return fm.elidedText(str, mode, width <= 0 ? w->width() : width);
-}
-
 class AbstractControl : public QFrame {
   Q_OBJECT
 
