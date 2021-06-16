@@ -64,25 +64,22 @@ bool compare_by_strength(const Network &a, const Network &b) {
 }
 
 void WifiThread::run() {
-  unsigned int i = 10;
+  unsigned int i = 0;
+  wifi->refreshNetworks();
   while (!isInterruptionRequested()) {
     // Process incoming signals from networking UI
     eventDispatcher()->processEvents(QEventLoop::AllEvents);
     i++;
-    QThread::msleep(100);
-    if (i > 10) {
-      i = 0;
+    QThread::msleep(1000);
+//    if (i > 100) {
+//      i = 0;
       qDebug() << "WifiThread::run()";
-      qDebug() << "connecting:" << wifi->connecting_to_network;
-      // TODO move this updating code to change() so we only update on a state change
-      // TODO then impose a minimum rate of updating (2s?) where not refreshed in this duration, refresh here
+      qDebug() << wifi->connecting_to_network;
       wifi->request_scan();
-      wifi->refreshNetworks();
+//      wifi->refreshNetworks();
+      wifi->updateNetworks();
       emit updateNetworking(wifi->seen_networks, wifi->ipv4_address);
-    } else {
-//      wifi->updateNetworks();
-      emit updateNetworking(wifi->seen_networks, wifi->ipv4_address);
-    }
+//    }
   }
 }
 
@@ -90,6 +87,7 @@ void WifiThread::connectToNetwork(const Network n, const QString pass) {
   qDebug() << "WIFITHREAD::connectToNetwork";
 //  QThread::sleep(5);
   if (n.known && pass.isEmpty()) {  // we can have a connection with an incorrect password
+    wifi->refreshNetworks();
     wifi->activateWifiConnection(n.ssid);
   } else if (n.security_type == SecurityType::OPEN) {
     wifi->connect(n);
@@ -171,6 +169,7 @@ void WifiManager::updateNetworks() {  // TODO assuming false
     }
     network.connected = ctype;
   }
+  std::sort(seen_networks.begin(), seen_networks.end(), compare_by_strength);
 }
 
 void WifiManager::refreshNetworks() {
@@ -250,8 +249,6 @@ QList<Network> WifiManager::get_networks() {
     Network network = {path.path(), ssid, strength, ctype, security, isKnownNetwork(ssid)};
     r.push_back(network);
   }
-
-  std::sort(r.begin(), r.end(), compare_by_strength);
   return r;
 }
 
@@ -438,6 +435,7 @@ QString WifiManager::get_adapter() {
 
 void WifiManager::change(unsigned int new_state, unsigned int previous_state, unsigned int change_reason) {
   updateNetworks();
+  emit updateNetworking(seen_networks, ipv4_address);
   raw_adapter_state = new_state;
   if (new_state == state_need_auth && change_reason == reason_wrong_password) {
     qDebug() << "CHANGE::WRONG PASSWORD!";
