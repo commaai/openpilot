@@ -517,20 +517,3 @@ FW_VERSIONS = {
     ],
   },
 }
-
-DBC = {
-  CAR.ATLAS_MK1: dbc_dict('vw_mqb_2010', None),
-  CAR.GOLF_MK7: dbc_dict('vw_mqb_2010', None),
-  CAR.JETTA_MK7: dbc_dict('vw_mqb_2010', None),
-  CAR.PASSAT_MK8: dbc_dict('vw_mqb_2010', None),
-  CAR.TIGUAN_MK2: dbc_dict('vw_mqb_2010', None),
-  CAR.TOURAN_MK2: dbc_dict('vw_mqb_2010', None),
-  CAR.AUDI_A3_MK3: dbc_dict('vw_mqb_2010', None),
-  CAR.AUDI_Q2_MK1: dbc_dict('vw_mqb_2010', None),
-  CAR.SEAT_ATECA_MK1: dbc_dict('vw_mqb_2010', None),
-  CAR.SEAT_LEON_MK3: dbc_dict('vw_mqb_2010', None),
-  CAR.SKODA_KODIAQ_MK1: dbc_dict('vw_mqb_2010', None),
-  CAR.SKODA_OCTAVIA_MK3: dbc_dict('vw_mqb_2010', None),
-  CAR.SKODA_SCALA_MK1: dbc_dict('vw_mqb_2010', None),
-  CAR.SKODA_SUPERB_MK3: dbc_dict('vw_mqb_2010', None),
-}

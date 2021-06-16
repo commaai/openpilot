@@ -1,15 +1,16 @@
 import numpy as np
 from cereal import car
 from selfdrive.config import Conversions as CV
+from selfdrive.car import dbc_dict
 from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
-from selfdrive.car.volkswagen.values import DBC, CANBUS, TransmissionType, GearShifter, BUTTON_STATES, CarControllerParams
+from selfdrive.car.volkswagen.values import CANBUS, TransmissionType, GearShifter, BUTTON_STATES, CarControllerParams
 
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
-    can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
+    can_define = CANDefine(dbc_dict('vw_mqb_2010', None)["pt"])
     if CP.transmissionType == TransmissionType.automatic:
       self.shifter_values = can_define.dv["Getriebe_11"]["GE_Fahrstufe"]
     elif CP.transmissionType == TransmissionType.direct:
@@ -239,7 +240,7 @@ class CarState(CarStateBase):
       signals += MqbExtraSignals.bsm_radar_signals
       checks += MqbExtraSignals.bsm_radar_checks
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, CANBUS.pt)
+    return CANParser(dbc_dict('vw_mqb_2010', None)["pt"], signals, checks, CANBUS.pt)
 
   @staticmethod
   def get_cam_can_parser(CP):
@@ -258,7 +259,7 @@ class CarState(CarStateBase):
       ("LDW_02", 10)        # From R242 Driver assistance camera
     ]
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, CANBUS.cam)
+    return CANParser(dbc_dict('vw_mqb_2010', None)["pt"], signals, checks, CANBUS.cam)
 
 class MqbExtraSignals:
   # Additional signal and message lists for optional or bus-portable controllers
