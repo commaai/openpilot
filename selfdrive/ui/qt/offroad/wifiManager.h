@@ -32,7 +32,6 @@ class WifiManager : public QObject {
 public:
   explicit WifiManager();
 
-  void requestScan();
   QVector<Network> seen_networks;
   QString ipv4_address;
   QString connecting_to_network;
@@ -54,15 +53,15 @@ public:
 
   void addTetheringConnection();
   void activateWifiConnection(const QString &ssid);
-  void changeTetheringPassword(const QString &newPassword);
 
-private:
+private:  // TODO clean this up
   QVector<QString> seen_ssids;
   QString adapter;  //Path to network manager wifi-device
   QDBusConnection bus = QDBusConnection::systemBus();
   unsigned int raw_adapter_state;  //Connection status https://developer.gnome.org/NetworkManager/1.26/nm-dbus-types.html#NMDeviceState
   QString tethering_ssid;
   QString tetheringPassword = "swagswagcommma";
+  bool scanning = false;
 
   QString get_adapter();
   QString get_ipv4_address();
@@ -78,47 +77,23 @@ private:
   QDBusObjectPath pathFromSsid(const QString &ssid);
   ConnectedType getConnectedType(const QString &path, const QString &ssid, const QString &active_ap);
 
-signals:  // Signals to communicate with Networking UI
-  void wrongPassword(const Network n);
-  void successfulConnection(const QString &ssid);
-
-  void updateNetworking(const QVector<Network> seen_networks, const QString ipv4_address);
-
-private slots:
-  void state_change(unsigned int new_state, unsigned int old_state, unsigned int reason);
-  void property_change(const QString &interface, const QVariantMap &props, const QStringList &invalidated_props);
-};
-
-
-class WifiThread : public QThread {
-    Q_OBJECT
-
-public:
-  using QThread::QThread;
-  void run() override;
-  WifiManager *wifi;
-
-  WifiThread() {
-    wifi = new WifiManager();
-    // Bridge signals from manager to thread
-    connect(wifi, &WifiManager::wrongPassword, this, &WifiThread::wrongPassword);
-    connect(wifi, &WifiManager::updateNetworking, this, &WifiThread::updateNetworking);
-
-    moveToThread(this);
-  }
-
-public slots:
-  void connectToNetwork(const Network n, const QString pass);
-  void toggleTethering(const bool enabled);
-  void changeTetheringPassword(const QString newPassword);
-//  void wrongPassword(const QString ssid);
-
 signals:
   // Callback to main UI thread
   void updateNetworking(const QVector<Network> seen_networks, const QString ipv4_address);
   void wrongPassword(const Network n);
+  void successfulConnection(const QString &ssid);
 
   // Advanced networking signals
   void tetheringStateChange();
 
+public slots:
+  void requestScan();
+  void connectToNetwork(const Network n, const QString pass);
+  void toggleTethering(const bool enabled);
+  void changeTetheringPassword(const QString newPassword);
+
+
+private slots:
+  void state_change(unsigned int new_state, unsigned int old_state, unsigned int reason);
+  void property_change(const QString &interface, const QVariantMap &props, const QStringList &invalidated_props);
 };

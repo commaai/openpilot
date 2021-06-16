@@ -69,12 +69,18 @@ public slots:
 
 class Networking : public QWidget {
   Q_OBJECT
+  QThread wifiThread;
 
 public:
   explicit Networking(QWidget* parent = 0, bool show_advanced = true);
-  WifiThread* wifiThread;
+  ~Networking() {  // TODO
+    wifiThread.quit();
+    wifiThread.wait();
+  }
 
 private:
+  WifiManager* wifiManager = nullptr;
+
   QStackedLayout* main_layout = nullptr; // nm_warning, wifiScreen, advanced
   QWidget* wifiScreen = nullptr;
   AdvancedNetworking* an = nullptr;
@@ -89,6 +95,7 @@ private:
 
 signals:
   void connectToNetwork(const Network n, const QString pass);
+  void refreshWifiManager();
 
 public slots:
   void refresh(const QVector<Network> seen_networks, const QString ipv4_address);

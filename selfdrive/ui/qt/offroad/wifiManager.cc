@@ -69,66 +69,60 @@ bool compare_by_strength(const Network &a, const Network &b) {
   return a.strength > b.strength;
 }
 
-void WifiThread::run() {
-  QThread::sleep(1);
-  const unsigned int min_refresh_rate = 5000;
-  const unsigned int event_loop_rate = 100;
-  unsigned int ms_since_scan = 5000;
-//  wifi->requestScan();
-  while (!isInterruptionRequested()) {
-    QThread::msleep(event_loop_rate);
-    ms_since_scan += event_loop_rate;
-    if (ms_since_scan >= min_refresh_rate) {
-      qDebug() << "Requesting scan";
-	    wifi->requestScan();
-	    ms_since_scan = 0;
-	  }
-    eventDispatcher()->processEvents(QEventLoop::AllEvents);
-
-//    qDebug() << "WifiThread::run()";
-//    qDebug() << wifi->connecting_to_network;
-//    wifi->requestScan();
-//    wifi->refreshNetworks();
-//    emit updateNetworking(wifi->seen_networks, wifi->ipv4_address);
-//
-//    // Process incoming signals from networking UI
+//void WifiThread::run() {
+//  QThread::sleep(1);
+//  const unsigned int min_refresh_rate = 5000;
+//  const unsigned int event_loop_rate = 100;
+//  unsigned int ms_since_scan = 5000;
+////  wifi->requestScan();
+//  while (!isInterruptionRequested()) {
+//    QThread::msleep(event_loop_rate);
+//    ms_since_scan += event_loop_rate;
+//    if (ms_since_scan >= min_refresh_rate) {
+//      qDebug() << "Requesting scan";
+//	    wifi->requestScan();
+//	    ms_since_scan = 0;
+//	  }
 //    eventDispatcher()->processEvents(QEventLoop::AllEvents);
-//    QThread::sleep(1);
-  }
-}
+//
+////    qDebug() << "WifiThread::run()";
+////    qDebug() << wifi->connecting_to_network;
+////    wifi->requestScan();
+////    wifi->refreshNetworks();
+////    emit updateNetworking(wifi->seen_networks, wifi->ipv4_address);
+////
+////    // Process incoming signals from networking UI
+////    eventDispatcher()->processEvents(QEventLoop::AllEvents);
+////    QThread::sleep(1);
+//  }
+//}
 
-void WifiThread::connectToNetwork(const Network n, const QString pass) {
+void WifiManager::connectToNetwork(const Network n, const QString pass) {
+  if (connecting_to_network != "") {
+    qDebug() << "YOU'RE ALREADY CONNECTING TO A NETWORK, CHILL!!";
+    return;
+  }
   qDebug() << "WIFITHREAD::connectToNetwork";
 //  QThread::sleep(5);
   if (n.known) {  // check network n
-    wifi->activateWifiConnection(n.ssid);
+    activateWifiConnection(n.ssid);
   } else if (n.security_type == SecurityType::OPEN) {
-    wifi->connect(n);
+    connect(n);
   } else if (n.security_type == SecurityType::WPA && !pass.isEmpty()) {
     qDebug() << "WIFITHREAD::connectToNetwork::WPA";
-    wifi->connect(n, pass);
+    connect(n, pass);
   }
 }
 
-void WifiThread::toggleTethering(const bool enabled) {
+void WifiManager::toggleTethering(const bool enabled) {
   qDebug() << "toggleTETHERING!" << enabled;
   if (enabled) {
-    wifi->enableTethering();
+    enableTethering();
   } else {
-    wifi->disableTethering();
+    disableTethering();
   }
   emit tetheringStateChange();
 }
-
-void WifiThread::changeTetheringPassword(const QString newPassword) {
-  wifi->changeTetheringPassword(newPassword);
-}
-
-
-//void WifiThread::wrongPassword(const QString ssid) {
-//  emit wrongPasswordSignal(ssid);
-//}
-
 
 WifiManager::WifiManager() : QObject() {
   qDBusRegisterMetaType<Connection>();
@@ -356,9 +350,12 @@ void WifiManager::forgetNetwork(const QString &ssid) {
 }
 
 void WifiManager::requestScan() {
-  QDBusInterface nm(nm_service, adapter, wireless_device_iface, bus);
-  nm.setTimeout(DBUS_TIMEOUT);
-  nm.call("RequestScan", QVariantMap());  // a signal is sent to WifiManager::property_change once the scan is complete
+  if (connecting_to_network == "" && !scanning) {  // TODO don't scan when tethering
+    scanning = true;
+    QDBusInterface nm(nm_service, adapter, wireless_device_iface, bus);
+    nm.setTimeout(DBUS_TIMEOUT);
+    nm.call("RequestScan", QVariantMap());  // a signal is sent to WifiManager::property_change once the scan is complete
+  }
 }
 
 uint WifiManager::get_wifi_device_state() {
@@ -473,6 +470,7 @@ void WifiManager::property_change(const QString &interface, const QVariantMap &p
     refreshNetworks();
     emit updateNetworking(seen_networks, ipv4_address);
     qDebug() << "Scan complete";
+    scanning = false;
   }
 }
 
@@ -571,7 +569,7 @@ bool WifiManager::tetheringEnabled() {
   return get_property(active_ap, "Ssid") == tethering_ssid;
 }
 
-void WifiManager::changeTetheringPassword(const QString &newPassword) {
+void WifiManager::changeTetheringPassword(const QString newPassword) {
   qDebug() << "CHANGING PASSWORD!";
   tetheringPassword = newPassword;
   if (isKnownNetwork(tethering_ssid)) {
