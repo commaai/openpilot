@@ -76,4 +76,11 @@ public:
   inline int putBool(const std::string &key, bool val) {
     return putBool(key.c_str(), val);
   }
+
+  // async write
+  bool asyncIsWriting();
+  void asyncPut(const std::string &key, const std::string &val);
+  inline void asyncPutBool(const std::string &key, bool val) {
+    asyncPut(key, val ? "1" : "0");
+  }
 };

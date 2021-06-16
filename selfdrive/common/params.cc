@@ -16,6 +16,7 @@
 #include <mutex>
 #include <unordered_map>
 
+#include "selfdrive/common/queue.h"
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
 #include "selfdrive/hardware/hw.h"
@@ -339,4 +340,53 @@ void Params::clearAll(ParamKeyType key_type) {
       remove(key);
     }
   }
+}
+
+
+// async write parameters
+
+class AsyncWriter {
+public:
+  AsyncWriter() {
+    thread_ = std::thread(&AsyncWriter::thread, this);
+  }
+
+  ~AsyncWriter() {
+    queue_.push(nullptr);
+    thread_.join();
+  }
+
+  inline void put(const std::string &params_path, const std::string &key, const std::string &val) {
+    queue_.push(new ParamData{params_path, key, val});
+  }
+
+  void thread() {
+    while (ParamData *d = queue_.pop()) {
+      ++writing_;
+      Params param(d->path);
+      param.put(d->key, d->val);
+      delete d;
+      --writing_;
+    }
+  }
+
+  inline bool isWriting() const { return queue_.empty() && writing_ == 0; }
+
+private:
+  struct ParamData {
+    std::string path, key, val;
+  };
+  SafeQueue<ParamData *> queue_;
+  std::thread thread_;
+  std::atomic<int> writing_ = 0;
+};
+
+AsyncWriter async_writer;
+
+void Params::asyncPut(const std::string &key, const std::string &val) {
+  async_writer.put(params_path, key, val);
+}
+
+bool Params::asyncIsWriting() {
+  return async_writer.isWriting();
 }

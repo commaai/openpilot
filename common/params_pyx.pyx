@@ -108,11 +108,6 @@ cdef class Params:
 
 
 def put_nonblocking(key, val, d=None):
-  def f(key, val):
-    params = Params(d)
-    cdef string k = ensure_bytes(key)
-    params.put(k, val)
-
-  t = threading.Thread(target=f, args=(key, val))
-  t.start()
-  return t
+  params = Params(d)
+  cdef string k = ensure_bytes(key)
+  params.asyncPut(key, val)
