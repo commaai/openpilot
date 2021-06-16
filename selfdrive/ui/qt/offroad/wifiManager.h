@@ -103,11 +103,19 @@ class WifiThread : public QThread {
     Q_OBJECT
 
 public:
-  using QThread::QThread;
-  explicit WifiThread();
-
+  WifiThread() {
+    wifi = new WifiManager();
+    moveToThread(this);
+  }
   void run() override;
+
+  using QThread::QThread;
+//  explicit WifiThread();
+
   WifiManager *wifi;
+
+public slots:
+  void connectToNetwork(const Network n, const QString pass);
 
 private:
   QMutex mutex;

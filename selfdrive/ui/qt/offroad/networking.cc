@@ -88,11 +88,12 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent), s
 void Networking::attemptInitialization() {
   // Checks if network manager is active
   try {
-    wifiManager = new WifiManager();
+//    wifiManager = new WifiManager();
+    wifiThread = new WifiThread();
   } catch (std::exception &e) {
     return;
   }
-  wifiManager->moveToThread(&wifiThread);
+//  wifiManager->moveToThread(&wifiThread);
 
   connect(wifiManager, &WifiManager::wrongPassword, this, &Networking::wrongPassword);
 //  connect(this, &Networking::refreshNetworks, wifi, &WifiManager::refreshNetworks);
@@ -125,21 +126,18 @@ void Networking::attemptInitialization() {
   qRegisterMetaType<Network>("Network");
   qRegisterMetaType<QVector<Network>>("QVector<Network>");
 
-  connect(&wifiThread, &QThread::finished, wifiManager, &QObject::deleteLater);
+//  connect(&wifiThread, &QThread::finished, wifiManager, &QObject::deleteLater);
 
-  connect(this, &Networking::startWifiManager, wifiManager, &WifiManager::start);
-  connect(wifiManager, &WifiManager::updateNetworking, this, &Networking::refresh);
-  connect(wifiManager, &WifiManager::tetheringStateChange, an, &AdvancedNetworking::tetheringStateChange);
+  connect(wifiThread, &WifiThread::updateNetworking, this, &Networking::refresh);
+//  connect(wifiThread, &WifiThread::tetheringStateChange, an, &AdvancedNetworking::tetheringStateChange);
 
   // Sub classes to wifi manager signals
-  connect(wifiWidget, &WifiUI::connectToNetwork, wifiManager, &WifiManager::connectToNetwork);
-  connect(an, &AdvancedNetworking::enableTethering, wifiManager, &WifiManager::enableTethering);
-  connect(an, &AdvancedNetworking::disableTethering, wifiManager, &WifiManager::disableTethering);
-//  connect(wifiManager, &WifiManager::updateAdvancedNetworking, an, &AdvancedNetworking::refresh);
-//  connect(wifiWidget, &WifiUI::connectToNetwork, wifiWorker, &WifiWorker::connectToNetwork);
+  connect(wifiWidget, &WifiUI::connectToNetwork, wifiThread, &WifiThread::connectToNetwork);
+//  connect(an, &AdvancedNetworking::enableTethering, wifiThread, &WifiThread::enableTethering);
+//  connect(an, &AdvancedNetworking::disableTethering, wifiThread, &WifiThread::disableTethering);
 
-  wifiThread.start();
-  emit startWifiManager();
+
+  wifiThread->start();
 
   setStyleSheet(R"(
     QPushButton {

@@ -63,10 +63,6 @@ bool compare_by_strength(const Network &a, const Network &b) {
   return a.strength > b.strength;
 }
 
-WifiThread::WifiThread() : QThread() {
-  wifi = new WifiManager();
-}
-
 void WifiThread::run() {
   qDebug() << "in start";
   while (!isInterruptionRequested()) {
@@ -77,13 +73,25 @@ void WifiThread::run() {
     emit updateNetworking(wifi->seen_networks, wifi->ipv4_address);
     mutex.unlock();
 
-    // Process event queue TODO: see if this is blocking, no mutex is required then
+    // Process event queue
     eventDispatcher()->processEvents(QEventLoop::AllEvents);
-    // exec();  // TODO: do we need this too?
-
     QThread::sleep(1);
   }
 }
+
+void WifiThread::connectToNetwork(const Network n, const QString pass) {
+  QMutexLocker locker(&mutex);
+  qDebug() << "WIFITHREAD::connectToNetwork";
+//  QThread::sleep(5);
+  if (wifi->isKnownNetwork(n.ssid)) {  // check network n
+    wifi->activateWifiConnection(n.ssid);
+  } else if (n.security_type == SecurityType::OPEN) {
+    wifi->connect(n);
+  } else if (n.security_type == SecurityType::WPA && !pass.isEmpty()) {
+    wifi->connect(n, pass);
+  }
+}
+
 
 
 WifiManager::WifiManager() : QObject() {

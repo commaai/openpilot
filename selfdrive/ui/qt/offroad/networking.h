@@ -69,11 +69,10 @@ public slots:
 
 class Networking : public QWidget {
   Q_OBJECT
-  QThread wifiThread;
 
 public:
   explicit Networking(QWidget* parent = 0, bool show_advanced = true);
-  WifiThread* wifiThread2;
+  WifiThread* wifiThread;
 
 private:
 //    QThread *wifi_thread;
