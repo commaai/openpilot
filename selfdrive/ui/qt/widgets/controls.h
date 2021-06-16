@@ -9,15 +9,20 @@
 #include "selfdrive/ui/qt/widgets/toggle.h"
 
 QFrame *horizontal_line(QWidget *parent = nullptr);
-
+#include <QDebug>
 class ElidedLabel : public QFrame {
   Q_OBJECT
 
  public:
   ElidedLabel(QWidget *parent = 0) : ElidedLabel("", parent) {}
-  explicit ElidedLabel(const QString &text, QWidget *parent = 0) : content_(text.trimmed()), QFrame(parent) {}
+  explicit ElidedLabel(const QString &text, QWidget *parent = 0) : content_(text.trimmed()), QFrame(parent) {
+    setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+  }
   void setAlignment(size_t alignment) { alignment_ = alignment; }
   const QString &text() const { return content_; }
+  QSize 	minimumSizeHint() const override {
+    return QSize(100, 80);
+  }
   void setText(const QString &text) {
     content_ = text.trimmed();
     elidedText_ = "";
