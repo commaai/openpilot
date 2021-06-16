@@ -79,7 +79,8 @@ void Networking::attemptInitialization() {
   connect(wifiThread, &WifiThread::updateNetworking, this, &Networking::refresh);
   connect(wifiThread, &WifiThread::tetheringStateChange, an, &AdvancedNetworking::tetheringStateChange);
 
-  // Signals sent from sub classes to wifi thread
+  // Signals sent from this or sub-classes to wifi thread
+  connect(this, &Networking::connectToNetwork, wifiThread, &WifiThread::connectToNetwork);
   connect(wifiWidget, &WifiUI::connectToNetwork, wifiThread, &WifiThread::connectToNetwork);
   connect(an, &AdvancedNetworking::toggleTetheringSignal, wifiThread, &WifiThread::toggleTethering);
   wifiThread->start();
@@ -120,8 +121,13 @@ void Networking::refresh(const QVector<Network> seen_networks, const QString ipv
 }
 
 void Networking::wrongPassword(const Network n) {
+  qDebug() << "Networking::wrongPassword()";
   QString pass = InputDialog::getText("Wrong password for \"" + n.ssid +"\"", 8);
-  emit connectToNetwork(n, pass);
+  qDebug() << "got password, sending";
+  if (!pass.isEmpty()) {
+    qDebug() << "emitting!";
+    emit connectToNetwork(n, pass);
+  }
 }
 
 // AdvancedNetworking functions

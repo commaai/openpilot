@@ -64,27 +64,36 @@ bool compare_by_strength(const Network &a, const Network &b) {
 }
 
 void WifiThread::run() {
+  unsigned int i = 10;
   while (!isInterruptionRequested()) {
-    qDebug() << "WifiThread::run()";
-    qDebug() << wifi->connecting_to_network;
-    wifi->request_scan();
-    wifi->refreshNetworks();
-    emit updateNetworking(wifi->seen_networks, wifi->ipv4_address);
-
     // Process incoming signals from networking UI
     eventDispatcher()->processEvents(QEventLoop::AllEvents);
-    QThread::sleep(1);
+    i++;
+    QThread::msleep(100);
+    if (i > 10) {
+      i = 0;
+      qDebug() << "WifiThread::run()";
+      qDebug() << "connecting:" << wifi->connecting_to_network;
+      // TODO move this updating code to change() so we only update on a state change
+      // TODO then impose a minimum rate of updating (2s?) where not refreshed in this duration, refresh here
+      wifi->request_scan();
+      wifi->refreshNetworks();
+      emit updateNetworking(wifi->seen_networks, wifi->ipv4_address);
+    } else {
+//      wifi->updateNetworks();
+      emit updateNetworking(wifi->seen_networks, wifi->ipv4_address);
+    }
   }
 }
 
 void WifiThread::connectToNetwork(const Network n, const QString pass) {
   qDebug() << "WIFITHREAD::connectToNetwork";
 //  QThread::sleep(5);
-  if (n.known) {  // check network n
+  if (n.known && pass.isEmpty()) {  // we can have a connection with an incorrect password
     wifi->activateWifiConnection(n.ssid);
   } else if (n.security_type == SecurityType::OPEN) {
     wifi->connect(n);
-  } else if (n.security_type == SecurityType::WPA && !pass.isEmpty()) {
+  } else if (n.security_type == SecurityType::WPA) {
     qDebug() << "WIFITHREAD::connectToNetwork::WPA";
     wifi->connect(n, pass);
   }
@@ -143,10 +152,31 @@ WifiManager::WifiManager() : QObject() {
   QDBusInterface(nm_service, nm_settings_path, nm_settings_iface, bus);
 }
 
+// if scan is false, it only updates the seen_ssids and seen_networks lists for UI, if it is true then it scans for networks
+void WifiManager::updateNetworks() {  // TODO assuming false
+//  seen_networks.clear();
+//  seen_ssids.clear();
+  ipv4_address = get_ipv4_address();  // TODO remove?
+  QString active_ap = get_active_ap();
+  for (Network &network : seen_networks) {
+    ConnectedType ctype;
+    if (network.path != active_ap) {
+      ctype = ConnectedType::DISCONNECTED;
+    } else {
+      if (network.ssid == connecting_to_network) {
+        ctype = ConnectedType::CONNECTING;
+      } else {
+        ctype = ConnectedType::CONNECTED;
+      }
+    }
+    network.connected = ctype;
+  }
+}
+
 void WifiManager::refreshNetworks() {
   seen_networks.clear();
-  seen_ssids.clear();
-  ipv4_address = get_ipv4_address();
+  seen_ssids.clear();  // TODO combine these two
+  ipv4_address = get_ipv4_address();  // TODO: remove!
   for (Network &network : get_networks()) {
     if (seen_ssids.count(network.ssid)) {
       continue;
@@ -407,17 +437,20 @@ QString WifiManager::get_adapter() {
 }
 
 void WifiManager::change(unsigned int new_state, unsigned int previous_state, unsigned int change_reason) {
+  updateNetworks();
   raw_adapter_state = new_state;
   if (new_state == state_need_auth && change_reason == reason_wrong_password) {
-    qDebug() << "WRONG PASSWORD!";
+    qDebug() << "CHANGE::WRONG PASSWORD!";
     Network network;
     for (const Network n : seen_networks) {
-      qDebug() << n.ssid;
+      if (n.ssid == connecting_to_network) {
+        connecting_to_network = "";  // TODO unify connecting_to_network with seen_networks<network>.connecting
+        emit wrongPassword(n);
+        return;
+      }
     }
-//    Network network = {"", ssid, strength, ctype, security, isKnownNetwork(ssid)};
-//    emit wrongPassword(createNetwork(connecting_to_network));
-    connecting_to_network = "";  // TODO unify connecting_to_network with seen_networks<network>.connecting
   } else if (new_state == state_connected) {
+    qDebug() << "CHANGE::CONNECTED!";
     emit successfulConnection(connecting_to_network);  // TODO: use Network
     connecting_to_network = "";  // TODO unify connecting_to_network with seen_networks<network>.connecting
   }
