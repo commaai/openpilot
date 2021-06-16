@@ -84,10 +84,12 @@ CameraViewWidget::CameraViewWidget(VisionStreamType stream_type, QWidget* parent
 
 CameraViewWidget::~CameraViewWidget() {
   makeCurrent();
+  if (isValid()) {
+    glDeleteVertexArrays(1, &frame_vao);
+    glDeleteBuffers(1, &frame_vbo);
+    glDeleteBuffers(1, &frame_ibo);
+  }
   doneCurrent();
-  glDeleteVertexArrays(1, &frame_vao);
-  glDeleteBuffers(1, &frame_vbo);
-  glDeleteBuffers(1, &frame_ibo);
 }
 
 void CameraViewWidget::initializeGL() {
