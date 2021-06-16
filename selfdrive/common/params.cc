@@ -362,15 +362,15 @@ public:
 
   void thread() {
     while (ParamData *d = queue_.pop()) {
-      ++writing_;
+      writing_ = true;
       Params param(d->path);
       param.put(d->key, d->val);
       delete d;
-      --writing_;
+      writing_ = false;
     }
   }
 
-  inline bool isWriting() const { return queue_.empty() && writing_ == 0; }
+  inline bool isWriting() const { return writing_ || !queue_.empty(); }
 
 private:
   struct ParamData {
@@ -378,7 +378,7 @@ private:
   };
   SafeQueue<ParamData *> queue_;
   std::thread thread_;
-  std::atomic<int> writing_ = 0;
+  std::atomic<bool> writing_ = 0;
 };
 
 AsyncWriter async_writer;
