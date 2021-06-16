@@ -1,6 +1,7 @@
 #include "selfdrive/ui/qt/widgets/scrollview.h"
 
 #include <QScrollBar>
+#include <QScroller>
 
 ScrollView::ScrollView(QWidget *w, QWidget *parent) : QScrollArea(parent) {
   setWidget(w);

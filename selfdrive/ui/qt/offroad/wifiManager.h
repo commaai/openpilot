@@ -1,7 +1,7 @@
 #pragma once
 
-#include <QWidget>
 #include <QtDBus>
+#include <QWidget>
 
 enum class SecurityType {
   OPEN,

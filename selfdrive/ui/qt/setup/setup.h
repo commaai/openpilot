@@ -1,5 +1,3 @@
-#include <QLineEdit>
-#include <QPushButton>
 #include <QStackedWidget>
 #include <QString>
 #include <QWidget>
