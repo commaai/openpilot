@@ -4,7 +4,6 @@
 #include <QMouseEvent>
 #include <QPushButton>
 #include <QStackedWidget>
-#include <QTextEdit>
 #include <QWidget>
 
 #include "selfdrive/common/params.h"

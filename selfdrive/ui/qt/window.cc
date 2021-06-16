@@ -1,5 +1,7 @@
 #include "selfdrive/ui/qt/window.h"
 
+#include <QFontDatabase>
+
 #include "selfdrive/hardware/hw.h"
 
 MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {

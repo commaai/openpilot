@@ -1,25 +1,16 @@
 #pragma once
 
-#include <openssl/bio.h>
-#include <openssl/pem.h>
-#include <openssl/rsa.h>
-
-#include <QCryptographicHash>
-#include <QJsonValue>
+#include <QJsonObject>
 #include <QNetworkReply>
-#include <QNetworkRequest>
-#include <QPair>
 #include <QString>
-#include <QVector>
-#include <QWidget>
-#include <atomic>
+#include <QTimer>
 
 class CommaApi : public QObject {
   Q_OBJECT
 
 public:
   static QByteArray rsa_sign(const QByteArray &data);
-  static QString create_jwt(const QVector<QPair<QString, QJsonValue>> &payloads = {}, int expiry = 3600);
+  static QString create_jwt(const QJsonObject &payloads = {}, int expiry = 3600);
 };
 
 /**
