@@ -14,12 +14,11 @@ class TrainingGuide : public QFrame {
 public:
   explicit TrainingGuide(QWidget *parent = 0) : QFrame(parent) {};
 
-protected:
+private:
   void showEvent(QShowEvent *event) override;
   void paintEvent(QPaintEvent *event) override;
   void mouseReleaseEvent(QMouseEvent* e) override;
 
-private:
   QImage image;
   QPoint imageCorner;
   int currentIndex = 0;
@@ -58,15 +57,14 @@ class TermsPage : public QFrame {
 public:
   explicit TermsPage(QWidget *parent = 0) : QFrame(parent) {};
 
-protected:
-  void showEvent(QShowEvent *event) override;
-
-private:
-  QPushButton *accept_btn;
-  QPushButton *decline_btn;
-
 public slots:
   void enableAccept();
+
+private:
+  void showEvent(QShowEvent *event) override;
+
+  QPushButton *accept_btn;
+  QPushButton *decline_btn;
 
 signals:
   void acceptedTerms();

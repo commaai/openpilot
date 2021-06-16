@@ -151,7 +151,6 @@ void DeclinePage::showEvent(QShowEvent *event) {
 void OnboardingWindow::updateActiveScreen() {
   accepted_terms = params.get("HasAcceptedTerms") == current_terms_version;
   training_done = params.get("CompletedTrainingVersion") == current_training_version;
-
   if (!accepted_terms) {
     setCurrentIndex(0);
   } else if (!training_done && !params.getBool("Passive")) {
@@ -182,9 +181,7 @@ OnboardingWindow::OnboardingWindow(QWidget *parent) : QStackedWidget(parent) {
 
   DeclinePage* declinePage = new DeclinePage(this);
   addWidget(declinePage);
-  connect(declinePage, &DeclinePage::getBack, [=]() {
-    updateActiveScreen();
-  });
+  connect(declinePage, &DeclinePage::getBack, [=]() { updateActiveScreen(); });
 
   setStyleSheet(R"(
     * {
