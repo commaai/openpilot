@@ -26,7 +26,7 @@ class CANBUS:
   cam = 2
 
 class DBC:
-  mqb = "vw_mqb_2010"
+  mqb = "vw_mqb_2010"  # Used for all cars with MQB-style CAN messaging
 
 TransmissionType = car.CarParams.TransmissionType
 GearShifter = car.CarState.GearShifter
