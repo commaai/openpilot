@@ -20,6 +20,7 @@ class ElidedLabel : public QFrame {
   const QString &text() const { return content_; }
   void setText(const QString &text) {
     content_ = text.trimmed();
+    elidedText_ = "";
     update();
   }
 
@@ -27,6 +28,7 @@ class ElidedLabel : public QFrame {
   void paintEvent(QPaintEvent *event) override;
   size_t alignment_ = Qt::AlignLeft | Qt::AlignVCenter;
   QString content_;
+  QString elidedText_;
 };
 
 class AbstractControl : public QFrame {

@@ -88,7 +88,9 @@ void ElidedLabel::paintEvent(QPaintEvent *event) {
   QFrame::paintEvent(event);
 
   QPainter painter(this);
-  QFontMetrics fontMetrics = painter.fontMetrics();
-  QString elidedString = fontMetrics.elidedText(content_, Qt::ElideRight, width());
-  painter.drawText(rect(), alignment_,  elidedString);
+  if (elidedText_.isEmpty()) {
+    QFontMetrics fontMetrics = painter.fontMetrics();
+    elidedText_ = fontMetrics.elidedText(content_, Qt::ElideRight, width());
+  }
+  painter.drawText(rect(), alignment_,  elidedText_);
 }
