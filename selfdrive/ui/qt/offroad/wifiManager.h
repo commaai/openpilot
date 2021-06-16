@@ -52,6 +52,7 @@ public:
   void changeTetheringPassword(const QString &newPassword);
 
 private:
+  QMutex mutex;
   QVector<QByteArray> seen_ssids;
   QString adapter;//Path to network manager wifi-device
   QDBusConnection bus = QDBusConnection::systemBus();
@@ -89,10 +90,29 @@ signals:  // Signals to communicate with Networking UI
 
 public slots:
   void connectToNetwork(const Network n, const QString pass);
-  void refreshAll();
+  void start();
   void enableTethering();
   void disableTethering();
 
 private slots:
   void change(unsigned int new_state, unsigned int previous_state, unsigned int change_reason);
+};
+
+
+class WifiThread : public QThread {
+    Q_OBJECT
+
+public:
+  using QThread::QThread;
+  explicit WifiThread();
+
+  void run() override;
+  WifiManager *wifi;
+
+private:
+  QMutex mutex;
+
+signals:
+  void updateNetworking(const QVector<Network> seen_networks, const QString ipv4_address);
+
 };

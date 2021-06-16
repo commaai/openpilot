@@ -62,9 +62,9 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent), s
 
   main_layout->addWidget(warning);
 
-  QTimer* timer = new QTimer(this);
-  QObject::connect(timer, &QTimer::timeout, this, [=](){ emit refreshWifiManager(); });  // TODO cause a wifimanager refresh here
-  timer->start(1000);
+//  QTimer* timer = new QTimer(this);
+//  QObject::connect(timer, &QTimer::timeout, this, [=](){ emit refreshWifiManager(); });  // TODO cause a wifimanager refresh here
+//  timer->start(1000);
   attemptInitialization();
 }
 
@@ -127,7 +127,7 @@ void Networking::attemptInitialization() {
 
   connect(&wifiThread, &QThread::finished, wifiManager, &QObject::deleteLater);
 
-  connect(this, &Networking::refreshWifiManager, wifiManager, &WifiManager::refreshAll);
+  connect(this, &Networking::startWifiManager, wifiManager, &WifiManager::start);
   connect(wifiManager, &WifiManager::updateNetworking, this, &Networking::refresh);
   connect(wifiManager, &WifiManager::tetheringStateChange, an, &AdvancedNetworking::tetheringStateChange);
 
@@ -136,11 +136,10 @@ void Networking::attemptInitialization() {
   connect(an, &AdvancedNetworking::enableTethering, wifiManager, &WifiManager::enableTethering);
   connect(an, &AdvancedNetworking::disableTethering, wifiManager, &WifiManager::disableTethering);
 //  connect(wifiManager, &WifiManager::updateAdvancedNetworking, an, &AdvancedNetworking::refresh);
-
 //  connect(wifiWidget, &WifiUI::connectToNetwork, wifiWorker, &WifiWorker::connectToNetwork);
 
   wifiThread.start();
-//  emit startWifiThread();
+  emit startWifiManager();
 
   setStyleSheet(R"(
     QPushButton {

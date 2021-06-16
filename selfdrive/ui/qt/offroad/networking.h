@@ -73,6 +73,7 @@ class Networking : public QWidget {
 
 public:
   explicit Networking(QWidget* parent = 0, bool show_advanced = true);
+  WifiThread* wifiThread2;
 
 private:
 //    QThread *wifi_thread;
@@ -90,8 +91,8 @@ private:
   void attemptInitialization();
 
 signals:
-  void refreshNetworks();
-  void refreshWifiManager();
+//  void refreshNetworks();
+  void startWifiManager();
 
 public slots:
   void refresh(const QVector<Network> seen_networks, const QString ipv4_address);

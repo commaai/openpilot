@@ -55,8 +55,6 @@ T get_response(QDBusMessage response) {
   }
 }
 
-QMutex mutex;  // TODO: class variable?
-
 bool compare_by_strength(const Network &a, const Network &b) {
   if (a.connected == ConnectedType::CONNECTED) return true;
   if (b.connected == ConnectedType::CONNECTED) return false;
@@ -64,6 +62,29 @@ bool compare_by_strength(const Network &a, const Network &b) {
   if (b.connected == ConnectedType::CONNECTING) return false;
   return a.strength > b.strength;
 }
+
+WifiThread::WifiThread() : QThread() {
+  wifi = new WifiManager();
+}
+
+void WifiThread::run() {
+  qDebug() << "in start";
+  while (!isInterruptionRequested()) {
+    qDebug() << "WifiThread::run()";
+    mutex.lock();
+    wifi->request_scan();
+    wifi->refreshNetworks();
+    emit updateNetworking(wifi->seen_networks, wifi->ipv4_address);
+    mutex.unlock();
+
+    // Process event queue TODO: see if this is blocking, no mutex is required then
+    eventDispatcher()->processEvents(QEventLoop::AllEvents);
+    // exec();  // TODO: do we need this too?
+
+    QThread::sleep(1);
+  }
+}
+
 
 WifiManager::WifiManager() : QObject() {
   qDBusRegisterMetaType<Connection>();
@@ -98,11 +119,16 @@ WifiManager::WifiManager() : QObject() {
   QDBusInterface(nm_service, nm_settings_path, nm_settings_iface, bus);
 }
 
-void WifiManager::refreshAll() {
-  QMutexLocker locker(&mutex);
-  request_scan();
-  refreshNetworks();
-  emit updateNetworking(seen_networks, ipv4_address);
+void WifiManager::start() {
+//  qDebug() << "in start";
+  while (true) {
+    mutex.lock();
+    request_scan();
+    refreshNetworks();
+    emit updateNetworking(seen_networks, ipv4_address);
+    mutex.unlock();
+    QThread::sleep(1);
+  }
 }
 
 void WifiManager::refreshNetworks() {
@@ -485,6 +511,7 @@ void WifiManager::addTetheringConnection() {
 }
 
 void WifiManager::enableTethering() {
+  qDebug() << "waiting for mutex in enableTethering()";
   QMutexLocker locker(&mutex);
   qDebug() << "Enabling tethering";
   if (!isKnownNetwork(tethering_ssid.toUtf8())) {
