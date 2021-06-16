@@ -149,9 +149,12 @@ void DeclinePage::showEvent(QShowEvent *event) {
 }
 
 void OnboardingWindow::updateActiveScreen() {
+  accepted_terms = params.get("HasAcceptedTerms") == current_terms_version;
+  training_done = params.get("CompletedTrainingVersion") == current_training_version;
+
   if (!accepted_terms) {
     setCurrentIndex(0);
-  } else if (!training_done) {
+  } else if (!training_done && !params.getBool("Passive")) {
     setCurrentIndex(1);
   } else {
     emit onboardingDone();
@@ -161,13 +164,10 @@ void OnboardingWindow::updateActiveScreen() {
 OnboardingWindow::OnboardingWindow(QWidget *parent) : QStackedWidget(parent) {
   current_terms_version = params.get("TermsVersion");
   current_training_version = params.get("TrainingVersion");
-}
 
-void OnboardingWindow::initWidgets() {
   TermsPage* terms = new TermsPage(this);
   addWidget(terms);
   connect(terms, &TermsPage::acceptedTerms, [=]() {
-    accepted_terms = true;
     Params().put("HasAcceptedTerms", current_terms_version);
     updateActiveScreen();
   });
@@ -176,7 +176,6 @@ void OnboardingWindow::initWidgets() {
   TrainingGuide* tr = new TrainingGuide(this);
   addWidget(tr);
   connect(tr, &TrainingGuide::completedTraining, [=]() {
-    training_done = true;
     Params().put("CompletedTrainingVersion", current_training_version);
     updateActiveScreen();
   });
@@ -205,16 +204,5 @@ void OnboardingWindow::initWidgets() {
 }
 
 void OnboardingWindow::showEvent(QShowEvent *event) {
-  accepted_terms = params.get("HasAcceptedTerms") == current_terms_version;
-  training_done = params.get("CompletedTrainingVersion") == current_training_version;
-  if (accepted_terms && (training_done || params.getBool("Passive"))) {
-    emit onboardingDone();
-    return;
-  }
-
-  if (count() == 0) {
-    initWidgets();
-  }
-
   updateActiveScreen();
 }

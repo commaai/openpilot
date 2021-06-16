@@ -97,7 +97,6 @@ public:
 private:
   void showEvent(QShowEvent *event) override;
   void updateActiveScreen();
-  void initWidgets();
 
   Params params;
   std::string current_terms_version;
