@@ -83,3 +83,12 @@ ButtonControl::ButtonControl(const QString &title, const QString &text, const QS
   QObject::connect(&btn, &QPushButton::released, this, &ButtonControl::released);
   hlayout->addWidget(&btn);
 }
+
+void ElidedLabel::paintEvent(QPaintEvent *event) {
+  QFrame::paintEvent(event);
+
+  QPainter painter(this);
+  QFontMetrics fontMetrics = painter.fontMetrics();
+  QString elidedString = fontMetrics.elidedText(content_, Qt::ElideRight, width());
+  painter.drawText(rect(), alignment_,  elidedString);
+}

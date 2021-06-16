@@ -9,6 +9,31 @@
 #include "selfdrive/ui/qt/widgets/toggle.h"
 
 QFrame *horizontal_line(QWidget *parent = nullptr);
+
+class ElidedLabel : public QFrame {
+  Q_OBJECT
+
+ public:
+  ElidedLabel(QWidget *parent = 0) : ElidedLabel("", parent) {}
+  explicit ElidedLabel(const QString &text, QWidget *parent = 0) : content_(text), QFrame(parent) {}
+  void setAlignment(size_t alignment) { alignment_ = alignment; }
+  const QString &text() const { return content_; }
+  void setText(const QString &text) {
+    content_ = text;
+    update();
+  }
+
+ protected:
+  void paintEvent(QPaintEvent *event) override;
+  size_t alignment_ = Qt::AlignLeft | Qt::AlignVCenter;
+  QString content_;
+};
+
+inline QString elideString(QWidget *w, const QString &str, int width = 0, Qt::TextElideMode mode = Qt::ElideRight) {
+  QFontMetrics fm(w->font());
+  return fm.elidedText(str, mode, width <= 0 ? w->width() : width);
+}
+
 class AbstractControl : public QFrame {
   Q_OBJECT
 
@@ -48,7 +73,7 @@ public:
   void setText(const QString &text) { label.setText(text); }
 
 private:
-  QLabel label;
+  ElidedLabel label;
 };
 
 // widget for a button with a label
