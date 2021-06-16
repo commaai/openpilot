@@ -23,6 +23,8 @@ cdef extern from "selfdrive/common/params.h":
     bool getBool(string) nogil
     int remove(string) nogil
     int put(string, string) nogil
+    void asyncPut(string, string) nogil
     int putBool(string, bool) nogil
+    void asyncPutBool(string, bool) nogil
     bool checkKey(string) nogil
     void clearAll(ParamKeyType)
