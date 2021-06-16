@@ -20,8 +20,9 @@ class ElidedLabel : public QFrame {
   }
   void setAlignment(size_t alignment) { alignment_ = alignment; }
   const QString &text() const { return content_; }
-  QSize 	minimumSizeHint() const override {
-    return QSize(100, 80);
+  QSize sizeHint() const override {
+    // 1000 is big engoush
+    return QSize(1000, 80);
   }
   void setText(const QString &text) {
     content_ = text.trimmed();
