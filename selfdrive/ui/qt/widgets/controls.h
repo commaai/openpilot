@@ -118,7 +118,6 @@ class ListWidget : public QWidget {
     setSpacing(25);
   }
   inline void addWidget(QWidget *w) { layout_.addWidget(w); }
-  inline void addLayout(QLayout *layout) { layout_.addLayout(layout); }
   inline void setSpacing(int spacing) { layout_.setSpacing(spacing); }
 
  private:

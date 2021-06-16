@@ -171,7 +171,9 @@ void WifiUI::refresh() {
   ListWidget *list = new ListWidget(this);
   int i = 0;
   for (Network &network : wifi->seen_networks) {
-    QHBoxLayout *hlayout = new QHBoxLayout;
+    QWidget *w = new QWidget;
+    QHBoxLayout *hlayout = new QHBoxLayout(w);
+    hlayout->addSpacing(50);
 
     QLabel *ssid_label = new QLabel(QString::fromUtf8(network.ssid));
     ssid_label->setStyleSheet("font-size: 55px;");
@@ -213,7 +215,7 @@ void WifiUI::refresh() {
     btn->setFixedWidth(350);
     QObject::connect(btn, &QPushButton::clicked, this, [=]() { emit connectToNetwork(network); });
 
-    list->addLayout(hlayout);
+    list->addWidget(w);
     ++i;
   }
   main_layout->addWidget(list);
