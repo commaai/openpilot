@@ -13,12 +13,11 @@ class MainWindow : public QWidget {
 public:
   explicit MainWindow(QWidget *parent = 0);
 
-public slots:
+private:
+  bool eventFilter(QObject *obj, QEvent *event) override;
   void openSettings();
   void closeSettings();
 
-private:
-  bool eventFilter(QObject *obj, QEvent *event) override;
   Device device;
   QUIState qs;
 
