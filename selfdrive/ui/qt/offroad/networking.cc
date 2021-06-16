@@ -59,14 +59,13 @@ void Networking::attemptInitialization() {
     vlayout->addWidget(advancedSettings, 0, Qt::AlignRight);
     vlayout->addSpacing(10);
   }
-  WifiManager* wifi = new WifiManager();
 
-  wifiWidget = new WifiUI(this, wifi);
+  wifiWidget = new WifiUI(this);
   vlayout->addWidget(new ScrollView(wifiWidget, this), 1);
 
   main_layout->addWidget(wifiScreen);
 
-  an = new AdvancedNetworking(this, wifi);
+  an = new AdvancedNetworking(this);
   connect(an, &AdvancedNetworking::backPress, [=]() { main_layout->setCurrentWidget(wifiScreen); });
   main_layout->addWidget(an);
 
@@ -79,7 +78,8 @@ void Networking::attemptInitialization() {
   connect(wifiThread, &WifiThread::updateNetworking, this, &Networking::refresh);
   connect(wifiThread, &WifiThread::tetheringStateChange, an, &AdvancedNetworking::tetheringStateChange);
 
-  // Signals sent from sub classes to wifi thread
+  // Signals sent from self or sub-classes to wifi thread  // TODO: label this in header file
+  connect(this, &Networking::connectToNetwork, wifiThread, &WifiThread::connectToNetwork);
   connect(wifiWidget, &WifiUI::connectToNetwork, wifiThread, &WifiThread::connectToNetwork);
   connect(an, &AdvancedNetworking::toggleTetheringSignal, wifiThread, &WifiThread::toggleTethering);
   wifiThread->start();
@@ -121,12 +121,14 @@ void Networking::refresh(const QVector<Network> seen_networks, const QString ipv
 
 void Networking::wrongPassword(const Network n) {
   QString pass = InputDialog::getText("Wrong password for \"" + n.ssid +"\"", 8);
-  emit connectToNetwork(n, pass);
+  if (!pass.isEmpty()) {
+    emit connectToNetwork(n, pass);
+  }
 }
 
 // AdvancedNetworking functions
 
-AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWidget(parent), wifi(wifi) {
+AdvancedNetworking::AdvancedNetworking(QWidget* parent): QWidget(parent) {
 
   QVBoxLayout* main_layout = new QVBoxLayout(this);
   main_layout->setMargin(40);
@@ -148,8 +150,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   editPasswordButton = new ButtonControl("Tethering Password", "EDIT", "", [=]() {
     QString pass = InputDialog::getText("Enter new tethering password", 8);
     if (pass.size()) {
-      emit changeTetheringPassword(pass);
-      wifi->changeTetheringPassword(pass);
+      emit changeTetheringPassword(pass);  // TODO make sure this works
     }
   });
   main_layout->addWidget(editPasswordButton, 0);
@@ -186,7 +187,7 @@ void AdvancedNetworking::tetheringStateChange() {
 
 // WifiUI functions
 
-WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi) {
+WifiUI::WifiUI(QWidget *parent) : QWidget(parent) {
   main_layout = new QVBoxLayout(this);
 
   // Scan on startup

@@ -26,11 +26,10 @@ class WifiUI : public QWidget {
   Q_OBJECT
 
 public:
-  explicit WifiUI(QWidget *parent = 0, WifiManager* wifi = 0);
+  explicit WifiUI(QWidget *parent = 0);
   void refresh(QVector<Network> _seen_networks);
 
 private:
-  WifiManager *wifi = nullptr;
   QVBoxLayout* main_layout;
 
   QButtonGroup *connectButtons;
@@ -48,14 +47,13 @@ public slots:
 class AdvancedNetworking : public QWidget {
   Q_OBJECT
 public:
-  explicit AdvancedNetworking(QWidget* parent = 0, WifiManager* wifi = 0);
+  explicit AdvancedNetworking(QWidget* parent = 0);
   void refresh(const QString ipv4_address);
   ToggleControl *tetheringToggle;
 
 private:
   LabelControl* ipLabel;
   ButtonControl* editPasswordButton;
-  WifiManager* wifi = nullptr;
 
 signals:
   void backPress();
