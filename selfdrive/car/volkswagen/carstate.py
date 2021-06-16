@@ -1,7 +1,6 @@
 import numpy as np
 from cereal import car
 from selfdrive.config import Conversions as CV
-from selfdrive.car import dbc_dict
 from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine

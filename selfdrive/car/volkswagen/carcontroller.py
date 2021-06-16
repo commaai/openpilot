@@ -1,5 +1,5 @@
 from cereal import car
-from selfdrive.car import apply_std_steer_torque_limits, dbc_dict
+from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.volkswagen import volkswagencan
 from selfdrive.car.volkswagen.values import CANBUS, MQB_LDW_MESSAGES, BUTTON_STATES, CarControllerParams
 from opendbc.can.packer import CANPacker
