@@ -100,7 +100,6 @@ public:
   WifiThread() {
     wifi = new WifiManager();
     connect(wifi, &WifiManager::wrongPassword, this, &WifiThread::wrongPassword);
-    connect(wifi, &WifiManager::updateNetworking, this, &WifiThread::updateNetworking);
 
     moveToThread(this);
   }
