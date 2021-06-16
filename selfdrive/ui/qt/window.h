@@ -10,13 +10,15 @@
 class MainWindow : public QWidget {
   Q_OBJECT
 
-protected:
-  bool eventFilter(QObject *obj, QEvent *event) override;
-
 public:
   explicit MainWindow(QWidget *parent = 0);
 
+public slots:
+  void openSettings();
+  void closeSettings();
+
 private:
+  bool eventFilter(QObject *obj, QEvent *event) override;
   Device device;
   QUIState qs;
 
@@ -24,8 +26,4 @@ private:
   HomeWindow *homeWindow;
   SettingsWindow *settingsWindow;
   OnboardingWindow *onboardingWindow;
-
-public slots:
-  void openSettings();
-  void closeSettings();
 };
