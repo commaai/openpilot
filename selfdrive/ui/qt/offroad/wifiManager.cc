@@ -66,24 +66,29 @@ bool compare_by_strength(const Network &a, const Network &b) {
 void WifiThread::run() {
   qDebug() << "in start";
   while (!isInterruptionRequested()) {
-    qDebug() << "WifiThread::run()";
-    mutex.lock();
+//    qDebug() << "WifiThread::run()";
+//    mutex.lock();
     wifi->request_scan();
     wifi->refreshNetworks();
     emit updateNetworking(wifi->seen_networks, wifi->ipv4_address);
-    mutex.unlock();
+//    mutex.unlock();
 
     // Process event queue
     eventDispatcher()->processEvents(QEventLoop::AllEvents);
-    QThread::sleep(1);
+    QThread::sleep(2);
+
+//    qDebug() << "\n";
+//    for (auto const& [conn_ssid, conn_path] : wifi->listConnections()) {
+//      qDebug() << conn_ssid;
+//    }
   }
 }
 
 void WifiThread::connectToNetwork(const Network n, const QString pass) {
-  QMutexLocker locker(&mutex);
+//  QMutexLocker locker(&mutex);
   qDebug() << "WIFITHREAD::connectToNetwork";
 //  QThread::sleep(5);
-  if (wifi->isKnownNetwork(n.ssid)) {  // check network n
+  if (n.known) {  // check network n
     wifi->activateWifiConnection(n.ssid);
   } else if (n.security_type == SecurityType::OPEN) {
     wifi->connect(n);
@@ -130,6 +135,7 @@ WifiManager::WifiManager() : QObject() {
 void WifiManager::start() {
 //  qDebug() << "in start";
   while (true) {
+    qDebug() << "SHOULDN'T BE HERE!";
     mutex.lock();
     request_scan();
     refreshNetworks();
@@ -194,7 +200,7 @@ QList<Network> WifiManager::get_networks() {
   nm.setTimeout(dbus_timeout);
 
   QDBusMessage response = nm.call("GetAllAccessPoints");
-  QVariant first =  response.arguments().at(0);
+  QVariant first = response.arguments().at(0);
 
   QString active_ap = get_active_ap();
   const QDBusArgument &args = first.value<QDBusArgument>();
@@ -452,24 +458,14 @@ QVector<QPair<QString, QDBusObjectPath>> WifiManager::listConnections() {
   QDBusInterface nm(nm_service, nm_settings_path, nm_settings_iface, bus);
   nm.setTimeout(dbus_timeout);
 
-  QDBusMessage response = nm.call("ListConnections");
-  QVariant first =  response.arguments().at(0);
-  const QDBusArgument &args = first.value<QDBusArgument>();
-  args.beginArray();
-  while (!args.atEnd()) {
-    QDBusObjectPath path;
-    args >> path;
-
-    // Get ssid
+  QDBusReply<QList<QDBusObjectPath>> response = nm.call("ListConnections");
+  foreach (const QDBusObjectPath& path, response.value()) {
     QDBusInterface nm2(nm_service, path.path(), nm_settings_conn_iface, bus);
     nm2.setTimeout(dbus_timeout);
 
-    QDBusMessage response = nm2.call("GetSettings");
-    const QDBusArgument &dbusArg = response.arguments().at(0).value<QDBusArgument>();
-    QMap<QString, QMap<QString, QVariant>> map;
-    dbusArg >> map;
+    const QDBusReply<QMap<QString, QMap<QString, QVariant>>> map = nm2.call("GetSettings");
+    const QString ssid = map.value().value("802-11-wireless").value("ssid").toString();
 
-    const QString ssid = map.value("802-11-wireless").value("ssid").toString();
     connections.push_back(qMakePair(ssid, path));
   }
   return connections;

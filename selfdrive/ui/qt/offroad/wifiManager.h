@@ -38,6 +38,7 @@ public:
 
   void refreshNetworks();
   bool isKnownNetwork(const QString &ssid);
+  QVector<QPair<QString, QDBusObjectPath>> listConnections();
 
   void connect(const Network &ssid);
   void connect(const Network &ssid, const QString &password);
@@ -74,7 +75,6 @@ private:
   unsigned int get_ap_strength(const QString &network_path);
   SecurityType getSecurityType(const QString &ssid);
   QDBusObjectPath pathFromSsid(const QString &ssid);
-  QVector<QPair<QString, QDBusObjectPath>> listConnections();
 
 signals:  // Signals to communicate with Networking UI
   void wrongPassword(const QString &ssid);
