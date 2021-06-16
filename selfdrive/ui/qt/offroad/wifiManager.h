@@ -38,7 +38,6 @@ public:
   QString connecting_to_network;
 
   void refreshNetworks();
-  void updateNetworks();
   bool isKnownNetwork(const QString &ssid);
   QVector<QPair<QString, QDBusObjectPath>> listConnections();
 
@@ -101,7 +100,7 @@ public:
     wifi = new WifiManager();
     connect(wifi, &WifiManager::wrongPassword, this, &WifiThread::wrongPassword);
 
-    moveToThread(this);
+    moveToThread(this);  // TODO: remove?
   }
 
 public slots:
