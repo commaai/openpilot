@@ -72,7 +72,7 @@ class CAR:
   SKODA_OCTAVIA_MK3 = "SKODA OCTAVIA 3RD GEN" # Chassis NE, Mk3 Skoda Octavia and variants
 
 # Required attributes: mass, wheelbase
-# Optional attributes: steer_actuator_delay, steer_ratio
+# Optional attributes: steer_actuator_delay, steer_ratio, tire_stiffness
 
 ATTRIBUTES = {
   CAR.ATLAS_MK1: { "mass": 2011., "wheelbase": 2.98 },

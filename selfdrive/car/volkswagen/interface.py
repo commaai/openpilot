@@ -49,11 +49,11 @@ class CarInterface(CarInterfaceBase):
     # Optional per-CAR attributes, with defaults
     ret.steerActuatorDelay = ATTRIBUTES[candidate].setdefault("steer_actuator_delay", 0.05)  # Seems good for most MQB
     ret.steerRatio = ATTRIBUTES[candidate].setdefault("steer_ratio", 15.6)  # Updated by params learner
+    tire_stiffness_factor = ATTRIBUTES[candidate].setdefault("tire_stiffness", 1.0)  # Updated by params learner
 
     # Tuning values, currently using the same tune for all MQB
     # If we need to tune individual models, we'll need a dict lookup by EPS parameterization, not just CAR
     ret.steerRateCost = 1.0
-    tire_stiffness_factor = 1.0  # Updated by params learner
     [ ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kiBP,
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV,
       ret.lateralTuning.pid.kf ] = ([0.], [0.], [0.6], [0.2], 0.00006)
