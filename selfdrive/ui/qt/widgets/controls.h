@@ -3,6 +3,7 @@
 #include <QFrame>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QPainter>
 #include <QPushButton>
 
 #include "selfdrive/common/params.h"
@@ -117,7 +118,7 @@ class ListWidget : public QWidget {
     // default spacing is 25
     setSpacing(25);
   }
-  inline void addWidget(QWidget *w) { layout_.addWidget(w); }
+  inline void addItem(QWidget *w) { layout_.addWidget(w); }
   inline void setSpacing(int spacing) { layout_.setSpacing(spacing); }
 
  private:

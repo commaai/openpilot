@@ -119,7 +119,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   ListWidget *list = new ListWidget(this);
   // Enable tethering layout
   ToggleControl *tetheringToggle = new ToggleControl("Enable Tethering", "", "", wifi->isTetheringEnabled());
-  main_layout->addWidget(tetheringToggle);
+  list->addItem(tetheringToggle);
   QObject::connect(tetheringToggle, &ToggleControl::toggleFlipped, this, &AdvancedNetworking::toggleTethering);
 
   // Change tethering password
@@ -130,15 +130,15 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
       wifi->changeTetheringPassword(pass);
     }
   });
-  list->addWidget(editPasswordButton);
+  list->addItem(editPasswordButton);
 
   // IP address
   ipLabel = new LabelControl("IP Address", wifi->ipv4_address);
-  list->addWidget(ipLabel);
+  list->addItem(ipLabel);
 
   // SSH keys
-  list->addWidget(new SshToggle());
-  list->addWidget(new SshControl());
+  list->addItem(new SshToggle());
+  list->addItem(new SshControl());
 
   main_layout->addWidget(list);
   main_layout->addStretch(1);
@@ -215,7 +215,7 @@ void WifiUI::refresh() {
     btn->setFixedWidth(350);
     QObject::connect(btn, &QPushButton::clicked, this, [=]() { emit connectToNetwork(network); });
 
-    list->addWidget(w);
+    list->addItem(w);
     ++i;
   }
   main_layout->addWidget(list);

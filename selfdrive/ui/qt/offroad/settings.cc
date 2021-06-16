@@ -25,33 +25,33 @@
 #include "selfdrive/ui/qt/util.h"
 
 TogglesPanel::TogglesPanel(QWidget *parent) : ListWidget(parent) {
-  addWidget(new ParamControl("OpenpilotEnabledToggle",
+  addItem(new ParamControl("OpenpilotEnabledToggle",
                                   "Enable openpilot",
                                   "Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.",
                                   "../assets/offroad/icon_openpilot.png",
                                   this));
-  addWidget(new ParamControl("IsLdwEnabled",
+  addItem(new ParamControl("IsLdwEnabled",
                                   "Enable Lane Departure Warnings",
                                   "Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31mph (50kph).",
                                   "../assets/offroad/icon_warning.png",
                                   this));
-  addWidget(new ParamControl("IsRHD",
+  addItem(new ParamControl("IsRHD",
                                   "Enable Right-Hand Drive",
                                   "Allow openpilot to obey left-hand traffic conventions and perform driver monitoring on right driver seat.",
                                   "../assets/offroad/icon_openpilot_mirrored.png",
                                   this));
-  addWidget(new ParamControl("IsMetric",
+  addItem(new ParamControl("IsMetric",
                                   "Use Metric System",
                                   "Display speed in km/h instead of mp/h.",
                                   "../assets/offroad/icon_metric.png",
                                   this));
-  addWidget(new ParamControl("CommunityFeaturesToggle",
+  addItem(new ParamControl("CommunityFeaturesToggle",
                                   "Enable Community Features",
                                   "Use features from the open source community that are not maintained or supported by comma.ai and have not been confirmed to meet the standard safety model. These features include community supported cars and community supported hardware. Be extra cautious when using these features",
                                   "../assets/offroad/icon_shell.png",
                                   this));
 
-  addWidget(new ParamControl("UploadRaw",
+  addItem(new ParamControl("UploadRaw",
                                   "Upload Raw Logs",
                                   "Upload full logs and full resolution video by default while on WiFi. If not enabled, individual logs can be marked for upload at my.comma.ai/useradmin.",
                                   "../assets/offroad/icon_network.png",
@@ -64,9 +64,9 @@ TogglesPanel::TogglesPanel(QWidget *parent) : ListWidget(parent) {
                                                 this);
   bool record_lock = Params().getBool("RecordFrontLock");
   record_toggle->setEnabled(!record_lock);
-  addWidget(record_toggle);
+  addItem(record_toggle);
 
-  addWidget(new ParamControl("EndToEndToggle",
+  addItem(new ParamControl("EndToEndToggle",
                                    "\U0001f96c Disable use of lanelines (Alpha) \U0001f96c",
                                    "In this mode openpilot will ignore lanelines and just drive how it thinks a human would.",
                                    "../assets/offroad/icon_road.png",
@@ -81,8 +81,8 @@ TogglesPanel::TogglesPanel(QWidget *parent) : ListWidget(parent) {
     QObject::connect(wide_camera, &ToggleControl::toggleFlipped, [=](bool state) {
       Params().remove("CalibrationParams");
     });
-    addWidget(wide_camera);
-    addWidget(new ParamControl("EnableLteOnroad",
+    addItem(wide_camera);
+    addItem(new ParamControl("EnableLteOnroad",
                                     "Enable LTE while onroad",
                                     "",
                                     "../assets/offroad/icon_network.png",
@@ -94,10 +94,10 @@ DevicePanel::DevicePanel(QWidget* parent) : ListWidget(parent) {
   Params params = Params();
 
   QString dongle = QString::fromStdString(params.get("DongleId", false));
-  addWidget(new LabelControl("Dongle ID", dongle));
+  addItem(new LabelControl("Dongle ID", dongle));
 
   QString serial = QString::fromStdString(params.get("HardwareSerial", false));
-  addWidget(new LabelControl("Serial", serial));
+  addItem(new LabelControl("Serial", serial));
 
   // offroad-only buttons
 
@@ -206,7 +206,7 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
 
   QWidget *widgets[] = {versionLbl, lastUpdateLbl, updateBtn, gitBranchLbl, gitCommitLbl, osVersionLbl};
   for (QWidget* w : widgets) {
-    addWidget(w);
+    addItem(w);
   }
 
   fs_watch = new QFileSystemWatcher(this);
