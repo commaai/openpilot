@@ -4,7 +4,6 @@
 #include <QDebug>
 #include <QHBoxLayout>
 #include <QPushButton>
-#include <QStackedLayout>
 #include <QVBoxLayout>
 
 const int DEFAULT_STRETCH = 1;

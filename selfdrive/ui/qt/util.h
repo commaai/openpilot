@@ -1,6 +1,10 @@
 #pragma once
 
-#include <QtWidgets>
+#include <QDateTime>
+#include <QLayout>
+#include <QLayoutItem>
+#include <QPainter>
+#include <QSurfaceFormat>
 
 #include "selfdrive/common/params.h"
 

@@ -1,6 +1,3 @@
-#include <QLineEdit>
-#include <QPushButton>
-#include <QString>
 #include <QWidget>
 
 class WifiSetup : public QWidget {
