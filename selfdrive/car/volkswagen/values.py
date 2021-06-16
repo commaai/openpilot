@@ -25,6 +25,9 @@ class CANBUS:
   pt = 0
   cam = 2
 
+class DBC:
+  mqb = "vw_mqb_2010"
+
 TransmissionType = car.CarParams.TransmissionType
 GearShifter = car.CarState.GearShifter
 
