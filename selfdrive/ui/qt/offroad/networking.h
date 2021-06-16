@@ -59,8 +59,10 @@ private:
 
 signals:
   void backPress();
-  void enableTethering();
-  void disableTethering();
+
+  // WifiThread signals
+  void toggleTetheringSignal(const bool enabled);
+  void changeTetheringPassword(const QString newPassword);
 
 public slots:
   void toggleTethering(bool enable);
@@ -75,7 +77,6 @@ public:
   WifiThread* wifiThread;
 
 private:
-//    QThread *wifi_thread;
   QStackedLayout* main_layout = nullptr; // nm_warning, wifiScreen, advanced
   QWidget* wifiScreen = nullptr;
   AdvancedNetworking* an = nullptr;
@@ -86,18 +87,13 @@ private:
   Network selectedNetwork;
 
   WifiUI* wifiWidget;
-  WifiManager* wifiManager = nullptr;
   void attemptInitialization();
 
 signals:
-//  void refreshNetworks();
-  void startWifiManager();
+  void connectToNetwork(const Network n, const QString pass);
 
 public slots:
   void refresh(const QVector<Network> seen_networks, const QString ipv4_address);
-
-private slots:
-//  void connectToNetwork(const Network &n);
-  void wrongPassword(const QString &ssid);
+  void wrongPassword(const Network n);
 
 };

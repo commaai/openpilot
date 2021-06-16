@@ -19,7 +19,7 @@ typedef QVector<QMap<QString, QVariant>> IpConfig;
 
 struct Network {
   QString path;
-  QByteArray ssid;
+  QString ssid;
   unsigned int strength;
   ConnectedType connected;
   SecurityType security_type;
@@ -48,14 +48,15 @@ public:
 
   // Tethering functions
   bool tetheringEnabled();
+  void enableTethering();
+  void disableTethering();
 
   void addTetheringConnection();
   void activateWifiConnection(const QString &ssid);
   void changeTetheringPassword(const QString &newPassword);
 
 private:
-  QMutex mutex;
-  QVector<QByteArray> seen_ssids;
+  QVector<QString> seen_ssids;
   QString adapter;//Path to network manager wifi-device
   QDBusConnection bus = QDBusConnection::systemBus();
   unsigned int raw_adapter_state;//Connection status https://developer.gnome.org/NetworkManager/1.26/nm-dbus-types.html#NMDeviceState
@@ -65,7 +66,7 @@ private:
   QString get_adapter();
   QString get_ipv4_address();
   QList<Network> get_networks();
-  void connect(const QByteArray &ssid, const QString &username, const QString &password, SecurityType security_type);
+  void connect(const QString &ssid, const QString &username, const QString &password, SecurityType security_type);
   QString get_active_ap();
   void deactivateConnection(const QString &ssid);
   void forgetNetwork(const QString &ssid);
@@ -77,22 +78,10 @@ private:
   QDBusObjectPath pathFromSsid(const QString &ssid);
 
 signals:  // Signals to communicate with Networking UI
-  void wrongPassword(const QString &ssid);
+  void wrongPassword(const Network n);
   void successfulConnection(const QString &ssid);
 
   void updateNetworking(const QVector<Network> seen_networks, const QString ipv4_address);
-
-  // Advanced networking signals
-  void tetheringStateChange();
-
-//  void updateWifi(const QVector<Network> seen_networks);
-//  void updateAdvancedNetworking(const QString);  // TODO: change to &reference?
-
-public slots:
-  void connectToNetwork(const Network n, const QString pass);
-  void start();
-  void enableTethering();
-  void disableTethering();
 
 private slots:
   void change(unsigned int new_state, unsigned int previous_state, unsigned int change_reason);
@@ -103,24 +92,29 @@ class WifiThread : public QThread {
     Q_OBJECT
 
 public:
+  using QThread::QThread;
+  void run() override;
+  WifiManager *wifi;
+
   WifiThread() {
     wifi = new WifiManager();
-    moveToThread(this);
+    connect(wifi, &WifiManager::wrongPassword, this, &WifiThread::wrongPassword);
+
+    moveToThread(this);  // TODO: remove?
   }
-  void run() override;
-
-  using QThread::QThread;
-//  explicit WifiThread();
-
-  WifiManager *wifi;
 
 public slots:
   void connectToNetwork(const Network n, const QString pass);
-
-private:
-  QMutex mutex;
+  void toggleTethering(const bool enabled);
+  void changeTetheringPassword(const QString newPassword);
+//  void wrongPassword(const QString ssid);
 
 signals:
+  // Callback to main UI thread
   void updateNetworking(const QVector<Network> seen_networks, const QString ipv4_address);
+  void wrongPassword(const Network n);
+
+  // Advanced networking signals
+  void tetheringStateChange();
 
 };

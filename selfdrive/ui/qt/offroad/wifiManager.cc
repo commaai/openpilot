@@ -64,29 +64,20 @@ bool compare_by_strength(const Network &a, const Network &b) {
 }
 
 void WifiThread::run() {
-  qDebug() << "in start";
   while (!isInterruptionRequested()) {
-//    qDebug() << "WifiThread::run()";
-//    mutex.lock();
+    qDebug() << "WifiThread::run()";
     qDebug() << wifi->connecting_to_network;
     wifi->request_scan();
     wifi->refreshNetworks();
     emit updateNetworking(wifi->seen_networks, wifi->ipv4_address);
-//    mutex.unlock();
 
-    // Process event queue
+    // Process incoming signals from networking UI
     eventDispatcher()->processEvents(QEventLoop::AllEvents);
-    QThread::sleep(2);
-
-//    qDebug() << "\n";
-//    for (auto const& [conn_ssid, conn_path] : wifi->listConnections()) {
-//      qDebug() << conn_ssid;
-//    }
+    QThread::sleep(1);
   }
 }
 
 void WifiThread::connectToNetwork(const Network n, const QString pass) {
-//  QMutexLocker locker(&mutex);
   qDebug() << "WIFITHREAD::connectToNetwork";
 //  QThread::sleep(5);
   if (n.known) {  // check network n
@@ -94,10 +85,29 @@ void WifiThread::connectToNetwork(const Network n, const QString pass) {
   } else if (n.security_type == SecurityType::OPEN) {
     wifi->connect(n);
   } else if (n.security_type == SecurityType::WPA && !pass.isEmpty()) {
+    qDebug() << "WIFITHREAD::connectToNetwork::WPA";
     wifi->connect(n, pass);
   }
 }
 
+void WifiThread::toggleTethering(const bool enabled) {
+  qDebug() << "toggleTETHERING!" << enabled;
+  if (enabled) {
+    wifi->enableTethering();
+  } else {
+    wifi->disableTethering();
+  }
+  emit tetheringStateChange();
+}
+
+void WifiThread::changeTetheringPassword(const QString newPassword) {
+  wifi->changeTetheringPassword(newPassword);
+}
+
+
+//void WifiThread::wrongPassword(const QString ssid) {
+//  emit wrongPasswordSignal(ssid);
+//}
 
 
 WifiManager::WifiManager() : QObject() {
@@ -131,19 +141,6 @@ WifiManager::WifiManager() : QObject() {
   // making sure all future creations are non-blocking
   // https://bugreports.qt.io/browse/QTBUG-14485
   QDBusInterface(nm_service, nm_settings_path, nm_settings_iface, bus);
-}
-
-void WifiManager::start() {
-//  qDebug() << "in start";
-  while (true) {
-    qDebug() << "SHOULDN'T BE HERE!";
-    mutex.lock();
-    request_scan();
-    refreshNetworks();
-    emit updateNetworking(seen_networks, ipv4_address);
-    mutex.unlock();
-    QThread::sleep(1);
-  }
 }
 
 void WifiManager::refreshNetworks() {
@@ -202,7 +199,7 @@ QList<Network> WifiManager::get_networks() {
   QDBusReply<QList<QDBusObjectPath>> response = nm.call("GetAllAccessPoints");
 
   foreach (const QDBusObjectPath& path, response.value()) {  // TODO: can we replace with for (path : response.value()) { } ?
-    QByteArray ssid = get_property(path.path(), "Ssid");
+    QString ssid = get_property(path.path(), "Ssid");
     if (ssid.isEmpty()) {
       continue;
     }
@@ -246,19 +243,6 @@ SecurityType WifiManager::getSecurityType(const QString &path) {
   }
 }
 
-void WifiManager::connectToNetwork(const Network n, const QString pass) {
-  QMutexLocker locker(&mutex);
-  qDebug() << "WIFIMANAGER::connectToNetwork";
-  QThread::sleep(2);
-  if (isKnownNetwork(n.ssid)) {
-    activateWifiConnection(n.ssid);
-  } else if (n.security_type == SecurityType::OPEN) {
-    connect(n);
-  } else if (n.security_type == SecurityType::WPA && !pass.isEmpty()) {
-    connect(n, pass);
-  }
-}
-
 void WifiManager::connect(const Network &n) {
   return connect(n, "", "");
 }
@@ -268,20 +252,20 @@ void WifiManager::connect(const Network &n, const QString &password) {
 }
 
 void WifiManager::connect(const Network &n, const QString &username, const QString &password) {
-  connecting_to_network = n.ssid;
+  connecting_to_network = n.ssid;  // TODO: copy this to activate function too
   // disconnect();
   forgetNetwork(n.ssid); //Clear all connections that may already exist to the network we are connecting
   connect(n.ssid, username, password, n.security_type);
 }
 
-void WifiManager::connect(const QByteArray &ssid, const QString &username, const QString &password, SecurityType security_type) {
+void WifiManager::connect(const QString &ssid, const QString &username, const QString &password, SecurityType security_type) {
   Connection connection;
   connection["connection"]["type"] = "802-11-wireless";
   connection["connection"]["uuid"] = QUuid::createUuid().toString().remove('{').remove('}');
   connection["connection"]["id"] = "openpilot connection "+QString::fromStdString(ssid.toStdString());
   connection["connection"]["autoconnect-retries"] = 0;
 
-  connection["802-11-wireless"]["ssid"] = ssid;
+  connection["802-11-wireless"]["ssid"] = ssid.toUtf8();
   connection["802-11-wireless"]["mode"] = "infrastructure";
 
   if (security_type == SecurityType::WPA) {
@@ -297,6 +281,8 @@ void WifiManager::connect(const QByteArray &ssid, const QString &username, const
   nm_settings.setTimeout(dbus_timeout);
 
   nm_settings.call("AddConnection", QVariant::fromValue(connection));
+  qDebug() << "Here";
+
   activateWifiConnection(QString(ssid));
 }
 
@@ -423,10 +409,17 @@ QString WifiManager::get_adapter() {
 void WifiManager::change(unsigned int new_state, unsigned int previous_state, unsigned int change_reason) {
   raw_adapter_state = new_state;
   if (new_state == state_need_auth && change_reason == reason_wrong_password) {
-    emit wrongPassword(connecting_to_network);
+    qDebug() << "WRONG PASSWORD!";
+    Network network;
+    for (const Network n : seen_networks) {
+      qDebug() << n.ssid;
+    }
+//    Network network = {"", ssid, strength, ctype, security, isKnownNetwork(ssid)};
+//    emit wrongPassword(createNetwork(connecting_to_network));
+    connecting_to_network = "";  // TODO unify connecting_to_network with seen_networks<network>.connecting
   } else if (new_state == state_connected) {
-    emit successfulConnection(connecting_to_network);
-    connecting_to_network = "";
+    emit successfulConnection(connecting_to_network);  // TODO: use Network
+    connecting_to_network = "";  // TODO unify connecting_to_network with seen_networks<network>.connecting
   }
 }
 
@@ -466,6 +459,7 @@ QVector<QPair<QString, QDBusObjectPath>> WifiManager::listConnections() {
 }
 
 void WifiManager::activateWifiConnection(const QString &ssid) {
+  connecting_to_network = ssid;
   QDBusObjectPath path = pathFromSsid(ssid);
   if (!path.path().isEmpty()) {
     QString devicePath = get_adapter();
@@ -509,21 +503,14 @@ void WifiManager::addTetheringConnection() {
 }
 
 void WifiManager::enableTethering() {
-  qDebug() << "waiting for mutex in enableTethering()";
-  QMutexLocker locker(&mutex);
-  qDebug() << "Enabling tethering";
-  if (!isKnownNetwork(tethering_ssid.toUtf8())) {
+  if (!isKnownNetwork(tethering_ssid)) {
     addTetheringConnection();
   }
-  activateWifiConnection(tethering_ssid.toUtf8());
-  emit tetheringStateChange();  // re-enables tethering toggle
+  activateWifiConnection(tethering_ssid);
 }
 
 void WifiManager::disableTethering() {
-  QMutexLocker locker(&mutex);
-  qDebug() << "Disabling tethering";
-  deactivateConnection(tethering_ssid.toUtf8());
-  emit tetheringStateChange();
+  deactivateConnection(tethering_ssid);
 }
 
 bool WifiManager::tetheringEnabled() {
@@ -532,9 +519,10 @@ bool WifiManager::tetheringEnabled() {
 }
 
 void WifiManager::changeTetheringPassword(const QString &newPassword) {
+  qDebug() << "CHANGING PASSWORD!";
   tetheringPassword = newPassword;
-  if (isKnownNetwork(tethering_ssid.toUtf8())) {
-    forgetNetwork(tethering_ssid.toUtf8());
+  if (isKnownNetwork(tethering_ssid)) {
+    forgetNetwork(tethering_ssid);
   }
   addTetheringConnection();
 }
