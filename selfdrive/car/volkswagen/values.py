@@ -1,6 +1,5 @@
 # flake8: noqa
 
-from selfdrive.car import dbc_dict
 from cereal import car
 Ecu = car.CarParams.Ecu
 
@@ -25,6 +24,9 @@ class CarControllerParams:
 class CANBUS:
   pt = 0
   cam = 2
+
+class DBC:
+  mqb = "vw_mqb_2010"  # Used for all cars with MQB-style CAN messaging
 
 TransmissionType = car.CarParams.TransmissionType
 GearShifter = car.CarState.GearShifter
@@ -516,21 +518,4 @@ FW_VERSIONS = {
       b'\xf1\x873Q0907572B \xf1\x890192',
     ],
   },
-}
-
-DBC = {
-  CAR.ATLAS_MK1: dbc_dict('vw_mqb_2010', None),
-  CAR.GOLF_MK7: dbc_dict('vw_mqb_2010', None),
-  CAR.JETTA_MK7: dbc_dict('vw_mqb_2010', None),
-  CAR.PASSAT_MK8: dbc_dict('vw_mqb_2010', None),
-  CAR.TIGUAN_MK2: dbc_dict('vw_mqb_2010', None),
-  CAR.TOURAN_MK2: dbc_dict('vw_mqb_2010', None),
-  CAR.AUDI_A3_MK3: dbc_dict('vw_mqb_2010', None),
-  CAR.AUDI_Q2_MK1: dbc_dict('vw_mqb_2010', None),
-  CAR.SEAT_ATECA_MK1: dbc_dict('vw_mqb_2010', None),
-  CAR.SEAT_LEON_MK3: dbc_dict('vw_mqb_2010', None),
-  CAR.SKODA_KODIAQ_MK1: dbc_dict('vw_mqb_2010', None),
-  CAR.SKODA_OCTAVIA_MK3: dbc_dict('vw_mqb_2010', None),
-  CAR.SKODA_SCALA_MK1: dbc_dict('vw_mqb_2010', None),
-  CAR.SKODA_SUPERB_MK3: dbc_dict('vw_mqb_2010', None),
 }
