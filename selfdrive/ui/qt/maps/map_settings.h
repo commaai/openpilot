@@ -2,6 +2,9 @@
 #include <QWidget>
 #include <QLabel>
 #include <QPushButton>
+#include <QJsonObject>
+#include <QJsonDocument>
+#include <QJsonArray>
 
 class MapPanel : public QWidget {
   Q_OBJECT

@@ -1,5 +1,7 @@
 #include "map_settings.h"
 
+#include <QDebug>
+
 #include "selfdrive/ui/qt/widgets/controls.h"
 #include "selfdrive/common/util.h"
 
