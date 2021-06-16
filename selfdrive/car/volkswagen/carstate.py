@@ -10,7 +10,7 @@ from selfdrive.car.volkswagen.values import CANBUS, TransmissionType, GearShifte
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
-    can_define = CANDefine(dbc_dict('vw_mqb_2010', None)["pt"])
+    can_define = CANDefine("vw_mqb_2010")
     if CP.transmissionType == TransmissionType.automatic:
       self.shifter_values = can_define.dv["Getriebe_11"]["GE_Fahrstufe"]
     elif CP.transmissionType == TransmissionType.direct:
@@ -240,7 +240,7 @@ class CarState(CarStateBase):
       signals += MqbExtraSignals.bsm_radar_signals
       checks += MqbExtraSignals.bsm_radar_checks
 
-    return CANParser(dbc_dict('vw_mqb_2010', None)["pt"], signals, checks, CANBUS.pt)
+    return CANParser("vw_mqb_2010", signals, checks, CANBUS.pt)
 
   @staticmethod
   def get_cam_can_parser(CP):
@@ -259,7 +259,7 @@ class CarState(CarStateBase):
       ("LDW_02", 10)        # From R242 Driver assistance camera
     ]
 
-    return CANParser(dbc_dict('vw_mqb_2010', None)["pt"], signals, checks, CANBUS.cam)
+    return CANParser("vw_mqb_2010", signals, checks, CANBUS.cam)
 
 class MqbExtraSignals:
   # Additional signal and message lists for optional or bus-portable controllers

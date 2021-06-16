@@ -10,7 +10,7 @@ class CarController():
   def __init__(self, dbc_name, CP, VM):
     self.apply_steer_last = 0
 
-    self.packer_pt = CANPacker(dbc_dict('vw_mqb_2010', None)["pt"])
+    self.packer_pt = CANPacker("vw_mqb_2010")
 
     self.hcaSameTorqueCount = 0
     self.hcaEnabledFrameCount = 0
