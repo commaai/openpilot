@@ -32,10 +32,10 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent), s
 
   main_layout->addWidget(warning);
 
+  refresh(true);
   QTimer* timer = new QTimer(this);
-  QObject::connect(timer, &QTimer::timeout, this, &Networking::refresh);
+  QObject::connect(timer, &QTimer::timeout, this, [=](){ refresh(); });
   timer->start(5000);
-  attemptInitialization();
 }
 
 void Networking::attemptInitialization() {
@@ -89,8 +89,8 @@ void Networking::attemptInitialization() {
   ui_setup_complete = true;
 }
 
-void Networking::refresh() {
-  if (!this->isVisible()) {
+void Networking::refresh(const bool force) {
+  if (!this->isVisible() && !force) {
     return;
   }
   if (!ui_setup_complete) {
@@ -261,6 +261,8 @@ void WifiUI::refresh() {
 
 void WifiUI::handleButton(QAbstractButton* button) {
   QPushButton* btn = static_cast<QPushButton*>(button);
+  btn->setDisabled(true);
+  btn->setText("Connecting");
   Network n = wifi->seen_networks[connectButtons->id(btn)];
   emit connectToNetwork(n);
 }

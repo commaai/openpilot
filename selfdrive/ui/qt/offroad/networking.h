@@ -80,7 +80,6 @@ private:
 
 private slots:
   void connectToNetwork(const Network &n);
-  void refresh();
+  void refresh(const bool force = false);
   void wrongPassword(const QString &ssid);
 };
-
