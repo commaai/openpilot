@@ -183,7 +183,7 @@ void Render::initialize() {
   vipc_client = std::make_unique<VisionIpcClient>("camerad", stream_type, true);
 }
 
-void Render::render(bool cleanup) {
+void Render::render(bool hidden) {
   QOpenGLContext *ctx = glWindow_->context();
   if (!ctx) {  // QOpenGLWidget not yet initialized
     return;
@@ -207,7 +207,7 @@ void Render::render(bool cleanup) {
     initialize();
   }
 
-  if (cleanup) {
+  if (hidden) {
     vipc_client->connected = false;
     latest_frame = nullptr;
   } else {

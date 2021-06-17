@@ -23,7 +23,7 @@ public:
 
 signals:
  void frameUpdated();
- void renderRequested(bool cleanup);
+ void renderRequested(bool hidden);
 
 public slots:
   void moveContextToThread();
@@ -40,12 +40,12 @@ class Render : public QObject, protected QOpenGLFunctions {
 public:
   Render(VisionStreamType stream_type, CameraViewWidget *w);
   ~Render();
-  void render(bool cleanup);
 
 signals:
   void contextWanted();
 
 private:
+  void render(bool hidden);
   void updateFrame();
   bool frameUpdated() const { return latest_frame != nullptr; };
   void initialize();
