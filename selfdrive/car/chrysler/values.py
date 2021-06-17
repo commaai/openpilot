@@ -85,17 +85,6 @@ FINGERPRINTS = {
 }
 
 
-FW_VERSIONS = {
-  CAR.PACIFICA_2020: {
-    (Ecu.engine, 0x7e0, None): [
-      b'\xf1\xa0           2C4RC3GG5MR50813868434928AA G68496647AI \x27\x01           ',
-    ],
-    (Ecu.transmission, 0x7e1, None): [
-      b'\xf1\x00\x00B\x01\x01',
-    ],
-  },
-}
-
 STEER_THRESHOLD = 100
 
 DBC = {
