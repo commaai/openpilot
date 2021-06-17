@@ -29,6 +29,8 @@ def print_logmessage(t, msg, min_level):
     log = json.loads(msg)
     if log['levelnum'] >= min_level:
       print(f"[{t / 1e9:.6f}] {log['filename']}:{log.get('lineno', '')} - {log.get('funcname', '')}: {log['msg']}")
+      if 'exc_info' in log:
+        print(log['exc_info'])
   except json.decoder.JSONDecodeError:
     print(f"[{t / 1e9:.6f}] decode error: {msg}")
 
