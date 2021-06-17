@@ -369,8 +369,9 @@ void WifiManager::state_change(unsigned int new_state, unsigned int previous_sta
   if (new_state == state_need_auth && change_reason == reason_wrong_password) {
     emit wrongPassword(connecting_to_network);
   } else if (new_state == state_connected) {
-    emit successfulConnection(connecting_to_network);
     connecting_to_network = "";
+    refreshNetworks();
+    emit refreshed();
   }
 }
 
