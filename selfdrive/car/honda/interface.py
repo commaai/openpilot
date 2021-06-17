@@ -136,12 +136,17 @@ class CarInterface(CarInterfaceBase):
       ret.enableCamera = True
       ret.radarOffCan = True
       ret.openpilotLongitudinalControl = Params().get_bool("DisableRadar")
+
+      ret.enableCruise = not ret.openpilotLongitudinalControl
       ret.communityFeature = ret.openpilotLongitudinalControl
     else:
       ret.safetyModel = car.CarParams.SafetyModel.hondaNidec
       ret.enableCamera = True
       ret.enableGasInterceptor = 0x201 in fingerprint[0]
       ret.openpilotLongitudinalControl = ret.enableCamera
+
+      ret.enableCruise = not ret.enableGasInterceptor
+      ret.communityFeature = ret.enableGasInterceptor
 
     if candidate == CAR.CRV_5G:
       ret.enableBsm = 0x12f8bfa7 in fingerprint[0]
@@ -153,8 +158,6 @@ class CarInterface(CarInterfaceBase):
     cloudlog.warning("ECU Camera Simulated: %r", ret.enableCamera)
     cloudlog.warning("ECU Gas Interceptor: %r", ret.enableGasInterceptor)
 
-    ret.enableCruise = not ret.enableGasInterceptor
-    ret.communityFeature = ret.communityFeature or ret.enableGasInterceptor
 
     # Certain Hondas have an extra steering sensor at the bottom of the steering rack,
     # which improves controls quality as it removes the steering column torsion from feedback.
