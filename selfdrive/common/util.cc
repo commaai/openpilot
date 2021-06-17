@@ -61,7 +61,7 @@ std::string read_file(const std::string& fn) {
       std::string result;
       result.resize(pos);
       f.seekg(0, std::ios::beg);
-      if (f) {
+      if (f.read(result.data(), pos)) {
         return result;
       }
     } else {
