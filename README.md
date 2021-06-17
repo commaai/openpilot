@@ -214,7 +214,7 @@ Although they're not upstream, the community has openpilot running on other make
 Installation Instructions
 ------
 
-Install openpilot on an EON (depreciated) or comma two by entering ``https://openpilot.comma.ai`` during the installer setup.
+Install openpilot on an EON Gold or comma two by entering ``https://openpilot.comma.ai`` during the installer setup.
 
 Follow these [video instructions](https://youtu.be/lcjqxCymins) to properly mount the device on the windshield. Note: openpilot features an automatic pose calibration routine and openpilot performance should not be affected by small pitch and yaw misalignments caused by imprecise device mounting.
 
