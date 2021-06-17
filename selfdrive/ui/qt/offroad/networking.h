@@ -64,7 +64,6 @@ signals:
 
 public slots:
   void toggleTethering(bool enable);
-  void tetheringStateChange();
 };
 
 class Networking : public QWidget {
@@ -72,7 +71,7 @@ class Networking : public QWidget {
   QThread wifiThread;
 
 public:
-  explicit Networking(QWidget* parent = 0, bool show_advanced = true);
+  explicit Networking(QWidget* parent = 0);
   ~Networking() {  // TODO
     wifiThread.quit();
     wifiThread.wait();
@@ -85,8 +84,6 @@ private:
   QWidget* wifiScreen = nullptr;
   AdvancedNetworking* an = nullptr;
   bool ui_setup_complete = false;
-  bool show_advanced;
-
 
   Network selectedNetwork;
 

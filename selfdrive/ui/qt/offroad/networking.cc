@@ -22,7 +22,7 @@ void NetworkStrengthWidget::paintEvent(QPaintEvent* event) {
 
 // Networking functions
 
-Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent), show_advanced(show_advanced) {
+Networking::Networking(QWidget* parent) : QWidget(parent) {
   main_layout = new QStackedLayout(this);
 
   QLabel* warning = new QLabel("Network manager is inactive!");
@@ -35,7 +35,7 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent), s
 
   emit refreshWifiManager();
   QTimer* timer = new QTimer(this);
-  QObject::connect(timer, &QTimer::timeout, wifiManager, [=](){ emit refreshWifiManager(); qDebug() << "Requested scan";});  // TODO cause a wifimanager refresh here
+  QObject::connect(timer, &QTimer::timeout, wifiManager, [=](){ emit refreshWifiManager(); qDebug() << "Requested scan";});
   timer->start(5000);
 }
 
@@ -43,24 +43,22 @@ void Networking::attemptInitialization() {
   // Checks if network manager is active
   try {
     wifiManager = new WifiManager();  // TODO do this in same place we connect below
-//    wifiThread = new WifiThread();
   } catch (std::exception &e) {
     return;
   }
   wifiManager->moveToThread(&wifiThread);
-  connect(&wifiThread, &QThread::finished, wifiManager, &QObject::deleteLater);  // TODO see how this works
+  connect(&wifiThread, &QThread::finished, wifiManager, &QObject::deleteLater);
 
   QWidget* wifiScreen = new QWidget(this);
   QVBoxLayout* vlayout = new QVBoxLayout(wifiScreen);
-  if (show_advanced) {  // TODO: always show advanced
-    QPushButton* advancedSettings = new QPushButton("Advanced");
-    advancedSettings->setStyleSheet("margin-right: 30px;");
-    advancedSettings->setFixedSize(350, 100);
-    connect(advancedSettings, &QPushButton::released, [=]() { main_layout->setCurrentWidget(an); });
-    vlayout->addSpacing(10);
-    vlayout->addWidget(advancedSettings, 0, Qt::AlignRight);
-    vlayout->addSpacing(10);
-  }
+
+  QPushButton* advancedSettings = new QPushButton("Advanced");
+  advancedSettings->setStyleSheet("margin-right: 30px;");
+  advancedSettings->setFixedSize(350, 100);
+  connect(advancedSettings, &QPushButton::released, [=]() { main_layout->setCurrentWidget(an); });
+  vlayout->addSpacing(10);
+  vlayout->addWidget(advancedSettings, 0, Qt::AlignRight);
+  vlayout->addSpacing(10);
 
   wifiWidget = new WifiUI(this);
   vlayout->addWidget(new ScrollView(wifiWidget, this), 1);
@@ -75,16 +73,15 @@ void Networking::attemptInitialization() {
   qRegisterMetaType<Network>("Network");
   qRegisterMetaType<QVector<Network>>("QVector<Network>");
 
-//  connect(this, &Networking::refreshNetworks, wifi, &WifiManager::refreshNetworks);
   connect(wifiManager, &WifiManager::wrongPassword, this, &Networking::wrongPassword);
   connect(wifiManager, &WifiManager::updateNetworking, this, &Networking::refresh);
-  connect(wifiManager, &WifiManager::tetheringStateChange, an, &AdvancedNetworking::tetheringStateChange);
 
   // Signals sent from self or sub-classes to wifi manager thread  // TODO: label this in header file
   connect(this, &Networking::refreshWifiManager, wifiManager, &WifiManager::requestScan);
   connect(this, &Networking::connectToNetwork, wifiManager, &WifiManager::connectToNetwork);
   connect(wifiWidget, &WifiUI::connectToNetwork, wifiManager, &WifiManager::connectToNetwork);
   connect(an, &AdvancedNetworking::toggleTetheringSignal, wifiManager, &WifiManager::toggleTethering);
+  connect(an, &AdvancedNetworking::changeTetheringPassword, wifiManager, &WifiManager::changeTetheringPassword);
   wifiThread.start();
 
   setStyleSheet(R"(
@@ -182,11 +179,6 @@ void AdvancedNetworking::toggleTethering(bool enable) {
   tetheringToggle->setDisabled(true);
   editPasswordButton->setEnabled(!enable);  // TODO allow editing of password. on change, restart tethering
 }
-
-void AdvancedNetworking::tetheringStateChange() {
-  tetheringToggle->setDisabled(false);  // on any state change, enable toggle button
-}
-
 
 // WifiUI functions
 
