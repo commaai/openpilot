@@ -54,8 +54,10 @@ int set_core_affinity(int core) {
 namespace util {
 
 std::string read_file(const std::string& fn) {
-  if (std::ifstream f{fn, std::ios::binary | std::ios::in | std::ios::ate}) {
-    if (int pos = f.tellg(); pos > 0) {
+  std::ifstream f(fn, std::ios::binary | std::ios::in | std::ios::ate);
+  if (f) {
+    int pos = f.tellg();
+    if (pos > 0) {
       std::string result;
       result.resize(pos);
       f.seekg(0, std::ios::beg);
