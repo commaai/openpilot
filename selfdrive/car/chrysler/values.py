@@ -85,8 +85,6 @@ FINGERPRINTS = {
 }
 
 
-STEER_THRESHOLD = 100
-
 DBC = {
   CAR.PACIFICA_2017_HYBRID: dbc_dict('chrysler_pacifica_2017_hybrid', 'chrysler_pacifica_2017_hybrid_private_fusion'),
   CAR.PACIFICA_2018: dbc_dict('chrysler_pacifica_2017_hybrid', 'chrysler_pacifica_2017_hybrid_private_fusion'),
