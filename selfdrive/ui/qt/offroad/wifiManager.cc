@@ -142,7 +142,6 @@ WifiManager::WifiManager() : QObject() {
   QDBusInterface nm(nm_service, adapter, device_iface, bus);
   bus.connect(nm_service, adapter, device_iface, "StateChanged", this, SLOT(state_change(unsigned int, unsigned int, unsigned int)));
   bus.connect(nm_service, adapter, props_iface, "PropertiesChanged", this, SLOT(property_change(QString, QVariantMap, QStringList)));
-  bus.connect(nm_service, adapter, wireless_device_iface, "PropertiesChanged", this, SLOT(property_change2(QString, QVariantMap, QStringList)));
 
   QDBusInterface device_props(nm_service, adapter, props_iface, bus);
   device_props.setTimeout(DBUS_TIMEOUT);
@@ -202,9 +201,8 @@ void WifiManager::refreshNetworks() {
   QDBusInterface nm(nm_service, adapter, wireless_device_iface, bus);
   nm.setTimeout(DBUS_TIMEOUT);
 
-  QString active_ap = get_active_ap();
+  updateActiveAp();
   QDBusReply<QList<QDBusObjectPath>> response = nm.call("GetAllAccessPoints");
-
   ipv4_address = get_ipv4_address();
   seen_networks.clear();
 
@@ -216,7 +214,8 @@ void WifiManager::refreshNetworks() {
 
     unsigned int strength = get_ap_strength(path.path());
     SecurityType security = getSecurityType(path.path());
-    ConnectedType ctype = getConnectedType(path.path(), ssid, active_ap);
+    ConnectedType ctype = getConnectedType(path.path(), ssid);
+//    qDebug() << "active_ap:" << active_ap;
 
     Network network = {path.path(), ssid, strength, ctype, security, isKnownNetwork(ssid)};
     seen_networks.push_back(network);
@@ -225,24 +224,19 @@ void WifiManager::refreshNetworks() {
 }
 
 void WifiManager::updateNetworks() {
-  qDebug() << "updateNetworks start";
-  const QString active_ap = get_active_ap();
-  qDebug() << "updateNetworks end";
   for (Network &network : seen_networks) {
-    network.connected = getConnectedType(network.path, network.ssid, active_ap);
+    network.connected = getConnectedType(network.path, network.ssid);
   }
   std::sort(seen_networks.begin(), seen_networks.end(), compare_by_strength);
 }
 
-ConnectedType WifiManager::getConnectedType(const QString &path, const QString &ssid, const QString &active_ap) {
-  if (path != active_ap) {
+ConnectedType WifiManager::getConnectedType(const QString &path, const QString &ssid) {
+  if (ssid == connecting_to_network) {
+    return ConnectedType::CONNECTING;
+  } else if (path != active_ap) {
     return ConnectedType::DISCONNECTED;
   } else {
-    if (ssid == connecting_to_network) {
-      return ConnectedType::CONNECTING;
-    } else {
-      return ConnectedType::CONNECTED;
-    }
+    return ConnectedType::CONNECTED;
   }
 }
 
@@ -354,7 +348,7 @@ void WifiManager::forgetNetwork(const QString &ssid) {
 }
 
 void WifiManager::requestScan() {
-  if (connecting_to_network == "" && !scanning) {  // TODO don't scan when tethering
+  if (connecting_to_network == "") {  // TODO don't scan when tethering
     qDebug() << "Scanning...";
     scanning = true;
     QDBusInterface nm(nm_service, adapter, wireless_device_iface, bus);
@@ -374,13 +368,13 @@ uint WifiManager::get_wifi_device_state() {
   return resp;
 }
 
-QString WifiManager::get_active_ap() {
+void WifiManager::updateActiveAp() {
   QDBusInterface device_props(nm_service, adapter, props_iface, bus);
   device_props.setTimeout(DBUS_TIMEOUT);
 
   QDBusMessage response = device_props.call("Get", wireless_device_iface, "ActiveAccessPoint");
   QDBusObjectPath r = get_response<QDBusObjectPath>(response);
-  return r.path();
+  active_ap = r.path();
 }
 
 QByteArray WifiManager::get_property(const QString &network_path , const QString &property) {
@@ -425,7 +419,7 @@ QString WifiManager::get_adapter() {
 void WifiManager::state_change(unsigned int new_state, unsigned int old_state, unsigned int reason) {  // TODO prevent double running
   bool updateUI = false;
   raw_adapter_state = new_state;
-//  qDebug() << "NEW:" << new_state << "OLD:" << old_state << "CHANGE:" << reason;
+  qDebug() << "NEW:" << new_state << "OLD:" << old_state << "CHANGE:" << reason;
 
   // when connecting, we go into STATE_CONNECTING twice, skip second
   if (new_state == STATE_CONNECTING && old_state != STATE_NEED_AUTH) {
@@ -434,24 +428,26 @@ void WifiManager::state_change(unsigned int new_state, unsigned int old_state, u
 
   } else if (new_state == STATE_DISCONNECTED && connecting_to_network == "") {  // wait for connecting signal to update
     qDebug() << "STATE DISCONNECTED!";
+//    updateActiveAp(); // TODO remove?
+    active_ap = "";
     updateUI = true;
 
   } else if (new_state == STATE_NEED_AUTH && reason == REASON_WRONG_PASSWORD) {
     for (const Network n : seen_networks) {
       if (n.ssid == connecting_to_network) {
         qDebug() << "WRONG PASSWORD!";
-        connecting_to_network = "";  // TODO unify connecting_to_network with seen_networks<network>.connecting
+        connecting_to_network = "";
         emit wrongPassword(n);
         updateUI = true;
-        break;  // TODO break and emit update networking at bottom
+        break;
       }
     }
 
   } else if (new_state == STATE_CONNECTED) {
-    qDebug() << "STATE CONNECTED!";
-    updateUI = true;
-    connecting_to_network = "";  // TODO unify connecting_to_network with seen_networks<network>.connecting
     emit successfulConnection(connecting_to_network);
+    qDebug() << "STATE CONNECTED!";
+    connecting_to_network = "";
+    updateUI = true;
   }
 
   if (updateUI) {
@@ -461,23 +457,8 @@ void WifiManager::state_change(unsigned int new_state, unsigned int old_state, u
 }
 
 // https://developer.gnome.org/NetworkManager/stable/gdbus-org.freedesktop.NetworkManager.Device.Wireless.html
-void WifiManager::property_change(const QString &interface, const QVariantMap &props, const QStringList &invalidated_props) {
-//  qDebug() << "Props:" << props;
-//  qDebug() << "Invalid props:" << invalidated_props;
-  if (props.contains("ActiveAccessPoint")) {
-    qDebug() << "ActiveAccessPoint:" << props.value("ActiveAccessPoint").toString();
-  }
-  if (interface == wireless_device_iface && props.contains("LastScan")) {
-    refreshNetworks();
-    emit updateNetworking(seen_networks, ipv4_address);
-    qDebug() << "Scan complete";
-    scanning = false;
-  }
-}
-
-void WifiManager::property_change2(const QString &interface, const QVariantMap &props, const QStringList &invalidated_props) {
-  qDebug() << "Props:" << props;
-  qDebug() << "Invalid props:" << invalidated_props;
+void WifiManager::property_change(const QString &interface, const QVariantMap &props, const QStringList &invalidated_props) {  // TODO fix this not receiving signal sometimes
+  qDebug() << interface << props;
   if (interface == wireless_device_iface && props.contains("LastScan")) {
     refreshNetworks();
     emit updateNetworking(seen_networks, ipv4_address);
@@ -487,7 +468,7 @@ void WifiManager::property_change2(const QString &interface, const QVariantMap &
 }
 
 void WifiManager::disconnect() {
-  QString active_ap = get_active_ap();
+  updateActiveAp();  // TODO remove?
   if (active_ap != "" && active_ap != "/") {
     deactivateConnection(get_property(active_ap, "Ssid"));
   }
@@ -577,7 +558,7 @@ void WifiManager::disableTethering() {
 }
 
 bool WifiManager::tetheringEnabled() {
-  QString active_ap = get_active_ap();
+  updateActiveAp();  // TODO is this safe to remove?
   return get_property(active_ap, "Ssid") == tethering_ssid;
 }
 

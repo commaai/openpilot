@@ -60,12 +60,16 @@ private:  // TODO clean this up
   unsigned int raw_adapter_state;  //Connection status https://developer.gnome.org/NetworkManager/1.26/nm-dbus-types.html#NMDeviceState
   QString tethering_ssid;
   QString tetheringPassword = "swagswagcommma";
+
+  // Status variables
   bool scanning = false;
+  QString active_ap;
+  Network currentNetwork;
 
   QString get_adapter();
   QString get_ipv4_address();
   void connect(const QString &ssid, const QString &username, const QString &password, SecurityType security_type);
-  QString get_active_ap();
+  void updateActiveAp();
   void deactivateConnection(const QString &ssid);
   void forgetNetwork(const QString &ssid);
   QVector<QDBusObjectPath> get_active_connections();
@@ -74,7 +78,7 @@ private:  // TODO clean this up
   unsigned int get_ap_strength(const QString &network_path);
   SecurityType getSecurityType(const QString &ssid);
   QDBusObjectPath pathFromSsid(const QString &ssid);
-  ConnectedType getConnectedType(const QString &path, const QString &ssid, const QString &active_ap);
+  ConnectedType getConnectedType(const QString &path, const QString &ssid);
 
 signals:
   // Callback to main UI thread
@@ -91,9 +95,7 @@ public slots:
   void toggleTethering(const bool enabled);
   void changeTetheringPassword(const QString newPassword);
 
-
 private slots:
   void state_change(unsigned int new_state, unsigned int old_state, unsigned int reason);
   void property_change(const QString &interface, const QVariantMap &props, const QStringList &invalidated_props);
-  void property_change2(const QString &interface, const QVariantMap &props, const QStringList &invalidated_props);
 };
