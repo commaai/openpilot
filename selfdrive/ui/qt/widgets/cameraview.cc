@@ -103,6 +103,7 @@ CameraViewWidget::CameraViewWidget(VisionStreamType stream_type, QWidget* parent
 
 CameraViewWidget::~CameraViewWidget() {
   render_->exiting_ = true;
+  render_->grabCond_.notify_one();
   thread_->quit();
   thread_->wait();
   delete thread_;
@@ -123,9 +124,11 @@ void CameraViewWidget::hideEvent(QHideEvent *event) {
 Render::Render(VisionStreamType stream_type, CameraViewWidget *w) : stream_type(stream_type), glWindow_(w) {}
 
 Render::~Render() {
-  // glDeleteVertexArrays(1, &frame_vao);
-  // glDeleteBuffers(1, &frame_vbo);
-  // glDeleteBuffers(1, &frame_ibo);
+  if (inited_) {
+    glDeleteVertexArrays(1, &frame_vao);
+    glDeleteBuffers(1, &frame_vbo);
+    glDeleteBuffers(1, &frame_ibo);
+  }
 }
 
 void Render::initialize() {
