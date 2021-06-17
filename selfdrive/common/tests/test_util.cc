@@ -20,16 +20,16 @@ std::string random_bytes(int size) {
 }
 
 TEST_CASE("util::read_file") {
-  SECTION("read /proc") {
-    std::string ret = util::read_file("/proc/self/cmdline");
-    REQUIRE(ret.find("test_util") != std::string::npos);
+  SECTION("read /proc/version") {
+    std::string ret = util::read_file("/proc/version");
+    REQUIRE(ret.find("Linux version") != std::string::npos);
   }
   SECTION("read file") {
     char filename[] = "/tmp/test_read_XXXXXX";
     int fd = mkstemp(filename);
 
     REQUIRE(util::read_file(filename).empty());
-    
+
     std::string content = random_bytes(64 * 1024);
     write(fd, content.c_str(), content.size());
     std::string ret = util::read_file(filename);
