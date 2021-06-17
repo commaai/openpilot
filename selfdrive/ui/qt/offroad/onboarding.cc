@@ -88,15 +88,6 @@ void TermsPage::showEvent(QShowEvent *event) {
   accept_btn->setEnabled(false);
   buttons->addWidget(accept_btn);
   QObject::connect(accept_btn, &QPushButton::released, this, &TermsPage::acceptedTerms);
-
-  setStyleSheet(R"(
-    QPushButton {
-      padding: 50px;
-      font-size: 50px;
-      border-radius: 10px;
-      background-color: #292929;
-    }
-  )");
 }
 
 void TermsPage::enableAccept() {
@@ -137,15 +128,6 @@ void DeclinePage::showEvent(QShowEvent *event) {
       Params().putBool("DoUninstall", true);
     }
   });
-
-  setStyleSheet(R"(
-    QPushButton {
-      padding: 50px;
-      font-size: 50px;
-      border-radius: 10px;
-      background-color: #292929;
-    }
-  )");
 }
 
 void OnboardingWindow::updateActiveScreen() {
@@ -190,7 +172,8 @@ OnboardingWindow::OnboardingWindow(QWidget *parent) : QStackedWidget(parent) {
     }
     QPushButton {
       padding: 50px;
-      border-radius: 30px;
+      font-size: 50px;
+      border-radius: 10px;
       background-color: #292929;
     }
     QPushButton:disabled {
