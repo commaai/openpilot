@@ -57,7 +57,7 @@ openpilot should preserve all other vehicle's stock features, including, but are
 Supported Hardware
 ------
 
-At the moment, openpilot supports the EON dashcam DevKit (depreciated) and the [comma two](https://comma.ai/shop/products/comma-two-devkit). A [car harness](https://comma.ai/shop/products/car-harness) is recommended to connect the EON or comma two to the car. For experimental purposes, openpilot can also run on an Ubuntu computer with external [webcams](https://github.com/commaai/openpilot/tree/master/tools/webcam).
+At the moment, openpilot supports the EON Gold DevKit and the [comma two](https://comma.ai/shop/products/comma-two-devkit). A [car harness](https://comma.ai/shop/products/car-harness) is recommended to connect the EON or comma two to the car. For experimental purposes, openpilot can also run on an Ubuntu computer with external [webcams](https://github.com/commaai/openpilot/tree/master/tools/webcam).
 
 Supported Cars
 ------
