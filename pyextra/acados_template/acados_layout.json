@@ -1,0 +1,772 @@
+{
+    "code_export_directory": [
+        "str"
+    ],
+    "acados_include_path": [
+        "str"
+    ],
+    "model": {
+         "name" : [
+            "str"
+        ],
+        "dyn_ext_fun_type" : [
+            "str"
+        ],
+        "dyn_source_discrete" : [
+            "str"
+        ],
+        "dyn_disc_fun_jac_hess" : [
+            "str"
+        ],
+        "dyn_disc_fun_jac" : [
+            "str"
+        ],
+        "dyn_disc_fun" : [
+            "str"
+        ]
+    },
+    "parameter_values": [
+        "ndarray",
+        [
+            "np"
+        ]
+    ],
+    "acados_lib_path": [
+        "str"
+    ],
+    "problem_class": [
+        "str"
+    ],
+    "constraints": {
+        "constr_type": [
+            "str"
+        ],
+        "constr_type_e": [
+            "str"
+        ],
+        "lbx": [
+            "ndarray",
+                [
+                    "nbx"
+                ]
+        ],
+        "lbu": [
+            "ndarray",
+            [
+                "nbu"
+            ]
+        ],
+        "ubx": [
+            "ndarray",
+                [
+                    "nbx"
+                ]
+        ],
+        "ubu": [
+            "ndarray",
+            [
+                "nbu"
+            ]
+        ],
+        "idxbx": [
+            "ndarray",
+                [
+                    "nbx"
+                ]
+        ],
+        "idxbu": [
+            "ndarray",
+            [
+                "nbu"
+            ]
+        ],
+        "lbx_e": [
+            "ndarray",
+            [
+                "nbx_e"
+            ]
+        ],
+        "ubx_e": [
+            "ndarray",
+            [
+                "nbx_e"
+            ]
+        ],
+        "idxbx_e": [
+            "ndarray",
+            [
+                "nbx_e"
+            ]
+        ],
+        "lbx_0": [
+            "ndarray",
+            [
+                "nbx_0"
+            ]
+        ],
+        "ubx_0": [
+            "ndarray",
+            [
+                "nbx_0"
+            ]
+        ],
+        "idxbx_0": [
+            "ndarray",
+            [
+                "nbx_0"
+            ]
+        ],
+        "idxbxe_0": [
+            "ndarray",
+            [
+                "nbxe_0"
+            ]
+        ],
+        "lg": [
+            "ndarray",
+            [
+                "ng"
+            ]
+        ],
+        "ug": [
+            "ndarray",
+            [
+                "ng"
+            ]
+        ],
+        "D": [
+            "ndarray",
+                [
+                    "ng",
+                    "nu"
+                ]
+        ],
+        "C": [
+            "ndarray",
+            [
+                "ng",
+                "nx"
+            ]
+        ],
+        "C_e": [
+            "ndarray",
+            [
+                "ng_e",
+                "nx"
+            ]
+        ],
+        "lg_e": [
+            "ndarray",
+            [
+                "ng_e"
+            ]
+        ],
+        "ug_e": [
+            "ndarray",
+            [
+                "ng_e"
+            ]
+        ],
+        "lh": [
+            "ndarray",
+            [
+                "nh"
+            ]
+        ],
+        "uh": [
+            "ndarray",
+            [
+                "nh"
+            ]
+        ],
+        "lh_e": [
+            "ndarray",
+            [
+                "nh_e"
+            ]
+        ],
+        "uh_e": [
+            "ndarray",
+            [
+                "nh_e"
+            ]
+        ],
+        "lphi": [
+            "ndarray",
+            [
+                "nphi"
+            ]
+        ],
+        "uphi": [
+            "ndarray",
+            [
+                "nphi"
+            ]
+        ],
+        "lphi_e": [
+            "ndarray",
+            [
+                "nphi_e"
+            ]
+        ],
+        "uphi_e": [
+            "ndarray",
+            [
+                "nphi_e"
+            ]
+        ],
+        "lsbx": [
+            "ndarray",
+                [
+                    "nsbx"
+                ]
+        ],
+        "usbx": [
+            "ndarray",
+                [
+                    "nsbx"
+                ]
+        ],
+        "lsbu": [
+            "ndarray",
+            [
+                "nsbu"
+            ]
+        ],
+        "usbu": [
+            "ndarray",
+            [
+                "nsbu"
+            ]
+        ],
+        "idxsbx": [
+            "ndarray",
+                [
+                    "nsbx"
+                ]
+        ],
+        "idxsbu": [
+            "ndarray",
+            [
+                "nsbu"
+            ]
+        ],
+        "lsbx_e": [
+            "ndarray",
+                [
+                    "nsbx_e"
+                ]
+        ],
+        "usbx_e": [
+            "ndarray",
+                [
+                    "nsbx_e"
+                ]
+        ],
+        "idxsbx_e": [
+            "ndarray",
+                [
+                    "nsbx_e"
+                ]
+        ],
+        "lsg": [
+            "ndarray",
+            [
+                "nsg"
+            ]
+        ],
+        "usg": [
+            "ndarray",
+            [
+                "nsg"
+            ]
+        ],
+        "idxsg": [
+            "ndarray",
+            [
+                "nsg"
+            ]
+        ],
+        "lsg_e": [
+            "ndarray",
+            [
+                "nsg_e"
+            ]
+        ],
+        "usg_e": [
+            "ndarray",
+            [
+                "nsg_e"
+            ]
+        ],
+        "idxsg_e": [
+            "ndarray",
+            [
+                "nsg_e"
+            ]
+        ],
+        "lsh": [
+            "ndarray",
+            [
+                "nsh"
+            ]
+        ],
+        "ush": [
+            "ndarray",
+            [
+                "nsh"
+            ]
+        ],
+        "idxsh": [
+            "ndarray",
+            [
+                "nsh"
+            ]
+        ],
+        "lsh_e": [
+            "ndarray",
+            [
+                "nsh_e"
+            ]
+        ],
+        "ush_e": [
+            "ndarray",
+            [
+                "nsh_e"
+            ]
+        ],
+        "idxsh_e": [
+            "ndarray",
+            [
+                "nsh_e"
+            ]
+        ],
+        "lsphi": [
+            "ndarray",
+            [
+                "nsphi"
+            ]
+        ],
+        "usphi": [
+            "ndarray",
+            [
+                "nsphi"
+            ]
+        ],
+        "idxsphi": [
+            "ndarray",
+            [
+                "nsphi"
+            ]
+        ],
+        "lsphi_e": [
+            "ndarray",
+            [
+                "nsphi_e"
+            ]
+        ],
+        "usphi_e": [
+            "ndarray",
+            [
+                "nsphi_e"
+            ]
+        ],
+        "idxsphi_e": [
+            "ndarray",
+            [
+                "nsphi_e"
+            ]
+        ]
+    },
+    "cost": {
+        "cost_type_0": [
+            "str"
+        ],
+        "cost_type": [
+            "str"
+        ],
+        "cost_type_e": [
+            "str"
+        ],
+        "cost_ext_fun_type_0": [
+            "str"
+        ],
+        "cost_ext_fun_type": [
+            "str"
+        ],
+        "cost_ext_fun_type_e": [
+            "str"
+        ],
+        "Vu_0": [
+            "ndarray",
+            [
+                "ny_0",
+                "nu"
+            ]
+        ],
+        "Vu": [
+            "ndarray",
+            [
+                "ny",
+                "nu"
+            ]
+        ],
+        "Vx_0": [
+            "ndarray",
+            [
+                "ny_0",
+                "nx"
+            ]
+        ],
+        "Vx": [
+            "ndarray",
+            [
+                "ny",
+                "nx"
+            ]
+        ],
+        "Vx_e": [
+            "ndarray",
+            [
+                "ny_e",
+                "nx"
+            ]
+        ],
+        "Vz_0": [
+            "ndarray",
+            [
+                "ny_0",
+                "nz"
+            ]
+        ],
+        "Vz": [
+            "ndarray",
+            [
+                "ny",
+                "nz"
+            ]
+        ],
+        "W_0": [
+            "ndarray",
+            [
+                "ny_0",
+                "ny_0"
+            ]
+        ],
+        "W": [
+            "ndarray",
+            [
+                "ny",
+                "ny"
+            ]
+        ],
+        "Zl": [
+            "ndarray",
+            [
+                "ns"
+            ]
+        ],
+        "Zu": [
+            "ndarray",
+            [
+                "ns"
+            ]
+        ],
+        "zl": [
+            "ndarray",
+            [
+                "ns"
+            ]
+        ],
+        "zu": [
+            "ndarray",
+            [
+                "ns"
+            ]
+        ],
+        "W_e": [
+            "ndarray",
+            [
+                "ny_e",
+                "ny_e"
+            ]
+        ],
+        "yref_0": [
+            "ndarray",
+            [
+                "ny_0"
+            ]
+        ],
+        "yref": [
+            "ndarray",
+            [
+                "ny"
+            ]
+        ],
+        "yref_e": [
+            "ndarray",
+            [
+                "ny_e"
+            ]
+        ],
+        "Zl_e": [
+            "ndarray",
+            [
+                "ns_e"
+            ]
+        ],
+        "Zu_e": [
+            "ndarray",
+            [
+                "ns_e"
+            ]
+        ],
+        "zl_e": [
+            "ndarray",
+            [
+                "ns_e"
+            ]
+        ],
+        "zu_e": [
+            "ndarray",
+            [
+                "ns_e"
+            ]
+        ]
+    },
+    "dims": {
+        "N": [
+            "int"
+        ],
+        "nbu": [
+            "int"
+        ],
+        "nbx": [
+            "int"
+        ],
+        "nsbu": [
+            "int"
+        ],
+        "nsbx": [
+            "int"
+        ],
+        "nsbx_e": [
+            "int"
+        ],
+        "nbx_0": [
+            "int"
+        ],
+        "nbx_e": [
+            "int"
+        ],
+        "nbxe_0": [
+            "int"
+        ],
+        "nsg": [
+            "int"
+        ],
+        "nsg_e": [
+            "int"
+        ],
+        "nsh": [
+            "int"
+        ],
+        "nsh_e": [
+            "int"
+        ],
+        "nsphi": [
+            "int"
+        ],
+        "nsphi_e": [
+            "int"
+        ],
+        "ns": [
+            "int"
+        ],
+        "ns_e": [
+            "int"
+        ],
+        "ng": [
+            "int"
+        ],
+        "ng_e": [
+            "int"
+        ],
+        "np": [
+            "int"
+        ],
+        "nr": [
+            "int"
+        ],
+        "nr_e": [
+            "int"
+        ],
+        "nh": [
+            "int"
+        ],
+        "nh_e": [
+            "int"
+        ],
+        "nphi": [
+            "int"
+        ],
+        "nphi_e": [
+            "int"
+        ],
+        "nu": [
+            "int"
+        ],
+        "nx": [
+            "int"
+        ],
+        "ny": [
+            "int"
+        ],
+        "ny_0": [
+            "int"
+        ],
+        "ny_e": [
+            "int"
+        ],
+        "nz": [
+            "int"
+        ],
+        "gnsf_nx1": [
+            "int"
+        ],
+        "gnsf_nz1": [
+            "int"
+        ],
+        "gnsf_nuhat": [
+            "int"
+        ],
+        "gnsf_ny": [
+            "int"
+        ],
+        "gnsf_nout": [
+            "int"
+        ]
+    },
+    "solver_options": {
+        "time_steps": [
+            "ndarray",
+            [
+                "N"
+            ]
+        ],
+        "hessian_approx": [
+            "str"
+        ],
+        "regularize_method": [
+            "str"
+        ],
+        "integrator_type": [
+            "str"
+        ],
+        "nlp_solver_type": [
+            "str"
+        ],
+        "globalization": [
+            "str"
+        ],
+        "nlp_solver_step_length": [
+            "float"
+        ],
+        "levenberg_marquardt": [
+            "float"
+        ],
+        "qp_solver": [
+            "str"
+        ],
+        "tf": [
+            "float"
+        ],
+        "Tsim": [
+            "float"
+        ],
+        "alpha_min": [
+            "float"
+        ],
+        "alpha_reduction": [
+            "float"
+        ],
+        "sim_method_num_stages": [
+            "ndarray",
+            [
+                "N"
+            ]
+        ],
+        "sim_method_num_steps": [
+            "ndarray",
+            [
+                "N"
+            ]
+        ],
+        "sim_method_newton_iter": [
+            "int"
+        ],
+        "sim_method_jac_reuse": [
+            "bool"
+        ],
+        "qp_solver_cond_N": [
+            "int"
+        ],
+        "qp_solver_warm_start": [
+            "int"
+        ],
+        "qp_solver_tol_stat": [
+            "float"
+        ],
+        "qp_solver_tol_eq": [
+            "float"
+        ],
+        "qp_solver_tol_ineq": [
+            "float"
+        ],
+        "qp_solver_tol_comp": [
+            "float"
+        ],
+        "qp_solver_iter_max": [
+            "int"
+        ],
+        "nlp_solver_tol_stat": [
+            "float"
+        ],
+        "nlp_solver_tol_eq": [
+            "float"
+        ],
+        "nlp_solver_tol_ineq": [
+            "float"
+        ],
+        "nlp_solver_tol_comp": [
+            "float"
+        ],
+        "nlp_solver_max_iter": [
+            "int"
+        ],
+        "print_level": [
+            "int"
+        ],
+        "initialize_t_slacks": [
+            "int"
+        ],
+        "exact_hess_cost": [
+            "int"
+        ],
+        "exact_hess_constr": [
+            "int"
+        ],
+        "exact_hess_dyn": [
+            "int"
+        ],
+        "ext_cost_num_hess": [
+            "int"
+        ],
+        "model_external_shared_lib_dir": [
+            "str"
+        ],
+        "model_external_shared_lib_name": [
+            "str"
+        ]
+    }
+}
