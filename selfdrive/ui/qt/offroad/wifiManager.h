@@ -34,8 +34,6 @@ public:
   QVector<Network> seen_networks;
   QString ipv4_address;
 
-  void refreshNetworks();
-  void forgetConnection(const QString &ssid);
   bool isKnownNetwork(const QString &ssid);
 
   void connect(const Network &ssid);
@@ -53,6 +51,9 @@ public:
   void changeTetheringPassword(const QString &newPassword);
 
 private:
+  void sortNetworks();
+  void refreshNetworks(const QVector<QDBusObjectPath> &paths);
+
   QVector<QByteArray> seen_ssids;
   QString adapter;  // Path to network manager wifi-device
   QDBusConnection bus = QDBusConnection::systemBus();
@@ -63,7 +64,6 @@ private:
 
   QString get_adapter();
   QString get_ipv4_address();
-  QList<Network> get_networks();
   void connect(const QByteArray &ssid, const QString &username, const QString &password, SecurityType security_type);
   QString get_active_ap();
   void deactivateConnection(const QString &ssid);
@@ -74,6 +74,7 @@ private:
   SecurityType getSecurityType(const QString &ssid);
   QDBusObjectPath pathFromSsid(const QString &ssid);
   QVector<QPair<QString, QDBusObjectPath>> listConnections();
+  ConnectedType getConnectedType(const QString &path, const QString &ssid, const QString &active_ap);
 
 signals:
   void wrongPassword(const QString &ssid);
