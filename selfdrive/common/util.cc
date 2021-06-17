@@ -61,7 +61,9 @@ std::string read_file(const std::string& fn) {
       std::string result;
       result.resize(pos);
       f.seekg(0, std::ios::beg);
-      return f.read(result.data(), pos) ? result : std::string();
+      if (f) {
+        return result;
+      }
     } else {
       // fallback for files created on read, e.g. procfs
       std::stringstream buffer;
