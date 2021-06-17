@@ -33,9 +33,10 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent), s
 
   attemptInitialization();
 
+  emit refreshWifiManager();
   QTimer* timer = new QTimer(this);
   QObject::connect(timer, &QTimer::timeout, wifiManager, [=](){ emit refreshWifiManager(); qDebug() << "Requested scan";});  // TODO cause a wifimanager refresh here
-  timer->start(5000);
+  timer->start(8000);
 }
 
 void Networking::attemptInitialization() {

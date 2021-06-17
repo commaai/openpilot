@@ -55,7 +55,6 @@ public:
   void activateWifiConnection(const QString &ssid);
 
 private:  // TODO clean this up
-  QVector<QString> seen_ssids;
   QString adapter;  //Path to network manager wifi-device
   QDBusConnection bus = QDBusConnection::systemBus();
   unsigned int raw_adapter_state;  //Connection status https://developer.gnome.org/NetworkManager/1.26/nm-dbus-types.html#NMDeviceState
@@ -96,4 +95,5 @@ public slots:
 private slots:
   void state_change(unsigned int new_state, unsigned int old_state, unsigned int reason);
   void property_change(const QString &interface, const QVariantMap &props, const QStringList &invalidated_props);
+  void property_change2(const QString &interface, const QVariantMap &props, const QStringList &invalidated_props);
 };

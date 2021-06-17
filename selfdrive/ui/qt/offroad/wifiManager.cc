@@ -69,6 +69,15 @@ bool compare_by_strength(const Network &a, const Network &b) {
   return a.strength > b.strength;
 }
 
+bool ssid_in_networks(const QString &ssid, const QVector<Network> &networks) {
+  for (const Network &network : networks) {
+    if (ssid == network.ssid) {
+      return true;
+    }
+  }
+  return false;
+}
+
 //void WifiThread::run() {
 //  QThread::sleep(1);
 //  const unsigned int min_refresh_rate = 5000;
@@ -98,18 +107,13 @@ bool compare_by_strength(const Network &a, const Network &b) {
 //}
 
 void WifiManager::connectToNetwork(const Network n, const QString pass) {
-  if (connecting_to_network != "") {
-    qDebug() << "YOU'RE ALREADY CONNECTING TO A NETWORK, CHILL!!";
-    return;
-  }
-  qDebug() << "WIFITHREAD::connectToNetwork";
-//  QThread::sleep(5);
+  qDebug() << "WIFIMANAGER::connectToNetwork";
   if (n.known) {  // check network n
     activateWifiConnection(n.ssid);
   } else if (n.security_type == SecurityType::OPEN) {
     connect(n);
   } else if (n.security_type == SecurityType::WPA && !pass.isEmpty()) {
-    qDebug() << "WIFITHREAD::connectToNetwork::WPA";
+    qDebug() << "WIFIMANAGER::connectToNetwork::WPA";
     connect(n, pass);
   }
 }
@@ -138,6 +142,7 @@ WifiManager::WifiManager() : QObject() {
   QDBusInterface nm(nm_service, adapter, device_iface, bus);
   bus.connect(nm_service, adapter, device_iface, "StateChanged", this, SLOT(state_change(unsigned int, unsigned int, unsigned int)));
   bus.connect(nm_service, adapter, props_iface, "PropertiesChanged", this, SLOT(property_change(QString, QVariantMap, QStringList)));
+  bus.connect(nm_service, adapter, wireless_device_iface, "PropertiesChanged", this, SLOT(property_change2(QString, QVariantMap, QStringList)));
 
   QDBusInterface device_props(nm_service, adapter, props_iface, bus);
   device_props.setTimeout(DBUS_TIMEOUT);
@@ -149,7 +154,7 @@ WifiManager::WifiManager() : QObject() {
   tethering_ssid = "weedle";
   std::string bytes = Params().get("DongleId");
   if (bytes.length() >= 4) {
-    tethering_ssid+="-"+QString::fromStdString(bytes.substr(0,4));
+    tethering_ssid += "-" + QString::fromStdString(bytes.substr(0,4));
   }
 
   // Create dbus interface for tethering button. This populates the introspection cache,
@@ -200,13 +205,12 @@ void WifiManager::refreshNetworks() {
   QString active_ap = get_active_ap();
   QDBusReply<QList<QDBusObjectPath>> response = nm.call("GetAllAccessPoints");
 
-  ipv4_address = get_ipv4_address();  // TODO decide if this should get called between refreshes, or if it doesn't change at all
+  ipv4_address = get_ipv4_address();
   seen_networks.clear();
-  seen_ssids.clear();
 
-  foreach (const QDBusObjectPath& path, response.value()) {  // TODO: can we replace with for (path : response.value()) { } ?
+  for (const QDBusObjectPath &path : response.value()) {
     QString ssid = get_property(path.path(), "Ssid");
-    if (ssid.isEmpty() || seen_ssids.count(ssid) != 0) {  // TODO: refactor so we can check seen_networks for ssid and remove seen_ssids
+    if (ssid.isEmpty() || ssid_in_networks(ssid, seen_networks)) {
       continue;
     }
 
@@ -215,15 +219,15 @@ void WifiManager::refreshNetworks() {
     ConnectedType ctype = getConnectedType(path.path(), ssid, active_ap);
 
     Network network = {path.path(), ssid, strength, ctype, security, isKnownNetwork(ssid)};
-    seen_ssids.push_back(network.ssid);
     seen_networks.push_back(network);
   }
   std::sort(seen_networks.begin(), seen_networks.end(), compare_by_strength);
 }
 
 void WifiManager::updateNetworks() {
-  ipv4_address = get_ipv4_address();  // TODO remove?
+  qDebug() << "updateNetworks start";
   const QString active_ap = get_active_ap();
+  qDebug() << "updateNetworks end";
   for (Network &network : seen_networks) {
     network.connected = getConnectedType(network.path, network.ssid, active_ap);
   }
@@ -302,7 +306,7 @@ void WifiManager::connect(const QString &ssid, const QString &username, const QS
 }
 
 void WifiManager::deactivateConnection(const QString &ssid) {
-  for (QDBusObjectPath active_connection_raw : get_active_connections()) {
+  for (const QDBusObjectPath &active_connection_raw : get_active_connections()) {
     QString active_connection = active_connection_raw.path();
     QDBusInterface nm(nm_service, active_connection, props_iface, bus);
     nm.setTimeout(DBUS_TIMEOUT);
@@ -351,10 +355,13 @@ void WifiManager::forgetNetwork(const QString &ssid) {
 
 void WifiManager::requestScan() {
   if (connecting_to_network == "" && !scanning) {  // TODO don't scan when tethering
+    qDebug() << "Scanning...";
     scanning = true;
     QDBusInterface nm(nm_service, adapter, wireless_device_iface, bus);
     nm.setTimeout(DBUS_TIMEOUT);
     nm.call("RequestScan", QVariantMap());  // a signal is sent to WifiManager::property_change once the scan is complete
+  } else {
+    qDebug() << "Not scanning:" << connecting_to_network << scanning;
   }
 }
 
@@ -396,17 +403,10 @@ QString WifiManager::get_adapter() {
   QDBusInterface nm(nm_service, nm_path, nm_iface, bus);
   nm.setTimeout(DBUS_TIMEOUT);
 
-  QDBusMessage response = nm.call("GetDevices");
-  QVariant first =  response.arguments().at(0);
-
+  QDBusReply<QList<QDBusObjectPath>> response = nm.call("GetDevices");
   QString adapter_path = "";
 
-  const QDBusArgument &args = first.value<QDBusArgument>();
-  args.beginArray();
-  while (!args.atEnd()) {
-    QDBusObjectPath path;
-    args >> path;
-
+  for (const QDBusObjectPath &path : response.value()) {
     // Get device type
     QDBusInterface device_props(nm_service, path.path(), props_iface, bus);
     device_props.setTimeout(DBUS_TIMEOUT);
@@ -419,8 +419,6 @@ QString WifiManager::get_adapter() {
       break;
     }
   }
-  args.endArray();
-
   return adapter_path;
 }
 
@@ -457,8 +455,6 @@ void WifiManager::state_change(unsigned int new_state, unsigned int old_state, u
   }
 
   if (updateUI) {
-//    requestScan(); // TODO: only update seen_networks and emit
-//    refreshNetworks();
     updateNetworks();
     emit updateNetworking(seen_networks, ipv4_address);
   }
@@ -466,6 +462,22 @@ void WifiManager::state_change(unsigned int new_state, unsigned int old_state, u
 
 // https://developer.gnome.org/NetworkManager/stable/gdbus-org.freedesktop.NetworkManager.Device.Wireless.html
 void WifiManager::property_change(const QString &interface, const QVariantMap &props, const QStringList &invalidated_props) {
+//  qDebug() << "Props:" << props;
+//  qDebug() << "Invalid props:" << invalidated_props;
+  if (props.contains("ActiveAccessPoint")) {
+    qDebug() << "ActiveAccessPoint:" << props.value("ActiveAccessPoint").toString();
+  }
+  if (interface == wireless_device_iface && props.contains("LastScan")) {
+    refreshNetworks();
+    emit updateNetworking(seen_networks, ipv4_address);
+    qDebug() << "Scan complete";
+    scanning = false;
+  }
+}
+
+void WifiManager::property_change2(const QString &interface, const QVariantMap &props, const QStringList &invalidated_props) {
+  qDebug() << "Props:" << props;
+  qDebug() << "Invalid props:" << invalidated_props;
   if (interface == wireless_device_iface && props.contains("LastScan")) {
     refreshNetworks();
     emit updateNetworking(seen_networks, ipv4_address);
@@ -497,7 +509,7 @@ QVector<QPair<QString, QDBusObjectPath>> WifiManager::listConnections() {
   nm.setTimeout(DBUS_TIMEOUT);
 
   QDBusReply<QList<QDBusObjectPath>> response = nm.call("ListConnections");
-  foreach (const QDBusObjectPath& path, response.value()) {
+  for (const QDBusObjectPath &path : response.value()) {
     QDBusInterface nm2(nm_service, path.path(), nm_settings_conn_iface, bus);
     nm2.setTimeout(DBUS_TIMEOUT);
 
