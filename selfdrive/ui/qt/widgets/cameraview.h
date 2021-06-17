@@ -38,7 +38,8 @@ protected:
 class Render : public QObject, protected QOpenGLFunctions {
   Q_OBJECT
 public:
-  Render(VisionStreamType stream_type, CameraViewWidget *w); 
+  Render(VisionStreamType stream_type, CameraViewWidget *w);
+  ~Render();
   void render(bool cleanup);
 
 signals:
