@@ -36,7 +36,7 @@ Or alternatively, when on the master branch:
 ```
 git submodule update --init
 ```
-The reasons for having submodules on a dedicated repository and our new development philosophy can be found in our [post about externalization](https://comma-ai.medium.com/a-2020-theme-externalization-13b33326d8b3).
+The reasons for having submodules on a dedicated repository and our new development philosophy can be found in our [post about externalization](https://blog.comma.ai/a-2020-theme-externalization/).
 Modules that are in seperate repositories include:
 * cereal
 * laika
