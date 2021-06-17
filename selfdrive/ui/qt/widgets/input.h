@@ -10,6 +10,8 @@
 #include "selfdrive/ui/qt/widgets/keyboard.h"
 
 class QDialogBase : public QDialog {
+  Q_OBJECT
+
 protected:
   QDialogBase(QWidget *parent);
   bool eventFilter(QObject *o, QEvent *e) override;  
