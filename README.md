@@ -304,7 +304,7 @@ Safety and Testing
 * panda has software in the loop [safety tests](https://github.com/commaai/panda/tree/master/tests/safety).
 * Internally, we have a hardware in the loop Jenkins test suite that builds and unit tests the various processes.
 * panda has additional hardware in the loop [tests](https://github.com/commaai/panda/blob/master/Jenkinsfile).
-* We run the latest openpilot in a test lab containing 10 comma twos continuously replaying routes.
+* We run the latest openpilot in a testing closet containing 10 comma devices continuously replaying routes.
 
 Testing on PC
 ------
