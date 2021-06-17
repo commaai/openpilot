@@ -82,7 +82,6 @@ WifiManager::WifiManager(QWidget* parent) : QWidget(parent) {
   device_props.setTimeout(dbus_timeout);
   QDBusMessage response = device_props.call("Get", device_iface, "State");
   raw_adapter_state = get_response<uint>(response);
-  state_change(raw_adapter_state, 0, 0);
 
   // Set tethering ssid as "weedle" + first 4 characters of a dongle id
   tethering_ssid = "weedle";

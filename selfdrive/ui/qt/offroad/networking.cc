@@ -33,9 +33,9 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent), s
   main_layout->addWidget(warning);
 
   attemptInitialization();
-  emit requestScan();
+  wifi->requestScan();
   timer = new QTimer(this);
-  QObject::connect(timer, &QTimer::timeout, this, [=](){ emit requestScan(); });
+  QObject::connect(timer, &QTimer::timeout, wifi, &WifiManager::requestScan);
   timer->setInterval(5000);
 }
 
@@ -49,7 +49,6 @@ void Networking::attemptInitialization() {
 
   connect(wifi, &WifiManager::wrongPassword, this, &Networking::wrongPassword);
   connect(wifi, &WifiManager::refreshed, this, &Networking::refresh);
-  connect(this, &Networking::requestScan, wifi, &WifiManager::requestScan);
 
   QWidget* wifiScreen = new QWidget(this);
   QVBoxLayout* vlayout = new QVBoxLayout(wifiScreen);
@@ -189,7 +188,6 @@ void AdvancedNetworking::toggleTethering(bool enable) {
   }
   editPasswordButton->setEnabled(!enable);
 }
-
 
 // WifiUI functions
 

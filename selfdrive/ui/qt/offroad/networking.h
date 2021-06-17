@@ -71,20 +71,15 @@ private:
   AdvancedNetworking* an = nullptr;
   bool ui_setup_complete = false;
   bool show_advanced;
-  QTimer* timer;
-
-  Network selectedNetwork;
 
   WifiUI* wifiWidget;
   WifiManager* wifi = nullptr;
   void attemptInitialization();
+  QTimer* timer;
 
 protected:
   void hideEvent(QHideEvent *event) override;
   void showEvent(QShowEvent *event) override;
-
-signals:
-  void requestScan();
 
 public slots:
   void refresh();

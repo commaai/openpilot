@@ -30,6 +30,7 @@ class WifiManager : public QWidget {
 public:
   explicit WifiManager(QWidget* parent);
 
+  void requestScan();
   QVector<Network> seen_networks;
   QString ipv4_address;
 
@@ -53,9 +54,9 @@ public:
 
 private:
   QVector<QByteArray> seen_ssids;
-  QString adapter;//Path to network manager wifi-device
+  QString adapter;  // Path to network manager wifi-device
   QDBusConnection bus = QDBusConnection::systemBus();
-  unsigned int raw_adapter_state;//Connection status https://developer.gnome.org/NetworkManager/1.26/nm-dbus-types.html#NMDeviceState
+  unsigned int raw_adapter_state;  // Connection status https://developer.gnome.org/NetworkManager/1.26/nm-dbus-types.html#NMDeviceState
   QString connecting_to_network;
   QString tethering_ssid;
   QString tetheringPassword = "swagswagcommma";
@@ -77,9 +78,6 @@ private:
 signals:
   void wrongPassword(const QString &ssid);
   void refreshed();
-
-public slots:
-  void requestScan();
 
 private slots:
   void state_change(unsigned int new_state, unsigned int previous_state, unsigned int change_reason);
