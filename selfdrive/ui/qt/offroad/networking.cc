@@ -34,11 +34,9 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent), s
 
   attemptInitialization();
   emit requestScan();
-  QTimer* timer = new QTimer(this);
-  QObject::connect(timer, &QTimer::timeout, this, [=](){if (this->isVisible()) {
-                                                          emit requestScan();
-                                                        }});
-  timer->start(5000);
+  timer = new QTimer(this);
+  QObject::connect(timer, &QTimer::timeout, this, [=](){ emit requestScan(); });
+  timer->setInterval(5000);
 }
 
 void Networking::attemptInitialization() {
@@ -124,6 +122,14 @@ void Networking::wrongPassword(const QString &ssid) {
       return;
     }
   }
+}
+
+void Networking::hideEvent(QHideEvent* event) {
+  timer->stop();
+}
+
+void Networking::showEvent(QShowEvent* event) {
+  timer->start();
 }
 
 // AdvancedNetworking functions
