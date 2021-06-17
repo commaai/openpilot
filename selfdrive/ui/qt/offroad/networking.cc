@@ -32,9 +32,12 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent), s
 
   main_layout->addWidget(warning);
 
-  refresh(true);
+  attemptInitialization();
+  emit requestScan();
   QTimer* timer = new QTimer(this);
-  QObject::connect(timer, &QTimer::timeout, this, [=](){ refresh(); });
+  QObject::connect(timer, &QTimer::timeout, this, [=](){if (this->isVisible()) {
+                                                          emit requestScan();
+                                                        }});
   timer->start(5000);
 }
 
@@ -47,6 +50,8 @@ void Networking::attemptInitialization() {
   }
 
   connect(wifi, &WifiManager::wrongPassword, this, &Networking::wrongPassword);
+  connect(wifi, &WifiManager::refreshed, this, &Networking::refresh);
+  connect(this, &Networking::requestScan, wifi, &WifiManager::requestScan);
 
   QWidget* wifiScreen = new QWidget(this);
   QVBoxLayout* vlayout = new QVBoxLayout(wifiScreen);
@@ -89,10 +94,7 @@ void Networking::attemptInitialization() {
   ui_setup_complete = true;
 }
 
-void Networking::refresh(const bool force) {
-  if (!this->isVisible() && !force) {
-    return;
-  }
+void Networking::refresh() {
   if (!ui_setup_complete) {
     attemptInitialization();
     if (!ui_setup_complete) {
@@ -196,8 +198,6 @@ WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi)
 }
 
 void WifiUI::refresh() {
-  wifi->request_scan();
-  wifi->refreshNetworks();
   clearLayout(main_layout);
 
   connectButtons = new QButtonGroup(this); // TODO check if this is a leak

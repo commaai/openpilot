@@ -78,8 +78,13 @@ private:
   WifiManager* wifi = nullptr;
   void attemptInitialization();
 
+signals:
+  void requestScan();
+
+public slots:
+  void refresh();
+
 private slots:
   void connectToNetwork(const Network &n);
-  void refresh(const bool force = false);
   void wrongPassword(const QString &ssid);
 };

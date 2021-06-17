@@ -30,7 +30,6 @@ class WifiManager : public QWidget {
 public:
   explicit WifiManager(QWidget* parent);
 
-  void request_scan();
   QVector<Network> seen_networks;
   QString ipv4_address;
 
@@ -75,10 +74,16 @@ private:
   QDBusObjectPath pathFromSsid(const QString &ssid);
   QVector<QPair<QString, QDBusObjectPath>> listConnections();
 
-private slots:
-  void change(unsigned int new_state, unsigned int previous_state, unsigned int change_reason);
 signals:
   void wrongPassword(const QString &ssid);
   void successfulConnection(const QString &ssid);
   void refresh();
+  void refreshed();
+
+public slots:
+  void requestScan();
+
+private slots:
+  void state_change(unsigned int new_state, unsigned int previous_state, unsigned int change_reason);
+  void property_change(const QString &interface, const QVariantMap &props, const QStringList &invalidated_props);
 };
