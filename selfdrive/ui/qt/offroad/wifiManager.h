@@ -77,7 +77,6 @@ private:
 signals:
   void wrongPassword(const QString &ssid);
   void successfulConnection(const QString &ssid);
-  void refresh();
   void refreshed();
 
 public slots:

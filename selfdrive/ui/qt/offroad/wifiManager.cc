@@ -430,6 +430,7 @@ QVector<QPair<QString, QDBusObjectPath>> WifiManager::listConnections() {
 void WifiManager::activateWifiConnection(const QString &ssid) {
   QDBusObjectPath path = pathFromSsid(ssid);
   if (!path.path().isEmpty()) {
+    connecting_to_network = ssid;
     QString devicePath = get_adapter();
     QDBusInterface nm3(nm_service, nm_path, nm_iface, bus);
     nm3.setTimeout(dbus_timeout);
