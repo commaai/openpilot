@@ -58,7 +58,7 @@ Test openpilots performance in a simulated environment. The [CARLA simulator](ht
 * Traffic and pedestrians
 
 
-[Replay a drive](replay)* Cars
+[Replay a drive](replay)
 -------------
 
 Review video and log data from routes and stream CAN messages to your device.
