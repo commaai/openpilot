@@ -4,34 +4,11 @@
 #include <QScroller>
 
 ScrollView::ScrollView(QWidget *w, QWidget *parent) : QScrollArea(parent) {
+  setAttribute(Qt::WA_NoSystemBackground);
   setWidget(w);
   setWidgetResizable(true);
   setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  setStyleSheet("ScrollView { background-color:transparent; }");
-
-  QString style = R"(
-    QScrollBar:vertical {
-      border: none;
-      background: transparent;
-      width:10px;
-      margin: 0;
-    }
-    QScrollBar::handle:vertical {
-      min-height: 0px;
-      border-radius: 4px;
-      background-color: white;
-    }
-    QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
-      height: 0px;
-    }
-    QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
-      background: none;
-    }
-  )";
-
-  verticalScrollBar()->setStyleSheet(style);
-  horizontalScrollBar()->setStyleSheet(style);
 
   QScroller *scroller = QScroller::scroller(this->viewport());
   QScrollerProperties sp = scroller->scrollerProperties();
