@@ -30,10 +30,11 @@ make -j4 install
 INSTALL_DIR="$DIR/$ARCHNAME"
 rm -rf $INSTALL_DIR
 mkdir -p $INSTALL_DIR
-cp -r $DIR/acados/lib $INSTALL_DIR
-rm $INSTALL_DIR/lib/*.json
+
+rm $DIR/acados/lib/*.json
 
 cp -r $DIR/acados/include $DIR
+cp -r $DIR/acados/lib $INSTALL_DIR
 cp -r $DIR/acados/interfaces/acados_template/acados_template $DIR/../../pyextra
 
 #pip3 install -e $DIR/acados/interfaces/acados_template
