@@ -1,48 +1,48 @@
 Import('env', 'arch')
 
-cpp_path = [
-  "#",
-  "#selfdrive",
-  "#phonelibs/acado/include",
-  "#phonelibs/acado/include/acado",
-  "#phonelibs/qpoases/INCLUDE",
-  "#phonelibs/qpoases/INCLUDE/EXTRAS",
-  "#phonelibs/qpoases/SRC/",
-  "#phonelibs/qpoases",
-  "lib_mpc_export",
+gen = "c_generated_code"
+
+generated_files = [
+  f'{gen}/Makefile',
+
+  f'{gen}/main_lat.c',
+  f'{gen}/main_sim_lat.c',
+  f'{gen}/acados_solver_lat.c',
+  f'{gen}/acados_solver_lat.h',
+  f'{gen}/acados_sim_solver_lat.c',
+  f'{gen}/acados_sim_solver_lat.h',
+
+  f'{gen}/lat_cost/lat_cost_y_0_fun.h',
+  f'{gen}/lat_cost/lat_cost_y_0_fun.c',
+  f'{gen}/lat_cost/lat_cost_y_0_fun_jac_ut_xt.c',
+  f'{gen}/lat_cost/lat_cost_y_e_fun.c',
+  f'{gen}/lat_cost/lat_cost_y_e_fun.h',
+  f'{gen}/lat_cost/lat_cost_y_e_fun_jac_ut_xt.c',
+  f'{gen}/lat_cost/lat_cost_y_fun.c',
+  f'{gen}/lat_cost/lat_cost_y_fun.h',
+  f'{gen}/lat_cost/lat_cost_y_fun_jac_ut_xt.c',
+  f'{gen}/lat_cost/lat_cost_y_0_hess.c',
+  f'{gen}/lat_cost/lat_cost_y_e_hess.c',
+  f'{gen}/lat_cost/lat_cost_y_y_hess.c',
+
+  f'{gen}/lat_model/lat_model.h',
+  f'{gen}/lat_model/lat_expl_ode_fun.c',
+  f'{gen}/lat_model/lat_expl_vde_adj.c',
+  f'{gen}/lat_model/lat_expl_vde_forw.c',
 ]
 
-generated_c = [
-  'lib_mpc_export/acado_auxiliary_functions.c',
-  'lib_mpc_export/acado_qpoases_interface.cpp',
-  'lib_mpc_export/acado_integrator.c',
-  'lib_mpc_export/acado_solver.c',
-]
+lenv = env.Clone()
+lenv["ENV"]["ACADOS_SOURCE_DIR"] = Dir("#phonelibs/acados/acados").abspath
 
-generated_h = [
-  'lib_mpc_export/acado_common.h',
-  'lib_mpc_export/acado_auxiliary_functions.h',
-  'lib_mpc_export/acado_qpoases_interface.hpp',
-]
+lenv.Clean(generated_files, Dir(gen))
 
-interface_dir = Dir('lib_mpc_export')
+import os
+libpath = Dir(f"#phonelibs/acados/{arch}/lib").abspath
+lenv["ENV"]["LD_LIBRARY_PATH"] = os.getenv("LD_LIBRARY_PATH", "") + libpath
+lenv.Command(generated_files,
+             ["lat_mpc.py"],
+             f"cd {Dir('.').abspath} && python lat_mpc.py")
 
-SConscript(['#phonelibs/qpoases/SConscript'], variant_dir='lib_qp', exports=['interface_dir'])
-
-if GetOption('mpc_generate'):
-    generator_cpp = File('generator.cpp')
-
-    acado_libs = [File(f"#phonelibs/acado/{arch}/lib/libacado_toolkit.a"),
-                  File(f"#phonelibs/acado/{arch}/lib/libacado_casadi.a"),
-                  File(f"#phonelibs/acado/{arch}/lib/libacado_csparse.a")]
-
-    generator = env.Program('generator', generator_cpp, LIBS=acado_libs, CPPPATH=cpp_path,
-                            CCFLAGS=env['CCFLAGS'] + ["-Wno-deprecated", "-Wno-overloaded-shift-op-parentheses"])
-
-    cmd = f"cd {Dir('.').get_abspath()} && {generator[0].get_abspath()}"
-    env.Command(generated_c + generated_h, generator, cmd)
-
-
-
-mpc_files = ["lateral_mpc.c"] + generated_c
-env.SharedLibrary('mpc', mpc_files, LIBS=['m', 'qpoases'], LIBPATH=['lib_qp'], CPPPATH=cpp_path)
+lenv.Command(File(f"{gen}/libacados_ocp_solver_lat.so"),
+             generated_files,
+             f"cd {Dir(gen).abspath} && make ocp_shared_lib")
