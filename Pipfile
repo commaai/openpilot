@@ -75,7 +75,7 @@ ft4222 = "*"
 hypothesis = "*"
 inputs = "*"
 casadi = "*"
-future-fstrings = "*" # for acados
+future-fstrings = "*"  # for acados
 
 [packages]
 atomicwrites = "*"
