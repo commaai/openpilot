@@ -3,21 +3,6 @@ import struct
 import traceback
 from typing import Any
 from collections import defaultdict
-moraga:openpilot$ git add selfdrive/car/chrysler/values.py
-moraga:openpilot$ git add selfdrive/car/fw_versions.py
-moraga:openpilot$ git commit -m "Removed FPv2, due to insufficient demand."
-[patch-1 54d3f3792] Removed FPv2, due to insufficient demand.
- 2 files changed, 18 deletions(-)
-moraga:openpilot$ git push
-Enumerating objects: 13, done.
-Counting objects: 100% (13/13), done.
-Delta compression using up to 8 threads
-Compressing objects: 100% (7/7), done.
-Writing objects: 100% (7/7), 567 bytes | 189.00 KiB/s, done.
-Total 7 (delta 6), reused 0 (delta 0), pack-reused 0
-remote: Resolving deltas: 100% (6/6), completed with 6 local objects.
-To https://github.com/ErichMoraga/openpilot
-   909608d22..54d3f3792  patch-1 -> patch-1
 
 from tqdm import tqdm
 
