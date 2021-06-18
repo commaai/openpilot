@@ -24,6 +24,10 @@ TEST_CASE("util::read_file") {
     std::string ret = util::read_file("/proc/version");
     REQUIRE(ret.find("Linux version") != std::string::npos);
   }
+  SECTION("read from sysfs") {
+    std::string ret = util::read_file("/sys/power/wakeup_count");
+    REQUIRE(!ret.empty());
+  }
   SECTION("read file") {
     char filename[] = "/tmp/test_read_XXXXXX";
     int fd = mkstemp(filename);
