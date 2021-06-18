@@ -229,7 +229,9 @@ void SoftwarePanel::checkForUpdate() {
   updateBtn->setText("CHECKING");
 
   const QString paramsPath = QString::fromStdString(params.getParamsPath());
-  fs_watch = new QFileSystemWatcher(this);
+  fs_watch = new QFileSystemWatcher({paramsPath + "/d/LastUpdateTime",
+                                     paramsPath + "/d/UpdateFailedCount"},
+                                    this);
   QObject::connect(fs_watch, &QFileSystemWatcher::fileChanged, [=](const QString path) {
     int update_failed_count = params.get<int>("UpdateFailedCount").value_or(0);
     if (path.contains("UpdateFailedCount") && update_failed_count > 0) {
@@ -242,9 +244,6 @@ void SoftwarePanel::checkForUpdate() {
     fs_watch->deleteLater();
     fs_watch = nullptr;
   });
-
-  fs_watch->addPath(paramsPath + "/d/LastUpdateTime");
-  fs_watch->addPath(paramsPath + "/d/UpdateFailedCount");
   std::system("pkill -1 -f selfdrive.updated");
 }
 
