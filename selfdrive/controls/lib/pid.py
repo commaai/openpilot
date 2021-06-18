@@ -1,7 +1,7 @@
 import numpy as np
 from common.numpy_fast import clip, interp
 from common.realtime import DT_CTRL
-from math import exp
+from math import sqrt, exp
 
 def apply_deadzone(error, deadzone):
   if error > deadzone:
@@ -52,6 +52,13 @@ class PIDController():
   def k_d(self):
     return interp(self.speed, self._k_d[0], self._k_d[1])
 
+  @property
+  def k_bf(self):
+    _k_i = self.k_i
+    _k_d = self.k_d
+    _k_bf = sqrt(_k_i * _k_d / DT_CTRL)
+    return _k_bf
+
   def _check_saturation(self, control, check_saturation, error):
     saturated = (control < self.neg_limit) or (control > self.pos_limit)
 
@@ -73,12 +80,16 @@ class PIDController():
     self.d, self.d1, self.d2 = 0.0, 0.0, 0.0
     self.f = 0.0
 
+    self.bf1 = 0.0
+    self.bf2 = 0.0
+
     self.sat_count = 0.0
     self.saturated = False
     self.control = 0
 
-  def update(self, setpoint, measurement, speed=0.0, check_saturation=True, override=False, feedforward=0., deadzone=0., freeze_integrator=False, output_steer_last=0.):
-    self.speed = speed    
+
+  def update(self, setpoint, measurement, last_output, speed=0.0, check_saturation=True, override=False, feedforward=0., deadzone=0., freeze_integrator=False):
+    self.speed = speed
 
     #TODO: param
     _N = int(1. / DT_CTRL)
@@ -114,6 +125,10 @@ class PIDController():
 
     self.u0 =  self.ke0*self.e0 + self.ke1*self.e1 + self.ke2*self.e2 - self.ku1*self.u1 - self.ku2*self.u2
 
+    #back-feed / back-calculate integrator anti-windup
+    self.bf2, self.bf1 = self.bf1, self.u1 + self.f - last_output
+    self.u0 -= (k_bf*_Ts*(a0*self.bf1 - self.bf2)/ a0)
+
     #logging only
     self.p2 = self.p1
     self.p1 = self.p
@@ -123,9 +138,11 @@ class PIDController():
     self.d1 = self.d
 
     self.p = (Kp*(    a0*self.e0 + a1*self.e1 + self.e2) / a0) -self.ku1*self.p1 - self.ku2*self.p2
-    self.i = (Ki*_Ts*(a0*self.e0 -    self.e1)           / a0) -self.ku1*self.i1 - self.ku2*self.i2
+    self.i = (Ki*_Ts*(a0*self.e0 -    self.e1)           / a0) -self.ku1*self.i1 - self.ku2*self.i2 - (self.k_bf*_Ts*(a0*self.bf1 - self.bf2)/ a0)
     self.d = (Kd*_N*(    self.e0 -  2*self.e1 + self.e2) / a0) -self.ku1*self.d1 - self.ku2*self.d2
     #ylno gniggol
+
+    self._check_saturation(last_output, check_saturation, self.bf1)
 
     self.f = self.k_f*feedforward
     self.f = clip(self.f, self.neg_limit, self.pos_limit)
@@ -184,7 +201,7 @@ class PIController():
     self.saturated = False
     self.control = 0
 
-  def update(self, setpoint, measurement, speed=0.0, check_saturation=True, override=False, feedforward=0., deadzone=0., freeze_integrator=False):
+  def update(self, setpoint, measurement, last_output, speed=0.0, check_saturation=True, override=False, feedforward=0., deadzone=0., freeze_integrator=False):
     self.speed = speed
 
     error = float(apply_deadzone(setpoint - measurement, deadzone))

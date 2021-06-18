@@ -9,7 +9,7 @@ class LatControlAngle():
   def reset(self):
     pass
 
-  def update(self, active, CS, CP, VM, params, desired_curvature, desired_curvature_rate):
+  def update(self, active, CS, CP, CI, VM, params, desired_curvature, desired_curvature_rate):
     angle_log = log.ControlsState.LateralAngleState.new_message()
 
     if CS.vEgo < 0.3 or not active:

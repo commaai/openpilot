@@ -40,7 +40,7 @@ class CarInterfaceBase():
     self.CC = None
     if CarController is not None:
       self.CC = CarController(self.cp.dbc_name, CP, self.VM)
-
+  
   @staticmethod
   def calc_accel_override(a_ego, a_target, v_ego, v_target):
     return 1.
@@ -93,6 +93,12 @@ class CarInterfaceBase():
     ret.longitudinalTuning.kiV = [1.]
     return ret
 
+  def calc_last_outputs(self, request):
+    lat_out = request
+    if hasattr(self.CC, 'get_last_output'):
+      lat_out = self.CC.get_last_output()
+    return lat_out
+    
   # returns a car.CarState, pass in car.CarControl
   def update(self, c, can_strings):
     raise NotImplementedError

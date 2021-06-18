@@ -15,8 +15,10 @@ class LatControlPID():
 
   def reset(self):
     self.pid.reset()
+    self.output_steer = 0.0
 
-  def update(self, active, CS, CP, VM, params, desired_curvature, desired_curvature_rate):
+
+  def update(self, active, CS, CP, CI, VM, params, desired_curvature, desired_curvature_rate):
     pid_log = log.ControlsState.LateralPIDState.new_message()
     pid_log.steeringAngleDeg = float(CS.steeringAngleDeg)
     pid_log.steeringRateDeg = float(CS.steeringRateDeg)
@@ -25,9 +27,8 @@ class LatControlPID():
     angle_steers_des = angle_steers_des_no_offset + params.angleOffsetDeg
 
     if CS.vEgo < 0.3 or not active:
-      output_steer = 0.0
       pid_log.active = False
-      self.pid.reset()
+      self.reset()
     else:
       steers_max = get_steer_max(CP, CS.vEgo)
       self.pid.pos_limit = steers_max
@@ -40,7 +41,7 @@ class LatControlPID():
       deadzone = 0.0
 
       check_saturation = (CS.vEgo > 10) and not CS.steeringRateLimited and not CS.steeringPressed
-      output_steer = self.pid.update(angle_steers_des, CS.steeringAngleDeg, check_saturation=check_saturation, override=CS.steeringPressed,
+      self.output_steer = self.pid.update(angle_steers_des, CS.steeringAngleDeg, CI.calc_last_outputs(self.output_steer), check_saturation=check_saturation, override=CS.steeringPressed,
                                      feedforward=steer_feedforward, speed=CS.vEgo, deadzone=deadzone)
       pid_log.active = True
       pid_log.angleError = float(CS.steeringAngleDeg) - angle_steers_des
@@ -48,7 +49,7 @@ class LatControlPID():
       pid_log.i = self.pid.i
       pid_log.d = self.pid.d
       pid_log.f = self.pid.f
-      pid_log.output = output_steer
+      pid_log.output = self.output_steer
       pid_log.saturated = bool(self.pid.saturated)
 
-    return output_steer, angle_steers_des, pid_log
+    return self.output_steer, angle_steers_des, pid_log
