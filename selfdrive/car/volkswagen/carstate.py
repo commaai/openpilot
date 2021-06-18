@@ -9,11 +9,12 @@ from selfdrive.car.volkswagen.values import DBC, CANBUS, TransmissionType, GearS
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
-    can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
+    can_define = CANDefine(DBC.mqb)
     if CP.transmissionType == TransmissionType.automatic:
       self.shifter_values = can_define.dv["Getriebe_11"]["GE_Fahrstufe"]
     elif CP.transmissionType == TransmissionType.direct:
       self.shifter_values = can_define.dv["EV_Gearshift"]["GearPosition"]
+    self.hca_status_values = can_define.dv["LH_EPS_03"]["EPS_HCA_Status"]
     self.buttonStates = BUTTON_STATES.copy()
 
   def update(self, pt_cp, cam_cp, trans_type):
@@ -36,6 +37,11 @@ class CarState(CarStateBase):
     ret.steeringTorque = pt_cp.vl["LH_EPS_03"]["EPS_Lenkmoment"] * (1, -1)[int(pt_cp.vl["LH_EPS_03"]["EPS_VZ_Lenkmoment"])]
     ret.steeringPressed = abs(ret.steeringTorque) > CarControllerParams.STEER_DRIVER_ALLOWANCE
     ret.yawRate = pt_cp.vl["ESP_02"]["ESP_Gierrate"] * (1, -1)[int(pt_cp.vl["ESP_02"]["ESP_VZ_Gierrate"])] * CV.DEG_TO_RAD
+
+    # Verify EPS readiness to accept steering commands
+    hca_status = self.hca_status_values.get(pt_cp.vl["LH_EPS_03"]["EPS_HCA_Status"])
+    ret.steerError = hca_status in ["DISABLED", "FAULT"]
+    ret.steerWarning = hca_status in ["INITIALIZING", "REJECTED"]
 
     # Update gas, brakes, and gearshift.
     ret.gas = pt_cp.vl["Motor_20"]["MO_Fahrpedalrohwert_01"] / 100.0
@@ -127,8 +133,8 @@ class CarState(CarStateBase):
     self.buttonStates["setCruise"] = bool(pt_cp.vl["GRA_ACC_01"]["GRA_Tip_Setzen"])
     self.buttonStates["resumeCruise"] = bool(pt_cp.vl["GRA_ACC_01"]["GRA_Tip_Wiederaufnahme"])
     self.buttonStates["gapAdjustCruise"] = bool(pt_cp.vl["GRA_ACC_01"]["GRA_Verstellung_Zeitluecke"])
-    ret.leftBlinker = bool(pt_cp.vl["Gateway_72"]["BH_Blinker_li"])
-    ret.rightBlinker = bool(pt_cp.vl["Gateway_72"]["BH_Blinker_re"])
+    ret.leftBlinker = bool(pt_cp.vl["Blinkmodi_02"]["Comfort_Signal_Left"])
+    ret.rightBlinker = bool(pt_cp.vl["Blinkmodi_02"]["Comfort_Signal_Right"])
 
     # Read ACC hardware button type configuration info that has to pass thru
     # to the radar. Ends up being different for steering wheel buttons vs
@@ -140,10 +146,6 @@ class CarState(CarStateBase):
     # Pick up the GRA_ACC_01 CAN message counter so we can sync to it for
     # later cruise-control button spamming.
     self.graMsgBusCounter = pt_cp.vl["GRA_ACC_01"]["COUNTER"]
-
-    # Check to make sure the electric power steering rack is configured to
-    # accept and respond to HCA_01 messages and has not encountered a fault.
-    self.steeringFault = not pt_cp.vl["LH_EPS_03"]["EPS_HCA_Status"]
 
     # Additional safety checks performed in CarInterface.
     self.parkingBrakeSet = bool(pt_cp.vl["Kombi_01"]["KBI_Handbremse"])  # FIXME: need to include an EPB check as well
@@ -171,8 +173,8 @@ class CarState(CarStateBase):
       ("ZV_HFS_offen", "Gateway_72", 0),            # Door open, rear left
       ("ZV_HBFS_offen", "Gateway_72", 0),           # Door open, rear right
       ("ZV_HD_offen", "Gateway_72", 0),             # Trunk or hatch open
-      ("BH_Blinker_li", "Gateway_72", 0),           # Left turn signal on
-      ("BH_Blinker_re", "Gateway_72", 0),           # Right turn signal on
+      ("Comfort_Signal_Left", "Blinkmodi_02", 0),   # Left turn signal including comfort blink interval
+      ("Comfort_Signal_Right", "Blinkmodi_02", 0),  # Right turn signal including comfort blink interval
       ("AB_Gurtschloss_FA", "Airbag_02", 0),        # Seatbelt status, driver
       ("AB_Gurtschloss_BF", "Airbag_02", 0),        # Seatbelt status, passenger
       ("ESP_Fahrer_bremst", "ESP_05", 0),           # Brake pedal pressed
@@ -181,7 +183,7 @@ class CarState(CarStateBase):
       ("MO_Kuppl_schalter", "Motor_14", 0),         # Clutch switch
       ("EPS_Lenkmoment", "LH_EPS_03", 0),           # Absolute driver torque input
       ("EPS_VZ_Lenkmoment", "LH_EPS_03", 0),        # Driver torque input sign
-      ("EPS_HCA_Status", "LH_EPS_03", 0),           # Steering rack HCA support configured
+      ("EPS_HCA_Status", "LH_EPS_03", 3),           # EPS HCA control status
       ("ESP_Tastung_passiv", "ESP_21", 0),          # Stability control disabled
       ("KBI_MFA_v_Einheit_02", "Einheiten_01", 0),  # MPH vs KMH speed display
       ("KBI_Handbremse", "Kombi_01", 0),            # Manual handbrake applied
@@ -214,6 +216,7 @@ class CarState(CarStateBase):
       ("Motor_14", 10),     # From J623 Engine control module
       ("Airbag_02", 5),     # From J234 Airbag control module
       ("Kombi_01", 2),      # From J285 Instrument cluster
+      ("Blinkmodi_02", 1),  # From J519 BCM (sent at 1Hz when no lights active, 50Hz when active)
       ("Einheiten_01", 1),  # From J??? not known if gateway, cluster, or BCM
     ]
 
@@ -236,7 +239,7 @@ class CarState(CarStateBase):
       signals += MqbExtraSignals.bsm_radar_signals
       checks += MqbExtraSignals.bsm_radar_checks
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, CANBUS.pt)
+    return CANParser(DBC.mqb, signals, checks, CANBUS.pt)
 
   @staticmethod
   def get_cam_can_parser(CP):
@@ -255,7 +258,7 @@ class CarState(CarStateBase):
       ("LDW_02", 10)        # From R242 Driver assistance camera
     ]
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, CANBUS.cam)
+    return CANParser(DBC.mqb, signals, checks, CANBUS.cam)
 
 class MqbExtraSignals:
   # Additional signal and message lists for optional or bus-portable controllers

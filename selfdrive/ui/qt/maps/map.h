@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include <QGeoCoordinate>
 #include <QGeoManeuver>
 #include <QGeoRouteRequest>
@@ -21,7 +23,45 @@
 #include <QMap>
 #include <QPixmap>
 
+#include "selfdrive/common/params.h"
 #include "cereal/messaging/messaging.h"
+
+class MapInstructions : public QWidget {
+  Q_OBJECT
+
+private:
+  QLabel *distance;
+  QLabel *primary;
+  QLabel *secondary;
+  QLabel *icon_01;
+  QHBoxLayout *lane_layout;
+  QMap<QString, QVariant> last_banner;
+
+public:
+  MapInstructions(QWidget * parent=nullptr);
+
+public slots:
+  void updateDistance(float d);
+  void updateInstructions(QMap<QString, QVariant> banner, bool full);
+};
+
+class MapETA : public QWidget {
+  Q_OBJECT
+
+private:
+  QLabel *eta;
+  QLabel *time;
+  QLabel *time_unit;
+  QLabel *distance;
+  QLabel *distance_unit;
+  Params params;
+
+public:
+  MapETA(QWidget * parent=nullptr);
+
+public slots:
+  void updateETA(float seconds, float seconds_typical, float distance);
+};
 
 class MapWindow : public QOpenGLWidget {
   Q_OBJECT
@@ -56,44 +96,43 @@ private:
   int pan_counter = 0;
   int zoom_counter = 0;
 
+  // Position
+  QMapbox::Coordinate last_position = QMapbox::Coordinate(37.7393118509158, -122.46471285025565);
+  std::optional<float> last_bearing;
+
   // Route
   bool gps_ok = false;
-  bool has_route = false;
   QGeoServiceProvider *geoservice_provider;
   QGeoRoutingManager *routing_manager;
   QGeoRoute route;
   QGeoRouteSegment segment;
-  QWidget* map_instructions;
-  QMapbox::Coordinate last_position = QMapbox::Coordinate(37.7393118509158, -122.46471285025565);
+
+  MapInstructions* map_instructions;
+  MapETA* map_eta;
+
   QMapbox::Coordinate nav_destination;
   double last_maneuver_distance = 1000;
+
+  // Route recompute
+  QTimer* recompute_timer;
+  int recompute_backoff = 0;
+  int recompute_countdown = 0;
   void calculateRoute(QMapbox::Coordinate destination);
+  void clearRoute();
   bool shouldRecompute();
+  void updateETA();
 
 private slots:
   void timerUpdate();
   void routeCalculated(QGeoRouteReply *reply);
+  void recomputeRoute();
+
+public slots:
+  void offroadTransition(bool offroad);
 
 signals:
   void distanceChanged(float distance);
-  void instructionsChanged(QMap<QString, QVariant> banner);
+  void instructionsChanged(QMap<QString, QVariant> banner, bool full);
+  void ETAChanged(float seconds, float seconds_typical, float distance);
 };
 
-class MapInstructions : public QWidget {
-  Q_OBJECT
-
-private:
-  QLabel *distance;
-  QLabel *primary;
-  QLabel *secondary;
-  QLabel *icon_01;
-  QHBoxLayout *lane_layout;
-  QMap<QString, QVariant> last_banner;
-
-public:
-  MapInstructions(QWidget * parent=nullptr);
-
-public slots:
-  void updateDistance(float d);
-  void updateInstructions(QMap<QString, QVariant> banner);
-};

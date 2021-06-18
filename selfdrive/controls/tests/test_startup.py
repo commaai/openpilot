@@ -58,9 +58,13 @@ class TestStartup(unittest.TestCase):
     (EventName.startupNoControl, MAZDA.CX5, True, CX5_FW_VERSIONS),
     (EventName.startupNoControl, MAZDA.CX5, False, CX5_FW_VERSIONS),
 
+    # unrecognized car with no fw
+    (EventName.startupNoFw, None, True, None),
+    (EventName.startupNoFw, None, False, None),
+
     # unrecognized car
-    (EventName.startupNoCar, None, True, None),
-    (EventName.startupNoCar, None, False, None),
+    (EventName.startupNoCar, None, True, COROLLA_FW_VERSIONS[:1]),
+    (EventName.startupNoCar, None, False, COROLLA_FW_VERSIONS[:1]),
 
     # fuzzy match
     (EventName.startupFuzzyFingerprint, TOYOTA.COROLLA, True, COROLLA_FW_VERSIONS_FUZZY),

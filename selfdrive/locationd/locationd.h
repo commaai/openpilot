@@ -12,7 +12,6 @@
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/timing.h"
 #include "selfdrive/common/util.h"
-#include <math.h>
 
 #include "selfdrive/sensord/sensors/constants.h"
 #define VISION_DECIMATION 2

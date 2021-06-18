@@ -59,9 +59,9 @@ int sensor_loop() {
   sensors.push_back(&light);
 
 
-  for (Sensor * sensor : sensors){
+  for (Sensor * sensor : sensors) {
     int err = sensor->init();
-    if (err < 0){
+    if (err < 0) {
       LOGE("Error initializing sensors");
       return -1;
     }
@@ -69,14 +69,14 @@ int sensor_loop() {
 
   PubMaster pm({"sensorEvents"});
 
-  while (!do_exit){
+  while (!do_exit) {
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
     const int num_events = sensors.size();
     MessageBuilder msg;
     auto sensor_events = msg.initEvent().initSensorEvents(num_events);
 
-    for (int i = 0; i < num_events; i++){
+    for (int i = 0; i < num_events; i++) {
       auto event = sensor_events[i];
       sensors[i]->get_event(event);
     }

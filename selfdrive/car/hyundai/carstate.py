@@ -1,6 +1,6 @@
 import copy
 from cereal import car
-from selfdrive.car.hyundai.values import DBC, STEER_THRESHOLD, FEATURES, EV_HYBRID
+from selfdrive.car.hyundai.values import DBC, STEER_THRESHOLD, FEATURES, EV_CAR, HYBRID_CAR
 from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
 from selfdrive.config import Conversions as CV
@@ -40,7 +40,7 @@ class CarState(CarStateBase):
     if self.CP.openpilotLongitudinalControl:
       ret.cruiseState.available = cp.vl["TCS13"]["ACCEnable"] == 0
       ret.cruiseState.enabled = cp.vl["TCS13"]["ACC_REQ"] == 1
-      ret.cruiseState.standstill = cp.vl["TCS13"]["StandStill"] == 1
+      ret.cruiseState.standstill = False
     else:
       ret.cruiseState.available = cp.vl["SCC11"]["MainMode_ACC"] == 1
       ret.cruiseState.enabled = cp.vl["SCC12"]["ACCMode"] != 0
@@ -56,11 +56,14 @@ class CarState(CarStateBase):
     ret.brake = 0
     ret.brakePressed = cp.vl["TCS13"]["DriverBraking"] != 0
 
-    if self.CP.carFingerprint in EV_HYBRID:
-      ret.gas = cp.vl["E_EMS11"]["Accel_Pedal_Pos"] / 256.
+    if self.CP.carFingerprint in (HYBRID_CAR | EV_CAR):
+      if self.CP.carFingerprint in HYBRID_CAR:
+        ret.gas = cp.vl["E_EMS11"]["CR_Vcu_AccPedDep_Pos"] / 254.
+      else:
+        ret.gas = cp.vl["E_EMS11"]["Accel_Pedal_Pos"] / 254.
       ret.gasPressed = ret.gas > 0
     else:
-      ret.gas = cp.vl["EMS12"]["PV_AV_CAN"] / 100
+      ret.gas = cp.vl["EMS12"]["PV_AV_CAN"] / 100.
       ret.gasPressed = bool(cp.vl["EMS16"]["CF_Ems_AclAct"])
 
     # TODO: refactor gear parsing in function
@@ -228,10 +231,15 @@ class CarState(CarStateBase):
       ]
       checks += [("LCA11", 50)]
 
-    if CP.carFingerprint in EV_HYBRID:
-      signals += [
-        ("Accel_Pedal_Pos", "E_EMS11", 0),
-      ]
+    if CP.carFingerprint in (HYBRID_CAR | EV_CAR):
+      if CP.carFingerprint in HYBRID_CAR:
+        signals += [
+          ("CR_Vcu_AccPedDep_Pos", "E_EMS11", 0)
+        ]
+      else:
+        signals += [
+          ("Accel_Pedal_Pos", "E_EMS11", 0)
+        ]
       checks += [
         ("E_EMS11", 50),
       ]

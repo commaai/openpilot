@@ -29,13 +29,20 @@ def print_logmessage(t, msg, min_level):
     log = json.loads(msg)
     if log['levelnum'] >= min_level:
       print(f"[{t / 1e9:.6f}] {log['filename']}:{log.get('lineno', '')} - {log.get('funcname', '')}: {log['msg']}")
+      if 'exc_info' in log:
+        print(log['exc_info'])
   except json.decoder.JSONDecodeError:
     print(f"[{t / 1e9:.6f}] decode error: {msg}")
 
 
 def print_androidlog(t, msg):
   source = ANDROID_LOG_SOURCE[msg.id]
-  print(f"[{t / 1e9:.6f}] {source} {msg.pid} {msg.tag} - {msg.message}")
+  try:
+    m = json.loads(msg.message)['MESSAGE']
+  except Exception:
+    m = msg.message
+
+  print(f"[{t / 1e9:.6f}] {source} {msg.pid} {msg.tag} - {m}")
 
 
 if __name__ == "__main__":
@@ -49,7 +56,7 @@ if __name__ == "__main__":
   logs = None
   if len(args.route):
     r = Route(args.route[0])
-    logs = r.qlog_paths()
+    logs = [q if r is None else r for (q, r) in zip(r.qlog_paths(), r.log_paths())]
 
   if len(args.route) == 2 and logs:
     n = int(args.route[1])

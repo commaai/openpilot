@@ -4,13 +4,13 @@
 #define __user __attribute__(())
 #endif
 
-#include <CL/cl.h>
-#include <stdint.h>
-#include <stdlib.h>
-
+#include <cstdint>
+#include <cstdlib>
 #include <memory>
 #include <string>
 #include <vector>
+
+#include <CL/cl.h>
 
 #include "selfdrive/modeld/thneed/include/msm_kgsl.h"
 

@@ -1,4 +1,6 @@
-#include "toggle.h"
+#include "selfdrive/ui/qt/widgets/toggle.h"
+
+#include <QPainter>
 
 Toggle::Toggle(QWidget *parent) : QAbstractButton(parent),
 _height(80),
@@ -35,12 +37,12 @@ void Toggle::paintEvent(QPaintEvent *e) {
 }
 
 void Toggle::mouseReleaseEvent(QMouseEvent *e) {
-  if(!enabled){
+  if(!enabled) {
     return;
   }
   const int left = _radius;
   const int right = width() - _radius;
-  if(_x_circle != left && _x_circle != right){
+  if(_x_circle != left && _x_circle != right) {
     //Don't parse touch events, while the animation is running
     return;
   }
@@ -65,13 +67,13 @@ void Toggle::enterEvent(QEvent *e) {
   QAbstractButton::enterEvent(e);
 }
 
-bool Toggle::getEnabled(){
+bool Toggle::getEnabled() {
   return enabled;
 }
 
-void Toggle::setEnabled(bool value){
+void Toggle::setEnabled(bool value) {
   enabled = value;
-  if(value){
+  if(value) {
     circleColor.setRgb(0xfafafa);
     green.setRgb(0x33ab4c);
   }else{

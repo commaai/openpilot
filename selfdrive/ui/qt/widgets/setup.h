@@ -5,8 +5,6 @@
 #include <QVBoxLayout>
 #include <QWidget>
 
-#include "selfdrive/ui/qt/api.h"
-
 class PairingQRWidget : public QWidget {
   Q_OBJECT
 
@@ -15,7 +13,7 @@ public:
 
 private:
   QLabel* qrCode;
-  void updateQrCode(QString text);
+  void updateQrCode(const QString &text);
   void showEvent(QShowEvent *event) override;
 
 private slots:
@@ -31,7 +29,6 @@ private:
   QVBoxLayout* mainLayout;
   QLabel* username;
   QLabel* points;
-  CommaApi* api;
 
 private slots:
   void replyFinished(const QString &response);
@@ -51,7 +48,6 @@ public:
 
 private:
   QStackedWidget* mainLayout;
-  CommaApi* api;
   PrimeAdWidget *primeAd;
   PrimeUserWidget *primeUser;
   bool showQr = false;

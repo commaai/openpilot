@@ -433,8 +433,12 @@ selfdrive/modeld/runners/run.h
 selfdrive/monitoring/dmonitoringd.py
 selfdrive/monitoring/driver_monitor.py
 
-selfdrive/assets
+selfdrive/assets/*.png
 selfdrive/assets/fonts/*.ttf
+selfdrive/assets/images/*
+selfdrive/assets/offroad/*
+selfdrive/assets/sounds/*
+selfdrive/assets/training/*
 
 phonelibs/SConscript
 

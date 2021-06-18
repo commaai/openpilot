@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from cereal import car
 from selfdrive.config import Conversions as CV
-from selfdrive.car.hyundai.values import CAR
+from selfdrive.car.hyundai.values import CAR, EV_CAR, HYBRID_CAR
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
 
@@ -108,7 +108,7 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.385
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
-    elif candidate in [CAR.IONIQ, CAR.IONIQ_EV_LTD, CAR.IONIQ_EV_2020]:
+    elif candidate in [CAR.IONIQ, CAR.IONIQ_EV_LTD, CAR.IONIQ_EV_2020, CAR.IONIQ_PHEV]:
       ret.lateralTuning.pid.kf = 0.00006
       ret.mass = 1490. + STD_CARGO_KG  # weight per hyundai site https://www.hyundaiusa.com/ioniq-electric/specifications.aspx
       ret.wheelbase = 2.7
@@ -116,7 +116,7 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.385
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
-      if candidate != CAR.IONIQ_EV_2020:
+      if candidate not in [CAR.IONIQ_EV_2020, CAR.IONIQ_PHEV]:
         ret.minSteerSpeed = 32 * CV.MPH_TO_MS
     elif candidate == CAR.VELOSTER:
       ret.lateralTuning.pid.kf = 0.00005
@@ -220,10 +220,16 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.16], [0.01]]
 
     # these cars require a special panda safety mode due to missing counters and checksums in the messages
-    if candidate in [CAR.HYUNDAI_GENESIS, CAR.IONIQ_EV_2020, CAR.IONIQ_EV_LTD, CAR.IONIQ, CAR.KONA_EV, CAR.KIA_SORENTO,
+    if candidate in [CAR.HYUNDAI_GENESIS, CAR.IONIQ_EV_2020, CAR.IONIQ_EV_LTD, CAR.IONIQ_PHEV, CAR.IONIQ, CAR.KONA_EV, CAR.KIA_SORENTO,
                      CAR.SONATA_LF, CAR.KIA_NIRO_EV, CAR.KIA_OPTIMA, CAR.VELOSTER, CAR.KIA_STINGER, CAR.KIA_SELTOS,
                      CAR.GENESIS_G70, CAR.GENESIS_G80, CAR.KIA_CEED, CAR.ELANTRA]:
       ret.safetyModel = car.CarParams.SafetyModel.hyundaiLegacy
+
+    # set appropriate safety param for gas signal
+    if candidate in HYBRID_CAR:
+      ret.safetyParam = 2
+    elif candidate in EV_CAR:
+      ret.safetyParam = 1
 
     ret.centerToFront = ret.wheelbase * 0.4
 

@@ -171,6 +171,9 @@ def thermald_thread():
 
   thermal_config = HARDWARE.get_thermal_config()
 
+  if params.get_bool("IsOnroad"):
+    cloudlog.event("onroad flag not cleared")
+
   # CPR3 logging
   if EON:
     base_path = "/sys/kernel/debug/cpr3-regulator/"
@@ -342,7 +345,7 @@ def thermald_thread():
     # with 2% left, we killall, otherwise the phone will take a long time to boot
     startup_conditions["free_space"] = msg.deviceState.freeSpacePercent > 2
     startup_conditions["completed_training"] = params.get("CompletedTrainingVersion") == training_version or \
-                                               (current_branch in ['dashcam', 'dashcam-staging'])
+                                               params.get_bool("Passive")
     startup_conditions["not_driver_view"] = not params.get_bool("IsDriverViewEnabled")
     startup_conditions["not_taking_snapshot"] = not params.get_bool("IsTakingSnapshot")
     # if any CPU gets above 107 or the battery gets above 63, kill all processes
@@ -356,6 +359,7 @@ def thermald_thread():
     # Handle offroad/onroad transition
     should_start = all(startup_conditions.values())
     if should_start != should_start_prev or (count == 0):
+      params.put_bool("IsOnroad", should_start)
       params.put_bool("IsOffroad", not should_start)
       HARDWARE.set_power_save(not should_start)
       if TICI and not params.get_bool("EnableLteOnroad"):

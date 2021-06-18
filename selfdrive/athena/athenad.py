@@ -25,7 +25,7 @@ from common.api import Api
 from common.basedir import PERSIST
 from common.params import Params
 from common.realtime import sec_since_boot
-from selfdrive.hardware import HARDWARE, PC
+from selfdrive.hardware import HARDWARE, PC, TICI
 from selfdrive.loggerd.config import ROOT
 from selfdrive.loggerd.xattr_cache import getxattr, setxattr
 from selfdrive.swaglog import cloudlog, SWAGLOG_DIR
@@ -54,7 +54,7 @@ def handle_long_poll(ws):
 
   threads = [
     threading.Thread(target=ws_recv, args=(ws, end_event), name='ws_recv'),
-    threading.Thread(target=ws_send, args=(ws, end_event), name='wc_send'),
+    threading.Thread(target=ws_send, args=(ws, end_event), name='ws_send'),
     threading.Thread(target=upload_handler, args=(end_event,), name='upload_handler'),
     threading.Thread(target=log_handler, args=(end_event,), name='log_handler'),
   ] + [
@@ -116,7 +116,7 @@ def _do_upload(upload_item):
     return requests.put(upload_item.url,
                         data=f,
                         headers={**upload_item.headers, 'Content-Length': str(size)},
-                        timeout=10)
+                        timeout=30)
 
 
 # security: user should be able to request any message from their car
@@ -450,6 +450,21 @@ def backoff(retries):
   return random.randrange(0, min(128, int(2 ** retries)))
 
 
+def manage_tokens(api):
+  if not TICI:
+    return
+
+  try:
+    params = Params()
+    mapbox = api.get(f"/v1/tokens/mapbox/{api.dongle_id}/", timeout=5.0, access_token=api.get_token())
+    if mapbox.status_code == 200:
+      params.put("MapboxToken", mapbox.json()["token"])
+    else:
+      params.delete("MapboxToken")
+  except Exception:
+    cloudlog.exception("Failed to update tokens")
+
+
 def main():
   params = Params()
   dongle_id = params.get("DongleId", encoding='utf-8')
@@ -464,9 +479,11 @@ def main():
       ws = create_connection(ws_uri,
                              cookie="jwt=" + api.get_token(),
                              enable_multithread=True,
-                             timeout=1.0)
+                             timeout=30.0)
       cloudlog.event("athenad.main.connected_ws", ws_uri=ws_uri)
-      ws.settimeout(1)
+
+      manage_tokens(api)
+
       conn_retries = 0
       handle_long_poll(ws)
     except (KeyboardInterrupt, SystemExit):

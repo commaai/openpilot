@@ -1,27 +1,28 @@
 Import('env', 'arch')
 
 cpp_path = [
-    "#selfdrive",
-    "#phonelibs/acado/include",
-    "#phonelibs/acado/include/acado",
-    "#phonelibs/qpoases/INCLUDE",
-    "#phonelibs/qpoases/INCLUDE/EXTRAS",
-    "#phonelibs/qpoases/SRC/",
-    "#phonelibs/qpoases",
-    "lib_mpc_export",
+  "#",
+  "#selfdrive",
+  "#phonelibs/acado/include",
+  "#phonelibs/acado/include/acado",
+  "#phonelibs/qpoases/INCLUDE",
+  "#phonelibs/qpoases/INCLUDE/EXTRAS",
+  "#phonelibs/qpoases/SRC/",
+  "#phonelibs/qpoases",
+  "lib_mpc_export",
 ]
 
 generated_c = [
-    'lib_mpc_export/acado_auxiliary_functions.c',
-    'lib_mpc_export/acado_qpoases_interface.cpp',
-    'lib_mpc_export/acado_integrator.c',
-    'lib_mpc_export/acado_solver.c',
+  'lib_mpc_export/acado_auxiliary_functions.c',
+  'lib_mpc_export/acado_qpoases_interface.cpp',
+  'lib_mpc_export/acado_integrator.c',
+  'lib_mpc_export/acado_solver.c',
 ]
 
 generated_h = [
-    'lib_mpc_export/acado_common.h',
-    'lib_mpc_export/acado_auxiliary_functions.h',
-    'lib_mpc_export/acado_qpoases_interface.hpp',
+  'lib_mpc_export/acado_common.h',
+  'lib_mpc_export/acado_auxiliary_functions.h',
+  'lib_mpc_export/acado_qpoases_interface.hpp',
 ]
 
 interface_dir = Dir('lib_mpc_export')

@@ -1,4 +1,4 @@
-from collections import defaultdict
+from collections import defaultdict, deque
 from cereal.services import service_list
 import cereal.messaging as messaging
 import capnp
@@ -44,20 +44,25 @@ class SubMaster(messaging.SubMaster):
     self.rcv_time = {s: 0. for s in services}
     self.rcv_frame = {s: 0 for s in services}
     self.valid = {s: True for s in services}
+    self.recv_dts = {s: deque([0.0] * messaging.AVG_FREQ_HISTORY, maxlen=messaging.AVG_FREQ_HISTORY) for s in services}
     self.logMonoTime = {}
     self.sock = {}
     self.freq = {}
     self.check_average_freq = check_averag_freq
+    self.non_polled_services = []
+    self.ignore_average_freq = []
 
     # TODO: specify multiple triggers for service like plannerd that poll on more than one service
     cur_msgs = []
     self.msgs = []
     msgs = [m for m in msgs if m.which() in services]
+
     for msg in msgs:
       cur_msgs.append(msg)
       if msg.which() == trigger:
         self.msgs.append(cur_msgs)
         cur_msgs = []
+
     self.msgs = list(reversed(self.msgs))
 
     for s in services:

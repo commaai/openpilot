@@ -188,11 +188,11 @@ extern "C" {
   //   out = allocated integer array of size n * (n - 1) / 2 for result
   void hclust_pdist(int n, int m, double* pts, double* out) {
     int ii = 0;
-    for (int i = 0; i < n; i++){
-      for (int j = i + 1; j < n; j++){
+    for (int i = 0; i < n; i++) {
+      for (int j = i + 1; j < n; j++) {
         // Compute euclidian distance
         double d = 0;
-        for (int k = 0; k < m; k ++){
+        for (int k = 0; k < m; k ++) {
           double error = pts[i * m + k] - pts[j * m + k];
           d += (error * error);
         }

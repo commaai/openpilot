@@ -106,7 +106,6 @@ class CarInterface(CarInterfaceBase):
     ret.longitudinalTuning.kiBP = [0.]
     ret.longitudinalTuning.kiV = [0.36]
 
-    ret.stoppingControl = True
     ret.startAccel = 0.8
 
     ret.steerLimitTimer = 0.4

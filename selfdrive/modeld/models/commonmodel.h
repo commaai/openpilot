@@ -1,7 +1,7 @@
 #pragma once
 
-#include <float.h>
-#include <stdlib.h>
+#include <cfloat>
+#include <cstdlib>
 
 #include <memory>
 

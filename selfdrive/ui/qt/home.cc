@@ -9,41 +9,39 @@
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/timing.h"
 #include "selfdrive/common/util.h"
+#include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/widgets/drive_stats.h"
 #include "selfdrive/ui/qt/widgets/setup.h"
 
 // HomeWindow: the container for the offroad and onroad UIs
 
 HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
-  QHBoxLayout *layout = new QHBoxLayout(this);
-  layout->setMargin(0);
-  layout->setSpacing(0);
+  QHBoxLayout *main_layout = new QHBoxLayout(this);
+  main_layout->setMargin(0);
+  main_layout->setSpacing(0);
 
   sidebar = new Sidebar(this);
-  layout->addWidget(sidebar);
+  main_layout->addWidget(sidebar);
   QObject::connect(this, &HomeWindow::update, sidebar, &Sidebar::updateState);
   QObject::connect(sidebar, &Sidebar::openSettings, this, &HomeWindow::openSettings);
 
   slayout = new QStackedLayout();
-  layout->addLayout(slayout);
+  main_layout->addLayout(slayout);
 
   onroad = new OnroadWindow(this);
   slayout->addWidget(onroad);
 
   QObject::connect(this, &HomeWindow::update, onroad, &OnroadWindow::update);
-  QObject::connect(this, &HomeWindow::offroadTransitionSignal, onroad, &OnroadWindow::offroadTransition);
+  QObject::connect(this, &HomeWindow::offroadTransitionSignal, onroad, &OnroadWindow::offroadTransitionSignal);
 
   home = new OffroadHome();
   slayout->addWidget(home);
-  QObject::connect(this, &HomeWindow::openSettings, home, &OffroadHome::refresh);
 
   driver_view = new DriverViewWindow(this);
   connect(driver_view, &DriverViewWindow::done, [=] {
     showDriverView(false);
   });
   slayout->addWidget(driver_view);
-
-  setLayout(layout);
 }
 
 void HomeWindow::offroadTransition(bool offroad) {
@@ -69,8 +67,10 @@ void HomeWindow::showDriverView(bool show) {
 void HomeWindow::mousePressEvent(QMouseEvent* e) {
   // Handle sidebar collapsing
   if (onroad->isVisible() && (!sidebar->isVisible() || e->x() > sidebar->width())) {
+
+    // TODO: Handle this without exposing pointer to map widget
     // Hide map first if visible, then hide sidebar
-    if (onroad->map != nullptr && onroad->map->isVisible()){
+    if (onroad->map != nullptr && onroad->map->isVisible()) {
       onroad->map->setVisible(false);
     } else if (!sidebar->isVisible()) {
       sidebar->setVisible(true);
@@ -85,7 +85,7 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
 // OffroadHome: the offroad home page
 
 OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
-  QVBoxLayout* main_layout = new QVBoxLayout();
+  QVBoxLayout* main_layout = new QVBoxLayout(this);
   main_layout->setMargin(50);
 
   // top header
@@ -100,8 +100,7 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
   QObject::connect(alert_notification, &QPushButton::released, this, &OffroadHome::openAlerts);
   header_layout->addWidget(alert_notification, 0, Qt::AlignHCenter | Qt::AlignRight);
 
-  std::string brand = Params().getBool("Passive") ? "dashcam" : "openpilot";
-  QLabel* version = new QLabel(QString::fromStdString(brand + " v" + Params().get("Version")));
+  QLabel* version = new QLabel(getBrandVersion());
   version->setStyleSheet(R"(font-size: 55px;)");
   header_layout->addWidget(version, 0, Qt::AlignHCenter | Qt::AlignRight);
 
@@ -138,7 +137,6 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
   QObject::connect(timer, &QTimer::timeout, this, &OffroadHome::refresh);
   timer->start(10 * 1000);
 
-  setLayout(main_layout);
   setStyleSheet(R"(
     OffroadHome {
       background-color: black;
@@ -173,7 +171,7 @@ void OffroadHome::refresh() {
 
   alerts_widget->refresh();
   if (!alerts_widget->alertCount && !alerts_widget->updateAvailable) {
-    emit closeAlerts();
+    closeAlerts();
     alert_notification->setVisible(false);
     return;
   }
@@ -186,7 +184,7 @@ void OffroadHome::refresh() {
   }
 
   if (!alert_notification->isVisible() && !first_refresh) {
-    emit openAlerts();
+    openAlerts();
   }
   alert_notification->setVisible(true);
 

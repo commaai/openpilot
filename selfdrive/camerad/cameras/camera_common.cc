@@ -1,8 +1,9 @@
 #include "selfdrive/camerad/cameras/camera_common.h"
 
-#include <assert.h>
-#include <stdio.h>
 #include <unistd.h>
+
+#include <cassert>
+#include <cstdio>
 #include <chrono>
 #include <thread>
 
@@ -162,7 +163,7 @@ bool CameraBuf::acquire() {
 }
 
 void CameraBuf::release() {
-  if (release_callback){
+  if (release_callback) {
     release_callback((void*)camera_state, cur_buf_idx);
   }
 }

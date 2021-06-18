@@ -1,19 +1,18 @@
-#include "keyboard.h"
+#include "selfdrive/ui/qt/widgets/keyboard.h"
 
 #include <QButtonGroup>
 #include <QDebug>
 #include <QHBoxLayout>
 #include <QPushButton>
-#include <QStackedLayout>
 #include <QVBoxLayout>
 
 const int DEFAULT_STRETCH = 1;
 const int SPACEBAR_STRETCH = 3;
 
 KeyboardLayout::KeyboardLayout(QWidget* parent, const std::vector<QVector<QString>>& layout) : QWidget(parent) {
-  QVBoxLayout* vlayout = new QVBoxLayout;
-  vlayout->setMargin(0);
-  vlayout->setSpacing(35);
+  QVBoxLayout* main_layout = new QVBoxLayout(this);
+  main_layout->setMargin(0);
+  main_layout->setSpacing(35);
 
   QButtonGroup* btn_group = new QButtonGroup(this);
   QObject::connect(btn_group, SIGNAL(buttonClicked(QAbstractButton*)), parent, SLOT(handleButton(QAbstractButton*)));
@@ -22,7 +21,7 @@ KeyboardLayout::KeyboardLayout(QWidget* parent, const std::vector<QVector<QStrin
     QHBoxLayout *hlayout = new QHBoxLayout;
     hlayout->setSpacing(25);
 
-    if (vlayout->count() == 1) {
+    if (main_layout->count() == 1) {
       hlayout->addSpacing(90);
     }
 
@@ -33,11 +32,11 @@ KeyboardLayout::KeyboardLayout(QWidget* parent, const std::vector<QVector<QStrin
       hlayout->addWidget(btn, p == QString("  ") ? SPACEBAR_STRETCH : DEFAULT_STRETCH);
     }
 
-    if (vlayout->count() == 1) {
+    if (main_layout->count() == 1) {
       hlayout->addSpacing(90);
     }
 
-    vlayout->addLayout(hlayout);
+    main_layout->addLayout(hlayout);
   }
 
   setStyleSheet(R"(
@@ -56,11 +55,10 @@ KeyboardLayout::KeyboardLayout(QWidget* parent, const std::vector<QVector<QStrin
       background-color: #000000;
     }
   )");
-  setLayout(vlayout);
 }
 
 Keyboard::Keyboard(QWidget *parent) : QFrame(parent) {
-  main_layout = new QStackedLayout;
+  main_layout = new QStackedLayout(this);
   main_layout->setMargin(0);
 
   // lowercase
@@ -99,7 +97,6 @@ Keyboard::Keyboard(QWidget *parent) : QFrame(parent) {
   };
   main_layout->addWidget(new KeyboardLayout(this, specials));
 
-  setLayout(main_layout);
   main_layout->setCurrentIndex(0);
 }
 

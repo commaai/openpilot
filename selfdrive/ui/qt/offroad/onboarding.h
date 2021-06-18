@@ -4,7 +4,6 @@
 #include <QMouseEvent>
 #include <QPushButton>
 #include <QStackedWidget>
-#include <QTextEdit>
 #include <QWidget>
 
 #include "selfdrive/common/params.h"
@@ -15,12 +14,11 @@ class TrainingGuide : public QFrame {
 public:
   explicit TrainingGuide(QWidget *parent = 0) : QFrame(parent) {};
 
-protected:
+private:
   void showEvent(QShowEvent *event) override;
   void paintEvent(QPaintEvent *event) override;
   void mouseReleaseEvent(QMouseEvent* e) override;
 
-private:
   QImage image;
   QPoint imageCorner;
   int currentIndex = 0;
@@ -59,15 +57,14 @@ class TermsPage : public QFrame {
 public:
   explicit TermsPage(QWidget *parent = 0) : QFrame(parent) {};
 
-protected:
-  void showEvent(QShowEvent *event) override;
-
-private:
-  QPushButton *accept_btn;
-  QPushButton *decline_btn;
-
 public slots:
   void enableAccept();
+
+private:
+  void showEvent(QShowEvent *event) override;
+
+  QPushButton *accept_btn;
+  QPushButton *decline_btn;
 
 signals:
   void acceptedTerms();
@@ -80,10 +77,8 @@ class DeclinePage : public QFrame {
 public:
   explicit DeclinePage(QWidget *parent = 0) : QFrame(parent) {};
 
-protected:
-  void showEvent(QShowEvent *event) override;
-
 private:
+  void showEvent(QShowEvent *event) override;
   QPushButton *back_btn;
   QPushButton *uninstall_btn;
 
@@ -96,20 +91,17 @@ class OnboardingWindow : public QStackedWidget {
 
 public:
   explicit OnboardingWindow(QWidget *parent = 0);
-  bool isOnboardingDone();
 
 private:
+  void showEvent(QShowEvent *event) override;
+  void updateActiveScreen();
+
   Params params;
   std::string current_terms_version;
   std::string current_training_version;
   bool accepted_terms = false;
   bool training_done = false;
-  void updateOnboardingStatus();
 
 signals:
   void onboardingDone();
-  void resetTrainingGuide();
-
-public slots:
-  void updateActiveScreen();
 };
