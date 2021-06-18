@@ -1,7 +1,9 @@
 #pragma once
 
+#include <QLabel>
 #include <QPushButton>
 
+#include "selfdrive/common/params.h"
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
 

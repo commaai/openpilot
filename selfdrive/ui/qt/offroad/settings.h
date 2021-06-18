@@ -9,6 +9,7 @@
 #include <QWidget>
 
 
+#include "selfdrive/common/params.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
 
 // ********** settings window + top-level panels **********

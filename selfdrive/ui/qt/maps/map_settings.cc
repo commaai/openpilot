@@ -1,6 +1,7 @@
 #include "map_settings.h"
 
 #include <QDebug>
+#include <QHBoxLayout>
 
 #include "selfdrive/ui/qt/request_repeater.h"
 #include "selfdrive/ui/qt/widgets/controls.h"

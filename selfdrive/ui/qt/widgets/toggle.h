@@ -1,8 +1,9 @@
 #pragma once
 
 #include <QAbstractButton>
-#include <QMouseEvent>
-#include <QPropertyAnimation>
+
+class QMouseEvent;
+class QPropertyAnimation;
 
 class Toggle : public QAbstractButton {
   Q_OBJECT
