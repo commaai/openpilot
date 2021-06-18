@@ -206,10 +206,19 @@ void WifiUI::refresh() {
   for (Network &network : wifi->seen_networks) {
     QHBoxLayout *hlayout = new QHBoxLayout;
 
+    QLabel *ssid_label = new QLabel();
+    ssid_label->setStyleSheet("font-size: 55px;");
+    QString ssid_text(QString::fromUtf8(network.ssid));
+    QFontMetrics metrics(ssid_label->font());
+    QString elidedText = metrics.elidedText(ssid_text, Qt::ElideRight, 170);
+    ssid_label->setText(elidedText);
+
+    hlayout->addWidget(ssid_label, 1, Qt::AlignLeft);
+
     if (wifi->isKnownNetwork(network.ssid)) {
       QPushButton *forgetBtn = new QPushButton("\U0000274c");
-      forgetBtn->setStyleSheet("QPushButton { border-radius: 20px; padding: 0px; font-size: 55px; background-color: #E22C2C; color: #dddddd }");
-      forgetBtn->setFixedWidth(60);
+      forgetBtn->setStyleSheet("QPushButton { background-color: #E22C2C; color: #dddddd }");
+      forgetBtn->setFixedWidth(100);
 
       QObject::connect(forgetBtn, &QPushButton::released, [=]() {
         if (ConfirmationDialog::confirm("Are you sure you want to forget " + QString::fromUtf8(network.ssid) + "?", this)) {
@@ -217,19 +226,16 @@ void WifiUI::refresh() {
         }
       });
 
-      hlayout->addWidget(forgetBtn, 0, Qt::AlignLeft);
-    } else {
-      // TODO should be a label, but spacing is off
-      QPushButton *securityLabel = new QPushButton((network.security_type == SecurityType::WPA) ? "\U0001F512" : "\U0001F513");
+      hlayout->addWidget(forgetBtn, 0, Qt::AlignRight);
+    } else if (network.security_type == SecurityType::WPA) {
+      QLabel *icon = new QLabel();
+      QPixmap pix("../assets/offroad/lock_closed.svg");
+      icon->setPixmap(pix.scaledToWidth(60, Qt::SmoothTransformation));
+      icon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
+      icon->setStyleSheet("QLabel { margin: 0px; padding-left: 15px; padding-right: 15px; }");
 
-      securityLabel->setStyleSheet("QPushButton { padding: 0px; background-color: transparent; font-size: 55px }");
-      securityLabel->setFixedWidth(60);
-      hlayout->addWidget(securityLabel, 0, Qt::AlignLeft);
+      hlayout->addWidget(icon, 0, Qt::AlignRight);
     }
-
-    QLabel *ssid_label = new QLabel(QString::fromUtf8(network.ssid));
-    ssid_label->setStyleSheet("font-size: 55px;");
-    hlayout->addWidget(ssid_label, 1, Qt::AlignLeft);
 
     // strength indicator
     unsigned int strength_scale = network.strength / 17;
