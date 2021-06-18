@@ -34,9 +34,9 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent), s
 
   attemptInitialization();
   wifi->requestScan();
-  refreshTimer = new QTimer(this);
-  QObject::connect(refreshTimer, &QTimer::timeout, this, &Networking::refresh);
-  refreshTimer->setInterval(5000);
+  QTimer* timer = new QTimer(this);
+  QObject::connect(timer, &QTimer::timeout, this, &Networking::refresh);
+  timer->start(5000);
 }
 
 void Networking::attemptInitialization() {
@@ -48,7 +48,7 @@ void Networking::attemptInitialization() {
   }
 
   connect(wifi, &WifiManager::wrongPassword, this, &Networking::wrongPassword);
-  connect(wifi, &WifiManager::refreshed, this, &Networking::refresh);
+  connect(wifi, &WifiManager::refreshNow, this, &Networking::refresh);
 
   QWidget* wifiScreen = new QWidget(this);
   QVBoxLayout* vlayout = new QVBoxLayout(wifiScreen);
@@ -92,6 +92,9 @@ void Networking::attemptInitialization() {
 }
 
 void Networking::refresh() {
+  if (!this->isVisible()) {
+    return;
+  }
   if (!ui_setup_complete) {
     attemptInitialization();
     if (!ui_setup_complete) {
@@ -121,14 +124,6 @@ void Networking::wrongPassword(const QString &ssid) {
       return;
     }
   }
-}
-
-void Networking::hideEvent(QHideEvent* event) {
-  refreshTimer->stop();
-}
-
-void Networking::showEvent(QShowEvent* event) {
-  refreshTimer->start();
 }
 
 // AdvancedNetworking functions

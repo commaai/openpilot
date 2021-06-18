@@ -369,8 +369,7 @@ void WifiManager::stateChange(unsigned int new_state, unsigned int previous_stat
     emit wrongPassword(connecting_to_network);
   } else if (new_state == state_connected) {
     connecting_to_network = "";
-    refreshNetworks();
-    emit refreshed();
+    emit refreshNow();
   }
 }
 
@@ -378,8 +377,7 @@ void WifiManager::stateChange(unsigned int new_state, unsigned int previous_stat
 void WifiManager::propertyChange(const QString &interface, const QVariantMap &props, const QStringList &invalidated_props) {
   if (interface == wireless_device_iface && props.contains("LastScan") && firstScan) {
     firstScan = false;
-    refreshNetworks();
-    emit refreshed();
+    emit refreshNow();
   }
 }
 

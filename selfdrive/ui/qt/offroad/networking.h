@@ -75,11 +75,6 @@ private:
   WifiUI* wifiWidget;
   WifiManager* wifi = nullptr;
   void attemptInitialization();
-  QTimer* refreshTimer;
-
-protected:
-  void hideEvent(QHideEvent *event) override;
-  void showEvent(QShowEvent *event) override;
 
 public slots:
   void refresh();
