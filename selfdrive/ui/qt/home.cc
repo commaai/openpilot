@@ -95,6 +95,7 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
   header_layout->addWidget(date, 0, Qt::AlignHCenter | Qt::AlignLeft);
 
   alert_notification = new QPushButton();
+  alert_notification->setObjectName("alert_notification");
   alert_notification->setVisible(false);
   QObject::connect(alert_notification, &QPushButton::released, this, &OffroadHome::openAlerts);
   header_layout->addWidget(alert_notification, 0, Qt::AlignHCenter | Qt::AlignRight);
@@ -142,7 +143,7 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
     OffroadHome {
       background-color: black;
     }
-    OffroadHome>QPushButton {
+    QPushButton#alert_notification {
       padding: 15px;
       padding-left: 30px;
       padding-right: 30px;
