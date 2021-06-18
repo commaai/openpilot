@@ -142,7 +142,6 @@ class CarController():
     if CS.CP.carFingerprint in HONDA_BOSCH and CS.CP.openpilotLongitudinalControl:
       if (frame % 10) == 0:
         can_sends.append((0x18DAB0F1, 0, b"\x02\x3E\x80\x00\x00\x00\x00\x00", 1))
-        # TODO: Add filtering in panda to only allow this specific message from the hondaBosch safety mode
 
     # Send steering command.
     idx = frame % 4
