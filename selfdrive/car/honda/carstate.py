@@ -99,13 +99,7 @@ def get_can_signals(CP, gearbox_msg="GEARBOX"):
       ("GAS_PEDAL_2", 100),
     ]
 
-    if CP.openpilotLongitudinalControl:
-      signals += [
-        ("BRAKE_ERROR_1", "STANDSTILL", 1),
-        ("BRAKE_ERROR_2", "STANDSTILL", 1)
-      ]
-      checks += [("STANDSTILL", 50)]
-    else:
+    if not CP.openpilotLongitudinalControl:
       signals += [
         ("CRUISE_CONTROL_LABEL", "ACC_HUD", 0),
         ("CRUISE_SPEED", "ACC_HUD", 0),
@@ -116,13 +110,9 @@ def get_can_signals(CP, gearbox_msg="GEARBOX"):
         ("ACC_HUD", 10),
         ("ACC_CONTROL", 50),
       ]
-  else:
-    # Nidec signals.
-    signals += [("BRAKE_ERROR_1", "STANDSTILL", 1),
-                ("BRAKE_ERROR_2", "STANDSTILL", 1),
-                ("CRUISE_SPEED_PCM", "CRUISE", 0),
+  else:  # Nidec signals
+    signals += [("CRUISE_SPEED_PCM", "CRUISE", 0),
                 ("CRUISE_SPEED_OFFSET", "CRUISE_PARAMS", 0)]
-    checks += [("STANDSTILL", 50)]
 
     if CP.carFingerprint == CAR.ODYSSEY_CHN:
       checks += [("CRUISE_PARAMS", 10)]
@@ -199,6 +189,13 @@ def get_can_signals(CP, gearbox_msg="GEARBOX"):
     signals.append(("INTERCEPTOR_GAS", "GAS_SENSOR", 0))
     signals.append(("INTERCEPTOR_GAS2", "GAS_SENSOR", 0))
     checks.append(("GAS_SENSOR", 50))
+
+  if CP.openpilotLongitudinalControl:
+    signals += [
+      ("BRAKE_ERROR_1", "STANDSTILL", 1),
+      ("BRAKE_ERROR_2", "STANDSTILL", 1)
+    ]
+    checks += [("STANDSTILL", 50)]
 
   return signals, checks
 
