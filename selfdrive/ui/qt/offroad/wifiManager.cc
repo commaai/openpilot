@@ -490,8 +490,6 @@ bool WifiManager::tetheringEnabled() {
 
 void WifiManager::changeTetheringPassword(const QString &newPassword) {
   tetheringPassword = newPassword;
-  if (isKnownNetwork(tethering_ssid.toUtf8())) {
-    forgetConnection(tethering_ssid.toUtf8());
-  }
+  forgetNetwork(tethering_ssid.toUtf8());
   addTetheringConnection();
 }
