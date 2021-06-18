@@ -208,16 +208,7 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : QWidget(parent) {
   versionLbl = new LabelControl("Version", "", QString::fromStdString(params.get("ReleaseNotes")).trimmed());
   lastUpdateLbl = new LabelControl("Last Update Check", "", "The last time openpilot successfully checked for an update. The updater only runs while the car is off.");
   updateBtn = new ButtonControl("Check for Update", "");
-  connect(updateBtn, &ButtonControl::released, [=]() {
-    if (params.getBool("IsOffroad")) {
-      const QString paramsPath = QString::fromStdString(params.getParamsPath());
-      fs_watch->addPath(paramsPath + "/d/LastUpdateTime");
-      fs_watch->addPath(paramsPath + "/d/UpdateFailedCount");
-      updateBtn->setText("CHECKING");
-      updateBtn->setEnabled(false);
-    }
-    std::system("pkill -1 -f selfdrive.updated");
-  });
+  connect(updateBtn, &ButtonControl::released, this, &SoftwarePanel::checkForUpdate);
 
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   QWidget *widgets[] = {versionLbl, lastUpdateLbl, updateBtn, gitBranchLbl, gitCommitLbl, osVersionLbl};
@@ -229,7 +220,15 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : QWidget(parent) {
   }
 
   setStyleSheet(R"(QLabel {font-size: 50px;})");
+}
 
+void SoftwarePanel::checkForUpdate() {
+  if (!params.getBool("isOffroad") || fs_watch) return;
+  
+  updateBtn->setEnabled(false);
+  updateBtn->setText("CHECKING");
+
+  const QString paramsPath = QString::fromStdString(params.getParamsPath());
   fs_watch = new QFileSystemWatcher(this);
   QObject::connect(fs_watch, &QFileSystemWatcher::fileChanged, [=](const QString path) {
     int update_failed_count = params.get<int>("UpdateFailedCount").value_or(0);
@@ -240,11 +239,24 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : QWidget(parent) {
     } else if (path.contains("LastUpdateTime")) {
       updateLabels();
     }
+    fs_watch->deleteLater();
+    fs_watch = nullptr;
   });
+
+  fs_watch->addPath(paramsPath + "/d/LastUpdateTime");
+  fs_watch->addPath(paramsPath + "/d/UpdateFailedCount");
+  std::system("pkill -1 -f selfdrive.updated");
 }
 
 void SoftwarePanel::showEvent(QShowEvent *event) {
   updateLabels();
+}
+
+void SoftwarePanel::hideEvent(QHideEvent* event) {
+  if (fs_watch) {
+    fs_watch->deleteLater();
+    fs_watch = nullptr;
+  }
 }
 
 void SoftwarePanel::updateLabels() {

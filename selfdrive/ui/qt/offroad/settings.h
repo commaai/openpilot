@@ -35,7 +35,9 @@ public:
 
 private:
   void showEvent(QShowEvent *event) override;
+  void hideEvent(QHideEvent* event) override;
   void updateLabels();
+  void checkForUpdate();
 
   LabelControl *gitBranchLbl;
   LabelControl *gitCommitLbl;
@@ -45,7 +47,7 @@ private:
   ButtonControl *updateBtn;
 
   Params params;
-  QFileSystemWatcher *fs_watch;
+  QFileSystemWatcher *fs_watch = nullptr;
 };
 
 class SettingsWindow : public QFrame {
