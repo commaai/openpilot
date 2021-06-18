@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cmath>
+#include <cstring>
 
 #include "selfdrive/common/clutil.h"
 #include "selfdrive/common/mat.h"
@@ -27,7 +28,7 @@ std::tuple<float*, size_t> ModelFrame::prepare(cl_mem yuv_cl, int frame_width, i
                   y_cl, u_cl, v_cl, MODEL_WIDTH, MODEL_HEIGHT, transform);
   loadyuv_queue(&loadyuv, q, y_cl, u_cl, v_cl, net_input_cl);
 
-  memmove(&input_frames[0], &input_frames[MODEL_FRAME_SIZE], sizeof(float) * MODEL_FRAME_SIZE);
+  std::memmove(&input_frames[0], &input_frames[MODEL_FRAME_SIZE], sizeof(float) * MODEL_FRAME_SIZE);
   clEnqueueReadBuffer(q, net_input_cl, CL_TRUE, 0, MODEL_FRAME_SIZE * sizeof(float), &input_frames[MODEL_FRAME_SIZE], 0, nullptr, nullptr);
   clFinish(q);
   return std::make_tuple(&input_frames[0], MODEL_FRAME_SIZE * 2);

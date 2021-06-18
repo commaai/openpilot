@@ -184,8 +184,8 @@ void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const float *meta_da
   fill_sigmoid(&meta_data[DESIRE_LEN+5], brake_4ms2_sigmoid, NUM_META_INTERVALS, META_STRIDE);
   fill_sigmoid(&meta_data[DESIRE_LEN+6], brake_5ms2_sigmoid, NUM_META_INTERVALS, META_STRIDE);
 
-  memmove(prev_brake_5ms2_probs, &prev_brake_5ms2_probs[1], 4*sizeof(float));
-  memmove(prev_brake_3ms2_probs, &prev_brake_3ms2_probs[1], 2*sizeof(float));
+  std::memmove(prev_brake_5ms2_probs, &prev_brake_5ms2_probs[1], 4*sizeof(float));
+  std::memmove(prev_brake_3ms2_probs, &prev_brake_3ms2_probs[1], 2*sizeof(float));
   prev_brake_5ms2_probs[4] = brake_5ms2_sigmoid[0];
   prev_brake_3ms2_probs[2] = brake_3ms2_sigmoid[0];
 
