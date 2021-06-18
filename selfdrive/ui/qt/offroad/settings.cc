@@ -154,9 +154,8 @@ DevicePanel::DevicePanel(QWidget* parent) : ListWidget(parent) {
 
   for (auto btn : {dcamBtn, resetCalibBtn, retrainingBtn, uninstallBtn}) {
     if (btn) {
-      main_layout->addWidget(horizontal_line());
       connect(parent, SIGNAL(offroadTransition(bool)), btn, SLOT(setEnabled(bool)));
-      main_layout->addWidget(btn);
+      addItem(btn);
     }
   }
 

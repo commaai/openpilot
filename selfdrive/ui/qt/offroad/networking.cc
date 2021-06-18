@@ -173,7 +173,6 @@ void WifiUI::refresh() {
   for (Network &network : wifi->seen_networks) {
     QWidget *w = new QWidget;
     QHBoxLayout *hlayout = new QHBoxLayout(w);
-    hlayout->addSpacing(50);
 
     QLabel *ssid_label = new QLabel(QString::fromUtf8(network.ssid));
     ssid_label->setStyleSheet("font-size: 55px;");
