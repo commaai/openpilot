@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import numpy as np
 from cereal import car
+from panda import Panda
 from common.numpy_fast import clip, interp
 from common.params import Params
 from selfdrive.swaglog import cloudlog
@@ -12,9 +13,6 @@ from selfdrive.controls.lib.longitudinal_planner import _A_CRUISE_MAX_V_FOLLOWIN
 from selfdrive.car.interfaces import CarInterfaceBase
 
 A_ACC_MAX = max(_A_CRUISE_MAX_V_FOLLOWING)
-
-ALT_BRAKE_FLAG = 1
-BOSCH_LONG_FLAG = 2
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
@@ -423,10 +421,10 @@ class CarInterface(CarInterfaceBase):
 
     # These cars use alternate user brake msg (0x1BE)
     if candidate in HONDA_BOSCH_ALT_BRAKE_SIGNAL:
-      ret.safetyParam |= ALT_BRAKE_FLAG
+      ret.safetyParam |= Panda.FLAG_HONDA_ALT_BRAKE
 
     if ret.openpilotLongitudinalControl and candidate in HONDA_BOSCH:
-      ret.safetyParam |= BOSCH_LONG_FLAG
+      ret.safetyParam |= Panda.FLAG_HONDA_BOSCH_LONG
 
     # min speed to enable ACC. if car can do stop and go, then set enabling speed
     # to a negative value, so it won't matter. Otherwise, add 0.5 mph margin to not
