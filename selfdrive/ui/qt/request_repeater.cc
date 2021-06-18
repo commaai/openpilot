@@ -13,19 +13,19 @@ RequestRepeater::RequestRepeater(QObject *parent, const QString &requestURL, con
   timer->start(period * 1000);
 
   if (!cacheKey.isEmpty()) {
-    prevResp = QString::fromStdString(Params().get(cacheKey.toStdString()));
+    prevResp = QString::fromStdString(params.get(cacheKey.toStdString()));
     if (!prevResp.isEmpty()) {
       QTimer::singleShot(0, [=]() { emit receivedResponse(prevResp); });
     }
     QObject::connect(this, &HttpRequest::receivedResponse, [=](const QString &resp) {
       if (resp != prevResp) {
-        Params().put(cacheKey.toStdString(), resp.toStdString());
+        params.put(cacheKey.toStdString(), resp.toStdString());
         prevResp = resp;
       }
     });
     QObject::connect(this, &HttpRequest::failedResponse, [=](const QString &err) {
       if (!prevResp.isEmpty()) {
-        Params().remove(cacheKey.toStdString());
+        params.remove(cacheKey.toStdString());
         prevResp = "";
       }
     });
