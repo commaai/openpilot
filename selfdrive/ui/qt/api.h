@@ -5,13 +5,12 @@
 #include <QString>
 #include <QTimer>
 
-class CommaApi : public QObject {
-  Q_OBJECT
+namespace CommaApi {
 
-public:
-  static QByteArray rsa_sign(const QByteArray &data);
-  static QString create_jwt(const QJsonObject &payloads = {}, int expiry = 3600);
-};
+QByteArray rsa_sign(const QByteArray &data);
+QString create_jwt(const QJsonObject &payloads = {}, int expiry = 3600);
+
+}  // namespace CommaApi
 
 /**
  * Makes a request to the request endpoint.
