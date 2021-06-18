@@ -170,6 +170,8 @@ class CarController():
         ts = frame * DT_CTRL
         if CS.CP.carFingerprint in HONDA_BOSCH:
           accel = actuators.gas - actuators.brake
+
+          # TODO: pass in LoC.long_control_state and use that to decide starting/stoppping
           stopping = accel < 0 and CS.out.vEgo < 0.3
           starting = accel > 0 and CS.out.vEgo < 0.3
 
