@@ -1,4 +1,4 @@
-from selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
+from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.swaglog import cloudlog
 from selfdrive.config import Conversions as CV
 from selfdrive.car.honda.values import HONDA_BOSCH
@@ -11,9 +11,7 @@ from selfdrive.car.honda.values import HONDA_BOSCH
 
 RADAR_ADDR = 0x18DAB0F1
 EXT_DIAG_REQUEST = b'\x10\x03'
-EXT_DIAG_RESPONSE = b'\x50\x03'
 COM_CONT_REQUEST = b'\x28\x83\x03'
-COM_CONT_RESPONSE = b''
 
 
 def get_pt_bus(car_fingerprint):
@@ -28,24 +26,12 @@ def get_lkas_cmd_bus(car_fingerprint, radar_disabled=False):
   return 0
 
 
-def disable_radar(logcan, sendcan, bus=1, timeout=0.1, debug=False):
+def disable_radar(logcan, sendcan, bus=1):
   cloudlog.warning(f"radar disable {hex(RADAR_ADDR)} ...")
 
-  try:
-    query = IsoTpParallelQuery(sendcan, logcan, bus, [RADAR_ADDR], [EXT_DIAG_REQUEST], [EXT_DIAG_RESPONSE], debug=debug)
-
-    for _, _ in query.get_data(timeout).items():
-      cloudlog.warning("radar communication control disable tx/rx ...")
-
-      query = IsoTpParallelQuery(sendcan, logcan, bus, [RADAR_ADDR], [COM_CONT_REQUEST], [COM_CONT_RESPONSE], debug=debug)
-      query.get_data(0)
-
-      cloudlog.warning("radar disabled")
-      return
-
-  except Exception:
-    cloudlog.exception("radar disable exception")
-  cloudlog.warning("radar disable failed")
+  diag_msg = [RADAR_ADDR, 0, EXT_DIAG_REQUEST, bus]
+  com_msg = [RADAR_ADDR, 0, COM_CONT_REQUEST, bus]
+  sendcan.send(can_list_to_can_capnp([diag_msg, com_msg], msgtype='sendcan'))
 
 
 def create_brake_command(packer, apply_brake, pump_on, pcm_override, pcm_cancel_cmd, fcw, idx, car_fingerprint, stock_brake):
