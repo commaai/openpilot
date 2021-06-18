@@ -185,15 +185,14 @@ class LateralPlanner():
     if mpc_nans:
       self.setup_mpc()
       self.x0[3] = measured_curvature
-
       if t > self.last_cloudlog_t + 5.0:
         self.last_cloudlog_t = t
         cloudlog.warning("Lateral mpc - nan: True")
 
-    #if self.mpc_solution[0].cost > 20000. or mpc_nans:   # TODO: find a better way to detect when MPC did not converge
-    #  self.solution_invalid_cnt += 1
-    #else:
-    #  self.solution_invalid_cnt = 0
+    if self.lat_mpc.cost > 20000. or mpc_nans:
+      self.solution_invalid_cnt += 1
+    else:
+      self.solution_invalid_cnt = 0
 
   def publish(self, sm, pm):
     plan_solution_valid = self.solution_invalid_cnt < 2

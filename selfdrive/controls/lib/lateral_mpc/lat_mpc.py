@@ -105,11 +105,9 @@ def gen_lat_mpc_solver(build: bool):
   ocp.solver_options.qp_solver = 'FULL_CONDENSING_QPOASES'
   ocp.solver_options.hessian_approx = 'GAUSS_NEWTON'
   ocp.solver_options.integrator_type = 'ERK'
-  ocp.solver_options.nlp_solver_type = 'SQP'
-
+  ocp.solver_options.nlp_solver_type = 'SQP_RTI'
+  ocp.solver_options.qp_solver_iter_max = 100
   ocp.solver_options.qp_solver_cond_N = N
-
-  # nonuniform discretizations can be defined either by shooting_nodes or time_steps:
 
   # set prediction horizon
   ocp.solver_options.tf = Tf
@@ -148,7 +146,7 @@ class LateralMpc():
 
     self.x_sol = np.array([self.solver.get(i, 'x') for i in range(N+1)])
     self.u_sol = np.array([self.solver.get(i, 'u') for i in range(N)])
-
+    self.cost = self.solver.get_cost()
 
 if __name__ == "__main__":
   gen_lat_mpc_solver(True)
