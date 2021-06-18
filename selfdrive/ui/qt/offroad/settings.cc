@@ -270,12 +270,14 @@ QWidget * network_panel(QWidget * parent) {
   layout->setSpacing(30);
 
   // wifi + tethering buttons
-  layout->addWidget(new ButtonControl("WiFi Settings", "OPEN", "",
-                                      [=]() { HardwareEon::launch_wifi(); }));
+  auto wifiBtn = new ButtonControl("WiFi Settings", "OPEN");
+  QObject::connect(wifiBtn, &ButtonControl::released, [=]() { HardwareEon::launch_wifi(); });
+  layout->addWidget(wifiBtn);
   layout->addWidget(horizontal_line());
 
-  layout->addWidget(new ButtonControl("Tethering Settings", "OPEN", "",
-                                      [=]() { HardwareEon::launch_tethering(); }));
+  auto tetheringBtn = new ButtonControl("Tethering Settings", "OPEN");
+  QObject::connect(tetheringBtn, &ButtonControl::released, [=]() { HardwareEon::launch_tethering(); });
+  layout->addWidget(tetheringBtn);
   layout->addWidget(horizontal_line());
 
   // SSH key management
