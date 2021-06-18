@@ -4,7 +4,11 @@ import numpy as np
 from common.numpy_fast import clip
 from common.realtime import DT_CTRL
 from cereal import log
+<<<<<<< HEAD
 from selfdrive.controls.lib.drive_helpers import get_steer_max
+=======
+from selfdrive.controls.lib.drive_helpers import get_steer_max, get_lag_adjusted_curvature
+>>>>>>> 38ee69ff3 (refactor)
 
 
 class LatControlLQR():
