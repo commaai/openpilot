@@ -54,14 +54,17 @@ int set_core_affinity(int core) {
 namespace util {
 
 std::string read_file(const std::string& fn) {
-  std::ifstream f(fn, std::ios::binary | std::ios::in | std::ios::ate);
+  std::ifstream f(fn, std::ios::binary | std::ios::in);
   if (f) {
+    f.seekg(0, std::ios::end);
     int pos = f.tellg();
     if (pos > 0) {
       std::string result;
       result.resize(pos);
       f.seekg(0, std::ios::beg);
-      return f.read(result.data(), pos) ? result : std::string();
+      if (f.read(result.data(), pos)) {
+        return result;
+      }
     } else {
       // fallback for files created on read, e.g. procfs
       std::stringstream buffer;
