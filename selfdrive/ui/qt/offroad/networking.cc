@@ -145,7 +145,8 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   main_layout->addWidget(horizontal_line(), 0);
 
   // Change tethering password
-  editPasswordButton = new ButtonControl("Tethering Password", "EDIT", "", [=]() {
+  editPasswordButton = new ButtonControl("Tethering Password", "EDIT");
+  connect(editPasswordButton, &ButtonControl::released, [=]() {
     QString pass = InputDialog::getText("Enter new tethering password", 8);
     if (pass.size()) {
       wifi->changeTetheringPassword(pass);
