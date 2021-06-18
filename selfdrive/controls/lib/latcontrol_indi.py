@@ -85,7 +85,7 @@ class LatControlINDI():
     curvature, curvature_rate = get_lag_adjusted_curvature(CP, self.speed,
                                                       lat_plan.psis,
                                                       lat_plan.curvatures,
-                                                      lat_plan.curvature_rates)
+                                                      lat_plan.curvatureRates)
     # Update Kalman filter
     y = np.array([[math.radians(CS.steeringAngleDeg)], [math.radians(CS.steeringRateDeg)]])
     self.x = np.dot(self.A_K, self.x) + np.dot(self.K, y)
