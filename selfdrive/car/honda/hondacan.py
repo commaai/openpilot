@@ -40,7 +40,10 @@ def disable_radar(logcan, sendcan, bus=1, timeout=0.1, retry=5, debug=False):
         # communication control disable tx and rx
         query = IsoTpParallelQuery(sendcan, logcan, bus, [RADAR_ADDR], [COM_CONT_REQUEST], [COM_CONT_RESPONSE], debug=debug)
         query.get_data(0)
+
+        cloudlog.warning("radar disabled")
         return True
+
       cloudlog.warning(f"radar disable retry ({i+1}) ...")
     except Exception:
       cloudlog.exception("radar disable exception")
