@@ -15,6 +15,8 @@ class OffroadAlert : public QFrame {
 
 public:
   explicit OffroadAlert(QWidget *parent = 0);
+  void setCurrentIndex(int id);
+
   int alertCount = 0;
   bool updateAvailable;
 

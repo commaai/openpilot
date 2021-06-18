@@ -94,9 +94,16 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
 
   // top header
   QHBoxLayout* header_layout = new QHBoxLayout();
+  header_layout->setSpacing(16);
 
   date = new QLabel();
-  header_layout->addWidget(date, 0, Qt::AlignHCenter | Qt::AlignLeft);
+  header_layout->addWidget(date, 1, Qt::AlignHCenter | Qt::AlignLeft);
+
+  update_notification = new QPushButton("UPDATE");
+  update_notification->setObjectName("update_notification");
+  update_notification->setVisible(false);
+  QObject::connect(update_notification, &QPushButton::released, this, &OffroadHome::openUpdate);
+  header_layout->addWidget(update_notification, 0, Qt::AlignHCenter | Qt::AlignRight);
 
   alert_notification = new QPushButton();
   alert_notification->setObjectName("alert_notification");
@@ -129,7 +136,7 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
   center_layout->addWidget(statsAndSetupWidget);
 
   alerts_widget = new OffroadAlert();
-  QObject::connect(alerts_widget, &OffroadAlert::closeAlerts, this, &OffroadHome::closeAlerts);
+  QObject::connect(alerts_widget, &OffroadAlert::closeAlerts, this, &OffroadHome::closeOffroadAlerts);
   center_layout->addWidget(alerts_widget);
   center_layout->setAlignment(alerts_widget, Qt::AlignCenter);
 
@@ -138,7 +145,6 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
   // set up refresh timer
   timer = new QTimer(this);
   QObject::connect(timer, &QTimer::timeout, this, &OffroadHome::refresh);
-  timer->start(10 * 1000);
 
   setStyleSheet(R"(
     * {
@@ -147,61 +153,71 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
     OffroadHome {
       background-color: black;
     }
-    #alert_notification {
-      padding: 15px;
-      padding-left: 30px;
-      padding-right: 30px;
-      border: 1px solid;
-      border-radius: 5px;
-      font-size: 40px;
-      font-weight: 500;
+    OffroadHome>QPushButton{
+    padding: 15px;
+    padding-left: 30px;
+    padding-right: 30px;
+    border: 1px solid;
+    border-radius: 5px;
+    font-size: 40px;
+    font-weight: 500;
     }
     OffroadHome>QLabel {
       font-size: 55px;
+    }
+    #update_notification {
+      background-color: #E22C2C;
+    }
+    #alert_notification {
+      background-color: #364DEF;
     }
   )");
 }
 
 void OffroadHome::showEvent(QShowEvent *event) {
   refresh();
+  timer->start(10 * 1000);
+}
+
+void OffroadHome::hideEvent(QHideEvent *event) {
+  timer->stop();
 }
 
 void OffroadHome::openAlerts() {
   center_layout->setCurrentIndex(1);
+  alerts_widget->setCurrentIndex(1);
 }
 
-void OffroadHome::closeAlerts() {
+void OffroadHome::closeOffroadAlerts() {
   center_layout->setCurrentIndex(0);
 }
 
-void OffroadHome::refresh() {
-  bool first_refresh = !date->text().size();
-  if (!isVisible() && !first_refresh) {
-    return;
-  }
+void OffroadHome::openUpdate() {
+  center_layout->setCurrentIndex(1);
+  alerts_widget->setCurrentIndex(0);
+}
 
+void OffroadHome::refresh() {
   date->setText(QDateTime::currentDateTime().toString("dddd, MMMM d"));
 
-  // update alerts
-
   alerts_widget->refresh();
-  if (!alerts_widget->alertCount && !alerts_widget->updateAvailable) {
-    closeAlerts();
-    alert_notification->setVisible(false);
-    return;
-  }
-
-  if (alerts_widget->updateAvailable) {
-    alert_notification->setText("UPDATE");
+  const int alerts = alerts_widget->alertCount;
+  const bool updateAvailable = alerts_widget->updateAvailable;
+  if (alerts || updateAvailable) {
+    if (alerts) {
+      alert_notification->setText(QString::number(alerts) + " ALERT" + (alerts > 1 ? "S" : ""));
+      // popup new alerts
+      if (!alert_notification->isVisible()) {
+        openAlerts();
+      }
+    }
+    // popup when OffroadAlerts is hidden or new update is coming
+    if (updateAvailable && (!alert_notification->isVisible() || center_layout->currentIndex() != 1)) {
+      openUpdate();
+    }
   } else {
-    int alerts = alerts_widget->alertCount;
-    alert_notification->setText(QString::number(alerts) + " ALERT" + (alerts == 1 ? "" : "S"));
+    closeOffroadAlerts();
   }
-
-  if (!alert_notification->isVisible() && !first_refresh) {
-    openAlerts();
-  }
-  alert_notification->setVisible(true);
-  // Red background for alerts, blue for update available
-  alert_notification->setStyleSheet(alerts_widget->updateAvailable ? "background-color: #364DEF" : "background-color: #E22C2C");
+  alert_notification->setVisible(alerts);
+  update_notification->setVisible(updateAvailable);
 }

@@ -41,6 +41,7 @@ OffroadAlert::OffroadAlert(QWidget* parent) : QFrame(parent) {
   QObject::connect(dismiss_btn, &QPushButton::released, this, &OffroadAlert::closeAlerts);
 
   rebootBtn.setText("Reboot and Update");
+  rebootBtn.setObjectName("rebootBtn");
   rebootBtn.setFixedSize(600, 125);
   rebootBtn.setVisible(false);
   footer_layout->addWidget(&rebootBtn, 0, Qt::AlignBottom | Qt::AlignRight);
@@ -60,6 +61,9 @@ OffroadAlert::OffroadAlert(QWidget* parent) : QFrame(parent) {
       font-weight: 500;
       border-radius: 30px;
       background-color: white;
+    }
+    #rebootBtn {
+      background-color: #E22C2C;
     }
   )");
 }
@@ -84,29 +88,27 @@ void OffroadAlert::refresh() {
   }
 
   updateAlerts();
-
-  rebootBtn.setVisible(updateAvailable);
-  releaseNotesScroll->setVisible(updateAvailable);
-  releaseNotes.setText(QString::fromStdString(params.get("ReleaseNotes")));
-
-  alertsScroll->setVisible(!updateAvailable);
-  for (const auto& [k, label] : alerts) {
-    label->setVisible(!label->text().isEmpty());
-  }
 }
 
 void OffroadAlert::updateAlerts() {
   alertCount = 0;
   for (const auto& [key, label] : alerts) {
-    auto bytes = params.get(key.c_str());
+    QString text;
+    std::string bytes = params.get(key);
     if (bytes.size()) {
-      QJsonDocument doc_par = QJsonDocument::fromJson(QByteArray(bytes.data(), bytes.size()));
-      QJsonObject obj = doc_par.object();
-      label->setText(obj.value("text").toString());
-      alertCount++;
-    } else {
-      label->setText("");
+      auto doc_par = QJsonDocument::fromJson(bytes.c_str());
+      text = doc_par["text"].toString();
     }
+    label->setText(text);
+    label->setVisible(!text.isEmpty());
+    alertCount += !text.isEmpty();
   }
   updateAvailable = params.getBool("UpdateAvailable") && alertCount < 1;
+}
+
+void OffroadAlert::setCurrentIndex(int idx) {
+  // show release notes when idx = 0.
+  releaseNotesScroll->setVisible(idx == 0);
+  rebootBtn.setVisible(idx == 0);
+  alertsScroll->setVisible(idx == 1);
 }
