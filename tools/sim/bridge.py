@@ -10,6 +10,7 @@ from cereal import log
 from typing import Any
 
 import cereal.messaging as messaging
+from cereal.visionipc.visionipc_pyx import VisionIpcServer, VisionStreamType  # pylint: disable=no-name-in-module, import-error
 from common.params import Params
 from common.realtime import Ratekeeper, DT_DMON
 from lib.can import can_function
@@ -53,17 +54,30 @@ def steer_rate_limit(old, new):
     return new
 
 frame_id = 0
+vipc_server = None
 def cam_callback(image):
   global frame_id
+  global vipc_server
+  if vipc_server is None:
+    vipc_server = VisionIpcServer("camerad")
+    vipc_server.create_buffers(VisionStreamType.VISION_STREAM_RGB_BACK, 4, True, W, H)
+    vipc_server.create_buffers(VisionStreamType.VISION_STREAM_YUV_BACK, 40, False, W, H)
+    vipc_server.start_listener()
+
   img = np.frombuffer(image.raw_data, dtype=np.dtype("uint8"))
   img = np.reshape(img, (H, W, 4))
   img = img[:, :, [0, 1, 2]].copy()
 
+  # send RGB frame
+  eof = frame_id * 0.05
+  vipc_server.send(VisionStreamType.VISION_STREAM_RGB_BACK, img.tobytes(), frame_id, eof, eof)
+
   dat = messaging.new_message('roadCameraState')
   dat.roadCameraState = {
     "frameId": image.frame,
-    "image": img.tobytes(),
-    "transform": [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
+    "transform": [1.0, 0.0, 0.0,
+                  0.0, 1.0, 0.0,
+                  0.0, 0.0, 1.0]
   }
   pm.send('roadCameraState', dat)
   frame_id += 1
