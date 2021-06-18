@@ -12,8 +12,7 @@ QDialogBase::QDialogBase(QWidget *parent) : QDialog(parent) {
 
 bool QDialogBase::eventFilter(QObject *o, QEvent *e) {
   if (o == parent() && e->type() == QEvent::Hide) {
-    close();
-    return false;
+    reject();
   }
   return QDialog::eventFilter(o, e);
 }
