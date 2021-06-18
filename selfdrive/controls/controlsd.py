@@ -455,7 +455,7 @@ class Controls:
       actuators.gas, actuators.brake = self.LoC.update(self.active, CS, v_acc_sol, long_plan.vTargetFuture, a_acc_sol, self.CP)
 
       # Steering PID loop and lateral MPC
-      actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(self.active, CS, self.CP, self.VM, params, lat_plan)
+      actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(self.active, CS, self.CP, self.VM, params, lat_plan, self.CI.get_last_output())
     else:
       lac_log = log.ControlsState.LateralDebugState.new_message()
       if self.sm.rcv_frame['testJoystick'] > 0 and self.active:
