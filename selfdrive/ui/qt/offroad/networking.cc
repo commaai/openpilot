@@ -205,7 +205,28 @@ void WifiUI::refresh() {
   int i = 0;
   for (Network &network : wifi->seen_networks) {
     QHBoxLayout *hlayout = new QHBoxLayout;
-    hlayout->addSpacing(50);
+//    hlayout->addSpacing(50);
+
+    if (wifi->isKnownNetwork(network.ssid)) {
+      QPushButton *forgetBtn = new QPushButton("\U0000274c");
+      forgetBtn->setStyleSheet("QPushButton { border-radius: 20px; padding: 0px; font-size: 45px; background-color: #E22C2C; color: #dddddd }");
+      forgetBtn->setFixedWidth(60);
+
+      QObject::connect(forgetBtn, &QPushButton::released, [=]() {
+        if (ConfirmationDialog::confirm("Are you sure you want to forget " + QString::fromUtf8(network.ssid) + "?", this)) {
+          wifi->forgetConnection(network.ssid);
+        }
+      });
+
+      hlayout->addWidget(forgetBtn, 0, Qt::AlignLeft);
+    } else {
+      // TODO should be a label, but spacing is off
+      QPushButton *securityLabel = new QPushButton((network.security_type == SecurityType::WPA) ? "\U0001F512" : "\U0001F513");
+
+      securityLabel->setStyleSheet("QPushButton { padding: 0px; background-color: transparent; font-size: 45px }");
+      securityLabel->setFixedWidth(60);
+      hlayout->addWidget(securityLabel, 0, Qt::AlignLeft);
+    }
 
     QLabel *ssid_label = new QLabel(QString::fromUtf8(network.ssid));
     ssid_label->setStyleSheet("font-size: 55px;");
