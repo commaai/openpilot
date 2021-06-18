@@ -96,46 +96,18 @@ WifiManager::WifiManager(QWidget* parent) : QWidget(parent) {
   QDBusInterface(nm_service, nm_settings_path, nm_settings_iface, bus);
 }
 
-ConnectedType WifiManager::getConnectedType(const QString &path, const QString &ssid, const QString &active_ap) {
-  if (ssid == connecting_to_network) {
-    return ConnectedType::CONNECTING;
-  } else if (path != active_ap) {
-    return ConnectedType::DISCONNECTED;
-  } else {
-    return ConnectedType::CONNECTED;
-  }
-}
-
-void WifiManager::refreshNetworks(const QVector<QDBusObjectPath> &paths) {
-  qDebug() << "Got ALL APs!";
+void WifiManager::refreshNetworks() {
   seen_networks.clear();
   seen_ssids.clear();
   ipv4_address = get_ipv4_address();
-  QString active_ap = get_active_ap();  // TODO use ActiveAccessPoint signal for a non blocking solution
-
-  for (const QDBusObjectPath &path : paths) {
-    QByteArray ssid = get_property(path.path(), "Ssid");
-    if (seen_ssids.count(ssid) != 0 || ssid.length() == 0) {
+  for (Network &network : get_networks()) {
+    if (seen_ssids.count(network.ssid)) {
       continue;
     }
-    unsigned int strength = get_ap_strength(path.path());
-    SecurityType security = getSecurityType(path.path());
-    ConnectedType ctype = getConnectedType(path.path(), ssid, active_ap);
-
-    Network network = {path.path(), ssid, strength, ctype, security};
+    seen_ssids.push_back(network.ssid);
     seen_networks.push_back(network);
-    seen_ssids.push_back(ssid);
   }
-  std::sort(seen_networks.begin(), seen_networks.end(), compare_by_strength);
-}
 
-// Sorts networks for UI
-void WifiManager::sortNetworks() {
-  QString active_ap = get_active_ap();  // TODO use ActiveAccessPoint signal for a non blocking solution
-  for (Network &network : seen_networks) {
-    network.connected = getConnectedType(network.path, network.ssid, active_ap);
-  }
-  std::sort(seen_networks.begin(), seen_networks.end(), compare_by_strength);
 }
 
 QString WifiManager::get_ipv4_address() {
@@ -170,6 +142,46 @@ QString WifiManager::get_ipv4_address() {
     }
   }
   return "";
+}
+
+QList<Network> WifiManager::get_networks() {
+  QList<Network> r;
+  QDBusInterface nm(nm_service, adapter, wireless_device_iface, bus);
+  nm.setTimeout(dbus_timeout);
+
+  QDBusMessage response = nm.call("GetAllAccessPoints");
+  QVariant first =  response.arguments().at(0);
+
+  QString active_ap = get_active_ap();
+  const QDBusArgument &args = first.value<QDBusArgument>();
+  args.beginArray();
+  while (!args.atEnd()) {
+    QDBusObjectPath path;
+    args >> path;
+
+    QByteArray ssid = get_property(path.path(), "Ssid");
+    unsigned int strength = get_ap_strength(path.path());
+    SecurityType security = getSecurityType(path.path());
+    ConnectedType ctype;
+    if (path.path() != active_ap) {
+      ctype = ConnectedType::DISCONNECTED;
+    } else {
+      if (ssid == connecting_to_network) {
+        ctype = ConnectedType::CONNECTING;
+      } else {
+        ctype = ConnectedType::CONNECTED;
+      }
+    }
+    Network network = {path.path(), ssid, strength, ctype, security};
+
+    if (ssid.length()) {
+      r.push_back(network);
+    }
+  }
+  args.endArray();
+
+  std::sort(r.begin(), r.end(), compare_by_strength);
+  return r;
 }
 
 SecurityType WifiManager::getSecurityType(const QString &path) {
@@ -280,11 +292,9 @@ void WifiManager::forgetConnection(const QString &ssid) {
 }
 
 void WifiManager::requestScan() {
-  qDebug() << "Requesting scan!";
   QDBusInterface nm(nm_service, adapter, wireless_device_iface, bus);
   nm.setTimeout(dbus_timeout);
-  nm.call("RequestScan", QVariantMap());  // a signal is sent to WifiManager::property_change once the scan is complete
-//  nm.call("GetAllAccessPoints");
+  nm.call("RequestScan",  QVariantMap());  // a signal is sent to WifiManager::property_change once the scan is complete
 }
 
 uint WifiManager::get_wifi_device_state() {
@@ -345,7 +355,6 @@ QString WifiManager::get_adapter() {
 
     if (device_type == 2) { // Wireless
       adapter_path = path.path();
-      qDebug() << "Wireless path:" << adapter_path;
       break;
     }
   }
@@ -360,31 +369,16 @@ void WifiManager::state_change(unsigned int new_state, unsigned int previous_sta
     emit wrongPassword(connecting_to_network);
   } else if (new_state == state_connected) {
     connecting_to_network = "";
-//    refreshNetworks();
-    sortNetworks();
+    refreshNetworks();
     emit refreshed();
   }
 }
 
 // https://developer.gnome.org/NetworkManager/stable/gdbus-org.freedesktop.NetworkManager.Device.Wireless.html
 void WifiManager::property_change(const QString &interface, const QVariantMap &props, const QStringList &invalidated_props) {
-  if (interface == wireless_device_iface && props.contains("LastScan")) {  // TODO remove?
-//    refreshNetworks();
-    sortNetworks();
+  if (interface == wireless_device_iface && props.contains("LastScan")) {
+    refreshNetworks();
     emit refreshed();
-  } else if (interface == wireless_device_iface && props.contains("AccessPoints")) {
-    QVector<QDBusObjectPath> paths;
-
-    const QDBusArgument dbusArgs = props.value("AccessPoints").value<QDBusArgument>();
-    dbusArgs.beginArray();
-    while (!dbusArgs.atEnd())
-    {
-      QDBusObjectPath path;
-      dbusArgs >> path;
-      paths.push_back(path);
-    }
-    dbusArgs.endArray();
-    refreshNetworks(paths);
   }
 }
 
@@ -411,7 +405,6 @@ QVector<QPair<QString, QDBusObjectPath>> WifiManager::listConnections() {
   nm.setTimeout(dbus_timeout);
 
   QDBusMessage response = nm.call("ListConnections");
-//  qDebug() << "LISTCONNECTIONS:" << response;
   QVariant first =  response.arguments().at(0);
   const QDBusArgument &args = first.value<QDBusArgument>();
   args.beginArray();
