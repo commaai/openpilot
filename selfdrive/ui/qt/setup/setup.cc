@@ -90,7 +90,7 @@ QWidget * Setup::getting_started() {
 }
 
 QWidget * Setup::network_setup() {
-  Networking *wifi = new Networking(this, false);
+  Networking *wifi = new Networking(this, true);
   return build_page("Connect to WiFi", wifi, true, true);
 }
 
