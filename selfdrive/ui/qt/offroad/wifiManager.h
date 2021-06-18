@@ -80,6 +80,6 @@ signals:
   void refreshed();
 
 private slots:
-  void state_change(unsigned int new_state, unsigned int previous_state, unsigned int change_reason);
-  void property_change(const QString &interface, const QVariantMap &props, const QStringList &invalidated_props);
+  void stateChange(unsigned int new_state, unsigned int previous_state, unsigned int change_reason);
+  void propertyChange(const QString &interface, const QVariantMap &props, const QStringList &invalidated_props);
 };

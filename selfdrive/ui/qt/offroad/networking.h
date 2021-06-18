@@ -75,7 +75,7 @@ private:
   WifiUI* wifiWidget;
   WifiManager* wifi = nullptr;
   void attemptInitialization();
-  QTimer* timer;
+  QTimer* refreshTimer;
 
 protected:
   void hideEvent(QHideEvent *event) override;

@@ -75,8 +75,8 @@ WifiManager::WifiManager(QWidget* parent) : QWidget(parent) {
   }
 
   QDBusInterface nm(nm_service, adapter, device_iface, bus);
-  bus.connect(nm_service, adapter, device_iface, "StateChanged", this, SLOT(state_change(unsigned int, unsigned int, unsigned int)));
-  bus.connect(nm_service, adapter, props_iface, "PropertiesChanged", this, SLOT(property_change(QString, QVariantMap, QStringList)));
+  bus.connect(nm_service, adapter, device_iface, "StateChanged", this, SLOT(stateChange(unsigned int, unsigned int, unsigned int)));
+  bus.connect(nm_service, adapter, props_iface, "PropertiesChanged", this, SLOT(propertyChange(QString, QVariantMap, QStringList)));
 
   QDBusInterface device_props(nm_service, adapter, props_iface, bus);
   device_props.setTimeout(dbus_timeout);
@@ -294,7 +294,7 @@ void WifiManager::forgetConnection(const QString &ssid) {
 void WifiManager::requestScan() {
   QDBusInterface nm(nm_service, adapter, wireless_device_iface, bus);
   nm.setTimeout(dbus_timeout);
-  nm.call("RequestScan",  QVariantMap());  // a signal is sent to WifiManager::property_change once the scan is complete
+  nm.call("RequestScan",  QVariantMap());
 }
 
 uint WifiManager::get_wifi_device_state() {
@@ -363,7 +363,7 @@ QString WifiManager::get_adapter() {
   return adapter_path;
 }
 
-void WifiManager::state_change(unsigned int new_state, unsigned int previous_state, unsigned int change_reason) {
+void WifiManager::stateChange(unsigned int new_state, unsigned int previous_state, unsigned int change_reason) {
   raw_adapter_state = new_state;
   if (new_state == state_need_auth && change_reason == reason_wrong_password) {
     emit wrongPassword(connecting_to_network);
@@ -375,7 +375,7 @@ void WifiManager::state_change(unsigned int new_state, unsigned int previous_sta
 }
 
 // https://developer.gnome.org/NetworkManager/stable/gdbus-org.freedesktop.NetworkManager.Device.Wireless.html
-void WifiManager::property_change(const QString &interface, const QVariantMap &props, const QStringList &invalidated_props) {
+void WifiManager::propertyChange(const QString &interface, const QVariantMap &props, const QStringList &invalidated_props) {
   if (interface == wireless_device_iface && props.contains("LastScan") && firstScan) {
     firstScan = false;
     refreshNetworks();
