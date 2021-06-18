@@ -10,12 +10,6 @@ from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
-# TODO: move to values
-BOSCH_ACCEL_LOOKUP_BP = [-1., 0., 0.6]
-BOSCH_ACCEL_LOOKUP_V = [-3.5, 0., 2.]
-BOSCH_GAS_LOOKUP_BP = [0., 0.6]
-BOSCH_GAS_LOOKUP_V = [0, 2000]
-
 
 def actuator_hystereses(brake, braking, brake_steady, v_ego, car_fingerprint):
   # hyst params
@@ -183,8 +177,8 @@ class CarController():
           # Prevent rolling backwards
           accel = -1.0 if stopping else accel
 
-          apply_accel = interp(accel, BOSCH_ACCEL_LOOKUP_BP, BOSCH_ACCEL_LOOKUP_V)
-          apply_gas = interp(accel, BOSCH_GAS_LOOKUP_BP, BOSCH_GAS_LOOKUP_V)
+          apply_accel = interp(accel, P.BOSCH_ACCEL_LOOKUP_BP, P.BOSCH_ACCEL_LOOKUP_V)
+          apply_gas = interp(accel, P.BOSCH_GAS_LOOKUP_BP, P.BOSCH_GAS_LOOKUP_V)
           can_sends.extend(hondacan.create_acc_commands(self.packer, enabled, apply_accel, apply_gas, idx, stopping, starting, CS.CP.carFingerprint))
 
         else:
