@@ -9,7 +9,7 @@ SshControl::SshControl() : ButtonControl("SSH Keys", "", "Warning: This grants S
   username_label.setStyleSheet("color: #aaaaaa");
   hlayout->insertWidget(1, &username_label);
 
-  QObject::connect(&btn, &QPushButton::released, [=]() {
+  QObject::connect(this, &ButtonControl::released, [=]() {
     if (btn.text() == "ADD") {
       // github limits the username to 39 characters.
       QString username = InputDialog::getText("Enter your GitHub username", 39, this);
