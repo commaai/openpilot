@@ -35,7 +35,7 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent), s
   attemptInitialization();
   wifi->requestScan();
   timer = new QTimer(this);
-  QObject::connect(timer, &QTimer::timeout, wifi, &WifiManager::requestScan);
+  QObject::connect(timer, &QTimer::timeout, this, &Networking::refresh);
   timer->setInterval(5000);
 }
 
@@ -202,6 +202,8 @@ WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi)
 }
 
 void WifiUI::refresh() {
+  wifi->requestScan();
+  wifi->refreshNetworks();
   clearLayout(main_layout);
 
   connectButtons = new QButtonGroup(this); // TODO check if this is a leak

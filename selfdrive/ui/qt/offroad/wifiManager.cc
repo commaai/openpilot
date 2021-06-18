@@ -376,7 +376,8 @@ void WifiManager::state_change(unsigned int new_state, unsigned int previous_sta
 
 // https://developer.gnome.org/NetworkManager/stable/gdbus-org.freedesktop.NetworkManager.Device.Wireless.html
 void WifiManager::property_change(const QString &interface, const QVariantMap &props, const QStringList &invalidated_props) {
-  if (interface == wireless_device_iface && props.contains("LastScan")) {
+  if (interface == wireless_device_iface && props.contains("LastScan") && firstScan) {
+    firstScan = false;
     refreshNetworks();
     emit refreshed();
   }

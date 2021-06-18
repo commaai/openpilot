@@ -59,6 +59,7 @@ private:
   QString connecting_to_network;
   QString tethering_ssid;
   QString tetheringPassword = "swagswagcommma";
+  bool firstScan = true;
 
   QString get_adapter();
   QString get_ipv4_address();
