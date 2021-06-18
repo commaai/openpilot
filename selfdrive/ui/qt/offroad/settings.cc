@@ -113,18 +113,18 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
   main_layout->addWidget(new LabelControl("Serial", serial));
 
   // offroad-only buttons
-  QList<ButtonControl*> offroad_btns;
 
-  offroad_btns.append(new ButtonControl("Driver Camera", "PREVIEW",
-                                        "Preview the driver facing camera to help optimize device mounting position for best driver monitoring experience. (vehicle must be off)",
-                                        [=]() { emit showDriverView(); }, "", this));
+  auto dcamBtn = new ButtonControl("Driver Camera", "PREVIEW",
+                                        "Preview the driver facing camera to help optimize device mounting position for best driver monitoring experience. (vehicle must be off)");
+  connect(dcamBtn, &ButtonControl::released, [=]() { emit showDriverView(); });
 
   QString resetCalibDesc = "openpilot requires the device to be mounted within 4° left or right and within 5° up or down. openpilot is continuously calibrating, resetting is rarely required.";
-  ButtonControl *resetCalibBtn = new ButtonControl("Reset Calibration", "RESET", resetCalibDesc, [=]() {
+  auto resetCalibBtn = new ButtonControl("Reset Calibration", "RESET", resetCalibDesc);
+  connect(resetCalibBtn, &ButtonControl::released, [=]() {
     if (ConfirmationDialog::confirm("Are you sure you want to reset calibration?", this)) {
       Params().remove("CalibrationParams");
     }
-  }, "", this);
+  });
   connect(resetCalibBtn, &ButtonControl::showDescription, [=]() {
     QString desc = resetCalibDesc;
     std::string calib_bytes = Params().get("CalibrationParams");
@@ -146,25 +146,25 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
     }
     resetCalibBtn->setDescription(desc);
   });
-  offroad_btns.append(resetCalibBtn);
 
-  offroad_btns.append(new ButtonControl("Review Training Guide", "REVIEW",
-                                        "Review the rules, features, and limitations of openpilot", [=]() {
+  auto retrainingBtn = new ButtonControl("Review Training Guide", "REVIEW", "Review the rules, features, and limitations of openpilot");
+  connect(retrainingBtn, &ButtonControl::released, [=]() {
     if (ConfirmationDialog::confirm("Are you sure you want to review the training guide?", this)) {
       Params().remove("CompletedTrainingVersion");
       emit reviewTrainingGuide();
     }
-  }, "", this));
+  });
 
-  offroad_btns.append(new ButtonControl("Uninstall " + getBrand(), "UNINSTALL", "", [=]() {
+  auto uninstallBtn = new ButtonControl("Uninstall " + getBrand(), "UNINSTALL");
+  connect(uninstallBtn, &ButtonControl::released, [=]() {
     if (ConfirmationDialog::confirm("Are you sure you want to uninstall?", this)) {
       Params().putBool("DoUninstall", true);
     }
-  }, "", this));
+  });
 
-  for(auto &btn : offroad_btns) {
+  for (auto btn : {dcamBtn, resetCalibBtn, retrainingBtn, uninstallBtn}) {
     main_layout->addWidget(horizontal_line());
-    QObject::connect(parent, SIGNAL(offroadTransition(bool)), btn, SLOT(setEnabled(bool)));
+    connect(parent, SIGNAL(offroadTransition(bool)), btn, SLOT(setEnabled(bool)));
     main_layout->addWidget(btn);
   }
 
@@ -207,7 +207,8 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : QWidget(parent) {
   osVersionLbl = new LabelControl("OS Version");
   versionLbl = new LabelControl("Version", "", QString::fromStdString(params.get("ReleaseNotes")).trimmed());
   lastUpdateLbl = new LabelControl("Last Update Check", "", "The last time openpilot successfully checked for an update. The updater only runs while the car is off.");
-  updateBtn = new ButtonControl("Check for Update", "", "", [=]() {
+  updateBtn = new ButtonControl("Check for Update", "");
+  connect(updateBtn, &ButtonControl::released, [=]() {
     if (params.getBool("IsOffroad")) {
       const QString paramsPath = QString::fromStdString(params.getParamsPath());
       fs_watch->addPath(paramsPath + "/d/LastUpdateTime");
@@ -216,7 +217,7 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : QWidget(parent) {
       updateBtn->setEnabled(false);
     }
     std::system("pkill -1 -f selfdrive.updated");
-  }, "", this);
+  });
 
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   QWidget *widgets[] = {versionLbl, lastUpdateLbl, updateBtn, gitBranchLbl, gitCommitLbl, osVersionLbl};
