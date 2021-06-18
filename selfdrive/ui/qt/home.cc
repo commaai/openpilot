@@ -143,7 +143,7 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
     OffroadHome {
       background-color: black;
     }
-    QPushButton#alert_notification {
+    #alert_notification {
       padding: 15px;
       padding-left: 30px;
       padding-right: 30px;
