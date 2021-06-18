@@ -28,26 +28,25 @@ def get_lkas_cmd_bus(car_fingerprint, radar_disabled=False):
   return 0
 
 
-def disable_radar(logcan, sendcan, bus=1, timeout=0.1, retry=5, debug=False):
+def disable_radar(logcan, sendcan, bus=1, timeout=0.1, debug=False):
   cloudlog.warning(f"radar disable {hex(RADAR_ADDR)} ...")
-  for i in range(retry):
-    try:
-      # enter extended diagnostic session
-      query = IsoTpParallelQuery(sendcan, logcan, bus, [RADAR_ADDR], [EXT_DIAG_REQUEST], [EXT_DIAG_RESPONSE], debug=debug)
-      for _, _ in query.get_data(timeout).items():
-        cloudlog.warning("radar communication control disable tx/rx ...")
 
-        # communication control disable tx and rx
-        query = IsoTpParallelQuery(sendcan, logcan, bus, [RADAR_ADDR], [COM_CONT_REQUEST], [COM_CONT_RESPONSE], debug=debug)
-        query.get_data(0)
+  try:
+    query = IsoTpParallelQuery(sendcan, logcan, bus, [RADAR_ADDR], [EXT_DIAG_REQUEST], [EXT_DIAG_RESPONSE], debug=debug)
 
-        cloudlog.warning("radar disabled")
-        return True
+    for _, _ in query.get_data(timeout).items():
+      cloudlog.warning("radar communication control disable tx/rx ...")
 
-      cloudlog.warning(f"radar disable retry ({i+1}) ...")
-    except Exception:
-      cloudlog.exception("radar disable exception")
+      query = IsoTpParallelQuery(sendcan, logcan, bus, [RADAR_ADDR], [COM_CONT_REQUEST], [COM_CONT_RESPONSE], debug=debug)
+      query.get_data(0)
 
+      cloudlog.warning("radar disabled")
+      return True
+
+  except Exception:
+    cloudlog.exception("radar disable exception")
+
+  cloudlog.warning("radar disable failed")
   return False
 
 
