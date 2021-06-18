@@ -464,9 +464,7 @@ class CarInterface(CarInterfaceBase):
   @staticmethod
   def init(CP, logcan, sendcan):
     if CP.carFingerprint in HONDA_BOSCH and CP.openpilotLongitudinalControl:
-      return disable_radar(logcan, sendcan)
-    else:
-      return True
+      disable_radar(logcan, sendcan)
 
   # returns a car.CarState
   def update(self, c, can_strings):

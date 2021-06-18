@@ -41,13 +41,11 @@ def disable_radar(logcan, sendcan, bus=1, timeout=0.1, debug=False):
       query.get_data(0)
 
       cloudlog.warning("radar disabled")
-      return True
+      return
 
   except Exception:
     cloudlog.exception("radar disable exception")
-
   cloudlog.warning("radar disable failed")
-  return False
 
 
 def create_brake_command(packer, apply_brake, pump_on, pcm_override, pcm_cancel_cmd, fcw, idx, car_fingerprint, stock_brake):

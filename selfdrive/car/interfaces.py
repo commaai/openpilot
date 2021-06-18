@@ -53,7 +53,7 @@ class CarInterfaceBase():
 
   @staticmethod
   def init(CP, logcan, sendcan):
-    return True
+    pass
 
   # returns a set of default params to avoid repetition in car specific params
   @staticmethod
