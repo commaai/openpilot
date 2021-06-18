@@ -27,6 +27,10 @@ def get_lkas_cmd_bus(car_fingerprint, radar_disabled=False):
 
 
 def disable_radar(logcan, sendcan, bus=1):
+  """Silence the radar by disabling sending and receiving messages using UDS 0x28.
+  The radar will stay silent as long as openpilot keeps sending Tester Present.
+  Openpilot will emulate the radar. WARNING: THIS DISABLES AEB!"""
+
   cloudlog.warning(f"radar disable {hex(RADAR_ADDR)} ...")
 
   diag_msg = [RADAR_ADDR, 0, EXT_DIAG_REQUEST, bus]
