@@ -205,11 +205,10 @@ void WifiUI::refresh() {
   int i = 0;
   for (Network &network : wifi->seen_networks) {
     QHBoxLayout *hlayout = new QHBoxLayout;
-//    hlayout->addSpacing(50);
 
     if (wifi->isKnownNetwork(network.ssid)) {
       QPushButton *forgetBtn = new QPushButton("\U0000274c");
-      forgetBtn->setStyleSheet("QPushButton { border-radius: 20px; padding: 0px; font-size: 45px; background-color: #E22C2C; color: #dddddd }");
+      forgetBtn->setStyleSheet("QPushButton { border-radius: 20px; padding: 0px; font-size: 55px; background-color: #E22C2C; color: #dddddd }");
       forgetBtn->setFixedWidth(60);
 
       QObject::connect(forgetBtn, &QPushButton::released, [=]() {
@@ -223,7 +222,7 @@ void WifiUI::refresh() {
       // TODO should be a label, but spacing is off
       QPushButton *securityLabel = new QPushButton((network.security_type == SecurityType::WPA) ? "\U0001F512" : "\U0001F513");
 
-      securityLabel->setStyleSheet("QPushButton { padding: 0px; background-color: transparent; font-size: 45px }");
+      securityLabel->setStyleSheet("QPushButton { padding: 0px; background-color: transparent; font-size: 55px }");
       securityLabel->setFixedWidth(60);
       hlayout->addWidget(securityLabel, 0, Qt::AlignLeft);
     }
