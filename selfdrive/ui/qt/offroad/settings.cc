@@ -147,13 +147,16 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
     resetCalibBtn->setDescription(desc);
   });
 
-  auto retrainingBtn = new ButtonControl("Review Training Guide", "REVIEW", "Review the rules, features, and limitations of openpilot");
-  connect(retrainingBtn, &ButtonControl::released, [=]() {
-    if (ConfirmationDialog::confirm("Are you sure you want to review the training guide?", this)) {
-      Params().remove("CompletedTrainingVersion");
-      emit reviewTrainingGuide();
-    }
-  });
+  ButtonControl *retrainingBtn = nullptr;
+  if (!params.getBool("Passive")) {
+    retrainingBtn = new ButtonControl("Review Training Guide", "REVIEW", "Review the rules, features, and limitations of openpilot");
+    connect(retrainingBtn, &ButtonControl::released, [=]() {
+      if (ConfirmationDialog::confirm("Are you sure you want to review the training guide?", this)) {
+        Params().remove("CompletedTrainingVersion");
+        emit reviewTrainingGuide();
+      }
+    });
+  }
 
   auto uninstallBtn = new ButtonControl("Uninstall " + getBrand(), "UNINSTALL");
   connect(uninstallBtn, &ButtonControl::released, [=]() {
@@ -163,9 +166,11 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
   });
 
   for (auto btn : {dcamBtn, resetCalibBtn, retrainingBtn, uninstallBtn}) {
-    main_layout->addWidget(horizontal_line());
-    connect(parent, SIGNAL(offroadTransition(bool)), btn, SLOT(setEnabled(bool)));
-    main_layout->addWidget(btn);
+    if (btn) {
+      main_layout->addWidget(horizontal_line());
+      connect(parent, SIGNAL(offroadTransition(bool)), btn, SLOT(setEnabled(bool)));
+      main_layout->addWidget(btn);
+    }
   }
 
   // power buttons
