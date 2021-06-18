@@ -63,21 +63,21 @@ class Networking : public QWidget {
   Q_OBJECT
 
 public:
-  explicit Networking(QWidget* parent = 0, bool is_setup = false);
+  explicit Networking(QWidget* parent = 0, bool show_advanced = true);
 
 private:
   QStackedLayout* main_layout = nullptr; // nm_warning, wifiScreen, advanced
   QWidget* wifiScreen = nullptr;
   AdvancedNetworking* an = nullptr;
   bool ui_setup_complete = false;
-  bool is_setup;
+  bool show_advanced;
 
   WifiUI* wifiWidget;
   WifiManager* wifi = nullptr;
   void attemptInitialization();
 
 public slots:
-  void refresh(bool force);
+  void refresh();
 
 private slots:
   void connectToNetwork(const Network &n);

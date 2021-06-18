@@ -23,27 +23,19 @@ void NetworkStrengthWidget::paintEvent(QPaintEvent* event) {
 
 // Networking functions
 
-Networking::Networking(QWidget* parent, bool is_setup) : QWidget(parent), is_setup(is_setup) {
+Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent), show_advanced(show_advanced) {
   main_layout = new QStackedLayout(this);
 
-  QLabel* scanning = new QLabel("Scanning for networks");
-  scanning->setAlignment(Qt::AlignCenter);
-  scanning->setStyleSheet(R"(font-size: 65px;)");
-  main_layout->addWidget(scanning);
+  QLabel* warning = new QLabel("Network manager is inactive!");
+  warning->setAlignment(Qt::AlignCenter);
+  warning->setStyleSheet(R"(font-size: 65px;)");
 
-  if (is_setup) {
-    while (!ui_setup_complete) {
-      attemptInitialization();
-      qDebug() << "Attempted initialization";
-    }
-    refresh(true);
-  } else {
-    attemptInitialization();
-    wifi->requestScan();
-  }
+  main_layout->addWidget(warning);
 
+  attemptInitialization();
+  wifi->requestScan();
   QTimer* timer = new QTimer(this);
-  QObject::connect(timer, &QTimer::timeout, this, [=] { refresh(false); });
+  QObject::connect(timer, &QTimer::timeout, this, &Networking::refresh);
   timer->start(5000);
 }
 
@@ -60,7 +52,7 @@ void Networking::attemptInitialization() {
 
   QWidget* wifiScreen = new QWidget(this);
   QVBoxLayout* vlayout = new QVBoxLayout(wifiScreen);
-  if (!is_setup) {
+  if (show_advanced) {
     QPushButton* advancedSettings = new QPushButton("Advanced");
     advancedSettings->setStyleSheet("margin-right: 30px;");
     advancedSettings->setFixedSize(350, 100);
@@ -99,10 +91,8 @@ void Networking::attemptInitialization() {
   ui_setup_complete = true;
 }
 
-void Networking::refresh(bool force) {
-  qDebug() << "Refresh, force:" << force;
-  if (!this->isVisible() && !force) {
-    qDebug() << "Not refreshing";
+void Networking::refresh() {
+  if (!this->isVisible()) {
     return;
   }
   if (!ui_setup_complete) {
