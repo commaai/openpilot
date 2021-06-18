@@ -21,6 +21,9 @@ class CarController():
 
     self.steer_rate_limited = False
 
+  def get_last_output(self):
+    return self.apply_steer_last / P.STEER_MAX
+
   def update(self, enabled, CS, frame, ext_bus, actuators, visual_alert, left_lane_visible, right_lane_visible, left_lane_depart, right_lane_depart):
     """ Controls thread """
 

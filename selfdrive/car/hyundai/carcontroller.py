@@ -42,6 +42,9 @@ class CarController():
     self.steer_rate_limited = False
     self.last_resume_frame = 0
 
+  def get_last_output(self):
+    return self.apply_steer_last / self.p.STEER_MAX
+
   def update(self, enabled, CS, frame, actuators, pcm_cancel_cmd, visual_alert,
              left_lane, right_lane, left_lane_depart, right_lane_depart):
     # Steering Torque

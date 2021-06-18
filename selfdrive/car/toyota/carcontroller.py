@@ -38,6 +38,9 @@ class CarController():
 
     self.packer = CANPacker(dbc_name)
 
+  def get_last_output(self):
+    return self.last_steer / CarControllerParams.STEER_MAX
+
   def update(self, enabled, CS, frame, actuators, pcm_cancel_cmd, hud_alert,
              left_line, right_line, lead, left_lane_depart, right_lane_depart):
 

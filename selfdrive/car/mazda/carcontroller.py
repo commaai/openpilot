@@ -9,6 +9,9 @@ class CarController():
     self.packer = CANPacker(dbc_name)
     self.steer_rate_limited = False
 
+  def get_last_output(self):
+    return self.apply_steer_last / CarControllerParams.STEER_MAX
+
   def update(self, enabled, CS, frame, actuators):
     """ Controls thread """
 

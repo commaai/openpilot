@@ -11,6 +11,7 @@ TOGGLE_DEBUG = False
 
 class CarController():
   def __init__(self, dbc_name, CP, VM):
+    self.apply_steer_last = 0.0
     self.packer = CANPacker(dbc_name)
     self.enabled_last = False
     self.main_on_last = False
@@ -25,6 +26,7 @@ class CarController():
     steer_alert = visual_alert in [VisualAlert.steerRequired, VisualAlert.ldw]
 
     apply_steer = actuators.steer
+    self.apply_steer_last = apply_steer
 
     if pcm_cancel:
       #print "CANCELING!!!!"

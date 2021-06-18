@@ -23,6 +23,9 @@ class CarController():
     self.packer_obj = CANPacker(DBC[CP.carFingerprint]['radar'])
     self.packer_ch = CANPacker(DBC[CP.carFingerprint]['chassis'])
 
+  def get_last_output(self):
+    return self.apply_steer_last / self.params.STEER_MAX
+
   def update(self, enabled, CS, frame, actuators,
              hud_v_cruise, hud_show_lanes, hud_show_car, hud_alert):
 
