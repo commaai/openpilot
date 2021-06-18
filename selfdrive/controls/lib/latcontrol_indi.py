@@ -6,7 +6,7 @@ from common.realtime import DT_CTRL
 from common.numpy_fast import clip, interp
 from selfdrive.car.toyota.values import CarControllerParams
 from selfdrive.car import apply_toyota_steer_torque_limits
-from selfdrive.controls.lib.drive_helpers import get_steer_max
+from selfdrive.controls.lib.drive_helpers import get_steer_max, get_lag_adjusted_curvature
 
 
 class LatControlINDI():
@@ -82,6 +82,10 @@ class LatControlINDI():
 
   def update(self, active, CS, CP, VM, params, lat_plan):
     self.speed = CS.vEgo
+    curvature, curvature_rate = get_lag_adjusted_curvature(CP, self.speed,
+                                                      lat_plan.psis,
+                                                      lat_plan.curvatures,
+                                                      lat_plan.curvature_rates)
     # Update Kalman filter
     y = np.array([[math.radians(CS.steeringAngleDeg)], [math.radians(CS.steeringRateDeg)]])
     self.x = np.dot(self.A_K, self.x) + np.dot(self.K, y)
@@ -96,10 +100,10 @@ class LatControlINDI():
       self.output_steer = 0.0
       self.delayed_output = 0.0
     else:
-      steers_des = VM.get_steer_from_curvature(-lat_plan.curvature, CS.vEgo)
+      steers_des = VM.get_steer_from_curvature(-curvature, CS.vEgo)
       steers_des += math.radians(params.angleOffsetDeg)
 
-      rate_des = VM.get_steer_from_curvature(-lat_plan.curvatureRate, CS.vEgo)
+      rate_des = VM.get_steer_from_curvature(-curvature_rate, CS.vEgo)
 
       # Expected actuator value
       alpha = 1. - DT_CTRL / (self.RC + DT_CTRL)
@@ -142,4 +146,4 @@ class LatControlINDI():
       check_saturation = (CS.vEgo > 10.) and not CS.steeringRateLimited and not CS.steeringPressed
       indi_log.saturated = self._check_saturation(self.output_steer, check_saturation, steers_max)
 
-    return float(self.output_steer), 0, indi_log
+    return float(self.output_steer), steers_des, indi_log

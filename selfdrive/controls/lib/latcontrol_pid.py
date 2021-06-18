@@ -2,6 +2,7 @@ import math
 
 from selfdrive.controls.lib.pid import PIController
 from selfdrive.controls.lib.drive_helpers import get_steer_max
+from selfdrive.controls.lib.drive_helpers import get_lag_adjusted_curvature
 from cereal import log
 
 
@@ -16,11 +17,15 @@ class LatControlPID():
     self.pid.reset()
 
   def update(self, active, CS, CP, VM, params, lat_plan):
+    desired_curvature, _ = get_lag_adjusted_curvature(CP, CS.vEgo,
+                                                      lat_plan.psis,
+                                                      lat_plan.curvatures,
+                                                      lat_plan.curvatureRates)
     pid_log = log.ControlsState.LateralPIDState.new_message()
     pid_log.steeringAngleDeg = float(CS.steeringAngleDeg)
     pid_log.steeringRateDeg = float(CS.steeringRateDeg)
 
-    angle_steers_des_no_offset = math.degrees(VM.get_steer_from_curvature(-lat_plan.curvature, CS.vEgo))
+    angle_steers_des_no_offset = math.degrees(VM.get_steer_from_curvature(-desired_curvature, CS.vEgo))
     angle_steers_des = angle_steers_des_no_offset + params.angleOffsetDeg
 
     if CS.vEgo < 0.3 or not active:
@@ -48,4 +53,4 @@ class LatControlPID():
       pid_log.output = output_steer
       pid_log.saturated = bool(self.pid.saturated)
 
-    return output_steer, 0, pid_log
+    return output_steer, angle_steers_des, pid_log
