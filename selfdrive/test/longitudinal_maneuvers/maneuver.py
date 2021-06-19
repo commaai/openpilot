@@ -42,7 +42,7 @@ class Maneuver():
       log['d_rel'] = d_rel
       log['v_rel'] = v_rel
 
-    if d_rel < 2.0:
+    if d_rel < 1.0:
       print("Crashed!!!!")
       valid = False
 

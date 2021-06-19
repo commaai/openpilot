@@ -33,11 +33,13 @@ class Plant():
       Plant.messaging_initialized = True
 
     self.frame = 0
+    self.v_lead_prev = 0.0
 
     self.distance = 0.
     self.speed = speed
     self.steer_error, self.brake_error, self.steer_not_allowed = 0, 0, 0
     self.cruise_setting = 0
+    self.acceleration = 0.0
 
     self.steer_torque, self.v_cruise, self.acc_status = 0, 0, 0  # v_cruise is reported from can, not the one used for controls
 
@@ -63,6 +65,8 @@ class Plant():
     radar = messaging.new_message('radarState')
     control = messaging.new_message('controlsState')
     car_state = messaging.new_message('carState')
+    a_lead = (v_lead - self.v_lead_prev)/self.ts
+    self.v_lead_prev = v_lead
 
     if self.lead_relevancy:
       d_rel = np.maximum(0., self.distance_lead - self.distance)
@@ -77,8 +81,11 @@ class Plant():
     lead.dRel = float(d_rel)
     lead.yRel = float(0.0)
     lead.vRel = float(v_rel)
+    lead.aRel = float(a_lead - self.acceleration)
     lead.vLead = float(v_lead)
     lead.vLeadK = float(v_lead)
+    lead.aLeadK = float(a_lead)
+    lead.aLeadTau = float(1.5)
     lead.status = True
     lead.modelProb = prob
     radar.radarState.leadOne = lead
@@ -99,10 +106,10 @@ class Plant():
       time.sleep(0.01)
       if self.sm.updated['longitudinalPlan']:
         plan = self.sm['longitudinalPlan']
-        self.speed = plan.vTarget
         self.acceleration = plan.aTarget
         fcw = plan.fcw
         break
+    self.speed += self.ts*self.acceleration
 
 
     self.distance_lead = self.distance_lead + v_lead * self.ts
