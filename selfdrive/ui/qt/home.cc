@@ -175,7 +175,7 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
 }
 
 void OffroadHome::showEvent(QShowEvent *event) {
-  refresh();
+  date->setText(QDateTime::currentDateTime().toString("dddd, MMMM d"));
   timer->start(10 * 1000);
 }
 
