@@ -206,13 +206,8 @@ void WifiUI::refresh() {
   for (Network &network : wifi->seen_networks) {
     QHBoxLayout *hlayout = new QHBoxLayout;
 
-    QLabel *ssid_label = new QLabel();
+    QLabel *ssid_label = new QLabel(QString::fromUtf8(network.ssid));
     ssid_label->setStyleSheet("font-size: 55px;");
-    QString ssid_text(QString::fromUtf8(network.ssid));
-    QFontMetrics metrics(ssid_label->font());
-    QString elidedText = metrics.elidedText(ssid_text, Qt::ElideRight, 170);
-    ssid_label->setText(elidedText);
-
     hlayout->addWidget(ssid_label, 1, Qt::AlignLeft);
 
     if (wifi->isKnownNetwork(network.ssid)) {
@@ -232,13 +227,13 @@ void WifiUI::refresh() {
 
       hlayout->addWidget(forgetBtn, 0, Qt::AlignRight);
     } else if (network.security_type == SecurityType::WPA) {
-      QLabel *icon = new QLabel();
+      QLabel *lockIcon = new QLabel();
       QPixmap pix("../assets/offroad/icon_lock_closed.svg");
-      icon->setPixmap(pix.scaledToWidth(60, Qt::SmoothTransformation));
-      icon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
-      icon->setStyleSheet("QLabel { margin: 0px; padding-left: 15px; padding-right: 15px; }");
+      lockIcon->setPixmap(pix.scaledToWidth(40, Qt::SmoothTransformation));
+      lockIcon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
+      lockIcon->setStyleSheet("QLabel { margin: 0px; padding-left: 15px; padding-right: 15px; }");
 
-      hlayout->addWidget(icon, 0, Qt::AlignRight);
+      hlayout->addWidget(lockIcon, 0, Qt::AlignRight);
     }
 
     // strength indicator
