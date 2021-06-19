@@ -61,3 +61,15 @@ void ScrollView::paintEvent(QPaintEvent *event) {
 void ScrollView::hideEvent(QHideEvent *e) {
   verticalScrollBar()->setValue(0);
 }
+
+void 	ScrollView::scrollContentsBy(int dx, int dy) { 
+  // qInfo() << dx << dy;
+  // QRect scrolled();
+  // QRect aligned = widget->rect();
+  // widget->move(widget->width() < viewport->width() ? aligned.x() : scrolled.x(),
+  //              widget->height() < viewport->height() ? aligned.y() : scrolled.y());
+  viewport()->setUpdatesEnabled(false);
+  QScrollArea::scrollContentsBy(dx, dy);
+  viewport()->setUpdatesEnabled(true);
+
+}
