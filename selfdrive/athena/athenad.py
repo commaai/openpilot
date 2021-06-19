@@ -54,7 +54,7 @@ def handle_long_poll(ws):
 
   threads = [
     threading.Thread(target=ws_recv, args=(ws, end_event), name='ws_recv'),
-    threading.Thread(target=ws_send, args=(ws, end_event), name='wc_send'),
+    threading.Thread(target=ws_send, args=(ws, end_event), name='ws_send'),
     threading.Thread(target=upload_handler, args=(end_event,), name='upload_handler'),
     threading.Thread(target=log_handler, args=(end_event,), name='log_handler'),
   ] + [
@@ -116,7 +116,7 @@ def _do_upload(upload_item):
     return requests.put(upload_item.url,
                         data=f,
                         headers={**upload_item.headers, 'Content-Length': str(size)},
-                        timeout=10)
+                        timeout=30)
 
 
 # security: user should be able to request any message from their car
@@ -479,8 +479,7 @@ def main():
       ws = create_connection(ws_uri,
                              cookie="jwt=" + api.get_token(),
                              enable_multithread=True,
-                             timeout=1.0)
-      ws.settimeout(1)
+                             timeout=30.0)
       cloudlog.event("athenad.main.connected_ws", ws_uri=ws_uri)
 
       manage_tokens(api)

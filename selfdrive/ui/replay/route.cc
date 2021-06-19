@@ -37,7 +37,7 @@ bool Route::loadFromServer() {
     qInfo() << err;
     loop.quit();
   };
-  HttpRequest http(nullptr, url, "", !Hardware::PC());
+  HttpRequest http(nullptr, url, !Hardware::PC());
   QObject::connect(&http, &HttpRequest::failedResponse, onError);
   QObject::connect(&http, &HttpRequest::timeoutResponse, onError);
   QObject::connect(&http, &HttpRequest::receivedResponse, [&](const QString json) {

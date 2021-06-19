@@ -104,7 +104,9 @@ void Networking::refresh() {
 }
 
 void Networking::connectToNetwork(const Network &n) {
-  if (n.security_type == SecurityType::OPEN) {
+  if (wifi->isKnownNetwork(n.ssid)) {
+    wifi->activateWifiConnection(n.ssid);
+  } else if (n.security_type == SecurityType::OPEN) {
     wifi->connect(n);
   } else if (n.security_type == SecurityType::WPA) {
     QString pass = InputDialog::getText("Enter password for \"" + n.ssid + "\"", 8);
@@ -143,7 +145,8 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   main_layout->addWidget(horizontal_line(), 0);
 
   // Change tethering password
-  editPasswordButton = new ButtonControl("Tethering Password", "EDIT", "", [=]() {
+  editPasswordButton = new ButtonControl("Tethering Password", "EDIT");
+  connect(editPasswordButton, &ButtonControl::released, [=]() {
     QString pass = InputDialog::getText("Enter new tethering password", 8);
     if (pass.size()) {
       wifi->changeTetheringPassword(pass);
@@ -203,11 +206,36 @@ void WifiUI::refresh() {
   int i = 0;
   for (Network &network : wifi->seen_networks) {
     QHBoxLayout *hlayout = new QHBoxLayout;
-    hlayout->addSpacing(50);
 
     QLabel *ssid_label = new QLabel(QString::fromUtf8(network.ssid));
     ssid_label->setStyleSheet("font-size: 55px;");
     hlayout->addWidget(ssid_label, 1, Qt::AlignLeft);
+
+    if (wifi->isKnownNetwork(network.ssid) && !wifi->tetheringEnabled()) {
+      QPushButton *forgetBtn = new QPushButton();
+      QPixmap pix("../assets/offroad/icon_close.svg");
+
+      forgetBtn->setIcon(QIcon(pix));
+      forgetBtn->setIconSize(QSize(35, 35));
+      forgetBtn->setStyleSheet("QPushButton { background-color: #E22C2C; }");
+      forgetBtn->setFixedSize(100, 90);
+
+      QObject::connect(forgetBtn, &QPushButton::released, [=]() {
+        if (ConfirmationDialog::confirm("Are you sure you want to forget " + QString::fromUtf8(network.ssid) + "?", this)) {
+          wifi->forgetConnection(network.ssid);
+        }
+      });
+
+      hlayout->addWidget(forgetBtn, 0, Qt::AlignRight);
+    } else if (network.security_type == SecurityType::WPA) {
+      QLabel *lockIcon = new QLabel();
+      QPixmap pix("../assets/offroad/icon_lock_closed.svg");
+      lockIcon->setPixmap(pix.scaledToWidth(35, Qt::SmoothTransformation));
+      lockIcon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
+      lockIcon->setStyleSheet("QLabel { margin: 0px; padding-left: 15px; padding-right: 15px; }");
+
+      hlayout->addWidget(lockIcon, 0, Qt::AlignRight);
+    }
 
     // strength indicator
     unsigned int strength_scale = network.strength / 17;

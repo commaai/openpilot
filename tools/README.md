@@ -14,27 +14,25 @@ openpilot is developed and tested on **Ubuntu 20.04**, which is the primary deve
 
 Setup
 ============
-1. Clone openpilot into home directory:
-```
+1. Clone openpilot into your home directory:
+``` bash
 cd ~
-
-git clone --recurse-submodule https://github.com/commaai/openpilot.git
-
+git clone --recurse-submodules https://github.com/commaai/openpilot.git
 ```
 
-2. Run setup script:
+2. Run the setup script:
 
 Ubuntu:
-```
+``` bash
 openpilot/tools/ubuntu_setup.sh
 ```
 MacOS:
-```
+``` bash
 openpilot/tools/mac_setup.sh
 ```
 
-3. Compile openpilot by running SCons in openpilot directory
-```
+3. Build openpilot by running SCons in the root of the openpilot directory
+``` bash
 cd openpilot && scons -j$(nproc)
 ```
 
@@ -75,9 +73,9 @@ Use a joystick to control your car.
 Welcomed contributions
 =============
 
-* Documentation: code comments, better tutorials, etc..
-* Support for other platforms other than Ubuntu 20.04.
-* Performance improvements: the tools have been developed on high-performance workstations (12+ logical cores with 32+ GB of RAM), so they are not optimized for running efficiently. For example, `ui.py` might not be able to run real-time on most PCs.
+* Documentation: code comments, better tutorials, etc
+* Support for platforms other than Ubuntu 20.04
+* Performance improvements
 * More tools: anything that you think might be helpful to others.
 
 ![Imgur](https://i.imgur.com/IdfBgwK.jpg)

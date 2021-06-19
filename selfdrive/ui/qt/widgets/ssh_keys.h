@@ -18,7 +18,7 @@ public:
 };
 
 // SSH key management widget
-class SshControl : public AbstractControl {
+class SshControl : public ButtonControl {
   Q_OBJECT
 
 public:

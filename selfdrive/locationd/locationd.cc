@@ -281,7 +281,7 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
     LOGE("Locationd vs ubloxLocation orientation difference too large, kalman reset");
     this->reset_kalman(NAN, initial_pose_ecef_quat, ecef_pos);
     this->kf->predict_and_observe(current_time, OBSERVATION_ECEF_ORIENTATION_FROM_GPS, { initial_pose_ecef_quat });
-  } else if (gps_est_error > 50.0) {
+  } else if (gps_est_error > 100.0) {
     LOGE("Locationd vs ubloxLocation position difference too large, kalman reset");
     this->reset_kalman(NAN, initial_pose_ecef_quat, ecef_pos);
   }
@@ -469,7 +469,7 @@ int Localizer::locationd_thread() {
 }
 
 int main() {
-  setpriority(PRIO_PROCESS, 0, -20);
+  set_realtime_priority(5);
 
   Localizer localizer;
   return localizer.locationd_thread();

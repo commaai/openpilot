@@ -1,7 +1,7 @@
 #pragma once
 
-#include <QWidget>
 #include <QtDBus>
+#include <QWidget>
 
 enum class SecurityType {
   OPEN,
@@ -35,6 +35,9 @@ public:
   QString ipv4_address;
 
   void refreshNetworks();
+  void forgetConnection(const QString &ssid);
+  bool isKnownNetwork(const QString &ssid);
+
   void connect(const Network &ssid);
   void connect(const Network &ssid, const QString &password);
   void connect(const Network &ssid, const QString &username, const QString &password);
@@ -45,9 +48,8 @@ public:
   void disableTethering();
   bool tetheringEnabled();
 
-  bool activate_tethering_connection();
   void addTetheringConnection();
-  bool activate_wifi_connection(const QString &ssid);
+  void activateWifiConnection(const QString &ssid);
   void changeTetheringPassword(const QString &newPassword);
 
 private:
@@ -64,14 +66,14 @@ private:
   QList<Network> get_networks();
   void connect(const QByteArray &ssid, const QString &username, const QString &password, SecurityType security_type);
   QString get_active_ap();
-  void deactivate_connections(const QString &ssid);
-  void clear_connections(const QString &ssid);
+  void deactivateConnection(const QString &ssid);
   QVector<QDBusObjectPath> get_active_connections();
   uint get_wifi_device_state();
   QByteArray get_property(const QString &network_path, const QString &property);
   unsigned int get_ap_strength(const QString &network_path);
   SecurityType getSecurityType(const QString &ssid);
-  QVector<QDBusObjectPath> list_connections();
+  QDBusObjectPath pathFromSsid(const QString &ssid);
+  QVector<QPair<QString, QDBusObjectPath>> listConnections();
 
 private slots:
   void change(unsigned int new_state, unsigned int previous_state, unsigned int change_reason);

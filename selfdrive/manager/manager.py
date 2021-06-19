@@ -22,6 +22,8 @@ from selfdrive.version import dirty, get_git_commit, version, origin, branch, co
                               terms_version, training_version, comma_remote, \
                               get_git_branch, get_git_remote
 
+sys.path.append(os.path.join(BASEDIR, "pyextra"))
+
 def manager_init():
 
   # update system time from panda
