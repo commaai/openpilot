@@ -87,6 +87,9 @@ class CarKalman(KalmanFilter):
   def generate_code(generated_dir):
     dim_state = CarKalman.initial_x.shape[0]
     name = CarKalman.name
+    
+    # vehicle models comes from The Science of Vehicle Dynamics: Handling, Braking, and Ride of Road and Race Cars
+    # Model used is in 6.15 with formula from 6.198
 
     # globals
     global_vars = [sp.Symbol(name) for name in CarKalman.global_vars]
