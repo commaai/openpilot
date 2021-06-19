@@ -62,7 +62,7 @@ OffroadAlert::OffroadAlert(QWidget* parent) : QFrame(parent) {
       border-radius: 30px;
       background-color: white;
     }
-    #rebootBtn  {
+    #rebootBtn {
       background-color: #E22C2C;
     }
   )");
