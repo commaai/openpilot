@@ -36,6 +36,7 @@ public:
   bool firstRefresh = true;
 
   void refreshNetworks();
+  void forgetConnection(const QString &ssid);
   bool isKnownNetwork(const QString &ssid);
 
   void connect(const Network &ssid);
@@ -77,7 +78,7 @@ private:
 
 signals:
   void wrongPassword(const QString &ssid);
-  void refreshNow();
+  void refreshSignal();
 
 private slots:
   void stateChange(unsigned int new_state, unsigned int previous_state, unsigned int change_reason);
