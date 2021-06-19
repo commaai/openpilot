@@ -95,13 +95,13 @@ class LatControlINDI():
     indi_log.steeringRateDeg = math.degrees(self.x[1])
     indi_log.steeringAccelDeg = math.degrees(self.x[2])
 
+    steers_des = VM.get_steer_from_curvature(-curvature, CS.vEgo)
+    steers_des += math.radians(params.angleOffsetDeg)
     if CS.vEgo < 0.3 or not active:
       indi_log.active = False
       self.output_steer = 0.0
       self.delayed_output = 0.0
     else:
-      steers_des = VM.get_steer_from_curvature(-curvature, CS.vEgo)
-      steers_des += math.radians(params.angleOffsetDeg)
 
       rate_des = VM.get_steer_from_curvature(-curvature_rate, CS.vEgo)
 
@@ -146,4 +146,4 @@ class LatControlINDI():
       check_saturation = (CS.vEgo > 10.) and not CS.steeringRateLimited and not CS.steeringPressed
       indi_log.saturated = self._check_saturation(self.output_steer, check_saturation, steers_max)
 
-    return float(self.output_steer), steers_des, indi_log
+    return float(self.output_steer), float(steers_des), indi_log
