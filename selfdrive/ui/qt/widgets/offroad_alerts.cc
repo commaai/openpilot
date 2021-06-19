@@ -73,15 +73,22 @@ void OffroadAlert::refresh() {
     // setup labels for each alert
     QString json = util::read_file("../controls/lib/alerts_offroad.json").c_str();
     QJsonObject obj = QJsonDocument::fromJson(json.toUtf8()).object();
+    // descending sort labels by severity
+    std::vector<std::pair<std::string, int>> sorted;
     for (auto it = obj.constBegin(); it != obj.constEnd(); ++it) {
-      QLabel *l = new QLabel(this);
-      alerts[it.key().toStdString()] = l;
-      int severity = it.value()["severity"].toInt();
+      sorted.push_back({it.key().toStdString(), it.value()["severity"].toInt()});
+    }
+    std::sort(sorted.begin(), sorted.end(), [=](auto &l, auto &r) {
+      return l.second > r.second;
+    });
 
+    for (auto it = sorted.begin(); it != sorted.end(); ++it) {
+      QLabel *l = new QLabel(this);
+      alerts[it->first] = l;
       l->setMargin(60);
       l->setWordWrap(true);
       l->setVisible(false);
-      l->setStyleSheet(QString("background-color: %1").arg(severity ? "#E22C2C" : "#292929"));
+      l->setStyleSheet(QString("background-color: %1").arg(it->second ? "#E22C2C" : "#292929"));
       alerts_layout->addWidget(l);
     }
     alerts_layout->addStretch(1);
