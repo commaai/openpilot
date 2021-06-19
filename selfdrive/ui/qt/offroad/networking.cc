@@ -229,7 +229,7 @@ void WifiUI::refresh() {
     } else if (network.security_type == SecurityType::WPA) {
       QLabel *lockIcon = new QLabel();
       QPixmap pix("../assets/offroad/icon_lock_closed.svg");
-      lockIcon->setPixmap(pix.scaledToWidth(40, Qt::SmoothTransformation));
+      lockIcon->setPixmap(pix.scaledToWidth(35, Qt::SmoothTransformation));
       lockIcon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
       lockIcon->setStyleSheet("QLabel { margin: 0px; padding-left: 15px; padding-right: 15px; }");
 
