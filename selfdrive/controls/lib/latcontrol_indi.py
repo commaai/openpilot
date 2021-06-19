@@ -98,8 +98,6 @@ class LatControlINDI():
       self.output_steer = 0.0
       self.delayed_output = 0.0
     else:
-      steers_des = VM.get_steer_from_curvature(-curvature, CS.vEgo)
-      steers_des += math.radians(params.angleOffsetDeg)
 
       rate_des = VM.get_steer_from_curvature(-curvature_rate, CS.vEgo)
 
