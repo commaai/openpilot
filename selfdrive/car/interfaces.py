@@ -87,7 +87,7 @@ class CarInterfaceBase():
 
   def calc_last_outputs(self):
     lat_out = None
-    if self.CC.get_last_output is not None:
+    if hasattr(self.CC, 'get_last_output'):
       lat_out = self.CC.get_last_output()
     return lat_out
     
