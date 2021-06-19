@@ -166,10 +166,10 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
       font-size: 55px;
     }
     #update_notification {
-      background-color: #E22C2C;
+      background-color: #364DEF;
     }
     #alert_notification {
-      background-color: #364DEF;
+      background-color: #E22C2C;
     }
   )");
 }
