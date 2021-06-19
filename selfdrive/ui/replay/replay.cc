@@ -46,7 +46,7 @@ Replay::Replay(QString route, SubMaster *sm_, QObject *parent) : sm(sm_), QObjec
   }
 
   const QString url = "https://api.commadotai.com/v1/route/" + route + "/files";
-  http = new HttpRequest(this, url, "", !Hardware::PC());
+  http = new HttpRequest(this, url, !Hardware::PC());
   QObject::connect(http, &HttpRequest::receivedResponse, this, &Replay::parseResponse);
 }
 

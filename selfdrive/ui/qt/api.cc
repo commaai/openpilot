@@ -67,7 +67,7 @@ QString create_jwt(const QJsonObject &payloads, int expiry) {
 
 }  // namespace CommaApi
 
-HttpRequest::HttpRequest(QObject *parent, const QString &requestURL, const QString &cache_key, bool create_jwt_) : cache_key(cache_key), create_jwt(create_jwt_), QObject(parent) {
+HttpRequest::HttpRequest(QObject *parent, const QString &requestURL, bool create_jwt_) : create_jwt(create_jwt_), QObject(parent) {
   networkAccessManager = new QNetworkAccessManager(this);
   reply = NULL;
 
@@ -77,12 +77,6 @@ HttpRequest::HttpRequest(QObject *parent, const QString &requestURL, const QStri
   connect(networkTimer, &QTimer::timeout, this, &HttpRequest::requestTimeout);
 
   sendRequest(requestURL);
-
-  if (!cache_key.isEmpty()) {
-    if (std::string cached_resp = Params().get(cache_key.toStdString()); !cached_resp.empty()) {
-      QTimer::singleShot(0, [=]() { emit receivedResponse(QString::fromStdString(cached_resp)); });
-    }
-  }
 }
 
 void HttpRequest::sendRequest(const QString &requestURL) {
@@ -116,15 +110,8 @@ void HttpRequest::requestFinished() {
     QString response = reply->readAll();
 
     if (reply->error() == QNetworkReply::NoError) {
-      // save to cache
-      if (!cache_key.isEmpty()) {
-        Params().put(cache_key.toStdString(), response.toStdString());
-      }
       emit receivedResponse(response);
     } else {
-      if (!cache_key.isEmpty()) {
-        Params().remove(cache_key.toStdString());
-      }
       qDebug() << reply->errorString();
       emit failedResponse(reply->errorString());
     }
