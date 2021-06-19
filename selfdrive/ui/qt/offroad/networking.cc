@@ -217,7 +217,7 @@ void WifiUI::refresh() {
 
     if (wifi->isKnownNetwork(network.ssid)) {
       QPushButton *forgetBtn = new QPushButton();
-      QPixmap pix("../assets/offroad/close.svg");
+      QPixmap pix("../assets/offroad/icon_close.svg");
 
       forgetBtn->setIcon(QIcon(pix));
       forgetBtn->setIconSize(QSize(35, 35));
@@ -233,7 +233,7 @@ void WifiUI::refresh() {
       hlayout->addWidget(forgetBtn, 0, Qt::AlignRight);
     } else if (network.security_type == SecurityType::WPA) {
       QLabel *icon = new QLabel();
-      QPixmap pix("../assets/offroad/lock_closed.svg");
+      QPixmap pix("../assets/offroad/icon_lock_closed.svg");
       icon->setPixmap(pix.scaledToWidth(60, Qt::SmoothTransformation));
       icon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
       icon->setStyleSheet("QLabel { margin: 0px; padding-left: 15px; padding-right: 15px; }");
