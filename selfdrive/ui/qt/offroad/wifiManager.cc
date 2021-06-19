@@ -213,7 +213,7 @@ void WifiManager::connect(const Network &n, const QString &password) {
 void WifiManager::connect(const Network &n, const QString &username, const QString &password) {
   connecting_to_network = n.ssid;
   // disconnect();
-  forgetNetwork(n.ssid); //Clear all connections that may already exist to the network we are connecting
+  forgetConnection(n.ssid); //Clear all connections that may already exist to the network we are connecting
   connect(n.ssid, username, password, n.security_type);
 }
 
@@ -283,7 +283,7 @@ bool WifiManager::isKnownNetwork(const QString &ssid) {
   return !pathFromSsid(ssid).path().isEmpty();
 }
 
-void WifiManager::forgetNetwork(const QString &ssid) {
+void WifiManager::forgetConnection(const QString &ssid) {
   QDBusObjectPath path = pathFromSsid(ssid);
   if (!path.path().isEmpty()) {
     QDBusInterface nm2(nm_service, path.path(), nm_settings_conn_iface, bus);
@@ -480,7 +480,7 @@ bool WifiManager::tetheringEnabled() {
 void WifiManager::changeTetheringPassword(const QString &newPassword) {
   tetheringPassword = newPassword;
   if (isKnownNetwork(tethering_ssid.toUtf8())) {
-    forgetNetwork(tethering_ssid.toUtf8());
+    forgetConnection(tethering_ssid.toUtf8());
   }
   addTetheringConnection();
 }
