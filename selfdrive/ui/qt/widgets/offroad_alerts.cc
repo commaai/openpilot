@@ -62,7 +62,7 @@ OffroadAlert::OffroadAlert(QWidget* parent) : QFrame(parent) {
       border-radius: 30px;
       background-color: white;
     }
-    #rebootBtn {
+    #rebootBtn  {
       background-color: #E22C2C;
     }
   )");
@@ -71,17 +71,17 @@ OffroadAlert::OffroadAlert(QWidget* parent) : QFrame(parent) {
 void OffroadAlert::refresh() {
   if (alerts.empty()) {
     // setup labels for each alert
-    QString json = QString::fromStdString(util::read_file("../controls/lib/alerts_offroad.json"));
+    QString json = util::read_file("../controls/lib/alerts_offroad.json").c_str();
     QJsonObject obj = QJsonDocument::fromJson(json.toUtf8()).object();
-    for (auto &k : obj.keys()) {
+    for (auto it = obj.constBegin(); it != obj.constEnd(); ++it) {
       QLabel *l = new QLabel(this);
-      alerts[k.toStdString()] = l;
-      int severity = obj[k].toObject()["severity"].toInt();
+      alerts[it.key().toStdString()] = l;
+      int severity = it.value()["severity"].toInt();
 
       l->setMargin(60);
       l->setWordWrap(true);
-      l->setStyleSheet("background-color: " + QString(severity ? "#E22C2C" : "#292929"));
       l->setVisible(false);
+      l->setStyleSheet(QString("background-color: %1").arg(severity ? "#E22C2C" : "#292929"));
       alerts_layout->addWidget(l);
     }
     alerts_layout->addStretch(1);
