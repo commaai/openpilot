@@ -32,11 +32,10 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent), s
 
   main_layout->addWidget(warning);
 
-  attemptInitialization();
-  wifi->requestScan();
   QTimer* timer = new QTimer(this);
   QObject::connect(timer, &QTimer::timeout, this, &Networking::refresh);
   timer->start(5000);
+  attemptInitialization();
 }
 
 void Networking::attemptInitialization() {
@@ -89,6 +88,7 @@ void Networking::attemptInitialization() {
   )");
   main_layout->setCurrentWidget(wifiScreen);
   ui_setup_complete = true;
+  wifi->requestScan();
 }
 
 void Networking::refresh() {
