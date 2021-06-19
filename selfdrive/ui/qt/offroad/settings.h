@@ -3,6 +3,7 @@
 #include <QButtonGroup>
 #include <QFileSystemWatcher>
 #include <QFrame>
+#include <QGraphicsView>
 #include <QLabel>
 #include <QPushButton>
 #include <QStackedWidget>
@@ -28,11 +29,18 @@ public:
   explicit TogglesPanel(QWidget *parent = nullptr);
 };
 
+#include <QPainter>
+#include <QPaintEngine>
+#include <QDebug>
 class SoftwarePanel : public QWidget {
   Q_OBJECT
 public:
   explicit SoftwarePanel(QWidget* parent = nullptr);
-
+  void paintEvent(QPaintEvent *event) override{
+    QPainter p(this);
+    qInfo() << p.paintEngine()->type();
+    assert(p.paintEngine()->type() == QPaintEngine::OpenGL2);
+  }
 private:
   void showEvent(QShowEvent *event) override;
   void updateLabels();
@@ -48,7 +56,9 @@ private:
   QFileSystemWatcher *fs_watch;
 };
 
-class SettingsWindow : public QFrame {
+class QGraphicsProxyWidget;
+
+class SettingsWindow : public QGraphicsView {
   Q_OBJECT
 
 public:
@@ -57,6 +67,7 @@ public:
 protected:
   void hideEvent(QHideEvent *event) override;
   void showEvent(QShowEvent *event) override;
+  void resizeEvent(QResizeEvent *event) override;
 
 signals:
   void closeSettings();
@@ -69,4 +80,5 @@ private:
   QWidget *sidebar_widget;
   QButtonGroup *nav_btns;
   QStackedWidget *panel_widget;
+  QGraphicsProxyWidget *proxyWidget;
 };
