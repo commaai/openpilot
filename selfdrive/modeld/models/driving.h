@@ -32,11 +32,9 @@ struct ModelDataRaw {
 };
 
 typedef struct ModelState {
-  ModelFrame frame;
+  ModelFrame *frame;
   std::vector<float> output;
-  std::unique_ptr<float[]> input_frames;
   std::unique_ptr<RunModel> m;
-  cl_command_queue q;
 #ifdef DESIRE
   float prev_desire[DESIRE_LEN] = {};
   float pulse_desire[DESIRE_LEN] = {};
