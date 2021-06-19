@@ -10,7 +10,7 @@
 #include "selfdrive/common/timing.h"
 
 ModelFrame::ModelFrame(cl_device_id device_id, cl_context context) {
-  input_frames = std::make_unique<float[]>(MODEL_FRAME_SIZE * 2);
+  input_frames = std::make_unique<float[]>(buf_size);
 
   q = CL_CHECK_ERR(clCreateCommandQueue(context, device_id, 0, &err));
   y_cl = CL_CHECK_ERR(clCreateBuffer(context, CL_MEM_READ_WRITE, MODEL_WIDTH * MODEL_HEIGHT, NULL, &err));
@@ -22,7 +22,7 @@ ModelFrame::ModelFrame(cl_device_id device_id, cl_context context) {
   loadyuv_init(&loadyuv, context, device_id, MODEL_WIDTH, MODEL_HEIGHT);
 }
 
-std::tuple<float*, size_t> ModelFrame::prepare(cl_mem yuv_cl, int frame_width, int frame_height, const mat3 &transform) {
+float* ModelFrame::prepare(cl_mem yuv_cl, int frame_width, int frame_height, const mat3 &transform) {
   transform_queue(&this->transform, q,
                   yuv_cl, frame_width, frame_height,
                   y_cl, u_cl, v_cl, MODEL_WIDTH, MODEL_HEIGHT, transform);
@@ -31,7 +31,7 @@ std::tuple<float*, size_t> ModelFrame::prepare(cl_mem yuv_cl, int frame_width, i
   std::memmove(&input_frames[0], &input_frames[MODEL_FRAME_SIZE], sizeof(float) * MODEL_FRAME_SIZE);
   clEnqueueReadBuffer(q, net_input_cl, CL_TRUE, 0, MODEL_FRAME_SIZE * sizeof(float), &input_frames[MODEL_FRAME_SIZE], 0, nullptr, nullptr);
   clFinish(q);
-  return std::make_tuple(&input_frames[0], MODEL_FRAME_SIZE * 2);
+  return &input_frames[0];
 }
 
 ModelFrame::~ModelFrame() {

@@ -101,8 +101,8 @@ ModelDataRaw model_eval_frame(ModelState* s, cl_mem yuv_cl, int width, int heigh
 
   //for (int i = 0; i < OUTPUT_SIZE + TEMPORAL_SIZE; i++) { printf("%f ", s->output[i]); } printf("\n");
 
-  auto[net_input_buf, buf_size] = s->frame->prepare(yuv_cl, width, height, transform);
-  s->m->execute(net_input_buf, buf_size);
+  auto net_input_buf = s->frame->prepare(yuv_cl, width, height, transform);
+  s->m->execute(net_input_buf, s->frame->buf_size);
 
   // net outputs
   ModelDataRaw net_outputs;

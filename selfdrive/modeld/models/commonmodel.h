@@ -30,7 +30,9 @@ class ModelFrame {
  public:
   ModelFrame(cl_device_id device_id, cl_context context);
   ~ModelFrame();
-  std::tuple<float*, size_t> prepare(cl_mem yuv_cl, int width, int height, const mat3& transform);
+  float* prepare(cl_mem yuv_cl, int width, int height, const mat3& transform);
+
+  const int buf_size = MODEL_FRAME_SIZE * 2;
 
  private:
   Transform transform;
