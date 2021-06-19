@@ -216,9 +216,13 @@ void WifiUI::refresh() {
     hlayout->addWidget(ssid_label, 1, Qt::AlignLeft);
 
     if (wifi->isKnownNetwork(network.ssid)) {
-      QPushButton *forgetBtn = new QPushButton("\U0000274c");
-      forgetBtn->setStyleSheet("QPushButton { background-color: #E22C2C; color: #dddddd }");
-      forgetBtn->setFixedWidth(100);
+      QPushButton *forgetBtn = new QPushButton();
+      QPixmap pix("../assets/offroad/close.svg");
+
+      forgetBtn->setIcon(QIcon(pix));
+      forgetBtn->setIconSize(QSize(35, 35));
+      forgetBtn->setStyleSheet("QPushButton { background-color: #E22C2C; }");
+      forgetBtn->setFixedSize(100, 90);
 
       QObject::connect(forgetBtn, &QPushButton::released, [=]() {
         if (ConfirmationDialog::confirm("Are you sure you want to forget " + QString::fromUtf8(network.ssid) + "?", this)) {
