@@ -35,6 +35,7 @@ public:
   QString ipv4_address;
 
   void refreshNetworks();
+  void forgetConnection(const QString &ssid);
   bool isKnownNetwork(const QString &ssid);
 
   void connect(const Network &ssid);
@@ -66,7 +67,6 @@ private:
   void connect(const QByteArray &ssid, const QString &username, const QString &password, SecurityType security_type);
   QString get_active_ap();
   void deactivateConnection(const QString &ssid);
-  void forgetNetwork(const QString &ssid);
   QVector<QDBusObjectPath> get_active_connections();
   uint get_wifi_device_state();
   QByteArray get_property(const QString &network_path, const QString &property);
