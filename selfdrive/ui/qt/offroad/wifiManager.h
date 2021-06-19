@@ -33,6 +33,7 @@ public:
   void requestScan();
   QVector<Network> seen_networks;
   QString ipv4_address;
+  bool firstRefresh = true;
 
   void refreshNetworks();
   bool isKnownNetwork(const QString &ssid);
@@ -59,7 +60,6 @@ private:
   QString connecting_to_network;
   QString tethering_ssid;
   QString tetheringPassword = "swagswagcommma";
-  bool firstScan = true;
 
   QString get_adapter();
   QString get_ipv4_address();

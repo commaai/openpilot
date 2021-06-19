@@ -35,7 +35,7 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent), s
   attemptInitialization();
   wifi->requestScan();
   QTimer* timer = new QTimer(this);
-  QObject::connect(timer, &QTimer::timeout, this, [=] { refresh(false); });
+  QObject::connect(timer, &QTimer::timeout, this, &Networking::refresh);
   timer->start(5000);
 }
 
@@ -91,8 +91,8 @@ void Networking::attemptInitialization() {
   ui_setup_complete = true;
 }
 
-void Networking::refresh(bool force) {
-  if (!this->isVisible() && !force) {
+void Networking::refresh() {
+  if (!this->isVisible() && !wifi->firstRefresh) {
     return;
   }
   if (!ui_setup_complete) {
@@ -101,6 +101,7 @@ void Networking::refresh(bool force) {
       return;
     }
   }
+  wifi->firstRefresh = false;
   wifiWidget->refresh();
   an->refresh();
 }

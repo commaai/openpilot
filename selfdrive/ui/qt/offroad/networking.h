@@ -77,7 +77,7 @@ private:
   void attemptInitialization();
 
 public slots:
-  void refresh(bool force);
+  void refresh();
 
 private slots:
   void connectToNetwork(const Network &n);
