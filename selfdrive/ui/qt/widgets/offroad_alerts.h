@@ -3,12 +3,13 @@
 #include <map>
 
 #include <QFrame>
-#include <QLabel>
-#include <QPushButton>
-#include <QVBoxLayout>
 
 #include "selfdrive/common/params.h"
-#include "selfdrive/ui/qt/widgets/scrollview.h"
+
+class QLabel;
+class QPushButton;
+class QVBoxLayout;
+class ScrollView;
 
 class OffroadAlert : public QFrame {
   Q_OBJECT
@@ -26,8 +27,8 @@ private:
   Params params;
   std::map<std::string, QLabel*> alerts;
 
-  QLabel releaseNotes;
-  QPushButton rebootBtn;
+  QLabel *releaseNotes;
+  QPushButton *rebootBtn;
   ScrollView *alertsScroll;
   ScrollView *releaseNotesScroll;
   QVBoxLayout *alerts_layout;

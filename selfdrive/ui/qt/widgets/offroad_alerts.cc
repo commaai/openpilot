@@ -1,12 +1,15 @@
 #include "selfdrive/ui/qt/widgets/offroad_alerts.h"
 
 #include <QHBoxLayout>
+#include <QLabel>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QPushButton>
 #include <QVBoxLayout>
 
 #include "selfdrive/common/util.h"
 #include "selfdrive/hardware/hw.h"
+#include "selfdrive/ui/qt/widgets/scrollview.h"
 
 OffroadAlert::OffroadAlert(QWidget* parent) : QFrame(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
@@ -20,11 +23,12 @@ OffroadAlert::OffroadAlert(QWidget* parent) : QFrame(parent) {
   alerts_widget->setStyleSheet("background-color: transparent;");
 
   // release notes
-  releaseNotes.setWordWrap(true);
-  releaseNotes.setVisible(false);
-  releaseNotes.setAlignment(Qt::AlignTop);
+  releaseNotes = new QLabel(this);
+  releaseNotes->setWordWrap(true);
+  releaseNotes->setVisible(false);
+  releaseNotes->setAlignment(Qt::AlignTop);
 
-  releaseNotesScroll = new ScrollView(&releaseNotes, this);
+  releaseNotesScroll = new ScrollView(releaseNotes, this);
   main_layout->addWidget(releaseNotesScroll);
 
   alertsScroll = new ScrollView(alerts_widget, this);
@@ -39,12 +43,13 @@ OffroadAlert::OffroadAlert(QWidget* parent) : QFrame(parent) {
   footer_layout->addWidget(dismiss_btn, 0, Qt::AlignBottom | Qt::AlignLeft);
   QObject::connect(dismiss_btn, &QPushButton::released, this, &OffroadAlert::closeAlerts);
 
-  rebootBtn.setText("Reboot and Update");
-  rebootBtn.setObjectName("rebootBtn");
-  rebootBtn.setFixedSize(600, 125);
-  rebootBtn.setVisible(false);
-  footer_layout->addWidget(&rebootBtn, 0, Qt::AlignBottom | Qt::AlignRight);
-  QObject::connect(&rebootBtn, &QPushButton::released, [=]() { Hardware::reboot(); });
+  rebootBtn = new QPushButton(this);
+  rebootBtn->setText("Reboot and Update");
+  rebootBtn->setObjectName("rebootBtn");
+  rebootBtn->setFixedSize(600, 125);
+  rebootBtn->setVisible(false);
+  footer_layout->addWidget(rebootBtn, 0, Qt::AlignBottom | Qt::AlignRight);
+  QObject::connect(rebootBtn, &QPushButton::released, [=]() { Hardware::reboot(); });
 
   setStyleSheet(R"(
     * {
@@ -112,6 +117,6 @@ void OffroadAlert::updateAlerts() {
 void OffroadAlert::setCurrentIndex(int idx) {
   // show release notes when idx = 0.
   releaseNotesScroll->setVisible(idx == 0);
-  rebootBtn.setVisible(idx == 0);
+  rebootBtn->setVisible(idx == 0);
   alertsScroll->setVisible(idx == 1);
 }
