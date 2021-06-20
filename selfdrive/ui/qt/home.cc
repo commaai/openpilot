@@ -153,7 +153,7 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
     OffroadHome {
       background-color: black;
     }
-    OffroadHome>QPushButton{
+    #update_notification, #alert_notification {
     padding: 15px;
     padding-left: 30px;
     padding-right: 30px;
@@ -162,14 +162,14 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
     font-size: 40px;
     font-weight: 500;
     }
-    OffroadHome>QLabel {
-      font-size: 55px;
-    }
     #update_notification {
       background-color: #364DEF;
     }
     #alert_notification {
       background-color: #E22C2C;
+    }
+    OffroadHome>QLabel {
+      font-size: 55px;
     }
   )");
 }
