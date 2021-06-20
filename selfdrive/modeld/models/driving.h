@@ -31,7 +31,15 @@ struct ModelDataRaw {
   float *pose;
 };
 
-typedef struct ModelState {
+class ModelState {
+public:
+  ModelState(cl_device_id device_id, cl_context context);
+  ~ModelState();
+  ModelDataRaw evalFrame(cl_mem yuv_cl, int width, int height, const mat3 &transform, float *desire_in);
+  kj::ArrayPtr<const float> outputArray() const {
+    return kj::ArrayPtr<const float>(output.data(), output.size());
+  }
+private:
   ModelFrame *frame;
   std::vector<float> output;
   std::unique_ptr<RunModel> m;
@@ -42,12 +50,8 @@ typedef struct ModelState {
 #ifdef TRAFFIC_CONVENTION
   float traffic_convention[TRAFFIC_CONVENTION_LEN] = {};
 #endif
-} ModelState;
+};
 
-void model_init(ModelState* s, cl_device_id device_id, cl_context context);
-ModelDataRaw model_eval_frame(ModelState* s, cl_mem yuv_cl, int width, int height,
-                           const mat3 &transform, float *desire_in);
-void model_free(ModelState* s);
 void poly_fit(float *in_pts, float *in_stds, float *out);
 void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id, float frame_drop,
                    const ModelDataRaw &net_outputs, uint64_t timestamp_eof,

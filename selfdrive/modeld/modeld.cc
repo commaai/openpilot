@@ -105,8 +105,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client) {
       }
 
       double mt1 = millis_since_boot();
-      ModelDataRaw model_buf = model_eval_frame(&model, buf->buf_cl, buf->width, buf->height,
-                                                model_transform, vec_desire);
+      ModelDataRaw model_buf = model.evalFrame(buf->buf_cl, buf->width, buf->height, model_transform, vec_desire);
       double mt2 = millis_since_boot();
       float model_execution_time = (mt2 - mt1) / 1000.0;
 
@@ -120,8 +119,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client) {
 
       float frame_drop_ratio = frames_dropped / (1 + frames_dropped);
 
-      model_publish(pm, extra.frame_id, frame_id, frame_drop_ratio, model_buf, extra.timestamp_eof, model_execution_time,
-                    kj::ArrayPtr<const float>(model.output.data(), model.output.size()));
+      model_publish(pm, extra.frame_id, frame_id, frame_drop_ratio, model_buf, extra.timestamp_eof, model_execution_time, model.outputArray());
       posenet_publish(pm, extra.frame_id, vipc_dropped_frames, model_buf, extra.timestamp_eof);
 
       //printf("model process: %.2fms, from last %.2fms, vipc_frame_id %u, frame_id, %u, frame_drop %.3f\n", mt2 - mt1, mt1 - last, extra.frame_id, frame_id, frame_drop_ratio);
@@ -148,25 +146,24 @@ int main(int argc, char **argv) {
   cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
   cl_context context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
 
-  // init the models
-  ModelState model;
-  model_init(&model, device_id, context);
-  LOGW("models loaded, modeld starting");
+  {
+    ModelState model(device_id, context);
+    LOGW("models loaded, modeld starting");
 
-  VisionIpcClient vipc_client = VisionIpcClient("camerad", wide_camera ? VISION_STREAM_YUV_WIDE : VISION_STREAM_YUV_BACK, true, device_id, context);
-  while (!do_exit && !vipc_client.connect(false)) {
-    util::sleep_for(100);
+    VisionIpcClient vipc_client = VisionIpcClient("camerad", wide_camera ? VISION_STREAM_YUV_WIDE : VISION_STREAM_YUV_BACK, true, device_id, context);
+    while (!do_exit && !vipc_client.connect(false)) {
+      util::sleep_for(100);
+    }
+
+    // run the models
+    // vipc_client.connected is false only when do_exit is true
+    if (vipc_client.connected) {
+      const VisionBuf *b = &vipc_client.buffers[0];
+      LOGW("connected with buffer size: %d (%d x %d)", b->len, b->width, b->height);
+      run_model(model, vipc_client);
+    }
   }
 
-  // run the models
-  // vipc_client.connected is false only when do_exit is true
-  if (vipc_client.connected) {
-    const VisionBuf *b = &vipc_client.buffers[0];
-    LOGW("connected with buffer size: %d (%d x %d)", b->len, b->width, b->height);
-    run_model(model, vipc_client);
-  }
-
-  model_free(&model);
   LOG("joining calibration thread");
   thread.join();
   CL_CHECK(clReleaseContext(context));

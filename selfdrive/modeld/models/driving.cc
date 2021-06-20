@@ -55,70 +55,67 @@ float prev_brake_3ms2_probs[3] = {0,0,0};
 
 // #define DUMP_YUV
 
-void model_init(ModelState* s, cl_device_id device_id, cl_context context) {
-  s->frame = new ModelFrame(device_id, context);
+ModelState::ModelState(cl_device_id device_id, cl_context context) {
+  frame = new ModelFrame(device_id, context);
 
   constexpr int output_size = OUTPUT_SIZE + TEMPORAL_SIZE;
-  s->output.resize(output_size);
+  output.resize(output_size);
 
 #if defined(QCOM) || defined(QCOM2)
-  s->m = std::make_unique<ThneedModel>("../../models/supercombo.thneed", &s->output[0], output_size, USE_GPU_RUNTIME);
+  m = std::make_unique<ThneedModel>("../../models/supercombo.thneed", &output[0], output_size, USE_GPU_RUNTIME);
 #else
-  s->m = std::make_unique<DefaultRunModel>("../../models/supercombo.dlc", &s->output[0], output_size, USE_GPU_RUNTIME);
+  m = std::make_unique<DefaultRunModel>("../../models/supercombo.dlc", &output[0], output_size, USE_GPU_RUNTIME);
 #endif
 
 #ifdef TEMPORAL
-  s->m->addRecurrent(&s->output[OUTPUT_SIZE], TEMPORAL_SIZE);
+  m->addRecurrent(&output[OUTPUT_SIZE], TEMPORAL_SIZE);
 #endif
-
 #ifdef DESIRE
-  s->m->addDesire(s->pulse_desire, DESIRE_LEN);
+  m->addDesire(pulse_desire, DESIRE_LEN);
 #endif
-
 #ifdef TRAFFIC_CONVENTION
   const int idx = Params().getBool("IsRHD") ? 1 : 0;
-  s->traffic_convention[idx] = 1.0;
-  s->m->addTrafficConvention(s->traffic_convention, TRAFFIC_CONVENTION_LEN);
+  traffic_convention[idx] = 1.0;
+  m->addTrafficConvention(traffic_convention, TRAFFIC_CONVENTION_LEN);
 #endif
 }
 
-ModelDataRaw model_eval_frame(ModelState* s, cl_mem yuv_cl, int width, int height,
-                           const mat3 &transform, float *desire_in) {
+ModelState::~ModelState() {
+  delete frame;
+}
+
+ModelDataRaw ModelState::evalFrame(cl_mem yuv_cl, int width, int height, const mat3 &transform, float *desire_in) {
 #ifdef DESIRE
   if (desire_in != NULL) {
     for (int i = 1; i < DESIRE_LEN; i++) {
       // Model decides when action is completed
       // so desire input is just a pulse triggered on rising edge
-      if (desire_in[i] - s->prev_desire[i] > .99) {
-        s->pulse_desire[i] = desire_in[i];
+      if (desire_in[i] - prev_desire[i] > .99) {
+        pulse_desire[i] = desire_in[i];
       } else {
-        s->pulse_desire[i] = 0.0;
+        pulse_desire[i] = 0.0;
       }
-      s->prev_desire[i] = desire_in[i];
+      prev_desire[i] = desire_in[i];
     }
   }
 #endif
 
-  //for (int i = 0; i < OUTPUT_SIZE + TEMPORAL_SIZE; i++) { printf("%f ", s->output[i]); } printf("\n");
+  //for (int i = 0; i < OUTPUT_SIZE + TEMPORAL_SIZE; i++) { printf("%f ", output[i]); } printf("\n");
 
-  auto net_input_buf = s->frame->prepare(yuv_cl, width, height, transform);
-  s->m->execute(net_input_buf, s->frame->buf_size);
+  auto net_input_buf = frame->prepare(yuv_cl, width, height, transform);
+  m->execute(net_input_buf, frame->buf_size);
 
   // net outputs
   ModelDataRaw net_outputs;
-  net_outputs.plan = &s->output[PLAN_IDX];
-  net_outputs.lane_lines = &s->output[LL_IDX];
-  net_outputs.lane_lines_prob = &s->output[LL_PROB_IDX];
-  net_outputs.road_edges = &s->output[RE_IDX];
-  net_outputs.lead = &s->output[LEAD_IDX];
-  net_outputs.lead_prob = &s->output[LEAD_PROB_IDX];
-  net_outputs.meta = &s->output[DESIRE_STATE_IDX];
-  net_outputs.pose = &s->output[POSE_IDX];
+  net_outputs.plan = &output[PLAN_IDX];
+  net_outputs.lane_lines = &output[LL_IDX];
+  net_outputs.lane_lines_prob = &output[LL_PROB_IDX];
+  net_outputs.road_edges = &output[RE_IDX];
+  net_outputs.lead = &output[LEAD_IDX];
+  net_outputs.lead_prob = &output[LEAD_PROB_IDX];
+  net_outputs.meta = &output[DESIRE_STATE_IDX];
+  net_outputs.pose = &output[POSE_IDX];
   return net_outputs;
-}
-
-void model_free(ModelState* s) {
-  delete s->frame;
 }
 
 static const float *get_best_data(const float *data, int size, int group_size, int offset) {
