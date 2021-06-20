@@ -268,6 +268,7 @@ FW_VERSIONS = {
       b'57114-TWA-A040\x00\x00',
       b'57114-TWA-A050\x00\x00',
       b'57114-TWA-B520\x00\x00',
+      b'57114-TWA-A530\x00\x00',
     ],
     (Ecu.srs, 0x18da53f1, None): [
       b'77959-TWA-A440\x00\x00',
@@ -281,6 +282,7 @@ FW_VERSIONS = {
       b'78109-TWA-A120\x00\x00',
       b'78109-TWA-A210\x00\x00',
       b'78109-TWA-A220\x00\x00',
+      b'78109-TWA-A230\x00\x00',
       b'78109-TWA-L010\x00\x00',
     ],
     (Ecu.shiftByWire, 0x18da0bf1, None): [
