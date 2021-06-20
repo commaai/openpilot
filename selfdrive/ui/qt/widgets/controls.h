@@ -3,8 +3,8 @@
 #include <QFrame>
 
 class QLabel;
-class QPushButton;
 class QHBoxLayout;
+class QPushButton;
 class QVBoxLayout;
 class Toggle;
 
@@ -14,20 +14,19 @@ class AbstractControl : public QFrame {
 
 public:
   void setIcon(const QString &icon);
-  void setDescription(const QString &text);
   QString description() const;
-  void addWidget(QWidget *w);
-  void insertWidget(int id, QWidget *w);
+  void setDescription(const QString &text);
 
 signals:
   void showDescription();
 
 protected:
-  AbstractControl(const QString &title, const QString &desc = {}, QWidget *parent = nullptr);
-  void hideEvent(QHideEvent *e) override;
-  QSize minimumSizeHint() const override;
+ AbstractControl(const QString &title, const QString &desc = {},
+                 QWidget *parent = nullptr);
+ void hideEvent(QHideEvent *e) override;
+ QSize minimumSizeHint() const override;
 
-  QHBoxLayout *controls_layout = nullptr;
+ QHBoxLayout *controls_layout = nullptr;
 
 private:
   QLabel *icon_label = nullptr;
@@ -42,8 +41,9 @@ class LabelControl : public AbstractControl {
   Q_OBJECT
 
 public:
-  LabelControl(const QString &title, const QString &text = "", const QString &desc = "", QWidget *parent = nullptr);
-  void setText(const QString &text);
+ LabelControl(const QString &title, const QString &text = {},
+              const QString &desc = {}, QWidget *parent = nullptr);
+ void setText(const QString &text);
 
 protected:
   QLabel *label;
@@ -54,9 +54,10 @@ class ButtonControl : public AbstractControl {
   Q_OBJECT
 
 public:
-  ButtonControl(const QString &title, const QString &text, const QString &desc = "", QWidget *parent = nullptr);
-  void setText(const QString &text);
-  QString text() const;
+ ButtonControl(const QString &title, const QString &text,
+               const QString &desc = {}, QWidget *parent = nullptr);
+ void setText(const QString &text);
+ QString text() const;
 
 signals:
   void released();
@@ -72,8 +73,9 @@ class ToggleControl : public AbstractControl {
   Q_OBJECT
 
 public:
-  ToggleControl(const QString &title, const QString &desc = "", const QString &icon = "", const bool state = false, QWidget *parent = nullptr);
-  void setEnabled(bool enabled);
+ ToggleControl(const QString &title, const QString &desc = {},
+               const QString &icon = {}, const bool state = false, QWidget *parent = nullptr);
+ void setEnabled(bool enabled);
 
 signals:
   void toggleFlipped(bool state);
@@ -87,5 +89,6 @@ class ParamControl : public ToggleControl {
   Q_OBJECT
 
 public:
-  ParamControl(const QString &param, const QString &title, const QString &desc, const QString &icon, QWidget *parent = nullptr);
+ ParamControl(const QString &param, const QString &title, const QString &desc,
+              const QString &icon, QWidget *parent = nullptr);
 };

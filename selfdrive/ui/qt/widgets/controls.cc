@@ -22,7 +22,8 @@ QFrame *horizontal_line(QWidget *parent) {
   return line;
 }
 
-AbstractControl::AbstractControl(const QString &title, const QString &desc, QWidget *parent) : QFrame(parent) {
+AbstractControl::AbstractControl(const QString &title, const QString &desc,
+                                 QWidget *parent) : QFrame(parent) {
   main_layout = new QVBoxLayout(this);
   main_layout->setMargin(0);
 
@@ -94,7 +95,8 @@ void AbstractControl::hideEvent(QHideEvent *e) {
 
 // ButtonControl
 
-ButtonControl::ButtonControl(const QString &title, const QString &text, const QString &desc, QWidget *parent) : AbstractControl(title, desc, parent) {
+ButtonControl::ButtonControl(const QString &title, const QString &text,
+                             const QString &desc, QWidget *parent) : AbstractControl(title, desc, parent) {
   btn = new QPushButton;
   btn->setText(text);
   btn->setStyleSheet(R"(
@@ -121,7 +123,8 @@ void ButtonControl::setEnabled(bool enabled) { btn->setEnabled(enabled); };
 
 // LabelControl
 
-LabelControl::LabelControl(const QString &title, const QString &text, const QString &desc, QWidget *parent) : AbstractControl(title, desc, parent) {
+LabelControl::LabelControl(const QString &title, const QString &text, const QString &desc,
+                           QWidget *parent) : AbstractControl(title, desc, parent) {
   label = new QLabel;
   label->setText(text);
   label->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
@@ -132,7 +135,8 @@ void LabelControl::setText(const QString &text) { label->setText(text); }
 
 // ToggleControl
 
-ToggleControl::ToggleControl(const QString &title, const QString &desc, const QString &icon, const bool state, QWidget *parent) : AbstractControl(title, desc, parent) {
+ToggleControl::ToggleControl(const QString &title, const QString &desc, const QString &icon,
+                             const bool state, QWidget *parent) : AbstractControl(title, desc, parent) {
   setIcon(icon);
   toggle = new Toggle;
   toggle->setFixedSize(150, 100);
@@ -147,7 +151,8 @@ void ToggleControl::setEnabled(bool enabled) { toggle->setEnabled(enabled); }
 
 // ParamControl
 
-ParamControl::ParamControl(const QString &param, const QString &title, const QString &desc, const QString &icon, QWidget *parent) : ToggleControl(title, desc, icon, false, parent) {
+ParamControl::ParamControl(const QString &param, const QString &title, const QString &desc,
+                           const QString &icon, QWidget *parent) : ToggleControl(title, desc, icon, false, parent) {
   if (Params().getBool(param.toStdString().c_str())) {
     toggle->togglePosition();
   }
