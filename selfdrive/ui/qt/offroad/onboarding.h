@@ -64,7 +64,6 @@ private:
   void showEvent(QShowEvent *event) override;
 
   QPushButton *accept_btn;
-  QPushButton *decline_btn;
 
 signals:
   void acceptedTerms();
@@ -79,8 +78,6 @@ public:
 
 private:
   void showEvent(QShowEvent *event) override;
-  QPushButton *back_btn;
-  QPushButton *uninstall_btn;
 
 signals:
   void getBack();
@@ -99,8 +96,6 @@ private:
   Params params;
   std::string current_terms_version;
   std::string current_training_version;
-  bool accepted_terms = false;
-  bool training_done = false;
 
 signals:
   void onboardingDone();
