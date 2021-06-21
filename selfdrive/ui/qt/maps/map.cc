@@ -532,7 +532,7 @@ void MapInstructions::updateDistance(float d) {
 void MapInstructions::updateGPSValid(bool valid) {
   if (!valid) {
     primary->setText("");
-    distance->setText("GPS not available");
+    distance->setText("Waiting for GPS position");
     distance->setAlignment(Qt::AlignCenter);
 
     secondary->setVisible(false);
