@@ -47,7 +47,7 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings) {
 
   const int h = 180;
   map_eta->setFixedHeight(h);
-  map_eta->move(0, 1080 - h);
+  map_eta->move(25, 1080 - h);
   map_eta->setVisible(false);
 
   // Routing
@@ -749,4 +749,20 @@ void MapETA::updateETA(float s, float s_typical, float d) {
   distance->setText(distance_str);
 
   adjustSize();
+
+  // Rounded corners
+  const int radius = 25;
+  const auto r = rect();
+
+  // Top corners rounded
+  QPainterPath path;
+  path.setFillRule(Qt::WindingFill);
+  path.addRoundedRect(r, radius, radius);
+
+  // Bottom corners not rounded
+  path.addRect(r.marginsRemoved(QMargins(0, radius, 0, 0)));
+
+  // Set clipping mask
+  QRegion mask = QRegion(path.simplified().toFillPolygon().toPolygon());
+  setMask(mask);
 }
