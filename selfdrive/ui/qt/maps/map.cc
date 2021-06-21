@@ -704,8 +704,9 @@ void MapETA::updateETA(float s, float s_typical, float d) {
     eta->setText(eta_time.toString("HH:mm"));
     eta_unit->setText("eta");
   } else {
-    eta->setText(eta_time.toString("h:mm"));
-    eta_unit->setText(eta_time.toString("a"));
+    auto t = eta_time.toString("h:mm a").split(' ');
+    eta->setText(t[0]);
+    eta_unit->setText(t[1]);
   }
 
   // Remaining time
