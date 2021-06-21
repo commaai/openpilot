@@ -98,8 +98,7 @@ private:
   int zoom_counter = 0;
 
   // Position
-  QMapbox::Coordinate last_position = QMapbox::Coordinate(37.7393118509158, -122.46471285025565);
-  bool last_position_valid = false;
+  std::optional<QMapbox::Coordinate> last_position;
   std::optional<float> last_bearing;
 
   // Route

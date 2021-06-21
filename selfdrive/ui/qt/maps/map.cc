@@ -65,7 +65,6 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings) {
   auto last_gps_position = coordinate_from_param("LastGPSPosition");
   if (last_gps_position) {
     last_position = *last_gps_position;
-    last_position_valid = true;
   }
 
 
@@ -136,7 +135,6 @@ void MapWindow::timerUpdate() {
 
       last_position = coordinate;
       last_bearing = bearing;
-      last_position_valid = true;
 
       if (pan_counter == 0) {
         m_map->setCoordinate(coordinate);
@@ -176,7 +174,7 @@ void MapWindow::timerUpdate() {
         auto cur_maneuver = segment.maneuver();
         auto attrs = cur_maneuver.extendedAttributes();
         if (cur_maneuver.isValid() && attrs.contains("mapbox.banner_instructions")) {
-          float along_geometry = distance_along_geometry(segment.path(), to_QGeoCoordinate(last_position));
+          float along_geometry = distance_along_geometry(segment.path(), to_QGeoCoordinate(*last_position));
           float distance = std::max(0.0f, float(segment.distance()) - along_geometry);
           emit distanceChanged(distance);
 
@@ -195,7 +193,7 @@ void MapWindow::timerUpdate() {
         if (next_segment.isValid()) {
           auto next_maneuver = next_segment.maneuver();
           if (next_maneuver.isValid()) {
-            float next_maneuver_distance = next_maneuver.position().distanceTo(to_QGeoCoordinate(last_position));
+            float next_maneuver_distance = next_maneuver.position().distanceTo(to_QGeoCoordinate(*last_position));
             // Switch to next route segment
             if (next_maneuver_distance < REROUTE_DISTANCE && next_maneuver_distance > last_maneuver_distance) {
               segment = next_segment;
@@ -210,7 +208,7 @@ void MapWindow::timerUpdate() {
           Params().remove("NavDestination");
 
           // Clear route if driving away from destination
-          float d = segment.maneuver().position().distanceTo(to_QGeoCoordinate(last_position));
+          float d = segment.maneuver().position().distanceTo(to_QGeoCoordinate(*last_position));
           if (d > REROUTE_DISTANCE) {
             clearRoute();
           }
@@ -233,7 +231,12 @@ void MapWindow::resizeGL(int w, int h) {
 void MapWindow::initializeGL() {
   m_map.reset(new QMapboxGL(nullptr, m_settings, size(), 1));
 
-  m_map->setCoordinateZoom(last_position, MAX_ZOOM);
+  if (last_position) {
+    m_map->setCoordinateZoom(*last_position, MAX_ZOOM);
+  } else {
+    m_map->setCoordinateZoom(QMapbox::Coordinate(64.31990695292795, -149.79038934046247), MIN_ZOOM);
+  }
+
   m_map->setMargins({0, 350, 0, 50});
   m_map->setPitch(MIN_PITCH);
   m_map->setStyleUrl("mapbox://styles/pd0wm/cknuhcgvr0vs817o1akcx6pek"); // Larger fonts
@@ -259,7 +262,7 @@ static float get_time_typical(const QGeoRouteSegment &segment) {
 
 void MapWindow::recomputeRoute() {
   // Last position is valid if read from param or from GPS
-  if (!last_position_valid) {
+  if (!last_position) {
     return;
   }
 
@@ -294,7 +297,7 @@ void MapWindow::recomputeRoute() {
 
 void MapWindow::updateETA() {
   if (segment.isValid()) {
-    float progress = distance_along_geometry(segment.path(), to_QGeoCoordinate(last_position)) / segment.distance();
+    float progress = distance_along_geometry(segment.path(), to_QGeoCoordinate(*last_position)) / segment.distance();
     float total_distance = segment.distance() * (1.0 - progress);
     float total_time = segment.travelTime() * (1.0 - progress);
     float total_time_typical = get_time_typical(segment) * (1.0 - progress);
@@ -315,7 +318,7 @@ void MapWindow::updateETA() {
 void MapWindow::calculateRoute(QMapbox::Coordinate destination) {
   LOGW("calculating route");
   nav_destination = destination;
-  QGeoRouteRequest request(to_QGeoCoordinate(last_position), to_QGeoCoordinate(destination));
+  QGeoRouteRequest request(to_QGeoCoordinate(*last_position), to_QGeoCoordinate(destination));
   request.setFeatureWeight(QGeoRouteRequest::TrafficFeature, QGeoRouteRequest::AvoidFeatureWeight);
 
   if (last_bearing) {
@@ -370,7 +373,7 @@ bool MapWindow::shouldRecompute() {
   // Compute closest distance to all line segments in the current path
   float min_d = REROUTE_DISTANCE + 1;
   auto path = segment.path();
-  auto cur = to_QGeoCoordinate(last_position);
+  auto cur = to_QGeoCoordinate(*last_position);
   for (size_t i = 0; i < path.size() - 1; i++) {
     auto a = path[i];
     auto b = path[i+1];
