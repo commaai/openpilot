@@ -97,17 +97,17 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
   date = new QLabel();
   header_layout->addWidget(date, 1, Qt::AlignHCenter | Qt::AlignLeft);
 
-  update_notification = new QPushButton("UPDATE");
-  update_notification->setVisible(false);
-  update_notification->setStyleSheet("background-color: #364DEF;");
-  QObject::connect(update_notification, &QPushButton::released, [=]() { center_layout->setCurrentIndex(1); });
-  header_layout->addWidget(update_notification, 0, Qt::AlignHCenter | Qt::AlignRight);
+  update_notif = new QPushButton("UPDATE");
+  update_notif->setVisible(false);
+  update_notif->setStyleSheet("background-color: #364DEF;");
+  QObject::connect(update_notif, &QPushButton::released, [=]() { center_layout->setCurrentIndex(1); });
+  header_layout->addWidget(update_notif, 0, Qt::AlignHCenter | Qt::AlignRight);
 
-  alert_notification = new QPushButton();
-  alert_notification->setVisible(false);
-  alert_notification->setStyleSheet("background-color: #E22C2C;");
-  QObject::connect(alert_notification, &QPushButton::released, [=] { center_layout->setCurrentIndex(2); });
-  header_layout->addWidget(alert_notification, 0, Qt::AlignHCenter | Qt::AlignRight);
+  alert_notif = new QPushButton();
+  alert_notif->setVisible(false);
+  alert_notif->setStyleSheet("background-color: #E22C2C;");
+  QObject::connect(alert_notif, &QPushButton::released, [=] { center_layout->setCurrentIndex(2); });
+  header_layout->addWidget(alert_notif, 0, Qt::AlignHCenter | Qt::AlignRight);
 
   QLabel* version = new QLabel(getBrandVersion());
   header_layout->addWidget(version, 0, Qt::AlignHCenter | Qt::AlignRight);
@@ -181,13 +181,13 @@ void OffroadHome::refresh() {
   if (!alerts && !updateAvailable) {
     center_layout->setCurrentIndex(0);
   } else if (center_layout->currentIndex() == 0) {
-    if (updateAvailable && !update_notification->isVisible()) {
+    if (updateAvailable && !update_notif->isVisible()) {
       center_layout->setCurrentIndex(1);  
-    } else if (alerts && !alert_notification->isVisible()) {
+    } else if (alerts && !alert_notif->isVisible()) {
       center_layout->setCurrentIndex(2);  
     }
   }
-  alert_notification->setVisible(alerts);
-  alert_notification->setText(QString::number(alerts) + " ALERT" + (alerts > 1 ? "S" : ""));
-  update_notification->setVisible(updateAvailable);
+  alert_notif->setVisible(alerts);
+  alert_notif->setText(QString::number(alerts) + " ALERT" + (alerts > 1 ? "S" : ""));
+  update_notif->setVisible(updateAvailable);
 }

@@ -29,8 +29,8 @@ private:
   QStackedLayout* center_layout;
   UpdateAlert *update_widget;
   OffroadAlert* alerts_widget;
-  QPushButton* alert_notification;
-  QPushButton* update_notification;
+  QPushButton* alert_notif;
+  QPushButton* update_notif;
 };
 
 class HomeWindow : public QWidget {
