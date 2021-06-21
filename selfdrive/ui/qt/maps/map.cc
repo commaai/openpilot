@@ -45,7 +45,7 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings) {
   map_eta = new MapETA(this);
   connect(this, &MapWindow::ETAChanged, map_eta, &MapETA::updateETA);
 
-  const int h = 180;
+  const int h = 120;
   map_eta->setFixedHeight(h);
   map_eta->move(25, 1080 - h);
   map_eta->setVisible(false);
@@ -640,38 +640,34 @@ MapETA::MapETA(QWidget * parent) : QWidget(parent) {
   main_layout->setContentsMargins(40, 25, 40, 25);
 
   {
-    QVBoxLayout *layout = new QVBoxLayout;
+    QHBoxLayout *layout = new QHBoxLayout;
     eta = new QLabel;
     eta->setAlignment(Qt::AlignCenter);
     eta->setStyleSheet("font-weight:600");
 
-    auto eta_unit = new QLabel("eta");
+    eta_unit = new QLabel;
     eta_unit->setAlignment(Qt::AlignCenter);
 
-    layout->addStretch();
     layout->addWidget(eta);
     layout->addWidget(eta_unit);
-    layout->addStretch();
     main_layout->addLayout(layout);
   }
   main_layout->addSpacing(40);
   {
-    QVBoxLayout *layout = new QVBoxLayout;
+    QHBoxLayout *layout = new QHBoxLayout;
     time = new QLabel;
     time->setAlignment(Qt::AlignCenter);
 
     time_unit = new QLabel;
     time_unit->setAlignment(Qt::AlignCenter);
 
-    layout->addStretch();
     layout->addWidget(time);
     layout->addWidget(time_unit);
-    layout->addStretch();
     main_layout->addLayout(layout);
   }
   main_layout->addSpacing(40);
   {
-    QVBoxLayout *layout = new QVBoxLayout;
+    QHBoxLayout *layout = new QHBoxLayout;
     distance = new QLabel;
     distance->setAlignment(Qt::AlignCenter);
     distance->setStyleSheet("font-weight:600");
@@ -679,10 +675,8 @@ MapETA::MapETA(QWidget * parent) : QWidget(parent) {
     distance_unit = new QLabel;
     distance_unit->setAlignment(Qt::AlignCenter);
 
-    layout->addStretch();
     layout->addWidget(distance);
     layout->addWidget(distance_unit);
-    layout->addStretch();
     main_layout->addLayout(layout);
   }
 
@@ -708,8 +702,10 @@ void MapETA::updateETA(float s, float s_typical, float d) {
   auto eta_time = QDateTime::currentDateTime().addSecs(s).time();
   if (params.getBool("NavSettingTime24h")) {
     eta->setText(eta_time.toString("HH:mm"));
+    eta_unit->setText("eta");
   } else {
-    eta->setText(eta_time.toString("h:mm a"));
+    eta->setText(eta_time.toString("h:mm"));
+    eta_unit->setText(eta_time.toString("a"));
   }
 
   // Remaining time

@@ -51,6 +51,7 @@ class MapETA : public QWidget {
 
 private:
   QLabel *eta;
+  QLabel *eta_unit;
   QLabel *time;
   QLabel *time_unit;
   QLabel *distance;
