@@ -761,4 +761,7 @@ void MapETA::updateETA(float s, float s_typical, float d) {
   // Set clipping mask
   QRegion mask = QRegion(path.simplified().toFillPolygon().toPolygon());
   setMask(mask);
+
+  // Center
+  move(static_cast<QWidget*>(parent())->width() / 2 - width() / 2, 1080 - height());
 }
