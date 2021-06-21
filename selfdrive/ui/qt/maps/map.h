@@ -43,6 +43,7 @@ public:
 public slots:
   void updateDistance(float d);
   void updateInstructions(QMap<QString, QVariant> banner, bool full);
+  void updateGPSValid(bool valid);
 };
 
 class MapETA : public QWidget {
@@ -97,7 +98,7 @@ private:
   int zoom_counter = 0;
 
   // Position
-  QMapbox::Coordinate last_position = QMapbox::Coordinate(37.7393118509158, -122.46471285025565);
+  std::optional<QMapbox::Coordinate> last_position;
   std::optional<float> last_bearing;
 
   // Route
@@ -134,5 +135,6 @@ signals:
   void distanceChanged(float distance);
   void instructionsChanged(QMap<QString, QVariant> banner, bool full);
   void ETAChanged(float seconds, float seconds_typical, float distance);
+  void GPSValidChanged(bool valid);
 };
 
