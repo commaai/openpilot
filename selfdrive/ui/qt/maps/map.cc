@@ -536,6 +536,8 @@ void MapInstructions::updateGPSValid(bool valid) {
     secondary->setVisible(false);
     icon_01->setVisible(false);
 
+    last_banner = {};
+
     setVisible(true);
     adjustSize();
   }
