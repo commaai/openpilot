@@ -637,12 +637,13 @@ void MapInstructions::updateInstructions(QMap<QString, QVariant> banner, bool fu
 
 MapETA::MapETA(QWidget * parent) : QWidget(parent) {
   QHBoxLayout *main_layout = new QHBoxLayout(this);
-  main_layout->setContentsMargins(20, 25, 20, 25);
+  main_layout->setContentsMargins(40, 25, 40, 25);
 
   {
     QVBoxLayout *layout = new QVBoxLayout;
     eta = new QLabel;
     eta->setAlignment(Qt::AlignCenter);
+    eta->setStyleSheet("font-weight:600");
 
     auto eta_unit = new QLabel("eta");
     eta_unit->setAlignment(Qt::AlignCenter);
@@ -653,7 +654,7 @@ MapETA::MapETA(QWidget * parent) : QWidget(parent) {
     layout->addStretch();
     main_layout->addLayout(layout);
   }
-  main_layout->addSpacing(30);
+  main_layout->addSpacing(40);
   {
     QVBoxLayout *layout = new QVBoxLayout;
     time = new QLabel;
@@ -668,11 +669,13 @@ MapETA::MapETA(QWidget * parent) : QWidget(parent) {
     layout->addStretch();
     main_layout->addLayout(layout);
   }
-  main_layout->addSpacing(30);
+  main_layout->addSpacing(40);
   {
     QVBoxLayout *layout = new QVBoxLayout;
     distance = new QLabel;
     distance->setAlignment(Qt::AlignCenter);
+    distance->setStyleSheet("font-weight:600");
+
     distance_unit = new QLabel;
     distance_unit->setAlignment(Qt::AlignCenter);
 
@@ -719,16 +722,17 @@ void MapETA::updateETA(float s, float s_typical, float d) {
     time_unit->setText("hr");
   }
 
+  QString color;
   if (s / s_typical > 1.5) {
-    time_unit->setStyleSheet(R"(color: #DA3025; )");
-    time->setStyleSheet(R"(color: #DA3025; )");
+    color = "#DA3025";
   } else if (s / s_typical > 1.2) {
-    time_unit->setStyleSheet(R"(color: #DAA725; )");
-    time->setStyleSheet(R"(color: #DAA725; )");
+    color = "#DAA725";
   } else {
-    time_unit->setStyleSheet(R"(color: #25DA6E; )");
-    time->setStyleSheet(R"(color: #25DA6E; )");
+    color = "#25DA6E";
   }
+
+  time->setStyleSheet(QString(R"(color: %1; font-weight:600;)").arg(color));
+  time_unit->setStyleSheet(QString(R"(color: %1;)").arg(color));
 
   // Distance
   QString distance_str;
