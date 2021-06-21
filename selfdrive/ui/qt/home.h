@@ -23,13 +23,11 @@ private:
   void showEvent(QShowEvent *event) override;
   void hideEvent(QHideEvent *event) override;
   void refresh();
-  void openAlerts();
-  void openUpdate();
-  void closeOffroadAlerts();
 
   QTimer* timer;
   QLabel* date;
   QStackedLayout* center_layout;
+  UpdateAlert *update_widget;
   OffroadAlert* alerts_widget;
   QPushButton* alert_notification;
   QPushButton* update_notification;
