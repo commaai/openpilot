@@ -112,7 +112,7 @@ void Networking::refreshSlot() {
 }
 
 void Networking::connectToNetwork(const Network &n) {
-  if (wifi->isKnownNetwork(n.ssid)) {
+  if (wifi->isKnownConnection(n.ssid)) {
     wifi->activateWifiConnection(n.ssid);
   } else if (n.security_type == SecurityType::OPEN) {
     wifi->connect(n);
@@ -206,9 +206,6 @@ WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi)
 void WifiUI::refresh() {
   clearLayout(main_layout);
 
-  connectButtons = new QButtonGroup(this); // TODO check if this is a leak
-  QObject::connect(connectButtons, qOverload<QAbstractButton*>(&QButtonGroup::buttonClicked), this, &WifiUI::handleButton);
-
   int i = 0;
   for (Network &network : wifi->seen_networks) {
     QHBoxLayout *hlayout = new QHBoxLayout;
@@ -217,7 +214,7 @@ void WifiUI::refresh() {
     ssid_label->setStyleSheet("font-size: 55px;");
     hlayout->addWidget(ssid_label, 1, Qt::AlignLeft);
 
-    if (wifi->isKnownNetwork(network.ssid) && !wifi->tetheringEnabled()) {
+    if (wifi->isKnownConnection(network.ssid) && !wifi->tetheringEnabled()) {
       QPushButton *forgetBtn = new QPushButton();
       QPixmap pix("../assets/offroad/icon_close.svg");
 
@@ -253,7 +250,7 @@ void WifiUI::refresh() {
     btn->setFixedWidth(350);
     hlayout->addWidget(btn, 0, Qt::AlignRight);
 
-    connectButtons->addButton(btn, i);
+    QObject::connect(btn, &QPushButton::clicked, this, [=]() { emit connectToNetwork(network); });
 
     main_layout->addLayout(hlayout, 1);
     // Don't add the last horizontal line
@@ -263,10 +260,4 @@ void WifiUI::refresh() {
     i++;
   }
   main_layout->addStretch(3);
-}
-
-void WifiUI::handleButton(QAbstractButton* button) {
-  QPushButton* btn = static_cast<QPushButton*>(button);
-  Network n = wifi->seen_networks[connectButtons->id(btn)];
-  emit connectToNetwork(n);
 }

@@ -32,11 +32,12 @@ public:
 
   void requestScan();
   QVector<Network> seen_networks;
+  QVector<QPair<QString, QDBusObjectPath>> known_connections;
   QString ipv4_address;
 
   void refreshNetworks();
   void forgetConnection(const QString &ssid);
-  bool isKnownNetwork(const QString &ssid);
+  bool isKnownConnection(const QString &ssid);
 
   void connect(const Network &ssid);
   void connect(const Network &ssid, const QString &password);
@@ -72,8 +73,8 @@ private:
   QByteArray get_property(const QString &network_path, const QString &property);
   unsigned int get_ap_strength(const QString &network_path);
   SecurityType getSecurityType(const QString &path);
-  QDBusObjectPath pathFromSsid(const QString &ssid);
-  QVector<QPair<QString, QDBusObjectPath>> listConnections();
+  int getConnectionIndex(const QString &ssid);
+  void updateConnections();
 
 signals:
   void wrongPassword(const QString &ssid);
