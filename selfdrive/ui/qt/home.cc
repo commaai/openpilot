@@ -178,6 +178,7 @@ void OffroadHome::refresh() {
 
   bool updateAvailable = update_widget->refresh();
   int alerts = alerts_widget->refresh();
+
   if (!alerts && !updateAvailable) {
     center_layout->setCurrentIndex(0);
   } else if (center_layout->currentIndex() == 0) {
