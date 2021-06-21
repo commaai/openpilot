@@ -45,9 +45,9 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings) {
   map_eta = new MapETA(this);
   connect(this, &MapWindow::ETAChanged, map_eta, &MapETA::updateETA);
 
-  const int h = 180;
+  const int h = 120;
   map_eta->setFixedHeight(h);
-  map_eta->move(0, 1080 - h);
+  map_eta->move(25, 1080 - h);
   map_eta->setVisible(false);
 
   // Routing
@@ -639,49 +639,46 @@ void MapInstructions::updateInstructions(QMap<QString, QVariant> banner, bool fu
 
 MapETA::MapETA(QWidget * parent) : QWidget(parent) {
   QHBoxLayout *main_layout = new QHBoxLayout(this);
-  main_layout->setContentsMargins(20, 25, 20, 25);
+  main_layout->setContentsMargins(40, 25, 40, 25);
 
   {
-    QVBoxLayout *layout = new QVBoxLayout;
+    QHBoxLayout *layout = new QHBoxLayout;
     eta = new QLabel;
     eta->setAlignment(Qt::AlignCenter);
+    eta->setStyleSheet("font-weight:600");
 
-    auto eta_unit = new QLabel("eta");
+    eta_unit = new QLabel;
     eta_unit->setAlignment(Qt::AlignCenter);
 
-    layout->addStretch();
     layout->addWidget(eta);
     layout->addWidget(eta_unit);
-    layout->addStretch();
     main_layout->addLayout(layout);
   }
-  main_layout->addSpacing(30);
+  main_layout->addSpacing(40);
   {
-    QVBoxLayout *layout = new QVBoxLayout;
+    QHBoxLayout *layout = new QHBoxLayout;
     time = new QLabel;
     time->setAlignment(Qt::AlignCenter);
 
     time_unit = new QLabel;
     time_unit->setAlignment(Qt::AlignCenter);
 
-    layout->addStretch();
     layout->addWidget(time);
     layout->addWidget(time_unit);
-    layout->addStretch();
     main_layout->addLayout(layout);
   }
-  main_layout->addSpacing(30);
+  main_layout->addSpacing(40);
   {
-    QVBoxLayout *layout = new QVBoxLayout;
+    QHBoxLayout *layout = new QHBoxLayout;
     distance = new QLabel;
     distance->setAlignment(Qt::AlignCenter);
+    distance->setStyleSheet("font-weight:600");
+
     distance_unit = new QLabel;
     distance_unit->setAlignment(Qt::AlignCenter);
 
-    layout->addStretch();
     layout->addWidget(distance);
     layout->addWidget(distance_unit);
-    layout->addStretch();
     main_layout->addLayout(layout);
   }
 
@@ -707,8 +704,11 @@ void MapETA::updateETA(float s, float s_typical, float d) {
   auto eta_time = QDateTime::currentDateTime().addSecs(s).time();
   if (params.getBool("NavSettingTime24h")) {
     eta->setText(eta_time.toString("HH:mm"));
+    eta_unit->setText("eta");
   } else {
-    eta->setText(eta_time.toString("h:mm a"));
+    auto t = eta_time.toString("h:mm a").split(' ');
+    eta->setText(t[0]);
+    eta_unit->setText(t[1]);
   }
 
   // Remaining time
@@ -721,16 +721,17 @@ void MapETA::updateETA(float s, float s_typical, float d) {
     time_unit->setText("hr");
   }
 
+  QString color;
   if (s / s_typical > 1.5) {
-    time_unit->setStyleSheet(R"(color: #DA3025; )");
-    time->setStyleSheet(R"(color: #DA3025; )");
+    color = "#DA3025";
   } else if (s / s_typical > 1.2) {
-    time_unit->setStyleSheet(R"(color: #DAA725; )");
-    time->setStyleSheet(R"(color: #DAA725; )");
+    color = "#DAA725";
   } else {
-    time_unit->setStyleSheet(R"(color: #25DA6E; )");
-    time->setStyleSheet(R"(color: #25DA6E; )");
+    color = "#25DA6E";
   }
+
+  time->setStyleSheet(QString(R"(color: %1; font-weight:600;)").arg(color));
+  time_unit->setStyleSheet(QString(R"(color: %1;)").arg(color));
 
   // Distance
   QString distance_str;
@@ -747,4 +748,23 @@ void MapETA::updateETA(float s, float s_typical, float d) {
   distance->setText(distance_str);
 
   adjustSize();
+
+  // Rounded corners
+  const int radius = 25;
+  const auto r = rect();
+
+  // Top corners rounded
+  QPainterPath path;
+  path.setFillRule(Qt::WindingFill);
+  path.addRoundedRect(r, radius, radius);
+
+  // Bottom corners not rounded
+  path.addRect(r.marginsRemoved(QMargins(0, radius, 0, 0)));
+
+  // Set clipping mask
+  QRegion mask = QRegion(path.simplified().toFillPolygon().toPolygon());
+  setMask(mask);
+
+  // Center
+  move(static_cast<QWidget*>(parent())->width() / 2 - width() / 2, 1080 - height());
 }
