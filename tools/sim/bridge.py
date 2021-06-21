@@ -108,14 +108,18 @@ def gps_callback(gps, vehicle_state):
   ]
 
   dat.gpsLocationExternal = {
+    "timestamp": int(time.time() * 1000),
     "flags": 1, # valid fix
+    "accuracy": 1.0,
     "verticalAccuracy": 1.0,
     "speedAccuracy": 0.1,
+    "bearingAccuracyDeg": 0.1,
     "vNED": velNED,
     "bearingDeg": vehicle_state.bearing_deg,
     "latitude": gps.latitude,
     "longitude": gps.longitude,
     "altitude": gps.altitude,
+    "speed": vehicle_state.speed,
     "source": log.GpsLocationData.SensorSource.ublox,
   }
 
