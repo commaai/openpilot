@@ -23,7 +23,7 @@ class UpdateAlert : public AbstractAlert {
   Q_OBJECT
 
 public:
-  UpdateAlert(QWidget *parent = 0) : AbstractAlert(true, parent) {}
+  UpdateAlert(QWidget *parent = 0);
   bool refresh();
 
 private:

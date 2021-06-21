@@ -64,12 +64,12 @@ int OffroadAlert::refresh() {
     }
     std::sort(sorted.begin(), sorted.end(), [=](auto &l, auto &r) { return l.second > r.second; });
 
-    for (auto it = sorted.begin(); it != sorted.end(); ++it) {
+    for (auto &[key, severity] : sorted) {
       QLabel *l = new QLabel(this);
-      alerts[it->first] = l;
+      alerts[key] = l;
       l->setMargin(60);
       l->setWordWrap(true);
-      l->setStyleSheet(QString("background-color: %1").arg(it->second ? "#E22C2C" : "#292929"));
+      l->setStyleSheet(QString("background-color: %1").arg(severity ? "#E22C2C" : "#292929"));
       scrollable_layout->addWidget(l);
     }
   }
@@ -93,13 +93,14 @@ void OffroadAlert::updateAlerts() {
   return alertCount;
 }
 
+UpdateAlert::UpdateAlert(QWidget *parent) : AbstractAlert(true, parent) {
+  releaseNotes = new QLabel(this);
+  releaseNotes->setWordWrap(true);
+  releaseNotes->setAlignment(Qt::AlignTop);
+  scrollable_layout->addWidget(releaseNotes);
+}
+
 bool UpdateAlert::refresh() {
-  if (!releaseNotes) {
-    releaseNotes = new QLabel(this);
-    releaseNotes->setWordWrap(true);
-    releaseNotes->setAlignment(Qt::AlignTop);
-    scrollable_layout->addWidget(releaseNotes);
-  }
   bool updateAvailable = params.getBool("UpdateAvailable");
   if (updateAvailable) {
     releaseNotes->setText(params.get("ReleaseNotes").c_str());

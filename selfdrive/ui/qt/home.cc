@@ -6,7 +6,6 @@
 #include <QVBoxLayout>
 
 #include "selfdrive/common/params.h"
-#include "selfdrive/common/util.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/widgets/drive_stats.h"
 #include "selfdrive/ui/qt/widgets/setup.h"
@@ -109,8 +108,7 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
   QObject::connect(alert_notif, &QPushButton::released, [=] { center_layout->setCurrentIndex(2); });
   header_layout->addWidget(alert_notif, 0, Qt::AlignHCenter | Qt::AlignRight);
 
-  QLabel* version = new QLabel(getBrandVersion());
-  header_layout->addWidget(version, 0, Qt::AlignHCenter | Qt::AlignRight);
+  header_layout->addWidget(new QLabel(getBrandVersion()), 0, Qt::AlignHCenter | Qt::AlignRight);
 
   main_layout->addLayout(header_layout);
 
@@ -121,13 +119,10 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
   QWidget* statsAndSetupWidget = new QWidget();
   QHBoxLayout* statsAndSetup = new QHBoxLayout(statsAndSetupWidget);
   statsAndSetup->setMargin(0);
-
   DriveStats* drive = new DriveStats;
   drive->setFixedSize(800, 800);
   statsAndSetup->addWidget(drive);
-
-  SetupWidget* setup = new SetupWidget;
-  statsAndSetup->addWidget(setup);
+  statsAndSetup->addWidget(new SetupWidget);
 
   center_layout->addWidget(statsAndSetupWidget);
 
@@ -143,7 +138,7 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
 
   // set up refresh timer
   timer = new QTimer(this);
-  QObject::connect(timer, &QTimer::timeout, this, &OffroadHome::refresh);
+  timer->callOnTimeout(this, &OffroadHome::refresh);
 
   setStyleSheet(R"(
     * {
