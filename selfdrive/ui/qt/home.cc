@@ -165,9 +165,7 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
 }
 
 void OffroadHome::showEvent(QShowEvent *event) {
-  if (date->text().isEmpty()) {
-    refresh();
-  }
+  refresh();
   timer->start(10 * 1000);
 }
 
