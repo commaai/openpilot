@@ -467,7 +467,7 @@ MapInstructions::MapInstructions(QWidget * parent) : QWidget(parent) {
     QVBoxLayout *layout = new QVBoxLayout(w);
 
     distance = new QLabel;
-    distance->setStyleSheet(R"(font-size: 75px; )");
+    distance->setStyleSheet(R"(font-size: 75px;)");
     layout->addWidget(distance);
 
     primary = new QLabel;
@@ -482,6 +482,8 @@ MapInstructions::MapInstructions(QWidget * parent) : QWidget(parent) {
 
     lane_layout = new QHBoxLayout;
     layout->addLayout(lane_layout);
+
+    layout->addStretch(); // Make sure the word-wrapped labels are as small as possible
 
     main_layout->addWidget(w);
   }
