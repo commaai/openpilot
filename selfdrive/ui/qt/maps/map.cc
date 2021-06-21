@@ -39,6 +39,7 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings) {
   map_instructions = new MapInstructions(this);
   connect(this, &MapWindow::instructionsChanged, map_instructions, &MapInstructions::updateInstructions);
   connect(this, &MapWindow::distanceChanged, map_instructions, &MapInstructions::updateDistance);
+  connect(this, &MapWindow::GPSValidChanged, map_instructions, &MapInstructions::updateGPSValid);
   map_instructions->setFixedWidth(width());
 
   map_eta = new MapETA(this);
@@ -64,6 +65,7 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings) {
   auto last_gps_position = coordinate_from_param("LastGPSPosition");
   if (last_gps_position) {
     last_position = *last_gps_position;
+    last_position_valid = true;
   }
 
 
@@ -121,8 +123,10 @@ void MapWindow::timerUpdate() {
     auto location = (*sm)["liveLocationKalman"].getLiveLocationKalman();
     gps_ok = location.getGpsOK();
 
-    // Update map location, orientation and zoom on valid localizer output
-    if (location.getStatus() == cereal::LiveLocationKalman::Status::VALID) {
+    bool localizer_valid = location.getStatus() == cereal::LiveLocationKalman::Status::VALID;
+    emit GPSValidChanged(localizer_valid);
+
+    if (localizer_valid) {
       auto pos = location.getPositionGeodetic();
       auto orientation = location.getOrientationNED();
 
@@ -132,6 +136,7 @@ void MapWindow::timerUpdate() {
 
       last_position = coordinate;
       last_bearing = bearing;
+      last_position_valid = true;
 
       if (pan_counter == 0) {
         m_map->setCoordinate(coordinate);
@@ -165,61 +170,59 @@ void MapWindow::timerUpdate() {
         modelPathSource["data"] = QVariant::fromValue<QMapbox::Feature>(feature2);
         m_map->updateSource("modelPathSource", modelPathSource);
       }
-    }
 
-    // Show route instructions
-    if (segment.isValid()) {
-      auto cur_maneuver = segment.maneuver();
-      auto attrs = cur_maneuver.extendedAttributes();
-      if (cur_maneuver.isValid() && attrs.contains("mapbox.banner_instructions")) {
-        float along_geometry = distance_along_geometry(segment.path(), to_QGeoCoordinate(last_position));
-        float distance = std::max(0.0f, float(segment.distance()) - along_geometry);
-        emit distanceChanged(distance);
+      if (segment.isValid()) {
+        // Show route instructions
+        auto cur_maneuver = segment.maneuver();
+        auto attrs = cur_maneuver.extendedAttributes();
+        if (cur_maneuver.isValid() && attrs.contains("mapbox.banner_instructions")) {
+          float along_geometry = distance_along_geometry(segment.path(), to_QGeoCoordinate(last_position));
+          float distance = std::max(0.0f, float(segment.distance()) - along_geometry);
+          emit distanceChanged(distance);
 
-        m_map->setPitch(MAX_PITCH); // TODO: smooth pitching based on maneuver distance
+          m_map->setPitch(MAX_PITCH); // TODO: smooth pitching based on maneuver distance
 
-        auto banner = attrs["mapbox.banner_instructions"].toList();
-        if (banner.size()) {
-          map_instructions->setVisible(true);
-
-          auto banner_0 = banner[0].toMap();
-          float show_at = banner_0["distance_along_geometry"].toDouble();
-          emit instructionsChanged(banner_0, distance < show_at);
-        }
-      }
-
-      auto next_segment = segment.nextRouteSegment();
-      if (next_segment.isValid()) {
-        auto next_maneuver = next_segment.maneuver();
-        if (next_maneuver.isValid()) {
-          float next_maneuver_distance = next_maneuver.position().distanceTo(to_QGeoCoordinate(last_position));
-          // Switch to next route segment
-          if (next_maneuver_distance < REROUTE_DISTANCE && next_maneuver_distance > last_maneuver_distance) {
-            segment = next_segment;
-
-            recompute_backoff = std::max(0, recompute_backoff - 1);
-            recompute_countdown = 0;
+          auto banner = attrs["mapbox.banner_instructions"].toList();
+          if (banner.size()) {
+            auto banner_0 = banner[0].toMap();
+            float show_at = banner_0["distance_along_geometry"].toDouble();
+            emit instructionsChanged(banner_0, distance < show_at);
           }
-          last_maneuver_distance = next_maneuver_distance;
+        }
+
+        // Handle transition to next route segment
+        auto next_segment = segment.nextRouteSegment();
+        if (next_segment.isValid()) {
+          auto next_maneuver = next_segment.maneuver();
+          if (next_maneuver.isValid()) {
+            float next_maneuver_distance = next_maneuver.position().distanceTo(to_QGeoCoordinate(last_position));
+            // Switch to next route segment
+            if (next_maneuver_distance < REROUTE_DISTANCE && next_maneuver_distance > last_maneuver_distance) {
+              segment = next_segment;
+
+              recompute_backoff = std::max(0, recompute_backoff - 1);
+              recompute_countdown = 0;
+            }
+            last_maneuver_distance = next_maneuver_distance;
+          }
+        } else {
+          // Destination reached
+          Params().remove("NavDestination");
+
+          // Clear route if driving away from destination
+          float d = segment.maneuver().position().distanceTo(to_QGeoCoordinate(last_position));
+          if (d > REROUTE_DISTANCE) {
+            clearRoute();
+          }
         }
       } else {
-        Params().remove("NavDestination");
-
-        // Clear route if driving away from destination
-        float d = segment.maneuver().position().distanceTo(to_QGeoCoordinate(last_position));
-        if (d > REROUTE_DISTANCE) {
-          clearRoute();
-        }
+        map_instructions->setVisible(false);
       }
     }
-
   }
 
   update();
 
-  if (!segment.isValid()) {
-    map_instructions->setVisible(false);
-  }
 
 }
 
@@ -255,6 +258,11 @@ static float get_time_typical(const QGeoRouteSegment &segment) {
 
 
 void MapWindow::recomputeRoute() {
+  // Last position is valid if read from param or from GPS
+  if (!last_position_valid) {
+    return;
+  }
+
   bool should_recompute = shouldRecompute();
   auto new_destination = coordinate_from_param("NavDestination");
 
@@ -512,7 +520,22 @@ void MapInstructions::updateDistance(float d) {
     }
   }
 
+  distance->setAlignment(Qt::AlignLeft);
   distance->setText(distance_str);
+}
+
+void MapInstructions::updateGPSValid(bool valid) {
+  if (!valid) {
+    primary->setText("");
+    distance->setText("GPS not available");
+    distance->setAlignment(Qt::AlignCenter);
+
+    secondary->setVisible(false);
+    icon_01->setVisible(false);
+
+    setVisible(true);
+    adjustSize();
+  }
 }
 
 void MapInstructions::updateInstructions(QMap<QString, QVariant> banner, bool full) {
@@ -539,6 +562,7 @@ void MapInstructions::updateInstructions(QMap<QString, QVariant> banner, bool fu
     QPixmap pix(fn);
     icon_01->setPixmap(pix.scaledToWidth(200, Qt::SmoothTransformation));
     icon_01->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
+    icon_01->setVisible(true);
   }
 
   // Parse components (e.g. lanes, exit number)
@@ -601,8 +625,11 @@ void MapInstructions::updateInstructions(QMap<QString, QVariant> banner, bool fu
   primary->setText(primary_str);
   secondary->setVisible(secondary_str.length() > 0);
   secondary->setText(secondary_str);
-  adjustSize();
+
   last_banner = banner;
+
+  setVisible(true);
+  adjustSize();
 }
 
 MapETA::MapETA(QWidget * parent) : QWidget(parent) {
