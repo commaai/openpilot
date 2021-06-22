@@ -51,6 +51,10 @@ class CarInterfaceBase():
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None):
     raise NotImplementedError
 
+  @staticmethod
+  def init(CP, logcan, sendcan):
+    pass
+
   # returns a set of default params to avoid repetition in car specific params
   @staticmethod
   def get_std_params(candidate, fingerprint):
