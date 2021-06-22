@@ -4,6 +4,9 @@ from collections import namedtuple
 ThermalConfig = namedtuple('ThermalConfig', ['cpu', 'gpu', 'mem', 'bat', 'ambient'])
 
 class HardwareBase:
+  """
+  Base class for `HARDWARE` const (set in `selfdrive/__init__.py`)
+  """
   @staticmethod
   def get_cmdline():
     with open('/proc/cmdline') as f:

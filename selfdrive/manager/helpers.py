@@ -5,7 +5,12 @@ import errno
 import signal
 
 
-def unblock_stdout():
+def unblock_stdout() -> None:
+  """
+  Creates a non-blocking stdout by forking pty then killing the child process 
+  and keeping the pty handle. 
+  """
+
   # get a non-blocking stdout
   child_pid, child_pty = os.forkpty()
   if child_pid != 0:  # parent

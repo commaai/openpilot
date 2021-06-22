@@ -1,6 +1,7 @@
 import os
+from typing import Dict
 
-from selfdrive.manager.process import PythonProcess, NativeProcess, DaemonProcess
+from selfdrive.manager.process import PythonProcess, NativeProcess, DaemonProcess, ManagerProcess
 from selfdrive.hardware import EON, TICI, PC
 
 WEBCAM = os.getenv("USE_WEBCAM") is not None
@@ -17,7 +18,7 @@ procs = [
   NativeProcess("proclogd", "selfdrive/proclogd", ["./proclogd"]),
   NativeProcess("sensord", "selfdrive/sensord", ["./sensord"], enabled=not PC, persistent=EON, sigkill=EON),
   NativeProcess("ubloxd", "selfdrive/locationd", ["./ubloxd"], enabled=(not PC or WEBCAM)),
-  NativeProcess("ui", "selfdrive/ui", ["./ui"], persistent=True, watchdog_max_dt=(10 if TICI else None)),
+  NativeProcess("ui", "selfdrive/ui", ["./ui"], persistent=True, watchdog_max_seconds=(10 if TICI else None)),
   NativeProcess("locationd", "selfdrive/locationd", ["./locationd"]),
   PythonProcess("calibrationd", "selfdrive.locationd.calibrationd"),
   PythonProcess("controlsd", "selfdrive.controls.controlsd"),
@@ -36,4 +37,4 @@ procs = [
   PythonProcess("uploader", "selfdrive.loggerd.uploader", persistent=True),
 ]
 
-managed_processes = {p.name: p for p in procs}
+managed_processes: Dict[str, ManagerProcess] = {p.name: p for p in procs}

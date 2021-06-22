@@ -22,7 +22,10 @@ MAX_BUILD_PROGRESS = 100
 PREBUILT = os.path.exists(os.path.join(BASEDIR, 'prebuilt'))
 
 
-def build(spinner, dirty=False):
+def build(spinner: Spinner, dirty: bool = False):
+  """
+  Main build routine that compiles openpilot using scons
+  """
   env = os.environ.copy()
   env['SCONS_PROGRESS'] = "1"
   nproc = os.cpu_count()
@@ -30,13 +33,15 @@ def build(spinner, dirty=False):
 
   for retry in [True, False]:
     scons = subprocess.Popen(["scons", j_flag, "--cache-populate"], cwd=BASEDIR, env=env, stderr=subprocess.PIPE)
-
+    scons_errors = scons.stderr
+    if not scons_errors:
+      raise RuntimeError("scons stderr pipe missing")
     compile_output = []
 
     # Read progress from stderr and update spinner
     while scons.poll() is None:
       try:
-        line = scons.stderr.readline()
+        line = scons_errors.readline()
         if line is None:
           continue
         line = line.rstrip()
@@ -44,7 +49,7 @@ def build(spinner, dirty=False):
         prefix = b'progress: '
         if line.startswith(prefix):
           i = int(line[len(prefix):])
-          spinner.update_progress(MAX_BUILD_PROGRESS * min(1., i / TOTAL_SCONS_NODES), 100.)
+          spinner.update_progress(MAX_BUILD_PROGRESS * min(1, i // TOTAL_SCONS_NODES), 100)
         elif len(line):
           compile_output.append(line)
           print(line.decode('utf8', 'replace'))
@@ -53,7 +58,7 @@ def build(spinner, dirty=False):
 
     if scons.returncode != 0:
       # Read remaining output
-      r = scons.stderr.read().split(b'\n')
+      r = scons_errors.read().split(b'\n')
       compile_output += r
 
       if retry and (not dirty):

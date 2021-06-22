@@ -5,6 +5,7 @@ import time
 import subprocess
 from abc import ABC, abstractmethod
 from multiprocessing import Process
+from typing import Optional
 
 from setproctitle import setproctitle  # pylint: disable=no-name-in-module
 
@@ -58,15 +59,15 @@ def join_process(process, timeout):
 
 
 class ManagerProcess(ABC):
-  unkillable = False
-  daemon = False
-  sigkill = False
-  proc = None
-  enabled = True
-  name = ""
+  unkillable: bool = False
+  daemon: bool = False
+  sigkill: bool = False
+  proc: Optional[Process] = None
+  enabled: bool = True
+  name: str = ""
 
-  last_watchdog_time = 0
-  watchdog_max_dt = None
+  last_watchdog_time_ns: int = 0
+  watchdog_max_seconds: Optional[int] = None
   watchdog_seen = False
   shutting_down = False
 
@@ -83,7 +84,7 @@ class ManagerProcess(ABC):
     self.start()
 
   def check_watchdog(self, started):
-    if self.watchdog_max_dt is None or self.proc is None:
+    if self.watchdog_max_seconds is None or self.proc is None:
       return
 
     try:
@@ -92,9 +93,9 @@ class ManagerProcess(ABC):
     except Exception:
       pass
 
-    dt = sec_since_boot() - self.last_watchdog_time / 1e9
+    secs: int = sec_since_boot() - self.last_watchdog_time / 1e9
 
-    if dt > self.watchdog_max_dt:
+    if secs > self.watchdog_max_seconds:
       # Only restart while offroad for now
       if self.watchdog_seen and ENABLE_WATCHDOG and (not started):
         cloudlog.error(f"Watchdog timeout for {self.name} (exitcode {self.proc.exitcode}) restarting")
@@ -166,7 +167,7 @@ class ManagerProcess(ABC):
 
 
 class NativeProcess(ManagerProcess):
-  def __init__(self, name, cwd, cmdline, enabled=True, persistent=False, driverview=False, unkillable=False, sigkill=False, watchdog_max_dt=None):
+  def __init__(self, name, cwd, cmdline, enabled=True, persistent=False, driverview=False, unkillable=False, sigkill=False, watchdog_max_seconds=None):
     self.name = name
     self.cwd = cwd
     self.cmdline = cmdline
@@ -175,7 +176,7 @@ class NativeProcess(ManagerProcess):
     self.driverview = driverview
     self.unkillable = unkillable
     self.sigkill = sigkill
-    self.watchdog_max_dt = watchdog_max_dt
+    self.watchdog_max_seconds = watchdog_max_seconds
 
   def prepare(self):
     pass
@@ -190,14 +191,14 @@ class NativeProcess(ManagerProcess):
 
     cwd = os.path.join(BASEDIR, self.cwd)
     cloudlog.info("starting process %s" % self.name)
-    self.proc = Process(name=self.name, target=nativelauncher, args=(self.cmdline, cwd))
+    self.proc: Process = Process(name=self.name, target=nativelauncher, args=(self.cmdline, cwd))
     self.proc.start()
     self.watchdog_seen = False
     self.shutting_down = False
 
 
 class PythonProcess(ManagerProcess):
-  def __init__(self, name, module, enabled=True, persistent=False, driverview=False, unkillable=False, sigkill=False, watchdog_max_dt=None):
+  def __init__(self, name, module, enabled=True, persistent=False, driverview=False, unkillable=False, sigkill=False, watchdog_max_seconds=None):
     self.name = name
     self.module = module
     self.enabled = enabled
@@ -205,7 +206,7 @@ class PythonProcess(ManagerProcess):
     self.driverview = driverview
     self.unkillable = unkillable
     self.sigkill = sigkill
-    self.watchdog_max_dt = watchdog_max_dt
+    self.watchdog_max_seconds = watchdog_max_seconds
 
   def prepare(self):
     if self.enabled:
@@ -221,7 +222,7 @@ class PythonProcess(ManagerProcess):
       return
 
     cloudlog.info("starting python %s" % self.module)
-    self.proc = Process(name=self.name, target=launcher, args=(self.module,))
+    self.proc: Process = Process(name=self.name, target=launcher, args=(self.module,))
     self.proc.start()
     self.watchdog_seen = False
     self.shutting_down = False

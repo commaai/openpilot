@@ -3,6 +3,7 @@ import json
 import os
 import time
 import subprocess
+from typing import NoReturn
 
 import requests
 from timezonefinder import TimezoneFinder
@@ -12,7 +13,12 @@ from selfdrive.hardware import TICI
 from selfdrive.swaglog import cloudlog
 
 
-def set_timezone(valid_timezones, timezone):
+def set_timezone(valid_timezones: list, timezone: str) -> None:
+  """
+  Sets system timezone to str
+
+  Must be member of supplied valid_timezones list
+  """
   if timezone not in valid_timezones:
     cloudlog.error(f"Timezone not supported {timezone}")
     return
@@ -30,7 +36,7 @@ def set_timezone(valid_timezones, timezone):
     cloudlog.exception(f"Error setting timezone to {timezone}")
 
 
-def main():
+def main() -> NoReturn:
   params = Params()
   tf = TimezoneFinder()
 
