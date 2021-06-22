@@ -78,7 +78,7 @@ private:
   void requestScan();
 
 public slots:
-  void refresh();
+  void refreshSlot();
 
 private slots:
   void connectToNetwork(const Network &n);
