@@ -239,7 +239,7 @@ void MapWindow::initializeGL() {
 
   m_map->setMargins({0, 350, 0, 50});
   m_map->setPitch(MIN_PITCH);
-  m_map->setStyleUrl("mapbox://styles/pd0wm/cknuhcgvr0vs817o1akcx6pek"); // Larger fonts
+  m_map->setStyleUrl("mapbox://styles/commadotai/ckq7zp8ts1k0o17p8m6rv6cet");
 
   connect(m_map.data(), SIGNAL(needsRendering()), this, SLOT(update()));
   timer->start(100);
