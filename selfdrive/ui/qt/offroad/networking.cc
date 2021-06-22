@@ -33,7 +33,7 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent), s
   main_layout->addWidget(warning);
 
   QTimer* timer = new QTimer(this);
-  QObject::connect(timer, &QTimer::timeout, this, &Networking::refresh);
+  QObject::connect(timer, &QTimer::timeout, this, &Networking::requestScan);
   timer->start(5000);
   attemptInitialization();
 }
@@ -47,6 +47,7 @@ void Networking::attemptInitialization() {
   }
 
   connect(wifi, &WifiManager::wrongPassword, this, &Networking::wrongPassword);
+  connect(wifi, &WifiManager::refreshSignal, this, &Networking::refreshSlot);
 
   QWidget* wifiScreen = new QWidget(this);
   QVBoxLayout* vlayout = new QVBoxLayout(wifiScreen);
@@ -87,9 +88,10 @@ void Networking::attemptInitialization() {
   )");
   main_layout->setCurrentWidget(wifiScreen);
   ui_setup_complete = true;
+  wifi->requestScan();
 }
 
-void Networking::refresh() {
+void Networking::requestScan() {
   if (!this->isVisible()) {
     return;
   }
@@ -99,6 +101,10 @@ void Networking::refresh() {
       return;
     }
   }
+  wifi->requestScan();
+}
+
+void Networking::refreshSlot() {
   wifiWidget->refresh();
   an->refresh();
 }
@@ -182,7 +188,6 @@ void AdvancedNetworking::toggleTethering(bool enable) {
   editPasswordButton->setEnabled(!enable);
 }
 
-
 // WifiUI functions
 
 WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi) {
@@ -196,8 +201,6 @@ WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi)
 }
 
 void WifiUI::refresh() {
-  wifi->request_scan();
-  wifi->refreshNetworks();
   clearLayout(main_layout);
 
   connectButtons = new QButtonGroup(this); // TODO check if this is a leak
