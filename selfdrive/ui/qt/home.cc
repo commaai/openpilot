@@ -44,6 +44,10 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
   slayout->addWidget(driver_view);
 }
 
+void HomeWindow::showSidebar(bool show) {
+  sidebar->setVisible(show);
+}
+
 void HomeWindow::offroadTransition(bool offroad) {
   if (offroad) {
     slayout->setCurrentWidget(home);

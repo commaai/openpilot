@@ -67,6 +67,10 @@ void MainWindow::openSettings() {
 
 void MainWindow::closeSettings() {
   main_layout->setCurrentWidget(homeWindow);
+
+  if (QUIState::ui_state.scene.started) {
+    emit homeWindow->showSidebar(false);
+  }
 }
 
 bool MainWindow::eventFilter(QObject *obj, QEvent *event) {

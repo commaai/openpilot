@@ -276,6 +276,7 @@ void MapWindow::recomputeRoute() {
 
   if (*new_destination != nav_destination) {
     setVisible(true); // Show map on destination set/change
+    // TODO: close sidebar
     should_recompute = true;
   }
 
