@@ -467,16 +467,16 @@ MapInstructions::MapInstructions(QWidget * parent) : QWidget(parent) {
     QVBoxLayout *layout = new QVBoxLayout(w);
 
     distance = new QLabel;
-    distance->setStyleSheet(R"(font-size: 75px;)");
+    distance->setStyleSheet(R"(font-size: 90px;)");
     layout->addWidget(distance);
 
     primary = new QLabel;
-    primary->setStyleSheet(R"(font-size: 50px;)");
+    primary->setStyleSheet(R"(font-size: 60px;)");
     primary->setWordWrap(true);
     layout->addWidget(primary);
 
     secondary = new QLabel;
-    secondary->setStyleSheet(R"(font-size: 40px;)");
+    secondary->setStyleSheet(R"(font-size: 50px;)");
     secondary->setWordWrap(true);
     layout->addWidget(secondary);
 
@@ -688,7 +688,7 @@ MapETA::MapETA(QWidget * parent) : QWidget(parent) {
     * {
       color: white;
       font-family: "Inter";
-      font-size: 55px;
+      font-size: 70px;
     }
   )");
 
