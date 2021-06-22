@@ -12,7 +12,9 @@
  * */
 
 // https://developer.gnome.org/NetworkManager/1.26/nm-dbus-types.html#NM80211ApFlags
+const int NM_802_11_AP_FLAGS_NONE = 0x00000000;
 const int NM_802_11_AP_FLAGS_PRIVACY = 0x00000001;
+const int NM_802_11_AP_FLAGS_WPS = 0x00000002;
 
 // https://developer.gnome.org/NetworkManager/1.26/nm-dbus-types.html#NM80211ApSecurityFlags
 const int NM_802_11_AP_SEC_PAIR_WEP40      = 0x00000001;
@@ -161,7 +163,7 @@ QList<Network> WifiManager::get_networks() {
 
     QByteArray ssid = get_property(path.path(), "Ssid");
     unsigned int strength = get_ap_strength(path.path());
-    SecurityType security = getSecurityType(path.path());
+    SecurityType security = getSecurityType(path.path(), ssid);
     ConnectedType ctype;
     if (path.path() != active_ap) {
       ctype = ConnectedType::DISCONNECTED;
@@ -184,7 +186,7 @@ QList<Network> WifiManager::get_networks() {
   return r;
 }
 
-SecurityType WifiManager::getSecurityType(const QString &path) {
+SecurityType WifiManager::getSecurityType(const QString &path, const QString &ssid) {
   int sflag = get_property(path, "Flags").toInt();
   int wpaflag = get_property(path, "WpaFlags").toInt();
   int rsnflag = get_property(path, "RsnFlags").toInt();
@@ -193,7 +195,17 @@ SecurityType WifiManager::getSecurityType(const QString &path) {
   // obtained by looking at flags of networks in the office as reported by an Android phone
   const int supports_wpa = NM_802_11_AP_SEC_PAIR_WEP40 | NM_802_11_AP_SEC_PAIR_WEP104 | NM_802_11_AP_SEC_GROUP_WEP40 | NM_802_11_AP_SEC_GROUP_WEP104 | NM_802_11_AP_SEC_KEY_MGMT_PSK;
 
-  if (sflag == 0) {
+//  if (ssid == "STRESS_TEST") {
+    qDebug() << ssid;
+    qDebug() << "sflag:" << sflag;
+    qDebug() << "wpaflag:" << wpaflag;
+    qDebug() << "rsnflag:" << rsnflag;
+    qDebug() << "wpa_props:" << wpa_props;
+    qDebug() << "supports_wpa:" << (wpa_props & supports_wpa);
+    qDebug() << "---\n";
+//  }
+
+  if ((sflag == NM_802_11_AP_FLAGS_NONE) || (sflag & NM_802_11_AP_FLAGS_WPS && !(wpa_props & supports_wpa))) {
     return SecurityType::OPEN;
   } else if ((sflag & NM_802_11_AP_FLAGS_PRIVACY) && (wpa_props & supports_wpa) && !(wpa_props & NM_802_11_AP_SEC_KEY_MGMT_802_1X)) {
     return SecurityType::WPA;
