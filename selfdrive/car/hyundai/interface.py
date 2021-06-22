@@ -77,6 +77,14 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.65
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
+    elif candidate == CAR.ELANTRA_HEV_2021:
+      ret.lateralTuning.pid.kf = 0.00005
+      ret.mass = (3017. * CV.LB_TO_KG) + STD_CARGO_KG
+      ret.wheelbase = 2.72
+      ret.steerRatio = 13.27 * 1.15   # 15% higher at the center seems reasonable
+      tire_stiffness_factor = 0.65
+      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
     elif candidate == CAR.HYUNDAI_GENESIS:
       ret.lateralTuning.pid.kf = 0.00005
       ret.mass = 2060. + STD_CARGO_KG

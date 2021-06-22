@@ -10,7 +10,6 @@
 #include <QVBoxLayout>
 #include <QrCode.hpp>
 
-#include "selfdrive/common/params.h"
 #include "selfdrive/ui/qt/request_repeater.h"
 
 using qrcodegen::QrCode;
@@ -31,19 +30,8 @@ void PairingQRWidget::showEvent(QShowEvent *event) {
 }
 
 void PairingQRWidget::refresh() {
-  Params params;
-  QString IMEI = QString::fromStdString(params.get("IMEI"));
-  QString serial = QString::fromStdString(params.get("HardwareSerial"));
-
-  if (std::min(IMEI.length(), serial.length()) <= 5) {
-    qrCode->setText("Error getting serial: contact support");
-    qrCode->setWordWrap(true);
-    qrCode->setStyleSheet(R"(font-size: 60px;)");
-    return;
-  }
   QString pairToken = CommaApi::create_jwt({{"pair", true}});
-
-  QString qrString = IMEI + "--" + serial + "--" + pairToken;
+  QString qrString = "https://my.comma.ai/?pair=" + pairToken;
   this->updateQrCode(qrString);
 }
 
@@ -189,7 +177,7 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
   QVBoxLayout* qrLayout = new QVBoxLayout(q);
 
   qrLayout->addSpacing(30);
-  QLabel* qrLabel = new QLabel("Scan with comma connect!");
+  QLabel* qrLabel = new QLabel("Scan QR code to pair!");
   qrLabel->setWordWrap(true);
   qrLabel->setAlignment(Qt::AlignHCenter);
   qrLabel->setStyleSheet(R"(

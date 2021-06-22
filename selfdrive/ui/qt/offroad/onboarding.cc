@@ -11,7 +11,6 @@
 
 void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
   QPoint touch = QPoint(e->x(), e->y()) - imageCorner;
-  //qDebug() << touch.x() << ", " << touch.y();
 
   // Check for restart
   if (currentIndex == (boundingBox.size() - 1) && 200 <= touch.x() && touch.x() <= 920 &&
@@ -78,7 +77,7 @@ void TermsPage::showEvent(QShowEvent *event) {
   QHBoxLayout* buttons = new QHBoxLayout;
   main_layout->addLayout(buttons);
 
-  decline_btn = new QPushButton("Decline");
+  QPushButton *decline_btn = new QPushButton("Decline");
   buttons->addWidget(decline_btn);
   QObject::connect(decline_btn, &QPushButton::released, this, &TermsPage::declinedTerms);
 
@@ -93,7 +92,6 @@ void TermsPage::showEvent(QShowEvent *event) {
 void TermsPage::enableAccept() {
   accept_btn->setText("Accept");
   accept_btn->setEnabled(true);
-  return;
 }
 
 void DeclinePage::showEvent(QShowEvent *event) {
@@ -113,13 +111,13 @@ void DeclinePage::showEvent(QShowEvent *event) {
   QHBoxLayout* buttons = new QHBoxLayout;
   main_layout->addLayout(buttons);
 
-  back_btn = new QPushButton("Back");
+  QPushButton *back_btn = new QPushButton("Back");
   buttons->addWidget(back_btn);
   buttons->addSpacing(50);
 
   QObject::connect(back_btn, &QPushButton::released, this, &DeclinePage::getBack);
 
-  uninstall_btn = new QPushButton("Decline, uninstall openpilot");
+  QPushButton *uninstall_btn = new QPushButton("Decline, uninstall openpilot");
   uninstall_btn->setStyleSheet("background-color: #E22C2C;");
   buttons->addWidget(uninstall_btn);
 
@@ -131,8 +129,8 @@ void DeclinePage::showEvent(QShowEvent *event) {
 }
 
 void OnboardingWindow::updateActiveScreen() {
-  accepted_terms = params.get("HasAcceptedTerms") == current_terms_version;
-  training_done = params.get("CompletedTrainingVersion") == current_training_version;
+  bool accepted_terms = params.get("HasAcceptedTerms") == current_terms_version;
+  bool training_done = params.get("CompletedTrainingVersion") == current_training_version;
   if (!accepted_terms) {
     setCurrentIndex(0);
   } else if (!training_done && !params.getBool("Passive")) {
