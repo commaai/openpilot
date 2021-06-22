@@ -198,8 +198,8 @@ WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi)
 }
 
 void WifiUI::refresh() {
-  wifi->requestScan();
   wifi->refreshNetworks();
+  wifi->requestScan();
   clearLayout(main_layout);
 
   connectButtons = new QButtonGroup(this); // TODO check if this is a leak
