@@ -19,9 +19,10 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
 
   home_address = new QLabel("No home\nlocation set");
   home_address->setWordWrap(true);
-  home_address->setStyleSheet(R"(font-size: 30px; color: grey;)");
+  home_address->setStyleSheet(R"(font-size: 50px; color: grey;)");
   home_layout->addSpacing(20);
   home_layout->addWidget(home_address);
+  home_layout->addStretch();
 
   // Work
   QHBoxLayout *work_layout = new QHBoxLayout;
@@ -32,9 +33,10 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
 
   work_address = new QLabel("No work\nlocation set");
   work_address->setWordWrap(true);
-  work_address->setStyleSheet(R"(font-size: 30px; color: grey;)");
+  work_address->setStyleSheet(R"(font-size: 50px; color: grey;)");
   work_layout->addSpacing(20);
   work_layout->addWidget(work_address);
+  work_layout->addStretch();
 
   // Home & Work layout
   QHBoxLayout *home_work_layout = new QHBoxLayout;
@@ -67,7 +69,6 @@ static QString shorten(const QString &str, int max_len) {
 }
 
 void MapPanel::parseResponse(const QString &response) {
-  qDebug() << response;
   QJsonDocument doc = QJsonDocument::fromJson(response.trimmed().toUtf8());
   if (doc.isNull()) {
     qDebug() << "JSON Parse failed on navigation locations";
@@ -85,7 +86,7 @@ void MapPanel::parseResponse(const QString &response) {
     if (type == "favorite") {
       if (label == "home") {
         home_address->setText(shorten(name, 15) + "\n" + shorten(details, 50));
-        home_address->setStyleSheet(R"(font-size: 30px; color: white;)");
+        home_address->setStyleSheet(R"(font-size: 50px; color: white;)");
         home_button->setIcon(QPixmap("../assets/navigation/home.png"));
         QObject::connect(home_button, &QPushButton::clicked, [=]() {
           navigateTo(obj);
@@ -93,7 +94,7 @@ void MapPanel::parseResponse(const QString &response) {
         });
       } else if (label == "work") {
         work_address->setText(shorten(name, 15) + "\n" + shorten(details, 50));
-        work_address->setStyleSheet(R"(font-size: 30px; color: white;)");
+        work_address->setStyleSheet(R"(font-size: 50px; color: white;)");
         work_button->setIcon(QPixmap("../assets/navigation/work.png"));
         QObject::connect(work_button, &QPushButton::clicked, [=]() {
           navigateTo(obj);
