@@ -13,6 +13,7 @@ public:
 
   void navigateTo(const QJsonObject &place);
   void parseResponse(const QString &response);
+  void clear();
 
 private:
   QPushButton *home_button, *work_button;

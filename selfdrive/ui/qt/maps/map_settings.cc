@@ -6,6 +6,10 @@
 #include "selfdrive/ui/qt/widgets/controls.h"
 #include "selfdrive/common/util.h"
 
+static QString shorten(const QString &str, int max_len) {
+  return str.size() > max_len ? str.left(max_len).trimmed() + "…" : str;
+}
+
 MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   Params params = Params();
@@ -13,13 +17,11 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
   // Home
   QHBoxLayout *home_layout = new QHBoxLayout;
   home_button = new QPushButton;
-  home_button->setIcon(QPixmap("../assets/navigation/home_inactive.png"));
   home_button->setIconSize(QSize(200, 200));
   home_layout->addWidget(home_button);
 
-  home_address = new QLabel("No home\nlocation set");
+  home_address = new QLabel;
   home_address->setWordWrap(true);
-  home_address->setStyleSheet(R"(font-size: 50px; color: grey;)");
   home_layout->addSpacing(30);
   home_layout->addWidget(home_address);
   home_layout->addStretch();
@@ -27,13 +29,11 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
   // Work
   QHBoxLayout *work_layout = new QHBoxLayout;
   work_button = new QPushButton;
-  work_button->setIcon(QPixmap("../assets/navigation/work_inactive.png"));
   work_button->setIconSize(QSize(200, 200));
   work_layout->addWidget(work_button);
 
-  work_address = new QLabel("No work\nlocation set");
+  work_address = new QLabel;
   work_address->setWordWrap(true);
-  work_address->setStyleSheet(R"(font-size: 50px; color: grey;)");
   work_layout->addSpacing(30);
   work_layout->addWidget(work_address);
   work_layout->addStretch();
@@ -56,6 +56,8 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
                                     this));
   main_layout->addStretch();
 
+  clear();
+
   std::string dongle_id = Params().get("DongleId");
   if (util::is_valid_dongle_id(dongle_id)) {
     std::string url = "https://api.commadotai.com/v1/navigation/" + dongle_id + "/locations";
@@ -64,9 +66,18 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
   }
 }
 
-static QString shorten(const QString &str, int max_len) {
-  return str.size() > max_len ? str.left(max_len).trimmed() + "…" : str;
+void MapPanel::clear() {
+  home_button->setIcon(QPixmap("../assets/navigation/home_inactive.png"));
+  home_address->setStyleSheet(R"(font-size: 50px; color: grey;)");
+  home_address->setText("No home\nlocation set");
+  home_button->disconnect();
+
+  work_button->setIcon(QPixmap("../assets/navigation/work_inactive.png"));
+  work_address->setStyleSheet(R"(font-size: 50px; color: grey;)");
+  work_address->setText("No work\nlocation set");
+  work_button->disconnect();
 }
+
 
 void MapPanel::parseResponse(const QString &response) {
   QJsonDocument doc = QJsonDocument::fromJson(response.trimmed().toUtf8());
@@ -74,6 +85,8 @@ void MapPanel::parseResponse(const QString &response) {
     qDebug() << "JSON Parse failed on navigation locations";
     return;
   }
+
+  clear();
 
   for (auto location : doc.array()) {
     auto obj = location.toObject();
