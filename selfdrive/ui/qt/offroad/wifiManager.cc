@@ -414,6 +414,8 @@ void WifiManager::activateWifiConnection(const QString &ssid) {
   const int index = getConnectionIndex(ssid);
   if (index != -1) {
     const QDBusObjectPath &path = known_connections.at(index).second;
+    connecting_to_network = ssid;
+
     QString devicePath = get_adapter();
     QDBusInterface nm3(nm_service, nm_path, nm_iface, bus);
     nm3.setTimeout(dbus_timeout);
