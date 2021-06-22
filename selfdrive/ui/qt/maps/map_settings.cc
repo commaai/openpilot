@@ -20,7 +20,7 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
   home_address = new QLabel("No home\nlocation set");
   home_address->setWordWrap(true);
   home_address->setStyleSheet(R"(font-size: 50px; color: grey;)");
-  home_layout->addSpacing(20);
+  home_layout->addSpacing(30);
   home_layout->addWidget(home_address);
   home_layout->addStretch();
 
@@ -34,7 +34,7 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
   work_address = new QLabel("No work\nlocation set");
   work_address->setWordWrap(true);
   work_address->setStyleSheet(R"(font-size: 50px; color: grey;)");
-  work_layout->addSpacing(20);
+  work_layout->addSpacing(30);
   work_layout->addWidget(work_address);
   work_layout->addStretch();
 
@@ -62,6 +62,8 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
     RequestRepeater* repeater = new RequestRepeater(this, QString::fromStdString(url), "ApiCache_NavDestinations", 30);
     QObject::connect(repeater, &RequestRepeater::receivedResponse, this, &MapPanel::parseResponse);
   }
+
+  parseResponse(QString::fromStdString(util::read_file("/home/batman/example_response.txt")));
 }
 
 static QString shorten(const QString &str, int max_len) {
@@ -81,11 +83,11 @@ void MapPanel::parseResponse(const QString &response) {
     auto type = obj["save_type"].toString();
     auto label = obj["label"].toString();
     auto name = obj["place_name"].toString();
-    auto details = obj["place_details"].toString();
+    auto details = shorten(obj["place_details"].toString(), 30);
 
     if (type == "favorite") {
       if (label == "home") {
-        home_address->setText(shorten(name, 20) + "\n" + shorten(details, 50));
+        home_address->setText(name);
         home_address->setStyleSheet(R"(font-size: 50px; color: white;)");
         home_button->setIcon(QPixmap("../assets/navigation/home.png"));
         QObject::connect(home_button, &QPushButton::clicked, [=]() {
@@ -93,7 +95,7 @@ void MapPanel::parseResponse(const QString &response) {
           emit closeSettings();
         });
       } else if (label == "work") {
-        work_address->setText(shorten(name, 20) + "\n" + shorten(details, 50));
+        work_address->setText(name);
         work_address->setStyleSheet(R"(font-size: 50px; color: white;)");
         work_button->setIcon(QPixmap("../assets/navigation/work.png"));
         QObject::connect(work_button, &QPushButton::clicked, [=]() {
