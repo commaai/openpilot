@@ -483,8 +483,6 @@ MapInstructions::MapInstructions(QWidget * parent) : QWidget(parent) {
     lane_layout = new QHBoxLayout;
     layout->addLayout(lane_layout);
 
-    layout->addStretch(); // Make sure the word-wrapped labels are as small as possible
-
     main_layout->addWidget(w);
   }
 
@@ -550,6 +548,10 @@ void MapInstructions::updateInstructions(QMap<QString, QVariant> banner, bool fu
   // seems like it takes a little bit of time for the images to change and
   // the size can only be changed afterwards
   adjustSize();
+
+  // Word wrap widgets neet fixed width
+  primary->setFixedWidth(width() - 250);
+  secondary->setFixedWidth(width() - 250);
 
   if (banner == last_banner) return;
   QString primary_str, secondary_str;
