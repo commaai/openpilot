@@ -137,7 +137,9 @@ class Android(HardwareBase):
     try:
       modem = serial.Serial("/dev/smd11", 115200, timeout=0.1)
       modem.write(b"AT$QCRSRP?\r")
-      extra = modem.read_until(b"OK\r\n")
+      extra = modem.read_until(b"OK\r\n").decode('utf-8')
+      rsrp = extra.split("$QCRSRP: ")[1].split("\r")[0].split(",")
+      earfcn = rsrp[1]
     except Exception:
       pass
 
@@ -146,7 +148,7 @@ class Android(HardwareBase):
       'operator': getprop("gsm.sim.operator.numeric"),
       'state': getprop("gsm.sim.state"),
       'band': "",
-      'channel': "",
+      'channel': earfcn,
       'extra': extra,
     })
 
