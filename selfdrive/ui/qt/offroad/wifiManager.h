@@ -30,7 +30,6 @@ class WifiManager : public QWidget {
 public:
   explicit WifiManager(QWidget* parent);
 
-  void requestScan();
   QVector<Network> seen_networks;
   QString ipv4_address;
   bool firstRefresh = true;
@@ -83,4 +82,7 @@ signals:
 private slots:
   void stateChange(unsigned int new_state, unsigned int previous_state, unsigned int change_reason);
   void propertyChange(const QString &interface, const QVariantMap &props, const QStringList &invalidated_props);
+
+public slots:
+  void requestScan();
 };
