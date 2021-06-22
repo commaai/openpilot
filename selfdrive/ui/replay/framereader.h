@@ -2,7 +2,6 @@
 
 #include <unistd.h>
 
-#include <QThread>
 #include <atomic>
 #include <condition_variable>
 #include <mutex>
