@@ -151,6 +151,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"ApiCache_DriveStats", PERSISTENT},
     {"ApiCache_Device", PERSISTENT},
     {"ApiCache_Owner", PERSISTENT},
+    {"ApiCache_NavDestinations", PERSISTENT},
     {"AthenadPid", PERSISTENT},
     {"CalibrationParams", PERSISTENT},
     {"CarBatteryCapacity", PERSISTENT},

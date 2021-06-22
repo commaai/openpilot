@@ -2,6 +2,7 @@
 
 #include <QDebug>
 
+#include "selfdrive/ui/qt/request_repeater.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
 #include "selfdrive/common/util.h"
 
@@ -52,7 +53,13 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
                                     "",
                                     this));
   main_layout->addStretch();
-  parseResponse(QString::fromStdString(util::read_file("/home/batman/example_response.txt")));
+
+  std::string dongle_id = Params().get("DongleId");
+  if (util::is_valid_dongle_id(dongle_id)) {
+    std::string url = "https://api.commadotai.com/v1/navigation/" + dongle_id + "/locations";
+    RequestRepeater* repeater = new RequestRepeater(this, QString::fromStdString(url), "ApiCache_NavDestinations", 30);
+    QObject::connect(repeater, &RequestRepeater::receivedResponse, this, &MapPanel::parseResponse);
+  }
 }
 
 static QString shorten(const QString &str, int max_len) {
@@ -60,6 +67,7 @@ static QString shorten(const QString &str, int max_len) {
 }
 
 void MapPanel::parseResponse(const QString &response) {
+  qDebug() << response;
   QJsonDocument doc = QJsonDocument::fromJson(response.trimmed().toUtf8());
   if (doc.isNull()) {
     qDebug() << "JSON Parse failed on navigation locations";
