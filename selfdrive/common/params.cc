@@ -134,7 +134,6 @@ class FileLock {
       return;
     }
     if (HANDLE_EINTR(flock(fd_, op_)) < 0) {
-      close(fd_);
       LOGE("Failed to lock file %s, errno=%d", fn_.c_str(), errno);
     }
   }
