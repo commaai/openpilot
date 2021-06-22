@@ -77,9 +77,6 @@ private:
   void attemptInitialization();
   void requestScan();
 
-//signals:
-//  void requestScan();
-
 public slots:
   void refresh();
 
