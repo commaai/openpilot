@@ -136,7 +136,7 @@ void Replay::queueSegmentThread() {
       int n = it.key();
       std::unique_lock lk(segment_mutex_);
       if (segments_.find(n) == segments_.end()) {
-        segments_[n] = std::make_unique<Segment>(n, it.value());
+        segments_[n] = std::make_shared<Segment>(n, it.value());
         connect(segments_[n].get(), &Segment::finishedRead, this, &Replay::mergeEvents);
       }
     }
@@ -145,10 +145,10 @@ void Replay::queueSegmentThread() {
 }
 
 // return nullptr if segment is not loaded
-const Segment *Replay::getSegment(int segment) {
+const std::shared_ptr<Segment> Replay::getSegment(int segment) {
   std::unique_lock lk(segment_mutex_);
   auto it = segments_.find(segment);
-  return (it != segments_.end() && it->second->loaded) ? it->second.get() : nullptr;
+  return (it != segments_.end() && it->second->loaded) ? it->second : nullptr;
 }
 
 const std::string &Replay::eventSocketName(const Event *e) {
@@ -216,7 +216,7 @@ void Replay::pushFrame(int cur_seg_num, CameraType cam_type, uint32_t frame_id) 
     if (auto seg = getSegment(n)) {
       auto eidxMap = seg->log->encoderIdx[cam_type];
       if (auto eidx = eidxMap.find(frame_id); eidx != eidxMap.end()) {
-        camera_server_.pushFrame(cam_type, seg->frames[cam_type], eidx->second.frameEncodeId);
+        camera_server_.pushFrame(cam_type, seg, eidx->second.frameEncodeId);
         break;
       }
     }
@@ -236,7 +236,6 @@ void Replay::streamThread() {
     cereal::Event::Which which = seek_ts_ ? cereal::Event::INIT_DATA : current_which;
     // make sure current segment is loaded
     if (auto seg = getSegment(current_segment_)) {
-      camera_server_.ensure(seg->frames);
       eit = std::lower_bound(events_->begin(), events_->end(), seek_to, [&](const Event *e, uint64_t v) {
         return e->mono_time < v || (e->mono_time == v && e->which < which);
       });
@@ -254,7 +253,6 @@ void Replay::streamThread() {
       seek_ts_ = 0;
     }
     uint64_t loop_start_ts = nanos_since_boot();
-    int prev_segment = current_segment_;
     while (!exit_ && !loading_events_ && eit != events_->end()) {
       const Event *e = (*eit);
       const std::string &sock_name = eventSocketName(e);
@@ -262,11 +260,7 @@ void Replay::streamThread() {
         current_which = e->which;
         current_ts_ = e->mono_time;
         current_segment_ = (e->mono_time - route_start_ts_) / 1e9 / SEGMENT_LENGTH;
-        if (prev_segment != current_segment_) {
-          camera_server_.ensure(getSegment(current_segment_)->frames);
-          prev_segment = current_segment_;
-        }
-        
+
         if ((e->mono_time - last_print_ts) > 5 * 1e9) {
           last_print_ts = e->mono_time;
           qInfo().noquote() << "at" << elapsedTime(last_print_ts);
@@ -333,8 +327,8 @@ Segment::Segment(int seg_num, const SegmentFile &file, QObject *parent) : seg_nu
   for (const auto &[cam_type, file] : cam_files) {
     if (!file.isEmpty()) {
       loading_ += 1;
-      frames[cam_type] = std::make_shared<FrameReader>(file.toStdString(), this);
-      QObject::connect(frames[cam_type].get(), &FrameReader::finished, [=]() { if(--loading_ == 0) emit finishedRead(); });
+      frames[cam_type] = new FrameReader(file.toStdString(), this);
+      QObject::connect(frames[cam_type], &FrameReader::finished, [=]() { if(--loading_ == 0) emit finishedRead(); });
     }
   }
 }

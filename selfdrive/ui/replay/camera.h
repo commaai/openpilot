@@ -3,6 +3,7 @@
 #include "cereal/visionipc/visionipc_server.h"
 #include "selfdrive/common/queue.h"
 #include "selfdrive/ui/replay/framereader.h"
+class Segment;
 
 enum CameraType {
   RoadCam = 0,
@@ -16,8 +17,8 @@ class CameraServer {
 public:
   CameraServer();
   ~CameraServer();
-  void ensure(const std::shared_ptr<FrameReader> frs[MAX_CAMERAS]);
-  void pushFrame(CameraType type, std::shared_ptr<FrameReader> fr, uint32_t encodeFrameId);
+  void ensure(const std::shared_ptr<Segment> seg);
+  void pushFrame(CameraType type, std::shared_ptr<Segment> fr, uint32_t encodeFrameId);
   void stop();
 
  private:
