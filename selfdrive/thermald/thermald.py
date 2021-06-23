@@ -245,6 +245,10 @@ def thermald_thread():
         if registered_count > 10:
           cloudlog.warning(f"Modem stuck in registered state {network_info}")
 
+          os.system("nmcli radio wwan off")
+          os.system("nmcli radio wwan on")
+          registered_count = 0
+
       except Exception:
         cloudlog.exception("Error getting network status")
 
