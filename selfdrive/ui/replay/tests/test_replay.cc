@@ -25,7 +25,7 @@ TEST_CASE("FrameReader") {
     }
   }
   SECTION("process with timeout") {
-    FrameReader fr(stream_url, 3);
+    FrameReader fr(stream_url, 1);
     bool ret = fr.process();
     REQUIRE(ret == false);
     REQUIRE(fr.valid() == false);
