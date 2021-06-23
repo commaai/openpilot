@@ -87,7 +87,11 @@ class Tici(HardwareBase):
       primary_connection = self.bus.get_object(NM, primary_connection)
       tp = primary_connection.Get(NM_CON_ACT, 'Type', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
 
-      if tp in ['802-3-ethernet', '802-11-wireless']:
+      print(tp)
+
+      if tp in '802-3-ethernet':
+        return NetworkType.ethernet
+      elif if tp == '802-11-wireless':
         return NetworkType.wifi
       elif tp in ['gsm']:
         modem = self.get_modem()
