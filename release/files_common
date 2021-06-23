@@ -170,6 +170,13 @@ selfdrive/car/mazda/radar_interface.py
 selfdrive/car/mazda/values.py
 selfdrive/car/mazda/carcontroller.py
 selfdrive/car/mazda/mazdacan.py
+selfdrive/car/tesla/__init__.py
+selfdrive/car/tesla/teslacan.py
+selfdrive/car/tesla/carcontroller.py
+selfdrive/car/tesla/radar_interface.py
+selfdrive/car/tesla/values.py
+selfdrive/car/tesla/carstate.py
+selfdrive/car/tesla/interface.py
 selfdrive/car/mock/*.py
 
 selfdrive/clocksd/.gitignore
@@ -611,3 +618,5 @@ opendbc/toyota_adas.dbc
 opendbc/toyota_tss2_adas.dbc
 
 opendbc/vw_mqb_2010.dbc
+
+opendbc/tesla_can.dbc
