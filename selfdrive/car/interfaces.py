@@ -189,6 +189,7 @@ class CarStateBase:
   def update_blinker_from_light(self, blinker_time: int, left_blinker_lamp: bool, right_blinker_lamp: bool):
     """Update blinkers from lights. Enable output when light was seen within the last `blinker_time`
     iterations"""
+    # TODO: Handle case when switching direction. Now both blinkers can be on at the same time
     self.left_blinker_cnt = blinker_time if left_blinker_lamp else max(self.left_blinker_cnt - 1, 0)
     self.right_blinker_cnt = blinker_time if right_blinker_lamp else max(self.right_blinker_cnt - 1, 0)
     return self.left_blinker_cnt > 0, self.right_blinker_cnt > 0
@@ -207,7 +208,7 @@ class CarStateBase:
         self.left_blinker_cnt = blinker_time
 
     if right_blinker_stalk:
-      right_min = 1  # Keep blinker on while stalk is in position
+      right_min = 1
       self.left_blinker_cnt = 0
       if self.right_blinker_cnt == 0:
         self.right_blinker_cnt = blinker_time
