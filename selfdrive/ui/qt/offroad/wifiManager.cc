@@ -354,6 +354,7 @@ QString WifiManager::get_adapter() {
 void WifiManager::stateChange(unsigned int new_state, unsigned int previous_state, unsigned int change_reason) {
   raw_adapter_state = new_state;
   if (new_state == state_need_auth && change_reason == reason_wrong_password) {
+    forgetConnection(connecting_to_network);
     emit wrongPassword(connecting_to_network);
   } else if (new_state == state_connected) {
     connecting_to_network = "";
@@ -366,10 +367,8 @@ void WifiManager::stateChange(unsigned int new_state, unsigned int previous_stat
 void WifiManager::propertyChange(const QString &interface, const QVariantMap &props, const QStringList &invalidated_props) {
   if (interface == wireless_device_iface && props.contains("LastScan")) {
     if (firstRefresh) {
-      QElapsedTimer timer;
-      timer.start();
       known_connections = listConnections();
-      qDebug() << "listConnections:" << timer.nsecsElapsed() / 1e+6;
+      firstRefresh = false;
     }
     refreshNetworks();
     emit refreshSignal();
