@@ -133,23 +133,22 @@ class Android(HardwareBase):
     }
 
   def get_network_info(self):
-    ret = {
-      'state': getprop("gsm.sim.state"),
-      'technology': getprop("gsm.network.type"),
-      'operator': getprop("gsm.sim.operator.numeric"),
-    }
+    msg = log.DeviceState.NetworkInfo.new_message()
+    msg.state = getprop("gsm.sim.state")
+    msg.technology = getprop("gsm.network.type")
+    msg.operator = getprop("gsm.sim.operator.numeric")
 
     try:
       modem = serial.Serial("/dev/smd11", 115200, timeout=0.1)
       modem.write(b"AT$QCRSRP?\r")
-      ret["extra"] = modem.read_until(b"OK\r\n").decode('utf-8')
+      msg.extra = modem.read_until(b"OK\r\n").decode('utf-8')
 
-      rsrp = extra.split("$QCRSRP: ")[1].split("\r")[0].split(",")
-      ret["channel"] = rsrp[1]
+      rsrp = msg.extra.split("$QCRSRP: ")[1].split("\r")[0].split(",")
+      msg.channel = int(rsrp[1])
     except Exception:
       pass
 
-    return ret
+    return msg
 
   def get_network_type(self):
     wifi_check = parse_service_call_string(service_call(["connectivity", "2"]))
