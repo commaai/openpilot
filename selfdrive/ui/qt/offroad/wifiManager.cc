@@ -12,7 +12,9 @@
  * */
 
 // https://developer.gnome.org/NetworkManager/1.26/nm-dbus-types.html#NM80211ApFlags
+const int NM_802_11_AP_FLAGS_NONE = 0x00000000;
 const int NM_802_11_AP_FLAGS_PRIVACY = 0x00000001;
+const int NM_802_11_AP_FLAGS_WPS = 0x00000002;
 
 // https://developer.gnome.org/NetworkManager/1.26/nm-dbus-types.html#NM80211ApSecurityFlags
 const int NM_802_11_AP_SEC_PAIR_WEP40      = 0x00000001;
@@ -193,11 +195,12 @@ SecurityType WifiManager::getSecurityType(const QString &path) {
   // obtained by looking at flags of networks in the office as reported by an Android phone
   const int supports_wpa = NM_802_11_AP_SEC_PAIR_WEP40 | NM_802_11_AP_SEC_PAIR_WEP104 | NM_802_11_AP_SEC_GROUP_WEP40 | NM_802_11_AP_SEC_GROUP_WEP104 | NM_802_11_AP_SEC_KEY_MGMT_PSK;
 
-  if (sflag == 0) {
+  if ((sflag == NM_802_11_AP_FLAGS_NONE) || ((sflag & NM_802_11_AP_FLAGS_WPS) && !(wpa_props & supports_wpa))) {
     return SecurityType::OPEN;
   } else if ((sflag & NM_802_11_AP_FLAGS_PRIVACY) && (wpa_props & supports_wpa) && !(wpa_props & NM_802_11_AP_SEC_KEY_MGMT_802_1X)) {
     return SecurityType::WPA;
   } else {
+    LOGW("Unsupported network! sflag: %d, wpaflag: %d, rsnflag: %d", sflag, wpaflag, rsnflag);
     return SecurityType::UNSUPPORTED;
   }
 }
