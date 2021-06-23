@@ -71,7 +71,7 @@ private:
   uint get_wifi_device_state();
   QByteArray get_property(const QString &network_path, const QString &property);
   unsigned int get_ap_strength(const QString &network_path);
-  SecurityType getSecurityType(const QString &ssid);
+  SecurityType getSecurityType(const QString &path);
   QDBusObjectPath pathFromSsid(const QString &ssid);
   QVector<QPair<QString, QDBusObjectPath>> listConnections();
 
