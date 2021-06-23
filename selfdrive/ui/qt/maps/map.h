@@ -37,13 +37,14 @@ private:
   QHBoxLayout *lane_layout;
   QMap<QString, QVariant> last_banner;
 
+
 public:
   MapInstructions(QWidget * parent=nullptr);
+  void showError(QString error);
 
 public slots:
   void updateDistance(float d);
   void updateInstructions(QMap<QString, QVariant> banner, bool full);
-  void updateGPSValid(bool valid);
 };
 
 class MapETA : public QWidget {
@@ -93,6 +94,8 @@ private:
   SubMaster *sm;
   QTimer* timer;
 
+  bool loaded_once = false;
+
   // Panning
   QPointF m_lastPos;
   int pan_counter = 0;
@@ -136,6 +139,5 @@ signals:
   void distanceChanged(float distance);
   void instructionsChanged(QMap<QString, QVariant> banner, bool full);
   void ETAChanged(float seconds, float seconds_typical, float distance);
-  void GPSValidChanged(bool valid);
 };
 
