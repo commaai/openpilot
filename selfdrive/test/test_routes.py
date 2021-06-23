@@ -11,6 +11,7 @@ from selfdrive.car.mazda.values import CAR as MAZDA
 from selfdrive.car.subaru.values import CAR as SUBARU
 from selfdrive.car.toyota.values import CAR as TOYOTA
 from selfdrive.car.volkswagen.values import CAR as VOLKSWAGEN
+from selfdrive.car.tesla.values import CAR as TESLA
 
 # TODO: add routes for these cars
 non_tested_cars = [
@@ -164,6 +165,8 @@ routes = [
   TestRoute("10b5a4b380434151|2020-08-26--17-11-45", MAZDA.CX9),
   TestRoute("74f1038827005090|2020-08-26--20-05-50", MAZDA.MAZDA3),
   TestRoute("fb53c640f499b73d|2021-06-01--04-17-56", MAZDA.MAZDA6),
+
+  TestRoute("bb50caf5f0945ab1|2021-06-19--17-20-18", TESLA.AP2_MODELS),
 ]
 
 forced_dashcam_routes = [
