@@ -141,7 +141,6 @@ bool FrameReader::process() {
   } while (!exit_);
 
   if (valid_) {
-    // start decode thread
     decode_thread_ = std::thread(&FrameReader::decodeThread, this);
   }
   return valid_;
