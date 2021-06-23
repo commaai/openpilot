@@ -37,13 +37,13 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings) {
 
   // Instructions
   map_instructions = new MapInstructions(this);
-  connect(this, &MapWindow::instructionsChanged, map_instructions, &MapInstructions::updateInstructions);
-  connect(this, &MapWindow::distanceChanged, map_instructions, &MapInstructions::updateDistance);
-  connect(this, &MapWindow::GPSValidChanged, map_instructions, &MapInstructions::updateGPSValid);
+  QObject::connect(this, &MapWindow::instructionsChanged, map_instructions, &MapInstructions::updateInstructions);
+  QObject::connect(this, &MapWindow::distanceChanged, map_instructions, &MapInstructions::updateDistance);
   map_instructions->setFixedWidth(width());
+  map_instructions->setVisible(false);
 
   map_eta = new MapETA(this);
-  connect(this, &MapWindow::ETAChanged, map_eta, &MapETA::updateETA);
+  QObject::connect(this, &MapWindow::ETAChanged, map_eta, &MapETA::updateETA);
 
   const int h = 120;
   map_eta->setFixedHeight(h);
@@ -60,7 +60,7 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings) {
     qDebug() << geoservice_provider->errorString();
     assert(routing_manager);
   }
-  connect(routing_manager, SIGNAL(finished(QGeoRouteReply*)), this, SLOT(routeCalculated(QGeoRouteReply*)));
+  QObject::connect(routing_manager, &QGeoRoutingManager::finished, this, &MapWindow::routeCalculated);
 
   auto last_gps_position = coordinate_from_param("LastGPSPosition");
   if (last_gps_position) {
@@ -115,6 +115,11 @@ void MapWindow::initLayers() {
 }
 
 void MapWindow::timerUpdate() {
+  if (!loaded_once) {
+    map_instructions->showError("Map loading");
+    return;
+  }
+
   initLayers();
 
   sm->update(0);
@@ -123,7 +128,6 @@ void MapWindow::timerUpdate() {
     gps_ok = location.getGpsOK();
 
     bool localizer_valid = location.getStatus() == cereal::LiveLocationKalman::Status::VALID;
-    emit GPSValidChanged(localizer_valid);
 
     if (localizer_valid) {
       auto pos = location.getPositionGeodetic();
@@ -213,15 +217,13 @@ void MapWindow::timerUpdate() {
             clearRoute();
           }
         }
-      } else {
-        map_instructions->setVisible(false);
       }
+    } else {
+      map_instructions->showError("Waiting for GPS");
     }
   }
 
   update();
-
-
 }
 
 void MapWindow::resizeGL(int w, int h) {
@@ -242,6 +244,12 @@ void MapWindow::initializeGL() {
   m_map->setStyleUrl("mapbox://styles/commadotai/ckq7zp8ts1k0o17p8m6rv6cet");
 
   connect(m_map.data(), SIGNAL(needsRendering()), this, SLOT(update()));
+
+  QObject::connect(m_map.data(), &QMapboxGL::mapChanged, [=](QMapboxGL::MapChange change) {
+    if (change == QMapboxGL::MapChange::MapChangeDidFinishLoadingMap) {
+      loaded_once = true;
+    }
+  });
   timer->start(100);
 }
 
@@ -361,7 +369,7 @@ void MapWindow::clearRoute() {
     m_map->setPitch(MIN_PITCH);
   }
 
-  map_instructions->setVisible(false);
+  map_instructions->hideIfNoError();
   map_eta->setVisible(false);
 }
 
@@ -528,20 +536,19 @@ void MapInstructions::updateDistance(float d) {
   distance->setText(distance_str);
 }
 
-void MapInstructions::updateGPSValid(bool valid) {
-  if (!valid) {
-    primary->setText("");
-    distance->setText("Waiting for GPS position");
-    distance->setAlignment(Qt::AlignCenter);
+void MapInstructions::showError(QString error) {
+  primary->setText("");
+  distance->setText(error);
+  distance->setAlignment(Qt::AlignCenter);
 
-    secondary->setVisible(false);
-    icon_01->setVisible(false);
+  secondary->setVisible(false);
+  icon_01->setVisible(false);
 
-    last_banner = {};
+  last_banner = {};
+  error = true;
 
-    setVisible(true);
-    adjustSize();
-  }
+  setVisible(true);
+  adjustSize();
 }
 
 void MapInstructions::updateInstructions(QMap<QString, QVariant> banner, bool full) {
@@ -550,7 +557,7 @@ void MapInstructions::updateInstructions(QMap<QString, QVariant> banner, bool fu
   // the size can only be changed afterwards
   adjustSize();
 
-  // Word wrap widgets neet fixed width
+  // Word wrap widgets need fixed width
   primary->setFixedWidth(width() - 250);
   secondary->setFixedWidth(width() - 250);
 
@@ -637,9 +644,16 @@ void MapInstructions::updateInstructions(QMap<QString, QVariant> banner, bool fu
   secondary->setText(secondary_str);
 
   last_banner = banner;
+  error = false;
 
-  setVisible(true);
+  show();
   adjustSize();
+}
+
+void MapInstructions::hideIfNoError() {
+  if (!error) {
+    hide();
+  }
 }
 
 MapETA::MapETA(QWidget * parent) : QWidget(parent) {
