@@ -72,6 +72,7 @@ int OffroadAlert::refresh() {
       l->setStyleSheet(QString("background-color: %1").arg(severity ? "#E22C2C" : "#292929"));
       scrollable_layout->addWidget(l);
     }
+    scrollable_layout->addStretch(1);
   }
 
   updateAlerts();
