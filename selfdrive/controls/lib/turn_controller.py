@@ -99,6 +99,7 @@ class TurnController():
     self._params = Params()
     self._CP = CP
     self._op_enabled = False
+    self._gas_pressed = False
     self._is_enabled = self._params.get_bool("TurnVisionControl")
     self._min_braking_acc = float(self._params.get("MaxDecelerationForTurns"))
     self._jerk_limits = [self._min_braking_acc, _MAX_JERK_ACC_INCREASE]
@@ -212,9 +213,9 @@ class TurnController():
       _debug(f'TVC: High Lat Acc ahead. Distance: {self._v_target_distance:.2f}, target v: {self._v_target:.2f}')
 
   def _state_transition(self):
-    # In any case, if system is disabled or the feature is disabeld or min braking param has been
+    # In any case, if system is disabled or the feature is disabeld or gas is pressed or min braking param has been
     # set to non negative value, disable.
-    if not self._op_enabled or not self._is_enabled or self._min_braking_acc >= 0.0:
+    if not self._op_enabled or not self._is_enabled or self._gas_pressed or self._min_braking_acc >= 0.0:
       self.state = TurnControllerState.disabled
       return
 
@@ -282,6 +283,7 @@ class TurnController():
 
   def update(self, enabled, v_ego, a_ego, v_cruise_setpoint, sm):
     self._op_enabled = enabled
+    self._gas_pressed = sm['carState'].gasPressed
     self._v_ego = v_ego
     self._a_ego = a_ego
     self._v_cruise_setpoint = v_cruise_setpoint
