@@ -1,5 +1,20 @@
 #!/bin/bash -e
 
+PLATFORM=$(uname)
+check_platform() {
+  if [[ $PLATFORM == Linux ]]; then
+    echo "[PASS] PLATFORM: $PLATFORM"
+  else
+    echo "[FAIL] PLATFORM: $PLATFORM"
+    echo
+    echo "Today, plotjuggler can only be set up on Linux. Tomorrow, with the"
+    echo "help of your generous contribution, we may support more platforms."
+    echo 
+    exit 1
+  fi
+}
+check_platform
+
 mkdir -p bin
 cd bin
 
