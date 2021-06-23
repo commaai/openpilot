@@ -16,6 +16,12 @@ class CarInterface(CarInterfaceBase):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "tesla"
     ret.safetyModel = car.CarParams.SafetyModel.tesla
+
+    # There is no safe way to do steer blending with user torque,
+    # so the steering behaves like autopilot. This is not
+    # how openpilot should be, hence dashcamOnly
+    ret.dashcamOnly = True
+
     ret.steerControlType = car.CarParams.SteerControlType.angle
     ret.enableCamera = True
     ret.openpilotLongitudinalControl = False
