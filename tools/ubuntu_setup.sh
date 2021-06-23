@@ -71,7 +71,6 @@ fi
 # in the openpilot repo
 cd $HOME/openpilot
 
-# maybe extend bashrc
 source ~/.bashrc
 if [ -z "$OPENPILOT_ENV" ]; then
   OP_DIR=$(git rev-parse --show-toplevel)
