@@ -394,10 +394,10 @@ int WifiManager::getConnectionIndex(const QString &ssid) {
 }
 
 QVector<QPair<QString, QDBusObjectPath>> WifiManager::listConnections() {
+  QVector<QPair<QString, QDBusObjectPath>> connections;
   QDBusInterface nm(nm_service, nm_settings_path, nm_settings_iface, bus);
   nm.setTimeout(dbus_timeout);
 
-  QVector<QPair<QString, QDBusObjectPath>> connections;
   const QDBusReply<QList<QDBusObjectPath>> response = nm.call("ListConnections");
 
   for (const QDBusObjectPath &path : response.value()) {
