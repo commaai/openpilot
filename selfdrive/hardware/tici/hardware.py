@@ -106,8 +106,7 @@ class Tici(HardwareBase):
               return NetworkType.cell3G
             else:
               return NetworkType.cell2G
-    except Exception as e:
-      print(e)
+    except Exception:
       pass
 
     return NetworkType.none
@@ -263,6 +262,3 @@ class Tici(HardwareBase):
       # TODO: fix permissions with udev
       val = "0" if enabled else "1"
       os.system(f"sudo su -c 'echo {val} > /sys/devices/system/cpu/cpu{i}/online'")
-
-if __name__ == "__main__":
-  print(Tici().get_network_type())
