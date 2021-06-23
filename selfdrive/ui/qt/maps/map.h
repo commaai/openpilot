@@ -117,7 +117,6 @@ private:
   MapETA* map_eta;
 
   QMapbox::Coordinate nav_destination;
-  double last_maneuver_distance = 1000;
 
   // Route recompute
   QTimer* recompute_timer;

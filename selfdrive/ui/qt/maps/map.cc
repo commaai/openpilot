@@ -14,6 +14,8 @@
 const int PAN_TIMEOUT = 100;
 const bool DRAW_MODEL_PATH = false;
 const qreal REROUTE_DISTANCE = 25;
+const float MANEUVER_TRANSITION_THRESHOLD = 10;
+
 const float MAX_ZOOM = 17;
 const float MIN_ZOOM = 14;
 const float MAX_PITCH = 50;
@@ -179,8 +181,8 @@ void MapWindow::timerUpdate() {
         auto attrs = cur_maneuver.extendedAttributes();
         if (cur_maneuver.isValid() && attrs.contains("mapbox.banner_instructions")) {
           float along_geometry = distance_along_geometry(segment.path(), to_QGeoCoordinate(*last_position));
-          float distance = std::max(0.0f, float(segment.distance()) - along_geometry);
-          emit distanceChanged(distance);
+          float distance_to_maneuver = segment.distance() - along_geometry;
+          emit distanceChanged(std::max(0.0f, distance_to_maneuver));
 
           m_map->setPitch(MAX_PITCH); // TODO: smooth pitching based on maneuver distance
 
@@ -188,33 +190,27 @@ void MapWindow::timerUpdate() {
           if (banner.size()) {
             auto banner_0 = banner[0].toMap();
             float show_at = banner_0["distance_along_geometry"].toDouble();
-            emit instructionsChanged(banner_0, distance < show_at);
+            emit instructionsChanged(banner_0, distance_to_maneuver < show_at);
           }
-        }
 
-        // Handle transition to next route segment
-        auto next_segment = segment.nextRouteSegment();
-        if (next_segment.isValid()) {
-          auto next_maneuver = next_segment.maneuver();
-          if (next_maneuver.isValid()) {
-            float next_maneuver_distance = next_maneuver.position().distanceTo(to_QGeoCoordinate(*last_position));
-            // Switch to next route segment
-            if (next_maneuver_distance < REROUTE_DISTANCE && next_maneuver_distance > last_maneuver_distance) {
+          // Transition to next route segment
+          if (distance_to_maneuver < -MANEUVER_TRANSITION_THRESHOLD) {
+            auto next_segment = segment.nextRouteSegment();
+            if (next_segment.isValid()) {
               segment = next_segment;
 
               recompute_backoff = std::max(0, recompute_backoff - 1);
               recompute_countdown = 0;
-            }
-            last_maneuver_distance = next_maneuver_distance;
-          }
-        } else {
-          // Destination reached
-          Params().remove("NavDestination");
+            } else {
+              // Destination reached
+              Params().remove("NavDestination");
 
-          // Clear route if driving away from destination
-          float d = segment.maneuver().position().distanceTo(to_QGeoCoordinate(*last_position));
-          if (d > REROUTE_DISTANCE) {
-            clearRoute();
+              // Clear route if driving away from destination
+              float d = segment.maneuver().position().distanceTo(to_QGeoCoordinate(*last_position));
+              if (d > REROUTE_DISTANCE) {
+                clearRoute();
+              }
+            }
           }
         }
       }
