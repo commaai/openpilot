@@ -219,7 +219,7 @@ void MapWindow::timerUpdate() {
         }
       }
     } else {
-      map_instructions->showError("Waiting for GPS position");
+      map_instructions->showError("Waiting for GPS");
     }
   }
 
@@ -369,7 +369,7 @@ void MapWindow::clearRoute() {
     m_map->setPitch(MIN_PITCH);
   }
 
-  map_instructions->setVisible(false);
+  map_instructions->hideIfNoError();
   map_eta->setVisible(false);
 }
 
@@ -545,6 +545,7 @@ void MapInstructions::showError(QString error) {
   icon_01->setVisible(false);
 
   last_banner = {};
+  error = true;
 
   setVisible(true);
   adjustSize();
@@ -556,7 +557,7 @@ void MapInstructions::updateInstructions(QMap<QString, QVariant> banner, bool fu
   // the size can only be changed afterwards
   adjustSize();
 
-  // Word wrap widgets neet fixed width
+  // Word wrap widgets need fixed width
   primary->setFixedWidth(width() - 250);
   secondary->setFixedWidth(width() - 250);
 
@@ -643,9 +644,16 @@ void MapInstructions::updateInstructions(QMap<QString, QVariant> banner, bool fu
   secondary->setText(secondary_str);
 
   last_banner = banner;
+  error = false;
 
-  setVisible(true);
+  show();
   adjustSize();
+}
+
+void MapInstructions::hideIfNoError() {
+  if (!error) {
+    hide();
+  }
 }
 
 MapETA::MapETA(QWidget * parent) : QWidget(parent) {

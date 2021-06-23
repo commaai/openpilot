@@ -36,11 +36,12 @@ private:
   QLabel *icon_01;
   QHBoxLayout *lane_layout;
   QMap<QString, QVariant> last_banner;
-
+  bool error = false;
 
 public:
   MapInstructions(QWidget * parent=nullptr);
   void showError(QString error);
+  void hideIfNoError();
 
 public slots:
   void updateDistance(float d);
