@@ -164,8 +164,8 @@ uint8_t *FrameReader::get(int idx) {
 void FrameReader::decodeThread() {
   int idx = 0;
   while (!exit_) {
-    const int from = std::max(idx, 0);
-    const int to = std::min(from + 20, (int)frames_.size());
+    const int from = std::max(idx - 20, 0);
+    const int to = std::min(idx + 20, (int)frames_.size());
     for (int i = 0; i < frames_.size() && !exit_; ++i) {
       Frame &frame = frames_[i];
       if (i >= from && i < to) {
