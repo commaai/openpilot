@@ -177,9 +177,6 @@ void Replay::mergeEvents() {
   auto begin_merge_it = std::lower_bound(events_->begin(), events_->end(), min_tm, [](const Event *e, uint64_t v) {
     return e->mono_time < v;
   });
-  if (begin_merge_it == events_->end()) {
-    begin_merge_it = events_->begin();
-  }
   auto end_merge_it = std::upper_bound(begin_merge_it, events_->end(), max_tm, [](uint64_t v, const Event *e) {
     return v < e->mono_time;
   });
@@ -199,6 +196,7 @@ void Replay::mergeEvents() {
   cv_.notify_one();
 
   // erase segments
+  std::unique_lock lk(segment_mutex_);
   auto it = segments_.begin();
   while (it != segments_.end()) {
     auto &seg = it->second;
