@@ -92,29 +92,27 @@ def get_can_signals(CP, gearbox_msg="GEARBOX"):
     signals += [
       ("CAR_GAS", "GAS_PEDAL_2", 0),
       ("MAIN_ON", "SCM_FEEDBACK", 0),
-      ("CRUISE_CONTROL_LABEL", "ACC_HUD", 0),
       ("EPB_STATE", "EPB_STATUS", 0),
-      ("CRUISE_SPEED", "ACC_HUD", 0),
-      ("ACCEL_COMMAND", "ACC_CONTROL", 0),
-      ("AEB_STATUS", "ACC_CONTROL", 0),
     ]
     checks += [
-      ("ACC_HUD", 10),
       ("EPB_STATUS", 50),
       ("GAS_PEDAL_2", 100),
-      ("ACC_CONTROL", 50),
     ]
-    if CP.openpilotLongitudinalControl:
-      signals += [("BRAKE_ERROR_1", "STANDSTILL", 1),
-                  ("BRAKE_ERROR_2", "STANDSTILL", 1)]
-      checks += [("STANDSTILL", 50)]
-  else:
-    # Nidec signals.
-    signals += [("BRAKE_ERROR_1", "STANDSTILL", 1),
-                ("BRAKE_ERROR_2", "STANDSTILL", 1),
-                ("CRUISE_SPEED_PCM", "CRUISE", 0),
+
+    if not CP.openpilotLongitudinalControl:
+      signals += [
+        ("CRUISE_CONTROL_LABEL", "ACC_HUD", 0),
+        ("CRUISE_SPEED", "ACC_HUD", 0),
+        ("ACCEL_COMMAND", "ACC_CONTROL", 0),
+        ("AEB_STATUS", "ACC_CONTROL", 0),
+      ]
+      checks += [
+        ("ACC_HUD", 10),
+        ("ACC_CONTROL", 50),
+      ]
+  else:  # Nidec signals
+    signals += [("CRUISE_SPEED_PCM", "CRUISE", 0),
                 ("CRUISE_SPEED_OFFSET", "CRUISE_PARAMS", 0)]
-    checks += [("STANDSTILL", 50)]
 
     if CP.carFingerprint == CAR.ODYSSEY_CHN:
       checks += [("CRUISE_PARAMS", 10)]
@@ -192,6 +190,13 @@ def get_can_signals(CP, gearbox_msg="GEARBOX"):
     signals.append(("INTERCEPTOR_GAS2", "GAS_SENSOR", 0))
     checks.append(("GAS_SENSOR", 50))
 
+  if CP.openpilotLongitudinalControl:
+    signals += [
+      ("BRAKE_ERROR_1", "STANDSTILL", 1),
+      ("BRAKE_ERROR_2", "STANDSTILL", 1)
+    ]
+    checks += [("STANDSTILL", 50)]
+
   return signals, checks
 
 
@@ -211,7 +216,6 @@ class CarState(CarStateBase):
     self.brake_switch_prev_ts = 0
     self.cruise_setting = 0
     self.v_cruise_pcm_prev = 0
-    self.cruise_mode = 0
 
   def update(self, cp, cp_cam, cp_body):
     ret = car.CarState.new_message()
@@ -310,12 +314,13 @@ class CarState(CarStateBase):
     ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD[self.CP.carFingerprint]
 
     if self.CP.carFingerprint in HONDA_BOSCH:
-      self.cruise_mode = cp.vl["ACC_HUD"]["CRUISE_CONTROL_LABEL"]
-      ret.cruiseState.standstill = cp.vl["ACC_HUD"]["CRUISE_SPEED"] == 252.
-      ret.cruiseState.speedOffset = calc_cruise_offset(0, ret.vEgo)
-      # On set, cruise set speed pulses between 254~255 and the set speed prev is set to avoid this.
-      ret.cruiseState.speed = self.v_cruise_pcm_prev if cp.vl["ACC_HUD"]["CRUISE_SPEED"] > 160.0 else cp.vl["ACC_HUD"]["CRUISE_SPEED"] * CV.KPH_TO_MS
-      self.v_cruise_pcm_prev = ret.cruiseState.speed
+      if not self.CP.openpilotLongitudinalControl:
+        ret.cruiseState.nonAdaptive = cp.vl["ACC_HUD"]["CRUISE_CONTROL_LABEL"] != 0
+        ret.cruiseState.standstill = cp.vl["ACC_HUD"]["CRUISE_SPEED"] == 252.
+
+        # On set, cruise set speed pulses between 254~255 and the set speed prev is set to avoid this.
+        ret.cruiseState.speed = self.v_cruise_pcm_prev if cp.vl["ACC_HUD"]["CRUISE_SPEED"] > 160.0 else cp.vl["ACC_HUD"]["CRUISE_SPEED"] * CV.KPH_TO_MS
+        self.v_cruise_pcm_prev = ret.cruiseState.speed
     else:
       ret.cruiseState.speedOffset = calc_cruise_offset(cp.vl["CRUISE_PARAMS"]["CRUISE_SPEED_OFFSET"], ret.vEgo)
       ret.cruiseState.speed = cp.vl["CRUISE"]["CRUISE_SPEED_PCM"] * CV.KPH_TO_MS
@@ -336,7 +341,6 @@ class CarState(CarStateBase):
     ret.brake = cp.vl["VSA_STATUS"]["USER_BRAKE"]
     ret.cruiseState.enabled = cp.vl["POWERTRAIN_DATA"]["ACC_STATUS"] != 0
     ret.cruiseState.available = bool(main_on)
-    ret.cruiseState.nonAdaptive = self.cruise_mode != 0
 
     # Gets rid of Pedal Grinding noise when brake is pressed at slow speeds for some models
     if self.CP.carFingerprint in (CAR.PILOT, CAR.PILOT_2019, CAR.RIDGELINE):
@@ -347,7 +351,7 @@ class CarState(CarStateBase):
     self.is_metric = not cp.vl["HUD_SETTING"]["IMPERIAL_UNIT"] if self.CP.carFingerprint in (CAR.CIVIC) else False
 
     if self.CP.carFingerprint in HONDA_BOSCH:
-      ret.stockAeb = bool(cp.vl["ACC_CONTROL"]["AEB_STATUS"] and cp.vl["ACC_CONTROL"]["ACCEL_COMMAND"] < -1e-5)
+      ret.stockAeb = (not self.CP.openpilotLongitudinalControl) and bool(cp.vl["ACC_CONTROL"]["AEB_STATUS"] and cp.vl["ACC_CONTROL"]["ACCEL_COMMAND"] < -1e-5)
     else:
       ret.stockAeb = bool(cp_cam.vl["BRAKE_COMMAND"]["AEB_REQ_1"] and cp_cam.vl["BRAKE_COMMAND"]["COMPUTER_BRAKE"] > 1e-5)
 

@@ -134,7 +134,6 @@ class FileLock {
       return;
     }
     if (HANDLE_EINTR(flock(fd_, op_)) < 0) {
-      close(fd_);
       LOGE("Failed to lock file %s, errno=%d", fn_.c_str(), errno);
     }
   }
@@ -151,6 +150,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"ApiCache_DriveStats", PERSISTENT},
     {"ApiCache_Device", PERSISTENT},
     {"ApiCache_Owner", PERSISTENT},
+    {"ApiCache_NavDestinations", PERSISTENT},
     {"AthenadPid", PERSISTENT},
     {"CalibrationParams", PERSISTENT},
     {"CarBatteryCapacity", PERSISTENT},
@@ -159,6 +159,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"CarVin", CLEAR_ON_MANAGER_START | CLEAR_ON_PANDA_DISCONNECT | CLEAR_ON_IGNITION_ON},
     {"CommunityFeaturesToggle", PERSISTENT},
     {"ControlsReady", CLEAR_ON_MANAGER_START | CLEAR_ON_PANDA_DISCONNECT | CLEAR_ON_IGNITION_ON},
+    {"DisableRadar", PERSISTENT}, // WARNING: THIS DISABLES AEB
     {"EnableLteOnroad", PERSISTENT},
     {"EndToEndToggle", PERSISTENT},
     {"CompletedTrainingVersion", PERSISTENT},

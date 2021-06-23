@@ -2,6 +2,7 @@ import binascii
 import itertools
 import os
 import re
+import serial
 import struct
 import subprocess
 
@@ -11,6 +12,7 @@ from selfdrive.hardware.base import HardwareBase, ThermalConfig
 NetworkType = log.DeviceState.NetworkType
 NetworkStrength = log.DeviceState.NetworkStrength
 
+MODEM_PATH = "/dev/smd11"
 
 def service_call(call):
   try:
@@ -131,7 +133,22 @@ class Android(HardwareBase):
     }
 
   def get_network_info(self):
-    return None
+    msg = log.DeviceState.NetworkInfo.new_message()
+    msg.state = getprop("gsm.sim.state")
+    msg.technology = getprop("gsm.network.type")
+    msg.operator = getprop("gsm.sim.operator.numeric")
+
+    try:
+      modem = serial.Serial(MODEM_PATH, 115200, timeout=0.1)
+      modem.write(b"AT$QCRSRP?\r")
+      msg.extra = modem.read_until(b"OK\r\n").decode('utf-8')
+
+      rsrp = msg.extra.split("$QCRSRP: ")[1].split("\r")[0].split(",")
+      msg.channel = int(rsrp[1])
+    except Exception:
+      pass
+
+    return msg
 
   def get_network_type(self):
     wifi_check = parse_service_call_string(service_call(["connectivity", "2"]))

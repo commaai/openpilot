@@ -93,7 +93,7 @@ void MapWindow::initLayers() {
     nav["type"] = "line";
     nav["source"] = "navSource";
     m_map->addLayer(nav, "road-intersection");
-    m_map->setPaintProperty("navLayer", "line-color", QColor("#8cb3d1"));
+    m_map->setPaintProperty("navLayer", "line-color", QColor("#31a1ee"));
     m_map->setPaintProperty("navLayer", "line-width", 7.5);
     m_map->setLayoutProperty("navLayer", "line-cap", "round");
   }
@@ -239,7 +239,7 @@ void MapWindow::initializeGL() {
 
   m_map->setMargins({0, 350, 0, 50});
   m_map->setPitch(MIN_PITCH);
-  m_map->setStyleUrl("mapbox://styles/pd0wm/cknuhcgvr0vs817o1akcx6pek"); // Larger fonts
+  m_map->setStyleUrl("mapbox://styles/commadotai/ckq7zp8ts1k0o17p8m6rv6cet");
 
   connect(m_map.data(), SIGNAL(needsRendering()), this, SLOT(update()));
   timer->start(100);
@@ -276,6 +276,7 @@ void MapWindow::recomputeRoute() {
 
   if (*new_destination != nav_destination) {
     setVisible(true); // Show map on destination set/change
+    // TODO: close sidebar
     should_recompute = true;
   }
 
@@ -467,23 +468,21 @@ MapInstructions::MapInstructions(QWidget * parent) : QWidget(parent) {
     QVBoxLayout *layout = new QVBoxLayout(w);
 
     distance = new QLabel;
-    distance->setStyleSheet(R"(font-size: 75px;)");
+    distance->setStyleSheet(R"(font-size: 90px;)");
     layout->addWidget(distance);
 
     primary = new QLabel;
-    primary->setStyleSheet(R"(font-size: 50px;)");
+    primary->setStyleSheet(R"(font-size: 60px;)");
     primary->setWordWrap(true);
     layout->addWidget(primary);
 
     secondary = new QLabel;
-    secondary->setStyleSheet(R"(font-size: 40px;)");
+    secondary->setStyleSheet(R"(font-size: 50px;)");
     secondary->setWordWrap(true);
     layout->addWidget(secondary);
 
     lane_layout = new QHBoxLayout;
     layout->addLayout(lane_layout);
-
-    layout->addStretch(); // Make sure the word-wrapped labels are as small as possible
 
     main_layout->addWidget(w);
   }
@@ -550,6 +549,10 @@ void MapInstructions::updateInstructions(QMap<QString, QVariant> banner, bool fu
   // seems like it takes a little bit of time for the images to change and
   // the size can only be changed afterwards
   adjustSize();
+
+  // Word wrap widgets neet fixed width
+  primary->setFixedWidth(width() - 250);
+  secondary->setFixedWidth(width() - 250);
 
   if (banner == last_banner) return;
   QString primary_str, secondary_str;
@@ -688,7 +691,7 @@ MapETA::MapETA(QWidget * parent) : QWidget(parent) {
     * {
       color: white;
       font-family: "Inter";
-      font-size: 55px;
+      font-size: 70px;
     }
   )");
 

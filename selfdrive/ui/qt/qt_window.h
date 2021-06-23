@@ -13,7 +13,7 @@
 
 #include "selfdrive/hardware/hw.h"
 
-const int vwp_w = Hardware::TICI() ? 2160 : 1920;
+const int vwp_w = (Hardware::TICI() || (getenv("WIDE_UI") != NULL)) ? 2160 : 1920;
 const int vwp_h = 1080;
 
 inline void setMainWindow(QWidget *w) {
