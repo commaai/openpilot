@@ -1,17 +1,9 @@
 #!/usr/bin/env python3
-
 import sys
-
 import numpy as np
-import sympy as sp
-
 from selfdrive.locationd.models.constants import ObservationKind
-from rednose.helpers.ekf_sym import EKF_sym, gen_code
-from rednose.helpers.lst_sq_computer import LstSqComputer
-from rednose.helpers.sympy_helpers import euler_rotate, quat_matrix_r, quat_rotate
 
 EARTH_GM = 3.986005e14  # m^3/s^2 (gravitational constant * mass of earth)
-
 
 def parse_prr(m):
   from laika.raw_gnss import GNSSMeasurement
@@ -121,6 +113,11 @@ class LocKalman():
 
   @staticmethod
   def generate_code(generated_dir, N=4):
+    import sympy as sp
+    from rednose.helpers.ekf_sym import EKF_sym, gen_code
+    from rednose.helpers.lst_sq_computer import LstSqComputer
+    from rednose.helpers.sympy_helpers import euler_rotate, quat_matrix_r, quat_rotate
+
     dim_augment = LocKalman.dim_augment
     dim_augment_err = LocKalman.dim_augment_err
 
