@@ -176,11 +176,18 @@ void OffroadHome::refresh() {
 
   if (!alerts && !updateAvailable) {
     center_layout->setCurrentIndex(0);
-  } else if (center_layout->currentIndex() == 0) {
+  } else {
+    // pop-up new notification
     if (updateAvailable && !update_notif->isVisible()) {
-      center_layout->setCurrentIndex(1);  
+      center_layout->setCurrentIndex(1);
     } else if (alerts && !alert_notif->isVisible()) {
-      center_layout->setCurrentIndex(2);  
+      center_layout->setCurrentIndex(2);
+    }
+    // hide when no notifaction
+    if (center_layout->currentIndex() == 1 && !updateAvailable) {
+      center_layout->setCurrentIndex(2);
+    } else if (center_layout->currentIndex() == 2 && !alerts) {
+      center_layout->setCurrentIndex(1);
     }
   }
   alert_notif->setVisible(alerts);
