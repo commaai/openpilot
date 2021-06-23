@@ -1,6 +1,10 @@
 # flake8: noqa
 
+from collections import defaultdict
+from typing import Dict
+
 from cereal import car
+from selfdrive.car import dbc_dict
 Ecu = car.CarParams.Ecu
 
 class CarControllerParams:
@@ -25,8 +29,10 @@ class CANBUS:
   pt = 0
   cam = 2
 
-class DBC:
+class DBC_FILES:
   mqb = "vw_mqb_2010"  # Used for all cars with MQB-style CAN messaging
+
+DBC = defaultdict(lambda: dbc_dict(DBC_FILES.mqb, None))  # type: Dict[str, Dict[str, str]]
 
 TransmissionType = car.CarParams.TransmissionType
 GearShifter = car.CarState.GearShifter
