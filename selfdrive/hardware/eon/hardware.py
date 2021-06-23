@@ -139,7 +139,7 @@ class Android(HardwareBase):
     msg.operator = getprop("gsm.sim.operator.numeric")
 
     try:
-      modem = serial.Serial("/dev/smd11", 115200, timeout=0.1)
+      modem = serial.Serial(MODEM_PATH, 115200, timeout=0.1)
       modem.write(b"AT$QCRSRP?\r")
       msg.extra = modem.read_until(b"OK\r\n").decode('utf-8')
 
@@ -375,7 +375,3 @@ class Android(HardwareBase):
 
   def set_power_save(self, enabled):
     pass
-
-if __name__ == "__main__":
-  a = Android()
-  print(a.get_network_info())
