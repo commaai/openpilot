@@ -149,7 +149,6 @@ QList<Network> WifiManager::get_networks() {
   QList<Network> r;
   QDBusInterface nm(nm_service, adapter, wireless_device_iface, bus);
   nm.setTimeout(dbus_timeout);
-  updateConnections();
 
   const QString active_ap = get_active_ap();
   const QDBusReply<QList<QDBusObjectPath>> response = nm.call("GetAllAccessPoints");
@@ -358,6 +357,7 @@ QString WifiManager::get_adapter() {
 void WifiManager::stateChange(unsigned int new_state, unsigned int previous_state, unsigned int change_reason) {
   raw_adapter_state = new_state;
   if (new_state == state_need_auth && change_reason == reason_wrong_password) {
+    forgetConnection(connecting_to_network);
     emit wrongPassword(connecting_to_network);
   } else if (new_state == state_connected) {
     connecting_to_network = "";
@@ -369,6 +369,10 @@ void WifiManager::stateChange(unsigned int new_state, unsigned int previous_stat
 // https://developer.gnome.org/NetworkManager/stable/gdbus-org.freedesktop.NetworkManager.Device.Wireless.html
 void WifiManager::propertyChange(const QString &interface, const QVariantMap &props, const QStringList &invalidated_props) {
   if (interface == wireless_device_iface && props.contains("LastScan")) {
+    if (firstRefresh) {
+      known_connections = listConnections();
+      firstRefresh = false;
+    }
     refreshNetworks();
     emit refreshSignal();
   }
@@ -392,8 +396,8 @@ int WifiManager::getConnectionIndex(const QString &ssid) {
   return -1;
 }
 
-void WifiManager::updateConnections() {
-  known_connections.clear();
+QVector<QPair<QString, QDBusObjectPath>> WifiManager::listConnections() {
+  QVector<QPair<QString, QDBusObjectPath>> connections;
   QDBusInterface nm(nm_service, nm_settings_path, nm_settings_iface, bus);
   nm.setTimeout(dbus_timeout);
 
@@ -406,8 +410,9 @@ void WifiManager::updateConnections() {
     const QDBusReply<QMap<QString, QMap<QString, QVariant>>> map = nm2.call("GetSettings");
     const QString ssid = map.value().value("802-11-wireless").value("ssid").toString();
 
-    known_connections.push_back(qMakePair(ssid, path));
+    connections.push_back(qMakePair(ssid, path));
   }
+  return connections;
 }
 
 void WifiManager::activateWifiConnection(const QString &ssid) {

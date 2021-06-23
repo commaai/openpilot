@@ -34,6 +34,7 @@ public:
   QVector<Network> seen_networks;
   QVector<QPair<QString, QDBusObjectPath>> known_connections;
   QString ipv4_address;
+  bool firstRefresh = true;
 
   void refreshNetworks();
   void forgetConnection(const QString &ssid);
@@ -74,7 +75,7 @@ private:
   unsigned int get_ap_strength(const QString &network_path);
   SecurityType getSecurityType(const QString &path);
   int getConnectionIndex(const QString &ssid);
-  void updateConnections();
+  QVector<QPair<QString, QDBusObjectPath>> listConnections();
 
 signals:
   void wrongPassword(const QString &ssid);
