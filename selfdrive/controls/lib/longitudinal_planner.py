@@ -270,7 +270,7 @@ class Planner():
       # dp reset
       self.v_model = reset_speed
       self.a_model = reset_accel
-      self.speed_limit_controller.deactivate()  # Deactivate speed limit controller to provide no solution.
+      self.speed_limit_controller.deactivate(sm['carState'].gasPressed and enabled)  # Deactivate speed limit controller to provide no solution.
       self.turn_speed_controller.deactivate()  # Deactivate turn speed controller to provide no solution.
 
     self.mpc1.set_cur_state(self.v_acc_start, self.a_acc_start)

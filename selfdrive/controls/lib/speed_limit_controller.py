@@ -427,5 +427,6 @@ class SpeedLimitController():
     self._update_solution()
     self._update_events(events)
 
-  def deactivate(self):
-    self.state = SpeedLimitControlState.inactive
+  def deactivate(self, temporary):
+    if temporary is True:
+      self.state = SpeedLimitControlState.inactive
