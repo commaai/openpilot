@@ -186,7 +186,7 @@ class CarStateBase:
     v_ego_x = self.v_ego_kf.update(v_ego_raw)
     return float(v_ego_x[0]), float(v_ego_x[1])
 
-  def update_blinker_from_light(self, blinker_time: int, left_blinker_lamp: bool, right_blinker_lamp: bool):
+  def update_blinker_from_lamp(self, blinker_time: int, left_blinker_lamp: bool, right_blinker_lamp: bool):
     """Update blinkers from lights. Enable output when light was seen within the last `blinker_time`
     iterations"""
     # TODO: Handle case when switching direction. Now both blinkers can be on at the same time
