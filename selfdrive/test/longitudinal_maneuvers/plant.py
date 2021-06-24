@@ -1,22 +1,11 @@
 #!/usr/bin/env python3
-import os
 import time
 import numpy as np
 
-from opendbc import DBC_PATH
-
 from cereal import log
-from common.realtime import Ratekeeper
 import cereal.messaging as messaging
-from selfdrive.car.honda.values import CAR
-
-from selfdrive.car.honda.interface import CarInterface
+from common.realtime import Ratekeeper
 from selfdrive.controls.lib.longcontrol import LongCtrlState
-from opendbc.can.dbc import dbc
-honda = dbc(os.path.join(DBC_PATH, "honda_civic_touring_2016_can_generated.dbc"))
-
-# Trick: set 0x201 (interceptor) in fingerprints for gas is controlled like if there was an interceptor
-CP = CarInterface.get_params(CAR.CIVIC, {0: {0x201: 6}, 1: {}, 2: {}, 3: {}})
 
 
 class Plant():
@@ -32,7 +21,6 @@ class Plant():
       Plant.plan = messaging.sub_sock('longitudinalPlan')
       Plant.messaging_initialized = True
 
-    self.frame = 0
     self.v_lead_prev = 0.0
 
     self.distance = 0.
@@ -59,7 +47,7 @@ class Plant():
   def current_time(self):
     return float(self.rk.frame) / self.rate
 
-  def step(self, v_lead=0.0, cruise_buttons=None, grade=0.0, publish_model=True):
+  def step(self, v_lead=0.0):
     # ******** publish a fake model going straight and fake calibration ********
     # note that this is worst case for MPC, since model will delay long mpc by one time step
     radar = messaging.new_message('radarState')
@@ -130,13 +118,12 @@ class Plant():
       v_rel = 0.
 
     # print at 5hz
-    if (self.frame % (self.rate//5)) == 0:
+    if (self.rk.frame % (self.rate // 5)) == 0:
       print("%2.2f sec   %6.2f m  %6.2f m/s  %6.2f m/s2   lead_rel: %6.2f m  %6.2f m/s"
             % (self.current_time(), self.distance, self.speed, self.acceleration, d_rel, v_rel))
 
 
     # ******** update prevs ********
-    self.frame += 1
     self.rk.monitor_time()
 
     return {

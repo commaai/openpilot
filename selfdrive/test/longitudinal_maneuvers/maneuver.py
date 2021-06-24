@@ -1,5 +1,5 @@
-from selfdrive.test.longitudinal_maneuvers.plant import Plant
 import numpy as np
+from selfdrive.test.longitudinal_maneuvers.plant import Plant
 
 
 class Maneuver():
@@ -9,8 +9,6 @@ class Maneuver():
     self.speed = kwargs.get("initial_speed", 0.0)
     self.lead_relevancy = kwargs.get("lead_relevancy", 0)
 
-    self.grade_values = kwargs.get("grade_values", [0.0, 0.0])
-    self.grade_breakpoints = kwargs.get("grade_breakpoints", [0.0, duration])
     self.speed_lead_values = kwargs.get("speed_lead_values", [0.0, 0.0])
     self.speed_lead_breakpoints = kwargs.get("speed_lead_breakpoints", [0.0, duration])
 
@@ -28,13 +26,9 @@ class Maneuver():
     )
 
     valid = True
-    current_button = 0
     while plant.current_time() < self.duration:
-      grade = np.interp(plant.current_time(), self.grade_breakpoints, self.grade_values)
       speed_lead = np.interp(plant.current_time(), self.speed_lead_breakpoints, self.speed_lead_values)
-
-      # distance, speed, acceleration, distance_lead, brake, gas, steer_torque, fcw, controls_state= plant.step(speed_lead, current_button, grade)
-      log = plant.step(speed_lead, current_button, grade)
+      log = plant.step(speed_lead)
 
 
       d_rel = log['distance_lead'] - log['distance'] if self.lead_relevancy else 200.

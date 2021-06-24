@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 import os
-from selfdrive.test.process_replay.test_processes import get_segment
-from selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
-from selfdrive.manager.process_config import managed_processes
-from common.file_helpers import mkdirs_exists_ok
-from common.params import Params
-from tools.lib.logreader import LogReader
 import unittest
 
+from common.file_helpers import mkdirs_exists_ok
+from common.params import Params
+from selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
+from selfdrive.manager.process_config import managed_processes
 
 
 def check_no_collision(log):
@@ -22,8 +20,10 @@ def check_engaged(log):
   return log['controls_state_msgs'][-1][-1].active
 
 def put_default_car_params():
-  cp = [m for m in LogReader(get_segment('0982d79ebb0de295|2021-01-08--10-13-10--0')) if m.which() == 'carParams']
-  Params().put("CarParams", cp[0].carParams.as_builder().to_bytes())
+  from selfdrive.car.honda.values import CAR
+  from selfdrive.car.honda.interface import CarInterface
+  cp = CarInterface.get_params(CAR.CIVIC)
+  Params().put("CarParams", cp.to_bytes())
 
 
 
@@ -36,7 +36,6 @@ maneuvers = [
     initial_distance_lead=100.,
     speed_lead_values=[20.],
     speed_lead_breakpoints=[1.],
-    cruise_button_presses=[],
     checks=[check_fcw],
   ),
   Maneuver(
@@ -47,7 +46,6 @@ maneuvers = [
     initial_distance_lead=35.,
     speed_lead_values=[20., 0.],
     speed_lead_breakpoints=[3., 10.],
-    cruise_button_presses=[],
     checks=[check_fcw],
   ),
   Maneuver(
@@ -58,7 +56,6 @@ maneuvers = [
     initial_distance_lead=35.,
     speed_lead_values=[20., 0.],
     speed_lead_breakpoints=[3., 7.],
-    cruise_button_presses=[],
     checks=[check_fcw],
   ),
   Maneuver(
