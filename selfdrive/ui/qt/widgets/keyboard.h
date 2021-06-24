@@ -26,8 +26,6 @@ private:
 
 private slots:
   void handleButton(QAbstractButton* m_button);
-  void pressed(QAbstractButton* m_button);
-  void released(QAbstractButton* m_button);
 
 signals:
   void emitButton(const QString &s);

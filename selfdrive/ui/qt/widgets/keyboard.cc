@@ -16,8 +16,6 @@ KeyboardLayout::KeyboardLayout(QWidget* parent, const std::vector<QVector<QStrin
 
   QButtonGroup* btn_group = new QButtonGroup(this);
   QObject::connect(btn_group, SIGNAL(buttonClicked(QAbstractButton*)), parent, SLOT(handleButton(QAbstractButton*)));
-  QObject::connect(btn_group, SIGNAL(buttonPressed(QAbstractButton*)), parent, SLOT(pressed(QAbstractButton*)));
-  QObject::connect(btn_group, SIGNAL(buttonReleased(QAbstractButton*)), parent, SLOT(released(QAbstractButton*)));
 
   for (const auto &s : layout) {
     QHBoxLayout *hlayout = new QHBoxLayout;
@@ -104,14 +102,6 @@ Keyboard::Keyboard(QWidget *parent) : QFrame(parent) {
   main_layout->addWidget(new KeyboardLayout(this, specials));
 
   main_layout->setCurrentIndex(0);
-}
-
-void Keyboard::pressed(QAbstractButton* m_button) {
-  qDebug() << "pressed";
-}
-
-void Keyboard::released(QAbstractButton* m_button) {
-  qDebug() << "released";
 }
 
 void Keyboard::handleButton(QAbstractButton* m_button) {
