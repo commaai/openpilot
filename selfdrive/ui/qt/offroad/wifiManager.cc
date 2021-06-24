@@ -457,7 +457,9 @@ void WifiManager::addTetheringConnection() {
 
   QDBusInterface nm_settings(nm_service, nm_settings_path, nm_settings_iface, bus);
   nm_settings.setTimeout(dbus_timeout);
-  nm_settings.call("AddConnection", QVariant::fromValue(connection));
+
+  const QDBusReply<QDBusObjectPath> response = nm_settings.call("AddConnection", QVariant::fromValue(connection));
+  known_connections.push_back(qMakePair(QString(tethering_ssid), response.value()));
 }
 
 void WifiManager::enableTethering() {
