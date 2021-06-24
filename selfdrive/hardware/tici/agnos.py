@@ -232,7 +232,7 @@ if __name__ == "__main__":
       logging.error("Verification failed. Flashing AGNOS")
       flash_agnos_update(args.manifest, target_slot_number, logging, spinner)
 
-    logging.warning(f"Verification succeeeded. Swapping to slot {target_slot_number}")
+    logging.warning(f"Verification succeeded. Swapping to slot {target_slot_number}")
     swap(args.manifest, target_slot_number)
   else:
     flash_agnos_update(args.manifest, target_slot_number, logging, spinner)
