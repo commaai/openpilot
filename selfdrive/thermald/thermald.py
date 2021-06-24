@@ -196,7 +196,6 @@ def thermald_thread():
     try:
       binpath = os.path.join(BASEDIR, "selfdrive/hardware/eon/rat")
       out = subprocess.check_output([binpath], encoding='utf8').strip()
-      print(out.splitlines())
       dat = json.loads(out.splitlines()[1])
       cloudlog.event("NV data", data=dat)
     except Exception:
