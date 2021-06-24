@@ -4,15 +4,15 @@ import numpy as np
 
 from cereal import log
 import cereal.messaging as messaging
-from common.realtime import Ratekeeper
+from common.realtime import Ratekeeper, DT_MDL
 from selfdrive.controls.lib.longcontrol import LongCtrlState
 
 
 class Plant():
   messaging_initialized = False
 
-  def __init__(self, lead_relevancy=False, rate=20, speed=0.0, distance_lead=2.0):
-    self.rate = rate
+  def __init__(self, lead_relevancy=False, speed=0.0, distance_lead=2.0):
+    self.rate = 1. / DT_MDL
 
     if not Plant.messaging_initialized:
       Plant.radar = messaging.pub_sock('radarState')
@@ -25,24 +25,16 @@ class Plant():
 
     self.distance = 0.
     self.speed = speed
-    self.steer_error, self.brake_error, self.steer_not_allowed = 0, 0, 0
-    self.cruise_setting = 0
     self.acceleration = 0.0
-
-    self.steer_torque, self.v_cruise, self.acc_status = 0, 0, 0  # v_cruise is reported from can, not the one used for controls
-
-    self.lead_relevancy = lead_relevancy
 
     # lead car
     self.distance_lead = distance_lead
+    self.lead_relevancy = lead_relevancy
 
-    self.rk = Ratekeeper(rate, print_delay_threshold=100.0)
-    self.ts = 1./rate
+    self.rk = Ratekeeper(self.rate, print_delay_threshold=100.0)
+    self.ts = 1. / self.rate
     time.sleep(1)
-    self.sm = messaging.SubMaster(['longitudinalPlan'], poll=['longitudinalPlan'])
-
-  def close(self):
-    Plant.radar.close()
+    self.sm = messaging.SubMaster(['longitudinalPlan'])
 
   def current_time(self):
     return float(self.rk.frame) / self.rate
@@ -135,8 +127,8 @@ class Plant():
     }
 
 # simple engage in standalone mode
-def plant_thread(rate=20):
-  plant = Plant(rate)
+def plant_thread():
+  plant = Plant()
   while 1:
     plant.step()
 
