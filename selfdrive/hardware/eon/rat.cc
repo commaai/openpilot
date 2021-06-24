@@ -2,13 +2,13 @@
 #include <cassert>
 #include <cstdio>
 #include <cstdlib>
+#include <map>
+
+#include "json11.hpp"
 
 #include "libdiag.h"
-
 #include "selfdrive/common/swaglog.h"
 
-// https://github.com/dl12345/qcn/blob/master/nv.txt
-#define NV_GNSS_OEM_FEATURE_MASK 7165
 
 #define DIAG_NV_READ_F 38
 #define DIAG_NV_WRITE_F 39
@@ -144,14 +144,13 @@ static uint32_t nv_read_u32(int client_id, uint16_t nv_id) {
   return *(uint32_t*)resp.data;
 }
 
-#include <map>
-#include "json11.hpp"
 
 
 int main() {
   int err;
   int client_id = 0;
 
+  // setup diag
   bool ok = Diag_LSM_Init(NULL);
   assert(ok);
 
@@ -160,8 +159,13 @@ int main() {
   err = diag_register_dci_client(&client_id, &list, 0, &signal_type);
   assert(err == DIAG_DCI_NO_ERROR);
 
+  // log some stuff
   std::map<std::string, uint16_t> to_log = {
-    {"LTE B13 power", 6502},
+    {"B13", 6502},
+    {"B7", 6553},
+    {"B17", 6606},
+    {"B40", 6658},
+    {"B1", 6710},
   };
   auto log = json11::Json::object {};
   for (auto const &kv : to_log) {
@@ -172,6 +176,7 @@ int main() {
 
   printf("%s\n", json11::Json(log).dump().c_str());
 
+  // cleanup
   err = diag_release_dci_client(&client_id);
   assert(err == DIAG_DCI_NO_ERROR);
   Diag_LSM_DeInit();
