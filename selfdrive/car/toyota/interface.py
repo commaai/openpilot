@@ -331,7 +331,7 @@ class CarInterface(CarInterfaceBase):
 
     # removing the DSU disables AEB and it's considered a community maintained feature
     # intercepting the DSU is a community feature since it requires unofficial hardware
-    ret.communityFeature = ret.enableGasInterceptor or ret.enableDsu or smartDsu or candidate is CAR.ALPHARD_TSS2
+    ret.communityFeature = ret.enableGasInterceptor or ret.enableDsu or smartDsu
 
     if ret.enableGasInterceptor:
       # Transitions from original pedal tuning at MIN_ACC_SPEED to default tuning at MIN_ACC_SPEED + hysteresis gap

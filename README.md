@@ -100,6 +100,7 @@ Supported Cars
 | Lexus     | RX Hybrid 2016-19             | All               | Stock<sup>3</sup>| 0mph               | 0mph              |
 | Lexus     | RX Hybrid 2020                | All               | openpilot        | 0mph               | 0mph              |
 | Lexus     | UX Hybrid 2019-21             | All               | openpilot        | 0mph               | 0mph              |
+| Toyota    | Alphard 2020                  | All               | openpilot        | 0mph               | 0mph              |
 | Toyota    | Avalon 2016-21                | TSS-P             | Stock<sup>3</sup>| 20mph<sup>1</sup>  | 0mph              |
 | Toyota    | Avalon Hybrid 2019-21         | TSS-P             | Stock<sup>3</sup>| 20mph<sup>1</sup>  | 0mph              |
 | Toyota    | Camry 2018-20                 | All               | Stock            | 0mph<sup>4</sup>   | 0mph              |
@@ -190,7 +191,6 @@ Community Maintained Cars and Features
 | Subaru    | Crosstrek 2018-19             | EyeSight          | Stock            | 0mph               | 0mph         |
 | Subaru    | Forester 2019-21              | EyeSight          | Stock            | 0mph               | 0mph         |
 | Subaru    | Impreza 2017-19               | EyeSight          | Stock            | 0mph               | 0mph         |
-| Toyota    | Alphard 2020                  | All               | openpilot        | 0mph               | 0mph         |
 | Volkswagen| Atlas 2018-19                 | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| e-Golf 2014, 2019-20          | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Golf 2015-19                  | Driver Assistance | Stock            | 0mph               | 0mph         |
