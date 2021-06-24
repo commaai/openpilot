@@ -171,6 +171,8 @@ class CarStateBase:
     self.cruise_buttons = 0
     self.left_blinker_cnt = 0
     self.right_blinker_cnt = 0
+    self.left_blinker_prev = False
+    self.right_blinker_prev = False
 
     # Q = np.matrix([[10.0, 0.0], [0.0, 100.0]])
     # R = 1e3
@@ -197,26 +199,25 @@ class CarStateBase:
   def update_blinker_from_stalk(self, blinker_time: int, left_blinker_stalk: bool, right_blinker_stalk: bool):
     """Update blinkers from stalk position. When stalk is seen the blinker will be on for at least blinker_time,
     or until the stalk is turned off, whichever is longer. If the opposite stalk direction is seen the blinker
-    is forced to the other side"""
-    left_min = 0
-    right_min = 0
+    is forced to the other side. On a rising edge of the stalk the timeout is reset."""
 
     if left_blinker_stalk:
-      left_min = 1
       self.right_blinker_cnt = 0
-      if self.left_blinker_cnt == 0:
+      if not self.left_blinker_prev:
         self.left_blinker_cnt = blinker_time
 
     if right_blinker_stalk:
-      right_min = 1
       self.left_blinker_cnt = 0
-      if self.right_blinker_cnt == 0:
+      if not self.right_blinker_prev:
         self.right_blinker_cnt = blinker_time
 
-    self.left_blinker_cnt = max(self.left_blinker_cnt - 1, left_min)
-    self.right_blinker_cnt = max(self.right_blinker_cnt - 1, right_min)
+    self.left_blinker_cnt = max(self.left_blinker_cnt - 1, 0)
+    self.right_blinker_cnt = max(self.right_blinker_cnt - 1, 0)
 
-    return self.left_blinker_cnt > 0, self.right_blinker_cnt > 0
+    self.left_blinker_prev = left_blinker_stalk
+    self.right_blinker_prev = right_blinker_stalk
+
+    return bool(left_blinker_stalk or self.left_blinker_cnt > 0), bool(right_blinker_stalk or self.right_blinker_cnt > 0)
 
   @staticmethod
   def parse_gear_shifter(gear: str) -> car.CarState.GearShifter:

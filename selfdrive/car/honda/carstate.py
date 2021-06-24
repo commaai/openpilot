@@ -276,7 +276,7 @@ class CarState(CarStateBase):
     self.cruise_buttons = cp.vl["SCM_BUTTONS"]["CRUISE_BUTTONS"]
 
     ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_stalk(
-      300, cp.vl["SCM_FEEDBACK"]["LEFT_BLINKER"], cp.vl["SCM_FEEDBACK"]["RIGHT_BLINKER"])
+      250, cp.vl["SCM_FEEDBACK"]["LEFT_BLINKER"], cp.vl["SCM_FEEDBACK"]["RIGHT_BLINKER"])
     self.brake_hold = cp.vl["VSA_STATUS"]["BRAKE_HOLD_ACTIVE"]
 
     if self.CP.carFingerprint in (CAR.CIVIC, CAR.ODYSSEY, CAR.CRV_5G, CAR.ACCORD, CAR.ACCORDH, CAR.CIVIC_BOSCH,
