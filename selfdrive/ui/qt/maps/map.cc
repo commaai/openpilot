@@ -117,6 +117,7 @@ void MapWindow::initLayers() {
 }
 
 void MapWindow::timerUpdate() {
+  loaded_once = loaded_once || m_map->isFullyLoaded();
   if (!loaded_once) {
     map_instructions->showError("Map loading");
     return;
@@ -240,12 +241,6 @@ void MapWindow::initializeGL() {
   m_map->setStyleUrl("mapbox://styles/commadotai/ckq7zp8ts1k0o17p8m6rv6cet");
 
   connect(m_map.data(), SIGNAL(needsRendering()), this, SLOT(update()));
-
-  QObject::connect(m_map.data(), &QMapboxGL::mapChanged, [=](QMapboxGL::MapChange change) {
-    if (change == QMapboxGL::MapChange::MapChangeDidFinishLoadingMap) {
-      loaded_once = true;
-    }
-  });
   timer->start(100);
 }
 
