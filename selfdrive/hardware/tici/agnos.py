@@ -121,8 +121,6 @@ def clear_partition_hash(target_slot_number, partition):
 def flash_partition(target_slot_number, partition, cloudlog, spinner=None):
   cloudlog.info(f"Downloading and writing {partition['name']}")
 
-  path = get_partition_path(target_slot_number, partition)
-
   if verify_partition(target_slot_number, partition):
     cloudlog.info(f"Already flashed {partition['name']}")
     return
@@ -132,6 +130,7 @@ def flash_partition(target_slot_number, partition, cloudlog, spinner=None):
   # Clear hash before flashing in case we get interrupted
   clear_partition_hash(target_slot_number, partition)
 
+  path = get_partition_path(target_slot_number, partition)
   with open(path, 'wb+') as out:
     partition_size = partition['size']
 
@@ -186,7 +185,7 @@ def flash_agnos_update(manifest_path, target_slot_number, cloudlog, spinner=None
 
     for retries in range(10):
       try:
-        flash_partition(slot_number_to_suffix(target_slot_number), partition, cloudlog, spinner)
+        flash_partition(target_slot_number, partition, cloudlog, spinner)
         success = True
         break
 
