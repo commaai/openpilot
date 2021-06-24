@@ -75,7 +75,7 @@ private:
   unsigned int get_ap_strength(const QString &network_path);
   SecurityType getSecurityType(const QString &path);
   int getConnectionIndex(const QString &ssid);
-  QVector<QPair<QString, QDBusObjectPath>> listConnections();
+  void updateConnections();
 
 signals:
   void wrongPassword(const QString &ssid);
