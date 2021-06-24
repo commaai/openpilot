@@ -3,6 +3,7 @@ Version 0.8.6 (2021-XX-XX)
  * Hyundai Elantra Hybrid 2021 support thanks to tecandrew!
  * Hyundai Ioniq PHEV 2020 support thanks to YawWashout!
  * Škoda Octavia RS 2016 support thanks to jyoung8607!
+ * Toyota Alphard 2020 support thanks to belm0!
  * Volkswagen Golf SportWagen 2015 support thanks to jona96!
  * Volkswagen Touran 2017 support thanks to jyoung8607!
 
