@@ -244,13 +244,10 @@ selfdrive/controls/lib/lead_mpc.py
 
 selfdrive/controls/lib/cluster/*
 
-selfdrive/controls/lib/lateral_mpc/lib_mpc_export/*
 selfdrive/controls/lib/lateral_mpc/.gitignore
 selfdrive/controls/lib/lateral_mpc/SConscript
 selfdrive/controls/lib/lateral_mpc/__init__.py
-selfdrive/controls/lib/lateral_mpc/generator.cpp
-selfdrive/controls/lib/lateral_mpc/libmpc_py.py
-selfdrive/controls/lib/lateral_mpc/lateral_mpc.c
+selfdrive/controls/lib/lateral_mpc/lat_mpc.py
 
 selfdrive/controls/lib/lead_mpc_lib/lib_mpc_export/*
 selfdrive/controls/lib/lead_mpc_lib/.gitignore
