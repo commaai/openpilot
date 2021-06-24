@@ -41,4 +41,4 @@ class Maneuver():
       valid = False
 
     print("maneuver end", valid)
-    return (None, valid)
+    return valid

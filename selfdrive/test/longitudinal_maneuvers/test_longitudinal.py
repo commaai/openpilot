@@ -2,7 +2,6 @@
 import os
 import unittest
 
-from common.file_helpers import mkdirs_exists_ok
 from common.params import Params
 from selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
 from selfdrive.manager.process_config import managed_processes
@@ -19,12 +18,12 @@ def check_fcw(log):
 def check_engaged(log):
   return log['controls_state_msgs'][-1][-1].active
 
+
 def put_default_car_params():
   from selfdrive.car.honda.values import CAR
   from selfdrive.car.honda.interface import CarInterface
   cp = CarInterface.get_params(CAR.CIVIC)
   Params().put("CarParams", cp.to_bytes())
-
 
 
 maneuvers = [
@@ -111,41 +110,12 @@ maneuvers = [
 ]
 
 
-def setup_output():
-  output_dir = os.path.join(os.getcwd(), 'out/longitudinal')
-  if not os.path.exists(os.path.join(output_dir, "index.html")):
-    # write test output header
-
-    css_style = """
-    .maneuver_title {
-      font-size: 24px;
-      text-align: center;
-    }
-    .maneuver_graph {
-      width: 100%;
-    }
-    """
-
-    view_html = "<html><head><style>%s</style></head><body><table>" % (css_style,)
-    for i, man in enumerate(maneuvers):
-      view_html += "<tr><td class='maneuver_title' colspan=5><div>%s</div></td></tr><tr>" % (man.title,)
-      for c in ['distance.svg', 'speeds.svg', 'acceleration.svg', 'pedals.svg', 'pid.svg']:
-        view_html += "<td><img class='maneuver_graph' src='%s'/></td>" % (os.path.join("maneuver" + str(i + 1).zfill(2), c), )
-      view_html += "</tr>"
-
-    mkdirs_exists_ok(output_dir)
-    with open(os.path.join(output_dir, "index.html"), "w") as f:
-      f.write(view_html)
-
-
 class LongitudinalControl(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
     os.environ['SIMULATION'] = "1"
     os.environ['SKIP_FW_QUERY'] = "1"
     os.environ['NO_CAN_TIMEOUT'] = "1"
-
-    setup_output()
 
     params = Params()
     params.clear_all()
@@ -159,23 +129,22 @@ class LongitudinalControl(unittest.TestCase):
 
 
 def run_maneuver_worker(k):
-  man = maneuvers[k]
-
   def run(self):
+    man = maneuvers[k]
     print(man.title)
     put_default_car_params()
     managed_processes['plannerd'].start()
 
-    _, valid = man.evaluate()
+    valid = man.evaluate()
 
     managed_processes['plannerd'].stop()
     self.assertTrue(valid)
-
   return run
 
 
 for k in range(len(maneuvers)):
-  setattr(LongitudinalControl, "test_longitudinal_maneuvers_%d : " % (k + 1) + maneuvers[k].title, run_maneuver_worker(k))
+  setattr(LongitudinalControl, f"test_longitudinal_maneuvers_{k+1}",
+          run_maneuver_worker(k))
 
 if __name__ == "__main__":
   unittest.main(failfast=True)
