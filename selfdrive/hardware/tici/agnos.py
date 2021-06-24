@@ -81,6 +81,7 @@ def get_target_slot_number():
 
 
 def slot_number_to_suffix(slot_number):
+  assert slot_number in (0, 1)
   return '_a' if slot_number == 0 else '_b'
 
 
