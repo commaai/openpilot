@@ -47,7 +47,7 @@ void Networking::attemptInitialization() {
   }
 
   connect(wifi, &WifiManager::wrongPassword, this, &Networking::wrongPassword);
-  connect(wifi, &WifiManager::refreshSignal, this, &Networking::refreshSlot);
+  connect(wifi, &WifiManager::refreshSignal, this, &Networking::refresh);
 
   QWidget* wifiScreen = new QWidget(this);
   QVBoxLayout* vlayout = new QVBoxLayout(wifiScreen);
@@ -106,9 +106,12 @@ void Networking::requestScan() {
   wifi->requestScan();
 }
 
-void Networking::refreshSlot() {
-  wifiWidget->refresh();
-  an->refresh();
+void Networking::refresh() {
+  if (this->isVisible() || wifi->firstRefresh) {
+    wifiWidget->refresh();
+    an->refresh();
+    wifi->firstRefresh = false;
+  }
 }
 
 void Networking::connectToNetwork(const Network &n) {

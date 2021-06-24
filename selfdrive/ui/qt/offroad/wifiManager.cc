@@ -371,7 +371,6 @@ void WifiManager::propertyChange(const QString &interface, const QVariantMap &pr
   if (interface == wireless_device_iface && props.contains("LastScan")) {
     if (firstRefresh) {
       known_connections = listConnections();
-      firstRefresh = false;
     }
     refreshNetworks();
     emit refreshSignal();
