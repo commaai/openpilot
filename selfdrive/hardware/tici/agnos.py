@@ -10,6 +10,7 @@ from typing import Generator
 
 from common.spinner import Spinner
 
+SPARSE_CHUNK_FMT = struct.Struct('H2xI4x')
 
 class StreamingDecompressor:
   def __init__(self, url: str) -> None:
@@ -39,7 +40,7 @@ class StreamingDecompressor:
     self.sha256.update(result)
     return result
 
-SPARSE_CHUNK_FMT = struct.Struct('H2xI4x')
+
 def unsparsify(f: StreamingDecompressor) -> Generator[bytes, None, None]:
   # https://source.android.com/devices/bootloader/images#sparse-format
   magic = struct.unpack("I", f.read(4))[0]
@@ -74,24 +75,64 @@ def unsparsify(f: StreamingDecompressor) -> Generator[bytes, None, None]:
       raise Exception("Unhandled sparse chunk type")
 
 
-def flash_partition(cloudlog, spinner, target_slot, partition):
-  cloudlog.info(f"Downloading and writing {partition['name']}")
+def get_target_slot_number():
+  current_slot = subprocess.check_output(["abctl", "--boot_slot"], encoding='utf-8').strip()
+  return 1 if current_slot == "_a" else 0
 
-  downloader = StreamingDecompressor(partition['url'])
-  with open(f"/dev/disk/by-partlabel/{partition['name']}{target_slot}", 'wb+') as out:
+
+def slot_number_to_suffix(slot_number):
+  return '_a' if slot_number == 0 else '_b'
+
+
+def get_partition_path(target_slot_number, partition):
+  path = f"/dev/disk/by-partlabel/{partition['name']}"
+
+  if partition.get('has_ab', True):
+    path += slot_number_to_suffix(target_slot_number)
+
+  return path
+
+
+def verify_partition(target_slot_number, partition):
+  full_check = partition.get('full_check', False)
+  path = get_partition_path(target_slot_number, partition)
+  partition_size = partition['size']
+
+  with open(path, 'rb+') as out:
+    if full_check:
+      # TOOD: Compute hash of whole partition
+      raise NotImplementedError
+    else:
+      out.seek(partition_size)
+      return out.read(64) == partition['hash_raw'].lower().encode()
+
+
+def clear_partition_hash(target_slot_number, partition):
+  path = get_partition_path(target_slot_number, partition)
+  with open(path, 'wb+') as out:
     partition_size = partition['size']
 
-    # Check if partition is already flashed
-    out.seek(partition_size)
-    if out.read(64) == partition['hash_raw'].lower().encode():
-      cloudlog.info(f"Already flashed {partition['name']}")
-      return
-
-    # Clear hash before flashing
     out.seek(partition_size)
     out.write(b"\x00" * 64)
     out.seek(0)
     os.sync()
+
+
+def flash_partition(target_slot_number, partition, cloudlog, spinner=None):
+  cloudlog.info(f"Downloading and writing {partition['name']}")
+
+  downloader = StreamingDecompressor(partition['url'])
+  path = get_partition_path(target_slot_number, partition)
+
+  if verify_partition(target_slot_number, partition):
+    cloudlog.info(f"Already flashed {partition['name']}")
+    return
+
+  # Clear hash before flashing in case we get interrupted
+  clear_partition_hash(target_slot_number, partition)
+
+  with open(path, 'wb+') as out:
+    partition_size = partition['size']
 
     # Flash partition
     if partition['sparse']:
@@ -123,14 +164,18 @@ def flash_partition(cloudlog, spinner, target_slot, partition):
     out.write(partition['hash_raw'].lower().encode())
 
 
-def flash_agnos_update(manifest_path, cloudlog, spinner=None):
+def swap(manifest_path, target_slot_number):
+  update = json.load(open(manifest_path))
+  for partition in update:
+    clear_partition_hash(target_slot_number, partition)
+
+  os.system(f"abctl --set_active {target_slot_number}")
+
+
+def flash_agnos_update(manifest_path, target_slot_number, cloudlog, spinner=None):
   update = json.load(open(manifest_path))
 
-  current_slot = subprocess.check_output(["abctl", "--boot_slot"], encoding='utf-8').strip()
-  target_slot = "_b" if current_slot == "_a" else "_a"
-  target_slot_number = "0" if target_slot == "_a" else "1"
-
-  cloudlog.info(f"Current slot {current_slot}, target slot {target_slot}")
+  cloudlog.info(f"Target slot {target_slot_number}")
 
   # set target slot as unbootable
   os.system(f"abctl --set_unbootable {target_slot_number}")
@@ -140,7 +185,7 @@ def flash_agnos_update(manifest_path, cloudlog, spinner=None):
 
     for retries in range(10):
       try:
-        flash_partition(cloudlog, spinner, target_slot, partition)
+        flash_partition(slot_number_to_suffix(target_slot_number), partition, cloudlog, spinner)
         success = True
         break
 
@@ -154,21 +199,39 @@ def flash_agnos_update(manifest_path, cloudlog, spinner=None):
       cloudlog.info(f"Failed to flash {partition['name']}, aborting")
       raise Exception("Maximum retries exceeded")
 
-  cloudlog.info(f"AGNOS ready on slot {target_slot}")
+  cloudlog.info(f"AGNOS ready on slot {target_slot_number}")
+
+
+def verify_agnos_update(manifest_path, target_slot_number):
+  update = json.load(open(manifest_path))
+  return all(verify_partition(target_slot_number, partition) for partition in update)
 
 
 if __name__ == "__main__":
   import logging
   import time
-  import sys
+  import argparse
 
-  if len(sys.argv) != 2:
-    print("Usage: ./agnos.py <manifest.json>")
-    exit(1)
+  parser = argparse.ArgumentParser(description="Flash and verify AGNOS update",
+                                   formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+  parser.add_argument("--swap", action="store_true", help="Verify and perform swap, downloads if necessary")
+  parser.add_argument("manifest", nargs='?', help="Manifest json")
+  args = parser.parse_args()
 
   spinner = Spinner()
   spinner.update("Updating AGNOS")
   time.sleep(5)
 
   logging.basicConfig(level=logging.INFO)
-  flash_agnos_update(sys.argv[1], logging, spinner)
+
+  target_slot_number = get_target_slot_number()
+  if args.swap:
+    while not verify_agnos_update(args.manifest, target_slot_number):
+      logging.error("Verification failed. Flashing AGNOS")
+      flash_agnos_update(args.manifest, target_slot_number, logging, spinner)
+
+    logging.warning(f"Verification succeeeded. Swapping to slot {target_slot_number}")
+    swap(args.manifest, target_slot_number)
+  else:
+    flash_agnos_update(args.manifest, target_slot_number, logging, spinner)

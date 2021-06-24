@@ -104,62 +104,11 @@ function tici_init {
 
   # Check if AGNOS update is required
   if [ $(< /VERSION) != "$AGNOS_VERSION" ]; then
-    # Get number of slot to switch to
-    CUR_SLOT=$(abctl --boot_slot)
-    if [[ "$CUR_SLOT" == "_a" ]]; then
-      OTHER_SLOT="_b"
-      OTHER_SLOT_NUMBER="1"
-    else
-      OTHER_SLOT="_a"
-      OTHER_SLOT_NUMBER="0"
-    fi
-    echo "Cur slot $CUR_SLOT, target $OTHER_SLOT"
-
-    # Get expected hashes from manifest
     MANIFEST="$DIR/selfdrive/hardware/tici/agnos.json"
-    SYSTEM_HASH_EXPECTED=$(jq -r ".[] | select(.name == \"system\") | .hash_raw" $MANIFEST)
-    SYSTEM_SIZE=$(jq -r ".[] | select(.name == \"system\") | .size" $MANIFEST)
-    BOOT_HASH_EXPECTED=$(jq -r ".[] | select(.name == \"boot\") | .hash_raw" $MANIFEST)
-    BOOT_SIZE=$(jq -r ".[] | select(.name == \"boot\") | .size" $MANIFEST)
-    echo "Expected hashes:"
-    echo "System: $SYSTEM_HASH_EXPECTED"
-    echo "Boot: $BOOT_HASH_EXPECTED"
+    $DIR/selfdrive/hardware/tici/agnos.py --swap $MANIFEST
 
-    # Read hashes from alternate partitions, should already be flashed by updated
-    SYSTEM_HASH=$(dd if="/dev/disk/by-partlabel/system$OTHER_SLOT" bs=1 skip="$SYSTEM_SIZE" count=64 2>/dev/null)
-    BOOT_HASH=$(dd if="/dev/disk/by-partlabel/boot$OTHER_SLOT" bs=1 skip="$BOOT_SIZE" count=64 2>/dev/null)
-    echo "Found hashes:"
-    echo "System: $SYSTEM_HASH"
-    echo "Boot: $BOOT_HASH"
-
-    if [[ "$SYSTEM_HASH" == "$SYSTEM_HASH_EXPECTED" && "$BOOT_HASH" == "$BOOT_HASH_EXPECTED" ]]; then
-      echo "Swapping active slot to $OTHER_SLOT_NUMBER"
-
-      # Clean hashes before swapping to prevent looping
-      dd if=/dev/zero of="/dev/disk/by-partlabel/system$OTHER_SLOT" bs=1 seek="$SYSTEM_SIZE" count=64
-      dd if=/dev/zero of="/dev/disk/by-partlabel/boot$OTHER_SLOT" bs=1 seek="$BOOT_SIZE" count=64
-      sync
-
-      abctl --set_active "$OTHER_SLOT_NUMBER"
-
-      sleep 1
-      sudo reboot
-    else
-      echo "Hash mismatch, downloading agnos"
-      if $DIR/selfdrive/hardware/tici/agnos.py $MANIFEST; then
-        echo "Download done, swapping active slot to $OTHER_SLOT_NUMBER"
-
-        # Clean hashes before swapping to prevent looping
-        dd if=/dev/zero of="/dev/disk/by-partlabel/system$OTHER_SLOT" bs=1 seek="$SYSTEM_SIZE" count=64
-        dd if=/dev/zero of="/dev/disk/by-partlabel/boot$OTHER_SLOT" bs=1 seek="$BOOT_SIZE" count=64
-        sync
-
-        abctl --set_active "$OTHER_SLOT_NUMBER"
-      fi
-
-      sleep 1
-      sudo reboot
-    fi
+    sleep 1
+    sudo reboot
   fi
 }
 
