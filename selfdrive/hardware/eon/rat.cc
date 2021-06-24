@@ -113,12 +113,11 @@ static void efs_sync(int client_id) {
   }
 }
 
-static uint32_t nv_read_u32(int client_id, uint16_t nv_id) {
+static int nv_read(int client_id, uint16_t nv_id, NvPacket &resp) {
   NvPacket req = {
     .cmd_code = DIAG_NV_READ_F,
     .nv_id = nv_id,
   };
-  NvPacket resp = {0};
 
   int res_len = diag_send_sync(client_id, (unsigned char*)&req, sizeof(req),
                                (unsigned char*)&resp, sizeof(resp));
@@ -126,16 +125,28 @@ static uint32_t nv_read_u32(int client_id, uint16_t nv_id) {
   // hexdump((uint8_t*)&resp, res_len);
 
   if (resp.cmd_code != DIAG_NV_READ_F || resp.nv_id != nv_id) {
-    LOGW("nv_read_u32: diag command failed");
-    return 0;
+    LOGW("nv_read: diag command failed");
+    return -1;
   }
 
   if (resp.status != NV_DONE) {
-    LOGW("nv_read_u32: read failed: %d", resp.status);
+    LOGW("nv_read: read failed: %d", resp.status);
+    return -1;
+  }
+  return 0;
+}
+
+static uint32_t nv_read_u32(int client_id, uint16_t nv_id) {
+  NvPacket resp = {0};
+  if (nv_read(client_id, nv_id, resp) < 0) {
     return 0;
   }
   return *(uint32_t*)resp.data;
 }
+
+#include <map>
+#include "json11.hpp"
+
 
 int main() {
   int err;
@@ -149,8 +160,17 @@ int main() {
   err = diag_register_dci_client(&client_id, &list, 0, &signal_type);
   assert(err == DIAG_DCI_NO_ERROR);
 
-  uint32_t resp = nv_read_u32(client_id, 1832);
-  LOG("%08x\n", resp);
+  std::map<std::string, uint16_t> to_log = {
+    {"LTE B13 power", 6502},
+  };
+  auto log = json11::Json::object {};
+  for (auto const &kv : to_log) {
+    NvPacket resp = {0};
+    nv_read(client_id, kv.second, resp);
+    log[kv.first] = *(uint8_t*)resp.data;
+  }
+
+  printf("%s\n", json11::Json(log).dump().c_str());
 
   err = diag_release_dci_client(&client_id);
   assert(err == DIAG_DCI_NO_ERROR);

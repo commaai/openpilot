@@ -1,4 +1,4 @@
-Import('env', 'common', 'messaging')
+Import('env', 'common')
 
 lenv = env.Clone()
 lenv["CCFLAGS"] = [f for f in env["CCFLAGS"] if f != "-Wunused"]
