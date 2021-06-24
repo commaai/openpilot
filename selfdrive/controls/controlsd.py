@@ -86,7 +86,6 @@ class Controls:
     # read params
     self.is_metric = params.get_bool("IsMetric")
     self.is_ldw_enabled = params.get_bool("IsLdwEnabled")
-    self.enable_lte_onroad = params.get_bool("EnableLteOnroad")
     community_feature_toggle = params.get_bool("CommunityFeaturesToggle")
     openpilot_enabled_toggle = params.get_bool("OpenpilotEnabledToggle")
     passive = params.get_bool("Passive") or not openpilot_enabled_toggle
@@ -264,7 +263,7 @@ class Controls:
     if self.sm['longitudinalPlan'].fcw or (self.enabled and self.sm['modelV2'].meta.hardBrakePredicted):
       self.events.add(EventName.fcw)
 
-    if TICI and self.enable_lte_onroad:
+    if TICI:
       logs = messaging.drain_sock(self.log_sock, wait_for_one=False)
       messages = []
       for m in logs:
@@ -287,8 +286,7 @@ class Controls:
     # TODO: fix simulator
     if not SIMULATION:
       if not NOSENSOR:
-        if not self.sm['liveLocationKalman'].gpsOK and (self.distance_traveled > 1000) and \
-          (not TICI or self.enable_lte_onroad):
+        if not self.sm['liveLocationKalman'].gpsOK and (self.distance_traveled > 1000):
           # Not show in first 1 km to allow for driving out of garage. This event shows after 5 minutes
           self.events.add(EventName.noGps)
       if not self.sm.all_alive(self.camera_packets):
