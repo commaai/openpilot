@@ -66,7 +66,7 @@ Keyboard::Keyboard(QWidget *parent) : QFrame(parent) {
     {"q","w","e","r","t","y","u","i","o","p"},
     {"a","s","d","f","g","h","j","k","l"},
     {"⇧","z","x","c","v","b","n","m","⌫"},
-    {"123",",","  ",".","⏎"},
+    {"123","  ","⏎"},
   };
   main_layout->addWidget(new KeyboardLayout(this, lowercase));
 
@@ -75,26 +75,25 @@ Keyboard::Keyboard(QWidget *parent) : QFrame(parent) {
     {"Q","W","E","R","T","Y","U","I","O","P"},
     {"A","S","D","F","G","H","J","K","L"},
     {"↑","Z","X","C","V","B","N","M","⌫"},
-    {"123",",","  ",".","⏎"},
+    {"123","  ","⏎"},
   };
   main_layout->addWidget(new KeyboardLayout(this, uppercase));
 
   // numbers + specials
   std::vector<QVector<QString>> numbers = {
     {"1","2","3","4","5","6","7","8","9","0"},
-//    {"-","/",":",";","(",")","$","&&","@","\""},
-    {"@","#","$","%","&&","-","+","(",")"},
-    {"=/<","*","\"","'",":",";","!","?","⌫"},
-    {"ABC",",","_","  ","/",".","⏎"},
+    {"-","/",":",";","(",")","$","&&","@","\""},
+    {"#+=",".",",","?","!","`","⌫"},
+    {"ABC","  ","⏎"},
   };
   main_layout->addWidget(new KeyboardLayout(this, numbers));
 
   // extra specials
   std::vector<QVector<QString>> specials = {
-    {"~","`","|","·","√","π","÷","×","¶","△"},
-    {"£","¢","€","¥","^","°","=","{","}"},
-    {"123","\\","©","®","™","✓","[","]","⌫"},
-    {"ABC",",","<","  ",">",".","⏎"},
+    {"[","]","{","}","#","%","^","*","+","="},
+    {"_","\\","|","~","<",">","€","£","¥","•"},
+    {"123",".",",","?","!","`","⌫"},
+    {"ABC","  ","⏎"},
   };
   main_layout->addWidget(new KeyboardLayout(this, specials));
 
@@ -112,7 +111,7 @@ void Keyboard::handleButton(QAbstractButton* m_button) {
   if (!QString::compare(m_button->text(), "123")) {
     main_layout->setCurrentIndex(2);
   }
-  if (!QString::compare(m_button->text(), "=/<")) {
+  if (!QString::compare(m_button->text(), "#+=")) {
     main_layout->setCurrentIndex(3);
   }
   if (!QString::compare(m_button->text(), "⏎")) {

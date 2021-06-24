@@ -91,7 +91,7 @@ void InputDialog::handleInput(const QString &s) {
     }
   }
 
-  QVector<QString> control_buttons {"⇧", "↑", "ABC", "⏎", "=/<", "⌫", "123"};
+  QVector<QString> control_buttons {"⇧", "↑", "ABC", "⏎", "#+=", "⌫", "123"};
   for(QString c : control_buttons) {
     if (!QString::compare(s, c)) {
       return;
