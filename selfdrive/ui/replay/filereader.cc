@@ -74,6 +74,7 @@ LogReader::LogReader(const QString &file, QObject *parent) : QObject(parent) {
   });
   connect(file_reader_, &FileReader::failed, [=](const QString &err) {
     qDebug() << err;
+    emit finished(false);
   });
   thread_.start();
 }

@@ -10,6 +10,56 @@ const int SEGMENT_LENGTH = 60;  // 60s
 const int FORWARD_SEGS = 2;
 const int BACKWARD_SEGS = 2;
 
+// class Segment
+
+Segment::Segment(QObject *parent) : QObject(parent) {}
+
+void Segment::load(int seg_num, const SegmentFile &file) {
+  this->seg_num = seg_num;
+ // fallback to qlog if rlog not exists.
+  const QString &log_file = file.rlog.isEmpty() ? file.qlog : file.rlog;
+  if (log_file.isEmpty()) {
+    qDebug() << "no log file in segment" << seg_num;
+    emit loadFinished(false);
+    return;
+  }
+
+  loading_ = 1;
+  log = new LogReader(log_file, this);
+  QObject::connect(log, &LogReader::finished, [&](bool success) {
+    failed_ += !success;
+    if (--loading_ == 0) emit loadFinished(failed_ == 0);
+  });
+
+  // fallback to qcamera if camera not exists.
+  std::pair<CameraType, QString> cam_files[] = {{RoadCam, file.camera.isEmpty() ? file.qcamera : file.camera},
+                                                {DriverCam, file.dcamera},
+                                                {WideRoadCam, file.wcamera}};
+  for (const auto &[cam_type, file] : cam_files) {
+    if (!file.isEmpty()) {
+      loading_ += 1;
+      FrameReader *fr = frames[cam_type] = new FrameReader(file.toStdString());
+      frame_thread_[cam_type] = std::thread([=]() {
+        bool ret = fr->FrameReader::process();
+        failed_ += !ret;
+        if (--loading_ == 0) emit loadFinished(failed_ == 0);
+      });
+    }
+  }
+}
+
+Segment::~Segment() {
+  for (auto cam_type : ALL_CAMERAS) {
+    if (FrameReader *fr = frames[cam_type]) {
+      fr->stop();
+      frame_thread_[cam_type].join();
+      delete fr;
+    }
+  }
+  delete log;
+  qDebug() << "remove segment " << seg_num;
+}
+
 // class Replay
 
 Replay::Replay(SubMaster *sm, QObject *parent) : sm_(sm), QObject(parent) {
@@ -98,7 +148,8 @@ void Replay::relativeSeek(int seconds) {
 
 void Replay::seekTo(uint64_t to_ts) {
   const int segment = (to_ts - route_start_ts_) / 1e9 / SEGMENT_LENGTH;
-  if (!route_.segments().contains(segment)) {
+  auto seg = getSegment(segment);
+  if ((seg && seg->failed_) || !route_.segments().contains(segment)) {
     qInfo() << "can't seek to" << elapsedTime(to_ts) << ": segment" << segment << "does not exist.";
     return;
   }
@@ -136,8 +187,10 @@ void Replay::queueSegmentThread() {
       int n = it.key();
       std::unique_lock lk(segment_mutex_);
       if (segments_.find(n) == segments_.end()) {
-        segments_[n] = std::make_shared<Segment>(n, it.value());
-        connect(segments_[n].get(), &Segment::finishedRead, this, &Replay::mergeEvents);
+        std::shared_ptr<Segment> seg = std::make_shared<Segment>();
+        connect(seg.get(), &Segment::loadFinished, this, &Replay::mergeEvents);
+        seg->load(n, it.value());
+        segments_[n] = seg;
       }
     }
     QThread::msleep(50);
@@ -163,14 +216,16 @@ const std::string &Replay::eventSocketName(const Event *e) {
   return it->second;
 }
 
-void Replay::mergeEvents() {
+void Replay::mergeEvents(bool success) {
+  if (!success) return;
+
   Segment *seg = qobject_cast<Segment *>(QObject::sender());
   const LogReader *log = seg->log;
   if (route_start_ts_ == 0) {
     route_start_ts_ = log->route_start_ts;
   }
 
-  // merge segment
+  // merge events
   auto [min_seg, max_seg] = queueSegmentRange();
   uint64_t min_tm = route_start_ts_ + min_seg * SEGMENT_LENGTH * 1e9;
   uint64_t max_tm = route_start_ts_ + (max_seg + 1) * SEGMENT_LENGTH * 1e9;
@@ -202,7 +257,6 @@ void Replay::mergeEvents() {
     auto &seg = it->second;
     auto &e = seg->log->events;
     if (seg->loaded && (e.back()->mono_time < min_tm || e.front()->mono_time > max_tm)) {
-      qDebug() << "erase segment " << it->first;
       it = segments_.erase(it);
     } else {
       ++it;
@@ -226,32 +280,32 @@ void Replay::pushFrame(int cur_seg_num, CameraType cam_type, uint32_t frame_id) 
 void Replay::streamThread() {
   uint64_t last_print_ts = 0, evt_start_ts = 0;
   cereal::Event::Which current_which = cereal::Event::INIT_DATA;
+  bool waiting_printed =false;
   while (!exit_) {
     std::unique_lock lk(events_mutex_);
     cv_.wait(lk, [=] { return exit_ || !loading_events_; });
     if (exit_) break;
 
-    auto eit = events_->end();
     uint64_t seek_to = seek_ts_ ? seek_ts_ : current_ts_.load();
     cereal::Event::Which which = seek_ts_ ? cereal::Event::INIT_DATA : current_which;
-    // make sure current segment is loaded
-    if (auto seg = getSegment(current_segment_)) {
-      eit = std::lower_bound(events_->begin(), events_->end(), seek_to, [&](const Event *e, uint64_t v) {
-        return e->mono_time < v || (e->mono_time == v && e->which < which);
-      });
-    }
-    if (eit == events_->end()) {
-      qDebug() << "waiting for events";
+    auto eit = std::lower_bound(events_->begin(), events_->end(), seek_to, [&](const Event *e, uint64_t v) {
+      return e->mono_time < v || (e->mono_time == v && e->which <= which);
+    });
+
+    // wait until current segment is loaded
+    if (!getSegment(current_segment_) || eit == events_->end()) {
+      if (!waiting_printed) {
+        qInfo() << "waiting for events...";
+        waiting_printed = true;
+      }
       lk.unlock();
-      QThread::msleep(100);
+      QThread::msleep(50);
       continue;
     }
+    waiting_printed = false;
+
+    seek_ts_ = 0;
     evt_start_ts = (*eit)->mono_time;
-    if (seek_to > 0) {
-      // do not send the previous event again
-      ++eit;
-      seek_ts_ = 0;
-    }
     uint64_t loop_start_ts = nanos_since_boot();
     while (!exit_ && !loading_events_ && eit != events_->end()) {
       const Event *e = (*eit);
@@ -267,12 +321,11 @@ void Replay::streamThread() {
         }
 
         // keep time
-        uint64_t etime = e->mono_time - evt_start_ts;
-        uint64_t rtime = nanos_since_boot() - loop_start_ts;
-        uint64_t us_behind = ((etime - rtime) * 1e-3) + 0.5;
+        int64_t etime = e->mono_time - evt_start_ts;
+        int64_t rtime = nanos_since_boot() - loop_start_ts;
+        int64_t us_behind = ((etime - rtime) * 1e-3) + 0.5;
         if (us_behind > 0 && us_behind < 1e6) {
           QThread::usleep(us_behind);
-          //qDebug() << "sleeping" << us_behind << etime << timer.nsecsElapsed();
         }
 
         // publish frames
@@ -300,35 +353,6 @@ void Replay::streamThread() {
         }
       }
       ++eit;
-    }
-  }
-}
-
-// class Segment
-
-Segment::Segment(int seg_num, const SegmentFile &file, QObject *parent) : seg_num(seg_num), QObject(parent) {
-  // fallback to qlog if rlog not exists.
-  const QString &log_file = file.rlog.isEmpty() ? file.qlog : file.rlog;
-  if (log_file.isEmpty()) {
-    qDebug() << "no log file in segment" << seg_num;
-    return;
-  }
-
-  loading_ = 1;
-  log = new LogReader(log_file, this);
-  QObject::connect(log, &LogReader::finished, [&](bool success) {
-    if (--loading_ == 0) emit finishedRead();
-  });
-
-  // fallback to qcamera if camera not exists.
-  std::pair<CameraType, QString> cam_files[] = {{RoadCam, file.camera.isEmpty() ? file.qcamera : file.camera},
-                                                {DriverCam, file.dcamera},
-                                                {WideRoadCam, file.wcamera}};
-  for (const auto &[cam_type, file] : cam_files) {
-    if (!file.isEmpty()) {
-      loading_ += 1;
-      frames[cam_type] = new FrameReader(file.toStdString(), this);
-      QObject::connect(frames[cam_type], &FrameReader::finished, [=]() { if(--loading_ == 0) emit finishedRead(); });
     }
   }
 }

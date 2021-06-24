@@ -37,15 +37,9 @@ class CameraServer::CameraState {
 
       auto &[seg, encodeId] = frame;
       auto fr = seg->frames[cam_type];
-      if (frameChanged(fr)) {
-        // eidx is not in the same segment with different frame size
-        continue;
-      }
-
       VisionBuf *buf = vipc_server->get_buffer(stream_type);
       if (uint8_t *dat = fr->get(encodeId)) {
         VisionIpcBufExtra extra = {};
-        // qInfo() << "send frame " << encodeId;
         memcpy(buf->addr, dat, fr->getRGBSize());
         vipc_server->send(buf, &extra, false);
       } else {
@@ -108,6 +102,15 @@ void CameraServer::pushFrame(CameraType type, std::shared_ptr<Segment> seg, uint
   if (auto &cs = camera_states_[type]) {
     cs->queue.push({seg, encodeFrameId});
   }
+}
+
+void CameraServer::emptyQueue() {
+   for (auto cs : camera_states_) {
+     if (cs) {
+       std::pair<std::shared_ptr<Segment>, uint32_t> frame;
+       while (cs->queue.try_pop(frame)) {};
+     }
+   }
 }
 
 void CameraServer::stop() {

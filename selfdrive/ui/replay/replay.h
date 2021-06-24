@@ -13,18 +13,20 @@ class Segment : public QObject {
   Q_OBJECT
 
 public:
-  Segment(int seg_num, const SegmentFile &file, QObject *parent = nullptr);
-
-  const int seg_num;
+  Segment(QObject *parent = nullptr);
+  void load(int seg_num, const SegmentFile &file);
+  ~Segment();
+  int seg_num = 0;
   LogReader *log = nullptr;
   FrameReader *frames[MAX_CAMERAS] = {};
   std::atomic<bool> loaded = false;
-
+  std::atomic<int> failed = 0;
 signals:
-  void finishedRead();
+  void loadFinished(bool success);
 
 private:
   std::atomic<int> loading_ = 0;
+  std::thread frame_thread_[MAX_CAMERAS];
 };
 
 class Replay : public QObject {
@@ -38,10 +40,10 @@ public:
   void relativeSeek(int seconds);
   void seek(int seconds);
   void stop();
-  bool running() { return stream_thread_.joinable(); }
+  bool running() { return queue_thread_.joinable(); }
 
 public slots:
-  void mergeEvents();
+  void mergeEvents(bool success);
 
 private:
   QString elapsedTime(uint64_t ns);
