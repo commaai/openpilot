@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import datetime
+import json
 import os
+import subprocess
 import time
 from pathlib import Path
 from typing import Dict, Optional, Tuple
@@ -10,6 +12,7 @@ from smbus2 import SMBus
 
 import cereal.messaging as messaging
 from cereal import log
+from common.basedir import BASEDIR
 from common.filter_simple import FirstOrderFilter
 from common.numpy_fast import clip, interp
 from common.params import Params, ParamKeyType
@@ -188,6 +191,15 @@ def thermald_thread():
         except Exception:
           pass
     cloudlog.event("CPR", data=cpr_data)
+
+    # modem logging
+    try:
+      binpath = os.path.join(BASEDIR, "selfdrive/hardware/eon/rat")
+      out = subprocess.check_output([binpath], encoding='utf8').strip()
+      dat = json.loads(out.splitlines()[1])
+      cloudlog.event("NV data", data=dat)
+    except Exception:
+      pass
 
   while 1:
     pandaState = messaging.recv_sock(pandaState_sock, wait=True)
