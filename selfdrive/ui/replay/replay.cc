@@ -27,8 +27,8 @@ void Segment::load(int seg_num, const SegmentFile &file) {
   loading_ = 1;
   log = new LogReader(log_file, this);
   QObject::connect(log, &LogReader::finished, [&](bool success) {
-    failed_ += !success;
-    if (--loading_ == 0) emit loadFinished(failed_ == 0);
+    failed += !success;
+    if (--loading_ == 0) emit loadFinished(failed == 0);
   });
 
   // fallback to qcamera if camera not exists.
@@ -41,8 +41,8 @@ void Segment::load(int seg_num, const SegmentFile &file) {
       FrameReader *fr = frames[cam_type] = new FrameReader(file.toStdString());
       frame_thread_[cam_type] = std::thread([=]() {
         bool ret = fr->FrameReader::process();
-        failed_ += !ret;
-        if (--loading_ == 0) emit loadFinished(failed_ == 0);
+        failed += !ret;
+        if (--loading_ == 0) emit loadFinished(failed == 0);
       });
     }
   }
@@ -149,7 +149,7 @@ void Replay::relativeSeek(int seconds) {
 void Replay::seekTo(uint64_t to_ts) {
   const int segment = (to_ts - route_start_ts_) / 1e9 / SEGMENT_LENGTH;
   auto seg = getSegment(segment);
-  if ((seg && seg->failed_) || !route_.segments().contains(segment)) {
+  if ((seg && seg->failed) || !route_.segments().contains(segment)) {
     qInfo() << "can't seek to" << elapsedTime(to_ts) << ": segment" << segment << "does not exist.";
     return;
   }
