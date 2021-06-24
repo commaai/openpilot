@@ -7,18 +7,6 @@ from selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
 from selfdrive.manager.process_config import managed_processes
 
 
-def check_no_collision(log):
-  return min(log['d_rel']) > 0
-
-
-def check_fcw(log):
-  return any(log['fcw'])
-
-
-def check_engaged(log):
-  return log['controls_state_msgs'][-1][-1].active
-
-
 def put_default_car_params():
   from selfdrive.car.honda.values import CAR
   from selfdrive.car.honda.interface import CarInterface
@@ -35,7 +23,6 @@ maneuvers = [
     initial_distance_lead=100.,
     speed_lead_values=[20.],
     speed_lead_breakpoints=[1.],
-    checks=[check_fcw],
   ),
   Maneuver(
     "fcw: traveling at 20 m/s following a lead that decels from 20m/s to 0 at 3m/s2",
@@ -45,7 +32,6 @@ maneuvers = [
     initial_distance_lead=35.,
     speed_lead_values=[20., 0.],
     speed_lead_breakpoints=[3., 10.],
-    checks=[check_fcw],
   ),
   Maneuver(
     "fcw: traveling at 20 m/s following a lead that decels from 20m/s to 0 at 5m/s2",
@@ -55,7 +41,6 @@ maneuvers = [
     initial_distance_lead=35.,
     speed_lead_values=[20., 0.],
     speed_lead_breakpoints=[3., 7.],
-    checks=[check_fcw],
   ),
   Maneuver(
     'steady state following a car at 20m/s, then lead decel to 0mph at 1m/s^2',
@@ -65,7 +50,6 @@ maneuvers = [
     initial_distance_lead=35.,
     speed_lead_values=[20., 20., 0.],
     speed_lead_breakpoints=[0., 15., 35.0],
-    checks=[check_engaged, check_no_collision],
   ),
   Maneuver(
     'steady state following a car at 20m/s, then lead decel to 0mph at 2m/s^2',
@@ -75,7 +59,6 @@ maneuvers = [
     initial_distance_lead=35.,
     speed_lead_values=[20., 20., 0.],
     speed_lead_breakpoints=[0., 15., 25.0],
-    checks=[check_engaged, check_no_collision],
   ),
   Maneuver(
     'steady state following a car at 20m/s, then lead decel to 0mph at 3m/s^2',
@@ -85,7 +68,6 @@ maneuvers = [
     initial_distance_lead=35.,
     speed_lead_values=[20., 20., 0.],
     speed_lead_breakpoints=[0., 15., 21.66],
-    checks=[check_engaged, check_fcw],
   ),
   Maneuver(
     'steady state following a car at 20m/s, then lead decel to 0mph at 5m/s^2',
@@ -95,7 +77,6 @@ maneuvers = [
     initial_distance_lead=35.,
     speed_lead_values=[20., 20., 0.],
     speed_lead_breakpoints=[0., 15., 19.],
-    checks=[check_engaged, check_fcw],
   ),
   Maneuver(
     "approach stopped car at 20m/s",
@@ -105,7 +86,6 @@ maneuvers = [
     initial_distance_lead=50.,
     speed_lead_values=[0., 0.],
     speed_lead_breakpoints=[1., 11.],
-    checks=[check_engaged, check_no_collision],
   ),
 ]
 

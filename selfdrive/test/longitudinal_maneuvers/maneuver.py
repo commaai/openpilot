@@ -12,13 +12,10 @@ class Maneuver():
     self.speed_lead_values = kwargs.get("speed_lead_values", [0.0, 0.0])
     self.speed_lead_breakpoints = kwargs.get("speed_lead_breakpoints", [0.0, duration])
 
-    self.checks = kwargs.get("checks", [])
-
     self.duration = duration
     self.title = title
 
   def evaluate(self):
-    """runs the plant sim and returns (score, run_data)"""
     plant = Plant(
       lead_relevancy=self.lead_relevancy,
       speed=self.speed,
@@ -30,15 +27,14 @@ class Maneuver():
       speed_lead = np.interp(plant.current_time(), self.speed_lead_breakpoints, self.speed_lead_values)
       log = plant.step(speed_lead)
 
-
       d_rel = log['distance_lead'] - log['distance'] if self.lead_relevancy else 200.
       v_rel = speed_lead - log['speed'] if self.lead_relevancy else 0.
       log['d_rel'] = d_rel
       log['v_rel'] = v_rel
 
-    if d_rel < 1.0:
-      print("Crashed!!!!")
-      valid = False
+      if d_rel < 1.0:
+        print("Crashed!!!!")
+        valid = False
 
     print("maneuver end", valid)
     return valid
