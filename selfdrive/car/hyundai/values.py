@@ -650,8 +650,8 @@ CHECKSUM = {
 
 FEATURES = {
   # which message has the gear
-  "use_cluster_gears": set([CAR.ELANTRA, CAR.ELANTRA_GT_I30, CAR.KONA]),
-  "use_tcu_gears": set([CAR.KIA_OPTIMA, CAR.SONATA_LF, CAR.VELOSTER]),
+  "use_cluster_gears": set([CAR.ELANTRA_GT_I30, CAR.KONA]),  # TODO: see if we can remove cluster gears for these cars
+  "use_tcu_gears": set([CAR.ELANTRA, CAR.KIA_OPTIMA, CAR.SONATA_LF, CAR.VELOSTER]),
   "use_elect_gears": set([CAR.KIA_NIRO_EV, CAR.KIA_OPTIMA_H, CAR.IONIQ_EV_LTD, CAR.KONA_EV, CAR.IONIQ, CAR.IONIQ_EV_2020, CAR.IONIQ_PHEV, CAR.ELANTRA_HEV_2021]),
 
   # these cars use the FCA11 message for the AEB and FCW signals, all others use SCC12
