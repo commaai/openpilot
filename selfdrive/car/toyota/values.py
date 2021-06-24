@@ -1617,7 +1617,6 @@ FW_VERSIONS = {
   },
   CAR.ALPHARD_TSS2: {
     (Ecu.engine, 0x7e0, None): [b'\x0235883000\x00\x00\x00\x00\x00\x00\x00\x00A0202000\x00\x00\x00\x00\x00\x00\x00\x00',],
-    (Ecu.esp, 0x7b0, None): [b'F152658320\000\000\000\000\000\000',],
     (Ecu.eps, 0x7a1, None): [b'8965B58040\x00\x00\x00\x00\x00\x00',],
     (Ecu.fwdRadar, 0x750, 0xf): [b'\x018821F3301400\x00\x00\x00\x00',],
     (Ecu.fwdCamera, 0x750, 0x6d): [b'\x028646F5803200\x00\x00\x00\x008646G2601400\x00\x00\x00\x00',],
