@@ -82,12 +82,6 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
     QObject::connect(toggles.back(), &ToggleControl::toggleFlipped, [=](bool state) {
       Params().remove("CalibrationParams");
     });
-
-    toggles.append(new ParamControl("EnableLteOnroad",
-                                    "Enable LTE while onroad",
-                                    "",
-                                    "../assets/offroad/icon_network.png",
-                                    this));
   }
 
   bool record_lock = Params().getBool("RecordFrontLock");
