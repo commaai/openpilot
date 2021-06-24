@@ -369,10 +369,10 @@ void WifiManager::stateChange(unsigned int new_state, unsigned int previous_stat
 // https://developer.gnome.org/NetworkManager/stable/gdbus-org.freedesktop.NetworkManager.Device.Wireless.html
 void WifiManager::propertyChange(const QString &interface, const QVariantMap &props, const QStringList &invalidated_props) {
   if (interface == wireless_device_iface && props.contains("LastScan")) {
-    if (firstRefresh) {
+    if (firstScan) {
       known_connections = listConnections();
     }
-    refreshNetworks();
+    refreshNetworks();  // TODO: only refresh on firstScan, then use AccessPointAdded and Removed signals
     emit refreshSignal();
   }
 }

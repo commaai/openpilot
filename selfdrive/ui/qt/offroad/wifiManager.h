@@ -34,7 +34,7 @@ public:
   QVector<Network> seen_networks;
   QVector<QPair<QString, QDBusObjectPath>> known_connections;
   QString ipv4_address;
-  bool firstRefresh = true;
+  bool firstScan = true;
 
   void refreshNetworks();
   void forgetConnection(const QString &ssid);
