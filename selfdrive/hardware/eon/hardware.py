@@ -136,9 +136,9 @@ class Android(HardwareBase):
 
   def get_network_info(self):
     msg = log.DeviceState.NetworkInfo.new_message()
-    msg.state = getprop("gsm.sim.state")
-    msg.technology = getprop("gsm.network.type")
-    msg.operator = getprop("gsm.sim.operator.numeric")
+    msg.state = getprop("gsm.sim.state") or ""
+    msg.technology = getprop("gsm.network.type") or ""
+    msg.operator = getprop("gsm.sim.operator.numeric") or ""
 
     try:
       modem = serial.Serial(MODEM_PATH, 115200, timeout=0.1)
