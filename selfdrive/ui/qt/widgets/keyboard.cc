@@ -3,11 +3,17 @@
 #include <QButtonGroup>
 #include <QDebug>
 #include <QHBoxLayout>
-#include <QPushButton>
 #include <QVBoxLayout>
 
 const int DEFAULT_STRETCH = 1;
 const int SPACEBAR_STRETCH = 3;
+
+KeyButton::KeyButton(const QString &text, QWidget *parent) : QPushButton(text, parent) { }
+
+void KeyButton::paintEvent(QPaintEvent *e) {
+  qDebug() << "paintEvent!";
+  QPushButton::paintEvent(e);
+}
 
 KeyboardLayout::KeyboardLayout(QWidget* parent, const std::vector<QVector<QString>>& layout) : QWidget(parent) {
   QVBoxLayout* main_layout = new QVBoxLayout(this);
@@ -28,7 +34,8 @@ KeyboardLayout::KeyboardLayout(QWidget* parent, const std::vector<QVector<QStrin
     }
 
     for (const QString &p : s) {
-      QPushButton* btn = new QPushButton(p);
+//      QPushButton* btn = new QPushButton(p);
+      KeyButton* btn = new KeyButton(p);
       if (p == QString("⌫")) {
         btn->setAutoRepeat(true);
         btn->setAutoRepeatInterval(80);

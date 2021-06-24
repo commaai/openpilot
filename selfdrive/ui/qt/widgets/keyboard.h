@@ -2,17 +2,30 @@
 
 #include <vector>
 
+#include <QPushButton>
 #include <QAbstractButton>
 #include <QFrame>
 #include <QStackedLayout>
 #include <QString>
 #include <QWidget>
 
+class KeyButton : public QPushButton {
+  Q_OBJECT
+
+public:
+//  explicit KeyButton(QWidget* parent = nullptr, const QString& c);
+  explicit KeyButton(QWidget *parent = 0);
+  explicit KeyButton(const QString &text, QWidget *parent = 0);
+
+protected:
+  void paintEvent(QPaintEvent*) override;
+};
+
 class KeyboardLayout : public QWidget {
   Q_OBJECT
 
 public:
- explicit KeyboardLayout(QWidget* parent, const std::vector<QVector<QString>>& layout);
+  explicit KeyboardLayout(QWidget* parent, const std::vector<QVector<QString>>& layout);
 };
 
 class Keyboard : public QFrame {
