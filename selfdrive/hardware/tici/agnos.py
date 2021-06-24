@@ -121,12 +121,13 @@ def clear_partition_hash(target_slot_number, partition):
 def flash_partition(target_slot_number, partition, cloudlog, spinner=None):
   cloudlog.info(f"Downloading and writing {partition['name']}")
 
-  downloader = StreamingDecompressor(partition['url'])
   path = get_partition_path(target_slot_number, partition)
 
   if verify_partition(target_slot_number, partition):
     cloudlog.info(f"Already flashed {partition['name']}")
     return
+
+  downloader = StreamingDecompressor(partition['url'])
 
   # Clear hash before flashing in case we get interrupted
   clear_partition_hash(target_slot_number, partition)
