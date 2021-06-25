@@ -104,6 +104,7 @@ void MapPanel::parseResponse(const QString &response) {
 
   clear();
 
+  bool has_recents = false;
   for (auto location : doc.array()) {
     auto obj = location.toObject();
 
@@ -162,10 +163,15 @@ void MapPanel::parseResponse(const QString &response) {
 
       recent_layout->addWidget(widget);
       recent_layout->addSpacing(20);
+      has_recents = true;
     }
   }
 
-  // TODO: add text with "no recent desinations"
+  if (!has_recents) {
+    QLabel *no_recents = new QLabel("  no recent destinations");
+    no_recents->setStyleSheet(R"(font-size: 50px; color: #9c9c9c)");
+    recent_layout->addWidget(no_recents);
+  }
 }
 
 void MapPanel::navigateTo(const QJsonObject &place) {
