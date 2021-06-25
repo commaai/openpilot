@@ -48,13 +48,14 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
   main_layout->addLayout(home_work_layout);
   main_layout->addSpacing(50);
   main_layout->addWidget(horizontal_line());
+  main_layout->addSpacing(50);
 
   // Recents
   QLabel *recent = new QLabel("Recent");
   recent->setStyleSheet(R"(font-size: 55px;)");
   main_layout->addWidget(recent);
 
-  main_layout->addSpacing(20);
+  main_layout->addSpacing(50);
 
   recent_layout = new QVBoxLayout;
   main_layout->addLayout(recent_layout);
@@ -165,6 +166,8 @@ void MapPanel::parseResponse(const QString &response) {
       }
     }
   }
+
+  // TODO: add text with "no recent desinations"
 }
 
 void MapPanel::navigateTo(const QJsonObject &place) {
