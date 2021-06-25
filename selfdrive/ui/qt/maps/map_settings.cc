@@ -112,58 +112,55 @@ void MapPanel::parseResponse(const QString &response) {
     auto name = obj["place_name"].toString();
     auto details = shorten(obj["place_details"].toString(), 30);
 
-    if (type == "favorite") {
-      if (label == "home") {
-        home_address->setText(name);
-        home_address->setStyleSheet(R"(font-size: 50px; color: white;)");
-        home_button->setIcon(QPixmap("../assets/navigation/home.png"));
-        QObject::connect(home_button, &QPushButton::clicked, [=]() {
-          navigateTo(obj);
-          emit closeSettings();
-        });
-      } else if (label == "work") {
-        work_address->setText(name);
-        work_address->setStyleSheet(R"(font-size: 50px; color: white;)");
-        work_button->setIcon(QPixmap("../assets/navigation/work.png"));
-        QObject::connect(work_button, &QPushButton::clicked, [=]() {
-          navigateTo(obj);
-          emit closeSettings();
-        });
-      } else {
-        ClickableWidget *widget = new ClickableWidget;
-        QHBoxLayout *layout = new QHBoxLayout(widget);
-        layout->setContentsMargins(40, 10, 40, 10);
+    if (type == "favorite" && label == "home") {
+      home_address->setText(name);
+      home_address->setStyleSheet(R"(font-size: 50px; color: white;)");
+      home_button->setIcon(QPixmap("../assets/navigation/home.png"));
+      QObject::connect(home_button, &QPushButton::clicked, [=]() {
+        navigateTo(obj);
+        emit closeSettings();
+      });
+    } else if (type == "favorite" && label == "home") {
+      work_address->setText(name);
+      work_address->setStyleSheet(R"(font-size: 50px; color: white;)");
+      work_button->setIcon(QPixmap("../assets/navigation/work.png"));
+      QObject::connect(work_button, &QPushButton::clicked, [=]() {
+        navigateTo(obj);
+        emit closeSettings();
+      });
+    } else {
+      ClickableWidget *widget = new ClickableWidget;
+      QHBoxLayout *layout = new QHBoxLayout(widget);
+      layout->setContentsMargins(40, 10, 40, 10);
 
-        QLabel *recent_label = new QLabel(name + " " + details);
-        recent_label->setStyleSheet(R"(font-size: 50px; color: #9c9c9c)");
+      QLabel *recent_label = new QLabel(name + " " + details);
+      recent_label->setStyleSheet(R"(font-size: 50px; color: #9c9c9c)");
 
-        layout->addWidget(recent_label);
-        layout->addStretch();
+      layout->addWidget(recent_label);
+      layout->addStretch();
 
-        QLabel *arrow = new QLabel("→");
-        arrow->setStyleSheet(R"(font-size: 60px;)");
-        layout->addWidget(arrow);
+      QLabel *arrow = new QLabel("→");
+      arrow->setStyleSheet(R"(font-size: 60px;)");
+      layout->addWidget(arrow);
 
-        widget->setStyleSheet(R"(
-          .ClickableWidget {
-            border-radius: 10px;
-            border-width: 1px;
-            border-style: solid;
-            border-color: gray;
-          }
-          QWidget {
-            background-color: #393939;
-          }
-        )");
+      widget->setStyleSheet(R"(
+        .ClickableWidget {
+          border-radius: 10px;
+          border-width: 1px;
+          border-style: solid;
+          border-color: gray;
+        }
+        QWidget {
+          background-color: #393939;
+        }
+      )");
 
-        QObject::connect(widget, &ClickableWidget::clicked, [=]() {
-          navigateTo(obj);
-          emit closeSettings();
-        });
+      QObject::connect(widget, &ClickableWidget::clicked, [=]() {
+        navigateTo(obj);
+        emit closeSettings();
+      });
 
-
-        recent_layout->addWidget(widget);
-      }
+      recent_layout->addWidget(widget);
     }
   }
 
