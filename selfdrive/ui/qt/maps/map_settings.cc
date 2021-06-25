@@ -74,10 +74,26 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
 
   std::string dongle_id = Params().get("DongleId");
   if (util::is_valid_dongle_id(dongle_id)) {
-    std::string url = "https://api.commadotai.com/v1/navigation/" + dongle_id + "/locations";
-    RequestRepeater* repeater = new RequestRepeater(this, QString::fromStdString(url), "ApiCache_NavDestinations", 30);
-    QObject::connect(repeater, &RequestRepeater::receivedResponse, this, &MapPanel::parseResponse);
+    // Fetch favorite and recent locations
+    {
+      std::string url = "https://api.commadotai.com/v1/navigation/" + dongle_id + "/locations";
+      RequestRepeater* repeater = new RequestRepeater(this, QString::fromStdString(url), "ApiCache_NavDestinations", 30);
+      QObject::connect(repeater, &RequestRepeater::receivedResponse, this, &MapPanel::parseResponse);
+    }
+
+    // Destination set while offline
+    {
+      std::string url = "https://api.commadotai.com/v1/navigation/" + dongle_id + "/next";
+      RequestRepeater* repeater = new RequestRepeater(this, QString::fromStdString(url), "", 10);
+
+      QObject::connect(repeater, &RequestRepeater::receivedResponse, [](QString resp) {
+        if (resp != "null") {
+          Params().put("NavDestination", resp.toStdString());
+        }
+      });
+    }
   }
+
 }
 
 void MapPanel::clear() {

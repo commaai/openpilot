@@ -70,19 +70,6 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings) {
     last_position = *last_gps_position;
   }
 
-  // Query API for nav destination set while offline
-  std::string dongle_id = Params().get("DongleId");
-  if (util::is_valid_dongle_id(dongle_id)) {
-    std::string url = "https://api.commadotai.com/v1/navigation/" + dongle_id + "/next";
-    RequestRepeater* repeater = new RequestRepeater(this, QString::fromStdString(url), "", 10);
-
-    QObject::connect(repeater, &RequestRepeater::receivedResponse, [](QString resp) {
-      if (resp != "null") {
-        Params().put("NavDestination", resp.toStdString());
-      }
-    });
-  }
-
   grabGesture(Qt::GestureType::PinchGesture);
 }
 
