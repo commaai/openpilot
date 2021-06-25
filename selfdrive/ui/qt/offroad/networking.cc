@@ -108,6 +108,7 @@ void Networking::requestScan() {
 
 void Networking::refresh() {
   if (this->isVisible() || wifi->firstScan) {
+    qDebug() << "REFRESHING UI";
     wifiWidget->refresh();
     an->refresh();
     wifi->firstScan = false;
@@ -115,8 +116,9 @@ void Networking::refresh() {
 }
 
 void Networking::connectToNetwork(const Network &n) {
-  if (wifi->isKnownConnection(n.ssid)) {
-    wifi->activateWifiConnection(n.ssid);
+  int conn_index = wifi->getConnectionIndex(n.ssid);
+  if (conn_index != -1) {
+    wifi->activateConnection(wifi->known_connections.at(conn_index));
   } else if (n.security_type == SecurityType::OPEN) {
     wifi->connect(n);
   } else if (n.security_type == SecurityType::WPA) {
@@ -221,7 +223,7 @@ void WifiUI::refresh() {
     ssid_label->setStyleSheet("font-size: 55px;");
     hlayout->addWidget(ssid_label, 1, Qt::AlignLeft);
 
-    if (wifi->isKnownConnection(network.ssid) && !wifi->tetheringEnabled()) {
+    if ((wifi->getConnectionIndex(network.ssid) != -1) && !wifi->tetheringEnabled()) {
       QPushButton *forgetBtn = new QPushButton();
       QPixmap pix("../assets/offroad/icon_close.svg");
 
