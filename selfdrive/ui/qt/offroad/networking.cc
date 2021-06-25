@@ -206,9 +206,6 @@ WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi)
 void WifiUI::refresh() {
   clearLayout(main_layout);
 
-  connectButtons = new QButtonGroup(this); // TODO check if this is a leak
-  QObject::connect(connectButtons, qOverload<QAbstractButton*>(&QButtonGroup::buttonClicked), this, &WifiUI::handleButton);
-
   int i = 0;
   for (Network &network : wifi->seen_networks) {
     QHBoxLayout *hlayout = new QHBoxLayout;
@@ -251,10 +248,9 @@ void WifiUI::refresh() {
     QPushButton* btn = new QPushButton(network.security_type == SecurityType::UNSUPPORTED ? "Unsupported" : (network.connected == ConnectedType::CONNECTED ? "Connected" : (network.connected == ConnectedType::CONNECTING ? "Connecting" : "Connect")));
     btn->setDisabled(network.connected == ConnectedType::CONNECTED || network.connected == ConnectedType::CONNECTING || network.security_type == SecurityType::UNSUPPORTED);
     btn->setFixedWidth(350);
+    QObject::connect(btn, &QPushButton::clicked, this, [=]() { emit connectToNetwork(network); });
+
     hlayout->addWidget(btn, 0, Qt::AlignRight);
-
-    connectButtons->addButton(btn, i);
-
     main_layout->addLayout(hlayout, 1);
     // Don't add the last horizontal line
     if (i+1 < wifi->seen_networks.size()) {
@@ -263,10 +259,4 @@ void WifiUI::refresh() {
     i++;
   }
   main_layout->addStretch(3);
-}
-
-void WifiUI::handleButton(QAbstractButton* button) {
-  QPushButton* btn = static_cast<QPushButton*>(button);
-  Network n = wifi->seen_networks[connectButtons->id(btn)];
-  emit connectToNetwork(n);
 }
