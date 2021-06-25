@@ -289,7 +289,7 @@ bool WifiManager::isKnownConnection(const QString &ssid) {
 }
 
 void WifiManager::forgetConnection(const QString &ssid) {
-  QDBusObjectPath path = getConnectionPath(ssid);
+  const QDBusObjectPath &path = getConnectionPath(ssid);
   if (!path.path().isEmpty()) {
     QDBusInterface nm2(nm_service, path.path(), nm_settings_conn_iface, bus);
     nm2.call("Delete");
@@ -371,7 +371,6 @@ QString WifiManager::get_adapter() {
 void WifiManager::stateChange(unsigned int new_state, unsigned int previous_state, unsigned int change_reason) {
   raw_adapter_state = new_state;
   if (new_state == state_need_auth && change_reason == reason_wrong_password) {
-    known_connections.remove(getConnectionPath(connecting_to_network));
     emit wrongPassword(connecting_to_network);
   } else if (new_state == state_connected) {
     connecting_to_network = "";
