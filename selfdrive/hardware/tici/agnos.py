@@ -101,11 +101,20 @@ def verify_partition(target_slot_number, partition):
 
   with open(path, 'rb+') as out:
     if full_check:
-      # TOOD: Compute hash of whole partition
-      raise NotImplementedError
-    else:
-      out.seek(partition_size)
-      return out.read(64) == partition['hash_raw'].lower().encode()
+      raw_hash = hashlib.sha256()
+
+      pos = 0
+      chunk_size = 1024 * 1024
+      while pos < partition_size - 1:
+        n = min(chunk_size, partition_size - pos - 1)
+        raw_hash.update(out.read(n))
+        pos += n
+
+      if raw_hash.hexdigest().lower() != partition['hash_raw'].lower():
+        return False
+
+    out.seek(partition_size)
+    return out.read(64) == partition['hash_raw'].lower().encode()
 
 
 def clear_partition_hash(target_slot_number, partition):
