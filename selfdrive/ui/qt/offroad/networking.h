@@ -30,7 +30,6 @@ private:
   WifiManager *wifi = nullptr;
   QVBoxLayout* main_layout;
 
-  QButtonGroup *connectButtons;
   bool tetheringEnabled;
 
 signals:
@@ -38,7 +37,6 @@ signals:
 
 public slots:
   void refresh();
-  void handleButton(QAbstractButton* m_button);
 };
 
 class AdvancedNetworking : public QWidget {
