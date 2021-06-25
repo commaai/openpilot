@@ -18,7 +18,7 @@ if [ ! -d acados/ ]; then
 fi
 cd acados
 git fetch
-git checkout 9a1bab3f8fc4814a295fbf424fdc8125c63fdd08
+git checkout f63f0be563519a3df32463397f2bcd57b3958714
 git submodule update --recursive --init
 
 # build
@@ -36,5 +36,9 @@ rm $DIR/acados/lib/*.json
 cp -r $DIR/acados/include $DIR
 cp -r $DIR/acados/lib $INSTALL_DIR
 cp -r $DIR/acados/interfaces/acados_template/acados_template $DIR/../../pyextra
-
 #pip3 install -e $DIR/acados/interfaces/acados_template
+
+# build tera
+cd $DIR/acados/interfaces/acados_template/tera_renderer/
+cargo build --verbose --release
+cp target/release/t_renderer $INSTALL_DIR/
