@@ -13,6 +13,7 @@
     "hash": "1d31f0b0afafb27157c26f13226d884aa6f58abf6a6ddc21d928140bef0f539c",
     "hash_raw": "1d31f0b0afafb27157c26f13226d884aa6f58abf6a6ddc21d928140bef0f539c",
     "size": 14772224,
-    "sparse": false
+    "sparse": false,
+    "full_check": true
   }
 ]
