@@ -51,6 +51,7 @@ public:
   bool tetheringEnabled();
 
   void addTetheringConnection();
+  void activateWifiConnection(const QString &ssid);
   void activateConnection(const QPair<QString, QDBusObjectPath> &conn);
   void changeTetheringPassword(const QString &newPassword);
 
