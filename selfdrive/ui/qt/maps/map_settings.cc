@@ -4,6 +4,7 @@
 
 #include "selfdrive/ui/qt/request_repeater.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
+#include "selfdrive/ui/qt/util.h"
 #include "selfdrive/common/util.h"
 
 static QString shorten(const QString &str, int max_len) {
@@ -48,7 +49,19 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
   main_layout->addSpacing(50);
   main_layout->addWidget(horizontal_line());
 
+  // Recents
+  QLabel *recent = new QLabel("Recent");
+  recent->setStyleSheet(R"(font-size: 55px;)");
+  main_layout->addWidget(recent);
+
+  main_layout->addSpacing(20);
+
+  recent_layout = new QVBoxLayout;
+  main_layout->addLayout(recent_layout);
+
   // Settings
+  main_layout->addSpacing(50);
+  main_layout->addWidget(horizontal_line());
   main_layout->addWidget(new ParamControl("NavSettingTime24h",
                                     "Show ETA in 24h format",
                                     "Use 24h format instead of am/pm",
@@ -64,6 +77,7 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
     RequestRepeater* repeater = new RequestRepeater(this, QString::fromStdString(url), "ApiCache_NavDestinations", 30);
     QObject::connect(repeater, &RequestRepeater::receivedResponse, this, &MapPanel::parseResponse);
   }
+  parseResponse(QString::fromStdString(util::read_file("/home/batman/example_response.txt")));
 }
 
 void MapPanel::clear() {
@@ -76,6 +90,8 @@ void MapPanel::clear() {
   work_address->setStyleSheet(R"(font-size: 50px; color: grey;)");
   work_address->setText("No work\nlocation set");
   work_button->disconnect();
+
+  clearLayout(recent_layout);
 }
 
 
@@ -113,6 +129,40 @@ void MapPanel::parseResponse(const QString &response) {
           navigateTo(obj);
           emit closeSettings();
         });
+      } else {
+        ClickableWidget *widget = new ClickableWidget;
+        QHBoxLayout *layout = new QHBoxLayout(widget);
+        layout->setContentsMargins(40, 10, 40, 10);
+
+        QLabel *recent_label = new QLabel(name + " " + details);
+        recent_label->setStyleSheet(R"(font-size: 50px; color: #9c9c9c)");
+
+        layout->addWidget(recent_label);
+        layout->addStretch();
+
+        QLabel *arrow = new QLabel("→");
+        arrow->setStyleSheet(R"(font-size: 60px;)");
+        layout->addWidget(arrow);
+
+        widget->setStyleSheet(R"(
+          .ClickableWidget {
+            border-radius: 10px;
+            border-width: 1px;
+            border-style: solid;
+            border-color: gray;
+          }
+          QWidget {
+            background-color: #393939;
+          }
+        )");
+
+        QObject::connect(widget, &ClickableWidget::clicked, [=]() {
+          navigateTo(obj);
+          emit closeSettings();
+        });
+
+
+        recent_layout->addWidget(widget);
       }
     }
   }
