@@ -1,10 +1,11 @@
 #pragma once
-#include <QWidget>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QLabel>
 #include <QPushButton>
-#include <QJsonObject>
-#include <QJsonDocument>
-#include <QJsonArray>
+#include <QVBoxLayout>
+#include <QWidget>
 
 class MapPanel : public QWidget {
   Q_OBJECT
@@ -18,6 +19,7 @@ public:
 private:
   QPushButton *home_button, *work_button;
   QLabel *home_address, *work_address;
+  QVBoxLayout *recent_layout;
 
 signals:
   void closeSettings();
