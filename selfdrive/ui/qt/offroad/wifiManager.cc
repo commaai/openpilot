@@ -236,7 +236,7 @@ void WifiManager::connect(const QByteArray &ssid, const QString &username, const
   QDBusInterface nm_settings(nm_service, nm_settings_path, nm_settings_iface, bus);
   nm_settings.setTimeout(dbus_timeout);
 
-  const QDBusReply<QDBusObjectPath> result = nm_settings.call("AddConnection", QVariant::fromValue(connection));
+  nm_settings.call("AddConnection", QVariant::fromValue(connection));
   updateConnections();
   activateWifiConnection(QString(ssid));
 }
@@ -455,7 +455,7 @@ void WifiManager::addTetheringConnection() {
   QDBusInterface nm_settings(nm_service, nm_settings_path, nm_settings_iface, bus);
   nm_settings.setTimeout(dbus_timeout);
 
-  const QDBusReply<QDBusObjectPath> result = nm_settings.call("AddConnection", QVariant::fromValue(connection));
+  nm_settings.call("AddConnection", QVariant::fromValue(connection));
   updateConnections();
 }
 
