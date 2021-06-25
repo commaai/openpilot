@@ -5,6 +5,7 @@ Version 0.8.6 (2021-XX-XX)
  * Škoda Octavia RS 2016 support thanks to jyoung8607!
  * Toyota Alphard 2020 support thanks to belm0!
  * Volkswagen Golf SportWagen 2015 support thanks to jona96!
+ * Volkswagen Tiguan 2016 support thanks to jyoung8607!
  * Volkswagen Touran 2017 support thanks to jyoung8607!
 
 Version 0.8.5 (2021-06-11)
