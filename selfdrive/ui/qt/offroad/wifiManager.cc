@@ -150,7 +150,6 @@ QList<Network> WifiManager::get_networks() {
   QList<Network> r;
   QDBusInterface nm(nm_service, adapter, wireless_device_iface, bus);
   nm.setTimeout(dbus_timeout);
-//  updateConnections();
 
   const QString active_ap = get_active_ap();
   const QDBusReply<QList<QDBusObjectPath>> response = nm.call("GetAllAccessPoints");
@@ -238,7 +237,6 @@ void WifiManager::connect(const QByteArray &ssid, const QString &username, const
   nm_settings.setTimeout(dbus_timeout);
 
   const QDBusReply<QDBusObjectPath> result = nm_settings.call("AddConnection", QVariant::fromValue(connection));
-//  updateConnections();
 }
 
 void WifiManager::deactivateConnection(const QString &ssid) {
@@ -283,7 +281,6 @@ void WifiManager::forgetConnection(const QString &ssid) {
     const QDBusObjectPath &path = known_connections.at(index).second;
     QDBusInterface nm2(nm_service, path.path(), nm_settings_conn_iface, bus);
     nm2.call("Delete");
-//    updateConnections();
   }
 }
 
@@ -447,19 +444,6 @@ void WifiManager::activateConnection(const QPair<QString, QDBusObjectPath> &conn
   nm3.call("ActivateConnection", QVariant::fromValue(conn.second), QVariant::fromValue(QDBusObjectPath(devicePath)), QVariant::fromValue(QDBusObjectPath("/")));
 }
 
-void WifiManager::activateWifiConnection(const QString &ssid) {
-  const int index = getConnectionIndex(ssid);
-  if (index != -1) {
-    const QDBusObjectPath &path = known_connections.at(index).second;
-    connecting_to_network = ssid;
-
-    QString devicePath = get_adapter();
-    QDBusInterface nm3(nm_service, nm_path, nm_iface, bus);
-    nm3.setTimeout(dbus_timeout);
-    nm3.call("ActivateConnection", QVariant::fromValue(path), QVariant::fromValue(QDBusObjectPath(devicePath)), QVariant::fromValue(QDBusObjectPath("/")));
-  }
-}
-
 // Functions for tethering
 void WifiManager::addTetheringConnection() {
   Connection connection;
@@ -492,14 +476,16 @@ void WifiManager::addTetheringConnection() {
   nm_settings.setTimeout(dbus_timeout);
 
   const QDBusReply<QDBusObjectPath> result = nm_settings.call("AddConnection", QVariant::fromValue(connection));
-//  updateConnections();
 }
 
 void WifiManager::enableTethering() {
   if (getConnectionIndex(tethering_ssid.toUtf8()) == -1) {
     addTetheringConnection();
   }
-//  activateWifiConnection(tethering_ssid.toUtf8());
+  int index = getConnectionIndex(tethering_ssid.toUtf8()) == -1;
+  if (index != -1) {
+    activateConnection(known_connections.at(index));
+  }
 }
 
 void WifiManager::disableTethering() {
