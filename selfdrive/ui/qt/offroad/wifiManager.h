@@ -38,7 +38,7 @@ public:
 
   void refreshNetworks();
   void forgetConnection(const QString &ssid);
-  int getConnectionIndex(const QString &ssid);
+  bool isKnownConnection(const QString &ssid);
 
   void connect(const Network &ssid);
   void connect(const Network &ssid, const QString &password);
@@ -52,7 +52,6 @@ public:
 
   void addTetheringConnection();
   void activateWifiConnection(const QString &ssid);
-  void activateConnection(const QPair<QString, QDBusObjectPath> &conn);
   void changeTetheringPassword(const QString &newPassword);
 
 private:
@@ -75,6 +74,7 @@ private:
   QByteArray get_property(const QString &network_path, const QString &property);
   unsigned int get_ap_strength(const QString &network_path);
   SecurityType getSecurityType(const QString &path);
+  int getConnectionIndex(const QString &ssid);
   void updateConnections();
 
 signals:
@@ -84,4 +84,6 @@ signals:
 private slots:
   void stateChange(unsigned int new_state, unsigned int previous_state, unsigned int change_reason);
   void propertyChange(const QString &interface, const QVariantMap &props, const QStringList &invalidated_props);
+  void connectionRemoved(const QDBusObjectPath &path);
+  void newConnection(const QDBusObjectPath &path);
 };
