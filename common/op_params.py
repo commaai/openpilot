@@ -23,7 +23,7 @@ OLD_PARAMS_FILE = os.path.join(BASEDIR, 'op_params.json')
 
 
 class Param:
-  def __init__(self, default, allowed_types=[], description=None, *, static=False, live=False, hidden=False):
+  def __init__(self, default, allowed_types=[], description=None, *, static=False, live=False, hidden=False):  # pylint: disable=dangerous-default-value
     self.default_value = default  # value first saved and returned if actual value isn't a valid type
     if not isinstance(allowed_types, list):
       allowed_types = [allowed_types]
@@ -75,7 +75,7 @@ def _import_params():
       for key in old_params:
         _write_param(key, old_params[key])
       open(IMPORTED_PATH, 'w').close()
-    except:
+    except:  # pylint: disable=bare-except
       pass
 
 
