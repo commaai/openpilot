@@ -77,6 +77,7 @@ private:
   SecurityType getSecurityType(const QString &path);
   QDBusObjectPath getConnectionPath(const QString &ssid);
   QMap<QDBusObjectPath, QString> listConnections();
+  QString getConnectionSsid(const QDBusObjectPath &path);
 
 signals:
   void wrongPassword(const QString &ssid);

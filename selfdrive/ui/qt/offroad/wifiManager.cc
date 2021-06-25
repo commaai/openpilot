@@ -381,13 +381,8 @@ void WifiManager::connectionRemoved(const QDBusObjectPath &path) {
 }
 
 void WifiManager::newConnection(const QDBusObjectPath &path) {
-  QDBusInterface nm2(nm_service, path.path(), nm_settings_conn_iface, bus);
-  nm2.setTimeout(dbus_timeout);
-  const QDBusReply<Connection> result = nm2.call("GetSettings");
-  const QString &ssid = result.value().value("802-11-wireless").value("ssid").toString();
-
-  known_connections[path] = ssid;
-  activateWifiConnection(ssid);
+  known_connections[path] = getConnectionSsid(path);
+  activateWifiConnection(known_connections[path]);
 }
 
 void WifiManager::disconnect() {
@@ -398,13 +393,19 @@ void WifiManager::disconnect() {
 }
 
 QDBusObjectPath WifiManager::getConnectionPath(const QString &ssid) {
-  QDBusObjectPath path;  // returns uninitialized path if network is not known
   for (const QString &conn_ssid : known_connections) {
     if (ssid == conn_ssid) {
-      path = known_connections.key(conn_ssid);
+      return known_connections.key(conn_ssid);
     }
   }
-  return path;
+  return QDBusObjectPath();  // unknown ssid, return uninitialized path
+}
+
+QString WifiManager::getConnectionSsid(const QDBusObjectPath &path) {
+  QDBusInterface nm(nm_service, path.path(), nm_settings_conn_iface, bus);
+  nm.setTimeout(dbus_timeout);
+  const QDBusReply<Connection> result = nm.call("GetSettings");
+  return result.value().value("802-11-wireless").value("ssid").toString();
 }
 
 QMap<QDBusObjectPath, QString> WifiManager::listConnections() {
@@ -414,12 +415,7 @@ QMap<QDBusObjectPath, QString> WifiManager::listConnections() {
 
   const QDBusReply<QList<QDBusObjectPath>> response = nm.call("ListConnections");
   for (const QDBusObjectPath &path : response.value()) {
-    QDBusInterface nm2(nm_service, path.path(), nm_settings_conn_iface, bus);
-    nm2.setTimeout(dbus_timeout);
-
-    const QDBusReply<QMap<QString, QMap<QString, QVariant>>> map = nm2.call("GetSettings");
-    const QString ssid = map.value().value("802-11-wireless").value("ssid").toString();
-    connections[path] = ssid;
+    connections[path] = getConnectionSsid(path);
   }
   return connections;
 }
