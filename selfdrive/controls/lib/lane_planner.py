@@ -1,21 +1,28 @@
-from common.numpy_fast import interp
+from common.numpy_fast import interp, clip
 import numpy as np
 from selfdrive.hardware import EON, TICI
 from selfdrive.swaglog import cloudlog
 from cereal import log
+from common.op_params import opParams
 
 
 TRAJECTORY_SIZE = 33
 # camera offset is meters from center car to camera
 if EON:
-  CAMERA_OFFSET = 0.06
-  PATH_OFFSET = 0.0
+  STANDARD_CAMERA_OFFSET = 0.06  # do NOT change this. edit with opEdit
+  STANDARD_PATH_OFFSET = 0.0  # do NOT change this. edit with opEdit
+  # CAMERA_OFFSET = 0.06
+  # PATH_OFFSET = 0.0
 elif TICI:
-  CAMERA_OFFSET = -0.04
-  PATH_OFFSET = -0.04
+  STANDARD_CAMERA_OFFSET = -0.04  # do NOT change this. edit with opEdit
+  STANDARD_PATH_OFFSET = -0.04  # do NOT change this. edit with opEdit
+  # CAMERA_OFFSET = -0.04
+  # PATH_OFFSET = -0.04
 else:
-  CAMERA_OFFSET = 0.0
-  PATH_OFFSET = 0.0
+  STANDARD_CAMERA_OFFSET = 0.0  # do NOT change this. edit with opEdit
+  STANDARD_PATH_OFFSET = 0.0  # do NOT change this. edit with opEdit
+  # CAMERA_OFFSET = 0.0
+  # PATH_OFFSET = 0.0
 
 
 class LanePlanner:
@@ -27,6 +34,8 @@ class LanePlanner:
     self.lane_width_estimate = 3.7
     self.lane_width_certainty = 1.0
     self.lane_width = 3.7
+    self.op_params = opParams()
+    # self.camera_offset = self.op_params.get('camera_offset')
 
     self.lll_prob = 0.
     self.rll_prob = 0.
@@ -38,11 +47,15 @@ class LanePlanner:
     self.l_lane_change_prob = 0.
     self.r_lane_change_prob = 0.
 
-    self.camera_offset = -CAMERA_OFFSET if wide_camera else CAMERA_OFFSET
-    self.path_offset = -PATH_OFFSET if wide_camera else PATH_OFFSET
+    # self.camera_offset = -CAMERA_OFFSET if wide_camera else CAMERA_OFFSET
+    # self.path_offset = -PATH_OFFSET if wide_camera else PATH_OFFSET
 
   def parse_model(self, md):
     if len(md.laneLines) == 4 and len(md.laneLines[0].t) == TRAJECTORY_SIZE:
+      self.camera_offset = self.op_params.get('camera_offset')  # update camera offset
+      self.camera_offset = clip(self.camera_offset, -0.3, 0.3)
+      self.path_offset = self.camera_offset - STANDARD_CAMERA_OFFSET + STANDARD_PATH_OFFSET  # offset path
+
       self.ll_t = (np.array(md.laneLines[1].t) + np.array(md.laneLines[2].t))/2
       # left and right ll x is the same
       self.ll_x = md.laneLines[1].x

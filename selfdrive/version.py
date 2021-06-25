@@ -53,6 +53,7 @@ terms_version: bytes = b"2"
 dirty: bool = True
 comma_remote: bool = False
 tested_branch: bool = False
+dirty_files = None
 origin = get_git_remote()
 branch = get_git_full_branchname()
 commit = get_git_commit()
@@ -60,7 +61,11 @@ commit = get_git_commit()
 if (origin is not None) and (branch is not None):
   try:
     comma_remote = origin.startswith('git@github.com:commaai') or origin.startswith('https://github.com/commaai')
-    tested_branch = get_git_branch() in ['devel', 'release2-staging', 'dashcam-staging', 'release2', 'dashcam']
+    smiskol_remote = origin.startswith('git@github.com:sshane') or origin.startswith('https://github.com/sshane')
+
+    valid_branches = ['devel', 'release2-staging', 'dashcam-staging', 'release2', 'dashcam',
+                      'shanesmiskol_stock_additions', 'stock_additions', 'sshane_stock_additions', 'SA-master', 'sshane_SA-master']
+    tested_branch = get_git_branch().lower() in valid_branches
 
     dirty = False
 
@@ -74,15 +79,15 @@ if (origin is not None) and (branch is not None):
       dirty = (subprocess.call(["git", "diff-index", "--quiet", branch, "--"]) != 0)
 
       # Log dirty files
-      if dirty and comma_remote:
+      if dirty and (comma_remote or smiskol_remote):
         try:
           dirty_files = run_cmd(["git", "diff-index", branch, "--"])
-          cloudlog.event("dirty comma branch", version=version, dirty=dirty, origin=origin, branch=branch,
+          cloudlog.event("dirty SA branch", version=version, dirty=dirty, origin=origin, branch=branch,
                          dirty_files=dirty_files, commit=commit, origin_commit=get_git_commit(branch))
         except subprocess.CalledProcessError:
           pass
 
-    dirty = dirty or (not comma_remote)
+    dirty = dirty or (not comma_remote and not smiskol_remote)
     dirty = dirty or ('master' in branch)
 
   except subprocess.CalledProcessError:

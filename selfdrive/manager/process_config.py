@@ -2,6 +2,7 @@ import os
 
 from selfdrive.manager.process import PythonProcess, NativeProcess, DaemonProcess
 from selfdrive.hardware import EON, TICI, PC
+from common.op_params import opParams
 
 WEBCAM = os.getenv("USE_WEBCAM") is not None
 
@@ -32,8 +33,10 @@ procs = [
   PythonProcess("thermald", "selfdrive.thermald.thermald", persistent=True),
   PythonProcess("timezoned", "selfdrive.timezoned", enabled=TICI, persistent=True),
   PythonProcess("tombstoned", "selfdrive.tombstoned", enabled=not PC, persistent=True),
-  PythonProcess("updated", "selfdrive.updated", enabled=not PC, persistent=True),
   PythonProcess("uploader", "selfdrive.loggerd.uploader", persistent=True),
 ]
+
+if not opParams().get('update_behavior').lower().strip() == 'off' or os.path.exists('/data/no_ota_updates'):
+  procs.append(PythonProcess("updated", "selfdrive.updated", enabled=not PC, persistent=True))
 
 managed_processes = {p.name: p for p in procs}
