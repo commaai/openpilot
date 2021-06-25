@@ -120,7 +120,7 @@ void MapPanel::parseResponse(const QString &response) {
         navigateTo(obj);
         emit closeSettings();
       });
-    } else if (type == "favorite" && label == "home") {
+    } else if (type == "favorite" && label == "work") {
       work_address->setText(name);
       work_address->setStyleSheet(R"(font-size: 50px; color: white;)");
       work_button->setIcon(QPixmap("../assets/navigation/work.png"));
