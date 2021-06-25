@@ -55,7 +55,7 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
   recent->setStyleSheet(R"(font-size: 55px;)");
   main_layout->addWidget(recent);
 
-  main_layout->addSpacing(50);
+  main_layout->addSpacing(20);
 
   recent_layout = new QVBoxLayout;
   main_layout->addLayout(recent_layout);
@@ -161,7 +161,7 @@ void MapPanel::parseResponse(const QString &response) {
       });
 
       recent_layout->addWidget(widget);
-      recent_layout->addSpacing(10);
+      recent_layout->addSpacing(20);
     }
   }
 
