@@ -161,6 +161,7 @@ void MapPanel::parseResponse(const QString &response) {
       });
 
       recent_layout->addWidget(widget);
+      recent_layout->addSpacing(10);
     }
   }
 
