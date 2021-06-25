@@ -77,7 +77,9 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings) {
     RequestRepeater* repeater = new RequestRepeater(this, QString::fromStdString(url), "", 10);
 
     QObject::connect(repeater, &RequestRepeater::receivedResponse, [](QString resp) {
-      Params().put("NavDestination", resp.toStdString());
+      if (resp != "null") {
+        Params().put("NavDestination", resp.toStdString());
+      }
     });
   }
 
