@@ -14,34 +14,8 @@ def put_default_car_params():
   Params().put("CarParams", cp.to_bytes())
 
 
+# TODO: make new FCW tests
 maneuvers = [
-  Maneuver(
-    "fcw: traveling at 30 m/s and approaching lead traveling at 20m/s",
-    duration=15.,
-    initial_speed=30.,
-    lead_relevancy=True,
-    initial_distance_lead=100.,
-    speed_lead_values=[20.],
-    speed_lead_breakpoints=[1.],
-  ),
-  Maneuver(
-    "fcw: traveling at 20 m/s following a lead that decels from 20m/s to 0 at 3m/s2",
-    duration=13.,
-    initial_speed=20.,
-    lead_relevancy=True,
-    initial_distance_lead=35.,
-    speed_lead_values=[20., 0.],
-    speed_lead_breakpoints=[3., 10.],
-  ),
-  Maneuver(
-    "fcw: traveling at 20 m/s following a lead that decels from 20m/s to 0 at 5m/s2",
-    duration=8.,
-    initial_speed=20.,
-    lead_relevancy=True,
-    initial_distance_lead=35.,
-    speed_lead_values=[20., 0.],
-    speed_lead_breakpoints=[3., 7.],
-  ),
   Maneuver(
     'steady state following a car at 20m/s, then lead decel to 0mph at 1m/s^2',
     duration=50.,
