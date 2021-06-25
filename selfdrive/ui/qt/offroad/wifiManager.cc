@@ -80,6 +80,9 @@ WifiManager::WifiManager(QWidget* parent) : QWidget(parent) {
   bus.connect(nm_service, adapter, device_iface, "StateChanged", this, SLOT(stateChange(unsigned int, unsigned int, unsigned int)));
   bus.connect(nm_service, adapter, props_iface, "PropertiesChanged", this, SLOT(propertyChange(QString, QVariantMap, QStringList)));
 
+  bus.connect(nm_service, nm_settings_path, nm_settings_iface, "ConnectionRemoved", this, SLOT(connectionRemoved(QDBusObjectPath)));
+  bus.connect(nm_service, nm_settings_path, nm_settings_iface, "NewConnection", this, SLOT(newConnection(QDBusObjectPath)));
+
   QDBusInterface device_props(nm_service, adapter, props_iface, bus);
   device_props.setTimeout(dbus_timeout);
   QDBusMessage response = device_props.call("Get", device_iface, "State");
@@ -149,7 +152,6 @@ QList<Network> WifiManager::get_networks() {
   QList<Network> r;
   QDBusInterface nm(nm_service, adapter, wireless_device_iface, bus);
   nm.setTimeout(dbus_timeout);
-  updateConnections();
 
   const QString active_ap = get_active_ap();
   const QDBusReply<QList<QDBusObjectPath>> response = nm.call("GetAllAccessPoints");
@@ -237,8 +239,6 @@ void WifiManager::connect(const QByteArray &ssid, const QString &username, const
   nm_settings.setTimeout(dbus_timeout);
 
   nm_settings.call("AddConnection", QVariant::fromValue(connection));
-  updateConnections();
-  activateWifiConnection(QString(ssid));
 }
 
 void WifiManager::deactivateConnection(const QString &ssid) {
@@ -278,16 +278,14 @@ QVector<QDBusObjectPath> WifiManager::get_active_connections() {
 }
 
 bool WifiManager::isKnownConnection(const QString &ssid) {
-  return getConnectionIndex(ssid) != -1;
+  return !getConnectionPath(ssid).path().isEmpty();
 }
 
 void WifiManager::forgetConnection(const QString &ssid) {
-  const int index = getConnectionIndex(ssid);
-  if (index != -1) {
-    const QDBusObjectPath &path = known_connections.at(index).second;
+  const QDBusObjectPath &path = getConnectionPath(ssid);
+  if (!path.path().isEmpty()) {
     QDBusInterface nm2(nm_service, path.path(), nm_settings_conn_iface, bus);
     nm2.call("Delete");
-    updateConnections();
   }
 }
 
@@ -370,9 +368,26 @@ void WifiManager::stateChange(unsigned int new_state, unsigned int previous_stat
 // https://developer.gnome.org/NetworkManager/stable/gdbus-org.freedesktop.NetworkManager.Device.Wireless.html
 void WifiManager::propertyChange(const QString &interface, const QVariantMap &props, const QStringList &invalidated_props) {
   if (interface == wireless_device_iface && props.contains("LastScan")) {
+    if (firstScan) {
+      known_connections = listConnections();
+    }
     refreshNetworks();  // TODO: only refresh on firstScan, then use AccessPointAdded and Removed signals
     emit refreshSignal();
   }
+}
+
+void WifiManager::connectionRemoved(const QDBusObjectPath &path) {
+  known_connections.remove(path);
+}
+
+void WifiManager::newConnection(const QDBusObjectPath &path) {
+  QDBusInterface nm2(nm_service, path.path(), nm_settings_conn_iface, bus);
+  nm2.setTimeout(dbus_timeout);
+  const QDBusReply<Connection> result = nm2.call("GetSettings");
+  const QString &ssid = result.value().value("802-11-wireless").value("ssid").toString();
+
+  known_connections[path] = ssid;
+  activateWifiConnection(ssid);
 }
 
 void WifiManager::disconnect() {
@@ -382,41 +397,37 @@ void WifiManager::disconnect() {
   }
 }
 
-int WifiManager::getConnectionIndex(const QString &ssid) {
-  int index = 0;
-  for (auto const& [conn_ssid, conn_path] : known_connections) {
-    if (conn_ssid == ssid) {
-      return index;
+QDBusObjectPath WifiManager::getConnectionPath(const QString &ssid) {
+  QDBusObjectPath path;  // returns uninitialized path if network is not known
+  for (const QString &conn_ssid : known_connections) {
+    if (ssid == conn_ssid) {
+      path = known_connections.key(conn_ssid);
     }
-    index++;
   }
-  return -1;
+  return path;
 }
 
-void WifiManager::updateConnections() {
-  known_connections.clear();
+QMap<QDBusObjectPath, QString> WifiManager::listConnections() {
+  QMap<QDBusObjectPath, QString> connections;
   QDBusInterface nm(nm_service, nm_settings_path, nm_settings_iface, bus);
   nm.setTimeout(dbus_timeout);
 
   const QDBusReply<QList<QDBusObjectPath>> response = nm.call("ListConnections");
-
   for (const QDBusObjectPath &path : response.value()) {
     QDBusInterface nm2(nm_service, path.path(), nm_settings_conn_iface, bus);
     nm2.setTimeout(dbus_timeout);
 
-    const QDBusReply<Connection> result = nm2.call("GetSettings");
-    const QString ssid = result.value().value("802-11-wireless").value("ssid").toString();
-
-    known_connections.push_back(qMakePair(ssid, path));
+    const QDBusReply<QMap<QString, QMap<QString, QVariant>>> map = nm2.call("GetSettings");
+    const QString ssid = map.value().value("802-11-wireless").value("ssid").toString();
+    connections[path] = ssid;
   }
+  return connections;
 }
 
 void WifiManager::activateWifiConnection(const QString &ssid) {
-  const int index = getConnectionIndex(ssid);
-  if (index != -1) {
-    const QDBusObjectPath &path = known_connections.at(index).second;
+  const QDBusObjectPath &path = getConnectionPath(ssid);
+  if (!path.path().isEmpty()) {
     connecting_to_network = ssid;
-
     QString devicePath = get_adapter();
     QDBusInterface nm3(nm_service, nm_path, nm_iface, bus);
     nm3.setTimeout(dbus_timeout);
@@ -456,7 +467,6 @@ void WifiManager::addTetheringConnection() {
   nm_settings.setTimeout(dbus_timeout);
 
   nm_settings.call("AddConnection", QVariant::fromValue(connection));
-  updateConnections();
 }
 
 void WifiManager::enableTethering() {
