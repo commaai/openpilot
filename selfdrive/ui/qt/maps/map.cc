@@ -9,6 +9,7 @@
 #include "selfdrive/ui/ui.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/maps/map_helpers.h"
+#include "selfdrive/ui/qt/request_repeater.h"
 
 
 const int PAN_TIMEOUT = 100;
@@ -68,7 +69,6 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) : m_settings(settings) {
   if (last_gps_position) {
     last_position = *last_gps_position;
   }
-
 
   grabGesture(Qt::GestureType::PinchGesture);
 }

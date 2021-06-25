@@ -27,6 +27,9 @@ KeyboardLayout::KeyboardLayout(QWidget* parent, const std::vector<QVector<QStrin
 
     for (const QString &p : s) {
       QPushButton* btn = new QPushButton(p);
+      if (p == QString("⌫")) {
+        btn->setAutoRepeat(true);
+      }
       btn->setFixedHeight(135);
       btn_group->addButton(btn);
       hlayout->addWidget(btn, p == QString("  ") ? SPACEBAR_STRETCH : DEFAULT_STRETCH);
