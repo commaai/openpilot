@@ -217,7 +217,7 @@ if __name__ == "__main__":
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
   parser.add_argument("--swap", action="store_true", help="Verify and perform swap, downloads if necessary")
-  parser.add_argument("manifest", nargs='?', help="Manifest json")
+  parser.add_argument("manifest", help="Manifest json")
   args = parser.parse_args()
 
   spinner = Spinner()
