@@ -211,10 +211,7 @@ class CarState(CarStateBase):
       ]
 
     signals += [
-      ("CF_Clu_InhibitD", "CLU15", 0),
-      ("CF_Clu_InhibitP", "CLU15", 0),
-      ("CF_Clu_InhibitN", "CLU15", 0),
-      ("CF_Clu_InhibitR", "CLU15", 0),
+      ("CF_Clu_Gear", "CLU15", 0),
     ]
     checks += [
       ("CLU15", 5)
