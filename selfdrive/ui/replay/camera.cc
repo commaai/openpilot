@@ -11,37 +11,28 @@ static const VisionStreamType stream_types[] = {
     [WideRoadCam] = VISION_STREAM_RGB_WIDE,
 };
 
-// class CameraServer::CameraState
-
 class CameraServer::CameraState {
- public:
-  CameraState(VisionIpcServer *server, CameraType type, const FrameReader *f)
-      : cam_type(type), vipc_server(server), width(f->width), height(f->height), stream_type(stream_types[type]) {
-    vipc_server->create_buffers(stream_type, UI_BUF_COUNT, true, width, height);
-    thread = std::thread(&CameraState::run, this);
+public:
+  CameraState(VisionIpcServer *server, CameraType type, int w, int h) : width(w), height(h) {
+    server->create_buffers(stream_types[type], UI_BUF_COUNT, true, width, height);
+    thread = std::thread(&CameraState::run, this, server, type);
   }
 
   ~CameraState() {
-    exit = true;
+    queue.push({nullptr, 0});
     thread.join();
   }
 
-  inline bool frameChanged(const FrameReader *f) const {
-    return !f || width != f->width || height != f->height;
-  }
+  void run(VisionIpcServer *server, CameraType type) {
+    while (true) {
+      const auto &[fr, encodeId] = queue.pop();
+      if (!fr) break;
 
-  void run() {
-    while (!exit) {
-      std::pair<std::shared_ptr<Segment>, uint32_t> frame;
-      if (!queue.try_pop(frame, 20)) continue;
-
-      auto &[seg, encodeId] = frame;
-      auto fr = seg->frames[cam_type];
-      VisionBuf *buf = vipc_server->get_buffer(stream_type);
       if (uint8_t *dat = fr->get(encodeId)) {
         VisionIpcBufExtra extra = {};
+        VisionBuf *buf = server->get_buffer(stream_types[type]);
         memcpy(buf->addr, dat, fr->getRGBSize());
-        vipc_server->send(buf, &extra, false);
+        server->send(buf, &extra, false);
       } else {
         qDebug() << "failed get frame " << encodeId;
       }
@@ -49,15 +40,13 @@ class CameraServer::CameraState {
   }
 
   int width, height;
-  CameraType cam_type;
-  VisionStreamType stream_type;
   std::thread thread;
-  std::atomic<bool> exit = false;
-  VisionIpcServer *vipc_server = nullptr;
-  SafeQueue<std::pair<std::shared_ptr<Segment>, uint32_t>> queue;
-};
+  SafeQueue<std::pair<FrameReader *, uint32_t>> queue;
 
-// class CameraServer
+  friend inline bool frameChanged(const CameraState *c, const FrameReader *f) {
+    return (!c && f) || (c && !f) || (c && f && (c->width != f->width || c->height != f->height));
+  }
+};
 
 CameraServer::CameraServer() {
   device_id_ = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
@@ -69,58 +58,37 @@ CameraServer::~CameraServer() {
   CL_CHECK(clReleaseContext(context_));
 }
 
-void CameraServer::ensure(const std::shared_ptr<Segment> seg) {
-  if (vipc_server_) {
+void CameraServer::pushFrame(CameraType type, std::shared_ptr<Segment> seg, uint32_t encodeFrameId) {
+  if (seg_num != seg->seg_num) {
     // restart vipc server if frame changed. such as switched between qcameras and cameras.
     for (auto cam_type : ALL_CAMERAS) {
-      auto &f = seg->frames[cam_type];
-      auto &cs = camera_states_[cam_type];
-      if ((cs && cs->frameChanged(f)) || (!cs && f)) {
+      if (frameChanged(camera_states_[cam_type], seg->frames[cam_type])) {
         stop();
         break;
       }
     }
+    seg_num = seg->seg_num;
   }
   if (!vipc_server_) {
+    vipc_server_ = new VisionIpcServer("camerad", device_id_, context_);
     for (auto cam_type : ALL_CAMERAS) {
-      auto &f = seg->frames[cam_type];
-      if (!f || !f->valid()) continue;
-
-      if (!vipc_server_) {
-        vipc_server_ = new VisionIpcServer("camerad", device_id_, context_);
+      if (auto f = seg->frames[cam_type]) {
+        camera_states_[cam_type] = new CameraState(vipc_server_, cam_type, f->width, f->height);
       }
-      camera_states_[cam_type] = new CameraState(vipc_server_, cam_type, f);
     }
-    if (vipc_server_) {
-      vipc_server_->start_listener();
-    }
+    vipc_server_->start_listener();
   }
-}
 
-void CameraServer::pushFrame(CameraType type, std::shared_ptr<Segment> seg, uint32_t encodeFrameId) {
-  ensure(seg);
-  if (auto &cs = camera_states_[type]) {
-    cs->queue.push({seg, encodeFrameId});
-  }
-}
-
-void CameraServer::emptyQueue() {
-   for (auto cs : camera_states_) {
-     if (cs) {
-       std::pair<std::shared_ptr<Segment>, uint32_t> frame;
-       while (cs->queue.try_pop(frame)) {};
-     }
-   }
+  camera_states_[type]->queue.push({seg->frames[type], encodeFrameId});
 }
 
 void CameraServer::stop() {
-  if (!vipc_server_) return;
-
-  // stop camera threads
-  for (auto &cs : camera_states_) {
-    delete cs;
-    cs = nullptr;
+  if (vipc_server_) {
+    for (auto &cs : camera_states_) {
+      delete cs;
+      cs = nullptr;
+    }
+    delete vipc_server_;
+    vipc_server_ = nullptr;
   }
-  delete vipc_server_;
-  vipc_server_ = nullptr;
 }

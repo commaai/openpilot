@@ -10,8 +10,6 @@ const int SEGMENT_LENGTH = 60;  // 60s
 const int FORWARD_SEGS = 2;
 const int BACKWARD_SEGS = 2;
 
-// class Replay
-
 Replay::Replay(SubMaster *sm, QObject *parent) : sm_(sm), QObject(parent) {
   QStringList block = QString(getenv("BLOCK")).split(",");
   qDebug() << "blocklist" << block;
