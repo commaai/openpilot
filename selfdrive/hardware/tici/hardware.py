@@ -266,6 +266,6 @@ class Tici(HardwareBase):
   def get_gpu_usage_percent(self):
     try:
       used, total = open('/sys/class/kgsl/kgsl-3d0/gpubusy').read().strip().split()
-      return int(used) / int(total)
+      return 100.0 * int(used) / int(total)
     except Exception:
       return 0
