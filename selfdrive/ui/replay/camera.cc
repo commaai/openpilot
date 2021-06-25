@@ -58,7 +58,7 @@ CameraServer::~CameraServer() {
   CL_CHECK(clReleaseContext(context_));
 }
 
-void CameraServer::pushFrame(CameraType type, std::shared_ptr<Segment> seg, uint32_t encodeFrameId) {
+void CameraServer::pushFrame(CameraType type, const Segment *seg, uint32_t encodeFrameId) {
   if (seg_num != seg->seg_num) {
     // restart vipc server if frame changed. such as switched between qcameras and cameras.
     for (auto cam_type : ALL_CAMERAS) {

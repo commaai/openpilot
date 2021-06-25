@@ -120,15 +120,15 @@ void Replay::queueSegment(int seg_num) {
     if (it.key() >= seg_num && it.key() <= max) {
       std::unique_lock lk(segment_mutex_);
       if (segments_.find(it.key()) == segments_.end()) {
-        auto seg = segments_[it.key()] = std::make_shared<Segment>(this);
-        connect(seg.get(), &Segment::loadFinished, this, &Replay::mergeEvents);
+        auto seg = segments_[it.key()] = new Segment(this);
+        connect(seg, &Segment::loadFinished, this, &Replay::mergeEvents);
         seg->load(it.key(), it.value());
       }
     }
   }
 }
 
-const std::shared_ptr<Segment> Replay::getSegment(int segment) {
+const Segment *Replay::getSegment(int segment) {
   std::unique_lock lk(segment_mutex_);
   auto it = segments_.find(segment);
   return (it != segments_.end() && it->second->loaded()) ? it->second : nullptr;

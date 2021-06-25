@@ -31,7 +31,7 @@ public:
   inline const QString &name() const { return route_; };
   inline const QMap<int, SegmentFile> &segments() const { return segments_; }
 
- private:
+private:
   QString route_;
   QMap<int, SegmentFile> segments_;
 };

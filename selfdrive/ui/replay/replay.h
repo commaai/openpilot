@@ -21,6 +21,7 @@ public:
   int seg_num = 0;
   LogReader *log = nullptr;
   FrameReader *frames[MAX_CAMERAS] = {};
+
 signals:
   void loadFinished(bool success);
 
@@ -57,7 +58,7 @@ private:
   void queueSegment(int seg_num);
   void streamThread();
   void pushFrame(int cur_seg_num, CameraType type, uint32_t frame_id);
-  const std::shared_ptr<Segment> getSegment(int segment);
+  const Segment *getSegment(int segment);
   const std::string &eventSocketName(const Event *e);
 
   // messaging
@@ -70,7 +71,7 @@ private:
   Route route_;
   std::mutex events_mutex_, segment_mutex_;
   std::condition_variable cv_;
-  std::map<int, std::shared_ptr<Segment>> segments_;
+  std::map<int, Segment*> segments_;
   std::unique_ptr<std::vector<Event *>> events_;
 
   uint64_t seek_ts_ = 0;

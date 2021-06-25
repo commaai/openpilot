@@ -19,7 +19,7 @@ class CameraServer {
 public:
   CameraServer();
   ~CameraServer();
-  void pushFrame(CameraType type, std::shared_ptr<Segment> fr, uint32_t encodeFrameId);
+  void pushFrame(CameraType type, const Segment *seg, uint32_t encodeFrameId);
   void stop();
 
  private:
