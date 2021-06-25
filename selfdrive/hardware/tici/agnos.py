@@ -12,6 +12,7 @@ from common.spinner import Spinner
 
 SPARSE_CHUNK_FMT = struct.Struct('H2xI4x')
 
+
 class StreamingDecompressor:
   def __init__(self, url: str) -> None:
     self.buf = b""
@@ -110,11 +111,10 @@ def verify_partition(target_slot_number, partition):
         raw_hash.update(out.read(n))
         pos += n
 
-      if raw_hash.hexdigest().lower() != partition['hash_raw'].lower():
-        return False
-
-    out.seek(partition_size)
-    return out.read(64) == partition['hash_raw'].lower().encode()
+      return raw_hash.hexdigest().lower() == partition['hash_raw'].lower()
+    else:
+      out.seek(partition_size)
+      return out.read(64) == partition['hash_raw'].lower().encode()
 
 
 def clear_partition_hash(target_slot_number, partition):
@@ -124,7 +124,6 @@ def clear_partition_hash(target_slot_number, partition):
 
     out.seek(partition_size)
     out.write(b"\x00" * 64)
-    out.seek(0)
     os.sync()
 
 
@@ -138,7 +137,9 @@ def flash_partition(target_slot_number, partition, cloudlog, spinner=None):
   downloader = StreamingDecompressor(partition['url'])
 
   # Clear hash before flashing in case we get interrupted
-  clear_partition_hash(target_slot_number, partition)
+  full_check = partition.get('full_check', False)
+  if not full_check:
+    clear_partition_hash(target_slot_number, partition)
 
   path = get_partition_path(target_slot_number, partition)
   with open(path, 'wb+') as out:
@@ -171,13 +172,15 @@ def flash_partition(target_slot_number, partition, cloudlog, spinner=None):
 
     # Write hash after successfull flash
     os.sync()
-    out.write(partition['hash_raw'].lower().encode())
+    if not full_check:
+      out.write(partition['hash_raw'].lower().encode())
 
 
 def swap(manifest_path, target_slot_number):
   update = json.load(open(manifest_path))
   for partition in update:
-    clear_partition_hash(target_slot_number, partition)
+    if not partition.get('full_check', False):
+      clear_partition_hash(target_slot_number, partition)
 
   os.system(f"abctl --set_active {target_slot_number}")
 
