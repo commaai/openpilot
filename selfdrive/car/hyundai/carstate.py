@@ -22,12 +22,168 @@ def parse_cluster_gear(cluster_gear):
     return GearShifter.unknown
 
 
+def get_can_signals(CP):
+  # this function generates lists for signal, messages and initial values
+  signals = [
+    # sig_name, sig_address, default
+    ("WHL_SPD_FL", "WHL_SPD11", 0),
+    ("WHL_SPD_FR", "WHL_SPD11", 0),
+    ("WHL_SPD_RL", "WHL_SPD11", 0),
+    ("WHL_SPD_RR", "WHL_SPD11", 0),
+
+    ("YAW_RATE", "ESP12", 0),
+
+    ("CF_Gway_DrvSeatBeltInd", "CGW4", 1),
+
+    ("CF_Gway_DrvSeatBeltSw", "CGW1", 0),
+    ("CF_Gway_DrvDrSw", "CGW1", 0),       # Driver Door
+    ("CF_Gway_AstDrSw", "CGW1", 0),       # Passenger door
+    ("CF_Gway_RLDrSw", "CGW2", 0),        # Rear reft door
+    ("CF_Gway_RRDrSw", "CGW2", 0),        # Rear right door
+    ("CF_Gway_TurnSigLh", "CGW1", 0),
+    ("CF_Gway_TurnSigRh", "CGW1", 0),
+    ("CF_Gway_ParkBrakeSw", "CGW1", 0),
+
+    ("CYL_PRES", "ESP12", 0),
+
+    ("CF_Clu_CruiseSwState", "CLU11", 0),
+    ("CF_Clu_CruiseSwMain", "CLU11", 0),
+    ("CF_Clu_SldMainSW", "CLU11", 0),
+    ("CF_Clu_ParityBit1", "CLU11", 0),
+    ("CF_Clu_VanzDecimal" , "CLU11", 0),
+    ("CF_Clu_Vanz", "CLU11", 0),
+    ("CF_Clu_SPEED_UNIT", "CLU11", 0),
+    ("CF_Clu_DetentOut", "CLU11", 0),
+    ("CF_Clu_RheostatLevel", "CLU11", 0),
+    ("CF_Clu_CluInfo", "CLU11", 0),
+    ("CF_Clu_AmpInfo", "CLU11", 0),
+    ("CF_Clu_AliveCnt1", "CLU11", 0),
+
+    ("ACCEnable", "TCS13", 0),
+    ("ACC_REQ", "TCS13", 0),
+    ("DriverBraking", "TCS13", 0),
+    ("StandStill", "TCS13", 0),
+    ("PBRAKE_ACT", "TCS13", 0),
+
+    ("ESC_Off_Step", "TCS15", 0),
+    ("AVH_LAMP", "TCS15", 0),
+
+    ("CR_Mdps_StrColTq", "MDPS12", 0),
+    ("CF_Mdps_ToiActive", "MDPS12", 0),
+    ("CF_Mdps_ToiUnavail", "MDPS12", 0),
+    ("CF_Mdps_ToiFlt", "MDPS12", 0),
+    ("CR_Mdps_OutTq", "MDPS12", 0),
+
+    ("SAS_Angle", "SAS11", 0),
+    ("SAS_Speed", "SAS11", 0),
+
+    ("MainMode_ACC", "SCC11", 0),
+    ("VSetDis", "SCC11", 0),
+    ("SCCInfoDisplay", "SCC11", 0),
+    ("ACC_ObjDist", "SCC11", 0),
+    ("ACCMode", "SCC12", 1),
+  ]
+
+  checks = [
+    # address, frequency
+    ("MDPS12", 50),
+    ("TCS13", 50),
+    ("TCS15", 10),
+    ("CLU11", 50),
+    ("ESP12", 100),
+    ("CGW1", 10),
+    ("CGW2", 5),
+    ("CGW4", 5),
+    ("WHL_SPD11", 50),
+    ("SAS11", 100),
+  ]
+
+  if not CP.openpilotLongitudinalControl:
+    checks += [
+      ("SCC11", 50),
+      ("SCC12", 50),
+    ]
+
+  if CP.enableBsm:
+    signals += [
+      ("CF_Lca_IndLeft", "LCA11", 0),
+      ("CF_Lca_IndRight", "LCA11", 0),
+    ]
+    checks += [("LCA11", 50)]
+
+  if CP.carFingerprint in (HYBRID_CAR | EV_CAR):
+    if CP.carFingerprint in HYBRID_CAR:
+      signals += [
+        ("CR_Vcu_AccPedDep_Pos", "E_EMS11", 0)
+      ]
+    else:
+      signals += [
+        ("Accel_Pedal_Pos", "E_EMS11", 0)
+      ]
+    checks += [
+      ("E_EMS11", 50),
+    ]
+  else:
+    signals += [
+      ("PV_AV_CAN", "EMS12", 0),
+      ("CF_Ems_AclAct", "EMS16", 0),
+    ]
+    checks += [
+      ("EMS12", 100),
+      ("EMS16", 100),
+    ]
+
+  if CP.gearboxMessage[0] == "CLU15":
+    signals += [
+      ("CF_Clu_InhibitD", "CLU15", 0),
+      ("CF_Clu_InhibitP", "CLU15", 0),
+      ("CF_Clu_InhibitN", "CLU15", 0),
+      ("CF_Clu_InhibitR", "CLU15", 0),
+    ]
+    checks += [
+      ("CLU15", 5)
+    ]
+  elif CP.gearboxMessage[0] == "TCU12":
+    signals += [
+      ("CUR_GR", "TCU12", 0)
+    ]
+    checks += [
+      ("TCU12", 100)
+    ]
+  elif CP.gearboxMessage[0] == "ELECT_GEAR":
+    signals += [("Elect_Gear_Shifter", "ELECT_GEAR", 0)]
+    checks += [("ELECT_GEAR", 20)]
+  else:
+    signals += [
+      ("CF_Lvr_Gear", "LVR12", 0)
+    ]
+    checks += [
+      ("LVR12", 100)
+    ]
+
+  if CP.carFingerprint in FEATURES["use_fca"]:
+    signals += [
+      ("FCA_CmdAct", "FCA11", 0),
+      ("CF_VSM_Warn", "FCA11", 0),
+    ]
+    if not CP.openpilotLongitudinalControl:
+      checks += [("FCA11", 50)]
+  else:
+    signals += [
+      ("AEB_CmdAct", "SCC12", 0),
+      ("CF_VSM_Warn", "SCC12", 0),
+    ]
+
+  return signals, checks
+
+
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
-    self.shifter_values = can_define.dv["LVR12"]["CF_Lvr_Gear"]  # works with preferred and elect gear methods
-    self.shifter_values_tcu = can_define.dv["TCU12"]["CUR_GR"]
+    self.gearbox_msg = CP.gearboxMessage
+    if self.gearbox_msg[0] != "CLU15":  # cluster message doesn't use can definition
+      self.shifter_values = can_define.dv[self.gearbox_msg[0]][self.gearbox_msg[1]]
 
   def update(self, cp, cp_cam):
     ret = car.CarState.new_message()
@@ -86,23 +242,13 @@ class CarState(CarStateBase):
       ret.gas = cp.vl["EMS12"]["PV_AV_CAN"] / 100.
       ret.gasPressed = bool(cp.vl["EMS16"]["CF_Ems_AclAct"])
 
-    # Gear Selection via Cluster - For those Kia/Hyundai which are not fully discovered, we can use the Cluster Indicator for Gear Selection,
-    # as this seems to be standard over all cars, but is not the preferred method.
-    if self.CP.carFingerprint in FEATURES["use_cluster_gears"]:
-      ret.gearShifter = parse_cluster_gear(cp.vl["CLU15"])
+    if self.gearbox_msg[0] == "CLU15":
+      ret.gearShifter = parse_cluster_gear(cp.vl[self.gearbox_msg[0]])
+
+      gear = cp.vl[self.gearbox_msg[0]][self.gearbox_msg[1]]
+      ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(gear))
     else:
-      if self.CP.carFingerprint in FEATURES["use_tcu_gears"]:
-        # Gear Selection via TCU12
-        gear = cp.vl["TCU12"]["CUR_GR"]
-        ret.gearShifter = self.parse_gear_shifter(self.shifter_values_tcu.get(gear))
-      else:
-        # These methods use different messages but the same gear definition
-        if self.CP.carFingerprint in FEATURES["use_elect_gears"]:
-          gear = cp.vl["ELECT_GEAR"]["Elect_Gear_Shifter"]
-        else:
-          # Preferred method, but not not compatible with all Kia/Hyundai's
-          gear = cp.vl["LVR12"]["CF_Lvr_Gear"]
-        ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(gear))
+      ret.gearShifter = parse_cluster_gear(cp.vl[self.gearbox_msg[0]])
 
     if self.CP.carFingerprint in FEATURES["use_fca"]:
       ret.stockAeb = cp.vl["FCA11"]["FCA_CmdAct"] != 0
@@ -128,158 +274,8 @@ class CarState(CarStateBase):
 
     return ret
 
-  @staticmethod
-  def get_can_parser(CP):
-    signals = [
-      # sig_name, sig_address, default
-      ("WHL_SPD_FL", "WHL_SPD11", 0),
-      ("WHL_SPD_FR", "WHL_SPD11", 0),
-      ("WHL_SPD_RL", "WHL_SPD11", 0),
-      ("WHL_SPD_RR", "WHL_SPD11", 0),
-
-      ("YAW_RATE", "ESP12", 0),
-
-      ("CF_Gway_DrvSeatBeltInd", "CGW4", 1),
-
-      ("CF_Gway_DrvSeatBeltSw", "CGW1", 0),
-      ("CF_Gway_DrvDrSw", "CGW1", 0),       # Driver Door
-      ("CF_Gway_AstDrSw", "CGW1", 0),       # Passenger door
-      ("CF_Gway_RLDrSw", "CGW2", 0),        # Rear reft door
-      ("CF_Gway_RRDrSw", "CGW2", 0),        # Rear right door
-      ("CF_Gway_TurnSigLh", "CGW1", 0),
-      ("CF_Gway_TurnSigRh", "CGW1", 0),
-      ("CF_Gway_ParkBrakeSw", "CGW1", 0),
-
-      ("CYL_PRES", "ESP12", 0),
-
-      ("CF_Clu_CruiseSwState", "CLU11", 0),
-      ("CF_Clu_CruiseSwMain", "CLU11", 0),
-      ("CF_Clu_SldMainSW", "CLU11", 0),
-      ("CF_Clu_ParityBit1", "CLU11", 0),
-      ("CF_Clu_VanzDecimal" , "CLU11", 0),
-      ("CF_Clu_Vanz", "CLU11", 0),
-      ("CF_Clu_SPEED_UNIT", "CLU11", 0),
-      ("CF_Clu_DetentOut", "CLU11", 0),
-      ("CF_Clu_RheostatLevel", "CLU11", 0),
-      ("CF_Clu_CluInfo", "CLU11", 0),
-      ("CF_Clu_AmpInfo", "CLU11", 0),
-      ("CF_Clu_AliveCnt1", "CLU11", 0),
-
-      ("ACCEnable", "TCS13", 0),
-      ("ACC_REQ", "TCS13", 0),
-      ("DriverBraking", "TCS13", 0),
-      ("StandStill", "TCS13", 0),
-      ("PBRAKE_ACT", "TCS13", 0),
-
-      ("ESC_Off_Step", "TCS15", 0),
-      ("AVH_LAMP", "TCS15", 0),
-
-      ("CR_Mdps_StrColTq", "MDPS12", 0),
-      ("CF_Mdps_ToiActive", "MDPS12", 0),
-      ("CF_Mdps_ToiUnavail", "MDPS12", 0),
-      ("CF_Mdps_ToiFlt", "MDPS12", 0),
-      ("CR_Mdps_OutTq", "MDPS12", 0),
-
-      ("SAS_Angle", "SAS11", 0),
-      ("SAS_Speed", "SAS11", 0),
-
-      ("MainMode_ACC", "SCC11", 0),
-      ("VSetDis", "SCC11", 0),
-      ("SCCInfoDisplay", "SCC11", 0),
-      ("ACC_ObjDist", "SCC11", 0),
-      ("ACCMode", "SCC12", 1),
-    ]
-
-    checks = [
-      # address, frequency
-      ("MDPS12", 50),
-      ("TCS13", 50),
-      ("TCS15", 10),
-      ("CLU11", 50),
-      ("ESP12", 100),
-      ("CGW1", 10),
-      ("CGW2", 5),
-      ("CGW4", 5),
-      ("WHL_SPD11", 50),
-      ("SAS11", 100),
-    ]
-
-    if not CP.openpilotLongitudinalControl:
-      checks += [
-        ("SCC11", 50),
-        ("SCC12", 50),
-      ]
-
-    if CP.enableBsm:
-      signals += [
-        ("CF_Lca_IndLeft", "LCA11", 0),
-        ("CF_Lca_IndRight", "LCA11", 0),
-      ]
-      checks += [("LCA11", 50)]
-
-    if CP.carFingerprint in (HYBRID_CAR | EV_CAR):
-      if CP.carFingerprint in HYBRID_CAR:
-        signals += [
-          ("CR_Vcu_AccPedDep_Pos", "E_EMS11", 0)
-        ]
-      else:
-        signals += [
-          ("Accel_Pedal_Pos", "E_EMS11", 0)
-        ]
-      checks += [
-        ("E_EMS11", 50),
-      ]
-    else:
-      signals += [
-        ("PV_AV_CAN", "EMS12", 0),
-        ("CF_Ems_AclAct", "EMS16", 0),
-      ]
-      checks += [
-        ("EMS12", 100),
-        ("EMS16", 100),
-      ]
-
-    if CP.carFingerprint in FEATURES["use_cluster_gears"]:
-      signals += [
-        ("CF_Clu_InhibitD", "CLU15", 0),
-        ("CF_Clu_InhibitP", "CLU15", 0),
-        ("CF_Clu_InhibitN", "CLU15", 0),
-        ("CF_Clu_InhibitR", "CLU15", 0),
-      ]
-      checks += [
-        ("CLU15", 5)
-      ]
-    elif CP.carFingerprint in FEATURES["use_tcu_gears"]:
-      signals += [
-        ("CUR_GR", "TCU12", 0)
-      ]
-      checks += [
-        ("TCU12", 100)
-      ]
-    elif CP.carFingerprint in FEATURES["use_elect_gears"]:
-      signals += [("Elect_Gear_Shifter", "ELECT_GEAR", 0)]
-      checks += [("ELECT_GEAR", 20)]
-    else:
-      signals += [
-        ("CF_Lvr_Gear", "LVR12", 0)
-      ]
-      checks += [
-        ("LVR12", 100)
-      ]
-
-    if CP.carFingerprint in FEATURES["use_fca"]:
-      signals += [
-        ("FCA_CmdAct", "FCA11", 0),
-        ("CF_VSM_Warn", "FCA11", 0),
-      ]
-      if not CP.openpilotLongitudinalControl:
-        checks += [("FCA11", 50)]
-    else:
-      signals += [
-        ("AEB_CmdAct", "SCC12", 0),
-        ("CF_VSM_Warn", "SCC12", 0),
-      ]
-
+  def get_can_parser(self, CP):
+    signals, checks = get_can_signals(CP)
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 0)
 
   @staticmethod

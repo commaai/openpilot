@@ -253,6 +253,18 @@ class CarInterface(CarInterfaceBase):
     ret.enableCamera = True
     ret.enableBsm = 0x58b in fingerprint[0]
 
+    # LVR12 is the preferred gear message, but not not compatible with all Kia/Hyundai's
+    if 0x367 in fingerprint[0]:
+      ret.gearboxMessage = ["LVR12", "CF_Lvr_Gear"]
+    elif 0x372 in fingerprint[0]:
+      ret.gearboxMessage = ["ELECT_GEAR", "Elect_Gear_Shifter"]
+    elif 0x112 in fingerprint[0]:
+      ret.gearboxMessage = ["TCU12", "CUR_GR"]
+    else:  # 0x52a
+      # For those Kia/Hyundai which are not fully discovered, we can use the Cluster Indicator for Gear Selection,
+      # as this seems to be standard over all cars, but is not the preferred method.
+      ret.gearboxMessage = ["CLU15", "CF_Clu_InhibitD"]
+
     return ret
 
   def update(self, c, can_strings):

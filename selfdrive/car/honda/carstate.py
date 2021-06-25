@@ -204,7 +204,7 @@ class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
-    self.gearbox_msg = "GEARBOX"
+    self.gearbox_msg = "GEARBOX"  # TODO: do this in interface and don't pass gearbox_msg to get_can_signals
     if CP.carFingerprint == CAR.ACCORD and CP.transmissionType == TransmissionType.cvt:
       self.gearbox_msg = "GEARBOX_15T"
 
