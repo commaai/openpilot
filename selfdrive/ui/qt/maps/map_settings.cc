@@ -87,8 +87,9 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
       RequestRepeater* repeater = new RequestRepeater(this, QString::fromStdString(url), "", 10);
 
       QObject::connect(repeater, &RequestRepeater::receivedResponse, [](QString resp) {
-        if (resp != "null") {
-          Params().put("NavDestination", resp.toStdString());
+        auto params = Params();
+        if (resp != "null" && params.get("NavDestination").empty()) {
+          params.put("NavDestination", resp.toStdString());
         }
       });
     }
@@ -178,7 +179,7 @@ void MapPanel::parseResponse(const QString &response) {
       });
 
       recent_layout->addWidget(widget);
-      recent_layout->addSpacing(20);
+      recent_layout->addSpacing(10);
       has_recents = true;
     }
   }
