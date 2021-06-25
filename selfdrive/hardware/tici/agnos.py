@@ -105,8 +105,8 @@ def verify_partition(target_slot_number, partition):
 
       pos = 0
       chunk_size = 1024 * 1024
-      while pos < partition_size - 1:
-        n = min(chunk_size, partition_size - pos - 1)
+      while pos < partition_size:
+        n = min(chunk_size, partition_size - pos)
         raw_hash.update(out.read(n))
         pos += n
 
