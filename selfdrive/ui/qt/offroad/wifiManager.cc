@@ -68,6 +68,7 @@ bool compare_by_strength(const Network &a, const Network &b) {
 WifiManager::WifiManager(QWidget* parent) : QWidget(parent) {
   qDBusRegisterMetaType<Connection>();
   qDBusRegisterMetaType<IpConfig>();
+  qDBusRegisterMetaType<QDBusObjectPath>();
   connecting_to_network = "";
   adapter = get_adapter();
 
@@ -79,6 +80,8 @@ WifiManager::WifiManager(QWidget* parent) : QWidget(parent) {
   QDBusInterface nm(nm_service, adapter, device_iface, bus);
   bus.connect(nm_service, adapter, device_iface, "StateChanged", this, SLOT(stateChange(unsigned int, unsigned int, unsigned int)));
   bus.connect(nm_service, adapter, props_iface, "PropertiesChanged", this, SLOT(propertyChange(QString, QVariantMap, QStringList)));
+//  qDebug() << "removed:" << bus.connect(nm_service, adapter, props_iface, "ConnectionRemoved", this, SLOT(connectionRemoved(QDBusObjectPath)));
+//  qDebug() << "new con:" << bus.connect(nm_service, adapter, props_iface, "NewConnection", this, SLOT(newConnection(QDBusObjectPath)));
 
   QDBusInterface device_props(nm_service, adapter, props_iface, bus);
   device_props.setTimeout(dbus_timeout);
@@ -372,7 +375,17 @@ void WifiManager::propertyChange(const QString &interface, const QVariantMap &pr
   if (interface == wireless_device_iface && props.contains("LastScan")) {
     refreshNetworks();  // TODO: only refresh on firstScan, then use AccessPointAdded and Removed signals
     emit refreshSignal();
+  } else if (props.contains("AvailableConnections")) {
+    qDebug() << props;
   }
+}
+
+void WifiManager::connectionRemoved(const QDBusObjectPath &path) {
+  qDebug() << "CONNECTION REMOVED!";
+}
+
+void WifiManager::newConnection(const QDBusObjectPath &path) {
+  qDebug() << "CONNECTION REMOVED!";
 }
 
 void WifiManager::disconnect() {
