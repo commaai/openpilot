@@ -77,7 +77,6 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
     RequestRepeater* repeater = new RequestRepeater(this, QString::fromStdString(url), "ApiCache_NavDestinations", 30);
     QObject::connect(repeater, &RequestRepeater::receivedResponse, this, &MapPanel::parseResponse);
   }
-  parseResponse(QString::fromStdString(util::read_file("/home/batman/example_response.txt")));
 }
 
 void MapPanel::clear() {
