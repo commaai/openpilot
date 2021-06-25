@@ -3,25 +3,18 @@ from cereal import car
 from selfdrive.car.hyundai.values import DBC, STEER_THRESHOLD, USE_FCA, EV_CAR, HYBRID_CAR
 from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
+from opendbc.can.can_define import CANDefine
 from selfdrive.config import Conversions as CV
 
 GearShifter = car.CarState.GearShifter
 
 
-def parse_cluster_gear(cluster_gear):
-  if cluster_gear["CF_Clu_InhibitD"] == 1:
-    return GearShifter.drive
-  elif cluster_gear["CF_Clu_InhibitN"] == 1:
-    return GearShifter.neutral
-  elif cluster_gear["CF_Clu_InhibitP"] == 1:
-    return GearShifter.park
-  elif cluster_gear["CF_Clu_InhibitR"] == 1:
-    return GearShifter.reverse
-  else:
-    return GearShifter.unknown
-
-
 class CarState(CarStateBase):
+  def __init__(self, CP):
+    super().__init__(CP)
+    can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
+    self.shifter_values = can_define.dv["CLU15"]["CF_Clu_Gear"]
+
   def update(self, cp, cp_cam):
     ret = car.CarState.new_message()
 
@@ -79,7 +72,8 @@ class CarState(CarStateBase):
       ret.gas = cp.vl["EMS12"]["PV_AV_CAN"] / 100.
       ret.gasPressed = bool(cp.vl["EMS16"]["CF_Ems_AclAct"])
 
-    ret.gearShifter = parse_cluster_gear(cp.vl["CLU15"])
+    gear = self.shifter_values.get(cp.vl["CLU15"]["CF_Clu_Gear"])
+    ret.gearShifter = self.parse_gear_shifter(gear)
 
     if self.CP.carFingerprint in USE_FCA:
       ret.stockAeb = cp.vl["FCA11"]["FCA_CmdAct"] != 0
