@@ -41,9 +41,9 @@
   },
   {
     "name": "splash",
-    "url": "https://commadist.azureedge.net/agnosupdate/splash-4cfb3d66b51fd6f014eb99a7e1ed2a1fafbda3d1d5c6c1b94cc890e08e166c2b.img.xz",
-    "hash": "4cfb3d66b51fd6f014eb99a7e1ed2a1fafbda3d1d5c6c1b94cc890e08e166c2b",
-    "hash_raw": "4cfb3d66b51fd6f014eb99a7e1ed2a1fafbda3d1d5c6c1b94cc890e08e166c2b",
+    "url": "https://commadist.azureedge.net/agnosupdate/splash-5c61260048f22ede6e6343fabb27f6ff73f9271f4751a01aaf7abf097afc1f08.img.xz",
+    "hash": "5c61260048f22ede6e6343fabb27f6ff73f9271f4751a01aaf7abf097afc1f08",
+    "hash_raw": "5c61260048f22ede6e6343fabb27f6ff73f9271f4751a01aaf7abf097afc1f08",
     "size": 34226176,
     "sparse": false,
     "full_check": true,
