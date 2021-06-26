@@ -107,9 +107,10 @@ void Networking::requestScan() {
 }
 
 void Networking::refresh() {
-  if (this->isVisible() || wifi->knownConnections.isEmpty()) {
+  if (this->isVisible() || firstRefresh) {
     wifiWidget->refresh();
     an->refresh();
+    firstRefresh = false;
   }
 }
 

@@ -71,6 +71,7 @@ private:
   AdvancedNetworking* an = nullptr;
   bool ui_setup_complete = false;
   bool show_advanced;
+  bool firstRefresh = true;
 
   WifiUI* wifiWidget;
   WifiManager* wifi = nullptr;
