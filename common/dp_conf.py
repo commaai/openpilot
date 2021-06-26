@@ -18,16 +18,16 @@ confs = [
 
   {'name': 'dp_atl', 'default': False, 'type': 'Bool', 'conf_type': ['param', 'struct'], 'update_once': True},
   # dashcam related
-  {'name': 'dp_dashcamd', 'default': 0, 'type': 'Bool', 'conf_type': ['param', 'struct']},
+  {'name': 'dp_dashcamd', 'default': 1, 'type': 'Bool', 'conf_type': ['param', 'struct']},
   # {'name': 'dp_dashcam_ui', 'default': 0, 'type': 'Bool', 'conf_type': ['param', 'struct']},
   # auto shutdown
-  {'name': 'dp_auto_shutdown', 'default': False, 'type': 'Bool', 'conf_type': ['param', 'struct']},
-  {'name': 'dp_auto_shutdown_in', 'default': 90, 'type': 'UInt16', 'min': 1, 'max': 65535, 'depends': [{'name': 'dp_auto_shutdown', 'vals': [True]}], 'conf_type': ['param']},
+  {'name': 'dp_auto_shutdown', 'default': True, 'type': 'Bool', 'conf_type': ['param', 'struct']},
+  {'name': 'dp_auto_shutdown_in', 'default': 10, 'type': 'UInt16', 'min': 1, 'max': 65535, 'depends': [{'name': 'dp_auto_shutdown', 'vals': [True]}], 'conf_type': ['param']},
   # service
   {'name': 'dp_updated', 'default': True, 'type': 'Bool', 'conf_type': ['param']},
-  {'name': 'dp_logger', 'default': True, 'type': 'Bool', 'conf_type': ['param']},
-  {'name': 'dp_athenad', 'default': True, 'type': 'Bool', 'depends': [{'name': 'dp_atl', 'vals': [False]}], 'conf_type': ['param', 'struct']},
-  {'name': 'dp_uploader', 'default': True, 'type': 'Bool', 'depends': [{'name': 'dp_atl', 'vals': [False]}], 'conf_type': ['param', 'struct']},
+  {'name': 'dp_logger', 'default': False, 'type': 'Bool', 'conf_type': ['param']},
+  {'name': 'dp_athenad', 'default': False, 'type': 'Bool', 'depends': [{'name': 'dp_atl', 'vals': [False]}], 'conf_type': ['param', 'struct']},
+  {'name': 'dp_uploader', 'default': False, 'type': 'Bool', 'depends': [{'name': 'dp_atl', 'vals': [False]}], 'conf_type': ['param', 'struct']},
   # {'name': 'dp_gpxd', 'default': False, 'type': 'Bool', 'conf_type': ['param']},
   {'name': 'dp_hotspot_on_boot', 'default': False, 'type': 'Bool', 'conf_type': ['param']},
   # lat ctrl
@@ -35,20 +35,20 @@ confs = [
   {'name': 'dp_steering_on_signal', 'default': False, 'type': 'Bool', 'depends': [{'name': 'dp_lat_ctrl', 'vals': [True]}], 'conf_type': ['param', 'struct']},
   {'name': 'dp_signal_off_delay', 'default': 0, 'type': 'UInt8', 'min': 0, 'max': 10, 'conf_type': ['param', 'struct']},
   # assist/auto lane change
-  {'name': 'dp_lateral_mode', 'default': 1, 'type': 'UInt8', 'min': 0, 'max': 2, 'conf_type': ['param', 'struct']},
-  {'name': 'dp_lc_min_mph', 'default': 45, 'type': 'Float32', 'min': 0, 'max': 255., 'depends': [{'name': 'dp_lateral_mode', 'vals': [1,2]}], 'conf_type': ['param', 'struct']},
+  {'name': 'dp_lateral_mode', 'default': 2, 'type': 'UInt8', 'min': 0, 'max': 2, 'conf_type': ['param', 'struct']},
+  {'name': 'dp_lc_min_mph', 'default': 30, 'type': 'Float32', 'min': 0, 'max': 255., 'depends': [{'name': 'dp_lateral_mode', 'vals': [1,2]}], 'conf_type': ['param', 'struct']},
   {'name': 'dp_lc_auto_cont', 'default': False, 'type': 'Bool', 'depends': [{'name': 'dp_lateral_mode', 'vals': [2]}], 'conf_type': ['param', 'struct']},
-  {'name': 'dp_lc_auto_min_mph', 'default': 60, 'type': 'Float32', 'min': 0, 'max': 255., 'depends': [{'name': 'dp_lateral_mode', 'vals': [2]}], 'conf_type': ['param', 'struct']},
-  {'name': 'dp_lc_auto_delay', 'default': 3, 'type': 'Float32', 'min': 0, 'max': 10., 'depends': [{'name': 'dp_lateral_mode', 'vals': [2]}], 'conf_type': ['param', 'struct']},
+  {'name': 'dp_lc_auto_min_mph', 'default': 40, 'type': 'Float32', 'min': 0, 'max': 255., 'depends': [{'name': 'dp_lateral_mode', 'vals': [2]}], 'conf_type': ['param', 'struct']},
+  {'name': 'dp_lc_auto_delay', 'default': 0, 'type': 'Float32', 'min': 0, 'max': 10., 'depends': [{'name': 'dp_lateral_mode', 'vals': [2]}], 'conf_type': ['param', 'struct']},
   # long ctrl
   {'name': 'dp_allow_gas', 'default': False, 'type': 'Bool', 'depends': [{'name': 'dp_atl', 'vals': [False]}], 'conf_type': ['param', 'struct']},
   # {'name': 'dp_max_ctrl_speed', 'default': 92., 'type': 'Float32', 'conf_type': ['param', 'struct']},
   # {'name': 'dp_lead_car_alert', 'default': False, 'type': 'Bool', 'conf_type': ['param', 'struct']},
   # {'name': 'dp_lead_car_away_alert', 'default': True, 'type': 'Bool', 'conf_type': ['param']},
 
-  {'name': 'dp_following_profile_ctrl', 'default': False, 'type': 'Bool', 'depends': [{'name': 'dp_atl', 'vals': [False]}], 'conf_type': ['param', 'struct']},
-  {'name': 'dp_following_profile', 'default': 0, 'type': 'UInt8', 'min': 0, 'max': 2, 'depends': [{'name': 'dp_atl', 'vals': [False]}, {'name': 'dp_following_profile_ctrl', 'vals': [True]}], 'conf_type': ['param', 'struct']},
-  {'name': 'dp_accel_profile_ctrl', 'default': False, 'type': 'Bool', 'depends': [{'name': 'dp_atl', 'vals': [False]}], 'conf_type': ['param', 'struct']},
+  {'name': 'dp_following_profile_ctrl', 'default': True, 'type': 'Bool', 'depends': [{'name': 'dp_atl', 'vals': [False]}], 'conf_type': ['param', 'struct']},
+  {'name': 'dp_following_profile', 'default': 2, 'type': 'UInt8', 'min': 0, 'max': 2, 'depends': [{'name': 'dp_atl', 'vals': [False]}, {'name': 'dp_following_profile_ctrl', 'vals': [True]}], 'conf_type': ['param', 'struct']},
+  {'name': 'dp_accel_profile_ctrl', 'default': True, 'type': 'Bool', 'depends': [{'name': 'dp_atl', 'vals': [False]}], 'conf_type': ['param', 'struct']},
   {'name': 'dp_accel_profile', 'default': 0, 'type': 'UInt8', 'min': 0, 'max': 2, 'depends': [{'name': 'dp_atl', 'vals': [False]}, {'name': 'dp_accel_profile_ctrl', 'vals': [True]}], 'conf_type': ['param', 'struct']},
   # safety
   {'name': 'dp_gear_check', 'default': True, 'type': 'Bool', 'depends': [{'name': 'dp_atl', 'vals': [False]}], 'conf_type': ['param', 'struct']},
@@ -62,10 +62,10 @@ confs = [
   {'name': 'dp_ui_face', 'default': True, 'type': 'Bool', 'depends': [], 'conf_type': ['param', 'struct']},
   {'name': 'dp_ui_lane', 'default': True, 'type': 'Bool', 'depends': [], 'conf_type': ['param', 'struct']},
   {'name': 'dp_ui_lead', 'default': True, 'type': 'Bool', 'depends': [], 'conf_type': ['param', 'struct']},
-  {'name': 'dp_ui_dev', 'default': False, 'type': 'Bool', 'conf_type': ['param', 'struct']},
-  {'name': 'dp_ui_dev_mini', 'default': False, 'type': 'Bool', 'conf_type': ['param', 'struct']},
-  {'name': 'dp_ui_blinker', 'default': False, 'type': 'Bool', 'depends': [], 'conf_type': ['param', 'struct']},
-  {'name': 'dp_ui_brightness', 'default': 0, 'type': 'UInt8', 'min': 0, 'max': 100, 'conf_type': ['param', 'struct']},
+  {'name': 'dp_ui_dev', 'default': True, 'type': 'Bool', 'conf_type': ['param', 'struct']},
+  {'name': 'dp_ui_dev_mini', 'default': True, 'type': 'Bool', 'conf_type': ['param', 'struct']},
+  {'name': 'dp_ui_blinker', 'default': True, 'type': 'Bool', 'depends': [], 'conf_type': ['param', 'struct']},
+  {'name': 'dp_ui_brightness', 'default': 0, 'type': 'Int8', 'min': 0, 'max': 100, 'conf_type': ['param', 'struct']},
   {'name': 'dp_ui_volume', 'default': -5, 'type': 'Int8', 'min': -5, 'max': 100, 'conf_type': ['param', 'struct']},
   # Apps
   # {'name': 'dp_app_auto_update', 'default': True, 'type': 'Bool', 'conf_type': ['param', 'struct']},

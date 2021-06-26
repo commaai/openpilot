@@ -141,6 +141,16 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     timebombWarn @110;
     timebombBypassing @111;
     timebombBypassed @112;
+
+    #kumar
+    longControlDisabled @113;
+    preKeepHandsOnWheel @114;
+    promptKeepHandsOnWheel @115;
+    keepHandsOnWheel @116;
+    #map
+    speedLimitActive @117;
+    speedLimitDecrease @118;
+    speedLimitIncrease @119;
   }
 }
 
@@ -206,9 +216,16 @@ struct CarState {
   leftBlindspot @33 :Bool; # Is there something blocking the left lane change
   rightBlindspot @34 :Bool; # Is there something blocking the right lane change
 
+  #kumar
+  engineRPM @37 :Float32; # Engine RPM
+  parkingLightON @38 :Bool; # Parking Light ON
+  headlightON @39 :Bool; # Low Beam ON
+  lightSensor @40 :Float32; # Auto Headlight Sensor
+  meterDimmed @41 :Bool; # Combination Metre Dimmer ON
+
   # dp
-  lkMode @37 :Bool;
-  stopSteering @38 :Bool; # timebomb - stopSteering
+  lkMode @42 :Bool;
+  stopSteering @43 :Bool; # timebomb - stopSteering
 
   struct WheelSpeeds {
     # optional wheel speeds
@@ -225,6 +242,7 @@ struct CarState {
     speedOffset @3 :Float32;
     standstill @4 :Bool;
     nonAdaptive @5 :Bool;
+    speedLimit @6 :Float32;
   }
 
   enum GearShifter {

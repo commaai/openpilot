@@ -75,3 +75,7 @@ comma*.sh
 
 selfdrive/modeld/thneed/compile
 models/*.thneed
+
+#map
+installer/custom/termux-elf-cleaner/termux-elf-cleaner
+rednose/helpers/ekf_sym_pyx.cpp

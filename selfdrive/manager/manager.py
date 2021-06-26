@@ -36,6 +36,13 @@ def manager_init():
     ("CompletedTrainingVersion", "0"),
     ("HasAcceptedTerms", "0"),
     ("OpenpilotEnabledToggle", "1"),
+    ("ShowDebugUI", "1"),
+    ("SpeedLimitControl", "1"),
+    ("SpeedLimitPercOffset", "1"),
+    ("SpeedLimitDelayIncrease", "1"),
+    ("TurnSpeedControl", "1"),
+    ("TurnVisionControl", "1"),
+    ("HandsOnWheelMonitoring", "1"),
   ]
   if not PC:
     default_params.append(("LastUpdateTime", datetime.datetime.utcnow().isoformat().encode('utf8')))
@@ -49,6 +56,10 @@ def manager_init():
   for k, v in default_params:
     if params.get(k) is None:
       params.put(k, v)
+
+  # parameters set by Enviroment Varables
+  if os.getenv("HANDSMONITORING") is not None:
+    params.put("HandsOnWheelMonitoring", str(int(os.getenv("HANDSMONITORING"))))
 
   # dp init params
   init_params_vals(params)

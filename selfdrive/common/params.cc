@@ -290,6 +290,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"dp_panda_fake_black", PERSISTENT},
     {"dp_panda_no_gps", PERSISTENT},
     {"dp_last_candidate", PERSISTENT},
+    {"HandsOnWheelMonitoring", PERSISTENT},
 };
 
 } // namespace

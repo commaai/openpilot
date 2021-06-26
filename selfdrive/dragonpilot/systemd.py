@@ -19,7 +19,15 @@ from common.dp_time import LAST_MODIFIED_SYSTEMD
 from selfdrive.dragonpilot.dashcamd import Dashcamd
 from selfdrive.hardware import EON
 
-PARAM_PATH = params.get_params_path() + '/d/'
+PARAM_PATH = '/data/params/d/'
+files = os.listdir(PARAM_PATH)
+for file in files:
+  print(file)
+if not os.path.exists(PARAM_PATH + "dp_last_modified"):
+  params.put('dp_last_modified',str(floor(time.time())))
+  print("dp_last_modified read from file is " + str(params.get("dp_last_modified")))
+  if os.path.exists(PARAM_PATH + "dp_last_modified"):
+    print("dp_last_modified created succesfully")
 
 DELAY = 0.5 # 2hz
 HERTZ = 1/DELAY
@@ -81,7 +89,7 @@ def confd_thread():
         last_modified = modified
     '''
     ===================================================
-    conditionally set update_params to true 
+    conditionally set update_params to true
     ===================================================
     '''
     # force updating param when `started` changed
@@ -93,7 +101,7 @@ def confd_thread():
       update_params = True
     '''
     ===================================================
-    conditionally update dp param base on stock param 
+    conditionally update dp param base on stock param
     ===================================================
     '''
     # if update_params and params.get("LaneChangeEnabled") == b"1":

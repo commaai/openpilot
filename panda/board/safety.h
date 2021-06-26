@@ -209,7 +209,7 @@ void generic_rx_checks(bool stock_ecu_detected) {
   gas_pressed_prev = gas_pressed;
 
   // exit controls on rising edge of brake press
-  if (brake_pressed && (!brake_pressed_prev || vehicle_moving)) {
+  if (!unsafe_mode && brake_pressed && (!brake_pressed_prev || vehicle_moving)) {
     controls_allowed = 0;
   }
   brake_pressed_prev = brake_pressed;

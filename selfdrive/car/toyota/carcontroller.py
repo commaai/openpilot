@@ -74,13 +74,26 @@ class CarController():
     pcm_accel_cmd, self.accel_steady = accel_hysteresis(pcm_accel_cmd, self.accel_steady, enabled)
     pcm_accel_cmd = clip(pcm_accel_cmd * CarControllerParams.ACCEL_SCALE, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
 
+    #alwaysonkumar
+    if CS.CP.enableGasInterceptor:
+      if CS.out.gasPressed:
+        pcm_accel_cmd = max(pcm_accel_cmd, 0.06)
+      if CS.out.brakePressed:
+        apply_gas = 0.0
+        pcm_accel_cmd = min(pcm_accel_cmd, 0.00)
+    else:
+      if CS.out.gasPressed:
+        pcm_accel_cmd = max(pcm_accel_cmd, 0.0)
+      if CS.out.brakePressed and CS.out.vEgo > 1:
+        pcm_accel_cmd = min(pcm_accel_cmd, 0.0)
+
     # steer torque
     new_steer = int(round(actuators.steer * CarControllerParams.STEER_MAX))
     apply_steer = apply_toyota_steer_torque_limits(new_steer, self.last_steer, CS.out.steeringTorqueEps, CarControllerParams)
     self.steer_rate_limited = new_steer != apply_steer
 
     # Cut steering while we're in a known fault state (2s)
-    if not enabled or CS.steer_state in [9, 25] or abs(CS.out.steeringRateDeg) > 100 or (abs(CS.out.steeringAngleDeg) > 150 and CS.CP.carFingerprint in [CAR.RAV4H, CAR.PRIUS]):
+    if not enabled or CS.steer_state in [9, 25] or abs(CS.out.steeringRateDeg) > 100 or (abs(CS.out.steeringAngleDeg) > 400 and CS.CP.carFingerprint in [CAR.RAV4H, CAR.PRIUS]):
       apply_steer = 0
       apply_steer_req = 0
     else:
@@ -141,9 +154,9 @@ class CarController():
       elif pcm_cancel_cmd and CS.CP.carFingerprint == CAR.LEXUS_IS:
         can_sends.append(create_acc_cancel_command(self.packer))
       elif CS.CP.openpilotLongitudinalControl:
-        can_sends.append(create_accel_command(self.packer, pcm_accel_cmd, pcm_cancel_cmd, self.standstill_req, lead))
+        can_sends.append(create_accel_command(self.packer, pcm_accel_cmd, pcm_cancel_cmd, self.standstill_req, lead, CS.distance))
       else:
-        can_sends.append(create_accel_command(self.packer, 0, pcm_cancel_cmd, False, lead))
+        can_sends.append(create_accel_command(self.packer, 0, pcm_cancel_cmd, False, lead, CS.distance))
 
     if frame % 2 == 0 and CS.CP.enableGasInterceptor:
       # send exactly zero if gas cmd is zero. Interceptor will send the max between read value and gas cmd.

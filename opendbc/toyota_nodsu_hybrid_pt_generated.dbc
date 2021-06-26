@@ -347,6 +347,14 @@ BO_ 1163 RSA3: 8 FCM
  SG_ OVSPVALH : 27|4@0+ (1,-5) [0|0] "" XXX
  SG_ TSRSPU : 33|2@0+ (1,0) [0|0] "" XXX
 
+BO_ 956 GEAR_PACKET2: 8 XXX
+ SG_ SPORT_ON : 2|1@0+ (1,0) [0|1] "" XXX
+ SG_ GEAR : 13|6@0+ (1,0) [0|63] "" XXX
+ SG_ SPORT_GEAR_ON : 33|1@0+ (1,0) [0|1] "" XXX
+ SG_ SPORT_GEAR : 38|3@0+ (1,0) [0|7] "" XXX
+ SG_ ECON_ON : 40|1@0+ (1,0) [0|1] "" XXX
+ SG_ DRIVE_ENGAGED : 47|1@0+ (1,0) [0|1] "" XXX
+
 CM_ SG_ 36 ACCEL_Y "unit is tbd";
 CM_ SG_ 36 YAW_RATE "verify";
 CM_ SG_ 36 STEERING_TORQUE "does not seem the steer torque, tbd";
@@ -391,6 +399,8 @@ VAL_ 614 STATE 3 "enabled" 1 "disabled";
 VAL_ 614 DIRECTION_CMD 3 "right" 2 "center" 1 "left";
 VAL_ 643 STATE 0 "normal" 1 "adaptive_cruise_control" 3 "emergency_braking";
 VAL_ 921 CRUISE_CONTROL_STATE 2 "disabled" 11 "hold" 10 "hold_waiting_user_cmd" 6 "enabled" 5 "faulted";
+VAL_ 956 SPORT_ON 0 "off" 1 "on";
+VAL_ 956 ECON_ON 0 "off" 1 "on";
 VAL_ 1042 LDA_ALERT 3 "hold with continuous beep" 2 "LDA unavailable" 1 "hold" 0 "none";
 VAL_ 1042 BARRIERS 3 "both" 2 "right" 1 "left" 0 "none";
 VAL_ 1042 RIGHT_LINE 3 "orange" 2 "faded" 1 "solid" 0 "none";

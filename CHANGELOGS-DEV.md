@@ -4,6 +4,9 @@ dragonpilot 0.8.5-3
 * Added Steering Ratio controller.
 * Reduce Accel Profile to 3 modes only. (1.8s / 1.5s / 1.2s)
 * Bug fixes.
+* Added gas press to override mapd.
+* Physical shut off button for distance button in op_edit.
+* Corolla_tss2 fix.
 
 dragonpilot 0.8.5-2
 ========================
@@ -16,7 +19,7 @@ dragonpilot 0.8.5-1
 ========================
 * Based on openpilot 0.8.5 devel.
 * 基於 openpilot 0.8.5 devel.
-* Support 1+3t / C2 / Jetson Xavier NX. 
+* Support 1+3t / C2 / Jetson Xavier NX.
 * 支持 1+3t / C2 / Jetson Xavier NX.
 * No White/Grey Panda Support.
 * 不支持白灰熊.
@@ -83,7 +86,7 @@ dragonpilot 0.7.10.1
 * 加入 Dynamic gas Lite。(感謝 @toyboxZ 提供)
 * Added Dynamic Gas Lite. (Thanks to @toyboxZ)
 * 加入來自 afa 的 Honda inspire, accord, crv SnG 優化。(感謝 @menwenliang 提供)
-* Added Honda inspire, accord, crv SnG optimisation from afa fork. (Thanks to @menwenliang) 
+* Added Honda inspire, accord, crv SnG optimisation from afa fork. (Thanks to @menwenliang)
 * 加入 dp_toyota_lowest_cruise_override_vego。(感謝 @toyboxZ 提供)
 * Added dp_toyota_lowest_cruise_override_vego. (Thanks to @toyboxZ)
 
@@ -145,7 +148,7 @@ dragonpilot 0.7.8.0
 * 將警示訊息更改為類似於概念 UI 的設計。
 * Alert messages changed to concept UI alike design.
 * 當 manager 出現錯誤後，按 Exit 按鈕會執行 reset_update 腳本。
-* Added ability to execute reset_update.sh when press "Exit" button once manager returned errors. 
+* Added ability to execute reset_update.sh when press "Exit" button once manager returned errors.
 
 dragonpilot 0.7.7.3
 ========================
@@ -184,7 +187,7 @@ dragonpilot 0.7.7.1
 * 加入回調校介面。(感謝 @Kent)
 * Re-added Dev UI. (Thanks to @Kent)
 * 加入 "dp_lqr" 設定來強制使用 RAV4 的 lqr 調校。(感謝 @eisenheim)
-* Added "dp_lqr" setting to force enable lqr tuning from RAV4. (Thanks to eisenheim) 
+* Added "dp_lqr" setting to force enable lqr tuning from RAV4. (Thanks to eisenheim)
 
 dragonpilot 0.7.7.0
 ========================
@@ -237,7 +240,7 @@ dragonpilot 0.7.5.3
 * C2 支援自動關機「DragonAutoShutdownAt」參數。(感謝 @cgw1968 建議)
 * C2 to support auto shutdown "DragonAutoShutDownAt" param. (Thanks to @cgw1968)
 * 修正出現「pedalPressed」的錯誤。(感謝 @Wei 回報)
-* Fixed issue showing "pedalPressed" error. (Thanks to @Wei) 
+* Fixed issue showing "pedalPressed" error. (Thanks to @Wei)
 * 將剎車狀熊顯示於 dp 資訊欄。
 * Added brake indicator to dp infobar.
 * 修正「溫度監控」燈示。
@@ -245,7 +248,7 @@ dragonpilot 0.7.5.3
 * 加入「方向燈取消控制」延遲控制設。(感謝 @wabes 建議)
 * Added delay config to "Disable Lat Control on Blinker". (Thanks to @wabes)
 * 加入巴西版 2020 Corolla Hybrid 指紋v2。(感謝 @berno22 提供)
-* Added Brazil 2020 Corolla Hybrid FPv2. (Thanks to @berno22) 
+* Added Brazil 2020 Corolla Hybrid FPv2. (Thanks to @berno22)
 
 dragonpilot 0.7.5.2
 ========================
@@ -260,7 +263,7 @@ dragonpilot 0.7.5.2
 * 修正「位智模式」無法顯示警示的問題。(感謝 @axandres 回報)
 * Fixed alert issue in waze mode. (Thanks to @axandres)
 * 修正無法顯示更新中圖示的問題。
-* Fixed unable to display "UPDATING" icon issue. 
+* Fixed unable to display "UPDATING" icon issue.
 * 加入「允許多次自動換道」功能。(感謝 @阿濤 建議)
 * Added "Allow Continuous Auto Lane Change" Toggle. (Thanks to @阿濤)
 * 修正開機後設定頁面有時會錯誤的問題。(感謝 @salmankhan、@Wei 回報)
@@ -298,14 +301,14 @@ dragonpilot 0.7.5.0
 * 簡/繁中文版和 i18n 整合成為單一版本。  
 * Merged zhs/zht/i18n versions into one.
 * 新增大陸版 CAMRY HYBRID 指紋v2。(感謝 @杜子腾)
-* Added China Camery Hybrid FPv2. (Thanks to @杜子腾) 
+* Added China Camery Hybrid FPv2. (Thanks to @杜子腾)
 * 新增台灣版 Altis HYBRID 指紋v1。(感謝 @Fish)
 * Added Taiwan Altis Hybrid FPv1. (Thanks to @Fish)
 * 新增行駛時關閉畫面功能。
 * Added Screen off while driving feature.
 * 新增倒車時關閉畫面功能。
 * Added Screen off while reversing feature.
-* 新增駕駛介面加入「加速模式」切換鈕。 
+* 新增駕駛介面加入「加速模式」切換鈕。
 * Added acceleration profile toggle onto driving UI.
 * 新增自定車型功能，取代指紋暫存功能。
 * Replaced fingerprint cache with custom car model selector.
@@ -324,7 +327,7 @@ dragonpilot 0.7.5.0
 * 新增 CAMERY HIBRID 指紋。(感謝 @杜子腾)
 * 新增行駛時關閉畫面功能。
 * 新增倒車時關閉畫面功能。
-* 新增駕駛介面加入「加速模式」切換鈕。 
+* 新增駕駛介面加入「加速模式」切換鈕。
 * 新增自定義車型。
 
 2020-04-16
@@ -433,7 +436,7 @@ dragonpilot 0.7.5.0
 2020-01-19
 ========================
 * [DEVEL] 更新至最新的 commaai:devel (0.7.1)。
-* [DEVEL] 調整 appd 和 ALC 邏輯。 
+* [DEVEL] 調整 appd 和 ALC 邏輯。
 
 2020-01-14
 ========================
@@ -558,7 +561,7 @@ dragonpilot 0.7.5.0
 ========================
 * [DEVEL] 加入彎道減速功能開關。
 * [DEVEL] 強迫使用 dp 版 Panda 韌體。
-* [DEVEL] 更新至最新的 commaai:devel (0.6.5)。 
+* [DEVEL] 更新至最新的 commaai:devel (0.6.5)。
 
 2019-10-17
 ========================
@@ -582,7 +585,7 @@ dragonpilot 0.7.5.0
 
 2019-10-11
 ========================
-* [DEVEL] 更新至最新的 commaai:devel (0.6.5)。 
+* [DEVEL] 更新至最新的 commaai:devel (0.6.5)。
 * [DEVEL] 加入台灣 2019 RAV4 汽油版指紋。 (感謝 Max Duan / CloudJ 提供)
 
 2019-10-09
@@ -601,12 +604,12 @@ dragonpilot 0.7.5.0
 2019-10-05
 ========================
 * [DEVEL] 移除 curvature learner: 轉角明顯比原廠小。
-* [DEVEL] 更新至最新的 commaai:devel (0.6.4)。 
+* [DEVEL] 更新至最新的 commaai:devel (0.6.4)。
 
 2019-09-30
 ========================
 * [DEVEL] 更新 curvature learner 版本至 v4。
-* [DEVEL] Lexus ISH 使用更精確的 EPS Steering Angle Sensor 
+* [DEVEL] Lexus ISH 使用更精確的 EPS Steering Angle Sensor
 
 2019-09-27
 ========================

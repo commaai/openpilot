@@ -72,6 +72,9 @@ services = {
   # dp
   "thermal": (True, 2., 1),
   "dragonConf": (False, 2.),
+  "dynamicGasButton": (False, 0.),
+  #map
+  "liveMapData": (True, 0.),
 
 }
 service_list = {name: Service(new_port(idx), *vals) for  # type: ignore

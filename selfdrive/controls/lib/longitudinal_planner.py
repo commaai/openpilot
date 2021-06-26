@@ -34,9 +34,9 @@ _A_TOTAL_MAX_BP = [20., 40.]
 
 # dp
 DP_FOLLOWING_DIST = {
-  0: 1.8,
+  0: 1.2,
   1: 1.5,
-  2: 1.2,
+  2: 1.8,
 }
 
 DP_ACCEL_ECO = 0
@@ -130,10 +130,21 @@ class Planner():
     self.dp_accel_profile_ctrl = False
     self.dp_accel_profile = DP_ACCEL_ECO
     self.dp_following_profile_ctrl = False
-    self.dp_following_profile = 0
+    self.dp_following_profile = 3
     self.dp_following_dist = 1.8 # default val
 
-  def choose_solution(self, v_cruise_setpoint, enabled):
+  def choose_solution(self, v_cruise_setpoint, enabled, lead_1, lead_2, steeringAngleDeg):
+    center_x = -2.5 # Wheel base 2.5m
+    lead1_check = True
+    lead2_check = True
+    if steeringAngleDeg > 100: # only at high angles
+      center_y = -1+2.5/math.tan(steeringAngleDeg/1800.*math.pi) # Car Width 2m. Left side considered in left hand turn
+      lead1_check = math.sqrt((lead_1.dRel-center_x)**2+(lead_1.yRel-center_y)**2) < abs(2.5/math.sin(steeringAngleDeg/1800.*math.pi))+1. # extra meter clearance to car
+      lead2_check = math.sqrt((lead_2.dRel-center_x)**2+(lead_2.yRel-center_y)**2) < abs(2.5/math.sin(steeringAngleDeg/1800.*math.pi))+1.
+    elif steeringAngleDeg < -100: # only at high angles
+      center_y = +1+2.5/math.tan(steeringAngleDeg/1800.*math.pi) # Car Width 2m. Right side considered in right hand turn
+      lead1_check = math.sqrt((lead_1.dRel-center_x)**2+(lead_1.yRel-center_y)**2) < abs(2.5/math.sin(steeringAngleDeg/1800.*math.pi))+1.
+      lead2_check = math.sqrt((lead_2.dRel-center_x)**2+(lead_2.yRel-center_y)**2) < abs(2.5/math.sin(steeringAngleDeg/1800.*math.pi))+1.
     if enabled:
       solutions = {'cruise': self.v_cruise}
       if self.mpc1.prev_lead_status:
@@ -185,7 +196,6 @@ class Planner():
     self.dp_following_profile = sm['dragonConf'].dpFollowingProfile
     self.dp_following_dist = DP_FOLLOWING_DIST[0 if not self.dp_following_profile_ctrl else self.dp_following_profile]
 
-    # dp - slow on curve from 0.7.6.1
     # Calculate speed for normal cruise control
     pedal_pressed = sm['carState'].gasPressed or sm['carState'].brakePressed
     if enabled and not self.first_loop and not pedal_pressed:
@@ -230,7 +240,7 @@ class Planner():
     self.mpc1.update(sm['carState'], lead_1, self.dp_following_dist)
     self.mpc2.update(sm['carState'], lead_2, self.dp_following_dist)
 
-    self.choose_solution(v_cruise_setpoint, enabled)
+    self.choose_solution(v_cruise_setpoint, enabled, lead_1, lead_2, sm['carState'].steeringAngleDeg)
 
     # determine fcw
     if self.mpc1.new_lead:

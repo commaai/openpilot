@@ -150,6 +150,14 @@ def fingerprint(logcan, sendcan):
       if len(candidate_cars[b]) == 1 and frame > frame_fingerprint:
           # fingerprint done
           car_fingerprint = candidate_cars[b][0]
+      elif len(candidate_cars[b]) < 4: # For the Corolla 2020 LE Fingerprint problem
+        if frame > 180:
+          if any(("TOYOTA COROLLA TSS2 2019" in c) for c in candidate_cars[b]):
+            car_fingerprint = "TOYOTA COROLLA TSS2 2019"
+          if any(("TOYOTA COROLLA HYBRID TSS2 2019" in c) for c in candidate_cars[b]):
+            car_fingerprint = "TOYOTA COROLLA HYBRID TSS2 2019"
+          if any(("TOYOTA PRIUS 2017" in c) for c in candidate_cars[b]):
+            car_fingerprint = "TOYOTA PRIUS 2017"
 
     # bail if no cars left or we've been waiting for more than 2s
     failed = (all(len(cc) == 0 for cc in candidate_cars.values()) and frame > frame_fingerprint) or frame > 200

@@ -241,7 +241,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       _("Be ready to take over at any time"),
       _("Always keep hands on wheel and eyes on road"),
       AlertStatus.normal, AlertSize.mid,
-      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 15.),
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 4.),
   },
 
   EventName.startupMaster: {
@@ -249,7 +249,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       _("WARNING: This branch is not tested"),
       _("Always keep hands on wheel and eyes on road"),
       AlertStatus.userPrompt, AlertSize.mid,
-      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 15.),
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 4.),
   },
 
   EventName.startupNoControl: {
@@ -423,6 +423,26 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       Priority.HIGH, VisualAlert.steerRequired, AudibleAlert.chimeWarningRepeat, .1, .1, .1),
   },
 
+  EventName.preKeepHandsOnWheel: {
+    ET.WARNING: Alert(
+      "No hands on steering wheel detected",
+      "",
+      AlertStatus.userPrompt, AlertSize.small,
+      Priority.MID, VisualAlert.steerRequired, AudibleAlert.none, .0, .1, .1, alert_rate=0.75),
+  },
+
+  EventName.promptKeepHandsOnWheel: {
+    ET.WARNING: Alert(
+      "HANDS OFF STEERING WHEEL",
+      "Place hands on steering wheel",
+      AlertStatus.critical, AlertSize.mid,
+      Priority.MID, VisualAlert.steerRequired, AudibleAlert.chimeWarning2Repeat, .1, .1, .1, alert_rate=0.75),
+  },
+
+  EventName.keepHandsOnWheel: {
+    ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("Driver kept hands off sterring wheel"),
+  },
+
   EventName.driverMonitorLowAcc: {
     ET.WARNING: Alert(
       _("CHECK DRIVER FACE VISIBILITY"),
@@ -552,7 +572,11 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
   },
 
   EventName.steerTempUnavailable: {
-    ET.SOFT_DISABLE: SoftDisableAlert(_("Steering Temporarily Unavailable")),
+    ET.WARNING: Alert(
+      _("TAKE CONTROL"),
+      _("Steering Temporarily Unavailable"),
+      AlertStatus.userPrompt, AlertSize.mid,
+      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.chimeWarning1, .4, 2., 1.),
     ET.NO_ENTRY: NoEntryAlert(_("Steering Temporarily Unavailable"),
                               duration_hud_alert=0.),
   },
@@ -604,7 +628,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
   },
 
   EventName.wrongGear: {
-    ET.SOFT_DISABLE: SoftDisableAlert(_("Gear not D")),
+    #ET.SOFT_DISABLE: SoftDisableAlert(_("Gear not D")),
     ET.NO_ENTRY: NoEntryAlert(_("Gear not D")),
   },
 
@@ -745,7 +769,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       "",
       AlertStatus.normal, AlertSize.full,
       Priority.LOWEST, VisualAlert.none, AudibleAlert.none, 0., 0., .2, creation_delay=0.5),
-    ET.IMMEDIATE_DISABLE: ImmediateDisableAlert(_("Reverse Gear")),
+    #ET.IMMEDIATE_DISABLE: ImmediateDisableAlert(_("Reverse Gear")),
     ET.NO_ENTRY: NoEntryAlert(_("Reverse Gear")),
   },
 
@@ -859,5 +883,12 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       _("Release wheel when ready"),
       AlertStatus.normal, AlertSize.mid,
       Priority.LOW, VisualAlert.steerRequired, AudibleAlert.chimeWarning1, 3., 2., 3.),
+  },
+  EventName.longControlDisabled: {
+    ET.PERMANENT: Alert(
+      _("Steer Assist Active"),
+      _(""),
+      AlertStatus.normal, AlertSize.small,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none,.4, 2., 0.2),
   },
 }

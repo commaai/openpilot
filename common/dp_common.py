@@ -5,8 +5,8 @@ from common.params import Params
 from common.realtime import sec_since_boot
 import os
 params = Params()
-PARAM_PATH = params.get_params_path() + '/d/'
-LAST_MODIFIED = PARAM_PATH + "dp_last_modified"
+PARAM_PATH = "/data/params/d/"
+LAST_MODIFIED = str(PARAM_PATH) + "dp_last_modified"
 
 def is_online():
   try:

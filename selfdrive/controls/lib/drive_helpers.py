@@ -3,10 +3,10 @@ from selfdrive.config import Conversions as CV
 from cereal import car
 
 # kph
-V_CRUISE_MAX = 135
-V_CRUISE_MIN = 8
-V_CRUISE_DELTA = 8
-V_CRUISE_ENABLE_MIN = 40
+V_CRUISE_MAX = 169
+V_CRUISE_MIN = 7
+V_CRUISE_DELTA = 7
+V_CRUISE_ENABLE_MIN = 7
 MPC_N = 16
 CAR_ROTATION_RADIUS = 0.0
 
@@ -17,7 +17,7 @@ class MPC_COST_LAT:
 
 
 class MPC_COST_LONG:
-  TTC = 5.0
+  TTC = 5.5
   DISTANCE = 0.1
   ACCELERATION = 10.0
   JERK = 20.0

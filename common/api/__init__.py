@@ -31,10 +31,10 @@ class Api():
     if isinstance(token, bytes):
       token = token.decode('utf8')
     return token
-    
+
 
 def api_get(endpoint, method='GET', timeout=None, access_token=None, **params):
-  backend = "https://api.commadotai.com/"
+  backend = "https://api.retropilot.org/"
 
   headers = {}
   if access_token is not None:

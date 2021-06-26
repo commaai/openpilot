@@ -541,6 +541,23 @@ struct ControlsState @0x97ff69c53601abf1 {
   cumLagMs @15 :Float32;
   canErrorCounter @57 :UInt32;
 
+  # vision turn controll
+  turnControllerState @60 :TurnControllerState;
+  turnAcc @61 :Float32;
+
+  # speed limit control
+  speedLimit @62 :Float32;
+  speedLimitControlState @63 :SpeedLimitControlState;
+  speedLimitOffset @64 :Float32;
+  distToSpeedLimit @65 :Float32;
+  isMapSpeedLimit @66 :Bool;
+
+  # turn control
+  distToTurn @59 :Float32;
+  turnSpeed @67 :Float32;
+  turnSpeedControlState @68 :SpeedLimitControlState;
+  turnSign @69 :Int16;
+
   lateralControlState :union {
     indiState @52 :LateralINDIState;
     pidState @53 :LateralPIDState;
@@ -560,6 +577,20 @@ struct ControlsState @0x97ff69c53601abf1 {
     pid @1;
     stopping @2;
     starting @3;
+  }
+
+  enum SpeedLimitControlState {
+    inactive @0; # No speed limit set or not enabled by parameter.
+    tempInactive @1; # User wants to ignore speed limit until it changes.
+    adapting @2; # Reducing speed to match new speed limit.
+    active @3; # Cruising at speed limit.
+  }
+
+  enum TurnControllerState {
+    disabled @0; # No predicted substancial turn on vision range or feature disabled.
+    entering @1; # A subsantial turn is predicted ahead, adapting speed to turn confort levels.
+    turning @2; # Actively turning. Managing acceleration to provide a roll on turn feeling.
+    leaving @3; # Road ahead straightens. Start to allow positive acceleration.
   }
 
   enum AlertStatus {
@@ -775,12 +806,29 @@ struct LongitudinalPlan @0xe00b5b3eba12876c {
 
   processingDelay @29 :Float32;
 
+  turnControllerState @32 : ControlsState.TurnControllerState;
+  turnAcc @33 :Float32;
+
+  speedLimitControlState @34 :ControlsState.SpeedLimitControlState;
+  speedLimit @35 :Float32;
+  speedLimitOffset @36 :Float32;
+  distToSpeedLimit @37 :Float32;
+  isMapSpeedLimit @38 :Bool;
+
+  distToTurn @39 :Float32;
+  turnSpeed @40 :Float32;
+  turnSpeedControlState @41 :ControlsState.SpeedLimitControlState;
+  turnSign @42 :Int16;
+
   enum LongitudinalPlanSource {
     cruise @0;
     mpc1 @1;
     mpc2 @2;
     mpc3 @3;
     model @4;
+    turn @5;
+    limit @6;
+    turnlimit @7;
   }
 
   # deprecated
@@ -815,6 +863,8 @@ struct LateralPlan @0xe1e9318e2ae8b51e {
   rProb @7 :Float32;
   dPathPoints @20 :List(Float32);
   dProb @21 :Float32;
+  dPathWLinesX @26 :List(Float32);
+  dPathWLinesY @27 :List(Float32);
 
   mpcSolutionValid @9 :Bool;
   desire @17 :Desire;
@@ -828,7 +878,7 @@ struct LateralPlan @0xe1e9318e2ae8b51e {
   rawCurvatureRate @25 :Float32;
 
   # dp
-  dpALCAllowed @26 :Bool;
+  dpALCAllowed @28 :Bool;
 
   enum Desire {
     none @0;
@@ -1231,6 +1281,16 @@ struct DriverMonitoringState @0xb83cda094a1da284 {
   isRHDDEPRECATED @4 :Bool;
   isPreviewDEPRECATED @15 :Bool;
   rhdCheckedDEPRECATED @5 :Bool;
+  handsOnWheelState @17 :HandsOnWheelState;
+
+  enum HandsOnWheelState {
+    none @0;          # hand on wheel monitoring inactive
+    ok @1;            # driver has hands on steering wheel
+    minor @2;         # hands off steering wheel for acceptable period
+    warning @3;       # hands off steering wheel for warning period
+    critical @4;      # # hands off steering wheel for critical period
+    terminal @5;      # # hands off steering wheel for terminal period
+  }
 }
 
 struct Boot {
@@ -1275,6 +1335,29 @@ struct LiveMapDataDEPRECATED {
   mapValid @11 :Bool;
 }
 
+struct LiveMapData {
+  speedLimitValid @0 :Bool;
+  speedLimit @1 :Float32;
+  speedLimitAheadValid @2 :Bool;
+  speedLimitAhead @3 :Float32;
+  speedLimitAheadDistance @4 :Float32;
+  turnSpeedLimitValid @5 :Bool;
+  turnSpeedLimit @6 :Float32;
+  turnSpeedLimitEndDistance @7 :Float32;
+  turnSpeedLimitSign @8 :Int16;
+  turnSpeedLimitAheadValid @9 :Bool;
+  turnSpeedLimitAhead @10 :Float32;
+  turnSpeedLimitAheadDistance @11 :Float32;
+  turnSpeedLimitAheadSign @12 :Int16;
+  lastGpsTimestamp @13 :Int64;  # Milliseconds since January 1, 1970.
+  lastGpsLatitude @14 :Float64;
+  lastGpsLongitude @15 :Float64;
+  lastGpsSpeed @16 :Float32;
+  lastGpsBearingDeg @17 :Float32;
+  lastGpsAccuracy @18 :Float32;
+  lastGpsBearingAccuracyDeg @19 :Float32;
+}
+
 struct CameraOdometry {
   frameId @4 :UInt32;
   timestampEof @5 :UInt64;
@@ -1304,6 +1387,10 @@ struct ManagerState {
     running @2 :Bool;
     exitCode @3 :Int32;
   }
+}
+
+struct DynamicGasButton {
+  status @0 :UInt16;
 }
 
 struct Event {
@@ -1403,5 +1490,7 @@ struct Event {
     gpsLocationDEPRECATED @21 :GpsLocationData;
     uiLayoutStateDEPRECATED @57 :Legacy.UiLayoutState;
     dragonConf @79 :Dp.DragonConf;
+    dynamicGasButton @80 :DynamicGasButton;
+    liveMapData @81: LiveMapData;
   }
 }
