@@ -202,6 +202,7 @@ void Replay::mergeEvents(bool success) {
   auto it = segments_.begin();
   while (it != segments_.end()) {
     if (it->second->seg_num < min_seg || it->second->seg_num > max_seg) {
+      delete it->second;
       it = segments_.erase(it);
     } else {
       ++it;
