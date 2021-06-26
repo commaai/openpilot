@@ -46,7 +46,7 @@ class MapD():
     self._query_thread = None
     self._lock = threading.RLock()
 
-  def udpate_state(self, sm):
+  def update_state(self, sm):
     sock = 'controlsState'
     if not sm.updated[sock] or not sm.valid[sock]:
       return
