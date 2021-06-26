@@ -87,7 +87,7 @@ def main(sm=None, pm=None):
 
   min_sr, max_sr = 0.5 * CP.steerRatio, 2.0 * CP.steerRatio
 
-  params = params_reader.get("LiveParameters")
+  params = params_reader.get("LiveParameters") if not params_reader.get_bool('dp_reset_live_param_on_start') else None
 
   # Check if car model matches
   if params is not None:

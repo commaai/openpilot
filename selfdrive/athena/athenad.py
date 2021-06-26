@@ -25,7 +25,7 @@ from common.api import Api
 from common.basedir import PERSIST
 from common.params import Params
 from common.realtime import sec_since_boot
-from selfdrive.hardware import HARDWARE, PC, TICI
+from selfdrive.hardware import HARDWARE, PC, TICI, JETSON
 from selfdrive.loggerd.config import ROOT
 from selfdrive.loggerd.xattr_cache import getxattr, setxattr
 from selfdrive.swaglog import cloudlog, SWAGLOG_DIR
@@ -304,7 +304,7 @@ def get_logs_to_send_sorted():
 
 
 def log_handler(end_event):
-  if PC:
+  if PC or JETSON:
     return
 
   log_files = []

@@ -5,6 +5,7 @@ import sys
 import time
 import textwrap
 from pathlib import Path
+import re
 
 # NOTE: Do NOT import anything here that needs be built (e.g. params)
 from common.basedir import BASEDIR
@@ -74,10 +75,16 @@ def build(spinner, dirty=False):
         add_file_handler(cloudlog)
         cloudlog.error("scons build failed\n" + error_s)
 
+        try:
+          result = subprocess.check_output(["ifconfig", "wlan0"], encoding='utf8')
+          ip = re.findall(r"inet addr:((\d+\.){3}\d+)", result)[0][0]
+        except:
+          ip = 'N/A'
+
         # Show TextWindow
         spinner.close()
         error_s = "\n \n".join(["\n".join(textwrap.wrap(e, 65)) for e in errors])
-        with TextWindow("openpilot failed to build\n \n" + error_s) as t:
+        with TextWindow(("openpilot failed to build (IP: %s)\n \n" % ip) + error_s) as t:
           t.wait_for_exit()
         exit(1)
     else:

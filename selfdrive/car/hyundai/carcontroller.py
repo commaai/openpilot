@@ -4,6 +4,8 @@ from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.hyundai.hyundaican import create_lkas11, create_clu11, create_lfahda_mfc
 from selfdrive.car.hyundai.values import Buttons, CarControllerParams, CAR
 from opendbc.can.packer import CANPacker
+from common.dp_common import common_controller_ctrl
+from common.params import Params
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
@@ -34,6 +36,11 @@ def process_hud_alert(enabled, fingerprint, visual_alert, left_lane,
 
 class CarController():
   def __init__(self, dbc_name, CP, VM):
+    # dp
+    self.last_blinker_on = False
+    self.blinker_end_frame = 0.
+    self.dp_hkg_smart_mdps = Params().get('dp_hkg_smart_mdps') == b'1'
+
     self.p = CarControllerParams(CP)
     self.packer = CANPacker(dbc_name)
 
@@ -43,7 +50,7 @@ class CarController():
     self.last_resume_frame = 0
 
   def update(self, enabled, CS, frame, actuators, pcm_cancel_cmd, visual_alert,
-             left_lane, right_lane, left_lane_depart, right_lane_depart):
+             left_lane, right_lane, left_lane_depart, right_lane_depart, dragonconf):
     # Steering Torque
     new_steer = int(round(actuators.steer * self.p.STEER_MAX))
     apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, self.p)
@@ -53,11 +60,23 @@ class CarController():
     lkas_active = enabled and not CS.out.steerWarning
 
     # fix for Genesis hard fault at low speed
-    if CS.out.vEgo < 16.7 and self.car_fingerprint == CAR.HYUNDAI_GENESIS:
+    if not self.dp_hkg_smart_mdps and CS.out.vEgo < 16.7 and self.car_fingerprint == CAR.HYUNDAI_GENESIS:
       lkas_active = False
 
     if not lkas_active:
       apply_steer = 0
+
+    # dp
+    blinker_on = CS.out.leftBlinker or CS.out.rightBlinker
+    if not enabled:
+      self.blinker_end_frame = 0
+    if self.last_blinker_on and not blinker_on:
+      self.blinker_end_frame = frame + dragonconf.dpSignalOffDelay
+    apply_steer = common_controller_ctrl(enabled,
+                                         dragonconf,
+                                         blinker_on or frame < self.blinker_end_frame,
+                                         apply_steer, CS.out.vEgo)
+    self.last_blinker_on = blinker_on
 
     self.apply_steer_last = apply_steer
 

@@ -127,10 +127,24 @@ void set_safety_mode(uint16_t mode, int16_t param) {
   switch (mode_copy) {
     case SAFETY_SILENT:
       set_intercept_relay(false);
+      #ifdef vw
+      // Volkswagen community port:
+      // J533 integrations with White/Grey Panda really need Panda to respond
+      // at all times. Let the CAN transceivers ACK traffic unless this is
+      // BP/Uno where the physical relay makes it irrelevant. This makes
+      // SILENT identical to NOOUTPUT for White/Grey Panda.
+      if (board_has_obd()) {
+        current_board->set_can_mode(CAN_MODE_NORMAL);
+        can_silent = ALL_CAN_SILENT;
+      } else {
+        can_silent = ALL_CAN_LIVE;
+      }
+      #else
       if (board_has_obd()) {
         current_board->set_can_mode(CAN_MODE_NORMAL);
       }
       can_silent = ALL_CAN_SILENT;
+      #endif
       break;
     case SAFETY_NOOUTPUT:
       set_intercept_relay(false);
@@ -333,7 +347,11 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, bool hardwired) 
       break;
     // **** 0xc1: get hardware type
     case 0xc1:
+      #ifdef fake_black_panda
+      resp[0] = HW_TYPE_BLACK_PANDA;
+      #else
       resp[0] = hw_type;
+      #endif
       resp_len = 1;
       break;
     // **** 0xd0: fetch serial number

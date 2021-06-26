@@ -9,7 +9,11 @@ if [ -d /system ]; then
     export LD_LIBRARY_PATH="/data/pythonpath/phonelibs/snpe/aarch64/:$LD_LIBRARY_PATH"
   fi
 else
-  # PC
-  export LD_LIBRARY_PATH="$DIR/../../phonelibs/snpe/x86_64-linux-clang:$DIR/../..//openpilot/phonelibs/snpe/x86_64:$LD_LIBRARY_PATH"
+  if [ -f /JETSON ]; then # Jetson
+    export LD_LIBRARY_PATH="/usr/lib/aarch64-linux-gnu:$LD_LIBRARY_PATH"
+  else
+    # PC
+    export LD_LIBRARY_PATH="$DIR/../../phonelibs/snpe/x86_64-linux-clang:$DIR/../..//openpilot/phonelibs/snpe/x86_64:$LD_LIBRARY_PATH"
+  fi
 fi
 exec ./_modeld

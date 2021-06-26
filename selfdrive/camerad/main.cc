@@ -21,6 +21,8 @@
 #include "selfdrive/camerad/cameras/camera_qcom2.h"
 #elif WEBCAM
 #include "selfdrive/camerad/cameras/camera_webcam.h"
+#elif MIPI
+#include "selfdrive/camerad/cameras/camera_mipi.h"
 #else
 #include "selfdrive/camerad/cameras/camera_frame_stream.h"
 #endif
@@ -47,7 +49,7 @@ int main(int argc, char *argv[]) {
   set_realtime_priority(53);
   if (Hardware::EON()) {
     set_core_affinity(2);
-  } else if (Hardware::TICI()) {
+  } else if (Hardware::TICI() || Hardware::JETSON()) {
     set_core_affinity(6);
   }
 

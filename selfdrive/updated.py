@@ -113,7 +113,7 @@ def set_params(new_version: bool, failed_count: int, exception: Optional[str]) -
 
   if new_version:
     try:
-      with open(os.path.join(FINALIZED, "RELEASES.md"), "rb") as f:
+      with open(os.path.join(FINALIZED, f"CHANGELOGS-DEV.md"), "rb") as f:
         r = f.read()
       r = r[:r.find(b'\n\n')]  # Slice latest release notes
       params.put("ReleaseNotes", r + b"\n")
@@ -197,9 +197,9 @@ def init_overlay() -> None:
   else:
     run(mount_cmd)
 
-  git_diff = run(["git", "diff"], OVERLAY_MERGED, low_priority=True)
-  params.put("GitDiff", git_diff)
-  cloudlog.info(f"git diff output:\n{git_diff}")
+  #git_diff = run(["git", "diff"], OVERLAY_MERGED, low_priority=True)
+  params.put("GitDiff", "")
+  #cloudlog.info(f"git diff output:\n{git_diff}")
 
 
 def finalize_update() -> None:

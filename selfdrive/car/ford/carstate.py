@@ -8,6 +8,9 @@ from selfdrive.car.ford.values import DBC
 WHEEL_RADIUS = 0.33
 
 class CarState(CarStateBase):
+  def __init__(self, CP):
+    super().__init__(CP)
+
   def update(self, cp):
     ret = car.CarState.new_message()
     ret.wheelSpeeds.rr = cp.vl["WheelSpeed_CG1"]["WhlRr_W_Meas"] * WHEEL_RADIUS

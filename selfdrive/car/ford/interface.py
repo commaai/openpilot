@@ -5,6 +5,7 @@ from selfdrive.config import Conversions as CV
 from selfdrive.car.ford.values import MAX_ANGLE
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
+from common.dp_common import common_interface_atl, common_interface_get_params_lqr
 
 
 class CarInterface(CarInterfaceBase):
@@ -17,6 +18,7 @@ class CarInterface(CarInterfaceBase):
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "ford"
+    ret.lateralTuning.init('pid')
     ret.safetyModel = car.CarParams.SafetyModel.ford
     ret.dashcamOnly = True
 
@@ -46,15 +48,20 @@ class CarInterface(CarInterfaceBase):
     ret.enableCamera = True
     cloudlog.warning("ECU Camera Simulated: %r", ret.enableCamera)
 
+    # dp
+    ret = common_interface_get_params_lqr(ret)
+
     return ret
 
   # returns a car.CarState
-  def update(self, c, can_strings):
+  def update(self, c, can_strings, dragonconf):
     # ******************* do can recv *******************
     self.cp.update_strings(can_strings)
 
     ret = self.CS.update(self.cp)
-
+    # dp
+    self.dragonconf = dragonconf
+    ret.cruiseState.enabled = common_interface_atl(ret, dragonconf.dpAtl)
     ret.canValid = self.cp.can_valid
 
     # events
@@ -73,7 +80,7 @@ class CarInterface(CarInterfaceBase):
   def apply(self, c):
 
     can_sends = self.CC.update(c.enabled, self.CS, self.frame, c.actuators,
-                               c.hudControl.visualAlert, c.cruiseControl.cancel)
+                               c.hudControl.visualAlert, c.cruiseControl.cancel, self.dragonconf)
 
     self.frame += 1
     return can_sends

@@ -6,12 +6,17 @@ from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.gm import gmcan
 from selfdrive.car.gm.values import DBC, CanBus, CarControllerParams
 from opendbc.can.packer import CANPacker
+from common.dp_common import common_controller_ctrl
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 
 class CarController():
   def __init__(self, dbc_name, CP, VM):
+    # dp
+    self.last_blinker_on = False
+    self.blinker_end_frame = 0.
+
     self.start_time = 0.
     self.apply_steer_last = 0
     self.lka_icon_status_last = (False, False)
@@ -24,7 +29,7 @@ class CarController():
     self.packer_ch = CANPacker(DBC[CP.carFingerprint]['chassis'])
 
   def update(self, enabled, CS, frame, actuators,
-             hud_v_cruise, hud_show_lanes, hud_show_car, hud_alert):
+             hud_v_cruise, hud_show_lanes, hud_show_car, hud_alert, dragonconf):
 
     P = self.params
 
@@ -40,6 +45,18 @@ class CarController():
         self.steer_rate_limited = new_steer != apply_steer
       else:
         apply_steer = 0
+
+      # dp
+      blinker_on = CS.out.leftBlinker or CS.out.rightBlinker
+      if not enabled:
+        self.blinker_end_frame = 0
+      if self.last_blinker_on and not blinker_on:
+        self.blinker_end_frame = frame + dragonconf.dpSignalOffDelay
+      apply_steer = common_controller_ctrl(enabled,
+                                           dragonconf,
+                                           blinker_on or frame < self.blinker_end_frame,
+                                           apply_steer, CS.out.vEgo)
+      self.last_blinker_on = blinker_on
 
       self.apply_steer_last = apply_steer
       idx = (frame // P.STEER_STEP) % 4

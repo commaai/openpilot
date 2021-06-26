@@ -3,13 +3,17 @@ from common.numpy_fast import clip, interp
 from selfdrive.car.nissan import nissancan
 from opendbc.can.packer import CANPacker
 from selfdrive.car.nissan.values import CAR, CarControllerParams
-
+from common.dp_common import common_controller_ctrl
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 
 class CarController():
   def __init__(self, dbc_name, CP, VM):
+    # dp
+    self.last_blinker_on = False
+    self.blinker_end_frame = 0.
+
     self.CP = CP
     self.car_fingerprint = CP.carFingerprint
 
@@ -19,7 +23,7 @@ class CarController():
     self.packer = CANPacker(dbc_name)
 
   def update(self, enabled, CS, frame, actuators, cruise_cancel, hud_alert,
-             left_line, right_line, left_lane_depart, right_lane_depart):
+             left_line, right_line, left_lane_depart, right_lane_depart, dragonconf):
     """ Controls thread """
 
     # Send CAN commands.
@@ -57,6 +61,18 @@ class CarController():
     else:
       apply_angle = CS.out.steeringAngleDeg
       self.lkas_max_torque = 0
+
+    # dp
+    blinker_on = CS.out.leftBlinker or CS.out.rightBlinker
+    if not enabled:
+      self.blinker_end_frame = 0
+    if self.last_blinker_on and not blinker_on:
+      self.blinker_end_frame = frame + dragonconf.dpSignalOffDelay
+    apply_angle = common_controller_ctrl(enabled,
+                                         dragonconf,
+                                         blinker_on or frame < self.blinker_end_frame,
+                                         apply_angle, CS.out.vEgo)
+    self.last_blinker_on = blinker_on
 
     self.last_angle = apply_angle
 

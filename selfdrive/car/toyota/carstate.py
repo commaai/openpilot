@@ -5,7 +5,7 @@ from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
 from selfdrive.config import Conversions as CV
 from selfdrive.car.toyota.values import CAR, DBC, STEER_THRESHOLD, NO_STOP_TIMER_CAR
-
+from common.params import Params
 
 class CarState(CarStateBase):
   def __init__(self, CP):
@@ -19,6 +19,8 @@ class CarState(CarStateBase):
     self.needs_angle_offset = True
     self.accurate_steer_angle_seen = False
     self.angle_offset = 0.
+    # dp
+    self.dp_toyota_zss = Params().get('dp_toyota_zss') == b'1'
 
   def update(self, cp, cp_cam):
     ret = car.CarState.new_message()
@@ -45,11 +47,14 @@ class CarState(CarStateBase):
     ret.standstill = ret.vEgoRaw < 0.001
 
     # Some newer models have a more accurate angle measurement in the TORQUE_SENSOR message. Use if non-zero
-    if abs(cp.vl["STEER_TORQUE_SENSOR"]["STEER_ANGLE"]) > 1e-3:
+    if self.dp_toyota_zss or abs(cp.vl["STEER_TORQUE_SENSOR"]["STEER_ANGLE"]) > 1e-3:
       self.accurate_steer_angle_seen = True
 
     if self.accurate_steer_angle_seen:
-      ret.steeringAngleDeg = cp.vl["STEER_TORQUE_SENSOR"]["STEER_ANGLE"] - self.angle_offset
+      if self.dp_toyota_zss:
+        ret.steeringAngleDeg = cp.vl["SECONDARY_STEER_ANGLE"]["ZORRO_STEER"] - self.angle_offset
+      else:
+        ret.steeringAngleDeg = cp.vl["STEER_TORQUE_SENSOR"]["STEER_ANGLE"] - self.angle_offset
       if self.needs_angle_offset:
         angle_wheel = cp.vl["STEER_ANGLE_SENSOR"]["STEER_ANGLE"] + cp.vl["STEER_ANGLE_SENSOR"]["STEER_FRACTION"]
         if abs(angle_wheel) > 1e-3:
@@ -175,6 +180,9 @@ class CarState(CarStateBase):
       checks += [
         ("BSM", 1)
       ]
+
+    if Params().get('dp_toyota_zss') == b'1':
+      signals += [("ZORRO_STEER", "SECONDARY_STEER_ANGLE", 0)]
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 0)
 

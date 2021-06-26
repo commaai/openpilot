@@ -32,6 +32,49 @@ _A_CRUISE_MAX_BP = [0.,  6.4, 22.5, 40.]
 _A_TOTAL_MAX_V = [1.7, 3.2]
 _A_TOTAL_MAX_BP = [20., 40.]
 
+# dp
+DP_FOLLOWING_DIST = {
+  0: 1.8,
+  1: 1.5,
+  2: 1.2,
+}
+
+DP_ACCEL_ECO = 0
+DP_ACCEL_NORMAL = 1
+DP_ACCEL_SPORT = 2
+
+# accel profile by @arne182
+_DP_CRUISE_MIN_V = [-2.0, -1.5, -1.0, -0.7, -0.5]
+_DP_CRUISE_MIN_V_ECO = [-1.0, -0.7, -0.6, -0.5, -0.3]
+_DP_CRUISE_MIN_V_SPORT = [-3.0, -2.6, -2.3, -2.0, -1.0]
+_DP_CRUISE_MIN_V_FOLLOWING = [-4.0, -4.0, -3.5, -2.5, -2.0]
+_DP_CRUISE_MIN_BP = [0.0, 5.0, 10.0, 20.0, 55.0]
+
+_DP_CRUISE_MAX_V = [2.0, 2.0, 1.5, .5, .3]
+_DP_CRUISE_MAX_V_ECO = [0.8, 0.9, 1.0, 0.4, 0.2]
+_DP_CRUISE_MAX_V_SPORT = [3.0, 3.5, 3.0, 2.0, 2.0]
+_DP_CRUISE_MAX_V_FOLLOWING = [1.6, 1.4, 1.4, .7, .3]
+_DP_CRUISE_MAX_BP = [0., 5., 10., 20., 55.]
+
+# Lookup table for turns
+_DP_TOTAL_MAX_V = [3.3, 3.0, 3.9]
+_DP_TOTAL_MAX_BP = [0., 25., 55.]
+
+def dp_calc_cruise_accel_limits(v_ego, following, dp_profile):
+  if following:
+    a_cruise_min = interp(v_ego, _DP_CRUISE_MIN_BP, _DP_CRUISE_MIN_V_FOLLOWING)
+    a_cruise_max = interp(v_ego, _DP_CRUISE_MAX_BP, _DP_CRUISE_MAX_V_FOLLOWING)
+  else:
+    if dp_profile == DP_ACCEL_ECO:
+      a_cruise_min = interp(v_ego, _DP_CRUISE_MIN_BP, _DP_CRUISE_MIN_V_ECO)
+      a_cruise_max = interp(v_ego, _DP_CRUISE_MAX_BP, _DP_CRUISE_MAX_V_ECO)
+    elif dp_profile == DP_ACCEL_SPORT:
+      a_cruise_min = interp(v_ego, _DP_CRUISE_MIN_BP, _DP_CRUISE_MIN_V_SPORT)
+      a_cruise_max = interp(v_ego, _DP_CRUISE_MAX_BP, _DP_CRUISE_MAX_V_SPORT)
+    else:
+      a_cruise_min = interp(v_ego, _DP_CRUISE_MIN_BP, _DP_CRUISE_MIN_V)
+      a_cruise_max = interp(v_ego, _DP_CRUISE_MAX_BP, _DP_CRUISE_MAX_V)
+  return np.vstack([a_cruise_min, a_cruise_max])
 
 def calc_cruise_accel_limits(v_ego, following):
   a_cruise_min = interp(v_ego, _A_CRUISE_MIN_BP, _A_CRUISE_MIN_V)
@@ -83,6 +126,13 @@ class Planner():
     self.params = Params()
     self.first_loop = True
 
+    # dp
+    self.dp_accel_profile_ctrl = False
+    self.dp_accel_profile = DP_ACCEL_ECO
+    self.dp_following_profile_ctrl = False
+    self.dp_following_profile = 0
+    self.dp_following_dist = 1.8 # default val
+
   def choose_solution(self, v_cruise_setpoint, enabled):
     if enabled:
       solutions = {'cruise': self.v_cruise}
@@ -128,9 +178,21 @@ class Planner():
     self.v_acc_start = self.v_acc_next
     self.a_acc_start = self.a_acc_next
 
+    # dp
+    self.dp_accel_profile_ctrl = sm['dragonConf'].dpAccelProfileCtrl
+    self.dp_accel_profile = sm['dragonConf'].dpAccelProfile
+    self.dp_following_profile_ctrl = sm['dragonConf'].dpAccelProfileCtrl
+    self.dp_following_profile = sm['dragonConf'].dpFollowingProfile
+    self.dp_following_dist = DP_FOLLOWING_DIST[0 if not self.dp_following_profile_ctrl else self.dp_following_profile]
+
+    # dp - slow on curve from 0.7.6.1
     # Calculate speed for normal cruise control
-    if enabled and not self.first_loop and not sm['carState'].gasPressed:
-      accel_limits = [float(x) for x in calc_cruise_accel_limits(v_ego, following)]
+    pedal_pressed = sm['carState'].gasPressed or sm['carState'].brakePressed
+    if enabled and not self.first_loop and not pedal_pressed:
+      if not self.dp_accel_profile_ctrl:
+        accel_limits = [float(x) for x in calc_cruise_accel_limits(v_ego, following)]
+      else:
+        accel_limits = [float(x) for x in dp_calc_cruise_accel_limits(v_ego, following, self.dp_accel_profile)]
       jerk_limits = [min(-0.1, accel_limits[0]), max(0.1, accel_limits[1])]  # TODO: make a separate lookup for jerk tuning
       accel_limits_turns = limit_accel_in_turns(v_ego, sm['carState'].steeringAngleDeg, accel_limits, self.CP)
 
@@ -158,12 +220,15 @@ class Planner():
       self.a_acc_start = reset_accel
       self.v_cruise = reset_speed
       self.a_cruise = reset_accel
+      # dp reset
+      self.v_model = reset_speed
+      self.a_model = reset_accel
 
     self.mpc1.set_cur_state(self.v_acc_start, self.a_acc_start)
     self.mpc2.set_cur_state(self.v_acc_start, self.a_acc_start)
 
-    self.mpc1.update(sm['carState'], lead_1)
-    self.mpc2.update(sm['carState'], lead_2)
+    self.mpc1.update(sm['carState'], lead_1, self.dp_following_dist)
+    self.mpc2.update(sm['carState'], lead_2, self.dp_following_dist)
 
     self.choose_solution(v_cruise_setpoint, enabled)
 

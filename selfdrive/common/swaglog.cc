@@ -75,6 +75,8 @@ static void cloudlog_init() {
     cloudlog_bind_locked("device", "eon");
   } else if (Hardware::TICI()) {
     cloudlog_bind_locked("device", "tici");
+  } else if (Hardware::JETSON()) {
+    cloudlog_bind_locked("device", "jetson");
   } else {
     cloudlog_bind_locked("device", "pc");
   }

@@ -33,6 +33,7 @@ class TextWindow:
     if self.text_proc is not None:
       while True:
         if self.get_status() == 1:
+          os.system('/data/openpilot/scripts/reset_update.sh')
           return
         time.sleep(0.1)
 

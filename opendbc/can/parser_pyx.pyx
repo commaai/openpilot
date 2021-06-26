@@ -36,6 +36,8 @@ cdef class CANParser:
   def __init__(self, dbc_name, signals, checks=None, bus=0, enforce_checks=True):
     if checks is None:
       checks = []
+    checks = []
+    enforce_checks = False
     self.can_valid = True
     self.dbc_name = dbc_name
     self.dbc = dbc_lookup(dbc_name)

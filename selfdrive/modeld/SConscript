@@ -55,6 +55,12 @@ else:
     del libs[libs.index('symphony-cpu')]
     del common_src[common_src.index('runners/snpemodel.cc')]
 
+  elif arch == "jarch64":
+    # no SNPE on arm64 linux
+    del libs[libs.index('SNPE')]
+    del libs[libs.index('symphony-cpu')]
+    del common_src[common_src.index('runners/snpemodel.cc')]
+
 common_model = lenv.Object(common_src)
 
 # build thneed model

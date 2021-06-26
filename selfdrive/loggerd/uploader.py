@@ -195,8 +195,7 @@ def uploader_fn(exit_event):
   dongle_id = params.get("DongleId", encoding='utf8')
 
   if dongle_id is None:
-    cloudlog.info("uploader missing dongle_id")
-    raise Exception("uploader can't start without dongle id")
+    return
 
   if TICI and not Path("/data/media").is_mount():
     cloudlog.warning("NVME not mounted")

@@ -97,6 +97,8 @@ cdef class Params:
     cdef string k = self.check_key(key)
     self.p.remove(k)
 
+  def get_params_path(self):
+    return self.p.get_params_path().decode("utf-8")
 
 def put_nonblocking(key, val, d=None):
   def f(key, val):

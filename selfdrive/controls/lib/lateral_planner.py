@@ -67,6 +67,13 @@ class LateralPlanner():
     self.t_idxs = np.arange(TRAJECTORY_SIZE)
     self.y_pts = np.zeros(TRAJECTORY_SIZE)
 
+    # dp
+    self.dp_lc_auto_allowed = False
+    self.dp_lc_auto_timer = None
+    self.dp_lc_auto_delay = 2.
+    self.dp_lc_auto_cont = False
+    self.dp_lc_auto_completed = False
+
   def setup_mpc(self):
     self.libmpc = libmpc_py.libmpc
     self.libmpc.init()
@@ -87,6 +94,7 @@ class LateralPlanner():
     v_ego = sm['carState'].vEgo
     active = sm['controlsState'].active
     measured_curvature = sm['controlsState'].curvature
+    self.LP.update_dp_set_offsets(sm['dragonConf'].dpCameraOffset, sm['dragonConf'].dpPathOffset)
 
     md = sm['modelV2']
     self.LP.parse_model(sm['modelV2'])
@@ -99,7 +107,7 @@ class LateralPlanner():
 
     # Lane change logic
     one_blinker = sm['carState'].leftBlinker != sm['carState'].rightBlinker
-    below_lane_change_speed = v_ego < LANE_CHANGE_SPEED_MIN
+    below_lane_change_speed = v_ego < (sm['dragonConf'].dpLcMinMph * CV.MPH_TO_MS)
 
     if (not active) or (self.lane_change_timer > LANE_CHANGE_TIME_MAX):
       self.lane_change_state = LaneChangeState.off
@@ -109,6 +117,20 @@ class LateralPlanner():
       if self.lane_change_state == LaneChangeState.off and one_blinker and not self.prev_one_blinker and not below_lane_change_speed:
         self.lane_change_state = LaneChangeState.preLaneChange
         self.lane_change_ll_prob = 1.0
+
+      # dp alc
+      cur_time = sec_since_boot()
+      if not below_lane_change_speed and sm['dragonConf'].dpLateralMode == 2 and v_ego >= (sm['dragonConf'].dpLcAutoMinMph * CV.MPH_TO_MS):
+        # we allow auto lc when speed reached dragon_auto_lc_min_mph
+        self.dp_lc_auto_allowed = True
+      else:
+        # if too slow, we reset all the variables
+        self.dp_lc_auto_allowed = False
+        self.dp_lc_auto_timer = None
+
+      # disable auto lc when continuous is off and already did auto lc once
+      if self.dp_lc_auto_allowed and not sm['dragonConf'].dpLcAutoCont and self.dp_lc_auto_completed:
+        self.dp_lc_auto_allowed = False
 
       # LaneChangeState.preLaneChange
       elif self.lane_change_state == LaneChangeState.preLaneChange:
@@ -126,6 +148,19 @@ class LateralPlanner():
 
         blindspot_detected = ((sm['carState'].leftBlindspot and self.lane_change_direction == LaneChangeDirection.left) or
                               (sm['carState'].rightBlindspot and self.lane_change_direction == LaneChangeDirection.right))
+
+        # dp alc
+        if self.dp_lc_auto_allowed:
+          if self.dp_lc_auto_timer is None:
+            self.dp_lc_auto_timer = cur_time + sm['dragonConf'].dpLcAutoDelay
+          elif cur_time >= self.dp_lc_auto_timer:
+            # if timer is up, we set torque_applied to True to fake user input
+            torque_applied = True
+            self.dp_lc_auto_completed = True
+
+        # we reset the timers when torque is applied regardless
+        if torque_applied and not blindspot_detected:
+          self.dp_lc_auto_timer = None
 
         if not one_blinker or below_lane_change_speed:
           self.lane_change_state = LaneChangeState.off
@@ -151,10 +186,16 @@ class LateralPlanner():
         elif self.lane_change_ll_prob > 0.99:
           self.lane_change_state = LaneChangeState.off
 
+        # dp when finishing, we reset timer to none.
+        self.dp_lc_auto_timer = None
+
     if self.lane_change_state in [LaneChangeState.off, LaneChangeState.preLaneChange]:
       self.lane_change_timer = 0.0
     else:
       self.lane_change_timer += DT_MDL
+
+    if self.prev_one_blinker and not one_blinker:
+      self.dp_lc_auto_completed = False
 
     self.prev_one_blinker = one_blinker
 
@@ -231,7 +272,7 @@ class LateralPlanner():
   def publish(self, sm, pm):
     plan_solution_valid = self.solution_invalid_cnt < 2
     plan_send = messaging.new_message('lateralPlan')
-    plan_send.valid = sm.all_alive_and_valid(service_list=['carState', 'controlsState', 'modelV2'])
+    plan_send.valid = sm.all_alive_and_valid(service_list=['carState', 'controlsState', 'modelV2', 'dragonConf'])
     plan_send.lateralPlan.laneWidth = float(self.LP.lane_width)
     plan_send.lateralPlan.dPathPoints = [float(x) for x in self.y_pts]
     plan_send.lateralPlan.lProb = float(self.LP.lll_prob)
@@ -248,6 +289,7 @@ class LateralPlanner():
     plan_send.lateralPlan.desire = self.desire
     plan_send.lateralPlan.laneChangeState = self.lane_change_state
     plan_send.lateralPlan.laneChangeDirection = self.lane_change_direction
+    plan_send.lateralPlan.dpALCAllowed = self.dp_lc_auto_allowed
 
     pm.send('lateralPlan', plan_send)
 

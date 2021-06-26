@@ -1,4 +1,4 @@
-Import('env', 'arch', 'cereal', 'messaging', 'common', 'gpucommon', 'visionipc', 'USE_WEBCAM')
+Import('env', 'arch', 'cereal', 'messaging', 'common', 'gpucommon', 'visionipc', 'USE_WEBCAM', 'USE_MIPI')
 
 libs = ['m', 'pthread', common, 'jpeg', 'OpenCL', cereal, messaging, 'zmq', 'capnp', 'kj', visionipc, gpucommon]
 
@@ -9,7 +9,14 @@ elif arch == "larch64":
   libs += ['atomic']
   cameras = ['cameras/camera_qcom2.cc']
 else:
-  if USE_WEBCAM:
+  if USE_MIPI:
+    libs += ['opencv_core', 'opencv_highgui', 'opencv_imgproc', 'opencv_videoio']
+    cameras = ['cameras/camera_mipi.cc']
+    env = env.Clone()
+    env.Append(CXXFLAGS = '-DMIPI')
+    env.Append(CFLAGS = '-DMIPI')
+    env.Append(CPPPATH = '/usr/local/include/opencv4')
+  elif USE_WEBCAM:
     libs += ['opencv_core', 'opencv_highgui', 'opencv_imgproc', 'opencv_videoio']
     cameras = ['cameras/camera_webcam.cc']
     env = env.Clone()

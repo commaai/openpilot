@@ -1,10 +1,10 @@
 import os
 from pathlib import Path
-from selfdrive.hardware import PC
+from selfdrive.hardware import PC, JETSON
 
 if os.environ.get('LOGGERD_ROOT', False):
   ROOT = os.environ['LOGGERD_ROOT']
-elif PC:
+elif PC or JETSON:
   ROOT = os.path.join(str(Path.home()), ".comma", "media", "0", "realdata")
 else:
   ROOT = '/data/media/0/realdata/'

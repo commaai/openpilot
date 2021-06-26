@@ -41,6 +41,18 @@ class LanePlanner:
     self.camera_offset = -CAMERA_OFFSET if wide_camera else CAMERA_OFFSET
     self.path_offset = -PATH_OFFSET if wide_camera else PATH_OFFSET
 
+    self.dp_camera_offset = None
+    self.dp_path_offset = None
+
+  def update_dp_set_offsets(self, camera_offset, path_offset):
+    if self.dp_camera_offset != camera_offset:
+      self.dp_camera_offset = camera_offset
+      self.camera_offset = camera_offset / 100
+
+    if self.dp_path_offset != path_offset:
+      self.dp_path_offset = path_offset
+      self.path_offset = path_offset / 100
+
   def parse_model(self, md):
     if len(md.laneLines) == 4 and len(md.laneLines[0].t) == TRAJECTORY_SIZE:
       self.ll_t = (np.array(md.laneLines[1].t) + np.array(md.laneLines[2].t))/2

@@ -33,9 +33,9 @@
 
 namespace {
 
-const std::string default_params_path = Hardware::PC() ? util::getenv_default("HOME", "/.comma/params", "/data/params")
+const std::string default_params_path = Hardware::PC() || Hardware::JETSON() ? util::getenv_default("HOME", "/.comma/params", "/data/params")
                                                        : "/data/params";
-const std::string persistent_params_path = Hardware::PC() ? default_params_path : "/persist/comma/params";
+const std::string persistent_params_path = Hardware::PC() || Hardware::JETSON() ? default_params_path : "/persist/comma/params";
 
 volatile sig_atomic_t params_do_exit = 0;
 void params_sig_handler(int signal) {
@@ -217,6 +217,79 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"Offroad_UnofficialHardware", CLEAR_ON_MANAGER_START},
     {"Offroad_NvmeMissing", CLEAR_ON_MANAGER_START},
     {"ForcePowerDown", CLEAR_ON_MANAGER_START},
+    // dp
+    {"dp_atl", PERSISTENT},
+    {"dp_dashcamd", PERSISTENT},
+    {"dp_auto_shutdown", PERSISTENT},
+    {"dp_auto_shutdown_in", PERSISTENT},
+    {"dp_updated", PERSISTENT},
+    {"dp_logger", PERSISTENT},
+    {"dp_athenad", PERSISTENT},
+    {"dp_uploader", PERSISTENT},
+    {"dp_hotspot_on_boot", PERSISTENT},
+    {"dp_steering_on_signal", PERSISTENT},
+    {"dp_signal_off_delay", PERSISTENT},
+    {"dp_lateral_mode", PERSISTENT},
+    {"dp_lc_min_mph", PERSISTENT},
+    {"dp_lc_auto_cont", PERSISTENT},
+    {"dp_lc_auto_min_mph", PERSISTENT},
+    {"dp_lc_auto_delay", PERSISTENT},
+    {"dp_allow_gas", PERSISTENT},
+    {"dp_following_profile_ctrl", PERSISTENT},
+    {"dp_following_profile", PERSISTENT},
+    {"dp_accel_profile_ctrl", PERSISTENT},
+    {"dp_accel_profile", PERSISTENT},
+    {"dp_gear_check", PERSISTENT},
+    {"dp_speed_check", PERSISTENT},
+    {"dp_temp_monitor", PERSISTENT},
+    {"dp_ui_display_mode", PERSISTENT},
+    {"dp_ui_speed", PERSISTENT},
+    {"dp_ui_event", PERSISTENT},
+    {"dp_ui_max_speed", PERSISTENT},
+    {"dp_ui_face", PERSISTENT},
+    {"dp_ui_lane", PERSISTENT},
+    {"dp_ui_lead", PERSISTENT},
+    {"dp_ui_dev", PERSISTENT},
+    {"dp_ui_dev_mini", PERSISTENT},
+    {"dp_ui_blinker", PERSISTENT},
+    {"dp_ui_brightness", PERSISTENT},
+    {"dp_ui_volume", PERSISTENT},
+    {"dp_app_ext_gps", PERSISTENT},
+    {"dp_app_tomtom", PERSISTENT},
+    {"dp_app_tomtom_auto", PERSISTENT},
+    {"dp_app_tomtom_manual", PERSISTENT},
+    {"dp_app_mixplorer", PERSISTENT},
+    {"dp_app_mixplorer_manual", PERSISTENT},
+    {"dp_car_selected", PERSISTENT},
+    {"dp_car_list", PERSISTENT},
+    {"dp_car_detected", PERSISTENT},
+    {"dp_toyota_ldw", PERSISTENT},
+    {"dp_toyota_sng", PERSISTENT},
+    {"dp_toyota_zss", PERSISTENT},
+    {"dp_hkg_smart_mdps", PERSISTENT},
+    {"dp_honda_eps_mod", PERSISTENT},
+    {"dp_vw_panda", PERSISTENT},
+    {"dp_vw_timebomb_assist", PERSISTENT},
+    {"dp_fan_mode", PERSISTENT},
+    {"dp_last_modified", PERSISTENT},
+    {"dp_camera_offset", PERSISTENT},
+    {"dp_path_offset", PERSISTENT},
+    {"dp_locale", PERSISTENT},
+    {"dp_disable_relay", PERSISTENT},
+    {"dp_reg", PERSISTENT},
+    {"dp_sr_learner", PERSISTENT},
+    {"dp_sr_custom", PERSISTENT},
+    {"dp_sr_stock", PERSISTENT},
+    {"dp_lqr", PERSISTENT},
+    {"dp_reset_live_param_on_start", PERSISTENT},
+    {"dp_jetson", PERSISTENT},
+    {"dp_debug", PERSISTENT},
+    {"dp_car_assigned", PERSISTENT},
+    {"dp_car_list", PERSISTENT},
+    {"dp_no_batt", PERSISTENT},
+    {"dp_panda_fake_black", PERSISTENT},
+    {"dp_panda_no_gps", PERSISTENT},
+    {"dp_last_candidate", PERSISTENT},
 };
 
 } // namespace
@@ -328,4 +401,8 @@ void Params::clearAll(ParamKeyType key_type) {
       remove(key);
     }
   }
+}
+
+std::string Params::get_params_path() {
+  return default_params_path;
 }

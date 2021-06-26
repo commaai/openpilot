@@ -1,0 +1,7 @@
+#!/usr/bin/env python3.7
+
+# delay of reading last modified
+LAST_MODIFIED_THERMALD = 10.
+LAST_MODIFIED_SYSTEMD = 1.
+LAST_MODIFIED_LANE_PLANNER = 3.
+LAST_MODIFIED_UPLOADER = 10.

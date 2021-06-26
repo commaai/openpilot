@@ -8,7 +8,7 @@ messaging_dir = Dir('messaging')
 
 # Build cereal
 
-schema_files = ['log.capnp', 'car.capnp', 'legacy.capnp']
+schema_files = ['log.capnp', 'car.capnp', 'legacy.capnp', 'dp.capnp']
 env.Command(["gen/c/include/c++.capnp.h", "gen/c/include/java.capnp.h"], [], "mkdir -p " + gen_dir.path + "/c/include && touch $TARGETS")
 env.Command([f'gen/cpp/{s}.c++' for s in schema_files] + [f'gen/cpp/{s}.h' for s in schema_files],
             schema_files,
@@ -39,6 +39,13 @@ messaging_objects = env.SharedObject([
 
 messaging_lib = env.Library('messaging', messaging_objects)
 Depends('messaging/impl_zmq.cc', services_h)
+
+# note, this rebuilds the deps shared, zmq is statically linked to make APK happy
+# TODO: get APK to load system zmq to remove the static link
+if arch == "aarch64":
+  zmq_static = FindFile("libzmq.a", "/usr/lib")
+  shared_lib_shared_lib = [zmq_static, 'm', 'stdc++', "gnustl_shared", "kj", "capnp"]
+  env.SharedLibrary('messaging_shared', messaging_objects, LIBS=shared_lib_shared_lib)
 
 env.Program('messaging/bridge', ['messaging/bridge.cc'], LIBS=[messaging_lib, 'zmq'])
 Depends('messaging/bridge.cc', services_h)

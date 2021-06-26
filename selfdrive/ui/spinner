@@ -4,6 +4,8 @@ if [ -f /EON ] && [ ! -f qt/spinner ]; then
   cp qt/spinner_aarch64 qt/spinner
 elif [ -f /TICI ] && [ ! -f qt/spinner ]; then
   cp qt/spinner_larch64 qt/spinner
+elif [ -f /JETSON ] && [ ! -f qt/spinner ]; then
+  cp qt/spinner_larch64 qt/spinner
 fi
 
 export LD_LIBRARY_PATH="/system/lib64:$LD_LIBRARY_PATH"

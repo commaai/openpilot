@@ -5,6 +5,7 @@ from selfdrive.car.gm.values import CAR, CruiseButtons, \
                                     AccState
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
+from common.dp_common import common_interface_atl, common_interface_get_params_lqr
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
@@ -19,6 +20,8 @@ class CarInterface(CarInterfaceBase):
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "gm"
+    # dp
+    ret.lateralTuning.init('pid')
     ret.safetyModel = car.CarParams.SafetyModel.gm
     ret.enableCruise = False  # stock cruise control is kept off
 
@@ -112,14 +115,19 @@ class CarInterface(CarInterfaceBase):
     ret.steerLimitTimer = 0.4
     ret.radarTimeStep = 0.0667  # GM radar runs at 15Hz instead of standard 20Hz
 
+    # dp
+    ret = common_interface_get_params_lqr(ret)
+
     return ret
 
   # returns a car.CarState
-  def update(self, c, can_strings):
+  def update(self, c, can_strings, dragonconf):
     self.cp.update_strings(can_strings)
 
     ret = self.CS.update(self.cp)
-
+    # dp
+    self.dragonconf = dragonconf
+    ret.cruiseState.enabled = common_interface_atl(ret, dragonconf.dpAtl)
     ret.canValid = self.cp.can_valid
     ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
 
@@ -188,7 +196,7 @@ class CarInterface(CarInterfaceBase):
     can_sends = self.CC.update(enabled, self.CS, self.frame,
                                c.actuators,
                                hud_v_cruise, c.hudControl.lanesVisible,
-                               c.hudControl.leadVisible, c.hudControl.visualAlert)
+                               c.hudControl.leadVisible, c.hudControl.visualAlert, self.dragonconf)
 
     self.frame += 1
     return can_sends

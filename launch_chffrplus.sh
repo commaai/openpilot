@@ -6,6 +6,13 @@ fi
 
 source "$BASEDIR/launch_env.sh"
 
+if ! $(grep -q "letv" /proc/cmdline); then
+  mount -o remount,rw /system
+  sed -i -e 's#/dev/input/event1#/dev/input/event2#g' ~/.bash_profile
+  touch /ONEPLUS
+  mount -o remount,r /system
+fi
+
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
 function two_init {
@@ -56,6 +63,7 @@ function two_init {
 
   # USB traffic needs realtime handling on cpu 3
   [ -d "/proc/irq/733" ] && echo 3 > /proc/irq/733/smp_affinity_list
+  [ -d "/proc/irq/736" ] && echo 3 > /proc/irq/736/smp_affinity_list # USB for OP3T
 
   # GPU and camera get cpu 2
   CAM_IRQS="177 178 179 180 181 182 183 184 185 186 192"
@@ -76,20 +84,36 @@ function two_init {
   service call bluetooth_manager 8
 
   # Check for NEOS update
-  if [ $(< /VERSION) != "$REQUIRED_NEOS_VERSION" ]; then
-    if [ -f "$DIR/scripts/continue.sh" ]; then
-      cp "$DIR/scripts/continue.sh" "/data/data/com.termux/files/continue.sh"
-    fi
+  if $(grep -q "letv" /proc/cmdline); then
+    if [ $(< /VERSION) != "$REQUIRED_NEOS_VERSION" ]; then
+      if [ -f "$DIR/scripts/continue.sh" ]; then
+        cp "$DIR/scripts/continue.sh" "/data/data/com.termux/files/continue.sh"
+      fi
 
-    if [ ! -f "$BASEDIR/prebuilt" ]; then
-      # Clean old build products, but preserve the scons cache
-      cd $DIR
-      scons --clean
-      git clean -xdf
-      git submodule foreach --recursive git clean -xdf
-    fi
+      if [ ! -f "$BASEDIR/prebuilt" ]; then
+        # Clean old build products, but preserve the scons cache
+        cd $DIR
+        scons --clean
+        git clean -xdf
+        git submodule foreach --recursive git clean -xdf
+      fi
 
-    "$DIR/installer/updater/updater" "file://$DIR/installer/updater/update.json"
+      "$DIR/installer/updater/updater" "file://$DIR/installer/updater/update.json"
+    fi
+  else
+    echo -n 0 > /data/params/d/DisableUpdates
+  fi
+
+  # One-time fix for a subset of OP3T with gyro orientation offsets.
+  # Remove and regenerate qcom sensor registry. Only done on OP3T mainboards.
+  # Performed exactly once. The old registry is preserved just-in-case, and
+  # doubles as a flag denoting we've already done the reset.
+  if ! $(grep -q "letv" /proc/cmdline) && [ ! -f "/persist/comma/op3t-sns-reg-backup" ]; then
+    echo "Performing OP3T sensor registry reset"
+    mv /persist/sensors/sns.reg /persist/comma/op3t-sns-reg-backup &&
+      rm -f /persist/sensors/sensors_settings /persist/sensors/error_log /persist/sensors/gyro_sensitity_cal &&
+      echo "restart" > /sys/kernel/debug/msm_subsys/slpi &&
+      sleep 5  # Give Android sensor subsystem a moment to recover
   fi
 }
 
@@ -179,10 +203,10 @@ function launch {
   #    that completed successfully and synced to disk.
 
   if [ -f "${BASEDIR}/.overlay_init" ]; then
-    find ${BASEDIR}/.git -newer ${BASEDIR}/.overlay_init | grep -q '.' 2> /dev/null
-    if [ $? -eq 0 ]; then
-      echo "${BASEDIR} has been modified, skipping overlay update installation"
-    else
+#    find ${BASEDIR}/.git -newer ${BASEDIR}/.overlay_init | grep -q '.' 2> /dev/null
+#    if [ $? -eq 0 ]; then
+#      echo "${BASEDIR} has been modified, skipping overlay update installation"
+#    else
       if [ -f "${STAGING_ROOT}/finalized/.overlay_consistent" ]; then
         if [ ! -d /data/safe_staging/old_openpilot ]; then
           echo "Valid overlay update found, installing"
@@ -206,7 +230,7 @@ function launch {
           # TODO: restore backup? This means the updater didn't start after swapping
         fi
       fi
-    fi
+#    fi
   fi
 
   # handle pythonpath
@@ -218,6 +242,10 @@ function launch {
     two_init
   elif [ -f /TICI ]; then
     tici_init
+  fi
+
+  if [ -f "/sdcard/dp_patcher.py" ]; then
+    /data/data/com.termux/files/usr/bin/python /sdcard/dp_patcher.py
   fi
 
   # write tmux scrollback to a file

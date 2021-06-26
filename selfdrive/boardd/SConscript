@@ -1,4 +1,14 @@
 Import('env', 'envCython', 'common', 'cereal', 'messaging')
+# dp - Add read dp_disable_relay value
+if FindFile('dp_disable_relay', '/data/params/d') != None:
+  with open('/data/params/d/dp_disable_relay') as f:
+    if (int(f.read().strip())) == 1:
+      env.Append(CCFLAGS='-DDisableRelay')
+
+if FindFile('dp_panda_no_gps', '/data/params/d') != None:
+  with open('/data/params/d/dp_panda_no_gps') as f:
+    if (int(f.read().strip())) == 1:
+      env.Append(CCFLAGS='-DNoGPS')
 
 env.Program('boardd', ['boardd.cc', 'panda.cc', 'pigeon.cc'], LIBS=['usb-1.0', common, cereal, messaging, 'pthread', 'zmq', 'capnp', 'kj'])
 env.Library('libcan_list_to_can_capnp', ['can_list_to_can_capnp.cc'])

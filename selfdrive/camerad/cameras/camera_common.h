@@ -25,7 +25,8 @@
 #define CAMERA_ID_LGC920 6
 #define CAMERA_ID_LGC615 7
 #define CAMERA_ID_AR0231 8
-#define CAMERA_ID_MAX 9
+#define CAMERA_ID_IMX219 9
+#define CAMERA_ID_MAX 10
 
 #define UI_BUF_COUNT 4
 #define YUV_COUNT 40

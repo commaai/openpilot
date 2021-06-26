@@ -59,7 +59,7 @@ class LongitudinalMpc():
     self.cur_state[0].v_ego = v
     self.cur_state[0].a_ego = a
 
-  def update(self, CS, lead):
+  def update(self, CS, lead, dp_following_distance=1.8):
     v_ego = CS.vEgo
 
     # Setup current mpc state
@@ -94,7 +94,7 @@ class LongitudinalMpc():
 
     # Calculate mpc
     t = sec_since_boot()
-    self.n_its = self.libmpc.run_mpc(self.cur_state, self.mpc_solution, self.a_lead_tau, a_lead)
+    self.n_its = self.libmpc.run_mpc(self.cur_state, self.mpc_solution, self.a_lead_tau, a_lead, dp_following_distance)
     self.duration = int((sec_since_boot() - t) * 1e9)
 
     # Get solution. MPC timestep is 0.2 s, so interpolation to 0.05 s is needed

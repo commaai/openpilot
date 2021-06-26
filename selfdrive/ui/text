@@ -4,6 +4,8 @@ if [ -f /EON ] && [ ! -f qt/text ]; then
   cp qt/text_aarch64 qt/text
 elif [ -f /TICI ] && [ ! -f qt/text ]; then
   cp qt/text_larch64 qt/text
+elif [ -f /JETSON ] && [ ! -f qt/text ]; then
+  cp qt/text_larch64 qt/text
 fi
 
 export LD_LIBRARY_PATH="/system/lib64:$LD_LIBRARY_PATH"
