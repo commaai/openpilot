@@ -35,7 +35,7 @@ def getch() -> str:
     termios.tcsetattr(STDIN_FD, termios.TCSADRAIN, old_settings)
   return ch
 
-def keyboard_poll_thread(q: 'Queue[str]') -> NoReturn:
+def keyboard_poll_thread(q: 'Queue[str]'):
   while True:
     c = getch()
     # print("got %s" % c)
@@ -54,7 +54,8 @@ def keyboard_poll_thread(q: 'Queue[str]') -> NoReturn:
     elif c == 'd':
       q.put("steer_%f" % -0.15)
     elif c == 'q':
-      exit(0)
+      q.put("quit")
+      break
 
 def test(q: 'Queue[str]') -> NoReturn:
   while True:
