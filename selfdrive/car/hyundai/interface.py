@@ -253,6 +253,15 @@ class CarInterface(CarInterfaceBase):
     ret.enableCamera = True
     ret.enableBsm = 0x58b in fingerprint[0]
 
+    if 0x367 in fingerprint[0]:
+      ret.gearboxType = 1
+    elif 0x372 in fingerprint[0]:
+      ret.gearboxType = 2
+    elif 0x112 in fingerprint[0]:
+      ret.gearboxType = 3
+    else:  #
+      ret.gearboxType = 4
+
     return ret
 
   def update(self, c, can_strings):
