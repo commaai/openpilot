@@ -244,7 +244,7 @@ def mapd_thread(sm=None, pm=None):
 
   while True:
     sm.update()
-    mapd.udpate_state(sm)
+    mapd.update_state(sm)
     mapd.update_gps(sm)
     mapd.updated_osm_data()
     mapd.update_route()
