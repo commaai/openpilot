@@ -1,8 +1,8 @@
 class FirstOrderFilter:
   # first order filter
   def __init__(self, x0, RC, dt):
-    self.dt = dt
     self.x = x0
+    self.dt = dt
     self.update_alpha(RC)
 
   def update_alpha(self, RC):
