@@ -33,11 +33,6 @@ private:
   QUrl url_;
 };
 
-struct EncodeIdx {
-  int segmentNum;
-  uint32_t frameEncodeId;
-};
-
 class Event {
 public:
   Event(const kj::ArrayPtr<const capnp::word> &amsg) : reader(amsg) {
@@ -68,8 +63,6 @@ public:
   inline bool valid() const { return valid_; }
 
   std::vector<Event *> events;
-  uint64_t route_start_ts = 0;
-  std::unordered_map<uint32_t, EncodeIdx> encoderIdx[MAX_CAMERAS] = {};
 
 signals:
   void finished(bool success);

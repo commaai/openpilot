@@ -150,14 +150,36 @@ void Replay::mergeEvents(bool success) {
   if (!success) return;
 
   Segment *seg = qobject_cast<Segment *>(QObject::sender());
-  route_start_ts_ = seg->log->route_start_ts;
 
   auto [min_seg, max_seg] = cacheSegmentRange(current_segment_);
   if (seg->seg_num >= min_seg && seg->seg_num <= max_seg) {
-    std::vector<Event *> *dst = new std::vector<Event *>;
-    dst->reserve(events_->size() + seg->log->events.size());
+    // parse events
+    auto insertEidx = [&](CameraType type, const cereal::EncodeIndex::Reader &e) {
+      eidx[type][e.getFrameId()] = {e.getSegmentNum(), e.getSegmentId()};
+    };
+
+    for (auto evt : seg->log->events) {
+      switch (evt->which) {
+        case cereal::Event::INIT_DATA:
+          route_start_ts_ = evt->mono_time;
+          break;
+        case cereal::Event::ROAD_ENCODE_IDX:
+          insertEidx(RoadCam, evt->event.getRoadEncodeIdx());
+          break;
+        case cereal::Event::DRIVER_ENCODE_IDX:
+          insertEidx(DriverCam, evt->event.getDriverEncodeIdx());
+          break;
+        case cereal::Event::WIDE_ROAD_ENCODE_IDX:
+          insertEidx(WideRoadCam, evt->event.getWideRoadEncodeIdx());
+          break;
+        default:
+          break;
+      }
+    }
 
     // merge events
+    std::vector<Event *> *dst = new std::vector<Event *>;
+    dst->reserve(events_->size() + seg->log->events.size());
     for (auto it = segments_.cbegin(); it != segments_.cend(); ++it) {
       if (it->first >= min_seg && it->first <= max_seg && it->second->loaded()) {
         auto &e = it->second->log->events;
@@ -187,15 +209,10 @@ void Replay::mergeEvents(bool success) {
   }
 }
 
-void Replay::pushFrame(int seg_num, CameraType cam_type, uint32_t frame_id) {
-  // search encodeIdx in adjacent segments.
-  for (int n : {seg_num, seg_num - 1, seg_num + 1}) {
-    if (auto seg = getSegment(n)) {
-      auto eidxMap = seg->log->encoderIdx[cam_type];
-      if (auto eidx = eidxMap.find(frame_id); eidx != eidxMap.end()) {
-        camera_server_.pushFrame(cam_type, seg, eidx->second.frameEncodeId);
-        break;
-      }
+void Replay::pushFrame(CameraType cam_type, uint32_t frame_id) {
+  if (auto e = eidx[cam_type].find(frame_id); e != eidx[cam_type].end()) {
+    if (auto seg = getSegment(e->second.seg_num)) {
+      camera_server_.pushFrame(cam_type, seg, e->second.encode_id);
     }
   }
 }
@@ -228,10 +245,10 @@ void Replay::streamThread() {
       continue;
     }
     waiting_printed = false;
-
     seek_ts_ = 0;
     evt_start_ts = (*eit)->mono_time;
     uint64_t loop_start_ts = nanos_since_boot();
+
     while (!exit_ && !loading_events_ && eit != events_->end()) {
       const Event *e = (*eit);
       const std::string &sock_name = eventSocketName(e);
@@ -260,13 +277,13 @@ void Replay::streamThread() {
         // publish frames
         switch (current_which) {
           case cereal::Event::ROAD_CAMERA_STATE:
-            pushFrame(current_segment_, RoadCam, e->event.getRoadCameraState().getFrameId());
+            pushFrame(RoadCam, e->event.getRoadCameraState().getFrameId());
             break;
           case cereal::Event::DRIVER_CAMERA_STATE:
-            pushFrame(current_segment_, DriverCam, e->event.getDriverCameraState().getFrameId());
+            pushFrame(DriverCam, e->event.getDriverCameraState().getFrameId());
             break;
           case cereal::Event::WIDE_ROAD_CAMERA_STATE:
-            pushFrame(current_segment_, WideRoadCam, e->event.getWideRoadCameraState().getFrameId());
+            pushFrame(WideRoadCam, e->event.getWideRoadCameraState().getFrameId());
             break;
           default:
             break;

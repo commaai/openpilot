@@ -98,36 +98,12 @@ void LogReader::parseEvents(const QByteArray &dat) {
     qWarning() << "bz2 decompress failed";
   }
 
-  auto insertEidx = [&](CameraType type, const cereal::EncodeIndex::Reader &e) {
-    encoderIdx[type][e.getFrameId()] = {e.getSegmentNum(), e.getSegmentId()};
-  };
-
   valid_ = true;
   kj::ArrayPtr<const capnp::word> words((const capnp::word *)raw_.data(), raw_.size() / sizeof(capnp::word));
   while (!exit_ && words.size() > 0) {
     try {
       std::unique_ptr<Event> evt = std::make_unique<Event>(words);
       words = kj::arrayPtr(evt->reader.getEnd(), words.end());
-
-      if (evt->which == cereal::Event::INIT_DATA) {
-        route_start_ts = evt->mono_time;
-        continue;
-      }
-
-      switch (evt->which) {
-        case cereal::Event::ROAD_ENCODE_IDX:
-          insertEidx(RoadCam, evt->event.getRoadEncodeIdx());
-          break;
-        case cereal::Event::DRIVER_ENCODE_IDX:
-          insertEidx(DriverCam, evt->event.getDriverEncodeIdx());
-          break;
-        case cereal::Event::WIDE_ROAD_ENCODE_IDX:
-          insertEidx(WideRoadCam, evt->event.getWideRoadEncodeIdx());
-          break;
-        default:
-          break;
-      }
-
       events.push_back(evt.release());
     } catch (const kj::Exception &e) {
       valid_ = false;

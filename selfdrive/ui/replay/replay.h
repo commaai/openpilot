@@ -19,6 +19,7 @@ public:
   inline bool loaded() const { return loading_ == 0 && failed_ == 0; }
   inline bool failed() const { return failed_ != 0; }
   int seg_num = 0;
+  uint64_t route_start_ts = 0;
   LogReader *log = nullptr;
   FrameReader *frames[MAX_CAMERAS] = {};
 
@@ -57,7 +58,7 @@ private:
   std::pair<int, int> cacheSegmentRange(int seg_num);
   void queueSegment(int seg_num);
   void streamThread();
-  void pushFrame(int cur_seg_num, CameraType type, uint32_t frame_id);
+  void pushFrame(CameraType type, uint32_t frame_id);
   const Segment *getSegment(int segment);
   const std::string &eventSocketName(const Event *e);
 
@@ -73,6 +74,11 @@ private:
   std::condition_variable cv_;
   std::map<int, Segment*> segments_;
   std::unique_ptr<std::vector<Event *>> events_;
+  struct EncodeIdx {
+    int seg_num;
+    uint32_t encode_id;
+  };
+  std::unordered_map<uint32_t, EncodeIdx> eidx[MAX_CAMERAS] = {};
 
   uint64_t seek_ts_ = 0;
   std::atomic<int> current_segment_ = 0;
