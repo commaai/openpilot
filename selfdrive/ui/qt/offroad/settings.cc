@@ -182,7 +182,7 @@ DevicePanel::DevicePanel(QWidget* parent) : ListWidget(parent) {
     }
   });
 
-  addWidget(btnsWidget);
+  addItem(btnsWidget);
 }
 
 SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
