@@ -371,6 +371,7 @@ QString WifiManager::get_adapter() {
 void WifiManager::stateChange(unsigned int new_state, unsigned int previous_state, unsigned int change_reason) {
   raw_adapter_state = new_state;
   if (new_state == state_need_auth && change_reason == reason_wrong_password) {
+    knownConnections.remove(getConnectionPath(connecting_to_network));
     emit wrongPassword(connecting_to_network);
   } else if (new_state == state_connected) {
     connecting_to_network = "";
@@ -382,21 +383,21 @@ void WifiManager::stateChange(unsigned int new_state, unsigned int previous_stat
 // https://developer.gnome.org/NetworkManager/stable/gdbus-org.freedesktop.NetworkManager.Device.Wireless.html
 void WifiManager::propertyChange(const QString &interface, const QVariantMap &props, const QStringList &invalidated_props) {
   if (interface == wireless_device_iface && props.contains("LastScan")) {
-    if (firstScan) {
-      known_connections = listConnections();
+    if (knownConnections.isEmpty()) {
+      knownConnections = listConnections();
     }
-    refreshNetworks();  // TODO: only refresh on firstScan, then use AccessPointAdded and Removed signals
+    refreshNetworks();  // TODO: only refresh on first scan, then use AccessPointAdded and Removed signals
     emit refreshSignal();
   }
 }
 
 void WifiManager::connectionRemoved(const QDBusObjectPath &path) {
-  known_connections.remove(path);
+  knownConnections.remove(path);
 }
 
 void WifiManager::newConnection(const QDBusObjectPath &path) {
-  known_connections[path] = getConnectionSsid(path);
-  activateWifiConnection(known_connections[path]);
+  knownConnections[path] = getConnectionSsid(path);
+  activateWifiConnection(knownConnections[path]);
 }
 
 void WifiManager::disconnect() {
@@ -407,9 +408,9 @@ void WifiManager::disconnect() {
 }
 
 QDBusObjectPath WifiManager::getConnectionPath(const QString &ssid) {
-  for (const QString &conn_ssid : known_connections) {
+  for (const QString &conn_ssid : knownConnections) {
     if (ssid == conn_ssid) {
-      return known_connections.key(conn_ssid);
+      return knownConnections.key(conn_ssid);
     }
   }
   return QDBusObjectPath();  // unknown ssid, return uninitialized path
