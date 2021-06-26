@@ -26,7 +26,7 @@ public:
   int getRGBSize() const { return width * height * 3; }
   size_t getFrameCount() const { return frames_.size(); }
   bool valid() const { return valid_; }
-
+  
   int width = 0, height = 0;
 
 private:
@@ -54,6 +54,6 @@ private:
   bool valid_ = false;
   std::string url_;
   std::thread decode_thread_;
-  int timeout_;
-  double timeout_ms_;
+  int timeout_ = 0;
+  double timeout_ms_ = 0;
 };

@@ -25,31 +25,18 @@ static int ffmpeg_lockmgr_cb(void **arg, enum AVLockOp op) {
 
 class AVInitializer {
 public:
- AVInitializer() {}
- ~AVInitializer() {
-   if (inited_) {
-     avformat_network_deinit();
-   }
- }
- void init() {
-   std::call_once(init_flag, [=]() {
-     int ret = av_lockmgr_register(ffmpeg_lockmgr_cb);
-     assert(ret >= 0);
-     av_register_all();
-     avformat_network_init();
-     inited_ = true;
-   });
- }
+  AVInitializer() {
+    int ret = av_lockmgr_register(ffmpeg_lockmgr_cb);
+    assert(ret >= 0);
+    av_register_all();
+    avformat_network_init();
+  }
 
-private:
-  bool inited_ = false;
-  inline static std::once_flag init_flag;
+  ~AVInitializer() { avformat_network_deinit(); }
 };
 
-static AVInitializer av_initializer;
-
 FrameReader::FrameReader(const std::string &url, int timeout_sec) : url_(url), timeout_(timeout_sec) {
-  av_initializer.init();
+  static AVInitializer av_initializer;
 }
 
 FrameReader::~FrameReader() {
@@ -88,22 +75,21 @@ FrameReader::~FrameReader() {
 }
 
 int FrameReader::check_interrupt(void *p) {
-  return p && millis_since_boot() > static_cast<FrameReader*>(p)->timeout_ms_;
+  FrameReader *fr = static_cast<FrameReader*>(p);
+  return fr->exit_ || (fr->timeout_ > 0 && millis_since_boot() > fr->timeout_ms_);
 }
 
 bool FrameReader::process() {
   pFormatCtx_ = avformat_alloc_context();
+  pFormatCtx_->interrupt_callback.callback = &FrameReader::check_interrupt;
+  pFormatCtx_->interrupt_callback.opaque = (void *)this;
   if (timeout_ > 0) {
     timeout_ms_ = millis_since_boot() + timeout_ * 1000;
-    pFormatCtx_->interrupt_callback.callback = &FrameReader::check_interrupt;
-    pFormatCtx_->interrupt_callback.opaque = (void *)this;
   }
-
   if (avformat_open_input(&pFormatCtx_, url_.c_str(), NULL, NULL) != 0) {
     printf("error loading %s\n", url_.c_str());
     return false;
   }
-
   avformat_find_stream_info(pFormatCtx_, NULL);
   av_dump_format(pFormatCtx_, 0, url_.c_str(), 0);
 
@@ -150,21 +136,17 @@ uint8_t *FrameReader::get(int idx) {
   if (!valid_ || idx < 0 || idx >= frames_.size()) {
     return nullptr;
   }
-
-  {
-    std::unique_lock lk(mutex_);
-    decode_idx_ = idx;
-    cv_decode_.notify_one();
-    cv_frame_.wait(lk, [=] { return exit_ || frames_[idx].data || frames_[idx].failed; });
-  }
-
+  std::unique_lock lk(mutex_);
+  decode_idx_ = idx;
+  cv_decode_.notify_one();
+  cv_frame_.wait(lk, [=] { return exit_ || frames_[idx].data || frames_[idx].failed; });
   return frames_[idx].data;
 }
 
 void FrameReader::decodeThread() {
   int idx = 0;
   while (!exit_) {
-    const int from = std::max(idx - 20, 0);
+    const int from = std::max(idx - 15, 0);
     const int to = std::min(idx + 20, (int)frames_.size());
     for (int i = 0; i < frames_.size() && !exit_; ++i) {
       Frame &frame = frames_[i];
