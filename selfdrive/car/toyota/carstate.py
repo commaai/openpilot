@@ -133,7 +133,7 @@ class CarState(CarStateBase):
     #Arne distance button
     if self.read_distance_lines != cp.vl["PCM_CRUISE_SM"]['DISTANCE_LINES'] and physical_buttons_DF:
       self.read_distance_lines = cp.vl["PCM_CRUISE_SM"]['DISTANCE_LINES']
-      put_nonblocking('dp_following_profile', str(int(max(self.read_distance_lines - 1 , 0))))
+      put_nonblocking('dp_following_profile', str(int(max(self.read_distance_lines, 0))))
       put_nonblocking('dp_last_modified',str(floor(time.time())))
 
     ret.leftBlinker = cp.vl["STEERING_LEVERS"]["TURN_SIGNALS"] == 1
