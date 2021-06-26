@@ -330,14 +330,15 @@ void Segment::load(int seg_num, const SegmentFile &file) {
   for (const auto &[cam_type, file] : cam_files) {
     if (!file.isEmpty()) {
       loading_ += 1;
-      FrameReader *fr = frames[cam_type] = new FrameReader(file.toStdString());
-      frame_thread_[cam_type] = std::thread([=]() {
-        bool ret = fr->FrameReader::process();
+      frames[cam_type] = new FrameReader(file.toStdString());
+      frame_thread_[cam_type] = std::thread([=,type=cam_type]() {
+        bool ret = frames[type]->FrameReader::process();
         failed_ += !ret;
         if (--loading_ == 0) emit loadFinished(failed_ == 0);
       });
     }
   }
+  qDebug() << "loading segment" << seg_num;
 }
 
 Segment::~Segment() {
