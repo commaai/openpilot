@@ -92,7 +92,7 @@ void Replay::relativeSeek(int seconds) {
 void Replay::seekTo(uint64_t to_ts) {
   const int segment = int64_t(to_ts - route_start_ts_) / 1e9 / SEGMENT_LENGTH;
   auto seg = getSegment(segment);
-  if ((seg && seg->failed()) || !route_.segments().contains(segment)) {
+  if (!route_.segments().contains(segment) || (seg && seg->failed())) {
     qInfo() << "can't seek to" << elapsedTime(to_ts) << ": segment" << segment << "does not exist.";
     return;
   }
@@ -218,7 +218,7 @@ void Replay::pushFrame(CameraType cam_type, uint32_t frame_id) {
 }
 
 void Replay::streamThread() {
-  uint64_t last_print_ts = 0, evt_start_ts = 0;
+  uint64_t last_print_ts = 0;
   cereal::Event::Which current_which = cereal::Event::INIT_DATA;
   bool waiting_printed = false;
   while (!exit_) {
@@ -246,7 +246,7 @@ void Replay::streamThread() {
     }
     waiting_printed = false;
     seek_ts_ = 0;
-    evt_start_ts = (*eit)->mono_time;
+    uint64_t evt_start_ts = (*eit)->mono_time;
     uint64_t loop_start_ts = nanos_since_boot();
 
     while (!exit_ && !loading_events_ && eit != events_->end()) {

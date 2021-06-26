@@ -19,7 +19,6 @@ public:
   inline bool loaded() const { return loading_ == 0 && failed_ == 0; }
   inline bool failed() const { return failed_ != 0; }
   int seg_num = 0;
-  uint64_t route_start_ts = 0;
   LogReader *log = nullptr;
   FrameReader *frames[MAX_CAMERAS] = {};
 

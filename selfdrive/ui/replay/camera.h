@@ -7,7 +7,7 @@
 enum CameraType {
   RoadCam = 0,
   DriverCam,
-  WideRoadCam
+  WideRoadCam,
 };
 
 const CameraType ALL_CAMERAS[] = {RoadCam, DriverCam, WideRoadCam};
