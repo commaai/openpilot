@@ -2,6 +2,8 @@
 
 #include <iostream>
 
+#include <QPainter>
+
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/timing.h"
 #include "selfdrive/ui/paint.h"
