@@ -115,7 +115,7 @@ static void draw_frame(UIState *s) {
 
   if (s->last_frame) {
     glBindTexture(GL_TEXTURE_2D, s->texture[s->last_frame->idx]->frame_tex);
-    if (!Hardware::EON()) {
+    if (!HARDWARE.EON()) {
       // this is handled in ion on QCOM
       glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, s->last_frame->width, s->last_frame->height,
                    0, GL_RGB, GL_UNSIGNED_BYTE, s->last_frame->addr);
@@ -370,7 +370,7 @@ void ui_nvg_init(UIState *s) {
   // init drawing
 
   // on EON, we enable MSAA
-  s->vg = Hardware::EON() ? nvgCreate(0) : nvgCreate(NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG);
+  s->vg = HARDWARE.EON() ? nvgCreate(0) : nvgCreate(NVG_ANTIALIAS | NVG_STENCIL_STROKES | NVG_DEBUG);
   assert(s->vg);
 
   // init fonts
@@ -438,7 +438,7 @@ void ui_resize(UIState *s, int width, int height) {
   s->fb_w = width;
   s->fb_h = height;
 
-  auto intrinsic_matrix = s->wide_camera ? ecam_intrinsic_matrix : fcam_intrinsic_matrix;
+  auto intrinsic_matrix = s->wide_camera ? HARDWARE.wide_road_cam_intrinsic_matrix() : HARDWARE.road_cam_intrinsic_matrix();
 
   s->zoom = zoom / intrinsic_matrix.v[0];
 

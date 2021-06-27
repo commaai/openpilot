@@ -73,7 +73,7 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                    "../assets/offroad/icon_road.png",
                                    this));
 
-  if (Hardware::TICI()) {
+  if (HARDWARE.TICI()) {
     toggles.append(new ParamControl("EnableWideCamera",
                                     "Enable use of Wide Angle Camera",
                                     "Use wide angle camera for driving and ui.",
@@ -176,7 +176,7 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
   power_layout->addWidget(reboot_btn);
   QObject::connect(reboot_btn, &QPushButton::released, [=]() {
     if (ConfirmationDialog::confirm("Are you sure you want to reboot?", this)) {
-      Hardware::reboot();
+      HARDWARE.reboot();
     }
   });
 
@@ -185,7 +185,7 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
   power_layout->addWidget(poweroff_btn);
   QObject::connect(poweroff_btn, &QPushButton::released, [=]() {
     if (ConfirmationDialog::confirm("Are you sure you want to power off?", this)) {
-      Hardware::poweroff();
+      HARDWARE.poweroff();
     }
   });
 
@@ -251,7 +251,7 @@ void SoftwarePanel::updateLabels() {
   updateBtn->setEnabled(true);
   gitBranchLbl->setText(QString::fromStdString(params.get("GitBranch")));
   gitCommitLbl->setText(QString::fromStdString(params.get("GitCommit")).left(10));
-  osVersionLbl->setText(QString::fromStdString(Hardware::get_os_version()).trimmed());
+  osVersionLbl->setText(QString::fromStdString(HARDWARE.get_os_version()).trimmed());
 }
 
 QWidget * network_panel(QWidget * parent) {
@@ -262,12 +262,12 @@ QWidget * network_panel(QWidget * parent) {
 
   // wifi + tethering buttons
   auto wifiBtn = new ButtonControl("WiFi Settings", "OPEN");
-  QObject::connect(wifiBtn, &ButtonControl::released, [=]() { HardwareEon::launch_wifi(); });
+  QObject::connect(wifiBtn, &ButtonControl::released, [=]() { HARDWARE.launch_wifi(); });
   layout->addWidget(wifiBtn);
   layout->addWidget(horizontal_line());
 
   auto tetheringBtn = new ButtonControl("Tethering Settings", "OPEN");
-  QObject::connect(tetheringBtn, &ButtonControl::released, [=]() { HardwareEon::launch_tethering(); });
+  QObject::connect(tetheringBtn, &ButtonControl::released, [=]() { HARDWARE.launch_tethering(); });
   layout->addWidget(tetheringBtn);
   layout->addWidget(horizontal_line());
 
@@ -392,6 +392,6 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
 
 void SettingsWindow::hideEvent(QHideEvent *event) {
 #ifdef QCOM
-  HardwareEon::close_activities();
+  HARDWARE.close_activities();
 #endif
 }

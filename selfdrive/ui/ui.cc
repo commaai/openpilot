@@ -25,7 +25,7 @@ static bool calib_frame_to_full_frame(const UIState *s, float in_x, float in_y, 
   const float margin = 500.0f;
   const vec3 pt = (vec3){{in_x, in_y, in_z}};
   const vec3 Ep = matvecmul3(s->scene.view_from_calib, pt);
-  const vec3 KEp = matvecmul3(s->wide_camera ? ecam_intrinsic_matrix : fcam_intrinsic_matrix, Ep);
+  const vec3 KEp = matvecmul3(s->wide_camera ? HARDWARE.wide_road_cam_intrinsic_matrix() : HARDWARE.road_cam_intrinsic_matrix(), Ep);
 
   // Project.
   float x = KEp.v[0] / KEp.v[2];
@@ -198,10 +198,10 @@ static void update_state(UIState *s) {
   if (sm.updated("roadCameraState")) {
     auto camera_state = sm["roadCameraState"].getRoadCameraState();
 
-    float max_lines = Hardware::EON() ? 5408 : 1757;
+    float max_lines = HARDWARE.EON() ? 5408 : 1757;
     float gain = camera_state.getGainFrac();
 
-    if (Hardware::TICI()) {
+    if (HARDWARE.TICI()) {
       // gainFrac can go up to 4, with another 2.5x multiplier based on globalGain. Scale back to 0 - 1
       gain *= (camera_state.getGlobalGain() > 100 ? 2.5 : 1.0) / 10.0;
     }
@@ -230,7 +230,7 @@ static void update_vision(UIState *s) {
     VisionBuf * buf = s->vipc_client->recv();
     if (buf != nullptr) {
       s->last_frame = buf;
-    } else if (!Hardware::PC()) {
+    } else if (!HARDWARE.PC()) {
       LOGE("visionIPC receive timeout");
     }
   }
@@ -257,7 +257,7 @@ static void update_status(UIState *s) {
       s->scene.started_frame = s->sm->frame;
 
       s->scene.end_to_end = Params().getBool("EndToEndToggle");
-      s->wide_camera = Hardware::TICI() ? Params().getBool("EnableWideCamera") : false;
+      s->wide_camera = HARDWARE.TICI() ? Params().getBool("EnableWideCamera") : false;
 
       // Update intrinsics matrix after possible wide camera toggle change
       if (s->vg) {
@@ -289,7 +289,7 @@ QUIState::QUIState(QObject *parent) : QObject(parent) {
   ui_state.fb_h = vwp_h;
   ui_state.scene.started = false;
   ui_state.last_frame = nullptr;
-  ui_state.wide_camera = Hardware::TICI() ? Params().getBool("EnableWideCamera") : false;
+  ui_state.wide_camera = HARDWARE.TICI() ? Params().getBool("EnableWideCamera") : false;
 
   ui_state.vipc_client_rear = new VisionIpcClient("camerad", VISION_STREAM_RGB_BACK, true);
   ui_state.vipc_client_wide = new VisionIpcClient("camerad", VISION_STREAM_RGB_WIDE, true);
@@ -336,7 +336,7 @@ void Device::update(const UIState &s) {
 void Device::setAwake(bool on, bool reset) {
   if (on != awake) {
     awake = on;
-    Hardware::set_display_power(awake);
+    HARDWARE.set_display_power(awake);
     LOGD("setting display power %d", awake);
     emit displayPowerChanged(awake);
   }
@@ -360,7 +360,7 @@ void Device::updateBrightness(const UIState &s) {
   }
 
   if (brightness != last_brightness) {
-    std::thread{Hardware::set_brightness, brightness}.detach();
+    std::thread{&Hardware::set_brightness, &HARDWARE, brightness}.detach();
   }
   last_brightness = brightness;
 }

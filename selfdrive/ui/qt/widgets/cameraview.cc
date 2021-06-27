@@ -46,25 +46,23 @@ const mat4 device_transform = {{
 mat4 get_driver_view_transform() {
   const float driver_view_ratio = 1.333;
   mat4 transform;
-  if (Hardware::TICI()) {
+  if (HARDWARE.TICI()) {
     // from dmonitoring.cc
-    const int full_width_tici = 1928;
-    const int full_height_tici = 1208;
     const int adapt_width_tici = 668;
     const int crop_x_offset = 32;
     const int crop_y_offset = -196;
-    const float yscale = full_height_tici * driver_view_ratio / adapt_width_tici;
-    const float xscale = yscale*(1080)/(2160)*full_width_tici/full_height_tici;
+    const float yscale = HARDWARE.driver_cam_size[1] * driver_view_ratio / adapt_width_tici;
+    const float xscale = yscale * HARDWARE.screen_size[1] / HARDWARE.screen_size[0] * HARDWARE.driver_cam_size[0] / HARDWARE.driver_cam_size[1];
     transform = (mat4){{
-      xscale,  0.0, 0.0, xscale*crop_x_offset/full_width_tici*2,
-      0.0,  yscale, 0.0, yscale*crop_y_offset/full_height_tici*2,
+      xscale,  0.0, 0.0, xscale * crop_x_offset / HARDWARE.driver_cam_size[0] * 2,
+      0.0,  yscale, 0.0, yscale * crop_y_offset / HARDWARE.driver_cam_size[1] * 2,
       0.0,  0.0, 1.0, 0.0,
       0.0,  0.0, 0.0, 1.0,
     }};
   } else {
     // frame from 4/3 to 16/9 display
     transform = (mat4){{
-      driver_view_ratio*(1080)/(1920),  0.0, 0.0, 0.0,
+      driver_view_ratio * HARDWARE.screen_size[1] / HARDWARE.screen_size[0],  0.0, 0.0, 0.0,
       0.0,  1.0, 0.0, 0.0,
       0.0,  0.0, 1.0, 0.0,
       0.0,  0.0, 0.0, 1.0,
@@ -72,7 +70,6 @@ mat4 get_driver_view_transform() {
   }
   return transform;
 }
-
 } // namespace
 
 CameraViewWidget::CameraViewWidget(VisionStreamType stream_type, QWidget* parent) : stream_type(stream_type), QOpenGLWidget(parent) {
@@ -128,7 +125,7 @@ void CameraViewWidget::initializeGL() {
   if (stream_type == VISION_STREAM_RGB_FRONT) {
     frame_mat = matmul(device_transform, get_driver_view_transform());
   } else {
-    auto intrinsic_matrix = stream_type == VISION_STREAM_RGB_WIDE ? ecam_intrinsic_matrix : fcam_intrinsic_matrix;
+    auto intrinsic_matrix = stream_type == VISION_STREAM_RGB_WIDE ? HARDWARE.wide_road_cam_intrinsic_matrix() : HARDWARE.road_cam_intrinsic_matrix();
     float zoom_ = zoom / intrinsic_matrix.v[0];
     if (stream_type == VISION_STREAM_RGB_WIDE) {
       zoom_ *= 0.5;
@@ -170,7 +167,7 @@ void CameraViewWidget::paintGL() {
   glActiveTexture(GL_TEXTURE0);
 
   glBindTexture(GL_TEXTURE_2D, texture[latest_frame->idx]->frame_tex);
-  if (!Hardware::EON()) {
+  if (!HARDWARE.EON()) {
     // this is handled in ion on QCOM
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, latest_frame->width, latest_frame->height,
                   0, GL_RGB, GL_UNSIGNED_BYTE, latest_frame->addr);

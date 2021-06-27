@@ -7,26 +7,35 @@
 #include "selfdrive/common/util.h"
 #include "selfdrive/hardware/base.h"
 
-class HardwareTici : public HardwareNone {
+class Hardware : public HardwareBase {
 public:
-  static constexpr float MAX_VOLUME = 0.5;
-  static constexpr float MIN_VOLUME = 0.4;
-  static bool TICI() { return true; }
-  static std::string get_os_version() {
-    return "AGNOS " + util::read_file("/VERSION");
-  };
+  Hardware() : HardwareBase() {
+    MAX_VOLUME = 0.5;
+    MIN_VOLUME = 0.4;
 
-  static void reboot() { std::system("sudo reboot"); };
-  static void poweroff() { std::system("sudo poweroff"); };
-  static void set_brightness(int percent) {
+    road_cam_focal_len = 2648;
+    wide_cam_focal_len = driver_cam_focal_len = 860;
+    road_cam_size = driver_cam_size = wide_road_cam_size = {1928, 1208};
+
+    screen_size = {2160, 1080};
+  }
+
+  bool TICI() override { return true; }
+  std::string get_os_version() override  {
+    return "AGNOS " + util::read_file("/VERSION");
+  }
+
+  void reboot() override  { std::system("sudo reboot"); }
+  void poweroff() override  { std::system("sudo poweroff"); }
+  void set_brightness(int percent) override {
     std::ofstream brightness_control("/sys/class/backlight/panel0-backlight/brightness");
     if (brightness_control.is_open()) {
       brightness_control << (percent * (int)(1023/100.)) << "\n";
       brightness_control.close();
     }
-  };
-  static void set_display_power(bool on) {};
+  }
+  static inline void set_display_power(bool on) {}
 
-  static bool get_ssh_enabled() { return Params().getBool("SshEnabled"); };
-  static void set_ssh_enabled(bool enabled) { Params().putBool("SshEnabled", enabled); };
+  bool get_ssh_enabled() override  { return Params().getBool("SshEnabled"); }
+  void set_ssh_enabled(bool enabled) override  { Params().putBool("SshEnabled", enabled); }
 };

@@ -33,7 +33,7 @@ private:
                    const std::string &type, cereal::ControlsState::AlertSize size, AudibleAlert sound);
 
   QColor bg;
-  float volume = Hardware::MIN_VOLUME;
+  float volume = HARDWARE.MIN_VOLUME;
   std::map<AudibleAlert, std::pair<QSoundEffect, int>> sounds;
   float blinking_rate = 0;
   QString text1, text2;

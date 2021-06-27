@@ -141,7 +141,7 @@ QWidget * Setup::download_failed() {
   QPushButton *reboot_btn = new QPushButton("Reboot");
   nav_layout->addWidget(reboot_btn, 0, Qt::AlignBottom | Qt::AlignLeft);
   QObject::connect(reboot_btn, &QPushButton::released, this, [=]() {
-    if (Hardware::TICI()) {
+    if (HARDWARE.TICI()) {
       std::system("sudo reboot");
     }
   });

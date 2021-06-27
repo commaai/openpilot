@@ -35,7 +35,7 @@ int main(int argc, char *argv[]) {
 #ifdef __aarch64__
   btn->setText("Reboot");
   QObject::connect(btn, &QPushButton::released, [=]() {
-    Hardware::reboot();
+    HARDWARE.reboot();
   });
 #else
   btn->setText("Exit");

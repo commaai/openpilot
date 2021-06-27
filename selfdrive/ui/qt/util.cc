@@ -70,10 +70,10 @@ void setQtSurfaceFormat() {
 }
 
 void initApp() {
-  Hardware::set_display_power(true);
-  Hardware::set_brightness(65);
+  HARDWARE.set_display_power(true);
+  HARDWARE.set_brightness(65);
   setQtSurfaceFormat();
-  if (Hardware::EON()) {
+  if (HARDWARE.EON()) {
     QApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
   }
 }

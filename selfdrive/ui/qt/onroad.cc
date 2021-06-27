@@ -48,7 +48,7 @@ void OnroadWindow::offroadTransition(bool offroad) {
     QString token = QString::fromStdString(Params().get("MapboxToken"));
     if (map == nullptr && !token.isEmpty()) {
       QMapboxGLSettings settings;
-      if (!Hardware::PC()) {
+      if (!HARDWARE.PC()) {
         settings.setCacheDatabasePath("/data/mbgl-cache.db");
       }
       settings.setCacheDatabaseMaximumSize(20 * 1024 * 1024);
@@ -89,7 +89,7 @@ void OnroadAlerts::updateState(const UIState &s) {
   if (sm.updated("carState")) {
     // scale volume with speed
     volume = util::map_val(sm["carState"].getCarState().getVEgo(), 0.f, 20.f,
-                           Hardware::MIN_VOLUME, Hardware::MAX_VOLUME);
+                           HARDWARE.MIN_VOLUME, HARDWARE.MAX_VOLUME);
   }
   if (sm["deviceState"].getDeviceState().getStarted()) {
     if (sm.updated("controlsState")) {

@@ -71,9 +71,9 @@ static void cloudlog_init() {
   s.ctx_j["dirty"] = !getenv("CLEAN");
 
   // device type
-  if (Hardware::EON()) {
+  if (HARDWARE.EON()) {
     cloudlog_bind_locked("device", "eon");
-  } else if (Hardware::TICI()) {
+  } else if (HARDWARE.TICI()) {
     cloudlog_bind_locked("device", "tici");
   } else {
     cloudlog_bind_locked("device", "pc");
