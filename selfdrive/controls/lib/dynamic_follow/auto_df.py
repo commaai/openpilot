@@ -3,8 +3,9 @@
 """
 
 import numpy as np
+from common.basedir import BASEDIR
 
-wb = np.load('/data/openpilot/selfdrive/controls/lib/dynamic_follow/auto_df_weights.npz', allow_pickle=True)
+wb = np.load(f'{BASEDIR}/selfdrive/controls/lib/dynamic_follow/auto_df_weights.npz', allow_pickle=True)
 w, b = wb['wb']
 
 def softmax(x):
