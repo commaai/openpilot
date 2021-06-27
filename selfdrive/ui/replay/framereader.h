@@ -27,7 +27,6 @@ public:
   int getRGBSize() const { return width * height * 3; }
   size_t getFrameCount() const { return frames_.size(); }
   bool valid() const { return valid_; }
-  
 
   int width = 0, height = 0;
 
