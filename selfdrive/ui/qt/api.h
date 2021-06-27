@@ -1,9 +1,12 @@
 #pragma once
 
 #include <QJsonObject>
-#include <QNetworkReply>
+#include <QObject>
 #include <QString>
-#include <QTimer>
+
+class QNetworkAccessManager;
+class QNetworkReply;
+class QTimer;
 
 namespace CommaApi {
 
@@ -27,7 +30,7 @@ protected:
   QNetworkReply *reply;
 
 private:
-  QNetworkAccessManager *networkAccessManager;
+  static QNetworkAccessManager *getNam();
   QTimer *networkTimer;
   bool create_jwt;
 

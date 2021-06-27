@@ -9,7 +9,10 @@
 #include <QDebug>
 #include <QFile>
 #include <QJsonDocument>
+#include <QNetworkAccessManager>
+#include <QNetworkReply>
 #include <QNetworkRequest>
+#include <QTimer>
 
 #include "selfdrive/common/params.h"
 #include "selfdrive/common/util.h"
@@ -68,7 +71,6 @@ QString create_jwt(const QJsonObject &payloads, int expiry) {
 }  // namespace CommaApi
 
 HttpRequest::HttpRequest(QObject *parent, const QString &requestURL, bool create_jwt_) : create_jwt(create_jwt_), QObject(parent) {
-  networkAccessManager = new QNetworkAccessManager(this);
   reply = NULL;
 
   networkTimer = new QTimer(this);
@@ -93,7 +95,7 @@ void HttpRequest::sendRequest(const QString &requestURL) {
   request.setUrl(QUrl(requestURL));
   request.setRawHeader(QByteArray("Authorization"), ("JWT " + token).toUtf8());
 
-  reply = networkAccessManager->get(request);
+  reply = getNam()->get(request);
 
   networkTimer->start();
   connect(reply, &QNetworkReply::finished, this, &HttpRequest::requestFinished);
@@ -120,4 +122,9 @@ void HttpRequest::requestFinished() {
   }
   reply->deleteLater();
   reply = NULL;
+}
+
+QNetworkAccessManager *HttpRequest::getNam() {
+  static QNetworkAccessManager qnam; // instantiated on first use.
+  return &qnam;
 }
