@@ -52,6 +52,7 @@ terms_version: bytes = b"2"
 
 dirty: bool = True
 comma_remote: bool = False
+smiskol_remote: bool = False
 tested_branch: bool = False
 dirty_files = None
 origin = get_git_remote()
