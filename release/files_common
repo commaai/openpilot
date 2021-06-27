@@ -279,6 +279,7 @@ selfdrive/hardware/tici/__init__.py
 selfdrive/hardware/tici/hardware.py
 selfdrive/hardware/pc/__init__.py
 selfdrive/hardware/pc/hardware.py
+selfdrive/hardware/pc/hardware.h
 
 selfdrive/locationd/__init__.py
 selfdrive/locationd/.gitignore
