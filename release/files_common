@@ -37,6 +37,10 @@ common/text_window.py
 common/cython_hacks.py
 common/SConscript
 
+common/op_params.py
+common/data_collector.py
+common/travis_checker.py
+
 common/kalman/.gitignore
 common/kalman/*
 
@@ -235,6 +239,7 @@ selfdrive/controls/lib/speed_smoother.py
 selfdrive/controls/lib/fcw.py
 selfdrive/controls/lib/long_mpc.py
 selfdrive/controls/lib/long_mpc_model.py
+selfdrive/controls/lib/dynamic_follow/*
 
 selfdrive/controls/lib/cluster/*
 
