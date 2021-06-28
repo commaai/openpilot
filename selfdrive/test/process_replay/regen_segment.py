@@ -2,6 +2,7 @@
 import os
 import time
 import multiprocessing
+from tqdm import tqdm
 
 # run DM procs
 os.environ["USE_WEBCAM"] = "1"
@@ -35,6 +36,9 @@ def replay_cameras():
   vipc_server = VisionIpcServer("camerad")
   for (_, size, stream, __) in cameras:
     vipc_server.create_buffers(stream, 40, False, size[0], size[1])
+
+  # make UI work
+  vipc_server.create_buffers(VisionStreamType.VISION_STREAM_RGB_BACK, 4, True, eon_f_frame_size[0], eon_f_frame_size[1])
   vipc_server.start_listener()
 
   rk = Ratekeeper(1 / 0.05, print_delay_threshold=None)
@@ -71,7 +75,7 @@ def regen_segment(route, seg):
   params.put("CalibrationParams", cal.to_bytes())
 
   process_replay_dir = os.path.dirname(os.path.abspath(__file__))
-  os.environ["LOG_ROOT"] = process_replay_dir
+  os.environ["LOG_ROOT"] = os.path.join(process_replay_dir, "fakedata/")
   os.environ["SIMULATION"] = "1"
 
   os.environ['SKIP_FW_QUERY'] = ""
@@ -96,6 +100,9 @@ def regen_segment(route, seg):
     'managerState': [
       multiprocessing.Process(target=replay_service, args=('managerState', lr)),
     ],
+    'thermald': [
+      multiprocessing.Process(target=replay_service, args=('deviceState', lr)),
+    ],
     'camerad': [
       multiprocessing.Process(target=replay_cameras),
     ],
@@ -109,22 +116,24 @@ def regen_segment(route, seg):
     ],
   }
 
-  # startup procs
-  ignore = list(fake_daemons.keys()) + ['ui', 'manage_athenad', 'uploader']
-  ensure_running(managed_processes.values(), started=True, not_run=ignore)
-  for threads in fake_daemons.values():
-    for t in threads:
-      t.start()
+  try:
+    # start procs up
+    ignore = list(fake_daemons.keys()) + ['ui', 'manage_athenad', 'uploader']
+    ensure_running(managed_processes.values(), started=True, not_run=ignore)
+    for threads in fake_daemons.values():
+      for t in threads:
+        t.start()
 
-  # TODO: ensure all procs are running
-  time.sleep(60)
-
-  # kill everything
-  for p in managed_processes.values():
-    p.stop()
-  for procs in fake_daemons.values():
-    for p in procs:
-      p.terminate()
+    # TODO: ensure all procs are running
+    for _ in tqdm(range(60)):
+      time.sleep(1)
+  finally:
+    # kill everything
+    for p in managed_processes.values():
+      p.stop()
+    for procs in fake_daemons.values():
+      for p in procs:
+        p.terminate()
 
 if __name__ == "__main__":
-  regen_segment("ef895f46af5fd73f|2021-05-22--14-06-35", 10)
+  regen_segment("ef895f46af5fd73f|2021-05-22--14-06-35", 6)
