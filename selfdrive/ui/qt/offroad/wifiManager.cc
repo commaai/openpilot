@@ -39,11 +39,11 @@ const QString ipv4config_iface       = "org.freedesktop.NetworkManager.IP4Config
 
 const QString nm_service             = "org.freedesktop.NetworkManager";
 
-const int STATE_NEED_AUTH = 60;
-const int STATE_CONNECTED = 100;
-const int REASON_WRONG_PASSWORD = 8;
-const int DEVICE_TYPE_WIFI = 2;
-const int DBUS_TIMEOUT = 100;
+const int state_need_auth = 60;
+const int state_connected = 100;
+const int reason_wrong_password = 8;
+const int device_type_wifi = 2;
+const int dbus_timeout = 100;
 
 template <typename T>
 T get_response(QDBusMessage response) {
@@ -88,7 +88,7 @@ void WifiManager::setup() {
   bus.connect(nm_service, nm_settings_path, nm_settings_iface, "NewConnection", this, SLOT(newConnection(QDBusObjectPath)));
 
   QDBusInterface device_props(nm_service, adapter, props_iface, bus);
-  device_props.setTimeout(DBUS_TIMEOUT);
+  device_props.setTimeout(dbus_timeout);
   QDBusMessage response = device_props.call("Get", device_iface, "State");
   raw_adapter_state = get_response<uint>(response);
 
@@ -127,14 +127,14 @@ void WifiManager::refreshNetworks() {
 }
 
 QString WifiManager::get_ipv4_address() {
-  if (raw_adapter_state != STATE_CONNECTED) {
+  if (raw_adapter_state != state_connected) {
     return "";
   }
   QVector<QDBusObjectPath> conns = get_active_connections();
   for (auto &p : conns) {
     QString active_connection = p.path();
     QDBusInterface nm(nm_service, active_connection, props_iface, bus);
-    nm.setTimeout(DBUS_TIMEOUT);
+    nm.setTimeout(dbus_timeout);
 
     QDBusObjectPath pth = get_response<QDBusObjectPath>(nm.call("Get", connection_iface, "Ip4Config"));
     QString ip4config = pth.path();
@@ -143,7 +143,7 @@ QString WifiManager::get_ipv4_address() {
 
     if (type == "802-11-wireless") {
       QDBusInterface nm2(nm_service, ip4config, props_iface, bus);
-      nm2.setTimeout(DBUS_TIMEOUT);
+      nm2.setTimeout(dbus_timeout);
 
       const QDBusArgument &arr = get_response<QDBusArgument>(nm2.call("Get", ipv4config_iface, "AddressData"));
       QMap<QString, QVariant> pth2;
@@ -163,7 +163,7 @@ QString WifiManager::get_ipv4_address() {
 QList<Network> WifiManager::get_networks() {
   QList<Network> r;
   QDBusInterface nm(nm_service, adapter, wireless_device_iface, bus);
-  nm.setTimeout(DBUS_TIMEOUT);
+  nm.setTimeout(dbus_timeout);
 
   const QDBusReply<QList<QDBusObjectPath>> response = nm.call("GetAllAccessPoints");
 
@@ -246,7 +246,7 @@ void WifiManager::connect(const QByteArray &ssid, const QString &username, const
   connection["ipv6"]["method"] = "ignore";
 
   QDBusInterface nm_settings(nm_service, nm_settings_path, nm_settings_iface, bus);
-  nm_settings.setTimeout(DBUS_TIMEOUT);
+  nm_settings.setTimeout(dbus_timeout);
 
   nm_settings.call("AddConnection", QVariant::fromValue(connection));
 }
@@ -255,14 +255,14 @@ void WifiManager::deactivateConnection(const QString &ssid) {
   for (QDBusObjectPath active_connection_raw : get_active_connections()) {
     QString active_connection = active_connection_raw.path();
     QDBusInterface nm(nm_service, active_connection, props_iface, bus);
-    nm.setTimeout(DBUS_TIMEOUT);
+    nm.setTimeout(dbus_timeout);
 
     QDBusObjectPath pth = get_response<QDBusObjectPath>(nm.call("Get", connection_iface, "SpecificObject"));
     if (pth.path() != "" && pth.path() != "/") {
       QString Ssid = get_property(pth.path(), "Ssid");
       if (Ssid == ssid) {
         QDBusInterface nm2(nm_service, nm_path, nm_iface, bus);
-        nm2.setTimeout(DBUS_TIMEOUT);
+        nm2.setTimeout(dbus_timeout);
         nm2.call("DeactivateConnection", QVariant::fromValue(active_connection_raw));
       }
     }
@@ -271,7 +271,7 @@ void WifiManager::deactivateConnection(const QString &ssid) {
 
 QVector<QDBusObjectPath> WifiManager::get_active_connections() {
   QDBusInterface nm(nm_service, nm_path, props_iface, bus);
-  nm.setTimeout(DBUS_TIMEOUT);
+  nm.setTimeout(dbus_timeout);
 
   QDBusMessage response = nm.call("Get", nm_iface, "ActiveConnections");
   const QDBusArgument &arr = get_response<QDBusArgument>(response);
@@ -301,22 +301,22 @@ void WifiManager::forgetConnection(const QString &ssid) {
 
 bool WifiManager::isWirelessAdapter(const QDBusObjectPath &path) {
   QDBusInterface device_props(nm_service, path.path(), props_iface, bus);
-  device_props.setTimeout(DBUS_TIMEOUT);
+  device_props.setTimeout(dbus_timeout);
   const uint deviceType = get_response<uint>(device_props.call("Get", device_iface, "DeviceType"));
-  return deviceType == DEVICE_TYPE_WIFI;
+  return deviceType == device_type_wifi;
 }
 
 void WifiManager::requestScan() {
   if (this->isVisible()) {
     QDBusInterface nm(nm_service, adapter, wireless_device_iface, bus);
-    nm.setTimeout(DBUS_TIMEOUT);
+    nm.setTimeout(dbus_timeout);
     nm.call("RequestScan",  QVariantMap());
   }
 }
 
 uint WifiManager::get_wifi_device_state() {
   QDBusInterface device_props(nm_service, adapter, props_iface, bus);
-  device_props.setTimeout(DBUS_TIMEOUT);
+  device_props.setTimeout(dbus_timeout);
 
   QDBusMessage response = device_props.call("Get", device_iface, "State");
   uint resp = get_response<uint>(response);
@@ -325,7 +325,7 @@ uint WifiManager::get_wifi_device_state() {
 
 QString WifiManager::getActiveAp() {
   QDBusInterface device_props(nm_service, adapter, props_iface, bus);
-  device_props.setTimeout(DBUS_TIMEOUT);
+  device_props.setTimeout(dbus_timeout);
 
   QDBusMessage response = device_props.call("Get", wireless_device_iface, "ActiveAccessPoint");
   QDBusObjectPath r = get_response<QDBusObjectPath>(response);
@@ -334,7 +334,7 @@ QString WifiManager::getActiveAp() {
 
 QByteArray WifiManager::get_property(const QString &network_path, const QString &property) {
   QDBusInterface device_props(nm_service, network_path, props_iface, bus);
-  device_props.setTimeout(DBUS_TIMEOUT);
+  device_props.setTimeout(dbus_timeout);
 
   QDBusMessage response = device_props.call("Get", ap_iface, property);
   return get_response<QByteArray>(response);
@@ -342,7 +342,7 @@ QByteArray WifiManager::get_property(const QString &network_path, const QString 
 
 unsigned int WifiManager::get_ap_strength(const QString &network_path) {
   QDBusInterface device_props(nm_service, network_path, props_iface, bus);
-  device_props.setTimeout(DBUS_TIMEOUT);
+  device_props.setTimeout(dbus_timeout);
 
   QDBusMessage response = device_props.call("Get", ap_iface, "Strength");
   return get_response<unsigned int>(response);
@@ -350,7 +350,7 @@ unsigned int WifiManager::get_ap_strength(const QString &network_path) {
 
 QString WifiManager::getAdapter() {
   QDBusInterface nm(nm_service, nm_path, nm_iface, bus);
-  nm.setTimeout(DBUS_TIMEOUT);
+  nm.setTimeout(dbus_timeout);
 
   const QDBusReply<QList<QDBusObjectPath>> &response = nm.call("GetDevices");
   for (const QDBusObjectPath &path : response.value()) {
@@ -363,10 +363,10 @@ QString WifiManager::getAdapter() {
 
 void WifiManager::stateChange(unsigned int new_state, unsigned int previous_state, unsigned int change_reason) {
   raw_adapter_state = new_state;
-  if (new_state == STATE_NEED_AUTH && change_reason == REASON_WRONG_PASSWORD) {
+  if (new_state == state_need_auth && change_reason == reason_wrong_password) {
     forgetConnection(connecting_to_network);
     emit wrongPassword(connecting_to_network);
-  } else if (new_state == STATE_CONNECTED) {
+  } else if (new_state == state_connected) {
     connecting_to_network = "";
     refreshNetworks();
     emit refreshSignal();
@@ -422,7 +422,7 @@ QDBusObjectPath WifiManager::getConnectionPath(const QString &ssid) {
 
 QString WifiManager::getConnectionSsid(const QDBusObjectPath &path) {
   QDBusInterface nm(nm_service, path.path(), nm_settings_conn_iface, bus);
-  nm.setTimeout(DBUS_TIMEOUT);
+  nm.setTimeout(dbus_timeout);
   const QDBusReply<Connection> result = nm.call("GetSettings");
   return result.value().value("802-11-wireless").value("ssid").toString();
 }
@@ -430,7 +430,7 @@ QString WifiManager::getConnectionSsid(const QDBusObjectPath &path) {
 QMap<QDBusObjectPath, QString> WifiManager::listConnections() {
   QMap<QDBusObjectPath, QString> connections;
   QDBusInterface nm(nm_service, nm_settings_path, nm_settings_iface, bus);
-  nm.setTimeout(DBUS_TIMEOUT);
+  nm.setTimeout(dbus_timeout);
 
   const QDBusReply<QList<QDBusObjectPath>> response = nm.call("ListConnections");
   for (const QDBusObjectPath &path : response.value()) {
@@ -444,7 +444,7 @@ void WifiManager::activateWifiConnection(const QString &ssid) {
   if (!path.path().isEmpty()) {
     connecting_to_network = ssid;
     QDBusInterface nm3(nm_service, nm_path, nm_iface, bus);
-    nm3.setTimeout(DBUS_TIMEOUT);
+    nm3.setTimeout(dbus_timeout);
     nm3.call("ActivateConnection", QVariant::fromValue(path), QVariant::fromValue(QDBusObjectPath(adapter)), QVariant::fromValue(QDBusObjectPath("/")));
   }
 }
@@ -478,7 +478,7 @@ void WifiManager::addTetheringConnection() {
   connection["ipv6"]["method"] = "ignore";
 
   QDBusInterface nm_settings(nm_service, nm_settings_path, nm_settings_iface, bus);
-  nm_settings.setTimeout(DBUS_TIMEOUT);
+  nm_settings.setTimeout(dbus_timeout);
   nm_settings.call("AddConnection", QVariant::fromValue(connection));
 }
 
