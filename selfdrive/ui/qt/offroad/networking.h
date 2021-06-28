@@ -68,7 +68,6 @@ private:
   QWidget* wifiScreen = nullptr;
   AdvancedNetworking* an = nullptr;
   bool show_advanced;
-  bool firstRefresh = true;
 
   WifiUI* wifiWidget;
   WifiManager* wifi = nullptr;

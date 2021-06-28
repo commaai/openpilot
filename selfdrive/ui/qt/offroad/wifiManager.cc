@@ -307,7 +307,7 @@ bool WifiManager::isWirelessAdapter(const QDBusObjectPath &path) {
 }
 
 void WifiManager::requestScan() {
-  if (this->isVisible()) {
+  if (this->isVisible() || firstRefresh) {
     QDBusInterface nm(nm_service, adapter, wireless_device_iface, bus);
     nm.setTimeout(dbus_timeout);
     nm.call("RequestScan",  QVariantMap());

@@ -33,6 +33,7 @@ public:
   QVector<Network> seen_networks;
   QMap<QDBusObjectPath, QString> knownConnections;
   QString ipv4_address;
+  bool firstRefresh = true;
 
   void requestScan();
   void refreshNetworks();

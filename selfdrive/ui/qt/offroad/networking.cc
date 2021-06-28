@@ -78,10 +78,10 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent), s
 }
 
 void Networking::refresh() {
-  if (this->isVisible() || firstRefresh) {
+  if (this->isVisible() || wifi->firstRefresh) {
     wifiWidget->refresh();
     an->refresh();
-    firstRefresh = false;
+    wifi->firstRefresh = false;
   }
 }
 
