@@ -11,13 +11,14 @@ import cereal.messaging as messaging
 from cereal.services import service_list
 from cereal.visionipc.visionipc_pyx import VisionIpcServer, VisionStreamType  # pylint: disable=no-name-in-module, import-error
 from common.params import Params
-from common.realtime import Ratekeeper
+from common.realtime import Ratekeeper, DT_MDL, DT_DMON
 from common.transformations.camera import eon_f_frame_size, eon_d_frame_size
 from selfdrive.car.fingerprints import FW_VERSIONS
 from selfdrive.manager.process import ensure_running
 from selfdrive.manager.process_config import managed_processes
 from tools.lib.route import Route
 from tools.lib.logreader import LogReader
+
 
 def replay_service(s, msgs):
   pm = messaging.PubMaster([s, ])
@@ -28,39 +29,44 @@ def replay_service(s, msgs):
     rk.keep_time()
 
 def replay_cameras():
-  pm = messaging.PubMaster(["roadCameraState", "driverCameraState"])
   cameras = [
-    ("roadCameraState", eon_f_frame_size, VisionStreamType.VISION_STREAM_YUV_BACK, 1),
-    ("driverCameraState", eon_d_frame_size, VisionStreamType.VISION_STREAM_YUV_FRONT, 2),
+    ("roadCameraState", DT_MDL, eon_f_frame_size, VisionStreamType.VISION_STREAM_YUV_BACK),
+    ("driverCameraState", DT_DMON, eon_d_frame_size, VisionStreamType.VISION_STREAM_YUV_FRONT),
   ]
-  vipc_server = VisionIpcServer("camerad")
-  for (_, size, stream, __) in cameras:
-    vipc_server.create_buffers(stream, 40, False, size[0], size[1])
 
-  # make UI work
-  vipc_server.create_buffers(VisionStreamType.VISION_STREAM_RGB_BACK, 4, True, eon_f_frame_size[0], eon_f_frame_size[1])
-  vipc_server.start_listener()
-
-  rk = Ratekeeper(1 / 0.05, print_delay_threshold=None)
-  while True:
-    for (pkt, size, stream, decimation) in cameras:
-      if rk.frame % decimation != 0:
-        continue
-
-      # TODO: send real frames from log
-      m = messaging.new_message(pkt)
-      msg = getattr(m, pkt)
-      msg.frameId = rk.frame // decimation
-      pm.send(pkt, m)
+  # TODO: use real frames
+  def replay_camera(s, dt, vipc_server):
+    pm = messaging.PubMaster([s, ])
+    rk = Ratekeeper(1 / dt, print_delay_threshold=None)
+    while True:
+      m = messaging.new_message(s)
+      msg = getattr(m, s)
+      msg.frameId = rk.frame
+      pm.send(s, m)
 
       img = b"\x00" * int(size[0]*size[1]*3/2)  # yuv img
       vipc_server.send(stream, img, msg.frameId, msg.timestampSof, msg.timestampEof)
-    rk.keep_time()
 
-def regen_segment(route, seg):
+      # TODO: fetch next image, then keep time
+      rk.keep_time()
 
-  r = Route(route)
-  lr = list(LogReader(r.log_paths()[seg]))
+  # init vipc server and cameras
+  p = []
+  vipc_server = VisionIpcServer("camerad")
+  for (s, dt, size, stream) in cameras:
+    vipc_server.create_buffers(stream, 40, False, size[0], size[1])
+    p.append(multiprocessing.Process(target=replay_camera, args=(s, dt, vipc_server)))
+
+  # hack to make UI work
+  vipc_server.create_buffers(VisionStreamType.VISION_STREAM_RGB_BACK, 4, True, eon_f_frame_size[0], eon_f_frame_size[1])
+  vipc_server.start_listener()
+
+  return p
+
+
+def regen_segment(lr):
+
+  lr = list(lr)
 
   # setup env
   params = Params()
@@ -104,7 +110,7 @@ def regen_segment(route, seg):
       multiprocessing.Process(target=replay_service, args=('deviceState', lr)),
     ],
     'camerad': [
-      multiprocessing.Process(target=replay_cameras),
+      *replay_cameras(),
     ],
 
     # TODO: fix these and run them
@@ -136,4 +142,6 @@ def regen_segment(route, seg):
         p.terminate()
 
 if __name__ == "__main__":
-  regen_segment("ef895f46af5fd73f|2021-05-22--14-06-35", 6)
+  r = Route("ef895f46af5fd73f|2021-05-22--14-06-35")
+  lr = LogReader(r.log_paths()[6])
+  regen_segment(lr)
