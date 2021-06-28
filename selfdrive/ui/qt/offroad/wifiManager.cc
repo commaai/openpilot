@@ -74,14 +74,12 @@ WifiManager::WifiManager(QWidget* parent) : QWidget(parent) {
   bus.connect(nm_service, nm_path, nm_iface, "DeviceAdded", this, SLOT(deviceAdded(QDBusObjectPath)));
 
   adapter = getAdapter();
-  qDebug() << "ADAPTER:" << adapter;
   if (!adapter.isEmpty()) {
     setup();
   }
 }
 
 void WifiManager::setup() {
-  qDebug() << "WIFIMANAGER::SETUP()!";
   QDBusInterface nm(nm_service, adapter, device_iface, bus);
   bus.connect(nm_service, adapter, device_iface, "StateChanged", this, SLOT(stateChange(unsigned int, unsigned int, unsigned int)));
   bus.connect(nm_service, adapter, props_iface, "PropertiesChanged", this, SLOT(propertyChange(QString, QVariantMap, QStringList)));
@@ -300,12 +298,18 @@ void WifiManager::forgetConnection(const QString &ssid) {
   }
 }
 
+bool WifiManager::isWirelessAdapter(const QDBusObjectPath &path) {
+  QDBusInterface device_props(nm_service, path.path(), props_iface, bus);
+  device_props.setTimeout(dbus_timeout);
+  const uint deviceType = get_response<uint>(device_props.call("Get", device_iface, "DeviceType"));
+  return deviceType == DEVICE_TYPE_WIFI;
+}
+
 void WifiManager::requestScan() {
   if (this->isVisible()) {
     QDBusInterface nm(nm_service, adapter, wireless_device_iface, bus);
     nm.setTimeout(dbus_timeout);
     nm.call("RequestScan",  QVariantMap());
-    qDebug() << "REQUESTING SCAN!";
   }
 }
 
@@ -347,20 +351,13 @@ QString WifiManager::getAdapter() {
   QDBusInterface nm(nm_service, nm_path, nm_iface, bus);
   nm.setTimeout(dbus_timeout);
 
-  const QDBusReply<QList<QDBusObjectPath>> response = nm.call("GetDevices");
-
+  const QDBusReply<QList<QDBusObjectPath>> &response = nm.call("GetDevices");
   for (const QDBusObjectPath &path : response.value()) {
-    // Get device type
-    QDBusInterface device_props(nm_service, path.path(), props_iface, bus);
-    device_props.setTimeout(dbus_timeout);
-
-    const uint deviceType = get_response<uint>(device_props.call("Get", device_iface, "DeviceType"));
-    if (deviceType == DEVICE_TYPE_WIFI) {
-      adapter = path.path();
-      break;
+    if (isWirelessAdapter(path)) {
+      return path.path();
     }
   }
-  return adapter;
+  return "";
 }
 
 void WifiManager::stateChange(unsigned int new_state, unsigned int previous_state, unsigned int change_reason) {
@@ -387,11 +384,7 @@ void WifiManager::propertyChange(const QString &interface, const QVariantMap &pr
 }
 
 void WifiManager::deviceAdded(const QDBusObjectPath &path) {
-  QDBusInterface device_props(nm_service, path.path(), props_iface, bus);
-  device_props.setTimeout(dbus_timeout);
-
-  const uint deviceType = get_response<uint>(device_props.call("Get", device_iface, "DeviceType"));
-  if (deviceType == DEVICE_TYPE_WIFI) {
+  if (isWirelessAdapter(path)) {
     adapter = path.path();
     setup();
   }
