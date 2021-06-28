@@ -47,7 +47,7 @@ void Networking::attemptInitialization() {
   }
 
   connect(wifi, &WifiManager::wrongPassword, this, &Networking::wrongPassword);
-  connect(wifi, &WifiManager::refreshSignal, this, &Networking::refreshSlot);
+  connect(wifi, &WifiManager::refreshSignal, this, &Networking::refresh);
 
   QWidget* wifiScreen = new QWidget(this);
   QVBoxLayout* vlayout = new QVBoxLayout(wifiScreen);
@@ -106,19 +106,24 @@ void Networking::requestScan() {
   wifi->requestScan();
 }
 
-void Networking::refreshSlot() {
-  wifiWidget->refresh();
-  an->refresh();
+void Networking::refresh() {
+  if (this->isVisible() || firstRefresh) {
+    wifiWidget->refresh();
+    an->refresh();
+    firstRefresh = false;
+  }
 }
 
 void Networking::connectToNetwork(const Network &n) {
-  if (wifi->isKnownNetwork(n.ssid)) {
+  if (wifi->isKnownConnection(n.ssid)) {
     wifi->activateWifiConnection(n.ssid);
   } else if (n.security_type == SecurityType::OPEN) {
     wifi->connect(n);
   } else if (n.security_type == SecurityType::WPA) {
     QString pass = InputDialog::getText("Enter password for \"" + n.ssid + "\"", 8);
-    wifi->connect(n, pass);
+    if (!pass.isEmpty()) {
+      wifi->connect(n, pass);
+    }
   }
 }
 
@@ -126,7 +131,9 @@ void Networking::wrongPassword(const QString &ssid) {
   for (Network n : wifi->seen_networks) {
     if (n.ssid == ssid) {
       QString pass = InputDialog::getText("Wrong password for \"" + n.ssid +"\"", 8);
-      wifi->connect(n, pass);
+      if (!pass.isEmpty()) {
+        wifi->connect(n, pass);
+      }
       return;
     }
   }
@@ -214,7 +221,7 @@ void WifiUI::refresh() {
     ssid_label->setStyleSheet("font-size: 55px;");
     hlayout->addWidget(ssid_label, 1, Qt::AlignLeft);
 
-    if (wifi->isKnownNetwork(network.ssid) && !wifi->tetheringEnabled()) {
+    if (wifi->isKnownConnection(network.ssid) && !wifi->tetheringEnabled()) {
       QPushButton *forgetBtn = new QPushButton();
       QPixmap pix("../assets/offroad/icon_close.svg");
 
