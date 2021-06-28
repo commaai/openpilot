@@ -25,7 +25,7 @@
 ExitHandler do_exit;
 
 int sensor_loop() {
-  I2CBus *i2c_bus_imu;
+  I2CBus *i2c_bus_imu = nullptr;
 
   try {
     i2c_bus_imu = new I2CBus(I2C_BUS_IMU);
@@ -63,6 +63,7 @@ int sensor_loop() {
     int err = sensor->init();
     if (err < 0) {
       LOGE("Error initializing sensors");
+      delete i2c_bus_imu;
       return -1;
     }
   }
@@ -86,6 +87,7 @@ int sensor_loop() {
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     std::this_thread::sleep_for(std::chrono::milliseconds(10) - (end - begin));
   }
+  delete i2c_bus_imu;
   return 0;
 }
 
