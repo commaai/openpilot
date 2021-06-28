@@ -39,8 +39,8 @@ const QString ipv4config_iface       = "org.freedesktop.NetworkManager.IP4Config
 
 const QString nm_service             = "org.freedesktop.NetworkManager";
 
-const int state_connected = 100;
 const int state_need_auth = 60;
+const int state_connected = 100;
 const int reason_wrong_password = 8;
 const int dbus_timeout = 100;
 
@@ -154,17 +154,14 @@ QList<Network> WifiManager::get_networks() {
   QDBusInterface nm(nm_service, adapter, wireless_device_iface, bus);
   nm.setTimeout(dbus_timeout);
 
-  QDBusMessage response = nm.call("GetAllAccessPoints");
-  QVariant first =  response.arguments().at(0);
+  const QString active_ap = get_active_ap();
+  const QDBusReply<QList<QDBusObjectPath>> response = nm.call("GetAllAccessPoints");
 
-  QString active_ap = get_active_ap();
-  const QDBusArgument &args = first.value<QDBusArgument>();
-  args.beginArray();
-  while (!args.atEnd()) {
-    QDBusObjectPath path;
-    args >> path;
-
+  for (const QDBusObjectPath &path : response.value()) {
     QByteArray ssid = get_property(path.path(), "Ssid");
+    if (ssid.isEmpty()) {
+      continue;
+    }
     unsigned int strength = get_ap_strength(path.path());
     SecurityType security = getSecurityType(path.path());
     ConnectedType ctype;
@@ -178,12 +175,8 @@ QList<Network> WifiManager::get_networks() {
       }
     }
     Network network = {path.path(), ssid, strength, ctype, security};
-
-    if (ssid.length()) {
-      r.push_back(network);
-    }
+    r.push_back(network);
   }
-  args.endArray();
 
   std::sort(r.begin(), r.end(), compare_by_strength);
   return r;
@@ -340,17 +333,10 @@ QString WifiManager::get_adapter() {
   QDBusInterface nm(nm_service, nm_path, nm_iface, bus);
   nm.setTimeout(dbus_timeout);
 
-  QDBusMessage response = nm.call("GetDevices");
-  QVariant first =  response.arguments().at(0);
-
+  const QDBusReply<QList<QDBusObjectPath>> response = nm.call("GetDevices");
   QString adapter_path = "";
 
-  const QDBusArgument &args = first.value<QDBusArgument>();
-  args.beginArray();
-  while (!args.atEnd()) {
-    QDBusObjectPath path;
-    args >> path;
-
+  for (const QDBusObjectPath &path : response.value()) {
     // Get device type
     QDBusInterface device_props(nm_service, path.path(), props_iface, bus);
     device_props.setTimeout(dbus_timeout);
@@ -363,15 +349,13 @@ QString WifiManager::get_adapter() {
       break;
     }
   }
-  args.endArray();
-
   return adapter_path;
 }
 
 void WifiManager::stateChange(unsigned int new_state, unsigned int previous_state, unsigned int change_reason) {
   raw_adapter_state = new_state;
   if (new_state == state_need_auth && change_reason == reason_wrong_password) {
-    knownConnections.remove(getConnectionPath(connecting_to_network));
+    forgetConnection(connecting_to_network);
     emit wrongPassword(connecting_to_network);
   } else if (new_state == state_connected) {
     connecting_to_network = "";
@@ -401,7 +385,7 @@ void WifiManager::newConnection(const QDBusObjectPath &path) {
 }
 
 void WifiManager::disconnect() {
-  QString active_ap = get_active_ap();
+  const QString &active_ap = get_active_ap();
   if (active_ap != "" && active_ap != "/") {
     deactivateConnection(get_property(active_ap, "Ssid"));
   }
@@ -413,7 +397,7 @@ QDBusObjectPath WifiManager::getConnectionPath(const QString &ssid) {
       return knownConnections.key(conn_ssid);
     }
   }
-  return QDBusObjectPath();  // unknown ssid, return uninitialized path
+  return QDBusObjectPath();
 }
 
 QString WifiManager::getConnectionSsid(const QDBusObjectPath &path) {
@@ -439,7 +423,7 @@ void WifiManager::activateWifiConnection(const QString &ssid) {
   const QDBusObjectPath &path = getConnectionPath(ssid);
   if (!path.path().isEmpty()) {
     connecting_to_network = ssid;
-    QString devicePath = get_adapter();
+    const QString &devicePath = get_adapter();
     QDBusInterface nm3(nm_service, nm_path, nm_iface, bus);
     nm3.setTimeout(dbus_timeout);
     nm3.call("ActivateConnection", QVariant::fromValue(path), QVariant::fromValue(QDBusObjectPath(devicePath)), QVariant::fromValue(QDBusObjectPath("/")));
