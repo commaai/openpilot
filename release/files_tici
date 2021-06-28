@@ -1,0 +1,14 @@
+installer/continue_openpilot.sh
+
+selfdrive/camerad/cameras/camera_qcom2.cc
+selfdrive/camerad/cameras/camera_qcom2.h
+selfdrive/camerad/cameras/real_debayer.cl
+
+selfdrive/hardware/tici/__init__.py
+selfdrive/hardware/tici/hardware.h
+selfdrive/hardware/tici/hardware.py
+selfdrive/hardware/tici/pins.py
+selfdrive/hardware/tici/agnos.py
+selfdrive/hardware/tici/agnos.json
+
+selfdrive/timezoned.py
