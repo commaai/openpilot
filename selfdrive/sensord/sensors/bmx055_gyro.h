@@ -33,5 +33,5 @@ class BMX055_Gyro : public I2CSensor {
 public:
   BMX055_Gyro(I2CBus *bus);
   int init();
-  void get_event(cereal::SensorEventData::Builder &event);
+  bool get_event(cereal::SensorEventData::Builder &event);
 };

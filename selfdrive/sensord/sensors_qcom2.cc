@@ -46,18 +46,14 @@ int sensor_loop() {
   LightSensor light("/sys/class/i2c-adapter/i2c-2/2-0038/iio:device1/in_intensity_both_raw");
 
   // Sensor init
-  std::vector<Sensor *> sensors;
-  sensors.push_back(&bmx055_accel);
-  sensors.push_back(&bmx055_gyro);
-  sensors.push_back(&bmx055_magn);
-  sensors.push_back(&bmx055_temp);
-
-  sensors.push_back(&lsm6ds3_accel);
-  sensors.push_back(&lsm6ds3_gyro);
-  sensors.push_back(&lsm6ds3_temp);
-
-  sensors.push_back(&light);
-
+  Sensor *sensors[] = {&bmx055_accel,
+                       &bmx055_gyro,
+                       &bmx055_magn,
+                       &bmx055_temp,
+                       &lsm6ds3_accel,
+                       &lsm6ds3_gyro,
+                       &lsm6ds3_temp,
+                       &light};
 
   for (Sensor * sensor : sensors) {
     int err = sensor->init();
@@ -72,13 +68,20 @@ int sensor_loop() {
   while (!do_exit) {
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
-    const int num_events = sensors.size();
     MessageBuilder msg;
-    auto sensor_events = msg.initEvent().initSensorEvents(num_events);
-
-    for (int i = 0; i < num_events; i++) {
-      auto event = sensor_events[i];
-      sensors[i]->get_event(event);
+    auto orphanage = msg.getOrphanage();
+    std::vector<capnp::Orphan<cereal::SensorEventData>> sensor_events;
+    sensor_events.reserve(std::size(sensors));
+    for (auto &sensor : sensors) {
+      auto orphan = orphanage.newOrphan<cereal::SensorEventData>();
+      auto event = orphan.get();
+      if (sensor->get_event(event)) {
+        sensor_events.push_back(kj::mv(orphan));
+      }
+    }
+    auto events = msg.initEvent().initSensorEvents(sensor_events.size());
+    for (int i = 0; i < sensor_events.size(); ++i) {
+      events.adoptWithCaveats(i, kj::mv(sensor_events[i]));
     }
 
     pm.send("sensorEvents", msg);

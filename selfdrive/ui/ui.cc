@@ -180,18 +180,12 @@ static void update_state(UIState *s) {
   if (sm.updated("carParams")) {
     scene.longitudinal_control = sm["carParams"].getCarParams().getOpenpilotLongitudinalControl();
   }
-  if (sm.updated("sensorEvents")) {
+  if (!scene.started && sm.updated("sensorEvents")) {
     for (auto sensor : sm["sensorEvents"].getSensorEvents()) {
-      if (!scene.started && sensor.which() == cereal::SensorEventData::ACCELERATION) {
-        auto accel = sensor.getAcceleration().getV();
-        if (accel.totalSize().wordCount) { // TODO: sometimes empty lists are received. Figure out why
-          scene.accel_sensor = accel[2];
-        }
-      } else if (!scene.started && sensor.which() == cereal::SensorEventData::GYRO_UNCALIBRATED) {
-        auto gyro = sensor.getGyroUncalibrated().getV();
-        if (gyro.totalSize().wordCount) {
-          scene.gyro_sensor = gyro[1];
-        }
+      if (sensor.which() == cereal::SensorEventData::ACCELERATION) {
+        scene.accel_sensor = sensor.getAcceleration().getV()[2];
+      } else if (sensor.which() == cereal::SensorEventData::GYRO_UNCALIBRATED) {
+        scene.gyro_sensor = sensor.getGyroUncalibrated().getV()[1];
       }
     }
   }

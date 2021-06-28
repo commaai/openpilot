@@ -34,7 +34,7 @@ fail:
   return ret;
 }
 
-void LSM6DS3_Accel::get_event(cereal::SensorEventData::Builder &event) {
+bool LSM6DS3_Accel::get_event(cereal::SensorEventData::Builder &event) {
 
   uint64_t start_time = nanos_since_boot();
   uint8_t buffer[6];
@@ -56,5 +56,5 @@ void LSM6DS3_Accel::get_event(cereal::SensorEventData::Builder &event) {
   auto svec = event.initAcceleration();
   svec.setV(xyz);
   svec.setStatus(true);
-
+  return true;
 }

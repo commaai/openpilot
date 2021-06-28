@@ -8,5 +8,5 @@ class BMX055_Temp : public I2CSensor {
 public:
   BMX055_Temp(I2CBus *bus);
   int init();
-  void get_event(cereal::SensorEventData::Builder &event);
+  bool get_event(cereal::SensorEventData::Builder &event);
 };
