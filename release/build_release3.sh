@@ -9,7 +9,7 @@ export GIT_SSH_COMMAND="ssh -i /data/gitkey"
 BUILD_DIR=/data/releasepilot
 SOURCE_DIR="$(git rev-parse --show-toplevel)"
 
-BRANCH=build_release_test
+BRANCH=release3-staging
 
 echo "[-] Setting up repo T=$SECONDS"
 rm -rf $BUILD_DIR
@@ -78,7 +78,7 @@ git commit --amend -m "openpilot v$VERSION"
 if [ ! -z "$PUSH" ]; then
   echo "[-] pushing T=$SECONDS"
   git remote set-url origin git@github.com:commaai/openpilot.git
-  git push origin $BRANCH
+  git push -f origin $BRANCH
 
   # Create dashcam
   git rm selfdrive/car/*/carcontroller.py
