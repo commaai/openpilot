@@ -69,6 +69,7 @@ private:
   AdvancedNetworking* an = nullptr;
   bool ui_setup_complete = false;
   bool show_advanced;
+  bool firstRefresh = true;
 
   WifiUI* wifiWidget;
   WifiManager* wifi = nullptr;
@@ -76,7 +77,7 @@ private:
   void requestScan();
 
 public slots:
-  void refreshSlot();
+  void refresh();
 
 private slots:
   void connectToNetwork(const Network &n);
