@@ -39,6 +39,7 @@ common/SConscript
 
 common/op_params.py
 common/data_collector.py
+common/colors.py
 common/travis_checker.py
 
 common/kalman/.gitignore
@@ -76,6 +77,7 @@ selfdrive/tombstoned.py
 selfdrive/pandad.py
 selfdrive/updated.py
 selfdrive/rtshield.py
+selfdrive/controls/lib/dynamic_gas/*
 
 selfdrive/athena/__init__.py
 selfdrive/athena/athenad.py
