@@ -6,8 +6,10 @@ export GIT_AUTHOR_NAME="Vehicle Researcher"
 export GIT_AUTHOR_EMAIL="user@comma.ai"
 export GIT_SSH_COMMAND="ssh -i /data/gitkey"
 
-SOURCE_DIR=/data/openpilot
-BUILD_DIR=/data/releasepilot
+SOURCE_DIR="$(git rev-parse --show-toplevel)"
+BUILD_DIR=/tmp/releasepilot
+
+BRANCH=build_release_test
 
 echo "[-] Setting up repo T=$SECONDS"
 rm -rf $BUILD_DIR
@@ -15,14 +17,7 @@ mkdir -p $BUILD_DIR
 cd $BUILD_DIR
 git init
 git remote add origin git@github.com:commaai/openpilot.git
-
-echo "[-] git fetch origin T=$SECONDS"
-#git fetch origin
-git checkout -f -B release3-staging
-
-# remove everything except .git
-echo "[-] erasing old files T=$SECONDS"
-find . -maxdepth 1 -not -path './.git' -not -name '.' -not -name '..' -exec rm -rf '{}' \;
+git checkout -f -B $BRANCH
 
 # do the files copy
 echo "[-] copying files T=$SECONDS"
@@ -40,7 +35,6 @@ echo "#define COMMA_VERSION \"$VERSION-$(git --git-dir=$SOURCE_DIR/.git rev-pars
 
 echo "[-] committing version $VERSION T=$SECONDS"
 git add -f .
-git status
 git commit -a -m "openpilot v$VERSION release"
 
 # TODO: sign with release cert
@@ -83,8 +77,8 @@ git commit --amend -m "openpilot v$VERSION"
 
 if [ ! -z "$PUSH" ]; then
   echo "[-] pushing T=$SECONDS"
-  #git remote set-url origin git@github.com:commaai/openpilot.git
-  #git push -f origin release3-staging
+  #git remote set-url origin git@github.com:adeebshihadeh/openpilot.git
+  #git push -f origin $BRANCH
 
   # Create dashcam
   #git rm selfdrive/car/*/carcontroller.py

@@ -4,6 +4,4 @@ selfdrive/camerad/cameras/camera_qcom2.cc
 selfdrive/camerad/cameras/camera_qcom2.h
 selfdrive/camerad/cameras/real_debayer.cl
 
-selfdrive/sensord/sensors_qcom2.cc
-
 selfdrive/timezoned.py
