@@ -29,23 +29,9 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent), s
   QLabel* warning = new QLabel("Network manager is inactive!");
   warning->setAlignment(Qt::AlignCenter);
   warning->setStyleSheet(R"(font-size: 65px;)");
-
   main_layout->addWidget(warning);
 
-  QTimer* timer = new QTimer(this);
-  QObject::connect(timer, &QTimer::timeout, this, &Networking::requestScan);
-  timer->start(5000);
-  attemptInitialization();
-}
-
-void Networking::attemptInitialization() {
-  // Checks if network manager is active
-  try {
-    wifi = new WifiManager(this);
-  } catch (std::exception &e) {
-    return;
-  }
-
+  wifi = new WifiManager(this);
   connect(wifi, &WifiManager::wrongPassword, this, &Networking::wrongPassword);
   connect(wifi, &WifiManager::refreshSignal, this, &Networking::refresh);
 
@@ -89,21 +75,6 @@ void Networking::attemptInitialization() {
     }
   )");
   main_layout->setCurrentWidget(wifiScreen);
-  ui_setup_complete = true;
-  wifi->requestScan();
-}
-
-void Networking::requestScan() {
-  if (!this->isVisible()) {
-    return;
-  }
-  if (!ui_setup_complete) {
-    attemptInitialization();
-    if (!ui_setup_complete) {
-      return;
-    }
-  }
-  wifi->requestScan();
 }
 
 void Networking::refresh() {
@@ -155,7 +126,8 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   main_layout->addWidget(back, 0, Qt::AlignLeft);
 
   // Enable tethering layout
-  ToggleControl *tetheringToggle = new ToggleControl("Enable Tethering", "", "", wifi->tetheringEnabled());
+//  ToggleControl *tetheringToggle = new ToggleControl("Enable Tethering", "", "", wifi->tetheringEnabled());
+  ToggleControl *tetheringToggle = new ToggleControl("Enable Tethering", "", "", false);  // TODO fix this
   main_layout->addWidget(tetheringToggle);
   QObject::connect(tetheringToggle, &ToggleControl::toggleFlipped, this, &AdvancedNetworking::toggleTethering);
   main_layout->addWidget(horizontal_line(), 0);

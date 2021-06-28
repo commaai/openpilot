@@ -42,6 +42,7 @@ const QString nm_service             = "org.freedesktop.NetworkManager";
 const int state_need_auth = 60;
 const int state_connected = 100;
 const int reason_wrong_password = 8;
+const int DEVICE_TYPE_WIFI = 2;
 const int dbus_timeout = 100;
 
 template <typename T>
@@ -69,13 +70,18 @@ WifiManager::WifiManager(QWidget* parent) : QWidget(parent) {
   qDBusRegisterMetaType<Connection>();
   qDBusRegisterMetaType<IpConfig>();
   connecting_to_network = "";
-  adapter = get_adapter();
 
-  bool has_adapter = adapter != "";
-  if (!has_adapter) {
-    throw std::runtime_error("Error connecting to NetworkManager");
+  bus.connect(nm_service, nm_path, nm_iface, "DeviceAdded", this, SLOT(deviceAdded(QDBusObjectPath)));
+
+  adapter = getAdapter();
+  qDebug() << "ADAPTER:" << adapter;
+  if (!adapter.isEmpty()) {
+    setup();
   }
+}
 
+void WifiManager::setup() {
+  qDebug() << "WIFIMANAGER::SETUP()!";
   QDBusInterface nm(nm_service, adapter, device_iface, bus);
   bus.connect(nm_service, adapter, device_iface, "StateChanged", this, SLOT(stateChange(unsigned int, unsigned int, unsigned int)));
   bus.connect(nm_service, adapter, props_iface, "PropertiesChanged", this, SLOT(propertyChange(QString, QVariantMap, QStringList)));
@@ -99,6 +105,11 @@ WifiManager::WifiManager(QWidget* parent) : QWidget(parent) {
   // making sure all future creations are non-blocking
   // https://bugreports.qt.io/browse/QTBUG-14485
   QDBusInterface(nm_service, nm_settings_path, nm_settings_iface, bus);
+
+  QTimer* timer = new QTimer(this);
+  QObject::connect(timer, &QTimer::timeout, this, &WifiManager::requestScan);
+  timer->start(5000);
+  requestScan();
 }
 
 void WifiManager::refreshNetworks() {
@@ -290,9 +301,12 @@ void WifiManager::forgetConnection(const QString &ssid) {
 }
 
 void WifiManager::requestScan() {
-  QDBusInterface nm(nm_service, adapter, wireless_device_iface, bus);
-  nm.setTimeout(dbus_timeout);
-  nm.call("RequestScan",  QVariantMap());
+  if (this->isVisible()) {
+    QDBusInterface nm(nm_service, adapter, wireless_device_iface, bus);
+    nm.setTimeout(dbus_timeout);
+    nm.call("RequestScan",  QVariantMap());
+    qDebug() << "REQUESTING SCAN!";
+  }
 }
 
 uint WifiManager::get_wifi_device_state() {
@@ -329,27 +343,24 @@ unsigned int WifiManager::get_ap_strength(const QString &network_path) {
   return get_response<unsigned int>(response);
 }
 
-QString WifiManager::get_adapter() {
+QString WifiManager::getAdapter() {
   QDBusInterface nm(nm_service, nm_path, nm_iface, bus);
   nm.setTimeout(dbus_timeout);
 
   const QDBusReply<QList<QDBusObjectPath>> response = nm.call("GetDevices");
-  QString adapter_path = "";
 
   for (const QDBusObjectPath &path : response.value()) {
     // Get device type
     QDBusInterface device_props(nm_service, path.path(), props_iface, bus);
     device_props.setTimeout(dbus_timeout);
 
-    QDBusMessage response = device_props.call("Get", device_iface, "DeviceType");
-    uint device_type = get_response<uint>(response);
-
-    if (device_type == 2) { // Wireless
-      adapter_path = path.path();
+    const uint deviceType = get_response<uint>(device_props.call("Get", device_iface, "DeviceType"));
+    if (deviceType == DEVICE_TYPE_WIFI) {
+      adapter = path.path();
       break;
     }
   }
-  return adapter_path;
+  return adapter;
 }
 
 void WifiManager::stateChange(unsigned int new_state, unsigned int previous_state, unsigned int change_reason) {
@@ -372,6 +383,17 @@ void WifiManager::propertyChange(const QString &interface, const QVariantMap &pr
     }
     refreshNetworks();  // TODO: only refresh on first scan, then use AccessPointAdded and Removed signals
     emit refreshSignal();
+  }
+}
+
+void WifiManager::deviceAdded(const QDBusObjectPath &path) {
+  QDBusInterface device_props(nm_service, path.path(), props_iface, bus);
+  device_props.setTimeout(dbus_timeout);
+
+  const uint deviceType = get_response<uint>(device_props.call("Get", device_iface, "DeviceType"));
+  if (deviceType == DEVICE_TYPE_WIFI) {
+    adapter = path.path();
+    setup();
   }
 }
 
@@ -423,10 +445,9 @@ void WifiManager::activateWifiConnection(const QString &ssid) {
   const QDBusObjectPath &path = getConnectionPath(ssid);
   if (!path.path().isEmpty()) {
     connecting_to_network = ssid;
-    const QString &devicePath = get_adapter();
     QDBusInterface nm3(nm_service, nm_path, nm_iface, bus);
     nm3.setTimeout(dbus_timeout);
-    nm3.call("ActivateConnection", QVariant::fromValue(path), QVariant::fromValue(QDBusObjectPath(devicePath)), QVariant::fromValue(QDBusObjectPath("/")));
+    nm3.call("ActivateConnection", QVariant::fromValue(path), QVariant::fromValue(QDBusObjectPath(adapter)), QVariant::fromValue(QDBusObjectPath("/")));
   }
 }
 

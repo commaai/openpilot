@@ -54,6 +54,8 @@ public:
   void changeTetheringPassword(const QString &newPassword);
 
 private:
+  void setup();
+
   QVector<QByteArray> seen_ssids;
   QString adapter;  // Path to network manager wifi-device
   QDBusConnection bus = QDBusConnection::systemBus();
@@ -62,7 +64,7 @@ private:
   QString tethering_ssid;
   QString tetheringPassword = "swagswagcommma";
 
-  QString get_adapter();
+  QString getAdapter();
   QString get_ipv4_address();
   QList<Network> get_networks();
   void connect(const QByteArray &ssid, const QString &username, const QString &password, SecurityType security_type);
@@ -84,6 +86,7 @@ signals:
 private slots:
   void stateChange(unsigned int new_state, unsigned int previous_state, unsigned int change_reason);
   void propertyChange(const QString &interface, const QVariantMap &props, const QStringList &invalidated_props);
+  void deviceAdded(const QDBusObjectPath &path);
   void connectionRemoved(const QDBusObjectPath &path);
   void newConnection(const QDBusObjectPath &path);
 };
