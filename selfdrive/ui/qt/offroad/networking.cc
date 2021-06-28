@@ -128,7 +128,7 @@ void Networking::connectToNetwork(const Network &n) {
 }
 
 void Networking::wrongPassword(const QString &ssid) {
-  for (Network n : wifi->seen_networks) {
+  for (Network n : wifi->seenNetworks) {
     if (n.ssid == ssid) {
       QString pass = InputDialog::getText("Wrong password for \"" + n.ssid +"\"", 8);
       if (!pass.isEmpty()) {
@@ -172,7 +172,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   main_layout->addWidget(horizontal_line(), 0);
 
   // IP address
-  ipLabel = new LabelControl("IP Address", wifi->ipv4_address);
+  ipLabel = new LabelControl("IP Address", wifi->ip4Address);
   main_layout->addWidget(ipLabel, 0);
   main_layout->addWidget(horizontal_line(), 0);
 
@@ -185,7 +185,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
 }
 
 void AdvancedNetworking::refresh() {
-  ipLabel->setText(wifi->ipv4_address);
+  ipLabel->setText(wifi->ip4Address);
   update();
 }
 
@@ -214,7 +214,7 @@ void WifiUI::refresh() {
   clearLayout(main_layout);
 
   int i = 0;
-  for (Network &network : wifi->seen_networks) {
+  for (Network &network : wifi->seenNetworks) {
     QHBoxLayout *hlayout = new QHBoxLayout;
 
     QLabel *ssid_label = new QLabel(QString::fromUtf8(network.ssid));
@@ -260,7 +260,7 @@ void WifiUI::refresh() {
     hlayout->addWidget(btn, 0, Qt::AlignRight);
     main_layout->addLayout(hlayout, 1);
     // Don't add the last horizontal line
-    if (i+1 < wifi->seen_networks.size()) {
+    if (i+1 < wifi->seenNetworks.size()) {
       main_layout->addWidget(horizontal_line(), 0);
     }
     i++;

@@ -23,6 +23,7 @@ struct Network {
   unsigned int strength;
   ConnectedType connected;
   SecurityType security_type;
+  bool known;
 };
 
 class WifiManager : public QWidget {
@@ -31,9 +32,8 @@ public:
   explicit WifiManager(QWidget* parent);
 
   void requestScan();
-  QVector<Network> seen_networks;
-  QMap<QDBusObjectPath, QString> knownConnections;
-  QString ipv4_address;
+  QVector<Network> seenNetworks;
+  QString ip4Address;
 
   void refreshNetworks();
   void forgetConnection(const QString &ssid);
@@ -54,6 +54,8 @@ public:
   void changeTetheringPassword(const QString &newPassword);
 
 private:
+  QMap<QDBusObjectPath, QString> knownConnections;
+
   QVector<QByteArray> seen_ssids;
   QString adapter;  // Path to network manager wifi-device
   QDBusConnection bus = QDBusConnection::systemBus();
@@ -63,14 +65,13 @@ private:
   QString tetheringPassword = "swagswagcommma";
 
   QString get_adapter();
-  QString get_ipv4_address();
-  QList<Network> get_networks();
+  QString getIp4Address(const QDBusObjectPath &path);
   void connect(const QByteArray &ssid, const QString &username, const QString &password, SecurityType security_type);
   QString get_active_ap();
   void deactivateConnection(const QString &ssid);
   QVector<QDBusObjectPath> get_active_connections();
   uint get_wifi_device_state();
-  QByteArray get_property(const QString &network_path, const QString &property);
+  QByteArray getApProperty(const QString &network_path, const QString &property);
   unsigned int get_ap_strength(const QString &network_path);
   SecurityType getSecurityType(const QString &path);
   QDBusObjectPath getConnectionPath(const QString &ssid);
@@ -86,4 +87,6 @@ private slots:
   void propertyChange(const QString &interface, const QVariantMap &props, const QStringList &invalidated_props);
   void connectionRemoved(const QDBusObjectPath &path);
   void newConnection(const QDBusObjectPath &path);
+  void accessPointAdded(const QDBusObjectPath &path);
+  void accessPointRemoved(const QDBusObjectPath &path);
 };
