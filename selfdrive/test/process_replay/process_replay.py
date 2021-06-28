@@ -250,21 +250,9 @@ CONFIGS = [
     fake_pubsubmaster=True,
   ),
   ProcessConfig(
-    proc_name="radard",
-    pub_sub={
-      "can": ["radarState", "liveTracks"],
-      "liveParameters": [], "carState": [], "modelV2": [],
-    },
-    ignore=["logMonoTime", "valid", "radarState.cumLagMs"],
-    init_callback=get_car_params,
-    should_recv_callback=radar_rcv_callback,
-    tolerance=None,
-    fake_pubsubmaster=True,
-  ),
-  ProcessConfig(
     proc_name="plannerd",
     pub_sub={
-      "modelV2": ["lateralPlan"], "radarState": ["longitudinalPlan"],
+      "modelV2": ["lateralPlan", "longitudinalPlan"],
       "carState": [], "controlsState": [],
     },
     ignore=["logMonoTime", "valid", "longitudinalPlan.processingDelay"],
