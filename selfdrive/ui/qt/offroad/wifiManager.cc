@@ -98,16 +98,18 @@ void WifiManager::setup() {
   if (bytes.length() >= 4) {
     tethering_ssid+="-"+QString::fromStdString(bytes.substr(0,4));
   }
-
-  // Create dbus interface for tethering button. This populates the introspection cache,
-  // making sure all future creations are non-blocking
-  // https://bugreports.qt.io/browse/QTBUG-14485
-  QDBusInterface(nm_service, nm_settings_path, nm_settings_iface, bus);
+  activeAp = getActiveAp();
+  tetheringEnabled = get_property(activeAp, "Ssid") == tethering_ssid;
 
   QTimer* timer = new QTimer(this);
   QObject::connect(timer, &QTimer::timeout, this, &WifiManager::requestScan);
   timer->start(5000);
   requestScan();
+
+  // Create dbus interface for tethering button. This populates the introspection cache,
+  // making sure all future creations are non-blocking
+  // https://bugreports.qt.io/browse/QTBUG-14485
+  QDBusInterface(nm_service, nm_settings_path, nm_settings_iface, bus);
 }
 
 void WifiManager::refreshNetworks() {
@@ -163,7 +165,6 @@ QList<Network> WifiManager::get_networks() {
   QDBusInterface nm(nm_service, adapter, wireless_device_iface, bus);
   nm.setTimeout(DBUS_TIMEOUT);
 
-  const QString active_ap = get_active_ap();
   const QDBusReply<QList<QDBusObjectPath>> response = nm.call("GetAllAccessPoints");
 
   for (const QDBusObjectPath &path : response.value()) {
@@ -174,7 +175,7 @@ QList<Network> WifiManager::get_networks() {
     unsigned int strength = get_ap_strength(path.path());
     SecurityType security = getSecurityType(path.path());
     ConnectedType ctype;
-    if (path.path() != active_ap) {
+    if (path.path() != activeAp) {
       ctype = ConnectedType::DISCONNECTED;
     } else {
       if (ssid == connecting_to_network) {
@@ -322,7 +323,7 @@ uint WifiManager::get_wifi_device_state() {
   return resp;
 }
 
-QString WifiManager::get_active_ap() {
+QString WifiManager::getActiveAp() {
   QDBusInterface device_props(nm_service, adapter, props_iface, bus);
   device_props.setTimeout(DBUS_TIMEOUT);
 
@@ -331,7 +332,7 @@ QString WifiManager::get_active_ap() {
   return r.path();
 }
 
-QByteArray WifiManager::get_property(const QString &network_path , const QString &property) {
+QByteArray WifiManager::get_property(const QString &network_path, const QString &property) {
   QDBusInterface device_props(nm_service, network_path, props_iface, bus);
   device_props.setTimeout(DBUS_TIMEOUT);
 
@@ -380,6 +381,11 @@ void WifiManager::propertyChange(const QString &interface, const QVariantMap &pr
     }
     refreshNetworks();  // TODO: only refresh on first scan, then use AccessPointAdded and Removed signals
     emit refreshSignal();
+
+  } else if (interface == wireless_device_iface && props.contains("ActiveAccessPoint")) {
+    const QDBusObjectPath &path = props.value("ActiveAccessPoint").value<QDBusObjectPath>();
+    activeAp = path.path();  // can be "/" or empty if no active AP
+    tetheringEnabled = get_property(activeAp, "Ssid") == tethering_ssid;
   }
 }
 
@@ -400,9 +406,8 @@ void WifiManager::newConnection(const QDBusObjectPath &path) {
 }
 
 void WifiManager::disconnect() {
-  const QString &active_ap = get_active_ap();
-  if (active_ap != "" && active_ap != "/") {
-    deactivateConnection(get_property(active_ap, "Ssid"));
+  if (activeAp != "" && activeAp != "/") {
+    deactivateConnection(get_property(activeAp, "Ssid"));
   }
 }
 
@@ -486,11 +491,6 @@ void WifiManager::enableTethering() {
 
 void WifiManager::disableTethering() {
   deactivateConnection(tethering_ssid.toUtf8());
-}
-
-bool WifiManager::tetheringEnabled() {
-  QString active_ap = get_active_ap();
-  return get_property(active_ap, "Ssid") == tethering_ssid;
 }
 
 void WifiManager::changeTetheringPassword(const QString &newPassword) {
