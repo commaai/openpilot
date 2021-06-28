@@ -81,7 +81,7 @@ class Planner():
     long_control_state = sm['controlsState'].longControlState
     force_slow_decel = sm['controlsState'].forceDecel
 
-    lead_0 = sm['modelV2'].leads[0]
+    lead_0 = sm['modelV2'].leadsV3[0]
 
     enabled = (long_control_state == LongCtrlState.pid) or (long_control_state == LongCtrlState.stopping)
     if not enabled or sm['carState'].gasPressed:
@@ -116,8 +116,8 @@ class Planner():
 
     # Throw FCW if brake predictions exceed capability
     self.fcw = (bool(np.any(np.array(self.a_desired_trajectory) < -3.0)) and
-                sm['modelV2'].leads[0].prob > .9 and
-                sm['modelV2'].leads[0].prob > .9)
+                sm['modelV2'].leadsV3[0].prob > .9 and
+                sm['modelV2'].leadsV3[0].prob > .9)
 
     # Interpolate 0.05 seconds and save as starting point for next iteration
     a_prev = self.a_desired

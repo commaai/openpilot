@@ -46,7 +46,6 @@ class Plant():
     md = messaging.new_message('modelV2')
     control = messaging.new_message('controlsState')
     car_state = messaging.new_message('carState')
-    a_lead = (v_lead - self.v_lead_prev)/self.ts
     self.v_lead_prev = v_lead
 
     if self.lead_relevancy:
@@ -57,18 +56,6 @@ class Plant():
       d_rel = 200.
       v_rel = 0.
       prob = 0.0
-
-    lead = log.RadarState.LeadData.new_message()
-    lead.dRel = float(d_rel)
-    lead.yRel = float(0.0)
-    lead.vRel = float(v_rel)
-    lead.aRel = float(a_lead - self.acceleration)
-    lead.vLead = float(v_lead)
-    lead.vLeadK = float(v_lead)
-    lead.aLeadK = float(a_lead)
-    lead.aLeadTau = float(1.5)
-    lead.status = True
-    lead.modelProb = prob
 
     md.modelV2.position.t = [float(t) for t in T_IDXS]
     lead = log.ModelDataV2.LeadDataV3.new_message()
@@ -81,7 +68,7 @@ class Plant():
     lead.a = [0.0 for i in range(0,12,2)]
 
     lead.prob = prob
-    md.modelV2.leads = [lead, lead]
+    md.modelV2.leadsV3 = [lead, lead]
 
 
 
@@ -91,19 +78,6 @@ class Plant():
     Plant.model.send(md.to_bytes())
     Plant.controls_state.send(control.to_bytes())
     Plant.car_state.send(car_state.to_bytes())
-
-
-    # ******** get controlsState messages for plotting ***
-    self.sm.update()
-    while True:
-      time.sleep(0.01)
-      if self.sm.updated['longitudinalPlan']:
-        plan = self.sm['longitudinalPlan']
-        self.acceleration = plan.aTarget
-        fcw = plan.fcw
-        break
-    self.speed += self.ts*self.acceleration
-    self.distance_lead = self.distance_lead + v_lead * self.ts
 
     # ******** get controlsState messages for plotting ***
     self.sm.update()

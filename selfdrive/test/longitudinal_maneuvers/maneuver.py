@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-=======
-from selfdrive.test.longitudinal_maneuvers.plant import Plant
->>>>>>> d2e297baa (vision only)
 import numpy as np
 from selfdrive.test.longitudinal_maneuvers.plant import Plant
 
@@ -28,8 +24,8 @@ class Maneuver():
 
     valid = True
     while plant.current_time() < self.duration:
-      speed_lead = np.interp(plant.current_time(), self.speed_lead_breakpoints, self.speed_lead_values)
-      log = plant.step(speed_lead)
+      speeds_lead = np.interp(plant.current_time() + np.arange(0.,12.,2.), self.speed_lead_breakpoints, self.speed_lead_values)
+      log = plant.step(speeds_lead)
 
       d_rel = log['distance_lead'] - log['distance'] if self.lead_relevancy else 200.
       v_rel = speeds_lead[0] - log['speed'] if self.lead_relevancy else 0.
