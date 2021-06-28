@@ -78,7 +78,6 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client) {
 
   uint32_t frame_id = 0, last_vipc_frame_id = 0;
   double last = 0;
-  int desire = -1;
   uint32_t run_count = 0;
 
   while (!do_exit) {
@@ -93,7 +92,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client) {
 
     // TODO: path planner timeout?
     sm.update(0);
-    desire = ((int)sm["lateralPlan"].getLateralPlan().getDesire());
+    int desire = ((int)sm["lateralPlan"].getLateralPlan().getDesire());
     frame_id = sm["roadCameraState"].getRoadCameraState().getFrameId();
 
     if (run_model_this_iter) {
