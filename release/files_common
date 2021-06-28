@@ -336,7 +336,6 @@ selfdrive/loggerd/xattr_cache.py
 selfdrive/sensord/SConscript
 selfdrive/sensord/libdiag.h
 selfdrive/sensord/sensors_qcom.cc
-selfdrive/sensord/sensors_qcom2.cc
 selfdrive/sensord/sensors/*.cc
 selfdrive/sensord/sensors/*.h
 selfdrive/sensord/sensord
@@ -379,8 +378,6 @@ selfdrive/camerad/cameras/camera_frame_stream.cc
 selfdrive/camerad/cameras/camera_frame_stream.h
 selfdrive/camerad/cameras/camera_qcom.cc
 selfdrive/camerad/cameras/camera_qcom.h
-selfdrive/camerad/cameras/camera_qcom2.cc
-selfdrive/camerad/cameras/camera_qcom2.h
 selfdrive/camerad/cameras/debayer.cl
 selfdrive/camerad/cameras/sensor_i2c.h
 selfdrive/camerad/cameras/sensor2_i2c.h
