@@ -21,6 +21,10 @@ from tools.lib.framereader import FrameReader
 from tools.lib.logreader import LogReader
 
 
+process_replay_dir = os.path.dirname(os.path.abspath(__file__))
+FAKEDATA = os.path.join(process_replay_dir, "fakedata/GENERATED")
+
+
 def replay_service(s, msgs):
   pm = messaging.PubMaster([s, ])
   rk = Ratekeeper(service_list[s].frequency, print_delay_threshold=None)
@@ -72,7 +76,7 @@ def replay_cameras(lr, frs):
   return p
 
 
-def regen_segment(lr, frs=None):
+def regen_segment(lr, frs=None, outdir=FAKEDATA):
 
   lr = list(lr)
   if frs is None:
@@ -90,8 +94,7 @@ def regen_segment(lr, frs=None):
   cal.liveCalibration.rpyCalib = [0.0, 0.0, 0.0]
   params.put("CalibrationParams", cal.to_bytes())
 
-  process_replay_dir = os.path.dirname(os.path.abspath(__file__))
-  os.environ["LOG_ROOT"] = os.path.join(process_replay_dir, "fakedata/")
+  os.environ["LOG_ROOT"] = outdir
   os.environ["SIMULATION"] = "1"
 
   os.environ['SKIP_FW_QUERY'] = ""
@@ -140,7 +143,7 @@ def regen_segment(lr, frs=None):
       for p in procs:
         p.start()
 
-    for _ in tqdm(range(600)):
+    for _ in tqdm(range(60)):
       # ensure all procs are running
       for d, procs in fake_daemons.items():
         for p in procs:
@@ -155,8 +158,12 @@ def regen_segment(lr, frs=None):
       for p in procs:
         p.terminate()
 
+  r = params.get("CurrentRoute", encoding='utf-8')
+  return os.path.join(outdir, r)
+
 if __name__ == "__main__":
   r = Route("0982d79ebb0de295|2021-01-17--17-13-08")
   lr = LogReader(r.log_paths()[11])
   fr = FrameReader(r.camera_paths()[11])
-  regen_segment(lr, {'roadCameraState': fr})
+  r = regen_segment(lr, {'roadCameraState': fr})
+  print(r)

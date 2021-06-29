@@ -345,8 +345,11 @@ int main(int argc, char** argv) {
     qlog_states[sock] = {.counter = 0, .freq = it.decimation};
   }
 
+  Params params;
+
   // init logger
   logger_init(&s.logger, "rlog", true);
+  params.put("CurrentRoute", s.logger.route_name);
 
   // init encoders
   pthread_mutex_init(&s.rotate_lock, NULL);
@@ -356,7 +359,7 @@ int main(int argc, char** argv) {
   encoder_threads.push_back(std::thread(encoder_thread, LOG_CAMERA_ID_FCAMERA));
   s.rotate_state[LOG_CAMERA_ID_FCAMERA].enabled = true;
 
-  if (!Hardware::PC() && Params().getBool("RecordFront")) {
+  if (!Hardware::PC() && params.getBool("RecordFront")) {
     encoder_threads.push_back(std::thread(encoder_thread, LOG_CAMERA_ID_DCAMERA));
     s.rotate_state[LOG_CAMERA_ID_DCAMERA].enabled = true;
   }

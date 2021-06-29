@@ -5,11 +5,11 @@ import sys
 from typing import Any
 
 from selfdrive.car.car_helpers import interface_names
+from selfdrive.test.openpilotci import get_url
 from selfdrive.test.process_replay.compare_logs import compare_logs
 from selfdrive.test.process_replay.process_replay import CONFIGS, replay_process
 from tools.lib.logreader import LogReader
 
-INJECT_MODEL = 0
 
 segments = [
   ("HYUNDAI", "02c45f73a2e5c6e9|2021-01-01--19-08-22--1"),     # HYUNDAI.SONATA
@@ -35,18 +35,6 @@ BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
 
 # run the full test (including checks) when no args given
 FULL_TEST = len(sys.argv) <= 1
-
-
-def get_segment(segment_name, original=True):
-  route_name, segment_num = segment_name.rsplit("--", 1)
-  if original:
-    rlog_url = BASE_URL + "%s/%s/rlog.bz2" % (route_name.replace("|", "/"), segment_num)
-  else:
-    process_replay_dir = os.path.dirname(os.path.abspath(__file__))
-    model_ref_commit = open(os.path.join(process_replay_dir, "model_ref_commit")).read().strip()
-    rlog_url = BASE_URL + "%s/%s/rlog_%s.bz2" % (route_name.replace("|", "/"), segment_num, model_ref_commit)
-
-  return rlog_url
 
 
 def test_process(cfg, lr, cmp_log_fn, ignore_fields=None, ignore_msgs=None):
@@ -153,8 +141,8 @@ if __name__ == "__main__":
 
     results[segment] = {}
 
-    rlog_fn = get_segment(segment)
-    lr = LogReader(rlog_fn)
+    r, n = segment.rsplit("--", 1)
+    lr = LogReader(get_url(r, n))
 
     for cfg in CONFIGS:
       if (procs_whitelisted and cfg.proc_name not in args.whitelist_procs) or \
