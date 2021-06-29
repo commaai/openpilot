@@ -71,11 +71,11 @@ WifiManager::WifiManager(QWidget* parent) : QWidget(parent) {
   qDBusRegisterMetaType<IpConfig>();
   connecting_to_network = "";
 
-  bus.connect(nm_service, nm_path, nm_iface, "DeviceAdded", this, SLOT(deviceAdded(QDBusObjectPath)));
-
   adapter = getAdapter();
   if (!adapter.isEmpty()) {
     setup();
+  } else {
+    bus.connect(nm_service, nm_path, nm_iface, "DeviceAdded", this, SLOT(deviceAdded(QDBusObjectPath)));
   }
 }
 
