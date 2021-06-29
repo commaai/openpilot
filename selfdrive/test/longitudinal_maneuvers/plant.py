@@ -68,7 +68,7 @@ class Plant():
     lead.a = [0.0 for i in range(0,12,2)]
 
     lead.prob = prob
-    md.modelV2.leadsV3 = [lead, lead]
+    md.modelV2.leadsV3 = [lead, lead, lead]
 
 
 
