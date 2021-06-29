@@ -102,10 +102,8 @@ void WifiManager::setup() {
   tetheringEnabled = getApProperty(activeAp, "Ssid") == tethering_ssid;
 
   QTimer* timer = new QTimer(this);
-  QObject::connect(timer, &QTimer::timeout, this, [=] {
-    if (this->isVisible()) {
-      requestScan();
-    }
+  QObject::connect(timer, &QTimer::timeout, this, [=]() {
+    if (this->isVisible()) requestScan();
   });
   timer->start(5000);
   requestScan();

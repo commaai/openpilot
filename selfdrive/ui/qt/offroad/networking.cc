@@ -25,11 +25,6 @@ void NetworkStrengthWidget::paintEvent(QPaintEvent* event) {
 Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent), show_advanced(show_advanced) {
   main_layout = new QStackedLayout(this);
 
-  QLabel* warning = new QLabel("Network manager is inactive!");
-  warning->setAlignment(Qt::AlignCenter);
-  warning->setStyleSheet(R"(font-size: 65px;)");
-  main_layout->addWidget(warning);
-
   wifi = new WifiManager(this);
   connect(wifi, &WifiManager::wrongPassword, this, &Networking::wrongPassword);
   connect(wifi, &WifiManager::refreshSignal, this, &Networking::refresh);
@@ -51,7 +46,6 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent), s
   wifiWidget->setObjectName("wifiWidget");
   connect(wifiWidget, &WifiUI::connectToNetwork, this, &Networking::connectToNetwork);
   vlayout->addWidget(new ScrollView(wifiWidget, this), 1);
-
   main_layout->addWidget(wifiScreen);
 
   an = new AdvancedNetworking(this, wifi);
