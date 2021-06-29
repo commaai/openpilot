@@ -7,32 +7,12 @@
 #include <QSurfaceFormat>
 #include <QWidget>
 
-#include "selfdrive/common/params.h"
-
-
+QString getBrand();
+QString getBrandVersion();
 void configFont(QPainter &p, const QString &family, int size, const QString &style);
 void clearLayout(QLayout* layout);
+void setQtSurfaceFormat();
 QString timeAgo(const QDateTime &date);
-
-inline QString getBrand() {
-  return Params().getBool("Passive") ? "dashcam" : "openpilot";
-}
-
-inline QString getBrandVersion() {
-  return getBrand() + " v" + QString::fromStdString(Params().get("Version")).left(14).trimmed();
-}
-
-inline void setQtSurfaceFormat() {
-  QSurfaceFormat fmt;
-#ifdef __APPLE__
-  fmt.setVersion(3, 2);
-  fmt.setProfile(QSurfaceFormat::OpenGLContextProfile::CoreProfile);
-  fmt.setRenderableType(QSurfaceFormat::OpenGL);
-#else
-  fmt.setRenderableType(QSurfaceFormat::OpenGLES);
-#endif
-  QSurfaceFormat::setDefaultFormat(fmt);
-}
 
 class ClickableWidget : public QWidget
 {
