@@ -259,7 +259,7 @@ class CarInterface(CarInterfaceBase):
       ret.gearboxType = 2
     elif 0x112 in fingerprint[0]:
       ret.gearboxType = 3
-    else:  #
+    else:  # CLU15
       ret.gearboxType = 4
 
     return ret
