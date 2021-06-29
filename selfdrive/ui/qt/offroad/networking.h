@@ -71,6 +71,7 @@ private:
 
   WifiUI* wifiWidget;
   WifiManager* wifi = nullptr;
+  void showEvent(QShowEvent* event) override;
 
 public slots:
   void refresh();

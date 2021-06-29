@@ -22,7 +22,6 @@ void NetworkStrengthWidget::paintEvent(QPaintEvent* event) {
 }
 
 // Networking functions
-
 Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent), show_advanced(show_advanced) {
   main_layout = new QStackedLayout(this);
 
@@ -78,11 +77,10 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent), s
 }
 
 void Networking::refresh() {
-  if (this->isVisible() || wifi->firstRefresh) {
+  if (wifi->seen_networks.size() != 0) {
     wifiWidget->refresh();
-    an->refresh();
-    wifi->firstRefresh = false;
   }
+  an->refresh();
 }
 
 void Networking::connectToNetwork(const Network &n) {
@@ -110,8 +108,11 @@ void Networking::wrongPassword(const QString &ssid) {
   }
 }
 
-// AdvancedNetworking functions
+void Networking::showEvent(QShowEvent *event) {
+  refresh();
+}
 
+// AdvancedNetworking functions
 AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWidget(parent), wifi(wifi) {
 
   QVBoxLayout* main_layout = new QVBoxLayout(this);
@@ -170,7 +171,6 @@ void AdvancedNetworking::toggleTethering(bool enable) {
 }
 
 // WifiUI functions
-
 WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi) {
   main_layout = new QVBoxLayout(this);
 

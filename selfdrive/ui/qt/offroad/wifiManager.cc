@@ -102,7 +102,9 @@ void WifiManager::setup() {
   tetheringEnabled = get_property(activeAp, "Ssid") == tethering_ssid;
 
   QTimer* timer = new QTimer(this);
-  QObject::connect(timer, &QTimer::timeout, this, &WifiManager::requestScan);
+  QObject::connect(timer, &QTimer::timeout, this, [=] {
+    if (this->isVisible()) requestScan();
+  });
   timer->start(5000);
   requestScan();
 
@@ -307,11 +309,9 @@ bool WifiManager::isWirelessAdapter(const QDBusObjectPath &path) {
 }
 
 void WifiManager::requestScan() {
-  if (this->isVisible() || firstRefresh) {
-    QDBusInterface nm(nm_service, adapter, wireless_device_iface, bus);
-    nm.setTimeout(dbus_timeout);
-    nm.call("RequestScan",  QVariantMap());
-  }
+  QDBusInterface nm(nm_service, adapter, wireless_device_iface, bus);
+  nm.setTimeout(dbus_timeout);
+  nm.call("RequestScan",  QVariantMap());
 }
 
 uint WifiManager::get_wifi_device_state() {
@@ -369,7 +369,7 @@ void WifiManager::stateChange(unsigned int new_state, unsigned int previous_stat
   } else if (new_state == state_connected) {
     connecting_to_network = "";
     refreshNetworks();
-    emit refreshSignal();
+    updateUI();
   }
 }
 
@@ -380,12 +380,18 @@ void WifiManager::propertyChange(const QString &interface, const QVariantMap &pr
       knownConnections = listConnections();
     }
     refreshNetworks();  // TODO: only refresh on first scan, then use AccessPointAdded and Removed signals
-    emit refreshSignal();
+    updateUI();
 
   } else if (interface == wireless_device_iface && props.contains("ActiveAccessPoint")) {
     const QDBusObjectPath &path = props.value("ActiveAccessPoint").value<QDBusObjectPath>();
     activeAp = path.path();  // can be "/" or empty if no active AP
     tetheringEnabled = get_property(activeAp, "Ssid") == tethering_ssid;
+  }
+}
+
+void WifiManager::updateUI() {
+  if (this->isVisible()) {
+    emit refreshSignal();
   }
 }
 

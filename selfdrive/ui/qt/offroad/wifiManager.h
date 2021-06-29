@@ -33,7 +33,6 @@ public:
   QVector<Network> seen_networks;
   QMap<QDBusObjectPath, QString> knownConnections;
   QString ipv4_address;
-  bool firstRefresh = true;
 
   void requestScan();
   void refreshNetworks();
@@ -81,6 +80,7 @@ private:
   QDBusObjectPath getConnectionPath(const QString &ssid);
   QMap<QDBusObjectPath, QString> listConnections();
   QString getConnectionSsid(const QDBusObjectPath &path);
+  void updateUI();
 
 signals:
   void wrongPassword(const QString &ssid);
