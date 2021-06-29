@@ -18,6 +18,20 @@ DEST_KEY = azureutil.get_user_token(_DATA_ACCOUNT_CI, "openpilotci")
 SOURCE_KEYS = [azureutil.get_user_token(account, bucket) for account, bucket in SOURCES]
 SERVICE = BlockBlobService(_DATA_ACCOUNT_CI, sas_token=DEST_KEY)
 
+def upload_route(path):
+  r, n = path.rsplit("--", 1)
+  destpath = f"{r}/{n}"
+  cmd = [
+    "azcopy",
+    "copy",
+    f"{path}/*",
+    "https://{}.blob.core.windows.net/{}/{}?{}".format(_DATA_ACCOUNT_CI, "openpilotci", destpath, DEST_KEY),
+    "--recursive=false",
+    "--overwrite=false",
+    "--exclude-pattern=*/dcamera.hevc",
+  ]
+  subprocess.check_call(cmd)
+
 def sync_to_ci_public(route):
   key_prefix = route.replace('|', '/')
   dongle_id = key_prefix.split('/')[0]
