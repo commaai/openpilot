@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import unittest
 import numpy as np
 
@@ -6,7 +7,7 @@ import cereal.messaging as messaging
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.longitudinal_planner import calc_cruise_accel_limits
 from selfdrive.controls.lib.speed_smoother import speed_smoother
-from selfdrive.controls.lib.long_mpc import LongitudinalMpc
+from selfdrive.controls.lib.lead_mpc import LeadMpc
 
 
 def RW(v_ego, v_l):
@@ -32,8 +33,7 @@ def run_following_distance_simulation(v_lead, t_end=200.0):
 
   v_cruise_setpoint = v_lead + 10.
 
-  pm = FakePubMaster()
-  mpc = LongitudinalMpc(1)
+  mpc = LeadMpc(0)
 
   first = True
   while t < t_end:
@@ -50,27 +50,28 @@ def run_following_distance_simulation(v_lead, t_end=200.0):
     CS.carState.vEgo = v_ego
     CS.carState.aEgo = a_ego
 
-    # Setup lead packet
+    # Setup model packet
+    radarstate = messaging.new_message('radarState')
     lead = log.RadarState.LeadData.new_message()
-    lead.status = True
+    lead.modelProb = .75
     lead.dRel = x_lead - x_ego
     lead.vLead = v_lead
     lead.aLeadK = 0.0
+    lead.status = True
+    radarstate.radarState.leadOne = lead
 
     # Run MPC
     mpc.set_cur_state(v_ego, a_ego)
     if first:  # Make sure MPC is converged on first timestep
       for _ in range(20):
-        mpc.update(CS.carState, lead)
-        mpc.publish(pm)
-    mpc.update(CS.carState, lead)
-    mpc.publish(pm)
+        mpc.update(CS.carState, radarstate.radarState, 0)
+    mpc.update(CS.carState, radarstate.radarState, 0)
 
     # Choose slowest of two solutions
-    if v_cruise < mpc.v_mpc:
+    if v_cruise < mpc.mpc_solution.v_ego[5]:
       v_ego, a_ego = v_cruise, a_cruise
     else:
-      v_ego, a_ego = mpc.v_mpc, mpc.a_mpc
+      v_ego, a_ego = mpc.mpc_solution.v_ego[5], mpc.mpc_solution.a_ego[5]
 
     # Update state
     x_lead += v_lead * dt
@@ -89,4 +90,8 @@ class TestFollowingDistance(unittest.TestCase):
       simulation_steady_state = run_following_distance_simulation(v_lead)
       correct_steady_state = RW(v_lead, v_lead) + 4.0
 
-      self.assertAlmostEqual(simulation_steady_state, correct_steady_state, delta=0.1)
+      self.assertAlmostEqual(simulation_steady_state, correct_steady_state, delta=.1)
+
+
+if __name__ == "__main__":
+  unittest.main()
