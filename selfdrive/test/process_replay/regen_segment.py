@@ -17,56 +17,66 @@ from selfdrive.car.fingerprints import FW_VERSIONS
 from selfdrive.manager.process import ensure_running
 from selfdrive.manager.process_config import managed_processes
 from tools.lib.route import Route
+from tools.lib.framereader import FrameReader
 from tools.lib.logreader import LogReader
 
 
 def replay_service(s, msgs):
   pm = messaging.PubMaster([s, ])
   rk = Ratekeeper(service_list[s].frequency, print_delay_threshold=None)
-  s_msgs = [m for m in msgs if m.which() == s]
-  for m in s_msgs:
+  smsgs = [m for m in msgs if m.which() == s]
+  for m in smsgs:
     pm.send(s, m.as_builder())
     rk.keep_time()
 
-def replay_cameras():
+vs = None
+def replay_cameras(lr, frs):
   cameras = [
     ("roadCameraState", DT_MDL, eon_f_frame_size, VisionStreamType.VISION_STREAM_YUV_BACK),
     ("driverCameraState", DT_DMON, eon_d_frame_size, VisionStreamType.VISION_STREAM_YUV_FRONT),
   ]
 
-  # TODO: use real frames
-  def replay_camera(s, dt, vipc_server):
+  def replay_camera(s, stream, dt, vipc_server, fr, size):
     pm = messaging.PubMaster([s, ])
     rk = Ratekeeper(1 / dt, print_delay_threshold=None)
+
+    img = b"\x00" * int(size[0]*size[1]*3/2)
     while True:
+      if fr is not None and False:
+        img = fr.get(rk.frame % fr.frame_count, pix_fmt='yuv420p')[0]
+        img = img.flatten().tobytes()
+        print("got img")
+
+      rk.keep_time()
+
       m = messaging.new_message(s)
       msg = getattr(m, s)
       msg.frameId = rk.frame
       pm.send(s, m)
 
-      img = b"\x00" * int(size[0]*size[1]*3/2)  # yuv img
       vipc_server.send(stream, img, msg.frameId, msg.timestampSof, msg.timestampEof)
-
-      # TODO: fetch next image, then keep time
-      rk.keep_time()
 
   # init vipc server and cameras
   p = []
-  vipc_server = VisionIpcServer("camerad")
+  global vs
+  vs = VisionIpcServer("camerad")
   for (s, dt, size, stream) in cameras:
-    vipc_server.create_buffers(stream, 40, False, size[0], size[1])
-    p.append(multiprocessing.Process(target=replay_camera, args=(s, dt, vipc_server)))
+    fr = frs.get(s, None)
+    vs.create_buffers(stream, 40, False, size[0], size[1])
+    p.append(multiprocessing.Process(target=replay_camera,
+                                     args=(s, stream, dt, vs, fr, size)))
 
   # hack to make UI work
-  vipc_server.create_buffers(VisionStreamType.VISION_STREAM_RGB_BACK, 4, True, eon_f_frame_size[0], eon_f_frame_size[1])
-  vipc_server.start_listener()
-
+  vs.create_buffers(VisionStreamType.VISION_STREAM_RGB_BACK, 4, True, eon_f_frame_size[0], eon_f_frame_size[1])
+  vs.start_listener()
   return p
 
 
-def regen_segment(lr):
+def regen_segment(lr, frs=None):
 
   lr = list(lr)
+  if frs is None:
+    frs = dict()
 
   # setup env
   params = Params()
@@ -103,14 +113,14 @@ def regen_segment(lr):
       multiprocessing.Process(target=replay_service, args=('can', lr)),
       multiprocessing.Process(target=replay_service, args=('pandaState', lr)),
     ],
-    'managerState': [
-      multiprocessing.Process(target=replay_service, args=('managerState', lr)),
-    ],
+    #'managerState': [
+    #  multiprocessing.Process(target=replay_service, args=('managerState', lr)),
+    #],
     'thermald': [
       multiprocessing.Process(target=replay_service, args=('deviceState', lr)),
     ],
     'camerad': [
-      *replay_cameras(),
+      *replay_cameras(lr, frs),
     ],
 
     # TODO: fix these and run them
@@ -126,12 +136,16 @@ def regen_segment(lr):
     # start procs up
     ignore = list(fake_daemons.keys()) + ['ui', 'manage_athenad', 'uploader']
     ensure_running(managed_processes.values(), started=True, not_run=ignore)
-    for threads in fake_daemons.values():
-      for t in threads:
-        t.start()
+    for procs in fake_daemons.values():
+      for p in procs:
+        p.start()
 
-    # TODO: ensure all procs are running
-    for _ in tqdm(range(60)):
+    for _ in tqdm(range(600)):
+      # ensure all procs are running
+      for d, procs in fake_daemons.items():
+        for p in procs:
+          if not p.is_alive():
+            raise Exception(f"{d}'s {p.name} died")
       time.sleep(1)
   finally:
     # kill everything
@@ -142,6 +156,7 @@ def regen_segment(lr):
         p.terminate()
 
 if __name__ == "__main__":
-  r = Route("ef895f46af5fd73f|2021-05-22--14-06-35")
-  lr = LogReader(r.log_paths()[6])
-  regen_segment(lr)
+  r = Route("0982d79ebb0de295|2021-01-17--17-13-08")
+  lr = LogReader(r.log_paths()[11])
+  fr = FrameReader(r.camera_paths()[11])
+  regen_segment(lr, {'roadCameraState': fr})
