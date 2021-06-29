@@ -63,7 +63,7 @@ def initialize_v_cruise(v_ego, buttonEvents, v_cruise_last):
 
 
 def get_lag_adjusted_curvature(CP, v_ego, psis, curvatures, curvature_rates):
-  if not len(psis) == CONTROL_N:
+  if len(psis) != CONTROL_N:
     psis = [0.0 for i in range(CONTROL_N)]
     curvatures = [0.0 for i in range(CONTROL_N)]
     curvature_rates = [0.0 for i in range(CONTROL_N)]
