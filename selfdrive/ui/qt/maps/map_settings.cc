@@ -84,7 +84,7 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
     // Destination set while offline
     {
       std::string url = "https://api.commadotai.com/v1/navigation/" + dongle_id + "/next";
-      RequestRepeater* repeater = new RequestRepeater(this, QString::fromStdString(url), "", 10);
+      RequestRepeater* repeater = new RequestRepeater(this, QString::fromStdString(url), "", 10, true);
 
       QObject::connect(repeater, &RequestRepeater::receivedResponse, [](QString resp) {
         auto params = Params();

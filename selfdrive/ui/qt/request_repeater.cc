@@ -1,11 +1,11 @@
 #include "selfdrive/ui/qt/request_repeater.h"
 
 RequestRepeater::RequestRepeater(QObject *parent, const QString &requestURL, const QString &cacheKey,
-                                 int period) : HttpRequest(parent, requestURL) {
+                                 int period, bool while_onroad) : HttpRequest(parent, requestURL) {
   timer = new QTimer(this);
   timer->setTimerType(Qt::VeryCoarseTimer);
   QObject::connect(timer, &QTimer::timeout, [=]() {
-    if (!QUIState::ui_state.scene.started && QUIState::ui_state.awake && reply == NULL) {
+    if ((!QUIState::ui_state.scene.started || while_onroad) && QUIState::ui_state.awake && reply == NULL) {
       sendRequest(requestURL);
     }
   });
