@@ -241,8 +241,9 @@ void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const float * data,
   xyzt.setZ(arr(&d[2], columns));
   xyzt.setT(column_offset >= 0 ? arr((float *)T_IDXS) : arr(plan_t_arr));
   if (fill_std) {
-    float stds[TRAJECTORY_SIZE] = {NAN};
-    xyzt.setXStd(column_offset >= 0 ? arr(&d[columns*TRAJECTORY_SIZE], columns) : arr(stds));
+    float nan_stds[TRAJECTORY_SIZE] = {};
+    std::fill_n(nan_stds, std::size(nan_stds), NAN);
+    xyzt.setXStd(column_offset >= 0 ? arr(&d[columns*TRAJECTORY_SIZE], columns) : arr(nan_stds));
     xyzt.setYStd(arr(&d[columns*TRAJECTORY_SIZE+1], columns));
     xyzt.setZStd(arr(&d[columns*TRAJECTORY_SIZE+2], columns));
   }
