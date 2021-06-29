@@ -85,3 +85,6 @@ class Pc(HardwareBase):
 
   def set_power_save(self, enabled):
     pass
+
+  def get_gpu_usage_percent(self):
+    return 0

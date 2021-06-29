@@ -262,3 +262,10 @@ class Tici(HardwareBase):
       # TODO: fix permissions with udev
       val = "0" if enabled else "1"
       os.system(f"sudo su -c 'echo {val} > /sys/devices/system/cpu/cpu{i}/online'")
+
+  def get_gpu_usage_percent(self):
+    try:
+      used, total = open('/sys/class/kgsl/kgsl-3d0/gpubusy').read().strip().split()
+      return 100.0 * int(used) / int(total)
+    except Exception:
+      return 0
