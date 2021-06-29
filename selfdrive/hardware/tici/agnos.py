@@ -96,7 +96,7 @@ def get_partition_path(target_slot_number, partition):
 
 
 def verify_partition(target_slot_number, partition):
-  full_check = partition.get('full_check', False)
+  full_check = partition['full_check']
   path = get_partition_path(target_slot_number, partition)
   partition_size = partition['size']
 
@@ -137,7 +137,7 @@ def flash_partition(target_slot_number, partition, cloudlog, spinner=None):
   downloader = StreamingDecompressor(partition['url'])
 
   # Clear hash before flashing in case we get interrupted
-  full_check = partition.get('full_check', False)
+  full_check = partition['full_check']
   if not full_check:
     clear_partition_hash(target_slot_number, partition)
 
@@ -182,7 +182,7 @@ def swap(manifest_path, target_slot_number):
     if not partition.get('full_check', False):
       clear_partition_hash(target_slot_number, partition)
 
-  os.system(f"abctl --set_active {target_slot_number}")
+  subprocess.check_output(f"abctl --set_active {target_slot_number}", shell=True)
 
 
 def flash_agnos_update(manifest_path, target_slot_number, cloudlog, spinner=None):
