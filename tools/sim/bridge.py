@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 import argparse
-import atexit
 import carla # pylint: disable=import-error
 import math
 import numpy as np
 import time
 import threading
 from cereal import log
+from multiprocessing import Process, Queue
 from typing import Any
 
 import cereal.messaging as messaging
@@ -82,9 +82,9 @@ def imu_callback(imu, vehicle_state):
   dat.sensorEvents[1].gyroUncalibrated.v = [imu.gyroscope.x, imu.gyroscope.y, imu.gyroscope.z]
   pm.send('sensorEvents', dat)
 
-def panda_state_function():
+def panda_state_function(exit_event: threading.Event):
   pm = messaging.PubMaster(['pandaState'])
-  while 1:
+  while not exit_event.is_set():
     dat = messaging.new_message('pandaState')
     dat.valid = True
     dat.pandaState = {
@@ -125,10 +125,9 @@ def gps_callback(gps, vehicle_state):
 
   pm.send('gpsLocationExternal', dat)
 
-def fake_driver_monitoring():
+def fake_driver_monitoring(exit_event: threading.Event):
   pm = messaging.PubMaster(['driverState','driverMonitoringState'])
-  while 1:
-
+  while not exit_event.is_set():
     # dmonitoringmodeld output
     dat = messaging.new_message('driverState')
     dat.driverState.faceProb = 1.0
@@ -145,9 +144,9 @@ def fake_driver_monitoring():
 
     time.sleep(DT_DMON)
 
-def can_function_runner(vs):
+def can_function_runner(vs: VehicleState, exit_event: threading.Event):
   i = 0
-  while 1:
+  while not exit_event.is_set():
     can_function(pm, vs.speed, vs.angle, i, vs.cruise_button, vs.is_engaged)
     time.sleep(0.01)
     i+=1
@@ -211,18 +210,14 @@ def bridge(q):
   gps = world.spawn_actor(gps_bp, transform, attach_to=vehicle)
   gps.listen(lambda gps: gps_callback(gps, vehicle_state))
 
-  def destroy():
-    print("clean exit")
-    imu.destroy()
-    camera.destroy()
-    vehicle.destroy()
-    print("done")
-  atexit.register(destroy)
-
   # launch fake car threads
-  threading.Thread(target=panda_state_function).start()
-  threading.Thread(target=fake_driver_monitoring).start()
-  threading.Thread(target=can_function_runner, args=(vehicle_state,)).start()
+  threads = []
+  exit_event = threading.Event()
+  threads.append(threading.Thread(target=panda_state_function, args=(exit_event,)))
+  threads.append(threading.Thread(target=fake_driver_monitoring, args=(exit_event,)))
+  threads.append(threading.Thread(target=can_function_runner, args=(vehicle_state, exit_event,)))
+  for t in threads:
+    t.start()
 
   # can loop
   rk = Ratekeeper(100, print_delay_threshold=0.05)
@@ -283,6 +278,8 @@ def bridge(q):
         elif m[1] == "cancel":
           cruise_button = CruiseButtons.CANCEL
           is_openpilot_engaged = False
+      elif m[0] == "quit":
+        break
 
       throttle_out = throttle_manual * throttle_manual_multiplier
       steer_out = steer_manual * steer_manual_multiplier
@@ -361,10 +358,20 @@ def bridge(q):
 
     rk.keep_time()
 
-def go(q: Any):
+  # Clean up resources in the opposite order they were created.
+  exit_event.set()
+  for t in reversed(threads):
+    t.join()
+  gps.destroy()
+  imu.destroy()
+  camera.destroy()
+  vehicle.destroy()
+
+def bridge_keep_alive(q: Any):
   while 1:
     try:
       bridge(q)
+      break
     except RuntimeError:
       print("Restarting bridge...")
 
@@ -377,16 +384,15 @@ if __name__ == "__main__":
   msg.liveCalibration.rpyCalib = [0.0, 0.0, 0.0]
   Params().put("CalibrationParams", msg.to_bytes())
 
-  from multiprocessing import Process, Queue
   q: Any = Queue()
-  p = Process(target=go, args=(q,))
-  p.daemon = True
+  p = Process(target=bridge_keep_alive, args=(q,), daemon=True)
   p.start()
 
   if args.joystick:
     # start input poll for joystick
     from lib.manual_ctrl import wheel_poll_thread
     wheel_poll_thread(q)
+    p.join()
   else:
     # start input poll for keyboard
     from lib.keyboard_ctrl import keyboard_poll_thread
