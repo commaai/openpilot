@@ -4,6 +4,7 @@ import numpy as np
 from common.numpy_fast import interp
 
 import cereal.messaging as messaging
+from cereal import log
 from common.realtime import DT_MDL
 from selfdrive.modeld.constants import T_IDXS
 from selfdrive.config import Conversions as CV
@@ -67,6 +68,8 @@ class Planner():
     self.a_desired = 0.0
     self.longitudinalPlanSource = 'cruise'
     self.alpha = np.exp(-DT_MDL/2.0)
+    self.lead_0 = log.ModelDataV2.LeadDataV3.new_message()
+    self.lead_1 = log.ModelDataV2.LeadDataV3.new_message()
 
 
   def update(self, sm, CP):
@@ -81,7 +84,9 @@ class Planner():
     long_control_state = sm['controlsState'].longControlState
     force_slow_decel = sm['controlsState'].forceDecel
 
-    lead_0 = sm['modelV2'].leadsV3[0]
+    if len(sm['modelV2'].leadsV3) > 2:
+      self.lead_0 = sm['modelV2'].leadsV3[0]
+      self.lead_1 = sm['modelV2'].leadsV3[1]
 
     enabled = (long_control_state == LongCtrlState.pid) or (long_control_state == LongCtrlState.stopping)
     if not enabled or sm['carState'].gasPressed:
@@ -92,7 +97,10 @@ class Planner():
     self.v_desired = self.alpha * self.v_desired + (1 - self.alpha) * v_ego
     self.v_desired = max(0.0, self.v_desired)
 
-    following = lead_0.prob > .5 and lead_0.x[0] < 45.0 and lead_0.v[0] > v_ego and lead_0.a[0] > 0.0
+    following = self.lead_0.prob > .5 and \
+                self.lead_0.x[0] < 45.0 and \
+                self.lead_0.v[0] > v_ego and \
+                self.lead_0.a[0] > 0.0
     accel_limits = [float(x) for x in calc_cruise_accel_limits(v_ego, following)]
     accel_limits_turns = limit_accel_in_turns(v_ego, sm['carState'].steeringAngleDeg, accel_limits, self.CP)
     if force_slow_decel:
@@ -115,9 +123,9 @@ class Planner():
         next_a = self.mpcs[key].mpc_solution.a_ego[5]
 
     # Throw FCW if brake predictions exceed capability
-    self.fcw = (bool(np.any(np.array(self.a_desired_trajectory) < -3.0)) and
-                sm['modelV2'].leadsV3[0].prob > .9 and
-                sm['modelV2'].leadsV3[0].prob > .9)
+    self.fcw = (bool(np.any(np.array(self.a_desired_trajectory) < -3.5)) and
+                self.lead_0.prob > .95 and
+                self.lead_1.prob > .95)
 
     # Interpolate 0.05 seconds and save as starting point for next iteration
     a_prev = self.a_desired

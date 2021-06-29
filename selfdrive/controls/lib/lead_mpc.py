@@ -4,6 +4,7 @@ import math
 import numpy as np
 from selfdrive.modeld.constants import T_IDXS
 from selfdrive.swaglog import cloudlog
+from cereal import log
 from common.realtime import sec_since_boot
 from selfdrive.controls.lib.lead_mpc_lib import libmpc_py
 from selfdrive.controls.lib.drive_helpers import MPC_COST_LONG
@@ -39,7 +40,12 @@ class LeadMpc():
     self.cur_state[0].a_ego = a_safe
 
   def update(self, carstate, model, v_cruise):
-    lead = model.leadsV3[self.lead_id]
+    if len(model.leadsV3) > 2:
+      lead = model.leadsV3[self.lead_id]
+    else:
+      lead = log.ModelDataV2.LeadDataV3.new_message()
+      lead.x = [0.0 for i in range(6)]
+      lead.v = [0.0 for i in range(6)]
     v_ego = carstate.vEgo
 
     # Setup current mpc state
@@ -49,11 +55,9 @@ class LeadMpc():
       self.status = lead.prob > 0.5
       x_lead = lead.x[0]
       v_lead = max(0.0, lead.v[0])
-      a_lead = lead.a[0]
 
-      if (v_lead < 0.1 or -a_lead / 2.0 > v_lead):
+      if (v_lead < 0.1):
         v_lead = 0.0
-        a_lead = 0.0
 
       self.cur_state[0].x_l = x_lead
       self.cur_state[0].v_l = v_lead
