@@ -2,14 +2,31 @@
 import os
 import sys
 import subprocess
+from xx.chffr.lib import azureutil  # pylint: disable=import-error
+from xx.chffr.lib.storage import _DATA_ACCOUNT_CI # pylint: disable=import-error
 
 BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
 
 TOKEN_PATH = "/data/azure_token"
+DEST_KEY = azureutil.get_user_token(_DATA_ACCOUNT_CI, "openpilotci")
 
 def get_url(route_name, segment_num, log_type="rlog"):
   ext = "hevc" if log_type in ["fcamera", "dcamera"] else "bz2"
   return BASE_URL + "%s/%s/%s.%s" % (route_name.replace("|", "/"), segment_num, log_type, ext)
+
+def upload_route(path):
+  r, n = path.rsplit("--", 1)
+  destpath = f"{r}/{n}"
+  cmd = [
+    "azcopy",
+    "copy",
+    f"{path}/*",
+    "https://{}.blob.core.windows.net/{}/{}?{}".format(_DATA_ACCOUNT_CI, "openpilotci", destpath, DEST_KEY),
+    "--recursive=false",
+    "--overwrite=false",
+    "--exclude-pattern=*/dcamera.hevc",
+  ]
+  subprocess.check_call(cmd)
 
 def upload_file(path, name):
   from azure.storage.blob import BlockBlobService

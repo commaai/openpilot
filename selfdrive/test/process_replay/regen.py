@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import argparse
 import os
 import time
 import multiprocessing
@@ -16,13 +17,14 @@ from common.transformations.camera import eon_f_frame_size, eon_d_frame_size
 from selfdrive.car.fingerprints import FW_VERSIONS
 from selfdrive.manager.process import ensure_running
 from selfdrive.manager.process_config import managed_processes
+from selfdrive.test.openpilotci import upload_route
 from tools.lib.route import Route
 from tools.lib.framereader import FrameReader
 from tools.lib.logreader import LogReader
 
 
 process_replay_dir = os.path.dirname(os.path.abspath(__file__))
-FAKEDATA = os.path.join(process_replay_dir, "fakedata/GENERATED")
+FAKEDATA = os.path.join(process_replay_dir, "fakedata/")
 
 
 def replay_service(s, msgs):
@@ -159,11 +161,24 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA):
         p.terminate()
 
   r = params.get("CurrentRoute", encoding='utf-8')
-  return os.path.join(outdir, r)
+  return os.path.join(outdir, r + "--0")
 
 if __name__ == "__main__":
-  r = Route("0982d79ebb0de295|2021-01-17--17-13-08")
-  lr = LogReader(r.log_paths()[11])
-  fr = FrameReader(r.camera_paths()[11])
-  r = regen_segment(lr, {'roadCameraState': fr})
-  print(r)
+
+  parser = argparse.ArgumentParser(description="Generate new segments from old ones")
+  parser.add_argument("--upload", action="store_true", help="Upload the new segment to the CI bucket")
+  parser.add_argument("route", type=str, help="The source route")
+  parser.add_argument("seg", type=int, help="Segment in source route")
+  args = parser.parse_args()
+
+  r = Route(args.route)
+  lr = LogReader(r.log_paths()[args.seg])
+  fr = FrameReader(r.camera_paths()[args.seg])
+  rpath = regen_segment(lr, {'roadCameraState': fr})
+  relr = os.path.relpath(rpath)
+
+  print("\n\n", "*"*30, "\n\n")
+  print("New route:", relr, "\n")
+  if args.upload:
+    upload_route(relr)
+
