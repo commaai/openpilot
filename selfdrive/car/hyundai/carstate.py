@@ -1,6 +1,6 @@
 import copy
 from cereal import car
-from selfdrive.car.hyundai.values import DBC, STEER_THRESHOLD, USE_FCA, EV_CAR, HYBRID_CAR
+from selfdrive.car.hyundai.values import DBC, STEER_THRESHOLD, FEATURES, EV_CAR, HYBRID_CAR
 from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
@@ -12,15 +12,15 @@ GearShifter = car.CarState.GearShifter
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
-
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
-    if self.CP.gearboxType in [1, 2]:
-      # preferred and elect gear methods use same definition
-      self.shifter_values = can_define.dv["LVR12"]["CF_Lvr_Gear"]
-    elif self.CP.gearboxType == 3:
-      self.shifter_values = can_define.dv["TCU12"]["CUR_GR"]
-    else:
+
+    if self.CP.carFingerprint in FEATURES["use_cluster_gears"]:
       self.shifter_values = can_define.dv["CLU15"]["CF_Clu_Gear"]
+    elif self.CP.carFingerprint in FEATURES["use_tcu_gears"]:
+      self.shifter_values = can_define.dv["TCU12"]["CUR_GR"]
+    else:  # preferred and elect gear methods use same definition
+      self.shifter_values = can_define.dv["LVR12"]["CF_Lvr_Gear"]
+
 
   def update(self, cp, cp_cam):
     ret = car.CarState.new_message()
@@ -79,19 +79,20 @@ class CarState(CarStateBase):
       ret.gas = cp.vl["EMS12"]["PV_AV_CAN"] / 100.
       ret.gasPressed = bool(cp.vl["EMS16"]["CF_Ems_AclAct"])
 
-    if self.CP.gearboxType == 1:
-      gear = cp.vl["LVR12"]["CF_Lvr_Gear"]
-    elif self.CP.gearboxType == 2:
-      gear = cp.vl["ELECT_GEAR"]["Elect_Gear_Shifter"]
-    elif self.CP.gearboxType == 3:
-      gear = cp.vl["TCU12"]["CUR_GR"]
-    else:
-      # Last in priority, some cars have this message but CF_Clu_Gear is empty
+    # Gear Selection via Cluster - For those Kia/Hyundai which are not fully discovered, we can use the Cluster Indicator for Gear Selection,
+    # as this seems to be standard over all cars, but is not the preferred method.
+    if self.CP.carFingerprint in FEATURES["use_cluster_gears"]:
       gear = cp.vl["CLU15"]["CF_Clu_Gear"]
+    elif self.CP.carFingerprint in FEATURES["use_tcu_gears"]:
+      gear = cp.vl["TCU12"]["CUR_GR"]
+    elif self.CP.carFingerprint in FEATURES["use_elect_gears"]:
+      gear = cp.vl["ELECT_GEAR"]["Elect_Gear_Shifter"]
+    else:
+      gear = cp.vl["LVR12"]["CF_Lvr_Gear"]
 
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(gear))
 
-    if self.CP.carFingerprint in USE_FCA:
+    if self.CP.carFingerprint in FEATURES["use_fca"]:
       ret.stockAeb = cp.vl["FCA11"]["FCA_CmdAct"] != 0
       ret.stockFcw = cp.vl["FCA11"]["CF_VSM_Warn"] == 2
     else:
@@ -226,36 +227,32 @@ class CarState(CarStateBase):
         ("EMS16", 100),
       ]
 
-    if CP.gearboxType == 1:
-      signals += [
-        ("CF_Lvr_Gear", "LVR12", 0)
-      ]
-      checks += [
-        ("LVR12", 100)
-      ]
-    elif CP.gearboxType == 2:
-      signals += [
-        ("Elect_Gear_Shifter", "ELECT_GEAR", 0)
-      ]
-      checks += [
-        ("ELECT_GEAR", 20)
-      ]
-    elif CP.gearboxType == 3:
-      signals += [
-        ("CUR_GR", "TCU12", 0)
-      ]
-      checks += [
-        ("TCU12", 100)
-      ]
-    else:
+    if CP.carFingerprint in FEATURES["use_cluster_gears"]:
       signals += [
         ("CF_Clu_Gear", "CLU15", 0),
       ]
       checks += [
         ("CLU15", 5)
       ]
+    elif CP.carFingerprint in FEATURES["use_tcu_gears"]:
+      signals += [
+        ("CUR_GR", "TCU12", 0)
+      ]
+      checks += [
+        ("TCU12", 100)
+      ]
+    elif CP.carFingerprint in FEATURES["use_elect_gears"]:
+      signals += [("Elect_Gear_Shifter", "ELECT_GEAR", 0)]
+      checks += [("ELECT_GEAR", 20)]
+    else:
+      signals += [
+        ("CF_Lvr_Gear", "LVR12", 0)
+      ]
+      checks += [
+        ("LVR12", 100)
+      ]
 
-    if CP.carFingerprint in USE_FCA:
+    if CP.carFingerprint in FEATURES["use_fca"]:
       signals += [
         ("FCA_CmdAct", "FCA11", 0),
         ("CF_VSM_Warn", "FCA11", 0),
