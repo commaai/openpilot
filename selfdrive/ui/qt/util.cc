@@ -73,7 +73,7 @@ void ClickableWidget::mouseReleaseEvent(QMouseEvent *event) {
 }
 
 // Fix stylesheets
-void ClickableWidget::paintEvent(QPaintEvent *)  {
+void ClickableWidget::paintEvent(QPaintEvent *) {
   QStyleOption opt;
   opt.init(this);
   QPainter p(this);
