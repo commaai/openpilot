@@ -1,14 +1,14 @@
 #pragma once
 
+#include <QDateTime>
+#include <QLayout>
+#include <QMouseEvent>
+#include <QPainter>
 #include <QSurfaceFormat>
 #include <QWidget>
 
 #include "selfdrive/common/params.h"
 
-class QDateTime;
-class QLayout;
-class QMouseEvent;
-class QPainter;
 
 void configFont(QPainter &p, const QString &family, int size, const QString &style);
 void clearLayout(QLayout* layout);

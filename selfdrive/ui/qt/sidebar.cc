@@ -1,7 +1,6 @@
 #include "selfdrive/ui/qt/sidebar.h"
 
 #include <QMouseEvent>
-#include <QPainter>
 
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/common/util.h"

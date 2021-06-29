@@ -1,11 +1,6 @@
 #include "selfdrive/ui/qt/util.h"
 
-#include <QDateTime>
-#include <QDebug>
-#include <QLayout>
 #include <QLayoutItem>
-#include <QMouseEvent>
-#include <QPainter>
 #include <QStyleOption>
 
 void configFont(QPainter &p, const QString &family, int size, const QString &style) {
