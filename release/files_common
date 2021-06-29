@@ -253,13 +253,13 @@ selfdrive/controls/lib/lateral_mpc/generator.cpp
 selfdrive/controls/lib/lateral_mpc/libmpc_py.py
 selfdrive/controls/lib/lateral_mpc/lateral_mpc.c
 
-selfdrive/controls/lib/longitudinal_mpc/lib_mpc_export/*
-selfdrive/controls/lib/longitudinal_mpc/.gitignore
-selfdrive/controls/lib/longitudinal_mpc/SConscript
-selfdrive/controls/lib/longitudinal_mpc/__init__.py
-selfdrive/controls/lib/longitudinal_mpc/generator.cpp
-selfdrive/controls/lib/longitudinal_mpc/libmpc_py.py
-selfdrive/controls/lib/longitudinal_mpc/longitudinal_mpc.c
+selfdrive/controls/lib/lead_mpc_lib/lib_mpc_export/*
+selfdrive/controls/lib/lead_mpc_lib/.gitignore
+selfdrive/controls/lib/lead_mpc_lib/SConscript
+selfdrive/controls/lib/lead_mpc_lib/__init__.py
+selfdrive/controls/lib/lead_mpc_lib/generator.cpp
+selfdrive/controls/lib/lead_mpc_lib/libmpc_py.py
+selfdrive/controls/lib/lead_mpc_lib/longitudinal_mpc.c
 
 selfdrive/controls/lib/longitudinal_mpc_lib/lib_mpc_export/*
 selfdrive/controls/lib/longitudinal_mpc_lib/.gitignore
