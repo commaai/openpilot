@@ -20,7 +20,7 @@
 #endif
 
 void dmonitoring_init(DMonitoringModelState* s) {
-  const char *model_path = "../../models/dmonitoring_model_q.dlc";
+  const char *model_path = Hardware::PC() ? "../../models/dmonitoring_model.dlc" : "../../models/dmonitoring_model_q.dlc";
   int runtime = USE_DSP_RUNTIME;
   s->m = new DefaultRunModel(model_path, &s->output[0], OUTPUT_SIZE, runtime);
   s->is_rhd = Params().getBool("IsRHD");
