@@ -576,7 +576,6 @@ class Controls:
     controlsState.enabled = self.enabled
     controlsState.active = self.active
     controlsState.curvature = curvature
-    controlsState.steeringAngleDesiredDeg = actuators.steeringAngleDeg
     controlsState.state = self.state
     controlsState.engageable = not self.events.any(ET.NO_ENTRY)
     controlsState.longControlState = self.LoC.long_control_state
