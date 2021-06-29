@@ -39,7 +39,7 @@ qt_libs = [widgets] + base_libs
 
 # spinner and text window
 qt_env.Program("qt/text", ["qt/text.cc"], LIBS=qt_libs)
-qt_env.Program("qt/spinner", ["qt/spinner.cc"], LIBS=base_libs)
+qt_env.Program("qt/spinner", ["qt/spinner.cc"], LIBS=qt_libs)
 
 # build main UI
 qt_src = ["main.cc", "ui.cc", "paint.cc", "qt/sidebar.cc", "qt/onroad.cc",
