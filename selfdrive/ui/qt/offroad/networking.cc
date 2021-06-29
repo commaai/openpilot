@@ -71,9 +71,7 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent), s
 }
 
 void Networking::refresh() {
-  if (wifi->seen_networks.size() != 0) {
-    wifiWidget->refresh();
-  }
+  wifiWidget->refresh();
   an->refresh();
 }
 
