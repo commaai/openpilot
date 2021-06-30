@@ -15,6 +15,8 @@ QFrame *horizontal_line(QWidget *parent) {
 }
 
 AbstractControl::AbstractControl(const QString &title, const QString &desc, const QString &icon, QWidget *parent) : QFrame(parent) {
+  setAutoFillBackground(true);
+  setAttribute(Qt::WA_OpaquePaintEvent);
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setMargin(0);
 

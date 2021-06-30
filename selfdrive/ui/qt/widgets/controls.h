@@ -9,23 +9,12 @@
 #include "selfdrive/ui/qt/widgets/toggle.h"
 
 QFrame *horizontal_line(QWidget *parent = nullptr);
-
-#include <QPainter>
-#include <QPaintEngine>
-#include <QDebug>
-#include <cassert>
 class AbstractControl : public QFrame {
   Q_OBJECT
 
 public:
   void setDescription(const QString &desc) {
     if(description) description->setText(desc);
-  }
-  void paintEvent(QPaintEvent *event) override{
-    QPainter p(this);
-    // qInfo() << p.paintEngine()->type();
-    assert(p.paintEngine()->type() == QPaintEngine::OpenGL2);
-    // qInfo() << "is opengl";
   }
 
 signals:
