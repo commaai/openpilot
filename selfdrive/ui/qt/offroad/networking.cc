@@ -103,11 +103,13 @@ void Networking::requestScan() {
       return;
     }
   }
+  qDebug() << "REQUESTING SCAN";
   wifi->requestScan();
 }
 
 void Networking::refresh() {
   if (this->isVisible() || firstRefresh) {
+    qDebug() << "REFRESHING UI";
     wifiWidget->refresh();
     an->refresh();
     firstRefresh = false;
