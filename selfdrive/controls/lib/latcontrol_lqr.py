@@ -4,7 +4,7 @@ import numpy as np
 from common.numpy_fast import clip
 from common.realtime import DT_CTRL
 from cereal import log
-from selfdrive.controls.lib.drive_helpers import get_steer_max, get_lag_adjusted_curvature
+from selfdrive.controls.lib.drive_helpers import get_steer_max
 
 
 class LatControlLQR():
@@ -44,11 +44,7 @@ class LatControlLQR():
 
     return self.sat_count > self.sat_limit
 
-  def update(self, active, CS, CP, VM, params, lat_plan):
-    desired_curvature, _ = get_lag_adjusted_curvature(CP, CS.vEgo,
-                                                      lat_plan.psis,
-                                                      lat_plan.curvatures,
-                                                      lat_plan.curvatureRates)
+  def update(self, active, CS, CP, VM, params, desired_curvature, desired_curvature_rate):
     lqr_log = log.ControlsState.LateralLQRState.new_message()
 
     steers_max = get_steer_max(CP, CS.vEgo)

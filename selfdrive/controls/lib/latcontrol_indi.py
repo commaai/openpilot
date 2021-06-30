@@ -6,7 +6,7 @@ from common.realtime import DT_CTRL
 from common.numpy_fast import clip, interp
 from selfdrive.car.toyota.values import CarControllerParams
 from selfdrive.car import apply_toyota_steer_torque_limits
-from selfdrive.controls.lib.drive_helpers import get_steer_max, get_lag_adjusted_curvature
+from selfdrive.controls.lib.drive_helpers import get_steer_max
 
 
 class LatControlINDI():
@@ -80,12 +80,8 @@ class LatControlINDI():
 
     return self.sat_count > self.sat_limit
 
-  def update(self, active, CS, CP, VM, params, lat_plan):
+  def update(self, active, CS, CP, VM, params, curvature, curvature_rate):
     self.speed = CS.vEgo
-    curvature, curvature_rate = get_lag_adjusted_curvature(CP, self.speed,
-                                                      lat_plan.psis,
-                                                      lat_plan.curvatures,
-                                                      lat_plan.curvatureRates)
     # Update Kalman filter
     y = np.array([[math.radians(CS.steeringAngleDeg)], [math.radians(CS.steeringRateDeg)]])
     self.x = np.dot(self.A_K, self.x) + np.dot(self.K, y)

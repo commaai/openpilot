@@ -1,6 +1,5 @@
 import math
 from cereal import log
-from selfdrive.controls.lib.drive_helpers import get_lag_adjusted_curvature
 
 
 class LatControlAngle():
@@ -10,11 +9,7 @@ class LatControlAngle():
   def reset(self):
     pass
 
-  def update(self, active, CS, CP, VM, params, lat_plan):
-    desired_curvature, _ = get_lag_adjusted_curvature(CP, CS.vEgo,
-                                                      lat_plan.psis,
-                                                      lat_plan.curvatures,
-                                                      lat_plan.curvatureRates)
+  def update(self, active, CS, CP, VM, params, desired_curvature, desired_curvature_rate):
     angle_log = log.ControlsState.LateralAngleState.new_message()
 
     if CS.vEgo < 0.3 or not active:
