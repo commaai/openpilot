@@ -168,16 +168,22 @@ void AdvancedNetworking::toggleTethering(bool enabled) {
 
 WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi) {
   main_layout = new QVBoxLayout(this);
+  scanningWidget();
+  main_layout->setSpacing(25);
+}
 
-  // Scan on startup
+void WifiUI::scanningWidget() {
   QLabel *scanning = new QLabel("Scanning for networks");
   scanning->setStyleSheet(R"(font-size: 65px;)");
   main_layout->addWidget(scanning, 0, Qt::AlignCenter);
-  main_layout->setSpacing(25);
 }
 
 void WifiUI::refresh() {
   clearLayout(main_layout);
+  if (wifi->seen_networks.size() == 0) {
+    scanningWidget();
+    return;
+  }
 
   int i = 0;
   for (Network &network : wifi->seen_networks) {
