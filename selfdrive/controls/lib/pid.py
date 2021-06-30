@@ -1,7 +1,6 @@
 import numpy as np
 from common.numpy_fast import clip, interp
 from common.realtime import DT_CTRL
-from common.filter_simple import FirstOrderFilter
 
 def apply_deadzone(error, deadzone):
   if error > deadzone:
@@ -13,13 +12,11 @@ def apply_deadzone(error, deadzone):
   return error
 
 class PIDController():
-  def __init__(self, k_p, k_i, k_d, k_f=0., pos_limit=None, neg_limit=None, rate=100, sat_limit=0.4, convert=None):
+  def __init__(self, k_p, k_i, k_d, k_f=0., pos_limit=None, neg_limit=None, rate=100, sat_limit=0.8, convert=None):
     self._k_p = k_p  # proportional gain
     self._k_i = k_i  # integral gain
     self._k_d = k_d  # derivative gain
     self.k_f = k_f  # feedforward gain
-
-    self.error = FirstOrderFilter(0, 5, DT_CTRL, hz_mode=True)
 
     self.pos_limit = pos_limit
     self.neg_limit = neg_limit
@@ -62,8 +59,6 @@ class PIDController():
     self.e0, self.e1, self.e2 = 0.0, 0.0, 0.0
     self.bf1, self.bf2 = 0.0, 0.0
 
-    self.error.reset(0)
-
     self.p, self.p1, self.p2 = 0.0, 0.0, 0.0
     self.i, self.i1, self.i2 = 0.0, 0.0, 0.0
     self.d, self.d1, self.d2 = 0.0, 0.0, 0.0
@@ -79,7 +74,7 @@ class PIDController():
     self.speed = speed
 
     k_bf = 1.0
-    _N = 30
+    _N = 20
     _Ts = DT_CTRL
     
     Kp, Ki, Kd = self.k_p, self.k_i, self.k_d
@@ -96,8 +91,6 @@ class PIDController():
     self.u2, self.u1 = self.u1, self.u0
     
     self.e0 = float(apply_deadzone(setpoint - measurement, deadzone))
-    self.e0 = self.error.update(self.e0)
-
     self.u0 =  self.ke0*self.e0 + self.ke1*self.e1 + self.ke2*self.e2 - self.ku1*self.u1 - self.ku2*self.u2
 
     #back-feed / back-calculate integrator anti-windup
