@@ -112,7 +112,6 @@ void WifiManager::refreshNetworks() {
     seen_ssids.push_back(network.ssid);
     seen_networks.push_back(network);
   }
-
 }
 
 QString WifiManager::get_ipv4_address() {
@@ -375,8 +374,10 @@ void WifiManager::stateChange(unsigned int new_state, unsigned int previous_stat
     emit wrongPassword(connecting_to_network);
   } else if (new_state == state_connected) {
     connecting_to_network = "";
-    refreshNetworks();
-    emit refreshSignal();
+    if (this->isVisible()) {
+      refreshNetworks();
+      emit refreshSignal();
+    }
   }
 }
 
