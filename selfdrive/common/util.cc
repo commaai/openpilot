@@ -172,7 +172,7 @@ struct tm get_time() {
 bool time_valid(struct tm sys_time) {
   int year = 1900 + sys_time.tm_year;
   int month = 1 + sys_time.tm_mon;
-  return (year > 2020) || (year == 2020 && month >= 10);
+  return (year > 2021) || (year == 2021 && month >= 6);
 }
 
 }  // namespace util
