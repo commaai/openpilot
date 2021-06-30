@@ -111,6 +111,8 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA):
         os.environ['SKIP_FW_QUERY'] = "1"
         os.environ['FINGERPRINT'] = car_fingerprint
 
+  #TODO: init car, make sure starts engaged when segment is engaged
+
   fake_daemons = {
     'sensord': [
       multiprocessing.Process(target=replay_service, args=('sensorEvents', lr)),
