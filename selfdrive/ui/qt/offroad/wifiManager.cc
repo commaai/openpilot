@@ -374,7 +374,6 @@ void WifiManager::stateChange(unsigned int new_state, unsigned int previous_stat
     knownConnections.remove(getConnectionPath(connecting_to_network));
     emit wrongPassword(connecting_to_network);
   } else if (new_state == state_connected) {
-    qDebug() << "STATE_CONNECTED";
     connecting_to_network = "";
     refreshNetworks();
     emit refreshSignal();
@@ -384,7 +383,6 @@ void WifiManager::stateChange(unsigned int new_state, unsigned int previous_stat
 // https://developer.gnome.org/NetworkManager/stable/gdbus-org.freedesktop.NetworkManager.Device.Wireless.html
 void WifiManager::propertyChange(const QString &interface, const QVariantMap &props, const QStringList &invalidated_props) {
   if (interface == wireless_device_iface && props.contains("LastScan")) {
-    qDebug() << "LAST_SCAN";
     if (knownConnections.isEmpty()) {
       knownConnections = listConnections();
     }
@@ -400,7 +398,6 @@ void WifiManager::connectionRemoved(const QDBusObjectPath &path) {
 void WifiManager::newConnection(const QDBusObjectPath &path) {
   knownConnections[path] = getConnectionSsid(path);
   activateWifiConnection(knownConnections[path]);
-  qDebug() << "NEW_CONNECTION";
 }
 
 void WifiManager::disconnect() {
