@@ -44,7 +44,7 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
     description->setContentsMargins(40, 20, 40, 20);
     description->setStyleSheet("font-size: 40px; color:grey");
     description->setWordWrap(true);
-    description->setVisible(false);
+    description->setVisible(true);
     main_layout->addWidget(description);
 
     connect(title_label, &QPushButton::clicked, [=]() {

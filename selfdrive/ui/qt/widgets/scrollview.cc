@@ -2,6 +2,7 @@
 
 #include <QScrollBar>
 #include <QScroller>
+#include <QEasingCurve>
 
 ScrollView::ScrollView(QWidget *w, QWidget *parent) : QScrollArea(parent) {
   setWidget(w);
@@ -36,8 +37,11 @@ ScrollView::ScrollView(QWidget *w, QWidget *parent) : QScrollArea(parent) {
   QScroller *scroller = QScroller::scroller(this->viewport());
   QScrollerProperties sp = scroller->scrollerProperties();
 
-  sp.setScrollMetric(QScrollerProperties::VerticalOvershootPolicy, QVariant::fromValue<QScrollerProperties::OvershootPolicy>(QScrollerProperties::OvershootAlwaysOff));
-  sp.setScrollMetric(QScrollerProperties::HorizontalOvershootPolicy, QVariant::fromValue<QScrollerProperties::OvershootPolicy>(QScrollerProperties::OvershootAlwaysOff));
+  sp.setScrollMetric(QScrollerProperties::FrameRate, QScrollerProperties::Fps30);
+  sp.setScrollMetric(QScrollerProperties::VerticalOvershootPolicy, QScrollerProperties::OvershootAlwaysOff);
+  sp.setScrollMetric(QScrollerProperties::HorizontalOvershootPolicy, QScrollerProperties::OvershootAlwaysOff);
+  sp.setScrollMetric(QScrollerProperties::DragStartDistance, 0.001);
+  sp.setScrollMetric(QScrollerProperties::ScrollingCurve, QEasingCurve::Linear);
 
   scroller->grabGesture(this->viewport(), QScroller::LeftMouseButtonGesture);
   scroller->setScrollerProperties(sp);
@@ -45,4 +49,8 @@ ScrollView::ScrollView(QWidget *w, QWidget *parent) : QScrollArea(parent) {
 
 void ScrollView::hideEvent(QHideEvent *e) {
   verticalScrollBar()->setValue(0);
+}
+
+void ScrollView::scrollContentsBy(int dx, int dy) {
+  return QScrollArea::scrollContentsBy(dx, dy);
 }
