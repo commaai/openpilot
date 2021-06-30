@@ -25,6 +25,7 @@ class WifiUI : public QWidget {
 
 public:
   explicit WifiUI(QWidget *parent = 0, WifiManager* wifi = 0);
+  void scanningWidget();
 
 private:
   WifiManager *wifi = nullptr;
