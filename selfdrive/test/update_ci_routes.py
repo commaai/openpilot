@@ -29,6 +29,7 @@ def upload_route(path):
     "--recursive=false",
     "--overwrite=false",
     "--exclude-pattern=*/dcamera.hevc",
+    "--exclude-pattern=*/*.mkv",
   ]
   subprocess.check_call(cmd)
 
