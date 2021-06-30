@@ -49,7 +49,7 @@ ScrollView::ScrollView(QWidget *w, QWidget *parent) : QScrollArea(parent) {
 }
 
 void ScrollView::hideEvent(QHideEvent *e) {
-  // verticalScrollBar()->setValue(0);
+  verticalScrollBar()->setValue(0);
 }
 
 void ScrollView::scrollContentsBy(int dx, int dy) {
