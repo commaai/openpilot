@@ -2,10 +2,10 @@ import os
 import math
 import numpy as np
 from common.realtime import sec_since_boot, DT_MDL
-from common.numpy_fast import interp, clip
+from common.numpy_fast import interp
 from selfdrive.swaglog import cloudlog
 from selfdrive.controls.lib.lateral_mpc import libmpc_py
-from selfdrive.controls.lib.drive_helpers import MPC_COST_LAT, MPC_N, CAR_ROTATION_RADIUS
+from selfdrive.controls.lib.drive_helpers import CONTROL_N, MPC_COST_LAT, LAT_MPC_N, CAR_ROTATION_RADIUS
 from selfdrive.controls.lib.lane_planner import LanePlanner, TRAJECTORY_SIZE
 from selfdrive.config import Conversions as CV
 import cereal.messaging as messaging
@@ -18,9 +18,6 @@ LOG_MPC = os.environ.get('LOG_MPC', False)
 
 LANE_CHANGE_SPEED_MIN = 30 * CV.MPH_TO_MS
 LANE_CHANGE_TIME_MAX = 10.
-# this corresponds to 80deg/s and 20deg/s steering angle in a toyota corolla
-MAX_CURVATURE_RATES = [0.03762194918267951, 0.003441203371932992]
-MAX_CURVATURE_RATE_SPEEDS = [0, 35]
 
 DESIRES = {
   LaneChangeDirection.none: {
@@ -173,12 +170,12 @@ class LateralPlanner():
       # Heading cost is useful at low speed, otherwise end of plan can be off-heading
       heading_cost = interp(v_ego, [5.0, 10.0], [MPC_COST_LAT.HEADING, 0.0])
       self.libmpc.set_weights(path_cost, heading_cost, CP.steerRateCost)
-    y_pts = np.interp(v_ego * self.t_idxs[:MPC_N + 1], np.linalg.norm(d_path_xyz, axis=1), d_path_xyz[:,1])
-    heading_pts = np.interp(v_ego * self.t_idxs[:MPC_N + 1], np.linalg.norm(self.path_xyz, axis=1), self.plan_yaw)
+    y_pts = np.interp(v_ego * self.t_idxs[:LAT_MPC_N + 1], np.linalg.norm(d_path_xyz, axis=1), d_path_xyz[:,1])
+    heading_pts = np.interp(v_ego * self.t_idxs[:LAT_MPC_N + 1], np.linalg.norm(self.path_xyz, axis=1), self.plan_yaw)
     self.y_pts = y_pts
 
-    assert len(y_pts) == MPC_N + 1
-    assert len(heading_pts) == MPC_N + 1
+    assert len(y_pts) == LAT_MPC_N + 1
+    assert len(heading_pts) == LAT_MPC_N + 1
     self.libmpc.run_mpc(self.cur_state, self.mpc_solution,
                         float(v_ego),
                         CAR_ROTATION_RADIUS,
@@ -188,29 +185,7 @@ class LateralPlanner():
     self.cur_state.x = 0.0
     self.cur_state.y = 0.0
     self.cur_state.psi = 0.0
-    self.cur_state.curvature = interp(DT_MDL, self.t_idxs[:MPC_N + 1], self.mpc_solution.curvature)
-
-    # TODO this needs more thought, use .2s extra for now to estimate other delays
-    delay = CP.steerActuatorDelay + .2
-    current_curvature = self.mpc_solution.curvature[0]
-    psi = interp(delay, self.t_idxs[:MPC_N + 1], self.mpc_solution.psi)
-    next_curvature_rate = self.mpc_solution.curvature_rate[0]
-
-    # MPC can plan to turn the wheel and turn back before t_delay. This means
-    # in high delay cases some corrections never even get commanded. So just use
-    # psi to calculate a simple linearization of desired curvature
-    curvature_diff_from_psi = psi / (max(v_ego, 1e-1) * delay) - current_curvature
-    next_curvature = current_curvature + 2 * curvature_diff_from_psi
-
-    self.desired_curvature = next_curvature
-    self.desired_curvature_rate = next_curvature_rate
-    max_curvature_rate = interp(v_ego, MAX_CURVATURE_RATE_SPEEDS, MAX_CURVATURE_RATES)
-    self.safe_desired_curvature_rate = clip(self.desired_curvature_rate,
-                                            -max_curvature_rate,
-                                            max_curvature_rate)
-    self.safe_desired_curvature = clip(self.desired_curvature,
-                                       self.safe_desired_curvature - max_curvature_rate/DT_MDL,
-                                       self.safe_desired_curvature + max_curvature_rate/DT_MDL)
+    self.cur_state.curvature = interp(DT_MDL, self.t_idxs[:LAT_MPC_N + 1], self.mpc_solution.curvature)
 
     #  Check for infeasable MPC solution
     mpc_nans = any(math.isnan(x) for x in self.mpc_solution.curvature)
@@ -234,14 +209,12 @@ class LateralPlanner():
     plan_send.valid = sm.all_alive_and_valid(service_list=['carState', 'controlsState', 'modelV2'])
     plan_send.lateralPlan.laneWidth = float(self.LP.lane_width)
     plan_send.lateralPlan.dPathPoints = [float(x) for x in self.y_pts]
+    plan_send.lateralPlan.psis = [float(x) for x in self.mpc_solution.psi[0:CONTROL_N]]
+    plan_send.lateralPlan.curvatures = [float(x) for x in self.mpc_solution.curvature[0:CONTROL_N]]
+    plan_send.lateralPlan.curvatureRates = [float(x) for x in self.mpc_solution.curvature_rate[0:CONTROL_N-1]] +[0.0]
     plan_send.lateralPlan.lProb = float(self.LP.lll_prob)
     plan_send.lateralPlan.rProb = float(self.LP.rll_prob)
     plan_send.lateralPlan.dProb = float(self.LP.d_prob)
-
-    plan_send.lateralPlan.rawCurvature = float(self.desired_curvature)
-    plan_send.lateralPlan.rawCurvatureRate = float(self.desired_curvature_rate)
-    plan_send.lateralPlan.curvature = float(self.safe_desired_curvature)
-    plan_send.lateralPlan.curvatureRate = float(self.safe_desired_curvature_rate)
 
     plan_send.lateralPlan.mpcSolutionValid = bool(plan_solution_valid)
 
