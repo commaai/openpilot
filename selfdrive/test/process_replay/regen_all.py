@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-from selfdrive.test.process_replay.test_processes import original_segments as segments
 from selfdrive.test.process_replay.regen import regen_and_save
+from selfdrive.test.process_replay.test_processes import original_segments as segments
 
 if __name__ == "__main__":
   new_segments = []

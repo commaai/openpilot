@@ -1,8 +1,8 @@
-from common.numpy_fast import clip, interp
-from selfdrive.config import Conversions as CV
 from cereal import car
-from selfdrive.modeld.constants import T_IDXS
+from common.numpy_fast import clip, interp
 from common.realtime import DT_MDL
+from selfdrive.config import Conversions as CV
+from selfdrive.modeld.constants import T_IDXS
 
 
 # kph
