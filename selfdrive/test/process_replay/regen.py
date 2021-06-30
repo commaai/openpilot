@@ -3,7 +3,7 @@ import os
 import time
 import multiprocessing
 from tqdm import tqdm
-
+import argparse
 # run DM procs
 os.environ["USE_WEBCAM"] = "1"
 
@@ -18,7 +18,6 @@ from selfdrive.manager.process import ensure_running
 from selfdrive.manager.process_config import managed_processes
 from selfdrive.test.update_ci_routes import upload_route
 from tools.lib.framereader import FrameReader
-from selfdrive.test.process_replay.test_processes import original_segments as segments
 from tools.lib.logreader import LogReader
 
 
@@ -167,24 +166,23 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA):
   return os.path.join(outdir, r + "--0")
 
 
-if __name__ == "__main__":
-  new_segments = []
-  for segment in segments:
-    route = segment[1].rsplit('--', 1)[0]
-    sidx = int(segment[1].rsplit('--', 1)[1])
-    lr = LogReader(f"cd:/{route.replace('|', '/')}/{sidx}/rlog.bz2")
-    fr = FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/fcamera.hevc")
-    rpath = regen_segment(lr, {'roadCameraState': fr})
-    relr = os.path.relpath(rpath)
+def regen_and_save(route, sidx, upload=False):
+  lr = LogReader(f"cd:/{route.replace('|', '/')}/{sidx}/rlog.bz2")
+  fr = FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/fcamera.hevc")
+  rpath = regen_segment(lr, {'roadCameraState': fr})
+  relr = os.path.relpath(rpath)
 
-    print("\n\n", "*"*30, "\n\n")
-    print("New route:", relr, "\n")
+  print("\n\n", "*"*30, "\n\n")
+  print("New route:", relr, "\n")
+  if upload:
     upload_route(relr)
-    relr = relr.replace('/', '|')
-    new_segments.append(f'("{segment[0]}", "{relr}"), ')
-  print()
-  print()
-  print()
-  print('COPY THIS INTO test_processes.py')
-  for seg in new_segments:
-    print(seg)
+  return relr
+
+
+if __name__ == "__main__":
+  parser = argparse.ArgumentParser(description="Generate new segments from old ones")
+  parser.add_argument("--upload", action="store_true", help="Upload the new segment to the CI bucket")
+  parser.add_argument("route", type=str, help="The source route")
+  parser.add_argument("seg", type=int, help="Segment in source route")
+  args = parser.parse_args()
+  regen_and_save(args.route, args.seg, args.upload)
