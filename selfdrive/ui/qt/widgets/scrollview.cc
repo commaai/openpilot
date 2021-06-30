@@ -1,5 +1,6 @@
 #include "selfdrive/ui/qt/widgets/scrollview.h"
 
+#include <QDebug>
 #include <QScrollBar>
 #include <QScroller>
 #include <QEasingCurve>
@@ -48,9 +49,11 @@ ScrollView::ScrollView(QWidget *w, QWidget *parent) : QScrollArea(parent) {
 }
 
 void ScrollView::hideEvent(QHideEvent *e) {
-  verticalScrollBar()->setValue(0);
+  // verticalScrollBar()->setValue(0);
 }
 
 void ScrollView::scrollContentsBy(int dx, int dy) {
-  return QScrollArea::scrollContentsBy(dx, dy);
+  qInfo() << verticalScrollBar()->value();
+  widget()->move(0, -verticalScrollBar()->value());
+  // QScrollArea::scrollContentsBy(dx, dy);
 }
