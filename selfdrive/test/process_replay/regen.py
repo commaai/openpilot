@@ -17,9 +17,8 @@ from selfdrive.car.fingerprints import FW_VERSIONS
 from selfdrive.manager.process import ensure_running
 from selfdrive.manager.process_config import managed_processes
 from selfdrive.test.update_ci_routes import upload_route
-from tools.lib.route import Route
 from tools.lib.framereader import FrameReader
-from selfdrive.test.process_replay.test_processes import segments
+from selfdrive.test.process_replay.test_processes import original_segments as segments
 from tools.lib.logreader import LogReader
 
 
@@ -171,10 +170,8 @@ if __name__ == "__main__":
   for segment in segments:
     route = segment[1].rsplit('--', 1)[0]
     sidx = int(segment[1].rsplit('--', 1)[1])
-    print(segment)
-    r = Route(route)
-    lr = LogReader(r.log_paths()[sidx])
-    fr = FrameReader(r.camera_paths()[sidx])
+    lr = LogReader(f"cd:/{route.replace('|', '/')}/{sidx}/rlog.bz2")
+    fr = FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/fcamera.hevc")
     rpath = regen_segment(lr, {'roadCameraState': fr})
     relr = os.path.relpath(rpath)
 
@@ -182,7 +179,7 @@ if __name__ == "__main__":
     print("New route:", relr, "\n")
     upload_route(relr)
     relr = relr.replace('/', '|')
-    new_segments.append(f'("{segment[0]}", "{relr}")')
+    new_segments.append(f'("{segment[0]}", "{relr}"), ')
   print()
   print()
   print()

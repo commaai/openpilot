@@ -11,21 +11,34 @@ from selfdrive.test.process_replay.process_replay import CONFIGS, replay_process
 from tools.lib.logreader import LogReader
 
 
-segments = [
+original_segments = [
   ("HYUNDAI", "02c45f73a2e5c6e9|2021-01-01--19-08-22--1"),     # HYUNDAI.SONATA
   ("TOYOTA", "0982d79ebb0de295|2021-01-04--17-13-21--13"),     # TOYOTA.PRIUS (INDI)
   ("TOYOTA2", "0982d79ebb0de295|2021-01-03--20-03-36--6"),     # TOYOTA.RAV4  (LQR)
-  ("HONDA", "0982d79ebb0de295|2021-01-08--10-13-10--6"),       # HONDA.CIVIC (NIDEC)
-  ("HONDA2", "a8e8bf6a3864361b|2021-01-04--03-01-18--2"),      # HONDA.ACCORD (BOSCH)
-  ("CHRYSLER", "52d86230ee29aa84|2021-01-10--17-16-34--30"),   # CHRYSLER.PACIFICA
+  ("HONDA", "eb140f119469d9ab|2021-06-12--10-46-24--27"),       # HONDA.CIVIC (NIDEC)
+  ("HONDA2", "7d2244f34d1bbcda|2021-06-25--12-25-37--26"),      # HONDA.ACCORD (BOSCH)
+  ("CHRYSLER", "4deb27de11bee626|2021-02-20--11-28-55--8"),   # CHRYSLER.PACIFICA
   ("SUBARU", "4d70bc5e608678be|2021-01-15--17-02-04--5"),      # SUBARU.IMPREZA
-  ("GM", "ae3ed0eb20960a20|2021-01-15--15-04-06--8"),          # GM.VOLT
-  ("NISSAN", "e4d79cf6b8b19a0d|2021-01-17--14-48-08--7"),      # NISSAN.XTRAIL
+  ("GM", "0c58b6a25109da2b|2021-02-23--16-35-50--11"),          # GM.VOLT
+  ("NISSAN", "35336926920f3571|2021-02-12--18-38-48--46"),      # NISSAN.XTRAIL
   ("VOLKSWAGEN", "ef895f46af5fd73f|2021-05-22--14-06-35--6"),  # VW.AUDI_A3_MK3
 
   # Enable when port is tested and dascamOnly is no longer set
   #("MAZDA", "32a319f057902bb3|2020-04-27--15-18-58--2"),      # MAZDA.CX5
   #("TESLA", "bb50caf5f0945ab1|2021-06-19--17-20-18--3"),      # TESLA.AP2_MODELS
+]
+
+segments = [
+  ("HYUNDAI", "process_replay|fakedata|2021-06-30--01-00-31--0"),
+  ("TOYOTA", "process_replay|fakedata|2021-06-30--01-03-53--0"),
+  ("TOYOTA2", "process_replay|fakedata|2021-06-30--01-07-24--0"),
+  ("HONDA", "process_replay|fakedata|2021-06-30--01-48-33--0"),
+  ("HONDA2", "process_replay|fakedata|2021-06-30--01-52-56--0"),
+  ("CHRYSLER", "process_replay|fakedata|2021-06-30--01-23-40--0"),
+  ("SUBARU", "process_replay|fakedata|2021-06-30--01-27-22--0"),
+  ("GM", "process_replay|fakedata|2021-06-30--01-30-49--0"),
+  ("NISSAN", "process_replay|fakedata|2021-06-30--01-34-20--0"),
+  ("VOLKSWAGEN", "process_replay|fakedata|2021-06-30--01-37-52--0"),
 ]
 
 # dashcamOnly makes don't need to be tested until a full port is done
