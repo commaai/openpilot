@@ -17,6 +17,7 @@ from selfdrive.car.fingerprints import FW_VERSIONS
 from selfdrive.manager.process import ensure_running
 from selfdrive.manager.process_config import managed_processes
 from selfdrive.test.update_ci_routes import upload_route
+from tools.lib.route import Route
 from tools.lib.framereader import FrameReader
 from tools.lib.logreader import LogReader
 
@@ -166,9 +167,14 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA):
   return os.path.join(outdir, r + "--0")
 
 
-def regen_and_save(route, sidx, upload=False):
-  lr = LogReader(f"cd:/{route.replace('|', '/')}/{sidx}/rlog.bz2")
-  fr = FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/fcamera.hevc")
+def regen_and_save(route, sidx, upload=False, use_route_meta=True):
+  if use_route_meta:
+    r = Route(args.route)
+    lr = LogReader(r.log_paths()[args.seg])
+    fr = FrameReader(r.camera_paths()[args.seg])
+  else:
+    lr = LogReader(f"cd:/{route.replace('|', '/')}/{sidx}/rlog.bz2")
+    fr = FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/fcamera.hevc")
   rpath = regen_segment(lr, {'roadCameraState': fr})
   relr = os.path.relpath(rpath)
 
