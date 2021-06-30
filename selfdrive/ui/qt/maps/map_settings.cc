@@ -128,7 +128,7 @@ void MapPanel::parseResponse(const QString &response) {
       auto type = obj["save_type"].toString();
       auto label = obj["label"].toString();
       auto name = obj["place_name"].toString();
-      auto details = shorten(obj["place_details"].toString(), 30);
+      auto details = obj["place_details"].toString();
 
       if (type != save_type) continue;
 
@@ -164,7 +164,7 @@ void MapPanel::parseResponse(const QString &response) {
         layout->addSpacing(10);
 
 
-        QLabel *recent_label = new QLabel(name + " " + details);
+        QLabel *recent_label = new QLabel(shorten(name + " " + details, 45));
         recent_label->setStyleSheet(R"(font-size: 50px;)");
 
         layout->addWidget(recent_label);
