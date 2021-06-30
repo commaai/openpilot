@@ -31,9 +31,11 @@ def replay_service(s, msgs):
   pm = messaging.PubMaster([s, ])
   rk = Ratekeeper(service_list[s].frequency, print_delay_threshold=None)
   smsgs = [m for m in msgs if m.which() == s]
-  for m in smsgs:
-    pm.send(s, m.as_builder())
-    rk.keep_time()
+  while True:
+    for m in smsgs:
+      # TODO: use logMonoTime
+      pm.send(s, m.as_builder())
+      rk.keep_time()
 
 vs = None
 def replay_cameras(lr, frs):
