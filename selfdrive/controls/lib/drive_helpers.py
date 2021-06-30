@@ -72,16 +72,14 @@ def get_lag_adjusted_curvature(CP, v_ego, psis, curvatures, curvature_rates):
   delay = CP.steerActuatorDelay + .2
   current_curvature = curvatures[0]
   psi = interp(delay, T_IDXS[:CONTROL_N], psis)
-  next_curvature_rate = curvature_rates[0]
+  desired_curvature_rate = curvature_rates[0]
 
   # MPC can plan to turn the wheel and turn back before t_delay. This means
   # in high delay cases some corrections never even get commanded. So just use
   # psi to calculate a simple linearization of desired curvature
   curvature_diff_from_psi = psi / (max(v_ego, 1e-1) * delay) - current_curvature
-  next_curvature = current_curvature + 2 * curvature_diff_from_psi
+  desired_curvature = current_curvature + 2 * curvature_diff_from_psi
 
-  desired_curvature = next_curvature
-  desired_curvature_rate = next_curvature_rate
   max_curvature_rate = interp(v_ego, MAX_CURVATURE_RATE_SPEEDS, MAX_CURVATURE_RATES)
   safe_desired_curvature_rate = clip(desired_curvature_rate,
                                           -max_curvature_rate,
