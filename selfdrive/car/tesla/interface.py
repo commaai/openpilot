@@ -35,6 +35,14 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.959
       ret.centerToFront = ret.wheelbase * 0.5
       ret.steerRatio = 13.5
+    elif candidate == CAR.AP1_MODELS:
+      ret.mass = 2100. + STD_CARGO_KG
+      ret.wheelbase = 2.959
+      ret.centerToFront = ret.wheelbase * 0.5
+      ret.steerRatio = 13.5
+      ret.safetyParam = 1 + 2 # has AP, ACC
+      ret.openpilotLongitudinalControl = False
+      ret.communityFeature = True
     else:
       raise ValueError(f"Unsupported car: {candidate}")
 
