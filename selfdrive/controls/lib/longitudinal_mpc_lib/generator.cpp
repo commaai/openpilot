@@ -14,7 +14,7 @@ int main( )
   DifferentialState x_ego, v_ego, a_ego, t;
   OnlineData min_a, max_a;
 
-  Control j_ego;
+  Control j_ego, accel_slack, speed_slack;
 
   // Equations of motion
   f << dot(x_ego) == v_ego;
@@ -27,7 +27,7 @@ int main( )
   h << v_ego;
   h << a_ego;
   h << j_ego;
-  h << accel_slack**2 + speed_slack**2;
+  h << accel_slack*accel_slack + speed_slack*speed_slack;
 
   // Weights are defined in mpc.
   BMatrix Q(5,5); Q.setAll(true);
