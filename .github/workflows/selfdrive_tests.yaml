@@ -50,7 +50,7 @@ jobs:
     - name: Build openpilot and run checks
       run: |
           cd $STRIPPED_DIR
-          ${{ env.RUN }} "python selfdrive/manager/build.py && \
+          ${{ env.RUN }} "CI=1 python selfdrive/manager/build.py && \
                           python -m unittest discover selfdrive/car"
     - name: Cleanup scons cache
       run: |
