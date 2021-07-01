@@ -62,7 +62,8 @@ private:
   QString tethering_ssid;
   QString tetheringPassword = "swagswagcommma";
 
-  QString get_adapter();
+  QString getAdapter();
+  bool isWirelessAdapter(const QDBusObjectPath &path);
   QString get_ipv4_address();
   QList<Network> get_networks();
   void connect(const QByteArray &ssid, const QString &username, const QString &password, SecurityType security_type);
@@ -76,6 +77,7 @@ private:
   QDBusObjectPath getConnectionPath(const QString &ssid);
   QMap<QDBusObjectPath, QString> listConnections();
   QString getConnectionSsid(const QDBusObjectPath &path);
+  void setup();
 
 signals:
   void wrongPassword(const QString &ssid);
@@ -84,6 +86,7 @@ signals:
 private slots:
   void stateChange(unsigned int new_state, unsigned int previous_state, unsigned int change_reason);
   void propertyChange(const QString &interface, const QVariantMap &props, const QStringList &invalidated_props);
+  void deviceAdded(const QDBusObjectPath &path);
   void connectionRemoved(const QDBusObjectPath &path);
   void newConnection(const QDBusObjectPath &path);
 };

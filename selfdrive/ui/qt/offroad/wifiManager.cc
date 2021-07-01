@@ -41,6 +41,7 @@ const QString nm_service             = "org.freedesktop.NetworkManager";
 
 const int state_connected = 100;
 const int state_need_auth = 60;
+const int device_type_wifi = 2;
 const int reason_wrong_password = 8;
 const int dbus_timeout = 100;
 
@@ -69,13 +70,31 @@ WifiManager::WifiManager(QWidget* parent) : QWidget(parent) {
   qDBusRegisterMetaType<Connection>();
   qDBusRegisterMetaType<IpConfig>();
   connecting_to_network = "";
-  adapter = get_adapter();
 
-  bool has_adapter = adapter != "";
-  if (!has_adapter) {
-    throw std::runtime_error("Error connecting to NetworkManager");
+  // Set tethering ssid as "weedle" + first 4 characters of a dongle id
+  tethering_ssid = "weedle";
+  std::string bytes = Params().get("DongleId");
+  if (bytes.length() >= 4) {
+    tethering_ssid += "-" + QString::fromStdString(bytes.substr(0,4));
   }
 
+  adapter = getAdapter();
+  if (!adapter.isEmpty()) {
+    setup();
+  } else {
+    bus.connect(nm_service, nm_path, nm_iface, "DeviceAdded", this, SLOT(deviceAdded(QDBusObjectPath)));
+  }
+
+  QTimer* timer = new QTimer(this);
+  QObject::connect(timer, &QTimer::timeout, this, [=]() {
+    if (!adapter.isEmpty() && this->isVisible()) {
+      requestScan();
+    }
+  });
+  timer->start(5000);
+}
+
+void WifiManager::setup() {
   QDBusInterface nm(nm_service, adapter, device_iface, bus);
   bus.connect(nm_service, adapter, device_iface, "StateChanged", this, SLOT(stateChange(unsigned int, unsigned int, unsigned int)));
   bus.connect(nm_service, adapter, props_iface, "PropertiesChanged", this, SLOT(propertyChange(QString, QVariantMap, QStringList)));
@@ -87,18 +106,7 @@ WifiManager::WifiManager(QWidget* parent) : QWidget(parent) {
   device_props.setTimeout(dbus_timeout);
   QDBusMessage response = device_props.call("Get", device_iface, "State");
   raw_adapter_state = get_response<uint>(response);
-
-  // Set tethering ssid as "weedle" + first 4 characters of a dongle id
-  tethering_ssid = "weedle";
-  std::string bytes = Params().get("DongleId");
-  if (bytes.length() >= 4) {
-    tethering_ssid+="-"+QString::fromStdString(bytes.substr(0,4));
-  }
-
-  // Create dbus interface for tethering button. This populates the introspection cache,
-  // making sure all future creations are non-blocking
-  // https://bugreports.qt.io/browse/QTBUG-14485
-  QDBusInterface(nm_service, nm_settings_path, nm_settings_iface, bus);
+  requestScan();
 }
 
 void WifiManager::refreshNetworks() {
@@ -295,6 +303,13 @@ void WifiManager::forgetConnection(const QString &ssid) {
   }
 }
 
+bool WifiManager::isWirelessAdapter(const QDBusObjectPath &path) {
+  QDBusInterface device_props(nm_service, path.path(), props_iface, bus);
+  device_props.setTimeout(dbus_timeout);
+  const uint deviceType = get_response<uint>(device_props.call("Get", device_iface, "DeviceType"));
+  return deviceType == device_type_wifi;
+}
+
 void WifiManager::requestScan() {
   QDBusInterface nm(nm_service, adapter, wireless_device_iface, bus);
   nm.setTimeout(dbus_timeout);
@@ -335,36 +350,17 @@ unsigned int WifiManager::get_ap_strength(const QString &network_path) {
   return get_response<unsigned int>(response);
 }
 
-QString WifiManager::get_adapter() {
+QString WifiManager::getAdapter() {
   QDBusInterface nm(nm_service, nm_path, nm_iface, bus);
   nm.setTimeout(dbus_timeout);
 
-  QDBusMessage response = nm.call("GetDevices");
-  QVariant first =  response.arguments().at(0);
-
-  QString adapter_path = "";
-
-  const QDBusArgument &args = first.value<QDBusArgument>();
-  args.beginArray();
-  while (!args.atEnd()) {
-    QDBusObjectPath path;
-    args >> path;
-
-    // Get device type
-    QDBusInterface device_props(nm_service, path.path(), props_iface, bus);
-    device_props.setTimeout(dbus_timeout);
-
-    QDBusMessage response = device_props.call("Get", device_iface, "DeviceType");
-    uint device_type = get_response<uint>(response);
-
-    if (device_type == 2) { // Wireless
-      adapter_path = path.path();
-      break;
+  const QDBusReply<QList<QDBusObjectPath>> &response = nm.call("GetDevices");
+  for (const QDBusObjectPath &path : response.value()) {
+    if (isWirelessAdapter(path)) {
+      return path.path();
     }
   }
-  args.endArray();
-
-  return adapter_path;
+  return "";
 }
 
 void WifiManager::stateChange(unsigned int new_state, unsigned int previous_state, unsigned int change_reason) {
@@ -388,9 +384,16 @@ void WifiManager::propertyChange(const QString &interface, const QVariantMap &pr
       knownConnections = listConnections();
     }
     if (this->isVisible()) {
-      refreshNetworks();  // TODO: only refresh on first scan, then use AccessPointAdded and Removed signals
+      refreshNetworks();
       emit refreshSignal();
     }
+  }
+}
+
+void WifiManager::deviceAdded(const QDBusObjectPath &path) {
+  if (isWirelessAdapter(path) && (adapter.isEmpty() || adapter == "/")) {
+    adapter = path.path();
+    setup();
   }
 }
 
@@ -442,10 +445,9 @@ void WifiManager::activateWifiConnection(const QString &ssid) {
   const QDBusObjectPath &path = getConnectionPath(ssid);
   if (!path.path().isEmpty()) {
     connecting_to_network = ssid;
-    QString devicePath = get_adapter();
     QDBusInterface nm3(nm_service, nm_path, nm_iface, bus);
     nm3.setTimeout(dbus_timeout);
-    nm3.call("ActivateConnection", QVariant::fromValue(path), QVariant::fromValue(QDBusObjectPath(devicePath)), QVariant::fromValue(QDBusObjectPath("/")));
+    nm3.call("ActivateConnection", QVariant::fromValue(path), QVariant::fromValue(QDBusObjectPath(adapter)), QVariant::fromValue(QDBusObjectPath("/")));
   }
 }
 
@@ -494,8 +496,13 @@ void WifiManager::disableTethering() {
 }
 
 bool WifiManager::tetheringEnabled() {
-  QString active_ap = get_active_ap();
-  return get_property(active_ap, "Ssid") == tethering_ssid;
+  if (adapter != "" && adapter != "/") {
+    QString active_ap = get_active_ap();
+    if (active_ap != "" && active_ap != "/") {
+      return get_property(active_ap, "Ssid") == tethering_ssid;
+    }
+  }
+  return false;
 }
 
 void WifiManager::changeTetheringPassword(const QString &newPassword) {
