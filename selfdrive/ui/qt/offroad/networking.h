@@ -67,9 +67,7 @@ private:
   QStackedLayout* main_layout = nullptr; // nm_warning, wifiScreen, advanced
   QWidget* wifiScreen = nullptr;
   AdvancedNetworking* an = nullptr;
-  bool ui_setup_complete = false;
   bool show_advanced;
-  bool firstRefresh = true;
 
   WifiUI* wifiWidget;
   WifiManager* wifi = nullptr;
