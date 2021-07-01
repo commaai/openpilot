@@ -28,13 +28,13 @@ DESIRES = {
   },
   LaneChangeDirection.left: {
     LaneChangeState.off: log.LateralPlan.Desire.none,
-    LaneChangeState.preLaneChange: log.LateralPlan.Desire.none,
+    LaneChangeState.preLaneChange: log.LateralPlan.Desire.keepLeft,
     LaneChangeState.laneChangeStarting: log.LateralPlan.Desire.laneChangeLeft,
     LaneChangeState.laneChangeFinishing: log.LateralPlan.Desire.laneChangeLeft,
   },
   LaneChangeDirection.right: {
     LaneChangeState.off: log.LateralPlan.Desire.none,
-    LaneChangeState.preLaneChange: log.LateralPlan.Desire.none,
+    LaneChangeState.preLaneChange: log.LateralPlan.Desire.keepRight,
     LaneChangeState.laneChangeStarting: log.LateralPlan.Desire.laneChangeRight,
     LaneChangeState.laneChangeFinishing: log.LateralPlan.Desire.laneChangeRight,
   },
