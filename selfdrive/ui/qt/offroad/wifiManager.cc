@@ -92,11 +92,6 @@ WifiManager::WifiManager(QWidget* parent) : QWidget(parent) {
     }
   });
   timer->start(5000);
-
-  // Create dbus interface for tethering button. This populates the introspection cache,
-  // making sure all future creations are non-blocking
-  // https://bugreports.qt.io/browse/QTBUG-14485
-  QDBusInterface(nm_service, nm_settings_path, nm_settings_iface, bus);
 }
 
 void WifiManager::setup() {
