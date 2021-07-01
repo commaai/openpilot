@@ -68,6 +68,8 @@ void WifiManager::setup() {
   device_props.setTimeout(DBUS_TIMEOUT);
   QDBusMessage response = device_props.call("Get", NM_DBUS_INTERFACE_DEVICE, "State");
   raw_adapter_state = get_response<uint>(response);
+
+  initConnections();
   requestScan();
 }
 
@@ -342,12 +344,10 @@ void WifiManager::stateChange(unsigned int new_state, unsigned int previous_stat
 // https://developer.gnome.org/NetworkManager/stable/gdbus-org.freedesktop.NetworkManager.Device.Wireless.html
 void WifiManager::propertyChange(const QString &interface, const QVariantMap &props, const QStringList &invalidated_props) {
   if (interface == NM_DBUS_INTERFACE_DEVICE_WIRELESS && props.contains("LastScan")) {
-    if (knownConnections.isEmpty()) {
-      knownConnections = listConnections();
-    }
-    if (this->isVisible()) {
+    if (this->isVisible() || firstScan) {
       refreshNetworks();
       emit refreshSignal();
+      firstScan = false;
     }
   }
 }
@@ -391,16 +391,14 @@ QString WifiManager::getConnectionSsid(const QDBusObjectPath &path) {
   return result.value().value("802-11-wireless").value("ssid").toString();
 }
 
-QMap<QDBusObjectPath, QString> WifiManager::listConnections() {
-  QMap<QDBusObjectPath, QString> connections;
+void WifiManager::initConnections() {
   QDBusInterface nm(NM_DBUS_SERVICE, NM_DBUS_PATH_SETTINGS, NM_DBUS_INTERFACE_SETTINGS, bus);
   nm.setTimeout(DBUS_TIMEOUT);
 
   const QDBusReply<QList<QDBusObjectPath>> response = nm.call("ListConnections");
   for (const QDBusObjectPath &path : response.value()) {
-    connections[path] = getConnectionSsid(path);
+    knownConnections[path] = getConnectionSsid(path);
   }
-  return connections;
 }
 
 void WifiManager::activateWifiConnection(const QString &ssid) {
