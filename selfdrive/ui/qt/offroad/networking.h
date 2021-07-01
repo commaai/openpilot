@@ -71,8 +71,6 @@ private:
 
   WifiUI* wifiWidget;
   WifiManager* wifi = nullptr;
-  void attemptInitialization();
-  void requestScan();
 
 public slots:
   void refresh();

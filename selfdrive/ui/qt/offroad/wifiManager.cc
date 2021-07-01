@@ -388,7 +388,7 @@ void WifiManager::propertyChange(const QString &interface, const QVariantMap &pr
       knownConnections = listConnections();
     }
     if (this->isVisible()) {
-      refreshNetworks();  // TODO: only refresh on first scan, then use AccessPointAdded and Removed signals
+      refreshNetworks();
       emit refreshSignal();
     }
   }

@@ -72,7 +72,6 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent), s
 }
 
 void Networking::refresh() {
-  qDebug() << "REFRESHED UI!";
   wifiWidget->refresh();
   an->refresh();
 }
