@@ -3,6 +3,8 @@
 #include <QtDBus>
 #include <QWidget>
 
+#include "selfdrive/ui/qt/offroad/networkmanager.h"
+
 enum class SecurityType {
   OPEN,
   WPA,
