@@ -18,7 +18,7 @@ int main( )
 
   Control j_ego;
 
-  auto ego_stop_time = v_l/MAX_BRAKE;
+  auto ego_stop_time = v_ego/MAX_BRAKE;
   auto ego_stop_dist = v_ego*ego_stop_time - (MAX_BRAKE * ego_stop_time*ego_stop_time)/2;
   auto lead_stop_time = v_l/MAX_BRAKE;
   auto lead_stop_dist = v_l*lead_stop_time - (MAX_BRAKE * lead_stop_time*lead_stop_time)/2;
