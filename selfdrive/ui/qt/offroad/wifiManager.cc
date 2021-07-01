@@ -275,9 +275,9 @@ bool WifiManager::isWirelessAdapter(const QDBusObjectPath &path) {
 }
 
 void WifiManager::requestScan() {
-  QDBusInterface nm(NM_DBUS_SERVICE, adapter, NM_DBUS_INTERFACE_DEVICE_WIRELESS, bus);
-  nm.setTimeout(DBUS_TIMEOUT);
-  nm.call("RequestScan",  QVariantMap());
+  QDBusInterface nm(nm_service, adapter, wireless_device_iface, bus);
+  nm.setTimeout(dbus_timeout);
+  nm.call("RequestScan", QVariantMap());
 }
 
 uint WifiManager::get_wifi_device_state() {
@@ -413,6 +413,9 @@ void WifiManager::activateWifiConnection(const QString &ssid) {
 
 // Functions for tethering
 void WifiManager::addTetheringConnection() {
+  if (isKnownConnection(tethering_ssid)) {
+    return;
+  }
   Connection connection;
   connection["connection"]["id"] = "Hotspot";
   connection["connection"]["uuid"] = QUuid::createUuid().toString().remove('{').remove('}');
@@ -428,7 +431,7 @@ void WifiManager::addTetheringConnection() {
   connection["802-11-wireless-security"]["key-mgmt"] = "wpa-psk";
   connection["802-11-wireless-security"]["pairwise"] = QStringList("ccmp");
   connection["802-11-wireless-security"]["proto"] = QStringList("rsn");
-  connection["802-11-wireless-security"]["psk"] = tetheringPassword;
+  connection["802-11-wireless-security"]["psk"] = defaultTetheringPassword;
 
   connection["ipv4"]["method"] = "shared";
   QMap<QString,QVariant> address;
@@ -445,9 +448,7 @@ void WifiManager::addTetheringConnection() {
 }
 
 void WifiManager::enableTethering() {
-  if (!isKnownConnection(tethering_ssid.toUtf8())) {
-    addTetheringConnection();
-  }
+  addTetheringConnection();
   activateWifiConnection(tethering_ssid.toUtf8());
 }
 
@@ -465,8 +466,29 @@ bool WifiManager::tetheringEnabled() {
   return false;
 }
 
-void WifiManager::changeTetheringPassword(const QString &newPassword) {
-  tetheringPassword = newPassword;
-  forgetConnection(tethering_ssid.toUtf8());
+QString WifiManager::getTetheringPassword() {
   addTetheringConnection();
+  const QDBusObjectPath &path = getConnectionPath(tethering_ssid);
+  if (!path.path().isEmpty()) {
+    QDBusInterface nm(nm_service, path.path(), nm_settings_conn_iface, bus);
+    nm.setTimeout(dbus_timeout);
+
+    const QDBusReply<QMap<QString, QMap<QString, QVariant>>> response = nm.call("GetSecrets", "802-11-wireless-security");
+    return response.value().value("802-11-wireless-security").value("psk").toString();
+  }
+  return "";
+}
+
+void WifiManager::changeTetheringPassword(const QString &newPassword) {
+  const QDBusObjectPath &path = getConnectionPath(tethering_ssid);
+  if (!path.path().isEmpty()) {
+    QDBusInterface nm(nm_service, path.path(), nm_settings_conn_iface, bus);
+    nm.setTimeout(dbus_timeout);
+
+    const QDBusReply<Connection> result = nm.call("GetSettings");
+    Connection settings = result.value();
+
+    settings["802-11-wireless-security"]["psk"] = newPassword;
+    nm.call("Update", QVariant::fromValue(settings));
+  }
 }
