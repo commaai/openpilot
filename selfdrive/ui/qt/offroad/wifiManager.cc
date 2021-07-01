@@ -75,7 +75,7 @@ WifiManager::WifiManager(QWidget* parent) : QWidget(parent) {
   tethering_ssid = "weedle";
   std::string bytes = Params().get("DongleId");
   if (bytes.length() >= 4) {
-    tethering_ssid+="-"+QString::fromStdString(bytes.substr(0,4));
+    tethering_ssid += "-" + QString::fromStdString(bytes.substr(0,4));
   }
 
   adapter = getAdapter();
