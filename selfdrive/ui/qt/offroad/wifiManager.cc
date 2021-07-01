@@ -500,9 +500,11 @@ void WifiManager::disableTethering() {
 }
 
 bool WifiManager::tetheringEnabled() {
-  QString active_ap = get_active_ap();
-  if (active_ap != "" && active_ap != "/") {
-    return get_property(active_ap, "Ssid") == tethering_ssid;
+  if (adapter != "" && adapter != "/") {
+    QString active_ap = get_active_ap();
+    if (active_ap != "" && active_ap != "/") {
+      return get_property(active_ap, "Ssid") == tethering_ssid;
+    }
   }
   return false;
 }

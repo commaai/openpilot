@@ -33,7 +33,7 @@ public:
   void requestScan();
   QVector<Network> seen_networks;
   QMap<QDBusObjectPath, QString> knownConnections;
-  QString ipv4_address;
+  QString ipv4_address = "";
 
   void refreshNetworks();
   void forgetConnection(const QString &ssid);
