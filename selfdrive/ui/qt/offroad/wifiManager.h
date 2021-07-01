@@ -33,7 +33,7 @@ public:
   void requestScan();
   QVector<Network> seen_networks;
   QMap<QDBusObjectPath, QString> knownConnections;
-  QString ipv4_address;
+  QString ipv4_address = "";
 
   void refreshNetworks();
   void forgetConnection(const QString &ssid);
@@ -64,6 +64,7 @@ private:
 
   QString getAdapter();
   bool isWirelessAdapter(const QDBusObjectPath &path);
+  bool validPath(const QString &path);
   QString get_ipv4_address();
   QList<Network> get_networks();
   void connect(const QByteArray &ssid, const QString &username, const QString &password, SecurityType security_type);
