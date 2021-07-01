@@ -23,6 +23,7 @@ struct Network {
   unsigned int strength;
   ConnectedType connected;
   SecurityType security_type;
+  bool known;
 };
 
 class WifiManager : public QWidget {
@@ -31,13 +32,15 @@ public:
   explicit WifiManager(QWidget* parent);
 
   void requestScan();
-  QVector<Network> seen_networks;
+//  QMap<QDBusObjectPath, Network> seenNetworks;
+  QVector<Network> seenNetworks;
   QMap<QDBusObjectPath, QString> knownConnections;
   QString ipv4_address;
 
   void refreshNetworks();
   void forgetConnection(const QString &ssid);
   bool isKnownConnection(const QString &ssid);
+  void updateNetworks();
 
   void connect(const Network &ssid);
   void connect(const Network &ssid, const QString &password);
@@ -54,7 +57,6 @@ public:
   void changeTetheringPassword(const QString &newPassword);
 
 private:
-  QVector<QByteArray> seen_ssids;
   QString adapter;  // Path to network manager wifi-device
   QDBusConnection bus = QDBusConnection::systemBus();
   unsigned int raw_adapter_state;  // Connection status https://developer.gnome.org/NetworkManager/1.26/nm-dbus-types.html#NMDeviceState
@@ -62,6 +64,10 @@ private:
   QString tethering_ssid;
   QString tetheringPassword = "swagswagcommma";
 
+  void initActiveAp();
+  void initConnections();
+  void initNetworks();
+  QString activeAp = "";
   QString get_adapter();
   QString get_ipv4_address();
   QList<Network> get_networks();
@@ -73,17 +79,19 @@ private:
   QByteArray get_property(const QString &network_path, const QString &property);
   unsigned int get_ap_strength(const QString &network_path);
   SecurityType getSecurityType(const QString &path);
+  ConnectedType getConnectedType(const QString &path, const QString &ssid);
   QDBusObjectPath getConnectionPath(const QString &ssid);
   QMap<QDBusObjectPath, QString> listConnections();
   QString getConnectionSsid(const QDBusObjectPath &path);
 
 signals:
   void wrongPassword(const QString &ssid);
-  void refreshSignal();
 
 private slots:
   void stateChange(unsigned int new_state, unsigned int previous_state, unsigned int change_reason);
   void propertyChange(const QString &interface, const QVariantMap &props, const QStringList &invalidated_props);
+  void addAccessPoint(const QDBusObjectPath &path);
+  void removeAccessPoint(const QDBusObjectPath &path);
   void connectionRemoved(const QDBusObjectPath &path);
   void newConnection(const QDBusObjectPath &path);
 };
