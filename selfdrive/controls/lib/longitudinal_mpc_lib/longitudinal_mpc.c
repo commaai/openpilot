@@ -32,7 +32,7 @@ typedef struct {
   double cost;
 } log_t;
 
-void init(double xCost, double vCost, double aCost, double jerkCost){
+void init(double xCost, double vCost, double aCost, double jerkCost, double constraintCost){
   acado_initializeSolver();
   int    i;
   const int STEP_MULTIPLIER = 3;
@@ -56,6 +56,7 @@ void init(double xCost, double vCost, double aCost, double jerkCost){
     acadoVariables.W[NY*NY*i + (NY+1)*1] = vCost * f;
     acadoVariables.W[NY*NY*i + (NY+1)*2] = aCost * f;
     acadoVariables.W[NY*NY*i + (NY+1)*3] = jerkCost * f;
+    acadoVariables.W[NY*NY*i + (NY+1)*4] = constraintCost * f;
   }
   acadoVariables.WN[(NYN+1)*0] = xCost * STEP_MULTIPLIER;
   acadoVariables.WN[(NYN+1)*1] = vCost * STEP_MULTIPLIER;
@@ -77,6 +78,7 @@ int run_mpc(state_t * x0, log_t * solution,
     acadoVariables.y[NY*i + 1] = target_v[i];
     acadoVariables.y[NY*i + 2] = target_a[i];
     acadoVariables.y[NY*i + 3] = 0.0;
+    acadoVariables.y[NY*i + 4] = 0.0;
   }
   acadoVariables.yN[0] = target_x[N];
   acadoVariables.yN[1] = target_v[N];

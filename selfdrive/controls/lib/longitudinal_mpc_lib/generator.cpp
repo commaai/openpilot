@@ -27,9 +27,10 @@ int main( )
   h << v_ego;
   h << a_ego;
   h << j_ego;
+  h << accel_slack**2 + speed_slack**2;
 
   // Weights are defined in mpc.
-  BMatrix Q(4,4); Q.setAll(true);
+  BMatrix Q(5,5); Q.setAll(true);
 
   // Terminal cost
   Function hN;
@@ -49,9 +50,9 @@ int main( )
   ocp.minimizeLSQ(Q, h);
   ocp.minimizeLSQEndTerm(QN, hN);
 
-  ocp.subjectTo( 0.0 <= v_ego);
-  ocp.subjectTo( 0.0 <= a_ego - min_a);
-  ocp.subjectTo( a_ego - max_a <= 0.0);
+  ocp.subjectTo( 0.0 <= v_ego + speed_slack);
+  ocp.subjectTo( 0.0 <= a_ego - min_a + accel_slack);
+  ocp.subjectTo( a_ego - max_a + accel_slack <= 0.0);
   ocp.setNOD(2);
 
   OCPexport mpc(ocp);

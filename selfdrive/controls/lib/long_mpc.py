@@ -20,7 +20,7 @@ class LongitudinalMpc():
 
   def reset_mpc(self):
     self.libmpc = libmpc_py.libmpc
-    self.libmpc.init(0.0, 1.0, 1.0, 10.0)
+    self.libmpc.init(0.0, 1.0, 1.0, 10.0, 100.0)
 
     self.mpc_solution = libmpc_py.ffi.new("log_t *")
     self.cur_state = libmpc_py.ffi.new("state_t *")

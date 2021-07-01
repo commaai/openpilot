@@ -25,8 +25,7 @@ double cost;
 } log_t;
 
 
-void init(double xCost, double vCost, double aCost, double jerkCost);
-void init_with_simulation(double v_ego);
+void init(double xCost, double vCost, double aCost, double jerkCost, double constraintCost);
 int run_mpc(state_t * x0, log_t * solution,
             double target_x[MPC_N+1], double target_v[MPC_N+1], double target_a[MPC_N+1],
             double min_a, double max_a);
