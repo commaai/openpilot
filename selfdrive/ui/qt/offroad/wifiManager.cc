@@ -164,6 +164,9 @@ QList<Network> WifiManager::get_networks() {
     args >> path;
 
     QByteArray ssid = get_property(path.path(), "Ssid");
+    if (ssid.isEmpty()) {
+      continue;
+    }
     unsigned int strength = get_ap_strength(path.path());
     SecurityType security = getSecurityType(path.path());
     ConnectedType ctype;
@@ -177,10 +180,7 @@ QList<Network> WifiManager::get_networks() {
       }
     }
     Network network = {path.path(), ssid, strength, ctype, security};
-
-    if (ssid.length()) {
-      r.push_back(network);
-    }
+    r.push_back(network);
   }
   args.endArray();
 
