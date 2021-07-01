@@ -7,7 +7,7 @@
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/window.h"
 
-void customMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg) {
+void swagLogMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg) {
   static std::map<QtMsgType, int> levels = {
     {QtMsgType::QtDebugMsg, 10},
     {QtMsgType::QtInfoMsg, 20},
@@ -26,7 +26,7 @@ void customMessageHandler(QtMsgType type, const QMessageLogContext &context, con
 }
 
 int main(int argc, char *argv[]) {
-  qInstallMessageHandler(customMessageHandler);
+  qInstallMessageHandler(swagLogMessageHandler);
   setQtSurfaceFormat();
 
   if (Hardware::EON()) {
