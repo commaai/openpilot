@@ -23,7 +23,7 @@ class LeadMpc():
   def reset_mpc(self):
     ffi, self.libmpc = libmpc_py.get_libmpc(self.lead_id)
     self.libmpc.init(MPC_COST_LONG.TTC, MPC_COST_LONG.DISTANCE,
-                     MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)
+                     MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK, 10000.)
 
     self.mpc_solution = ffi.new("log_t *")
     self.cur_state = ffi.new("state_t *")

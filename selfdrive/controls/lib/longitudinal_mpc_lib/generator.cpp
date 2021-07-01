@@ -11,15 +11,18 @@ int main( )
 
   DifferentialEquation f;
 
-  DifferentialState x_ego, v_ego, a_ego, t;
+  DifferentialState x_ego, v_ego, a_ego;
+  DifferentialState dummy_0, dummy_1;
   OnlineData min_a, max_a;
 
-  Control j_ego, accel_slack, speed_slack;
+  Control j_ego, speed_slack, accel_slack;
 
   // Equations of motion
   f << dot(x_ego) == v_ego;
   f << dot(v_ego) == a_ego;
   f << dot(a_ego) == j_ego;
+  f << dot(dummy_0) == speed_slack;
+  f << dot(dummy_1) == accel_slack;
 
   // Running cost
   Function h;
@@ -27,10 +30,11 @@ int main( )
   h << v_ego;
   h << a_ego;
   h << j_ego;
-  h << accel_slack*accel_slack + speed_slack*speed_slack;
+  h << speed_slack;
+  h << accel_slack;
 
   // Weights are defined in mpc.
-  BMatrix Q(5,5); Q.setAll(true);
+  BMatrix Q(6,6); Q.setAll(true);
 
   // Terminal cost
   Function hN;

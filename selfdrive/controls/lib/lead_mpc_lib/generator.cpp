@@ -18,9 +18,10 @@ int main( )
   DifferentialEquation f;
 
   DifferentialState x_ego, v_ego, a_ego;
+  DifferentialState dummy;
   OnlineData x_l, v_l;
 
-  Control j_ego;
+  Control j_ego, accel_slack;
 
   auto desired = 4.0 + RW(v_ego, v_l);
   auto d_l = x_l - x_ego;
@@ -29,21 +30,23 @@ int main( )
   f << dot(x_ego) == v_ego;
   f << dot(v_ego) == a_ego;
   f << dot(a_ego) == j_ego;
+  f << dot(dummy) == accel_slack;
 
   // Running cost
   Function h;
   h << exp(0.3 * NORM_RW_ERROR(v_ego, v_l, d_l)) - 1;
-  h << (d_l - desired) / (0.05 * v_ego + 0.5);
+  h << 0.0*(d_l - desired) / (0.05 * v_ego + 0.5);
   h << a_ego * (0.1 * v_ego + 1.0);
   h << j_ego * (0.1 * v_ego + 1.0);
+  h << accel_slack;
 
   // Weights are defined in mpc.
-  BMatrix Q(4,4); Q.setAll(true);
+  BMatrix Q(5,5); Q.setAll(true);
 
   // Terminal cost
   Function hN;
   hN << exp(0.3 * NORM_RW_ERROR(v_ego, v_l, d_l)) - 1;
-  hN << (d_l - desired) / (0.05 * v_ego + 0.5);
+  hN << 2*(d_l - desired) / (0.05 * v_ego + 0.5);
   hN << a_ego * (0.1 * v_ego + 1.0);
 
   // Weights are defined in mpc.
@@ -70,6 +73,7 @@ int main( )
   ocp.minimizeLSQEndTerm(QN, hN);
 
   ocp.subjectTo( 0.0 <= v_ego);
+  ocp.subjectTo( -3.0 <= a_ego + accel_slack);
   ocp.setNOD(2);
 
   OCPexport mpc(ocp);
