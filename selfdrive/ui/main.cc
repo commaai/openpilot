@@ -1,12 +1,11 @@
-#include <iostream>
 #include <QApplication>
 #include <QSslConfiguration>
 
+#include "selfdrive/common/swaglog.h"
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/window.h"
-#include "selfdrive/common/swaglog.h"
 
 void customMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg) {
   static std::map<QtMsgType, int> levels = {
