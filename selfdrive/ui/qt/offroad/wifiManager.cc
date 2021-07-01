@@ -111,6 +111,7 @@ void WifiManager::setup() {
   device_props.setTimeout(dbus_timeout);
   QDBusMessage response = device_props.call("Get", device_iface, "State");
   raw_adapter_state = get_response<uint>(response);
+  requestScan();
 }
 
 void WifiManager::refreshNetworks() {
