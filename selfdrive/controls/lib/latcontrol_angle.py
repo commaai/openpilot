@@ -1,6 +1,5 @@
 import math
 from cereal import log
-from selfdrive.controls.lib.drive_helpers import get_lag_adjusted_curvature
 
 
 class LatControlAngle():
