@@ -6,8 +6,6 @@ from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
 from selfdrive.config import Conversions as CV
 
-GearShifter = car.CarState.GearShifter
-
 
 class CarState(CarStateBase):
   def __init__(self, CP):
