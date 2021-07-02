@@ -184,6 +184,10 @@ void WifiUI::refresh() {
     setScanningWidget();
     return;
   }
+  QElapsedTimer timer;
+  timer.start();
+  refreshNetworks();
+  qDebug() << "Elapsed:" << timer.nsecsElapsed() / 1e6 << "ms";
 
   int i = 0;
   for (Network &network : wifi->seen_networks) {
