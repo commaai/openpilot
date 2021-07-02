@@ -54,6 +54,7 @@ public:
   void addTetheringConnection();
   void activateWifiConnection(const QString &ssid);
   void changeTetheringPassword(const QString &newPassword);
+  QString getTetheringPassword();
 
 private:
   QVector<QByteArray> seen_ssids;
@@ -62,7 +63,7 @@ private:
   unsigned int raw_adapter_state;  // Connection status https://developer.gnome.org/NetworkManager/1.26/nm-dbus-types.html#NMDeviceState
   QString connecting_to_network;
   QString tethering_ssid;
-  QString tetheringPassword = "swagswagcommma";
+  const QString defaultTetheringPassword = "swagswagcommma";
 
   bool firstScan = true;
   QString getAdapter();
