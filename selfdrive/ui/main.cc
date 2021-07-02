@@ -6,7 +6,6 @@
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/window.h"
 
-
 int main(int argc, char *argv[]) {
   qInstallMessageHandler(swagLogMessageHandler);
   setQtSurfaceFormat();
