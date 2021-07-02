@@ -90,22 +90,21 @@ QString WifiManager::get_ipv4_address() {
   if (raw_adapter_state != NM_DEVICE_STATE_ACTIVATED) {
     return "";
   }
-  QVector<QDBusObjectPath> conns = get_active_connections();
+  const QVector<QDBusObjectPath> &conns = getActiveConnections();
   for (auto &p : conns) {
     QString active_connection = p.path();
     QDBusInterface nm(NM_DBUS_SERVICE, active_connection, NM_DBUS_INTERFACE_PROPERTIES, bus);
     nm.setTimeout(DBUS_TIMEOUT);
 
-    QDBusObjectPath pth = get_response<QDBusObjectPath>(nm.call("Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "Ip4Config"));
-    QString ip4config = pth.path();
+    const QDBusObjectPath &pth = get_response<QDBusObjectPath>(nm.call("Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "Ip4Config"));
 
-    QString type = get_response<QString>(nm.call("Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "Type"));
+    const QString &type = get_response<QString>(nm.call("Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "Type"));
 
     if (type == "802-11-wireless") {
-      QDBusInterface nm2(NM_DBUS_SERVICE, ip4config, NM_DBUS_INTERFACE_PROPERTIES, bus);
+      QDBusInterface nm2(NM_DBUS_SERVICE, pth.path(), NM_DBUS_INTERFACE_PROPERTIES, bus);
       nm2.setTimeout(DBUS_TIMEOUT);
 
-      const QDBusArgument &arr = get_response<QDBusArgument>(nm2.call("Get", NM_DBUS_INTERFACE_IP4_CONFIG, "AddressData"));
+      const QDBusArgument &arr = get_response<QDBusArgument>(nm2.call("Get", NM_DBUS_INTERFACE_IP4_CONFIG, "AddressData")); // TODO this
       QMap<QString, QVariant> pth2;
       arr.beginArray();
       while (!arr.atEnd()) {
@@ -125,24 +124,17 @@ QList<Network> WifiManager::get_networks() {
   QDBusInterface nm(NM_DBUS_SERVICE, adapter, NM_DBUS_INTERFACE_DEVICE_WIRELESS, bus);
   nm.setTimeout(DBUS_TIMEOUT);
 
-  QDBusMessage response = nm.call("GetAllAccessPoints");
-  QVariant first =  response.arguments().at(0);
-
-  QString active_ap = get_active_ap();
-  const QDBusArgument &args = first.value<QDBusArgument>();
-  args.beginArray();
-  while (!args.atEnd()) {
-    QDBusObjectPath path;
-    args >> path;
-
-    QByteArray ssid = get_property(path.path(), "Ssid");
+  const QString &activeAp = getActiveAp();
+  const QDBusReply<QList<QDBusObjectPath>> response = nm.call("GetAllAccessPoints");
+  for (const QDBusObjectPath &path : response.value()) {
+    const QByteArray &ssid = get_property(path.path(), "Ssid");
     if (ssid.isEmpty()) {
       continue;
     }
     unsigned int strength = get_ap_strength(path.path());
     SecurityType security = getSecurityType(path.path());
     ConnectedType ctype;
-    if (path.path() != active_ap) {
+    if (path.path() != activeAp) {
       ctype = ConnectedType::DISCONNECTED;
     } else {
       if (ssid == connecting_to_network) {
@@ -154,7 +146,6 @@ QList<Network> WifiManager::get_networks() {
     Network network = {path.path(), ssid, strength, ctype, security};
     r.push_back(network);
   }
-  args.endArray();
 
   std::sort(r.begin(), r.end(), compare_by_strength);
   return r;
@@ -220,7 +211,7 @@ void WifiManager::connect(const QByteArray &ssid, const QString &username, const
 }
 
 void WifiManager::deactivateConnection(const QString &ssid) {
-  for (QDBusObjectPath active_connection_raw : get_active_connections()) {
+  for (const QDBusObjectPath &active_connection_raw : getActiveConnections()) {
     QString active_connection = active_connection_raw.path();
     QDBusInterface nm(NM_DBUS_SERVICE, active_connection, NM_DBUS_INTERFACE_PROPERTIES, bus);
     nm.setTimeout(DBUS_TIMEOUT);
@@ -237,7 +228,7 @@ void WifiManager::deactivateConnection(const QString &ssid) {
   }
 }
 
-QVector<QDBusObjectPath> WifiManager::get_active_connections() {
+QVector<QDBusObjectPath> WifiManager::getActiveConnections() {
   QDBusInterface nm(NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE_PROPERTIES, bus);
   nm.setTimeout(DBUS_TIMEOUT);
 
@@ -289,7 +280,7 @@ uint WifiManager::get_wifi_device_state() {
   return resp;
 }
 
-QString WifiManager::get_active_ap() {
+QString WifiManager::getActiveAp() {
   QDBusInterface device_props(NM_DBUS_SERVICE, adapter, NM_DBUS_INTERFACE_PROPERTIES, bus);
   device_props.setTimeout(DBUS_TIMEOUT);
 
@@ -371,9 +362,9 @@ void WifiManager::newConnection(const QDBusObjectPath &path) {
 }
 
 void WifiManager::disconnect() {
-  QString active_ap = get_active_ap();
-  if (active_ap != "" && active_ap != "/") {
-    deactivateConnection(get_property(active_ap, "Ssid"));
+  const QString &activeAp = getActiveAp();
+  if (activeAp != "" && activeAp != "/") {
+    deactivateConnection(get_property(activeAp, "Ssid"));
   }
 }
 
@@ -459,9 +450,9 @@ void WifiManager::disableTethering() {
 
 bool WifiManager::tetheringEnabled() {
   if (adapter != "" && adapter != "/") {
-    QString active_ap = get_active_ap();
-    if (active_ap != "" && active_ap != "/") {
-      return get_property(active_ap, "Ssid") == tethering_ssid;
+    const QString &activeAp = getActiveAp();
+    if (activeAp != "" && activeAp != "/") {
+      return get_property(activeAp, "Ssid") == tethering_ssid;
     }
   }
   return false;

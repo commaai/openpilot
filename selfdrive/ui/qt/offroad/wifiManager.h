@@ -71,9 +71,9 @@ private:
   QString get_ipv4_address();
   QList<Network> get_networks();
   void connect(const QByteArray &ssid, const QString &username, const QString &password, SecurityType security_type);
-  QString get_active_ap();
+  QString getActiveAp();
   void deactivateConnection(const QString &ssid);
-  QVector<QDBusObjectPath> get_active_connections();
+  QVector<QDBusObjectPath> getActiveConnections();
   uint get_wifi_device_state();
   QByteArray get_property(const QString &network_path, const QString &property);
   unsigned int get_ap_strength(const QString &network_path);
