@@ -447,7 +447,7 @@ void WifiManager::addTetheringConnection() {
 }
 
 void WifiManager::enableTethering() {
-  if (isKnownConnection(tethering_ssid)) {
+  if (!isKnownConnection(tethering_ssid)) {
     addTetheringConnection();
   }
   activateWifiConnection(tethering_ssid.toUtf8());
@@ -468,7 +468,7 @@ bool WifiManager::tetheringEnabled() {
 }
 
 QString WifiManager::getTetheringPassword() {
-  if (isKnownConnection(tethering_ssid)) {
+  if (!isKnownConnection(tethering_ssid)) {
     addTetheringConnection();
   }
   const QDBusObjectPath &path = getConnectionPath(tethering_ssid);
