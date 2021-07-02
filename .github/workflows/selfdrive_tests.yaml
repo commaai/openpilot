@@ -30,6 +30,9 @@ jobs:
     - uses: actions/checkout@v2
       with:
         submodules: true
+    - name: Check submodules
+      if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
+      run: release/check-submodules.sh
     - name: Cache dependencies
       id: dependency-cache
       uses: actions/cache@v2
