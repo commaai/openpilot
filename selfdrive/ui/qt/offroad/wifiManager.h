@@ -64,6 +64,7 @@ private:
   QString tethering_ssid;
   QString tetheringPassword = "swagswagcommma";
 
+  bool firstScan = true;
   QString getAdapter();
   bool isWirelessAdapter(const QDBusObjectPath &path);
   QString get_ipv4_address();
@@ -77,7 +78,7 @@ private:
   unsigned int get_ap_strength(const QString &network_path);
   SecurityType getSecurityType(const QString &path);
   QDBusObjectPath getConnectionPath(const QString &ssid);
-  QMap<QDBusObjectPath, QString> listConnections();
+  void initConnections();
   QString getConnectionSsid(const QDBusObjectPath &path);
   void setup();
 
