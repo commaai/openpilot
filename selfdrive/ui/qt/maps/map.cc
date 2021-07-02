@@ -224,6 +224,7 @@ void MapWindow::timerUpdate() {
 }
 
 void MapWindow::resizeGL(int w, int h) {
+  m_map->resize(size() / MAP_SCALE);
   map_instructions->setFixedWidth(width());
 }
 
@@ -251,9 +252,6 @@ void MapWindow::initializeGL() {
 
 void MapWindow::paintGL() {
   if (!isVisible()) return;
-
-  m_map->resize(size() / MAP_SCALE);
-  m_map->setFramebufferObject(defaultFramebufferObject(), size());
   m_map->render();
 }
 
