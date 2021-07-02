@@ -7,6 +7,7 @@
 #include "selfdrive/ui/qt/window.h"
 
 int main(int argc, char *argv[]) {
+  qInstallMessageHandler(swagLogMessageHandler);
   setQtSurfaceFormat();
 
   if (Hardware::EON()) {

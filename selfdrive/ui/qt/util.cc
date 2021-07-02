@@ -4,6 +4,7 @@
 #include <QStyleOption>
 
 #include "selfdrive/common/params.h"
+#include "selfdrive/common/swaglog.h"
 
 QString getBrand() {
   return Params().getBool("Passive") ? "dashcam" : "openpilot";
@@ -78,4 +79,23 @@ void ClickableWidget::paintEvent(QPaintEvent *) {
   opt.init(this);
   QPainter p(this);
   style()->drawPrimitive(QStyle::PE_Widget, &opt, &p, this);
+}
+
+
+void swagLogMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg) {
+  static std::map<QtMsgType, int> levels = {
+    {QtMsgType::QtDebugMsg, 10},
+    {QtMsgType::QtInfoMsg, 20},
+    {QtMsgType::QtWarningMsg, 30},
+    {QtMsgType::QtCriticalMsg, 40},
+    {QtMsgType::QtSystemMsg, 40},
+    {QtMsgType::QtFatalMsg, 50},
+  };
+
+  std::string file, function;
+  if (context.file != nullptr) file = context.file;
+  if (context.function != nullptr) function = context.function;
+
+  auto bts = msg.toUtf8();
+  cloudlog_e(levels[type], file.c_str(), context.line, function.c_str(), "%s", bts.constData());
 }
