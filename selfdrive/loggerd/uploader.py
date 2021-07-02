@@ -27,7 +27,7 @@ UPLOAD_ATTR_VALUE = b'1'
 allow_sleep = bool(os.getenv("UPLOADER_SLEEP", "1"))
 force_wifi = os.getenv("FORCEWIFI") is not None
 fake_upload = os.getenv("FAKEUPLOAD") is not None
-op_params = opParams()
+upload_on_hotspot = opParams().get("upload_on_hotspot")
 
 
 def get_directory_sort(d):
@@ -235,7 +235,7 @@ def uploader_fn(exit_event):
 
     d = None
     on_hotspot = is_on_hotspot()
-    if (on_hotspot and op_params.get('upload_on_hotspot')) or not on_hotspot:
+    if (on_hotspot and upload_on_hotspot) or not on_hotspot:
       d = uploader.next_file_to_upload(with_raw=allow_raw_upload and on_wifi and offroad)
     if d is None:  # Nothing to upload
       if allow_sleep:
