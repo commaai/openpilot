@@ -165,6 +165,7 @@ class CarState(CarStateBase):
 
     if CP.hasZss:
       signals += [("ZORRO_STEER", "SECONDARY_STEER_ANGLE", 0)]
+      checks += [("ZORRO_STEER", "SECONDARY_STEER_ANGLE", 80)]
 
     # add gas interceptor reading if we are using it
     if CP.enableGasInterceptor:
