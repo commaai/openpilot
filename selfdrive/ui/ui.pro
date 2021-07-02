@@ -1,5 +1,4 @@
-HEADERS         = qt/widgets/setup.h \
-                  qt/home.h
+HEADERS         = qt/widgets/drive_stats.h
 SOURCES         = main.cc \
                   qt/home.cc \
                   qt/widgets/setup.cc \
