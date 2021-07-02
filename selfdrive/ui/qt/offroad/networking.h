@@ -52,7 +52,7 @@ signals:
   void backPress();
 
 public slots:
-  void toggleTethering(bool enable);
+  void toggleTethering(bool enabled);
   void refresh();
 };
 

@@ -48,8 +48,8 @@ public:
   void disconnect();
 
   // Tethering functions
-  bool tetheringEnabled();
-  void toggleTethering(bool enable);
+  void setTetheringEnabled(bool enabled);
+  bool isTetheringEnabled();
   void addTetheringConnection();
   void changeTetheringPassword(const QString &newPassword);
   QString getTetheringPassword();
