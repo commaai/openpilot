@@ -342,7 +342,6 @@ void WifiManager::propertyChange(const QString &interface, const QVariantMap &pr
   } else if (interface == NM_DBUS_INTERFACE_DEVICE_WIRELESS && props.contains("ActiveAccessPoint")) {
     const QDBusObjectPath &path = props.value("ActiveAccessPoint").value<QDBusObjectPath>();
     activeAp = path.path();
-    qDebug() << activeAp;
   }
 }
 
