@@ -365,7 +365,9 @@ void WifiManager::connectionRemoved(const QDBusObjectPath &path) {
 
 void WifiManager::newConnection(const QDBusObjectPath &path) {
   knownConnections[path] = getConnectionSsid(path);
-  activateWifiConnection(knownConnections[path]);
+  if (knownConnections[path] != tethering_ssid) {
+    activateWifiConnection(knownConnections[path]);
+  }
 }
 
 void WifiManager::disconnect() {
