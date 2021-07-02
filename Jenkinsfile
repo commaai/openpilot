@@ -180,17 +180,25 @@ pipeline {
                 }
                 */
 
-                stage('Tici Build') {
+                stage('tici Build') {
                   environment {
                     R3_PUSH = "${env.BRANCH_NAME == 'master' ? '1' : ' '}"
                   }
                   steps {
                     phone_steps("tici", [
                       ["build", "cd selfdrive/manager && ./build.py"],
-                      ["test loggerd", "python selfdrive/loggerd/tests/test_loggerd.py"],
-                      ["test encoder", "LD_LIBRARY_PATH=/usr/local/lib python selfdrive/loggerd/tests/test_encoder.py"],
                       ["onroad tests", "cd selfdrive/test/ && ./test_onroad.py"],
                       //["build release3-staging", "cd release && PUSH=${env.R3_PUSH} ./build_release3.sh"],
+                    ])
+                  }
+                }
+
+                stage('Unit Tests (tici)') {
+                  steps {
+                    phone_steps("tici2", [
+                      ["build", "cd selfdrive/manager && ./build.py"],
+                      ["test loggerd", "python selfdrive/loggerd/tests/test_loggerd.py"],
+                      ["test encoder", "LD_LIBRARY_PATH=/usr/local/lib python selfdrive/loggerd/tests/test_encoder.py"],
                     ])
                   }
                 }

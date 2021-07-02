@@ -39,17 +39,19 @@ class TestLoggerd(unittest.TestCase):
     return log_dirs[-1]
 
   def _get_log_dir(self, x):
-    for p in x.split(' '):
-      path = Path(p.strip())
-      if path.is_dir():
-        return path
+    for l in x.splitlines():
+      for p in l.split(' '):
+        path = Path(p.strip())
+        if path.is_dir():
+          return path
     return None
 
   def _get_log_fn(self, x):
-    for p in x.split(' '):
-      path = Path(p.strip())
-      if path.is_file():
-        return path
+    for l in x.splitlines():
+      for p in l.split(' '):
+        path = Path(p.strip())
+        if path.is_file():
+          return path
     return None
 
   def _gen_bootlog(self):
