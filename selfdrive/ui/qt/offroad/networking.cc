@@ -90,7 +90,7 @@ void Networking::connectToNetwork(const Network &n) {
 }
 
 void Networking::wrongPassword(const QString &ssid) {
-  for (Network n : wifi->seenNetworks) {
+  for (Network n : wifi->seen_networks) {
     if (n.ssid == ssid) {
       QString pass = InputDialog::getText("Wrong password for \"" + n.ssid +"\"", 8);
       if (!pass.isEmpty()) {
@@ -99,6 +99,10 @@ void Networking::wrongPassword(const QString &ssid) {
       return;
     }
   }
+}
+
+void Networking::showEvent(QShowEvent *event) {
+  refresh();
 }
 
 // AdvancedNetworking functions
@@ -164,19 +168,25 @@ void AdvancedNetworking::toggleTethering(bool enable) {
 
 WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi) {
   main_layout = new QVBoxLayout(this);
+  setScanningWidget();
+  main_layout->setSpacing(25);
+}
 
-  // Scan on startup
+void WifiUI::setScanningWidget() {
   QLabel *scanning = new QLabel("Scanning for networks");
   scanning->setStyleSheet(R"(font-size: 65px;)");
   main_layout->addWidget(scanning, 0, Qt::AlignCenter);
-  main_layout->setSpacing(25);
 }
 
 void WifiUI::refresh() {
   clearLayout(main_layout);
+  if (wifi->seen_networks.size() == 0) {
+    setScanningWidget();
+    return;
+  }
 
   int i = 0;
-  for (Network &network : wifi->seenNetworks) {
+  for (Network &network : wifi->seen_networks) {
     QHBoxLayout *hlayout = new QHBoxLayout;
 
     QLabel *ssid_label = new QLabel(QString::fromUtf8(network.ssid));
@@ -222,7 +232,7 @@ void WifiUI::refresh() {
     hlayout->addWidget(btn, 0, Qt::AlignRight);
     main_layout->addLayout(hlayout, 1);
     // Don't add the last horizontal line
-    if (i+1 < wifi->seenNetworks.size()) {
+    if (i+1 < wifi->seen_networks.size()) {
       main_layout->addWidget(horizontal_line(), 0);
     }
     i++;

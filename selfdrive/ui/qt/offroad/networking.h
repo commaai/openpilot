@@ -25,6 +25,7 @@ class WifiUI : public QWidget {
 
 public:
   explicit WifiUI(QWidget *parent = 0, WifiManager* wifi = 0);
+  void setScanningWidget();
 
 private:
   WifiManager *wifi = nullptr;
@@ -71,6 +72,7 @@ private:
 
   WifiUI* wifiWidget;
   WifiManager* wifi = nullptr;
+  void showEvent(QShowEvent* event) override;
 
 public slots:
   void refresh();

@@ -74,7 +74,7 @@ void WifiManager::setup() {
 }
 
 void WifiManager::refreshNetworks() {
-  seenNetworks.clear();
+  seen_networks.clear();
   seen_ssids.clear();
   ipv4_address = get_ipv4_address();
   for (Network &network : get_networks()) {
@@ -82,7 +82,7 @@ void WifiManager::refreshNetworks() {
       continue;
     }
     seen_ssids.push_back(network.ssid);
-    seenNetworks.push_back(network);
+    seen_networks.push_back(network);
   }
 }
 

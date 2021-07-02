@@ -34,7 +34,7 @@ public:
   explicit WifiManager(QWidget* parent);
 
   void requestScan();
-  QVector<Network> seenNetworks;
+  QVector<Network> seen_networks;
   QMap<QDBusObjectPath, QString> knownConnections;
   QString ipv4_address;
 
