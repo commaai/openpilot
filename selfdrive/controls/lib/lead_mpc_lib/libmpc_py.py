@@ -20,7 +20,7 @@ def _get_libmpc(mpc_id):
     double v_ego[21];
     double a_ego[21];
     double j_ego[20];
-    double accel_slack[20];
+    double time_slack[20];
     double x_l[21];
     double v_l[21];
     double a_l[21];
