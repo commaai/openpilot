@@ -1,8 +1,11 @@
 """Install exception handler for process crash."""
 from selfdrive.swaglog import cloudlog
 from selfdrive.version import version
+from selfdrive.version import origin, branch, dirty, smiskol_remote, get_git_commit
+from common.op_params import opParams
 
 import sentry_sdk
+from sentry_sdk import set_tag
 from sentry_sdk.integrations.threading import ThreadingIntegration
 
 def capture_exception(*args, **kwargs) -> None:
@@ -22,6 +25,16 @@ def bind_extra(**kwargs) -> None:
     sentry_sdk.set_tag(k, v)
 
 def init() -> None:
-  sentry_sdk.init("https://30d4f5e7d35c4a0d84455c03c0e80706@o237581.ingest.sentry.io/5844043",
-                  default_integrations=False, integrations=[ThreadingIntegration(propagate_hub=True)],
-                  release=version)
+  if smiskol_remote:  # CHANGE TO YOUR remote and sentry key to receive errors if you fork this fork
+    sentry_uri = 'https://a83947fe6772400bb220c3f0e4a6e63b@o237581.ingest.sentry.io/5252098'
+  else:
+    sentry_uri = 'https://30d4f5e7d35c4a0d84455c03c0e80706@o237581.ingest.sentry.io/5844043'  # stock
+
+  sentry_sdk.init(sentry_uri, default_integrations=False,
+                  integrations=[ThreadingIntegration(propagate_hub=True)], release=version)
+
+  error_tags = {'dirty': dirty, 'origin': origin, 'branch': branch, 'commit': get_git_commit(), 'username': opParams().get('username')}
+  if error_tags['username'] is None or not isinstance(error_tags['username'], str):
+    username = 'undefined'
+  for tag in error_tags:
+    set_tag(tag, error_tags[tag])
