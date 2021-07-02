@@ -224,6 +224,8 @@ function launch {
   tmux capture-pane -pq -S-1000 > /tmp/launch_log
 
   # start manager
+  git submodule update --init
+
   cd selfdrive/manager
   ./build.py && ./manager.py
 
