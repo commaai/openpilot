@@ -76,13 +76,13 @@ void WifiManager::setup() {
 void WifiManager::refreshNetworks() {
   QDBusInterface nm(NM_DBUS_SERVICE, adapter, NM_DBUS_INTERFACE_DEVICE_WIRELESS, bus);
   nm.setTimeout(DBUS_TIMEOUT);
+  const QDBusReply<QList<QDBusObjectPath>> &response = nm.call("GetAllAccessPoints");
 
-  seenNetworks.clear();
-  seenSsids.clear();
   ipv4_address = get_ipv4_address();
   const QString &activeAp = getActiveAp();
 
-  const QDBusReply<QList<QDBusObjectPath>> response = nm.call("GetAllAccessPoints");
+  seenNetworks.clear();
+  seenSsids.clear();
   for (const QDBusObjectPath &path : response.value()) {
     const QByteArray &ssid = get_property(path.path(), "Ssid");
     if (ssid.isEmpty() || seenSsids.contains(ssid)) {
