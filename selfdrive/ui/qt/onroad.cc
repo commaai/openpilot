@@ -225,10 +225,10 @@ NvgWindow::~NvgWindow() {
 
 void NvgWindow::initializeGL() {
   initializeOpenGLFunctions();
-  qWarning() << "OpenGL version:" << QString((const char*)glGetString(GL_VERSION));
-  qWarning() << "OpenGL vendor:" << QString((const char*)glGetString(GL_VENDOR));
-  qWarning() << "OpenGL renderer:" << QString((const char*)glGetString(GL_RENDERER));
-  qWarning() << "OpenGL language version:" << QString((const char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
+  qInfo() << "OpenGL version:" << QString((const char*)glGetString(GL_VERSION));
+  qInfo() << "OpenGL vendor:" << QString((const char*)glGetString(GL_VENDOR));
+  qInfo() << "OpenGL renderer:" << QString((const char*)glGetString(GL_RENDERER));
+  qInfo() << "OpenGL language version:" << QString((const char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
 
   ui_nvg_init(&QUIState::ui_state);
   prev_draw_t = millis_since_boot();
