@@ -122,7 +122,7 @@ class TestOnroad(unittest.TestCase):
       # make sure we get at least two full segments
       cls.segments = []
       with Timeout(300, "timed out waiting for logs"):
-        while len(cls.segments) < 2:
+        while len(cls.segments) < 3:
           new_paths = set()
           if logger_root.exists():
             new_paths = set(logger_root.iterdir()) - initial_segments
@@ -135,7 +135,7 @@ class TestOnroad(unittest.TestCase):
       if proc.wait(60) is None:
         proc.kill()
 
-    cls.lr = list(LogReader(os.path.join(str(cls.segments[0]), "rlog.bz2")))
+    cls.lr = list(LogReader(os.path.join(str(cls.segments[1]), "rlog.bz2")))
 
   def test_cloudlog_size(self):
     msgs = [m for m in self.lr if m.which() == 'logMessage']
