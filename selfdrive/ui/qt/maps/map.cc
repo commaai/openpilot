@@ -117,7 +117,9 @@ void MapWindow::initLayers() {
 }
 
 void MapWindow::timerUpdate() {
-  update();
+  if (isVisible()) {
+    update();
+  }
 
   loaded_once = loaded_once || m_map->isFullyLoaded();
   if (!loaded_once) {
