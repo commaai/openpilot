@@ -35,6 +35,6 @@ def init() -> None:
 
   error_tags = {'dirty': dirty, 'origin': origin, 'branch': branch, 'commit': get_git_commit(), 'username': opParams().get('username')}
   if error_tags['username'] is None or not isinstance(error_tags['username'], str):
-    username = 'undefined'
+    error_tags['username'] = 'undefined'
   for tag in error_tags:
     set_tag(tag, error_tags[tag])
