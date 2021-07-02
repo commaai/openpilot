@@ -123,7 +123,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   main_layout->addWidget(horizontal_line(), 0);
 
   // Change tethering password
-  editPasswordButton = new ButtonControl("Tethering Password", "EDIT");
+  ButtonControl *editPasswordButton = new ButtonControl("Tethering Password", "EDIT");
   connect(editPasswordButton, &ButtonControl::released, [=]() {
     QString pass = InputDialog::getText("Enter new tethering password", 8, wifi->getTetheringPassword());
     if (!pass.isEmpty()) {
@@ -152,12 +152,7 @@ void AdvancedNetworking::refresh() {
 }
 
 void AdvancedNetworking::toggleTethering(bool enable) {
-  if (enable) {
-    wifi->enableTethering();
-  } else {
-    wifi->disableTethering();
-  }
-  editPasswordButton->setEnabled(!enable);
+  wifi->toggleTethering(enable);
 }
 
 // WifiUI functions

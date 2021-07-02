@@ -46,7 +46,6 @@ public:
 
 private:
   LabelControl* ipLabel;
-  ButtonControl* editPasswordButton;
   WifiManager* wifi = nullptr;
 
 signals:
