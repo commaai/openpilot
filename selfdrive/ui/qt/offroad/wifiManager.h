@@ -48,7 +48,6 @@ public:
   void disconnect();
 
   // Tethering functions
-  void setTetheringEnabled(bool enabled);
   bool isTetheringEnabled();
   void addTetheringConnection();
   void changeTetheringPassword(const QString &newPassword);
@@ -84,6 +83,9 @@ private:
 signals:
   void wrongPassword(const QString &ssid);
   void refreshSignal();
+
+public slots:
+  void setTetheringEnabled(bool enabled);
 
 private slots:
   void stateChange(unsigned int new_state, unsigned int previous_state, unsigned int change_reason);
