@@ -29,7 +29,6 @@ git submodule foreach --recursive "git reset --hard && git clean -xdf"
 
 echo "git checkout done, t=$SECONDS"
 
-rsync -a --delete $SOURCE_DIR/.git $TEST_DIR/.git
-rsync -a --delete --inplace $SOURCE_DIR $TEST_DIR
+rsync -a --delete $SOURCE_DIR $TEST_DIR
 
 echo "$TEST_DIR synced with $GIT_COMMIT, t=$SECONDS"
