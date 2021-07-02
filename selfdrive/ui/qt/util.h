@@ -13,6 +13,7 @@ void configFont(QPainter &p, const QString &family, int size, const QString &sty
 void clearLayout(QLayout* layout);
 void setQtSurfaceFormat();
 QString timeAgo(const QDateTime &date);
+void swagLogMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg);
 
 class ClickableWidget : public QWidget
 {

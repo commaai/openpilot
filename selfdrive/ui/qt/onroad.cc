@@ -1,6 +1,7 @@
 #include "selfdrive/ui/qt/onroad.h"
 
 #include <iostream>
+#include <QDebug>
 
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/timing.h"
@@ -224,10 +225,10 @@ NvgWindow::~NvgWindow() {
 
 void NvgWindow::initializeGL() {
   initializeOpenGLFunctions();
-  std::cout << "OpenGL version: " << glGetString(GL_VERSION) << std::endl;
-  std::cout << "OpenGL vendor: " << glGetString(GL_VENDOR) << std::endl;
-  std::cout << "OpenGL renderer: " << glGetString(GL_RENDERER) << std::endl;
-  std::cout << "OpenGL language version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
+  qInfo() << "OpenGL version:" << QString((const char*)glGetString(GL_VERSION));
+  qInfo() << "OpenGL vendor:" << QString((const char*)glGetString(GL_VENDOR));
+  qInfo() << "OpenGL renderer:" << QString((const char*)glGetString(GL_RENDERER));
+  qInfo() << "OpenGL language version:" << QString((const char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
 
   ui_nvg_init(&QUIState::ui_state);
   prev_draw_t = millis_since_boot();
