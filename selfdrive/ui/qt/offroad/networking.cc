@@ -77,7 +77,7 @@ void Networking::refresh() {
 }
 
 void Networking::connectToNetwork(const Network &n) {
-  if (wifi->isKnownConnection(n.ssid)) {
+  if (n.known) {
     wifi->activateWifiConnection(n.ssid);
   } else if (n.security_type == SecurityType::OPEN) {
     wifi->connect(n);
@@ -90,7 +90,7 @@ void Networking::connectToNetwork(const Network &n) {
 }
 
 void Networking::wrongPassword(const QString &ssid) {
-  for (Network n : wifi->seen_networks) {
+  for (Network n : wifi->seenNetworks) {
     if (n.ssid == ssid) {
       QString pass = InputDialog::getText("Wrong password for \"" + n.ssid +"\"", 8);
       if (!pass.isEmpty()) {
@@ -176,14 +176,14 @@ void WifiUI::refresh() {
   clearLayout(main_layout);
 
   int i = 0;
-  for (Network &network : wifi->seen_networks) {
+  for (Network &network : wifi->seenNetworks) {
     QHBoxLayout *hlayout = new QHBoxLayout;
 
     QLabel *ssid_label = new QLabel(QString::fromUtf8(network.ssid));
     ssid_label->setStyleSheet("font-size: 55px;");
     hlayout->addWidget(ssid_label, 1, Qt::AlignLeft);
 
-    if (wifi->isKnownConnection(network.ssid) && !wifi->tetheringEnabled()) {
+    if (network.known && !wifi->tetheringEnabled()) {
       QPushButton *forgetBtn = new QPushButton();
       QPixmap pix("../assets/offroad/icon_close.svg");
 
@@ -222,7 +222,7 @@ void WifiUI::refresh() {
     hlayout->addWidget(btn, 0, Qt::AlignRight);
     main_layout->addLayout(hlayout, 1);
     // Don't add the last horizontal line
-    if (i+1 < wifi->seen_networks.size()) {
+    if (i+1 < wifi->seenNetworks.size()) {
       main_layout->addWidget(horizontal_line(), 0);
     }
     i++;

@@ -74,7 +74,7 @@ void WifiManager::setup() {
 }
 
 void WifiManager::refreshNetworks() {
-  seen_networks.clear();
+  seenNetworks.clear();
   seen_ssids.clear();
   ipv4_address = get_ipv4_address();
   for (Network &network : get_networks()) {
@@ -82,7 +82,7 @@ void WifiManager::refreshNetworks() {
       continue;
     }
     seen_ssids.push_back(network.ssid);
-    seen_networks.push_back(network);
+    seenNetworks.push_back(network);
   }
 }
 
@@ -151,7 +151,7 @@ QList<Network> WifiManager::get_networks() {
         ctype = ConnectedType::CONNECTED;
       }
     }
-    Network network = {path.path(), ssid, strength, ctype, security};
+    Network network = {path.path(), ssid, strength, ctype, security, isKnownConnection(ssid)};
     r.push_back(network);
   }
   args.endArray();

@@ -25,6 +25,7 @@ struct Network {
   unsigned int strength;
   ConnectedType connected;
   SecurityType security_type;
+  bool known;
 };
 
 class WifiManager : public QWidget {
@@ -33,7 +34,7 @@ public:
   explicit WifiManager(QWidget* parent);
 
   void requestScan();
-  QVector<Network> seen_networks;
+  QVector<Network> seenNetworks;
   QMap<QDBusObjectPath, QString> knownConnections;
   QString ipv4_address;
 
