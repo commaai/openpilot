@@ -48,9 +48,9 @@ private:
 
 signals:
   void backPress();
-  void setTetheringEnabled(bool enabled);
 
 public slots:
+  void toggleTethering(bool enabled);
   void refresh();
 };
 

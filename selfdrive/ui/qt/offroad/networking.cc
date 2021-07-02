@@ -51,7 +51,6 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent), s
 
   an = new AdvancedNetworking(this, wifi);
   connect(an, &AdvancedNetworking::backPress, [=]() { main_layout->setCurrentWidget(wifiScreen); });
-  connect(an, &AdvancedNetworking::setTetheringEnabled, wifi, &WifiManager::setTetheringEnabled);
   main_layout->addWidget(an);
 
   setStyleSheet(R"(
@@ -120,7 +119,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   // Enable tethering layout
   ToggleControl *tetheringToggle = new ToggleControl("Enable Tethering", "", "", wifi->isTetheringEnabled());
   main_layout->addWidget(tetheringToggle);
-  QObject::connect(tetheringToggle, &ToggleControl::toggleFlipped, [=](bool enabled) { emit setTetheringEnabled(enabled); });
+  QObject::connect(tetheringToggle, &ToggleControl::toggleFlipped, this, &AdvancedNetworking::toggleTethering);
   main_layout->addWidget(horizontal_line(), 0);
 
   // Change tethering password
@@ -150,6 +149,10 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
 void AdvancedNetworking::refresh() {
   ipLabel->setText(wifi->ipv4_address);
   update();
+}
+
+void AdvancedNetworking::toggleTethering(bool enabled) {
+  wifi->setTetheringEnabled(enabled);
 }
 
 // WifiUI functions
