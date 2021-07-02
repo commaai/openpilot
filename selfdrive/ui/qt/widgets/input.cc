@@ -59,8 +59,8 @@ InputDialog::InputDialog(const QString &prompt_text, QWidget *parent) : QDialog(
 
 QString InputDialog::getText(const QString &prompt, int minLength, const QString &defaultText) {
   InputDialog d = InputDialog(prompt);
-  d.minLength = minLength;
   d.line->setText(defaultText);
+  d.setMinLength(minLength);
   const int ret = d.exec();
   return ret ? d.text() : QString();
 }
@@ -107,6 +107,10 @@ void InputDialog::setMessage(const QString &message, bool clearInputField) {
   if (clearInputField) {
     line->setText("");
   }
+}
+
+void InputDialog::setMinLength(int length) {
+  minLength = length;
 }
 
 ConfirmationDialog::ConfirmationDialog(const QString &prompt_text, const QString &confirm_text, const QString &cancel_text,

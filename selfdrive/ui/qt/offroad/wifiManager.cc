@@ -415,9 +415,6 @@ void WifiManager::activateWifiConnection(const QString &ssid) {
 
 // Functions for tethering
 void WifiManager::addTetheringConnection() {
-  if (isKnownConnection(tethering_ssid)) {
-    return;
-  }
   Connection connection;
   connection["connection"]["id"] = "Hotspot";
   connection["connection"]["uuid"] = QUuid::createUuid().toString().remove('{').remove('}');
@@ -450,7 +447,9 @@ void WifiManager::addTetheringConnection() {
 }
 
 void WifiManager::enableTethering() {
-  addTetheringConnection();
+  if (isKnownConnection(tethering_ssid)) {
+    addTetheringConnection();
+  }
   activateWifiConnection(tethering_ssid.toUtf8());
 }
 
@@ -469,7 +468,9 @@ bool WifiManager::tetheringEnabled() {
 }
 
 QString WifiManager::getTetheringPassword() {
-  addTetheringConnection();
+  if (isKnownConnection(tethering_ssid)) {
+    addTetheringConnection();
+  }
   const QDBusObjectPath &path = getConnectionPath(tethering_ssid);
   if (!path.path().isEmpty()) {
     QDBusInterface nm(NM_DBUS_INTERFACE, path.path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION, bus);
