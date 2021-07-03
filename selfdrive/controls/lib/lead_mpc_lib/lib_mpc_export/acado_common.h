@@ -187,8 +187,8 @@ real_t objAuxVar[ 6 ];
 /** Row vector of size: 12 */
 real_t objValueIn[ 12 ];
 
-/** Row vector of size: 35 */
-real_t objValueOut[ 35 ];
+/** Row vector of size: 55 */
+real_t objValueOut[ 55 ];
 
 /** Matrix of size: 120 x 6 (row major format) */
 real_t Q1[ 720 ];
@@ -211,8 +211,8 @@ real_t QN1[ 36 ];
 /** Column vector of size: 6 */
 real_t QN2[ 6 ];
 
-/** Column vector of size: 54 */
-real_t conAuxVar[ 54 ];
+/** Column vector of size: 51 */
+real_t conAuxVar[ 51 ];
 
 /** Row vector of size: 12 */
 real_t conValueIn[ 12 ];

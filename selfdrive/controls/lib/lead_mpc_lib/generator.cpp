@@ -23,7 +23,7 @@ int main( )
   auto ego_stop_dist = v_ego*ego_stop_time - (MAX_BRAKE * ego_stop_time*ego_stop_time)/2;
   auto lead_stop_time = v_l/MAX_BRAKE;
   auto lead_stop_dist = v_l*lead_stop_time - (MAX_BRAKE * lead_stop_time*lead_stop_time)/2;
-  auto reaction_time = ((x_l - x_ego)- 2.0  + lead_stop_dist - ego_stop_dist)/(v_ego + 1.0);
+  auto reaction_distance = ((x_l - x_ego)- 4.0  + lead_stop_dist - ego_stop_dist);
 
   // Equations of motion
   f << dot(x_ego) == v_ego;
@@ -35,18 +35,18 @@ int main( )
 
   // Running cost
   Function h;
-  h << j_ego;
+  h << j_ego/(v_ego + 1.0);
   h << time_slack;
   h << speed_slack;
   h << accel_slack;
-  h << reaction_time - T_REACT;
+  h << reaction_distance - T_REACT*v_ego;
 
   // Weights are defined in mpc.
   BMatrix Q(5,5); Q.setAll(true);
 
   // Terminal cost
   Function hN;
-  hN << reaction_time - T_REACT;
+  hN << reaction_distance - T_REACT*v_ego;
 
   // Weights are defined in mpc.
   BMatrix QN(1,1); QN.setAll(true);
@@ -73,7 +73,7 @@ int main( )
 
   ocp.subjectTo( 0.0 <= v_ego + speed_slack);
   ocp.subjectTo( MIN_ACCEL <= a_ego + accel_slack);
-  ocp.subjectTo( T_REACT <= reaction_time + time_slack);
+  ocp.subjectTo( 0.0 <= reaction_distance - T_REACT*v_ego + time_slack);
   ocp.setNOD(2);
 
   OCPexport mpc(ocp);

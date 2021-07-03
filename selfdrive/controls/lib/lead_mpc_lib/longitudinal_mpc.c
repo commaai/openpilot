@@ -63,6 +63,7 @@ void init(double ttcCost, double distanceCost, double jerkCost, double constrain
     acadoVariables.W[NY*NY*i + (NY+1)*2] = constraintCost * f;
     acadoVariables.W[NY*NY*i + (NY+1)*3] = constraintCost * f;
     acadoVariables.W[NY*NY*i + (NY+1)*4] = 0.0; // dummy cost needed for compilation
+    //acadoVariables.W[NY*NY*i + (NY+1)*4] = distanceCost * f;
   }
   acadoVariables.WN[(NYN+1)*0] = distanceCost * 50.; // desired distance
 
