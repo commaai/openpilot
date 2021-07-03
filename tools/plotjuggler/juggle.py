@@ -62,13 +62,8 @@ def juggle_route(route_name, segment_number, segment_count, qlog, can, layout):
       print(f"Please try a different {'segment' if segment_number is not None else 'route'}")
       return
 
-  all_data = []
   pool = multiprocessing.Pool(24)
-  for d in pool.map(load_segment, logs):
-    all_data += d
-
-  if not can:
-    all_data = [d for d in all_data if d.which() not in ['can', 'sendcan']]
+  all_data = [d for d_list in pool.map(load_segment, logs) for d in d_list if d.which() not in ['can', 'sendcan'] or can]
 
   # Infer DBC name from logs
   dbc = None
@@ -105,7 +100,6 @@ if __name__ == "__main__":
     arg_parser.print_help()
     sys.exit()
   args = arg_parser.parse_args(sys.argv[1:])
-  print(args)
 
   if args.stream:
     start_juggler()
