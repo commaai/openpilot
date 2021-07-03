@@ -35,7 +35,7 @@ typedef struct {
   double cost;
 } log_t;
 
-void init(double ttcCost, double distanceCost, double accelerationCost, double jerkCost, double constraintCost){
+void init(double ttcCost, double distanceCost, double jerkCost, double constraintCost){
   acado_initializeSolver();
   int    i;
   const int STEP_MULTIPLIER = 3;
@@ -59,12 +59,12 @@ void init(double ttcCost, double distanceCost, double accelerationCost, double j
     }
     // Setup diagonal entries
     acadoVariables.W[NY*NY*i + (NY+1)*0] = jerkCost * f;
-    acadoVariables.W[NY*NY*i + (NY+1)*1] = distanceCost * f;
+    acadoVariables.W[NY*NY*i + (NY+1)*1] = ttcCost * f;
     acadoVariables.W[NY*NY*i + (NY+1)*2] = constraintCost * f;
     acadoVariables.W[NY*NY*i + (NY+1)*3] = constraintCost * f;
-    acadoVariables.W[NY*NY*i + (NY+1)*4] = 0.0;
+    acadoVariables.W[NY*NY*i + (NY+1)*4] = 0.0; // dummy cost needed for compilation
   }
-  acadoVariables.WN[(NYN+1)*0] = .0*distanceCost * STEP_MULTIPLIER; // desired distance
+  acadoVariables.WN[(NYN+1)*0] = distanceCost * 50.; // desired distance
 
 }
 

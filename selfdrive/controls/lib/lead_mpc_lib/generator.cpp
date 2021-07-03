@@ -3,7 +3,7 @@
 using namespace std;
 
 #define MAX_BRAKE 7.
-#define T_REACT 2.0
+#define T_REACT 1.8
 #define MIN_ACCEL -3.0
 
 int main( )
@@ -23,7 +23,7 @@ int main( )
   auto ego_stop_dist = v_ego*ego_stop_time - (MAX_BRAKE * ego_stop_time*ego_stop_time)/2;
   auto lead_stop_time = v_l/MAX_BRAKE;
   auto lead_stop_dist = v_l*lead_stop_time - (MAX_BRAKE * lead_stop_time*lead_stop_time)/2;
-  auto reaction_time = ((x_l - x_ego)- 4.0  + lead_stop_dist - ego_stop_dist)/(v_ego + 1.0);
+  auto reaction_time = ((x_l - x_ego)- 2.0  + lead_stop_dist - ego_stop_dist)/(v_ego + 1.0);
 
   // Equations of motion
   f << dot(x_ego) == v_ego;
