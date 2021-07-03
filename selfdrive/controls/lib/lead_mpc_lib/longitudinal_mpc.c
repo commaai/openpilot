@@ -27,7 +27,6 @@ typedef struct {
   double v_ego[N+1];
   double a_ego[N+1];
   double j_ego[N];
-  double time_slack[N];
   double x_l[N+1];
   double v_l[N+1];
   double a_l[N+1];
@@ -35,7 +34,7 @@ typedef struct {
   double cost;
 } log_t;
 
-void init(double ttcCost, double distanceCost, double jerkCost, double constraintCost){
+void init(double ttcCost, double distanceCost, double accelerationCost, double jerkCost){
   acado_initializeSolver();
   int    i;
   const int STEP_MULTIPLIER = 3;
@@ -58,14 +57,14 @@ void init(double ttcCost, double distanceCost, double jerkCost, double constrain
       f = STEP_MULTIPLIER;
     }
     // Setup diagonal entries
-    acadoVariables.W[NY*NY*i + (NY+1)*0] = jerkCost * f;
-    acadoVariables.W[NY*NY*i + (NY+1)*1] = ttcCost * f;
-    acadoVariables.W[NY*NY*i + (NY+1)*2] = constraintCost * f;
-    acadoVariables.W[NY*NY*i + (NY+1)*3] = constraintCost * f;
-    acadoVariables.W[NY*NY*i + (NY+1)*4] = 0.0; // dummy cost needed for compilation
-    //acadoVariables.W[NY*NY*i + (NY+1)*4] = distanceCost * f;
+    acadoVariables.W[NY*NY*i + (NY+1)*0] = ttcCost * f; // exponential cost for time-to-collision (ttc)
+    acadoVariables.W[NY*NY*i + (NY+1)*1] = distanceCost * f; // desired distance
+    acadoVariables.W[NY*NY*i + (NY+1)*2] = accelerationCost * f; // acceleration
+    acadoVariables.W[NY*NY*i + (NY+1)*3] = jerkCost * f; // jerk
   }
-  acadoVariables.WN[(NYN+1)*0] = distanceCost * 50.; // desired distance
+  acadoVariables.WN[(NYN+1)*0] = ttcCost * STEP_MULTIPLIER; // exponential cost for danger zone
+  acadoVariables.WN[(NYN+1)*1] = distanceCost * STEP_MULTIPLIER; // desired distance
+  acadoVariables.WN[(NYN+1)*2] = accelerationCost * STEP_MULTIPLIER; // acceleration
 
 }
 
@@ -162,8 +161,7 @@ int run_mpc(state_t * x0, log_t * solution, double l, double a_l_0){
     solution->a_ego[i] = acadoVariables.x[i*NX+2];
 
     if (i < N){
-      solution->j_ego[i] = acadoVariables.u[i*NU];
-      solution->time_slack[i] = acadoVariables.u[i*NU+1];
+      solution->j_ego[i] = acadoVariables.u[i];
     }
   }
   solution->cost = acado_getObjective();

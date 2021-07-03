@@ -44,5 +44,5 @@ if GetOption('mpc_generate'):
 
 
 mpc_files = ["longitudinal_mpc.c"] + generated_c
+env.SharedLibrary('mpc0', mpc_files, LIBS=['m', 'qpoases'], LIBPATH=['lib_qp'], CPPPATH=cpp_path)
 env.SharedLibrary('mpc1', mpc_files, LIBS=['m', 'qpoases'], LIBPATH=['lib_qp'], CPPPATH=cpp_path)
-env.SharedLibrary('mpc2', mpc_files, LIBS=['m', 'qpoases'], LIBPATH=['lib_qp'], CPPPATH=cpp_path)

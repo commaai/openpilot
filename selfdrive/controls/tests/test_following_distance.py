@@ -5,8 +5,6 @@ import numpy as np
 from cereal import log
 import cereal.messaging as messaging
 from selfdrive.config import Conversions as CV
-from selfdrive.controls.lib.longitudinal_planner import calc_cruise_accel_limits
-from selfdrive.controls.lib.speed_smoother import speed_smoother
 from selfdrive.controls.lib.lead_mpc import LeadMpc
 
 
@@ -31,19 +29,10 @@ def run_following_distance_simulation(v_lead, t_end=200.0):
   v_ego = v_lead
   a_ego = 0.0
 
-  v_cruise_setpoint = v_lead + 10.
-
   mpc = LeadMpc(0)
 
   first = True
   while t < t_end:
-    # Run cruise control
-    accel_limits = [float(x) for x in calc_cruise_accel_limits(v_ego, False)]
-    jerk_limits = [min(-0.1, accel_limits[0]), max(0.1, accel_limits[1])]
-    v_cruise, a_cruise = speed_smoother(v_ego, a_ego, v_cruise_setpoint,
-                                        accel_limits[1], accel_limits[0],
-                                        jerk_limits[1], jerk_limits[0],
-                                        dt)
 
     # Setup CarState
     CS = messaging.new_message('carState')
@@ -68,10 +57,7 @@ def run_following_distance_simulation(v_lead, t_end=200.0):
     mpc.update(CS.carState, radarstate.radarState, 0)
 
     # Choose slowest of two solutions
-    if v_cruise < mpc.mpc_solution.v_ego[5]:
-      v_ego, a_ego = v_cruise, a_cruise
-    else:
-      v_ego, a_ego = mpc.mpc_solution.v_ego[5], mpc.mpc_solution.a_ego[5]
+    v_ego, a_ego = mpc.mpc_solution.v_ego[5], mpc.mpc_solution.a_ego[5]
 
     # Update state
     x_lead += v_lead * dt
@@ -90,8 +76,7 @@ class TestFollowingDistance(unittest.TestCase):
       simulation_steady_state = run_following_distance_simulation(v_lead)
       correct_steady_state = RW(v_lead, v_lead) + 4.0
 
-      self.assertAlmostEqual(simulation_steady_state, correct_steady_state, delta=.05*correct_steady_state)
-      #print(simulation_steady_state, correct_steady_state)
+      self.assertAlmostEqual(simulation_steady_state, correct_steady_state, delta=.1)
 
 
 if __name__ == "__main__":

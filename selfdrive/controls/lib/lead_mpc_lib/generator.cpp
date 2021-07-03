@@ -1,10 +1,14 @@
 #include <acado_code_generation.hpp>
 
+const int controlHorizon = 50;
+
 using namespace std;
 
-#define MAX_BRAKE 7.
-#define T_REACT 1.8
-#define MIN_ACCEL -3.0
+#define G 9.81
+#define TR 1.8
+
+#define RW(v_ego, v_l) (v_ego * TR - (v_l - v_ego) * TR + v_ego*v_ego/(2*G) - v_l*v_l / (2*G))
+#define NORM_RW_ERROR(v_ego, v_l, p) ((RW(v_ego, v_l) + 4.0 - p)/(sqrt(v_ego + 0.5) + 0.1))
 
 int main( )
 {
@@ -14,41 +18,36 @@ int main( )
   DifferentialEquation f;
 
   DifferentialState x_ego, v_ego, a_ego;
-  DifferentialState dummy, dummy3;
   OnlineData x_l, v_l;
 
-  Control j_ego, time_slack, accel_slack;
+  Control j_ego;
 
-  auto ego_stop_time = v_ego/MAX_BRAKE;
-  auto ego_stop_dist = v_ego*ego_stop_time - (MAX_BRAKE * ego_stop_time*ego_stop_time)/2;
-  auto lead_stop_time = v_l/MAX_BRAKE;
-  auto lead_stop_dist = v_l*lead_stop_time - (MAX_BRAKE * lead_stop_time*lead_stop_time)/2;
-  auto reaction_distance = ((x_l - x_ego)- 4.0  + lead_stop_dist - ego_stop_dist);
+  auto desired = 4.0 + RW(v_ego, v_l);
+  auto d_l = x_l - x_ego;
 
   // Equations of motion
   f << dot(x_ego) == v_ego;
   f << dot(v_ego) == a_ego;
   f << dot(a_ego) == j_ego;
-  f << dot(dummy) == time_slack;
-  f << dot(dummy3) == accel_slack;
 
   // Running cost
   Function h;
-  h << j_ego/(v_ego + 1.0);
-  h << time_slack;
-  h << accel_slack;
-  h << accel_slack;
-  h << reaction_distance - T_REACT*v_ego;
+  h << exp(0.3 * NORM_RW_ERROR(v_ego, v_l, d_l)) - 1;
+  h << (d_l - desired) / (0.05 * v_ego + 0.5);
+  h << a_ego * (0.1 * v_ego + 1.0);
+  h << j_ego * (0.1 * v_ego + 1.0);
 
   // Weights are defined in mpc.
-  BMatrix Q(5,5); Q.setAll(true);
+  BMatrix Q(4,4); Q.setAll(true);
 
   // Terminal cost
   Function hN;
-  hN << reaction_distance - T_REACT*v_ego;
+  hN << exp(0.3 * NORM_RW_ERROR(v_ego, v_l, d_l)) - 1;
+  hN << (d_l - desired) / (0.05 * v_ego + 0.5);
+  hN << a_ego * (0.1 * v_ego + 1.0);
 
   // Weights are defined in mpc.
-  BMatrix QN(1,1); QN.setAll(true);
+  BMatrix QN(3,3); QN.setAll(true);
 
   // Non uniform time grid
   // First 5 timesteps are 0.2, after that it's 0.6
@@ -71,16 +70,14 @@ int main( )
   ocp.minimizeLSQEndTerm(QN, hN);
 
   ocp.subjectTo( 0.0 <= v_ego);
-  ocp.subjectTo( MIN_ACCEL <= a_ego + accel_slack);
-  ocp.subjectTo( 0.0 <= reaction_distance - T_REACT*v_ego + time_slack);
   ocp.setNOD(2);
 
   OCPexport mpc(ocp);
   mpc.set( HESSIAN_APPROXIMATION, GAUSS_NEWTON );
   mpc.set( DISCRETIZATION_TYPE, MULTIPLE_SHOOTING );
   mpc.set( INTEGRATOR_TYPE, INT_RK4 );
-  mpc.set( NUM_INTEGRATOR_STEPS, 50);
-  mpc.set( MAX_NUM_QP_ITERATIONS, 50);
+  mpc.set( NUM_INTEGRATOR_STEPS, controlHorizon);
+  mpc.set( MAX_NUM_QP_ITERATIONS, 500);
   mpc.set( CG_USE_VARIABLE_WEIGHTING_MATRIX, YES);
 
   mpc.set( SPARSE_QP_SOLUTION, CONDENSING );
