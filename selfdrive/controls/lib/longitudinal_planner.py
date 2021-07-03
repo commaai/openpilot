@@ -122,9 +122,10 @@ class Planner():
         next_a = self.mpcs[key].mpc_solution.a_ego[5]
 
     # Throw FCW if brake predictions exceed capability
-    self.fcw = (bool(np.any(np.array(self.a_desired_trajectory) < -3.5)) and
+    self.fcw = (any(lead - ego < 2.0 for (lead, ego) in zip(self.mpcs['lead0'].mpc_solution[0].x_l, self.mpcs['lead0'].mpc_solution[0].x_ego)) and
                 self.lead_0.modelProb > .95 and
-                self.lead_1.modelProb > .95)
+                self.lead_1.modelProb > .95 and
+                enabled)
 
     # Interpolate 0.05 seconds and save as starting point for next iteration
     a_prev = self.a_desired

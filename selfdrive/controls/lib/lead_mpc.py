@@ -4,7 +4,6 @@ import math
 from selfdrive.swaglog import cloudlog
 from common.realtime import sec_since_boot
 from selfdrive.controls.lib.radar_helpers import _LEAD_ACCEL_TAU
-from selfdrive.controls.lib.drive_helpers import MPC_COST_LONG
 from selfdrive.controls.lib.lead_mpc_lib import libmpc_py
 
 LOG_MPC = os.environ.get('LOG_MPC', False)
@@ -22,8 +21,7 @@ class LeadMpc():
 
   def reset_mpc(self):
     ffi, self.libmpc = libmpc_py.get_libmpc(self.lead_id)
-    self.libmpc.init(MPC_COST_LONG.TTC, MPC_COST_LONG.DISTANCE,
-                     MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK, 10000.)
+    self.libmpc.init(1.0, 1.0, 1.0, 10000.)
 
     self.mpc_solution = ffi.new("log_t *")
     self.cur_state = ffi.new("state_t *")
