@@ -14,10 +14,10 @@ int main( )
   DifferentialEquation f;
 
   DifferentialState x_ego, v_ego, a_ego;
-  DifferentialState dummy, dummy2, dummy3;
+  DifferentialState dummy, dummy3;
   OnlineData x_l, v_l;
 
-  Control j_ego, time_slack, speed_slack, accel_slack;
+  Control j_ego, time_slack, accel_slack;
 
   auto ego_stop_time = v_ego/MAX_BRAKE;
   auto ego_stop_dist = v_ego*ego_stop_time - (MAX_BRAKE * ego_stop_time*ego_stop_time)/2;
@@ -30,14 +30,13 @@ int main( )
   f << dot(v_ego) == a_ego;
   f << dot(a_ego) == j_ego;
   f << dot(dummy) == time_slack;
-  f << dot(dummy2) == speed_slack;
   f << dot(dummy3) == accel_slack;
 
   // Running cost
   Function h;
   h << j_ego/(v_ego + 1.0);
   h << time_slack;
-  h << speed_slack;
+  h << accel_slack;
   h << accel_slack;
   h << reaction_distance - T_REACT*v_ego;
 
@@ -71,7 +70,7 @@ int main( )
   ocp.minimizeLSQ(Q, h);
   ocp.minimizeLSQEndTerm(QN, hN);
 
-  ocp.subjectTo( 0.0 <= v_ego + speed_slack);
+  ocp.subjectTo( 0.0 <= v_ego);
   ocp.subjectTo( MIN_ACCEL <= a_ego + accel_slack);
   ocp.subjectTo( 0.0 <= reaction_distance - T_REACT*v_ego + time_slack);
   ocp.setNOD(2);
@@ -80,8 +79,8 @@ int main( )
   mpc.set( HESSIAN_APPROXIMATION, GAUSS_NEWTON );
   mpc.set( DISCRETIZATION_TYPE, MULTIPLE_SHOOTING );
   mpc.set( INTEGRATOR_TYPE, INT_RK4 );
-  mpc.set( NUM_INTEGRATOR_STEPS, 500);
-  mpc.set( MAX_NUM_QP_ITERATIONS, 500);
+  mpc.set( NUM_INTEGRATOR_STEPS, 50);
+  mpc.set( MAX_NUM_QP_ITERATIONS, 50);
   mpc.set( CG_USE_VARIABLE_WEIGHTING_MATRIX, YES);
 
   mpc.set( SPARSE_QP_SOLUTION, CONDENSING );
