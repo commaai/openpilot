@@ -57,7 +57,7 @@ def juggle_route(route_name, segment_number, segment_count, qlog, can, layout):
     if fallback_answer == 'y':
       logs = r.qlog_paths()
       if segment_number is not None:
-        logs = logs[segment_number:segment_number+1]
+        logs = logs[segment_number:segment_number+segment_count]
     else:
       print(f"Please try a different {'segment' if segment_number is not None else 'route'}")
       return
