@@ -11,7 +11,7 @@ SshControl::SshControl() : ButtonControl("SSH Keys", "", "Warning: This grants S
 
   QObject::connect(this, &ButtonControl::released, [=]() {
     if (text() == "ADD") {
-      QString username = InputDialog::getText("Enter your GitHub username", -1, this);
+      QString username = InputDialog::getText("Enter your GitHub username", this);
       if (username.length() > 0) {
         setText("LOADING");
         setEnabled(false);

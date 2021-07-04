@@ -22,7 +22,7 @@ class InputDialog : public QDialogBase {
 
 public:
   explicit InputDialog(const QString &prompt_text, QWidget *parent);
-  static QString getText(const QString &prompt, int minLength, const QString &defaultText, QWidget *parent);
+  static QString getText(const QString &prompt, QWidget *parent, int minLength = -1, const QString &defaultText = "");
   QString text();
   void setMessage(const QString &message, bool clearInputField = true);
   void setMinLength(int length);

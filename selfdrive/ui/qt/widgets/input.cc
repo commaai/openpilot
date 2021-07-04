@@ -69,7 +69,7 @@ InputDialog::InputDialog(const QString &prompt_text, QWidget *parent) : QDialogB
 
 }
 
-QString InputDialog::getText(const QString &prompt, int minLength, const QString &defaultText, QWidget *parent) {
+QString InputDialog::getText(const QString &prompt, QWidget *parent, int minLength, const QString &defaultText) {
   InputDialog d = InputDialog(prompt, parent);
   d.line->setText(defaultText);
   d.setMinLength(minLength);
