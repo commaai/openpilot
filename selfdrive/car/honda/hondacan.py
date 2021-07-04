@@ -1,7 +1,7 @@
 from selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
 from selfdrive.swaglog import cloudlog
 from selfdrive.config import Conversions as CV
-from selfdrive.car.honda.values import HONDA_BOSCH
+from selfdrive.car.honda.values import HONDA_BOSCH, CAR
 
 # CAN bus layout with relay
 # 0 = ACC-CAN - radar side
