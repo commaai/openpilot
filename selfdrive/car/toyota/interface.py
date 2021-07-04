@@ -168,36 +168,22 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.17], [0.03]]
       ret.lateralTuning.pid.kf = 0.00006
 
-    elif candidate == CAR.RAV4_TSS2:
+    elif candidate in [CAR.RAV4_TSS2, CAR.RAV4H_TSS2]:
       stop_and_go = True
       ret.safetyParam = 73
       ret.wheelbase = 2.68986
       ret.steerRatio = 14.3
       tire_stiffness_factor = 0.7933
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.15], [0.05]]
-      ret.mass = 3370. * CV.LB_TO_KG + STD_CARGO_KG
-      ret.lateralTuning.pid.kf = 0.00004
+      ret.mass = 3585. * CV.LB_TO_KG + STD_CARGO_KG # Average between ICE and Hybrid
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.1]]
+      ret.lateralTuning.pid.kf = 0.00007818594
 
+      # 2019+ Rav4 TSS2 uses two different steering racks and specific tuning seems to be necessary.
+      # See https://github.com/commaai/openpilot/pull/21429#issuecomment-873652891
       for fw in car_fw:
-        if fw.ecu == "eps" and fw.fwVersion == b"8965B42170\x00\x00\x00\x00\x00\x00":
-          ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.1]]
-          ret.lateralTuning.pid.kf = 0.00007818594
-          break
-
-    elif candidate == CAR.RAV4H_TSS2:
-      stop_and_go = True
-      ret.safetyParam = 73
-      ret.wheelbase = 2.68986
-      ret.steerRatio = 14.3
-      tire_stiffness_factor = 0.7933
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.15], [0.05]]
-      ret.mass = 3800. * CV.LB_TO_KG + STD_CARGO_KG
-      ret.lateralTuning.pid.kf = 0.00004
-
-      for fw in car_fw:
-        if fw.ecu == "eps" and fw.fwVersion == b"8965B42170\x00\x00\x00\x00\x00\x00":
-          ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.1]]
-          ret.lateralTuning.pid.kf = 0.00007818594
+        if fw.ecu == "eps" and fw.fwVersion.startswith(b'\x02'):
+          ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.15], [0.05]]
+          ret.lateralTuning.pid.kf = 0.00004
           break
 
     elif candidate in [CAR.COROLLA_TSS2, CAR.COROLLAH_TSS2]:
