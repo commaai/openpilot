@@ -80,6 +80,7 @@ MapWindow::~MapWindow() {
 void MapWindow::initLayers() {
   // This doesn't work from initializeGL
   if (!m_map->layerExists("modelPathLayer")) {
+    qDebug() << "Initializing modelPathLayer";
     QVariantMap modelPath;
     modelPath["id"] = "modelPathLayer";
     modelPath["type"] = "line";
@@ -90,6 +91,7 @@ void MapWindow::initLayers() {
     m_map->setLayoutProperty("modelPathLayer", "line-cap", "round");
   }
   if (!m_map->layerExists("navLayer")) {
+    qDebug() << "Initializing navLayer";
     QVariantMap nav;
     nav["id"] = "navLayer";
     nav["type"] = "line";
@@ -100,6 +102,7 @@ void MapWindow::initLayers() {
     m_map->setLayoutProperty("navLayer", "line-cap", "round");
   }
   if (!m_map->layerExists("carPosLayer")) {
+    qDebug() << "Initializing carPosLayer";
     m_map->addImage("label-arrow", QImage("../assets/images/triangle.svg"));
 
     QVariantMap carPos;
@@ -207,7 +210,7 @@ void MapWindow::timerUpdate() {
               recompute_backoff = std::max(0, recompute_backoff - 1);
               recompute_countdown = 0;
             } else {
-              // Destination reached
+              qWarning() << "Destination reached";
               Params().remove("NavDestination");
 
               // Clear route if driving away from destination
@@ -279,6 +282,7 @@ void MapWindow::recomputeRoute() {
   }
 
   if (*new_destination != nav_destination) {
+    qWarning() << "Got new destination from NavDestination param" << *new_destination;
     setVisible(true); // Show map on destination set/change
     // TODO: close sidebar
     should_recompute = true;
@@ -321,7 +325,8 @@ void MapWindow::updateETA() {
 }
 
 void MapWindow::calculateRoute(QMapbox::Coordinate destination) {
-  LOGW("calculating route");
+  qWarning() << "Calculating route to" << destination;
+
   nav_destination = destination;
   QGeoRouteRequest request(to_QGeoCoordinate(*last_position), to_QGeoCoordinate(destination));
   request.setFeatureWeight(QGeoRouteRequest::TrafficFeature, QGeoRouteRequest::AvoidFeatureWeight);
@@ -337,8 +342,9 @@ void MapWindow::calculateRoute(QMapbox::Coordinate destination) {
 }
 
 void MapWindow::routeCalculated(QGeoRouteReply *reply) {
-  LOGW("new route calculated");
   if (reply->routes().size() != 0) {
+    qWarning() << "Got route response";
+
     route = reply->routes().at(0);
     segment = route.firstRouteSegment();
 
@@ -351,6 +357,8 @@ void MapWindow::routeCalculated(QGeoRouteReply *reply) {
     m_map->setLayoutProperty("navLayer", "visibility", "visible");
 
     updateETA();
+  } else {
+    qWarning() << "Got empty route response";
   }
 
   reply->deleteLater();
