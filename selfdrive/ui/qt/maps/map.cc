@@ -342,23 +342,28 @@ void MapWindow::calculateRoute(QMapbox::Coordinate destination) {
 }
 
 void MapWindow::routeCalculated(QGeoRouteReply *reply) {
-  if (reply->routes().size() != 0) {
-    qWarning() << "Got route response";
+  if (reply->error() == QGeoRouteReply::NoError) {
+    if (reply->routes().size() != 0) {
+      qWarning() << "Got route response";
 
-    route = reply->routes().at(0);
-    segment = route.firstRouteSegment();
+      route = reply->routes().at(0);
+      segment = route.firstRouteSegment();
 
-    auto route_points = coordinate_list_to_collection(route.path());
-    QMapbox::Feature feature(QMapbox::Feature::LineStringType, route_points, {}, {});
-    QVariantMap navSource;
-    navSource["type"] = "geojson";
-    navSource["data"] = QVariant::fromValue<QMapbox::Feature>(feature);
-    m_map->updateSource("navSource", navSource);
-    m_map->setLayoutProperty("navLayer", "visibility", "visible");
+      auto route_points = coordinate_list_to_collection(route.path());
+      QMapbox::Feature feature(QMapbox::Feature::LineStringType, route_points, {}, {});
+      QVariantMap navSource;
+      navSource["type"] = "geojson";
+      navSource["data"] = QVariant::fromValue<QMapbox::Feature>(feature);
+      m_map->updateSource("navSource", navSource);
+      m_map->setLayoutProperty("navLayer", "visibility", "visible");
 
-    updateETA();
+      updateETA();
+    } else {
+      qWarning() << "Got empty route response";
+    }
   } else {
-    qWarning() << "Got empty route response";
+    qWarning() << "Got error in route reply" << reply->errorString();
+  
   }
 
   reply->deleteLater();
