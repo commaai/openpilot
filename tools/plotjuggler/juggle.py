@@ -50,7 +50,7 @@ def juggle_route(route_name, segment_number, segment_count, qlog, can, layout):
     logs = r.qlog_paths() if qlog else r.log_paths()
 
   if segment_number is not None:
-    logs = logs[segment_number:segment_number + segment_count]
+    logs = logs[segment_number:segment_number+segment_count]
 
   if None in logs:
     fallback_answer = input("At least one of the rlogs in this segment does not exist, would you like to use the qlogs? (y/n) : ")
