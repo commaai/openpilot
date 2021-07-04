@@ -88,8 +88,13 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
 
       QObject::connect(repeater, &RequestRepeater::receivedResponse, [](QString resp) {
         auto params = Params();
-        if (resp != "null" && params.get("NavDestination").empty()) {
-          params.put("NavDestination", resp.toStdString());
+        if (resp != "null") {
+          if (params.get("NavDestination").empty()) {
+            qWarning() << "Setting NavDestination from /next" << resp;
+            params.put("NavDestination", resp.toStdString());
+          } else {
+            qWarning() << "Got location from /next, but NavDestination already set";
+          }
         }
       });
     }
