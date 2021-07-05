@@ -16,11 +16,10 @@ if [ ! -d "$TARGET_DIR" ]; then
   git remote add origin git@github.com:commaai/openpilot.git
 fi
 
-echo "[-] git prune T=$SECONDS"
-cd $TARGET_DIR
-git gc
-
 echo "[-] bringing master-ci and devel in sync T=$SECONDS"
+cd $TARGET_DIR
+git prune || true
+git remote prune origin || true
 git fetch origin master-ci
 git fetch origin devel
 
