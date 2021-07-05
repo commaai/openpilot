@@ -7,6 +7,7 @@ set -e
 
 export CI=1
 export TEST_DIR=${env.TEST_DIR}
+export SOURCE_DIR=${env.SOURCE_DIR}
 export GIT_BRANCH=${env.GIT_BRANCH}
 export GIT_COMMIT=${env.GIT_COMMIT}
 
@@ -50,6 +51,7 @@ pipeline {
   environment {
     COMMA_JWT = credentials('athena-test-jwt')
     TEST_DIR = "/data/openpilot"
+    SOURCE_DIR = "/data/openpilot_source/"
   }
   options {
       timeout(time: 3, unit: 'HOURS')
@@ -127,7 +129,8 @@ pipeline {
                 stage('Devel Tests') {
                   steps {
                     phone_steps("eon-build", [
-                      ["build devel", "cd release && DEVEL_TEST=1 ./build_devel.sh"],
+                      ["build devel", "cd $SOURCE_DIR/release && EXTRA_FILES='tools/' ./build_devel.sh"],
+                      ["build openpilot", "cd selfdrive/manager && ./build.py"],
                       ["test manager", "python selfdrive/manager/test/test_manager.py"],
                       ["onroad tests", "cd selfdrive/test/ && ./test_onroad.py"],
                       ["test car interfaces", "cd selfdrive/car/tests/ && ./test_car_interfaces.py"],
@@ -232,7 +235,7 @@ pipeline {
               }
               steps {
                 phone_steps("eon-build", [
-                  ["push devel", "cd release && CI_PUSH='master-ci' ./build_devel.sh"],
+                  ["push devel", "cd $SOURCE_DIR/release && PUSH='master-ci' ./build_devel.sh"],
                 ])
               }
             }
