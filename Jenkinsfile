@@ -51,7 +51,7 @@ pipeline {
   environment {
     COMMA_JWT = credentials('athena-test-jwt')
     TEST_DIR = "/data/openpilot"
-    SOURCE_DIR = "/data/openpilot"
+    SOURCE_DIR = "/data/openpilot_source"
   }
   options {
       timeout(time: 3, unit: 'HOURS')
