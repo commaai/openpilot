@@ -10,11 +10,9 @@
 #include "selfdrive/ui/qt/widgets/input.h"
 
 void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
-  QPoint touch = QPoint(e->x(), e->y()) - imageCorner;
-  
-  if (boundingRect[currentIndex].contains(touch)) {
+  if (boundingRect[currentIndex].contains(e->x(), e->y())) {
     currentIndex += 1;
-  } else if (currentIndex == (boundingRect.size() - 2) && boundingRect.last().contains(touch)) {
+  } else if (currentIndex == (boundingRect.size() - 2) && boundingRect.last().contains(e->x(), e->y())) {
     currentIndex = 0;
   }
 

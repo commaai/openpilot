@@ -90,8 +90,8 @@ private:
     QRect(1385, 490, 750, 270),
     continueBtnWide,
     continueBtnWide,
-    QRect(1050, 757, 718, 189),
-    QRect(215, 757, 718, 189),
+    QRect(1138, 755, 718, 189),
+    QRect(303, 755, 718, 189),
   };
 
   const QString IMG_PATH = vwp_w == 2160 ? "../assets/training_wide/" : "../assets/training/";
