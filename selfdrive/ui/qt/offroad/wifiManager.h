@@ -40,6 +40,7 @@ public:
   void refreshNetworks();
   void forgetConnection(const QString &ssid);
   bool isKnownConnection(const QString &ssid);
+  void activateWifiConnection(const QString &ssid);
 
   void connect(const Network &ssid);
   void connect(const Network &ssid, const QString &password);
@@ -47,12 +48,9 @@ public:
   void disconnect();
 
   // Tethering functions
-  void enableTethering();
-  void disableTethering();
-  bool tetheringEnabled();
-
+  void setTetheringEnabled(bool enabled);
+  bool isTetheringEnabled();
   void addTetheringConnection();
-  void activateWifiConnection(const QString &ssid);
   void changeTetheringPassword(const QString &newPassword);
   QString getTetheringPassword();
 

@@ -438,18 +438,18 @@ void WifiManager::addTetheringConnection() {
   nm_settings.call("AddConnection", QVariant::fromValue(connection));
 }
 
-void WifiManager::enableTethering() {
-  if (!isKnownConnection(tethering_ssid)) {
-    addTetheringConnection();
+void WifiManager::setTetheringEnabled(bool enabled) {
+  if (enabled) {
+    if (!isKnownConnection(tethering_ssid)) {
+      addTetheringConnection();
+    }
+    activateWifiConnection(tethering_ssid);
+  } else {
+    deactivateConnection(tethering_ssid);
   }
-  activateWifiConnection(tethering_ssid.toUtf8());
 }
 
-void WifiManager::disableTethering() {
-  deactivateConnection(tethering_ssid.toUtf8());
-}
-
-bool WifiManager::tetheringEnabled() {
+bool WifiManager::isTetheringEnabled() {
   if (activeAp != "" && activeAp != "/") {
     return get_property(activeAp, "Ssid") == tethering_ssid;
   }
@@ -480,5 +480,9 @@ void WifiManager::changeTetheringPassword(const QString &newPassword) {
     Connection settings = QDBusReply<Connection>(nm.call("GetSettings")).value();
     settings["802-11-wireless-security"]["psk"] = newPassword;
     nm.call("Update", QVariant::fromValue(settings));
+
+    if (isTetheringEnabled()) {
+      activateWifiConnection(tethering_ssid);
+    }
   }
 }
