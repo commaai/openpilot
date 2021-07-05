@@ -2,7 +2,7 @@
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
 
-TARGET_DIR=/tmp/releasepilot
+TARGET_DIR=/data/releasepilot
 SOURCE_DIR="$(git rev-parse --show-toplevel)"
 
 # set git identity
