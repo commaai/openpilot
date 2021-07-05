@@ -21,31 +21,7 @@ private:
   void mouseReleaseEvent(QMouseEvent* e) override;
 
   QImage image;
-  QPoint imageCorner;
   int currentIndex = 0;
-
-  // (minx, maxx, miny, maxy)
-  const QVector<int> continueBtnn = {1600, 1920, 0, 1080};
-  QVector<QVector<int>> boundingBox {
-    {650, 1375, 700, 900},
-    continueBtnn,
-    continueBtnn,
-    {1240, 1750, 480, 1080},
-    {1570, 1780, 620, 750},
-    continueBtnn,
-    {1630, 1740, 620, 780},
-    {1200, 1920, 0, 1080},
-    {1455, 1850, 400, 660},
-    {1460, 1800, 195, 520},
-    continueBtnn,
-    {1350, 1920, 65, 1080},
-    continueBtnn,
-    {1570, 1900, 130, 1000},
-    {1350, 1770, 500, 700},
-    continueBtnn,
-    continueBtnn,
-    {1000, 1800, 760, 954},
-  };
 
   // Bounding boxes for each training guide step
   const QRect continueBtnStandard = {1610, 0, 310, 1080};
