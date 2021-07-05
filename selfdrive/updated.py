@@ -92,8 +92,8 @@ def set_consistent_flag(consistent: bool) -> None:
   consistent_file = Path(os.path.join(FINALIZED, ".overlay_consistent"))
   if consistent:
     consistent_file.touch()
-  elif not consistent and consistent_file.exists():
-    consistent_file.unlink()
+  elif not consistent:
+    consistent_file.unlink(missing_ok=True)
   os.sync()
 
 
@@ -356,8 +356,7 @@ def main():
   wait_helper.sleep(30)
 
   overlay_init = Path(os.path.join(BASEDIR, ".overlay_init"))
-  if overlay_init.exists():
-    overlay_init.unlink()
+  overlay_init.unlink(missing_ok=True)
 
   first_run = True
   last_fetch_time = 0
@@ -406,9 +405,11 @@ def main():
         returncode=e.returncode
       )
       exception = f"command failed: {e.cmd}\n{e.output}"
+      overlay_init.unlink(missing_ok=True)
     except Exception as e:
       cloudlog.exception("uncaught updated exception, shouldn't happen")
       exception = str(e)
+      overlay_init.unlink(missing_ok=True)
 
     set_params(new_version, update_failed_count, exception)
     wait_helper.sleep(60)
