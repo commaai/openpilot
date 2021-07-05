@@ -1,6 +1,9 @@
 #!/usr/bin/bash -e
 
-export SOURCE_DIR="/data/openpilot_source/"
+if [ -z "$SOURCE_DIR" ]; then
+  echo "SOURCE_DIR must be set"
+  exit 1
+fi
 
 if [ -z "$GIT_COMMIT" ]; then
   echo "GIT_COMMIT must be set"

@@ -1,15 +1,14 @@
 #!/usr/bin/bash -e
 
-export GIT_COMMITTER_NAME="Vehicle Researcher"
-export GIT_COMMITTER_EMAIL="user@comma.ai"
-export GIT_AUTHOR_NAME="Vehicle Researcher"
-export GIT_AUTHOR_EMAIL="user@comma.ai"
-export GIT_SSH_COMMAND="ssh -i /data/gitkey"
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
 
 BUILD_DIR=/data/releasepilot
 SOURCE_DIR="$(git rev-parse --show-toplevel)"
 
 BRANCH=release3-staging
+
+# set git identity
+source $DIR/identity.sh
 
 echo "[-] Setting up repo T=$SECONDS"
 rm -rf $BUILD_DIR
