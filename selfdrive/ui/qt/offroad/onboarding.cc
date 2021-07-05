@@ -39,7 +39,6 @@ void TrainingGuide::paintEvent(QPaintEvent *event) {
   QRect rect(image.rect());
   rect.moveCenter(bg.center());
   painter.drawImage(rect.topLeft(), image);
-  imageCorner = rect.topLeft();
 }
 
 void TermsPage::showEvent(QShowEvent *event) {
