@@ -30,8 +30,6 @@ private:
   WifiManager *wifi = nullptr;
   QVBoxLayout* main_layout;
 
-  bool tetheringEnabled;
-
 signals:
   void connectToNetwork(const Network &n);
 
@@ -46,14 +44,13 @@ public:
 
 private:
   LabelControl* ipLabel;
-  ButtonControl* editPasswordButton;
   WifiManager* wifi = nullptr;
 
 signals:
   void backPress();
 
 public slots:
-  void toggleTethering(bool enable);
+  void toggleTethering(bool enabled);
   void refresh();
 };
 
