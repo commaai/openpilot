@@ -10,28 +10,23 @@
 #include "selfdrive/ui/qt/widgets/input.h"
 
 void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
-  QPoint touch = QPoint(e->x(), e->y()) - imageCorner;
-
-  // Check for restart
-  if (currentIndex == (boundingBox.size() - 1) && 200 <= touch.x() && touch.x() <= 920 &&
-      760 <= touch.y() && touch.y() <= 960) {
-    currentIndex = 0;
-  } else if (boundingBox[currentIndex][0] <= touch.x() && touch.x() <= boundingBox[currentIndex][1] &&
-             boundingBox[currentIndex][2] <= touch.y() && touch.y() <= boundingBox[currentIndex][3]) {
+  if (boundingRect[currentIndex].contains(e->x(), e->y())) {
     currentIndex += 1;
+  } else if (currentIndex == (boundingRect.size() - 2) && boundingRect.last().contains(e->x(), e->y())) {
+    currentIndex = 0;
   }
 
-  if (currentIndex >= boundingBox.size()) {
+  if (currentIndex >= (boundingRect.size() - 1)) {
     emit completedTraining();
   } else {
-    image.load("../assets/training/step" + QString::number(currentIndex) + ".png");
+    image.load(IMG_PATH + "step" + QString::number(currentIndex) + ".png");
     update();
   }
 }
 
 void TrainingGuide::showEvent(QShowEvent *event) {
   currentIndex = 0;
-  image.load("../assets/training/step0.png");
+  image.load(IMG_PATH + "step0.png");
 }
 
 void TrainingGuide::paintEvent(QPaintEvent *event) {
@@ -44,7 +39,6 @@ void TrainingGuide::paintEvent(QPaintEvent *event) {
   QRect rect(image.rect());
   rect.moveCenter(bg.center());
   painter.drawImage(rect.topLeft(), image);
-  imageCorner = rect.topLeft();
 }
 
 void TermsPage::showEvent(QShowEvent *event) {
