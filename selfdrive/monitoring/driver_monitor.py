@@ -39,7 +39,6 @@ _PITCH_POS_ALLOWANCE = 0.12  # rad, to not be too sensitive on positive pitch
 _PITCH_NATURAL_OFFSET = 0.02  # people don't seem to look straight when they drive relaxed, rather a bit up
 _YAW_NATURAL_OFFSET = 0.08  # people don't seem to look straight when they drive relaxed, rather a bit to the right (center of car)
 
-_HI_STD_TIMEOUT = 5
 _HI_STD_FALLBACK_TIME = 10  # fall back to wheel touch if model is uncertain for a long time
 _DISTRACTED_FILTER_TS = 0.25  # 0.6Hz
 
@@ -230,10 +229,6 @@ class DriverStatus():
     driver_attentive = self.driver_distraction_filter.x < 0.37
     awareness_prev = self.awareness
 
-    if self.face_detected and self.hi_stds * DT_DMON > _HI_STD_TIMEOUT and self.hi_std_alert_enabled:
-      events.add(EventName.driverMonitorLowAcc)
-      self.hi_std_alert_enabled = False  # only showed once until orange prompt resets it
-
     if (driver_attentive and self.face_detected and self.pose.low_std and self.awareness > 0):
       # only restore awareness when paying attention and alert is not red
       self.awareness = min(self.awareness + ((_RECOVERY_FACTOR_MAX-_RECOVERY_FACTOR_MIN)*(1.-self.awareness)+_RECOVERY_FACTOR_MIN)*self.step_change, 1.)
@@ -243,10 +238,13 @@ class DriverStatus():
       if self.awareness > self.threshold_prompt:
         return
 
-    # should always be counting if distracted unless at standstill and reaching orange
-    if (not (self.face_detected and self.hi_stds * DT_DMON <= _HI_STD_FALLBACK_TIME) or (self.driver_distraction_filter.x > 0.63 and self.driver_distracted and self.face_detected)) and \
-       not (standstill and self.awareness - self.step_change <= self.threshold_prompt):
-      self.awareness = max(self.awareness - self.step_change, -0.1)
+    standstill_exemption = standstill and self.awareness - self.step_change <= self.threshold_prompt
+    certainly_distracted = self.driver_distraction_filter.x > 0.63 and self.driver_distracted and self.face_detected
+    maybe_distracted = self.hi_stds * DT_DMON > _HI_STD_FALLBACK_TIME or not self.face_detected
+    if certainly_distracted or maybe_distracted:
+      # should always be counting if distracted unless at standstill and reaching orange
+      if not standstill_exemption:
+        self.awareness = max(self.awareness - self.step_change, -0.1)
 
     alert = None
     if self.awareness <= 0.:
