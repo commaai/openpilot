@@ -2,6 +2,7 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPushButton>
+#include <QTimer>
 #include <QVBoxLayout>
 
 #include "selfdrive/ui/qt/qt_window.h"
@@ -22,7 +23,7 @@ void Reset::doReset() {
   for (auto &cmd : cmds) {
     int ret = std::system(cmd);
     if (ret != 0) {
-      body->setText("Reset failed.");
+      body->setText("Reset failed. Reboot to try again.");
       rebootBtn->show();
       return;
     }
@@ -39,7 +40,7 @@ void Reset::confirm() {
     rebootBtn->hide();
     confirmBtn->hide();
 #ifdef __aarch64__
-    doReset();
+    QTimer::singleShot(100, this, &Reset::doReset);
 #endif
   }
 }
@@ -55,7 +56,7 @@ Reset::Reset(bool recover, QWidget *parent) : QWidget(parent) {
   body = new QLabel("System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.");
   body->setWordWrap(true);
   body->setAlignment(Qt::AlignCenter);
-  body->setStyleSheet("font-size: 65px;");
+  body->setStyleSheet("font-size: 80px;");
   main_layout->addWidget(body, 1, Qt::AlignCenter);
 
   QHBoxLayout *blayout = new QHBoxLayout();
