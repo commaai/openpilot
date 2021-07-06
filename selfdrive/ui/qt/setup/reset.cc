@@ -6,77 +6,83 @@
 #include <QWidget>
 
 #include "selfdrive/ui/qt/qt_window.h"
+#include "selfdrive/ui/qt/setup/reset.h"
 
 #define USERDATA "/dev/disk/by-partlabel/userdata"
 #define NVME "/dev/nvme0n1"
 
-bool do_reset() {
+void Reset::doReset() {
   std::vector<const char*> cmds = {
-    "sudo umount " NVME,
-    "yes | sudo mkfs.ext4 " NVME,
-    "sudo umount " USERDATA,
+    "sudo umount " NVME " || true",
+    "yes | sudo mkfs.ext4 " NVME " || true",
+    "sudo umount " USERDATA " || true",
     "yes | sudo mkfs.ext4 " USERDATA,
     "sudo reboot",
   };
 
+  int ret = 0;
   for (auto &cmd : cmds) {
-    int ret = std::system(cmd);
-    if (ret != 0) return false;
+    ret = std::system(cmd);
+    if (ret != 0) break;
   }
-  return true;
+
+  if (ret != 0) {
+    body->setText("Reset failed.");
+    rebootBtn->show();
+  }
 }
 
-int main(int argc, char *argv[]) {
-  QApplication a(argc, argv);
-  QWidget window;
-  setMainWindow(&window);
+void Reset::confirm() {
+  const QString confirm_txt = "Are you sure you want to reset your device?";
+  if (body->text() != confirm_txt) {
+    body->setText(confirm_txt);
+  } else {
+    body->setText("Resetting device...");
+    rejectBtn->hide();
+    rebootBtn->hide();
+    confirmBtn->hide();
+    doReset();
+  }
+}
 
-  QVBoxLayout *main_layout = new QVBoxLayout(&window);
+Reset::Reset(bool recover, QWidget *parent) : QWidget(parent) {
+  QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(125, 125, 125, 125);
 
   QLabel *title = new QLabel("System Reset");
-  title->setStyleSheet(R"(
-    font-weight: 500;
-    font-size: 100px;
-  )");
+  title->setStyleSheet(R"(font-weight: 500; font-size: 100px;)");
   main_layout->addWidget(title, 0, Qt::AlignTop);
 
-  QLabel *body = new QLabel("System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.");
+  body = new QLabel("System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.");
   body->setWordWrap(true);
   body->setAlignment(Qt::AlignCenter);
   body->setStyleSheet("font-size: 65px;");
   main_layout->addWidget(body, 1, Qt::AlignCenter);
 
-  QHBoxLayout *btn_layout = new QHBoxLayout();
+  QHBoxLayout *blayout = new QHBoxLayout();
+  main_layout->addLayout(blayout);
 
-  QPushButton *cancel_btn = new QPushButton("Cancel");
-  btn_layout->addWidget(cancel_btn, 0, Qt::AlignLeft);
-  QObject::connect(cancel_btn, &QPushButton::released, &a, &QApplication::quit);
+  rejectBtn = new QPushButton("Cancel");
+  blayout->addWidget(rejectBtn, 0, Qt::AlignLeft);
+  QObject::connect(rejectBtn, &QPushButton::released, QCoreApplication::instance(), &QCoreApplication::quit);
 
-  QPushButton *confirm_btn  = new QPushButton("Confirm");
-  btn_layout->addWidget(confirm_btn, 0, Qt::AlignRight);
-  QObject::connect(confirm_btn, &QPushButton::released, [=]() {
-    const QString confirm_txt = "Are you sure you want to reset your device?";
-    if (body->text() != confirm_txt) {
-      body->setText(confirm_txt);
-    } else {
-      body->setText("Resetting device...");
-      cancel_btn->hide();
-      confirm_btn->hide();
-      QCoreApplication::processEvents(QEventLoop::AllEvents, 1000);
-#ifdef __aarch64__
-      bool ret = do_reset();
-      if (!ret) {
-        body->setText("Reset failed.");
-        cancel_btn->show();
-      }
-#endif
-    }
+  rebootBtn = new QPushButton("Reboot");
+  blayout->addWidget(rebootBtn, 0, Qt::AlignLeft);
+  QObject::connect(rebootBtn, &QPushButton::released, [=]{
+    std::system("sudo reboot");
   });
 
-  main_layout->addLayout(btn_layout);
+  confirmBtn  = new QPushButton("Confirm");
+  blayout->addWidget(confirmBtn, 0, Qt::AlignRight);
+  QObject::connect(confirmBtn, &QPushButton::released, this, &Reset::confirm);
 
-  window.setStyleSheet(R"(
+  rejectBtn->setVisible(!recover);
+  rebootBtn->setVisible(recover);
+  if (recover) {
+    body->setText("Unable to mount data partition. Press confirm to reset your device.");
+  }
+
+  setStyleSheet(R"(
     * {
       color: white;
       background-color: black;
@@ -90,6 +96,14 @@ int main(int argc, char *argv[]) {
       font-size: 50px;
     }
   )");
+}
 
+int main(int argc, char *argv[]) {
+
+  bool recover = argc > 1 && strcmp(argv[1], "--recover") == 0;
+
+  QApplication a(argc, argv);
+  Reset reset(recover);
+  setMainWindow(&reset);
   return a.exec();
 }
