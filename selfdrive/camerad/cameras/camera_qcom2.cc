@@ -46,9 +46,11 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
   },
 };
 
-float sensor_analog_gains[ANALOG_GAIN_MAX_IDX] = {3.0/6.0, 4.0/6.0, 4.0/5.0, 5.0/5.0,
-                                                  5.0/4.0, 6.0/4.0, 6.0/3.0, 7.0/3.0,
-                                                  7.0/2.0, 8.0/2.0};
+float sensor_analog_gains[] = {
+  1.0/8.0, 2.0/8.0, 2.0/7.0, 3.0/7.0, // 0, 1, 2, 3
+  3.0/6.0, 4.0/6.0, 4.0/5.0, 5.0/5.0, // 4, 5, 6, 7
+  5.0/4.0, 6.0/4.0, 6.0/3.0, 7.0/3.0, // 8, 9, 10, 11
+  7.0/2.0, 8.0/2.0, 8.0/1.0};         // 12, 13, 14, 15 = bypass
 
 // ************** low level camera helpers ****************
 
@@ -521,14 +523,14 @@ static void camera_init(MultiCameraState *multi_cam_state, VisionIpcServer * v, 
   s->camera_num = camera_num;
 
   s->dc_gain_enabled = false;
-  s->analog_gain = 0x5;
-  s->analog_gain_frac = sensor_analog_gains[s->analog_gain];
+
   s->exposure_time = 256;
-  s->exposure_time_max = 1.2 * EXPOSURE_TIME_MAX / 2;
-  s->exposure_time_min = 0.75 * EXPOSURE_TIME_MIN * 2;
   s->request_id_last = 0;
   s->skipped = true;
-  s->ef_filtered = 1.0;
+
+  s->min_ev = EXPOSURE_TIME_MIN * sensor_analog_gains[0];
+  s->max_ev = EXPOSURE_TIME_MAX * sensor_analog_gains[ANALOG_GAIN_MAX_IDX] * DC_GAIN;
+  s->cur_ev = (s->max_ev - s->min_ev) / 2;
 
   s->buf.init(device_id, ctx, s, v, FRAME_BUF_COUNT, rgb_type, yuv_type);
 }
@@ -925,104 +927,57 @@ void handle_camera_event(CameraState *s, void *evdat) {
   }
 }
 
-// ******************* exposure control helpers *******************
-
-void set_exposure_time_bounds(CameraState *s) {
-  switch (s->analog_gain) {
-    case 0: {
-      s->exposure_time_min = EXPOSURE_TIME_MIN;
-      s->exposure_time_max = EXPOSURE_TIME_MAX; // EXPOSURE_TIME_MIN * 4;
-      break;
-    }
-    case ANALOG_GAIN_MAX_IDX - 1: {
-      s->exposure_time_min = EXPOSURE_TIME_MIN; // EXPOSURE_TIME_MAX / 4;
-      s->exposure_time_max = EXPOSURE_TIME_MAX;
-      break;
-    }
-    default: {
-      // finetune margins on both ends
-      float k_up = sensor_analog_gains[s->analog_gain+1] / sensor_analog_gains[s->analog_gain];
-      float k_down = sensor_analog_gains[s->analog_gain-1] / sensor_analog_gains[s->analog_gain];
-      s->exposure_time_min = k_down * EXPOSURE_TIME_MIN * 2;
-      s->exposure_time_max = k_up * EXPOSURE_TIME_MAX / 2;
-    }
-  }
-}
-
-void switch_conversion_gain(CameraState *s) {
-  if (!s->dc_gain_enabled) {
-    s->dc_gain_enabled = true;
-    s->analog_gain -= 4;
-  } else {
-    s->dc_gain_enabled = false;
-    s->analog_gain += 4;
-  }
-}
-
 static void set_camera_exposure(CameraState *s, float grey_frac) {
-  // TODO: get stats from sensor?
-  float target_grey = 0.4 - ((float)(s->analog_gain + 4*s->dc_gain_enabled) / 48.0f);
+  float target_grey = 0.4;
 
-  LOGE("target: %.2f, current: %.2f", target_grey, grey_frac);
+  float new_ev = s->cur_ev * target_grey / grey_frac;
+  new_ev = std::clamp(new_ev, s->min_ev, s->max_ev);
 
-  float exposure_factor = 1 + 30 * pow((target_grey - grey_frac), 3);
-  exposure_factor = std::max(exposure_factor, 0.56f);
+  float best_ev_score = 1e6;
+  int new_g = 0;
+  bool new_dc = false;
+  int new_t = 0;
 
-  if (s->camera_num != 1) {
-    s->ef_filtered = (1 - EF_LOWPASS_K) * s->ef_filtered + EF_LOWPASS_K * exposure_factor;
-    exposure_factor = s->ef_filtered;
+  // Simple brute force optimizer to choose sensor parameters
+  // to reach desired EV
+  for (int dc = 0; dc <= 1; dc++) {
+    for (int g = 0; g <= ANALOG_GAIN_MAX_IDX; g++) {
+      float gain = sensor_analog_gains[g] * (dc ? DC_GAIN : 1.0);
+
+      // Compute optimal time for given gain
+      int t = std::clamp(int(new_ev / gain), EXPOSURE_TIME_MIN, EXPOSURE_TIME_MAX);
+
+      // Compute error to desired ev
+      float score = std::abs(new_ev - (t * gain)) * 10;
+      score += g * 10;
+      score += dc * 100;
+
+      if (score < best_ev_score) {
+        new_t = t;
+        new_dc = dc;
+        new_g = g;
+        best_ev_score = score;
+      }
+    }
   }
 
   s->exp_lock.lock();
+
   s->measured_grey_fraction = grey_frac;
   s->target_grey_fraction = target_grey;
 
-  // always prioritize exposure time adjust
-  s->exposure_time *= exposure_factor;
-
-  // switch gain if max/min exposure time is reached
-  // or always switch down to a lower gain when possible
-  bool kd = false;
-  if (s->analog_gain > 0) {
-    kd = 1.1 * s->exposure_time / (sensor_analog_gains[s->analog_gain-1] / sensor_analog_gains[s->analog_gain]) < EXPOSURE_TIME_MAX / 2;
-  }
-
-  if (s->exposure_time > s->exposure_time_max) {
-    if (s->analog_gain < ANALOG_GAIN_MAX_IDX - 1) {
-      s->exposure_time = EXPOSURE_TIME_MAX / 2;
-      s->analog_gain += 1;
-      if (!s->dc_gain_enabled && sensor_analog_gains[s->analog_gain] >= 4.0) { // switch to HCG
-        switch_conversion_gain(s);
-      }
-      set_exposure_time_bounds(s);
-    } else {
-      s->exposure_time = s->exposure_time_max;
-    }
-  } else if (s->exposure_time < s->exposure_time_min || kd) {
-    if (s->analog_gain > 0) {
-      s->exposure_time = std::max(EXPOSURE_TIME_MIN * 2, (int)(s->exposure_time / (sensor_analog_gains[s->analog_gain-1] / sensor_analog_gains[s->analog_gain])));
-      s->analog_gain -= 1;
-      if (s->dc_gain_enabled && sensor_analog_gains[s->analog_gain] <= 1.25) { // switch back to LCG
-        switch_conversion_gain(s);
-      }
-      set_exposure_time_bounds(s);
-    } else {
-      s->exposure_time = s->exposure_time_min;
-    }
-  }
-
-  // set up config
-  uint16_t AG = s->analog_gain + 4;
-  AG = 0xFF00 + AG * 16 + AG;
-  s->analog_gain_frac = sensor_analog_gains[s->analog_gain];
+  s->cur_ev = new_ev;
+  s->analog_gain_frac = sensor_analog_gains[new_g];
+  s->exposure_time = new_t;
+  s->dc_gain_enabled = new_dc;
+  s->analog_gain = new_g;
 
   s->exp_lock.unlock();
-  // printf("cam %d, min %d, max %d \n", s->camera_num, s->exposure_time_min, s->exposure_time_max);
-  // printf("cam %d, set AG to 0x%X, S to %d, dc %d \n", s->camera_num, AG, s->exposure_time, s->dc_gain_enabled);
 
+  uint16_t analog_gain_reg = 0xFF00 | (s->analog_gain << 4) | s->analog_gain;
   struct i2c_random_wr_payload exp_reg_array[] = {
-                                                  {0x3366, AG}, // analog gain
-                                                  {0x3362, (uint16_t)(s->dc_gain_enabled?0x1:0x0)}, // DC_GAIN
+                                                  {0x3366, analog_gain_reg}, // analog gain
+                                                  {0x3362, (uint16_t)(s->dc_gain_enabled ? 0x1 : 0x0)}, // DC_GAIN
                                                   {0x305A, 0x00F8}, // red gain
                                                   {0x3058, 0x0122}, // blue gain
                                                   {0x3056, 0x009A}, // g1 gain
@@ -1032,6 +987,9 @@ static void set_camera_exposure(CameraState *s, float grey_frac) {
                                                   //{0x301A, 0x091C}}; // reset
   sensors_i2c(s, exp_reg_array, sizeof(exp_reg_array)/sizeof(struct i2c_random_wr_payload),
                CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
+
+  // LOGE("%d EV min: %.2f - cur: %.2f - max: %.2f - Score: %.2f", s->camera_num, s->min_ev, s->cur_ev, s->max_ev, best_ev_score);
+  // LOGE("%d target: %.2f, current: %.2f, t=%d, AG=%.2f, DC=%d", s->camera_num, target_grey, grey_frac, s->exposure_time, s->analog_gain_frac, s->dc_gain_enabled);
 }
 
 void camera_autoexposure(CameraState *s, float grey_frac) {

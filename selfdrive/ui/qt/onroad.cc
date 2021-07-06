@@ -100,8 +100,8 @@ void OnroadAlerts::updateState(const UIState &s) {
       // Handle controls timeout
       if (sm.rcv_frame("controlsState") < s.scene.started_frame) {
         // car is started, but controlsState hasn't been seen at all
-        updateAlert("openpilot Unavailable", "Waiting for controls to start", 0,
-                    "controlsWaiting", cereal::ControlsState::AlertSize::MID, AudibleAlert::NONE);
+        // updateAlert("openpilot Unavailable", "Waiting for controls to start", 0,
+        //             "controlsWaiting", cereal::ControlsState::AlertSize::MID, AudibleAlert::NONE);
       } else if ((sm.frame - sm.rcv_frame("controlsState")) > 5 * UI_FREQ) {
         // car is started, but controls is lagging or died
         updateAlert("TAKE CONTROL IMMEDIATELY", "Controls Unresponsive", 0,
