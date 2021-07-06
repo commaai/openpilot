@@ -12,13 +12,14 @@ Once you've cloned and are in openpilot, download PlotJuggler and install our pl
 
 ```
 batman@z840-openpilot:~/openpilot/tools/plotjuggler$ ./juggle.py -h
-usage: juggle.py [-h] [--qlog] [--can] [--stream] [--layout [LAYOUT]] [route_name] [segment_number]
+usage: juggle.py [-h] [--qlog] [--can] [--stream] [--layout [LAYOUT]] [route_name] [segment_number] [segment_count]
 
-PlotJuggler plugin for reading rlogs
+PlotJuggler plugin for reading openpilot logs
 
 positional arguments:
   route_name         The name of the route that will be plotted. (default: None)
   segment_number     The index of the segment that will be plotted (default: None)
+  segment_count      The number of segments that will be plotted (default: 1)
 
 optional arguments:
   -h, --help         show this help message and exit

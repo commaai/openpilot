@@ -42,7 +42,7 @@ def start_juggler(fn=None, dbc=None, layout=None):
   extra_args = " ".join(extra_args)
   subprocess.call(f'{pj} --plugin_folders {os.path.join(juggle_dir, "bin")} {extra_args}', shell=True, env=env, cwd=juggle_dir)
 
-def juggle_route(route_name, segment_number, qlog, can, layout):
+def juggle_route(route_name, segment_number, segment_count, qlog, can, layout):
   if route_name.startswith("http://") or route_name.startswith("https://") or os.path.isfile(route_name):
     logs = [route_name]
   else:
@@ -50,14 +50,14 @@ def juggle_route(route_name, segment_number, qlog, can, layout):
     logs = r.qlog_paths() if qlog else r.log_paths()
 
   if segment_number is not None:
-    logs = logs[segment_number:segment_number+1]
+    logs = logs[segment_number:segment_number+segment_count]
 
   if None in logs:
     fallback_answer = input("At least one of the rlogs in this segment does not exist, would you like to use the qlogs? (y/n) : ")
     if fallback_answer == 'y':
       logs = r.qlog_paths()
       if segment_number is not None:
-        logs = logs[segment_number:segment_number+1]
+        logs = logs[segment_number:segment_number+segment_count]
     else:
       print(f"Please try a different {'segment' if segment_number is not None else 'route'}")
       return
@@ -87,7 +87,7 @@ def juggle_route(route_name, segment_number, qlog, can, layout):
   start_juggler(tempfile.name, dbc, layout)
 
 def get_arg_parser():
-  parser = argparse.ArgumentParser(description="PlotJuggler plugin for reading rlogs",
+  parser = argparse.ArgumentParser(description="PlotJuggler plugin for reading openpilot logs",
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
   parser.add_argument("--qlog", action="store_true", help="Use qlogs")
@@ -96,6 +96,7 @@ def get_arg_parser():
   parser.add_argument("--layout", nargs='?', help="Run PlotJuggler with a pre-defined layout")
   parser.add_argument("route_name", nargs='?', help="The name of the route that will be plotted.")
   parser.add_argument("segment_number", type=int, nargs='?', help="The index of the segment that will be plotted")
+  parser.add_argument("segment_count", type=int, nargs='?', help="The number of segments that will be plotted", default=1)
   return parser
 
 if __name__ == "__main__":
@@ -108,4 +109,4 @@ if __name__ == "__main__":
   if args.stream:
     start_juggler()
   else:
-    juggle_route(args.route_name, args.segment_number, args.qlog, args.can, args.layout)
+    juggle_route(args.route_name, args.segment_number, args.segment_count, args.qlog, args.can, args.layout)
