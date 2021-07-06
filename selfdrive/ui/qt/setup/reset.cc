@@ -83,6 +83,7 @@ Reset::Reset(bool recover, QWidget *parent) : QWidget(parent) {
 
   setStyleSheet(R"(
     * {
+      font-family: Inter;
       color: white;
       background-color: black;
     }
