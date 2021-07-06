@@ -1,5 +1,0 @@
-Import('env', 'common')
-
-lenv = env.Clone()
-lenv["CCFLAGS"] = [f for f in env["CCFLAGS"] if f != "-Wunused"]
-lenv.Program('rat', ['rat.cc'], LIBS=[common, 'diag', 'time_genoff', 'zmq'])
