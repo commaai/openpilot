@@ -528,7 +528,7 @@ static void camera_init(MultiCameraState *multi_cam_state, VisionIpcServer * v, 
   s->request_id_last = 0;
   s->skipped = true;
 
-  s->min_ev = EXPOSURE_TIME_MIN * sensor_analog_gains[0];
+  s->min_ev = EXPOSURE_TIME_MIN * sensor_analog_gains[ANALOG_GAIN_MIN_IDX_LCG];
   s->max_ev = EXPOSURE_TIME_MAX * sensor_analog_gains[ANALOG_GAIN_MAX_IDX] * DC_GAIN;
   s->cur_ev = (s->max_ev - s->min_ev) / 2;
 
@@ -941,7 +941,9 @@ static void set_camera_exposure(CameraState *s, float grey_frac) {
   // Simple brute force optimizer to choose sensor parameters
   // to reach desired EV
   for (int dc = 0; dc <= 1; dc++) {
-    for (int g = 0; g <= ANALOG_GAIN_MAX_IDX; g++) {
+    // Minimum recommended analog gains: 0.8x LCG, 1.0x HCG
+    int min_g = dc ? ANALOG_GAIN_MIN_IDX_HCG : ANALOG_GAIN_MIN_IDX_LCG;
+    for (int g = min_g; g <= ANALOG_GAIN_MAX_IDX; g++) {
       float gain = sensor_analog_gains[g] * (dc ? DC_GAIN : 1.0);
 
       // Compute optimal time for given gain
