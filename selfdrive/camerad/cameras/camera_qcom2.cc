@@ -962,6 +962,9 @@ void switch_conversion_gain(CameraState *s) {
 static void set_camera_exposure(CameraState *s, float grey_frac) {
   // TODO: get stats from sensor?
   float target_grey = 0.4 - ((float)(s->analog_gain + 4*s->dc_gain_enabled) / 48.0f);
+
+  LOGE("target: %.2f, current: %.2f", target_grey, grey_frac);
+
   float exposure_factor = 1 + 30 * pow((target_grey - grey_frac), 3);
   exposure_factor = std::max(exposure_factor, 0.56f);
 
