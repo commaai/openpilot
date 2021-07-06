@@ -196,10 +196,11 @@ class DriverStatus():
     self.blink.left_blink = driver_state.leftBlinkProb * (driver_state.leftEyeProb > _EYE_THRESHOLD) * (driver_state.sunglassesProb < _SG_THRESHOLD)
     self.blink.right_blink = driver_state.rightBlinkProb * (driver_state.rightEyeProb > _EYE_THRESHOLD) * (driver_state.sunglassesProb < _SG_THRESHOLD)
 
-    self.driver_distracted = (self._is_driver_distracted(self.pose, self.blink) > 0 and
-                              driver_state.faceProb > _FACE_THRESHOLD and self.pose.low_std) or \
-                             ((driver_state.distractedPose > _E2E_POSE_THRESHOLD or driver_state.distractedEyes > _E2E_EYES_THRESHOLD) and
-                              (self.face_detected and not self.face_partial))
+    distracted_normal = (self._is_driver_distracted(self.pose, self.blink) > 0 and
+                        driver_state.faceProb > _FACE_THRESHOLD and self.pose.low_std)
+    distracted_E2E = ((driver_state.distractedPose > _E2E_POSE_THRESHOLD or driver_state.distractedEyes > _E2E_EYES_THRESHOLD) and
+                     (self.face_detected and not self.face_partial))
+    self.driver_distracted = distracted_normal or distracted_E2E
     self.driver_distraction_filter.update(self.driver_distracted)
 
     # update offseter
@@ -231,7 +232,7 @@ class DriverStatus():
 
     if self.face_detected and self.hi_stds * DT_DMON > _HI_STD_TIMEOUT and self.hi_std_alert_enabled:
       events.add(EventName.driverMonitorLowAcc)
-      self.hi_std_alert_enabled = False # only showed once until orange prompt resets it
+      self.hi_std_alert_enabled = False  # only showed once until orange prompt resets it
 
     if (driver_attentive and self.face_detected and self.pose.low_std and self.awareness > 0):
       # only restore awareness when paying attention and alert is not red
