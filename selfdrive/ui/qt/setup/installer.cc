@@ -50,7 +50,7 @@ int fresh_clone() {
   };
   for (const auto& [key, value] : params) {
     std::ofstream param;
-    param.open("/data/params/d/RecordFrontLock" + key);
+    param.open("/data/params/d/" + key);
     param << value;
     param.close();
   }
