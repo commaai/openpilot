@@ -8,8 +8,8 @@
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/setup/reset.h"
 
-#define USERDATA "/dev/disk/by-partlabel/userdata"
 #define NVME "/dev/nvme0n1"
+#define USERDATA "/dev/disk/by-partlabel/userdata"
 
 void Reset::doReset() {
   std::vector<const char*> cmds = {
@@ -23,12 +23,11 @@ void Reset::doReset() {
   int ret = 0;
   for (auto &cmd : cmds) {
     ret = std::system(cmd);
-    if (ret != 0) break;
-  }
-
-  if (ret != 0) {
-    body->setText("Reset failed.");
-    rebootBtn->show();
+    if (ret != 0) {
+      body->setText("Reset failed.");
+      rebootBtn->show();
+      return;
+    }
   }
 }
 
@@ -41,7 +40,9 @@ void Reset::confirm() {
     rejectBtn->hide();
     rebootBtn->hide();
     confirmBtn->hide();
+#ifdef __aarch64__
     doReset();
+#endif
   }
 }
 
@@ -99,9 +100,7 @@ Reset::Reset(bool recover, QWidget *parent) : QWidget(parent) {
 }
 
 int main(int argc, char *argv[]) {
-
   bool recover = argc > 1 && strcmp(argv[1], "--recover") == 0;
-
   QApplication a(argc, argv);
   Reset reset(recover);
   setMainWindow(&reset);
