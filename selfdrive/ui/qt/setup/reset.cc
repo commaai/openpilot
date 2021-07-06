@@ -3,7 +3,6 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QVBoxLayout>
-#include <QWidget>
 
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/setup/reset.h"
@@ -20,9 +19,8 @@ void Reset::doReset() {
     "sudo reboot",
   };
 
-  int ret = 0;
   for (auto &cmd : cmds) {
-    ret = std::system(cmd);
+    int ret = std::system(cmd);
     if (ret != 0) {
       body->setText("Reset failed.");
       rebootBtn->show();
@@ -48,7 +46,7 @@ void Reset::confirm() {
 
 Reset::Reset(bool recover, QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
-  main_layout->setContentsMargins(125, 125, 125, 125);
+  main_layout->setContentsMargins(100, 100, 100, 100);
 
   QLabel *title = new QLabel("System Reset");
   title->setStyleSheet(R"(font-weight: 500; font-size: 100px;)");
