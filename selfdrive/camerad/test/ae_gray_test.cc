@@ -50,7 +50,7 @@ int main() {
               memset(&fb_y[h_0*W+h_1*W], l[2], h_2*W);
               memset(&fb_y[h_0*W+h_1*W+h_2*W], l[3], h_3*W);
               memset(&fb_y[h_0*W+h_1*W+h_2*W+h_3*W], l[4], h_4*W);
-              float ev = set_exposure_target((const CameraBuf*) &cb, 0, W-1, 1, 0, H-1, 1, g*10, (bool)is_qcom2, (bool)is_qcom2);
+              float ev = set_exposure_target((const CameraBuf*) &cb, 0, W-1, 1, 0, H-1, 1);
               // printf("%d/%d/%d/%d/%d ev is %f\n", h_0, h_1, h_2, h_3, h_4, ev);
               // printf("%f\n", ev);
 
