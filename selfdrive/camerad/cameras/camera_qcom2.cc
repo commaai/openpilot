@@ -988,8 +988,8 @@ static void set_camera_exposure(CameraState *s, float grey_frac) {
   sensors_i2c(s, exp_reg_array, sizeof(exp_reg_array)/sizeof(struct i2c_random_wr_payload),
                CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
 
-  // LOGE("%d EV min: %.2f - cur: %.2f - max: %.2f - Score: %.2f", s->camera_num, s->min_ev, s->cur_ev, s->max_ev, best_ev_score);
-  // LOGE("%d target: %.2f, current: %.2f, t=%d, AG=%.2f, DC=%d", s->camera_num, target_grey, grey_frac, s->exposure_time, s->analog_gain_frac, s->dc_gain_enabled);
+  // LOGD("%d EV min: %.2f - cur: %.2f - max: %.2f - Score: %.2f", s->camera_num, s->min_ev, s->cur_ev, s->max_ev, best_ev_score);
+  // LOGD("%d target: %.2f, current: %.2f, t=%d, AG=%.2f, DC=%d", s->camera_num, target_grey, grey_frac, s->exposure_time, s->analog_gain_frac, s->dc_gain_enabled);
 }
 
 void camera_autoexposure(CameraState *s, float grey_frac) {
