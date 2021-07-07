@@ -325,7 +325,7 @@ void MapWindow::updateETA() {
 }
 
 void MapWindow::calculateRoute(QMapbox::Coordinate destination) {
-  qWarning() << "Calculating route to" << destination;
+  qWarning() << "Calculating route" << *last_position << "->" << destination;
 
   nav_destination = destination;
   QGeoRouteRequest request(to_QGeoCoordinate(*last_position), to_QGeoCoordinate(destination));
