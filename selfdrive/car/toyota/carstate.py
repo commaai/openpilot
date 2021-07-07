@@ -164,7 +164,7 @@ class CarState(CarStateBase):
     ]
 
     if CP.carFingerprint in TSS2_CAR:
-      signals.append(("SET_ME_X01", "ACC_CONTROL", 0))
+      signals.append(("SET_ME_X01", "ACC_CONTROL", 1))
       checks.append(("ACC_CONTROL", 33))
 
     if CP.carFingerprint == CAR.LEXUS_IS:
