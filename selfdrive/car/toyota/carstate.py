@@ -4,7 +4,7 @@ from opendbc.can.can_define import CANDefine
 from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
 from selfdrive.config import Conversions as CV
-from selfdrive.car.toyota.values import CAR, DBC, STEER_THRESHOLD, NO_STOP_TIMER_CAR
+from selfdrive.car.toyota.values import CAR, DBC, STEER_THRESHOLD, NO_STOP_TIMER_CAR, TSS2_CAR
 from selfdrive.swaglog import cloudlog
 
 
@@ -76,11 +76,9 @@ class CarState(CarStateBase):
     if self.CP.carFingerprint == CAR.LEXUS_IS:
       ret.cruiseState.available = cp.vl["DSU_CRUISE"]["MAIN_ON"] != 0
       ret.cruiseState.speed = cp.vl["DSU_CRUISE"]["SET_SPEED"] * CV.KPH_TO_MS
-      self.low_speed_lockout = False
     else:
       ret.cruiseState.available = cp.vl["PCM_CRUISE_2"]["MAIN_ON"] != 0
       ret.cruiseState.speed = cp.vl["PCM_CRUISE_2"]["SET_SPEED"] * CV.KPH_TO_MS
-      self.low_speed_lockout = cp.vl["PCM_CRUISE_2"]["LOW_SPEED_LOCKOUT"] == 2
 
       val = cp_cam.vl["ACC_CONTROL"]["SET_ME_X01"]
       if val not in self.logged_setme_vals and val != 1:
@@ -88,6 +86,14 @@ class CarState(CarStateBase):
         cloudlog.event("setme_vals", vals=self.logged_setme_vals, car=self.CP.carFingerprint)
 
     self.pcm_acc_status = cp.vl["PCM_CRUISE"]["CRUISE_STATE"]
+
+    # some TSS2 cars have low speed lockout permanently set. ignore those cars, while still checking all others.
+    # when a car has a permanent low speed lockout, SET_ME_X01 on bus 0 is 2
+    self.low_speed_lockout = False
+    if self.CP.carFingerprint != CAR.LEXUS_IS and (self.CP.carFingerprint not in TSS2_CAR or
+                             (self.CP.carFingerprint in TSS2_CAR and cp.vl["ACC_CONTROL"]["SET_ME_X01"] == 1)):
+      self.low_speed_lockout = cp.vl["PCM_CRUISE_2"]["LOW_SPEED_LOCKOUT"] == 2
+
     if self.CP.carFingerprint in NO_STOP_TIMER_CAR or self.CP.enableGasInterceptor:
       # ignore standstill in hybrid vehicles, since pcm allows to restart without
       # receiving any special command. Also if interceptor is detected
@@ -156,6 +162,10 @@ class CarState(CarStateBase):
       ("PCM_CRUISE", 33),
       ("STEER_TORQUE_SENSOR", 50),
     ]
+
+    if CP.carFingerprint in TSS2_CAR:
+      signals.append(("SET_ME_X01", "ACC_CONTROL", 0))
+      checks.append(("ACC_CONTROL", 33))
 
     if CP.carFingerprint == CAR.LEXUS_IS:
       signals.append(("MAIN_ON", "DSU_CRUISE", 0))
