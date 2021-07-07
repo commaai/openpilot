@@ -937,8 +937,7 @@ static void set_camera_exposure(CameraState *s, float grey_frac) {
   float new_target_grey = std::clamp(0.4 - 0.2 * log2(1.0 + s->cur_ev) / log2(6000.0), 0.2, 0.4);
   float target_grey = (1.0 - k) * s->target_grey_fraction + k * new_target_grey;
 
-  float new_ev = s->cur_ev * target_grey / grey_frac;
-  new_ev = std::clamp(new_ev, s->min_ev, s->max_ev);
+  float desired_ev = std::clamp(s->cur_ev * target_grey / grey_frac, s->min_ev, s->max_ev);
 
   float best_ev_score = 1e6;
   int new_g = 0;
@@ -952,10 +951,10 @@ static void set_camera_exposure(CameraState *s, float grey_frac) {
       float gain = sensor_analog_gains[g] * (dc ? DC_GAIN : 1.0);
 
       // Compute optimal time for given gain
-      int t = std::clamp(int(new_ev / gain), EXPOSURE_TIME_MIN, EXPOSURE_TIME_MAX);
+      int t = std::clamp(int(std::round(desired_ev / gain)), EXPOSURE_TIME_MIN, EXPOSURE_TIME_MAX);
 
       // Compute error to desired ev
-      float score = std::abs(new_ev - (t * gain)) * 10;
+      float score = std::abs(desired_ev - (t * gain)) * 10;
       score += g * 10;
       score += dc * 100;
 
@@ -973,10 +972,12 @@ static void set_camera_exposure(CameraState *s, float grey_frac) {
   s->measured_grey_fraction = grey_frac;
   s->target_grey_fraction = target_grey;
 
-  s->cur_ev = new_ev;
   s->analog_gain_frac = sensor_analog_gains[new_g];
   s->exposure_time = new_t;
   s->dc_gain_enabled = new_dc;
+
+  float gain = s->analog_gain_frac * (s->dc_gain_enabled ? DC_GAIN : 1.0);
+  s->cur_ev = s->exposure_time * gain;
 
   s->exp_lock.unlock();
 
