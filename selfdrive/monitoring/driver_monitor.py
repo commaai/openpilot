@@ -118,7 +118,6 @@ class DriverStatus():
     self.active_monitoring_mode = True
     self.is_model_uncertain = False
     self.hi_stds = 0
-    self.hi_std_alert_enabled = True
     self.threshold_prompt = _DISTRACTED_PROMPT_TIME_TILL_TERMINAL / _DISTRACTED_TIME
 
     self._set_timers(active_monitoring=True)
@@ -250,7 +249,6 @@ class DriverStatus():
     if self.awareness <= 0.:
       # terminal red alert: disengagement required
       alert = EventName.driverDistracted if self.active_monitoring_mode else EventName.driverUnresponsive
-      self.hi_std_alert_enabled = True
       self.terminal_time += 1
       if awareness_prev > 0.:
         self.terminal_alert_cnt += 1
