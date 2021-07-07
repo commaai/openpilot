@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <set>
 #include <cstdlib>
-#include <iostream>
 
 #include "selfdrive/common/params.h"
 #include "selfdrive/common/swaglog.h"
@@ -71,7 +70,6 @@ void WifiManager::setup() {
   raw_adapter_state = get_response<uint>(response);
 
   requestScan();
-  std::cout << "HERE";
 }
 
 void WifiManager::refreshNetworks() {
