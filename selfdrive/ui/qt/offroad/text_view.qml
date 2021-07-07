@@ -8,10 +8,6 @@ Item {
     id: flickArea
     objectName: "flickArea"
     anchors.fill: parent
-    bottomMargin: 50
-    topMargin: 50
-    leftMargin: 50
-    rightMargin: 50
     contentHeight: helpText.height
     contentWidth: helpText.width
     flickableDirection: Flickable.VerticalFlick
@@ -24,8 +20,8 @@ Item {
     Text {
       id: helpText
       width: flickArea.width
-      font.family: Inter
-      font.weight: Light
+      font.family: "Inter"
+      font.weight: "Light"
       font.pixelSize: 50
       textFormat: Text.RichText
       color: "white"
@@ -34,5 +30,3 @@ Item {
     }
   }
 }
-
-
