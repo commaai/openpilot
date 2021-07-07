@@ -9,7 +9,7 @@ Item {
     objectName: "flickArea"
     anchors.fill: parent
     contentHeight: helpText.height
-    contentWidth: width - 100
+    contentWidth: width - (leftMargin + rightMargin)
     bottomMargin: 50
     topMargin: 50
     rightMargin: 50
