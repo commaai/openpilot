@@ -30,10 +30,9 @@ int main( )
   h << a_ego;
   h << j_ego;
   h << accel_slack;
-  h << accel_slack;
 
   // Weights are defined in mpc.
-  BMatrix Q(6,6); Q.setAll(true);
+  BMatrix Q(5,5); Q.setAll(true);
 
   // Terminal cost
   Function hN;

@@ -57,7 +57,6 @@ void init(double xCost, double vCost, double aCost, double jerkCost, double cons
     acadoVariables.W[NY*NY*i + (NY+1)*2] = aCost * f;
     acadoVariables.W[NY*NY*i + (NY+1)*3] = jerkCost * f;
     acadoVariables.W[NY*NY*i + (NY+1)*4] = constraintCost * f;
-    acadoVariables.W[NY*NY*i + (NY+1)*5] = constraintCost * f;
   }
   acadoVariables.WN[(NYN+1)*0] = xCost * STEP_MULTIPLIER;
   acadoVariables.WN[(NYN+1)*1] = vCost * STEP_MULTIPLIER;
