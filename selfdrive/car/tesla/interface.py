@@ -30,7 +30,7 @@ class CarInterface(CarInterfaceBase):
     ret.steerActuatorDelay = 0.1
     ret.steerRateCost = 0.5
 
-    if candidate == CAR.AP2_MODELS:
+    if candidate in [CAR.AP2_MODELS, CAR.AP1_MODELS]:
       ret.mass = 2100. + STD_CARGO_KG
       ret.wheelbase = 2.959
       ret.centerToFront = ret.wheelbase * 0.5
