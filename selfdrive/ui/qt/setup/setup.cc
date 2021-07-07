@@ -143,33 +143,40 @@ QWidget * Setup::software_selection() {
 QWidget * Setup::downloading() {
   QWidget *widget = new QWidget();
   QVBoxLayout *main_layout = new QVBoxLayout(widget);
-  main_layout->addWidget(title_label("Downloading..."), 0, Qt::AlignCenter);
+  QLabel *txt = new QLabel("Downloading...");
+  txt->setStyleSheet("font-size: 90px; font-weight: 500;");
+  main_layout->addWidget(txt, 0, Qt::AlignCenter);
   return widget;
 }
 
 QWidget * Setup::download_failed() {
   QWidget *widget = new QWidget();
   QVBoxLayout *main_layout = new QVBoxLayout(widget);
-  main_layout->setContentsMargins(50, 50, 50, 50);
-  main_layout->addWidget(title_label("Download Failed"), 0, Qt::AlignLeft | Qt::AlignTop);
+  main_layout->setContentsMargins(55, 55, 55, 55);
+
+  QLabel *title = new QLabel("Download Failed");
+  title->setStyleSheet("font-size: 90px; font-weight: 500;");
+  main_layout->addWidget(title, 0, Qt::AlignLeft | Qt::AlignTop);
+
+  title->move(224, 184);
 
   QLabel *body = new QLabel("Ensure the entered URL is valid, and the device's network connection is good.");
   body->setWordWrap(true);
   body->setAlignment(Qt::AlignHCenter);
-  body->setStyleSheet(R"(font-size: 80px;)");
+  body->setStyleSheet("font-size: 80px; font-weight: 300;");
   main_layout->addWidget(body);
 
   QHBoxLayout *nav_layout = new QHBoxLayout();
 
-  QPushButton *reboot_btn = new QPushButton("Reboot");
+  QPushButton *reboot_btn = new QPushButton("Reboot Device");
+  reboot_btn->setStyleSheet("background-color: #333333;");
   nav_layout->addWidget(reboot_btn, 0, Qt::AlignBottom | Qt::AlignLeft);
   QObject::connect(reboot_btn, &QPushButton::released, this, [=]() {
-    if (Hardware::TICI()) {
-      std::system("sudo reboot");
-    }
+    Hardware::reboot();
   });
 
   QPushButton *restart_btn = new QPushButton("Start over");
+  restart_btn->setStyleSheet("background-color: #465BEA;");
   nav_layout->addWidget(restart_btn, 0, Qt::AlignBottom | Qt::AlignRight);
   QObject::connect(restart_btn, &QPushButton::released, this, [=]() {
     setCurrentIndex(0);
@@ -188,10 +195,10 @@ void Setup::nextPage() {
 }
 
 Setup::Setup(QWidget *parent) : QStackedWidget(parent) {
-  addWidget(getting_started());
-  addWidget(network_setup());
-  addWidget(software_selection());
-  addWidget(downloading());
+  //addWidget(getting_started());
+  //addWidget(network_setup());
+  //addWidget(software_selection());
+  //addWidget(downloading());
   addWidget(download_failed());
 
   QObject::connect(this, &Setup::downloadFailed, this, &Setup::nextPage);
@@ -203,12 +210,9 @@ Setup::Setup(QWidget *parent) : QStackedWidget(parent) {
       background-color: black;
     }
     QPushButton {
-      padding: 50px;
-      padding-right: 100px;
-      padding-left: 100px;
-      border: 7px solid white;
-      border-radius: 20px;
-      font-size: 50px;
+      font-size: 55px;
+      font-weight: 500;
+      border-radius: 10px;
     }
   )");
 }
