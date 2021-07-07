@@ -203,7 +203,7 @@ void Localizer::handle_sensors(double current_time, const capnp::List<cereal::Se
     }
 
       // TODO: handle messages from two IMUs at the same time
-    if (sensor_reading.getSource() == cereal::SensorEventData::SensorSource::LSM6DS3) {
+    if (sensor_reading.getSource() == cereal::SensorEventData::SensorSource::BMX055) {
       continue;
     }
 
