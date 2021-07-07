@@ -33,4 +33,15 @@ Item {
       text: text_view
     }
   }
+
+  Rectangle {
+    id: scrollbar
+    anchors.right: flickArea.right
+    anchors.rightMargin: 20
+    y: flickArea.topMargin + flickArea.visibleArea.yPosition * (flickArea.height - flickArea.bottomMargin - flickArea.topMargin)
+    width: 12
+    radius: 6
+    height: flickArea.visibleArea.heightRatio * (flickArea.height - flickArea.bottomMargin - flickArea.topMargin)
+    color: "#808080"
+  }
 }
