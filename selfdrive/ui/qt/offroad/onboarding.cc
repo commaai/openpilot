@@ -51,15 +51,18 @@ void TermsPage::showEvent(QShowEvent *event) {
   main_layout->setMargin(40);
   main_layout->setSpacing(40);
 
+  QLabel *title = new QLabel("Terms & Conditions");
+  title->setStyleSheet("font-size: 90px; font-weight: 500;");
+  main_layout->addWidget(title);
+
   QQuickWidget *text = new QQuickWidget(this);
   text->setResizeMode(QQuickWidget::SizeRootObjectToView);
   text->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
   text->setAttribute(Qt::WA_AlwaysStackOnTop);
-  text->setClearColor(Qt::transparent);
+  text->setClearColor(QColor("#1B1B1B"));
 
   QString text_view = util::read_file("../assets/offroad/tc.html").c_str();
   text->rootContext()->setContextProperty("text_view", text_view);
-  text->rootContext()->setContextProperty("font_size", 55);
 
   text->setSource(QUrl::fromLocalFile("qt/offroad/text_view.qml"));
 
@@ -79,6 +82,14 @@ void TermsPage::showEvent(QShowEvent *event) {
 
   accept_btn = new QPushButton("Scroll to accept");
   accept_btn->setEnabled(false);
+  accept_btn->setStyleSheet(R"(
+    QPushButton {
+      background-color: #465BEA;
+    }
+    QPushButton:disabled {
+      background-color: #4F4F4F;
+    }
+  )");
   buttons->addWidget(accept_btn);
   QObject::connect(accept_btn, &QPushButton::released, this, &TermsPage::acceptedTerms);
 }
@@ -166,11 +177,7 @@ OnboardingWindow::OnboardingWindow(QWidget *parent) : QStackedWidget(parent) {
       padding: 50px;
       font-size: 50px;
       border-radius: 10px;
-      background-color: #292929;
-    }
-    QPushButton:disabled {
-      color: #777777;
-      background-color: #222222;
+      background-color: #4F4F4F;
     }
   )");
 }
