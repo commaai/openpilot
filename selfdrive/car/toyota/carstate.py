@@ -91,7 +91,7 @@ class CarState(CarStateBase):
     # when a car has a permanent low speed lockout, SET_ME_X01 on bus 0 is 2
     self.low_speed_lockout = False
     if self.CP.carFingerprint != CAR.LEXUS_IS and (self.CP.carFingerprint not in TSS2_CAR or
-                             (self.CP.carFingerprint in TSS2_CAR and cp.vl["ACC_CONTROL"]["SET_ME_X01"] == 1)):
+                             (self.CP.carFingerprint in TSS2_CAR and cp_cam.vl["ACC_CONTROL"]["SET_ME_X01"] == 1)):
       self.low_speed_lockout = cp.vl["PCM_CRUISE_2"]["LOW_SPEED_LOCKOUT"] == 2
 
     if self.CP.carFingerprint in NO_STOP_TIMER_CAR or self.CP.enableGasInterceptor:
@@ -163,10 +163,6 @@ class CarState(CarStateBase):
       ("STEER_TORQUE_SENSOR", 50),
     ]
 
-    if CP.carFingerprint in TSS2_CAR:
-      signals.append(("SET_ME_X01", "ACC_CONTROL", 1))
-      checks.append(("ACC_CONTROL", 33))
-
     if CP.carFingerprint == CAR.LEXUS_IS:
       signals.append(("MAIN_ON", "DSU_CRUISE", 0))
       signals.append(("SET_SPEED", "DSU_CRUISE", 0))
@@ -211,5 +207,9 @@ class CarState(CarStateBase):
       ("PRE_COLLISION", 0), # TODO: figure out why freq is inconsistent
       ("ACC_CONTROL", 0),
     ]
+
+    if CP.carFingerprint in TSS2_CAR:
+      signals.append(("SET_ME_X01", "ACC_CONTROL", 1))
+      checks.append(("ACC_CONTROL", 33))
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 2)
