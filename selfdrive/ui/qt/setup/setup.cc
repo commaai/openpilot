@@ -20,30 +20,31 @@
 void Setup::download(QString url) {
   QCoreApplication::processEvents(QEventLoop::AllEvents, 1000);
   setCurrentIndex(count() - 2);
-
-  CURL *curl = curl_easy_init();
-  if (!curl) {
-    emit downloadFailed();
-  }
-
-  char tmpfile[] = "/tmp/installer_XXXXXX";
-  FILE *fp = fdopen(mkstemp(tmpfile), "w");
-
-  curl_easy_setopt(curl, CURLOPT_URL, url.toStdString().c_str());
-  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, NULL);
-  curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
-  curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
-  curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-  curl_easy_setopt(curl, CURLOPT_USERAGENT, USER_AGENT);
-
-  int ret = curl_easy_perform(curl);
-  if (ret != CURLE_OK) {
-    emit downloadFailed();
-  }
-  curl_easy_cleanup(curl);
-  fclose(fp);
-
-  rename(tmpfile, "/tmp/installer");
+  qDebug() << "DOWNLOADING";
+//
+//  CURL *curl = curl_easy_init();
+//  if (!curl) {
+//    emit downloadFailed();
+//  }
+//
+//  char tmpfile[] = "/tmp/installer_XXXXXX";
+//  FILE *fp = fdopen(mkstemp(tmpfile), "w");
+//
+//  curl_easy_setopt(curl, CURLOPT_URL, url.toStdString().c_str());
+//  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, NULL);
+//  curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
+//  curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+//  curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+//  curl_easy_setopt(curl, CURLOPT_USERAGENT, USER_AGENT);
+//
+//  int ret = curl_easy_perform(curl);
+//  if (ret != CURLE_OK) {
+//    emit downloadFailed();
+//  }
+//  curl_easy_cleanup(curl);
+//  fclose(fp);
+//
+//  rename(tmpfile, "/tmp/installer");
 }
 
 QLabel * title_label(QString text) {

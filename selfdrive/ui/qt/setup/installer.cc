@@ -1,14 +1,16 @@
 #include <time.h>
 #include <unistd.h>
+#include "subprocess.hpp"
 
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <QDebug>
 
-#ifndef BRANCH
-#define BRANCH "master"
-#endif
+//#ifndef BRANCH
+//#define BRANCH "master"
+//#endif
 
 #define GIT_URL "https://github.com/commaai/openpilot.git"
 #define GIT_SSH_URL "git@github.com:commaai/openpilot.git"
@@ -31,10 +33,44 @@ int fresh_clone() {
   if (err) return 1;
 
   // Clone
-  err = std::system("git clone " GIT_URL " -b " BRANCH " --depth=1 --recurse-submodules /data/tmppilot");
-  if (err) return 1;
-  err = std::system("cd /data/tmppilot && git remote set-url origin --push " GIT_SSH_URL);
-  if (err) return 1;
+//  err = std::system("git clone " GIT_URL " -b " BRANCH " --depth=1 --recurse-submodules /data/tmppilot");
+//  err = std::system("git clone " GIT_URL " --depth=1 --recurse-submodules /data/tmppilot");
+//  if (err) return 1;
+
+
+  std::array<char, 128> buffer;
+  std::string prefix("Receiving");
+
+  auto pipe = popen("git clone " GIT_URL " --depth=1 --progress --recurse-submodules /data/tmppilot 2>&1", "r"); // get rid of shared_ptr
+  if (!pipe) return 1;
+
+  std::string tmpBuffer = "";
+
+  while (fgets(buffer.data(), 1, pipe) != NULL) {
+    qDebug() << "START";
+    tmpBuffer += buffer.data();
+//    if (tmpBuffer == "Receiving") {
+      qDebug() << tmpBuffer.c_str();
+//      tmpBuffer = "";
+//    }
+//    std::string line = buffer.data();
+//    qDebug() << (!line.compare(0, prefix.size(), prefix));
+////    qDebug() << line.rfind("Receiving", 0);
+//    qDebug() << line.substr(0, prefix.size()).c_str();
+//    qDebug() << "-----";
+//    if (line.rfind("Receiving objects", 0) == 0) {
+//      qDebug() << line.c_str();;
+//    }
+//    qDebug() << buffer.data();
+    qDebug() << "END";
+//    result += buffer.data();
+  }
+
+  auto returnCode = pclose(pipe);
+
+  qDebug() << "err:" << returnCode;
+//  err = std::system("cd /data/tmppilot && git remote set-url origin --push " GIT_SSH_URL);
+//  if (err) return 1;
 
   err = std::system("mv /data/tmppilot /data/openpilot");
   if (err) return 1;
@@ -73,8 +109,8 @@ int install() {
   if (err) return 1;
 
   // Write continue.sh
-  err = std::system("cp /data/openpilot/installer/continue_openpilot.sh " CONTINUE_PATH);
-  if (err == -1) return 1;
+//  err = std::system("cp /data/openpilot/installer/continue_openpilot.sh " CONTINUE_PATH);
+//  if (err == -1) return 1;
 
   return 0;
 }
