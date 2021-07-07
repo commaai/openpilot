@@ -9,7 +9,11 @@ Item {
     objectName: "flickArea"
     anchors.fill: parent
     contentHeight: helpText.height
-    contentWidth: helpText.width
+    contentWidth: width - 100
+    bottomMargin: 50
+    topMargin: 50
+    rightMargin: 50
+    leftMargin: 50
     flickableDirection: Flickable.VerticalFlick
     flickDeceleration: 7500.0
     maximumFlickVelocity: 10000.0
@@ -19,7 +23,7 @@ Item {
 
     Text {
       id: helpText
-      width: flickArea.width
+      width: flickArea.contentWidth
       font.family: "Inter"
       font.weight: "Light"
       font.pixelSize: 50
