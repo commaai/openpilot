@@ -28,7 +28,7 @@ Item {
       font.weight: "Light"
       font.pixelSize: 50
       textFormat: Text.RichText
-      color: "white"
+      color: "#C9C9C9"
       wrapMode: Text.Wrap
       text: text_view
     }
