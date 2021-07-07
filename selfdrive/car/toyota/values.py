@@ -59,7 +59,6 @@ class CAR:
   MIRAI = "TOYOTA MIRAI 2021" # TSS 2.5
   ALPHARD_TSS2 = "TOYOTA ALPHARD 2020"
 
-# static msgs from the DSU
 # (addr, cars, bus, 1/freq*100, vl)
 STATIC_DSU_MSGS = [
   (0x128, (CAR.PRIUS, CAR.RAV4H, CAR.LEXUS_RXH, CAR.LEXUS_NXH, CAR.LEXUS_NX, CAR.RAV4, CAR.COROLLA, CAR.AVALON), 1,   3, b'\xf4\x01\x90\x83\x00\x37'),
