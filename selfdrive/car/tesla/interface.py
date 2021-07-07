@@ -23,7 +23,6 @@ class CarInterface(CarInterfaceBase):
     ret.dashcamOnly = True
 
     ret.steerControlType = car.CarParams.SteerControlType.angle
-    ret.enableCamera = True
     ret.openpilotLongitudinalControl = False
     ret.communityFeature = True
 
