@@ -301,6 +301,8 @@ static void do_autoexposure(CameraState *s, float grey_frac) {
     }
     s->frame_info_lock.lock();
     s->cur_gain_frac = cur_gain_frac;
+    s->measured_grey_fraction = grey_frac;
+    s->target_grey_fraction = target_grey;
     s->frame_info_lock.unlock();
 
     set_exposure(s, s->cur_exposure_frac, cur_gain_frac);
@@ -1167,6 +1169,8 @@ void cameras_run(MultiCameraState *s) {
             .lens_err = c->focus_err,
             .lens_true_pos = c->lens_true_pos,
             .gain = c->cur_gain_frac,
+            .measured_grey_fraction = c->measured_grey_fraction,
+            .target_grey_fraction = c->target_grey_fraction,
             .high_conversion_gain = false,
         };
         c->frame_metadata_idx = (c->frame_metadata_idx + 1) % METADATA_BUF_COUNT;

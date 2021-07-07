@@ -908,6 +908,8 @@ void handle_camera_event(CameraState *s, void *evdat) {
     meta_data.gain = s->dc_gain_enabled ? s->analog_gain_frac * 2.5 : s->analog_gain_frac;
     meta_data.high_conversion_gain = s->dc_gain_enabled;
     meta_data.integ_lines = s->exposure_time;
+    meta_data.measured_grey_fraction = s->measured_grey_fraction;
+    meta_data.target_grey_fraction = s->target_grey_fraction;
     s->exp_lock.unlock();
 
     // dispatch
@@ -969,6 +971,9 @@ static void set_camera_exposure(CameraState *s, float grey_frac) {
   }
 
   s->exp_lock.lock();
+  s->measured_grey_fraction = grey_frac;
+  s->target_grey_fraction = target_grey;
+
   // always prioritize exposure time adjust
   s->exposure_time *= exposure_factor;
 

@@ -60,6 +60,8 @@ void run_frame_stream(CameraState &camera, const char* frame_pkt) {
         .integ_lines = frame.get("integLines").as<unsigned>(),
         .gain = frame.get("gain").as<float>(),
         .high_conversion_gain = frame.get("highConversionGain").as<bool>(),
+        .measured_grey_fraction = 0,
+        .target_grey_fraction = 0,
       };
 
       cl_command_queue q = camera.buf.camera_bufs[buf_idx].copy_q;
