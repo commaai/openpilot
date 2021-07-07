@@ -49,11 +49,11 @@ void TermsPage::showEvent(QShowEvent *event) {
   }
 
   QVBoxLayout *main_layout = new QVBoxLayout(this);
-  main_layout->setContentsMargins(55, 20, 55, 55);
+  main_layout->setContentsMargins(45, 35, 45, 45);
   main_layout->setSpacing(0);
 
   QLabel *title = new QLabel("Terms & Conditions");
-  title->setStyleSheet("font-size: 90px; font-weight: 500;");
+  title->setStyleSheet("font-size: 90px; font-weight: 600;");
   main_layout->addWidget(title);
 
   main_layout->addSpacing(30);
@@ -77,7 +77,7 @@ void TermsPage::showEvent(QShowEvent *event) {
 
   QHBoxLayout* buttons = new QHBoxLayout;
   buttons->setMargin(0);
-  buttons->setSpacing(50);
+  buttons->setSpacing(45);
   main_layout->addLayout(buttons);
 
   QPushButton *decline_btn = new QPushButton("Decline");
@@ -178,7 +178,7 @@ OnboardingWindow::OnboardingWindow(QWidget *parent) : QStackedWidget(parent) {
     QPushButton {
       height: 160px;
       font-size: 55px;
-      font-weight: 500;
+      font-weight: 400;
       border-radius: 10px;
       background-color: #4F4F4F;
     }
