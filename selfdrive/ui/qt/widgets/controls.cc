@@ -4,11 +4,11 @@ QFrame *horizontal_line(QWidget *parent) {
   QFrame *line = new QFrame(parent);
   line->setFrameShape(QFrame::StyledPanel);
   line->setStyleSheet(R"(
-    margin-left: 40px;
-    margin-right: 40px;
+    margin-left: 0;
+    margin-right: 0;
     border-width: 1px;
+    border-color: #7f7f7f;
     border-bottom-style: solid;
-    border-color: gray;
   )");
   line->setFixedHeight(2);
   return line;
@@ -42,7 +42,7 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
   if (!desc.isEmpty()) {
     description = new QLabel(desc);
     description->setContentsMargins(40, 20, 40, 20);
-    description->setStyleSheet("font-size: 40px; color:grey");
+    description->setStyleSheet("font-size: 40px; color: grey");
     description->setWordWrap(true);
     description->setVisible(false);
     main_layout->addWidget(description);
@@ -69,7 +69,7 @@ ButtonControl::ButtonControl(const QString &title, const QString &text, const QS
   btn.setStyleSheet(R"(
     QPushButton {
       padding: 0;
-      border-radius: 50px;
+      border-radius: 10px;
       font-size: 35px;
       font-weight: 500;
       color: #E4E4E4;

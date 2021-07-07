@@ -12,14 +12,14 @@ const int SPACEBAR_STRETCH = 3;
 KeyboardLayout::KeyboardLayout(QWidget* parent, const std::vector<QVector<QString>>& layout) : QWidget(parent) {
   QVBoxLayout* main_layout = new QVBoxLayout(this);
   main_layout->setMargin(0);
-  main_layout->setSpacing(35);
+  main_layout->setSpacing(20);
 
   QButtonGroup* btn_group = new QButtonGroup(this);
   QObject::connect(btn_group, SIGNAL(buttonClicked(QAbstractButton*)), parent, SLOT(handleButton(QAbstractButton*)));
 
   for (const auto &s : layout) {
     QHBoxLayout *hlayout = new QHBoxLayout;
-    hlayout->setSpacing(25);
+    hlayout->setSpacing(15);
 
     if (main_layout->count() == 1) {
       hlayout->addSpacing(90);
@@ -47,15 +47,15 @@ KeyboardLayout::KeyboardLayout(QWidget* parent, const std::vector<QVector<QStrin
       outline: none;
     }
     QPushButton {
-      font-size: 65px;
+      font-size: 75px;
       margin: 0px;
       padding: 0px;
-      border-radius: 30px;
+      border-radius: 10px;
       color: #dddddd;
       background-color: #444444;
     }
     QPushButton:pressed {
-      background-color: #000000;
+      background-color: #333333;
     }
   )");
 }
