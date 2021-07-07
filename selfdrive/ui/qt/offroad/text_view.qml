@@ -2,7 +2,7 @@ import QtQuick 2.0
 
 Item {
   id: root
-  signal qmlSignal()
+  signal scroll()
 
   Flickable {
     id: flickArea
@@ -15,7 +15,7 @@ Item {
     maximumFlickVelocity: 10000.0
     pixelAligned: true
 
-    onAtYEndChanged: root.qmlSignal()
+    onAtYEndChanged: root.scroll()
 
     Text {
       id: helpText

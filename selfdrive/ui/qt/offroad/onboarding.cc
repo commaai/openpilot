@@ -49,8 +49,8 @@ void TermsPage::showEvent(QShowEvent *event) {
   }
 
   QVBoxLayout *main_layout = new QVBoxLayout(this);
-  main_layout->setMargin(55);
-  main_layout->setSpacing(40);
+  main_layout->setContentsMargins(55, 20, 55, 55);
+  main_layout->setSpacing(50);
 
   QLabel *title = new QLabel("Terms & Conditions");
   title->setStyleSheet("font-size: 90px; font-weight: 500;");
@@ -67,10 +67,10 @@ void TermsPage::showEvent(QShowEvent *event) {
 
   text->setSource(QUrl::fromLocalFile("qt/offroad/text_view.qml"));
 
-  main_layout->addWidget(text);
+  main_layout->addWidget(text, 1);
 
   QObject *obj = (QObject*)text->rootObject();
-  QObject::connect(obj, SIGNAL(qmlSignal()), SLOT(enableAccept()));
+  QObject::connect(obj, SIGNAL(scroll()), SLOT(enableAccept()));
 
   QHBoxLayout* buttons = new QHBoxLayout;
   buttons->setMargin(0);
