@@ -56,12 +56,7 @@ void run_frame_stream(CameraState &camera, const char* frame_pkt) {
       camera.buf.camera_bufs_metadata[buf_idx] = {
         .frame_id = frame.get("frameId").as<uint32_t>(),
         .timestamp_eof = frame.get("timestampEof").as<uint64_t>(),
-        .frame_length = frame.get("frameLength").as<unsigned>(),
-        .integ_lines = frame.get("integLines").as<unsigned>(),
-        .gain = frame.get("gain").as<float>(),
-        .high_conversion_gain = frame.get("highConversionGain").as<bool>(),
-        .measured_grey_fraction = 0,
-        .target_grey_fraction = 0,
+        .timestamp_sof = frame.get("timestampSof").as<uint64_t>(),
       };
 
       cl_command_queue q = camera.buf.camera_bufs[buf_idx].copy_q;
