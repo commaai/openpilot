@@ -8,10 +8,9 @@
 
 int main(int argc, char *argv[]) {
   qInstallMessageHandler(swagLogMessageHandler);
-  setQtSurfaceFormat();
+  initApp();
 
   if (Hardware::EON()) {
-    QApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
     QSslConfiguration ssl = QSslConfiguration::defaultConfiguration();
     ssl.setCaCertificates(QSslCertificate::fromPath("/usr/etc/tls/cert.pem"));
     QSslConfiguration::setDefaultConfiguration(ssl);
