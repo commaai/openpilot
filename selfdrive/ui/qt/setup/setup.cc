@@ -83,10 +83,33 @@ QWidget * Setup::build_page(QString title, QWidget *content, bool next, bool pre
 }
 
 QWidget * Setup::getting_started() {
-  QLabel *body = new QLabel("Before we get on the road, let's finish\ninstallation and cover some details.");
-  body->setAlignment(Qt::AlignHCenter);
-  body->setStyleSheet(R"(font-size: 80px;)");
-  return build_page("Getting Started", body, true, false);
+  QWidget *widget = new QWidget();
+  QHBoxLayout *main_layout = new QHBoxLayout(widget);
+  main_layout->setMargin(0);
+
+  QVBoxLayout *vlayout = new QVBoxLayout();
+  vlayout->setContentsMargins(150, 280, 0, 0);
+  main_layout->addLayout(vlayout);
+
+  QLabel *title = new QLabel("Getting Started");
+  title->setStyleSheet("font-size: 90px; font-weight: 500;");
+  vlayout->addWidget(title, 0, Qt::AlignLeft | Qt::AlignTop);
+
+  QLabel *desc = new QLabel("Before we get on the road, let’s finish installation and cover some details.");
+  desc->setWordWrap(true);
+  desc->setStyleSheet("font-size: 80px; font-weight: 300;");
+  vlayout->addWidget(desc, 0, Qt::AlignLeft | Qt::AlignTop);
+
+  vlayout->insertStretch(0);
+  vlayout->addStretch();
+
+  QPushButton *btn = new QPushButton(">");
+  btn->setFixedSize(310, 1080);
+  btn->setStyleSheet("background-color: #465BEA; border:none; border-radius: 0;");
+  main_layout->addWidget(btn, 0, Qt::AlignRight);
+  QObject::connect(btn, &QPushButton::released, this, &Setup::nextPage);
+
+  return widget;
 }
 
 QWidget * Setup::network_setup() {
