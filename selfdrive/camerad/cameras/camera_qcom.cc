@@ -1167,7 +1167,8 @@ void cameras_run(MultiCameraState *s) {
             .lens_sag = c->last_sag_acc_z,
             .lens_err = c->focus_err,
             .lens_true_pos = c->lens_true_pos,
-            .gain_frac = c->cur_gain_frac,
+            .gain = c->cur_gain_frac,
+            .high_conversion_gain = false,
         };
         c->frame_metadata_idx = (c->frame_metadata_idx + 1) % METADATA_BUF_COUNT;
 

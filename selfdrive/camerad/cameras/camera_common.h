@@ -71,12 +71,12 @@ typedef struct FrameMetadata {
   uint64_t timestamp_eof;
   unsigned int frame_length;
   unsigned int integ_lines;
-  unsigned int global_gain;
+  float gain;
+  bool high_conversion_gain;
   unsigned int lens_pos;
   float lens_sag;
   float lens_err;
   float lens_true_pos;
-  float gain_frac;
 } FrameMetadata;
 
 typedef struct CameraExpInfo {

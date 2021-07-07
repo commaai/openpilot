@@ -905,8 +905,8 @@ void handle_camera_event(CameraState *s, void *evdat) {
     meta_data.frame_id = main_id - s->idx_offset;
     meta_data.timestamp_sof = timestamp;
     s->exp_lock.lock();
-    meta_data.global_gain = s->analog_gain + (100*s->dc_gain_enabled);
-    meta_data.gain_frac = s->analog_gain_frac;
+    meta_data.gain = s->dc_gain_enabled ? s->analog_gain_frac * 2.5 : s->analog_gain_frac;
+    meta_data.high_conversion_gain = s->dc_gain_enabled;
     meta_data.integ_lines = s->exposure_time;
     s->exp_lock.unlock();
 
