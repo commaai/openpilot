@@ -1,13 +1,15 @@
 #include "selfdrive/ui/qt/widgets/keyboard.h"
 
 #include <QButtonGroup>
-#include <QDebug>
 #include <QHBoxLayout>
 #include <QPushButton>
 #include <QVBoxLayout>
 
 const int DEFAULT_STRETCH = 1;
 const int SPACEBAR_STRETCH = 3;
+
+const QString BACKSPACE_KEY = "⌫";
+const QString ENTER_KEY = "⏎";
 
 KeyboardLayout::KeyboardLayout(QWidget* parent, const std::vector<QVector<QString>>& layout) : QWidget(parent) {
   QVBoxLayout* main_layout = new QVBoxLayout(this);
@@ -27,7 +29,7 @@ KeyboardLayout::KeyboardLayout(QWidget* parent, const std::vector<QVector<QStrin
 
     for (const QString &p : s) {
       QPushButton* btn = new QPushButton(p);
-      if (p == QString("⌫")) {
+      if (p == BACKSPACE_KEY) {
         btn->setAutoRepeat(true);
       }
       btn->setFixedHeight(135);
@@ -43,9 +45,6 @@ KeyboardLayout::KeyboardLayout(QWidget* parent, const std::vector<QVector<QStrin
   }
 
   setStyleSheet(R"(
-    * {
-      outline: none;
-    }
     QPushButton {
       font-size: 75px;
       margin: 0px;
@@ -68,8 +67,8 @@ Keyboard::Keyboard(QWidget *parent) : QFrame(parent) {
   std::vector<QVector<QString>> lowercase = {
     {"q","w","e","r","t","y","u","i","o","p"},
     {"a","s","d","f","g","h","j","k","l"},
-    {"⇧","z","x","c","v","b","n","m","⌫"},
-    {"123","  ","⏎"},
+    {"↑","z","x","c","v","b","n","m",BACKSPACE_KEY},
+    {"123","  ",".",ENTER_KEY},
   };
   main_layout->addWidget(new KeyboardLayout(this, lowercase));
 
@@ -77,8 +76,8 @@ Keyboard::Keyboard(QWidget *parent) : QFrame(parent) {
   std::vector<QVector<QString>> uppercase = {
     {"Q","W","E","R","T","Y","U","I","O","P"},
     {"A","S","D","F","G","H","J","K","L"},
-    {"↑","Z","X","C","V","B","N","M","⌫"},
-    {"123","  ","⏎"},
+    {"↓","Z","X","C","V","B","N","M",BACKSPACE_KEY},
+    {"123","  ",".",ENTER_KEY},
   };
   main_layout->addWidget(new KeyboardLayout(this, uppercase));
 
@@ -86,8 +85,8 @@ Keyboard::Keyboard(QWidget *parent) : QFrame(parent) {
   std::vector<QVector<QString>> numbers = {
     {"1","2","3","4","5","6","7","8","9","0"},
     {"-","/",":",";","(",")","$","&&","@","\""},
-    {"#+=",".",",","?","!","`","⌫"},
-    {"ABC","  ","⏎"},
+    {"#+=",".",",","?","!","`",BACKSPACE_KEY},
+    {"ABC","  ",".",ENTER_KEY},
   };
   main_layout->addWidget(new KeyboardLayout(this, numbers));
 
@@ -95,33 +94,33 @@ Keyboard::Keyboard(QWidget *parent) : QFrame(parent) {
   std::vector<QVector<QString>> specials = {
     {"[","]","{","}","#","%","^","*","+","="},
     {"_","\\","|","~","<",">","€","£","¥","•"},
-    {"123",".",",","?","!","`","⌫"},
-    {"ABC","  ","⏎"},
+    {"123",".",",","?","!","`",BACKSPACE_KEY},
+    {"ABC","  ",ENTER_KEY},
   };
   main_layout->addWidget(new KeyboardLayout(this, specials));
 
   main_layout->setCurrentIndex(0);
 }
 
-void Keyboard::handleButton(QAbstractButton* m_button) {
-  QString id = m_button->text();
-  if (!QString::compare(m_button->text(), "↑") || !QString::compare(m_button->text(), "ABC")) {
+void Keyboard::handleButton(QAbstractButton* btn) {
+  const QString key = btn->text();
+  if (!QString::compare(key, "↓") || !QString::compare(key, "ABC")) {
     main_layout->setCurrentIndex(0);
   }
-  if (!QString::compare(m_button->text(), "⇧")) {
+  if (!QString::compare(key, "↑")) {
     main_layout->setCurrentIndex(1);
   }
-  if (!QString::compare(m_button->text(), "123")) {
+  if (!QString::compare(key, "123")) {
     main_layout->setCurrentIndex(2);
   }
-  if (!QString::compare(m_button->text(), "#+=")) {
+  if (!QString::compare(key, "#+=")) {
     main_layout->setCurrentIndex(3);
   }
-  if (!QString::compare(m_button->text(), "⏎")) {
+  if (!QString::compare(key, BACKSPACE_KEY)) {
     main_layout->setCurrentIndex(0);
   }
-  if ("A" <= id && id <= "Z") {
+  if ("A" <= key && key <= "Z") {
     main_layout->setCurrentIndex(0);
   }
-  emit emitButton(m_button->text());
+  emit emitButton(key);
 }
