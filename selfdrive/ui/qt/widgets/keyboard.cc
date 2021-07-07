@@ -95,7 +95,7 @@ Keyboard::Keyboard(QWidget *parent) : QFrame(parent) {
     {"[","]","{","}","#","%","^","*","+","="},
     {"_","\\","|","~","<",">","€","£","¥","•"},
     {"123",".",",","?","!","`",BACKSPACE_KEY},
-    {"ABC","  ",ENTER_KEY},
+    {"ABC","  ",".",ENTER_KEY},
   };
   main_layout->addWidget(new KeyboardLayout(this, specials));
 
