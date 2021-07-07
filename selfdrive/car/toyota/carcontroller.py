@@ -4,7 +4,7 @@ from selfdrive.car import apply_toyota_steer_torque_limits, create_gas_command, 
 from selfdrive.car.toyota.toyotacan import create_steer_command, create_ui_command, \
                                            create_accel_command, create_acc_cancel_command, \
                                            create_fcw_command, create_lta_steer_command
-from selfdrive.car.toyota.values import Ecu, CAR, STATIC_MSGS, NO_STOP_TIMER_CAR, TSS2_CAR, \
+from selfdrive.car.toyota.values import CAR, STATIC_DSU_MSGS, NO_STOP_TIMER_CAR, TSS2_CAR, \
                                         MIN_ACC_SPEED, PEDAL_HYST_GAP, CarControllerParams
 from opendbc.can.packer import CANPacker
 
@@ -35,12 +35,6 @@ class CarController():
     self.standstill_req = False
     self.steer_rate_limited = False
     self.use_interceptor = False
-
-    self.fake_ecus = set()
-    if CP.enableCamera:
-      self.fake_ecus.add(Ecu.fwdCamera)
-    if CP.enableDsu:
-      self.fake_ecus.add(Ecu.dsu)
 
     self.packer = CANPacker(dbc_name)
 
@@ -104,18 +98,17 @@ class CarController():
     # toyota can trace shows this message at 42Hz, with counter adding alternatively 1 and 2;
     # sending it at 100Hz seem to allow a higher rate limit, as the rate limit seems imposed
     # on consecutive messages
-    if Ecu.fwdCamera in self.fake_ecus:
-      can_sends.append(create_steer_command(self.packer, apply_steer, apply_steer_req, frame))
-      if frame % 2 == 0 and CS.CP.carFingerprint in TSS2_CAR:
-        can_sends.append(create_lta_steer_command(self.packer, 0, 0, frame // 2))
+    can_sends.append(create_steer_command(self.packer, apply_steer, apply_steer_req, frame))
+    if frame % 2 == 0 and CS.CP.carFingerprint in TSS2_CAR:
+      can_sends.append(create_lta_steer_command(self.packer, 0, 0, frame // 2))
 
-      # LTA mode. Set ret.steerControlType = car.CarParams.SteerControlType.angle and whitelist 0x191 in the panda
-      # if frame % 2 == 0:
-      #   can_sends.append(create_steer_command(self.packer, 0, 0, frame // 2))
-      #   can_sends.append(create_lta_steer_command(self.packer, actuators.steeringAngleDeg, apply_steer_req, frame // 2))
+    # LTA mode. Set ret.steerControlType = car.CarParams.SteerControlType.angle and whitelist 0x191 in the panda
+    # if frame % 2 == 0:
+    #   can_sends.append(create_steer_command(self.packer, 0, 0, frame // 2))
+    #   can_sends.append(create_lta_steer_command(self.packer, actuators.steeringAngleDeg, apply_steer_req, frame // 2))
 
     # we can spam can to cancel the system even if we are using lat only control
-    if (frame % 3 == 0 and CS.CP.openpilotLongitudinalControl) or (pcm_cancel_cmd and Ecu.fwdCamera in self.fake_ecus):
+    if (frame % 3 == 0 and CS.CP.openpilotLongitudinalControl) or pcm_cancel_cmd:
       lead = lead or CS.out.vEgo < 12.    # at low speed we always assume the lead is present do ACC can be engaged
 
       # Lexus IS uses a different cancellation message
@@ -146,16 +139,16 @@ class CarController():
       # forcing the pcm to disengage causes a bad fault sound so play a good sound instead
       send_ui = True
 
-    if (frame % 100 == 0 or send_ui) and Ecu.fwdCamera in self.fake_ecus:
+    if (frame % 100 == 0 or send_ui):
       can_sends.append(create_ui_command(self.packer, steer_alert, pcm_cancel_cmd, left_line, right_line, left_lane_depart, right_lane_depart))
 
-    if frame % 100 == 0 and Ecu.dsu in self.fake_ecus:
+    if frame % 100 == 0 and CS.CP.enableDsu:
       can_sends.append(create_fcw_command(self.packer, fcw_alert))
 
     #*** static msgs ***
 
-    for (addr, ecu, cars, bus, fr_step, vl) in STATIC_MSGS:
-      if frame % fr_step == 0 and ecu in self.fake_ecus and CS.CP.carFingerprint in cars:
+    for (addr, cars, bus, fr_step, vl) in STATIC_DSU_MSGS:
+      if frame % fr_step == 0 and CS.CP.enableDsu and CS.CP.carFingerprint in cars:
         can_sends.append(make_can_msg(addr, vl, bus))
 
     return can_sends

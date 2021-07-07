@@ -90,8 +90,6 @@ class TestCarModel(unittest.TestCase):
       elif tuning == 'indi':
         self.assertTrue(len(self.CP.lateralTuning.indi.outerLoopGainV))
 
-    self.assertTrue(self.CP.enableCamera)
-
     # TODO: check safetyModel is in release panda build
     safety = libpandasafety_py.libpandasafety
     set_status = safety.set_safety_hooks(self.CP.safetyModel.raw, self.CP.safetyParam)
