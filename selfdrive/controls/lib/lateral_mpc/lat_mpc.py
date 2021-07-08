@@ -1,25 +1,61 @@
+#!/usr/bin/env python3
 import os
 import sys
+import json
 from common.basedir import BASEDIR
 
 # TODO: clean this up
-os.environ["TERA_PATH"] = os.path.join(BASEDIR, "phonelibs/acados/x86_64/t_renderer")
+acados_path = os.path.join(BASEDIR, "phonelibs/acados/x86_64")
+os.environ["TERA_PATH"] = os.path.join(acados_path, "t_renderer")
 sys.path.append(os.path.join(BASEDIR, "pyextra"))
 
+import acados_template
 import numpy as np
 import scipy.linalg
 from acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
 from casadi import SX, vertcat, sin, cos
 
-from selfdrive.controls.lib.drive_helpers import MPC_N as N
-
-
-def index_function(idx, max_val=192):
-  return (max_val/1024)*(idx**2)
+from selfdrive.controls.lib.drive_helpers import LAT_MPC_N as N
+from selfdrive.modeld.constants import index_function
 
 
 IDX_N = 33
 T_IDXS = np.array([index_function(idx, max_val=10.0) for idx in range(IDX_N)], dtype=np.float64)
+
+LAT_MPC_DIR = os.path.dirname(os.path.abspath(__file__))
+JSON_FILE = "acados_ocp_lat.json"
+
+# TODO: move to acados_template?
+def generate_code(acados_ocp, json_file):
+  from acados_template.acados_ocp_solver import make_ocp_dims_consistent, set_up_imported_gnsf_model, \
+                                                remove_x0_elimination, ocp_generate_external_functions, \
+                                                ocp_formulation_json_dump, ocp_render_templates
+
+  # make dims consistent
+  make_ocp_dims_consistent(acados_ocp)
+
+  # module dependent post processing
+  if acados_ocp.solver_options.integrator_type == 'GNSF':
+    set_up_imported_gnsf_model(acados_ocp)
+
+  if acados_ocp.solver_options.qp_solver == 'PARTIAL_CONDENSING_QPDUNES':
+    remove_x0_elimination(acados_ocp)
+
+  # set integrator time automatically
+  acados_ocp.solver_options.Tsim = acados_ocp.solver_options.time_steps[0]
+
+  # generate external functions
+  ocp_generate_external_functions(acados_ocp, acados_ocp.model)
+
+  # dump to json
+  template_dir = os.path.dirname(acados_template.__file__)
+  with open(os.path.join(template_dir, 'simulink_default_opts.json')) as f:
+    simulink_opts = json.load(f)
+  ocp_formulation_json_dump(acados_ocp, simulink_opts, json_file)
+
+  # render templates
+  ocp_render_templates(acados_ocp, json_file)
+
 
 def gen_lat_model():
   model = AcadosModel()
@@ -58,15 +94,12 @@ def gen_lat_model():
   return model
 
 
-def gen_lat_mpc_solver(build: bool):
-  model = gen_lat_model()
-
+def gen_lat_mpc_solver():
   ocp = AcadosOcp()
-  ocp.model = model
+  ocp.model = gen_lat_model()
 
   N = 16
   Tf = T_IDXS[N]
-
 
   # set dimensions
   ocp.dims.N = N
@@ -115,14 +148,14 @@ def gen_lat_mpc_solver(build: bool):
   ocp.solver_options.tf = Tf
   ocp.solver_options.shooting_nodes = T_IDXS[:N+1]
 
-  lat_mpc_dir = os.path.dirname(os.path.abspath(__file__))
-  ocp.code_export_directory = os.path.join(lat_mpc_dir, "c_generated_code")
-  acados_ocp_solver = AcadosOcpSolver(ocp, json_file='acados_ocp_' + model.name + '.json', build=build)
-  return acados_ocp_solver
+  ocp.code_export_directory = os.path.join(LAT_MPC_DIR, "c_generated_code")
+  return ocp
+
 
 class LateralMpc():
   def __init__(self):
-    self.solver = gen_lat_mpc_solver(False)
+    ocp = gen_lat_mpc_solver()
+    self.solver = AcadosOcpSolver(ocp, json_file=JSON_FILE, build=False)
     self.x_sol = np.zeros((N+1, 4))
     self.u_sol = np.zeros((N))
 
@@ -151,4 +184,5 @@ class LateralMpc():
     self.cost = self.solver.get_cost()
 
 if __name__ == "__main__":
-  gen_lat_mpc_solver(True)
+  ocp = gen_lat_mpc_solver()
+  generate_code(ocp, json_file=JSON_FILE)
