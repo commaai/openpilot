@@ -116,10 +116,10 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
   main_layout->addSpacing(25);
   center_layout = new QStackedLayout();
 
-  QWidget* statsAndSetupWidget = new QWidget();
+  QWidget* statsAndSetupWidget = new QWidget(this);
   QHBoxLayout* statsAndSetup = new QHBoxLayout(statsAndSetupWidget);
   statsAndSetup->setMargin(0);
-  DriveStats* drive = new DriveStats;
+  DriveStats* drive = new DriveStats();
   drive->setFixedSize(800, 800);
   statsAndSetup->addWidget(drive);
   statsAndSetup->addWidget(new SetupWidget);
@@ -157,10 +157,10 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
       font-size: 55px;
     }
   )");
+  refresh();
 }
 
 void OffroadHome::showEvent(QShowEvent *event) {
-  refresh();
   timer->start(10 * 1000);
 }
 
@@ -174,23 +174,20 @@ void OffroadHome::refresh() {
   bool updateAvailable = update_widget->refresh();
   int alerts = alerts_widget->refresh();
 
-  if (!alerts && !updateAvailable) {
-    center_layout->setCurrentIndex(0);
-  } else {
-    // pop-up new notification
-    if (updateAvailable && !update_notif->isVisible()) {
-      center_layout->setCurrentIndex(1);
-    } else if (alerts && !alert_notif->isVisible()) {
-      center_layout->setCurrentIndex(2);
-    }
-    // hide when no notifaction
-    if (center_layout->currentIndex() == 1 && !updateAvailable) {
-      center_layout->setCurrentIndex(2);
-    } else if (center_layout->currentIndex() == 2 && !alerts) {
-      center_layout->setCurrentIndex(1);
-    }
+  // pop-up new notification
+  int idx = center_layout->currentIndex();
+  if (!updateAvailable && !alerts) {
+    idx = 0;
+  } else if (updateAvailable && (!update_notif->isVisible() || (!alerts && idx == 2))) {
+    idx = 1;
+  } else if (alerts && (!alert_notif->isVisible() || (!updateAvailable && idx == 1))) {
+    idx = 2;
   }
-  alert_notif->setVisible(alerts);
-  alert_notif->setText(QString::number(alerts) + " ALERT" + (alerts > 1 ? "S" : ""));
+  center_layout->setCurrentIndex(idx);
+
   update_notif->setVisible(updateAvailable);
+  alert_notif->setVisible(alerts);
+  if (alerts) {
+    alert_notif->setText(QString::number(alerts) + " ALERT" + (alerts > 1 ? "S" : ""));
+  }
 }
