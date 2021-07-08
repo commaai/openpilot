@@ -183,9 +183,8 @@ void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const float *meta_da
 
   std::memmove(prev_brake_5ms2_probs, &prev_brake_5ms2_probs[1], 4*sizeof(float));
   std::memmove(prev_brake_3ms2_probs, &prev_brake_3ms2_probs[1], 2*sizeof(float));
-  typedef Arr<NUM_META_INTERVALS, sigmoid> arr;
-  auto brake_3ms2_sigmoid = arr(&meta_data[DESIRE_LEN+4], META_STRIDE);
-  auto brake_5ms2_sigmoid = arr(&meta_data[DESIRE_LEN+6], META_STRIDE);
+   auto brake_3ms2_sigmoid = Arr<NUM_META_INTERVALS, sigmoid>(&meta_data[DESIRE_LEN+4], META_STRIDE);
+  auto brake_5ms2_sigmoid = Arr<NUM_META_INTERVALS, sigmoid>(&meta_data[DESIRE_LEN+6], META_STRIDE);
   prev_brake_5ms2_probs[4] = brake_5ms2_sigmoid[0];
   prev_brake_3ms2_probs[2] = brake_3ms2_sigmoid[0];
 
@@ -200,11 +199,11 @@ void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const float *meta_da
 
   auto disengage = meta.initDisengagePredictions();
   disengage.setT({2,4,6,8,10});
-  disengage.setGasDisengageProbs(arr(&meta_data[DESIRE_LEN+1], META_STRIDE));
-  disengage.setBrakeDisengageProbs(arr(&meta_data[DESIRE_LEN+2], META_STRIDE));
-  disengage.setSteerOverrideProbs(arr(&meta_data[DESIRE_LEN+3], META_STRIDE));
+  disengage.setGasDisengageProbs(Arr<NUM_META_INTERVALS, sigmoid>(&meta_data[DESIRE_LEN+1], META_STRIDE));
+  disengage.setBrakeDisengageProbs(Arr<NUM_META_INTERVALS, sigmoid>(&meta_data[DESIRE_LEN+2], META_STRIDE));
+  disengage.setSteerOverrideProbs(Arr<NUM_META_INTERVALS, sigmoid>(&meta_data[DESIRE_LEN+3], META_STRIDE));
   disengage.setBrake3MetersPerSecondSquaredProbs(brake_3ms2_sigmoid);
-  disengage.setBrake4MetersPerSecondSquaredProbs(arr(&meta_data[DESIRE_LEN+5], META_STRIDE));
+  disengage.setBrake4MetersPerSecondSquaredProbs(Arr<NUM_META_INTERVALS, sigmoid>(&meta_data[DESIRE_LEN+5], META_STRIDE));
   disengage.setBrake5MetersPerSecondSquaredProbs(brake_5ms2_sigmoid);
 
   meta.setEngagedProb(sigmoid(meta_data[DESIRE_LEN]));
