@@ -127,6 +127,7 @@ public:
     return x_;
   }
   inline void reset(float x) { x_ = x; }
+  inline float x(){ return x_; }
 
 private:
   float x_, k_;

@@ -24,6 +24,7 @@
 #include <QPixmap>
 
 #include "selfdrive/common/params.h"
+#include "selfdrive/common/util.h"
 #include "cereal/messaging/messaging.h"
 
 class MapInstructions : public QWidget {
@@ -105,6 +106,8 @@ private:
   // Position
   std::optional<QMapbox::Coordinate> last_position;
   std::optional<float> last_bearing;
+  FirstOrderFilter velocity_filter;
+  bool localizer_valid = false;
 
   // Route
   bool gps_ok = false;
