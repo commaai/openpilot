@@ -4,7 +4,6 @@
 
 #define deg2rad(d) (d/180.0*M_PI)
 
-const int N_steps = 16;
 using namespace std;
 
 int main( )
@@ -26,8 +25,11 @@ int main( )
 
 
   // Equations of motion
-  f << dot(xx) == v_ego * cos(psi) - rotation_radius * sin(psi) * (v_ego * curvature);
-  f << dot(yy) == v_ego * sin(psi) + rotation_radius * cos(psi) * (v_ego * curvature);
+  f << dot(xx) == v_ego * cos(psi);
+  f << dot(yy) == v_ego * sin(psi);
+  // disable rotation radius for now
+  //f << dot(xx) == v_ego * cos(psi) - rotation_radius * sin(psi) * (v_ego * curvature);
+  //f << dot(yy) == v_ego * sin(psi) + rotation_radius * cos(psi) * (v_ego * curvature);
   f << dot(psi) == v_ego * curvature;
   f << dot(curvature) == curvature_rate;
 
@@ -65,9 +67,9 @@ int main( )
   // QN(2,2) = 1.0;
   // QN(3,3) = 1.0;
 
-  double T_IDXS_ARR[N_steps + 1];
-  memcpy(T_IDXS_ARR, T_IDXS, (N_steps + 1) * sizeof(double));
-  Grid times(N_steps + 1, T_IDXS_ARR);
+  double T_IDXS_ARR[LAT_MPC_N + 1];
+  memcpy(T_IDXS_ARR, T_IDXS, (LAT_MPC_N + 1) * sizeof(double));
+  Grid times(LAT_MPC_N + 1, T_IDXS_ARR);
   OCP ocp(times);
   ocp.subjectTo(f);
 
@@ -84,8 +86,8 @@ int main( )
   mpc.set( HESSIAN_APPROXIMATION, GAUSS_NEWTON );
   mpc.set( DISCRETIZATION_TYPE, MULTIPLE_SHOOTING );
   mpc.set( INTEGRATOR_TYPE, INT_RK4 );
-  mpc.set( NUM_INTEGRATOR_STEPS, 2500);
-  mpc.set( MAX_NUM_QP_ITERATIONS, 1000);
+  mpc.set( NUM_INTEGRATOR_STEPS, 1000);
+  mpc.set( MAX_NUM_QP_ITERATIONS, 50);
   mpc.set( CG_USE_VARIABLE_WEIGHTING_MATRIX, YES);
 
   mpc.set( SPARSE_QP_SOLUTION, CONDENSING );

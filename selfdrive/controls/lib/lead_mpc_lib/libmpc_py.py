@@ -35,7 +35,7 @@ def _get_libmpc(mpc_id):
 
     return (ffi, ffi.dlopen(libmpc_fn))
 
-mpcs = [_get_libmpc(1), _get_libmpc(2)]
+mpcs = [_get_libmpc(0), _get_libmpc(1)]
 
 def get_libmpc(mpc_id):
-    return mpcs[mpc_id - 1]
+    return mpcs[mpc_id]

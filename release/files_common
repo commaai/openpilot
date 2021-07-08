@@ -238,10 +238,9 @@ selfdrive/controls/lib/pid.py
 selfdrive/controls/lib/longitudinal_planner.py
 selfdrive/controls/lib/radar_helpers.py
 selfdrive/controls/lib/vehicle_model.py
-selfdrive/controls/lib/speed_smoother.py
 selfdrive/controls/lib/fcw.py
 selfdrive/controls/lib/long_mpc.py
-selfdrive/controls/lib/long_mpc_model.py
+selfdrive/controls/lib/lead_mpc.py
 
 selfdrive/controls/lib/cluster/*
 
@@ -253,21 +252,21 @@ selfdrive/controls/lib/lateral_mpc/generator.cpp
 selfdrive/controls/lib/lateral_mpc/libmpc_py.py
 selfdrive/controls/lib/lateral_mpc/lateral_mpc.c
 
-selfdrive/controls/lib/longitudinal_mpc/lib_mpc_export/*
-selfdrive/controls/lib/longitudinal_mpc/.gitignore
-selfdrive/controls/lib/longitudinal_mpc/SConscript
-selfdrive/controls/lib/longitudinal_mpc/__init__.py
-selfdrive/controls/lib/longitudinal_mpc/generator.cpp
-selfdrive/controls/lib/longitudinal_mpc/libmpc_py.py
-selfdrive/controls/lib/longitudinal_mpc/longitudinal_mpc.c
+selfdrive/controls/lib/lead_mpc_lib/lib_mpc_export/*
+selfdrive/controls/lib/lead_mpc_lib/.gitignore
+selfdrive/controls/lib/lead_mpc_lib/SConscript
+selfdrive/controls/lib/lead_mpc_lib/__init__.py
+selfdrive/controls/lib/lead_mpc_lib/generator.cpp
+selfdrive/controls/lib/lead_mpc_lib/libmpc_py.py
+selfdrive/controls/lib/lead_mpc_lib/longitudinal_mpc.c
 
-selfdrive/controls/lib/longitudinal_mpc_model/lib_mpc_export/*
-selfdrive/controls/lib/longitudinal_mpc_model/.gitignore
-selfdrive/controls/lib/longitudinal_mpc_model/SConscript
-selfdrive/controls/lib/longitudinal_mpc_model/__init__.py
-selfdrive/controls/lib/longitudinal_mpc_model/generator.cpp
-selfdrive/controls/lib/longitudinal_mpc_model/libmpc_py.py
-selfdrive/controls/lib/longitudinal_mpc_model/longitudinal_mpc.c
+selfdrive/controls/lib/longitudinal_mpc_lib/lib_mpc_export/*
+selfdrive/controls/lib/longitudinal_mpc_lib/.gitignore
+selfdrive/controls/lib/longitudinal_mpc_lib/SConscript
+selfdrive/controls/lib/longitudinal_mpc_lib/__init__.py
+selfdrive/controls/lib/longitudinal_mpc_lib/generator.cpp
+selfdrive/controls/lib/longitudinal_mpc_lib/libmpc_py.py
+selfdrive/controls/lib/longitudinal_mpc_lib/longitudinal_mpc.c
 
 selfdrive/hardware/__init__.py
 selfdrive/hardware/base.h
