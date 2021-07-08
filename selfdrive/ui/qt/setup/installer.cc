@@ -168,7 +168,7 @@ Installer::Installer(QWidget *parent) : QWidget(parent) {
       started = true;
     }
   });
-  timer->start(100);
+  timer->start(100);  // TODO why is this needed?
 };
 
 void Installer::update(const int value) {
