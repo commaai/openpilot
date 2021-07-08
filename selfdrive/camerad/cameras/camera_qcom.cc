@@ -414,8 +414,6 @@ static void camera_open(CameraState *s, bool is_road_cam) {
   struct csid_cfg_data csid_cfg_data = {};
   struct v4l2_event_subscription sub = {};
 
-  struct msm_actuator_cfg_data actuator_cfg_data = {};
-
   // open devices
   const char *sensor_dev;
   if (is_road_cam) {
@@ -463,10 +461,6 @@ static void camera_open(CameraState *s, bool is_road_cam) {
   // SENSOR: send power down
   struct sensorb_cfg_data sensorb_cfg_data = {.cfgtype = CFG_POWER_DOWN};
   cam_ioctl(s->sensor_fd, VIDIOC_MSM_SENSOR_CFG, &sensorb_cfg_data, "sensor power down");
-
-  // actuator powerdown
-  actuator_cfg_data.cfgtype = CFG_ACTUATOR_POWERDOWN;
-  cam_ioctl(s->actuator_fd, VIDIOC_MSM_ACTUATOR_CFG, &actuator_cfg_data, "actuator powerdown");
 
   // reset isp
   // struct msm_vfe_axi_halt_cmd halt_cmd = {
@@ -530,6 +524,11 @@ static void camera_open(CameraState *s, bool is_road_cam) {
   LOG("sensor init i2c: %d", err);
 
   if (is_road_cam) {
+    struct msm_actuator_cfg_data actuator_cfg_data = {};
+    // actuator powerdown
+    actuator_cfg_data.cfgtype = CFG_ACTUATOR_POWERDOWN;
+    cam_ioctl(s->actuator_fd, VIDIOC_MSM_ACTUATOR_CFG, &actuator_cfg_data, "actuator powerdown");
+
     // init the actuator
     actuator_cfg_data.cfgtype = CFG_ACTUATOR_POWERUP;
     cam_ioctl(s->actuator_fd, VIDIOC_MSM_ACTUATOR_CFG, &actuator_cfg_data, "actuator powerup");
