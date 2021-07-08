@@ -23,14 +23,6 @@
 #define BRANCH "master"
 #endif
 
-#ifdef MASTER
-  const QVector<QString> stages = {"Receiving objects: ", "Resolving deltas: ", "Filtering content: "};
-  const QVector<int> weights = {60, 2, 38};
-#else
-  const QVector<QString> stages = {"Receiving objects: ", "Resolving deltas: "};
-  const QVector<int> weights = {95, 5};
-#endif
-
 #define GIT_URL "https://github.com/commaai/openpilot.git"
 #define GIT_SSH_URL "git@github.com:commaai/openpilot.git"
 
@@ -76,8 +68,7 @@ int Installer::freshClone() {
   if (err) return 1;
 
   // Clone
-//  auto clone_pipe = popen("git clone " GIT_URL " -b " BRANCH " --depth=1 --progress --recurse-submodules " BASEDIR "/tmppilot 2>&1 >/dev/null", "r");
-  auto clone_pipe = popen("git clone " GIT_URL " -b " BRANCH " --depth=1 --progress " BASEDIR "/tmppilot 2>&1 >/dev/null", "r");
+  auto clone_pipe = popen("git clone " GIT_URL " -b " BRANCH " --depth=1 --progress --recurse-submodules " BASEDIR "/tmppilot 2>&1 >/dev/null", "r");
   if (!clone_pipe) return 1;
 
   char c;

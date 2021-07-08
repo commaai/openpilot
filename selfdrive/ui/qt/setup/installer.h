@@ -17,11 +17,13 @@ public:
 private:
   QLabel *text;
   QProgressBar *progress_bar;
-  QSocketNotifier *notifier;
   int install();
   int freshClone();
   int getProgress(const QString &line);
   bool started = false;
+
+  const QVector<QString> stages = {"Receiving objects: ", "Resolving deltas: "};
+  const QVector<int> weights = {95, 5};
   QString currentStage;
 
 public slots:
