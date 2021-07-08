@@ -191,13 +191,15 @@ class CarState(CarStateBase):
 
     signals = [
       ("FORCE", "PRE_COLLISION", 0),
-      ("PRECOLLISION_ACTIVE", "PRE_COLLISION", 0)
+      ("PRECOLLISION_ACTIVE", "PRE_COLLISION", 0),
+      ("SET_ME_X01", "ACC_CONTROL", 0)
     ]
 
     # use steering message to check if panda is connected to frc
     checks = [
       ("STEERING_LKA", 42),
       ("PRE_COLLISION", 0), # TODO: figure out why freq is inconsistent
+      ("ACC_CONTROL", 0),
     ]
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 2)
