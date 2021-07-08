@@ -85,7 +85,7 @@ class CarState(CarStateBase):
       val = cp_cam.vl["ACC_CONTROL"]["SET_ME_X01"]
       if val not in self.logged_setme_vals and val != 1:
         self.logged_setme_vals.add(val)
-        cloudlog.event("setme_vals", vals=self.logged_setme_vals)
+        cloudlog.event("setme_vals", vals=self.logged_setme_vals, car=self.CP.carFingerprint)
 
     self.pcm_acc_status = cp.vl["PCM_CRUISE"]["CRUISE_STATE"]
     if self.CP.carFingerprint in NO_STOP_TIMER_CAR or self.CP.enableGasInterceptor:
@@ -192,7 +192,7 @@ class CarState(CarStateBase):
     signals = [
       ("FORCE", "PRE_COLLISION", 0),
       ("PRECOLLISION_ACTIVE", "PRE_COLLISION", 0),
-      ("SET_ME_X01", "ACC_CONTROL", 0)
+      ("SET_ME_X01", "ACC_CONTROL", 1)
     ]
 
     # use steering message to check if panda is connected to frc
