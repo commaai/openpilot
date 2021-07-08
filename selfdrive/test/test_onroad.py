@@ -154,6 +154,7 @@ class TestOnroad(unittest.TestCase):
     self.assertTrue(cpu_ok)
 
   def test_model_timings(self):
+    #TODO this went up when plannerd cpu usage increased, why?
     cfgs = [("modelV2", 0.035, 0.03), ("driverState", 0.025, 0.021)]
     for (s, instant_max, avg_max) in cfgs:
       ts = [getattr(getattr(m, s), "modelExecutionTime") for m in self.lr if m.which() == s]
