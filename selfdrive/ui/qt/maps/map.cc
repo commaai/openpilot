@@ -714,8 +714,6 @@ MapETA::MapETA(QWidget * parent) : QWidget(parent) {
 
 
 void MapETA::updateETA(float s, float s_typical, float d) {
-  setVisible(true);
-
   // ETA
   auto eta_time = QDateTime::currentDateTime().addSecs(s).time();
   if (params.getBool("NavSettingTime24h")) {
@@ -763,6 +761,7 @@ void MapETA::updateETA(float s, float s_typical, float d) {
   distance_str.setNum(num, 'f', num < 100 ? 1 : 0);
   distance->setText(distance_str);
 
+  show();
   adjustSize();
   repaint();
   adjustSize();
