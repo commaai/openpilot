@@ -9,7 +9,7 @@ from selfdrive.monitoring.driver_monitor import DriverStatus, \
                                   _AWARENESS_TIME, _AWARENESS_PRE_TIME_TILL_TERMINAL, \
                                   _AWARENESS_PROMPT_TIME_TILL_TERMINAL, _DISTRACTED_TIME, \
                                   _DISTRACTED_PRE_TIME_TILL_TERMINAL, _DISTRACTED_PROMPT_TIME_TILL_TERMINAL, \
-                                  _POSESTD_THRESHOLD, _HI_STD_TIMEOUT, _HI_STD_FALLBACK_TIME
+                                  _POSESTD_THRESHOLD, _HI_STD_FALLBACK_TIME
 
 EventName = car.CarEvent.EventName
 
@@ -18,7 +18,6 @@ _DISTRACTED_SECONDS_TO_ORANGE = _DISTRACTED_TIME - _DISTRACTED_PROMPT_TIME_TILL_
 _DISTRACTED_SECONDS_TO_RED = _DISTRACTED_TIME + 1
 _INVISIBLE_SECONDS_TO_ORANGE = _AWARENESS_TIME - _AWARENESS_PROMPT_TIME_TILL_TERMINAL + 1
 _INVISIBLE_SECONDS_TO_RED = _AWARENESS_TIME + 1
-_UNCERTAIN_SECONDS_TO_GREEN = _HI_STD_TIMEOUT + 0.5
 
 def make_msg(face_detected, distracted=False, model_uncertain=False):
   ds = log.DriverState.new_message()
@@ -32,6 +31,7 @@ def make_msg(face_detected, distracted=False, model_uncertain=False):
   ds.faceOrientationStd = [1.*model_uncertain, 1.*model_uncertain, 1.*model_uncertain]
   ds.facePositionStd = [1.*model_uncertain, 1.*model_uncertain]
   return ds
+
 
 # driver state from neural net, 10Hz
 msg_NO_FACE_DETECTED = make_msg(False)
@@ -192,11 +192,10 @@ class TestMonitoring(unittest.TestCase):
     ds_vector = [msg_DISTRACTED_BUT_SOMEHOW_UNCERTAIN] * int(_TEST_TIMESPAN/DT_DMON)
     interaction_vector = always_false[:]
     events = self._run_seq(ds_vector, interaction_vector, always_true, always_false)[0]
-    self.assertEqual(len(events[int(_UNCERTAIN_SECONDS_TO_GREEN*0.5/DT_DMON)]), 0)
-    self.assertEqual(events[int((_HI_STD_TIMEOUT)/DT_DMON)].names[0], EventName.driverMonitorLowAcc)
     self.assertTrue(EventName.preDriverUnresponsive in events[int((_INVISIBLE_SECONDS_TO_ORANGE-1+_HI_STD_FALLBACK_TIME-0.1)/DT_DMON)].names)
     self.assertTrue(EventName.promptDriverUnresponsive in events[int((_INVISIBLE_SECONDS_TO_ORANGE-1+_HI_STD_FALLBACK_TIME+0.1)/DT_DMON)].names)
     self.assertTrue(EventName.driverUnresponsive in events[int((_INVISIBLE_SECONDS_TO_RED-1+_HI_STD_FALLBACK_TIME+0.1)/DT_DMON)].names)
+
 
 if __name__ == "__main__":
   unittest.main()
