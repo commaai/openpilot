@@ -335,6 +335,7 @@ void WifiManager::stateChange(unsigned int new_state, unsigned int previous_stat
 void WifiManager::propertyChange(const QString &interface, const QVariantMap &props, const QStringList &invalidated_props) {
   if (interface == NM_DBUS_INTERFACE_DEVICE_WIRELESS && props.contains("LastScan")) {
     if (this->isVisible() || firstScan) {
+      activeAp = getActiveAp();
       refreshNetworks();
       emit refreshSignal();
       firstScan = false;
@@ -448,6 +449,16 @@ void WifiManager::setTetheringEnabled(bool enabled) {
     deactivateConnection(tethering_ssid);
   }
 }
+
+QString WifiManager::getActiveAp() {
+  QDBusInterface device_props(NM_DBUS_SERVICE, adapter, NM_DBUS_INTERFACE_PROPERTIES, bus);
+  device_props.setTimeout(DBUS_TIMEOUT);
+
+  QDBusMessage response = device_props.call("Get", NM_DBUS_INTERFACE_DEVICE_WIRELESS, "ActiveAccessPoint");
+  QDBusObjectPath r = get_response<QDBusObjectPath>(response);
+  return r.path();
+}
+
 
 bool WifiManager::isTetheringEnabled() {
   if (activeAp != "" && activeAp != "/") {
