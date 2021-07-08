@@ -42,15 +42,15 @@ class CarController():
     self.steer_rate_limited = False
     self.last_resume_frame = 0
 
-  def update(self, enabled, CS, frame, actuators, min_steer_speed, pcm_cancel_cmd,
-             visual_alert, left_lane, right_lane, left_lane_depart, right_lane_depart):
+  def update(self, enabled, CS, frame, actuators, pcm_cancel_cmd, visual_alert,
+             left_lane, right_lane, left_lane_depart, right_lane_depart):
     # Steering Torque
     new_steer = int(round(actuators.steer * self.p.STEER_MAX))
     apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, self.p)
     self.steer_rate_limited = new_steer != apply_steer
 
     # disable when temp fault is active, or below LKA minimum speed
-    lkas_active = enabled and not CS.out.steerWarning and CS.out.vEgo >= min_steer_speed
+    lkas_active = enabled and not CS.out.steerWarning and CS.out.vEgo >= CS.CP.minSteerSpeed
 
     if not lkas_active:
       apply_steer = 0
