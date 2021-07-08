@@ -23,7 +23,7 @@ fi
 
 # set up environment
 cd $SOURCE_DIR
-git fetch origin $GIT_COMMIT
+git fetch --verbose origin $GIT_COMMIT
 git reset --hard $GIT_COMMIT
 git checkout $GIT_COMMIT
 git clean -xdf

@@ -1,14 +1,8 @@
 #include <acado_code_generation.hpp>
-
-const int controlHorizon = 50;
+#include "selfdrive/common/modeldata.h"
 
 using namespace std;
 
-#define G 9.81
-#define TR 1.8
-
-#define RW(v_ego, v_l) (v_ego * TR - (v_l - v_ego) * TR + v_ego*v_ego/(2*G) - v_l*v_l / (2*G))
-#define NORM_RW_ERROR(v_ego, v_l, p) ((RW(v_ego, v_l) + 4.0 - p)/(sqrt(v_ego + 0.5) + 0.1))
 
 int main( )
 {
@@ -18,66 +12,57 @@ int main( )
   DifferentialEquation f;
 
   DifferentialState x_ego, v_ego, a_ego;
-  OnlineData x_l, v_l;
+  DifferentialState dummy_0;
+  OnlineData min_a, max_a;
 
-  Control j_ego;
-
-  auto desired = 4.0 + RW(v_ego, v_l);
-  auto d_l = x_l - x_ego;
+  Control j_ego, accel_slack;
 
   // Equations of motion
   f << dot(x_ego) == v_ego;
   f << dot(v_ego) == a_ego;
   f << dot(a_ego) == j_ego;
+  f << dot(dummy_0) == accel_slack;
 
   // Running cost
   Function h;
-  h << exp(0.3 * NORM_RW_ERROR(v_ego, v_l, d_l)) - 1;
-  h << (d_l - desired) / (0.05 * v_ego + 0.5);
-  h << a_ego * (0.1 * v_ego + 1.0);
-  h << j_ego * (0.1 * v_ego + 1.0);
+  h << x_ego;
+  h << v_ego;
+  h << a_ego;
+  h << j_ego;
+  h << accel_slack;
 
   // Weights are defined in mpc.
-  BMatrix Q(4,4); Q.setAll(true);
+  BMatrix Q(5,5); Q.setAll(true);
 
   // Terminal cost
   Function hN;
-  hN << exp(0.3 * NORM_RW_ERROR(v_ego, v_l, d_l)) - 1;
-  hN << (d_l - desired) / (0.05 * v_ego + 0.5);
-  hN << a_ego * (0.1 * v_ego + 1.0);
+  hN << x_ego;
+  hN << v_ego;
+  hN << a_ego;
 
   // Weights are defined in mpc.
   BMatrix QN(3,3); QN.setAll(true);
 
-  // Non uniform time grid
-  // First 5 timesteps are 0.2, after that it's 0.6
-  DMatrix numSteps(20, 1);
-  for (int i = 0; i < 5; i++){
-    numSteps(i) = 1;
-  }
-  for (int i = 5; i < 20; i++){
-    numSteps(i) = 3;
-  }
-
-  // Setup Optimal Control Problem
-  const double tStart = 0.0;
-  const double tEnd   = 10.0;
-
-  OCP ocp( tStart, tEnd, numSteps);
+  double T_IDXS_ARR[LON_MPC_N + 1];
+  memcpy(T_IDXS_ARR, T_IDXS, (LON_MPC_N + 1) * sizeof(double));
+  Grid times(LON_MPC_N + 1, T_IDXS_ARR);
+  OCP ocp(times);
   ocp.subjectTo(f);
 
   ocp.minimizeLSQ(Q, h);
   ocp.minimizeLSQEndTerm(QN, hN);
 
   ocp.subjectTo( 0.0 <= v_ego);
+  ocp.subjectTo( 0.0 <= a_ego - min_a + accel_slack);
+  ocp.subjectTo( a_ego - max_a + accel_slack <= 0.0);
   ocp.setNOD(2);
 
   OCPexport mpc(ocp);
   mpc.set( HESSIAN_APPROXIMATION, GAUSS_NEWTON );
   mpc.set( DISCRETIZATION_TYPE, MULTIPLE_SHOOTING );
   mpc.set( INTEGRATOR_TYPE, INT_RK4 );
-  mpc.set( NUM_INTEGRATOR_STEPS, controlHorizon);
-  mpc.set( MAX_NUM_QP_ITERATIONS, 500);
+  mpc.set( NUM_INTEGRATOR_STEPS, 1000);
+  mpc.set( MAX_NUM_QP_ITERATIONS, 50);
   mpc.set( CG_USE_VARIABLE_WEIGHTING_MATRIX, YES);
 
   mpc.set( SPARSE_QP_SOLUTION, CONDENSING );
