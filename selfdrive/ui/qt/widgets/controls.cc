@@ -1,6 +1,7 @@
 #include "selfdrive/ui/qt/widgets/controls.h"
 
 #include <QPainter>
+#include <QStyleOption>
 
 QFrame *horizontal_line(QWidget *parent) {
   QFrame *line = new QFrame(parent);
@@ -86,13 +87,30 @@ ButtonControl::ButtonControl(const QString &title, const QString &text, const QS
   hlayout->addWidget(&btn);
 }
 
+// ElidedLabel
+
+ElidedLabel::ElidedLabel(QWidget *parent) : ElidedLabel({}, parent) {}
+
+ElidedLabel::ElidedLabel(const QString &text, QWidget *parent) : QLabel(text.trimmed(), parent) {
+  setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+  setMinimumWidth(1);
+}
+
+void ElidedLabel::resizeEvent(QResizeEvent* event) {
+  QLabel::resizeEvent(event);
+  lastText_ = elidedText_ = "";
+}
+
 void ElidedLabel::paintEvent(QPaintEvent *event) {
-  QFrame::paintEvent(event);
+  const QString curText = text();
+  if (curText != lastText_) {
+    elidedText_ = fontMetrics().elidedText(curText, Qt::ElideRight, contentsRect().width());
+    lastText_ = curText;
+  }
 
   QPainter painter(this);
-  if (elidedText_.isEmpty()) {
-    QFontMetrics fontMetrics = painter.fontMetrics();
-    elidedText_ = fontMetrics.elidedText(content_, Qt::ElideRight, width());
-  }
-  painter.drawText(rect(), alignment_,  elidedText_);
+  drawFrame(&painter);
+  QStyleOption opt;
+  opt.initFrom(this);
+  style()->drawItemText(&painter, contentsRect(), alignment(), opt.palette, isEnabled(), elidedText_, foregroundRole());
 }

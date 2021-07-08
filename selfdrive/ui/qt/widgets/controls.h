@@ -10,28 +10,17 @@
 
 QFrame *horizontal_line(QWidget *parent = nullptr);
 
-class ElidedLabel : public QFrame {
+class ElidedLabel : public QLabel {
   Q_OBJECT
 
  public:
-  ElidedLabel(QWidget *parent = 0) : ElidedLabel("", parent) {}
-  explicit ElidedLabel(const QString &text, QWidget *parent = 0) : content_(text.trimmed()), QFrame(parent) {
-    setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-  }
-  void setAlignment(size_t alignment) { alignment_ = alignment; }
-  const QString &text() const { return content_; }
-  QSize sizeHint() const override { return QSize(1000, 80); }
-  void setText(const QString &text) {
-    content_ = text.trimmed();
-    elidedText_ = "";
-    update();
-  }
+  explicit ElidedLabel(QWidget *parent = 0);
+  explicit ElidedLabel(const QString &text, QWidget *parent = 0);
 
  protected:
   void paintEvent(QPaintEvent *event) override;
-  size_t alignment_ = Qt::AlignLeft | Qt::AlignVCenter;
-  QString content_;
-  QString elidedText_;
+  void resizeEvent(QResizeEvent* event) override;
+  QString lastText_, elidedText_;
 };
 
 class AbstractControl : public QFrame {
