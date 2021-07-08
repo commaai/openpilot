@@ -531,6 +531,7 @@ static void camera_init(MultiCameraState *multi_cam_state, VisionIpcServer * v, 
   s->min_ev = EXPOSURE_TIME_MIN * sensor_analog_gains[ANALOG_GAIN_MIN_IDX];
   s->max_ev = EXPOSURE_TIME_MAX * sensor_analog_gains[ANALOG_GAIN_MAX_IDX] * DC_GAIN;
   s->cur_ev = (s->max_ev - s->min_ev) / 2;
+  s->target_grey_fraction = 0.3;
 
   s->buf.init(device_id, ctx, s, v, FRAME_BUF_COUNT, rgb_type, yuv_type);
 }
@@ -928,8 +929,13 @@ void handle_camera_event(CameraState *s, void *evdat) {
 }
 
 static void set_camera_exposure(CameraState *s, float grey_frac) {
+  const float dt = 0.15;
+  const float ts = 10.0;
+  const float k = (dt / ts) / (1.0 + dt / ts);
+
   // Scale target grey between 0.2 and 0.4 depending on lighting conditions
-  float target_grey = std::clamp(0.4 - 0.2 * log2(1.0 + s->cur_ev) / log2(6000.0), 0.2, 0.4);
+  float new_target_grey = std::clamp(0.4 - 0.2 * log2(1.0 + s->cur_ev) / log2(6000.0), 0.2, 0.4);
+  float target_grey = (1.0 - k) * s->target_grey_fraction + k * new_target_grey;
 
   float new_ev = s->cur_ev * target_grey / grey_frac;
   new_ev = std::clamp(new_ev, s->min_ev, s->max_ev);
