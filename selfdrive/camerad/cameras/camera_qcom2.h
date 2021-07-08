@@ -11,9 +11,8 @@
 
 #define FRAME_BUF_COUNT 4
 
-#define ANALOG_GAIN_MIN_IDX_LCG 0x6 // 0.8x
-#define ANALOG_GAIN_MIN_IDX_HCG 0x7 // 1.0x
-#define ANALOG_GAIN_MAX_IDX 0xE // 0xF is bypass
+#define ANALOG_GAIN_MIN_IDX 0x4 // 0.5x
+#define ANALOG_GAIN_MAX_IDX 0xD // 4.0x
 #define EXPOSURE_TIME_MIN 2 // with HDR, fastest ss
 #define EXPOSURE_TIME_MAX 1904 // with HDR, slowest ss
 
