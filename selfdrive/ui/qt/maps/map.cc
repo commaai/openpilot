@@ -764,6 +764,8 @@ void MapETA::updateETA(float s, float s_typical, float d) {
   distance->setText(distance_str);
 
   adjustSize();
+  repaint();
+  adjustSize();
 
   // Rounded corners
   const int radius = 25;
