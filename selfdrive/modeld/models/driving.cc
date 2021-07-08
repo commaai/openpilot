@@ -156,39 +156,20 @@ static const float *get_lead_data(const float *lead, int t_offset) {
   return get_best_data(lead, LEAD_MHP_N, LEAD_MHP_GROUP_SIZE, t_offset - LEAD_MHP_SELECTION);
 }
 
-
 void fill_lead_v3(cereal::ModelDataV2::LeadDataV3::Builder lead, const float *lead_data, const float *prob, int t_offset, float prob_t) {
   float t[LEAD_TRAJ_LEN] = {0.0, 2.0, 4.0, 6.0, 8.0, 10.0};
   const float *data = get_lead_data(lead_data, t_offset);
   lead.setProb(sigmoid(prob[t_offset]));
   lead.setProbTime(prob_t);
-  float x_arr[LEAD_TRAJ_LEN];
-  float y_arr[LEAD_TRAJ_LEN];
-  float v_arr[LEAD_TRAJ_LEN];
-  float a_arr[LEAD_TRAJ_LEN];
-  float x_stds_arr[LEAD_TRAJ_LEN];
-  float y_stds_arr[LEAD_TRAJ_LEN];
-  float v_stds_arr[LEAD_TRAJ_LEN];
-  float a_stds_arr[LEAD_TRAJ_LEN];
-  for (int i=0; i<LEAD_TRAJ_LEN; i++) {
-    x_arr[i] = data[i*LEAD_PRED_DIM+0];
-    y_arr[i] = data[i*LEAD_PRED_DIM+1];
-    v_arr[i] = data[i*LEAD_PRED_DIM+2];
-    a_arr[i] = data[i*LEAD_PRED_DIM+3];
-    x_stds_arr[i] = exp(data[LEAD_MHP_VALS + i*LEAD_PRED_DIM+0]);
-    y_stds_arr[i] = exp(data[LEAD_MHP_VALS + i*LEAD_PRED_DIM+1]);
-    v_stds_arr[i] = exp(data[LEAD_MHP_VALS + i*LEAD_PRED_DIM+2]);
-    a_stds_arr[i] = exp(data[LEAD_MHP_VALS + i*LEAD_PRED_DIM+3]);
-  }
   lead.setT(t);
-  lead.setX(x_arr);
-  lead.setY(y_arr);
-  lead.setV(v_arr);
-  lead.setA(a_arr);
-  lead.setXStd(x_stds_arr);
-  lead.setYStd(y_stds_arr);
-  lead.setVStd(v_stds_arr);
-  lead.setAStd(a_stds_arr);
+  lead.setX(Arr<LEAD_TRAJ_LEN>(&data[0], LEAD_PRED_DIM));
+  lead.setY(Arr<LEAD_TRAJ_LEN>(&data[1], LEAD_PRED_DIM));
+  lead.setV(Arr<LEAD_TRAJ_LEN>(&data[2], LEAD_PRED_DIM));
+  lead.setA(Arr<LEAD_TRAJ_LEN>(&data[3], LEAD_PRED_DIM));
+  lead.setXStd(Arr<LEAD_TRAJ_LEN, exp>(&data[LEAD_MHP_VALS+0], LEAD_PRED_DIM));
+  lead.setYStd(Arr<LEAD_TRAJ_LEN, exp>(&data[LEAD_MHP_VALS+1], LEAD_PRED_DIM));
+  lead.setVStd(Arr<LEAD_TRAJ_LEN, exp>(&data[LEAD_MHP_VALS+2], LEAD_PRED_DIM));
+  lead.setAStd(Arr<LEAD_TRAJ_LEN, exp>(&data[LEAD_MHP_VALS+3], LEAD_PRED_DIM));
 }
 
 void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const float *meta_data) {
