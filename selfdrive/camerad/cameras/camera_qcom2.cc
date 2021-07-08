@@ -941,29 +941,24 @@ static void set_camera_exposure(CameraState *s, float grey_frac) {
 
   float best_ev_score = 1e6;
   int new_g = 0;
-  bool new_dc = false;
   int new_t = 0;
 
   // Simple brute force optimizer to choose sensor parameters
   // to reach desired EV
-  for (int dc = 0; dc <= 1; dc++) {
-    for (int g = ANALOG_GAIN_MIN_IDX; g <= ANALOG_GAIN_MAX_IDX; g++) {
-      float gain = sensor_analog_gains[g] * (dc ? DC_GAIN : 1.0);
+  for (int g = ANALOG_GAIN_MIN_IDX; g <= ANALOG_GAIN_MAX_IDX; g++) {
+    float gain = sensor_analog_gains[g] * DC_GAIN;
 
-      // Compute optimal time for given gain
-      int t = std::clamp(int(std::round(desired_ev / gain)), EXPOSURE_TIME_MIN, EXPOSURE_TIME_MAX);
+    // Compute optimal time for given gain
+    int t = std::clamp(int(std::round(desired_ev / gain)), EXPOSURE_TIME_MIN, EXPOSURE_TIME_MAX);
 
-      // Compute error to desired ev
-      float score = std::abs(desired_ev - (t * gain)) * 10;
-      score += g * 10;
-      score += dc * 100;
+    // Compute error to desired ev
+    float score = std::abs(desired_ev - (t * gain)) * 10;
+    score += g * 10;
 
-      if (score < best_ev_score) {
-        new_t = t;
-        new_dc = dc;
-        new_g = g;
-        best_ev_score = score;
-      }
+    if (score < best_ev_score) {
+      new_t = t;
+      new_g = g;
+      best_ev_score = score;
     }
   }
 
@@ -974,7 +969,7 @@ static void set_camera_exposure(CameraState *s, float grey_frac) {
 
   s->analog_gain_frac = sensor_analog_gains[new_g];
   s->exposure_time = new_t;
-  s->dc_gain_enabled = new_dc;
+  s->dc_gain_enabled = true;
 
   float gain = s->analog_gain_frac * (s->dc_gain_enabled ? DC_GAIN : 1.0);
   s->cur_ev = s->exposure_time * gain;
