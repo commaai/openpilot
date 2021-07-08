@@ -67,16 +67,24 @@ typedef struct LogCameraInfo {
 
 typedef struct FrameMetadata {
   uint32_t frame_id;
+  unsigned int frame_length;
+
+  // Timestamps
   uint64_t timestamp_sof; // only set on tici
   uint64_t timestamp_eof;
-  unsigned int frame_length;
+
+  // Exposure
   unsigned int integ_lines;
-  unsigned int global_gain;
+  bool high_conversion_gain;
+  float gain;
+  float measured_grey_fraction;
+  float target_grey_fraction;
+
+  // Focus
   unsigned int lens_pos;
   float lens_sag;
   float lens_err;
   float lens_true_pos;
-  float gain_frac;
 } FrameMetadata;
 
 typedef struct CameraExpInfo {
