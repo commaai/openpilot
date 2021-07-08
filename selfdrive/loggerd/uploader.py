@@ -176,7 +176,7 @@ class Uploader():
     else:
       cloudlog.debug("uploading %r", fn)
       stat = self.normal_upload(key, fn)
-      if stat is not None and stat.status_code in (200, 201, 412):
+      if stat is not None and stat.status_code in (200, 201, 403, 412):
         cloudlog.event("upload_success" if stat.status_code != 412 else "upload_ignored", key=key, fn=fn, sz=sz, debug=True)
         try:
           # tag file as uploaded
