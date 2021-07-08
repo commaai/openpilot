@@ -14,7 +14,7 @@ void clearLayout(QLayout* layout);
 void setQtSurfaceFormat();
 QString timeAgo(const QDateTime &date);
 void swagLogMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg);
-void initApp(int brightness = 65);
+void initApp();
 
 class ClickableWidget : public QWidget
 {
