@@ -5,7 +5,19 @@
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/hardware/hw.h"
 
-InputDialog::InputDialog(const QString &prompt_text, QWidget *parent) : QDialog(parent) {
+QDialogBase::QDialogBase(QWidget *parent) : QDialog(parent) {
+  Q_ASSERT(parent != nullptr);
+  parent->installEventFilter(this);
+}
+
+bool QDialogBase::eventFilter(QObject *o, QEvent *e) {
+  if (o == parent() && e->type() == QEvent::Hide) {
+    reject();
+  }
+  return QDialog::eventFilter(o, e);
+}
+
+InputDialog::InputDialog(const QString &prompt_text, QWidget *parent) : QDialogBase(parent) {
   main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(50, 50, 50, 50);
   main_layout->setSpacing(20);
@@ -57,8 +69,8 @@ InputDialog::InputDialog(const QString &prompt_text, QWidget *parent) : QDialog(
 
 }
 
-QString InputDialog::getText(const QString &prompt, int minLength, const QString &defaultText) {
-  InputDialog d = InputDialog(prompt);
+QString InputDialog::getText(const QString &prompt, QWidget *parent, int minLength, const QString &defaultText) {
+  InputDialog d = InputDialog(prompt, parent);
   d.line->setText(defaultText);
   d.setMinLength(minLength);
   const int ret = d.exec();
@@ -114,7 +126,7 @@ void InputDialog::setMinLength(int length) {
 }
 
 ConfirmationDialog::ConfirmationDialog(const QString &prompt_text, const QString &confirm_text, const QString &cancel_text,
-                                       QWidget *parent):QDialog(parent) {
+                                       QWidget *parent) : QDialogBase(parent) {
   setWindowFlags(Qt::Popup);
   main_layout = new QVBoxLayout(this);
   main_layout->setMargin(25);

@@ -109,7 +109,7 @@ QWidget * Setup::software_selection() {
   QPushButton *custom_btn = new QPushButton("Custom");
   main_layout->addWidget(custom_btn);
   QObject::connect(custom_btn, &QPushButton::released, this, [=]() {
-    QString input_url = InputDialog::getText("Enter URL");
+    QString input_url = InputDialog::getText("Enter URL", this);
     if (input_url.size()) {
       this->download(input_url);
     }

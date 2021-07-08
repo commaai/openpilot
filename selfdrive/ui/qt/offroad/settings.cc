@@ -394,12 +394,4 @@ void SettingsWindow::hideEvent(QHideEvent *event) {
 #ifdef QCOM
   HardwareEon::close_activities();
 #endif
-
-  // TODO: this should be handled by the Dialog classes
-  QList<QWidget*> children = findChildren<QWidget *>();
-  for(auto &w : children) {
-    if(w->metaObject()->superClass()->className() == QString("QDialog")) {
-      w->close();
-    }
-  }
 }
