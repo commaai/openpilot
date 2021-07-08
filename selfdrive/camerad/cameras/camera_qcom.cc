@@ -282,6 +282,12 @@ static void set_exposure(CameraState *s, float exposure_frac, float gain_frac) {
 
 static void do_autoexposure(CameraState *s, float grey_frac) {
   const float target_grey = 0.3;
+
+  s->frame_info_lock.lock();
+  s->measured_grey_fraction = grey_frac;
+  s->target_grey_fraction = target_grey;
+  s->frame_info_lock.unlock();
+
   if (s->apply_exposure == ov8865_apply_exposure) {
     // gain limits downstream
     const float gain_frac_min = 0.015625;
@@ -1162,12 +1168,14 @@ void cameras_run(MultiCameraState *s) {
             .timestamp_eof = timestamp,
             .frame_length = (uint32_t)c->frame_length,
             .integ_lines = (uint32_t)c->cur_integ_lines,
-            .global_gain = (uint32_t)c->cur_gain,
             .lens_pos = c->cur_lens_pos,
             .lens_sag = c->last_sag_acc_z,
             .lens_err = c->focus_err,
             .lens_true_pos = c->lens_true_pos,
-            .gain_frac = c->cur_gain_frac,
+            .gain = c->cur_gain_frac,
+            .measured_grey_fraction = c->measured_grey_fraction,
+            .target_grey_fraction = c->target_grey_fraction,
+            .high_conversion_gain = false,
         };
         c->frame_metadata_idx = (c->frame_metadata_idx + 1) % METADATA_BUF_COUNT;
 
