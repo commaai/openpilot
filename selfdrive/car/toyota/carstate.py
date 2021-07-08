@@ -5,6 +5,7 @@ from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
 from selfdrive.config import Conversions as CV
 from selfdrive.car.toyota.values import CAR, DBC, STEER_THRESHOLD, NO_STOP_TIMER_CAR
+from selfdrive.swaglog import cloudlog
 
 
 class CarState(CarStateBase):
@@ -19,6 +20,7 @@ class CarState(CarStateBase):
     self.needs_angle_offset = True
     self.accurate_steer_angle_seen = False
     self.angle_offset = 0.
+    self.logged_setme_vals = set()
 
   def update(self, cp, cp_cam):
     ret = car.CarState.new_message()
@@ -79,6 +81,12 @@ class CarState(CarStateBase):
       ret.cruiseState.available = cp.vl["PCM_CRUISE_2"]["MAIN_ON"] != 0
       ret.cruiseState.speed = cp.vl["PCM_CRUISE_2"]["SET_SPEED"] * CV.KPH_TO_MS
       self.low_speed_lockout = cp.vl["PCM_CRUISE_2"]["LOW_SPEED_LOCKOUT"] == 2
+
+      val = cp_cam.vl["ACC_CONTROL"]["SET_ME_X01"]
+      if val not in self.logged_setme_vals and val != 1:
+        self.logged_setme_vals.add(val)
+        cloudlog.event("setme_vals", vals=self.logged_setme_vals)
+
     self.pcm_acc_status = cp.vl["PCM_CRUISE"]["CRUISE_STATE"]
     if self.CP.carFingerprint in NO_STOP_TIMER_CAR or self.CP.enableGasInterceptor:
       # ignore standstill in hybrid vehicles, since pcm allows to restart without
