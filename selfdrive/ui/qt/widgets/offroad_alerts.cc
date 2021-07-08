@@ -97,7 +97,6 @@ void OffroadAlert::refresh() {
 
 void OffroadAlert::updateAlerts() {
   alertCount = 0;
-  updateAvailable = params.getBool("UpdateAvailable");
   for (const auto& [key, label] : alerts) {
     auto bytes = params.get(key.c_str());
     if (bytes.size()) {
@@ -109,4 +108,5 @@ void OffroadAlert::updateAlerts() {
       label->setText("");
     }
   }
+  updateAvailable = params.getBool("UpdateAvailable") && alertCount < 1;
 }
