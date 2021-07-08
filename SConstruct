@@ -170,7 +170,7 @@ if arch != "Darwin":
   ldflags += ["-Wl,--as-needed", "-Wl,--no-undefined"]
 
 # change pythonpath to this
-lenv["PYTHONPATH"] = Dir("#").path
+lenv["PYTHONPATH"] = Dir("#").path + ":" + Dir("#pyextra/").path
 
 env = Environment(
   ENV=lenv,
