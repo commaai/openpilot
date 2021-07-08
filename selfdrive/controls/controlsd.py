@@ -244,7 +244,9 @@ class Controls:
     elif not self.sm.all_alive_and_valid():
       self.events.add(EventName.commIssue)
       if not self.logged_comm_issue:
-        cloudlog.error(f"commIssue - valid: {self.sm.valid} - alive: {self.sm.alive}")
+        invalid = [s for s, valid in self.sm.valid.items() if not valid]
+        not_alive = [s for s, alive in self.sm.alive.items() if not alive]
+        cloudlog.event("commIssue", invalid=invalid, not_alive=not_alive)
         self.logged_comm_issue = True
     else:
       self.logged_comm_issue = False
