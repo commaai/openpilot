@@ -69,6 +69,7 @@ lenv = {
   "PATH": os.environ['PATH'],
 }
 
+
 if arch == "aarch64" or arch == "larch64":
   lenv["LD_LIBRARY_PATH"] = '/data/data/com.termux/files/usr/lib'
 
@@ -87,6 +88,7 @@ if arch == "aarch64" or arch == "larch64":
     "/system/vendor/lib64",
     "/system/comma/usr/lib",
     "#phonelibs/nanovg",
+    f"#phonelibs/acados/{arch}/lib",
   ]
 
   if arch == "larch64":
@@ -134,6 +136,7 @@ else:
     ]
   else:
     libpath = [
+      "#phonelibs/acados/x86_64/lib",
       "#phonelibs/snpe/x86_64-linux-clang",
       "#phonelibs/libyuv/x64/lib",
       "#phonelibs/mapbox-gl-native-qt/x86_64",
@@ -164,7 +167,7 @@ else:
 
 # no --as-needed on mac linker
 if arch != "Darwin":
-  ldflags += ["-Wl,--as-needed"]
+  ldflags += ["-Wl,--as-needed", "-Wl,--no-undefined"]
 
 # Enable swaglog include in submodules
 cflags += ["-DSWAGLOG"]
@@ -191,6 +194,9 @@ env = Environment(
 
   CPPPATH=cpppath + [
     "#",
+    "#phonelibs/acados/include",
+    "#phonelibs/acados/include/blasfeo/include",
+    "#phonelibs/acados/include/hpipm/include",
     "#phonelibs/catch2/include",
     "#phonelibs/bzip2",
     "#phonelibs/libyuv/include",
