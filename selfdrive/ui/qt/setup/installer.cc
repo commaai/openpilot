@@ -23,19 +23,19 @@
 #define BRANCH "master"
 #endif
 
+#ifdef MASTER
+  const QVector<QString> stages = {"Receiving objects: ", "Resolving deltas: ", "Filtering content: "};
+  const QVector<int> weights = {60, 2, 38};
+#else
+  const QVector<QString> stages = {"Receiving objects: ", "Resolving deltas: "};
+  const QVector<int> weights = {95, 5};
+#endif
+
 #define GIT_URL "https://github.com/commaai/openpilot.git"
 #define GIT_SSH_URL "git@github.com:commaai/openpilot.git"
 
 #define CONTINUE_PATH "/data/continue.sh"
-
-int get_progress(const std::string &line) {
-  const std::string prefix = "Receiving objects: ";
-  const int start_idx = line.find(prefix);
-  if (start_idx != std::string::npos) {
-    return std::stoi(line.substr(start_idx + prefix.length(), 3));
-  }
-  return -1;
-}
+#define BASEDIR "/data"
 
 bool time_valid() {
   time_t rawtime;
@@ -45,23 +45,47 @@ bool time_valid() {
   return (1900 + sys_time->tm_year) >= 2019;
 }
 
-int Installer::fresh_clone() {
+int Installer::getProgress(const QString &line) {
+  for (const QString &prefix : stages) {
+    if (line.startsWith(prefix)) {
+      currentStage = prefix;
+      break;
+    }
+  }
+
+  if (stages.contains(currentStage)) {
+    const int startIdx = line.indexOf(currentStage);
+    if (startIdx != -1) {
+      int stageIdx = stages.indexOf(currentStage);
+      const int weight = weights.at(stageIdx);
+      QVector<int> offsets = weights.mid(0, stageIdx);
+
+      float offset = std::accumulate(offsets.begin(), offsets.end(), 0);
+      float value = line.mid(startIdx + currentStage.length(), 3).toFloat() / (100. / weight);
+      return qRound(value + offset);
+    }
+  }
+  return -1;
+}
+
+int Installer::freshClone() {
   int err;
 
   // Cleanup
-  err = std::system("rm -rf /data/tmppilot /data/openpilot");
+  err = std::system("rm -rf " BASEDIR "/tmppilot " BASEDIR "/openpilot");
   if (err) return 1;
 
   // Clone
-  auto clone_pipe = popen("git clone " GIT_URL " -b " BRANCH " --depth=1 --progress --recurse-submodules /data/tmppilot 2>&1 >/dev/null", "r");
+//  auto clone_pipe = popen("git clone " GIT_URL " -b " BRANCH " --depth=1 --progress --recurse-submodules " BASEDIR "/tmppilot 2>&1 >/dev/null", "r");
+  auto clone_pipe = popen("git clone " GIT_URL " -b " BRANCH " --depth=1 --progress " BASEDIR "/tmppilot 2>&1 >/dev/null", "r");
   if (!clone_pipe) return 1;
 
   char c;
-  std::string buffer;  // TODO: use QT
+  QString buffer;  // TODO: use QT
   while (fscanf(clone_pipe, "%c", &c) != EOF) {
     if (c == '\r' || c == '\n') {
-//      std::cout << "--->>> " << buffer.c_str() << "|||\n";
-      int progress = get_progress(buffer);
+      qDebug() << "--->>>" << buffer << "|||\n";
+      int progress = getProgress(buffer);
       if (progress != -1) {
         emit update(progress);
       }
@@ -74,14 +98,14 @@ int Installer::fresh_clone() {
   err = pclose(clone_pipe);
   if (err) return 1;
 
-  err = std::system("cd /data/tmppilot && git remote set-url origin --push " GIT_SSH_URL);
+  err = std::system("cd " BASEDIR "/tmppilot && git remote set-url origin --push " GIT_SSH_URL);
   if (err) return 1;
 
-  err = std::system("mv /data/tmppilot /data/openpilot");
+  err = std::system("mv " BASEDIR "/tmppilot " BASEDIR "/openpilot");
   if (err) return 1;
 
 #ifdef INTERNAL
-  err = std::system("mkdir -p /data/params/d/");
+  err = std::system("mkdir -p " BASEDIR "/params/d/");
   if (err) return 1;
 
   std::map<std::string, std::string> params = {
@@ -91,7 +115,7 @@ int Installer::fresh_clone() {
   };
   for (const auto& [key, value] : params) {
     std::ofstream param;
-    param.open("/data/params/d/" + key);
+    param.open("" BASEDIR "/params/d/" + key);
     param << value;
     param.close();
   }
@@ -110,11 +134,11 @@ int Installer::install() {
   }
 
   std::cout << "Doing fresh clone\n";
-  err = fresh_clone();
+  err = freshClone();
   if (err) return 1;
 
   // Write continue.sh
-  err = std::system("cp /data/openpilot/installer/continue_openpilot.sh " CONTINUE_PATH);
+  err = std::system("cp " BASEDIR "/openpilot/installer/continue_openpilot.sh " CONTINUE_PATH);
   if (err == -1) return 1;
 
   return 0;
@@ -126,7 +150,8 @@ Installer::Installer(QWidget *parent) : QWidget(parent) {
   main_layout->setMargin(200);
 
   progress_bar = new QProgressBar();
-  progress_bar->setRange(5, 100);
+//  progress_bar->setRange(5, 100);
+  progress_bar->setRange(0, 100);
   progress_bar->setTextVisible(false);
   progress_bar->setVisible(true);
   progress_bar->setFixedHeight(20);

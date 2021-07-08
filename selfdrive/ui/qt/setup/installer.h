@@ -19,8 +19,10 @@ private:
   QProgressBar *progress_bar;
   QSocketNotifier *notifier;
   int install();
-  int fresh_clone();
+  int freshClone();
+  int getProgress(const QString &line);
   bool started = false;
+  QString currentStage;
 
 public slots:
   void update(const int value);

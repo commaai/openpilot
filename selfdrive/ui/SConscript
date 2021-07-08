@@ -63,6 +63,8 @@ if arch != 'aarch64' and GetOption('setup'):
   ]
   for name, branch in installers:
     d = {'BRANCH': f"'\"{branch}\"'"}
+    if "master" == branch:
+      d['MASTER'] = "1"
     if "internal" in name:
       d['INTERNAL'] = "1"
 
