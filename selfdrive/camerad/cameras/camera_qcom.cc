@@ -282,6 +282,12 @@ static void set_exposure(CameraState *s, float exposure_frac, float gain_frac) {
 
 static void do_autoexposure(CameraState *s, float grey_frac) {
   const float target_grey = 0.3;
+
+  s->frame_info_lock.lock();
+  s->measured_grey_fraction = grey_frac;
+  s->target_grey_fraction = target_grey;
+  s->frame_info_lock.unlock();
+
   if (s->apply_exposure == ov8865_apply_exposure) {
     // gain limits downstream
     const float gain_frac_min = 0.015625;
@@ -301,8 +307,6 @@ static void do_autoexposure(CameraState *s, float grey_frac) {
     }
     s->frame_info_lock.lock();
     s->cur_gain_frac = cur_gain_frac;
-    s->measured_grey_fraction = grey_frac;
-    s->target_grey_fraction = target_grey;
     s->frame_info_lock.unlock();
 
     set_exposure(s, s->cur_exposure_frac, cur_gain_frac);
