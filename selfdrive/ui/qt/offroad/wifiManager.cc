@@ -69,6 +69,7 @@ void WifiManager::setup() {
   QDBusMessage response = device_props.call("Get", NM_DBUS_INTERFACE_DEVICE, "State");
   raw_adapter_state = get_response<uint>(response);
 
+  initConnections();
   requestScan();
 }
 
@@ -335,7 +336,6 @@ void WifiManager::propertyChange(const QString &interface, const QVariantMap &pr
   if (interface == NM_DBUS_INTERFACE_DEVICE_WIRELESS && props.contains("LastScan")) {
     if (this->isVisible() || firstScan) {
       activeAp = getActiveAp();
-      initConnections();
       refreshNetworks();
       emit refreshSignal();
       firstScan = false;
@@ -390,7 +390,6 @@ void WifiManager::initConnections() {
   QDBusInterface nm(NM_DBUS_SERVICE, NM_DBUS_PATH_SETTINGS, NM_DBUS_INTERFACE_SETTINGS, bus);
   nm.setTimeout(DBUS_TIMEOUT);
 
-  knownConnections.clear();
   const QDBusReply<QList<QDBusObjectPath>> response = nm.call("ListConnections");
   for (const QDBusObjectPath &path : response.value()) {
     knownConnections[path] = getConnectionSsid(path);
