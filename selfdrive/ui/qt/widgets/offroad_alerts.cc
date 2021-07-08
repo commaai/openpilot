@@ -75,12 +75,8 @@ int OffroadAlert::refresh() {
     scrollable_layout->addStretch(1);
   }
 
-  updateAlerts();
-}
-
-void OffroadAlert::updateAlerts() {
-  alertCount = 0;
-  for (const auto& [key, label] : alerts) {
+  int alertCount = 0;
+  for (const auto &[key, label] : alerts) {
     QString text;
     std::string bytes = params.get(key);
     if (bytes.size()) {
