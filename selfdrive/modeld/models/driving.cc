@@ -252,6 +252,9 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelDataRaw &net_ou
       plan_t_arr[xidx] = p * T_IDXS[tidx+1] + (1 - p) * T_IDXS[tidx];
     }
   }
+  for (; xidx<TRAJECTORY_SIZE; xidx++) {
+    plan_t_arr[xidx] = NAN;
+  }
 
   fill_xyzt(framed.initPosition(), best_plan, PLAN_MHP_COLUMNS, 0, plan_t_arr, true);
   fill_xyzt(framed.initVelocity(), best_plan, PLAN_MHP_COLUMNS, 3, plan_t_arr, false);
@@ -287,11 +290,10 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelDataRaw &net_ou
 void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id, float frame_drop,
                    const ModelDataRaw &net_outputs, uint64_t timestamp_eof,
                    float model_execution_time, kj::ArrayPtr<const float> raw_pred) {
-  const uint32_t frame_age = (frame_id > vipc_frame_id) ? (frame_id - vipc_frame_id) : 0;
   MessageBuilder msg;
   auto framed = msg.initEvent().initModelV2();
   framed.setFrameId(vipc_frame_id);
-  framed.setFrameAge(frame_age);
+  framed.setFrameAge(std::max(int(frame_id - vipc_frame_id), 0));
   framed.setFrameDropPerc(frame_drop * 100);
   framed.setTimestampEof(timestamp_eof);
   framed.setModelExecutionTime(model_execution_time);
