@@ -34,7 +34,7 @@
 // TODO: this is also hardcoded in common/transformations/camera.py
 // TODO: choose based on frame input size
 const float y_offset = Hardware::TICI() ? 150.0 : 0.0;
-const float zoom = Hardware::TICI() ? 2912.8 : 2138.5;
+const float ZOOM = Hardware::TICI() ? 2912.8 : 2138.5;
 
 typedef struct Rect {
   int x, y, w, h;
@@ -136,7 +136,6 @@ typedef struct UIState {
   Rect video_rect, viz_rect;
   float car_space_transform[6];
   bool wide_camera;
-  float zoom;
 } UIState;
 
 
