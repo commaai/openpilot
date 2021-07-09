@@ -16,9 +16,8 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   main_layout = new QStackedLayout(this);
   main_layout->setStackingMode(QStackedLayout::StackAll);
 
-  // old UI on bottom
-  nvg = new NvgWindow(this);
-  QObject::connect(this, &OnroadWindow::update, nvg, &NvgWindow::update);
+  bool wide_camera = Hardware::TICI() && Params().getBool("EnableWideCamera");
+  nvg = new NvgWindow(wide_camera ? VISION_STREAM_RGB_WIDE : VISION_STREAM_RGB_BACK, this);
 
   QWidget * split_wrapper = new QWidget;
   split = new QHBoxLayout(split_wrapper);
@@ -214,46 +213,20 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
 }
 
 
-NvgWindow::NvgWindow(QWidget *parent) : QOpenGLWidget(parent) {
-  setAttribute(Qt::WA_OpaquePaintEvent);
-}
-
-NvgWindow::~NvgWindow() {
-  makeCurrent();
-  doneCurrent();
-}
+NvgWindow::NvgWindow(VisionStreamType stream_type, QWidget *parent) : CameraViewWidget(stream_type, parent) {}
+NvgWindow::~NvgWindow() {}
 
 void NvgWindow::initializeGL() {
-  initializeOpenGLFunctions();
-  qInfo() << "OpenGL version:" << QString((const char*)glGetString(GL_VERSION));
-  qInfo() << "OpenGL vendor:" << QString((const char*)glGetString(GL_VENDOR));
-  qInfo() << "OpenGL renderer:" << QString((const char*)glGetString(GL_RENDERER));
-  qInfo() << "OpenGL language version:" << QString((const char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
-
+  CameraViewWidget::initializeGL();
   ui_nvg_init(&QUIState::ui_state);
-  prev_draw_t = millis_since_boot();
-}
-
-void NvgWindow::update(const UIState &s) {
-  // Connecting to visionIPC requires opengl to be current
-  if (s.vipc_client->connected) {
-    makeCurrent();
-  }
-  repaint();
 }
 
 void NvgWindow::resizeGL(int w, int h) {
+  CameraViewWidget::resizeGL(w, h);
   ui_resize(&QUIState::ui_state, w, h);
 }
 
 void NvgWindow::paintGL() {
+  CameraViewWidget::paintGL();
   ui_draw(&QUIState::ui_state, width(), height());
-
-  double cur_draw_t = millis_since_boot();
-  double dt = cur_draw_t - prev_draw_t;
-  if (dt > 66) {
-    // warn on sub 15fps
-    LOGW("slow frame time: %.2f", dt);
-  }
-  prev_draw_t = cur_draw_t;
 }

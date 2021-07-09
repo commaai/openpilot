@@ -25,6 +25,7 @@ signals:
 protected:
   void paintGL() override;
   void initializeGL() override;
+  void resizeGL(int w, int h) override;
   void showEvent(QShowEvent *event) override;
   void hideEvent(QHideEvent *event) override;
 

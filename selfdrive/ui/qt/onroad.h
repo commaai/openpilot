@@ -11,6 +11,7 @@
 #include "cereal/gen/cpp/log.capnp.h"
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/qt/qt_window.h"
+#include "selfdrive/ui/qt/widgets/cameraview.h"
 #include "selfdrive/ui/ui.h"
 
 typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
@@ -46,24 +47,17 @@ public slots:
 };
 
 // container window for the NVG UI
-class NvgWindow : public QOpenGLWidget, protected QOpenGLFunctions {
+class NvgWindow : public CameraViewWidget {
   Q_OBJECT
 
 public:
-  using QOpenGLWidget::QOpenGLWidget;
-  explicit NvgWindow(QWidget* parent = 0);
+  explicit NvgWindow(VisionStreamType stream_type, QWidget* parent = 0);
   ~NvgWindow();
 
 protected:
-  void paintGL() override;
   void initializeGL() override;
   void resizeGL(int w, int h) override;
-
-private:
-  double prev_draw_t = 0;
-
-public slots:
-  void update(const UIState &s);
+  void paintGL() override;
 };
 
 // container for all onroad widgets

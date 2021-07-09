@@ -1,5 +1,7 @@
 #include "selfdrive/ui/qt/widgets/cameraview.h"
 
+#include <QDebug>
+
 #include "selfdrive/ui/qt/qt_window.h"
 
 namespace {
@@ -94,6 +96,11 @@ CameraViewWidget::~CameraViewWidget() {
 
 void CameraViewWidget::initializeGL() {
   initializeOpenGLFunctions();
+  qInfo() << "OpenGL version:" << QString((const char*)glGetString(GL_VERSION));
+  qInfo() << "OpenGL vendor:" << QString((const char*)glGetString(GL_VENDOR));
+  qInfo() << "OpenGL renderer:" << QString((const char*)glGetString(GL_RENDERER));
+  qInfo() << "OpenGL language version:" << QString((const char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
+
 
   gl_shader = std::make_unique<GLShader>(frame_vertex_shader, frame_fragment_shader);
   GLint frame_pos_loc = glGetAttribLocation(gl_shader->prog, "aPosition");
@@ -125,7 +132,11 @@ void CameraViewWidget::initializeGL() {
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   glBindVertexArray(0);
 
-  if (stream_type == VISION_STREAM_RGB_FRONT) {
+  vipc_client = std::make_unique<VisionIpcClient>("camerad", stream_type, true);
+}
+
+void CameraViewWidget::resizeGL(int w, int h) {
+ if (stream_type == VISION_STREAM_RGB_FRONT) {
     frame_mat = matmul(device_transform, get_driver_view_transform());
   } else {
     auto intrinsic_matrix = stream_type == VISION_STREAM_RGB_WIDE ? ecam_intrinsic_matrix : fcam_intrinsic_matrix;
@@ -133,18 +144,17 @@ void CameraViewWidget::initializeGL() {
     if (stream_type == VISION_STREAM_RGB_WIDE) {
       zoom *= 0.5;
     }
-    float zx = zoom * 2 * intrinsic_matrix.v[2] / width();
-    float zy = zoom * 2 * intrinsic_matrix.v[5] / height();
+    float zx = zoom * 2 * intrinsic_matrix.v[2] / w;
+    float zy = zoom * 2 * intrinsic_matrix.v[5] / h;
 
     const mat4 frame_transform = {{
       zx, 0.0, 0.0, 0.0,
-      0.0, zy, 0.0, -y_offset / height() * 2,
+      0.0, zy, 0.0, -y_offset / h * 2,
       0.0, 0.0, 1.0, 0.0,
       0.0, 0.0, 0.0, 1.0,
     }};
     frame_mat = matmul(device_transform, frame_transform);
   }
-  vipc_client = std::make_unique<VisionIpcClient>("camerad", stream_type, true);
 }
 
 void CameraViewWidget::showEvent(QShowEvent *event) {
