@@ -25,6 +25,14 @@ T_IDXS = np.array([index_function(idx, max_val=10.0) for idx in range(IDX_N)], d
 LAT_MPC_DIR = os.path.dirname(os.path.abspath(__file__))
 JSON_FILE = "acados_ocp_lat.json"
 
+
+# TODO: fix this up in AcadosOcpSolver
+def get_default_simulink_options():
+  template_dir = os.path.dirname(acados_template.__file__)
+  with open(os.path.join(template_dir, 'simulink_default_opts.json')) as f:
+    return json.load(f)
+
+
 # TODO: move to acados_template?
 def generate_code(acados_ocp, json_file):
   from acados_template.acados_ocp_solver import make_ocp_dims_consistent, set_up_imported_gnsf_model, \
@@ -48,10 +56,7 @@ def generate_code(acados_ocp, json_file):
   ocp_generate_external_functions(acados_ocp, acados_ocp.model)
 
   # dump to json
-  template_dir = os.path.dirname(acados_template.__file__)
-  with open(os.path.join(template_dir, 'simulink_default_opts.json')) as f:
-    simulink_opts = json.load(f)
-  ocp_formulation_json_dump(acados_ocp, simulink_opts, json_file)
+  ocp_formulation_json_dump(acados_ocp, get_default_simulink_options, json_file)
 
   # render templates
   ocp_render_templates(acados_ocp, json_file)
@@ -155,7 +160,8 @@ def gen_lat_mpc_solver():
 class LateralMpc():
   def __init__(self):
     ocp = gen_lat_mpc_solver()
-    self.solver = AcadosOcpSolver(ocp, json_file=JSON_FILE, build=False)
+    self.solver = AcadosOcpSolver(ocp, json_file=JSON_FILE, build=False,
+                                  simulink_opts=get_default_simulink_options())
     self.x_sol = np.zeros((N+1, 4))
     self.u_sol = np.zeros((N))
 
