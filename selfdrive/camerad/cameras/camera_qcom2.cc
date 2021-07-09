@@ -967,7 +967,6 @@ static void set_camera_exposure(CameraState *s, float grey_frac) {
   s->measured_grey_fraction = grey_frac;
   s->target_grey_fraction = target_grey;
 
-  s->analog_gain = new_g;
   s->analog_gain_frac = sensor_analog_gains[new_g];
   s->exposure_time = new_t;
   s->dc_gain_enabled = true;
