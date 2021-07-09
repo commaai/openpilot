@@ -125,6 +125,10 @@ void CameraViewWidget::initializeGL() {
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   glBindVertexArray(0);
 
+  vipc_client = std::make_unique<VisionIpcClient>("camerad", stream_type, true);
+}
+
+void CameraViewWidget::resizeGL(int w, int h) {
   if (stream_type == VISION_STREAM_RGB_FRONT) {
     frame_mat = matmul(device_transform, get_driver_view_transform());
   } else {
@@ -133,18 +137,17 @@ void CameraViewWidget::initializeGL() {
     if (stream_type == VISION_STREAM_RGB_WIDE) {
       zoom *= 0.5;
     }
-    float zx = zoom * 2 * intrinsic_matrix.v[2] / width();
-    float zy = zoom * 2 * intrinsic_matrix.v[5] / height();
+    float zx = zoom * 2 * intrinsic_matrix.v[2] / w;
+    float zy = zoom * 2 * intrinsic_matrix.v[5] / h;
 
     const mat4 frame_transform = {{
       zx, 0.0, 0.0, 0.0,
-      0.0, zy, 0.0, -y_offset / height() * 2,
+      0.0, zy, 0.0, -y_offset / h * 2,
       0.0, 0.0, 1.0, 0.0,
       0.0, 0.0, 0.0, 1.0,
     }};
     frame_mat = matmul(device_transform, frame_transform);
   }
-  vipc_client = std::make_unique<VisionIpcClient>("camerad", stream_type, true);
 }
 
 void CameraViewWidget::showEvent(QShowEvent *event) {
