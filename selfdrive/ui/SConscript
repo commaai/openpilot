@@ -71,7 +71,7 @@ if arch != 'aarch64' and GetOption('setup'):
       r.raise_for_status()
       d['SSH_KEYS'] = f'\\"{r.text.strip()}\\"'
     obj = qt_env.Object(f"qt/setup/installer_{name}.o", ["qt/setup/installer.cc"], CPPDEFINES=d)
-    qt_env.Program(f"qt/setup/installer_{name}", obj, LIBS=qt_libs, CPPDEFINES=d)
+    qt_env.Program(f"qt/setup/installer_{name}", obj, LIBS=qt_libs)
 
 # build headless replay
 if arch == 'x86_64' and os.path.exists(Dir("#tools/").get_abspath()):
