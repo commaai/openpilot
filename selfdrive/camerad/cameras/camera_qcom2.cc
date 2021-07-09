@@ -977,7 +977,7 @@ static void set_camera_exposure(CameraState *s, float grey_frac) {
 
   s->exp_lock.unlock();
 
-  uint16_t analog_gain_reg = 0xFF00 | (s->analog_gain << 4) | s->analog_gain;
+  uint16_t analog_gain_reg = 0xFF00 | (new_g << 4) | new_g;
   struct i2c_random_wr_payload exp_reg_array[] = {
                                                   {0x3366, analog_gain_reg}, // analog gain
                                                   {0x3362, (uint16_t)(s->dc_gain_enabled ? 0x1 : 0x0)}, // DC_GAIN
