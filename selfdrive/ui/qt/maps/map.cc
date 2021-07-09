@@ -716,6 +716,11 @@ MapETA::MapETA(QWidget * parent) : QWidget(parent) {
 
 
 void MapETA::updateETA(float s, float s_typical, float d) {
+  if (d < MANEUVER_TRANSITION_THRESHOLD) {
+    hide();
+    return;
+  }
+
   // ETA
   auto eta_time = QDateTime::currentDateTime().addSecs(s).time();
   if (params.getBool("NavSettingTime24h")) {
