@@ -32,7 +32,7 @@ def create_accel_command(packer, accel, pcm_cancel, standstill_req, lead):
   # TODO: find the exact canceling bit that does not create a chime
   values = {
     "ACCEL_CMD": accel,
-    "SET_ME_X01": 1,
+    "ACC_TYPE": 1,
     "DISTANCE": 0,
     "MINI_CAR": lead,
     "SET_ME_X3": 3,

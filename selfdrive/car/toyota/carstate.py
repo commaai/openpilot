@@ -88,10 +88,10 @@ class CarState(CarStateBase):
     self.pcm_acc_status = cp.vl["PCM_CRUISE"]["CRUISE_STATE"]
 
     # some TSS2 cars have low speed lockout permanently set. ignore those cars, while still checking all others.
-    # when a car has a permanent low speed lockout, SET_ME_X01 is 2
+    # when a car has a permanent low speed lockout, ACC_TYPE is 2
     self.low_speed_lockout = False
     if self.CP.carFingerprint != CAR.LEXUS_IS and (self.CP.carFingerprint not in TSS2_CAR or
-                             (self.CP.carFingerprint in TSS2_CAR and cp_cam.vl["ACC_CONTROL"]["SET_ME_X01"] == 1)):
+                             (self.CP.carFingerprint in TSS2_CAR and cp_cam.vl["ACC_CONTROL"]["ACC_TYPE"] == 1)):
       self.low_speed_lockout = cp.vl["PCM_CRUISE_2"]["LOW_SPEED_LOCKOUT"] == 2
 
     if self.CP.carFingerprint in NO_STOP_TIMER_CAR or self.CP.enableGasInterceptor:
@@ -209,7 +209,7 @@ class CarState(CarStateBase):
     ]
 
     if CP.carFingerprint in TSS2_CAR:
-      signals.append(("SET_ME_X01", "ACC_CONTROL", 1))
+      signals.append(("ACC_TYPE", "ACC_CONTROL", 1))
       checks.append(("ACC_CONTROL", 33))
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 2)
