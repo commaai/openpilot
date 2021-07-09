@@ -81,7 +81,7 @@ class CarState(CarStateBase):
       ret.cruiseState.available = cp.vl["PCM_CRUISE_2"]["MAIN_ON"] != 0
       ret.cruiseState.speed = cp.vl["PCM_CRUISE_2"]["SET_SPEED"] * CV.KPH_TO_MS
 
-    if not self.CP.enableDsu:
+    if not self.CP.enableDsu and self.CP.openpilotLongitudinalControl:
       self.acc_type = cp_cam.vl["ACC_CONTROL"]["ACC_TYPE"]
 
     # some TSS2 cars have low speed lockout permanently set, so ignore on those cars
@@ -203,7 +203,7 @@ class CarState(CarStateBase):
       ("PRE_COLLISION", 0), # TODO: figure out why freq is inconsistent
     ]
 
-    if not CP.enableDsu:
+    if not CP.enableDsu and CP.openpilotLongitudinalControl:
       signals.append(("ACC_TYPE", "ACC_CONTROL", 0))
       checks.append(("ACC_CONTROL", 33))
 
