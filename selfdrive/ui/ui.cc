@@ -158,7 +158,7 @@ static void update_state(UIState *s) {
       }
     }
   }
-  if (sm.updated("modelV2")) {
+  if (sm.updated("modelV2") && s->vg) {
     update_model(s, sm["modelV2"].getModelV2());
   }
   if (sm.updated("pandaState")) {
