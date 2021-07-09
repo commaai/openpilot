@@ -106,9 +106,6 @@ typedef struct UIState {
   // NVG
   NVGcontext *vg;
 
-  // images
-  std::map<std::string, int> images;
-
   std::unique_ptr<SubMaster> sm;
 
   UIStatus status;

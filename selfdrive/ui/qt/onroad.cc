@@ -37,8 +37,16 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   QObject::connect(this, &OnroadWindow::offroadTransitionSignal, this, &OnroadWindow::offroadTransition);
   main_layout->addWidget(alerts);
 
+  scene = new OnroadScene(this);
+  QObject::connect(this, &OnroadWindow::update, scene, &OnroadScene::updateState);
+  QObject::connect(this, &OnroadWindow::offroadTransitionSignal, scene, &OnroadScene::offroadTransition);
+  main_layout->addWidget(scene);
+
   // setup stacking order
   alerts->raise();
+  scene->raise();
+  
+  
 
   setAttribute(Qt::WA_OpaquePaintEvent);
 }
@@ -247,4 +255,85 @@ void NvgWindow::showEvent(QShowEvent *event) {
   // Update vistion stream after possible wide camera toggle change
   setStreamType(getStreamType());
   ui_resize(&QUIState::ui_state, rect().width(), rect().height());
+}
+
+
+OnroadScene::OnroadScene(QWidget *parent) : QWidget(parent) {
+  setAttribute(Qt::WA_TransparentForMouseEvents, true);
+  engage_img = QPixmap("../assets/img_chffr_wheel.png").scaled(img_size, img_size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+  dm_img = QPixmap("../assets/img_driver_face.png").scaled(img_size, img_size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+}
+
+void OnroadScene::offroadTransition(bool offroad) {
+  metric = Params().getBool("IsMetric");
+  connect(this, &OnroadScene::valueChanged, [=] { update(); });
+}
+
+void OnroadScene::updateState(const UIState &s) {
+  SubMaster &sm = *(s.sm);
+
+  auto v = sm["carState"].getCarState().getVEgo() * (metric ? 3.6 : 2.2369363);
+  setProperty("speed", QString::number(int(v)));
+  setProperty("speedUnit", metric ? "km/h" : "mph");
+
+  auto cs = sm["controlsState"].getControlsState();
+  const int SET_SPEED_NA = 255;
+  auto vcruise = cs.getVCruise();
+  if (vcruise != 0 && vcruise != SET_SPEED_NA) {
+    auto max = vcruise * (metric ? 1 : 0.6225);
+    setProperty("maxSpeed", QString::number((int)max));
+  } else {
+    setProperty("maxSpeed", "N/A");
+  }
+
+  setProperty("dmActive", sm["driverMonitoringState"].getDriverMonitoringState().getIsActiveMode());
+  setProperty("hideDM", cs.getAlertSize() == cereal::ControlsState::AlertSize::NONE);
+  setProperty("engageable", cs.getEngageable());
+  setProperty("status", s.status);
+}
+
+void OnroadScene::drawIcon(QPainter &p, const QPoint &center, QPixmap &img, QBrush bg, float opacity) {
+  p.setPen(Qt::NoPen);
+  p.setBrush(bg);
+  QRect rc = {center.x() - radius / 2, center.y() - radius / 2, radius, radius};
+  p.drawEllipse(rc);
+  p.setOpacity(opacity);
+
+  p.drawPixmap(center.x() - img_size / 2, center.y() - img_size / 2, img);
+}
+
+void OnroadScene::paintEvent(QPaintEvent*) {
+  QPainter p(this);
+  p.setRenderHint(QPainter::Antialiasing);
+
+  // max speed
+  QRect rc(bdr_s * 2, bdr_s * 1.5, 184, 202);
+  rc.moveLeft(300);
+  p.setPen(QPen(QColor(0xff, 0xff, 0xff, 100), 10));
+  p.setBrush(QColor(0, 0, 0, 100));
+  p.drawRoundedRect(rc, 20, 20);
+  
+  QRect rcText = rc;
+  rcText.setBottom(120);
+  p.setPen(QColor(0xff, 0xff, 0xff, 200));
+  configFont(p, "Open Sans", 45, "Regular");
+  p.drawText(rcText, Qt::AlignCenter,  "MAX");
+  rcText = rc;
+  rcText.setTop(120);
+  p.setPen(QColor(0xff, 0xff, 0xff, 100));
+  configFont(p, "Open Sans", 90, "SemiBold");
+  p.drawText(rcText, Qt::AlignCenter, maxSpeed_);
+
+  // current speed
+  p.setPen(Qt::white);
+  configFont(p, "Open Sans", 186, "Bold");
+  p.drawText(rect().adjusted(0, 112, 0, 0), Qt::AlignHCenter | Qt::AlignTop, speed_);
+
+  // engage-ability icon
+  // if (engageable_) {
+    drawIcon(p, {rect().right() - radius - bdr_s*2, radius  + int(bdr_s * 1.5)}, engage_img, bg_colors[status_], 1.0);
+  // }
+  
+  // dm icon
+  drawIcon(p, {radius + (bdr_s * 2), rect().bottom() - footer_h / 2}, dm_img, QColor(0, 0, 0, 70), dmActive_ ? 1.0: 0.2);
 }
