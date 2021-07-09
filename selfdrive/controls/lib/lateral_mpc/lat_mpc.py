@@ -56,7 +56,7 @@ def generate_code(acados_ocp, json_file):
   ocp_generate_external_functions(acados_ocp, acados_ocp.model)
 
   # dump to json
-  ocp_formulation_json_dump(acados_ocp, get_default_simulink_options, json_file)
+  ocp_formulation_json_dump(acados_ocp, get_default_simulink_options(), json_file)
 
   # render templates
   ocp_render_templates(acados_ocp, json_file)
