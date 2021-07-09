@@ -21,7 +21,7 @@ original_segments = [
   ("SUBARU", "4d70bc5e608678be|2021-01-15--17-02-04--5"),      # SUBARU.IMPREZA
   ("GM", "0c58b6a25109da2b|2021-02-23--16-35-50--11"),          # GM.VOLT
   ("NISSAN", "35336926920f3571|2021-02-12--18-38-48--46"),      # NISSAN.XTRAIL
-  ("VOLKSWAGEN", "ef895f46af5fd73f|2021-05-22--14-06-35--6"),  # VW.AUDI_A3_MK3
+  ("VOLKSWAGEN", "de9592456ad7d144|2021-06-29--11-00-15--6"),  # VOLKSWAGEN.GOLF
 
   # Enable when port is tested and dascamOnly is no longer set
   #("MAZDA", "32a319f057902bb3|2020-04-27--15-18-58--2"),      # MAZDA.CX5
@@ -29,16 +29,16 @@ original_segments = [
 ]
 
 segments = [
-  ("HYUNDAI", "process_replay|fakedata|2021-06-30--01-00-31--0"),
-  ("TOYOTA", "process_replay|fakedata|2021-06-30--01-03-53--0"),
-  ("TOYOTA2", "process_replay|fakedata|2021-06-30--01-07-24--0"),
-  ("HONDA", "process_replay|fakedata|2021-06-30--01-48-33--0"),
-  ("HONDA2", "process_replay|fakedata|2021-06-30--01-52-56--0"),
-  ("CHRYSLER", "process_replay|fakedata|2021-06-30--01-23-40--0"),
-  ("SUBARU", "process_replay|fakedata|2021-06-30--01-27-22--0"),
-  ("GM", "process_replay|fakedata|2021-06-30--01-30-49--0"),
-  ("NISSAN", "process_replay|fakedata|2021-06-30--01-34-20--0"),
-  ("VOLKSWAGEN", "process_replay|fakedata|2021-06-30--01-37-52--0"),
+  ("HYUNDAI", "fakedata|2021-07-09--16-01-34--0"),
+  ("TOYOTA", "fakedata|2021-07-09--16-02-45--0"),
+  ("TOYOTA2", "fakedata|2021-07-09--16-03-56--0"),
+  ("HONDA", "fakedata|2021-07-09--16-05-07--0"),
+  ("HONDA2", "fakedata|2021-07-09--16-08-28--0"),
+  ("CHRYSLER", "fakedata|2021-07-09--16-09-39--0"),
+  ("SUBARU", "fakedata|2021-07-09--16-10-50--0"),
+  ("GM", "fakedata|2021-07-09--16-13-53--0"),
+  ("NISSAN", "fakedata|2021-07-09--16-17-35--0"),
+  ("VOLKSWAGEN", "fakedata|2021-07-09--16-29-13--0"),
 ]
 
 # dashcamOnly makes don't need to be tested until a full port is done
