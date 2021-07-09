@@ -21,6 +21,7 @@ class CarState(CarStateBase):
     self.angle_offset = 0.
 
     self.low_speed_lockout = False
+    self.acc_type = 1
 
   def update(self, cp, cp_cam):
     ret = car.CarState.new_message()
@@ -80,15 +81,16 @@ class CarState(CarStateBase):
       ret.cruiseState.available = cp.vl["PCM_CRUISE_2"]["MAIN_ON"] != 0
       ret.cruiseState.speed = cp.vl["PCM_CRUISE_2"]["SET_SPEED"] * CV.KPH_TO_MS
 
-    self.pcm_acc_status = cp.vl["PCM_CRUISE"]["CRUISE_STATE"]
+    if not self.CP.enableDsu:
+      self.acc_type = cp_cam.vl["ACC_CONTROL"]["ACC_TYPE"]
 
     # some TSS2 cars have low speed lockout permanently set, so ignore on those cars
     # these cars are identified by an ACC_TYPE value of 2
-    self.acc_type = cp_cam.vl["ACC_CONTROL"]["ACC_TYPE"]
     if (self.CP.carFingerprint not in TSS2_CAR and self.CP.carFingerprint != CAR.LEXUS_IS) or \
        (self.CP.carFingerprint in TSS2_CAR and self.acc_type == 1):
       self.low_speed_lockout = cp.vl["PCM_CRUISE_2"]["LOW_SPEED_LOCKOUT"] == 2
 
+    self.pcm_acc_status = cp.vl["PCM_CRUISE"]["CRUISE_STATE"]
     if self.CP.carFingerprint in NO_STOP_TIMER_CAR or self.CP.enableGasInterceptor:
       # ignore standstill in hybrid vehicles, since pcm allows to restart without
       # receiving any special command. Also if interceptor is detected
@@ -193,7 +195,7 @@ class CarState(CarStateBase):
     signals = [
       ("FORCE", "PRE_COLLISION", 0),
       ("PRECOLLISION_ACTIVE", "PRE_COLLISION", 0),
-      ("ACC_TYPE", "ACC_CONTROL", 1),
+      ("ACC_TYPE", "ACC_CONTROL", 0),
     ]
 
     # use steering message to check if panda is connected to frc
