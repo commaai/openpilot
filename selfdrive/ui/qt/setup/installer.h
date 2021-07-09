@@ -1,11 +1,5 @@
-#include <array>
-
 #include <QLabel>
-#include <QOpenGLWidget>
-#include <QPixmap>
 #include <QProgressBar>
-#include <QSocketNotifier>
-#include <QVariantAnimation>
 #include <QWidget>
 
 class Installer : public QWidget {

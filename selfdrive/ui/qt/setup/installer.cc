@@ -1,21 +1,10 @@
 #include "selfdrive/ui/qt/setup/installer.h"
-#include <time.h>
-#include <unistd.h>
 
-#include <cstdlib>
-#include <fstream>
-#include <iostream>
-#include <map>
-
-#include <QApplication>
-#include <QGridLayout>
-#include <QPainter>
 #include <QString>
-#include <QTransform>
 #include <QDebug>
 #include <QTimer>
+#include <QThread>
 
-#include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/util.h"
 
@@ -120,11 +109,11 @@ int Installer::install() {
 
   // Wait for valid time
   while (!time_valid()) {
-    usleep(500 * 1000);
-    std::cout << "Waiting for valid time\n";
+    QThread::msleep(500);
+    qDebug() << "Waiting for valid time";
   }
 
-  std::cout << "Doing fresh clone\n";
+  qDebug() << "Doing fresh clone";
   err = freshClone();
   if (err) return 1;
 
@@ -156,12 +145,10 @@ Installer::Installer(QWidget *parent) : QWidget(parent) {
     Installer {
       background-color: black;
     }
-    * {
-      background-color: transparent;
-    }
     QLabel {
       color: white;
       font-size: 80px;
+      background-color: transparent;
     }
     QProgressBar {
       background-color: #373737;
@@ -195,11 +182,7 @@ void Installer::update(const int value) {
 }
 
 int main(int argc, char *argv[]) {
-  setQtSurfaceFormat();
-
-  Hardware::set_display_power(true);
-  Hardware::set_brightness(65);
-
+  initApp();
   QApplication a(argc, argv);
   Installer installer;
   setMainWindow(&installer);
