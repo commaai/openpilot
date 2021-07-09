@@ -52,7 +52,6 @@ def replay_cameras(lr, frs):
       if fr is not None:
         img = fr.get(rk.frame % fr.frame_count, pix_fmt='yuv420p')[0]
         img = img.flatten().tobytes()
-        print("got img")
 
       rk.keep_time()
 
