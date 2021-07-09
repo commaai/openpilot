@@ -20,6 +20,8 @@ class CarState(CarStateBase):
     self.accurate_steer_angle_seen = False
     self.angle_offset = 0.
 
+    self.low_speed_lockout = False
+
   def update(self, cp, cp_cam):
     ret = car.CarState.new_message()
 
@@ -82,9 +84,9 @@ class CarState(CarStateBase):
 
     # some TSS2 cars have low speed lockout permanently set. ignore those cars, while still checking all others.
     # when a car has a permanent low speed lockout, ACC_TYPE is 2
-    self.low_speed_lockout = False
+    self.acc_type = cp_cam.vl["ACC_CONTROL"]["ACC_TYPE"]
     if self.CP.carFingerprint != CAR.LEXUS_IS and (self.CP.carFingerprint not in TSS2_CAR or
-                             (self.CP.carFingerprint in TSS2_CAR and cp_cam.vl["ACC_CONTROL"]["ACC_TYPE"] == 1)):
+                             (self.CP.carFingerprint in TSS2_CAR and self.acc_type == 1)):
       self.low_speed_lockout = cp.vl["PCM_CRUISE_2"]["LOW_SPEED_LOCKOUT"] == 2
 
     if self.CP.carFingerprint in NO_STOP_TIMER_CAR or self.CP.enableGasInterceptor:
