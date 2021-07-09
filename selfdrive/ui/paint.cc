@@ -216,29 +216,26 @@ static void ui_draw_vision_header(UIState *s) {
   ui_draw_vision_event(s);
 }
 
-static void ui_draw_vision(UIState *s) {
+void ui_draw(UIState *s, int w, int h) {
   const UIScene *scene = &s->scene;
+  s->viz_rect = Rect{0, 0, w, h};
+
+  glEnable(GL_BLEND);
+  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  glViewport(0, 0, s->fb_w, s->fb_h);
+
+  nvgBeginFrame(s->vg, s->fb_w, s->fb_h, 1.0f);
+  
   // Draw augmented elements
   if (scene->world_objects_visible) {
     ui_draw_world(s);
   }
   // Set Speed, Current Speed, Status/Events
   ui_draw_vision_header(s);
-  if ((*s->sm)["controlsState"].getControlsState().getAlertSize() == cereal::ControlsState::AlertSize::NONE) {
+  if (false && (*s->sm)["controlsState"].getControlsState().getAlertSize() == cereal::ControlsState::AlertSize::NONE) {
     ui_draw_vision_face(s);
   }
-}
 
-void ui_draw(UIState *s, int w, int h) {
-  s->viz_rect = Rect{bdr_s, bdr_s, w - 2 * bdr_s, h - 2 * bdr_s};
-
-  glEnable(GL_BLEND);
-  glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  glViewport(0, 0, s->fb_w, s->fb_h);
-
-  // NVG drawing functions - should be no GL inside NVG frame
-  nvgBeginFrame(s->vg, s->fb_w, s->fb_h, 1.0f);
-  ui_draw_vision(s);
   nvgEndFrame(s->vg);
   glDisable(GL_BLEND);
 }
@@ -309,10 +306,11 @@ void ui_resize(UIState *s, int width, int height) {
   if (s->wide_camera) {
     zoom *= 0.5;
   }
+  Rect video_rect = Rect{0, 0, s->fb_w, s->fb_h};
 
   // Apply transformation such that video pixel coordinates match video
   // 1) Put (0, 0) in the middle of the video
-  nvgTranslate(s->vg, s->video_rect.x + s->video_rect.w / 2, s->video_rect.y + s->video_rect.h / 2 + y_offset);
+  nvgTranslate(s->vg, video_rect.x + video_rect.w / 2, video_rect.y + video_rect.h / 2 + y_offset);
 
   // 2) Apply same scaling as video
   nvgScale(s->vg, zoom, zoom);

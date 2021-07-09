@@ -34,6 +34,7 @@ private:
                    const std::string &type, cereal::ControlsState::AlertSize size, AudibleAlert sound);
 
   QColor bg;
+  UIStatus prev_status = STATUS_DISENGAGED;
   float volume = Hardware::MIN_VOLUME;
   std::map<AudibleAlert, std::pair<QSoundEffect, int>> sounds;
   float blinking_rate = 0;
