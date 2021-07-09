@@ -8,7 +8,7 @@ from selfdrive.car.interfaces import CarInterfaceBase
 class CarInterface(CarInterfaceBase):
   @staticmethod
   def compute_gb(accel, speed):
-    # TODO: is this correct?
+    # TODO: This needs some tuning
     return float(accel)
 
   @staticmethod
