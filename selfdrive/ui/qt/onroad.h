@@ -47,7 +47,7 @@ public slots:
   void offroadTransition(bool offroad);
 };
 
-class OnroadScene : public QWidget {
+class OnroadHud : public QWidget {
   Q_OBJECT
   Q_PROPERTY(QString speed MEMBER speed_ NOTIFY valueChanged);
   Q_PROPERTY(QString speedUnit MEMBER speedUnit_ NOTIFY valueChanged);
@@ -58,7 +58,7 @@ class OnroadScene : public QWidget {
   Q_PROPERTY(int status MEMBER status_ NOTIFY valueChanged);
 
 public:
-  OnroadScene(QWidget *parent = 0);
+  OnroadHud(QWidget *parent = 0);
   void updateState(const UIState &s);
   void offroadTransition(bool offroad);
    const int radius = 180;
@@ -101,7 +101,7 @@ public:
 
 private:
   OnroadAlerts *alerts;
-  OnroadScene *scene;
+  OnroadHud *scene;
   NvgWindow *nvg;
   QStackedLayout *main_layout;
   QHBoxLayout* split;

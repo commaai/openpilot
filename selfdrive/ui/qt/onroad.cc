@@ -37,9 +37,9 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   QObject::connect(this, &OnroadWindow::offroadTransitionSignal, this, &OnroadWindow::offroadTransition);
   main_layout->addWidget(alerts);
 
-  scene = new OnroadScene(this);
-  QObject::connect(this, &OnroadWindow::update, scene, &OnroadScene::updateState);
-  QObject::connect(this, &OnroadWindow::offroadTransitionSignal, scene, &OnroadScene::offroadTransition);
+  scene = new OnroadHud(this);
+  QObject::connect(this, &OnroadWindow::update, scene, &OnroadHud::updateState);
+  QObject::connect(this, &OnroadWindow::offroadTransitionSignal, scene, &OnroadHud::offroadTransition);
   main_layout->addWidget(scene);
 
   // setup stacking order
@@ -258,18 +258,18 @@ void NvgWindow::showEvent(QShowEvent *event) {
 }
 
 
-OnroadScene::OnroadScene(QWidget *parent) : QWidget(parent) {
+OnroadHud::OnroadHud(QWidget *parent) : QWidget(parent) {
   setAttribute(Qt::WA_TransparentForMouseEvents, true);
   engage_img = QPixmap("../assets/img_chffr_wheel.png").scaled(img_size, img_size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
   dm_img = QPixmap("../assets/img_driver_face.png").scaled(img_size, img_size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
 }
 
-void OnroadScene::offroadTransition(bool offroad) {
+void OnroadHud::offroadTransition(bool offroad) {
   metric = Params().getBool("IsMetric");
-  connect(this, &OnroadScene::valueChanged, [=] { update(); });
+  connect(this, &OnroadHud::valueChanged, [=] { update(); });
 }
 
-void OnroadScene::updateState(const UIState &s) {
+void OnroadHud::updateState(const UIState &s) {
   SubMaster &sm = *(s.sm);
 
   auto v = sm["carState"].getCarState().getVEgo() * (metric ? 3.6 : 2.2369363);
@@ -292,7 +292,7 @@ void OnroadScene::updateState(const UIState &s) {
   setProperty("status", s.status);
 }
 
-void OnroadScene::drawIcon(QPainter &p, const QPoint &center, QPixmap &img, QBrush bg, float opacity) {
+void OnroadHud::drawIcon(QPainter &p, const QPoint &center, QPixmap &img, QBrush bg, float opacity) {
   p.setPen(Qt::NoPen);
   p.setBrush(bg);
   QRect rc = {center.x() - radius / 2, center.y() - radius / 2, radius, radius};
@@ -302,7 +302,7 @@ void OnroadScene::drawIcon(QPainter &p, const QPoint &center, QPixmap &img, QBru
   p.drawPixmap(center.x() - img_size / 2, center.y() - img_size / 2, img);
 }
 
-void OnroadScene::paintEvent(QPaintEvent*) {
+void OnroadHud::paintEvent(QPaintEvent*) {
   QPainter p(this);
   p.setRenderHint(QPainter::Antialiasing);
 
