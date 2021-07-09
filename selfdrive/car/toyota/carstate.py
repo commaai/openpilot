@@ -85,8 +85,8 @@ class CarState(CarStateBase):
     # some TSS2 cars have low speed lockout permanently set, so ignore on those cars
     # these cars are identified by an ACC_TYPE value of 2
     self.acc_type = cp_cam.vl["ACC_CONTROL"]["ACC_TYPE"]
-    if self.CP.carFingerprint != CAR.LEXUS_IS and (self.CP.carFingerprint not in TSS2_CAR or
-                             (self.CP.carFingerprint in TSS2_CAR and self.acc_type == 1)):
+    if (self.CP.carFingerprint not in TSS2_CAR and self.CP.carFingerprint != CAR.LEXUS_IS) or \
+       (self.CP.carFingerprint in TSS2_CAR and self.acc_type == 1):
       self.low_speed_lockout = cp.vl["PCM_CRUISE_2"]["LOW_SPEED_LOCKOUT"] == 2
 
     if self.CP.carFingerprint in NO_STOP_TIMER_CAR or self.CP.enableGasInterceptor:
