@@ -10,7 +10,6 @@
 #include "selfdrive/common/util.h"
 #include "selfdrive/common/watchdog.h"
 #include "selfdrive/hardware/hw.h"
-// #include "selfdrive/ui/paint.h"
 #include "selfdrive/ui/qt/qt_window.h"
 
 #define BACKLIGHT_DT 0.25
@@ -240,7 +239,7 @@ QUIState::QUIState(QObject *parent) : QObject(parent) {
   // update timer
   timer = new QTimer(this);
   QObject::connect(timer, &QTimer::timeout, this, &QUIState::update);
-  timer->start(0);
+  timer->start(1000 / UI_FREQ);
 }
 
 void QUIState::update() {
@@ -252,10 +251,6 @@ void QUIState::update() {
   if (ui_state.scene.started != started_prev || ui_state.sm->frame == 1) {
     started_prev = ui_state.scene.started;
     emit offroadTransition(!ui_state.scene.started);
-
-    // Change timeout to 0 when onroad, this will call update continously.
-    // This puts visionIPC in charge of update frequency, reducing video latency
-    timer->start(ui_state.scene.started ? 0 : 1000 / UI_FREQ);
   }
 
   watchdog_kick();

@@ -2,8 +2,6 @@
 
 #include <map>
 
-#include <QOpenGLFunctions>
-#include <QOpenGLWidget>
 #include <QSoundEffect>
 #include <QStackedLayout>
 #include <QWidget>
@@ -66,7 +64,7 @@ public:
 
 protected:
   void paintEvent(QPaintEvent*) override;
-  void drawIcon(QPainter &p, const QPoint &center, QPixmap &img, QBrush bg, float opacity = 1.0);
+  void drawIcon(QPainter &p, int x, int y, QPixmap &img, QBrush bg, float opacity = 1.0);
   QPixmap engage_img, dm_img;
   QString speed_, speedUnit_, maxSpeed_;
   bool metric = false, engageable_ = false, dmActive_ = false, hideDM_ = false;
@@ -100,7 +98,6 @@ public:
 
 private:
   OnroadAlerts *alerts;
-  OnroadHud *scene;
   QStackedLayout *main_layout;
   QHBoxLayout* split;
 

@@ -35,14 +35,14 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   QObject::connect(this, &OnroadWindow::offroadTransitionSignal, this, &OnroadWindow::offroadTransition);
   main_layout->addWidget(alerts);
 
-  scene = new OnroadHud(this);
-  QObject::connect(this, &OnroadWindow::update, scene, &OnroadHud::updateState);
-  QObject::connect(this, &OnroadWindow::offroadTransitionSignal, scene, &OnroadHud::offroadTransition);
-  main_layout->addWidget(scene);
+  OnroadHud *hud = new OnroadHud(this);
+  QObject::connect(this, &OnroadWindow::update, hud, &OnroadHud::updateState);
+  QObject::connect(this, &OnroadWindow::offroadTransitionSignal, hud, &OnroadHud::offroadTransition);
+  main_layout->addWidget(hud);
 
   // setup stacking order
   alerts->raise();
-  scene->raise();
+  hud->raise();
   
   setAttribute(Qt::WA_OpaquePaintEvent);
 }
@@ -167,7 +167,7 @@ void OnroadAlerts::stopSounds() {
 }
 
 void OnroadAlerts::paintEvent(QPaintEvent *event) {
-  // draw border
+  // border
   QPainter p(this);
   p.setPen(QPen(bg, bdr_s));
   p.drawRect(rect());
@@ -250,6 +250,8 @@ void NvgWindow::showEvent(QShowEvent *event) {
   ui_resize(&QUIState::ui_state, rect().width(), rect().height());
 }
 
+// OnroadHud
+
 OnroadHud::OnroadHud(QWidget *parent) : QWidget(parent) {
   setAttribute(Qt::WA_TransparentForMouseEvents, true);
   engage_img = QPixmap("../assets/img_chffr_wheel.png").scaled(img_size, img_size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
@@ -284,48 +286,49 @@ void OnroadHud::updateState(const UIState &s) {
   setProperty("status", s.status);
 }
 
-void OnroadHud::drawIcon(QPainter &p, const QPoint &center, QPixmap &img, QBrush bg, float opacity) {
+void OnroadHud::drawIcon(QPainter &p, int x, int y, QPixmap &img, QBrush bg, float opacity) {
   p.setPen(Qt::NoPen);
   p.setBrush(bg);
-  QRect rc = {center.x() - radius / 2, center.y() - radius / 2, radius, radius};
-  p.drawEllipse(rc);
+  p.drawEllipse(x - radius / 2, y - radius / 2, radius, radius);
   p.setOpacity(opacity);
-
-  p.drawPixmap(center.x() - img_size / 2, center.y() - img_size / 2, img);
+  p.drawPixmap(x - img_size / 2, y - img_size / 2, img);
 }
 
-void OnroadHud::paintEvent(QPaintEvent*) {
+void OnroadHud::paintEvent(QPaintEvent *) {
   QPainter p(this);
   p.setRenderHint(QPainter::Antialiasing);
 
   // max speed
   QRect rc(bdr_s * 2, bdr_s * 1.5, 184, 202);
-  rc.moveLeft(300);
   p.setPen(QPen(QColor(0xff, 0xff, 0xff, 100), 10));
   p.setBrush(QColor(0, 0, 0, 100));
   p.drawRoundedRect(rc, 20, 20);
-  
+
   QRect rcText = rc;
   rcText.setBottom(120);
   p.setPen(QColor(0xff, 0xff, 0xff, 200));
-  configFont(p, "Open Sans", 45, "Regular");
-  p.drawText(rcText, Qt::AlignCenter,  "MAX");
+  configFont(p, "Open Sans", 40, "Regular");
+  p.drawText(rcText, Qt::AlignCenter, "MAX");
   rcText = rc;
   rcText.setTop(120);
   p.setPen(QColor(0xff, 0xff, 0xff, 100));
-  configFont(p, "Open Sans", 90, "SemiBold");
+  configFont(p, "Open Sans", 78, "SemiBold");
   p.drawText(rcText, Qt::AlignCenter, maxSpeed_);
 
   // current speed
   p.setPen(Qt::white);
-  configFont(p, "Open Sans", 186, "Bold");
-  p.drawText(rect().adjusted(0, 112, 0, 0), Qt::AlignHCenter | Qt::AlignTop, speed_);
+  configFont(p, "Open Sans", 180, "Bold");
+  p.drawText(rect(), Qt::AlignHCenter | Qt::AlignTop, speed_);
+  p.setPen(QColor(0xff, 0xff, 0xff, 200));
+  configFont(p, "Open Sans", 70, "Regular");
+  p.drawText(rect().adjusted(0, 190, 0, 0), Qt::AlignHCenter | Qt::AlignTop, speedUnit_);
 
   // engage-ability icon
-  // if (engageable_) {
-    drawIcon(p, {rect().right() - radius - bdr_s*2, radius  + int(bdr_s * 1.5)}, engage_img, bg_colors[status_], 1.0);
-  // }
-  
+  if (engageable_) {
+    drawIcon(p, rect().right()-radius/2-bdr_s*2, radius / 2 + int(bdr_s*1.5), engage_img, bg_colors[status_], 1.0);
+  }
   // dm icon
-  drawIcon(p, {radius + (bdr_s * 2), rect().bottom() - footer_h / 2}, dm_img, QColor(0, 0, 0, 70), dmActive_ ? 1.0: 0.2);
+  if (!hideDM_) {
+    drawIcon(p, radius/2 + (bdr_s * 2), rect().bottom() - footer_h / 2, dm_img, QColor(0, 0, 0, 70), dmActive_ ? 1.0 : 0.2);
+  }
 }
