@@ -61,7 +61,7 @@ public:
   OnroadHud(QWidget *parent = 0);
   void updateState(const UIState &s);
   void offroadTransition(bool offroad);
-   const int radius = 180;
+  const int radius = 180; 
   const int img_size = 135;
 
 protected:
@@ -71,7 +71,6 @@ protected:
   QString speed_, speedUnit_, maxSpeed_;
   bool metric = false, engageable_ = false, dmActive_ = false, hideDM_ = false;
   int status_ = STATUS_DISENGAGED;
-  
 
 signals:
   void valueChanged();
@@ -102,7 +101,6 @@ public:
 private:
   OnroadAlerts *alerts;
   OnroadHud *scene;
-  NvgWindow *nvg;
   QStackedLayout *main_layout;
   QHBoxLayout* split;
 

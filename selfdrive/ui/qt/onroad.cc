@@ -20,13 +20,11 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   main_layout = new QStackedLayout(this);
   main_layout->setStackingMode(QStackedLayout::StackAll);
 
-  nvg = new NvgWindow(getStreamType(), this);
-
   QWidget * split_wrapper = new QWidget;
   split = new QHBoxLayout(split_wrapper);
   split->setContentsMargins(0, 0, 0, 0);
   split->setSpacing(0);
-  split->addWidget(nvg);
+  split->addWidget(new NvgWindow(getStreamType(), this));
 
   main_layout->addWidget(split_wrapper);
 
@@ -46,11 +44,8 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   alerts->raise();
   scene->raise();
   
-  
-
   setAttribute(Qt::WA_OpaquePaintEvent);
 }
-
 
 void OnroadWindow::offroadTransition(bool offroad) {
 #ifdef ENABLE_MAPS
@@ -70,7 +65,6 @@ void OnroadWindow::offroadTransition(bool offroad) {
 
       map = m;
     }
-
   }
 #endif
 }
@@ -121,7 +115,6 @@ void OnroadAlerts::updateState(const UIState &s) {
       status = STATUS_ALERT;
     }
   }
-
 
   // TODO: add blinking back if performant
   //float alpha = 0.375 * cos((millis_since_boot() / 1000) * 2 * M_PI * blinking_rate) + 0.625;
@@ -256,7 +249,6 @@ void NvgWindow::showEvent(QShowEvent *event) {
   setStreamType(getStreamType());
   ui_resize(&QUIState::ui_state, rect().width(), rect().height());
 }
-
 
 OnroadHud::OnroadHud(QWidget *parent) : QWidget(parent) {
   setAttribute(Qt::WA_TransparentForMouseEvents, true);
