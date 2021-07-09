@@ -26,8 +26,8 @@
 #define GIT_URL "https://github.com/commaai/openpilot.git"
 #define GIT_SSH_URL "git@github.com:commaai/openpilot.git"
 
-#define CONTINUE_PATH "/data/continue.sh"
 #define BASEDIR "/data"
+#define CONTINUE_PATH BASEDIR "/continue.sh"
 
 bool time_valid() {
   time_t rawtime;
@@ -39,7 +39,7 @@ bool time_valid() {
 
 int Installer::getProgress(const QString &line) {
   for (const QString &prefix : stages) {
-    if (line.startsWith(prefix)) {
+    if (line.startsWith(prefix) && currentStage != prefix) {
       currentStage = prefix;
       break;
     }

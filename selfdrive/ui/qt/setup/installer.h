@@ -22,8 +22,8 @@ private:
   int getProgress(const QString &line);
   bool started = false;
 
-  const QVector<QString> stages = {"Receiving objects: ", "Resolving deltas: "};
-  const QVector<int> weights = {95, 5};
+  const QVector<QString> stages = {"Receiving objects: ", "Resolving deltas: ", "Updating files: "};
+  const QVector<int> weights = {91, 2, 7};
   QString currentStage;
 
 public slots:
