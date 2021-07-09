@@ -18,6 +18,7 @@ public:
   using QOpenGLWidget::QOpenGLWidget;
   explicit CameraViewWidget(VisionStreamType stream_type, QWidget* parent = nullptr);
   ~CameraViewWidget();
+  void setVistionStreamType(VisionStreamType stream_type);
 
 signals:
  void frameUpdated();

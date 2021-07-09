@@ -52,7 +52,6 @@ class NvgWindow : public CameraViewWidget {
 
 public:
   explicit NvgWindow(VisionStreamType stream_type, QWidget* parent = 0);
-  ~NvgWindow();
 
 protected:
   void initializeGL() override;

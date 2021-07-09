@@ -212,9 +212,9 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
   }
 }
 
+// NvgWindow
 
 NvgWindow::NvgWindow(VisionStreamType stream_type, QWidget *parent) : CameraViewWidget(stream_type, parent) {}
-NvgWindow::~NvgWindow() {}
 
 void NvgWindow::initializeGL() {
   CameraViewWidget::initializeGL();
