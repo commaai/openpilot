@@ -11,9 +11,9 @@ public:
 private:
   QLabel *text;
   QProgressBar *progress_bar;
-  int install();
   int freshClone();
   int getProgress(const QString &line);
+  void update(const int value);
   bool started = false;
 
   const QVector<QString> stages = {"Receiving objects: ", "Resolving deltas: ", "Updating files: "};
@@ -21,5 +21,5 @@ private:
   QString currentStage;
 
 public slots:
-  void update(const int value);
+  int install();
 };

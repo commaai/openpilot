@@ -1,9 +1,9 @@
 #include "selfdrive/ui/qt/setup/installer.h"
 
-#include <QString>
 #include <QDebug>
-#include <QTimer>
+#include <QString>
 #include <QThread>
+#include <QTimer>
 
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/util.h"
@@ -61,10 +61,10 @@ int Installer::freshClone() {
   if (!clone_pipe) return 1;
 
   char c;
-  QString buffer;  // TODO: use QT
+  QString buffer;
   while (fscanf(clone_pipe, "%c", &c) != EOF) {
     if (c == '\r' || c == '\n') {
-      qDebug() << "--->>>" << buffer << "|||\n";
+//      qDebug() << "--->>>" << buffer << "|||\n";
       int progress = getProgress(buffer);
       if (progress != -1) {
         emit update(progress);
@@ -162,16 +162,7 @@ Installer::Installer(QWidget *parent) : QWidget(parent) {
     }
   )");
 
-  QTimer* timer = new QTimer(this);
-  QObject::connect(timer, &QTimer::timeout, this, [=]() {
-    QCoreApplication::processEvents(QEventLoop::AllEvents, 1);
-    this->repaint();
-    if (!started) {
-      install();
-      started = true;
-    }
-  });
-  timer->start(100);  // TODO why is this needed?
+  QTimer::singleShot(100, this, &Installer::install);  // TODO why is this needed?
 };
 
 void Installer::update(const int value) {
@@ -188,4 +179,3 @@ int main(int argc, char *argv[]) {
   setMainWindow(&installer);
   return a.exec();
 }
-
