@@ -77,9 +77,8 @@ mat4 get_driver_view_transform() {
 
 } // namespace
 
-CameraViewWidget::CameraViewWidget(VisionStreamType stream_type, QWidget* parent) : stream_type(stream_type), QOpenGLWidget(parent) {
+CameraViewWidget::CameraViewWidget(VisionStreamType type, QWidget* parent) : stream_type(type), QOpenGLWidget(parent) {
   setAttribute(Qt::WA_OpaquePaintEvent);
-
   timer = new QTimer(this);
   connect(timer, &QTimer::timeout, this, &CameraViewWidget::updateFrame);
 }
@@ -94,13 +93,20 @@ CameraViewWidget::~CameraViewWidget() {
   doneCurrent();
 }
 
+void CameraViewWidget::setStreamType(VisionStreamType type) {
+  if (!vipc_client || stream_type != type) {
+    stream_type = type;
+    vipc_client.reset(new VisionIpcClient("camerad", stream_type, true));
+    updateFrameTransform(rect().width(), rect().height());
+  }
+}
+
 void CameraViewWidget::initializeGL() {
   initializeOpenGLFunctions();
   qInfo() << "OpenGL version:" << QString((const char*)glGetString(GL_VERSION));
   qInfo() << "OpenGL vendor:" << QString((const char*)glGetString(GL_VENDOR));
   qInfo() << "OpenGL renderer:" << QString((const char*)glGetString(GL_RENDERER));
   qInfo() << "OpenGL language version:" << QString((const char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
-
 
   gl_shader = std::make_unique<GLShader>(frame_vertex_shader, frame_fragment_shader);
   GLint frame_pos_loc = glGetAttribLocation(gl_shader->prog, "aPosition");
@@ -132,10 +138,14 @@ void CameraViewWidget::initializeGL() {
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   glBindVertexArray(0);
 
-  vipc_client = std::make_unique<VisionIpcClient>("camerad", stream_type, true);
+  setStreamType(stream_type);
 }
 
 void CameraViewWidget::resizeGL(int w, int h) {
+  updateFrameTransform(w, h);
+}
+
+void CameraViewWidget::updateFrameTransform(int w, int h) {
  if (stream_type == VISION_STREAM_RGB_FRONT) {
     frame_mat = matmul(device_transform, get_driver_view_transform());
   } else {

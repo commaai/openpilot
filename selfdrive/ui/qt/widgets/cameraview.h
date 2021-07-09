@@ -16,9 +16,9 @@ Q_OBJECT
 
 public:
   using QOpenGLWidget::QOpenGLWidget;
-  explicit CameraViewWidget(VisionStreamType stream_type, QWidget* parent = nullptr);
+  explicit CameraViewWidget(VisionStreamType type, QWidget* parent = nullptr);
   ~CameraViewWidget();
-  void setVistionStreamType(VisionStreamType stream_type);
+  void setStreamType(VisionStreamType type);
 
 signals:
  void frameUpdated();
@@ -29,6 +29,7 @@ protected:
   void resizeGL(int w, int h) override;
   void showEvent(QShowEvent *event) override;
   void hideEvent(QHideEvent *event) override;
+  void updateFrameTransform(int w, int h);
 
 protected slots:
   void updateFrame();

@@ -51,12 +51,13 @@ class NvgWindow : public CameraViewWidget {
   Q_OBJECT
 
 public:
-  explicit NvgWindow(VisionStreamType stream_type, QWidget* parent = 0);
+  explicit NvgWindow(VisionStreamType type, QWidget* parent = 0);
 
 protected:
   void initializeGL() override;
   void resizeGL(int w, int h) override;
   void paintGL() override;
+  void showEvent(QShowEvent *event) override;
 };
 
 // container for all onroad widgets

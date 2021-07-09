@@ -12,12 +12,15 @@
 #include "selfdrive/ui/qt/maps/map.h"
 #endif
 
+static inline VisionStreamType getStreamType() {
+  return Hardware::TICI() && Params().getBool("EnableWideCamera") ? VISION_STREAM_RGB_WIDE : VISION_STREAM_RGB_BACK;
+}
+
 OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   main_layout = new QStackedLayout(this);
   main_layout->setStackingMode(QStackedLayout::StackAll);
 
-  bool wide_camera = Hardware::TICI() && Params().getBool("EnableWideCamera");
-  nvg = new NvgWindow(wide_camera ? VISION_STREAM_RGB_WIDE : VISION_STREAM_RGB_BACK, this);
+  nvg = new NvgWindow(getStreamType(), this);
 
   QWidget * split_wrapper = new QWidget;
   split = new QHBoxLayout(split_wrapper);
@@ -214,7 +217,7 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
 
 // NvgWindow
 
-NvgWindow::NvgWindow(VisionStreamType stream_type, QWidget *parent) : CameraViewWidget(stream_type, parent) {}
+NvgWindow::NvgWindow(VisionStreamType type, QWidget *parent) : CameraViewWidget(type, parent) {}
 
 void NvgWindow::initializeGL() {
   CameraViewWidget::initializeGL();
@@ -229,4 +232,11 @@ void NvgWindow::resizeGL(int w, int h) {
 void NvgWindow::paintGL() {
   CameraViewWidget::paintGL();
   ui_draw(&QUIState::ui_state, width(), height());
+}
+
+void NvgWindow::showEvent(QShowEvent *event) {
+  CameraViewWidget::showEvent(event);
+  // Update vistion stream after possible wide camera toggle change
+  setStreamType(getStreamType());
+  ui_resize(&QUIState::ui_state, rect().width(), rect().height());
 }

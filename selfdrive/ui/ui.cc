@@ -218,15 +218,9 @@ static void update_status(UIState *s) {
     if (s->scene.started) {
       s->status = STATUS_DISENGAGED;
       s->scene.started_frame = s->sm->frame;
-
       s->scene.end_to_end = Params().getBool("EndToEndToggle");
       s->wide_camera = Hardware::TICI() ? Params().getBool("EnableWideCamera") : false;
-
-      // Update intrinsics matrix after possible wide camera toggle change
-      // if (s->vg) {
-      //   ui_resize(s, s->fb_w, s->fb_h);
-      // }
-    } 
+    }
   }
   started_prev = s->scene.started;
 }
