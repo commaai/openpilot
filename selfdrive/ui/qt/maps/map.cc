@@ -138,14 +138,13 @@ void MapWindow::timerUpdate() {
       last_position = coordinate;
       last_bearing = bearing;
       velocity_filter.update(velocity);
-    } else {
-      map_instructions->showError("Waiting for GPS");
     }
   }
 
-  if (m_map.isNull()) return;
+  if (m_map.isNull()) {
+    return;
+  }
 
-  // Update map once it's loaded
   loaded_once = loaded_once || m_map->isFullyLoaded();
   if (!loaded_once) {
     map_instructions->showError("Map loading");
@@ -153,6 +152,11 @@ void MapWindow::timerUpdate() {
   }
 
   initLayers();
+
+  if (!localizer_valid) {
+    map_instructions->showError("Waiting for GPS");
+    return;
+  }
 
   if (pan_counter == 0) {
     if (last_position) m_map->setCoordinate(*last_position);
@@ -168,14 +172,12 @@ void MapWindow::timerUpdate() {
   }
 
   // Update current location marker
-  if (localizer_valid) {
-    auto point = coordinate_to_collection(*last_position);
-    QMapbox::Feature feature1(QMapbox::Feature::PointType, point, {}, {});
-    QVariantMap carPosSource;
-    carPosSource["type"] = "geojson";
-    carPosSource["data"] = QVariant::fromValue<QMapbox::Feature>(feature1);
-    m_map->updateSource("carPosSource", carPosSource);
-  }
+  auto point = coordinate_to_collection(*last_position);
+  QMapbox::Feature feature1(QMapbox::Feature::PointType, point, {}, {});
+  QVariantMap carPosSource;
+  carPosSource["type"] = "geojson";
+  carPosSource["data"] = QVariant::fromValue<QMapbox::Feature>(feature1);
+  m_map->updateSource("carPosSource", carPosSource);
 
   // Show route instructions
   if (segment.isValid()) {
