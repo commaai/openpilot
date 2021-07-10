@@ -1,5 +1,7 @@
 #include "selfdrive/ui/qt/api.h"
 
+#include <iostream>
+
 #include <openssl/bio.h>
 #include <openssl/pem.h>
 #include <openssl/rsa.h>
@@ -7,7 +9,6 @@
 #include <QCryptographicHash>
 #include <QDateTime>
 #include <QDebug>
-#include <QFile>
 #include <QJsonDocument>
 #include <QNetworkRequest>
 
@@ -22,14 +23,15 @@ const std::string private_key_path =
                    : "/persist/comma/id_rsa";
 
 QByteArray rsa_sign(const QByteArray &data) {
-  auto file = QFile(private_key_path.c_str());
-  if (!file.open(QIODevice::ReadOnly)) {
-    qDebug() << "No RSA private key found, please run manager.py or registration.py";
+  static std::string key;
+  if (key.empty()) {
+    key = util::read_file(private_key_path);
+  }
+  if (key.empty()) {
+    std::cout << "No RSA private key found, please run manager.py or registration.py" << std::endl;
     return QByteArray();
   }
-  auto key = file.readAll();
-  file.close();
-  file.deleteLater();
+
   BIO* mem = BIO_new_mem_buf(key.data(), key.size());
   assert(mem);
   RSA* rsa_private = PEM_read_bio_RSAPrivateKey(mem, NULL, NULL, NULL);
