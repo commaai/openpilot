@@ -12,6 +12,7 @@
 #include "nanovg.h"
 
 #include "cereal/messaging/messaging.h"
+#include "common/transformations/orientation.hpp"
 #include "selfdrive/camerad/cameras/camera_common.h"
 #include "selfdrive/common/modeldata.h"
 #include "selfdrive/common/params.h"
@@ -91,16 +92,13 @@ typedef struct UIState {
   // framebuffer
   int fb_w, fb_h;
 
-  // NVG
   NVGcontext *vg;
-
   std::unique_ptr<SubMaster> sm;
 
   UIStatus status;
   UIScene scene;
 
   bool awake;
-
   float car_space_transform[6];
   bool wide_camera;
 } UIState;

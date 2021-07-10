@@ -128,20 +128,16 @@ static void ui_draw_world(UIState *s) {
       draw_lead(s, lead_two, s->scene.lead_vertices[1]);
     }
   }
-  nvgResetScissor(s->vg);
 }
 
 void ui_draw(UIState *s, int w, int h) {
   const UIScene *scene = &s->scene;
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  glViewport(0, 0, s->fb_w, s->fb_h);
-
   nvgBeginFrame(s->vg, s->fb_w, s->fb_h, 1.0f);
   
   NVGpaint gradient = nvgLinearGradient(s->vg, 0, header_h-(header_h/2.5),
                         0, header_h, nvgRGBAf(0,0,0,0.45), nvgRGBAf(0,0,0,0));
-
   nvgBeginPath(s->vg);
   nvgRect(s->vg, 0, 0, s->fb_w, s->fb_h);
   nvgFillPaint(s->vg, gradient);
@@ -150,6 +146,7 @@ void ui_draw(UIState *s, int w, int h) {
   if (scene->world_objects_visible) {
     ui_draw_world(s);
   }
+
   nvgEndFrame(s->vg);
   glDisable(GL_BLEND);
 }
@@ -173,10 +170,8 @@ void ui_resize(UIState *s, int width, int height) {
   // Apply transformation such that video pixel coordinates match video
   // 1) Put (0, 0) in the middle of the video
   nvgTranslate(s->vg, 0 + s->fb_w / 2, 0 + s->fb_h / 2 + y_offset);
-
   // 2) Apply same scaling as video
   nvgScale(s->vg, zoom, zoom);
-
   // 3) Put (0, 0) in top left corner of video
   nvgTranslate(s->vg, -intrinsic_matrix.v[2], -intrinsic_matrix.v[5]);
 

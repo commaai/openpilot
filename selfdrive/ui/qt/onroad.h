@@ -97,7 +97,6 @@ public:
   QWidget *map = nullptr;
 
 private:
-  OnroadAlerts *alerts;
   QStackedLayout *main_layout;
   QHBoxLayout* split;
 
