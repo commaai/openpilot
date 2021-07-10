@@ -135,14 +135,14 @@ class CarInterface(CarInterfaceBase):
       # WARNING: THIS DISABLES AEB!
       ret.openpilotLongitudinalControl = Params().get_bool("DisableRadar")
 
-      ret.enableCruise = not ret.openpilotLongitudinalControl
+      ret.pcmCruise = not ret.openpilotLongitudinalControl
       ret.communityFeature = ret.openpilotLongitudinalControl
     else:
       ret.safetyModel = car.CarParams.SafetyModel.hondaNidec
       ret.enableGasInterceptor = 0x201 in fingerprint[0]
       ret.openpilotLongitudinalControl = True
 
-      ret.enableCruise = not ret.enableGasInterceptor
+      ret.pcmCruise = not ret.enableGasInterceptor
       ret.communityFeature = ret.enableGasInterceptor
 
     if candidate == CAR.CRV_5G:
@@ -509,7 +509,7 @@ class CarInterface(CarInterfaceBase):
     ret.buttonEvents = buttonEvents
 
     # events
-    events = self.create_common_events(ret, pcm_enable=self.CP.enableCruise)
+    events = self.create_common_events(ret, pcm_enable=self.CP.pcmCruise)
     if self.CS.brake_error:
       events.add(EventName.brakeUnavailable)
     if self.CS.brake_hold and self.CS.CP.openpilotLongitudinalControl:
@@ -517,12 +517,12 @@ class CarInterface(CarInterfaceBase):
     if self.CS.park_brake:
       events.add(EventName.parkBrake)
 
-    if self.CP.enableCruise and ret.vEgo < self.CP.minEnableSpeed:
+    if self.CP.pcmCruise and ret.vEgo < self.CP.minEnableSpeed:
       events.add(EventName.belowEngageSpeed)
 
     # it can happen that car cruise disables while comma system is enabled: need to
     # keep braking if needed or if the speed is very low
-    if self.CP.enableCruise and not ret.cruiseState.enabled \
+    if self.CP.pcmCruise and not ret.cruiseState.enabled \
        and (c.actuators.brake <= 0. or not self.CP.openpilotLongitudinalControl):
       # non loud alert if cruise disables below 25mph as expected (+ a little margin)
       if ret.vEgo < self.CP.minEnableSpeed + 2.:
@@ -537,7 +537,7 @@ class CarInterface(CarInterfaceBase):
 
       # do enable on both accel and decel buttons
       if b.type in [ButtonType.accelCruise, ButtonType.decelCruise] and not b.pressed:
-        if not self.CP.enableCruise:
+        if not self.CP.pcmCruise:
           events.add(EventName.buttonEnable)
 
       # do disable on button down
