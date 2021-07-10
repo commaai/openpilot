@@ -96,7 +96,7 @@ class Controls:
     car_recognized = self.CP.carName != 'mock'
 
     controller_available = self.CI.CC is not None and not passive and not self.CP.dashcamOnly
-    community_feature = self.CP.communityFeature or self.CP.fuzzyFingerprint or \
+    community_feature = self.CP.communityFeature or \
                         self.CP.fingerprintSource == car.CarParams.FingerprintSource.can
     community_feature_disallowed = community_feature and (not community_feature_toggle)
     self.read_only = not car_recognized or not controller_available or \
