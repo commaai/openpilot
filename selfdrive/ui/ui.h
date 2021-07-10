@@ -8,12 +8,10 @@
 #include <QObject>
 #include <QTimer>
 #include <QColor>
-#include <QRect>
 
 #include "nanovg.h"
 
 #include "cereal/messaging/messaging.h"
-#include "common/transformations/orientation.hpp"
 #include "selfdrive/camerad/cameras/camera_common.h"
 #include "selfdrive/common/modeldata.h"
 #include "selfdrive/common/params.h"
@@ -103,7 +101,6 @@ typedef struct UIState {
 
   bool awake;
 
-  QRect viz_rect;
   float car_space_transform[6];
   bool wide_camera;
 } UIState;

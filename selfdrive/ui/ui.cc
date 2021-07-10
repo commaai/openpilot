@@ -6,6 +6,7 @@
 #include <cmath>
 #include <cstdio>
 
+#include "common/transformations/orientation.hpp"
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
 #include "selfdrive/common/watchdog.h"

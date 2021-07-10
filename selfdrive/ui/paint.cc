@@ -63,8 +63,8 @@ static void draw_lead(UIState *s, const cereal::RadarState::LeadData::Reader &le
   }
 
   float sz = std::clamp((25 * 30) / (d_rel / 3 + 30), 15.0f, 30.0f) * 2.35;
-  x = std::clamp(x, 0.f, s->viz_rect.right() - sz / 2);
-  y = std::fmin(s->viz_rect.bottom() - sz * .6, y);
+  x = std::clamp(x, 0.f, s->fb_w - sz / 2);
+  y = std::fmin(s->fb_h - sz * .6, y);
   draw_chevron(s, x, y, sz, nvgRGBA(201, 34, 49, fillAlpha), COLOR_YELLOW);
 }
 
@@ -113,9 +113,6 @@ static void ui_draw_vision_lane_lines(UIState *s) {
 
 // Draw all world space objects.
 static void ui_draw_world(UIState *s) {
-  // Don't draw on top of sidebar
-  nvgScissor(s->vg, s->viz_rect.x(), s->viz_rect.y(), s->viz_rect.width(), s->viz_rect.height());
-
   // Draw lane edges and vision/mpc tracks
   ui_draw_vision_lane_lines(s);
 
@@ -136,21 +133,17 @@ static void ui_draw_world(UIState *s) {
 
 void ui_draw(UIState *s, int w, int h) {
   const UIScene *scene = &s->scene;
-  s->viz_rect = {0, 0, w, h};
-
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   glViewport(0, 0, s->fb_w, s->fb_h);
 
   nvgBeginFrame(s->vg, s->fb_w, s->fb_h, 1.0f);
   
-  NVGpaint gradient = nvgLinearGradient(s->vg, s->viz_rect.x(),
-                        s->viz_rect.y()+(header_h-(header_h/2.5)),
-                        s->viz_rect.x(), s->viz_rect.y()+header_h,
-                        nvgRGBAf(0,0,0,0.45), nvgRGBAf(0,0,0,0));
+  NVGpaint gradient = nvgLinearGradient(s->vg, 0, header_h-(header_h/2.5),
+                        0, header_h, nvgRGBAf(0,0,0,0.45), nvgRGBAf(0,0,0,0));
 
   nvgBeginPath(s->vg);
-  nvgRect(s->vg, s->viz_rect.x(), s->viz_rect.y(), s->viz_rect.width(), header_h);
+  nvgRect(s->vg, 0, 0, s->fb_w, s->fb_h);
   nvgFillPaint(s->vg, gradient);
 
   // Draw augmented elements

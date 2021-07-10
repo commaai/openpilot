@@ -1,5 +1,7 @@
 #include "selfdrive/ui/qt/sidebar.h"
 
+#include <cmath>
+
 #include <QMouseEvent>
 
 #include "selfdrive/ui/qt/qt_window.h"
@@ -86,7 +88,7 @@ void Sidebar::updateState(const UIState &s) {
     pandaStatus = danger_color;
     pandaStr = "NO\nPANDA";
   } else if (Hardware::TICI() && s.scene.started) {
-    pandaStr = QString("SATS %1\nACC %2").arg(s.scene.satelliteCount).arg(fmin(10, s.scene.gpsAccuracy), 0, 'f', 2);
+    pandaStr = QString("SATS %1\nACC %2").arg(s.scene.satelliteCount).arg(std::fmin(10, s.scene.gpsAccuracy), 0, 'f', 2);
     pandaStatus = sm["liveLocationKalman"].getLiveLocationKalman().getGpsOK() ? good_color : warning_color;
   }
   setProperty("pandaStr", pandaStr);
