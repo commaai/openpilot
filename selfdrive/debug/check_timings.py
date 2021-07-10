@@ -17,8 +17,8 @@ if __name__ == "__main__":
       msgs = messaging.drain_sock(sock)
       for m in msgs:
         ts[s].append(m.logMonoTime / 1e6)
-      time.sleep(1)
 
       if len(ts[s]) == ts[s].maxlen:
         d = np.diff(ts[s])
-        print(f"{s:17} {np.max(d):.2f} {np.max(d):.2f} {np.max(d):.2f} {np.std(d):.2f}")
+        print(f"{s:17} {np.mean(d):.2f} {np.std(d):.2f} {np.max(d):.2f} {np.min(d):.2f}")
+    time.sleep(1)
