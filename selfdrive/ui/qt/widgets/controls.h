@@ -9,6 +9,20 @@
 #include "selfdrive/ui/qt/widgets/toggle.h"
 
 QFrame *horizontal_line(QWidget *parent = nullptr);
+
+class ElidedLabel : public QLabel {
+  Q_OBJECT
+
+ public:
+  explicit ElidedLabel(QWidget *parent = 0);
+  explicit ElidedLabel(const QString &text, QWidget *parent = 0);
+
+ protected:
+  void paintEvent(QPaintEvent *event) override;
+  void resizeEvent(QResizeEvent* event) override;
+  QString lastText_, elidedText_;
+};
+
 class AbstractControl : public QFrame {
   Q_OBJECT
 
@@ -48,7 +62,7 @@ public:
   void setText(const QString &text) { label.setText(text); }
 
 private:
-  QLabel label;
+  ElidedLabel label;
 };
 
 // widget for a button with a label
