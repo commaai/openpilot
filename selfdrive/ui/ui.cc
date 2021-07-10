@@ -186,7 +186,7 @@ static void update_state(UIState *s) {
 
     scene.light_sensor = std::clamp<float>((1023.0 / max_lines) * (max_lines - camera_state.getIntegLines() * gain), 0.0, 1023.0);
   }
-  scene.started = sm["deviceState"].getDeviceState().getStarted() && scene.ignition;
+  scene.started = true;//sm["deviceState"].getDeviceState().getStarted() && scene.ignition;
 }
 
 static void update_params(UIState *s) {

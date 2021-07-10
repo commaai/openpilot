@@ -107,12 +107,13 @@ void OnroadAlerts::updateState(const UIState &s) {
         // car is started, but controlsState hasn't been seen at all
         updateAlert("openpilot Unavailable", "Waiting for controls to start", 0,
                     "controlsWaiting", cereal::ControlsState::AlertSize::MID, AudibleAlert::NONE);
+        status = STATUS_ALERT;
       } else if ((sm.frame - sm.rcv_frame("controlsState")) > 5 * UI_FREQ) {
         // car is started, but controls is lagging or died
         updateAlert("TAKE CONTROL IMMEDIATELY", "Controls Unresponsive", 0,
                     "controlsUnresponsive", cereal::ControlsState::AlertSize::FULL, AudibleAlert::CHIME_WARNING_REPEAT);
+        status = STATUS_ALERT;
       }
-      status = STATUS_ALERT;
     }
   }
 
@@ -169,9 +170,8 @@ void OnroadAlerts::stopSounds() {
 void OnroadAlerts::paintEvent(QPaintEvent *event) {
   // border
   QPainter p(this);
-  p.setPen(QPen(bg, bdr_s));
-  p.drawRect(rect());
-  p.setPen(Qt::NoPen);
+  p.setPen(QPen(bg, bdr_s, Qt::SolidLine, Qt::SquareCap, Qt::MiterJoin));
+  p.drawRect(rect().adjusted(bdr_s / 2, bdr_s / 2, -bdr_s / 2, -bdr_s / 2));
 
   if (alert_size == cereal::ControlsState::AlertSize::NONE) {
     return;
@@ -304,16 +304,16 @@ void OnroadHud::paintEvent(QPaintEvent *) {
   p.setBrush(QColor(0, 0, 0, 100));
   p.drawRoundedRect(rc, 20, 20);
 
-  QRect rcText = rc;
-  rcText.setBottom(120);
+  // QRect rcText = rc;
+  // rcText.setBottom(120);
   p.setPen(QColor(0xff, 0xff, 0xff, 200));
   configFont(p, "Open Sans", 40, "Regular");
-  p.drawText(rcText, Qt::AlignCenter, "MAX");
-  rcText = rc;
-  rcText.setTop(120);
+  p.drawText(rc, Qt::AlignHCenter | Qt::AlignTop, "MAX");
+  // rcText = rc;
+  // rcText.setTop(120);
   p.setPen(QColor(0xff, 0xff, 0xff, 100));
   configFont(p, "Open Sans", 78, "SemiBold");
-  p.drawText(rcText, Qt::AlignCenter, maxSpeed_);
+  p.drawText(rc, Qt::AlignHCenter | Qt::AlignBottom, maxSpeed_);
 
   // current speed
   p.setPen(Qt::white);

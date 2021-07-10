@@ -41,7 +41,6 @@ private:
   std::unique_ptr<VisionIpcClient> vipc_client;
   std::unique_ptr<EGLImageTexture> texture[UI_BUF_COUNT];
   std::unique_ptr<GLShader> gl_shader;
-
   VisionStreamType stream_type;
   QTimer* timer;
 };
