@@ -85,9 +85,6 @@ void Sidebar::updateState(const UIState &s) {
   if (s.scene.pandaType == cereal::PandaState::PandaType::UNKNOWN) {
     pandaStatus = danger_color;
     pandaStr = "NO\nPANDA";
-  } else if (Hardware::TICI() && s.scene.started) {
-    pandaStr = QString("SATS %1\nACC %2").arg(s.scene.satelliteCount).arg(fmin(10, s.scene.gpsAccuracy), 0, 'f', 2);
-    pandaStatus = sm["liveLocationKalman"].getLiveLocationKalman().getGpsOK() ? good_color : warning_color;
   }
   setProperty("pandaStr", pandaStr);
   setProperty("pandaStatus", pandaStatus);
