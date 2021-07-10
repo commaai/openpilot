@@ -8,6 +8,7 @@
 #include <QObject>
 #include <QTimer>
 #include <QColor>
+#include <QRect>
 
 #include "nanovg.h"
 
@@ -30,17 +31,6 @@
 // TODO: choose based on frame input size
 const float y_offset = Hardware::TICI() ? 150.0 : 0.0;
 const float ZOOM = Hardware::TICI() ? 2912.8 : 2138.5;
-
-typedef struct Rect {
-  int x, y, w, h;
-  int centerX() const { return x + w / 2; }
-  int centerY() const { return y + h / 2; }
-  int right() const { return x + w; }
-  int bottom() const { return y + h; }
-  bool ptInRect(int px, int py) const {
-    return px >= x && px < (x + w) && py >= y && py < (y + h);
-  }
-} Rect;
 
 const int bdr_s = 30;
 const int header_h = 420;
@@ -113,7 +103,7 @@ typedef struct UIState {
 
   bool awake;
 
-  Rect video_rect, viz_rect;
+  QRect viz_rect;
   float car_space_transform[6];
   bool wide_camera;
 } UIState;

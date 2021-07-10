@@ -114,7 +114,7 @@ static void ui_draw_vision_lane_lines(UIState *s) {
 // Draw all world space objects.
 static void ui_draw_world(UIState *s) {
   // Don't draw on top of sidebar
-  nvgScissor(s->vg, s->viz_rect.x, s->viz_rect.y, s->viz_rect.w, s->viz_rect.h);
+  nvgScissor(s->vg, s->viz_rect.x(), s->viz_rect.y(), s->viz_rect.width(), s->viz_rect.height());
 
   // Draw lane edges and vision/mpc tracks
   ui_draw_vision_lane_lines(s);
@@ -136,7 +136,7 @@ static void ui_draw_world(UIState *s) {
 
 void ui_draw(UIState *s, int w, int h) {
   const UIScene *scene = &s->scene;
-  s->viz_rect = Rect{0, 0, w, h};
+  s->viz_rect = {0, 0, w, h};
 
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -144,13 +144,13 @@ void ui_draw(UIState *s, int w, int h) {
 
   nvgBeginFrame(s->vg, s->fb_w, s->fb_h, 1.0f);
   
-  NVGpaint gradient = nvgLinearGradient(s->vg, s->viz_rect.x,
-                        s->viz_rect.y+(header_h-(header_h/2.5)),
-                        s->viz_rect.x, s->viz_rect.y+header_h,
+  NVGpaint gradient = nvgLinearGradient(s->vg, s->viz_rect.x(),
+                        s->viz_rect.y()+(header_h-(header_h/2.5)),
+                        s->viz_rect.x(), s->viz_rect.y()+header_h,
                         nvgRGBAf(0,0,0,0.45), nvgRGBAf(0,0,0,0));
 
   nvgBeginPath(s->vg);
-  nvgRect(s->vg, s->viz_rect.x, s->viz_rect.y, s->viz_rect.w, header_h);
+  nvgRect(s->vg, s->viz_rect.x(), s->viz_rect.y(), s->viz_rect.width(), header_h);
   nvgFillPaint(s->vg, gradient);
 
   // Draw augmented elements
@@ -176,11 +176,10 @@ void ui_resize(UIState *s, int width, int height) {
   if (s->wide_camera) {
     zoom *= 0.5;
   }
-  Rect video_rect = Rect{0, 0, s->fb_w, s->fb_h};
 
   // Apply transformation such that video pixel coordinates match video
   // 1) Put (0, 0) in the middle of the video
-  nvgTranslate(s->vg, video_rect.x + video_rect.w / 2, video_rect.y + video_rect.h / 2 + y_offset);
+  nvgTranslate(s->vg, 0 + s->fb_w / 2, 0 + s->fb_h / 2 + y_offset);
 
   // 2) Apply same scaling as video
   nvgScale(s->vg, zoom, zoom);
