@@ -294,41 +294,47 @@ void OnroadHud::drawIcon(QPainter &p, int x, int y, QPixmap &img, QBrush bg, flo
   p.drawPixmap(x - img_size / 2, y - img_size / 2, img);
 }
 
+static void drawText(QPainter &p, int x, int y, Qt::Alignment flag, const QString &text, int alpha = 255) {
+  p.setPen(QColor(0xff, 0xff, 0xff, alpha));
+  QFontMetrics fm(p.font());
+  QRect r = fm.tightBoundingRect(text);
+  r.moveCenter({x, y});
+  if (flag & Qt::AlignTop) {
+    r.moveTop(r.top() + r.height() / 2);
+  } else if (flag & Qt::AlignBottom) {
+    r.moveTop(r.top() - r.height() / 2);
+  }
+  p.drawText(r.x(), r.bottom(), text);
+}
+
 void OnroadHud::paintEvent(QPaintEvent *) {
   QPainter p(this);
   p.setRenderHint(QPainter::Antialiasing);
 
   // max speed
-  QRect rc(bdr_s * 2, bdr_s * 1.5, 184, 202);
+  QRect rc(bdr_s * 3, bdr_s * 2.5, 184, 202);
   p.setPen(QPen(QColor(0xff, 0xff, 0xff, 100), 10));
   p.setBrush(QColor(0, 0, 0, 100));
   p.drawRoundedRect(rc, 20, 20);
 
-  // QRect rcText = rc;
-  // rcText.setBottom(120);
-  p.setPen(QColor(0xff, 0xff, 0xff, 200));
-  configFont(p, "Open Sans", 40, "Regular");
-  p.drawText(rc, Qt::AlignHCenter | Qt::AlignTop, "MAX");
-  // rcText = rc;
-  // rcText.setTop(120);
-  p.setPen(QColor(0xff, 0xff, 0xff, 100));
-  configFont(p, "Open Sans", 78, "SemiBold");
-  p.drawText(rc, Qt::AlignHCenter | Qt::AlignBottom, maxSpeed_);
+  bool is_cruise_set = maxSpeed_ != "N/A";
+  configFont(p, "Open Sans", 52, "Regular");
+  drawText(p, rc.center().x(), rc.top() + bdr_s, Qt::AlignTop, "MAX", is_cruise_set ? 200 : 100);
+  configFont(p, "Open Sans", 78, is_cruise_set ? "Bold" : "SemiBold");
+  drawText(p, rc.center().x(), rc.bottom() - bdr_s, Qt::AlignBottom, maxSpeed_, is_cruise_set ? 255 : 100);
 
   // current speed
-  p.setPen(Qt::white);
   configFont(p, "Open Sans", 180, "Bold");
-  p.drawText(rect(), Qt::AlignHCenter | Qt::AlignTop, speed_);
-  p.setPen(QColor(0xff, 0xff, 0xff, 200));
+  drawText(p, rect().center().x(), rc.center().y(), Qt::AlignVCenter, speed_);
   configFont(p, "Open Sans", 70, "Regular");
-  p.drawText(rect().adjusted(0, 190, 0, 0), Qt::AlignHCenter | Qt::AlignTop, speedUnit_);
+  drawText(p, rect().center().x(), rc.bottom(), Qt::AlignTop, speedUnit_, 200);
 
   // engage-ability icon
   if (engageable_) {
-    drawIcon(p, rect().right()-radius/2-bdr_s*2, radius / 2 + int(bdr_s*1.5), engage_img, bg_colors[status_], 1.0);
+    drawIcon(p, rect().right() - radius / 2 - bdr_s * 2, radius / 2 + int(bdr_s * 1.5), engage_img, bg_colors[status_], 1.0);
   }
   // dm icon
   if (!hideDM_) {
-    drawIcon(p, radius/2 + (bdr_s * 2), rect().bottom() - footer_h / 2, dm_img, QColor(0, 0, 0, 70), dmActive_ ? 1.0 : 0.2);
+    drawIcon(p, radius / 2 + (bdr_s * 2), rect().bottom() - footer_h / 2, dm_img, QColor(0, 0, 0, 70), dmActive_ ? 1.0 : 0.2);
   }
 }
