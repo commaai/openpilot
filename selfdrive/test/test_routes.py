@@ -169,10 +169,8 @@ routes = [
   TestRoute("fb53c640f499b73d|2021-06-01--04-17-56", MAZDA.MAZDA6),
   TestRoute("f6d5b1a9d7a1c92e|2021-07-08--06-56-59", MAZDA.CX9_2021),
 
-
   TestRoute("6c14ee12b74823ce|2021-06-30--11-49-02", TESLA.AP1_MODELS),
   TestRoute("bb50caf5f0945ab1|2021-06-19--17-20-18", TESLA.AP2_MODELS),
-
 ]
 
 forced_dashcam_routes = [
