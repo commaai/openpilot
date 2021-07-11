@@ -15,6 +15,7 @@
 #include <random>
 #include <string>
 #include <thread>
+#include <unordered_map>
 
 #include "cereal/messaging/messaging.h"
 #include "cereal/services.h"
@@ -150,17 +151,16 @@ void encoder_thread(int cam_idx) {
 
       s.last_camera_seen_tms = millis_since_boot();
 
-      // Decide if we should rotate
       if (cam_info.trigger_rotate && (cnt > 0 && (cnt % (SEGMENT_LENGTH * MAIN_FPS)) == 0)) {
         // trigger rotate and wait logger rotated to new segment
         ++s.waiting_rotate;
         std::unique_lock lk(s.rotate_lock);
-        s.rotate_cv.wait(lk, [&] { return s.rotate_segment != cur_seg || do_exit; });
+        s.rotate_cv.wait(lk, [&] { return s.rotate_segment > cur_seg || do_exit; });
       }
       if (do_exit) break;
 
       // rotate the encoder if the logger is on a newer segment
-      if (s.rotate_segment != cur_seg) {
+      if (s.rotate_segment > cur_seg) {
         cur_seg = s.rotate_segment;
         LOGW("camera %d rotate encoder to %s", cam_idx, s.segment_path);
         for (auto &e : encoders) {
@@ -255,7 +255,7 @@ int main(int argc, char** argv) {
   typedef struct QlogState {
     int counter, freq;
   } QlogState;
-  std::map<SubSocket*, QlogState> qlog_states;
+  std::unordered_map<SubSocket*, QlogState> qlog_states;
 
   s.ctx = Context::create();
   Poller * poller = Poller::create();
@@ -310,18 +310,16 @@ int main(int argc, char** argv) {
           LOGD("%lu messages, %.2f msg/sec, %.2f KB/sec", msg_count, msg_count / seconds, bytes_count * 0.001 / seconds);
         }
       }
-    }
 
-    bool new_segment = (s.waiting_rotate == s.max_waiting);
-    if (!new_segment) {
-      double tms = millis_since_boot();
-      if ((tms - s.last_rotate_tms) > SEGMENT_LENGTH * 1000 &&
-          (tms - s.last_camera_seen_tms) > NO_CAMERA_PATIENCE) {
-        LOGW("no camera packet seen. auto rotating");
-        new_segment = true;
+      if (s.waiting_rotate == s.max_waiting) {
+        logger_rotate();
       }
     }
-    if (new_segment && !do_exit) {
+
+    double tms = millis_since_boot();
+    if ((tms - s.last_rotate_tms) > SEGMENT_LENGTH * 1000 &&
+        (tms - s.last_camera_seen_tms) > NO_CAMERA_PATIENCE) {
+      LOGW("no camera packet seen. auto rotating");
       logger_rotate();
     }
   }
