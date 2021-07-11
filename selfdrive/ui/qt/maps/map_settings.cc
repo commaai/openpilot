@@ -60,7 +60,7 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
   recent_layout = new QVBoxLayout;
   QWidget *recent_widget = new LayoutWidget(recent_layout, this);
   ScrollView *recent_scroller = new ScrollView(recent_widget, this);
-  main_layout->addWidget(recent_scroller);
+  main_layout->addWidget(recent_scroller, 1);
 
   // Settings
   main_layout->addSpacing(50);
