@@ -153,7 +153,7 @@ class Controls:
 
     if not sounds_available:
       self.events.add(EventName.soundsUnavailable, static=True)
-    if community_feature_disallowed and car_recognized:
+    if community_feature_disallowed and car_recognized and not self.CP.dashcamOnly:
       self.events.add(EventName.communityFeatureDisallowed, static=True)
     if not car_recognized:
       self.events.add(EventName.carUnrecognized, static=True)
