@@ -212,6 +212,8 @@ void MapPanel::parseResponse(const QString &response) {
     no_recents->setStyleSheet(R"(font-size: 50px; color: #9c9c9c)");
     recent_layout->addWidget(no_recents);
   }
+
+  recent_layout->addStretch();
 }
 
 void MapPanel::navigateTo(const QJsonObject &place) {
