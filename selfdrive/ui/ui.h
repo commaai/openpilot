@@ -83,9 +83,6 @@ typedef struct UIScene {
 
   cereal::PandaState::PandaType pandaType;
 
-  // gps
-  int satelliteCount;
-
   // modelV2
   float lane_line_probs[4];
   float road_edge_stds[2];
