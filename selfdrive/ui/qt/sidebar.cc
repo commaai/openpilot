@@ -25,7 +25,7 @@ void Sidebar::drawMetric(QPainter &p, const QString &label, const QString &val, 
   p.setPen(QColor(0xff, 0xff, 0xff));
   if (val.isEmpty()) {
     configFont(p, "Open Sans", 35, "Bold");
-    const QRect r = QRect(rect.x() + 35, rect.y(), rect.width() - 50, rect.height());
+    const QRect r = QRect(rect.x() + 30, rect.y(), rect.width() - 40, rect.height());
     p.drawText(r, Qt::AlignCenter, label);
   } else {
     configFont(p, "Open Sans", 58, "Bold");
@@ -85,6 +85,9 @@ void Sidebar::updateState(const UIState &s) {
   if (s.scene.pandaType == cereal::PandaState::PandaType::UNKNOWN) {
     pandaStatus = danger_color;
     pandaStr = "NO\nPANDA";
+  } else if (!sm["liveLocationKalman"].getLiveLocationKalman().getGpsOK()) {
+    pandaStatus = warning_color;
+    pandaStr = "GPS\nSEARCHING";
   }
   setProperty("pandaStr", pandaStr);
   setProperty("pandaStatus", pandaStatus);
