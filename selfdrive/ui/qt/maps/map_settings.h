@@ -7,6 +7,8 @@
 #include <QVBoxLayout>
 #include <QWidget>
 
+#include "selfdrive/common/params.h"
+
 class MapPanel : public QWidget {
   Q_OBJECT
 public:
@@ -17,6 +19,7 @@ public:
   void clear();
 
 private:
+  Params params;
   QPushButton *home_button, *work_button;
   QLabel *home_address, *work_address;
   QVBoxLayout *recent_layout;

@@ -16,8 +16,18 @@ QString timeAgo(const QDateTime &date);
 void swagLogMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg);
 void initApp();
 
-class ClickableWidget : public QWidget
-{
+
+// convenience class for wrapping layouts
+class LayoutWidget : public QWidget {
+  Q_OBJECT
+
+public:
+  LayoutWidget(QLayout *l, QWidget *parent = nullptr) : QWidget(parent) {
+    setLayout(l);
+  };
+};
+
+class ClickableWidget : public QWidget {
   Q_OBJECT
 
 public:
