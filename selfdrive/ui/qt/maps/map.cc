@@ -400,6 +400,12 @@ void MapWindow::mousePressEvent(QMouseEvent *ev) {
   ev->accept();
 }
 
+void MapWindow::mouseDoubleClickEvent(QMouseEvent *ev) {
+  if (last_position) m_map->setCoordinate(*last_position);
+  if (last_bearing) m_map->setBearing(*last_bearing);
+  m_map->setZoom(util::map_val<float>(velocity_filter.x(), 0, 30, MAX_ZOOM, MIN_ZOOM));
+}
+
 void MapWindow::mouseMoveEvent(QMouseEvent *ev) {
   QPointF delta = ev->localPos() - m_lastPos;
 
