@@ -211,8 +211,7 @@ DBC = {
 }
 
 # Gen 1 hardware: same CAN messages and same camera
-GEN1 = [ CAR.CX5, CAR.CX9, CAR.CX9_2021, CAR.MAZDA3, CAR.MAZDA6 ]
+GEN1 = set([CAR.CX5, CAR.CX9, CAR.CX9_2021, CAR.MAZDA3, CAR.MAZDA6])
 
-# Cars with Steer Lockout
-STEER_LOCK_CAR = [ CAR.CX5, CAR.CX9, CAR.MAZDA3, CAR.MAZDA6, CAR.CX9_2021 ]
-
+# Cars with a steering lockout
+STEER_LOCKOUT_CAR = set([CAR.CX5, CAR.CX9, CAR.MAZDA3, CAR.MAZDA6])

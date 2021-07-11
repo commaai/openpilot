@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from cereal import car
 from selfdrive.config import Conversions as CV
-from selfdrive.car.mazda.values import CAR, LKAS_LIMITS, STEER_LOCK_CAR
+from selfdrive.car.mazda.values import CAR, LKAS_LIMITS
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
 
@@ -20,10 +20,10 @@ class CarInterface(CarInterfaceBase):
 
     ret.carName = "mazda"
     ret.safetyModel = car.CarParams.SafetyModel.mazda
-
-    ret.dashcamOnly = candidate in STEER_LOCK_CAR
-
     ret.radarOffCan = True
+
+    ret.communityFeature = True
+    ret.dashcamOnly = True
 
     ret.steerActuatorDelay = 0.1
     ret.steerRateCost = 1.0
