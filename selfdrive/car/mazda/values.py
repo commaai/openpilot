@@ -8,19 +8,20 @@ Ecu = car.CarParams.Ecu
 # Steer torque limits
 
 class CarControllerParams:
-  STEER_MAX = 600                 # max_steer 2048
-  STEER_STEP = 1                  # how often we update the steer cmd
+  STEER_MAX = 800                # theoretical max_steer 2047
   STEER_DELTA_UP = 10             # torque increase per refresh
-  STEER_DELTA_DOWN = 20           # torque decrease per refresh
+  STEER_DELTA_DOWN = 25           # torque decrease per refresh
   STEER_DRIVER_ALLOWANCE = 15     # allowed driver torque before start limiting
   STEER_DRIVER_MULTIPLIER = 1     # weight driver torque
   STEER_DRIVER_FACTOR = 1         # from dbc
+  STEER_ERROR_MAX = 350           # max delta between torque cmd and torque motor
 
 class CAR:
   CX5 = "MAZDA CX-5"
   CX9 = "MAZDA CX-9"
   MAZDA3 = "MAZDA 3"
   MAZDA6 = "MAZDA 6"
+  CX9_2021 = "Mazda CX-9 2021"   # No Steer Lockout
 
 class LKAS_LIMITS:
   STEER_THRESHOLD = 15
@@ -176,6 +177,27 @@ FW_VERSIONS = {
     (Ecu.transmission, 0x7e1, None): [
       b'PYH7-21PS1-B\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
+  },
+
+  CAR.CX9_2021 : {
+    (Ecu.eps, 0x730, None): [
+      b'TC3M-3210X-A-00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.engine, 0x7e0, None): [
+      b'PXM4-188K2-C\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdRadar, 0x764, None): [
+      b'K131-67XK2-E\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.esp, 0x760, None): [
+      b'TA0B-437K2-C\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdCamera, 0x706, None): [
+      b'GSH7-67XK2-M\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'PXM4-21PS1-B\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
   }
 }
 
@@ -185,6 +207,11 @@ DBC = {
   CAR.CX9: dbc_dict('mazda_2017', None),
   CAR.MAZDA3: dbc_dict('mazda_2017', None),
   CAR.MAZDA6: dbc_dict('mazda_2017', None),
+  CAR.CX9_2021: dbc_dict('mazda_2017', None),
 }
 
-GEN1 = [ CAR.CX5, CAR.CX9, CAR.MAZDA3, CAR.MAZDA6 ]
+# Gen 1 hardware: same CAN messages and same camera
+GEN1 = set([CAR.CX5, CAR.CX9, CAR.CX9_2021, CAR.MAZDA3, CAR.MAZDA6])
+
+# Cars with a steering lockout
+STEER_LOCKOUT_CAR = set([CAR.CX5, CAR.CX9, CAR.MAZDA3, CAR.MAZDA6])
