@@ -297,6 +297,7 @@ int main(int argc, char** argv) {
   while (!do_exit) {
     // poll for new messages on all sockets
     for (auto sock : poller->poll(1000)) {
+      // drain socket
       QlogState &qs = qlog_states[sock];
       Message *msg = nullptr;
       while (!do_exit && (msg = sock->receive(true))) {
@@ -310,7 +311,7 @@ int main(int argc, char** argv) {
           LOGD("%lu messages, %.2f msg/sec, %.2f KB/sec", msg_count, msg_count / seconds, bytes_count * 0.001 / seconds);
         }
       }
-
+      // rotate if needed
       if (s.waiting_rotate == s.max_waiting) {
         logger_rotate();
       }
