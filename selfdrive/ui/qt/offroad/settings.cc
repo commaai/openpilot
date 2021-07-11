@@ -284,11 +284,8 @@ QWidget * network_panel(QWidget * parent) {
 }
 
 void SettingsWindow::showEvent(QShowEvent *event) {
-  if (layout()) {
-    panel_widget->setCurrentIndex(0);
-    nav_btns->buttons()[0]->setChecked(true);
-    return;
-  }
+  panel_widget->setCurrentIndex(0);
+  nav_btns->buttons()[0]->setChecked(true);
 }
 
 SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
@@ -367,6 +364,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     panel_widget->addWidget(panel_frame);
 
     QObject::connect(btn, &QPushButton::released, [=, w = panel_frame]() {
+      btn->setChecked(true);
       panel_widget->setCurrentWidget(w);
     });
   }

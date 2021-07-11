@@ -2,37 +2,41 @@
 
 #include <map>
 
-#include <QFrame>
 #include <QLabel>
-#include <QPushButton>
 #include <QVBoxLayout>
 
 #include "selfdrive/common/params.h"
-#include "selfdrive/ui/qt/widgets/scrollview.h"
 
-class OffroadAlert : public QFrame {
+class AbstractAlert : public QFrame {
+  Q_OBJECT
+
+protected:
+  AbstractAlert(bool hasRebootBtn, QWidget *parent = nullptr);
+  QVBoxLayout *scrollable_layout;
+  Params params;
+
+signals:
+  void dismiss();
+};
+
+class UpdateAlert : public AbstractAlert {
   Q_OBJECT
 
 public:
-  explicit OffroadAlert(QWidget *parent = 0);
-  int alertCount = 0;
-  bool updateAvailable;
+  UpdateAlert(QWidget *parent = 0);
+  bool refresh();
 
 private:
-  void updateAlerts();
+  QLabel *releaseNotes = nullptr;
+};
 
-  Params params;
+class OffroadAlert : public AbstractAlert {
+  Q_OBJECT
+
+public:
+  explicit OffroadAlert(QWidget *parent = 0) : AbstractAlert(false, parent) {}
+  int refresh();
+
+private:
   std::map<std::string, QLabel*> alerts;
-
-  QLabel releaseNotes;
-  QPushButton rebootBtn;
-  ScrollView *alertsScroll;
-  ScrollView *releaseNotesScroll;
-  QVBoxLayout *alerts_layout;
-
-signals:
-  void closeAlerts();
-
-public slots:
-  void refresh();
 };
