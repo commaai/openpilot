@@ -20,10 +20,10 @@ class CarInterface(CarInterfaceBase):
 
     ret.carName = "mazda"
     ret.safetyModel = car.CarParams.SafetyModel.mazda
-
-    ret.dashcamOnly = True
-
     ret.radarOffCan = True
+
+    ret.communityFeature = True
+    ret.dashcamOnly = True
 
     ret.steerActuatorDelay = 0.1
     ret.steerRateCost = 1.0
@@ -37,7 +37,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.19], [0.019]]
       ret.lateralTuning.pid.kf = 0.00006
-    elif candidate == CAR.CX9:
+    elif candidate in [CAR.CX9, CAR.CX9_2021]:
       ret.mass = 4217 * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 3.1
       ret.steerRatio = 17.6
