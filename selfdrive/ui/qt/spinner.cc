@@ -30,12 +30,12 @@ TrackWidget::TrackWidget(QWidget *parent) : QWidget(parent) {
     p.resetTransform();
     p.fillRect(0, 0, spinner_size.width(), spinner_size.height(), Qt::black);
     p.drawPixmap(0, 0, comma_img);
-    p.setTransform(transform.rotate(360 / spinner_fps));
+    p.setTransform(transform.rotate(360 / track_imgs.size()));
     p.drawPixmap(-width() / 2, -height() / 2, track_img);
     track_imgs[i] = pm.copy();
   }
 
-  m_anim.setDuration(1000);
+  m_anim.setDuration(1000 * ((float)track_imgs.size() / spinner_fps));
   m_anim.setStartValue(0);
   m_anim.setEndValue(int(track_imgs.size() -1));
   m_anim.setLoopCount(-1);
