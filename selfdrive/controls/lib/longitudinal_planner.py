@@ -28,7 +28,7 @@ _A_TOTAL_MAX_BP = [20., 40.]
 
 
 def get_max_accel(v_ego):
-  return interp(v_ego, A_CRUISE_MAX_VALS, A_CRUISE_MAX_VALS)
+  return interp(v_ego, A_CRUISE_MAX_BP, A_CRUISE_MAX_VALS)
 
 
 def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
