@@ -932,7 +932,7 @@ static void set_camera_exposure(CameraState *s, float grey_frac) {
   const float dt = 0.15;
 
   const float ts_grey = 10.0;
-  const float ts_ev = 1.0;
+  const float ts_ev = 0.05;
 
   const float k_grey = (dt / ts_grey) / (1.0 + dt / ts_grey);
   const float k_ev = (dt / ts_ev) / (1.0 + dt / ts_ev);
