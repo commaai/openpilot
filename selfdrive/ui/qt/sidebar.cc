@@ -85,7 +85,7 @@ void Sidebar::updateState(const UIState &s) {
   if (s.scene.pandaType == cereal::PandaState::PandaType::UNKNOWN) {
     pandaStatus = danger_color;
     pandaStr = "NO\nPANDA";
-  } else if (!sm["liveLocationKalman"].getLiveLocationKalman().getGpsOK()) {
+  } else if (s.scene.started && !sm["liveLocationKalman"].getLiveLocationKalman().getGpsOK()) {
     pandaStatus = warning_color;
     pandaStr = "GPS\nSEARCHING";
   }
