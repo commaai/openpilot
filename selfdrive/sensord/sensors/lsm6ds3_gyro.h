@@ -18,7 +18,7 @@
 
 class LSM6DS3_Gyro : public I2CSensor {
   uint8_t get_device_address() {return LSM6DS3_GYRO_I2C_ADDR;}
-  bool lsm6ds3trc = false;
+  cereal::SensorEventData::SensorSource source = cereal::SensorEventData::SensorSource::LSM6DS3;
 public:
   LSM6DS3_Gyro(I2CBus *bus);
   int init();

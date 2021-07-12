@@ -23,7 +23,9 @@ int LSM6DS3_Accel::init() {
     goto fail;
   }
 
-  lsm6ds3trc = (buffer[0] == LSM6DS3TRC_ACCEL_CHIP_ID);
+  if (buffer[0] == LSM6DS3TRC_ACCEL_CHIP_ID) {
+    source = cereal::SensorEventData::SensorSource::LSM6DS3TRC;
+  }
 
   // TODO: set scale and bandwith. Default is +- 2G, 50 Hz
   ret = set_register(LSM6DS3_ACCEL_I2C_REG_CTRL1_XL, LSM6DS3_ACCEL_ODR_104HZ);
@@ -48,7 +50,7 @@ void LSM6DS3_Accel::get_event(cereal::SensorEventData::Builder &event) {
   float y = read_16_bit(buffer[2], buffer[3]) * scale;
   float z = read_16_bit(buffer[4], buffer[5]) * scale;
 
-  event.setSource(cereal::SensorEventData::SensorSource::LSM6DS3);
+  event.setSource(source);
   event.setVersion(1);
   event.setSensor(SENSOR_ACCELEROMETER);
   event.setType(SENSOR_TYPE_ACCELEROMETER);
