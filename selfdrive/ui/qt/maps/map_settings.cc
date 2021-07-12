@@ -14,11 +14,12 @@ static QString shorten(const QString &str, int max_len) {
 
 MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
+  const int icon_size = 200;
 
   // Home
   QHBoxLayout *home_layout = new QHBoxLayout;
   home_button = new QPushButton;
-  home_button->setIconSize(QSize(200, 200));
+  home_button->setIconSize(QSize(icon_size, icon_size));
   home_layout->addWidget(home_button);
 
   home_address = new QLabel;
@@ -30,7 +31,7 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
   // Work
   QHBoxLayout *work_layout = new QHBoxLayout;
   work_button = new QPushButton;
-  work_button->setIconSize(QSize(200, 200));
+  work_button->setIconSize(QSize(icon_size, icon_size));
   work_layout->addWidget(work_button);
 
   work_address = new QLabel;
@@ -46,31 +47,15 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
   home_work_layout->addLayout(work_layout, 1);
 
   main_layout->addLayout(home_work_layout);
-  main_layout->addSpacing(50);
+  main_layout->addSpacing(20);
   main_layout->addWidget(horizontal_line());
-  main_layout->addSpacing(50);
-
-  // Recents
-  QLabel *recent = new QLabel("Recent");
-  recent->setStyleSheet(R"(font-size: 55px;)");
-  main_layout->addWidget(recent);
-
   main_layout->addSpacing(20);
 
+  // Recents
   recent_layout = new QVBoxLayout;
   QWidget *recent_widget = new LayoutWidget(recent_layout, this);
   ScrollView *recent_scroller = new ScrollView(recent_widget, this);
   main_layout->addWidget(recent_scroller, 1);
-
-  // Settings
-  main_layout->addSpacing(50);
-  main_layout->addWidget(horizontal_line());
-  main_layout->addWidget(new ParamControl("NavSettingTime24h",
-                                          "Show ETA in 24h format",
-                                          "Use 24h format instead of am/pm",
-                                          "",
-                                          this));
-  main_layout->addStretch();
 
   clear();
 
@@ -158,7 +143,7 @@ void MapPanel::parseResponse(const QString &response) {
       } else {
         ClickableWidget *widget = new ClickableWidget;
         QHBoxLayout *layout = new QHBoxLayout(widget);
-        layout->setContentsMargins(15, 10, 40, 10);
+        layout->setContentsMargins(15, 14, 40, 14);
 
         QLabel *star = new QLabel("★");
         auto sp = star->sizePolicy();
@@ -208,7 +193,7 @@ void MapPanel::parseResponse(const QString &response) {
   }
 
   if (!has_recents) {
-    QLabel *no_recents = new QLabel("  no recent destinations");
+    QLabel *no_recents = new QLabel("no recent destinations");
     no_recents->setStyleSheet(R"(font-size: 50px; color: #9c9c9c)");
     recent_layout->addWidget(no_recents);
   }
