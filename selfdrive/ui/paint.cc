@@ -440,15 +440,15 @@ void ui_resize(UIState *s, int width, int height) {
 
   auto intrinsic_matrix = s->wide_camera ? ecam_intrinsic_matrix : fcam_intrinsic_matrix;
 
-  s->zoom = zoom / intrinsic_matrix.v[0];
+  float zoom = ZOOM / intrinsic_matrix.v[0];
 
   if (s->wide_camera) {
-    s->zoom *= 0.5;
+    zoom *= 0.5;
   }
 
   s->video_rect = Rect{bdr_s, bdr_s, s->fb_w - 2 * bdr_s, s->fb_h - 2 * bdr_s};
-  float zx = s->zoom * 2 * intrinsic_matrix.v[2] / s->video_rect.w;
-  float zy = s->zoom * 2 * intrinsic_matrix.v[5] / s->video_rect.h;
+  float zx = zoom * 2 * intrinsic_matrix.v[2] / s->video_rect.w;
+  float zy = zoom * 2 * intrinsic_matrix.v[5] / s->video_rect.h;
 
   const mat4 frame_transform = {{
     zx, 0.0, 0.0, 0.0,
@@ -464,7 +464,7 @@ void ui_resize(UIState *s, int width, int height) {
   nvgTranslate(s->vg, s->video_rect.x + s->video_rect.w / 2, s->video_rect.y + s->video_rect.h / 2 + y_offset);
 
   // 2) Apply same scaling as video
-  nvgScale(s->vg, s->zoom, s->zoom);
+  nvgScale(s->vg, zoom, zoom);
 
   // 3) Put (0, 0) in top left corner of video
   nvgTranslate(s->vg, -intrinsic_matrix.v[2], -intrinsic_matrix.v[5]);

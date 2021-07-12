@@ -180,12 +180,14 @@ void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &fr
   framed.setTimestampSof(frame_data.timestamp_sof);
   framed.setFrameLength(frame_data.frame_length);
   framed.setIntegLines(frame_data.integ_lines);
-  framed.setGlobalGain(frame_data.global_gain);
+  framed.setGain(frame_data.gain);
+  framed.setHighConversionGain(frame_data.high_conversion_gain);
+  framed.setMeasuredGreyFraction(frame_data.measured_grey_fraction);
+  framed.setTargetGreyFraction(frame_data.target_grey_fraction);
   framed.setLensPos(frame_data.lens_pos);
   framed.setLensSag(frame_data.lens_sag);
   framed.setLensErr(frame_data.lens_err);
   framed.setLensTruePos(frame_data.lens_true_pos);
-  framed.setGainFrac(frame_data.gain_frac);
 }
 
 kj::Array<uint8_t> get_frame_image(const CameraBuf *b) {

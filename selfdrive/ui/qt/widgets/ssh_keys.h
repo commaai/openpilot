@@ -27,7 +27,6 @@ public:
 private:
   Params params;
 
-  QPushButton btn;
   QLabel username_label;
 
   void refresh();

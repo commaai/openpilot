@@ -7,6 +7,7 @@
 #include <QVBoxLayout>
 
 #include "selfdrive/common/util.h"
+#include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/widgets/input.h"
 
 void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
@@ -48,43 +49,57 @@ void TermsPage::showEvent(QShowEvent *event) {
   }
 
   QVBoxLayout *main_layout = new QVBoxLayout(this);
-  main_layout->setMargin(40);
-  main_layout->setSpacing(40);
+  main_layout->setContentsMargins(45, 35, 45, 45);
+  main_layout->setSpacing(0);
+
+  QLabel *title = new QLabel("Terms & Conditions");
+  title->setStyleSheet("font-size: 90px; font-weight: 600;");
+  main_layout->addWidget(title);
+
+  main_layout->addSpacing(30);
 
   QQuickWidget *text = new QQuickWidget(this);
   text->setResizeMode(QQuickWidget::SizeRootObjectToView);
   text->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
   text->setAttribute(Qt::WA_AlwaysStackOnTop);
-  text->setClearColor(Qt::transparent);
+  text->setClearColor(QColor("#1B1B1B"));
 
   QString text_view = util::read_file("../assets/offroad/tc.html").c_str();
   text->rootContext()->setContextProperty("text_view", text_view);
-  text->rootContext()->setContextProperty("font_size", 55);
 
   text->setSource(QUrl::fromLocalFile("qt/offroad/text_view.qml"));
 
-  main_layout->addWidget(text);
+  main_layout->addWidget(text, 1);
+  main_layout->addSpacing(50);
 
   QObject *obj = (QObject*)text->rootObject();
-  QObject::connect(obj, SIGNAL(qmlSignal()), SLOT(enableAccept()));
+  QObject::connect(obj, SIGNAL(scroll()), SLOT(enableAccept()));
 
   QHBoxLayout* buttons = new QHBoxLayout;
+  buttons->setMargin(0);
+  buttons->setSpacing(45);
   main_layout->addLayout(buttons);
 
   QPushButton *decline_btn = new QPushButton("Decline");
   buttons->addWidget(decline_btn);
   QObject::connect(decline_btn, &QPushButton::released, this, &TermsPage::declinedTerms);
 
-  buttons->addSpacing(50);
-
   accept_btn = new QPushButton("Scroll to accept");
   accept_btn->setEnabled(false);
+  accept_btn->setStyleSheet(R"(
+    QPushButton {
+      background-color: #465BEA;
+    }
+    QPushButton:disabled {
+      background-color: #4F4F4F;
+    }
+  )");
   buttons->addWidget(accept_btn);
   QObject::connect(accept_btn, &QPushButton::released, this, &TermsPage::acceptedTerms);
 }
 
 void TermsPage::enableAccept() {
-  accept_btn->setText("Accept");
+  accept_btn->setText("Agree");
   accept_btn->setEnabled(true);
 }
 
@@ -94,31 +109,29 @@ void DeclinePage::showEvent(QShowEvent *event) {
   }
 
   QVBoxLayout *main_layout = new QVBoxLayout(this);
-  main_layout->setMargin(40);
+  main_layout->setMargin(45);
   main_layout->setSpacing(40);
 
   QLabel *text = new QLabel(this);
-  text->setText("You must accept the Terms and Conditions in order to use openpilot!");
-  text->setStyleSheet(R"(font-size: 50px;)");
+  text->setText("You must accept the Terms and Conditions in order to use openpilot.");
+  text->setStyleSheet(R"(font-size: 80px; font-weight: 300; margin: 200px;)");
+  text->setWordWrap(true);
   main_layout->addWidget(text, 0, Qt::AlignCenter);
 
   QHBoxLayout* buttons = new QHBoxLayout;
+  buttons->setSpacing(45);
   main_layout->addLayout(buttons);
 
   QPushButton *back_btn = new QPushButton("Back");
   buttons->addWidget(back_btn);
-  buttons->addSpacing(50);
 
   QObject::connect(back_btn, &QPushButton::released, this, &DeclinePage::getBack);
 
-  QPushButton *uninstall_btn = new QPushButton("Decline, uninstall openpilot");
-  uninstall_btn->setStyleSheet("background-color: #E22C2C;");
+  QPushButton *uninstall_btn = new QPushButton("Decline, uninstall " + getBrand());
+  uninstall_btn->setStyleSheet("background-color: #B73D3D");
   buttons->addWidget(uninstall_btn);
-
   QObject::connect(uninstall_btn, &QPushButton::released, [=]() {
-    if (ConfirmationDialog::confirm("Are you sure you want to uninstall?", this)) {
-      Params().putBool("DoUninstall", true);
-    }
+    Params().putBool("DoUninstall", true);
   });
 }
 
@@ -163,14 +176,11 @@ OnboardingWindow::OnboardingWindow(QWidget *parent) : QStackedWidget(parent) {
       background-color: black;
     }
     QPushButton {
-      padding: 50px;
-      font-size: 50px;
+      height: 160px;
+      font-size: 55px;
+      font-weight: 400;
       border-radius: 10px;
-      background-color: #292929;
-    }
-    QPushButton:disabled {
-      color: #777777;
-      background-color: #222222;
+      background-color: #4F4F4F;
     }
   )");
 }

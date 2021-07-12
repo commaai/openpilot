@@ -82,7 +82,7 @@ void Networking::connectToNetwork(const Network &n) {
   } else if (n.security_type == SecurityType::OPEN) {
     wifi->connect(n);
   } else if (n.security_type == SecurityType::WPA) {
-    QString pass = InputDialog::getText("Enter password for \"" + n.ssid + "\"", 8);
+    QString pass = InputDialog::getText("Enter password for \"" + n.ssid + "\"", this, 8);
     if (!pass.isEmpty()) {
       wifi->connect(n, pass);
     }
@@ -92,7 +92,7 @@ void Networking::connectToNetwork(const Network &n) {
 void Networking::wrongPassword(const QString &ssid) {
   for (Network n : wifi->seen_networks) {
     if (n.ssid == ssid) {
-      QString pass = InputDialog::getText("Wrong password for \"" + n.ssid +"\"", 8);
+      QString pass = InputDialog::getText("Wrong password for \"" + n.ssid +"\"", this, 8);
       if (!pass.isEmpty()) {
         wifi->connect(n, pass);
       }
@@ -125,7 +125,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   // Change tethering password
   ButtonControl *editPasswordButton = new ButtonControl("Tethering Password", "EDIT");
   connect(editPasswordButton, &ButtonControl::released, [=]() {
-    QString pass = InputDialog::getText("Enter new tethering password", 8, wifi->getTetheringPassword());
+    QString pass = InputDialog::getText("Enter new tethering password", this, 8, wifi->getTetheringPassword());
     if (!pass.isEmpty()) {
       wifi->changeTetheringPassword(pass);
     }
@@ -174,7 +174,7 @@ void WifiUI::refresh() {
   for (Network &network : wifi->seen_networks) {
     QHBoxLayout *hlayout = new QHBoxLayout;
 
-    QLabel *ssid_label = new QLabel(QString::fromUtf8(network.ssid));
+    ElidedLabel *ssid_label = new ElidedLabel(network.ssid);
     ssid_label->setStyleSheet("font-size: 55px;");
     hlayout->addWidget(ssid_label, 1, Qt::AlignLeft);
 

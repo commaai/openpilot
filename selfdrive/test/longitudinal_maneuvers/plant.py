@@ -86,12 +86,10 @@ class Plant():
       time.sleep(0.01)
       if self.sm.updated['longitudinalPlan']:
         plan = self.sm['longitudinalPlan']
-        self.acceleration = plan.aTarget
+        self.speed = plan.speeds[5]
+        self.acceleration = plan.accels[5]
         fcw = plan.fcw
         break
-    self.speed += self.ts*self.acceleration
-
-
     self.distance_lead = self.distance_lead + v_lead * self.ts
 
     # ******** run the car ********

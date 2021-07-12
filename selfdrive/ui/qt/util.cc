@@ -1,10 +1,12 @@
 #include "selfdrive/ui/qt/util.h"
 
+#include <QApplication>
 #include <QLayoutItem>
 #include <QStyleOption>
 
 #include "selfdrive/common/params.h"
 #include "selfdrive/common/swaglog.h"
+#include "selfdrive/hardware/hw.h"
 
 QString getBrand() {
   return Params().getBool("Passive") ? "dashcam" : "openpilot";
@@ -65,6 +67,15 @@ void setQtSurfaceFormat() {
   fmt.setRenderableType(QSurfaceFormat::OpenGLES);
 #endif
   QSurfaceFormat::setDefaultFormat(fmt);
+}
+
+void initApp() {
+  Hardware::set_display_power(true);
+  Hardware::set_brightness(65);
+  setQtSurfaceFormat();
+  if (Hardware::EON()) {
+    QApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
+  }
 }
 
 ClickableWidget::ClickableWidget(QWidget *parent) : QWidget(parent) { }

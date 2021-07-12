@@ -20,7 +20,7 @@ class CarInterface(CarInterfaceBase):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "gm"
     ret.safetyModel = car.CarParams.SafetyModel.gm
-    ret.enableCruise = False  # stock cruise control is kept off
+    ret.pcmCruise = False  # stock cruise control is kept off
 
     # GM port is a community feature
     # TODO: make a port that uses a car harness and it only intercepts the camera
@@ -29,8 +29,7 @@ class CarInterface(CarInterfaceBase):
     # Presence of a camera on the object bus is ok.
     # Have to go to read_only if ASCM is online (ACC-enabled cars),
     # or camera is on powertrain bus (LKA cars without ACC).
-    ret.enableCamera = True
-    ret.openpilotLongitudinalControl = ret.enableCamera
+    ret.openpilotLongitudinalControl = True
     tire_stiffness_factor = 0.444  # not optimized yet
 
     # Start with a baseline lateral tuning for all GM vehicles. Override tuning as needed in each model section below.

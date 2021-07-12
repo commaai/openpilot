@@ -410,7 +410,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       Priority.LOWEST, VisualAlert.steerRequired, AudibleAlert.none, .0, .0, .1),
   },
 
-  EventName.steerTempUnavailableUserOverride: {
+  EventName.steerTempUnavailableSilent: {
     ET.WARNING: Alert(
       "Steering Temporarily Unavailable",
       "",
@@ -464,14 +464,6 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       "Driver Unresponsive",
       AlertStatus.critical, AlertSize.full,
       Priority.HIGH, VisualAlert.steerRequired, AudibleAlert.chimeWarningRepeat, .1, .1, .1),
-  },
-
-  EventName.driverMonitorLowAcc: {
-    ET.WARNING: Alert(
-      "CHECK DRIVER FACE VISIBILITY",
-      "Driver Monitoring Uncertain",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.none, .4, 0., 1.5),
   },
 
   EventName.manualRestart: {

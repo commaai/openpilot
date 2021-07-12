@@ -2,10 +2,11 @@
 
 #include <QDebug>
 
+#include "selfdrive/common/util.h"
+#include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/request_repeater.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
-#include "selfdrive/ui/qt/util.h"
-#include "selfdrive/common/util.h"
+#include "selfdrive/ui/qt/widgets/scrollview.h"
 
 static QString shorten(const QString &str, int max_len) {
   return str.size() > max_len ? str.left(max_len).trimmed() + "…" : str;
@@ -13,7 +14,6 @@ static QString shorten(const QString &str, int max_len) {
 
 MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
-  Params params = Params();
 
   // Home
   QHBoxLayout *home_layout = new QHBoxLayout;
@@ -58,21 +58,23 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
   main_layout->addSpacing(20);
 
   recent_layout = new QVBoxLayout;
-  main_layout->addLayout(recent_layout);
+  QWidget *recent_widget = new LayoutWidget(recent_layout, this);
+  ScrollView *recent_scroller = new ScrollView(recent_widget, this);
+  main_layout->addWidget(recent_scroller, 1);
 
   // Settings
   main_layout->addSpacing(50);
   main_layout->addWidget(horizontal_line());
   main_layout->addWidget(new ParamControl("NavSettingTime24h",
-                                    "Show ETA in 24h format",
-                                    "Use 24h format instead of am/pm",
-                                    "",
-                                    this));
+                                          "Show ETA in 24h format",
+                                          "Use 24h format instead of am/pm",
+                                          "",
+                                          this));
   main_layout->addStretch();
 
   clear();
 
-  std::string dongle_id = Params().get("DongleId");
+  std::string dongle_id = params.get("DongleId");
   if (util::is_valid_dongle_id(dongle_id)) {
     // Fetch favorite and recent locations
     {
@@ -210,9 +212,11 @@ void MapPanel::parseResponse(const QString &response) {
     no_recents->setStyleSheet(R"(font-size: 50px; color: #9c9c9c)");
     recent_layout->addWidget(no_recents);
   }
+
+  recent_layout->addStretch();
 }
 
 void MapPanel::navigateTo(const QJsonObject &place) {
   QJsonDocument doc(place);
-  Params().put("NavDestination", doc.toJson().toStdString());
+  params.put("NavDestination", doc.toJson().toStdString());
 }

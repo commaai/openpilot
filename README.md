@@ -156,7 +156,7 @@ Community Maintained Cars and Features
 | Holden    | Astra 2017<sup>1</sup>        | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
 | Hyundai   | Elantra 2017-19               | SCC + LKAS        | Stock            | 19mph              | 34mph        |
 | Hyundai   | Elantra 2021                  | SCC + LKAS        | Stock            | 0mph               | 0mph         |
-| Hyundai   | Elantra Hybrid 2021          | SCC + LKAS        | Stock            | 0mph               | 0mph         |
+| Hyundai   | Elantra Hybrid 2021           | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Hyundai   | Genesis 2015-16               | SCC + LKAS        | Stock            | 19mph              | 37mph        |
 | Hyundai   | Ioniq Electric 2019           | SCC + LKAS        | Stock            | 0mph               | 32mph        |
 | Hyundai   | Ioniq Electric 2020           | SCC + LKAS        | Stock            | 0mph               | 0mph         |
@@ -170,6 +170,7 @@ Community Maintained Cars and Features
 | Jeep      | Grand Cherokee 2019-20        | Adaptive Cruise   | Stock            | 0mph               | 39mph        |
 | Kia       | Forte 2018-2021               | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Kia       | Niro EV 2020                  | SCC + LKAS        | Stock            | 0mph               | 0mph         |
+| Kia       | Niro PHEV 2019                | SCC + LKAS        | Stock            | 10mph              | 32mph        |
 | Kia       | Optima 2017                   | SCC + LKAS        | Stock            | 0mph               | 32mph        |
 | Kia       | Optima 2019                   | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Kia       | Seltos 2021                   | SCC + LKAS        | Stock            | 0mph               | 0mph         |
