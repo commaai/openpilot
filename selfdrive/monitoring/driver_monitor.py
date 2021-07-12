@@ -1,4 +1,4 @@
-from math import atan2, sqrt
+from math import atan2
 
 from cereal import car
 from common.numpy_fast import interp
@@ -160,13 +160,13 @@ class DriverStatus():
       pitch_error = pose.pitch - self.pose.pitch_offseter.filtered_stat.mean()
       yaw_error = pose.yaw - self.pose.yaw_offseter.filtered_stat.mean()
 
-    # positive pitch allowance
-    if pitch_error > 0.:
-      pitch_error = max(pitch_error - _PITCH_POS_ALLOWANCE, 0.)
-    pitch_error *= _PITCH_WEIGHT
-    pose_metric = sqrt(yaw_error**2 + pitch_error**2)
+    MIN_YAW, MAX_YAW = -_METRIC_THRESHOLD*pose.cfactor, _METRIC_THRESHOLD*pose.cfactor
+    MIN_PITCH, MAX_PITCH = -_METRIC_THRESHOLD*pose.cfactor*_PITCH_WEIGHT
+    MAX_PITCH = _PITCH_WEIGHT * (_METRIC_THRESHOLD*pose.cfactor + _PITCH_POS_ALLOWANCE)
+    pitch_bad = not (MIN_PITCH < pitch_error < MAX_PITCH)
+    yaw_bad = not (MIN_YAW < yaw_error < MAX_YAW)
 
-    if pose_metric > _METRIC_THRESHOLD*pose.cfactor:
+    if yaw_bad or pitch_bad:
       return DistractedType.BAD_POSE
     elif (blink.left_blink + blink.right_blink)*0.5 > _BLINK_THRESHOLD*blink.cfactor:
       return DistractedType.BAD_BLINK
