@@ -16,6 +16,8 @@
 
 class LSM6DS3_Temp : public I2CSensor {
   uint8_t get_device_address() {return LSM6DS3_TEMP_I2C_ADDR;}
+  bool lsm6ds3trc = false;
+
 public:
   LSM6DS3_Temp(I2CBus *bus);
   int init();

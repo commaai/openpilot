@@ -27,6 +27,8 @@ int LSM6DS3_Gyro::init() {
     goto fail;
   }
 
+  lsm6ds3trc = (buffer[0] == LSM6DS3TRC_GYRO_CHIP_ID);
+
   // TODO: set scale. Default is +- 250 deg/s
   ret = set_register(LSM6DS3_GYRO_I2C_REG_CTRL2_G, LSM6DS3_GYRO_ODR_104HZ);
   if (ret < 0) {
