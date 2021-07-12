@@ -185,7 +185,7 @@ def swap(manifest_path, target_slot_number):
   subprocess.check_output(f"abctl --set_active {target_slot_number}", shell=True)
 
 
-def flash_agnos_update(manifest_path: str, target_slot_number: int, cloudlog, spinner=None):
+def flash_agnos_update(manifest_path: str, target_slot_number: int, cloudlog, spinner: Optional[Spinner] = None):
   update = json.load(open(manifest_path))
 
   cloudlog.info(f"Target slot {target_slot_number}")
@@ -204,7 +204,8 @@ def flash_agnos_update(manifest_path: str, target_slot_number: int, cloudlog, sp
 
       except requests.exceptions.RequestException:
         cloudlog.exception("Failed")
-        spinner.update("Waiting for internet...")
+        if spinner is not None:
+          spinner.update("Waiting for internet...")
         cloudlog.info(f"Failed to download {partition['name']}, retrying ({retries})")
         time.sleep(10)
 
