@@ -39,7 +39,7 @@ void MMC5603NJ_Magn::get_event(cereal::SensorEventData::Builder &event) {
   // float y = read_16_bit(buffer[2], buffer[3]) * scale;
   // float z = read_16_bit(buffer[4], buffer[5]) * scale;
 
-  event.setSource(cereal::SensorEventData::SensorSource::LSM6DS3);
+  event.setSource(cereal::SensorEventData::SensorSource::MMC5603NJ);
   event.setVersion(1);
   event.setSensor(SENSOR_MAGNETOMETER_UNCALIBRATED);
   event.setType(SENSOR_TYPE_MAGNETIC_FIELD_UNCALIBRATED);
