@@ -213,6 +213,13 @@ class Tici(HardwareBase):
 
     return network_strength
 
+  def get_modem_version(self):
+    try:
+      modem = self.get_modem()
+      return modem.Get(MM_MODEM, 'Revision', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
+    except Exception:
+      return None
+
   # We don't have a battery, so let's use some sane constants
   def get_battery_capacity(self):
     return 100

@@ -117,3 +117,7 @@ class HardwareBase:
   @abstractmethod
   def get_gpu_usage_percent(self):
     pass
+
+  @abstractmethod
+  def get_modem_version(self):
+    pass
