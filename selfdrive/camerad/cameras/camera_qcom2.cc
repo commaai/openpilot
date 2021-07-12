@@ -30,7 +30,6 @@ const size_t FRAME_STRIDE = 2416;  // for 10 bit output
 
 const int MIPI_SETTLE_CNT = 33;  // Calculated by camera_freqs.py
 
-
 CameraInfo cameras_supported[CAMERA_ID_MAX] = {
   [CAMERA_ID_AR0231] = {
     .frame_width = FRAME_WIDTH,
@@ -53,6 +52,7 @@ const float sensor_analog_gains[] = {
 const size_t ANALOG_GAIN_MIN_IDX = 0x0; // 0.125x
 const size_t ANALOG_GAIN_REC_IDX = 0x6; // 0.8x
 const size_t ANALOG_GAIN_MAX_IDX = 0xD; // 4.0x
+
 const int EXPOSURE_TIME_MIN = 2; // with HDR, fastest ss
 const int EXPOSURE_TIME_MAX = 1904; // with HDR, slowest ss
 
@@ -60,7 +60,6 @@ const int EXPOSURE_TIME_MAX = 1904; // with HDR, slowest ss
 std::atomic<CameraExpInfo> cam_exp[3] = {{{0}}};
 
 // ************** low level camera helpers ****************
-
 int cam_control(int fd, int op_code, void *handle, int size) {
   struct cam_control camcontrol = {0};
   camcontrol.op_code = op_code;
@@ -1001,9 +1000,6 @@ static void set_camera_exposure(CameraState *s, float grey_frac) {
                                                   //{0x301A, 0x091C}}; // reset
   sensors_i2c(s, exp_reg_array, sizeof(exp_reg_array)/sizeof(struct i2c_random_wr_payload),
                CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
-
-  // LOGD("%d EV min: %.2f - cur: %.2f - max: %.2f - Score: %.2f", s->camera_num, s->min_ev, s->cur_ev, s->max_ev, best_ev_score);
-  // LOGD("%d target: %.2f, current: %.2f, t=%d, AG=%.2f, DC=%d", s->camera_num, target_grey, grey_frac, s->exposure_time, s->analog_gain_frac, s->dc_gain_enabled);
 }
 
 void camera_autoexposure(CameraState *s, float grey_frac) {
