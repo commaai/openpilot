@@ -3,6 +3,7 @@
 from cereal import car
 from selfdrive.car import dbc_dict
 from selfdrive.config import Conversions as CV
+from selfdrive.controls.lib.longitudinal_planner import A_CRUISE_MAX_VALS
 
 Ecu = car.CarParams.Ecu
 MIN_ACC_SPEED = 19. * CV.MPH_TO_MS
@@ -10,7 +11,7 @@ PEDAL_HYST_GAP = 3. * CV.MPH_TO_MS
 
 class CarControllerParams:
   ACCEL_HYST_GAP = 0.02  # don't change accel command for small oscilalitons within this value
-  ACCEL_MAX = 1.5  # 1.5 m/s2
+  ACCEL_MAX = A_CRUISE_MAX_VALS[0]
   ACCEL_MIN = -3.0  # 3   m/s2
   ACCEL_SCALE = max(ACCEL_MAX, -ACCEL_MIN)
 
