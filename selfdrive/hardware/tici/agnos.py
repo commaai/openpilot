@@ -6,7 +6,7 @@ import requests
 import struct
 import subprocess
 import os
-from typing import Generator
+from typing import Generator, Optional
 
 from common.spinner import Spinner
 
@@ -127,7 +127,7 @@ def clear_partition_hash(target_slot_number, partition):
     os.sync()
 
 
-def flash_partition(target_slot_number, partition, cloudlog, spinner=None):
+def flash_partition(target_slot_number: int, partition: dict, cloudlog, spinner: Optional[Spinner] = None):
   cloudlog.info(f"Downloading and writing {partition['name']}")
 
   if verify_partition(target_slot_number, partition):
@@ -185,7 +185,7 @@ def swap(manifest_path, target_slot_number):
   subprocess.check_output(f"abctl --set_active {target_slot_number}", shell=True)
 
 
-def flash_agnos_update(manifest_path, target_slot_number, cloudlog, spinner=None):
+def flash_agnos_update(manifest_path: str, target_slot_number: int, cloudlog, spinner=None):
   update = json.load(open(manifest_path))
 
   cloudlog.info(f"Target slot {target_slot_number}")
@@ -215,7 +215,7 @@ def flash_agnos_update(manifest_path, target_slot_number, cloudlog, spinner=None
   cloudlog.info(f"AGNOS ready on slot {target_slot_number}")
 
 
-def verify_agnos_update(manifest_path, target_slot_number):
+def verify_agnos_update(manifest_path: str, target_slot_number: int) -> bool:
   update = json.load(open(manifest_path))
   return all(verify_partition(target_slot_number, partition) for partition in update)
 
