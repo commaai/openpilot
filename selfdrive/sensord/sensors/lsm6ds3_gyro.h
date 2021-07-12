@@ -12,6 +12,7 @@
 
 // Constants
 #define LSM6DS3_GYRO_CHIP_ID        0x69
+#define LSM6DS3TRC_GYRO_CHIP_ID     0x6A
 #define LSM6DS3_GYRO_ODR_104HZ      (0b0100 << 4)
 
 

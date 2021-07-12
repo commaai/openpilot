@@ -21,7 +21,7 @@ int LSM6DS3_Gyro::init() {
     goto fail;
   }
 
-  if(buffer[0] != LSM6DS3_GYRO_CHIP_ID) {
+  if(buffer[0] != LSM6DS3_GYRO_CHIP_ID && buffer[0] != LSM6DS3TRC_GYRO_CHIP_ID) {
     LOGE("Chip ID wrong. Got: %d, Expected %d", buffer[0], LSM6DS3_GYRO_CHIP_ID);
     ret = -1;
     goto fail;

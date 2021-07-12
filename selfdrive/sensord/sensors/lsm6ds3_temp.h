@@ -11,6 +11,7 @@
 
 // Constants
 #define LSM6DS3_TEMP_CHIP_ID        0x69
+#define LSM6DS3TRC_TEMP_CHIP_ID     0x6A
 
 
 class LSM6DS3_Temp : public I2CSensor {
