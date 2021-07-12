@@ -1,5 +1,7 @@
 from cereal import car
 from common.numpy_fast import clip
+
+from selfdrive.controls.lib.drive_helpers import get_max_accel
 from selfdrive.car import apply_toyota_steer_torque_limits, create_gas_command, make_can_msg
 from selfdrive.car.toyota.toyotacan import create_steer_command, create_ui_command, \
                                            create_accel_command, create_acc_cancel_command, \
@@ -61,7 +63,10 @@ class CarController():
         pcm_accel_cmd = 0.06 - actuators.brake
 
     pcm_accel_cmd, self.accel_steady = accel_hysteresis(pcm_accel_cmd, self.accel_steady, enabled)
-    pcm_accel_cmd = clip(pcm_accel_cmd * CarControllerParams.ACCEL_SCALE, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
+    planner_max_accel = get_max_accel(CS.out.vEgo)
+    pcm_accel_cmd = clip(pcm_accel_cmd * CarControllerParams.ACCEL_SCALE,
+                         CarControllerParams.ACCEL_MIN,
+                         min(planner_max_accel, CarControllerParams.ACCEL_MAX))
 
     # steer torque
     new_steer = int(round(actuators.steer * CarControllerParams.STEER_MAX))

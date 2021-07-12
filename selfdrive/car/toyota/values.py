@@ -3,7 +3,7 @@
 from cereal import car
 from selfdrive.car import dbc_dict
 from selfdrive.config import Conversions as CV
-from selfdrive.controls.lib.longitudinal_planner import A_CRUISE_MAX_VALS
+from selfdrive.controls.lib.drive_helpers import A_CRUISE_MAX_VALS
 
 Ecu = car.CarParams.Ecu
 MIN_ACC_SPEED = 19. * CV.MPH_TO_MS
