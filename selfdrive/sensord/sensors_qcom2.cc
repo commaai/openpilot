@@ -18,6 +18,7 @@
 #include "selfdrive/sensord/sensors/lsm6ds3_accel.h"
 #include "selfdrive/sensord/sensors/lsm6ds3_gyro.h"
 #include "selfdrive/sensord/sensors/lsm6ds3_temp.h"
+#include "selfdrive/sensord/sensors/mmc5603nj_magn.h"
 #include "selfdrive/sensord/sensors/sensor.h"
 
 #define I2C_BUS_IMU 1
@@ -43,6 +44,8 @@ int sensor_loop() {
   LSM6DS3_Gyro lsm6ds3_gyro(i2c_bus_imu);
   LSM6DS3_Temp lsm6ds3_temp(i2c_bus_imu);
 
+  MMC5603NJ_Magn mmc5603nj_magn(i2c_bus_imu);
+
   LightSensor light("/sys/class/i2c-adapter/i2c-2/2-0038/iio:device1/in_intensity_both_raw");
 
   // Sensor init
@@ -55,6 +58,8 @@ int sensor_loop() {
   sensors.push_back(&lsm6ds3_accel);
   sensors.push_back(&lsm6ds3_gyro);
   sensors.push_back(&lsm6ds3_temp);
+
+  sensors.push_back(&mmc5603nj_magn);
 
   sensors.push_back(&light);
 
