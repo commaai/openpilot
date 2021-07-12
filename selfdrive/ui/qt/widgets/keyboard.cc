@@ -11,6 +11,8 @@ const int SPACEBAR_STRETCH = 3;
 const QString BACKSPACE_KEY = "⌫";
 const QString ENTER_KEY = "⏎";
 
+const QStringList CONTROL_BUTTONS = {"↑", "↓", "ABC", "#+=", "123"};
+
 KeyboardLayout::KeyboardLayout(QWidget* parent, const std::vector<QVector<QString>>& layout) : QWidget(parent) {
   QVBoxLayout* main_layout = new QVBoxLayout(this);
   main_layout->setMargin(0);
@@ -124,5 +126,9 @@ void Keyboard::handleButton(QAbstractButton* btn) {
   if ("A" <= key && key <= "Z") {
     main_layout->setCurrentIndex(0);
   }
-  emit emitButton(key);
+
+  // TODO: break up into separate signals
+  if (!CONTROL_BUTTONS.contains(key)) {
+    emit emitButton(key);
+  }
 }
