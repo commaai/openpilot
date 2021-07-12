@@ -11,16 +11,6 @@
 
 #define FRAME_BUF_COUNT 4
 
-#define ANALOG_GAIN_MIN_IDX 0x0 // 0.125x
-#define ANALOG_GAIN_REC_IDX 0x6 // 0.8x
-#define ANALOG_GAIN_MAX_IDX 0xD // 4.0x
-#define EXPOSURE_TIME_MIN 2 // with HDR, fastest ss
-#define EXPOSURE_TIME_MAX 1904 // with HDR, slowest ss
-
-#define DC_GAIN 2.5
-
-#define DEBAYER_LOCAL_WORKSIZE 16
-
 typedef struct CameraState {
   MultiCameraState *multi_cam_state;
   CameraInfo ci;
