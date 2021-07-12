@@ -290,9 +290,12 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   QVBoxLayout *sidebar_layout = new QVBoxLayout(sidebar_widget);
   sidebar_layout->setMargin(0);
   panel_widget = new QStackedWidget();
+  panel_widget->setContentsMargins(50, 25, 50, 25);
   panel_widget->setStyleSheet(R"(
-    border-radius: 30px;
-    background-color: #292929;
+    QStackedWidget{
+      border-radius: 30px;
+      background-color: #292929;
+    }
   )");
 
   // close button
@@ -356,6 +359,10 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
 
     const int lr_margin = name != "Network" ? 50 : 0;  // Network panel handles its own margins
     panel->setContentsMargins(lr_margin, 25, lr_margin, 25);
+    QPalette pal = palette();
+    pal.setColor(QPalette::Background, QColor(0x29, 0x29, 0x29));
+    panel->setAutoFillBackground(true);
+    panel->setPalette(pal);
 
     ScrollView *panel_frame = new ScrollView(panel, this);
     panel_widget->addWidget(panel_frame);
