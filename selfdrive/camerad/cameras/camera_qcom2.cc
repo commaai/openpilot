@@ -965,7 +965,7 @@ static void set_camera_exposure(CameraState *s, float grey_frac) {
 
     // Compute error to desired ev
     float score = std::abs(desired_ev - (t * gain)) * 10;
-    score += std::abs(g - (int)ANALOG_GAIN_REC_IDX) * 2.5;
+    score += std::abs(g - (int)ANALOG_GAIN_REC_IDX);
 
     if (score < best_ev_score) {
       new_t = t;
