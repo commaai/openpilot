@@ -88,3 +88,6 @@ class Pc(HardwareBase):
 
   def get_gpu_usage_percent(self):
     return 0
+
+  def get_modem_version(self):
+    return None
