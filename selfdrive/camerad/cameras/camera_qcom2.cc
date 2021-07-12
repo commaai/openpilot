@@ -56,8 +56,6 @@ const size_t ANALOG_GAIN_MAX_IDX = 0xD; // 4.0x
 const int EXPOSURE_TIME_MIN = 2; // with HDR, fastest ss
 const int EXPOSURE_TIME_MAX = 1904; // with HDR, slowest ss
 
-const size_t DEBAYER_LOCAL_WORKSIZE = 16;
-
 // global var for AE ops
 std::atomic<CameraExpInfo> cam_exp[3] = {{{0}}};
 
