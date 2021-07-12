@@ -49,9 +49,9 @@ const float sensor_analog_gains[] = {
   5.0/4.0, 6.0/4.0, 6.0/3.0, 7.0/3.0, // 8, 9, 10, 11
   7.0/2.0, 8.0/2.0, 8.0/1.0};         // 12, 13, 14, 15 = bypass
 
-const size_t ANALOG_GAIN_MIN_IDX = 0x0; // 0.125x
-const size_t ANALOG_GAIN_REC_IDX = 0x6; // 0.8x
-const size_t ANALOG_GAIN_MAX_IDX = 0xD; // 4.0x
+const int ANALOG_GAIN_MIN_IDX = 0x0; // 0.125x
+const int ANALOG_GAIN_REC_IDX = 0x6; // 0.8x
+const int ANALOG_GAIN_MAX_IDX = 0xD; // 4.0x
 
 const int EXPOSURE_TIME_MIN = 2; // with HDR, fastest ss
 const int EXPOSURE_TIME_MAX = 1904; // with HDR, slowest ss
@@ -538,6 +538,7 @@ static void camera_init(MultiCameraState *multi_cam_state, VisionIpcServer * v, 
   s->max_ev = EXPOSURE_TIME_MAX * sensor_analog_gains[ANALOG_GAIN_MAX_IDX] * DC_GAIN;
   s->cur_ev = (s->max_ev - s->min_ev) / 2;
   s->target_grey_fraction = 0.3;
+  s->gain_idx = ANALOG_GAIN_MIN_IDX;
 
   s->buf.init(device_id, ctx, s, v, FRAME_BUF_COUNT, rgb_type, yuv_type);
 }
@@ -956,7 +957,7 @@ static void set_camera_exposure(CameraState *s, float grey_frac) {
 
   // Simple brute force optimizer to choose sensor parameters
   // to reach desired EV
-  for (int g = ANALOG_GAIN_MIN_IDX; g <= ANALOG_GAIN_MAX_IDX; g++) {
+  for (int g = std::max(ANALOG_GAIN_MIN_IDX, s->gain_idx - 1); g <= std::min(ANALOG_GAIN_MAX_IDX, s->gain_idx + 1); g++) {
     float gain = sensor_analog_gains[g] * (enable_dc_gain ? DC_GAIN : 1);
 
     // Compute optimal time for given gain
@@ -964,7 +965,7 @@ static void set_camera_exposure(CameraState *s, float grey_frac) {
 
     // Compute error to desired ev
     float score = std::abs(desired_ev - (t * gain)) * 10;
-    score += std::abs(g - (int)ANALOG_GAIN_REC_IDX) * 2.5;
+    score += std::abs(g - (int)ANALOG_GAIN_REC_IDX);
 
     if (score < best_ev_score) {
       new_t = t;
@@ -979,6 +980,7 @@ static void set_camera_exposure(CameraState *s, float grey_frac) {
   s->target_grey_fraction = target_grey;
 
   s->analog_gain_frac = sensor_analog_gains[new_g];
+  s->gain_idx = new_g;
   s->exposure_time = new_t;
   s->dc_gain_enabled = enable_dc_gain;
 
