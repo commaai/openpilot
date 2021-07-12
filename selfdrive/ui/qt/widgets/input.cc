@@ -62,7 +62,9 @@ InputDialog::InputDialog(const QString &prompt_text, QWidget *parent) : QDialogB
 
   setStyleSheet(R"(
     * {
+      outline: none;
       color: white;
+      font-family: Inter;
       background-color: black;
     }
   )");
@@ -93,25 +95,16 @@ void InputDialog::show() {
 void InputDialog::handleInput(const QString &s) {
   if (!QString::compare(s,"⌫")) {
     line->backspace();
-  }
-
-  if (!QString::compare(s,"⏎")) {
+  } else if (!QString::compare(s,"⏎")) {
     if (line->text().length() >= minLength) {
       done(QDialog::Accepted);
       emitText(line->text());
     } else {
       setMessage("Need at least "+QString::number(minLength)+" characters!", false);
     }
+  } else {
+    line->insert(s.left(1));
   }
-
-  QVector<QString> control_buttons {"⇧", "↑", "ABC", "⏎", "#+=", "⌫", "123"};
-  for(QString c : control_buttons) {
-    if (!QString::compare(s, c)) {
-      return;
-    }
-  }
-
-  line->insert(s.left(1));
 }
 
 void InputDialog::setMessage(const QString &message, bool clearInputField) {
