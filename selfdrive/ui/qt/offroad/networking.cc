@@ -59,7 +59,7 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent), s
       margin: 0px;
       padding: 15px;
       border-width: 0;
-      border-radius: 10px;
+      border-radius: 30px;
       color: #dddddd;
       background-color: #444444;
     }

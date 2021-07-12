@@ -31,6 +31,8 @@ KeyboardLayout::KeyboardLayout(QWidget* parent, const std::vector<QVector<QStrin
       QPushButton* btn = new QPushButton(p);
       if (p == BACKSPACE_KEY) {
         btn->setAutoRepeat(true);
+      } else if (p == ENTER_KEY) {
+        btn->setStyleSheet("background-color: #465BEA;");
       }
       btn->setFixedHeight(135);
       btn_group->addButton(btn);
