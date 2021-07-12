@@ -9,9 +9,9 @@ acados_path = os.path.join(BASEDIR, "phonelibs/acados/x86_64")
 os.environ["TERA_PATH"] = os.path.join(acados_path, "t_renderer")
 sys.path.append(os.path.join(BASEDIR, "pyextra"))
 
-import pyextra.acados_template as acados_template
+import acados_template as acados_template
 import numpy as np
-from pyextra.acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
+from acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
 from casadi import SX, vertcat, sin, cos
 
 from selfdrive.controls.lib.drive_helpers import LAT_MPC_N as N
@@ -34,7 +34,7 @@ def get_default_simulink_options():
 
 # TODO: move to acados_template?
 def generate_code(acados_ocp, json_file):
-  from pyextra.acados_template.acados_ocp_solver import make_ocp_dims_consistent, set_up_imported_gnsf_model, \
+  from acados_template.acados_ocp_solver import make_ocp_dims_consistent, set_up_imported_gnsf_model, \
                                                 remove_x0_elimination, ocp_generate_external_functions, \
                                                 ocp_formulation_json_dump, ocp_render_templates
 
