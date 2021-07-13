@@ -1,10 +1,11 @@
-Version 0.8.6 (2021-XX-XX)
+Version 0.8.6 (2021-07-19)
 ========================
  * Revamp lateral and longitudinal planners
    * Refactor planner output API to be more readable and verbose
    * Planners now output desired trajectories for speed, acceleration, curvature, and curvature rate
    * Use MPC for longitudinal planning when no lead car is present, this replaces a mostly hardcoded policy and makes accel and deccel smoother
  * Remove "CHECK DRIVER FACE VISIBILITY" warning
+ * Fixed cruise fault on some TSS2.5 Camrys and international Toyotas
  * Hyundai Elantra Hybrid 2021 support thanks to tecandrew!
  * Hyundai Ioniq PHEV 2020 support thanks to YawWashout!
  * Kia Niro Hybrid 2019 support thanks to jyoung8607!
