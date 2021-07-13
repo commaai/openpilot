@@ -523,6 +523,7 @@ panda/VERSION
 panda/board/**
 panda/certs/**
 panda/crypto/**
+panda/examples/query_fw_versions.py
 panda/python/**
 
 opendbc/.gitignore
