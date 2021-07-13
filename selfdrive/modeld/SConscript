@@ -59,7 +59,7 @@ else:
 common_model = lenv.Object(common_src)
 
 # build thneed model
-if not GetOption('no_thneed') and (arch == "aarch64" or arch == "larch64"):
+if not GetOption('no_thneed') and arch in ("aarch64", "larch64"):
   compiler = lenv.Program('thneed/compile', ["thneed/compile.cc"]+common_model, LIBS=libs)
   cmd = f"cd {Dir('.').abspath} && {compiler[0].abspath} ../../models/supercombo.dlc ../../models/supercombo.thneed --binary"
 
@@ -76,4 +76,3 @@ lenv.Program('_modeld', [
     "modeld.cc",
     "models/driving.cc",
   ]+common_model, LIBS=libs)
-
