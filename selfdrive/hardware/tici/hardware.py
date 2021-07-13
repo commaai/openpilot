@@ -1,4 +1,5 @@
 import os
+from functools import cached_property
 from enum import IntEnum
 import subprocess
 from pathlib import Path
@@ -53,29 +54,18 @@ def write_amplifier_reg(reg, val, offset, mask):
 
 
 class Tici(HardwareBase):
-  def __init__(self):
-    self._bus = None
-    self._nm = None
-    self._mm = None
-
-  @property
+  @cached_property
   def bus(self):
-    if self._bus is None:
-      import dbus  # pylint: disable=import-error
-      self._bus = dbus.SystemBus()
-    return self._bus
+    import dbus  # pylint: disable=import-error
+    return dbus.SystemBus()
 
-  @property
+  @cached_property
   def nm(self):
-    if self._nm is None:
-      self._nm = self.bus.get_object(NM, '/org/freedesktop/NetworkManager')
-    return self._nm
+    return self.bus.get_object(NM, '/org/freedesktop/NetworkManager')
 
-  @property
+  @cached_property
   def mm(self):
-    if self._mm is None:
-      self._mm = self.bus.get_object(MM, '/org/freedesktop/ModemManager1')
-    return self._mm
+    return self.bus.get_object(MM, '/org/freedesktop/ModemManager1')
 
   def get_os_version(self):
     with open("/VERSION") as f:
