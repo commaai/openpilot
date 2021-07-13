@@ -332,7 +332,7 @@ void Device::setAwake(bool on, bool reset) {
   }
 
   if (reset) {
-    awake_timeout = 30 * UI_FREQ;
+    awake_timeout = 1000000 * UI_FREQ;
   }
 }
 
