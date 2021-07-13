@@ -488,6 +488,7 @@ scripts/update_now.sh
 scripts/stop_updater.sh
 
 pyextra/.gitignore
+pyextra/acados_template/**
 
 rednose/**
 
