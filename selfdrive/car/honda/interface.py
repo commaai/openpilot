@@ -8,7 +8,7 @@ from selfdrive.config import Conversions as CV
 from selfdrive.car.honda.values import CruiseButtons, CAR, HONDA_BOSCH, HONDA_BOSCH_ALT_BRAKE_SIGNAL
 from selfdrive.car.honda.hondacan import disable_radar
 from selfdrive.car import STD_CARGO_KG, CivicParams, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
-from selfdrive.controls.lib.longitudinal_planner import A_CRUISE_MAX_VALS
+from selfdrive.controls.lib.drive_helpers import A_CRUISE_MAX_VALS
 from selfdrive.car.interfaces import CarInterfaceBase
 
 
