@@ -50,7 +50,7 @@ const float sensor_analog_gains[] = {
   7.0/2.0, 8.0/2.0, 8.0/1.0};         // 12, 13, 14, 15 = bypass
 
 const int ANALOG_GAIN_MIN_IDX = 0x0; // 0.125x
-const int ANALOG_GAIN_REC_IDX = 0x6; // 0.8x
+const int ANALOG_GAIN_REC_IDX = 0x7; // 1.0x
 const int ANALOG_GAIN_MAX_IDX = 0xD; // 4.0x
 
 const int EXPOSURE_TIME_MIN = 2; // with HDR, fastest ss
@@ -957,14 +957,22 @@ static void set_camera_exposure(CameraState *s, float grey_frac) {
 
   // Simple brute force optimizer to choose sensor parameters
   // to reach desired EV
-  for (int g = std::max(ANALOG_GAIN_MIN_IDX, s->gain_idx - 1); g <= std::min(ANALOG_GAIN_MAX_IDX, s->gain_idx + 1); g++) {
+  for (int g = ANALOG_GAIN_MIN_IDX; g <= ANALOG_GAIN_MAX_IDX; g++) {
     float gain = sensor_analog_gains[g] * (enable_dc_gain ? DC_GAIN : 1);
 
     // Compute optimal time for given gain
     int t = std::clamp(int(std::round(desired_ev / gain)), EXPOSURE_TIME_MIN, EXPOSURE_TIME_MAX);
 
+    // Only go below recomended gain when absolutely necessary to not overexpose
+    // behavior is not completely linear causing visible step changes when switching gain
+    if (g < ANALOG_GAIN_REC_IDX && t > 10) {
+      continue;
+    }
+
     // Compute error to desired ev
     float score = std::abs(desired_ev - (t * gain)) * 10;
+
+    // Going below recomended gain needs lower penalty to not overexpose
     float m = g > ANALOG_GAIN_REC_IDX ? 5.0 : 1.0;
     score += std::abs(g - (int)ANALOG_GAIN_REC_IDX) * m;
 
