@@ -51,6 +51,11 @@ AddOption('--external-sconscript',
           dest='external_sconscript',
           help='add an external SConscript to the build')
 
+AddOption('--no-thneed',
+          action='store_true',
+          dest='no_thneed',
+          help='avoid using thneed')
+
 real_arch = arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
 if platform.system() == "Darwin":
   arch = "Darwin"
