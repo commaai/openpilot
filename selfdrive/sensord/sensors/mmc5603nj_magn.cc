@@ -23,6 +23,30 @@ int MMC5603NJ_Magn::init() {
     goto fail;
   }
 
+  // Set 100 Hz
+  ret = set_register(MMC5603NJ_I2C_REG_ODR, 100);
+  if (ret < 0) {
+    goto fail;
+  }
+
+  // Set BW to 0b01 for 1-150 Hz operation
+  ret = set_register(MMC5603NJ_I2C_REG_INTERNAL_1, 0b01);
+  if (ret < 0) {
+    goto fail;
+  }
+
+  // Set compute measurement rate
+  ret = set_register(MMC5603NJ_I2C_REG_INTERNAL_0, MMC5603NJ_CMM_FREQ_EN);
+  if (ret < 0) {
+    goto fail;
+  }
+
+  // Enable continous mode
+  ret = set_register(MMC5603NJ_I2C_REG_INTERNAL_2, MMC5603NJ_CMM_EN);
+  if (ret < 0) {
+    goto fail;
+  }
+
 fail:
   return ret;
 }
@@ -30,14 +54,14 @@ fail:
 void MMC5603NJ_Magn::get_event(cereal::SensorEventData::Builder &event) {
 
   uint64_t start_time = nanos_since_boot();
-  // uint8_t buffer[6];
-  // int len = read_register(LSM6DS3_ACCEL_I2C_REG_OUTX_L_XL, buffer, sizeof(buffer));
-  // assert(len == sizeof(buffer));
+  uint8_t buffer[9];
+  int len = read_register(MMC5603NJ_I2C_REG_XOUT0, buffer, sizeof(buffer));
+  assert(len == sizeof(buffer));
 
-  // float scale = 9.81 * 2.0f / (1 << 15);
-  // float x = read_16_bit(buffer[0], buffer[1]) * scale;
-  // float y = read_16_bit(buffer[2], buffer[3]) * scale;
-  // float z = read_16_bit(buffer[4], buffer[5]) * scale;
+  float scale = 1.0 / 16384.0;
+  float x = read_20_bit(buffer[2], buffer[1], buffer[0]) * scale;
+  float y = read_20_bit(buffer[5], buffer[4], buffer[3]) * scale;
+  float z = read_20_bit(buffer[8], buffer[7], buffer[6]) * scale;
 
   event.setSource(cereal::SensorEventData::SensorSource::MMC5603NJ);
   event.setVersion(1);
@@ -45,7 +69,7 @@ void MMC5603NJ_Magn::get_event(cereal::SensorEventData::Builder &event) {
   event.setType(SENSOR_TYPE_MAGNETIC_FIELD_UNCALIBRATED);
   event.setTimestamp(start_time);
 
-  float xyz[] = {0, 0, 0};
+  float xyz[] = {x, y, z};
   auto svec = event.initMagneticUncalibrated();
   svec.setV(xyz);
   svec.setStatus(true);
