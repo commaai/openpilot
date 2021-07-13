@@ -16,7 +16,9 @@
 // Constants
 #define MMC5603NJ_CHIP_ID        0x10
 #define MMC5603NJ_CMM_FREQ_EN    (1 << 7)
+#define MMC5603NJ_AUTO_SR_EN     (1 << 5)
 #define MMC5603NJ_CMM_EN         (1 << 4)
+#define MMC5603NJ_EN_PRD_SET     (1 << 3)
 
 class MMC5603NJ_Magn : public I2CSensor {
   uint8_t get_device_address() {return MMC5603NJ_I2C_ADDR;}

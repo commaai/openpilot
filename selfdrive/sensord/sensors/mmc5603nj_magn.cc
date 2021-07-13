@@ -36,13 +36,13 @@ int MMC5603NJ_Magn::init() {
   }
 
   // Set compute measurement rate
-  ret = set_register(MMC5603NJ_I2C_REG_INTERNAL_0, MMC5603NJ_CMM_FREQ_EN);
+  ret = set_register(MMC5603NJ_I2C_REG_INTERNAL_0, MMC5603NJ_CMM_FREQ_EN | MMC5603NJ_AUTO_SR_EN);
   if (ret < 0) {
     goto fail;
   }
 
-  // Enable continous mode
-  ret = set_register(MMC5603NJ_I2C_REG_INTERNAL_2, MMC5603NJ_CMM_EN);
+  // Enable continous mode, set every 100 measurements
+  ret = set_register(MMC5603NJ_I2C_REG_INTERNAL_2, MMC5603NJ_CMM_EN | MMC5603NJ_EN_PRD_SET | 0b11);
   if (ret < 0) {
     goto fail;
   }
@@ -59,9 +59,9 @@ void MMC5603NJ_Magn::get_event(cereal::SensorEventData::Builder &event) {
   assert(len == sizeof(buffer));
 
   float scale = 1.0 / 16384.0;
-  float x = read_20_bit(buffer[2], buffer[1], buffer[0]) * scale;
-  float y = read_20_bit(buffer[5], buffer[4], buffer[3]) * scale;
-  float z = read_20_bit(buffer[8], buffer[7], buffer[6]) * scale;
+  float x = read_20_bit(buffer[6], buffer[1], buffer[0]) * scale;
+  float y = read_20_bit(buffer[7], buffer[3], buffer[2]) * scale;
+  float z = read_20_bit(buffer[8], buffer[5], buffer[4]) * scale;
 
   event.setSource(cereal::SensorEventData::SensorSource::MMC5603NJ);
   event.setVersion(1);
