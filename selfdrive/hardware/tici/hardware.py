@@ -75,7 +75,7 @@ class Tici(HardwareBase):
   def mm(self):
     if self._mm is None:
       self._mm = self.bus.get_object(MM, '/org/freedesktop/ModemManager1')
-    return self._nm
+    return self._mm
 
   def get_os_version(self):
     with open("/VERSION") as f:
