@@ -66,6 +66,7 @@ class Uploader():
     self.immediate_count = 0
 
     # stats for last successfully uploaded file
+    self.last_time = 0
     self.last_speed = 0
     self.last_filename = ""
 
@@ -213,7 +214,8 @@ class Uploader():
           cloudlog.event("uploader_setxattr_failed", exc=self.last_exc, key=key, fn=fn, sz=sz)
 
         self.last_filename = fn
-        self.last_speed = (sz / 1e6) / (time.monotonic() - start_time)
+        self.last_time = time.monotonic() - start_time
+        self.last_speed = (sz / 1e6) / self.last_time
         success = True
       else:
         cloudlog.event("upload_failed", stat=stat, exc=self.last_exc, key=key, fn=fn, sz=sz, debug=True)
@@ -228,6 +230,7 @@ class Uploader():
     us.immediateQueueCount = 0
     us.rawQueueSize = 0
     us.rawQueueCount = 0
+    us.lastTime = self.last_time
     us.lastSpeed = self.last_speed
     us.lastFilename = self.last_filename
     return msg
