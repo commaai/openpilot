@@ -134,7 +134,7 @@ static void update_state(UIState *s) {
     scene.engageable = sm["controlsState"].getControlsState().getEngageable();
     scene.dm_active = sm["driverMonitoringState"].getDriverMonitoringState().getIsActiveMode();
   }
-  if (sm.updated("radarState")) {
+  if (sm.updated("radarState") && s->vg) {
     std::optional<cereal::ModelDataV2::XYZTData::Reader> line;
     if (sm.rcv_frame("modelV2") > 0) {
       line = sm["modelV2"].getModelV2().getPosition();
@@ -158,7 +158,7 @@ static void update_state(UIState *s) {
       }
     }
   }
-  if (sm.updated("modelV2")) {
+  if (sm.updated("modelV2") && s->vg) {
     update_model(s, sm["modelV2"].getModelV2());
   }
   if (sm.updated("pandaState")) {

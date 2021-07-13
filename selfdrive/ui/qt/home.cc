@@ -25,14 +25,14 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
   slayout = new QStackedLayout();
   main_layout->addLayout(slayout);
 
+  home = new OffroadHome();
+  slayout->addWidget(home);
+
   onroad = new OnroadWindow(this);
   slayout->addWidget(onroad);
 
   QObject::connect(this, &HomeWindow::update, onroad, &OnroadWindow::update);
   QObject::connect(this, &HomeWindow::offroadTransitionSignal, onroad, &OnroadWindow::offroadTransitionSignal);
-
-  home = new OffroadHome();
-  slayout->addWidget(home);
 
   driver_view = new DriverViewWindow(this);
   connect(driver_view, &DriverViewWindow::done, [=] {
