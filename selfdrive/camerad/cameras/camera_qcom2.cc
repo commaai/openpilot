@@ -976,6 +976,9 @@ static void set_camera_exposure(CameraState *s, float grey_frac) {
     float m = g > ANALOG_GAIN_REC_IDX ? 5.0 : 1.0;
     score += std::abs(g - (int)ANALOG_GAIN_REC_IDX) * m;
 
+    // Small penalty on changing gain
+    score += std::abs(g - s->gain_idx);
+
     if (score < best_ev_score) {
       new_t = t;
       new_g = g;
