@@ -130,7 +130,7 @@ def gen_lat_mpc_solver():
                                   ((v_ego +5.0) * psi_ego),
                                   ((v_ego +5.0) * 4 * curv_rate))
   ocp.model.cost_y_expr_e = vertcat(y_ego,
-                                    ((2.*v_ego +5.0) * psi_ego))
+                                    ((v_ego +5.0) * psi_ego))
   ocp.parameter_values = np.array([0., .0])
 
   # set constraints
@@ -174,7 +174,7 @@ class LateralMpc():
   def run(self, x0, v_ego, car_rotation_radius, y_pts, heading_pts):
     self.solver.constraints_set(0, "lbx", x0)
     self.solver.constraints_set(0, "ubx", x0)
-    yref = np.column_stack([y_pts, heading_pts, np.zeros(N+1)])
+    yref = np.column_stack([y_pts, heading_pts*(v_ego+5.0), np.zeros(N+1)])
     p = np.array([v_ego, car_rotation_radius])
     for i in range(N):
       self.solver.set(i, "p", p)
