@@ -10,6 +10,11 @@ int16_t read_16_bit(uint8_t lsb, uint8_t msb) {
   return int16_t(combined);
 }
 
+int32_t read_20_bit(uint8_t b2, uint8_t b1, uint8_t b0) {
+  uint32_t combined = (uint32_t(b0) << 16) | (uint32_t(b1) << 8) | uint32_t(b2);
+  return int32_t(combined) / (1 << 4);
+}
+
 
 I2CSensor::I2CSensor(I2CBus *bus) : bus(bus) {
 }
