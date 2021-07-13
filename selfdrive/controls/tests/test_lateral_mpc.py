@@ -19,7 +19,7 @@ def run_mpc(v_ref=30., x_init=0., y_init=0., psi_init=0., curvature_init=0.,
   for _ in range(20):
     lat_mpc.run(x0, v_ref,
                 CAR_ROTATION_RADIUS,
-                list(y_pts), list(heading_pts))
+                y_pts, heading_pts)
   return lat_mpc.x_sol
 
 
