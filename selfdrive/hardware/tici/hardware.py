@@ -51,13 +51,31 @@ def write_amplifier_reg(reg, val, offset, mask):
     v = (v & (~mask)) | ((val << offset) & mask)
     bus.write_byte_data(AMP_ADDRESS, reg, v, force=True)
 
+
 class Tici(HardwareBase):
   def __init__(self):
-    import dbus  # pylint: disable=import-error
+    self._bus = None
+    self._nm = None
+    self._mm = None
 
-    self.bus = dbus.SystemBus()
-    self.nm = self.bus.get_object(NM, '/org/freedesktop/NetworkManager')
-    self.mm = self.bus.get_object(MM, '/org/freedesktop/ModemManager1')
+  @property
+  def bus(self):
+    if self._bus is None:
+      import dbus  # pylint: disable=import-error
+      self._bus = dbus.SystemBus()
+    return self._bus
+
+  @property
+  def nm(self):
+    if self._nm is None:
+      self._nm = self.bus.get_object(NM, '/org/freedesktop/NetworkManager')
+    return self._nm
+
+  @property
+  def mm(self):
+    if self._mm is None:
+      self._mm = self.bus.get_object(MM, '/org/freedesktop/ModemManager1')
+    return self._nm
 
   def get_os_version(self):
     with open("/VERSION") as f:
