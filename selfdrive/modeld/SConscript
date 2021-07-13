@@ -26,11 +26,13 @@ thneed_src = [
   "runners/thneedmodel.cc",
 ]
 
+use_thneed = not GetOption('no_thneed')
+
 if arch == "aarch64" or arch == "larch64":
   libs += ['gsl', 'CB']
   libs += ['gnustl_shared'] if arch == "aarch64" else ['pthread', 'dl']
 
-  if not GetOption('no_thneed'):
+  if use_thneed:
     common_src += thneed_src
     dlsym_offset = get_dlsym_offset()
     lenv['CXXFLAGS'].append("-DUSE_THNEED")
@@ -59,7 +61,7 @@ else:
 common_model = lenv.Object(common_src)
 
 # build thneed model
-if not GetOption('no_thneed') and arch in ("aarch64", "larch64"):
+if use_thneed and arch in ("aarch64", "larch64"):
   compiler = lenv.Program('thneed/compile', ["thneed/compile.cc"]+common_model, LIBS=libs)
   cmd = f"cd {Dir('.').abspath} && {compiler[0].abspath} ../../models/supercombo.dlc ../../models/supercombo.thneed --binary"
 
