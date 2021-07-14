@@ -96,3 +96,5 @@ class Amplifier:
     self.set_global_shutdown(amp_disabled=False)
 
 
+if __name__ == "__main__":
+  Amplifier(debug=True).initialize_configuration()
