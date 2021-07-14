@@ -257,8 +257,8 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelDataRaw &net_ou
   plan_t_arr[0] = 0.0;
   for (int xidx=1, tidx=0; xidx<TRAJECTORY_SIZE; xidx++) {
     // increment tidx until we find an element that's further away than the current xidx
-    for (int id = tidx; id < TRAJECTORY_SIZE-1 && best_plan[(id+1)*PLAN_MHP_COLUMNS] < X_IDXS[xidx]; id++) {
-      tidx = id;
+    while (tidx < TRAJECTORY_SIZE-1 && best_plan[(tidx+1)*PLAN_MHP_COLUMNS] < X_IDXS[xidx];) {
+      tidx++;
     }
     float current_x_val = best_plan[tidx*PLAN_MHP_COLUMNS];
     float next_x_val = best_plan[(tidx+1)*PLAN_MHP_COLUMNS];
