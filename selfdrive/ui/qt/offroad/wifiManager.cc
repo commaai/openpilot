@@ -84,11 +84,11 @@ void WifiManager::addNetwork(const QDBusObjectPath &path) {
     }
   }
   Network network = {path.path(), ssid, strength, ctype, security, isKnownConnection(ssid)};
+  mutex.lock();
   if (!seenNetworks.contains(ssid)) {
-    mutex.lock();
     seenNetworks[ssid] = network;
-    mutex.unlock();
   }
+  mutex.unlock();
 }
 
 void WifiManager::refreshNetworks() {
