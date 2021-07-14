@@ -111,7 +111,7 @@ class HardwareBase:
     pass
 
   @abstractmethod
-  def set_power_save(self, enabled):
+  def set_power_save(self, powersave_enabled):
     pass
 
   @abstractmethod

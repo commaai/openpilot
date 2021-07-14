@@ -262,14 +262,14 @@ class Tici(HardwareBase):
     except Exception:
       pass
 
-  def set_power_save(self, enabled):
+  def set_power_save(self, powersave_enabled):
     # amplifier, 100mW at idle
-    self.amplifier.set_global_shutdown(amp_disabled=enabled)
+    self.amplifier.set_global_shutdown(amp_disabled=powersave_enabled)
 
     # offline big cluster, leave core 4 online for boardd
     for i in range(5, 8):
       # TODO: fix permissions with udev
-      val = "0" if enabled else "1"
+      val = "0" if powersave_enabled else "1"
       os.system(f"sudo su -c 'echo {val} > /sys/devices/system/cpu/cpu{i}/online'")
 
   def get_gpu_usage_percent(self):

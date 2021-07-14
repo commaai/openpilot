@@ -83,7 +83,7 @@ class Pc(HardwareBase):
   def set_screen_brightness(self, percentage):
     pass
 
-  def set_power_save(self, enabled):
+  def set_power_save(self, powersave_enabled):
     pass
 
   def get_gpu_usage_percent(self):
