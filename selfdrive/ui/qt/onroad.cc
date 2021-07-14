@@ -165,7 +165,8 @@ void OnroadAlerts::stopSounds() {
 void OnroadAlerts::paintEvent(QPaintEvent *event) {
   // border
   QPainter p(this);
-  p.setPen(QPen(bg, bdr_s, Qt::SolidLine, Qt::SquareCap, Qt::MiterJoin));
+  QColor borderColor(bg.red(), bg.green(), bg.blue(), 255);
+  p.setPen(QPen(borderColor, bdr_s, Qt::SolidLine, Qt::SquareCap, Qt::MiterJoin));
   p.drawRect(rect().adjusted(bdr_s / 2, bdr_s / 2, -bdr_s / 2, -bdr_s / 2));
 
   if (alert_size == cereal::ControlsState::AlertSize::NONE) {
