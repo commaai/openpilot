@@ -108,7 +108,7 @@ static void ui_draw_line(UIState *s, const line_vertices_data &vd, NVGcolor *col
   nvgFill(s->vg);
 }
 
-static void draw_frame(UIState *s) {
+static void draw_video_frame(UIState *s) {
   glBindVertexArray(s->frame_vao);
   mat4 *out_mat = &s->rear_frame_mat;
   glActiveTexture(GL_TEXTURE0);
@@ -255,27 +255,23 @@ static void ui_draw_vision(UIState *s) {
 
 void ui_draw(UIState *s, int w, int h) {
   s->viz_rect = Rect{bdr_s, bdr_s, w - 2 * bdr_s, h - 2 * bdr_s};
-
   const bool draw_vision = s->scene.started && s->vipc_client->connected;
 
   glViewport(0, 0, s->fb_w, s->fb_h);
-
-  // GL drawing functions
   if (draw_vision) {
-    // Draw video frames
-    draw_frame(s);
+    draw_video_frame(s);
   }
+
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   
   // NVG drawing functions - should be no GL inside NVG frame
   nvgBeginFrame(s->vg, s->fb_w, s->fb_h, 1.0f);
-
   if (draw_vision) {
     ui_draw_vision(s);
   }
-
   nvgEndFrame(s->vg);
+
   glDisable(GL_BLEND);
 }
 
@@ -443,7 +439,7 @@ void ui_resize(UIState *s, int width, int height) {
 
   // Apply transformation such that video pixel coordinates match video
   // 1) Put (0, 0) in the middle of the video
-  nvgTranslate(s->vg, 0 + width / 2, 0 + height / 2 + y_offset);
+  nvgTranslate(s->vg, width / 2, height / 2 + y_offset);
 
   // 2) Apply same scaling as video
   nvgScale(s->vg, zoom, zoom);
