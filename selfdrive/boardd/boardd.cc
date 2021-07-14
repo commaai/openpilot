@@ -388,7 +388,7 @@ void panda_state_thread(bool spoofing_started) {
 
     size_t i = 0;
     for (size_t f = size_t(cereal::PandaState::FaultType::RELAY_MALFUNCTION);
-        f <= size_t(cereal::PandaState::FaultType::INTERRUPT_RATE_TIM9); f++) {
+        f <= size_t(cereal::PandaState::FaultType::INTERRUPT_RATE_TICK); f++) {
       if (fault_bits.test(f)) {
         faults.set(i, cereal::PandaState::FaultType(f));
         i++;
