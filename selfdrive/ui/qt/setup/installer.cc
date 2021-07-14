@@ -132,10 +132,6 @@ void Installer::cloneFinished(int exitCode, QProcess::ExitStatus exitStatus) {
   err = std::system("mv /data/tmppilot /data/openpilot");
   assert(err == 0);
 
-  // write continue.sh
-  err = std::system("cp /data/openpilot/installer/continue_openpilot.sh " CONTINUE_PATH);
-  assert(err == 0);
-
 #ifdef INTERNAL
   std::system("mkdir -p /data/params/d/");
 
@@ -153,9 +149,12 @@ void Installer::cloneFinished(int exitCode, QProcess::ExitStatus exitStatus) {
   std::system("cd /data/tmppilot && git remote set-url origin --push " GIT_SSH_URL);
 #endif
 
+  // write continue.sh
+  err = std::system("cp /data/openpilot/installer/continue_openpilot.sh " CONTINUE_PATH);
+  assert(err == 0);
+
   QCoreApplication::exit(0);
 }
-
 
 int main(int argc, char *argv[]) {
   initApp();
