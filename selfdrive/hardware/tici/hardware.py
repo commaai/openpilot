@@ -6,7 +6,11 @@ from pathlib import Path
 
 from cereal import log
 from selfdrive.hardware.base import HardwareBase, ThermalConfig
+<<<<<<< HEAD
 from selfdrive.hardware.tici.amplifier import Amplifier
+=======
+from selfdrive.hardware.tici import iwlist
+>>>>>>> 4efb18324 (return using athena)
 
 NM = 'org.freedesktop.NetworkManager'
 NM_CON_ACT = NM + '.Connection.Active'
@@ -281,3 +285,12 @@ class Tici(HardwareBase):
 
   def initialize_hardware(self):
     self.amplifier.initialize_configuration()
+
+  def get_networks(self):
+    r = {}
+
+    wlan = iwlist.scan()
+    if wlan is not None:
+      r['wlan'] = wlan
+
+    return r
