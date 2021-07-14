@@ -264,14 +264,12 @@ void ui_draw(UIState *s, int w, int h) {
 
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-  
   // NVG drawing functions - should be no GL inside NVG frame
   nvgBeginFrame(s->vg, s->fb_w, s->fb_h, 1.0f);
   if (draw_vision) {
     ui_draw_vision(s);
   }
   nvgEndFrame(s->vg);
-
   glDisable(GL_BLEND);
 }
 
