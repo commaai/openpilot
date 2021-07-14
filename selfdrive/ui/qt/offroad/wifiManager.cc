@@ -317,7 +317,6 @@ void WifiManager::stateChange(unsigned int new_state, unsigned int previous_stat
 void WifiManager::propertyChange(const QString &interface, const QVariantMap &props, const QStringList &invalidated_props) {
   if (interface == NM_DBUS_INTERFACE_DEVICE_WIRELESS && props.contains("LastScan")) {
     if (this->isVisible() || firstScan) {
-      qDebug() << "LASTSCAN";
       refreshNetworks();
       emit refreshSignal();
       firstScan = false;
