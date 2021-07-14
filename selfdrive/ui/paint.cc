@@ -234,7 +234,7 @@ static void ui_draw_vision_header(UIState *s) {
                         s->viz_rect.x, s->viz_rect.y+header_h,
                         nvgRGBAf(0,0,0,0.45), nvgRGBAf(0,0,0,0));
 
-  ui_fill_rect(s->vg, {s->viz_rect.x, s->viz_rect.y, s->fb_w, header_h}, gradient);
+  ui_fill_rect(s->vg, {s->viz_rect.x, s->viz_rect.y, s->viz_rect.w, header_h}, gradient);
 
   ui_draw_vision_maxspeed(s);
   ui_draw_vision_speed(s);
@@ -243,12 +243,8 @@ static void ui_draw_vision_header(UIState *s) {
 
 static void ui_draw_vision_frame(UIState *s) {
   // Draw video frames
-  glEnable(GL_SCISSOR_TEST);
   glViewport(0, 0, s->fb_w, s->fb_h);
-  glScissor(0, 0, s->fb_w, s->fb_h);
   draw_frame(s);
-  glDisable(GL_SCISSOR_TEST);
-  glViewport(0, 0, s->fb_w, s->fb_h);
 }
 
 static void ui_draw_vision(UIState *s) {
