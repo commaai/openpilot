@@ -18,7 +18,7 @@ def scan(interface="wlan0"):
         mac = line.split(' ')[-1]
       elif "dBm" in line:
         try:
-          level = line.split('Signal level')[1]
+          level = line.split('Signal level=')[1]
           rss = int(level.split(' ')[0])
           result.append({"mac": mac, "rss": rss})
           mac = None
