@@ -141,7 +141,7 @@ class Planner():
 
     longitudinalPlan.speeds = [float(x) for x in self.v_desired_trajectory]
     longitudinalPlan.accels = [float(x) for x in self.a_desired_trajectory]
-    longitudinalPlan.accels = [float(x) for x in self.j_desired_trajectory]
+    longitudinalPlan.jerks = [float(x) for x in self.j_desired_trajectory]
 
     longitudinalPlan.hasLead = self.mpcs['lead0'].status
     longitudinalPlan.longitudinalPlanSource = self.longitudinalPlanSource
