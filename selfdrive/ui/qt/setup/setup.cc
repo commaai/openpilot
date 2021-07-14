@@ -64,21 +64,30 @@ QWidget * Setup::build_page(QString title, QWidget *content, bool next, bool pre
 
   main_layout->addWidget(content);
 
-  QHBoxLayout *nav_layout = new QHBoxLayout();
+  QGridLayout *nav_layout = new QGridLayout();
+  nav_layout->setSpacing(0);
+  nav_layout->setColumnStretch(0, 1);
+  nav_layout->setColumnStretch(1, 1);
 
+  QPushButton *back_btn = new QPushButton("Back");
+  back_btn->setStyleSheet(R"(margin-right: 26px;)");
+  nav_layout->addWidget(back_btn, 0, 0);
   if (prev) {
-    QPushButton *back_btn = new QPushButton("Back");
-    nav_layout->addWidget(back_btn, 1, Qt::AlignBottom | Qt::AlignLeft);
     QObject::connect(back_btn, &QPushButton::released, this, &Setup::prevPage);
+  } else {
+    back_btn->setVisible(false);
   }
 
+  QPushButton *continue_btn = new QPushButton("Continue");
+  continue_btn->setStyleSheet(R"(margin-left: 26px;)");
+  nav_layout->addWidget(continue_btn, 0, 1);
   if (next) {
-    QPushButton *continue_btn = new QPushButton("Continue");
-    nav_layout->addWidget(continue_btn, 0, Qt::AlignBottom | Qt::AlignRight);
     QObject::connect(continue_btn, &QPushButton::released, this, &Setup::nextPage);
+  } else {
+    continue_btn->setVisible(false);
   }
 
-  main_layout->addLayout(nav_layout, 0);
+  main_layout->addLayout(nav_layout, 1);
   return widget;
 }
 
@@ -91,6 +100,7 @@ QWidget * Setup::getting_started() {
 
 QWidget * Setup::network_setup() {
   Networking *wifi = new Networking(this, false);
+  wifi->setStyleSheet("background-color: #333333; border-radius: 10px;");
   return build_page("Connect to WiFi", wifi, true, true);
 }
 
@@ -181,11 +191,9 @@ Setup::Setup(QWidget *parent) : QStackedWidget(parent) {
     }
     QPushButton {
       padding: 50px;
-      padding-right: 100px;
-      padding-left: 100px;
-      border: 7px solid white;
-      border-radius: 20px;
-      font-size: 50px;
+      border-radius: 10px;
+      font-size: 55px;
+      background-color: #333333;
     }
   )");
 }

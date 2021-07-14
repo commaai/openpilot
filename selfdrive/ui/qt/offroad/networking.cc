@@ -46,6 +46,7 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent), s
 
   QWidget* wifiScreen = new QWidget(this);
   QVBoxLayout* vlayout = new QVBoxLayout(wifiScreen);
+  vlayout->setContentsMargins(20, 20, 20, 20);
   if (show_advanced) {
     QPushButton* advancedSettings = new QPushButton("Advanced");
     advancedSettings->setObjectName("advancedBtn");
@@ -68,6 +69,9 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent), s
   main_layout->addWidget(an);
 
   setStyleSheet(R"(
+    * {
+      font-family: Inter;
+    }
     #wifiWidget > QPushButton, #back_btn, #advancedBtn {
       font-size: 50px;
       margin: 0px;
@@ -77,10 +81,6 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent), s
       color: #dddddd;
       background-color: #444444;
     }
-//    #wifiWidget > QPushButton:disabled {
-//      color: #777777;
-//      background-color: #222222;
-//    }
   )");
   main_layout->setCurrentWidget(wifiScreen);
 }
@@ -183,12 +183,13 @@ void AdvancedNetworking::toggleTethering(bool enabled) {
 
 WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi) {
   main_layout = new QVBoxLayout(this);
+  main_layout->setContentsMargins(0, 0, 0, 0);
 
   // Scan on startup
   QLabel *scanning = new QLabel("Scanning for networks");
   scanning->setStyleSheet(R"(font-size: 65px;)");
   main_layout->addWidget(scanning, 0, Qt::AlignCenter);
-  main_layout->setSpacing(25);
+  main_layout->setSpacing(50);
 }
 
 void WifiUI::refresh() {
@@ -199,6 +200,7 @@ void WifiUI::refresh() {
     main_layout->addWidget(scanning, 0, Qt::AlignCenter);
     return;
   }
+  main_layout->addSpacing(50);
 
   int i = 0;
   for (Network &network : wifi->seen_networks) {
@@ -208,7 +210,7 @@ void WifiUI::refresh() {
     QPushButton *ssid_label = new QPushButton(network.ssid);
     ssid_label->setEnabled(!(network.connected == ConnectedType::CONNECTED || network.connected == ConnectedType::CONNECTING || network.security_type == SecurityType::UNSUPPORTED));
 
-    QString ssidStyleSheet = "font-size: 55px; text-align: left; background-color: transparent; border: 0px; ";
+    QString ssidStyleSheet = "font-size: 55px; text-align: left; border: 0px; padding: 0px; margin: 0px; margin-left: 44px";
 
     QObject::connect(ssid_label, &QPushButton::clicked, this, [=]() { emit connectToNetwork(network); });
     hlayout->addWidget(ssid_label, 1);
@@ -242,7 +244,7 @@ void WifiUI::refresh() {
     }
 
     if (network.connected == ConnectedType::CONNECTED || network.connected == ConnectedType::CONNECTING) {
-      ssidStyleSheet += "font-weight: 500;";
+      ssidStyleSheet += "font-weight: 600;";
 
       QLabel *connectIcon = new QLabel();
       QPixmap pix(network.connected == ConnectedType::CONNECTED ? "../assets/offroad/icon_checkmark.png" : "../assets/navigation/direction_rotary.png");
@@ -267,7 +269,7 @@ void WifiUI::refresh() {
     QPixmap pix("../assets/offroad/icon_network.png");
     strength->setPixmap(pix.scaledToHeight(49, Qt::SmoothTransformation));
     strength->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
-    strength->setStyleSheet("margin: 0px; padding-left: 51px; padding-right: 0px ");
+    strength->setStyleSheet("margin: 0px; padding-left: 50px; padding-right: 85px ");
     hlayout->addWidget(strength, 0, Qt::AlignRight);
 
 
