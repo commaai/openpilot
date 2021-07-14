@@ -8,6 +8,13 @@
 #include "selfdrive/ui/qt/widgets/scrollview.h"
 #include "selfdrive/ui/qt/util.h"
 
+bool compareByStrength(const Network &a, const Network &b) {
+  if (a.connected == ConnectedType::CONNECTED) return true;
+  if (b.connected == ConnectedType::CONNECTED) return false;
+  if (a.connected == ConnectedType::CONNECTING) return true;
+  if (b.connected == ConnectedType::CONNECTING) return false;
+  return a.strength > b.strength;
+}
 
 void NetworkStrengthWidget::paintEvent(QPaintEvent* event) {
   QPainter p(this);
@@ -90,13 +97,11 @@ void Networking::connectToNetwork(const Network &n) {
 }
 
 void Networking::wrongPassword(const QString &ssid) {
-  for (Network n : wifi->seen_networks) {
-    if (n.ssid == ssid) {
-      QString pass = InputDialog::getText("Wrong password", this, "for \"" + n.ssid +"\"", true, 8);
-      if (!pass.isEmpty()) {
-        wifi->connect(n, pass);
-      }
-      return;
+  if (wifi->seenNetworks.contains(ssid)) {
+    const Network &n = wifi->seenNetworks.value(ssid);
+    QString pass = InputDialog::getText("Wrong password for \"" + n.ssid +"\"", this, 8);
+    if (!pass.isEmpty()) {
+      wifi->connect(n, pass);
     }
   }
 }
@@ -185,9 +190,11 @@ void WifiUI::refresh() {
     main_layout->addWidget(scanning, 0, Qt::AlignCenter);
     return;
   }
+  QList<Network> sortedNetworks = wifi->seenNetworks.values();
+  std::sort(sortedNetworks.begin(), sortedNetworks.end(), compareByStrength);
 
   int i = 0;
-  for (Network &network : wifi->seen_networks) {
+  for (Network &network : sortedNetworks) {
     QHBoxLayout *hlayout = new QHBoxLayout;
 
     ElidedLabel *ssid_label = new ElidedLabel(network.ssid);
@@ -233,7 +240,7 @@ void WifiUI::refresh() {
     hlayout->addWidget(btn, 0, Qt::AlignRight);
     main_layout->addLayout(hlayout, 1);
     // Don't add the last horizontal line
-    if (i+1 < wifi->seen_networks.size()) {
+    if (i+1 < sortedNetworks.size()) {
       main_layout->addWidget(horizontal_line(), 0);
     }
     i++;

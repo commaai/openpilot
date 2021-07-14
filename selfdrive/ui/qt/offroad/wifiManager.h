@@ -25,6 +25,7 @@ struct Network {
   unsigned int strength;
   ConnectedType connected;
   SecurityType security_type;
+  bool known;
 };
 
 class WifiManager : public QWidget {
@@ -33,11 +34,12 @@ public:
   explicit WifiManager(QWidget* parent);
 
   void requestScan();
-  QVector<Network> seen_networks;
+  QMap<QString, Network> seenNetworks;
   QMap<QDBusObjectPath, QString> knownConnections;
   QString ipv4_address;
 
   void refreshNetworks();
+  void addNetwork(const QDBusObjectPath &path);
   void forgetConnection(const QString &ssid);
   bool isKnownConnection(const QString &ssid);
   void activateWifiConnection(const QString &ssid);
@@ -55,7 +57,6 @@ public:
   QString getTetheringPassword();
 
 private:
-  QVector<QByteArray> seen_ssids;
   QString adapter;  // Path to network manager wifi-device
   QDBusConnection bus = QDBusConnection::systemBus();
   unsigned int raw_adapter_state;  // Connection status https://developer.gnome.org/NetworkManager/1.26/nm-dbus-types.html#NMDeviceState
@@ -80,6 +81,7 @@ private:
   void initConnections();
   QString getConnectionSsid(const QDBusObjectPath &path);
   void setup();
+  std::mutex mutex;
 
 signals:
   void wrongPassword(const QString &ssid);
