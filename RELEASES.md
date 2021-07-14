@@ -1,4 +1,4 @@
-Version 0.8.6 (2021-07-19)
+Version 0.8.6 (2021-07-21)
 ========================
  * Revamp lateral and longitudinal planners
    * Refactor planner output API to be more readable and verbose
