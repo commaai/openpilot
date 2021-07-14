@@ -101,6 +101,16 @@ void Networking::wrongPassword(const QString &ssid) {
   }
 }
 
+void Networking::showEvent(QShowEvent* event) {
+  // Wait to refresh to avoid queuing up too many scans if shown and hidden quickly
+  QTimer::singleShot(300, this, [=]() {
+    if (this->isVisible()) {
+      wifi->refreshNetworks();
+      refresh();
+    }
+  });
+}
+
 // AdvancedNetworking functions
 
 AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWidget(parent), wifi(wifi) {
@@ -169,6 +179,12 @@ WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi)
 
 void WifiUI::refresh() {
   clearLayout(main_layout);
+  if (wifi->seen_networks.size() == 0) {
+    QLabel *scanning = new QLabel("No networks found. Scanning...");
+    scanning->setStyleSheet(R"(font-size: 65px;)");
+    main_layout->addWidget(scanning, 0, Qt::AlignCenter);
+    return;
+  }
 
   int i = 0;
   for (Network &network : wifi->seen_networks) {
