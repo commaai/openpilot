@@ -123,7 +123,7 @@ void model_free(ModelState* s) {
 
 static const float *get_best_data(const float *data, int size, int group_size, int offset) {
   int max_idx = 0;
-  for (int i = 1; i < size; i++) {
+  for (int i = 1; i < size - 1; i++) {
     if (data[(i + 1) * group_size + offset] >
         data[(max_idx + 1) * group_size + offset]) {
       max_idx = i;
