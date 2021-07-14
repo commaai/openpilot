@@ -29,9 +29,9 @@ class LongitudinalMpc():
     self.cur_state[0].v_ego = 0
     self.cur_state[0].a_ego = 0
 
-    self.v_solution = [0.0 for i in range(T_IDXS)]
-    self.a_solution = [0.0 for i in range(T_IDXS)]
-    self.j_solution = [0.0 for i in range(T_IDXS-1)]
+    self.v_solution = [0.0 for i in range(len(T_IDXS))]
+    self.a_solution = [0.0 for i in range(len(T_IDXS))]
+    self.j_solution = [0.0 for i in range(len(T_IDXS)-1)]
 
   def set_accel_limits(self, min_a, max_a):
     self.min_a = min_a
