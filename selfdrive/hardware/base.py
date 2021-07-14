@@ -121,3 +121,7 @@ class HardwareBase:
   @abstractmethod
   def get_modem_version(self):
     pass
+
+  @abstractmethod
+  def initialize_hardware(self):
+    pass

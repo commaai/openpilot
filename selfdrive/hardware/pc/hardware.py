@@ -91,3 +91,6 @@ class Pc(HardwareBase):
 
   def get_modem_version(self):
     return None
+
+  def initialize_hardware(self):
+    pass
