@@ -71,9 +71,11 @@ Reset::Reset(bool recover, QWidget *parent) : QWidget(parent) {
 
   rebootBtn = new QPushButton("Reboot");
   blayout->addWidget(rebootBtn);
+#ifdef __aarch64__
   QObject::connect(rebootBtn, &QPushButton::released, [=]{
     std::system("sudo reboot");
   });
+#endif
 
   confirmBtn = new QPushButton("Confirm");
   confirmBtn->setStyleSheet("background-color: #465BEA;");
@@ -84,7 +86,7 @@ Reset::Reset(bool recover, QWidget *parent) : QWidget(parent) {
   rebootBtn->setVisible(recover);
   if (recover) {
     body->setText("Unable to mount data partition. Press confirm to reset your device.");
-  } else {}
+  }
 
   setStyleSheet(R"(
     * {
@@ -97,8 +99,9 @@ Reset::Reset(bool recover, QWidget *parent) : QWidget(parent) {
     }
     QPushButton {
       height: 160;
-      border-radius: 10px;
       font-size: 55px;
+      font-weight: 400;
+      border-radius: 10px;
       background-color: #333333;
     }
   )");
