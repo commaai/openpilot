@@ -47,8 +47,8 @@ class LeadMpc():
     if self.lead_id == 0:
       lead = radarstate.leadOne
     else:
-      lead = radarstate.leadOne
-    self.status = lead.status and lead.modelProb > .5
+      lead = radarstate.leadTwo
+    self.status = lead.status
 
     # Setup current mpc state
     self.cur_state[0].x_ego = 0.0
