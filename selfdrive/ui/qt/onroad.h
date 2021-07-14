@@ -38,7 +38,7 @@ private:
   float blinking_rate = 0;
   QString text1, text2;
   std::string alert_type;
-  cereal::ControlsState::AlertSize alert_size;
+  cereal::ControlsState::AlertSize alert_size = cereal::ControlsState::AlertSize::NONE;
 
 public slots:
   void updateState(const UIState &s);
