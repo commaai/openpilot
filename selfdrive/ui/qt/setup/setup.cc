@@ -60,6 +60,7 @@ QWidget * Setup::build_page(QString title, QWidget *content, bool next, bool pre
   QVBoxLayout *main_layout = new QVBoxLayout(widget);
 
   main_layout->setMargin(50);
+  main_layout->setSpacing(36);
   main_layout->addWidget(title_label(title), 0, Qt::AlignLeft | Qt::AlignTop);
 
   main_layout->addWidget(content);
