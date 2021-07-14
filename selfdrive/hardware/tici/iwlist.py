@@ -33,14 +33,3 @@ def scan(interface="wlan0"):
 
   except Exception:
     return None
-
-
-if __name__ == "__main__":
-  import sys
-  import pprint
-
-  if len(sys.argv) > 1:
-    pprint.pp(scan(sys.argv[1]))
-  else:
-    pprint.pp(scan())
-
