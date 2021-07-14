@@ -302,12 +302,12 @@ class Tici(HardwareBase):
       if 'LTE' in extra:
         extra = extra.split(',')
         try:
-          r['lte'] = {
+          r['lte'] = [{
             "mcc": int(extra[3]),
             "mnc": int(extra[4]),
             "cid": int(extra[5], 16),
             "nmr": [{"pci": int(extra[6]), "earfcn": int(extra[7])}],
-          }
+          }]
         except (ValueError, IndexError):
           pass
 
