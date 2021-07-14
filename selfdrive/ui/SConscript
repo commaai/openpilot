@@ -56,7 +56,7 @@ if arch != 'aarch64' and GetOption('setup'):
 
   senv = qt_env.Clone()
   senv['LINKFLAGS'].append('-Wl,-strip-debug')
-  installers =[
+  installers = [
     ("openpilot", "release3-staging"),
     ("openpilot_test", "release3-staging"),
     ("openpilot_internal", "master"),
