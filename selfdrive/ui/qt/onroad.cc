@@ -7,6 +7,9 @@
 #include "selfdrive/common/timing.h"
 #include "selfdrive/ui/paint.h"
 #include "selfdrive/ui/qt/util.h"
+#ifdef ENABLE_MAPS
+#include "selfdrive/ui/qt/maps/map.h"
+#endif
 
 OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   setAttribute(Qt::WA_OpaquePaintEvent);
@@ -93,7 +96,7 @@ void OnroadWindow::offroadTransition(bool offroad) {
     }
   }
   if (map) {
-    map->offroadTransition(offroad);
+    ((MapWindow*)map)->offroadTransition(offroad);
   }
 #endif
 }

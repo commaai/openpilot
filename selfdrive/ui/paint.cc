@@ -232,8 +232,6 @@ static void ui_draw_vision_header(UIState *s) {
                         header_h-(header_h/2.5),
                         0, header_h,
                         nvgRGBAf(0,0,0,0.45), nvgRGBAf(0,0,0,0));
-
-  // no right bdr_s for onroad->map.
   ui_fill_rect(s->vg, {0, 0, s->fb_w , header_h}, gradient);
 
   ui_draw_vision_maxspeed(s);

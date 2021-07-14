@@ -13,10 +13,6 @@
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/ui.h"
 
-#ifdef ENABLE_MAPS
-#include "selfdrive/ui/qt/maps/map.h"
-#endif
-
 typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
 
 // ***** onroad widgets *****
@@ -73,9 +69,8 @@ class OnroadWindow : public QWidget {
 
 public:
   OnroadWindow(QWidget* parent = 0);
-#ifdef ENABLE_MAPS
-  MapWindow *map = nullptr;
-#endif
+  QWidget *map = nullptr;
+
 public slots:
   void offroadTransition(bool offroad);
   void updateState(const UIState &s);
