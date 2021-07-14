@@ -11,7 +11,8 @@ from selfdrive.controls.lib.longcontrol import LongCtrlState
 class Plant():
   messaging_initialized = False
 
-  def __init__(self, lead_relevancy=False, speed=0.0, distance_lead=2.0, only_lead2=False):
+  def __init__(self, lead_relevancy=False, speed=0.0, distance_lead=2.0,
+               only_lead2=False, only_radar=False):
     self.rate = 1. / DT_MDL
 
     if not Plant.messaging_initialized:
@@ -31,6 +32,7 @@ class Plant():
     self.distance_lead = distance_lead
     self.lead_relevancy = lead_relevancy
     self.only_lead2=only_lead2
+    self.only_radar=only_radar
 
     self.rk = Ratekeeper(self.rate, print_delay_threshold=100.0)
     self.ts = 1. / self.rate
@@ -66,11 +68,16 @@ class Plant():
     if self.lead_relevancy:
       d_rel = np.maximum(0., self.distance_lead - self.distance)
       v_rel = v_lead - self.speed
-      prob = 1.0
+      if self.only_radar:
+        prob = 0.0
+      else:
+        prob = 1.0
+      status = True
     else:
       d_rel = 200.
       v_rel = 0.
       prob = 0.0
+      status = False
 
     lead = log.RadarState.LeadData.new_message()
     lead.dRel = float(d_rel)
@@ -81,7 +88,7 @@ class Plant():
     lead.vLeadK = float(v_lead)
     lead.aLeadK = float(a_lead)
     lead.aLeadTau = float(1.5)
-    lead.status = True
+    lead.status = status
     lead.modelProb = prob
     if not self.only_lead2:
       radar.radarState.leadOne = lead

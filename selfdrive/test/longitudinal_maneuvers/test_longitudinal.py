@@ -71,6 +71,16 @@ maneuvers = [
     speed_lead_breakpoints=[1., 11.],
     only_lead2=True,
   ),
+  Maneuver(
+    "stay stopped behind radar override lead",
+    duration=20.,
+    initial_speed=0.,
+    lead_relevancy=True,
+    initial_distance_lead=10.,
+    speed_lead_values=[0., 0.],
+    speed_lead_breakpoints=[1., 11.],
+    only_radar=True,
+  ),
 ]
 
 
