@@ -86,6 +86,8 @@ OnroadAlerts::OnroadAlerts(QWidget *parent) : QWidget(parent) {
 
 void OnroadAlerts::updateState(const UIState &s) {
   SubMaster &sm = *(s.sm);
+  UIStatus status = s.status;
+
   if (sm.updated("carState")) {
     // scale volume with speed
     volume = util::map_val(sm["carState"].getCarState().getVEgo(), 0.f, 20.f,
@@ -106,16 +108,17 @@ void OnroadAlerts::updateState(const UIState &s) {
         // car is started, but controls is lagging or died
         updateAlert("TAKE CONTROL IMMEDIATELY", "Controls Unresponsive", 0,
                     "controlsUnresponsive", cereal::ControlsState::AlertSize::FULL, AudibleAlert::CHIME_WARNING_REPEAT);
-
-        // TODO: clean this up once Qt handles the border
-        QUIState::ui_state.status = STATUS_ALERT;
+        status = STATUS_ALERT;
       }
     }
   }
 
   // TODO: add blinking back if performant
   //float alpha = 0.375 * cos((millis_since_boot() / 1000) * 2 * M_PI * blinking_rate) + 0.625;
-  bg = bg_colors[s.status];
+  if (bg_colors[status] != bg) {
+    bg = bg_colors[status];
+    update();
+  }
 }
 
 void OnroadAlerts::offroadTransition(bool offroad) {
@@ -160,6 +163,11 @@ void OnroadAlerts::stopSounds() {
 }
 
 void OnroadAlerts::paintEvent(QPaintEvent *event) {
+  // border
+  QPainter p(this);
+  p.setPen(QPen(bg, bdr_s, Qt::SolidLine, Qt::SquareCap, Qt::MiterJoin));
+  p.drawRect(rect().adjusted(bdr_s / 2, bdr_s / 2, -bdr_s / 2, -bdr_s / 2));
+
   if (alert_size == cereal::ControlsState::AlertSize::NONE) {
     return;
   }
@@ -170,8 +178,6 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
   };
   int h = alert_sizes[alert_size];
   QRect r = QRect(0, height() - h, width(), h);
-
-  QPainter p(this);
 
   // draw background + gradient
   p.setPen(Qt::NoPen);

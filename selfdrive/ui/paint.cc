@@ -265,19 +265,12 @@ static void ui_draw_vision(UIState *s) {
   }
 }
 
-static void ui_draw_background(UIState *s) {
-  const QColor &color = bg_colors[s->status];
-  glClearColor(color.redF(), color.greenF(), color.blueF(), 1.0);
-  glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-}
-
 void ui_draw(UIState *s, int w, int h) {
   s->viz_rect = Rect{bdr_s, bdr_s, w - 2 * bdr_s, h - 2 * bdr_s};
 
   const bool draw_vision = s->scene.started && s->vipc_client->connected;
 
   // GL drawing functions
-  ui_draw_background(s);
   if (draw_vision) {
     ui_draw_vision_frame(s);
   }
