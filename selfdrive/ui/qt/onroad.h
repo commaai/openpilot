@@ -2,11 +2,10 @@
 
 #include <map>
 
-#include <QHBoxLayout>
 #include <QOpenGLFunctions>
 #include <QOpenGLWidget>
 #include <QSoundEffect>
-
+#include <QStackedLayout>
 #include <QWidget>
 
 #include "cereal/gen/cpp/log.capnp.h"

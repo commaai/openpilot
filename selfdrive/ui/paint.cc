@@ -228,12 +228,9 @@ static void ui_draw_vision_face(UIState *s) {
 }
 
 static void ui_draw_vision_header(UIState *s) {
-  NVGpaint gradient = nvgLinearGradient(s->vg, 0,
-                        header_h-(header_h/2.5),
-                        0, header_h,
-                        nvgRGBAf(0,0,0,0.45), nvgRGBAf(0,0,0,0));
+  NVGpaint gradient = nvgLinearGradient(s->vg, 0, header_h - (header_h / 2.5), 0, header_h,
+                                        nvgRGBAf(0, 0, 0, 0.45), nvgRGBAf(0, 0, 0, 0));
   ui_fill_rect(s->vg, {0, 0, s->fb_w , header_h}, gradient);
-
   ui_draw_vision_maxspeed(s);
   ui_draw_vision_speed(s);
   ui_draw_vision_event(s);
@@ -259,7 +256,6 @@ void ui_draw(UIState *s, int w, int h) {
   if (draw_vision) {
     draw_vision_frame(s);
   }
-
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   // NVG drawing functions - should be no GL inside NVG frame
@@ -436,10 +432,8 @@ void ui_resize(UIState *s, int width, int height) {
   // Apply transformation such that video pixel coordinates match video
   // 1) Put (0, 0) in the middle of the video
   nvgTranslate(s->vg, width / 2, height / 2 + y_offset);
-
   // 2) Apply same scaling as video
   nvgScale(s->vg, zoom, zoom);
-
   // 3) Put (0, 0) in top left corner of video
   nvgTranslate(s->vg, -intrinsic_matrix.v[2], -intrinsic_matrix.v[5]);
 

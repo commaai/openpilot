@@ -2,7 +2,6 @@
 
 #include <iostream>
 #include <QDebug>
-#include <QStackedLayout>
 
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/timing.h"
@@ -13,7 +12,6 @@
 #endif
 
 OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
-  setAttribute(Qt::WA_OpaquePaintEvent);
   QVBoxLayout *main_layout  = new QVBoxLayout(this);
   main_layout->setMargin(bdr_s);
   QStackedLayout *stacked_layout = new QStackedLayout;
@@ -37,6 +35,8 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 
   // setup stacking order
   alerts->raise();
+
+  setAttribute(Qt::WA_OpaquePaintEvent);
 }
 
 void OnroadWindow::updateState(const UIState &s) {
@@ -74,8 +74,8 @@ void OnroadWindow::offroadTransition(bool offroad) {
 void OnroadWindow::paintEvent(QPaintEvent *event) {
   // draw border
   QPainter p(this);
-  QColor borderColor(bg.red(), bg.green(), bg.blue(), 255);
-  p.setPen(QPen(borderColor, bdr_s, Qt::SolidLine, Qt::SquareCap, Qt::MiterJoin));
+  QColor color(bg.red(), bg.green(), bg.blue(), 255);
+  p.setPen(QPen(color, bdr_s, Qt::SolidLine, Qt::SquareCap, Qt::MiterJoin));
   p.drawRect(rect().adjusted(bdr_s / 2, bdr_s / 2, -bdr_s / 2, -bdr_s / 2));
 }
 
