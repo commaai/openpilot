@@ -11,7 +11,7 @@ from selfdrive.controls.lib.longcontrol import LongCtrlState
 class Plant():
   messaging_initialized = False
 
-  def __init__(self, lead_relevancy=False, speed=0.0, distance_lead=2.0):
+  def __init__(self, lead_relevancy=False, speed=0.0, distance_lead=2.0, only_lead2=False):
     self.rate = 1. / DT_MDL
 
     if not Plant.messaging_initialized:
@@ -30,11 +30,26 @@ class Plant():
     # lead car
     self.distance_lead = distance_lead
     self.lead_relevancy = lead_relevancy
+    self.only_lead2=only_lead2
 
     self.rk = Ratekeeper(self.rate, print_delay_threshold=100.0)
     self.ts = 1. / self.rate
     time.sleep(1)
     self.sm = messaging.SubMaster(['longitudinalPlan'])
+
+    # make sure planner has time to be fully initialized
+    # TODO planner should just be explicitly initialized
+    for i in range(10000):
+      assert i < 10000
+      radar = messaging.new_message('radarState')
+      control = messaging.new_message('controlsState')
+      car_state = messaging.new_message('carState')
+      control.controlsState.longControlState = LongCtrlState.pid
+      control.controlsState.vCruise = speed*3.6
+      car_state.carState.vEgo = self.speed
+      Plant.radar.send(radar.to_bytes())
+      Plant.controls_state.send(control.to_bytes())
+      Plant.car_state.send(car_state.to_bytes())
 
   def current_time(self):
     return float(self.rk.frame) / self.rate
@@ -68,7 +83,8 @@ class Plant():
     lead.aLeadTau = float(1.5)
     lead.status = True
     lead.modelProb = prob
-    radar.radarState.leadOne = lead
+    if not self.only_lead2:
+      radar.radarState.leadOne = lead
     radar.radarState.leadTwo = lead
 
 
