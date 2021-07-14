@@ -63,6 +63,7 @@ private:
   QString tethering_ssid;
   const QString defaultTetheringPassword = "swagswagcomma";
 
+  bool firstScan = true;
   QString getAdapter();
   bool isWirelessAdapter(const QDBusObjectPath &path);
   QString get_ipv4_address();

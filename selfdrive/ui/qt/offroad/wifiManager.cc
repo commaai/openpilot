@@ -69,13 +69,9 @@ void WifiManager::setup() {
   QDBusMessage response = device_props.call("Get", NM_DBUS_INTERFACE_DEVICE, "State");
   raw_adapter_state = get_response<uint>(response);
 
+  initActiveAp();
+  initConnections();
   requestScan();
-  QTimer::singleShot(1000, this, [=]() {  // LastScan signal isn't always reliable so force a refresh
-    initActiveAp();
-    initConnections();
-    refreshNetworks();
-    emit refreshSignal();
-  });
 }
 
 void WifiManager::refreshNetworks() {
@@ -320,9 +316,11 @@ void WifiManager::stateChange(unsigned int new_state, unsigned int previous_stat
 // https://developer.gnome.org/NetworkManager/stable/gdbus-org.freedesktop.NetworkManager.Device.Wireless.html
 void WifiManager::propertyChange(const QString &interface, const QVariantMap &props, const QStringList &invalidated_props) {
   if (interface == NM_DBUS_INTERFACE_DEVICE_WIRELESS && props.contains("LastScan")) {
-    if (this->isVisible()) {
+    if (this->isVisible() || firstScan) {
+      qDebug() << "LASTSCAN";
       refreshNetworks();
       emit refreshSignal();
+      firstScan = false;
     }
   } else if (interface == NM_DBUS_INTERFACE_DEVICE_WIRELESS && props.contains("ActiveAccessPoint")) {
     const QDBusObjectPath &path = props.value("ActiveAccessPoint").value<QDBusObjectPath>();
