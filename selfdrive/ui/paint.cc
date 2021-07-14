@@ -243,8 +243,13 @@ static void ui_draw_vision_header(UIState *s) {
 
 static void ui_draw_vision_frame(UIState *s) {
   // Draw video frames
+  glEnable(GL_SCISSOR_TEST);
   glViewport(s->video_rect.x, s->video_rect.y, s->video_rect.w, s->video_rect.h);
+  // no right bdr_s for onroad->map.
+  glScissor(s->viz_rect.x, s->viz_rect.y, s->viz_rect.w + bdr_s, s->viz_rect.h);
   draw_frame(s);
+  glDisable(GL_SCISSOR_TEST);
+
   glViewport(0, 0, s->fb_w, s->fb_h);
 }
 
@@ -435,7 +440,7 @@ void ui_resize(UIState *s, int width, int height) {
     zoom *= 0.5;
   }
 
-  s->video_rect = Rect{bdr_s, bdr_s, s->fb_w - 2 * bdr_s, s->fb_h - 2 * bdr_s};
+  s->video_rect = Rect{0, 0, width, height};
   float zx = zoom * 2 * intrinsic_matrix.v[2] / s->video_rect.w;
   float zy = zoom * 2 * intrinsic_matrix.v[5] / s->video_rect.h;
 
