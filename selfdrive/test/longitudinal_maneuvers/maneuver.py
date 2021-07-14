@@ -12,6 +12,9 @@ class Maneuver():
     self.speed_lead_values = kwargs.get("speed_lead_values", [0.0, 0.0])
     self.speed_lead_breakpoints = kwargs.get("speed_lead_breakpoints", [0.0, duration])
 
+    self.only_lead2 = kwargs.get("only_lead2", False)
+    self.only_radar = kwargs.get("only_radar", False)
+
     self.duration = duration
     self.title = title
 
@@ -19,7 +22,9 @@ class Maneuver():
     plant = Plant(
       lead_relevancy=self.lead_relevancy,
       speed=self.speed,
-      distance_lead=self.distance_lead
+      distance_lead=self.distance_lead,
+      only_lead2=self.only_lead2,
+      only_radar=self.only_radar
     )
 
     valid = True
