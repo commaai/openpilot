@@ -54,6 +54,7 @@ KeyboardLayout::KeyboardLayout(QWidget* parent, const std::vector<QVector<QStrin
       margin: 0px;
       padding: 0px;
       border-radius: 10px;
+      border: 0px;
       color: #dddddd;
       background-color: #444444;
     }
@@ -120,7 +121,7 @@ void Keyboard::handleButton(QAbstractButton* btn) {
   if (!QString::compare(key, "#+=")) {
     main_layout->setCurrentIndex(3);
   }
-  if (!QString::compare(key, BACKSPACE_KEY)) {
+  if (!QString::compare(key, ENTER_KEY)) {
     main_layout->setCurrentIndex(0);
   }
   if ("A" <= key && key <= "Z") {

@@ -35,6 +35,7 @@ InputDialog::InputDialog(const QString &prompt_text, QWidget *parent) : QDialogB
     padding-right: 45px;
     padding-left: 45px;
     border-radius: 7px;
+    border: 0px;
     font-size: 45px;
     background-color: #444444;
   )");
