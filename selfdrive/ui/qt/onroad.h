@@ -12,6 +12,7 @@
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/ui.h"
+#include "selfdrive/ui/qt/maps/map.h"
 
 typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
 
@@ -50,6 +51,7 @@ class NvgWindow : public QOpenGLWidget, protected QOpenGLFunctions {
 public:
   using QOpenGLWidget::QOpenGLWidget;
   explicit NvgWindow(QWidget* parent = 0);
+  void update(const UIState &s);
   ~NvgWindow();
 
 protected:
@@ -59,9 +61,6 @@ protected:
 
 private:
   double prev_draw_t = 0;
-
-public slots:
-  void update(const UIState &s);
 };
 
 // container for all onroad widgets
@@ -70,7 +69,11 @@ class OnroadWindow : public QWidget {
 
 public:
   OnroadWindow(QWidget* parent = 0);
-  QWidget *map = nullptr;
+  MapWindow *map = nullptr;
+
+public slots:
+  void offroadTransition(bool offroad);
+  void updateState(const UIState &s);
 
 private:
   void paintEvent(QPaintEvent *event);
@@ -80,12 +83,4 @@ private:
   QColor bg;
   QStackedLayout *stacked_layout;
   QHBoxLayout* split;
-
-signals:
-  void update(const UIState &s);
-  void offroadTransitionSignal(bool offroad);
-
-private slots:
-  void offroadTransition(bool offroad);
-  void updateState(const UIState &s);
 };

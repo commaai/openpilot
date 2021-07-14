@@ -21,7 +21,6 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 
   // old UI on bottom
   nvg = new NvgWindow(this);
-  QObject::connect(this, &OnroadWindow::updateState, nvg, &NvgWindow::update);
 
   QWidget * split_wrapper = new QWidget;
   split = new QHBoxLayout(split_wrapper);
@@ -33,8 +32,6 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 
   alerts = new OnroadAlerts(this);
   alerts->setAttribute(Qt::WA_TransparentForMouseEvents, true);
-  QObject::connect(this, &OnroadWindow::update, this, &OnroadWindow::updateState);
-  QObject::connect(this, &OnroadWindow::offroadTransitionSignal, this, &OnroadWindow::offroadTransition);
   stacked_layout->addWidget(alerts);
 
   // setup stacking order
@@ -44,6 +41,8 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 }
 
 void OnroadWindow::updateState(const UIState &s) {
+  nvg->update(s);
+
   SubMaster &sm = *(s.sm);
   UIStatus status = s.status;
 
@@ -94,13 +93,12 @@ void OnroadWindow::offroadTransition(bool offroad) {
       settings.setCacheDatabaseMaximumSize(20 * 1024 * 1024);
       settings.setAccessToken(token.trimmed());
 
-      MapWindow * m = new MapWindow(settings);
-      QObject::connect(this, &OnroadWindow::offroadTransitionSignal, m, &MapWindow::offroadTransition);
-      split->addWidget(m);
-
-      map = m;
+      map = new MapWindow(settings);
+      split->addWidget(map);
     }
-
+  }
+  if (map) {
+    map->offroadTransition(offroad);
   }
 #endif
 }
@@ -170,7 +168,6 @@ void OnroadAlerts::stopSounds() {
 }
 
 void OnroadAlerts::paintEvent(QPaintEvent *event) {
-  // border
   if (alert_size == cereal::ControlsState::AlertSize::NONE) {
     return;
   }
