@@ -54,7 +54,6 @@ KeyboardLayout::KeyboardLayout(QWidget* parent, const std::vector<QVector<QStrin
       margin: 0px;
       padding: 0px;
       border-radius: 10px;
-      border: 0px;
       color: #dddddd;
       background-color: #444444;
     }

@@ -63,7 +63,6 @@ InputDialog::InputDialog(const QString &prompt_text, QWidget *parent) : QDialogB
   setStyleSheet(R"(
     * {
       outline: none;
-      border: 0px;
       color: white;
       font-family: Inter;
       background-color: black;
