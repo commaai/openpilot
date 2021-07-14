@@ -268,6 +268,11 @@ def getNetworkType():
 
 
 @dispatcher.add_method
+def getNetworks():
+  return HARDWARE.get_networks()
+
+
+@dispatcher.add_method
 def takeSnapshot():
   from selfdrive.camerad.snapshot.snapshot import snapshot, jpeg_write
   ret = snapshot()
