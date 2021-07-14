@@ -8,10 +8,6 @@
 #include "selfdrive/ui/paint.h"
 #include "selfdrive/ui/qt/util.h"
 
-#ifdef ENABLE_MAPS
-#include "selfdrive/ui/qt/maps/map.h"
-#endif
-
 OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   setAttribute(Qt::WA_OpaquePaintEvent);
   QVBoxLayout *main_layout  = new QVBoxLayout(this);
