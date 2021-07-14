@@ -102,8 +102,9 @@ void Networking::wrongPassword(const QString &ssid) {
 }
 
 void Networking::showEvent(QShowEvent* event) {
+  // Wait to refresh to avoid lag when cycling through settings widgets
   QTimer::singleShot(300, this, [=]() {
-    if (this->isVisible() && !wifi->adapter.isEmpty()) {
+    if (this->isVisible()) {
       wifi->refreshNetworks();
       refresh();
     }
@@ -168,20 +169,20 @@ void AdvancedNetworking::toggleTethering(bool enabled) {
 
 WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi) {
   main_layout = new QVBoxLayout(this);
-  setScanningWidget();
-  main_layout->setSpacing(25);
-}
 
-void WifiUI::setScanningWidget() {
+  // Scan on startup
   QLabel *scanning = new QLabel("Scanning for networks");
   scanning->setStyleSheet(R"(font-size: 65px;)");
   main_layout->addWidget(scanning, 0, Qt::AlignCenter);
+  main_layout->setSpacing(25);
 }
 
 void WifiUI::refresh() {
   clearLayout(main_layout);
   if (wifi->seen_networks.size() == 0) {
-    setScanningWidget();
+    QLabel *scanning = new QLabel("No networks");
+    scanning->setStyleSheet(R"(font-size: 65px;)");
+    main_layout->addWidget(scanning, 0, Qt::AlignCenter);
     return;
   }
 

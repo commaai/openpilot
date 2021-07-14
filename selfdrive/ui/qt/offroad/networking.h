@@ -29,7 +29,6 @@ public:
 private:
   WifiManager *wifi = nullptr;
   QVBoxLayout* main_layout;
-  void setScanningWidget();
 
 signals:
   void connectToNetwork(const Network &n);

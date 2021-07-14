@@ -75,6 +75,9 @@ void WifiManager::setup() {
 }
 
 void WifiManager::refreshNetworks() {
+  if (adapter.isEmpty()) {
+    return;
+  }
   seen_networks.clear();
   seen_ssids.clear();
   ipv4_address = get_ipv4_address();
