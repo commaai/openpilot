@@ -160,8 +160,7 @@ static void ui_draw_vision_lane_lines(UIState *s) {
 
 // Draw all world space objects.
 static void ui_draw_world(UIState *s) {
-  // Don't draw on top of sidebar
-  nvgScissor(s->vg, s->viz_rect.x, s->viz_rect.y, s->viz_rect.w, s->viz_rect.h);
+  nvgScissor(s->vg, s->video_rect.x, s->video_rect.y, s->video_rect.w, s->video_rect.h);
 
   // Draw lane edges and vision/mpc tracks
   ui_draw_vision_lane_lines(s);
