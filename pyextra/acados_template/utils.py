@@ -173,7 +173,7 @@ def get_tera():
     msg += 'Do you wish to set up Tera renderer automatically?\n'
     msg += 'y/N? (press y to download tera or any key for manual installation)\n'
 
-    if input(msg) == 'y':
+    if input(msg) == 'y' or True:
         print("Dowloading {}".format(url))
         with urllib.request.urlopen(url) as response, open(tera_path, 'wb') as out_file:
             shutil.copyfileobj(response, out_file)
