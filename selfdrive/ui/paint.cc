@@ -108,7 +108,7 @@ static void ui_draw_line(UIState *s, const line_vertices_data &vd, NVGcolor *col
   nvgFill(s->vg);
 }
 
-static void draw_video_frame(UIState *s) {
+static void draw_vision_frame(UIState *s) {
   glBindVertexArray(s->frame_vao);
   mat4 *out_mat = &s->rear_frame_mat;
   glActiveTexture(GL_TEXTURE0);
@@ -259,7 +259,7 @@ void ui_draw(UIState *s, int w, int h) {
 
   glViewport(0, 0, s->fb_w, s->fb_h);
   if (draw_vision) {
-    draw_video_frame(s);
+    draw_vision_frame(s);
   }
 
   glEnable(GL_BLEND);
