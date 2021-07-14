@@ -191,12 +191,12 @@ static void ui_draw_vision_maxspeed(UIState *s) {
   ui_draw_rect(s->vg, rect, COLOR_WHITE_ALPHA(100), 10, 20.);
 
   nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
-  ui_draw_text(s, rect.centerX(), 148, "MAX", 26 * 2.5, COLOR_WHITE_ALPHA(is_cruise_set ? 200 : 100), "sans-regular");
+  ui_draw_text(s, rect.centerX(), 118, "MAX", 26 * 2.5, COLOR_WHITE_ALPHA(is_cruise_set ? 200 : 100), "sans-regular");
   if (is_cruise_set) {
     const std::string maxspeed_str = std::to_string((int)std::nearbyint(maxspeed));
-    ui_draw_text(s, rect.centerX(), 242, maxspeed_str.c_str(), 48 * 2.5, COLOR_WHITE, "sans-bold");
+    ui_draw_text(s, rect.centerX(), 212, maxspeed_str.c_str(), 48 * 2.5, COLOR_WHITE, "sans-bold");
   } else {
-    ui_draw_text(s, rect.centerX(), 242, "N/A", 42 * 2.5, COLOR_WHITE_ALPHA(100), "sans-semibold");
+    ui_draw_text(s, rect.centerX(), 212, "N/A", 42 * 2.5, COLOR_WHITE_ALPHA(100), "sans-semibold");
   }
 }
 
@@ -204,8 +204,8 @@ static void ui_draw_vision_speed(UIState *s) {
   const float speed = std::max(0.0, (*s->sm)["carState"].getCarState().getVEgo() * (s->scene.is_metric ? 3.6 : 2.2369363));
   const std::string speed_str = std::to_string((int)std::nearbyint(speed));
   nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
-  ui_draw_text(s, s->viz_rect.centerX(), 240, speed_str.c_str(), 96 * 2.5, COLOR_WHITE, "sans-bold");
-  ui_draw_text(s, s->viz_rect.centerX(), 320, s->scene.is_metric ? "km/h" : "mph", 36 * 2.5, COLOR_WHITE_ALPHA(200), "sans-regular");
+  ui_draw_text(s, s->viz_rect.centerX(), 210, speed_str.c_str(), 96 * 2.5, COLOR_WHITE, "sans-bold");
+  ui_draw_text(s, s->viz_rect.centerX(), 290, s->scene.is_metric ? "km/h" : "mph", 36 * 2.5, COLOR_WHITE_ALPHA(200), "sans-regular");
 }
 
 static void ui_draw_vision_event(UIState *s) {
@@ -228,13 +228,13 @@ static void ui_draw_vision_face(UIState *s) {
 }
 
 static void ui_draw_vision_header(UIState *s) {
-  NVGpaint gradient = nvgLinearGradient(s->vg, s->viz_rect.x,
-                        s->viz_rect.y+(header_h-(header_h/2.5)),
-                        s->viz_rect.x, s->viz_rect.y+header_h,
+  NVGpaint gradient = nvgLinearGradient(s->vg, 0,
+                        header_h-(header_h/2.5),
+                        0, header_h,
                         nvgRGBAf(0,0,0,0.45), nvgRGBAf(0,0,0,0));
 
   // no right bdr_s for onroad->map.
-  ui_fill_rect(s->vg, {s->viz_rect.x, s->viz_rect.y, s->viz_rect.w + bdr_s, header_h}, gradient);
+  ui_fill_rect(s->vg, {0, 0, s->fb_w , header_h}, gradient);
 
   ui_draw_vision_maxspeed(s);
   ui_draw_vision_speed(s);
@@ -255,7 +255,7 @@ static void ui_draw_vision(UIState *s) {
 }
 
 void ui_draw(UIState *s, int w, int h) {
-  s->viz_rect = Rect{bdr_s, bdr_s, w - 2 * bdr_s, h - 2 * bdr_s};
+  s->viz_rect = Rect{0, 0, w, h};
   const bool draw_vision = s->scene.started && s->vipc_client->connected;
 
   glViewport(0, 0, s->fb_w, s->fb_h);

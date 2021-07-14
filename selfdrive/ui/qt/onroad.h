@@ -22,6 +22,10 @@ class OnroadAlerts : public QWidget {
 
 public:
   OnroadAlerts(QWidget *parent = 0);
+  void setBackgroundColor(QColor color) { bg = color; }
+  void setVolume(float vol) { volume = vol; }
+  void updateAlert(const QString &t1, const QString &t2, float blink_rate,
+                   const std::string &type, cereal::ControlsState::AlertSize size, AudibleAlert sound);
 
 protected:
   void paintEvent(QPaintEvent*) override;
@@ -29,8 +33,6 @@ protected:
 private:
   void stopSounds();
   void playSound(AudibleAlert alert);
-  void updateAlert(const QString &t1, const QString &t2, float blink_rate,
-                   const std::string &type, cereal::ControlsState::AlertSize size, AudibleAlert sound);
 
   QColor bg;
   float volume = Hardware::MIN_VOLUME;
@@ -39,10 +41,6 @@ private:
   QString text1, text2;
   std::string alert_type;
   cereal::ControlsState::AlertSize alert_size = cereal::ControlsState::AlertSize::NONE;
-
-public slots:
-  void updateState(const UIState &s);
-  void offroadTransition(bool offroad);
 };
 
 // container window for the NVG UI
@@ -75,9 +73,12 @@ public:
   QWidget *map = nullptr;
 
 private:
+  void paintEvent(QPaintEvent *event);
+
   OnroadAlerts *alerts;
   NvgWindow *nvg;
-  QStackedLayout *main_layout;
+  QColor bg;
+  QStackedLayout *stacked_layout;
   QHBoxLayout* split;
 
 signals:
@@ -86,4 +87,5 @@ signals:
 
 private slots:
   void offroadTransition(bool offroad);
+  void updateState(const UIState &s);
 };
