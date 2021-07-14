@@ -25,6 +25,9 @@ def scan(interface="wlan0"):
         except ValueError:
           continue
 
+    if mac is not None:
+      result.append({"mac": mac})
+
     return result
 
   except Exception as e:
