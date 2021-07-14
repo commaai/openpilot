@@ -6,11 +6,8 @@ from pathlib import Path
 
 from cereal import log
 from selfdrive.hardware.base import HardwareBase, ThermalConfig
-<<<<<<< HEAD
 from selfdrive.hardware.tici.amplifier import Amplifier
-=======
 from selfdrive.hardware.tici import iwlist
->>>>>>> 4efb18324 (return using athena)
 
 NM = 'org.freedesktop.NetworkManager'
 NM_CON_ACT = NM + '.Connection.Active'
