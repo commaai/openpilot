@@ -204,9 +204,6 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
   p.fillRect(r, g);
   p.setCompositionMode(QPainter::CompositionMode_SourceOver);
 
-  // remove bottom border
-  r = QRect(0, height() - h, width(), h - 30);
-
   // text
   const QPoint c = r.center();
   p.setPen(QColor(0xff, 0xff, 0xff));
