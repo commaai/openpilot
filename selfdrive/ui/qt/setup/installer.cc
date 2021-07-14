@@ -31,20 +31,27 @@ bool time_valid() {
 Installer::Installer(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *layout = new QVBoxLayout(this);
   layout->setContentsMargins(150, 290, 150, 150);
+  layout->setSpacing(0);
 
   QLabel *title = new QLabel("Installing...");
   title->setStyleSheet("font-size: 90px; font-weight: 600;");
   layout->addWidget(title, 0, Qt::AlignTop);
 
+  layout->addSpacing(170);
+
   bar = new QProgressBar();
-  bar->setRange(2, 100);
+  bar->setRange(0, 100);
   bar->setTextVisible(false);
   bar->setFixedHeight(72);
-  layout->addWidget(bar);
+  layout->addWidget(bar, 0, Qt::AlignTop);
+
+  layout->addSpacing(30);
 
   val = new QLabel("0%");
   val->setStyleSheet("font-size: 70px; font-weight: 300;");
   layout->addWidget(val, 0, Qt::AlignTop);
+
+  layout->addStretch();
 
   QTimer::singleShot(100, this, &Installer::doInstall);
 
@@ -70,8 +77,6 @@ void Installer::updateProgress(int percent) {
 }
 
 void Installer::doInstall() {
-  int err;
-
   // wait for valid time
   while (!time_valid()) {
     usleep(500 * 1000);
@@ -79,20 +84,19 @@ void Installer::doInstall() {
   }
 
   // cleanup
-  err = std::system("rm -rf /data/tmppilot /data/openpilot");
-  if (err) goto fail;
+  int err = std::system("rm -rf /data/tmppilot /data/openpilot");
+  if (err) {
+    val->setText("Failed");
+    return;
+  }
 
   // TODO: support using the dashcam cache
   // do install
-  qDebug() << "Doing fresh clone\n";
   freshClone();
-
-  return;
-fail:
-  val->setText("Failed");
 }
 
 void Installer::freshClone() {
+  qDebug() << "Doing fresh clone\n";
   QObject::connect(&proc, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this, &Installer::cloneFinished);
   QObject::connect(&proc, &QProcess::readyReadStandardError, this, &Installer::readProgress);
   QStringList args = {"clone", "--progress", GIT_URL, "-b", BRANCH, "--depth=1", "--recurse-submodules", "/data/tmppilot"};
@@ -107,9 +111,7 @@ void Installer::readProgress() {
     {"Updating files: ", 7},
   };
 
-  auto err = proc.readAllStandardError();
-  qDebug() << "\n\n" << err;
-  auto line = QString(err);
+  auto line = QString(proc.readAllStandardError());
 
   int base = 0;
   for (const QPair kv : stages) {
@@ -117,7 +119,6 @@ void Installer::readProgress() {
       auto perc = line.split(kv.first)[1].split("%")[0];
       int p = base + int(perc.toFloat() / 100. * kv.second);
       updateProgress(p);
-      qDebug() << "new" << p;
       break;
     }
     base += kv.second;
@@ -126,21 +127,20 @@ void Installer::readProgress() {
 
 void Installer::cloneFinished(int exitCode, QProcess::ExitStatus exitStatus) {
   qDebug() << "finished " << exitCode;
-
   if (exitCode != 0) {
-    // reboot button?
-    // cleanup?
     val->setText("Failed");
     return;
   }
 
-  // TODO: error handling
+  int err;
 
   // move into place
-  std::system("mv /data/tmppilot /data/openpilot");
+  err = std::system("mv /data/tmppilot /data/openpilot");
+  assert(err == 0);
 
   // write continue.sh
-  std::system("cp /data/openpilot/installer/continue_openpilot.sh " CONTINUE_PATH);
+  err = std::system("cp /data/openpilot/installer/continue_openpilot.sh " CONTINUE_PATH);
+  assert(err == 0);
 
 #ifdef INTERNAL
   std::system("mkdir -p /data/params/d/");
@@ -156,11 +156,9 @@ void Installer::cloneFinished(int exitCode, QProcess::ExitStatus exitStatus) {
     param << value;
     param.close();
   }
-
   std::system("cd /data/tmppilot && git remote set-url origin --push " GIT_SSH_URL);
 #endif
 }
-
 
 
 int main(int argc, char *argv[]) {
