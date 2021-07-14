@@ -125,3 +125,7 @@ class HardwareBase:
   @abstractmethod
   def initialize_hardware(self):
     pass
+
+  @abstractmethod
+  def get_networks(self):
+    pass

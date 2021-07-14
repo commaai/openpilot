@@ -94,3 +94,6 @@ class Pc(HardwareBase):
 
   def initialize_hardware(self):
     pass
+
+  def get_networks(self):
+    return None
