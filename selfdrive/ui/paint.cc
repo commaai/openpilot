@@ -243,9 +243,8 @@ static void ui_draw_vision_header(UIState *s) {
 
 static void ui_draw_vision_frame(UIState *s) {
   // Draw video frames
-  glViewport(s->video_rect.x, s->video_rect.y, s->video_rect.w, s->video_rect.h);
-  draw_frame(s);
   glViewport(0, 0, s->fb_w, s->fb_h);
+  draw_frame(s);
 }
 
 static void ui_draw_vision(UIState *s) {
@@ -435,13 +434,13 @@ void ui_resize(UIState *s, int width, int height) {
     zoom *= 0.5;
   }
 
-  s->video_rect = Rect{bdr_s, bdr_s, s->fb_w - 2 * bdr_s, s->fb_h - 2 * bdr_s};
-  float zx = zoom * 2 * intrinsic_matrix.v[2] / s->video_rect.w;
-  float zy = zoom * 2 * intrinsic_matrix.v[5] / s->video_rect.h;
+  Rect video_rect = {0, 0, s->fb_w, s->fb_h};
+  float zx = zoom * 2 * intrinsic_matrix.v[2] / video_rect.w;
+  float zy = zoom * 2 * intrinsic_matrix.v[5] / video_rect.h;
 
   const mat4 frame_transform = {{
     zx, 0.0, 0.0, 0.0,
-    0.0, zy, 0.0, -y_offset / s->video_rect.h * 2,
+    0.0, zy, 0.0, -y_offset / video_rect.h * 2,
     0.0, 0.0, 1.0, 0.0,
     0.0, 0.0, 0.0, 1.0,
   }};
@@ -450,7 +449,7 @@ void ui_resize(UIState *s, int width, int height) {
 
   // Apply transformation such that video pixel coordinates match video
   // 1) Put (0, 0) in the middle of the video
-  nvgTranslate(s->vg, s->video_rect.x + s->video_rect.w / 2, s->video_rect.y + s->video_rect.h / 2 + y_offset);
+  nvgTranslate(s->vg, video_rect.x + video_rect.w / 2, video_rect.y + video_rect.h / 2 + y_offset);
 
   // 2) Apply same scaling as video
   nvgScale(s->vg, zoom, zoom);

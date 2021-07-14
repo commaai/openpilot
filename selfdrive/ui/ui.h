@@ -129,7 +129,7 @@ typedef struct UIState {
 
   bool awake;
 
-  Rect video_rect, viz_rect;
+  Rect viz_rect;
   float car_space_transform[6];
   bool wide_camera;
 } UIState;
