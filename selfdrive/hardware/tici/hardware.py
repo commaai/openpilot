@@ -297,21 +297,16 @@ class Tici(HardwareBase):
     if lte_info is not None:
       extra = lte_info['extra']
 
+      # <state>,"LTE",<is_tdd>,<mcc>,<mnc>,<cellid>,<pcid>,<earfcn>,<freq_band_ind>,
+      # <ul_bandwidth>,<dl_bandwidth>,<tac>,<rsrp>,<rsrq>,<rssi>,<sinr>,<srxlev>
       if 'LTE' in extra:
-        # <state>,"LTE",<is_tdd>,<mcc>,<mnc>,<cellid>,<pcid>,<earfcn>,<freq_band_ind>,
-        # <ul_bandwidth>,<dl_bandwidth>,<tac>,<rsrp>,<rsrq>,<rssi>,<sinr>,<srxlev>
         extra = extra.split(',')
         try:
           r['lte'] = {
             "mcc": int(extra[3]),
             "mnc": int(extra[4]),
             "cid": int(extra[5], 16),
-            "nmr": [
-              {
-                "pci": int(extra[6]),
-                "earfcn": int(extra[7]),
-              }
-            ],
+            "nmr": [{"pci": int(extra[6]), "earfcn": int(extra[7])}],
           }
         except (ValueError, IndexError):
           pass
