@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <QDebug>
+#include <QStackedLayout>
 
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/timing.h"
@@ -15,7 +16,7 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   setAttribute(Qt::WA_OpaquePaintEvent);
   QVBoxLayout *main_layout  = new QVBoxLayout(this);
   main_layout->setMargin(bdr_s);
-  stacked_layout = new QStackedLayout(this);
+  QStackedLayout *stacked_layout = new QStackedLayout;
   stacked_layout->setStackingMode(QStackedLayout::StackAll);
   main_layout->addLayout(stacked_layout);
 
@@ -39,47 +40,16 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 }
 
 void OnroadWindow::updateState(const UIState &s) {
-  nvg->update(s);
-
-  SubMaster &sm = *(s.sm);
-  UIStatus status = s.status;
-
-  if (sm.updated("carState")) {
-    // scale volume with speed
-    alerts->setVolume(util::map_val(sm["carState"].getCarState().getVEgo(), 0.f, 20.f,
-                           Hardware::MIN_VOLUME, Hardware::MAX_VOLUME));
-  }
-  if (sm["deviceState"].getDeviceState().getStarted()) {
-    if (sm.updated("controlsState")) {
-      const cereal::ControlsState::Reader &cs = sm["controlsState"].getControlsState();
-      alerts->updateAlert(QString::fromStdString(cs.getAlertText1()), QString::fromStdString(cs.getAlertText2()),
-                  cs.getAlertBlinkingRate(), cs.getAlertType(), cs.getAlertSize(), cs.getAlertSound());
-    } else if ((sm.frame - s.scene.started_frame) > 10 * UI_FREQ) {
-      // Handle controls timeout
-      if (sm.rcv_frame("controlsState") < s.scene.started_frame) {
-        // car is started, but controlsState hasn't been seen at all
-        alerts->updateAlert("openpilot Unavailable", "Waiting for controls to start", 0,
-                    "controlsWaiting", cereal::ControlsState::AlertSize::MID, AudibleAlert::NONE);
-      } else if ((sm.frame - sm.rcv_frame("controlsState")) > 5 * UI_FREQ) {
-        // car is started, but controls is lagging or died
-        alerts->updateAlert("TAKE CONTROL IMMEDIATELY", "Controls Unresponsive", 0,
-                    "controlsUnresponsive", cereal::ControlsState::AlertSize::FULL, AudibleAlert::CHIME_WARNING_REPEAT);
-        status = STATUS_ALERT;
-      }
-    }
-  }
-
-  // TODO: add blinking back if performant
-  //float alpha = 0.375 * cos((millis_since_boot() / 1000) * 2 * M_PI * blinking_rate) + 0.625;
-  if (bg_colors[status] != bg) {
-    bg = bg_colors[status];
-    alerts->setBackgroundColor(bg);
-    QWidget::update();
+  nvg->updateState(s);
+  QColor bgColor = alerts->updateState(s);
+  if (bg != bgColor) {
+    bg = bgColor;
+    update();
   }
 }
 
 void OnroadWindow::offroadTransition(bool offroad) {
-  alerts->updateAlert("", "", 0, "", cereal::ControlsState::AlertSize::NONE, AudibleAlert::NONE);  
+  alerts->offroadTransition(offroad);
 #ifdef ENABLE_MAPS
   if (!offroad) {
     QString token = QString::fromStdString(Params().get("MapboxToken"));
@@ -126,6 +96,45 @@ OnroadAlerts::OnroadAlerts(QWidget *parent) : QWidget(parent) {
     sounds[alert].first.setSource(QUrl::fromLocalFile(fn));
     sounds[alert].second = loops ? QSoundEffect::Infinite : 0;
   }
+}
+
+QColor OnroadAlerts::updateState(const UIState &s) {
+  SubMaster &sm = *(s.sm);
+  UIStatus status = s.status;
+
+  if (sm.updated("carState")) {
+    // scale volume with speed
+    volume = util::map_val(sm["carState"].getCarState().getVEgo(), 0.f, 20.f,
+                           Hardware::MIN_VOLUME, Hardware::MAX_VOLUME);
+  }
+  if (sm["deviceState"].getDeviceState().getStarted()) {
+    if (sm.updated("controlsState")) {
+      const cereal::ControlsState::Reader &cs = sm["controlsState"].getControlsState();
+      updateAlert(QString::fromStdString(cs.getAlertText1()), QString::fromStdString(cs.getAlertText2()),
+                  cs.getAlertBlinkingRate(), cs.getAlertType(), cs.getAlertSize(), cs.getAlertSound());
+    } else if ((sm.frame - s.scene.started_frame) > 10 * UI_FREQ) {
+      // Handle controls timeout
+      if (sm.rcv_frame("controlsState") < s.scene.started_frame) {
+        // car is started, but controlsState hasn't been seen at all
+        updateAlert("openpilot Unavailable", "Waiting for controls to start", 0,
+                    "controlsWaiting", cereal::ControlsState::AlertSize::MID, AudibleAlert::NONE);
+      } else if ((sm.frame - sm.rcv_frame("controlsState")) > 5 * UI_FREQ) {
+        // car is started, but controls is lagging or died
+        updateAlert("TAKE CONTROL IMMEDIATELY", "Controls Unresponsive", 0,
+                    "controlsUnresponsive", cereal::ControlsState::AlertSize::FULL, AudibleAlert::CHIME_WARNING_REPEAT);
+        status = STATUS_ALERT;
+      }
+    }
+  }
+
+  // TODO: add blinking back if performant
+  //float alpha = 0.375 * cos((millis_since_boot() / 1000) * 2 * M_PI * blinking_rate) + 0.625;
+  bg = bg_colors[status];
+  return bg;
+}
+
+void OnroadAlerts::offroadTransition(bool offroad) {
+  updateAlert("", "", 0, "", cereal::ControlsState::AlertSize::NONE, AudibleAlert::NONE);
 }
 
 void OnroadAlerts::updateAlert(const QString &t1, const QString &t2, float blink_rate,
@@ -240,7 +249,7 @@ void NvgWindow::initializeGL() {
   prev_draw_t = millis_since_boot();
 }
 
-void NvgWindow::update(const UIState &s) {
+void NvgWindow::updateState(const UIState &s) {
   // Connecting to visionIPC requires opengl to be current
   if (s.vipc_client->connected) {
     makeCurrent();

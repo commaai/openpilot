@@ -2,10 +2,11 @@
 
 #include <map>
 
+#include <QHBoxLayout>
 #include <QOpenGLFunctions>
 #include <QOpenGLWidget>
 #include <QSoundEffect>
-#include <QStackedLayout>
+
 #include <QWidget>
 
 #include "cereal/gen/cpp/log.capnp.h"
@@ -22,10 +23,8 @@ class OnroadAlerts : public QWidget {
 
 public:
   OnroadAlerts(QWidget *parent = 0);
-  void setBackgroundColor(QColor color) { bg = color; }
-  void setVolume(float vol) { volume = vol; }
-  void updateAlert(const QString &t1, const QString &t2, float blink_rate,
-                   const std::string &type, cereal::ControlsState::AlertSize size, AudibleAlert sound);
+  QColor updateState(const UIState &s);
+  void offroadTransition(bool offroad);
 
 protected:
   void paintEvent(QPaintEvent*) override;
@@ -33,6 +32,8 @@ protected:
 private:
   void stopSounds();
   void playSound(AudibleAlert alert);
+  void updateAlert(const QString &t1, const QString &t2, float blink_rate,
+                   const std::string &type, cereal::ControlsState::AlertSize size, AudibleAlert sound);
 
   QColor bg;
   float volume = Hardware::MIN_VOLUME;
@@ -43,7 +44,6 @@ private:
   cereal::ControlsState::AlertSize alert_size = cereal::ControlsState::AlertSize::NONE;
 };
 
-
 // container window for the NVG UI
 class NvgWindow : public QOpenGLWidget, protected QOpenGLFunctions {
   Q_OBJECT
@@ -51,7 +51,7 @@ class NvgWindow : public QOpenGLWidget, protected QOpenGLFunctions {
 public:
   using QOpenGLWidget::QOpenGLWidget;
   explicit NvgWindow(QWidget* parent = 0);
-  void update(const UIState &s);
+  void updateState(const UIState &s);
   ~NvgWindow();
 
 protected:
@@ -81,6 +81,5 @@ private:
   OnroadAlerts *alerts;
   NvgWindow *nvg;
   QColor bg;
-  QStackedLayout *stacked_layout;
   QHBoxLayout* split;
 };
