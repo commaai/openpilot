@@ -69,8 +69,13 @@ void WifiManager::setup() {
   QDBusMessage response = device_props.call("Get", NM_DBUS_INTERFACE_DEVICE, "State");
   raw_adapter_state = get_response<uint>(response);
 
-  initConnections();
   requestScan();
+  QTimer::singleShot(1000, this, [=]() {  // LastScan signal isn't always reliable so force a refresh
+    initActiveAp();
+    initConnections();
+    refreshNetworks();
+    emit refreshSignal();
+  });
 }
 
 void WifiManager::refreshNetworks() {
@@ -315,11 +320,9 @@ void WifiManager::stateChange(unsigned int new_state, unsigned int previous_stat
 // https://developer.gnome.org/NetworkManager/stable/gdbus-org.freedesktop.NetworkManager.Device.Wireless.html
 void WifiManager::propertyChange(const QString &interface, const QVariantMap &props, const QStringList &invalidated_props) {
   if (interface == NM_DBUS_INTERFACE_DEVICE_WIRELESS && props.contains("LastScan")) {
-    if (this->isVisible() || firstScan) {
-      activeAp = getActiveAp();
+    if (this->isVisible()) {
       refreshNetworks();
       emit refreshSignal();
-      firstScan = false;
     }
   } else if (interface == NM_DBUS_INTERFACE_DEVICE_WIRELESS && props.contains("ActiveAccessPoint")) {
     const QDBusObjectPath &path = props.value("ActiveAccessPoint").value<QDBusObjectPath>();
@@ -431,13 +434,12 @@ void WifiManager::setTetheringEnabled(bool enabled) {
   }
 }
 
-QString WifiManager::getActiveAp() {
+void WifiManager::initActiveAp() {
   QDBusInterface device_props(NM_DBUS_SERVICE, adapter, NM_DBUS_INTERFACE_PROPERTIES, bus);
   device_props.setTimeout(DBUS_TIMEOUT);
 
-  QDBusMessage response = device_props.call("Get", NM_DBUS_INTERFACE_DEVICE_WIRELESS, "ActiveAccessPoint");
-  QDBusObjectPath r = get_response<QDBusObjectPath>(response);
-  return r.path();
+  const QDBusMessage &response = device_props.call("Get", NM_DBUS_INTERFACE_DEVICE_WIRELESS, "ActiveAccessPoint");
+  activeAp = get_response<QDBusObjectPath>(response).path();
 }
 
 

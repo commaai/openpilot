@@ -101,6 +101,15 @@ void Networking::wrongPassword(const QString &ssid) {
   }
 }
 
+void Networking::showEvent(QShowEvent* event) {
+  QTimer::singleShot(300, this, [=]() {
+    if (this->isVisible()) {
+      wifi->refreshNetworks();
+      refresh();
+    }
+  });
+}
+
 // AdvancedNetworking functions
 
 AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWidget(parent), wifi(wifi) {

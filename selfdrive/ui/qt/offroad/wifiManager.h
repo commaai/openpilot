@@ -63,13 +63,12 @@ private:
   QString tethering_ssid;
   const QString defaultTetheringPassword = "swagswagcomma";
 
-  bool firstScan = true;
   QString getAdapter();
   bool isWirelessAdapter(const QDBusObjectPath &path);
   QString get_ipv4_address();
   void connect(const QByteArray &ssid, const QString &username, const QString &password, SecurityType security_type);
   QString activeAp;
-  QString getActiveAp();
+  void initActiveAp();
   void deactivateConnection(const QString &ssid);
   QVector<QDBusObjectPath> get_active_connections();
   uint get_wifi_device_state();
