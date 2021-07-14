@@ -100,8 +100,28 @@ void Installer::freshClone() {
 }
 
 void Installer::readProgress() {
-  qDebug() << "\n\ngot progress";
-  qDebug() << proc.readAllStandardError();
+  const QVector<QPair<QString, int>> stages = {
+    // prefix, weight in percentage
+    {"Receiving objects: ", 91},
+    {"Resolving deltas: ", 2},
+    {"Updating files: ", 7},
+  };
+
+  auto err = proc.readAllStandardError();
+  qDebug() << "\n\n" << err;
+  auto line = QString(err);
+
+  int base = 0;
+  for (const QPair kv : stages) {
+    if (line.startsWith(kv.first)) {
+      auto perc = line.split(kv.first)[1].split("%")[0];
+      int p = base + int(perc.toFloat() / 100. * kv.second);
+      updateProgress(p);
+      qDebug() << "new" << p;
+      break;
+    }
+    base += kv.second;
+  }
 }
 
 void Installer::cloneFinished(int exitCode, QProcess::ExitStatus exitStatus) {
