@@ -253,26 +253,24 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelDataRaw &net_ou
   // plan
   const float *best_plan = get_plan_data(net_outputs.plan);
   float plan_t_arr[TRAJECTORY_SIZE];
+  std::fill_n(plan_t_arr, TRAJECTORY_SIZE, NAN);
   plan_t_arr[0] = 0.0;
-  int xidx = 1, tidx = 0;
-  for (; xidx<TRAJECTORY_SIZE; xidx++) {
+  for (int xidx=1, tidx=0; xidx<TRAJECTORY_SIZE; xidx++) {
     // increment tidx until we find an element that's further away than the current xidx
-    for (; tidx < TRAJECTORY_SIZE - 1 && best_plan[(tidx+1)*PLAN_MHP_COLUMNS] < X_IDXS[xidx]; tidx++) {}
+    while (tidx < TRAJECTORY_SIZE-1 && best_plan[(tidx+1)*PLAN_MHP_COLUMNS] < X_IDXS[xidx]) {
+      tidx++;
+    }
     float current_x_val = best_plan[tidx*PLAN_MHP_COLUMNS];
     float next_x_val = best_plan[(tidx+1)*PLAN_MHP_COLUMNS];
     if (next_x_val < X_IDXS[xidx]) {
-      // if the plan doesn't extend far enough, set plan_t to the max value (10s), then break and fill the rest with nans
+      // if the plan doesn't extend far enough, set plan_t to the max value (10s), then break
       plan_t_arr[xidx] = T_IDXS[TRAJECTORY_SIZE-1];
-      xidx++;
       break;
     } else {
       // otherwise, interpolate to find `t` for the current xidx
       float p = (X_IDXS[xidx] - current_x_val) / (next_x_val - current_x_val);
       plan_t_arr[xidx] = p * T_IDXS[tidx+1] + (1 - p) * T_IDXS[tidx];
     }
-  }
-  for (; xidx<TRAJECTORY_SIZE; xidx++) {
-    plan_t_arr[xidx] = NAN;
   }
 
   fill_xyzt(framed.initPosition(), best_plan, PLAN_MHP_COLUMNS, 0, plan_t_arr, true);
