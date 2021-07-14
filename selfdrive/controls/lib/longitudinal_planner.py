@@ -109,6 +109,7 @@ class Planner():
         self.longitudinalPlanSource = key
         self.v_desired_trajectory = self.mpcs[key].v_solution[:CONTROL_N]
         self.a_desired_trajectory = self.mpcs[key].a_solution[:CONTROL_N]
+        self.j_desired_trajectory = self.mpcs[key].j_solution[:CONTROL_N]
         next_a = self.mpcs[key].a_solution[5]
 
     # determine fcw
@@ -140,6 +141,7 @@ class Planner():
 
     longitudinalPlan.speeds = [float(x) for x in self.v_desired_trajectory]
     longitudinalPlan.accels = [float(x) for x in self.a_desired_trajectory]
+    longitudinalPlan.jerks = [float(x) for x in self.j_desired_trajectory]
 
     longitudinalPlan.hasLead = self.mpcs['lead0'].status
     longitudinalPlan.longitudinalPlanSource = self.longitudinalPlanSource
