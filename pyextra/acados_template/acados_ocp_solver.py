@@ -791,7 +791,7 @@ class AcadosOcpSolver:
             ocp_render_templates(acados_ocp, json_file)
 
             ## Compile solver
-            cwd = os.getcwd()
+            cwd=os.getcwd()
             os.chdir(code_export_dir)
             os.system('make clean_ocp_shared_lib')
             os.system('make ocp_shared_lib')
@@ -905,6 +905,49 @@ class AcadosOcpSolver:
                 [c_void_p, c_void_p, c_void_p, c_int, c_char_p, c_void_p]
             self.shared_lib.ocp_nlp_out_get(self.nlp_config, \
                 self.nlp_dims, self.nlp_out, stage_, field, out_data)
+        elif field_ in mem_fields:
+            self.shared_lib.ocp_nlp_get_at_stage.argtypes = \
+                [c_void_p, c_void_p, c_void_p, c_int, c_char_p, c_void_p]
+            self.shared_lib.ocp_nlp_get_at_stage(self.nlp_config, \
+                self.nlp_dims, self.nlp_solver, stage_, field, out_data)
+
+        return out
+
+    def get_slice(self, start_stage_, end_stage_, field_):
+        out_fields = ['x']
+        field = field_
+        field = field.encode('utf-8')
+
+        if (field_ not in out_fields):
+            raise Exception('AcadosOcpSolver.get_slice(): {} is an invalid argument.\
+                    \n Possible values are {}. Exiting.'.format(field_, out_fields))
+
+        if not isinstance(start_stage_, int):
+            raise Exception('AcadosOcpSolver.get_slice(): stage index must be Integer.')
+
+        if not isinstance(end_stage_, int):
+            raise Exception('AcadosOcpSolver.get_slice(): stage index must be Integer.')
+
+        if start_stage_ >= end_stage_:
+            raise Exception('AcadosOcpSolver.get_slice(): end stage index must be larger than start stage index')
+
+        if start_stage_ < 0 or end_stage_ > self.N + 1:
+            raise Exception('AcadosOcpSolver.get_slice(): stage index must be in [0, N], got: {}.'.format(self.N))
+        self.shared_lib.ocp_nlp_dims_get_from_attr.argtypes = \
+            [c_void_p, c_void_p, c_void_p, c_int, c_char_p]
+        self.shared_lib.ocp_nlp_dims_get_from_attr.restype = c_int
+
+        dims = self.shared_lib.ocp_nlp_dims_get_from_attr(self.nlp_config, \
+            self.nlp_dims, self.nlp_out, start_stage_, field)
+
+        out = np.ascontiguousarray(np.zeros((end_stage_ - start_stage_, dims)), dtype=np.float64)
+        out_data = cast(out.ctypes.data, POINTER(c_double))
+
+        if (field_ in out_fields):
+            self.shared_lib.ocp_nlp_out_get_slice.argtypes = \
+                [c_void_p, c_void_p, c_void_p, c_int, c_int, c_char_p, c_void_p]
+            self.shared_lib.ocp_nlp_out_get_slice(self.nlp_config, \
+                self.nlp_dims, self.nlp_out, start_stage_, end_stage_, field, out_data)
         elif field_ in mem_fields:
             self.shared_lib.ocp_nlp_get_at_stage.argtypes = \
                 [c_void_p, c_void_p, c_void_p, c_int, c_char_p, c_void_p]
