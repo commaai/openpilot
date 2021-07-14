@@ -85,10 +85,7 @@ void Installer::doInstall() {
 
   // cleanup
   int err = std::system("rm -rf /data/tmppilot /data/openpilot");
-  if (err) {
-    val->setText("Failed");
-    return;
-  }
+  assert(err == 0);
 
   // TODO: support using the dashcam cache
   // do install
@@ -127,10 +124,7 @@ void Installer::readProgress() {
 
 void Installer::cloneFinished(int exitCode, QProcess::ExitStatus exitStatus) {
   qDebug() << "finished " << exitCode;
-  if (exitCode != 0) {
-    val->setText("Failed");
-    return;
-  }
+  assert(exitCode == 0);
 
   int err;
 
@@ -158,6 +152,8 @@ void Installer::cloneFinished(int exitCode, QProcess::ExitStatus exitStatus) {
   }
   std::system("cd /data/tmppilot && git remote set-url origin --push " GIT_SSH_URL);
 #endif
+
+  QCoreApplication::exit(0);
 }
 
 
