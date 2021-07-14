@@ -47,33 +47,39 @@ void Reset::confirm() {
 
 Reset::Reset(bool recover, QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
-  main_layout->setContentsMargins(100, 100, 100, 100);
+  main_layout->setContentsMargins(45, 220, 45, 45);
+  main_layout->setSpacing(0);
 
   QLabel *title = new QLabel("System Reset");
-  title->setStyleSheet(R"(font-weight: 500; font-size: 100px;)");
-  main_layout->addWidget(title, 0, Qt::AlignTop);
+  title->setStyleSheet("font-size: 90px; font-weight: 600;");
+  main_layout->addWidget(title, 0, Qt::AlignTop | Qt::AlignLeft);
+
+  main_layout->addSpacing(60);
 
   body = new QLabel("System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.");
   body->setWordWrap(true);
-  body->setAlignment(Qt::AlignCenter);
-  body->setStyleSheet("font-size: 80px;");
-  main_layout->addWidget(body, 1, Qt::AlignCenter);
+  body->setStyleSheet("font-size: 80px; font-weight: light;");
+  main_layout->addWidget(body, 1, Qt::AlignTop | Qt::AlignLeft);
 
   QHBoxLayout *blayout = new QHBoxLayout();
   main_layout->addLayout(blayout);
+  blayout->setSpacing(50);
 
   rejectBtn = new QPushButton("Cancel");
-  blayout->addWidget(rejectBtn, 0, Qt::AlignLeft);
+  blayout->addWidget(rejectBtn);
   QObject::connect(rejectBtn, &QPushButton::released, QCoreApplication::instance(), &QCoreApplication::quit);
 
   rebootBtn = new QPushButton("Reboot");
-  blayout->addWidget(rebootBtn, 0, Qt::AlignLeft);
+  blayout->addWidget(rebootBtn);
+#ifdef __aarch64__
   QObject::connect(rebootBtn, &QPushButton::released, [=]{
     std::system("sudo reboot");
   });
+#endif
 
-  confirmBtn  = new QPushButton("Confirm");
-  blayout->addWidget(confirmBtn, 0, Qt::AlignRight);
+  confirmBtn = new QPushButton("Confirm");
+  confirmBtn->setStyleSheet("background-color: #465BEA;");
+  blayout->addWidget(confirmBtn);
   QObject::connect(confirmBtn, &QPushButton::released, this, &Reset::confirm);
 
   rejectBtn->setVisible(!recover);
@@ -88,13 +94,15 @@ Reset::Reset(bool recover, QWidget *parent) : QWidget(parent) {
       color: white;
       background-color: black;
     }
+    QLabel {
+      margin-left: 140;
+    }
     QPushButton {
-      padding: 50px;
-      padding-right: 100px;
-      padding-left: 100px;
-      border: 7px solid white;
-      border-radius: 20px;
-      font-size: 50px;
+      height: 160;
+      font-size: 55px;
+      font-weight: 400;
+      border-radius: 10px;
+      background-color: #333333;
     }
   )");
 }
