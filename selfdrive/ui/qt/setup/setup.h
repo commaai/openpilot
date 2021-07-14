@@ -1,3 +1,5 @@
+#pragma once
+
 #include <QStackedWidget>
 #include <QString>
 #include <QWidget>
