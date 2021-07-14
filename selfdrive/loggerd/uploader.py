@@ -226,10 +226,10 @@ class Uploader():
   def get_msg(self):
     msg = messaging.new_message("uploaderState")
     us = msg.uploaderState
-    us.immediateQueueSize = 0
-    us.immediateQueueCount = 0
-    us.rawQueueSize = 0
-    us.rawQueueCount = 0
+    us.rawQueueSize = int(self.raw_size / 1e6)
+    us.rawQueueCount = self.raw_count
+    us.immediateQueueSize = int(self.immediate_size / 1e6)
+    us.immediateQueueCount = self.immediate_count
     us.lastTime = self.last_time
     us.lastSpeed = self.last_speed
     us.lastFilename = self.last_filename
