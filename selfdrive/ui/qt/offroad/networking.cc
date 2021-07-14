@@ -180,7 +180,7 @@ WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi)
 void WifiUI::refresh() {
   clearLayout(main_layout);
   if (wifi->seen_networks.size() == 0) {
-    QLabel *scanning = new QLabel("No networks");
+    QLabel *scanning = new QLabel("No networks found. Scanning...");
     scanning->setStyleSheet(R"(font-size: 65px;)");
     main_layout->addWidget(scanning, 0, Qt::AlignCenter);
     return;
