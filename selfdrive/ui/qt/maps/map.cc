@@ -259,6 +259,11 @@ static float get_time_typical(const QGeoRouteSegment &segment) {
 
 
 void MapWindow::recomputeRoute() {
+  // Retry all timed out requests
+  if (!m_map.isNull()) {
+    m_map->connectionEstablished();
+  }
+
   if (!last_position) {
     return;
   }
