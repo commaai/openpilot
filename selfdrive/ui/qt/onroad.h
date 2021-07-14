@@ -12,7 +12,6 @@
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/ui.h"
-#include "selfdrive/ui/qt/maps/map.h"
 
 typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
 
@@ -43,6 +42,9 @@ private:
   std::string alert_type;
   cereal::ControlsState::AlertSize alert_size = cereal::ControlsState::AlertSize::NONE;
 };
+
+
+class MapWindow;
 
 // container window for the NVG UI
 class NvgWindow : public QOpenGLWidget, protected QOpenGLFunctions {

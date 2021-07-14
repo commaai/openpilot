@@ -13,6 +13,7 @@
 #endif
 
 OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
+  setAttribute(Qt::WA_OpaquePaintEvent);
   QVBoxLayout *main_layout  = new QVBoxLayout(this);
   main_layout->setMargin(bdr_s);
   stacked_layout = new QStackedLayout(this);
@@ -36,8 +37,6 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 
   // setup stacking order
   alerts->raise();
-
-  setAttribute(Qt::WA_OpaquePaintEvent);
 }
 
 void OnroadWindow::updateState(const UIState &s) {
