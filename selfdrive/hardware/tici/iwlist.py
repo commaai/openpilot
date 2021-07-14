@@ -30,8 +30,7 @@ def scan(interface="wlan0"):
 
     return result
 
-  except Exception as e:
-    print(e)
+  except Exception:
     return None
 
 
