@@ -103,7 +103,7 @@ void Networking::wrongPassword(const QString &ssid) {
 
 void Networking::showEvent(QShowEvent* event) {
   QTimer::singleShot(300, this, [=]() {
-    if (this->isVisible()) {
+    if (this->isVisible() && !wifi->adapter.isEmpty()) {
       wifi->refreshNetworks();
       refresh();
     }
