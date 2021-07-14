@@ -6,9 +6,11 @@
 #include <iostream>
 #include <map>
 
-#ifndef BRANCH
-#define BRANCH "master"
-#endif
+#include <QVBoxLayout>
+
+#include "selfdrive/ui/qt/util.h"
+#include "selfdrive/ui/qt/qt_window.h"
+#include "selfdrive/ui/qt/setup/installer.h"
 
 #define GIT_URL "https://github.com/commaai/openpilot.git"
 #define GIT_SSH_URL "git@github.com:commaai/openpilot.git"
@@ -79,7 +81,51 @@ int install() {
   return 0;
 }
 
+Installer::Installer(QWidget *parent) : QWidget(parent) {
+  QVBoxLayout *layout = new QVBoxLayout(this);
+  layout->setContentsMargins(150, 290, 150, 150);
+
+  QLabel *title = new QLabel("Installing...");
+  title->setStyleSheet("font-size: 90px; font-weight: 600;");
+  layout->addWidget(title, 0, Qt::AlignTop);
+
+  bar = new QProgressBar();
+  bar->setRange(2, 100);
+  bar->setTextVisible(false);
+  bar->setFixedHeight(72);
+  layout->addWidget(bar);
+  
+  val = new QLabel("0%");
+  val->setStyleSheet("font-size: 70px; font-weight: 300;");
+  layout->addWidget(val, 0, Qt::AlignTop);
+
+  updateProgress(69);
+
+  setStyleSheet(R"(
+    * {
+      font-family: Inter;
+      color: white;
+      background-color: black;
+    }
+    QProgressBar {
+      border: none;
+      background-color: #292929;
+    }
+    QProgressBar::chunk {
+      background-color: #364DEF;
+    }
+  )");
+}
+
+void Installer::updateProgress(int percent) {
+  bar->setValue(percent);
+  val->setText(QString("%1%").arg(percent));
+}
+
 int main(int argc, char *argv[]) {
-  // TODO: make a small installation UI
-  return install();
+  initApp();
+  QApplication a(argc, argv);
+  Installer installer;
+  setMainWindow(&installer);
+  return a.exec();
 }
