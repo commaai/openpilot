@@ -171,6 +171,7 @@ def thermald_thread():
   power_monitor = PowerMonitoring()
   no_panda_cnt = 0
 
+  HARDWARE.initialize_hardware()
   thermal_config = HARDWARE.get_thermal_config()
 
   if params.get_bool("IsOnroad"):
