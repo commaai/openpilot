@@ -435,6 +435,23 @@ def ws_recv(ws, end_event):
       cloudlog.exception("athenad.ws_recv.exception")
       end_event.set()
 
+def send_frames(ws, data, FRAME_SIZE):
+  frame_number = 0
+  last_chunk = None
+  data_stream = io.StringIO(data)
+  while True:
+    chunk = data_stream.read(FRAME_SIZE)
+    if (chunk):
+      if (last_chunk):
+        ws.send_frame(ABNF.create_frame(last_chunk, ABNF.OPCODE_CONT, 0))
+      last_chunk = chunk
+    else:
+      if (frame_number == 1):
+        ws.send(last_chunk)
+      else:
+        ws.send_frame(ABNF.create_frame(last_chunk, ABNF.OPCODE_CONT, 1))
+      break
+    frame_number += 1
 
 def ws_send(ws, end_event):
   while not end_event.is_set():
@@ -443,7 +460,7 @@ def ws_send(ws, end_event):
         data = send_queue.get_nowait()
       except queue.Empty:
         data = log_send_queue.get(timeout=1)
-      ws.send(data)
+      send_frames(ws, data, 5120)
     except queue.Empty:
       pass
     except Exception:
