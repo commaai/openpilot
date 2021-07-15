@@ -182,7 +182,10 @@ def swap(manifest_path: str, target_slot_number: int) -> None:
     if not partition.get('full_check', False):
       clear_partition_hash(target_slot_number, partition)
 
-  subprocess.check_output(f"abctl --set_active {target_slot_number}", shell=True)
+  while True:
+    out = subprocess.check_output(f"abctl --set_active {target_slot_number}", shell=True, encoding='utf8')
+    if "No such file or directory" not in out:
+      break
 
 
 def flash_agnos_update(manifest_path: str, target_slot_number: int, cloudlog, spinner: Optional[Spinner] = None) -> None:
