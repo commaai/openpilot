@@ -78,7 +78,6 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent), s
     * {
       background-color: #292929;
       border-radius: 10px;
-      font-weight: 300;
     }
   )");
   main_layout->setCurrentWidget(wifiScreen);
@@ -205,6 +204,9 @@ void WifiUI::refresh() {
     QHBoxLayout *hlayout = new QHBoxLayout;
     hlayout->setSpacing(0);
 
+    // Clickable SSID label
+    QPushButton *ssid_label = new QPushButton(network.ssid);
+    ssid_label->setEnabled(network.connected != ConnectedType::CONNECTED && network.connected != ConnectedType::CONNECTING && network.security_type != SecurityType::UNSUPPORTED);
     QString ssidStyleSheet = R"(
       font-size: 55px;
       text-align: left;
@@ -216,17 +218,17 @@ void WifiUI::refresh() {
       margin: 0px;
       margin-left: 44px;
     )";
+
     if (network.connected == ConnectedType::CONNECTED || network.connected == ConnectedType::CONNECTING) {
       ssidStyleSheet += "font-weight: 500;";
+    } else {
+      ssidStyleSheet += "font-weight: 300;";
     }
-
-    QPushButton *ssid_label = new QPushButton(network.ssid);
-    ssid_label->setEnabled(network.connected != ConnectedType::CONNECTED && network.connected != ConnectedType::CONNECTING && network.security_type != SecurityType::UNSUPPORTED);
     ssid_label->setStyleSheet(ssidStyleSheet);
-
     QObject::connect(ssid_label, &QPushButton::clicked, this, [=]() { emit connectToNetwork(network); });
     hlayout->addWidget(ssid_label, 1);
 
+    // Forget button
     if (wifi->isKnownConnection(network.ssid) && !wifi->isTetheringEnabled()) {
       QPushButton *forgetBtn = new QPushButton("FORGET");
       forgetBtn->setObjectName("forgetBtn");
@@ -235,18 +237,19 @@ void WifiUI::refresh() {
           wifi->forgetConnection(network.ssid);
         }
       });
-
       hlayout->addWidget(forgetBtn, 0, Qt::AlignRight);
     }
 
+    // Status icon
     if (network.connected == ConnectedType::CONNECTED || network.connected == ConnectedType::CONNECTING) {
       QLabel *connectIcon = new QLabel();
+      // TODO replace connecting icon with proper widget/icon
       QPixmap pix(network.connected == ConnectedType::CONNECTED ? "../assets/offroad/icon_checkmark.svg" : "../assets/navigation/direction_rotary.png");
+
       connectIcon->setPixmap(pix.scaledToWidth(49, Qt::SmoothTransformation));
       connectIcon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
       connectIcon->setStyleSheet("margin: 0px; padding-left: 51px; padding-right: 0px ");
       hlayout->addWidget(connectIcon, 0, Qt::AlignRight);
-
     } else if (network.security_type == SecurityType::WPA) {
       QLabel *lockIcon = new QLabel();
       QPixmap pix("../assets/offroad/icon_lock_closed.svg");
@@ -257,7 +260,7 @@ void WifiUI::refresh() {
       hlayout->addWidget(lockIcon, 0, Qt::AlignRight);
     }
 
-    // strength indicator
+    // Strength indicator
     hlayout->addWidget(networkStrengthWidget(network.strength / 26), 0, Qt::AlignRight);
 
     main_layout->addLayout(hlayout, 1);
