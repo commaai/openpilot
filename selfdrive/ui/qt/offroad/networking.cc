@@ -8,31 +8,15 @@
 #include "selfdrive/ui/qt/widgets/scrollview.h"
 #include "selfdrive/ui/qt/util.h"
 
-QPointF my_find_ellipse_coords(const QRectF &r, qreal angle) {
-  QPainterPath path;
-  path.arcMoveTo(r, angle);
-  return path.currentPosition();
-}
 
-void NetworkStrengthWidget::paintEvent(QPaintEvent* event) {
-  QPainter p(this);
-  p.setRenderHint(QPainter::Antialiasing);
-//  p.setPen(Qt::NoPen);
-  QPen pen(Qt::white);
-  pen.setWidth(20);
-  p.setPen(pen);
-
-  QRectF rectangle(0, 0, 500.0, 500.0);
-  int startAngle = 0 * 16;
-  int spanAngle = 180 * 16;
-
-  p.drawArc(rectangle, startAngle, spanAngle);
-//  const QColor gray(0x54, 0x54, 0x54);
-//  for (int i = 0, x = 0; i < 5; ++i) {
-//    p.setBrush(i < strength_ ? Qt::white : gray);
-//    p.drawEllipse(0, 0, 15, 15);
-//    x += 20;
-//  }
+QLabel *networkStrengthWidget(const unsigned int strength_) {
+  QLabel *strength = new QLabel();
+  QVector<QString> imgs({"low", "medium", "high", "full"});
+  QPixmap pix("../assets/offroad/icon_wifi_strength_" + imgs.at(strength_) + ".svg");
+  strength->setPixmap(pix.scaledToHeight(68, Qt::SmoothTransformation));
+  strength->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
+  strength->setStyleSheet("margin: 0px; padding-left: 48px; padding-right: 83px ");
+  return strength;
 }
 
 // Networking functions
@@ -69,9 +53,6 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent), s
   main_layout->addWidget(an);
 
   setStyleSheet(R"(
-    * {
-      font-family: Inter;
-    }
     #wifiWidget > QPushButton, #back_btn, #advancedBtn {
       font-size: 50px;
       margin: 0px;
@@ -80,6 +61,10 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent), s
       border-radius: 30px;
       color: #dddddd;
       background-color: #444444;
+    }
+    * {
+      background-color: #292929;
+      border-radius: 10px;
     }
   )");
   main_layout->setCurrentWidget(wifiScreen);
@@ -189,7 +174,7 @@ WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi)
   QLabel *scanning = new QLabel("Scanning for networks");
   scanning->setStyleSheet(R"(font-size: 65px;)");
   main_layout->addWidget(scanning, 0, Qt::AlignCenter);
-  main_layout->setSpacing(50);
+  main_layout->setSpacing(0);
 }
 
 void WifiUI::refresh() {
@@ -210,7 +195,17 @@ void WifiUI::refresh() {
     QPushButton *ssid_label = new QPushButton(network.ssid);
     ssid_label->setEnabled(!(network.connected == ConnectedType::CONNECTED || network.connected == ConnectedType::CONNECTING || network.security_type == SecurityType::UNSUPPORTED));
 
-    QString ssidStyleSheet = "font-size: 55px; text-align: left; border: 0px; padding: 0px; margin: 0px; margin-left: 44px";
+    QString ssidStyleSheet = R"(
+      font-size: 55px;
+      text-align: left;
+      background-color: transparent;
+      border: 0px;
+      padding: 50px;
+      padding-left: 0px;
+      padding-right: 0px;
+      margin: 0px;
+      margin-left: 44px;
+    )";
 
     QObject::connect(ssid_label, &QPushButton::clicked, this, [=]() { emit connectToNetwork(network); });
     hlayout->addWidget(ssid_label, 1);
@@ -231,8 +226,6 @@ void WifiUI::refresh() {
         padding-bottom: 16px;
         padding-top: 16px;
       )");
-
-//      forgetBtn->setFixedSize(215, 71);
 
       QObject::connect(forgetBtn, &QPushButton::released, [=]() {
         if (ConfirmationDialog::confirm("Are you sure you want to forget " + QString::fromUtf8(network.ssid) + "?", this)) {
@@ -264,14 +257,8 @@ void WifiUI::refresh() {
     }
     ssid_label->setStyleSheet(ssidStyleSheet);
 
-    // TODO placeholder for a real wifi strength widget
-    QLabel *strength = new QLabel();
-    QPixmap pix("../assets/offroad/icon_network.png");
-    strength->setPixmap(pix.scaledToHeight(49, Qt::SmoothTransformation));
-    strength->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
-    strength->setStyleSheet("margin: 0px; padding-left: 50px; padding-right: 85px ");
-    hlayout->addWidget(strength, 0, Qt::AlignRight);
-
+    // strength indicator
+    hlayout->addWidget(networkStrengthWidget(network.strength / 26), 0, Qt::AlignRight);
 
     main_layout->addLayout(hlayout, 1);
     // Don't add the last horizontal line
