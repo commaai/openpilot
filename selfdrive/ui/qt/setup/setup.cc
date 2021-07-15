@@ -46,42 +46,6 @@ void Setup::download(QString url) {
   rename(tmpfile, "/tmp/installer");
 }
 
-QLabel * title_label(QString text) {
-  QLabel *l = new QLabel(text);
-  l->setStyleSheet(R"(
-    font-size: 100px;
-    font-weight: 500;
-  )");
-  return l;
-}
-
-QWidget * Setup::build_page(QString title, QWidget *content, bool next, bool prev) {
-  QWidget *widget = new QWidget();
-  QVBoxLayout *main_layout = new QVBoxLayout(widget);
-
-  main_layout->setMargin(50);
-  main_layout->addWidget(title_label(title), 0, Qt::AlignLeft | Qt::AlignTop);
-
-  main_layout->addWidget(content);
-
-  QHBoxLayout *nav_layout = new QHBoxLayout();
-
-  if (prev) {
-    QPushButton *back_btn = new QPushButton("Back");
-    nav_layout->addWidget(back_btn, 1, Qt::AlignBottom | Qt::AlignLeft);
-    QObject::connect(back_btn, &QPushButton::released, this, &Setup::prevPage);
-  }
-
-  if (next) {
-    QPushButton *continue_btn = new QPushButton("Continue");
-    nav_layout->addWidget(continue_btn, 0, Qt::AlignBottom | Qt::AlignRight);
-    QObject::connect(continue_btn, &QPushButton::released, this, &Setup::nextPage);
-  }
-
-  main_layout->addLayout(nav_layout, 0);
-  return widget;
-}
-
 QWidget * Setup::getting_started() {
   QWidget *widget = new QWidget();
 
@@ -155,6 +119,36 @@ QWidget * Setup::network_setup() {
   return widget;
 }
 
+QWidget * radio_button(QString title, QButtonGroup *group) {
+  QPushButton *btn = new QPushButton(title);
+  btn->setCheckable(true);
+  group->addButton(btn);
+  btn->setStyleSheet(R"(
+    QPushButton {
+      height: 230;
+      padding-left: 100px;
+      padding-right: 100px;
+      text-align: left;
+      font-size: 80px;
+      font-weight: 400;
+      border-radius: 10px;
+      background-color: #4F4F4F;
+    }
+    QPushButton:checked {
+      background-color: #465BEA;
+    }
+  )");
+
+  QPixmap pix("../../../assets/img_circled_check.svg");
+  btn->setIcon(pix);
+  btn->setIconSize(QSize(0, 0));
+  btn->setLayoutDirection(Qt::RightToLeft);
+  QObject::connect(btn, &QPushButton::toggled, [=](bool checked) {
+    btn->setIconSize(checked ? QSize(104, 104) : QSize(0, 0));
+  });
+  return btn;
+}
+
 QWidget * Setup::software_selection() {
   QWidget *widget = new QWidget();
   QVBoxLayout *main_layout = new QVBoxLayout(widget);
@@ -172,18 +166,12 @@ QWidget * Setup::software_selection() {
   QButtonGroup *group = new QButtonGroup(widget);
   group->setExclusive(true);
 
-  QPushButton *dashcam = new QPushButton("Dashcam");
-  dashcam->setObjectName("radioBtn");
-  dashcam->setCheckable(true);
-  group->addButton(dashcam);
+  QWidget *dashcam = radio_button("Dashcam", group);
   main_layout->addWidget(dashcam);
 
   main_layout->addSpacing(30);
 
-  QPushButton *custom = new QPushButton("Custom Software");
-  custom->setObjectName("radioBtn");
-  custom->setCheckable(true);
-  group->addButton(custom);
+  QWidget *custom = radio_button("Custom Software", group);
   main_layout->addWidget(custom);
 
   main_layout->addStretch();
@@ -209,22 +197,6 @@ QWidget * Setup::software_selection() {
     btn->setChecked(true);
     cont->setEnabled(true);
   });
-
-  widget->setStyleSheet(R"(
-    QPushButton#radioBtn {
-      height: 230;
-      padding-left: 100px;
-      padding-right: 100px;
-      text-align: left;
-      font-size: 80px;
-      font-weight: 400;
-      border-radius: 10px;
-      background-color: #4F4F4F;
-    }
-    QPushButton#radioBtn:checked {
-      background-color: #465BEA;
-    }
-  )");
 
   return widget;
 }
@@ -284,10 +256,10 @@ void Setup::nextPage() {
 }
 
 Setup::Setup(QWidget *parent) : QStackedWidget(parent) {
-  addWidget(getting_started());
-  addWidget(network_setup());
-  addWidget(software_selection());
-  addWidget(downloading());
+  //addWidget(getting_started());
+  //addWidget(network_setup());
+  //addWidget(software_selection());
+  //addWidget(downloading());
   addWidget(download_failed());
 
   QObject::connect(this, &Setup::downloadFailed, this, &Setup::nextPage);
