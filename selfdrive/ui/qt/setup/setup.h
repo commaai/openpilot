@@ -14,14 +14,14 @@ private:
   QWidget *getting_started();
   QWidget *network_setup();
   QWidget *software_selection();
-  QWidget *custom_software();
   QWidget *downloading();
   QWidget *download_failed();
 
-  QWidget *build_page(QString title, QWidget *content, bool next, bool prev);
+  QWidget *failed_widget;
+  QWidget *downloading_widget;
 
 signals:
-  void downloadFailed();
+  void finished(bool success);
 
 public slots:
   void nextPage();
