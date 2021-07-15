@@ -107,7 +107,7 @@ QWidget * Setup::network_setup() {
   QObject::connect(back, &QPushButton::clicked, this, &Setup::prevPage);
   blayout->addWidget(back);
 
-  QPushButton *cont = new QPushButton("Continue");
+  QPushButton *cont = new QPushButton();
   cont->setObjectName("navBtn");
   QObject::connect(cont, &QPushButton::clicked, this, &Setup::nextPage);
   blayout->addWidget(cont);
@@ -116,6 +116,7 @@ QWidget * Setup::network_setup() {
   HttpRequest *request = new HttpRequest(this, TEST_URL, false, 2500);
   QObject::connect(request, &HttpRequest::requestDone, [=](bool success) {
     cont->setEnabled(success);
+    cont->setText(success ? "Continue" : "Waiting for internet");
     repaint();
   });
   QTimer *timer = new QTimer(this);
@@ -306,7 +307,6 @@ Setup::Setup(QWidget *parent) : QStackedWidget(parent) {
     setCurrentWidget(failed_widget);
   });
 
-  // TODO: disabled bg color?
   // TODO: revisit pressed bg color
   setStyleSheet(R"(
     * {
