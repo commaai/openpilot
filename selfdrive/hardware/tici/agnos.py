@@ -184,7 +184,7 @@ def swap(manifest_path: str, target_slot_number: int) -> None:
 
   while True:
     out = subprocess.check_output(f"abctl --set_active {target_slot_number}", shell=True, stderr=subprocess.STDOUT, encoding='utf8')
-    if "No such file or directory" not in out:
+    if ("No such file or directory" not in out) and ("lun as boot lun" in out):
       break
 
 
