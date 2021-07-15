@@ -183,8 +183,10 @@ def swap(manifest_path: str, target_slot_number: int) -> None:
       clear_partition_hash(target_slot_number, partition)
 
   while True:
-    out = subprocess.check_output(f"abctl --set_active {target_slot_number}", shell=True, encoding='utf8')
-    if "No such file or directory" not in out:
+    out = subprocess.run(f"abctl --set_active {target_slot_number}", shell=True, encoding='utf8', check=True)
+    print("stdout", out.stdout)
+    print("stderr", out.stderr)
+    if "No such file or directory" not in out.stderr:
       break
 
 
