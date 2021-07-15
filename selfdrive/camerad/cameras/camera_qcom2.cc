@@ -537,7 +537,6 @@ static void camera_init(MultiCameraState *multi_cam_state, VisionIpcServer * v, 
   s->max_ev = EXPOSURE_TIME_MAX * sensor_analog_gains[ANALOG_GAIN_MAX_IDX] * DC_GAIN;
   s->target_grey_fraction = 0.3;
 
-  // Initial values: gain 1.0x, integration time 5
   s->gain_idx = ANALOG_GAIN_REC_IDX;
   s->exposure_time = 5;
   s->cur_ev = (enable_dc_gain ? DC_GAIN : 1) * sensor_analog_gains[s->gain_idx] * s->exposure_time;
