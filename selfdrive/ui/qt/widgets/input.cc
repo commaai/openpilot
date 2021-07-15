@@ -5,6 +5,7 @@
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/hardware/hw.h"
 
+
 QDialogBase::QDialogBase(QWidget *parent) : QDialog(parent) {
   Q_ASSERT(parent != nullptr);
   parent->installEventFilter(this);
@@ -17,8 +18,7 @@ bool QDialogBase::eventFilter(QObject *o, QEvent *e) {
   return QDialog::eventFilter(o, e);
 }
 
-InputDialog::InputDialog(const QString &title, QWidget *parent,
-                         const QString &subtitle) : QDialogBase(parent) {
+InputDialog::InputDialog(const QString &title, QWidget *parent, const QString &subtitle, bool secret) : QDialogBase(parent) {
   main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(50, 55, 50, 50);
   main_layout->setSpacing(0);
@@ -54,17 +54,45 @@ InputDialog::InputDialog(const QString &title, QWidget *parent,
 
   // text box
   main_layout->addStretch();
+
+  QWidget *textbox_widget = new QWidget;
+  textbox_widget->setObjectName("textbox");
+  QHBoxLayout *textbox_layout = new QHBoxLayout(textbox_widget);
+  textbox_layout->setContentsMargins(50, 0, 50, 0);
+
   line = new QLineEdit();
-  line->setStyleSheet(R"(
-    font-size: 80px;
-    font-weight: light;
-    margin-left: 50px;
-    margin-right: 50px;
-    border: none;
-    border-radius: 0;
-    border-bottom: 3px solid #BDBDBD;
+  textbox_widget->setStyleSheet(R"(
+    #textbox {
+      border: none;
+      border-radius: 0;
+      border-bottom: 3px solid #BDBDBD;
+    }
+    * {
+      font-size: 80px;
+      font-weight: light;
+      background-color: transparent;
+    }
   )");
-  main_layout->addWidget(line, 0, Qt::AlignBottom);
+  textbox_layout->addWidget(line, 1);
+  if (secret) {
+    eye_btn = new QPushButton();
+    eye_btn->setCheckable(true);
+    QObject::connect(eye_btn, &QPushButton::toggled, [=](bool checked) {
+      if (checked) {
+        eye_btn->setIcon(QIcon("../assets/img_eye_closed.svg"));
+        eye_btn->setIconSize(QSize(81, 54));
+        line->setEchoMode(QLineEdit::PasswordEchoOnEdit);
+      } else {
+        eye_btn->setIcon(QIcon("../assets/img_eye_open.svg"));
+        eye_btn->setIconSize(QSize(81, 44));
+        line->setEchoMode(QLineEdit::Normal);
+      }
+    });
+    eye_btn->setChecked(true);
+    textbox_layout->addWidget(eye_btn);
+  }
+
+  main_layout->addWidget(textbox_widget, 0, Qt::AlignBottom);
 
   main_layout->addSpacing(25);
   k = new Keyboard(this);
@@ -79,12 +107,11 @@ InputDialog::InputDialog(const QString &title, QWidget *parent,
       background-color: black;
     }
   )");
-
 }
 
 QString InputDialog::getText(const QString &prompt, QWidget *parent, const QString &subtitle,
-                             int minLength, const QString &defaultText) {
-  InputDialog d = InputDialog(prompt, parent, subtitle);
+                             bool secret, int minLength, const QString &defaultText) {
+  InputDialog d = InputDialog(prompt, parent, subtitle, secret);
   d.line->setText(defaultText);
   d.setMinLength(minLength);
   const int ret = d.exec();
