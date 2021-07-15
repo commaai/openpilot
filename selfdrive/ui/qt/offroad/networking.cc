@@ -21,12 +21,12 @@ QLabel *networkStrengthWidget(const unsigned int strength_) {
 
 // Networking functions
 
-Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent), show_advanced(show_advanced) {
+Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent) {
   main_layout = new QStackedLayout(this);
 
   wifi = new WifiManager(this);
-  connect(wifi, &WifiManager::wrongPassword, this, &Networking::wrongPassword);
   connect(wifi, &WifiManager::refreshSignal, this, &Networking::refresh);
+  connect(wifi, &WifiManager::wrongPassword, this, &Networking::wrongPassword);
 
   QWidget* wifiScreen = new QWidget(this);
   QVBoxLayout* vlayout = new QVBoxLayout(wifiScreen);
@@ -52,7 +52,11 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent), s
   connect(an, &AdvancedNetworking::backPress, [=]() { main_layout->setCurrentWidget(wifiScreen); });
   main_layout->addWidget(an);
 
+  // TODO: revisit pressed colors
   setStyleSheet(R"(
+    Networking {
+      background-color: #292929;
+    }
     #wifiWidget > QPushButton, #back_btn, #advancedBtn {
       font-size: 50px;
       margin: 0px;
@@ -75,10 +79,6 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent), s
       padding-bottom: 16px;
       padding-top: 16px;
       margin: 0px;
-    }
-    * {
-      background-color: #292929;
-      border-radius: 10px;
     }
   )");
   main_layout->setCurrentWidget(wifiScreen);
@@ -183,49 +183,46 @@ void AdvancedNetworking::toggleTethering(bool enabled) {
 WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi) {
   main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(0, 0, 0, 0);
-
-  // Scan on startup
-  QLabel *scanning = new QLabel("Scanning for networks");
-  scanning->setStyleSheet(R"(font-size: 65px;)");
-  main_layout->addWidget(scanning, 0, Qt::AlignCenter);
   main_layout->setSpacing(0);
+
+  QLabel *scanning = new QLabel("Scanning for networks...");
+  scanning->setStyleSheet("font-size: 65px;");
+  main_layout->addWidget(scanning, 0, Qt::AlignCenter);
 }
 
 void WifiUI::refresh() {
+  // TODO: don't rebuild this every time
   clearLayout(main_layout);
+
   if (wifi->seen_networks.size() == 0) {
     QLabel *scanning = new QLabel("No networks found. Scanning...");
-    scanning->setStyleSheet(R"(font-size: 65px;)");
+    scanning->setStyleSheet("font-size: 65px;");
     main_layout->addWidget(scanning, 0, Qt::AlignCenter);
     return;
   }
 
+  // add networks
   int i = 0;
   for (Network &network : wifi->seen_networks) {
     QHBoxLayout *hlayout = new QHBoxLayout;
+    hlayout->setContentsMargins(44, 0, 0, 0);
     hlayout->setSpacing(0);
 
     // Clickable SSID label
     QPushButton *ssid_label = new QPushButton(network.ssid);
-    ssid_label->setEnabled(network.connected != ConnectedType::CONNECTED && network.connected != ConnectedType::CONNECTING && network.security_type != SecurityType::UNSUPPORTED);
-    QString ssidStyleSheet = R"(
+    ssid_label->setEnabled(network.connected != ConnectedType::CONNECTED &&
+                           network.connected != ConnectedType::CONNECTING &&
+                           network.security_type != SecurityType::UNSUPPORTED);
+    int weight = network.connected == ConnectedType::DISCONNECTED ? 300 : 500;
+    ssid_label->setStyleSheet(QString(R"(
       font-size: 55px;
+      font-weight: %1;
       text-align: left;
+      border: none;
+      padding-top: 50px;
+      padding-bottom: 50px;
       background-color: transparent;
-      border: 0px;
-      padding: 50px;
-      padding-left: 0px;
-      padding-right: 0px;
-      margin: 0px;
-      margin-left: 44px;
-    )";
-
-    if (network.connected == ConnectedType::CONNECTED || network.connected == ConnectedType::CONNECTING) {
-      ssidStyleSheet += "font-weight: 500;";
-    } else {
-      ssidStyleSheet += "font-weight: 300;";
-    }
-    ssid_label->setStyleSheet(ssidStyleSheet);
+    )").arg(weight));
     QObject::connect(ssid_label, &QPushButton::clicked, this, [=]() { emit connectToNetwork(network); });
     hlayout->addWidget(ssid_label, 1);
 
@@ -273,11 +270,12 @@ void WifiUI::refresh() {
     hlayout->addWidget(networkStrengthWidget(network.strength / 26), 0, Qt::AlignRight);
 
     main_layout->addLayout(hlayout, 1);
+
     // Don't add the last horizontal line
     if (i+1 < wifi->seen_networks.size()) {
       main_layout->addWidget(horizontal_line(), 0);
     }
     i++;
   }
-  main_layout->addStretch(3);
+  main_layout->addStretch(1);
 }
