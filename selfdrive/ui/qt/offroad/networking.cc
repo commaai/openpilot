@@ -209,7 +209,6 @@ void WifiUI::refresh() {
 
     QObject::connect(ssid_label, &QPushButton::clicked, this, [=]() { emit connectToNetwork(network); });
     hlayout->addWidget(ssid_label, 1);
-//    hlayout->addWidget(ssid_label, 1, Qt::AlignLeft);
 
     if (wifi->isKnownConnection(network.ssid) && !wifi->isTetheringEnabled()) {
       QPushButton *forgetBtn = new QPushButton("FORGET");
@@ -237,7 +236,7 @@ void WifiUI::refresh() {
     }
 
     if (network.connected == ConnectedType::CONNECTED || network.connected == ConnectedType::CONNECTING) {
-      ssidStyleSheet += "font-weight: 600;";
+      ssidStyleSheet += "font-weight: 500;";
 
       QLabel *connectIcon = new QLabel();
       QPixmap pix(network.connected == ConnectedType::CONNECTED ? "../assets/offroad/icon_checkmark.png" : "../assets/navigation/direction_rotary.png");
