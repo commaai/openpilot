@@ -167,7 +167,7 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
     background: #585858;
   )");
   finishRegistationLayout->addWidget(finishButton);
-  QObject::connect(finishButton, &QPushButton::released, this, &SetupWidget::showQrCode);
+  QObject::connect(finishButton, &QPushButton::clicked, this, &SetupWidget::showQrCode);
 
   mainLayout->addWidget(finishRegistration);
 
