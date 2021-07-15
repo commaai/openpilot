@@ -62,6 +62,19 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent), s
       color: #dddddd;
       background-color: #444444;
     }
+    #wifiWidget > QPushButton#forgetBtn {
+      font-size: 32px;
+      font-weight: 600;
+      color: #292929;
+      background-color: #BDBDBD;
+      border-width: 1px;
+      border-radius: 5px;
+      border-color: #828282;
+      padding-left: 40px;
+      padding-right: 40px;
+      padding-bottom: 16px;
+      padding-top: 16px;
+    }
     * {
       background-color: #292929;
       border-radius: 10px;
@@ -186,7 +199,6 @@ void WifiUI::refresh() {
     main_layout->addWidget(scanning, 0, Qt::AlignCenter);
     return;
   }
-  main_layout->addSpacing(50);
 
   int i = 0;
   for (Network &network : wifi->seen_networks) {
@@ -209,7 +221,7 @@ void WifiUI::refresh() {
     }
 
     QPushButton *ssid_label = new QPushButton(network.ssid);
-    ssid_label->setEnabled(!(network.connected == ConnectedType::CONNECTED || network.connected == ConnectedType::CONNECTING || network.security_type == SecurityType::UNSUPPORTED));
+    ssid_label->setEnabled(network.connected != ConnectedType::CONNECTED && network.connected != ConnectedType::CONNECTING && network.security_type != SecurityType::UNSUPPORTED);
     ssid_label->setStyleSheet(ssidStyleSheet);
 
     QObject::connect(ssid_label, &QPushButton::clicked, this, [=]() { emit connectToNetwork(network); });
@@ -217,20 +229,7 @@ void WifiUI::refresh() {
 
     if (wifi->isKnownConnection(network.ssid) && !wifi->isTetheringEnabled()) {
       QPushButton *forgetBtn = new QPushButton("FORGET");
-      forgetBtn->setStyleSheet(R"(
-        font-size: 32px;
-        font-weight: 600;
-        color: #292929;
-        background-color: #BDBDBD;
-        border-width: 1px;
-        border-radius: 5px;
-        border-color: #828282;
-        padding-left: 40px;
-        padding-right: 40px;
-        padding-bottom: 16px;
-        padding-top: 16px;
-      )");
-
+      forgetBtn->setObjectName("forgetBtn");
       QObject::connect(forgetBtn, &QPushButton::released, [=]() {
         if (ConfirmationDialog::confirm("Are you sure you want to forget " + QString::fromUtf8(network.ssid) + "?", this)) {
           wifi->forgetConnection(network.ssid);
@@ -242,8 +241,8 @@ void WifiUI::refresh() {
 
     if (network.connected == ConnectedType::CONNECTED || network.connected == ConnectedType::CONNECTING) {
       QLabel *connectIcon = new QLabel();
-      QPixmap pix(network.connected == ConnectedType::CONNECTED ? "../assets/offroad/icon_checkmark.png" : "../assets/navigation/direction_rotary.png");
-      connectIcon->setPixmap(pix.scaledToHeight(49, Qt::SmoothTransformation));
+      QPixmap pix(network.connected == ConnectedType::CONNECTED ? "../assets/offroad/icon_checkmark.svg" : "../assets/navigation/direction_rotary.png");
+      connectIcon->setPixmap(pix.scaledToWidth(49, Qt::SmoothTransformation));
       connectIcon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
       connectIcon->setStyleSheet("margin: 0px; padding-left: 51px; padding-right: 0px ");
       hlayout->addWidget(connectIcon, 0, Qt::AlignRight);
