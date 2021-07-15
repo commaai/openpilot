@@ -120,7 +120,7 @@ void Keyboard::handleButton(QAbstractButton* btn) {
   if (!QString::compare(key, "#+=")) {
     main_layout->setCurrentIndex(3);
   }
-  if (!QString::compare(key, BACKSPACE_KEY)) {
+  if (!QString::compare(key, ENTER_KEY)) {
     main_layout->setCurrentIndex(0);
   }
   if ("A" <= key && key <= "Z") {
