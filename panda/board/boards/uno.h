@@ -250,9 +250,6 @@ void uno_init(void) {
     can_flip_buses(0, 2);
   }
 
-  // init multiplexer
-  can_set_obd(car_harness_status, false);
-
   // Switch to phone usb mode if harness connection is powered by less than 7V
   if(adc_get_voltage() < 7000U){
     uno_set_usb_switch(true);
@@ -281,6 +278,11 @@ const harness_configuration uno_harness_config = {
 const board board_uno = {
   .board_type = "Uno",
   .harness_config = &uno_harness_config,
+  .has_gps = true,
+  .has_hw_gmlan = false,
+  .has_obd = true,
+  .has_lin = false,
+  .has_rtc = true,
   .init = uno_init,
   .enable_can_transceiver = uno_enable_can_transceiver,
   .enable_can_transceivers = uno_enable_can_transceivers,

@@ -18,10 +18,13 @@ uint32_t can_rx_errs = 0;
 uint32_t can_send_errs = 0;
 uint32_t can_fwd_errs = 0;
 uint32_t gmlan_send_errs = 0;
-extern int can_live, pending_can_live;
+
+extern int can_live;
+extern int pending_can_live;
 
 // must reinit after changing these
-extern int can_loopback, can_silent;
+extern int can_loopback;
+extern int can_silent;
 extern uint32_t can_speed[4];
 
 void can_set_forwarding(int from, int to);
@@ -42,19 +45,23 @@ uint32_t ignition_can_cnt = 0U;
 #define ALL_CAN_SILENT 0xFF
 #define ALL_CAN_LIVE 0
 
-int can_live = 0, pending_can_live = 0, can_loopback = 0, can_silent = ALL_CAN_SILENT;
+int can_live = 0;
+int pending_can_live = 0;
+int can_loopback = 0;
+int can_silent = ALL_CAN_SILENT;
 
 // ********************* instantiate queues *********************
-
 #define can_buffer(x, size) \
   CAN_FIFOMailBox_TypeDef elems_##x[size]; \
-  can_ring can_##x = { .w_ptr = 0, .r_ptr = 0, .fifo_size = size, .elems = (CAN_FIFOMailBox_TypeDef *)&elems_##x };
+  can_ring can_##x = { .w_ptr = 0, .r_ptr = 0, .fifo_size = (size), .elems = (CAN_FIFOMailBox_TypeDef *)&(elems_##x) };
 
 can_buffer(rx_q, 0x1000)
 can_buffer(tx1_q, 0x100)
 can_buffer(tx2_q, 0x100)
 can_buffer(tx3_q, 0x100)
 can_buffer(txgmlan_q, 0x100)
+// FIXME:
+// cppcheck-suppress misra-c2012-9.3
 can_ring *can_queues[] = {&can_tx1_q, &can_tx2_q, &can_tx3_q, &can_txgmlan_q};
 
 // global CAN stats
@@ -65,7 +72,6 @@ int can_err_cnt = 0;
 int can_overflow_cnt = 0;
 
 // ********************* interrupt safe queue *********************
-
 bool can_pop(can_ring *q, CAN_FIFOMailBox_TypeDef *elem) {
   bool ret = 0;
 
@@ -181,7 +187,7 @@ void can_flip_buses(uint8_t bus1, uint8_t bus2){
 
 // TODO: Cleanup with new abstraction
 void can_set_gmlan(uint8_t bus) {
-  if(board_has_gmlan()){
+  if(current_board->has_hw_gmlan){
     // first, disable GMLAN on prev bus
     uint8_t prev_bus = can_num_lookup[3];
     if (bus != prev_bus) {
@@ -229,34 +235,6 @@ void can_set_gmlan(uint8_t bus) {
   }
 }
 
-// TODO: remove
-void can_set_obd(uint8_t harness_orientation, bool obd){
-  if(obd){
-    puts("setting CAN2 to be OBD\n");
-  } else {
-    puts("setting CAN2 to be normal\n");
-  }
-  if(board_has_obd()){
-    if(obd != (bool)(harness_orientation == HARNESS_STATUS_NORMAL)){
-        // B5,B6: disable normal mode
-        set_gpio_mode(GPIOB, 5, MODE_INPUT);
-        set_gpio_mode(GPIOB, 6, MODE_INPUT);
-        // B12,B13: CAN2 mode
-        set_gpio_alternate(GPIOB, 12, GPIO_AF9_CAN2);
-        set_gpio_alternate(GPIOB, 13, GPIO_AF9_CAN2);
-    } else {
-        // B5,B6: CAN2 mode
-        set_gpio_alternate(GPIOB, 5, GPIO_AF9_CAN2);
-        set_gpio_alternate(GPIOB, 6, GPIO_AF9_CAN2);
-        // B12,B13: disable normal mode
-        set_gpio_mode(GPIOB, 12, MODE_INPUT);
-        set_gpio_mode(GPIOB, 13, MODE_INPUT);
-    }
-  } else {
-    puts("OBD CAN not available on this board\n");
-  }
-}
-
 // CAN error
 void can_sce(CAN_TypeDef *CAN) {
   ENTER_CRITICAL();
@@ -286,7 +264,6 @@ void can_sce(CAN_TypeDef *CAN) {
 }
 
 // ***************************** CAN *****************************
-
 void process_can(uint8_t can_number) {
   if (can_number != 0xffU) {
 
@@ -479,4 +456,3 @@ bool can_init(uint8_t can_number) {
   }
   return ret;
 }
-

@@ -57,7 +57,7 @@ openpilot should preserve all other vehicle's stock features, including, but are
 Supported Hardware
 ------
 
-At the moment, openpilot supports the [EON DevKit](https://comma.ai/shop/products/eon-dashcam-devkit) and the [comma two](https://comma.ai/shop/products/comma-two-devkit). A [car harness](https://comma.ai/shop/products/car-harness) is recommended to connect the EON or comma two to the car. For experimental purposes, openpilot can also run on an Ubuntu computer with external [webcams](https://github.com/commaai/openpilot/tree/master/tools/webcam).
+At the moment, openpilot supports the EON Gold DevKit and the [comma two](https://comma.ai/shop/products/comma-two-devkit). A [car harness](https://comma.ai/shop/products/car-harness) is recommended to connect the EON or comma two to the car. For experimental purposes, openpilot can also run on an Ubuntu computer with external [webcams](https://github.com/commaai/openpilot/tree/master/tools/webcam).
 
 Supported Cars
 ------
@@ -70,10 +70,12 @@ Supported Cars
 | Honda     | Accord 2018-20                | All               | Stock            | 0mph               | 3mph              |
 | Honda     | Accord Hybrid 2018-20         | All               | Stock            | 0mph               | 3mph              |
 | Honda     | Civic Hatchback 2017-21       | Honda Sensing     | Stock            | 0mph               | 12mph             |
-| Honda     | Civic Sedan/Coupe 2016-18     | Honda Sensing     | openpilot        | 0mph               | 12mph             |
-| Honda     | Civic Sedan/Coupe 2019-20     | All               | Stock            | 0mph               | 2mph<sup>2</sup>  |
+| Honda     | Civic Coupe 2016-18           | Honda Sensing     | openpilot        | 0mph               | 12mph             |
+| Honda     | Civic Coupe 2019-20           | All               | Stock            | 0mph               | 2mph<sup>2</sup>  |
+| Honda     | Civic Sedan 2016-18           | Honda Sensing     | openpilot        | 0mph               | 12mph             |
+| Honda     | Civic Sedan 2019-20           | All               | Stock            | 0mph               | 2mph<sup>2</sup>  |
 | Honda     | CR-V 2015-16                  | Touring           | openpilot        | 25mph<sup>1</sup>  | 12mph             |
-| Honda     | CR-V 2017-20                  | Honda Sensing     | Stock            | 0mph               | 12mph             |
+| Honda     | CR-V 2017-21                  | Honda Sensing     | Stock            | 0mph               | 12mph             |
 | Honda     | CR-V Hybrid 2017-2019         | Honda Sensing     | Stock            | 0mph               | 12mph             |
 | Honda     | Fit 2018-19                   | Honda Sensing     | openpilot        | 25mph<sup>1</sup>  | 12mph             |
 | Honda     | HR-V 2019-20                  | Honda Sensing     | openpilot        | 25mph<sup>1</sup>  | 12mph             |
@@ -92,16 +94,17 @@ Supported Cars
 | Lexus     | IS 2017-2019                  | All               | Stock            | 22mph              | 0mph              |
 | Lexus     | NX 2018                       | All               | Stock<sup>3</sup>| 0mph               | 0mph              |
 | Lexus     | NX 2020                       | All               | openpilot        | 0mph               | 0mph              |
-| Lexus     | NX Hybrid 2018                | All               | Stock<sup>3</sup>| 0mph               | 0mph              |
+| Lexus     | NX Hybrid 2018-19             | All               | Stock<sup>3</sup>| 0mph               | 0mph              |
 | Lexus     | RX 2016-18                    | All               | Stock<sup>3</sup>| 0mph               | 0mph              |
 | Lexus     | RX 2020-21                    | All               | openpilot        | 0mph               | 0mph              |
 | Lexus     | RX Hybrid 2016-19             | All               | Stock<sup>3</sup>| 0mph               | 0mph              |
-| Lexus     | RX Hybrid 2020                | All               | openpilot        | 0mph               | 0mph              |
-| Lexus     | UX Hybrid 2019                | All               | openpilot        | 0mph               | 0mph              |
+| Lexus     | RX Hybrid 2020-21             | All               | openpilot        | 0mph               | 0mph              |
+| Lexus     | UX Hybrid 2019-21             | All               | openpilot        | 0mph               | 0mph              |
+| Toyota    | Alphard 2020                  | All               | openpilot        | 0mph               | 0mph              |
 | Toyota    | Avalon 2016-21                | TSS-P             | Stock<sup>3</sup>| 20mph<sup>1</sup>  | 0mph              |
-| Toyota    | Avalon Hybrid 2019            | TSS-P             | Stock<sup>3</sup>| 20mph<sup>1</sup>  | 0mph              |
+| Toyota    | Avalon Hybrid 2019-21         | TSS-P             | Stock<sup>3</sup>| 20mph<sup>1</sup>  | 0mph              |
 | Toyota    | Camry 2018-20                 | All               | Stock            | 0mph<sup>4</sup>   | 0mph              |
-| Toyota    | Camry 2021                    | All               | openpilot        | 0mph               | 0mph              |
+| Toyota    | Camry 2021                    | All               | openpilot        | 0mph<sup>4</sup>   | 0mph              |
 | Toyota    | Camry Hybrid 2018-20          | All               | Stock            | 0mph<sup>4</sup>   | 0mph              |
 | Toyota    | Camry Hybrid 2021             | All               | openpilot        | 0mph               | 0mph              |
 | Toyota    | C-HR 2017-20                  | All               | Stock            | 0mph               | 0mph              |
@@ -151,19 +154,23 @@ Community Maintained Cars and Features
 | Genesis   | G90 2018                      | All               | Stock            | 0mph               | 0mph         |
 | GMC       | Acadia 2018<sup>1</sup>       | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
 | Holden    | Astra 2017<sup>1</sup>        | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
-| Hyundai   | Elantra 2017-19, 2021         | SCC + LKAS        | Stock            | 19mph              | 34mph        |
+| Hyundai   | Elantra 2017-19               | SCC + LKAS        | Stock            | 19mph              | 34mph        |
+| Hyundai   | Elantra 2021                  | SCC + LKAS        | Stock            | 0mph               | 0mph         |
+| Hyundai   | Elantra Hybrid 2021           | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Hyundai   | Genesis 2015-16               | SCC + LKAS        | Stock            | 19mph              | 37mph        |
 | Hyundai   | Ioniq Electric 2019           | SCC + LKAS        | Stock            | 0mph               | 32mph        |
 | Hyundai   | Ioniq Electric 2020           | SCC + LKAS        | Stock            | 0mph               | 0mph         |
+| Hyundai   | Ioniq PHEV 2020               | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Hyundai   | Kona 2020                     | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Hyundai   | Kona EV 2019                  | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Hyundai   | Santa Fe 2019-20              | All               | Stock            | 0mph               | 0mph         |
 | Hyundai   | Sonata 2018-2019              | SCC + LKAS        | Stock            | 0mph               | 0mph         |
-| Hyundai   | Veloster 2019                 | SCC + LKAS        | Stock            | 5mph               | 0mph         |
+| Hyundai   | Veloster 2019-20              | SCC + LKAS        | Stock            | 5mph               | 0mph         |
 | Jeep      | Grand Cherokee 2016-18        | Adaptive Cruise   | Stock            | 0mph               | 9mph         |
 | Jeep      | Grand Cherokee 2019-20        | Adaptive Cruise   | Stock            | 0mph               | 39mph        |
 | Kia       | Forte 2018-2021               | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Kia       | Niro EV 2020                  | SCC + LKAS        | Stock            | 0mph               | 0mph         |
+| Kia       | Niro PHEV 2019                | SCC + LKAS        | Stock            | 10mph              | 32mph        |
 | Kia       | Optima 2017                   | SCC + LKAS        | Stock            | 0mph               | 32mph        |
 | Kia       | Optima 2019                   | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Kia       | Seltos 2021                   | SCC + LKAS        | Stock            | 0mph               | 0mph         |
@@ -178,6 +185,7 @@ Community Maintained Cars and Features
 | SEAT      | Leon 2014-2020                | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Škoda     | Kodiaq 2018                   | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Škoda     | Octavia 2015, 2019            | Driver Assistance | Stock            | 0mph               | 0mph         |
+| Škoda     | Octavia RS 2016               | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Škoda     | Scala 2020                    | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Škoda     | Superb 2015-18                | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Subaru    | Ascent 2019                   | EyeSight          | Stock            | 0mph               | 0mph         |
@@ -192,10 +200,12 @@ Community Maintained Cars and Features
 | Volkswagen| Golf GTI 2018-19              | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Golf R 2016-19                | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Golf SportsVan 2016           | Driver Assistance | Stock            | 0mph               | 0mph         |
+| Volkswagen| Golf SportWagen 2015          | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Jetta 2018-20                 | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Jetta GLI 2021                | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Passat 2016-17<sup>2</sup>    | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Tiguan 2020                   | Driver Assistance | Stock            | 0mph               | 0mph         |
+| Volkswagen| Touran 2017                   | Driver Assistance | Stock            | 0mph               | 0mph         |
 
 <sup>1</sup>Requires an [OBD-II car harness](https://comma.ai/shop/products/comma-car-harness) and [community built ASCM harness](https://github.com/commaai/openpilot/wiki/GM#hardware). ***NOTE: disconnecting the ASCM disables Automatic Emergency Braking (AEB).*** <br />
 <sup>2</sup>Only includes the MQB Passat sold outside of North America. The NMS Passat made in Chattanooga TN is not yet supported.
@@ -209,7 +219,7 @@ Although they're not upstream, the community has openpilot running on other make
 Installation Instructions
 ------
 
-Install openpilot on an EON or comma two by entering ``https://openpilot.comma.ai`` during the installer setup.
+Install openpilot on an EON Gold or comma two by entering ``https://openpilot.comma.ai`` during the installer setup.
 
 Follow these [video instructions](https://youtu.be/lcjqxCymins) to properly mount the device on the windshield. Note: openpilot features an automatic pose calibration routine and openpilot performance should not be affected by small pitch and yaw misalignments caused by imprecise device mounting.
 
@@ -299,7 +309,7 @@ Safety and Testing
 * panda has software in the loop [safety tests](https://github.com/commaai/panda/tree/master/tests/safety).
 * Internally, we have a hardware in the loop Jenkins test suite that builds and unit tests the various processes.
 * panda has additional hardware in the loop [tests](https://github.com/commaai/panda/blob/master/Jenkinsfile).
-* We run the latest openpilot in a testing closet containing 10 EONs continuously replaying routes.
+* We run the latest openpilot in a testing closet containing 10 comma devices continuously replaying routes.
 
 Testing on PC
 ------
@@ -326,7 +336,7 @@ Community and Contributing
 
 openpilot is developed by [comma](https://comma.ai/) and by users like you. We welcome both pull requests and issues on [GitHub](http://github.com/commaai/openpilot). Bug fixes and new car ports are encouraged.
 
-You can add support for your car by following guides we have written for [Brand](https://medium.com/@comma_ai/how-to-write-a-car-port-for-openpilot-7ce0785eda84) and [Model](https://medium.com/@comma_ai/openpilot-port-guide-for-toyota-models-e5467f4b5fe6) ports. Generally, a car with adaptive cruise control and lane keep assist is a good candidate. [Join our Discord](https://discord.comma.ai) to discuss car ports: most car makes have a dedicated channel.
+You can add support for your car by following guides we have written for [Brand](https://blog.comma.ai/how-to-write-a-car-port-for-openpilot/) and [Model](https://blog.comma.ai/openpilot-port-guide-for-toyota-models/) ports. Generally, a car with adaptive cruise control and lane keep assist is a good candidate. [Join our Discord](https://discord.comma.ai) to discuss car ports: most car makes have a dedicated channel.
 
 Want to get paid to work on openpilot? [comma is hiring](https://comma.ai/jobs/).
 
@@ -337,27 +347,27 @@ Directory Structure
     .
     ├── cereal              # The messaging spec and libs used for all logs
     ├── common              # Library like functionality we've developed here
-    ├── installer/updater   # Manages auto-updates of NEOS
+    ├── installer/updater   # Manages updates of NEOS
     ├── opendbc             # Files showing how to interpret data from cars
     ├── panda               # Code used to communicate on CAN
-    ├── phonelibs           # Libraries used on NEOS devices
-    ├── pyextra             # Libraries used on NEOS devices
+    ├── phonelibs           # External libraries
+    ├── pyextra             # Extra python packages not shipped in NEOS
     └── selfdrive           # Code needed to drive the car
-        ├── assets          # Fonts, images and sounds for UI
+        ├── assets          # Fonts, images, and sounds for UI
         ├── athena          # Allows communication with the app
         ├── boardd          # Daemon to talk to the board
         ├── camerad         # Driver to capture images from the camera sensors
         ├── car             # Car specific code to read states and control actuators
         ├── common          # Shared C/C++ code for the daemons
-        ├── controls        # Perception, planning and controls
+        ├── controls        # Planning and controls
         ├── debug           # Tools to help you debug and do car ports
-        ├── locationd       # Soon to be home of precise location
+        ├── locationd       # Precise localization and vehicle parameter estimation
         ├── logcatd         # Android logcat as a service
         ├── loggerd         # Logger and uploader of car data
         ├── modeld          # Driving and monitoring model runners
         ├── proclogd        # Logs information from proc
-        ├── sensord         # IMU / GPS interface code
-        ├── test            # Unit tests, system tests and a car simulator
+        ├── sensord         # IMU interface code
+        ├── test            # Unit tests, system tests, and a car simulator
         └── ui              # The UI
 
 Licensing

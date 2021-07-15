@@ -27,18 +27,18 @@ const int HONDA_BOSCH_ACCEL_MIN = -350; // max braking == -3.5m/s2
 // Nidec and Bosch giraffe have pt on bus 0
 AddrCheckStruct honda_rx_checks[] = {
   {.msg = {{0x1A6, 0, 8, .check_checksum = true, .max_counter = 3U, .expected_timestep = 40000U},
-           {0x296, 0, 4, .check_checksum = true, .max_counter = 3U, .expected_timestep = 40000U}}},
-  {.msg = {{0x158, 0, 8, .check_checksum = true, .max_counter = 3U, .expected_timestep = 10000U}}},
-  {.msg = {{0x17C, 0, 8, .check_checksum = true, .max_counter = 3U, .expected_timestep = 10000U}}},
+           {0x296, 0, 4, .check_checksum = true, .max_counter = 3U, .expected_timestep = 40000U},{ 0 }}},
+  {.msg = {{0x158, 0, 8, .check_checksum = true, .max_counter = 3U, .expected_timestep = 10000U}, { 0 }, { 0 }}},
+  {.msg = {{0x17C, 0, 8, .check_checksum = true, .max_counter = 3U, .expected_timestep = 10000U}, { 0 }, { 0 }}},
 };
 const int HONDA_RX_CHECKS_LEN = sizeof(honda_rx_checks) / sizeof(honda_rx_checks[0]);
 
 // Bosch harness has pt on bus 1
 AddrCheckStruct honda_bh_rx_checks[] = {
-  {.msg = {{0x296, 1, 4, .check_checksum = true, .max_counter = 3U, .expected_timestep = 40000U}}},
-  {.msg = {{0x158, 1, 8, .check_checksum = true, .max_counter = 3U, .expected_timestep = 10000U}}},
+  {.msg = {{0x296, 1, 4, .check_checksum = true, .max_counter = 3U, .expected_timestep = 40000U}, { 0 }, { 0 }}},
+  {.msg = {{0x158, 1, 8, .check_checksum = true, .max_counter = 3U, .expected_timestep = 10000U}, { 0 }, { 0 }}},
   {.msg = {{0x17C, 1, 8, .check_checksum = true, .max_counter = 3U, .expected_timestep = 10000U},
-           {0x1BE, 1, 3, .check_checksum = true, .max_counter = 3U, .expected_timestep = 20000U}}},
+           {0x1BE, 1, 3, .check_checksum = true, .max_counter = 3U, .expected_timestep = 20000U}, { 0 }}},
 };
 const int HONDA_BH_RX_CHECKS_LEN = sizeof(honda_bh_rx_checks) / sizeof(honda_bh_rx_checks[0]);
 
@@ -161,16 +161,25 @@ static int honda_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
       }
     }
 
-    // if steering controls messages are received on the destination bus, it's an indication
-    // that the relay might be malfunctioning
     bool stock_ecu_detected = false;
     int bus_rdr_car = (honda_hw == HONDA_BH_HW) ? 0 : 2;  // radar bus, car side
-    if ((safety_mode_cnt > RELAY_TRNS_TIMEOUT) && ((addr == 0xE4) || (addr == 0x194))) {
-      if (((honda_hw != HONDA_N_HW) && (bus == bus_rdr_car)) ||
-        ((honda_hw == HONDA_N_HW) && (bus == 0))) {
+    int pt_bus = (honda_hw == HONDA_BH_HW) ? 1 : 0;
+
+    if (safety_mode_cnt > RELAY_TRNS_TIMEOUT) {
+      // If steering controls messages are received on the destination bus, it's an indication
+      // that the relay might be malfunctioning
+      if ((addr == 0xE4) || (addr == 0x194)) {
+        if (((honda_hw != HONDA_N_HW) && (bus == bus_rdr_car)) || ((honda_hw == HONDA_N_HW) && (bus == 0))) {
+          stock_ecu_detected = true;
+        }
+      }
+      // If Honda Bosch longitudinal mode is selected we need to ensure the radar is turned off
+      // Verify this by ensuring ACC_CONTROL (0x1DF) is not received on the PT bus
+      if (honda_bosch_long && (bus == pt_bus) && (addr == 0x1DF)) {
         stock_ecu_detected = true;
       }
     }
+
     generic_rx_checks(stock_ecu_detected);
   }
   return valid;
@@ -288,6 +297,13 @@ static int honda_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
     if (((GET_BYTE(to_send, 0) >> 5) & 0x7) != 2) {
       tx = 0;
     }
+  }
+
+  // Only tester present ("\x02\x3E\x80\x00\x00\x00\x00\x00") allowed on diagnostics address
+  if (addr == 0x18DAB0F1) {
+  if ((GET_BYTES_04(to_send) != 0x00803E02) || (GET_BYTES_48(to_send) != 0x0)) {
+    tx = 0;
+  }
   }
 
   // 1 allows the message through

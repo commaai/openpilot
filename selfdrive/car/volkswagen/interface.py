@@ -1,5 +1,4 @@
 from cereal import car
-from selfdrive.swaglog import cloudlog
 from selfdrive.car.volkswagen.values import CAR, BUTTON_STATES, TransmissionType, GearShifter
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
@@ -41,7 +40,6 @@ class CarInterface(CarInterfaceBase):
       else:
         # No trans message at all, must be a true stick-shift manual
         ret.transmissionType = TransmissionType.manual
-      cloudlog.info("Detected transmission type: %s", ret.transmissionType)
 
     # Global tuning defaults, can be overridden per-vehicle
 
@@ -81,6 +79,11 @@ class CarInterface(CarInterfaceBase):
       # Average of SWB and LWB variants
       ret.mass = 1715 + STD_CARGO_KG
       ret.wheelbase = 2.74
+
+    elif candidate == CAR.TOURAN_MK2:
+      # Average of SWB and LWB variants
+      ret.mass = 1516 + STD_CARGO_KG
+      ret.wheelbase = 2.79
 
     elif candidate == CAR.AUDI_A3_MK3:
       # Averages of all 8V A3 variants
@@ -124,7 +127,6 @@ class CarInterface(CarInterfaceBase):
 
     ret.centerToFront = ret.wheelbase * 0.45
 
-    ret.enableCamera = True
     ret.enableBsm = 0x30F in fingerprint[0]
 
     # TODO: get actual value, for now starting with reasonable value for

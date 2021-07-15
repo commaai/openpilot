@@ -9,11 +9,11 @@ const int CHRYSLER_STANDSTILL_THRSLD = 10;  // about 1m/s
 const CanMsg CHRYSLER_TX_MSGS[] = {{571, 0, 3}, {658, 0, 6}, {678, 0, 8}};
 
 AddrCheckStruct chrysler_rx_checks[] = {
-  {.msg = {{544, 0, 8, .check_checksum = true, .max_counter = 15U, .expected_timestep = 10000U}}},
-  {.msg = {{514, 0, 8, .check_checksum = false, .max_counter = 0U, .expected_timestep = 10000U}}},
-  {.msg = {{500, 0, 8, .check_checksum = true, .max_counter = 15U, .expected_timestep = 20000U}}},
-  {.msg = {{308, 0, 8, .check_checksum = false, .max_counter = 15U,  .expected_timestep = 20000U}}},
-  {.msg = {{320, 0, 8, .check_checksum = true, .max_counter = 15U,  .expected_timestep = 20000U}}},
+  {.msg = {{544, 0, 8, .check_checksum = true, .max_counter = 15U, .expected_timestep = 10000U}, { 0 }, { 0 }}},
+  {.msg = {{514, 0, 8, .check_checksum = false, .max_counter = 0U, .expected_timestep = 10000U}, { 0 }, { 0 }}},
+  {.msg = {{500, 0, 8, .check_checksum = true, .max_counter = 15U, .expected_timestep = 20000U}, { 0 }, { 0 }}},
+  {.msg = {{308, 0, 8, .check_checksum = false, .max_counter = 15U,  .expected_timestep = 20000U}, { 0 }, { 0 }}},
+  {.msg = {{320, 0, 8, .check_checksum = true, .max_counter = 15U,  .expected_timestep = 20000U}, { 0 }, { 0 }}},
 };
 const int CHRYSLER_RX_CHECK_LEN = sizeof(chrysler_rx_checks) / sizeof(chrysler_rx_checks[0]);
 
@@ -25,10 +25,10 @@ static uint8_t chrysler_get_checksum(CAN_FIFOMailBox_TypeDef *to_push) {
 static uint8_t chrysler_compute_checksum(CAN_FIFOMailBox_TypeDef *to_push) {
   /* This function does not want the checksum byte in the input data.
   jeep chrysler canbus checksum from http://illmatics.com/Remote%20Car%20Hacking.pdf */
-  uint8_t checksum = 0xFF;
+  uint8_t checksum = 0xFFU;
   int len = GET_LEN(to_push);
   for (int j = 0; j < (len - 1); j++) {
-    uint8_t shift = 0x80;
+    uint8_t shift = 0x80U;
     uint8_t curr = (uint8_t)GET_BYTE(to_push, j);
     for (int i=0; i<8; i++) {
       uint8_t bit_sum = curr & shift;
@@ -132,7 +132,7 @@ static int chrysler_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
   // LKA STEER
   if (addr == 0x292) {
     int desired_torque = ((GET_BYTE(to_send, 0) & 0x7U) << 8) + GET_BYTE(to_send, 1) - 1024U;
-    uint32_t ts = TIM2->CNT;
+    uint32_t ts = microsecond_timer_get();
     bool violation = 0;
 
     if (controls_allowed) {

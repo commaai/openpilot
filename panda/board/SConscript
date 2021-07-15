@@ -1,16 +1,13 @@
 import os
 import subprocess
 
-EON = os.path.isfile('/EON')
-TICI = os.path.isfile('/TICI')
-PC = not (EON or TICI)
-
 PREFIX = "arm-none-eabi-"
 BUILDER = "DEV"
 
 if os.getenv("PEDAL"):
   PROJECT = "pedal"
-  STARTUP_FILE = "startup_stm32f205xx.s"
+  STARTUP_FILE = "stm32fx/startup_stm32f205xx.s"
+  LINKER_SCRIPT = "stm32fx/stm32fx_flash.ld"
   MAIN = "pedal/main.c"
   PROJECT_FLAGS = [
     "-mcpu=cortex-m3",
@@ -20,10 +17,13 @@ if os.getenv("PEDAL"):
     "-O2",
     "-DPEDAL",
   ]
+  if os.getenv("PEDAL_USB"):
+    PROJECT_FLAGS.append("-DPEDAL_USB")
 
 else:
   PROJECT = "panda"
-  STARTUP_FILE = "startup_stm32f413xx.s"
+  STARTUP_FILE = "stm32fx/startup_stm32f413xx.s"
+  LINKER_SCRIPT = "stm32fx/stm32fx_flash.ld"
   MAIN = "main.c"
   PROJECT_FLAGS = [
     "-mcpu=cortex-m4",
@@ -34,11 +34,8 @@ else:
     "-fsingle-precision-constant",
     "-Os",
     "-g",
+    "-DPANDA",
   ]
-
-  if not PC:
-    PROJECT_FLAGS += ["-DEON"]
-    BUILDER = "EON"
 
 
 def get_version(builder, build_type):
@@ -85,7 +82,7 @@ def objcopy(source, target, env, for_signature):
     return '$OBJCOPY -O binary %s %s' % (source[0], target[0])
 
 
-linkerscript_fn = File("stm32_flash.ld").srcnode().abspath
+linkerscript_fn = File(LINKER_SCRIPT).srcnode().abspath
 
 flags = [
   "-Wall",
@@ -112,7 +109,7 @@ else:
   flags += ["-DALLOW_DEBUG"]
 
 includes = [
-  "inc",
+  "stm32fx/inc",
   "..",
   ".",
 ]

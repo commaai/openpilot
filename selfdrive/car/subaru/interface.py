@@ -28,8 +28,6 @@ class CarInterface(CarInterfaceBase):
     ret.communityFeature = True
     ret.dashcamOnly = candidate in PREGLOBAL_CARS
 
-    ret.enableCamera = True
-
     ret.steerRateCost = 0.7
     ret.steerLimitTimer = 0.4
 
@@ -122,6 +120,6 @@ class CarInterface(CarInterfaceBase):
   def apply(self, c):
     can_sends = self.CC.update(c.enabled, self.CS, self.frame, c.actuators,
                                c.cruiseControl.cancel, c.hudControl.visualAlert,
-                               c.hudControl.leftLaneVisible, c.hudControl.rightLaneVisible)
+                               c.hudControl.leftLaneVisible, c.hudControl.rightLaneVisible, c.hudControl.leftLaneDepart, c.hudControl.rightLaneDepart)
     self.frame += 1
     return can_sends

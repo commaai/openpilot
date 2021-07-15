@@ -3,9 +3,9 @@
 #include <string>
 #include <unistd.h>
 
-#include "messaging.h"
-#include "visionipc.h"
-#include "visionbuf.h"
+#include "messaging/messaging.h"
+#include "visionipc/visionipc.h"
+#include "visionipc/visionbuf.h"
 
 class VisionIpcClient {
 private:

@@ -1,4 +1,4 @@
-#include <string.h>
+#include <cstring>
 
 #include "libyuv.h"
 
@@ -6,6 +6,7 @@
 #include "selfdrive/common/params.h"
 #include "selfdrive/common/timing.h"
 #include "selfdrive/hardware/hw.h"
+
 #include "selfdrive/modeld/models/dmonitoring.h"
 
 #define MODEL_WIDTH 320
@@ -19,7 +20,7 @@
 #endif
 
 void dmonitoring_init(DMonitoringModelState* s) {
-  const char *model_path = "../../models/dmonitoring_model_q.dlc";
+  const char *model_path = Hardware::PC() ? "../../models/dmonitoring_model.dlc" : "../../models/dmonitoring_model_q.dlc";
   int runtime = USE_DSP_RUNTIME;
   s->m = new DefaultRunModel(model_path, &s->output[0], OUTPUT_SIZE, runtime);
   s->is_rhd = Params().getBool("IsRHD");
@@ -165,7 +166,7 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
   return ret;
 }
 
-void dmonitoring_publish(PubMaster &pm, uint32_t frame_id, const DMonitoringResult &res, float execution_time, kj::ArrayPtr<const float> raw_pred){
+void dmonitoring_publish(PubMaster &pm, uint32_t frame_id, const DMonitoringResult &res, float execution_time, kj::ArrayPtr<const float> raw_pred) {
   // make msg
   MessageBuilder msg;
   auto framed = msg.initEvent().initDriverState();

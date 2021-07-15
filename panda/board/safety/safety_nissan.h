@@ -16,11 +16,11 @@ const CanMsg NISSAN_TX_MSGS[] = {{0x169, 0, 8}, {0x2b1, 0, 8}, {0x4cc, 0, 8}, {0
 // Signals duplicated below due to the fact that these messages can come in on either CAN bus, depending on car model.
 AddrCheckStruct nissan_rx_checks[] = {
   {.msg = {{0x2, 0, 5, .expected_timestep = 10000U},
-           {0x2, 1, 5, .expected_timestep = 10000U}}},  // STEER_ANGLE_SENSOR (100Hz)
+           {0x2, 1, 5, .expected_timestep = 10000U}, { 0 }}},  // STEER_ANGLE_SENSOR (100Hz)
   {.msg = {{0x285, 0, 8, .expected_timestep = 20000U},
-           {0x285, 1, 8, .expected_timestep = 20000U}}}, // WHEEL_SPEEDS_REAR (50Hz)
+           {0x285, 1, 8, .expected_timestep = 20000U}, { 0 }}}, // WHEEL_SPEEDS_REAR (50Hz)
   {.msg = {{0x30f, 2, 3, .expected_timestep = 100000U},
-           {0x30f, 1, 3, .expected_timestep = 100000U}}}, // CRUISE_STATE (10Hz)
+           {0x30f, 1, 3, .expected_timestep = 100000U}, { 0 }}}, // CRUISE_STATE (10Hz)
   {.msg = {{0x15c, 0, 8, .expected_timestep = 20000U},
            {0x15c, 1, 8, .expected_timestep = 20000U},
            {0x239, 0, 8, .expected_timestep = 20000U}}}, // GAS_PEDAL (100Hz / 50Hz)

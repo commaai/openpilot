@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <cstddef>
 
-constexpr int VISIONIPC_MAX_FDS = 64;
+constexpr int VISIONIPC_MAX_FDS = 128;
 
 struct VisionIpcBufExtra {
   uint32_t frame_id;

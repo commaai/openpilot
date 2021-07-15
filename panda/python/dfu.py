@@ -22,7 +22,6 @@ class PandaDFU(object):
           continue
         if this_dfu_serial == dfu_serial or dfu_serial is None:
           self._handle = device.open()
-          self.legacy = "07*128Kg" in self._handle.getASCIIStringDescriptor(4)
           return
     raise Exception("failed to open " + dfu_serial if dfu_serial is not None else "DFU device")
 

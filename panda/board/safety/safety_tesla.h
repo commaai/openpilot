@@ -1,18 +1,3 @@
-// board enforces
-//   in-state
-//      accel set/resume
-//   out-state
-//      cancel button
-//      regen paddle
-//      accel rising edge
-//      brake rising edge
-//      brake > 0mph
-//
-bool fmax_limit_check(float val, const float MAX_VAL, const float MIN_VAL) {
-  return (val > MAX_VAL) || (val < MIN_VAL);
-}
-
-// 2m/s are added to be less restrictive
 const struct lookup_t TESLA_LOOKUP_ANGLE_RATE_UP = {
     {2., 7., 17.},
     {5., .8, .25}};
@@ -21,186 +6,193 @@ const struct lookup_t TESLA_LOOKUP_ANGLE_RATE_DOWN = {
     {2., 7., 17.},
     {5., 3.5, .8}};
 
-const struct lookup_t TESLA_LOOKUP_MAX_ANGLE = {
-    {2., 29., 38.},
-    {410., 92., 36.}};
+const int TESLA_DEG_TO_CAN = 10;
 
-const uint32_t TESLA_RT_INTERVAL = 250000; // 250ms between real time checks
+const CanMsg TESLA_TX_MSGS[] = {
+  {0x488, 0, 4},  // DAS_steeringControl
+  {0x45, 0, 8},   // STW_ACTN_RQ
+  {0x45, 2, 8},   // STW_ACTN_RQ
+};
 
-// state of angle limits
-float tesla_desired_angle_last = 0; // last desired steer angle
-float tesla_rt_angle_last = 0.; // last real time angle
-float tesla_ts_angle_last = 0;
+AddrCheckStruct tesla_rx_checks[] = {
+  {.msg = {{0x370, 0, 8, .expected_timestep = 40000U}, { 0 }, { 0 }}},   // EPAS_sysStatus (25Hz)
+  {.msg = {{0x108, 0, 8, .expected_timestep = 10000U}, { 0 }, { 0 }}},   // DI_torque1 (100Hz)
+  {.msg = {{0x118, 0, 6, .expected_timestep = 10000U}, { 0 }, { 0 }}},   // DI_torque2 (100Hz)
+  {.msg = {{0x155, 0, 8, .expected_timestep = 20000U}, { 0 }, { 0 }}},   // ESP_B (50Hz)
+  {.msg = {{0x20a, 0, 8, .expected_timestep = 20000U}, { 0 }, { 0 }}},   // BrakeMessage (50Hz)
+  {.msg = {{0x368, 0, 8, .expected_timestep = 100000U}, { 0 }, { 0 }}},  // DI_state (10Hz)
+  {.msg = {{0x318, 0, 8, .expected_timestep = 100000U}, { 0 }, { 0 }}},  // GTW_carState (10Hz)
+};
+#define TESLA_RX_CHECK_LEN (sizeof(tesla_rx_checks) / sizeof(tesla_rx_checks[0]))
 
-int tesla_controls_allowed_last = 0;
-
-int tesla_speed = 0;
-int eac_status = 0;
-
-void set_gmlan_digital_output(int to_set);
-void reset_gmlan_switch_timeout(void);
-void gmlan_switch_init(int timeout_enable);
-
+bool autopilot_enabled = false;
 
 static int tesla_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
-  set_gmlan_digital_output(0); // #define GMLAN_HIGH 0
-  reset_gmlan_switch_timeout(); //we're still in tesla safety mode, reset the timeout counter and make sure our output is enabled
+  bool valid = addr_safety_check(to_push, tesla_rx_checks, TESLA_RX_CHECK_LEN,
+                                 NULL, NULL, NULL);
 
-  int addr = GET_ADDR(to_push);
+  if(valid) {
+    int bus = GET_BUS(to_push);
+    int addr = GET_ADDR(to_push);
 
-  if (addr == 0x45) {
-    // 6 bits starting at position 0
-    int lever_position = GET_BYTE(to_push, 0) & 0x3F;
-    if (lever_position == 2) { // pull forward
-      // activate openpilot
-      controls_allowed = 1;
+    if(bus == 0) {
+      if(addr == 0x370) {
+        // Steering angle: (0.1 * val) - 819.2 in deg.
+        // Store it 1/10 deg to match steering request
+        int angle_meas_new = (((GET_BYTE(to_push, 4) & 0x3F) << 8) | GET_BYTE(to_push, 5)) - 8192;
+        update_sample(&angle_meas, angle_meas_new);
+      }
+
+      if(addr == 0x155) {
+        // Vehicle speed: (0.01 * val) * KPH_TO_MPS
+        vehicle_speed = ((GET_BYTE(to_push, 5) << 8) | (GET_BYTE(to_push, 6))) * 0.01 / 3.6;
+        vehicle_moving = vehicle_speed > 0.;
+      }
+
+      if(addr == 0x108) {
+        // Gas pressed
+        gas_pressed = (GET_BYTE(to_push, 6) != 0);
+      }
+
+      if(addr == 0x20a) {
+        // Brake pressed
+        brake_pressed = (((GET_BYTE(to_push, 0) & 0x0C) >> 2) != 1);
+      }
+
+      if(addr == 0x368) {
+        // Cruise state
+        int cruise_state = (GET_BYTE(to_push, 1) >> 4);
+        bool cruise_engaged = (cruise_state == 2) ||  // ENABLED
+                              (cruise_state == 3) ||  // STANDSTILL
+                              (cruise_state == 4) ||  // OVERRIDE
+                              (cruise_state == 6) ||  // PRE_FAULT
+                              (cruise_state == 7);    // PRE_CANCEL
+
+        if(cruise_engaged && !cruise_engaged_prev) {
+          controls_allowed = 1;
+        }
+        if(!cruise_engaged) {
+          controls_allowed = 0;
+        }
+        cruise_engaged_prev = cruise_engaged;
+      }
     }
-    if (lever_position == 1) { // push towards the back
-      // deactivate openpilot
-      controls_allowed = 0;
+
+    if (bus == 2) {
+      if (addr == 0x399) {
+        // Autopilot status
+        int autopilot_status = (GET_BYTE(to_push, 0) & 0xF);
+        autopilot_enabled = (autopilot_status == 3) ||  // ACTIVE_1
+                            (autopilot_status == 4) ||  // ACTIVE_2
+                            (autopilot_status == 5);    // ACTIVE_NAVIGATE_ON_AUTOPILOT
+
+        if (autopilot_enabled) {
+          controls_allowed = 0;
+        }
+      }
     }
+
+    // 0x488: DAS_steeringControl should not be received on bus 0
+    generic_rx_checks((addr == 0x488) && (bus == 0));
   }
 
-  // exit controls on brake press
-  // DI_torque2::DI_brakePedal 0x118
-  if (addr == 0x118) {
-    // 1 bit at position 16
-    if ((GET_BYTE(to_push, 1) & 0x80) != 0) {
-      // disable break cancel by commenting line below
-      controls_allowed = 0;
-    }
-    //get vehicle speed in m/s. Tesla gives MPH
-    tesla_speed = (((((GET_BYTE(to_push, 3) & 0xF) << 8) + GET_BYTE(to_push, 2)) * 0.05) - 25) * 1.609 / 3.6;
-    if (tesla_speed < 0) {
-      tesla_speed = 0;
-    }
-  }
-
-  // exit controls on EPAS error
-  // EPAS_sysStatus::EPAS_eacStatus 0x370
-  if (addr == 0x370) {
-    // if EPAS_eacStatus is not 1 or 2, disable control
-    eac_status = (GET_BYTE(to_push, 6) >> 5) & 0x7;
-    // For human steering override we must not disable controls when eac_status == 0
-    // Additional safety: we could only allow eac_status == 0 when we have human steering allowed
-    if (controls_allowed && (eac_status != 0) && (eac_status != 1) && (eac_status != 2)) {
-      controls_allowed = 0;
-      //puts("EPAS error! \n");
-    }
-  }
-  //get latest steering wheel angle
-  if (addr == 0x00E) {
-    float angle_meas_now = (int)(((((GET_BYTE(to_push, 0) & 0x3F) << 8) + GET_BYTE(to_push, 1)) * 0.1) - 819.2);
-    uint32_t ts = TIM2->CNT;
-    uint32_t ts_elapsed = get_ts_elapsed(ts, tesla_ts_angle_last);
-
-    // *** angle real time check
-    // add 1 to not false trigger the violation and multiply by 25 since the check is done every 250 ms and steer angle is updated at     100Hz
-    float rt_delta_angle_up = (interpolate(TESLA_LOOKUP_ANGLE_RATE_UP, tesla_speed) * 25.) + 1.;
-    float rt_delta_angle_down = (interpolate(TESLA_LOOKUP_ANGLE_RATE_DOWN, tesla_speed) * 25.) + 1.;
-    float highest_rt_angle = tesla_rt_angle_last + ((tesla_rt_angle_last > 0.) ? rt_delta_angle_up : rt_delta_angle_down);
-    float lowest_rt_angle = tesla_rt_angle_last - ((tesla_rt_angle_last > 0.) ? rt_delta_angle_down : rt_delta_angle_up);
-
-    if ((ts_elapsed > TESLA_RT_INTERVAL) || (controls_allowed && !tesla_controls_allowed_last)) {
-      tesla_rt_angle_last = angle_meas_now;
-      tesla_ts_angle_last = ts;
-    }
-
-    // check for violation;
-    if (fmax_limit_check(angle_meas_now, highest_rt_angle, lowest_rt_angle)) {
-      // We should not be able to STEER under these conditions
-      // Other sending is fine (to allow human override)
-      controls_allowed = 0;
-      //puts("WARN: RT Angle - No steer allowed! \n");
-    } else {
-      controls_allowed = 1;
-    }
-
-    tesla_controls_allowed_last = controls_allowed;
-  }
-  return 1;
+  return valid;
 }
 
-// all commands: gas/regen, friction brake and steering
-// if controls_allowed and no pedals pressed
-//     allow all commands up to limit
-// else
-//     block all commands that produce actuation
 
 static int tesla_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
-
   int tx = 1;
   int addr = GET_ADDR(to_send);
+  bool violation = false;
 
-  // do not transmit CAN message if steering angle too high
-  // DAS_steeringControl::DAS_steeringAngleRequest
-  if (addr == 0x488) {
-    float angle_raw = ((GET_BYTE(to_send, 0) & 0x7F) << 8) + GET_BYTE(to_send, 1);
-    float desired_angle = (angle_raw * 0.1) - 1638.35;
-    bool violation = 0;
-    int st_enabled = GET_BYTE(to_send, 2) & 0x40;
+  if(!msg_allowed(to_send, TESLA_TX_MSGS, sizeof(TESLA_TX_MSGS) / sizeof(TESLA_TX_MSGS[0]))) {
+    tx = 0;
+  }
 
-    if (st_enabled == 0) {
-      //steering is not enabled, do not check angles and do send
-      tesla_desired_angle_last = desired_angle;
-    } else if (controls_allowed) {
-      // add 1 to not false trigger the violation
-      float delta_angle_up = interpolate(TESLA_LOOKUP_ANGLE_RATE_UP, tesla_speed) + 1.;
-      float delta_angle_down = interpolate(TESLA_LOOKUP_ANGLE_RATE_DOWN, tesla_speed) + 1.;
-      float highest_desired_angle = tesla_desired_angle_last + ((tesla_desired_angle_last > 0.) ? delta_angle_up : delta_angle_down);
-      float lowest_desired_angle = tesla_desired_angle_last - ((tesla_desired_angle_last > 0.) ? delta_angle_down : delta_angle_up);
-      float TESLA_MAX_ANGLE = interpolate(TESLA_LOOKUP_MAX_ANGLE, tesla_speed) + 1.;
+  if(relay_malfunction) {
+    tx = 0;
+  }
 
-      //check for max angles
-      violation |= fmax_limit_check(desired_angle, TESLA_MAX_ANGLE, -TESLA_MAX_ANGLE);
+  if(addr == 0x488) {
+    // Steering control: (0.1 * val) - 1638.35 in deg.
+    // We use 1/10 deg as a unit here
+    int raw_angle_can = (((GET_BYTE(to_send, 0) & 0x7F) << 8) | GET_BYTE(to_send, 1));
+    int desired_angle = raw_angle_can - 16384;
+    int steer_control_type = GET_BYTE(to_send, 2) >> 6;
+    bool steer_control_enabled = (steer_control_type != 0) &&  // NONE
+                                 (steer_control_type != 3);    // DISABLED
 
-      //check for angle delta changes
-      violation |= fmax_limit_check(desired_angle, highest_desired_angle, lowest_desired_angle);
+    // Rate limit while steering
+    if(controls_allowed && steer_control_enabled) {
+      // Add 1 to not false trigger the violation
+      float delta_angle_float;
+      delta_angle_float = (interpolate(TESLA_LOOKUP_ANGLE_RATE_UP, vehicle_speed) * TESLA_DEG_TO_CAN);
+      int delta_angle_up = (int)(delta_angle_float) + 1;
+      delta_angle_float =  (interpolate(TESLA_LOOKUP_ANGLE_RATE_DOWN, vehicle_speed) * TESLA_DEG_TO_CAN);
+      int delta_angle_down = (int)(delta_angle_float) + 1;
+      int highest_desired_angle = desired_angle_last + ((desired_angle_last > 0) ? delta_angle_up : delta_angle_down);
+      int lowest_desired_angle = desired_angle_last - ((desired_angle_last >= 0) ? delta_angle_down : delta_angle_up);
 
-      if (violation) {
-        controls_allowed = 0;
-        tx = 0;
-      }
-      tesla_desired_angle_last = desired_angle;
-    } else {
-      tx = 0;
+      // Check for violation;
+      violation |= max_limit_check(desired_angle, highest_desired_angle, lowest_desired_angle);
+    }
+    desired_angle_last = desired_angle;
+
+    // Angle should be the same as current angle while not steering
+    if(!controls_allowed && ((desired_angle < (angle_meas.min - 1)) || (desired_angle > (angle_meas.max + 1)))) {
+      violation = true;
+    }
+
+    // No angle control allowed when controls are not allowed
+    if(!controls_allowed && steer_control_enabled) {
+      violation = true;
     }
   }
+
+  if(addr == 0x45) {
+    // No button other than cancel can be sent by us
+    int control_lever_status = (GET_BYTE(to_send, 0) & 0x3F);
+    if((control_lever_status != 0) && (control_lever_status != 1)) {
+      violation = true;
+    }
+  }
+
+  if(violation) {
+    controls_allowed = 0;
+    tx = 0;
+  }
+
   return tx;
+}
+
+static int tesla_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
+  int bus_fwd = -1;
+  int addr = GET_ADDR(to_fwd);
+
+  if(bus_num == 0) {
+    // Chassis to autopilot
+    bus_fwd = 2;
+  }
+
+  if(bus_num == 2) {
+    // Autopilot to chassis
+    bool block_msg = ((addr == 0x488) && !autopilot_enabled);
+    if(!block_msg) {
+      bus_fwd = 0;
+    }
+  }
+
+  if(relay_malfunction) {
+    bus_fwd = -1;
+  }
+
+  return bus_fwd;
 }
 
 static void tesla_init(int16_t param) {
   UNUSED(param);
   controls_allowed = 0;
-  gmlan_switch_init(1); //init the gmlan switch with 1s timeout enabled
-}
-
-static int tesla_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
-
-  int bus_fwd = -1;
-  int addr = GET_ADDR(to_fwd);
-
-  if (bus_num == 0) {
-    // change inhibit of GTW_epasControl
-
-    if (addr != 0x214) {
-      // remove EPB_epasControl
-      bus_fwd = 2; // Custom EPAS bus
-    }
-    if (addr == 0x101) {
-      to_fwd->RDLR = GET_BYTES_04(to_fwd) | 0x4000; // 0x4000: WITH_ANGLE, 0xC000: WITH_BOTH (angle and torque)
-      uint32_t checksum = (GET_BYTE(to_fwd, 1) + GET_BYTE(to_fwd, 0) + 2) & 0xFF;
-      to_fwd->RDLR = GET_BYTES_04(to_fwd) & 0xFFFF;
-      to_fwd->RDLR = GET_BYTES_04(to_fwd) + (checksum << 16);
-    }
-  }
-  if (bus_num == 2) {
-    // remove GTW_epasControl in forwards
-    if (addr != 0x101) {
-      bus_fwd = 0;  // Chassis CAN
-    }
-  }
-  return bus_fwd;
+  relay_malfunction_reset();
 }
 
 const safety_hooks tesla_hooks = {
@@ -209,4 +201,6 @@ const safety_hooks tesla_hooks = {
   .tx = tesla_tx_hook,
   .tx_lin = nooutput_tx_lin_hook,
   .fwd = tesla_fwd_hook,
+  .addr_check = tesla_rx_checks,
+  .addr_check_len = TESLA_RX_CHECK_LEN,
 };

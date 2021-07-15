@@ -138,10 +138,14 @@ class Panda(object):
   HW_TYPE_BLACK_PANDA = b'\x03'
   HW_TYPE_PEDAL = b'\x04'
   HW_TYPE_UNO = b'\x05'
+  HW_TYPE_DOS = b'\x06'
 
   CLOCK_SOURCE_MODE_DISABLED = 0
   CLOCK_SOURCE_MODE_FREE_RUNNING = 1
   CLOCK_SOURCE_MODE_EXTERNAL_SYNC = 2
+
+  FLAG_HONDA_ALT_BRAKE = 1
+  FLAG_HONDA_BOSCH_LONG = 2
 
   def __init__(self, serial=None, claim=True):
     self._serial = serial
@@ -177,7 +181,6 @@ class Panda(object):
                 self._serial = this_serial
                 print("opening device", self._serial, hex(device.getProductID()))
                 self.bootstub = device.getProductID() == 0xddee
-                self.legacy = (device.getbcdDevice() != 0x2300)
                 self._handle = device.open()
                 if sys.platform not in ["win32", "cygwin", "msys", "darwin"]:
                   self._handle.setAutoDetachKernelDriver(True)
@@ -390,11 +393,17 @@ class Panda(object):
   def is_black(self):
     return self.get_type() == Panda.HW_TYPE_BLACK_PANDA
 
+  def is_pedal(self):
+    return self.get_type() == Panda.HW_TYPE_PEDAL
+
   def is_uno(self):
     return self.get_type() == Panda.HW_TYPE_UNO
 
+  def is_dos(self):
+    return self.get_type() == Panda.HW_TYPE_DOS
+
   def has_obd(self):
-    return (self.is_uno() or self.is_black())
+    return (self.is_uno() or self.is_dos() or self.is_black())
 
   def get_serial(self):
     dat = self._handle.controlRead(Panda.REQUEST_IN, 0xd0, 0, 0, 0x20)
@@ -420,8 +429,10 @@ class Panda(object):
     self._handle.controlWrite(Panda.REQUEST_OUT, 0xda, int(bootmode), 0, b'')
     time.sleep(0.2)
 
-  def set_safety_mode(self, mode=SAFETY_SILENT):
+  def set_safety_mode(self, mode=SAFETY_SILENT, disable_heartbeat=True):
     self._handle.controlWrite(Panda.REQUEST_OUT, 0xdc, mode, 0, b'')
+    if disable_heartbeat:
+      self.set_heartbeat_disabled()
 
   def set_can_forwarding(self, from_bus, to_bus):
     # TODO: This feature may not work correctly with saturated buses
@@ -618,6 +629,11 @@ class Panda(object):
 
   def send_heartbeat(self):
     self._handle.controlWrite(Panda.REQUEST_OUT, 0xf3, 0, 0, b'')
+
+  # disable heartbeat checks for use outside of openpilot
+  # sending a heartbeat will reenable the checks
+  def set_heartbeat_disabled(self):
+    self._handle.controlWrite(Panda.REQUEST_OUT, 0xf8, 0, 0, b'')
 
   # ******************* RTC *******************
   def set_datetime(self, dt):

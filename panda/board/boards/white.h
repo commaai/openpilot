@@ -78,13 +78,6 @@ void white_set_gps_mode(uint8_t mode) {
       set_gpio_output(GPIOC, 14, 0);
       set_gpio_output(GPIOC, 5, 0);
       break;
-#ifndef EON
-    case GPS_ENABLED:
-      // ESP ON
-      set_gpio_output(GPIOC, 14, 1);
-      set_gpio_output(GPIOC, 5, 1);
-      break;
-#endif
     case GPS_BOOTMODE:
       set_gpio_output(GPIOC, 14, 1);
       set_gpio_output(GPIOC, 5, 0);
@@ -158,71 +151,8 @@ uint32_t white_read_current(void){
   return adc_get(ADCCHAN_CURRENT);
 }
 
-uint32_t marker = 0;
 void white_usb_power_mode_tick(uint32_t uptime){
-
-  // on EON or BOOTSTUB, no state machine
-#if !defined(BOOTSTUB) && !defined(EON)
-  #define CURRENT_THRESHOLD 0xF00U
-  #define CLICKS 5U // 5 seconds to switch modes
-
-  uint32_t current = white_read_current();
-
-  // ~0x9a = 500 ma
-  // puth(current); puts("\n");
-
-  switch (usb_power_mode) {
-    case USB_POWER_CLIENT:
-      if ((uptime - marker) >= CLICKS) {
-        if (!is_enumerated) {
-          puts("USBP: didn't enumerate, switching to CDP mode\n");
-          // switch to CDP
-          white_set_usb_power_mode(USB_POWER_CDP);
-          marker = uptime;
-        }
-      }
-      // keep resetting the timer if it's enumerated
-      if (is_enumerated) {
-        marker = uptime;
-      }
-      break;
-    case USB_POWER_CDP:
-      // been CLICKS clicks since we switched to CDP
-      if ((uptime - marker) >= CLICKS) {
-        // measure current draw, if positive and no enumeration, switch to DCP
-        if (!is_enumerated && (current < CURRENT_THRESHOLD)) {
-          puts("USBP: no enumeration with current draw, switching to DCP mode\n");
-          white_set_usb_power_mode(USB_POWER_DCP);
-          marker = uptime;
-        }
-      }
-      // keep resetting the timer if there's no current draw in CDP
-      if (current >= CURRENT_THRESHOLD) {
-        marker = uptime;
-      }
-      break;
-    case USB_POWER_DCP:
-      // been at least CLICKS clicks since we switched to DCP
-      if ((uptime - marker) >= CLICKS) {
-        // if no current draw, switch back to CDP
-        if (current >= CURRENT_THRESHOLD) {
-          puts("USBP: no current draw, switching back to CDP mode\n");
-          white_set_usb_power_mode(USB_POWER_CDP);
-          marker = uptime;
-        }
-      }
-      // keep resetting the timer if there's current draw in DCP
-      if (current < CURRENT_THRESHOLD) {
-        marker = uptime;
-      }
-      break;
-    default:
-      puts("USB power mode invalid\n");  // set_usb_power_mode prevents assigning invalid values
-      break;
-  }
-#else
   UNUSED(uptime);
-#endif
 }
 
 void white_set_ir_power(uint8_t percentage){
@@ -313,7 +243,7 @@ void white_grey_common_init(void) {
   // Init usb power mode
   uint32_t voltage = adc_get_voltage();
   // Init in CDP mode only if panda is powered by 12V.
-  // Otherwise a PC would not be able to flash a standalone panda with EON build
+  // Otherwise a PC would not be able to flash a standalone panda
   if (voltage > 8000U) {  // 8V threshold
     white_set_usb_power_mode(USB_POWER_CDP);
   } else {
@@ -335,6 +265,11 @@ const harness_configuration white_harness_config = {
 const board board_white = {
   .board_type = "White",
   .harness_config = &white_harness_config,
+  .has_gps = false,
+  .has_hw_gmlan = true,
+  .has_obd = false,
+  .has_lin = true,
+  .has_rtc = false,
   .init = white_init,
   .enable_can_transceiver = white_enable_can_transceiver,
   .enable_can_transceivers = white_enable_can_transceivers,

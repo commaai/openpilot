@@ -10,6 +10,7 @@ from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
+
 def actuator_hystereses(brake, braking, brake_steady, v_ego, car_fingerprint):
   # hyst params
   brake_hyst_on = 0.02     # to activate brakes exceed this value
@@ -62,7 +63,7 @@ def process_hud_alert(hud_alert):
   # priority is: FCW, steer required, all others
   if hud_alert == VisualAlert.fcw:
     fcw_display = VISUAL_HUD[hud_alert.raw]
-  elif hud_alert == VisualAlert.steerRequired:
+  elif hud_alert in [VisualAlert.steerRequired, VisualAlert.ldw]:
     steer_required = VISUAL_HUD[hud_alert.raw]
   else:
     acc_alert = VISUAL_HUD[hud_alert.raw]
@@ -103,7 +104,7 @@ class CarController():
 
     # Never send cancel command if we never enter cruise state (no cruise if pedal)
     # Cancel cmd causes brakes to release at a standstill causing grinding
-    pcm_cancel_cmd = pcm_cancel_cmd and CS.CP.enableCruise
+    pcm_cancel_cmd = pcm_cancel_cmd and CS.CP.pcmCruise
 
     # *** rate limit after the enable check ***
     self.brake_last = rate_limit(brake, self.brake_last, -2., DT_CTRL)
@@ -137,6 +138,11 @@ class CarController():
     # Send CAN commands.
     can_sends = []
 
+    # tester present - w/ no response (keeps radar disabled)
+    if CS.CP.carFingerprint in HONDA_BOSCH and CS.CP.openpilotLongitudinalControl:
+      if (frame % 10) == 0:
+        can_sends.append((0x18DAB0F1, 0, b"\x02\x3E\x80\x00\x00\x00\x00\x00", 1))
+
     # Send steering command.
     idx = frame % 4
     can_sends.append(hondacan.create_steering_control(self.packer, apply_steer,
@@ -163,7 +169,19 @@ class CarController():
         idx = frame // 2
         ts = frame * DT_CTRL
         if CS.CP.carFingerprint in HONDA_BOSCH:
-          pass # TODO: implement
+          accel = actuators.gas - actuators.brake
+
+          # TODO: pass in LoC.long_control_state and use that to decide starting/stoppping
+          stopping = accel < 0 and CS.out.vEgo < 0.3
+          starting = accel > 0 and CS.out.vEgo < 0.3
+
+          # Prevent rolling backwards
+          accel = -1.0 if stopping else accel
+
+          apply_accel = interp(accel, P.BOSCH_ACCEL_LOOKUP_BP, P.BOSCH_ACCEL_LOOKUP_V)
+          apply_gas = interp(accel, P.BOSCH_GAS_LOOKUP_BP, P.BOSCH_GAS_LOOKUP_V)
+          can_sends.extend(hondacan.create_acc_commands(self.packer, enabled, apply_accel, apply_gas, idx, stopping, starting, CS.CP.carFingerprint))
+
         else:
           apply_gas = clip(actuators.gas, 0., 1.)
           apply_brake = int(clip(self.brake_last * P.BRAKE_MAX, 0, P.BRAKE_MAX - 1))

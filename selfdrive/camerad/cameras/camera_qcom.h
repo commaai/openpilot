@@ -1,8 +1,7 @@
 #pragma once
 
-#include <stdint.h>
-
 #include <atomic>
+#include <cstdint>
 #include <memory>
 
 #include "cereal/messaging/messaging.h"
@@ -67,6 +66,10 @@ typedef struct CameraState {
   unsigned int max_gain;
   float cur_exposure_frac, cur_gain_frac;
   int cur_gain, cur_integ_lines;
+
+  float measured_grey_fraction;
+  float target_grey_fraction;
+
   std::atomic<float> digital_gain;
   camera_apply_exposure_func apply_exposure;
 

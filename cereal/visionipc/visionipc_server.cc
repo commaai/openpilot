@@ -7,9 +7,9 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include "messaging.h"
-#include "ipc.h"
-#include "visionipc_server.h"
+#include "messaging/messaging.h"
+#include "visionipc/ipc.h"
+#include "visionipc/visionipc_server.h"
 
 std::string get_endpoint_name(std::string name, VisionStreamType type){
   if (messaging_use_zmq()){

@@ -1,7 +1,6 @@
 #include <array>
 
 #include <QLabel>
-#include <QOpenGLWidget>
 #include <QPixmap>
 #include <QProgressBar>
 #include <QSocketNotifier>
@@ -19,7 +18,6 @@ public:
 private:
   void paintEvent(QPaintEvent *event) override;
   std::array<QPixmap, spinner_fps> track_imgs;
-  QPixmap comma_img;
   QVariantAnimation m_anim;
 };
 

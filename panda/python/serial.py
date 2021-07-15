@@ -4,6 +4,7 @@ class PandaSerial(object):
     self.panda = panda
     self.port = port
     self.panda.set_uart_parity(self.port, 0)
+    self._baudrate = baud
     self.panda.set_uart_baud(self.port, baud)
     self.buf = b""
 
@@ -20,3 +21,15 @@ class PandaSerial(object):
 
   def close(self):
     pass
+
+  def flush(self):
+    pass
+
+  @property
+  def baudrate(self):
+    return self._baudrate
+
+  @baudrate.setter
+  def baudrate(self, value):
+    self.panda.set_uart_baud(self.port, value)
+    self._baudrate = value

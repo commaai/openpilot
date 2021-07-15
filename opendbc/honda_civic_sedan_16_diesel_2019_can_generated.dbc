@@ -370,6 +370,48 @@ BO_ 891 STALK_STATUS_2: 8 XXX
  SG_ CHECKSUM : 59|4@0+ (1,0) [0|3] "" EON
  SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
 
+BO_ 13274 LKAS_HUD_A: 5 ADAS
+ SG_ CAM_TEMP_HIGH : 7|1@0+ (1,0) [0|255] "" BDY
+ SG_ SET_ME_X41 : 6|7@0+ (1,0) [0|127] "" BDY
+ SG_ BOH : 6|7@0+ (1,0) [0|127] "" BDY
+ SG_ DASHED_LANES : 14|1@0+ (1,0) [0|1] "" BDY
+ SG_ DTC : 13|1@0+ (1,0) [0|1] "" BDY
+ SG_ LKAS_PROBLEM : 12|1@0+ (1,0) [0|1] "" BDY
+ SG_ LKAS_OFF : 11|1@0+ (1,0) [0|1] "" BDY
+ SG_ SOLID_LANES : 10|1@0+ (1,0) [0|1] "" BDY
+ SG_ LDW_RIGHT : 9|1@0+ (1,0) [0|1] "" BDY
+ SG_ STEERING_REQUIRED : 8|1@0+ (1,0) [0|1] "" BDY
+ SG_ BOH : 23|2@0+ (1,0) [0|4] "" BDY
+ SG_ LDW_PROBLEM : 21|1@0+ (1,0) [0|1] "" BDY
+ SG_ BEEP : 17|2@0+ (1,0) [0|1] "" BDY
+ SG_ SET_ME_X01 : 20|1@0+ (1,0) [0|1] "" BDY
+ SG_ LDW_ON : 28|1@0+ (1,0) [0|1] "" BDY
+ SG_ LDW_OFF : 27|1@0+ (1,0) [0|1] "" BDY
+ SG_ CLEAN_WINDSHIELD : 26|1@0+ (1,0) [0|1] "" BDY
+ SG_ COUNTER : 37|2@0+ (1,0) [0|3] "" BDY
+ SG_ CHECKSUM : 35|4@0+ (1,0) [0|15] "" BDY
+
+BO_ 13275 LKAS_HUD_B: 8 ADAS
+ SG_ CAM_TEMP_HIGH : 7|1@0+ (1,0) [0|255] "" BDY
+ SG_ SET_ME_X41 : 6|7@0+ (1,0) [0|127] "" BDY
+ SG_ BOH : 6|7@0+ (1,0) [0|127] "" BDY
+ SG_ DASHED_LANES : 14|1@0+ (1,0) [0|1] "" BDY
+ SG_ DTC : 13|1@0+ (1,0) [0|1] "" BDY
+ SG_ LKAS_PROBLEM : 12|1@0+ (1,0) [0|1] "" BDY
+ SG_ LKAS_OFF : 11|1@0+ (1,0) [0|1] "" BDY
+ SG_ SOLID_LANES : 10|1@0+ (1,0) [0|1] "" BDY
+ SG_ LDW_RIGHT : 9|1@0+ (1,0) [0|1] "" BDY
+ SG_ STEERING_REQUIRED : 8|1@0+ (1,0) [0|1] "" BDY
+ SG_ BOH : 23|2@0+ (1,0) [0|4] "" BDY
+ SG_ LDW_PROBLEM : 21|1@0+ (1,0) [0|1] "" BDY
+ SG_ BEEP : 17|2@0+ (1,0) [0|1] "" BDY
+ SG_ SET_ME_X01 : 20|1@0+ (1,0) [0|1] "" BDY
+ SG_ LDW_ON : 28|1@0+ (1,0) [0|1] "" BDY
+ SG_ LDW_OFF : 27|1@0+ (1,0) [0|1] "" BDY
+ SG_ CLEAN_WINDSHIELD : 26|1@0+ (1,0) [0|1] "" BDY
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" BDY
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" BDY
+
 CM_ SG_ 479 AEB_STATUS "set for the duration of AEB event";
 CM_ SG_ 479 AEB_BRAKING "set when braking is commanded during AEB event";
 CM_ SG_ 479 AEB_PREPARE "set 1s before AEB";

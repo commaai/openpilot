@@ -1,6 +1,7 @@
 #include "selfdrive/ui/qt/onroad.h"
 
 #include <iostream>
+#include <QDebug>
 
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/timing.h"
@@ -12,34 +13,31 @@
 #endif
 
 OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
-  layout = new QStackedLayout(this);
-  layout->setStackingMode(QStackedLayout::StackAll);
+  main_layout = new QStackedLayout(this);
+  main_layout->setStackingMode(QStackedLayout::StackAll);
 
   // old UI on bottom
   nvg = new NvgWindow(this);
   QObject::connect(this, &OnroadWindow::update, nvg, &NvgWindow::update);
 
-  split = new QHBoxLayout();
+  QWidget * split_wrapper = new QWidget;
+  split = new QHBoxLayout(split_wrapper);
   split->setContentsMargins(0, 0, 0, 0);
   split->setSpacing(0);
   split->addWidget(nvg);
 
-
-  QWidget * split_wrapper = new QWidget;
-  split_wrapper->setLayout(split);
-  layout->addWidget(split_wrapper);
+  main_layout->addWidget(split_wrapper);
 
   alerts = new OnroadAlerts(this);
   alerts->setAttribute(Qt::WA_TransparentForMouseEvents, true);
   QObject::connect(this, &OnroadWindow::update, alerts, &OnroadAlerts::updateState);
   QObject::connect(this, &OnroadWindow::offroadTransitionSignal, alerts, &OnroadAlerts::offroadTransition);
   QObject::connect(this, &OnroadWindow::offroadTransitionSignal, this, &OnroadWindow::offroadTransition);
-  layout->addWidget(alerts);
+  main_layout->addWidget(alerts);
 
   // setup stacking order
   alerts->raise();
 
-  setLayout(layout);
   setAttribute(Qt::WA_OpaquePaintEvent);
 }
 
@@ -48,9 +46,11 @@ void OnroadWindow::offroadTransition(bool offroad) {
 #ifdef ENABLE_MAPS
   if (!offroad) {
     QString token = QString::fromStdString(Params().get("MapboxToken"));
-    if (map == nullptr && !token.isEmpty()){
+    if (map == nullptr && !token.isEmpty()) {
       QMapboxGLSettings settings;
-      settings.setCacheDatabasePath("/data/mbgl-cache.db");
+      if (!Hardware::PC()) {
+        settings.setCacheDatabasePath("/data/mbgl-cache.db");
+      }
       settings.setCacheDatabaseMaximumSize(20 * 1024 * 1024);
       settings.setAccessToken(token.trimmed());
 
@@ -68,9 +68,19 @@ void OnroadWindow::offroadTransition(bool offroad) {
 // ***** onroad widgets *****
 
 OnroadAlerts::OnroadAlerts(QWidget *parent) : QWidget(parent) {
-  for (auto &kv : sound_map) {
-    auto path = QUrl::fromLocalFile(kv.second.first);
-    sounds[kv.first].setSource(path);
+  std::tuple<AudibleAlert, QString, bool> sound_list[] = {
+    {AudibleAlert::CHIME_DISENGAGE, "../assets/sounds/disengaged.wav", false},
+    {AudibleAlert::CHIME_ENGAGE, "../assets/sounds/engaged.wav", false},
+    {AudibleAlert::CHIME_WARNING1, "../assets/sounds/warning_1.wav", false},
+    {AudibleAlert::CHIME_WARNING2, "../assets/sounds/warning_2.wav", false},
+    {AudibleAlert::CHIME_WARNING2_REPEAT, "../assets/sounds/warning_2.wav", true},
+    {AudibleAlert::CHIME_WARNING_REPEAT, "../assets/sounds/warning_repeat.wav", true},
+    {AudibleAlert::CHIME_ERROR, "../assets/sounds/error.wav", false},
+    {AudibleAlert::CHIME_PROMPT, "../assets/sounds/error.wav", false}};
+
+  for (auto &[alert, fn, loops] : sound_list) {
+    sounds[alert].first.setSource(QUrl::fromLocalFile(fn));
+    sounds[alert].second = loops ? QSoundEffect::Infinite : 0;
   }
 }
 
@@ -114,7 +124,7 @@ void OnroadAlerts::offroadTransition(bool offroad) {
 
 void OnroadAlerts::updateAlert(const QString &t1, const QString &t2, float blink_rate,
                                const std::string &type, cereal::ControlsState::AlertSize size, AudibleAlert sound) {
-  if (alert_type.compare(type) == 0 && text1.compare(t1) == 0) {
+  if (alert_type.compare(type) == 0 && text1.compare(t1) == 0 && text2.compare(t2) == 0) {
     return;
   }
 
@@ -133,24 +143,23 @@ void OnroadAlerts::updateAlert(const QString &t1, const QString &t2, float blink
 }
 
 void OnroadAlerts::playSound(AudibleAlert alert) {
-  int loops = sound_map[alert].second ? QSoundEffect::Infinite : 0;
-  sounds[alert].setLoopCount(loops);
-  sounds[alert].setVolume(volume);
-  sounds[alert].play();
+  auto &[sound, loops] = sounds[alert];
+  sound.setLoopCount(loops);
+  sound.setVolume(volume);
+  sound.play();
 }
 
 void OnroadAlerts::stopSounds() {
   for (auto &kv : sounds) {
     // Only stop repeating sounds
-    if (kv.second.loopsRemaining() == QSoundEffect::Infinite) {
-      kv.second.stop();
+    auto &[sound, loops] = kv.second;
+    if (sound.loopsRemaining() == QSoundEffect::Infinite) {
+      sound.stop();
     }
   }
 }
 
 void OnroadAlerts::paintEvent(QPaintEvent *event) {
-  QPainter p(this);
-
   if (alert_size == cereal::ControlsState::AlertSize::NONE) {
     return;
   }
@@ -162,9 +171,11 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
   int h = alert_sizes[alert_size];
   QRect r = QRect(0, height() - h, width(), h);
 
+  QPainter p(this);
+
   // draw background + gradient
   p.setPen(Qt::NoPen);
-  p.setCompositionMode(QPainter::CompositionMode_DestinationOver);
+  p.setCompositionMode(QPainter::CompositionMode_SourceOver);
 
   p.setBrush(QBrush(bg));
   p.drawRect(r);
@@ -172,6 +183,8 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
   QLinearGradient g(0, r.y(), 0, r.bottom());
   g.setColorAt(0, QColor::fromRgbF(0, 0, 0, 0.05));
   g.setColorAt(1, QColor::fromRgbF(0, 0, 0, 0.35));
+
+  p.setCompositionMode(QPainter::CompositionMode_DestinationOver);
   p.setBrush(QBrush(g));
   p.fillRect(r, g);
   p.setCompositionMode(QPainter::CompositionMode_SourceOver);
@@ -212,10 +225,10 @@ NvgWindow::~NvgWindow() {
 
 void NvgWindow::initializeGL() {
   initializeOpenGLFunctions();
-  std::cout << "OpenGL version: " << glGetString(GL_VERSION) << std::endl;
-  std::cout << "OpenGL vendor: " << glGetString(GL_VENDOR) << std::endl;
-  std::cout << "OpenGL renderer: " << glGetString(GL_RENDERER) << std::endl;
-  std::cout << "OpenGL language version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
+  qInfo() << "OpenGL version:" << QString((const char*)glGetString(GL_VERSION));
+  qInfo() << "OpenGL vendor:" << QString((const char*)glGetString(GL_VENDOR));
+  qInfo() << "OpenGL renderer:" << QString((const char*)glGetString(GL_RENDERER));
+  qInfo() << "OpenGL language version:" << QString((const char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
 
   ui_nvg_init(&QUIState::ui_state);
   prev_draw_t = millis_since_boot();
@@ -223,7 +236,7 @@ void NvgWindow::initializeGL() {
 
 void NvgWindow::update(const UIState &s) {
   // Connecting to visionIPC requires opengl to be current
-  if (s.vipc_client->connected){
+  if (s.vipc_client->connected) {
     makeCurrent();
   }
   repaint();

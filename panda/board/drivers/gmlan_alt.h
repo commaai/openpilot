@@ -288,4 +288,3 @@ bool bitbang_gmlan(CAN_FIFOMailBox_TypeDef *to_bang) {
   }
   return gmlan_send_ok;
 }
-

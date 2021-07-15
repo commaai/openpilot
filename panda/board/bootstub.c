@@ -3,62 +3,24 @@
 #define VERS_TAG 0x53524556
 #define MIN_VERSION 2
 
-#include "config.h"
-#include "obj/gitversion.h"
-
-#ifdef STM32F4
-  #define PANDA
-  #include "stm32f4xx.h"
-  #include "stm32f4xx_hal_gpio_ex.h"
-#else
-  #include "stm32f2xx.h"
-  #include "stm32f2xx_hal_gpio_ex.h"
-#endif
-
-// ******************** Prototypes ********************
-void puts(const char *a){ UNUSED(a); }
-void puth(unsigned int i){ UNUSED(i); }
-void puth2(unsigned int i){ UNUSED(i); }
-typedef struct board board;
-typedef struct harness_configuration harness_configuration;
-// No CAN support on bootloader
-void can_flip_buses(uint8_t bus1, uint8_t bus2){UNUSED(bus1); UNUSED(bus2);}
-void can_set_obd(int harness_orientation, bool obd){UNUSED(harness_orientation); UNUSED(obd);}
-
-// ********************* Globals **********************
-int hw_type = 0;
-const board *current_board;
-
 // ********************* Includes *********************
-#include "libc.h"
-#include "provision.h"
-#include "critical.h"
-#include "faults.h"
+#include "config.h"
 
-#include "drivers/registers.h"
-#include "drivers/interrupts.h"
-#include "drivers/clock.h"
-#include "drivers/llgpio.h"
-#include "drivers/adc.h"
 #include "drivers/pwm.h"
-
-#include "board.h"
-
-#include "gpio.h"
-
-#include "drivers/spi.h"
 #include "drivers/usb.h"
-//#include "drivers/uart.h"
+
+#include "early_init.h"
+#include "provision.h"
 
 #include "crypto/rsa.h"
 #include "crypto/sha.h"
 
 #include "obj/cert.h"
-
+#include "obj/gitversion.h"
 #include "spi_flasher.h"
 
 void __initialize_hardware_early(void) {
-  early();
+  early_initialization();
 }
 
 void fail(void) {
@@ -77,7 +39,7 @@ int main(void) {
 
   disable_interrupts();
   clock_init();
-  detect_configuration();
+  detect_external_debug_serial();
   detect_board_type();
 
   if (enter_bootloader_mode == ENTER_SOFTLOADER_MAGIC) {
@@ -121,4 +83,3 @@ good:
   ((void(*)(void)) _app_start[1])();
   return 0;
 }
-

@@ -1334,6 +1334,14 @@ BO_ 981 Licht_Anf_01: 8 XXX
 BO_ 1440 RLS_01: 8 XXX
 
 BO_ 870 Blinkmodi_02: 8 XXX
+ SG_ Hazard_Switch : 20|1@1+ (1,0) [0|1] ""  XXX
+ SG_ Comfort_Signal_Left : 23|1@1+ (1,0) [0|1] ""  XXX
+ SG_ Comfort_Signal_Right : 24|1@1+ (1,0) [0|1] ""  XXX
+ SG_ Left_Turn_Exterior_Bulb_1 : 25|1@1+ (1,0) [0|1] ""  XXX
+ SG_ Right_Turn_Exterior_Bulb_1 : 26|1@1+ (1,0) [0|1] ""  XXX
+ SG_ Left_Turn_Exterior_Bulb_2 : 27|1@1+ (1,0) [0|1] ""  XXX
+ SG_ Right_Turn_Exterior_Bulb_2 : 28|1@1+ (1,0) [0|1] ""  XXX
+ SG_ Fast_Send_Rate_Active : 37|1@1+ (1,0) [0|1] ""  XXX
 
 BO_ 1385 HVEM_04: 8 XXX
 
@@ -1364,6 +1372,14 @@ CM_ SG_ 294 254 "May be zero when sent by older cameras";
 CM_ SG_ 294 Assist_Torque "Heading control input, torque";
 CM_ SG_ 294 Assist_VZ "Heading control input, direction (sign)";
 CM_ SG_ 294 HCA_Available "Must be 1 for steering rack to accept HCA commands";
+CM_ SG_ 870 Hazard_Switch "Four-way flashers active";
+CM_ SG_ 870 Comfort_Signal_Left "Comfort turn signal active, left";
+CM_ SG_ 870 Comfort_Signal_Right "Comfort turn signal active, right";
+CM_ SG_ 870 Left_Turn_Exterior_Bulb_1 "Probably front";
+CM_ SG_ 870 Right_Turn_Exterior_Bulb_1 "Probably front";
+CM_ SG_ 870 Left_Turn_Exterior_Bulb_2 "Probably rear";
+CM_ SG_ 870 Right_Turn_Exterior_Bulb_2 "Probably rear";
+CM_ SG_ 870 Fast_Send_Rate_Active "CAN message send rate";
 CM_ SG_ 919 LDW_DLC "Probable DLC (distance to line crossing)";
 CM_ SG_ 919 LDW_TLC "Probable TLC (time to line crossing)";
 CM_ SG_ 919 LDW_Unknown "Might be a steering pressed / driver active flag";
@@ -1383,3 +1399,4 @@ VAL_ 159 EPS_HCA_Status 0 "disabled" 1 "initializing" 2 "fault" 3 "ready" 4 "rej
 VAL_ 173 GE_Fahrstufe 5 "P" 6 "R" 7 "N" 8 "D" 9 "S" 10 "E" 14 "T";
 VAL_ 391 GearPosition 2 "P" 3 "R" 4 "N" 5 "D" 6 "D";
 VAL_ 391 RegenBrakingMode 0 "default" 1 "B1" 2 "B2" 3 "B3";
+VAL_ 870 Fast_Send_Rate_Active 0 "1 Hz" 1 "50 Hz";

@@ -13,6 +13,10 @@ AddOption('--test',
           action='store_true',
           help='build test files')
 
+AddOption('--setup',
+          action='store_true',
+          help='build setup and installer files')
+
 AddOption('--kaitai',
           action='store_true',
           help='Regenerate kaitai struct parsers')
@@ -46,6 +50,11 @@ AddOption('--external-sconscript',
           metavar='FILE',
           dest='external_sconscript',
           help='add an external SConscript to the build')
+
+AddOption('--no-thneed',
+          action='store_true',
+          dest='no_thneed',
+          help='avoid using thneed')
 
 real_arch = arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
 if platform.system() == "Darwin":
@@ -98,8 +107,8 @@ if arch == "aarch64" or arch == "larch64":
       "#phonelibs/libyuv/lib",
       "/system/vendor/lib64"
     ]
-    cflags = ["-DQCOM", "-mcpu=cortex-a57"]
-    cxxflags = ["-DQCOM", "-mcpu=cortex-a57"]
+    cflags = ["-DQCOM", "-D_USING_LIBCXX", "-mcpu=cortex-a57"]
+    cxxflags = ["-DQCOM", "-D_USING_LIBCXX", "-mcpu=cortex-a57"]
     rpath = []
 else:
   cflags = []
@@ -195,8 +204,6 @@ env = Environment(
     "#phonelibs/qrcode",
     "#phonelibs",
     "#cereal",
-    "#cereal/messaging",
-    "#cereal/visionipc",
     "#opendbc/can",
   ],
 
@@ -317,7 +324,8 @@ qt_flags = [
   "-DQT_QUICK_LIB",
   "-DQT_QUICKWIDGETS_LIB",
   "-DQT_QML_LIB",
-  "-DQT_CORE_LIB"
+  "-DQT_CORE_LIB",
+  "-DQT_MESSAGELOGCONTEXT",
 ]
 qt_env['CXXFLAGS'] += qt_flags
 qt_env['LIBPATH'] += ['#selfdrive/ui']
@@ -399,8 +407,8 @@ SConscript(['selfdrive/modeld/SConscript'])
 
 SConscript(['selfdrive/controls/lib/cluster/SConscript'])
 SConscript(['selfdrive/controls/lib/lateral_mpc/SConscript'])
-SConscript(['selfdrive/controls/lib/longitudinal_mpc/SConscript'])
-SConscript(['selfdrive/controls/lib/longitudinal_mpc_model/SConscript'])
+SConscript(['selfdrive/controls/lib/lead_mpc_lib/SConscript'])
+SConscript(['selfdrive/controls/lib/longitudinal_mpc_lib/SConscript'])
 
 SConscript(['selfdrive/boardd/SConscript'])
 SConscript(['selfdrive/proclogd/SConscript'])

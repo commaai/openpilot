@@ -1,8 +1,7 @@
-#include "paint.h"
-
-#include <assert.h>
+#include "selfdrive/ui/paint.h"
 
 #include <algorithm>
+#include <cassert>
 
 #ifdef __APPLE__
 #include <OpenGL/gl3.h>
@@ -85,7 +84,7 @@ static void draw_lead(UIState *s, const cereal::RadarState::LeadData::Reader &le
     fillAlpha = (int)(fmin(fillAlpha, 255));
   }
 
-  float sz = std::clamp((25 * 30) / (d_rel / 3 + 30), 15.0f, 30.0f) * s->zoom;
+  float sz = std::clamp((25 * 30) / (d_rel / 3 + 30), 15.0f, 30.0f) * 2.35;
   x = std::clamp(x, 0.f, s->viz_rect.right() - sz / 2);
   y = std::fmin(s->viz_rect.bottom() - sz * .6, y);
   draw_chevron(s, x, y, sz, nvgRGBA(201, 34, 49, fillAlpha), COLOR_YELLOW);
@@ -435,21 +434,21 @@ void ui_nvg_init(UIState *s) {
   ui_resize(s, s->fb_w, s->fb_h);
 }
 
-void ui_resize(UIState *s, int width, int height){
+void ui_resize(UIState *s, int width, int height) {
   s->fb_w = width;
   s->fb_h = height;
 
   auto intrinsic_matrix = s->wide_camera ? ecam_intrinsic_matrix : fcam_intrinsic_matrix;
 
-  s->zoom = zoom / intrinsic_matrix.v[0];
+  float zoom = ZOOM / intrinsic_matrix.v[0];
 
   if (s->wide_camera) {
-    s->zoom *= 0.5;
+    zoom *= 0.5;
   }
 
   s->video_rect = Rect{bdr_s, bdr_s, s->fb_w - 2 * bdr_s, s->fb_h - 2 * bdr_s};
-  float zx = s->zoom * 2 * intrinsic_matrix.v[2] / s->video_rect.w;
-  float zy = s->zoom * 2 * intrinsic_matrix.v[5] / s->video_rect.h;
+  float zx = zoom * 2 * intrinsic_matrix.v[2] / s->video_rect.w;
+  float zy = zoom * 2 * intrinsic_matrix.v[5] / s->video_rect.h;
 
   const mat4 frame_transform = {{
     zx, 0.0, 0.0, 0.0,
@@ -465,7 +464,7 @@ void ui_resize(UIState *s, int width, int height){
   nvgTranslate(s->vg, s->video_rect.x + s->video_rect.w / 2, s->video_rect.y + s->video_rect.h / 2 + y_offset);
 
   // 2) Apply same scaling as video
-  nvgScale(s->vg, s->zoom, s->zoom);
+  nvgScale(s->vg, zoom, zoom);
 
   // 3) Put (0, 0) in top left corner of video
   nvgTranslate(s->vg, -intrinsic_matrix.v[2], -intrinsic_matrix.v[5]);

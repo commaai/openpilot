@@ -11,25 +11,29 @@
 
 LSM6DS3_Gyro::LSM6DS3_Gyro(I2CBus *bus) : I2CSensor(bus) {}
 
-int LSM6DS3_Gyro::init(){
+int LSM6DS3_Gyro::init() {
   int ret = 0;
   uint8_t buffer[1];
 
   ret = read_register(LSM6DS3_GYRO_I2C_REG_ID, buffer, 1);
-  if(ret < 0){
+  if(ret < 0) {
     LOGE("Reading chip ID failed: %d", ret);
     goto fail;
   }
 
-  if(buffer[0] != LSM6DS3_GYRO_CHIP_ID){
+  if(buffer[0] != LSM6DS3_GYRO_CHIP_ID && buffer[0] != LSM6DS3TRC_GYRO_CHIP_ID) {
     LOGE("Chip ID wrong. Got: %d, Expected %d", buffer[0], LSM6DS3_GYRO_CHIP_ID);
     ret = -1;
     goto fail;
   }
 
+  if (buffer[0] == LSM6DS3TRC_GYRO_CHIP_ID) {
+    source = cereal::SensorEventData::SensorSource::LSM6DS3TRC;
+  }
+
   // TODO: set scale. Default is +- 250 deg/s
   ret = set_register(LSM6DS3_GYRO_I2C_REG_CTRL2_G, LSM6DS3_GYRO_ODR_104HZ);
-  if (ret < 0){
+  if (ret < 0) {
     goto fail;
   }
 
@@ -38,7 +42,7 @@ fail:
   return ret;
 }
 
-void LSM6DS3_Gyro::get_event(cereal::SensorEventData::Builder &event){
+void LSM6DS3_Gyro::get_event(cereal::SensorEventData::Builder &event) {
 
   uint64_t start_time = nanos_since_boot();
   uint8_t buffer[6];
@@ -50,7 +54,7 @@ void LSM6DS3_Gyro::get_event(cereal::SensorEventData::Builder &event){
   float y = DEG2RAD(read_16_bit(buffer[2], buffer[3]) * scale);
   float z = DEG2RAD(read_16_bit(buffer[4], buffer[5]) * scale);
 
-  event.setSource(cereal::SensorEventData::SensorSource::LSM6DS3);
+  event.setSource(source);
   event.setVersion(2);
   event.setSensor(SENSOR_GYRO_UNCALIBRATED);
   event.setType(SENSOR_TYPE_GYROSCOPE_UNCALIBRATED);

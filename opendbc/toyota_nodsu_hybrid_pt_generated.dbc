@@ -193,7 +193,7 @@ BO_ 742 LEAD_INFO: 8 DSU
 
 BO_ 835 ACC_CONTROL: 8 DSU
  SG_ ACCEL_CMD : 7|16@0- (0.001,0) [-20|20] "m/s2" HCU
- SG_ SET_ME_X01 : 23|2@0+ (1,0) [0|3] "" HCU
+ SG_ ACC_TYPE : 23|2@0+ (1,0) [0|3] "" HCU
  SG_ DISTANCE : 20|1@0+ (1,0) [0|1] "" XXX
  SG_ MINI_CAR : 21|1@0+ (1,0) [0|1] "" XXX
  SG_ SET_ME_X3 : 19|4@0+ (1,0) [0|15] "" XXX
@@ -225,6 +225,9 @@ BO_ 951 ESP_CONTROL: 8 ESP
  SG_ TC_DISABLED : 13|1@0+ (1,0) [0|1] "" XXX
  SG_ VSC_DISABLED : 12|2@0+ (1,0) [0|1] "" XXX
  SG_ BRAKE_LIGHTS_ACC : 18|1@0+ (1,0) [0|1] "" XXX
+
+BO_ 1020 SOLAR_SENSOR: 8 XXX
+ SG_ LUX_SENSOR : 55|13@0+ (1,0) [0|0] "" XXX
 
 BO_ 1041 ACC_HUD: 8 DSU
  SG_ FCW : 4|1@0+ (1,0) [0|1] "" XXX
@@ -363,6 +366,7 @@ CM_ SG_ 614 ANGLE "set to measured angle when ipas control isn't active";
 CM_ SG_ 643 COUNTER "only used on cars that use this msg for cruise control";
 CM_ SG_ 643 BRAKE_STATUS "only used on cars that use this msg for cruise control";
 CM_ SG_ 643 PRECOLLISION_ACTIVE "set 0.5s before any braking";
+CM_ SG_ 835 ACC_TYPE "if 2, car is likely to have a permanent low speed lockout. 1 is ok";
 CM_ SG_ 835 PERMIT_BRAKING "Original ACC has this going high when a car in front is detected. In openpilot and before the PERMIT_BRAKING name, this was 'SET_ME_1' and is hardcoded to be high. Unsure if only informational or has an effect though existing usage in openpilot is to always set it to 1. Originally 'PMTBRKG' in the leaked toyota_2017_ref_pt.dbc file and name expansion speculated to be PerMiT BRaKinG.";
 CM_ SG_ 835 ACCEL_CMD_ALT "Copy of main ACCEL_CMD, but across 8 bits instead of 16 bits like ACCEL_CMD. Unsure if only informational or has an effect. Likely informational as existing openpilot sets this to 0 and no loss of functionality observed. Originally 'AT_RAW' in leaked toyota_2017_ref_pt.dbc file.";
 CM_ SG_ 921 UI_SET_SPEED "set speed shown in UI with user set unit";
@@ -390,6 +394,7 @@ VAL_ 467 LOW_SPEED_LOCKOUT 2 "low speed locked" 1 "ok";
 VAL_ 614 STATE 3 "enabled" 1 "disabled";
 VAL_ 614 DIRECTION_CMD 3 "right" 2 "center" 1 "left";
 VAL_ 643 STATE 0 "normal" 1 "adaptive_cruise_control" 3 "emergency_braking";
+VAL_ 835 ACC_TYPE 2 "permanent low speed lockout" 1 "ok";
 VAL_ 921 CRUISE_CONTROL_STATE 2 "disabled" 11 "hold" 10 "hold_waiting_user_cmd" 6 "enabled" 5 "faulted";
 VAL_ 1042 LDA_ALERT 3 "hold with continuous beep" 2 "LDA unavailable" 1 "hold" 0 "none";
 VAL_ 1042 BARRIERS 3 "both" 2 "right" 1 "left" 0 "none";

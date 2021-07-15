@@ -1,7 +1,9 @@
 #pragma once
 
-#include <QWidget>
 #include <QtDBus>
+#include <QWidget>
+
+#include "selfdrive/ui/qt/offroad/networkmanager.h"
 
 enum class SecurityType {
   OPEN,
@@ -30,53 +32,63 @@ class WifiManager : public QWidget {
 public:
   explicit WifiManager(QWidget* parent);
 
-  void request_scan();
+  void requestScan();
   QVector<Network> seen_networks;
+  QMap<QDBusObjectPath, QString> knownConnections;
   QString ipv4_address;
 
   void refreshNetworks();
-  void connect(Network ssid);
-  void connect(Network ssid, QString password);
-  void connect(Network ssid, QString username, QString password);
+  void forgetConnection(const QString &ssid);
+  bool isKnownConnection(const QString &ssid);
+  void activateWifiConnection(const QString &ssid);
+
+  void connect(const Network &ssid);
+  void connect(const Network &ssid, const QString &password);
+  void connect(const Network &ssid, const QString &username, const QString &password);
   void disconnect();
 
   // Tethering functions
-  void enableTethering();
-  void disableTethering();
-  bool tetheringEnabled();
-
-  bool activate_tethering_connection();
+  void setTetheringEnabled(bool enabled);
+  bool isTetheringEnabled();
   void addTetheringConnection();
-  bool activate_wifi_connection(QString ssid);
-  void changeTetheringPassword(QString newPassword);
+  void changeTetheringPassword(const QString &newPassword);
+  QString getTetheringPassword();
 
 private:
   QVector<QByteArray> seen_ssids;
-  QString adapter;//Path to network manager wifi-device
+  QString adapter;  // Path to network manager wifi-device
   QDBusConnection bus = QDBusConnection::systemBus();
-  unsigned int raw_adapter_state;//Connection status https://developer.gnome.org/NetworkManager/1.26/nm-dbus-types.html#NMDeviceState
+  unsigned int raw_adapter_state;  // Connection status https://developer.gnome.org/NetworkManager/1.26/nm-dbus-types.html#NMDeviceState
   QString connecting_to_network;
   QString tethering_ssid;
-  QString tetheringPassword = "swagswagcommma";
+  const QString defaultTetheringPassword = "swagswagcomma";
 
-  QString get_adapter();
+  bool firstScan = true;
+  QString getAdapter();
+  bool isWirelessAdapter(const QDBusObjectPath &path);
   QString get_ipv4_address();
-  QList<Network> get_networks();
-  void connect(QByteArray ssid, QString username, QString password, SecurityType security_type);
-  QString get_active_ap();
-  void deactivate_connections(QString ssid);
-  void clear_connections(QString ssid);
+  void connect(const QByteArray &ssid, const QString &username, const QString &password, SecurityType security_type);
+  QString activeAp;
+  void initActiveAp();
+  void deactivateConnection(const QString &ssid);
   QVector<QDBusObjectPath> get_active_connections();
   uint get_wifi_device_state();
-  QByteArray get_property(QString network_path, QString property);
-  unsigned int get_ap_strength(QString network_path);
-  SecurityType getSecurityType(QString ssid);
-  QVector<QDBusObjectPath> list_connections();
+  QByteArray get_property(const QString &network_path, const QString &property);
+  unsigned int get_ap_strength(const QString &network_path);
+  SecurityType getSecurityType(const QString &path);
+  QDBusObjectPath getConnectionPath(const QString &ssid);
+  void initConnections();
+  QString getConnectionSsid(const QDBusObjectPath &path);
+  void setup();
+
+signals:
+  void wrongPassword(const QString &ssid);
+  void refreshSignal();
 
 private slots:
-  void change(unsigned int new_state, unsigned int previous_state, unsigned int change_reason);
-signals:
-  void wrongPassword(QString ssid);
-  void successfulConnection(QString ssid);
-  void refresh();
+  void stateChange(unsigned int new_state, unsigned int previous_state, unsigned int change_reason);
+  void propertyChange(const QString &interface, const QVariantMap &props, const QStringList &invalidated_props);
+  void deviceAdded(const QDBusObjectPath &path);
+  void connectionRemoved(const QDBusObjectPath &path);
+  void newConnection(const QDBusObjectPath &path);
 };

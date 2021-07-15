@@ -1,10 +1,10 @@
 #include "selfdrive/ui/ui.h"
 
-#include <assert.h>
-#include <stdio.h>
 #include <unistd.h>
 
+#include <cassert>
 #include <cmath>
+#include <cstdio>
 
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
@@ -85,7 +85,7 @@ static void update_line_data(const UIState *s, const cereal::ModelDataV2::XYZTDa
     v += calib_frame_to_full_frame(s, line_x[i], line_y[i] + y_off, line_z[i] + z_off, v);
   }
   pvd->cnt = v - pvd->v;
-  assert(pvd->cnt < std::size(pvd->v));
+  assert(pvd->cnt <= std::size(pvd->v));
 }
 
 static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
@@ -121,7 +121,7 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
   update_line_data(s, model_position, 0.5, 1.22, &scene.track_vertices, max_idx);
 }
 
-static void update_sockets(UIState *s){
+static void update_sockets(UIState *s) {
   s->sm->update(0);
 }
 
@@ -134,7 +134,7 @@ static void update_state(UIState *s) {
     scene.engageable = sm["controlsState"].getControlsState().getEngageable();
     scene.dm_active = sm["driverMonitoringState"].getDriverMonitoringState().getIsActiveMode();
   }
-  if (sm.updated("radarState")) {
+  if (sm.updated("radarState") && s->vg) {
     std::optional<cereal::ModelDataV2::XYZTData::Reader> line;
     if (sm.rcv_frame("modelV2") > 0) {
       line = sm["modelV2"].getModelV2().getPosition();
@@ -158,7 +158,7 @@ static void update_state(UIState *s) {
       }
     }
   }
-  if (sm.updated("modelV2")) {
+  if (sm.updated("modelV2") && s->vg) {
     update_model(s, sm["modelV2"].getModelV2());
   }
   if (sm.updated("pandaState")) {
@@ -168,15 +168,6 @@ static void update_state(UIState *s) {
   } else if ((s->sm->frame - s->sm->rcv_frame("pandaState")) > 5*UI_FREQ) {
     scene.pandaType = cereal::PandaState::PandaType::UNKNOWN;
   }
-  if (sm.updated("ubloxGnss")) {
-    auto data = sm["ubloxGnss"].getUbloxGnss();
-    if (data.which() == cereal::UbloxGnss::MEASUREMENT_REPORT) {
-      scene.satelliteCount = data.getMeasurementReport().getNumMeas();
-    }
-  }
-  if (sm.updated("gpsLocationExternal")) {
-    scene.gpsAccuracy = sm["gpsLocationExternal"].getGpsLocationExternal().getAccuracy();
-  }
   if (sm.updated("carParams")) {
     scene.longitudinal_control = sm["carParams"].getCarParams().getOpenpilotLongitudinalControl();
   }
@@ -184,12 +175,12 @@ static void update_state(UIState *s) {
     for (auto sensor : sm["sensorEvents"].getSensorEvents()) {
       if (!scene.started && sensor.which() == cereal::SensorEventData::ACCELERATION) {
         auto accel = sensor.getAcceleration().getV();
-        if (accel.totalSize().wordCount){ // TODO: sometimes empty lists are received. Figure out why
+        if (accel.totalSize().wordCount) { // TODO: sometimes empty lists are received. Figure out why
           scene.accel_sensor = accel[2];
         }
       } else if (!scene.started && sensor.which() == cereal::SensorEventData::GYRO_UNCALIBRATED) {
         auto gyro = sensor.getGyroUncalibrated().getV();
-        if (gyro.totalSize().wordCount){
+        if (gyro.totalSize().wordCount) {
           scene.gyro_sensor = gyro[1];
         }
       }
@@ -199,16 +190,16 @@ static void update_state(UIState *s) {
     auto camera_state = sm["roadCameraState"].getRoadCameraState();
 
     float max_lines = Hardware::EON() ? 5408 : 1757;
-    float gain = camera_state.getGainFrac();
+    float gain = camera_state.getGain();
 
     if (Hardware::TICI()) {
-      // gainFrac can go up to 4, with another 2.5x multiplier based on globalGain. Scale back to 0 - 1
-      gain *= (camera_state.getGlobalGain() > 100 ? 2.5 : 1.0) / 10.0;
+      // Max gain is 4 * 2.5 (High Conversion Gain)
+      gain /= 10.0;
     }
 
     scene.light_sensor = std::clamp<float>((1023.0 / max_lines) * (max_lines - camera_state.getIntegLines() * gain), 0.0, 1023.0);
   }
-  scene.started = sm["deviceState"].getDeviceState().getStarted();
+  scene.started = sm["deviceState"].getDeviceState().getStarted() && scene.ignition;
 }
 
 static void update_params(UIState *s) {
@@ -221,14 +212,14 @@ static void update_params(UIState *s) {
 
 static void update_vision(UIState *s) {
   if (!s->vipc_client->connected && s->scene.started) {
-    if (s->vipc_client->connect(false)){
+    if (s->vipc_client->connect(false)) {
       ui_init_vision(s);
     }
   }
 
-  if (s->vipc_client->connected){
+  if (s->vipc_client->connected) {
     VisionBuf * buf = s->vipc_client->recv();
-    if (buf != nullptr){
+    if (buf != nullptr) {
       s->last_frame = buf;
     } else if (!Hardware::PC()) {
       LOGE("visionIPC receive timeout");
@@ -265,7 +256,7 @@ static void update_status(UIState *s) {
       }
 
       // Choose vision ipc client
-      if (s->wide_camera){
+      if (s->wide_camera) {
         s->vipc_client = s->vipc_client_wide;
       } else {
         s->vipc_client = s->vipc_client_rear;
@@ -280,9 +271,8 @@ static void update_status(UIState *s) {
 
 QUIState::QUIState(QObject *parent) : QObject(parent) {
   ui_state.sm = std::make_unique<SubMaster, const std::initializer_list<const char *>>({
-    "modelV2", "controlsState", "liveCalibration", "radarState", "deviceState", "liveLocationKalman",
-    "pandaState", "carParams", "driverMonitoringState", "sensorEvents", "carState", "ubloxGnss",
-    "gpsLocationExternal", "roadCameraState",
+    "modelV2", "controlsState", "liveCalibration", "radarState", "deviceState", "roadCameraState",
+    "pandaState", "carParams", "driverMonitoringState", "sensorEvents", "carState", "liveLocationKalman",
   });
 
   ui_state.fb_w = vwp_w;

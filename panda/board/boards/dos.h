@@ -204,9 +204,6 @@ void dos_init(void) {
     can_flip_buses(0, 2);
   }
 
-  // init multiplexer
-  can_set_obd(car_harness_status, false);
-
   // Init clock source as internal free running
   dos_set_clock_source_mode(CLOCK_SOURCE_MODE_FREE_RUNNING);
 }
@@ -228,6 +225,11 @@ const harness_configuration dos_harness_config = {
 const board board_dos = {
   .board_type = "Dos",
   .harness_config = &dos_harness_config,
+  .has_gps = false,
+  .has_hw_gmlan = false,
+  .has_obd = true,
+  .has_lin = false,
+  .has_rtc = true,
   .init = dos_init,
   .enable_can_transceiver = dos_enable_can_transceiver,
   .enable_can_transceivers = dos_enable_can_transceivers,

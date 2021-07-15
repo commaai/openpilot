@@ -257,7 +257,7 @@ CM_ "honda_crv_touring_2016_can.dbc starts here";
 
 BO_ 342 STEERING_SENSORS: 6 EPS
  SG_ STEER_ANGLE : 7|16@0- (-0.1,0) [-500|500] "deg" EON
- SG_ STEER_ANGLE_RATE : 23|16@0- (1,0) [-3000|3000] "deg/s" EON
+ SG_ STEER_ANGLE_RATE : 23|16@0- (-1,0) [-3000|3000] "deg/s" EON
  SG_ COUNTER : 45|2@0+ (1,0) [0|3] "" EON
  SG_ CHECKSUM : 43|4@0+ (1,0) [0|15] "" EON
 

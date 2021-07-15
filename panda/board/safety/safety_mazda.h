@@ -31,11 +31,11 @@ const CanMsg MAZDA_TX_MSGS[] = {{MAZDA_LKAS, 0, 8}, {MAZDA_CRZ_BTNS, 0, 8}};
 bool mazda_lkas_allowed = false;
 
 AddrCheckStruct mazda_rx_checks[] = {
-  {.msg = {{MAZDA_CRZ_CTRL,     0, 8, .expected_timestep = 20000U}}},
-  {.msg = {{MAZDA_CRZ_BTNS,     0, 8, .expected_timestep = 100000U}}},
-  {.msg = {{MAZDA_STEER_TORQUE, 0, 8, .expected_timestep = 12000U}}},
-  {.msg = {{MAZDA_ENGINE_DATA,  0, 8, .expected_timestep = 10000U}}},
-  {.msg = {{MAZDA_PEDALS,       0, 8, .expected_timestep = 20000U}}},
+  {.msg = {{MAZDA_CRZ_CTRL,     0, 8, .expected_timestep = 20000U}, { 0 }, { 0 }}},
+  {.msg = {{MAZDA_CRZ_BTNS,     0, 8, .expected_timestep = 100000U}, { 0 }, { 0 }}},
+  {.msg = {{MAZDA_STEER_TORQUE, 0, 8, .expected_timestep = 12000U}, { 0 }, { 0 }}},
+  {.msg = {{MAZDA_ENGINE_DATA,  0, 8, .expected_timestep = 10000U}, { 0 }, { 0 }}},
+  {.msg = {{MAZDA_PEDALS,       0, 8, .expected_timestep = 20000U}, { 0 }, { 0 }}},
 };
 const int MAZDA_RX_CHECKS_LEN = sizeof(mazda_rx_checks) / sizeof(mazda_rx_checks[0]);
 
@@ -120,7 +120,7 @@ static int mazda_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
     if (addr == MAZDA_LKAS) {
       int desired_torque = (((GET_BYTE(to_send, 0) & 0x0f) << 8) | GET_BYTE(to_send, 1)) - MAZDA_MAX_STEER;
       bool violation = 0;
-      uint32_t ts = TIM2->CNT;
+      uint32_t ts = microsecond_timer_get();
 
       if (controls_allowed) {
 

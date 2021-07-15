@@ -213,9 +213,6 @@ void black_init(void) {
   if (car_harness_status == HARNESS_STATUS_FLIPPED) {
     can_flip_buses(0, 2);
   }
-
-  // init multiplexer
-  can_set_obd(car_harness_status, false);
 }
 
 const harness_configuration black_harness_config = {
@@ -235,6 +232,11 @@ const harness_configuration black_harness_config = {
 const board board_black = {
   .board_type = "Black",
   .harness_config = &black_harness_config,
+  .has_gps = true,
+  .has_hw_gmlan = false,
+  .has_obd = true,
+  .has_lin = false,
+  .has_rtc = false,
   .init = black_init,
   .enable_can_transceiver = black_enable_can_transceiver,
   .enable_can_transceivers = black_enable_can_transceivers,

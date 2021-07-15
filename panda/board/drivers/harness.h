@@ -3,9 +3,6 @@ uint8_t car_harness_status = 0U;
 #define HARNESS_STATUS_NORMAL 1U
 #define HARNESS_STATUS_FLIPPED 2U
 
-// Threshold voltage (mV) for either of the SBUs to be below before deciding harness is connected
-#define HARNESS_CONNECTED_THRESHOLD 2500U
-
 struct harness_configuration {
   const bool has_harness;
   GPIO_TypeDef *GPIO_SBU1;

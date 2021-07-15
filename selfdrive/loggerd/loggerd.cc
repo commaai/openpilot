@@ -1,17 +1,16 @@
-#include <errno.h>
 #include <ftw.h>
-#include <inttypes.h>
 #include <pthread.h>
-#include <string.h>
 #include <sys/resource.h>
 #include <unistd.h>
 
 #include <atomic>
 #include <cassert>
+#include <cerrno>
 #include <condition_variable>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <mutex>
 #include <random>
 #include <string>
@@ -173,7 +172,7 @@ void encoder_thread(int cam_idx) {
   VisionIpcClient vipc_client = VisionIpcClient("camerad", cam_info.stream_type, false);
 
   while (!do_exit) {
-    if (!vipc_client.connect(false)){
+    if (!vipc_client.connect(false)) {
       util::sleep_for(100);
       continue;
     }
@@ -199,7 +198,7 @@ void encoder_thread(int cam_idx) {
     while (!do_exit) {
       VisionIpcBufExtra extra;
       VisionBuf* buf = vipc_client.recv(&extra);
-      if (buf == nullptr){
+      if (buf == nullptr) {
         continue;
       }
 
@@ -346,8 +345,11 @@ int main(int argc, char** argv) {
     qlog_states[sock] = {.counter = 0, .freq = it.decimation};
   }
 
+  Params params;
+
   // init logger
   logger_init(&s.logger, "rlog", true);
+  params.put("CurrentRoute", s.logger.route_name);
 
   // init encoders
   pthread_mutex_init(&s.rotate_lock, NULL);
@@ -357,7 +359,7 @@ int main(int argc, char** argv) {
   encoder_threads.push_back(std::thread(encoder_thread, LOG_CAMERA_ID_FCAMERA));
   s.rotate_state[LOG_CAMERA_ID_FCAMERA].enabled = true;
 
-  if (!Hardware::PC() && Params().getBool("RecordFront")) {
+  if (!Hardware::PC() && params.getBool("RecordFront")) {
     encoder_threads.push_back(std::thread(encoder_thread, LOG_CAMERA_ID_DCAMERA));
     s.rotate_state[LOG_CAMERA_ID_DCAMERA].enabled = true;
   }
@@ -382,7 +384,7 @@ int main(int argc, char** argv) {
       Message * last_msg = nullptr;
       while (!do_exit) {
         Message * msg = sock->receive(true);
-        if (!msg){
+        if (!msg) {
           break;
         }
         delete last_msg;
@@ -470,9 +472,10 @@ int main(int argc, char** argv) {
   LOGW("closing logger");
   logger_close(&s.logger, &do_exit);
 
-  if (do_exit.power_failure){
+  if (do_exit.power_failure) {
     LOGE("power failure");
     sync();
+    LOGE("sync done");
   }
 
   // messaging cleanup

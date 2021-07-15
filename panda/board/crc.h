@@ -1,6 +1,7 @@
 uint8_t crc_checksum(uint8_t *dat, int len, const uint8_t poly) {
-  uint8_t crc = 0xFF;
-  int i, j;
+  uint8_t crc = 0xFFU;
+  int i;
+  int j;
   for (i = len - 1; i >= 0; i--) {
     crc ^= dat[i];
     for (j = 0; j < 8; j++) {

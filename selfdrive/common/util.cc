@@ -1,8 +1,7 @@
 #include "selfdrive/common/util.h"
 
-#include <errno.h>
-
 #include <cassert>
+#include <cerrno>
 #include <cstring>
 #include <dirent.h>
 #include <fstream>
@@ -55,29 +54,29 @@ int set_core_affinity(int core) {
 namespace util {
 
 std::string read_file(const std::string& fn) {
-  std::ifstream ifs(fn, std::ios::binary | std::ios::ate);
-  if (ifs) {
-    std::ifstream::pos_type pos = ifs.tellg();
-    if (pos != std::ios::beg) {
-      std::string result;
-      result.resize(pos);
-      ifs.seekg(0, std::ios::beg);
-      ifs.read(result.data(), pos);
-      if (ifs) {
+  std::ifstream f(fn, std::ios::binary | std::ios::in);
+  if (f.is_open()) {
+    f.seekg(0, std::ios::end);
+    int size = f.tellg();
+    if (f.good() && size > 0) {
+      std::string result(size, '\0');
+      f.seekg(0, std::ios::beg);
+      f.read(result.data(), size);
+      // return either good() or has reached end-of-file (e.g. /sys/power/wakeup_count)
+      if (f.good() || f.eof()) {
+        result.resize(f.gcount());
         return result;
       }
     }
+    // fallback for files created on read, e.g. procfs
+    std::stringstream buffer;
+    buffer << f.rdbuf();
+    return buffer.str();
   }
-  ifs.close();
-
-  // fallback for files created on read, e.g. procfs
-  std::ifstream f(fn);
-  std::stringstream buffer;
-  buffer << f.rdbuf();
-  return buffer.str();
+  return std::string();
 }
 
-int read_files_in_dir(std::string path, std::map<std::string, std::string> *contents) {
+int read_files_in_dir(const std::string &path, std::map<std::string, std::string> *contents) {
   DIR *d = opendir(path.c_str());
   if (!d) return -1;
 
@@ -119,7 +118,7 @@ bool file_exists(const std::string& fn) {
 
 std::string getenv_default(const char* env_var, const char * suffix, const char* default_val) {
   const char* env_val = getenv(env_var);
-  if (env_val != NULL){
+  if (env_val != NULL) {
     return std::string(env_val) + std::string(suffix);
   } else {
     return std::string(default_val);
@@ -156,7 +155,11 @@ std::string dir_name(std::string const &path) {
   return path.substr(0, pos);
 }
 
-struct tm get_time(){
+bool is_valid_dongle_id(std::string const& dongle_id) {
+  return !dongle_id.empty() && dongle_id != "UnregisteredDevice";
+}
+
+struct tm get_time() {
   time_t rawtime;
   time(&rawtime);
 
@@ -166,10 +169,10 @@ struct tm get_time(){
   return sys_time;
 }
 
-bool time_valid(struct tm sys_time){
+bool time_valid(struct tm sys_time) {
   int year = 1900 + sys_time.tm_year;
   int month = 1 + sys_time.tm_mon;
-  return (year > 2020) || (year == 2020 && month >= 10);
+  return (year > 2021) || (year == 2021 && month >= 6);
 }
 
 }  // namespace util

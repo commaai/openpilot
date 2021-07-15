@@ -153,7 +153,7 @@ int spi_cb_rx(uint8_t *data, int len, uint8_t *data_out) {
 
 #ifdef PEDAL
 
-#include "drivers/llcan.h"
+#include "stm32fx/llcan.h"
 #define CAN CAN1
 
 #define CAN_BL_INPUT 0x1
@@ -313,7 +313,7 @@ void soft_flasher_start(void) {
   GPIOA->OSPEEDR = GPIO_OSPEEDER_OSPEEDR11 | GPIO_OSPEEDER_OSPEEDR12;
 
   // flasher
-  spi_init();
+  //spi_init();
 
   // enable USB
   usb_init();
@@ -340,4 +340,3 @@ void soft_flasher_start(void) {
     delay(500000);
   }
 }
-
