@@ -53,16 +53,17 @@ InputDialog::InputDialog(const QString &title, QWidget *parent, const QString &s
   main_layout->addLayout(header_layout);
 
   // text box
-  main_layout->addStretch();
+  main_layout->addStretch(2);
 
   QWidget *textbox_widget = new QWidget;
   textbox_widget->setObjectName("textbox");
   QHBoxLayout *textbox_layout = new QHBoxLayout(textbox_widget);
   textbox_layout->setContentsMargins(50, 0, 50, 0);
 
-  line = new QLineEdit();
   textbox_widget->setStyleSheet(R"(
     #textbox {
+      margin-left: 50px;
+      margin-right: 50px;
       border: none;
       border-radius: 0;
       border-bottom: 3px solid #BDBDBD;
@@ -73,7 +74,10 @@ InputDialog::InputDialog(const QString &title, QWidget *parent, const QString &s
       background-color: transparent;
     }
   )");
+
+  line = new QLineEdit();
   textbox_layout->addWidget(line, 1);
+
   if (secret) {
     eye_btn = new QPushButton();
     eye_btn->setCheckable(true);
