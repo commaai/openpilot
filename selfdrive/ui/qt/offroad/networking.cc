@@ -15,7 +15,7 @@ QLabel *networkStrengthWidget(const unsigned int strength_) {
   QPixmap pix("../assets/offroad/icon_wifi_strength_" + imgs.at(strength_) + ".svg");
   strength->setPixmap(pix.scaledToHeight(68, Qt::SmoothTransformation));
   strength->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
-  strength->setStyleSheet("margin: 0px; padding-left: 48px; padding-right: 83px ");
+  strength->setStyleSheet("padding: 0px; margin-left: 50px; margin-right: 80px ");
   return strength;
 }
 
@@ -74,6 +74,7 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent), s
       padding-right: 40px;
       padding-bottom: 16px;
       padding-top: 16px;
+      margin: 0px;
     }
     * {
       background-color: #292929;
@@ -241,7 +242,15 @@ void WifiUI::refresh() {
     }
 
     // Status icon
-    if (network.connected == ConnectedType::CONNECTED || network.connected == ConnectedType::CONNECTING) {
+    if (network.connected == ConnectedType::CONNECTED) {
+      QLabel *connectIcon = new QLabel();
+      QPixmap pix("../assets/offroad/icon_checkmark.svg");
+
+      connectIcon->setPixmap(pix.scaledToWidth(49, Qt::SmoothTransformation));
+      connectIcon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
+      connectIcon->setStyleSheet("margin: 0px; padding-left: 51px; padding-right: 0px ");
+      hlayout->addWidget(connectIcon, 0, Qt::AlignRight);
+    } else if (network.connected == ConnectedType::CONNECTING) {
       QLabel *connectIcon = new QLabel();
       // TODO replace connecting icon with proper widget/icon
       QPixmap pix(network.connected == ConnectedType::CONNECTED ? "../assets/offroad/icon_checkmark.svg" : "../assets/navigation/direction_rotary.png");
@@ -256,7 +265,7 @@ void WifiUI::refresh() {
 
       lockIcon->setPixmap(pix.scaledToHeight(49, Qt::SmoothTransformation));
       lockIcon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
-      lockIcon->setStyleSheet("margin: 0px; padding-left: 51px; padding-right: 0px ");
+      lockIcon->setStyleSheet("padding: 0px; margin-left: 62px; margin-right: 0px ");
       hlayout->addWidget(lockIcon, 0, Qt::AlignRight);
     }
 
