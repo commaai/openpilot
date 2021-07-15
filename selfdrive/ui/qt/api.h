@@ -22,6 +22,7 @@ class HttpRequest : public QObject {
 public:
   explicit HttpRequest(QObject* parent, const QString &requestURL, bool create_jwt_ = true);
   void sendRequest(const QString &requestURL);
+  bool active();
 
 protected:
   QNetworkReply *reply;
@@ -36,6 +37,7 @@ private slots:
   void requestFinished();
 
 signals:
+  void requestDone(bool success);
   void receivedResponse(const QString &response);
   void failedResponse(const QString &errorString);
   void timeoutResponse(const QString &errorString);

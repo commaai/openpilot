@@ -79,6 +79,10 @@ HttpRequest::HttpRequest(QObject *parent, const QString &requestURL, bool create
   sendRequest(requestURL);
 }
 
+bool HttpRequest::active() {
+  return reply != NULL;
+}
+
 void HttpRequest::sendRequest(const QString &requestURL) {
   QString token;
   if(create_jwt) {
@@ -105,11 +109,13 @@ void HttpRequest::requestTimeout() {
 
 // This function should always emit something
 void HttpRequest::requestFinished() {
+  bool success = false;
   if (reply->error() != QNetworkReply::OperationCanceledError) {
     networkTimer->stop();
     QString response = reply->readAll();
 
     if (reply->error() == QNetworkReply::NoError) {
+      success = true;
       emit receivedResponse(response);
     } else {
       qDebug() << reply->errorString();
@@ -118,6 +124,7 @@ void HttpRequest::requestFinished() {
   } else {
     emit timeoutResponse("timeout");
   }
+  emit requestDone(success);
   reply->deleteLater();
   reply = NULL;
 }

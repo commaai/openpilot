@@ -10,12 +10,15 @@
 #include <curl/curl.h>
 
 #include "selfdrive/hardware/hw.h"
+#include "selfdrive/ui/qt/api.h"
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/offroad/networking.h"
 #include "selfdrive/ui/qt/widgets/input.h"
 
 const char*  USER_AGENT = "AGNOSSetup-0.1";
 const QString DASHCAM_URL = "https://dashcam.comma.ai";
+
+const QString TEST_URL = "https://api.commadotai.com/v1/me";
 
 void Setup::download(QString url) {
   CURL *curl = curl_easy_init();
@@ -94,7 +97,7 @@ QWidget * Setup::network_setup() {
   Networking *wifi = new Networking(this, false);
   main_layout->addWidget(wifi, 1);
 
-  // back + cotninue buttons
+  // back + continue buttons
   QHBoxLayout *blayout = new QHBoxLayout;
   main_layout->addLayout(blayout);
   blayout->setSpacing(50);
@@ -108,6 +111,20 @@ QWidget * Setup::network_setup() {
   cont->setObjectName("navBtn");
   QObject::connect(cont, &QPushButton::clicked, this, &Setup::nextPage);
   blayout->addWidget(cont);
+
+  // setup timer for testing internet connection
+  HttpRequest *request = new HttpRequest(this, TEST_URL, false);
+  QObject::connect(request, &HttpRequest::requestDone, [=](bool success) {
+    qDebug() << "got response" << success;
+    cont->setEnabled(success);
+  });
+  QTimer *timer = new QTimer(this);
+  QObject::connect(timer, &QTimer::timeout, [=]() {
+    if (!request->active() && cont->isVisible()) {
+      request->sendRequest(TEST_URL);
+    }
+  });
+  timer->start(1000);
 
   return widget;
 }
@@ -289,6 +306,7 @@ Setup::Setup(QWidget *parent) : QStackedWidget(parent) {
     setCurrentWidget(failed_widget);
   });
 
+  // TODO: disabled bg color?
   // TODO: revisit pressed bg color
   setStyleSheet(R"(
     * {
