@@ -185,10 +185,10 @@ def swap(manifest_path: str, target_slot_number: int, cloudlog) -> None:
   while True:
     out = subprocess.check_output(f"abctl --set_active {target_slot_number}", shell=True, stderr=subprocess.STDOUT, encoding='utf8')
     if ("No such file or directory" not in out) and ("lun as boot lun" in out):
-      cloudlog.info("Swap successfull {out}")
+      cloudlog.info(f"Swap successfull {out}")
       break
     else:
-      cloudlog.error("Swap failed {out}")
+      cloudlog.error(f"Swap failed {out}")
 
 
 def flash_agnos_update(manifest_path: str, target_slot_number: int, cloudlog, spinner: Optional[Spinner] = None) -> None:
