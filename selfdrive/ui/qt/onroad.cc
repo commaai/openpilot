@@ -44,7 +44,6 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 }
 
 void OnroadWindow::updateState(const UIState &s) {
-  nvg->updateState(s);
   QColor bgColor = alerts->updateState(s);
   if (bg != bgColor) {
     bg = bgColor;
@@ -67,8 +66,7 @@ void OnroadWindow::offroadTransition(bool offroad) {
       MapWindow * m = new MapWindow(settings);
       QObject::connect(this, &OnroadWindow::offroadTransitionSignal, m, &MapWindow::offroadTransition);
       split->addWidget(m);
-
-      map = m;    
+      map = m;
     }
   }
 #endif
