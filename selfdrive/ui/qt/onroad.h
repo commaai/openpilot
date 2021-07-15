@@ -23,7 +23,6 @@ class OnroadAlerts : public QWidget {
 public:
   OnroadAlerts(QWidget *parent = 0);
   QColor updateState(const UIState &s);
-  void offroadTransition(bool offroad);
 
 protected:
   void paintEvent(QPaintEvent*) override;
@@ -41,6 +40,9 @@ private:
   QString text1, text2;
   std::string alert_type;
   cereal::ControlsState::AlertSize alert_size = cereal::ControlsState::AlertSize::NONE;
+
+public slots:
+  void offroadTransition(bool offroad);
 };
 
 // container window for the NVG UI
@@ -50,7 +52,6 @@ class NvgWindow : public QOpenGLWidget, protected QOpenGLFunctions {
 public:
   using QOpenGLWidget::QOpenGLWidget;
   explicit NvgWindow(QWidget* parent = 0);
-  void updateState(const UIState &s);
   ~NvgWindow();
 
 protected:
@@ -60,6 +61,9 @@ protected:
 
 private:
   double prev_draw_t = 0;
+
+public slots:
+  void updateState(const UIState &s);
 };
 
 // container for all onroad widgets
@@ -70,10 +74,6 @@ public:
   OnroadWindow(QWidget* parent = 0);
   QWidget *map = nullptr;
 
-public slots:
-  void offroadTransition(bool offroad);
-  void updateState(const UIState &s);
-
 private:
   void paintEvent(QPaintEvent *event);
 
@@ -81,4 +81,12 @@ private:
   NvgWindow *nvg;
   QColor bg;
   QHBoxLayout* split;
+
+signals:
+  void updateStateSignal(const UIState &s);
+  void offroadTransitionSignal(bool offroad);
+
+private slots:
+  void offroadTransition(bool offroad);
+  void updateState(const UIState &s);
 };

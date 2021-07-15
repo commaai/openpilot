@@ -20,6 +20,7 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 
   // old UI on bottom
   nvg = new NvgWindow(this);
+  QObject::connect(this, &OnroadWindow::updateStateSignal, nvg, &NvgWindow::updateState);
 
   QWidget * split_wrapper = new QWidget;
   split = new QHBoxLayout(split_wrapper);
@@ -31,12 +32,15 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 
   alerts = new OnroadAlerts(this);
   alerts->setAttribute(Qt::WA_TransparentForMouseEvents, true);
+  QObject::connect(this, &OnroadWindow::offroadTransitionSignal, alerts, &OnroadAlerts::offroadTransition);
   stacked_layout->addWidget(alerts);
 
   // setup stacking order
   alerts->raise();
 
   setAttribute(Qt::WA_OpaquePaintEvent);
+  QObject::connect(this, &OnroadWindow::updateStateSignal, this, &OnroadWindow::updateState);
+  QObject::connect(this, &OnroadWindow::offroadTransitionSignal, this, &OnroadWindow::offroadTransition);
 }
 
 void OnroadWindow::updateState(const UIState &s) {
@@ -49,7 +53,6 @@ void OnroadWindow::updateState(const UIState &s) {
 }
 
 void OnroadWindow::offroadTransition(bool offroad) {
-  alerts->offroadTransition(offroad);
 #ifdef ENABLE_MAPS
   if (!offroad) {
     QString token = QString::fromStdString(Params().get("MapboxToken"));
@@ -61,12 +64,12 @@ void OnroadWindow::offroadTransition(bool offroad) {
       settings.setCacheDatabaseMaximumSize(20 * 1024 * 1024);
       settings.setAccessToken(token.trimmed());
 
-      map = new MapWindow(settings);
-      split->addWidget(map);
+      MapWindow * m = new MapWindow(settings);
+      QObject::connect(this, &OnroadWindow::offroadTransitionSignal, m, &MapWindow::offroadTransition);
+      split->addWidget(m);
+
+      map = m;    
     }
-  }
-  if (map) {
-    ((MapWindow*)map)->offroadTransition(offroad);
   }
 #endif
 }
