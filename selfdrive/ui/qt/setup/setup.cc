@@ -84,60 +84,149 @@ QWidget * Setup::build_page(QString title, QWidget *content, bool next, bool pre
 
 QWidget * Setup::getting_started() {
   QWidget *widget = new QWidget();
+
   QHBoxLayout *main_layout = new QHBoxLayout(widget);
   main_layout->setMargin(0);
 
   QVBoxLayout *vlayout = new QVBoxLayout();
-  vlayout->setContentsMargins(150, 280, 0, 0);
+  vlayout->setContentsMargins(165, 280, 0, 0);
   main_layout->addLayout(vlayout);
 
   QLabel *title = new QLabel("Getting Started");
   title->setStyleSheet("font-size: 90px; font-weight: 500;");
   vlayout->addWidget(title, 0, Qt::AlignLeft | Qt::AlignTop);
 
+  vlayout->addSpacing(90);
   QLabel *desc = new QLabel("Before we get on the road, let’s finish installation and cover some details.");
   desc->setWordWrap(true);
-  desc->setStyleSheet("font-size: 80px; font-weight: 300;");
+  desc->setStyleSheet("font-size: 80px; font-weight: 300; margin-right: 50px;");
   vlayout->addWidget(desc, 0, Qt::AlignLeft | Qt::AlignTop);
 
-  vlayout->insertStretch(0);
   vlayout->addStretch();
 
   QPushButton *btn = new QPushButton(">");
   btn->setFixedSize(310, 1080);
-  btn->setStyleSheet("background-color: #465BEA; border:none; border-radius: 0;");
+  btn->setProperty("primary", true);
+  btn->setStyleSheet(R"(
+    QPushButton {
+      font-size: 90px;
+      border: none;
+      border-radius: 0;
+    }
+  )");
   main_layout->addWidget(btn, 0, Qt::AlignRight);
-  QObject::connect(btn, &QPushButton::released, this, &Setup::nextPage);
+  QObject::connect(btn, &QPushButton::clicked, this, &Setup::nextPage);
 
   return widget;
 }
 
 QWidget * Setup::network_setup() {
+  QWidget *widget = new QWidget();
+  QVBoxLayout *main_layout = new QVBoxLayout(widget);
+  main_layout->setContentsMargins(55, 50, 55, 50);
+
+  // title
+  QLabel *title = new QLabel("Connect to WiFi");
+  title->setStyleSheet("font-size: 90px; font-weight: 500;");
+  main_layout->addWidget(title, 0, Qt::AlignLeft | Qt::AlignTop);
+
+  // wifi widget
   Networking *wifi = new Networking(this, false);
-  return build_page("Connect to WiFi", wifi, true, true);
+  main_layout->addWidget(wifi, 1);
+
+  // back + cotninue buttons
+  QHBoxLayout *blayout = new QHBoxLayout;
+  main_layout->addLayout(blayout);
+  blayout->setSpacing(50);
+
+  QPushButton *back = new QPushButton("Back");
+  back->setObjectName("navBtn");
+  QObject::connect(back, &QPushButton::clicked, this, &Setup::prevPage);
+  blayout->addWidget(back);
+
+  QPushButton *cont = new QPushButton("Continue");
+  cont->setObjectName("navBtn");
+  QObject::connect(cont, &QPushButton::clicked, this, &Setup::nextPage);
+  blayout->addWidget(cont);
+
+  widget->setStyleSheet(R"(
+  )");
+
+  return widget;
 }
 
 QWidget * Setup::software_selection() {
   QWidget *widget = new QWidget();
   QVBoxLayout *main_layout = new QVBoxLayout(widget);
+  main_layout->setContentsMargins(55, 50, 55, 50);
+  main_layout->setSpacing(0);
 
-  QPushButton *dashcam_btn = new QPushButton("Dashcam");
-  main_layout->addWidget(dashcam_btn);
-  QObject::connect(dashcam_btn, &QPushButton::released, this, [=]() {
-    this->download("https://dashcam.comma.ai");
-  });
+  // title
+  QLabel *title = new QLabel("Choose Software to Install");
+  title->setStyleSheet("font-size: 90px; font-weight: 500;");
+  main_layout->addWidget(title, 0, Qt::AlignLeft | Qt::AlignTop);
 
   main_layout->addSpacing(50);
 
-  QPushButton *custom_btn = new QPushButton("Custom");
-  main_layout->addWidget(custom_btn);
-  QObject::connect(custom_btn, &QPushButton::released, this, [=]() {
-    QString input_url = InputDialog::getText("Enter URL", this);
-    if (input_url.size()) {
-      this->download(input_url);
-    }
+  // dashcam + custom radio buttons
+  QButtonGroup *group = new QButtonGroup(widget);
+  group->setExclusive(true);
+
+  QPushButton *dashcam = new QPushButton("Dashcam");
+  dashcam->setObjectName("radioBtn");
+  dashcam->setCheckable(true);
+  group->addButton(dashcam);
+  main_layout->addWidget(dashcam);
+
+  main_layout->addSpacing(30);
+
+  QPushButton *custom = new QPushButton("Custom Software");
+  custom->setObjectName("radioBtn");
+  custom->setCheckable(true);
+  group->addButton(custom);
+  main_layout->addWidget(custom);
+
+  main_layout->addStretch();
+
+  // back + continue buttons
+  QHBoxLayout *blayout = new QHBoxLayout;
+  main_layout->addLayout(blayout);
+  blayout->setSpacing(50);
+
+  QPushButton *back = new QPushButton("Back");
+  back->setObjectName("navBtn");
+  QObject::connect(back, &QPushButton::clicked, this, &Setup::prevPage);
+  blayout->addWidget(back);
+
+  // TODO: disabled state color?
+  QPushButton *cont = new QPushButton("Continue");
+  cont->setObjectName("navBtn");
+  cont->setEnabled(false);
+  QObject::connect(cont, &QPushButton::clicked, this, &Setup::nextPage);
+  blayout->addWidget(cont);
+
+  connect(group, QOverload<QAbstractButton *>::of(&QButtonGroup::buttonClicked), [=](QAbstractButton *btn) {
+    btn->setChecked(true);
+    cont->setEnabled(true);
   });
-  return build_page("Choose Software", widget, false, true);
+
+  widget->setStyleSheet(R"(
+    QPushButton#radioBtn {
+      height: 230;
+      padding-left: 100px;
+      padding-right: 100px;
+      text-align: left;
+      font-size: 80px;
+      font-weight: 400;
+      border-radius: 10px;
+      background-color: #4F4F4F;
+    }
+    QPushButton#radioBtn:checked {
+      background-color: #465BEA;
+    }
+  )");
+
+  return widget;
 }
 
 QWidget * Setup::downloading() {
@@ -195,24 +284,38 @@ void Setup::nextPage() {
 }
 
 Setup::Setup(QWidget *parent) : QStackedWidget(parent) {
-  //addWidget(getting_started());
-  //addWidget(network_setup());
-  //addWidget(software_selection());
-  //addWidget(downloading());
+  addWidget(getting_started());
+  addWidget(network_setup());
+  addWidget(software_selection());
+  addWidget(downloading());
   addWidget(download_failed());
 
   QObject::connect(this, &Setup::downloadFailed, this, &Setup::nextPage);
 
+  // TODO: revisit pressed bg color
   setStyleSheet(R"(
     * {
       font-family: Inter;
       color: white;
+    }
+    Setup {
       background-color: black;
     }
-    QPushButton {
+    *[primary='true'] {
+      background-color: #465BEA;
+    }
+    *[primary='true']:pressed {
+      background-color: #3049F4;
+    }
+    QPushButton#navBtn {
+      height: 160;
       font-size: 55px;
-      font-weight: 500;
+      font-weight: 400;
       border-radius: 10px;
+      background-color: #333333;
+    }
+    QPushButton#navBtn:pressed {
+      background-color: #444444;
     }
   )");
 }
