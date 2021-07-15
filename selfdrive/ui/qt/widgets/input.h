@@ -9,20 +9,22 @@
 
 #include "selfdrive/ui/qt/widgets/keyboard.h"
 
+
 class QDialogBase : public QDialog {
   Q_OBJECT
 
 protected:
   QDialogBase(QWidget *parent);
-  bool eventFilter(QObject *o, QEvent *e) override;  
+  bool eventFilter(QObject *o, QEvent *e) override;
 };
 
 class InputDialog : public QDialogBase {
   Q_OBJECT
 
 public:
-  explicit InputDialog(const QString &prompt_text, QWidget *parent);
-  static QString getText(const QString &prompt, QWidget *parent, int minLength = -1, const QString &defaultText = "");
+  explicit InputDialog(const QString &title, QWidget *parent, const QString &subtitle = "", bool secret = false);
+  static QString getText(const QString &title, QWidget *parent, const QString &substitle = "",
+                         bool secret = false, int minLength = -1, const QString &defaultText = "");
   QString text();
   void setMessage(const QString &message, bool clearInputField = true);
   void setMinLength(int length);
@@ -33,7 +35,9 @@ private:
   QLineEdit *line;
   Keyboard *k;
   QLabel *label;
+  QLabel *sublabel;
   QVBoxLayout *main_layout;
+  QPushButton *eye_btn;
 
 public slots:
   int exec() override;
