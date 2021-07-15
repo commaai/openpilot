@@ -21,8 +21,9 @@ class InputDialog : public QDialogBase {
   Q_OBJECT
 
 public:
-  explicit InputDialog(const QString &prompt_text, QWidget *parent);
-  static QString getText(const QString &prompt, QWidget *parent, int minLength = -1, const QString &defaultText = "");
+  explicit InputDialog(const QString &title, QWidget *parent, const QString &subtitle = "");
+  static QString getText(const QString &title, QWidget *parent, const QString &substitle = "",
+                         int minLength = -1, const QString &defaultText = "");
   QString text();
   void setMessage(const QString &message, bool clearInputField = true);
   void setMinLength(int length);
@@ -33,6 +34,7 @@ private:
   QLineEdit *line;
   Keyboard *k;
   QLabel *label;
+  QLabel *sublabel;
   QVBoxLayout *main_layout;
 
 public slots:

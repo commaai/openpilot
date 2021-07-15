@@ -17,25 +17,33 @@ bool QDialogBase::eventFilter(QObject *o, QEvent *e) {
   return QDialog::eventFilter(o, e);
 }
 
-InputDialog::InputDialog(const QString &prompt_text, QWidget *parent) : QDialogBase(parent) {
+InputDialog::InputDialog(const QString &title, QWidget *parent,
+                         const QString &subtitle) : QDialogBase(parent) {
   main_layout = new QVBoxLayout(this);
-  main_layout->setContentsMargins(50, 50, 50, 50);
-  main_layout->setSpacing(20);
+  main_layout->setContentsMargins(50, 55, 50, 50);
+  main_layout->setSpacing(0);
 
   // build header
   QHBoxLayout *header_layout = new QHBoxLayout();
 
-  label = new QLabel(prompt_text, this);
-  label->setStyleSheet(R"(font-size: 75px; font-weight: 500;)");
-  header_layout->addWidget(label, 1, Qt::AlignLeft);
+  QVBoxLayout *vlayout = new QVBoxLayout;
+  header_layout->addLayout(vlayout);
+  label = new QLabel(title, this);
+  label->setStyleSheet("font-size: 90px; font-weight: bold;");
+  vlayout->addWidget(label, 1, Qt::AlignTop | Qt::AlignLeft);
+
+  if (!subtitle.isEmpty()) {
+    sublabel = new QLabel(subtitle, this);
+    sublabel->setStyleSheet("font-size: 55px; font-weight: light; color: #BDBDBD;");
+    vlayout->addWidget(sublabel, 1, Qt::AlignTop | Qt::AlignLeft);
+  }
 
   QPushButton* cancel_btn = new QPushButton("Cancel");
+  cancel_btn->setFixedSize(386, 125);
   cancel_btn->setStyleSheet(R"(
-    padding: 30px;
-    padding-right: 45px;
-    padding-left: 45px;
-    border-radius: 7px;
-    font-size: 45px;
+    font-size: 48px;
+    border-radius: 10px;
+    color: #E4E4E4;
     background-color: #444444;
   )");
   header_layout->addWidget(cancel_btn, 0, Qt::AlignRight);
@@ -45,17 +53,20 @@ InputDialog::InputDialog(const QString &prompt_text, QWidget *parent) : QDialogB
   main_layout->addLayout(header_layout);
 
   // text box
-  main_layout->addSpacing(20);
+  main_layout->addStretch();
   line = new QLineEdit();
   line->setStyleSheet(R"(
-    border: none;
-    background-color: #444444;
     font-size: 80px;
-    font-weight: 500;
-    padding: 10px;
+    font-weight: light;
+    margin-left: 50px;
+    margin-right: 50px;
+    border: none;
+    border-radius: 0;
+    border-bottom: 3px solid #BDBDBD;
   )");
-  main_layout->addWidget(line, 1, Qt::AlignTop);
+  main_layout->addWidget(line, 0, Qt::AlignBottom);
 
+  main_layout->addSpacing(25);
   k = new Keyboard(this);
   QObject::connect(k, &Keyboard::emitButton, this, &InputDialog::handleInput);
   main_layout->addWidget(k, 2, Qt::AlignBottom);
@@ -71,8 +82,9 @@ InputDialog::InputDialog(const QString &prompt_text, QWidget *parent) : QDialogB
 
 }
 
-QString InputDialog::getText(const QString &prompt, QWidget *parent, int minLength, const QString &defaultText) {
-  InputDialog d = InputDialog(prompt, parent);
+QString InputDialog::getText(const QString &prompt, QWidget *parent, const QString &subtitle,
+                             int minLength, const QString &defaultText) {
+  InputDialog d = InputDialog(prompt, parent, subtitle);
   d.line->setText(defaultText);
   d.setMinLength(minLength);
   const int ret = d.exec();
