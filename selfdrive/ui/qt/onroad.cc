@@ -20,7 +20,7 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   nvg = new NvgWindow(this);
   QObject::connect(this, &OnroadWindow::update, nvg, &NvgWindow::update);
 
-  QWidget * split_wrapper = new QWidget;
+  QWidget *split_wrapper = new QWidget;
   split = new QHBoxLayout(split_wrapper);
   split->setContentsMargins(0, 0, 0, 0);
   split->setSpacing(0);
@@ -41,7 +41,6 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   setAttribute(Qt::WA_OpaquePaintEvent);
 }
 
-
 void OnroadWindow::offroadTransition(bool offroad) {
 #ifdef ENABLE_MAPS
   if (!offroad) {
@@ -54,20 +53,19 @@ void OnroadWindow::offroadTransition(bool offroad) {
       settings.setCacheDatabaseMaximumSize(20 * 1024 * 1024);
       settings.setAccessToken(token.trimmed());
 
-      MapWindow * m = new MapWindow(settings);
+      MapWindow *m = new MapWindow(settings);
       QObject::connect(this, &OnroadWindow::offroadTransitionSignal, m, &MapWindow::offroadTransition);
       split->addWidget(m);
 
       map = m;
     }
-
   }
 #endif
 }
 
 // ***** onroad widgets *****
 
-OnroadAlerts::OnroadAlerts(QWidget *parent) : QWidget(parent) {
+OnroadAlerts::OnroadAlerts(QWidget *parent) : QOpenGLWidget(parent) {
   std::tuple<AudibleAlert, QString, bool> sound_list[] = {
     {AudibleAlert::CHIME_DISENGAGE, "../assets/sounds/disengaged.wav", false},
     {AudibleAlert::CHIME_ENGAGE, "../assets/sounds/engaged.wav", false},
@@ -113,9 +111,17 @@ void OnroadAlerts::updateState(const UIState &s) {
     }
   }
 
-  // TODO: add blinking back if performant
-  //float alpha = 0.375 * cos((millis_since_boot() / 1000) * 2 * M_PI * blinking_rate) + 0.625;
   bg = bg_colors[s.status];
+
+  static std::map<cereal::ControlsState::AlertSize, const int> alert_sizes = {
+    {cereal::ControlsState::AlertSize::NONE, 0},
+    {cereal::ControlsState::AlertSize::SMALL, 271},
+    {cereal::ControlsState::AlertSize::MID, 420},
+    {cereal::ControlsState::AlertSize::FULL, height()},
+  };
+  int h = alert_sizes[alert_size];
+  QRect rc = geometry();
+  setGeometry(rc.adjusted(0, rc.height()-h, 0, 0));
 }
 
 void OnroadAlerts::offroadTransition(bool offroad) {
@@ -125,6 +131,9 @@ void OnroadAlerts::offroadTransition(bool offroad) {
 void OnroadAlerts::updateAlert(const QString &t1, const QString &t2, float blink_rate,
                                const std::string &type, cereal::ControlsState::AlertSize size, AudibleAlert sound) {
   if (alert_type.compare(type) == 0 && text1.compare(t1) == 0 && text2.compare(t2) == 0) {
+    if (blink_rate > 0) {
+      update();
+    }
     return;
   }
 
@@ -163,21 +172,18 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
   if (alert_size == cereal::ControlsState::AlertSize::NONE) {
     return;
   }
-  static std::map<cereal::ControlsState::AlertSize, const int> alert_sizes = {
-    {cereal::ControlsState::AlertSize::SMALL, 271},
-    {cereal::ControlsState::AlertSize::MID, 420},
-    {cereal::ControlsState::AlertSize::FULL, height()},
-  };
-  int h = alert_sizes[alert_size];
-  QRect r = QRect(0, height() - h, width(), h);
 
   QPainter p(this);
+  QRect r = QRect(0, 0, width(), height());
 
   // draw background + gradient
   p.setPen(Qt::NoPen);
   p.setCompositionMode(QPainter::CompositionMode_SourceOver);
-
-  p.setBrush(QBrush(bg));
+  QColor bgColor = bg;
+  if (blinking_rate > 0) {
+    bgColor.setAlphaF(0.375 * cos((millis_since_boot() / 1000) * 2 * M_PI * blinking_rate) + 0.625);
+  }
+  p.setBrush(bgColor);
   p.drawRect(r);
 
   QLinearGradient g(0, r.y(), 0, r.bottom());
@@ -190,12 +196,12 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
   p.setCompositionMode(QPainter::CompositionMode_SourceOver);
 
   // remove bottom border
-  r = QRect(0, height() - h, width(), h - 30);
+  r.adjust(0, 0, 0, -bdr_s);
 
   // text
   const QPoint c = r.center();
   p.setPen(QColor(0xff, 0xff, 0xff));
-  p.setRenderHint(QPainter::TextAntialiasing);
+  p.setRenderHints(QPainter::Antialiasing | QPainter::TextAntialiasing);
   if (alert_size == cereal::ControlsState::AlertSize::SMALL) {
     configFont(p, "Open Sans", 74, "SemiBold");
     p.drawText(r, Qt::AlignCenter, text1);
@@ -239,7 +245,7 @@ void NvgWindow::update(const UIState &s) {
   if (s.vipc_client->connected) {
     makeCurrent();
   }
-  repaint();
+  QOpenGLWidget::update();
 }
 
 void NvgWindow::resizeGL(int w, int h) {
