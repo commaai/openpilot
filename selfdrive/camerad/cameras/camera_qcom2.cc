@@ -530,7 +530,6 @@ static void camera_init(MultiCameraState *multi_cam_state, VisionIpcServer * v, 
 
   s->dc_gain_enabled = false;
 
-  s->exposure_time = 256;
   s->request_id_last = 0;
   s->skipped = true;
 
@@ -540,7 +539,8 @@ static void camera_init(MultiCameraState *multi_cam_state, VisionIpcServer * v, 
 
   // Initial values: gain 1.0x, integration time 5
   s->gain_idx = ANALOG_GAIN_REC_IDX;
-  s->cur_ev = (enable_dc_gain ? DC_GAIN : 1) * sensor_analog_gains[s->gain_idx] * 5;
+  s->exposure_time = 5;
+  s->cur_ev = (enable_dc_gain ? DC_GAIN : 1) * sensor_analog_gains[s->gain_idx] * s->exposure_time;
 
   s->buf.init(device_id, ctx, s, v, FRAME_BUF_COUNT, rgb_type, yuv_type);
 }
