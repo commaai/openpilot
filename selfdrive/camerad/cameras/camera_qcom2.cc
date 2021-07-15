@@ -528,17 +528,17 @@ static void camera_init(MultiCameraState *multi_cam_state, VisionIpcServer * v, 
 
   s->camera_num = camera_num;
 
-  s->dc_gain_enabled = false;
-
-  s->exposure_time = 256;
   s->request_id_last = 0;
   s->skipped = true;
 
   s->min_ev = EXPOSURE_TIME_MIN * sensor_analog_gains[ANALOG_GAIN_MIN_IDX] * (enable_dc_gain ? DC_GAIN : 1);
   s->max_ev = EXPOSURE_TIME_MAX * sensor_analog_gains[ANALOG_GAIN_MAX_IDX] * DC_GAIN;
-  s->cur_ev = (s->max_ev - s->min_ev) / 2;
   s->target_grey_fraction = 0.3;
-  s->gain_idx = ANALOG_GAIN_MIN_IDX;
+
+  s->dc_gain_enabled = enable_dc_gain;
+  s->gain_idx = ANALOG_GAIN_REC_IDX;
+  s->exposure_time = 5;
+  s->cur_ev = (s->dc_gain_enabled ? DC_GAIN : 1) * sensor_analog_gains[s->gain_idx] * s->exposure_time;
 
   s->buf.init(device_id, ctx, s, v, FRAME_BUF_COUNT, rgb_type, yuv_type);
 }
@@ -1005,10 +1005,6 @@ static void set_camera_exposure(CameraState *s, float grey_frac) {
   struct i2c_random_wr_payload exp_reg_array[] = {
                                                   {0x3366, analog_gain_reg}, // analog gain
                                                   {0x3362, (uint16_t)(s->dc_gain_enabled ? 0x1 : 0x0)}, // DC_GAIN
-                                                  {0x305A, 0x00F8}, // red gain
-                                                  {0x3058, 0x0122}, // blue gain
-                                                  {0x3056, 0x009A}, // g1 gain
-                                                  {0x305C, 0x009A}, // g2 gain
                                                   {0x3012, (uint16_t)s->exposure_time}, // integ time
                                                  };
                                                   //{0x301A, 0x091C}}; // reset
