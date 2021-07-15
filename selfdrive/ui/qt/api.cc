@@ -67,13 +67,14 @@ QString create_jwt(const QJsonObject &payloads, int expiry) {
 
 }  // namespace CommaApi
 
-HttpRequest::HttpRequest(QObject *parent, const QString &requestURL, bool create_jwt_) : create_jwt(create_jwt_), QObject(parent) {
+HttpRequest::HttpRequest(QObject *parent, const QString &requestURL, bool create_jwt_,
+                         int timeout) : create_jwt(create_jwt_), QObject(parent) {
   networkAccessManager = new QNetworkAccessManager(this);
   reply = NULL;
 
   networkTimer = new QTimer(this);
   networkTimer->setSingleShot(true);
-  networkTimer->setInterval(20000);
+  networkTimer->setInterval(timeout);
   connect(networkTimer, &QTimer::timeout, this, &HttpRequest::requestTimeout);
 
   sendRequest(requestURL);

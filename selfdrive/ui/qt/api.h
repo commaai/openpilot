@@ -20,7 +20,7 @@ class HttpRequest : public QObject {
   Q_OBJECT
 
 public:
-  explicit HttpRequest(QObject* parent, const QString &requestURL, bool create_jwt_ = true);
+  explicit HttpRequest(QObject* parent, const QString &requestURL, bool create_jwt_ = true, int timeout = 20000);
   void sendRequest(const QString &requestURL);
   bool active();
 

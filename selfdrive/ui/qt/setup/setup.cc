@@ -113,10 +113,10 @@ QWidget * Setup::network_setup() {
   blayout->addWidget(cont);
 
   // setup timer for testing internet connection
-  HttpRequest *request = new HttpRequest(this, TEST_URL, false);
+  HttpRequest *request = new HttpRequest(this, TEST_URL, false, 2500);
   QObject::connect(request, &HttpRequest::requestDone, [=](bool success) {
-    qDebug() << "got response" << success;
     cont->setEnabled(success);
+    repaint();
   });
   QTimer *timer = new QTimer(this);
   QObject::connect(timer, &QTimer::timeout, [=]() {
@@ -323,7 +323,10 @@ Setup::Setup(QWidget *parent) : QStackedWidget(parent) {
       border-radius: 10px;
       background-color: #333333;
     }
-    QPushButton#navBtn:pressed, QPushButton#navBtn:disabled {
+    QPushButton#navBtn:disabled {
+      color: #808080;
+    }
+    QPushButton#navBtn:pressed {
       background-color: #444444;
     }
     QPushButton[primary='true'], #navBtn[primary='true'] {
