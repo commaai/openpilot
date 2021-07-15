@@ -10,11 +10,12 @@
 #include <curl/curl.h>
 
 #include "selfdrive/hardware/hw.h"
+#include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/offroad/networking.h"
 #include "selfdrive/ui/qt/widgets/input.h"
-#include "selfdrive/ui/qt/qt_window.h"
 
-#define USER_AGENT "AGNOSSetup-0.1"
+const char*  USER_AGENT = "AGNOSSetup-0.1";
+const QString DASHCAM_URL = "https://dashcam.comma.ai";
 
 void Setup::download(QString url) {
   CURL *curl = curl_easy_init();
@@ -52,18 +53,18 @@ QWidget * Setup::getting_started() {
   main_layout->setMargin(0);
 
   QVBoxLayout *vlayout = new QVBoxLayout();
-  vlayout->setContentsMargins(165, 280, 0, 0);
+  vlayout->setContentsMargins(165, 280, 100, 0);
   main_layout->addLayout(vlayout);
 
   QLabel *title = new QLabel("Getting Started");
   title->setStyleSheet("font-size: 90px; font-weight: 500;");
-  vlayout->addWidget(title, 0, Qt::AlignLeft | Qt::AlignTop);
+  vlayout->addWidget(title, 0, Qt::AlignTop | Qt::AlignLeft);
 
   vlayout->addSpacing(90);
   QLabel *desc = new QLabel("Before we get on the road, let’s finish installation and cover some details.");
   desc->setWordWrap(true);
-  desc->setStyleSheet("font-size: 80px; font-weight: 300; margin-right: 50px;");
-  vlayout->addWidget(desc, 0, Qt::AlignLeft | Qt::AlignTop);
+  desc->setStyleSheet("font-size: 80px; font-weight: 300;");
+  vlayout->addWidget(desc, 0, Qt::AlignTop | Qt::AlignLeft);
 
   vlayout->addStretch();
 
@@ -107,9 +108,6 @@ QWidget * Setup::network_setup() {
   cont->setObjectName("navBtn");
   QObject::connect(cont, &QPushButton::clicked, this, &Setup::nextPage);
   blayout->addWidget(cont);
-
-  widget->setStyleSheet(R"(
-  )");
 
   return widget;
 }
@@ -188,12 +186,11 @@ QWidget * Setup::software_selection() {
   blayout->addWidget(cont);
 
   QObject::connect(cont, &QPushButton::clicked, [=]() {
-    QString url = "https://dashcam.comma.ai";
+    QString url = DASHCAM_URL;
     if (group->checkedButton() != dashcam) {
       url = InputDialog::getText("Enter URL", this);
     }
     if (!url.isEmpty()) {
-      qDebug() << "installing" << url;
       setCurrentWidget(downloading_widget);
       QTimer::singleShot(100, this, [=]() {
         download(url);
@@ -233,11 +230,12 @@ QWidget * Setup::download_failed() {
   QLabel *body = new QLabel("Ensure the entered URL is valid, and the device’s internet connection is good.");
   body->setWordWrap(true);
   body->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  body->setStyleSheet("font-size: 80px; font-weight: 300;");
+  body->setStyleSheet("font-size: 80px; font-weight: 300; margin-right: 100px;");
   main_layout->addWidget(body);
 
   main_layout->addStretch();
 
+  // reboot + start over buttons
   QHBoxLayout *blayout = new QHBoxLayout();
   blayout->setSpacing(50);
   main_layout->addLayout(blayout, 0);
@@ -294,8 +292,8 @@ Setup::Setup(QWidget *parent) : QStackedWidget(parent) {
   // TODO: revisit pressed bg color
   setStyleSheet(R"(
     * {
-      font-family: Inter;
       color: white;
+      font-family: Inter;
     }
     Setup {
       background-color: black;
@@ -310,10 +308,10 @@ Setup::Setup(QWidget *parent) : QStackedWidget(parent) {
     QPushButton#navBtn:pressed, QPushButton#navBtn:disabled {
       background-color: #444444;
     }
-    *[primary='true'] {
+    QPushButton[primary='true'], #navBtn[primary='true'] {
       background-color: #465BEA;
     }
-    *[primary='true']:pressed {
+    QPushButton[primary='true']:pressed, #navBtn:pressed[primary='true'] {
       background-color: #3049F4;
     }
   )");
