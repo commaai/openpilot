@@ -10,7 +10,6 @@
 #include <curl/curl.h>
 
 #include "selfdrive/hardware/hw.h"
-
 #include "selfdrive/ui/qt/offroad/networking.h"
 #include "selfdrive/ui/qt/widgets/input.h"
 #include "selfdrive/ui/qt/qt_window.h"
@@ -18,12 +17,10 @@
 #define USER_AGENT "AGNOSSetup-0.1"
 
 void Setup::download(QString url) {
-  QCoreApplication::processEvents(QEventLoop::AllEvents, 1000);
-  setCurrentIndex(count() - 2);
-
   CURL *curl = curl_easy_init();
   if (!curl) {
-    emit downloadFailed();
+    emit finished(false);
+    return;
   }
 
   char tmpfile[] = "/tmp/installer_XXXXXX";
@@ -38,12 +35,14 @@ void Setup::download(QString url) {
 
   int ret = curl_easy_perform(curl);
   if (ret != CURLE_OK) {
-    emit downloadFailed();
+    emit finished(false);
+    return;
   }
   curl_easy_cleanup(curl);
   fclose(fp);
 
   rename(tmpfile, "/tmp/installer");
+  emit finished(true);
 }
 
 QWidget * Setup::getting_started() {
@@ -68,16 +67,12 @@ QWidget * Setup::getting_started() {
 
   vlayout->addStretch();
 
-  QPushButton *btn = new QPushButton(">");
+  QPushButton *btn = new QPushButton();
+  btn->setIcon(QIcon("../../../assets/img_continue_triangle.svg"));
+  btn->setIconSize(QSize(54, 106));
   btn->setFixedSize(310, 1080);
   btn->setProperty("primary", true);
-  btn->setStyleSheet(R"(
-    QPushButton {
-      font-size: 90px;
-      border: none;
-      border-radius: 0;
-    }
-  )");
+  btn->setStyleSheet("border: none;");
   main_layout->addWidget(btn, 0, Qt::AlignRight);
   QObject::connect(btn, &QPushButton::clicked, this, &Setup::nextPage);
 
@@ -139,6 +134,7 @@ QWidget * radio_button(QString title, QButtonGroup *group) {
     }
   )");
 
+  // checkmark icon
   QPixmap pix("../../../assets/img_circled_check.svg");
   btn->setIcon(pix);
   btn->setIconSize(QSize(0, 0));
@@ -186,12 +182,24 @@ QWidget * Setup::software_selection() {
   QObject::connect(back, &QPushButton::clicked, this, &Setup::prevPage);
   blayout->addWidget(back);
 
-  // TODO: disabled state color?
   QPushButton *cont = new QPushButton("Continue");
   cont->setObjectName("navBtn");
   cont->setEnabled(false);
-  QObject::connect(cont, &QPushButton::clicked, this, &Setup::nextPage);
   blayout->addWidget(cont);
+
+  QObject::connect(cont, &QPushButton::clicked, [=]() {
+    QString url = "https://dashcam.comma.ai";
+    if (group->checkedButton() != dashcam) {
+      url = InputDialog::getText("Enter URL", this);
+    }
+    if (!url.isEmpty()) {
+      qDebug() << "installing" << url;
+      setCurrentWidget(downloading_widget);
+      QTimer::singleShot(100, this, [=]() {
+        download(url);
+      });
+    }
+  });
 
   connect(group, QOverload<QAbstractButton *>::of(&QButtonGroup::buttonClicked), [=](QAbstractButton *btn) {
     btn->setChecked(true);
@@ -213,37 +221,47 @@ QWidget * Setup::downloading() {
 QWidget * Setup::download_failed() {
   QWidget *widget = new QWidget();
   QVBoxLayout *main_layout = new QVBoxLayout(widget);
-  main_layout->setContentsMargins(55, 55, 55, 55);
+  main_layout->setContentsMargins(55, 225, 55, 55);
+  main_layout->setSpacing(0);
 
   QLabel *title = new QLabel("Download Failed");
   title->setStyleSheet("font-size: 90px; font-weight: 500;");
-  main_layout->addWidget(title, 0, Qt::AlignLeft | Qt::AlignTop);
+  main_layout->addWidget(title, 0, Qt::AlignTop | Qt::AlignLeft);
 
-  title->move(224, 184);
+  main_layout->addSpacing(67);
 
-  QLabel *body = new QLabel("Ensure the entered URL is valid, and the device's network connection is good.");
+  QLabel *body = new QLabel("Ensure the entered URL is valid, and the device’s internet connection is good.");
   body->setWordWrap(true);
-  body->setAlignment(Qt::AlignHCenter);
+  body->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   body->setStyleSheet("font-size: 80px; font-weight: 300;");
   main_layout->addWidget(body);
 
-  QHBoxLayout *nav_layout = new QHBoxLayout();
+  main_layout->addStretch();
 
-  QPushButton *reboot_btn = new QPushButton("Reboot Device");
-  reboot_btn->setStyleSheet("background-color: #333333;");
-  nav_layout->addWidget(reboot_btn, 0, Qt::AlignBottom | Qt::AlignLeft);
-  QObject::connect(reboot_btn, &QPushButton::released, this, [=]() {
+  QHBoxLayout *blayout = new QHBoxLayout();
+  blayout->setSpacing(50);
+  main_layout->addLayout(blayout, 0);
+
+  QPushButton *reboot = new QPushButton("Reboot device");
+  reboot->setObjectName("navBtn");
+  blayout->addWidget(reboot);
+  QObject::connect(reboot, &QPushButton::released, this, [=]() {
     Hardware::reboot();
   });
 
-  QPushButton *restart_btn = new QPushButton("Start over");
-  restart_btn->setStyleSheet("background-color: #465BEA;");
-  nav_layout->addWidget(restart_btn, 0, Qt::AlignBottom | Qt::AlignRight);
-  QObject::connect(restart_btn, &QPushButton::released, this, [=]() {
+  QPushButton *restart = new QPushButton("Start over");
+  restart->setObjectName("navBtn");
+  restart->setProperty("primary", true);
+  blayout->addWidget(restart);
+  QObject::connect(restart, &QPushButton::released, this, [=]() {
     setCurrentIndex(0);
   });
 
-  main_layout->addLayout(nav_layout, 0);
+  widget->setStyleSheet(R"(
+    QLabel {
+      margin-left: 117;
+    }
+  )");
   return widget;
 }
 
@@ -256,13 +274,22 @@ void Setup::nextPage() {
 }
 
 Setup::Setup(QWidget *parent) : QStackedWidget(parent) {
-  //addWidget(getting_started());
-  //addWidget(network_setup());
-  //addWidget(software_selection());
-  //addWidget(downloading());
-  addWidget(download_failed());
+  addWidget(getting_started());
+  addWidget(network_setup());
+  addWidget(software_selection());
 
-  QObject::connect(this, &Setup::downloadFailed, this, &Setup::nextPage);
+  downloading_widget = downloading();
+  addWidget(downloading_widget);
+
+  failed_widget = download_failed();
+  addWidget(failed_widget);
+
+  QObject::connect(this, &Setup::finished, [=](bool success) {
+    // hide setup on success
+    qDebug() << "finished" << success;
+    setVisible(!success);
+    setCurrentWidget(failed_widget);
+  });
 
   // TODO: revisit pressed bg color
   setStyleSheet(R"(
@@ -273,12 +300,6 @@ Setup::Setup(QWidget *parent) : QStackedWidget(parent) {
     Setup {
       background-color: black;
     }
-    *[primary='true'] {
-      background-color: #465BEA;
-    }
-    *[primary='true']:pressed {
-      background-color: #3049F4;
-    }
     QPushButton#navBtn {
       height: 160;
       font-size: 55px;
@@ -286,8 +307,14 @@ Setup::Setup(QWidget *parent) : QStackedWidget(parent) {
       border-radius: 10px;
       background-color: #333333;
     }
-    QPushButton#navBtn:pressed {
+    QPushButton#navBtn:pressed, QPushButton#navBtn:disabled {
       background-color: #444444;
+    }
+    *[primary='true'] {
+      background-color: #465BEA;
+    }
+    *[primary='true']:pressed {
+      background-color: #3049F4;
     }
   )");
 }
