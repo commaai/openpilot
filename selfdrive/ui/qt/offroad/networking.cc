@@ -92,7 +92,7 @@ void Networking::connectToNetwork(const Network &n) {
 void Networking::wrongPassword(const QString &ssid) {
   for (Network n : wifi->seen_networks) {
     if (n.ssid == ssid) {
-      QString pass = InputDialog::getText("Wrong password for \"" + n.ssid +"\"", this, "", true, 8);
+      QString pass = InputDialog::getText("Wrong password", this, "for \"" + n.ssid +"\"", true, 8);
       if (!pass.isEmpty()) {
         wifi->connect(n, pass);
       }
