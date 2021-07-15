@@ -528,7 +528,6 @@ static void camera_init(MultiCameraState *multi_cam_state, VisionIpcServer * v, 
 
   s->camera_num = camera_num;
 
-
   s->request_id_last = 0;
   s->skipped = true;
 
