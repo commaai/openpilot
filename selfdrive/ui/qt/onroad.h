@@ -29,16 +29,13 @@ protected:
 private:
   void stopSounds();
   void playSound(AudibleAlert alert);
-  void updateAlert(const QString &t1, const QString &t2, float blink_rate,
-                   const std::string &type, cereal::ControlsState::AlertSize size, AudibleAlert sound);
+  void updateAlert(Alert a);
 
   QColor bg;
   float volume = Hardware::MIN_VOLUME;
   std::map<AudibleAlert, std::pair<QSoundEffect, int>> sounds;
-  float blinking_rate = 0;
-  QString text1, text2;
-  std::string alert_type;
-  cereal::ControlsState::AlertSize alert_size;
+
+  Alert alert;
 
 public slots:
   void updateState(const UIState &s);
