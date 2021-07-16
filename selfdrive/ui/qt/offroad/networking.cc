@@ -49,13 +49,6 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QFrame(parent) {
 
   ScrollView *wifiScroller = new ScrollView(wifiWidget, this);
   wifiScroller->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-  wifiScroller->verticalScrollBar()->setStyleSheet(R"(
-    QScrollBar::handle:vertical {
-      min-height: 0px;
-      border-radius: 4px;
-      background-color: #8A8A8A;
-    }
-  )");
   vlayout->addWidget(wifiScroller, 1);
   main_layout->addWidget(wifiScreen);
 
@@ -77,17 +70,6 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QFrame(parent) {
       border-radius: 30px;
       color: #dddddd;
       background-color: #444444;
-    }
-    #wifiWidget > QPushButton#forgetBtn {
-      font-size: 32px;
-      font-weight: 600;
-      color: #292929;
-      background-color: #BDBDBD;
-      border-width: 1px solid #828282;
-      border-radius: 5px;
-      padding: 40px;
-      padding-bottom: 16px;
-      padding-top: 16px;
     }
   )");
   main_layout->setCurrentWidget(wifiScreen);
@@ -197,6 +179,25 @@ WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi)
   QLabel *scanning = new QLabel("Scanning for networks...");
   scanning->setStyleSheet("font-size: 65px;");
   main_layout->addWidget(scanning, 0, Qt::AlignCenter);
+
+  setStyleSheet(R"(
+    QScrollBar::handle:vertical {
+      min-height: 0px;
+      border-radius: 4px;
+      background-color: #8A8A8A;
+    }
+    #forgetBtn {
+      font-size: 32px;
+      font-weight: 600;
+      color: #292929;
+      background-color: #BDBDBD;
+      border-width: 1px solid #828282;
+      border-radius: 5px;
+      padding: 40px;
+      padding-bottom: 16px;
+      padding-top: 16px;
+    }
+  )");
 }
 
 void WifiUI::refresh() {
