@@ -28,7 +28,5 @@ private slots:
   void handleButton(QAbstractButton* m_button);
 
 signals:
-  void emitKey(const QString &s);
-  void emitBackspace();
-  void emitEnter();
+  void emitButton(const QString &s);
 };
