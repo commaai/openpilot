@@ -113,6 +113,7 @@ QWidget * Setup::network_setup() {
 
   QPushButton *cont = new QPushButton();
   cont->setObjectName("navBtn");
+  cont->setProperty("primary", true);
   QObject::connect(cont, &QPushButton::clicked, this, &Setup::nextPage);
   blayout->addWidget(cont);
 
@@ -205,6 +206,7 @@ QWidget * Setup::software_selection() {
   QPushButton *cont = new QPushButton("Continue");
   cont->setObjectName("navBtn");
   cont->setEnabled(false);
+  cont->setProperty("primary", true);
   blayout->addWidget(cont);
 
   QObject::connect(cont, &QPushButton::clicked, [=]() {
@@ -332,8 +334,9 @@ Setup::Setup(QWidget *parent) : QStackedWidget(parent) {
       border-radius: 10px;
       background-color: #333333;
     }
-    QPushButton#navBtn:disabled {
+    QPushButton#navBtn:disabled, QPushButton[primary='true']:disabled {
       color: #808080;
+      background-color: #333333;
     }
     QPushButton#navBtn:pressed {
       background-color: #444444;
