@@ -13,6 +13,9 @@ const QString ENTER_KEY = "⏎";
 
 const QStringList CONTROL_BUTTONS = {"↑", "↓", "ABC", "#+=", "123"};
 
+const int  key_spacing_horizontal = 15;
+const int key_spacing_vertical = 20;
+
 KeyboardLayout::KeyboardLayout(QWidget* parent, const std::vector<QVector<QString>>& layout) : QWidget(parent) {
   QVBoxLayout* main_layout = new QVBoxLayout(this);
   main_layout->setMargin(0);
@@ -36,7 +39,7 @@ KeyboardLayout::KeyboardLayout(QWidget* parent, const std::vector<QVector<QStrin
       } else if (p == ENTER_KEY) {
         btn->setStyleSheet("background-color: #465BEA;");
       }
-      btn->setFixedHeight(135);
+      btn->setFixedHeight(135 + key_spacing_vertical);
       btn_group->addButton(btn);
       hlayout->addWidget(btn, p == QString("  ") ? SPACEBAR_STRETCH : DEFAULT_STRETCH);
     }
@@ -48,8 +51,6 @@ KeyboardLayout::KeyboardLayout(QWidget* parent, const std::vector<QVector<QStrin
     main_layout->addLayout(hlayout);
   }
 
-  const int  key_spacing_horizontal = 15;
-  const int key_spacing_vertical = 20;
   setStyleSheet(QString(R"(
     QPushButton {
       font-size: 75px;
