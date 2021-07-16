@@ -18,7 +18,7 @@
 const char*  USER_AGENT = "AGNOSSetup-0.1";
 const QString DASHCAM_URL = "https://dashcam.comma.ai";
 
-const QString TEST_URL = "https://api.commadotai.com/v1/me";
+const QString TEST_URL = DASHCAM_URL;
 
 void Setup::download(QString url) {
   CURL *curl = curl_easy_init();
