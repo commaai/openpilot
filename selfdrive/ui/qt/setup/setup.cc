@@ -15,10 +15,8 @@
 #include "selfdrive/ui/qt/offroad/networking.h"
 #include "selfdrive/ui/qt/widgets/input.h"
 
-const char*  USER_AGENT = "AGNOSSetup-0.1";
+const char* USER_AGENT = "AGNOSSetup-0.1";
 const QString DASHCAM_URL = "https://dashcam.comma.ai";
-
-const QString TEST_URL = "https://api.commadotai.com/v1/me";
 
 void Setup::download(QString url) {
   CURL *curl = curl_easy_init();
@@ -113,11 +111,12 @@ QWidget * Setup::network_setup() {
 
   QPushButton *cont = new QPushButton();
   cont->setObjectName("navBtn");
+  cont->setProperty("primary", true);
   QObject::connect(cont, &QPushButton::clicked, this, &Setup::nextPage);
   blayout->addWidget(cont);
 
   // setup timer for testing internet connection
-  HttpRequest *request = new HttpRequest(this, TEST_URL, false, 2500);
+  HttpRequest *request = new HttpRequest(this, DASHCAM_URL, false, 2500);
   QObject::connect(request, &HttpRequest::requestDone, [=](bool success) {
     cont->setEnabled(success);
     cont->setText(success ? "Continue" : "Waiting for internet");
@@ -126,7 +125,7 @@ QWidget * Setup::network_setup() {
   QTimer *timer = new QTimer(this);
   QObject::connect(timer, &QTimer::timeout, [=]() {
     if (!request->active() && cont->isVisible()) {
-      request->sendRequest(TEST_URL);
+      request->sendRequest(DASHCAM_URL);
     }
   });
   timer->start(1000);
@@ -205,6 +204,7 @@ QWidget * Setup::software_selection() {
   QPushButton *cont = new QPushButton("Continue");
   cont->setObjectName("navBtn");
   cont->setEnabled(false);
+  cont->setProperty("primary", true);
   blayout->addWidget(cont);
 
   QObject::connect(cont, &QPushButton::clicked, [=]() {
@@ -332,8 +332,9 @@ Setup::Setup(QWidget *parent) : QStackedWidget(parent) {
       border-radius: 10px;
       background-color: #333333;
     }
-    QPushButton#navBtn:disabled {
+    QPushButton#navBtn:disabled, QPushButton[primary='true']:disabled {
       color: #808080;
+      background-color: #333333;
     }
     QPushButton#navBtn:pressed {
       background-color: #444444;

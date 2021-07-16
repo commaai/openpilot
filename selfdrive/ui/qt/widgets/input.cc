@@ -139,7 +139,7 @@ void InputDialog::show() {
 void InputDialog::handleInput(const QString &s) {
   if (!QString::compare(s,"⌫")) {
     line->backspace();
-  } else if (!QString::compare(s,"⏎")) {
+  } else if (!QString::compare(s,"→")) {
     if (line->text().length() >= minLength) {
       done(QDialog::Accepted);
       emitText(line->text());
@@ -171,7 +171,7 @@ ConfirmationDialog::ConfirmationDialog(const QString &prompt_text, const QString
   prompt = new QLabel(prompt_text, this);
   prompt->setWordWrap(true);
   prompt->setAlignment(Qt::AlignHCenter);
-  prompt->setStyleSheet(R"(font-size: 55px; font-weight: 400;)");
+  prompt->setStyleSheet("font-size: 55px; font-weight: 400;");
   main_layout->addWidget(prompt, 1, Qt::AlignTop | Qt::AlignHCenter);
 
   // cancel + confirm buttons
