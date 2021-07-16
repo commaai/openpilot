@@ -115,23 +115,23 @@ Keyboard::Keyboard(QWidget *parent) : QFrame(parent) {
 void Keyboard::handleButton(QAbstractButton* btn) {
   const QString &key = btn->text();
   if (CONTROL_BUTTONS.contains(key)) {
-    if (!QString::compare(key, "↓") || !QString::compare(key, "ABC")) {
+    if (key == "↓" || key == "ABC") {
       main_layout->setCurrentIndex(0);
-    } else if (!QString::compare(key, "↑")) {
+    } else if (key == "↑") {
       main_layout->setCurrentIndex(1);
-    } else if (!QString::compare(key, "123")) {
+    } else if (key == "123") {
       main_layout->setCurrentIndex(2);
-    } else if (!QString::compare(key, "#+=")) {
+    } else if (key == "#+=") {
       main_layout->setCurrentIndex(3);
     } else if ("A" <= key && key <= "Z") {
       main_layout->setCurrentIndex(0);
-    } else if (!QString::compare(key, ENTER_KEY)) {
+    } else if (key == ENTER_KEY) {
       main_layout->setCurrentIndex(0);
       emit emitEnter();
-    } else if (!QString::compare(key, BACKSPACE_KEY)) {
+    } else if (key == BACKSPACE_KEY) {
       emit emitBackspace();
     }
   } else {
-    emit emitButton(key);
+    emit emitKey(key);
   }
 }
