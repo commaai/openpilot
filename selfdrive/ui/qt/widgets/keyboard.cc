@@ -16,14 +16,14 @@ const QStringList CONTROL_BUTTONS = {"↑", "↓", "ABC", "#+=", "123"};
 KeyboardLayout::KeyboardLayout(QWidget* parent, const std::vector<QVector<QString>>& layout) : QWidget(parent) {
   QVBoxLayout* main_layout = new QVBoxLayout(this);
   main_layout->setMargin(0);
-  main_layout->setSpacing(20);
+  main_layout->setSpacing(0);
 
   QButtonGroup* btn_group = new QButtonGroup(this);
   QObject::connect(btn_group, SIGNAL(buttonClicked(QAbstractButton*)), parent, SLOT(handleButton(QAbstractButton*)));
 
   for (const auto &s : layout) {
     QHBoxLayout *hlayout = new QHBoxLayout;
-    hlayout->setSpacing(15);
+    hlayout->setSpacing(0);
 
     if (main_layout->count() == 1) {
       hlayout->addSpacing(90);
@@ -48,10 +48,15 @@ KeyboardLayout::KeyboardLayout(QWidget* parent, const std::vector<QVector<QStrin
     main_layout->addLayout(hlayout);
   }
 
-  setStyleSheet(R"(
+  const int  key_spacing_horizontal = 15;
+  const int key_spacing_vertical = 20;
+  setStyleSheet(QString(R"(
     QPushButton {
       font-size: 75px;
-      margin: 0px;
+      margin-left: %1px;
+      margin-right: %1px;
+      margin-top: %2px;
+      margin-bottom: %2px;
       padding: 0px;
       border-radius: 10px;
       color: #dddddd;
@@ -60,7 +65,7 @@ KeyboardLayout::KeyboardLayout(QWidget* parent, const std::vector<QVector<QStrin
     QPushButton:pressed {
       background-color: #333333;
     }
-  )");
+  )").arg(key_spacing_vertical / 2).arg(key_spacing_horizontal / 2));
 }
 
 Keyboard::Keyboard(QWidget *parent) : QFrame(parent) {
