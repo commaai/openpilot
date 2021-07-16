@@ -58,7 +58,7 @@ private slots:
                 QString::fromStdString(cs.getAlertType()),
                 cs.getAlertSize(), cs.getAlertSound()});
     } else if (sm->rcv_frame("controlsState") > 0 && (*sm)["controlsState"].getControlsState().getEnabled() &&
-               ((nanos_since_boot() - sm->rcv_time("controlsState")) / 1e9 > CONTROLS_UNRESPONSIVE_TIMEOUT)) {
+               ((nanos_since_boot() - sm->rcv_time("controlsState")) / 1e9 > CONTROLS_TIMEOUT)) {
       setAlert(CONTROLS_UNRESPONSIVE_ALERT);
     }
   }

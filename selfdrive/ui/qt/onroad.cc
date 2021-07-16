@@ -76,12 +76,12 @@ void OnroadAlerts::updateState(const UIState &s) {
                    QString::fromStdString(cs.getAlertText2()),
                    QString::fromStdString(cs.getAlertType()),
                    cs.getAlertSize(), cs.getAlertSound()});
-    } else if ((sm.frame - s.scene.started_frame) > 10 * UI_FREQ) {
+    } else if ((sm.frame - s.scene.started_frame) > 5 * UI_FREQ) {
       // Handle controls timeout
       if (sm.rcv_frame("controlsState") < s.scene.started_frame) {
         // car is started, but controlsState hasn't been seen at all
         updateAlert(CONTROLS_WAITING_ALERT);
-      } else if ((sm.frame - sm.rcv_frame("controlsState")) > 5 * UI_FREQ) {
+      } else if ((nanos_since_boot() - sm.rcv_time("controlsState")) / 1e9 > CONTROLS_TIMEOUT) {
         // car is started, but controls is lagging or died
         updateAlert(CONTROLS_UNRESPONSIVE_ALERT);
 

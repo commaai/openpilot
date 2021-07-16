@@ -67,7 +67,7 @@ const Alert CONTROLS_WAITING_ALERT = {"openpilot Unavailable", "Waiting for cont
 const Alert CONTROLS_UNRESPONSIVE_ALERT = {"TAKE CONTROL IMMEDIATELY", "Controls Unresponsive",
                                            "controlsUnresponsive", cereal::ControlsState::AlertSize::FULL,
                                            AudibleAlert::CHIME_WARNING_REPEAT};
-const int CONTROLS_UNRESPONSIVE_TIMEOUT = 5;
+const int CONTROLS_TIMEOUT = 5;
 
 const int bdr_s = 30;
 const int header_h = 420;
