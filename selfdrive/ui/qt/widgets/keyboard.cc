@@ -13,8 +13,8 @@ const QString ENTER_KEY = "⏎";
 
 const QStringList CONTROL_BUTTONS = {"↑", "↓", "ABC", "#+=", "123"};
 
-const int  key_spacing_horizontal = 15;
-const int key_spacing_vertical = 20;
+const float key_spacing_vertical = 20;
+const float key_spacing_horizontal = 15;
 
 KeyboardLayout::KeyboardLayout(QWidget* parent, const std::vector<QVector<QString>>& layout) : QWidget(parent) {
   QVBoxLayout* main_layout = new QVBoxLayout(this);
