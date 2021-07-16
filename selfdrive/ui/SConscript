@@ -19,8 +19,7 @@ if arch == "Darwin":
   del base_libs[base_libs.index('OpenCL')]
   qt_env['FRAMEWORKS'] += ['OpenCL']
 
-widgets_src = ["qt/util.cc",
-               "qt/widgets/input.cc", "qt/widgets/drive_stats.cc",
+widgets_src = ["qt/util.cc", "qt/widgets/input.cc", "qt/widgets/drive_stats.cc",
                "qt/widgets/ssh_keys.cc", "qt/widgets/toggle.cc", "qt/widgets/controls.cc",
                "qt/widgets/offroad_alerts.cc", "qt/widgets/setup.cc", "qt/widgets/keyboard.cc",
                "qt/widgets/scrollview.cc", "qt/widgets/cameraview.cc", "#phonelibs/qrcode/QrCode.cc", "qt/api.cc",
@@ -29,10 +28,13 @@ widgets_src = ["qt/util.cc",
 if arch != 'aarch64':
   widgets_src += ["qt/offroad/networking.cc", "qt/offroad/wifiManager.cc"]
 
-if maps:
+qt_env['CPPDEFINES'] = []
+if GetOption('setup'):
+  qt_env['CPPDEFINES'] += ["USE_QRC"]
+elif maps:
   base_libs += ['qmapboxgl']
   widgets_src += ["qt/maps/map_helpers.cc", "qt/maps/map_settings.cc", "qt/maps/map.cc"]
-  qt_env['CPPDEFINES'] = ["ENABLE_MAPS"]
+  qt_env['CPPDEFINES'] += ["ENABLE_MAPS"]
 
 widgets = qt_env.Library("qt_widgets", widgets_src, LIBS=base_libs)
 qt_libs = [widgets] + base_libs
@@ -51,8 +53,15 @@ qt_env.Program("_ui", qt_src, LIBS=qt_libs)
 # setup, factory resetter, and installer
 if arch != 'aarch64' and GetOption('setup'):
   qt_env.Program("qt/setup/reset", ["qt/setup/reset.cc"], LIBS=qt_libs)
-  qt_env.Program("qt/setup/setup", ["qt/setup/setup.cc"], LIBS=qt_libs + ['curl', 'common', 'json11'])
   qt_env.Program("qt/setup/wifi", ["qt/setup/wifi.cc"], LIBS=qt_libs + ['common', 'json11'])
+
+  # TODO: do this for all resources once NEOS has rcc
+  assets = "#selfdrive/assets/assets.cc"
+  assets_src = "#selfdrive/assets/assets.qrc"
+  qt_env.Command(assets, assets_src, f"rcc $SOURCES -o $TARGET")
+  qt_env.Depends(assets, Glob('#selfdrive/assets/*', exclude=[assets, assets_src, "#selfdrive/assets/assets.o"]))
+  qt_env.Program("qt/setup/setup", ["qt/setup/setup.cc", assets],
+                 LIBS=qt_libs + ['curl', 'common', 'json11'])
 
   senv = qt_env.Clone()
   senv['LINKFLAGS'].append('-Wl,-strip-debug')

@@ -64,11 +64,11 @@ InputDialog::InputDialog(const QString &title, QWidget *parent, const QString &s
     #textbox {
       margin-left: 50px;
       margin-right: 50px;
-      border: none;
       border-radius: 0;
       border-bottom: 3px solid #BDBDBD;
     }
     * {
+      border: none;
       font-size: 80px;
       font-weight: light;
       background-color: transparent;
@@ -81,13 +81,14 @@ InputDialog::InputDialog(const QString &title, QWidget *parent, const QString &s
   if (secret) {
     eye_btn = new QPushButton();
     eye_btn->setCheckable(true);
+    eye_btn->setFixedSize(150, 120);
     QObject::connect(eye_btn, &QPushButton::toggled, [=](bool checked) {
       if (checked) {
-        eye_btn->setIcon(QIcon("../assets/img_eye_closed.svg"));
+        eye_btn->setIcon(QIcon(ASSET_PATH + "img_eye_closed.svg"));
         eye_btn->setIconSize(QSize(81, 54));
         line->setEchoMode(QLineEdit::PasswordEchoOnEdit);
       } else {
-        eye_btn->setIcon(QIcon("../assets/img_eye_open.svg"));
+        eye_btn->setIcon(QIcon(ASSET_PATH + "img_eye_open.svg"));
         eye_btn->setIconSize(QSize(81, 44));
         line->setEchoMode(QLineEdit::Normal);
       }
