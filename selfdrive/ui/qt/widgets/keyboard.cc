@@ -31,11 +31,14 @@ KeyboardLayout::KeyboardLayout(QWidget* parent, const std::vector<QVector<QStrin
       hlayout->addSpacing(90);
     }
 
+    int i = 0;
     for (const QString &p : s) {
       QPushButton* btn = new QPushButton(p);
       int top_margin = main_layout->count() == 0 ? 0 : 10;
       int bottom_margin = main_layout->count() == 3 ? 0 : 10;
-      QString keyStyleSheet = QString("margin-left: 7.5px; margin-right: 7.5px; margin-top: %1px; margin-bottom: %2px;").arg(top_margin).arg(bottom_margin);
+      QString left_margin = i == 0 ? "0" : "7.5";
+      QString right_margin = i == s.size() - 1 ? "0" : "7.5";
+      QString keyStyleSheet = QString("margin-left: %1px; margin-right: %2px; margin-top: %3px; margin-bottom: %4px;").arg(left_margin).arg(right_margin).arg(top_margin).arg(bottom_margin);
       if (p == BACKSPACE_KEY) {
         btn->setAutoRepeat(true);
       } else if (p == ENTER_KEY) {
@@ -45,6 +48,7 @@ KeyboardLayout::KeyboardLayout(QWidget* parent, const std::vector<QVector<QStrin
       btn->setFixedHeight(135 + top_margin + bottom_margin);
       btn_group->addButton(btn);
       hlayout->addWidget(btn, p == QString("  ") ? SPACEBAR_STRETCH : DEFAULT_STRETCH);
+      i++;
     }
 
     if (main_layout->count() == 1) {
