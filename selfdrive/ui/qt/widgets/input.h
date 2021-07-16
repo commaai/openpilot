@@ -59,10 +59,6 @@ public:
   static bool alert(const QString &prompt_text, QWidget *parent);
   static bool confirm(const QString &prompt_text, QWidget *parent);
 
-private:
-  QLabel *prompt;
-  QVBoxLayout *main_layout;
-
 public slots:
   int exec() override;
 };
