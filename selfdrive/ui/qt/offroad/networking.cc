@@ -57,6 +57,11 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QFrame(parent) {
   connect(an, &AdvancedNetworking::backPress, [=]() { main_layout->setCurrentWidget(wifiScreen); });
   main_layout->addWidget(an);
 
+  QPalette pal = palette();
+  pal.setColor(QPalette::Background, QColor(0x29, 0x29, 0x29));
+  setAutoFillBackground(true);
+  setPalette(pal);
+
   // TODO: revisit pressed colors
   setStyleSheet(R"(
     Networking {
