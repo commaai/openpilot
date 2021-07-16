@@ -93,9 +93,13 @@ QWidget * Setup::network_setup() {
   title->setStyleSheet("font-size: 90px; font-weight: 500;");
   main_layout->addWidget(title, 0, Qt::AlignLeft | Qt::AlignTop);
 
+  main_layout->addSpacing(25);
+
   // wifi widget
   Networking *wifi = new Networking(this, false);
   main_layout->addWidget(wifi, 1);
+
+  main_layout->addSpacing(35);
 
   // back + continue buttons
   QHBoxLayout *blayout = new QHBoxLayout;

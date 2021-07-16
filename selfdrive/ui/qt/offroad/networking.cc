@@ -4,6 +4,7 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPainter>
+#include <QScrollBar>
 
 #include "selfdrive/ui/qt/widgets/scrollview.h"
 #include "selfdrive/ui/qt/util.h"
@@ -45,7 +46,17 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QFrame(parent) {
   wifiWidget = new WifiUI(this, wifi);
   wifiWidget->setObjectName("wifiWidget");
   connect(wifiWidget, &WifiUI::connectToNetwork, this, &Networking::connectToNetwork);
-  vlayout->addWidget(new ScrollView(wifiWidget, this), 1);
+
+  ScrollView *wifiScroller = new ScrollView(wifiWidget, this);
+  wifiScroller->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+  wifiScroller->verticalScrollBar()->setStyleSheet(R"(
+    QScrollBar::handle:vertical {
+      min-height: 0px;
+      border-radius: 4px;
+      background-color: #8A8A8A;
+    }
+  )");
+  vlayout->addWidget(wifiScroller, 1);
   main_layout->addWidget(wifiScreen);
 
   an = new AdvancedNetworking(this, wifi);
@@ -55,6 +66,7 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QFrame(parent) {
   // TODO: revisit pressed colors
   setStyleSheet(R"(
     Networking {
+      border-radius: 13px;
       background-color: #292929;
     }
     #wifiWidget > QPushButton, #back_btn, #advancedBtn {
@@ -71,14 +83,11 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QFrame(parent) {
       font-weight: 600;
       color: #292929;
       background-color: #BDBDBD;
-      border-width: 1px;
+      border-width: 1px solid #828282;
       border-radius: 5px;
-      border-color: #828282;
-      padding-left: 40px;
-      padding-right: 40px;
+      padding: 40px;
       padding-bottom: 16px;
       padding-top: 16px;
-      margin: 0px;
     }
   )");
   main_layout->setCurrentWidget(wifiScreen);
