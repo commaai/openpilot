@@ -67,30 +67,15 @@ void OnroadWindow::offroadTransition(bool offroad) {
 
 // ***** onroad widgets *****
 
-OnroadAlerts::OnroadAlerts(QWidget *parent) : QWidget(parent) {
-  std::tuple<AudibleAlert, QString, bool> sound_list[] = {
-    {AudibleAlert::CHIME_DISENGAGE, "../assets/sounds/disengaged.wav", false},
-    {AudibleAlert::CHIME_ENGAGE, "../assets/sounds/engaged.wav", false},
-    {AudibleAlert::CHIME_WARNING1, "../assets/sounds/warning_1.wav", false},
-    {AudibleAlert::CHIME_WARNING2, "../assets/sounds/warning_2.wav", false},
-    {AudibleAlert::CHIME_WARNING2_REPEAT, "../assets/sounds/warning_2.wav", true},
-    {AudibleAlert::CHIME_WARNING_REPEAT, "../assets/sounds/warning_repeat.wav", true},
-    {AudibleAlert::CHIME_ERROR, "../assets/sounds/error.wav", false},
-    {AudibleAlert::CHIME_PROMPT, "../assets/sounds/error.wav", false}};
-
-  for (auto &[alert, fn, loops] : sound_list) {
-    sounds[alert].first.setSource(QUrl::fromLocalFile(fn));
-    sounds[alert].second = loops ? QSoundEffect::Infinite : 0;
-  }
-}
-
 void OnroadAlerts::updateState(const UIState &s) {
   SubMaster &sm = *(s.sm);
   if (sm["deviceState"].getDeviceState().getStarted()) {
     if (sm.updated("controlsState")) {
       const cereal::ControlsState::Reader &cs = sm["controlsState"].getControlsState();
-      updateAlert({QString::fromStdString(cs.getAlertText1()), QString::fromStdString(cs.getAlertText2()),
-                   cs.getAlertType(), cs.getAlertSize(), cs.getAlertSound()});
+      updateAlert({QString::fromStdString(cs.getAlertText1()),
+                   QString::fromStdString(cs.getAlertText2()),
+                   QString::fromStdString(cs.getAlertType()),
+                   cs.getAlertSize(), cs.getAlertSound()});
     } else if ((sm.frame - s.scene.started_frame) > 10 * UI_FREQ) {
       // Handle controls timeout
       if (sm.rcv_frame("controlsState") < s.scene.started_frame) {
@@ -114,37 +99,9 @@ void OnroadAlerts::offroadTransition(bool offroad) {
 }
 
 void OnroadAlerts::updateAlert(Alert a) {
-  if (alert.equal(a)) {
-    return;
-  }
-
-  alert = a;
-
-  // TODO: this goes to soundd
-  /*
-  stopSounds();
-  if (sound != AudibleAlert::NONE) {
-    playSound(sound);
-  }
-  */
-
-  update();
-}
-
-void OnroadAlerts::playSound(AudibleAlert alert) {
-  auto &[sound, loops] = sounds[alert];
-  sound.setLoopCount(loops);
-  sound.setVolume(volume);
-  sound.play();
-}
-
-void OnroadAlerts::stopSounds() {
-  for (auto &kv : sounds) {
-    // Only stop repeating sounds
-    auto &[sound, loops] = kv.second;
-    if (sound.loopsRemaining() == QSoundEffect::Infinite) {
-      sound.stop();
-    }
+  if (!alert.equal(a)) {
+    alert = a;
+    update();
   }
 }
 

@@ -52,7 +52,7 @@ typedef struct Rect {
 typedef struct Alert {
   QString text1;
   QString text2;
-  std::string type;
+  QString type;
   cereal::ControlsState::AlertSize size;
   AudibleAlert sound;
   bool equal(Alert a2) {
@@ -67,7 +67,7 @@ const Alert CONTROLS_WAITING_ALERT = {"openpilot Unavailable", "Waiting for cont
 const Alert CONTROLS_UNRESPONSIVE_ALERT = {"TAKE CONTROL IMMEDIATELY", "Controls Unresponsive",
                                            "controlsUnresponsive", cereal::ControlsState::AlertSize::FULL,
                                            AudibleAlert::CHIME_WARNING_REPEAT};
-const CONTROLS_UNRESPONSIVE_TIMEOUT = 10;
+const int CONTROLS_UNRESPONSIVE_TIMEOUT = 10;
 
 const int bdr_s = 30;
 const int header_h = 420;
