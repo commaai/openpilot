@@ -5,7 +5,6 @@
 #include <QMap>
 #include <QPushButton>
 #include <QVBoxLayout>
-#include <QMap>
 
 const QString BACKSPACE_KEY = "⌫";
 const QString ENTER_KEY = "→";
@@ -122,8 +121,12 @@ void Keyboard::handleButton(QAbstractButton* btn) {
     if (index != -1) {
       main_layout->setCurrentIndex(index);
     }
-    if (key == ENTER_KEY) emit emitEnter();
-    if (key == BACKSPACE_KEY) emit emitBackspace();
+    if (key == ENTER_KEY) {
+      emit emitEnter();
+    }
+    if (key == BACKSPACE_KEY) {
+      emit emitBackspace();
+    }
 
   } else {
     if ("A" <= key && key <= "Z") {
