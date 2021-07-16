@@ -227,6 +227,7 @@ void MapPanel::parseResponse(const QString &response) {
 
   recent_layout->addStretch();
   stack->setCurrentIndex(0);
+  repaint();
 }
 
 void MapPanel::failedResponse(const QString &response) {
