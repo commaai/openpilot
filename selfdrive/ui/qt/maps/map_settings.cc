@@ -13,7 +13,10 @@ static QString shorten(const QString &str, int max_len) {
 }
 
 MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
-  QVBoxLayout *main_layout = new QVBoxLayout(this);
+  stack = new QStackedWidget;
+
+  QWidget * main_widget = new QWidget;
+  QVBoxLayout *main_layout = new QVBoxLayout(main_widget);
   const int icon_size = 200;
 
   // Home
@@ -57,6 +60,15 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
   ScrollView *recent_scroller = new ScrollView(recent_widget, this);
   main_layout->addWidget(recent_scroller, 1);
 
+  QWidget * no_prime_widget = new QWidget;
+
+  stack->addWidget(main_widget);
+  stack->addWidget(no_prime_widget);
+  stack->setCurrentIndex(1);
+
+  QVBoxLayout *wrapper = new QVBoxLayout(this);
+  wrapper->addWidget(stack);
+
   clear();
 
   std::string dongle_id = params.get("DongleId");
@@ -66,6 +78,7 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
       std::string url = "https://api.commadotai.com/v1/navigation/" + dongle_id + "/locations";
       RequestRepeater* repeater = new RequestRepeater(this, QString::fromStdString(url), "ApiCache_NavDestinations", 30);
       QObject::connect(repeater, &RequestRepeater::receivedResponse, this, &MapPanel::parseResponse);
+      QObject::connect(repeater, &RequestRepeater::failedResponse, this, &MapPanel::failedResponse);
     }
 
     // Destination set while offline
@@ -199,6 +212,12 @@ void MapPanel::parseResponse(const QString &response) {
   }
 
   recent_layout->addStretch();
+  stack->setCurrentIndex(0);
+}
+
+void MapPanel::failedResponse(const QString &response) {
+  qWarning() << "Request failed" << response;
+  stack->setCurrentIndex(1);
 }
 
 void MapPanel::navigateTo(const QJsonObject &place) {
