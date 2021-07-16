@@ -44,6 +44,7 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
       background-color: black;
     }
     QPushButton {
+      height: 135px;
       font-size: 75px;
       margin: 0px;
       padding: 0px;
@@ -58,7 +59,11 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
 }
 
 bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
+  if (event->type() == QEvent::TouchBegin) {
+
+  }
   qDebug() << "EVENT:" << event;
+  qDebug() << "EVENT type:" << event->type();
   return QWidget::eventFilter(obj, event);
 }
 
