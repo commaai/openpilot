@@ -16,3 +16,10 @@ void setMainWindow(QWidget *w) {
   w->showFullScreen();
 #endif
 }
+
+
+extern "C" {
+  void set_main_window(void *w) {
+    setMainWindow((QWidget*)w);
+  }
+}
