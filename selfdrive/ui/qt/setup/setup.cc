@@ -208,15 +208,20 @@ QWidget * Setup::software_selection() {
   blayout->addWidget(cont);
 
   QObject::connect(cont, &QPushButton::clicked, [=]() {
+    auto w = currentWidget();
     QString url = DASHCAM_URL;
     if (group->checkedButton() != dashcam) {
+      QTimer::singleShot(0, [=]() {
+        setCurrentWidget(downloading_widget);
+      });
       url = InputDialog::getText("Enter URL", this, "for Custom Software");
     }
     if (!url.isEmpty()) {
-      setCurrentWidget(downloading_widget);
       QTimer::singleShot(100, this, [=]() {
         download(url);
       });
+    } else {
+      setCurrentWidget(w);
     }
   });
 
