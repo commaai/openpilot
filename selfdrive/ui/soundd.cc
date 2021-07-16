@@ -1,3 +1,5 @@
+#include <sys/resource.h>
+
 #include <map>
 
 #include <QApplication>
@@ -93,7 +95,8 @@ private:
 };
 
 int main(int argc, char **argv) {
-  // TODO: priority? can't mismatch UI too much
+  setpriority(PRIO_PROCESS, 0, -20);
+
   QApplication a(argc, argv);
   Sound sound;
   return a.exec();
