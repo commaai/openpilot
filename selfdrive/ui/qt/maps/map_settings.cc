@@ -230,7 +230,6 @@ void MapPanel::parseResponse(const QString &response) {
 }
 
 void MapPanel::failedResponse(const QString &response) {
-  qWarning() << "Request failed" << response;
   stack->setCurrentIndex(1);
 }
 
