@@ -43,7 +43,7 @@ public slots:
   int exec() override;
 
 private slots:
-  void handleInput(const QString &s);
+  void handleEnter(const QString &s);
 
 signals:
   void cancel();
