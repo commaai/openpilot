@@ -8,7 +8,7 @@ ScrollView::ScrollView(QWidget *w, QWidget *parent) : QScrollArea(parent) {
   setWidgetResizable(true);
   setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);  // TODO bar only for networking or all?
   setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  setStyleSheet("ScrollView { background-color:transparent; }");
+  setStyleSheet("background-color: transparent;");
 
   QString style = R"(
     QScrollBar:vertical {
@@ -29,7 +29,6 @@ ScrollView::ScrollView(QWidget *w, QWidget *parent) : QScrollArea(parent) {
       background: none;
     }
   )";
-
   verticalScrollBar()->setStyleSheet(style);
   horizontalScrollBar()->setStyleSheet(style);
 

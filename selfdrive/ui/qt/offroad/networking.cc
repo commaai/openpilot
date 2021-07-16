@@ -21,7 +21,7 @@ QLabel *networkStrengthWidget(const unsigned int strength_) {
 
 // Networking functions
 
-Networking::Networking(QWidget* parent, bool show_advanced) : QWidget(parent) {
+Networking::Networking(QWidget* parent, bool show_advanced) : QFrame(parent) {
   main_layout = new QStackedLayout(this);
 
   wifi = new WifiManager(this);

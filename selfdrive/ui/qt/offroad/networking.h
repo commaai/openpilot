@@ -43,7 +43,7 @@ public slots:
   void refresh();
 };
 
-class Networking : public QWidget {
+class Networking : public QFrame {
   Q_OBJECT
 
 public:
