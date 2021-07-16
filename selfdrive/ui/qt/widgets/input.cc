@@ -4,6 +4,7 @@
 
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/hardware/hw.h"
+#include <QDebug>
 
 
 QDialogBase::QDialogBase(QWidget *parent) : QDialog(parent) {
