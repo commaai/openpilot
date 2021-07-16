@@ -59,12 +59,15 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
 }
 
 bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
+//  qDebug() << "EVENT:" << event;
+//  qDebug() << "EVENT type:" << event->type();
   if (event->type() == QEvent::TouchBegin) {
-
+    qDebug() << "Touch event ignored:" << event;
+    event->ignore();
+    return true;
+  } else {
+    return QWidget::eventFilter(obj, event);
   }
-  qDebug() << "EVENT:" << event;
-  qDebug() << "EVENT type:" << event->type();
-  return QWidget::eventFilter(obj, event);
 }
 
 
