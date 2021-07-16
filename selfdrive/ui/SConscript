@@ -22,7 +22,7 @@ widgets_src = ["qt/util.cc", "qt/widgets/input.cc", "qt/widgets/drive_stats.cc",
                "qt/widgets/ssh_keys.cc", "qt/widgets/toggle.cc", "qt/widgets/controls.cc",
                "qt/widgets/offroad_alerts.cc", "qt/widgets/prime.cc", "qt/widgets/keyboard.cc",
                "qt/widgets/scrollview.cc", "qt/widgets/cameraview.cc", "#third_party/qrcode/QrCode.cc", "qt/api.cc",
-               "qt/request_repeater.cc"]
+               "qt/request_repeater.cc", "qt/qt_window.cc"]
 
 if arch != 'aarch64':
   widgets_src += ["qt/offroad/networking.cc", "qt/offroad/wifiManager.cc"]
@@ -45,6 +45,8 @@ asset_obj = qt_env.Object("assets", assets)
 
 # build soundd
 qt_env.Program("_soundd", "soundd.cc", LIBS=base_libs)
+
+qt_env.SharedLibrary("qt/python_helpers", ["qt/qt_window.cc"], LIBS=qt_libs)
 
 # spinner and text window
 qt_env.Program("qt/text", ["qt/text.cc"], LIBS=qt_libs)
