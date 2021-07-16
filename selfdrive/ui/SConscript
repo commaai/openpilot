@@ -5,6 +5,13 @@ Import('qt_env', 'arch', 'common', 'messaging', 'gpucommon', 'visionipc',
 base_libs = [gpucommon, common, messaging, cereal, visionipc, transformations, 'zmq',
              'capnp', 'kj', 'm', 'OpenCL', 'ssl', 'crypto', 'pthread'] + qt_env["LIBS"]
 
+# build soundd
+qt_env.Program("soundd", "soundd.cc",
+               LIBS=base_libs)
+
+
+# build UI
+
 maps = arch in ['larch64', 'x86_64'] and \
   os.path.exists(File("qt/maps/map.cc").srcnode().abspath)
 
