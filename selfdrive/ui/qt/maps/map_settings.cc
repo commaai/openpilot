@@ -4,6 +4,7 @@
 
 #include "selfdrive/common/util.h"
 #include "selfdrive/ui/qt/util.h"
+#include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/request_repeater.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
 #include "selfdrive/ui/qt/widgets/scrollview.h"
@@ -61,6 +62,19 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
   main_layout->addWidget(recent_scroller, 1);
 
   QWidget * no_prime_widget = new QWidget;
+  QVBoxLayout *no_prime_layout = new QVBoxLayout(no_prime_widget);
+  QLabel *signup = new QLabel("Sign up for comme prime to use navigation");
+  signup->setStyleSheet(R"(font-size: 60px; color: white;)");
+  signup->setAlignment(Qt::AlignCenter);
+  no_prime_layout->addWidget(signup);
+  no_prime_layout->addSpacing(50);
+
+  QLabel *screenshot = new QLabel;
+  QPixmap pm = QPixmap("../assets/navigation/screenshot.png");
+  screenshot->setPixmap(pm.scaledToWidth(vwp_w * 0.65, Qt::SmoothTransformation));
+  no_prime_layout->addWidget(screenshot, 0, Qt::AlignHCenter);
+
+  no_prime_layout->addStretch();
 
   stack->addWidget(main_widget);
   stack->addWidget(no_prime_widget);

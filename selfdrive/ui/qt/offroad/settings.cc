@@ -85,11 +85,13 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
   }
 
 #ifdef ENABLE_MAPS
-  toggles.append(new ParamControl("NavSettingTime24h",
-                                  "Show ETA in 24h format",
-                                  "Use 24h format instead of am/pm",
-                                  "../assets/offroad/icon_metric.png",
-                                  this));
+  if (!Hardware::EON()) {
+    toggles.append(new ParamControl("NavSettingTime24h",
+                                    "Show ETA in 24h format",
+                                    "Use 24h format instead of am/pm",
+                                    "../assets/offroad/icon_metric.png",
+                                    this));
+  }
 #endif
 
   bool record_lock = Params().getBool("RecordFrontLock");
