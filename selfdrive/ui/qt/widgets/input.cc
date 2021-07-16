@@ -165,20 +165,14 @@ void InputDialog::setMinLength(int length) {
 
 ConfirmationDialog::ConfirmationDialog(const QString &prompt_text, const QString &confirm_text, const QString &cancel_text,
                                        QWidget *parent) : QDialogBase(parent) {
-  setWindowFlags(Qt::Popup);
-
   QFrame *container = new QFrame(this);
   QVBoxLayout *main_layout = new QVBoxLayout(container);
   main_layout->setContentsMargins(32, 120, 32, 32);
 
-  QVBoxLayout *outer_layout = new QVBoxLayout(this);
-  outer_layout->setContentsMargins(210, 170, 210, 170);
-  outer_layout->addWidget(container);
-
   QLabel *prompt = new QLabel(prompt_text, this);
   prompt->setWordWrap(true);
   prompt->setAlignment(Qt::AlignHCenter);
-  prompt->setStyleSheet("font-size: 70px; font-weight: bold;");
+  prompt->setStyleSheet("font-size: 70px; font-weight: bold; color: black;");
   main_layout->addWidget(prompt, 1, Qt::AlignTop | Qt::AlignHCenter);
 
   // cancel + confirm buttons
@@ -198,10 +192,12 @@ ConfirmationDialog::ConfirmationDialog(const QString &prompt_text, const QString
     QObject::connect(confirm_btn, &QPushButton::released, this, &ConfirmationDialog::accept);
   }
 
+  QVBoxLayout *outer_layout = new QVBoxLayout(this);
+  outer_layout->setContentsMargins(210, 170, 210, 170);
+  outer_layout->addWidget(container);
+
+  setWindowFlags(Qt::Popup);
   setStyleSheet(R"(
-    * {
-      color: black;
-    }
     ConfirmationDialog {
       background-color: black;
     }
