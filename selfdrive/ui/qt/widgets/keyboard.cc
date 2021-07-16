@@ -2,14 +2,14 @@
 
 #include <QButtonGroup>
 #include <QHBoxLayout>
+#include <QMap>
 #include <QPushButton>
 #include <QVBoxLayout>
 
-const int DEFAULT_STRETCH = 1;
-const int SPACEBAR_STRETCH = 3;
-
 const QString BACKSPACE_KEY = "⌫";
-const QString ENTER_KEY = "⏎";
+const QString ENTER_KEY = "→";
+
+const QMap<QString, int> KEY_STRETCH = {{"  ", 5}, {ENTER_KEY, 2}};
 
 const QStringList CONTROL_BUTTONS = {"↑", "↓", "ABC", "#+=", "123"};
 
@@ -41,7 +41,7 @@ KeyboardLayout::KeyboardLayout(QWidget* parent, const std::vector<QVector<QStrin
       }
       btn->setFixedHeight(135 + key_spacing_vertical);
       btn_group->addButton(btn);
-      hlayout->addWidget(btn, p == QString("  ") ? SPACEBAR_STRETCH : DEFAULT_STRETCH);
+      hlayout->addWidget(btn, KEY_STRETCH.value(p, 1));
     }
 
     if (main_layout->count() == 1) {
