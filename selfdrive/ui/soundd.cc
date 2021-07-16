@@ -12,16 +12,12 @@
 
 typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
 
-// TODO: handle controls unresponsive alert
 // TODO: detect when we can't play sounds
 // TODO: detect when we can't display the UI
 
 class Sound : public QObject {
-
 public:
   explicit Sound(QObject *parent = 0) {
-    sm = new SubMaster({"carState", "controlsState"});
-
     std::tuple<AudibleAlert, QString, bool> sound_list[] = {
       {AudibleAlert::CHIME_DISENGAGE, "../assets/sounds/disengaged.wav", false},
       {AudibleAlert::CHIME_ENGAGE, "../assets/sounds/engaged.wav", false},
@@ -32,11 +28,12 @@ public:
       {AudibleAlert::CHIME_ERROR, "../assets/sounds/error.wav", false},
       {AudibleAlert::CHIME_PROMPT, "../assets/sounds/error.wav", false}
     };
-
     for (auto &[alert, fn, loops] : sound_list) {
       sounds[alert].first.setSource(QUrl::fromLocalFile(fn));
       sounds[alert].second = loops ? QSoundEffect::Infinite : 0;
     }
+
+    sm = new SubMaster({"carState", "controlsState"});
 
     QTimer *timer = new QTimer(this);
     QObject::connect(timer, &QTimer::timeout, this, &Sound::update);
@@ -45,11 +42,6 @@ public:
   ~Sound() {
     delete sm;
   };
-
-  Alert alert;
-  float volume = Hardware::MIN_VOLUME;
-  std::map<AudibleAlert, std::pair<QSoundEffect, int>> sounds;
-  SubMaster *sm;
 
 private slots:
   void update() {
@@ -60,32 +52,44 @@ private slots:
                              Hardware::MIN_VOLUME, Hardware::MAX_VOLUME);
     }
     if (sm->updated("controlsState")) {
-      // TODO: properly check if alert changed
       const cereal::ControlsState::Reader &cs = (*sm)["controlsState"].getControlsState();
-      Alert latest = {QString::fromStdString(cs.getAlertText1()),
-                      QString::fromStdString(cs.getAlertText2()),
-                      QString::fromStdString(cs.getAlertType()),
-                      cs.getAlertSize(), cs.getAlertSound()};
-      if (!alert.equal(latest)) {
-        alert = latest;
-        // stop sounds
-        for (auto &kv : sounds) {
-          // Only stop repeating sounds
-          auto &[sound, loops] = kv.second;
-          if (sound.loopsRemaining() == QSoundEffect::Infinite) {
-            sound.stop();
-          }
-        }
+      setAlert({QString::fromStdString(cs.getAlertText1()),
+                QString::fromStdString(cs.getAlertText2()),
+                QString::fromStdString(cs.getAlertType()),
+                cs.getAlertSize(), cs.getAlertSound()});
+    } else if (sm->rcv_frame("controlsState") > 0 && (*sm)["controlsState"].getControlsState().getEnabled() &&
+               ((nanos_since_boot() - sm->rcv_time("controlsState")) / 1e9 > CONTROLS_UNRESPONSIVE_TIMEOUT)) {
+      setAlert(CONTROLS_UNRESPONSIVE_ALERT);
+    }
+  }
 
-        if (alert.sound != AudibleAlert::NONE) {
-          auto &[sound, loops] = sounds[alert.sound];
-          sound.setLoopCount(loops);
-          sound.setVolume(volume);
-          sound.play();
+  void setAlert(Alert a) {
+    if (!alert.equal(a)) {
+      alert = a;
+      // stop sounds
+      for (auto &kv : sounds) {
+        // Only stop repeating sounds
+        auto &[sound, loops] = kv.second;
+        if (sound.loopsRemaining() == QSoundEffect::Infinite) {
+          sound.stop();
         }
+      }
+
+      // play sound
+      if (alert.sound != AudibleAlert::NONE) {
+        auto &[sound, loops] = sounds[alert.sound];
+        sound.setLoopCount(loops);
+        sound.setVolume(volume);
+        sound.play();
       }
     }
   }
+
+private:
+  Alert alert;
+  float volume = Hardware::MIN_VOLUME;
+  std::map<AudibleAlert, std::pair<QSoundEffect, int>> sounds;
+  SubMaster *sm;
 };
 
 int main(int argc, char **argv) {
