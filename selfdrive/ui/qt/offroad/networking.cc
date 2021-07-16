@@ -6,14 +6,15 @@
 #include <QPainter>
 #include <QScrollBar>
 
-#include "selfdrive/ui/qt/widgets/scrollview.h"
 #include "selfdrive/ui/qt/util.h"
+#include "selfdrive/ui/qt/qt_window.h"
+#include "selfdrive/ui/qt/widgets/scrollview.h"
 
 
 QLabel *networkStrengthWidget(const unsigned int strength_) {
   QLabel *strength = new QLabel();
   QVector<QString> imgs({"low", "medium", "high", "full"});
-  QPixmap pix("../assets/offroad/icon_wifi_strength_" + imgs.at(strength_) + ".svg");
+  QPixmap pix(ASSET_PATH + "/offroad/icon_wifi_strength_" + imgs.at(strength_) + ".svg");
   strength->setPixmap(pix.scaledToHeight(68, Qt::SmoothTransformation));
   strength->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
   strength->setStyleSheet("padding: 0px; margin-left: 50px; margin-right: 80px ");
@@ -55,6 +56,11 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QFrame(parent) {
   an = new AdvancedNetworking(this, wifi);
   connect(an, &AdvancedNetworking::backPress, [=]() { main_layout->setCurrentWidget(wifiScreen); });
   main_layout->addWidget(an);
+
+  QPalette pal = palette();
+  pal.setColor(QPalette::Background, QColor(0x29, 0x29, 0x29));
+  setAutoFillBackground(true);
+  setPalette(pal);
 
   // TODO: revisit pressed colors
   setStyleSheet(R"(
@@ -251,7 +257,7 @@ void WifiUI::refresh() {
     // Status icon
     if (network.connected == ConnectedType::CONNECTED) {
       QLabel *connectIcon = new QLabel();
-      QPixmap pix("../assets/offroad/icon_checkmark.svg");
+      QPixmap pix(ASSET_PATH + "offroad/icon_checkmark.svg");
 
       connectIcon->setPixmap(pix.scaledToWidth(49, Qt::SmoothTransformation));
       connectIcon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
@@ -260,7 +266,7 @@ void WifiUI::refresh() {
     } else if (network.connected == ConnectedType::CONNECTING) {
       QLabel *connectIcon = new QLabel();
       // TODO replace connecting icon with proper widget/icon
-      QPixmap pix(network.connected == ConnectedType::CONNECTED ? "../assets/offroad/icon_checkmark.svg" : "../assets/navigation/direction_rotary.png");
+      QPixmap pix(ASSET_PATH + (network.connected == ConnectedType::CONNECTED ? "offroad/icon_checkmark.svg" : "navigation/direction_rotary.png"));
 
       connectIcon->setPixmap(pix.scaledToWidth(49, Qt::SmoothTransformation));
       connectIcon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
@@ -268,7 +274,7 @@ void WifiUI::refresh() {
       hlayout->addWidget(connectIcon, 0, Qt::AlignRight);
     } else if (network.security_type == SecurityType::WPA) {
       QLabel *lockIcon = new QLabel();
-      QPixmap pix("../assets/offroad/icon_lock_closed.svg");
+      QPixmap pix(ASSET_PATH + "offroad/icon_lock_closed.svg");
 
       lockIcon->setPixmap(pix.scaledToHeight(49, Qt::SmoothTransformation));
       lockIcon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));

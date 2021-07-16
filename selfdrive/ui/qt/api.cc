@@ -123,6 +123,8 @@ void HttpRequest::requestFinished() {
       emit failedResponse(reply->errorString());
     }
   } else {
+    networkAccessManager->clearAccessCache();
+    networkAccessManager->clearConnectionCache();
     emit timeoutResponse("timeout");
   }
   emit requestDone(success);

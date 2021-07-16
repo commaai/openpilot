@@ -72,7 +72,7 @@ QWidget * Setup::getting_started() {
   vlayout->addStretch();
 
   QPushButton *btn = new QPushButton();
-  btn->setIcon(QIcon("../../../assets/img_continue_triangle.svg"));
+  btn->setIcon(QIcon(":/img_continue_triangle.svg"));
   btn->setIconSize(QSize(54, 106));
   btn->setFixedSize(310, 1080);
   btn->setProperty("primary", true);
@@ -155,7 +155,7 @@ QWidget * radio_button(QString title, QButtonGroup *group) {
   )");
 
   // checkmark icon
-  QPixmap pix("../../../assets/img_circled_check.svg");
+  QPixmap pix(":/img_circled_check.svg");
   btn->setIcon(pix);
   btn->setIconSize(QSize(0, 0));
   btn->setLayoutDirection(Qt::RightToLeft);
@@ -208,15 +208,20 @@ QWidget * Setup::software_selection() {
   blayout->addWidget(cont);
 
   QObject::connect(cont, &QPushButton::clicked, [=]() {
+    auto w = currentWidget();
     QString url = DASHCAM_URL;
     if (group->checkedButton() != dashcam) {
-      url = InputDialog::getText("Enter URL", this);
+      QTimer::singleShot(0, [=]() {
+        setCurrentWidget(downloading_widget);
+      });
+      url = InputDialog::getText("Enter URL", this, "for Custom Software");
     }
     if (!url.isEmpty()) {
-      setCurrentWidget(downloading_widget);
       QTimer::singleShot(100, this, [=]() {
         download(url);
       });
+    } else {
+      setCurrentWidget(w);
     }
   });
 
