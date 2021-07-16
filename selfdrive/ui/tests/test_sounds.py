@@ -34,7 +34,7 @@ def test_sound_card_init():
 
 
 @phone_only
-@with_processes(['ui', 'camerad'])
+@with_processes(['ui', 'soundd', 'camerad'])
 def test_alert_sounds():
   set_params_enabled()
   pm = messaging.PubMaster(['deviceState', 'controlsState'])
