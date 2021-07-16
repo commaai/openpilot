@@ -29,6 +29,7 @@ struct Network {
 
 class WifiManager : public QWidget {
   Q_OBJECT
+
 public:
   explicit WifiManager(QWidget* parent);
 
