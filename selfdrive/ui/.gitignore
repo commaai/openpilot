@@ -1,7 +1,6 @@
 moc_*
 *.moc
 
-soundd
 replay/replay
 qt/text
 qt/spinner
