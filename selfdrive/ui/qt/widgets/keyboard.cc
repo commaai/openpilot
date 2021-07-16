@@ -123,8 +123,6 @@ void Keyboard::handleButton(QAbstractButton* btn) {
       main_layout->setCurrentIndex(2);
     } else if (key == "#+=") {
       main_layout->setCurrentIndex(3);
-    } else if ("A" <= key && key <= "Z") {
-      main_layout->setCurrentIndex(0);
     } else if (key == ENTER_KEY) {
       main_layout->setCurrentIndex(0);
       emit emitEnter();
@@ -132,6 +130,9 @@ void Keyboard::handleButton(QAbstractButton* btn) {
       emit emitBackspace();
     }
   } else {
+    if ("A" <= key && key <= "Z") {
+      main_layout->setCurrentIndex(0);
+    }
     emit emitKey(key);
   }
 }
