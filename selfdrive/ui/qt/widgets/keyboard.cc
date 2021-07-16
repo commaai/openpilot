@@ -35,12 +35,13 @@ KeyboardLayout::KeyboardLayout(QWidget* parent, const std::vector<QVector<QStrin
       QPushButton* btn = new QPushButton(p);
       int top_margin = main_layout->count() == 0 ? 0 : 10;
       int bottom_margin = main_layout->count() == 3 ? 0 : 10;
-      btn->setStyleSheet(QString("margin-left: 7.5px; margin-right: 7.5px; margin-top: %1px; margin-bottom: %2px;").arg(top_margin).arg(bottom_margin));
+      QString keyStyleSheet = QString("margin-left: 7.5px; margin-right: 7.5px; margin-top: %1px; margin-bottom: %2px;").arg(top_margin).arg(bottom_margin);
       if (p == BACKSPACE_KEY) {
         btn->setAutoRepeat(true);
       } else if (p == ENTER_KEY) {
-        btn->setStyleSheet("background-color: #465BEA;");
+        keyStyleSheet += "background-color: #465BEA;";
       }
+      btn->setStyleSheet(keyStyleSheet);
       btn->setFixedHeight(135 + top_margin + bottom_margin);
       btn_group->addButton(btn);
       hlayout->addWidget(btn, p == QString("  ") ? SPACEBAR_STRETCH : DEFAULT_STRETCH);
