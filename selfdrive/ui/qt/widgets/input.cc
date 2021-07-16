@@ -81,6 +81,7 @@ InputDialog::InputDialog(const QString &title, QWidget *parent, const QString &s
   if (secret) {
     eye_btn = new QPushButton();
     eye_btn->setCheckable(true);
+    eye_btn->setFixedSize(150, 120);
     QObject::connect(eye_btn, &QPushButton::toggled, [=](bool checked) {
       if (checked) {
         eye_btn->setIcon(QIcon(ASSET_PATH + "img_eye_closed.svg"));
