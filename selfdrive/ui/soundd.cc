@@ -6,13 +6,10 @@
 #include <QString>
 #include <QSoundEffect>
 
-#include "cereal/gen/cpp/log.capnp.h"
 #include "cereal/messaging/messaging.h"
 #include "selfdrive/common/util.h"
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/ui.h"
-
-typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
 
 // TODO: detect when we can't play sounds
 // TODO: detect when we can't display the UI
