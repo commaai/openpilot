@@ -23,7 +23,8 @@ KeyboardLayout::KeyboardLayout(QWidget* parent, const std::vector<QVector<QStrin
 
   for (const auto &s : layout) {
     QHBoxLayout *hlayout = new QHBoxLayout;
-    hlayout->setSpacing(15);
+//    hlayout->setSpacing(15);
+    hlayout->setSpacing(0);
 
     if (main_layout->count() == 1) {
       hlayout->addSpacing(90);
@@ -31,6 +32,7 @@ KeyboardLayout::KeyboardLayout(QWidget* parent, const std::vector<QVector<QStrin
 
     for (const QString &p : s) {
       QPushButton* btn = new QPushButton(p);
+      btn->setStyleSheet("margin: 15px;");
       if (p == BACKSPACE_KEY) {
         btn->setAutoRepeat(true);
       } else if (p == ENTER_KEY) {
