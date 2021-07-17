@@ -67,12 +67,12 @@ Reset::Reset(bool recover, QWidget *parent) : QWidget(parent) {
 
   rejectBtn = new QPushButton("Cancel");
   blayout->addWidget(rejectBtn);
-  QObject::connect(rejectBtn, &QPushButton::released, QCoreApplication::instance(), &QCoreApplication::quit);
+  QObject::connect(rejectBtn, &QPushButton::clicked, QCoreApplication::instance(), &QCoreApplication::quit);
 
   rebootBtn = new QPushButton("Reboot");
   blayout->addWidget(rebootBtn);
 #ifdef __aarch64__
-  QObject::connect(rebootBtn, &QPushButton::released, [=]{
+  QObject::connect(rebootBtn, &QPushButton::clicked, [=]{
     std::system("sudo reboot");
   });
 #endif
@@ -80,7 +80,7 @@ Reset::Reset(bool recover, QWidget *parent) : QWidget(parent) {
   confirmBtn = new QPushButton("Confirm");
   confirmBtn->setStyleSheet("background-color: #465BEA;");
   blayout->addWidget(confirmBtn);
-  QObject::connect(confirmBtn, &QPushButton::released, this, &Reset::confirm);
+  QObject::connect(confirmBtn, &QPushButton::clicked, this, &Reset::confirm);
 
   rejectBtn->setVisible(!recover);
   rebootBtn->setVisible(recover);

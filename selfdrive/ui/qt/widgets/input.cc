@@ -48,8 +48,8 @@ InputDialog::InputDialog(const QString &title, QWidget *parent, const QString &s
     background-color: #444444;
   )");
   header_layout->addWidget(cancel_btn, 0, Qt::AlignRight);
-  QObject::connect(cancel_btn, &QPushButton::released, this, &InputDialog::reject);
-  QObject::connect(cancel_btn, &QPushButton::released, this, &InputDialog::cancel);
+  QObject::connect(cancel_btn, &QPushButton::clicked, this, &InputDialog::reject);
+  QObject::connect(cancel_btn, &QPushButton::clicked, this, &InputDialog::cancel);
 
   main_layout->addLayout(header_layout);
 
@@ -184,13 +184,13 @@ ConfirmationDialog::ConfirmationDialog(const QString &prompt_text, const QString
   if (cancel_text.length()) {
     QPushButton* cancel_btn = new QPushButton(cancel_text);
     btn_layout->addWidget(cancel_btn);
-    QObject::connect(cancel_btn, &QPushButton::released, this, &ConfirmationDialog::reject);
+    QObject::connect(cancel_btn, &QPushButton::clicked, this, &ConfirmationDialog::reject);
   }
 
   if (confirm_text.length()) {
     QPushButton* confirm_btn = new QPushButton(confirm_text);
     btn_layout->addWidget(confirm_btn);
-    QObject::connect(confirm_btn, &QPushButton::released, this, &ConfirmationDialog::accept);
+    QObject::connect(confirm_btn, &QPushButton::clicked, this, &ConfirmationDialog::accept);
   }
 
   QVBoxLayout *outer_layout = new QVBoxLayout(this);

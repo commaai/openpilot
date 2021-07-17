@@ -82,7 +82,7 @@ void TermsPage::showEvent(QShowEvent *event) {
 
   QPushButton *decline_btn = new QPushButton("Decline");
   buttons->addWidget(decline_btn);
-  QObject::connect(decline_btn, &QPushButton::released, this, &TermsPage::declinedTerms);
+  QObject::connect(decline_btn, &QPushButton::clicked, this, &TermsPage::declinedTerms);
 
   accept_btn = new QPushButton("Scroll to accept");
   accept_btn->setEnabled(false);
@@ -95,7 +95,7 @@ void TermsPage::showEvent(QShowEvent *event) {
     }
   )");
   buttons->addWidget(accept_btn);
-  QObject::connect(accept_btn, &QPushButton::released, this, &TermsPage::acceptedTerms);
+  QObject::connect(accept_btn, &QPushButton::clicked, this, &TermsPage::acceptedTerms);
 }
 
 void TermsPage::enableAccept() {
@@ -125,12 +125,12 @@ void DeclinePage::showEvent(QShowEvent *event) {
   QPushButton *back_btn = new QPushButton("Back");
   buttons->addWidget(back_btn);
 
-  QObject::connect(back_btn, &QPushButton::released, this, &DeclinePage::getBack);
+  QObject::connect(back_btn, &QPushButton::clicked, this, &DeclinePage::getBack);
 
   QPushButton *uninstall_btn = new QPushButton("Decline, uninstall " + getBrand());
   uninstall_btn->setStyleSheet("background-color: #B73D3D");
   buttons->addWidget(uninstall_btn);
-  QObject::connect(uninstall_btn, &QPushButton::released, [=]() {
+  QObject::connect(uninstall_btn, &QPushButton::clicked, [=]() {
     Params().putBool("DoUninstall", true);
   });
 }
