@@ -99,10 +99,17 @@ InputDialog::InputDialog(const QString &title, QWidget *parent, const QString &s
   }
 
   main_layout->addWidget(textbox_widget, 0, Qt::AlignBottom);
-
   main_layout->addSpacing(25);
+
   k = new Keyboard(this);
-  QObject::connect(k, &Keyboard::emitButton, this, &InputDialog::handleInput);
+  QObject::connect(k, &Keyboard::emitEnter, this, &InputDialog::handleEnter);
+  QObject::connect(k, &Keyboard::emitBackspace, this, [=]() {
+    line->backspace();
+  });
+  QObject::connect(k, &Keyboard::emitKey, this, [=](const QString &key) {
+    line->insert(key.left(1));
+  });
+
   main_layout->addWidget(k, 2, Qt::AlignBottom);
 
   setStyleSheet(R"(
@@ -137,18 +144,12 @@ void InputDialog::show() {
   setMainWindow(this);
 }
 
-void InputDialog::handleInput(const QString &s) {
-  if (!QString::compare(s,"⌫")) {
-    line->backspace();
-  } else if (!QString::compare(s,"→")) {
-    if (line->text().length() >= minLength) {
-      done(QDialog::Accepted);
-      emitText(line->text());
-    } else {
-      setMessage("Need at least "+QString::number(minLength)+" characters!", false);
-    }
+void InputDialog::handleEnter() {
+  if (line->text().length() >= minLength) {
+    done(QDialog::Accepted);
+    emitText(line->text());
   } else {
-    line->insert(s.left(1));
+    setMessage("Need at least "+QString::number(minLength)+" characters!", false);
   }
 }
 
