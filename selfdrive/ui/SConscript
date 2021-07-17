@@ -39,6 +39,9 @@ elif maps:
 widgets = qt_env.Library("qt_widgets", widgets_src, LIBS=base_libs)
 qt_libs = [widgets] + base_libs
 
+# build soundd
+qt_env.Program("_soundd", "soundd.cc", LIBS=base_libs)
+
 # spinner and text window
 qt_env.Program("qt/text", ["qt/text.cc"], LIBS=qt_libs)
 qt_env.Program("qt/spinner", ["qt/spinner.cc"], LIBS=qt_libs)

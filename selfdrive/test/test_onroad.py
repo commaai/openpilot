@@ -34,6 +34,7 @@ PROCS = {
   "./_dmonitoringmodeld": 2.67,
   "selfdrive.thermald.thermald": 2.41,
   "selfdrive.locationd.calibrationd": 2.0,
+  "./soundd": 2.0,
   "selfdrive.monitoring.dmonitoringd": 1.90,
   "./proclogd": 1.54,
   "selfdrive.logmessaged": 0.2,
@@ -48,6 +49,7 @@ if TICI:
     "./loggerd": 60.0,
     "selfdrive.controls.controlsd": 26.0,
     "./camerad": 25.0,
+    "./_ui": 21.0,
     "selfdrive.controls.plannerd": 12.0,
     "selfdrive.locationd.paramsd": 5.0,
     "./_dmonitoringmodeld": 10.0,
@@ -74,9 +76,6 @@ def check_cpu_usage(first_proc, last_proc):
       cpu_time = cputime_total(last) - cputime_total(first)
       cpu_usage = cpu_time / dt * 100.
       if cpu_usage > max(normal_cpu_usage * 1.1, normal_cpu_usage + 5.0):
-        # TODO: fix high CPU when playing sounds constantly in UI
-        if proc_name == "./_ui" and cpu_usage < 50.:
-          continue
         result += f"Warning {proc_name} using more CPU than normal\n"
         r = False
       elif cpu_usage < min(normal_cpu_usage * 0.65, max(normal_cpu_usage - 1.0, 0.0)):
