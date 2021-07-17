@@ -181,9 +181,6 @@ WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi)
   }
   lock = QPixmap(ASSET_PATH + "offroad/icon_lock_closed.svg").scaledToWidth(49, Qt::SmoothTransformation);
   checkmark = QPixmap(ASSET_PATH + "offroad/icon_checkmark.svg").scaledToWidth(49, Qt::SmoothTransformation);
-  loading_gif = new QMovie(ASSET_PATH + "img_spinner_track.gif");
-  loading_gif->setScaledSize(QSize(50, 50));
-  loading_gif->setCacheMode(QMovie::CacheAll);
 
   QLabel *scanning = new QLabel("Scanning for networks...");
   scanning->setStyleSheet("font-size: 65px;");
@@ -222,10 +219,9 @@ void WifiUI::refresh() {
 
   // add networks
   int i = 0;
-  bool connecting = false;
   for (Network &network : wifi->seen_networks) {
     QHBoxLayout *hlayout = new QHBoxLayout;
-    hlayout->setContentsMargins(44, 0, 73, 0);
+    hlayout->setContentsMargins(44, 50, 73, 50);
     hlayout->setSpacing(50);
 
     // Clickable SSID label
@@ -239,12 +235,25 @@ void WifiUI::refresh() {
       font-weight: %1;
       text-align: left;
       border: none;
-      padding-top: 50px;
-      padding-bottom: 50px;
-      background-color: transparent;
+      padding: 0;
     )").arg(weight));
     QObject::connect(ssid_label, &QPushButton::clicked, this, [=]() { emit connectToNetwork(network); });
     hlayout->addWidget(ssid_label, 1);
+
+    if (network.connected == ConnectedType::CONNECTING) {
+      QPushButton *connecting = new QPushButton("CONNECTING...");
+      connecting->setStyleSheet(R"(
+        font-size: 32px;
+        font-weight: 400;
+        color: white;
+        border-radius: 0;
+        padding: 27px;
+        padding-left: 43px;
+        padding-right: 43px;
+        background-color: black;
+      )");
+      hlayout->addWidget(connecting, 2, Qt::AlignLeft);
+    }
 
     // Forget button
     if (wifi->isKnownConnection(network.ssid) && !wifi->isTetheringEnabled()) {
@@ -263,16 +272,12 @@ void WifiUI::refresh() {
       QLabel *connectIcon = new QLabel();
       connectIcon->setPixmap(checkmark);
       hlayout->addWidget(connectIcon, 0, Qt::AlignRight);
-    } else if (network.connected == ConnectedType::CONNECTING) {
-      connecting = true;
-      QLabel *connectIcon = new QLabel();
-      connectIcon->setMovie(loading_gif);
-      loading_gif->start();
-      hlayout->addWidget(connectIcon, 0, Qt::AlignRight);
     } else if (network.security_type == SecurityType::WPA) {
       QLabel *lockIcon = new QLabel();
       lockIcon->setPixmap(lock);
       hlayout->addWidget(lockIcon, 0, Qt::AlignRight);
+    } else {
+      hlayout->addSpacing(lock.width() + hlayout->spacing()*2);
     }
 
     // Strength indicator
@@ -288,6 +293,5 @@ void WifiUI::refresh() {
     }
     i++;
   }
-  if (!connecting) loading_gif->stop();
   main_layout->addStretch(1);
 }

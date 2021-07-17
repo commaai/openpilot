@@ -19,8 +19,6 @@ public:
 private:
   WifiManager *wifi = nullptr;
   QVBoxLayout* main_layout;
-
-  QMovie *loading_gif;
   QPixmap lock;
   QPixmap checkmark;
   QVector<QPixmap> strengths;
