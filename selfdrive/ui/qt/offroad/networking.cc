@@ -211,7 +211,7 @@ void WifiUI::refresh() {
   clearLayout(main_layout);
 
   if (wifi->seen_networks.size() == 0) {
-    QLabel *scanning = new QLabel("No networks found. Scanning...");
+    QLabel *scanning = new QLabel("Scanning for networks...");
     scanning->setStyleSheet("font-size: 65px;");
     main_layout->addWidget(scanning, 0, Qt::AlignCenter);
     return;
@@ -221,7 +221,7 @@ void WifiUI::refresh() {
   int i = 0;
   for (Network &network : wifi->seen_networks) {
     QHBoxLayout *hlayout = new QHBoxLayout;
-    hlayout->setContentsMargins(44, 50, 73, 50);
+    hlayout->setContentsMargins(44, 0, 73, 0);
     hlayout->setSpacing(50);
 
     // Clickable SSID label
@@ -235,16 +235,17 @@ void WifiUI::refresh() {
       font-weight: %1;
       text-align: left;
       border: none;
-      padding: 0;
+      padding-top: 50px;
+      padding-bottom: 50px;
     )").arg(weight));
     QObject::connect(ssid_label, &QPushButton::clicked, this, [=]() { emit connectToNetwork(network); });
-    hlayout->addWidget(ssid_label, 1);
+    hlayout->addWidget(ssid_label, network.connected == ConnectedType::CONNECTING ? 0 : 1);
 
     if (network.connected == ConnectedType::CONNECTING) {
       QPushButton *connecting = new QPushButton("CONNECTING...");
       connecting->setStyleSheet(R"(
         font-size: 32px;
-        font-weight: 500;
+        font-weight: 600;
         color: white;
         border-radius: 0;
         padding: 27px;
@@ -293,5 +294,5 @@ void WifiUI::refresh() {
     }
     i++;
   }
-  main_layout->addStretch(1);
+  main_layout->addStretch(2);
 }

@@ -270,7 +270,7 @@ QWidget * Setup::download_failed() {
   QPushButton *reboot = new QPushButton("Reboot device");
   reboot->setObjectName("navBtn");
   blayout->addWidget(reboot);
-  QObject::connect(reboot, &QPushButton::released, this, [=]() {
+  QObject::connect(reboot, &QPushButton::clicked, this, [=]() {
     Hardware::reboot();
   });
 
@@ -278,7 +278,7 @@ QWidget * Setup::download_failed() {
   restart->setObjectName("navBtn");
   restart->setProperty("primary", true);
   blayout->addWidget(restart);
-  QObject::connect(restart, &QPushButton::released, this, [=]() {
+  QObject::connect(restart, &QPushButton::clicked, this, [=]() {
     setCurrentIndex(0);
   });
 
@@ -312,8 +312,11 @@ Setup::Setup(QWidget *parent) : QStackedWidget(parent) {
   QObject::connect(this, &Setup::finished, [=](bool success) {
     // hide setup on success
     qDebug() << "finished" << success;
-    setVisible(!success);
-    setCurrentWidget(failed_widget);
+    if (success) {
+      QTimer::singleShot(3000, this, &QWidget::hide);
+    } else {
+      setCurrentWidget(failed_widget);
+    }
   });
 
   // TODO: revisit pressed bg color
