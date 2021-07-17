@@ -65,22 +65,33 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
 //  if (event->type() == QEvent::TouchBegin) {
   if (event->type() == QEvent::TouchBegin) {
     QTouchEvent *touchEvent = static_cast<QTouchEvent *>(event);
-    QPointF pos;
-    for (const auto tp : touchEvent->touchPoints()) {
-      pos.setX(tp.startPos().x());
-      pos.setY(tp.startPos().y());
-      break;
-    }
     Qt::MouseButtons buttons;
     Qt::KeyboardModifiers modifiers;
-    qDebug() << "Sent mouse event with pos:" << pos;
-    QMouseEvent eventNew(QEvent::MouseButtonPress, pos, Qt::LeftButton, buttons, modifiers);  // TODO fix screen pos
-//    QApplication::sendEvent(obj, &eventNew);
-    return QWidget::eventFilter(obj, event);
-//    return true;
-//  } else if (event->type() == QEvent::MouseButtonPress || event->type() == QEvent::MouseMove || event->type() == QEvent::HoverMove) {
-//    event->ignore();
-//    return true;
+    for (const auto tp : touchEvent->touchPoints()) {
+      QPointF pos;
+      pos.setX(tp.startPos().x());
+      pos.setY(tp.startPos().y());
+      QMouseEvent eventNew(QEvent::MouseButtonPress, pos, Qt::LeftButton, buttons, modifiers);  // TODO fix local pos if needed
+      QApplication::sendEvent(obj, &eventNew);
+      qDebug() << "Sent mouse press with pos:" << pos;
+    }
+    return true;
+  } else if (event->type() == QEvent::TouchUpdate) {
+    // TODO: implement
+    return true;
+  } else if (event->type() == QEvent::TouchEnd) {
+    QTouchEvent *touchEvent = static_cast<QTouchEvent *>(event);
+    Qt::MouseButtons buttons;
+    Qt::KeyboardModifiers modifiers;
+    for (const auto tp : touchEvent->touchPoints()) {
+      QPointF pos;
+      pos.setX(tp.startPos().x());
+      pos.setY(tp.startPos().y());
+      QMouseEvent eventNew(QEvent::MouseButtonRelease, pos, Qt::LeftButton, buttons, modifiers);
+      QApplication::sendEvent(obj, &eventNew);
+      qDebug() << "Sent mouse release with pos:" << pos;
+    }
+    return true;
   } else {
     return QWidget::eventFilter(obj, event);
   }
@@ -92,14 +103,10 @@ int main(int argc, char *argv[]) {
   QApplication a(argc, argv);
   MainWindow window;
   setMainWindow(&window);
+
   a.installEventFilter(&window);
-
+  a.setAttribute(Qt::AA_SynthesizeMouseForUnhandledTouchEvents, false);
   window.setAttribute(Qt::WA_AcceptTouchEvents);
-  window.setAttribute(Qt::AA_SynthesizeMouseForUnhandledTouchEvents, false);
-
-
-//  QList<QAbstractSlider *> sliders = window.findChildren<QAbstractSlider *>();
-//     foreach (QAbstractSlider *slider, sliders)
 
   return a.exec();
 }
