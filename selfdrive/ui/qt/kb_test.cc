@@ -93,7 +93,9 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
       screenPos.setX(tp.screenPos().x());
       screenPos.setY(tp.screenPos().y());
       QMouseEvent eventNew(QEvent::MouseMove, localPos, screenPos, button, buttons, modifiers);
+      QHoverEvent eventNew2(QEvent::HoverMove, localPos, screenPos, button, buttons, modifiers);
       QApplication::sendEvent(obj, &eventNew);
+      QApplication::sendEvent(obj, &eventNew2);
       qDebug() << "Sent mouse move with pos:" << localPos;
     }
     return true;
