@@ -82,7 +82,7 @@ void OnroadWindow::paintEvent(QPaintEvent *event) {
 
 // ***** onroad widgets *****
 
-void OnroadAlerts::updateState(const UIState &s) {
+QColor OnroadAlerts::updateState(const UIState &s) {
   SubMaster &sm = *(s.sm);
   UIStatus status = s.status;
   if (sm["deviceState"].getDeviceState().getStarted()) {
