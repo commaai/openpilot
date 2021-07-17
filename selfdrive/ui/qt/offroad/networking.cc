@@ -244,7 +244,7 @@ void WifiUI::refresh() {
       QPushButton *connecting = new QPushButton("CONNECTING...");
       connecting->setStyleSheet(R"(
         font-size: 32px;
-        font-weight: 400;
+        font-weight: 500;
         color: white;
         border-radius: 0;
         padding: 27px;
@@ -277,7 +277,7 @@ void WifiUI::refresh() {
       lockIcon->setPixmap(lock);
       hlayout->addWidget(lockIcon, 0, Qt::AlignRight);
     } else {
-      hlayout->addSpacing(lock.width() + hlayout->spacing()*2);
+      hlayout->addSpacing(lock.width() + hlayout->spacing());
     }
 
     // Strength indicator
