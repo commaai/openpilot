@@ -96,22 +96,23 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
     for (const QTouchEvent::TouchPoint &touchPoint : touchEvent->touchPoints()) {
       const QPointF &localPos(touchPoint.lastPos());
       const QPointF &screenPos(touchPoint.screenPos());
-      QEvent::Type mouseEventType = QEvent::MouseMove;
       Qt::MouseButton button = Qt::NoButton;
       Qt::MouseButtons buttons = Qt::LeftButton;
+
       if (touchPoint.state() == Qt::TouchPointPressed) {
-        mouseEventType = QEvent::MouseButtonPress;
         button = Qt::LeftButton;
+        QMouseEvent mouseEvent(QEvent::MouseButtonPress, localPos, screenPos, button, buttons, Qt::NoModifier);
+        QApplication::sendEvent(obj, &mouseEvent);
       } else if (touchPoint.state() == Qt::TouchPointReleased) {
-        mouseEventType = QEvent::MouseButtonRelease;
         button = Qt::LeftButton;
         buttons = Qt::NoButton;
-      }  // Qt::TouchPointMoved or Qt::TouchPointStationary
-
-      QMouseEvent mouseEvent(mouseEventType, localPos, screenPos, button, buttons, Qt::NoModifiers);
-      QApplication::sendEvent(obj, &mouseEvent);
+        QMouseEvent mouseEvent(QEvent::MouseButtonRelease, localPos, screenPos, button, buttons, Qt::NoModifier);
+        QApplication::sendEvent(obj, &mouseEvent);
+      } else if (touchPoint.state() == Qt::TouchPointMoved) {
+        QMouseEvent mouseEvent(QEvent::MouseMove, localPos, screenPos, button, buttons, Qt::NoModifier);
+        QApplication::sendEvent(obj, &mouseEvent);
+      }
     }
   }
-
   return false;
 }
