@@ -111,6 +111,10 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
         QMouseEvent eventNew(QEvent::MouseButtonRelease, localPos, screenPos, button, buttons, modifiers);
         QApplication::sendEvent(obj, &eventNew);
         qDebug() << "Sent mouse release with pos:" << localPos;
+      } else if (tp.state() == Qt::TouchPointMoved) {
+        button = Qt::NoButton;
+        QMouseEvent eventNew(QEvent::MouseMove, localPos, screenPos, button, buttons, modifiers);
+        QApplication::sendEvent(obj, &eventNew);
       }
     }
   }
