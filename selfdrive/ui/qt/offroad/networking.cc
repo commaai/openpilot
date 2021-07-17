@@ -222,6 +222,7 @@ void WifiUI::refresh() {
 
   // add networks
   int i = 0;
+  bool connecting = false;
   for (Network &network : wifi->seen_networks) {
     QHBoxLayout *hlayout = new QHBoxLayout;
     hlayout->setContentsMargins(44, 0, 73, 0);
@@ -263,6 +264,7 @@ void WifiUI::refresh() {
       connectIcon->setPixmap(checkmark);
       hlayout->addWidget(connectIcon, 0, Qt::AlignRight);
     } else if (network.connected == ConnectedType::CONNECTING) {
+      connecting = true;
       QLabel *connectIcon = new QLabel();
       connectIcon->setMovie(loading_gif);
       loading_gif->start();
@@ -286,5 +288,6 @@ void WifiUI::refresh() {
     }
     i++;
   }
+  if (!connecting) loading_gif->stop();
   main_layout->addStretch(1);
 }
