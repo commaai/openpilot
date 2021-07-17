@@ -101,8 +101,14 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
       const Qt::KeyboardModifiers modifiers;
 
       if (touchPoint.state() == Qt::TouchPointPressed) {
-        QMouseEvent mouseEvent(QEvent::MouseButtonPress, localPos, screenPos, button, buttons, modifiers);
-        QApplication::sendEvent(obj, &mouseEvent);
+        button = Qt::NoButton;
+        buttons = Qt::NoButton;
+        QMouseEvent mouseEvent1(QEvent::MouseMove, localPos, screenPos, button, buttons, modifiers);
+        QApplication::sendEvent(obj, &mouseEvent1);
+
+        button = Qt::LeftButton;
+        QMouseEvent mouseEvent2(QEvent::MouseButtonPress, localPos, screenPos, button, buttons, modifiers);
+        QApplication::sendEvent(obj, &mouseEvent2);
       } else if (touchPoint.state() == Qt::TouchPointReleased) {
         buttons = Qt::NoButton;
         QMouseEvent mouseEvent(QEvent::MouseButtonRelease, localPos, screenPos, button, buttons, modifiers);
