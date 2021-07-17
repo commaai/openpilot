@@ -60,8 +60,9 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
 }
 
 bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
-//  qDebug() << "EVENT:" << event;
+  qDebug() << "EVENT:" << event;
 //  qDebug() << "EVENT type:" << event->type();
+//  if (event->type() == QEvent::TouchBegin) {
   if (event->type() == QEvent::TouchBegin) {
     QTouchEvent *touchEvent = static_cast<QTouchEvent *>(event);
     QPointF pos;
@@ -74,9 +75,14 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
     Qt::KeyboardModifiers modifiers;
     qDebug() << "Sent mouse event with pos:" << pos;
     QMouseEvent eventNew(QEvent::MouseButtonPress, pos, Qt::LeftButton, buttons, modifiers);  // TODO fix screen pos
-    QApplication::sendEvent(obj, &eventNew);
+//    QApplication::sendEvent(obj, &eventNew);
+    return QWidget::eventFilter(obj, event);
+  } else if (event->type() == QEvent::MouseButtonPress || event->type() == QEvent::MouseMove || event->type() == QEvent::HoverMove) {
+    event->ignore();
+    return true;
+  } else {
+    return QWidget::eventFilter(obj, event);
   }
-  return QWidget::eventFilter(obj, event);
 }
 
 
