@@ -2,28 +2,31 @@
 
 #include <QButtonGroup>
 #include <QHBoxLayout>
+#include <QMap>
 #include <QPushButton>
 #include <QVBoxLayout>
 
-const int DEFAULT_STRETCH = 1;
-const int SPACEBAR_STRETCH = 3;
-
 const QString BACKSPACE_KEY = "⌫";
-const QString ENTER_KEY = "⏎";
+const QString ENTER_KEY = "→";
 
-const QStringList CONTROL_BUTTONS = {"↑", "↓", "ABC", "#+=", "123"};
+const QMap<QString, int> KEY_STRETCH = {{"  ", 5}, {ENTER_KEY, 2}};
+
+const QStringList CONTROL_BUTTONS = {"↑", "↓", "ABC", "#+=", "123", BACKSPACE_KEY, ENTER_KEY};
+
+const float key_spacing_vertical = 20;
+const float key_spacing_horizontal = 15;
 
 KeyboardLayout::KeyboardLayout(QWidget* parent, const std::vector<QVector<QString>>& layout) : QWidget(parent) {
   QVBoxLayout* main_layout = new QVBoxLayout(this);
   main_layout->setMargin(0);
-  main_layout->setSpacing(20);
+  main_layout->setSpacing(0);
 
   QButtonGroup* btn_group = new QButtonGroup(this);
   QObject::connect(btn_group, SIGNAL(buttonClicked(QAbstractButton*)), parent, SLOT(handleButton(QAbstractButton*)));
 
   for (const auto &s : layout) {
     QHBoxLayout *hlayout = new QHBoxLayout;
-    hlayout->setSpacing(15);
+    hlayout->setSpacing(0);
 
     if (main_layout->count() == 1) {
       hlayout->addSpacing(90);
@@ -36,9 +39,9 @@ KeyboardLayout::KeyboardLayout(QWidget* parent, const std::vector<QVector<QStrin
       } else if (p == ENTER_KEY) {
         btn->setStyleSheet("background-color: #465BEA;");
       }
-      btn->setFixedHeight(135);
+      btn->setFixedHeight(135 + key_spacing_vertical);
       btn_group->addButton(btn);
-      hlayout->addWidget(btn, p == QString("  ") ? SPACEBAR_STRETCH : DEFAULT_STRETCH);
+      hlayout->addWidget(btn, KEY_STRETCH.value(p, 1));
     }
 
     if (main_layout->count() == 1) {
@@ -48,10 +51,13 @@ KeyboardLayout::KeyboardLayout(QWidget* parent, const std::vector<QVector<QStrin
     main_layout->addLayout(hlayout);
   }
 
-  setStyleSheet(R"(
+  setStyleSheet(QString(R"(
     QPushButton {
       font-size: 75px;
-      margin: 0px;
+      margin-left: %1px;
+      margin-right: %1px;
+      margin-top: %2px;
+      margin-bottom: %2px;
       padding: 0px;
       border-radius: 10px;
       color: #dddddd;
@@ -60,7 +66,7 @@ KeyboardLayout::KeyboardLayout(QWidget* parent, const std::vector<QVector<QStrin
     QPushButton:pressed {
       background-color: #333333;
     }
-  )");
+  )").arg(key_spacing_vertical / 2).arg(key_spacing_horizontal / 2));
 }
 
 Keyboard::Keyboard(QWidget *parent) : QFrame(parent) {
@@ -107,28 +113,26 @@ Keyboard::Keyboard(QWidget *parent) : QFrame(parent) {
 }
 
 void Keyboard::handleButton(QAbstractButton* btn) {
-  const QString key = btn->text();
-  if (!QString::compare(key, "↓") || !QString::compare(key, "ABC")) {
-    main_layout->setCurrentIndex(0);
-  }
-  if (!QString::compare(key, "↑")) {
-    main_layout->setCurrentIndex(1);
-  }
-  if (!QString::compare(key, "123")) {
-    main_layout->setCurrentIndex(2);
-  }
-  if (!QString::compare(key, "#+=")) {
-    main_layout->setCurrentIndex(3);
-  }
-  if (!QString::compare(key, BACKSPACE_KEY)) {
-    main_layout->setCurrentIndex(0);
-  }
-  if ("A" <= key && key <= "Z") {
-    main_layout->setCurrentIndex(0);
-  }
-
-  // TODO: break up into separate signals
-  if (!CONTROL_BUTTONS.contains(key)) {
-    emit emitButton(key);
+  const QString &key = btn->text();
+  if (CONTROL_BUTTONS.contains(key)) {
+    if (key == "↓" || key == "ABC") {
+      main_layout->setCurrentIndex(0);
+    } else if (key == "↑") {
+      main_layout->setCurrentIndex(1);
+    } else if (key == "123") {
+      main_layout->setCurrentIndex(2);
+    } else if (key == "#+=") {
+      main_layout->setCurrentIndex(3);
+    } else if (key == ENTER_KEY) {
+      main_layout->setCurrentIndex(0);
+      emit emitEnter();
+    } else if (key == BACKSPACE_KEY) {
+      emit emitBackspace();
+    }
+  } else {
+    if ("A" <= key && key <= "Z") {
+      main_layout->setCurrentIndex(0);
+    }
+    emit emitKey(key);
   }
 }

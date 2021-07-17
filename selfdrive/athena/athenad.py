@@ -209,6 +209,13 @@ def cancelUpload(upload_id):
   return {"success": 1}
 
 
+@dispatcher.add_method
+def primeActivated(active):
+  dongle_id = Params().get("DongleId", encoding='utf-8')
+  api = Api(dongle_id)
+  manage_tokens(api)
+
+
 def startLocalProxy(global_end_event, remote_ws_uri, local_port):
   try:
     if local_port not in LOCAL_PORT_WHITELIST:
