@@ -26,5 +26,6 @@ int main(int argc, char *argv[]) {
   a.installEventFilter(&w);
   a.setAttribute(Qt::AA_SynthesizeMouseForUnhandledTouchEvents, false);
   w.setAttribute(Qt::WA_AcceptTouchEvents);
+
   return a.exec();
 }

@@ -1,7 +1,6 @@
 #include "selfdrive/ui/qt/window.h"
 
 #include <QFontDatabase>
-#include <QDebug>
 
 #include "selfdrive/hardware/hw.h"
 
@@ -91,30 +90,27 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
   }
 #endif
 
+  // synthesize mouse events from touch events
   if (event->type() == QEvent::TouchBegin || event->type() == QEvent::TouchUpdate || event->type() == QEvent::TouchEnd || event->type() == QEvent::TouchCancel) {
-    QTouchEvent *touchEvent = static_cast<QTouchEvent *>(event);
-    for (const QTouchEvent::TouchPoint &tp : touchEvent->touchPoints()) {
+    const QTouchEvent *touchEvent = static_cast<QTouchEvent *>(event);
+    for (const QTouchEvent::TouchPoint &touchPoint : touchEvent->touchPoints()) {
+      const QPointF &localPos(touchPoint.startPos());
+      const QPointF &screenPos(touchPoint.screenPos());
       Qt::MouseButton button = Qt::LeftButton;
       Qt::MouseButtons buttons = Qt::LeftButton;
-      Qt::KeyboardModifiers modifiers;
-      QPointF localPos;
-      QPointF screenPos;
-      localPos.setX(tp.startPos().x());
-      localPos.setY(tp.startPos().y());
-      screenPos.setX(tp.screenPos().x());
-      screenPos.setY(tp.screenPos().y());
-      if (tp.state() == Qt::TouchPointPressed) {
-        QMouseEvent eventNew(QEvent::MouseButtonPress, localPos, screenPos, button, buttons, modifiers);  // TODO fix local pos if needed
-        QApplication::sendEvent(obj, &eventNew);
-        qDebug() << "Sent mouse press with pos:" << localPos;
-      } else if (tp.state() == Qt::TouchPointReleased) {
-        QMouseEvent eventNew(QEvent::MouseButtonRelease, localPos, screenPos, button, buttons, modifiers);
-        QApplication::sendEvent(obj, &eventNew);
-        qDebug() << "Sent mouse release with pos:" << localPos;
-      } else if (tp.state() == Qt::TouchPointMoved) {
+      const Qt::KeyboardModifiers modifiers;
+
+      if (touchPoint.state() == Qt::TouchPointPressed) {
+        QMouseEvent mouseEvent(QEvent::MouseButtonPress, localPos, screenPos, button, buttons, modifiers);
+        QApplication::sendEvent(obj, &mouseEvent);
+      } else if (touchPoint.state() == Qt::TouchPointReleased) {
+        buttons = Qt::NoButton;
+        QMouseEvent mouseEvent(QEvent::MouseButtonRelease, localPos, screenPos, button, buttons, modifiers);
+        QApplication::sendEvent(obj, &mouseEvent);
+      } else if (touchPoint.state() == Qt::TouchPointMoved) {
         button = Qt::NoButton;
-        QMouseEvent eventNew(QEvent::MouseMove, localPos, screenPos, button, buttons, modifiers);
-        QApplication::sendEvent(obj, &eventNew);
+        QMouseEvent mouseEvent(QEvent::MouseMove, localPos, screenPos, button, buttons, modifiers);
+        QApplication::sendEvent(obj, &mouseEvent);
       }
     }
   }
