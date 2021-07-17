@@ -158,7 +158,7 @@ class SwagLogger(logging.Logger):
     evt.update(kwargs)
     if 'error' in kwargs:
       self.error(evt)
-    if 'debug' in kwargs:
+    elif 'debug' in kwargs:
       self.debug(evt)
     else:
       self.info(evt)

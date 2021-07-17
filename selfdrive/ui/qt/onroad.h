@@ -1,15 +1,11 @@
 #pragma once
 
-#include <map>
-
 #include <QOpenGLFunctions>
 #include <QOpenGLWidget>
-#include <QSoundEffect>
 #include <QStackedLayout>
 #include <QWidget>
 
 #include "cereal/gen/cpp/log.capnp.h"
-#include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/ui.h"
 
@@ -21,24 +17,16 @@ class OnroadAlerts : public QWidget {
   Q_OBJECT
 
 public:
-  OnroadAlerts(QWidget *parent = 0);
+  OnroadAlerts(QWidget *parent = 0) {};
 
 protected:
   void paintEvent(QPaintEvent*) override;
 
 private:
-  void stopSounds();
-  void playSound(AudibleAlert alert);
-  void updateAlert(const QString &t1, const QString &t2, float blink_rate,
-                   const std::string &type, cereal::ControlsState::AlertSize size, AudibleAlert sound);
-
   QColor bg;
-  float volume = Hardware::MIN_VOLUME;
-  std::map<AudibleAlert, std::pair<QSoundEffect, int>> sounds;
-  float blinking_rate = 0;
-  QString text1, text2;
-  std::string alert_type;
-  cereal::ControlsState::AlertSize alert_size;
+  Alert alert;
+
+  void updateAlert(Alert a);
 
 public slots:
   void updateState(const UIState &s);
