@@ -312,8 +312,11 @@ Setup::Setup(QWidget *parent) : QStackedWidget(parent) {
   QObject::connect(this, &Setup::finished, [=](bool success) {
     // hide setup on success
     qDebug() << "finished" << success;
-    setVisible(!success);
-    setCurrentWidget(failed_widget);
+    if (success) {
+      QTimer::singleShot(3000, this, &QWidget::hide);
+    } else {
+      setCurrentWidget(failed_widget);
+    }
   });
 
   // TODO: revisit pressed bg color
