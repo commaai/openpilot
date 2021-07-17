@@ -77,9 +77,10 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
     QMouseEvent eventNew(QEvent::MouseButtonPress, pos, Qt::LeftButton, buttons, modifiers);  // TODO fix screen pos
 //    QApplication::sendEvent(obj, &eventNew);
     return QWidget::eventFilter(obj, event);
-  } else if (event->type() == QEvent::MouseButtonPress || event->type() == QEvent::MouseMove || event->type() == QEvent::HoverMove) {
-    event->ignore();
-    return true;
+//    return true;
+//  } else if (event->type() == QEvent::MouseButtonPress || event->type() == QEvent::MouseMove || event->type() == QEvent::HoverMove) {
+//    event->ignore();
+//    return true;
   } else {
     return QWidget::eventFilter(obj, event);
   }
@@ -94,6 +95,7 @@ int main(int argc, char *argv[]) {
   a.installEventFilter(&window);
 
   window.setAttribute(Qt::WA_AcceptTouchEvents);
+  window.setAttribute(Qt::AA_SynthesizeMouseForUnhandledTouchEvents, false);
 
 
 //  QList<QAbstractSlider *> sliders = window.findChildren<QAbstractSlider *>();
