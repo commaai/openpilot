@@ -9,7 +9,7 @@ SshControl::SshControl() : ButtonControl("SSH Keys", "", "Warning: This grants S
   username_label.setStyleSheet("color: #aaaaaa");
   hlayout->insertWidget(1, &username_label);
 
-  QObject::connect(this, &ButtonControl::released, [=]() {
+  QObject::connect(this, &ButtonControl::clicked, [=]() {
     if (text() == "ADD") {
       QString username = InputDialog::getText("Enter your GitHub username", this);
       if (username.length() > 0) {
