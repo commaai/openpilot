@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QButtonGroup>
+#include <QMovie>
 #include <QVBoxLayout>
 #include <QWidget>
 
@@ -18,6 +19,9 @@ public:
 private:
   WifiManager *wifi = nullptr;
   QVBoxLayout* main_layout;
+  QPixmap lock;
+  QPixmap checkmark;
+  QVector<QPixmap> strengths;
 
 signals:
   void connectToNetwork(const Network &n);
