@@ -211,7 +211,7 @@ void WifiUI::refresh() {
   clearLayout(main_layout);
 
   if (wifi->seen_networks.size() == 0) {
-    QLabel *scanning = new QLabel("No networks found. Scanning...");
+    QLabel *scanning = new QLabel("Scanning for networks...");
     scanning->setStyleSheet("font-size: 65px;");
     main_layout->addWidget(scanning, 0, Qt::AlignCenter);
     return;
@@ -293,5 +293,5 @@ void WifiUI::refresh() {
     }
     i++;
   }
-  main_layout->addStretch(1);
+  main_layout->addStretch(2);
 }
