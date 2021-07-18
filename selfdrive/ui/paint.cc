@@ -131,6 +131,10 @@ static void ui_draw_world(UIState *s) {
 }
 
 void ui_draw(UIState *s, int w, int h) {
+  if (s->fb_w != w || s->fb_h != h) {
+    ui_resize(s, w, h);
+  }
+
   const UIScene *scene = &s->scene;
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

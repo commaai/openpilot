@@ -176,11 +176,6 @@ void NvgWindow::initializeGL() {
   ui_nvg_init(&QUIState::ui_state);
 }
 
-void NvgWindow::resizeGL(int w, int h) {
-  CameraViewWidget::resizeGL(w, h);
-  ui_resize(&QUIState::ui_state, w, h);
-}
-
 void NvgWindow::paintGL() {
   CameraViewWidget::paintGL();
   ui_draw(&QUIState::ui_state, width(), height());
@@ -190,7 +185,6 @@ void NvgWindow::showEvent(QShowEvent *event) {
   CameraViewWidget::showEvent(event);
   // Update vistion stream after possible wide camera toggle change
   setStreamType(getStreamType());
-  ui_resize(&QUIState::ui_state, rect().width(), rect().height());
 }
 
 // OnroadHud
