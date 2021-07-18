@@ -336,7 +336,6 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     pal.setColor(QPalette::Background, QColor(0x29, 0x29, 0x29));
     panel->setAutoFillBackground(true);
     panel->setPalette(pal);
-
     ScrollView *panel_frame = new ScrollView(panel, this);
     panel_widget->addWidget(panel_frame);
 
