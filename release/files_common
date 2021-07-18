@@ -436,7 +436,10 @@ selfdrive/modeld/runners/run.h
 selfdrive/monitoring/dmonitoringd.py
 selfdrive/monitoring/driver_monitor.py
 
+selfdrive/assets/.gitignore
+selfdrive/assets/assets.qrc
 selfdrive/assets/*.png
+selfdrive/assets/*.svg
 selfdrive/assets/fonts/*.ttf
 selfdrive/assets/images/*
 selfdrive/assets/offroad/*
