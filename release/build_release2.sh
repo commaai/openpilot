@@ -60,6 +60,7 @@ if test "$(git submodule--helper list | wc -l)" -gt "0"; then
   echo "submodules found:"
   git submodule--helper list
 fi
+git submodule status
 
 # Cleanup
 find . -name '*.a' -delete
