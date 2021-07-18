@@ -78,11 +78,22 @@ mat4 get_driver_view_transform() {
 CameraViewWidget::CameraViewWidget(VisionStreamType stream_type, QWidget* parent) : stream_type(stream_type), QOpenGLWidget(parent) {
   setAttribute(Qt::WA_OpaquePaintEvent);
 
-  timer = new QTimer(this);
-  connect(timer, &QTimer::timeout, this, &CameraViewWidget::updateFrame);
+  thread = new QThread();
+  VisionUpdater *updater = new VisionUpdater(stream_type);
+  updater->moveToThread(thread);
+  connect(thread, &QThread::finished, updater, &QObject::deleteLater);
+  connect(updater, &VisionUpdater::connected, this, &CameraViewWidget::visionConnected);
+  connect(updater, &VisionUpdater::updated, this, &CameraViewWidget::visionRecvd);
+  connect(this, &CameraViewWidget::acquireFrame, updater, &VisionUpdater::recv);
+  connect(this, &CameraViewWidget::closeVision, updater, &VisionUpdater::close);
+  thread->start();
 }
 
 CameraViewWidget::~CameraViewWidget() {
+  thread->quit();
+  thread->wait();
+  delete thread;
+
   makeCurrent();
   if (isValid()) {
     glDeleteVertexArrays(1, &frame_vao);
@@ -144,16 +155,15 @@ void CameraViewWidget::initializeGL() {
     }};
     frame_mat = matmul(device_transform, frame_transform);
   }
-  vipc_client = std::make_unique<VisionIpcClient>("camerad", stream_type, true);
 }
 
 void CameraViewWidget::showEvent(QShowEvent *event) {
-  timer->start(0);
+  latest_frame = nullptr;
+  emit acquireFrame();
 }
 
 void CameraViewWidget::hideEvent(QHideEvent *event) {
-  timer->stop();
-  vipc_client->connected = false;
+  emit closeVision();
   latest_frame = nullptr;
 }
 
@@ -161,59 +171,83 @@ void CameraViewWidget::paintGL() {
   if (!latest_frame) {
     glClearColor(0, 0, 0, 1.0);
     glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-    return;
+  } else {
+    glViewport(0, 0, width(), height());
+
+    glBindVertexArray(frame_vao);
+    glActiveTexture(GL_TEXTURE0);
+
+    glBindTexture(GL_TEXTURE_2D, texture[latest_frame->idx]->frame_tex);
+    if (!Hardware::EON()) {
+      // this is handled in ion on QCOM
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, latest_frame->width, latest_frame->height,
+                    0, GL_RGB, GL_UNSIGNED_BYTE, latest_frame->addr);
+    }
+
+    glUseProgram(gl_shader->prog);
+    glUniform1i(gl_shader->getUniformLocation("uTexture"), 0);
+    glUniformMatrix4fv(gl_shader->getUniformLocation("uTransform"), 1, GL_TRUE, frame_mat.v);
+
+    assert(glGetError() == GL_NO_ERROR);
+    glEnableVertexAttribArray(0);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, (const void *)0);
+    glDisableVertexAttribArray(0);
+    glBindVertexArray(0);
   }
-
-  glViewport(0, 0, width(), height());
-
-  glBindVertexArray(frame_vao);
-  glActiveTexture(GL_TEXTURE0);
-
-  glBindTexture(GL_TEXTURE_2D, texture[latest_frame->idx]->frame_tex);
-  if (!Hardware::EON()) {
-    // this is handled in ion on QCOM
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, latest_frame->width, latest_frame->height,
-                  0, GL_RGB, GL_UNSIGNED_BYTE, latest_frame->addr);
-  }
-
-  glUseProgram(gl_shader->prog);
-  glUniform1i(gl_shader->getUniformLocation("uTexture"), 0);
-  glUniformMatrix4fv(gl_shader->getUniformLocation("uTransform"), 1, GL_TRUE, frame_mat.v);
-
-  assert(glGetError() == GL_NO_ERROR);
-  glEnableVertexAttribArray(0);
-  glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, (const void *)0);
-  glDisableVertexAttribArray(0);
-  glBindVertexArray(0);
+  emit acquireFrame();
 }
 
-void CameraViewWidget::updateFrame() {
-  if (!vipc_client->connected && vipc_client->connect(false)) {
-    // init vision
-    for (int i = 0; i < vipc_client->num_buffers; i++) {
-      texture[i].reset(new EGLImageTexture(&vipc_client->buffers[i]));
-
-      glBindTexture(GL_TEXTURE_2D, texture[i]->frame_tex);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-      // BGR
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_BLUE);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
-      assert(glGetError() == GL_NO_ERROR);
-    }
-    latest_frame = nullptr;
+void CameraViewWidget::visionRecvd(VisionBuf *frame) {
+  if (frame && frame != latest_frame) {
+    emit frameUpdated();
   }
+  latest_frame = frame;
+  update();
+}
 
+void CameraViewWidget::visionConnected(VisionBuf *bufs, int num_buffers) {
+  // init vision
+  for (int i = 0; i < num_buffers; i++) {
+    texture[i].reset(new EGLImageTexture(&bufs[i]));
+
+    glBindTexture(GL_TEXTURE_2D, texture[i]->frame_tex);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+    // BGR
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_BLUE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
+    assert(glGetError() == GL_NO_ERROR);
+  }
+  latest_frame = nullptr;
+}
+
+// VisionUpdater
+
+VisionUpdater::VisionUpdater(VisionStreamType stream_type) : QObject() {
+  vipc_client = std::make_unique<VisionIpcClient>("camerad", stream_type, true);
+}
+
+void VisionUpdater::recv() {
+  if (!vipc_client->connected) {
+    latest_frame = nullptr;
+    if (vipc_client->connect(false)) {
+      emit connected(vipc_client->buffers, vipc_client->num_buffers);
+    }
+  }
   if (vipc_client->connected) {
     VisionBuf *buf = vipc_client->recv();
     if (buf != nullptr) {
       latest_frame = buf;
-      update();
-      emit frameUpdated();
     } else {
       LOGE("visionIPC receive timeout");
     }
   }
+  emit updated(latest_frame);
+}
+
+void VisionUpdater::close() {
+  vipc_client->connected = false;
+  latest_frame = nullptr;
 }
