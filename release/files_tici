@@ -1,5 +1,9 @@
 installer/continue_openpilot.sh
 
+phonelibs/mapbox-gl-native-qt/include/*
+
+selfdrive/timezoned.py
+
 selfdrive/assets/navigation/*
 selfdrive/assets/training_wide/*
 
@@ -15,4 +19,7 @@ selfdrive/hardware/tici/agnos.py
 selfdrive/hardware/tici/agnos.json
 selfdrive/hardware/tici/amplifier.py
 
-selfdrive/timezoned.py
+selfdrive/ui/qt/spinner_larch64
+selfdrive/ui/qt/text_larch64
+selfdrive/ui/qt/maps/*.cc
+selfdrive/ui/qt/maps/*.h
