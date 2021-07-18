@@ -83,7 +83,7 @@ ButtonControl::ButtonControl(const QString &title, const QString &text, const QS
     }
   )");
   btn.setFixedSize(250, 100);
-  QObject::connect(&btn, &QPushButton::released, this, &ButtonControl::released);
+  QObject::connect(&btn, &QPushButton::clicked, this, &ButtonControl::clicked);
   hlayout->addWidget(&btn);
 }
 

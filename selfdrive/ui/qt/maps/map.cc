@@ -236,7 +236,7 @@ void MapWindow::initializeGL() {
 
   m_map->setMargins({0, 350, 0, 50});
   m_map->setPitch(MIN_PITCH);
-  m_map->setStyleUrl("mapbox://styles/commadotai/ckq7zp8ts1k0o17p8m6rv6cet");
+  m_map->setStyleUrl("mapbox://styles/commaai/ckr64tlwp0azb17nqvr9fj13s");
 
   connect(m_map.data(), SIGNAL(needsRendering()), this, SLOT(update()));
   QObject::connect(m_map.data(), &QMapboxGL::mapChanged, [=](QMapboxGL::MapChange change) {
@@ -259,6 +259,11 @@ static float get_time_typical(const QGeoRouteSegment &segment) {
 
 
 void MapWindow::recomputeRoute() {
+  // Retry all timed out requests
+  if (!m_map.isNull()) {
+    m_map->connectionEstablished();
+  }
+
   if (!last_position) {
     return;
   }
@@ -398,6 +403,12 @@ bool MapWindow::shouldRecompute() {
 void MapWindow::mousePressEvent(QMouseEvent *ev) {
   m_lastPos = ev->localPos();
   ev->accept();
+}
+
+void MapWindow::mouseDoubleClickEvent(QMouseEvent *ev) {
+  if (last_position) m_map->setCoordinate(*last_position);
+  if (last_bearing) m_map->setBearing(*last_bearing);
+  m_map->setZoom(util::map_val<float>(velocity_filter.x(), 0, 30, MAX_ZOOM, MIN_ZOOM));
 }
 
 void MapWindow::mouseMoveEvent(QMouseEvent *ev) {

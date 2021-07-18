@@ -15,6 +15,9 @@ if [ -z "$TEST_DIR" ]; then
   exit 1
 fi
 
+umount /data/safe_staging/merged/ || true
+sudo umount /data/safe_staging/merged/ || true
+
 if [ -f "/EON" ]; then
   rm -rf /data/core
   rm -rf /data/neoupdate

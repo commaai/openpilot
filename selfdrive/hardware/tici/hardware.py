@@ -1,11 +1,13 @@
 import os
+from functools import cached_property
 from enum import IntEnum
 import subprocess
 from pathlib import Path
-from smbus2 import SMBus
 
 from cereal import log
 from selfdrive.hardware.base import HardwareBase, ThermalConfig
+from selfdrive.hardware.tici.amplifier import Amplifier
+from selfdrive.hardware.tici import iwlist
 
 NM = 'org.freedesktop.NetworkManager'
 NM_CON_ACT = NM + '.Connection.Active'
@@ -42,22 +44,23 @@ NetworkStrength = log.DeviceState.NetworkStrength
 MM_MODEM_ACCESS_TECHNOLOGY_UMTS = 1 << 5
 MM_MODEM_ACCESS_TECHNOLOGY_LTE = 1 << 14
 
-AMP_I2C_BUS = 0
-AMP_ADDRESS = 0x10
-
-def write_amplifier_reg(reg, val, offset, mask):
-  with SMBus(AMP_I2C_BUS) as bus:
-    v = bus.read_byte_data(AMP_ADDRESS, reg, force=True)
-    v = (v & (~mask)) | ((val << offset) & mask)
-    bus.write_byte_data(AMP_ADDRESS, reg, v, force=True)
-
 class Tici(HardwareBase):
-  def __init__(self):
+  @cached_property
+  def bus(self):
     import dbus  # pylint: disable=import-error
+    return dbus.SystemBus()
 
-    self.bus = dbus.SystemBus()
-    self.nm = self.bus.get_object(NM, '/org/freedesktop/NetworkManager')
-    self.mm = self.bus.get_object(MM, '/org/freedesktop/ModemManager1')
+  @cached_property
+  def nm(self):
+    return self.bus.get_object(NM, '/org/freedesktop/NetworkManager')
+
+  @cached_property
+  def mm(self):
+    return self.bus.get_object(MM, '/org/freedesktop/ModemManager1')
+
+  @cached_property
+  def amplifier(self):
+    return Amplifier()
 
   def get_os_version(self):
     with open("/VERSION") as f:
@@ -213,6 +216,13 @@ class Tici(HardwareBase):
 
     return network_strength
 
+  def get_modem_version(self):
+    try:
+      modem = self.get_modem()
+      return modem.Get(MM_MODEM, 'Revision', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
+    except Exception:
+      return None
+
   # We don't have a battery, so let's use some sane constants
   def get_battery_capacity(self):
     return 100
@@ -253,14 +263,14 @@ class Tici(HardwareBase):
     except Exception:
       pass
 
-  def set_power_save(self, enabled):
+  def set_power_save(self, powersave_enabled):
     # amplifier, 100mW at idle
-    write_amplifier_reg(0x51, 0b0 if enabled else 0b1, 7, 0b10000000)
+    self.amplifier.set_global_shutdown(amp_disabled=powersave_enabled)
 
     # offline big cluster, leave core 4 online for boardd
     for i in range(5, 8):
       # TODO: fix permissions with udev
-      val = "0" if enabled else "1"
+      val = "0" if powersave_enabled else "1"
       os.system(f"sudo su -c 'echo {val} > /sys/devices/system/cpu/cpu{i}/online'")
 
   def get_gpu_usage_percent(self):
@@ -269,3 +279,33 @@ class Tici(HardwareBase):
       return 100.0 * int(used) / int(total)
     except Exception:
       return 0
+
+  def initialize_hardware(self):
+    self.amplifier.initialize_configuration()
+
+  def get_networks(self):
+    r = {}
+
+    wlan = iwlist.scan()
+    if wlan is not None:
+      r['wlan'] = wlan
+
+    lte_info = self.get_network_info()
+    if lte_info is not None:
+      extra = lte_info['extra']
+
+      # <state>,"LTE",<is_tdd>,<mcc>,<mnc>,<cellid>,<pcid>,<earfcn>,<freq_band_ind>,
+      # <ul_bandwidth>,<dl_bandwidth>,<tac>,<rsrp>,<rsrq>,<rssi>,<sinr>,<srxlev>
+      if 'LTE' in extra:
+        extra = extra.split(',')
+        try:
+          r['lte'] = [{
+            "mcc": int(extra[3]),
+            "mnc": int(extra[4]),
+            "cid": int(extra[5], 16),
+            "nmr": [{"pci": int(extra[6]), "earfcn": int(extra[7])}],
+          }]
+        except (ValueError, IndexError):
+          pass
+
+    return r

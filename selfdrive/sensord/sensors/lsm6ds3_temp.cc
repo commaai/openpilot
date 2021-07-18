@@ -17,10 +17,14 @@ int LSM6DS3_Temp::init() {
     goto fail;
   }
 
-  if(buffer[0] != LSM6DS3_TEMP_CHIP_ID) {
+  if(buffer[0] != LSM6DS3_TEMP_CHIP_ID && buffer[0] != LSM6DS3TRC_TEMP_CHIP_ID) {
     LOGE("Chip ID wrong. Got: %d, Expected %d", buffer[0], LSM6DS3_TEMP_CHIP_ID);
     ret = -1;
     goto fail;
+  }
+
+  if (buffer[0] == LSM6DS3TRC_TEMP_CHIP_ID) {
+    source = cereal::SensorEventData::SensorSource::LSM6DS3TRC;
   }
 
 fail:
@@ -34,9 +38,10 @@ void LSM6DS3_Temp::get_event(cereal::SensorEventData::Builder &event) {
   int len = read_register(LSM6DS3_TEMP_I2C_REG_OUT_TEMP_L, buffer, sizeof(buffer));
   assert(len == sizeof(buffer));
 
-  float temp = 25.0f + read_16_bit(buffer[0], buffer[1]) / 16.0f;
+  float scale = (source == cereal::SensorEventData::SensorSource::LSM6DS3TRC) ? 256.0f : 16.0f;
+  float temp = 25.0f + read_16_bit(buffer[0], buffer[1]) / scale;
 
-  event.setSource(cereal::SensorEventData::SensorSource::LSM6DS3);
+  event.setSource(source);
   event.setVersion(1);
   event.setType(SENSOR_TYPE_AMBIENT_TEMPERATURE);
   event.setTimestamp(start_time);

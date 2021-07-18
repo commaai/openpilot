@@ -29,6 +29,7 @@ struct Network {
 
 class WifiManager : public QWidget {
   Q_OBJECT
+
 public:
   explicit WifiManager(QWidget* parent);
 
@@ -67,10 +68,9 @@ private:
   QString getAdapter();
   bool isWirelessAdapter(const QDBusObjectPath &path);
   QString get_ipv4_address();
-  QList<Network> get_networks();
   void connect(const QByteArray &ssid, const QString &username, const QString &password, SecurityType security_type);
   QString activeAp;
-  QString getActiveAp();
+  void initActiveAp();
   void deactivateConnection(const QString &ssid);
   QVector<QDBusObjectPath> get_active_connections();
   uint get_wifi_device_state();

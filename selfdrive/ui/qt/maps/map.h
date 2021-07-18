@@ -86,6 +86,7 @@ private:
   void initLayers();
 
   void mousePressEvent(QMouseEvent *ev) final;
+  void mouseDoubleClickEvent(QMouseEvent *ev) final;
   void mouseMoveEvent(QMouseEvent *ev) final;
   void wheelEvent(QWheelEvent *ev) final;
   bool event(QEvent *event) final;

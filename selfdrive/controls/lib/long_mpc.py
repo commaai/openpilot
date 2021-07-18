@@ -29,6 +29,10 @@ class LongitudinalMpc():
     self.cur_state[0].v_ego = 0
     self.cur_state[0].a_ego = 0
 
+    self.v_solution = [0.0 for i in range(len(T_IDXS))]
+    self.a_solution = [0.0 for i in range(len(T_IDXS))]
+    self.j_solution = [0.0 for i in range(len(T_IDXS)-1)]
+
   def set_accel_limits(self, min_a, max_a):
     self.min_a = min_a
     self.max_a = max_a
@@ -54,6 +58,7 @@ class LongitudinalMpc():
 
     self.v_solution = list(self.mpc_solution.v_ego)
     self.a_solution = list(self.mpc_solution.a_ego)
+    self.j_solution = list(self.mpc_solution.j_ego)
 
     # Reset if NaN or goes through lead car
     nans = any(math.isnan(x) for x in self.mpc_solution[0].v_ego)

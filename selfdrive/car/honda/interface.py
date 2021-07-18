@@ -5,10 +5,9 @@ from panda import Panda
 from common.numpy_fast import clip, interp
 from common.params import Params
 from selfdrive.config import Conversions as CV
-from selfdrive.car.honda.values import CruiseButtons, CAR, HONDA_BOSCH, HONDA_BOSCH_ALT_BRAKE_SIGNAL
+from selfdrive.car.honda.values import CarControllerParams, CruiseButtons, CAR, HONDA_BOSCH, HONDA_BOSCH_ALT_BRAKE_SIGNAL
 from selfdrive.car.honda.hondacan import disable_radar
 from selfdrive.car import STD_CARGO_KG, CivicParams, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
-from selfdrive.controls.lib.longitudinal_planner import A_CRUISE_MAX as A_ACC_MAX
 from selfdrive.car.interfaces import CarInterfaceBase
 
 
@@ -120,7 +119,7 @@ class CarInterface(CarInterfaceBase):
     # accelOverride is more or less the max throttle allowed to pcm: usually set to a constant
     # unless aTargetMax is very high and then we scale with it; this help in quicker restart
 
-    return float(max(max_accel, a_target / A_ACC_MAX)) * min(speedLimiter, accelLimiter)
+    return float(max(max_accel, a_target / CarControllerParams.ACCEL_MAX)) * min(speedLimiter, accelLimiter)
 
   @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=[]):  # pylint: disable=dangerous-default-value
@@ -135,14 +134,14 @@ class CarInterface(CarInterfaceBase):
       # WARNING: THIS DISABLES AEB!
       ret.openpilotLongitudinalControl = Params().get_bool("DisableRadar")
 
-      ret.enableCruise = not ret.openpilotLongitudinalControl
+      ret.pcmCruise = not ret.openpilotLongitudinalControl
       ret.communityFeature = ret.openpilotLongitudinalControl
     else:
       ret.safetyModel = car.CarParams.SafetyModel.hondaNidec
       ret.enableGasInterceptor = 0x201 in fingerprint[0]
       ret.openpilotLongitudinalControl = True
 
-      ret.enableCruise = not ret.enableGasInterceptor
+      ret.pcmCruise = not ret.enableGasInterceptor
       ret.communityFeature = ret.enableGasInterceptor
 
     if candidate == CAR.CRV_5G:
@@ -509,7 +508,7 @@ class CarInterface(CarInterfaceBase):
     ret.buttonEvents = buttonEvents
 
     # events
-    events = self.create_common_events(ret, pcm_enable=self.CP.enableCruise)
+    events = self.create_common_events(ret, pcm_enable=False)
     if self.CS.brake_error:
       events.add(EventName.brakeUnavailable)
     if self.CS.brake_hold and self.CS.CP.openpilotLongitudinalControl:
@@ -517,18 +516,21 @@ class CarInterface(CarInterfaceBase):
     if self.CS.park_brake:
       events.add(EventName.parkBrake)
 
-    if self.CP.enableCruise and ret.vEgo < self.CP.minEnableSpeed:
+    if self.CP.pcmCruise and ret.vEgo < self.CP.minEnableSpeed:
       events.add(EventName.belowEngageSpeed)
 
-    # it can happen that car cruise disables while comma system is enabled: need to
-    # keep braking if needed or if the speed is very low
-    if self.CP.enableCruise and not ret.cruiseState.enabled \
-       and (c.actuators.brake <= 0. or not self.CP.openpilotLongitudinalControl):
-      # non loud alert if cruise disables below 25mph as expected (+ a little margin)
-      if ret.vEgo < self.CP.minEnableSpeed + 2.:
-        events.add(EventName.speedTooLow)
-      else:
-        events.add(EventName.cruiseDisabled)
+    if self.CP.pcmCruise:
+      # we engage when pcm is active (rising edge)
+      if ret.cruiseState.enabled and not self.CS.out.cruiseState.enabled:
+        events.add(EventName.pcmEnable)
+      elif not ret.cruiseState.enabled and (c.actuators.brake <= 0. or not self.CP.openpilotLongitudinalControl):
+        # it can happen that car cruise disables while comma system is enabled: need to
+        # keep braking if needed or if the speed is very low
+        if ret.vEgo < self.CP.minEnableSpeed + 2.:
+          # non loud alert if cruise disables below 25mph as expected (+ a little margin)
+          events.add(EventName.speedTooLow)
+        else:
+          events.add(EventName.cruiseDisabled)
     if self.CS.CP.minEnableSpeed > 0 and ret.vEgo < 0.001:
       events.add(EventName.manualRestart)
 
@@ -537,7 +539,7 @@ class CarInterface(CarInterfaceBase):
 
       # do enable on both accel and decel buttons
       if b.type in [ButtonType.accelCruise, ButtonType.decelCruise] and not b.pressed:
-        if not self.CP.enableCruise:
+        if not self.CP.pcmCruise:
           events.add(EventName.buttonEnable)
 
       # do disable on button down

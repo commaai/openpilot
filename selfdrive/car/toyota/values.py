@@ -10,8 +10,8 @@ PEDAL_HYST_GAP = 3. * CV.MPH_TO_MS
 
 class CarControllerParams:
   ACCEL_HYST_GAP = 0.02  # don't change accel command for small oscilalitons within this value
-  ACCEL_MAX = 1.5  # 1.5 m/s2
-  ACCEL_MIN = -3.0  # 3   m/s2
+  ACCEL_MAX = 1.5  # m/s2
+  ACCEL_MIN = -3.0  # m/s2
   ACCEL_SCALE = max(ACCEL_MAX, -ACCEL_MIN)
 
   STEER_MAX = 1500
@@ -443,6 +443,7 @@ FW_VERSIONS = {
     (Ecu.engine, 0x700, None): [
       b'\x018966306Q5000\x00\x00\x00\x00',
       b'\x018966306T3100\x00\x00\x00\x00',
+      b'\x018966306T4100\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x750, 15): [
       b'\x018821F6201200\x00\x00\x00\x00',
@@ -1562,6 +1563,7 @@ FW_VERSIONS = {
       b'F152647500\x00\x00\x00\x00\x00\x00',
       b'F152647510\x00\x00\x00\x00\x00\x00',
       b'F152647520\x00\x00\x00\x00\x00\x00',
+      b'F152647521\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.eps, 0x7a1, None): [
       b'8965B47070\x00\x00\x00\x00\x00\x00',
@@ -1571,6 +1573,7 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdCamera, 0x750, 0x6d): [
       b'\x028646F4707000\x00\x00\x00\x008646G2601400\x00\x00\x00\x00',
+      b'\x028646F4710000\x00\x00\x00\x008646G2601500\x00\x00\x00\x00',
     ],
   },
   CAR.MIRAI: {

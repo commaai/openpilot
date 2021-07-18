@@ -209,6 +209,13 @@ def cancelUpload(upload_id):
   return {"success": 1}
 
 
+@dispatcher.add_method
+def primeActivated(active):
+  dongle_id = Params().get("DongleId", encoding='utf-8')
+  api = Api(dongle_id)
+  manage_tokens(api)
+
+
 def startLocalProxy(global_end_event, remote_ws_uri, local_port):
   try:
     if local_port not in LOCAL_PORT_WHITELIST:
@@ -265,6 +272,11 @@ def getSimInfo():
 @dispatcher.add_method
 def getNetworkType():
   return HARDWARE.get_network_type()
+
+
+@dispatcher.add_method
+def getNetworks():
+  return HARDWARE.get_networks()
 
 
 @dispatcher.add_method
@@ -424,7 +436,7 @@ def ws_recv(ws, end_event):
     except WebSocketTimeoutException:
       ns_since_last_ping = int(sec_since_boot() * 1e9) - last_ping
       if ns_since_last_ping > RECONNECT_TIMEOUT_S * 1e9:
-        cloudlog.exception("athenad.wc_recv.timeout")
+        cloudlog.exception("athenad.ws_recv.timeout")
         end_event.set()
     except Exception:
       cloudlog.exception("athenad.ws_recv.exception")
@@ -491,6 +503,8 @@ def main():
     except (ConnectionError, TimeoutError, WebSocketException):
       conn_retries += 1
       params.delete("LastAthenaPingTime")
+      if TICI:
+        cloudlog.exception("athenad.main.exception2")
     except Exception:
       cloudlog.exception("athenad.main.exception")
 
