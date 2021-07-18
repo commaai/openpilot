@@ -1,8 +1,10 @@
 #!/usr/bin/bash -e
 
+# git diff --name-status origin/release3-staging | grep "^A" | less
+
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
 
-BUILD_DIR=/data/releasepilot
+BUILD_DIR=/data/openpilot
 SOURCE_DIR="$(git rev-parse --show-toplevel)"
 
 BRANCH=release3-staging
