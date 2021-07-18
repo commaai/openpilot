@@ -284,31 +284,20 @@ void SettingsWindow::showEvent(QShowEvent *event) {
 }
 
 SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
-
   // setup two main layouts
   sidebar_widget = new QWidget;
+  sidebar_widget->setFixedWidth(500);
+  sidebar_widget->setObjectName("sidebar_widget");
   QVBoxLayout *sidebar_layout = new QVBoxLayout(sidebar_widget);
-  sidebar_layout->setMargin(0);
+  sidebar_layout->setContentsMargins(50, 50, 100, 50);
+
   panel_widget = new QStackedWidget();
-  panel_widget->setContentsMargins(50, 25, 50, 25);
-  panel_widget->setStyleSheet(R"(
-    QStackedWidget{
-      border-radius: 30px;
-      background-color: #292929;
-    }
-  )");
+  panel_widget->setObjectName("panel_widget");
+  panel_widget->setContentsMargins(25, 25, 25, 25);
 
   // close button
-  QPushButton *close_btn = new QPushButton("×");
-  close_btn->setStyleSheet(R"(
-    font-size: 140px;
-    padding-bottom: 20px;
-    font-weight: bold;
-    border 1px grey solid;
-    border-radius: 100px;
-    background-color: #292929;
-    font-weight: 400;
-  )");
+  QPushButton *close_btn = new QPushButton("X");
+  close_btn->setObjectName("close_btn");
   close_btn->setFixedSize(200, 200);
   sidebar_layout->addSpacing(45);
   sidebar_layout->addWidget(close_btn, 0, Qt::AlignCenter);
@@ -331,34 +320,18 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   panels.push_back({"Navigation", map_panel});
   QObject::connect(map_panel, &MapPanel::closeSettings, this, &SettingsWindow::closeSettings);
 #endif
-
-  const int padding = panels.size() > 3 ? 25 : 35;
-
   nav_btns = new QButtonGroup();
   for (auto &[name, panel] : panels) {
     QPushButton *btn = new QPushButton(name);
     btn->setCheckable(true);
     btn->setChecked(nav_btns->buttons().size() == 0);
-    btn->setStyleSheet(QString(R"(
-      QPushButton {
-        color: grey;
-        border: none;
-        background: none;
-        font-size: 65px;
-        font-weight: 500;
-        padding-top: %1px;
-        padding-bottom: %1px;
-      }
-      QPushButton:checked {
-        color: white;
-      }
-    )").arg(padding));
-
     nav_btns->addButton(btn);
     sidebar_layout->addWidget(btn, 0, Qt::AlignRight);
 
-    const int lr_margin = name != "Network" ? 50 : 0;  // Network panel handles its own margins
-    panel->setContentsMargins(lr_margin, 25, lr_margin, 25);
+    const int lr_margin = name != "Network" ? 25 : 0;  // Network panel handles its own margins
+    panel->setContentsMargins(lr_margin, 0, lr_margin, 0);
+
+    // for fast scroll
     QPalette pal = palette();
     pal.setColor(QPalette::Background, QColor(0x29, 0x29, 0x29));
     panel->setAutoFillBackground(true);
@@ -372,16 +345,13 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
       panel_widget->setCurrentWidget(w);
     });
   }
-  sidebar_layout->setContentsMargins(50, 50, 100, 50);
 
   // main settings layout, sidebar + main panel
   QHBoxLayout *main_layout = new QHBoxLayout(this);
-
-  sidebar_widget->setFixedWidth(500);
   main_layout->addWidget(sidebar_widget);
   main_layout->addWidget(panel_widget);
 
-  setStyleSheet(R"(
+  setStyleSheet(QString(R"(
     * {
       color: white;
       font-size: 50px;
@@ -389,7 +359,30 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     SettingsWindow {
       background-color: black;
     }
-  )");
+    #panel_widget {
+      border-radius: 30px;
+      background-color: #292929;
+    }
+    #sidebar_widget > QPushButton {
+      color: grey;
+      border: none;
+      background: none;
+      font-size: 65px;
+      font-weight: 500;
+      padding-top: %1px;
+      padding-bottom: %1px;
+    }
+    #sidebar_widget > QPushButton:checked {
+      color: white;
+    }
+    QPushButton#close_btn {
+      font-size: 90px;
+      font-weight: bold;
+      border 1px grey solid;
+      border-radius: 100px;
+      background-color: #292929;
+    }
+  )").arg(panels.size() > 3 ? 25 : 35));
 }
 
 void SettingsWindow::hideEvent(QHideEvent *event) {
