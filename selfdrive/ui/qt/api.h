@@ -29,10 +29,8 @@ public:
   void sendRequest(const QString &requestURL, const Method method = Method::GET);
   bool active();
 
-protected:
-  QNetworkReply *reply = nullptr;
-
 private:
+  QNetworkReply *reply = nullptr;
   QNetworkAccessManager *networkAccessManager = nullptr;
   QTimer *networkTimer = nullptr;
   bool create_jwt;

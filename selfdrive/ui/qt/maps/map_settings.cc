@@ -97,18 +97,18 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
     // Fetch favorite and recent locations
     {
       QString url = CommaApi::BASE_URL + "/v1/navigation/" + *dongle_id + "/locations";
-      RequestRepeater* repeater = new RequestRepeater(this, url, "ApiCache_NavDestinations", 30, true);
-      QObject::connect(repeater, &RequestRepeater::receivedResponse, this, &MapPanel::parseResponse);
-      QObject::connect(repeater, &RequestRepeater::failedResponse, this, &MapPanel::failedResponse);
+      HttpRequest* request = requestRepeater()->request(url, "ApiCache_NavDestinations", 30, true);
+      QObject::connect(request, &HttpRequest::receivedResponse, this, &MapPanel::parseResponse);
+      QObject::connect(request, &HttpRequest::failedResponse, this, &MapPanel::failedResponse);
     }
 
     // Destination set while offline
     {
       QString url = CommaApi::BASE_URL + "/v1/navigation/" + *dongle_id + "/next";
-      RequestRepeater* repeater = new RequestRepeater(this, url, "", 10, true);
+      HttpRequest* request = requestRepeater()->request(url, "", 10, true);
       HttpRequest* deleter = new HttpRequest(this);
 
-      QObject::connect(repeater, &RequestRepeater::receivedResponse, [=](QString resp) {
+      QObject::connect(request, &HttpRequest::receivedResponse, [=](QString resp) {
         auto params = Params();
         if (resp != "null") {
           if (params.get("NavDestination").empty()) {

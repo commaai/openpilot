@@ -3,6 +3,7 @@
 #include <QFontDatabase>
 
 #include "selfdrive/hardware/hw.h"
+#include "selfdrive/ui/qt/request_repeater.h"
 
 MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   main_layout = new QStackedLayout(this);
@@ -46,6 +47,9 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
        closeSettings();
      }
   });
+
+  QObject::connect(&qs, &QUIState::offroadTransition, requestRepeater(), &RequestRepeater::offroadTransition);
+  QObject::connect(&device, &Device::displayPowerChanged, requestRepeater(), &RequestRepeater::displayPowerChanged);
 
   // load fonts
   QFontDatabase::addApplicationFont("../assets/fonts/opensans_regular.ttf");

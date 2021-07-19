@@ -112,8 +112,8 @@ PrimeUserWidget::PrimeUserWidget(QWidget* parent) : QWidget(parent) {
   // set up API requests
   if (auto dongleId = getDongleId()) {
     QString url = CommaApi::BASE_URL + "/v1/devices/" + *dongleId + "/owner";
-    RequestRepeater *repeater = new RequestRepeater(this, url, "ApiCache_Owner", 6);
-    QObject::connect(repeater, &RequestRepeater::receivedResponse, this, &PrimeUserWidget::replyFinished);
+    HttpRequest *request = requestRepeater()->request(url, "ApiCache_Owner", 6);
+    QObject::connect(request, &HttpRequest::receivedResponse, this, &PrimeUserWidget::replyFinished);
   }
 }
 
@@ -257,10 +257,10 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
   // set up API requests
   if (auto dongleId = getDongleId()) {
     QString url = CommaApi::BASE_URL + "/v1.1/devices/" + *dongleId + "/";
-    RequestRepeater* repeater = new RequestRepeater(this, url, "ApiCache_Device", 5);
+    HttpRequest* request = requestRepeater()->request(url, "ApiCache_Device", 5);
 
-    QObject::connect(repeater, &RequestRepeater::receivedResponse, this, &SetupWidget::replyFinished);
-    QObject::connect(repeater, &RequestRepeater::failedResponse, this, &SetupWidget::parseError);
+    QObject::connect(request, &HttpRequest::receivedResponse, this, &SetupWidget::replyFinished);
+    QObject::connect(request, &HttpRequest::failedResponse, this, &SetupWidget::parseError);
   }
   hide(); // Only show when first request comes back
 }
