@@ -95,6 +95,7 @@ QWidget * Setup::network_setup() {
 
   // wifi widget
   Networking *wifi = new Networking(this, false);
+  wifi->setStyleSheet("Networking {background-color: #292929; border-radius: 13px;}");
   main_layout->addWidget(wifi, 1);
 
   main_layout->addSpacing(35);
