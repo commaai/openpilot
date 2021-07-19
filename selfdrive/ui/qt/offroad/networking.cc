@@ -56,10 +56,6 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QFrame(parent) {
 
   // TODO: revisit pressed colors
   setStyleSheet(R"(
-    Networking {
-      border-radius: 13px;
-      background-color: #292929;
-    }
     #wifiWidget > QPushButton, #back_btn, #advancedBtn {
       font-size: 50px;
       margin: 0px;
