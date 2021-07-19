@@ -19,9 +19,11 @@ public:
 private:
   WifiManager *wifi = nullptr;
   QVBoxLayout* main_layout;
+  QHBoxLayout* buildNetworkWidget(const Network &network);
   QPixmap lock;
   QPixmap checkmark;
   QVector<QPixmap> strengths;
+  int idx = 0;
 
 signals:
   void connectToNetwork(const Network &n);
