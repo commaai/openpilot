@@ -944,8 +944,8 @@ static void set_camera_exposure(CameraState *s, float grey_frac) {
   const float k_grey = (dt / ts_grey) / (1.0 + dt / ts_grey);
   const float k_ev = (dt / ts_ev) / (1.0 + dt / ts_ev);
 
-  // Scale target grey between 0.2 and 0.4 depending on lighting conditions
-  float new_target_grey = std::clamp(0.4 - 0.2 * log2(1.0 + s->cur_ev) / log2(6000.0), 0.2, 0.4);
+  // Scale target grey between 0.1 and 0.4 depending on lighting conditions
+  float new_target_grey = std::clamp(0.4 - 0.3 * log2(1.0 + s->cur_ev) / log2(6000.0), 0.1, 0.4);
   float target_grey = (1.0 - k_grey) * s->target_grey_fraction + k_grey * new_target_grey;
 
   float desired_ev = std::clamp(s->cur_ev * target_grey / grey_frac, s->min_ev, s->max_ev);
