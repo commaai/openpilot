@@ -278,7 +278,12 @@ void MapWindow::recomputeRoute() {
   if (*new_destination != nav_destination) {
     qWarning() << "Got new destination from NavDestination param" << *new_destination;
 
-    setVisible(true); // Show map on destination set/change
+    // Only open the map on setting destination the first time
+    if (allow_open) {
+      setVisible(true); // Show map on destination set/change
+      allow_open = false;
+    }
+
     // TODO: close sidebar
 
     should_recompute = true;
@@ -375,6 +380,7 @@ void MapWindow::clearRoute() {
 
   map_instructions->hideIfNoError();
   map_eta->setVisible(false);
+  allow_open = true;
 }
 
 
