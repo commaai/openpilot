@@ -1,0 +1,4 @@
+#!/bin/sh
+export LD_LIBRARY_PATH="/system/lib64:$LD_LIBRARY_PATH"
+export QT_PLUGIN_PATH="../../phonelibs/qt-plugins/$(uname -m)"
+exec ./_ui
