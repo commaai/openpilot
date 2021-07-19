@@ -40,7 +40,6 @@ public:
 
 signals:
   void openSettings();
-  void closeSettings();
 
   // forwarded signals
   void displayPowerChanged(bool on);
