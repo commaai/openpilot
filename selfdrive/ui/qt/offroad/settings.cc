@@ -227,8 +227,6 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : QWidget(parent) {
     }
   }
 
-  setStyleSheet(R"(QLabel {font-size: 50px;})");
-
   fs_watch = new QFileSystemWatcher(this);
   QObject::connect(fs_watch, &QFileSystemWatcher::fileChanged, [=](const QString path) {
     int update_failed_count = params.get<int>("UpdateFailedCount").value_or(0);
