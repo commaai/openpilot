@@ -27,7 +27,7 @@ private:
   };
   std::vector<std::unique_ptr<Request>> requests_;
   Params params_;
-  bool offroad_ = false, awake_ = true;
+  bool offroad_ = true, awake_ = true;
 
   friend RequestRepeater *requestRepeater();
 };
