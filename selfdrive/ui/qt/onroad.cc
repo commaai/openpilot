@@ -32,6 +32,7 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 
   alerts = new OnroadAlerts(this);
   alerts->setAttribute(Qt::WA_TransparentForMouseEvents, true);
+  QObject::connect(this, &OnroadWindow::updateStateSignal, alerts, &OnroadAlerts::updateState);
   QObject::connect(this, &OnroadWindow::offroadTransitionSignal, alerts, &OnroadAlerts::offroadTransition);
   stacked_layout->addWidget(alerts);
 
@@ -44,7 +45,7 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 }
 
 void OnroadWindow::updateState(const UIState &s) {
-  QColor bgColor = alerts->updateState(s);
+  QColor bgColor = alerts->bgColor();
   if (bg != bgColor) {
     bg = bgColor;
     update();
@@ -82,7 +83,7 @@ void OnroadWindow::paintEvent(QPaintEvent *event) {
 
 // ***** onroad widgets *****
 
-QColor OnroadAlerts::updateState(const UIState &s) {
+void OnroadAlerts::updateState(const UIState &s) {
   SubMaster &sm = *(s.sm);
   UIStatus status = s.status;
   if (sm["deviceState"].getDeviceState().getStarted()) {
@@ -108,7 +109,6 @@ QColor OnroadAlerts::updateState(const UIState &s) {
   // TODO: add blinking back if performant
   //float alpha = 0.375 * cos((millis_since_boot() / 1000) * 2 * M_PI * blinking_rate) + 0.625;
   bg = bg_colors[status];
-  return bg;
 }
 
 void OnroadAlerts::offroadTransition(bool offroad) {
