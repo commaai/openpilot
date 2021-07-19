@@ -9,7 +9,7 @@ HttpRequest *RequestRepeater::request(const QString &url, const QString &cacheKe
                            .req = new HttpRequest(this),
                            .timer = new QTimer(this),
                            .while_onroad = while_onroad};
-  requests_.push_back(r);
+  requests_.emplace_back(r);
 
   if (!cacheKey.isEmpty()) {
     r->prevResp = QString::fromStdString(params_.get(cacheKey.toStdString()));
@@ -51,8 +51,12 @@ void RequestRepeater::displayPowerChanged(bool on) {
 }
 
 void RequestRepeater::updateRequests() {
-  for (Request *r : requests_) {
-    (awake_ && (offroad_ || r->while_onroad)) ? r->timer->start() : r->timer->stop();
+  for (auto &r : requests_) {
+    if (awake_ && (offroad_ || r->while_onroad)) {
+      r->timer->start();
+     } else {
+      r->timer->stop();
+     }
   }
 }
 

@@ -25,7 +25,7 @@ private:
     HttpRequest *req;
     QString prevResp;
   };
-  QVector<Request *> requests_;
+  std::vector<std::unique_ptr<Request>> requests_;
   Params params_;
   bool offroad_ = false, awake_ = true;
 
