@@ -59,6 +59,7 @@ selfdrive/car/tests/test_car_interfaces.py
 if test "$(git submodule--helper list | wc -l)" -gt "0"; then
   echo "submodules found:"
   git submodule--helper list
+  exit 1
 fi
 git submodule status
 
