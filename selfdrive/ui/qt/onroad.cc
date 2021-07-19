@@ -32,8 +32,6 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 
   alerts = new OnroadAlerts(this);
   alerts->setAttribute(Qt::WA_TransparentForMouseEvents, true);
-  QObject::connect(this, &OnroadWindow::updateStateSignal, alerts, &OnroadAlerts::updateState);
-  QObject::connect(this, &OnroadWindow::offroadTransitionSignal, alerts, &OnroadAlerts::offroadTransition);
   stacked_layout->addWidget(alerts);
 
   // setup stacking order
@@ -45,11 +43,32 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 }
 
 void OnroadWindow::updateState(const UIState &s) {
-  QColor bgColor = alerts->bgColor();
-  if (bg != bgColor) {
-    bg = bgColor;
-    update();
+  SubMaster &sm = *(s.sm);
+  UIStatus status = s.status;
+  if (sm["deviceState"].getDeviceState().getStarted()) {
+    if (sm.updated("controlsState")) {
+      const cereal::ControlsState::Reader &cs = sm["controlsState"].getControlsState();
+      alerts->updateAlert({QString::fromStdString(cs.getAlertText1()),
+                   QString::fromStdString(cs.getAlertText2()),
+                   QString::fromStdString(cs.getAlertType()),
+                   cs.getAlertSize(), cs.getAlertSound()});
+    } else if ((sm.frame - s.scene.started_frame) > 5 * UI_FREQ) {
+      // Handle controls timeout
+      if (sm.rcv_frame("controlsState") < s.scene.started_frame) {
+        // car is started, but controlsState hasn't been seen at all
+        alerts->updateAlert(CONTROLS_WAITING_ALERT);
+      } else if ((nanos_since_boot() - sm.rcv_time("controlsState")) / 1e9 > CONTROLS_TIMEOUT) {
+        // car is started, but controls is lagging or died
+        status = STATUS_ALERT;
+        alerts->updateAlert(CONTROLS_UNRESPONSIVE_ALERT);
+      }
+    }
   }
+
+  // TODO: add blinking back if performant
+  //float alpha = 0.375 * cos((millis_since_boot() / 1000) * 2 * M_PI * blinking_rate) + 0.625;
+  bg = bg_colors[status];
+  alerts->setColor(bg);
 }
 
 void OnroadWindow::offroadTransition(bool offroad) {
@@ -71,6 +90,8 @@ void OnroadWindow::offroadTransition(bool offroad) {
     }
   }
 #endif
+
+  alerts->updateAlert({});
 }
 
 void OnroadWindow::paintEvent(QPaintEvent *event) {
@@ -82,38 +103,6 @@ void OnroadWindow::paintEvent(QPaintEvent *event) {
 }
 
 // ***** onroad widgets *****
-
-void OnroadAlerts::updateState(const UIState &s) {
-  SubMaster &sm = *(s.sm);
-  UIStatus status = s.status;
-  if (sm["deviceState"].getDeviceState().getStarted()) {
-    if (sm.updated("controlsState")) {
-      const cereal::ControlsState::Reader &cs = sm["controlsState"].getControlsState();
-      updateAlert({QString::fromStdString(cs.getAlertText1()),
-                   QString::fromStdString(cs.getAlertText2()),
-                   QString::fromStdString(cs.getAlertType()),
-                   cs.getAlertSize(), cs.getAlertSound()});
-    } else if ((sm.frame - s.scene.started_frame) > 5 * UI_FREQ) {
-      // Handle controls timeout
-      if (sm.rcv_frame("controlsState") < s.scene.started_frame) {
-        // car is started, but controlsState hasn't been seen at all
-        updateAlert(CONTROLS_WAITING_ALERT);
-      } else if ((nanos_since_boot() - sm.rcv_time("controlsState")) / 1e9 > CONTROLS_TIMEOUT) {
-        // car is started, but controls is lagging or died
-        updateAlert(CONTROLS_UNRESPONSIVE_ALERT);
-        status = STATUS_ALERT;
-      }
-    }
-  }
-
-  // TODO: add blinking back if performant
-  //float alpha = 0.375 * cos((millis_since_boot() / 1000) * 2 * M_PI * blinking_rate) + 0.625;
-  bg = bg_colors[status];
-}
-
-void OnroadAlerts::offroadTransition(bool offroad) {
-  updateAlert({});
-}
 
 void OnroadAlerts::updateAlert(Alert a) {
   if (!alert.equal(a)) {

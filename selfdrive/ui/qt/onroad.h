@@ -18,7 +18,8 @@ class OnroadAlerts : public QWidget {
 
 public:
   OnroadAlerts(QWidget *parent = 0) : QWidget(parent) {};
-  inline QColor bgColor() const { return bg; };
+  void updateAlert(Alert a);
+  inline void setColor(const QColor &color) { bg = color; };
 
 protected:
   void paintEvent(QPaintEvent*) override;
@@ -26,12 +27,6 @@ protected:
 private:
   QColor bg;
   Alert alert = {};
-
-  void updateAlert(Alert a);
-
-public slots:
-  void offroadTransition(bool offroad);
-  void updateState(const UIState &s);
 };
 
 // container window for the NVG UI
