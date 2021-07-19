@@ -312,7 +312,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   QPushButton *close_btn = new QPushButton("×");
   close_btn->setStyleSheet(R"(
     font-size: 140px;
-    padding-bottom: 15px;
+    padding-bottom: 20px;
     font-weight: bold;
     border 1px grey solid;
     border-radius: 100px;
