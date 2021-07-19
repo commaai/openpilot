@@ -8,6 +8,8 @@
 const int FACE_IMG_SIZE = 130;
 
 DriverViewWindow::DriverViewWindow(QWidget* parent) : QWidget(parent) {
+  Params().putBool("IsDriverViewEnabled", true);
+
   setAttribute(Qt::WA_OpaquePaintEvent);
   layout = new QStackedLayout(this);
   layout->setStackingMode(QStackedLayout::StackAll);
@@ -21,22 +23,15 @@ DriverViewWindow::DriverViewWindow(QWidget* parent) : QWidget(parent) {
   layout->setCurrentWidget(scene);
 }
 
-void DriverViewWindow::mousePressEvent(QMouseEvent* e) {
-  emit done();
+DriverViewWindow::~DriverViewWindow() {
+  Params().putBool("IsDriverViewEnabled", false);
 }
+
+// DriverViewScene
 
 DriverViewScene::DriverViewScene(QWidget* parent) : sm({"driverState"}), QWidget(parent) {
   face = QImage("../assets/img_driver_face.png").scaled(FACE_IMG_SIZE, FACE_IMG_SIZE, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-}
-
-void DriverViewScene::showEvent(QShowEvent* event) {
-  frame_updated = false;
-  is_rhd = params.getBool("IsRHD");
-  params.putBool("IsDriverViewEnabled", true);
-}
-
-void DriverViewScene::hideEvent(QHideEvent* event) {
-  params.putBool("IsDriverViewEnabled", false);
+  is_rhd = Params().getBool("IsRHD");
 }
 
 void DriverViewScene::frameUpdated() {

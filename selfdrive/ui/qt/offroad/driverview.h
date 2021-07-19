@@ -16,12 +16,8 @@ public:
 public slots:
   void frameUpdated();
 
-protected:
-  void showEvent(QShowEvent *event) override;
-  void hideEvent(QHideEvent *event) override;
-  void paintEvent(QPaintEvent *event) override;
-
 private:
+  void paintEvent(QPaintEvent *event) override;
   Params params;
   SubMaster sm;
   QImage face;
@@ -34,14 +30,13 @@ class DriverViewWindow : public QWidget {
 
 public:
   explicit DriverViewWindow(QWidget *parent);
+  ~DriverViewWindow();
 
 signals:
-  void done();
-
-protected:
-  void mousePressEvent(QMouseEvent* e) override;
+  void clicked();
 
 private:
+  void mousePressEvent(QMouseEvent* e) override { emit clicked(); }
   CameraViewWidget *cameraView;
   DriverViewScene *scene;
   QStackedLayout *layout;

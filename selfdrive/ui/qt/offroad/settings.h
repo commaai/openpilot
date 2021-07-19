@@ -10,6 +10,7 @@
 
 
 #include "selfdrive/ui/qt/widgets/controls.h"
+#include "selfdrive/ui/qt/offroad/driverview.h"
 
 // ********** settings window + top-level panels **********
 
@@ -54,19 +55,19 @@ class SettingsWindow : public QFrame {
 public:
   explicit SettingsWindow(QWidget *parent = 0);
 
-protected:
-  void hideEvent(QHideEvent *event) override;
-  void showEvent(QShowEvent *event) override;
-
 signals:
   void closeSettings();
   void offroadTransition(bool offroad);
   void reviewTrainingGuide();
+
+protected:
+  void hideEvent(QHideEvent *event) override;
+  void showEvent(QShowEvent *event) override;
   void showDriverView();
 
-private:
   QPushButton *sidebar_alert_widget;
   QWidget *sidebar_widget;
   QButtonGroup *nav_btns;
   QStackedWidget *panel_widget;
+  DriverViewWindow *driver_view = nullptr;
 };

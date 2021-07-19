@@ -30,9 +30,6 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   QObject::connect(settingsWindow, &SettingsWindow::reviewTrainingGuide, [=]() {
     main_layout->setCurrentWidget(onboardingWindow);
   });
-  QObject::connect(settingsWindow, &SettingsWindow::showDriverView, [=] {
-    homeWindow->showDriverView(true);
-  });
 
   device.setAwake(true, true);
   QObject::connect(&qs, &QUIState::uiUpdate, &device, &Device::update);

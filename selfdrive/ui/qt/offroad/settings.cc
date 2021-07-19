@@ -105,8 +105,9 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
 
   // offroad-only buttons
 
-  auto dcamBtn = new ButtonControl("Driver Camera", "PREVIEW",
-                                        "Preview the driver facing camera to help optimize device mounting position for best driver monitoring experience. (vehicle must be off)");
+  auto dcamBtn = new ButtonControl(
+    "Driver Camera", "PREVIEW",
+    "Preview the driver facing camera to help optimize device mounting position for best driver monitoring experience. (vehicle must be off)");
   connect(dcamBtn, &ButtonControl::clicked, [=]() { emit showDriverView(); });
 
   QString resetCalibDesc = "openpilot requires the device to be mounted within 4° left or right and within 5° up or down. openpilot is continuously calibrating, resetting is rarely required.";
@@ -385,8 +386,24 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   )");
 }
 
+void SettingsWindow::showDriverView() {
+  if (!driver_view) {
+    driver_view = new DriverViewWindow(this);
+    connect(driver_view, &DriverViewWindow::clicked, [=]() {
+      driver_view->deleteLater();
+      driver_view = nullptr;
+    });
+    driver_view->setFixedSize(width(), height());
+    driver_view->show();
+  }
+}
+
 void SettingsWindow::hideEvent(QHideEvent *event) {
 #ifdef QCOM
   HardwareEon::close_activities();
 #endif
+  if (driver_view) {
+    driver_view->deleteLater();
+    driver_view = nullptr;
+  }
 }
