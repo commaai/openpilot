@@ -44,31 +44,26 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 
 void OnroadWindow::updateState(const UIState &s) {
   SubMaster &sm = *(s.sm);
-  UIStatus status = s.status;
+  bg = bg_colors[s.status];
   if (sm["deviceState"].getDeviceState().getStarted()) {
     if (sm.updated("controlsState")) {
       const cereal::ControlsState::Reader &cs = sm["controlsState"].getControlsState();
       alerts->updateAlert({QString::fromStdString(cs.getAlertText1()),
                    QString::fromStdString(cs.getAlertText2()),
                    QString::fromStdString(cs.getAlertType()),
-                   cs.getAlertSize(), cs.getAlertSound()});
+                   cs.getAlertSize(), cs.getAlertSound()}, bg);
     } else if ((sm.frame - s.scene.started_frame) > 5 * UI_FREQ) {
       // Handle controls timeout
       if (sm.rcv_frame("controlsState") < s.scene.started_frame) {
         // car is started, but controlsState hasn't been seen at all
-        alerts->updateAlert(CONTROLS_WAITING_ALERT);
+        alerts->updateAlert(CONTROLS_WAITING_ALERT, bg);
       } else if ((nanos_since_boot() - sm.rcv_time("controlsState")) / 1e9 > CONTROLS_TIMEOUT) {
         // car is started, but controls is lagging or died
-        status = STATUS_ALERT;
-        alerts->updateAlert(CONTROLS_UNRESPONSIVE_ALERT);
+        bg = bg_colors[STATUS_ALERT];
+        alerts->updateAlert(CONTROLS_UNRESPONSIVE_ALERT, bg);
       }
     }
   }
-
-  // TODO: add blinking back if performant
-  //float alpha = 0.375 * cos((millis_since_boot() / 1000) * 2 * M_PI * blinking_rate) + 0.625;
-  bg = bg_colors[status];
-  alerts->setColor(bg);
 }
 
 void OnroadWindow::offroadTransition(bool offroad) {
@@ -91,7 +86,7 @@ void OnroadWindow::offroadTransition(bool offroad) {
   }
 #endif
 
-  alerts->updateAlert({});
+  alerts->clearAlert();
 }
 
 void OnroadWindow::paintEvent(QPaintEvent *event) {
@@ -104,11 +99,17 @@ void OnroadWindow::paintEvent(QPaintEvent *event) {
 
 // ***** onroad widgets *****
 
-void OnroadAlerts::updateAlert(Alert a) {
-  if (!alert.equal(a)) {
+void OnroadAlerts::updateAlert(const Alert &a, const QColor &color) {
+  if (!alert.equal(a) || color != bg) {
     alert = a;
+    bg = color;
     update();
   }
+}
+
+void OnroadAlerts::clearAlert() {
+  alert = {};
+  update();
 }
 
 void OnroadAlerts::paintEvent(QPaintEvent *event) {
