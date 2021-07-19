@@ -35,7 +35,7 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   });
 
   device.setAwake(true, true);
-  QObject::connect(&qs, &QUIState::uiUpdate, &device, &Device::update);
+  QObject::connect(&qs, &QUIState::offroadTransition, &device, &Device::offroadTransition);
   QObject::connect(&qs, &QUIState::offroadTransition, [=](bool offroad) {
     if (!offroad) {
       closeSettings();

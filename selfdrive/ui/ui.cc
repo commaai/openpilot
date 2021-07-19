@@ -168,34 +168,7 @@ static void update_state(UIState *s) {
   if (sm.updated("carParams")) {
     scene.longitudinal_control = sm["carParams"].getCarParams().getOpenpilotLongitudinalControl();
   }
-  if (sm.updated("sensorEvents")) {
-    for (auto sensor : sm["sensorEvents"].getSensorEvents()) {
-      if (!scene.started && sensor.which() == cereal::SensorEventData::ACCELERATION) {
-        auto accel = sensor.getAcceleration().getV();
-        if (accel.totalSize().wordCount) { // TODO: sometimes empty lists are received. Figure out why
-          scene.accel_sensor = accel[2];
-        }
-      } else if (!scene.started && sensor.which() == cereal::SensorEventData::GYRO_UNCALIBRATED) {
-        auto gyro = sensor.getGyroUncalibrated().getV();
-        if (gyro.totalSize().wordCount) {
-          scene.gyro_sensor = gyro[1];
-        }
-      }
-    }
-  }
-  if (sm.updated("roadCameraState")) {
-    auto camera_state = sm["roadCameraState"].getRoadCameraState();
 
-    float max_lines = Hardware::EON() ? 5408 : 1757;
-    float gain = camera_state.getGain();
-
-    if (Hardware::TICI()) {
-      // Max gain is 4 * 2.5 (High Conversion Gain)
-      gain /= 10.0;
-    }
-
-    scene.light_sensor = std::clamp<float>((1023.0 / max_lines) * (max_lines - camera_state.getIntegLines() * gain), 0.0, 1023.0);
-  }
   scene.started = sm["deviceState"].getDeviceState().getStarted() && scene.ignition;
 }
 
@@ -311,15 +284,23 @@ void QUIState::update() {
   emit uiUpdate(ui_state);
 }
 
-Device::Device(QObject *parent) : brightness_filter(BACKLIGHT_OFFROAD, BACKLIGHT_TS, BACKLIGHT_DT), QObject(parent) {
+// Device
+
+Device::Device(QObject *parent) : sm({"sensorEvents", "roadCameraState"}),
+                                  brightness_filter(BACKLIGHT_OFFROAD, BACKLIGHT_TS, BACKLIGHT_DT),
+                                  QObject(parent) {
+  timer.callOnTimeout(this, &Device::update);
+  timer.start(1000 / DEVICE_FREQ);
 }
 
-void Device::update(const UIState &s) {
-  updateBrightness(s);
-  updateWakefulness(s);
+void Device::offroadTransition(bool offroad) {
+  started = !offroad;
+}
 
-  // TODO: remove from UIState and use signals
-  QUIState::ui_state.awake = awake;
+void Device::update() {
+  sm.update(0);
+  updateBrightness();
+  updateWakefulness();
 }
 
 void Device::setAwake(bool on, bool reset) {
@@ -331,15 +312,26 @@ void Device::setAwake(bool on, bool reset) {
   }
 
   if (reset) {
-    awake_timeout = 30 * UI_FREQ;
+    awake_timeout = SLEEP_AFTER;
   }
 }
 
-void Device::updateBrightness(const UIState &s) {
+void Device::updateBrightness() {
+  if (started && sm.updated("roadCameraState")) {
+    auto camera_state = sm["roadCameraState"].getRoadCameraState();
+    float max_lines = Hardware::EON() ? 5408 : 1757;
+    float gain = camera_state.getGain();
+    if (Hardware::TICI()) {
+      // Max gain is 4 * 2.5 (High Conversion Gain)
+      gain /= 10.0;
+    }
+    light_sensor = std::clamp<float>((1023.0 / max_lines) * (max_lines - camera_state.getIntegLines() * gain), 0.0, 1023.0);
+  }
+
   float brightness_b = 10;
   float brightness_m = 0.1;
-  float clipped_brightness = std::min(100.0f, (s.scene.light_sensor * brightness_m) + brightness_b);
-  if (!s.scene.started) {
+  float clipped_brightness = std::min(100.0f, (light_sensor * brightness_m) + brightness_b);
+  if (!started) {
     clipped_brightness = BACKLIGHT_OFFROAD;
   }
 
@@ -354,17 +346,30 @@ void Device::updateBrightness(const UIState &s) {
   last_brightness = brightness;
 }
 
-void Device::updateWakefulness(const UIState &s) {
+void Device::updateWakefulness() {
   awake_timeout = std::max(awake_timeout - 1, 0);
 
-  bool should_wake = s.scene.started || s.scene.ignition;
-  if (!should_wake) {
+  bool should_wake = started;
+  if (!should_wake && sm.updated("sensorEvents")) {
+    for (auto sensor : sm["sensorEvents"].getSensorEvents()) {
+      if (sensor.which() == cereal::SensorEventData::ACCELERATION) {
+        auto accel = sensor.getAcceleration().getV();
+        if (accel.totalSize().wordCount) {  // TODO: sometimes empty lists are received. Figure out why
+          accel_sensor = accel[2];
+        }
+      } else if (sensor.which() == cereal::SensorEventData::GYRO_UNCALIBRATED) {
+        auto gyro = sensor.getGyroUncalibrated().getV();
+        if (gyro.totalSize().wordCount) {
+          gyro_sensor = gyro[1];
+        }
+      }
+    }
     // tap detection while display is off
-    bool accel_trigger = abs(s.scene.accel_sensor - accel_prev) > 0.2;
-    bool gyro_trigger = abs(s.scene.gyro_sensor - gyro_prev) > 0.15;
+    bool accel_trigger = abs(accel_sensor - accel_prev) > 0.2;
+    bool gyro_trigger = abs(gyro_sensor - gyro_prev) > 0.15;
     should_wake = accel_trigger && gyro_trigger;
-    gyro_prev = s.scene.gyro_sensor;
-    accel_prev = (accel_prev * (accel_samples - 1) + s.scene.accel_sensor) / accel_samples;
+    gyro_prev = gyro_sensor;
+    accel_prev = (accel_prev * (accel_samples - 1) + accel_sensor) / accel_samples;
   }
 
   setAwake(awake_timeout, should_wake);

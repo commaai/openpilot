@@ -73,7 +73,8 @@ const int bdr_s = 30;
 const int header_h = 420;
 const int footer_h = 280;
 
-const int UI_FREQ = 20;   // Hz
+const int UI_FREQ = 20; // Hz
+const int DEVICE_FREQ = 5; // Hz
 
 typedef enum UIStatus {
   STATUS_DISENGAGED,
@@ -117,7 +118,6 @@ typedef struct UIScene {
   // lead
   vertex_data lead_vertices[2];
 
-  float light_sensor, accel_sensor, gyro_sensor;
   bool started, ignition, is_metric, longitudinal_control, end_to_end;
   uint64_t started_frame;
 } UIScene;
@@ -185,27 +185,29 @@ class Device : public QObject {
 
 public:
   Device(QObject *parent = 0);
+  void setAwake(bool on, bool reset);
 
 private:
   // auto brightness
-  const float accel_samples = 5*UI_FREQ;
-
-  bool awake;
-  int awake_timeout = 0;
-  float accel_prev = 0;
-  float gyro_prev = 0;
+  const float accel_samples = 5 * DEVICE_FREQ;
+  const int SLEEP_AFTER = 30 * DEVICE_FREQ;
+  int awake_timeout = SLEEP_AFTER;
+  bool awake = false, started = false;
   float last_brightness = 0;
+  float accel_prev = 0, gyro_prev = 0;
+  float light_sensor = 0, accel_sensor = 0, gyro_sensor = 0;
   FirstOrderFilter brightness_filter;
 
-  QTimer *timer;
+  SubMaster sm;
+  QTimer timer;
 
-  void updateBrightness(const UIState &s);
-  void updateWakefulness(const UIState &s);
+  void update();
+  void updateBrightness();
+  void updateWakefulness();
 
 signals:
   void displayPowerChanged(bool on);
 
 public slots:
-  void setAwake(bool on, bool reset);
-  void update(const UIState &s);
+  void offroadTransition(bool offroad);
 };
