@@ -41,18 +41,18 @@ DRIVER_MONITOR_SETTINGS = {
   "_PITCH_NATURAL_OFFSET": 0.02,  # people don't seem to look straight when they drive relaxed, rather a bit up
   "_YAW_NATURAL_OFFSET": 0.08,  # people don't seem to look straight when they drive relaxed, rather a bit to the right (center of car)
 
-  "_HI_STD_FALLBACK_TIME": 10  / DT_DMON,  # fall back to wheel touch if model is uncertain for 10s
+  "_HI_STD_FALLBACK_TIME": int(10  / DT_DMON),  # fall back to wheel touch if model is uncertain for 10s
   "_DISTRACTED_FILTER_TS": 0.25,  # 0.6Hz
 
   "_POSE_CALIB_MIN_SPEED": 13,  # 30 mph
-  "_POSE_OFFSET_MIN_COUNT": 60 / DT_DMON,  # valid data counts before calibration completes, 1min cumulative
-  "_POSE_OFFSET_MAX_COUNT": 360 / DT_DMON,  # stop deweighting new data after 6 min, aka "short term memory"
+  "_POSE_OFFSET_MIN_COUNT": int(60 / DT_DMON),  # valid data counts before calibration completes, 1min cumulative
+  "_POSE_OFFSET_MAX_COUNT": int(360 / DT_DMON),  # stop deweighting new data after 6 min, aka "short term memory"
 
   "_RECOVERY_FACTOR_MAX": 5.,  # relative to minus step change
   "_RECOVERY_FACTOR_MIN": 1.25,  # relative to minus step change
 
   "_MAX_TERMINAL_ALERTS": 3,  # not allowed to engage after 3 terminal alerts
-  "_MAX_TERMINAL_DURATION": 30 / DT_DMON,  # not allowed to engage after 30s of terminal alerts
+  "_MAX_TERMINAL_DURATION": int(30 / DT_DMON),  # not allowed to engage after 30s of terminal alerts
 }
 
 # model output refers to center of cropped image, so need to apply the x displacement offset
@@ -221,7 +221,7 @@ class DriverStatus():
     self.pose_calibrated = self.pose.pitch_offseter.filtered_stat.n > self._POSE_OFFSET_MIN_COUNT and \
                             self.pose.yaw_offseter.filtered_stat.n > self._POSE_OFFSET_MIN_COUNT
 
-    self.is_model_uncertain = self.hi_stds * DT_DMON > self._HI_STD_FALLBACK_TIME
+    self.is_model_uncertain = self.hi_stds > self._HI_STD_FALLBACK_TIME
     self._set_timers(self.face_detected and not self.is_model_uncertain)
     if self.face_detected and not self.pose.low_std and not self.driver_distracted:
       self.hi_stds += 1
@@ -250,7 +250,7 @@ class DriverStatus():
 
     standstill_exemption = standstill and self.awareness - self.step_change <= self.threshold_prompt
     certainly_distracted = self.driver_distraction_filter.x > 0.63 and self.driver_distracted and self.face_detected
-    maybe_distracted = self.hi_stds * DT_DMON > self._HI_STD_FALLBACK_TIME or not self.face_detected
+    maybe_distracted = self.hi_stds > self._HI_STD_FALLBACK_TIME or not self.face_detected
     if certainly_distracted or maybe_distracted:
       # should always be counting if distracted unless at standstill and reaching orange
       if not standstill_exemption:
