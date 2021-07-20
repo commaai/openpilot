@@ -20,6 +20,7 @@ private:
   WifiManager *wifi = nullptr;
   QVBoxLayout* main_layout;
   QHBoxLayout* buildNetworkWidget(const Network &network);
+  void updateNetworkWidget(QHBoxLayout *hlayout, const Network &network);
   QPixmap lock;
   QPixmap checkmark;
   QVector<QPixmap> strengths;
