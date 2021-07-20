@@ -18,8 +18,8 @@ class MainWindow : public QWidget {
 public:
   explicit MainWindow(QWidget *parent = 0);
 
-private:
-  bool eventFilter(QObject *obj, QEvent *event) override;
+//private:
+//  bool eventFilter(QObject *obj, QEvent *event) override;
 //  void openSettings();
 //  void closeSettings();
 
