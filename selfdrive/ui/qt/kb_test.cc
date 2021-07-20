@@ -53,7 +53,7 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
     QPushButton *btn = new QPushButton(QString("Btn %1").arg(i));
     btn->setAttribute(Qt::WA_AcceptTouchEvents);
     btn->setObjectName(QString("btn%1").arg(i));
-    btn->installEventFilter(this);
+//    btn->installEventFilter(this);
     btn->setFocusPolicy(Qt::NoFocus);
     QObject::connect(btn, &QPushButton::clicked, this, [=]() { qDebug() << QString("Btn %1 clicked!").arg(i); });
     main_layout->addWidget(btn);
@@ -81,6 +81,9 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
 }
 
 bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
+  if (obj->inherits("QWidgetWindow")) {
+    return QWidget::eventFilter(obj, event);
+  }
 
   // synthesize mouse events from touch events
   if (event->type() == QEvent::TouchBegin || event->type() == QEvent::TouchUpdate || event->type() == QEvent::TouchEnd || event->type() == QEvent::TouchCancel) {
@@ -115,7 +118,7 @@ int main(int argc, char *argv[]) {
   QApplication a(argc, argv);
 
   MainWindow window;
-//  a.installEventFilter(&window);
+  a.installEventFilter(&window);
   setMainWindow(&window);
 
   a.setAttribute(Qt::AA_SynthesizeMouseForUnhandledTouchEvents, false);
