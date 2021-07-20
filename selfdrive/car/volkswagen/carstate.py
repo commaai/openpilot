@@ -173,7 +173,6 @@ class CarState(CarStateBase):
       ("ESP_Fahrer_bremst", "ESP_05", 0),           # Brake pedal pressed
       ("ESP_Bremsdruck", "ESP_05", 0),              # Brake pressure applied
       ("MO_Fahrpedalrohwert_01", "Motor_20", 0),    # Accelerator pedal value
-      ("MO_Kuppl_schalter", "Motor_14", 0),         # Clutch switch
       ("EPS_Lenkmoment", "LH_EPS_03", 0),           # Absolute driver torque input
       ("EPS_VZ_Lenkmoment", "LH_EPS_03", 0),        # Driver torque input sign
       ("EPS_HCA_Status", "LH_EPS_03", 3),           # EPS HCA control status
