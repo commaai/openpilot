@@ -248,7 +248,7 @@ void WifiUI::updateStatusIcon(QLabel *statusIcon, const Network &network) {
 QHBoxLayout* WifiUI::buildNetworkWidget(const Network &network, bool isTetheringEnabled) {
   QHBoxLayout *hlayout = new QHBoxLayout;
   hlayout->setContentsMargins(44, 0, 73, 0);
-  hlayout->setObjectName(network.ssid);
+  hlayout->setProperty("ssid", network.ssid);
   hlayout->setSpacing(50);
 
   // Clickable SSID label
@@ -319,7 +319,7 @@ void WifiUI::refresh() {
   // Update or delete all drawn networks by checking seenNetworks
   int i = 0;
   while (i < main_layout->count()) {
-    const QString &networkSsid = main_layout->itemAt(i)->layout()->objectName();
+    const QString &networkSsid = main_layout->itemAt(i)->layout()->property("ssid").toString();
     if (!networkSsid.isEmpty()) {
       if (wifi->seenNetworks.contains(networkSsid)) {
         qDebug() << "UPDATING:" << networkSsid;
@@ -343,15 +343,15 @@ void WifiUI::refresh() {
     return;
   }
 
-  QVector<QString> objectNames;  // ssids already added to main_layout
+  QVector<QString> drawnSsids;  // ssids already added to main_layout
   for (int i = 0; i < main_layout->count(); i++) {
-    objectNames.push_back(main_layout->itemAt(i)->layout()->objectName());
+    drawnSsids.push_back(main_layout->itemAt(i)->layout()->property("ssid").toString());
   }
 
   // add networks
   i = 0;
   for (Network &network : wifi->seenNetworks) {
-    if (!objectNames.contains(network.ssid)) {
+    if (!drawnSsids.contains(network.ssid)) {
       QHBoxLayout *hlayout = buildNetworkWidget(network, isTetheringEnabled);
       main_layout->addLayout(hlayout, 1);
       qDebug() << network.ssid << "is not in drawn networks, add it!";
