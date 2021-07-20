@@ -7,6 +7,7 @@ from cereal import car
 from selfdrive.car import dbc_dict
 
 Ecu = car.CarParams.Ecu
+NetworkLocation = car.CarParams.NetworkLocation
 TransmissionType = car.CarParams.TransmissionType
 GearShifter = car.CarState.GearShifter
 
@@ -31,6 +32,7 @@ class CarControllerParams:
 class CANBUS:
   pt = 0
   cam = 2
+  ext = -1  # Changed to alias of CANBUS.pt or CANBUS.cam depending on fingerprint
 
 class DBC_FILES:
   mqb = "vw_mqb_2010"  # Used for all cars with MQB-style CAN messaging
