@@ -227,8 +227,10 @@ int ocp_nlp_dynamics_model_set(ocp_nlp_config *config, ocp_nlp_dims *dims, ocp_n
 /// \param field The name of the field, either nls_res_jac,
 ///     y_ref, W (others TBC)
 /// \param value Cost values.
+int ocp_nlp_cost_model_set_slice(ocp_nlp_config *config, ocp_nlp_dims *dims, ocp_nlp_in *in,
+        int start_stage, int end_stage, const char *field, void *value, int dim);
 int ocp_nlp_cost_model_set(ocp_nlp_config *config, ocp_nlp_dims *dims, ocp_nlp_in *in,
-        int stage, const char *field, void *value);
+        int start_stage, const char *field, void *value);
 
 
 /// Sets the function pointers to the constraints functions for the given stage.
