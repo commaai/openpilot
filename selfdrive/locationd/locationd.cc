@@ -432,8 +432,7 @@ kj::ArrayPtr<capnp::byte> Localizer::get_message_bytes(MessageBuilder& msg_build
 }
 
 
-bool Localizer::isGpsOK()
-{
+bool Localizer::isGpsOK() {
   return this->kf->get_filter_time() - this->last_gps_fix < 1.0;
 }
 
