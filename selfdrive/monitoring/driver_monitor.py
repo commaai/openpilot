@@ -205,10 +205,10 @@ class DriverStatus():
     self.blink.left_blink = driver_state.leftBlinkProb * (driver_state.leftEyeProb > self._EYE_THRESHOLD) * (driver_state.sunglassesProb < self._SG_THRESHOLD)
     self.blink.right_blink = driver_state.rightBlinkProb * (driver_state.rightEyeProb > self._EYE_THRESHOLD) * (driver_state.sunglassesProb < self._SG_THRESHOLD)
 
-    distracted_normal = (self._is_driver_distracted(self.pose, self.blink) > 0 and
-                        driver_state.faceProb > self._FACE_THRESHOLD and self.pose.low_std)
-    distracted_E2E = ((driver_state.distractedPose > self._E2E_POSE_THRESHOLD or driver_state.distractedEyes > self._E2E_EYES_THRESHOLD) and
-                     (self.face_detected and not self.face_partial))
+    distracted_normal = self._is_driver_distracted(self.pose, self.blink) > 0 and \
+                                   driver_state.faceProb > self._FACE_THRESHOLD and self.pose.low_std
+    distracted_E2E = (driver_state.distractedPose > self._E2E_POSE_THRESHOLD or driver_state.distractedEyes > self._E2E_EYES_THRESHOLD) and \
+                              (self.face_detected and not self.face_partial)
     self.driver_distracted = distracted_normal or distracted_E2E
     self.driver_distraction_filter.update(self.driver_distracted)
 
