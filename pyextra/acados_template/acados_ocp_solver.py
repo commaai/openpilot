@@ -852,11 +852,12 @@ class AcadosOcpSolver:
         return status
 
 
-    def get(self, stage_, field_):
+    def get_slice(self, start_stage_, end_stage_, field_):
         """
         Get the last solution of the solver:
 
-            :param stage: integer corresponding to shooting node
+            :param start_stage: integer corresponding to shooting node that indicates start of slice
+            :param end_stage: integer corresponding to shooting node that indicates end of slice
             :param field: string in ['x', 'u', 'z', 'pi', 'lam', 't', 'sl', 'su',]
 
             .. note:: regarding lam, t: \n
@@ -870,55 +871,12 @@ class AcadosOcpSolver:
                       sl: slack variables of soft lower inequality constraints \n
                       su: slack variables of soft upper inequality constraints \n
         """
-
         out_fields = ['x', 'u', 'z', 'pi', 'lam', 't']
         mem_fields = ['sl', 'su']
         field = field_
         field = field.encode('utf-8')
 
         if (field_ not in out_fields + mem_fields):
-            raise Exception('AcadosOcpSolver.get(): {} is an invalid argument.\
-                    \n Possible values are {}. Exiting.'.format(field_, out_fields + mem_fields))
-
-        if not isinstance(stage_, int):
-            raise Exception('AcadosOcpSolver.get(): stage index must be Integer.')
-
-        if stage_ < 0 or stage_ > self.N:
-            raise Exception('AcadosOcpSolver.get(): stage index must be in [0, N], got: {}.'.format(self.N))
-
-        if stage_ == self.N and field_ == 'pi':
-            raise Exception('AcadosOcpSolver.get(): field {} does not exist at final stage {}.'\
-                .format(field_, stage_))
-
-        self.shared_lib.ocp_nlp_dims_get_from_attr.argtypes = \
-            [c_void_p, c_void_p, c_void_p, c_int, c_char_p]
-        self.shared_lib.ocp_nlp_dims_get_from_attr.restype = c_int
-
-        dims = self.shared_lib.ocp_nlp_dims_get_from_attr(self.nlp_config, \
-            self.nlp_dims, self.nlp_out, stage_, field)
-
-        out = np.ascontiguousarray(np.zeros((dims,)), dtype=np.float64)
-        out_data = cast(out.ctypes.data, POINTER(c_double))
-
-        if (field_ in out_fields):
-            self.shared_lib.ocp_nlp_out_get.argtypes = \
-                [c_void_p, c_void_p, c_void_p, c_int, c_char_p, c_void_p]
-            self.shared_lib.ocp_nlp_out_get(self.nlp_config, \
-                self.nlp_dims, self.nlp_out, stage_, field, out_data)
-        elif field_ in mem_fields:
-            self.shared_lib.ocp_nlp_get_at_stage.argtypes = \
-                [c_void_p, c_void_p, c_void_p, c_int, c_char_p, c_void_p]
-            self.shared_lib.ocp_nlp_get_at_stage(self.nlp_config, \
-                self.nlp_dims, self.nlp_solver, stage_, field, out_data)
-
-        return out
-
-    def get_slice(self, start_stage_, end_stage_, field_):
-        out_fields = ['x']
-        field = field_
-        field = field.encode('utf-8')
-
-        if (field_ not in out_fields):
             raise Exception('AcadosOcpSolver.get_slice(): {} is an invalid argument.\
                     \n Possible values are {}. Exiting.'.format(field_, out_fields))
 
@@ -952,9 +910,13 @@ class AcadosOcpSolver:
             self.shared_lib.ocp_nlp_get_at_stage.argtypes = \
                 [c_void_p, c_void_p, c_void_p, c_int, c_char_p, c_void_p]
             self.shared_lib.ocp_nlp_get_at_stage(self.nlp_config, \
-                self.nlp_dims, self.nlp_solver, stage_, field, out_data)
+                self.nlp_dims, self.nlp_solver, start_stage_, end_stage_, field, out_data)
 
         return out
+
+
+    def get(self, stage_, field_):
+        return self.get_slice(stage_, stage_ + 1, field_)[0]
 
 
     def print_statistics(self):
