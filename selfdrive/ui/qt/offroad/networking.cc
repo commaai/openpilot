@@ -222,12 +222,16 @@ WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi)
   )");
 }
 
-void WifiUI::updateSsidLabel(QPushButton *ssid_label, const Network &network) {
-  ssid_label->setEnabled(network.connected != ConnectedType::CONNECTED &&
+void WifiUI::updateSsidLabel(QPushButton *ssidLabel, const Network &network) {
+  ssidLabel->setEnabled(network.connected != ConnectedType::CONNECTED &&
                          network.connected != ConnectedType::CONNECTING &&
                          network.security_type != SecurityType::UNSUPPORTED);
-  const int weight = network.connected == ConnectedType::DISCONNECTED ? 300 : 500;
-  ssid_label->setStyleSheet(QString("font-weight: %1;").arg(weight));
+  bool disconnected = network.connected == ConnectedType::DISCONNECTED;
+  QVariant prevDisconnected = ssidLabel->property("disconnected");
+  if (prevDisconnected.toBool() != disconnected || !prevDisconnected.isValid()) {
+    ssidLabel->setStyleSheet(QString("font-weight: %1;").arg(disconnected ? 300 : 500));
+  }
+  ssidLabel->setProperty("disconnected", network.connected == ConnectedType::DISCONNECTED);
 }
 
 void WifiUI::updateStatusIcon(QLabel *statusIcon, const Network &network) {
@@ -241,18 +245,18 @@ void WifiUI::updateStatusIcon(QLabel *statusIcon, const Network &network) {
   }
 }
 
-QHBoxLayout* WifiUI::buildNetworkWidget(const Network &network) {
+QHBoxLayout* WifiUI::buildNetworkWidget(const Network &network, bool isTetheringEnabled) {
   QHBoxLayout *hlayout = new QHBoxLayout;
   hlayout->setContentsMargins(44, 0, 73, 0);
   hlayout->setObjectName(network.ssid);
   hlayout->setSpacing(50);
 
   // Clickable SSID label
-  QPushButton *ssid_label = new QPushButton(network.ssid);  // TODO: name styling
-  ssid_label->setObjectName("ssidLabel");
-  updateSsidLabel(ssid_label, network);
-  QObject::connect(ssid_label, &QPushButton::clicked, this, [=]() { emit connectToNetwork(network); });
-  hlayout->addWidget(ssid_label, network.connected == ConnectedType::CONNECTING ? 0 : 1);
+  QPushButton *ssidLabel = new QPushButton(network.ssid);
+  ssidLabel->setObjectName("ssidLabel");
+  updateSsidLabel(ssidLabel, network);
+  QObject::connect(ssidLabel, &QPushButton::clicked, this, [=]() { emit connectToNetwork(network); });
+  hlayout->addWidget(ssidLabel, network.connected == ConnectedType::CONNECTING ? 0 : 1);
 
   // Connecting label
   QPushButton *connecting = new QPushButton("CONNECTING...");
@@ -283,12 +287,12 @@ QHBoxLayout* WifiUI::buildNetworkWidget(const Network &network) {
   return hlayout;
 }
 
-void WifiUI::updateNetworkWidget(QHBoxLayout *hlayout, const Network &network) {
+void WifiUI::updateNetworkWidget(QHBoxLayout *hlayout, const Network &network, bool isTetheringEnabled) {
   hlayout->setStretch(0, network.connected == ConnectedType::CONNECTING ? 0 : 1);
 
   // Clickable SSID label
-  QPushButton *ssid_label = qobject_cast<QPushButton*>(hlayout->itemAt(0)->widget());
-  updateSsidLabel(ssid_label, network);
+  QPushButton *ssidLabel = qobject_cast<QPushButton*>(hlayout->itemAt(0)->widget());
+  updateSsidLabel(ssidLabel, network);
 
   // Connecting label
   QPushButton *connecting = qobject_cast<QPushButton*>(hlayout->itemAt(1)->widget());
@@ -296,7 +300,7 @@ void WifiUI::updateNetworkWidget(QHBoxLayout *hlayout, const Network &network) {
 
   // Forget button
   QPushButton *forgetBtn = qobject_cast<QPushButton*>(hlayout->itemAt(2)->widget());
-  forgetBtn->setVisible(wifi->isKnownConnection(network.ssid) && !wifi->isTetheringEnabled());
+  forgetBtn->setVisible(wifi->isKnownConnection(network.ssid) && !isTetheringEnabled);
 
   // Status icon
   QLabel *statusIcon = qobject_cast<QLabel*>(hlayout->itemAt(3)->widget());
@@ -309,6 +313,7 @@ void WifiUI::updateNetworkWidget(QHBoxLayout *hlayout, const Network &network) {
 
 void WifiUI::refresh() {
 
+  bool isTetheringEnabled = wifi->isTetheringEnabled();
   if (idx > 2) wifi->seenNetworks.remove("SHANE-EPC");
   idx++;
   // Update or delete all drawn networks by checking seenNetworks
@@ -319,7 +324,7 @@ void WifiUI::refresh() {
       if (wifi->seenNetworks.contains(networkSsid)) {
         qDebug() << "UPDATING:" << networkSsid;
         QHBoxLayout *hlayout = qobject_cast<QHBoxLayout*>(main_layout->itemAt(i)->layout());
-        updateNetworkWidget(hlayout, wifi->seenNetworks.value(networkSsid));
+        updateNetworkWidget(hlayout, wifi->seenNetworks.value(networkSsid), isTetheringEnabled);
       } else {
         qDebug() << "DELETING:" << networkSsid;
         // TODO: is this the best way to remove the layout?
@@ -347,7 +352,7 @@ void WifiUI::refresh() {
   i = 0;
   for (Network &network : wifi->seenNetworks) {
     if (!objectNames.contains(network.ssid)) {
-      QHBoxLayout *hlayout = buildNetworkWidget(network);
+      QHBoxLayout *hlayout = buildNetworkWidget(network, isTetheringEnabled);
       main_layout->addLayout(hlayout, 1);
       qDebug() << network.ssid << "is not in drawn networks, add it!";
     }

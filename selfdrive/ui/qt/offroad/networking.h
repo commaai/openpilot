@@ -19,9 +19,9 @@ public:
 private:
   WifiManager *wifi = nullptr;
   QVBoxLayout* main_layout;
-  QHBoxLayout* buildNetworkWidget(const Network &network);
-  void updateNetworkWidget(QHBoxLayout *hlayout, const Network &network);
-  void updateSsidLabel(QPushButton *ssid_label, const Network &network);
+  QHBoxLayout* buildNetworkWidget(const Network &network, bool isTetheringEnabled);
+  void updateNetworkWidget(QHBoxLayout *hlayout, const Network &network, bool isTetheringEnabled);
+  void updateSsidLabel(QPushButton *ssidLabel, const Network &network);
   void updateStatusIcon(QLabel *statusIcon, const Network &network);
   QPixmap lock;
   QPixmap checkmark;
