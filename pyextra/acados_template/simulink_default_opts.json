@@ -7,6 +7,9 @@
         "KKT_residual": 1,
         "x1": 1,
         "CPU_time": 1,
+        "CPU_time_sim": 0,
+        "CPU_time_qp": 0,
+        "CPU_time_lin": 0,
         "sqp_iter": 1
     },
     "inputs": {
