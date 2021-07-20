@@ -111,7 +111,7 @@ void Networking::wrongPassword(const QString &ssid) {
 
 void Networking::showEvent(QShowEvent* event) {
   // Wait to refresh to avoid delay when showing Networking widget
-  QTimer::singleShot(300, this, [=]() {
+  QTimer::singleShot(500, this, [=]() {
     if (this->isVisible()) {
       wifi->refreshNetworks();
       refresh();
@@ -230,9 +230,12 @@ WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi)
 }
 
 void WifiUI::updateSsidLabel(QPushButton *ssidLabel, const Network &network) {
+  ssidLabel->setText(network.ssid);
   ssidLabel->setEnabled(network.connected != ConnectedType::CONNECTED &&
                          network.connected != ConnectedType::CONNECTING &&
                          network.security_type != SecurityType::UNSUPPORTED);
+  ssidLabel->disconnect();
+  QObject::connect(ssidLabel, &QPushButton::clicked, this, [=]() { emit connectToNetwork(network); });
   int weight = network.connected == ConnectedType::DISCONNECTED ? 300 : 500;
   ssidLabel->setStyleSheet(QString("font-weight: %1;").arg(weight));
 }
@@ -254,10 +257,9 @@ QHBoxLayout* WifiUI::buildNetworkWidget(const Network &network, bool isTethering
   hlayout->setSpacing(50);
 
   // Clickable SSID label
-  QPushButton *ssidLabel = new QPushButton(network.ssid);
+  QPushButton *ssidLabel = new QPushButton();
   ssidLabel->setObjectName("ssidLabel");
   updateSsidLabel(ssidLabel, network);
-  QObject::connect(ssidLabel, &QPushButton::clicked, this, [=]() { emit connectToNetwork(network); });
   hlayout->addWidget(ssidLabel, network.connected == ConnectedType::CONNECTING ? 0 : 1);
 
   // Connecting label
@@ -269,6 +271,7 @@ QHBoxLayout* WifiUI::buildNetworkWidget(const Network &network, bool isTethering
   // Forget button
   QPushButton *forgetBtn = new QPushButton("FORGET");
   forgetBtn->setObjectName("forgetBtn");
+  forgetBtn->disconnect();
   QObject::connect(forgetBtn, &QPushButton::clicked, [=]() {
     if (ConfirmationDialog::confirm("Forget WiFi Network \"" + QString::fromUtf8(network.ssid) + "\"?", this)) {
       wifi->forgetConnection(network.ssid);
@@ -291,6 +294,7 @@ QHBoxLayout* WifiUI::buildNetworkWidget(const Network &network, bool isTethering
 }
 
 void WifiUI::updateNetworkWidget(QHBoxLayout *hlayout, const Network &network, bool isTetheringEnabled) {
+  // TODO clean up
   hlayout->setStretch(0, network.connected == ConnectedType::CONNECTING ? 0 : 1);
 
   // Clickable SSID label
@@ -303,6 +307,12 @@ void WifiUI::updateNetworkWidget(QHBoxLayout *hlayout, const Network &network, b
 
   // Forget button
   QPushButton *forgetBtn = qobject_cast<QPushButton*>(hlayout->itemAt(2)->widget());
+  forgetBtn->disconnect();
+  QObject::connect(forgetBtn, &QPushButton::clicked, [=]() {
+    if (ConfirmationDialog::confirm("Forget WiFi Network \"" + QString::fromUtf8(network.ssid) + "\"?", this)) {
+      wifi->forgetConnection(network.ssid);
+    }
+  });
   forgetBtn->setVisible(wifi->isKnownConnection(network.ssid) && !isTetheringEnabled);
 
   // Status icon
@@ -332,35 +342,23 @@ void WifiUI::refresh() {
   QList<Network> sortedNetworks = wifi->seenNetworks.values();
   std::sort(sortedNetworks.begin(), sortedNetworks.end(), compare_by_strength);
 
-
   int i = 0;
-  while (i < main_layout->count()) {
-    const QString &networkSsid = main_layout->itemAt(i)->layout()->property("ssid").toString();
-    if (!wifi->seenNetworks.contains(networkSsid)) {
-      // TODO: is this the best way to remove the layout?
-      QLayoutItem *item = main_layout->takeAt(i--);
-      clearLayout(item->layout());
-      delete item;
-    }
-    i++;
-  }
-
-  i = 0;
-  assert(sortedNetworks.count() >= main_layout->count());
   const bool isTetheringEnabled = wifi->isTetheringEnabled();
   for (const Network &network : sortedNetworks) {
-    QHBoxLayout *hlayout;
-    if (!drawnSsids().contains(network.ssid)) {
-      hlayout = buildNetworkWidget(network, isTetheringEnabled);
-      qDebug() << network.ssid << "is not in drawn networks, add it!";
-    } else {
-      int widgetIndex = drawnSsids().indexOf(network.ssid);
-      hlayout = qobject_cast<QHBoxLayout*>(main_layout->takeAt(widgetIndex)->layout());
+    if (i < main_layout->count()) {  // update widget
+      QHBoxLayout *hlayout = qobject_cast<QHBoxLayout*>(main_layout->itemAt(i)->layout());
       updateNetworkWidget(hlayout, network, isTetheringEnabled);
+    } else {  // add new widget
+      QHBoxLayout *hlayout = buildNetworkWidget(network, isTetheringEnabled);
+      main_layout->addLayout(hlayout, 1);
     }
-    main_layout->insertLayout(i, hlayout, 1);
     i++;
   }
-  qDebug() << "-------";
+
+  while (i < main_layout->count()) {
+    QLayoutItem *item = main_layout->takeAt(i++);  // TODO: is this the best way to remove the layout?
+    clearLayout(item->layout());
+    delete item;
+  }
 //  main_layout->addStretch(1);
 }
