@@ -411,7 +411,7 @@ void hardware_control_thread() {
   bool prev_charging_disabled = false;
   unsigned int cnt = 0;
 
-  FirstOrderFilter integ_lines_filter(0, 10.0, 0.05);
+  FirstOrderFilter integ_lines_filter(0, 30.0, 0.05);
 
   while (!do_exit && panda->connected) {
     cnt++;
