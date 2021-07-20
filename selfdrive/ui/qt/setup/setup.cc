@@ -5,12 +5,12 @@
 
 #include <QApplication>
 #include <QLabel>
+#include <QNetworkConfigurationManager>
 #include <QVBoxLayout>
 
 #include <curl/curl.h>
 
 #include "selfdrive/hardware/hw.h"
-#include "selfdrive/ui/qt/api.h"
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/offroad/networking.h"
 #include "selfdrive/ui/qt/widgets/input.h"
@@ -116,20 +116,16 @@ QWidget * Setup::network_setup() {
   QObject::connect(cont, &QPushButton::clicked, this, &Setup::nextPage);
   blayout->addWidget(cont);
 
-  // setup timer for testing internet connection
-  HttpRequest *request = new HttpRequest(this, DASHCAM_URL, false, 2500);
-  QObject::connect(request, &HttpRequest::requestDone, [=](bool success) {
-    cont->setEnabled(success);
-    cont->setText(success ? "Continue" : "Waiting for internet");
-    repaint();
+  // testing internet connection
+  auto updateContinueBtn = [](QPushButton *btn, bool isOnline) {
+    btn->setEnabled(isOnline);
+    btn->setText(isOnline ? "Continue" : "Waiting for internet");
+  };
+  QNetworkConfigurationManager *ncm = new QNetworkConfigurationManager(this);
+  updateContinueBtn(cont, ncm->isOnline());
+  QObject::connect(ncm, &QNetworkConfigurationManager::onlineStateChanged, [=](bool isOnline) {
+    updateContinueBtn(cont, isOnline);
   });
-  QTimer *timer = new QTimer(this);
-  QObject::connect(timer, &QTimer::timeout, [=]() {
-    if (!request->active() && cont->isVisible()) {
-      request->sendRequest(DASHCAM_URL);
-    }
-  });
-  timer->start(1000);
 
   return widget;
 }

@@ -110,24 +110,19 @@ void HttpRequest::requestTimeout() {
 
 // This function should always emit something
 void HttpRequest::requestFinished() {
-  bool success = false;
   if (reply->error() != QNetworkReply::OperationCanceledError) {
     networkTimer->stop();
     QString response = reply->readAll();
 
     if (reply->error() == QNetworkReply::NoError) {
-      success = true;
       emit receivedResponse(response);
     } else {
       qDebug() << reply->errorString();
       emit failedResponse(reply->errorString());
     }
   } else {
-    networkAccessManager->clearAccessCache();
-    networkAccessManager->clearConnectionCache();
     emit timeoutResponse("timeout");
   }
-  emit requestDone(success);
   reply->deleteLater();
   reply = NULL;
 }

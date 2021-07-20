@@ -37,7 +37,6 @@ private slots:
   void requestFinished();
 
 signals:
-  void requestDone(bool success);
   void receivedResponse(const QString &response);
   void failedResponse(const QString &errorString);
   void timeoutResponse(const QString &errorString);
