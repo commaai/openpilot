@@ -1254,10 +1254,10 @@ class AcadosOcpSolver:
 
         value_shape = value_.shape
         expected_shape = tuple(np.concatenate([np.array([end_stage_ - start_stage_]), dims]))
-        if len(value_shape) == 1:
-            value_shape = (value_shape[0], 0)
+        if len(value_shape) == 2:
+            value_shape = (value_shape[0], value_shape[1], 0)
 
-        elif len(value_shape) == 2:
+        elif len(value_shape) == 3:
             if api=='old':
                 pass
             elif api=='warn':
@@ -1284,6 +1284,7 @@ class AcadosOcpSolver:
             raise Exception('AcadosOcpSolver.cost_set(): mismatching dimension', \
                 ' for field "{}" with dimension {} (you have {})'.format( \
                 field_, expected_shape, value_shape))
+
 
         value_data = cast(value_.ctypes.data, POINTER(c_double))
         value_data_p = cast((value_data), c_void_p)

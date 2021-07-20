@@ -112,8 +112,8 @@ def gen_lat_mpc_solver():
   ocp.cost.cost_type = 'NONLINEAR_LS'
   ocp.cost.cost_type_e = 'NONLINEAR_LS'
 
-  Q = np.diag([1., 1.])
-  QR = np.diag([1., 1., 1.])
+  Q = np.diag([0.0, 0.0])
+  QR = np.diag([0.0, 0.0, 0.0])
 
   ocp.cost.W = QR
   ocp.cost.W_e = Q
@@ -166,9 +166,9 @@ class LateralMpc():
 
   def set_weights(self, path_weight, heading_weight, steer_rate_weight):
     W = np.diag([path_weight, heading_weight, steer_rate_weight])
-    for i in range(N):
-      self.solver.cost_set(i, 'W', W)
-    # TODO hacky weights to keep behavior the same
+    Ws = np.tile(W[None], reps=(N,1,1))
+    self.solver.cost_set_slice(0, N, 'W', Ws, api='old')
+    #TODO hacky weights to keep behavior the same
     self.solver.cost_set(N, 'W', (3/20.)*W[:2,:2])
 
   def run(self, x0, v_ego, car_rotation_radius, y_pts, heading_pts):
@@ -178,14 +178,13 @@ class LateralMpc():
     p = np.array([v_ego, car_rotation_radius])
     for i in range(N):
       self.solver.set(i, "p", p)
-      self.solver.set(i, "yref", yref[i])
+    self.solver.cost_set_slice(0, N, "yref", yref[:N])
     self.solver.set(N, "yref", yref[N][:2])
 
     #status = self.solver.solve()
     self.solver.solve()
-
-    self.x_sol = np.array([self.solver.get(i, 'x') for i in range(N+1)])
-    self.u_sol = np.array([self.solver.get(i, 'u') for i in range(N)])
+    self.x_sol = self.solver.get_slice(0, N+1, 'x')
+    self.u_sol = self.solver.get_slice(0, N, 'u')
     self.cost = self.solver.get_cost()
 
 if __name__ == "__main__":
