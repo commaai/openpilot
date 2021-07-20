@@ -31,6 +31,7 @@ public:
   void finite_check(double current_time = NAN);
   void time_check(double current_time = NAN);
   void update_reset_tracker();
+  bool isGpsOK();
 
   kj::ArrayPtr<capnp::byte> get_message_bytes(MessageBuilder& msg_builder, uint64_t logMonoTime,
     bool inputsOK, bool sensorsOK, bool gpsOK);
