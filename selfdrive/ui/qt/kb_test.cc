@@ -14,38 +14,50 @@
 #include "selfdrive/ui/qt/widgets/scrollview.h"
 #include "selfdrive/ui/qt/kb_test.h"
 
-QTouchButton::QTouchButton(const QString &text, QWidget *parent) : QPushButton(text, parent) {
+//QTouchButton::QTouchButton(const QString &text, QWidget *parent) : QPushButton(text, parent) {
+//
+//}
 
-}
+//void QTouchButton::focusOutEvent(QFocusEvent *e) {
+//  if (e->reason() != Qt::MouseFocusReason) {
+//    QPushButton::focusOutEvent(e);
+//  }
+//}
 
-void QTouchButton::focusOutEvent(QFocusEvent *e) {
-  if (e->reason() != Qt::MouseFocusReason) {
-    QPushButton::focusOutEvent(e);
-  }
-}
+//void QTouchButton::event(QEvent *event) {
+//  if (ev->type() == QEvent::TouchBegin || ev->type() == QEvent::TouchEnd || ev->type() == QEvent::TouchUpdate) {
+//    qDebug() << "TOUCH EVENT:" << ev;
+//  }
+//}
+
+//void QTouchButton::touchEvent(QTouchEvent *ev) {
+//  switch (ev->type()) {
+//    case QEvent::TouchBegin:
+//      qDebug() << "Touch begin for btn" << objectName();
+//      break;
+//    case QEvent::TouchEnd:
+//      qDebug() << "Touch end for btn" << objectName();
+//      break;
+//    case QEvent::TouchUpdate:
+//      qDebug() << "Touch update for btn" << objectName();
+//      break;
+//    default:
+//      break;
+//  }
+//}
 
 MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   QHBoxLayout *main_layout = new QHBoxLayout(this);
 
-  QTouchButton *btn1 = new QTouchButton("Btn 1");
-//  btn1->setAttribute(Qt::WA_AcceptTouchEvents);
-  btn1->setObjectName("btn1");
-  main_layout->addWidget(btn1);
-
-  QTouchButton *btn2 = new QTouchButton("Btn 2");
-//  btn2->setAttribute(Qt::WA_AcceptTouchEvents);
-  btn2->setObjectName("btn2");
-  main_layout->addWidget(btn2);
-
-  QTouchButton *btn3 = new QTouchButton("Btn 3");
-//  btn3->setAttribute(Qt::WA_AcceptTouchEvents);
-  btn3->setObjectName("btn3");
-  main_layout->addWidget(btn3);
-
-  QTouchButton *btn4 = new QTouchButton("Btn 4");
-//  btn4->setAttribute(Qt::WA_AcceptTouchEvents);
-  btn4->setObjectName("btn4");
-  main_layout->addWidget(btn4);
+  for (int i = 0; i < 7; i++) {
+    QPushButton *btn = new QPushButton(QString("Btn %1").arg(i));
+    btn->setAttribute(Qt::WA_AcceptTouchEvents);
+    btn->setObjectName(QString("btn%1").arg(i));
+    btn->installEventFilter(this);
+    btn->setFocusPolicy(Qt::NoFocus);
+    QObject::connect(btn, &QPushButton::clicked, this, [=]() { qDebug() << QString("Btn %1 clicked!").arg(i); });
+    main_layout->addWidget(btn);
+  }
 
   setStyleSheet(R"(
     * {
@@ -76,27 +88,25 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
     for (const QTouchEvent::TouchPoint &touchPoint : touchEvent->touchPoints()) {
       const QPointF &localPos(touchPoint.lastPos());
       const QPointF &screenPos(touchPoint.screenPos());
+      QEvent::Type mouseEventType = QEvent::MouseMove;
       Qt::MouseButton button = Qt::NoButton;
       Qt::MouseButtons buttons = Qt::LeftButton;
 
       if (touchPoint.state() == Qt::TouchPointPressed) {
+        mouseEventType = QEvent::MouseButtonPress;
         button = Qt::LeftButton;
-        QMouseEvent mouseEvent(QEvent::MouseButtonPress, localPos, screenPos, button, buttons, Qt::NoModifier);
-        QApplication::sendEvent(obj, &mouseEvent);
       } else if (touchPoint.state() == Qt::TouchPointReleased) {
+        mouseEventType = QEvent::MouseButtonRelease;
         button = Qt::LeftButton;
         buttons = Qt::NoButton;
-        QMouseEvent mouseEvent(QEvent::MouseButtonRelease, localPos, screenPos, button, buttons, Qt::NoModifier);
-        QApplication::sendEvent(obj, &mouseEvent);
-      } else if (touchPoint.state() == Qt::TouchPointMoved) {
-        QMouseEvent mouseEvent(QEvent::MouseMove, localPos, screenPos, button, buttons, Qt::NoModifier);
-        QApplication::sendEvent(obj, &mouseEvent);
       }
+      QMouseEvent mouseEvent(mouseEventType, localPos, screenPos, button, buttons, Qt::NoModifier);
+      QApplication::sendEvent(obj, &mouseEvent);
     }
     event->accept();
     return true;
   }
-  return false;
+  return QWidget::eventFilter(obj, event);
 }
 
 
@@ -105,11 +115,11 @@ int main(int argc, char *argv[]) {
   QApplication a(argc, argv);
 
   MainWindow window;
-  a.installEventFilter(&window);
+//  a.installEventFilter(&window);
   setMainWindow(&window);
 
   a.setAttribute(Qt::AA_SynthesizeMouseForUnhandledTouchEvents, false);
-  window.setAttribute(Qt::WA_AcceptTouchEvents);
+//  window.setAttribute(Qt::WA_AcceptTouchEvents);
 
   return a.exec();
 }
