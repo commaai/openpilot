@@ -19,14 +19,14 @@ public:
 private:
   WifiManager *wifi = nullptr;
   QVBoxLayout* main_layout;
+  QPixmap lock;
+  QPixmap checkmark;
+  QVector<QPixmap> strengths;
+
   QHBoxLayout* buildNetworkWidget(const Network &network, bool isTetheringEnabled);
   void updateNetworkWidget(QHBoxLayout *hlayout, const Network &network, bool isTetheringEnabled);
   void updateSsidLabel(QPushButton *ssidLabel, const Network &network);
   void updateStatusIcon(QLabel *statusIcon, const Network &network);
-  QPixmap lock;
-  QPixmap checkmark;
-  QVector<QPixmap> strengths;
-  int idx = 0;
 
 signals:
   void connectToNetwork(const Network &n);
