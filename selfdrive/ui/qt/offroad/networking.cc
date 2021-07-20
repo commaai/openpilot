@@ -347,7 +347,11 @@ void WifiUI::refresh() {
       main_layout->insertLayout(i, hlayout, 1);
       qDebug() << network.ssid << "is not in drawn networks, add it!";
     } else {
-      QHBoxLayout *hlayout = qobject_cast<QHBoxLayout*>(main_layout->itemAt(i)->layout());
+      int widgetIndex = drawnSsids.indexOf(network.ssid);
+      QHBoxLayout *hlayout = qobject_cast<QHBoxLayout*>(main_layout->takeAt(i)->layout());
+      if (widgetIndex != i) {
+        main_layout->insertLayout(i, hlayout, 1);
+      }
       updateNetworkWidget(hlayout, network, isTetheringEnabled);
     }
     i++;
