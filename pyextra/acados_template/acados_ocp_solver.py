@@ -1190,7 +1190,7 @@ class AcadosOcpSolver:
 
             if value_.shape[0] != dims:
                 msg = 'AcadosOcpSolver.set(): mismatching dimension for field "{}" '.format(field_)
-                msg += 'with dimension {} (you have {})'.format(dims, value_.shape[0])
+                msg += 'with dimension {} (you have {})'.format(dims, value_.shape)
                 raise Exception(msg)
 
             value_data = cast(value_.ctypes.data, POINTER(c_double))
@@ -1219,7 +1219,12 @@ class AcadosOcpSolver:
         return
 
 
-    def cost_set(self, stage_, field_, value_, api='warn'):
+
+    def cost_set(self, start_stage_, field_, value_, api='warn'):
+      self.cost_set_slice(start_stage_, start_stage_+1, field_, value_[None], api='warn')
+      return
+
+    def cost_set_slice(self, start_stage_, end_stage_, field_, value_, api='warn'):
         """
         Set numerical data in the cost module of the solver.
 
@@ -1230,12 +1235,13 @@ class AcadosOcpSolver:
         # cast value_ to avoid conversion issues
         if isinstance(value_, (float, int)):
             value_ = np.array([value_])
-        value_ = value_.astype(float)
-
+        value_ = np.ascontiguousarray(np.copy(value_), dtype=np.float64)
         field = field_
         field = field.encode('utf-8')
+        dim = np.product(value_.shape[1:])
 
-        stage = c_int(stage_)
+        start_stage = c_int(start_stage_)
+        end_stage = c_int(end_stage_)
         self.shared_lib.ocp_nlp_cost_dims_get_from_attr.argtypes = \
             [c_void_p, c_void_p, c_void_p, c_int, c_char_p, POINTER(c_int)]
         self.shared_lib.ocp_nlp_cost_dims_get_from_attr.restype = c_int
@@ -1244,9 +1250,10 @@ class AcadosOcpSolver:
         dims_data = cast(dims.ctypes.data, POINTER(c_int))
 
         self.shared_lib.ocp_nlp_cost_dims_get_from_attr(self.nlp_config, \
-            self.nlp_dims, self.nlp_out, stage_, field, dims_data)
+            self.nlp_dims, self.nlp_out, start_stage_, field, dims_data)
 
         value_shape = value_.shape
+        expected_shape = tuple(np.concatenate([np.array([end_stage_ - start_stage_]), dims]))
         if len(value_shape) == 1:
             value_shape = (value_shape[0], 0)
 
@@ -1273,18 +1280,18 @@ class AcadosOcpSolver:
             else:
                 raise Exception("Unknown api: '{}'".format(api))
 
-        if value_shape != tuple(dims):
+        if value_shape != expected_shape:
             raise Exception('AcadosOcpSolver.cost_set(): mismatching dimension', \
                 ' for field "{}" with dimension {} (you have {})'.format( \
-                field_, tuple(dims), value_shape))
+                field_, expected_shape, value_shape))
 
         value_data = cast(value_.ctypes.data, POINTER(c_double))
         value_data_p = cast((value_data), c_void_p)
 
-        self.shared_lib.ocp_nlp_cost_model_set.argtypes = \
-            [c_void_p, c_void_p, c_void_p, c_int, c_char_p, c_void_p]
-        self.shared_lib.ocp_nlp_cost_model_set(self.nlp_config, \
-            self.nlp_dims, self.nlp_in, stage, field, value_data_p)
+        self.shared_lib.ocp_nlp_cost_model_set_slice.argtypes = \
+            [c_void_p, c_void_p, c_void_p, c_int, c_int, c_char_p, c_void_p, c_int]
+        self.shared_lib.ocp_nlp_cost_model_set_slice(self.nlp_config, \
+            self.nlp_dims, self.nlp_in, start_stage, end_stage, field, value_data_p, dim)
 
         return
 
