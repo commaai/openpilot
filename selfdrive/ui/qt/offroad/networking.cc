@@ -279,6 +279,7 @@ QHBoxLayout* WifiUI::buildNetworkWidget(const Network &network, bool isTethering
 
   // Status icon
   QLabel *statusIcon = new QLabel();
+  statusIcon->setFixedWidth(lock.width());
   updateStatusIcon(statusIcon, network);
   hlayout->addWidget(statusIcon, 0, Qt::AlignRight);
 
@@ -313,6 +314,14 @@ void WifiUI::updateNetworkWidget(QHBoxLayout *hlayout, const Network &network, b
   strength->setPixmap(strengths[std::clamp((int)network.strength/26, 0, 3)]);
 }
 
+QVector<QString> WifiUI::drawnSsids() {
+  QVector<QString> ssids;
+  for (int i = 0; i < main_layout->count(); i++) {
+    ssids.push_back(main_layout->itemAt(i)->layout()->property("ssid").toString());
+  }
+  return ssids;
+}
+
 void WifiUI::refresh() {
   if (wifi->seenNetworks.size() == 0) {
     QLabel *scanning = new QLabel("Scanning for networks...");
@@ -322,6 +331,7 @@ void WifiUI::refresh() {
   }
   QList<Network> sortedNetworks = wifi->seenNetworks.values();
   std::sort(sortedNetworks.begin(), sortedNetworks.end(), compare_by_strength);
+
 
   int i = 0;
   while (i < main_layout->count()) {
@@ -335,25 +345,20 @@ void WifiUI::refresh() {
     i++;
   }
 
-  QVector<QString> drawnSsids;
-  for (int i = 0; i < main_layout->count(); i++) {
-    drawnSsids.push_back(main_layout->itemAt(i)->layout()->property("ssid").toString());
-  }
   i = 0;
+  assert(sortedNetworks.count() >= main_layout->count());
   const bool isTetheringEnabled = wifi->isTetheringEnabled();
   for (const Network &network : sortedNetworks) {
-    if (!drawnSsids.contains(network.ssid)) {
-      QHBoxLayout *hlayout = buildNetworkWidget(network, isTetheringEnabled);
-      main_layout->insertLayout(i, hlayout, 1);
+    QHBoxLayout *hlayout;
+    if (!drawnSsids().contains(network.ssid)) {
+      hlayout = buildNetworkWidget(network, isTetheringEnabled);
       qDebug() << network.ssid << "is not in drawn networks, add it!";
     } else {
-      int widgetIndex = drawnSsids.indexOf(network.ssid);
-      QHBoxLayout *hlayout = qobject_cast<QHBoxLayout*>(main_layout->takeAt(i)->layout());
-      if (widgetIndex != i) {
-        main_layout->insertLayout(i, hlayout, 1);
-      }
+      int widgetIndex = drawnSsids().indexOf(network.ssid);
+      hlayout = qobject_cast<QHBoxLayout*>(main_layout->takeAt(widgetIndex)->layout());
       updateNetworkWidget(hlayout, network, isTetheringEnabled);
     }
+    main_layout->insertLayout(i, hlayout, 1);
     i++;
   }
   qDebug() << "-------";
