@@ -88,7 +88,7 @@ sim_opts * {{ model.name }}_acados_get_sim_opts(sim_solver_capsule *capsule);
 sim_solver * {{ model.name }}_acados_get_sim_solver(sim_solver_capsule *capsule);
 
 
-sim_solver_capsule * {{ model.name }}_acados_sim_solver_create_capsule();
+sim_solver_capsule * {{ model.name }}_acados_sim_solver_create_capsule(void);
 int {{ model.name }}_acados_sim_solver_free_capsule(sim_solver_capsule *capsule);
 
 #ifdef __cplusplus

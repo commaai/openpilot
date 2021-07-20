@@ -468,6 +468,17 @@ def make_ocp_dims_consistent(acados_ocp):
     else:
         raise Exception("Wrong value for sim_method_num_stages. Should be either int or array of ints of shape (N,).")
 
+    # jac_reuse
+    if isinstance(opts.sim_method_jac_reuse, np.ndarray) and opts.sim_method_jac_reuse.size == 1:
+        opts.sim_method_jac_reuse = opts.sim_method_jac_reuse.item()
+
+    if isinstance(opts.sim_method_jac_reuse, (int, float)) and opts.sim_method_jac_reuse % 1 == 0:
+        opts.sim_method_jac_reuse = opts.sim_method_jac_reuse * np.ones((dims.N,), dtype=np.int64)
+    elif isinstance(opts.sim_method_jac_reuse, np.ndarray) and opts.sim_method_jac_reuse.size == dims.N \
+           and np.all(np.equal(np.mod(opts.sim_method_jac_reuse, 1), 0)):
+        opts.sim_method_jac_reuse = np.reshape(opts.sim_method_jac_reuse, (dims.N,)).astype(np.int64)
+    else:
+        raise Exception("Wrong value for sim_method_jac_reuse. Should be either int or array of ints of shape (N,).")
 
 
 
@@ -560,6 +571,8 @@ def ocp_generate_external_functions(acados_ocp, model):
         generate_c_code_explicit_ode(model, opts)
     elif acados_ocp.solver_options.integrator_type == 'IRK':
         # implicit model -- generate C code
+        generate_c_code_implicit_ode(model, opts)
+    elif acados_ocp.solver_options.integrator_type == 'LIFTED_IRK':
         generate_c_code_implicit_ode(model, opts)
     elif acados_ocp.solver_options.integrator_type == 'GNSF':
         generate_c_code_gnsf(model, opts)

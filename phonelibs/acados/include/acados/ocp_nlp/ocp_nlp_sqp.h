@@ -104,6 +104,9 @@ typedef struct
     double time_reg;
     double time_tot;
     double time_glob;
+    double time_sim;
+    double time_sim_la;
+    double time_sim_ad;
 
     // statistics
     double *stat;

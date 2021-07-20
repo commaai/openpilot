@@ -44,8 +44,8 @@ int {{ model.name }}_phi_constraint(const real_t** arg, real_t** res, int* iw, r
 int {{ model.name }}_phi_constraint_work(int *, int *, int *, int *);
 const int *{{ model.name }}_phi_constraint_sparsity_in(int);
 const int *{{ model.name }}_phi_constraint_sparsity_out(int);
-int {{ model.name }}_phi_constraint_n_in();
-int {{ model.name }}_phi_constraint_n_out();
+int {{ model.name }}_phi_constraint_n_in(void);
+int {{ model.name }}_phi_constraint_n_out(void);
 {% endif %}
 
 #ifdef __cplusplus
