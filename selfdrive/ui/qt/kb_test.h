@@ -12,14 +12,24 @@
 #include "selfdrive/ui/qt/widgets/scrollview.h"
 
 
+class QTouchButton : public QPushButton {
+  Q_OBJECT
+
+public:
+  QTouchButton(const QString &text, QWidget *parent = nullptr);
+
+protected:
+  void focusOutEvent(QFocusEvent *e) override;
+};
+
 class MainWindow : public QWidget {
   Q_OBJECT
 
 public:
   explicit MainWindow(QWidget *parent = 0);
 
-//private:
-//  bool eventFilter(QObject *obj, QEvent *event) override;
+private:
+  bool eventFilter(QObject *obj, QEvent *event) override;
 //  void openSettings();
 //  void closeSettings();
 
