@@ -12,6 +12,13 @@
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/widgets/scrollview.h"
 
+bool compare_by_strength(const Network &a, const Network &b) {
+  if (a.connected == ConnectedType::CONNECTED) return true;
+  if (b.connected == ConnectedType::CONNECTED) return false;
+  if (a.connected == ConnectedType::CONNECTING) return true;
+  if (b.connected == ConnectedType::CONNECTING) return false;
+  return a.strength > b.strength;
+}
 
 // Networking functions
 
@@ -226,16 +233,11 @@ void WifiUI::updateSsidLabel(QPushButton *ssidLabel, const Network &network) {
   ssidLabel->setEnabled(network.connected != ConnectedType::CONNECTED &&
                          network.connected != ConnectedType::CONNECTING &&
                          network.security_type != SecurityType::UNSUPPORTED);
-  bool disconnected = network.connected == ConnectedType::DISCONNECTED;
-  QVariant prevDisconnected = ssidLabel->property("disconnected");
-  if (prevDisconnected.toBool() != disconnected || !prevDisconnected.isValid()) {
-    ssidLabel->setStyleSheet(QString("font-weight: %1;").arg(disconnected ? 300 : 500));
-  }
-  ssidLabel->setProperty("disconnected", network.connected == ConnectedType::DISCONNECTED);
+  int weight = network.connected == ConnectedType::DISCONNECTED ? 300 : 500;
+  ssidLabel->setStyleSheet(QString("font-weight: %1;").arg(weight));
 }
 
 void WifiUI::updateStatusIcon(QLabel *statusIcon, const Network &network) {
-  // TODO do we want to always update image, or only when we need to?
   if (network.connected == ConnectedType::CONNECTED) {
     statusIcon->setPixmap(checkmark);
   } else if (network.security_type == SecurityType::WPA) {
@@ -312,54 +314,41 @@ void WifiUI::updateNetworkWidget(QHBoxLayout *hlayout, const Network &network, b
 }
 
 void WifiUI::refresh() {
+  if (wifi->seenNetworks.size() == 0) {
+    QLabel *scanning = new QLabel("Scanning for networks...");
+    scanning->setStyleSheet("font-size: 65px;");
+    main_layout->addWidget(scanning, 0, Qt::AlignCenter);
+    return;
+  }
+  QList<Network> sortedNetworks = wifi->seenNetworks.values();
+  std::sort(sortedNetworks.begin(), sortedNetworks.end(), compare_by_strength);
 
-  bool isTetheringEnabled = wifi->isTetheringEnabled();
-  if (idx > 2) wifi->seenNetworks.remove("SHANE-EPC");
-  idx++;
-  // Update or delete all drawn networks by checking seenNetworks
   int i = 0;
   while (i < main_layout->count()) {
     const QString &networkSsid = main_layout->itemAt(i)->layout()->property("ssid").toString();
-    if (!networkSsid.isEmpty()) {
-      if (wifi->seenNetworks.contains(networkSsid)) {
-        qDebug() << "UPDATING:" << networkSsid;
-        QHBoxLayout *hlayout = qobject_cast<QHBoxLayout*>(main_layout->itemAt(i)->layout());
-        updateNetworkWidget(hlayout, wifi->seenNetworks.value(networkSsid), isTetheringEnabled);
-      } else {
-        qDebug() << "DELETING:" << networkSsid;
-        // TODO: is this the best way to remove the layout?
-        QLayoutItem *item = main_layout->takeAt(i--);  // use i, then decrement for next loop
-        clearLayout(item->layout());
-        delete item;
-      }
+    if (!wifi->seenNetworks.contains(networkSsid)) {
+      // TODO: is this the best way to remove the layout?
+      QLayoutItem *item = main_layout->takeAt(i--);
+      clearLayout(item->layout());
+      delete item;
     }
     i++;
   }
 
-  if (wifi->seenNetworks.size() == 0) {
-//    QLabel *scanning = new QLabel("Scanning for networks...");
-//    scanning->setStyleSheet("font-size: 65px;");
-//    main_layout->addWidget(scanning, 0, Qt::AlignCenter);
-    return;
-  }
-
-  QVector<QString> drawnSsids;  // ssids already added to main_layout
+  QVector<QString> drawnSsids;
   for (int i = 0; i < main_layout->count(); i++) {
     drawnSsids.push_back(main_layout->itemAt(i)->layout()->property("ssid").toString());
   }
-
-  // add networks
   i = 0;
-  for (Network &network : wifi->seenNetworks) {
+  const bool isTetheringEnabled = wifi->isTetheringEnabled();
+  for (const Network &network : sortedNetworks) {
     if (!drawnSsids.contains(network.ssid)) {
       QHBoxLayout *hlayout = buildNetworkWidget(network, isTetheringEnabled);
-      main_layout->addLayout(hlayout, 1);
+      main_layout->insertLayout(i, hlayout, 1);
       qDebug() << network.ssid << "is not in drawn networks, add it!";
-    }
-
-    // Don't add the last horizontal line
-    if (i+1 < wifi->seenNetworks.size()) {
-//      main_layout->addWidget(horizontal_line(), 0);
+    } else {
+      QHBoxLayout *hlayout = qobject_cast<QHBoxLayout*>(main_layout->itemAt(i)->layout());
+      updateNetworkWidget(hlayout, network, isTetheringEnabled);
     }
     i++;
   }
