@@ -70,7 +70,12 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QFrame(parent) {
 }
 
 void Networking::refresh() {
+  QElapsedTimer timer;
+  timer.start();
   wifiWidget->refresh();
+  double elapsed = timer.nsecsElapsed() / 1e6;
+
+  qDebug() << "Took" << elapsed << "ms to draw" << wifi->seenNetworks.size() << "networks -" << elapsed / wifi->seenNetworks.size() << "ms/network";
   an->refresh();
 }
 
@@ -197,7 +202,43 @@ WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi)
       padding-bottom: 16px;
       padding-top: 16px;
     }
+    #connecting {
+      font-size: 32px;
+      font-weight: 600;
+      color: white;
+      border-radius: 0;
+      padding: 27px;
+      padding-left: 43px;
+      padding-right: 43px;
+      background-color: black;
+    }
+    #ssidLabel {
+      font-size: 55px;
+      text-align: left;
+      border: none;
+      padding-top: 50px;
+      padding-bottom: 50px;
+    }
   )");
+}
+
+void WifiUI::updateSsidLabel(QPushButton *ssid_label, const Network &network) {
+  ssid_label->setEnabled(network.connected != ConnectedType::CONNECTED &&
+                         network.connected != ConnectedType::CONNECTING &&
+                         network.security_type != SecurityType::UNSUPPORTED);
+  const int weight = network.connected == ConnectedType::DISCONNECTED ? 300 : 500;
+  ssid_label->setStyleSheet(QString("font-weight: %1;").arg(weight));
+}
+
+void WifiUI::updateStatusIcon(QLabel *statusIcon, const Network &network) {
+  // TODO do we want to always update image, or only when we need to?
+  if (network.connected == ConnectedType::CONNECTED) {
+    statusIcon->setPixmap(checkmark);
+  } else if (network.security_type == SecurityType::WPA) {
+    statusIcon->setPixmap(lock);
+  } else {
+    statusIcon->clear();
+  }
 }
 
 QHBoxLayout* WifiUI::buildNetworkWidget(const Network &network) {
@@ -207,34 +248,15 @@ QHBoxLayout* WifiUI::buildNetworkWidget(const Network &network) {
   hlayout->setSpacing(50);
 
   // Clickable SSID label
-  QPushButton *ssid_label = new QPushButton(network.ssid);
-  ssid_label->setEnabled(network.connected != ConnectedType::CONNECTED &&
-                         network.connected != ConnectedType::CONNECTING &&
-                         network.security_type != SecurityType::UNSUPPORTED);
-  int weight = network.connected == ConnectedType::DISCONNECTED ? 300 : 500;
-  ssid_label->setStyleSheet(QString(R"(
-    font-size: 55px;
-    font-weight: %1;
-    text-align: left;
-    border: none;
-    padding-top: 50px;
-    padding-bottom: 50px;
-  )").arg(weight));
+  QPushButton *ssid_label = new QPushButton(network.ssid);  // TODO: name styling
+  ssid_label->setObjectName("ssidLabel");
+  updateSsidLabel(ssid_label, network);
   QObject::connect(ssid_label, &QPushButton::clicked, this, [=]() { emit connectToNetwork(network); });
   hlayout->addWidget(ssid_label, network.connected == ConnectedType::CONNECTING ? 0 : 1);
 
   // Connecting label
   QPushButton *connecting = new QPushButton("CONNECTING...");
-  connecting->setStyleSheet(R"(
-    font-size: 32px;
-    font-weight: 600;
-    color: white;
-    border-radius: 0;
-    padding: 27px;
-    padding-left: 43px;
-    padding-right: 43px;
-    background-color: black;
-  )");
+  connecting->setObjectName("connecting");
   connecting->setVisible(network.connected == ConnectedType::CONNECTING);
   hlayout->addWidget(connecting, 2, Qt::AlignLeft);
 
@@ -251,12 +273,7 @@ QHBoxLayout* WifiUI::buildNetworkWidget(const Network &network) {
 
   // Status icon
   QLabel *statusIcon = new QLabel();
-  statusIcon->setFixedWidth(lock.width());
-  if (network.connected == ConnectedType::CONNECTED) {
-    statusIcon->setPixmap(checkmark);
-  } else if (network.security_type == SecurityType::WPA) {
-    statusIcon->setPixmap(lock);
-  }
+  updateStatusIcon(statusIcon, network);
   hlayout->addWidget(statusIcon, 0, Qt::AlignRight);
 
   // Strength indicator
@@ -271,19 +288,7 @@ void WifiUI::updateNetworkWidget(QHBoxLayout *hlayout, const Network &network) {
 
   // Clickable SSID label
   QPushButton *ssid_label = qobject_cast<QPushButton*>(hlayout->itemAt(0)->widget());
-  ssid_label->setEnabled(network.connected != ConnectedType::CONNECTED &&
-                         network.connected != ConnectedType::CONNECTING &&
-                         network.security_type != SecurityType::UNSUPPORTED);
-  int weight = network.connected == ConnectedType::DISCONNECTED ? 300 : 500;
-  // TODO set this globally and just change weight?
-  ssid_label->setStyleSheet(QString(R"(
-    font-size: 55px;
-    font-weight: %1;
-    text-align: left;
-    border: none;
-    padding-top: 50px;
-    padding-bottom: 50px;
-  )").arg(weight));
+  updateSsidLabel(ssid_label, network);
 
   // Connecting label
   QPushButton *connecting = qobject_cast<QPushButton*>(hlayout->itemAt(1)->widget());
@@ -294,15 +299,8 @@ void WifiUI::updateNetworkWidget(QHBoxLayout *hlayout, const Network &network) {
   forgetBtn->setVisible(wifi->isKnownConnection(network.ssid) && !wifi->isTetheringEnabled());
 
   // Status icon
-  // TODO do we want to always update image, or only when we need to?
   QLabel *statusIcon = qobject_cast<QLabel*>(hlayout->itemAt(3)->widget());
-  if (network.connected == ConnectedType::CONNECTED) {
-    statusIcon->setPixmap(checkmark);
-  } else if (network.security_type == SecurityType::WPA) {
-    statusIcon->setPixmap(lock);
-  } else {
-    statusIcon->clear();
-  }
+  updateStatusIcon(statusIcon, network);
 
   // Strength indicator
   QLabel *strength = qobject_cast<QLabel*>(hlayout->itemAt(4)->widget());
@@ -310,12 +308,10 @@ void WifiUI::updateNetworkWidget(QHBoxLayout *hlayout, const Network &network) {
 }
 
 void WifiUI::refresh() {
-  // TODO: don't rebuild this every time
-//  clearLayout(main_layout);
 
-  // Update or delete all drawn networks by checking seenNetworks
-//  if (idx > 2) wifi->seenNetworks.remove("SHANE-EPC");
+  if (idx > 2) wifi->seenNetworks.remove("SHANE-EPC");
   idx++;
+  // Update or delete all drawn networks by checking seenNetworks
   int i = 0;
   while (i < main_layout->count()) {
     const QString &networkSsid = main_layout->itemAt(i)->layout()->objectName();
