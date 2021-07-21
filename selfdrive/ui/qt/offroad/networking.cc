@@ -188,6 +188,7 @@ WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi)
   main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(0, 0, 0, 0);
   main_layout->setSpacing(0);
+  main_layout->addStretch(1);  // this is kept at bottom
 
   // load imgs
   for (const auto &s : {"low", "medium", "high", "full"}) {
@@ -311,42 +312,48 @@ QHBoxLayout* WifiUI::buildNetworkWidget(QHBoxLayout *hlayout, const Network &net
 
 QVector<QString> WifiUI::drawnSsids() {
   QVector<QString> ssids;
-  for (int i = 0; i < main_layout->count(); i++) {
-    ssids.push_back(main_layout->itemAt(i)->layout()->property("ssid").toString());
+  for (int i = 0; i < main_layout->count() - 1; i++) {
+//    if (main_layout->itemAt(i)->layout() != nullptr) {  // for stretch
+      ssids.push_back(main_layout->itemAt(i)->layout()->property("ssid").toString());
+//    }
   }
   return ssids;
 }
 
 void WifiUI::refresh() {
-  if (wifi->seenNetworks.size() == 0) {
-    QLabel *scanning = new QLabel("Scanning for networks...");
-    scanning->setStyleSheet("font-size: 65px;");
-    main_layout->addWidget(scanning, 0, Qt::AlignCenter);
-    return;
-  }
+//  if (wifi->seenNetworks.size() == 0) {
+//    QLabel *scanning = new QLabel("Scanning for networks...");
+//    scanning->setStyleSheet("font-size: 65px;");
+//    main_layout->addWidget(scanning, 0, Qt::AlignCenter);
+//    return;
+//  }
   QList<Network> sortedNetworks = wifi->seenNetworks.values();
   std::sort(sortedNetworks.begin(), sortedNetworks.end(), compare_by_strength);
 
   int i = 0;
   const bool isTetheringEnabled = wifi->isTetheringEnabled();
   for (const Network &network : sortedNetworks) {
-    if (i < main_layout->count()) {  // update widget
-      QHBoxLayout *hlayout = qobject_cast<QHBoxLayout*>(main_layout->itemAt(i)->layout());
+    QHBoxLayout *hlayout;
+    if (drawnSsids().contains(network.ssid)) {  // update it
+      int widgetIdx = drawnSsids().indexOf(network.ssid);
+      hlayout = qobject_cast<QHBoxLayout*>(main_layout->takeAt(widgetIdx)->layout());
       buildNetworkWidget(hlayout, network, isTetheringEnabled, false);
-    } else {  // add new widget
-      QHBoxLayout *hlayout = new QHBoxLayout;
-      hlayout = buildNetworkWidget(hlayout, network, isTetheringEnabled, true);
-      main_layout->addLayout(hlayout, 1);
+      qDebug() << "Updating:" << network.ssid << "at index" << widgetIdx << "to index" << i;
+    } else {  // add it
+      qDebug() << "Adding:" << network.ssid;
+      hlayout = buildNetworkWidget(new QHBoxLayout, network, isTetheringEnabled, true);
     }
+    main_layout->insertLayout(i, hlayout, 1);
     i++;
   }
 
-  while (i < main_layout->count()) {  // delete excess widgets
-    QLayoutItem *item = main_layout->takeAt(i++);  // TODO: is this the best way to remove the layout?
+  assert(main_layout->count() - 1 >= sortedNetworks.size());
+  while (i < main_layout->count() - 1) {  // delete excess widgets
+    QLayoutItem *item = main_layout->takeAt(i);  // TODO: is this the best way to remove the layout?
     clearLayout(item->layout());
     delete item;
   }
+  assert(main_layout->count() - 1 == sortedNetworks.size());
 
   // TODO: add stretch and horizontal lines back
-//  main_layout->addStretch(1);
 }
