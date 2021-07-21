@@ -21,14 +21,6 @@ T *getWidget(QHBoxLayout *hlayout, int index, bool init) {
   return widget;
 }
 
-bool compare_by_strength(const Network &a, const Network &b) {
-  if (a.connected == ConnectedType::CONNECTED) return true;
-  if (b.connected == ConnectedType::CONNECTED) return false;
-  if (a.connected == ConnectedType::CONNECTING) return true;
-  if (b.connected == ConnectedType::CONNECTING) return false;
-  return a.strength > b.strength;
-}
-
 // Networking functions
 
 Networking::Networking(QWidget* parent, bool show_advanced) : QFrame(parent) {
@@ -91,7 +83,7 @@ void Networking::refresh() {
   wifiWidget->refresh();
   double elapsed = timer.nsecsElapsed() / 1e6;
 
-  qDebug() << "Took" << elapsed << "ms to draw" << wifi->seenNetworks.size() << "networks -" << elapsed / wifi->seenNetworks.size() << "ms/network";
+  qDebug() << "Took" << elapsed << "ms to draw" << wifi->seen_networks.size() << "networks -" << elapsed / wifi->seen_networks.size() << "ms/network";
   an->refresh();
 }
 
@@ -109,11 +101,13 @@ void Networking::connectToNetwork(const Network &n) {
 }
 
 void Networking::wrongPassword(const QString &ssid) {
-  if (wifi->seenNetworks.contains(ssid)) {
-    const Network &n = wifi->seenNetworks.value(ssid);
-    QString pass = InputDialog::getText("Wrong password", this, "for \"" + n.ssid +"\"", true, 8);
-    if (!pass.isEmpty()) {
-      wifi->connect(n, pass);
+  for (Network n : wifi->seen_networks) {
+    if (n.ssid == ssid) {
+      QString pass = InputDialog::getText("Wrong password", this, "for \"" + n.ssid +"\"", true, 8);
+      if (!pass.isEmpty()) {
+        wifi->connect(n, pass);
+      }
+      return;
     }
   }
 }
@@ -321,18 +315,16 @@ QVector<QString> WifiUI::drawnSsids() {
 }
 
 void WifiUI::refresh() {
-//  if (wifi->seenNetworks.size() == 0) {
+//  if (wifi->seen_networks.size() == 0) {
 //    QLabel *scanning = new QLabel("Scanning for networks...");
 //    scanning->setStyleSheet("font-size: 65px;");
 //    main_layout->addWidget(scanning, 0, Qt::AlignCenter);
 //    return;
 //  }
-  QList<Network> sortedNetworks = wifi->seenNetworks.values();
-  std::sort(sortedNetworks.begin(), sortedNetworks.end(), compare_by_strength);
 
   int i = 0;
   const bool isTetheringEnabled = wifi->isTetheringEnabled();
-  for (const Network &network : sortedNetworks) {
+  for (const Network &network : wifi->seen_networks) {
     QHBoxLayout *hlayout;
     if (drawnSsids().contains(network.ssid)) {  // update it
       int widgetIdx = drawnSsids().indexOf(network.ssid);
@@ -351,13 +343,13 @@ void WifiUI::refresh() {
     i++;
   }
 
-  assert(main_layout->count() - 1 >= sortedNetworks.size());
+  assert(main_layout->count() - 1 >= wifi->seen_networks.size());
   while (i < main_layout->count() - 1) {  // delete excess widgets
     QLayoutItem *item = main_layout->takeAt(i);  // TODO: is this the best way to remove the layout?
     clearLayout(item->layout());
     delete item;
   }
-  assert(main_layout->count() - 1 == sortedNetworks.size());
+  assert(main_layout->count() - 1 == wifi->seen_networks.size());
 
   // TODO: add stretch and horizontal lines back
 }

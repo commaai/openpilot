@@ -34,7 +34,7 @@ public:
   explicit WifiManager(QWidget* parent);
 
   void requestScan();
-  QMap<QString, Network> seenNetworks;
+  QVector<Network> seen_networks;
   QMap<QDBusObjectPath, QString> knownConnections;
   QString ipv4_address;
 
@@ -56,6 +56,7 @@ public:
   QString getTetheringPassword();
 
 private:
+  QVector<QByteArray> seen_ssids;
   QString adapter;  // Path to network manager wifi-device
   QDBusConnection bus = QDBusConnection::systemBus();
   unsigned int raw_adapter_state;  // Connection status https://developer.gnome.org/NetworkManager/1.26/nm-dbus-types.html#NMDeviceState
