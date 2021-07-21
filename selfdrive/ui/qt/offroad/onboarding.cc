@@ -44,7 +44,7 @@ void TrainingGuide::paintEvent(QPaintEvent *event) {
   if (currentIndex > 0 && currentIndex < (boundingRect.size() - 2)) {
     const int h = 20;
     const int w = (currentIndex / (float)(boundingRect.size() - 2)) * width();
-    painter.fillRect(QRect(0, height() - h, w, progress_height), QColor("#465BEA"));
+    painter.fillRect(QRect(0, height() - h, w, h), QColor("#465BEA"));
   }
 }
 
