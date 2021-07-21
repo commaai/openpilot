@@ -73,17 +73,6 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                    "../assets/offroad/icon_road.png",
                                    this));
 
-  if (Hardware::TICI()) {
-    toggles.append(new ParamControl("EnableWideCamera",
-                                    "Enable use of Wide Angle Camera",
-                                    "Use wide angle camera for driving and ui.",
-                                    "../assets/offroad/icon_openpilot.png",
-                                    this));
-    QObject::connect(toggles.back(), &ToggleControl::toggleFlipped, [=](bool state) {
-      Params().remove("CalibrationParams");
-    });
-  }
-
 #ifdef ENABLE_MAPS
   toggles.append(new ParamControl("NavSettingTime24h",
                                   "Show ETA in 24h format",

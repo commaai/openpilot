@@ -165,7 +165,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"CompletedTrainingVersion", PERSISTENT},
     {"DisablePowerDown", PERSISTENT},
     {"DisableUpdates", PERSISTENT},
-    {"EnableWideCamera", PERSISTENT},
+    {"EnableWideCamera", CLEAR_ON_MANAGER_START},
     {"DoUninstall", CLEAR_ON_MANAGER_START},
     {"DongleId", PERSISTENT},
     {"GitDiff", PERSISTENT},
