@@ -23,7 +23,7 @@ private:
   QPixmap checkmark;
   QVector<QPixmap> strengths;
 
-  QVBoxLayout* updateNetworkWidget(QVBoxLayout *vlayout, const Network &network, bool isTetheringEnabled, bool setup);
+  QVBoxLayout* updateNetworkWidget(QVBoxLayout *vlayout, QHBoxLayout *hlayout, const Network &network, bool isTetheringEnabled, bool setup);
   QVector<QString> drawnSsids();
 
 signals:
