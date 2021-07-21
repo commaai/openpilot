@@ -100,7 +100,7 @@ def gen_lat_mpc_solver():
   ocp.model = gen_lat_model()
 
   N = 16
-  Tf = T_IDXS[N]
+  Tf = np.array(T_IDXS)[N]
 
   # set dimensions
   ocp.dims.N = N
@@ -147,7 +147,7 @@ def gen_lat_mpc_solver():
 
   # set prediction horizon
   ocp.solver_options.tf = Tf
-  ocp.solver_options.shooting_nodes = T_IDXS[:N+1]
+  ocp.solver_options.shooting_nodes = np.array(T_IDXS)[:N+1]
 
   ocp.code_export_directory = os.path.join(LAT_MPC_DIR, "c_generated_code")
   return ocp

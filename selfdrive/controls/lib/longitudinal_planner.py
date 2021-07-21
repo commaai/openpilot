@@ -12,7 +12,7 @@ from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.fcw import FCWChecker
 from selfdrive.controls.lib.longcontrol import LongCtrlState
 from selfdrive.controls.lib.lead_mpc import LeadMpc
-from selfdrive.controls.lib.long_mpc import LongitudinalMpc
+from selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import LongitudinalMpc
 from selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, CONTROL_N
 from selfdrive.swaglog import cloudlog
 
