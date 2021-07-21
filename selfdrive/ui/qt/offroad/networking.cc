@@ -13,12 +13,11 @@
 #include "selfdrive/ui/qt/widgets/scrollview.h"
 
 template <typename T>
-T *getWidget(QHBoxLayout *hlayout, int index, bool init) {
-  if (init) {
+T *getWidget(QHBoxLayout *hlayout, int index, bool setup) {
+  if (setup) {
     return new T();
   }
-  T *widget = qobject_cast<T*>(hlayout->itemAt(index)->widget());
-  return widget;
+  return qobject_cast<T*>(hlayout->itemAt(index)->widget());
 }
 
 // Networking functions
@@ -234,55 +233,49 @@ WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi)
   )");
 }
 
-QHBoxLayout* WifiUI::buildNetworkWidget(QHBoxLayout *hlayout, const Network &network, bool isTetheringEnabled, bool init) {
-  QPushButton *ssidLabel = getWidget<QPushButton>(hlayout, 0, init);
-  QPushButton *connecting = getWidget<QPushButton>(hlayout, 1, init);
-  QPushButton *forgetBtn = getWidget<QPushButton>(hlayout, 2, init);
-  QLabel *statusIcon = getWidget<QLabel>(hlayout, 3, init);
-  QLabel *strength = getWidget<QLabel>(hlayout, 4, init);
+QHBoxLayout* WifiUI::buildNetworkWidget(QHBoxLayout *hlayout, const Network &network, bool isTetheringEnabled, bool setup) {
+  // Get existing or create new widgets
+  QPushButton *ssidLabel = getWidget<QPushButton>(hlayout, 0, setup);
+  QPushButton *connecting = getWidget<QPushButton>(hlayout, 1, setup);
+  QPushButton *forgetBtn = getWidget<QPushButton>(hlayout, 2, setup);
+  QLabel *statusIcon = getWidget<QLabel>(hlayout, 3, setup);
+  QLabel *strength = getWidget<QLabel>(hlayout, 4, setup);
 
-  if (init) {
+  if (setup) {
     hlayout->setContentsMargins(44, 0, 73, 0);
     hlayout->setProperty("ssid", network.ssid);
     hlayout->setSpacing(50);
 
+    ssidLabel->setText(network.ssid);
     ssidLabel->setObjectName("ssidLabel");
+    QObject::connect(ssidLabel, &QPushButton::clicked, this, [=]() { emit connectToNetwork(network); });
 
     connecting->setText("CONNECTING...");
     connecting->setObjectName("connecting");
 
     forgetBtn->setText("FORGET");
     forgetBtn->setObjectName("forgetBtn");
+    QObject::connect(forgetBtn, &QPushButton::clicked, [=]() {
+      if (ConfirmationDialog::confirm("Forget WiFi Network \"" + QString::fromUtf8(network.ssid) + "\"?", this)) {
+        wifi->forgetConnection(network.ssid);
+      }
+    });
 
     statusIcon->setFixedWidth(lock.width());
   }
 
-  // Clickable SSID label
   hlayout->setStretch(0, network.connected == ConnectedType::CONNECTING ? 0 : 1);
-  ssidLabel->setText(network.ssid);
   ssidLabel->setEnabled(network.connected != ConnectedType::CONNECTED &&
-                         network.connected != ConnectedType::CONNECTING &&
-                         network.security_type != SecurityType::UNSUPPORTED);
-  ssidLabel->disconnect();
-  QObject::connect(ssidLabel, &QPushButton::clicked, this, [=]() { emit connectToNetwork(network); });
+                        network.connected != ConnectedType::CONNECTING &&
+                        network.security_type != SecurityType::UNSUPPORTED);
   int weight = network.connected == ConnectedType::DISCONNECTED ? 300 : 500;
-  if (!ssidLabel->styleSheet().contains(QString("font-weight: %1;").arg(weight)) ||
-      ssidLabel->styleSheet().isEmpty())
+  if (!ssidLabel->styleSheet().contains(QString("font-weight: %1;").arg(weight))) {
     ssidLabel->setStyleSheet(QString("font-weight: %1;").arg(weight));
+  }
 
-  // Connecting label
   connecting->setVisible(network.connected == ConnectedType::CONNECTING);
-
-  // Forget button
-  forgetBtn->disconnect();
-  QObject::connect(forgetBtn, &QPushButton::clicked, [=]() {
-    if (ConfirmationDialog::confirm("Forget WiFi Network \"" + QString::fromUtf8(network.ssid) + "\"?", this)) {
-      wifi->forgetConnection(network.ssid);
-    }
-  });
   forgetBtn->setVisible(wifi->isKnownConnection(network.ssid) && !wifi->isTetheringEnabled());
 
-  // Status icon
   if (network.connected == ConnectedType::CONNECTED) {
     statusIcon->setPixmap(checkmark);
   } else if (network.security_type == SecurityType::WPA) {
@@ -291,10 +284,9 @@ QHBoxLayout* WifiUI::buildNetworkWidget(QHBoxLayout *hlayout, const Network &net
     statusIcon->clear();
   }
 
-  // Strength indicator
   strength->setPixmap(strengths[std::clamp((int)network.strength/26, 0, 3)]);
 
-  if (init) {
+  if (setup) {
     hlayout->addWidget(ssidLabel, network.connected == ConnectedType::CONNECTING ? 0 : 1);
     hlayout->addWidget(connecting, 2, Qt::AlignLeft);
     hlayout->addWidget(forgetBtn, 0, Qt::AlignRight);
@@ -325,31 +317,26 @@ void WifiUI::refresh() {
   int i = 0;
   const bool isTetheringEnabled = wifi->isTetheringEnabled();
   for (const Network &network : wifi->seen_networks) {
-    QHBoxLayout *hlayout;
-    if (drawnSsids().contains(network.ssid)) {  // update it
+    if (drawnSsids().contains(network.ssid)) {  // update network widget
       int widgetIdx = drawnSsids().indexOf(network.ssid);
-      hlayout = qobject_cast<QHBoxLayout*>(main_layout->itemAt(widgetIdx)->layout());
+      QHBoxLayout *hlayout = qobject_cast<QHBoxLayout*>(main_layout->itemAt(widgetIdx)->layout());
       buildNetworkWidget(hlayout, network, isTetheringEnabled, false);
       if (widgetIdx != i) {
         main_layout->removeItem(hlayout);
         main_layout->insertLayout(i, hlayout, 1);
       }
-      qDebug() << "Updating:" << network.ssid << "at index" << widgetIdx << "to index" << i;
-    } else {  // add it
-      qDebug() << "Adding:" << network.ssid;
-      hlayout = buildNetworkWidget(new QHBoxLayout, network, isTetheringEnabled, true);
+    } else {  // add network widget
+      QHBoxLayout *hlayout = buildNetworkWidget(new QHBoxLayout, network, isTetheringEnabled, true);
       main_layout->insertLayout(i, hlayout, 1);
     }
     i++;
   }
 
-  assert(main_layout->count() - 1 >= wifi->seen_networks.size());
   while (i < main_layout->count() - 1) {  // delete excess widgets
     QLayoutItem *item = main_layout->takeAt(i);  // TODO: is this the best way to remove the layout?
     clearLayout(item->layout());
     delete item;
   }
-  assert(main_layout->count() - 1 == wifi->seen_networks.size());
 
   // TODO: add stretch and horizontal lines back
 }
