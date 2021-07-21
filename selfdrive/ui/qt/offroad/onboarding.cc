@@ -40,6 +40,13 @@ void TrainingGuide::paintEvent(QPaintEvent *event) {
   QRect rect(image.rect());
   rect.moveCenter(bg.center());
   painter.drawImage(rect.topLeft(), image);
+
+  // progress bar
+  if (currentIndex > 0 && currentIndex < (boundingRect.size() - 2)) {
+    const int progress_height = 35;
+    const int w = (currentIndex / (float)(boundingRect.size() - 2)) * width();
+    painter.fillRect(QRect(0, height() - progress_height, w, progress_height), QColor("#465BEA"));
+  }
 }
 
 void TermsPage::showEvent(QShowEvent *event) {
