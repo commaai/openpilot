@@ -336,14 +336,18 @@ void WifiUI::refresh() {
     QHBoxLayout *hlayout;
     if (drawnSsids().contains(network.ssid)) {  // update it
       int widgetIdx = drawnSsids().indexOf(network.ssid);
-      hlayout = qobject_cast<QHBoxLayout*>(main_layout->takeAt(widgetIdx)->layout());
+      hlayout = qobject_cast<QHBoxLayout*>(main_layout->itemAt(widgetIdx)->layout());
       buildNetworkWidget(hlayout, network, isTetheringEnabled, false);
+      if (widgetIdx != i) {
+        main_layout->removeItem(hlayout);
+        main_layout->insertLayout(i, hlayout, 1);
+      }
       qDebug() << "Updating:" << network.ssid << "at index" << widgetIdx << "to index" << i;
     } else {  // add it
       qDebug() << "Adding:" << network.ssid;
       hlayout = buildNetworkWidget(new QHBoxLayout, network, isTetheringEnabled, true);
+      main_layout->insertLayout(i, hlayout, 1);
     }
-    main_layout->insertLayout(i, hlayout, 1);
     i++;
   }
 
