@@ -230,6 +230,7 @@ WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi)
     }
     #ssidLabel {
       font-size: 55px;
+      font-weight: 300;
       text-align: left;
       border: none;
       padding-top: 50px;
@@ -270,7 +271,9 @@ QHBoxLayout* WifiUI::buildNetworkWidget(QHBoxLayout *hlayout, const Network &net
   ssidLabel->disconnect();
   QObject::connect(ssidLabel, &QPushButton::clicked, this, [=]() { emit connectToNetwork(network); });
   int weight = network.connected == ConnectedType::DISCONNECTED ? 300 : 500;
-  ssidLabel->setStyleSheet(QString("font-weight: %1;").arg(weight));
+  if (!ssidLabel->styleSheet().contains(QString("font-weight: %1;").arg(weight)) ||
+      ssidLabel->styleSheet().isEmpty())
+    ssidLabel->setStyleSheet(QString("font-weight: %1;").arg(weight));
 
   // Connecting label
   connecting->setVisible(network.connected == ConnectedType::CONNECTING);
