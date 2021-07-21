@@ -26,7 +26,7 @@ JSON_FILE = "acados_ocp_long.json"
 
 def gen_long_model():
   model = AcadosModel()
-  model.name = 'lat'
+  model.name = 'long'
 
   # set up states & controls
   x_ego = SX.sym('x_ego')
@@ -55,7 +55,7 @@ def gen_long_mpc_solver():
   ocp = AcadosOcp()
   ocp.model = gen_long_model()
 
-  Tf = T_IDXS[N]
+  Tf = np.array(T_IDXS)[N]
 
   # set dimensions
   ocp.dims.N = N
@@ -82,8 +82,8 @@ def gen_long_mpc_solver():
   # set constraints
   ocp.constraints.constr_type = 'BGH'
   ocp.constraints.idxbx = np.array([1,2])
-  ocp.constraints.ubx = np.array([0, -1.2])
-  ocp.constraints.lbx = np.array([100., 1.2])
+  ocp.constraints.lbx = np.array([0, -1.2])
+  ocp.constraints.ubx = np.array([100., 1.2])
   x0 = np.array([0.0, 0.0, 0.0])
   ocp.constraints.x0 = x0
 
@@ -96,7 +96,7 @@ def gen_long_mpc_solver():
 
   # set prediction horizon
   ocp.solver_options.tf = Tf
-  ocp.solver_options.shooting_nodes = T_IDXS[:N+1]
+  ocp.solver_options.shooting_nodes = np.array(T_IDXS)[:N+1]
 
   ocp.code_export_directory = os.path.join(LON_MPC_DIR, "c_generated_code")
   return ocp
@@ -115,6 +115,7 @@ class LongitudinalMpc():
     self.a_solution = [0.0 for i in range(len(T_IDXS))]
     self.j_solution = [0.0 for i in range(len(T_IDXS)-1)]
     self.last_cloudlog_t = 0
+    self.status = True
 
   def set_weights(self):
     W = np.diag([0.0, 1.0, 0.0, 50.0])
