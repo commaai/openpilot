@@ -5,7 +5,10 @@ from typing import Dict
 
 from cereal import car
 from selfdrive.car import dbc_dict
+
 Ecu = car.CarParams.Ecu
+TransmissionType = car.CarParams.TransmissionType
+GearShifter = car.CarState.GearShifter
 
 class CarControllerParams:
   HCA_STEP = 2                   # HCA_01 message frequency 50Hz
@@ -33,9 +36,6 @@ class DBC_FILES:
   mqb = "vw_mqb_2010"  # Used for all cars with MQB-style CAN messaging
 
 DBC = defaultdict(lambda: dbc_dict(DBC_FILES.mqb, None))  # type: Dict[str, Dict[str, str]]
-
-TransmissionType = car.CarParams.TransmissionType
-GearShifter = car.CarState.GearShifter
 
 BUTTON_STATES = {
   "accelCruise": False,
