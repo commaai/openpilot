@@ -282,7 +282,7 @@ void WifiUI::refresh() {
     strength->setPixmap(strengths[std::clamp((int)network.strength/26, 0, 3)]);
     hlayout->addWidget(strength, 0, Qt::AlignRight);
 
-    main_layout->addLayout(hlayout, 1);
+    main_layout->addLayout(hlayout);
 
     // Don't add the last horizontal line
     if (i+1 < wifi->seen_networks.size()) {
@@ -290,5 +290,5 @@ void WifiUI::refresh() {
     }
     i++;
   }
-  main_layout->addStretch(2);
+  main_layout->addStretch(1);
 }
