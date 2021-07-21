@@ -204,24 +204,6 @@ WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi)
       padding-bottom: 16px;
       padding-top: 16px;
     }
-    #connecting {
-      font-size: 32px;
-      font-weight: 600;
-      color: white;
-      border-radius: 0;
-      padding: 27px;
-      padding-left: 43px;
-      padding-right: 43px;
-      background-color: black;
-    }
-    #ssidLabel {
-      font-size: 55px;
-      font-weight: 300;
-      text-align: left;
-      border: none;
-      padding-top: 50px;
-      padding-bottom: 50px;
-    }
   )");
 }
 
@@ -235,12 +217,20 @@ QVBoxLayout* WifiUI::createNetworkWidget(const Network &network) {
 
   // Clickable SSID label
   QPushButton *ssidLabel = new QPushButton(network.ssid);
-  ssidLabel->setObjectName("ssidLabel");
   QObject::connect(ssidLabel, &QPushButton::clicked, this, [=]() { emit connectToNetwork(network); });
 
   // Connecting label
   QPushButton *connecting = new QPushButton("CONNECTING...");
-  connecting->setObjectName("connecting");
+  connecting->setStyleSheet(R"(
+    font-size: 32px;
+    font-weight: 600;
+    color: white;
+    border-radius: 0;
+    padding: 27px;
+    padding-left: 43px;
+    padding-right: 43px;
+    background-color: black;
+  )");
 
   // Forget button
   QPushButton *forgetBtn = new QPushButton("FORGET");
@@ -281,9 +271,14 @@ void WifiUI::updateNetworkWidget(QVBoxLayout *vlayout, const Network &network, b
                         network.connected != ConnectedType::CONNECTING &&
                         network.security_type != SecurityType::UNSUPPORTED);
   int weight = network.connected == ConnectedType::DISCONNECTED ? 300 : 500;
-  if (!ssidLabel->styleSheet().contains(QString("font-weight: %1;").arg(weight))) {
-    ssidLabel->setStyleSheet(QString("font-weight: %1;").arg(weight));
-  }
+  ssidLabel->setStyleSheet(QString(R"(
+    font-size: 55px;
+    font-weight: %1;
+    text-align: left;
+    border: none;
+    padding-top: 50px;
+    padding-bottom: 50px;
+  )").arg(weight));
 
   // Update icons and visibility
   if (network.connected == ConnectedType::CONNECTED) {
