@@ -15,11 +15,8 @@ from acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
 from casadi import SX, vertcat, sin, cos
 
 from selfdrive.controls.lib.drive_helpers import LAT_MPC_N as N
-from selfdrive.modeld.constants import index_function
+from selfdrive.controls.lib.drive_helpers import T_IDXS
 
-
-IDX_N = 33
-T_IDXS = np.array([index_function(idx, max_val=10.0) for idx in range(IDX_N)], dtype=np.float64)
 
 LAT_MPC_DIR = os.path.dirname(os.path.abspath(__file__))
 JSON_FILE = "acados_ocp_lat.json"
@@ -186,6 +183,7 @@ class LateralMpc():
     self.x_sol = self.solver.get_slice(0, N+1, 'x')
     self.u_sol = self.solver.get_slice(0, N, 'u')
     self.cost = self.solver.get_cost()
+
 
 if __name__ == "__main__":
   ocp = gen_lat_mpc_solver()
