@@ -12,14 +12,6 @@
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/widgets/scrollview.h"
 
-template <typename T>
-T *getWidget(QHBoxLayout *hlayout, int index, bool setup) {
-  if (setup) {
-    return new T();
-  }
-  return qobject_cast<T*>(hlayout->itemAt(index)->widget());
-}
-
 // Networking functions
 
 Networking::Networking(QWidget* parent, bool show_advanced) : QFrame(parent) {
@@ -233,37 +225,57 @@ WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi)
   )");
 }
 
-QVBoxLayout* WifiUI::updateNetworkWidget(QVBoxLayout *vlayout, QHBoxLayout *hlayout, const Network &network, bool isTetheringEnabled, bool setup) {
-  // Get existing or create new widgets
-  QPushButton *ssidLabel = getWidget<QPushButton>(hlayout, 0, setup);
-  QPushButton *connecting = getWidget<QPushButton>(hlayout, 1, setup);
-  QPushButton *forgetBtn = getWidget<QPushButton>(hlayout, 2, setup);
-  QLabel *statusIcon = getWidget<QLabel>(hlayout, 3, setup);
-  QLabel *strength = getWidget<QLabel>(hlayout, 4, setup);
+QVBoxLayout* WifiUI::createNetworkWidget(const Network &network) {
+  QVBoxLayout *vlayout = new QVBoxLayout;
+  QHBoxLayout *hlayout = new QHBoxLayout;
 
-  if (setup) {
-    hlayout->setContentsMargins(44, 0, 73, 0);
-    vlayout->setProperty("ssid", network.ssid);
-    hlayout->setSpacing(50);
+  vlayout->setProperty("ssid", network.ssid);
+  hlayout->setContentsMargins(44, 0, 73, 0);
+  hlayout->setSpacing(50);
 
-    ssidLabel->setText(network.ssid);
-    ssidLabel->setObjectName("ssidLabel");
-    QObject::connect(ssidLabel, &QPushButton::clicked, this, [=]() { emit connectToNetwork(network); });
+  // Clickable SSID label
+  QPushButton *ssidLabel = new QPushButton(network.ssid);
+  ssidLabel->setObjectName("ssidLabel");
+  QObject::connect(ssidLabel, &QPushButton::clicked, this, [=]() { emit connectToNetwork(network); });
 
-    connecting->setText("CONNECTING...");
-    connecting->setObjectName("connecting");
+  // Connecting label
+  QPushButton *connecting = new QPushButton("CONNECTING...");
+  connecting->setObjectName("connecting");
 
-    forgetBtn->setText("FORGET");
-    forgetBtn->setObjectName("forgetBtn");
-    QObject::connect(forgetBtn, &QPushButton::clicked, [=]() {
-      if (ConfirmationDialog::confirm("Forget WiFi Network \"" + QString::fromUtf8(network.ssid) + "\"?", this)) {
-        wifi->forgetConnection(network.ssid);
-      }
-    });
+  // Forget button
+  QPushButton *forgetBtn = new QPushButton("FORGET");
+  forgetBtn->setObjectName("forgetBtn");
+  QObject::connect(forgetBtn, &QPushButton::clicked, [=]() {
+    if (ConfirmationDialog::confirm("Forget WiFi Network \"" + QString::fromUtf8(network.ssid) + "\"?", this)) {
+      wifi->forgetConnection(network.ssid);
+    }
+  });
 
-    statusIcon->setFixedWidth(lock.width());
-  }
+  // Status and strength icons
+  QLabel *statusIcon = new QLabel;
+  statusIcon->setFixedWidth(lock.width());
+  QLabel *strength = new QLabel;
 
+  hlayout->addWidget(ssidLabel, network.connected == ConnectedType::CONNECTING ? 0 : 1);
+  hlayout->addWidget(connecting, 2, Qt::AlignLeft);
+  hlayout->addWidget(forgetBtn, 0, Qt::AlignRight);
+  hlayout->addWidget(statusIcon, 0, Qt::AlignRight);
+  hlayout->addWidget(strength, 0, Qt::AlignRight);
+
+  vlayout->addLayout(hlayout);
+  vlayout->addWidget(horizontal_line(), 0);
+  return vlayout;
+}
+
+void WifiUI::updateNetworkWidget(QVBoxLayout *vlayout, const Network &network, bool isTetheringEnabled) {
+  QHBoxLayout *hlayout = qobject_cast<QHBoxLayout*>(vlayout->itemAt(0)->layout());
+  QPushButton *ssidLabel = qobject_cast<QPushButton*>(hlayout->itemAt(0)->widget());
+  QPushButton *connecting = qobject_cast<QPushButton*>(hlayout->itemAt(1)->widget());
+  QPushButton *forgetBtn = qobject_cast<QPushButton*>(hlayout->itemAt(2)->widget());
+  QLabel *statusIcon = qobject_cast<QLabel*>(hlayout->itemAt(3)->widget());
+  QLabel *strength = qobject_cast<QLabel*>(hlayout->itemAt(4)->widget());
+
+  // Update ssid
   hlayout->setStretch(0, network.connected == ConnectedType::CONNECTING ? 0 : 1);
   ssidLabel->setEnabled(network.connected != ConnectedType::CONNECTED &&
                         network.connected != ConnectedType::CONNECTING &&
@@ -273,9 +285,7 @@ QVBoxLayout* WifiUI::updateNetworkWidget(QVBoxLayout *vlayout, QHBoxLayout *hlay
     ssidLabel->setStyleSheet(QString("font-weight: %1;").arg(weight));
   }
 
-  connecting->setVisible(network.connected == ConnectedType::CONNECTING);
-  forgetBtn->setVisible(wifi->isKnownConnection(network.ssid) && !wifi->isTetheringEnabled());
-
+  // Update icons and visibility
   if (network.connected == ConnectedType::CONNECTED) {
     statusIcon->setPixmap(checkmark);
   } else if (network.security_type == SecurityType::WPA) {
@@ -283,20 +293,9 @@ QVBoxLayout* WifiUI::updateNetworkWidget(QVBoxLayout *vlayout, QHBoxLayout *hlay
   } else {
     statusIcon->clear();
   }
-
   strength->setPixmap(strengths[std::clamp((int)network.strength/26, 0, 3)]);
-
-  if (setup) {
-    hlayout->addWidget(ssidLabel, network.connected == ConnectedType::CONNECTING ? 0 : 1);
-    hlayout->addWidget(connecting, 2, Qt::AlignLeft);
-    hlayout->addWidget(forgetBtn, 0, Qt::AlignRight);
-    hlayout->addWidget(statusIcon, 0, Qt::AlignRight);
-    hlayout->addWidget(strength, 0, Qt::AlignRight);
-    vlayout->addLayout(hlayout);
-    vlayout->addWidget(horizontal_line(), 0);
-  }
-  vlayout->itemAt(1)->widget()->setVisible(true);
-  return vlayout;
+  connecting->setVisible(network.connected == ConnectedType::CONNECTING);
+  forgetBtn->setVisible(wifi->isKnownConnection(network.ssid) && !wifi->isTetheringEnabled());
 }
 
 QVector<QString> WifiUI::drawnSsids() {
@@ -321,15 +320,15 @@ void WifiUI::refresh() {
     if (drawnSsids().contains(network.ssid)) {  // update network widget
       int widgetIdx = drawnSsids().indexOf(network.ssid);
       QVBoxLayout *vlayout = qobject_cast<QVBoxLayout*>(main_layout->itemAt(widgetIdx)->layout());
-      QHBoxLayout *hlayout = qobject_cast<QHBoxLayout*>(vlayout->itemAt(0)->layout());
-      updateNetworkWidget(vlayout, hlayout, network, isTetheringEnabled, false);
+      updateNetworkWidget(vlayout, network, isTetheringEnabled);
 
       if (widgetIdx != i) {
         main_layout->removeItem(vlayout);
         main_layout->insertLayout(i, vlayout, 1);
       }
     } else {  // add network widget
-      QVBoxLayout *vlayout = updateNetworkWidget(new QVBoxLayout, new QHBoxLayout, network, isTetheringEnabled, true);
+      QVBoxLayout *vlayout = createNetworkWidget(network);
+      updateNetworkWidget(vlayout, network, isTetheringEnabled);
       main_layout->insertLayout(i, vlayout, 1);
     }
     i++;
