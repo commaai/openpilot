@@ -34,6 +34,8 @@ KeyboardLayout::KeyboardLayout(QWidget* parent, const std::vector<QVector<QStrin
 
     for (const QString &p : s) {
       QPushButton* btn = new QPushButton(p);
+      btn->setFocusPolicy(Qt::NoFocus);
+      btn->setAttribute(Qt::WA_AcceptTouchEvents);
       if (p == BACKSPACE_KEY) {
         btn->setAutoRepeat(true);
       } else if (p == ENTER_KEY) {

@@ -222,6 +222,8 @@ void WifiUI::refresh() {
 
     // Clickable SSID label
     QPushButton *ssid_label = new QPushButton(network.ssid);
+    ssid_label->setFocusPolicy(Qt::NoFocus);
+    ssid_label->setAttribute(Qt::WA_AcceptTouchEvents);
     ssid_label->setEnabled(network.connected != ConnectedType::CONNECTED &&
                            network.connected != ConnectedType::CONNECTING &&
                            network.security_type != SecurityType::UNSUPPORTED);
@@ -255,6 +257,8 @@ void WifiUI::refresh() {
     // Forget button
     if (wifi->isKnownConnection(network.ssid) && !wifi->isTetheringEnabled()) {
       QPushButton *forgetBtn = new QPushButton("FORGET");
+      forgetBtn->setFocusPolicy(Qt::NoFocus);
+      forgetBtn->setAttribute(Qt::WA_AcceptTouchEvents);
       forgetBtn->setObjectName("forgetBtn");
       QObject::connect(forgetBtn, &QPushButton::clicked, [=]() {
         if (ConfirmationDialog::confirm("Forget WiFi Network \"" + QString::fromUtf8(network.ssid) + "\"?", this)) {

@@ -345,6 +345,8 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   nav_btns = new QButtonGroup();
   for (auto &[name, panel] : panels) {
     QPushButton *btn = new QPushButton(name);
+    btn->setFocusPolicy(Qt::NoFocus);
+    btn->setAttribute(Qt::WA_AcceptTouchEvents);
     btn->setCheckable(true);
     btn->setChecked(nav_btns->buttons().size() == 0);
     btn->setStyleSheet(QString(R"(

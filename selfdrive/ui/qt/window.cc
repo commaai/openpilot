@@ -33,6 +33,7 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   QObject::connect(settingsWindow, &SettingsWindow::showDriverView, [=] {
     homeWindow->showDriverView(true);
   });
+  main_layout->setCurrentWidget(settingsWindow);
 
   device.setAwake(true, true);
   QObject::connect(&qs, &QUIState::uiUpdate, &device, &Device::update);
@@ -90,29 +91,32 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
   }
 #endif
 
-  // synthesize mouse events from touch events
+  if (obj->inherits("QWidgetWindow")) {
+    return QWidget::eventFilter(obj, event);
+  }
+
   if (event->type() == QEvent::TouchBegin || event->type() == QEvent::TouchUpdate || event->type() == QEvent::TouchEnd || event->type() == QEvent::TouchCancel) {
     const QTouchEvent *touchEvent = static_cast<QTouchEvent *>(event);
     for (const QTouchEvent::TouchPoint &touchPoint : touchEvent->touchPoints()) {
       const QPointF &localPos(touchPoint.lastPos());
       const QPointF &screenPos(touchPoint.screenPos());
+      QEvent::Type mouseEventType = QEvent::MouseMove;
       Qt::MouseButton button = Qt::NoButton;
       Qt::MouseButtons buttons = Qt::LeftButton;
 
       if (touchPoint.state() == Qt::TouchPointPressed) {
+        mouseEventType = QEvent::MouseButtonPress;
         button = Qt::LeftButton;
-        QMouseEvent mouseEvent(QEvent::MouseButtonPress, localPos, screenPos, button, buttons, Qt::NoModifier);
-        QApplication::sendEvent(obj, &mouseEvent);
       } else if (touchPoint.state() == Qt::TouchPointReleased) {
+        mouseEventType = QEvent::MouseButtonRelease;
         button = Qt::LeftButton;
         buttons = Qt::NoButton;
-        QMouseEvent mouseEvent(QEvent::MouseButtonRelease, localPos, screenPos, button, buttons, Qt::NoModifier);
-        QApplication::sendEvent(obj, &mouseEvent);
-      } else if (touchPoint.state() == Qt::TouchPointMoved) {
-        QMouseEvent mouseEvent(QEvent::MouseMove, localPos, screenPos, button, buttons, Qt::NoModifier);
-        QApplication::sendEvent(obj, &mouseEvent);
       }
+      QMouseEvent mouseEvent(mouseEventType, localPos, screenPos, button, buttons, Qt::NoModifier);
+      QApplication::sendEvent(obj, &mouseEvent);
     }
+    event->accept();
+    return true;
   }
   return false;
 }
