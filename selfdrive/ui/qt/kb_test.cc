@@ -7,7 +7,6 @@
 #include <QHBoxLayout>
 #include <QMainWindow>
 #include <QDebug>
-
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/qt_window.h"
@@ -87,6 +86,7 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
 
   // synthesize mouse events from touch events
   if (event->type() == QEvent::TouchBegin || event->type() == QEvent::TouchUpdate || event->type() == QEvent::TouchEnd || event->type() == QEvent::TouchCancel) {
+    qDebug() << obj;
     const QTouchEvent *touchEvent = static_cast<QTouchEvent *>(event);
     for (const QTouchEvent::TouchPoint &touchPoint : touchEvent->touchPoints()) {
       const QPointF &localPos(touchPoint.lastPos());
@@ -118,6 +118,9 @@ int main(int argc, char *argv[]) {
   QApplication a(argc, argv);
 
   MainWindow window;
+  QList<QPushButton *> allPButtons = window.findChildren<QPushButton *>();
+  qDebug() << "Len:" << allPButtons.size();
+
   a.installEventFilter(&window);
   setMainWindow(&window);
 
