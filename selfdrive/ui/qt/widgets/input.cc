@@ -125,7 +125,6 @@ InputDialog::InputDialog(const QString &title, QWidget *parent, const QString &s
 QString InputDialog::getText(const QString &prompt, QWidget *parent, const QString &subtitle,
                              bool secret, int minLength, const QString &defaultText) {
   InputDialog d = InputDialog(prompt, parent, subtitle, secret);
-  setupTouch(&d);
   d.line->setText(defaultText);
   d.setMinLength(minLength);
   const int ret = d.exec();
@@ -137,6 +136,7 @@ QString InputDialog::text() {
 }
 
 int InputDialog::exec() {
+  setupTouch(this);
   setMainWindow(this);
   return QDialog::exec();
 }
@@ -232,6 +232,7 @@ bool ConfirmationDialog::confirm(const QString &prompt_text, QWidget *parent) {
 }
 
 int ConfirmationDialog::exec() {
+  setupTouch(this);
   setMainWindow(this);
   return QDialog::exec();
 }
