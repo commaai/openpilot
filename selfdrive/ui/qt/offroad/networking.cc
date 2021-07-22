@@ -12,6 +12,13 @@
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/widgets/scrollview.h"
 
+bool compare_by_strength(const Network &a, const Network &b) {
+  if (a.connected == ConnectedType::CONNECTED) return true;
+  if (b.connected == ConnectedType::CONNECTED) return false;
+  if (a.connected == ConnectedType::CONNECTING) return true;
+  if (b.connected == ConnectedType::CONNECTING) return false;
+  return a.strength > b.strength;
+}
 
 // Networking functions
 
@@ -88,13 +95,11 @@ void Networking::connectToNetwork(const Network &n) {
 }
 
 void Networking::wrongPassword(const QString &ssid) {
-  for (Network n : wifi->seen_networks) {
-    if (n.ssid == ssid) {
-      QString pass = InputDialog::getText("Wrong password", this, "for \"" + n.ssid +"\"", true, 8);
-      if (!pass.isEmpty()) {
-        wifi->connect(n, pass);
-      }
-      return;
+  if (wifi->seenNetworks.contains(ssid)) {
+    const Network &n = wifi->seenNetworks.value(ssid);
+    QString pass = InputDialog::getText("Wrong password", this, "for \"" + n.ssid +"\"", true, 8);
+    if (!pass.isEmpty()) {
+      wifi->connect(n, pass);
     }
   }
 }
@@ -206,16 +211,18 @@ void WifiUI::refresh() {
   // TODO: don't rebuild this every time
   clearLayout(main_layout);
 
-  if (wifi->seen_networks.size() == 0) {
+  if (wifi->seenNetworks.size() == 0) {
     QLabel *scanning = new QLabel("Scanning for networks...");
     scanning->setStyleSheet("font-size: 65px;");
     main_layout->addWidget(scanning, 0, Qt::AlignCenter);
     return;
   }
+  QList<Network> sortedNetworks = wifi->seenNetworks.values();
+  std::sort(sortedNetworks.begin(), sortedNetworks.end(), compare_by_strength);
 
   // add networks
   int i = 0;
-  for (Network &network : wifi->seen_networks) {
+  for (Network &network : sortedNetworks) {
     QHBoxLayout *hlayout = new QHBoxLayout;
     hlayout->setContentsMargins(44, 0, 73, 0);
     hlayout->setSpacing(50);
@@ -285,7 +292,7 @@ void WifiUI::refresh() {
     main_layout->addLayout(hlayout);
 
     // Don't add the last horizontal line
-    if (i+1 < wifi->seen_networks.size()) {
+    if (i+1 < wifi->seenNetworks.size()) {
       main_layout->addWidget(horizontal_line(), 0);
     }
     i++;
