@@ -300,7 +300,6 @@ void WifiUI::refresh() {
   if (wifi->seen_networks.size() == 0) {
     return setCurrentIndex(0);
   }
-  setCurrentIndex(1);
 
   int i = 0;
   const bool isTetheringEnabled = wifi->isTetheringEnabled();
@@ -328,4 +327,5 @@ void WifiUI::refresh() {
     clearLayout(item->layout());
     delete item;
   }
+  setCurrentIndex(1);
 }
