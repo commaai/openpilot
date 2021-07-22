@@ -18,8 +18,7 @@ public:
 
 private:
   WifiManager *wifi = nullptr;
-  QStackedLayout* main_layout;
-  QVBoxLayout* network_layout;
+  QVBoxLayout* main_layout;
   QPixmap lock;
   QPixmap checkmark;
   QVector<QPixmap> strengths;

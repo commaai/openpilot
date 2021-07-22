@@ -170,21 +170,10 @@ void AdvancedNetworking::toggleTethering(bool enabled) {
 // WifiUI functions
 
 WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi) {
-  main_layout = new QStackedLayout(this);
-//  main_layout->setContentsMargins(0, 0, 0, 0);
-
-  QLabel *scanning = new QLabel("Scanning for networks...");
-  scanning->setStyleSheet("font-size: 65px;");
-  scanning->setAlignment(Qt::AlignCenter);
-  main_layout->addWidget(scanning);
-
-  network_layout = new QVBoxLayout(this);
-  network_layout->setContentsMargins(0, 0, 0, 0);
-  network_layout->setSpacing(0);
-  network_layout->addStretch(1);  // this is kept at bottom
-  QWidget *network_layout_widget = new QWidget(this);
-  network_layout_widget->setLayout(network_layout);
-  main_layout->addWidget(network_layout_widget);
+  main_layout = new QVBoxLayout(this);
+  main_layout->setContentsMargins(0, 0, 0, 0);
+  main_layout->setSpacing(0);
+  main_layout->addStretch(1);  // this is kept at bottom
 
   // load imgs
   for (const auto &s : {"low", "medium", "high", "full"}) {
@@ -193,6 +182,10 @@ WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi)
   }
   lock = QPixmap(ASSET_PATH + "offroad/icon_lock_closed.svg").scaledToWidth(49, Qt::SmoothTransformation);
   checkmark = QPixmap(ASSET_PATH + "offroad/icon_checkmark.svg").scaledToWidth(49, Qt::SmoothTransformation);
+
+//  QLabel *scanning = new QLabel("Scanning for networks...");
+//  scanning->setStyleSheet("font-size: 65px;");
+//  main_layout->addWidget(scanning, 0, Qt::AlignCenter);
 
   setStyleSheet(R"(
     QScrollBar::handle:vertical {
@@ -302,46 +295,47 @@ void WifiUI::updateNetworkWidget(QVBoxLayout *vlayout, const Network &network, b
 
 QVector<QString> WifiUI::drawnSsids() {
   QVector<QString> ssids;
-  for (int i = 0; i < network_layout->count() - 1; i++) {
-    ssids.push_back(network_layout->itemAt(i)->layout()->property("ssid").toString());
+  for (int i = 0; i < main_layout->count() - 1; i++) {
+    ssids.push_back(main_layout->itemAt(i)->layout()->property("ssid").toString());
   }
   return ssids;
 }
 
 void WifiUI::refresh() {
-  if (wifi->seen_networks.size() == 0) {
-    main_layout->setCurrentIndex(0);
-    return;
-  }
-  main_layout->setCurrentIndex(1);
+//  if (wifi->seen_networks.size() == 0) {
+//    QLabel *scanning = new QLabel("Scanning for networks...");
+//    scanning->setStyleSheet("font-size: 65px;");
+//    main_layout->addWidget(scanning, 0, Qt::AlignCenter);
+//    return;
+//  }
 
   int i = 0;
   const bool isTetheringEnabled = wifi->isTetheringEnabled();
   for (const Network &network : wifi->seen_networks) {
     if (drawnSsids().contains(network.ssid)) {  // update network widget
       int widgetIdx = drawnSsids().indexOf(network.ssid);
-      QVBoxLayout *vlayout = qobject_cast<QVBoxLayout*>(network_layout->itemAt(widgetIdx)->layout());
+      QVBoxLayout *vlayout = qobject_cast<QVBoxLayout*>(main_layout->itemAt(widgetIdx)->layout());
       updateNetworkWidget(vlayout, network, isTetheringEnabled);
 
       if (widgetIdx != i) {
-        network_layout->removeItem(vlayout);
-        network_layout->insertLayout(i, vlayout, 1);
+        main_layout->removeItem(vlayout);
+        main_layout->insertLayout(i, vlayout, 1);
       }
     } else {  // add network widget
       QVBoxLayout *vlayout = createNetworkWidget(network);
-      network_layout->insertLayout(i, vlayout, 1);
+      main_layout->insertLayout(i, vlayout, 1);
       updateNetworkWidget(vlayout, network, isTetheringEnabled);
     }
     i++;
   }
 
-  while (i < network_layout->count() - 1) {  // delete excess widgets
-    QLayoutItem *item = network_layout->takeAt(i);
+  while (i < main_layout->count() - 1) {  // delete excess widgets
+    QLayoutItem *item = main_layout->takeAt(i);
     clearLayout(item->layout());
     delete item;
   }
 
-  if (network_layout->count() > 1) {  // hide last horizontal line
-    network_layout->itemAt(network_layout->count() - 2)->layout()->itemAt(1)->widget()->setVisible(false);
+  if (main_layout->count() > 1) {  // hide last horizontal line
+    main_layout->itemAt(main_layout->count() - 2)->layout()->itemAt(1)->widget()->setVisible(false);
   }
 }
