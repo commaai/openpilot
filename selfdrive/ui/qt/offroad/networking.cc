@@ -3,14 +3,13 @@
 #include <algorithm>
 
 #include <QDebug>
-#include <QHBoxLayout>
 #include <QLabel>
-#include <QPainter>
 #include <QScrollBar>
 
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/widgets/scrollview.h"
+
 
 // Networking functions
 
@@ -307,15 +306,14 @@ void WifiUI::refresh() {
   const bool isTetheringEnabled = wifi->isTetheringEnabled();
   for (const Network &network : wifi->seen_networks) {
     QVBoxLayout *vlayout;
-    if (i < networks_layout->count() - 1) {
-      qDebug() << "Updating:" << network.ssid;
+    if (i < networks_layout->count() - 1) {  // replace current network layout
       vlayout = qobject_cast<QVBoxLayout*>(networks_layout->itemAt(i)->layout());
       QHBoxLayout *hlayout = qobject_cast<QHBoxLayout*>(vlayout->itemAt(0)->layout());
       updateNetworkWidget(hlayout, network, isTetheringEnabled);
-    } else {
-      qDebug() << "Adding:" << network.ssid;
+    } else {  // add new one
       vlayout = new QVBoxLayout;
       networks_layout->insertLayout(i, vlayout);
+
       QHBoxLayout *hlayout = emptyWifiWidget();
       vlayout->addLayout(hlayout);
       vlayout->addWidget(horizontal_line(), 0);
