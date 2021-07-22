@@ -54,14 +54,16 @@ class OnroadWindow : public QWidget {
 
 public:
   OnroadWindow(QWidget* parent = 0);
-  QWidget *map = nullptr;
+  bool isMapVisible() const { return map && map->isVisible(); }
 
 private:
   void paintEvent(QPaintEvent *event);
-
+  void mousePressEvent(QMouseEvent* e) override;
   OnroadAlerts *alerts;
   NvgWindow *nvg;
   QColor bg = bg_colors[STATUS_DISENGAGED];
+  QWidget *map = nullptr;
+  QStackedLayout *main_layout;
   QHBoxLayout* split;
 
 signals:
