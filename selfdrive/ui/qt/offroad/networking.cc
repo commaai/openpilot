@@ -312,16 +312,10 @@ void WifiUI::refresh() {
   int i = 0;
   const bool isTetheringEnabled = wifi->isTetheringEnabled();
   for (const Network &network : wifi->seen_networks) {
-    if (drawnSsids().contains(network.ssid)) {  // update network widget
-      int widgetIdx = drawnSsids().indexOf(network.ssid);
-      QVBoxLayout *vlayout = qobject_cast<QVBoxLayout*>(main_layout->itemAt(widgetIdx)->layout());
+    if (i < main_layout->count() - 1) {
+      QVBoxLayout *vlayout = qobject_cast<QVBoxLayout*>(main_layout->itemAt(i)->layout());
       updateNetworkWidget(vlayout, network, isTetheringEnabled);
-
-      if (widgetIdx != i) {
-        main_layout->removeItem(vlayout);
-        main_layout->insertLayout(i, vlayout, 1);
-      }
-    } else {  // add network widget
+    } else {
       QVBoxLayout *vlayout = createNetworkWidget(network);
       updateNetworkWidget(vlayout, network, isTetheringEnabled);
       main_layout->insertLayout(i, vlayout, 1);
