@@ -24,7 +24,6 @@ private:
   QVector<QPixmap> strengths;
 
   QHBoxLayout* createNetworkWidget(QHBoxLayout *hlayout, const Network &network, bool isTetheringEnabled);
-  QVector<QString> drawnSsids();
 
 signals:
   void connectToNetwork(const Network &n);

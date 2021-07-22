@@ -208,8 +208,6 @@ WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi)
 }
 
 QHBoxLayout* WifiUI::createNetworkWidget(QHBoxLayout *hlayout, const Network &network, bool isTetheringEnabled) {
-//  QHBoxLayout *hlayout = qobject_cast<QHBoxLayout*>(vlayout->itemAt(0)->layout());
-//  vlayout->setProperty("ssid", network.ssid);
   hlayout->setContentsMargins(44, 0, 73, 0);
   hlayout->setSpacing(50);
 
@@ -278,14 +276,6 @@ QHBoxLayout* WifiUI::createNetworkWidget(QHBoxLayout *hlayout, const Network &ne
   return hlayout;
 }
 
-QVector<QString> WifiUI::drawnSsids() {
-  QVector<QString> ssids;
-  for (int i = 0; i < main_layout->count() - 1; i++) {
-    ssids.push_back(main_layout->itemAt(i)->layout()->property("ssid").toString());
-  }
-  return ssids;
-}
-
 void WifiUI::refresh() {
 //  if (wifi->seen_networks.size() == 0) {
 //    QLabel *scanning = new QLabel("Scanning for networks...");
@@ -296,24 +286,23 @@ void WifiUI::refresh() {
 
   int i = 0;
   const bool isTetheringEnabled = wifi->isTetheringEnabled();
-  qDebug() << "is tethering:" << isTetheringEnabled;
   for (const Network &network : wifi->seen_networks) {
+    QVBoxLayout *vlayout;
     if (i < main_layout->count() - 1) {
-      // update
-      QVBoxLayout *vlayout = qobject_cast<QVBoxLayout*>(main_layout->itemAt(i)->layout());
-      vlayout->setProperty("ssid", network.ssid);
+      qDebug() << "Updating:" << network.ssid;
+      vlayout = qobject_cast<QVBoxLayout*>(main_layout->itemAt(i)->layout());
       QHBoxLayout *hlayout = qobject_cast<QHBoxLayout*>(vlayout->itemAt(0)->layout());
       clearLayout(hlayout);
-//      vlayout->addLayout(hlayout);
       createNetworkWidget(hlayout, network, isTetheringEnabled);
     } else {
-      QVBoxLayout *vlayout = new QVBoxLayout;
+      qDebug() << "Adding:" << network.ssid;
+      vlayout = new QVBoxLayout;
       QHBoxLayout *hlayout = createNetworkWidget(new QHBoxLayout, network, isTetheringEnabled);
       vlayout->addLayout(hlayout);
       vlayout->addWidget(horizontal_line(), 0);
-      vlayout->setProperty("ssid", network.ssid);
       main_layout->insertLayout(i, vlayout);
     }
+    vlayout->itemAt(1)->widget()->setVisible(i < wifi->seen_networks.size() - 1);  // hides last horizontal line
     i++;
   }
 
@@ -321,9 +310,5 @@ void WifiUI::refresh() {
     QLayoutItem *item = main_layout->takeAt(i);
     clearLayout(item->layout());
     delete item;
-  }
-
-  if (main_layout->count() > 1) {  // hide last horizontal line
-    main_layout->itemAt(main_layout->count() - 2)->layout()->itemAt(1)->widget()->setVisible(false);
   }
 }
