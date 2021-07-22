@@ -68,7 +68,7 @@ void HomeWindow::showDriverView(bool show) {
 
 void HomeWindow::mousePressEvent(QMouseEvent* e) {
   // Handle sidebar collapsing
-  if (onroad->isVisible() && (!sidebar->isVisible() || e->x() > sidebar->width())) {
+  if (onroad->isVisible()) {
 
     // TODO: Handle this without exposing pointer to map widget
     // Hide map first if visible, then hide sidebar
