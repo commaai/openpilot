@@ -22,12 +22,7 @@ int main(int argc, char *argv[]) {
 
   QApplication a(argc, argv);
   MainWindow w;
-  QList<QPushButton*> pushButtons = w.findChildren<QPushButton *>();
-  for (int i = 0; i < pushButtons.size(); i++) {
-    pushButtons.at(i)->setAttribute(Qt::WA_AcceptTouchEvents);
-    pushButtons.at(i)->setFocusPolicy(Qt::NoFocus);
-  }
-  qDebug() << "Set up" << pushButtons.size() << "buttons";
+  setupTouch(&w);
 
   setMainWindow(&w);
   a.installEventFilter(&w);

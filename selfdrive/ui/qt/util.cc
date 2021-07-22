@@ -1,7 +1,9 @@
 #include "selfdrive/ui/qt/util.h"
 
 #include <QApplication>
+#include <QDebug>
 #include <QLayoutItem>
+#include <QPushButton>
 #include <QStyleOption>
 
 #include "selfdrive/common/params.h"
@@ -33,6 +35,15 @@ void clearLayout(QLayout* layout) {
     }
     delete item;
   }
+}
+
+void setupTouch(QWidget *widget) {
+  QList<QPushButton*> pushButtons = widget->findChildren<QPushButton *>();
+  for (int i = 0; i < pushButtons.size(); i++) {
+    pushButtons.at(i)->setAttribute(Qt::WA_AcceptTouchEvents);
+    pushButtons.at(i)->setFocusPolicy(Qt::NoFocus);
+  }
+  qDebug() << "Set up" << pushButtons.size() << "buttons";
 }
 
 QString timeAgo(const QDateTime &date) {

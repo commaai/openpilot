@@ -125,6 +125,7 @@ InputDialog::InputDialog(const QString &title, QWidget *parent, const QString &s
 QString InputDialog::getText(const QString &prompt, QWidget *parent, const QString &subtitle,
                              bool secret, int minLength, const QString &defaultText) {
   InputDialog d = InputDialog(prompt, parent, subtitle, secret);
+  setupTouch(&d);
   d.line->setText(defaultText);
   d.setMinLength(minLength);
   const int ret = d.exec();

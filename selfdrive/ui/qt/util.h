@@ -11,6 +11,7 @@ QString getBrand();
 QString getBrandVersion();
 void configFont(QPainter &p, const QString &family, int size, const QString &style);
 void clearLayout(QLayout* layout);
+void setupTouch(QWidget *widget);
 void setQtSurfaceFormat();
 QString timeAgo(const QDateTime &date);
 void swagLogMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg);
