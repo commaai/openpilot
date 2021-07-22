@@ -169,11 +169,20 @@ void AdvancedNetworking::toggleTethering(bool enabled) {
 
 // WifiUI functions
 
-WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi) {
-  main_layout = new QVBoxLayout(this);
-  main_layout->setContentsMargins(0, 0, 0, 0);
-  main_layout->setSpacing(0);
-  main_layout->addStretch(1);  // this is kept at bottom
+WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QStackedWidget(parent), wifi(wifi) {
+  QLabel *scanning = new QLabel("Scanning for networks...");
+  scanning->setStyleSheet("font-size: 65px;");
+  scanning->setAlignment(Qt::AlignCenter);
+  addWidget(scanning);
+
+  networks_layout = new QVBoxLayout;
+  networks_layout->setContentsMargins(0, 0, 0, 0);
+  networks_layout->setSpacing(0);
+  networks_layout->addStretch(1);  // this is kept at bottom
+
+  QWidget *networks_widget = new QWidget(this);  // widget to hold layout
+  networks_widget->setLayout(networks_layout);
+  addWidget(networks_widget);
 
   // load imgs
   for (const auto &s : {"low", "medium", "high", "full"}) {
@@ -182,10 +191,6 @@ WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi)
   }
   lock = QPixmap(ASSET_PATH + "offroad/icon_lock_closed.svg").scaledToWidth(49, Qt::SmoothTransformation);
   checkmark = QPixmap(ASSET_PATH + "offroad/icon_checkmark.svg").scaledToWidth(49, Qt::SmoothTransformation);
-
-//  QLabel *scanning = new QLabel("Scanning for networks...");
-//  scanning->setStyleSheet("font-size: 65px;");
-//  main_layout->addWidget(scanning, 0, Qt::AlignCenter);
 
   setStyleSheet(R"(
     QScrollBar::handle:vertical {
@@ -254,6 +259,7 @@ QHBoxLayout* WifiUI::updateNetworkWidget(QHBoxLayout *hlayout, const Network &ne
     font-weight: %1;
     text-align: left;
     border: none;
+    padding-left: 15px;
     padding-top: 50px;
     padding-bottom: 50px;
   )").arg(weight));
@@ -292,26 +298,24 @@ QHBoxLayout* WifiUI::updateNetworkWidget(QHBoxLayout *hlayout, const Network &ne
 }
 
 void WifiUI::refresh() {
-//  if (wifi->seen_networks.size() == 0) {
-//    QLabel *scanning = new QLabel("Scanning for networks...");
-//    scanning->setStyleSheet("font-size: 65px;");
-//    main_layout->addWidget(scanning, 0, Qt::AlignCenter);
-//    return;
-//  }
+  if (wifi->seen_networks.size() == 0) {
+    return setCurrentIndex(0);
+  }
+  setCurrentIndex(1);
 
   int i = 0;
   const bool isTetheringEnabled = wifi->isTetheringEnabled();
   for (const Network &network : wifi->seen_networks) {
     QVBoxLayout *vlayout;
-    if (i < main_layout->count() - 1) {
+    if (i < networks_layout->count() - 1) {
       qDebug() << "Updating:" << network.ssid;
-      vlayout = qobject_cast<QVBoxLayout*>(main_layout->itemAt(i)->layout());
+      vlayout = qobject_cast<QVBoxLayout*>(networks_layout->itemAt(i)->layout());
       QHBoxLayout *hlayout = qobject_cast<QHBoxLayout*>(vlayout->itemAt(0)->layout());
       updateNetworkWidget(hlayout, network, isTetheringEnabled);
     } else {
       qDebug() << "Adding:" << network.ssid;
       vlayout = new QVBoxLayout;
-      main_layout->insertLayout(i, vlayout);
+      networks_layout->insertLayout(i, vlayout);
       QHBoxLayout *hlayout = emptyWifiWidget();
       vlayout->addLayout(hlayout);
       vlayout->addWidget(horizontal_line(), 0);
@@ -321,8 +325,8 @@ void WifiUI::refresh() {
     i++;
   }
 
-  while (i < main_layout->count() - 1) {  // delete excess widgets
-    QLayoutItem *item = main_layout->takeAt(i);
+  while (i < networks_layout->count() - 1) {  // delete excess widgets
+    QLayoutItem *item = networks_layout->takeAt(i);
     clearLayout(item->layout());
     delete item;
   }

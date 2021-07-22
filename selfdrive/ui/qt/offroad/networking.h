@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QButtonGroup>
+#include <QStackedWidget>
 #include <QMovie>
 #include <QVBoxLayout>
 #include <QWidget>
@@ -10,7 +11,7 @@
 #include "selfdrive/ui/qt/widgets/ssh_keys.h"
 #include "selfdrive/ui/qt/widgets/toggle.h"
 
-class WifiUI : public QWidget {
+class WifiUI : public QStackedWidget {
   Q_OBJECT
 
 public:
@@ -18,7 +19,7 @@ public:
 
 private:
   WifiManager *wifi = nullptr;
-  QVBoxLayout* main_layout;
+  QVBoxLayout* networks_layout;
   QPixmap lock;
   QPixmap checkmark;
   QVector<QPixmap> strengths;
