@@ -81,11 +81,20 @@ def gen_long_mpc_solver():
 
   # set constraints
   ocp.constraints.constr_type = 'BGH'
-  ocp.constraints.idxbx = np.array([1,2])
-  ocp.constraints.lbx = np.array([0, -1.2])
-  ocp.constraints.ubx = np.array([100., 1.2])
+  ocp.constraints.idxbx = np.array([0, 1,2])
+  ocp.constraints.lbx = np.array([0., 0, -1.2])
+  ocp.constraints.ubx = np.array([10000, 100., 1.2])
+  ocp.constraints.Jsbx = np.eye(3)
   x0 = np.array([0.0, 0.0, 0.0])
   ocp.constraints.x0 = x0
+
+  l2_penalty = 10000.0
+  l1_penalty = 0.0
+  weights = np.array([0.0, 1e4, 1e4])
+  ocp.cost.Zl = l2_penalty * weights
+  ocp.cost.Zu = l2_penalty * weights
+  ocp.cost.zl = l1_penalty * weights
+  ocp.cost.zu = l1_penalty * weights
 
   ocp.solver_options.qp_solver = 'FULL_CONDENSING_QPOASES'
   ocp.solver_options.hessian_approx = 'GAUSS_NEWTON'
@@ -142,6 +151,9 @@ class LongitudinalMpc():
     #p = np.array([self.min_a, self.max_a])
     #for i in range(N):
     #  self.solver.set(i, "p", p)
+    for i in range(1,N):
+      self.solver.constraints_set(i, "lbx", np.array([0.0, 0.0,self.min_a]))
+      self.solver.constraints_set(i, "ubx", np.array([000000.0, 100.0,self.max_a]))
     self.solver.cost_set_slice(0, N, "yref", yref[:N])
     self.solver.set(N, "yref", yref[N][:3])
 
