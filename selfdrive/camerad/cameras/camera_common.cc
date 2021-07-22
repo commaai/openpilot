@@ -127,6 +127,8 @@ bool CameraBuf::acquire() {
     const size_t globalWorkSize[] = {size_t(camera_state->ci.frame_width), size_t(camera_state->ci.frame_height)};
     const size_t localWorkSize[] = {DEBAYER_LOCAL_WORKSIZE, DEBAYER_LOCAL_WORKSIZE};
     CL_CHECK(clSetKernelArg(krnl_debayer, 2, localMemSize, 0));
+    int ggain = camera_state->analog_gain + 4*camera_state->dc_gain_enabled;
+    CL_CHECK(clSetKernelArg(krnl_debayer, 3, sizeof(int), &ggain));
     CL_CHECK(clEnqueueNDRangeKernel(q, krnl_debayer, 2, NULL, globalWorkSize, localWorkSize,
                                     0, 0, &debayer_event));
 #else
@@ -278,30 +280,39 @@ static void publish_thumbnail(PubMaster *pm, const CameraBuf *b) {
   free(thumbnail_buffer);
 }
 
-float set_exposure_target(const CameraBuf *b, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip) {
-  int lum_med;
-  uint32_t lum_binning[256] = {0};
+float set_exposure_target(const CameraBuf *b, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip, int analog_gain, bool hist_ceil, bool hl_weighted) {
   const uint8_t *pix_ptr = b->cur_yuv_buf->y;
-
+  uint32_t lum_binning[256] = {0};
   unsigned int lum_total = 0;
   for (int y = y_start; y < y_end; y += y_skip) {
     for (int x = x_start; x < x_end; x += x_skip) {
       uint8_t lum = pix_ptr[(y * b->rgb_width) + x];
+      if (hist_ceil && lum < 80 && lum_binning[lum] > HISTO_CEIL_K * (y_end - y_start) * (x_end - x_start) / x_skip / y_skip / 256) {
+        continue;
+      }
       lum_binning[lum]++;
       lum_total += 1;
     }
   }
 
-
-  // Find mean lumimance value
   unsigned int lum_cur = 0;
-  for (lum_med = 255; lum_med >= 0; lum_med--) {
+  int lum_med = 0;
+  int lum_med_alt = 0;
+  for (lum_med=255; lum_med>=0; lum_med--) {
     lum_cur += lum_binning[lum_med];
-
+    if (hl_weighted) {
+      int lum_med_tmp = 0;
+      int hb = HLC_THRESH + (10 - analog_gain);
+      if (lum_cur > 0 && lum_med > hb) {
+        lum_med_tmp = (lum_med - hb) + 100;
+      }
+      lum_med_alt = lum_med_alt>lum_med_tmp?lum_med_alt:lum_med_tmp;
+    }
     if (lum_cur >= lum_total / 2) {
       break;
     }
   }
+  lum_med = lum_med_alt>0 ? lum_med + lum_med/32*lum_cur*abs(lum_med_alt - lum_med)/lum_total:lum_med;
 
   return lum_med / 256.0;
 }
@@ -344,12 +355,18 @@ static void driver_cam_auto_exposure(CameraState *c, SubMaster &sm) {
   struct ExpRect {int x1, x2, x_skip, y1, y2, y_skip;};
   const CameraBuf *b = &c->buf;
 
+  bool hist_ceil = false, hl_weighted = false;
   int x_offset = 0, y_offset = 0;
   int frame_width = b->rgb_width, frame_height = b->rgb_height;
-
+#ifndef QCOM2
+  int analog_gain = -1;
+#else
+  int analog_gain = c->analog_gain;
+#endif
 
   ExpRect def_rect;
   if (Hardware::TICI()) {
+    hist_ceil = hl_weighted = true;
     x_offset = 630, y_offset = 156;
     frame_width = 668, frame_height = frame_width / 1.33;
     def_rect = {96, 1832, 2, 242, 1148, 4};
@@ -373,7 +390,7 @@ static void driver_cam_auto_exposure(CameraState *c, SubMaster &sm) {
     }
   }
 
-  camera_autoexposure(c, set_exposure_target(b, rect.x1, rect.x2, rect.x_skip, rect.y1, rect.y2, rect.y_skip));
+  camera_autoexposure(c, set_exposure_target(b, rect.x1, rect.x2, rect.x_skip, rect.y1, rect.y2, rect.y_skip, analog_gain, hist_ceil, hl_weighted));
 }
 
 void common_process_driver_camera(SubMaster *sm, PubMaster *pm, CameraState *c, int cnt) {

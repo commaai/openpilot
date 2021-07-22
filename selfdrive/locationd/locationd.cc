@@ -372,7 +372,11 @@ void Localizer::time_check(double current_time) {
 
 void Localizer::update_reset_tracker() {
   // reset tracker is tuned to trigger when over 1reset/10s over 2min period
-  this->reset_tracker *= .99995;
+  if (this->isGpsOK()) {
+    this->reset_tracker *= .99995;
+  } else {
+    this->reset_tracker = 0.0;
+  }
 }
 
 void Localizer::reset_kalman(double current_time, VectorXd init_orient, VectorXd init_pos) {
@@ -427,6 +431,11 @@ kj::ArrayPtr<capnp::byte> Localizer::get_message_bytes(MessageBuilder& msg_build
   return msg_builder.toBytes();
 }
 
+
+bool Localizer::isGpsOK() {
+  return this->kf->get_filter_time() - this->last_gps_fix < 1.0;
+}
+
 int Localizer::locationd_thread() {
   const std::initializer_list<const char *> service_list =
       { "gpsLocationExternal", "sensorEvents", "cameraOdometry", "liveCalibration", "carState" };
@@ -448,7 +457,7 @@ int Localizer::locationd_thread() {
       uint64_t logMonoTime = sm["cameraOdometry"].getLogMonoTime();
       bool inputsOK = sm.allAliveAndValid();
       bool sensorsOK = sm.alive("sensorEvents") && sm.valid("sensorEvents");
-      bool gpsOK = (logMonoTime / 1e9) - this->last_gps_fix < 1.0;
+      bool gpsOK = this->isGpsOK();
 
       MessageBuilder msg_builder;
       kj::ArrayPtr<capnp::byte> bytes = this->get_message_bytes(msg_builder, logMonoTime, inputsOK, sensorsOK, gpsOK);

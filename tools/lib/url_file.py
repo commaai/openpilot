@@ -117,7 +117,12 @@ class URLFile(object):
     download_range = False
     headers = ["Connection: keep-alive"]
     if self._pos != 0 or ll is not None:
-      end = (self._pos + ll if ll is not None else self.get_length()) - 1
+      if ll is None:
+        end = self.get_length() - 1
+      else:
+        end = min(self._pos + ll, self.get_length()) - 1
+      if self._pos >= end:
+        return b""
       headers.append(f"Range: bytes={self._pos}-{end}")
       download_range = True
 

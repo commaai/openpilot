@@ -20,29 +20,25 @@ class CarInterface(CarInterfaceBase):
   @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
-
-    # VW port is a community feature, since we don't own one to test
+    ret.carName = "volkswagen"
     ret.communityFeature = True
+    ret.radarOffCan = True
 
     if True:  # pylint: disable=using-constant-test
-      # Set common MQB parameters that will apply globally
-      ret.carName = "volkswagen"
-      ret.radarOffCan = True
+      # Set global MQB parameters
       ret.safetyModel = car.CarParams.SafetyModel.volkswagen
-      ret.steerActuatorDelay = 0.05
+      ret.enableBsm = 0x30F in fingerprint[0]
 
-      if 0xAD in fingerprint[0]:
-        # Getriebe_11 detected: traditional automatic or DSG gearbox
+      if 0xAD in fingerprint[0]:  # Getriebe_11
         ret.transmissionType = TransmissionType.automatic
-      elif 0x187 in fingerprint[0]:
-        # EV_Gearshift detected: e-Golf or similar direct-drive electric
+      elif 0x187 in fingerprint[0]:  # EV_Gearshift
         ret.transmissionType = TransmissionType.direct
-      else:
-        # No trans message at all, must be a true stick-shift manual
+      else:  # No trans message at all, must be a true stick-shift manual
         ret.transmissionType = TransmissionType.manual
 
     # Global tuning defaults, can be overridden per-vehicle
 
+    ret.steerActuatorDelay = 0.05
     ret.steerRateCost = 1.0
     ret.steerLimitTimer = 0.4
     ret.steerRatio = 15.6  # Let the params learner figure this out
@@ -56,78 +52,60 @@ class CarInterface(CarInterfaceBase):
     # Per-chassis tuning values, override tuning defaults here if desired
 
     if candidate == CAR.ATLAS_MK1:
-      # Averages of all CA Atlas variants
       ret.mass = 2011 + STD_CARGO_KG
       ret.wheelbase = 2.98
 
     elif candidate == CAR.GOLF_MK7:
-      # Averages of all AU Golf variants
       ret.mass = 1397 + STD_CARGO_KG
       ret.wheelbase = 2.62
 
     elif candidate == CAR.JETTA_MK7:
-      # Averages of all BU Jetta variants
       ret.mass = 1328 + STD_CARGO_KG
       ret.wheelbase = 2.71
 
     elif candidate == CAR.PASSAT_MK8:
-      # Averages of all 3C Passat variants
       ret.mass = 1551 + STD_CARGO_KG
       ret.wheelbase = 2.79
 
     elif candidate == CAR.TIGUAN_MK2:
-      # Average of SWB and LWB variants
       ret.mass = 1715 + STD_CARGO_KG
       ret.wheelbase = 2.74
 
     elif candidate == CAR.TOURAN_MK2:
-      # Average of SWB and LWB variants
       ret.mass = 1516 + STD_CARGO_KG
       ret.wheelbase = 2.79
 
     elif candidate == CAR.AUDI_A3_MK3:
-      # Averages of all 8V A3 variants
       ret.mass = 1335 + STD_CARGO_KG
       ret.wheelbase = 2.61
 
     elif candidate == CAR.AUDI_Q2_MK1:
-      # Averages of all GA Q2 variants
       ret.mass = 1205 + STD_CARGO_KG
       ret.wheelbase = 2.61
 
     elif candidate == CAR.SEAT_ATECA_MK1:
-      # Averages of all 5F Ateca variants
       ret.mass = 1900 + STD_CARGO_KG
       ret.wheelbase = 2.64
 
     elif candidate == CAR.SEAT_LEON_MK3:
-      # Averages of all 5F Leon variants
       ret.mass = 1227 + STD_CARGO_KG
       ret.wheelbase = 2.64
 
     elif candidate == CAR.SKODA_KODIAQ_MK1:
-      # Averages of all 5N Kodiaq variants
       ret.mass = 1569 + STD_CARGO_KG
       ret.wheelbase = 2.79
 
     elif candidate == CAR.SKODA_OCTAVIA_MK3:
-      # Averages of all 5E/NE Octavia variants
       ret.mass = 1388 + STD_CARGO_KG
       ret.wheelbase = 2.68
 
     elif candidate == CAR.SKODA_SCALA_MK1:
-      # Averages of all NW Scala variants
       ret.mass = 1192 + STD_CARGO_KG
       ret.wheelbase = 2.65
 
     elif candidate == CAR.SKODA_SUPERB_MK3:
-      # Averages of all 3V/NP Scala variants
       ret.mass = 1505 + STD_CARGO_KG
       ret.wheelbase = 2.84
-
-    ret.centerToFront = ret.wheelbase * 0.45
-
-    ret.enableBsm = 0x30F in fingerprint[0]
 
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase
@@ -135,6 +113,7 @@ class CarInterface(CarInterfaceBase):
 
     # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
     # mass and CG position, so all cars will have approximately similar dyn behaviors
+    ret.centerToFront = ret.wheelbase * 0.45
     ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront,
                                                                          tire_stiffness_factor=tire_stiffness_factor)
 

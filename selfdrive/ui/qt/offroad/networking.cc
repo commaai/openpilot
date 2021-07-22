@@ -56,10 +56,6 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QFrame(parent) {
 
   // TODO: revisit pressed colors
   setStyleSheet(R"(
-    Networking {
-      border-radius: 13px;
-      background-color: #292929;
-    }
     #wifiWidget > QPushButton, #back_btn, #advancedBtn {
       font-size: 50px;
       margin: 0px;
@@ -286,7 +282,7 @@ void WifiUI::refresh() {
     strength->setPixmap(strengths[std::clamp((int)network.strength/26, 0, 3)]);
     hlayout->addWidget(strength, 0, Qt::AlignRight);
 
-    main_layout->addLayout(hlayout, 1);
+    main_layout->addLayout(hlayout);
 
     // Don't add the last horizontal line
     if (i+1 < wifi->seen_networks.size()) {
@@ -294,5 +290,5 @@ void WifiUI::refresh() {
     }
     i++;
   }
-  main_layout->addStretch(2);
+  main_layout->addStretch(1);
 }

@@ -82,16 +82,16 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
   {0x328E, 0x0FA0}, // T2 G2
 
    // Initial Gains
-  {0x3022, 0x0001}, // GROUPED_PARAMETER_HOLD_
-  {0x3366, 0xFF77}, // ANALOG_GAIN (1x)
+  {0x3022, 0x01}, // GROUPED_PARAMETER_HOLD_
+  {0x3366, 0x5555}, // ANALOG_GAIN
   {0x3060, 0x3333}, // ANALOG_COLOR_GAIN
-  {0x3362, 0x0001}, // DC GAIN (enabled)
-  {0x305A, 0x00F8}, // red gain
-  {0x3058, 0x0122}, // blue gain
-  {0x3056, 0x009A}, // g1 gain
-  {0x305C, 0x009A}, // g2 gain
+  {0x3362, 0x0000}, // DC GAIN
+  {0x305A, 0x0108}, // RED_GAIN
+  {0x3058, 0x00FB}, // BLUE_GAIN
+  {0x3056, 0x009A}, // GREEN1_GAIN
+  {0x305C, 0x009A}, // GREEN2_GAIN
   {0x3022, 0x00}, // GROUPED_PARAMETER_HOLD_
 
   // Initial Integration Time
-  {0x3012, 0x0005},
+  {0x3012, 0x256},
 };
