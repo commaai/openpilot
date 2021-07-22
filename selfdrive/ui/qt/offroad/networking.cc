@@ -323,8 +323,8 @@ void WifiUI::refresh() {
       }
     } else {  // add network widget
       QVBoxLayout *vlayout = createNetworkWidget(network);
-      updateNetworkWidget(vlayout, network, isTetheringEnabled);
       main_layout->insertLayout(i, vlayout, 1);
+      updateNetworkWidget(vlayout, network, isTetheringEnabled);
     }
     i++;
   }
