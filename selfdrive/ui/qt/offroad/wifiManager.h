@@ -70,6 +70,7 @@ private:
   QString get_ipv4_address();
   void connect(const QByteArray &ssid, const QString &username, const QString &password, SecurityType security_type);
   QString activeAp;
+  QString activeSsid;
   void initActiveAp();
   void deactivateConnection(const QString &ssid);
   QVector<QDBusObjectPath> get_active_connections();
