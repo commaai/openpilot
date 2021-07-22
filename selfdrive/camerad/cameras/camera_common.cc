@@ -360,7 +360,7 @@ static void driver_cam_auto_exposure(CameraState *c, SubMaster &sm) {
 
   static ExpRect rect = def_rect;
   // use driver face crop for AE
-  if (sm.updated("driverState")) {
+  if (Hardware::EON() && sm.updated("driverState")) {
     if (auto state = sm["driverState"].getDriverState(); state.getFaceProb() > 0.4) {
       auto face_position = state.getFacePosition();
       int x = is_rhd ? 0 : frame_width - (0.5 * frame_height);
@@ -368,8 +368,6 @@ static void driver_cam_auto_exposure(CameraState *c, SubMaster &sm) {
       int y = (face_position[1] + 0.5) * frame_height + y_offset;
       rect = {std::max(0, x - 72), std::min(b->rgb_width - 1, x + 72), 2,
               std::max(0, y - 72), std::min(b->rgb_height - 1, y + 72), 1};
-    } else {
-      rect = def_rect;
     }
   }
 
