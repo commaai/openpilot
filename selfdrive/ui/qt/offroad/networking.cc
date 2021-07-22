@@ -307,17 +307,15 @@ void WifiUI::refresh() {
       qDebug() << "Updating:" << network.ssid;
       vlayout = qobject_cast<QVBoxLayout*>(main_layout->itemAt(i)->layout());
       QHBoxLayout *hlayout = qobject_cast<QHBoxLayout*>(vlayout->itemAt(0)->layout());
-//      clearLayout(hlayout);
-//      createNetworkWidget(hlayout, network, isTetheringEnabled);
       updateNetworkWidget(hlayout, network, isTetheringEnabled);
     } else {
       qDebug() << "Adding:" << network.ssid;
       vlayout = new QVBoxLayout;
-//      QHBoxLayout *hlayout = createNetworkWidget(new QHBoxLayout, network, isTetheringEnabled);
-      QHBoxLayout *hlayout = updateNetworkWidget(emptyWifiWidget(), network, isTetheringEnabled);
+      main_layout->insertLayout(i, vlayout);
+      QHBoxLayout *hlayout = emptyWifiWidget();
       vlayout->addLayout(hlayout);
       vlayout->addWidget(horizontal_line(), 0);
-      main_layout->insertLayout(i, vlayout);
+      updateNetworkWidget(hlayout, network, isTetheringEnabled);
     }
     vlayout->itemAt(1)->widget()->setVisible(i < wifi->seen_networks.size() - 1);  // hides last horizontal line
     i++;
