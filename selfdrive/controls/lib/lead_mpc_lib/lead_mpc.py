@@ -118,11 +118,11 @@ def gen_lead_mpc_solver():
   ocp.solver_options.hessian_approx = 'GAUSS_NEWTON'
   ocp.solver_options.integrator_type = 'ERK'
   ocp.solver_options.nlp_solver_type = 'SQP_RTI'
-  #ocp.solver_options.nlp_solver_tol_stat = 1e-3
-  #ocp.solver_options.tol = 1e-3
+  ocp.solver_options.nlp_solver_tol_stat = 1e-3
+  ocp.solver_options.tol = 1e-3
 
   ocp.solver_options.qp_solver_iter_max = 10
-  #ocp.solver_options.qp_tol = 1e-3
+  ocp.solver_options.qp_tol = 1e-3
   #ocp.solver_options.qp_solver_warm_start = 2
 
   # set prediction horizon
@@ -211,9 +211,9 @@ class LeadMpc():
         dt = .6
       ps[i] = np.array([x_lead, v_lead])
       self.solver.set(i, "p", ps[i])
-      if self.x_sol[i,0] > x_lead:
-        new_x = np.array([x_lead - 4.0, v_lead, 0.0])
-        self.solver.set(i, "x", new_x)
+      #if self.x_sol[i,0] > x_lead:
+      #  new_x = np.array([x_lead - 4.0, v_lead, 0.0])
+      #  self.solver.set(i, "x", new_x)
       x_ego += v_ego_e * dt
       v_ego_e = max(v_ego_e-3.0 * dt, 0.0)
       a_lead = a_lead_0 * np.exp(-self.a_lead_tau * (t**2)/2.)
