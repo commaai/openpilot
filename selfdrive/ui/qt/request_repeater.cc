@@ -24,10 +24,7 @@ RequestRepeater::RequestRepeater(QObject *parent, const QString &requestURL, con
       }
     });
     QObject::connect(this, &HttpRequest::failedResponse, [=](const QString &err) {
-      if (!prevResp.isEmpty()) {
-        params.remove(cacheKey.toStdString());
-        prevResp = "";
-      }
+      prevResp = "";
     });
   }
 }
