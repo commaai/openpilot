@@ -241,6 +241,8 @@ int ocp_nlp_cost_model_set(ocp_nlp_config *config, ocp_nlp_dims *dims, ocp_nlp_i
 /// \param stage Stage number.
 /// \param field The name of the field, either lb, ub (others TBC)
 /// \param value Constraints function or values.
+int ocp_nlp_constraints_model_set_slice(ocp_nlp_config *config, ocp_nlp_dims *dims, ocp_nlp_in *in,
+        int start_stage, int end_stage, const char *field, void *value, int dim);
 int ocp_nlp_constraints_model_set(ocp_nlp_config *config, ocp_nlp_dims *dims,
         ocp_nlp_in *in, int stage, const char *field, void *value);
 

@@ -96,12 +96,16 @@ def gen_long_mpc_solver():
   ocp.cost.zl = l1_penalty * weights
   ocp.cost.zu = l1_penalty * weights
 
-  ocp.solver_options.qp_solver = 'FULL_CONDENSING_QPOASES'
+  ocp.solver_options.qp_solver = 'PARTIAL_CONDENSING_HPIPM'
   ocp.solver_options.hessian_approx = 'GAUSS_NEWTON'
   ocp.solver_options.integrator_type = 'ERK'
   ocp.solver_options.nlp_solver_type = 'SQP_RTI'
-  ocp.solver_options.qp_solver_iter_max = 100
-  ocp.solver_options.qp_solver_cond_N = N
+  #ocp.solver_options.nlp_solver_tol_stat = 1e-3
+  #ocp.solver_options.tol = 1e-3
+
+  ocp.solver_options.qp_solver_iter_max = 10
+  #ocp.solver_options.qp_tol = 1e-3
+  #ocp.solver_options.qp_solver_warm_start = 2
 
   # set prediction horizon
   ocp.solver_options.tf = Tf
@@ -148,12 +152,10 @@ class LongitudinalMpc():
     speeds = v_cruise_clipped * np.ones(N+1)
     accels = np.zeros(N+1)
     yref = np.column_stack([poss, speeds, accels, np.zeros(N+1)])
-    #p = np.array([self.min_a, self.max_a])
-    #for i in range(N):
-    #  self.solver.set(i, "p", p)
-    for i in range(1,N):
-      self.solver.constraints_set(i, "lbx", np.array([0.0, 0.0,self.min_a]))
-      self.solver.constraints_set(i, "ubx", np.array([000000.0, 100.0,self.max_a]))
+    mins = np.tile(np.array([0.0, 0.0,self.min_a])[None], reps=(N-1,1))
+    maxs = np.tile(np.array([0.0, 100.0,self.max_a])[None], reps=(N-1,1))
+    self.solver.constraints_set_slice(1, N, "lbx", mins, api='old')
+    self.solver.constraints_set_slice(1, N, "ubx", maxs, api='old')
     self.solver.cost_set_slice(0, N, "yref", yref[:N])
     self.solver.set(N, "yref", yref[N][:3])
 
@@ -161,6 +163,7 @@ class LongitudinalMpc():
     self.x_sol = self.solver.get_slice(0, N+1, 'x')
     self.u_sol = self.solver.get_slice(0, N, 'u')
     self.cost = self.solver.get_cost()
+    #self.solver.print_statistics()
 
     self.v_solution = list(self.x_sol[:,1])
     self.a_solution = list(self.x_sol[:,2])

@@ -1309,8 +1309,11 @@ class AcadosOcpSolver:
 
         return
 
+    def constraints_set(self, start_stage_, field_, value_, api='warn'):
+      self.constraints_set_slice(start_stage_, start_stage_+1, field_, value_[None], api='warn')
+      return
 
-    def constraints_set(self, stage_, field_, value_, api='warn'):
+    def constraints_set_slice(self, start_stage_, end_stage_, field_, value_, api='warn'):
         """
         Set numerical data in the constraint module of the solver.
 
@@ -1325,8 +1328,10 @@ class AcadosOcpSolver:
 
         field = field_
         field = field.encode('utf-8')
+        dim = np.product(value_.shape[1:])
 
-        stage = c_int(stage_)
+        start_stage = c_int(start_stage_)
+        end_stage = c_int(end_stage_)
         self.shared_lib.ocp_nlp_constraint_dims_get_from_attr.argtypes = \
             [c_void_p, c_void_p, c_void_p, c_int, c_char_p, POINTER(c_int)]
         self.shared_lib.ocp_nlp_constraint_dims_get_from_attr.restype = c_int
@@ -1335,12 +1340,13 @@ class AcadosOcpSolver:
         dims_data = cast(dims.ctypes.data, POINTER(c_int))
 
         self.shared_lib.ocp_nlp_constraint_dims_get_from_attr(self.nlp_config, \
-            self.nlp_dims, self.nlp_out, stage_, field, dims_data)
+            self.nlp_dims, self.nlp_out, start_stage_, field, dims_data)
 
         value_shape = value_.shape
-        if len(value_shape) == 1:
-            value_shape = (value_shape[0], 0)
-        elif len(value_shape) == 2:
+        expected_shape = tuple(np.concatenate([np.array([end_stage_ - start_stage_]), dims]))
+        if len(value_shape) == 2:
+            value_shape = (value_shape[0], value_shape[1], 0)
+        elif len(value_shape) == 3:
             if api=='old':
                 pass
             elif api=='warn':
@@ -1363,17 +1369,17 @@ class AcadosOcpSolver:
             else:
                 raise Exception("Unknown api: '{}'".format(api))
                 
-        if value_shape != tuple(dims):
+        if value_shape != expected_shape:
             raise Exception('AcadosOcpSolver.constraints_set(): mismatching dimension' \
-                ' for field "{}" with dimension {} (you have {})'.format(field_, tuple(dims), value_shape))
+                ' for field "{}" with dimension {} (you have {})'.format(field_, expected_shape, value_shape))
 
         value_data = cast(value_.ctypes.data, POINTER(c_double))
         value_data_p = cast((value_data), c_void_p)
 
-        self.shared_lib.ocp_nlp_constraints_model_set.argtypes = \
-            [c_void_p, c_void_p, c_void_p, c_int, c_char_p, c_void_p]
-        self.shared_lib.ocp_nlp_constraints_model_set(self.nlp_config, \
-            self.nlp_dims, self.nlp_in, stage, field, value_data_p)
+        self.shared_lib.ocp_nlp_constraints_model_set_slice.argtypes = \
+            [c_void_p, c_void_p, c_void_p, c_int, c_int, c_char_p, c_void_p, c_int]
+        self.shared_lib.ocp_nlp_constraints_model_set_slice(self.nlp_config, \
+            self.nlp_dims, self.nlp_in, start_stage, end_stage, field, value_data_p, dim)
 
         return
 
