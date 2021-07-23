@@ -114,13 +114,13 @@ class Planner():
     # determine fcw
     if self.mpcs['lead0'].new_lead:
       self.fcw_checker.reset_lead(cur_time)
-    #blinkers = sm['carState'].leftBlinker or sm['carState'].rightBlinker
-    #self.fcw = self.fcw_checker.update(self.mpcs['lead0'].mpc_solution, cur_time,
-    #                                   sm['controlsState'].active,
-    #                                   v_ego, sm['carState'].aEgo,
-    #                                   self.lead_1.dRel, self.lead_1.vLead, self.lead_1.aLeadK,
-    #                                   self.lead_1.yRel, self.lead_1.vLat,
-    #                                   self.lead_1.fcw, blinkers) and not sm['carState'].brakePressed
+    blinkers = sm['carState'].leftBlinker or sm['carState'].rightBlinker
+    self.fcw = self.fcw_checker.update(self.mpcs['lead0'].x_sol[:,2], cur_time,
+                                       sm['controlsState'].active,
+                                       v_ego, sm['carState'].aEgo,
+                                       self.lead_1.dRel, self.lead_1.vLead, self.lead_1.aLeadK,
+                                       self.lead_1.yRel, self.lead_1.vLat,
+                                       self.lead_1.fcw, blinkers) and not sm['carState'].brakePressed
     if self.fcw:
       cloudlog.info("FCW triggered %s", self.fcw_checker.counters)
 
