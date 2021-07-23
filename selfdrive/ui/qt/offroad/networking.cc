@@ -241,8 +241,7 @@ void WifiUI::refresh() {
     // Clickable SSID label
     QPushButton *ssidLabel = new QPushButton(network.ssid);
     ssidLabel->setObjectName("ssidLabel");
-    ssidLabel->setEnabled(network.connected != ConnectedType::CONNECTED &&
-                          network.connected != ConnectedType::CONNECTING &&
+    ssidLabel->setEnabled(network.connected == ConnectedType::DISCONNECTED &&
                           network.security_type != SecurityType::UNSUPPORTED);
     if (network.connected != ConnectedType::DISCONNECTED) {
       ssidLabel->setStyleSheet(QString("font-weight: %1;").arg(500));
