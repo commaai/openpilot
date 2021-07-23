@@ -3,7 +3,7 @@ import numpy as np
 
 from selfdrive.swaglog import cloudlog
 from common.realtime import sec_since_boot
-from selfdrive.controls.lib.lateral_mpc.lat_mpc import generate_code, get_default_simulink_options
+from selfdrive.controls.lib.lateral_mpc_lib.lat_mpc import generate_code, get_default_simulink_options
 from selfdrive.controls.lib.drive_helpers import LON_MPC_N as N
 from selfdrive.modeld.constants import T_IDXS
 import os
