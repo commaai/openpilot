@@ -211,7 +211,7 @@ WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi)
     }
     #ssidLabel {
       font-size: 55px;
-      font-weight: %1;
+      font-weight: 300;
       text-align: left;
       border: none;
       padding-top: 50px;
@@ -240,11 +240,13 @@ void WifiUI::refresh() {
 
     // Clickable SSID label
     QPushButton *ssidLabel = new QPushButton(network.ssid);
-    ssidLabel->setEnabled(network.connected != ConnectedType::CONNECTED &&
-                           network.connected != ConnectedType::CONNECTING &&
-                           network.security_type != SecurityType::UNSUPPORTED);
-    int weight = network.connected == ConnectedType::DISCONNECTED ? 300 : 500;
     ssidLabel->setObjectName("ssidLabel");
+    ssidLabel->setEnabled(network.connected != ConnectedType::CONNECTED &&
+                          network.connected != ConnectedType::CONNECTING &&
+                          network.security_type != SecurityType::UNSUPPORTED);
+    if (network.connected != ConnectedType::DISCONNECTED) {
+      ssidLabel->setStyleSheet(QString("font-weight: %1;").arg(500));
+    }
     QObject::connect(ssidLabel, &QPushButton::clicked, this, [=]() { emit connectToNetwork(network); });
     hlayout->addWidget(ssidLabel, network.connected == ConnectedType::CONNECTING ? 0 : 1);
 
