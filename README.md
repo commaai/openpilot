@@ -304,7 +304,7 @@ Safety and Testing
 ----
 
 * openpilot observes ISO26262 guidelines, see [SAFETY.md](SAFETY.md) for more details.
-* openpilot has software in the loop [tests](.github/workflows/test.yaml) that run on every commit.
+* openpilot has software in the loop [tests](.github/workflows/selfdrive_tests.yaml) that run on every commit.
 * The safety model code lives in panda and is written in C, see [code rigor](https://github.com/commaai/panda#code-rigor) for more details.
 * panda has software in the loop [safety tests](https://github.com/commaai/panda/tree/master/tests/safety).
 * Internally, we have a hardware in the loop Jenkins test suite that builds and unit tests the various processes.
