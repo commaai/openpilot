@@ -244,7 +244,7 @@ void WifiUI::refresh() {
     ssidLabel->setEnabled(network.connected == ConnectedType::DISCONNECTED &&
                           network.security_type != SecurityType::UNSUPPORTED);
     if (network.connected != ConnectedType::DISCONNECTED) {
-      ssidLabel->setStyleSheet(QString("font-weight: %1;").arg(500));
+      ssidLabel->setStyleSheet("font-weight: 500;");
     }
     QObject::connect(ssidLabel, &QPushButton::clicked, this, [=]() { emit connectToNetwork(network); });
     hlayout->addWidget(ssidLabel, network.connected == ConnectedType::CONNECTING ? 0 : 1);
