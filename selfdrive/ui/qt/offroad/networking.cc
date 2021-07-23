@@ -213,7 +213,7 @@ WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QStackedWidget(parent), wif
 
 QHBoxLayout* WifiUI::emptyWifiWidget() {
   QHBoxLayout *hlayout = new QHBoxLayout();
-  hlayout->setContentsMargins(44, 0, 73, 0);
+  hlayout->setContentsMargins(44, 50, 73, 50);
   hlayout->setSpacing(50);
 
   QPushButton *ssidLabel = new QPushButton();
@@ -260,8 +260,8 @@ QVBoxLayout* WifiUI::updateNetworkWidget(QVBoxLayout *vlayout, const Network &ne
     text-align: left;
     border: none;
     padding-left: 15px;
-    padding-top: 50px;
-    padding-bottom: 50px;
+    padding-top: 0px;
+    padding-bottom: 0px;
   )").arg(weight));
   ssidLabel->disconnect();
   QObject::connect(ssidLabel, &QPushButton::clicked, this, [=]() { emit connectToNetwork(network); });
