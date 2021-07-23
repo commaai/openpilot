@@ -217,6 +217,9 @@ WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi)
       padding-top: 50px;
       padding-bottom: 50px;
     }
+    #ssidLabel[currentNetwork=true] {
+      font-weight: 500;
+    }
   )");
 }
 
@@ -243,9 +246,7 @@ void WifiUI::refresh() {
     ssidLabel->setObjectName("ssidLabel");
     ssidLabel->setEnabled(network.connected == ConnectedType::DISCONNECTED &&
                           network.security_type != SecurityType::UNSUPPORTED);
-    if (network.connected != ConnectedType::DISCONNECTED) {
-      ssidLabel->setStyleSheet("font-weight: 500;");
-    }
+    ssidLabel->setProperty("currentNetwork", network.connected != ConnectedType::DISCONNECTED);
     QObject::connect(ssidLabel, &QPushButton::clicked, this, [=]() { emit connectToNetwork(network); });
     hlayout->addWidget(ssidLabel, network.connected == ConnectedType::CONNECTING ? 0 : 1);
 
