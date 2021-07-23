@@ -46,7 +46,6 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
 
 class Planner():
   def __init__(self, CP):
-    self.cnt = 0
     self.CP = CP
     self.mpcs = {}
     self.mpcs['lead0'] = LeadMpc(0)
@@ -101,7 +100,6 @@ class Planner():
     accel_limits_turns[0] = min(accel_limits_turns[0], self.a_desired)
     accel_limits_turns[1] = max(accel_limits_turns[1], self.a_desired)
     self.mpcs['cruise'].set_accel_limits(accel_limits_turns[0], accel_limits_turns[1])
-    self.cnt += 1
     next_a = np.inf
     for key in self.mpcs:
       self.mpcs[key].set_cur_state(self.v_desired, self.a_desired)
@@ -112,7 +110,6 @@ class Planner():
         self.a_desired_trajectory = self.mpcs[key].a_solution[:CONTROL_N]
         self.j_desired_trajectory = self.mpcs[key].j_solution[:CONTROL_N]
         next_a = self.mpcs[key].a_solution[5]
-    print(self.cnt, self.longitudinalPlanSource)
 
     # determine fcw
     if self.mpcs['lead0'].new_lead:

@@ -174,7 +174,6 @@ class LeadMpc():
       x_lead = lead.dRel
       v_lead = max(0.0, lead.vLead)
       a_lead = lead.aLeadK
-      print(a_lead)
 
       if (v_lead < 0.1 or -a_lead / 2.0 > v_lead):
         v_lead = 0.0
@@ -202,8 +201,6 @@ class LeadMpc():
     x_ego = 0
     v_ego_e = v_ego
     a_lead_0 = a_lead
-    x_lead_0 = x_lead
-    v_lead_0 = v_lead
     ps = np.zeros((N+1,2))
     for i in range(N+1):
       if i > 4:
@@ -240,16 +237,6 @@ class LeadMpc():
     # Reset if NaN or goes through lead car
     nans = np.any(np.isnan(self.x_sol))
     crashing = np.any(ps[:,0] - self.x_sol[:,0] < 0)
-
-    print('HEYYY DOG')
-    print(ps[:,0] - self.x_sol[:,0])
-    print(v_ego, x_lead_0, v_lead_0, a_lead_0)
-    print(self.a_solution[6])
-    print(ps)
-    print(self.x_sol)
-    print()
-    print()
-    print()
 
     t = sec_since_boot()
     if ((crashing) and self.prev_lead_status) or nans:
