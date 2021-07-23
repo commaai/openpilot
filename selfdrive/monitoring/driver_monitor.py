@@ -3,6 +3,7 @@ from math import atan2, sqrt
 from cereal import car
 from common.numpy_fast import interp
 from common.realtime import DT_DMON
+from selfdrive.hardware import TICI
 from common.filter_simple import FirstOrderFilter
 from common.stat_live import RunningStatFilter
 
@@ -22,14 +23,14 @@ _DISTRACTED_PRE_TIME_TILL_TERMINAL = 8.
 _DISTRACTED_PROMPT_TIME_TILL_TERMINAL = 6.
 
 _FACE_THRESHOLD = 0.5
-_PARTIAL_FACE_THRESHOLD = 0.5
+_PARTIAL_FACE_THRESHOLD = 0.75 if TICI else 0.5
 _EYE_THRESHOLD = 0.5
 _SG_THRESHOLD = 0.5
 _BLINK_THRESHOLD = 0.5
 _BLINK_THRESHOLD_SLACK = 0.65
 _BLINK_THRESHOLD_STRICT = 0.5
 _PITCH_WEIGHT = 1.35  # pitch matters a lot more
-_POSESTD_THRESHOLD = 0.14
+_POSESTD_THRESHOLD = 0.318 if TICI else 0.14
 _E2E_POSE_THRESHOLD = 0.9
 _E2E_EYES_THRESHOLD = 0.75
 _METRIC_THRESHOLD = 0.4
