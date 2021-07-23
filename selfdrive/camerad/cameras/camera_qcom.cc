@@ -1113,7 +1113,7 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
   if (cnt % 3 == 0) {
     const int x = 290, y = 322, width = 560, height = 314;
     const int skip = 1;
-    camera_autoexposure(c, set_exposure_target(b, x, x + width, skip, y, y + height, skip, -1, false, false));
+    camera_autoexposure(c, set_exposure_target(b, x, x + width, skip, y, y + height, skip));
   }
 }
 
