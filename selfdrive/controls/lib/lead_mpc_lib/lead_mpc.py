@@ -90,16 +90,17 @@ def gen_lead_mpc_solver():
   G = 9.81
   TR = 1.8
   desired_dist = (v_ego * TR
-                  - (v_lead - v_ego) * TR + v_ego*v_ego/(2*G)
+                  - (v_lead - v_ego) * TR
+                  + v_ego*v_ego/(2*G)
                   - v_lead * v_lead / (2*G))
-  dist_err = ((desired_dist + 4.0 - (x_lead - x_ego))/(sqrt(v_ego + 0.5) + 0.1))
+  dist_err = (desired_dist + 4.0 - (x_lead - x_ego))/(sqrt(v_ego + 0.5) + 0.1)
 
   # TODO hacky weights to keep behavior the same
-  ocp.model.cost_y_expr = vertcat(0.3 * exp(dist_err) - 1.,
+  ocp.model.cost_y_expr = vertcat(exp(.3 * dist_err) - 1.,
                                   ((x_lead - x_ego) - (desired_dist + 4.0)) / (0.05 * v_ego + 0.5),
                                   a_ego * (.1 * v_ego + 1.0),
                                   j_ego * (.1 * v_ego + 1.0))
-  ocp.model.cost_y_expr_e = vertcat(0.3 * exp(dist_err) - 1.,
+  ocp.model.cost_y_expr_e = vertcat(exp(.3 * dist_err) - 1.,
                                   ((x_lead - x_ego) - (desired_dist + 4.0)) / (0.05 * v_ego + 0.5),
                                   a_ego * (.1 * v_ego + 1.0))
   ocp.parameter_values = np.array([0., .0])
@@ -149,7 +150,7 @@ class LeadMpc():
     self.status = False
     self.new_lead = False
     self.prev_lead_status = False
-    self.prev_lead_x = 100
+    self.prev_lead_x = 10
 
   def set_weights(self):
     W = np.diag([MPC_COST_LONG.TTC, MPC_COST_LONG.DISTANCE,
@@ -244,6 +245,10 @@ class LeadMpc():
     print('HEYYY DOG')
     print(ps[:,0] - self.x_sol[:,0])
     print(v_ego, x_lead_0, v_lead_0, a_lead_0)
+    print(self.a_solution[6])
+    print(ps)
+    print(self.x_sol)
+    print()
     print()
     print()
 
