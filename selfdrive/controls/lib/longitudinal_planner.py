@@ -11,7 +11,7 @@ from selfdrive.modeld.constants import T_IDXS
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.fcw import FCWChecker
 from selfdrive.controls.lib.longcontrol import LongCtrlState
-from selfdrive.controls.lib.lead_mpc import LeadMpc
+from selfdrive.controls.lib.lead_mpc_lib.lead_mpc import LeadMpc
 from selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import LongitudinalMpc
 from selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, CONTROL_N
 from selfdrive.swaglog import cloudlog
@@ -115,13 +115,13 @@ class Planner():
     # determine fcw
     if self.mpcs['lead0'].new_lead:
       self.fcw_checker.reset_lead(cur_time)
-    blinkers = sm['carState'].leftBlinker or sm['carState'].rightBlinker
-    self.fcw = self.fcw_checker.update(self.mpcs['lead0'].mpc_solution, cur_time,
-                                       sm['controlsState'].active,
-                                       v_ego, sm['carState'].aEgo,
-                                       self.lead_1.dRel, self.lead_1.vLead, self.lead_1.aLeadK,
-                                       self.lead_1.yRel, self.lead_1.vLat,
-                                       self.lead_1.fcw, blinkers) and not sm['carState'].brakePressed
+    #blinkers = sm['carState'].leftBlinker or sm['carState'].rightBlinker
+    #self.fcw = self.fcw_checker.update(self.mpcs['lead0'].mpc_solution, cur_time,
+    #                                   sm['controlsState'].active,
+    #                                   v_ego, sm['carState'].aEgo,
+    #                                   self.lead_1.dRel, self.lead_1.vLead, self.lead_1.aLeadK,
+    #                                   self.lead_1.yRel, self.lead_1.vLat,
+    #                                   self.lead_1.fcw, blinkers) and not sm['carState'].brakePressed
     if self.fcw:
       cloudlog.info("FCW triggered %s", self.fcw_checker.counters)
 
