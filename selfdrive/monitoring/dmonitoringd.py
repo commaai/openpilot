@@ -50,9 +50,8 @@ def dmonitoringd_thread(sm=None, pm=None):
     driver_status.get_pose(sm['driverState'], sm['liveCalibration'].rpyCalib, sm['carState'].vEgo, sm['controlsState'].enabled)
 
     # Block engaging after max number of distrations
-    # pylint: disable=no-member
-    if driver_status.terminal_alert_cnt >= driver_status._MAX_TERMINAL_ALERTS or \
-       driver_status.terminal_time >= driver_status._MAX_TERMINAL_DURATION:
+    if driver_status.terminal_alert_cnt >= driver_status.settings._MAX_TERMINAL_ALERTS or \
+       driver_status.terminal_time >= driver_status.settings._MAX_TERMINAL_DURATION:
       events.add(car.CarEvent.EventName.tooDistracted)
 
     # Update events from driver state
