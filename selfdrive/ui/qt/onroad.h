@@ -63,7 +63,7 @@ private:
 
   OnroadAlerts *alerts;
   NvgWindow *nvg;
-  QColor bg;
+  QColor bg = bg_colors[STATUS_DISENGAGED];
   QHBoxLayout* split;
 
 signals:
