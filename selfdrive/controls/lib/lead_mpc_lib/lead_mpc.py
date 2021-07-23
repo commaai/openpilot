@@ -123,7 +123,6 @@ def gen_lead_mpc_solver():
 
   ocp.solver_options.qp_solver_iter_max = 10
   ocp.solver_options.qp_tol = 1e-3
-  #ocp.solver_options.qp_solver_warm_start = 2
 
   # set prediction horizon
   ocp.solver_options.tf = Tf
