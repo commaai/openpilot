@@ -25,6 +25,7 @@ struct Network {
   ConnectedType connected;
   SecurityType security_type;
 };
+bool compare_by_strength(const Network &a, const Network &b);
 
 class WifiManager : public QWidget {
   Q_OBJECT

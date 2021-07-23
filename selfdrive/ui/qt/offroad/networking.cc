@@ -13,14 +13,6 @@
 #include "selfdrive/ui/qt/widgets/scrollview.h"
 
 
-bool compareByStrength(const Network &a, const Network &b) {
-  if (a.connected == ConnectedType::CONNECTED) return true;
-  if (b.connected == ConnectedType::CONNECTED) return false;
-  if (a.connected == ConnectedType::CONNECTING) return true;
-  if (b.connected == ConnectedType::CONNECTING) return false;
-  return a.strength > b.strength;
-}
-
 // Networking functions
 
 Networking::Networking(QWidget* parent, bool show_advanced) : QFrame(parent) {
@@ -219,7 +211,7 @@ void WifiUI::refresh() {
     return;
   }
   QList<Network> sortedNetworks = wifi->seenNetworks.values();
-  std::sort(sortedNetworks.begin(), sortedNetworks.end(), compareByStrength);
+  std::sort(sortedNetworks.begin(), sortedNetworks.end(), compare_by_strength);
 
   // add networks
   int i = 0;

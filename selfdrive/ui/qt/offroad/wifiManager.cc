@@ -20,6 +20,14 @@ T get_response(QDBusMessage response) {
   }
 }
 
+bool compare_by_strength(const Network &a, const Network &b) {
+  if (a.connected == ConnectedType::CONNECTED) return true;
+  if (b.connected == ConnectedType::CONNECTED) return false;
+  if (a.connected == ConnectedType::CONNECTING) return true;
+  if (b.connected == ConnectedType::CONNECTING) return false;
+  return a.strength > b.strength;
+}
+
 WifiManager::WifiManager(QWidget* parent) : QWidget(parent) {
   qDBusRegisterMetaType<Connection>();
   qDBusRegisterMetaType<IpConfig>();
