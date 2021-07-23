@@ -138,12 +138,11 @@ def gen_lat_mpc_solver():
   x0 = np.array([0.0, -1.0, 0.0, 0.0])
   ocp.constraints.x0 = x0
 
-  ocp.solver_options.qp_solver = 'FULL_CONDENSING_QPOASES'
+  ocp.solver_options.qp_solver = 'PARTIAL_CONDENSING_HPIPM'
   ocp.solver_options.hessian_approx = 'GAUSS_NEWTON'
   ocp.solver_options.integrator_type = 'ERK'
   ocp.solver_options.nlp_solver_type = 'SQP_RTI'
-  ocp.solver_options.qp_solver_iter_max = 100
-  ocp.solver_options.qp_solver_cond_N = N
+  ocp.solver_options.qp_solver_iter_max = 10
 
   # set prediction horizon
   ocp.solver_options.tf = Tf

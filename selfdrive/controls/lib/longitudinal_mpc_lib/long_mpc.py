@@ -100,12 +100,11 @@ def gen_long_mpc_solver():
   ocp.solver_options.hessian_approx = 'GAUSS_NEWTON'
   ocp.solver_options.integrator_type = 'ERK'
   ocp.solver_options.nlp_solver_type = 'SQP_RTI'
-  #ocp.solver_options.nlp_solver_tol_stat = 1e-3
-  #ocp.solver_options.tol = 1e-3
+  ocp.solver_options.nlp_solver_tol_stat = 1e-3
+  ocp.solver_options.tol = 1e-3
 
   ocp.solver_options.qp_solver_iter_max = 10
-  #ocp.solver_options.qp_tol = 1e-3
-  #ocp.solver_options.qp_solver_warm_start = 2
+  ocp.solver_options.qp_tol = 1e-3
 
   # set prediction horizon
   ocp.solver_options.tf = Tf
