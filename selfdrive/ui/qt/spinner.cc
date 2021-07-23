@@ -54,7 +54,9 @@ Spinner::Spinner(QWidget *parent) : QWidget(parent) {
   main_layout->addWidget(new TrackWidget(this), 0, 0, Qt::AlignHCenter | Qt::AlignVCenter);
 
   text = new QLabel();
+  text->setWordWrap(true);
   text->setVisible(false);
+  text->setAlignment(Qt::AlignCenter);
   main_layout->addWidget(text, 1, 0, Qt::AlignHCenter);
 
   progress_bar = new QProgressBar();

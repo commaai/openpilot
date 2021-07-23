@@ -5,7 +5,10 @@ from typing import Dict
 
 from cereal import car
 from selfdrive.car import dbc_dict
+
 Ecu = car.CarParams.Ecu
+TransmissionType = car.CarParams.TransmissionType
+GearShifter = car.CarState.GearShifter
 
 class CarControllerParams:
   HCA_STEP = 2                   # HCA_01 message frequency 50Hz
@@ -33,9 +36,6 @@ class DBC_FILES:
   mqb = "vw_mqb_2010"  # Used for all cars with MQB-style CAN messaging
 
 DBC = defaultdict(lambda: dbc_dict(DBC_FILES.mqb, None))  # type: Dict[str, Dict[str, str]]
-
-TransmissionType = car.CarParams.TransmissionType
-GearShifter = car.CarState.GearShifter
 
 BUTTON_STATES = {
   "accelCruise": False,
@@ -471,15 +471,18 @@ FW_VERSIONS = {
       b'\xf1\x8704E906027HD\xf1\x893742',
       b'\xf1\x8704L906021DT\xf1\x898127',
       b'\xf1\x8704L906026BS\xf1\x891541',
+      b'\xf1\x875G0906259C \xf1\x890002',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x870CW300043B \xf1\x891601',
+      b'\xf1\x870D9300041C \xf1\x894936',
       b'\xf1\x870D9300041J \xf1\x894902',
       b'\xf1\x870D9300041P \xf1\x894507',
     ],
     (Ecu.srs, 0x715, None): [
       b'\xf1\x873Q0959655AC\xf1\x890200\xf1\x82\r11120011100010022212110200',
       b'\xf1\x873Q0959655AS\xf1\x890200\xf1\x82\r11120011100010022212110200',
+      b'\xf1\x873Q0959655AQ\xf1\x890200\xf1\x82\r11120011100010312212113100',
       b'\xf1\x873Q0959655CN\xf1\x890720\xf1\x82\x0e3221003221002105755331052100',
     ],
     (Ecu.eps, 0x712, None): [
