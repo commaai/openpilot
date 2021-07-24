@@ -3,8 +3,8 @@ import numpy as np
 
 from selfdrive.swaglog import cloudlog
 from common.realtime import sec_since_boot
-from selfdrive.controls.lib.lateral_mpc_lib.lat_mpc import generate_code, get_default_simulink_options
 from selfdrive.controls.lib.drive_helpers import LON_MPC_N as N
+from selfdrive.controls.lib.lateral_mpc_lib.lat_mpc import generate_code
 from selfdrive.modeld.constants import T_IDXS
 import os
 import sys
@@ -20,7 +20,8 @@ sys.path.append(os.path.join(BASEDIR, "pyextra"))
 
 
 
-LON_MPC_DIR = os.path.dirname(os.path.abspath(__file__))
+LONG_MPC_DIR = os.path.dirname(os.path.abspath(__file__))
+EXPORT_DIR = os.path.join(LONG_MPC_DIR, "c_generated_code")
 JSON_FILE = "acados_ocp_long.json"
 
 
@@ -110,15 +111,13 @@ def gen_long_mpc_solver():
   ocp.solver_options.tf = Tf
   ocp.solver_options.shooting_nodes = np.array(T_IDXS)[:N+1]
 
-  ocp.code_export_directory = os.path.join(LON_MPC_DIR, "c_generated_code")
+  ocp.code_export_directory = EXPORT_DIR
   return ocp
 
 
 class LongitudinalMpc():
   def __init__(self):
-    ocp = gen_long_mpc_solver()
-    self.solver = AcadosOcpSolver(ocp, json_file=JSON_FILE, build=False,
-                                  simulink_opts=get_default_simulink_options())
+    self.solver = AcadosOcpSolver('long', N, EXPORT_DIR)
     self.x_sol = np.zeros((N+1, 3))
     self.u_sol = np.zeros((N))
     self.set_weights()

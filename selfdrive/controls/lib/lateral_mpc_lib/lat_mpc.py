@@ -7,6 +7,7 @@ from common.basedir import BASEDIR
 # TODO: clean this up
 acados_path = os.path.join(BASEDIR, "phonelibs/acados/x86_64")
 os.environ["TERA_PATH"] = os.path.join(acados_path, "t_renderer")
+print(os.path.join(acados_path, "t_renderer"))
 sys.path.append(os.path.join(BASEDIR, "pyextra"))
 
 import acados_template as acados_template
@@ -19,6 +20,7 @@ from selfdrive.controls.lib.drive_helpers import T_IDXS
 
 
 LAT_MPC_DIR = os.path.dirname(os.path.abspath(__file__))
+EXPORT_DIR = os.path.join(LAT_MPC_DIR, "c_generated_code")
 JSON_FILE = "acados_ocp_lat.json"
 
 
@@ -148,15 +150,13 @@ def gen_lat_mpc_solver():
   ocp.solver_options.tf = Tf
   ocp.solver_options.shooting_nodes = np.array(T_IDXS)[:N+1]
 
-  ocp.code_export_directory = os.path.join(LAT_MPC_DIR, "c_generated_code")
+  ocp.code_export_directory = EXPORT_DIR
   return ocp
 
 
 class LateralMpc():
   def __init__(self):
-    ocp = gen_lat_mpc_solver()
-    self.solver = AcadosOcpSolver(ocp, json_file=JSON_FILE, build=False,
-                                  simulink_opts=get_default_simulink_options())
+    self.solver = AcadosOcpSolver('lat', N, EXPORT_DIR)
     self.x_sol = np.zeros((N+1, 4))
     self.u_sol = np.zeros((N))
 
@@ -186,4 +186,5 @@ class LateralMpc():
 
 if __name__ == "__main__":
   ocp = gen_lat_mpc_solver()
+  #AcadosOcpSolver.generate(ocp, json_file=JSON_FILE, build=False)
   generate_code(ocp, json_file=JSON_FILE)
