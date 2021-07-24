@@ -545,7 +545,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
   # current GPS position. This alert is thrown when the localizer is reset
   # more often than expected.
   EventName.localizerMalfunction: {
-    ET.PERMANENT: NormalPermanentAlert("Localizer unstable", "Contact Support"),
+    ET.PERMANENT: NormalPermanentAlert("Sensor Malfunction", "Contact Support"),
   },
 
   # ********** events that affect controls state transitions **********

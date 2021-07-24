@@ -31,7 +31,7 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
   onroad = new OnroadWindow(this);
   slayout->addWidget(onroad);
 
-  QObject::connect(this, &HomeWindow::update, onroad, &OnroadWindow::update);
+  QObject::connect(this, &HomeWindow::update, onroad, &OnroadWindow::updateStateSignal);
   QObject::connect(this, &HomeWindow::offroadTransitionSignal, onroad, &OnroadWindow::offroadTransitionSignal);
 
   driver_view = new DriverViewWindow(this);
@@ -39,6 +39,7 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
     showDriverView(false);
   });
   slayout->addWidget(driver_view);
+  setAttribute(Qt::WA_NoSystemBackground);
 }
 
 void HomeWindow::showSidebar(bool show) {
@@ -46,12 +47,12 @@ void HomeWindow::showSidebar(bool show) {
 }
 
 void HomeWindow::offroadTransition(bool offroad) {
+  sidebar->setVisible(offroad);
   if (offroad) {
     slayout->setCurrentWidget(home);
   } else {
     slayout->setCurrentWidget(onroad);
   }
-  sidebar->setVisible(offroad);
   emit offroadTransitionSignal(offroad);
 }
 

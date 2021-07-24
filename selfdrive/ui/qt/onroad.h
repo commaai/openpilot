@@ -18,20 +18,15 @@ class OnroadAlerts : public QWidget {
   Q_OBJECT
 
 public:
-  OnroadAlerts(QWidget *parent = 0) {};
+  OnroadAlerts(QWidget *parent = 0) : QWidget(parent) {};
+  void updateAlert(const Alert &a, const QColor &color);
 
 protected:
   void paintEvent(QPaintEvent*) override;
 
 private:
   QColor bg;
-  Alert alert;
-
-  void updateAlert(Alert a);
-
-public slots:
-  void updateState(const UIState &s);
-  void offroadTransition(bool offroad);
+  Alert alert = {};
 };
 
 class OnroadHud : public QWidget {
@@ -85,13 +80,18 @@ public:
   QWidget *map = nullptr;
 
 private:
-  QStackedLayout *main_layout;
+  void paintEvent(QPaintEvent *event);
+
+  OnroadAlerts *alerts;
+  NvgWindow *nvg;
+  QColor bg = bg_colors[STATUS_DISENGAGED];
   QHBoxLayout* split;
 
 signals:
-  void update(const UIState &s);
+  void updateStateSignal(const UIState &s);
   void offroadTransitionSignal(bool offroad);
 
 private slots:
   void offroadTransition(bool offroad);
+  void updateState(const UIState &s);
 };

@@ -73,17 +73,6 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                    "../assets/offroad/icon_road.png",
                                    this));
 
-  if (Hardware::TICI()) {
-    toggles.append(new ParamControl("EnableWideCamera",
-                                    "Enable use of Wide Angle Camera",
-                                    "Use wide angle camera for driving and ui.",
-                                    "../assets/offroad/icon_openpilot.png",
-                                    this));
-    QObject::connect(toggles.back(), &ToggleControl::toggleFlipped, [=](bool state) {
-      Params().remove("CalibrationParams");
-    });
-  }
-
 #ifdef ENABLE_MAPS
   toggles.append(new ParamControl("NavSettingTime24h",
                                   "Show ETA in 24h format",
@@ -227,8 +216,6 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : QWidget(parent) {
     }
   }
 
-  setStyleSheet(R"(QLabel {font-size: 50px;})");
-
   fs_watch = new QFileSystemWatcher(this);
   QObject::connect(fs_watch, &QFileSystemWatcher::fileChanged, [=](const QString path) {
     int update_failed_count = params.get<int>("UpdateFailedCount").value_or(0);
@@ -309,13 +296,15 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   )");
 
   // close button
-  QPushButton *close_btn = new QPushButton("X");
+  QPushButton *close_btn = new QPushButton("×");
   close_btn->setStyleSheet(R"(
-    font-size: 90px;
+    font-size: 140px;
+    padding-bottom: 20px;
     font-weight: bold;
     border 1px grey solid;
     border-radius: 100px;
     background-color: #292929;
+    font-weight: 400;
   )");
   close_btn->setFixedSize(200, 200);
   sidebar_layout->addSpacing(45);
@@ -335,12 +324,11 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   };
 
 #ifdef ENABLE_MAPS
-  if (!Params().get("MapboxToken").empty()) {
-    auto map_panel = new MapPanel(this);
-    panels.push_back({"Navigation", map_panel});
-    QObject::connect(map_panel, &MapPanel::closeSettings, this, &SettingsWindow::closeSettings);
-  }
+  auto map_panel = new MapPanel(this);
+  panels.push_back({"Navigation", map_panel});
+  QObject::connect(map_panel, &MapPanel::closeSettings, this, &SettingsWindow::closeSettings);
 #endif
+
   const int padding = panels.size() > 3 ? 25 : 35;
 
   nav_btns = new QButtonGroup();

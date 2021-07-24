@@ -150,7 +150,6 @@ void ui_draw(UIState *s, int w, int h) {
   if (scene->world_objects_visible) {
     ui_draw_world(s);
   }
-
   nvgEndFrame(s->vg);
   glDisable(GL_BLEND);
 }
