@@ -1,27 +1,17 @@
 #!/usr/bin/env python3
+import os
 import numpy as np
 
-from selfdrive.swaglog import cloudlog
 from common.numpy_fast import interp
 from common.realtime import sec_since_boot
+from selfdrive.swaglog import cloudlog
 from selfdrive.modeld.constants import T_IDXS
+from selfdrive.controls.lib.drive_helpers import MPC_COST_LONG, CONTROL_N
 from selfdrive.controls.lib.radar_helpers import _LEAD_ACCEL_TAU
-import os
-import sys
-from common.basedir import BASEDIR
 from selfdrive.controls.lib.lateral_mpc_lib.lat_mpc import generate_code
 
 from acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
 from casadi import SX, vertcat, sqrt, exp
-from selfdrive.controls.lib.drive_helpers import MPC_COST_LONG
-from selfdrive.controls.lib.drive_helpers import CONTROL_N
-
-# TODO: clean this up
-acados_path = os.path.join(BASEDIR, "phonelibs/acados/x86_64")
-os.environ["TERA_PATH"] = os.path.join(acados_path, "t_renderer")
-sys.path.append(os.path.join(BASEDIR, "pyextra"))
-
-
 
 LEAD_MPC_DIR = os.path.dirname(os.path.abspath(__file__))
 EXPORT_DIR = os.path.join(LEAD_MPC_DIR, "c_generated_code")
@@ -249,4 +239,5 @@ class LeadMpc():
 
 if __name__ == "__main__":
   ocp = gen_lead_mpc_solver()
+  #AcadosOcpSolver.generate(ocp, json_file=JSON_FILE, build=True, simulink_opts=get_default_simulink_options())
   generate_code(ocp, json_file=JSON_FILE)

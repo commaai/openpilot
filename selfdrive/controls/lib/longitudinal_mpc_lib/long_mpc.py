@@ -1,22 +1,16 @@
 #!/usr/bin/env python3
+import os
 import numpy as np
 
-from selfdrive.swaglog import cloudlog
 from common.realtime import sec_since_boot
+from selfdrive.swaglog import cloudlog
 from selfdrive.controls.lib.drive_helpers import LON_MPC_N as N
 from selfdrive.controls.lib.lateral_mpc_lib.lat_mpc import generate_code
 from selfdrive.modeld.constants import T_IDXS
-import os
-import sys
-from common.basedir import BASEDIR
 
 from acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
 from casadi import SX, vertcat
 
-# TODO: clean this up
-acados_path = os.path.join(BASEDIR, "phonelibs/acados/x86_64")
-os.environ["TERA_PATH"] = os.path.join(acados_path, "t_renderer")
-sys.path.append(os.path.join(BASEDIR, "pyextra"))
 
 
 
@@ -181,4 +175,5 @@ class LongitudinalMpc():
 
 if __name__ == "__main__":
   ocp = gen_long_mpc_solver()
+  #AcadosOcpSolver.generate(ocp, json_file=JSON_FILE, build=True, simulink_opts=get_default_simulink_options())
   generate_code(ocp, json_file=JSON_FILE)
