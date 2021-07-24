@@ -213,7 +213,7 @@ class TestAthenadMethods(unittest.TestCase):
       Path(fn).touch()
       fl.append(os.path.basename(fn))
 
-    # ensure the list is all logs accept most recent
+    # ensure the list is all logs except most recent
     sl = athenad.get_logs_to_send_sorted()
     self.assertListEqual(sl, fl[:-1])
 
