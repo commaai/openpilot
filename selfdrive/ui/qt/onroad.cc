@@ -7,18 +7,20 @@
 #include "selfdrive/common/timing.h"
 #include "selfdrive/ui/paint.h"
 #include "selfdrive/ui/qt/util.h"
-
 #ifdef ENABLE_MAPS
 #include "selfdrive/ui/qt/maps/map.h"
 #endif
 
 OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
-  main_layout = new QStackedLayout(this);
-  main_layout->setStackingMode(QStackedLayout::StackAll);
+  QVBoxLayout *main_layout  = new QVBoxLayout(this);
+  main_layout->setMargin(bdr_s);
+  QStackedLayout *stacked_layout = new QStackedLayout;
+  stacked_layout->setStackingMode(QStackedLayout::StackAll);
+  main_layout->addLayout(stacked_layout);
 
   // old UI on bottom
   nvg = new NvgWindow(this);
-  QObject::connect(this, &OnroadWindow::update, nvg, &NvgWindow::update);
+  QObject::connect(this, &OnroadWindow::updateStateSignal, nvg, &NvgWindow::updateState);
 
   QWidget * split_wrapper = new QWidget;
   split = new QHBoxLayout(split_wrapper);
@@ -26,21 +28,46 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   split->setSpacing(0);
   split->addWidget(nvg);
 
-  main_layout->addWidget(split_wrapper);
+  stacked_layout->addWidget(split_wrapper);
 
   alerts = new OnroadAlerts(this);
   alerts->setAttribute(Qt::WA_TransparentForMouseEvents, true);
-  QObject::connect(this, &OnroadWindow::update, alerts, &OnroadAlerts::updateState);
-  QObject::connect(this, &OnroadWindow::offroadTransitionSignal, alerts, &OnroadAlerts::offroadTransition);
-  QObject::connect(this, &OnroadWindow::offroadTransitionSignal, this, &OnroadWindow::offroadTransition);
-  main_layout->addWidget(alerts);
+  stacked_layout->addWidget(alerts);
 
   // setup stacking order
   alerts->raise();
 
   setAttribute(Qt::WA_OpaquePaintEvent);
+  QObject::connect(this, &OnroadWindow::updateStateSignal, this, &OnroadWindow::updateState);
+  QObject::connect(this, &OnroadWindow::offroadTransitionSignal, this, &OnroadWindow::offroadTransition);
 }
 
+void OnroadWindow::updateState(const UIState &s) {
+  SubMaster &sm = *(s.sm);
+  QColor bgColor = bg_colors[s.status];
+  if (sm.updated("controlsState")) {
+    const cereal::ControlsState::Reader &cs = sm["controlsState"].getControlsState();
+    alerts->updateAlert({QString::fromStdString(cs.getAlertText1()),
+                 QString::fromStdString(cs.getAlertText2()),
+                 QString::fromStdString(cs.getAlertType()),
+                 cs.getAlertSize(), cs.getAlertSound()}, bgColor);
+  } else if ((sm.frame - s.scene.started_frame) > 5 * UI_FREQ) {
+    // Handle controls timeout
+    if (sm.rcv_frame("controlsState") < s.scene.started_frame) {
+      // car is started, but controlsState hasn't been seen at all
+      alerts->updateAlert(CONTROLS_WAITING_ALERT, bgColor);
+    } else if ((nanos_since_boot() - sm.rcv_time("controlsState")) / 1e9 > CONTROLS_TIMEOUT) {
+      // car is started, but controls is lagging or died
+      bgColor = bg_colors[STATUS_ALERT];
+      alerts->updateAlert(CONTROLS_UNRESPONSIVE_ALERT, bgColor);
+    }
+  }
+  if (bg != bgColor) {
+    // repaint border
+    bg = bgColor;
+    update();
+  }
+}
 
 void OnroadWindow::offroadTransition(bool offroad) {
 #ifdef ENABLE_MAPS
@@ -57,50 +84,25 @@ void OnroadWindow::offroadTransition(bool offroad) {
       MapWindow * m = new MapWindow(settings);
       QObject::connect(this, &OnroadWindow::offroadTransitionSignal, m, &MapWindow::offroadTransition);
       split->addWidget(m);
-
       map = m;
     }
-
   }
 #endif
+
+  alerts->updateAlert({}, bg);
+}
+
+void OnroadWindow::paintEvent(QPaintEvent *event) {
+  QPainter p(this);
+  p.fillRect(rect(), QColor(bg.red(), bg.green(), bg.blue(), 255));
 }
 
 // ***** onroad widgets *****
 
-void OnroadAlerts::updateState(const UIState &s) {
-  SubMaster &sm = *(s.sm);
-  if (sm["deviceState"].getDeviceState().getStarted()) {
-    if (sm.updated("controlsState")) {
-      const cereal::ControlsState::Reader &cs = sm["controlsState"].getControlsState();
-      updateAlert({QString::fromStdString(cs.getAlertText1()),
-                   QString::fromStdString(cs.getAlertText2()),
-                   QString::fromStdString(cs.getAlertType()),
-                   cs.getAlertSize(), cs.getAlertSound()});
-    } else if ((sm.frame - s.scene.started_frame) > 10 * UI_FREQ) {
-      // Handle controls timeout
-      if (sm.rcv_frame("controlsState") < s.scene.started_frame) {
-        // car is started, but controlsState hasn't been seen at all
-        updateAlert(CONTROLS_WAITING_ALERT);
-      } else if ((nanos_since_boot() - sm.rcv_time("controlsState")) / 1e9 > CONTROLS_TIMEOUT) {
-        // car is started, but controls is lagging or died
-        updateAlert(CONTROLS_UNRESPONSIVE_ALERT);
-
-        // TODO: clean this up once Qt handles the border
-        QUIState::ui_state.status = STATUS_ALERT;
-      }
-    }
-  }
-
-  bg = bg_colors[s.status];
-}
-
-void OnroadAlerts::offroadTransition(bool offroad) {
-  updateAlert({});
-}
-
-void OnroadAlerts::updateAlert(Alert a) {
-  if (!alert.equal(a)) {
+void OnroadAlerts::updateAlert(const Alert &a, const QColor &color) {
+  if (!alert.equal(a) || color != bg) {
     alert = a;
+    bg = color;
     update();
   }
 }
@@ -134,9 +136,6 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
   p.setBrush(QBrush(g));
   p.fillRect(r, g);
   p.setCompositionMode(QPainter::CompositionMode_SourceOver);
-
-  // remove bottom border
-  r = QRect(0, height() - h, width(), h - 30);
 
   // text
   const QPoint c = r.center();
@@ -180,10 +179,13 @@ void NvgWindow::initializeGL() {
   prev_draw_t = millis_since_boot();
 }
 
-void NvgWindow::update(const UIState &s) {
+void NvgWindow::updateState(const UIState &s) {
   // Connecting to visionIPC requires opengl to be current
   if (s.vipc_client->connected) {
     makeCurrent();
+  }
+  if (isVisible() != s.vipc_client->connected) {
+    setVisible(s.vipc_client->connected);
   }
   repaint();
 }
