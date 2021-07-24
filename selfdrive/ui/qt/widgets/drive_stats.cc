@@ -46,9 +46,9 @@ DriveStats::DriveStats(QWidget* parent) : QWidget(parent) {
   }
 
   setStyleSheet(R"(
-    QLabel[type="title"] {font-size: 48px; font-weight: 500;}
-    QLabel[type="number"] {font-size: 80px; font-weight: 600;}
-    QLabel[type="unit"] {font-size: 45px; font-weight: 500;}
+    QLabel[type="title"] { font-size: 48px; font-weight: 500; }
+    QLabel[type="number"] { font-size: 80px; font-weight: 600; }
+    QLabel[type="unit"] { font-size: 45px; font-weight: 500; }
   )");
 }
 
