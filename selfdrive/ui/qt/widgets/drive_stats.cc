@@ -10,21 +10,11 @@
 
 const double MILE_TO_KM = 1.60934;
 
-namespace {
-
-QLabel* numberLabel() {
-  QLabel* label = new QLabel("0");
-  label->setStyleSheet("font-size: 80px; font-weight: 600;");
+static QLabel* newLabel(const QString& text, const QString &type) {
+  QLabel* label = new QLabel(text);
+  label->setProperty("type", type);
   return label;
 }
-
-QLabel* unitLabel(const QString& name) {
-  QLabel* label = new QLabel(name);
-  label->setStyleSheet("font-size: 45px; font-weight: 500;");
-  return label;
-}
-
-}  // namespace
 
 DriveStats::DriveStats(QWidget* parent) : QWidget(parent) {
   metric_ = Params().getBool("IsMetric");
@@ -34,15 +24,15 @@ DriveStats::DriveStats(QWidget* parent) : QWidget(parent) {
 
   auto add_stats_layouts = [=](const QString &title, StatsLabels& labels) {
     int row = main_layout->rowCount();
-    main_layout->addWidget(new QLabel(title), row++, 0, 1, 3);
+    main_layout->addWidget(newLabel(title, "title"), row++, 0, 1, 3);
 
-    main_layout->addWidget(labels.routes = numberLabel(), row, 0, Qt::AlignLeft);
-    main_layout->addWidget(labels.distance = numberLabel(), row, 1, Qt::AlignLeft);
-    main_layout->addWidget(labels.hours = numberLabel(), row, 2, Qt::AlignLeft);
+    main_layout->addWidget(labels.routes = newLabel("0", "number"), row, 0, Qt::AlignLeft);
+    main_layout->addWidget(labels.distance = newLabel("0", "number"), row, 1, Qt::AlignLeft);
+    main_layout->addWidget(labels.hours = newLabel("0", "number"), row, 2, Qt::AlignLeft);
 
-    main_layout->addWidget(unitLabel("DRIVES"), row + 1, 0, Qt::AlignLeft);
-    main_layout->addWidget(labels.distance_unit = unitLabel(getDistanceUnit()), row + 1, 1, Qt::AlignLeft);
-    main_layout->addWidget(unitLabel("HOURS"), row + 1, 2, Qt::AlignLeft);
+    main_layout->addWidget(newLabel("DRIVES", "unit"), row + 1, 0, Qt::AlignLeft);
+    main_layout->addWidget(labels.distance_unit = newLabel(getDistanceUnit(), "unit"), row + 1, 1, Qt::AlignLeft);
+    main_layout->addWidget(newLabel("HOURS", "unit"), row + 1, 2, Qt::AlignLeft);
   };
 
   add_stats_layouts("ALL TIME", all_);
@@ -55,7 +45,11 @@ DriveStats::DriveStats(QWidget* parent) : QWidget(parent) {
     QObject::connect(repeater, &RequestRepeater::receivedResponse, this, &DriveStats::parseResponse);
   }
 
-  setStyleSheet(R"(QLabel {font-size: 48px; font-weight: 500;})");
+  setStyleSheet(R"(
+    QLabel[type="title"] { font-size: 48px; font-weight: 500; }
+    QLabel[type="number"] { font-size: 80px; font-weight: 600; }
+    QLabel[type="unit"] { font-size: 45px; font-weight: 500; }
+  )");
 }
 
 void DriveStats::updateStats() {
