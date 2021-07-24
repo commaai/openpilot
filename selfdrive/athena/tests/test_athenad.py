@@ -28,6 +28,7 @@ class TestAthenadMethods(unittest.TestCase):
     athenad.Params = MockParams
     athenad.Api = MockApi
     athenad.LOCAL_PORT_WHITELIST = set([cls.SOCKET_PORT])
+    swaglog.SWAGLOG_DIR = tempfile.mkdtemp()
 
   def test_echo(self):
     assert dispatcher["echo"]("bob") == "bob"
