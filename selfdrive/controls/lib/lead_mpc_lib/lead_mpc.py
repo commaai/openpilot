@@ -4,12 +4,12 @@ import numpy as np
 from selfdrive.swaglog import cloudlog
 from common.numpy_fast import interp
 from common.realtime import sec_since_boot
-from selfdrive.controls.lib.lateral_mpc_lib.lat_mpc import generate_code, get_default_simulink_options
 from selfdrive.modeld.constants import T_IDXS
 from selfdrive.controls.lib.radar_helpers import _LEAD_ACCEL_TAU
 import os
 import sys
 from common.basedir import BASEDIR
+from selfdrive.controls.lib.lateral_mpc_lib.lat_mpc import generate_code
 
 from acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
 from casadi import SX, vertcat, sqrt, exp
@@ -24,6 +24,7 @@ sys.path.append(os.path.join(BASEDIR, "pyextra"))
 
 
 LEAD_MPC_DIR = os.path.dirname(os.path.abspath(__file__))
+EXPORT_DIR = os.path.join(LEAD_MPC_DIR, "c_generated_code")
 JSON_FILE = "acados_ocp_lead.json"
 
 MPC_T = list(np.arange(0,1.,.2)) + list(np.arange(1.,10.6,.6))
@@ -128,16 +129,14 @@ def gen_lead_mpc_solver():
   ocp.solver_options.tf = Tf
   ocp.solver_options.shooting_nodes = np.array(MPC_T)
 
-  ocp.code_export_directory = os.path.join(LEAD_MPC_DIR, "c_generated_code")
+  ocp.code_export_directory = EXPORT_DIR
   return ocp
 
 
 class LeadMpc():
   def __init__(self, lead_id):
     self.lead_id = lead_id
-    ocp = gen_lead_mpc_solver()
-    self.solver = AcadosOcpSolver(ocp, json_file=JSON_FILE, build=False,
-                                  simulink_opts=get_default_simulink_options())
+    self.solver = AcadosOcpSolver('lead', N, EXPORT_DIR)
     self.x_sol = np.zeros((N+1, 3))
     self.u_sol = np.zeros((N))
     self.set_weights()
