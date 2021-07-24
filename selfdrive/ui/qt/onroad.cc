@@ -45,23 +45,21 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 void OnroadWindow::updateState(const UIState &s) {
   SubMaster &sm = *(s.sm);
   QColor bgColor = bg_colors[s.status];
-  if (sm["deviceState"].getDeviceState().getStarted()) {
-    if (sm.updated("controlsState")) {
-      const cereal::ControlsState::Reader &cs = sm["controlsState"].getControlsState();
-      alerts->updateAlert({QString::fromStdString(cs.getAlertText1()),
-                   QString::fromStdString(cs.getAlertText2()),
-                   QString::fromStdString(cs.getAlertType()),
-                   cs.getAlertSize(), cs.getAlertSound()}, bgColor);
-    } else if ((sm.frame - s.scene.started_frame) > 5 * UI_FREQ) {
-      // Handle controls timeout
-      if (sm.rcv_frame("controlsState") < s.scene.started_frame) {
-        // car is started, but controlsState hasn't been seen at all
-        alerts->updateAlert(CONTROLS_WAITING_ALERT, bgColor);
-      } else if ((nanos_since_boot() - sm.rcv_time("controlsState")) / 1e9 > CONTROLS_TIMEOUT) {
-        // car is started, but controls is lagging or died
-        bgColor = bg_colors[STATUS_ALERT];
-        alerts->updateAlert(CONTROLS_UNRESPONSIVE_ALERT, bgColor);
-      }
+  if (sm.updated("controlsState")) {
+    const cereal::ControlsState::Reader &cs = sm["controlsState"].getControlsState();
+    alerts->updateAlert({QString::fromStdString(cs.getAlertText1()),
+                 QString::fromStdString(cs.getAlertText2()),
+                 QString::fromStdString(cs.getAlertType()),
+                 cs.getAlertSize(), cs.getAlertSound()}, bgColor);
+  } else if ((sm.frame - s.scene.started_frame) > 5 * UI_FREQ) {
+    // Handle controls timeout
+    if (sm.rcv_frame("controlsState") < s.scene.started_frame) {
+      // car is started, but controlsState hasn't been seen at all
+      alerts->updateAlert(CONTROLS_WAITING_ALERT, bgColor);
+    } else if ((nanos_since_boot() - sm.rcv_time("controlsState")) / 1e9 > CONTROLS_TIMEOUT) {
+      // car is started, but controls is lagging or died
+      bgColor = bg_colors[STATUS_ALERT];
+      alerts->updateAlert(CONTROLS_UNRESPONSIVE_ALERT, bgColor);
     }
   }
   if (bg != bgColor) {
@@ -91,7 +89,7 @@ void OnroadWindow::offroadTransition(bool offroad) {
   }
 #endif
 
-  alerts->clearAlert();
+  alerts->updateAlert({}, bg);
 }
 
 void OnroadWindow::paintEvent(QPaintEvent *event) {
@@ -107,11 +105,6 @@ void OnroadAlerts::updateAlert(const Alert &a, const QColor &color) {
     bg = color;
     update();
   }
-}
-
-void OnroadAlerts::clearAlert() {
-  alert = {};
-  update();
 }
 
 void OnroadAlerts::paintEvent(QPaintEvent *event) {

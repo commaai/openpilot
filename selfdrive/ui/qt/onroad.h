@@ -19,7 +19,6 @@ class OnroadAlerts : public QWidget {
 public:
   OnroadAlerts(QWidget *parent = 0) : QWidget(parent) {};
   void updateAlert(const Alert &a, const QColor &color);
-  void clearAlert();
 
 protected:
   void paintEvent(QPaintEvent*) override;
