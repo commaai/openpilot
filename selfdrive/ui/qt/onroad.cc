@@ -95,11 +95,8 @@ void OnroadWindow::offroadTransition(bool offroad) {
 }
 
 void OnroadWindow::paintEvent(QPaintEvent *event) {
-  // draw border
   QPainter p(this);
-  QColor color(bg.red(), bg.green(), bg.blue(), 255);
-  p.setPen(QPen(color, bdr_s, Qt::SolidLine, Qt::SquareCap, Qt::MiterJoin));
-  p.drawRect(rect().adjusted(bdr_s / 2, bdr_s / 2, -bdr_s / 2, -bdr_s / 2));
+  p.fillRect(rect(), QColor(bg.red(), bg.green(), bg.blue(), 255));
 }
 
 // ***** onroad widgets *****
@@ -193,6 +190,9 @@ void NvgWindow::updateState(const UIState &s) {
   // Connecting to visionIPC requires opengl to be current
   if (s.vipc_client->connected) {
     makeCurrent();
+  }
+  if (isVisible() != s.vipc_client->connected) {
+    setVisible(s.vipc_client->connected);
   }
   repaint();
 }
