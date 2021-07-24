@@ -9,7 +9,6 @@
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/ui.h"
 
-typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
 
 // ***** onroad widgets *****
 
