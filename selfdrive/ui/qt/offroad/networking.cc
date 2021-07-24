@@ -200,6 +200,27 @@ WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi)
       padding-bottom: 16px;
       padding-top: 16px;
     }
+    #connecting {
+      font-size: 32px;
+      font-weight: 600;
+      color: white;
+      border-radius: 0;
+      padding: 27px;
+      padding-left: 43px;
+      padding-right: 43px;
+      background-color: black;
+    }
+    #ssidLabel {
+      font-size: 55px;
+      font-weight: 300;
+      text-align: left;
+      border: none;
+      padding-top: 50px;
+      padding-bottom: 50px;
+    }
+    #ssidLabel[disconnected=false] {
+      font-weight: 500;
+    }
   )");
 }
 
@@ -222,34 +243,17 @@ void WifiUI::refresh() {
     hlayout->setSpacing(50);
 
     // Clickable SSID label
-    QPushButton *ssid_label = new QPushButton(network.ssid);
-    ssid_label->setEnabled(network.connected != ConnectedType::CONNECTED &&
-                           network.connected != ConnectedType::CONNECTING &&
-                           network.security_type != SecurityType::UNSUPPORTED);
-    int weight = network.connected == ConnectedType::DISCONNECTED ? 300 : 500;
-    ssid_label->setStyleSheet(QString(R"(
-      font-size: 55px;
-      font-weight: %1;
-      text-align: left;
-      border: none;
-      padding-top: 50px;
-      padding-bottom: 50px;
-    )").arg(weight));
-    QObject::connect(ssid_label, &QPushButton::clicked, this, [=]() { emit connectToNetwork(network); });
-    hlayout->addWidget(ssid_label, network.connected == ConnectedType::CONNECTING ? 0 : 1);
+    QPushButton *ssidLabel = new QPushButton(network.ssid);
+    ssidLabel->setObjectName("ssidLabel");
+    ssidLabel->setEnabled(network.connected == ConnectedType::DISCONNECTED &&
+                          network.security_type != SecurityType::UNSUPPORTED);
+    ssidLabel->setProperty("disconnected", network.connected == ConnectedType::DISCONNECTED);
+    QObject::connect(ssidLabel, &QPushButton::clicked, this, [=]() { emit connectToNetwork(network); });
+    hlayout->addWidget(ssidLabel, network.connected == ConnectedType::CONNECTING ? 0 : 1);
 
     if (network.connected == ConnectedType::CONNECTING) {
       QPushButton *connecting = new QPushButton("CONNECTING...");
-      connecting->setStyleSheet(R"(
-        font-size: 32px;
-        font-weight: 600;
-        color: white;
-        border-radius: 0;
-        padding: 27px;
-        padding-left: 43px;
-        padding-right: 43px;
-        background-color: black;
-      )");
+      connecting->setObjectName("connecting");
       hlayout->addWidget(connecting, 2, Qt::AlignLeft);
     }
 
