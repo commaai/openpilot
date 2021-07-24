@@ -800,8 +800,6 @@ class AcadosOcpSolver:
         ocp_formulation_json_dump(acados_ocp, simulink_opts, json_file)
 
         code_export_dir = acados_ocp.code_export_directory
-        print(json_file)
-        raise RuntimeError
         # render templates
         ocp_render_templates(acados_ocp, json_file)
 
