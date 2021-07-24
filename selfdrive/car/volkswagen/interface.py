@@ -14,10 +14,10 @@ class CarInterface(CarInterfaceBase):
     self.buttonStatesPrev = BUTTON_STATES.copy()
 
     if CP.networkLocation == NetworkLocation.fwdCamera:
-      CANBUS.ext = CANBUS.pt
+      self.ext_bus = CANBUS.pt
       self.cp_ext = self.cp
     else:
-      CANBUS.ext = CANBUS.cam
+      self.ext_bus = CANBUS.cam
       self.cp_ext = self.cp_cam
 
   @staticmethod
@@ -177,7 +177,7 @@ class CarInterface(CarInterfaceBase):
     return self.CS.out
 
   def apply(self, c):
-    can_sends = self.CC.update(c.enabled, self.CS, self.frame, c.actuators,
+    can_sends = self.CC.update(c.enabled, self.CS, self.frame, self.ext_bus, c.actuators,
                    c.hudControl.visualAlert,
                    c.hudControl.leftLaneVisible,
                    c.hudControl.rightLaneVisible,
