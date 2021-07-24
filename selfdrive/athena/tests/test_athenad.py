@@ -15,7 +15,6 @@ from websocket import ABNF
 from websocket._exceptions import WebSocketConnectionClosedException
 
 from selfdrive import swaglog
-swaglog.SWAGLOG_DIR = tempfile.mkdtemp() # change before athenad import
 from selfdrive.athena import athenad
 from selfdrive.athena.athenad import dispatcher
 from selfdrive.athena.tests.helpers import MockWebsocket, MockParams, MockApi, EchoSocket, with_http_server
@@ -26,6 +25,7 @@ class TestAthenadMethods(unittest.TestCase):
   def setUpClass(cls):
     cls.SOCKET_PORT = 45454
     athenad.ROOT = tempfile.mkdtemp()
+    athenad.SWAGLOG_DIR = swaglog.SWAGLOG_DIR = tempfile.mkdtemp()
     athenad.Params = MockParams
     athenad.Api = MockApi
     athenad.LOCAL_PORT_WHITELIST = set([cls.SOCKET_PORT])
