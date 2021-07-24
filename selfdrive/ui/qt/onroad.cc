@@ -35,7 +35,7 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   stacked_layout->addWidget(alerts);
 
   OnroadHud *hud = new OnroadHud(this);
-  QObject::connect(this, &OnroadWindow::update, hud, &OnroadHud::updateState);
+  QObject::connect(this, &OnroadWindow::updateState, hud, &OnroadHud::updateState);
   QObject::connect(this, &OnroadWindow::offroadTransitionSignal, hud, &OnroadHud::offroadTransition);
   main_layout->addWidget(hud);
 
