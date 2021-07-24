@@ -95,7 +95,7 @@ class LeadMpc():
     # Reset if NaN or goes through lead car
     crashing = any(lead - ego < -50 for (lead, ego) in zip(self.mpc_solution[0].x_l, self.mpc_solution[0].x_ego))
     nans = any(math.isnan(x) for x in self.mpc_solution[0].v_ego)
-    backwards = min(self.mpc_solution[0].v_ego) < -0.01
+    backwards = min(self.mpc_solution[0].v_ego) < -0.15
 
     if ((backwards or crashing) and self.prev_lead_status) or nans:
       if t > self.last_cloudlog_t + 5.0:
