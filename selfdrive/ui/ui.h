@@ -149,8 +149,6 @@ typedef struct UIState {
   GLuint frame_vao, frame_vbo, frame_ibo;
   mat4 rear_frame_mat;
 
-  bool awake;
-
   float car_space_transform[6];
   bool wide_camera;
 } UIState;
