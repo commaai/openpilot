@@ -17,20 +17,15 @@ class OnroadAlerts : public QWidget {
   Q_OBJECT
 
 public:
-  OnroadAlerts(QWidget *parent = 0) {};
+  OnroadAlerts(QWidget *parent = 0) : QWidget(parent) {};
+  void updateAlert(const Alert &a, const QColor &color);
 
 protected:
   void paintEvent(QPaintEvent*) override;
 
 private:
   QColor bg;
-  Alert alert;
-
-  void updateAlert(Alert a);
-
-public slots:
-  void updateState(const UIState &s);
-  void offroadTransition(bool offroad);
+  Alert alert = {};
 };
 
 // container window for the NVG UI
@@ -51,7 +46,7 @@ private:
   double prev_draw_t = 0;
 
 public slots:
-  void update(const UIState &s);
+  void updateState(const UIState &s);
 };
 
 // container for all onroad widgets
@@ -63,15 +58,18 @@ public:
   QWidget *map = nullptr;
 
 private:
+  void paintEvent(QPaintEvent *event);
+
   OnroadAlerts *alerts;
   NvgWindow *nvg;
-  QStackedLayout *main_layout;
+  QColor bg = bg_colors[STATUS_DISENGAGED];
   QHBoxLayout* split;
 
 signals:
-  void update(const UIState &s);
+  void updateStateSignal(const UIState &s);
   void offroadTransitionSignal(bool offroad);
 
 private slots:
   void offroadTransition(bool offroad);
+  void updateState(const UIState &s);
 };
