@@ -2,36 +2,28 @@
 import os
 import sys
 import json
-from common.basedir import BASEDIR
-
-# TODO: clean this up
-acados_path = os.path.join(BASEDIR, "phonelibs/acados/x86_64")
-os.environ["TERA_PATH"] = os.path.join(acados_path, "t_renderer")
-print(os.path.join(acados_path, "t_renderer"))
-sys.path.append(os.path.join(BASEDIR, "pyextra"))
-
-import acados_template as acados_template
 import numpy as np
-from acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
-from casadi import SX, vertcat, sin, cos
 
+from casadi import SX, vertcat, sin, cos
+from common.basedir import BASEDIR
 from selfdrive.controls.lib.drive_helpers import LAT_MPC_N as N
 from selfdrive.controls.lib.drive_helpers import T_IDXS
 
 
-LAT_MPC_DIR = os.path.dirname(os.path.abspath(__file__))
-EXPORT_DIR = os.path.join(LAT_MPC_DIR, "c_generated_code")
-JSON_FILE = "acados_ocp_lat.json"
+# TODO: clean this up
+acados_path = os.path.join(BASEDIR, "phonelibs/acados/x86_64")
+os.environ["TERA_PATH"] = os.path.join(acados_path, "t_renderer")
+json_path = os.path.join(BASEDIR, "pyextra/acados_template")
+sys.path.append(os.path.join(BASEDIR, "pyextra"))
 
+import acados_template as acados_template
+from acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
 
-# TODO: fix this up in AcadosOcpSolver
 def get_default_simulink_options():
   template_dir = os.path.dirname(acados_template.__file__)
   with open(os.path.join(template_dir, 'simulink_default_opts.json')) as f:
     return json.load(f)
 
-
-# TODO: move to acados_template?
 def generate_code(acados_ocp, json_file):
   from acados_template.acados_ocp_solver import make_ocp_dims_consistent, set_up_imported_gnsf_model, \
                                                 remove_x0_elimination, ocp_generate_external_functions, \
@@ -58,6 +50,11 @@ def generate_code(acados_ocp, json_file):
 
   # render templates
   ocp_render_templates(acados_ocp, json_file)
+
+
+LAT_MPC_DIR = os.path.dirname(os.path.abspath(__file__))
+EXPORT_DIR = os.path.join(LAT_MPC_DIR, "c_generated_code")
+JSON_FILE = "acados_ocp_lat.json"
 
 
 def gen_lat_model():
@@ -186,5 +183,5 @@ class LateralMpc():
 
 if __name__ == "__main__":
   ocp = gen_lat_mpc_solver()
-  #AcadosOcpSolver.generate(ocp, json_file=JSON_FILE, build=False)
+  #AcadosOcpSolver.generate(ocp, json_file=JSON_FILE, build=True, simulink_opts=get_default_simulink_options())
   generate_code(ocp, json_file=JSON_FILE)
