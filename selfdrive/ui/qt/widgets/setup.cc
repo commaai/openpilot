@@ -92,7 +92,7 @@ PrimeUserWidget::PrimeUserWidget(QWidget* parent) : QWidget(parent) {
   std::string dongleId = Params().get("DongleId");
   if (util::is_valid_dongle_id(dongleId)) {
     std::string url = "https://api.commadotai.com/v1/devices/" + dongleId + "/owner";
-    RequestRepeater *repeater = new RequestRepeater(this, QString::fromStdString(url), "ApiCache_Owner", 6);
+    RequestRepeater *repeater = new RequestRepeater(this, QString::fromStdString(url), "ApiCache_Owner", 12);
     QObject::connect(repeater, &RequestRepeater::receivedResponse, this, &PrimeUserWidget::replyFinished);
   }
 }
@@ -220,9 +220,8 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
   // set up API requests
   std::string dongleId = Params().get("DongleId");
   if (util::is_valid_dongle_id(dongleId)) {
-    std::string url = "https://api.commadotai.com/v1.1/devices/" + dongleId + "/";
-    RequestRepeater* repeater = new RequestRepeater(this, QString::fromStdString(url), "ApiCache_Device", 5);
-
+    QString url = "https://api.commadotai.com/v1.1/devices/" + QString::fromStdString(dongleId) + "/";
+    RequestRepeater* repeater = new RequestRepeater(this, url, "ApiCache_Device", 10);
     QObject::connect(repeater, &RequestRepeater::receivedResponse, this, &SetupWidget::replyFinished);
     QObject::connect(repeater, &RequestRepeater::failedResponse, this, &SetupWidget::parseError);
   }
