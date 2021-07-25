@@ -1,5 +1,5 @@
 from cereal import car
-from selfdrive.car.volkswagen.values import CAR, BUTTON_STATES, TransmissionType, GearShifter
+from selfdrive.car.volkswagen.values import CAR, BUTTON_STATES, CANBUS, NetworkLocation, TransmissionType, GearShifter
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
 
@@ -12,6 +12,13 @@ class CarInterface(CarInterfaceBase):
 
     self.displayMetricUnitsPrev = None
     self.buttonStatesPrev = BUTTON_STATES.copy()
+
+    if CP.networkLocation == NetworkLocation.fwdCamera:
+      self.ext_bus = CANBUS.pt
+      self.cp_ext = self.cp
+    else:
+      self.ext_bus = CANBUS.cam
+      self.cp_ext = self.cp_cam
 
   @staticmethod
   def compute_gb(accel, speed):
@@ -35,6 +42,11 @@ class CarInterface(CarInterfaceBase):
         ret.transmissionType = TransmissionType.direct
       else:  # No trans message at all, must be a true stick-shift manual
         ret.transmissionType = TransmissionType.manual
+
+      if 0x86 in fingerprint[1]:  # LWI_01 seen on bus 1, we're wired to the CAN gateway
+        ret.networkLocation = NetworkLocation.gateway
+      else:  # We're wired to the LKAS camera
+        ret.networkLocation = NetworkLocation.fwdCamera
 
     # Global tuning defaults, can be overridden per-vehicle
 
@@ -129,7 +141,7 @@ class CarInterface(CarInterfaceBase):
     self.cp.update_strings(can_strings)
     self.cp_cam.update_strings(can_strings)
 
-    ret = self.CS.update(self.cp, self.cp_cam, self.CP.transmissionType)
+    ret = self.CS.update(self.cp, self.cp_cam, self.cp_ext, self.CP.transmissionType)
     ret.canValid = self.cp.can_valid and self.cp_cam.can_valid
     ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
 
@@ -165,7 +177,7 @@ class CarInterface(CarInterfaceBase):
     return self.CS.out
 
   def apply(self, c):
-    can_sends = self.CC.update(c.enabled, self.CS, self.frame, c.actuators,
+    can_sends = self.CC.update(c.enabled, self.CS, self.frame, self.ext_bus, c.actuators,
                    c.hudControl.visualAlert,
                    c.hudControl.leftLaneVisible,
                    c.hudControl.rightLaneVisible,
