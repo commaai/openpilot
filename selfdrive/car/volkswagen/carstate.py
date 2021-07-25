@@ -4,7 +4,7 @@ from selfdrive.config import Conversions as CV
 from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
-from selfdrive.car.volkswagen.values import DBC_FILES, CANBUS, TransmissionType, GearShifter, BUTTON_STATES, CarControllerParams
+from selfdrive.car.volkswagen.values import DBC_FILES, CANBUS, NetworkLocation, TransmissionType, GearShifter, BUTTON_STATES, CarControllerParams
 
 class CarState(CarStateBase):
   def __init__(self, CP):
@@ -17,7 +17,7 @@ class CarState(CarStateBase):
     self.hca_status_values = can_define.dv["LH_EPS_03"]["EPS_HCA_Status"]
     self.buttonStates = BUTTON_STATES.copy()
 
-  def update(self, pt_cp, cam_cp, trans_type):
+  def update(self, pt_cp, cam_cp, ext_cp, trans_type):
     ret = car.CarState.new_message()
     # Update vehicle speed and acceleration from ABS wheel speeds.
     ret.wheelSpeeds.fl = pt_cp.vl["ESP_19"]["ESP_VL_Radgeschw_02"] * CV.KPH_TO_MS
@@ -79,8 +79,8 @@ class CarState(CarStateBase):
     # Consume blind-spot monitoring info/warning LED states, if available.
     # Infostufe: BSM LED on, Warnung: BSM LED flashing
     if self.CP.enableBsm:
-      ret.leftBlindspot = bool(pt_cp.vl["SWA_01"]["SWA_Infostufe_SWA_li"]) or bool(pt_cp.vl["SWA_01"]["SWA_Warnung_SWA_li"])
-      ret.rightBlindspot = bool(pt_cp.vl["SWA_01"]["SWA_Infostufe_SWA_re"]) or bool(pt_cp.vl["SWA_01"]["SWA_Warnung_SWA_re"])
+      ret.leftBlindspot = bool(ext_cp.vl["SWA_01"]["SWA_Infostufe_SWA_li"]) or bool(ext_cp.vl["SWA_01"]["SWA_Warnung_SWA_li"])
+      ret.rightBlindspot = bool(ext_cp.vl["SWA_01"]["SWA_Infostufe_SWA_re"]) or bool(ext_cp.vl["SWA_01"]["SWA_Warnung_SWA_re"])
 
     # Consume factory LDW data relevant for factory SWA (Lane Change Assist)
     # and capture it for forwarding to the blind spot radar controller
@@ -95,8 +95,8 @@ class CarState(CarStateBase):
     # braking release bits are set.
     # Refer to VW Self Study Program 890253: Volkswagen Driver Assistance
     # Systems, chapter on Front Assist with Braking: Golf Family for all MQB
-    ret.stockFcw = bool(pt_cp.vl["ACC_10"]["AWV2_Freigabe"])
-    ret.stockAeb = bool(pt_cp.vl["ACC_10"]["ANB_Teilbremsung_Freigabe"]) or bool(pt_cp.vl["ACC_10"]["ANB_Zielbremsung_Freigabe"])
+    ret.stockFcw = bool(ext_cp.vl["ACC_10"]["AWV2_Freigabe"])
+    ret.stockAeb = bool(ext_cp.vl["ACC_10"]["ANB_Teilbremsung_Freigabe"]) or bool(ext_cp.vl["ACC_10"]["ANB_Zielbremsung_Freigabe"])
 
     # Update ACC radar status.
     accStatus = pt_cp.vl["TSK_06"]["TSK_Status"]
@@ -115,7 +115,7 @@ class CarState(CarStateBase):
 
     # Update ACC setpoint. When the setpoint is zero or there's an error, the
     # radar sends a set-speed of ~90.69 m/s / 203mph.
-    ret.cruiseState.speed = pt_cp.vl["ACC_02"]["ACC_Wunschgeschw"] * CV.KPH_TO_MS
+    ret.cruiseState.speed = ext_cp.vl["ACC_02"]["ACC_Wunschgeschw"] * CV.KPH_TO_MS
     if ret.cruiseState.speed > 90:
       ret.cruiseState.speed = 0
 
@@ -222,13 +222,13 @@ class CarState(CarStateBase):
                   ("BCM1_Rueckfahrlicht_Schalter", "Gateway_72", 0)]  # Reverse light from BCM
       checks += [("Motor_14", 10)]  # From J623 Engine control module
 
-    # TODO: Detect ACC radar bus location
-    signals += MqbExtraSignals.fwd_radar_signals
-    checks += MqbExtraSignals.fwd_radar_checks
-    # TODO: Detect BSM radar bus location
-    if CP.enableBsm:
-      signals += MqbExtraSignals.bsm_radar_signals
-      checks += MqbExtraSignals.bsm_radar_checks
+    if CP.networkLocation == NetworkLocation.fwdCamera:
+      # Radars are here on CANBUS.pt
+      signals += MqbExtraSignals.fwd_radar_signals
+      checks += MqbExtraSignals.fwd_radar_checks
+      if CP.enableBsm:
+        signals += MqbExtraSignals.bsm_radar_signals
+        checks += MqbExtraSignals.bsm_radar_checks
 
     return CANParser(DBC_FILES.mqb, signals, checks, CANBUS.pt)
 
@@ -248,6 +248,14 @@ class CarState(CarStateBase):
       # sig_address, frequency
       ("LDW_02", 10)        # From R242 Driver assistance camera
     ]
+
+    if CP.networkLocation == NetworkLocation.gateway:
+      # Radars are here on CANBUS.cam
+      signals += MqbExtraSignals.fwd_radar_signals
+      checks += MqbExtraSignals.fwd_radar_checks
+      if CP.enableBsm:
+        signals += MqbExtraSignals.bsm_radar_signals
+        checks += MqbExtraSignals.bsm_radar_checks
 
     return CANParser(DBC_FILES.mqb, signals, checks, CANBUS.cam)
 
