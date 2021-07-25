@@ -14,6 +14,7 @@ from unittest import mock
 from websocket import ABNF
 from websocket._exceptions import WebSocketConnectionClosedException
 
+from selfdrive import swaglog
 from selfdrive.athena import athenad
 from selfdrive.athena.athenad import dispatcher
 from selfdrive.athena.tests.helpers import MockWebsocket, MockParams, MockApi, EchoSocket, with_http_server
@@ -24,6 +25,7 @@ class TestAthenadMethods(unittest.TestCase):
   def setUpClass(cls):
     cls.SOCKET_PORT = 45454
     athenad.ROOT = tempfile.mkdtemp()
+    athenad.SWAGLOG_DIR = swaglog.SWAGLOG_DIR = tempfile.mkdtemp()
     athenad.Params = MockParams
     athenad.Api = MockApi
     athenad.LOCAL_PORT_WHITELIST = set([cls.SOCKET_PORT])
@@ -203,6 +205,17 @@ class TestAthenadMethods(unittest.TestCase):
     finally:
       end_event.set()
       thread.join()
+
+  def test_get_logs_to_send_sorted(self):
+    fl = list()
+    for i in range(10):
+      fn = os.path.join(swaglog.SWAGLOG_DIR, f'swaglog.{i:010}')
+      Path(fn).touch()
+      fl.append(os.path.basename(fn))
+
+    # ensure the list is all logs except most recent
+    sl = athenad.get_logs_to_send_sorted()
+    self.assertListEqual(sl, fl[:-1])
 
 if __name__ == '__main__':
   unittest.main()
