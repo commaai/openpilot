@@ -20,16 +20,16 @@ class HttpRequest : public QObject {
   Q_OBJECT
 
 public:
-  explicit HttpRequest(QObject* parent, const QString &requestURL, bool create_jwt_ = true, int timeout = 20000);
+  explicit HttpRequest(QObject* parent, bool create_jwt = true, int timeout = 20000);
   void sendRequest(const QString &requestURL);
   bool active();
 
 protected:
-  QNetworkReply *reply;
+  QNetworkReply *reply = nullptr;
 
 private:
-  QNetworkAccessManager *networkAccessManager;
-  QTimer *networkTimer;
+  QNetworkAccessManager *networkAccessManager = nullptr;
+  QTimer *networkTimer = nullptr;
   bool create_jwt;
 
 private slots:
