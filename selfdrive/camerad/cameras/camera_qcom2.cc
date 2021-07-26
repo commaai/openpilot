@@ -25,7 +25,7 @@
 extern ExitHandler do_exit;
 
 const size_t FRAME_WIDTH = 1928;
-const size_t FRAME_HEIGHT =1208;
+const size_t FRAME_HEIGHT = 1208;
 const size_t FRAME_STRIDE = 2416;  // for 10 bit output
 
 const int MIPI_SETTLE_CNT = 33;  // Calculated by camera_freqs.py
