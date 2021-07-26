@@ -6,20 +6,13 @@ import multiprocessing
 from typing import Optional
 
 from common.clock import sec_since_boot  # pylint: disable=no-name-in-module, import-error
-from selfdrive.hardware import PC, TICI
+from selfdrive.hardware import PC
 
 
 # time step for each process
 DT_CTRL = 0.01  # controlsd
 DT_MDL = 0.05  # model
 DT_TRML = 0.5  # thermald and manager
-
-# driver monitoring
-if TICI:
-  DT_DMON = 0.05
-else:
-  DT_DMON = 0.1
-
 
 class Priority:
   # CORE 2

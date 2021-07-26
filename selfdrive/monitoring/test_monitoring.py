@@ -3,7 +3,6 @@ import unittest
 import numpy as np
 
 from cereal import car, log
-from common.realtime import DT_DMON
 from selfdrive.controls.lib.events import Events
 from selfdrive.monitoring.driver_monitor import DriverStatus, DRIVER_MONITOR_SETTINGS
 
@@ -15,6 +14,7 @@ DISTRACTED_SECONDS_TO_ORANGE = dm_settings._DISTRACTED_TIME - dm_settings._DISTR
 DISTRACTED_SECONDS_TO_RED = dm_settings._DISTRACTED_TIME + 1
 INVISIBLE_SECONDS_TO_ORANGE = dm_settings._AWARENESS_TIME - dm_settings._AWARENESS_PROMPT_TIME_TILL_TERMINAL + 1
 INVISIBLE_SECONDS_TO_RED = dm_settings._AWARENESS_TIME + 1
+DT_DMON = dm_settings._DT_DMON
 
 def make_msg(face_detected, distracted=False, model_uncertain=False):
   ds = log.DriverState.new_message()
