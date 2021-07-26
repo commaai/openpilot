@@ -15,14 +15,14 @@ public slots:
   void displayPowerChanged(bool on);
 
 private:
-  RequestRepeater(QObject *parent = 0);
+  RequestRepeater() : QObject() {};
   void updateRequests();
 
   struct Request {
     bool while_onroad;
     QString url;
-    QTimer *timer;
-    HttpRequest *req;
+    QTimer timer;
+    HttpRequest req;
     QString prevResp;
   };
   std::vector<std::unique_ptr<Request>> requests_;
