@@ -29,7 +29,7 @@ from selfdrive.hardware import HARDWARE, PC, TICI
 from selfdrive.loggerd.config import ROOT
 from selfdrive.loggerd.xattr_cache import getxattr, setxattr
 from selfdrive.swaglog import cloudlog, SWAGLOG_DIR
-from selfdrive.version import get_version, get_git_remote, get_git_branch, get_git_commit
+from selfdrive.version import version, get_version, get_git_remote, get_git_branch, get_git_commit
 
 ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
 HANDLER_THREADS = int(os.getenv('HANDLER_THREADS', "4"))
@@ -493,6 +493,7 @@ def main():
                              enable_multithread=True,
                              timeout=30.0)
       cloudlog.event("athenad.main.connected_ws", ws_uri=ws_uri)
+      params.delete("PrimeRedirected")
 
       manage_tokens(api)
 
@@ -502,13 +503,22 @@ def main():
       break
     except (ConnectionError, TimeoutError, WebSocketException):
       conn_retries += 1
+      params.delete("PrimeRedirected")
       params.delete("LastAthenaPingTime")
-      if TICI:
-        cloudlog.exception("athenad.main.exception2")
+    except socket.timeout:
+      try:
+        r = requests.get("http://api.commadotai.com/v1/me", allow_redirects=False,
+                         headers={"User-Agent": f"openpilot-{version}"}, timeout=15.0)
+        if r.status_code == 302 and r.headers['Location'].startswith("http://u.web2go.com"):
+          params.put_bool("PrimeRedirected", True)
+      except Exception:
+        cloudlog.exception("athenad.socket_timeout.exception")
+      params.delete("LastAthenaPingTime")
     except Exception:
       cloudlog.exception("athenad.main.exception")
 
       conn_retries += 1
+      params.delete("PrimeRedirected")
       params.delete("LastAthenaPingTime")
 
     time.sleep(backoff(conn_retries))
