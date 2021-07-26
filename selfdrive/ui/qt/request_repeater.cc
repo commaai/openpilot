@@ -48,7 +48,7 @@ void RequestRepeater::displayPowerChanged(bool on) {
 
 void RequestRepeater::updateRequests() {
   for (auto &r : requests_) {
-    awake_ && (offroad_ || r->while_onroad) ? r->timer.start() : r->timer.stop();
+    (awake_ && (offroad_ || r->while_onroad)) ? r->timer.start() : r->timer.stop();
   }
 }
 

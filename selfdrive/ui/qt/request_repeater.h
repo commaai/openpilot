@@ -9,7 +9,7 @@ class RequestRepeater : public QObject {
   Q_OBJECT
 
 public:
-  HttpRequest *request(const QString &requestURL, const QString &cacheKey = "", int period = 0, bool while_onroad = false);
+  HttpRequest *request(const QString &requestURL, const QString &cacheKey, int period, bool while_onroad = false);
 
 public slots:
   void offroadTransition(bool offroad);
