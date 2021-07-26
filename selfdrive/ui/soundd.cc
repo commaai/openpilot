@@ -14,18 +14,25 @@
 // TODO: detect when we can't play sounds
 // TODO: detect when we can't display the UI
 
+// TODO: merge again and add EQ in the amp config
+#ifdef QCOM2
+  const QString sound_asset_path = "../assets/sounds_tici/";
+#else
+  const QString sound_asset_path = "../assets/sounds_eon/";
+#endif
+
 class Sound : public QObject {
 public:
   explicit Sound(QObject *parent = 0) {
     std::tuple<AudibleAlert, QString, bool> sound_list[] = {
-      {AudibleAlert::CHIME_DISENGAGE, "../assets/sounds/disengaged.wav", false},
-      {AudibleAlert::CHIME_ENGAGE, "../assets/sounds/engaged.wav", false},
-      {AudibleAlert::CHIME_WARNING1, "../assets/sounds/warning_1.wav", false},
-      {AudibleAlert::CHIME_WARNING2, "../assets/sounds/warning_2.wav", false},
-      {AudibleAlert::CHIME_WARNING2_REPEAT, "../assets/sounds/warning_2.wav", true},
-      {AudibleAlert::CHIME_WARNING_REPEAT, "../assets/sounds/warning_repeat.wav", true},
-      {AudibleAlert::CHIME_ERROR, "../assets/sounds/error.wav", false},
-      {AudibleAlert::CHIME_PROMPT, "../assets/sounds/error.wav", false}
+      {AudibleAlert::CHIME_DISENGAGE, sound_asset_path + "disengaged.wav", false},
+      {AudibleAlert::CHIME_ENGAGE, sound_asset_path + "engaged.wav", false},
+      {AudibleAlert::CHIME_WARNING1, sound_asset_path + "warning_1.wav", false},
+      {AudibleAlert::CHIME_WARNING2, sound_asset_path + "warning_2.wav", false},
+      {AudibleAlert::CHIME_WARNING2_REPEAT, sound_asset_path + "warning_2.wav", true},
+      {AudibleAlert::CHIME_WARNING_REPEAT, sound_asset_path + "warning_repeat.wav", true},
+      {AudibleAlert::CHIME_ERROR, sound_asset_path + "error.wav", false},
+      {AudibleAlert::CHIME_PROMPT, sound_asset_path + "error.wav", false}
     };
     for (auto &[alert, fn, loops] : sound_list) {
       sounds[alert].first.setSource(QUrl::fromLocalFile(fn));
