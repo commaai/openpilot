@@ -31,7 +31,7 @@ BASE_CONFIG = [
   AmpConfig("Enable PLL2", 0b1, 0x1A, 7, 0b10000000),
   AmpConfig("DAI1: I2S mode", 0b00100, 0x14, 2, 0b01111100),
   AmpConfig("DAI2: I2S mode", 0b00100, 0x1C, 2, 0b01111100),
-  AmpConfig("Right speaker output volume", 0x18, 0x3E, 0, 0b00011111),
+  AmpConfig("Right speaker output volume", 0x1a, 0x3E, 0, 0b00011111),
   AmpConfig("DAI1 Passband filtering: music mode", 0b1, 0x18, 7, 0b10000000),
   AmpConfig("DAI1 voice mode gain (DV1G)", 0b00, 0x2F, 4, 0b00110000),
   AmpConfig("DAI1 attenuation (DV1)", 0x0, 0x2F, 0, 0b00001111),
