@@ -67,7 +67,7 @@ class LateralPlanner():
 
   def setup_mpc(self):
     self.lat_mpc = LateralMpc()
-    self.x0 = np.zeros(4)
+    self.x0 = np.zeros(6)
 
     self.desired_curvature = 0.0
     self.safe_desired_curvature = 0.0
@@ -170,13 +170,14 @@ class LateralPlanner():
 
     assert len(y_pts) == LAT_MPC_N + 1
     assert len(heading_pts) == LAT_MPC_N + 1
+    self.x0[4] = v_ego
     self.lat_mpc.run(self.x0,
                      v_ego,
                      CAR_ROTATION_RADIUS,
                      y_pts,
                      heading_pts)
     # init state for next
-    self.x0 = np.array([0.0, 0.0, 0.0, interp(DT_MDL, self.t_idxs[:LAT_MPC_N + 1], self.lat_mpc.x_sol[:,3])])
+    self.x0[3] = interp(DT_MDL, self.t_idxs[:LAT_MPC_N + 1], self.lat_mpc.x_sol[:,3])
 
 
     #  Check for infeasable MPC solution

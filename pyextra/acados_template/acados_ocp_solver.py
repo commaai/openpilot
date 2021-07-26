@@ -811,8 +811,6 @@ class AcadosOcpSolver:
           os.system('make ocp_shared_lib')
           os.chdir(cwd)
 
-        return cls(model.name, acados_ocp.dims.N, code_export_dir)
-
     def __init__(self, model_name, N, code_export_dir):
         self.model_name = model_name
         self.N = N
@@ -1233,6 +1231,7 @@ class AcadosOcpSolver:
                     self.nlp_solver, stage, field, value_data_p)
         return
 
+
     def cost_set(self, start_stage_, field_, value_, api='warn'):
       self.cost_set_slice(start_stage_, start_stage_+1, field_, value_[None], api='warn')
       return
@@ -1301,7 +1300,6 @@ class AcadosOcpSolver:
 
         value_data = cast(value_.ctypes.data, POINTER(c_double))
         value_data_p = cast((value_data), c_void_p)
-
         self.shared_lib.ocp_nlp_cost_model_set_slice.argtypes = \
             [c_void_p, c_void_p, c_void_p, c_int, c_int, c_char_p, c_void_p, c_int]
         self.shared_lib.ocp_nlp_cost_model_set_slice(self.nlp_config, \
