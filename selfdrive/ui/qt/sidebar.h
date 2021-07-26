@@ -3,6 +3,7 @@
 #include <QFrame>
 #include <QMap>
 
+#include "selfdrive/common/params.h"
 #include "selfdrive/ui/ui.h"
 
 class Sidebar : public QFrame {
@@ -49,6 +50,7 @@ private:
   const QColor warning_color = QColor(218, 202, 37);
   const QColor danger_color = QColor(201, 34, 49);
 
+  Params params;
   QString connect_str = "OFFLINE";
   QColor connect_status = warning_color;
   QString panda_str = "NO\nPANDA";

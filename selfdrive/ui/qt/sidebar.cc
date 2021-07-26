@@ -62,11 +62,16 @@ void Sidebar::updateState(const UIState &s) {
 
   auto last_ping = deviceState.getLastAthenaPingTime();
   if (last_ping == 0) {
-    setProperty("connectStr", "OFFLINE");
-    setProperty("connectStatus", warning_color);
+    if (params.getBool("PrimeRedirected")) {
+      setProperty("connectStr", "NO\nPRIME");
+      setProperty("connectStatus", danger_color);
+    } else {
+      setProperty("connectStr", "CONNECT\nOFFLINE");
+      setProperty("connectStatus", warning_color);
+    }
   } else {
     bool online = nanos_since_boot() - last_ping < 80e9;
-    setProperty("connectStr",  online ? "ONLINE" : "ERROR");
+    setProperty("connectStr",  (online ? "CONNECT\nONLINE" : "CONNECT\nERROR"));
     setProperty("connectStatus", online ? good_color : danger_color);
   }
 
@@ -121,5 +126,5 @@ void Sidebar::paintEvent(QPaintEvent *event) {
   // metrics
   drawMetric(p, "TEMP", QString("%1°C").arg(temp_val), temp_status, 338);
   drawMetric(p, panda_str, "", panda_status, 518);
-  drawMetric(p, "CONNECT\n" + connect_str, "", connect_status, 676);
+  drawMetric(p, connect_str, "", connect_status, 676);
 }
