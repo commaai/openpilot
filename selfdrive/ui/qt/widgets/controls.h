@@ -106,21 +106,6 @@ protected:
   Toggle toggle;
 };
 
-class QTouchButton : public QPushButton {
-  Q_OBJECT
-
-public:
-  QTouchButton(const QString &text, QWidget *parent = nullptr) : QPushButton(text, parent) {
-    setAttribute(Qt::WA_AcceptTouchEvents);
-    setFocusPolicy(Qt::NoFocus);
-  }
-
-  QTouchButton(const QIcon &icon, const QString &text, QWidget *parent = nullptr) : QPushButton(icon, text, parent) {
-    setAttribute(Qt::WA_AcceptTouchEvents);
-    setFocusPolicy(Qt::NoFocus);
-  }
-};
-
 // widget to toggle params
 class ParamControl : public ToggleControl {
   Q_OBJECT

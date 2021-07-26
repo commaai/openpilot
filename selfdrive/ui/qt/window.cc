@@ -33,7 +33,7 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   QObject::connect(settingsWindow, &SettingsWindow::showDriverView, [=] {
     homeWindow->showDriverView(true);
   });
-  main_layout->setCurrentWidget(settingsWindow);
+  main_layout->setCurrentWidget(settingsWindow);  // fixme temp because settings btn uses mouse event
 
   device.setAwake(true, true);
   QObject::connect(&qs, &QUIState::uiUpdate, &device, &Device::update);
