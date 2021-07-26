@@ -492,7 +492,7 @@ def main():
       ws = create_connection(ws_uri,
                              cookie="jwt=" + api.get_token(),
                              enable_multithread=True,
-                             timeout=3.0)
+                             timeout=30.0)
       cloudlog.event("athenad.main.connected_ws", ws_uri=ws_uri)
       params.delete("PrimeRedirected")
 
