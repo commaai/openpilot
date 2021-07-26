@@ -1,8 +1,9 @@
 #pragma once
 
-#include "selfdrive/common/util.h"
+#include <memory>
+
+#include "selfdrive/common/params.h"
 #include "selfdrive/ui/qt/api.h"
-#include "selfdrive/ui/ui.h"
 
 class RequestRepeater : public QObject {
   Q_OBJECT

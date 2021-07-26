@@ -10,6 +10,7 @@
 #include <QVBoxLayout>
 #include <QrCode.hpp>
 
+#include "selfdrive/common/util.h"
 #include "selfdrive/ui/qt/request_repeater.h"
 #include "selfdrive/ui/qt/util.h"
 
