@@ -443,7 +443,7 @@ selfdrive/assets/*.svg
 selfdrive/assets/fonts/*.ttf
 selfdrive/assets/images/*
 selfdrive/assets/offroad/*
-selfdrive/assets/sounds_eon/*
+selfdrive/assets/sounds/*
 selfdrive/assets/training/*
 
 phonelibs/SConscript
