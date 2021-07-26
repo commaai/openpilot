@@ -514,6 +514,7 @@ def main():
           params.put_bool("PrimeRedirected", True)
       except Exception:
         cloudlog.exception("athenad.socket_timeout.exception")
+      params.delete("LastAthenaPingTime")
     except Exception:
       cloudlog.exception("athenad.main.exception")
 
