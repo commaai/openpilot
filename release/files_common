@@ -451,8 +451,6 @@ phonelibs/libyuv/include/**
 phonelibs/libyuv/lib/**
 phonelibs/libyuv/larch64/**
 
-phonelibs/acados/*
-
 phonelibs/snpe/include/**
 phonelibs/snpe/aarch64**
 phonelibs/snpe/larch64**
