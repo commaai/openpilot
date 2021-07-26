@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-from selfdrive.controls.lib.lateral_mpc.lat_mpc import LateralMpc
+from selfdrive.controls.lib.lateral_mpc_lib.lat_mpc import LateralMpc
 from selfdrive.controls.lib.drive_helpers import LAT_MPC_N, CAR_ROTATION_RADIUS
 
 
@@ -13,7 +13,7 @@ def run_mpc(v_ref=30., x_init=0., y_init=0., psi_init=0., curvature_init=0.,
   y_pts = poly_shift * np.ones(LAT_MPC_N + 1)
   heading_pts = np.zeros(LAT_MPC_N + 1)
 
-  x0 = np.array([x_init, y_init, psi_init, curvature_init])
+  x0 = np.array([x_init, y_init, psi_init, curvature_init, v_ref, CAR_ROTATION_RADIUS])
 
   # converge in no more than 20 iterations
   for _ in range(20):
