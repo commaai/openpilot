@@ -41,7 +41,7 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
   },
 };
 
-const bool enable_dc_gain = true;
+const bool enable_dc_gain = false;
 const float DC_GAIN = 2.5;
 const float sensor_analog_gains[] = {
   1.0/8.0, 2.0/8.0, 2.0/7.0, 3.0/7.0, // 0, 1, 2, 3
@@ -50,7 +50,7 @@ const float sensor_analog_gains[] = {
   7.0/2.0, 8.0/2.0, 8.0/1.0};         // 12, 13, 14, 15 = bypass
 
 const int ANALOG_GAIN_MIN_IDX = 0x0; // 0.125x
-const int ANALOG_GAIN_REC_IDX = 0x7; // 1.0x
+const int ANALOG_GAIN_REC_IDX = 0x6; // 0.8x
 const int ANALOG_GAIN_MAX_IDX = 0xD; // 4.0x
 
 const int EXPOSURE_TIME_MIN = 2; // with HDR, fastest ss
@@ -936,10 +936,10 @@ void handle_camera_event(CameraState *s, void *evdat) {
 }
 
 static void set_camera_exposure(CameraState *s, float grey_frac) {
-  const float dt = 0.15;
+  const float dt = 0.05;
 
   const float ts_grey = 10.0;
-  const float ts_ev = 0.05;
+  const float ts_ev = 0.25;
 
   const float k_grey = (dt / ts_grey) / (1.0 + dt / ts_grey);
   const float k_ev = (dt / ts_ev) / (1.0 + dt / ts_ev);
@@ -964,8 +964,7 @@ static void set_camera_exposure(CameraState *s, float grey_frac) {
     int t = std::clamp(int(std::round(desired_ev / gain)), EXPOSURE_TIME_MIN, EXPOSURE_TIME_MAX);
 
     // Only go below recomended gain when absolutely necessary to not overexpose
-    // behavior is not completely linear causing visible step changes when switching gain
-    if (g < ANALOG_GAIN_REC_IDX && t > 10) {
+    if (g < ANALOG_GAIN_REC_IDX && t > 20) {
       continue;
     }
 
@@ -973,11 +972,12 @@ static void set_camera_exposure(CameraState *s, float grey_frac) {
     float score = std::abs(desired_ev - (t * gain)) * 10;
 
     // Going below recomended gain needs lower penalty to not overexpose
-    float m = g > ANALOG_GAIN_REC_IDX ? 5.0 : 1.0;
+    float m = g > ANALOG_GAIN_REC_IDX ? 5.0 : 0.0;
     score += std::abs(g - (int)ANALOG_GAIN_REC_IDX) * m;
 
     // Small penalty on changing gain
-    score += std::abs(g - s->gain_idx);
+    score += std::abs(g - s->gain_idx) * (score / 10);
+    // LOGE("cam: %d - gain: %d, t: %d (%.2f), score %.2f, %.3f, %.3f", s->camera_num, g, t, desired_ev / gain, score, desired_ev, s->min_ev);
 
     if (score < best_ev_score) {
       new_t = t;
@@ -1059,11 +1059,9 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
   }
   s->pm->send(c == &s->road_cam ? "roadCameraState" : "wideRoadCameraState", msg);
 
-  if (cnt % 3 == 0) {
-    const auto [x, y, w, h] = (c == &s->wide_road_cam) ? std::tuple(96, 250, 1734, 524) : std::tuple(96, 160, 1734, 986);
-    const int skip = 2;
-    camera_autoexposure(c, set_exposure_target(b, x, x + w, skip, y, y + h, skip));
-  }
+  const auto [x, y, w, h] = (c == &s->wide_road_cam) ? std::tuple(96, 250, 1734, 524) : std::tuple(96, 160, 1734, 986);
+  const int skip = 2;
+  camera_autoexposure(c, set_exposure_target(b, x, x + w, skip, y, y + h, skip));
 }
 
 void cameras_run(MultiCameraState *s) {
