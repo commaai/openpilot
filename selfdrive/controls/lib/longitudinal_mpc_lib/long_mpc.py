@@ -5,7 +5,6 @@ import numpy as np
 from common.realtime import sec_since_boot
 from selfdrive.swaglog import cloudlog
 from selfdrive.controls.lib.drive_helpers import LON_MPC_N as N
-from selfdrive.controls.lib.lateral_mpc_lib.lat_mpc import generate_code
 from selfdrive.modeld.constants import T_IDXS
 
 from acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
@@ -175,5 +174,4 @@ class LongitudinalMpc():
 
 if __name__ == "__main__":
   ocp = gen_long_mpc_solver()
-  #AcadosOcpSolver.generate(ocp, json_file=JSON_FILE, build=True, simulink_opts=get_default_simulink_options())
-  generate_code(ocp, json_file=JSON_FILE)
+  AcadosOcpSolver.generate(ocp, json_file=JSON_FILE, build=False)

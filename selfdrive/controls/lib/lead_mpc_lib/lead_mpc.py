@@ -8,7 +8,6 @@ from selfdrive.swaglog import cloudlog
 from selfdrive.modeld.constants import T_IDXS
 from selfdrive.controls.lib.drive_helpers import MPC_COST_LONG, CONTROL_N
 from selfdrive.controls.lib.radar_helpers import _LEAD_ACCEL_TAU
-from selfdrive.controls.lib.lateral_mpc_lib.lat_mpc import generate_code
 
 from acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
 from casadi import SX, vertcat, sqrt, exp
@@ -239,5 +238,4 @@ class LeadMpc():
 
 if __name__ == "__main__":
   ocp = gen_lead_mpc_solver()
-  #AcadosOcpSolver.generate(ocp, json_file=JSON_FILE, build=True, simulink_opts=get_default_simulink_options())
-  generate_code(ocp, json_file=JSON_FILE)
+  AcadosOcpSolver.generate(ocp, json_file=JSON_FILE, build=False)
