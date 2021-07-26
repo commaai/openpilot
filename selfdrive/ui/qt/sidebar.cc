@@ -66,7 +66,7 @@ void Sidebar::updateState(const UIState &s) {
       setProperty("connectStr", "NO\nPRIME");
       setProperty("connectStatus", danger_color);
     } else {
-      setProperty("connectStr", "CONECT\nOFFLINE");
+      setProperty("connectStr", "CONNECT\nOFFLINE");
       setProperty("connectStatus", warning_color);
     }
   } else {
