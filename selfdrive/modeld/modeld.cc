@@ -134,9 +134,11 @@ int main(int argc, char **argv) {
   set_realtime_priority(54);
 
   if (Hardware::EON()) {
-    set_core_affinity(2);
+    int err = set_core_affinity(2);
+    assert(err == 0);
   } else if (Hardware::TICI()) {
-    set_core_affinity(7);  
+    int err = set_core_affinity(7);
+    assert(err == 0);
   }
   bool wide_camera = Hardware::TICI() ? Params().getBool("EnableWideCamera") : false;
 
