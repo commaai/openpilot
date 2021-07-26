@@ -415,6 +415,9 @@ void MapWindow::mouseDoubleClickEvent(QMouseEvent *ev) {
   if (last_position) m_map->setCoordinate(*last_position);
   if (last_bearing) m_map->setBearing(*last_bearing);
   m_map->setZoom(util::map_val<float>(velocity_filter.x(), 0, 30, MAX_ZOOM, MIN_ZOOM));
+
+  pan_counter = 0;
+  zoom_counter = 0;
 }
 
 void MapWindow::mouseMoveEvent(QMouseEvent *ev) {
