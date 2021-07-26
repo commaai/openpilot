@@ -272,8 +272,11 @@ void rotate_if_needed() {
 
 int main(int argc, char** argv) {
   if (Hardware::TICI()) {
-    set_realtime_priority(2);
-    set_core_affinity(2);
+    int err;
+    err = set_realtime_priority(2);
+    assert(err == 0);
+    err = set_core_affinity(2);
+    assert(err == 0);
   } else {
     setpriority(PRIO_PROCESS, 0, -20);
   }

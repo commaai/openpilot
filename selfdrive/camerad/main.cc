@@ -44,14 +44,11 @@ void party(cl_device_id device_id, cl_context context) {
 #endif
 
 int main(int argc, char *argv[]) {
-  set_realtime_priority(53);
-  if (Hardware::EON()) {
-    int err = set_core_affinity(2);
-    assert(err == 0);
-  } else if (Hardware::TICI()) {
-    int err = set_core_affinity(6);
-    assert(err == 0);
-  }
+  int err;
+  err = set_realtime_priority(53);
+  assert(err == 0);
+  err = set_core_affinity(Hardware::TICI() ? 6 : 2);
+  assert(err == 0);
 
   cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
 
