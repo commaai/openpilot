@@ -49,10 +49,9 @@ lenv.Clean(generated_files, Dir(gen))
 import os
 libpath = Dir(f"#phonelibs/acados/{arch}/lib").abspath
 lenv["ENV"]["LD_LIBRARY_PATH"] = os.getenv("LD_LIBRARY_PATH", "") + libpath
-if GetOption('mpc_generate'):
-  lenv.Command(generated_files,
-               ["lead_mpc.py"],
-               f"cd {Dir('.').abspath} && python lead_mpc.py")
+lenv.Command(generated_files,
+             ["lead_mpc.py"],
+             f"cd {Dir('.').abspath} && python lead_mpc.py")
 
 lenv["CFLAGS"].append("-DACADOS_WITH_QPOASES")
 lenv["CXXFLAGS"].append("-DACADOS_WITH_QPOASES")
