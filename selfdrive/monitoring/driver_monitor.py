@@ -2,6 +2,7 @@ from math import atan2, sqrt
 
 from cereal import car
 from common.numpy_fast import interp
+from common.realtime import DT_DMON
 from selfdrive.hardware import TICI
 from common.filter_simple import FirstOrderFilter
 from common.stat_live import RunningStatFilter
@@ -16,7 +17,7 @@ EventName = car.CarEvent.EventName
 
 class DRIVER_MONITOR_SETTINGS():
   def __init__(self, TICI=TICI):
-    self._DT_DMON = 0.05 if TICI else 0.1
+    self._DT_DMON = DT_DMON
     self._AWARENESS_TIME = 35. # passive wheeltouch total timeout
     self._AWARENESS_PRE_TIME_TILL_TERMINAL = 12.
     self._AWARENESS_PROMPT_TIME_TILL_TERMINAL = 6.
