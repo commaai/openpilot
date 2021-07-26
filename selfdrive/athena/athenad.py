@@ -55,7 +55,6 @@ def handle_long_poll(ws):
   threads = [
     threading.Thread(target=ws_recv, args=(ws, end_event), name='ws_recv'),
     threading.Thread(target=ws_send, args=(ws, end_event), name='ws_send'),
-    threading.Thread(target=upload_handler, args=(end_event,), name='upload_handler'),
     threading.Thread(target=log_handler, args=(end_event,), name='log_handler'),
   ] + [
     threading.Thread(target=jsonrpc_handler, args=(end_event,), name=f'worker_{x}')
@@ -484,34 +483,45 @@ def main():
   ws_uri = ATHENA_HOST + "/ws/v2/" + dongle_id
   api = Api(dongle_id)
 
+  end_event = threading.Event()
+  upload_thread = threading.Thread(target=upload_handler, args=(end_event,), name='upload_handler')
+  upload_thread.start()
+
   conn_retries = 0
-  while 1:
-    try:
-      cloudlog.event("athenad.main.connecting_ws", ws_uri=ws_uri)
-      ws = create_connection(ws_uri,
-                             cookie="jwt=" + api.get_token(),
-                             enable_multithread=True,
-                             timeout=30.0)
-      cloudlog.event("athenad.main.connected_ws", ws_uri=ws_uri)
 
-      manage_tokens(api)
+  try:
+    while True:
+      try:
+        cloudlog.event("athenad.main.connecting_ws", ws_uri=ws_uri)
+        ws = create_connection(ws_uri,
+                               cookie="jwt=" + api.get_token(),
+                               enable_multithread=True,
+                               timeout=30.0)
+        cloudlog.event("athenad.main.connected_ws", ws_uri=ws_uri)
 
-      conn_retries = 0
-      handle_long_poll(ws)
-    except (KeyboardInterrupt, SystemExit):
-      break
-    except (ConnectionError, TimeoutError, WebSocketException):
-      conn_retries += 1
-      params.delete("LastAthenaPingTime")
-      if TICI:
-        cloudlog.exception("athenad.main.exception2")
-    except Exception:
-      cloudlog.exception("athenad.main.exception")
+        manage_tokens(api)
 
-      conn_retries += 1
-      params.delete("LastAthenaPingTime")
+        conn_retries = 0
+        handle_long_poll(ws)
+      except (KeyboardInterrupt, SystemExit):
+        break
+      except (ConnectionError, TimeoutError, WebSocketException):
+        conn_retries += 1
+        params.delete("LastAthenaPingTime")
+        if TICI:
+          cloudlog.exception("athenad.main.exception2")
+      except Exception:
+        cloudlog.exception("athenad.main.exception")
 
-    time.sleep(backoff(conn_retries))
+        conn_retries += 1
+        params.delete("LastAthenaPingTime")
+
+      time.sleep(backoff(conn_retries))
+  except Exception:
+    pass
+  finally:
+    end_event.set()
+    upload_thread.join()
 
 
 if __name__ == "__main__":
