@@ -775,8 +775,7 @@ class AcadosOcpSolver:
         model = acados_ocp.model
 
         if simulink_opts is None:
-            acados_path = get_acados_path()
-            json_path = os.path.join(acados_path, 'interfaces/acados_template/acados_template')
+            json_path = os.path.dirname(os.path.realpath())
             with open(json_path + '/simulink_default_opts.json', 'r') as f:
                 simulink_opts = json.load(f)
 
