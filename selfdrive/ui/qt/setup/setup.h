@@ -1,6 +1,5 @@
 #pragma once
 
-#include <QButtonGroup>
 #include <QStackedWidget>
 #include <QString>
 #include <QWidget>

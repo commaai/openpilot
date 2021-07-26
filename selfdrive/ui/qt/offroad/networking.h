@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QButtonGroup>
 #include <QHBoxLayout>
 #include <QStackedWidget>
 #include <QVBoxLayout>
@@ -23,8 +24,8 @@ private:
   QPixmap checkmark;
   QVector<QPixmap> strengths;
 
-  QVBoxLayout* updateNetworkWidget(QVBoxLayout *vlayout, const Network &network, bool isTetheringEnabled);
-  QHBoxLayout* emptyWifiWidget();
+  QVBoxLayout* updateNetworkLayout(QVBoxLayout *vlayout, const Network &network, bool tethering);
+  QHBoxLayout* emptyNetworkLayout();
 
 signals:
   void connectToNetwork(const Network &n);
