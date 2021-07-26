@@ -257,9 +257,7 @@ QHBoxLayout* WifiUI::emptyNetworkLayout() {  // TODO: try setting the ssid label
   return hlayout;
 }
 
-QVBoxLayout* WifiUI::updateNetworkLayout(QVBoxLayout *vlayout, const Network &network, bool tethering) {
-  QHBoxLayout *hlayout = qobject_cast<QHBoxLayout*>(vlayout->itemAt(0)->layout());
-
+QHBoxLayout* WifiUI::updateNetworkLayout(QHBoxLayout *hlayout, const Network &network, bool tethering) {
   // Clickable SSID label
   QPushButton *ssidLabel = qobject_cast<QPushButton*>(hlayout->itemAt(0)->widget());
   ssidLabel->setText(network.ssid);
@@ -297,7 +295,7 @@ QVBoxLayout* WifiUI::updateNetworkLayout(QVBoxLayout *vlayout, const Network &ne
   // Strength indicator
   QLabel *strength = qobject_cast<QLabel*>(hlayout->itemAt(4)->widget());
   strength->setPixmap(strengths[std::clamp((int)network.strength/26, 0, 3)]);
-  return vlayout;
+  return hlayout;
 }
 
 void WifiUI::refresh() {
@@ -311,14 +309,13 @@ void WifiUI::refresh() {
     QVBoxLayout *vlayout;
     if (i < networks_layout->count() - 1) {  // replace current network layout
       vlayout = qobject_cast<QVBoxLayout*>(networks_layout->itemAt(i)->layout());
-      updateNetworkLayout(vlayout, network, tethering);
+      QHBoxLayout *hlayout = qobject_cast<QHBoxLayout*>(vlayout->itemAt(0)->layout());
+      updateNetworkLayout(hlayout, network, tethering);
     } else {  // add new one
       vlayout = new QVBoxLayout;
-      vlayout->addLayout(emptyNetworkLayout());
+      vlayout->addLayout(updateNetworkLayout(emptyNetworkLayout(), network, tethering));
       vlayout->addWidget(horizontal_line(), 0);
-
       networks_layout->insertLayout(i, vlayout);
-      vlayout = updateNetworkLayout(vlayout, network, tethering);
     }
     vlayout->itemAt(1)->widget()->setVisible(i < wifi->seen_networks.size() - 1);  // hides last horizontal line
     i++;

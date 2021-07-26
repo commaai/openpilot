@@ -24,7 +24,7 @@ private:
   QPixmap checkmark;
   QVector<QPixmap> strengths;
 
-  QVBoxLayout* updateNetworkLayout(QVBoxLayout *vlayout, const Network &network, bool tethering);
+  QHBoxLayout* updateNetworkLayout(QHBoxLayout *hlayout, const Network &network, bool tethering);
   QHBoxLayout* emptyNetworkLayout();
 
 signals:
