@@ -88,7 +88,8 @@ void WifiManager::refreshNetworks() {
   for (const QDBusObjectPath &path : response.value()) {
     const QByteArray &ssid = get_property(path.path(), "Ssid");
     unsigned int strength = get_ap_strength(path.path());
-    if (ssid.isEmpty() || (seenNetworks.contains(ssid) && strength <= seenNetworks.value(ssid).strength)) {
+    if (ssid.isEmpty() || (seenNetworks.contains(ssid) &&
+        strength <= seenNetworks.value(ssid).strength)) {
       continue;
     }
     SecurityType security = getSecurityType(path.path());
