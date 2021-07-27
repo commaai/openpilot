@@ -150,10 +150,15 @@ void Installer::cloneFinished(int exitCode, QProcess::ExitStatus exitStatus) {
 #endif
 
   // write continue.sh
-  err = std::system("cp /data/openpilot/installer/continue_openpilot.sh " CONTINUE_PATH);
+  err = std::system("cp /data/openpilot/installer/continue_openpilot.sh /data/continue.sh.new");
+  assert(err == 0);
+  err = std::system("chmod +x /data/continue.sh.new");
+  assert(err == 0);
+  std::system("mv /data/continue.sh.new " CONTINUE_PATH);
   assert(err == 0);
 
-  QCoreApplication::exit(0);
+  // wait for the installed software's UI to take over
+  QTimer::singleShot(60 * 1000, &QCoreApplication::quit);
 }
 
 int main(int argc, char *argv[]) {
