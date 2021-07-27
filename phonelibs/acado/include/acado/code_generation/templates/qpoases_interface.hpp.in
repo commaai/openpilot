@@ -1,0 +1,46 @@
+#ifndef @SOLVER_DEFINE@
+#define @SOLVER_DEFINE@
+
+#ifdef PC_DEBUG
+#include <stdio.h>
+#endif /* PC_DEBUG */
+
+#include <math.h>
+
+#ifdef __cplusplus
+#define EXTERNC extern "C"
+#else
+#define EXTERNC
+#endif
+
+/*
+ * A set of options for qpOASES
+ */
+
+/** Maximum number of optimization variables. */
+#define QPOASES_NVMAX      @NVMAX@
+/** Maximum number of constraints. */
+#define QPOASES_NCMAX      @NCMAX@
+/** Maximum number of working set recalculations. */
+#define QPOASES_NWSRMAX    @NWSRMAX@
+/** Print level for qpOASES. */
+#define QPOASES_PRINTLEVEL @PRINT_LEVEL@
+/** The value of EPS */
+#define QPOASES_EPS        @EPS@
+/** Internally used floating point type */
+typedef @REAL_T@ real_t;
+
+/*
+ * Forward function declarations
+ */
+
+/** A function that calls the QP solver */
+EXTERNC int @MODULE_NAME@_@PREFIX@solve( void );
+
+/** Get the number of active set changes */
+EXTERNC int @MODULE_NAME@_@PREFIX@getNWSR( void );
+
+/** Get the error string. */
+const char* @MODULE_NAME@_getErrorString( int error );
+
+#endif /* @SOLVER_DEFINE@ */

@@ -1,0 +1,96 @@
+/*
+ * ACADO OCP solver wrapper header.
+ */
+ 
+#ifndef @MODULE_PREFIX@_SOLVER_SFUNCTION
+#define @MODULE_PREFIX@_SOLVER_SFUNCTION
+
+/* Include the common header. */
+#include "@MODULE_NAME@_common.h"
+
+/** Internal data structure for communicating with the solver
+  * NOTE: Do not change order of the fields here
+  */
+typedef struct
+{
+	real_t x[(@MODULE_PREFIX@_N + 1) * @MODULE_PREFIX@_NX];
+	
+#if @MODULE_PREFIX@_NXA
+	real_t z[@MODULE_PREFIX@_N * @MODULE_PREFIX@_NXA];
+#endif
+
+	real_t u[@MODULE_PREFIX@_N * @MODULE_PREFIX@_NU];
+
+#if @MODULE_PREFIX@_NOD
+	real_t od[(@MODULE_PREFIX@_N + 1) * @MODULE_PREFIX@_NOD];
+#endif
+
+	real_t y[@MODULE_PREFIX@_N * @MODULE_PREFIX@_NY];
+	real_t yN[@MODULE_PREFIX@_NYN];
+	
+#if @MODULE_PREFIX@_WEIGHTING_MATRICES_TYPE == 1
+	real_t W[@MODULE_PREFIX@_NY * @MODULE_PREFIX@_NY];
+	real_t WN[@MODULE_PREFIX@_NYN * @MODULE_PREFIX@_NYN];
+#elif @MODULE_PREFIX@_WEIGHTING_MATRICES_TYPE == 2
+	real_t W[@MODULE_PREFIX@_N * @MODULE_PREFIX@_NY * @MODULE_PREFIX@_NY];
+	real_t WN[@MODULE_PREFIX@_NYN * @MODULE_PREFIX@_NYN];
+#endif
+
+#if @MODULE_PREFIX@_USE_ARRIVAL_COST == 1
+	real_t xAC[ @MODULE_PREFIX@_NX ];
+	real_t SAC[@MODULE_PREFIX@_NX * @MODULE_PREFIX@_NX];
+	real_t WL[@MODULE_PREFIX@_NX * @MODULE_PREFIX@_NX];
+#endif
+	
+#if @MODULE_PREFIX@_INITIAL_STATE_FIXED
+	real_t x0[ @MODULE_PREFIX@_NX ];
+#endif /* #if @MODULE_PREFIX@_INITIAL_STATE_FIXED */
+
+#if @MODULE_PREFIX@_COMPUTE_COVARIANCE_MATRIX == 1
+	real_t sigmaN[@MODULE_PREFIX@_NX * @MODULE_PREFIX@_NX];
+#endif
+
+} @MODULE_PREFIX@data;
+
+/** Input data structure for the ACADO OCP solver. */
+typedef struct
+{
+	int control;			/**< Control flag. */
+	int shifting; 			/**< Shifting strategy. */
+	int initialization;		/**< Initialization flag. */
+	@MODULE_PREFIX@data data;	        /**< Input data. */
+} @MODULE_PREFIX@input;
+
+/** Output data structure for the ACADO OCP solver. */
+typedef struct
+{
+	int status;				/**< Status (ATM from the QP solver). */
+	int nIterations;        /**< @ iteration of the QP solver. */
+	real_t kktValue;		/**< KKT value. */
+	real_t objValue;		/**< Objective value. */
+	real_t execTime;		/**< Execution time. */
+	@MODULE_PREFIX@data data;	        /**< Output data. */
+} @MODULE_PREFIX@output;
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif /* __cplusplus */
+
+/** The step function of the solver. */
+void @MODULE_NAME@_step(
+	@MODULE_PREFIX@input*  inData,	/**< Input data. */
+	@MODULE_PREFIX@output* outData	/**< Output data. */
+	);
+
+/** Initialization of the solver. */
+void @MODULE_NAME@_initialize( void );
+
+/** Cleanup of the solver. */
+void @MODULE_NAME@_cleanup( void );
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif /* __cplusplus */
+
+#endif /* @MODULE_NAME@_SOLVER_SFUNCTION */

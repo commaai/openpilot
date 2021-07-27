@@ -1,0 +1,141 @@
+/*
+ * ACADO OCP solver wrapper.
+ */
+
+#include <string.h>
+#include "@MODULE_NAME@_solver_sfunction.h"
+#include "@MODULE_NAME@_auxiliary_functions.h"
+
+/* Make instances of ACADO structures. */
+@MODULE_PREFIX@variables @MODULE_NAME@Variables;
+@MODULE_PREFIX@workspace @MODULE_NAME@Workspace;
+
+/* Initialized indicator. */
+static unsigned initialized = 0;
+
+void @MODULE_NAME@_step(@MODULE_PREFIX@input* inData, @MODULE_PREFIX@output* outData)
+{
+    #if !(defined _DSPACE)
+	@MODULE_NAME@_timer tmr;
+	
+	/* Start measuring time. */
+	@MODULE_NAME@_tic( &tmr );
+    #endif
+	
+	/* Copy all outside world data here. */	
+	memcpy(&@MODULE_NAME@Variables.x, &(inData->data), sizeof( @MODULE_PREFIX@data ));  /* offset necessary because of the dummy variable ! */
+	
+	/* Call solver */
+	switch ( inData->control )
+	{
+		case 0:
+			/* Simple operational mode. Run one RTI with optional shifting. */
+			
+			if ( !initialized )
+			{				
+				@MODULE_NAME@_initialize( );
+				if (inData->initialization == 1)
+				{
+					@MODULE_NAME@_initializeNodesByForwardSimulation();
+				}
+				
+				initialized = 1;
+			}
+			else if (inData->shifting == 1 || inData->shifting == 2)
+			{
+			
+#if @MODULE_PREFIX@_QP_SOLVER == @MODULE_PREFIX@_QPDUNES
+				@MODULE_NAME@_shiftQpData();
+#endif
+			
+				@MODULE_NAME@_shiftStates(inData->shifting, 0, 0);
+				@MODULE_NAME@_shiftControls( 0 );
+			}
+			
+			@MODULE_NAME@_preparationStep();
+			
+			outData->status = @MODULE_NAME@_feedbackStep();
+			
+			outData->kktValue = @MODULE_NAME@_getKKT();
+			outData->objValue = @MODULE_NAME@_getObjective();
+			
+#if ( (@MODULE_PREFIX@_QP_SOLVER == @MODULE_PREFIX@_QPOASES) || (@MODULE_PREFIX@_QP_SOLVER == @MODULE_PREFIX@_QPOASES3) )
+ 			outData->nIterations = @MODULE_NAME@_getNWSR();
+#endif /* ( (@MODULE_PREFIX@_QP_SOLVER == @MODULE_PREFIX@_QPOASES) || (@MODULE_PREFIX@_QP_SOLVER == @MODULE_PREFIX@_QPOASES3) ) */
+			
+			break;
+		
+		case 1:
+			/* Initialize */
+				
+			@MODULE_NAME@_initialize( );
+			if (inData->initialization == 1)
+			{
+				@MODULE_NAME@_initializeNodesByForwardSimulation();
+			}
+			
+			initialized = 1;
+			
+			break;
+		
+		case 2:
+			/* Preparation step */
+			
+			@MODULE_NAME@_preparationStep();
+			
+			break;
+		
+		case 3:
+			/* Feedback step */
+			
+			outData->status = @MODULE_NAME@_feedbackStep();
+			
+			outData->kktValue = @MODULE_NAME@_getKKT();
+			outData->objValue = @MODULE_NAME@_getObjective();
+				
+#if ( (@MODULE_PREFIX@_QP_SOLVER == @MODULE_PREFIX@_QPOASES) || (@MODULE_PREFIX@_QP_SOLVER == @MODULE_PREFIX@_QPOASES3) )
+			outData->nIterations = @MODULE_NAME@_getNWSR();
+#endif /* ( (@MODULE_PREFIX@_QP_SOLVER == @MODULE_PREFIX@_QPOASES) || (@MODULE_PREFIX@_QP_SOLVER == @MODULE_PREFIX@_QPOASES3) ) */
+						
+			break;
+		
+		case 4:
+			/* Shifting */
+			
+#if @MODULE_PREFIX@_QP_SOLVER == @MODULE_PREFIX@_QPDUNES
+			@MODULE_NAME@_shiftQpData();
+#endif
+			
+			@MODULE_NAME@_shiftStates(inData->shifting, 0, 0);
+			@MODULE_NAME@_shiftControls( 0 );
+			
+			break;
+			
+		default:
+			/* Return default error code */
+			outData->status = -1;
+	}
+	
+	/* Copy the data to outside world. */
+	memcpy(&(outData->data), &@MODULE_NAME@Variables.x, sizeof( @MODULE_PREFIX@data ));   /* offset necessary because of the dummy variable ! */
+	
+    #if !(defined _DSPACE)
+	/* Read the elapsed time. */
+	outData->execTime = @MODULE_NAME@_toc( &tmr );
+    #endif
+}
+
+void @MODULE_NAME@_initialize( void )
+{
+	memset(&@MODULE_NAME@Workspace, 0, sizeof( @MODULE_NAME@Workspace ));	
+	@MODULE_NAME@_initializeSolver();
+	initialized = 0;
+}
+
+void @MODULE_NAME@_cleanup( void )
+{
+#if @MODULE_PREFIX@_QP_SOLVER == @MODULE_PREFIX@_QPDUNES
+	/* Clean-up of the qpDUNES QP solver. */
+	@MODULE_NAME@_cleanupSolver();
+#endif /* @MODULE_PREFIX@_QP_SOLVER == @MODULE_PREFIX@_QPDUNES */
+}
