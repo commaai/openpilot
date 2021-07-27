@@ -394,8 +394,16 @@ void WifiManager::activateWifiConnection(const QString &ssid) {
 }
 
 bool WifiManager::isOnMobileNetwork() {
-  return false;
-
+  bool mobileConnected = false;
+  QVector<QDBusObjectPath> conns = get_active_connections();
+  for (const QDBusObjectPath &path : get_active_connections()) {
+    QDBusInterface nm(NM_DBUS_SERVICE, path.path(), NM_DBUS_INTERFACE_PROPERTIES, bus);
+    nm.setTimeout(DBUS_TIMEOUT);
+    const QString &type = get_response<QString>(nm.call("Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "Type"));
+    if (type == "802-11-wireless") return false;
+    if (type == "gsm") mobileConnected = true;
+  }
+  return mobileConnected;
 }
 
 // Functions for tethering
