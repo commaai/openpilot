@@ -5,13 +5,7 @@ import numpy as np
 from cereal import log
 import cereal.messaging as messaging
 from selfdrive.config import Conversions as CV
-from selfdrive.controls.lib.lead_mpc_lib.lead_mpc import LeadMpc
-
-
-def RW(v_ego, v_l):
-  TR = 1.8
-  G = 9.81
-  return (v_ego * TR - (v_l - v_ego) * TR + v_ego * v_ego / (2 * G) - v_l * v_l / (2 * G))
+from selfdrive.controls.lib.lead_mpc_lib.lead_mpc import RW, LeadMpc
 
 
 class FakePubMaster():

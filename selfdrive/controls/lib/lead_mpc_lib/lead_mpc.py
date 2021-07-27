@@ -19,6 +19,13 @@ JSON_FILE = "acados_ocp_lead.json"
 MPC_T = list(np.arange(0,1.,.2)) + list(np.arange(1.,10.6,.6))
 N = len(MPC_T) - 1
 
+
+def RW(v_ego, v_l):
+  TR = 1.8
+  G = 9.81
+  return (v_ego * TR - (v_l - v_ego) * TR + v_ego * v_ego / (2 * G) - v_l * v_l / (2 * G))
+
+
 def gen_lead_model():
   model = AcadosModel()
   model.name = 'lead'
@@ -111,7 +118,7 @@ def gen_lead_mpc_solver():
   ocp.solver_options.nlp_solver_tol_stat = 1e-3
   ocp.solver_options.tol = 1e-3
 
-  ocp.solver_options.qp_solver_iter_max = 10
+  ocp.solver_options.qp_solver_iter_max = 100
   ocp.solver_options.qp_tol = 1e-3
 
   # set prediction horizon
@@ -195,9 +202,10 @@ class LeadMpc():
         dt = .6
       ps[i] = np.array([x_lead, v_lead])
       self.solver.set(i, "p", ps[i])
-      #if self.x_sol[i,0] > x_lead:
-      #  new_x = np.array([x_lead - 4.0, v_lead, 0.0])
-      #  self.solver.set(i, "x", new_x)
+      desired_x = RW(v_ego, v_lead)
+      if x_lead - self.x_sol[i,0] < desired_x:
+        new_x = np.array([x_lead - desired_x, v_lead, 0.0])
+        self.solver.set(i, "x", new_x)
       x_ego += v_ego_e * dt
       v_ego_e = max(v_ego_e-3.0 * dt, 0.0)
       a_lead = a_lead_0 * np.exp(-self.a_lead_tau * (t**2)/2.)
