@@ -125,6 +125,7 @@ QString WifiManager::get_ipv4_address() {
     QString ip4config = pth.path();
 
     QString type = get_response<QString>(nm.call("Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "Type"));
+    qDebug() << "TYPE:" << type;
 
     if (type == "802-11-wireless") {
       QDBusInterface nm2(NM_DBUS_SERVICE, ip4config, NM_DBUS_INTERFACE_PROPERTIES, bus);
@@ -357,7 +358,7 @@ void WifiManager::disconnect() {
 
 QDBusObjectPath WifiManager::getConnectionPath(const QString &ssid) {
   for (const QString &conn_ssid : knownConnections) {
-    qDebug() << "connection:" << conn_ssid;
+//    qDebug() << "connection:" << conn_ssid;
     if (ssid == conn_ssid) {
       return knownConnections.key(conn_ssid);
     }
