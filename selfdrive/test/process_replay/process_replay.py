@@ -24,6 +24,7 @@ from selfdrive.manager.process_config import managed_processes
 NUMPY_TOLERANCE = 1e-7
 CI = "CI" in os.environ
 TIMEOUT = 15
+MAX_RETRIES = 10
 
 ProcessConfig = namedtuple('ProcessConfig', ['proc_name', 'pub_sub', 'ignore', 'init_callback', 'should_recv_callback', 'tolerance', 'fake_pubsubmaster'])
 
@@ -444,9 +445,12 @@ def cpp_replay_process(cfg, lr, fingerprint=None):
   os.environ["SIMULATION"] = "1"  # Disable submaster alive checks
   managed_processes[cfg.proc_name].prepare()
   managed_processes[cfg.proc_name].start()
+  start_time = time.time()
 
   with Timeout(TIMEOUT):
     while not all(pm.all_readers_updated(s) for s in cfg.pub_sub.keys()):
+      if time.time() - start_time > TIMEOUT:
+        raise TimeoutError
       time.sleep(0)
 
     # Make sure all subscribers are connected
@@ -468,6 +472,8 @@ def cpp_replay_process(cfg, lr, fingerprint=None):
 
       if not len(resp_sockets):  # We only need to wait if we didn't already wait for a response
         while not pm.all_readers_updated(msg.which()):
+          if time.time() - start_time > TIMEOUT:
+            raise TimeoutError
           time.sleep(0)
 
     managed_processes[cfg.proc_name].signal(signal.SIGKILL)
