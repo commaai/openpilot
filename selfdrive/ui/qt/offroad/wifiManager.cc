@@ -390,7 +390,7 @@ void WifiManager::activateWifiConnection(const QString &ssid) {
   }
 }
 
-NetworkType WifiManager::networkType() {
+NetworkType WifiManager::currentNetworkType() {
   QDBusInterface nm(NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE_PROPERTIES, bus);
   nm.setTimeout(DBUS_TIMEOUT);
   const QDBusObjectPath &path = get_response<QDBusObjectPath>(nm.call("Get", NM_DBUS_INTERFACE, "PrimaryConnection"));
@@ -400,10 +400,8 @@ NetworkType WifiManager::networkType() {
   const QString &type = get_response<QString>(nm2.call("Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "Type"));
 
   if (type == "802-3-ethernet") {
-    qDebug() << "TYPE: ETHERNET";
     return NetworkType::ETHERNET;
   } else if (type == "802-11-wireless") {  // includes hotspot, test with isTetheringEnabled
-    qDebug() << "TYPE: WIFI";
     return NetworkType::WIFI;
   } else {
     for (const QDBusObjectPath &path : get_active_connections()) {
@@ -411,12 +409,10 @@ NetworkType WifiManager::networkType() {
       nm3.setTimeout(DBUS_TIMEOUT);
       const QString &type = get_response<QString>(nm3.call("Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "Type"));
       if (type == "gsm") {
-        qDebug() << "TYPE: CELL";
         return NetworkType::CELL;
       }
     }
   }
-  qDebug() << "TYPE: NONE";
   return NetworkType::NONE;
 }
 
