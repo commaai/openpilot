@@ -32,6 +32,7 @@ public:
     for (auto &[alert, fn, loops] : sound_list) {
       sounds[alert].first.setSource(QUrl::fromLocalFile(fn));
       sounds[alert].second = loops ? QSoundEffect::Infinite : 0;
+      QObject::connect(&sounds[alert].first, &QSoundEffect::statusChanged, this, &Sound::checkStatus);
     }
 
     sm = new SubMaster({"carState", "controlsState"});
@@ -45,6 +46,12 @@ public:
   };
 
 private slots:
+  void checkStatus() {
+    for (auto &[alert, kv] : sounds) {
+      assert(kv.first.status() != QSoundEffect::Error);
+    }
+  }
+
   void update() {
     sm->update(100);
     if (sm->updated("carState")) {
