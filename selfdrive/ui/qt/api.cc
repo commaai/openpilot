@@ -80,7 +80,7 @@ bool HttpRequest::active() {
   return reply != nullptr;
 }
 
-void HttpRequest::sendRequest(const QString &requestURL) {
+void HttpRequest::sendRequest(const QString &requestURL, const HttpRequest::Method method) {
   if (active()) {
     qDebug() << "HttpRequest is active";
     return;
@@ -98,7 +98,11 @@ void HttpRequest::sendRequest(const QString &requestURL) {
   request.setUrl(QUrl(requestURL));
   request.setRawHeader(QByteArray("Authorization"), ("JWT " + token).toUtf8());
 
-  reply = networkAccessManager->get(request);
+  if (method == HttpRequest::Method::GET) {
+    reply = networkAccessManager->get(request);
+  } else if (method == HttpRequest::Method::DELETE) {
+    reply = networkAccessManager->deleteResource(request);
+  }
 
   networkTimer->start();
   connect(reply, &QNetworkReply::finished, this, &HttpRequest::requestFinished);
