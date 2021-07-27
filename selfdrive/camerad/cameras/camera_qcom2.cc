@@ -41,7 +41,6 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
   },
 };
 
-const bool enable_dc_gain = true;
 const float DC_GAIN = 2.5;
 const float sensor_analog_gains[] = {
   1.0/8.0, 2.0/8.0, 2.0/7.0, 3.0/7.0, // 0, 1, 2, 3
@@ -50,7 +49,7 @@ const float sensor_analog_gains[] = {
   7.0/2.0, 8.0/2.0, 8.0/1.0};         // 12, 13, 14, 15 = bypass
 
 const int ANALOG_GAIN_MIN_IDX = 0x0; // 0.125x
-const int ANALOG_GAIN_REC_IDX = enable_dc_gain ? 0x7 : 0x6; // 1.0x - 0.8x
+const int ANALOG_GAIN_REC_IDX = 0x7; // 1.0x
 const int ANALOG_GAIN_MAX_IDX = 0xD; // 4.0x
 
 const int EXPOSURE_TIME_MIN = 2; // with HDR, fastest ss
@@ -531,11 +530,11 @@ static void camera_init(MultiCameraState *multi_cam_state, VisionIpcServer * v, 
   s->request_id_last = 0;
   s->skipped = true;
 
-  s->min_ev = EXPOSURE_TIME_MIN * sensor_analog_gains[ANALOG_GAIN_MIN_IDX] * (enable_dc_gain ? DC_GAIN : 1);
+  s->min_ev = EXPOSURE_TIME_MIN * sensor_analog_gains[ANALOG_GAIN_MIN_IDX];
   s->max_ev = EXPOSURE_TIME_MAX * sensor_analog_gains[ANALOG_GAIN_MAX_IDX] * DC_GAIN;
   s->target_grey_fraction = 0.3;
 
-  s->dc_gain_enabled = enable_dc_gain;
+  s->dc_gain_enabled = true;
   s->gain_idx = ANALOG_GAIN_REC_IDX;
   s->exposure_time = 5;
   s->cur_ev = (s->dc_gain_enabled ? DC_GAIN : 1) * sensor_analog_gains[s->gain_idx] * s->exposure_time;
@@ -954,6 +953,15 @@ static void set_camera_exposure(CameraState *s, float grey_frac) {
   float best_ev_score = 1e6;
   int new_g = 0;
   int new_t = 0;
+
+  // Hysteresis around high conversion gain
+  // We usually want this on since it results in lower noise, but turn off in very bright day scenes
+  bool enable_dc_gain = s->dc_gain_enabled;
+  if (!enable_dc_gain && target_grey < 0.3) {
+    enable_dc_gain = true;
+  } else if (enable_dc_gain && target_grey > 0.35) {
+    enable_dc_gain = false;
+  }
 
   // Simple brute force optimizer to choose sensor parameters
   // to reach desired EV
