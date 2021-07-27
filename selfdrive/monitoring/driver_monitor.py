@@ -16,44 +16,46 @@ EventName = car.CarEvent.EventName
 # ******************************************************************************************
 
 class DRIVER_MONITOR_SETTINGS():
-  _AWARENESS_TIME = 35. # passive wheeltouch total timeout
-  _AWARENESS_PRE_TIME_TILL_TERMINAL = 12.
-  _AWARENESS_PROMPT_TIME_TILL_TERMINAL = 6.
-  _DISTRACTED_TIME = 11. # active monitoring total timeout
-  _DISTRACTED_PRE_TIME_TILL_TERMINAL = 8.
-  _DISTRACTED_PROMPT_TIME_TILL_TERMINAL = 6.
+  def __init__(self, TICI=TICI, DT_DMON=DT_DMON):
+    self._DT_DMON = DT_DMON
+    self._AWARENESS_TIME = 35. # passive wheeltouch total timeout
+    self._AWARENESS_PRE_TIME_TILL_TERMINAL = 12.
+    self._AWARENESS_PROMPT_TIME_TILL_TERMINAL = 6.
+    self._DISTRACTED_TIME = 11. # active monitoring total timeout
+    self._DISTRACTED_PRE_TIME_TILL_TERMINAL = 8.
+    self._DISTRACTED_PROMPT_TIME_TILL_TERMINAL = 6.
 
-  _FACE_THRESHOLD = 0.5
-  _PARTIAL_FACE_THRESHOLD = 0.75 if TICI else 0.5
-  _EYE_THRESHOLD = 0.5
-  _SG_THRESHOLD = 0.5
-  _BLINK_THRESHOLD = 0.88 if TICI else 0.5
-  _BLINK_THRESHOLD_SLACK = 0.98 if TICI else 0.65
-  _BLINK_THRESHOLD_STRICT = 0.88 if TICI else 0.5
-  _PITCH_WEIGHT = 1.175 if TICI else 1.35  # pitch matters a lot more
-  _POSESTD_THRESHOLD = 0.318 if TICI else 0.14
-  _E2E_POSE_THRESHOLD = 0.95 if TICI else 0.9
-  _E2E_EYES_THRESHOLD = 0.75
+    self._FACE_THRESHOLD = 0.5
+    self._PARTIAL_FACE_THRESHOLD = 0.75 if TICI else 0.5
+    self._EYE_THRESHOLD = 0.5
+    self._SG_THRESHOLD = 0.5
+    self._BLINK_THRESHOLD = 0.88 if TICI else 0.5
+    self._BLINK_THRESHOLD_SLACK = 0.98 if TICI else 0.65
+    self._BLINK_THRESHOLD_STRICT = 0.88 if TICI else 0.5
+    self._PITCH_WEIGHT = 1.175 if TICI else 1.35  # pitch matters a lot more
+    self._POSESTD_THRESHOLD = 0.318 if TICI else 0.14
+    self._E2E_POSE_THRESHOLD = 0.95 if TICI else 0.9
+    self._E2E_EYES_THRESHOLD = 0.75
 
-  _METRIC_THRESHOLD = 0.5 if TICI else 0.4
-  _METRIC_THRESHOLD_SLACK = 0.6875 if TICI else 0.55
-  _METRIC_THRESHOLD_STRICT = 0.5 if TICI else 0.4
-  _PITCH_POS_ALLOWANCE = 0.12  # rad, to not be too sensitive on positive pitch
-  _PITCH_NATURAL_OFFSET = 0.02  # people don't seem to look straight when they drive relaxed, rather a bit up
-  _YAW_NATURAL_OFFSET = 0.08  # people don't seem to look straight when they drive relaxed, rather a bit to the right (center of car)
+    self._METRIC_THRESHOLD = 0.5 if TICI else 0.4
+    self._METRIC_THRESHOLD_SLACK = 0.6875 if TICI else 0.55
+    self._METRIC_THRESHOLD_STRICT = 0.5 if TICI else 0.4
+    self._PITCH_POS_ALLOWANCE = 0.12  # rad, to not be too sensitive on positive pitch
+    self._PITCH_NATURAL_OFFSET = 0.02  # people don't seem to look straight when they drive relaxed, rather a bit up
+    self._YAW_NATURAL_OFFSET = 0.08  # people don't seem to look straight when they drive relaxed, rather a bit to the right (center of car)
 
-  _HI_STD_FALLBACK_TIME = int(10  / DT_DMON)  # fall back to wheel touch if model is uncertain for 10s
-  _DISTRACTED_FILTER_TS = 0.25  # 0.6Hz
+    self._HI_STD_FALLBACK_TIME = int(10  / self._DT_DMON)  # fall back to wheel touch if model is uncertain for 10s
+    self._DISTRACTED_FILTER_TS = 0.25  # 0.6Hz
 
-  _POSE_CALIB_MIN_SPEED = 13  # 30 mph
-  _POSE_OFFSET_MIN_COUNT = int(60 / DT_DMON)  # valid data counts before calibration completes, 1min cumulative
-  _POSE_OFFSET_MAX_COUNT = int(360 / DT_DMON)  # stop deweighting new data after 6 min, aka "short term memory"
+    self._POSE_CALIB_MIN_SPEED = 13  # 30 mph
+    self._POSE_OFFSET_MIN_COUNT = int(60 / self._DT_DMON)  # valid data counts before calibration completes, 1min cumulative
+    self._POSE_OFFSET_MAX_COUNT = int(360 / self._DT_DMON)  # stop deweighting new data after 6 min, aka "short term memory"
 
-  _RECOVERY_FACTOR_MAX = 5.  # relative to minus step change
-  _RECOVERY_FACTOR_MIN = 1.25  # relative to minus step change
+    self._RECOVERY_FACTOR_MAX = 5.  # relative to minus step change
+    self._RECOVERY_FACTOR_MIN = 1.25  # relative to minus step change
 
-  _MAX_TERMINAL_ALERTS = 3  # not allowed to engage after 3 terminal alerts
-  _MAX_TERMINAL_DURATION = int(30 / DT_DMON)  # not allowed to engage after 30s of terminal alerts
+    self._MAX_TERMINAL_ALERTS = 3  # not allowed to engage after 3 terminal alerts
+    self._MAX_TERMINAL_DURATION = int(30 / self._DT_DMON)  # not allowed to engage after 30s of terminal alerts
 
 
 # model output refers to center of cropped image, so need to apply the x displacement offset
@@ -103,7 +105,7 @@ class DriverBlink():
     self.cfactor = 1.
 
 class DriverStatus():
-  def __init__(self, rhd=False, settings=DRIVER_MONITOR_SETTINGS):
+  def __init__(self, rhd=False, settings=DRIVER_MONITOR_SETTINGS()):
     # init policy settings
     self.settings = settings
 
@@ -116,7 +118,7 @@ class DriverStatus():
     self.awareness_active = 1.
     self.awareness_passive = 1.
     self.driver_distracted = False
-    self.driver_distraction_filter = FirstOrderFilter(0., self.settings._DISTRACTED_FILTER_TS, DT_DMON)
+    self.driver_distraction_filter = FirstOrderFilter(0., self.settings._DISTRACTED_FILTER_TS, self.settings._DT_DMON)
     self.face_detected = False
     self.face_partial = False
     self.terminal_alert_cnt = 0
@@ -133,7 +135,7 @@ class DriverStatus():
   def _set_timers(self, active_monitoring):
     if self.active_monitoring_mode and self.awareness <= self.threshold_prompt:
       if active_monitoring:
-        self.step_change = DT_DMON / self.settings._DISTRACTED_TIME
+        self.step_change = self.settings._DT_DMON / self.settings._DISTRACTED_TIME
       else:
         self.step_change = 0.
       return  # no exploit after orange alert
@@ -148,7 +150,7 @@ class DriverStatus():
 
       self.threshold_pre = self.settings._DISTRACTED_PRE_TIME_TILL_TERMINAL / self.settings._DISTRACTED_TIME
       self.threshold_prompt = self.settings._DISTRACTED_PROMPT_TIME_TILL_TERMINAL / self.settings._DISTRACTED_TIME
-      self.step_change = DT_DMON / self.settings._DISTRACTED_TIME
+      self.step_change = self.settings._DT_DMON / self.settings._DISTRACTED_TIME
       self.active_monitoring_mode = True
     else:
       if self.active_monitoring_mode:
@@ -157,7 +159,7 @@ class DriverStatus():
 
       self.threshold_pre = self.settings._AWARENESS_PRE_TIME_TILL_TERMINAL / self.settings._AWARENESS_TIME
       self.threshold_prompt = self.settings._AWARENESS_PROMPT_TIME_TILL_TERMINAL / self.settings._AWARENESS_TIME
-      self.step_change = DT_DMON / self.settings._AWARENESS_TIME
+      self.step_change = self.settings._DT_DMON / self.settings._AWARENESS_TIME
       self.active_monitoring_mode = False
 
   def _is_driver_distracted(self, pose, blink):
