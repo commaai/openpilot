@@ -1,1 +1,4 @@
 acados/
+!x86_64/
+!larch64/
+!aarch64/
