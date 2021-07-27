@@ -112,7 +112,6 @@ class TestAthenadMethods(unittest.TestCase):
     athenad.upload_queue.put_nowait(item)
     try:
       self.wait_for_upload()
-
       time.sleep(0.1)
 
       # TODO: verify that upload actually succeeded
@@ -134,9 +133,11 @@ class TestAthenadMethods(unittest.TestCase):
     thread.start()
 
     try:
-      # Check that upload with retry count exceeded is not put back
       athenad.upload_queue.put_nowait(item_no_retry)
+      self.wait_for_upload()
       time.sleep(0.1)
+
+      # Check that upload with retry count exceeded is not put back
       self.assertEqual(athenad.upload_queue.qsize(), 0)
 
       athenad.upload_queue.put_nowait(item)
@@ -164,8 +165,8 @@ class TestAthenadMethods(unittest.TestCase):
     thread.start()
     try:
       self.wait_for_upload()
-
       time.sleep(0.1)
+
       self.assertEqual(athenad.upload_queue.qsize(), 0)
       self.assertEqual(len(athenad.cancelled_uploads), 0)
     finally:
