@@ -40,7 +40,7 @@ LOG_ATTR_VALUE_MAX_UNIX_TIME = int.to_bytes(2147483647, 4, sys.byteorder)
 RECONNECT_TIMEOUT_S = 70
 
 RETRY_DELAY = 1.0  # seconds
-MAX_RETRY_COUNT = 300  # Try for at most 5 minutes
+MAX_RETRY_COUNT = 300  # Try for at most 5 minutes if upload fails immediately
 
 dispatcher["echo"] = lambda s: s
 recv_queue: Any = queue.Queue()
