@@ -165,7 +165,6 @@ def thermald_thread():
   handle_fan = None
   is_uno = False
   ui_running_prev = False
-  last_gsm_roaming = None
 
   params = Params()
   power_monitor = PowerMonitoring()
@@ -257,17 +256,6 @@ def thermald_thread():
 
       except Exception:
         cloudlog.exception("Error getting network status")
-
-      if TICI:
-        try:
-          gsm_roaming = params.get_bool("GsmRoaming")
-          if gsm_roaming != last_gsm_roaming:
-            last_gsm_roaming = gsm_roaming
-            home_only = "no" if gsm_roaming else "yes"
-            os.system(f"nmcli connection modify --temporary lte gsm.home-only {home_only}")
-
-        except Exception:
-          cloudlog.exception("Error setting roaming")
 
     msg.deviceState.freeSpacePercent = get_available_percent(default=100.0)
     msg.deviceState.memoryUsagePercent = int(round(psutil.virtual_memory().percent))

@@ -418,6 +418,24 @@ NetworkType WifiManager::currentNetworkType() {
   return NetworkType::NONE;
 }
 
+void WifiManager::setRoaming(bool roaming) {
+  const QDBusObjectPath &path = getConnectionPath("lte");
+  if (!path.path().isEmpty()) {
+    ElapsedTimer timer;
+    timer.start();
+    QDBusInterface nm(NM_DBUS_INTERFACE, path.path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION, bus);
+    nm.setTimeout(DBUS_TIMEOUT);
+
+    Connection settings = QDBusReply<Connection>(nm.call("GetSettings")).value();
+    qDebug() << "Getting settings took:" << timer.nsecsElapsed() / 1e6 << "ms";
+    qDebug() << "home only:" << settings["gsm"]["home-only"];
+    timer.start();
+    settings["gsm"]["home-only"] = roaming ? "no" : "yes";
+    nm.call("Update", QVariant::fromValue(settings));
+    qDebug() << "Saving settings took:" << timer.nsecsElapsed() / 1e6 << "ms";
+  }
+}
+
 // Functions for tethering
 void WifiManager::addTetheringConnection() {
   Connection connection;

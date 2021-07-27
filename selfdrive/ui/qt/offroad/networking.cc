@@ -67,6 +67,14 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QFrame(parent) {
     }
   )");
   main_layout->setCurrentWidget(wifiScreen);
+
+  QTimer* timer = new QTimer(this);
+  QObject::connect(timer, &QTimer::timeout, this, [=]() {
+    bool roaming = params.getBool("GsmRoaming");
+    qDebug() << "Setting roaming:" << roaming;
+    wifi->setRoaming(roaming);
+  });
+  timer->start(5000);
 }
 
 void Networking::refresh() {

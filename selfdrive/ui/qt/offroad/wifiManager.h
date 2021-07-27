@@ -49,6 +49,7 @@ public:
   bool isKnownConnection(const QString &ssid);
   void activateWifiConnection(const QString &ssid);
   NetworkType currentNetworkType();
+  void setRoaming(bool roaming);
 
   void connect(const Network &ssid);
   void connect(const Network &ssid, const QString &password);
