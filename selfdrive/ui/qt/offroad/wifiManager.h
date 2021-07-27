@@ -15,6 +15,11 @@ enum class ConnectedType{
   CONNECTING,
   CONNECTED
 };
+enum class NetworkType{
+  DISCONNECTED,
+  CONNECTING,
+  CONNECTED
+};
 
 typedef QMap<QString, QMap<QString, QVariant>> Connection;
 typedef QVector<QMap<QString, QVariant>> IpConfig;
@@ -42,7 +47,7 @@ public:
   void forgetConnection(const QString &ssid);
   bool isKnownConnection(const QString &ssid);
   void activateWifiConnection(const QString &ssid);
-  bool isOnMobileNetwork();
+  QString networkType();
 
   void connect(const Network &ssid);
   void connect(const Network &ssid, const QString &password);

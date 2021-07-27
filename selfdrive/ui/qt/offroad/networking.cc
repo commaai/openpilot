@@ -106,6 +106,7 @@ void Networking::showEvent(QShowEvent* event) {
     if (this->isVisible()) {
       wifi->refreshNetworks();
       refresh();
+      qDebug() << "networkType:" << wifi->networkType();
     }
   });
 }

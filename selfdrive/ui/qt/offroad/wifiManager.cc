@@ -390,16 +390,24 @@ void WifiManager::activateWifiConnection(const QString &ssid) {
   }
 }
 
-bool WifiManager::isOnMobileNetwork() {
-  bool mobileConnected = false;
-  for (const QDBusObjectPath &path : get_active_connections()) {
-    QDBusInterface nm(NM_DBUS_SERVICE, path.path(), NM_DBUS_INTERFACE_PROPERTIES, bus);
-    nm.setTimeout(DBUS_TIMEOUT);
-    const QString &type = get_response<QString>(nm.call("Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "Type"));
-    if (type == "802-11-wireless") return false;
-    if (type == "gsm") mobileConnected = true;
-  }
-  return mobileConnected;
+QString WifiManager::networkType() {
+  QDBusInterface nm(NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE_PROPERTIES, bus);
+  nm.setTimeout(DBUS_TIMEOUT);
+  const QDBusMessage &response = nm.call("Get", NM_DBUS_INTERFACE, "PrimaryConnection");
+  qDebug() << response;
+  qDebug() << get_response<QDBusObjectPath>(response).path();;
+  return "";
+
+
+//  bool mobileConnected = false;
+//  for (const QDBusObjectPath &path : get_active_connections()) {
+//    QDBusInterface nm(NM_DBUS_SERVICE, path.path(), NM_DBUS_INTERFACE_PROPERTIES, bus);
+//    nm.setTimeout(DBUS_TIMEOUT);
+//    const QString &type = get_response<QString>(nm.call("Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "Type"));
+//    if (type == "802-11-wireless") return false;
+//    if (type == "gsm") mobileConnected = true;
+//  }
+//  return mobileConnected;
 }
 
 // Functions for tethering
