@@ -195,8 +195,7 @@ void WifiManager::connect(const QByteArray &ssid, const QString &username, const
   }
 
   connection["ipv4"]["method"] = "auto";
-  connection["ipv4"]["route-metric"] = 500;
-  connection["ipv4"]["dns-priority"] = 500;
+  connection["ipv4"]["dns-priority"] = 600;
   connection["ipv6"]["method"] = "ignore";
 
   QDBusInterface nm_settings(NM_DBUS_SERVICE, NM_DBUS_PATH_SETTINGS, NM_DBUS_INTERFACE_SETTINGS, bus);
