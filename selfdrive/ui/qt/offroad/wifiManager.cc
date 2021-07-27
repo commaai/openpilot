@@ -117,8 +117,7 @@ QString WifiManager::get_ipv4_address() {
   }
   QVector<QDBusObjectPath> conns = get_active_connections();
   for (auto &p : conns) {
-    QString active_connection = p.path();
-    QDBusInterface nm(NM_DBUS_SERVICE, active_connection, NM_DBUS_INTERFACE_PROPERTIES, bus);
+    QDBusInterface nm(NM_DBUS_SERVICE, p.path(), NM_DBUS_INTERFACE_PROPERTIES, bus);
     nm.setTimeout(DBUS_TIMEOUT);
 
     QDBusObjectPath pth = get_response<QDBusObjectPath>(nm.call("Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "Ip4Config"));
@@ -389,6 +388,33 @@ void WifiManager::activateWifiConnection(const QString &ssid) {
     nm3.setTimeout(DBUS_TIMEOUT);
     nm3.call("ActivateConnection", QVariant::fromValue(path), QVariant::fromValue(QDBusObjectPath(adapter)), QVariant::fromValue(QDBusObjectPath("/")));
   }
+}
+
+// function matches tici/hardware.py
+NetworkType WifiManager::currentNetworkType() {
+  QDBusInterface nm(NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE_PROPERTIES, bus);
+  nm.setTimeout(DBUS_TIMEOUT);
+  const QDBusObjectPath &path = get_response<QDBusObjectPath>(nm.call("Get", NM_DBUS_INTERFACE, "PrimaryConnection"));
+
+  QDBusInterface nm2(NM_DBUS_SERVICE, path.path(), NM_DBUS_INTERFACE_PROPERTIES, bus);
+  nm.setTimeout(DBUS_TIMEOUT);
+  const QString &type = get_response<QString>(nm2.call("Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "Type"));
+
+  if (type == "802-3-ethernet") {
+    return NetworkType::ETHERNET;
+  } else if (type == "802-11-wireless" && !isTetheringEnabled()) {
+    return NetworkType::WIFI;
+  } else {
+    for (const QDBusObjectPath &path : get_active_connections()) {
+      QDBusInterface nm3(NM_DBUS_SERVICE, path.path(), NM_DBUS_INTERFACE_PROPERTIES, bus);
+      nm3.setTimeout(DBUS_TIMEOUT);
+      const QString &type = get_response<QString>(nm3.call("Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "Type"));
+      if (type == "gsm") {
+        return NetworkType::CELL;
+      }
+    }
+  }
+  return NetworkType::NONE;
 }
 
 // Functions for tethering

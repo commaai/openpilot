@@ -10,10 +10,16 @@ enum class SecurityType {
   WPA,
   UNSUPPORTED
 };
-enum class ConnectedType{
+enum class ConnectedType {
   DISCONNECTED,
   CONNECTING,
   CONNECTED
+};
+enum class NetworkType {
+  NONE,
+  WIFI,
+  CELL,
+  ETHERNET
 };
 
 typedef QMap<QString, QMap<QString, QVariant>> Connection;
@@ -42,6 +48,7 @@ public:
   void forgetConnection(const QString &ssid);
   bool isKnownConnection(const QString &ssid);
   void activateWifiConnection(const QString &ssid);
+  NetworkType currentNetworkType();
 
   void connect(const Network &ssid);
   void connect(const Network &ssid, const QString &password);
