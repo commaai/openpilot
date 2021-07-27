@@ -372,7 +372,7 @@ QString WifiManager::getConnectionSsid(const QDBusObjectPath &path) {
   if (!ssid.isEmpty()) {
     return ssid;
   }
-  return result.value().value("connection").value("id").toString();
+  return result.value().value("connection").value("id").toString();  // lte doesn't have an ssid
 }
 
 void WifiManager::initConnections() {

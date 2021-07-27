@@ -61,8 +61,6 @@ private:
   WifiUI* wifiWidget;
   WifiManager* wifi = nullptr;
 
-  Params params;
-
 protected:
   void showEvent(QShowEvent* event) override;
 
