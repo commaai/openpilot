@@ -430,8 +430,8 @@ void WifiManager::setRoaming(bool roaming) {
 
     Connection settings = QDBusReply<Connection>(nm.call("GetSettings")).value();
     bool prevRoaming = !settings.value("gsm").value("home-only").toBool();
-    if (!settings.value("gsm").contains("home-only") || prevRoaming != roaming) {
-      settings["gsm"]["home-only"] = roaming ? "no" : "yes";
+    if (!settings.value("gsm").contains("home-only") || prevRoaming != roaming) {  // set if unset or param is changed
+      settings["gsm"]["home-only"] = !roaming;
       nm.call("Update", QVariant::fromValue(settings));
     }
   }
