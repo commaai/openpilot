@@ -67,13 +67,6 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QFrame(parent) {
     }
   )");
   main_layout->setCurrentWidget(wifiScreen);
-
-  // roaming timer
-  QTimer* timer = new QTimer(this);
-  QObject::connect(timer, &QTimer::timeout, this, [=]() {
-    wifi->setRoaming(params.getBool("GsmRoaming"));
-  });
-  timer->start(10000);
 }
 
 void Networking::refresh() {
@@ -158,6 +151,14 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   main_layout->addWidget(new SshToggle());
   main_layout->addWidget(horizontal_line(), 0);
   main_layout->addWidget(new SshControl());
+  main_layout->addWidget(horizontal_line(), 0);
+
+  // Roaming toggle
+  ToggleControl *roamingToggle = new ToggleControl("Enable Roaming", "", "", wifi->isRoamingEnabled());
+  QObject::connect(roamingToggle, &SshToggle::toggleFlipped, [=](bool state) {
+    wifi->setRoamingEnabled(state);
+  });
+  main_layout->addWidget(roamingToggle);
 
   main_layout->addStretch(1);
 }

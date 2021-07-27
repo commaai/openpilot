@@ -422,19 +422,30 @@ NetworkType WifiManager::currentNetworkType() {
   return NetworkType::NONE;
 }
 
-void WifiManager::setRoaming(bool roaming) {
+void WifiManager::setRoamingEnabled(bool roaming) {
   const QDBusObjectPath &path = getConnectionPath("lte");
   if (!path.path().isEmpty()) {
     QDBusInterface nm(NM_DBUS_SERVICE, path.path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION, bus);
     nm.setTimeout(DBUS_TIMEOUT);
 
     Connection settings = QDBusReply<Connection>(nm.call("GetSettings")).value();
-    bool prevRoaming = !settings.value("gsm").value("home-only").toBool();
-    if (!settings.value("gsm").contains("home-only") || prevRoaming != roaming) {  // set if unset or param is changed
+    if (settings.value("gsm").value("home-only").toBool() == roaming) {
       settings["gsm"]["home-only"] = !roaming;
       nm.call("Update", QVariant::fromValue(settings));
     }
   }
+}
+
+bool WifiManager::isRoamingEnabled() {
+  const QDBusObjectPath &path = getConnectionPath("lte");
+  if (!path.path().isEmpty()) {
+    QDBusInterface nm(NM_DBUS_SERVICE, path.path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION, bus);
+    nm.setTimeout(DBUS_TIMEOUT);
+
+    const Connection &settings = QDBusReply<Connection>(nm.call("GetSettings")).value();
+    return !settings.value("gsm").value("home-only").toBool();
+  }
+  return false;
 }
 
 // Functions for tethering
