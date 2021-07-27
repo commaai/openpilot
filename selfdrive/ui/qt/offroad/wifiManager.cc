@@ -357,6 +357,7 @@ void WifiManager::disconnect() {
 
 QDBusObjectPath WifiManager::getConnectionPath(const QString &ssid) {
   for (const QString &conn_ssid : knownConnections) {
+    qDebug() << "connection:" << conn_ssid;
     if (ssid == conn_ssid) {
       return knownConnections.key(conn_ssid);
     }
@@ -389,6 +390,11 @@ void WifiManager::activateWifiConnection(const QString &ssid) {
     nm3.setTimeout(DBUS_TIMEOUT);
     nm3.call("ActivateConnection", QVariant::fromValue(path), QVariant::fromValue(QDBusObjectPath(adapter)), QVariant::fromValue(QDBusObjectPath("/")));
   }
+}
+
+bool WifiManager::isOnMobileNetwork() {
+  return false;
+
 }
 
 // Functions for tethering

@@ -42,6 +42,7 @@ public:
   void forgetConnection(const QString &ssid);
   bool isKnownConnection(const QString &ssid);
   void activateWifiConnection(const QString &ssid);
+  bool isOnMobileNetwork();
 
   void connect(const Network &ssid);
   void connect(const Network &ssid, const QString &password);
