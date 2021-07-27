@@ -1,5 +1,5 @@
 if [ -z "$OPENPILOT_ENV" ]; then
-  export PYTHONPATH="$HOME/openpilot:$PYTHONPATH"
+  export PYTHONPATH="$HOME/openpilot:$HOME/openpilot/pyextra:$PYTHONPATH"
 
   unamestr=`uname`
   if [[ "$unamestr" == 'Linux' ]]; then
