@@ -175,6 +175,7 @@ cxxflags += ["-DSWAGLOG"]
 
 # change pythonpath to this
 lenv["PYTHONPATH"] = Dir("#").abspath + ":" + Dir("#pyextra/").abspath
+lenv["TERA_PATH"] = Dir("#").abspath + f"/phonelibs/acados/{arch}/t_renderer"
 
 env = Environment(
   ENV=lenv,
