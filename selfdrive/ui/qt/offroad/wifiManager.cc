@@ -401,7 +401,7 @@ NetworkType WifiManager::currentNetworkType() {
 
   if (type == "802-3-ethernet") {
     return NetworkType::ETHERNET;
-  } else if (type == "802-11-wireless") {  // includes hotspot, test with isTetheringEnabled
+  } else if (type == "802-11-wireless" && !isTetheringEnabled()) {
     return NetworkType::WIFI;
   } else {
     for (const QDBusObjectPath &path : get_active_connections()) {
