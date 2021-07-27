@@ -106,7 +106,6 @@ void Networking::showEvent(QShowEvent* event) {
     if (this->isVisible()) {
       wifi->refreshNetworks();
       refresh();
-      qDebug() << "isOnMobileNetwork:" << wifi->isOnMobileNetwork();
     }
   });
 }
