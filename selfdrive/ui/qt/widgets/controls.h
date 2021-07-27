@@ -23,6 +23,19 @@ class ElidedLabel : public QLabel {
   QString lastText_, elidedText_;
 };
 
+class ElidedButton : public QPushButton {
+  Q_OBJECT
+
+ public:
+  explicit ElidedButton(QWidget *parent = 0);
+  explicit ElidedButton(const QString &text, QWidget *parent = 0);
+
+ protected:
+  void paintEvent(QPaintEvent *event) override;
+  void resizeEvent(QResizeEvent* event) override;
+  QString lastText_, elidedText_;
+};
+
 class AbstractControl : public QFrame {
   Q_OBJECT
 

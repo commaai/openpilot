@@ -87,6 +87,33 @@ ButtonControl::ButtonControl(const QString &title, const QString &text, const QS
   hlayout->addWidget(&btn);
 }
 
+// ElidedButton
+
+ElidedButton::ElidedButton(QWidget *parent) : ElidedButton({}, parent) {}
+
+ElidedButton::ElidedButton(const QString &text, QWidget *parent) : QPushButton(text.trimmed(), parent) {
+  setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+  setMinimumWidth(1);
+}
+
+void ElidedButton::resizeEvent(QResizeEvent* event) {
+  QPushButton::resizeEvent(event);
+  lastText_ = elidedText_ = "";
+}
+
+void ElidedButton::paintEvent(QPaintEvent *event) {
+  const QString curText = text();
+  if (curText != lastText_) {
+    elidedText_ = fontMetrics().elidedText(curText, Qt::ElideRight, contentsRect().width());
+    lastText_ = curText;
+  }
+
+  QPainter painter(this);
+  QStyleOption opt;
+  opt.initFrom(this);
+  style()->drawItemText(&painter, contentsRect(), Qt::AlignLeft | Qt::AlignVCenter, opt.palette, isEnabled(), elidedText_, foregroundRole());
+}
+
 // ElidedLabel
 
 ElidedLabel::ElidedLabel(QWidget *parent) : ElidedLabel({}, parent) {}
