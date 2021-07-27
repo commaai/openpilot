@@ -49,7 +49,7 @@ upload_queue: Any = queue.Queue()
 log_send_queue: Any = queue.Queue()
 log_recv_queue: Any = queue.Queue()
 cancelled_uploads: Any = set()
-UploadItem = namedtuple('UploadItem', ['path', 'url', 'headers', 'created_at', 'id', 'retry_count'])
+UploadItem = namedtuple('UploadItem', ['path', 'url', 'headers', 'created_at', 'id', 'retry_count'], defaults=(0,))
 
 
 def handle_long_poll(ws):
@@ -197,7 +197,7 @@ def uploadFileToUrl(fn, url, headers):
   if not os.path.exists(path):
     return 404
 
-  item = UploadItem(path=path, url=url, headers=headers, created_at=int(time.time() * 1000), id=None, retry_count=0)
+  item = UploadItem(path=path, url=url, headers=headers, created_at=int(time.time() * 1000), id=None)
   upload_id = hashlib.sha1(str(item).encode()).hexdigest()
   item = item._replace(id=upload_id)
 
