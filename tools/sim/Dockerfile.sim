@@ -44,7 +44,7 @@ RUN /tmp/install_carla.sh
 RUN cd $HOME && \
     wget https://raw.githubusercontent.com/commaai/eon-neos-builder/master/devices/eon/home/.tmux.conf
 
-ENV PYTHONPATH $HOME/openpilot:${PYTHONPATH}
+ENV PYTHONPATH $HOME/openpilot:$HOME/openpilot/pyextra:${PYTHONPATH}
 RUN mkdir -p $HOME/openpilot
 
 COPY SConstruct $HOME/openpilot/
