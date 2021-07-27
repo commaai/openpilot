@@ -281,7 +281,7 @@ QWidget * Setup::download_failed() {
   restart->setProperty("primary", true);
   blayout->addWidget(restart);
   QObject::connect(restart, &QPushButton::clicked, this, [=]() {
-    setCurrentIndex(0);
+    setCurrentIndex(2);
   });
 
   widget->setStyleSheet(R"(
