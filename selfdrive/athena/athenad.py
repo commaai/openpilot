@@ -39,6 +39,9 @@ LOG_ATTR_NAME = 'user.upload'
 LOG_ATTR_VALUE_MAX_UNIX_TIME = int.to_bytes(2147483647, 4, sys.byteorder)
 RECONNECT_TIMEOUT_S = 70
 
+RETRY_DELAY = 1.0  # seconds
+MAX_RETRY_COUNT = 300  # Try for at most 5 minutes
+
 dispatcher["echo"] = lambda s: s
 recv_queue: Any = queue.Queue()
 send_queue: Any = queue.Queue()
@@ -46,7 +49,7 @@ upload_queue: Any = queue.Queue()
 log_send_queue: Any = queue.Queue()
 log_recv_queue: Any = queue.Queue()
 cancelled_uploads: Any = set()
-UploadItem = namedtuple('UploadItem', ['path', 'url', 'headers', 'created_at', 'id'])
+UploadItem = namedtuple('UploadItem', ['path', 'url', 'headers', 'created_at', 'id', 'retry_count'])
 
 
 def handle_long_poll(ws):
@@ -103,7 +106,16 @@ def upload_handler(end_event):
       if item.id in cancelled_uploads:
         cancelled_uploads.remove(item.id)
         continue
-      _do_upload(item)
+
+      try:
+        _do_upload(item)
+      except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+        cloudlog.warning(f"athena.upload_handler.retry {e} {item}")
+
+        if item.retry_count < MAX_RETRY_COUNT:
+          item = item._replace(retry_count=item.retry_count + 1)
+          upload_queue.put_nowait(item)
+          time.sleep(RETRY_DELAY)
     except queue.Empty:
       pass
     except Exception:
@@ -185,7 +197,7 @@ def uploadFileToUrl(fn, url, headers):
   if not os.path.exists(path):
     return 404
 
-  item = UploadItem(path=path, url=url, headers=headers, created_at=int(time.time() * 1000), id=None)
+  item = UploadItem(path=path, url=url, headers=headers, created_at=int(time.time() * 1000), id=None, retry_count=0)
   upload_id = hashlib.sha1(str(item).encode()).hexdigest()
   item = item._replace(id=upload_id)
 
