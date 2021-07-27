@@ -9,6 +9,8 @@ from collections import namedtuple
 
 import capnp
 from tqdm import tqdm
+from tenacity import retry, stop_after_attempt, retry_if_exception_type
+
 
 import cereal.messaging as messaging
 from cereal import car, log
@@ -336,6 +338,7 @@ CONFIGS = [
 ]
 
 
+@retry(stop=stop_after_attempt(MAX_RETRIES), retry=retry_if_exception_type(TimeoutError))
 def replay_process(cfg, lr, fingerprint=None):
   if cfg.fake_pubsubmaster:
     return python_replay_process(cfg, lr, fingerprint)
@@ -447,35 +450,37 @@ def cpp_replay_process(cfg, lr, fingerprint=None):
   managed_processes[cfg.proc_name].start()
   start_time = time.time()
 
-  with Timeout(TIMEOUT):
-    while not all(pm.all_readers_updated(s) for s in cfg.pub_sub.keys()):
-      if time.time() - start_time > TIMEOUT:
-        raise TimeoutError
-      time.sleep(0)
+  try:
+    with Timeout(TIMEOUT):
+      while not all(pm.all_readers_updated(s) for s in cfg.pub_sub.keys()):
+        if time.time() - start_time > TIMEOUT:
+          raise TimeoutError
+        time.sleep(0)
 
-    # Make sure all subscribers are connected
-    sockets = {s: messaging.sub_sock(s, timeout=2000) for s in sub_sockets}
-    for s in sub_sockets:
-      messaging.recv_one_or_none(sockets[s])
+      # Make sure all subscribers are connected
+      sockets = {s: messaging.sub_sock(s, timeout=2000) for s in sub_sockets}
+      for s in sub_sockets:
+        messaging.recv_one_or_none(sockets[s])
 
-    for i, msg in enumerate(tqdm(pub_msgs, disable=False)):
-      pm.send(msg.which(), msg.as_builder())
+      for i, msg in enumerate(tqdm(pub_msgs, disable=False)):
+        pm.send(msg.which(), msg.as_builder())
 
-      resp_sockets = cfg.pub_sub[msg.which()] if cfg.should_recv_callback is None else cfg.should_recv_callback(msg)
-      for s in resp_sockets:
-        response = messaging.recv_one(sockets[s])
+        resp_sockets = cfg.pub_sub[msg.which()] if cfg.should_recv_callback is None else cfg.should_recv_callback(msg)
+        for s in resp_sockets:
+          response = messaging.recv_one(sockets[s])
 
-        if response is None:
-          print(f"Warning, no response received {i}")
-        else:
-          log_msgs.append(response)
+          if response is None:
+            print(f"Warning, no response received {i}")
+          else:
+            log_msgs.append(response)
 
-      if not len(resp_sockets):  # We only need to wait if we didn't already wait for a response
-        while not pm.all_readers_updated(msg.which()):
-          if time.time() - start_time > TIMEOUT:
-            raise TimeoutError
-          time.sleep(0)
+        if not len(resp_sockets):  # We only need to wait if we didn't already wait for a response
+          while not pm.all_readers_updated(msg.which()):
+            if time.time() - start_time > TIMEOUT:
+              raise TimeoutError
+            time.sleep(0)
 
+  finally:
     managed_processes[cfg.proc_name].signal(signal.SIGKILL)
     managed_processes[cfg.proc_name].stop()
 
