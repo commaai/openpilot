@@ -183,7 +183,7 @@ void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const float *meta_da
 
   std::memmove(prev_brake_5ms2_probs, &prev_brake_5ms2_probs[1], 4*sizeof(float));
   std::memmove(prev_brake_3ms2_probs, &prev_brake_3ms2_probs[1], 2*sizeof(float));
-   auto brake_3ms2_sigmoid = Arr<NUM_META_INTERVALS, sigmoid>(&meta_data[DESIRE_LEN+4], META_STRIDE);
+  auto brake_3ms2_sigmoid = Arr<NUM_META_INTERVALS, sigmoid>(&meta_data[DESIRE_LEN+4], META_STRIDE);
   auto brake_5ms2_sigmoid = Arr<NUM_META_INTERVALS, sigmoid>(&meta_data[DESIRE_LEN+6], META_STRIDE);
   prev_brake_5ms2_probs[4] = brake_5ms2_sigmoid[0];
   prev_brake_3ms2_probs[2] = brake_3ms2_sigmoid[0];
@@ -251,9 +251,6 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelDataRaw &net_ou
       float p = (X_IDXS[xidx] - current_x_val) / (next_x_val - current_x_val);
       plan_t_arr[xidx] = p * T_IDXS[tidx+1] + (1 - p) * T_IDXS[tidx];
     }
-  }
-  for (; xidx<TRAJECTORY_SIZE; xidx++) {
-    plan_t_arr[xidx] = NAN;
   }
 
   fill_xyzt(framed.initPosition(), best_plan, PLAN_MHP_COLUMNS, 0, plan_t_arr, true);
