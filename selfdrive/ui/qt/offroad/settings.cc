@@ -83,8 +83,8 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
 
   toggles.append(new ParamControl("GsmRoaming",
                                  "Enable Roaming",
-                                 "",
-                                 "../assets/offroad/icon_network.png",
+                                 "Allows mobile network roaming",
+                                 "../assets/offroad/icon_map.png",
                                  this));
 
   bool record_lock = Params().getBool("RecordFrontLock");
