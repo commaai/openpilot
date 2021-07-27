@@ -1,0 +1,313 @@
+
+"""
+Python generator for FORCES solvers.
+
+Dependencies:
+    - numpy
+    - scipy
+    - suds
+    - urllib
+    - zipfile
+    
+Copyright 2014 Milan Vukov, KU Leuven, Juan Jerez, EMBOTECH.
+
+Please note that although the ACADO generated code is released under LGPL
+license, FORCES generated code is licensed under terms of the GPL license.
+"""
+
+import numpy as np
+
+class MultistageProblem( object ):
+    def __init__(self, N):
+        # Number of stages
+        self.N = N
+        # Initialize dimensions:
+        self.dims = [
+                {'n': [], 'r': [], 'l': [], 'u': [], 'p': [], 'q': [], 'd': float(3)}
+            for k in range( N )] # d is just a dummy var
+        # Initialize cost structs
+        self.cost = [{'H': [], 'f': [], 'du': float(3)} for k in range( N )] # du is just a dummy var
+        # Initialize structs for equality constraints
+        self.eq = [{'C': [], 'c': [], 'D': [], 'd': float(3)} for k in range( N )] # d is just a dummy var
+        # Initialize structs for inequality constraints
+        self.ineq = [
+            {
+                'b': {'lb': [], 'lbidx': [], 'ub': [], 'ubidx': [], 'd': float(3)}, 
+                'p': {'A': [], 'b': [], 'd': float(3)},
+                'q': {'Q': [], 'G': [], 'r': [], 'd': float(3)}
+            }
+            for k in range( N )] # d is just a dummy var
+        
+        # Parameters
+        self.params = []
+        # Outputs
+        self.outputs = []
+        # Options
+        self.codeoptions = {
+            'name': 'forces',
+            'maxit': 30,
+            'linesearch':
+            {'factor_aff': 0.9, 'factor_cc': 0.95, 'minstep': 1.e-8, 'maxstep': 0.995},
+            'accuracy':
+            {'mu': 1.e-06, 'ineq': 1.e-06, 'eq': 1.e-06, 'rdgap': 1.e-04},
+            'printlevel': 0,
+            'init': 0,
+            'optlevel': 1,
+            'overwrite': 1,
+            'timing': 1,
+            'floattype': 'double',
+            'parallel': 0,
+            'clversion': 1,
+            'mu0': 1.0}
+        
+    def setDims(self, stage, n, r, l, u, p, q):
+        if (stage < 0) or (stage > self.N - 1):
+            raise ValueError("Stage index must be between 0 and " + str(N - 1))
+            
+        self.dims[ stage ][ 'n' ] = float( n )
+        self.dims[ stage ][ 'r' ] = float( r )
+        self.dims[ stage ][ 'l' ] = float( l )
+        self.dims[ stage ][ 'u' ] = float( u )
+        self.dims[ stage ][ 'p' ] = float( p )
+        self.dims[ stage ][ 'q' ] = float( q )
+            
+    def setStage(self,
+                 stage,
+                 H = None, f = None,
+                 lb = None, ub = None,
+                 C = None, c = None, D = None):
+        
+        if (stage < 0) or (stage > self.N - 1):
+            raise ValueError("Stage index must be between 0 and " + str(N - 1))
+            
+    def newParam(self, name, maps2stage, maps2data, type = 'dense'):
+        self.params.append( (name, tuple([float( el ) for el in maps2stage]), maps2data, type) )
+            
+    def newOutput(self, name, fromStage, idxWithinStage):
+        self.outputs.append( (name, fromStage, [float( el ) for el in idxWithinStage]) )
+
+    def _saveData(self, fileName = 'solver.mat'):
+
+        # Type conversion from int to double
+        for stage in range( self.N ):
+            for name in ['lbidx', 'ubidx']:
+                data = self.ineq[ stage ][ 'b' ][ name ]
+                self.ineq[ stage ][ 'b' ][ name ] = [float( el ) for el in data]
+        
+        # Export stages
+        self.exportStages = np.array(
+            [(self.dims[ n ], self.cost[ n ], self.eq[ n ], self.ineq[ n ]) for n in range( self.N )],
+            dtype = [('dims', 'O'), ('cost', 'O'), ('eq', 'O'), ('ineq', 'O')])
+
+        # Max dim of all strings is set to 10
+        self.exportParams = np.array(self.params,
+            dtype = [('name', 'S10'), ('maps2stage', 'O'), ('maps2data', 'S10'), ('type', 'S10')])
+        
+        # Max dim of all strings is set to 10   
+        self.exportOutputs = np.array(self.outputs,
+            dtype = [('name', 'S10'), ('fromStage', 'd'), ('idxWithinStage', 'O')])
+        
+        # Max dim of all strings is set to 10
+        self.exportOptions = np.array([tuple(self.codeoptions.values())],
+            dtype = zip(self.codeoptions.keys(), ('d', 'd', 'd', 'O', 'd', 'd', 'd', 
+                                                  'S10', 'S10', 'd', 'd', 'd', 'O')))
+
+        # Pack shit and save it to a file which we are gonna send to FORCES server
+        problem = {}
+        problem['outvars'] = self.exportOutputs
+        problem['params'] = self.exportParams
+        problem['stages'] = self.exportStages
+        problem['settings'] = self.exportOptions
+
+        import scipy.io as sio
+        sio.savemat(fileName, problem, format = '5', oned_as = 'row')
+            
+    def generateCode(self, userID = "", unzip = True):
+
+        if userID == "":
+            raise ValueError("userID is empty.")
+    
+        fileName = 'forces.mat'
+        self._saveData( fileName )
+
+        # write binary file as a byte string of the right format
+        temp = np.fromfile( open(fileName, 'rb'), 'B' )
+        self.fileData = "["
+        for i in range(len(temp)-1):
+            self.fileData += str(temp[i]) + ";"
+        self.fileData += str(temp[i+1]) + "]"
+
+        # send request to server
+        from suds import WebFault
+        from suds.client import Client
+        
+        server = "http://forces.ethz.ch"
+        self.forcesClient = Client(server + "/CodeGen.asmx?Wsdl")
+        resp = self.forcesClient.service[ 0 ].generateCodeFromMatlab(userID, self.fileData)
+
+        # retrieve files
+        import urllib
+
+        usock = urllib.urlopen(server + resp)
+        outputfile = open("forces.zip",'w')
+        outputfile.write(usock.read())
+        outputfile.close()
+        usock.close()
+
+        if unzip is True:
+            import zipfile
+
+            with zipfile.ZipFile('forces.zip', "r") as z:
+                z.extractall( "./forces" )
+                
+## Generator for a FORCES QP solver used by the ACADO OCP solver
+
+#
+# User options
+#
+
+# Number of states
+nx = @NX@
+# Number of controls
+nu = @NU@
+# Number of discretization (shooting) nodes
+N  = @N@
+
+# Lower and upper bounds on stage variables, for all N stages
+lbIdx = [
+        @LB_IDX@
+        ]
+ubIdx = [
+        @UB_IDX@
+        ]
+    
+# Constant Hessian
+constHessian = @CONST_HESSIAN@
+# Diagonal Hessian
+diagHessian = @DIAG_HESSIAN@
+diagHessianN = @DIAG_HESSIAN_N@
+# Fixed initial state
+fixedInitialState = @FIXED_INITIAL_STATE@
+
+## Define FORCES multistage problem
+
+stages = MultistageProblem( N )
+
+for i in range( N ):
+    if i == 0:
+        #
+        # Initial stage
+        #
+
+        # Dimension
+        stages.setDims(i, nx + nu, nx, len( lbIdx[ 0 ] ), len( ubIdx[ 0 ] ), 0, 0)
+        
+        # Cost
+        if constHessian == 1:
+            if diagHessian == 1:
+                stages.newParam('H1', range(1, N), 'cost.H', 'diag')
+            else:
+                stages.newParam('H1', range(1, N), 'cost.H')
+        else:
+            if diagHessian == 1:
+                stages.newParam('H1', [ 1 ], 'cost.H', 'diag')
+            else:
+                stages.newParam('H1', [ 1 ], 'cost.H')
+
+        stages.newParam('f1', [ 1 ], 'cost.f')
+
+        # Lower bounds
+        stages.ineq[ 0 ]['b']['lbidx'] = lbIdx[ 0 ]
+        if len( lbIdx[ 0 ] ):
+            stages.newParam('lb' + str(i + 1), [i + 1], 'ineq.b.lb')
+        # Upper bounds
+        stages.ineq[ 0 ]['b']['ubidx'] = ubIdx[ 0 ]
+        if len( ubIdx[ 0 ] ):
+            stages.newParam('ub' + str(i + 1), [i + 1], 'ineq.b.ub')
+
+        # Equality constraints
+        stages.newParam('C1', [ 1 ], 'eq.C')
+        stages.newParam('d1', [ 1 ], 'eq.c')
+
+        if fixedInitialState == 1:
+            stages.eq[ 0 ][ 'D' ] = np.concatenate((np.eye( nx ), np.zeros([nx, nu])), 1)
+
+    elif i < (N - 1):
+
+        #
+        # Stages along horizon
+        #
+
+        # Dimension
+        stages.setDims(i, nx + nu, nx, len( lbIdx[ i ] ), len( ubIdx[ i ] ), 0, 0)
+
+        # Cost
+        if constHessian == 0:
+            if diagHessian == 1:
+                stages.newParam('H' + str(i + 1), [i + 1], 'cost.H', 'diag')
+            else:
+                stages.newParam('H' + str(i + 1), [i + 1], 'cost.H')
+
+        stages.newParam('f' + str(i + 1), [i + 1], 'cost.f')
+
+        # Lower bounds
+        stages.ineq[ i ]['b']['lbidx'] = lbIdx[ i ]
+        if len( lbIdx[ i ] ):
+            stages.newParam('lb' + str(i + 1), [i + 1], 'ineq.b.lb')
+        # Upper bounds
+        stages.ineq[ i ]['b']['ubidx'] = ubIdx[ i ]
+        if len( ubIdx[ i ] ):
+            stages.newParam('ub' + str(i + 1), [i + 1], 'ineq.b.ub')
+
+        # Equality constraints
+        stages.newParam('C' + str(i + 1), [i + 1], 'eq.C')
+        stages.newParam('d' + str(i + 1), [i + 1], 'eq.c')
+
+        stages.eq[ i ][ 'D' ] = np.concatenate((-np.eye( nx ), np.zeros([nx, nu])), 1)
+
+    else:
+
+        #
+        # Final stage
+        #
+
+        # Dimensions
+        stages.setDims(i, nx, nx if fixedInitialState == 1 else 0,
+                       len( lbIdx[ i ] ), len( ubIdx[ i ] ), 0, 0)
+        # Cost
+        if diagHessianN == 1:
+            stages.newParam('H' + str(i + 1), [i + 1], 'cost.H', 'diag')
+        else:
+            stages.newParam('H' + str(i + 1), [i + 1], 'cost.H')
+        stages.newParam('f' + str(i + 1), [i + 1], 'cost.f')
+
+        # Lower bounds
+        stages.ineq[ i ]['b']['lbidx'] = lbIdx[ i ]
+        if len( lbIdx[ i ] ):
+            stages.newParam('lb' + str(i + 1), [i + 1], 'ineq.b.lb')
+        # Upper bounds
+        stages.ineq[ i ]['b']['ubidx'] = ubIdx[ i ]
+        if len( ubIdx[ i ] ):
+            stages.newParam('ub' + str(i + 1), [i + 1], 'ineq.b.ub')
+
+        # Equality constraints
+        stages.eq[ i ][ 'D' ] = -np.eye( nx )
+        if fixedInitialState == 1:
+            stages.newParam('d' + str(i + 1), [i + 1], 'eq.c')
+
+## Define outputs of the solver
+for i in range( N ):
+    stages.newOutput('out' + str(i + 1), i + 1, range(1, int(stages.dims[ i ][ 'n' ]) + 1))
+
+## Solver settings
+stages.codeoptions["name"]       = "@SOLVER_NAME@" 
+stages.codeoptions["overwrite"]  = 1 # Always overwrite the existing code
+stages.codeoptions["printlevel"] = @PRINT_LEVEL@
+stages.codeoptions["maxit"]      = @MAX_ITERATIONS@
+stages.codeoptions["parallel"]   = @PARALLEL@
+stages.codeoptions["init"]       = @WARM_START@
+
+## Generate code
+import os
+userID = os.environ[ "FORCES_LICENSE" ]
+stages.generateCode( userID )

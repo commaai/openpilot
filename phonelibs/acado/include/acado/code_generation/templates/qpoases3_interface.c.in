@@ -1,0 +1,60 @@
+#include <@ACADO_COMMON_HEADER@>
+
+#include "qpOASES_e/@SOLVER_NAME@.h"
+
+#if @MODULE_PREFIX@_COMPUTE_COVARIANCE_MATRIX == 1
+#include "qpOASES_e/extras/SolutionAnalysis.h"
+#endif /* @MODULE_PREFIX@_COMPUTE_COVARIANCE_MATRIX */
+
+static int @MODULE_NAME@_@PREFIX@nWSR;
+
+@USE_NAMESPACE@
+
+#if @MODULE_PREFIX@_COMPUTE_COVARIANCE_MATRIX == 1
+static SolutionAnalysis @MODULE_NAME@_sa;
+#endif /* @MODULE_PREFIX@_COMPUTE_COVARIANCE_MATRIX */
+
+int @MODULE_NAME@_@PREFIX@solve( void )
+{
+
+	returnValue retVal;
+	@SOLVER_NAME@ qp;
+	Options options;
+
+	@MODULE_NAME@_@PREFIX@nWSR = QPOASES_NWSRMAX;
+
+	@CTOR@;
+	Options_setToMPC( &options );
+	@SOLVER_NAME@_setOptions( &qp,options );
+	
+	retVal = @SOLVER_NAME@_@CALL_SOLVER@
+	retVal = qpOASES_getSimpleStatus( retVal,0 );
+
+    /* only use solution on success, if iteration limit has been reached or if QP is infeasible! */
+    if ( ( retVal == 0 ) || ( retVal == 1 ) || ( retVal == -2 ) )
+    {
+        @SOLVER_NAME@_getPrimalSolution( &qp,@PRIMAL_SOLUTION@ );
+        @SOLVER_NAME@_getDualSolution( &qp,@DUAL_SOLUTION@ );
+    }
+	
+#if @MODULE_PREFIX@_COMPUTE_COVARIANCE_MATRIX == 1
+
+	if (retVal != SUCCESSFUL_RETURN)
+		return (int)retVal;
+		
+	retVal = @MODULE_NAME@_sa.getHessianInverse( &qp,@SIGMA@ );
+
+#endif /* @MODULE_PREFIX@_COMPUTE_COVARIANCE_MATRIX */
+
+	return (int)retVal;
+}
+
+int @MODULE_NAME@_@PREFIX@getNWSR( void )
+{
+	return @MODULE_NAME@_@PREFIX@nWSR;
+}
+
+const char* @MODULE_NAME@_@PREFIX@getErrorString( int error )
+{
+	return MessageHandling_getErrorCodeMessage( qpOASES_getGlobalMessageHandler(),error );
+}

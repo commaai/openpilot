@@ -1,0 +1,40 @@
+UNAME := $(shell uname)
+
+LDLIBS = -lm -lstdc++
+ifeq ($(UNAME), Linux)
+	LDLIBS += -lrt
+endif
+
+CCACHE_APP := $(shell which ccache 2>/dev/null)
+
+CFLAGS = -O3 -I.
+CXXFLAGS = -O3 -finline-functions -I. 
+CC     = $(CCACHE_APP) gcc
+CXX    = $(CCACHE_APP) g++
+
+OBJECTS = 	\
+			@MODULE_NAME@_auxiliary_sim_functions.o \
+			@MODULE_NAME@_integrator.o 
+
+.PHONY: all
+all: @MODULE_NAME@_test @MODULE_NAME@_compare 
+
+@MODULE_NAME@_test: ${OBJECTS} @MODULE_NAME@_test.o
+
+@MODULE_NAME@_compare: ${OBJECTS} @MODULE_NAME@_compare.o
+
+@MODULE_NAME@_auxiliary_sim_functions.o          : 	@MODULE_NAME@_common.h \
+											@MODULE_NAME@_auxiliary_sim_functions.h
+@MODULE_NAME@_integrator.o          : 	@MODULE_NAME@_common.h \
+								@MODULE_NAME@_auxiliary_sim_functions.h
+@MODULE_NAME@_test.o                : 	@MODULE_NAME@_common.h \
+								@MODULE_NAME@_auxiliary_sim_functions.h
+@MODULE_NAME@_compare.o             : 	@MODULE_NAME@_common.h \
+								@MODULE_NAME@_auxiliary_sim_functions.h
+
+${OBJECTS} : @MODULE_NAME@_auxiliary_sim_functions.h
+
+.PHONY : clean
+clean :
+	-rm -f *.o *.a @MODULE_NAME@_test @MODULE_NAME@_compare
+

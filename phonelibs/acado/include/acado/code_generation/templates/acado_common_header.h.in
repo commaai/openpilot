@@ -1,0 +1,70 @@
+#ifndef @MODULE_PREFIX@_COMMON_H
+#define @MODULE_PREFIX@_COMMON_H
+
+#include <math.h>
+#include <string.h>
+
+#ifndef __MATLAB__
+#ifdef __cplusplus
+extern "C"
+{
+#endif /* __cplusplus */
+#endif /* __MATLAB__ */
+
+/** \defgroup @MODULE_PREFIX@ ACADO CGT generated module. */
+/** @{ */
+
+@QP_SOLVER_INTERFACE@
+
+/*
+ * Common definitions
+ */
+@COMMON_DEFINITIONS@
+
+/*
+ * Globally used structure definitions
+ */
+
+/** The structure containing the user data.
+ * 
+ *  Via this structure the user "communicates" with the solver code.
+ */
+typedef struct @MODULE_PREFIX@variables_
+{
+int dummy;
+@VARIABLES_DECLARATION@
+} @MODULE_PREFIX@variables;
+
+/** Private workspace used by the auto-generated code.
+ * 
+ *  Data members of this structure are private to the solver.
+ *  In other words, the user code should not modify values of this 
+ *  structure. 
+ */
+typedef struct @MODULE_PREFIX@workspace_
+{
+@WORKSPACE_DECLARATION@
+} @MODULE_PREFIX@workspace;
+
+/* 
+ * Forward function declarations. 
+ */
+
+@FUNCTION_DECLARATIONS@
+
+/* 
+ * Extern declarations. 
+ */
+
+extern @MODULE_PREFIX@workspace @MODULE_NAME@Workspace;
+extern @MODULE_PREFIX@variables @MODULE_NAME@Variables;
+
+/** @} */
+
+#ifndef __MATLAB__
+#ifdef __cplusplus
+} /* extern "C" */
+#endif /* __cplusplus */
+#endif /* __MATLAB__ */
+
+#endif /* @MODULE_PREFIX@_COMMON_H */

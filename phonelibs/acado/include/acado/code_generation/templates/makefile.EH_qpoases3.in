@@ -1,0 +1,53 @@
+UNAME := $(shell uname)
+
+LDLIBS = -lm -lstdc++
+ifeq ($(UNAME), Linux)
+	LDLIBS += -lrt
+endif
+
+CCACHE_APP := $(shell which ccache 2>/dev/null)
+
+CFLAGS = -O3 -finline-functions -I. -I./qpoases3 -I./qpoases3/include -I./qpoases3/src
+CXXFLAGS = -O3 -finline-functions -I. -I./qpoases3 -I./qpoases3/include -I./qpoases3/src
+CC     = $(CCACHE_APP) gcc
+CXX    = $(CCACHE_APP) g++
+
+OBJECTS = \
+	./qpoases3/src/Bounds.o \
+	./qpoases3/src/Constraints.o \
+	./qpoases3/src/Indexlist.o \
+	./qpoases3/src/Matrices.o \
+	./qpoases3/src/MessageHandling.o \
+	./qpoases3/src/Options.o \
+	./qpoases3/src/Flipper.o \
+	./qpoases3/src/QProblem.o \
+	./qpoases3/src/QProblemB.o \
+	./qpoases3/src/Utils.o \
+	acado_qpoases3_interface.o \
+	acado_integrator.o \
+	acado_solver.o \
+	acado_auxiliary_functions.o \
+	acado_hessian_regularization.o
+
+.PHONY: all
+all: libacado_exported_rti.a test
+
+test: ${OBJECTS} test.o
+
+acado_qpoases3_interface.o  : acado_qpoases3_interface.h
+acado_solver.o              : acado_common.h
+acado_integrator.o          : acado_common.h
+acado_auxiliary_functions.o : acado_common.h \
+                              acado_auxiliary_functions.h
+test.o                      : acado_common.h \
+                              acado_qpoases3_interface.h \
+                              acado_auxiliary_functions.h
+
+libacado_exported_rti.a: ${OBJECTS}
+	ar r $@ $?
+
+${OBJECTS} : acado_qpoases3_interface.h
+
+.PHONY : clean
+clean :
+	-rm -f *.o *.a ./qpoases3/*.o ./qpoases3/src/*.o ./qpoases3/src/*.a test
