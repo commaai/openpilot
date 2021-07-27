@@ -77,6 +77,7 @@ InputDialog::InputDialog(const QString &title, QWidget *parent, const QString &s
   )");
 
   line = new QLineEdit();
+  line->setStyleSheet("lineedit-password-mask-delay: 1500;");
   textbox_layout->addWidget(line, 1);
 
   if (secret) {
@@ -87,7 +88,7 @@ InputDialog::InputDialog(const QString &title, QWidget *parent, const QString &s
       if (checked) {
         eye_btn->setIcon(QIcon(ASSET_PATH + "img_eye_closed.svg"));
         eye_btn->setIconSize(QSize(81, 54));
-        line->setEchoMode(QLineEdit::PasswordEchoOnEdit);
+        line->setEchoMode(QLineEdit::Password);
       } else {
         eye_btn->setIcon(QIcon(ASSET_PATH + "img_eye_open.svg"));
         eye_btn->setIconSize(QSize(81, 44));
