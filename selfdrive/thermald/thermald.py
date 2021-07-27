@@ -259,12 +259,11 @@ def thermald_thread():
         cloudlog.exception("Error getting network status")
 
       try:
-        gsm_roaming = params.get("GsmRoaming")
+        gsm_roaming = params.get_bool("GsmRoaming")
         if gsm_roaming != last_gsm_roaming:
           last_gsm_roaming = gsm_roaming
-          roam = "yes" if gsm_roaming else "no"
-          print(f"Setting roaming: {roam}")
-          os.system(f"nmcli connection modify --temporary lte gsm.home-only {roam}")
+          home_only = "no" if gsm_roaming else "yes"
+          os.system(f"nmcli connection modify --temporary lte gsm.home-only {home_only}")
 
       except Exception:
         cloudlog.exception("Error setting roaming")
