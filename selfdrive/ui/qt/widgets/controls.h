@@ -10,12 +10,12 @@
 
 QFrame *horizontal_line(QWidget *parent = nullptr);
 
-class ElidedLabel : public QLabel {
+class ElidedButton : public QPushButton {
   Q_OBJECT
 
  public:
-  explicit ElidedLabel(QWidget *parent = 0);
-  explicit ElidedLabel(const QString &text, QWidget *parent = 0);
+  explicit ElidedButton(QWidget *parent = 0);
+  explicit ElidedButton(const QString &text, QWidget *parent = 0);
 
  protected:
   void paintEvent(QPaintEvent *event) override;
@@ -23,12 +23,12 @@ class ElidedLabel : public QLabel {
   QString lastText_, elidedText_;
 };
 
-class ElidedButton : public QPushButton {
+class ElidedLabel : public QLabel {
   Q_OBJECT
 
  public:
-  explicit ElidedButton(QWidget *parent = 0);
-  explicit ElidedButton(const QString &text, QWidget *parent = 0);
+  explicit ElidedLabel(QWidget *parent = 0);
+  explicit ElidedLabel(const QString &text, QWidget *parent = 0);
 
  protected:
   void paintEvent(QPaintEvent *event) override;
