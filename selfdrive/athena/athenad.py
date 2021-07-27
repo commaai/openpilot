@@ -109,7 +109,7 @@ def upload_handler(end_event):
 
       try:
         _do_upload(item)
-      except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+      except (requests.exceptions.Timeout, requests.exceptions.ConnectionError, requests.exceptions.SSLError) as e:
         cloudlog.warning(f"athena.upload_handler.retry {e} {item}")
 
         if item.retry_count < MAX_RETRY_COUNT:
