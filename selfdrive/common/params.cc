@@ -174,6 +174,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"GitRemote", PERSISTENT},
     {"GithubSshKeys", PERSISTENT},
     {"GithubUsername", PERSISTENT},
+    {"GsmRoaming", PERSISTENT},
     {"HardwareSerial", PERSISTENT},
     {"HasAcceptedTerms", PERSISTENT},
     {"IsDriverViewEnabled", CLEAR_ON_MANAGER_START},
@@ -203,7 +204,6 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"RecordFront", PERSISTENT},
     {"RecordFrontLock", PERSISTENT},  // for the internal fleet
     {"ReleaseNotes", PERSISTENT},
-    {"GsmRoaming", PERSISTENT},
     {"ShouldDoUpdate", CLEAR_ON_MANAGER_START},
     {"SubscriberInfo", PERSISTENT},
     {"SshEnabled", PERSISTENT},
