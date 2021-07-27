@@ -368,7 +368,11 @@ QString WifiManager::getConnectionSsid(const QDBusObjectPath &path) {
   QDBusInterface nm(NM_DBUS_SERVICE, path.path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION, bus);
   nm.setTimeout(DBUS_TIMEOUT);
   const QDBusReply<Connection> result = nm.call("GetSettings");
-  return result.value().value("802-11-wireless").value("ssid").toString();
+  const QString &ssid = result.value().value("802-11-wireless").value("ssid").toString();
+  if (!ssid.isEmpty()) {
+    return ssid;
+  }
+  return result.value().value("connection").value("id").toString();
 }
 
 void WifiManager::initConnections() {
@@ -421,18 +425,15 @@ NetworkType WifiManager::currentNetworkType() {
 void WifiManager::setRoaming(bool roaming) {
   const QDBusObjectPath &path = getConnectionPath("lte");
   if (!path.path().isEmpty()) {
-    ElapsedTimer timer;
-    timer.start();
-    QDBusInterface nm(NM_DBUS_INTERFACE, path.path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION, bus);
+    QDBusInterface nm(NM_DBUS_SERVICE, path.path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION, bus);
     nm.setTimeout(DBUS_TIMEOUT);
 
     Connection settings = QDBusReply<Connection>(nm.call("GetSettings")).value();
-    qDebug() << "Getting settings took:" << timer.nsecsElapsed() / 1e6 << "ms";
-    qDebug() << "home only:" << settings["gsm"]["home-only"];
-    timer.start();
-    settings["gsm"]["home-only"] = roaming ? "no" : "yes";
-    nm.call("Update", QVariant::fromValue(settings));
-    qDebug() << "Saving settings took:" << timer.nsecsElapsed() / 1e6 << "ms";
+    bool prevRoaming = !settings.value("gsm").value("home-only").toBool();
+    if (!settings.value("gsm").contains("home-only") || prevRoaming != roaming) {
+      settings["gsm"]["home-only"] = roaming ? "no" : "yes";
+      nm.call("Update", QVariant::fromValue(settings));
+    }
   }
 }
 
