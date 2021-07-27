@@ -63,8 +63,8 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
 
   ParamControl *record_toggle = new ParamControl("RecordFront",
                                                  "Record and Upload Driver Camera",
-                                                "Upload data from the driver facing camera and help improve the driver monitoring algorithm.",
-                                                "../assets/offroad/icon_monitoring.png",
+                                                 "Upload data from the driver facing camera and help improve the driver monitoring algorithm.",
+                                                 "../assets/offroad/icon_monitoring.png",
                                                 this);
   toggles.append(record_toggle);
   toggles.append(new ParamControl("EndToEndToggle",
@@ -80,6 +80,12 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
                                   "../assets/offroad/icon_metric.png",
                                   this));
 #endif
+
+  toggles.append(new ParamControl("GsmRoaming",
+                                 "Enable Roaming",
+                                 "",
+                                 "../assets/offroad/icon_network.png",
+                                 this));
 
   bool record_lock = Params().getBool("RecordFrontLock");
   record_toggle->setEnabled(!record_lock);
