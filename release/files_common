@@ -456,6 +456,10 @@ phonelibs/snpe/aarch64**
 phonelibs/snpe/larch64**
 phonelibs/snpe/dsp**
 
+phonelibs/acados/x86_64**
+phonelibs/acados/aarch64**
+phonelibs/acados/larch64**
+
 phonelibs/android_frameworks_native/**
 phonelibs/android_hardware_libhardware/**
 phonelibs/android_system_core/**
