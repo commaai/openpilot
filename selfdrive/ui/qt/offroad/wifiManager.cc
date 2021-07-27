@@ -390,6 +390,7 @@ void WifiManager::activateWifiConnection(const QString &ssid) {
   }
 }
 
+// function matches tici/hardware.py
 NetworkType WifiManager::currentNetworkType() {
   QDBusInterface nm(NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE_PROPERTIES, bus);
   nm.setTimeout(DBUS_TIMEOUT);

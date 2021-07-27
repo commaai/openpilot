@@ -10,16 +10,16 @@ enum class SecurityType {
   WPA,
   UNSUPPORTED
 };
-enum class ConnectedType{
+enum class ConnectedType {
   DISCONNECTED,
   CONNECTING,
   CONNECTED
 };
-enum class NetworkType{
-  ETHERNET,
+enum class NetworkType {
+  NONE,
   WIFI,
   CELL,
-  NONE
+  ETHERNET
 };
 
 typedef QMap<QString, QMap<QString, QVariant>> Connection;
