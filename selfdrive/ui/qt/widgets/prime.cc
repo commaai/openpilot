@@ -268,8 +268,10 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
 
 void SetupWidget::parseError(const QString &response) {
   show();
-  showQr = false;
-  mainLayout->setCurrentIndex(0);
+  if (mainLayout->currentIndex() == 1) {
+    showQr = false;
+    mainLayout->setCurrentIndex(0);
+  }
 }
 
 void SetupWidget::showQrCode() {
