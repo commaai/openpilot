@@ -167,6 +167,7 @@ if arch != "Darwin":
   ldflags += ["-Wl,--as-needed"]
 
 cflags += ["-DSWAGLOG"]
+cxxflags += ["-DSWAGLOG"]
 
 # change pythonpath to this
 lenv["PYTHONPATH"] = Dir("#").path
