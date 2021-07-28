@@ -306,16 +306,22 @@ void SettingsWindow::showEvent(QShowEvent *event) {
 }
 
 SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
+  double t1 = millis_since_boot();
+  QHBoxLayout *main_layout = new QHBoxLayout(this);
 
   // setup two main layouts
   sidebar_widget = new QWidget;
+  sidebar_widget->setFixedWidth(500);
   QVBoxLayout *sidebar_layout = new QVBoxLayout(sidebar_widget);
-  sidebar_layout->setMargin(0);
+  sidebar_layout->setContentsMargins(50, 50, 100, 50);
+  main_layout->addWidget(sidebar_widget);
+
   panel_widget = new QStackedWidget();
   panel_widget->setStyleSheet(R"(
     border-radius: 30px;
     background-color: #292929;
   )");
+  main_layout->addWidget(panel_widget);
 
   // close button
   QPushButton *close_btn = new QPushButton("×");
@@ -357,7 +363,6 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
 #endif
 
   const int padding = panels.size() > 3 ? 25 : 35;
-
   nav_btns = new QButtonGroup();
   for (auto &[name, panel] : panels) {
     QPushButton *btn = new QPushButton(name);
@@ -395,14 +400,6 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
       panel_widget->setCurrentWidget(w);
     });
   }
-  sidebar_layout->setContentsMargins(50, 50, 100, 50);
-
-  // main settings layout, sidebar + main panel
-  QHBoxLayout *main_layout = new QHBoxLayout(this);
-
-  sidebar_widget->setFixedWidth(500);
-  main_layout->addWidget(sidebar_widget);
-  main_layout->addWidget(panel_widget);
 
   setStyleSheet(R"(
     * {
@@ -413,6 +410,9 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
       background-color: black;
     }
   )");
+  
+  double t2 = millis_since_boot();
+  printf("SettingsWindow init time %f\n", t2 - t1);
 }
 
 void SettingsWindow::hideEvent(QHideEvent *event) {
