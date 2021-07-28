@@ -24,4 +24,5 @@ private:
 
   void doInstall();
   void freshClone();
+  void cachedFetch();
 };
