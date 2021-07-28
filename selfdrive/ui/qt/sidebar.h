@@ -29,7 +29,7 @@ public slots:
 
 protected:
   void paintEvent(QPaintEvent *event) override;
-  void mousePressEvent(QMouseEvent *event) override;
+  void mouseReleaseEvent(QMouseEvent *event) override;
 
 private:
   void drawMetric(QPainter &p, const QString &label, const QString &val, QColor c, int y);

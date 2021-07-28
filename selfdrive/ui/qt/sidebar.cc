@@ -46,7 +46,7 @@ Sidebar::Sidebar(QWidget *parent) : QFrame(parent) {
   setStyleSheet("background-color: rgb(57, 57, 57);");
 }
 
-void Sidebar::mousePressEvent(QMouseEvent *event) {
+void Sidebar::mouseReleaseEvent(QMouseEvent *event) {
   if (settings_btn.contains(event->pos())) {
     emit openSettings();
   }
