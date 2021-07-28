@@ -7,11 +7,16 @@
 #include <QVBoxLayout>
 
 #include "selfdrive/common/util.h"
+#include "selfdrive/common/params.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/widgets/input.h"
 
 void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
   if (boundingRect[currentIndex].contains(e->x(), e->y())) {
+    if (currentIndex == 9) {
+      const QRect yes = QRect(692, 842, 492, 148);
+      Params().putBool("RecordFront", yes.contains(e->x(), e->y()));
+    }
     currentIndex += 1;
   } else if (currentIndex == (boundingRect.size() - 2) && boundingRect.last().contains(e->x(), e->y())) {
     currentIndex = 0;
