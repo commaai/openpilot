@@ -1044,7 +1044,7 @@ static void ae_thread(MultiCameraState *s) {
       }
     }
 
-    util::sleep_for(50);
+    util::sleep_for(1);
   }
 }
 
