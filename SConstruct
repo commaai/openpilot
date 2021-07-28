@@ -166,6 +166,7 @@ else:
 if arch != "Darwin":
   ldflags += ["-Wl,--as-needed"]
 
+# Enable swaglog include in submodules
 cflags += ["-DSWAGLOG"]
 cxxflags += ["-DSWAGLOG"]
 
