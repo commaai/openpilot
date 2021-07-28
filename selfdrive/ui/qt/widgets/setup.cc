@@ -61,30 +61,63 @@ void PairingQRWidget::updateQrCode(const QString &text) {
 
 PrimeUserWidget::PrimeUserWidget(QWidget* parent) : QWidget(parent) {
   mainLayout = new QVBoxLayout(this);
-  mainLayout->setMargin(30);
+  mainLayout->setMargin(0);
+  mainLayout->setSpacing(30);
 
-  QLabel* commaPrime = new QLabel("COMMA PRIME");
-  mainLayout->addWidget(commaPrime, 0, Qt::AlignTop);
+  // subscribed prime layout
+  QWidget *primeWidget = new QWidget;
+  primeWidget->setObjectName("primeWidget");
+  QVBoxLayout *primeLayout = new QVBoxLayout(primeWidget);
+  primeLayout->setMargin(0);
+  primeWidget->setContentsMargins(60, 50, 60, 50);
 
-  username = new QLabel();
-  username->setStyleSheet("font-size: 55px;"); // TODO: fit width
-  mainLayout->addWidget(username, 0, Qt::AlignTop);
+  QLabel* subscribed = new QLabel("SUBSCRIBED");
+  subscribed->setStyleSheet("font-size: 41px; font-weight: 700; color: #86FF4E; margin-bottom: 60px;");
+  primeLayout->addWidget(subscribed, 0, Qt::AlignTop);
 
-  mainLayout->addSpacing(100);
+  QLabel* commaPrime = new QLabel("comma prime");
+  commaPrime->setStyleSheet("font-size: 75px; font-weight: 700;");
+  primeLayout->addWidget(commaPrime, 0, Qt::AlignTop);
+
+  QLabel* connectUrl = new QLabel("CONNECT.COMMA.AI");
+  connectUrl->setStyleSheet("font-size: 41px; font-weight: 600; color: #A0A0A0;");
+  primeLayout->addWidget(connectUrl, 0, Qt::AlignTop);
+
+  mainLayout->addWidget(primeWidget, 6);
+
+  // comma points layout
+  QWidget *pointsWidget = new QWidget;
+  pointsWidget->setObjectName("primeWidget");
+  QVBoxLayout *pointsLayout = new QVBoxLayout(pointsWidget);
+  pointsLayout->setMargin(0);
+  pointsWidget->setContentsMargins(60, 50, 60, 50);
 
   QLabel* commaPoints = new QLabel("COMMA POINTS");
-  commaPoints->setStyleSheet(R"(
-    color: #b8b8b8;
-  )");
-  mainLayout->addWidget(commaPoints, 0, Qt::AlignTop);
+  commaPoints->setStyleSheet("font-size: 41px; font-weight: 600;");
+  pointsLayout->addWidget(commaPoints, 0, Qt::AlignTop);
 
-  points = new QLabel();
-  mainLayout->addWidget(points, 0, Qt::AlignTop);
+  points = new QLabel("210");
+  points->setStyleSheet("font-size: 91px; font-weight: 700;");
+  pointsLayout->addWidget(points, 0, Qt::AlignTop);
+
+  mainLayout->addWidget(pointsWidget, 4);
+
+  // username layout
+  QWidget *nameWidget = new QWidget;
+  nameWidget->setObjectName("primeWidget");
+  QVBoxLayout *nameLayout = new QVBoxLayout(nameWidget);
+  nameLayout->setMargin(60);
+
+  username = new QLabel("SHANE@COMMA.AI");
+  username->setStyleSheet("font-size: 37px; font-weight: 600;"); // TODO: fit width
+  nameLayout->addWidget(username, 0, Qt::AlignVCenter);
+
+  mainLayout->addWidget(nameWidget, 3);
 
   setStyleSheet(R"(
-    QLabel {
-      font-size: 70px;
-      font-weight: 500;
+    #primeWidget {
+      background-color: #292929;
+      border-radius: 10px;
     }
   )");
 
@@ -227,7 +260,6 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
 
   setStyleSheet(R"(
     SetupWidget {
-      background-color: #333333;
       border-radius: 10px;
     }
   )");
@@ -269,8 +301,8 @@ void SetupWidget::replyFinished(const QString &response) {
   }
 
   QJsonObject json = doc.object();
-  bool is_paired = false;  // json["is_paired"].toBool();
-  bool is_prime = json["prime"].toBool();
+  bool is_paired = true;  // json["is_paired"].toBool();
+  bool is_prime = true;  // json["prime"].toBool();
 
   if (!is_paired) {
     mainLayout->setCurrentIndex(showQr);
