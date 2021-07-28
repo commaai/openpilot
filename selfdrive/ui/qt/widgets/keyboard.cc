@@ -1,9 +1,11 @@
 #include "selfdrive/ui/qt/widgets/keyboard.h"
 
+#include <vector>
+
 #include <QButtonGroup>
 #include <QHBoxLayout>
 #include <QMap>
-#include <QPushButton>
+#include <QTouchEvent>
 #include <QVBoxLayout>
 
 const QString BACKSPACE_KEY = "⌫";
@@ -16,13 +18,31 @@ const QStringList CONTROL_BUTTONS = {"↑", "↓", "ABC", "#+=", "123", BACKSPAC
 const float key_spacing_vertical = 20;
 const float key_spacing_horizontal = 15;
 
+KeyButton::KeyButton(const QString &text, QWidget *parent) : QPushButton(text, parent) {
+  setAttribute(Qt::WA_AcceptTouchEvents);
+}
+
+bool KeyButton::event(QEvent *event) {
+  if (event->type() == QEvent::TouchBegin || event->type() == QEvent::TouchEnd) {
+    QTouchEvent *touchEvent = static_cast<QTouchEvent *>(event);
+    if (!touchEvent->touchPoints().empty()) {
+      const QEvent::Type mouseType = event->type() == QEvent::TouchBegin ? QEvent::MouseButtonPress : QEvent::MouseButtonRelease; 
+      QMouseEvent mouseEvent(mouseType, touchEvent->touchPoints().front().pos(), Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+      QPushButton::event(&mouseEvent);
+      event->accept();
+      return true;
+    }
+  }
+  return QPushButton::event(event);
+}
+
 KeyboardLayout::KeyboardLayout(QWidget* parent, const std::vector<QVector<QString>>& layout) : QWidget(parent) {
   QVBoxLayout* main_layout = new QVBoxLayout(this);
   main_layout->setMargin(0);
   main_layout->setSpacing(0);
 
   QButtonGroup* btn_group = new QButtonGroup(this);
-  QObject::connect(btn_group, SIGNAL(buttonClicked(QAbstractButton*)), parent, SLOT(handleButton(QAbstractButton*)));
+  QObject::connect(btn_group, SIGNAL(buttonPressed(QAbstractButton*)), parent, SLOT(handleButton(QAbstractButton*)));
 
   for (const auto &s : layout) {
     QHBoxLayout *hlayout = new QHBoxLayout;
@@ -33,7 +53,7 @@ KeyboardLayout::KeyboardLayout(QWidget* parent, const std::vector<QVector<QStrin
     }
 
     for (const QString &p : s) {
-      QPushButton* btn = new QPushButton(p);
+      KeyButton* btn = new KeyButton(p);
       if (p == BACKSPACE_KEY) {
         btn->setAutoRepeat(true);
       } else if (p == ENTER_KEY) {
