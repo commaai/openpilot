@@ -78,8 +78,7 @@ void WifiManager::refreshNetworks() {
   if (adapter.isEmpty()) {
     return;
   }
-  seen_networks.clear();
-  seen_ssids.clear();
+  seenNetworks.clear();
   ipv4_address = get_ipv4_address();
 
   QDBusInterface nm(NM_DBUS_SERVICE, adapter, NM_DBUS_INTERFACE_DEVICE_WIRELESS, bus);
@@ -87,11 +86,12 @@ void WifiManager::refreshNetworks() {
 
   const QDBusReply<QList<QDBusObjectPath>> &response = nm.call("GetAllAccessPoints");
   for (const QDBusObjectPath &path : response.value()) {
-    QByteArray ssid = get_property(path.path(), "Ssid");
-    if (ssid.isEmpty() || seen_ssids.contains(ssid)) {
+    const QByteArray &ssid = get_property(path.path(), "Ssid");
+    unsigned int strength = get_ap_strength(path.path());
+    if (ssid.isEmpty() || (seenNetworks.contains(ssid) &&
+        strength <= seenNetworks.value(ssid).strength)) {
       continue;
     }
-    unsigned int strength = get_ap_strength(path.path());
     SecurityType security = getSecurityType(path.path());
     ConnectedType ctype;
     QString activeSsid = (activeAp != "" && activeAp != "/") ? get_property(activeAp, "Ssid") : "";
@@ -104,11 +104,9 @@ void WifiManager::refreshNetworks() {
         ctype = ConnectedType::CONNECTED;
       }
     }
-    Network network = {path.path(), ssid, strength, ctype, security};
-    seen_ssids.push_back(ssid);
-    seen_networks.push_back(network);
+    Network network = {ssid, strength, ctype, security};
+    seenNetworks[ssid] = network;
   }
-  std::sort(seen_networks.begin(), seen_networks.end(), compare_by_strength);
 }
 
 QString WifiManager::get_ipv4_address() {
