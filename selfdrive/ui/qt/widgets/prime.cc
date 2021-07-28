@@ -83,7 +83,7 @@ PrimeUserWidget::PrimeUserWidget(QWidget* parent) : QWidget(parent) {
   connectUrl->setStyleSheet("font-size: 41px; font-weight: 600; color: #A0A0A0;");
   primeLayout->addWidget(connectUrl, 0, Qt::AlignTop);
 
-  mainLayout->addWidget(primeWidget, 6);
+  mainLayout->addWidget(primeWidget);
 
   // comma points layout
   QWidget *pointsWidget = new QWidget;
@@ -100,19 +100,9 @@ PrimeUserWidget::PrimeUserWidget(QWidget* parent) : QWidget(parent) {
   points->setStyleSheet("font-size: 91px; font-weight: 700;");
   pointsLayout->addWidget(points, 0, Qt::AlignTop);
 
-  mainLayout->addWidget(pointsWidget, 4);
+  mainLayout->addWidget(pointsWidget);
 
-  // username layout
-  QWidget *nameWidget = new QWidget;
-  nameWidget->setObjectName("primeWidget");
-  QVBoxLayout *nameLayout = new QVBoxLayout(nameWidget);
-  nameLayout->setMargin(60);
-
-  username = new QLabel("SHANE@COMMA.AI");
-  username->setStyleSheet("font-size: 37px; font-weight: 600;"); // TODO: fit width
-  nameLayout->addWidget(username, 0, Qt::AlignVCenter);
-
-  mainLayout->addWidget(nameWidget, 3);
+  mainLayout->addStretch();
 
   setStyleSheet(R"(
     #primeWidget {
@@ -133,19 +123,12 @@ PrimeUserWidget::PrimeUserWidget(QWidget* parent) : QWidget(parent) {
 void PrimeUserWidget::replyFinished(const QString &response) {
   QJsonDocument doc = QJsonDocument::fromJson(response.toUtf8());
   if (doc.isNull()) {
-    qDebug() << "JSON Parse failed on getting username and points";
+    qDebug() << "JSON Parse failed on getting points";
     return;
   }
 
   QJsonObject json = doc.object();
-  QString points_str = QString::number(json["points"].toInt());
-  QString username_str = json["username"].toString();
-  if (username_str.length()) {
-    username_str = "@" + username_str;
-  }
-
-  username->setText(username_str);
-  points->setText(points_str);
+  points->setText(QString::number(json["points"].toInt()));
 }
 
 PrimeAdWidget::PrimeAdWidget(QWidget* parent) : QWidget(parent) {

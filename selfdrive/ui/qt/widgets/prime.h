@@ -27,7 +27,6 @@ public:
 
 private:
   QVBoxLayout* mainLayout;
-  QLabel* username;
   QLabel* points;
 
 private slots:
