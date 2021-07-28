@@ -9,11 +9,12 @@ from common.params import Params
 from selfdrive.swaglog import cloudlog
 
 PANDA_FW_FN = os.path.join(PANDA_BASEDIR, "board", "obj", "panda.bin.signed")
+PANDA_H7_FW_FN = os.path.join(PANDA_BASEDIR, "board", "obj", "panda_h7.bin.signed")
 
 
-def get_expected_signature() -> bytes:
+def get_expected_signature(fn=PANDA_H7_FW_FN) -> bytes:
   try:
-    return Panda.get_signature_from_firmware(PANDA_FW_FN)
+    return Panda.get_signature_from_firmware(fn)
   except Exception:
     cloudlog.exception("Error computing expected signature")
     return b""
@@ -42,12 +43,15 @@ def update_panda() -> Panda:
 
     time.sleep(1)
 
-  fw_signature = get_expected_signature()
-
   try:
     serial = panda.get_serial()[0].decode("utf-8")
   except Exception:
     serial = None
+
+  if panda._mcu_type == 2:
+    fw_signature = get_expected_signature(PANDA_H7_FW_FN)
+  else:
+    fw_signature = get_expected_signature(PANDA_FW_FN)
 
   panda_version = "bootstub" if panda.bootstub else panda.get_version()
   panda_signature = b"" if panda.bootstub else panda.get_signature()

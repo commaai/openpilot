@@ -11,10 +11,11 @@
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
 
-Panda::Panda() {
+Panda::Panda(std::string serial) {
+  libusb_device **dev_list = NULL;
   // init libusb
   int err = libusb_init(&ctx);
-  if (err != 0) { goto fail; }
+  if (err != 0) goto fail;
 
 #if LIBUSB_API_VERSION >= 0x01000106
   libusb_set_option(ctx, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_INFO);
@@ -22,18 +23,39 @@ Panda::Panda() {
   libusb_set_debug(ctx, 3);
 #endif
 
-  dev_handle = libusb_open_device_with_vid_pid(ctx, 0xbbaa, 0xddcc);
-  if (dev_handle == NULL) { goto fail; }
+  for (size_t i = 0; i < libusb_get_device_list(ctx, &dev_list); ++i) {
+    libusb_device *device = dev_list[i];
+    libusb_device_descriptor desc;
+    libusb_get_device_descriptor(device, &desc);
+
+    if (desc.idVendor == 0xbbaa && desc.idProduct == 0xddcc) {
+      libusb_open(device, &dev_handle);
+      unsigned char desc_serial[25];
+      int ret = libusb_get_string_descriptor_ascii(dev_handle, desc.iSerialNumber, desc_serial, sizeof(desc_serial));
+      if (ret < 0) break;
+      std::string tmp_serial = std::string(reinterpret_cast<const char*>(desc_serial));
+      
+      if (!serial.empty() && serial.compare(tmp_serial)) {
+        libusb_close(dev_handle);
+        dev_handle = NULL;
+        continue;
+      }
+      usb_serial = tmp_serial;
+      break;
+    }
+  }
+
+  if (dev_handle == NULL) goto fail;
 
   if (libusb_kernel_driver_active(dev_handle, 0) == 1) {
     libusb_detach_kernel_driver(dev_handle, 0);
   }
 
   err = libusb_set_configuration(dev_handle, 1);
-  if (err != 0) { goto fail; }
+  if (err != 0) goto fail;
 
   err = libusb_claim_interface(dev_handle, 0);
-  if (err != 0) { goto fail; }
+  if (err != 0) goto fail;
 
   hw_type = get_hw_type();
 
@@ -62,9 +84,44 @@ void Panda::cleanup() {
     libusb_close(dev_handle);
   }
 
-  if (ctx) {
-    libusb_exit(ctx);
+  if (ctx) libusb_exit(ctx);
+}
+
+std::vector<std::string> Panda::list() {
+  // init libusb
+  libusb_context *context = NULL;
+  libusb_device **dev_list = NULL;
+  std::vector<std::string> serials;
+  
+  int err = libusb_init(&context);
+  if (err != 0) {
+    LOGE("libusb initialization error");
+    return serials;
   }
+
+#if LIBUSB_API_VERSION >= 0x01000106
+  libusb_set_option(context, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_INFO);
+#else
+  libusb_set_debug(context, 3);
+#endif
+
+  for (size_t i = 0; i < libusb_get_device_list(context, &dev_list); ++i) {
+    libusb_device *device = dev_list[i];
+    libusb_device_descriptor desc;
+
+    libusb_get_device_descriptor(device, &desc);
+    if (desc.idVendor == 0xbbaa && desc.idProduct == 0xddcc) {
+      libusb_device_handle *handle = NULL;
+      libusb_open(device, &handle);
+      unsigned char serial[25];
+      int ret = libusb_get_string_descriptor_ascii(handle, desc.iSerialNumber, serial, sizeof(serial));
+      libusb_close(handle);
+
+      if (ret < 0) break;
+      serials.push_back((char *)serial);
+    }
+  }
+  return serials;
 }
 
 void Panda::handle_usb_issue(int err, const char func[]) {
@@ -80,9 +137,7 @@ int Panda::usb_write(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigne
   int err;
   const uint8_t bmRequestType = LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE;
 
-  if (!connected) {
-    return LIBUSB_ERROR_NO_DEVICE;
-  }
+  if (!connected) return LIBUSB_ERROR_NO_DEVICE;
 
   std::lock_guard lk(usb_lock);
   do {
@@ -97,9 +152,7 @@ int Panda::usb_read(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned
   int err;
   const uint8_t bmRequestType = LIBUSB_ENDPOINT_IN | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE;
 
-  if (!connected) {
-    return LIBUSB_ERROR_NO_DEVICE;
-  }
+  if (!connected) return LIBUSB_ERROR_NO_DEVICE;
 
   std::lock_guard lk(usb_lock);
   do {
@@ -114,9 +167,7 @@ int Panda::usb_bulk_write(unsigned char endpoint, unsigned char* data, int lengt
   int err;
   int transferred = 0;
 
-  if (!connected) {
-    return 0;
-  }
+  if (!connected) return 0;
 
   std::lock_guard lk(usb_lock);
   do {
@@ -139,9 +190,7 @@ int Panda::usb_bulk_read(unsigned char endpoint, unsigned char* data, int length
   int err;
   int transferred = 0;
 
-  if (!connected) {
-    return 0;
-  }
+  if (!connected) return 0;
 
   std::lock_guard lk(usb_lock);
 
@@ -290,9 +339,7 @@ int Panda::can_receive(kj::Array<capnp::word>& out_buf) {
   // Not sure if this can happen
   if (recv < 0) recv = 0;
 
-  if (recv == RECV_SIZE) {
-    LOGW("Receive buffer full");
-  }
+  if (recv == RECV_SIZE) LOGW("Receive buffer full");
 
   size_t num_msg = recv / 0x10;
   MessageBuilder msg;
@@ -302,14 +349,9 @@ int Panda::can_receive(kj::Array<capnp::word>& out_buf) {
   // populate message
   auto canData = evt.initCan(num_msg);
   for (int i = 0; i < num_msg; i++) {
-    if (data[i*4] & 4) {
-      // extended
-      canData[i].setAddress(data[i*4] >> 3);
-      //printf("got extended: %x\n", data[i*4] >> 3);
-    } else {
-      // normal
-      canData[i].setAddress(data[i*4] >> 21);
-    }
+    if (data[i*4] & 4) canData[i].setAddress(data[i*4] >> 3); // extended
+    else canData[i].setAddress(data[i*4] >> 21); // normal
+    
     canData[i].setBusTime(data[i*4+1] >> 16);
     int len = data[i*4+1]&0xF;
     canData[i].setDat(kj::arrayPtr((uint8_t*)&data[i*4+2], len));
@@ -317,4 +359,34 @@ int Panda::can_receive(kj::Array<capnp::word>& out_buf) {
   }
   out_buf = capnp::messageToFlatArray(msg);
   return recv;
+}
+
+void Panda::can_send_raw(std::vector<uint32_t> can_data_vector) { // Needs better name...
+  const int msg_count = can_data_vector.size() / 4;
+
+  for (int i = 0; i < msg_count; i++) {
+    if (can_data_vector[i*4] >= 0x800) can_data_vector[i*4] = (can_data_vector[i*4] << 3) | 5; // extended
+    else can_data_vector[i*4] = (can_data_vector[i*4] << 21) | 1; // normal
+  }
+
+  usb_bulk_write(3, (unsigned char*)can_data_vector.data(), can_data_vector.size(), 5);
+}
+
+size_t Panda::can_receive_raw(uint32_t* data, uint8_t bus_shift) {
+  int recv = usb_bulk_read(0x81, (unsigned char*)data, RECV_SIZE);
+
+  // Not sure if this can happen
+  if (recv < 0) recv = 0;
+
+  if (recv == RECV_SIZE) {
+    LOGW("Receive buffer full");
+  }
+  size_t num_msg = recv / 0x10;
+  for (int i = 0; i < num_msg; i++) {
+    if (data[i*4] & 4) data[i*4] = data[i*4] >> 3; // extended
+    else data[i*4] = data[i*4] >> 21; // normal
+    
+    data[i*4+1] = (data[i*4+1] & 0xFFFF0000) | (data[i*4+1]&0xF) | ((data[i*4+1] & 0xFF0) + (bus_shift << 8));
+  }
+  return num_msg;
 }

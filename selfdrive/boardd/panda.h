@@ -49,13 +49,17 @@ class Panda {
   void cleanup();
 
  public:
-  Panda();
+  Panda(std::string serial="");
   ~Panda();
 
+  std::string usb_serial;
   std::atomic<bool> connected = true;
   std::atomic<bool> comms_healthy = true;
   cereal::PandaState::PandaType hw_type = cereal::PandaState::PandaType::UNKNOWN;
   bool has_rtc = false;
+
+  // Static functions
+  static std::vector<std::string> list();
 
   // HW communication
   int usb_write(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned int timeout=TIMEOUT);
@@ -81,4 +85,6 @@ class Panda {
   void send_heartbeat();
   void can_send(capnp::List<cereal::CanData>::Reader can_data_list);
   int can_receive(kj::Array<capnp::word>& out_buf);
+  void can_send_raw(std::vector<uint32_t> can_data_vector);
+  size_t can_receive_raw(uint32_t* data, uint8_t bus_shift);
 };
