@@ -38,6 +38,7 @@ public:
 private:
   LabelControl* ipLabel;
   WifiManager* wifi = nullptr;
+  Params params;
 
 signals:
   void backPress();

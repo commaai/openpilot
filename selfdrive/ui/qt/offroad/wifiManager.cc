@@ -431,21 +431,9 @@ void WifiManager::setRoamingEnabled(bool roaming) {
     Connection settings = QDBusReply<Connection>(nm.call("GetSettings")).value();
     if (settings.value("gsm").value("home-only").toBool() == roaming) {
       settings["gsm"]["home-only"] = !roaming;
-      nm.call("Update", QVariant::fromValue(settings));
+      nm.call("UpdateUnsaved", QVariant::fromValue(settings));  // resets on reboot
     }
   }
-}
-
-bool WifiManager::isRoamingEnabled() {
-  const QDBusObjectPath &path = getConnectionPath("lte");
-  if (!path.path().isEmpty()) {
-    QDBusInterface nm(NM_DBUS_SERVICE, path.path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION, bus);
-    nm.setTimeout(DBUS_TIMEOUT);
-
-    const Connection &settings = QDBusReply<Connection>(nm.call("GetSettings")).value();
-    return !settings.value("gsm").value("home-only").toBool();
-  }
-  return false;
 }
 
 // Functions for tethering

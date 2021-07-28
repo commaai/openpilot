@@ -50,7 +50,6 @@ public:
   void activateWifiConnection(const QString &ssid);
   NetworkType currentNetworkType();
   void setRoamingEnabled(bool roaming);
-  bool isRoamingEnabled();
 
   void connect(const Network &ssid);
   void connect(const Network &ssid, const QString &password);
