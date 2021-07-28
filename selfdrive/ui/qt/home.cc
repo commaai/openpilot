@@ -88,10 +88,11 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
 
 OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
   QVBoxLayout* main_layout = new QVBoxLayout(this);
-  main_layout->setMargin(50);
+  main_layout->setContentsMargins(40, 40, 40, 45);
 
   // top header
   QHBoxLayout* header_layout = new QHBoxLayout();
+  header_layout->setContentsMargins(15, 15, 15, 0);
   header_layout->setSpacing(16);
 
   date = new QLabel();
@@ -120,10 +121,9 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
   QWidget* statsAndSetupWidget = new QWidget(this);
   QHBoxLayout* statsAndSetup = new QHBoxLayout(statsAndSetupWidget);
   statsAndSetup->setMargin(0);
-  DriveStats* drive = new DriveStats();
-  drive->setFixedSize(800, 800);
-  statsAndSetup->addWidget(drive);
-  statsAndSetup->addWidget(new SetupWidget);
+  statsAndSetup->setSpacing(30);
+  statsAndSetup->addWidget(new DriveStats, 11);
+  statsAndSetup->addWidget(new SetupWidget, 8);
 
   center_layout->addWidget(statsAndSetupWidget);
 
