@@ -71,16 +71,18 @@ PrimeUserWidget::PrimeUserWidget(QWidget* parent) : QWidget(parent) {
   primeLayout->setMargin(0);
   primeWidget->setContentsMargins(60, 50, 60, 50);
 
-  QLabel* subscribed = new QLabel("SUBSCRIBED");
-  subscribed->setStyleSheet("font-size: 41px; font-weight: 700; color: #86FF4E; margin-bottom: 60px;");
+  QLabel* subscribed = new QLabel("✓ SUBSCRIBED");
+  subscribed->setStyleSheet("font-size: 41px; font-weight: bold; color: #86FF4E;");
   primeLayout->addWidget(subscribed, 0, Qt::AlignTop);
 
+  primeLayout->addSpacing(60);
+
   QLabel* commaPrime = new QLabel("comma prime");
-  commaPrime->setStyleSheet("font-size: 75px; font-weight: 700;");
+  commaPrime->setStyleSheet("font-size: 75px; font-weight: bold;");
   primeLayout->addWidget(commaPrime, 0, Qt::AlignTop);
 
   QLabel* connectUrl = new QLabel("CONNECT.COMMA.AI");
-  connectUrl->setStyleSheet("font-size: 41px; font-weight: 600; color: #A0A0A0;");
+  connectUrl->setStyleSheet("font-size: 41px; font-family: Inter SemiBold; color: #A0A0A0;");
   primeLayout->addWidget(connectUrl, 0, Qt::AlignTop);
 
   mainLayout->addWidget(primeWidget);
@@ -93,11 +95,11 @@ PrimeUserWidget::PrimeUserWidget(QWidget* parent) : QWidget(parent) {
   pointsWidget->setContentsMargins(60, 50, 60, 50);
 
   QLabel* commaPoints = new QLabel("COMMA POINTS");
-  commaPoints->setStyleSheet("font-size: 41px; font-weight: 600;");
+  commaPoints->setStyleSheet("font-size: 41px; font-family: Inter SemiBold;");
   pointsLayout->addWidget(commaPoints, 0, Qt::AlignTop);
 
   points = new QLabel("210");
-  points->setStyleSheet("font-size: 91px; font-weight: 700;");
+  points->setStyleSheet("font-size: 91px; font-weight: bold;");
   pointsLayout->addWidget(points, 0, Qt::AlignTop);
 
   mainLayout->addWidget(pointsWidget);
