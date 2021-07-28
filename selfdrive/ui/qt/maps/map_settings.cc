@@ -105,10 +105,11 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
 
     // Destination set while offline
     {
-      std::string url = "https://api.commadotai.com/v1/navigation/" + dongle_id + "/next";
-      RequestRepeater* repeater = new RequestRepeater(this, QString::fromStdString(url), "", 10, true);
+      QString url = QString::fromStdString("https://api.commadotai.com/v1/navigation/" + dongle_id + "/next");
+      RequestRepeater* repeater = new RequestRepeater(this, url, "", 10, true);
+      HttpRequest* deleter = new HttpRequest(this);
 
-      QObject::connect(repeater, &RequestRepeater::receivedResponse, [](QString resp) {
+      QObject::connect(repeater, &RequestRepeater::receivedResponse, [=](QString resp) {
         auto params = Params();
         if (resp != "null") {
           if (params.get("NavDestination").empty()) {
@@ -117,6 +118,9 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
           } else {
             qWarning() << "Got location from /next, but NavDestination already set";
           }
+
+          // Send DELETE to clear destination server side
+          deleter->sendRequest(url, HttpRequest::Method::DELETE);
         }
       });
     }
