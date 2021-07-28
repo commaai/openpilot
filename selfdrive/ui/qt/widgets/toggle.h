@@ -10,7 +10,7 @@ class Toggle : public QAbstractButton {
 
 public:
   Toggle(QWidget* parent = nullptr);
-  void togglePosition();
+  void togglePosition(bool animate = true);
   bool on;
   int animation_duration = 150;
   int immediateOffset = 0;

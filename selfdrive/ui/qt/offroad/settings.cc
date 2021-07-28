@@ -306,7 +306,6 @@ void SettingsWindow::showEvent(QShowEvent *event) {
 }
 
 SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
-  double t1 = millis_since_boot();
   QHBoxLayout *main_layout = new QHBoxLayout(this);
 
   // setup two main layouts
@@ -410,9 +409,6 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
       background-color: black;
     }
   )");
-  
-  double t2 = millis_since_boot();
-  printf("SettingsWindow init time %f\n", t2 - t1);
 }
 
 void SettingsWindow::hideEvent(QHideEvent *event) {

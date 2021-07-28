@@ -15,10 +15,10 @@ _anim(new QPropertyAnimation(this, "offset_circle", this))
   circleColor = QColor(0xffffff); // placeholder
   green = QColor(0xffffff); // placeholder
   setEnabled(true);
+  setFixedHeight(_height);
 }
 
 void Toggle::paintEvent(QPaintEvent *e) {
-  this->setFixedHeight(_height);
   QPainter p(this);
   p.setPen(Qt::NoPen);
   p.setRenderHint(QPainter::Antialiasing, true);
@@ -52,15 +52,21 @@ void Toggle::mouseReleaseEvent(QMouseEvent *e) {
   }
 }
 
-void Toggle::togglePosition() {
+void Toggle::togglePosition(bool animate) {
   on = !on;
   const int left = _radius;
   const int right = width() - _radius;
-  _anim->setStartValue(on ? left + immediateOffset : right - immediateOffset);
-  _anim->setEndValue(on ? right : left);
-  _anim->setDuration(animation_duration);
-  _anim->start();
-  repaint();
+  const int start = on ? left + immediateOffset : right - immediateOffset;
+  const int end = on ? right : left;
+  if (animate) {
+    _anim->setStartValue(start);
+    _anim->setEndValue(end);
+    _anim->setDuration(animation_duration);
+    _anim->start();
+    repaint();
+  } else {
+    set_offset_circle(end);
+  }
 }
 
 void Toggle::enterEvent(QEvent *e) {

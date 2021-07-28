@@ -95,7 +95,7 @@ public:
   ToggleControl(const QString &title, const QString &desc = "", const QString &icon = "", const bool state = false, QWidget *parent = nullptr) : AbstractControl(title, desc, icon, parent) {
     toggle.setFixedSize(150, 100);
     if (state) {
-      toggle.togglePosition();
+      toggle.togglePosition(false);
     }
     hlayout->addWidget(&toggle);
     QObject::connect(&toggle, &Toggle::stateChanged, this, &ToggleControl::toggleFlipped);
