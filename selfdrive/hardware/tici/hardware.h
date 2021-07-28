@@ -28,7 +28,7 @@ public:
   static void set_display_power(bool on) {
     std::ofstream bl_power_control("/sys/class/backlight/panel0-backlight/bl_power");
     if (bl_power_control.is_open()) {
-      bl_power_control << (on ? "0" : "1") << "\n";
+      bl_power_control << (on ? "0" : "4") << "\n";
       bl_power_control.close();
     }
   };
