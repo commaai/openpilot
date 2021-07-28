@@ -81,6 +81,8 @@ PrimeUserWidget::PrimeUserWidget(QWidget* parent) : QWidget(parent) {
   commaPrime->setStyleSheet("font-size: 75px; font-weight: bold;");
   primeLayout->addWidget(commaPrime, 0, Qt::AlignTop);
 
+  primeLayout->addSpacing(20);
+
   QLabel* connectUrl = new QLabel("CONNECT.COMMA.AI");
   connectUrl->setStyleSheet("font-size: 41px; font-family: Inter SemiBold; color: #A0A0A0;");
   primeLayout->addWidget(connectUrl, 0, Qt::AlignTop);
@@ -133,27 +135,43 @@ void PrimeUserWidget::replyFinished(const QString &response) {
   points->setText(QString::number(json["points"].toInt()));
 }
 
-PrimeAdWidget::PrimeAdWidget(QWidget* parent) : QWidget(parent) {
+PrimeAdWidget::PrimeAdWidget(QWidget* parent) : QFrame(parent) {
   QVBoxLayout* main_layout = new QVBoxLayout(this);
-  main_layout->setMargin(30);
-  main_layout->setSpacing(15);
+  main_layout->setContentsMargins(80, 90, 80, 60);
+  main_layout->setSpacing(0);
 
-  main_layout->addWidget(new QLabel("Upgrade now"), 1, Qt::AlignTop);
+  QLabel *upgrade = new QLabel("Upgrade Now");
+  upgrade->setStyleSheet("font-size: 75px; font-weight: bold;");
+  main_layout->addWidget(upgrade, 0, Qt::AlignTop);
+  main_layout->addSpacing(50);
 
-  QLabel* description = new QLabel("Become a comma prime member at connect.comma.ai and get premium features!");
-  description->setStyleSheet(R"(
-    font-size: 50px;
-    color: #b8b8b8;
-  )");
+  QLabel *description = new QLabel("Become a comma prime member at connect.comma.ai");
+  description->setStyleSheet("font-size: 60px; font-weight: light; color: white;");
   description->setWordWrap(true);
-  main_layout->addWidget(description, 2, Qt::AlignTop);
+  main_layout->addWidget(description, 0, Qt::AlignTop);
 
-  QVector<QString> features = {"✓ REMOTE ACCESS", "✓ 14 DAYS OF STORAGE", "✓ DEVELOPER PERKS"};
-  for (auto &f: features) {
-    QLabel* feature = new QLabel(f);
-    feature->setStyleSheet(R"(font-size: 40px;)");
-    main_layout->addWidget(feature, 0, Qt::AlignBottom);
+  main_layout->addStretch();
+
+  QLabel *features = new QLabel("PRIME FEATURES:");
+  features->setStyleSheet("font-size: 41px; font-weight: bold; color: #E5E5E5;");
+  main_layout->addWidget(features, 0, Qt::AlignBottom);
+  main_layout->addSpacing(30);
+
+  QVector<QString> bullets = {"Remote access", "14 days of storage", "Developer perks"};
+  for (auto &b: bullets) {
+    const QString check = "<b><font color='#465BEA'>✓</font></b> ";
+    QLabel *l = new QLabel(check + b);
+    l->setAlignment(Qt::AlignLeft);
+    l->setStyleSheet("font-size: 50px; margin-bottom: 15px;");
+    main_layout->addWidget(l, 0, Qt::AlignBottom);
   }
+
+  setStyleSheet(R"(
+    PrimeAdWidget {
+      border-radius: 10px;
+      background-color: #333333;
+    }
+  )");
 }
 
 
@@ -287,7 +305,7 @@ void SetupWidget::replyFinished(const QString &response) {
 
   QJsonObject json = doc.object();
   bool is_paired = true;  // json["is_paired"].toBool();
-  bool is_prime = true;  // json["prime"].toBool();
+  bool is_prime = false;  // json["prime"].toBool();
 
   if (!is_paired) {
     mainLayout->setCurrentIndex(showQr);
