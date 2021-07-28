@@ -1,4 +1,4 @@
-#include "selfdrive/ui/qt/widgets/setup.h"
+#include "selfdrive/ui/qt/widgets/prime.h"
 
 #include <QDebug>
 #include <QJsonDocument>
