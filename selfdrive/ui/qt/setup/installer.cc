@@ -86,6 +86,7 @@ Installer::Installer(QWidget *parent) : QWidget(parent) {
 void Installer::updateProgress(int percent) {
   bar->setValue(percent);
   val->setText(QString("%1%").arg(percent));
+  repaint();
 }
 
 void Installer::doInstall() {
@@ -155,6 +156,8 @@ void Installer::readProgress() {
 void Installer::cloneFinished(int exitCode, QProcess::ExitStatus exitStatus) {
   qDebug() << "git finished with " << exitCode;
   assert(exitCode == 0);
+
+  updateProgress(100);
 
   // ensure correct branch is checked out
   int err = chdir(TMP_INSTALL_PATH);
