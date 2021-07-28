@@ -11,6 +11,10 @@
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/widgets/input.h"
 
+TrainingGuide::TrainingGuide(QWidget *parent) : QFrame(parent) {
+  setAttribute(Qt::WA_OpaquePaintEvent);
+}
+
 void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
   if (boundingRect[currentIndex].contains(e->x(), e->y())) {
     if (currentIndex == 9) {
