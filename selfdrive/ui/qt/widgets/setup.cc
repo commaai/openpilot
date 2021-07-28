@@ -155,7 +155,7 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
     font-size: 75px;
     font-weight: 700;
     margin: 0px;
-    margin-left: 90px;
+    margin-left: 85px;
     margin-top: 75px;
   )");
   finishRegistationLayout->addWidget(registrationTitle);
@@ -168,7 +168,7 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
     font-weight: 300;
     margin: 0px;
     margin-left: 90px;
-    margin-top: 75px;
+    margin-top: 40px;
   )");
   finishRegistationLayout->addWidget(registrationDescription, 0, Qt::AlignTop);
 
@@ -222,6 +222,7 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
   mainLayout->setCurrentWidget(primeAd);
 
   QVBoxLayout *main_layout = new QVBoxLayout(this);
+  main_layout->setContentsMargins(0, 0, 0, 0);
   main_layout->addWidget(mainLayout);
 
   setStyleSheet(R"(
