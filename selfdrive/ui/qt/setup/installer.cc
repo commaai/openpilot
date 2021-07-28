@@ -19,8 +19,7 @@
 
 #define CONTINUE_PATH "/data/continue.sh"
 
-//#define CACHE_PATH "/usr/comma/openpilot"
-#define CACHE_PATH "/tmp/openpilot"
+#define CACHE_PATH "/usr/comma/openpilot"
 #define INSTALL_PATH "/data/openpilot"
 #define TMP_INSTALL_PATH "/data/tmppilot"
 
@@ -63,7 +62,8 @@ Installer::Installer(QWidget *parent) : QWidget(parent) {
 
   layout->addStretch();
 
-  QObject::connect(&proc, &QProcess::errorOccurred, &QCoreApplication::quit);
+  QObject::connect(&proc, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this, &Installer::cloneFinished);
+  QObject::connect(&proc, &QProcess::readyReadStandardError, this, &Installer::readProgress);
 
   QTimer::singleShot(100, this, &Installer::doInstall);
 
@@ -109,8 +109,6 @@ void Installer::doInstall() {
 
 void Installer::freshClone() {
   qDebug() << "Doing fresh clone";
-  QObject::connect(&proc, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this, &Installer::cloneFinished);
-  QObject::connect(&proc, &QProcess::readyReadStandardError, this, &Installer::readProgress);
   proc.start("git", {"clone", "--progress", GIT_URL, "-b", BRANCH,
                      "--depth=1", "--recurse-submodules", TMP_INSTALL_PATH});
 }
@@ -125,8 +123,6 @@ void Installer::cachedFetch() {
 
   updateProgress(10);
 
-  QObject::connect(&proc, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this, &Installer::cloneFinished);
-  QObject::connect(&proc, &QProcess::readyReadStandardError, this, &Installer::readProgress);
   proc.setWorkingDirectory(TMP_INSTALL_PATH);
   proc.start("git", {"fetch", "--progress", "origin", BRANCH});
 }
