@@ -146,7 +146,7 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
 
   QWidget* finishRegistration = new QWidget;
   QVBoxLayout* finishRegistationLayout = new QVBoxLayout(finishRegistration);
-  finishRegistationLayout->setMargin(0);
+  finishRegistationLayout->setMargin(30);
   finishRegistationLayout->setSpacing(0);
 
   QLabel* registrationTitle = new QLabel("Finish Setup");
@@ -155,8 +155,8 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
     font-size: 75px;
     font-weight: 700;
     margin: 0px;
-    margin-left: 85px;
-    margin-top: 75px;
+    margin-left: 55px;
+    margin-top: 45px;
   )");
   finishRegistationLayout->addWidget(registrationTitle);
 
@@ -167,20 +167,20 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
     font-size: 55px;
     font-weight: 300;
     margin: 0px;
-    margin-left: 90px;
-    margin-top: 40px;
+    margin-left: 60px;
+    margin-top: 10px;
   )");
   finishRegistationLayout->addWidget(registrationDescription, 0, Qt::AlignTop);
 
   finishRegistationLayout->addStretch();
 
   QPushButton* finishButton = new QPushButton("Pair device");
-  finishButton->setFixedHeight(200);
+  finishButton->setFixedHeight(220);
   finishButton->setStyleSheet(R"(
     margin: 0px;
-    margin-left: 40px;
-    margin-right: 40px;
-    margin-bottom: 46px;
+    margin-left: 10px;
+    margin-right: 10px;
+    margin-bottom: 16px;
     border-radius: 10px;
     font-size: 55px;
     font-weight: 500;
