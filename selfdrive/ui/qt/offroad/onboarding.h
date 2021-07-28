@@ -13,7 +13,7 @@ class TrainingGuide : public QFrame {
   Q_OBJECT
 
 public:
-  explicit TrainingGuide(QWidget *parent = 0) : QFrame(parent) {};
+  explicit TrainingGuide(QWidget *parent = 0);
 
 private:
   void showEvent(QShowEvent *event) override;
