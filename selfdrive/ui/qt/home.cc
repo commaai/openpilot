@@ -88,11 +88,11 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
 
 OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
   QVBoxLayout* main_layout = new QVBoxLayout(this);
-  main_layout->setContentsMargins(40, 52, 40, 45);
+  main_layout->setContentsMargins(40, 40, 40, 45);
 
   // top header
   QHBoxLayout* header_layout = new QHBoxLayout();
-  header_layout->setContentsMargins(15, 0, 15, 0);
+  header_layout->setContentsMargins(15, 15, 15, 0);
   header_layout->setSpacing(16);
 
   date = new QLabel();
