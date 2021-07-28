@@ -6,6 +6,7 @@
 #include <map>
 
 #include <QDebug>
+#include <QDir>
 #include <QTimer>
 #include <QVBoxLayout>
 
@@ -18,6 +19,10 @@
 
 #define CONTINUE_PATH "/data/continue.sh"
 
+#define CACHE_PATH "/usr/comma/openpilot"
+#define INSTALL_PATH "/data/openpilot"
+#define TMP_INSTALL_PATH "/data/tmppilot"
+
 
 bool time_valid() {
   time_t rawtime;
@@ -27,6 +32,10 @@ bool time_valid() {
   return (1900 + sys_time->tm_year) >= 2020;
 }
 
+void run(const char* cmd) {
+  int err = std::system(cmd);
+  assert(err == 0);
+}
 
 Installer::Installer(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *layout = new QVBoxLayout(this);
@@ -53,6 +62,9 @@ Installer::Installer(QWidget *parent) : QWidget(parent) {
 
   layout->addStretch();
 
+  QObject::connect(&proc, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this, &Installer::cloneFinished);
+  QObject::connect(&proc, &QProcess::readyReadStandardError, this, &Installer::readProgress);
+
   QTimer::singleShot(100, this, &Installer::doInstall);
 
   setStyleSheet(R"(
@@ -74,6 +86,7 @@ Installer::Installer(QWidget *parent) : QWidget(parent) {
 void Installer::updateProgress(int percent) {
   bar->setValue(percent);
   val->setText(QString("%1%").arg(percent));
+  repaint();
 }
 
 void Installer::doInstall() {
@@ -84,20 +97,34 @@ void Installer::doInstall() {
   }
 
   // cleanup
-  int err = std::system("rm -rf /data/tmppilot /data/openpilot");
-  assert(err == 0);
+  run("rm -rf " TMP_INSTALL_PATH " " INSTALL_PATH);
 
-  // TODO: support using the dashcam cache
-  // do install
-  freshClone();
+  // do the install
+  if (QDir(CACHE_PATH).exists()) {
+    cachedFetch();
+  } else {
+    freshClone();
+  }
 }
 
 void Installer::freshClone() {
-  qDebug() << "Doing fresh clone\n";
-  QObject::connect(&proc, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this, &Installer::cloneFinished);
-  QObject::connect(&proc, &QProcess::readyReadStandardError, this, &Installer::readProgress);
-  QStringList args = {"clone", "--progress", GIT_URL, "-b", BRANCH, "--depth=1", "--recurse-submodules", "/data/tmppilot"};
-  proc.start("git", args);
+  qDebug() << "Doing fresh clone";
+  proc.start("git", {"clone", "--progress", GIT_URL, "-b", BRANCH,
+                     "--depth=1", "--recurse-submodules", TMP_INSTALL_PATH});
+}
+
+void Installer::cachedFetch() {
+  qDebug() << "Fetching with cache";
+
+  run("cp -rp " CACHE_PATH " " TMP_INSTALL_PATH);
+  int err = chdir(TMP_INSTALL_PATH);
+  assert(err == 0);
+  run("git remote set-branches --add origin " BRANCH);
+
+  updateProgress(10);
+
+  proc.setWorkingDirectory(TMP_INSTALL_PATH);
+  proc.start("git", {"fetch", "--progress", "origin", BRANCH});
 }
 
 void Installer::readProgress() {
@@ -123,17 +150,22 @@ void Installer::readProgress() {
 }
 
 void Installer::cloneFinished(int exitCode, QProcess::ExitStatus exitStatus) {
-  qDebug() << "finished " << exitCode;
+  qDebug() << "git finished with " << exitCode;
   assert(exitCode == 0);
 
-  int err;
+  updateProgress(100);
+
+  // ensure correct branch is checked out
+  int err = chdir(TMP_INSTALL_PATH);
+  assert(err == 0);
+  run("git checkout " BRANCH);
+  run("git reset --hard origin/" BRANCH);
 
   // move into place
-  err = std::system("mv /data/tmppilot /data/openpilot");
-  assert(err == 0);
+  run("mv " TMP_INSTALL_PATH " " INSTALL_PATH);
 
 #ifdef INTERNAL
-  std::system("mkdir -p /data/params/d/");
+  run("mkdir -p /data/params/d/");
 
   std::map<std::string, std::string> params = {
     {"SshEnabled", "1"},
@@ -146,16 +178,13 @@ void Installer::cloneFinished(int exitCode, QProcess::ExitStatus exitStatus) {
     param << value;
     param.close();
   }
-  std::system("cd /data/tmppilot && git remote set-url origin --push " GIT_SSH_URL);
+  run("cd " INSTALL_PATH " && git remote set-url origin --push " GIT_SSH_URL);
 #endif
 
   // write continue.sh
-  err = std::system("cp /data/openpilot/installer/continue_openpilot.sh /data/continue.sh.new");
-  assert(err == 0);
-  err = std::system("chmod +x /data/continue.sh.new");
-  assert(err == 0);
-  std::system("mv /data/continue.sh.new " CONTINUE_PATH);
-  assert(err == 0);
+  run("cp /data/openpilot/installer/continue_openpilot.sh /data/continue.sh.new");
+  run("chmod +x /data/continue.sh.new");
+  run("mv /data/continue.sh.new " CONTINUE_PATH);
 
   // wait for the installed software's UI to take over
   QTimer::singleShot(60 * 1000, &QCoreApplication::quit);
