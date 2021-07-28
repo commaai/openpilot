@@ -88,7 +88,7 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
 
 OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
   QVBoxLayout* main_layout = new QVBoxLayout(this);
-  main_layout->setContentsMargins(40, 40, 40, 45);
+  main_layout->setContentsMargins(40, 52, 40, 45);
 
   // top header
   QHBoxLayout* header_layout = new QHBoxLayout();
@@ -122,8 +122,8 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
   QHBoxLayout* statsAndSetup = new QHBoxLayout(statsAndSetupWidget);
   statsAndSetup->setMargin(0);
   statsAndSetup->setSpacing(30);
-  statsAndSetup->addWidget(new DriveStats, 6);
-  statsAndSetup->addWidget(new SetupWidget, 4);
+  statsAndSetup->addWidget(new DriveStats, 11);
+  statsAndSetup->addWidget(new SetupWidget, 8);
 
   center_layout->addWidget(statsAndSetupWidget);
 
