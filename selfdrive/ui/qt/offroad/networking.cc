@@ -178,6 +178,7 @@ WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi)
   }
   lock = QPixmap(ASSET_PATH + "offroad/icon_lock_closed.svg").scaledToWidth(49, Qt::SmoothTransformation);
   checkmark = QPixmap(ASSET_PATH + "offroad/icon_checkmark.svg").scaledToWidth(49, Qt::SmoothTransformation);
+  circled_slash = QPixmap(ASSET_PATH + "img_circled_slash.svg").scaledToWidth(49, Qt::SmoothTransformation);
 
   QLabel *scanning = new QLabel("Scanning for networks...");
   scanning->setStyleSheet("font-size: 65px;");
@@ -222,7 +223,7 @@ WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi)
       font-weight: 500;
     }
     #ssidLabel:disabled {
-      color: #4F4F4F;
+      color: #696969;
     }
   )");
 }
@@ -278,6 +279,10 @@ void WifiUI::refresh() {
       QLabel *connectIcon = new QLabel();
       connectIcon->setPixmap(checkmark);
       hlayout->addWidget(connectIcon, 0, Qt::AlignRight);
+    } else if (network.security_type == SecurityType::UNSUPPORTED) {
+      QLabel *unsupportedIcon = new QLabel();
+      unsupportedIcon->setPixmap(circled_slash);
+      hlayout->addWidget(unsupportedIcon, 0, Qt::AlignRight);
     } else if (network.security_type == SecurityType::WPA) {
       QLabel *lockIcon = new QLabel();
       lockIcon->setPixmap(lock);
