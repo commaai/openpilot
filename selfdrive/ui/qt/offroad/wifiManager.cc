@@ -431,7 +431,7 @@ void WifiManager::setRoamingEnabled(bool roaming) {
     Connection settings = QDBusReply<Connection>(nm.call("GetSettings")).value();
     if (settings.value("gsm").value("home-only").toBool() == roaming) {
       settings["gsm"]["home-only"] = !roaming;
-      nm.call("UpdateUnsaved", QVariant::fromValue(settings));  // resets on reboot
+      nm.call("UpdateUnsaved", QVariant::fromValue(settings));  // update is temporary
     }
   }
 }
