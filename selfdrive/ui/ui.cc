@@ -14,8 +14,8 @@
 #include "selfdrive/ui/paint.h"
 #include "selfdrive/ui/qt/qt_window.h"
 
-#define BACKLIGHT_DT 0.25
-#define BACKLIGHT_TS 2.00
+#define BACKLIGHT_DT 0.05
+#define BACKLIGHT_TS 10.00
 #define BACKLIGHT_OFFROAD 75
 
 
@@ -224,6 +224,8 @@ static void update_vision(UIState *s) {
     } else if (!Hardware::PC()) {
       LOGE("visionIPC receive timeout");
     }
+  } else if (s->scene.started) {
+    util::sleep_for(1000. / UI_FREQ);
   }
 }
 

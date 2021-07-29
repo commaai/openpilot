@@ -3,6 +3,7 @@
 #include <QFrame>
 #include <QMap>
 
+#include "selfdrive/common/params.h"
 #include "selfdrive/ui/ui.h"
 
 class Sidebar : public QFrame {
@@ -28,7 +29,7 @@ public slots:
 
 protected:
   void paintEvent(QPaintEvent *event) override;
-  void mousePressEvent(QMouseEvent *event) override;
+  void mouseReleaseEvent(QMouseEvent *event) override;
 
 private:
   void drawMetric(QPainter &p, const QString &label, const QString &val, QColor c, int y);
@@ -49,6 +50,7 @@ private:
   const QColor warning_color = QColor(218, 202, 37);
   const QColor danger_color = QColor(201, 34, 49);
 
+  Params params;
   QString connect_str = "OFFLINE";
   QColor connect_status = warning_color;
   QString panda_str = "NO\nPANDA";

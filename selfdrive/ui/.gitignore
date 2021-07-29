@@ -7,4 +7,5 @@ qt/spinner
 qt/setup/setup
 qt/setup/reset
 qt/setup/wifi
+qt/setup/updater
 qt/setup/installer_*

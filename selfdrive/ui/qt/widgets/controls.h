@@ -75,7 +75,7 @@ public:
   inline QString text() const { return btn.text(); }
 
 signals:
-  void released();
+  void clicked();
 
 public slots:
   void setEnabled(bool enabled) { btn.setEnabled(enabled); };
@@ -112,14 +112,19 @@ class ParamControl : public ToggleControl {
 
 public:
   ParamControl(const QString &param, const QString &title, const QString &desc, const QString &icon, QWidget *parent = nullptr) : ToggleControl(title, desc, icon, false, parent) {
-    if (params.getBool(param.toStdString().c_str())) {
-      toggle.togglePosition();
-    }
+    key = param.toStdString();
     QObject::connect(this, &ToggleControl::toggleFlipped, [=](bool state) {
-      params.putBool(param.toStdString().c_str(), state);
+      params.putBool(key, state);
     });
   }
 
+  void showEvent(QShowEvent *event) override {
+    if (params.getBool(key) != toggle.on) {
+      toggle.togglePosition();
+    }
+  };
+
 private:
+  std::string key;
   Params params;
 };

@@ -122,7 +122,6 @@ void VisionIpcServer::listener(){
       bufs[i].buf_cl = 0;
       bufs[i].copy_q = 0;
       bufs[i].handle = 0;
-      bufs[i].owner = false;
 
       bufs[i].server_id = server_id;
     }

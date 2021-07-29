@@ -5,7 +5,11 @@ from typing import Dict
 
 from cereal import car
 from selfdrive.car import dbc_dict
+
 Ecu = car.CarParams.Ecu
+NetworkLocation = car.CarParams.NetworkLocation
+TransmissionType = car.CarParams.TransmissionType
+GearShifter = car.CarState.GearShifter
 
 class CarControllerParams:
   HCA_STEP = 2                   # HCA_01 message frequency 50Hz
@@ -33,9 +37,6 @@ class DBC_FILES:
   mqb = "vw_mqb_2010"  # Used for all cars with MQB-style CAN messaging
 
 DBC = defaultdict(lambda: dbc_dict(DBC_FILES.mqb, None))  # type: Dict[str, Dict[str, str]]
-
-TransmissionType = car.CarParams.TransmissionType
-GearShifter = car.CarState.GearShifter
 
 BUTTON_STATES = {
   "accelCruise": False,
@@ -68,6 +69,7 @@ class CAR:
   GOLF_MK7 = "VOLKSWAGEN GOLF 7TH GEN"        # Chassis 5G/AU/BA/BE, Mk7 VW Golf and variants
   JETTA_MK7 = "VOLKSWAGEN JETTA 7TH GEN"      # Chassis BU, Mk7 Jetta
   PASSAT_MK8 = "VOLKSWAGEN PASSAT 8TH GEN"    # Chassis 3G, Mk8 Passat and variants
+  TCROSS_MK1 = "VOLKSWAGEN T-CROSS 1ST GEN"   # Chassis C1, Mk1 VW T-Cross SWB and LWB variants
   TIGUAN_MK2 = "VOLKSWAGEN TIGUAN 2ND GEN"    # Chassis AD/BW, Mk2 VW Tiguan and variants
   TOURAN_MK2 = "VOLKSWAGEN TOURAN 2ND GEN"    # Chassis 1T, Mk2 VW Touran and variants
   AUDI_A3_MK3 = "AUDI A3 3RD GEN"             # Chassis 8V/FF, Mk3 Audi A3 and variants
@@ -95,6 +97,7 @@ FW_VERSIONS = {
       b'\xf1\x8703H906026F \xf1\x896696',
       b'\xf1\x8703H906026F \xf1\x899970',
       b'\xf1\x8703H906026S \xf1\x896693',
+      b'\xf1\x8703H906026S \xf1\x899970',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x8709G927158A \xf1\x893387',
@@ -137,6 +140,7 @@ FW_VERSIONS = {
       b'\xf1\x875G0906259N \xf1\x890003',
       b'\xf1\x875G0906259Q \xf1\x890002',
       b'\xf1\x875G0906259Q \xf1\x892313',
+      b'\xf1\x878V0906259H \xf1\x890002',
       b'\xf1\x878V0906259J \xf1\x890003',
       b'\xf1\x878V0906259K \xf1\x890001',
       b'\xf1\x878V0906259P \xf1\x890001',
@@ -154,6 +158,7 @@ FW_VERSIONS = {
       b'\xf1\x870CW300045  \xf1\x894531',
       b'\xf1\x870CW300047D \xf1\x895261',
       b'\xf1\x870CW300048J \xf1\x890611',
+      b'\xf1\x870D9300012  \xf1\x894904',
       b'\xf1\x870D9300012  \xf1\x894913',
       b'\xf1\x870D9300012  \xf1\x894937',
       b'\xf1\x870D9300012  \xf1\x895045',
@@ -189,6 +194,7 @@ FW_VERSIONS = {
       b'\xf1\x875Q0959655S \xf1\x890870\xf1\x82\02324230011211200061104171724102491132111',
       b'\xf1\x875Q0959655S \xf1\x890870\xf1\x82\02324230011211200621143171724112491132111',
       b'\xf1\x875Q0959655S \xf1\x890870\xf1\x82\x1315120011211200061104171717101791132111',
+      b'\xf1\x875Q0959655T \xf1\x890825\xf1\x82\023271200111312--071104171837103791132111',
       b'\xf1\x875Q0959655T \xf1\x890830\xf1\x82\x13271100111312--071104171826102691131211',
       b'\xf1\x875QD959655  \xf1\x890388\xf1\x82\x111413001113120006110417121D101D9112',
     ],
@@ -291,6 +297,23 @@ FW_VERSIONS = {
       b'\xf1\x873Q0907572B \xf1\x890192',
       b'\xf1\x873Q0907572C \xf1\x890195',
       b'\xf1\x875Q0907572R \xf1\x890771',
+    ],
+  },
+  CAR.TCROSS_MK1: {
+    (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x8704C906025AK\xf1\x897053',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x870CW300050E \xf1\x891903',
+    ],
+    (Ecu.srs, 0x715, None): [
+      b'\xf1\x872Q0959655AJ\xf1\x890250\xf1\x82\02212130411110411--04041104141311152H14',
+    ],
+    (Ecu.eps, 0x712, None): [
+      b'\xf1\x872Q1909144M \xf1\x896041',
+    ],
+    (Ecu.fwdRadar, 0x757, None): [
+      b'\xf1\x872Q0907572T \xf1\x890383',
     ],
   },
   CAR.TIGUAN_MK2: {
@@ -467,15 +490,18 @@ FW_VERSIONS = {
       b'\xf1\x8704E906027HD\xf1\x893742',
       b'\xf1\x8704L906021DT\xf1\x898127',
       b'\xf1\x8704L906026BS\xf1\x891541',
+      b'\xf1\x875G0906259C \xf1\x890002',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x870CW300043B \xf1\x891601',
+      b'\xf1\x870D9300041C \xf1\x894936',
       b'\xf1\x870D9300041J \xf1\x894902',
       b'\xf1\x870D9300041P \xf1\x894507',
     ],
     (Ecu.srs, 0x715, None): [
       b'\xf1\x873Q0959655AC\xf1\x890200\xf1\x82\r11120011100010022212110200',
       b'\xf1\x873Q0959655AS\xf1\x890200\xf1\x82\r11120011100010022212110200',
+      b'\xf1\x873Q0959655AQ\xf1\x890200\xf1\x82\r11120011100010312212113100',
       b'\xf1\x873Q0959655CN\xf1\x890720\xf1\x82\x0e3221003221002105755331052100',
     ],
     (Ecu.eps, 0x712, None): [
