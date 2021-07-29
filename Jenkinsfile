@@ -71,7 +71,7 @@ pipeline {
       }
       steps {
         phone_steps("eon-build", [
-          ["build release2-staging and dashcam-staging", "cd release && PUSH=1 ./build_release2.sh"],
+          ["build release2-staging & dashcam-staging", "cd release && PUSH=1 ./build_release2.sh"],
         ])
       }
     }
@@ -88,7 +88,7 @@ pipeline {
       }
       steps {
         phone_steps("tici", [
-          ["build release3-staging and dashcam3-staging", "cd release && PUSH_NOT_YET=1 ./build_release3.sh"],
+          ["build release3-staging & dashcam3-staging", "PUSH_NOT_YET=1 $SOURCE_DIR/release/build_release3.sh"],
         ])
       }
     }
