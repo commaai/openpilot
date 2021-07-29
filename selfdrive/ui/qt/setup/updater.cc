@@ -138,6 +138,7 @@ void Updater::installUpdate() {
   setCurrentWidget(progress);
   QObject::connect(&proc, &QProcess::readyReadStandardError, this, &Updater::readProgress);
   QObject::connect(&proc, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this, &Updater::updateFinished);
+  proc.setProcessChannelMode(QProcess::ForwardedOutputChannel);
   proc.start(updater, {"--swap", manifest});
 }
 
