@@ -39,6 +39,9 @@ LOG_ATTR_NAME = 'user.upload'
 LOG_ATTR_VALUE_MAX_UNIX_TIME = int.to_bytes(2147483647, 4, sys.byteorder)
 RECONNECT_TIMEOUT_S = 70
 
+RETRY_DELAY = 10  # seconds
+MAX_RETRY_COUNT = 30  # Try for at most 5 minutes if upload fails immediately
+
 dispatcher["echo"] = lambda s: s
 recv_queue: Any = queue.Queue()
 send_queue: Any = queue.Queue()
@@ -46,7 +49,7 @@ upload_queue: Any = queue.Queue()
 log_send_queue: Any = queue.Queue()
 log_recv_queue: Any = queue.Queue()
 cancelled_uploads: Any = set()
-UploadItem = namedtuple('UploadItem', ['path', 'url', 'headers', 'created_at', 'id'])
+UploadItem = namedtuple('UploadItem', ['path', 'url', 'headers', 'created_at', 'id', 'retry_count'], defaults=(0,))
 
 
 def handle_long_poll(ws):
@@ -103,7 +106,20 @@ def upload_handler(end_event):
       if item.id in cancelled_uploads:
         cancelled_uploads.remove(item.id)
         continue
-      _do_upload(item)
+
+      try:
+        _do_upload(item)
+      except (requests.exceptions.Timeout, requests.exceptions.ConnectionError, requests.exceptions.SSLError) as e:
+        cloudlog.warning(f"athena.upload_handler.retry {e} {item}")
+
+        if item.retry_count < MAX_RETRY_COUNT:
+          item = item._replace(retry_count=item.retry_count + 1)
+          upload_queue.put_nowait(item)
+
+          for _ in range(RETRY_DELAY):
+            time.sleep(1)
+            if end_event.is_set():
+              break
     except queue.Empty:
       pass
     except Exception:
