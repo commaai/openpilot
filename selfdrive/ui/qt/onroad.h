@@ -55,13 +55,13 @@ class OnroadWindow : public QWidget {
 public:
   OnroadWindow(QWidget* parent = 0);
   QWidget *map = nullptr;
+  QColor bg = bg_colors[STATUS_DISENGAGED];
 
 private:
   void paintEvent(QPaintEvent *event);
 
   OnroadAlerts *alerts;
   NvgWindow *nvg;
-  QColor bg = bg_colors[STATUS_DISENGAGED];
   QHBoxLayout* split;
 
 signals:

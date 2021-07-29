@@ -184,9 +184,6 @@ void NvgWindow::updateState(const UIState &s) {
   if (s.vipc_client->connected) {
     makeCurrent();
   }
-  if (isVisible() != s.vipc_client->connected) {
-    setVisible(s.vipc_client->connected);
-  }
   repaint();
 }
 
@@ -195,6 +192,14 @@ void NvgWindow::resizeGL(int w, int h) {
 }
 
 void NvgWindow::paintGL() {
+  // TODO: make camerad startup fast and remove this
+  if (QUIState::ui_state.vipc_client->connected) {
+    QPainter p(this);
+    QColor bg = static_cast<OnroadWindow*>(parent())->bg;
+    p.fillRect(rect(), QColor(bg.red(), bg.green(), bg.blue(), 255));
+    return;
+  }
+
   ui_draw(&QUIState::ui_state, width(), height());
 
   double cur_draw_t = millis_since_boot();
