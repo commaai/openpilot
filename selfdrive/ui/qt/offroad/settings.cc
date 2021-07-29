@@ -308,13 +308,18 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   // close button
   QPushButton *close_btn = new QPushButton("×");
   close_btn->setStyleSheet(R"(
-    font-size: 140px;
-    padding-bottom: 20px;
-    font-weight: bold;
-    border 1px grey solid;
-    border-radius: 100px;
-    background-color: #292929;
-    font-weight: 400;
+    QPushButton {
+      font-size: 140px;
+      padding-bottom: 20px;
+      font-weight: bold;
+      border 1px grey solid;
+      border-radius: 100px;
+      background-color: #292929;
+      font-weight: 400;
+    }
+    QPushButton:pressed {
+      background-color: #3B3B3B;
+    }
   )");
   close_btn->setFixedSize(200, 200);
   sidebar_layout->addSpacing(45);
@@ -358,6 +363,9 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
       }
       QPushButton:checked {
         color: white;
+      }
+      QPushButton:pressed {
+        color: #ADADAD;
       }
     )").arg(padding));
 
