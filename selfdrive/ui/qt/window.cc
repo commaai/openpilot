@@ -6,6 +6,19 @@
 
 MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   main_layout = new QStackedLayout(this);
+  QWidget *test = new QWidget;
+  QHBoxLayout *hlayout = new QHBoxLayout(test);
+  QPushButton *btn = new QPushButton("Test1");
+  btn->setFixedHeight(200);
+  QPushButton *btn2 = new QPushButton("Test2");
+  btn2->setFixedHeight(200);
+  QPushButton *btn3 = new QPushButton("Test3");
+  btn3->setFixedHeight(200);
+  hlayout->addWidget(btn);
+  hlayout->addWidget(btn2);
+  hlayout->addWidget(btn3);
+  main_layout->addWidget(test);
+
   main_layout->setMargin(0);
 
   onboardingWindow = new OnboardingWindow(this);
@@ -55,8 +68,21 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   // no outline to prevent the focus rectangle
   setStyleSheet(R"(
     * {
-      font-family: Inter;
       outline: none;
+      color: white;
+      background-color: black;
+    }
+    QPushButton {
+      height: 135px;
+      font-size: 75px;
+      margin: 0px;
+      padding: 0px;
+      border-radius: 10px;
+      color: #dddddd;
+      background-color: #444444;
+    }
+    QPushButton:pressed {
+      background-color: #333333;
     }
   )");
   setAttribute(Qt::WA_NoSystemBackground);
