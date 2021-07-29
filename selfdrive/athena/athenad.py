@@ -39,8 +39,8 @@ LOG_ATTR_NAME = 'user.upload'
 LOG_ATTR_VALUE_MAX_UNIX_TIME = int.to_bytes(2147483647, 4, sys.byteorder)
 RECONNECT_TIMEOUT_S = 70
 
-RETRY_DELAY = 1.0  # seconds
-MAX_RETRY_COUNT = 300  # Try for at most 5 minutes if upload fails immediately
+RETRY_DELAY = 10  # seconds
+MAX_RETRY_COUNT = 30  # Try for at most 5 minutes if upload fails immediately
 
 dispatcher["echo"] = lambda s: s
 recv_queue: Any = queue.Queue()
@@ -115,7 +115,11 @@ def upload_handler(end_event):
         if item.retry_count < MAX_RETRY_COUNT:
           item = item._replace(retry_count=item.retry_count + 1)
           upload_queue.put_nowait(item)
-          time.sleep(RETRY_DELAY)
+
+          for _ in range(RETRY_DELAY):
+            time.sleep(1)
+            if end_event.is_set():
+              break
     except queue.Empty:
       pass
     except Exception:
