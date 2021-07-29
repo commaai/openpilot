@@ -24,7 +24,7 @@ class CarInterface(CarInterfaceBase):
 
     ret.steerActuatorDelay = 0.0  # Default delay
     ret.steerRateCost = 0.5
-    ret.steerLimitTimer = 2.5
+    ret.steerLimitTimer = 0.4
     tire_stiffness_factor = 1.
 
     ret.startAccel = 1.0
@@ -118,27 +118,13 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
 
     elif candidate == CAR.KONA_HEV:
-      #ret.lateralTuning.pid.kf = 0.00007
+      ret.lateralTuning.pid.kf = 0.00007
       ret.mass = 1425. + STD_CARGO_KG
       ret.wheelbase = 2.6
       ret.steerRatio = 13.73  # Spec
       tire_stiffness_factor = 1.
-      #ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
-      #ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.27], [0.05]]
-
-      ret.lateralTuning.init('lqr')
-      ret.lateralTuning.lqr.scale = 1650.
-      ret.lateralTuning.lqr.ki = 0.01
-      ret.lateralTuning.lqr.dcGain = 0.003
-      ret.lateralTuning.lqr.a = [0., 1., -0.22619643, 1.21822268]
-      ret.lateralTuning.lqr.b = [-1.92006585e-04, 3.95603032e-05]
-      ret.lateralTuning.lqr.c = [1., 0.]
-      ret.lateralTuning.lqr.k = [-110., 451.]
-      ret.lateralTuning.lqr.l = [0.33, 0.318]
-
-      ret.steerMaxBP = [0.]
-      ret.steerMaxV = [1.0]
-
+      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.27], [0.05]]
     elif candidate in [CAR.IONIQ, CAR.IONIQ_EV_LTD, CAR.IONIQ_EV_2020, CAR.IONIQ_PHEV]:
       ret.lateralTuning.pid.kf = 0.00006
       ret.mass = 1490. + STD_CARGO_KG  # weight per hyundai site https://www.hyundaiusa.com/ioniq-electric/specifications.aspx
