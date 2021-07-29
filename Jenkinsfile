@@ -84,11 +84,11 @@ pipeline {
         }
       }
       when {
-        branch 'r3-ci'
+        branch 'devel-staging'
       }
       steps {
         phone_steps("tici", [
-          ["build release3-staging & dashcam3-staging", "PUSH_NOT_YET=1 $SOURCE_DIR/release/build_release3.sh"],
+          ["build release3-staging & dashcam3-staging", "PUSH=1 $SOURCE_DIR/release/build_release3.sh"],
         ])
       }
     }
