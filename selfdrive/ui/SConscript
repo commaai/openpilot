@@ -56,6 +56,7 @@ qt_env.Program("_ui", qt_src, LIBS=qt_libs)
 if arch != 'aarch64' and GetOption('setup'):
   qt_env.Program("qt/setup/reset", ["qt/setup/reset.cc"], LIBS=qt_libs)
   qt_env.Program("qt/setup/wifi", ["qt/setup/wifi.cc"], LIBS=qt_libs + ['common', 'json11'])
+  qt_env.Program("qt/setup/updater", ["qt/setup/updater.cc"], LIBS=qt_libs)
 
   # TODO: do this for all resources once NEOS has rcc
   assets = "#selfdrive/assets/assets.cc"
