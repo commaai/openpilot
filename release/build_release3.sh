@@ -40,10 +40,9 @@ echo "[-] committing version $VERSION T=$SECONDS"
 git add -f .
 git commit -a -m "openpilot v$VERSION release"
 
-# TODO: sign with release cert
 # Build panda firmware
 pushd panda/
-scons -U .
+CERT=/data/pandaextra/certs/release RELEASE=1 scons -u .
 mv board/obj/panda.bin.signed /tmp/panda.bin.signed
 popd
 
