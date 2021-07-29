@@ -241,6 +241,7 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
 
   mainLayout->setCurrentWidget(primeAd);
 
+  setFixedWidth(750);
   setStyleSheet(R"(
     #primeWidget {
       border-radius: 10px;
