@@ -54,15 +54,18 @@ qt_env.Program("_ui", qt_src, LIBS=qt_libs)
 
 # setup, factory resetter, and installer
 if arch != 'aarch64' and GetOption('setup'):
-  qt_env.Program("qt/setup/reset", ["qt/setup/reset.cc"], LIBS=qt_libs)
-  qt_env.Program("qt/setup/wifi", ["qt/setup/wifi.cc"], LIBS=qt_libs + ['common', 'json11'])
 
   # TODO: do this for all resources once NEOS has rcc
   assets = "#selfdrive/assets/assets.cc"
   assets_src = "#selfdrive/assets/assets.qrc"
   qt_env.Command(assets, assets_src, f"rcc $SOURCES -o $TARGET")
   qt_env.Depends(assets, Glob('#selfdrive/assets/*', exclude=[assets, assets_src, "#selfdrive/assets/assets.o"]))
-  qt_env.Program("qt/setup/setup", ["qt/setup/setup.cc", assets],
+  asset_obj = qt_env.Object("assets", assets)
+
+  qt_env.Program("qt/setup/reset", ["qt/setup/reset.cc"], LIBS=qt_libs)
+  qt_env.Program("qt/setup/wifi", ["qt/setup/wifi.cc"], LIBS=qt_libs + ['common', 'json11'])
+  qt_env.Program("qt/setup/updater", ["qt/setup/updater.cc", asset_obj], LIBS=qt_libs)
+  qt_env.Program("qt/setup/setup", ["qt/setup/setup.cc", asset_obj],
                  LIBS=qt_libs + ['curl', 'common', 'json11'])
 
   senv = qt_env.Clone()

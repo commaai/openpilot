@@ -19,6 +19,7 @@ selfdrive/hardware/tici/pins.py
 selfdrive/hardware/tici/agnos.py
 selfdrive/hardware/tici/agnos.json
 selfdrive/hardware/tici/amplifier.py
+selfdrive/hardware/tici/updater
 
 selfdrive/ui/qt/spinner_larch64
 selfdrive/ui/qt/text_larch64

@@ -5,10 +5,9 @@ import hashlib
 import requests
 import struct
 import subprocess
+import sys
 import os
-from typing import Generator, Optional
-
-from common.spinner import Spinner
+from typing import Generator
 
 SPARSE_CHUNK_FMT = struct.Struct('H2xI4x')
 
@@ -127,7 +126,7 @@ def clear_partition_hash(target_slot_number: int, partition: dict) -> None:
     os.sync()
 
 
-def flash_partition(target_slot_number: int, partition: dict, cloudlog, spinner: Optional[Spinner] = None):
+def flash_partition(target_slot_number: int, partition: dict, cloudlog):
   cloudlog.info(f"Downloading and writing {partition['name']}")
 
   if verify_partition(target_slot_number, partition):
@@ -151,18 +150,13 @@ def flash_partition(target_slot_number: int, partition: dict, cloudlog, spinner:
       for chunk in unsparsify(downloader):
         raw_hash.update(chunk)
         out.write(chunk)
-
-        if spinner is not None:
-          spinner.update_progress(out.tell(), partition_size)
+        print(f"Installing {partition['name']}: {out.tell() / partition_size * 100}", file=sys.stderr)
 
       if raw_hash.hexdigest().lower() != partition['hash_raw'].lower():
         raise Exception(f"Unsparse hash mismatch '{raw_hash.hexdigest().lower()}'")
     else:
       while not downloader.eof:
         out.write(downloader.read(1024 * 1024))
-
-        if spinner is not None:
-          spinner.update_progress(out.tell(), partition_size)
 
     if downloader.sha256.hexdigest().lower() != partition['hash'].lower():
       raise Exception("Uncompressed hash mismatch")
@@ -191,7 +185,7 @@ def swap(manifest_path: str, target_slot_number: int, cloudlog) -> None:
       cloudlog.error(f"Swap failed {out}")
 
 
-def flash_agnos_update(manifest_path: str, target_slot_number: int, cloudlog, spinner: Optional[Spinner] = None) -> None:
+def flash_agnos_update(manifest_path: str, target_slot_number: int, cloudlog) -> None:
   update = json.load(open(manifest_path))
 
   cloudlog.info(f"Target slot {target_slot_number}")
@@ -204,14 +198,12 @@ def flash_agnos_update(manifest_path: str, target_slot_number: int, cloudlog, sp
 
     for retries in range(10):
       try:
-        flash_partition(target_slot_number, partition, cloudlog, spinner)
+        flash_partition(target_slot_number, partition, cloudlog)
         success = True
         break
 
       except requests.exceptions.RequestException:
         cloudlog.exception("Failed")
-        if spinner is not None:
-          spinner.update("Waiting for internet...")
         cloudlog.info(f"Failed to download {partition['name']}, retrying ({retries})")
         time.sleep(10)
 
@@ -239,19 +231,15 @@ if __name__ == "__main__":
   parser.add_argument("manifest", help="Manifest json")
   args = parser.parse_args()
 
-  spinner = Spinner()
-  spinner.update("Updating AGNOS")
-  time.sleep(5)
-
   logging.basicConfig(level=logging.INFO)
 
   target_slot_number = get_target_slot_number()
   if args.swap:
     while not verify_agnos_update(args.manifest, target_slot_number):
       logging.error("Verification failed. Flashing AGNOS")
-      flash_agnos_update(args.manifest, target_slot_number, logging, spinner)
+      flash_agnos_update(args.manifest, target_slot_number, logging)
 
     logging.warning(f"Verification succeeded. Swapping to slot {target_slot_number}")
     swap(args.manifest, target_slot_number, logging)
   else:
-    flash_agnos_update(args.manifest, target_slot_number, logging, spinner)
+    flash_agnos_update(args.manifest, target_slot_number, logging)
