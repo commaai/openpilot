@@ -379,8 +379,8 @@ void WifiManager::initConnections() {
     const Connection &settings = getConnectionSettings(path);
     if (settings.value("connection").value("type") == "802-11-wireless") {
       knownConnections[path] = settings.value("802-11-wireless").value("ssid").toString();
-    } else {
-      lteConnectionPath = path.path() != "/" ? path.path() : "";
+    } else if (path.path() != "/") {
+      lteConnectionPath = path.path();
     }
   }
 }
