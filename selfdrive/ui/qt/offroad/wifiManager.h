@@ -87,7 +87,7 @@ private:
   SecurityType getSecurityType(const QString &path);
   QDBusObjectPath getConnectionPath(const QString &ssid);
   void initConnections();
-  QString getConnectionName(const QDBusObjectPath &path);
+  QString getConnectionSsid(const QDBusObjectPath &path);
   void setup();
 
 signals:
