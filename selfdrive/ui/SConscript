@@ -21,7 +21,7 @@ if arch == "Darwin":
 
 widgets_src = ["qt/util.cc", "qt/widgets/input.cc", "qt/widgets/drive_stats.cc",
                "qt/widgets/ssh_keys.cc", "qt/widgets/toggle.cc", "qt/widgets/controls.cc",
-               "qt/widgets/offroad_alerts.cc", "qt/widgets/setup.cc", "qt/widgets/keyboard.cc",
+               "qt/widgets/offroad_alerts.cc", "qt/widgets/prime.cc", "qt/widgets/keyboard.cc",
                "qt/widgets/scrollview.cc", "qt/widgets/cameraview.cc", "#phonelibs/qrcode/QrCode.cc", "qt/api.cc",
                "qt/request_repeater.cc"]
 

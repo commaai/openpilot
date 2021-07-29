@@ -27,14 +27,13 @@ public:
 
 private:
   QVBoxLayout* mainLayout;
-  QLabel* username;
   QLabel* points;
 
 private slots:
   void replyFinished(const QString &response);
 };
 
-class PrimeAdWidget : public QWidget {
+class PrimeAdWidget : public QFrame {
   Q_OBJECT
 public:
   explicit PrimeAdWidget(QWidget* parent = 0);
