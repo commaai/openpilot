@@ -76,11 +76,31 @@ pipeline {
       }
     }
 
+    stage('Build release3') {
+      agent {
+        docker {
+          image 'python:3.7.3'
+          args '--user=root'
+        }
+      }
+      when {
+        branch 'r3-ci'
+      }
+      steps {
+        phone_steps("tici", [
+          ["build release3-staging and dashcam3-staging", "cd release && PUSH_NOT_YET=1 ./build_release3.sh"],
+        ])
+      }
+    }
+
     stage('openpilot tests') {
       when {
         not {
           anyOf {
-            branch 'master-ci'; branch 'devel'; branch 'devel-staging'; branch 'release2'; branch 'release2-staging'; branch 'dashcam'; branch 'dashcam-staging'; branch 'testing-closet*'; branch 'hotfix-*'
+            branch 'master-ci'; branch 'devel'; branch 'devel-staging';
+            branch 'release2'; branch 'release2-staging'; branch 'dashcam'; branch 'dashcam-staging';
+            branch 'release3'; branch 'release3-staging'; branch 'dashcam3'; branch 'dashcam3-staging';
+            branch 'testing-closet*'; branch 'hotfix-*'
           }
         }
       }
@@ -191,7 +211,6 @@ pipeline {
                     phone_steps("tici", [
                       ["build", "cd selfdrive/manager && ./build.py"],
                       ["onroad tests", "cd selfdrive/test/ && ./test_onroad.py"],
-                      //["build release3-staging", "cd release && PUSH=${env.R3_PUSH} ./build_release3.sh"],
                     ])
                   }
                 }

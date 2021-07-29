@@ -59,7 +59,7 @@ common/api/__init__.py
 models/supercombo.dlc
 models/dmonitoring_model_q.dlc
 
-release/build_release2.sh
+release/*
 
 selfdrive/version.py
 
