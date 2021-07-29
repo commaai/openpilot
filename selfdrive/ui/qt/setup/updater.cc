@@ -5,6 +5,7 @@
 
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/qt_window.h"
+#include "selfdrive/ui/qt/offroad/networking.h"
 #include "selfdrive/ui/qt/setup/updater.h"
 
 #define UPDATER_PATH "/data/openpilot/selfdrive/hardware/tici/agnos.py"
@@ -17,31 +18,61 @@ void run(const char* cmd) {
 
 Updater::Updater(QWidget *parent) : QStackedWidget(parent) {
 
-  // prompt layout
-  QWidget *w = new QWidget;
-  QVBoxLayout *layout = new QVBoxLayout(w);
-  layout->setContentsMargins(100, 100, 100, 100);
+  // initial prompt screen
+  prompt = new QWidget;
+  {
+    QVBoxLayout *layout = new QVBoxLayout(prompt);
+    layout->setContentsMargins(100, 100, 100, 100);
 
-  QLabel *title = new QLabel("Update Required");
-  title->setStyleSheet("font-size: 80px; font-weight: bold;");
-  layout->addWidget(title);
+    QLabel *title = new QLabel("Update Required");
+    title->setStyleSheet("font-size: 80px; font-weight: bold;");
+    layout->addWidget(title);
 
-  QLabel *desc = new QLabel("An operating system update is required. Connect your device to WiFi for the fastest update experience. The download size is approximately 1GB.");
-  desc->setWordWrap(true);
-  desc->setStyleSheet("font-size: 65px;");
-  layout->addWidget(desc);
+    QLabel *desc = new QLabel("An operating system update is required. Connect your device to WiFi for the fastest update experience. The download size is approximately 1GB.");
+    desc->setWordWrap(true);
+    desc->setStyleSheet("font-size: 65px;");
+    layout->addWidget(desc);
 
-  QHBoxLayout *hlayout = new QHBoxLayout;
-  layout->addLayout(hlayout);
+    QHBoxLayout *hlayout = new QHBoxLayout;
+    layout->addLayout(hlayout);
 
-  QPushButton *wifi = new QPushButton("Connect to WiFi");
-  hlayout->addWidget(wifi);
+    QPushButton *connect = new QPushButton("Connect to WiFi");
+    QObject::connect(connect, &QPushButton::clicked, [=]() {
+      setCurrentWidget(wifi);
+    });
+    hlayout->addWidget(connect);
 
-  QPushButton *install = new QPushButton("Install");
-  QObject::connect(install, &QPushButton::clicked, this, &Updater::installUpdate);
-  hlayout->addWidget(install);
+    QPushButton *install = new QPushButton("Install");
+    QObject::connect(install, &QPushButton::clicked, this, &Updater::installUpdate);
+    hlayout->addWidget(install);
+  }
 
-  addWidget(w);
+  // wifi connection screen
+  wifi = new QWidget;
+  {
+    QVBoxLayout *layout = new QVBoxLayout(wifi);
+    layout->setContentsMargins(100, 100, 100, 100);
+
+    Networking *networking = new Networking(this, false);
+    networking->setStyleSheet("Networking { background-color: #292929; border-radius: 13px; }");
+    layout->addWidget(networking, 1);
+
+    QHBoxLayout *hlayout = new QHBoxLayout;
+    layout->addLayout(hlayout);
+
+    QPushButton *back = new QPushButton("Back");
+    QObject::connect(back, &QPushButton::clicked, [=]() {
+      setCurrentWidget(prompt);
+    });
+    hlayout->addWidget(back);
+
+    QPushButton *install = new QPushButton("Install");
+    QObject::connect(install, &QPushButton::clicked, this, &Updater::installUpdate);
+    hlayout->addWidget(install);
+  }
+
+  addWidget(prompt);
+  addWidget(wifi);
 
   setStyleSheet(R"(
     * {
@@ -64,53 +95,6 @@ Updater::Updater(QWidget *parent) : QStackedWidget(parent) {
 void Updater::installUpdate() {
   // set widget
   proc.start(UPDATER_PATH, {MANIFEST_PATH});
-}
-
-QWidget* Updater::buildProgressWidget() {
-
-  QWidget *w = new QWidget;
-  QVBoxLayout *layout = new QVBoxLayout(w);
-  layout->setContentsMargins(150, 290, 150, 150);
-  layout->setSpacing(0);
-
-  QLabel *title = new QLabel("Installing...");
-  title->setStyleSheet("font-size: 90px; font-weight: 600;");
-  layout->addWidget(title, 0, Qt::AlignTop);
-
-  layout->addSpacing(170);
-
-  bar = new QProgressBar();
-  bar->setRange(0, 100);
-  bar->setTextVisible(false);
-  bar->setFixedHeight(72);
-  layout->addWidget(bar, 0, Qt::AlignTop);
-
-  layout->addSpacing(30);
-
-  val = new QLabel("0%");
-  val->setStyleSheet("font-size: 70px; font-weight: 300;");
-  layout->addWidget(val, 0, Qt::AlignTop);
-
-  layout->addStretch();
-
-  QObject::connect(&proc, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this, &Updater::updateFinished);
-  QObject::connect(&proc, &QProcess::readyReadStandardError, this, &Updater::readProgress);
-
-  w->setStyleSheet(R"(
-    * {
-      font-family: Inter;
-      color: white;
-      background-color: black;
-    }
-    QProgressBar {
-      border: none;
-      background-color: #292929;
-    }
-    QProgressBar::chunk {
-      background-color: #364DEF;
-    }
-  )");
-  return w;
 }
 
 void Updater::updateProgress(int percent) {

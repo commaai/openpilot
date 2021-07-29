@@ -25,5 +25,6 @@ private:
   QProgressBar *bar;
   QProcess proc;
 
-  QWidget *buildProgressWidget();
+  // three views
+  QWidget *prompt, *wifi, *progress;
 };
