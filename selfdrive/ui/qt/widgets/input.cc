@@ -1,5 +1,6 @@
 #include "selfdrive/ui/qt/widgets/input.h"
 
+#include <QOpenGLWidget>
 #include <QPushButton>
 
 #include "selfdrive/ui/qt/util.h"
@@ -20,6 +21,7 @@ bool QDialogBase::eventFilter(QObject *o, QEvent *e) {
 }
 
 InputDialog::InputDialog(const QString &title, QWidget *parent, const QString &subtitle, bool secret) : QDialogBase(parent) {
+  new QOpenGLWidget(this);
   main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(50, 55, 50, 50);
   main_layout->setSpacing(0);
@@ -167,6 +169,7 @@ void InputDialog::setMinLength(int length) {
 
 ConfirmationDialog::ConfirmationDialog(const QString &prompt_text, const QString &confirm_text, const QString &cancel_text,
                                        QWidget *parent) : QDialogBase(parent) {
+  new QOpenGLWidget(this);
   QFrame *container = new QFrame(this);
   QVBoxLayout *main_layout = new QVBoxLayout(container);
   main_layout->setContentsMargins(32, 120, 32, 32);
