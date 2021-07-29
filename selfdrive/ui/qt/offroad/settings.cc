@@ -194,7 +194,7 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
     #reboot_btn { background-color: #393939; }
     #reboot_btn:pressed { background-color: #4a4a4a; }
     #poweroff_btn { background-color: #E22C2C; }
-    #poweroff_btn:pressed { background-color: #FF3030; }
+    #poweroff_btn:pressed { background-color: #FF2424; }
   )");
   main_layout->addLayout(power_layout);
 }
