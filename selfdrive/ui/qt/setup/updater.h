@@ -11,7 +11,7 @@ class Updater : public QStackedWidget {
   Q_OBJECT
 
 public:
-  explicit Updater(QWidget *parent = 0);
+  explicit Updater(const QString &updater_path, const QString &manifest_path, QWidget *parent = 0);
 
 private slots:
   void installUpdate();
@@ -19,10 +19,12 @@ private slots:
   void updateFinished(int exitCode, QProcess::ExitStatus exitStatus);
 
 private:
+  QString updater, manifest;
+
   QLabel *text;
   QProgressBar *bar;
   QPushButton *reboot;
-	QProcess proc;
+  QProcess proc;
 
   QWidget *prompt, *wifi, *progress;
 };
