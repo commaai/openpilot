@@ -343,7 +343,7 @@ void WifiManager::connectionRemoved(const QDBusObjectPath &path) {
 }
 
 void WifiManager::newConnection(const QDBusObjectPath &path) {
-  knownConnections[path] = getConnectionSsid(path);
+  knownConnections[path] = getConnectionName(path);
   if (knownConnections[path] != tethering_ssid) {
     activateWifiConnection(knownConnections[path]);
   }
@@ -355,24 +355,23 @@ void WifiManager::disconnect() {
   }
 }
 
-QDBusObjectPath WifiManager::getConnectionPath(const QString &ssid) {
-  for (const QString &conn_ssid : knownConnections) {
-    if (ssid == conn_ssid) {
-      return knownConnections.key(conn_ssid);
+QDBusObjectPath WifiManager::getConnectionPath(const QString &name) {
+  for (const QString &conn_name : knownConnections) {
+    if (name == conn_name) {
+      return knownConnections.key(conn_name);
     }
   }
   return QDBusObjectPath();
 }
 
-QString WifiManager::getConnectionSsid(const QDBusObjectPath &path) {
+QString WifiManager::getConnectionName(const QDBusObjectPath &path) {
   QDBusInterface nm(NM_DBUS_SERVICE, path.path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION, bus);
   nm.setTimeout(DBUS_TIMEOUT);
-  const QDBusReply<Connection> result = nm.call("GetSettings");
-  const QString &ssid = result.value().value("802-11-wireless").value("ssid").toString();
-  if (!ssid.isEmpty()) {
-    return ssid;
+  const Connection &settings = QDBusReply<Connection>(nm.call("GetSettings")).value();
+  if (settings.value("connection").value("type") == "802-11-wireless") {
+    return settings.value("802-11-wireless").value("ssid").toString();
   }
-  return result.value().value("connection").value("id").toString();  // lte doesn't have an ssid
+  return settings.value("connection").value("id").toString();
 }
 
 void WifiManager::initConnections() {
@@ -381,7 +380,7 @@ void WifiManager::initConnections() {
 
   const QDBusReply<QList<QDBusObjectPath>> response = nm.call("ListConnections");
   for (const QDBusObjectPath &path : response.value()) {
-    knownConnections[path] = getConnectionSsid(path);
+    knownConnections[path] = getConnectionName(path);
   }
 }
 
