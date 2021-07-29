@@ -201,10 +201,15 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
   QPushButton* finishButton = new QPushButton("Pair device");
   finishButton->setFixedHeight(220);
   finishButton->setStyleSheet(R"(
-    font-size: 55px;
-    font-weight: 400;
-    border-radius: 10px;
-    background-color: #465BEA;
+    QPushButton {
+      font-size: 55px;
+      font-weight: 400;
+      border-radius: 10px;
+      background-color: #465BEA;
+    }
+    QPushButton:pressed {
+      background-color: #3049F4;
+    }
   )");
   finishRegistationLayout->addWidget(finishButton);
   QObject::connect(finishButton, &QPushButton::clicked, this, &SetupWidget::showQrCode);
@@ -285,7 +290,7 @@ void SetupWidget::replyFinished(const QString &response) {
   }
 
   QJsonObject json = doc.object();
-  bool is_paired = false;  // json["is_paired"].toBool();
+  bool is_paired = true;  // json["is_paired"].toBool();
   bool is_prime = false;  // json["prime"].toBool();
 
   if (!is_paired) {
