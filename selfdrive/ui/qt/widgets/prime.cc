@@ -182,47 +182,31 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
 
   QWidget* finishRegistration = new QWidget;
   QVBoxLayout* finishRegistationLayout = new QVBoxLayout(finishRegistration);
-  finishRegistationLayout->setMargin(30);
+  finishRegistationLayout->setContentsMargins(30, 75, 30, 45);
   finishRegistationLayout->setSpacing(0);
 
   QLabel* registrationTitle = new QLabel("Finish Setup");
-  registrationTitle->setAlignment(Qt::AlignLeft);
-  registrationTitle->setStyleSheet(R"(
-    font-size: 75px;
-    font-weight: 700;
-    margin: 0px;
-    margin-left: 55px;
-    margin-top: 45px;
-  )");
+  registrationTitle->setStyleSheet("font-size: 75px; font-weight: bold; margin-left: 55px;");
   finishRegistationLayout->addWidget(registrationTitle);
 
-  QLabel* registrationDescription = new QLabel("Pair your device on comma connect (connect.comma.ai) and claim your comma prime offer.");
+  finishRegistationLayout->addSpacing(30);
+
+  QLabel* registrationDescription = new QLabel("Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer.");
   registrationDescription->setWordWrap(true);
-  registrationDescription->setAlignment(Qt::AlignLeft);
-  registrationDescription->setStyleSheet(R"(
-    font-size: 55px;
-    font-weight: 300;
-    margin: 0px;
-    margin-left: 60px;
-    margin-top: 10px;
-  )");
-  finishRegistationLayout->addWidget(registrationDescription, 0, Qt::AlignTop);
+  registrationDescription->setStyleSheet("font-size: 55px; font-weight: light; margin-left: 55px;");
+  finishRegistationLayout->addWidget(registrationDescription);
 
   finishRegistationLayout->addStretch();
 
   QPushButton* finishButton = new QPushButton("Pair device");
   finishButton->setFixedHeight(220);
   finishButton->setStyleSheet(R"(
-    margin: 0px;
-    margin-left: 10px;
-    margin-right: 10px;
-    margin-bottom: 16px;
-    border-radius: 10px;
     font-size: 55px;
-    font-weight: 500;
-    background: #465BEA;
+    font-weight: 400;
+    border-radius: 10px;
+    background-color: #465BEA;
   )");
-  finishRegistationLayout->addWidget(finishButton, 0, Qt::AlignBottom);
+  finishRegistationLayout->addWidget(finishButton);
   QObject::connect(finishButton, &QPushButton::clicked, this, &SetupWidget::showQrCode);
 
   mainLayout->addWidget(finishRegistration);
@@ -231,21 +215,21 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
 
   QWidget* q = new QWidget;
   QVBoxLayout* qrLayout = new QVBoxLayout(q);
-  qrLayout->setAlignment(Qt::AlignVCenter);
+  qrLayout->setContentsMargins(90, 90, 90, 90);
 
-  qrLayout->addSpacing(100);
   QLabel* qrLabel = new QLabel("Scan the QR code to pair.");
-  qrLabel->setWordWrap(true);
   qrLabel->setAlignment(Qt::AlignHCenter);
-  qrLabel->setStyleSheet(R"(
-    font-size: 47px;
-    font-weight: 300;
-  )");
+  qrLabel->setStyleSheet("font-size: 47px; font-weight: light;");
   qrLayout->addWidget(qrLabel);
   qrLayout->addSpacing(50);
 
   qrLayout->addWidget(new PairingQRWidget);
-  qrLayout->addSpacing(100);
+  qrLayout->addStretch();
+
+  // setup widget
+  QVBoxLayout *outer_layout = new QVBoxLayout(this);
+  outer_layout->setContentsMargins(0, 0, 0, 0);
+  outer_layout->addWidget(mainLayout);
 
   mainLayout->addWidget(q);
 
@@ -257,13 +241,10 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
 
   mainLayout->setCurrentWidget(primeAd);
 
-  QVBoxLayout *main_layout = new QVBoxLayout(this);
-  main_layout->setContentsMargins(0, 0, 0, 0);
-  main_layout->addWidget(mainLayout);
-
   setStyleSheet(R"(
     SetupWidget {
       border-radius: 10px;
+      background-color: #333333;
     }
   )");
 
@@ -304,7 +285,7 @@ void SetupWidget::replyFinished(const QString &response) {
   }
 
   QJsonObject json = doc.object();
-  bool is_paired = true;  // json["is_paired"].toBool();
+  bool is_paired = false;  // json["is_paired"].toBool();
   bool is_prime = false;  // json["prime"].toBool();
 
   if (!is_paired) {
