@@ -343,7 +343,7 @@ void WifiManager::connectionRemoved(const QDBusObjectPath &path) {
 }
 
 void WifiManager::newConnection(const QDBusObjectPath &path) {
-  knownConnections[path] = getConnectionSsid(path);
+  knownConnections[path] = getConnectionSettings(path).value("802-11-wireless").value("ssid").toString();
   if (knownConnections[path] != tethering_ssid) {
     activateWifiConnection(knownConnections[path]);
   }
@@ -364,15 +364,10 @@ QDBusObjectPath WifiManager::getConnectionPath(const QString &ssid) {
   return QDBusObjectPath();
 }
 
-QString WifiManager::getConnectionSsid(const QDBusObjectPath &path) {
+Connection WifiManager::getConnectionSettings(const QDBusObjectPath &path) {
   QDBusInterface nm(NM_DBUS_SERVICE, path.path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION, bus);
   nm.setTimeout(DBUS_TIMEOUT);
-  const QDBusReply<Connection> result = nm.call("GetSettings");
-  const QString &ssid = result.value().value("802-11-wireless").value("ssid").toString();
-  if (!ssid.isEmpty()) {
-    return ssid;
-  }
-  return result.value().value("connection").value("id").toString();  // lte doesn't have an ssid
+  return QDBusReply<Connection>(nm.call("GetSettings")).value();
 }
 
 void WifiManager::initConnections() {
@@ -381,7 +376,12 @@ void WifiManager::initConnections() {
 
   const QDBusReply<QList<QDBusObjectPath>> response = nm.call("ListConnections");
   for (const QDBusObjectPath &path : response.value()) {
-    knownConnections[path] = getConnectionSsid(path);
+    const Connection &settings = getConnectionSettings(path);
+    if (settings.value("connection").value("type") == "802-11-wireless") {
+      knownConnections[path] = settings.value("802-11-wireless").value("ssid").toString();
+    } else {
+      lteConnectionPath = path.path() != "/" ? path.path() : "";
+    }
   }
 }
 
@@ -423,9 +423,8 @@ NetworkType WifiManager::currentNetworkType() {
 }
 
 void WifiManager::setRoamingEnabled(bool roaming) {
-  const QDBusObjectPath &path = getConnectionPath("lte");
-  if (!path.path().isEmpty()) {
-    QDBusInterface nm(NM_DBUS_SERVICE, path.path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION, bus);
+  if (!lteConnectionPath.isEmpty()) {
+    QDBusInterface nm(NM_DBUS_SERVICE, lteConnectionPath, NM_DBUS_INTERFACE_SETTINGS_CONNECTION, bus);
     nm.setTimeout(DBUS_TIMEOUT);
 
     Connection settings = QDBusReply<Connection>(nm.call("GetSettings")).value();
