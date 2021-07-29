@@ -23,6 +23,22 @@ class ElidedLabel : public QLabel {
   QString lastText_, elidedText_;
 };
 
+
+class ElidedButton : public ElidedLabel {
+  Q_OBJECT
+
+public:
+  explicit ElidedButton(const QString &text, QWidget *parent = 0) : ElidedLabel(text, parent) {}
+
+signals:
+  void clicked();
+
+protected:
+  void mouseReleaseEvent(QMouseEvent *event) override {
+    emit clicked();
+  }
+};
+
 class AbstractControl : public QFrame {
   Q_OBJECT
 
