@@ -111,7 +111,6 @@ void Networking::showEvent(QShowEvent* event) {
 // AdvancedNetworking functions
 
 AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWidget(parent), wifi(wifi) {
-
   QVBoxLayout* main_layout = new QVBoxLayout(this);
   main_layout->setMargin(40);
   main_layout->setSpacing(20);
@@ -123,11 +122,15 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   connect(back, &QPushButton::clicked, [=]() { emit backPress(); });
   main_layout->addWidget(back, 0, Qt::AlignLeft);
 
+  QWidget *advancedScreen = new QWidget;
+  QVBoxLayout* vlayout = new QVBoxLayout(advancedScreen);
+  ScrollView *advancedScroller = new ScrollView(advancedScreen, this);
+
   // Enable tethering layout
   ToggleControl *tetheringToggle = new ToggleControl("Enable Tethering", "", "", wifi->isTetheringEnabled());
-  main_layout->addWidget(tetheringToggle);
+  vlayout->addWidget(tetheringToggle);
   QObject::connect(tetheringToggle, &ToggleControl::toggleFlipped, this, &AdvancedNetworking::toggleTethering);
-  main_layout->addWidget(horizontal_line(), 0);
+  vlayout->addWidget(horizontal_line(), 0);
 
   // Change tethering password
   ButtonControl *editPasswordButton = new ButtonControl("Tethering Password", "EDIT");
@@ -137,20 +140,21 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
       wifi->changeTetheringPassword(pass);
     }
   });
-  main_layout->addWidget(editPasswordButton, 0);
-  main_layout->addWidget(horizontal_line(), 0);
+  vlayout->addWidget(editPasswordButton, 0);
+  vlayout->addWidget(horizontal_line(), 0);
 
   // IP address
   ipLabel = new LabelControl("IP Address", wifi->ipv4_address);
-  main_layout->addWidget(ipLabel, 0);
-  main_layout->addWidget(horizontal_line(), 0);
+  vlayout->addWidget(ipLabel, 0);
+  vlayout->addWidget(horizontal_line(), 0);
 
   // SSH keys
-  main_layout->addWidget(new SshToggle());
-  main_layout->addWidget(horizontal_line(), 0);
-  main_layout->addWidget(new SshControl());
+  vlayout->addWidget(new SshToggle());
+  vlayout->addWidget(horizontal_line(), 0);
+  vlayout->addWidget(new SshControl());
 
-  main_layout->addStretch(1);
+  vlayout->addStretch(1);
+  main_layout->addWidget(advancedScroller);
 }
 
 void AdvancedNetworking::refresh() {
