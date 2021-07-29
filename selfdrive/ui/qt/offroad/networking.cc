@@ -42,6 +42,7 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QFrame(parent) {
   connect(wifiWidget, &WifiUI::connectToNetwork, this, &Networking::connectToNetwork);
 
   ScrollView *wifiScroller = new ScrollView(wifiWidget, this);
+  wifiScroller->setStyleSheet("background-color: #292929;");
   wifiScroller->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
   vlayout->addWidget(wifiScroller, 1);
   main_layout->addWidget(wifiScreen);
