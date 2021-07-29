@@ -108,13 +108,6 @@ PrimeUserWidget::PrimeUserWidget(QWidget* parent) : QWidget(parent) {
 
   mainLayout->addStretch();
 
-  setStyleSheet(R"(
-    #primeWidget {
-      background-color: #292929;
-      border-radius: 10px;
-    }
-  )");
-
   // set up API requests
   std::string dongleId = Params().get("DongleId");
   if (util::is_valid_dongle_id(dongleId)) {
@@ -181,6 +174,7 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
   // Unpaired, registration prompt layout
 
   QWidget* finishRegistration = new QWidget;
+  finishRegistration->setObjectName("primeWidget");
   QVBoxLayout* finishRegistationLayout = new QVBoxLayout(finishRegistration);
   finishRegistationLayout->setContentsMargins(30, 75, 30, 45);
   finishRegistationLayout->setSpacing(0);
@@ -219,6 +213,7 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
   // Pairing QR code layout
 
   QWidget* q = new QWidget;
+  q->setObjectName("primeWidget");
   QVBoxLayout* qrLayout = new QVBoxLayout(q);
   qrLayout->setContentsMargins(90, 90, 90, 90);
 
@@ -247,7 +242,7 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
   mainLayout->setCurrentWidget(primeAd);
 
   setStyleSheet(R"(
-    SetupWidget {
+    #primeWidget {
       border-radius: 10px;
       background-color: #333333;
     }
@@ -290,12 +285,9 @@ void SetupWidget::replyFinished(const QString &response) {
   }
 
   QJsonObject json = doc.object();
-  bool is_paired = true;  // json["is_paired"].toBool();
-  bool is_prime = false;  // json["prime"].toBool();
-
-  if (!is_paired) {
+  if (!json["is_paired"].toBool()) {
     mainLayout->setCurrentIndex(showQr);
-  } else if (!is_prime) {
+  } else if (!json["prime"].toBool()) {
     showQr = false;
     mainLayout->setCurrentWidget(primeAd);
   } else {
