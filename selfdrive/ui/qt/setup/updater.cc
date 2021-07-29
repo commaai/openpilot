@@ -144,13 +144,15 @@ void Updater::installUpdate() {
 
 void Updater::readProgress() {
   auto lines = QString(proc.readAllStandardError());
-  auto line = lines.trimmed().split("\n").last();
-
-  auto parts = line.split(":");
-  if (parts.size() == 2) {
-    text->setText(parts[0]);
-    bar->setValue((int)parts[1].toDouble());
-    repaint();
+  for (const QString &line : lines.trimmed().split("\n")) {
+    auto parts = line.split(":");
+    if (parts.size() == 2) {
+      text->setText(parts[0]);
+      bar->setValue((int)parts[1].toDouble());
+      repaint();
+    } else {
+      qDebug() << line;
+    }
   }
 }
 
