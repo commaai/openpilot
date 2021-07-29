@@ -10,6 +10,9 @@ class KeyButton : public QPushButton {
 public:
   KeyButton(const QString &text, QWidget *parent = 0);
   bool event(QEvent *event) override;
+
+protected:
+  void mouseMoveEvent(QMouseEvent *event);
 };
 
 class KeyboardLayout : public QWidget {

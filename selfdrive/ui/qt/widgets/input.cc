@@ -21,7 +21,7 @@ bool QDialogBase::eventFilter(QObject *o, QEvent *e) {
 }
 
 InputDialog::InputDialog(const QString &title, QWidget *parent, const QString &subtitle, bool secret) : QDialogBase(parent) {
-  new QOpenGLWidget(this);
+//  new QOpenGLWidget(this);
   main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(50, 55, 50, 50);
   main_layout->setSpacing(0);

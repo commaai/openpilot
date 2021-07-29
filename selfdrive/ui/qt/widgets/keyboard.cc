@@ -7,6 +7,7 @@
 #include <QMap>
 #include <QTouchEvent>
 #include <QVBoxLayout>
+#include <QDebug>
 
 const QString BACKSPACE_KEY = "⌫";
 const QString ENTER_KEY = "→";
@@ -22,11 +23,19 @@ KeyButton::KeyButton(const QString &text, QWidget *parent) : QPushButton(text, p
   setAttribute(Qt::WA_AcceptTouchEvents);
 }
 
+void KeyButton::mouseMoveEvent(QMouseEvent *event) {
+  QPushButton::mouseMoveEvent(event);
+  repaint();
+  qDebug() << "Mouse release!";
+//  emit clicked();
+//  KeyButton::mouseReleaseEvent(event);
+}
+
 bool KeyButton::event(QEvent *event) {
   if (event->type() == QEvent::TouchBegin || event->type() == QEvent::TouchEnd) {
     QTouchEvent *touchEvent = static_cast<QTouchEvent *>(event);
     if (!touchEvent->touchPoints().empty()) {
-      const QEvent::Type mouseType = event->type() == QEvent::TouchBegin ? QEvent::MouseButtonPress : QEvent::MouseButtonRelease; 
+      const QEvent::Type mouseType = event->type() == QEvent::TouchBegin ? QEvent::MouseButtonPress : QEvent::MouseButtonRelease;
       QMouseEvent mouseEvent(mouseType, touchEvent->touchPoints().front().pos(), Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
       QPushButton::event(&mouseEvent);
       event->accept();
