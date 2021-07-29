@@ -54,7 +54,6 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QFrame(parent) {
   setAutoFillBackground(true);
   setPalette(pal);
 
-  // TODO: revisit pressed colors
   setStyleSheet(R"(
     #back_btn, #advancedBtn {
       font-size: 50px;
@@ -201,6 +200,9 @@ WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi)
       padding: 40px;
       padding-bottom: 16px;
       padding-top: 16px;
+    }
+    #forgetBtn:pressed {
+      background-color: #CFCFCF;
     }
     #connecting {
       font-size: 32px;
