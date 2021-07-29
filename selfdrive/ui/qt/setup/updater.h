@@ -13,18 +13,14 @@ public:
   explicit Updater(QWidget *parent = 0);
 
 private slots:
-  void updateProgress(int percent);
-
   void installUpdate();
-
   void readProgress();
   void updateFinished(int exitCode, QProcess::ExitStatus exitStatus);
 
 private:
-  QLabel *val;
+  QLabel *text;
   QProgressBar *bar;
   QProcess proc;
 
-  // three views
   QWidget *prompt, *wifi, *progress;
 };

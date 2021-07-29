@@ -150,7 +150,7 @@ def flash_partition(target_slot_number: int, partition: dict, cloudlog):
       for chunk in unsparsify(downloader):
         raw_hash.update(chunk)
         out.write(chunk)
-        print(f"{partition['name']}: {out.tell() / partition_size}", file=sys.stderr)
+        print(f"Installing {partition['name']}: {out.tell() / partition_size * 100}", file=sys.stderr)
 
       if raw_hash.hexdigest().lower() != partition['hash_raw'].lower():
         raise Exception(f"Unsparse hash mismatch '{raw_hash.hexdigest().lower()}'")

@@ -11,10 +11,6 @@
 #define UPDATER_PATH "/data/openpilot/selfdrive/hardware/tici/agnos.py"
 #define MANIFEST_PATH "/data/openpilot/selfdrive/hardware/tici/agnos.json"
 
-void run(const char* cmd) {
-  int err = std::system(cmd);
-  assert(err == 0);
-}
 
 Updater::Updater(QWidget *parent) : QStackedWidget(parent) {
 
@@ -71,12 +67,36 @@ Updater::Updater(QWidget *parent) : QStackedWidget(parent) {
     hlayout->addWidget(install);
   }
 
+	// progress screen
+  progress = new QWidget;
+  {
+		QVBoxLayout *layout = new QVBoxLayout(progress);
+		layout->setContentsMargins(150, 330, 150, 150);
+		layout->setSpacing(0);
+
+		text = new QLabel("Installing...");
+		text->setStyleSheet("font-size: 90px; font-weight: 600;");
+		layout->addWidget(text, 0, Qt::AlignTop);
+
+		layout->addSpacing(100);
+
+		bar = new QProgressBar();
+		bar->setRange(0, 100);
+		bar->setTextVisible(false);
+		bar->setFixedHeight(72);
+		layout->addWidget(bar, 0, Qt::AlignTop);
+
+		layout->addStretch();
+  }
+
   addWidget(prompt);
   addWidget(wifi);
+  addWidget(progress);
 
   setStyleSheet(R"(
     * {
       color: white;
+			font-family: Inter;
     }
     Updater {
       color: white;
@@ -89,23 +109,32 @@ Updater::Updater(QWidget *parent) : QStackedWidget(parent) {
       border-radius: 10px;
       background-color: #333333;
     }
+    QProgressBar {
+      border: none;
+      background-color: #292929;
+    }
+    QProgressBar::chunk {
+      background-color: #364DEF;
+    }
   )");
 }
 
 void Updater::installUpdate() {
-  // set widget
-  proc.start(UPDATER_PATH, {MANIFEST_PATH});
-}
-
-void Updater::updateProgress(int percent) {
-  bar->setValue(percent);
-  val->setText(QString("%1%").arg(percent));
-  repaint();
+  setCurrentWidget(progress);
+  QObject::connect(&proc, &QProcess::readyReadStandardError, this, &Updater::readProgress);
+  proc.start(UPDATER_PATH, {"--swap", MANIFEST_PATH});
 }
 
 void Updater::readProgress() {
-  auto line = QString(proc.readAllStandardError());
-  qDebug() << "got " << line;
+  auto lines = QString(proc.readAllStandardError());
+  auto line = lines.trimmed().split("\n").last();
+
+	auto parts = line.split(":");
+	if (parts.size() == 2) {
+		text->setText(parts[0]);
+		bar->setValue((int)parts[1].toDouble());
+		repaint();
+	}
 }
 
 void Updater::updateFinished(int exitCode, QProcess::ExitStatus exitStatus) {
