@@ -193,7 +193,7 @@ void NvgWindow::resizeGL(int w, int h) {
 
 void NvgWindow::paintGL() {
   // TODO: make camerad startup fast and remove this
-  if (QUIState::ui_state.vipc_client->connected) {
+  if (!QUIState::ui_state.vipc_client->connected) {
     QPainter p(this);
     QColor bg = static_cast<OnroadWindow*>(parent())->bg;
     p.fillRect(rect(), QColor(bg.red(), bg.green(), bg.blue(), 255));
