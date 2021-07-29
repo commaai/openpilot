@@ -2,6 +2,7 @@
 
 #include <QLabel>
 #include <QProcess>
+#include <QPushButton>
 #include <QProgressBar>
 #include <QStackedWidget>
 #include <QWidget>
@@ -20,7 +21,8 @@ private slots:
 private:
   QLabel *text;
   QProgressBar *bar;
-  QProcess proc;
+  QPushButton *reboot;
+	QProcess proc;
 
   QWidget *prompt, *wifi, *progress;
 };

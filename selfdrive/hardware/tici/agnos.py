@@ -220,6 +220,8 @@ def verify_agnos_update(manifest_path: str, target_slot_number: int) -> bool:
 
 
 if __name__ == "__main__":
+  raise Exception("update failed")
+
   import logging
   import time
   import argparse

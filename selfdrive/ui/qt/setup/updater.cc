@@ -1,8 +1,8 @@
 #include <QDebug>
 #include <QTimer>
-#include <QPushButton>
 #include <QVBoxLayout>
 
+#include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/offroad/networking.h"
@@ -67,26 +67,36 @@ Updater::Updater(QWidget *parent) : QStackedWidget(parent) {
     hlayout->addWidget(install);
   }
 
-	// progress screen
+  // progress screen
   progress = new QWidget;
   {
-		QVBoxLayout *layout = new QVBoxLayout(progress);
-		layout->setContentsMargins(150, 330, 150, 150);
-		layout->setSpacing(0);
+    QVBoxLayout *layout = new QVBoxLayout(progress);
+    layout->setContentsMargins(150, 330, 150, 150);
+    layout->setSpacing(0);
 
-		text = new QLabel("Installing...");
-		text->setStyleSheet("font-size: 90px; font-weight: 600;");
-		layout->addWidget(text, 0, Qt::AlignTop);
+    text = new QLabel("Installing...");
+    text->setStyleSheet("font-size: 90px; font-weight: 600;");
+    layout->addWidget(text, 0, Qt::AlignTop);
 
-		layout->addSpacing(100);
+    layout->addSpacing(100);
 
-		bar = new QProgressBar();
-		bar->setRange(0, 100);
-		bar->setTextVisible(false);
-		bar->setFixedHeight(72);
-		layout->addWidget(bar, 0, Qt::AlignTop);
+    bar = new QProgressBar();
+    bar->setRange(0, 100);
+    bar->setTextVisible(false);
+    bar->setFixedHeight(72);
+    layout->addWidget(bar, 0, Qt::AlignTop);
 
-		layout->addStretch();
+    layout->addStretch();
+
+    reboot = new QPushButton("Reboot");
+    reboot->setStyleSheet("padding-left: 60px; padding-right: 60px;");
+    QObject::connect(reboot, &QPushButton::clicked, [=]() {
+      Hardware::reboot();
+    });
+    layout->addWidget(reboot, 0, Qt::AlignLeft);
+    reboot->hide();
+
+    layout->addStretch();
   }
 
   addWidget(prompt);
@@ -96,7 +106,7 @@ Updater::Updater(QWidget *parent) : QStackedWidget(parent) {
   setStyleSheet(R"(
     * {
       color: white;
-			font-family: Inter;
+      font-family: Inter;
     }
     Updater {
       color: white;
@@ -122,6 +132,7 @@ Updater::Updater(QWidget *parent) : QStackedWidget(parent) {
 void Updater::installUpdate() {
   setCurrentWidget(progress);
   QObject::connect(&proc, &QProcess::readyReadStandardError, this, &Updater::readProgress);
+  QObject::connect(&proc, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this, &Updater::updateFinished);
   proc.start(UPDATER_PATH, {"--swap", MANIFEST_PATH});
 }
 
@@ -129,17 +140,23 @@ void Updater::readProgress() {
   auto lines = QString(proc.readAllStandardError());
   auto line = lines.trimmed().split("\n").last();
 
-	auto parts = line.split(":");
-	if (parts.size() == 2) {
-		text->setText(parts[0]);
-		bar->setValue((int)parts[1].toDouble());
-		repaint();
-	}
+  auto parts = line.split(":");
+  if (parts.size() == 2) {
+    text->setText(parts[0]);
+    bar->setValue((int)parts[1].toDouble());
+    repaint();
+  }
 }
 
 void Updater::updateFinished(int exitCode, QProcess::ExitStatus exitStatus) {
   qDebug() << "finished with " << exitCode;
-  assert(exitCode == 0);
+  if (exitCode == 0) {
+    qDebug() << "reboot";
+    //Hardware::reboot();
+  } else {
+    text->setText("Update failed.");
+    reboot->show();
+  }
 }
 
 int main(int argc, char *argv[]) {
