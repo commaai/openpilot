@@ -325,10 +325,10 @@ void WifiManager::propertyChange(const QString &interface, const QVariantMap &pr
     }
   } else if (interface == NM_DBUS_INTERFACE_DEVICE_WIRELESS && props.contains("ActiveAccessPoint")) {
     const QDBusObjectPath &path = props.value("ActiveAccessPoint").value<QDBusObjectPath>();
-    activeAp = path.path();
-    if (get_property(activeAp, "Ssid") == tethering_ssid) {
-      emit tetheringConnected();
+    if (isTetheringEnabled() && get_property(path.path(), "Ssid") != tethering_ssid) {
+      emit tetheringDisabled();
     }
+    activeAp = path.path();
   }
 }
 

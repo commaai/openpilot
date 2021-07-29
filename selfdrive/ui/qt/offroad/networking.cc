@@ -47,7 +47,7 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QFrame(parent) {
 
   an = new AdvancedNetworking(this, wifi);
   connect(an, &AdvancedNetworking::backPress, [=]() { main_layout->setCurrentWidget(wifiScreen); });
-  connect(wifi, &WifiManager::tetheringConnected, [=]() { an->tetheringToggle->setEnabled(true); });
+  connect(wifi, &WifiManager::tetheringDisabled, [=]() { an->tetheringToggle->setEnabled(true); });
   main_layout->addWidget(an);
 
   QPalette pal = palette();
@@ -129,9 +129,8 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   main_layout->addWidget(tetheringToggle);
   QObject::connect(tetheringToggle, &ToggleControl::toggleFlipped, [=](bool state) {
     wifi->setTetheringEnabled(state);
-    if (state == true) {
+    if (state == false) {
       tetheringToggle->setEnabled(false);
-      ipLabel->setText("Enabling tethering...");
     }
   });
   main_layout->addWidget(horizontal_line(), 0);
