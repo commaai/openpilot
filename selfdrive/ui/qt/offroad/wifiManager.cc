@@ -57,6 +57,9 @@ WifiManager::WifiManager(QWidget* parent) : QWidget(parent) {
 }
 
 void WifiManager::setup() {
+  nm_service = new QDBusInterface(NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, bus);
+  nm_service->setTimeout(DBUS_TIMEOUT);
+
   QDBusInterface nm(NM_DBUS_SERVICE, adapter, NM_DBUS_INTERFACE_DEVICE, bus);
   bus.connect(NM_DBUS_SERVICE, adapter, NM_DBUS_INTERFACE_DEVICE, "StateChanged", this, SLOT(stateChange(unsigned int, unsigned int, unsigned int)));
   bus.connect(NM_DBUS_SERVICE, adapter, NM_DBUS_INTERFACE_PROPERTIES, "PropertiesChanged", this, SLOT(propertyChange(QString, QVariantMap, QStringList)));
@@ -212,7 +215,7 @@ void WifiManager::deactivateConnection(const QString &ssid) {
     if (pth.path() != "" && pth.path() != "/") {
       QString Ssid = get_property(pth.path(), "Ssid");
       if (Ssid == ssid) {
-        nm_service.call("DeactivateConnection", QVariant::fromValue(active_connection_raw));
+        nm_service->call("DeactivateConnection", QVariant::fromValue(active_connection_raw));
       }
     }
   }
@@ -287,7 +290,7 @@ unsigned int WifiManager::get_ap_strength(const QString &network_path) {
 }
 
 QString WifiManager::getAdapter() {
-  const QDBusReply<QList<QDBusObjectPath>> &response = nm_service.call("GetDevices");
+  const QDBusReply<QList<QDBusObjectPath>> &response = nm_service->call("GetDevices");
   for (const QDBusObjectPath &path : response.value()) {
     if (isWirelessAdapter(path)) {
       return path.path();
@@ -378,7 +381,7 @@ void WifiManager::activateWifiConnection(const QString &ssid) {
   const QDBusObjectPath &path = getConnectionPath(ssid);
   if (!path.path().isEmpty()) {
     connecting_to_network = ssid;
-    nm_service.call("ActivateConnection", QVariant::fromValue(path), QVariant::fromValue(QDBusObjectPath(adapter)), QVariant::fromValue(QDBusObjectPath("/")));
+    nm_service->call("ActivateConnection", QVariant::fromValue(path), QVariant::fromValue(QDBusObjectPath(adapter)), QVariant::fromValue(QDBusObjectPath("/")));
   }
 }
 
