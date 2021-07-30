@@ -20,13 +20,14 @@ const float key_spacing_horizontal = 15;
 
 KeyButton::KeyButton(const QString &text, QWidget *parent) : QPushButton(text, parent) {
   setAttribute(Qt::WA_AcceptTouchEvents);
+  setFocusPolicy(Qt::NoFocus);
 }
 
 bool KeyButton::event(QEvent *event) {
   if (event->type() == QEvent::TouchBegin || event->type() == QEvent::TouchEnd) {
     QTouchEvent *touchEvent = static_cast<QTouchEvent *>(event);
     if (!touchEvent->touchPoints().empty()) {
-      const QEvent::Type mouseType = event->type() == QEvent::TouchBegin ? QEvent::MouseButtonPress : QEvent::MouseButtonRelease; 
+      const QEvent::Type mouseType = event->type() == QEvent::TouchBegin ? QEvent::MouseButtonPress : QEvent::MouseButtonRelease;
       QMouseEvent mouseEvent(mouseType, touchEvent->touchPoints().front().pos(), Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
       QPushButton::event(&mouseEvent);
       event->accept();
@@ -42,7 +43,7 @@ KeyboardLayout::KeyboardLayout(QWidget* parent, const std::vector<QVector<QStrin
   main_layout->setSpacing(0);
 
   QButtonGroup* btn_group = new QButtonGroup(this);
-  QObject::connect(btn_group, SIGNAL(buttonPressed(QAbstractButton*)), parent, SLOT(handleButton(QAbstractButton*)));
+  QObject::connect(btn_group, SIGNAL(buttonClicked(QAbstractButton*)), parent, SLOT(handleButton(QAbstractButton*)));
 
   for (const auto &s : layout) {
     QHBoxLayout *hlayout = new QHBoxLayout;
