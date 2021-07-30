@@ -621,7 +621,7 @@ FW_VERSIONS = {
   CAR.ELANTRA_2021: {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00CN7_ SCC FHCUP      1.00 1.01 99110-AA000         ',
-      b'xf1\000CN7_ SCC F-CUP      1.00 1.01 99110-AA000         ',
+      b'\xf1\000CN7_ SCC F-CUP      1.00 1.01 99110-AA000         ',
     ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x87\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xf1\x00CN7 MDPS C 1.00 1.06 \x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 4CNDC106\xf1\xa01.06',
@@ -643,8 +643,9 @@ FW_VERSIONS = {
       b'\xf1\x87CXMQFM2135005JB2E\xb9\x89\x98W\xa9y\x97h\xa9\x98\x99wxvwh\x87\177\xffx\xff\xff\xff,,\xf1\x89HT6VA640A1\xf1\x82CCN0N20NS5\x00\x00\x00\x00\x00\x00',
       b'\xf1\x87CXLQFM1431165JB2\x88\xa9\xa9\x9aV\x88\x87\x88˗\x86xgvfgW\x88\x9f\xff\x89\xff\xff\xff\x8bW\xf1\x89HT6VA640A1\xf1\x82CCN0N20NS5\000\000\000\000\000\000',
     ],
-    (Ecu.engine, 0x7e0, None): [b'\xf1\x82CNCWD0AMFCXCSFFA',
-                               [b'\xf1\x82CNCVD0AMFCXCSFFB',
+    (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x82CNCWD0AMFCXCSFFA',
+      b'\xf1\x82CNCVD0AMFCXCSFFB',
     ],
   },
   CAR.ELANTRA_HEV_2021: {
