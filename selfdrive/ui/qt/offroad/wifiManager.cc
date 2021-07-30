@@ -321,6 +321,7 @@ void WifiManager::propertyChange(const QString &interface, const QVariantMap &pr
 
 void WifiManager::deviceAdded(const QDBusObjectPath &path) {
   if (isWirelessAdapter(path) && (adapter.isEmpty() || adapter == "/")) {
+    bus.disconnect(NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, "DeviceAdded", this, SLOT(deviceAdded(QDBusObjectPath)));
     adapter = path.path();
     setup();
   }
