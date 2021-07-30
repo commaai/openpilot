@@ -38,6 +38,7 @@ public:
 
 private:
   LabelControl* ipLabel;
+  ToggleControl* tetheringToggle;
   WifiManager* wifi = nullptr;
 
 signals:
