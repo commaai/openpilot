@@ -35,16 +35,17 @@ class AdvancedNetworking : public QWidget {
   Q_OBJECT
 public:
   explicit AdvancedNetworking(QWidget* parent = 0, WifiManager* wifi = 0);
-  ToggleControl* tetheringToggle;
 
 private:
   LabelControl* ipLabel;
+  ToggleControl* tetheringToggle;
   WifiManager* wifi = nullptr;
 
 signals:
   void backPress();
 
 public slots:
+  void toggleTethering(bool enabled);
   void refresh();
 };
 
