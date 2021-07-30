@@ -327,6 +327,19 @@ std::string Params::get(const char *key, bool block) {
   }
 }
 
+std::map<std::string, std::string> Params::readMultiple(const std::vector<std::string> &keys) {
+  FileLock file_lock(params_path + "/.lock", LOCK_SH);
+  std::lock_guard<FileLock> lk(file_lock);
+
+  std::map<std::string, std::string> ret;
+  std::string key_path(PATH_MAX, '\0');
+  for (auto &key : keys) {
+    key_path = params_path + "/d" + key;
+    ret[key] = util::read_file(key_path);
+  }
+  return ret;
+}
+
 int Params::readAll(std::map<std::string, std::string> *params) {
   FileLock file_lock(params_path + "/.lock", LOCK_SH);
   std::lock_guard<FileLock> lk(file_lock);

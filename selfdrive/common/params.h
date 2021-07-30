@@ -3,6 +3,7 @@
 #include <map>
 #include <sstream>
 #include <string>
+#include <vector>
 
 #define ERR_NO_VALUE -33
 
@@ -32,6 +33,7 @@ public:
   }
   void clearAll(ParamKeyType type);
 
+  std::map<std::string, std::string> readMultiple(const std::vector<std::string> &keys);
   // read all values
   int readAll(std::map<std::string, std::string> *params);
 

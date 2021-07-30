@@ -71,16 +71,19 @@ int OffroadAlert::refresh() {
       l->setWordWrap(true);
       l->setStyleSheet(QString("background-color: %1").arg(severity ? "#E22C2C" : "#292929"));
       scrollable_layout->addWidget(l);
+
+      alert_keys.push_back(key);
     }
     scrollable_layout->addStretch(1);
   }
-
+  
+  std::map<std::string, std::string> alertMap = params.readMultiple(alert_keys);
   int alertCount = 0;
   for (const auto &[key, label] : alerts) {
     QString text;
-    std::string bytes = params.get(key);
-    if (bytes.size()) {
-      auto doc_par = QJsonDocument::fromJson(bytes.c_str());
+    auto it = alertMap.find(key);
+    if (it != alertMap.end() && !it->second.empty()) {
+      auto doc_par = QJsonDocument::fromJson(it->second.c_str());
       text = doc_par["text"].toString();
     }
     label->setText(text);

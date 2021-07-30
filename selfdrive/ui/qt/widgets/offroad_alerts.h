@@ -39,4 +39,5 @@ public:
 
 private:
   std::map<std::string, QLabel*> alerts;
+  std::vector<std::string> alert_keys;
 };
