@@ -57,8 +57,10 @@ WifiManager::WifiManager(QWidget* parent) : QWidget(parent) {
 }
 
 void WifiManager::setup() {
-  nm_service = new QDBusInterface(NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, bus);
-  nm_service->setTimeout(DBUS_TIMEOUT);
+  nm_interface = new QDBusInterface(NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, bus);
+  nm_interface->setTimeout(DBUS_TIMEOUT);
+  nm_interface_props = new QDBusInterface(NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE_PROPERTIES, bus);
+  nm_interface_props->setTimeout(DBUS_TIMEOUT);
 
   QDBusInterface nm(NM_DBUS_SERVICE, adapter, NM_DBUS_INTERFACE_DEVICE, bus);
   bus.connect(NM_DBUS_SERVICE, adapter, NM_DBUS_INTERFACE_DEVICE, "StateChanged", this, SLOT(stateChange(unsigned int, unsigned int, unsigned int)));
@@ -215,17 +217,14 @@ void WifiManager::deactivateConnection(const QString &ssid) {
     if (pth.path() != "" && pth.path() != "/") {
       QString Ssid = get_property(pth.path(), "Ssid");
       if (Ssid == ssid) {
-        nm_service->call("DeactivateConnection", QVariant::fromValue(active_connection_raw));
+        nm_interface->call("DeactivateConnection", QVariant::fromValue(active_connection_raw));
       }
     }
   }
 }
 
 QVector<QDBusObjectPath> WifiManager::get_active_connections() {
-  QDBusInterface nm(NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE_PROPERTIES, bus);
-  nm.setTimeout(DBUS_TIMEOUT);
-
-  QDBusMessage response = nm.call("Get", NM_DBUS_INTERFACE, "ActiveConnections");
+  QDBusMessage response = nm_interface_props->call("Get", NM_DBUS_INTERFACE, "ActiveConnections");
   const QDBusArgument &arr = get_response<QDBusArgument>(response);
   QVector<QDBusObjectPath> conns;
 
@@ -290,7 +289,7 @@ unsigned int WifiManager::get_ap_strength(const QString &network_path) {
 }
 
 QString WifiManager::getAdapter() {
-  const QDBusReply<QList<QDBusObjectPath>> &response = nm_service->call("GetDevices");
+  const QDBusReply<QList<QDBusObjectPath>> &response = nm_interface->call("GetDevices");
   for (const QDBusObjectPath &path : response.value()) {
     if (isWirelessAdapter(path)) {
       return path.path();
@@ -381,18 +380,16 @@ void WifiManager::activateWifiConnection(const QString &ssid) {
   const QDBusObjectPath &path = getConnectionPath(ssid);
   if (!path.path().isEmpty()) {
     connecting_to_network = ssid;
-    nm_service->call("ActivateConnection", QVariant::fromValue(path), QVariant::fromValue(QDBusObjectPath(adapter)), QVariant::fromValue(QDBusObjectPath("/")));
+    nm_interface->call("ActivateConnection", QVariant::fromValue(path), QVariant::fromValue(QDBusObjectPath(adapter)), QVariant::fromValue(QDBusObjectPath("/")));
   }
 }
 
 // function matches tici/hardware.py
 NetworkType WifiManager::currentNetworkType() {
-  QDBusInterface nm(NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE_PROPERTIES, bus);
-  nm.setTimeout(DBUS_TIMEOUT);
-  const QDBusObjectPath &path = get_response<QDBusObjectPath>(nm.call("Get", NM_DBUS_INTERFACE, "PrimaryConnection"));
+  const QDBusObjectPath &path = get_response<QDBusObjectPath>(nm_interface_props->call("Get", NM_DBUS_INTERFACE, "PrimaryConnection"));
 
   QDBusInterface nm2(NM_DBUS_SERVICE, path.path(), NM_DBUS_INTERFACE_PROPERTIES, bus);
-  nm.setTimeout(DBUS_TIMEOUT);
+  nm2.setTimeout(DBUS_TIMEOUT);
   const QString &type = get_response<QString>(nm2.call("Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "Type"));
 
   if (type == "802-3-ethernet") {

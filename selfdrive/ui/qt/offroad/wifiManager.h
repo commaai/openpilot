@@ -70,7 +70,8 @@ private:
   QString tethering_ssid;
   const QString defaultTetheringPassword = "swagswagcomma";
 
-  QDBusInterface *nm_service;
+  QDBusInterface *nm_interface;
+  QDBusInterface *nm_interface_props;
 
   bool firstScan = true;
   QString getAdapter();
