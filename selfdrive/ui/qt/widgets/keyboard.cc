@@ -58,7 +58,7 @@ KeyboardLayout::KeyboardLayout(QWidget* parent, const std::vector<QVector<QStrin
       if (p == BACKSPACE_KEY) {
         btn->setAutoRepeat(true);
       } else if (p == ENTER_KEY) {
-        btn->setStyleSheet("background-color: #465BEA;");
+        btn->setObjectName("enterKey");
       }
       btn->setFixedHeight(135 + key_spacing_vertical);
       btn_group->addButton(btn);
@@ -86,6 +86,12 @@ KeyboardLayout::KeyboardLayout(QWidget* parent, const std::vector<QVector<QStrin
     }
     QPushButton:pressed {
       background-color: #333333;
+    }
+    #enterKey {
+      background-color: #465BEA;
+    }
+    #enterKey:pressed {
+      background-color: #3049F4;
     }
   )").arg(key_spacing_vertical / 2).arg(key_spacing_horizontal / 2));
 }
