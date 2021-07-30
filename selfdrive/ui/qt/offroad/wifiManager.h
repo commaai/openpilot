@@ -70,6 +70,9 @@ private:
   QString tethering_ssid;
   const QString defaultTetheringPassword = "swagswagcomma";
 
+  QDBusInterface nm_service(NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, bus);
+  nm_service.setTimeout(DBUS_TIMEOUT);
+
   bool firstScan = true;
   QString getAdapter();
   bool isWirelessAdapter(const QDBusObjectPath &path);
