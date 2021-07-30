@@ -63,9 +63,9 @@ def juggle_route(route_name, segment_number, segment_count, qlog, can, layout):
       return
 
   all_data = []
-  pool = multiprocessing.Pool(24)
-  for d in pool.map(load_segment, logs):
-    all_data += d
+  with multiprocessing.Pool(24) as pool:
+    for d in pool.map(load_segment, logs):
+      all_data += d
 
   if not can:
     all_data = [d for d in all_data if d.which() not in ['can', 'sendcan']]
