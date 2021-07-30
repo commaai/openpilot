@@ -16,6 +16,17 @@ QString getBrandVersion() {
   return getBrand() + " v" + QString::fromStdString(Params().get("Version")).left(14).trimmed();
 }
 
+QString getDongleId() {
+  static QString dongleId;
+  if (dongleId.isEmpty()) {
+    std::string id = Params().get("DongleId");
+    if (!id.empty() && id != "UnregisteredDevice") {
+      dongleId = QString::fromStdString(id);
+    }
+  }
+  return dongleId;
+}
+
 void configFont(QPainter &p, const QString &family, int size, const QString &style) {
   QFont f(family);
   f.setPixelSize(size);
