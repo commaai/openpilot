@@ -72,6 +72,7 @@ private:
 
   QDBusInterface *nm_interface;
   QDBusInterface *nm_interface_props;
+  QDBusInterface *nm_interface_settings;
 
   bool firstScan = true;
   QString getAdapter();

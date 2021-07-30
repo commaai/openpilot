@@ -61,6 +61,8 @@ void WifiManager::setup() {
   nm_interface->setTimeout(DBUS_TIMEOUT);
   nm_interface_props = new QDBusInterface(NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE_PROPERTIES, bus);
   nm_interface_props->setTimeout(DBUS_TIMEOUT);
+  nm_interface_settings = new QDBusInterface(NM_DBUS_SERVICE, NM_DBUS_PATH_SETTINGS, NM_DBUS_INTERFACE_SETTINGS, bus);
+  nm_interface_settings->setTimeout(DBUS_TIMEOUT);
 
   QDBusInterface nm(NM_DBUS_SERVICE, adapter, NM_DBUS_INTERFACE_DEVICE, bus);
   bus.connect(NM_DBUS_SERVICE, adapter, NM_DBUS_INTERFACE_DEVICE, "StateChanged", this, SLOT(stateChange(unsigned int, unsigned int, unsigned int)));
@@ -201,10 +203,7 @@ void WifiManager::connect(const QByteArray &ssid, const QString &username, const
   connection["ipv4"]["dns-priority"] = 600;
   connection["ipv6"]["method"] = "ignore";
 
-  QDBusInterface nm_settings(NM_DBUS_SERVICE, NM_DBUS_PATH_SETTINGS, NM_DBUS_INTERFACE_SETTINGS, bus);
-  nm_settings.setTimeout(DBUS_TIMEOUT);
-
-  nm_settings.call("AddConnection", QVariant::fromValue(connection));
+  nm_interface_settings->call("AddConnection", QVariant::fromValue(connection));
 }
 
 void WifiManager::deactivateConnection(const QString &ssid) {
@@ -367,10 +366,7 @@ QString WifiManager::getConnectionSsid(const QDBusObjectPath &path) {
 }
 
 void WifiManager::initConnections() {
-  QDBusInterface nm(NM_DBUS_SERVICE, NM_DBUS_PATH_SETTINGS, NM_DBUS_INTERFACE_SETTINGS, bus);
-  nm.setTimeout(DBUS_TIMEOUT);
-
-  const QDBusReply<QList<QDBusObjectPath>> response = nm.call("ListConnections");
+  const QDBusReply<QList<QDBusObjectPath>> response = nm_interface_settings->call("ListConnections");
   for (const QDBusObjectPath &path : response.value()) {
     knownConnections[path] = getConnectionSsid(path);
   }
@@ -437,9 +433,7 @@ void WifiManager::addTetheringConnection() {
   connection["ipv4"]["route-metric"] = 1100;
   connection["ipv6"]["method"] = "ignore";
 
-  QDBusInterface nm_settings(NM_DBUS_SERVICE, NM_DBUS_PATH_SETTINGS, NM_DBUS_INTERFACE_SETTINGS, bus);
-  nm_settings.setTimeout(DBUS_TIMEOUT);
-  nm_settings.call("AddConnection", QVariant::fromValue(connection));
+  nm_interface_settings->call("AddConnection", QVariant::fromValue(connection));
 }
 
 void WifiManager::setTetheringEnabled(bool enabled) {
