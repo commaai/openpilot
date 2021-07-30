@@ -148,7 +148,7 @@ REQUESTS = [
     "nissan",
     [NISSAN_VERSION_REQUEST],
     [NISSAN_VERSION_RESPONSE],
-    NISSAN_RX_OFFSET,
+    NISSAN_RX_OFFSET1,
   ),
   (
     "nissan",
