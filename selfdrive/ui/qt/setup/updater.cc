@@ -136,24 +136,24 @@ Updater::Updater(const QString &updater_path, const QString &manifest_path, QWid
 
 void Updater::installUpdate() {
   setCurrentWidget(progress);
-  QObject::connect(&proc, &QProcess::readyReadStandardError, this, &Updater::readProgress);
+  QObject::connect(&proc, &QProcess::readyReadStandardOutput, this, &Updater::readProgress);
   QObject::connect(&proc, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this, &Updater::updateFinished);
-  proc.setProcessChannelMode(QProcess::ForwardedOutputChannel);
+  proc.setProcessChannelMode(QProcess::ForwardedErrorChannel);
   proc.start(updater, {"--swap", manifest});
 }
 
 void Updater::readProgress() {
-  auto lines = QString(proc.readAllStandardError());
+  auto lines = QString(proc.readAllStandardOutput());
   for (const QString &line : lines.trimmed().split("\n")) {
     auto parts = line.split(":");
     if (parts.size() == 2) {
       text->setText(parts[0]);
       bar->setValue((int)parts[1].toDouble());
-      repaint();
     } else {
       qDebug() << line;
     }
   }
+  update();
 }
 
 void Updater::updateFinished(int exitCode, QProcess::ExitStatus exitStatus) {
