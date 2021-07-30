@@ -18,7 +18,7 @@ class Sound : public QObject {
 public:
   explicit Sound(QObject *parent = 0) {
     // TODO: merge again and add EQ in the amp config
-    const QString sound_asset_path = Hardware::TICI ? "../assets/sounds_tici/" : "../assets/sounds/";
+    const QString sound_asset_path = Hardware::TICI() ? "../assets/sounds_tici/" : "../assets/sounds/";
     std::tuple<AudibleAlert, QString, bool> sound_list[] = {
       {AudibleAlert::CHIME_DISENGAGE, sound_asset_path + "disengaged.wav", false},
       {AudibleAlert::CHIME_ENGAGE, sound_asset_path + "engaged.wav", false},
