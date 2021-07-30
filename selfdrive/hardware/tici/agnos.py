@@ -5,7 +5,6 @@ import hashlib
 import requests
 import struct
 import subprocess
-import sys
 import os
 from typing import Generator
 
