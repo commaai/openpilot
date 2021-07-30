@@ -44,6 +44,8 @@ jobs:
       run: |
         mkdir $STRIPPED_DIR
         cp -pR --parents $(cat release/files_common) $STRIPPED_DIR
+        cp -pR --parents $(cat release/files_tici) $STRIPPED_DIR
+        cp -pR --parents $(cat release/files_pc) $STRIPPED_DIR
         cp Dockerfile.openpilot_base $STRIPPED_DIR
 
         # need this to build on x86

@@ -71,7 +71,24 @@ pipeline {
       }
       steps {
         phone_steps("eon-build", [
-          ["build release2-staging and dashcam-staging", "cd release && PUSH=1 ./build_release2.sh"],
+          ["build release2-staging & dashcam-staging", "cd release && PUSH=1 ./build_release2.sh"],
+        ])
+      }
+    }
+
+    stage('Build release3') {
+      agent {
+        docker {
+          image 'python:3.7.3'
+          args '--user=root'
+        }
+      }
+      when {
+        branch 'devel-staging'
+      }
+      steps {
+        phone_steps("tici", [
+          ["build release3-staging & dashcam3-staging", "PUSH=1 $SOURCE_DIR/release/build_release3.sh"],
         ])
       }
     }
@@ -80,7 +97,10 @@ pipeline {
       when {
         not {
           anyOf {
-            branch 'master-ci'; branch 'devel'; branch 'devel-staging'; branch 'release2'; branch 'release2-staging'; branch 'dashcam'; branch 'dashcam-staging'; branch 'testing-closet*'; branch 'hotfix-*'
+            branch 'master-ci'; branch 'devel'; branch 'devel-staging';
+            branch 'release2'; branch 'release2-staging'; branch 'dashcam'; branch 'dashcam-staging';
+            branch 'release3'; branch 'release3-staging'; branch 'dashcam3'; branch 'dashcam3-staging';
+            branch 'testing-closet*'; branch 'hotfix-*'
           }
         }
       }
@@ -191,7 +211,6 @@ pipeline {
                     phone_steps("tici", [
                       ["build", "cd selfdrive/manager && ./build.py"],
                       ["onroad tests", "cd selfdrive/test/ && ./test_onroad.py"],
-                      //["build release3-staging", "cd release && PUSH=${env.R3_PUSH} ./build_release3.sh"],
                     ])
                   }
                 }
