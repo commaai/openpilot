@@ -1,9 +1,5 @@
 Version 0.8.7 (2021-07-31)
 ========================
- * New driving model with improved laneless performance
-   * Trained on 5000+ hours of diverse driving data from 3000+ users in 40+ countries
-   * Better anti-cheating methods during simulator training ensure the model hugs less in laneless mode
-   * All new desire ground-truthing stack makes the model better at lane changes
  * Volkswagen T-Cross 2021 support thanks to jyoung8607!
 
 Version 0.8.6 (2021-07-21)
