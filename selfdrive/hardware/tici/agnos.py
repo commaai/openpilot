@@ -227,6 +227,7 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Flash and verify AGNOS update",
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
+  parser.add_argument("--verify", action="store_true", help="Verify and perform swap if update ready")
   parser.add_argument("--swap", action="store_true", help="Verify and perform swap, downloads if necessary")
   parser.add_argument("manifest", help="Manifest json")
   args = parser.parse_args()
@@ -234,7 +235,12 @@ if __name__ == "__main__":
   logging.basicConfig(level=logging.INFO)
 
   target_slot_number = get_target_slot_number()
-  if args.swap:
+  if args.verify:
+    if verify_agnos_update(args.manifest, target_slot_number):
+      swap(args.manifest, target_slot_number, logging)
+      exit(0)
+    exit(1)
+  elif args.swap:
     while not verify_agnos_update(args.manifest, target_slot_number):
       logging.error("Verification failed. Flashing AGNOS")
       flash_agnos_update(args.manifest, target_slot_number, logging)

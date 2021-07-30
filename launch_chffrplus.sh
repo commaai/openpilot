@@ -108,8 +108,12 @@ function tici_init {
 
   # Check if AGNOS update is required
   if [ $(< /VERSION) != "$AGNOS_VERSION" ]; then
+    AGNOS_PY="$DIR/selfdrive/hardware/tici/agnos.py"
     MANIFEST="$DIR/selfdrive/hardware/tici/agnos.json"
-    $DIR/selfdrive/hardware/tici/updater $DIR/selfdrive/hardware/tici/agnos.py $MANIFEST
+    if $AGNOS_PY --verify $MANIFEST; then
+      sudo reboot
+    fi
+    $DIR/selfdrive/hardware/tici/updater $AGNOS_PY $MANIFEST
   fi
 }
 
