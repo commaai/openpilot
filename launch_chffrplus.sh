@@ -111,9 +111,7 @@ function tici_init {
     AGNOS_PY="$DIR/selfdrive/hardware/tici/agnos.py"
     MANIFEST="$DIR/selfdrive/hardware/tici/agnos.json"
     if $AGNOS_PY --verify $MANIFEST; then
-      echo "ready"
-      exit 0
-      #sudo reboot
+      sudo reboot
     fi
     $DIR/selfdrive/hardware/tici/updater $AGNOS_PY $MANIFEST
   fi
