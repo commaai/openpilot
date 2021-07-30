@@ -224,7 +224,12 @@ int main() {
       }
     }
 
-    publisher.send("procLog", msg);
+    // copy message to a new buidler to remove the unused space occupied by orphans
+    MessageBuilder finalMsg;
+    kj::Array<capnp::word> buf = capnp::messageToFlatArray(msg);
+    capnp::FlatArrayMessageReader reader(buf);
+    finalMsg.setRoot(reader.getRoot<cereal::Event>());
+    publisher.send("procLog", finalMsg);
 
     util::sleep_for(2000); // 2 secs
   }
