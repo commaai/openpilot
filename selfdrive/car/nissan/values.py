@@ -55,6 +55,28 @@ FINGERPRINTS = {
   ]
 }
 
+FW_VERSIONS = {
+  CAR.LEAF: {
+    # 2018 Leaf - UDM / @razemio
+    # Ecu, addr, subaddr
+    #(Ecu.esp, 0x7b0, None): [
+    #  b'',
+    #],
+    (Ecu.eps, 0x746, None): [
+      b'5SH2A\x99A\x05\x02N123F\x15\x81\x00\x00\x00\x00\x00\x00\x00\x80',
+    ],
+    #(Ecu.fwdCamera, 0x787, None): [
+    #  b'',
+    #],
+    #(Ecu.engine, 0x797, None): [
+    #  b'',
+    #],
+    (Ecu.transmission, 0x79d, None): [
+      b'5SA2B\x04AB\x071\x03\x80\x12P\x02\x03D\x00\x02\x06\x00\x00\x00\x80',
+    ],
+  },
+}
+
 DBC = {
   CAR.XTRAIL: dbc_dict('nissan_x_trail_2017', None),
   CAR.LEAF: dbc_dict('nissan_leaf_2018', None),
