@@ -630,7 +630,7 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00CN7 MFC  AT USA LHD 1.00 1.00 99210-AB000 200819',
-      b'\xf1\000CN7 MFC  AT USA LHD 1.00 1.00 99210-AB000 200819'
+      b'\xf1\000CN7 MFC  AT USA LHD 1.00 1.00 99210-AB000 200819',
     ],
     (Ecu.esp, 0x7d1, None): [
       b'\xf1\x8758910-AB800\xf1\x00CN ESC \t 101 \x10\x03 58910-AB800\xf1\xa01.01',
