@@ -48,8 +48,8 @@ DriveStats::DriveStats(QWidget* parent) : QFrame(parent) {
 
   std::string dongle_id = Params().get("DongleId");
   if (util::is_valid_dongle_id(dongle_id)) {
-    std::string url = "https://api.commadotai.com/v1.1/devices/" + dongle_id + "/stats";
-    RequestRepeater* repeater = new RequestRepeater(this, QString::fromStdString(url), "ApiCache_DriveStats", 30);
+    QString url = CommaApi::BASE_URL + "/v1.1/devices/" + dongle_id.c_str() + "/stats";
+    RequestRepeater* repeater = new RequestRepeater(this, url, "ApiCache_DriveStats", 30);
     QObject::connect(repeater, &RequestRepeater::receivedResponse, this, &DriveStats::parseResponse);
   }
 
