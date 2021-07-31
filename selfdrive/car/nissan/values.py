@@ -68,9 +68,9 @@ FW_VERSIONS = {
     #(Ecu.fwdCamera, 0x787, None): [
     #  b'',
     #],
-    #(Ecu.engine, 0x797, None): [
-    #  b'',
-    #],
+    (Ecu.engine, 0x797, None): [
+      b'5SH4A\x03AB\x075SH4APSMT04\x00\x00\x00\x80',
+    ],
     (Ecu.transmission, 0x79d, None): [
       b'5SA2B\x04AB\x071\x03\x80\x12P\x02\x03D\x00\x02\x06\x00\x00\x00\x80',
     ],
