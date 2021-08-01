@@ -37,7 +37,7 @@ void buildCPUTimes(cereal::ProcLog::Builder &builder) {
   };
   std::vector<CPUTime> cpu_times;
 
-  std::istringstream sstat("/proc/stat");
+  std::ifstream sstat("/proc/stat");
   std::string stat_line;
   while (std::getline(sstat, stat_line)) {
     if (util::starts_with(stat_line, "cpu ")) {
@@ -135,14 +135,12 @@ const ProcCache &getProcExtraInfo(int pid, const std::string &name) {
 
 void buildProcesses(cereal::ProcLog::Builder &builder) {
   struct Process {
-    int pid;
+    int pid, ppid, processor;
     char state;
-    int ppid;
     unsigned long utime, stime;
     long cutime, cstime, priority, nice, num_threads;
     unsigned long long starttime;
     unsigned long vms, rss;
-    int processor;
     std::string name;
   };
   std::vector<Process> procs_info;
@@ -156,17 +154,17 @@ void buildProcesses(cereal::ProcLog::Builder &builder) {
       char name[PATH_MAX] = {};
       std::string stat = util::read_file(util::string_format("/proc/%d/stat", p.pid));
       int count = sscanf(stat.data(),
-                        "%*d (%1024[^)]) %c %d %*d %*d %*d %*d %*d %*d %*d %*d %*d "
-                        "%lu %lu %ld %ld %ld %ld %ld %*d %lld "
-                        "%lu %lu %*d %*d %*d %*d %*d %*d %*d "
-                        "%*d %*d %*d %*d %*d %*d %*d %d",
-                        name, &p.state, &p.ppid,
-                        &p.utime, &p.stime, &p.cutime, &p.cstime, &p.priority, &p.nice, &p.num_threads, &p.starttime,
-                        &p.vms, &p.rss, &p.processor);
-      if (count != 14) continue;
-
-      p.name = name;
-      procs_info.push_back(p);
+                         "%*d (%1024[^)]) %c %d %*d %*d %*d %*d %*d %*d %*d %*d %*d "
+                         "%lu %lu %ld %ld %ld %ld %ld %*d %lld "
+                         "%lu %lu %*d %*d %*d %*d %*d %*d %*d "
+                         "%*d %*d %*d %*d %*d %*d %*d %d",
+                         name, &p.state, &p.ppid,
+                         &p.utime, &p.stime, &p.cutime, &p.cstime, &p.priority, &p.nice, &p.num_threads, &p.starttime,
+                         &p.vms, &p.rss, &p.processor);
+      if (count == 14) {
+        p.name = name;
+        procs_info.push_back(p);
+      }
     }
   }
   closedir(d);
@@ -201,6 +199,9 @@ void buildProcesses(cereal::ProcLog::Builder &builder) {
   }
 }
 
+void test_CPUTimes() {
+
+}
 int main() {
   setpriority(PRIO_PROCESS, 0, -15);
   PubMaster publisher({"procLog"});
