@@ -45,6 +45,5 @@ private:
   std::unique_ptr<EGLImageTexture> texture[UI_BUF_COUNT];
   std::unique_ptr<GLShader> gl_shader;
 
-  QTimer* timer;
   VisionStreamType stream_type;
 };

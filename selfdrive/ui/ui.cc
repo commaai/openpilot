@@ -6,13 +6,9 @@
 #include <cmath>
 #include <cstdio>
 
-#include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
-#include "selfdrive/common/visionimg.h"
 #include "selfdrive/common/watchdog.h"
 #include "selfdrive/hardware/hw.h"
-#include "selfdrive/ui/paint.h"
-#include "selfdrive/ui/qt/qt_window.h"
 
 #define BACKLIGHT_DT 0.05
 #define BACKLIGHT_TS 10.00
@@ -204,16 +200,14 @@ static void update_status(UIState *s) {
   // Handle onroad/offroad transition
   static bool started_prev = false;
   if (s->scene.started != started_prev) {
-    // Invisible until we receive a calibration message.
-    s->scene.world_objects_visible = false;
-
     if (s->scene.started) {
       s->status = STATUS_DISENGAGED;
       s->scene.started_frame = s->sm->frame;
-      
       s->scene.end_to_end = Params().getBool("EndToEndToggle");
       s->wide_camera = Hardware::TICI() ? Params().getBool("EnableWideCamera") : false;
     }
+    // Invisible until we receive a calibration message.
+    s->scene.world_objects_visible = false;
   }
   started_prev = s->scene.started;
 }
@@ -225,7 +219,6 @@ QUIState::QUIState(QObject *parent) : QObject(parent) {
     "pandaState", "carParams", "driverMonitoringState", "sensorEvents", "carState", "liveLocationKalman",
   });
 
-  ui_state.scene.started = false;
   ui_state.wide_camera = Hardware::TICI() ? Params().getBool("EnableWideCamera") : false;
 
   // update timer

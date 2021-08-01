@@ -1,9 +1,7 @@
 #include "selfdrive/ui/qt/onroad.h"
 
-#include <iostream>
 #include <QDebug>
 
-#include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/timing.h"
 #include "selfdrive/ui/paint.h"
 #include "selfdrive/ui/qt/util.h"
@@ -18,14 +16,12 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   stacked_layout->setStackingMode(QStackedLayout::StackAll);
   main_layout->addLayout(stacked_layout);
 
-  // old UI on bottom
-  nvg = new NvgWindow(VISION_STREAM_RGB_BACK, this);
 
   QWidget * split_wrapper = new QWidget;
   split = new QHBoxLayout(split_wrapper);
   split->setContentsMargins(0, 0, 0, 0);
   split->setSpacing(0);
-  split->addWidget(nvg);
+  split->addWidget(new NvgWindow(VISION_STREAM_RGB_BACK, this));
 
   stacked_layout->addWidget(split_wrapper);
 

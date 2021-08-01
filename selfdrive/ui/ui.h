@@ -1,6 +1,5 @@
 #pragma once
 
-#include <atomic>
 #include <map>
 #include <memory>
 #include <string>
@@ -128,7 +127,7 @@ typedef struct UIState {
   std::unique_ptr<SubMaster> sm;
 
   UIStatus status;
-  UIScene scene;
+  UIScene scene = {};
 
   bool awake;
 

@@ -1,12 +1,8 @@
 #pragma once
 
-#include <QOpenGLFunctions>
-#include <QOpenGLWidget>
 #include <QStackedLayout>
 #include <QWidget>
 
-#include "cereal/gen/cpp/log.capnp.h"
-#include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/widgets/cameraview.h"
 #include "selfdrive/ui/ui.h"
 
@@ -33,13 +29,11 @@ class NvgWindow : public CameraViewWidget {
   Q_OBJECT
 
 public:
-  explicit NvgWindow(VisionStreamType type, QWidget* parent = 0) : CameraViewWidget(type, parent);
+  explicit NvgWindow(VisionStreamType type, QWidget* parent = 0) : CameraViewWidget(type, parent) {}
 
 protected:
   void paintGL() override;
   void initializeGL() override;
-
-private:
   double prev_draw_t = 0;
 };
 
@@ -55,7 +49,6 @@ private:
   void paintEvent(QPaintEvent *event);
   void mousePressEvent(QMouseEvent* e) override;
   OnroadAlerts *alerts;
-  NvgWindow *nvg;
   QColor bg = bg_colors[STATUS_DISENGAGED];
   QWidget *map = nullptr;
   QHBoxLayout* split;

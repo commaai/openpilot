@@ -1,6 +1,5 @@
 #include "selfdrive/ui/paint.h"
 
-// #include <algorithm>
 #include <cassert>
 
 #ifdef __APPLE__
@@ -226,7 +225,6 @@ void ui_draw(UIState *s, int w, int h) {
   if (s->fb_w != w || s->fb_h != h) {
     ui_resize(s, w, h);
   }
-
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   nvgBeginFrame(s->vg, s->fb_w, s->fb_h, 1.0f);
@@ -296,7 +294,7 @@ void ui_resize(UIState *s, int width, int height) {
   s->fb_w = width;
   s->fb_h = height;
 
-  const mat3 &intrinsic_matrix = s->wide_camera ? ecam_intrinsic_matrix : fcam_intrinsic_matrix;
+  auto intrinsic_matrix = s->wide_camera ? ecam_intrinsic_matrix : fcam_intrinsic_matrix;
   float zoom = ZOOM / intrinsic_matrix.v[0];
   if (s->wide_camera) {
     zoom *= 0.5;

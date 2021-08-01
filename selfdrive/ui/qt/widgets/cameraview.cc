@@ -1,5 +1,6 @@
-#include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/widgets/cameraview.h"
+
+#include "selfdrive/common/swaglog.h"
 
 namespace {
 
@@ -95,9 +96,7 @@ mat4 get_fit_view_transform(float widget_aspect_ratio, float frame_aspect_ratio)
 CameraViewWidget::CameraViewWidget(VisionStreamType stream_type, bool zoom, QWidget* parent) :
                                    stream_type(stream_type), zoomed_view(zoom), QOpenGLWidget(parent) {
   setAttribute(Qt::WA_OpaquePaintEvent);
-
-  timer = new QTimer(this);
-  connect(timer, &QTimer::timeout, this, &CameraViewWidget::updateFrame);
+  connect(this, &QOpenGLWidget::frameSwapped, this, &CameraViewWidget::updateFrame);
 }
 
 CameraViewWidget::~CameraViewWidget() {
@@ -152,7 +151,7 @@ void CameraViewWidget::updateFrameMat(int w, int h) {
   if (stream_type == VISION_STREAM_RGB_FRONT) {
     frame_mat = matmul(device_transform, get_driver_view_transform());
   } else {
-    const mat3 intrinsic_matrix = stream_type == VISION_STREAM_RGB_WIDE ? ecam_intrinsic_matrix : fcam_intrinsic_matrix;
+    auto intrinsic_matrix = stream_type == VISION_STREAM_RGB_WIDE ? ecam_intrinsic_matrix : fcam_intrinsic_matrix;
     float zoom = ZOOM / intrinsic_matrix.v[0];
     if (stream_type == VISION_STREAM_RGB_WIDE) {
       zoom *= 0.5;
@@ -171,7 +170,6 @@ void CameraViewWidget::updateFrameMat(int w, int h) {
 }
 
 void CameraViewWidget::showEvent(QShowEvent *event) {
-  // set vipc_client
   VisionStreamType type = stream_type;
   if (type != VISION_STREAM_RGB_FRONT) {
     bool wide_cam = Hardware::TICI() && Params().getBool("EnableWideCamera");
@@ -183,11 +181,9 @@ void CameraViewWidget::showEvent(QShowEvent *event) {
     updateFrameMat(width(), height());
   }
   latest_frame = nullptr;
-  timer->start(0);
 }
 
 void CameraViewWidget::hideEvent(QHideEvent *event) {
-  timer->stop();
   vipc_client->connected = false;
 }
 
@@ -234,7 +230,7 @@ void CameraViewWidget::paintGL() {
     glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
     return;
   }
- 
+
   glViewport(0, 0, width(), height());
 
   glBindVertexArray(frame_vao);
@@ -278,16 +274,17 @@ void CameraViewWidget::updateFrame() {
     resizeGL(width(), height());
   }
 
-  if (vipc_client->connected) {
-    VisionBuf *buf = vipc_client->recv();
-    if (buf != nullptr) {
-      latest_frame = buf;
-      update();
-      emit frameUpdated();
-    } else if (!Hardware::PC()) {
-      LOGE("visionIPC receive timeout");
-    } else {
-      // util::sleep_for(1000. / UI_FREQ);
-    }
+  VisionBuf *buf = nullptr;
+  if (vipc_client->connected && (buf = vipc_client->recv())) {
+    latest_frame = buf;
+    update();
+    emit frameUpdated();
+    return;
+  }
+  // failed to get frame, try again
+  int msec = vipc_client->connected ? 0 : 1000. / UI_FREQ;
+  QTimer::singleShot(msec, this, &CameraViewWidget::updateFrame);
+  if (vipc_client->connected && !Hardware::PC()) {
+    LOGE("visionIPC receive timeout");
   }
 }
