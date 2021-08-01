@@ -112,9 +112,14 @@ CameraViewWidget::~CameraViewWidget() {
 void CameraViewWidget::initializeGL() {
   initializeOpenGLFunctions();
 
-  gl_shader = std::make_unique<GLShader>(frame_vertex_shader, frame_fragment_shader);
-  GLint frame_pos_loc = glGetAttribLocation(gl_shader->prog, "aPosition");
-  GLint frame_texcoord_loc = glGetAttribLocation(gl_shader->prog, "aTexCoord");
+  program = new QOpenGLShaderProgram(context());
+  bool ret = program->addShaderFromSourceCode(QOpenGLShader::Vertex, frame_vertex_shader);
+  assert(ret);
+  ret = program->addShaderFromSourceCode(QOpenGLShader::Fragment, frame_fragment_shader);
+  assert(ret);
+  program->link();
+  GLint frame_pos_loc = program->attributeLocation("aPosition");
+  GLint frame_texcoord_loc = program->attributeLocation("aTexCoord");
 
   auto [x1, x2, y1, y2] = stream_type == VISION_STREAM_RGB_FRONT ? std::tuple(0.f, 1.f, 1.f, 0.f) : std::tuple(1.f, 0.f, 1.f, 0.f);
   const uint8_t frame_indicies[] = {0, 1, 2, 0, 2, 3};
@@ -243,9 +248,9 @@ void CameraViewWidget::paintGL() {
                   0, GL_RGB, GL_UNSIGNED_BYTE, latest_frame->addr);
   }
 
-  glUseProgram(gl_shader->prog);
-  glUniform1i(gl_shader->getUniformLocation("uTexture"), 0);
-  glUniformMatrix4fv(gl_shader->getUniformLocation("uTransform"), 1, GL_TRUE, frame_mat.v);
+  glUseProgram(program->programId());
+  glUniform1i(program->uniformLocation("uTexture"), 0);
+  glUniformMatrix4fv(program->uniformLocation("uTransform"), 1, GL_TRUE, frame_mat.v);
 
   assert(glGetError() == GL_NO_ERROR);
   glEnableVertexAttribArray(0);

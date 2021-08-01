@@ -3,10 +3,10 @@
 #include <memory>
 
 #include <QOpenGLFunctions>
+#include <QOpenGLShaderProgram>
 #include <QOpenGLWidget>
 
 #include "cereal/visionipc/visionipc_client.h"
-#include "selfdrive/common/glutil.h"
 #include "selfdrive/common/mat.h"
 #include "selfdrive/common/visionimg.h"
 #include "selfdrive/ui/ui.h"
@@ -43,7 +43,7 @@ private:
   mat4 frame_mat;
   std::unique_ptr<VisionIpcClient> vipc_client;
   std::unique_ptr<EGLImageTexture> texture[UI_BUF_COUNT];
-  std::unique_ptr<GLShader> gl_shader;
+  QOpenGLShaderProgram *program;
 
   VisionStreamType stream_type;
 };

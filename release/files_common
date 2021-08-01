@@ -190,8 +190,6 @@ selfdrive/common/version.h
 
 selfdrive/common/framebuffer.h
 selfdrive/common/framebuffer.cc
-selfdrive/common/glutil.cc
-selfdrive/common/glutil.h
 selfdrive/common/touch.[c,h]
 selfdrive/common/swaglog.h
 selfdrive/common/swaglog.cc
