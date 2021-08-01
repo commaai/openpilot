@@ -44,6 +44,7 @@ protected:
 private:
   double prev_draw_t = 0;
 
+
 public slots:
   void updateState(const UIState &s);
 };
