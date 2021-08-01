@@ -142,18 +142,53 @@ void CameraViewWidget::initializeGL() {
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(frame_indicies), frame_indicies, GL_STATIC_DRAW);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   glBindVertexArray(0);
+}
 
-  vipc_client = std::make_unique<VisionIpcClient>("camerad", stream_type, true);
+void CameraViewWidget::resizeGL(int w, int h) {
+  updateFrameMat(w, h);
+}
+
+void CameraViewWidget::updateFrameMat(int w, int h) {
+  if (stream_type == VISION_STREAM_RGB_FRONT) {
+    frame_mat = matmul(device_transform, get_driver_view_transform());
+  } else {
+    const mat3 intrinsic_matrix = stream_type == VISION_STREAM_RGB_WIDE ? ecam_intrinsic_matrix : fcam_intrinsic_matrix;
+    float zoom = ZOOM / intrinsic_matrix.v[0];
+    if (stream_type == VISION_STREAM_RGB_WIDE) {
+      zoom *= 0.5;
+    }
+    float zx = zoom * 2 * intrinsic_matrix.v[2] / w;
+    float zy = zoom * 2 * intrinsic_matrix.v[5] / h;
+
+    const mat4 frame_transform = {{
+      zx, 0.0, 0.0, 0.0,
+      0.0, zy, 0.0, -y_offset / h * 2,
+      0.0, 0.0, 1.0, 0.0,
+      0.0, 0.0, 0.0, 1.0,
+    }};
+    frame_mat = matmul(device_transform, frame_transform);
+  }
 }
 
 void CameraViewWidget::showEvent(QShowEvent *event) {
+  // set vipc_client
+  VisionStreamType type = stream_type;
+  if (type != VISION_STREAM_RGB_FRONT) {
+    bool wide_cam = Hardware::TICI() && Params().getBool("EnableWideCamera");
+    type = wide_cam ?  VISION_STREAM_RGB_WIDE : VISION_STREAM_RGB_BACK;
+  }
+  if (!vipc_client || type != stream_type) {
+    stream_type = type;
+    vipc_client.reset(new VisionIpcClient("camerad", stream_type, true));
+    updateFrameMat(width(), height());
+  }
+  latest_frame = nullptr;
   timer->start(0);
 }
 
 void CameraViewWidget::hideEvent(QHideEvent *event) {
   timer->stop();
   vipc_client->connected = false;
-  latest_frame = nullptr;
 }
 
 void CameraViewWidget::mouseReleaseEvent(QMouseEvent *event) {
@@ -199,7 +234,7 @@ void CameraViewWidget::paintGL() {
     glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
     return;
   }
-
+ 
   glViewport(0, 0, width(), height());
 
   glBindVertexArray(frame_vao);
@@ -249,8 +284,10 @@ void CameraViewWidget::updateFrame() {
       latest_frame = buf;
       update();
       emit frameUpdated();
-    } else {
+    } else if (!Hardware::PC()) {
       LOGE("visionIPC receive timeout");
+    } else {
+      // util::sleep_for(1000. / UI_FREQ);
     }
   }
 }

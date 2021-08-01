@@ -19,8 +19,7 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   main_layout->addLayout(stacked_layout);
 
   // old UI on bottom
-  nvg = new NvgWindow(this);
-  QObject::connect(this, &OnroadWindow::updateStateSignal, nvg, &NvgWindow::updateState);
+  nvg = new NvgWindow(VISION_STREAM_RGB_BACK, this);
 
   QWidget * split_wrapper = new QWidget;
   split = new QHBoxLayout(split_wrapper);
@@ -169,17 +168,10 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
 }
 
 
-NvgWindow::NvgWindow(QWidget *parent) : QOpenGLWidget(parent) {
-  setAttribute(Qt::WA_OpaquePaintEvent);
-}
-
-NvgWindow::~NvgWindow() {
-  makeCurrent();
-  doneCurrent();
-}
+// NvgWindow
 
 void NvgWindow::initializeGL() {
-  initializeOpenGLFunctions();
+  CameraViewWidget::initializeGL();
   qInfo() << "OpenGL version:" << QString((const char*)glGetString(GL_VERSION));
   qInfo() << "OpenGL vendor:" << QString((const char*)glGetString(GL_VENDOR));
   qInfo() << "OpenGL renderer:" << QString((const char*)glGetString(GL_RENDERER));
@@ -189,22 +181,8 @@ void NvgWindow::initializeGL() {
   prev_draw_t = millis_since_boot();
 }
 
-void NvgWindow::updateState(const UIState &s) {
-  // Connecting to visionIPC requires opengl to be current
-  if (s.vipc_client->connected) {
-    makeCurrent();
-  }
-  if (isVisible() != s.vipc_client->connected) {
-    setVisible(s.vipc_client->connected);
-  }
-  repaint();
-}
-
-void NvgWindow::resizeGL(int w, int h) {
-  ui_resize(&QUIState::ui_state, w, h);
-}
-
 void NvgWindow::paintGL() {
+  CameraViewWidget::paintGL();
   ui_draw(&QUIState::ui_state, width(), height());
 
   double cur_draw_t = millis_since_boot();
