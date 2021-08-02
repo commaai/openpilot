@@ -1,7 +1,6 @@
 #include "selfdrive/proclogd/proclog.h"
 
 #include <dirent.h>
-
 #include <cassert>
 #include <climits>
 #include <fstream>
@@ -48,21 +47,24 @@ std::unordered_map<std::string, uint64_t> memInfo(std::istream &stream) {
 
 // parse /proc/pid/stat
 std::optional<PidStat> pidStat(const std::string &stat) {
+  // To avoid being fooled by names containing a closing paren, scan backwards.
+  auto open_paren = stat.find('(');
+  auto close_paren = stat.rfind(')');
+  if (open_paren == std::string::npos || close_paren == std::string::npos || open_paren > close_paren)
+    return std::nullopt;
+
   PidStat p;
-  char name[PATH_MAX] = {};
-  int count = sscanf(stat.data(),
-                     "%d (%1024[^)]) %c %d %*d %*d %*d %*d %*d %*d %*d %*d %*d "
+  p.pid = atoi(stat.data());
+  p.name = stat.substr(open_paren + 1, close_paren-open_paren-1);
+  int count = sscanf(&stat[close_paren + 1],
+                     " %c %d %*d %*d %*d %*d %*d %*d %*d %*d %*d "
                      "%lu %lu %ld %ld %ld %ld %ld %*d %lld "
                      "%lu %lu %*d %*d %*d %*d %*d %*d %*d "
                      "%*d %*d %*d %*d %*d %*d %*d %d",
-                     &p.pid, name, &p.state, &p.ppid,
+                     &p.state, &p.ppid,
                      &p.utime, &p.stime, &p.cutime, &p.cstime, &p.priority, &p.nice, &p.num_threads, &p.starttime,
                      &p.vms, &p.rss, &p.processor);
-  if (count == 15) {
-    p.name = name;
-    return p;
-  }
-  return std::nullopt;
+  return count == 13 ? std::make_optional(p) : std::nullopt;
 }
 
 std::vector<int> pids() {

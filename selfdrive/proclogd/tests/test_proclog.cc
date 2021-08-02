@@ -67,15 +67,15 @@ TEST_CASE("Parser::procStat") {
 
 TEST_CASE("Parser::memInfo") {
   SECTION("from string") {
-    std::istringstream stream("MemTotal:    1024 kb\nMemFree:    10 kb\n");
+    std::istringstream stream("MemTotal:    1024 kb\nMemFree:    2048 kb\n");
     auto stats = Parser::memInfo(stream);
-    REQUIRE((stats["MemTotal:"] = 1024 * 1024 && stats["MemFree:"] == 1024 * 10));
+    REQUIRE((stats["MemTotal:"] = 1024 * 1024 && stats["MemFree:"] == 2048 * 1024));
   }
   SECTION("from wrong string") {
-    std::istringstream stream("MemTotal:   kb \nMemFree:    10 kb\n");
+    std::istringstream stream("MemTotal:   kb \nMemFree:    2048 kb\n");
     auto stats = Parser::memInfo(stream);
     REQUIRE(stats.find("MemTotal:") == stats.end());
-    REQUIRE(stats["MemFree:"] == 1024 * 10);
+    REQUIRE(stats["MemFree:"] == 2048 * 1024);
   }
   SECTION("from /proc/ProcStat") {
     std::istringstream stream(util::read_file("/proc/meminfo"));
@@ -83,6 +83,7 @@ TEST_CASE("Parser::memInfo") {
     std::string keys[] = {"MemTotal:", "MemFree:", "MemAvailable:", "Buffers:", "Cached:", "Active:", "Inactive:", "Shmem:"};
     for (auto &key : keys) {
       REQUIRE(stats.find(key) != stats.end());
+      REQUIRE(stats[key] > 0);
     }
   }
   SECTION("from empty string") {
