@@ -116,6 +116,8 @@ TEST_CASE("Parser::cmdline") {
 }
 
 TEST_CASE("buildProcLogerMessage") {
+  std::vector<int> current_pids = Parser::pids();
+
   MessageBuilder msg;
   buildProcLogMessage(msg);
 
@@ -137,7 +139,7 @@ TEST_CASE("buildProcLogerMessage") {
 
   // test cereal::ProcLog::Process
   auto procs = log.getProcs();
-  REQUIRE(procs.size() > 1);
+  REQUIRE(procs.size() == current_pids.size());
 
   bool found_self = false;
   int self_pid = getpid();
