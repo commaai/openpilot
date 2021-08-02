@@ -204,6 +204,7 @@ FW_VERSIONS = {
       b'77959-TBX-H230\x00\x00',
     ],
     (Ecu.combinationMeter, 0x18da60f1, None): [
+      b'78109-TVC-C010\x00\x00',
       b'78109-TVA-A210\x00\x00',
       b'78109-TVC-A010\x00\x00',
       b'78109-TVC-A020\x00\x00',
