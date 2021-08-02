@@ -132,15 +132,4 @@ TEST_CASE("buildProcLogerMessage") {
     }
   }
   REQUIRE(found_self == true);
-
-  // test if proc_names in procs
-  const std::string proc_names[] = {"systemd"};
-  for (auto &name : proc_names) {
-    bool found = false;
-    for (auto p : procs) {
-      std::string n = p.getName();
-      if ((found = (n == name))) break;
-    }
-    REQUIRE(found == true);
-  }
 }
