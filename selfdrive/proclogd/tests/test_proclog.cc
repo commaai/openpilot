@@ -19,7 +19,7 @@ TEST_CASE("Parser::pidStat") {
   SECTION("more") {
     auto stat = Parser::pidStat(self_stat + " 1 2 3 4 5");
     REQUIRE(stat);
-    REQUIRE(stat->name == "test_proclog" && stat->pid == getpid());
+    REQUIRE((stat->name == "test_proclog" && stat->pid == getpid()));
   }
   SECTION("less") {
     auto stat = Parser::pidStat(self_stat.substr(0, 20));
@@ -28,6 +28,18 @@ TEST_CASE("Parser::pidStat") {
   SECTION("from empty string") {
     auto stat = Parser::pidStat("");
     REQUIRE(!stat);
+  }
+  SECTION("all processes stats") {
+    std::vector<int> pids = Parser::pids();
+    std::unordered_map<int, PidStat> stats;
+    REQUIRE(pids.size() > 1);
+    for (int pid : pids) {
+      auto stat = Parser::pidStat(util::read_file("/proc/" + std::to_string(pid) + "/stat"));
+      if (stat) {
+        stats[pid] = *stat;
+      }
+    }
+    REQUIRE(stats.size() == pids.size());
   }
 }
 
@@ -113,7 +125,7 @@ TEST_CASE("Parser::cmdline") {
 
 TEST_CASE("buildProcLogerMessage") {
   MessageBuilder msg;
-  buildProcLogerMessage(msg);
+  buildProcLogMessage(msg);
 
   kj::Array<capnp::word> buf = capnp::messageToFlatArray(msg);
   capnp::FlatArrayMessageReader reader(buf);

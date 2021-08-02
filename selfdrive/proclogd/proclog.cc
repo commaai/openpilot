@@ -65,6 +65,20 @@ std::optional<PidStat> pidStat(const std::string &stat) {
   return std::nullopt;
 }
 
+std::vector<int> pids() {
+  std::vector<int> ids;
+  struct dirent *de = NULL;
+  DIR *d = opendir("/proc");
+  assert(d);
+  while ((de = readdir(d))) {
+    if (isdigit(de->d_name[0])) {
+      ids.push_back(std::stoi(de->d_name));
+    }
+  }
+  closedir(d);
+  return ids;
+}
+
 // null-delimited cmdline arguments to vector
 std::vector<std::string> cmdline(const std::string &cmdline_s) {
   const char *cmdline_p = cmdline_s.c_str();
@@ -119,7 +133,7 @@ void buildCPUTimes(cereal::ProcLog::Builder &builder) {
   }
 }
 
-void buildMemoryInfo(cereal::ProcLog::Builder &builder) {
+void buildMemInfo(cereal::ProcLog::Builder &builder) {
   std::ifstream stream("/proc/meminfo");
   auto mem_info = Parser::memInfo(stream);
 
@@ -134,20 +148,13 @@ void buildMemoryInfo(cereal::ProcLog::Builder &builder) {
   mem.setShared(mem_info["Shmem:"]);
 }
 
-void buildProcesses(cereal::ProcLog::Builder &builder) {
+void buildProcs(cereal::ProcLog::Builder &builder) {
   std::vector<PidStat> procs_info;
-  struct dirent *de = NULL;
-  DIR *d = opendir("/proc");
-  assert(d);
-  while ((de = readdir(d))) {
-    if (isdigit(de->d_name[0])) {
-      int pid = atoi(de->d_name);
-      if (auto stat = Parser::pidStat(util::read_file(util::string_format("/proc/%d/stat", pid)))) {
-        procs_info.push_back(*stat);
-      }
+  for (int pid : Parser::pids()) {
+    if (auto stat = Parser::pidStat(util::read_file(util::string_format("/proc/%d/stat", pid)))) {
+      procs_info.push_back(*stat);
     }
   }
-  closedir(d);
 
   auto lprocs = builder.initProcs(procs_info.size());
   for (size_t i = 0; i < procs_info.size(); i++) {
@@ -178,9 +185,9 @@ void buildProcesses(cereal::ProcLog::Builder &builder) {
   }
 }
 
-void buildProcLogerMessage(MessageBuilder &msg) {
+void buildProcLogMessage(MessageBuilder &msg) {
   auto procLog = msg.initEvent().initProcLog();
   buildCPUTimes(procLog);
-  buildMemoryInfo(procLog);
-  buildProcesses(procLog);
+  buildMemInfo(procLog);
+  buildProcs(procLog);
 }

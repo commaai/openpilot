@@ -12,7 +12,7 @@ int main(int argc, char **argv) {
 
   while (!do_exit) {
     MessageBuilder msg;
-    buildProcLogerMessage(msg);
+    buildProcLogMessage(msg);
     publisher.send("procLog", msg);
 
     util::sleep_for(2000);  // 2 secs
