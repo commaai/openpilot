@@ -94,22 +94,23 @@ kj::Array<capnp::word> logger_build_init_data() {
   init.setDirty(!getenv("CLEAN"));
 
   // log params
-  Params params = Params();
-  init.setGitCommit(params.get("GitCommit"));
-  init.setGitBranch(params.get("GitBranch"));
-  init.setGitRemote(params.get("GitRemote"));
+  auto params = Params();
+  std::map<std::string, std::string> params_map = params.readAll();
+
+  init.setGitCommit(params_map["GitCommit"]);
+  init.setGitBranch(params_map["GitBranch"]);
+  init.setGitRemote(params_map["GitRemote"]);
   init.setPassive(params.getBool("Passive"));
-  init.setDongleId(params.get("DongleId"));
-  {
-    std::map<std::string, std::string> params_map = params.readAll();
-    auto lparams = init.initParams().initEntries(params_map.size());
-    int i = 0;
-    for (auto& kv : params_map) {
-      auto lentry = lparams[i];
-      lentry.setKey(kv.first);
-      lentry.setValue(capnp::Data::Reader((const kj::byte*)kv.second.data(), kv.second.size()));
-      i++;
-    }
+  init.setDongleId(params_map["DongleId"]);
+  
+  auto lparams = init.initParams().initEntries(params_map.size());
+  int i = 0;
+  for (auto& [key, value] : params_map) {
+    auto lentry = lparams[i];
+    lentry.setKey(key);
+    lentry.setValue(capnp::Data::Reader((const kj::byte*)value.data(), value.size()));
+    i++;
+
   }
   return capnp::messageToFlatArray(msg);
 }
