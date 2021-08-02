@@ -104,7 +104,7 @@ struct i2c_random_wr_payload init_array_ar0231[] = {
 
   {0x3060, 0x3333}, // ANALOG_COLOR_GAIN
 
-  {0x3362, 0x0011}, // DC GAIN (enabled A & B)
+  {0x3362, 0x0000}, // DC GAIN (A & B)
 
   {0x305A, 0x00F8}, // red gain (A)
   {0x3058, 0x0122}, // blue gain (A)

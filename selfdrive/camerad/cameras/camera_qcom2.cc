@@ -534,7 +534,7 @@ static void camera_init(MultiCameraState *multi_cam_state, VisionIpcServer * v, 
   s->max_ev = EXPOSURE_TIME_MAX * sensor_analog_gains[ANALOG_GAIN_MAX_IDX] * DC_GAIN;
   s->target_grey_fraction = 0.3;
 
-  s->dc_gain_enabled = true;
+  s->dc_gain_enabled = false;
   s->gain_idx = ANALOG_GAIN_REC_IDX;
   s->exposure_time = 5;
   s->context_a = true;
@@ -958,9 +958,9 @@ static void set_camera_exposure(CameraState *s, float grey_frac) {
   // Hysteresis around high conversion gain
   // We usually want this on since it results in lower noise, but turn off in very bright day scenes
   bool enable_dc_gain = s->dc_gain_enabled;
-  if (!enable_dc_gain && target_grey < 0.3) {
+  if (!enable_dc_gain && target_grey < 0.2) {
     enable_dc_gain = true;
-  } else if (enable_dc_gain && target_grey > 0.35) {
+  } else if (enable_dc_gain && target_grey > 0.3) {
     enable_dc_gain = false;
   }
 
