@@ -1,2 +1,6 @@
 Import('env', 'cereal', 'messaging', 'common')
-env.Program('proclogd.cc', LIBS=[cereal, messaging, 'pthread', 'zmq', 'capnp', 'kj', 'common'])
+libs = [cereal, messaging, 'pthread', 'zmq', 'capnp', 'kj', 'common']
+env.Program('proclogd', ['proclogd.cc', 'parser.cc'], LIBS=libs)
+
+if GetOption('test'):
+  env.Program('tests/test_parser', ['tests/test_parser.cc', 'parser.cc'], LIBS=libs)
