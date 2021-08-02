@@ -5,7 +5,7 @@
 
 const std::string allowed_states = "RSDTZtWXxKWPI";
 
-TEST_CASE("Parser::pidStat") {
+TEST_CASE("Parser::procStat") {
   std::string self_stat = util::read_file("/proc/self/stat");
   SECTION("self stat") {
     auto stat = Parser::procStat(self_stat);
