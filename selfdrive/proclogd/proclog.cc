@@ -3,7 +3,6 @@
 #include <dirent.h>
 
 #include <cassert>
-#include <climits>
 #include <fstream>
 #include <iterator>
 #include <sstream>
@@ -107,9 +106,9 @@ std::optional<ProcStat> procStat(std::string stat) {
 
 std::vector<int> pids() {
   std::vector<int> ids;
-  struct dirent *de = NULL;
   DIR *d = opendir("/proc");
   assert(d);
+  struct dirent *de = NULL;
   while ((de = readdir(d))) {
     if (isdigit(de->d_name[0])) {
       ids.push_back(std::stoi(de->d_name));
@@ -143,8 +142,9 @@ const ProcCache &getProcExtraInfo(int pid, const std::string &name) {
   if (cache.pid != pid || cache.name != name) {
     cache.pid = pid;
     cache.name = name;
-    cache.exe = util::readlink(util::string_format("/proc/%d/exe", pid));
-    cache.cmdline = cmdline(util::read_file(util::string_format("/proc/%d/cmdline", pid)));
+    std::string spid = std::to_string(pid);
+    cache.exe = util::readlink("/proc/" + spid + "/exe");
+    cache.cmdline = cmdline(util::read_file("/proc/" + spid + "/cmdline"));
   }
   return cache;
 }
@@ -191,7 +191,8 @@ void buildMemInfo(cereal::ProcLog::Builder &builder) {
 void buildProcs(cereal::ProcLog::Builder &builder) {
   std::vector<ProcStat> proc_stats;
   for (int pid : Parser::pids()) {
-    if (auto stat = Parser::procStat(util::read_file(util::string_format("/proc/%d/stat", pid)))) {
+    std::string path = "/proc/" + std::to_string(pid) + "/stat";
+    if (auto stat = Parser::procStat(util::read_file(path))) {
       proc_stats.push_back(*stat);
     }
   }

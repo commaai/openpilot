@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "cereal/messaging/messaging.h"
+
 struct CPUTime {
   int id;
   unsigned long utime, ntime, stime, itime;

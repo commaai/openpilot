@@ -8,8 +8,8 @@ ExitHandler do_exit;
 
 int main(int argc, char **argv) {
   setpriority(PRIO_PROCESS, 0, -15);
-  PubMaster publisher({"procLog"});
 
+  PubMaster publisher({"procLog"});
   while (!do_exit) {
     MessageBuilder msg;
     buildProcLogMessage(msg);
