@@ -95,7 +95,7 @@ TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
 DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   Params params = Params();
-  main_layout->addWidget(new LabelControl("Dongle ID", getDongleId().value_or("")));
+  main_layout->addWidget(new LabelControl("Dongle ID", getDongleId().value_or("N/A")));
   main_layout->addWidget(horizontal_line());
 
   QString serial = QString::fromStdString(params.get("HardwareSerial", false));
