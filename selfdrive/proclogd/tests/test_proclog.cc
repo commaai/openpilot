@@ -34,8 +34,7 @@ TEST_CASE("Parser::pidStat") {
     std::unordered_map<int, PidStat> stats;
     REQUIRE(pids.size() > 1);
     for (int pid : pids) {
-      auto stat = Parser::pidStat(util::read_file("/proc/" + std::to_string(pid) + "/stat"));
-      if (stat) {
+      if (auto stat = Parser::pidStat(util::read_file("/proc/" + std::to_string(pid) + "/stat"))) {
         stats[pid] = *stat;
       }
     }
