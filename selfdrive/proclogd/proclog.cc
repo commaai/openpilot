@@ -108,10 +108,14 @@ std::vector<int> pids() {
   std::vector<int> ids;
   DIR *d = opendir("/proc");
   assert(d);
+  char *p_end;
   struct dirent *de = NULL;
   while ((de = readdir(d))) {
-    if (isdigit(de->d_name[0])) {
-      ids.push_back(std::stoi(de->d_name));
+    if (de->d_type == DT_DIR) {
+      int pid = strtol(de->d_name, &p_end, 10);
+      if (p_end == (de->d_name + strlen(de->d_name))) {
+        ids.push_back(pid);
+      }
     }
   }
   closedir(d);
