@@ -327,12 +327,12 @@ std::string Params::get(const char *key, bool block) {
   }
 }
 
-int Params::readAll(std::map<std::string, std::string> *params) {
+std::map<std::string, std::string> Params::readAll() {
   FileLock file_lock(params_path + "/.lock", LOCK_SH);
   std::lock_guard<FileLock> lk(file_lock);
 
   std::string key_path = params_path + "/d";
-  return util::read_files_in_dir(key_path, params);
+  return util::read_files_in_dir(key_path);
 }
 
 void Params::clearAll(ParamKeyType key_type) {
