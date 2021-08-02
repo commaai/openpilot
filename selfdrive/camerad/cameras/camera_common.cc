@@ -375,7 +375,8 @@ static void driver_cam_auto_exposure(CameraState *c, SubMaster &sm) {
 }
 
 void common_process_driver_camera(SubMaster *sm, PubMaster *pm, CameraState *c, int cnt) {
-  if (Hardware::TICI() || cnt % 3 == 0) {
+  int j = Hardware::TICI() ? 2 : 3;
+  if (cnt % j == 0) {
     sm->update(0);
     driver_cam_auto_exposure(c, *sm);
   }

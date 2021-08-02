@@ -936,7 +936,7 @@ void handle_camera_event(CameraState *s, void *evdat) {
 }
 
 static void set_camera_exposure(CameraState *s, float grey_frac) {
-  const float dt = 0.05;
+  const float dt = 0.1;
 
   const float ts_grey = 10.0;
   const float ts_ev = 0.25;
@@ -1071,9 +1071,11 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
   }
   s->pm->send(c == &s->road_cam ? "roadCameraState" : "wideRoadCameraState", msg);
 
-  const auto [x, y, w, h] = (c == &s->wide_road_cam) ? std::tuple(96, 250, 1734, 524) : std::tuple(96, 160, 1734, 986);
-  const int skip = 2;
-  camera_autoexposure(c, set_exposure_target(b, x, x + w, skip, y, y + h, skip));
+  if (cnt % 2 == 0) {
+    const auto [x, y, w, h] = (c == &s->wide_road_cam) ? std::tuple(96, 250, 1734, 524) : std::tuple(96, 160, 1734, 986);
+    const int skip = 2;
+    camera_autoexposure(c, set_exposure_target(b, x, x + w, skip, y, y + h, skip));
+  }
 }
 
 void cameras_run(MultiCameraState *s) {
