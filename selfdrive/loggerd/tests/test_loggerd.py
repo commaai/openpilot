@@ -116,6 +116,9 @@ class TestLoggerd(unittest.TestCase):
     if TICI:
       expected_files.add("ecamera.hevc")
 
+    # give camerad time to start
+    time.sleep(5)
+
     for _ in range(5):
       num_segs = random.randint(1, 10)
       length = random.randint(2, 5)
