@@ -7,6 +7,7 @@
 
 #include "selfdrive/common/params.h"
 #include "selfdrive/ui/qt/request_repeater.h"
+#include "selfdrive/ui/qt/util.h"
 
 const double MILE_TO_KM = 1.60934;
 
@@ -46,10 +47,9 @@ DriveStats::DriveStats(QWidget* parent) : QFrame(parent) {
   main_layout->addStretch();
   add_stats_layouts("PAST WEEK", week_);
 
-  std::string dongle_id = Params().get("DongleId");
-  if (util::is_valid_dongle_id(dongle_id)) {
-    std::string url = "https://api.commadotai.com/v1.1/devices/" + dongle_id + "/stats";
-    RequestRepeater* repeater = new RequestRepeater(this, QString::fromStdString(url), "ApiCache_DriveStats", 30);
+  if (auto dongleId = getDongleId()) {
+    QString url = "https://api.commadotai.com/v1.1/devices/" + *dongleId + "/stats";
+    RequestRepeater* repeater = new RequestRepeater(this, url, "ApiCache_DriveStats", 30);
     QObject::connect(repeater, &RequestRepeater::receivedResponse, this, &DriveStats::parseResponse);
   }
 
