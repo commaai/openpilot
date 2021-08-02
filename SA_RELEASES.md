@@ -1,3 +1,8 @@
+Stock Additions Update 1 - 2021-08-XX (0.8.7)
+===
+ * Update SA to 0.8.7!
+ * Variable longitudinal lag by speed
+
 Stock Additions Update 3 - 2021-05-03 (0.8.2)
 ===
  * Remove eager accel and instead send future desired accel
