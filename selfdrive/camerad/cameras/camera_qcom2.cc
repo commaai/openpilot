@@ -537,6 +537,7 @@ static void camera_init(MultiCameraState *multi_cam_state, VisionIpcServer * v, 
   s->dc_gain_enabled = true;
   s->gain_idx = ANALOG_GAIN_REC_IDX;
   s->exposure_time = 5;
+  s->context_a = true;
   s->cur_ev = (s->dc_gain_enabled ? DC_GAIN : 1) * sensor_analog_gains[s->gain_idx] * s->exposure_time;
 
   s->buf.init(device_id, ctx, s, v, FRAME_BUF_COUNT, rgb_type, yuv_type);
@@ -1007,17 +1008,20 @@ static void set_camera_exposure(CameraState *s, float grey_frac) {
   float gain = s->analog_gain_frac * (s->dc_gain_enabled ? DC_GAIN : 1.0);
   s->cur_ev = s->exposure_time * gain;
 
+  s->context_a = !s->context_a;
   s->exp_lock.unlock();
 
+  // context_a = true means the next context will be A. Configure gain/exposure time and switch to it.
   uint16_t analog_gain_reg = 0xFF00 | (new_g << 4) | new_g;
   struct i2c_random_wr_payload exp_reg_array[] = {
-                                                  {0x3366, analog_gain_reg}, // analog gain
-                                                  {0x3362, (uint16_t)(s->dc_gain_enabled ? 0x1 : 0x0)}, // DC_GAIN
-                                                  {0x3012, (uint16_t)s->exposure_time}, // integ time
-                                                 };
-                                                  //{0x301A, 0x091C}}; // reset
+                                                  {uint16_t(s->context_a ? 0x3366 : 0x3368), analog_gain_reg},
+                                                  {0x3362, (uint16_t)(s->dc_gain_enabled ? 0x11 : 0x0)}, // TODO: only change HCG in new context
+                                                  {uint16_t(s->context_a ? 0x3012 : 0x3016), (uint16_t)s->exposure_time},
+                                                  {0x30B0, uint16_t(s->context_a ? 0x0800 : 0x2800)}, // Switch context
+                                                };
   sensors_i2c(s, exp_reg_array, sizeof(exp_reg_array)/sizeof(struct i2c_random_wr_payload),
-               CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
+              CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
+
 }
 
 void camera_autoexposure(CameraState *s, float grey_frac) {

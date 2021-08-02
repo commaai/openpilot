@@ -27,6 +27,7 @@ typedef struct CameraState {
   float measured_grey_fraction;
   float target_grey_fraction;
   int gain_idx;
+  bool context_a;
 
   unique_fd sensor_fd;
   unique_fd csiphy_fd;
