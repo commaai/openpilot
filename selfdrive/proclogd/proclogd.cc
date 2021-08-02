@@ -1,4 +1,3 @@
-
 #include <dirent.h>
 #include <sys/resource.h>
 
@@ -56,8 +55,7 @@ void buildProcesses(cereal::ProcLog::Builder &builder) {
   while ((de = readdir(d))) {
     if (isdigit(de->d_name[0])) {
       int pid = atoi(de->d_name);
-      auto stat = Parser::pidStat(util::read_file(util::string_format("/proc/%d/stat", pid)));
-      if (stat) {
+      if (auto stat = Parser::pidStat(util::read_file(util::string_format("/proc/%d/stat", pid)))) {
         procs_info.push_back(*stat);
       }
     }
@@ -86,7 +84,6 @@ void buildProcesses(cereal::ProcLog::Builder &builder) {
 
     const ProcCache &extra_info = Parser::getProcExtraInfo(r.pid, r.name);
     l.setExe(extra_info.exe);
-
     auto lcmdline = l.initCmdline(extra_info.cmdline.size());
     for (size_t i = 0; i < lcmdline.size(); i++) {
       lcmdline.set(i, extra_info.cmdline[i]);
