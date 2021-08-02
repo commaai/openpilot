@@ -95,8 +95,7 @@ kj::Array<capnp::word> logger_build_init_data() {
 
   // log params
   auto params = Params();
-  std::map<std::string, std::string> params_map;
-  params.readAll(&params_map);
+  std::map<std::string, std::string> params_map = params.readAll();
 
   init.setGitCommit(params_map["GitCommit"]);
   init.setGitBranch(params_map["GitBranch"]);
@@ -111,6 +110,7 @@ kj::Array<capnp::word> logger_build_init_data() {
     lentry.setKey(key);
     lentry.setValue(capnp::Data::Reader((const kj::byte*)value.data(), value.size()));
     i++;
+
   }
   return capnp::messageToFlatArray(msg);
 }

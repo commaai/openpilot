@@ -62,7 +62,7 @@ bool is_valid_dongle_id(std::string const& dongle_id);
 
 // **** file fhelpers *****
 std::string read_file(const std::string& fn);
-int read_files_in_dir(const std::string& path, std::map<std::string, std::string>* contents);
+std::map<std::string, std::string> read_files_in_dir(const std::string& path);
 int write_file(const char* path, const void* data, size_t size, int flags = O_WRONLY, mode_t mode = 0777);
 std::string readlink(const std::string& path);
 bool file_exists(const std::string& fn);
