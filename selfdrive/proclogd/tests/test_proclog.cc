@@ -8,7 +8,7 @@ const std::string allowed_states = "RSDTZtWXxKWPI";
 TEST_CASE("Parser::pidStat") {
   std::string self_stat = util::read_file("/proc/self/stat");
   SECTION("self stat") {
-    auto stat = Parser::pidStat(self_stat);
+    auto stat = Parser::procStat(self_stat);
     REQUIRE((stat && stat->name == "test_proclog" && stat->pid == getpid()));
     REQUIRE(stat->state == 'R');
   }
@@ -16,41 +16,43 @@ TEST_CASE("Parser::pidStat") {
     std::string from = "(test_proclog)";
     size_t start_pos = self_stat.find(from);
     self_stat.replace(start_pos, from.length(), "((test proclog))");
-    auto stat = Parser::pidStat(self_stat);
+    auto stat = Parser::procStat(self_stat);
     REQUIRE(stat);
     REQUIRE(stat->name == "(test proclog)");
     REQUIRE(stat->pid == getpid());
   }
   SECTION("from empty string") {
-    auto stat = Parser::pidStat("");
+    auto stat = Parser::procStat("");
     REQUIRE(!stat);
   }
   SECTION("all processes stats") {
     std::vector<int> pids = Parser::pids();
-    std::unordered_map<int, PidStat> stats;
     REQUIRE(pids.size() > 1);
+
+    std::set<int> parsed_pids;
     for (int pid : pids) {
-      if (auto stat = Parser::pidStat(util::read_file("/proc/" + std::to_string(pid) + "/stat"))) {
-        stats[pid] = *stat;
+      if (auto stat = Parser::procStat(util::read_file("/proc/" + std::to_string(pid) + "/stat"))) {
+        REQUIRE(stat->pid == pid);
         REQUIRE(allowed_states.find(stat->state) != std::string::npos);
+        parsed_pids.insert(pid);
       }
     }
-    REQUIRE(stats.size() == pids.size());
+    REQUIRE(parsed_pids.size() == pids.size());
   }
 }
 
-TEST_CASE("Parser::procStat") {
+TEST_CASE("Parser::cpuTimes") {
   SECTION("from string") {
     std::string stat = "cpu 0 0 0 0 0 0 0 0 0\ncpu0 1 2 3 4 5 6 7 8\ncpu1 1 2 3 4 5 6 7 8\nothers";
     std::istringstream stream(stat);
-    auto stats = Parser::procStat(stream);
+    auto stats = Parser::cpuTimes(stream);
     REQUIRE(stats.size() == 2);
     REQUIRE((stats[0].id == 0 && stats[0].utime == 1 && stats[0].ntime == 2));
     REQUIRE((stats[1].id == 1 && stats[0].utime == 1 && stats[0].ntime == 2));
   }
   SECTION("from /proc/stat") {
     std::istringstream stream(util::read_file("/proc/stat"));
-    auto stats = Parser::procStat(stream);
+    auto stats = Parser::cpuTimes(stream);
     REQUIRE(stats.size() == sysconf(_SC_NPROCESSORS_ONLN));
     for (int i = 0; i < stats.size(); ++i) {
       REQUIRE(stats[i].id == i);
@@ -58,7 +60,7 @@ TEST_CASE("Parser::procStat") {
   }
   SECTION("from empty string") {
     std::istringstream stream("");
-    REQUIRE(Parser::procStat(stream).empty());
+    REQUIRE(Parser::cpuTimes(stream).empty());
   }
 }
 
@@ -90,29 +92,22 @@ TEST_CASE("Parser::memInfo") {
   }
 }
 
+void test_cmdline(std::string cmdline, const std::vector<std::string> requires) {
+  auto cmds = Parser::cmdline(cmdline);
+  REQUIRE(cmds.size() == requires.size());
+  for (int i = 0; i < requires.size(); ++i) {
+    REQUIRE(cmds[i] == requires[i]);  
+  }
+}
 TEST_CASE("Parser::cmdline") {
   SECTION("normal") {
-    std::string str("a\0b\0c\0", 7);
-    auto cmds = Parser::cmdline(str);
-    REQUIRE(cmds.size() == 3);
-    REQUIRE(cmds[0] == "a");
-    REQUIRE(cmds[1] == "b");
-    REQUIRE(cmds[2] == "c");
+    test_cmdline(std::string("a\0b\0c\0", 7), {"a", "b", "c"});
   }
   SECTION("multiple null") {
-    std::string str("a\0\0b\0", 6);
-    auto cmds = Parser::cmdline(str);
-    REQUIRE(cmds.size() == 3);
-    REQUIRE(cmds[0] == "a");
-    REQUIRE(cmds[1] == "");
-    REQUIRE(cmds[2] == "b");
+    test_cmdline(std::string("a\0\0c\0", 6), {"a", "", "c"});
   }
   SECTION("multiple null terminate") {
-    std::string str("a\0b\0c\0\0\0", 9);
-    auto cmds = Parser::cmdline(str);
-    REQUIRE(cmds[0] == "a");
-    REQUIRE(cmds[1] == "b");
-    REQUIRE(cmds[2] == "c");
+    test_cmdline(std::string("a\0b\0c\0\0\0", 9), {"a", "b", "c"});
   }
   SECTION("from empty string") {
     auto cmds = Parser::cmdline("");
@@ -127,6 +122,7 @@ TEST_CASE("buildProcLogerMessage") {
   kj::Array<capnp::word> buf = capnp::messageToFlatArray(msg);
   capnp::FlatArrayMessageReader reader(buf);
   auto log = reader.getRoot<cereal::Event>().getProcLog();
+  REQUIRE(log.totalSize().wordCount > 0);
 
   // test cereal::ProcLog::CPUTimes
   auto cpu_times = log.getCpuTimes();
@@ -148,6 +144,7 @@ TEST_CASE("buildProcLogerMessage") {
   for (auto p : procs) {
     if (p.getPid() == self_pid) {
       REQUIRE(p.getName() == "test_proclog");
+      REQUIRE(p.getState() == 'R');
       found_self = true;
     }
     REQUIRE(p.getPid() != 0);

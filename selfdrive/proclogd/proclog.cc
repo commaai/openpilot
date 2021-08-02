@@ -1,11 +1,12 @@
 #include "selfdrive/proclogd/proclog.h"
 
 #include <dirent.h>
+
 #include <cassert>
 #include <climits>
 #include <fstream>
-#include <sstream>
 #include <iterator>
+#include <sstream>
 
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
@@ -13,7 +14,7 @@
 namespace Parser {
 
 // parse /proc/stat
-std::vector<CPUTime> procStat(std::istream &stream) {
+std::vector<CPUTime> cpuTimes(std::istream &stream) {
   std::vector<CPUTime> cpu_times;
   std::string line;
   while (std::getline(stream, line)) {
@@ -48,8 +49,8 @@ std::unordered_map<std::string, uint64_t> memInfo(std::istream &stream) {
 }
 
 // field position (https://man7.org/linux/man-pages/man5/proc.5.html)
-enum StatPos{
-  pid = 1, 
+enum StatPos {
+  pid = 1,
   state = 3,
   ppid = 4,
   utime = 14,
@@ -65,40 +66,42 @@ enum StatPos{
   processor = 39,
   MAX_FIELD = 52,
 };
+
 // parse /proc/pid/stat
-std::optional<PidStat> pidStat(std::string stat) {
+std::optional<ProcStat> procStat(std::string stat) {
   // To avoid being fooled by names containing a closing paren, scan backwards.
   auto open_paren = stat.find('(');
   auto close_paren = stat.rfind(')');
   if (open_paren == std::string::npos || close_paren == std::string::npos || open_paren > close_paren)
     return std::nullopt;
 
-  PidStat p;
-  p.name = stat.substr(open_paren + 1, close_paren-open_paren-1);
+  std::string name = stat.substr(open_paren + 1, close_paren - open_paren - 1);
   // repace space in name with _
   std::replace(&stat[open_paren], &stat[close_paren], ' ', '_');
-  
   std::istringstream iss(stat);
-  std::vector<std::string> v{std::istream_iterator<std::string>(iss), 
-                                 std::istream_iterator<std::string>()};
+  std::vector<std::string> v{std::istream_iterator<std::string>(iss),
+                             std::istream_iterator<std::string>()};
   if (v.size() != StatPos::MAX_FIELD) {
     LOGE("failed to parse /proc/<pid>/stat :%s", stat.c_str());
     return std::nullopt;
   }
-  p.pid = stoi(v[StatPos::pid -1]);
-  p.state = v[StatPos::state -1][0];
-  p.ppid = stoi(v[StatPos::ppid -1]);
-  p.utime = stoul(v[StatPos::utime -1]);
-  p.stime = stoul(v[StatPos::stime -1]);
-  p.cutime = stol(v[StatPos::cutime -1]);
-  p.cstime = stol(v[StatPos::cstime -1]);
-  p.priority = stol(v[StatPos::priority -1]);
-  p.nice = stol(v[StatPos::nice -1]);
-  p.num_threads = stol(v[StatPos::num_threads -1]);
-  p.starttime = stoull(v[StatPos::starttime -1]);
-  p.vms = stoul(v[StatPos::vsize -1]);
-  p.rss = stoul(v[StatPos::rss -1]);
-  p.processor = stoi(v[StatPos::processor -1]);
+
+  ProcStat p = {};
+  p.name = name;
+  p.pid = stoi(v[StatPos::pid - 1]);
+  p.state = v[StatPos::state - 1][0];
+  p.ppid = stoi(v[StatPos::ppid - 1]);
+  p.utime = stoul(v[StatPos::utime - 1]);
+  p.stime = stoul(v[StatPos::stime - 1]);
+  p.cutime = stol(v[StatPos::cutime - 1]);
+  p.cstime = stol(v[StatPos::cstime - 1]);
+  p.priority = stol(v[StatPos::priority - 1]);
+  p.nice = stol(v[StatPos::nice - 1]);
+  p.num_threads = stol(v[StatPos::num_threads - 1]);
+  p.starttime = stoull(v[StatPos::starttime - 1]);
+  p.vms = stoul(v[StatPos::vsize - 1]);
+  p.rss = stoul(v[StatPos::rss - 1]);
+  p.processor = stoi(v[StatPos::processor - 1]);
   return p;
 }
 
@@ -153,12 +156,12 @@ const size_t page_size = sysconf(_SC_PAGE_SIZE);
 
 void buildCPUTimes(cereal::ProcLog::Builder &builder) {
   std::ifstream stream("/proc/stat");
-  std::vector<CPUTime> stats = Parser::procStat(stream);
+  std::vector<CPUTime> stats = Parser::cpuTimes(stream);
 
   auto log_cpu_times = builder.initCpuTimes(stats.size());
   for (int i = 0; i < stats.size(); ++i) {
     auto l = log_cpu_times[i];
-    auto r = stats[i];
+    const CPUTime &r = stats[i];
     l.setCpuNum(r.id);
     l.setUser(r.utime / jiffy);
     l.setNice(r.ntime / jiffy);
@@ -186,17 +189,17 @@ void buildMemInfo(cereal::ProcLog::Builder &builder) {
 }
 
 void buildProcs(cereal::ProcLog::Builder &builder) {
-  std::vector<PidStat> procs_info;
+  std::vector<ProcStat> proc_stats;
   for (int pid : Parser::pids()) {
-    if (auto stat = Parser::pidStat(util::read_file(util::string_format("/proc/%d/stat", pid)))) {
-      procs_info.push_back(*stat);
+    if (auto stat = Parser::procStat(util::read_file(util::string_format("/proc/%d/stat", pid)))) {
+      proc_stats.push_back(*stat);
     }
   }
 
-  auto lprocs = builder.initProcs(procs_info.size());
-  for (size_t i = 0; i < procs_info.size(); i++) {
-    auto l = lprocs[i];
-    PidStat &r = procs_info[i];
+  auto procs = builder.initProcs(proc_stats.size());
+  for (size_t i = 0; i < proc_stats.size(); i++) {
+    auto l = procs[i];
+    const ProcStat &r = proc_stats[i];
     l.setPid(r.pid);
     l.setState(r.state);
     l.setPpid(r.ppid);

@@ -12,28 +12,26 @@ struct CPUTime {
 
 struct ProcCache {
   int pid;
-  std::string name;
+  std::string name, exe;
   std::vector<std::string> cmdline;
-  std::string exe;
 };
 
-struct PidStat {
+struct ProcStat {
   int pid, ppid, processor;
   char state;
-  unsigned long utime, stime;
+  unsigned long utime, stime, vms, rss;
   long cutime, cstime, priority, nice, num_threads;
   unsigned long long starttime;
-  unsigned long vms, rss;
   std::string name;
 };
 
 namespace Parser {
 
-std::vector<CPUTime> procStat(std::istream &stream);
-std::unordered_map<std::string, uint64_t> memInfo(std::istream &stream);
-std::optional<PidStat> pidStat(std::string stat);
 std::vector<int> pids();
+std::optional<ProcStat> procStat(std::string stat);
 std::vector<std::string> cmdline(const std::string &cmd);
+std::vector<CPUTime> cpuTimes(std::istream &stream);
+std::unordered_map<std::string, uint64_t> memInfo(std::istream &stream);
 const ProcCache &getProcExtraInfo(int pid, const std::string &name);
 
 };  // namespace Parser
