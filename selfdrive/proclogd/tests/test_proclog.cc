@@ -114,8 +114,8 @@ TEST_CASE("buildProcLogerMessage") {
   // test cereal::ProcLog::Mem
   auto mem = log.getMem();
   // first & last items we read from /proc/mem
-  REQUIRE(mem.getTotal() != 0);
-  REQUIRE(mem.getShared() != 0);
+  REQUIRE(mem.getTotal() > 0);
+  REQUIRE(mem.getShared() > 0);
 
   auto procs = log.getProcs();
   REQUIRE(procs.size() > 1);
