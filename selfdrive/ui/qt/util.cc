@@ -17,14 +17,13 @@ QString getBrandVersion() {
 }
 
 std::optional<QString> getDongleId() {
-  static QString dongleId;
-  if (dongleId.isEmpty()) {
-    std::string id = Params().get("DongleId");
-    if (!id.empty() && id != "UnregisteredDevice") {
-      dongleId = QString::fromStdString(id);
-    }
+  std::string id = Params().get("DongleId");
+
+  if (!id.empty() && (id != "UnregisteredDevice")) {
+    return QString::fromStdString(id);
+  } else {
+    return {};
   }
-  return !dongleId.isEmpty() ? std::make_optional(dongleId) : std::nullopt;
 }
 
 void configFont(QPainter &p, const QString &family, int size, const QString &style) {
