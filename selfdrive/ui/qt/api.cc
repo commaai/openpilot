@@ -14,6 +14,7 @@
 #include "selfdrive/common/params.h"
 #include "selfdrive/common/util.h"
 #include "selfdrive/hardware/hw.h"
+#include "selfdrive/ui/qt/util.h"
 
 namespace CommaApi {
 
@@ -48,9 +49,8 @@ QByteArray rsa_sign(const QByteArray &data) {
 QString create_jwt(const QJsonObject &payloads, int expiry) {
   QJsonObject header = {{"alg", "RS256"}};
 
-  QString dongle_id = QString::fromStdString(Params().get("DongleId"));
   auto t = QDateTime::currentSecsSinceEpoch();
-  QJsonObject payload = {{"identity", dongle_id}, {"nbf", t}, {"iat", t}, {"exp", t + expiry}};
+  QJsonObject payload = {{"identity", getDongleId().value_or("")}, {"nbf", t}, {"iat", t}, {"exp", t + expiry}};
   for (auto it = payloads.begin(); it != payloads.end(); ++it) {
     payload.insert(it.key(), it.value());
   }
