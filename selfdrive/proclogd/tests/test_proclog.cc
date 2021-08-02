@@ -3,18 +3,23 @@
 #include "selfdrive/common/util.h"
 #include "selfdrive/proclogd/proclog.h"
 
+const std::string allowed_states = "RSDTZtWXxKWPI";
+
 TEST_CASE("Parser::pidStat") {
   std::string self_stat = util::read_file("/proc/self/stat");
   SECTION("self stat") {
     auto stat = Parser::pidStat(self_stat);
     REQUIRE((stat && stat->name == "test_proclog" && stat->pid == getpid()));
+    REQUIRE(stat->state == 'R');
   }
-  SECTION("name with space") {
+  SECTION("name with space and paren") {
     std::string from = "(test_proclog)";
     size_t start_pos = self_stat.find(from);
-    self_stat.replace(start_pos, from.length(), "(test proclog)");
+    self_stat.replace(start_pos, from.length(), "((test proclog))");
     auto stat = Parser::pidStat(self_stat);
-    REQUIRE((stat && stat->name == "test proclog" && stat->pid == getpid()));
+    REQUIRE(stat);
+    REQUIRE(stat->name == "(test proclog)");
+    REQUIRE(stat->pid == getpid());
   }
   SECTION("more") {
     auto stat = Parser::pidStat(self_stat + " 1 2 3 4 5");
@@ -36,6 +41,7 @@ TEST_CASE("Parser::pidStat") {
     for (int pid : pids) {
       if (auto stat = Parser::pidStat(util::read_file("/proc/" + std::to_string(pid) + "/stat"))) {
         stats[pid] = *stat;
+        REQUIRE(allowed_states.find(stat->state) != std::string::npos);
       }
     }
     REQUIRE(stats.size() == pids.size());
@@ -142,10 +148,10 @@ TEST_CASE("buildProcLogerMessage") {
   REQUIRE(mem.getTotal() > 0);
   REQUIRE(mem.getShared() > 0);
 
+  // test cereal::ProcLog::Process
   auto procs = log.getProcs();
   REQUIRE(procs.size() > 1);
 
-  // test if self in procs
   bool found_self = false;
   int self_pid = getpid();
   for (auto p : procs) {
@@ -153,8 +159,9 @@ TEST_CASE("buildProcLogerMessage") {
       REQUIRE(p.getName() == "test_proclog");
       REQUIRE(p.getNumThreads() == 1);
       found_self = true;
-      break;
     }
+    REQUIRE(p.getPid() != 0);
+    REQUIRE(allowed_states.find(p.getState()) != std::string::npos);
   }
   REQUIRE(found_self == true);
 }
