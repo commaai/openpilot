@@ -247,7 +247,6 @@ selfdrive/controls/lib/vehicle_model.py
 selfdrive/controls/lib/fcw.py
 selfdrive/controls/lib/long_mpc.py
 selfdrive/controls/lib/lead_mpc.py
-selfdrive/controls/lib/long_mpc_model.py
 selfdrive/controls/lib/dynamic_follow/*
 
 selfdrive/controls/lib/cluster/*
