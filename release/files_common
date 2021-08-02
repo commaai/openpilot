@@ -311,6 +311,8 @@ selfdrive/logcatd/logcatd_systemd.cc
 
 selfdrive/proclogd/SConscript
 selfdrive/proclogd/proclogd.cc
+selfdrive/proclogd/parser.cc
+selfdrive/proclogd/parser.h
 
 selfdrive/loggerd/SConscript
 selfdrive/loggerd/encoder.h
