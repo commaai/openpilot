@@ -11,6 +11,7 @@
 #include <QrCode.hpp>
 
 #include "selfdrive/ui/qt/request_repeater.h"
+#include "selfdrive/ui/qt/util.h"
 
 using qrcodegen::QrCode;
 
@@ -109,9 +110,8 @@ PrimeUserWidget::PrimeUserWidget(QWidget* parent) : QWidget(parent) {
   mainLayout->addStretch();
 
   // set up API requests
-  std::string dongleId = Params().get("DongleId");
-  if (util::is_valid_dongle_id(dongleId)) {
-    QString url = CommaApi::BASE_URL + "/v1/devices/" + dongleId.c_str() + "/owner";
+  if (auto dongleId = getDongleId()) {
+    QString url = CommaApi::BASE_URL + "/v1/devices/" + *dongleId + "/owner";
     RequestRepeater *repeater = new RequestRepeater(this, url, "ApiCache_Owner", 6);
     QObject::connect(repeater, &RequestRepeater::receivedResponse, this, &PrimeUserWidget::replyFinished);
   }
@@ -255,9 +255,8 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
   setSizePolicy(sp_retain);
 
   // set up API requests
-  std::string dongleId = Params().get("DongleId");
-  if (util::is_valid_dongle_id(dongleId)) {
-    QString url = CommaApi::BASE_URL + "/v1.1/devices/" + dongleId.c_str() + "/";
+  if (auto dongleId = getDongleId()) {
+    QString url = CommaApi::BASE_URL + "/v1.1/devices/" + *dongleId + "/";
     RequestRepeater* repeater = new RequestRepeater(this, url, "ApiCache_Device", 5);
 
     QObject::connect(repeater, &RequestRepeater::receivedResponse, this, &SetupWidget::replyFinished);

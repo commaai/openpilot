@@ -76,19 +76,20 @@ std::string read_file(const std::string& fn) {
   return std::string();
 }
 
-int read_files_in_dir(const std::string &path, std::map<std::string, std::string> *contents) {
+std::map<std::string, std::string> read_files_in_dir(const std::string &path) {
+  std::map<std::string, std::string> ret;
   DIR *d = opendir(path.c_str());
-  if (!d) return -1;
+  if (!d) return ret;
 
   struct dirent *de = NULL;
   while ((de = readdir(d))) {
     if (isalnum(de->d_name[0])) {
-      (*contents)[de->d_name] = util::read_file(path + "/" + de->d_name);
+      ret[de->d_name] = util::read_file(path + "/" + de->d_name);
     }
   }
 
   closedir(d);
-  return 0;
+  return ret;
 }
 
 int write_file(const char* path, const void* data, size_t size, int flags, mode_t mode) {
@@ -153,10 +154,6 @@ std::string dir_name(std::string const &path) {
   size_t pos = path.find_last_of("/");
   if (pos == std::string::npos) return "";
   return path.substr(0, pos);
-}
-
-bool is_valid_dongle_id(std::string const& dongle_id) {
-  return !dongle_id.empty() && dongle_id != "UnregisteredDevice";
 }
 
 struct tm get_time() {
