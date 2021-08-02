@@ -85,23 +85,30 @@ std::optional<ProcStat> procStat(std::string stat) {
     return std::nullopt;
   }
 
-  ProcStat p = {};
-  p.name = name;
-  p.pid = stoi(v[StatPos::pid - 1]);
-  p.state = v[StatPos::state - 1][0];
-  p.ppid = stoi(v[StatPos::ppid - 1]);
-  p.utime = stoul(v[StatPos::utime - 1]);
-  p.stime = stoul(v[StatPos::stime - 1]);
-  p.cutime = stol(v[StatPos::cutime - 1]);
-  p.cstime = stol(v[StatPos::cstime - 1]);
-  p.priority = stol(v[StatPos::priority - 1]);
-  p.nice = stol(v[StatPos::nice - 1]);
-  p.num_threads = stol(v[StatPos::num_threads - 1]);
-  p.starttime = stoull(v[StatPos::starttime - 1]);
-  p.vms = stoul(v[StatPos::vsize - 1]);
-  p.rss = stoul(v[StatPos::rss - 1]);
-  p.processor = stoi(v[StatPos::processor - 1]);
-  return p;
+  try {
+    ProcStat p = {};
+    p.name = name;
+    p.pid = stoi(v[StatPos::pid - 1]);
+    p.state = v[StatPos::state - 1][0];
+    p.ppid = stoi(v[StatPos::ppid - 1]);
+    p.utime = stoul(v[StatPos::utime - 1]);
+    p.stime = stoul(v[StatPos::stime - 1]);
+    p.cutime = stol(v[StatPos::cutime - 1]);
+    p.cstime = stol(v[StatPos::cstime - 1]);
+    p.priority = stol(v[StatPos::priority - 1]);
+    p.nice = stol(v[StatPos::nice - 1]);
+    p.num_threads = stol(v[StatPos::num_threads - 1]);
+    p.starttime = stoull(v[StatPos::starttime - 1]);
+    p.vms = stoul(v[StatPos::vsize - 1]);
+    p.rss = stoul(v[StatPos::rss - 1]);
+    p.processor = stoi(v[StatPos::processor - 1]);
+    return p;
+  } catch (const std::invalid_argument &e) {
+    LOGE("failed to parse /proc/<pid>/stat (invalid_argument) :%s", stat.c_str());
+  } catch (const std::out_of_range &e) {
+    LOGE("failed to parse /proc/<pid>/stat (out_of_range) :%s", stat.c_str());
+  }
+  return std::nullopt;
 }
 
 std::vector<int> pids() {
