@@ -96,7 +96,7 @@ void test_cmdline(std::string cmdline, const std::vector<std::string> requires) 
   auto cmds = Parser::cmdline(cmdline);
   REQUIRE(cmds.size() == requires.size());
   for (int i = 0; i < requires.size(); ++i) {
-    REQUIRE(cmds[i] == requires[i]);  
+    REQUIRE(cmds[i] == requires[i]);
   }
 }
 TEST_CASE("Parser::cmdline") {
@@ -145,10 +145,17 @@ TEST_CASE("buildProcLogerMessage") {
     if (p.getPid() == self_pid) {
       REQUIRE(p.getName() == "test_proclog");
       REQUIRE(p.getState() == 'R');
+      std::string exe = p.getExe();
+      REQUIRE(exe.find("test_proclog") != std::string::npos);
       found_self = true;
     }
     REQUIRE(p.getPid() != 0);
     REQUIRE(allowed_states.find(p.getState()) != std::string::npos);
+
+    auto cmdline = p.getCmdline();
+    if (cmdline.size() > 0) {
+      REQUIRE(cmdline[0].size() > 0);
+    }
   }
   REQUIRE(found_self == true);
 }

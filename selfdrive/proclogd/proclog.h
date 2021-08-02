@@ -19,8 +19,8 @@ struct ProcCache {
 struct ProcStat {
   int pid, ppid, processor;
   char state;
-  unsigned long utime, stime, vms, rss;
   long cutime, cstime, priority, nice, num_threads;
+  unsigned long utime, stime, vms, rss;
   unsigned long long starttime;
   std::string name;
 };
