@@ -53,7 +53,10 @@ std::string string_format(const std::string& format, Args... args) {
   return std::string(buf.get(), buf.get() + size - 1);
 }
 
-std::string getenv_default(const char* env_var, const char* suffix, const char* default_val);
+std::string getenv(const char* key, const char* default_val = "");
+int getenv(const char* key, int default_val);
+float getenv(const char* key, float default_val);
+
 std::string tohex(const uint8_t* buf, size_t buf_size);
 std::string hexdump(const std::string& in);
 std::string base_name(std::string const& path);

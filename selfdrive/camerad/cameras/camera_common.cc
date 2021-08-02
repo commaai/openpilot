@@ -193,11 +193,11 @@ void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &fr
 }
 
 kj::Array<uint8_t> get_frame_image(const CameraBuf *b) {
-  static const int x_min = getenv("XMIN") ? atoi(getenv("XMIN")) : 0;
-  static const int y_min = getenv("YMIN") ? atoi(getenv("YMIN")) : 0;
-  static const int env_xmax = getenv("XMAX") ? atoi(getenv("XMAX")) : -1;
-  static const int env_ymax = getenv("YMAX") ? atoi(getenv("YMAX")) : -1;
-  static const int scale = getenv("SCALE") ? atoi(getenv("SCALE")) : 1;
+  static const int x_min = util::getenv("XMIN", 0);
+  static const int y_min = util::getenv("YMIN", 0);
+  static const int env_xmax = util::getenv("XMAX", -1);
+  static const int env_ymax = util::getenv("YMAX", -1);
+  static const int scale = util::getenv("SCALE", 1);
 
   assert(b->cur_rgb_buf);
 

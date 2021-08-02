@@ -117,13 +117,19 @@ bool file_exists(const std::string& fn) {
   return f.good();
 }
 
-std::string getenv_default(const char* env_var, const char * suffix, const char* default_val) {
-  const char* env_val = getenv(env_var);
-  if (env_val != NULL) {
-    return std::string(env_val) + std::string(suffix);
-  } else {
-    return std::string(default_val);
-  }
+std::string getenv(const char* key, const char* default_val) {
+  const char* val = ::getenv(key);
+  return val ? val : default_val;
+}
+
+int getenv(const char* key, int default_val) {
+  const char* val = ::getenv(key);
+  return val ? atoi(val) : default_val;
+}
+
+float getenv(const char* key, float default_val) {
+  const char* val = ::getenv(key);
+  return val ? atof(val) : default_val;
 }
 
 std::string tohex(const uint8_t *buf, size_t buf_size) {
