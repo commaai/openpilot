@@ -94,8 +94,9 @@ kj::Array<capnp::word> logger_build_init_data() {
   init.setDirty(!getenv("CLEAN"));
 
   // log params
+  auto params = Params();
   std::map<std::string, std::string> params_map;
-  Params().readAll(&params_map);
+  params.readAll(&params_map);
 
   init.setGitCommit(params_map["GitCommit"]);
   init.setGitBranch(params_map["GitBranch"]);
