@@ -1,17 +1,23 @@
 #pragma once
 
+#include <QJsonDocument>
 #include <QLabel>
 
-class DriveStats : public QWidget {
+class DriveStats : public QFrame {
   Q_OBJECT
 
 public:
   explicit DriveStats(QWidget* parent = 0);
 
 private:
-  bool metric;
+  void showEvent(QShowEvent *event) override;
+  void updateStats();
+  inline QString getDistanceUnit() const { return metric_ ? "KM" : "Miles"; }
+
+  bool metric_;
+  QJsonDocument stats_;
   struct StatsLabels {
-    QLabel *routes, *distance, *hours;
+    QLabel *routes, *distance, *distance_unit, *hours;
   } all_, week_;
 
 private slots:

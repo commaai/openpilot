@@ -84,10 +84,12 @@ CameraViewWidget::CameraViewWidget(VisionStreamType stream_type, QWidget* parent
 
 CameraViewWidget::~CameraViewWidget() {
   makeCurrent();
+  if (isValid()) {
+    glDeleteVertexArrays(1, &frame_vao);
+    glDeleteBuffers(1, &frame_vbo);
+    glDeleteBuffers(1, &frame_ibo);
+  }
   doneCurrent();
-  glDeleteVertexArrays(1, &frame_vao);
-  glDeleteBuffers(1, &frame_vbo);
-  glDeleteBuffers(1, &frame_ibo);
 }
 
 void CameraViewWidget::initializeGL() {
@@ -127,12 +129,12 @@ void CameraViewWidget::initializeGL() {
     frame_mat = matmul(device_transform, get_driver_view_transform());
   } else {
     auto intrinsic_matrix = stream_type == VISION_STREAM_RGB_WIDE ? ecam_intrinsic_matrix : fcam_intrinsic_matrix;
-    float zoom_ = zoom / intrinsic_matrix.v[0];
+    float zoom = ZOOM / intrinsic_matrix.v[0];
     if (stream_type == VISION_STREAM_RGB_WIDE) {
-      zoom_ *= 0.5;
+      zoom *= 0.5;
     }
-    float zx = zoom_ * 2 * intrinsic_matrix.v[2] / width();
-    float zy = zoom_ * 2 * intrinsic_matrix.v[5] / height();
+    float zx = zoom * 2 * intrinsic_matrix.v[2] / width();
+    float zy = zoom * 2 * intrinsic_matrix.v[5] / height();
 
     const mat4 frame_transform = {{
       zx, 0.0, 0.0, 0.0,

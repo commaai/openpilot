@@ -79,6 +79,8 @@ void run_camera(CameraState *s, cv::VideoCapture &video_cap, float *ts) {
   while (!do_exit) {
     cv::Mat frame_mat, transformed_mat;
     video_cap >> frame_mat;
+    if (frame_mat.empty()) continue;
+
     cv::warpPerspective(frame_mat, transformed_mat, transform, size, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 0);
 
     s->buf.camera_bufs_metadata[buf_idx] = {.frame_id = frame_id};

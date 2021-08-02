@@ -30,6 +30,9 @@ jobs:
     - uses: actions/checkout@v2
       with:
         submodules: true
+    - name: Check submodules
+      if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
+      run: release/check-submodules.sh
     - name: Cache dependencies
       id: dependency-cache
       uses: actions/cache@v2
@@ -41,6 +44,8 @@ jobs:
       run: |
         mkdir $STRIPPED_DIR
         cp -pR --parents $(cat release/files_common) $STRIPPED_DIR
+        cp -pR --parents $(cat release/files_tici) $STRIPPED_DIR
+        cp -pR --parents $(cat release/files_pc) $STRIPPED_DIR
         cp Dockerfile.openpilot_base $STRIPPED_DIR
 
         # need this to build on x86
@@ -50,7 +55,7 @@ jobs:
     - name: Build openpilot and run checks
       run: |
           cd $STRIPPED_DIR
-          ${{ env.RUN }} "python selfdrive/manager/build.py && \
+          ${{ env.RUN }} "CI=1 python selfdrive/manager/build.py && \
                           python -m unittest discover selfdrive/car"
     - name: Cleanup scons cache
       run: |
@@ -208,6 +213,7 @@ jobs:
                         $UNIT_TEST selfdrive/athena && \
                         $UNIT_TEST selfdrive/thermald && \
                         $UNIT_TEST tools/lib/tests && \
+                        ./selfdrive/common/tests/test_util && \
                         ./selfdrive/camerad/test/ae_gray_test"
     - name: Upload coverage to Codecov
       run: bash <(curl -s https://codecov.io/bash) -v -F unit_tests

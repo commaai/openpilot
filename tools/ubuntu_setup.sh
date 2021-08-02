@@ -68,17 +68,16 @@ if ! command -v "pyenv" > /dev/null 2>&1; then
   curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash
 fi
 
-# install bashrc
+# in the openpilot repo
+cd $HOME/openpilot
+
 source ~/.bashrc
 if [ -z "$OPENPILOT_ENV" ]; then
   OP_DIR=$(git rev-parse --show-toplevel)
-  echo "source $OP_DIR/tools/openpilot_env.sh" >> ~/.bashrc
+  printf "\nsource %s/tools/openpilot_env.sh" "$OP_DIR" >> ~/.bashrc
   source ~/.bashrc
   echo "added openpilot_env to bashrc"
 fi
-
-# in the openpilot repo
-cd $HOME/openpilot
 
 # do the rest of the git checkout
 git lfs pull

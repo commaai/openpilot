@@ -64,7 +64,7 @@ common/api/__init__.py
 models/supercombo.dlc
 models/dmonitoring_model_q.dlc
 
-release/build_release2.sh
+release/*
 
 selfdrive/version.py
 
@@ -176,6 +176,13 @@ selfdrive/car/mazda/radar_interface.py
 selfdrive/car/mazda/values.py
 selfdrive/car/mazda/carcontroller.py
 selfdrive/car/mazda/mazdacan.py
+selfdrive/car/tesla/__init__.py
+selfdrive/car/tesla/teslacan.py
+selfdrive/car/tesla/carcontroller.py
+selfdrive/car/tesla/radar_interface.py
+selfdrive/car/tesla/values.py
+selfdrive/car/tesla/carstate.py
+selfdrive/car/tesla/interface.py
 selfdrive/car/mock/*.py
 
 selfdrive/clocksd/.gitignore
@@ -237,9 +244,9 @@ selfdrive/controls/lib/pid.py
 selfdrive/controls/lib/longitudinal_planner.py
 selfdrive/controls/lib/radar_helpers.py
 selfdrive/controls/lib/vehicle_model.py
-selfdrive/controls/lib/speed_smoother.py
 selfdrive/controls/lib/fcw.py
 selfdrive/controls/lib/long_mpc.py
+selfdrive/controls/lib/lead_mpc.py
 selfdrive/controls/lib/long_mpc_model.py
 selfdrive/controls/lib/dynamic_follow/*
 
@@ -253,21 +260,21 @@ selfdrive/controls/lib/lateral_mpc/generator.cpp
 selfdrive/controls/lib/lateral_mpc/libmpc_py.py
 selfdrive/controls/lib/lateral_mpc/lateral_mpc.c
 
-selfdrive/controls/lib/longitudinal_mpc/lib_mpc_export/*
-selfdrive/controls/lib/longitudinal_mpc/.gitignore
-selfdrive/controls/lib/longitudinal_mpc/SConscript
-selfdrive/controls/lib/longitudinal_mpc/__init__.py
-selfdrive/controls/lib/longitudinal_mpc/generator.cpp
-selfdrive/controls/lib/longitudinal_mpc/libmpc_py.py
-selfdrive/controls/lib/longitudinal_mpc/longitudinal_mpc.c
+selfdrive/controls/lib/lead_mpc_lib/lib_mpc_export/*
+selfdrive/controls/lib/lead_mpc_lib/.gitignore
+selfdrive/controls/lib/lead_mpc_lib/SConscript
+selfdrive/controls/lib/lead_mpc_lib/__init__.py
+selfdrive/controls/lib/lead_mpc_lib/generator.cpp
+selfdrive/controls/lib/lead_mpc_lib/libmpc_py.py
+selfdrive/controls/lib/lead_mpc_lib/longitudinal_mpc.c
 
-selfdrive/controls/lib/longitudinal_mpc_model/lib_mpc_export/*
-selfdrive/controls/lib/longitudinal_mpc_model/.gitignore
-selfdrive/controls/lib/longitudinal_mpc_model/SConscript
-selfdrive/controls/lib/longitudinal_mpc_model/__init__.py
-selfdrive/controls/lib/longitudinal_mpc_model/generator.cpp
-selfdrive/controls/lib/longitudinal_mpc_model/libmpc_py.py
-selfdrive/controls/lib/longitudinal_mpc_model/longitudinal_mpc.c
+selfdrive/controls/lib/longitudinal_mpc_lib/lib_mpc_export/*
+selfdrive/controls/lib/longitudinal_mpc_lib/.gitignore
+selfdrive/controls/lib/longitudinal_mpc_lib/SConscript
+selfdrive/controls/lib/longitudinal_mpc_lib/__init__.py
+selfdrive/controls/lib/longitudinal_mpc_lib/generator.cpp
+selfdrive/controls/lib/longitudinal_mpc_lib/libmpc_py.py
+selfdrive/controls/lib/longitudinal_mpc_lib/longitudinal_mpc.c
 
 selfdrive/hardware/__init__.py
 selfdrive/hardware/base.h
@@ -277,11 +284,9 @@ selfdrive/hardware/eon/__init__.py
 selfdrive/hardware/eon/hardware.h
 selfdrive/hardware/eon/hardware.py
 selfdrive/hardware/tici/__init__.py
-selfdrive/hardware/tici/hardware.h
 selfdrive/hardware/tici/hardware.py
-selfdrive/hardware/tici/pins.py
-selfdrive/hardware/tici/agnos.py
-selfdrive/hardware/tici/agnos.json
+selfdrive/hardware/tici/amplifier.py
+selfdrive/hardware/tici/iwlist.py
 selfdrive/hardware/pc/__init__.py
 selfdrive/hardware/pc/hardware.py
 
@@ -357,6 +362,7 @@ selfdrive/ui/*.h
 selfdrive/ui/ui
 selfdrive/ui/text
 selfdrive/ui/spinner
+selfdrive/ui/soundd
 
 selfdrive/ui/qt/*.cc
 selfdrive/ui/qt/*.h
@@ -379,8 +385,6 @@ selfdrive/camerad/cameras/camera_frame_stream.cc
 selfdrive/camerad/cameras/camera_frame_stream.h
 selfdrive/camerad/cameras/camera_qcom.cc
 selfdrive/camerad/cameras/camera_qcom.h
-selfdrive/camerad/cameras/camera_qcom2.cc
-selfdrive/camerad/cameras/camera_qcom2.h
 selfdrive/camerad/cameras/debayer.cl
 selfdrive/camerad/cameras/sensor_i2c.h
 selfdrive/camerad/cameras/sensor2_i2c.h
@@ -440,7 +444,10 @@ selfdrive/modeld/runners/run.h
 selfdrive/monitoring/dmonitoringd.py
 selfdrive/monitoring/driver_monitor.py
 
+selfdrive/assets/.gitignore
+selfdrive/assets/assets.qrc
 selfdrive/assets/*.png
+selfdrive/assets/*.svg
 selfdrive/assets/fonts/*.ttf
 selfdrive/assets/images/*
 selfdrive/assets/offroad/*
@@ -503,6 +510,7 @@ cereal/log.capnp
 cereal/services.py
 cereal/SConscript
 cereal/include/**
+cereal/logger/logger.h
 cereal/messaging/.gitignore
 cereal/messaging/__init__.py
 cereal/messaging/bridge.cc
@@ -530,6 +538,7 @@ panda/VERSION
 panda/board/**
 panda/certs/**
 panda/crypto/**
+panda/examples/query_fw_versions.py
 panda/python/**
 
 opendbc/.gitignore
@@ -618,3 +627,5 @@ opendbc/toyota_adas.dbc
 opendbc/toyota_tss2_adas.dbc
 
 opendbc/vw_mqb_2010.dbc
+
+opendbc/tesla_can.dbc

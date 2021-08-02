@@ -1,7 +1,9 @@
 #pragma once
 
-#include <QtWidgets>
+#include <QFrame>
+#include <QMap>
 
+#include "selfdrive/common/params.h"
 #include "selfdrive/ui/ui.h"
 
 class Sidebar : public QFrame {
@@ -27,7 +29,7 @@ public slots:
 
 protected:
   void paintEvent(QPaintEvent *event) override;
-  void mousePressEvent(QMouseEvent *event) override;
+  void mouseReleaseEvent(QMouseEvent *event) override;
 
 private:
   void drawMetric(QPainter &p, const QString &label, const QString &val, QColor c, int y);
@@ -36,6 +38,7 @@ private:
   const QMap<cereal::DeviceState::NetworkType, QString> network_type = {
     {cereal::DeviceState::NetworkType::NONE, "--"},
     {cereal::DeviceState::NetworkType::WIFI, "WiFi"},
+    {cereal::DeviceState::NetworkType::ETHERNET, "ETH"},
     {cereal::DeviceState::NetworkType::CELL2_G, "2G"},
     {cereal::DeviceState::NetworkType::CELL3_G, "3G"},
     {cereal::DeviceState::NetworkType::CELL4_G, "LTE"},
@@ -47,6 +50,7 @@ private:
   const QColor warning_color = QColor(218, 202, 37);
   const QColor danger_color = QColor(201, 34, 49);
 
+  Params params;
   QString connect_str = "OFFLINE";
   QColor connect_status = warning_color;
   QString panda_str = "NO\nPANDA";

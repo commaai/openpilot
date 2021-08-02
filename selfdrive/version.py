@@ -7,6 +7,10 @@ from common.basedir import BASEDIR
 from selfdrive.swaglog import cloudlog
 
 
+TESTED_BRANCHES = ['devel', 'release2-staging', 'release3-staging', 'dashcam-staging', 'release2', 'release3', 'dashcam']
+SA_BRANCHES = ['stock_additions', 'SA-master']
+SA_BRANCHES += [f'{prefix}_{brnch}' for brnch in SA_BRANCHES for prefix in ['shanesmiskol', 'sshane']]
+
 def run_cmd(cmd: List[str]) -> str:
     return subprocess.check_output(cmd, encoding='utf8').strip()
 
@@ -64,9 +68,7 @@ if (origin is not None) and (branch is not None):
     comma_remote = origin.startswith('git@github.com:commaai') or origin.startswith('https://github.com/commaai')
     smiskol_remote = origin.startswith('git@github.com:sshane') or origin.startswith('https://github.com/sshane')
 
-    valid_branches = ['devel', 'release2-staging', 'dashcam-staging', 'release2', 'dashcam',
-                      'shanesmiskol_stock_additions', 'stock_additions', 'sshane_stock_additions', 'SA-master', 'sshane_SA-master']
-    tested_branch = get_git_branch().lower() in valid_branches
+    tested_branch = get_git_branch() in (TESTED_BRANCHES + SA_BRANCHES)
 
     dirty = False
 

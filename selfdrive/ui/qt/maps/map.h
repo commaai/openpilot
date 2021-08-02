@@ -24,6 +24,7 @@
 #include <QPixmap>
 
 #include "selfdrive/common/params.h"
+#include "selfdrive/common/util.h"
 #include "cereal/messaging/messaging.h"
 
 class MapInstructions : public QWidget {
@@ -36,9 +37,12 @@ private:
   QLabel *icon_01;
   QHBoxLayout *lane_layout;
   QMap<QString, QVariant> last_banner;
+  bool error = false;
 
 public:
   MapInstructions(QWidget * parent=nullptr);
+  void showError(QString error);
+  void hideIfNoError();
 
 public slots:
   void updateDistance(float d);
@@ -50,6 +54,7 @@ class MapETA : public QWidget {
 
 private:
   QLabel *eta;
+  QLabel *eta_unit;
   QLabel *time;
   QLabel *time_unit;
   QLabel *distance;
@@ -81,6 +86,7 @@ private:
   void initLayers();
 
   void mousePressEvent(QMouseEvent *ev) final;
+  void mouseDoubleClickEvent(QMouseEvent *ev) final;
   void mouseMoveEvent(QMouseEvent *ev) final;
   void wheelEvent(QWheelEvent *ev) final;
   bool event(QEvent *event) final;
@@ -91,16 +97,21 @@ private:
   SubMaster *sm;
   QTimer* timer;
 
+  bool loaded_once = false;
+
   // Panning
   QPointF m_lastPos;
   int pan_counter = 0;
   int zoom_counter = 0;
 
   // Position
-  QMapbox::Coordinate last_position = QMapbox::Coordinate(37.7393118509158, -122.46471285025565);
+  std::optional<QMapbox::Coordinate> last_position;
   std::optional<float> last_bearing;
+  FirstOrderFilter velocity_filter;
+  bool localizer_valid = false;
 
   // Route
+  bool allow_open = true;
   bool gps_ok = false;
   QGeoServiceProvider *geoservice_provider;
   QGeoRoutingManager *routing_manager;
@@ -111,7 +122,6 @@ private:
   MapETA* map_eta;
 
   QMapbox::Coordinate nav_destination;
-  double last_maneuver_distance = 1000;
 
   // Route recompute
   QTimer* recompute_timer;

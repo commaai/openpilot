@@ -2,7 +2,7 @@
 
 Our software is open source so you can solve your own problems without needing help from others. And if you solve a problem and are so kind, you can upstream it for the rest of the world to use.
 
-Most open source development activity is coordinated through our [GitHub Discussions](https://github.com/commaai/openpilot/discussions) and [Discord](https://discord.comma.ai). A lot of documentation is available on our [medium](https://medium.com/@comma_ai/).
+Most open source development activity is coordinated through our [GitHub Discussions](https://github.com/commaai/openpilot/discussions) and [Discord](https://discord.comma.ai). A lot of documentation is available on our [blog](https://blog.comma.ai/).
 
 ## Getting Started
 
@@ -22,9 +22,9 @@ Code is automatically checked for style by GitHub Actions as part of the automat
 
 ## Car Ports (openpilot)
 
-We've released a [Model Port guide](https://medium.com/@comma_ai/openpilot-port-guide-for-toyota-models-e5467f4b5fe6) for porting to Toyota/Lexus models.
+We've released a [Model Port guide](https://blog.comma.ai/openpilot-port-guide-for-toyota-models/) for porting to Toyota/Lexus models.
 
-If you port openpilot to a substantially new car brand, see this more generic [Brand Port guide](https://medium.com/@comma_ai/how-to-write-a-car-port-for-openpilot-7ce0785eda84).
+If you port openpilot to a substantially new car brand, see this more generic [Brand Port guide](https://blog.comma.ai/how-to-write-a-car-port-for-openpilot/).
 
 ## Pull Requests
 
@@ -36,7 +36,7 @@ Or alternatively, when on the master branch:
 ```
 git submodule update --init
 ```
-The reasons for having submodules on a dedicated repository and our new development philosophy can be found in our [post about externalization](https://medium.com/@comma_ai/a-2020-theme-externalization-13b33326d8b3).
+The reasons for having submodules on a dedicated repository and our new development philosophy can be found in our [post about externalization](https://blog.comma.ai/a-2020-theme-externalization/).
 Modules that are in seperate repositories include:
 * cereal
 * laika

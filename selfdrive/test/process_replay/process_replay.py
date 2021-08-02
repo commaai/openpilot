@@ -454,7 +454,7 @@ def cpp_replay_process(cfg, lr, fingerprint=None):
     for s in sub_sockets:
       messaging.recv_one_or_none(sockets[s])
 
-    for i, msg in enumerate(tqdm(pub_msgs, disable=CI)):
+    for i, msg in enumerate(tqdm(pub_msgs, disable=False)):
       pm.send(msg.which(), msg.as_builder())
 
       resp_sockets = cfg.pub_sub[msg.which()] if cfg.should_recv_callback is None else cfg.should_recv_callback(msg)

@@ -24,7 +24,6 @@ class CarInterface(CarInterfaceBase):
     ret.communityFeature = True
 
     ret.steerLimitAlert = False
-    ret.enableCamera = True
     ret.steerRateCost = 0.5
 
     ret.steerActuatorDelay = 0.1
@@ -46,7 +45,7 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.824
       ret.centerToFront = ret.wheelbase * 0.44
       ret.steerRatio = 17
-  
+
     ret.steerControlType = car.CarParams.SteerControlType.angle
     ret.radarOffCan = True
 

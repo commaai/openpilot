@@ -54,41 +54,42 @@ int set_core_affinity(int core) {
 namespace util {
 
 std::string read_file(const std::string& fn) {
-  std::ifstream ifs(fn, std::ios::binary | std::ios::ate);
-  if (ifs) {
-    std::ifstream::pos_type pos = ifs.tellg();
-    if (pos != std::ios::beg) {
-      std::string result;
-      result.resize(pos);
-      ifs.seekg(0, std::ios::beg);
-      ifs.read(result.data(), pos);
-      if (ifs) {
+  std::ifstream f(fn, std::ios::binary | std::ios::in);
+  if (f.is_open()) {
+    f.seekg(0, std::ios::end);
+    int size = f.tellg();
+    if (f.good() && size > 0) {
+      std::string result(size, '\0');
+      f.seekg(0, std::ios::beg);
+      f.read(result.data(), size);
+      // return either good() or has reached end-of-file (e.g. /sys/power/wakeup_count)
+      if (f.good() || f.eof()) {
+        result.resize(f.gcount());
         return result;
       }
     }
+    // fallback for files created on read, e.g. procfs
+    std::stringstream buffer;
+    buffer << f.rdbuf();
+    return buffer.str();
   }
-  ifs.close();
-
-  // fallback for files created on read, e.g. procfs
-  std::ifstream f(fn);
-  std::stringstream buffer;
-  buffer << f.rdbuf();
-  return buffer.str();
+  return std::string();
 }
 
-int read_files_in_dir(const std::string &path, std::map<std::string, std::string> *contents) {
+std::map<std::string, std::string> read_files_in_dir(const std::string &path) {
+  std::map<std::string, std::string> ret;
   DIR *d = opendir(path.c_str());
-  if (!d) return -1;
+  if (!d) return ret;
 
   struct dirent *de = NULL;
   while ((de = readdir(d))) {
     if (isalnum(de->d_name[0])) {
-      (*contents)[de->d_name] = util::read_file(path + "/" + de->d_name);
+      ret[de->d_name] = util::read_file(path + "/" + de->d_name);
     }
   }
 
   closedir(d);
-  return 0;
+  return ret;
 }
 
 int write_file(const char* path, const void* data, size_t size, int flags, mode_t mode) {
@@ -155,6 +156,10 @@ std::string dir_name(std::string const &path) {
   return path.substr(0, pos);
 }
 
+bool is_valid_dongle_id(std::string const& dongle_id) {
+  return !dongle_id.empty() && dongle_id != "UnregisteredDevice";
+}
+
 struct tm get_time() {
   time_t rawtime;
   time(&rawtime);
@@ -168,7 +173,7 @@ struct tm get_time() {
 bool time_valid(struct tm sys_time) {
   int year = 1900 + sys_time.tm_year;
   int month = 1 + sys_time.tm_mon;
-  return (year > 2020) || (year == 2020 && month >= 10);
+  return (year > 2021) || (year == 2021 && month >= 6);
 }
 
 }  // namespace util

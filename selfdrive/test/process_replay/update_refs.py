@@ -2,10 +2,10 @@
 import os
 import sys
 
-from selfdrive.test.openpilotci import upload_file
+from selfdrive.test.openpilotci import upload_file, get_url
 from selfdrive.test.process_replay.compare_logs import save_log
 from selfdrive.test.process_replay.process_replay import replay_process, CONFIGS
-from selfdrive.test.process_replay.test_processes import segments, get_segment
+from selfdrive.test.process_replay.test_processes import segments
 from selfdrive.version import get_git_commit
 from tools.lib.logreader import LogReader
 
@@ -23,13 +23,8 @@ if __name__ == "__main__":
     f.write(ref_commit)
 
   for car_brand, segment in segments:
-    rlog_fn = get_segment(segment)
-
-    if rlog_fn is None:
-      print("failed to get segment %s" % segment)
-      sys.exit(1)
-
-    lr = LogReader(rlog_fn)
+    r, n = segment.rsplit("--", 1)
+    lr = LogReader(get_url(r, n))
 
     for cfg in CONFIGS:
       log_msgs = replay_process(cfg, lr)

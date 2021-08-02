@@ -3,7 +3,6 @@ from cereal import car
 from selfdrive.config import Conversions as CV
 from selfdrive.car.toyota.values import Ecu, CAR, TSS2_CAR, NO_DSU_CAR, MIN_ACC_SPEED, PEDAL_HYST_GAP, CarControllerParams
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
-from selfdrive.swaglog import cloudlog
 from selfdrive.car.interfaces import CarInterfaceBase
 from common.op_params import opParams
 
@@ -32,6 +31,8 @@ class CarInterface(CarInterfaceBase):
     ret.steerLimitTimer = 0.4
     ret.hasZss = 0x23 in fingerprint[0]  # Detect whether car has accurate ZSS
     ret.steerRateCost = 0.5 if ret.hasZss else 1.0
+
+    ret.stoppingControl = False # Toyota starts braking more when it thinks you want to stop
 
     CARS_NOT_PID = [CAR.RAV4, CAR.RAV4H]
     if not prius_use_pid:
@@ -85,12 +86,15 @@ class CarInterface(CarInterfaceBase):
       stop_and_go = False
       ret.safetyParam = 88
       ret.wheelbase = 2.70
-      ret.steerRatio = 18.27
+      ret.steerRatio = 17.43
+      ret.minSpeedCan = 0.1 * CV.KPH_TO_MS
       tire_stiffness_factor = 0.444  # not optimized yet
       ret.mass = 2860. * CV.LB_TO_KG + STD_CARGO_KG  # mean between normal and hybrid
-      ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kiBP = [[9., 16., 32.], [9., 16., 32.]]
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.165, 0.088, 0.053], [0.041, 0.022, 0.013]]
-      ret.lateralTuning.pid.kf = 0.00004085  # full torque for 20 deg at 80mph means 0.00007818594
+      ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kpV = [[20, 31], [0.05, 0.12]]  # 45 to 70 mph
+      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kiV = [[20, 31], [0.001, 0.01]]
+      ret.lateralTuning.pid.kdBP, ret.lateralTuning.pid.kdV = [[20, 31], [0.0, 0.0]]
+      # ret.lateralTuning.pid.kf = 0.00003  # full torque for 20 deg at 80mph means 0.00007818594
+      ret.lateralTuning.pid.kf = 0.000055  # full torque for 20 deg at 80mph means 0.00007818594
       ret.lateralTuning.pid.newKfTuned = True
 
     elif candidate == CAR.LEXUS_RX:
@@ -183,53 +187,26 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.17], [0.03]]
       ret.lateralTuning.pid.kf = 0.00006
 
-    elif candidate == CAR.RAV4_TSS2:
+    elif candidate in [CAR.RAV4_TSS2, CAR.RAV4H_TSS2]:
       stop_and_go = True
       ret.safetyParam = 73
       ret.wheelbase = 2.68986
       ret.steerRatio = 14.3
       tire_stiffness_factor = 0.7933
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.15], [0.05]]
+      ret.mass = 3585. * CV.LB_TO_KG + STD_CARGO_KG # Average between ICE and Hybrid
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.1]]
       ret.lateralTuning.pid.kdV = [0.1]
-      ret.mass = 3370. * CV.LB_TO_KG + STD_CARGO_KG
-      ret.lateralTuning.pid.kf = 0.00004
+      ret.lateralTuning.pid.kf = 0.00007818594
 
+      # 2019+ Rav4 TSS2 uses two different steering racks and specific tuning seems to be necessary.
+      # See https://github.com/commaai/openpilot/pull/21429#issuecomment-873652891
       for fw in car_fw:
-        if fw.ecu == "eps" and fw.fwVersion == b"8965B42170\x00\x00\x00\x00\x00\x00":
-          ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.1]]
-          ret.lateralTuning.pid.kf = 0.00007818594
+        if fw.ecu == "eps" and (fw.fwVersion.startswith(b'\x02') or fw.fwVersion in [b'8965B42181\x00\x00\x00\x00\x00\x00']):
+          ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.15], [0.05]]
+          ret.lateralTuning.pid.kf = 0.00004
           break
 
       if rav4TSS2_use_indi:  # Rav4 2020 TSS2 Tune, needs to be verified, based on cgwtuning
-        ret.lateralTuning.init('indi')
-        ret.lateralTuning.indi.innerLoopGainBP = [16.7, 25]
-        ret.lateralTuning.indi.innerLoopGainV = [15, 15]
-        ret.lateralTuning.indi.outerLoopGainBP = [8.3, 11.1, 13.9, 16.7, 19.4, 22.2, 25, 30.1, 33.3, 36.1]
-        ret.lateralTuning.indi.outerLoopGainV = [4.7, 6.1, 8.35, 10.5, 12.8, 14.99, 16, 17, 18, 19]
-        ret.lateralTuning.indi.timeConstantBP = [8.3, 11.1, 13.9, 16.7, 19.4, 22.2, 25, 30.1, 33.3, 36.1]
-        ret.lateralTuning.indi.timeConstantV = [1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.0, 4.0, 4.0]
-        ret.lateralTuning.indi.actuatorEffectivenessBP = [16.7, 25]
-        ret.lateralTuning.indi.actuatorEffectivenessV = [15, 15]
-        ret.steerRateCost = 0.3
-
-    elif candidate == CAR.RAV4H_TSS2:
-      stop_and_go = True
-      ret.safetyParam = 73
-      ret.wheelbase = 2.68986
-      ret.steerRatio = 14.3
-      tire_stiffness_factor = 0.7933
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.15], [0.05]]
-      ret.lateralTuning.pid.kdV = [0.1]
-      ret.mass = 3800. * CV.LB_TO_KG + STD_CARGO_KG
-      ret.lateralTuning.pid.kf = 0.00004
-
-      for fw in car_fw:
-        if fw.ecu == "eps" and fw.fwVersion == b"8965B42170\x00\x00\x00\x00\x00\x00":
-          ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.1]]
-          ret.lateralTuning.pid.kf = 0.00007818594
-          break
-
-      if rav4TSS2_use_indi:  # Rav4 2020 TSS2 Tune, based on cgwtuning, needs to be verified
         ret.lateralTuning.init('indi')
         ret.lateralTuning.indi.innerLoopGainBP = [16.7, 25]
         ret.lateralTuning.indi.innerLoopGainV = [15, 15]
@@ -248,6 +225,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 13.9
       tire_stiffness_factor = 0.444  # not optimized yet
       ret.mass = 3060. * CV.LB_TO_KG + STD_CARGO_KG
+
       if corollaTSS2_use_indi:  # birdman6450#7399's Corolla 2020 TSS2 Tune
         ret.lateralTuning.init('indi')
         ret.lateralTuning.indi.innerLoopGainBP = [18, 22, 26]
@@ -262,6 +240,7 @@ class CarInterface(CarInterfaceBase):
       else:
         ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.1]]
         ret.lateralTuning.pid.kf = 0.00007818594
+        # TODO: is this good?
         # ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[.028], [.0012]]  # birdman6450#7399's Corolla 2020 PIF Tune
         # ret.lateralTuning.pid.kdV = [0.]
         # ret.lateralTuning.pid.kf = 0.000153263811757641
@@ -348,6 +327,16 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.1]]
       ret.lateralTuning.pid.kf = 0.00006
 
+    elif candidate == CAR.ALPHARD_TSS2:
+      stop_and_go = True
+      ret.safetyParam = 73
+      ret.wheelbase = 3.00
+      ret.steerRatio = 14.2
+      tire_stiffness_factor = 0.444
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.19], [0.02]]
+      ret.mass = 4305. * CV.LB_TO_KG + STD_CARGO_KG
+      ret.lateralTuning.pid.kf = 0.00007818594
+
     if use_lqr:
       ret.lateralTuning.init('lqr')
 
@@ -372,7 +361,6 @@ class CarInterface(CarInterfaceBase):
     ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront,
                                                                          tire_stiffness_factor=tire_stiffness_factor)
 
-    ret.enableCamera = True
     ret.enableBsm = 0x3F6 in fingerprint[0] and candidate in TSS2_CAR
     # Detect smartDSU, which intercepts ACC_CMD from the DSU allowing openpilot to send it
     smartDsu = 0x2FF in fingerprint[0]
@@ -381,9 +369,7 @@ class CarInterface(CarInterfaceBase):
     ret.enableDsu = (len(found_ecus) > 0) and (Ecu.dsu not in found_ecus) and (candidate not in NO_DSU_CAR)
     ret.enableGasInterceptor = 0x201 in fingerprint[0]
     # if the smartDSU is detected, openpilot can send ACC_CMD (and the smartDSU will block it from the DSU) or not (the DSU is "connected")
-    ret.openpilotLongitudinalControl = ret.enableCamera and (smartDsu or ret.enableDsu or candidate in TSS2_CAR)
-    cloudlog.warning("ECU DSU Simulated: %r", ret.enableDsu)
-    cloudlog.warning("ECU Gas Interceptor: %r", ret.enableGasInterceptor)
+    ret.openpilotLongitudinalControl = smartDsu or ret.enableDsu or candidate in TSS2_CAR
 
     # min speed to enable ACC. if car can do stop and go, then set enabling speed
     # to a negative value, so it won't matter.
@@ -440,10 +426,10 @@ class CarInterface(CarInterfaceBase):
     if self.CS.low_speed_lockout and self.CP.openpilotLongitudinalControl:
       events.add(EventName.lowSpeedLockout)
     if ret.vEgo < self.CP.minEnableSpeed and self.CP.openpilotLongitudinalControl:
-      # events.add(EventName.belowEngageSpeed)
-      # if c.actuators.gas > 0.1:
-      #   # some margin on the actuator to not false trigger cancellation while stopping
-      #   events.add(EventName.speedTooLow)
+      events.add(EventName.belowEngageSpeed)
+      if c.actuators.gas > 0.2:
+        # some margin on the actuator to not false trigger cancellation while stopping
+        events.add(EventName.speedTooLow)
       if ret.vEgo < 0.001:
         # while in standstill, send a user alert
         events.add(EventName.manualRestart)

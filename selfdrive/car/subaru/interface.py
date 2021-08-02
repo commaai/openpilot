@@ -28,8 +28,6 @@ class CarInterface(CarInterfaceBase):
     ret.communityFeature = True
     ret.dashcamOnly = candidate in PREGLOBAL_CARS
 
-    ret.enableCamera = True
-
     ret.steerRateCost = 0.7
     ret.steerLimitTimer = 0.4
 

@@ -29,7 +29,7 @@ from selfdrive.hardware import HARDWARE, PC, TICI
 from selfdrive.loggerd.config import ROOT
 from selfdrive.loggerd.xattr_cache import getxattr, setxattr
 from selfdrive.swaglog import cloudlog, SWAGLOG_DIR
-from selfdrive.version import get_version, get_git_remote, get_git_branch, get_git_commit
+from selfdrive.version import version, get_version, get_git_remote, get_git_branch, get_git_commit
 
 ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
 HANDLER_THREADS = int(os.getenv('HANDLER_THREADS', "4"))
@@ -39,6 +39,9 @@ LOG_ATTR_NAME = 'user.upload'
 LOG_ATTR_VALUE_MAX_UNIX_TIME = int.to_bytes(2147483647, 4, sys.byteorder)
 RECONNECT_TIMEOUT_S = 70
 
+RETRY_DELAY = 10  # seconds
+MAX_RETRY_COUNT = 30  # Try for at most 5 minutes if upload fails immediately
+
 dispatcher["echo"] = lambda s: s
 recv_queue: Any = queue.Queue()
 send_queue: Any = queue.Queue()
@@ -46,7 +49,7 @@ upload_queue: Any = queue.Queue()
 log_send_queue: Any = queue.Queue()
 log_recv_queue: Any = queue.Queue()
 cancelled_uploads: Any = set()
-UploadItem = namedtuple('UploadItem', ['path', 'url', 'headers', 'created_at', 'id'])
+UploadItem = namedtuple('UploadItem', ['path', 'url', 'headers', 'created_at', 'id', 'retry_count'], defaults=(0,))
 
 
 def handle_long_poll(ws):
@@ -54,7 +57,7 @@ def handle_long_poll(ws):
 
   threads = [
     threading.Thread(target=ws_recv, args=(ws, end_event), name='ws_recv'),
-    threading.Thread(target=ws_send, args=(ws, end_event), name='wc_send'),
+    threading.Thread(target=ws_send, args=(ws, end_event), name='ws_send'),
     threading.Thread(target=upload_handler, args=(end_event,), name='upload_handler'),
     threading.Thread(target=log_handler, args=(end_event,), name='log_handler'),
   ] + [
@@ -103,7 +106,20 @@ def upload_handler(end_event):
       if item.id in cancelled_uploads:
         cancelled_uploads.remove(item.id)
         continue
-      _do_upload(item)
+
+      try:
+        _do_upload(item)
+      except (requests.exceptions.Timeout, requests.exceptions.ConnectionError, requests.exceptions.SSLError) as e:
+        cloudlog.warning(f"athena.upload_handler.retry {e} {item}")
+
+        if item.retry_count < MAX_RETRY_COUNT:
+          item = item._replace(retry_count=item.retry_count + 1)
+          upload_queue.put_nowait(item)
+
+          for _ in range(RETRY_DELAY):
+            time.sleep(1)
+            if end_event.is_set():
+              break
     except queue.Empty:
       pass
     except Exception:
@@ -116,7 +132,7 @@ def _do_upload(upload_item):
     return requests.put(upload_item.url,
                         data=f,
                         headers={**upload_item.headers, 'Content-Length': str(size)},
-                        timeout=10)
+                        timeout=30)
 
 
 # security: user should be able to request any message from their car
@@ -209,6 +225,14 @@ def cancelUpload(upload_id):
   return {"success": 1}
 
 
+@dispatcher.add_method
+def primeActivated(activated):
+  dongle_id = Params().get("DongleId", encoding='utf-8')
+  api = Api(dongle_id)
+  manage_tokens(api)
+  return {"success": 1}
+
+
 def startLocalProxy(global_end_event, remote_ws_uri, local_port):
   try:
     if local_port not in LOCAL_PORT_WHITELIST:
@@ -268,6 +292,11 @@ def getNetworkType():
 
 
 @dispatcher.add_method
+def getNetworks():
+  return HARDWARE.get_networks()
+
+
+@dispatcher.add_method
 def takeSnapshot():
   from selfdrive.camerad.snapshot.snapshot import snapshot, jpeg_write
   ret = snapshot()
@@ -298,9 +327,8 @@ def get_logs_to_send_sorted():
     # assume send failed and we lost the response if sent more than one hour ago
     if not time_sent or curr_time - time_sent > 3600:
       logs.append(log_entry)
-  # return logs in order they should be sent
   # excluding most recent (active) log file
-  return sorted(logs[:-1])
+  return sorted(logs)[:-1]
 
 
 def log_handler(end_event):
@@ -319,7 +347,7 @@ def log_handler(end_event):
       # send one log
       curr_log = None
       if len(log_files) > 0:
-        log_entry = log_files.pop()
+        log_entry = log_files.pop() # newest log file
         cloudlog.debug(f"athena.log_handler.forward_request {log_entry}")
         try:
           curr_time = int(time.time())
@@ -424,7 +452,7 @@ def ws_recv(ws, end_event):
     except WebSocketTimeoutException:
       ns_since_last_ping = int(sec_since_boot() * 1e9) - last_ping
       if ns_since_last_ping > RECONNECT_TIMEOUT_S * 1e9:
-        cloudlog.exception("athenad.wc_recv.timeout")
+        cloudlog.exception("athenad.ws_recv.timeout")
         end_event.set()
     except Exception:
       cloudlog.exception("athenad.ws_recv.exception")
@@ -479,9 +507,9 @@ def main():
       ws = create_connection(ws_uri,
                              cookie="jwt=" + api.get_token(),
                              enable_multithread=True,
-                             timeout=1.0)
-      ws.settimeout(1)
+                             timeout=30.0)
       cloudlog.event("athenad.main.connected_ws", ws_uri=ws_uri)
+      params.delete("PrimeRedirected")
 
       manage_tokens(api)
 
@@ -491,11 +519,22 @@ def main():
       break
     except (ConnectionError, TimeoutError, WebSocketException):
       conn_retries += 1
+      params.delete("PrimeRedirected")
+      params.delete("LastAthenaPingTime")
+    except socket.timeout:
+      try:
+        r = requests.get("http://api.commadotai.com/v1/me", allow_redirects=False,
+                         headers={"User-Agent": f"openpilot-{version}"}, timeout=15.0)
+        if r.status_code == 302 and r.headers['Location'].startswith("http://u.web2go.com"):
+          params.put_bool("PrimeRedirected", True)
+      except Exception:
+        cloudlog.exception("athenad.socket_timeout.exception")
       params.delete("LastAthenaPingTime")
     except Exception:
       cloudlog.exception("athenad.main.exception")
 
       conn_retries += 1
+      params.delete("PrimeRedirected")
       params.delete("LastAthenaPingTime")
 
     time.sleep(backoff(conn_retries))

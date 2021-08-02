@@ -18,6 +18,7 @@
 #include "selfdrive/sensord/sensors/lsm6ds3_accel.h"
 #include "selfdrive/sensord/sensors/lsm6ds3_gyro.h"
 #include "selfdrive/sensord/sensors/lsm6ds3_temp.h"
+#include "selfdrive/sensord/sensors/mmc5603nj_magn.h"
 #include "selfdrive/sensord/sensors/sensor.h"
 
 #define I2C_BUS_IMU 1
@@ -43,27 +44,38 @@ int sensor_loop() {
   LSM6DS3_Gyro lsm6ds3_gyro(i2c_bus_imu);
   LSM6DS3_Temp lsm6ds3_temp(i2c_bus_imu);
 
+  MMC5603NJ_Magn mmc5603nj_magn(i2c_bus_imu);
+
   LightSensor light("/sys/class/i2c-adapter/i2c-2/2-0038/iio:device1/in_intensity_both_raw");
 
   // Sensor init
+  std::vector<std::pair<Sensor *, bool>> sensors_init; // Sensor, required
+  sensors_init.push_back({&bmx055_accel, true});
+  sensors_init.push_back({&bmx055_gyro, true});
+  sensors_init.push_back({&bmx055_magn, true});
+  sensors_init.push_back({&bmx055_temp, true});
+
+  sensors_init.push_back({&lsm6ds3_accel, true});
+  sensors_init.push_back({&lsm6ds3_gyro, true});
+  sensors_init.push_back({&lsm6ds3_temp, true});
+
+  sensors_init.push_back({&mmc5603nj_magn, false});
+
+  sensors_init.push_back({&light, true});
+
+
+  // Initialize sensors
   std::vector<Sensor *> sensors;
-  sensors.push_back(&bmx055_accel);
-  sensors.push_back(&bmx055_gyro);
-  sensors.push_back(&bmx055_magn);
-  sensors.push_back(&bmx055_temp);
-
-  sensors.push_back(&lsm6ds3_accel);
-  sensors.push_back(&lsm6ds3_gyro);
-  sensors.push_back(&lsm6ds3_temp);
-
-  sensors.push_back(&light);
-
-
-  for (Sensor * sensor : sensors) {
-    int err = sensor->init();
+  for (auto &sensor : sensors_init) {
+    int err = sensor.first->init();
     if (err < 0) {
-      LOGE("Error initializing sensors");
-      return -1;
+      // Fail on required sensors
+      if (sensor.second) {
+        LOGE("Error initializing sensors");
+        return -1;
+      }
+    } else {
+      sensors.push_back(sensor.first);
     }
   }
 

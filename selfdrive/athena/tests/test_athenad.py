@@ -14,8 +14,9 @@ from unittest import mock
 from websocket import ABNF
 from websocket._exceptions import WebSocketConnectionClosedException
 
+from selfdrive import swaglog
 from selfdrive.athena import athenad
-from selfdrive.athena.athenad import dispatcher
+from selfdrive.athena.athenad import MAX_RETRY_COUNT, dispatcher
 from selfdrive.athena.tests.helpers import MockWebsocket, MockParams, MockApi, EchoSocket, with_http_server
 from cereal import messaging
 
@@ -24,9 +25,16 @@ class TestAthenadMethods(unittest.TestCase):
   def setUpClass(cls):
     cls.SOCKET_PORT = 45454
     athenad.ROOT = tempfile.mkdtemp()
+    athenad.SWAGLOG_DIR = swaglog.SWAGLOG_DIR = tempfile.mkdtemp()
     athenad.Params = MockParams
     athenad.Api = MockApi
     athenad.LOCAL_PORT_WHITELIST = set([cls.SOCKET_PORT])
+
+  def wait_for_upload(self):
+    now = time.time()
+    while time.time() - now < 5:
+      if athenad.upload_queue.qsize() == 0:
+        break
 
   def test_echo(self):
     assert dispatcher["echo"]("bob") == "bob"
@@ -103,12 +111,43 @@ class TestAthenadMethods(unittest.TestCase):
 
     athenad.upload_queue.put_nowait(item)
     try:
-      time.sleep(1) # give it time to process to prevent shutdown before upload completes
-      now = time.time()
-      while time.time() - now < 5:
-        if athenad.upload_queue.qsize() == 0:
-          break
+      self.wait_for_upload()
+      time.sleep(0.1)
+
+      # TODO: verify that upload actually succeeded
       self.assertEqual(athenad.upload_queue.qsize(), 0)
+    finally:
+      end_event.set()
+      athenad.upload_queue = queue.Queue()
+      os.unlink(fn)
+
+  def test_upload_handler_timeout(self):
+    """When an upload times out or fails to connect it should be placed back in the queue"""
+    fn = os.path.join(athenad.ROOT, 'qlog.bz2')
+    Path(fn).touch()
+    item = athenad.UploadItem(path=fn, url="http://localhost:44444/qlog.bz2", headers={}, created_at=int(time.time()*1000), id='')
+    item_no_retry = item._replace(retry_count=MAX_RETRY_COUNT)
+
+    end_event = threading.Event()
+    thread = threading.Thread(target=athenad.upload_handler, args=(end_event,))
+    thread.start()
+
+    try:
+      athenad.upload_queue.put_nowait(item_no_retry)
+      self.wait_for_upload()
+      time.sleep(0.1)
+
+      # Check that upload with retry count exceeded is not put back
+      self.assertEqual(athenad.upload_queue.qsize(), 0)
+
+      athenad.upload_queue.put_nowait(item)
+      self.wait_for_upload()
+      time.sleep(0.1)
+
+      # Check that upload item was put back in the queue with incremented retry count
+      self.assertEqual(athenad.upload_queue.qsize(), 1)
+      self.assertEqual(athenad.upload_queue.get().retry_count, 1)
+
     finally:
       end_event.set()
       athenad.upload_queue = queue.Queue()
@@ -125,10 +164,9 @@ class TestAthenadMethods(unittest.TestCase):
     thread = threading.Thread(target=athenad.upload_handler, args=(end_event,))
     thread.start()
     try:
-      now = time.time()
-      while time.time() - now < 5:
-        if athenad.upload_queue.qsize() == 0 and len(athenad.cancelled_uploads) == 0:
-          break
+      self.wait_for_upload()
+      time.sleep(0.1)
+
       self.assertEqual(athenad.upload_queue.qsize(), 0)
       self.assertEqual(len(athenad.cancelled_uploads), 0)
     finally:
@@ -203,6 +241,17 @@ class TestAthenadMethods(unittest.TestCase):
     finally:
       end_event.set()
       thread.join()
+
+  def test_get_logs_to_send_sorted(self):
+    fl = list()
+    for i in range(10):
+      fn = os.path.join(swaglog.SWAGLOG_DIR, f'swaglog.{i:010}')
+      Path(fn).touch()
+      fl.append(os.path.basename(fn))
+
+    # ensure the list is all logs except most recent
+    sl = athenad.get_logs_to_send_sorted()
+    self.assertListEqual(sl, fl[:-1])
 
 if __name__ == '__main__':
   unittest.main()
