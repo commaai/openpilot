@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "cereal/messaging/messaging.h"
 struct CPUTime {
   int id;
   unsigned long utime, ntime, stime, itime;
@@ -35,3 +36,5 @@ std::vector<std::string> cmdline(const std::string &cmd);
 const ProcCache &getProcExtraInfo(int pid, const std::string &name);
 
 };  // namespace Parser
+
+void buildProcLogerMessage(MessageBuilder &msg);

@@ -1,7 +1,7 @@
 #define CATCH_CONFIG_MAIN
 #include "catch2/catch.hpp"
 #include "selfdrive/common/util.h"
-#include "selfdrive/proclogd/parser.h"
+#include "selfdrive/proclogd/proclog.h"
 
 TEST_CASE("Parser::procStat") {
   SECTION("from string") {
@@ -95,5 +95,52 @@ TEST_CASE("Parser::cmdline") {
     REQUIRE(cmds[0] == "a");
     REQUIRE(cmds[1] == "b");
     REQUIRE(cmds[2] == "c");
+  }
+}
+
+TEST_CASE("buildProcLogerMessage") {
+  MessageBuilder msg;
+  buildProcLogerMessage(msg);
+
+  kj::Array<capnp::word> buf = capnp::messageToFlatArray(msg);
+  capnp::FlatArrayMessageReader reader(buf);
+  auto log = reader.getRoot<cereal::Event>().getProcLog();
+
+  // test cereal::ProcLog::CPUTimes
+  auto cpu_times = log.getCpuTimes();
+  REQUIRE(cpu_times.size() == sysconf(_SC_NPROCESSORS_ONLN));
+  REQUIRE(cpu_times[cpu_times.size() - 1].getCpuNum() == cpu_times.size() - 1);
+
+  // test cereal::ProcLog::Mem
+  auto mem = log.getMem();
+  // first & last items we read from /proc/mem
+  REQUIRE(mem.getTotal() != 0);
+  REQUIRE(mem.getShared() != 0);
+
+  auto procs = log.getProcs();
+  REQUIRE(procs.size() > 1);
+
+  // test if self in procs
+  bool found_self = false;
+  int self_pid = getpid();
+  for (auto p : procs) {
+    if (p.getPid() == self_pid) {
+      REQUIRE(p.getName() == "test_proclog");
+      REQUIRE(p.getNumThreads() == 1);
+      found_self = true;
+      break;
+    }
+  }
+  REQUIRE(found_self == true);
+
+  // test if proc_names in procs
+  const std::string proc_names[] = {"systemd"};
+  for (auto &name : proc_names) {
+    bool found = false;
+    for (auto p : procs) {
+      std::string n = p.getName();
+      if ((found = (n == name))) break;
+    }
+    REQUIRE(found == true);
   }
 }
