@@ -5,7 +5,9 @@
 #include <climits>
 #include <fstream>
 #include <sstream>
+#include <iterator>
 
+#include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
 
 namespace Parser {
@@ -45,8 +47,26 @@ std::unordered_map<std::string, uint64_t> memInfo(std::istream &stream) {
   return mem_info;
 }
 
+// field position (https://man7.org/linux/man-pages/man5/proc.5.html)
+enum StatPos{
+  pid = 1, 
+  state = 3,
+  ppid = 4,
+  utime = 14,
+  stime = 15,
+  cutime = 16,
+  cstime = 17,
+  priority = 18,
+  nice = 19,
+  num_threads = 20,
+  starttime = 22,
+  vsize = 23,
+  rss = 24,
+  processor = 39,
+  MAX_FIELD = 52,
+};
 // parse /proc/pid/stat
-std::optional<PidStat> pidStat(const std::string &stat) {
+std::optional<PidStat> pidStat(std::string stat) {
   // To avoid being fooled by names containing a closing paren, scan backwards.
   auto open_paren = stat.find('(');
   auto close_paren = stat.rfind(')');
@@ -54,17 +74,32 @@ std::optional<PidStat> pidStat(const std::string &stat) {
     return std::nullopt;
 
   PidStat p;
-  p.pid = atoi(stat.data());
   p.name = stat.substr(open_paren + 1, close_paren-open_paren-1);
-  int count = sscanf(&stat[close_paren + 1],
-                     " %c %d %*d %*d %*d %*d %*d %*d %*d %*d %*d "
-                     "%lu %lu %ld %ld %ld %ld %ld %*d %lld "
-                     "%lu %lu %*d %*d %*d %*d %*d %*d %*d "
-                     "%*d %*d %*d %*d %*d %*d %*d %d",
-                     &p.state, &p.ppid,
-                     &p.utime, &p.stime, &p.cutime, &p.cstime, &p.priority, &p.nice, &p.num_threads, &p.starttime,
-                     &p.vms, &p.rss, &p.processor);
-  return count == 13 ? std::make_optional(p) : std::nullopt;
+  // repace space in name with _
+  std::replace(&stat[open_paren], &stat[close_paren], ' ', '_');
+  
+  std::istringstream iss(stat);
+  std::vector<std::string> v{std::istream_iterator<std::string>(iss), 
+                                 std::istream_iterator<std::string>()};
+  if (v.size() != StatPos::MAX_FIELD) {
+    LOGE("failed to parse /proc/<pid>/stat :%s", stat.c_str());
+    return std::nullopt;
+  }
+  p.pid = stoi(v[StatPos::pid -1]);
+  p.state = v[StatPos::state -1][0];
+  p.ppid = stoi(v[StatPos::ppid -1]);
+  p.utime = stoul(v[StatPos::utime -1]);
+  p.stime = stoul(v[StatPos::stime -1]);
+  p.cutime = stol(v[StatPos::cutime -1]);
+  p.cstime = stol(v[StatPos::cstime -1]);
+  p.priority = stol(v[StatPos::priority -1]);
+  p.nice = stol(v[StatPos::nice -1]);
+  p.num_threads = stol(v[StatPos::num_threads -1]);
+  p.starttime = stoull(v[StatPos::starttime -1]);
+  p.vms = stoul(v[StatPos::vsize -1]);
+  p.rss = stoul(v[StatPos::rss -1]);
+  p.processor = stoi(v[StatPos::processor -1]);
+  return p;
 }
 
 std::vector<int> pids() {

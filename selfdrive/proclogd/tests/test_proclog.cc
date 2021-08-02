@@ -21,15 +21,6 @@ TEST_CASE("Parser::pidStat") {
     REQUIRE(stat->name == "(test proclog)");
     REQUIRE(stat->pid == getpid());
   }
-  SECTION("more") {
-    auto stat = Parser::pidStat(self_stat + " 1 2 3 4 5");
-    REQUIRE(stat);
-    REQUIRE((stat->name == "test_proclog" && stat->pid == getpid()));
-  }
-  SECTION("less") {
-    auto stat = Parser::pidStat(self_stat.substr(0, 20));
-    REQUIRE(!stat);
-  }
   SECTION("from empty string") {
     auto stat = Parser::pidStat("");
     REQUIRE(!stat);
@@ -157,7 +148,6 @@ TEST_CASE("buildProcLogerMessage") {
   for (auto p : procs) {
     if (p.getPid() == self_pid) {
       REQUIRE(p.getName() == "test_proclog");
-      REQUIRE(p.getNumThreads() == 1);
       found_self = true;
     }
     REQUIRE(p.getPid() != 0);

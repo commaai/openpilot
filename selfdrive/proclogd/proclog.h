@@ -31,7 +31,7 @@ namespace Parser {
 
 std::vector<CPUTime> procStat(std::istream &stream);
 std::unordered_map<std::string, uint64_t> memInfo(std::istream &stream);
-std::optional<PidStat> pidStat(const std::string &stat);
+std::optional<PidStat> pidStat(std::string stat);
 std::vector<int> pids();
 std::vector<std::string> cmdline(const std::string &cmd);
 const ProcCache &getProcExtraInfo(int pid, const std::string &name);
