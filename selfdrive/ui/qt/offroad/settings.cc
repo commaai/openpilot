@@ -147,14 +147,7 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
     });
   }
 
-  auto uninstallBtn = new ButtonControl("Uninstall " + getBrand(), "UNINSTALL");
-  connect(uninstallBtn, &ButtonControl::clicked, [=]() {
-    if (ConfirmationDialog::confirm("Are you sure you want to uninstall?", this)) {
-      Params().putBool("DoUninstall", true);
-    }
-  });
-
-  for (auto btn : {dcamBtn, resetCalibBtn, retrainingBtn, uninstallBtn}) {
+  for (auto btn : {dcamBtn, resetCalibBtn, retrainingBtn}) {
     if (btn) {
       main_layout->addWidget(horizontal_line());
       connect(parent, SIGNAL(offroadTransition(bool)), btn, SLOT(setEnabled(bool)));
@@ -219,10 +212,17 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : QWidget(parent) {
   QWidget *widgets[] = {versionLbl, lastUpdateLbl, updateBtn, gitBranchLbl, gitCommitLbl, osVersionLbl};
   for (int i = 0; i < std::size(widgets); ++i) {
     main_layout->addWidget(widgets[i]);
-    if (i < std::size(widgets) - 1) {
-      main_layout->addWidget(horizontal_line());
-    }
+    main_layout->addWidget(horizontal_line());
   }
+
+  auto uninstallBtn = new ButtonControl("Uninstall " + getBrand(), "UNINSTALL");
+  connect(uninstallBtn, &ButtonControl::clicked, [=]() {
+    if (ConfirmationDialog::confirm("Are you sure you want to uninstall?", this)) {
+      Params().putBool("DoUninstall", true);
+    }
+  });
+  connect(parent, SIGNAL(offroadTransition(bool)), uninstallBtn, SLOT(setEnabled(bool)));
+  main_layout->addWidget(uninstallBtn);
 
   fs_watch = new QFileSystemWatcher(this);
   QObject::connect(fs_watch, &QFileSystemWatcher::fileChanged, [=](const QString path) {
