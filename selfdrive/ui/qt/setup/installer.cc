@@ -86,7 +86,7 @@ Installer::Installer(QWidget *parent) : QWidget(parent) {
 void Installer::updateProgress(int percent) {
   bar->setValue(percent);
   val->setText(QString("%1%").arg(percent));
-  repaint();
+  update();
 }
 
 void Installer::doInstall() {
