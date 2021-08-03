@@ -81,12 +81,6 @@ TEST_CASE("Parser::memInfo") {
     auto stats = Parser::memInfo(stream);
     REQUIRE((stats["MemTotal:"] = 1024 * 1024 && stats["MemFree:"] == 2048 * 1024));
   }
-  SECTION("from wrong string") {
-    std::istringstream stream("MemTotal:   kb \nMemFree:    2048 kb\n");
-    auto stats = Parser::memInfo(stream);
-    REQUIRE(stats.find("MemTotal:") == stats.end());
-    REQUIRE(stats["MemFree:"] == 2048 * 1024);
-  }
   SECTION("from /proc/ProcStat") {
     std::istringstream stream(util::read_file("/proc/meminfo"));
     auto stats = Parser::memInfo(stream);
