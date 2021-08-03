@@ -20,6 +20,11 @@ bool QDialogBase::eventFilter(QObject *o, QEvent *e) {
   return QDialog::eventFilter(o, e);
 }
 
+int QDialogBase::exec() {
+  setMainWindow(this);
+  return QDialog::exec();
+}
+
 InputDialog::InputDialog(const QString &title, QWidget *parent, const QString &subtitle, bool secret) : QDialogBase(parent) {
   main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(50, 55, 50, 50);
@@ -137,11 +142,6 @@ QString InputDialog::text() {
   return line->text();
 }
 
-int InputDialog::exec() {
-  setMainWindow(this);
-  return QDialog::exec();
-}
-
 void InputDialog::show() {
   setMainWindow(this);
 }
@@ -234,11 +234,6 @@ bool ConfirmationDialog::confirm(const QString &prompt_text, QWidget *parent) {
   return d.exec();
 }
 
-int ConfirmationDialog::exec() {
-  setMainWindow(this);
-  return QDialog::exec();
-}
-
 
 // RichTextDialog
 
@@ -290,9 +285,4 @@ RichTextDialog::RichTextDialog(const QString &prompt_text, const QString &btn_te
 bool RichTextDialog::alert(const QString &prompt_text, QWidget *parent) {
   auto d = RichTextDialog(prompt_text, "Ok", parent);
   return d.exec();
-}
-
-int RichTextDialog::exec() {
-  setMainWindow(this);
-  return QDialog::exec();
 }
