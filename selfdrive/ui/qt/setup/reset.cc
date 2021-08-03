@@ -12,22 +12,22 @@
 #define USERDATA "/dev/disk/by-partlabel/userdata"
 
 void Reset::doReset() {
-  std::vector<const char*> cmds = {
-    "sudo umount " NVME " || true",
-    "yes | sudo mkfs.ext4 " NVME " || true",
-    "sudo umount " USERDATA " || true",
-    "yes | sudo mkfs.ext4 " USERDATA,
-    "sudo reboot",
-  };
+  // best effort to wipe nvme
+  std::system("sudo umount " NVME);
+  std::system("yes | sudo mkfs.ext4 " NVME);
 
-  for (auto &cmd : cmds) {
-    int ret = std::system(cmd);
-    if (ret != 0) {
-      body->setText("Reset failed. Reboot to try again.");
-      rebootBtn->show();
-      return;
-    }
+  // we handle two cases here
+  //  * user-prompted factory reset
+  //  * recovering from a corrupt userdata by formatting
+  int rm = std::system("sudo rm -rf /data/*");
+  std::system("sudo umount " USERDATA);
+  int fmt = std::system("yes | sudo mkfs.ext4 " USERDATA);
+
+  if (rm == 0 || fmt == 0) {
+    std::system("sudo reboot");
   }
+  body->setText("Reset failed. Reboot to try again.");
+  rebootBtn->show();
 }
 
 void Reset::confirm() {
@@ -45,7 +45,7 @@ void Reset::confirm() {
   }
 }
 
-Reset::Reset(bool recover, QWidget *parent) : QWidget(parent) {
+Reset::Reset(bool recover, QWidget *parent) : recover(recover), QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(45, 220, 45, 45);
   main_layout->setSpacing(0);
