@@ -13,21 +13,18 @@
 namespace Parser {
 
 // parse /proc/stat
-std::vector<CPUTime> cpuTimes(std::istream &stream) {
+std::vector<CPUTime> cpuTimes(std::istream &iss) {
   std::vector<CPUTime> cpu_times;
   std::string line;
-  while (std::getline(stream, line)) {
-    if (util::starts_with(line, "cpu ")) {
-      // cpu total
-    } else if (util::starts_with(line, "cpu")) {
-      // specific cpu
-      CPUTime t = {};
-      sscanf(line.data(), "cpu%d %lu %lu %lu %lu %lu %lu %lu",
-             &t.id, &t.utime, &t.ntime, &t.stime, &t.itime, &t.iowtime, &t.irqtime, &t.sirqtime);
-      cpu_times.push_back(t);
-    } else {
-      break;
-    }
+  // skip the first line for cpu total
+  std::getline(iss, line);
+  while (std::getline(iss, line)) {
+    if (line.compare(0, 3, "cpu") != 0) break;
+
+    CPUTime t = {};
+    sscanf(line.data(), "cpu%d %lu %lu %lu %lu %lu %lu %lu",
+            &t.id, &t.utime, &t.ntime, &t.stime, &t.itime, &t.iowtime, &t.irqtime, &t.sirqtime);
+    cpu_times.push_back(t);
   }
   return cpu_times;
 }
@@ -180,7 +177,7 @@ void buildCPUTimes(cereal::ProcLog::Builder &builder) {
     l.setIdle(r.itime / jiffy);
     l.setIowait(r.iowtime / jiffy);
     l.setIrq(r.irqtime / jiffy);
-    l.setSoftirq(r.irqtime / jiffy);
+    l.setSoftirq(r.sirqtime / jiffy);
   }
 }
 
