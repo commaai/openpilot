@@ -71,10 +71,10 @@ if arch != 'aarch64' and GetOption('setup'):
   senv = qt_env.Clone()
   senv['LINKFLAGS'].append('-Wl,-strip-debug')
   installers = [
-    ("openpilot", "release3-staging"),
+    ("openpilot", "release3"),
     ("openpilot_test", "release3-staging"),
     ("openpilot_internal", "master"),
-    ("dashcam", "dashcam3-staging"),
+    ("dashcam", "dashcam3"),
     ("dashcam_test", "dashcam3-staging"),
   ]
   for name, branch in installers:
