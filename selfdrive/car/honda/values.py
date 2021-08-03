@@ -7,7 +7,6 @@ Ecu = car.CarParams.Ecu
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 class CarControllerParams():
-  ACCEL_MAX = 1.6
 
   def __init__(self, CP):
       self.BRAKE_MAX = 1024//4
