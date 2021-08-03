@@ -1008,8 +1008,18 @@ static void set_camera_exposure(CameraState *s, float grey_frac) {
   float gain = s->analog_gain_frac * (s->dc_gain_enabled ? DC_GAIN : 1.0);
   s->cur_ev = s->exposure_time * gain;
 
+  // No context switch for now
   // s->context_a = !s->context_a;
+
   s->exp_lock.unlock();
+
+  // Processing a frame takes right about 50ms, so we need to wait a few ms
+  // so we don't send i2c commands around the frame start.
+  int ms = (nanos_since_boot() - s->buf.cur_frame_data.timestamp_sof) / 1000000;
+  if (ms < 60) {
+    util::sleep_for(60 - ms);
+  }
+  // LOGE("ae - camera %d, cur_t %.5f, sof %.5f, dt %.5f", s->camera_num, 1e-9 * nanos_since_boot(), 1e-9 * s->buf.cur_frame_data.timestamp_sof, 1e-9 * (nanos_since_boot() - s->buf.cur_frame_data.timestamp_sof));
 
   // context_a = true means the next context will be A. Configure gain/exposure time and switch to it.
   uint16_t analog_gain_reg = 0xFF00 | (new_g << 4) | new_g;
@@ -1017,7 +1027,7 @@ static void set_camera_exposure(CameraState *s, float grey_frac) {
                                                   {uint16_t(s->context_a ? 0x3366 : 0x3368), analog_gain_reg},
                                                   {0x3362, (uint16_t)(s->dc_gain_enabled ? 0x11 : 0x0)}, // TODO: only change HCG in new context
                                                   {uint16_t(s->context_a ? 0x3012 : 0x3016), (uint16_t)s->exposure_time},
-                                                  {0x30B0, uint16_t(s->context_a ? 0x0800 : 0x2800)}, // Switch context
+                                                  // {0x30B0, uint16_t(s->context_a ? 0x0800 : 0x2800)}, // Switch context
                                                 };
   sensors_i2c(s, exp_reg_array, sizeof(exp_reg_array)/sizeof(struct i2c_random_wr_payload),
               CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
