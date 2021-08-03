@@ -157,7 +157,8 @@ class CarController():
     accel = -1.0 if stopping else accel
     apply_accel = interp(accel, P.BOSCH_ACCEL_LOOKUP_BP, P.BOSCH_ACCEL_LOOKUP_V)
 
-    pcm_speed = max(0.0, CS.out.vEgo + 2*apply_accel)
+    gas_mult = interp(CS.out.vEgo, [0.0, 1.0], [2.0, 1.0])
+    pcm_speed = max(0.0, CS.out.vEgo + gas_mult * apply_accel)
     pcm_accel = pcm_accel = int(clip(apply_accel, 0, 1) * 0xc6)
     if not CS.CP.openpilotLongitudinalControl:
       if (frame % 2) == 0:
