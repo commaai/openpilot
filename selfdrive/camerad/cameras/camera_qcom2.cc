@@ -1025,32 +1025,9 @@ static void set_camera_exposure(CameraState *s, float grey_frac) {
 }
 
 void camera_autoexposure(CameraState *s, float grey_frac) {
-  CameraExpInfo tmp = cam_exp[s->camera_num].load();
-  tmp.op_id++;
-  tmp.grey_frac = grey_frac;
-  cam_exp[s->camera_num].store(tmp);
+  set_camera_exposure(s, grey_frac);
 }
 
-static void ae_thread(MultiCameraState *s) {
-  CameraState *c_handles[3] = {&s->wide_road_cam, &s->road_cam, &s->driver_cam};
-
-  int op_id_last[3] = {0};
-  CameraExpInfo cam_op[3];
-
-  set_thread_name("camera_settings");
-
-  while(!do_exit) {
-    for (int i=0;i<3;i++) {
-      cam_op[i] = cam_exp[i].load();
-      if (cam_op[i].op_id != op_id_last[i]) {
-        set_camera_exposure(c_handles[i], cam_op[i].grey_frac);
-        op_id_last[i] = cam_op[i].op_id;
-      }
-    }
-
-    util::sleep_for(1);
-  }
-}
 
 void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) {
   common_process_driver_camera(s->sm, s->pm, c, cnt);
@@ -1081,7 +1058,6 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
 void cameras_run(MultiCameraState *s) {
   LOG("-- Starting threads");
   std::vector<std::thread> threads;
-  threads.push_back(std::thread(ae_thread, s));
   threads.push_back(start_process_thread(s, &s->road_cam, process_road_camera));
   threads.push_back(start_process_thread(s, &s->driver_cam, process_driver_camera));
   threads.push_back(start_process_thread(s, &s->wide_road_cam, process_road_camera));
