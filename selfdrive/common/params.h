@@ -25,7 +25,7 @@ public:
   Params(const std::string &path);
 
   bool checkKey(const std::string &key);
-  uint32_t getKeyType(const std::string &key);
+  ParamKeyType getKeyType(const std::string &key);
 
   // Delete a value
   int remove(const char *key);

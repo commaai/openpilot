@@ -246,8 +246,8 @@ bool Params::checkKey(const std::string &key) {
   return keys.find(key) != keys.end();
 }
 
-uint32_t Params::getKeyType(const std::string &key) {
-  return keys[key];
+ParamKeyType Params::getKeyType(const std::string &key) {
+  return static_cast<ParamKeyType>(keys[key]);
 }
 
 int Params::put(const char* key, const char* value, size_t value_size) {
