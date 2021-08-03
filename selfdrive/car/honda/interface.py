@@ -564,7 +564,6 @@ class CarInterface(CarInterfaceBase):
     can_sends = self.CC.update(c.enabled, self.CS, self.frame,
                                c.actuators,
                                c.cruiseControl.speedOverride,
-                               c.cruiseControl.override,
                                c.cruiseControl.cancel,
                                pcm_accel,
                                hud_v_cruise,
