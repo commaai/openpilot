@@ -72,7 +72,7 @@ def process_hud_alert(hud_alert):
 
 
 HUDData = namedtuple("HUDData",
-                     ["pcm_accel", "v_cruise",  "car",
+                     ["pcm_accel", "v_cruise", "car",
                      "lanes", "fcw", "acc_alert", "steer_required"])
 
 
@@ -147,8 +147,18 @@ class CarController():
       lkas_active, CS.CP.carFingerprint, idx, CS.CP.openpilotLongitudinalControl))
 
 
-    pcm_speed = 0.0
-    pcm_accel = 0
+    accel = actuators.gas - actuators.brake
+
+    # TODO: pass in LoC.long_control_state and use that to decide starting/stoppping
+    stopping = accel < 0 and CS.out.vEgo < 0.3
+    starting = accel > 0 and CS.out.vEgo < 0.3
+
+    # Prevent rolling backwards
+    accel = -1.0 if stopping else accel
+    apply_accel = interp(accel, P.BOSCH_ACCEL_LOOKUP_BP, P.BOSCH_ACCEL_LOOKUP_V)
+
+    pcm_speed = max(0.0, CS.out.vEgo + 2*apply_accel)
+    pcm_accel = pcm_accel = int(clip(apply_accel, 0, 1) * 0xc6)
     if not CS.CP.openpilotLongitudinalControl:
       if (frame % 2) == 0:
         idx = frame // 2
@@ -164,17 +174,6 @@ class CarController():
       if (frame % 2) == 0:
         idx = frame // 2
         ts = frame * DT_CTRL
-        accel = actuators.gas - actuators.brake
-
-        # TODO: pass in LoC.long_control_state and use that to decide starting/stoppping
-        stopping = accel < 0 and CS.out.vEgo < 0.3
-        starting = accel > 0 and CS.out.vEgo < 0.3
-
-        # Prevent rolling backwards
-        accel = -1.0 if stopping else accel
-        apply_accel = interp(accel, P.BOSCH_ACCEL_LOOKUP_BP, P.BOSCH_ACCEL_LOOKUP_V)
-        pcm_speed = max(0.0, CS.out.vEgo + 2*apply_accel)
-        pcm_accel = pcm_accel = int(clip(apply_accel, 0, 1) * 0xc6)
 
         if CS.CP.carFingerprint in HONDA_BOSCH:
           apply_gas = interp(accel, P.BOSCH_GAS_LOOKUP_BP, P.BOSCH_GAS_LOOKUP_V)
