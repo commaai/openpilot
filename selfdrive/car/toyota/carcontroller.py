@@ -61,7 +61,7 @@ class CarController():
     # *** compute control surfaces ***
 
     # gas and brake
-    interceptor_gas_cmd = 0.
+    interceptor_gas_cmd = clip(actuators.gas, 0, 1)
     pcm_accel_cmd = actuators.gas - actuators.brake
 
     if CS.CP.enableGasInterceptor:
@@ -74,7 +74,7 @@ class CarController():
       if self.use_interceptor and enabled:
         # only send negative accel when using interceptor. gas handles acceleration
         # +0.06 offset to reduce ABS pump usage when OP is engaged
-        interceptor_gas_cmd = clip(compute_gb_pedal(pcm_accel_cmd * CarControllerParams.ACCEL_SCALE, CS.out.vEgo), 0., 1.)
+        # interceptor_gas_cmd = clip(compute_gb_pedal(pcm_accel_cmd * CarControllerParams.ACCEL_SCALE, CS.out.vEgo), 0., 1.)
         pcm_accel_cmd = 0.06 - actuators.brake
 
     pcm_accel_cmd, self.accel_steady = accel_hysteresis(pcm_accel_cmd, self.accel_steady, enabled)
