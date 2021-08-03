@@ -147,6 +147,8 @@ class CarController():
       lkas_active, CS.CP.carFingerprint, idx, CS.CP.openpilotLongitudinalControl))
 
 
+    pcm_speed = 0.0
+    pcm_accel = 0
     if not CS.CP.openpilotLongitudinalControl:
       if (frame % 2) == 0:
         idx = frame // 2
@@ -156,8 +158,6 @@ class CarController():
         can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.CANCEL, idx, CS.CP.carFingerprint))
       elif CS.out.cruiseState.standstill:
         can_sends.append(hondacan.spam_buttons_command(self.packer, CruiseButtons.RES_ACCEL, idx, CS.CP.carFingerprint))
-      pcm_speed = 0.0
-      pcm_accel = 0
 
     else:
       # Send gas and brake commands.
