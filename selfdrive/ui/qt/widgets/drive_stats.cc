@@ -48,7 +48,7 @@ DriveStats::DriveStats(QWidget* parent) : QFrame(parent) {
   add_stats_layouts("PAST WEEK", week_);
 
   if (auto dongleId = getDongleId()) {
-    QString url = "https://api.commadotai.com/v1.1/devices/" + *dongleId + "/stats";
+    QString url = CommaApi::BASE_URL + "/v1.1/devices/" + *dongleId + "/stats";
     RequestRepeater* repeater = new RequestRepeater(this, url, "ApiCache_DriveStats", 30);
     QObject::connect(repeater, &RequestRepeater::receivedResponse, this, &DriveStats::parseResponse);
   }
