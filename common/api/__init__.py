@@ -43,4 +43,4 @@ def api_get(endpoint, method='GET', timeout=None, access_token=None, **params):
 
   headers['User-Agent'] = "openpilot-" + version
 
-  return requests.request(method, API_HOST+endpoint, timeout=timeout, headers=headers, params=params)
+  return requests.request(method, API_HOST + "/" + endpoint, timeout=timeout, headers=headers, params=params)
