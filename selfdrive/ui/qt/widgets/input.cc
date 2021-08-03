@@ -254,7 +254,6 @@ RichTextDialog::RichTextDialog(const QString &prompt_text, const QString &btn_te
   prompt->setTextFormat(Qt::RichText);
   prompt->setStyleSheet("font-size: 42px; font-weight: light; color: #C9C9C9; margin: 45px;");
   ScrollView *scroller = new ScrollView(prompt, this);
-  scroller->setStyleSheet(R"(ScrollView { background-color: #1B1B1B; border-radius: 10px; })");
   main_layout->addWidget(scroller, 1, Qt::AlignTop);
 
   // confirm button

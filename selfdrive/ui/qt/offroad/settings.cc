@@ -149,11 +149,13 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
   }
 
   ButtonControl *regulatoryBtn = nullptr;
-  regulatoryBtn = new ButtonControl("Regulatory", "VIEW", "");
-  connect(regulatoryBtn, &ButtonControl::clicked, [=]() {
-    const std::string txt = util::read_file(ASSET_PATH.toStdString() + "/offroad/fcc.html");
-    RichTextDialog::alert(QString::fromStdString(txt), this);
-  });
+  if (Hardware::TICI()) {
+    regulatoryBtn = new ButtonControl("Regulatory", "VIEW", "");
+    connect(regulatoryBtn, &ButtonControl::clicked, [=]() {
+      const std::string txt = util::read_file(ASSET_PATH.toStdString() + "/offroad/fcc.html");
+      RichTextDialog::alert(QString::fromStdString(txt), this);
+    });
+  }
 
   for (auto btn : {dcamBtn, resetCalibBtn, retrainingBtn, regulatoryBtn}) {
     if (btn) {
