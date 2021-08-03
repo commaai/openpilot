@@ -438,6 +438,7 @@ FW_VERSIONS = {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8704L906021EL\xf1\x897542',
       b'\xf1\x8704L906026BP\xf1\x891198',
+      b'\xf1\x8704L906026BP\xf1\x897608',
       b'\xf1\x8705E906018AS\xf1\x899596',
     ],
     (Ecu.transmission, 0x7e1, None): [
