@@ -30,7 +30,7 @@ TEST_CASE("Parser::procStat") {
     REQUIRE(stat->rss == 62214);
     REQUIRE(stat->processor == 2);
   }
-  SECTION("all processes stats") {
+  SECTION("all processes") {
     std::vector<int> pids = Parser::pids();
     REQUIRE(pids.size() > 1);
     int parsed_cnt = 0;
@@ -78,16 +78,17 @@ TEST_CASE("Parser::cpuTimes") {
 TEST_CASE("Parser::memInfo") {
   SECTION("from string") {
     std::istringstream stream("MemTotal:    1024 kb\nMemFree:    2048 kb\n");
-    auto stats = Parser::memInfo(stream);
-    REQUIRE((stats["MemTotal:"] = 1024 * 1024 && stats["MemFree:"] == 2048 * 1024));
+    auto meminfo = Parser::memInfo(stream);
+    REQUIRE(meminfo["MemTotal:"] == 1024 * 1024);
+    REQUIRE(meminfo["MemFree:"] == 2048 * 1024);
   }
-  SECTION("from /proc/ProcStat") {
+  SECTION("from /proc/meminfo") {
+    std::string require_keys[] = {"MemTotal:", "MemFree:", "MemAvailable:", "Buffers:", "Cached:", "Active:", "Inactive:", "Shmem:"};
     std::istringstream stream(util::read_file("/proc/meminfo"));
-    auto stats = Parser::memInfo(stream);
-    std::string keys[] = {"MemTotal:", "MemFree:", "MemAvailable:", "Buffers:", "Cached:", "Active:", "Inactive:", "Shmem:"};
-    for (auto &key : keys) {
-      REQUIRE(stats.find(key) != stats.end());
-      REQUIRE(stats[key] > 0);
+    auto meminfo = Parser::memInfo(stream);
+    for (auto &key : require_keys) {
+      REQUIRE(meminfo.find(key) != meminfo.end());
+      REQUIRE(meminfo[key] > 0);
     }
   }
 }
@@ -131,13 +132,12 @@ TEST_CASE("buildProcLogerMessage") {
   REQUIRE(procs.size() == current_pids.size());
 
   for (auto p : procs) {
-    REQUIRE(std::find(current_pids.begin(), current_pids.end(), p.getPid()) != current_pids.end());
+    REQUIRE_THAT(current_pids, Catch::Matchers::VectorContains(p.getPid()));
     REQUIRE(allowed_states.find(p.getState()) != std::string::npos);
     if (p.getPid() == ::getpid()) {
       REQUIRE(p.getName() == "test_proclog");
       REQUIRE(p.getState() == 'R');
-      std::string exe = p.getExe();
-      REQUIRE(exe.find("test_proclog") != std::string::npos);
+      REQUIRE_THAT(p.getExe().cStr(), Catch::Matchers::Contains("test_proclog"));
     }
   }
 }
