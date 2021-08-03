@@ -106,6 +106,7 @@ std::optional<ProcStat> procStat(std::string stat) {
   return std::nullopt;
 }
 
+// return list of PIDs from /proc
 std::vector<int> pids() {
   std::vector<int> ids;
   DIR *d = opendir("/proc");
@@ -148,9 +149,9 @@ const ProcCache &getProcExtraInfo(int pid, const std::string &name) {
   if (cache.pid != pid || cache.name != name) {
     cache.pid = pid;
     cache.name = name;
-    std::string spid = std::to_string(pid);
-    cache.exe = util::readlink("/proc/" + spid + "/exe");
-    cache.cmdline = cmdline(util::read_file("/proc/" + spid + "/cmdline"));
+    std::string proc_path = "/proc/" + std::to_string(pid);
+    cache.exe = util::readlink(proc_path + "/exe");
+    cache.cmdline = cmdline(util::read_file(proc_path + "/cmdline"));
   }
   return cache;
 }
@@ -195,8 +196,10 @@ void buildMemInfo(cereal::ProcLog::Builder &builder) {
 }
 
 void buildProcs(cereal::ProcLog::Builder &builder) {
+  auto pids = Parser::pids();
   std::vector<ProcStat> proc_stats;
-  for (int pid : Parser::pids()) {
+  proc_stats.reserve(pids.size());
+  for (int pid : pids) {
     std::string path = "/proc/" + std::to_string(pid) + "/stat";
     if (auto stat = Parser::procStat(util::read_file(path))) {
       proc_stats.push_back(*stat);
