@@ -1008,7 +1008,7 @@ static void set_camera_exposure(CameraState *s, float grey_frac) {
   float gain = s->analog_gain_frac * (s->dc_gain_enabled ? DC_GAIN : 1.0);
   s->cur_ev = s->exposure_time * gain;
 
-  s->context_a = !s->context_a;
+  // s->context_a = !s->context_a;
   s->exp_lock.unlock();
 
   // context_a = true means the next context will be A. Configure gain/exposure time and switch to it.
