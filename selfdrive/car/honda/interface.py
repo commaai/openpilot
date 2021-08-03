@@ -2,7 +2,7 @@
 import numpy as np
 from cereal import car
 from panda import Panda
-from common.numpy_fast import clip, interp
+from common.numpy_fast import interp
 from common.params import Params
 from selfdrive.config import Conversions as CV
 from selfdrive.car.honda.values import CarControllerParams, CruiseButtons, CAR, HONDA_BOSCH, HONDA_BOSCH_ALT_BRAKE_SIGNAL
@@ -559,13 +559,9 @@ class CarInterface(CarInterfaceBase):
     else:
       hud_v_cruise = 255
 
-    pcm_accel = int(clip(c.cruiseControl.accelOverride, 0, 1) * 0xc6)
-
     can_sends = self.CC.update(c.enabled, self.CS, self.frame,
                                c.actuators,
-                               c.cruiseControl.speedOverride,
                                c.cruiseControl.cancel,
-                               pcm_accel,
                                hud_v_cruise,
                                c.hudControl.lanesVisible,
                                hud_show_car=c.hudControl.leadVisible,
