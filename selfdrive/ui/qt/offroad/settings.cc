@@ -23,6 +23,7 @@
 #include "selfdrive/ui/qt/widgets/toggle.h"
 #include "selfdrive/ui/ui.h"
 #include "selfdrive/ui/qt/util.h"
+#include "selfdrive/ui/qt/qt_window.h"
 
 TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
@@ -147,7 +148,14 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
     });
   }
 
-  for (auto btn : {dcamBtn, resetCalibBtn, retrainingBtn}) {
+  ButtonControl *regulatoryBtn = nullptr;
+  regulatoryBtn = new ButtonControl("Regulatory", "VIEW", "");
+  connect(regulatoryBtn, &ButtonControl::clicked, [=]() {
+    const std::string txt = util::read_file(ASSET_PATH.toStdString() + "/offroad/fcc.html");
+    RichTextDialog::alert(QString::fromStdString(txt), this);
+  });
+
+  for (auto btn : {dcamBtn, resetCalibBtn, retrainingBtn, regulatoryBtn}) {
     if (btn) {
       main_layout->addWidget(horizontal_line());
       connect(parent, SIGNAL(offroadTransition(bool)), btn, SLOT(setEnabled(bool)));

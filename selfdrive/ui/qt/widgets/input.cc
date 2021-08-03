@@ -2,9 +2,10 @@
 
 #include <QPushButton>
 
+#include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/qt_window.h"
-#include "selfdrive/hardware/hw.h"
+#include "selfdrive/ui/qt/widgets/scrollview.h"
 
 
 QDialogBase::QDialogBase(QWidget *parent) : QDialog(parent) {
@@ -165,6 +166,8 @@ void InputDialog::setMinLength(int length) {
   minLength = length;
 }
 
+// ConfirmationDialog
+
 ConfirmationDialog::ConfirmationDialog(const QString &prompt_text, const QString &confirm_text, const QString &cancel_text,
                                        QWidget *parent) : QDialogBase(parent) {
   QFrame *container = new QFrame(this);
@@ -232,6 +235,65 @@ bool ConfirmationDialog::confirm(const QString &prompt_text, QWidget *parent) {
 }
 
 int ConfirmationDialog::exec() {
+  setMainWindow(this);
+  return QDialog::exec();
+}
+
+
+// RichTextDialog
+
+RichTextDialog::RichTextDialog(const QString &prompt_text, const QString &btn_text,
+                               QWidget *parent) : QDialogBase(parent) {
+  QFrame *container = new QFrame(this);
+  QVBoxLayout *main_layout = new QVBoxLayout(container);
+  main_layout->setContentsMargins(32, 32, 32, 32);
+
+  QLabel *prompt = new QLabel(prompt_text, this);
+  prompt->setWordWrap(true);
+  prompt->setAlignment(Qt::AlignLeft);
+  prompt->setTextFormat(Qt::RichText);
+  prompt->setStyleSheet("font-size: 42px; font-weight: light; color: #C9C9C9; margin: 45px;");
+  ScrollView *scroller = new ScrollView(prompt, this);
+  scroller->setStyleSheet(R"(ScrollView { background-color: #1B1B1B; border-radius: 10px; })");
+  main_layout->addWidget(scroller, 1, Qt::AlignTop);
+
+  // confirm button
+  QPushButton* confirm_btn = new QPushButton(btn_text);
+  main_layout->addWidget(confirm_btn);
+  QObject::connect(confirm_btn, &QPushButton::clicked, this, &RichTextDialog::accept);
+
+  QVBoxLayout *outer_layout = new QVBoxLayout(this);
+  outer_layout->setContentsMargins(100, 100, 100, 100);
+  outer_layout->addWidget(container);
+
+  setWindowFlags(Qt::Popup);
+  setStyleSheet(R"(
+    RichTextDialog {
+      background-color: black;
+    }
+    QFrame {
+      background-color: #1b1b1b;
+    }
+    QPushButton {
+      height: 160;
+      font-size: 55px;
+      font-weight: 400;
+      border-radius: 10px;
+      color: white;
+      background-color: #333333;
+    }
+    QPushButton:pressed {
+      background-color: #444444;
+    }
+  )");
+}
+
+bool RichTextDialog::alert(const QString &prompt_text, QWidget *parent) {
+  auto d = RichTextDialog(prompt_text, "Ok", parent);
+  return d.exec();
+}
+
+int RichTextDialog::exec() {
   setMainWindow(this);
   return QDialog::exec();
 }
