@@ -78,7 +78,8 @@ if arch != 'aarch64' and GetOption('setup'):
     ("dashcam_test", "dashcam3-staging"),
   ]
   for name, branch in installers:
-    d = {'BRANCH': f"'\"{branch}\"'"}
+    brand = "dashcam" if "dashcam" in branch else "openpilot"
+    d = {'BRANCH': f"'\"{branch}\"'", 'CONTINUE_SRC_PATH': f"'\"installer/continue_{brand}.sh\"'"}
     if "internal" in name:
       d['INTERNAL'] = "1"
 

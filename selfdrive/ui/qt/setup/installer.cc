@@ -182,7 +182,7 @@ void Installer::cloneFinished(int exitCode, QProcess::ExitStatus exitStatus) {
 #endif
 
   // write continue.sh
-  run("cp /data/openpilot/installer/continue_openpilot.sh /data/continue.sh.new");
+  run("cp " INSTALL_PATH "/" CONTINUE_SRC_PATH " /data/continue.sh.new");
   run("chmod +x /data/continue.sh.new");
   run("mv /data/continue.sh.new " CONTINUE_PATH);
 
