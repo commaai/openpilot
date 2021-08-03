@@ -98,7 +98,7 @@ class opParams:
     """
 
     self.fork_params = {'camera_offset': Param(0.06, NUMBER, 'Your camera offset to use in lane_planner.py', live=True),
-                        'dynamic_follow': Param('stock', str, static=True, hidden=True),
+                        'dynamic_follow': Param('auto', str, static=True, hidden=True),
                         'global_df_mod': Param(1.0, NUMBER, 'The multiplier for the current distance used by dynamic follow. The range is limited from 0.85 to 2.5\n'
                                                             'Smaller values will get you closer, larger will get you farther\n'
                                                             'This is multiplied by any profile that\'s active. Set to 1. to disable', live=True),
