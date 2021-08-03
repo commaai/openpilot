@@ -13,12 +13,12 @@
 namespace Parser {
 
 // parse /proc/stat
-std::vector<CPUTime> cpuTimes(std::istream &iss) {
+std::vector<CPUTime> cpuTimes(std::istream &is) {
   std::vector<CPUTime> cpu_times;
   std::string line;
   // skip the first line for cpu total
-  std::getline(iss, line);
-  while (std::getline(iss, line)) {
+  std::getline(is, line);
+  while (std::getline(is, line)) {
     if (line.compare(0, 3, "cpu") != 0) break;
 
     CPUTime t = {};
@@ -30,10 +30,10 @@ std::vector<CPUTime> cpuTimes(std::istream &iss) {
 }
 
 // parse /proc/meminfo
-std::unordered_map<std::string, uint64_t> memInfo(std::istream &stream) {
+std::unordered_map<std::string, uint64_t> memInfo(std::istream &is) {
   std::unordered_map<std::string, uint64_t> mem_info;
   std::string line, key;
-  while (std::getline(stream, line)) {
+  while (std::getline(is, line)) {
     std::istringstream l(line);
     uint64_t val = 0;
     l >> key >> val;
