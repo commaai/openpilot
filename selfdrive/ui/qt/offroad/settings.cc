@@ -149,7 +149,7 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
   }
 
   ButtonControl *regulatoryBtn = nullptr;
-  if (Hardware::TICI()) {
+  if (Hardware::TICI() || true) {
     regulatoryBtn = new ButtonControl("Regulatory", "VIEW", "");
     connect(regulatoryBtn, &ButtonControl::clicked, [=]() {
       const std::string txt = util::read_file(ASSET_PATH.toStdString() + "/offroad/fcc.html");
