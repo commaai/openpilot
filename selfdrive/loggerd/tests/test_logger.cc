@@ -35,10 +35,10 @@ bool decompressBZ2(std::vector<uint8_t> &dest, const char srcData[], size_t srcS
   return ret == BZ_STREAM_END;
 }
 
-void verify_logfile(const std::string &fn, uint64_t boottime, uint64_t monotonic) {
+void verify_logfile(const std::string &fn, uint64_t boottime, uint64_t monotonic, cereal::Sentinel::SentinelType type) {
   std::vector<uint8_t> log;
   std::string log_bz2 = util::read_file(fn);
-  // if fn is still opened by LoggerHandle afater logger_close, rlog_bz2.size() is zero
+  // if fn is still opened by LoggerHandle afater logger_close, log_bz2.size() is zero
   REQUIRE(log_bz2.size() > 0);
   bool ret = decompressBZ2(log, log_bz2.data(), log_bz2.size());
   REQUIRE(ret);
@@ -47,11 +47,20 @@ void verify_logfile(const std::string &fn, uint64_t boottime, uint64_t monotonic
   for (int i = 0; i < THREAD_COUNT; ++i) {
     required_sum += i * LOG_COUNT;
   }
+
+  int i = 0;
   kj::ArrayPtr<const capnp::word> words((capnp::word *)log.data(), log.size() / sizeof(capnp::word));
   while (words.size() > 0) {
     try {
       capnp::FlatArrayMessageReader reader(words);
       auto event = reader.getRoot<cereal::Event>();
+      if (i == 0) {
+        REQUIRE(event.which() == cereal::Event::INIT_DATA);
+      } else if (i == 1) {
+        REQUIRE(event.which() == cereal::Event::SENTINEL);
+        auto sentinel = event.getSentinel();
+        REQUIRE(sentinel.getType() == type);
+      }
       if (event.which() == cereal::Event::CLOCKS) {
         auto clocks = event.getClocks();
         REQUIRE(clocks.getBootTimeNanos() == boottime);
@@ -59,6 +68,7 @@ void verify_logfile(const std::string &fn, uint64_t boottime, uint64_t monotonic
         sum += clocks.getModemUptimeMillis();
       }
       words = kj::arrayPtr(reader.getEnd(), words.end());
+      ++i;
     } catch (...) {
       REQUIRE(0);
       break;
@@ -101,7 +111,7 @@ TEST_CASE("logger") {
       t.join();
     }
     logger_close(&logger);
-    verify_logfile(segment_path + std::string("/rlog.bz2"), boottime, monotonic);
-    verify_logfile(segment_path + std::string("/qlog.bz2"), boottime, monotonic);
+    verify_logfile(segment_path + std::string("/rlog.bz2"), boottime, monotonic, cereal::Sentinel::SentinelType::START_OF_ROUTE);
+    verify_logfile(segment_path + std::string("/qlog.bz2"), boottime, monotonic, cereal::Sentinel::SentinelType::START_OF_ROUTE);
   }
 }
