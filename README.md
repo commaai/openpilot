@@ -1,4 +1,4 @@
-[![](https://i.imgur.com/UelUjKAh.png)](#)
+![](https://user-images.githubusercontent.com/37757984/127420744-89ca219c-8f8e-46d3-bccf-c1cb53b81bb1.png)
 
 Table of Contents
 =======================
@@ -57,7 +57,7 @@ openpilot should preserve all other vehicle's stock features, including, but are
 Supported Hardware
 ------
 
-At the moment, openpilot supports the EON Gold DevKit and the [comma two](https://comma.ai/shop/products/comma-two-devkit). A [car harness](https://comma.ai/shop/products/car-harness) is recommended to connect the EON or comma two to the car. For experimental purposes, openpilot can also run on an Ubuntu computer with external [webcams](https://github.com/commaai/openpilot/tree/master/tools/webcam).
+At the moment, openpilot supports the EON Gold DevKit, [comma two](https://comma.ai/shop/products/two), and [comma three](https://comma.ai/shop/products/three). A [car harness](https://comma.ai/shop/products/car-harness) is recommended to connect your device to the car. For experimental purposes, openpilot can also run on an Ubuntu computer with external [webcams](https://github.com/commaai/openpilot/tree/master/tools/webcam).
 
 Supported Cars
 ------
@@ -220,7 +220,7 @@ Although they're not upstream, the community has openpilot running on other make
 Installation Instructions
 ------
 
-Install openpilot on an EON Gold or comma two by entering ``https://openpilot.comma.ai`` during the installer setup.
+Install openpilot on a supported device by entering ``https://openpilot.comma.ai`` during the installer setup.
 
 Follow these [video instructions](https://youtu.be/lcjqxCymins) to properly mount the device on the windshield. Note: openpilot features an automatic pose calibration routine and openpilot performance should not be affected by small pitch and yaw misalignments caused by imprecise device mounting.
 
