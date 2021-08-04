@@ -126,19 +126,13 @@ std::vector<int> pids() {
 }
 
 // null-delimited cmdline arguments to vector
-std::vector<std::string> cmdline(const std::string &cmdline_s) {
-  const char *cmdline_p = cmdline_s.c_str();
-  const char *cmdline_ep = cmdline_p + cmdline_s.size();
-
-  // strip trailing null bytes
-  while ((cmdline_ep - 1) > cmdline_p && *(cmdline_ep - 1) == 0) {
-    cmdline_ep--;
-  }
+std::vector<std::string> cmdline(std::istream &stream) {
   std::vector<std::string> ret;
-  while (cmdline_p < cmdline_ep) {
-    std::string arg(cmdline_p);
-    ret.push_back(arg);
-    cmdline_p += arg.size() + 1;
+  std::string line;
+  while (std::getline(stream, line, '\0')) {
+    if (!line.empty()) {
+      ret.push_back(line);
+    }
   }
   return ret;
 }
@@ -151,7 +145,9 @@ const ProcCache &getProcExtraInfo(int pid, const std::string &name) {
     cache.name = name;
     std::string proc_path = "/proc/" + std::to_string(pid);
     cache.exe = util::readlink(proc_path + "/exe");
-    cache.cmdline = cmdline(util::read_file(proc_path + "/cmdline"));
+    std::ifstream stream(proc_path + "/cmdline");
+    cache.cmdline = cmdline(stream);
+    // cache.cmdline = cmdline(util::read_file(proc_path + "/cmdline"));
   }
   return cache;
 }

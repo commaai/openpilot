@@ -94,7 +94,9 @@ TEST_CASE("Parser::memInfo") {
 }
 
 void test_cmdline(std::string cmdline, const std::vector<std::string> requires) {
-  auto cmds = Parser::cmdline(cmdline);
+  std::stringstream ss;
+   ss.write(&cmdline[0], cmdline.size());
+  auto cmds = Parser::cmdline(ss);
   REQUIRE(cmds.size() == requires.size());
   for (int i = 0; i < requires.size(); ++i) {
     REQUIRE(cmds[i] == requires[i]);
@@ -102,7 +104,7 @@ void test_cmdline(std::string cmdline, const std::vector<std::string> requires) 
 }
 TEST_CASE("Parser::cmdline") {
   test_cmdline(std::string("a\0b\0c\0", 7), {"a", "b", "c"});
-  test_cmdline(std::string("a\0\0c\0", 6), {"a", "", "c"});
+  test_cmdline(std::string("a\0\0c\0", 6), {"a", "c"});
   test_cmdline(std::string("a\0b\0c\0\0\0", 9), {"a", "b", "c"});
 }
 
