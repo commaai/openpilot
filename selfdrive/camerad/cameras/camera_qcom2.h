@@ -17,8 +17,6 @@
 
 #define EF_LOWPASS_K 0.35
 
-#define DEBAYER_LOCAL_WORKSIZE 16
-
 typedef struct CameraState {
   MultiCameraState *multi_cam_state;
   CameraInfo ci;
