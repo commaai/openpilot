@@ -8,8 +8,8 @@ from selfdrive.swaglog import cloudlog
 
 
 TESTED_BRANCHES = ['devel', 'release2-staging', 'release3-staging', 'dashcam-staging', 'release2', 'release3', 'dashcam']
-SA_BRANCHES = ['stock_additions', 'SA-master']
-SA_BRANCHES += [f'{prefix}_{brnch}' for brnch in SA_BRANCHES for prefix in ['shanesmiskol', 'sshane']]
+SA_BRANCHES = ['stock_additions', 'SA-master']  # tested SA branches
+SA_BRANCHES += [f'{prefix}_{brnch}' for brnch in SA_BRANCHES for prefix in ['shanesmiskol', 'sshane']]  # usernames
 
 def run_cmd(cmd: List[str]) -> str:
     return subprocess.check_output(cmd, encoding='utf8').strip()
