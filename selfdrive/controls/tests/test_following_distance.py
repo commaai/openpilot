@@ -29,7 +29,7 @@ def run_following_distance_simulation(v_lead, t_end=200.0):
   v_ego = v_lead
   a_ego = 0.0
 
-  mpc = LeadMpc(0)
+  mpc = LeadMpc(0, test=True)
 
   first = True
   while t < t_end:

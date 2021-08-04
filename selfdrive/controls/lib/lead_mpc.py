@@ -13,8 +13,9 @@ MPC_T = list(np.arange(0,1.,.2)) + list(np.arange(1.,10.6,.6))
 
 
 class LeadMpc():
-  def __init__(self, mpc_id):
+  def __init__(self, mpc_id, test=False):
     self.lead_id = mpc_id
+    self.test = test
 
     self.dynamic_follow = DynamicFollow(mpc_id)
     self.reset_mpc()
@@ -88,7 +89,10 @@ class LeadMpc():
       a_lead = 0.0
       self.a_lead_tau = _LEAD_ACCEL_TAU
 
-    TR = self.dynamic_follow.update(CS, self.libmpc)  # update dynamic follow
+    if not self.test:
+      TR = self.dynamic_follow.update(CS, self.libmpc)  # update dynamic follow
+    else:
+      TR = 1.8
 
     # Calculate mpc
     t = sec_since_boot()
