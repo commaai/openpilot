@@ -526,7 +526,6 @@ cereal/visionipc/*.pxd
 
 panda/.gitignore
 panda/__init__.py
-panda/VERSION
 panda/board/**
 panda/certs/**
 panda/crypto/**
