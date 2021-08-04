@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 import os
 import json
+from atomicwrites import atomic_write
 from common.colors import COLORS
 from common.travis_checker import BASEDIR
-from atomicwrites import atomic_write
+from selfdrive.hardware import TICI
 try:
   from common.realtime import sec_since_boot
 except ImportError:
@@ -97,7 +98,8 @@ class opParams:
       self.fork_params = {'camera_offset': Param(0.06, allowed_types=NUMBER), live=True}  # NUMBER allows both floats and ints
     """
 
-    self.fork_params = {'camera_offset': Param(0.06, NUMBER, 'Your camera offset to use in lane_planner.py', live=True),
+    self.fork_params = {'camera_offset': Param(-0.04 if TICI else 0.06, NUMBER, 'Your camera offset to use in lane_planner.py\n'
+                                                                                'If you have a comma three, note that the default camera offset is -0.04!', live=True),
                         'dynamic_follow': Param('auto', str, static=True, hidden=True),
                         'global_df_mod': Param(1.0, NUMBER, 'The multiplier for the current distance used by dynamic follow. The range is limited from 0.85 to 2.5\n'
                                                             'Smaller values will get you closer, larger will get you farther\n'
