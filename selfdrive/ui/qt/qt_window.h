@@ -23,7 +23,7 @@ const int vwp_w = (Hardware::TICI() || (getenv("WIDE_UI") != NULL)) ? 2160 : 192
 const int vwp_h = 1080;
 
 inline void setMainWindow(QWidget *w) {
-  const float scale = getenv("SCALE") != NULL ? std::stof(getenv("SCALE")) : 1.0;
+  const float scale = util::getenv("SCALE", 1.0f);
   w->setFixedSize(vwp_w*scale, vwp_h*scale);
   w->show();
 
