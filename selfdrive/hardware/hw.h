@@ -21,8 +21,9 @@ public:
 namespace Path {
 inline static std::string HOME = util::getenv("HOME");
 inline std::string log_root() {
-  if (const char *env = getenv("LOG_ROOT"))
+  if (const char *env = getenv("LOG_ROOT")) {
     return env;
+  }
   return Hardware::PC() ? HOME + "/.comma/media/0/realdata" : "/data/media/0/realdata";
 }
 inline std::string params() {
@@ -33,8 +34,5 @@ inline std::string persistent_params() {
 }
 inline std::string rsa_file() {
   return Hardware::PC() ? HOME + "/.comma/persist/comma/id_rsa" : "/persist/comma/id_rsa";
-}
-inline std::string json_token() {
-  return Hardware::PC() ? HOME + "/.comma/auth.json" : "/.comma/auth.json";
 }
 }  // namespace Path
