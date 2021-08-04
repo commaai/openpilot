@@ -14,7 +14,6 @@ private:
   QPushButton *rebootBtn;
   QPushButton *confirmBtn;
   void doReset();
-  bool recover;
 
 private slots:
   void confirm();

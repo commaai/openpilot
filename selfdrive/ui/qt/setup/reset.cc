@@ -45,7 +45,7 @@ void Reset::confirm() {
   }
 }
 
-Reset::Reset(bool recover, QWidget *parent) : recover(recover), QWidget(parent) {
+Reset::Reset(bool recover, QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(45, 220, 45, 45);
   main_layout->setSpacing(0);
