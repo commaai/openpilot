@@ -160,8 +160,8 @@ class CarController():
     gas_mult = interp(CS.out.vEgo, [0.0, 1.0], [2.0, 1.0])
     pcm_speed = max(0.0, CS.out.vEgo + gas_mult * apply_accel)
 
-    # just set to max, speed should enforce smoothness
-    pcm_accel = int(1.0 * 0xc6)
+    # This is needed otherwise accel to decel is not smooth
+    pcm_accel = int(clip(apply_accel, 0.0, 1.0) * 0xc6)
     if not CS.CP.openpilotLongitudinalControl:
       if (frame % 2) == 0:
         idx = frame // 2
