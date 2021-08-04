@@ -537,7 +537,6 @@ static void camera_init(MultiCameraState *multi_cam_state, VisionIpcServer * v, 
   s->dc_gain_enabled = false;
   s->gain_idx = ANALOG_GAIN_REC_IDX;
   s->exposure_time = 5;
-  s->context_a = true;
   s->cur_ev[0] = s->cur_ev[1] = s->cur_ev[2] = (s->dc_gain_enabled ? DC_GAIN : 1) * sensor_analog_gains[s->gain_idx] * s->exposure_time;
 
   s->buf.init(device_id, ctx, s, v, FRAME_BUF_COUNT, rgb_type, yuv_type);
@@ -1016,9 +1015,6 @@ static void set_camera_exposure(CameraState *s, float grey_frac) {
   float gain = s->analog_gain_frac * (s->dc_gain_enabled ? DC_GAIN : 1.0);
   s->cur_ev[s->buf.cur_frame_data.frame_id % 3] = s->exposure_time * gain;
 
-  // No context switch for now
-  // s->context_a = !s->context_a;
-
   s->exp_lock.unlock();
 
   // Processing a frame takes right about 50ms, so we need to wait a few ms
@@ -1029,13 +1025,11 @@ static void set_camera_exposure(CameraState *s, float grey_frac) {
   }
   // LOGE("ae - camera %d, cur_t %.5f, sof %.5f, dt %.5f", s->camera_num, 1e-9 * nanos_since_boot(), 1e-9 * s->buf.cur_frame_data.timestamp_sof, 1e-9 * (nanos_since_boot() - s->buf.cur_frame_data.timestamp_sof));
 
-  // context_a = true means the next context will be A. Configure gain/exposure time and switch to it.
   uint16_t analog_gain_reg = 0xFF00 | (new_g << 4) | new_g;
   struct i2c_random_wr_payload exp_reg_array[] = {
-                                                  {uint16_t(s->context_a ? 0x3366 : 0x3368), analog_gain_reg},
-                                                  {0x3362, (uint16_t)(s->dc_gain_enabled ? 0x11 : 0x0)}, // TODO: only change HCG in new context
-                                                  {uint16_t(s->context_a ? 0x3012 : 0x3016), (uint16_t)s->exposure_time},
-                                                  // {0x30B0, uint16_t(s->context_a ? 0x0800 : 0x2800)}, // Switch context
+                                                  {0x3366, analog_gain_reg},
+                                                  {0x3362, (uint16_t)(s->dc_gain_enabled ? 0x1 : 0x0)},
+                                                  {0x3012, (uint16_t)s->exposure_time},
                                                 };
   sensors_i2c(s, exp_reg_array, sizeof(exp_reg_array)/sizeof(struct i2c_random_wr_payload),
               CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
