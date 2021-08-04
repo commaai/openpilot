@@ -67,13 +67,6 @@ class TestLoggerd(unittest.TestCase):
     msg = msgs[0]
     self.assertEqual(msg.which(), 'initData')
 
-  def _check_sentinel(self, msgs, route):
-    start_type = SentinelType.startOfRoute if route else SentinelType.startOfSegment
-    self.assertTrue(msgs[1].sentinel.type == start_type)
-
-    end_type = SentinelType.endOfRoute if route else SentinelType.endOfSegment
-    self.assertTrue(msgs[-1].sentinel.type == end_type)
-
   def test_init_data_values(self):
     os.environ["CLEAN"] = random.choice(["0", "1"])
 
