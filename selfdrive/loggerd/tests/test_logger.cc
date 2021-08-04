@@ -70,6 +70,8 @@ void verify_logfile(const std::string &fn, uint64_t boottime, uint64_t monotonic
       words = kj::arrayPtr(reader.getEnd(), words.end());
       if (words == 0) {
         // the last event should be SENTINEL
+
+        // TODO: this check failed sometimes. need to be fixed in LoggerState.
         REQUIRE(event.which() == cereal::Event::SENTINEL);
         auto sentinel = event.getSentinel();
         REQUIRE(sentinel.getType() == end_type);
@@ -90,7 +92,7 @@ TEST_CASE("logger") {
   LoggerState logger = {};
   logger_init(&logger, "rlog", true);
 
-  std::string log_root = util::getenv("TMPDIR" "/tmp/") + "log_root";
+  std::string log_root = "/tmp/log_root";
   char segment_path[PATH_MAX];
   int part = -1;
   logger_next(&logger, log_root.c_str(), segment_path, std::size(segment_path), &part);
@@ -121,4 +123,8 @@ TEST_CASE("logger") {
     verify_logfile(segment_path + std::string("/rlog.bz2"), boottime, monotonic, SentinelType::START_OF_ROUTE, SentinelType::END_OF_SEGMENT);
     verify_logfile(segment_path + std::string("/qlog.bz2"), boottime, monotonic, SentinelType::START_OF_ROUTE, SentinelType::END_OF_SEGMENT);
   }
+}
+
+TEST_CASE("bootlog") {
+
 }
