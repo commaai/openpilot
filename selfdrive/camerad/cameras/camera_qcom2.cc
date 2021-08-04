@@ -49,7 +49,7 @@ const float sensor_analog_gains[] = {
   7.0/2.0, 8.0/2.0, 8.0/1.0};         // 12, 13, 14, 15 = bypass
 
 const int ANALOG_GAIN_MIN_IDX = 0x1; // 0.25x
-const int ANALOG_GAIN_REC_IDX = 0x7; // 1.0x
+const int ANALOG_GAIN_REC_IDX = 0x6; // 0.8x
 const int ANALOG_GAIN_MAX_IDX = 0xD; // 4.0x
 
 const int EXPOSURE_TIME_MIN = 2; // with HDR, fastest ss
