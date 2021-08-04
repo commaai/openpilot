@@ -73,12 +73,10 @@ TEST_CASE("logger") {
   LoggerState logger = {};
   logger_init(&logger, "rlog", true);
 
-  const char *tmpdir = getenv("TMPDIR");
-  std::string root = tmpdir ? tmpdir : "/tmp/";
-  root += "test_logger";
+  std::string log_root = util::getenv("TMPDIR" "/tmp/") + "log_root";
   char segment_path[PATH_MAX];
   int part = -1;
-  logger_next(&logger, root.c_str(), segment_path, std::size(segment_path), &part);
+  logger_next(&logger, log_root.c_str(), segment_path, std::size(segment_path), &part);
 
   SECTION("multiple threads writing to log") {
     uint64_t boottime = nanos_since_boot();

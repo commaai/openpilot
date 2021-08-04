@@ -5,10 +5,8 @@ import string
 import subprocess
 import time
 import unittest
-from collections import defaultdict
 from pathlib import Path
 
-import cereal.messaging as messaging
 from cereal import log
 from cereal.services import service_list
 from common.basedir import BASEDIR
