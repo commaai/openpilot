@@ -23,6 +23,8 @@
 #define INSTALL_PATH "/data/openpilot"
 #define TMP_INSTALL_PATH "/data/tmppilot"
 
+extern const uint8_t str_continue[] asm("_binary_installer_continue_" BRAND "_sh_start");
+extern const uint8_t str_continue_end[] asm("_binary_installer_continue_" BRAND "_sh_end");
 
 bool time_valid() {
   time_t rawtime;
@@ -182,7 +184,14 @@ void Installer::cloneFinished(int exitCode, QProcess::ExitStatus exitStatus) {
 #endif
 
   // write continue.sh
-  run("cp " INSTALL_PATH "/" CONTINUE_SRC_PATH " /data/continue.sh.new");
+  FILE *of = fopen("/data/continue.sh.new", "wb");
+  assert(of != NULL);
+
+  size_t num = str_continue_end - str_continue;
+  size_t num_written = fwrite(str_continue, 1, num, of);
+  assert(num == num_written);
+  fclose(of);
+
   run("chmod +x /data/continue.sh.new");
   run("mv /data/continue.sh.new " CONTINUE_PATH);
 
