@@ -82,6 +82,7 @@ void verify_logfiles(const std::string &segment_path, uint64_t boottime, uint64_
         }
         ++i;
       } catch (...) {
+        INFO("could not parse message");
         REQUIRE(0);
         break;
       }
