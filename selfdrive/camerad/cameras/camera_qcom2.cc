@@ -48,7 +48,7 @@ const float sensor_analog_gains[] = {
   5.0/4.0, 6.0/4.0, 6.0/3.0, 7.0/3.0, // 8, 9, 10, 11
   7.0/2.0, 8.0/2.0, 8.0/1.0};         // 12, 13, 14, 15 = bypass
 
-const int ANALOG_GAIN_MIN_IDX = 0x0; // 0.125x
+const int ANALOG_GAIN_MIN_IDX = 0x1; // 0.25x
 const int ANALOG_GAIN_REC_IDX = 0x7; // 1.0x
 const int ANALOG_GAIN_MAX_IDX = 0xD; // 4.0x
 
@@ -973,14 +973,14 @@ static void set_camera_exposure(CameraState *s, float grey_frac) {
 
   // Simple brute force optimizer to choose sensor parameters
   // to reach desired EV
-  for (int g = ANALOG_GAIN_MIN_IDX; g <= ANALOG_GAIN_MAX_IDX; g++) {
+  for (int g = std::max((int)ANALOG_GAIN_MIN_IDX, s->gain_idx - 1); g <= std::min((int)ANALOG_GAIN_MAX_IDX, s->gain_idx + 1); g++) {
     float gain = sensor_analog_gains[g] * (enable_dc_gain ? DC_GAIN : 1);
 
     // Compute optimal time for given gain
     int t = std::clamp(int(std::round(desired_ev / gain)), EXPOSURE_TIME_MIN, EXPOSURE_TIME_MAX);
 
     // Only go below recomended gain when absolutely necessary to not overexpose
-    if (g < ANALOG_GAIN_REC_IDX && t > 20) {
+    if (g < ANALOG_GAIN_REC_IDX && t > 20 && g < s->gain_idx) {
       continue;
     }
 
@@ -988,12 +988,13 @@ static void set_camera_exposure(CameraState *s, float grey_frac) {
     float score = std::abs(desired_ev - (t * gain)) * 10;
 
     // Going below recomended gain needs lower penalty to not overexpose
-    float m = g > ANALOG_GAIN_REC_IDX ? 5.0 : 0.0;
+    float m = g > ANALOG_GAIN_REC_IDX ? 5.0 : 0.1;
     score += std::abs(g - (int)ANALOG_GAIN_REC_IDX) * m;
 
+    // LOGE("cam: %d - gain: %d, t: %d (%.2f), score %.2f, score + gain %.2f, %.3f, %.3f", s->camera_num, g, t, desired_ev / gain, score, score + std::abs(g - s->gain_idx) * (score + 1.0) / 10.0, desired_ev, s->min_ev);
+
     // Small penalty on changing gain
-    score += std::abs(g - s->gain_idx) * (score / 10);
-    // LOGE("cam: %d - gain: %d, t: %d (%.2f), score %.2f, %.3f, %.3f", s->camera_num, g, t, desired_ev / gain, score, desired_ev, s->min_ev);
+    score += std::abs(g - s->gain_idx) * (score + 1.0) / 10.0;
 
     if (score < best_ev_score) {
       new_t = t;
