@@ -114,7 +114,6 @@ void Localizer::build_live_location(cereal::LiveLocationKalman::Builder& fix) {
   VectorXd vel_calib_std = rotate_cov(this->calib_from_device, vel_device_cov).diagonal().array().sqrt();
 
   VectorXd orientation_ned = ned_euler_from_ecef(fix_ecef_ecef, orientation_ecef);
-  VectorXd calibrated_orientation_ned = ned_euler_from_ecef(fix_ecef_ecef, calibrated_orientation_ecef);
   //orientation_ned_std = ned_euler_from_ecef(fix_ecef, orientation_ecef + orientation_ecef_std) - orientation_ned
   VectorXd nextfix_ecef = fix_ecef + vel_ecef;
   VectorXd ned_vel = this->converter->ecef2ned((ECEF) { .x = nextfix_ecef(0), .y = nextfix_ecef(1), .z = nextfix_ecef(2) }).to_vector() - converter->ecef2ned(fix_ecef_ecef).to_vector();
@@ -138,7 +137,6 @@ void Localizer::build_live_location(cereal::LiveLocationKalman::Builder& fix) {
   init_measurement(fix.initOrientationECEF(), orientation_ecef, orientation_ecef_std, true);
   init_measurement(fix.initCalibratedOrientationECEF(), calibrated_orientation_ecef, nans, this->calibrated);
   init_measurement(fix.initOrientationNED(), orientation_ned, nans, true);
-  init_measurement(fix.initCalibratedOrientationNED(), calibrated_orientation_ned, nans, this->calibrated);
   init_measurement(fix.initAngularVelocityDevice(), angVelocityDevice, angVelocityDeviceErr, true);
   init_measurement(fix.initVelocityCalibrated(), vel_calib, vel_calib_std, this->calibrated);
   init_measurement(fix.initAngularVelocityCalibrated(), ang_vel_calib, ang_vel_calib_std, this->calibrated);
