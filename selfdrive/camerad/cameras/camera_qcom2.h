@@ -21,7 +21,7 @@ typedef struct CameraState {
   bool dc_gain_enabled;
   float analog_gain_frac;
 
-  float cur_ev;
+  float cur_ev[3];
   float min_ev, max_ev;
 
   float measured_grey_fraction;

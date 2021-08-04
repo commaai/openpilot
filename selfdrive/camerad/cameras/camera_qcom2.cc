@@ -538,7 +538,7 @@ static void camera_init(MultiCameraState *multi_cam_state, VisionIpcServer * v, 
   s->gain_idx = ANALOG_GAIN_REC_IDX;
   s->exposure_time = 5;
   s->context_a = true;
-  s->cur_ev = (s->dc_gain_enabled ? DC_GAIN : 1) * sensor_analog_gains[s->gain_idx] * s->exposure_time;
+  s->cur_ev[0] = s->cur_ev[1] = s->cur_ev[2] = (s->dc_gain_enabled ? DC_GAIN : 1) * sensor_analog_gains[s->gain_idx] * s->exposure_time;
 
   s->buf.init(device_id, ctx, s, v, FRAME_BUF_COUNT, rgb_type, yuv_type);
 }
@@ -936,20 +936,24 @@ void handle_camera_event(CameraState *s, void *evdat) {
 }
 
 static void set_camera_exposure(CameraState *s, float grey_frac) {
-  const float dt = 0.1;
+  const float dt = 0.05;
 
   const float ts_grey = 10.0;
-  const float ts_ev = 0.25;
+  const float ts_ev = 0.05;
 
   const float k_grey = (dt / ts_grey) / (1.0 + dt / ts_grey);
   const float k_ev = (dt / ts_ev) / (1.0 + dt / ts_ev);
 
+  // It takes 3 frames for the commanded exposure settings to take effect
+  // This can be lowered to 2 if we can compute the histogram before the capture of the next frame is started
+  const float cur_ev = s->cur_ev[s->buf.cur_frame_data.frame_id % 3];
+
   // Scale target grey between 0.1 and 0.4 depending on lighting conditions
-  float new_target_grey = std::clamp(0.4 - 0.3 * log2(1.0 + s->cur_ev) / log2(6000.0), 0.1, 0.4);
+  float new_target_grey = std::clamp(0.4 - 0.3 * log2(1.0 + cur_ev) / log2(6000.0), 0.1, 0.4);
   float target_grey = (1.0 - k_grey) * s->target_grey_fraction + k_grey * new_target_grey;
 
-  float desired_ev = std::clamp(s->cur_ev * target_grey / grey_frac, s->min_ev, s->max_ev);
-  desired_ev = (1.0 - k_ev) * s->cur_ev + k_ev * desired_ev;
+  float desired_ev = std::clamp(cur_ev * target_grey / grey_frac, s->min_ev, s->max_ev);
+  desired_ev = (1.0 - k_ev) * cur_ev + k_ev * desired_ev;
 
   float best_ev_score = 1e6;
   int new_g = 0;
@@ -1006,7 +1010,7 @@ static void set_camera_exposure(CameraState *s, float grey_frac) {
   s->dc_gain_enabled = enable_dc_gain;
 
   float gain = s->analog_gain_frac * (s->dc_gain_enabled ? DC_GAIN : 1.0);
-  s->cur_ev = s->exposure_time * gain;
+  s->cur_ev[s->buf.cur_frame_data.frame_id % 3] = s->exposure_time * gain;
 
   // No context switch for now
   // s->context_a = !s->context_a;
@@ -1058,11 +1062,9 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
   }
   s->pm->send(c == &s->road_cam ? "roadCameraState" : "wideRoadCameraState", msg);
 
-  if (cnt % 2 == 0) {
-    const auto [x, y, w, h] = (c == &s->wide_road_cam) ? std::tuple(96, 250, 1734, 524) : std::tuple(96, 160, 1734, 986);
-    const int skip = 2;
-    camera_autoexposure(c, set_exposure_target(b, x, x + w, skip, y, y + h, skip));
-  }
+  const auto [x, y, w, h] = (c == &s->wide_road_cam) ? std::tuple(96, 250, 1734, 524) : std::tuple(96, 160, 1734, 986);
+  const int skip = 2;
+  camera_autoexposure(c, set_exposure_target(b, x, x + w, skip, y, y + h, skip));
 }
 
 void cameras_run(MultiCameraState *s) {
