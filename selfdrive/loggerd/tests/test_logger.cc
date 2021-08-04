@@ -12,6 +12,7 @@ const int LOG_COUNT = 1000;
 const int THREAD_COUNT = 5;
 
 namespace {
+
 bool decompressBZ2(std::vector<uint8_t> &dest, const char srcData[], size_t srcSize,
                    size_t outputSizeIncrement = 0x100000U) {
   bz_stream strm = {};
@@ -37,7 +38,7 @@ bool decompressBZ2(std::vector<uint8_t> &dest, const char srcData[], size_t srcS
 void verify_logfile(const std::string &fn, uint64_t boottime, uint64_t monotonic) {
   std::vector<uint8_t> log;
   std::string log_bz2 = util::read_file(fn);
-  // if fn is still opened by LoggerHandle fater logger_close, rlog_bz2.size() is zero
+  // if fn is still opened by LoggerHandle afater logger_close, rlog_bz2.size() is zero
   REQUIRE(log_bz2.size() > 0);
   bool ret = decompressBZ2(log, log_bz2.data(), log_bz2.size());
   REQUIRE(ret);
