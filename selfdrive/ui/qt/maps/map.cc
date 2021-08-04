@@ -129,7 +129,7 @@ void MapWindow::timerUpdate() {
 
     if (localizer_valid) {
       auto pos = location.getPositionGeodetic();
-      auto orientation = location.getCalibratedOrientationNED();
+      auto orientation = location.getOrientationNED();
 
       float velocity = location.getVelocityCalibrated().getValue()[0];
       float bearing = RAD2DEG(orientation.getValue()[2]);
