@@ -109,9 +109,10 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
   }
 
   // update path
-  auto lead_one = (*s->sm)["modelV2"].getModelV2().getLeadsV2()[0];
+  auto lead_one = (*s->sm)["modelV2"].getModelV2().getLeads()[0];
   if (lead_one.getProb() > 0.5) {
     const float lead_d = lead_one.getXyva()[0] * 2.;
+    max_distance = std::clamp((float)(lead_d - fmin(lead_d * 0.35, 10.)), 0.0f, max_distance);
   }
   max_idx = get_path_length_idx(model_position, max_distance);
   update_line_data(s, model_position, 0.5, 1.22, &scene.track_vertices, max_idx);
@@ -135,7 +136,7 @@ static void update_state(UIState *s) {
     if (sm.rcv_frame("modelV2") > 0) {
       line = sm["modelV2"].getModelV2().getPosition();
     }
-    update_leads(s, sm["modelV2"].getModelV2().getLeadsV2()[0], line);
+    update_leads(s, sm["modelV2"].getModelV2().getLeads()[0], line);
   }
   if (sm.updated("liveCalibration")) {
     scene.world_objects_visible = true;

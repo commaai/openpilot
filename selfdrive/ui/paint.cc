@@ -167,8 +167,8 @@ static void ui_draw_world(UIState *s) {
 
   // Draw lead indicators if openpilot is handling longitudinal
   if (s->scene.longitudinal_control) {
-    auto lead_one = (*s->sm)["modelV2"].getModelV2().getLeadsV2()[0];
-    auto lead_two = (*s->sm)["modelV2"].getModelV2().getLeadsV2()[1];
+    auto lead_one = (*s->sm)["modelV2"].getModelV2().getLeads()[0];
+    auto lead_two = (*s->sm)["modelV2"].getModelV2().getLeads()[1];
     if (lead_one.getProb() > .5) {
       draw_lead(s, lead_one, s->scene.lead_vertices[0]);
     }
