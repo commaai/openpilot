@@ -2213,7 +2213,7 @@ namespace Catch {
             m_result( result )
         {}
 
-        // We don't actually need a virtual destructor, but many static analyzers
+        // We don't actually need a virtual destructor, but many static analysers
         // complain if it's not here :-(
         virtual ~ITransientExpression();
 
@@ -10578,7 +10578,7 @@ namespace Catch {
             // Extracts the actual name part of an enum instance
             // In other words, it returns the Blue part of Bikeshed::Colour::Blue
             StringRef extractInstanceName(StringRef enumInstance) {
-                // Find last occurrence of ":"
+                // Find last occurence of ":"
                 size_t name_start = enumInstance.size();
                 while (name_start > 0 && enumInstance[name_start - 1] != ':') {
                     --name_start;

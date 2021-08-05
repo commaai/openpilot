@@ -1022,9 +1022,9 @@ returnValue QProblem_obtainAuxiliaryWorkingSet(	QProblem* _THIS,
 												Bounds* const guessedBounds,				/**< Guessed working set of bounds for solution (xOpt,yOpt). */
 												Constraints* const guessedConstraints,		/**< Guessed working set for solution (xOpt,yOpt). */
 												Bounds* auxiliaryBounds,					/**< Input: Allocated bound object. \n
-																							 *	 Output: Working set of constraints for auxiliary QP. */
+																							 *	 Ouput: Working set of constraints for auxiliary QP. */
 												Constraints* auxiliaryConstraints			/**< Input: Allocated bound object. \n
-																							 *	 Output: Working set for auxiliary QP. */
+																							 *	 Ouput: Working set for auxiliary QP. */
 												);
 
 /** Sets up bound and constraints data structures according to auxiliaryBounds/Constraints.

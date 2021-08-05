@@ -99,7 +99,7 @@ void s_sim_erk_ws_set_p(float *p, struct s_sim_erk_ws *work);
 void s_sim_erk_ws_set_x(float *x, struct s_sim_erk_ws *work);
 // forward sensitivities
 void s_sim_erk_ws_set_fs(float *fs, struct s_sim_erk_ws *work);
-// ode function
+// ode funtion
 void s_sim_erk_ws_set_ode(void (*ode)(int t, float *x, float *p, void *ode_args, float *xdot), struct s_sim_erk_ws *work);
 // forward vde function
 void s_sim_erk_ws_set_vde_for(void (*ode)(int t, float *x, float *p, void *ode_args, float *xdot), struct s_sim_erk_ws *work);

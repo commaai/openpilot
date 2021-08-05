@@ -51,7 +51,7 @@ typedef struct framebuffer_device_t {
     const uint32_t  width;
     const uint32_t  height;
 
-    /* framebuffer stride in pixels */
+    /* frambuffer stride in pixels */
     const int       stride;
 
     /* framebuffer pixel format */

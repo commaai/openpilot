@@ -110,9 +110,9 @@ RET_SETUP_AUXILIARYQP_FAILED,					/**< Failed to setup auxiliary QP for initiali
 RET_NO_EXTERN_SOLVER,							/**< No extern QP solver available. */
 RET_QP_UNBOUNDED,								/**< 40 QP is unbounded. */
 RET_QP_INFEASIBLE,								/**< QP is infeasible. */
-RET_QP_NOT_SOLVED,								/**< Problems occurred while solving QP with standard solver. */
+RET_QP_NOT_SOLVED,								/**< Problems occured while solving QP with standard solver. */
 RET_QP_SOLVED,									/**< QP successfully solved. */
-RET_UNABLE_TO_SOLVE_QP,							/**< Problems occurred while solving QP. */
+RET_UNABLE_TO_SOLVE_QP,							/**< Problems occured while solving QP. */
 RET_INITIALISATION_STARTED,						/**< Starting problem initialisation. */
 RET_HOTSTART_FAILED,							/**< Unable to perform homotopy due to internal error. */
 RET_HOTSTART_FAILED_TO_INIT,					/**< Unable to initialise problem. */
@@ -179,7 +179,7 @@ RET_INACCURATE_SOLUTION							/**< KKT optimality conditions not satisfied to su
 
 
 /** This class handles all kinds of messages (errors, warnings, infos) initiated
- *  by qpOASES modules and stores the corresponding global preferences.
+ *  by qpOASES modules and stores the correspoding global preferences.
  *
  *	\author Hans Joachim Ferreau (special thanks to Leonard Wirsching)
  *	\version 1.3embedded
@@ -237,7 +237,7 @@ class MessageHandling
 
 
 		/** Prints an error message(a simplified macro THROWERROR is also provided). \n
-		 *  Errors are defined as abnormal events which cause an immediate termination of the current (sub) function.
+		 *  Errors are definied as abnormal events which cause an immediate termination of the current (sub) function.
 		 *  Errors of a sub function should be commented by the calling function by means of a warning message
 		 *  (if this error does not cause an error of the calling function, either)!
 		 *  \return Error number returned by sub function call
@@ -254,7 +254,7 @@ class MessageHandling
 		);
 
 		/** Prints a warning message (a simplified macro THROWWARNING is also provided).
-		 *  Warnings are defined as abnormal events which does NOT cause an immediate termination of the current (sub) function.
+		 *  Warnings are definied as abnormal events which does NOT cause an immediate termination of the current (sub) function.
 		 *  \return Warning number returned by sub function call
 		 */
 		returnValue throwWarning(

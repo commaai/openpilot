@@ -47,7 +47,7 @@ extern "C" {
 // FourCC codes grouped according to implementation efficiency.
 // Primary formats should convert in 1 efficient step.
 // Secondary formats are converted in 2 steps.
-// Auxiliary formats call primary converters.
+// Auxilliary formats call primary converters.
 enum FourCC {
   // 9 Primary YUV formats: 5 planar, 2 biplanar, 2 packed.
   FOURCC_I420 = FOURCC('I', '4', '2', '0'),

@@ -34,7 +34,7 @@
 **************************************************************************************************/
 
 /*
- * auxiliary algebra operation external dependencies header
+ * auxiliary algebra operation external dependancies header
  *
  * include/blasfeo_d_aux_ext_dep.h
  *

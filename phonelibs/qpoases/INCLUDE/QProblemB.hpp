@@ -346,7 +346,7 @@ class QProblemB
 																					 *	 If a NULL pointer is passed, all entries are assumed to be zero. */
 												const Bounds* const guessedBounds,	/**< Guessed working set for solution (xOpt,yOpt). */
 												Bounds* auxiliaryBounds				/**< Input: Allocated bound object. \n
-																					 *	 Output: Working set for auxiliary QP. */
+																					 *	 Ouput: Working set for auxiliary QP. */
 												) const;
 
 		/** Setups bound data structure according to auxiliaryBounds.

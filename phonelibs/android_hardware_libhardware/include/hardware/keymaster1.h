@@ -298,7 +298,7 @@ struct keymaster1_device {
      *
      * \param[in] dev The keymaster device structure.
      *
-     * \param[in] key_blob The key to retrieve characteristics from.
+     * \param[in] key_blob The key to retreive characteristics from.
      *
      * \param[in] client_id The client ID data, or NULL if none associated.
      *
@@ -441,7 +441,7 @@ struct keymaster1_device {
      * initialization, notably to return the IV or nonce from operations that generate an IV or
      * nonce.  The caller takes ownership of the output parameters array and must free it with
      * keymaster_free_param_set().  out_params may be set to NULL if no output parameters are
-     * expected.  If out_params is NULL, and output parameters are generated, begin() will return
+     * expected.  If out_params is NULL, and output paramaters are generated, begin() will return
      * KM_ERROR_OUTPUT_PARAMETER_NULL.
      *
      * \param[out] operation_handle The newly-created operation handle which must be passed to
@@ -482,7 +482,7 @@ struct keymaster1_device {
      * \param[out] out_params Output parameters.  Used to return additional data from the operation
      * The caller takes ownership of the output parameters array and must free it with
      * keymaster_free_param_set().  out_params may be set to NULL if no output parameters are
-     * expected.  If out_params is NULL, and output parameters are generated, begin() will return
+     * expected.  If out_params is NULL, and output paramaters are generated, begin() will return
      * KM_ERROR_OUTPUT_PARAMETER_NULL.
      *
      * \param[out] output The output data, if any.  The caller assumes ownership of the allocated

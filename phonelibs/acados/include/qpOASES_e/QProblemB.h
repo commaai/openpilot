@@ -714,7 +714,7 @@ returnValue QProblemB_obtainAuxiliaryWorkingSet(	QProblemB* _THIS,
 																					 *	 If a NULL pointer is passed, all entries are assumed to be zero. */
 													Bounds* const guessedBounds,	/**< Guessed working set for solution (xOpt,yOpt). */
 													Bounds* auxiliaryBounds			/**< Input: Allocated bound object. \n
-																					 *	 Output: Working set for auxiliary QP. */
+																					 *	 Ouput: Working set for auxiliary QP. */
 													);
 
 /** Decides if lower bounds are smaller than upper bounds

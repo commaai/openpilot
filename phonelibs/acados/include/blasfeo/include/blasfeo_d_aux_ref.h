@@ -122,7 +122,7 @@ void blasfeo_ref_dgead(int m, int n, double alpha, struct blasfeo_dmat *sA, int 
 // y <= y + alpha*x
 void blasfeo_ref_dvecad(int m, double alpha, struct blasfeo_dvec *sx, int xi, struct blasfeo_dvec *sy, int yi);
 
-// --- transpositions
+// --- traspositions
 // B <= A'
 void blasfeo_ref_dgetr(int m, int n, struct blasfeo_dmat *sA, int ai, int aj, struct blasfeo_dmat *sB, int bi, int bj);
 // B <= A', A lower triangular

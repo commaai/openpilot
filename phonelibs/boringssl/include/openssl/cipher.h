@@ -292,7 +292,7 @@ OPENSSL_EXPORT int EVP_CIPHER_CTX_set_key_length(EVP_CIPHER_CTX *ctx, unsigned k
 
 /* Cipher accessors. */
 
-/* EVP_CIPHER_nid returns a NID identifying |cipher|. (For example,
+/* EVP_CIPHER_nid returns a NID identifing |cipher|. (For example,
  * |NID_aes_128_gcm|.) */
 OPENSSL_EXPORT int EVP_CIPHER_nid(const EVP_CIPHER *cipher);
 
@@ -491,7 +491,7 @@ typedef struct evp_cipher_info_st {
 } EVP_CIPHER_INFO;
 
 struct evp_cipher_st {
-  /* type contains a NID identifying the cipher. (e.g. NID_aes_128_gcm.) */
+  /* type contains a NID identifing the cipher. (e.g. NID_aes_128_gcm.) */
   int nid;
 
   /* block_size contains the block size, in bytes, of the cipher, or 1 for a

@@ -486,7 +486,7 @@ OPENSSL_EXPORT int BIO_get_fp(BIO *bio, FILE **out_file);
 
 /* BIO_set_fp sets the |FILE| for |bio|. If |close_flag| is |BIO_CLOSE| then
  * |fclose| will be called on |file| when |bio| is closed. It returns one on
- * success and zero otherwise. */
+ * sucess and zero otherwise. */
 OPENSSL_EXPORT int BIO_set_fp(BIO *bio, FILE *file, int close_flag);
 
 /* BIO_read_filename opens |filename| for reading and sets the result as the

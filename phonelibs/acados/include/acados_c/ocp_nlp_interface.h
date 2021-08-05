@@ -164,7 +164,7 @@ void ocp_nlp_plan_destroy(void* plan_);
 /// \param plan The plan (user nlp configuration).
 ocp_nlp_config *ocp_nlp_config_create(ocp_nlp_plan plan);
 
-/// Destructor of the nlp configuration.
+/// Desctructor of the nlp configuration.
 ///
 /// \param config_ The configuration struct.
 void ocp_nlp_config_destroy(void *config_);

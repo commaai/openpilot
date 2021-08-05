@@ -31,7 +31,7 @@
  *    must display the following acknowledgement:
  *    "This product includes cryptographic software written by
  *     Eric Young (eay@cryptsoft.com)"
- *    The word 'cryptographic' can be left out if the routines from the library
+ *    The word 'cryptographic' can be left out if the rouines from the library
  *    being used are not cryptographic related :-).
  * 4. If you include any Windows specific code (or a derivative thereof) from
  *    the apps directory (application code) you must include an acknowledgement:
@@ -309,7 +309,7 @@ OPENSSL_EXPORT void ERR_clear_system_error(void);
   ERR_put_error(ERR_LIB_SYS, SYS_F_##func, 0, __FILE__, __LINE__);
 
 /* ERR_put_error adds an error to the error queue, dropping the least recent
- * error if necessary for space reasons. */
+ * error if neccessary for space reasons. */
 OPENSSL_EXPORT void ERR_put_error(int library, int func, int reason,
                                   const char *file, unsigned line);
 
@@ -333,7 +333,7 @@ OPENSSL_EXPORT int ERR_set_mark(void);
 OPENSSL_EXPORT int ERR_pop_to_mark(void);
 
 struct err_error_st {
-  /* file contains the filename where the error occurred. */
+  /* file contains the filename where the error occured. */
   const char *file;
   /* data contains optional data. It must be freed with |OPENSSL_free| if
    * |flags&ERR_FLAG_MALLOCED|. */
@@ -341,7 +341,7 @@ struct err_error_st {
   /* packed contains the error library, function and reason, as packed by
    * ERR_PACK. */
   uint32_t packed;
-  /* line contains the line number where the error occurred. */
+  /* line contains the line number where the error occured. */
   uint16_t line;
   /* flags contains a bitwise-OR of ERR_FLAG_* values. */
   uint8_t flags;

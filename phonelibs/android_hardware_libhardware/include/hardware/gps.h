@@ -1854,7 +1854,7 @@ typedef struct {
      * Parameters:
      *     config_data - a pointer to a char array which holds what usually is expected from
                          file(/etc/gps.conf), i.e., a sequence of UTF8 strings separated by '\n'.
-     *     length - total number of UTF8 characters in configuration data.
+     *     length - total number of UTF8 characters in configuraiton data.
      *
      * IMPORTANT:
      *      GPS HAL should expect this function can be called multiple times. And it may be

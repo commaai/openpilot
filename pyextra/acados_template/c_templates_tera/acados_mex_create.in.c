@@ -276,7 +276,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     mxSetField(plhs[1], 0, "disc_phi_fun", disc_phi_fun_mat);
     mxSetField(plhs[1], 0, "disc_phi_fun_jac", disc_phi_fun_jac_mat);
     mxSetField(plhs[1], 0, "disc_phi_fun_jac_hess", disc_phi_fun_jac_hess_mat);
-/* constraints */
+/* constaints */
     mxArray *phi_constraint_mat = mxCreateNumericMatrix(1, 2, mxINT64_CLASS, mxREAL);
     l_ptr = mxGetData(phi_constraint_mat);
 {%- if constraints.constr_type == "BGP" %}

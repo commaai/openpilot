@@ -785,7 +785,7 @@ typedef struct hwc_composer_device_1 {
      *
      * Within the standard prepare()/set() composition loop, the client
      * (surfaceflinger) can request that a given layer uses dedicated cursor
-     * composition hardware by specifying the HWC_IS_CURSOR_LAYER flag. Only
+     * composition hardware by specifiying the HWC_IS_CURSOR_LAYER flag. Only
      * one layer per display can have this flag set. If the layer is suitable
      * for the platform's cursor hardware, hwcomposer will return from prepare()
      * a composition type of HWC_CURSOR_OVERLAY for that layer. This indicates

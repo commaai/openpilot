@@ -451,7 +451,7 @@ returnValue MessageHandling::throwMessage(
 			myPrintf( myPrintfString );
 		}
 
-		/* take care of proper indentation for subsequent error messages */
+		/* take care of proper indention for subsequent error messages */
 		if ( RETstring[0] == 'E' )
 		{
 			++errorCount;

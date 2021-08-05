@@ -1695,7 +1695,7 @@ OPENSSL_EXPORT int DTLSv1_handle_timeout(SSL *ssl);
 OPENSSL_EXPORT int SSL_session_reused(const SSL *ssl);
 
 /* SSL_total_renegotiations returns the total number of renegotiation handshakes
- * performed by |ssl|. This includes the pending renegotiation, if any. */
+ * peformed by |ssl|. This includes the pending renegotiation, if any. */
 OPENSSL_EXPORT int SSL_total_renegotiations(const SSL *ssl);
 
 /* SSL_CTX_set_tmp_dh configures |ctx| to use the group from |dh| as the group

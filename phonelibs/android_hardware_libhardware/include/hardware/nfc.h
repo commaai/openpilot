@@ -32,7 +32,7 @@ __BEGIN_DECLS
  * This HAL allows NCI silicon vendors to make use
  * of the core NCI stack in Android for their own silicon.
  *
- * The responsibilities of the NCI HAL implementation
+ * The responibilities of the NCI HAL implementation
  * are as follows:
  *
  * - Implement the transport to the NFC controller
@@ -106,7 +106,7 @@ typedef void (nfc_stack_callback_t) (nfc_event_t event, nfc_status_t event_statu
 
 /*
  * The callback passed in from the NFC stack that the HAL
- * can use to pass incoming data to the stack.
+ * can use to pass incomming data to the stack.
  */
 typedef void (nfc_stack_data_callback_t) (uint16_t data_len, uint8_t* p_data);
 
@@ -187,7 +187,7 @@ typedef struct nfc_nci_device {
     int (*control_granted)(const struct nfc_nci_device *p_dev);
 
     /*
-     * (*power_cycle)() Restart controller by power cycle;
+     * (*power_cycle)() Restart controller by power cyle;
      * HAL_OPEN_CPLT_EVT will notify when operation is complete.
      */
     int (*power_cycle)(const struct nfc_nci_device *p_dev);

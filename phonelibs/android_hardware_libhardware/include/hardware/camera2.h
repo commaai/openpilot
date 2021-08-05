@@ -349,13 +349,13 @@ enum {
  */
 enum {
     /**
-     * A serious failure occurred. Camera device may not work without reboot, and
+     * A serious failure occured. Camera device may not work without reboot, and
      * no further frames or buffer streams will be produced by the
      * device. Device should be treated as closed.
      */
     CAMERA2_MSG_ERROR_HARDWARE = 0x0001,
     /**
-     * A serious failure occurred. No further frames or buffer streams will be
+     * A serious failure occured. No further frames or buffer streams will be
      * produced by the device. Device should be treated as closed. The client
      * must reopen the device to use it again.
      */
@@ -786,7 +786,7 @@ typedef struct camera2_device_ops {
             void *user);
 
     /**
-     * Get methods to query for vendor extension metadata tag information. May
+     * Get methods to query for vendor extension metadata tag infomation. May
      * set ops to NULL if no vendor extension tags are defined.
      */
     int (*get_metadata_vendor_tag_ops)(const struct camera2_device*,

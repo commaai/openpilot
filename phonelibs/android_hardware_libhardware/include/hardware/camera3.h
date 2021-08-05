@@ -1267,7 +1267,7 @@
  *      To avoid excessive amount of noise reduction and insufficient amount of edge enhancement
  *      being applied to the input buffer, the application can hint the HAL  how much effective
  *      exposure time improvement has been done by the application, then the HAL can adjust the
- *      noise reduction and edge enhancement parameters to get best reprocessed image quality.
+ *      noise reduction and edge enhancement paramters to get best reprocessed image quality.
  *      Below tag can be used for this purpose:
  *          - android.reprocess.effectiveExposureFactor
  *      The value would be exposure time increase factor applied to the original output image,
@@ -1903,7 +1903,7 @@ typedef enum camera3_msg_type {
  */
 typedef enum camera3_error_msg_code {
     /**
-     * A serious failure occurred. No further frames or buffer streams will
+     * A serious failure occured. No further frames or buffer streams will
      * be produced by the device. Device should be treated as closed. The
      * client must reopen the device to use it again. The frame_number field
      * is unused.

@@ -115,7 +115,7 @@ void s_tree_ocp_qcqp_ipm_arg_set_default(enum hpipm_mode mode, struct s_tree_ocp
 void s_tree_ocp_qcqp_ipm_arg_set(char *field, void *value, struct s_tree_ocp_qcqp_ipm_arg *arg);
 // set maximum number of iterations
 void s_tree_ocp_qcqp_ipm_arg_set_iter_max(int *value, struct s_tree_ocp_qcqp_ipm_arg *arg);
-// set minimum step length
+// set minimum step lenght
 void s_tree_ocp_qcqp_ipm_arg_set_alpha_min(float *value, struct s_tree_ocp_qcqp_ipm_arg *arg);
 // set initial value of barrier parameter
 void s_tree_ocp_qcqp_ipm_arg_set_mu0(float *value, struct s_tree_ocp_qcqp_ipm_arg *arg);
