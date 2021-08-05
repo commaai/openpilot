@@ -116,6 +116,7 @@ void encoder_thread(int cam_idx) {
   set_thread_name(cam_info.filename);
 
   int cnt = 0, cur_seg = -1;
+  int encode_idx = 0;
   LoggerHandle *lh = NULL;
   std::vector<Encoder *> encoders;
   VisionIpcClient vipc_client = VisionIpcClient("camerad", cam_info.stream_type, false);
@@ -193,7 +194,7 @@ void encoder_thread(int cam_idx) {
           } else {
             eidx.setType(cam_idx == LOG_CAMERA_ID_DCAMERA ? cereal::EncodeIndex::Type::FRONT : cereal::EncodeIndex::Type::FULL_H_E_V_C);
           }
-          eidx.setEncodeId(cnt);
+          eidx.setEncodeId(encode_idx);
           eidx.setSegmentNum(cur_seg);
           eidx.setSegmentId(out_id);
           if (lh) {
@@ -205,6 +206,7 @@ void encoder_thread(int cam_idx) {
       }
 
       cnt++;
+      encode_idx++;
     }
 
     if (lh) {
