@@ -84,7 +84,7 @@ void Localizer::build_live_location(cereal::LiveLocationKalman::Builder& fix) {
   VectorXd orientation_ecef_std = predicted_std.segment<STATE_ECEF_ORIENTATION_ERR_LEN>(STATE_ECEF_ORIENTATION_ERR_START);
   MatrixXdr device_from_ecef = euler2rot(orientation_ecef).transpose();
   //VectorXd calibrated_orientation_ecef = rot2euler(device_from_ecef);
-  VectorXd calibrated_orientation_ecef = rot2euler((this->calib_from_device * euler2rot(orientation_ecef).transpose()).transpose());
+  VectorXd calibrated_orientation_ecef = rot2euler((this->calib_from_device * device_from_ecef).transpose());
 
   VectorXd acc_calib = this->calib_from_device * predicted_state.segment<STATE_ACCELERATION_LEN>(STATE_ACCELERATION_START);
   MatrixXdr acc_calib_cov = predicted_cov.block<STATE_ACCELERATION_ERR_LEN, STATE_ACCELERATION_ERR_LEN>(STATE_ACCELERATION_ERR_START, STATE_ACCELERATION_ERR_START);
