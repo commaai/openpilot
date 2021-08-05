@@ -310,7 +310,9 @@ selfdrive/logcatd/logcatd_android.cc
 selfdrive/logcatd/logcatd_systemd.cc
 
 selfdrive/proclogd/SConscript
-selfdrive/proclogd/proclogd.cc
+selfdrive/proclogd/main.cc
+selfdrive/proclogd/proclog.cc
+selfdrive/proclogd/proclog.h
 
 selfdrive/loggerd/SConscript
 selfdrive/loggerd/encoder.h
