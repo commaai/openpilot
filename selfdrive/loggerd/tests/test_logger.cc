@@ -72,7 +72,7 @@ void verify_logfiles(const std::string &segment_path, uint64_t boottime, uint64_
           sum += clocks.getModemUptimeMillis();
         }
         words = kj::arrayPtr(reader.getEnd(), words.end());
-        if (words == 0) {
+        if (words.size() == 0) {
           // the last event should be SENTINEL
 
           // TODO: this check failed sometimes. need to be fixed in LoggerState.
@@ -82,7 +82,7 @@ void verify_logfiles(const std::string &segment_path, uint64_t boottime, uint64_
         }
         ++i;
       } catch (...) {
-        INFO("could not parse message");
+        INFO("failed parse " << i)
         REQUIRE(0);
         break;
       }
@@ -91,15 +91,18 @@ void verify_logfiles(const std::string &segment_path, uint64_t boottime, uint64_
   }
 }
 
-void logger_thread(LoggerState *log, int *wait_rotating, int segment_cnt, uint64_t boottime, uint64_t monotonic, int number) {
+void logger_thread(LoggerState *log, int *threads_writing, int segment_cnt, uint64_t boottime, uint64_t monotonic, int number) {
   int curseg = -1;
   for (int cnt = 0; cnt < segment_cnt; ++cnt) {
+    LoggerHandle *lh = nullptr;
     {
       std::unique_lock lk(lock);
       cv.wait(lk, [=]() { return log->part > curseg; });
       curseg = log->part;
+      *threads_writing += 1;
+      lh = logger_get_handle(log);
+      cv_finish.notify_one();
     }
-    LoggerHandle *lh = logger_get_handle(log);
     for (int i = 0; i < LOG_COUNT; ++i) {
       MessageBuilder msg;
       auto clocks = msg.initEvent().initClocks();
@@ -112,16 +115,13 @@ void logger_thread(LoggerState *log, int *wait_rotating, int segment_cnt, uint64
       usleep(0);
     }
     lh_close(lh);
-    std::unique_lock lk(lock);
-    *wait_rotating += 1;
-    cv_finish.notify_one();
   }
 }
 
-void test_rotate(int thread_cnt, LoggerState *logger, const std::string &log_root, int *wait_rotating, uint64_t boottime, uint64_t monotonic) {
+void test_rotate(int thread_cnt, LoggerState *logger, const std::string &log_root, int *threads_writing, uint64_t boottime, uint64_t monotonic) {
   std::vector<std::thread> threads;
   for (uint8_t i = 1; i <= thread_cnt; ++i) {
-    threads.push_back(std::thread(logger_thread, logger, wait_rotating, ROTATE_CNT, boottime, monotonic, i));
+    threads.push_back(std::thread(logger_thread, logger, threads_writing, ROTATE_CNT, boottime, monotonic, i));
   }
 
   char segment_path[PATH_MAX];
@@ -130,11 +130,10 @@ void test_rotate(int thread_cnt, LoggerState *logger, const std::string &log_roo
   for (int i = 0; i < ROTATE_CNT; ++i) {
     int ret = logger_next(logger, log_root.c_str(), segment_path, std::size(segment_path), &part);
     REQUIRE(ret == 0);
-
-    std::unique_lock lk(lock);
     cv.notify_all();
-    cv_finish.wait(lk, [=]() { return *wait_rotating == thread_cnt || i == ROTATE_CNT; });
-    *wait_rotating = 0;
+    std::unique_lock lk(lock);
+    cv_finish.wait(lk, [=]() { return *threads_writing == thread_cnt; });
+    *threads_writing = 0;
   }
   for (auto &t : threads) {
     t.join();
@@ -158,23 +157,24 @@ void test_rotate(int thread_cnt, LoggerState *logger, const std::string &log_roo
 
 TEST_CASE("logger") {
   const std::string log_root = "/tmp/log_root";
-  system("rm /tmp/log_root/* -rf");
+  
   uint64_t boottime = nanos_since_boot();
   uint64_t monotonic = nanos_monotonic();
-  int wait_rotating = 0;
+  int threads_writing = 0;
   LoggerState logger = {};
   logger_init(&logger, "rlog", true);
 
   SECTION("one thread logging and rotation") {
-    test_rotate(1, &logger, log_root, &wait_rotating, boottime, monotonic);
+    system("rm /tmp/log_root/* -rf");
+    test_rotate(1, &logger, log_root, &threads_writing, boottime, monotonic);
   }
   SECTION("two threads logging and rotation") {
-    test_rotate(2, &logger, log_root, &wait_rotating, boottime, monotonic);
+    test_rotate(2, &logger, log_root, &threads_writing, boottime, monotonic);
   }
   SECTION("three threads logging and rotation") {
-    test_rotate(3, &logger, log_root, &wait_rotating, boottime, monotonic);
+    test_rotate(3, &logger, log_root, &threads_writing, boottime, monotonic);
   }
   SECTION("four threads logging and rotation") {
-    test_rotate(4, &logger, log_root, &wait_rotating, boottime, monotonic);
+    test_rotate(4, &logger, log_root, &threads_writing, boottime, monotonic);
   }
 }
