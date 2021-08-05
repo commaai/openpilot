@@ -16,6 +16,6 @@ if __name__ == "__main__":
   if keys.status_code == 200:
     Params().put("GithubSshKeys", keys.text)
     Params().put("GithubUsername", username)
-    print("Setup ssh keys sucessfully")
+    print("Setup ssh keys successfully")
   else:
     print("Error getting public keys from github")
