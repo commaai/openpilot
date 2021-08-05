@@ -158,7 +158,7 @@ class Controls:
     self.sm['liveParameters'].valid = True
 
     self.startup_event = get_startup_event(car_recognized, controller_available, self.CP.fuzzyFingerprint,
-                                           len(self.CP.carFw) > 0)
+                                           len(self.CP.carFw) > 0, self.CP)
 
     if not sounds_available:
       self.events.add(EventName.soundsUnavailable, static=True)

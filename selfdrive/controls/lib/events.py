@@ -345,6 +345,14 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 15.),
   },
 
+  EventName.startupZss: {
+    ET.PERMANENT: Alert(
+      "Using Zorro steering sensor",
+      "Always keep hands on wheel and eyes on road",
+      AlertStatus.normal, AlertSize.mid,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.),
+  },
+
   # openpilot uses the version strings from various ECUs to detect the correct car model.
   # Usually all ECUs are recognized and an exact match to a car model can be made. Sometimes
   # one or two ECUs have unrecognized versions, but the others are present in the database.
