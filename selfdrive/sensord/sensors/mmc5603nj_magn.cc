@@ -41,7 +41,7 @@ int MMC5603NJ_Magn::init() {
     goto fail;
   }
 
-  // Enable continous mode, set every 100 measurements
+  // Enable continuous mode, set every 100 measurements
   ret = set_register(MMC5603NJ_I2C_REG_INTERNAL_2, MMC5603NJ_CMM_EN | MMC5603NJ_EN_PRD_SET | 0b11);
   if (ret < 0) {
     goto fail;

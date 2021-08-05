@@ -245,6 +245,6 @@ void BMX055_Magn::get_event(cereal::SensorEventData::Builder &event) {
   // The BMX055 Magnetometer has no FIFO mode. Self running mode only goes
   // up to 30 Hz. Therefore we put in forced mode, and request measurements
   // at a 100 Hz. When reading the registers we have to check the ready bit
-  // To verify the measurement was comleted this cycle.
+  // To verify the measurement was completed this cycle.
   set_register(BMX055_MAGN_I2C_REG_MAG, BMX055_MAGN_FORCED);
 }
