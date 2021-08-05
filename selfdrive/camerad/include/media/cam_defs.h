@@ -158,7 +158,7 @@ struct cam_iommu_handle {
 #define CAM_FORMAT_Y_ONLY                       45
 #define CAM_FORMAT_MAX                          46
 
-/* camera rotation */
+/* camera rotaion */
 #define CAM_ROTATE_CW_0_DEGREE                  0
 #define CAM_ROTATE_CW_90_DEGREE                 1
 #define CAM_RORATE_CW_180_DEGREE                2

@@ -1,5 +1,5 @@
 //
-// C++ standalone version of fastcluster by Daniel Muellner
+// C++ standalone verion of fastcluster by Daniel Muellner
 //
 // Copyright: Daniel Muellner, 2011
 //            Christoph Dalitz, 2018

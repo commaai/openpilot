@@ -11,7 +11,7 @@
 #define CAM_ICP_DEV_TYPE_BPS_CDM 5
 #define CAM_ICP_DEV_TYPE_MAX     5
 
-/* definitions needed for icp acquire device */
+/* definitions needed for icp aquire device */
 #define CAM_ICP_RES_TYPE_BPS        1
 #define CAM_ICP_RES_TYPE_IPE_RT     2
 #define CAM_ICP_RES_TYPE_IPE        3
@@ -100,7 +100,7 @@ struct cam_icp_dev_ver {
 /**
  * struct cam_icp_ver - ICP version info
  *
- * This structure is used for fw and api version
+ * This strcuture is used for fw and api version
  * this is used to get firmware version and api version from firmware
  * and use this info in CAM_QUERY_CAP IOCTL
  *

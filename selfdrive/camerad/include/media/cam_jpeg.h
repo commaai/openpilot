@@ -10,7 +10,7 @@
 
 #define CAM_JPEG_NUM_DEV_PER_RES_MAX      1
 
-/* definitions needed for jpeg acquire device */
+/* definitions needed for jpeg aquire device */
 #define CAM_JPEG_RES_TYPE_ENC        0
 #define CAM_JPEG_RES_TYPE_DMA        1
 #define CAM_JPEG_RES_TYPE_MAX        2

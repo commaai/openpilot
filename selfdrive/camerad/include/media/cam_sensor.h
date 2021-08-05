@@ -316,7 +316,7 @@ struct cam_cmd_unconditional_wait {
 } __attribute__((packed));
 
 /**
- * cam_csiphy_info: Provides cmdbuffer structure
+ * cam_csiphy_info: Provides cmdbuffer structre
  * @lane_mask     : Lane mask details
  * @lane_assign   : Lane sensor will be using
  * @csiphy_3phase : Total number of lanes

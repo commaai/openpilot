@@ -47,7 +47,7 @@
 #define CAM_ISP_LANE_TYPE_CPHY                  1
 #define CAM_ISP_LANE_TYPE_MAX                   2
 
-/* ISP Resource Composite Group ID */
+/* ISP Resurce Composite Group ID */
 #define CAM_ISP_RES_COMP_GROUP_NONE             0
 #define CAM_ISP_RES_COMP_GROUP_ID_0             1
 #define CAM_ISP_RES_COMP_GROUP_ID_1             2
