@@ -120,14 +120,20 @@ class TestEncoder(unittest.TestCase):
         # Check encodeIdx
         if encode_idx_name is not None:
           rlog_path = f"{route_prefix_path}--{i}/rlog.bz2"
-          idxs = [getattr(m, encode_idx_name).segmentId for m in LogReader(rlog_path) if m.which() == encode_idx_name]
-          self.assertEqual(frame_count, len(idxs))
+
+          segment_idxs = [getattr(m, encode_idx_name).segmentId for m in LogReader(rlog_path) if m.which() == encode_idx_name]
+          encode_idxs = [getattr(m, encode_idx_name).encodeId for m in LogReader(rlog_path) if m.which() == encode_idx_name]
+
+          # Check frame count
+          self.assertEqual(frame_count, len(segment_idxs))
+          self.assertEqual(frame_count, len(encode_idxs))
 
           # Check for duplicates or skips
-          self.assertEqual(0, idxs[0])
-          self.assertEqual(len(idxs)-1, idxs[-1])
-          self.assertEqual(len(set(idxs)), len(idxs))
-          self.assertGreater(idxs[-1], expected_frames * i)
+          self.assertEqual(0, segment_idxs[0])
+          self.assertEqual(len(set(segment_idxs)), len(segment_idxs))
+
+          self.assertEqual(expected_frames * i, encode_idxs[0])
+          self.assertEqual(len(set(encode_idxs)), len(encode_idxs))
 
       if TICI:
         expected_frames = fps * SEGMENT_LENGTH
