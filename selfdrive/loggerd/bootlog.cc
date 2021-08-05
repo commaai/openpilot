@@ -40,7 +40,7 @@ int main(int argc, char** argv) {
   LOGW("bootlog to %s", path.c_str());
 
   // Open bootlog
-  int r = logger_mkpath((char*)path.c_str());
+  int r = util::create_directories(path, 0777);
   assert(r == 0);
 
   BZFile bz_file(path.c_str());

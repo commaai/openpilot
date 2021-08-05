@@ -1,5 +1,4 @@
 
-#include <dirent.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 
@@ -15,7 +14,7 @@
 std::string random_bytes(int size) {
   std::random_device rd;
   std::independent_bits_engine<std::default_random_engine, CHAR_BIT, unsigned char> rbe(rd());
-  std::string bytes(size+1, '\0');
+  std::string bytes(size + 1, '\0');
   std::generate(bytes.begin(), bytes.end(), std::ref(rbe));
   return bytes;
 }
@@ -90,5 +89,56 @@ TEST_CASE("util::read_files_in_dir") {
   REQUIRE(result.size() == std::size(files));
   for (auto& [k, v] : result) {
     REQUIRE(k == v);
+TEST_CASE("util::create_directories") {
+  auto check_dir_permissions = [](const std::string &dir, mode_t mode) -> bool {
+    struct stat st = {};
+    return stat(dir.c_str(), &st) == 0 && (st.st_mode & S_IFMT) == S_IFDIR && (st.st_mode & (S_IRWXU | S_IRWXG | S_IRWXO)) == mode;
+  };
+  system("rm /tmp/test_create_directories -rf");
+  std::string dir = "/tmp/test_create_directories/a/b/c/d/e/f";
+
+  SECTION("with umask") {
+    REQUIRE(util::create_directories(dir, 0777, true, true));
+    REQUIRE(check_dir_permissions(dir, 0777));
+  }
+  SECTION("without umask") {
+    REQUIRE(util::create_directories(dir, 0777, true, false));
+    REQUIRE(check_dir_permissions(dir, 0777) == false);
+    REQUIRE(check_dir_permissions(dir, 0775) == true);
+  }
+  SECTION("reset permissions") {
+    REQUIRE(util::create_directories(dir, 0775));
+    REQUIRE(check_dir_permissions(dir, 0775) == true);
+
+    // don't reset permissions
+    REQUIRE(util::create_directories(dir, 0666, false));
+    REQUIRE(check_dir_permissions(dir, 0775) == true);
+    // reset permissions
+    REQUIRE(util::create_directories(dir, 0666, true));
+    REQUIRE(check_dir_permissions(dir, 0666) == true);
+  }
+  SECTION("dir already exists") {
+    REQUIRE(util::create_directories(dir, 0777));
+    REQUIRE(util::create_directories(dir, 0777));
+  }
+  SECTION("a file exists with the same name") {
+    REQUIRE(util::create_directories(dir, 0777));
+    int f = open((dir + "/file").c_str(), O_RDWR | O_CREAT);
+    REQUIRE(f != -1);
+    close(f);
+    REQUIRE(util::create_directories(dir + "/file", 0777) == false);
+    REQUIRE(util::create_directories(dir + "/file/1/2/3", 0777) == false);
+  }
+  SECTION("end with slashs") {
+    // one slashs
+    REQUIRE(util::create_directories(dir + "/", 0777, true));
+    REQUIRE(check_dir_permissions(dir, 0777) == true);
+    // multiple slashs
+    REQUIRE(util::create_directories(dir + "///", 0777, true));
+    REQUIRE(check_dir_permissions(dir, 0777) == true);
+  }
+  SECTION("empty") {
+    bool ret = util::create_directories("", 0777, true);
+    REQUIRE(ret == false);
   }
 }

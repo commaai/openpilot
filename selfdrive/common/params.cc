@@ -4,7 +4,6 @@
 #define _GNU_SOURCE
 #endif  // _GNU_SOURCE
 
-#include <dirent.h>
 #include <sys/file.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -41,27 +40,10 @@ int fsync_dir(const char* path) {
   return result;
 }
 
-int mkdir_p(std::string path) {
-  char * _path = (char *)path.c_str();
-
-  for (char *p = _path + 1; *p; p++) {
-    if (*p == '/') {
-      *p = '\0'; // Temporarily truncate
-      if (mkdir(_path, 0775) != 0) {
-        if (errno != EEXIST) return -1;
-      }
-      *p = '/';
-    }
-  }
-  if (mkdir(_path, 0775) != 0) {
-    if (errno != EEXIST) return -1;
-  }
-  return 0;
-}
 
 bool create_params_path(const std::string &param_path, const std::string &key_path) {
   // Make sure params path exists
-  if (!util::file_exists(param_path) && mkdir_p(param_path) != 0) {
+  if (!util::file_exists(param_path) && util::create_directories(param_path, 0777) != 0) {
     return false;
   }
 
