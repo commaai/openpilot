@@ -44,7 +44,7 @@ void verify_logfiles(const std::string &segment_path, uint64_t boottime, uint64_
   for (const char *fn : {"/rlog.bz2", "/qlog.bz2"}) {
     const std::string log_file = segment_path + fn;
     INFO(log_file);
-    // if fn is still opened by LoggerHandle afater logger_close, log_bz2.size() is zero
+    // if fn is still opened by LoggerHandle after logger_close, log_bz2.size() is zero
     std::string log_bz2 = util::read_file(log_file);
     REQUIRE(log_bz2.size() > 0);
 
@@ -132,6 +132,7 @@ void test_rotate(int thread_cnt, LoggerState *logger, const std::string &log_roo
     REQUIRE(ret == 0);
     cv.notify_all();
     std::unique_lock lk(lock);
+    // rotate to the next segment if all threads are writing in the current segment.
     cv_finish.wait(lk, [=]() { return *threads_writing == thread_cnt; });
     *threads_writing = 0;
   }

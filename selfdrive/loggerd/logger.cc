@@ -269,6 +269,7 @@ void lh_close(LoggerHandle* h) {
   pthread_mutex_lock(&h->lock);
   assert(h->refcnt > 0);
   if (h->refcnt == 1) {
+    // a very ugly hack.at present, only here can guarantee sentinel is the last msg
     pthread_mutex_unlock(&h->lock);
     lh_log_sentinel(h, h->end_sentinel_type);
     pthread_mutex_lock(&h->lock);
