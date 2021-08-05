@@ -120,7 +120,6 @@ class opParams:
                                                               'auto will reboot the device when an update is seen', static=True),
                         'dynamic_gas': Param(False, bool, 'Whether to use dynamic gas if your car is supported'),
                         'hide_auto_df_alerts': Param(False, bool, 'Hides the alert that shows what profile the model has chosen'),
-                        'model_laneless': Param(False, bool, 'Ignore lane lines, only path is used for planning (e2e). Experimental', static=True),
                         'log_auto_df': Param(False, bool, 'Logs dynamic follow data for auto-df', static=True),
                         # 'dynamic_camera_offset': Param(False, bool, 'Whether to automatically keep away from oncoming traffic.\n'
                         #                                             'Works from 35 to ~60 mph (requires radar)'),

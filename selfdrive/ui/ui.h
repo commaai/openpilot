@@ -60,7 +60,7 @@ typedef struct Alert {
   }
 } Alert;
 
-const Alert CONTROLS_WAITING_ALERT = {"openpilot Unavailable", "Waiting for controls to start", 
+const Alert CONTROLS_WAITING_ALERT = {"openpilot Unavailable", "Waiting for controls to start",
                                       "controlsWaiting", cereal::ControlsState::AlertSize::MID,
                                       AudibleAlert::NONE};
 
@@ -100,6 +100,10 @@ typedef struct {
 
 typedef struct UIScene {
 
+  int dfButtonStatus = 0;
+  int lsButtonStatus = 0;
+  bool mlButtonEnabled;
+
   mat3 view_from_calib;
   bool world_objects_visible;
 
@@ -138,6 +142,7 @@ typedef struct UIState {
   std::map<std::string, int> images;
 
   std::unique_ptr<SubMaster> sm;
+  std::unique_ptr<PubMaster> pm;
 
   UIStatus status;
   UIScene scene;
@@ -175,6 +180,7 @@ private slots:
 private:
   QTimer *timer;
   bool started_prev = true;
+  void saInit(const UIState &s);
 };
 
 
