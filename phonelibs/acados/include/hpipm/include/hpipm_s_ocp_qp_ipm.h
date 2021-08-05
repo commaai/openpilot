@@ -147,7 +147,7 @@ void s_ocp_qp_ipm_arg_set_default(enum hpipm_mode mode, struct s_ocp_qp_ipm_arg 
 void s_ocp_qp_ipm_arg_set(char *field, void *value, struct s_ocp_qp_ipm_arg *arg);
 // set maximum number of iterations
 void s_ocp_qp_ipm_arg_set_iter_max(int *iter_max, struct s_ocp_qp_ipm_arg *arg);
-// set minimum step lenght
+// set minimum step length
 void s_ocp_qp_ipm_arg_set_alpha_min(float *alpha_min, struct s_ocp_qp_ipm_arg *arg);
 // set initial value of barrier parameter
 void s_ocp_qp_ipm_arg_set_mu0(float *mu0, struct s_ocp_qp_ipm_arg *arg);

@@ -43,7 +43,7 @@
 // mex
 #include "mex.h"
 
-/* auxilary mex */
+/* auxiliary mex */
 // prints a matrix in column-major format (exponential notation)
 void MEX_print_exp_mat(int m, int n, double *A, int lda)
 {

@@ -74,7 +74,7 @@ enum QProblemStatus
 	QPS_NOTINITIALISED,			/**< QProblem object is freshly instantiated or reset. */
 	QPS_PREPARINGAUXILIARYQP,	/**< An auxiliary problem is currently setup, either at the very beginning
 								 *   via an initial homotopy or after changing the QP matrices. */
-	QPS_AUXILIARYQPSOLVED,		/**< An auxilary problem was solved, either at the very beginning
+	QPS_AUXILIARYQPSOLVED,		/**< An auxiliary problem was solved, either at the very beginning
 								 *   via an initial homotopy or after changing the QP matrices. */
 	QPS_PERFORMINGHOMOTOPY,		/**< A homotopy according to the main idea of the online active
 								 *   set strategy is performed. */

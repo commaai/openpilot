@@ -11,7 +11,7 @@ TransmissionType = car.CarParams.TransmissionType
 
 
 def calc_cruise_offset(offset, speed):
-  # euristic formula so that speed is controlled to ~ 0.3m/s below pid_speed
+  # heuristic formula so that speed is controlled to ~ 0.3m/s below pid_speed
   # constraints to solve for _K0, _K1, _K2 are:
   # - speed = 0m/s, out = -0.3
   # - speed = 34m/s, offset = 20, out = -0.25

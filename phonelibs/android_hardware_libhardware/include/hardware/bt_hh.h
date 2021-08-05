@@ -44,7 +44,7 @@ typedef enum
     BTHH_HS_HID_NOT_READY,        /* handshake error : device not ready */
     BTHH_HS_INVALID_RPT_ID,       /* handshake error : invalid report ID */
     BTHH_HS_TRANS_NOT_SPT,        /* handshake error : transaction not spt */
-    BTHH_HS_INVALID_PARAM,        /* handshake error : invalid paremter */
+    BTHH_HS_INVALID_PARAM,        /* handshake error : invalid parameter */
     BTHH_HS_ERROR,                /* handshake error : unspecified HS error */
     BTHH_ERR,                     /* general BTA HH error */
     BTHH_ERR_SDP,                 /* SDP error */
@@ -89,8 +89,8 @@ typedef struct
  */
 typedef void (* bthh_connection_state_callback)(bt_bdaddr_t *bd_addr, bthh_connection_state_t state);
 
-/** Callback for vitual unplug api.
- *  the status of the vitual unplug
+/** Callback for virtual unplug api.
+ *  the status of the virtual unplug
  */
 typedef void (* bthh_virtual_unplug_callback)(bt_bdaddr_t *bd_addr, bthh_status_t hh_status);
 
@@ -110,7 +110,7 @@ typedef void (* bthh_idle_time_callback)(bt_bdaddr_t *bd_addr, bthh_status_t hh_
 
 
 /** Callback for get report api.
- *  if staus is ok rpt_data contains the report data
+ *  if status is ok rpt_data contains the report data
  */
 typedef void (* bthh_get_report_callback)(bt_bdaddr_t *bd_addr, bthh_status_t hh_status, uint8_t* rpt_data, int rpt_size);
 

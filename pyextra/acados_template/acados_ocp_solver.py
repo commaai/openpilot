@@ -529,7 +529,7 @@ def ocp_formulation_json_load(json_file='acados_ocp_nlp.json'):
     # load class dict
     acados_ocp.__dict__ = ocp_nlp_dict
 
-    # laod class attributes dict, dims, constraints, etc
+    # load class attributes dict, dims, constraints, etc
     for acados_struct, v  in ocp_layout.items():
         # skip non dict attributes
         if not isinstance(v, dict): continue
@@ -1251,7 +1251,7 @@ class AcadosOcpSolver:
             elif api=='warn':
                 if not np.all(np.ravel(value_, order='F')==np.ravel(value_, order='K')):
                     raise Exception("Ambiguity in API detected.\n"
-                                    "Are you making an acados model from scrach? Add api='new' to cost_set and carry on.\n"
+                                    "Are you making an acados model from scratch? Add api='new' to cost_set and carry on.\n"
                                     "Are you seeing this error suddenly in previously running code? Read on.\n"
                                     "  You are relying on a now-fixed bug in cost_set for field '{}'.\n".format(field_) +
                                     "  acados_template now correctly passes on any matrices to acados in column major format.\n" +
@@ -1320,7 +1320,7 @@ class AcadosOcpSolver:
             elif api=='warn':
                 if not np.all(np.ravel(value_, order='F')==np.ravel(value_, order='K')):
                     raise Exception("Ambiguity in API detected.\n"
-                                    "Are you making an acados model from scrach? Add api='new' to constraints_set and carry on.\n"
+                                    "Are you making an acados model from scratch? Add api='new' to constraints_set and carry on.\n"
                                     "Are you seeing this error suddenly in previously running code? Read on.\n"
                                     "  You are relying on a now-fixed bug in constraints_set for field '{}'.\n".format(field_) +
                                     "  acados_template now correctly passes on any matrices to acados in column major format.\n" +

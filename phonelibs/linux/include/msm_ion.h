@@ -84,7 +84,7 @@ enum cp_mem_usage {
 #define ION_FLAG_CP_APP (1 << 26)
 
 /**
- * Flag to allow non continguous allocation of memory from secure
+ * Flag to allow non contiguous allocation of memory from secure
  * heap
  */
 #define ION_FLAG_ALLOW_NON_CONTIG (1 << 24)

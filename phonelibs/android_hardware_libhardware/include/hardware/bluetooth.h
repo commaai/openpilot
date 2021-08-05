@@ -440,7 +440,7 @@ typedef struct {
     size_t size;
     /**
      * Opens the interface and provides the callback routines
-     * to the implemenation of this interface.
+     * to the implementation of this interface.
      */
     int (*init)(bt_callbacks_t* callbacks );
 

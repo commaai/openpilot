@@ -55,7 +55,7 @@ typedef struct nfc_tag_device {
      *
      * The driver must:
      *   * Set the static lock bytes to read only
-     *   * Configure the Capability Container to disable write acess
+     *   * Configure the Capability Container to disable write access
      *         eg: 0xE1 0x10 <size> 0x0F
      *
      * This function is called once before any calls to setContent().

@@ -168,7 +168,7 @@ enum kgsl_user_mem_type {
 	KGSL_USER_MEM_TYPE_ADDR		= 0x00000002,
 	KGSL_USER_MEM_TYPE_ION		= 0x00000003,
 	/*
-	 * ION type is retained for backwards compatibilty but Ion buffers are
+	 * ION type is retained for backwards compatibility but Ion buffers are
 	 * dma-bufs so try to use that naming if we can
 	 */
 	KGSL_USER_MEM_TYPE_DMABUF       = 0x00000003,
@@ -461,7 +461,7 @@ struct kgsl_device_waittimestamp_ctxtid {
  * other ioctls to determine when the commands have been executed by
  * the GPU.
  *
- * This fucntion is deprecated - consider using IOCTL_KGSL_SUBMIT_COMMANDS
+ * This function is deprecated - consider using IOCTL_KGSL_SUBMIT_COMMANDS
  * instead
  */
 struct kgsl_ringbuffer_issueibcmds {
@@ -505,7 +505,7 @@ struct kgsl_cmdstream_freememontimestamp {
 
 /* Previous versions of this header had incorrectly defined
    IOCTL_KGSL_CMDSTREAM_FREEMEMONTIMESTAMP as a read-only ioctl instead
-   of a write only ioctl.  To ensure binary compatability, the following
+   of a write only ioctl.  To ensure binary compatibility, the following
    #define will be used to intercept the incorrect ioctl
 */
 
@@ -1039,9 +1039,9 @@ struct kgsl_cmd_syncpoint {
  * This structure specifies a command to send to the GPU hardware.  This is
  * similar to kgsl_issueibcmds expect that it doesn't support the legacy way to
  * submit IB lists and it adds sync points to block the IB until the
- * dependencies are satisified.  This entry point is the new and preferred way
+ * dependencies are satisfied.  This entry point is the new and preferred way
  * to submit commands to the GPU. The memory list can be used to specify all
- * memory that is referrenced in the current set of commands.
+ * memory that is referenced in the current set of commands.
  */
 
 struct kgsl_submit_commands {
@@ -1182,7 +1182,7 @@ struct kgsl_cff_sync_gpuobj {
  * @va_len: Size in bytes of the virtual region to allocate
  * @mmapsize: Returns the mmap() size of the object
  * @id: Returns the GPU object ID of the new object
- * @metadata_len: Length of the metdata to copy from the user
+ * @metadata_len: Length of the metadata to copy from the user
  * @metadata: Pointer to the user specified metadata to store for the object
  */
 struct kgsl_gpuobj_alloc {
@@ -1423,7 +1423,7 @@ struct kgsl_preemption_counters_query {
 
 /**
  * struct kgsl_gpuobj_set_info - argument for IOCTL_KGSL_GPUOBJ_SET_INFO
- * @flags: Flags to indicate which paramaters to change
+ * @flags: Flags to indicate which parameters to change
  * @metadata:  If KGSL_GPUOBJ_SET_INFO_METADATA is set, a pointer to the new
  * metadata
  * @id: GPU memory object ID to change

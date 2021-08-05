@@ -2289,7 +2289,7 @@ typedef struct {
 #define CURL_VERSION_CURLDEBUG    (1<<13) /* Debug memory tracking supported */
 #define CURL_VERSION_TLSAUTH_SRP  (1<<14) /* TLS-SRP auth is supported */
 #define CURL_VERSION_NTLM_WB      (1<<15) /* NTLM delegation to winbind helper
-                                             is suported */
+                                             is supported */
 #define CURL_VERSION_HTTP2        (1<<16) /* HTTP2 support built-in */
 #define CURL_VERSION_GSSAPI       (1<<17) /* Built against a GSS-API library */
 #define CURL_VERSION_KERBEROS5    (1<<18) /* Kerberos V5 auth is supported */

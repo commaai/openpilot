@@ -316,7 +316,7 @@ OPENSSL_EXPORT BIGNUM *bn_wexpand(BIGNUM *bn, unsigned words);
 /* BIGNUM pools.
  *
  * Certain BIGNUM operations need to use many temporary variables and
- * allocating and freeing them can be quite slow. Thus such opertions typically
+ * allocating and freeing them can be quite slow. Thus such operations typically
  * take a |BN_CTX| parameter, which contains a pool of |BIGNUMs|. The |ctx|
  * argument to a public function may be NULL, in which case a local |BN_CTX|
  * will be created just for the lifetime of that call.

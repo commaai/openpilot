@@ -2845,7 +2845,7 @@ returnValue QProblem::hotstart_determineStepDirection(	const int* const FR_idx, 
 			}
 			else
 			{
-				/* auxillary variable */
+				/* auxiliary variable */
 				real_t delta_xFRy_TMP[NCMAX_ALLOC];
 
 				for( i=0; i<nAC; ++i )

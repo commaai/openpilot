@@ -158,7 +158,7 @@ struct cam_req_mgr_flush_info {
 /** struct cam_req_mgr_sched_info
  * @session_hdl: Input param - Identifier for CSL session
  * @link_hdl: Input Param -Identifier for link
- * inluding itself.
+ * including itself.
  * @bubble_enable: Input Param - Cam req mgr will do bubble recovery if this
  * flag is set.
  * @sync_mode: Type of Sync mode for this request
@@ -198,7 +198,7 @@ struct cam_req_mgr_sync_mode {
 
 /**
  * struct cam_req_mgr_link_control
- * @ops:                 Link operations: activate/deactive
+ * @ops:                 Link operations: activate/deactivate
  * @session_hdl:         Input param - Identifier for CSL session
  * @num_links:           Input Param - Num of links
  * @reserved:            reserved field

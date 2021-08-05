@@ -280,7 +280,7 @@ void MessageHandlingCPY(	MessageHandling* FROM,
 
 
 /** Prints an error message(a simplified macro THROWERROR is also provided). \n
- *  Errors are definied as abnormal events which cause an immediate termination of the current (sub) function.
+ *  Errors are defined as abnormal events which cause an immediate termination of the current (sub) function.
  *  Errors of a sub function should be commented by the calling function by means of a warning message
  *  (if this error does not cause an error of the calling function, either)!
  *  \return Error number returned by sub function call
@@ -297,7 +297,7 @@ returnValue MessageHandling_throwError(	MessageHandling* _THIS,
 										);
 
 /** Prints a warning message (a simplified macro THROWWARNING is also provided).
- *  Warnings are definied as abnormal events which does NOT cause an immediate termination of the current (sub) function.
+ *  Warnings are defined as abnormal events which does NOT cause an immediate termination of the current (sub) function.
  *  \return Warning number returned by sub function call
  */
 returnValue MessageHandling_throwWarning(	MessageHandling* _THIS,

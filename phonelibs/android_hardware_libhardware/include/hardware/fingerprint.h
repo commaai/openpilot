@@ -131,7 +131,7 @@ typedef struct fingerprint_device {
      * The call will block if the HAL state machine is in busy state until HAL
      * leaves the busy state.
      *
-     * Function return: 0 if callback function is successfuly registered
+     * Function return: 0 if callback function is successfully registered
      *                  or a negative number in case of error, generally from the errno.h set.
      */
     int (*set_notify)(struct fingerprint_device *dev, fingerprint_notify_t notify);
@@ -206,7 +206,7 @@ typedef struct fingerprint_device {
      * In the absence of errors the function returns the total number of templates
      * in the user directory.
      * If the caller has no good guess on the size of the array he should call this
-     * function witn *max_size == 0 and use the return value for the array allocation.
+     * function with *max_size == 0 and use the return value for the array allocation.
      * The caller of this function has a complete list of the templates when *max_size
      * is the same as the function return.
      *

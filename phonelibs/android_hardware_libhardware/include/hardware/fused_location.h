@@ -471,7 +471,7 @@ typedef struct {
 
     /**
      * Opens the diagnostic interface and provides the callback routines
-     * to the implemenation of this interface.
+     * to the implementation of this interface.
      */
     void  (*init)(FlpDiagnosticCallbacks* callbacks);
 
@@ -568,7 +568,7 @@ typedef struct {
  * add_geofence_area call.
  *
  * Even though the diagram and explanation talks about states and transitions,
- * the callee is only interested in the transistions. The states are mentioned
+ * the callee is only interested in the transitions. The states are mentioned
  * here for illustrative purposes.
  *
  * Startup Scenario: When the device boots up, if an application adds geofences,
@@ -612,7 +612,7 @@ typedef void (*flp_geofence_transition_callback) (int32_t geofence_id,  FlpLocat
         int32_t transition, FlpUtcTime timestamp, uint32_t sources_used);
 
 /**
- * The callback associated with the availablity of one the sources used for geofence
+ * The callback associated with the availability of one the sources used for geofence
  * monitoring by the FLP sub-system For example, if the GPS system determines that it cannot
  * monitor geofences because of lack of reliability or unavailability of the GPS signals,
  * it will call this callback with FLP_GEOFENCE_MONITOR_STATUS_UNAVAILABLE parameter and the
@@ -742,7 +742,7 @@ typedef struct {
 
    /**
     * The time limit after which the UNCERTAIN transition
-    * should be triggered. This paramter is defined in milliseconds.
+    * should be triggered. This parameter is defined in milliseconds.
     */
     int unknown_timer_ms;
 
@@ -767,7 +767,7 @@ typedef struct {
 
    /**
     * Opens the geofence interface and provides the callback routines
-    * to the implemenation of this interface.  Once called you should respond
+    * to the implementation of this interface.  Once called you should respond
     * by calling the flp_capabilities_callback in FlpGeofenceCallbacks to
     * specify the capabilities that your implementation supports.
     */

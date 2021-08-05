@@ -68,7 +68,7 @@
  * 4) _l(lower) / _u(upper)
  *    _lib8 (hp implementation, 8 rows kernel)
  *    _lib4 (hp implementation, 4 rows kernel)
- *    _lib0 (hp interface with reference implentation)
+ *    _lib0 (hp interface with reference implementation)
  *    _lib (reference implementation)
  *    _libref (reference implementation with dedicated namespace)
  *

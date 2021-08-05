@@ -78,7 +78,7 @@
 /* Max batch size of processing */
 #define MSM_CAMERA_MAX_USER_BUFF_CNT 16
 
-/* featur base */
+/* feature base */
 #define MSM_CAMERA_FEATURE_BASE     0x00010000
 #define MSM_CAMERA_FEATURE_SHUTDOWN (MSM_CAMERA_FEATURE_BASE + 1)
 

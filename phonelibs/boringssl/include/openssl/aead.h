@@ -64,7 +64,7 @@ extern "C" {
  *
  * The "seal" and "open" operations are atomic - an entire message must be
  * encrypted or decrypted in a single call. Large messages may have to be split
- * up in order to accomodate this. When doing so, be mindful of the need not to
+ * up in order to accommodate this. When doing so, be mindful of the need not to
  * repeat nonces and the possibility that an attacker could duplicate, reorder
  * or drop message chunks. For example, using a single key for a given (large)
  * message and sealing chunks with nonces counting from zero would be secure as

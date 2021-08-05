@@ -170,7 +170,7 @@ OPENSSL_EXPORT int EVP_Digest(const void *data, size_t len, uint8_t *md_out,
  * These functions allow code to learn details about an abstract hash
  * function. */
 
-/* EVP_MD_type returns a NID identifing |md|. (For example, |NID_sha256|.) */
+/* EVP_MD_type returns a NID identifying |md|. (For example, |NID_sha256|.) */
 OPENSSL_EXPORT int EVP_MD_type(const EVP_MD *md);
 
 /* EVP_MD_flags returns the flags for |md|, which is a set of |EVP_MD_FLAG_*|

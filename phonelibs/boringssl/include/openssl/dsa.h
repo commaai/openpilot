@@ -71,7 +71,7 @@ extern "C" {
 #endif
 
 
-/* DSA contains functions for signing and verifing with the Digital Signature
+/* DSA contains functions for signing and verifying with the Digital Signature
  * Algorithm. */
 
 

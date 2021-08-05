@@ -144,7 +144,7 @@ struct light_device_t {
     /**
      * Set the provided lights to the provided values.
      *
-     * Returns: 0 on succes, error code on failure.
+     * Returns: 0 on success, error code on failure.
      */
     int (*set_light)(struct light_device_t* dev,
             struct light_state_t const* state);

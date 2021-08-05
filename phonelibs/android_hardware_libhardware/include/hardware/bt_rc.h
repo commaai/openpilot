@@ -340,7 +340,7 @@ typedef struct {
      */
     bt_status_t (*init)( btrc_callbacks_t* callbacks , int max_avrcp_connections);
 
-    /** Respose to GetPlayStatus request. Contains the current
+    /** Response to GetPlayStatus request. Contains the current
     **  1. Play status
     **  2. Song duration/length
     **  3. Song position
@@ -402,7 +402,7 @@ typedef struct {
     /**Send current volume setting to remote side. Support limited to SetAbsoluteVolume
     ** This can be enhanced to support Relative Volume (AVRCP 1.0).
     ** With RelateVolume, we will send VOLUME_UP/VOLUME_DOWN opposed to absolute volume level
-    ** volume: Should be in the range 0-127. bit7 is reseved and cannot be set
+    ** volume: Should be in the range 0-127. bit7 is reserved and cannot be set
     */
     bt_status_t (*set_volume)(uint8_t volume, bt_bdaddr_t *bd_addr);
     bt_status_t (*get_folder_items_rsp) (btrc_folder_list_entries_t *p_param, bt_bdaddr_t *bd_addr);
@@ -500,7 +500,7 @@ typedef struct {
     /** send command to get current player attributes to target */
     bt_status_t (*get_player_app_setting_cmd) (uint8_t num_attrib, uint8_t* attrib_ids);
 
-    /** send command to set player applicaiton setting attributes to target */
+    /** send command to set player application setting attributes to target */
     bt_status_t (*set_player_app_setting_cmd) (uint8_t num_attrib, uint8_t* attrib_ids, uint8_t* attrib_vals);
 
     /** send command to register for supported notificaiton events to target */
