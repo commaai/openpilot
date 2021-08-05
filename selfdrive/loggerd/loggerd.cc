@@ -151,7 +151,7 @@ void encoder_thread(int cam_idx) {
 
       s.last_camera_seen_tms = millis_since_boot();
 
-      if (cam_info.trigger_rotate && (cnt > 0 && (cnt % (SEGMENT_LENGTH * MAIN_FPS)) == 0)) {
+      if (cam_info.trigger_rotate && (cnt >= SEGMENT_LENGTH * MAIN_FPS)) {
         // trigger rotate and wait logger rotated to new segment
         ++s.waiting_rotate;
         std::unique_lock lk(s.rotate_lock);
