@@ -282,14 +282,21 @@ int main(int argc, char** argv) {
   // TODO: create these threads dynamically on frame packet presence
   std::vector<std::thread> encoder_threads;
   encoder_threads.push_back(std::thread(encoder_thread, LOG_CAMERA_ID_FCAMERA));
-  s.max_waiting += 1;
+  if (cameras_logged[LOG_CAMERA_ID_FCAMERA].trigger_rotate) {
+    s.max_waiting += 1;
+  }
 
   if (!Hardware::PC() && params.getBool("RecordFront")) {
     encoder_threads.push_back(std::thread(encoder_thread, LOG_CAMERA_ID_DCAMERA));
+    if (cameras_logged[LOG_CAMERA_ID_DCAMERA].trigger_rotate) {
+      s.max_waiting += 1;
+    }
   }
   if (Hardware::TICI()) {
     encoder_threads.push_back(std::thread(encoder_thread, LOG_CAMERA_ID_ECAMERA));
-    s.max_waiting += 1;
+    if (cameras_logged[LOG_CAMERA_ID_ECAMERA].trigger_rotate) {
+      s.max_waiting += 1;
+    }
   }
 
   uint64_t msg_count = 0, bytes_count = 0;
