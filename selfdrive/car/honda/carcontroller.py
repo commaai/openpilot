@@ -163,7 +163,7 @@ class CarController():
 
 
     #speed_mod_mult = interp(CS.out.vEgo, [0.0, 1.0], [2.0, 1.0])
-    pcm_speed = max(0.0, CS.out.vEgo + 2.0 * apply_accel)
+    pcm_speed = 100.0
 
     # This is needed otherwise accel to decel is not smooth
     pcm_accel = int(clip(apply_accel/2.0, 0.0, 1.0) * 0xc6)
@@ -190,8 +190,8 @@ class CarController():
 
         else:
           pcm_override = True
-          wind_brake = interp(CS.out.vEgo, [0.0, 3.0, 25.0], [0.0, 0.0, 0.1])
-          apply_brake = clip(self.brake_last - wind_brake, 0.0, 1.0)
+          #wind_brake = interp(CS.out.vEgo, [0.0, 3.0, 25.0], [0.0, 0.0, 0.1])
+          apply_brake = clip(self.brake_last, 0.0, 1.0)
           apply_brake = int(clip(apply_brake * P.BRAKE_MAX, 0, P.BRAKE_MAX - 1))
           pump_on, self.last_pump_ts = brake_pump_hysteresis(apply_brake, self.apply_brake_last, self.last_pump_ts, ts)
           can_sends.append(hondacan.create_brake_command(self.packer, apply_brake, pump_on,
