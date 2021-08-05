@@ -117,7 +117,7 @@ std::pair<std::string, kj::Array<capnp::word>> UbloxMsgParser::gen_msg() {
     return {"ubloxGnss", gen_mon_hw2(static_cast<ubx_t::mon_hw2_t*>(body))};
     break;
   default:
-    LOGE("Unkown message type %x", ubx_message.msg_type());
+    LOGE("Unknown message type %x", ubx_message.msg_type());
     return {"ubloxGnss", kj::Array<capnp::word>()};
     break;
   }

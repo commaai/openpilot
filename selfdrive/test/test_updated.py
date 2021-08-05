@@ -118,7 +118,7 @@ class TestUpdated(unittest.TestCase):
     self._update_now()
     t = self._read_param("LastUpdateTime", timeout=timeout)
     if t is None:
-      raise Exception("timed out waiting for update to complate")
+      raise Exception("timed out waiting for update to complete")
 
   def _make_commit(self):
     all_dirs, all_files = [], []

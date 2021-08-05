@@ -111,7 +111,7 @@ void *alloc_w_mmu_hdl(int video0_fd, int len, uint32_t *handle, int align = 8, i
     assert(ptr != MAP_FAILED);
   }
 
-  // LOGD("alloced: %x %d %llx mapped %p", mem_mgr_alloc_cmd.out.buf_handle, mem_mgr_alloc_cmd.out.fd, mem_mgr_alloc_cmd.out.vaddr, ptr);
+  // LOGD("allocated: %x %d %llx mapped %p", mem_mgr_alloc_cmd.out.buf_handle, mem_mgr_alloc_cmd.out.fd, mem_mgr_alloc_cmd.out.vaddr, ptr);
 
   return ptr;
 }
