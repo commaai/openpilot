@@ -162,6 +162,8 @@ void encoder_thread(int cam_idx) {
       // rotate the encoder if the logger is on a newer segment
       if (s.rotate_segment > cur_seg) {
         cur_seg = s.rotate_segment;
+        cnt = 0;
+
         LOGW("camera %d rotate encoder to %s", cam_idx, s.segment_path);
         for (auto &e : encoders) {
           e->encoder_close();
