@@ -19,8 +19,7 @@ std::vector<CPUTime> cpuTimes(std::istream &stream) {
   // skip the first line for cpu total
   std::getline(stream, line);
   while (std::getline(stream, line)) {
-    if (line.compare(0, 3, "cpu") != 0)
-      break;
+    if (line.compare(0, 3, "cpu") != 0) break;
 
     CPUTime t = {};
     std::istringstream iss(line);
@@ -37,8 +36,9 @@ std::unordered_map<std::string, uint64_t> memInfo(std::istream &stream) {
   while (std::getline(stream, line)) {
     uint64_t val = 0;
     std::istringstream iss(line);
-    if (iss >> key >> val) 
+    if (iss >> key >> val) {
       mem_info[key] = val * 1024;
+    }
   }
   return mem_info;
 }
@@ -67,8 +67,9 @@ std::optional<ProcStat> procStat(std::string stat) {
   // To avoid being fooled by names containing a closing paren, scan backwards.
   auto open_paren = stat.find('(');
   auto close_paren = stat.rfind(')');
-  if (open_paren == std::string::npos || close_paren == std::string::npos || open_paren > close_paren)
+  if (open_paren == std::string::npos || close_paren == std::string::npos || open_paren > close_paren) {
     return std::nullopt;
+  }
 
   std::string name = stat.substr(open_paren + 1, close_paren - open_paren - 1);
   // repace space in name with _
@@ -147,7 +148,6 @@ const ProcCache &getProcExtraInfo(int pid, const std::string &name) {
     cache.exe = util::readlink(proc_path + "/exe");
     std::ifstream stream(proc_path + "/cmdline");
     cache.cmdline = cmdline(stream);
-    // cache.cmdline = cmdline(util::read_file(proc_path + "/cmdline"));
   }
   return cache;
 }
