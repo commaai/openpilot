@@ -118,7 +118,17 @@ PrimeUserWidget::PrimeUserWidget(QWidget* parent) : QWidget(parent) {
 
   mainLayout->addWidget(pointsWidget);
 
-  mainLayout->addStretch();
+  QWidget *thirdWidget = new QWidget;
+  thirdWidget->setObjectName("primeWidget");
+  QVBoxLayout *thirdLayout = new QVBoxLayout(thirdWidget);
+  thirdLayout->setMargin(0);
+  thirdWidget->setContentsMargins(60, 50, 60, 50);
+
+  QLabel* thirdLabel = new QLabel("Stock...with Additions!");
+  thirdLabel->setStyleSheet("font-size: 41px; font-family: Inter SemiBold;");
+  thirdLayout->addWidget(thirdLabel, 0, Qt::AlignVCenter);
+
+  mainLayout->addWidget(thirdWidget);
 
   // set up API requests
   std::string dongleId = Params().get("DongleId");
