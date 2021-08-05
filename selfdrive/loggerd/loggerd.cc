@@ -72,7 +72,7 @@ LogCameraInfo cameras_logged[LOG_CAMERA_ID_MAX] = {
     .is_h265 = true,
     .downscale = false,
     .has_qcamera = false,
-    .trigger_rotate = false
+    .trigger_rotate = Hardware::TICI(),
   },
   [LOG_CAMERA_ID_ECAMERA] = {
     .stream_type = VISION_STREAM_YUV_WIDE,
