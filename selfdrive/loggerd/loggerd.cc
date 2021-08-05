@@ -248,20 +248,16 @@ void logger_rotate() {
   LOGW((s.logger.part == 0) ? "logging to %s" : "rotated to %s", s.segment_path);
 }
 
-void rotator_thread() {
-  while (!do_exit) {
-    if (s.waiting_rotate == s.max_waiting) {
-      logger_rotate();
-    }
+void rotate_if_needed() {
+  if (s.waiting_rotate == s.max_waiting) {
+    logger_rotate();
+  }
 
-    double tms = millis_since_boot();
-    if ((tms - s.last_rotate_tms) > SEGMENT_LENGTH * 1000 &&
-        (tms - s.last_camera_seen_tms) > NO_CAMERA_PATIENCE) {
-      LOGW("no camera packet seen. auto rotating");
-      logger_rotate();
-    }
-
-    util::sleep_for(1);
+  double tms = millis_since_boot();
+  if ((tms - s.last_rotate_tms) > SEGMENT_LENGTH * 1000 &&
+      (tms - s.last_camera_seen_tms) > NO_CAMERA_PATIENCE) {
+    LOGW("no camera packet seen. auto rotating");
+    logger_rotate();
   }
 }
 
@@ -320,8 +316,6 @@ int main(int argc, char** argv) {
     }
   }
 
-  auto rotator = std::thread(rotator_thread);
-
   uint64_t msg_count = 0, bytes_count = 0;
   double start_ts = millis_since_boot();
   while (!do_exit) {
@@ -336,6 +330,8 @@ int main(int argc, char** argv) {
         bytes_count += msg->getSize();
         delete msg;
 
+        rotate_if_needed();
+
         if ((++msg_count % 1000) == 0) {
           double seconds = (millis_since_boot() - start_ts) / 1000.0;
           LOGD("%lu messages, %.2f msg/sec, %.2f KB/sec", msg_count, msg_count / seconds, bytes_count * 0.001 / seconds);
@@ -343,8 +339,6 @@ int main(int argc, char** argv) {
       }
     }
   }
-
-  rotator.join();
 
   LOGW("closing encoders");
   s.rotate_cv.notify_all();
