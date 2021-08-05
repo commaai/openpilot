@@ -127,6 +127,7 @@ class TestEncoder(unittest.TestCase):
           self.assertEqual(0, idxs[0])
           self.assertEqual(len(idxs)-1, idxs[-1])
           self.assertEqual(len(set(idxs)), len(idxs))
+          self.assertGreater(idxs[-1], expected_frames * i)
 
       if TICI:
         expected_frames = fps * SEGMENT_LENGTH
