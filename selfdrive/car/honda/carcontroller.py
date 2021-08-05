@@ -162,11 +162,11 @@ class CarController():
       apply_accel = interp(accel, P.NIDEC_ACCEL_LOOKUP_BP, P.NIDEC_ACCEL_LOOKUP_V)
 
 
-    #speed_mod_mult = interp(CS.out.vEgo, [0.0, 1.0], [2.0, 1.0])
+    throttle_mult = interp(CS.out.vEgo, [0.0, 2.0, 20., 40.], [2.0, .25, .5, 1.0])
     pcm_speed = 100.0
 
     # This is needed otherwise accel to decel is not smooth
-    pcm_accel = int(clip(apply_accel/2.0, 0.0, 1.0) * 0xc6)
+    pcm_accel = int(clip(throttle_mult*apply_accel, 0.0, 1.0) * 0xc6)
 
     if not CS.CP.openpilotLongitudinalControl:
       if (frame % 2) == 0:
