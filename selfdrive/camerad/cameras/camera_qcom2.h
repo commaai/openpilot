@@ -10,30 +10,23 @@
 #include "selfdrive/common/util.h"
 
 #define FRAME_BUF_COUNT 4
-
-#define ANALOG_GAIN_MAX_IDX 10 // 0xF is bypass
-#define EXPOSURE_TIME_MIN 2 // with HDR, fastest ss
-#define EXPOSURE_TIME_MAX 1904 // with HDR, slowest ss
-
-#define EF_LOWPASS_K 0.35
-
 #define DEBAYER_LOCAL_WORKSIZE 16
-
 typedef struct CameraState {
   MultiCameraState *multi_cam_state;
   CameraInfo ci;
 
   std::mutex exp_lock;
-  float analog_gain_frac;
-  uint16_t analog_gain;
-  bool dc_gain_enabled;
+
   int exposure_time;
-  int exposure_time_min;
-  int exposure_time_max;
-  float ef_filtered;
+  bool dc_gain_enabled;
+  float analog_gain_frac;
+
+  float cur_ev[3];
+  float min_ev, max_ev;
 
   float measured_grey_fraction;
   float target_grey_fraction;
+  int gain_idx;
 
   unique_fd sensor_fd;
   unique_fd csiphy_fd;
