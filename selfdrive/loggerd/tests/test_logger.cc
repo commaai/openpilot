@@ -81,8 +81,8 @@ void verify_logfiles(const std::string &segment_path, uint64_t boottime, uint64_
           REQUIRE(sentinel.getType() == end_type);
         }
         ++i;
-      } catch (...) {
-        INFO("failed parse " << i)
+      } catch (const kj::Exception& ex) {
+        INFO("failed parse " << i << " excpetion :" << ex.getDescription());
         REQUIRE(0);
         break;
       }
