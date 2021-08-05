@@ -76,6 +76,9 @@ def check_cpu_usage(first_proc, last_proc):
       cpu_time = cputime_total(last) - cputime_total(first)
       cpu_usage = cpu_time / dt * 100.
       if cpu_usage > max(normal_cpu_usage * 1.1, normal_cpu_usage + 5.0):
+        # cpu usage is high while playing sounds
+        if proc_name == "./_soundd" and cpu_usage < 25.:
+          continue
         result += f"Warning {proc_name} using more CPU than normal\n"
         r = False
       elif cpu_usage < min(normal_cpu_usage * 0.65, max(normal_cpu_usage - 1.0, 0.0)):
