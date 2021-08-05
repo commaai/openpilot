@@ -4,7 +4,7 @@ import cereal.messaging as messaging
 from selfdrive.manager.process_config import managed_processes
 
 if __name__ == "__main__":
-  services = ['controlsState', 'deviceState', 'pandaState', 'radarState']  # the services needed to be spoofed to start ui offroad
+  services = ['controlsState', 'deviceState', 'pandaState']  # the services needed to be spoofed to start ui offroad
   procs = ['camerad', 'ui', 'modeld', 'calibrationd']
 
   for p in procs:
