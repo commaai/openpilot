@@ -17,19 +17,23 @@
 class Sound : public QObject {
 public:
   explicit Sound(QObject *parent = 0) {
+    // TODO: merge again and add EQ in the amp config
+    const QString sound_asset_path = Hardware::TICI() ? "../assets/sounds_tici/" : "../assets/sounds/";
     std::tuple<AudibleAlert, QString, bool> sound_list[] = {
-      {AudibleAlert::CHIME_DISENGAGE, "../assets/sounds/disengaged.wav", false},
-      {AudibleAlert::CHIME_ENGAGE, "../assets/sounds/engaged.wav", false},
-      {AudibleAlert::CHIME_WARNING1, "../assets/sounds/warning_1.wav", false},
-      {AudibleAlert::CHIME_WARNING2, "../assets/sounds/warning_2.wav", false},
-      {AudibleAlert::CHIME_WARNING2_REPEAT, "../assets/sounds/warning_2.wav", true},
-      {AudibleAlert::CHIME_WARNING_REPEAT, "../assets/sounds/warning_repeat.wav", true},
-      {AudibleAlert::CHIME_ERROR, "../assets/sounds/error.wav", false},
-      {AudibleAlert::CHIME_PROMPT, "../assets/sounds/error.wav", false}
+      {AudibleAlert::CHIME_DISENGAGE, sound_asset_path + "disengaged.wav", false},
+      {AudibleAlert::CHIME_ENGAGE, sound_asset_path + "engaged.wav", false},
+      {AudibleAlert::CHIME_WARNING1, sound_asset_path + "warning_1.wav", false},
+      {AudibleAlert::CHIME_WARNING2, sound_asset_path + "warning_2.wav", false},
+      {AudibleAlert::CHIME_WARNING2_REPEAT, sound_asset_path + "warning_2.wav", true},
+      {AudibleAlert::CHIME_WARNING_REPEAT, sound_asset_path + "warning_repeat.wav", true},
+      {AudibleAlert::CHIME_ERROR, sound_asset_path + "error.wav", false},
+      {AudibleAlert::CHIME_PROMPT, sound_asset_path + "error.wav", false}
     };
     for (auto &[alert, fn, loops] : sound_list) {
-      sounds[alert].first.setSource(QUrl::fromLocalFile(fn));
-      sounds[alert].second = loops ? QSoundEffect::Infinite : 0;
+      QSoundEffect *s = new QSoundEffect(this);
+      QObject::connect(s, &QSoundEffect::statusChanged, this, &Sound::checkStatus);
+      s->setSource(QUrl::fromLocalFile(fn));
+      sounds[alert] = {s, loops ? QSoundEffect::Infinite : 0};
     }
 
     sm = new SubMaster({"carState", "controlsState"});
@@ -43,6 +47,11 @@ public:
   };
 
 private slots:
+  void checkStatus() {
+    QSoundEffect *s = qobject_cast<QSoundEffect*>(sender());
+    assert(s->status() != QSoundEffect::Error);
+  }
+
   void update() {
     sm->update(100);
     if (sm->updated("carState")) {
@@ -66,20 +75,19 @@ private slots:
     if (!alert.equal(a)) {
       alert = a;
       // stop sounds
-      for (auto &kv : sounds) {
+      for (auto &[s, loops] : sounds) {
         // Only stop repeating sounds
-        auto &[sound, loops] = kv.second;
-        if (sound.loopsRemaining() == QSoundEffect::Infinite) {
-          sound.stop();
+        if (s->loopsRemaining() == QSoundEffect::Infinite) {
+          s->stop();
         }
       }
 
       // play sound
       if (alert.sound != AudibleAlert::NONE) {
-        auto &[sound, loops] = sounds[alert.sound];
-        sound.setLoopCount(loops);
-        sound.setVolume(volume);
-        sound.play();
+        auto &[s, loops] = sounds[alert.sound];
+        s->setLoopCount(loops);
+        s->setVolume(volume);
+        s->play();
       }
     }
   }
@@ -87,7 +95,7 @@ private slots:
 private:
   Alert alert;
   float volume = Hardware::MIN_VOLUME;
-  std::map<AudibleAlert, std::pair<QSoundEffect, int>> sounds;
+  QMap<AudibleAlert, QPair<QSoundEffect*, int>> sounds;
   SubMaster *sm;
 };
 

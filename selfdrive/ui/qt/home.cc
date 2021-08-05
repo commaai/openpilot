@@ -8,7 +8,7 @@
 #include "selfdrive/common/params.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/widgets/drive_stats.h"
-#include "selfdrive/ui/qt/widgets/setup.h"
+#include "selfdrive/ui/qt/widgets/prime.h"
 
 // HomeWindow: the container for the offroad and onroad UIs
 
@@ -88,10 +88,11 @@ void HomeWindow::mousePressEvent(QMouseEvent* e) {
 
 OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
   QVBoxLayout* main_layout = new QVBoxLayout(this);
-  main_layout->setMargin(50);
+  main_layout->setContentsMargins(40, 40, 40, 45);
 
   // top header
   QHBoxLayout* header_layout = new QHBoxLayout();
+  header_layout->setContentsMargins(15, 15, 15, 0);
   header_layout->setSpacing(16);
 
   date = new QLabel();
@@ -120,9 +121,8 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
   QWidget* statsAndSetupWidget = new QWidget(this);
   QHBoxLayout* statsAndSetup = new QHBoxLayout(statsAndSetupWidget);
   statsAndSetup->setMargin(0);
-  DriveStats* drive = new DriveStats();
-  drive->setFixedSize(800, 800);
-  statsAndSetup->addWidget(drive);
+  statsAndSetup->setSpacing(30);
+  statsAndSetup->addWidget(new DriveStats, 1);
   statsAndSetup->addWidget(new SetupWidget);
 
   center_layout->addWidget(statsAndSetupWidget);
@@ -158,10 +158,10 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
       font-size: 55px;
     }
   )");
-  refresh();
 }
 
 void OffroadHome::showEvent(QShowEvent *event) {
+  refresh();
   timer->start(10 * 1000);
 }
 

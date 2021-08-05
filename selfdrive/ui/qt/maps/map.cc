@@ -147,7 +147,7 @@ void MapWindow::timerUpdate() {
 
   loaded_once = loaded_once || m_map->isFullyLoaded();
   if (!loaded_once) {
-    map_instructions->showError("Map loading");
+    map_instructions->showError("Map Loading");
     return;
   }
 
@@ -259,6 +259,10 @@ static float get_time_typical(const QGeoRouteSegment &segment) {
 
 
 void MapWindow::recomputeRoute() {
+  if (!QUIState::ui_state.scene.started) {
+    return;
+  }
+
   // Retry all timed out requests
   if (!m_map.isNull()) {
     m_map->connectionEstablished();
@@ -343,6 +347,7 @@ void MapWindow::calculateRoute(QMapbox::Coordinate destination) {
 }
 
 void MapWindow::routeCalculated(QGeoRouteReply *reply) {
+  bool got_route = false;
   if (reply->error() == QGeoRouteReply::NoError) {
     if (reply->routes().size() != 0) {
       qWarning() << "Got route response";
@@ -357,6 +362,7 @@ void MapWindow::routeCalculated(QGeoRouteReply *reply) {
       navSource["data"] = QVariant::fromValue<QMapbox::Feature>(feature);
       m_map->updateSource("navSource", navSource);
       m_map->setLayoutProperty("navLayer", "visibility", "visible");
+      got_route = true;
 
       updateETA();
     } else {
@@ -364,6 +370,10 @@ void MapWindow::routeCalculated(QGeoRouteReply *reply) {
     }
   } else {
     qWarning() << "Got error in route reply" << reply->errorString();
+  }
+
+  if (!got_route) {
+    map_instructions->showError("Failed to Route");
   }
 
   reply->deleteLater();
@@ -415,6 +425,9 @@ void MapWindow::mouseDoubleClickEvent(QMouseEvent *ev) {
   if (last_position) m_map->setCoordinate(*last_position);
   if (last_bearing) m_map->setBearing(*last_bearing);
   m_map->setZoom(util::map_val<float>(velocity_filter.x(), 0, 30, MAX_ZOOM, MIN_ZOOM));
+
+  pan_counter = 0;
+  zoom_counter = 0;
 }
 
 void MapWindow::mouseMoveEvent(QMouseEvent *ev) {

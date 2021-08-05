@@ -94,9 +94,9 @@ QWidget * Setup::network_setup() {
   main_layout->addSpacing(25);
 
   // wifi widget
-  Networking *wifi = new Networking(this, false);
-  wifi->setStyleSheet("Networking {background-color: #292929; border-radius: 13px;}");
-  main_layout->addWidget(wifi, 1);
+  Networking *networking = new Networking(this, false);
+  networking->setStyleSheet("Networking {background-color: #292929; border-radius: 13px;}");
+  main_layout->addWidget(networking, 1);
 
   main_layout->addSpacing(35);
 
@@ -117,12 +117,18 @@ QWidget * Setup::network_setup() {
   blayout->addWidget(cont);
 
   // setup timer for testing internet connection
-  HttpRequest *request = new HttpRequest(this, DASHCAM_URL, false, 2500);
+  HttpRequest *request = new HttpRequest(this, false, 2500);
   QObject::connect(request, &HttpRequest::requestDone, [=](bool success) {
     cont->setEnabled(success);
-    cont->setText(success ? "Continue" : "Waiting for internet");
+    if (success) {
+      const bool cell = networking->wifi->currentNetworkType() == NetworkType::CELL;
+      cont->setText(cell ? "Continue without WiFi" : "Continue");
+    } else {
+      cont->setText("Waiting for internet");
+    }
     repaint();
   });
+  request->sendRequest(DASHCAM_URL);
   QTimer *timer = new QTimer(this);
   QObject::connect(timer, &QTimer::timeout, [=]() {
     if (!request->active() && cont->isVisible()) {
@@ -280,7 +286,7 @@ QWidget * Setup::download_failed() {
   restart->setProperty("primary", true);
   blayout->addWidget(restart);
   QObject::connect(restart, &QPushButton::clicked, this, [=]() {
-    setCurrentIndex(0);
+    setCurrentIndex(2);
   });
 
   widget->setStyleSheet(R"(

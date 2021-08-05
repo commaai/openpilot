@@ -4,6 +4,8 @@
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
 
+cd $DIR
+
 BUILD_DIR=/data/openpilot
 SOURCE_DIR="$(git rev-parse --show-toplevel)"
 
@@ -31,17 +33,16 @@ cd $BUILD_DIR
 
 rm -f panda/board/obj/panda.bin.signed
 
-VERSION=$(cat selfdrive/common/version.h | awk -F\" '{print $2}')
-echo "#define COMMA_VERSION \"$VERSION-$(git --git-dir=$SOURCE_DIR/.git rev-parse --short HEAD)-$(date '+%Y-%m-%dT%H:%M:%S')\"" > selfdrive/common/version.h
+VERSION=$(cat selfdrive/common/version.h | awk -F[\"-]  '{print $2}')
+echo "#define COMMA_VERSION \"$VERSION-release\"" > selfdrive/common/version.h
 
 echo "[-] committing version $VERSION T=$SECONDS"
 git add -f .
 git commit -a -m "openpilot v$VERSION release"
 
-# TODO: sign with release cert
 # Build panda firmware
 pushd panda/
-scons -U .
+CERT=/data/pandaextra/certs/release RELEASE=1 scons -u .
 mv board/obj/panda.bin.signed /tmp/panda.bin.signed
 popd
 

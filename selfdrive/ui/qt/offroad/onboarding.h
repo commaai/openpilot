@@ -13,7 +13,7 @@ class TrainingGuide : public QFrame {
   Q_OBJECT
 
 public:
-  explicit TrainingGuide(QWidget *parent = 0) : QFrame(parent) {};
+  explicit TrainingGuide(QWidget *parent = 0);
 
 private:
   void showEvent(QShowEvent *event) override;
@@ -29,12 +29,13 @@ private:
     QRect(650, 710, 720, 190),
     continueBtnStandard,
     continueBtnStandard,
-    QRect(1470, 515, 235, 565),
-    QRect(1580, 630, 215, 130),
+    QRect(1442, 565, 230, 310),
+    QRect(1515, 562, 133, 60),
     continueBtnStandard,
     QRect(1580, 630, 215, 130),
     QRect(1210, 0, 485, 590),
     QRect(1460, 400, 375, 210),
+    QRect(166, 842, 1019, 148),
     QRect(1460, 210, 300, 310),
     continueBtnStandard,
     QRect(1375, 80, 545, 1000),
@@ -52,12 +53,13 @@ private:
     QRect(654, 721, 718, 189),
     continueBtnWide,
     continueBtnWide,
-    QRect(1589, 530, 345, 555),
-    QRect(1660, 630, 195, 125),
+    QRect(1690, 570, 165, 300),
+    QRect(1690, 560, 133, 60),
     continueBtnWide,
     QRect(1820, 630, 180, 155),
     QRect(1360, 0, 460, 620),
     QRect(1570, 400, 375, 215),
+    QRect(167, 842, 1018, 148),
     QRect(1610, 210, 295, 310),
     continueBtnWide,
     QRect(1555, 90, 610, 990),

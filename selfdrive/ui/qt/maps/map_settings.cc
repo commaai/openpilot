@@ -93,22 +93,22 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
 
   clear();
 
-  std::string dongle_id = params.get("DongleId");
-  if (util::is_valid_dongle_id(dongle_id)) {
+  if (auto dongle_id = getDongleId()) {
     // Fetch favorite and recent locations
     {
-      std::string url = "https://api.commadotai.com/v1/navigation/" + dongle_id + "/locations";
-      RequestRepeater* repeater = new RequestRepeater(this, QString::fromStdString(url), "ApiCache_NavDestinations", 30);
+      QString url = CommaApi::BASE_URL + "/v1/navigation/" + *dongle_id + "/locations";
+      RequestRepeater* repeater = new RequestRepeater(this, url, "ApiCache_NavDestinations", 30, true);
       QObject::connect(repeater, &RequestRepeater::receivedResponse, this, &MapPanel::parseResponse);
       QObject::connect(repeater, &RequestRepeater::failedResponse, this, &MapPanel::failedResponse);
     }
 
     // Destination set while offline
     {
-      std::string url = "https://api.commadotai.com/v1/navigation/" + dongle_id + "/next";
-      RequestRepeater* repeater = new RequestRepeater(this, QString::fromStdString(url), "", 10, true);
+      QString url = CommaApi::BASE_URL + "/v1/navigation/" + *dongle_id + "/next";
+      RequestRepeater* repeater = new RequestRepeater(this, url, "", 10, true);
+      HttpRequest* deleter = new HttpRequest(this);
 
-      QObject::connect(repeater, &RequestRepeater::receivedResponse, [](QString resp) {
+      QObject::connect(repeater, &RequestRepeater::receivedResponse, [=](QString resp) {
         auto params = Params();
         if (resp != "null") {
           if (params.get("NavDestination").empty()) {
@@ -117,6 +117,9 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
           } else {
             qWarning() << "Got location from /next, but NavDestination already set";
           }
+
+          // Send DELETE to clear destination server side
+          deleter->sendRequest(url, HttpRequest::Method::DELETE);
         }
       });
     }

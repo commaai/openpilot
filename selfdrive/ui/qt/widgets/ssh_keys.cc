@@ -40,7 +40,7 @@ void SshControl::refresh() {
 }
 
 void SshControl::getUserKeys(const QString &username) {
-  HttpRequest *request = new HttpRequest(this, "https://github.com/" + username + ".keys", false);
+  HttpRequest *request = new HttpRequest(this, false);
   QObject::connect(request, &HttpRequest::receivedResponse, [=](const QString &resp) {
     if (!resp.isEmpty()) {
       params.put("GithubUsername", username.toStdString());
@@ -61,4 +61,6 @@ void SshControl::getUserKeys(const QString &username) {
     refresh();
     request->deleteLater();
   });
+
+  request->sendRequest("https://github.com/" + username + ".keys");
 }

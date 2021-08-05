@@ -20,7 +20,7 @@ python replay/unlogger.py <route-name>
 python replay/ui.py   # Define the environmental variable HORIZONTAL is the ui layout is too tall
 ```
 
-Unlogger with local data downloaded from device or https://my.comma.ai:
+Unlogger with local data downloaded from device or https://connect.comma.ai:
 
 ```
 python replay/unlogger.py <route-name> <path-to-data-directory>

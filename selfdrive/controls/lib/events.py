@@ -240,6 +240,8 @@ def joystick_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> 
 EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, bool], Alert]]]] = {
   # ********** events with no alerts **********
 
+  EventName.stockFcw: {},
+
   # ********** events only containing alerts displayed in all states **********
 
   EventName.joystickDebug: {
@@ -355,15 +357,6 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       AlertStatus.critical, AlertSize.full,
       Priority.HIGHEST, VisualAlert.fcw, AudibleAlert.none, 1., 2., 2.),
     ET.NO_ENTRY: NoEntryAlert("Stock AEB: Risk of Collision"),
-  },
-
-  EventName.stockFcw: {
-    ET.PERMANENT: Alert(
-      "BRAKE!",
-      "Stock FCW: Risk of Collision",
-      AlertStatus.critical, AlertSize.full,
-      Priority.HIGHEST, VisualAlert.fcw, AudibleAlert.none, 1., 2., 2.),
-    ET.NO_ENTRY: NoEntryAlert("Stock FCW: Risk of Collision"),
   },
 
   EventName.fcw: {

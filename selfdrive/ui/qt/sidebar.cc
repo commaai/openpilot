@@ -2,7 +2,6 @@
 
 #include <QMouseEvent>
 
-#include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/common/util.h"
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/qt/util.h"
@@ -41,12 +40,12 @@ Sidebar::Sidebar(QWidget *parent) : QFrame(parent) {
 
   connect(this, &Sidebar::valueChanged, [=] { update(); });
 
+  setAttribute(Qt::WA_OpaquePaintEvent);
+  setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
   setFixedWidth(300);
-  setMinimumHeight(vwp_h);
-  setStyleSheet("background-color: rgb(57, 57, 57);");
 }
 
-void Sidebar::mousePressEvent(QMouseEvent *event) {
+void Sidebar::mouseReleaseEvent(QMouseEvent *event) {
   if (settings_btn.contains(event->pos())) {
     emit openSettings();
   }
@@ -62,11 +61,16 @@ void Sidebar::updateState(const UIState &s) {
 
   auto last_ping = deviceState.getLastAthenaPingTime();
   if (last_ping == 0) {
-    setProperty("connectStr", "OFFLINE");
-    setProperty("connectStatus", warning_color);
+    if (params.getBool("PrimeRedirected")) {
+      setProperty("connectStr", "NO\nPRIME");
+      setProperty("connectStatus", danger_color);
+    } else {
+      setProperty("connectStr", "CONNECT\nOFFLINE");
+      setProperty("connectStatus", warning_color);
+    }
   } else {
     bool online = nanos_since_boot() - last_ping < 80e9;
-    setProperty("connectStr",  online ? "ONLINE" : "ERROR");
+    setProperty("connectStr",  (online ? "CONNECT\nONLINE" : "CONNECT\nERROR"));
     setProperty("connectStatus", online ? good_color : danger_color);
   }
 
@@ -98,6 +102,8 @@ void Sidebar::paintEvent(QPaintEvent *event) {
   p.setPen(Qt::NoPen);
   p.setRenderHint(QPainter::Antialiasing);
 
+  p.fillRect(rect(), QColor(57, 57, 57));
+
   // static imgs
   p.setOpacity(0.65);
   p.drawImage(settings_btn.x(), settings_btn.y(), settings_img);
@@ -121,5 +127,5 @@ void Sidebar::paintEvent(QPaintEvent *event) {
   // metrics
   drawMetric(p, "TEMP", QString("%1°C").arg(temp_val), temp_status, 338);
   drawMetric(p, panda_str, "", panda_status, 518);
-  drawMetric(p, "CONNECT\n" + connect_str, "", connect_status, 676);
+  drawMetric(p, connect_str, "", connect_status, 676);
 }

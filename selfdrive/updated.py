@@ -167,6 +167,8 @@ def init_overlay() -> None:
   params.put_bool("UpdateAvailable", False)
   set_consistent_flag(False)
   dismount_overlay()
+  if TICI:
+    run(["sudo", "rm", "-rf", STAGING_ROOT])
   if os.path.isdir(STAGING_ROOT):
     shutil.rmtree(STAGING_ROOT)
 
