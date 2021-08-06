@@ -87,7 +87,7 @@ class URLFile(object):
 
     file_begin = self._pos
     file_end = self._pos + ll if ll is not None else self.get_length()
-    #  We have to allign with chunks we store. Position is the begginiing of the latest chunk that starts before or at our file
+    #  We have to align with chunks we store. Position is the begginiing of the latest chunk that starts before or at our file
     position = (file_begin // CHUNK_SIZE) * CHUNK_SIZE
     response = b""
     while True:

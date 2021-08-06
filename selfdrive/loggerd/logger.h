@@ -15,11 +15,7 @@
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/hardware/hw.h"
 
-const std::string DEFAULT_LOG_ROOT =
-    Hardware::PC() ? util::getenv_default("HOME", "/.comma/media/0/realdata", "/data/media/0/realdata")
-                   : "/data/media/0/realdata";
-
-const std::string LOG_ROOT = util::getenv_default("LOG_ROOT", "", DEFAULT_LOG_ROOT.c_str());
+const std::string LOG_ROOT = Path::log_root();
 
 #define LOGGER_MAX_HANDLES 16
 

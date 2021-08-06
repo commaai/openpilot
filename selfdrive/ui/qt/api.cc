@@ -18,12 +18,8 @@
 
 namespace CommaApi {
 
-const std::string private_key_path =
-    Hardware::PC() ? util::getenv_default("HOME", "/.comma/persist/comma/id_rsa", "/persist/comma/id_rsa")
-                   : "/persist/comma/id_rsa";
-
 QByteArray rsa_sign(const QByteArray &data) {
-  auto file = QFile(private_key_path.c_str());
+  auto file = QFile(Path::rsa_file().c_str());
   if (!file.open(QIODevice::ReadOnly)) {
     qDebug() << "No RSA private key found, please run manager.py or registration.py";
     return QByteArray();
@@ -89,7 +85,7 @@ void HttpRequest::sendRequest(const QString &requestURL, const HttpRequest::Meth
   if(create_jwt) {
     token = CommaApi::create_jwt();
   } else {
-    QString token_json = QString::fromStdString(util::read_file(util::getenv_default("HOME", "/.comma/auth.json", "/.comma/auth.json")));
+    QString token_json = QString::fromStdString(util::read_file(util::getenv("HOME") + "/.comma/auth.json"));
     QJsonDocument json_d = QJsonDocument::fromJson(token_json.toUtf8());
     token = json_d["access_token"].toString();
   }

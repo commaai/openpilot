@@ -22,16 +22,17 @@ typedef struct CameraState {
   CameraInfo ci;
 
   std::mutex exp_lock;
-  float analog_gain_frac;
-  uint16_t analog_gain;
-  bool dc_gain_enabled;
+
   int exposure_time;
-  int exposure_time_min;
-  int exposure_time_max;
-  float ef_filtered;
+  bool dc_gain_enabled;
+  float analog_gain_frac;
+
+  float cur_ev[3];
+  float min_ev, max_ev;
 
   float measured_grey_fraction;
   float target_grey_fraction;
+  int gain_idx;
 
   unique_fd sensor_fd;
   unique_fd csiphy_fd;
