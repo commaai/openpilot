@@ -66,7 +66,7 @@ static int get_path_length_idx(const cereal::ModelDataV2::XYZTData::Reader &line
 static void update_leads(UIState *s, const cereal::ModelDataV2::LeadDataV2::Reader &lead_data, std::optional<cereal::ModelDataV2::XYZTData::Reader> line) {
   if (lead_data.getProb() > 0.5) {
     float z = line ? (*line).getZ()[get_path_length_idx(*line, lead_data.getXyva()[0])] : 0.0;
-    calib_frame_to_full_frame(s, lead_data.getXyva()[0], -lead_data.getXyva()[1], z + 1.22, &s->scene.lead_vertices[0]);
+    calib_frame_to_full_frame(s, lead_data.getXyva()[0], lead_data.getXyva()[1], z + 1.22, &s->scene.lead_vertices[0]);
 
   }
 }
