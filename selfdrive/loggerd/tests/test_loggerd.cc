@@ -30,15 +30,22 @@ void encode_thread(LoggerdState *s, bool trigger_rotate, bool has_camera) {
         s->last_camera_seen_tms = millis_since_boot();
       }
       if (cnt >= segment_length_ms) {
+        // trigger rotate and wait logger rotated to new segment
         SAFE_REQUIRE(s->rotate_segment == cur_seg);
         s->triggerAndWait(cur_seg, &do_exit);
         if (!do_exit) {
+          SAFE_REQUIRE(s->waiting_rotate == 0);
           SAFE_REQUIRE(s->rotate_segment == cur_seg + 1);
         }
       }
     }
+
+    // rotate if the logger is on a newer segment
     if (s->rotate_segment > cur_seg) {
       SAFE_REQUIRE(s->rotate_segment == cur_seg + 1);
+      if (trigger_rotate && cur_seg != -1 && has_camera) {
+        SAFE_REQUIRE(cnt == segment_length_ms);
+      }
       ++rotated_cnt;
       cnt = 0;
       cur_seg = s->rotate_segment;
