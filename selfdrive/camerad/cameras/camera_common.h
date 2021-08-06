@@ -28,12 +28,6 @@
 
 #define UI_BUF_COUNT 4
 
-#define LOG_CAMERA_ID_FCAMERA 0
-#define LOG_CAMERA_ID_DCAMERA 1
-#define LOG_CAMERA_ID_ECAMERA 2
-#define LOG_CAMERA_ID_QCAMERA 3
-#define LOG_CAMERA_ID_MAX 4
-
 #define HLC_THRESH 222
 #define HLC_A 80
 #define HISTO_CEIL_K 5
@@ -51,20 +45,6 @@ typedef struct CameraInfo {
   int bayer_flip;
   bool hdr;
 } CameraInfo;
-
-typedef struct LogCameraInfo {
-  const char* filename;
-  const char* frame_packet_name;
-  const char* encode_idx_name;
-  VisionStreamType stream_type;
-  int frame_width, frame_height;
-  int fps;
-  int bitrate;
-  bool is_h265;
-  bool downscale;
-  bool has_qcamera;
-  bool trigger_rotate;
-} LogCameraInfo;
 
 typedef struct FrameMetadata {
   uint32_t frame_id;

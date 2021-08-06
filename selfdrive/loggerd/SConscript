@@ -1,13 +1,13 @@
 Import('env', 'arch', 'cereal', 'messaging', 'common', 'visionipc', 'gpucommon')
 
 
-logger_lib = env.Library('logger', ["logger.cc"])
+logger_lib = env.Library('logger', ['logger.cc', 'logging.cc'])
 libs = [logger_lib, common, cereal, messaging, visionipc,
         'zmq', 'capnp', 'kj', 'z',
         'avformat', 'avcodec', 'swscale', 'avutil',
         'yuv', 'bz2', 'OpenCL']
 
-src = ['loggerd.cc']
+src = ['main.cc']
 if arch in ["aarch64", "larch64"]:
   src += ['omx_encoder.cc']
   libs += ['OmxCore', 'gsl', 'CB'] + gpucommon
@@ -24,5 +24,8 @@ if arch == "Darwin":
   del libs[libs.index('OpenCL')]
   env['FRAMEWORKS'] = ['OpenCL']
 
-env.Program(src, LIBS=libs)
+env.Program('loggerd', src, LIBS=libs)
 env.Program('bootlog.cc', LIBS=libs)
+
+if GetOption('test'):
+  env.Program('tests/test_loggerd', ['tests/test_runner.cc', 'tests/test_loggerd.cc'], LIBS=[libs])
