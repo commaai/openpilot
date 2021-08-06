@@ -4,7 +4,7 @@
 ExitHandler do_exit;
 
 const int thread_cnt = 10;
-const int ROTATE_CNT = 200;
+const int ROTATE_CNT = 100;
 const int segment_length_ms = 10;  // ms
 const int no_camera_patience = 5;  // ms
 
@@ -70,8 +70,26 @@ void test_rotation(bool has_camera) {
   }
 
   while (!do_exit) {
+    int prev_segment = s.rotate_segment;
     s.rotate_if_needed();
-    if (s.rotate_segment == ROTATE_CNT - 1) break;
+
+    if (s.rotate_segment != prev_segment) {
+      SAFE_REQUIRE(s.waiting_rotate == 0);
+      if (!has_camera) {
+        // make sure this is a timeout rotation
+        SAFE_REQUIRE((millis_since_boot() - s.last_camera_seen_tms) > no_camera_patience);
+      }
+    } else {
+      SAFE_REQUIRE(s.waiting_rotate <= s.max_waiting);
+      if (!has_camera) {
+        double tms = millis_since_boot();
+        SAFE_REQUIRE(uint64_t(tms - s.last_rotate_tms) <= segment_length_ms);
+      }
+    }
+
+    if (s.rotate_segment == ROTATE_CNT - 1) {
+      break;
+    }
     util::sleep_for(1);
   }
 
