@@ -150,7 +150,9 @@ void encoder_thread(int cam_idx) {
       VisionBuf* buf = vipc_client.recv(&extra);
       if (buf == nullptr) continue;
 
-      s.last_camera_seen_tms = millis_since_boot();
+      if (cam_info.trigger_rotate) {
+        s.last_camera_seen_tms = millis_since_boot();
+      }
 
       if (cam_info.trigger_rotate && (cnt >= SEGMENT_LENGTH * MAIN_FPS)) {
         // trigger rotate and wait logger rotated to new segment
