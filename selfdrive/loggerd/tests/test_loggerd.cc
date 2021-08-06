@@ -4,7 +4,7 @@
 ExitHandler do_exit;
 const int ROTATE_CNT = 1000;
 
-void encode_thread(LoggerdState *s, bool trigger_rotate, bool test_timeout_rotate) {
+void encode_thread(LoggerdState *s, bool trigger_rotate) {
   int cnt = 0, rotated_cnt = 0, cur_seg = -1;
   do {
     if (trigger_rotate) {
