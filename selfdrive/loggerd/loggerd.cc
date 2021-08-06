@@ -150,6 +150,7 @@ void encoder_thread(int cam_idx) {
       VisionBuf* buf = vipc_client.recv(&extra);
       if (buf == nullptr) continue;
 
+      bool encoded_rotated = false;
       if (cam_info.trigger_rotate) {
         s.last_camera_seen_tms = millis_since_boot();
 
@@ -157,14 +158,12 @@ void encoder_thread(int cam_idx) {
           // trigger rotate and wait logger rotated to new segment
           ++s.waiting_rotate;
 
-          if (lh) {
-            lh_close(lh);
-          }
-          std::string next_segment_path = logger_get_segment_path(LOG_ROOT, s.logger.route_name, cur_seg+1);
+          std::string next_segment_path = logger_get_segment_path(LOG_ROOT, s.logger.route_name, cur_seg + 1);
           for (auto &e : encoders) {
             e->encoder_close();
             e->encoder_open(next_segment_path.c_str());
           }
+          encoded_rotated = true;
           std::unique_lock lk(s.rotate_lock);
           s.rotate_cv.wait(lk, [&] { return s.rotate_segment > cur_seg || do_exit; });
         }
@@ -178,7 +177,16 @@ void encoder_thread(int cam_idx) {
         cnt = 0;
 
         LOGW("camera %d rotate encoder to %s", cam_idx, s.segment_path);
+        if (lh) {
+          lh_close(lh);
+        }
         lh = logger_get_handle(&s.logger);
+        if (!encoded_rotated) {
+          for (auto &e : encoders) {
+            e->encoder_close();
+            e->encoder_open(s.segment_path);
+          }
+        }
       }
 
       // encode a frame
