@@ -15,8 +15,6 @@ void encode_thread(LoggerdState *s, bool trigger_rotate) {
           REQUIRE(s->rotate_segment == cur_seg + 1);
           REQUIRE(s->waiting_rotate == 0);
         }
-      } else {
-        REQUIRE(s->rotate_segment == cur_seg);
       }
     }
     if (s->rotate_segment > cur_seg) {
@@ -25,6 +23,7 @@ void encode_thread(LoggerdState *s, bool trigger_rotate) {
       cnt = 0;
       cur_seg = s->rotate_segment;
     }
+
     ++cnt;
     usleep(0);
   } while (!do_exit);
