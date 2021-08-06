@@ -180,8 +180,13 @@ void encoder_thread(int cam_idx) {
       for (int i = 0; i < encoders.size(); ++i) {
         int out_id = encoders[i]->encode_frame(buf->y, buf->u, buf->v,
                                                buf->width, buf->height, extra.timestamp_eof);
+        
+        if (out_id == -1) {
+          LOGE("Failed to encode frame. frame_id: %d encode_id: %d", extra.frame_id, encode_idx);
+        }
+
+        // publish encode index
         if (i == 0 && out_id != -1) {
-          // publish encode index
           MessageBuilder msg;
           // this is really ugly
           auto eidx = cam_idx == LOG_CAMERA_ID_DCAMERA ? msg.initEvent().initDriverEncodeIdx() :
