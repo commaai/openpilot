@@ -150,7 +150,7 @@ void encoder_thread(int cam_idx) {
       VisionBuf* buf = vipc_client.recv(&extra);
       if (buf == nullptr) continue;
 
-      bool encoded_rotated = false;
+      bool encoder_rotated = false;
       if (cam_info.trigger_rotate) {
         s.last_camera_seen_tms = millis_since_boot();
 
@@ -163,7 +163,7 @@ void encoder_thread(int cam_idx) {
             e->encoder_close();
             e->encoder_open(next_segment_path.c_str());
           }
-          encoded_rotated = true;
+          encoder_rotated = true;
           std::unique_lock lk(s.rotate_lock);
           s.rotate_cv.wait(lk, [&] { return s.rotate_segment > cur_seg || do_exit; });
         }
@@ -172,7 +172,10 @@ void encoder_thread(int cam_idx) {
 
       // rotate the encoder if the logger is on a newer segment
       if (s.rotate_segment > cur_seg) {
-        assert(s.rotate_segment == cur_seg + 1);
+        if (encoder_rotated && s.rotate_segment != cur_seg + 1) {
+          // shouldn't happen
+          encoder_rotated = false;
+        }
         cur_seg = s.rotate_segment;
         cnt = 0;
 
@@ -181,7 +184,7 @@ void encoder_thread(int cam_idx) {
           lh_close(lh);
         }
         lh = logger_get_handle(&s.logger);
-        if (!encoded_rotated) {
+        if (!encoder_rotated) {
           for (auto &e : encoders) {
             e->encoder_close();
             e->encoder_open(s.segment_path);
