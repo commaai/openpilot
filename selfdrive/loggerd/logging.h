@@ -16,7 +16,7 @@
 #define LOG_CAMERA_ID_QCAMERA 3
 #define LOG_CAMERA_ID_MAX 4
 
-#define NO_CAMERA_PATIENCE 500 // fall back to time-based rotation if all cameras are dead
+#define NO_CAMERA_PATIENCE 500  // fall back to time-based rotation if all cameras are dead
 
 const int SEGMENT_LENGTH = getenv("LOGGERD_TEST") ? atoi(getenv("LOGGERD_SEGMENT_LENGTH")) : 60;
 
@@ -36,10 +36,13 @@ typedef struct LogCameraInfo {
 
 class LoggerdState {
 public:
-  void rotate(bool fake_rotate = false);
-  void rotate_if_needed(bool fake_rotate = false);
-  void triggerAndWait(int cur_seg, ExitHandler *do_exit);
-  Context *ctx = nullptr;
+  LoggerdState() = default;
+  LoggerdState(int segment_length_ms, int no_camera_patience, bool testing);
+  void rotate();
+  void rotate_if_needed();
+  void triggerAndWait(int cur_seg, ExitHandler* do_exit);
+
+  Context* ctx;
   LoggerState logger = {};
   char segment_path[4096];
   std::mutex rotate_lock;
@@ -49,4 +52,9 @@ public:
   std::atomic<int> waiting_rotate = 0;
   int max_waiting = 0;
   double last_rotate_tms = 0.;
+
+private:
+  int segment_length_ms = SEGMENT_LENGTH * 1000;
+  int no_camera_patience = NO_CAMERA_PATIENCE;
+  bool testing = false;
 };

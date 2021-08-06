@@ -1,10 +1,14 @@
 #include "selfdrive/loggerd/logging.h"
 
-void LoggerdState::rotate(bool fake_rotate) {
+LoggerdState::LoggerdState(int segment_length_ms, int no_camera_patience, bool testing)
+    : segment_length_ms(segment_length_ms), no_camera_patience(no_camera_patience), testing(testing) {
+}
+
+void LoggerdState::rotate() {
   {
     std::unique_lock lk(rotate_lock);
     int segment = -1;
-    if (!fake_rotate) {
+    if (!testing) {
       int err = logger_next(&logger, LOG_ROOT.c_str(), segment_path, sizeof(segment_path), &segment);
       assert(err == 0);
     } else {
@@ -19,16 +23,16 @@ void LoggerdState::rotate(bool fake_rotate) {
   LOGW((rotate_segment == 0) ? "logging to %s" : "rotated to %s", segment_path);
 }
 
-void LoggerdState::rotate_if_needed(bool fake_rotate) {
+void LoggerdState::rotate_if_needed() {
   if (waiting_rotate == max_waiting) {
-    rotate(fake_rotate);
+    rotate();
   }
 
   double tms = millis_since_boot();
-  if ((tms - last_rotate_tms) > SEGMENT_LENGTH * 1000 &&
-      (tms - last_camera_seen_tms) > NO_CAMERA_PATIENCE) {
+  if ((tms - last_rotate_tms) > segment_length_ms &&
+      (tms - last_camera_seen_tms) > no_camera_patience) {
     LOGW("no camera packet seen. auto rotating");
-    rotate(fake_rotate);
+    rotate();
   }
 }
 
