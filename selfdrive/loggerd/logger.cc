@@ -126,6 +126,10 @@ std::string logger_get_route_name() {
   return route_name;
 }
 
+std::string logger_get_segment_path(const std::string& root_path, const std::string& root_name, int segment) {
+  return util::string_format("%s/%s--%d", root_path.c_str(), root_name.c_str(), segment);
+}
+
 void log_init_data(LoggerState *s) {
   auto bytes = s->init_data.asBytes();
   logger_log(s, bytes.begin(), bytes.size(), s->has_qlog);

@@ -160,8 +160,10 @@ void encoder_thread(int cam_idx) {
           if (lh) {
             lh_close(lh);
           }
+          std::string next_segment_path = logger_get_segment_path(LOG_ROOT, s.logger.route_name, cur_seg+1);
           for (auto &e : encoders) {
             e->encoder_close();
+            e->encoder_open(next_segment_path.c_str());
           }
           std::unique_lock lk(s.rotate_lock);
           s.rotate_cv.wait(lk, [&] { return s.rotate_segment > cur_seg || do_exit; });
@@ -171,13 +173,11 @@ void encoder_thread(int cam_idx) {
 
       // rotate the encoder if the logger is on a newer segment
       if (s.rotate_segment > cur_seg) {
+        assert(s.rotate_segment == cur_seg + 1);
         cur_seg = s.rotate_segment;
         cnt = 0;
 
         LOGW("camera %d rotate encoder to %s", cam_idx, s.segment_path);
-        for (auto &e : encoders) {
-          e->encoder_open(s.segment_path);
-        }
         lh = logger_get_handle(&s.logger);
       }
 
