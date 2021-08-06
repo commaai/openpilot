@@ -152,13 +152,20 @@ void encoder_thread(int cam_idx) {
 
       if (cam_info.trigger_rotate) {
         s.last_camera_seen_tms = millis_since_boot();
-      }
 
-      if (cam_info.trigger_rotate && (cnt >= SEGMENT_LENGTH * MAIN_FPS)) {
-        // trigger rotate and wait logger rotated to new segment
-        ++s.waiting_rotate;
-        std::unique_lock lk(s.rotate_lock);
-        s.rotate_cv.wait(lk, [&] { return s.rotate_segment > cur_seg || do_exit; });
+        if (cnt >= SEGMENT_LENGTH * MAIN_FPS) {
+          // trigger rotate and wait logger rotated to new segment
+          ++s.waiting_rotate;
+
+          if (lh) {
+            lh_close(lh);
+          }
+          for (auto &e : encoders) {
+            e->encoder_close();
+          }
+          std::unique_lock lk(s.rotate_lock);
+          s.rotate_cv.wait(lk, [&] { return s.rotate_segment > cur_seg || do_exit; });
+        }
       }
       if (do_exit) break;
 
@@ -169,11 +176,7 @@ void encoder_thread(int cam_idx) {
 
         LOGW("camera %d rotate encoder to %s", cam_idx, s.segment_path);
         for (auto &e : encoders) {
-          e->encoder_close();
           e->encoder_open(s.segment_path);
-        }
-        if (lh) {
-          lh_close(lh);
         }
         lh = logger_get_handle(&s.logger);
       }
