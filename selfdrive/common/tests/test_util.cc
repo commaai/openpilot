@@ -104,7 +104,11 @@ TEST_CASE("util::create_directories") {
   SECTION("without umask") {
     REQUIRE(util::create_directories(dir, 0777, true, false));
     REQUIRE(check_dir_permissions(dir, 0777) == false);
-    REQUIRE(check_dir_permissions(dir, 0775) == true);
+    mode_t mask = umask(0);
+    mode_t required = 0777;
+    required &=~mask;
+    REQUIRE(check_dir_permissions(dir, required) == true);
+    umask(mask);
   }
   SECTION("reset permissions") {
     REQUIRE(util::create_directories(dir, 0775));
