@@ -156,7 +156,7 @@ static LoggerHandle* logger_open(LoggerState *s, const char* root_path) {
   h->end_sentinel_type = SentinelType::END_OF_SEGMENT;
   h->exit_signal = 0;
 
-  if (!util::create_directories(h->log_path, 0777)) return nullptr;
+  if (!util::create_directories(h->segment_path, 0777)) return nullptr;
 
   FILE* lock_file = fopen(h->lock_path, "wb");
   if (lock_file == NULL) return NULL;
