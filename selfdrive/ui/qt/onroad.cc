@@ -141,7 +141,7 @@ ButtonsWindow::ButtonsWindow(QWidget *parent) : QWidget(parent) {
       padding: 0px;
       border-width: 12px;
       border-style: solid;
-      background-color: transparent;
+      background-color: rgba(75, 75, 75, 0.3);
     }
   )");
 }
