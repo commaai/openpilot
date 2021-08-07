@@ -43,7 +43,7 @@ int fsync_dir(const char* path) {
 
 bool create_params_path(const std::string &param_path, const std::string &key_path) {
   // Make sure params path exists
-  if (!util::file_exists(param_path) && util::create_directories(param_path, 0777) != 0) {
+  if (!util::file_exists(param_path) && !util::create_directories(param_path, 0777)) {
     return false;
   }
 

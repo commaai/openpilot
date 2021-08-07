@@ -138,8 +138,6 @@ void logger_init(LoggerState *s, const char* log_name, bool has_qlog) {
 }
 
 static LoggerHandle* logger_open(LoggerState *s, const char* root_path) {
-  int err;
-
   LoggerHandle *h = NULL;
   for (int i=0; i<LOGGER_MAX_HANDLES; i++) {
     if (s->handles[i].refcnt == 0) {
@@ -158,8 +156,7 @@ static LoggerHandle* logger_open(LoggerState *s, const char* root_path) {
   h->end_sentinel_type = SentinelType::END_OF_SEGMENT;
   h->exit_signal = 0;
 
-  err = util::create_directories(h->log_path, 0777);
-  if (err) return NULL;
+  if (!util::create_directories(h->log_path, 0777)) return nullptr;
 
   FILE* lock_file = fopen(h->lock_path, "wb");
   if (lock_file == NULL) return NULL;
