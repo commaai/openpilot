@@ -29,7 +29,6 @@ def ui_thread(addr, frame_address):
   assert pygame_modules_have_loaded()
 
   size = (int(_FULL_FRAME_SIZE[0] * SCALE), int(_FULL_FRAME_SIZE[1] * SCALE))
-  print(size)
   pygame.display.set_caption("comma one debug UI")
   screen = pygame.display.set_mode(size, pygame.DOUBLEBUF)
 
@@ -66,8 +65,10 @@ def ui_thread(addr, frame_address):
         flags=cv2.WARP_INVERSE_MAP)
     else:
       # actually RGB
-      img = np.frombuffer(yuv_img, dtype=np.uint8).reshape((_FULL_FRAME_SIZE[1], _FULL_FRAME_SIZE[0], 3))
-      img = img[:, :, ::-1]  # Convert BGR to RGB
+      img_array = np.frombuffer(yuv_img, dtype=np.uint8)
+      if img_array.size != 0:
+        img = img_array.reshape((_FULL_FRAME_SIZE[1], _FULL_FRAME_SIZE[0], 3))
+        img = img[:, :, ::-1]  # Convert BGR to RGB
 
     height, width = img.shape[:2]
     img_resized = cv2.resize(
