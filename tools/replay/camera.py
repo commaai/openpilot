@@ -29,6 +29,7 @@ def ui_thread(addr, frame_address):
   assert pygame_modules_have_loaded()
 
   size = (int(_FULL_FRAME_SIZE[0] * SCALE), int(_FULL_FRAME_SIZE[1] * SCALE))
+  print(size)
   pygame.display.set_caption("comma one debug UI")
   screen = pygame.display.set_mode(size, pygame.DOUBLEBUF)
 
