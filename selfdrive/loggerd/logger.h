@@ -1,15 +1,9 @@
 #pragma once
 
 #include <cassert>
-#include <pthread.h>
-
-#include <cstdint>
-#include <cstdio>
 #include <memory>
-
+#include <mutex>
 #include <bzlib.h>
-#include <capnp/serialize.h>
-#include <kj/array.h>
 
 #include "cereal/messaging/messaging.h"
 #include "selfdrive/common/util.h"
@@ -22,8 +16,8 @@ const std::string LOG_ROOT = Path::log_root();
 
 class BZFile {
  public:
-  BZFile(const char* path) {
-    file = util::safe_fopen(path, "wb");
+  BZFile(const std::string &path) {
+    file = util::safe_fopen(path.c_str(), "wb");
     assert(file != nullptr);
     int bzerror;
     bz_file = BZ2_bzWriteOpen(&bzerror, file, 9, 0, 30);
@@ -60,40 +54,37 @@ class BZFile {
 
 typedef cereal::Sentinel::SentinelType SentinelType;
 
-typedef struct LoggerHandle {
-  pthread_mutex_t lock;
-  SentinelType end_sentinel_type;
-  int exit_signal;
-  int refcnt;
-  char segment_path[4096];
-  char log_path[4096];
-  char qlog_path[4096];
-  char lock_path[4096];
-  std::unique_ptr<BZFile> log, q_log;
-} LoggerHandle;
+class Logger {
+public:
+  Logger(const std::string& route_path, int part, kj::ArrayPtr<kj::byte> init_data);
+  ~Logger();
+  void end_of_route(int signal);
+  inline int segment() const { return part_; }
+  inline const std::string& segmentPath() const { return segment_path_; }
+  void write(uint8_t* data, size_t data_size, bool in_qlog);
+  inline void write(kj::ArrayPtr<capnp::byte> array, bool in_qlog) { write(array.begin(), array.size(), in_qlog); }
 
-typedef struct LoggerState {
-  pthread_mutex_t lock;
-  int part;
-  kj::Array<capnp::word> init_data;
-  std::string route_name;
-  char log_name[64];
-  bool has_qlog;
+protected:
+  std::mutex lock_;
+  int part_ = -1, signal_ = 0;
+  std::string segment_path_;
+  std::unique_ptr<BZFile> log_, qlog_;
+  SentinelType end_sentinel_type_ = cereal::Sentinel::SentinelType::END_OF_SEGMENT;
+};
 
-  LoggerHandle handles[LOGGER_MAX_HANDLES];
-  LoggerHandle* cur_handle;
-} LoggerState;
+class LoggerManager {
+public:
+  LoggerManager(const std::string& log_root = LOG_ROOT);
+  std::shared_ptr<Logger> next();
+  inline const std::string& routePath() const { return route_path_; }
+  inline const std::string& routeName() const { return route_name_; }
+
+protected:
+  int part_ = -1;
+  std::string route_path_, route_name_;
+  kj::Array<capnp::word> init_data_;
+};
 
 kj::Array<capnp::word> logger_build_init_data();
 std::string logger_get_route_name();
-void logger_init(LoggerState *s, const char* log_name, bool has_qlog);
-int logger_next(LoggerState *s, const char* root_path,
-                            char* out_segment_path, size_t out_segment_path_len,
-                            int* out_part);
-LoggerHandle* logger_get_handle(LoggerState *s);
-void logger_close(LoggerState *s, ExitHandler *exit_handler=nullptr);
-void logger_log(LoggerState *s, uint8_t* data, size_t data_size, bool in_qlog);
-
-void lh_log(LoggerHandle* h, uint8_t* data, size_t data_size, bool in_qlog);
-void lh_close(LoggerHandle* h);
 void clear_locks(const std::string log_root);
