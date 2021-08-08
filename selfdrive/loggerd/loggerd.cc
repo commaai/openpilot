@@ -1,18 +1,14 @@
 #include <ftw.h>
-#include <pthread.h>
 #include <sys/resource.h>
 #include <unistd.h>
 
 #include <atomic>
 #include <cassert>
-#include <cerrno>
 #include <condition_variable>
 #include <cstdint>
-#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <mutex>
-#include <random>
 #include <string>
 #include <thread>
 #include <unordered_map>
@@ -106,14 +102,14 @@ const LogCameraInfo qcam_info = {
 };
 
 struct LoggerdState {
+  LoggerdState() : logger_manager(LOG_ROOT) {}
   Context *ctx;
-  LoggerState logger = {};
-  char segment_path[4096];
+  LoggerManager logger_manager;
+  std::shared_ptr<Logger> lh;
   std::mutex rotate_lock;
   std::condition_variable rotate_cv;
-  std::atomic<int> rotate_segment;
-  std::atomic<double> last_camera_seen_tms;
-  std::atomic<int> waiting_rotate;
+  std::atomic<double> last_camera_seen_tms = 0.;
+  std::atomic<int> waiting_rotate = 0;
   int max_waiting = 0;
   double last_rotate_tms = 0.;
 
@@ -149,9 +145,8 @@ bool sync_encoders(LoggerdState *state, CameraType cam_type, uint32_t frame_id) 
 void encoder_thread(const LogCameraInfo &cam_info) {
   set_thread_name(cam_info.filename);
 
-  int cnt = 0, cur_seg = -1;
-  int encode_idx = 0;
-  LoggerHandle *lh = NULL;
+  int cnt = 0, encode_idx = 0;
+  std::shared_ptr<Logger> lh = NULL;
   std::vector<Encoder *> encoders;
   VisionIpcClient vipc_client = VisionIpcClient("camerad", cam_info.stream_type, false);
 
@@ -193,24 +188,19 @@ void encoder_thread(const LogCameraInfo &cam_info) {
         // trigger rotate and wait logger rotated to new segment
         ++s.waiting_rotate;
         std::unique_lock lk(s.rotate_lock);
-        s.rotate_cv.wait(lk, [&] { return s.rotate_segment > cur_seg || do_exit; });
+        s.rotate_cv.wait(lk, [&] { return s.lh != lh || do_exit; });
       }
       if (do_exit) break;
 
       // rotate the encoder if the logger is on a newer segment
-      if (s.rotate_segment > cur_seg) {
-        cur_seg = s.rotate_segment;
+      if (s.lh != lh) {
         cnt = 0;
-
-        LOGW("camera %d rotate encoder to %s", cam_info.type, s.segment_path);
+        lh = s.lh;
+        LOGW("camera %d rotate encoder to %s", cam_info.type, lh->segmentPath().c_str());
         for (auto &e : encoders) {
           e->encoder_close();
-          e->encoder_open(s.segment_path);
+          e->encoder_open(lh->segmentPath().c_str());
         }
-        if (lh) {
-          lh_close(lh);
-        }
-        lh = logger_get_handle(&s.logger);
       }
 
       // encode a frame
@@ -238,22 +228,15 @@ void encoder_thread(const LogCameraInfo &cam_info) {
             eidx.setType(cam_info.type == DriverCam ? cereal::EncodeIndex::Type::FRONT : cereal::EncodeIndex::Type::FULL_H_E_V_C);
           }
           eidx.setEncodeId(encode_idx);
-          eidx.setSegmentNum(cur_seg);
+          eidx.setSegmentNum(lh->segment());
           eidx.setSegmentId(out_id);
-          if (lh) {
-            auto bytes = msg.toBytes();
-            lh_log(lh, bytes.begin(), bytes.size(), true);
-          }
+
+          lh->write(msg.toBytes(), true);
         }
       }
 
       cnt++;
       encode_idx++;
-    }
-
-    if (lh) {
-      lh_close(lh);
-      lh = NULL;
     }
   }
 
@@ -279,15 +262,12 @@ void clear_locks() {
 void logger_rotate() {
   {
     std::unique_lock lk(s.rotate_lock);
-    int segment = -1;
-    int err = logger_next(&s.logger, LOG_ROOT.c_str(), s.segment_path, sizeof(s.segment_path), &segment);
-    assert(err == 0);
-    s.rotate_segment = segment;
+    s.lh = s.logger_manager.next();
     s.waiting_rotate = 0;
     s.last_rotate_tms = millis_since_boot();
   }
   s.rotate_cv.notify_all();
-  LOGW((s.logger.part == 0) ? "logging to %s" : "rotated to %s", s.segment_path);
+  LOGW((s.lh->segment() == 0) ? "logging to %s" : "rotated to %s", s.lh->segmentPath().c_str());
 }
 
 void rotate_if_needed() {
@@ -340,9 +320,8 @@ int main(int argc, char** argv) {
   }
 
   // init logger
-  logger_init(&s.logger, "rlog", true);
   logger_rotate();
-  Params().put("CurrentRoute", s.logger.route_name);
+  Params().put("CurrentRoute", s.logger_manager.routeName());
 
   // init encoders
   s.last_camera_seen_tms = millis_since_boot();
@@ -364,7 +343,7 @@ int main(int argc, char** argv) {
       Message *msg = nullptr;
       while (!do_exit && (msg = sock->receive(true))) {
         const bool in_qlog = qs.freq != -1 && (qs.counter++ % qs.freq == 0);
-        logger_log(&s.logger, (uint8_t *)msg->getData(), msg->getSize(), in_qlog);
+        s.lh->write((uint8_t *)msg->getData(), msg->getSize(), in_qlog);
         bytes_count += msg->getSize();
         delete msg;
 
@@ -383,8 +362,8 @@ int main(int argc, char** argv) {
   for (auto &t : encoder_threads) t.join();
 
   LOGW("closing logger");
-  logger_close(&s.logger, &do_exit);
-
+  s.lh->end_of_route(do_exit);
+  s.lh = nullptr;
   if (do_exit.power_failure) {
     LOGE("power failure");
     sync();
