@@ -1,5 +1,6 @@
 
 #include <dirent.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 
 #include <algorithm>
@@ -50,4 +51,13 @@ TEST_CASE("util::read_file") {
   SECTION("read non-permission") {
     REQUIRE(util::read_file("/proc/kmsg").empty());
   }
+}
+
+TEST_CASE("util::file_exists") {
+  const std::string file = "/tmp/test_util_file_exists";
+  system(("rm " + file + " -f").c_str());
+  int flock = ::open(file.c_str(), O_RDWR | O_CREAT);
+  assert(flock != -1);
+  REQUIRE(util::file_exists(file) == true);
+  close(flock);
 }
