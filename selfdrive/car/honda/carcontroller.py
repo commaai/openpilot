@@ -5,7 +5,7 @@ from selfdrive.controls.lib.drive_helpers import rate_limit
 from common.numpy_fast import clip, interp
 from selfdrive.car import create_gas_command
 from selfdrive.car.honda import hondacan
-from selfdrive.car.honda.values import CruiseButtons, CAR, VISUAL_HUD, HONDA_BOSCH, CarControllerParams
+from selfdrive.car.honda.values import OLD_NIDEC_LONG_CONTROL, CruiseButtons, CAR, VISUAL_HUD, HONDA_BOSCH, CarControllerParams
 from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -161,13 +161,17 @@ class CarController():
     else:
       apply_accel = interp(accel, P.NIDEC_ACCEL_LOOKUP_BP, P.NIDEC_ACCEL_LOOKUP_V)
 
+    if CS.CP.carFingerprint in OLD_NIDEC_LONG_CONTROL:
+      pcm_accel = int(clip(pcm_accel, 0, 1) * 0xc6)
+      #pcm_speed = pcm_speed
+      wind_brake = 0.0
+    else:
+      pcm_accel = int(1.0 * 0xc6)
+      wind_brake = interp(CS.out.vEgo, [0.0, 1.0, 20.0], [0.0, 0.0, 0.1])
+      pcm_speed = CS.out.vEgo + apply_accel
 
-    #throttle_mult = interp(CS.out.vEgo, [0.0, 2.0, 20., 40.], [2.0, .25, .5, 1.0])
-    pcm_speed = CS.out.vEgo + apply_accel
 
-    # This is needed otherwise accel to decel is not smooth
-    #pcm_accel = int(clip(throttle_mult*apply_accel, 0.0, 1.0) * 0xc6)
-    pcm_accel = int(1.0 * 0xc6)
+
     if not CS.CP.openpilotLongitudinalControl:
       if (frame % 2) == 0:
         idx = frame // 2
