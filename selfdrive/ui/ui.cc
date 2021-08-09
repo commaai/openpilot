@@ -190,6 +190,11 @@ static void update_state(UIState *s) {
     float max_gain = Hardware::EON() ? 1.0: 10.0;
     float max_ev = max_lines * max_gain;
 
+    // C3 camera only uses about 10% of available gain at night
+    if (Hardware::TICI) {
+      max_ev /= 10;
+    }
+
     float ev = camera_state.getGain() * float(camera_state.getIntegLines());
 
     scene.light_sensor = 1023 * std::clamp<float>(1.0 - (ev / max_ev), 0.0, 1.0);
