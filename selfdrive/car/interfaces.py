@@ -42,6 +42,10 @@ class CarInterfaceBase():
       self.CC = CarController(self.cp.dbc_name, CP, self.VM)
 
   @staticmethod
+  def calc_accel_override(a_ego, a_target, v_ego, v_target):
+    return 1.
+
+  @staticmethod
   def compute_gb(accel, speed):
     raise NotImplementedError
 

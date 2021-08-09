@@ -168,7 +168,6 @@ class CarController():
     # This is needed otherwise accel to decel is not smooth
     #pcm_accel = int(clip(throttle_mult*apply_accel, 0.0, 1.0) * 0xc6)
     pcm_accel = int(1.0 * 0xc6)
-
     if not CS.CP.openpilotLongitudinalControl:
       if (frame % 2) == 0:
         idx = frame // 2

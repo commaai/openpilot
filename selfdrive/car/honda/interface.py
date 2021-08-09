@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-from common.numpy_fast import interp
 from cereal import car
 from panda import Panda
+from common.numpy_fast import interp
 from common.params import Params
 from selfdrive.config import Conversions as CV
-from selfdrive.car.honda.values import CruiseButtons, CAR, HONDA_BOSCH, HONDA_BOSCH_ALT_BRAKE_SIGNAL
+from selfdrive.car.honda.values import CarControllerParams, CruiseButtons, CAR, HONDA_BOSCH, HONDA_BOSCH_ALT_BRAKE_SIGNAL
 from selfdrive.car.honda.hondacan import disable_radar
 from selfdrive.car import STD_CARGO_KG, CivicParams, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
@@ -48,6 +48,38 @@ class CarInterface(CarInterfaceBase):
   @staticmethod
   def compute_gb(accel, speed): # pylint: disable=method-hidden
     raise NotImplementedError
+
+  @staticmethod
+  def calc_accel_override(a_ego, a_target, v_ego, v_target):
+
+    # normalized max accel. Allowing max accel at low speed causes speed overshoots
+    max_accel_bp = [10, 20]    # m/s
+    max_accel_v = [0.714, 1.0]  # unit of max accel
+    max_accel = interp(v_ego, max_accel_bp, max_accel_v)
+
+    # limit the pcm accel cmd if:
+    # - v_ego exceeds v_target, or
+    # - a_ego exceeds a_target and v_ego is close to v_target
+
+    eA = a_ego - a_target
+    valuesA = [1.0, 0.1]
+    bpA = [0.3, 1.1]
+
+    eV = v_ego - v_target
+    valuesV = [1.0, 0.1]
+    bpV = [0.0, 0.5]
+
+    valuesRangeV = [1., 0.]
+    bpRangeV = [-1., 0.]
+
+    # only limit if v_ego is close to v_target
+    speedLimiter = interp(eV, bpV, valuesV)
+    accelLimiter = max(interp(eA, bpA, valuesA), interp(eV, bpRangeV, valuesRangeV))
+
+    # accelOverride is more or less the max throttle allowed to pcm: usually set to a constant
+    # unless aTargetMax is very high and then we scale with it; this help in quicker restart
+
+    return float(max(max_accel, a_target / CarControllerParams.ACCEL_MAX)) * min(speedLimiter, accelLimiter)
 
   @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=[]):  # pylint: disable=dangerous-default-value
