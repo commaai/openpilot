@@ -89,7 +89,7 @@ class CarController():
     self.params = CarControllerParams(CP)
 
   def update(self, enabled, CS, frame, actuators,
-             pcm_cancel_cmd,
+             pcm_speed, pcm_override, pcm_cancel_cmd, pcm_accel,
              hud_v_cruise, hud_show_lanes, hud_show_car, hud_alert):
 
     P = self.params
@@ -190,7 +190,6 @@ class CarController():
           can_sends.extend(hondacan.create_acc_commands(self.packer, enabled, apply_accel, apply_gas, idx, stopping, starting, CS.CP.carFingerprint))
 
         else:
-          pcm_override = True
           wind_brake = interp(CS.out.vEgo, [0.0, 1.0, 20.0], [0.0, 0.0, 0.1])
           apply_brake = clip(self.brake_last - wind_brake, 0.0, 1.0)
           apply_brake = int(clip(apply_brake * P.BRAKE_MAX, 0, P.BRAKE_MAX - 1))
