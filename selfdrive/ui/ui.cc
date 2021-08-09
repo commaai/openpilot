@@ -346,6 +346,16 @@ void Device::updateBrightness(const UIState &s) {
     brightness = 0;
   }
 
+  // CIE 1931 - https://www.photonstophotos.net/GeneralTopics/Exposure/Psychometric_Lightness_and_Gamma.htm
+  if (Hardware::TICI()) { // TODO: check if C2 brightness setting is linear or already compensated
+    if (brightness <= 8) {
+      brightness = (brightness / 903.3);
+    } else {
+      brightness = std::pow((brightness + 16.0) / 116.0, 3.0);
+    }
+    brightness *= 100.0;
+  }
+
   if (brightness != last_brightness) {
     std::thread{Hardware::set_brightness, brightness}.detach();
   }
