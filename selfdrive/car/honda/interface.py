@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import numpy as np
+from common.numpy_fast import interp
 from cereal import car
 from panda import Panda
 from common.params import Params
@@ -28,56 +28,19 @@ def compute_gb_honda_nidec(accel, speed):
   return float(accel) / 4.8 - creep_brake
 
 
-def get_compute_gb_acura():
-  # generate a function that takes in [desired_accel, current_speed] -> [-1.0, 1.0]
-  # where -1.0 is max brake and 1.0 is max gas
-  # see debug/dump_accel_from_fiber.py to see how those parameters were generated
-  w0 = np.array([[ 1.22056961, -0.39625418,  0.67952657],
-                 [ 1.03691769,  0.78210306, -0.41343188]])
-  b0 = np.array([ 0.01536703, -0.14335321, -0.26932889])
-  w2 = np.array([[-0.59124422,  0.42899439,  0.38660881],
-                 [ 0.79973811,  0.13178682,  0.08550351],
-                 [-0.15651935, -0.44360259,  0.76910877]])
-  b2 = np.array([ 0.15624429,  0.02294923, -0.0341086 ])
-  w4 = np.array([[-0.31521443],
-                 [-0.38626176],
-                 [ 0.52667892]])
-  b4 = np.array([-0.02922216])
-
-  def compute_output(dat, w0, b0, w2, b2, w4, b4):
-    m0 = np.dot(dat, w0) + b0
-    m0 = leakyrelu(m0, 0.1)
-    m2 = np.dot(m0, w2) + b2
-    m2 = leakyrelu(m2, 0.1)
-    m4 = np.dot(m2, w4) + b4
-    return m4
-
-  def leakyrelu(x, alpha):
-    return np.maximum(x, alpha * x)
-
-  def _compute_gb_acura(accel, speed):
-    # linearly extrap below v1 using v1 and v2 data
-    v1 = 5.
-    v2 = 10.
-    dat = np.array([accel, speed])
-    if speed > 5.:
-      m4 = compute_output(dat, w0, b0, w2, b2, w4, b4)
-    else:
-      dat[1] = v1
-      m4v1 = compute_output(dat, w0, b0, w2, b2, w4, b4)
-      dat[1] = v2
-      m4v2 = compute_output(dat, w0, b0, w2, b2, w4, b4)
-      m4 = (speed - v1) * (m4v2 - m4v1) / (v2 - v1) + m4v1
-    return float(m4)
-
-  return _compute_gb_acura
+def compute_gb_acura(accel, speed):
+  GB_VALUES = [-2., 0.0, 0.8]
+  GB_BP = [-5., 0.0, 4.0]
+  return interp(accel, GB_BP, GB_VALUES)
 
 
 class CarInterface(CarInterfaceBase):
   def __init__(self, CP, CarController, CarState):
     super().__init__(CP, CarController, CarState)
 
-    if self.CS.CP.carFingerprint in HONDA_BOSCH:
+    if self.CS.CP.carFingerprint == CAR.ACURA_ILX:
+      self.compute_gb = compute_gb_acura
+    elif self.CS.CP.carFingerprint in HONDA_BOSCH:
       self.compute_gb = compute_gb_honda_bosch
     else:
       self.compute_gb = compute_gb_honda_nidec
