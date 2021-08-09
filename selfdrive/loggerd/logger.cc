@@ -119,8 +119,8 @@ Logger::Logger(const std::string& route_path, int part, kj::ArrayPtr<kj::byte> i
   const std::string qlog_path = segment_path + "/qlog.bz2";
 
   // mkpath & create lock file.
-  bool ret = util::create_directories(log_path, 0775);
-  assert(ret == true);
+  int err = logger_mkpath((char*)log_path.c_str());
+  assert(err == 0);
   lock_path = log_path + ".lock";
   int flock = ::open(lock_path.c_str(), O_RDWR | O_CREAT);
   assert(flock != -1);

@@ -1,12 +1,9 @@
 #include <ftw.h>
 #include <sys/resource.h>
-#include <unistd.h>
 
 #include <atomic>
 #include <cassert>
 #include <condition_variable>
-#include <cstdint>
-#include <cstdlib>
 #include <cstring>
 #include <mutex>
 #include <string>
