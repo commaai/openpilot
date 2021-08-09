@@ -163,6 +163,7 @@ TEST_CASE("logger") {
     do_exit = true;
     do_exit.signal = 1;
     logger_close(&logger, &do_exit);
+    REQUIRE(logger.cur_handle->refcnt == 0);
 
     for (int i = 0; i < segment_cnt; ++i) {
       verify_segment(log_root + "/" + logger.route_name, i, segment_cnt, event_cnt[i]);
