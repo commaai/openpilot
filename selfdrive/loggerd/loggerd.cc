@@ -4,7 +4,6 @@
 #include <atomic>
 #include <cassert>
 #include <condition_variable>
-#include <cstring>
 #include <mutex>
 #include <string>
 #include <thread>
@@ -143,7 +142,6 @@ void encoder_thread(const LogCameraInfo &cam_info) {
   set_thread_name(cam_info.filename);
 
   int cnt = 0, encode_idx = 0;
-  std::shared_ptr<Logger> lh = NULL;
   std::vector<Encoder *> encoders;
   VisionIpcClient vipc_client = VisionIpcClient("camerad", cam_info.stream_type, false);
 
@@ -169,6 +167,7 @@ void encoder_thread(const LogCameraInfo &cam_info) {
       }
     }
 
+    std::shared_ptr<Logger> lh = nullptr;
     while (!do_exit) {
       VisionIpcBufExtra extra;
       VisionBuf* buf = vipc_client.recv(&extra);

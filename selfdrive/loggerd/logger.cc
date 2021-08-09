@@ -121,10 +121,8 @@ Logger::Logger(const std::string& route_path, int part, kj::ArrayPtr<kj::byte> i
   // mkpath & create lock file.
   int err = logger_mkpath((char*)log_path.c_str());
   assert(err == 0);
-  lock_path = log_path + ".lock";
-  int flock = ::open(lock_path.c_str(), O_RDWR | O_CREAT);
-  assert(flock != -1);
-  close(flock);
+  lock_path = segment_path + "/log.lock";
+  std::ofstream{lock_path};
 
   log = std::make_unique<BZFile>(log_path.c_str());
   qlog = std::make_unique<BZFile>(qlog_path.c_str());
