@@ -1,5 +1,7 @@
 #include "selfdrive/common/util.h"
 
+#include <sys/stat.h>
+
 #include <cassert>
 #include <cerrno>
 #include <cstring>
@@ -113,8 +115,8 @@ std::string readlink(const std::string &path) {
 }
 
 bool file_exists(const std::string& fn) {
-  std::ifstream f(fn);
-  return f.good();
+  struct stat st = {};
+  return stat(fn.c_str(), &st) != -1;
 }
 
 std::string getenv(const char* key, const char* default_val) {
