@@ -318,21 +318,28 @@ float set_exposure_target(const CameraBuf *b, int x_start, int x_end, int x_skip
   return lum_med / 256.0;
 }
 
-static void road_cam_auto_exposure(CameraState *c) {
-#ifndef QCOM2
-  const ExpRect rect = {290, 850, 1, 322, 636, 1};
-  int analog_gain = -1;
-#else
-  const ExpRect = (c == &s->wide_road_cam) ? {96, 1830, 2, 250, 774, 2}
-                                           : {96, 1830, 2, 160, 1146, 2};
-  int analog_gain = (int)c->analog_gain;
+static void road_cam_auto_exposure(CameraServer *s, CameraState *c, int cnt) {
+#ifdef QCOM
+  if (cnt % 3 == 0) {
+    const int x = 290, y = 322, width = 560, height = 314;
+    const int skip = 1;
+    camera_autoexposure(c, set_exposure_target(&c->buf, x, x + width, skip, y, y + height, skip));
+  }
+#elif QCOM2
+  const auto [x, y, w, h] = (c == &s->wide_road_cam) ? std::tuple(96, 250, 1734, 524) : std::tuple(96, 160, 1734, 986);
+  const int skip = 2;
+  camera_autoexposure(c, set_exposure_target(&c->buf, x, x + w, skip, y, y + h, skip));
+}
 #endif
-  camera_autoexposure(c, set_exposure_target(&c->buf, rect, analog_gain, false, false));
 }
 
-static void driver_cam_auto_exposure(CameraState *c) {
+static void driver_cam_auto_exposure(CameraState *c, int cnt) {
   static const bool is_rhd = Params().getBool("IsRHD");
+  struct ExpRect {int x1, x2, x_skip, y1, y2, y_skip;};
+  static int j = Hardware::TICI() ? 1 : 3;
   static SubMaster sm({"driverState"});
+
+  if ((cnt % j) != 0) return;
 
   const CameraBuf *b = &c->buf;
 
@@ -364,21 +371,6 @@ static void driver_cam_auto_exposure(CameraState *c) {
   }
 
   camera_autoexposure(c, set_exposure_target(b, rect.x1, rect.x2, rect.x_skip, rect.y1, rect.y2, rect.y_skip));
-}
-
-void common_process_driver_camera(PubMaster *pm, CameraState *c, int cnt) {
-  int j = Hardware::TICI() ? 1 : 3;
-  if (cnt % j == 0) {
-    driver_cam_auto_exposure(c);
-  }
-  MessageBuilder msg;
-  auto framed = msg.initEvent().initDriverCameraState();
-  framed.setFrameType(cereal::FrameData::FrameType::FRONT);
-  fill_frame_data(framed, c->buf.cur_frame_data);
-  if (env_send_driver) {
-    framed.setImage(get_frame_image(&c->buf));
-  }
-  pm->send("driverCameraState", msg);
 }
 
 // CameraServerBase
@@ -470,9 +462,10 @@ void CameraServerBase::process_camera(CameraState *cs, process_thread_cb callbac
       pm->send(cam_state_name, msg);
 
       // auto exposure
-      if (cnt % 3 == 0) {
-        cs == &server->driver_cam ? driver_cam_auto_exposure(cs)
-                                  : road_cam_auto_exposure(cs);
+      if (cs == &server->driver_cam) {
+        driver_cam_auto_exposure(cs, cnt);
+      } else {
+        road_cam_auto_exposure(server, cs, cnt);
       }
 
       // pub thumbnail
