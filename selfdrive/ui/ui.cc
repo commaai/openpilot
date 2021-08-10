@@ -360,7 +360,6 @@ void Device::updateBrightness(const UIState &s) {
     brightness = 0;
   }
 
-
   if (brightness != last_brightness) {
     std::thread{Hardware::set_brightness, brightness}.detach();
   }
