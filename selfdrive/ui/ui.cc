@@ -344,14 +344,12 @@ void Device::updateBrightness(const UIState &s) {
   float clipped_brightness = std::min(100.0f, (s.scene.light_sensor * brightness_m) + brightness_b);
 
   // CIE 1931 - https://www.photonstophotos.net/GeneralTopics/Exposure/Psychometric_Lightness_and_Gamma.htm
-  if (Hardware::TICI()) { // TODO: check if C2 brightness setting is linear or already compensated
-    if (clipped_brightness <= 8) {
-      clipped_brightness = (clipped_brightness / 903.3);
-    } else {
-      clipped_brightness = std::pow((clipped_brightness + 16.0) / 116.0, 3.0);
-    }
-    clipped_brightness *= 100.0;
+  if (clipped_brightness <= 8) {
+    clipped_brightness = (clipped_brightness / 903.3);
+  } else {
+    clipped_brightness = std::pow((clipped_brightness + 16.0) / 116.0, 3.0);
   }
+  clipped_brightness *= 100.0;
 
   if (!s.scene.started) {
     clipped_brightness = BACKLIGHT_OFFROAD;
