@@ -5,6 +5,7 @@
 #define FRAME_BUF_COUNT 16
 
 typedef struct CameraState {
+  CameraType cam_type;
   int camera_num;
   CameraInfo ci;
 
@@ -19,6 +20,6 @@ public:
   CameraServer();
   void run() override;
 
-  CameraState road_cam = {};
-  CameraState driver_cam = {};
+  CameraState road_cam = {.cam_type = RoadCam};
+  CameraState driver_cam = {.cam_type = DriverCam};
 };

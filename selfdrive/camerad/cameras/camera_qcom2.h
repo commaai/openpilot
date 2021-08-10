@@ -12,6 +12,7 @@
 #define FRAME_BUF_COUNT 4
 #define DEBAYER_LOCAL_WORKSIZE 16
 typedef struct CameraState {
+  CameraType cam_type;
   CameraServer *multi_cam_state;
   CameraInfo ci;
 
@@ -69,7 +70,7 @@ public:
   int cdm_iommu = -1;
   pthread_mutex_t isp_lock;
 
-  CameraState road_cam = {};
-  CameraState wide_road_cam = {};
-  CameraState driver_cam = {};
+  CameraState road_cam = {.cam_type = RoadCam};
+  CameraState wide_road_cam = {.cam_type = WideRoadCam};
+  CameraState driver_cam = {.cam_type = DriverCam};
 };

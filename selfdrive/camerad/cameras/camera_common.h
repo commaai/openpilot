@@ -40,6 +40,12 @@
 
 typedef void (*release_cb)(void *cookie, int buf_idx);
 
+enum CameraType {
+  RoadCam = 0,
+  DriverCam,
+  WideRoadCam
+};
+
 typedef struct CameraInfo {
   int frame_width, frame_height;
   int frame_stride;

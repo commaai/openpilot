@@ -40,6 +40,7 @@ typedef struct StreamState {
 } StreamState;
 
 typedef struct CameraState {
+  CameraType cam_type;
   int camera_num;
   int camera_id;
 
@@ -101,8 +102,8 @@ public:
   VisionBuf focus_bufs[FRAME_BUF_COUNT] = {};
   VisionBuf stats_bufs[FRAME_BUF_COUNT] = {};
 
-  CameraState road_cam = {};
-  CameraState driver_cam = {};
+  CameraState road_cam = {.cam_type = RoadCam};
+  CameraState driver_cam = {.cam_type = DriverCam};
 };
 
 void actuator_move(CameraState *s, uint16_t target);

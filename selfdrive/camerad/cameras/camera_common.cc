@@ -49,15 +49,17 @@ static cl_program build_debayer_program(cl_device_id device_id, cl_context conte
 
 void CameraBuf::init(CameraServer* server, CameraState *s, int frame_cnt, release_cb release_callback) {
   vipc_server = server->vipc_server;
-  if (s == &server->road_cam) {
+  if (s->cam_type == RoadCam) {
     this->rgb_type = VISION_STREAM_RGB_BACK;
     this->yuv_type = VISION_STREAM_YUV_BACK;
-  } else if (s == &server->driver_cam) {
+  } else if (s->cam_type == DriverCam) {
     this->rgb_type = VISION_STREAM_RGB_FRONT;
     this->yuv_type = VISION_STREAM_YUV_FRONT;
-  } else {
+  } else if (s->cam_type == WideRoadCam) {
     this->rgb_type = VISION_STREAM_RGB_WIDE;
     this->yuv_type = VISION_STREAM_YUV_WIDE;
+  } else {
+    assert(0);
   }
 
   this->release_callback = release_callback;
@@ -318,19 +320,18 @@ float set_exposure_target(const CameraBuf *b, int x_start, int x_end, int x_skip
   return lum_med / 256.0;
 }
 
-static void road_cam_auto_exposure(CameraServer *s, CameraState *c, int cnt) {
-#ifdef QCOM
-  if (cnt % 3 == 0) {
-    const int x = 290, y = 322, width = 560, height = 314;
-    const int skip = 1;
-    camera_autoexposure(c, set_exposure_target(&c->buf, x, x + width, skip, y, y + height, skip));
+static void road_cam_auto_exposure(CameraState *c, int cnt) {
+  if (Hardware::EON()) {
+    if (cnt % 3 == 0) {
+      const int x = 290, y = 322, width = 560, height = 314;
+      const int skip = 1;
+      camera_autoexposure(c, set_exposure_target(&c->buf, x, x + width, skip, y, y + height, skip));
+    }
+  } else if (Hardware::TICI()) {
+    const auto [x, y, w, h] = (c->cam_type == WideRoadCam) ? std::tuple(96, 250, 1734, 524) : std::tuple(96, 160, 1734, 986);
+    const int skip = 2;
+    camera_autoexposure(c, set_exposure_target(&c->buf, x, x + w, skip, y, y + h, skip));
   }
-#elif QCOM2
-  const auto [x, y, w, h] = (c == &s->wide_road_cam) ? std::tuple(96, 250, 1734, 524) : std::tuple(96, 160, 1734, 986);
-  const int skip = 2;
-  camera_autoexposure(c, set_exposure_target(&c->buf, x, x + w, skip, y, y + h, skip));
-}
-#endif
 }
 
 static void driver_cam_auto_exposure(CameraState *c, int cnt) {
@@ -374,6 +375,7 @@ static void driver_cam_auto_exposure(CameraState *c, int cnt) {
 }
 
 // CameraServerBase
+ExitHandler do_exit;
 
 CameraServerBase::CameraServerBase() {
   device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
@@ -384,13 +386,11 @@ CameraServerBase::CameraServerBase() {
 #else
   context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
 #endif
-
-  pm = new PubMaster({"roadCameraState", "driverCameraState", "thumbnail"
-#ifdef QCOM2
-    , "wideRoadCameraState"
-#endif
-  });
- 
+  std::vector services = {"roadCameraState", "driverCameraState", "thumbnail"};
+  if (Hardware::TICI()) {
+    services.push_back("wideRoadCameraState");
+  }
+  pm = new PubMaster(services);
   vipc_server = new VisionIpcServer("camerad", device_id, context);
 }
 
@@ -411,21 +411,18 @@ void CameraServerBase::start_process_thread(CameraState *cs, process_thread_cb c
   camera_threads.push_back(std::thread(&CameraServerBase::process_camera, this, cs, callback, is_frame_stream));
 }
 
-ExitHandler do_exit;
-
 void CameraServerBase::process_camera(CameraState *cs, process_thread_cb callback, bool is_frame_stream) {
-  CameraServer *server = (CameraServer *)this;
   const char *thread_name, *cam_state_name;
   bool set_image = false, set_transform = false, pub_thumbnail = false;
   ::cereal::FrameData::Builder (cereal::Event::Builder::*init_cam_state_func)() = nullptr;
 
-  if (cs == &server->road_cam) {
+  if (cs->cam_type == RoadCam) {
     thread_name = "RoadCamera";
     cam_state_name = "roadCameraState";
     set_image = getenv("SEND_ROAD") != NULL;
     pub_thumbnail = set_transform = true;
     init_cam_state_func = &cereal::Event::Builder::initRoadCameraState;
-  } else if (cs == &server->driver_cam) {
+  } else if (cs->cam_type == DriverCam) {
     thread_name = "DriverCamera";
     cam_state_name = "driverCameraState";
     set_image = getenv("SEND_DRIVER") != NULL;
@@ -457,16 +454,13 @@ void CameraServerBase::process_camera(CameraState *cs, process_thread_cb callbac
         framed.setImage(get_frame_image(&cs->buf));
       }
       if (callback) {
-        callback(server, cs, framed, cnt);
+        callback((CameraServer*)this, cs, framed, cnt);
       }
       pm->send(cam_state_name, msg);
 
       // auto exposure
-      if (cs == &server->driver_cam) {
-        driver_cam_auto_exposure(cs, cnt);
-      } else {
-        road_cam_auto_exposure(server, cs, cnt);
-      }
+      (cs->cam_type == DriverCam) ? driver_cam_auto_exposure(cs, cnt)
+                                  : road_cam_auto_exposure(cs, cnt);
 
       // pub thumbnail
       if (pub_thumbnail && cnt % 100 == 3) {
