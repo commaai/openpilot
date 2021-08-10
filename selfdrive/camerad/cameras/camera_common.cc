@@ -296,8 +296,8 @@ float set_exposure_target(const CameraBuf *b, int x_start, int x_end, int x_skip
   const uint8_t *pix_ptr = b->cur_yuv_buf->y;
 
   unsigned int lum_total = 0;
-  for (int y = rect.y1; y < rect.y2; y += rect.y_skip) {
-    for (int x = rect.x1; x < rect.x2; x += rect.x_skip) {
+  for (int y = y_start; y < y_end; y += y_skip) {
+    for (int x = x_start; x < x_end; x += x_skip) {
       uint8_t lum = pix_ptr[(y * b->rgb_width) + x];
       lum_binning[lum]++;
       lum_total += 1;
