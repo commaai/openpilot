@@ -243,8 +243,8 @@ static void update_status(UIState *s) {
 
 QUIState::QUIState(QObject *parent) : QObject(parent) {
   ui_state.sm = std::make_unique<SubMaster, const std::initializer_list<const char *>>({
-    "modelV2", "controlsState", "liveCalibration", "deviceState", "roadCameraState",
-    "pandaState", "carParams", "driverMonitoringState", "sensorEvents", "carState", "liveLocationKalman",
+    "modelV2", "controlsState", "liveCalibration", "deviceState", 
+    "pandaState", "carParams", "driverMonitoringState", "carState", "liveLocationKalman",
   });
 
   ui_state.fb_w = vwp_w;
