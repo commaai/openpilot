@@ -72,6 +72,7 @@ if arch != 'aarch64' and GetOption('setup'):
   installers = [
     ("openpilot", "release3"),
     ("openpilot_test", "release3-staging"),
+    ("openpilot_nightly", "master-ci"),
     ("openpilot_internal", "master"),
     ("dashcam", "dashcam3"),
     ("dashcam_test", "dashcam3-staging"),
