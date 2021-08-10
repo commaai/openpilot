@@ -1076,7 +1076,6 @@ static void setup_self_recover(CameraState *c, const uint16_t *lapres, size_t la
   c->self_recover.store(self_recover);
 }
 
-// called by CameraServerBase::process_camera
 void process_road_camera_cb(CameraServer *s, CameraState *c, cereal::FrameData::Builder &framed, int cnt) {
   const CameraBuf *b = &c->buf;
   const int roi_id = cnt % std::size(s->lapres);  // rolling roi

@@ -4,7 +4,6 @@
 
 #include <cassert>
 #include <cstdio>
-#include <chrono>
 #include <thread>
 
 #include "libyuv.h"
@@ -49,19 +48,11 @@ static cl_program build_debayer_program(cl_device_id device_id, cl_context conte
 
 void CameraBuf::init(CameraServer* server, CameraState *s, int frame_cnt, release_cb release_callback) {
   vipc_server = server->vipc_server;
-  if (s->cam_type == RoadCam) {
-    this->rgb_type = VISION_STREAM_RGB_BACK;
-    this->yuv_type = VISION_STREAM_YUV_BACK;
-  } else if (s->cam_type == DriverCam) {
-    this->rgb_type = VISION_STREAM_RGB_FRONT;
-    this->yuv_type = VISION_STREAM_YUV_FRONT;
-  } else if (s->cam_type == WideRoadCam) {
-    this->rgb_type = VISION_STREAM_RGB_WIDE;
-    this->yuv_type = VISION_STREAM_YUV_WIDE;
-  } else {
-    assert(0);
-  }
-
+  std::pair<VisionStreamType, VisionStreamType> stream_types[] = {
+      [RoadCam] = {VISION_STREAM_RGB_BACK, VISION_STREAM_YUV_BACK},
+      [DriverCam] = {VISION_STREAM_RGB_FRONT, VISION_STREAM_YUV_FRONT},
+      [WideRoadCam] = {VISION_STREAM_RGB_WIDE, VISION_STREAM_YUV_WIDE}};
+  std::tie(rgb_type, yuv_type) = stream_types[s->cam_type];
   this->release_callback = release_callback;
 
   const CameraInfo *ci = &s->ci;
@@ -188,7 +179,7 @@ void CameraBuf::queue(size_t buf_idx) {
 
 // common functions
 
-static void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data) {
+void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data) {
   framed.setFrameId(frame_data.frame_id);
   framed.setTimestampEof(frame_data.timestamp_eof);
   framed.setTimestampSof(frame_data.timestamp_sof);
@@ -360,14 +351,17 @@ static void driver_cam_auto_exposure(CameraState *c, int cnt) {
 
   static ExpRect rect = def_rect;
   // use driver face crop for AE
-  if (Hardware::EON() && sm.updated("driverState")) {
-    if (auto state = sm["driverState"].getDriverState(); state.getFaceProb() > 0.4) {
-      auto face_position = state.getFacePosition();
-      int x = is_rhd ? 0 : frame_width - (0.5 * frame_height);
-      x += (face_position[0] * (is_rhd ? -1.0 : 1.0) + 0.5) * (0.5 * frame_height) + x_offset;
-      int y = (face_position[1] + 0.5) * frame_height + y_offset;
-      rect = {std::max(0, x - 72), std::min(b->rgb_width - 1, x + 72), 2,
-              std::max(0, y - 72), std::min(b->rgb_height - 1, y + 72), 1};
+  if (Hardware::EON()) {
+    sm.update(0);
+    if (sm.updated("driverState")) {
+      if (auto state = sm["driverState"].getDriverState(); state.getFaceProb() > 0.4) {
+        auto face_position = state.getFacePosition();
+        int x = is_rhd ? 0 : frame_width - (0.5 * frame_height);
+        x += (face_position[0] * (is_rhd ? -1.0 : 1.0) + 0.5) * (0.5 * frame_height) + x_offset;
+        int y = (face_position[1] + 0.5) * frame_height + y_offset;
+        rect = {std::max(0, x - 72), std::min(b->rgb_width - 1, x + 72), 2,
+                std::max(0, y - 72), std::min(b->rgb_height - 1, y + 72), 1};
+      }
     }
   }
 
@@ -386,7 +380,7 @@ CameraServerBase::CameraServerBase() {
 #else
   context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
 #endif
-  std::vector services = {"roadCameraState", "driverCameraState", "thumbnail"};
+  std::vector<const char*> services = {"roadCameraState", "driverCameraState", "thumbnail"};
   if (Hardware::TICI()) {
     services.push_back("wideRoadCameraState");
   }
@@ -413,41 +407,39 @@ void CameraServerBase::start_process_thread(CameraState *cs, process_thread_cb c
 
 void CameraServerBase::process_camera(CameraState *cs, process_thread_cb callback) {
   const char *thread_name, *cam_state_name;
-  bool set_image = false, set_transform = false, pub_thumbnail = false;
+  bool set_image = false;
   ::cereal::FrameData::Builder (cereal::Event::Builder::*init_cam_state_func)() = nullptr;
-  const bool process_camera_buffer = Hardware::EON() || Hardware::TICI() || util::getenv("USE_WEBCAM") != "";
+  // don't process camera buffer for frame stream
+  const bool process_camera_buffer = Hardware::EON() || Hardware::TICI() || getenv("USE_WEBCAM") != nullptr;
 
   if (cs->cam_type == RoadCam) {
     thread_name = "RoadCamera";
     cam_state_name = "roadCameraState";
-    set_image = getenv("SEND_ROAD") != NULL;
-    pub_thumbnail = set_transform = true;
+    set_image = getenv("SEND_ROAD") != nullptr;
     init_cam_state_func = &cereal::Event::Builder::initRoadCameraState;
   } else if (cs->cam_type == DriverCam) {
     thread_name = "DriverCamera";
     cam_state_name = "driverCameraState";
-    set_image = getenv("SEND_DRIVER") != NULL;
+    set_image = getenv("SEND_DRIVER") != nullptr;
     init_cam_state_func = &cereal::Event::Builder::initDriverCameraState;
   } else {
     thread_name = "WideRoadCamera";
     cam_state_name = "wideRoadCameraState";
-    set_image = getenv("SEND_WIDE_ROAD") != NULL;
+    set_image = getenv("SEND_WIDE_ROAD") != nullptr;
     init_cam_state_func = &cereal::Event::Builder::initWideRoadCameraState;
   }
-
   set_thread_name(thread_name);
 
-  uint32_t cnt = 0;
-  while (!do_exit) {
+  for (uint32_t cnt = 0; !do_exit; ++cnt) {
     if (!cs->buf.acquire()) continue;
 
     if (process_camera_buffer) {
       MessageBuilder msg;
-      cereal::FrameData::Builder framed = (msg.initEvent().*init_cam_state_func)();
 
       // fill and send FrameData
+      cereal::FrameData::Builder framed = (msg.initEvent().*init_cam_state_func)();
       fill_frame_data(framed, cs->buf.cur_frame_data);
-      if (set_transform) {
+      if (cs->cam_type == RoadCam) {
         framed.setTransform(cs->buf.yuv_transform.v);
       }
       if (set_image) {
@@ -461,15 +453,13 @@ void CameraServerBase::process_camera(CameraState *cs, process_thread_cb callbac
       // auto exposure
       (cs->cam_type == DriverCam) ? driver_cam_auto_exposure(cs, cnt)
                                   : road_cam_auto_exposure(cs, cnt);
-
       // pub thumbnail
-      if (pub_thumbnail && cnt % 100 == 3) {
+      if (cs->cam_type == RoadCam && cnt % 100 == 3) {
         // this takes 10ms???
         publish_thumbnail(pm, &(cs->buf));
       }
     }
 
     cs->buf.release();
-    ++cnt;
   }
 }
