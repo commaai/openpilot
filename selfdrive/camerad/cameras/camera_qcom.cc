@@ -1077,7 +1077,7 @@ static void setup_self_recover(CameraState *c, const uint16_t *lapres, size_t la
 }
 
 // called by CameraServerBase::process_camera
-void process_road_camera(CameraServer *s, CameraState *c, cereal::FrameData::Builder &framed, int cnt) {
+void process_road_camera_cb(CameraServer *s, CameraState *c, cereal::FrameData::Builder &framed, int cnt) {
   const CameraBuf *b = &c->buf;
   const int roi_id = cnt % std::size(s->lapres);  // rolling roi
   s->lapres[roi_id] = s->lap_conv->Update(b->q, (uint8_t *)b->cur_rgb_buf->addr, roi_id);
@@ -1098,7 +1098,7 @@ CameraServer::CameraServer() : CameraServerBase() {
 
 void CameraServer::run() {
   camera_threads.push_back(std::thread(ops_thread, this));
-  start_process_thread(&road_cam, process_road_camera);
+  start_process_thread(&road_cam, process_road_camera_cb);
   start_process_thread(&driver_cam);
 
   CameraState* cameras[2] = {&road_cam, &driver_cam};

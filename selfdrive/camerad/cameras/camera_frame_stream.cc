@@ -82,7 +82,7 @@ CameraServer::CameraServer() : CameraServerBase() {
 }
 
 void CameraServer::run() {
-  start_process_thread(&road_cam, nullptr, true);
+  start_process_thread(&road_cam);
   set_thread_name("frame_streaming");
   run_frame_stream(road_cam, "roadCameraState");
 }

@@ -337,8 +337,8 @@ static void road_cam_auto_exposure(CameraState *c, int cnt) {
 static void driver_cam_auto_exposure(CameraState *c, int cnt) {
   static const bool is_rhd = Params().getBool("IsRHD");
   struct ExpRect {int x1, x2, x_skip, y1, y2, y_skip;};
-  static int j = Hardware::TICI() ? 1 : 3;
   static SubMaster sm({"driverState"});
+  static int j = Hardware::TICI() ? 1 : 3;
 
   if ((cnt % j) != 0) return;
 
@@ -407,14 +407,15 @@ void CameraServerBase::start() {
   for (auto &t : camera_threads) t.join();
 }
 
-void CameraServerBase::start_process_thread(CameraState *cs, process_thread_cb callback, bool is_frame_stream) {
-  camera_threads.push_back(std::thread(&CameraServerBase::process_camera, this, cs, callback, is_frame_stream));
+void CameraServerBase::start_process_thread(CameraState *cs, process_thread_cb callback) {
+  camera_threads.push_back(std::thread(&CameraServerBase::process_camera, this, cs, callback));
 }
 
-void CameraServerBase::process_camera(CameraState *cs, process_thread_cb callback, bool is_frame_stream) {
+void CameraServerBase::process_camera(CameraState *cs, process_thread_cb callback) {
   const char *thread_name, *cam_state_name;
   bool set_image = false, set_transform = false, pub_thumbnail = false;
   ::cereal::FrameData::Builder (cereal::Event::Builder::*init_cam_state_func)() = nullptr;
+  const bool process_camera_buffer = Hardware::EON() || Hardware::TICI() || util::getenv("USE_WEBCAM") != "";
 
   if (cs->cam_type == RoadCam) {
     thread_name = "RoadCamera";
@@ -440,8 +441,7 @@ void CameraServerBase::process_camera(CameraState *cs, process_thread_cb callbac
   while (!do_exit) {
     if (!cs->buf.acquire()) continue;
 
-    // process camera buffer
-    if (!is_frame_stream) {
+    if (process_camera_buffer) {
       MessageBuilder msg;
       cereal::FrameData::Builder framed = (msg.initEvent().*init_cam_state_func)();
 
