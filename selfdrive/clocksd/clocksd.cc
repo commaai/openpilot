@@ -52,7 +52,7 @@ int main() {
   while (!do_exit && (err = read(timerfd, &expirations, sizeof(expirations)))) {
     if (err < 0) {
       if (errno == EINTR) continue;
-      else break;
+      break;
     }
 #else
   // Just run at 1Hz on apple
