@@ -5,9 +5,11 @@
 #include <QString>
 #include <QTimer>
 
+#include "selfdrive/common/util.h"
+
 namespace CommaApi {
 
-const QString BASE_URL = getenv("API_HOST") != nullptr ? getenv("API_HOST") : "https://api.commadotai.com";
+const QString BASE_URL = util::getenv("API_HOST", "https://api.commadotai.com").c_str();
 QByteArray rsa_sign(const QByteArray &data);
 QString create_jwt(const QJsonObject &payloads = {}, int expiry = 3600);
 
