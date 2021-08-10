@@ -64,11 +64,11 @@ static int get_path_length_idx(const cereal::ModelDataV2::XYZTData::Reader &line
 }
 
 static void update_leads(UIState *s, const cereal::ModelDataV2::Reader &model) {
-  auto leaders = model.getLeads();
+  auto leads = model.getLeads();
   auto model_position = model.getPosition();
   for (int i = 0; i < 2; ++i) {
-    if (leaders[i].getProb() > 0.5) {
-      auto xyva = leaders[i].getXyva();
+    if (leads[i].getProb() > 0.5) {
+      auto xyva = leads[i].getXyva();
       float z = model_position.getZ()[get_path_length_idx(model_position, xyva[0])];
       calib_frame_to_full_frame(s, xyva[0], xyva[1], z + 1.22, &s->scene.lead_vertices[i]);
     }
