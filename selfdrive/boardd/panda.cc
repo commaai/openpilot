@@ -91,20 +91,20 @@ void Panda::cleanup() {
 std::vector<std::string> Panda::list() {
   // init libusb
   std::vector<std::string> serials;
-  libusb_context *ctx = NULL;
-  libusb_device **dev_list = NULL;
+  libusb_context *ctx_tmp = NULL;
+  libusb_device **dev_list_tmp = NULL;
   size_t serials_idx = 0;
-  int err = libusb_init(&ctx);
+  int err = libusb_init(&ctx_tmp);
   if (err != 0) { return serials; }
 
 #if LIBUSB_API_VERSION >= 0x01000106
-  libusb_set_option(ctx, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_INFO);
+  libusb_set_option(ctx_tmp, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_INFO);
 #else
-  libusb_set_debug(ctx, 3);
+  libusb_set_debug(ctx_tmp, 3);
 #endif
 
-  for (size_t i = 0; i < libusb_get_device_list(ctx, &dev_list); ++i) {
-    libusb_device *device = dev_list[i];
+  for (size_t i = 0; i < libusb_get_device_list(ctx_tmp, &dev_list_tmp); ++i) {
+    libusb_device *device = dev_list_tmp[i];
     libusb_device_descriptor desc = { 0 };
 
     libusb_get_device_descriptor(device, &desc);
