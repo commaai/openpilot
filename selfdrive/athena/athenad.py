@@ -22,6 +22,7 @@ from websocket import ABNF, WebSocketTimeoutException, WebSocketException, creat
 import cereal.messaging as messaging
 from cereal.services import service_list
 from common.api import Api
+from common.file_helpers import CallbackReader
 from common.basedir import PERSIST
 from common.params import Params
 from common.realtime import sec_since_boot
@@ -52,19 +53,6 @@ cancelled_uploads: Any = set()
 UploadItem = namedtuple('UploadItem', ['path', 'url', 'headers', 'created_at', 'id', 'retry_count', 'current', 'progress'], defaults=(0, False, 0))
 
 cur_upload_item = None
-
-class CallbackReader:
-  def __init__(self, f, callback, *args):
-    self.f = f
-    self.callback = callback
-    self.cb_args = args
-    self.total_read = 0
-
-  def read(self, *args, **kwargs):
-    chunk = self.f.read(*args, **kwargs)
-    self.total_read += len(chunk)
-    self.callback(*self.cb_args, self.total_read)
-    return chunk
 
 
 def handle_long_poll(ws):
