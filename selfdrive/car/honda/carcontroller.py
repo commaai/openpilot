@@ -170,7 +170,7 @@ class CarController():
       pcm_accel = int(clip(pcm_accel, 0, 1) * 0xc6)
     elif CS.CP.carFingerprint == CAR.ACURA_ILX:
       pcm_speed = CS.out.vEgo + apply_accel
-      pcm_accel = int(clip(pcm_accel, 0, 1) * 0xc6)
+      pcm_accel = int(1.0 * 0xc6)
     else:
       if apply_accel > 0:
         pcm_speed = 100
@@ -180,7 +180,7 @@ class CarController():
         if accel < wind_brake:
           pcm_speed = 0.0
         else:
-          pcm_speed = CS.out.vEgo* clip(1.0 + 3 * wind_brake, 0.0, 1.0)
+          pcm_speed = max(0.0, CS.out.vEgo* clip(1.0 + 3 * wind_brake, 0.0, 1.0))
         pcm_accel = int(0)
 
 
