@@ -174,7 +174,7 @@ class CarController():
         max_accel = interp(CS.out.vEgo, CIVIC_MAX_ACCEL_BP, CIVIC_MAX_ACCEL_VALS)
         pcm_accel = int(clip(apply_accel/max_accel, 0.0, 1.0) * 0xc6)
       else:
-        if accel < wind_brake:
+        if accel < -wind_brake:
           pcm_speed = 0.0
         else:
           pcm_speed = max(0.0, CS.out.vEgo* (1.0 - 3 * wind_brake))
