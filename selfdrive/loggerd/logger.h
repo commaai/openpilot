@@ -62,7 +62,7 @@ typedef cereal::Sentinel::SentinelType SentinelType;
 typedef struct LoggerHandle {
   pthread_mutex_t lock;
   SentinelType end_sentinel_type;
-  bool exit_signal;
+  int exit_signal;
   int refcnt;
   char segment_path[4096];
   char log_path[4096];
