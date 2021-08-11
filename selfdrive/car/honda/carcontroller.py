@@ -11,6 +11,7 @@ from opendbc.can.packer import CANPacker
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 
+#TODO not clear this does anything useful
 def actuator_hystereses(brake, braking, brake_steady, v_ego, car_fingerprint):
   # hyst params
   brake_hyst_on = 0.02     # to activate brakes exceed this value
@@ -161,23 +162,25 @@ class CarController():
     else:
       apply_accel = interp(accel, P.NIDEC_ACCEL_LOOKUP_BP, P.NIDEC_ACCEL_LOOKUP_V)
 
+    # wind brake means both idle drive accel in drive at low speed
+    # and air resistance decel at highspeed
+    wind_brake = interp(CS.out.vEgo, [0.0, 2.3, 20.0], [0.15, 0.0, -0.1])
     if CS.CP.carFingerprint in OLD_NIDEC_LONG_CONTROL:
-      pcm_accel = int(clip(pcm_accel, 0, 1) * 0xc6)
       #pcm_speed = pcm_speed
-      wind_brake = 0.0
+      pcm_accel = int(clip(pcm_accel, 0, 1) * 0xc6)
+    elif CS.CP.carFingerprint == CAR.ACURA_ILX:
+      pcm_speed = CS.out.vEgo + apply_accel
+      pcm_accel = int(clip(pcm_accel, 0, 1) * 0xc6)
     else:
-      wind_brake = interp(CS.out.vEgo, [0.0, 1.0, 20.0], [0.0, 0.0, 0.1])
       if apply_accel > 0:
         pcm_speed = 100
-        CIVIC_MAX_ACCEL_VALS = [0.5, 2.4, 1.4, 0.6]
-        CIVIC_MAX_ACCEL_BP = [0, 4.0, 10., 20.]
-        max_accel = interp(CS.out.vEgo, CIVIC_MAX_ACCEL_BP, CIVIC_MAX_ACCEL_VALS)
+        max_accel = interp(CS.out.vEgo, P.NIDEC_MAX_ACCEL_BP, P.NIDEC_MAX_ACCEL_V)
         pcm_accel = int(clip(apply_accel/max_accel, 0.0, 1.0) * 0xc6)
       else:
-        if accel < -wind_brake:
+        if accel < wind_brake:
           pcm_speed = 0.0
         else:
-          pcm_speed = max(0.0, CS.out.vEgo* (1.0 - 3 * wind_brake))
+          pcm_speed = CS.out.vEgo* clip(1.0 + 3 * wind_brake, 0.0, 1.0)
         pcm_accel = int(0)
 
 
@@ -203,7 +206,7 @@ class CarController():
           can_sends.extend(hondacan.create_acc_commands(self.packer, enabled, apply_accel, apply_gas, idx, stopping, starting, CS.CP.carFingerprint))
 
         else:
-          apply_brake = clip(self.brake_last - wind_brake, 0.0, 1.0)
+          apply_brake = clip(self.brake_last + wind_brake, 0.0, 1.0)
           apply_brake = int(clip(apply_brake * P.BRAKE_MAX, 0, P.BRAKE_MAX - 1))
           pump_on, self.last_pump_ts = brake_pump_hysteresis(apply_brake, self.apply_brake_last, self.last_pump_ts, ts)
           can_sends.append(hondacan.create_brake_command(self.packer, apply_brake, pump_on,
