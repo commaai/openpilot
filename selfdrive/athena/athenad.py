@@ -193,8 +193,13 @@ def setNavDestination(latitude=0, longitude=0):
 
 
 @dispatcher.add_method
-def listDataDirectory():
-  files = [os.path.relpath(os.path.join(dp, f), ROOT) for dp, dn, fn in os.walk(ROOT) for f in fn]
+def listDataDirectory(prefix=None):
+  files = list()
+  for dp, _, fn in os.walk(ROOT):
+    for f in fn:
+      rp = os.path.relpath(os.path.join(dp, f), ROOT)
+      if prefix is None or rp.startswith(prefix):
+        files.append(rp)
   return files
 
 
