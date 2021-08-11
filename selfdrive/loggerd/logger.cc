@@ -102,15 +102,16 @@ kj::Array<capnp::word> logger_build_init_data() {
   init.setGitRemote(params_map["GitRemote"]);
   init.setPassive(params.getBool("Passive"));
   init.setDongleId(params_map["DongleId"]);
-  
+
+  for (auto it = params_map.begin(); it != params_map.end(); ) {
+    it = (params.getKeyType(it->first) & DONT_LOG) ? params_map.erase(it) : std::next(it);
+  }
   auto lparams = init.initParams().initEntries(params_map.size());
   int i = 0;
   for (auto& [key, value] : params_map) {
     auto lentry = lparams[i];
     lentry.setKey(key);
-    if ( !(params.getKeyType(key) & DONT_LOG) ) {
-      lentry.setValue(capnp::Data::Reader((const kj::byte*)value.data(), value.size()));
-    }
+    lentry.setValue(capnp::Data::Reader((const kj::byte*)value.data(), value.size()));
     i++;
 
   }
