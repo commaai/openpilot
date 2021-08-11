@@ -164,7 +164,7 @@ class CarController():
 
     # wind brake means both idle drive accel in drive at low speed
     # and air resistance decel at highspeed
-    wind_brake = interp(CS.out.vEgo, [0.0, 2.3, 20.0], [0.15, 0.0, -0.1])
+    wind_brake = interp(CS.out.vEgo, [0.0, 2.3, 20.0], [0.0, 0.0, -0.1])
     if CS.CP.carFingerprint in OLD_NIDEC_LONG_CONTROL:
       #pcm_speed = pcm_speed
       pcm_accel = int(clip(pcm_accel, 0, 1) * 0xc6)
