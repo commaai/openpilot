@@ -9,6 +9,7 @@ if [ -d /system ]; then
   else # QCOM
     export LD_LIBRARY_PATH="/data/pythonpath/phonelibs/snpe/aarch64/:$LD_LIBRARY_PATH"
   fi
+  export ADSP_LIBRARY_PATH="/data/pythonpath/phonelibs/snpe/dsp/"
 else
   # PC
   export LD_LIBRARY_PATH="$DIR/../../phonelibs/snpe/x86_64-linux-clang:$DIR/../../openpilot/phonelibs/snpe/x86_64:$LD_LIBRARY_PATH"
