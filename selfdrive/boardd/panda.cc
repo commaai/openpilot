@@ -11,7 +11,7 @@
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
 
-Panda::Panda() {
+Panda::Panda(std::string serial) {
   // init libusb
   int err = libusb_init(&ctx);
   if (err != 0) { goto fail; }
@@ -22,7 +22,28 @@ Panda::Panda() {
   libusb_set_debug(ctx, 3);
 #endif
 
-  dev_handle = libusb_open_device_with_vid_pid(ctx, 0xbbaa, 0xddcc);
+  for (size_t i = 0; i < libusb_get_device_list(ctx, &dev_list); ++i) {
+    libusb_device *device = dev_list[i];
+    libusb_device_descriptor desc = { 0 };
+    libusb_get_device_descriptor(device, &desc);
+
+    if (desc.idVendor == 0xbbaa && desc.idProduct == 0xddcc) {
+      libusb_open(device, &dev_handle);
+      unsigned char desc_serial[25];
+      int ret = libusb_get_string_descriptor_ascii(dev_handle, desc.iSerialNumber, desc_serial, sizeof(desc_serial));
+      if (ret < 0) { break; }
+      std::string tmp_serial = std::string(reinterpret_cast<const char*>(desc_serial));
+      
+      if (!serial.empty() && serial.compare(tmp_serial)) {
+        libusb_close(dev_handle);
+        dev_handle = NULL;
+        continue;
+      }
+      usb_serial = tmp_serial;
+      break;
+    }
+  }
+
   if (dev_handle == NULL) { goto fail; }
 
   if (libusb_kernel_driver_active(dev_handle, 0) == 1) {
@@ -65,6 +86,42 @@ void Panda::cleanup() {
   if (ctx) {
     libusb_exit(ctx);
   }
+}
+
+std::vector<std::string> Panda::list() {
+  // init libusb
+  std::vector<std::string> serials;
+  libusb_context *ctx = NULL;
+  libusb_device **dev_list = NULL;
+  size_t serials_idx = 0;
+  int err = libusb_init(&ctx);
+  if (err != 0) { return serials; }
+
+#if LIBUSB_API_VERSION >= 0x01000106
+  libusb_set_option(ctx, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_INFO);
+#else
+  libusb_set_debug(ctx, 3);
+#endif
+
+  for (size_t i = 0; i < libusb_get_device_list(ctx, &dev_list); ++i) {
+    libusb_device *device = dev_list[i];
+    libusb_device_descriptor desc = { 0 };
+
+    libusb_get_device_descriptor(device, &desc);
+    if (desc.idVendor == 0xbbaa && desc.idProduct == 0xddcc) {
+      libusb_device_handle *handle = NULL;
+      libusb_open(device, &handle);
+      unsigned char serial[25];
+      int ret = libusb_get_string_descriptor_ascii(handle, desc.iSerialNumber, serial, sizeof(serial));
+      libusb_close(handle);
+
+      if (ret < 0) { return serials; }
+      serials.resize(serials_idx+1);
+      serials[serials_idx] = (char *)serial;
+      ++serials_idx;
+    }
+  }
+  return serials;
 }
 
 void Panda::handle_usb_issue(int err, const char func[]) {

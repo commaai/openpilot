@@ -44,18 +44,23 @@ class Panda {
  private:
   libusb_context *ctx = NULL;
   libusb_device_handle *dev_handle = NULL;
+  libusb_device **dev_list = NULL;
   std::mutex usb_lock;
   void handle_usb_issue(int err, const char func[]);
   void cleanup();
 
  public:
-  Panda();
+  Panda(std::string serial);
   ~Panda();
 
+  std::string usb_serial;
   std::atomic<bool> connected = true;
   std::atomic<bool> comms_healthy = true;
   cereal::PandaState::PandaType hw_type = cereal::PandaState::PandaType::UNKNOWN;
   bool has_rtc = false;
+
+  // Static functions
+  static std::vector<std::string> list();
 
   // HW communication
   int usb_write(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned int timeout=TIMEOUT);
