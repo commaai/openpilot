@@ -53,6 +53,19 @@ UploadItem = namedtuple('UploadItem', ['path', 'url', 'headers', 'created_at', '
 
 cur_upload_item = None
 
+class CallbackReader:
+  def __init__(self, f, callback, *args):
+    self.f = f
+    self.callback = callback
+    self.cb_args = args
+    self.total_read = 0
+
+  def read(self, *args, **kwargs):
+    chunk = self.f.read(*args, **kwargs)
+    self.total_read += len(chunk)
+    self.callback(*self.cb_args, self.total_read)
+    return chunk
+
 
 def handle_long_poll(ws):
   end_event = threading.Event()
@@ -114,12 +127,20 @@ def upload_handler(end_event):
         continue
 
       try:
-        _do_upload(cur_upload_item)
+        def cb(sz, cur):
+          global cur_upload_item
+          cur_upload_item = cur_upload_item._replace(progress=cur / sz if sz else 1)
+
+        _do_upload(cur_upload_item, cb)
       except (requests.exceptions.Timeout, requests.exceptions.ConnectionError, requests.exceptions.SSLError) as e:
         cloudlog.warning(f"athena.upload_handler.retry {e} {cur_upload_item}")
 
         if cur_upload_item.retry_count < MAX_RETRY_COUNT:
-          item = cur_upload_item._replace(retry_count=cur_upload_item.retry_count + 1, current=False)
+          item = cur_upload_item._replace(
+            retry_count=cur_upload_item.retry_count + 1,
+            progress=0,
+            current=False
+          )
           upload_queue.put_nowait(item)
           cur_upload_item = None
 
@@ -134,9 +155,13 @@ def upload_handler(end_event):
       cloudlog.exception("athena.upload_handler.exception")
 
 
-def _do_upload(upload_item):
+def _do_upload(upload_item, callback=None):
   with open(upload_item.path, "rb") as f:
     size = os.fstat(f.fileno()).st_size
+
+    if callback:
+      f = CallbackReader(f, callback, size)
+
     return requests.put(upload_item.url,
                         data=f,
                         headers={**upload_item.headers, 'Content-Length': str(size)},
