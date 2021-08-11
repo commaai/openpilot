@@ -5,10 +5,10 @@
 
 #include <algorithm>
 #include <climits>
+#include <fstream>
 #include <random>
 #include <string>
 
-#define CATCH_CONFIG_MAIN
 #include "catch2/catch.hpp"
 #include "selfdrive/common/util.h"
 

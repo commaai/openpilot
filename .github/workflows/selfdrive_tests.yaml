@@ -213,7 +213,7 @@ jobs:
                         $UNIT_TEST selfdrive/athena && \
                         $UNIT_TEST selfdrive/thermald && \
                         $UNIT_TEST tools/lib/tests && \
-                        ./selfdrive/common/tests/test_util && \
+                        ./selfdrive/common/tests/test_common && \
                         ./selfdrive/proclogd/tests/test_proclog && \
                         ./selfdrive/camerad/test/ae_gray_test"
     - name: Upload coverage to Codecov
