@@ -18,8 +18,8 @@ class CarControllerParams():
       self.STEER_LOOKUP_BP = [v * -1 for v in CP.lateralParams.torqueBP][1:][::-1] + list(CP.lateralParams.torqueBP)
       self.STEER_LOOKUP_V = [v * -1 for v in CP.lateralParams.torqueV][1:][::-1] + list(CP.lateralParams.torqueV)
 
-      self.NIDEC_ACCEL_LOOKUP_BP = [-1., 0., 1.0]
-      self.NIDEC_ACCEL_LOOKUP_V = [-4.8, 0., 4.8]
+      self.NIDEC_ACCEL_LOOKUP_BP = [-1., 0., .6]
+      self.NIDEC_ACCEL_LOOKUP_V = [-4.8, 0., 2.0]
 
       self.NIDEC_MAX_ACCEL_V = [0.5, 2.4, 1.4, 0.6]
       self.NIDEC_MAX_ACCEL_BP = [0.0, 4.0, 10., 20.]

@@ -162,9 +162,8 @@ class CarController():
     else:
       apply_accel = interp(accel, P.NIDEC_ACCEL_LOOKUP_BP, P.NIDEC_ACCEL_LOOKUP_V)
 
-    # wind brake means both idle drive accel in drive at low speed
-    # and air resistance decel at highspeed
-    wind_brake = interp(CS.out.vEgo, [0.0, 2.3, 20.0], [0.0, 0.0, -0.1])
+    # wind brake from air resistance decel at highspeed
+    wind_brake = interp(CS.out.vEgo, [0.0, 2.3, 20.0], [0.0, 0.0, 0.1])
     if CS.CP.carFingerprint in OLD_NIDEC_LONG_CONTROL:
       #pcm_speed = pcm_speed
       pcm_accel = int(clip(pcm_accel, 0, 1) * 0xc6)
@@ -177,10 +176,8 @@ class CarController():
         max_accel = interp(CS.out.vEgo, P.NIDEC_MAX_ACCEL_BP, P.NIDEC_MAX_ACCEL_V)
         pcm_accel = int(clip(apply_accel/max_accel, 0.0, 1.0) * 0xc6)
       else:
-        if accel < wind_brake:
-          pcm_speed = 0.0
-        else:
-          pcm_speed = max(0.0, CS.out.vEgo* clip(1.0 + 3 * wind_brake, 0.0, 1.0))
+        decel = max(0.0, -accel)
+        pcm_speed = CS.out.vEgo * clip((wind_brake - decel)/max(wind_brake, .01), 0.0, 1.0)
         pcm_accel = int(0)
 
 
@@ -206,7 +203,7 @@ class CarController():
           can_sends.extend(hondacan.create_acc_commands(self.packer, enabled, apply_accel, apply_gas, idx, stopping, starting, CS.CP.carFingerprint))
 
         else:
-          apply_brake = clip(self.brake_last + wind_brake, 0.0, 1.0)
+          apply_brake = clip(self.brake_last - wind_brake, 0.0, 1.0)
           apply_brake = int(clip(apply_brake * P.BRAKE_MAX, 0, P.BRAKE_MAX - 1))
           pump_on, self.last_pump_ts = brake_pump_hysteresis(apply_brake, self.apply_brake_last, self.last_pump_ts, ts)
           can_sends.append(hondacan.create_brake_command(self.packer, apply_brake, pump_on,
