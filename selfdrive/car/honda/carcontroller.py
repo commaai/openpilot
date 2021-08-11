@@ -11,6 +11,7 @@ from opendbc.can.packer import CANPacker
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 
+#TODO not clear this does anything useful
 def actuator_hystereses(brake, braking, brake_steady, v_ego, car_fingerprint):
   # hyst params
   brake_hyst_on = 0.02     # to activate brakes exceed this value
@@ -162,9 +163,13 @@ class CarController():
       apply_accel = interp(accel, P.NIDEC_ACCEL_LOOKUP_BP, P.NIDEC_ACCEL_LOOKUP_V)
 
     if CS.CP.carFingerprint in OLD_NIDEC_LONG_CONTROL:
-      pcm_accel = int(clip(pcm_accel, 0, 1) * 0xc6)
-      #pcm_speed = pcm_speed
       wind_brake = 0.0
+      #pcm_speed = pcm_speed
+      pcm_accel = int(clip(pcm_accel, 0, 1) * 0xc6)
+    elif CS.CP.carFingerprint == CAR.ACURA_ILX:
+      wind_brake = interp(CS.out.vEgo, [0.0, 1.0, 20.0], [0.0, 0.0, 0.1])
+      pcm_speed = CS.out.vEgo + apply_accel
+      pcm_accel = int(clip(pcm_accel, 0, 1) * 0xc6)
     else:
       wind_brake = interp(CS.out.vEgo, [0.0, 1.0, 20.0], [0.0, 0.0, 0.1])
       if apply_accel > 0:
