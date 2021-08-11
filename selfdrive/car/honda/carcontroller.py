@@ -166,19 +166,15 @@ class CarController():
     # and air resistance decel at highspeed
     wind_brake = interp(CS.out.vEgo, [0.0, 2.3, 20.0], [0.15, 0.0, -0.1])
     if CS.CP.carFingerprint in OLD_NIDEC_LONG_CONTROL:
-      wind_brake = interp(CS.out.vEgo, [0.0, 2.3, 20.0], [0.1, 0.0, -0.1])
       #pcm_speed = pcm_speed
       pcm_accel = int(clip(pcm_accel, 0, 1) * 0xc6)
     elif CS.CP.carFingerprint == CAR.ACURA_ILX:
       pcm_speed = CS.out.vEgo + apply_accel
       pcm_accel = int(clip(pcm_accel, 0, 1) * 0xc6)
     else:
-      wind_brake = interp(CS.out.vEgo, [0.0, 2.3, 20.0], [0.1, 0.0, -0.1])
       if apply_accel > 0:
         pcm_speed = 100
-        CIVIC_MAX_ACCEL_VALS = [0.5, 2.4, 1.4, 0.6]
-        CIVIC_MAX_ACCEL_BP = [0, 4.0, 10., 20.]
-        max_accel = interp(CS.out.vEgo, CIVIC_MAX_ACCEL_BP, CIVIC_MAX_ACCEL_VALS)
+        max_accel = interp(CS.out.vEgo, P.NIDEC_MAX_ACCEL_BP, P.NIDEC_MAX_ACCEL_V)
         pcm_accel = int(clip(apply_accel/max_accel, 0.0, 1.0) * 0xc6)
       else:
         if accel < wind_brake:
