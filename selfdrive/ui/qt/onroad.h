@@ -18,7 +18,6 @@ class ButtonsWindow : public QWidget {
 
 public:
   ButtonsWindow(QWidget* parent = 0);
-  void updateState(const UIState &s);
 
 private:
   QPushButton *dfButton;
@@ -27,6 +26,9 @@ private:
   int dfStatus = -1;  // always initialize style sheet and send msg
   const QStringList dfButtonColors = {"#044389", "#24a8bc", "#fcff4b", "#37b868"};
   void updateDfButton(int status);
+
+public slots:
+  void updateState(const UIState &s);
 };
 
 class OnroadAlerts : public QWidget {
@@ -63,6 +65,9 @@ private:
 
 public slots:
   void updateState(const UIState &s);
+
+signals:
+  void resizeSignal(int w, int h);
 };
 
 // container for all onroad widgets

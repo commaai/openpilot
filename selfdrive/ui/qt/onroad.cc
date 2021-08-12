@@ -20,6 +20,9 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 
   // old UI on bottom
   nvg = new NvgWindow(this);
+  QObject::connect(nvg, &NvgWindow::resizeSignal, [=](int w, int h){
+    buttons->setFixedWidth(w);
+  });
   QObject::connect(this, &OnroadWindow::updateStateSignal, nvg, &NvgWindow::updateState);
 
   QWidget * split_wrapper = new QWidget;
@@ -29,6 +32,7 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   split->addWidget(nvg);
 
   buttons = new ButtonsWindow(this);
+  QObject::connect(this, &OnroadWindow::updateStateSignal, buttons, &ButtonsWindow::updateState);
   stacked_layout->addWidget(buttons);
 
   stacked_layout->addWidget(split_wrapper);
@@ -46,8 +50,6 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 }
 
 void OnroadWindow::updateState(const UIState &s) {
-  buttons->updateState(s);
-
   SubMaster &sm = *(s.sm);
   QColor bgColor = bg_colors[s.status];
   if (sm.updated("controlsState")) {
@@ -111,7 +113,7 @@ ButtonsWindow::ButtonsWindow(QWidget *parent) : QWidget(parent) {
   QWidget *btns_wrapper = new QWidget;
   QHBoxLayout *btns_layout  = new QHBoxLayout(btns_wrapper);
   btns_layout->setSpacing(0);
-  btns_layout->setContentsMargins(0, 0, 15, 15);
+  btns_layout->setContentsMargins(0, 0, 30, 30);
 
   main_layout->addWidget(btns_wrapper, 0, Qt::AlignBottom);
 
@@ -256,6 +258,7 @@ void NvgWindow::updateState(const UIState &s) {
 
 void NvgWindow::resizeGL(int w, int h) {
   ui_resize(&QUIState::ui_state, w, h);
+  emit resizeSignal(w, h);  // for ButtonsWindow
 }
 
 void NvgWindow::paintGL() {
