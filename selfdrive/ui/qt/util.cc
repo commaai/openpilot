@@ -13,7 +13,7 @@ QString getBrand() {
 }
 
 QString getBrandVersion() {
-  return getBrand() + " v" + QString::fromStdString(Params().get("Version")).left(14).trimmed();
+  return getBrand() + " v" + QString::fromStdString(Params().get("Version")).left(35).trimmed();
 }
 
 void configFont(QPainter &p, const QString &family, int size, const QString &style) {
