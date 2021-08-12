@@ -18,6 +18,13 @@ class CarControllerParams():
       self.STEER_LOOKUP_BP = [v * -1 for v in CP.lateralParams.torqueBP][1:][::-1] + list(CP.lateralParams.torqueBP)
       self.STEER_LOOKUP_V = [v * -1 for v in CP.lateralParams.torqueV][1:][::-1] + list(CP.lateralParams.torqueV)
 
+      self.NIDEC_ACCEL_LOOKUP_BP = [-1., 0., .6]
+      self.NIDEC_ACCEL_LOOKUP_V = [-4.8, 0., 2.0]
+
+      self.NIDEC_MAX_ACCEL_V = [0.5, 2.4, 1.4, 0.6]
+      self.NIDEC_MAX_ACCEL_BP = [0.0, 4.0, 10., 20.]
+
+
       self.BOSCH_ACCEL_LOOKUP_BP = [-1., 0., 0.6]
       self.BOSCH_ACCEL_LOOKUP_V = [-3.5, 0., 2.]
       self.BOSCH_GAS_LOOKUP_BP = [0., 0.6]
@@ -1297,5 +1304,6 @@ SPEED_FACTOR = {
   CAR.INSIGHT: 1.,
 }
 
+OLD_NIDEC_LONG_CONTROL = set([CAR.ODYSSEY, CAR.ACURA_RDX, CAR.CRV, CAR.HRV])
 HONDA_BOSCH = set([CAR.ACCORD, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_5G, CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G])
 HONDA_BOSCH_ALT_BRAKE_SIGNAL = set([CAR.ACCORD, CAR.CRV_5G, CAR.ACURA_RDX_3G])
