@@ -6,6 +6,9 @@ from selfdrive.modeld.constants import T_IDXS
 
 LongCtrlState = log.ControlsState.LongControlState
 
+ACCEL_MAX = 2.0
+ACCEL_MIN = -4.0
+ACCEL_SCALE = 4.0
 STOPPING_EGO_SPEED = 0.5
 STOPPING_TARGET_SPEED_OFFSET = 0.01
 STARTING_TARGET_SPEED = 0.5
@@ -61,6 +64,8 @@ class LongControl():
                             (CP.longitudinalTuning.kiBP, CP.longitudinalTuning.kiV),
                             rate=RATE,
                             sat_limit=0.8)
+    self.pid.pos_limit = ACCEL_MAX
+    self.pid.neg_limit = ACCEL_MIN
     self.v_pid = 0.0
     self.last_output_accel = 0.0
 
@@ -83,9 +88,6 @@ class LongControl():
       a_target = 0.0
 
 
-    # Actuation limits
-    accel_max = 2.0
-    accel_min = -4.0
     #TODO deal with gasMax and brakeMax in car interfaces
 
     # Update state machine
@@ -103,8 +105,6 @@ class LongControl():
     # tracking objects and driving
     elif self.long_control_state == LongCtrlState.pid:
       self.v_pid = v_target
-      self.pid.pos_limit = accel_max
-      self.pid.neg_limit = accel_min
 
       # Toyota starts braking more when it thinks you want to stop
       # Freeze the integrator so we don't accelerate to compensate, and don't allow positive acceleration
@@ -121,7 +121,7 @@ class LongControl():
       # Keep applying brakes until the car is stopped
       if not CS.standstill or output_accel > -DECEL_STOPPING_TARGET:
         output_accel -= CP.stoppingDecelRate / RATE
-      output_accel = clip(output_accel, accel_min, accel_max)
+      output_accel = clip(output_accel, ACCEL_MIN, ACCEL_MAX)
 
       self.reset(CS.vEgo)
 
@@ -132,6 +132,6 @@ class LongControl():
       self.reset(CS.vEgo)
 
     self.last_output_accel = output_accel
-    final_accel = clip(output_accel, accel_min, accel_max)
+    final_accel = clip(output_accel, ACCEL_MIN, ACCEL_MAX)
 
     return final_accel, v_target, a_target
