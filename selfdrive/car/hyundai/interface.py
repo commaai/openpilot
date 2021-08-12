@@ -100,19 +100,11 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.indi.actuatorEffectivenessBP = [0.]
       ret.lateralTuning.indi.actuatorEffectivenessV = [2.3]
       ret.minSteerSpeed = 60 * CV.KPH_TO_MS
-    elif candidate == CAR.KONA:
+    elif candidate in [CAR.KONA, CAR.KONA_EV, CAR.KONA_HEV]:
       ret.lateralTuning.pid.kf = 0.00005
-      ret.mass = 1275. + STD_CARGO_KG
+      ret.mass = {CAR.KONA_EV: 1685., CAR.KONA_HEV: 1425.}.get(candidate, 1275.) + STD_CARGO_KG
       ret.wheelbase = 2.7
       ret.steerRatio = 13.73 * 1.15  # Spec
-      tire_stiffness_factor = 0.385
-      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
-    elif candidate == CAR.KONA_EV:
-      ret.lateralTuning.pid.kf = 0.00006
-      ret.mass = 1685. + STD_CARGO_KG
-      ret.wheelbase = 2.7
-      ret.steerRatio = 13.73  # Spec
       tire_stiffness_factor = 0.385
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
