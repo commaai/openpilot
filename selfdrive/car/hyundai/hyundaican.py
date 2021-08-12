@@ -17,9 +17,9 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
   values["CF_Lkas_ActToi"] = steer_req
   values["CF_Lkas_MsgCount"] = frame % 0x10
 
-  if car_fingerprint in [CAR.SONATA, CAR.PALISADE, CAR.KIA_NIRO_EV, CAR.SANTA_FE, CAR.IONIQ_EV_2020,
-                         CAR.IONIQ_PHEV, CAR.KIA_SELTOS, CAR.ELANTRA_2021, CAR.ELANTRA_HEV_2021,
-                         CAR.SONATA_HYBRID, CAR.KONA_HEV]:
+  if car_fingerprint in [CAR.SONATA, CAR.PALISADE, CAR.KIA_NIRO_EV, CAR.KIA_NIRO_HEV_2021, CAR.SANTA_FE,
+                         CAR.IONIQ_EV_2020, CAR.IONIQ_PHEV, CAR.KIA_SELTOS, CAR.ELANTRA_2021,
+                         CAR.ELANTRA_HEV_2021, CAR.SONATA_HYBRID, CAR.KONA_HEV]:
     values["CF_Lkas_LdwsActivemode"] = int(left_lane) + (int(right_lane) << 1)
     values["CF_Lkas_LdwsOpt_USM"] = 2
 
