@@ -249,12 +249,12 @@ void WifiUI::refresh() {
     hlayout->setSpacing(50);
 
     // Clickable SSID label
-    ElidedButton *ssidLabel = new ElidedButton(network.ssid);
+    ClickableLabel *ssidLabel = new ClickableLabel(network.ssid);
     ssidLabel->setObjectName("ssidLabel");
     ssidLabel->setEnabled(network.security_type != SecurityType::UNSUPPORTED);
     ssidLabel->setProperty("disconnected", network.connected == ConnectedType::DISCONNECTED);
     if (network.connected == ConnectedType::DISCONNECTED) {
-      QObject::connect(ssidLabel, &ElidedButton::clicked, this, [=]() { emit connectToNetwork(network); });
+      QObject::connect(ssidLabel, &ClickableLabel::clicked, this, [=]() { emit connectToNetwork(network); });
     }
     hlayout->addWidget(ssidLabel, network.connected == ConnectedType::CONNECTING ? 0 : 1);
 

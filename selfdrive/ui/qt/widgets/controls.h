@@ -24,11 +24,11 @@ class ElidedLabel : public QLabel {
 };
 
 
-class ElidedButton : public ElidedLabel {
+class ClickableLabel : public ElidedLabel {
   Q_OBJECT
 
 public:
-  explicit ElidedButton(const QString &text, QWidget *parent = 0) : ElidedLabel(text, parent) {}
+  explicit ClickableLabel(const QString &text, QWidget *parent = 0) : ElidedLabel(text, parent) {}
 
 signals:
   void clicked();
