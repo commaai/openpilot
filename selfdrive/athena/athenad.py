@@ -194,6 +194,8 @@ def setNavDestination(latitude=0, longitude=0):
 
 def scan_dir(path, prefix):
   files = list()
+  # only walk directories that match the prefix
+  # (glob and friends traverse entire dir tree)
   with os.scandir(path) as i:
     for e in i:
       rel_path = os.path.relpath(e.path, ROOT)
@@ -206,7 +208,7 @@ def scan_dir(path, prefix):
           files.extend(scan_dir(e.path, prefix))
       else:
         if rel_path.startswith(prefix):
-          files.append(e.path)
+          files.append(rel_path)
   return files
 
 @dispatcher.add_method
