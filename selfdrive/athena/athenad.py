@@ -52,7 +52,7 @@ log_recv_queue: Any = queue.Queue()
 cancelled_uploads: Any = set()
 UploadItem = namedtuple('UploadItem', ['path', 'url', 'headers', 'created_at', 'id', 'retry_count', 'current', 'progress'], defaults=(0, False, 0))
 
-cur_upload_item = None
+cur_upload_items = {}
 
 
 def handle_long_poll(ws):
@@ -103,34 +103,34 @@ def jsonrpc_handler(end_event):
 
 
 def upload_handler(end_event):
-  global cur_upload_item
+  tid = threading.get_ident()
 
   while not end_event.is_set():
-    cur_upload_item = None
+    cur_upload_items[tid] = None
 
     try:
-      cur_upload_item = upload_queue.get(timeout=1)._replace(current=True)
-      if cur_upload_item.id in cancelled_uploads:
-        cancelled_uploads.remove(cur_upload_item.id)
+      cur_upload_items[tid] = upload_queue.get(timeout=1)._replace(current=True)
+      if cur_upload_items[tid].id in cancelled_uploads:
+        cancelled_uploads.remove(cur_upload_items[tid].id)
         continue
 
       try:
         def cb(sz, cur):
-          global cur_upload_item
-          cur_upload_item = cur_upload_item._replace(progress=cur / sz if sz else 1)
+          cur_upload_items[tid] = cur_upload_items[tid]._replace(progress=cur / sz if sz else 1)
 
-        _do_upload(cur_upload_item, cb)
+        _do_upload(cur_upload_items[tid], cb)
       except (requests.exceptions.Timeout, requests.exceptions.ConnectionError, requests.exceptions.SSLError) as e:
-        cloudlog.warning(f"athena.upload_handler.retry {e} {cur_upload_item}")
+        cloudlog.warning(f"athena.upload_handler.retry {e} {cur_upload_items[tid]}")
 
-        if cur_upload_item.retry_count < MAX_RETRY_COUNT:
-          item = cur_upload_item._replace(
-            retry_count=cur_upload_item.retry_count + 1,
+        if cur_upload_items[tid].retry_count < MAX_RETRY_COUNT:
+          item = cur_upload_items[tid]
+          item = item._replace(
+            retry_count=item.retry_count + 1,
             progress=0,
             current=False
           )
           upload_queue.put_nowait(item)
-          cur_upload_item = None
+          cur_upload_items[tid] = None
 
           for _ in range(RETRY_DELAY):
             time.sleep(1)
@@ -233,7 +233,7 @@ def uploadFileToUrl(fn, url, headers):
 
 @dispatcher.add_method
 def listUploadQueue():
-  items = list(upload_queue.queue) + [cur_upload_item]
+  items = list(upload_queue.queue) + list(cur_upload_items.values())
   return [i._asdict() for i in items if i is not None]
 
 
@@ -536,6 +536,8 @@ def main():
       manage_tokens(api)
 
       conn_retries = 0
+      cur_upload_items.clear()
+
       handle_long_poll(ws)
     except (KeyboardInterrupt, SystemExit):
       break

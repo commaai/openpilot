@@ -32,7 +32,7 @@ class TestAthenadMethods(unittest.TestCase):
 
   def tearDown(self):
     athenad.upload_queue = queue.Queue()
-    athenad.cur_upload_item = None
+    athenad.cur_upload_items.clear()
 
   def wait_for_upload(self):
     now = time.time()
