@@ -63,7 +63,6 @@ private:
   NvgWindow *nvg;
   QColor bg = bg_colors[STATUS_DISENGAGED];
   QWidget *map = nullptr;
-  QStackedLayout *main_layout;
   QHBoxLayout* split;
 
 signals:
