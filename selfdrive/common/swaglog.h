@@ -31,7 +31,7 @@ void cloudlog_bind(const char* k, const char* v);
                                                     \
   if (__begin + __millis*1000000ULL < __ts) {       \
     if (__missed) {                                 \
-      cloudlog(CLOUDLOG_WARNING, "cloudlog: %d messages supressed", __missed); \
+      cloudlog(CLOUDLOG_WARNING, "cloudlog: %d messages suppressed", __missed); \
     }                                               \
     __begin = 0;                                    \
     __printed = 0;                                  \

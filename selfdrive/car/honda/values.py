@@ -18,6 +18,13 @@ class CarControllerParams():
       self.STEER_LOOKUP_BP = [v * -1 for v in CP.lateralParams.torqueBP][1:][::-1] + list(CP.lateralParams.torqueBP)
       self.STEER_LOOKUP_V = [v * -1 for v in CP.lateralParams.torqueV][1:][::-1] + list(CP.lateralParams.torqueV)
 
+      self.NIDEC_ACCEL_LOOKUP_BP = [-1., 0., .6]
+      self.NIDEC_ACCEL_LOOKUP_V = [-4.8, 0., 2.0]
+
+      self.NIDEC_MAX_ACCEL_V = [0.5, 2.4, 1.4, 0.6]
+      self.NIDEC_MAX_ACCEL_BP = [0.0, 4.0, 10., 20.]
+
+
       self.BOSCH_ACCEL_LOOKUP_BP = [-1., 0., 0.6]
       self.BOSCH_ACCEL_LOOKUP_V = [-3.5, 0., 2.]
       self.BOSCH_GAS_LOOKUP_BP = [0., 0.6]
@@ -204,6 +211,7 @@ FW_VERSIONS = {
       b'77959-TBX-H230\x00\x00',
     ],
     (Ecu.combinationMeter, 0x18da60f1, None): [
+      b'78109-TVC-C010\x00\x00',
       b'78109-TVA-A210\x00\x00',
       b'78109-TVC-A010\x00\x00',
       b'78109-TVC-A020\x00\x00',
@@ -314,6 +322,7 @@ FW_VERSIONS = {
       b'37805-5AA-L660\x00\x00',
       b'37805-5AA-L680\x00\x00',
       b'37805-5AA-L690\x00\x00',
+      b'37805-5AA-L810\000\000',
       b'37805-5AG-Q710\x00\x00',
       b'37805-5AJ-A610\x00\x00',
       b'37805-5AJ-A620\x00\x00',
@@ -336,12 +345,12 @@ FW_VERSIONS = {
       b'28101-5CG-A050\x00\x00',
       b'28101-5CG-A070\x00\x00',
       b'28101-5CG-A080\x00\x00',
+      b'28101-5CG-A320\x00\x00',
       b'28101-5CG-A810\x00\x00',
       b'28101-5CG-A820\x00\x00',
       b'28101-5DJ-A040\x00\x00',
       b'28101-5DJ-A060\x00\x00',
       b'28101-5DJ-A510\x00\x00',
-      b'28101-5CG-A320\x00\x00',
     ],
     (Ecu.vsa, 0x18da28f1, None): [
       b'57114-TBA-A540\x00\x00',
@@ -354,8 +363,8 @@ FW_VERSIONS = {
       b'39990-TBA,A030\x00\x00', # modified firmware
       b'39990-TBA-A030\x00\x00',
       b'39990-TBG-A030\x00\x00',
-      b'39990-TEG-A010\x00\x00',
       b'39990-TEA-T020\x00\x00',
+      b'39990-TEG-A010\x00\x00',
     ],
     (Ecu.srs, 0x18da53f1, None): [
       b'77959-TBA-A030\x00\x00',
@@ -387,9 +396,9 @@ FW_VERSIONS = {
       b'36161-TBA-A040\x00\x00',
       b'36161-TBC-A020\x00\x00',
       b'36161-TBC-A030\x00\x00',
+      b'36161-TED-Q320\x00\x00',
       b'36161-TEG-A010\x00\x00',
       b'36161-TEG-A020\x00\x00',
-      b'36161-TED-Q320\x00\x00',
     ],
     (Ecu.gateway, 0x18daeff1, None): [
       b'38897-TBA-A010\x00\x00',
@@ -1295,5 +1304,6 @@ SPEED_FACTOR = {
   CAR.INSIGHT: 1.,
 }
 
+OLD_NIDEC_LONG_CONTROL = set([CAR.ODYSSEY, CAR.ACURA_RDX, CAR.CRV, CAR.HRV])
 HONDA_BOSCH = set([CAR.ACCORD, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_5G, CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G])
 HONDA_BOSCH_ALT_BRAKE_SIGNAL = set([CAR.ACCORD, CAR.CRV_5G, CAR.ACURA_RDX_3G])
