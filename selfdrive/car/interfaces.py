@@ -46,10 +46,6 @@ class CarInterfaceBase():
     return 1.
 
   @staticmethod
-  def compute_gb(accel, speed):
-    raise NotImplementedError
-
-  @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None):
     raise NotImplementedError
 
@@ -79,8 +75,8 @@ class CarInterfaceBase():
     ret.openpilotLongitudinalControl = False
     ret.startAccel = 0.0
     ret.minSpeedCan = 0.3
-    ret.stoppingBrakeRate = 0.2 # brake_travel/s while trying to stop
-    ret.startingBrakeRate = 0.8 # brake_travel/s while releasing on restart
+    ret.stoppingDeceleRate = 0.8 # brake_travel/s while trying to stop
+    ret.startingAcceleRate = 3.6 # brake_travel/s while releasing on restart
     ret.stoppingControl = True
     ret.longitudinalTuning.deadzoneBP = [0.]
     ret.longitudinalTuning.deadzoneV = [0.]

@@ -15,38 +15,7 @@ EventName = car.CarEvent.EventName
 TransmissionType = car.CarParams.TransmissionType
 
 
-def compute_gb_honda_bosch(accel, speed):
-  return float(accel) / 3.5
-
-
-def compute_gb_honda_nidec(accel, speed):
-  creep_brake = 0.0
-  creep_speed = 2.3
-  creep_brake_value = 0.15
-  if speed < creep_speed:
-    creep_brake = (creep_speed - speed) / creep_speed * creep_brake_value
-  return float(accel) / 4.8 - creep_brake
-
-
-def compute_gb_acura(accel, speed):
-  GB_VALUES = [-2., 0.0, 0.8]
-  GB_BP = [-5., 0.0, 4.0]
-  return interp(accel, GB_BP, GB_VALUES)
-
-
 class CarInterface(CarInterfaceBase):
-  def __init__(self, CP, CarController, CarState):
-    super().__init__(CP, CarController, CarState)
-
-    if self.CS.CP.carFingerprint in HONDA_BOSCH:
-      self.compute_gb = compute_gb_honda_bosch
-    else:
-      self.compute_gb = compute_gb_honda_nidec
-
-  @staticmethod
-  def compute_gb(accel, speed): # pylint: disable=method-hidden
-    raise NotImplementedError
-
   @staticmethod
   def calc_accel_override(a_ego, a_target, v_ego, v_target):
 

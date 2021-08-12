@@ -94,6 +94,8 @@ class CarController():
 
     P = self.params
 
+    gas, brake = compute_gas_brake(actuators.accel, CS.out.vEgo, CS.CP.carFingerprint)
+
     # *** apply brake hysteresis ***
     brake, self.braking, self.brake_steady = actuator_hystereses(actuators.brake, self.braking, self.brake_steady, CS.out.vEgo, CS.CP.carFingerprint)
 
@@ -147,18 +149,19 @@ class CarController():
       lkas_active, CS.CP.carFingerprint, idx, CS.CP.openpilotLongitudinalControl))
 
 
-    accel = actuators.gas - actuators.brake
+    accel = actuators.accel
 
     # TODO: pass in LoC.long_control_state and use that to decide starting/stoppping
     stopping = accel < 0 and CS.out.vEgo < 0.3
     starting = accel > 0 and CS.out.vEgo < 0.3
 
     # Prevent rolling backwards
-    accel = -1.0 if stopping else accel
-    if CS.CP.carFingerprint in HONDA_BOSCH:
-      apply_accel = interp(accel, P.BOSCH_ACCEL_LOOKUP_BP, P.BOSCH_ACCEL_LOOKUP_V)
-    else:
-      apply_accel = interp(accel, P.NIDEC_ACCEL_LOOKUP_BP, P.NIDEC_ACCEL_LOOKUP_V)
+    accel = -4.0 if stopping else accel
+
+    #if CS.CP.carFingerprint in HONDA_BOSCH:
+    #  apply_accel = interp(accel, P.BOSCH_ACCEL_LOOKUP_BP, P.BOSCH_ACCEL_LOOKUP_V)
+    #else:
+    #  apply_accel = interp(accel, P.NIDEC_ACCEL_LOOKUP_BP, P.NIDEC_ACCEL_LOOKUP_V)
 
     # wind brake from air resistance decel at high speed
     wind_brake = interp(CS.out.vEgo, [0.0, 2.3, 35.0], [0.001, 0.002, 0.15])
@@ -166,8 +169,8 @@ class CarController():
       #pcm_speed = pcm_speed
       pcm_accel = int(clip(pcm_accel, 0, 1) * 0xc6)
     else:
-      max_accel = interp(CS.out.vEgo, P.NIDEC_MAX_ACCEL_BP, P.NIDEC_MAX_ACCEL_V)
-      pcm_accel = int(clip(apply_accel/max_accel, 0.0, 1.0) * 0xc6)
+      max_accel = 1.44*interp(CS.out.vEgo, P.NIDEC_MAX_ACCEL_BP, P.NIDEC_MAX_ACCEL_V)
+      pcm_accel = int(clip(accel/max_accel, 0.0, 1.0) * 0xc6)
       pcm_speed_BP = [-wind_brake,
                       -wind_brake*(3/4),
                       0.0]
@@ -193,8 +196,8 @@ class CarController():
         ts = frame * DT_CTRL
 
         if CS.CP.carFingerprint in HONDA_BOSCH:
-          apply_gas = interp(accel, P.BOSCH_GAS_LOOKUP_BP, P.BOSCH_GAS_LOOKUP_V)
-          can_sends.extend(hondacan.create_acc_commands(self.packer, enabled, apply_accel, apply_gas, idx, stopping, starting, CS.CP.carFingerprint))
+          bosch_gas = interp(accel, P.BOSCH_GAS_LOOKUP_BP, P.BOSCH_GAS_LOOKUP_V)
+          can_sends.extend(hondacan.create_acc_commands(self.packer, enabled, accel, bosch_gas, idx, stopping, starting, CS.CP.carFingerprint))
 
         else:
           apply_brake = clip(self.brake_last - wind_brake, 0.0, 1.0)

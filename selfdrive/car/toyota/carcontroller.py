@@ -45,7 +45,7 @@ class CarController():
 
     # gas and brake
     interceptor_gas_cmd = 0.
-    pcm_accel_cmd = actuators.gas - actuators.brake
+    pcm_accel_cmd = actuators.accel * CarControllerParams.ACCEL_SCALE/4.0
 
     if CS.CP.enableGasInterceptor:
       # handle hysteresis when around the minimum acc speed
@@ -57,8 +57,8 @@ class CarController():
       if self.use_interceptor and enabled:
         # only send negative accel when using interceptor. gas handles acceleration
         # +0.06 offset to reduce ABS pump usage when OP is engaged
-        interceptor_gas_cmd = clip(actuators.gas, 0., 1.)
-        pcm_accel_cmd = 0.06 - actuators.brake
+        interceptor_gas_cmd = clip(actuators.accel/4.0, 0., 1.)
+        pcm_accel_cmd = 0.06 - clip(actuators.brake/4.0, 0., 1.)
 
     pcm_accel_cmd, self.accel_steady = accel_hysteresis(pcm_accel_cmd, self.accel_steady, enabled)
     pcm_accel_cmd = clip(pcm_accel_cmd * CarControllerParams.ACCEL_SCALE, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
