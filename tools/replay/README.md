@@ -3,7 +3,7 @@ Replay driving data
 
 **Hardware needed**: none
 
-`unlogger.py` replays data collected with [dashcam](https://github.com/commaai/openpilot/tree/dashcam) or [openpilot](https://githucommaai/openpilot).
+`unlogger.py` replays data collected with [dashcam](https://github.com/commaai/openpilot/tree/dashcam) or [openpilot](https://github.com/commaai/openpilot).
 
 Unlogger with remote data:
 
