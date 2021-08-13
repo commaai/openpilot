@@ -8,8 +8,11 @@ from tempfile import NamedTemporaryFile
 
 from common.basedir import BASEDIR
 from selfdrive.test.process_replay.compare_logs import save_log
-from tools.lib.route import Route
+from tools.lib.api import CommaApi
+from tools.lib.auth_config import get_token
 from tools.lib.logreader import LogReader
+from tools.lib.route import Route
+from urllib.parse import urlparse, parse_qs
 
 juggle_dir = os.path.dirname(os.path.realpath(__file__))
 
@@ -43,7 +46,11 @@ def start_juggler(fn=None, dbc=None, layout=None):
   subprocess.call(f'{pj} --plugin_folders {os.path.join(juggle_dir, "bin")} {extra_args}', shell=True, env=env, cwd=juggle_dir)
 
 def juggle_route(route_name, segment_number, segment_count, qlog, can, layout):
-  if route_name.startswith("http://") or route_name.startswith("https://") or os.path.isfile(route_name):
+  if 'cabana' in route_name:
+    query = parse_qs(urlparse(route_name).query)
+    api = CommaApi(get_token())
+    logs = api.get(f'v1/route/{query["route"][0]}/log_urls?sig={query["sig"][0]}&exp={query["exp"][0]}')
+  elif route_name.startswith("http://") or route_name.startswith("https://") or os.path.isfile(route_name):
     logs = [route_name]
   else:
     r = Route(route_name)
