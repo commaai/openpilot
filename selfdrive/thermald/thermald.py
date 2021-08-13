@@ -121,6 +121,30 @@ def handle_fan_uno(max_cpu_temp, bat_temp, fan_speed, ignition):
 
   return new_speed
 
+prev_time = None
+error_integral = 0
+def handle_fan_tici(max_cpu_temp, bat_temp, fan_speed, ignition):
+  global prev_time, error_integral, prev_cpu_temp_error
+
+  CPU_TEMP_SETPOINT = 80 if ignition else 60
+  FAN_PWR_RANGE = (0, 80 if ignition else 30)
+  KI = 5e-5
+
+  if prev_time is None:
+    prev_time = time.monotonic()
+  dt = max(time.monotonic() - prev_time, 0.01)
+
+  error_integral += ((max_cpu_temp - CPU_TEMP_SETPOINT) * dt)
+
+  feed_forward = interp(max_cpu_temp, [60.0, 100.0], [0, 40])
+  fan_pwr_desired = (KI * error_integral) + feed_forward
+  fan_pwr_out = int(clip(fan_pwr_desired, FAN_PWR_RANGE[0], FAN_PWR_RANGE[1]))
+
+  # Dumb anti windup
+  error_integral = clip(error_integral, -(FAN_PWR_RANGE[1] / KI), (FAN_PWR_RANGE[1] / KI))
+
+  return fan_pwr_out
+
 
 def set_offroad_alert_if_changed(offroad_alert: str, show_alert: bool, extra_text: Optional[str]=None):
   if prev_offroad_states.get(offroad_alert, None) == (show_alert, extra_text):
@@ -216,9 +240,12 @@ def thermald_thread():
       if handle_fan is None and pandaState.pandaState.pandaType != log.PandaState.PandaType.unknown:
         is_uno = pandaState.pandaState.pandaType == log.PandaState.PandaType.uno
 
-        if (not EON) or is_uno:
+        if (not EON and not TICI) or is_uno:
           cloudlog.info("Setting up UNO fan handler")
           handle_fan = handle_fan_uno
+        elif TICI:
+          cloudlog.info("Setting up TICI fan handler")
+          handle_fan = handle_fan_tici
         else:
           cloudlog.info("Setting up EON fan handler")
           setup_eon_fan()
