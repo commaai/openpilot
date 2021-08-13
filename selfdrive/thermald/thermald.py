@@ -128,7 +128,7 @@ def handle_fan_tici(max_cpu_temp, bat_temp, fan_speed, ignition):
 
   CPU_TEMP_SETPOINT = 80 if ignition else 60
   FAN_PWR_RANGE = (0, 80 if ignition else 30)
-  KI = 5e-5
+  KI = 1e-5
 
   if prev_time is None:
     prev_time = time.monotonic()
