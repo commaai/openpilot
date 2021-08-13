@@ -17,6 +17,7 @@ from selfdrive.controls.lib.longcontrol import LongControl, STARTING_TARGET_SPEE
 from selfdrive.controls.lib.latcontrol_pid import LatControlPID
 from selfdrive.controls.lib.latcontrol_indi import LatControlINDI
 from selfdrive.controls.lib.latcontrol_lqr import LatControlLQR
+from selfdrive.controls.lib.latcontrol_model import LatControlModel
 from selfdrive.controls.lib.latcontrol_angle import LatControlAngle
 from selfdrive.controls.lib.events import Events, ET
 from selfdrive.controls.lib.alertmanager import AlertManager
@@ -133,6 +134,8 @@ class Controls:
       self.LaC = LatControlINDI(self.CP)
     elif self.CP.lateralTuning.which() == 'lqr':
       self.LaC = LatControlLQR(self.CP)
+    elif self.CP.lateralTuning.which() == 'model':
+      self.LaC = LatControlModel(self.CP)
 
     self.initialized = False
     self.state = State.disabled
@@ -667,6 +670,8 @@ class Controls:
       controlsState.lateralControlState.lqrState = lac_log
     elif self.CP.lateralTuning.which() == 'indi':
       controlsState.lateralControlState.indiState = lac_log
+    elif self.CP.lateralTuning.which() == 'model':
+      controlsState.lateralControlState.modelState = lac_log
     self.pm.send('controlsState', dat)
 
     # carState

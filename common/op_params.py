@@ -131,6 +131,8 @@ class opParams:
                         'prius_use_pid': Param(False, bool, 'This enables the PID lateral controller with new a experimental derivative tune\n'
                                                             'False: stock INDI, True: TSS2-tuned PID', static=True),
                         'use_lqr': Param(False, bool, 'Enable this to use LQR as your lateral controller over default with any car', static=True),
+                        'use_steering_model': Param(False, bool, 'Enable this to use an experimental ML-based lateral controller trained on the TSSP Corolla\n'
+                                                                 'Warning: the model may behave unexpectedly at any time, so always pay attention', static=True),
                         'corollaTSS2_use_indi': Param(False, bool, 'Enable this to use INDI for lat with your TSS2 Corolla', static=True),
                         'rav4TSS2_use_indi': Param(False, bool, 'Enable this to use INDI for lat with your TSS2 RAV4', static=True),
                         'standstill_hack': Param(False, bool, 'Some cars support stop and go, you just need to enable this', static=True)}

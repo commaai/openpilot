@@ -2,6 +2,7 @@ Stock Additions Update 1 - 2021-08-XX (0.8.7)
 ===
  * Update SA to 0.8.7!
  * Variable longitudinal lag by speed
+ * Toyota: add ML-based steering controller enabled by parameter `use_steering_model`
 
 Stock Additions Update 3 - 2021-05-03 (0.8.2)
 ===
