@@ -192,10 +192,28 @@ def setNavDestination(latitude=0, longitude=0):
   return {"success": 1}
 
 
-@dispatcher.add_method
-def listDataDirectory():
-  files = [os.path.relpath(os.path.join(dp, f), ROOT) for dp, dn, fn in os.walk(ROOT) for f in fn]
+def scan_dir(path, prefix):
+  files = list()
+  # only walk directories that match the prefix
+  # (glob and friends traverse entire dir tree)
+  with os.scandir(path) as i:
+    for e in i:
+      rel_path = os.path.relpath(e.path, ROOT)
+      if e.is_dir(follow_symlinks=False):
+        # add trailing slash
+        rel_path = os.path.join(rel_path, '')
+        # if prefix is a partial dir name, current dir will start with prefix
+        # if prefix is a partial file name, prefix with start with dir name
+        if rel_path.startswith(prefix) or prefix.startswith(rel_path):
+          files.extend(scan_dir(e.path, prefix))
+      else:
+        if rel_path.startswith(prefix):
+          files.append(rel_path)
   return files
+
+@dispatcher.add_method
+def listDataDirectory(prefix=''):
+  return scan_dir(ROOT, prefix)
 
 
 @dispatcher.add_method
