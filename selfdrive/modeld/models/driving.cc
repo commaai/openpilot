@@ -24,7 +24,9 @@ constexpr int PLAN_MHP_SELECTION = 1;
 constexpr int PLAN_MHP_GROUP_SIZE =  (2*PLAN_MHP_VALS + PLAN_MHP_SELECTION);
 
 constexpr int LEAD_MHP_N = 5;
-constexpr int LEAD_MHP_VALS = 4;
+constexpr int LEAD_TRAJ_LEN = 6;
+constexpr int LEAD_PRED_DIM = 4;
+constexpr int LEAD_MHP_VALS = LEAD_PRED_DIM*LEAD_TRAJ_LEN;
 constexpr int LEAD_MHP_SELECTION = 3;
 constexpr int LEAD_MHP_GROUP_SIZE = (2*LEAD_MHP_VALS + LEAD_MHP_SELECTION);
 
@@ -147,18 +149,38 @@ void fill_sigmoid(const float *input, float *output, int len, int stride) {
   }
 }
 
-void fill_lead_v2(cereal::ModelDataV2::LeadDataV2::Builder lead, const float *lead_data, const float *prob, int t_offset, float t) {
+void fill_lead_v3(cereal::ModelDataV2::LeadDataV3::Builder lead, const float *lead_data, const float *prob, int t_offset, float prob_t) {
+  float t[LEAD_TRAJ_LEN] = {0.0, 2.0, 4.0, 6.0, 8.0, 10.0};
   const float *data = get_lead_data(lead_data, t_offset);
   lead.setProb(sigmoid(prob[t_offset]));
-  lead.setT(t);
-  float xyva_arr[LEAD_MHP_VALS];
-  float xyva_stds_arr[LEAD_MHP_VALS];
-  for (int i=0; i<LEAD_MHP_VALS; i++) {
-    xyva_arr[i] = data[i];
-    xyva_stds_arr[i] = exp(data[LEAD_MHP_VALS + i]);
+  lead.setProbTime(prob_t);
+  float x_arr[LEAD_TRAJ_LEN];
+  float y_arr[LEAD_TRAJ_LEN];
+  float v_arr[LEAD_TRAJ_LEN];
+  float a_arr[LEAD_TRAJ_LEN];
+  float x_stds_arr[LEAD_TRAJ_LEN];
+  float y_stds_arr[LEAD_TRAJ_LEN];
+  float v_stds_arr[LEAD_TRAJ_LEN];
+  float a_stds_arr[LEAD_TRAJ_LEN];
+  for (int i=0; i<LEAD_TRAJ_LEN; i++) {
+    x_arr[i] = data[i*LEAD_PRED_DIM+0];
+    y_arr[i] = data[i*LEAD_PRED_DIM+1];
+    v_arr[i] = data[i*LEAD_PRED_DIM+2];
+    a_arr[i] = data[i*LEAD_PRED_DIM+3];
+    x_stds_arr[i] = exp(data[LEAD_MHP_VALS + i*LEAD_PRED_DIM+0]);
+    y_stds_arr[i] = exp(data[LEAD_MHP_VALS + i*LEAD_PRED_DIM+1]);
+    v_stds_arr[i] = exp(data[LEAD_MHP_VALS + i*LEAD_PRED_DIM+2]);
+    a_stds_arr[i] = exp(data[LEAD_MHP_VALS + i*LEAD_PRED_DIM+3]);
   }
-  lead.setXyva(xyva_arr);
-  lead.setXyvaStd(xyva_stds_arr);
+  lead.setT(t);
+  lead.setX(x_arr);
+  lead.setY(y_arr);
+  lead.setV(v_arr);
+  lead.setA(a_arr);
+  lead.setXStd(x_stds_arr);
+  lead.setYStd(y_stds_arr);
+  lead.setVStd(v_stds_arr);
+  lead.setAStd(a_stds_arr);
 }
 
 void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const float *meta_data) {
@@ -303,10 +325,10 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelDataRaw &net_ou
   fill_meta(framed.initMeta(), net_outputs.meta);
 
   // leads
-  auto leads = framed.initLeads(LEAD_MHP_SELECTION);
+  auto leads = framed.initLeadsV3(LEAD_MHP_SELECTION);
   float t_offsets[LEAD_MHP_SELECTION] = {0.0, 2.0, 4.0};
   for (int t_offset=0; t_offset<LEAD_MHP_SELECTION; t_offset++) {
-    fill_lead_v2(leads[t_offset], net_outputs.lead, net_outputs.lead_prob, t_offset, t_offsets[t_offset]);
+    fill_lead_v3(leads[t_offset], net_outputs.lead, net_outputs.lead_prob, t_offset, t_offsets[t_offset]);
   }
 }
 
