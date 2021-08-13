@@ -42,6 +42,7 @@ RECONNECT_TIMEOUT_S = 70
 
 RETRY_DELAY = 10  # seconds
 MAX_RETRY_COUNT = 30  # Try for at most 5 minutes if upload fails immediately
+WS_FRAME_SIZE = 4096
 
 dispatcher["echo"] = lambda s: s
 recv_queue: Any = queue.Queue()
@@ -506,7 +507,11 @@ def ws_send(ws, end_event):
         data = send_queue.get_nowait()
       except queue.Empty:
         data = log_send_queue.get(timeout=1)
-      ws.send(data)
+      for i in range(0, len(data), WS_FRAME_SIZE):
+        frame = data[i:i+WS_FRAME_SIZE]
+        last = i + WS_FRAME_SIZE >= len(data)
+        opcode = ABNF.OPCODE_TEXT if i == 0 else ABNF.OPCODE_CONT
+        ws.send_frame(ABNF.create_frame(frame, opcode, last))
     except queue.Empty:
       pass
     except Exception:
