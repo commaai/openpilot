@@ -12,9 +12,10 @@
 #include "selfdrive/common/util.h"
 
 Panda::Panda(std::string serial) {
+  libusb_device **dev_list = NULL;
   // init libusb
   int err = libusb_init(&ctx);
-  if (err != 0) { goto fail; }
+  if (err != 0) goto fail;
 
 #if LIBUSB_API_VERSION >= 0x01000106
   libusb_set_option(ctx, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_INFO);
@@ -24,7 +25,7 @@ Panda::Panda(std::string serial) {
 
   for (size_t i = 0; i < libusb_get_device_list(ctx, &dev_list); ++i) {
     libusb_device *device = dev_list[i];
-    libusb_device_descriptor desc = { 0 };
+    libusb_device_descriptor desc;
     libusb_get_device_descriptor(device, &desc);
 
     if (desc.idVendor == 0xbbaa && desc.idProduct == 0xddcc) {
@@ -44,17 +45,17 @@ Panda::Panda(std::string serial) {
     }
   }
 
-  if (dev_handle == NULL) { goto fail; }
+  if (dev_handle == NULL) goto fail;
 
   if (libusb_kernel_driver_active(dev_handle, 0) == 1) {
     libusb_detach_kernel_driver(dev_handle, 0);
   }
 
   err = libusb_set_configuration(dev_handle, 1);
-  if (err != 0) { goto fail; }
+  if (err != 0) goto fail;
 
   err = libusb_claim_interface(dev_handle, 0);
-  if (err != 0) { goto fail; }
+  if (err != 0) goto fail;
 
   hw_type = get_hw_type();
 
@@ -83,31 +84,30 @@ void Panda::cleanup() {
     libusb_close(dev_handle);
   }
 
-  if (ctx) {
-    libusb_exit(ctx);
-  }
+  if (ctx) libusb_exit(ctx);
 }
 
 std::vector<std::string> Panda::list() {
   // init libusb
+  libusb_context *context = NULL;
+  libusb_device **dev_list = NULL;
   std::vector<std::string> serials;
-  libusb_context *ctx_tmp = NULL;
-  libusb_device **dev_list_tmp = NULL;
-  int err = libusb_init(&ctx_tmp);
+  
+  int err = libusb_init(&context);
   if (err != 0) {
     LOGE("libusb initialization error");
     return serials;
   }
 
 #if LIBUSB_API_VERSION >= 0x01000106
-  libusb_set_option(ctx_tmp, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_INFO);
+  libusb_set_option(context, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_INFO);
 #else
-  libusb_set_debug(ctx_tmp, 3);
+  libusb_set_debug(context, 3);
 #endif
 
-  for (size_t i = 0; i < libusb_get_device_list(ctx_tmp, &dev_list_tmp); ++i) {
-    libusb_device *device = dev_list_tmp[i];
-    libusb_device_descriptor desc = { 0 };
+  for (size_t i = 0; i < libusb_get_device_list(context, &dev_list); ++i) {
+    libusb_device *device = dev_list[i];
+    libusb_device_descriptor desc;
 
     libusb_get_device_descriptor(device, &desc);
     if (desc.idVendor == 0xbbaa && desc.idProduct == 0xddcc) {
@@ -137,9 +137,7 @@ int Panda::usb_write(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigne
   int err;
   const uint8_t bmRequestType = LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE;
 
-  if (!connected) {
-    return LIBUSB_ERROR_NO_DEVICE;
-  }
+  if (!connected) return LIBUSB_ERROR_NO_DEVICE;
 
   std::lock_guard lk(usb_lock);
   do {
@@ -154,9 +152,7 @@ int Panda::usb_read(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned
   int err;
   const uint8_t bmRequestType = LIBUSB_ENDPOINT_IN | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE;
 
-  if (!connected) {
-    return LIBUSB_ERROR_NO_DEVICE;
-  }
+  if (!connected) return LIBUSB_ERROR_NO_DEVICE;
 
   std::lock_guard lk(usb_lock);
   do {
@@ -171,9 +167,7 @@ int Panda::usb_bulk_write(unsigned char endpoint, unsigned char* data, int lengt
   int err;
   int transferred = 0;
 
-  if (!connected) {
-    return 0;
-  }
+  if (!connected) return 0;
 
   std::lock_guard lk(usb_lock);
   do {
@@ -196,9 +190,7 @@ int Panda::usb_bulk_read(unsigned char endpoint, unsigned char* data, int length
   int err;
   int transferred = 0;
 
-  if (!connected) {
-    return 0;
-  }
+  if (!connected) return 0;
 
   std::lock_guard lk(usb_lock);
 
@@ -347,9 +339,7 @@ int Panda::can_receive(kj::Array<capnp::word>& out_buf) {
   // Not sure if this can happen
   if (recv < 0) recv = 0;
 
-  if (recv == RECV_SIZE) {
-    LOGW("Receive buffer full");
-  }
+  if (recv == RECV_SIZE) LOGW("Receive buffer full");
 
   size_t num_msg = recv / 0x10;
   MessageBuilder msg;
@@ -359,14 +349,9 @@ int Panda::can_receive(kj::Array<capnp::word>& out_buf) {
   // populate message
   auto canData = evt.initCan(num_msg);
   for (int i = 0; i < num_msg; i++) {
-    if (data[i*4] & 4) {
-      // extended
-      canData[i].setAddress(data[i*4] >> 3);
-      //printf("got extended: %x\n", data[i*4] >> 3);
-    } else {
-      // normal
-      canData[i].setAddress(data[i*4] >> 21);
-    }
+    if (data[i*4] & 4) canData[i].setAddress(data[i*4] >> 3); // extended
+    else canData[i].setAddress(data[i*4] >> 21); // normal
+    
     canData[i].setBusTime(data[i*4+1] >> 16);
     int len = data[i*4+1]&0xF;
     canData[i].setDat(kj::arrayPtr((uint8_t*)&data[i*4+2], len));
