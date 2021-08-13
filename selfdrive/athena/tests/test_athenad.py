@@ -30,6 +30,10 @@ class TestAthenadMethods(unittest.TestCase):
     athenad.Api = MockApi
     athenad.LOCAL_PORT_WHITELIST = set([cls.SOCKET_PORT])
 
+  def tearDown(self):
+    athenad.upload_queue = queue.Queue()
+    athenad.cur_upload_items.clear()
+
   def wait_for_upload(self):
     now = time.time()
     while time.time() - now < 5:
@@ -96,7 +100,6 @@ class TestAthenadMethods(unittest.TestCase):
       self.assertIsNotNone(resp['item'].get('id'))
       self.assertEqual(athenad.upload_queue.qsize(), 1)
     finally:
-      athenad.upload_queue = queue.Queue()
       os.unlink(fn)
 
   @with_http_server
@@ -118,7 +121,6 @@ class TestAthenadMethods(unittest.TestCase):
       self.assertEqual(athenad.upload_queue.qsize(), 0)
     finally:
       end_event.set()
-      athenad.upload_queue = queue.Queue()
       os.unlink(fn)
 
   def test_upload_handler_timeout(self):
@@ -150,7 +152,6 @@ class TestAthenadMethods(unittest.TestCase):
 
     finally:
       end_event.set()
-      athenad.upload_queue = queue.Queue()
       os.unlink(fn)
 
   def test_cancelUpload(self):
@@ -171,18 +172,41 @@ class TestAthenadMethods(unittest.TestCase):
       self.assertEqual(len(athenad.cancelled_uploads), 0)
     finally:
       end_event.set()
-      athenad.upload_queue = queue.Queue()
+
+  def test_listUploadQueueEmpty(self):
+    items = dispatcher["listUploadQueue"]()
+    self.assertEqual(len(items), 0)
+
+  @with_http_server
+  def test_listUploadQueueCurrent(self, host):
+    fn = os.path.join(athenad.ROOT, 'qlog.bz2')
+    Path(fn).touch()
+    item = athenad.UploadItem(path=fn, url=f"{host}/qlog.bz2", headers={}, created_at=int(time.time()*1000), id='')
+
+    end_event = threading.Event()
+    thread = threading.Thread(target=athenad.upload_handler, args=(end_event,))
+    thread.start()
+
+    try:
+      athenad.upload_queue.put_nowait(item)
+      self.wait_for_upload()
+
+      items = dispatcher["listUploadQueue"]()
+      self.assertEqual(len(items), 1)
+      self.assertTrue(items[0]['current'])
+
+    finally:
+      end_event.set()
+      os.unlink(fn)
 
   def test_listUploadQueue(self):
     item = athenad.UploadItem(path="qlog.bz2", url="http://localhost:44444/qlog.bz2", headers={}, created_at=int(time.time()*1000), id='id')
     athenad.upload_queue.put_nowait(item)
 
-    try:
-      items = dispatcher["listUploadQueue"]()
-      self.assertEqual(len(items), 1)
-      self.assertDictEqual(items[0], item._asdict())
-    finally:
-      athenad.upload_queue = queue.Queue()
+    items = dispatcher["listUploadQueue"]()
+    self.assertEqual(len(items), 1)
+    self.assertDictEqual(items[0], item._asdict())
+    self.assertFalse(items[0]['current'])
 
   @mock.patch('selfdrive.athena.athenad.create_connection')
   def test_startLocalProxy(self, mock_create_connection):
