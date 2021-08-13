@@ -158,19 +158,15 @@ class CarController():
     # Prevent rolling backwards
     accel = -4.0 if stopping else accel
 
-    #if CS.CP.carFingerprint in HONDA_BOSCH:
-    #  apply_accel = interp(accel, P.BOSCH_ACCEL_LOOKUP_BP, P.BOSCH_ACCEL_LOOKUP_V)
-    #else:
-    #  apply_accel = interp(accel, P.NIDEC_ACCEL_LOOKUP_BP, P.NIDEC_ACCEL_LOOKUP_V)
-
     # wind brake from air resistance decel at high speed
     wind_brake = interp(CS.out.vEgo, [0.0, 2.3, 35.0], [0.001, 0.002, 0.15])
     if CS.CP.carFingerprint in OLD_NIDEC_LONG_CONTROL:
       #pcm_speed = pcm_speed
       pcm_accel = int(clip(pcm_accel, 0, 1) * 0xc6)
     else:
-      max_accel = 1.44*interp(CS.out.vEgo, P.NIDEC_MAX_ACCEL_BP, P.NIDEC_MAX_ACCEL_V)
-      pcm_accel = int(clip(accel/max_accel, 0.0, 1.0) * 0xc6)
+      max_accel = interp(CS.out.vEgo, P.NIDEC_MAX_ACCEL_BP, P.NIDEC_MAX_ACCEL_V)
+      # TODO this 1.44 is just to maintain previous behavior
+      pcm_accel = int(clip((accel/1.44)/max_accel, 0.0, 1.0) * 0xc6)
       pcm_speed_BP = [-wind_brake,
                       -wind_brake*(3/4),
                       0.0]
