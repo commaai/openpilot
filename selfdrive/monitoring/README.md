@@ -10,4 +10,4 @@ Before creating a bug report, go through these troubleshooting steps.
 
 ## Bug report
 
-In order for us to look into DM bug reports, we'll need the driver-facing camera footage.
+In order for us to look into DM bug reports, we'll need the driver-facing camera footage. If you don't normally have this enabled, simply enable the toggle for a single drive. Also ensure the "Upload Raw Logs" toggle is enabled before going for a drive.
