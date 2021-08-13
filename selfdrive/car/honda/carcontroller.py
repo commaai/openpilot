@@ -178,11 +178,15 @@ class CarController():
       #  decel = max(0.0, -accel)
       #  pcm_speed = CS.out.vEgo * clip((wind_brake - decel)/max(wind_brake, .01), 0.0, 1.0)
       #  pcm_accel = int(0)
-      pcm_speed = CS.out.vEgo + apply_accel
       max_accel = interp(CS.out.vEgo, P.NIDEC_MAX_ACCEL_BP, P.NIDEC_MAX_ACCEL_V)
       pcm_accel = int(clip(apply_accel/max_accel, 0.0, 1.0) * 0xc6)
-      if apply_accel < -wind_brake:
-        pcm_speed = 0.0
+      pcm_speed = CS.out.vEgo + apply_accel
+      if apply_accel >= 0:
+        pcm_speed = 100.0
+      elif apply_accel < 0.0 and apply_accel > -wind_brake/2:
+        pcm_speed = interp(apply_accel, [wind_brake/2, 0.0], [CS.out.vEgo, 100.0])
+      else:
+        pcm_speed = interp(apply_accel, [wind_brake, wind_brake/2], [0.0, CS.out.vEgo])
 
 
 
