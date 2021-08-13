@@ -14,12 +14,13 @@ class LatControlModel:
     self.w, self.b = np.load(model_weights_file, allow_pickle=True)['wb']
 
     self.use_rates = CP.lateralTuning.model.useRates
-
     self.sat_count_rate = 1.0 * DT_CTRL
     self.sat_limit = CP.steerLimitTimer
 
+    self.reset()
+
   def reset(self):
-    pass
+    self.sat_count = 0.0
 
   def _check_saturation(self, control, check_saturation, limit):
     saturated = abs(control) == limit
