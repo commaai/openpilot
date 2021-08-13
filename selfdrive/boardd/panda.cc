@@ -31,7 +31,7 @@ Panda::Panda(std::string serial) {
       libusb_open(device, &dev_handle);
       unsigned char desc_serial[25];
       int ret = libusb_get_string_descriptor_ascii(dev_handle, desc.iSerialNumber, desc_serial, sizeof(desc_serial));
-      if (ret < 0) { break; }
+      if (ret < 0) break;
       std::string tmp_serial = std::string(reinterpret_cast<const char*>(desc_serial));
       
       if (!serial.empty() && serial.compare(tmp_serial)) {
@@ -93,9 +93,11 @@ std::vector<std::string> Panda::list() {
   std::vector<std::string> serials;
   libusb_context *ctx_tmp = NULL;
   libusb_device **dev_list_tmp = NULL;
-  size_t serials_idx = 0;
   int err = libusb_init(&ctx_tmp);
-  if (err != 0) { return serials; }
+  if (err != 0) {
+    LOGE("libusb initialization error");
+    return serials;
+  }
 
 #if LIBUSB_API_VERSION >= 0x01000106
   libusb_set_option(ctx_tmp, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_INFO);
@@ -115,10 +117,8 @@ std::vector<std::string> Panda::list() {
       int ret = libusb_get_string_descriptor_ascii(handle, desc.iSerialNumber, serial, sizeof(serial));
       libusb_close(handle);
 
-      if (ret < 0) { return serials; }
-      serials.resize(serials_idx+1);
-      serials[serials_idx] = (char *)serial;
-      ++serials_idx;
+      if (ret < 0) break;
+      serials.push_back((char *)serial);
     }
   }
   return serials;
