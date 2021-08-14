@@ -622,3 +622,4 @@ opendbc/toyota_tss2_adas.dbc
 opendbc/vw_mqb_2010.dbc
 
 opendbc/tesla_can.dbc
+opendbc/tesla_radar.dbc
