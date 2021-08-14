@@ -40,7 +40,10 @@ int main() {
       int err = android_logger_list_read(logger_list, &log_msg);
       if (err < 0) {
         if ((err == -1 && (errno == EINTR || errno == EAGAIN)) ||
-            (err == -EINTR || err == -EAGAIN)) continue;
+            (err == -EINTR || err == -EAGAIN)) {
+          util::sleep_for(100);
+          continue;
+        }
         break;
       }
 
