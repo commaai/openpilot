@@ -130,11 +130,6 @@ static void update_state(UIState *s) {
   SubMaster &sm = *(s->sm);
   UIScene &scene = s->scene;
 
-  // update engageability and DM icons at 2Hz
-  if (sm.frame % (UI_FREQ / 2) == 0) {
-    scene.engageable = sm["controlsState"].getControlsState().getEngageable();
-    scene.dm_active = sm["driverMonitoringState"].getDriverMonitoringState().getIsActiveMode();
-  }
   if (sm.updated("modelV2") && s->vg) {
     auto model = sm["modelV2"].getModelV2();
     update_model(s, model);
@@ -156,6 +151,9 @@ static void update_state(UIState *s) {
         scene.view_from_calib.v[i*3 + j] = view_from_calib(i,j);
       }
     }
+  }
+  if (sm.updated("deviceState")) {
+    scene.started = sm["deviceState"].getDeviceState().getStarted();
   }
   if (sm.updated("pandaState")) {
     auto pandaState = sm["pandaState"].getPandaState();
@@ -198,7 +196,12 @@ static void update_state(UIState *s) {
 
     scene.light_sensor = std::clamp<float>(1.0 - (ev / max_ev), 0.0, 1.0);
   }
-  scene.started = sm["deviceState"].getDeviceState().getStarted() && scene.ignition;
+  scene.started = scene.started && scene.ignition;
+   // update engageability and DM icons at 2Hz
+  if (scene.started && (sm.frame % (UI_FREQ / 2) == 0)) {
+    scene.engageable = sm["controlsState"].getControlsState().getEngageable();
+    scene.dm_active = sm["driverMonitoringState"].getDriverMonitoringState().getIsActiveMode();
+  }
 }
 
 static void update_params(UIState *s) {
