@@ -83,7 +83,7 @@ void LogState::log(int levelnum, const char* filename, int lineno, const char* f
   zmq_send(sock_, log_s.c_str(), log_s.length(), ZMQ_NOBLOCK);
 }
 
-LogState* logInstance() {
+static LogState* logInstance() {
   // local static variable initialization is thread-safe after c++11
   static LogState s;
   return &s;
