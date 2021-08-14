@@ -38,7 +38,11 @@ int main() {
     while (!do_exit) {
       log_msg log_msg;
       int err = android_logger_list_read(logger_list, &log_msg);
-      if (err <= 0) break;
+      if (err < 0) {
+        if ((err == -1 && (errno == EINTR || errno == EAGAIN)) ||
+            (err == -EINTR || err == -EAGAIN)) continue;
+        break;
+      }
 
       AndroidLogEntry entry;
       err = android_log_processLogBuffer(&log_msg.entry_v1, &entry);
@@ -55,7 +59,6 @@ int main() {
       androidEntry.setTid(entry.tid);
       androidEntry.setTag(entry.tag);
       androidEntry.setMessage(entry.message);
-
       pm.send("androidLog", msg);
     }
 
