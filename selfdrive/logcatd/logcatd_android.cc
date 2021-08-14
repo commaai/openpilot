@@ -59,6 +59,7 @@ int main() {
       androidEntry.setTid(entry.tid);
       androidEntry.setTag(entry.tag);
       androidEntry.setMessage(entry.message);
+
       pm.send("androidLog", msg);
     }
 
