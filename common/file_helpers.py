@@ -79,6 +79,25 @@ class NamedTemporaryDir():
     self.close()
 
 
+class CallbackReader:
+  """Wraps a file, but overrides the read method to also
+  call a callback function with the number of bytes read so far."""
+  def __init__(self, f, callback, *args):
+    self.f = f
+    self.callback = callback
+    self.cb_args = args
+    self.total_read = 0
+
+  def __getattr__(self, attr):
+    return getattr(self.f, attr)
+
+  def read(self, *args, **kwargs):
+    chunk = self.f.read(*args, **kwargs)
+    self.total_read += len(chunk)
+    self.callback(*self.cb_args, self.total_read)
+    return chunk
+
+
 def _get_fileobject_func(writer, temp_dir):
   def _get_fileobject():
     file_obj = writer.get_fileobject(dir=temp_dir)
