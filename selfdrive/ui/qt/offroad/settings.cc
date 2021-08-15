@@ -231,6 +231,16 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : QWidget(parent) {
       Params().putBool("DoUninstall", true);
     }
   });
+  auto settingsWindowParent = qobject_cast<SettingsWindow*>(parent);
+  if (settingsWindowParent) {
+    connect(settingsWindowParent, &SettingsWindow::offroadTransition, [=](bool enabled) {
+      if (enabled) {
+        uninstallBtn->setText("UNINSTALL");
+      } else {
+        uninstallBtn->setText("Turn off Veh.");
+      }
+    });
+  }
   connect(parent, SIGNAL(offroadTransition(bool)), uninstallBtn, SLOT(setEnabled(bool)));
   main_layout->addWidget(uninstallBtn);
 
