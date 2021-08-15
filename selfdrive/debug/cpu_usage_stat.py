@@ -44,7 +44,7 @@ def get_arg_parser():
   parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
   parser.add_argument("proc_names", nargs="?", default='',
-                      help="Process names to be monitored, comma seperated")
+                      help="Process names to be monitored, comma separated")
   parser.add_argument("--list_all", action='store_true',
                       help="Show all running processes' cmdline")
   parser.add_argument("--detailed_times", action='store_true',

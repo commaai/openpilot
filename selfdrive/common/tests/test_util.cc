@@ -1,5 +1,6 @@
 
 #include <dirent.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 
 #include <algorithm>
@@ -50,4 +51,27 @@ TEST_CASE("util::read_file") {
   SECTION("read non-permission") {
     REQUIRE(util::read_file("/proc/kmsg").empty());
   }
+}
+
+TEST_CASE("util::file_exists") {
+  char filename[] = "/tmp/test_file_exists_XXXXXX";
+  int fd = mkstemp(filename);
+  REQUIRE(fd != -1);
+  close(fd);
+
+  SECTION("existent file") {
+    REQUIRE(util::file_exists(filename));
+    REQUIRE(util::file_exists("/tmp"));
+  }
+  SECTION("nonexistent file") {
+    std::string fn = filename;
+    REQUIRE(!util::file_exists(fn + "/nonexistent"));
+  }
+  SECTION("file has no access permissions") {
+    std::string fn = "/proc/kmsg";
+    std::ifstream f(fn);
+    REQUIRE(f.good() == false);
+    REQUIRE(util::file_exists(fn));
+  }
+  ::remove(filename);
 }

@@ -158,10 +158,10 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
       font-size: 55px;
     }
   )");
-  refresh();
 }
 
 void OffroadHome::showEvent(QShowEvent *event) {
+  refresh();
   timer->start(10 * 1000);
 }
 

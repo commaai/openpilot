@@ -1,5 +1,7 @@
 #include "selfdrive/common/util.h"
 
+#include <sys/stat.h>
+
 #include <cassert>
 #include <cerrno>
 #include <cstring>
@@ -113,17 +115,23 @@ std::string readlink(const std::string &path) {
 }
 
 bool file_exists(const std::string& fn) {
-  std::ifstream f(fn);
-  return f.good();
+  struct stat st = {};
+  return stat(fn.c_str(), &st) != -1;
 }
 
-std::string getenv_default(const char* env_var, const char * suffix, const char* default_val) {
-  const char* env_val = getenv(env_var);
-  if (env_val != NULL) {
-    return std::string(env_val) + std::string(suffix);
-  } else {
-    return std::string(default_val);
-  }
+std::string getenv(const char* key, const char* default_val) {
+  const char* val = ::getenv(key);
+  return val ? val : default_val;
+}
+
+int getenv(const char* key, int default_val) {
+  const char* val = ::getenv(key);
+  return val ? atoi(val) : default_val;
+}
+
+float getenv(const char* key, float default_val) {
+  const char* val = ::getenv(key);
+  return val ? atof(val) : default_val;
 }
 
 std::string tohex(const uint8_t *buf, size_t buf_size) {
@@ -154,10 +162,6 @@ std::string dir_name(std::string const &path) {
   size_t pos = path.find_last_of("/");
   if (pos == std::string::npos) return "";
   return path.substr(0, pos);
-}
-
-bool is_valid_dongle_id(std::string const& dongle_id) {
-  return !dongle_id.empty() && dongle_id != "UnregisteredDevice";
 }
 
 struct tm get_time() {

@@ -129,7 +129,7 @@ void MapWindow::timerUpdate() {
 
     if (localizer_valid) {
       auto pos = location.getPositionGeodetic();
-      auto orientation = location.getOrientationNED();
+      auto orientation = location.getCalibratedOrientationNED();
 
       float velocity = location.getVelocityCalibrated().getValue()[0];
       float bearing = RAD2DEG(orientation.getValue()[2]);
@@ -198,7 +198,7 @@ void MapWindow::timerUpdate() {
       }
 
       // Transition to next route segment
-      if (distance_to_maneuver < -MANEUVER_TRANSITION_THRESHOLD) {
+      if (!shouldRecompute() && (distance_to_maneuver < -MANEUVER_TRANSITION_THRESHOLD)) {
         auto next_segment = segment.nextRouteSegment();
         if (next_segment.isValid()) {
           segment = next_segment;

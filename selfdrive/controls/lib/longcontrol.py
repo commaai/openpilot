@@ -81,7 +81,7 @@ class LongControl():
   def update(self, active, CS, CP, long_plan, extras):
     """Update longitudinal control. This updates the state machine and runs a PID loop"""
     # Interp control trajectory
-    # TODO estimate car specific lag, use .5s for now
+    # TODO estimate car specific lag, use .15s for now
     if len(long_plan.speeds) == CONTROL_N:
       accel_delay = interp(CS.vEgo, [4.4704, 35.7632], [0.15, 0.3])  # 10 to 80 mph
       v_target = interp(accel_delay, T_IDXS[:CONTROL_N], long_plan.speeds)
