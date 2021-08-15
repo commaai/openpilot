@@ -31,7 +31,7 @@ class TestAthenadMethods(unittest.TestCase):
     athenad.Api = MockApi
     athenad.LOCAL_PORT_WHITELIST = set([cls.SOCKET_PORT])
 
-  def tearDown(self):
+  def setUp(self):
     athenad.upload_queue = queue.Queue()
     athenad.cur_upload_items.clear()
 
