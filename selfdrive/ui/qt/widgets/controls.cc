@@ -9,9 +9,7 @@ QFrame *horizontal_line(QWidget *parent) {
   line->setStyleSheet(R"(
     margin-left: 40px;
     margin-right: 40px;
-    border-width: 1px;
-    border-bottom-style: solid;
-    border-color: gray;
+    background-color:grey;
   )");
   line->setFixedHeight(2);
   return line;
