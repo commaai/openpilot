@@ -35,14 +35,17 @@ Example:
 
 ## Streaming
 
-To get started exploring and plotting data live in your car, you can start PlotJuggler in streaming mode: `./juggle.py --stream`.
+Explore live data from your car! (If running openpilot locally, skip right to `./juggle.py --stream`.)
 
-For this to work, you'll need a few things:
-- Enable tethering on your comma device and connect your laptop.
-- Run `export ZMQ=1` on the computer, which tells the streaming plugin backend to use ZMQ. If you're streaming locally, you can omit this step as ZMQ is used to transport data over the network.
-- Most importantly: openpilot by default uses the MSGQ backend, so you'll need to [ssh into your device](https://github.com/commaai/openpilot/wiki/SSH) and run bridge. This simply re-broadcasts each message over ZMQ: `./cereal/messaging/bridge`.
+- On comma device:
+  - Enable wifi tethering
+- On laptop:
+  - `export ZMQ=1` in plotjuggler's environment, to tell the streaming plugin to use ZMQ.
+  - Connect to comma device wifi
+- [ssh into comma device](https://github.com/commaai/openpilot/wiki/SSH):
+  - Run `./cereal/messaging/bridge` to re-broadcast openpilot's MSGQ to ZMQ over the network.
 
-Now start PlotJuggler using the above `juggle.py` command, and find the `Cereal Subscriber` plugin in the dropdown under Streaming. Click Start and enter the IP address of the comma two. You should now be seeing all the messages for each [service in openpilot](https://github.com/commaai/cereal/blob/master/services.py) received live from your car!
+Start PlotJuggler with `./juggle.py --stream`, find the `Cereal Subscriber` plugin in the dropdown under Streaming, and click Start. Observe live messages from [openpilot's services](https://github.com/commaai/cereal/blob/master/services.py)!
 
 ## Demo
 
