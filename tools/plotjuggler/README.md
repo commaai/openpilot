@@ -35,7 +35,7 @@ Example:
 
 ## Streaming
 
-Explore live data from your car! (If running openpilot locally, skip right to `./juggle.py --stream`.)
+Explore live data from your car! (If running openpilot locally, skip to `./juggle.py --stream`.)
 
 - On comma device:
   - Enable wifi tethering
