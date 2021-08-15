@@ -115,9 +115,9 @@ class opParams:
                         # 'enable_long_derivative': Param(False, bool, 'If you have longitudinal overshooting, enable this! This enables derivative-based\n'
                         #                                              'integral wind-down to help reduce overshooting within the long PID loop'),
                         'disengage_on_gas': Param(False, bool, 'Whether you want openpilot to disengage on gas input or not'),
-                        'update_behavior': Param('auto', str, 'Can be: (\'off\', \'alert\', \'auto\') without quotes\n'
-                                                              'off will never update, alert shows an alert on-screen\n'
-                                                              'auto will reboot the device when an update is seen', static=True),
+                        'update_behavior': Param('alert', str, 'Can be: (\'off\', \'alert\', \'auto\') without quotes\n'
+                                                               'off will never update, alert shows an alert on-screen\n'
+                                                               'auto will reboot the device when an update is seen', static=True),
                         'dynamic_gas': Param(False, bool, 'Whether to use dynamic gas if your car is supported'),
                         'hide_auto_df_alerts': Param(False, bool, 'Hides the alert that shows what profile the model has chosen'),
                         'log_auto_df': Param(False, bool, 'Logs dynamic follow data for auto-df', static=True),
@@ -139,7 +139,7 @@ class opParams:
                         'standstill_hack': Param(False, bool, 'Some cars support stop and go, you just need to enable this', static=True)}
 
     self._to_delete = ['long_accel_delay', 'accel_lag_compensation']  # a list of unused params you want to delete from users' params file
-    self._to_reset = []  # a list of params you want reset to their default values
+    self._to_reset = ['update_behavior']  # a list of params you want reset to their default values
     self._run_init()  # restores, reads, and updates params
 
   def _run_init(self):  # does first time initializing of default params
