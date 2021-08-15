@@ -25,11 +25,7 @@ signals:
 class TogglesPanel : public ListWidget {
   Q_OBJECT
 public:
-  explicit TogglesPanel(QWidget *parent = nullptr) : QWidget(parent) {}
-
-private:
-  void initialize();
-  void showEvent(QShowEvent *event) override;
+  explicit TogglesPanel(QWidget *parent = nullptr);
 };
 
 class SoftwarePanel : public ListWidget {
