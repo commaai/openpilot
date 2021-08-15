@@ -67,26 +67,22 @@ static void ui_draw_circle_image(const UIState *s, int center_x, int center_y, i
   ui_draw_circle_image(s, center_x, center_y, radius, image, nvgRGBA(0, 0, 0, (255 * bg_alpha)), img_alpha);
 }
 
-static void draw_lead(UIState *s, const cereal::ModelDataV2::LeadDataV3::Reader &lead_data, const vertex_data &vd) {
+static void draw_lead(UIState *s, const UIScene::Lead &lead) {
   // Draw lead car indicator
-  auto [x, y] = vd;
-
   float fillAlpha = 0;
   float speedBuff = 10.;
   float leadBuff = 40.;
-  float d_rel = lead_data.getX()[0];
-  float v_rel = lead_data.getV()[0];
-  if (d_rel < leadBuff) {
-    fillAlpha = 255*(1.0-(d_rel/leadBuff));
-    if (v_rel < 0) {
-      fillAlpha += 255*(-1*(v_rel/speedBuff));
+  if (lead.d_rel < leadBuff) {
+    fillAlpha = 255*(1.0-(lead.d_rel/leadBuff));
+    if (lead.v_rel < 0) {
+      fillAlpha += 255*(-1*(lead.v_rel/speedBuff));
     }
     fillAlpha = (int)(fmin(fillAlpha, 255));
   }
 
-  float sz = std::clamp((25 * 30) / (d_rel / 3 + 30), 15.0f, 30.0f) * 2.35;
-  x = std::clamp(x, 0.f, s->fb_w - sz / 2);
-  y = std::fmin(s->fb_h - sz * .6, y);
+  float sz = std::clamp((25 * 30) / (lead.d_rel / 3 + 30), 15.0f, 30.0f) * 2.35;
+  float x = std::clamp(lead.vertices.x, 0.f, s->fb_w - sz / 2);
+  float y = std::fmin(s->fb_h - sz * .6, lead.vertices.y);
   draw_chevron(s, x, y, sz, nvgRGBA(201, 34, 49, fillAlpha), COLOR_YELLOW);
 }
 
@@ -167,13 +163,12 @@ static void ui_draw_world(UIState *s) {
 
   // Draw lead indicators if openpilot is handling longitudinal
   if (s->scene.longitudinal_control) {
-    auto lead_one = (*s->sm)["modelV2"].getModelV2().getLeadsV3()[0];
-    auto lead_two = (*s->sm)["modelV2"].getModelV2().getLeadsV3()[1];
-    if (lead_one.getProb() > .5) {
-      draw_lead(s, lead_one, s->scene.lead_vertices[0]);
+    const auto &leads = s->scene.leads;
+    if (leads[0].valid) {
+      draw_lead(s, leads[0]);
     }
-   if (lead_two.getProb() > .5 && (std::abs(lead_one.getX()[0] - lead_two.getX()[0]) > 3.0)) {
-      draw_lead(s, lead_two, s->scene.lead_vertices[1]);
+   if (leads[1].valid && (std::abs(leads[0].d_rel - leads[1].d_rel) > 3.0)) {
+      draw_lead(s, leads[1]);
     }
   }
   nvgResetScissor(s->vg);

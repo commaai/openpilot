@@ -67,9 +67,12 @@ static void update_leads(UIState *s, const cereal::ModelDataV2::Reader &model) {
   auto leads = model.getLeadsV3();
   auto model_position = model.getPosition();
   for (int i = 0; i < 2; ++i) {
-    if (leads[i].getProb() > 0.5) {
-      float z = model_position.getZ()[get_path_length_idx(model_position, leads[i].getX()[0])];
-      calib_frame_to_full_frame(s, leads[i].getX()[0], leads[i].getY()[0], z + 1.22, &s->scene.lead_vertices[i]);
+    UIScene::Lead &l = s->scene.leads[i];
+    if ((l.valid = leads[i].getProb() > 0.5)) {
+      l.d_rel = leads[i].getX()[0];
+      l.v_rel = leads[i].getV()[0];
+      float z = model_position.getZ()[get_path_length_idx(model_position, l.d_rel)];
+      calib_frame_to_full_frame(s, l.d_rel, leads[i].getY()[0], z + 1.22, &l.vertices);
     }
   }
 }
