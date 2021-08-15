@@ -216,66 +216,86 @@ kj::Array<uint8_t> get_frame_image(const CameraBuf *b) {
   return kj::mv(frame_image);
 }
 
-static void publish_thumbnail(PubMaster *pm, const CameraBuf *b) {
-  uint8_t* thumbnail_buffer = NULL;
-  unsigned long thumbnail_len = 0;
-
-  unsigned char *row = (unsigned char *)malloc(b->rgb_width/4*3);
-
+static std::pair<uint8_t *, size_t> yuv420_to_jpeg(const CameraBuf *b, int thumbnail_width, int thumbnail_height) {
+  std::unique_ptr<uint8[]> buf(new uint8_t[(thumbnail_width * thumbnail_height * 3) / 2]);
+  uint8_t *y_plane = buf.get();
+  uint8_t *u_plane = y_plane + thumbnail_width * thumbnail_height;
+  uint8_t *v_plane = u_plane + (thumbnail_width * thumbnail_height) / 4;
+  {
+    int result = libyuv::I420Scale(
+        b->cur_yuv_buf->y, b->rgb_width, b->cur_yuv_buf->u, b->rgb_width / 2, b->cur_yuv_buf->v, b->rgb_width / 2,
+        b->rgb_width, b->rgb_height,
+        y_plane, thumbnail_width, u_plane, thumbnail_width / 2, v_plane, thumbnail_width / 2,
+        thumbnail_width, thumbnail_height, libyuv::kFilterNone);
+    if (result != 0) {
+      LOGE("Generate YUV thumbnail failed.");
+      return {nullptr, 0};
+    }
+  }
   struct jpeg_compress_struct cinfo;
   struct jpeg_error_mgr jerr;
-
   cinfo.err = jpeg_std_error(&jerr);
   jpeg_create_compress(&cinfo);
+
+  uint8_t *thumbnail_buffer = nullptr;
+  size_t thumbnail_len = 0;
   jpeg_mem_dest(&cinfo, &thumbnail_buffer, &thumbnail_len);
 
-  cinfo.image_width = b->rgb_width / 4;
-  cinfo.image_height = b->rgb_height / 4;
+  cinfo.image_width = thumbnail_width;
+  cinfo.image_height = thumbnail_height;
   cinfo.input_components = 3;
-  cinfo.in_color_space = JCS_RGB;
 
   jpeg_set_defaults(&cinfo);
-#ifndef __APPLE__
-  jpeg_set_quality(&cinfo, 50, true);
-  jpeg_start_compress(&cinfo, true);
-#else
-  jpeg_set_quality(&cinfo, 50, static_cast<boolean>(true) );
-  jpeg_start_compress(&cinfo, static_cast<boolean>(true) );
-#endif
+  jpeg_set_colorspace(&cinfo, JCS_YCbCr);
+  // cinfo.dct_method = JDCT_IFAST;
+  cinfo.raw_data_in = TRUE;
+  // configure sampling factors for yuv420.
+  cinfo.comp_info[0].h_samp_factor = 2;
+  cinfo.comp_info[0].v_samp_factor = 2;
+  cinfo.comp_info[1].h_samp_factor = 1;
+  cinfo.comp_info[1].v_samp_factor = 1;
+  cinfo.comp_info[2].h_samp_factor = 1;
+  cinfo.comp_info[2].v_samp_factor = 1;
 
-  JSAMPROW row_pointer[1];
-  const uint8_t *bgr_ptr = (const uint8_t *)b->cur_rgb_buf->addr;
-  for (int ii = 0; ii < b->rgb_height/4; ii+=1) {
-    for (int j = 0; j < b->rgb_width*3; j+=12) {
-      for (int k = 0; k < 3; k++) {
-        uint16_t dat = 0;
-        int i = ii * 4;
-        dat += bgr_ptr[b->rgb_stride*i + j + k];
-        dat += bgr_ptr[b->rgb_stride*i + j+3 + k];
-        dat += bgr_ptr[b->rgb_stride*(i+1) + j + k];
-        dat += bgr_ptr[b->rgb_stride*(i+1) + j+3 + k];
-        dat += bgr_ptr[b->rgb_stride*(i+2) + j + k];
-        dat += bgr_ptr[b->rgb_stride*(i+2) + j+3 + k];
-        dat += bgr_ptr[b->rgb_stride*(i+3) + j + k];
-        dat += bgr_ptr[b->rgb_stride*(i+3) + j+3 + k];
-        row[(j/4) + (2-k)] = dat/8;
+  jpeg_set_quality(&cinfo, 50, TRUE);
+  jpeg_start_compress(&cinfo, TRUE);
+
+  const int compress_batch_size = 16;
+  JSAMPROW y[compress_batch_size] = {};
+  JSAMPROW cb[compress_batch_size / 2] = {};
+  JSAMPROW cr[compress_batch_size / 2] = {};
+  JSAMPARRAY planes[3]{y, cb, cr};
+
+  for (int line = 0; line < cinfo.image_height; line += compress_batch_size) {
+    for (int i = 0; i < compress_batch_size; ++i) {
+      y[i] = y_plane + (line + i) * cinfo.image_width;
+      if (i % 2 == 0) {
+        int offset = (cinfo.image_width / 2) * ((i + line) / 2);
+        cb[i / 2] = u_plane + offset;
+        cr[i / 2] = v_plane + offset;
       }
     }
-    row_pointer[0] = row;
-    jpeg_write_scanlines(&cinfo, row_pointer, 1);
+    jpeg_write_raw_data(&cinfo, planes, compress_batch_size);
   }
+
   jpeg_finish_compress(&cinfo);
   jpeg_destroy_compress(&cinfo);
-  free(row);
+
+  return {thumbnail_buffer, thumbnail_len};
+}
+
+static void publish_thumbnail(PubMaster *pm, const CameraBuf *b) {
+  auto [thumbnail, len] = yuv420_to_jpeg(b, b->rgb_width / 4, b->rgb_height / 4);
+  if (thumbnail == nullptr) return;
 
   MessageBuilder msg;
   auto thumbnaild = msg.initEvent().initThumbnail();
   thumbnaild.setFrameId(b->cur_frame_data.frame_id);
   thumbnaild.setTimestampEof(b->cur_frame_data.timestamp_eof);
-  thumbnaild.setThumbnail(kj::arrayPtr((const uint8_t*)thumbnail_buffer, thumbnail_len));
+  thumbnaild.setThumbnail(kj::arrayPtr(thumbnail, len));
 
   pm->send("thumbnail", msg);
-  free(thumbnail_buffer);
+  free(thumbnail);
 }
 
 float set_exposure_target(const CameraBuf *b, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip) {
