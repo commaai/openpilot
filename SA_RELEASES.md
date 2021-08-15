@@ -1,4 +1,8 @@
-Stock Additions Update 1 - 2021-08-XX (0.8.7)
+Stock Additions Update 2 - 2021-08-15 (0.8.8)
+===
+ * Update SA to 0.8.8 with new model from upstream!
+
+Stock Additions Update 1 - 2021-08-15 (0.8.7)
 ===
  * Update SA to 0.8.7!
  * Variable longitudinal lag by speed
