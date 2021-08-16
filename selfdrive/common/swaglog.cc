@@ -93,11 +93,13 @@ void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func
   char* msg_buf = nullptr;
   va_list args;
   va_start(args, fmt);
-  vasprintf(&msg_buf, fmt, args);
+  int len = vasprintf(&msg_buf, fmt, args);
   va_end(args);
 
-  if (msg_buf) {
+  if (len != -1 && msg_buf != nullptr) {
     logInstance()->log(levelnum, filename, lineno, func, msg_buf);
+  }
+  if (msg_buf != nullptr) {
     free(msg_buf);
   }
 }
