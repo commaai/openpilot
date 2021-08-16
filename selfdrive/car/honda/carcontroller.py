@@ -173,7 +173,7 @@ class CarController():
       max_accel = interp(CS.out.vEgo, P.NIDEC_MAX_ACCEL_BP, P.NIDEC_MAX_ACCEL_V)
       pcm_accel = int(clip(apply_accel/max_accel, 0.0, 1.0) * 0xc6)
       pcm_speed_BP = [-wind_brake,
-                      -3*wind_brake/4,
+                      -wind_brake*(3/4),
                       0.0]
       pcm_speed_V = [0.0,
                      CS.out.vEgo + apply_accel/2.0 - 2.0,
@@ -209,9 +209,11 @@ class CarController():
           self.apply_brake_last = apply_brake
 
           if CS.CP.enableGasInterceptor:
+            # way too aggressive at low speed without this
+            gas_mult = interp(CS.out.vEgo, [0., 10.], [0.4, 1.0])
             # send exactly zero if apply_gas is zero. Interceptor will send the max between read value and apply_gas.
             # This prevents unexpected pedal range rescaling
-            apply_gas = clip(actuators.gas, 0., 1.)
+            apply_gas = clip(gas_mult * actuators.gas, 0., 1.)
             can_sends.append(create_gas_command(self.packer, apply_gas, idx))
 
     hud = HUDData(int(pcm_accel), int(round(hud_v_cruise)), hud_car,
