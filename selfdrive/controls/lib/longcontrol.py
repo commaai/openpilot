@@ -14,7 +14,9 @@ BRAKE_THRESHOLD_TO_PID = 0.2
 BRAKE_STOPPING_TARGET = 0.5  # apply at least this amount of brake to maintain the vehicle stationary
 
 RATE = 100.0
-DEFAULT_LONG_LAG = 0.15
+#DEFAULT_LONG_LAG = 0.15
+# TODO: hyundai long - needs to be parameterized
+DEFAULT_LONG_LAG = 1.0
 
 
 def long_control_state_trans(active, long_control_state, v_ego, v_target, v_pid,

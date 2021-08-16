@@ -95,7 +95,8 @@ class CarInterfaceBase():
     raise NotImplementedError
 
   # return sendcan, pass in a car.CarControl
-  def apply(self, c):
+  # TODO: figure out a better way to pass long_control_state
+  def apply(self, c, long_control_state):
     raise NotImplementedError
 
   def create_common_events(self, cs_out, extra_gears=None, gas_resume_speed=-1, pcm_enable=True):
