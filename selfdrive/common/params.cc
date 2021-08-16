@@ -74,7 +74,7 @@ int mkdir_p(std::string path) {
   return 0;
 }
 
-static bool create_params_path(const std::string &param_path, const std::string &key_path) {
+bool create_params_path(const std::string &param_path, const std::string &key_path) {
   // Make sure params path exists
   if (!util::file_exists(param_path) && mkdir_p(param_path) != 0) {
     return false;
@@ -113,7 +113,7 @@ static bool create_params_path(const std::string &param_path, const std::string 
   return chmod(key_path.c_str(), 0777) == 0;
 }
 
-static void ensure_params_path(const std::string &params_path) {
+void ensure_params_path(const std::string &params_path) {
   if (!create_params_path(params_path, params_path + "/d")) {
     throw std::runtime_error(util::string_format("Failed to ensure params path, errno=%d", errno));
   }
