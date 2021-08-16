@@ -8,6 +8,7 @@
 
 typedef QPair<QString, QColor> ItemStatus;
 Q_DECLARE_METATYPE(ItemStatus);
+
 class Sidebar : public QFrame {
   Q_OBJECT
   Q_PROPERTY(ItemStatus connectStatus MEMBER connect_status NOTIFY valueChanged);
