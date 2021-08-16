@@ -67,7 +67,7 @@ class RadarInterface(RadarInterfaceBase):
     self.updated_messages.update(values)
 
     # Trigger update only on new first track message
-    if RADAR_MSGS_A[0] not in self.updated_messages:
+    if RADAR_MSGS_B[-1] not in self.updated_messages:
       return None
 
     ret = car.RadarData.new_message()
@@ -110,4 +110,5 @@ class RadarInterface(RadarInterfaceBase):
       self.pts[i].measured = bool(msg_a['Meas'])
 
     ret.points = list(self.pts.values())
+    self.updated_messages.clear()
     return ret
