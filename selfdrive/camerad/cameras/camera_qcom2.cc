@@ -751,17 +751,17 @@ void cameras_open(MultiCameraState *s) {
 
   LOG("-- Opening devices");
   // video0 is req_mgr, the target of many ioctls
-  s->video0_fd = open("/dev/v4l/by-path/platform-soc:qcom_cam-req-mgr-video-index0", O_RDWR | O_NONBLOCK);
+  s->video0_fd = HANDLE_EINTR(open("/dev/v4l/by-path/platform-soc:qcom_cam-req-mgr-video-index0", O_RDWR | O_NONBLOCK));
   assert(s->video0_fd >= 0);
   LOGD("opened video0");
 
   // video1 is cam_sync, the target of some ioctls
-  s->video1_fd = open("/dev/v4l/by-path/platform-cam_sync-video-index0", O_RDWR | O_NONBLOCK);
+  s->video1_fd = HANDLE_EINTR(open("/dev/v4l/by-path/platform-cam_sync-video-index0", O_RDWR | O_NONBLOCK));
   assert(s->video1_fd >= 0);
   LOGD("opened video1");
 
   // looks like there's only one of these
-  s->isp_fd = open("/dev/v4l-subdev1", O_RDWR | O_NONBLOCK);
+  s->isp_fd = HANDLE_EINTR(open("/dev/v4l-subdev1", O_RDWR | O_NONBLOCK));
   assert(s->isp_fd >= 0);
   LOGD("opened isp");
 
