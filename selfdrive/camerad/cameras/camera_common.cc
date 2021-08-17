@@ -27,6 +27,9 @@
 #else
 #include "selfdrive/camerad/cameras/camera_frame_stream.h"
 #endif
+#ifdef QCOM
+#include "CL/cl_ext_qcom.h"
+#endif
 
 const int YUV_COUNT = 100;
 
@@ -44,10 +47,13 @@ static cl_program build_debayer_program(cl_device_id device_id, cl_context conte
   return cl_program_from_file(context, device_id, cl_file, args);
 }
 
-void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType rgb_type, VisionStreamType yuv_type, release_cb release_callback) {
-  vipc_server = v;
-  this->rgb_type = rgb_type;
-  this->yuv_type = yuv_type;
+void CameraBuf::init(MultiCameraState *server, CameraState *s, int frame_cnt, release_cb release_callback) {
+  vipc_server = server->vipc_server;
+  std::pair<VisionStreamType, VisionStreamType> stream_types[] = {
+      [RoadCam] = {VISION_STREAM_RGB_BACK, VISION_STREAM_YUV_BACK},
+      [DriverCam] = {VISION_STREAM_RGB_FRONT, VISION_STREAM_YUV_FRONT},
+      [WideRoadCam] = {VISION_STREAM_RGB_WIDE, VISION_STREAM_YUV_WIDE}};
+  std::tie(rgb_type, yuv_type) = stream_types[s->cam_type];
   this->release_callback = release_callback;
 
   const CameraInfo *ci = &s->ci;
@@ -61,7 +67,7 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
 
   for (int i = 0; i < frame_buf_count; i++) {
     camera_bufs[i].allocate(frame_size);
-    camera_bufs[i].init_cl(device_id, context);
+    camera_bufs[i].init_cl(server->device_id, server->context);
   }
 
   rgb_width = ci->frame_width;
@@ -81,18 +87,18 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
   vipc_server->create_buffers(yuv_type, YUV_COUNT, false, rgb_width, rgb_height);
 
   if (ci->bayer) {
-    cl_program prg_debayer = build_debayer_program(device_id, context, ci, this, s);
+    cl_program prg_debayer = build_debayer_program(server->device_id, server->context, ci, this, s);
     krnl_debayer = CL_CHECK_ERR(clCreateKernel(prg_debayer, "debayer10", &err));
     CL_CHECK(clReleaseProgram(prg_debayer));
   }
 
-  rgb2yuv = std::make_unique<Rgb2Yuv>(context, device_id, rgb_width, rgb_height, rgb_stride);
+  rgb2yuv = std::make_unique<Rgb2Yuv>(server->context, server->device_id, rgb_width, rgb_height, rgb_stride);
 
 #ifdef __APPLE__
-  q = CL_CHECK_ERR(clCreateCommandQueue(context, device_id, 0, &err));
+  q = CL_CHECK_ERR(clCreateCommandQueue(server->context, server->device_id, 0, &err));
 #else
   const cl_queue_properties props[] = {0};  //CL_QUEUE_PRIORITY_KHR, CL_QUEUE_PRIORITY_HIGH_KHR, 0};
-  q = CL_CHECK_ERR(clCreateCommandQueueWithProperties(context, device_id, props, &err));
+  q = CL_CHECK_ERR(clCreateCommandQueueWithProperties(server->context, server->device_id, props, &err));
 #endif
 }
 
@@ -309,15 +315,8 @@ float set_exposure_target(const CameraBuf *b, int x_start, int x_end, int x_skip
 extern ExitHandler do_exit;
 
 void *processing_thread(MultiCameraState *cameras, CameraState *cs, process_thread_cb callback) {
-  const char *thread_name = nullptr;
-  if (cs == &cameras->road_cam) {
-    thread_name = "RoadCamera";
-  } else if (cs == &cameras->driver_cam) {
-    thread_name = "DriverCamera";
-  } else {
-    thread_name = "WideRoadCamera";
-  }
-  set_thread_name(thread_name);
+  const char *thread_names[] = {"RoadCamera", "DriverCamera", "WideRoadCamera"};
+  set_thread_name(thread_names[cs->cam_type]);
 
   uint32_t cnt = 0;
   while (!do_exit) {
@@ -325,7 +324,7 @@ void *processing_thread(MultiCameraState *cameras, CameraState *cs, process_thre
 
     callback(cameras, cs, cnt);
 
-    if (cs == &(cameras->road_cam) && cameras->pm && cnt % 100 == 3) {
+    if (cs->cam_type == RoadCam && cameras->pm && cnt % 100 == 3) {
       // this takes 10ms???
       publish_thumbnail(cameras->pm, &(cs->buf));
     }
@@ -388,4 +387,37 @@ void common_process_driver_camera(SubMaster *sm, PubMaster *pm, CameraState *c, 
     framed.setImage(get_frame_image(&c->buf));
   }
   pm->send("driverCameraState", msg);
+}
+
+// CameraServerBase
+
+void CameraServerBase::init() {
+  device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
+  // TODO: do this for QCOM2 too
+#if defined(QCOM)
+  const cl_context_properties props[] = {CL_CONTEXT_PRIORITY_HINT_QCOM, CL_PRIORITY_HINT_HIGH_QCOM, 0};
+  context = CL_CHECK_ERR(clCreateContext(props, 1, &device_id, NULL, NULL, &err));
+#else
+  context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
+#endif
+
+  std::vector<const char*> services = {"roadCameraState", "driverCameraState", "thumbnail"};
+  if (Hardware::TICI()) {
+    services.push_back("wideRoadCameraState");
+  }
+  pm = new PubMaster(services);
+  sm = new SubMaster({"driverState"});
+
+  vipc_server = new VisionIpcServer("camerad", device_id, context);
+}
+
+CameraServerBase::~CameraServerBase() {
+  delete vipc_server;
+  delete pm;
+  delete sm;
+  CL_CHECK(clReleaseContext(context));
+}
+
+void CameraServerBase::start() {
+  vipc_server->start_listener();
 }

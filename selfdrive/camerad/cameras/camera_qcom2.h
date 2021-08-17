@@ -10,6 +10,7 @@
 #define FRAME_BUF_COUNT 4
 #define DEBAYER_LOCAL_WORKSIZE 16
 typedef struct CameraState {
+  CameraType cam_type;
   MultiCameraState *multi_cam_state;
   CameraInfo ci;
 
@@ -53,7 +54,10 @@ typedef struct CameraState {
   CameraBuf buf;
 } CameraState;
 
-typedef struct MultiCameraState {
+class MultiCameraState : public CameraServerBase {
+public:
+  MultiCameraState() = default;
+
   unique_fd video0_fd;
   unique_fd video1_fd;
   unique_fd isp_fd;
@@ -61,10 +65,7 @@ typedef struct MultiCameraState {
   int cdm_iommu;
 
 
-  CameraState road_cam;
-  CameraState wide_road_cam;
-  CameraState driver_cam;
-
-  SubMaster *sm;
-  PubMaster *pm;
-} MultiCameraState;
+  CameraState road_cam{.cam_type = RoadCam};
+  CameraState wide_road_cam{.cam_type = WideRoadCam};
+  CameraState driver_cam{.cam_type = DriverCam};
+};

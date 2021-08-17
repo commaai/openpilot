@@ -40,6 +40,7 @@ typedef struct StreamState {
 } StreamState;
 
 typedef struct CameraState {
+  CameraType cam_type;
   int camera_num;
   int camera_id;
 
@@ -86,7 +87,9 @@ typedef struct CameraState {
 } CameraState;
 
 
-typedef struct MultiCameraState {
+class MultiCameraState : public CameraServerBase {
+public:
+  MultiCameraState() = default;
   unique_fd ispif_fd;
   unique_fd msmcfg_fd;
   unique_fd v4l_fd;
@@ -95,13 +98,11 @@ typedef struct MultiCameraState {
   VisionBuf focus_bufs[FRAME_BUF_COUNT];
   VisionBuf stats_bufs[FRAME_BUF_COUNT];
 
-  CameraState road_cam;
-  CameraState driver_cam;
+  CameraState road_cam{.cam_type = RoadCam};
+  CameraState driver_cam{.cam_type = DriverCam};
 
-  SubMaster *sm;
-  PubMaster *pm;
   LapConv *lap_conv;
-} MultiCameraState;
+};
 
 void actuator_move(CameraState *s, uint16_t target);
 int sensor_write_regs(CameraState *s, struct msm_camera_i2c_reg_array* arr, size_t size, int data_type);
