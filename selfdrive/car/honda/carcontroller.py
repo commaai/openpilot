@@ -94,7 +94,12 @@ class CarController():
 
     P = self.params
 
-    gas, brake = compute_gas_brake(actuators.accel, CS.out.vEgo, CS.CP.carFingerprint)
+    if enabled:
+      accel = actuators.accel
+      gas, brake = compute_gas_brake(actuators.accel, CS.out.vEgo, CS.CP.carFingerprint)
+    else:
+      accel = 0.0
+      gas, brake = 0.0, 0.0
 
     # *** apply brake hysteresis ***
     pre_limit_brake, self.braking, self.brake_steady = actuator_hystereses(brake, self.braking, self.brake_steady, CS.out.vEgo, CS.CP.carFingerprint)
@@ -149,7 +154,6 @@ class CarController():
       lkas_active, CS.CP.carFingerprint, idx, CS.CP.openpilotLongitudinalControl))
 
 
-    accel = actuators.accel
 
     # TODO: pass in LoC.long_control_state and use that to decide starting/stoppping
     stopping = accel < 0 and CS.out.vEgo < 0.3
