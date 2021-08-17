@@ -17,7 +17,7 @@ usage: juggle.py [-h] [--qlog] [--can] [--stream] [--layout [LAYOUT]] [route_nam
 PlotJuggler plugin for reading openpilot logs
 
 positional arguments:
-  route_name         The route name to plot, cabana share url accepted (default: None)
+  route_name         The route name to plot (cabana share URL accepted) (default: None)
   segment_number     The index of the segment to plot (default: None)
   segment_count      The number of segments to plot (default: 1)
 
