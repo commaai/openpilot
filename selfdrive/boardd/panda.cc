@@ -15,7 +15,7 @@ Panda::Panda(std::string serial) {
   libusb_device **dev_list = NULL;
   // init libusb
   int err = libusb_init(&ctx);
-  if (err != 0) goto fail;
+  if (err != 0) { goto fail; }
 
 #if LIBUSB_API_VERSION >= 0x01000106
   libusb_set_option(ctx, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_INFO);
@@ -45,17 +45,17 @@ Panda::Panda(std::string serial) {
     }
   }
 
-  if (dev_handle == NULL) goto fail;
+  if (dev_handle == NULL) { goto fail; }
 
   if (libusb_kernel_driver_active(dev_handle, 0) == 1) {
     libusb_detach_kernel_driver(dev_handle, 0);
   }
 
   err = libusb_set_configuration(dev_handle, 1);
-  if (err != 0) goto fail;
+  if (err != 0) { goto fail; }
 
   err = libusb_claim_interface(dev_handle, 0);
-  if (err != 0) goto fail;
+  if (err != 0) { goto fail; }
 
   hw_type = get_hw_type();
 
