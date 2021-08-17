@@ -150,16 +150,9 @@ static bool createDirectory(std::string dir, mode_t mode, bool reset_mode) {
   return errno == EEXIST && verify_dir(dir, reset_mode ? mode : 0);
 }
 
-bool create_directories(const std::string& dir, mode_t mode, bool reset_mode, bool no_umask) {
+bool create_directories(const std::string& dir, mode_t mode, bool reset_mode) {
   if (dir.empty()) return false;
-  if (no_umask) {
-    mode_t prev_mask = ::umask(0);
-    bool ret = createDirectory(dir, mode, reset_mode);
-    ::umask(prev_mask);
-    return ret;
-  } else {
-    return createDirectory(dir, mode, reset_mode);
-  }
+  return createDirectory(dir, mode, reset_mode);
 }
 
 std::string getenv(const char* key, const char* default_val) {
