@@ -94,7 +94,7 @@ class CarController():
 
     P = self.params
 
-    gas, brake = compute_gas_brake(actuators.accel, CS.out.vEgo, CS.CP.carFingerprint)
+    gas_val, brake_val = compute_gas_brake(actuators.accel, CS.out.vEgo, CS.CP.carFingerprint)
 
     # *** apply brake hysteresis ***
     brake, self.braking, self.brake_steady = actuator_hystereses(actuators.brake, self.braking, self.brake_steady, CS.out.vEgo, CS.CP.carFingerprint)
@@ -208,7 +208,7 @@ class CarController():
             gas_mult = interp(CS.out.vEgo, [0., 10.], [0.4, 1.0])
             # send exactly zero if apply_gas is zero. Interceptor will send the max between read value and apply_gas.
             # This prevents unexpected pedal range rescaling
-            apply_gas = clip(gas_mult * actuators.gas, 0., 1.)
+            apply_gas = clip(gas_mult * gas_val, 0., 1.)
             can_sends.append(create_gas_command(self.packer, apply_gas, idx))
 
     hud = HUDData(int(pcm_accel), int(round(hud_v_cruise)), hud_car,
