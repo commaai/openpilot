@@ -84,7 +84,9 @@ void Panda::cleanup() {
     libusb_close(dev_handle);
   }
 
-  if (ctx) libusb_exit(ctx);
+  if (ctx) {
+    libusb_exit(ctx);
+  }
 }
 
 std::vector<std::string> Panda::list() {
