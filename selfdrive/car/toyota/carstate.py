@@ -61,8 +61,10 @@ class CarState(CarStateBase):
       if abs(ret.steeringAngleDeg) < 90:
         self.angle_offset.update(torque_sensor_angle_deg - ret.steeringAngleDeg)
 
-      ret.steeringAngleDeg = torque_sensor_angle_deg - self.angle_offset.x
       ret.steeringAngleOffsetDeg = self.angle_offset.x
+
+      if self.angle_offset.initialized:
+        ret.steeringAngleDeg = torque_sensor_angle_deg - self.angle_offset.x
 
     ret.steeringRateDeg = cp.vl["STEER_ANGLE_SENSOR"]["STEER_RATE"]
 
