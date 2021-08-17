@@ -127,6 +127,11 @@ int Panda::usb_bulk_write(unsigned char endpoint, unsigned char* data, int lengt
     if (err == LIBUSB_ERROR_TIMEOUT) {
       LOGW("Transmit buffer full");
       break;
+    } else if (err == LIBUSB_ERROR_PIPE) {
+      LOGW("the endpoint halted");
+      if (libusb_clear_halt(dev_handle, endpoint) != 0) {
+        break;
+      }
     } else if (err != 0 || length != transferred) {
       handle_usb_issue(err, __func__);
     }
