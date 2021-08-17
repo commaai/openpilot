@@ -166,9 +166,6 @@ class CarController():
     if CS.CP.carFingerprint in OLD_NIDEC_LONG_CONTROL:
       #pcm_speed = pcm_speed
       pcm_accel = int(clip(pcm_accel, 0, 1) * 0xc6)
-    elif CS.CP.carFingerprint == CAR.ACURA_ILX:
-      pcm_speed = CS.out.vEgo + apply_accel
-      pcm_accel = int(1.0 * 0xc6)
     else:
       max_accel = interp(CS.out.vEgo, P.NIDEC_MAX_ACCEL_BP, P.NIDEC_MAX_ACCEL_V)
       pcm_accel = int(clip(apply_accel/max_accel, 0.0, 1.0) * 0xc6)
