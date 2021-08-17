@@ -128,11 +128,12 @@ def handle_fan_tici(max_cpu_temp, bat_temp, fan_speed, ignition):
 
   CPU_TEMP_SETPOINT = 80 if ignition else 60
   FAN_PWR_RANGE = (0, 80 if ignition else 30)
-  KI = 1e-5
+  KI = 1e-3
 
   if prev_time is None:
     prev_time = time.monotonic()
-  dt = max(time.monotonic() - prev_time, 0.01)
+  t = time.monotonic()
+  dt = max(t - prev_time, 0.01)
 
   error_integral += ((max_cpu_temp - CPU_TEMP_SETPOINT) * dt)
 
@@ -143,6 +144,7 @@ def handle_fan_tici(max_cpu_temp, bat_temp, fan_speed, ignition):
   # Dumb anti windup
   error_integral = clip(error_integral, -(FAN_PWR_RANGE[1] / KI), (FAN_PWR_RANGE[1] / KI))
 
+  prev_time = t
   return fan_pwr_out
 
 
