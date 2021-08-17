@@ -162,7 +162,7 @@ class CarController():
       apply_accel = interp(accel, P.NIDEC_ACCEL_LOOKUP_BP, P.NIDEC_ACCEL_LOOKUP_V)
 
     # wind brake from air resistance decel at high speed
-    wind_brake = interp(CS.out.vEgo, [0.0, 2.3, 20.0], [0.0, 0.0, 0.1])
+    wind_brake = interp(CS.out.vEgo, [0.0, 2.3, 35.0], [0.0, 0.0, 0.15])
     if CS.CP.carFingerprint in OLD_NIDEC_LONG_CONTROL:
       #pcm_speed = pcm_speed
       pcm_accel = int(clip(pcm_accel, 0, 1) * 0xc6)
@@ -170,16 +170,15 @@ class CarController():
       pcm_speed = CS.out.vEgo + apply_accel
       pcm_accel = int(1.0 * 0xc6)
     else:
-      if apply_accel > 0:
-        pcm_speed = 100
-        max_accel = interp(CS.out.vEgo, P.NIDEC_MAX_ACCEL_BP, P.NIDEC_MAX_ACCEL_V)
-        pcm_accel = int(clip(apply_accel/max_accel, 0.0, 1.0) * 0xc6)
-      else:
-        decel = max(0.0, -accel)
-        pcm_speed = CS.out.vEgo * clip((wind_brake - decel)/max(wind_brake, .01), 0.0, 1.0)
-        pcm_accel = int(0)
-
-
+      max_accel = interp(CS.out.vEgo, P.NIDEC_MAX_ACCEL_BP, P.NIDEC_MAX_ACCEL_V)
+      pcm_accel = int(clip(apply_accel/max_accel, 0.0, 1.0) * 0xc6)
+      pcm_speed_BP = [-wind_brake,
+                      -wind_brake*(3/4),
+                      0.0]
+      pcm_speed_V = [0.0,
+                     CS.out.vEgo + apply_accel/2.0 - 2.0,
+                     CS.out.vEgo + apply_accel/2.0 + 2.0]
+      pcm_speed = interp(accel, pcm_speed_BP, pcm_speed_V)
 
     if not CS.CP.openpilotLongitudinalControl:
       if (frame % 2) == 0:
@@ -210,9 +209,11 @@ class CarController():
           self.apply_brake_last = apply_brake
 
           if CS.CP.enableGasInterceptor:
+            # way too aggressive at low speed without this
+            gas_mult = interp(CS.out.vEgo, [0., 10.], [0.4, 1.0])
             # send exactly zero if apply_gas is zero. Interceptor will send the max between read value and apply_gas.
             # This prevents unexpected pedal range rescaling
-            apply_gas = clip(actuators.gas, 0., 1.)
+            apply_gas = clip(gas_mult * actuators.gas, 0., 1.)
             can_sends.append(create_gas_command(self.packer, apply_gas, idx))
 
     hud = HUDData(int(pcm_accel), int(round(hud_v_cruise)), hud_car,
