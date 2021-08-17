@@ -38,9 +38,7 @@ class CarInterface(CarInterfaceBase):
   def __init__(self, CP, CarController, CarState):
     super().__init__(CP, CarController, CarState)
 
-    if self.CS.CP.carFingerprint == CAR.ACURA_ILX:
-      self.compute_gb = compute_gb_acura
-    elif self.CS.CP.carFingerprint in HONDA_BOSCH:
+    if self.CS.CP.carFingerprint in HONDA_BOSCH:
       self.compute_gb = compute_gb_honda_bosch
     else:
       self.compute_gb = compute_gb_honda_nidec
