@@ -10,6 +10,8 @@ from collections import namedtuple
 import capnp
 from tqdm import tqdm
 
+os.environ["SIMULATION"] = "1"
+
 import cereal.messaging as messaging
 from cereal import car, log
 from cereal.services import service_list
@@ -441,7 +443,6 @@ def cpp_replay_process(cfg, lr, fingerprint=None):
   pub_msgs = [msg for msg in all_msgs if msg.which() in list(cfg.pub_sub.keys())]
   log_msgs = []
 
-  os.environ["SIMULATION"] = "1"  # Disable submaster alive checks
   managed_processes[cfg.proc_name].prepare()
   managed_processes[cfg.proc_name].start()
 
