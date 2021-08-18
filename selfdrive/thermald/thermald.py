@@ -122,9 +122,10 @@ def handle_fan_uno(max_cpu_temp, bat_temp, fan_speed, ignition):
   return new_speed
 
 prev_time = None
+prev_ignition = False
 error_integral = 0
 def handle_fan_tici(max_cpu_temp, bat_temp, fan_speed, ignition):
-  global prev_time, error_integral, prev_cpu_temp_error
+  global prev_time, prev_ignition, error_integral, prev_cpu_temp_error
 
   CPU_TEMP_SETPOINT = 80 if ignition else 60
   FAN_PWR_RANGE = (0, 80 if ignition else 30)
@@ -137,14 +138,17 @@ def handle_fan_tici(max_cpu_temp, bat_temp, fan_speed, ignition):
 
   error_integral += ((max_cpu_temp - CPU_TEMP_SETPOINT) * dt)
 
-  feed_forward = interp(max_cpu_temp, [60.0, 100.0], [0, 40])
+  feed_forward = interp(max_cpu_temp, [60.0, 100.0], [0, 80])
   fan_pwr_desired = (KI * error_integral) + feed_forward
   fan_pwr_out = int(clip(fan_pwr_desired, FAN_PWR_RANGE[0], FAN_PWR_RANGE[1]))
 
   # Dumb anti windup
   error_integral = clip(error_integral, -(FAN_PWR_RANGE[1] / KI), (FAN_PWR_RANGE[1] / KI))
+  if not prev_ignition and ignition:
+    error_integral = 0
 
   prev_time = t
+  prev_ignition = ignition
   return fan_pwr_out
 
 
