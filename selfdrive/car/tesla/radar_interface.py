@@ -58,6 +58,7 @@ class RadarInterface(RadarInterfaceBase):
     super().__init__(CP)
     self.rcp = get_radar_can_parser(CP)
     self.updated_messages = set()
+    self.trigger_msg = RADAR_MSGS_B[-1]
 
   def update(self, can_strings):
     if self.rcp is None:
@@ -67,7 +68,7 @@ class RadarInterface(RadarInterfaceBase):
     self.updated_messages.update(values)
 
     # Trigger update only on new first track message
-    if RADAR_MSGS_B[-1] not in self.updated_messages:
+    if self.trigger_msg not in self.updated_messages:
       return None
 
     ret = car.RadarData.new_message()
