@@ -8,7 +8,7 @@
 #include "selfdrive/ui/qt/widgets/scrollview.h"
 
 
-QDialogBase::QDialogBase(QWidget *parent) : QDialog(parent) {
+QDialogBase::QDialogBase(QWidget *parent) : QDialog() {
   Q_ASSERT(parent != nullptr);
   parent->installEventFilter(this);
 
@@ -19,7 +19,9 @@ QDialogBase::QDialogBase(QWidget *parent) : QDialog(parent) {
       color: white;
       font-family: Inter;
     }
-  
+    QDialogBase {
+      background-color: black;
+    }
     #container > QPushButton {
       height: 160;
       font-size: 55px;
@@ -31,7 +33,6 @@ QDialogBase::QDialogBase(QWidget *parent) : QDialog(parent) {
     #container > QPushButton:pressed {
       background-color: #444444;
     }
-
   )");
 }
 
