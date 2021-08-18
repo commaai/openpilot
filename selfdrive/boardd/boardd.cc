@@ -37,7 +37,15 @@
 
 Panda * panda = nullptr;
 std::atomic<bool> safety_setter_thread_running(false);
-std::atomic<bool> ignition(false);
+
+enum IgnitionStatus {
+  stopped = 0,
+  stopping,
+  starting,
+  started 
+};
+
+std::atomic<IgnitionStatus> ignition_status(stopped);
 
 ExitHandler do_exit;
 
@@ -241,7 +249,7 @@ void can_recv_thread() {
     if (remaining > 0) {
       std::this_thread::sleep_for(std::chrono::nanoseconds(remaining));
     } else {
-      if (ignition) {
+      if (ignition_status >= IgnitionStatus::starting) {
         LOGW("missed cycles (%d) %lld", (int)-1*remaining/dt, remaining);
       }
       next_frame_time = cur_time;
@@ -256,7 +264,7 @@ void panda_state_thread(bool spoofing_started) {
   PubMaster pm({"pandaState"});
 
   uint32_t no_ignition_cnt = 0;
-  bool ignition_last = false;
+  bool ignition = false;
   Params params = Params();
 
   // Broadcast empty pandaState message when panda is not yet connected
@@ -282,7 +290,12 @@ void panda_state_thread(bool spoofing_started) {
       panda->set_safety_model(cereal::CarParams::SafetyModel::NO_OUTPUT);
     }
 
-    ignition = ((pandaState.ignition_line != 0) || (pandaState.ignition_can != 0));
+    bool ignition_last = std::exchange(ignition, (pandaState.ignition_line != 0) || (pandaState.ignition_can != 0));
+    if (ignition) {
+      ignition_status = ignition_last ? IgnitionStatus::started : IgnitionStatus::starting;
+    } else {
+      ignition_status = ignition_last ? IgnitionStatus::stopping : IgnitionStatus::stopped;
+    }
 
     if (ignition) {
       no_ignition_cnt = 0;
@@ -303,7 +316,7 @@ void panda_state_thread(bool spoofing_started) {
 #endif
 
     // clear VIN, CarParams, and set new safety on car start
-    if (ignition && !ignition_last) {
+    if (ignition_status == IgnitionStatus::starting) {
       params.clearAll(CLEAR_ON_IGNITION_ON);
 
       if (!safety_setter_thread_running) {
@@ -312,7 +325,7 @@ void panda_state_thread(bool spoofing_started) {
       } else {
         LOGW("Safety setter thread already running");
       }
-    } else if (!ignition && ignition_last) {
+    } else if (ignition_status == IgnitionStatus::stopping) {
       params.clearAll(CLEAR_ON_IGNITION_OFF);
     }
 
@@ -339,7 +352,6 @@ void panda_state_thread(bool spoofing_started) {
       }
     }
 
-    ignition_last = ignition;
     uint16_t fan_speed_rpm = panda->get_fan_speed();
 
     // build msg
@@ -483,8 +495,6 @@ static void pigeon_publish_raw(PubMaster &pm, const std::string &dat) {
 
 void pigeon_thread() {
   PubMaster pm({"ubloxRaw"});
-  bool ignition_last = false;
-
   Pigeon *pigeon = Hardware::TICI() ? Pigeon::connect("/dev/ttyHS0") : Pigeon::connect(panda);
 
   std::unordered_map<char, uint64_t> last_recv_time;
@@ -498,7 +508,7 @@ void pigeon_thread() {
     std::string recv = pigeon->receive();
 
     // Parse message header
-    if (ignition && recv.length() >= 3) {
+    if (ignition_status >= IgnitionStatus::starting && recv.length() >= 3) {
       if (recv[0] == (char)ublox::PREAMBLE1 && recv[1] == (char)ublox::PREAMBLE2) {
         const char msg_cls = recv[2];
         uint64_t t = nanos_since_boot();
@@ -511,7 +521,7 @@ void pigeon_thread() {
     // Check based on message frequency
     for (const auto& [msg_cls, max_dt] : cls_max_dt) {
       int64_t dt = (int64_t)nanos_since_boot() - (int64_t)last_recv_time[msg_cls];
-      if (ignition_last && ignition && dt > max_dt) {
+      if (ignition_status == IgnitionStatus::started && dt > max_dt) {
         LOG("ublox receive timeout, msg class: 0x%02x, dt %llu", msg_cls, dt);
         // TODO: turn on reset after verification of logs
         // need_reset = true;
@@ -519,7 +529,7 @@ void pigeon_thread() {
     }
 
     // Check based on null bytes
-    if (ignition && recv.length() > 0 && recv[0] == (char)0x00) {
+    if (ignition_status >= IgnitionStatus::starting && recv.length() > 0 && recv[0] == (char)0x00) {
       need_reset = true;
       LOGW("received invalid ublox message while onroad, resetting panda GPS");
     }
@@ -530,7 +540,7 @@ void pigeon_thread() {
 
     // init pigeon on rising ignition edge
     // since it was turned off in low power mode
-    if((ignition && !ignition_last) || need_reset) {
+    if(ignition_status == IgnitionStatus::starting || need_reset) {
       pigeon->init();
 
       // Set receive times to current time
@@ -538,14 +548,12 @@ void pigeon_thread() {
       for (const auto& [msg_cls, dt] : cls_max_dt) {
         last_recv_time[msg_cls] = t;
       }
-    } else if (!ignition && ignition_last) {
+    } else if (ignition_status == IgnitionStatus::stopping) {
       // power off on falling edge of ignition
       LOGD("powering off pigeon\n");
       pigeon->stop();
       pigeon->set_power(false);
     }
-
-    ignition_last = ignition;
 
     // 10ms - 100 Hz
     util::sleep_for(10);
