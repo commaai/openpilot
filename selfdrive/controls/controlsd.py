@@ -45,6 +45,8 @@ LaneChangeState = log.LateralPlan.LaneChangeState
 LaneChangeDirection = log.LateralPlan.LaneChangeDirection
 EventName = car.CarEvent.EventName
 
+ACTUATOR_FIELDS = set(car.CarControl.Actuators.new_message().to_dict().keys())
+
 
 class Controls:
   def __init__(self, sm=None, pm=None, can_sock=None):
@@ -501,7 +503,7 @@ class Controls:
           self.events.add(EventName.steerSaturated)
 
     # Ensure no NaNs/Infs
-    for p in ('steer', 'steeringAngleDeg', 'gas', 'brake', 'accel'):
+    for p in ACTUATOR_FIELDS:
       if not math.isfinite(getattr(actuators, p)):
         cloudlog.error(f"actuators.{p} not finite {actuators.to_dict()}")
         setattr(actuators, p, 0.0)
