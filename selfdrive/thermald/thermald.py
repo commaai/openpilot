@@ -235,13 +235,13 @@ def thermald_thread():
         if TICI:
           cloudlog.info("Setting up TICI fan handler")
           handle_fan = handle_fan_tici
-        elif EON and not is_uno:
-          cloudlog.info("Setting up EON fan handler")
-          setup_eon_fan()
-          handle_fan = handle_fan_eon
-        else:
+        elif is_uno or PC:
           cloudlog.info("Setting up UNO fan handler")
           handle_fan = handle_fan_uno
+        else:
+          cloudlog.info("Setting up EON fan handler")
+          setup_eon_fan()
+          handle_fan = handle_fan_eon          
 
       # Handle disconnect
       if pandaState_prev is not None:
