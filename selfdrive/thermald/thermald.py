@@ -12,7 +12,7 @@ from smbus2 import SMBus
 import cereal.messaging as messaging
 from cereal import log
 from common.filter_simple import FirstOrderFilter
-from common.numpy_fast import clip, interp
+from common.numpy_fast import interp
 from common.params import Params, ParamKeyType
 from common.realtime import DT_TRML, sec_since_boot
 from common.dict_helpers import strip_deprecated_keys
@@ -31,7 +31,7 @@ ThermalStatus = log.DeviceState.ThermalStatus
 NetworkType = log.DeviceState.NetworkType
 NetworkStrength = log.DeviceState.NetworkStrength
 CURRENT_TAU = 15.   # 15s time constant
-CPU_TEMP_TAU = 5.   # 5s time constant
+TEMP_TAU = 5.   # 5s time constant
 DAYS_NO_CONNECTIVITY_MAX = 7  # do not allow to engage after a week without internet
 DAYS_NO_CONNECTIVITY_PROMPT = 4  # send an offroad prompt after 4 days with no internet
 DISCONNECT_TIMEOUT = 5.  # wait 5 seconds before going offroad after disconnect so you get an alert
@@ -41,9 +41,9 @@ ThermalBand = namedtuple("ThermalBand", ['min_temp', 'max_temp', 'lower_status',
 # List of thermal bands. We will stay within this region as long as we are within the bounds.
 # When exiting the bounds, we'll jump to the lower or higher band.
 THERMAL_BANDS = {
-  ThermalStatus.green:  ThermalBand(None, 80.0, None, ThermalStatus.yellow),
+  ThermalStatus.green: ThermalBand(None, 80.0, None, ThermalStatus.yellow),
   ThermalStatus.yellow: ThermalBand(75.0, 96.0, ThermalStatus.green, ThermalStatus.red),
-  ThermalStatus.red:    ThermalBand(80.0, 107., ThermalStatus.yellow, ThermalStatus.danger),
+  ThermalStatus.red: ThermalBand(80.0, 107., ThermalStatus.yellow, ThermalStatus.danger),
   ThermalStatus.danger: ThermalBand(94.0, None, ThermalStatus.red, None),
 }
 
@@ -135,7 +135,7 @@ def handle_fan_tici(controller, max_cpu_temp, fan_speed, ignition):
   controller.pos_limit = -(30 if ignition else 0)
 
   fan_pwr_out = -int(controller.update(
-                     setpoint=(75 if ignition else 68),
+                     setpoint=(75 if ignition else (OFFROAD_DANGER_TEMP - 2)),
                      measurement=max_cpu_temp,
                      feedforward=interp(max_cpu_temp, [60.0, 100.0], [0, -80])
                   ))
@@ -180,7 +180,7 @@ def thermald_thread():
   registered_count = 0
 
   current_filter = FirstOrderFilter(0., CURRENT_TAU, DT_TRML)
-  cpu_temp_filter = FirstOrderFilter(0., CPU_TEMP_TAU, DT_TRML)
+  temp_filter = FirstOrderFilter(0., TEMP_TAU, DT_TRML)
   pandaState_prev = None
   should_start_prev = False
   handle_fan = None
@@ -307,25 +307,24 @@ def thermald_thread():
 
     current_filter.update(msg.deviceState.batteryCurrent / 1e6)
 
-    # TODO: add car battery voltage check
-    max_cpu_temp = cpu_temp_filter.update(max(msg.deviceState.cpuTempC))
-    max_comp_temp = max(max_cpu_temp, msg.deviceState.memoryTempC, max(msg.deviceState.gpuTempC))
-    bat_temp = msg.deviceState.batteryTempC
+    max_comp_temp = temp_filter.update(
+      max(max(msg.deviceState.cpuTempC), msg.deviceState.memoryTempC, max(msg.deviceState.gpuTempC))
+    )
 
     if handle_fan is not None:
-      fan_speed = handle_fan(controller, max_cpu_temp, fan_speed, startup_conditions["ignition"])
+      fan_speed = handle_fan(controller, max_comp_temp, fan_speed, startup_conditions["ignition"])
       msg.deviceState.fanSpeedPercentDesired = fan_speed
 
     is_offroad_for_5_min = (started_ts is None) and ((not started_seen) or (off_ts is None) or (sec_since_boot() - off_ts > 60 * 5))
-    if is_offroad_for_5_min and max_cpu_temp > OFFROAD_DANGER_TEMP:
+    if is_offroad_for_5_min and max_comp_temp > OFFROAD_DANGER_TEMP:
       # If device is offroad we want to cool down before going onroad
       # since going onroad increases load and can make temps go over 107
       thermal_status = ThermalStatus.danger
     else:
       current_band = THERMAL_BANDS[thermal_status]
-      if current_band.min_temp is not None and max_cpu_temp < current_band.min_temp:
+      if current_band.min_temp is not None and max_comp_temp < current_band.min_temp:
         thermal_status = current_band.lower_status
-      elif current_band.max_temp is not None and max_cpu_temp > current_band.max_temp:
+      elif current_band.max_temp is not None and max_comp_temp > current_band.max_temp:
         thermal_status = current_band.higher_status
 
     # **** starting logic ****
