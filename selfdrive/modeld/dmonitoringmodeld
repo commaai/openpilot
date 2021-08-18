@@ -1,15 +1,17 @@
 #!/bin/sh
 
-if [ -d /system ]; then
-    if [ -f /TICI ]; then # QCOM2
-        export LD_LIBRARY_PATH="/usr/lib/aarch64-linux-gnu:/data/pythonpath/phonelibs/snpe/larch64:$LD_LIBRARY_PATH"
-    else # QCOM
-        export LD_LIBRARY_PATH="/data/pythonpath/phonelibs/snpe/aarch64/:$LD_LIBRARY_PATH"
-    fi
-    export ADSP_LIBRARY_PATH="/data/pythonpath/phonelibs/snpe/dsp/"
-else
-    # PC
-    export LD_LIBRARY_PATH="$HOME/openpilot/phonelibs/snpe/x86_64-linux-clang:/openpilot/phonelibs/snpe/x86_64:$HOME/openpilot/phonelibs/snpe/x86_64:$LD_LIBRARY_PATH"
-fi
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
+cd $DIR
 
+if [ -d /system ]; then
+  if [ -f /TICI ]; then # QCOM2
+    export LD_LIBRARY_PATH="/usr/lib/aarch64-linux-gnu:/data/pythonpath/phonelibs/snpe/larch64:$LD_LIBRARY_PATH"
+  else # QCOM
+    export LD_LIBRARY_PATH="/data/pythonpath/phonelibs/snpe/aarch64/:$LD_LIBRARY_PATH"
+  fi
+  export ADSP_LIBRARY_PATH="/data/pythonpath/phonelibs/snpe/dsp/"
+else
+  # PC
+  export LD_LIBRARY_PATH="$DIR/../../phonelibs/snpe/x86_64-linux-clang:$DIR/../../openpilot/phonelibs/snpe/x86_64:$LD_LIBRARY_PATH"
+fi
 exec ./_dmonitoringmodeld

@@ -47,7 +47,7 @@ PROCS = {
 if TICI:
   PROCS.update({
     "./loggerd": 60.0,
-    "selfdrive.controls.controlsd": 26.0,
+    "selfdrive.controls.controlsd": 28.0,
     "./camerad": 31.0,
     "./_ui": 21.0,
     "selfdrive.controls.plannerd": 12.0,
@@ -75,7 +75,7 @@ def check_cpu_usage(first_proc, last_proc):
       last = [p for p in last_proc.procLog.procs if proc_name in p.cmdline][0]
       cpu_time = cputime_total(last) - cputime_total(first)
       cpu_usage = cpu_time / dt * 100.
-      if cpu_usage > max(normal_cpu_usage * 1.1, normal_cpu_usage + 5.0):
+      if cpu_usage > max(normal_cpu_usage * 1.15, normal_cpu_usage + 5.0):
         # cpu usage is high while playing sounds
         if proc_name == "./_soundd" and cpu_usage < 25.:
           continue

@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-import numpy as np
 from cereal import car
 from panda import Panda
-from common.numpy_fast import clip, interp
+from common.numpy_fast import interp
 from common.params import Params
 from selfdrive.config import Conversions as CV
 from selfdrive.car.honda.values import CarControllerParams, CruiseButtons, CAR, HONDA_BOSCH, HONDA_BOSCH_ALT_BRAKE_SIGNAL
@@ -29,58 +28,17 @@ def compute_gb_honda_nidec(accel, speed):
   return float(accel) / 4.8 - creep_brake
 
 
-def get_compute_gb_acura():
-  # generate a function that takes in [desired_accel, current_speed] -> [-1.0, 1.0]
-  # where -1.0 is max brake and 1.0 is max gas
-  # see debug/dump_accel_from_fiber.py to see how those parameters were generated
-  w0 = np.array([[ 1.22056961, -0.39625418,  0.67952657],
-                 [ 1.03691769,  0.78210306, -0.41343188]])
-  b0 = np.array([ 0.01536703, -0.14335321, -0.26932889])
-  w2 = np.array([[-0.59124422,  0.42899439,  0.38660881],
-                 [ 0.79973811,  0.13178682,  0.08550351],
-                 [-0.15651935, -0.44360259,  0.76910877]])
-  b2 = np.array([ 0.15624429,  0.02294923, -0.0341086 ])
-  w4 = np.array([[-0.31521443],
-                 [-0.38626176],
-                 [ 0.52667892]])
-  b4 = np.array([-0.02922216])
-
-  def compute_output(dat, w0, b0, w2, b2, w4, b4):
-    m0 = np.dot(dat, w0) + b0
-    m0 = leakyrelu(m0, 0.1)
-    m2 = np.dot(m0, w2) + b2
-    m2 = leakyrelu(m2, 0.1)
-    m4 = np.dot(m2, w4) + b4
-    return m4
-
-  def leakyrelu(x, alpha):
-    return np.maximum(x, alpha * x)
-
-  def _compute_gb_acura(accel, speed):
-    # linearly extrap below v1 using v1 and v2 data
-    v1 = 5.
-    v2 = 10.
-    dat = np.array([accel, speed])
-    if speed > 5.:
-      m4 = compute_output(dat, w0, b0, w2, b2, w4, b4)
-    else:
-      dat[1] = v1
-      m4v1 = compute_output(dat, w0, b0, w2, b2, w4, b4)
-      dat[1] = v2
-      m4v2 = compute_output(dat, w0, b0, w2, b2, w4, b4)
-      m4 = (speed - v1) * (m4v2 - m4v1) / (v2 - v1) + m4v1
-    return float(m4)
-
-  return _compute_gb_acura
+def compute_gb_acura(accel, speed):
+  GB_VALUES = [-2., 0.0, 0.8]
+  GB_BP = [-5., 0.0, 4.0]
+  return interp(accel, GB_BP, GB_VALUES)
 
 
 class CarInterface(CarInterfaceBase):
   def __init__(self, CP, CarController, CarState):
     super().__init__(CP, CarController, CarState)
 
-    if self.CS.CP.carFingerprint == CAR.ACURA_ILX:
-      self.compute_gb = get_compute_gb_acura()
-    elif self.CS.CP.carFingerprint in HONDA_BOSCH:
+    if self.CS.CP.carFingerprint in HONDA_BOSCH:
       self.compute_gb = compute_gb_honda_bosch
     else:
       self.compute_gb = compute_gb_honda_nidec
@@ -183,11 +141,10 @@ class CarInterface(CarInterfaceBase):
         ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 2560], [0, 2560]]
         ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[1.1], [0.33]]
       tire_stiffness_factor = 1.
-
       ret.longitudinalTuning.kpBP = [0., 5., 35.]
-      ret.longitudinalTuning.kpV = [3.6, 2.4, 1.5]
+      ret.longitudinalTuning.kpV = [1.2, 0.8, 0.5]
       ret.longitudinalTuning.kiBP = [0., 35.]
-      ret.longitudinalTuning.kiV = [0.54, 0.36]
+      ret.longitudinalTuning.kiV = [0.18, 0.12]
 
     elif candidate in (CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL):
       stop_and_go = True
@@ -441,7 +398,7 @@ class CarInterface(CarInterfaceBase):
       ret.brakeMaxV = [1.]   # max brake allowed, 3.5m/s^2
     else:
       ret.gasMaxBP = [0.]  # m/s
-      ret.gasMaxV = [0.6] if ret.enableGasInterceptor else [0.]  # max gas allowed
+      ret.gasMaxV = [0.6]  # max gas allowed
       ret.brakeMaxBP = [5., 20.]  # m/s
       ret.brakeMaxV = [1., 0.8]   # max brake allowed
 
@@ -559,14 +516,12 @@ class CarInterface(CarInterfaceBase):
     else:
       hud_v_cruise = 255
 
-    pcm_accel = int(clip(c.cruiseControl.accelOverride, 0, 1) * 0xc6)
-
     can_sends = self.CC.update(c.enabled, self.CS, self.frame,
                                c.actuators,
                                c.cruiseControl.speedOverride,
                                c.cruiseControl.override,
                                c.cruiseControl.cancel,
-                               pcm_accel,
+                               c.cruiseControl.accelOverride,
                                hud_v_cruise,
                                c.hudControl.lanesVisible,
                                hud_show_car=c.hudControl.leadVisible,
