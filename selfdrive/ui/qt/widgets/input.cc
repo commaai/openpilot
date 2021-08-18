@@ -11,6 +11,7 @@
 QDialogBase::QDialogBase(QWidget *parent) : QDialog() {
   Q_ASSERT(parent != nullptr);
   parent->installEventFilter(this);
+  this->parent = parent;
 
   setStyleSheet(R"(
     * {
@@ -36,7 +37,7 @@ QDialogBase::QDialogBase(QWidget *parent) : QDialog() {
 }
 
 bool QDialogBase::eventFilter(QObject *o, QEvent *e) {
-  if (o == parent() && e->type() == QEvent::Hide) {
+  if (o == this->parent && e->type() == QEvent::Hide) {
     reject();
   }
   return QDialog::eventFilter(o, e);
