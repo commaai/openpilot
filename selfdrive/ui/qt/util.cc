@@ -105,12 +105,12 @@ void ClickableWidget::paintEvent(QPaintEvent *) {
 
 void swagLogMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg) {
   static std::map<QtMsgType, int> levels = {
-    {QtMsgType::QtDebugMsg, 10},
-    {QtMsgType::QtInfoMsg, 20},
-    {QtMsgType::QtWarningMsg, 30},
-    {QtMsgType::QtCriticalMsg, 40},
-    {QtMsgType::QtSystemMsg, 40},
-    {QtMsgType::QtFatalMsg, 50},
+    {QtMsgType::QtDebugMsg, CLOUDLOG_DEBUG},
+    {QtMsgType::QtInfoMsg, CLOUDLOG_INFO},
+    {QtMsgType::QtWarningMsg, CLOUDLOG_WARNING},
+    {QtMsgType::QtCriticalMsg, CLOUDLOG_ERROR},
+    {QtMsgType::QtSystemMsg, CLOUDLOG_ERROR},
+    {QtMsgType::QtFatalMsg, CLOUDLOG_CRITICAL},
   };
 
   std::string file, function;

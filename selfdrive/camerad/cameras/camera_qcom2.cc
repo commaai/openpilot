@@ -63,7 +63,8 @@ int cam_control(int fd, int op_code, void *handle, int size) {
   struct cam_control camcontrol = {0};
   camcontrol.op_code = op_code;
   camcontrol.handle = (uint64_t)handle;
-  if (size == 0) { camcontrol.size = 8;
+  if (size == 0) { 
+    camcontrol.size = 8;
     camcontrol.handle_type = CAM_HANDLE_MEM_HANDLE;
   } else {
     camcontrol.size = size;
