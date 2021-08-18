@@ -19,10 +19,8 @@ QDialogBase::QDialogBase(QWidget *parent) : QDialog(parent) {
       color: white;
       font-family: Inter;
     }
-    QDialogBase {
-      background-color: black;
-    }
-    QPushButton {
+  
+    #container > QPushButton {
       height: 160;
       font-size: 55px;
       font-weight: 400;
@@ -30,7 +28,7 @@ QDialogBase::QDialogBase(QWidget *parent) : QDialog(parent) {
       color: white;
       background-color: #333333;
     }
-    QPushButton:pressed {
+    #container > QPushButton:pressed {
       background-color: #444444;
     }
 
@@ -186,6 +184,7 @@ void InputDialog::setMinLength(int length) {
 ConfirmationDialog::ConfirmationDialog(const QString &prompt_text, const QString &confirm_text, const QString &cancel_text,
                                        QWidget *parent) : QDialogBase(parent) {
   QFrame *container = new QFrame(this);
+  container->setObjectName("container");
   container->setStyleSheet("QFrame { border-radius: 0; background-color: #ECECEC; }");
   QVBoxLayout *main_layout = new QVBoxLayout(container);
   main_layout->setContentsMargins(32, 120, 32, 32);
@@ -234,6 +233,7 @@ bool ConfirmationDialog::confirm(const QString &prompt_text, QWidget *parent) {
 RichTextDialog::RichTextDialog(const QString &prompt_text, const QString &btn_text,
                                QWidget *parent) : QDialogBase(parent) {
   QFrame *container = new QFrame(this);
+  container->setObjectName("container");
   container->setStyleSheet("QFrame { background-color: #1B1B1B; }");
   QVBoxLayout *main_layout = new QVBoxLayout(container);
   main_layout->setContentsMargins(32, 32, 32, 32);
