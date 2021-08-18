@@ -88,8 +88,6 @@ class LongControl():
       a_target = 0.0
 
 
-    #TODO deal with gasMax and brakeMax in car interfaces
-
     # Update state machine
     output_accel = self.last_output_accel
     self.long_control_state = long_control_state_trans(active, self.long_control_state, CS.vEgo,

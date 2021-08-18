@@ -312,10 +312,6 @@ class CarInterface(CarInterfaceBase):
     ret.communityFeature = ret.enableGasInterceptor or ret.enableDsu or smartDsu
 
     if ret.enableGasInterceptor:
-      # TODO deal with this
-      # Transitions from original pedal tuning at MIN_ACC_SPEED to default tuning at MIN_ACC_SPEED + hysteresis gap
-      ret.gasMaxBP = [0., MIN_ACC_SPEED]
-      ret.gasMaxV = [0.2, 0.5]
       ret.longitudinalTuning.kpBP = [0., 5., MIN_ACC_SPEED, MIN_ACC_SPEED + PEDAL_HYST_GAP, 35.]
       ret.longitudinalTuning.kpV = [1.2, 0.8, 0.765, 2.255, 1.5]
       ret.longitudinalTuning.kiBP = [0., MIN_ACC_SPEED, MIN_ACC_SPEED + PEDAL_HYST_GAP, 35.]
