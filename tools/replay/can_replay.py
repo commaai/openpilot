@@ -4,13 +4,11 @@ import time
 from multiprocessing import Process
 from tqdm import tqdm
 
-os.environ['TESTING_CLOSET'] = '1'
 os.environ['FILEREADER_CACHE'] = '1'
 
 from common.realtime import config_realtime_process, Ratekeeper, DT_CTRL
 from selfdrive.boardd.boardd import can_capnp_to_can_list
 from tools.lib.logreader import LogReader
-
 from panda import Panda
 try:
   from panda_jungle import PandaJungle  # pylint: disable=import-error
@@ -30,46 +28,51 @@ for i in tqdm(list(range(1, NUM_SEGS+1))):
 # set both to cycle ignition
 IGN_ON = int(os.getenv("ON", "0"))
 IGN_OFF = int(os.getenv("OFF", "0"))
+ENABLE_IGN = IGN_ON > 0 and IGN_OFF > 0
+if ENABLE_IGN:
+  print(f"Cycling ignition: on for {IGN_ON}s, off for {IGN_OFF}s")
 
-def send_thread(sender, core):
-  config_realtime_process(core, 55)
 
-  if "Jungle" in str(type(sender)):
+def send_thread(s):
+  if "Jungle" in str(type(s)):
+    if "FLASH" in os.environ:
+      s.flash()
+
     for i in [0, 1, 2, 3, 0xFFFF]:
-      sender.can_clear(i)
-    sender.set_ignition(False)
+      s.can_clear(i)
+    s.set_ignition(False)
     time.sleep(5)
-    sender.set_ignition(True)
-    sender.set_panda_power(True)
+    s.set_ignition(True)
+    s.set_panda_power(True)
   else:
-    sender.set_safety_mode(Panda.SAFETY_ALLOUTPUT)
-  sender.set_can_loopback(False)
+    s.set_safety_mode(Panda.SAFETY_ALLOUTPUT)
+  s.set_can_loopback(False)
 
-  ignition = None
-  if IGN_ON > 0 and IGN_OFF > 0:
-    ignition = True
-    print(f"Cycling ignition: on for {IGN_ON}s, off for {IGN_OFF}s")
 
-  log_idx = 0
+  idx = 0
+  ign = True
   rk = Ratekeeper(1 / DT_CTRL, print_delay_threshold=None)
   while True:
     # handle ignition cycling
-    if ignition is not None:
-      ign = (rk.frame*DT_CTRL) % (IGN_ON + IGN_OFF) < IGN_ON
-      if ign != ignition:
-        ignition = ign
-        sender.set_ignition(ignition)
+    if ENABLE_IGN:
+      i = (rk.frame*DT_CTRL) % (IGN_ON + IGN_OFF) < IGN_ON
+      if i != ign:
+        ign = i
+        s.set_ignition(ign)
 
-    snd = CAN_MSGS[log_idx]
-    log_idx = (log_idx + 1) % len(CAN_MSGS)
+    snd = CAN_MSGS[idx]
     snd = list(filter(lambda x: x[-1] <= 2, snd))
-    sender.can_send_many(snd)
+    s.can_send_many(snd)
+    idx = (idx + 1) % len(CAN_MSGS)
 
     # Drain panda message buffer
-    sender.can_recv()
+    s.can_recv()
     rk.keep_time()
 
+
 def connect():
+  config_realtime_process(3, 55)
+
   serials = {}
   while True:
     # look for new devices
@@ -80,7 +83,7 @@ def connect():
       for s in p.list():
         if s not in serials:
           print("starting send thread for", s)
-          serials[s] = Process(target=send_thread, args=(p(s), 3))
+          serials[s] = Process(target=send_thread, args=(p(s), ))
           serials[s].start()
 
     # try to join all send procs
@@ -92,15 +95,6 @@ def connect():
 
     time.sleep(1)
 
+
 if __name__ == "__main__":
-  time.sleep(1)
-
-  if "FLASH" in os.environ and PandaJungle is not None:
-    for s in PandaJungle.list():
-      PandaJungle(s).flash()
-
-  while True:
-    try:
-      connect()
-    except Exception:
-      pass
+  connect()
