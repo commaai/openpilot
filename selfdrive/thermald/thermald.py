@@ -16,6 +16,7 @@ from common.params import Params, ParamKeyType
 from common.realtime import DT_TRML, sec_since_boot
 from common.dict_helpers import strip_deprecated_keys
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
+from selfdrive.controls.lib.pid import PIController
 from selfdrive.hardware import EON, TICI, HARDWARE
 from selfdrive.loggerd.config import get_available_percent
 from selfdrive.pandad import get_expected_signature
@@ -121,33 +122,25 @@ def handle_fan_uno(max_cpu_temp, bat_temp, fan_speed, ignition):
 
   return new_speed
 
-prev_time = None
+controller = None
 prev_ignition = False
-error_integral = 0
 def handle_fan_tici(max_cpu_temp, bat_temp, fan_speed, ignition):
-  global prev_time, prev_ignition, error_integral, prev_cpu_temp_error
+  global controller, prev_ignition
+  if controller is None:
+    controller = PIController(k_p=0, k_i=2e-3, neg_limit=-80, pos_limit=0, rate=(1/DT_TRML))
 
-  CPU_TEMP_SETPOINT = 80 if ignition else 60
-  FAN_PWR_RANGE = (0, 80 if ignition else 30)
-  KI = 2e-3
-
-  if prev_time is None:
-    prev_time = time.monotonic()
-  t = time.monotonic()
-  dt = max(t - prev_time, 0.01)
-
-  error_integral += KI * ((max_cpu_temp - CPU_TEMP_SETPOINT) * dt)
-
-  feed_forward = interp(max_cpu_temp, [60.0, 100.0], [0, 80])
-  fan_pwr_desired = error_integral + feed_forward
-  fan_pwr_out = int(clip(fan_pwr_desired, FAN_PWR_RANGE[0], FAN_PWR_RANGE[1]))
-
-  # Dumb anti windup
-  error_integral = clip(error_integral, -(FAN_PWR_RANGE[1]/4), (FAN_PWR_RANGE[1]/4))
   if not prev_ignition and ignition:
-    error_integral = 0
+    controller.reset()
 
-  prev_time = t
+  controller.neg_limit = -(80 if ignition else 30)
+  controller.pos_limit = -(30 if ignition else 0)
+
+  fan_pwr_out = -int(controller.update(
+                    setpoint=(75 if ignition else 68),
+                    measurement=max_cpu_temp,
+                    feedforward=interp(max_cpu_temp, [60.0, 100.0], [0, -80])
+                  ))
+
   prev_ignition = ignition
   return fan_pwr_out
 
@@ -249,7 +242,7 @@ def thermald_thread():
         if TICI:
           cloudlog.info("Setting up TICI fan handler")
           handle_fan = handle_fan_tici
-        elif EON:
+        elif EON and not is_uno:
           cloudlog.info("Setting up EON fan handler")
           setup_eon_fan()
           handle_fan = handle_fan_eon

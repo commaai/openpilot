@@ -1,3 +1,4 @@
+from numbers import Number
 import numpy as np
 from common.numpy_fast import clip, interp
 
@@ -28,10 +29,14 @@ class PIController():
 
   @property
   def k_p(self):
+    if isinstance(self._k_p, Number):
+      return self._k_p
     return interp(self.speed, self._k_p[0], self._k_p[1])
 
   @property
   def k_i(self):
+    if isinstance(self._k_i, Number):
+      return self._k_i
     return interp(self.speed, self._k_i[0], self._k_i[1])
 
   def _check_saturation(self, control, check_saturation, error):
