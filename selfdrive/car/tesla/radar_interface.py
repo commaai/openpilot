@@ -4,8 +4,8 @@ from opendbc.can.parser import CANParser
 from selfdrive.car.tesla.values import DBC, CANBUS
 from selfdrive.car.interfaces import RadarInterfaceBase
 
-RADAR_MSGS_A = list(range(0x371, 0x37E, 3))
-RADAR_MSGS_B = list(range(0x372, 0x37F, 3))
+RADAR_MSGS_A = list(range(0x310, 0x36E, 3))
+RADAR_MSGS_B = list(range(0x311, 0x36F, 3))
 NUM_POINTS = len(RADAR_MSGS_A)
 SGU_INDEX_VALUES = [f"RADC_ACCTargObj{i+1}_sguIndex" for i in range(NUM_POINTS)]
 SGU_INDEX_NONE = 63
@@ -58,6 +58,7 @@ class RadarInterface(RadarInterfaceBase):
     super().__init__(CP)
     self.rcp = get_radar_can_parser(CP)
     self.updated_messages = set()
+    self.track_id = 0
     self.trigger_msg = RADAR_MSGS_B[-1]
 
   def update(self, can_strings):
@@ -67,7 +68,6 @@ class RadarInterface(RadarInterfaceBase):
     values = self.rcp.update_strings(can_strings)
     self.updated_messages.update(values)
 
-    # Trigger update only on new first track message
     if self.trigger_msg not in self.updated_messages:
       return None
 
@@ -92,17 +92,18 @@ class RadarInterface(RadarInterfaceBase):
         continue
 
       # Check if it's a valid track
-      track_id = self.rcp.vl['TeslaRadarTguInfo'][SGU_INDEX_VALUES[i]]
-      if track_id == SGU_INDEX_NONE or not msg_a['Tracked']:
+      if not msg_a['Tracked']:
         if i in self.pts:
           del self.pts[i]
         continue
 
+      # New track!
       if i not in self.pts:
         self.pts[i] = car.RadarData.RadarPoint.new_message()
+        self.pts[i].trackId = self.track_id
+        self.track_id += 1
 
       # Parse track data
-      self.pts[i].trackId = track_id
       self.pts[i].dRel = msg_a['LongDist']
       self.pts[i].yRel = msg_a['LatDist']
       self.pts[i].vRel = msg_a['LongSpeed']
