@@ -4,6 +4,7 @@ import os
 import time
 from pathlib import Path
 from typing import Dict, Optional, Tuple
+from collections import namedtuple
 
 import psutil
 from smbus2 import SMBus
@@ -35,10 +36,21 @@ DAYS_NO_CONNECTIVITY_MAX = 7  # do not allow to engage after a week without inte
 DAYS_NO_CONNECTIVITY_PROMPT = 4  # send an offroad prompt after 4 days with no internet
 DISCONNECT_TIMEOUT = 5.  # wait 5 seconds before going offroad after disconnect so you get an alert
 
+ThermalBand = namedtuple("ThermalBand", ['min_temp', 'max_temp', 'lower_status', 'higher_status'])
+
+# List of thermal bands. We will stay within this region as long as we are within the bounds.
+# When exiting the bounds, we'll jump to the lower or higher band.
+THERMAL_BANDS = {
+  ThermalStatus.green:  ThermalBand(None, 80.0, None, ThermalStatus.yellow),
+  ThermalStatus.yellow: ThermalBand(75.0, 96.0, ThermalStatus.green, ThermalStatus.red),
+  ThermalStatus.red:    ThermalBand(80.0, 107., ThermalStatus.yellow, ThermalStatus.danger),
+  ThermalStatus.danger: ThermalBand(94.0, None, ThermalStatus.red, None),
+}
+
+# Override to highest thermal band when offroad and above this temp
+OFFROAD_DANGER_TEMP = 70.0
+
 prev_offroad_states: Dict[str, Tuple[bool, Optional[str]]] = {}
-
-last_eon_fan_val = None
-
 
 def read_tz(x):
   if x is None:
@@ -65,6 +77,7 @@ def setup_eon_fan():
   os.system("echo 2 > /sys/module/dwc3_msm/parameters/otg_switch")
 
 
+last_eon_fan_val = None
 def set_eon_fan(val):
   global last_eon_fan_val
 
@@ -303,27 +316,17 @@ def thermald_thread():
       fan_speed = handle_fan(controller, max_cpu_temp, fan_speed, startup_conditions["ignition"])
       msg.deviceState.fanSpeedPercentDesired = fan_speed
 
-    # If device is offroad we want to cool down before going onroad
-    # since going onroad increases load and can make temps go over 107
-    # We only do this if there is a relay that prevents the car from faulting
     is_offroad_for_5_min = (started_ts is None) and ((not started_seen) or (off_ts is None) or (sec_since_boot() - off_ts > 60 * 5))
-    if max_cpu_temp > 107. or bat_temp >= 63. or (is_offroad_for_5_min and max_cpu_temp > 70.0):
-      # onroad not allowed
+    if is_offroad_for_5_min and max_cpu_temp > OFFROAD_DANGER_TEMP:
+      # If device is offroad we want to cool down before going onroad
+      # since going onroad increases load and can make temps go over 107
       thermal_status = ThermalStatus.danger
-    elif max_comp_temp > 96.0 or bat_temp > 60.:
-      # hysteresis between onroad not allowed and engage not allowed
-      thermal_status = clip(thermal_status, ThermalStatus.red, ThermalStatus.danger)
-    elif max_cpu_temp > 94.0:
-      # hysteresis between engage not allowed and uploader not allowed
-      thermal_status = clip(thermal_status, ThermalStatus.yellow, ThermalStatus.red)
-    elif max_cpu_temp > 80.0:
-      # uploader not allowed
-      thermal_status = ThermalStatus.yellow
-    elif max_cpu_temp > 75.0:
-      # hysteresis between uploader not allowed and all good
-      thermal_status = clip(thermal_status, ThermalStatus.green, ThermalStatus.yellow)
     else:
-      thermal_status = ThermalStatus.green  # default to good condition
+      current_band = THERMAL_BANDS[thermal_status]
+      if current_band.min_temp is not None and max_cpu_temp < current_band.min_temp:
+        thermal_status = current_band.lower_status
+      elif current_band.max_temp is not None and max_cpu_temp > current_band.max_temp:
+        thermal_status = current_band.higher_status
 
     # **** starting logic ****
 
