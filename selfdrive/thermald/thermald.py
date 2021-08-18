@@ -90,11 +90,8 @@ _TEMP_THRS_H = [50., 65., 80., 10000]
 _TEMP_THRS_L = [42.5, 57.5, 72.5, 10000]
 # fan speed options
 _FAN_SPEEDS = [0, 16384, 32768, 65535]
-# max fan speed only allowed if battery is hot
-_BAT_TEMP_THRESHOLD = 45.
 
-
-def handle_fan_eon(max_cpu_temp, bat_temp, fan_speed, ignition):
+def handle_fan_eon(max_cpu_temp, fan_speed, ignition):
   new_speed_h = next(speed for speed, temp_h in zip(_FAN_SPEEDS, _TEMP_THRS_H) if temp_h > max_cpu_temp)
   new_speed_l = next(speed for speed, temp_l in zip(_FAN_SPEEDS, _TEMP_THRS_L) if temp_l > max_cpu_temp)
 
@@ -105,16 +102,12 @@ def handle_fan_eon(max_cpu_temp, bat_temp, fan_speed, ignition):
     # update speed if using the low thresholds results in fan speed decrement
     fan_speed = new_speed_l
 
-  if bat_temp < _BAT_TEMP_THRESHOLD:
-    # no max fan speed unless battery is hot
-    fan_speed = min(fan_speed, _FAN_SPEEDS[-2])
-
   set_eon_fan(fan_speed // 16384)
 
   return fan_speed
 
 
-def handle_fan_uno(max_cpu_temp, bat_temp, fan_speed, ignition):
+def handle_fan_uno(max_cpu_temp, fan_speed, ignition):
   new_speed = int(interp(max_cpu_temp, [40.0, 80.0], [0, 80]))
 
   if not ignition:
@@ -124,7 +117,7 @@ def handle_fan_uno(max_cpu_temp, bat_temp, fan_speed, ignition):
 
 controller = None
 prev_ignition = False
-def handle_fan_tici(max_cpu_temp, bat_temp, fan_speed, ignition):
+def handle_fan_tici(max_cpu_temp, fan_speed, ignition):
   global controller, prev_ignition
   if controller is None:
     controller = PIController(k_p=0, k_i=2e-3, neg_limit=-80, pos_limit=0, rate=(1/DT_TRML))
@@ -309,20 +302,19 @@ def thermald_thread():
     # TODO: add car battery voltage check
     max_cpu_temp = cpu_temp_filter.update(max(msg.deviceState.cpuTempC))
     max_comp_temp = max(max_cpu_temp, msg.deviceState.memoryTempC, max(msg.deviceState.gpuTempC))
-    bat_temp = msg.deviceState.batteryTempC
 
     if handle_fan is not None:
-      fan_speed = handle_fan(max_cpu_temp, bat_temp, fan_speed, startup_conditions["ignition"])
+      fan_speed = handle_fan(max_cpu_temp, fan_speed, startup_conditions["ignition"])
       msg.deviceState.fanSpeedPercentDesired = fan_speed
 
     # If device is offroad we want to cool down before going onroad
     # since going onroad increases load and can make temps go over 107
     # We only do this if there is a relay that prevents the car from faulting
     is_offroad_for_5_min = (started_ts is None) and ((not started_seen) or (off_ts is None) or (sec_since_boot() - off_ts > 60 * 5))
-    if max_cpu_temp > 107. or bat_temp >= 63. or (is_offroad_for_5_min and max_cpu_temp > 70.0):
+    if max_cpu_temp > 107 or (is_offroad_for_5_min and max_cpu_temp > 70.0):
       # onroad not allowed
       thermal_status = ThermalStatus.danger
-    elif max_comp_temp > 96.0 or bat_temp > 60.:
+    elif max_comp_temp > 96.0:
       # hysteresis between onroad not allowed and engage not allowed
       thermal_status = clip(thermal_status, ThermalStatus.red, ThermalStatus.danger)
     elif max_cpu_temp > 94.0:
