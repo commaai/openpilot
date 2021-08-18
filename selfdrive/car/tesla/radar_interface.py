@@ -7,8 +7,6 @@ from selfdrive.car.interfaces import RadarInterfaceBase
 RADAR_MSGS_A = list(range(0x310, 0x36E, 3))
 RADAR_MSGS_B = list(range(0x311, 0x36F, 3))
 NUM_POINTS = len(RADAR_MSGS_A)
-SGU_INDEX_VALUES = [f"RADC_ACCTargObj{i+1}_sguIndex" for i in range(NUM_POINTS)]
-SGU_INDEX_NONE = 63
 
 def get_radar_can_parser(CP):
   # Status messages
@@ -20,7 +18,6 @@ def get_radar_can_parser(CP):
 
   checks = [
     ('TeslaRadarSguInfo', 10),
-    ('TeslaRadarTguInfo', 10),
   ]
 
   # Radar tracks. There are also raw point clouds available,
@@ -42,8 +39,6 @@ def get_radar_can_parser(CP):
 
       ('LatSpeed', msg_id_b, 0),
       ('Index2', msg_id_b, 0),
-
-      (SGU_INDEX_VALUES[i], "TeslaRadarTguInfo", 63),
     ])
 
     checks.extend([
