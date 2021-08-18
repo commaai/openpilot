@@ -45,7 +45,7 @@ LaneChangeState = log.LateralPlan.LaneChangeState
 LaneChangeDirection = log.LateralPlan.LaneChangeDirection
 EventName = car.CarEvent.EventName
 
-ACTUATOR_FIELDS = set(car.CarControl.Actuators.new_message().to_dict().keys())
+ACTUATOR_FIELDS = set(car.CarControl.Actuators.schema.fields.keys())
 
 
 class Controls:
