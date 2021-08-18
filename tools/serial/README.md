@@ -1,6 +1,6 @@
 # comma serial
 
-The comma serial gets you access to a low level serial console on your comma three, while providing astable 12V to power the device.
+The comma serial gets you access to a low level serial console on your comma three, while providing a stable 12V to power the device.
 
 The serial is available on the [comma shop](https://comma.ai/shop/products/comma-serial).
 
