@@ -60,7 +60,7 @@ class CarController():
         # +0.06 offset to reduce ABS pump usage when OP is engaged
         MAX_INTERCEPTOR_GAS = interp(CS.out.vEgo, [0.0, MIN_ACC_SPEED], [0.2, 0.5])
         interceptor_gas_cmd = clip(actuators.accel/ACCEL_SCALE, 0., MAX_INTERCEPTOR_GAS)
-        pcm_accel_cmd = 0.06 - clip(actuators.brake/ACCEL_SCALE, 0., 1.)
+        pcm_accel_cmd = 0.06 - clip(-actuators.accel/ACCEL_SCALE, 0., 1.)
 
     pcm_accel_cmd, self.accel_steady = accel_hysteresis(pcm_accel_cmd, self.accel_steady, enabled)
     pcm_accel_cmd = clip(pcm_accel_cmd * CarControllerParams.ACCEL_SCALE, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
