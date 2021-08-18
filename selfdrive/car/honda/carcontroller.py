@@ -11,7 +11,29 @@ from opendbc.can.packer import CANPacker
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 
-# TODO: not clear this does anything useful
+def compute_gb_honda_bosch(accel, speed):
+  #TODO returns 0s, is unused
+  return 0.0, 0.0
+
+
+def compute_gb_honda_nidec(accel, speed):
+  creep_brake = 0.0
+  creep_speed = 2.3
+  creep_brake_value = 0.15
+  if speed < creep_speed:
+    creep_brake = (creep_speed - speed) / creep_speed * creep_brake_value
+  gb = float(accel) / 4.8 - creep_brake
+  return clip(gb, 0.0, 1.0), clip(-gb, 0.0, 1.0)
+
+
+def compute_gas_brake(accel, speed, fingerprint):
+  if fingerprint in HONDA_BOSCH:
+    return compute_gb_honda_bosch(accel, speed)
+  else:
+    return compute_gb_honda_nidec(accel, speed)
+
+
+#TODO not clear this does anything useful
 def actuator_hystereses(brake, braking, brake_steady, v_ego, car_fingerprint):
   # hyst params
   brake_hyst_on = 0.02     # to activate brakes exceed this value
