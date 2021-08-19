@@ -2,13 +2,32 @@
 import os
 import time
 import psutil
+from typing import Optional
 
 from common.realtime import set_core_affinity, set_realtime_priority
 from selfdrive.swaglog import cloudlog
 
+
 MAX_MODEM_CRASHES = 3
+MODEM_PATH = "/sys/devices/soc/2080000.qcom,mss/subsys5"
 WATCHED_PROCS = ["zygote", "zygote64", "/system/bin/servicemanager", "/system/bin/surfaceflinger"]
 
+
+def get_modem_crash_count() -> Optional[int]:
+  try:
+    with open(os.path.join(MODEM_PATH, "crash_count")) as f:
+      return int(f.read())
+  except Exception:
+    cloudlog.exception("Error reading modem crash count")
+  return None
+
+def get_modem_state() -> str:
+  try:
+    with open(os.path.join(MODEM_PATH, "state")) as f:
+      return f.read().strip()
+  except Exception:
+    cloudlog.exception("Error reading modem state")
+  return ""
 
 def main():
   set_core_affinity(1)
@@ -31,33 +50,24 @@ def main():
         cloudlog.event("android service pid changed", proc=p, prev=procs[p], cur=cp[p])
       procs[p] = cp[p]
 
+    # check modem state
+    state = get_modem_state()
+    if state != modem_state and not modem_killed:
+      cloudlog.event("modem state changed", state=state)
+    modem_state = state
+
     # check modem crashes
-    modem_path = "/sys/devices/soc/2080000.qcom,mss/subsys5"
-    try:
-      with open(os.path.join(modem_path, "crash_count")) as f:
-        cnt = int(f.read())
+    cnt = get_modem_crash_count()
+    if cnt is not None:
       if cnt > crash_count:
         cloudlog.event("modem crash", count=cnt)
       crash_count = cnt
 
-    except Exception:
-      cloudlog.exception("Error reading modem crash count")
-      raise
-
-    # check modem state
-    try:
-      with open(os.path.join(modem_path, "state")) as f:
-        state = f.read().strip()
-        if state != modem_state and not modem_killed:
-          cloudlog.event("modem state changed", state=state)
-        modem_state = state
-    except Exception:
-      cloudlog.exception("Error reading modem state")
-
     # handle excessive modem crashes
     if crash_count > MAX_MODEM_CRASHES and not modem_killed:
       cloudlog.event("killing modem")
-      os.system("echo put > /sys/kernel/debug/msm_subsys/modem")
+      with open("/sys/kernel/debug/msm_subsys/modem", "w") as f:
+        f.write("put")
       modem_killed = True
 
     time.sleep(1)
