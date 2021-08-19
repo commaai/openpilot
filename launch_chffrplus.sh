@@ -10,10 +10,20 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
 function two_init {
 
-  # Wifi scan
-  wpa_cli IFNAME=wlan0 SCAN
+  # set IO scheduler
+  setprop sys.io.scheduler noop
+  for f in /sys/block/*/queue/scheduler; do
+    echo noop > $f
+  done
 
   # *** shield cores 2-3 ***
+
+  # TODO: should we enable this?
+  # offline cores 2-3 to force recurring timers onto the other cores
+  #echo 0 > /sys/devices/system/cpu/cpu2/online
+  #echo 0 > /sys/devices/system/cpu/cpu3/online
+  #echo 1 > /sys/devices/system/cpu/cpu2/online
+  #echo 1 > /sys/devices/system/cpu/cpu3/online
 
   # android gets two cores
   echo 0-1 > /dev/cpuset/background/cpus
@@ -74,6 +84,9 @@ function two_init {
 
   # disable bluetooth
   service call bluetooth_manager 8
+
+  # wifi scan
+  wpa_cli IFNAME=wlan0 SCAN
 
   # Check for NEOS update
   if [ $(< /VERSION) != "$REQUIRED_NEOS_VERSION" ]; then
