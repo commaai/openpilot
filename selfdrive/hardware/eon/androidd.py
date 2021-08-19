@@ -19,7 +19,7 @@ def main():
   modem_killed = False
   modem_state = "ONLINE"
   while True:
-    # check interesting procs
+    # check critical android services
     cp = {p: None for p in WATCHED_PROCS}
     for p in psutil.process_iter():
       cmdline = ''.join(p.cmdline())
@@ -54,7 +54,7 @@ def main():
     except Exception:
       cloudlog.exception("Error reading modem state")
 
-    # handle modem excessive crashes
+    # handle excessive modem crashes
     if crash_count > MAX_MODEM_CRASHES and not modem_killed:
       cloudlog.event("killing modem")
       os.system("echo put > /sys/kernel/debug/msm_subsys/modem")
