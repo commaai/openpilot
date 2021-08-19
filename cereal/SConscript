@@ -1,4 +1,4 @@
-Import('env', 'envCython', 'arch')
+Import('env', 'envCython', 'arch', 'common')
 
 import shutil
 
@@ -40,10 +40,10 @@ messaging_objects = env.SharedObject([
 messaging_lib = env.Library('messaging', messaging_objects)
 Depends('messaging/impl_zmq.cc', services_h)
 
-env.Program('messaging/bridge', ['messaging/bridge.cc'], LIBS=[messaging_lib, 'zmq'])
+env.Program('messaging/bridge', ['messaging/bridge.cc'], LIBS=[messaging_lib, 'zmq', common])
 Depends('messaging/bridge.cc', services_h)
 
-envCython.Program('messaging/messaging_pyx.so', 'messaging/messaging_pyx.pyx', LIBS=envCython["LIBS"]+[messaging_lib, "zmq"])
+envCython.Program('messaging/messaging_pyx.so', 'messaging/messaging_pyx.pyx', LIBS=envCython["LIBS"]+[messaging_lib, "zmq", common])
 
 
 # Build Vision IPC
@@ -63,7 +63,7 @@ vipc_objects = env.SharedObject(vipc_sources)
 vipc = env.Library('visionipc', vipc_objects)
 
 
-libs = envCython["LIBS"]+["OpenCL", "zmq", vipc, messaging_lib]
+libs = envCython["LIBS"]+["OpenCL", "zmq", vipc, messaging_lib, common]
 if arch == "aarch64":
   libs += ["adreno_utils"]
 if arch == "Darwin":
@@ -73,5 +73,5 @@ envCython.Program('visionipc/visionipc_pyx.so', 'visionipc/visionipc_pyx.pyx', L
 
 
 if GetOption('test'):
-  env.Program('messaging/test_runner', ['messaging/test_runner.cc', 'messaging/msgq_tests.cc'], LIBS=[messaging_lib])
-  env.Program('visionipc/test_runner', ['visionipc/test_runner.cc', 'visionipc/visionipc_tests.cc'], LIBS=[vipc, messaging_lib, 'zmq', 'pthread', 'OpenCL'])
+  env.Program('messaging/test_runner', ['messaging/test_runner.cc', 'messaging/msgq_tests.cc'], LIBS=[messaging_lib, common])
+  env.Program('visionipc/test_runner', ['visionipc/test_runner.cc', 'visionipc/visionipc_tests.cc'], LIBS=[vipc, messaging_lib, 'zmq', 'pthread', 'OpenCL', common])

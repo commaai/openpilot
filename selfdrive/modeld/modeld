@@ -1,6 +1,7 @@
 #!/bin/sh
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
+cd $DIR
 
 if [ -d /system ]; then
   if [ -f /TICI ]; then # QCOM2

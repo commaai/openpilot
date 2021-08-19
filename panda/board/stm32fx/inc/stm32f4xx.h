@@ -10,8 +10,8 @@
   *          is using in the C source code, usually in main.c. This file contains:
   *           - Configuration section that allows to select:
   *              - The STM32F4xx device used in the target application
-  *              - To use or not the peripheral’s drivers in application code(i.e.
-  *                code will be based on direct access to peripheral’s registers
+  *              - To use or not the peripheralâ€™s drivers in application code(i.e.
+  *                code will be based on direct access to peripheralâ€™s registers
   *                rather than drivers API), this option is controlled by
   *                "#define USE_HAL_DRIVER"
   *
@@ -74,12 +74,12 @@
 /* Uncomment the line below according to the target STM32 device used in your
    application
   */
-#if !defined (STM32F405xx) && !defined (STM32F415xx) && !defined (STM32F407xx) && !defined (STM32F417xx) && \
+/* #if !defined (STM32F405xx) && !defined (STM32F415xx) && !defined (STM32F407xx) && !defined (STM32F417xx) && \
     !defined (STM32F427xx) && !defined (STM32F437xx) && !defined (STM32F429xx) && !defined (STM32F439xx) && \
     !defined (STM32F401xC) && !defined (STM32F401xE) && !defined (STM32F410Tx) && !defined (STM32F410Cx) && \
     !defined (STM32F410Rx) && !defined (STM32F411xE) && !defined (STM32F446xx) && !defined (STM32F469xx) && \
     !defined (STM32F479xx) && !defined (STM32F412Cx) && !defined (STM32F412Rx) && !defined (STM32F412Vx) && \
-    !defined (STM32F412Zx) && !defined (STM32F413xx) && !defined (STM32F423xx)
+    !defined (STM32F412Zx) && !defined (STM32F413xx) && !defined (STM32F423xx) */
   /* #define STM32F405xx */   /*!< STM32F405RG, STM32F405VG and STM32F405ZG Devices */
   /* #define STM32F415xx */   /*!< STM32F415RG, STM32F415VG and STM32F415ZG Devices */
   /* #define STM32F407xx */   /*!< STM32F407VG, STM32F407VE, STM32F407ZG, STM32F407ZE, STM32F407IG  and STM32F407IE Devices */
@@ -109,7 +109,7 @@
   /* #define STM32F413xx */   /*!< STM32F413CH, STM32F413MH, STM32F413RH, STM32F413VH, STM32F413ZH, STM32F413CG, STM32F413MG,
                                    STM32F413RG, STM32F413VG and STM32F413ZG Devices */
   /* #define STM32F423xx */   /*!< STM32F423CH, STM32F423RH, STM32F423VH and STM32F423ZH Devices */
-#endif
+//#endif
 
 /*  Tip: To avoid modifying this file each time you need to switch between these
         devices, you can define the device in your toolchain compiler preprocessor.
@@ -143,51 +143,51 @@
   * @{
   */
 
-#if defined(STM32F405xx)
-  #include "stm32f405xx.h"
-#elif defined(STM32F415xx)
-  #include "stm32f415xx.h"
-#elif defined(STM32F407xx)
-  #include "stm32f407xx.h"
-#elif defined(STM32F417xx)
-  #include "stm32f417xx.h"
-#elif defined(STM32F427xx)
-  #include "stm32f427xx.h"
-#elif defined(STM32F437xx)
-  #include "stm32f437xx.h"
-#elif defined(STM32F429xx)
-  #include "stm32f429xx.h"
-#elif defined(STM32F439xx)
-  #include "stm32f439xx.h"
-#elif defined(STM32F401xC)
-  #include "stm32f401xc.h"
-#elif defined(STM32F401xE)
-  #include "stm32f401xe.h"
-#elif defined(STM32F410Tx)
-  #include "stm32f410tx.h"
-#elif defined(STM32F410Cx)
-  #include "stm32f410cx.h"
-#elif defined(STM32F410Rx)
-  #include "stm32f410rx.h"
-#elif defined(STM32F411xE)
-  #include "stm32f411xe.h"
-#elif defined(STM32F446xx)
-  #include "stm32f446xx.h"
-#elif defined(STM32F469xx)
-  #include "stm32f469xx.h"
-#elif defined(STM32F479xx)
-  #include "stm32f479xx.h"
-#elif defined(STM32F412Cx)
-  #include "stm32f412cx.h"
-#elif defined(STM32F412Zx)
-  #include "stm32f412zx.h"
-#elif defined(STM32F412Rx)
-  #include "stm32f412rx.h"
-#elif defined(STM32F412Vx)
-  #include "stm32f412vx.h"
-#elif defined(STM32F413xx)
+// #if defined(STM32F405xx)
+//   #include "stm32f405xx.h"
+// #elif defined(STM32F415xx)
+//   #include "stm32f415xx.h"
+// #elif defined(STM32F407xx)
+//   #include "stm32f407xx.h"
+// #elif defined(STM32F417xx)
+//   #include "stm32f417xx.h"
+// #elif defined(STM32F427xx)
+//   #include "stm32f427xx.h"
+// #elif defined(STM32F437xx)
+//   #include "stm32f437xx.h"
+// #elif defined(STM32F429xx)
+//   #include "stm32f429xx.h"
+// #elif defined(STM32F439xx)
+//   #include "stm32f439xx.h"
+// #elif defined(STM32F401xC)
+//   #include "stm32f401xc.h"
+// #elif defined(STM32F401xE)
+//   #include "stm32f401xe.h"
+// #elif defined(STM32F410Tx)
+//   #include "stm32f410tx.h"
+// #elif defined(STM32F410Cx)
+//   #include "stm32f410cx.h"
+// #elif defined(STM32F410Rx)
+//   #include "stm32f410rx.h"
+// #elif defined(STM32F411xE)
+//   #include "stm32f411xe.h"
+// #elif defined(STM32F446xx)
+//   #include "stm32f446xx.h"
+// #elif defined(STM32F469xx)
+//   #include "stm32f469xx.h"
+// #elif defined(STM32F479xx)
+//   #include "stm32f479xx.h"
+// #elif defined(STM32F412Cx)
+//   #include "stm32f412cx.h"
+// #elif defined(STM32F412Zx)
+//   #include "stm32f412zx.h"
+// #elif defined(STM32F412Rx)
+//   #include "stm32f412rx.h"
+// #elif defined(STM32F412Vx)
+//   #include "stm32f412vx.h"
+#if defined(STM32F413xx)
   #include "stm32f413xx.h"
-#elif defined(STM32F423xx)
+ #elif defined(STM32F423xx)
   #include "stm32f423xx.h"
 #else
  #error "Please select first the target STM32F4xx device used in your application (in stm32f4xx.h file)"

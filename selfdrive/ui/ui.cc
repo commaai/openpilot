@@ -63,13 +63,13 @@ static int get_path_length_idx(const cereal::ModelDataV2::XYZTData::Reader &line
   return max_idx;
 }
 
-static void update_leads(UIState *s, const cereal::RadarState::Reader &radar_state, std::optional<cereal::ModelDataV2::XYZTData::Reader> line) {
+static void update_leads(UIState *s, const cereal::ModelDataV2::Reader &model) {
+  auto leads = model.getLeadsV3();
+  auto model_position = model.getPosition();
   for (int i = 0; i < 2; ++i) {
-    auto lead_data = (i == 0) ? radar_state.getLeadOne() : radar_state.getLeadTwo();
-    if (lead_data.getStatus()) {
-      float z = line ? (*line).getZ()[get_path_length_idx(*line, lead_data.getDRel())] : 0.0;
-      // negative because radarState uses left positive convention
-      calib_frame_to_full_frame(s, lead_data.getDRel(), -lead_data.getYRel(), z + 1.22, &s->scene.lead_vertices[i]);
+    if (leads[i].getProb() > 0.5) {
+      float z = model_position.getZ()[get_path_length_idx(model_position, leads[i].getX()[0])];
+      calib_frame_to_full_frame(s, leads[i].getX()[0], leads[i].getY()[0], z + 1.22, &s->scene.lead_vertices[i]);
     }
   }
 }
@@ -112,9 +112,9 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
   }
 
   // update path
-  auto lead_one = (*s->sm)["radarState"].getRadarState().getLeadOne();
-  if (lead_one.getStatus()) {
-    const float lead_d = lead_one.getDRel() * 2.;
+  auto lead_one = model.getLeadsV3()[0];
+  if (lead_one.getProb() > 0.5) {
+    const float lead_d = lead_one.getX()[0] * 2.;
     max_distance = std::clamp((float)(lead_d - fmin(lead_d * 0.35, 10.)), 0.0f, max_distance);
   }
   max_idx = get_path_length_idx(model_position, max_distance);
@@ -134,12 +134,10 @@ static void update_state(UIState *s) {
     scene.engageable = sm["controlsState"].getControlsState().getEngageable();
     scene.dm_active = sm["driverMonitoringState"].getDriverMonitoringState().getIsActiveMode();
   }
-  if (sm.updated("radarState") && s->vg) {
-    std::optional<cereal::ModelDataV2::XYZTData::Reader> line;
-    if (sm.rcv_frame("modelV2") > 0) {
-      line = sm["modelV2"].getModelV2().getPosition();
-    }
-    update_leads(s, sm["radarState"].getRadarState(), line);
+  if (sm.updated("modelV2") && s->vg) {
+    auto model = sm["modelV2"].getModelV2();
+    update_model(s, model);
+    update_leads(s, model);
   }
   if (sm.updated("liveCalibration")) {
     scene.world_objects_visible = true;
@@ -157,9 +155,6 @@ static void update_state(UIState *s) {
         scene.view_from_calib.v[i*3 + j] = view_from_calib(i,j);
       }
     }
-  }
-  if (sm.updated("modelV2") && s->vg) {
-    update_model(s, sm["modelV2"].getModelV2());
   }
   if (sm.updated("pandaState")) {
     auto pandaState = sm["pandaState"].getPandaState();
@@ -189,15 +184,18 @@ static void update_state(UIState *s) {
   if (sm.updated("roadCameraState")) {
     auto camera_state = sm["roadCameraState"].getRoadCameraState();
 
-    float max_lines = Hardware::EON() ? 5408 : 1757;
-    float gain = camera_state.getGain();
+    float max_lines = Hardware::EON() ? 5408 : 1904;
+    float max_gain = Hardware::EON() ? 1.0: 10.0;
+    float max_ev = max_lines * max_gain;
 
-    if (Hardware::TICI()) {
-      // Max gain is 4 * 2.5 (High Conversion Gain)
-      gain /= 10.0;
+    // C3 camera only uses about 10% of available gain at night
+    if (Hardware::TICI) {
+      max_ev /= 10;
     }
 
-    scene.light_sensor = std::clamp<float>((1023.0 / max_lines) * (max_lines - camera_state.getIntegLines() * gain), 0.0, 1023.0);
+    float ev = camera_state.getGain() * float(camera_state.getIntegLines());
+
+    scene.light_sensor = std::clamp<float>(1.0 - (ev / max_ev), 0.0, 1.0);
   }
   scene.started = sm["deviceState"].getDeviceState().getStarted() && scene.ignition;
 }
@@ -273,7 +271,7 @@ static void update_status(UIState *s) {
 
 QUIState::QUIState(QObject *parent) : QObject(parent) {
   ui_state.sm = std::make_unique<SubMaster, const std::initializer_list<const char *>>({
-    "modelV2", "controlsState", "liveCalibration", "radarState", "deviceState", "roadCameraState",
+    "modelV2", "controlsState", "liveCalibration", "deviceState", "roadCameraState",
     "pandaState", "carParams", "driverMonitoringState", "sensorEvents", "carState", "liveLocationKalman",
   });
 
@@ -305,7 +303,7 @@ void QUIState::update() {
     started_prev = ui_state.scene.started;
     emit offroadTransition(!ui_state.scene.started);
 
-    // Change timeout to 0 when onroad, this will call update continously.
+    // Change timeout to 0 when onroad, this will call update continuously.
     // This puts visionIPC in charge of update frequency, reducing video latency
     timer->start(ui_state.scene.started ? 0 : 1000 / UI_FREQ);
   }
@@ -339,9 +337,19 @@ void Device::setAwake(bool on, bool reset) {
 }
 
 void Device::updateBrightness(const UIState &s) {
-  float brightness_b = 10;
-  float brightness_m = 0.1;
-  float clipped_brightness = std::min(100.0f, (s.scene.light_sensor * brightness_m) + brightness_b);
+  // Scale to 0% to 100%
+  float clipped_brightness = 100.0 * s.scene.light_sensor;
+
+  // CIE 1931 - https://www.photonstophotos.net/GeneralTopics/Exposure/Psychometric_Lightness_and_Gamma.htm
+  if (clipped_brightness <= 8) {
+    clipped_brightness = (clipped_brightness / 903.3);
+  } else {
+    clipped_brightness = std::pow((clipped_brightness + 16.0) / 116.0, 3.0);
+  }
+
+  // Scale back to 10% to 100%
+  clipped_brightness = std::clamp(100.0f * clipped_brightness, 10.0f, 100.0f);
+
   if (!s.scene.started) {
     clipped_brightness = BACKLIGHT_OFFROAD;
   }

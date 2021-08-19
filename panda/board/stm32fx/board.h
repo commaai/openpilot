@@ -2,6 +2,7 @@
 // Hardware abstraction layer for all different supported boards //
 // ///////////////////////////////////////////////////////////// //
 #include "boards/board_declarations.h"
+#include "boards/unused_funcs.h"
 
 // ///// Board definition and detection ///// //
 #include "drivers/harness.h"

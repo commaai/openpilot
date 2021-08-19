@@ -33,10 +33,6 @@
 
 namespace {
 
-const std::string default_params_path = Hardware::PC() ? util::getenv_default("HOME", "/.comma/params", "/data/params")
-                                                       : "/data/params";
-const std::string persistent_params_path = Hardware::PC() ? default_params_path : "/persist/comma/params";
-
 volatile sig_atomic_t params_do_exit = 0;
 void params_sig_handler(int signal) {
   params_do_exit = 1;
@@ -78,7 +74,7 @@ int mkdir_p(std::string path) {
   return 0;
 }
 
-static bool create_params_path(const std::string &param_path, const std::string &key_path) {
+bool create_params_path(const std::string &param_path, const std::string &key_path) {
   // Make sure params path exists
   if (!util::file_exists(param_path) && mkdir_p(param_path) != 0) {
     return false;
@@ -117,7 +113,7 @@ static bool create_params_path(const std::string &param_path, const std::string 
   return chmod(key_path.c_str(), 0777) == 0;
 }
 
-static void ensure_params_path(const std::string &params_path) {
+void ensure_params_path(const std::string &params_path) {
   if (!create_params_path(params_path, params_path + "/d")) {
     throw std::runtime_error(util::string_format("Failed to ensure params path, errno=%d", errno));
   }
@@ -198,6 +194,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"PandaFirmware", CLEAR_ON_MANAGER_START | CLEAR_ON_PANDA_DISCONNECT},
     {"PandaFirmwareHex", CLEAR_ON_MANAGER_START | CLEAR_ON_PANDA_DISCONNECT},
     {"PandaDongleId", CLEAR_ON_MANAGER_START | CLEAR_ON_PANDA_DISCONNECT},
+    {"PandaHeartbeatLost", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_OFF},
     {"Passive", PERSISTENT},
     {"PrimeRedirected", PERSISTENT},
     {"RecordFront", PERSISTENT},
@@ -231,11 +228,11 @@ std::unordered_map<std::string, uint32_t> keys = {
 
 } // namespace
 
-Params::Params(bool persistent_param) : Params(persistent_param ? persistent_params_path : default_params_path) {}
+Params::Params(bool persistent_param) : Params(persistent_param ? Path::persistent_params() : Path::params()) {}
 
 std::once_flag default_params_path_ensured;
 Params::Params(const std::string &path) : params_path(path) {
-  if (path == default_params_path) {
+  if (path == Path::params()) {
     std::call_once(default_params_path_ensured, ensure_params_path, path);
   } else {
     ensure_params_path(path);
@@ -331,12 +328,12 @@ std::string Params::get(const char *key, bool block) {
   }
 }
 
-int Params::readAll(std::map<std::string, std::string> *params) {
+std::map<std::string, std::string> Params::readAll() {
   FileLock file_lock(params_path + "/.lock", LOCK_SH);
   std::lock_guard<FileLock> lk(file_lock);
 
   std::string key_path = params_path + "/d";
-  return util::read_files_in_dir(key_path, params);
+  return util::read_files_in_dir(key_path);
 }
 
 void Params::clearAll(ParamKeyType key_type) {

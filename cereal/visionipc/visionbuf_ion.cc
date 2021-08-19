@@ -104,9 +104,7 @@ void VisionBuf::init_cl(cl_device_id device_id, cl_context ctx) {
 }
 
 
-void VisionBuf::sync(int dir) {
-  int err;
-
+int VisionBuf::sync(int dir) {
   struct ion_flush_data flush_data = {0};
   flush_data.handle = this->handle;
   flush_data.vaddr = this->addr;
@@ -124,19 +122,23 @@ void VisionBuf::sync(int dir) {
      ION_IOC_INV_CACHES : ION_IOC_CLEAN_CACHES;
 
   custom_data.arg = (unsigned long)&flush_data;
-  err = ioctl(ion_fd, ION_IOC_CUSTOM, &custom_data);
-  assert(err == 0);
+  return ioctl(ion_fd, ION_IOC_CUSTOM, &custom_data);
 }
 
-void VisionBuf::free() {
+int VisionBuf::free() {
+  int err = 0;
+
   if (this->buf_cl){
-    int err = clReleaseMemObject(this->buf_cl);
-    assert(err == 0);
+    err = clReleaseMemObject(this->buf_cl);
+    if (err != 0) return err;
   }
 
-  munmap(this->addr, this->mmap_len);
-  close(this->fd);
+  err = munmap(this->addr, this->mmap_len);
+  if (err != 0) return err;
+
+  err = close(this->fd);
+  if (err != 0) return err;
 
   struct ion_handle_data handle_data = {.handle = this->handle};
-  ioctl(ion_fd, ION_IOC_FREE, &handle_data);
+  return ioctl(ion_fd, ION_IOC_FREE, &handle_data);
 }

@@ -1,10 +1,14 @@
-import os
 import usb1
 import struct
 import binascii
+from .config import BOOTSTUB_ADDRESS, APP_ADDRESS_H7, APP_ADDRESS_FX, BLOCK_SIZE_H7, BLOCK_SIZE_FX, DEFAULT_H7_BOOTSTUB_FN, DEFAULT_BOOTSTUB_FN
+
+
+MCU_TYPE_F2 = 0
+MCU_TYPE_F4 = 1
+MCU_TYPE_H7 = 2
 
 # *** DFU mode ***
-
 DFU_DNLOAD = 1
 DFU_UPLOAD = 2
 DFU_GETSTATUS = 3
@@ -21,6 +25,7 @@ class PandaDFU(object):
         except Exception:
           continue
         if this_dfu_serial == dfu_serial or dfu_serial is None:
+          self._mcu_type = self.get_mcu_type(device)
           self._handle = device.open()
           return
     raise Exception("failed to open " + dfu_serial if dfu_serial is not None else "DFU device")
@@ -41,11 +46,18 @@ class PandaDFU(object):
     return dfu_serials
 
   @staticmethod
-  def st_serial_to_dfu_serial(st):
+  def st_serial_to_dfu_serial(st, mcu_type=MCU_TYPE_F4):
     if st is None or st == "none":
       return None
     uid_base = struct.unpack("H" * 6, bytes.fromhex(st))
-    return binascii.hexlify(struct.pack("!HHH", uid_base[1] + uid_base[5], uid_base[0] + uid_base[4] + 0xA, uid_base[3])).upper().decode("utf-8")
+    if mcu_type == MCU_TYPE_H7:
+      return binascii.hexlify(struct.pack("!HHH", uid_base[1] + uid_base[5], uid_base[0] + uid_base[4], uid_base[3])).upper().decode("utf-8")
+    else:
+      return binascii.hexlify(struct.pack("!HHH", uid_base[1] + uid_base[5], uid_base[0] + uid_base[4] + 0xA, uid_base[3])).upper().decode("utf-8")
+
+  # TODO: Find a way to detect F4 vs F2
+  def get_mcu_type(self, dev):
+    return MCU_TYPE_H7 if dev.getbcdDevice() == 512 else MCU_TYPE_F4
 
   def status(self):
     while 1:
@@ -85,14 +97,17 @@ class PandaDFU(object):
 
   def program_bootstub(self, code_bootstub):
     self.clear_status()
-    self.erase(0x8004000)
-    self.erase(0x8000000)
-    self.program(0x8000000, code_bootstub, 0x800)
+    self.erase(BOOTSTUB_ADDRESS)
+    if self._mcu_type == MCU_TYPE_H7:
+      self.erase(APP_ADDRESS_H7)
+      self.program(BOOTSTUB_ADDRESS, code_bootstub, BLOCK_SIZE_H7)
+    else:
+      self.erase(APP_ADDRESS_FX)
+      self.program(BOOTSTUB_ADDRESS, code_bootstub, BLOCK_SIZE_FX)
     self.reset()
 
   def recover(self):
-    from panda import BASEDIR
-    fn = os.path.join(BASEDIR, "board", "obj", "bootstub.panda.bin")
+    fn = DEFAULT_H7_BOOTSTUB_FN if self._mcu_type == MCU_TYPE_H7 else DEFAULT_BOOTSTUB_FN
 
     with open(fn, "rb") as f:
       code = f.read()
@@ -101,7 +116,7 @@ class PandaDFU(object):
 
   def reset(self):
     # **** Reset ****
-    self._handle.controlWrite(0x21, DFU_DNLOAD, 0, 0, b"\x21" + struct.pack("I", 0x8000000))
+    self._handle.controlWrite(0x21, DFU_DNLOAD, 0, 0, b"\x21" + struct.pack("I", BOOTSTUB_ADDRESS))
     self.status()
     try:
       self._handle.controlWrite(0x21, DFU_DNLOAD, 2, 0, b"")

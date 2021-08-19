@@ -21,9 +21,9 @@
 #include "selfdrive/loggerd/include/msm_media_info.h"
 
 // Check the OMX error code and assert if an error occurred.
-#define OMX_CHECK(_expr)          \
-  do {                           \
-    assert(OMX_ErrorNone == _expr); \
+#define OMX_CHECK(_expr)              \
+  do {                                \
+    assert(OMX_ErrorNone == (_expr)); \
   } while (0)
 
 extern ExitHandler do_exit;

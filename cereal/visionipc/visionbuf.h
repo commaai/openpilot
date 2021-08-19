@@ -55,8 +55,8 @@ class VisionBuf {
   void init_cl(cl_device_id device_id, cl_context ctx);
   void init_rgb(size_t width, size_t height, size_t stride);
   void init_yuv(size_t width, size_t height);
-  void sync(int dir);
-  void free();
+  int sync(int dir);
+  int free();
 };
 
 void visionbuf_compute_aligned_width_and_height(int width, int height, int *aligned_w, int *aligned_h);

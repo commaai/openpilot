@@ -35,7 +35,7 @@ public:
   void clearAll(ParamKeyType type);
 
   // read all values
-  int readAll(std::map<std::string, std::string> *params);
+  std::map<std::string, std::string> readAll();
 
   // helpers for reading values
   std::string get(const char *key, bool block = false);

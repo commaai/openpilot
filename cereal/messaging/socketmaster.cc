@@ -92,7 +92,9 @@ void SubMaster::update(int timeout) {
     SubMessage *m = messages_.at(s);
 
     m->msg_reader->~FlatArrayMessageReader();
-    m->msg_reader = new (m->allocated_msg_reader) capnp::FlatArrayMessageReader(m->aligned_buf.align(msg));
+    capnp::ReaderOptions options;
+    options.traversalLimitInWords = kj::maxValue; // Don't limit
+    m->msg_reader = new (m->allocated_msg_reader) capnp::FlatArrayMessageReader(m->aligned_buf.align(msg), options);
     delete msg;
     messages.push_back({m->name, m->msg_reader->getRoot<cereal::Event>()});
   }
@@ -100,7 +102,7 @@ void SubMaster::update(int timeout) {
   update_msgs(current_time, messages);
 }
 
-void SubMaster::update_msgs(uint64_t current_time, std::vector<std::pair<std::string, cereal::Event::Reader>> messages){
+void SubMaster::update_msgs(uint64_t current_time, const std::vector<std::pair<std::string, cereal::Event::Reader>> &messages){
   if (++frame == UINT64_MAX) frame = 1;
 
   for(auto &kv : messages) {
