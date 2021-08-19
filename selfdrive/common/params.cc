@@ -281,7 +281,7 @@ int Params::remove(const char *key) {
   std::lock_guard<FileLock> lk(file_lock);
   // Delete value.
   std::string path = params_path + "/d/" + key;
-  int result = ::remove(path.c_str());
+  int result = unlink(path.c_str());
   if (result != 0) {
     result = ERR_NO_VALUE;
     return result;
@@ -331,7 +331,7 @@ void Params::clearAll(ParamKeyType key_type) {
   for (auto &[key, type] : keys) {
     if (type & key_type) {
       path = params_path + "/d/" + key;
-      ::remove(path.c_str());
+      unlink(path.c_str());
     }
   }
   // fsync parent directory
