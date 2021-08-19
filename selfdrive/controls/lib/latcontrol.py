@@ -1,6 +1,8 @@
 from common.numpy_fast import clip
 from common.realtime import DT_CTRL
 
+MIN_CTRL_SPEED = 0.3
+
 
 class LatControl:
   def __init__(self, CP):
