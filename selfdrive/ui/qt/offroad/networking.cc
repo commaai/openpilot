@@ -13,6 +13,7 @@
 #include "selfdrive/ui/qt/widgets/controls.h"
 #include "selfdrive/ui/qt/widgets/scrollview.h"
 
+
 // Networking functions
 
 Networking::Networking(QWidget* parent, bool show_advanced) : QFrame(parent) {

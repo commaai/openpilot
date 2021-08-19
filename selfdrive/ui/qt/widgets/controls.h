@@ -39,7 +39,7 @@ protected:
   AbstractControl(const QString &title, const QString &desc = "", const QString &icon = "", QWidget *parent = nullptr);
   void hideEvent(QHideEvent *e) override;
 
-  QSize minimumSizeHint() const override {
+  QSize sizeHint() const override {
     QSize size = QFrame::minimumSizeHint();
     size.setHeight(120);
     return size;
@@ -135,8 +135,7 @@ class ListWidget : public QWidget {
  public:
   explicit ListWidget(QWidget *parent = 0) : QWidget(parent), layout_(this) {
     layout_.setMargin(0);
-    // default spacing is 25
-    setSpacing(25);
+    layout_.setSpacing(25); // default spacing is 25
   }
   inline void addItem(QWidget *w) { layout_.addWidget(w); }
   inline void addItem(QLayout *layout) { layout_.addLayout(layout); }

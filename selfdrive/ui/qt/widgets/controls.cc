@@ -19,13 +19,13 @@ QFrame *horizontal_line(QWidget *parent) {
 
 AbstractControl::AbstractControl(const QString &title, const QString &desc, const QString &icon, QWidget *parent) : QFrame(parent) {
   setAttribute(Qt::WA_NoSystemBackground);
+  setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setMargin(0);
 
   hlayout = new QHBoxLayout;
   hlayout->setMargin(0);
   hlayout->setSpacing(20);
-  hlayout->addSpacerItem(new QSpacerItem(0, 120));
 
   // left icon
   if (!icon.isEmpty()) {
@@ -59,7 +59,6 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
       description->setVisible(!description->isVisible());
     });
   }
-  main_layout->addStretch();
 }
 
 void AbstractControl::hideEvent(QHideEvent *e) {

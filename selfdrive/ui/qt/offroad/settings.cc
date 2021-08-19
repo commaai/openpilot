@@ -152,8 +152,7 @@ DevicePanel::DevicePanel(QWidget* parent) : ListWidget(parent) {
   }
 
   // power buttons
-  QWidget *btnsWidget = new QWidget();
-  QHBoxLayout *power_layout = new QHBoxLayout(btnsWidget);
+  QHBoxLayout *power_layout = new QHBoxLayout;
   power_layout->setSpacing(30);
 
   QPushButton *reboot_btn = new QPushButton("Reboot");
@@ -184,7 +183,7 @@ DevicePanel::DevicePanel(QWidget* parent) : ListWidget(parent) {
     #poweroff_btn { background-color: #E22C2C; }
     #poweroff_btn:pressed { background-color: #FF2424; }
   )");
-  addItem(btnsWidget);
+  addItem(power_layout);
 }
 
 SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
@@ -205,10 +204,6 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
     std::system("pkill -1 -f selfdrive.updated");
   });
 
-  QWidget *widgets[] = {versionLbl, lastUpdateLbl, updateBtn, gitBranchLbl, gitCommitLbl, osVersionLbl};
-  for (QWidget* w : widgets) {
-    addItem(w);
-  }
 
   auto uninstallBtn = new ButtonControl("Uninstall " + getBrand(), "UNINSTALL");
   connect(uninstallBtn, &ButtonControl::clicked, [=]() {
@@ -217,7 +212,11 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
     }
   });
   connect(parent, SIGNAL(offroadTransition(bool)), uninstallBtn, SLOT(setEnabled(bool)));
-  addItem(uninstallBtn);
+
+  QWidget *widgets[] = {versionLbl, lastUpdateLbl, updateBtn, gitBranchLbl, gitCommitLbl, osVersionLbl, uninstallBtn};
+  for (QWidget* w : widgets) {
+    addItem(w);
+  }
 
   fs_watch = new QFileSystemWatcher(this);
   QObject::connect(fs_watch, &QFileSystemWatcher::fileChanged, [=](const QString path) {
