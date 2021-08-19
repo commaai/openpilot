@@ -48,7 +48,7 @@ def test_athena():
         resp = requests.post(
           "https://athena.comma.ai/" + params.get("DongleId", encoding="utf-8"),
           headers={
-            "Authorization": "JWT " + os.getenv("COMMA_JWT"),
+            "Authorization": "JWT thisisnotajwt",
             "Content-Type": "application/json"
           },
           data=json.dumps(payload),
@@ -84,11 +84,6 @@ def test_athena():
     # kill athenad and ensure it is restarted (check_output will throw if it is not)
     os.kill(int(athenad_pid), signal.SIGINT)
     expect_athena_starts()
-
-    if not os.getenv('COMMA_JWT'):
-      print('WARNING: COMMA_JWT env not set, will not test requests to athena.comma.ai')
-      return
-
     expect_athena_registers(start)
 
     print("ATHENA: getSimInfo")

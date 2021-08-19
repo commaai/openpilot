@@ -49,7 +49,6 @@ def phone_steps(String device_type, steps) {
 pipeline {
   agent none
   environment {
-    COMMA_JWT = credentials('athena-test-jwt')
     TEST_DIR = "/data/openpilot"
     SOURCE_DIR = "/data/openpilot_source/"
   }
