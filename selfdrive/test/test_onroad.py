@@ -44,7 +44,7 @@ PROCS = {
   "./logcatd": 0,
 }
 
-if EON;
+if EON:
   PROCS.update({
     "selfdrive.hardware.eon.androidd": 0.4,
   })
