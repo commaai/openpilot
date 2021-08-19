@@ -507,8 +507,9 @@ void pigeon_thread() {
     bool need_reset = false;
     std::string recv = pigeon->receive();
 
+    IgnitionStatus ign_status = ignition_status.load();
     // Parse message header
-    if (ignition_status >= IgnitionStatus::starting && recv.length() >= 3) {
+    if (ign_status >= IgnitionStatus::starting && recv.length() >= 3) {
       if (recv[0] == (char)ublox::PREAMBLE1 && recv[1] == (char)ublox::PREAMBLE2) {
         const char msg_cls = recv[2];
         uint64_t t = nanos_since_boot();
@@ -521,7 +522,7 @@ void pigeon_thread() {
     // Check based on message frequency
     for (const auto& [msg_cls, max_dt] : cls_max_dt) {
       int64_t dt = (int64_t)nanos_since_boot() - (int64_t)last_recv_time[msg_cls];
-      if (ignition_status == IgnitionStatus::started && dt > max_dt) {
+      if (ign_status == IgnitionStatus::started && dt > max_dt) {
         LOG("ublox receive timeout, msg class: 0x%02x, dt %llu", msg_cls, dt);
         // TODO: turn on reset after verification of logs
         // need_reset = true;
@@ -529,7 +530,7 @@ void pigeon_thread() {
     }
 
     // Check based on null bytes
-    if (ignition_status >= IgnitionStatus::starting && recv.length() > 0 && recv[0] == (char)0x00) {
+    if (ign_status >= IgnitionStatus::starting && recv.length() > 0 && recv[0] == (char)0x00) {
       need_reset = true;
       LOGW("received invalid ublox message while onroad, resetting panda GPS");
     }
@@ -540,7 +541,7 @@ void pigeon_thread() {
 
     // init pigeon on rising ignition edge
     // since it was turned off in low power mode
-    if(ignition_status == IgnitionStatus::starting || need_reset) {
+    if(ign_status == IgnitionStatus::starting || need_reset) {
       pigeon->init();
 
       // Set receive times to current time
@@ -548,7 +549,7 @@ void pigeon_thread() {
       for (const auto& [msg_cls, dt] : cls_max_dt) {
         last_recv_time[msg_cls] = t;
       }
-    } else if (ignition_status == IgnitionStatus::stopping) {
+    } else if (ign_status == IgnitionStatus::stopping) {
       // power off on falling edge of ignition
       LOGD("powering off pigeon\n");
       pigeon->stop();
