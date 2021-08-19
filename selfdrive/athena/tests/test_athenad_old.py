@@ -84,6 +84,11 @@ def test_athena():
     # kill athenad and ensure it is restarted (check_output will throw if it is not)
     os.kill(int(athenad_pid), signal.SIGINT)
     expect_athena_starts()
+
+    if not os.getenv('COMMA_JWT'):
+      print('WARNING: COMMA_JWT env not set, will not test requests to athena.comma.ai')
+      return
+
     expect_athena_registers(start)
 
     print("ATHENA: getSimInfo")
