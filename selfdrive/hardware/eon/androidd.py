@@ -17,6 +17,7 @@ def main():
   procs = {}
   crash_count = 0
   modem_killed = False
+  modem_state = "ONLINE"
   while True:
     # check interesting procs
     cp = {p: None for p in WATCHED_PROCS}
@@ -30,8 +31,7 @@ def main():
         cloudlog.event("android service pid changed", proc=p, prev=procs[p], cur=cp[p])
       procs[p] = cp[p]
 
-    # TODO: handle modem bootloops
-    # handle modem crashes
+    # check modem crashes
     modem_path = "/sys/devices/soc/2080000.qcom,mss/subsys5"
     try:
       with open(os.path.join(modem_path, "crash_count")) as f:
@@ -48,12 +48,15 @@ def main():
     try:
       with open(os.path.join(modem_path, "state")) as f:
         state = f.read().strip()
-        if state != "ONLINE" and not modem_killed:
-          cloudlog.event("modem not online", state=state)
+        if state != modem_state and not modem_killed:
+          cloudlog.event("modem state changed", state=state)
+        modem_state = state
     except Exception:
       cloudlog.exception("Error reading modem state")
 
+    # handle modem excessive crashes
     if crash_count > MAX_MODEM_CRASHES and not modem_killed:
+      cloudlog.event("killing modem")
       os.system("echo put > /sys/kernel/debug/msm_subsys/modem")
       modem_killed = True
 
