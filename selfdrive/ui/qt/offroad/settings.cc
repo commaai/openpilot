@@ -152,7 +152,7 @@ DevicePanel::DevicePanel(QWidget* parent) : ListWidget(parent) {
   }
 
   // power buttons
-  QHBoxLayout *power_layout = new QHBoxLayout;
+  QHBoxLayout *power_layout = new QHBoxLayout();
   power_layout->setSpacing(30);
 
   QPushButton *reboot_btn = new QPushButton("Reboot");
@@ -255,7 +255,7 @@ QWidget * network_panel(QWidget * parent) {
 #ifdef QCOM
   QWidget *w = new QWidget(parent);
   QVBoxLayout *layout = new QVBoxLayout(w);
-  layout->setMargin(0);
+  layout->setContentsMargins(50, 0, 50, 0);
 
   ListWidget *list = new ListWidget();
   list->setSpacing(30);
@@ -272,7 +272,7 @@ QWidget * network_panel(QWidget * parent) {
   list->addItem(new SshToggle());
   list->addItem(new SshControl());
 
-  layout->addItem(list);
+  layout->addWidget(list);
   layout->addStretch(1);
 #else
   Networking *w = new Networking(parent);
