@@ -1,14 +1,15 @@
 import math
 
 from cereal import log
+from selfdrive.controls.lib.latcontrol import LatControl
 
 
-class LatControlAngle():
+class LatControlAngle(LatControl):
   def __init__(self, CP):
-    pass
+    super().__init__(CP)
 
   def reset(self):
-    pass
+    super().reset()
 
   def update(self, active, CS, CP, VM, params, last_actuators, desired_curvature, desired_curvature_rate):
     angle_log = log.ControlsState.LateralAngleState.new_message()

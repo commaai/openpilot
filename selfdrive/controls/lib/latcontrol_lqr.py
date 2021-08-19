@@ -5,10 +5,12 @@ from common.numpy_fast import clip
 from common.realtime import DT_CTRL
 from cereal import log
 from selfdrive.controls.lib.drive_helpers import get_steer_max
+from selfdrive.controls.lib.latcontrol import LatControl
 
 
-class LatControlLQR():
+class LatControlLQR(LatControl):
   def __init__(self, CP):
+    super().__init__(CP)
     self.scale = CP.lateralTuning.lqr.scale
     self.ki = CP.lateralTuning.lqr.ki
 
@@ -23,26 +25,11 @@ class LatControlLQR():
     self.i_unwind_rate = 0.3 * DT_CTRL
     self.i_rate = 1.0 * DT_CTRL
 
-    self.sat_count_rate = 1.0 * DT_CTRL
-    self.sat_limit = CP.steerLimitTimer
-
     self.reset()
 
   def reset(self):
+    super().reset()
     self.i_lqr = 0.0
-    self.sat_count = 0.0
-
-  def _check_saturation(self, control, check_saturation, limit):
-    saturated = abs(control) == limit
-
-    if saturated and check_saturation:
-      self.sat_count += self.sat_count_rate
-    else:
-      self.sat_count -= self.sat_count_rate
-
-    self.sat_count = clip(self.sat_count, 0.0, 1.0)
-
-    return self.sat_count > self.sat_limit
 
   def update(self, active, CS, CP, VM, params, last_actuators, desired_curvature, desired_curvature_rate):
     lqr_log = log.ControlsState.LateralLQRState.new_message()
@@ -91,12 +78,9 @@ class LatControlLQR():
       output_steer = lqr_output + self.i_lqr
       output_steer = clip(output_steer, -steers_max, steers_max)
 
-    check_saturation = (CS.vEgo > 10) and not CS.steeringRateLimited and not CS.steeringPressed
-    saturated = self._check_saturation(output_steer, check_saturation, steers_max)
-
     lqr_log.steeringAngleDeg = angle_steers_k
     lqr_log.i = self.i_lqr
     lqr_log.output = output_steer
     lqr_log.lqrOutput = lqr_output
-    lqr_log.saturated = saturated
+    lqr_log.saturated = self._check_saturation(output_steer, steers_max, CS)
     return output_steer, desired_angle, lqr_log
