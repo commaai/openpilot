@@ -324,9 +324,17 @@ std::map<std::string, std::string> Params::readAll() {
 }
 
 void Params::clearAll(ParamKeyType key_type) {
+  FileLock file_lock(params_path + "/.lock", LOCK_EX);
+  std::lock_guard<FileLock> lk(file_lock);
+
+  std::string path;
   for (auto &[key, type] : keys) {
     if (type & key_type) {
-      remove(key);
+      path = params_path + "/d/" + key;
+      ::remove(path.c_str());
     }
   }
+  // fsync parent directory
+  path = params_path + "/d";
+  fsync_dir(path.c_str());
 }
