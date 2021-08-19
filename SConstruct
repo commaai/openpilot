@@ -51,6 +51,11 @@ AddOption('--external-sconscript',
           dest='external_sconscript',
           help='add an external SConscript to the build')
 
+AddOption('--no-thneed',
+          action='store_true',
+          dest='no_thneed',
+          help='avoid using thneed')
+
 real_arch = arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
 if platform.system() == "Darwin":
   arch = "Darwin"
@@ -160,6 +165,10 @@ else:
 # no --as-needed on mac linker
 if arch != "Darwin":
   ldflags += ["-Wl,--as-needed"]
+
+# Enable swaglog include in submodules
+cflags += ["-DSWAGLOG"]
+cxxflags += ["-DSWAGLOG"]
 
 # change pythonpath to this
 lenv["PYTHONPATH"] = Dir("#").path
@@ -339,6 +348,17 @@ if GetOption("clazy"):
 
 Export('env', 'qt_env', 'arch', 'real_arch', 'SHARED', 'USE_WEBCAM')
 
+SConscript(['selfdrive/common/SConscript'])
+Import('_common', '_gpucommon', '_gpu_libs')
+
+if SHARED:
+  common, gpucommon = abspath(common), abspath(gpucommon)
+else:
+  common = [_common, 'json11']
+  gpucommon = [_gpucommon] + _gpu_libs
+
+Export('common', 'gpucommon')
+
 # cereal and messaging are shared with the system
 SConscript(['cereal/SConscript'])
 if SHARED:
@@ -349,18 +369,7 @@ else:
   messaging = [File('#cereal/libmessaging.a')]
   visionipc = [File('#cereal/libvisionipc.a')]
 
-Export('cereal', 'messaging')
-
-SConscript(['selfdrive/common/SConscript'])
-Import('_common', '_gpucommon', '_gpu_libs')
-
-if SHARED:
-  common, gpucommon = abspath(common), abspath(gpucommon)
-else:
-  common = [_common, 'json11']
-  gpucommon = [_gpucommon] + _gpu_libs
-
-Export('common', 'gpucommon', 'visionipc')
+Export('cereal', 'messaging', 'visionipc')
 
 # Build rednose library and ekf models
 

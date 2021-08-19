@@ -111,9 +111,21 @@ class HardwareBase:
     pass
 
   @abstractmethod
-  def set_power_save(self, enabled):
+  def set_power_save(self, powersave_enabled):
     pass
 
   @abstractmethod
   def get_gpu_usage_percent(self):
+    pass
+
+  @abstractmethod
+  def get_modem_version(self):
+    pass
+
+  @abstractmethod
+  def initialize_hardware(self):
+    pass
+
+  @abstractmethod
+  def get_networks(self):
     pass

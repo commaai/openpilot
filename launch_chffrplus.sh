@@ -93,6 +93,11 @@ function two_init {
 }
 
 function tici_init {
+  # wait longer for weston to come up
+  if [ -f "$BASEDIR/prebuilt" ]; then
+    sleep 3
+  fi
+
   sudo su -c 'echo "performance" > /sys/class/devfreq/soc:qcom,memlat-cpu0/governor'
   sudo su -c 'echo "performance" > /sys/class/devfreq/soc:qcom,memlat-cpu4/governor'
   nmcli connection modify --temporary lte gsm.auto-config yes
@@ -103,11 +108,12 @@ function tici_init {
 
   # Check if AGNOS update is required
   if [ $(< /VERSION) != "$AGNOS_VERSION" ]; then
+    AGNOS_PY="$DIR/selfdrive/hardware/tici/agnos.py"
     MANIFEST="$DIR/selfdrive/hardware/tici/agnos.json"
-    $DIR/selfdrive/hardware/tici/agnos.py --swap $MANIFEST
-
-    sleep 1
-    sudo reboot
+    if $AGNOS_PY --verify $MANIFEST; then
+      sudo reboot
+    fi
+    $DIR/selfdrive/hardware/tici/updater $AGNOS_PY $MANIFEST
   fi
 }
 

@@ -375,12 +375,22 @@ class Android(HardwareBase):
     with open("/sys/class/leds/lcd-backlight/brightness", "w") as f:
       f.write(str(int(percentage * 2.55)))
 
-  def set_power_save(self, enabled):
+  def set_power_save(self, powersave_enabled):
     pass
 
   def get_gpu_usage_percent(self):
     try:
       used, total = open('/sys/devices/soc/b00000.qcom,kgsl-3d0/kgsl/kgsl-3d0/gpubusy').read().strip().split()
-      return 100.0 * int(used) / int(total)
+      perc = 100.0 * int(used) / int(total)
+      return min(max(perc, 0), 100)
     except Exception:
       return 0
+
+  def get_modem_version(self):
+    return None
+
+  def initialize_hardware(self):
+    pass
+
+  def get_networks(self):
+    return None

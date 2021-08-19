@@ -2,9 +2,6 @@
 
 #include <QMouseEvent>
 
-#include "selfdrive/ui/qt/qt_window.h"
-#include "selfdrive/common/util.h"
-#include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/qt/util.h"
 
 void Sidebar::drawMetric(QPainter &p, const QString &label, const QString &val, QColor c, int y) {
@@ -25,7 +22,7 @@ void Sidebar::drawMetric(QPainter &p, const QString &label, const QString &val, 
   p.setPen(QColor(0xff, 0xff, 0xff));
   if (val.isEmpty()) {
     configFont(p, "Open Sans", 35, "Bold");
-    const QRect r = QRect(rect.x() + 35, rect.y(), rect.width() - 50, rect.height());
+    const QRect r = QRect(rect.x() + 30, rect.y(), rect.width() - 40, rect.height());
     p.drawText(r, Qt::AlignCenter, label);
   } else {
     configFont(p, "Open Sans", 58, "Bold");
@@ -41,12 +38,12 @@ Sidebar::Sidebar(QWidget *parent) : QFrame(parent) {
 
   connect(this, &Sidebar::valueChanged, [=] { update(); });
 
+  setAttribute(Qt::WA_OpaquePaintEvent);
+  setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
   setFixedWidth(300);
-  setMinimumHeight(vwp_h);
-  setStyleSheet("background-color: rgb(57, 57, 57);");
 }
 
-void Sidebar::mousePressEvent(QMouseEvent *event) {
+void Sidebar::mouseReleaseEvent(QMouseEvent *event) {
   if (settings_btn.contains(event->pos())) {
     emit openSettings();
   }
@@ -60,43 +57,39 @@ void Sidebar::updateState(const UIState &s) {
   int strength = (int)deviceState.getNetworkStrength();
   setProperty("netStrength", strength > 0 ? strength + 1 : 0);
 
+  ItemStatus connectstatus;
   auto last_ping = deviceState.getLastAthenaPingTime();
   if (last_ping == 0) {
-    setProperty("connectStr", "OFFLINE");
-    setProperty("connectStatus", warning_color);
+    connectstatus = params.getBool("PrimeRedirected") ? ItemStatus{"NO\nPRIME", danger_color} : ItemStatus{"CONNECT\nOFFLINE", warning_color};
   } else {
-    bool online = nanos_since_boot() - last_ping < 80e9;
-    setProperty("connectStr",  online ? "ONLINE" : "ERROR");
-    setProperty("connectStatus", online ? good_color : danger_color);
+    connectstatus = nanos_since_boot() - last_ping < 80e9 ? ItemStatus{"CONNECT\nONLINE", good_color} : ItemStatus{"CONNECT\nERROR", danger_color};
   }
+  setProperty("connectStatus", QVariant::fromValue(connectstatus));
 
-  QColor tempStatus = danger_color;
+  QColor tempColor = danger_color;
   auto ts = deviceState.getThermalStatus();
   if (ts == cereal::DeviceState::ThermalStatus::GREEN) {
-    tempStatus = good_color;
+    tempColor = good_color;
   } else if (ts == cereal::DeviceState::ThermalStatus::YELLOW) {
-    tempStatus = warning_color;
+    tempColor = warning_color;
   }
-  setProperty("tempStatus", tempStatus);
-  setProperty("tempVal", (int)deviceState.getAmbientTempC());
+  setProperty("tempStatus", QVariant::fromValue(ItemStatus{QString("%1°C").arg((int)deviceState.getAmbientTempC()), tempColor}));
 
-  QString pandaStr = "VEHICLE\nONLINE";
-  QColor pandaStatus = good_color;
+  ItemStatus pandaStatus = {"VEHICLE\nONLINE", good_color};
   if (s.scene.pandaType == cereal::PandaState::PandaType::UNKNOWN) {
-    pandaStatus = danger_color;
-    pandaStr = "NO\nPANDA";
-  } else if (Hardware::TICI() && s.scene.started) {
-    pandaStr = QString("SATS %1\nACC %2").arg(s.scene.satelliteCount).arg(fmin(10, s.scene.gpsAccuracy), 0, 'f', 2);
-    pandaStatus = sm["liveLocationKalman"].getLiveLocationKalman().getGpsOK() ? good_color : warning_color;
+    pandaStatus = {"NO\nPANDA", danger_color};
+  } else if (s.scene.started && !sm["liveLocationKalman"].getLiveLocationKalman().getGpsOK()) {
+    pandaStatus = {"GPS\nSEARCHING", warning_color};
   }
-  setProperty("pandaStr", pandaStr);
-  setProperty("pandaStatus", pandaStatus);
+  setProperty("pandaStatus", QVariant::fromValue(pandaStatus));
 }
 
 void Sidebar::paintEvent(QPaintEvent *event) {
   QPainter p(this);
   p.setPen(Qt::NoPen);
   p.setRenderHint(QPainter::Antialiasing);
+
+  p.fillRect(rect(), QColor(57, 57, 57));
 
   // static imgs
   p.setOpacity(0.65);
@@ -119,7 +112,7 @@ void Sidebar::paintEvent(QPaintEvent *event) {
   p.drawText(r, Qt::AlignCenter, net_type);
 
   // metrics
-  drawMetric(p, "TEMP", QString("%1°C").arg(temp_val), temp_status, 338);
-  drawMetric(p, panda_str, "", panda_status, 518);
-  drawMetric(p, "CONNECT\n" + connect_str, "", connect_status, 676);
+  drawMetric(p, "TEMP", temp_status.first, temp_status.second, 338);
+  drawMetric(p, panda_status.first, "", panda_status.second, 518);
+  drawMetric(p, connect_status.first, "", connect_status.second, 676);
 }

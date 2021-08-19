@@ -1,9 +1,0 @@
-Host comma-smays
-  HostName 192.168.5.11
-  Port 22
-  IdentityFile id_rsa
-
-Host comma-tether
-  HostName 192.168.43.1
-  Port 22
-  IdentityFile id_rsa

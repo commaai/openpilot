@@ -27,6 +27,8 @@ class CarInterfaceBase():
     self.VM = VehicleModel(CP)
 
     self.frame = 0
+    self.steer_warning = 0
+    self.steering_unpressed = 0
     self.low_speed_alert = False
 
     if CarState is not None:
@@ -67,12 +69,11 @@ class CarInterfaceBase():
     ret.steerMaxV = [1.]
     ret.minSteerSpeed = 0.
 
-    # stock ACC by default
-    ret.enableCruise = True
-    ret.minEnableSpeed = -1.  # enable is done by stock ACC, so ignore this
+    ret.pcmCruise = True     # openpilot's state is tied to the PCM's cruise state on most cars
+    ret.minEnableSpeed = -1. # enable is done by stock ACC, so ignore this
     ret.steerRatioRear = 0.  # no rear steering, at least on the listed cars aboveA
     ret.gasMaxBP = [0.]
-    ret.gasMaxV = [.5]  # half max brake
+    ret.gasMaxV = [.5]       # half max brake
     ret.brakeMaxBP = [0.]
     ret.brakeMaxV = [1.]
     ret.openpilotLongitudinalControl = False
@@ -97,14 +98,15 @@ class CarInterfaceBase():
   def apply(self, c):
     raise NotImplementedError
 
-  def create_common_events(self, cs_out, extra_gears=[], gas_resume_speed=-1, pcm_enable=True):  # pylint: disable=dangerous-default-value
+  def create_common_events(self, cs_out, extra_gears=None, gas_resume_speed=-1, pcm_enable=True):
     events = Events()
 
     if cs_out.doorOpen:
       events.add(EventName.doorOpen)
     if cs_out.seatbeltUnlatched:
       events.add(EventName.seatbeltNotLatched)
-    if cs_out.gearShifter != GearShifter.drive and cs_out.gearShifter not in extra_gears:
+    if cs_out.gearShifter != GearShifter.drive and (extra_gears is None or
+       cs_out.gearShifter not in extra_gears):
       events.add(EventName.wrongGear)
     if cs_out.gearShifter == GearShifter.reverse:
       events.add(EventName.reverseGear)
@@ -123,13 +125,19 @@ class CarInterfaceBase():
     if cs_out.cruiseState.nonAdaptive:
       events.add(EventName.wrongCruiseMode)
 
+    self.steer_warning = self.steer_warning + 1 if cs_out.steerWarning else 0
+    self.steering_unpressed = 0 if cs_out.steeringPressed else self.steering_unpressed + 1
+
+    # Handle permanent and temporary steering faults
     if cs_out.steerError:
       events.add(EventName.steerUnavailable)
     elif cs_out.steerWarning:
-      if cs_out.steeringPressed:
-        events.add(EventName.steerTempUnavailableUserOverride)
-      else:
+      # only escalate to the harsher alert after the condition has
+      # persisted for 0.5s and we're certain that the user isn't overriding
+      if self.steering_unpressed > int(0.5/DT_CTRL) and self.steer_warning > int(0.5/DT_CTRL):
         events.add(EventName.steerTempUnavailable)
+      else:
+        events.add(EventName.steerTempUnavailableSilent)
 
     # Disable on rising edge of gas or brake. Also disable on brake when speed > 0.
     # Optionally allow to press gas at zero speed to resume.

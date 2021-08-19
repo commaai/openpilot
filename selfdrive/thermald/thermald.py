@@ -21,7 +21,7 @@ from selfdrive.loggerd.config import get_available_percent
 from selfdrive.pandad import get_expected_signature
 from selfdrive.swaglog import cloudlog
 from selfdrive.thermald.power_monitoring import PowerMonitoring
-from selfdrive.version import get_git_branch, terms_version, training_version
+from selfdrive.version import tested_branch, terms_version, training_version
 
 FW_SIGNATURE = get_expected_signature()
 
@@ -151,11 +151,11 @@ def thermald_thread():
   started_seen = False
   thermal_status = ThermalStatus.green
   usb_power = True
-  current_branch = get_git_branch()
 
   network_type = NetworkType.none
   network_strength = NetworkStrength.unknown
   network_info = None
+  modem_version = None
   registered_count = 0
 
   current_filter = FirstOrderFilter(0., CURRENT_TAU, DT_TRML)
@@ -170,6 +170,7 @@ def thermald_thread():
   power_monitor = PowerMonitoring()
   no_panda_cnt = 0
 
+  HARDWARE.initialize_hardware()
   thermal_config = HARDWARE.get_thermal_config()
 
   if params.get_bool("IsOnroad"):
@@ -236,6 +237,12 @@ def thermald_thread():
         network_type = HARDWARE.get_network_type()
         network_strength = HARDWARE.get_network_strength(network_type)
         network_info = HARDWARE.get_network_info()  # pylint: disable=assignment-from-none
+
+        # Log modem version once
+        if modem_version is None:
+          modem_version = HARDWARE.get_modem_version()  # pylint: disable=assignment-from-none
+          if modem_version is not None:
+            cloudlog.warning(f"Modem version: {modem_version}")
 
         if TICI and (network_info.get('state', None) == "REGISTERED"):
           registered_count += 1
@@ -325,7 +332,7 @@ def thermald_thread():
     last_update_exception = params.get("LastUpdateException", encoding='utf8')
 
     if update_failed_count > 15 and last_update_exception is not None:
-      if current_branch in ["release2", "dashcam"]:
+      if tested_branch:
         extra_text = "Ensure the software is correctly installed"
       else:
         extra_text = last_update_exception

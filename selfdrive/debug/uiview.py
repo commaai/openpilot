@@ -3,9 +3,8 @@ import time
 import cereal.messaging as messaging
 from selfdrive.manager.process_config import managed_processes
 
-
 if __name__ == "__main__":
-  services = ['controlsState', 'deviceState', 'radarState']  # the services needed to be spoofed to start ui offroad
+  services = ['controlsState', 'deviceState', 'pandaState']  # the services needed to be spoofed to start ui offroad
   procs = ['camerad', 'ui', 'modeld', 'calibrationd']
 
   for p in procs:
@@ -13,15 +12,15 @@ if __name__ == "__main__":
 
   pm = messaging.PubMaster(services)
 
-  dat_controlsState, dat_deviceState, dat_radar = [messaging.new_message(s) for s in services]
-  dat_deviceState.deviceState.started = True
+  msgs = {s: messaging.new_message(s) for s in services}
+  msgs['deviceState'].deviceState.started = True
+  msgs['pandaState'].pandaState.ignitionLine = True
 
   try:
     while True:
-      pm.send('controlsState', dat_controlsState)
-      pm.send('deviceState', dat_deviceState)
-      pm.send('radarState', dat_radar)
-      time.sleep(1 / 100)  # continually send, rate doesn't matter for deviceState
+      time.sleep(1 / 100)  # continually send, rate doesn't matter
+      for s in msgs:
+        pm.send(s, msgs[s])
   except KeyboardInterrupt:
     for p in procs:
       managed_processes[p].stop()

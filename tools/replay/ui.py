@@ -56,7 +56,7 @@ def ui_thread(addr, frame_address):
 
   frame = messaging.sub_sock('roadCameraState', addr=addr, conflate=True)
   sm = messaging.SubMaster(['carState', 'longitudinalPlan', 'carControl', 'radarState', 'liveCalibration', 'controlsState',
-                            'liveTracks', 'modelV2', 'liveMpc', 'liveParameters', 'lateralPlan', 'roadCameraState'], addr=addr)
+                            'liveTracks', 'modelV2', 'liveParameters', 'lateralPlan', 'roadCameraState'], addr=addr)
 
   img = np.zeros((480, 640, 3), dtype='uint8')
   imgff = None
@@ -155,8 +155,10 @@ def ui_thread(addr, frame_address):
     plot_arr[-1, name_to_arr_idx['v_override']] = sm['carControl'].cruiseControl.speedOverride
     plot_arr[-1, name_to_arr_idx['v_cruise']] = sm['carState'].cruiseState.speed
     plot_arr[-1, name_to_arr_idx['a_ego']] = sm['carState'].aEgo
-    plot_arr[-1, name_to_arr_idx['a_target']] = sm['longitudinalPlan'].aTarget
     plot_arr[-1, name_to_arr_idx['accel_override']] = sm['carControl'].cruiseControl.accelOverride
+
+    if len(sm['longitudinalPlan'].accels):
+      plot_arr[-1, name_to_arr_idx['a_target']] = sm['longitudinalPlan'].accels[0]
 
     if sm.rcv_frame['modelV2']:
       plot_model(sm['modelV2'], img, calibration, top_down)

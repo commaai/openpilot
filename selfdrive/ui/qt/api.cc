@@ -14,15 +14,12 @@
 #include "selfdrive/common/params.h"
 #include "selfdrive/common/util.h"
 #include "selfdrive/hardware/hw.h"
+#include "selfdrive/ui/qt/util.h"
 
 namespace CommaApi {
 
-const std::string private_key_path =
-    Hardware::PC() ? util::getenv_default("HOME", "/.comma/persist/comma/id_rsa", "/persist/comma/id_rsa")
-                   : "/persist/comma/id_rsa";
-
 QByteArray rsa_sign(const QByteArray &data) {
-  auto file = QFile(private_key_path.c_str());
+  auto file = QFile(Path::rsa_file().c_str());
   if (!file.open(QIODevice::ReadOnly)) {
     qDebug() << "No RSA private key found, please run manager.py or registration.py";
     return QByteArray();
@@ -48,9 +45,8 @@ QByteArray rsa_sign(const QByteArray &data) {
 QString create_jwt(const QJsonObject &payloads, int expiry) {
   QJsonObject header = {{"alg", "RS256"}};
 
-  QString dongle_id = QString::fromStdString(Params().get("DongleId"));
   auto t = QDateTime::currentSecsSinceEpoch();
-  QJsonObject payload = {{"identity", dongle_id}, {"nbf", t}, {"iat", t}, {"exp", t + expiry}};
+  QJsonObject payload = {{"identity", getDongleId().value_or("")}, {"nbf", t}, {"iat", t}, {"exp", t + expiry}};
   for (auto it = payloads.begin(); it != payloads.end(); ++it) {
     payload.insert(it.key(), it.value());
   }
@@ -67,24 +63,29 @@ QString create_jwt(const QJsonObject &payloads, int expiry) {
 
 }  // namespace CommaApi
 
-HttpRequest::HttpRequest(QObject *parent, const QString &requestURL, bool create_jwt_) : create_jwt(create_jwt_), QObject(parent) {
+HttpRequest::HttpRequest(QObject *parent, bool create_jwt, int timeout) : create_jwt(create_jwt), QObject(parent) {
   networkAccessManager = new QNetworkAccessManager(this);
-  reply = NULL;
 
   networkTimer = new QTimer(this);
   networkTimer->setSingleShot(true);
-  networkTimer->setInterval(20000);
+  networkTimer->setInterval(timeout);
   connect(networkTimer, &QTimer::timeout, this, &HttpRequest::requestTimeout);
-
-  sendRequest(requestURL);
 }
 
-void HttpRequest::sendRequest(const QString &requestURL) {
+bool HttpRequest::active() {
+  return reply != nullptr;
+}
+
+void HttpRequest::sendRequest(const QString &requestURL, const HttpRequest::Method method) {
+  if (active()) {
+    qDebug() << "HttpRequest is active";
+    return;
+  }
   QString token;
   if(create_jwt) {
     token = CommaApi::create_jwt();
   } else {
-    QString token_json = QString::fromStdString(util::read_file(util::getenv_default("HOME", "/.comma/auth.json", "/.comma/auth.json")));
+    QString token_json = QString::fromStdString(util::read_file(util::getenv("HOME") + "/.comma/auth.json"));
     QJsonDocument json_d = QJsonDocument::fromJson(token_json.toUtf8());
     token = json_d["access_token"].toString();
   }
@@ -93,7 +94,11 @@ void HttpRequest::sendRequest(const QString &requestURL) {
   request.setUrl(QUrl(requestURL));
   request.setRawHeader(QByteArray("Authorization"), ("JWT " + token).toUtf8());
 
-  reply = networkAccessManager->get(request);
+  if (method == HttpRequest::Method::GET) {
+    reply = networkAccessManager->get(request);
+  } else if (method == HttpRequest::Method::DELETE) {
+    reply = networkAccessManager->deleteResource(request);
+  }
 
   networkTimer->start();
   connect(reply, &QNetworkReply::finished, this, &HttpRequest::requestFinished);
@@ -105,19 +110,24 @@ void HttpRequest::requestTimeout() {
 
 // This function should always emit something
 void HttpRequest::requestFinished() {
+  bool success = false;
   if (reply->error() != QNetworkReply::OperationCanceledError) {
     networkTimer->stop();
     QString response = reply->readAll();
 
     if (reply->error() == QNetworkReply::NoError) {
+      success = true;
       emit receivedResponse(response);
     } else {
       qDebug() << reply->errorString();
       emit failedResponse(reply->errorString());
     }
   } else {
+    networkAccessManager->clearAccessCache();
+    networkAccessManager->clearConnectionCache();
     emit timeoutResponse("timeout");
   }
+  emit requestDone(success);
   reply->deleteLater();
-  reply = NULL;
+  reply = nullptr;
 }
