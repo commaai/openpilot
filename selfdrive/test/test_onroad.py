@@ -13,7 +13,7 @@ from cereal.services import service_list
 from common.basedir import BASEDIR
 from common.timeout import Timeout
 from common.params import Params
-from selfdrive.hardware import TICI
+from selfdrive.hardware import EON, TICI
 from selfdrive.loggerd.config import ROOT
 from selfdrive.test.helpers import set_params_enabled
 from tools.lib.logreader import LogReader
@@ -43,6 +43,11 @@ PROCS = {
   "selfdrive.tombstoned": 0,
   "./logcatd": 0,
 }
+
+if EON:
+  PROCS.update({
+    "selfdrive.hardware.eon.androidd": 0.4,
+  })
 
 if TICI:
   PROCS.update({
