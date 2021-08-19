@@ -228,15 +228,16 @@ std::unordered_map<std::string, uint32_t> keys = {
 
 } // namespace
 
-Params::Params(bool persistent_param) : Params(persistent_param ? Path::persistent_params() : Path::params()) {}
+Params::Params(bool persistent_param) {
+  static std::once_flag once_flags[2];
 
-std::once_flag default_params_path_ensured;
-Params::Params(const std::string &path) : params_path(path) {
-  if (path == Path::params()) {
-    std::call_once(default_params_path_ensured, ensure_params_path, path);
-  } else {
-    ensure_params_path(path);
-  }
+  params_path = persistent_param ? Path::persistent_params() : Path::params();
+  std::call_once(once_flags[persistent_param], ensure_params_path, params_path);
+}
+
+Params::Params(const std::string &path) {
+  params_path = path;
+  ensure_params_path(path);
 }
 
 bool Params::checkKey(const std::string &key) {
