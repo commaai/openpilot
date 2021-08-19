@@ -39,16 +39,18 @@ def main():
   modem_state = "ONLINE"
   while True:
     # check critical android services
-    cp = {p: None for p in WATCHED_PROCS}
-    for p in psutil.process_iter():
-      cmdline = ''.join(p.cmdline())
-      if cmdline in WATCHED_PROCS:
-        cp[cmdline] = p.pid
+    if any(p is None or not p.is_running() for p in procs.values()) or not len(procs):
+      cur = {p: None for p in WATCHED_PROCS}
+      for p in psutil.process_iter(attrs=['cmdline']):
+        cmdline = None if not len(p.info['cmdline']) else p.info['cmdline'][0]
+        if cmdline in WATCHED_PROCS:
+          cur[cmdline] = p
 
-    for p in WATCHED_PROCS:
-      if p in procs and cp[p] != procs[p]:
-        cloudlog.event("android service pid changed", proc=p, prev=procs[p], cur=cp[p])
-      procs[p] = cp[p]
+      if len(procs):
+        for p in WATCHED_PROCS:
+          if cur[p] != procs[p]:
+            cloudlog.event("android service pid changed", proc=p, cur=cur[p], prev=procs[p])
+      procs.update(cur)
 
     # check modem state
     state = get_modem_state()
