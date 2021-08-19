@@ -72,7 +72,7 @@ class CarInterfaceBase():
     ret.startAccel = 0.0
     ret.minSpeedCan = 0.3
     ret.stoppingDecelRate = 0.8 # brake_travel/s while trying to stop
-    ret.startingAccelRate = 3.6 # brake_travel/s while releasing on restart
+    ret.startingAccelRate = 3.2 # brake_travel/s while releasing on restart
     ret.stoppingControl = True
     ret.longitudinalTuning.deadzoneBP = [0.]
     ret.longitudinalTuning.deadzoneV = [0.]
