@@ -100,7 +100,7 @@ class CameraBuf {
 private:
   VisionIpcServer *vipc_server;
   CameraState *camera_state;
-  cl_kernel krnl_debayer;
+  cl_kernel krnl_debayer = nullptr;
 
   std::unique_ptr<Rgb2Yuv> rgb2yuv;
 
