@@ -310,25 +310,31 @@ void Panda::send_heartbeat() {
   usb_write(0xf3, 1, 0);
 }
 
-void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list) {
+void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list, uint8_t first_bus) {
   static std::vector<uint32_t> send;
   const int msg_count = can_data_list.size();
+  int msg_belong_cnt = 0;
 
   send.resize(msg_count*0x10);
 
   for (int i = 0; i < msg_count; i++) {
     auto cmsg = can_data_list[i];
+    // Check if message belongs to this panda
+    if ((first_bus+MAX_BUS) <= cmsg.getSrc() < first_bus) continue;
+    
     if (cmsg.getAddress() >= 0x800) { // extended
-      send[i*4] = (cmsg.getAddress() << 3) | 5;
+      send[msg_belong_cnt*4] = (cmsg.getAddress() << 3) | 5;
     } else { // normal
-      send[i*4] = (cmsg.getAddress() << 21) | 1;
+      send[msg_belong_cnt*4] = (cmsg.getAddress() << 21) | 1;
     }
     auto can_data = cmsg.getDat();
     assert(can_data.size() <= 8);
-    send[i*4+1] = can_data.size() | (cmsg.getSrc() << 4);
-    memcpy(&send[i*4+2], can_data.begin(), can_data.size());
+    send[msg_belong_cnt*4+1] = can_data.size() | (cmsg.getSrc() << 4);
+    memcpy(&send[msg_belong_cnt*4+2], can_data.begin(), can_data.size());
+    msg_belong_cnt += 1;
   }
 
+  send.resize(msg_belong_cnt*0x10);
   usb_bulk_write(3, (unsigned char*)send.data(), send.size(), 5);
 }
 
@@ -361,18 +367,7 @@ int Panda::can_receive(kj::Array<capnp::word>& out_buf) {
   return recv;
 }
 
-void Panda::can_send_raw(std::vector<uint32_t> can_data_vector) { // Needs better name...
-  const int msg_count = can_data_vector.size() / 4;
-
-  for (int i = 0; i < msg_count; i++) {
-    if (can_data_vector[i*4] >= 0x800) can_data_vector[i*4] = (can_data_vector[i*4] << 3) | 5; // extended
-    else can_data_vector[i*4] = (can_data_vector[i*4] << 21) | 1; // normal
-  }
-
-  usb_bulk_write(3, (unsigned char*)can_data_vector.data(), can_data_vector.size(), 5);
-}
-
-size_t Panda::can_receive_raw(uint32_t* data, uint8_t bus_shift) {
+size_t Panda::can_receive_raw(uint32_t* data, uint8_t first_bus) {
   int recv = usb_bulk_read(0x81, (unsigned char*)data, RECV_SIZE);
 
   // Not sure if this can happen
@@ -386,7 +381,7 @@ size_t Panda::can_receive_raw(uint32_t* data, uint8_t bus_shift) {
     if (data[i*4] & 4) data[i*4] = data[i*4] >> 3; // extended
     else data[i*4] = data[i*4] >> 21; // normal
     
-    data[i*4+1] = (data[i*4+1] & 0xFFFF0000) | (data[i*4+1]&0xF) | ((data[i*4+1] & 0xFF0) + (bus_shift << 8));
+    data[i*4+1] = (data[i*4+1] & 0xFFFF0000) | (data[i*4+1]&0xF) | ((data[i*4+1] & 0xFF0) + (first_bus << 8));
   }
   return num_msg;
 }

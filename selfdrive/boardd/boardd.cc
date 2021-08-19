@@ -37,8 +37,8 @@
 
 Panda *panda = nullptr;
 Panda *panda_aux = nullptr;
-uint8_t main_shift = 0;
-uint8_t aux_shift = 5;
+uint8_t panda_first_bus = 0;
+uint8_t panda_aux_first_bus = 5;
 std::vector<std::string> pandas_detected;
 std::vector<std::string> pandas_connected;
 std::atomic<bool> safety_setter_thread_running(false);
@@ -218,8 +218,8 @@ void can_recv(PubMaster &pm) {
   uint32_t data[(RECV_SIZE/4)*2]; // Double the size, for both pandas
   size_t num_msg = 0;
 
-  num_msg = panda->can_receive_raw(&data[num_msg*4], main_shift);
-  if (panda_aux != nullptr) num_msg += panda_aux->can_receive_raw(&data[num_msg*4], aux_shift);
+  num_msg = panda->can_receive_raw(&data[num_msg*4], panda_first_bus);
+  if (panda_aux != nullptr) num_msg += panda_aux->can_receive_raw(&data[num_msg*4], panda_aux_first_bus);
 
   MessageBuilder msg;
   auto evt = msg.initEvent();
@@ -237,53 +237,6 @@ void can_recv(PubMaster &pm) {
   auto can_data = capnp::messageToFlatArray(msg);
   auto bytes = can_data.asBytes();
   pm.send("can", bytes.begin(), bytes.size());
-}
-
-void split_messages(capnp::List<cereal::CanData>::Reader can_data_list) {
-  const int msg_count = can_data_list.size();
-  int cnt_aux = 0;
-  int cnt_main = 0;
-
-  static std::vector<uint32_t> send_main;
-  static std::vector<uint32_t> send_aux;
-
-  send_main.resize(msg_count*0x10);
-  send_aux.resize(msg_count*0x10);
-
-  for (int i = 0; i < msg_count; i++) {
-    auto cmsg = can_data_list[i];
-    auto can_data = cmsg.getDat();
-    assert(can_data.size() <= 8);
-    uint32_t temp_data[4] = { };
-    bool secondary = false;
-  
-    uint8_t bus = cmsg.getSrc();
-    if (bus > 3) {
-      bus = bus - 4;
-      secondary = true;
-    }
-    temp_data[0] = cmsg.getAddress();
-    temp_data[1] = can_data.size() | (bus << 4); // Keep it here, don't move to panda.cc for now
-    memcpy(&temp_data[2], can_data.begin(), can_data.size());
-    
-    secondary = (main_shift == 0) ? secondary : !secondary;
-
-    if (secondary) {
-      memcpy(&send_aux[i*4], temp_data, sizeof(temp_data));
-      cnt_aux++;
-    } else {
-      memcpy(&send_main[i*4], temp_data, sizeof(temp_data));
-      cnt_main++;
-    }
-  }
-  if (cnt_main) {
-    send_main.resize(cnt_main*0x10);
-    panda->can_send_raw(send_main);
-  }
-  if ((cnt_aux) && (panda_aux != nullptr)) {
-    send_aux.resize(cnt_aux*0x10);
-    panda_aux->can_send_raw(send_aux);
-  }
 }
 
 void can_send_thread(bool fake_send) {
@@ -312,7 +265,9 @@ void can_send_thread(bool fake_send) {
     //Dont send if older than 1 second
     if (nanos_since_boot() - event.getLogMonoTime() < 1e9) {
       if (!fake_send) {
-        split_messages(event.getSendcan());
+        auto can_msgs = event.getSendcan();
+        panda->can_send(can_msgs, panda_first_bus);
+        if (panda_aux != nullptr) panda_aux->can_send(can_msgs, panda_aux_first_bus);
       }
     }
 
@@ -375,7 +330,7 @@ void panda_state_thread(bool spoofing_started) {
     health_t pandaState_aux;
     if (panda_aux != nullptr) pandaState_aux = panda_aux->get_state();
 
-    if (main_shift != 0) {
+    if (panda_first_bus != 0) {
       pandaState.safety_model = pandaState_aux.safety_model;
       pandaState.safety_param = pandaState_aux.safety_param;
       pandaState.controls_allowed = pandaState_aux.controls_allowed;
@@ -688,8 +643,8 @@ int main() {
   LOG("set affinity returns %d", err);
 
   // For now use both, later keep param only
-  if (Params().getBool("DriveWithAuxPanda")) { main_shift = 5; aux_shift = 0; LOGW("Using aux panda to drive, params");}
-  if (getenv("AUX_CAN_DRIVE") != nullptr) { main_shift = 5; aux_shift = 0; LOGW("Using aux panda to drive, getenv");}
+  if (Params().getBool("DriveWithAuxPanda")) { panda_first_bus = 5; panda_aux_first_bus = 0; LOGW("Using aux panda to drive, params");}
+  if (getenv("AUX_CAN_DRIVE") != nullptr) { panda_first_bus = 5; panda_aux_first_bus = 0; LOGW("Using aux panda to drive, getenv");}
 
   while (!do_exit) {
     std::vector<std::thread> threads;

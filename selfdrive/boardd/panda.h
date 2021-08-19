@@ -16,6 +16,8 @@
 #define RECV_SIZE (0x1000)
 #define TIMEOUT 0
 
+#define MAX_BUS 5
+
 // copied from panda/board/main.c
 struct __attribute__((packed)) health_t {
   uint32_t uptime;
@@ -83,8 +85,7 @@ class Panda {
   void set_power_saving(bool power_saving);
   void set_usb_power_mode(cereal::PandaState::UsbPowerMode power_mode);
   void send_heartbeat();
-  void can_send(capnp::List<cereal::CanData>::Reader can_data_list);
+  void can_send(capnp::List<cereal::CanData>::Reader can_data_list, uint8_t first_bus=0);
   int can_receive(kj::Array<capnp::word>& out_buf);
-  void can_send_raw(std::vector<uint32_t> can_data_vector);
-  size_t can_receive_raw(uint32_t* data, uint8_t bus_shift);
+  size_t can_receive_raw(uint32_t* data, uint8_t first_bus=0);
 };
