@@ -1,16 +1,22 @@
 #!/usr/bin/env python3
+import os
 import time
 import psutil
 
+from common.realtime import set_core_affinity, set_realtime_priority
 from selfdrive.swaglog import cloudlog
 
-WATCHED_PROCS = ["zygote", "zygote64", "/system/bin/servicemanager", "/system/bin/surfaceflinger", "sleep100"]
+MAX_MODEM_CRASHES = 3
+WATCHED_PROCS = ["zygote", "zygote64", "/system/bin/servicemanager", "/system/bin/surfaceflinger"]
+
 
 def main():
-  # TODO: handle modem bootloops
-  cloudlog.info("androidd started")
+  set_core_affinity(1)
+  set_realtime_priority(1)
 
   procs = {}
+  crash_count = 0
+  modem_killed = False
   while True:
     # check interesting procs
     cp = {p: None for p in WATCHED_PROCS}
@@ -23,6 +29,33 @@ def main():
       if p in procs and cp[p] != procs[p]:
         cloudlog.event("android service pid changed", proc=p, prev=procs[p], cur=cp[p])
       procs[p] = cp[p]
+
+    # TODO: handle modem bootloops
+    # handle modem crashes
+    modem_path = "/sys/devices/soc/2080000.qcom,mss/subsys5"
+    try:
+      with open(os.path.join(modem_path, "crash_count")) as f:
+        cnt = int(f.read())
+      if cnt > crash_count:
+        cloudlog.event("modem crash", count=cnt)
+      crash_count = cnt
+
+    except Exception:
+      cloudlog.exception("Error reading modem crash count")
+      raise
+
+    # check modem state
+    try:
+      with open(os.path.join(modem_path, "state")) as f:
+        state = f.read().strip()
+        if state != "ONLINE" and not modem_killed:
+          cloudlog.event("modem not online", state=state)
+    except Exception:
+      cloudlog.exception("Error reading modem state")
+
+    if crash_count > MAX_MODEM_CRASHES and not modem_killed:
+      os.system("echo put > /sys/kernel/debug/msm_subsys/modem")
+      modem_killed = True
 
     time.sleep(1)
 
