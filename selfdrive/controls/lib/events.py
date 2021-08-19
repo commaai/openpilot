@@ -733,9 +733,9 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
   },
 
   EventName.highCpuUsage: {
-    #ET.SOFT_DISABLE: SoftDisableAlert("Low Memory: Reboot Your Device"),
-    #ET.PERMANENT: NormalPermanentAlert("Low Memory", "Reboot your Device"),
-    ET.NO_ENTRY: NoEntryAlert("High CPU Usage: Reboot Your Device",
+    #ET.SOFT_DISABLE: SoftDisableAlert("System Malfunction: Reboot Your Device"),
+    #ET.PERMANENT: NormalPermanentAlert("System Malfunction", "Reboot your Device"),
+    ET.NO_ENTRY: NoEntryAlert("System Malfunction: Reboot Your Device",
                               audible_alert=AudibleAlert.chimeDisengage),
   },
 
