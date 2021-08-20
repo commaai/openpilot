@@ -12,50 +12,44 @@
 #include "selfdrive/common/util.h"
 
 Panda::Panda(std::string serial) {
-  libusb_device **dev_list = NULL;
   // init libusb
-  int err = libusb_init(&ctx);
-  if (err != 0) goto fail;
+  ssize_t num_devices;
+  libusb_device **dev_list = NULL;
+  int err = init_usb(ctx);
+  if (err != 0) { goto fail; }
 
-#if LIBUSB_API_VERSION >= 0x01000106
-  libusb_set_option(ctx, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_INFO);
-#else
-  libusb_set_debug(ctx, 3);
-#endif
-
-  for (size_t i = 0; i < libusb_get_device_list(ctx, &dev_list); ++i) {
-    libusb_device *device = dev_list[i];
+  // connect by serial
+  num_devices = libusb_get_device_list(ctx, &dev_list);
+  if (num_devices < 0) { goto fail; }
+  for (size_t i = 0; i < num_devices; ++i) {
     libusb_device_descriptor desc;
-    libusb_get_device_descriptor(device, &desc);
-
+    libusb_get_device_descriptor(dev_list[i], &desc);
     if (desc.idVendor == 0xbbaa && desc.idProduct == 0xddcc) {
-      libusb_open(device, &dev_handle);
-      unsigned char desc_serial[25];
-      int ret = libusb_get_string_descriptor_ascii(dev_handle, desc.iSerialNumber, desc_serial, sizeof(desc_serial));
-      if (ret < 0) break;
-      std::string tmp_serial = std::string(reinterpret_cast<const char*>(desc_serial));
-      
-      if (!serial.empty() && serial.compare(tmp_serial)) {
-        libusb_close(dev_handle);
-        dev_handle = NULL;
-        continue;
+      libusb_open(dev_list[i], &dev_handle);
+      if (dev_handle == NULL) { goto fail; }
+
+      unsigned char desc_serial[26];
+      int ret = libusb_get_string_descriptor_ascii(dev_handle, desc.iSerialNumber, desc_serial, std::size(desc_serial));
+      if (ret < 0) { goto fail; }
+
+      if (serial.empty() || serial.compare(reinterpret_cast<const char*>(desc_serial)) == 0) {
+        break;
       }
-      usb_serial = tmp_serial;
-      break;
+      libusb_close(dev_handle);
+      dev_handle = NULL;
     }
   }
-
-  if (dev_handle == NULL) goto fail;
+  libusb_free_device_list(dev_list, 1);
 
   if (libusb_kernel_driver_active(dev_handle, 0) == 1) {
     libusb_detach_kernel_driver(dev_handle, 0);
   }
 
   err = libusb_set_configuration(dev_handle, 1);
-  if (err != 0) goto fail;
+  if (err != 0) { goto fail; }
 
   err = libusb_claim_interface(dev_handle, 0);
-  if (err != 0) goto fail;
+  if (err != 0) { goto fail; }
 
   hw_type = get_hw_type();
 
@@ -69,6 +63,9 @@ Panda::Panda(std::string serial) {
 
 fail:
   cleanup();
+  if (dev_list != NULL) {
+    libusb_free_device_list(dev_list, 1);
+  }
   throw std::runtime_error("Error connecting to panda");
 }
 
@@ -84,19 +81,16 @@ void Panda::cleanup() {
     libusb_close(dev_handle);
   }
 
-  if (ctx) libusb_exit(ctx);
+  if (ctx) {
+    libusb_exit(ctx);
+  }
 }
 
-std::vector<std::string> Panda::list() {
-  // init libusb
-  libusb_context *context = NULL;
-  libusb_device **dev_list = NULL;
-  std::vector<std::string> serials;
-  
+int Panda::init_usb(libusb_context *context) {
   int err = libusb_init(&context);
   if (err != 0) {
     LOGE("libusb initialization error");
-    return serials;
+    return err;
   }
 
 #if LIBUSB_API_VERSION >= 0x01000106
@@ -105,21 +99,47 @@ std::vector<std::string> Panda::list() {
   libusb_set_debug(context, 3);
 #endif
 
-  for (size_t i = 0; i < libusb_get_device_list(context, &dev_list); ++i) {
+  return err;
+}
+
+std::vector<std::string> Panda::list() {
+  // init libusb
+  ssize_t num_devices;
+  libusb_context *context = NULL;
+  libusb_device **dev_list = NULL;
+  std::vector<std::string> serials;
+  
+  int err = init_usb(context);
+  if (err != 0) { return serials; }
+
+  num_devices = libusb_get_device_list(context, &dev_list);
+  if (num_devices < 0) {
+    LOGE("libusb can't get device list");
+    goto finish;
+  }
+  for (size_t i = 0; i < num_devices; ++i) {
     libusb_device *device = dev_list[i];
     libusb_device_descriptor desc;
-
     libusb_get_device_descriptor(device, &desc);
     if (desc.idVendor == 0xbbaa && desc.idProduct == 0xddcc) {
       libusb_device_handle *handle = NULL;
       libusb_open(device, &handle);
-      unsigned char serial[25];
-      int ret = libusb_get_string_descriptor_ascii(handle, desc.iSerialNumber, serial, sizeof(serial));
+      unsigned char serial[26];
+      int ret = libusb_get_string_descriptor_ascii(handle, desc.iSerialNumber, serial, std::size(serial));
+      libusb_release_interface(handle, 0);
       libusb_close(handle);
 
-      if (ret < 0) break;
+      if (ret < 0) { goto finish; }
       serials.push_back((char *)serial);
     }
+  }
+
+finish:
+  if (context) {
+    libusb_exit(context);
+  }
+  if (dev_list != NULL) {
+    libusb_free_device_list(dev_list, 1);
   }
   return serials;
 }
@@ -137,7 +157,9 @@ int Panda::usb_write(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigne
   int err;
   const uint8_t bmRequestType = LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE;
 
-  if (!connected) return LIBUSB_ERROR_NO_DEVICE;
+  if (!connected) {
+    return LIBUSB_ERROR_NO_DEVICE;
+  }
 
   std::lock_guard lk(usb_lock);
   do {
@@ -152,7 +174,9 @@ int Panda::usb_read(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned
   int err;
   const uint8_t bmRequestType = LIBUSB_ENDPOINT_IN | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE;
 
-  if (!connected) return LIBUSB_ERROR_NO_DEVICE;
+  if (!connected) {
+    return LIBUSB_ERROR_NO_DEVICE;
+  }
 
   std::lock_guard lk(usb_lock);
   do {
@@ -167,7 +191,9 @@ int Panda::usb_bulk_write(unsigned char endpoint, unsigned char* data, int lengt
   int err;
   int transferred = 0;
 
-  if (!connected) return 0;
+  if (!connected) {
+    return 0;
+  }
 
   std::lock_guard lk(usb_lock);
   do {
@@ -190,7 +216,9 @@ int Panda::usb_bulk_read(unsigned char endpoint, unsigned char* data, int length
   int err;
   int transferred = 0;
 
-  if (!connected) return 0;
+  if (!connected) {
+    return 0;
+  }
 
   std::lock_guard lk(usb_lock);
 
