@@ -74,7 +74,7 @@ int mkdir_p(std::string path) {
   return 0;
 }
 
-bool create_params_path(const std::string &param_path, const std::string &key_path) {
+static bool create_params_path(const std::string &param_path, const std::string &key_path) {
   // Make sure params path exists
   if (!util::file_exists(param_path) && mkdir_p(param_path) != 0) {
     return false;
@@ -113,7 +113,7 @@ bool create_params_path(const std::string &param_path, const std::string &key_pa
   return chmod(key_path.c_str(), 0777) == 0;
 }
 
-void ensure_params_path(const std::string &params_path) {
+static void ensure_params_path(const std::string &params_path) {
   if (!create_params_path(params_path, params_path + "/d")) {
     throw std::runtime_error(util::string_format("Failed to ensure params path, errno=%d", errno));
   }
@@ -194,7 +194,6 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"PandaFirmware", CLEAR_ON_MANAGER_START | CLEAR_ON_PANDA_DISCONNECT},
     {"PandaFirmwareHex", CLEAR_ON_MANAGER_START | CLEAR_ON_PANDA_DISCONNECT},
     {"PandaDongleId", CLEAR_ON_MANAGER_START | CLEAR_ON_PANDA_DISCONNECT},
-    {"PandaHeartbeatLost", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_OFF},
     {"Passive", PERSISTENT},
     {"PrimeRedirected", PERSISTENT},
     {"RecordFront", PERSISTENT},
@@ -224,7 +223,6 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"Offroad_NvmeMissing", CLEAR_ON_MANAGER_START},
     {"ForcePowerDown", CLEAR_ON_MANAGER_START},
     {"JoystickDebugMode", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_OFF},
-    {"DriveWithAuxPanda", PERSISTENT},
 };
 
 } // namespace

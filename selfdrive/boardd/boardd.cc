@@ -642,8 +642,6 @@ int main() {
   err = set_core_affinity(Hardware::TICI() ? 4 : 3);
   LOG("set affinity returns %d", err);
 
-  // For now use both, later keep param only
-  if (Params().getBool("DriveWithAuxPanda")) { panda_first_bus = 5; panda_aux_first_bus = 0; LOGW("Using aux panda to drive, params");}
   if (getenv("AUX_CAN_DRIVE") != nullptr) { panda_first_bus = 5; panda_aux_first_bus = 0; LOGW("Using aux panda to drive, getenv");}
 
   while (!do_exit) {
