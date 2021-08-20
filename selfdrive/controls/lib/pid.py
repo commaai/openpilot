@@ -1,5 +1,6 @@
-from numbers import Number
 import numpy as np
+from numbers import Number
+
 from common.numpy_fast import clip, interp
 
 def apply_deadzone(error, deadzone):
