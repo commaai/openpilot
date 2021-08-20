@@ -60,6 +60,7 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
       description->setVisible(!description->isVisible());
     });
   }
+  main_layout->addStretch();
 }
 
 void AbstractControl::hideEvent(QHideEvent *e) {
