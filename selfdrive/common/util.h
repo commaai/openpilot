@@ -41,10 +41,6 @@ T map_val(T x, T a1, T a2, T b1, T b2) {
 
 // ***** string helpers *****
 
-inline bool starts_with(const std::string& s, const std::string& prefix) {
-  return s.compare(0, prefix.size(), prefix) == 0;
-}
-
 template <typename... Args>
 std::string string_format(const std::string& format, Args... args) {
   size_t size = snprintf(nullptr, 0, format.c_str(), args...) + 1;

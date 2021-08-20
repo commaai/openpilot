@@ -60,7 +60,7 @@ kj::Array<capnp::word> logger_build_init_data() {
     init.setDeviceType(cereal::InitData::DeviceType::PC);
   }
 
-  init.setVersion(capnp::Text::Reader(COMMA_VERSION));
+  init.setVersion(COMMA_VERSION);
 
   std::ifstream cmdline_stream("/proc/cmdline");
   std::vector<std::string> kernel_args;

@@ -162,7 +162,7 @@ class CarController():
       apply_accel = interp(accel, P.NIDEC_ACCEL_LOOKUP_BP, P.NIDEC_ACCEL_LOOKUP_V)
 
     # wind brake from air resistance decel at high speed
-    wind_brake = interp(CS.out.vEgo, [0.0, 2.3, 35.0], [0.0, 0.0, 0.15])
+    wind_brake = interp(CS.out.vEgo, [0.0, 2.3, 35.0], [0.001, 0.002, 0.15])
     if CS.CP.carFingerprint in OLD_NIDEC_LONG_CONTROL:
       #pcm_speed = pcm_speed
       pcm_accel = int(clip(pcm_accel, 0, 1) * 0xc6)
@@ -173,8 +173,8 @@ class CarController():
                       -wind_brake*(3/4),
                       0.0]
       pcm_speed_V = [0.0,
-                     CS.out.vEgo + apply_accel/2.0 - 2.0,
-                     CS.out.vEgo + apply_accel/2.0 + 2.0]
+                     clip(CS.out.vEgo + apply_accel/2.0 - 2.0, 0.0, 100.0),
+                     clip(CS.out.vEgo + apply_accel/2.0 + 2.0, 0.0, 100.0)]
       pcm_speed = interp(accel, pcm_speed_BP, pcm_speed_V)
 
     if not CS.CP.openpilotLongitudinalControl:

@@ -37,6 +37,8 @@ IGNORE_PROCESSES = {"rtshield", "uploader", "deleter", "loggerd", "logmessaged",
                     "logcatd", "proclogd", "clocksd", "updated", "timezoned", "manage_athenad"} | \
                     {k for k, v in managed_processes.items() if not v.enabled}
 
+ACTUATOR_FIELDS = set(car.CarControl.Actuators.schema.fields.keys())
+
 ThermalStatus = log.DeviceState.ThermalStatus
 State = log.ControlsState.OpenpilotState
 PandaType = log.PandaState.PandaType
@@ -499,6 +501,12 @@ class Controls:
 
         if left_deviation or right_deviation:
           self.events.add(EventName.steerSaturated)
+
+    # Ensure no NaNs/Infs
+    for p in ACTUATOR_FIELDS:
+      if not math.isfinite(getattr(actuators, p)):
+        cloudlog.error(f"actuators.{p} not finite {actuators.to_dict()}")
+        setattr(actuators, p, 0.0)
 
     return actuators, lac_log
 
