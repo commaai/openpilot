@@ -83,6 +83,7 @@ TogglesPanel::TogglesPanel(QWidget *parent) : ListWidget(parent) {
 }
 
 DevicePanel::DevicePanel(QWidget* parent) : ListWidget(parent) {
+  setSpacing(50);
   Params params = Params();
   addItem(new LabelControl("Dongle ID", getDongleId().value_or("N/A")));
 

@@ -39,12 +39,6 @@ protected:
   AbstractControl(const QString &title, const QString &desc = "", const QString &icon = "", QWidget *parent = nullptr);
   void hideEvent(QHideEvent *e) override;
 
-  QSize sizeHint() const override {
-    QSize size = QFrame::minimumSizeHint();
-    size.setHeight(120);
-    return size;
-  };
-
   QHBoxLayout *hlayout;
   QPushButton *title_label;
   QLabel *description = nullptr;
@@ -133,9 +127,13 @@ private:
 class ListWidget : public QWidget {
   Q_OBJECT
  public:
-  explicit ListWidget(QWidget *parent = 0) : QWidget(parent), layout_(this) {
+  explicit ListWidget(QWidget *parent = 0) : QWidget(parent), mainLayout_(this) {
+    mainLayout_.setMargin(0);
+    mainLayout_.setSpacing(0);
+    mainLayout_.addLayout(&layout_);
     layout_.setMargin(0);
     layout_.setSpacing(25); // default spacing is 25
+    mainLayout_.addStretch();
   }
   inline void addItem(QWidget *w) { layout_.addWidget(w); }
   inline void addItem(QLayout *layout) { layout_.addLayout(layout); }
@@ -151,5 +149,6 @@ class ListWidget : public QWidget {
       p.drawLine(r.left() + 40, bottom, r.right() - 40, bottom);
     }
   }
+  QVBoxLayout mainLayout_; 
   QVBoxLayout layout_;
 };
