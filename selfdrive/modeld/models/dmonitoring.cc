@@ -81,7 +81,6 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
                        crop_w, crop_h);
   }
 
-  libyuv::FilterMode mode = libyuv::FilterModeEnum::kFilterBilinear;
   libyuv::I420Scale(s->cropped_buf->y, crop_w,
                     s->cropped_buf->u, crop_w / 2,
                     s->cropped_buf->v, crop_w / 2,
@@ -90,7 +89,7 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
                     s->resized_buf->u, resized_width / 2,
                     s->resized_buf->v, resized_width / 2,
                     resized_width, resized_height,
-                    mode);
+                    libyuv::FilterModeEnum::kFilterBilinear);
 
   // one shot conversion, O(n) anyway
   // yuvframe2tensor, normalize
