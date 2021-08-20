@@ -35,7 +35,7 @@ Panda::Panda(std::string serial) {
       if (dev_handle == NULL) { goto fail; }
 
       unsigned char desc_serial[25];
-      int ret = libusb_get_string_descriptor_ascii(dev_handle, desc.iSerialNumber, desc_serial, sizeof(desc_serial));
+      int ret = libusb_get_string_descriptor_ascii(dev_handle, desc.iSerialNumber, desc_serial, std::size(desc_serial));
       if (ret < 0) { goto fail; }
 
       if (serial.empty() || serial.compare(reinterpret_cast<const char*>(desc_serial)) == 0) {
@@ -124,7 +124,7 @@ std::vector<std::string> Panda::list() {
       libusb_device_handle *handle = NULL;
       libusb_open(device, &handle);
       unsigned char serial[25];
-      int ret = libusb_get_string_descriptor_ascii(handle, desc.iSerialNumber, serial, sizeof(serial));
+      int ret = libusb_get_string_descriptor_ascii(handle, desc.iSerialNumber, serial, std::size(serial));
       libusb_release_interface(handle, 0);
       libusb_close(handle);
 
