@@ -437,7 +437,7 @@ void panda_state_thread(bool spoofing_started) {
       ps.setVoltage(pandaState.voltage);
       ps.setCurrent(pandaState.current);
     }
-    
+
     ps.setIgnitionLine(pandaState.ignition_line);
     ps.setIgnitionCan(pandaState.ignition_can);
     ps.setControlsAllowed(pandaState.controls_allowed);
