@@ -33,6 +33,7 @@ Panda::Panda(std::string serial) {
       if (ret < 0) { goto fail; }
 
       if (serial.empty() || serial.compare(reinterpret_cast<const char*>(desc_serial)) == 0) {
+        usb_serial = reinterpret_cast<const char*>(desc_serial);
         break;
       }
       libusb_close(dev_handle);
