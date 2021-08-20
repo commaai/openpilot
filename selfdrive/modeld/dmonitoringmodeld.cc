@@ -35,10 +35,6 @@ void run_model(DMonitoringModelState &model, VisionIpcClient &vipc_client) {
 int main(int argc, char **argv) {
   setpriority(PRIO_PROCESS, 0, -15);
 
-  // init the models
-  DMonitoringModelState model;
-  dmonitoring_init(&model);
-
   VisionIpcClient vipc_client = VisionIpcClient("camerad", VISION_STREAM_YUV_FRONT, true);
   while (!do_exit && !vipc_client.connect(false)) {
     util::sleep_for(100);
@@ -47,9 +43,14 @@ int main(int argc, char **argv) {
   // run the models
   if (vipc_client.connected) {
     LOGW("connected with buffer size: %d", vipc_client.buffers[0].len);
+     // init the models
+    DMonitoringModelState model;
+    dmonitoring_init(&model, vipc_client.buffers[0].width, vipc_client.buffers[0].height);
+  
     run_model(model, vipc_client);
+  
+    dmonitoring_free(&model);
   }
 
-  dmonitoring_free(&model);
   return 0;
 }

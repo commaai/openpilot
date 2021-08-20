@@ -27,18 +27,39 @@ typedef struct DMonitoringResult {
   float dsp_execution_time;
 } DMonitoringResult;
 
+struct Rect {
+  int x, y, w, h;
+};
+
+class YUVBuf {
+ public:
+  YUVBuf(int w, int h) : width(w), height(h) {
+    buf = new uint8_t[w * h * 3 / 2];
+    y = buf;
+    u = y + width * height;
+    v = u + (width / 2) * (height / 2);
+  }
+  ~YUVBuf() {
+    delete[] buf;
+  }
+  uint8_t *y, *u, *v;
+  int width, height;
+  uint8_t* buf;
+};
+
 typedef struct DMonitoringModelState {
   RunModel *m;
   bool is_rhd;
   float output[OUTPUT_SIZE];
-  std::vector<uint8_t> resized_buf;
-  std::vector<uint8_t> cropped_buf;
-  std::vector<uint8_t> premirror_cropped_buf;
+  std::unique_ptr<YUVBuf> resized_buf;
+  std::unique_ptr<YUVBuf> cropped_buf;
+  std::unique_ptr<YUVBuf> premirror_cropped_buf;
   std::vector<float> net_input_buf;
   float tensor[UINT8_MAX + 1];
+  Rect crop_rect;
 } DMonitoringModelState;
 
-void dmonitoring_init(DMonitoringModelState* s);
+void dmonitoring_init(DMonitoringModelState* s, int width, int height);
 DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_buf, int width, int height);
 void dmonitoring_publish(PubMaster &pm, uint32_t frame_id, const DMonitoringResult &res, float execution_time, kj::ArrayPtr<const float> raw_pred);
 void dmonitoring_free(DMonitoringModelState* s);
