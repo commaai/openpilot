@@ -327,14 +327,17 @@ void Params::clearAll(ParamKeyType key_type) {
   FileLock file_lock(params_path + "/.lock", LOCK_EX);
   std::lock_guard<FileLock> lk(file_lock);
 
+  int removed = 0;
   std::string path;
   for (auto &[key, type] : keys) {
     if (type & key_type) {
       path = params_path + "/d/" + key;
-      unlink(path.c_str());
+      removed += unlink(path.c_str()) == 0;
     }
   }
   // fsync parent directory
-  path = params_path + "/d";
-  fsync_dir(path.c_str());
+  if (removed > 0) {
+    path = params_path + "/d";
+    fsync_dir(path.c_str());
+  }
 }
