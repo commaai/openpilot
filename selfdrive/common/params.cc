@@ -283,7 +283,6 @@ int Params::remove(const char *key) {
   std::string path = params_path + "/d/" + key;
   int result = unlink(path.c_str());
   if (result != 0) {
-    result = ERR_NO_VALUE;
     return result;
   }
   // fsync parent directory
