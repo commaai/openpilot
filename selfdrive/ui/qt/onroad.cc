@@ -113,19 +113,19 @@ ButtonsWindow::ButtonsWindow(QWidget *parent) : QWidget(parent) {
   QWidget *btns_wrapper = new QWidget;
   QHBoxLayout *btns_layout  = new QHBoxLayout(btns_wrapper);
   btns_layout->setSpacing(0);
-  btns_layout->setContentsMargins(0, 0, 30, 30);
+  btns_layout->setContentsMargins(30, 0, 30, 30);
 
   main_layout->addWidget(btns_wrapper, 0, Qt::AlignBottom);
 
-//  mlButton = new QPushButton("Toggle Model Long");
-//  mlButton->setStyleSheet("font-size: 50px; border-radius: 25px; border-color: #b83737;");
-//  QObject::connect(mlButton, &QPushButton::clicked, [=]() {
-//    mlButton->setStyleSheet("font-size: 50px; border-radius: 25px; border-color: #37b868;");
-//  });
-//  mlButton->setFixedWidth(525);
-//  mlButton->setFixedHeight(150);
-//  btns_layout->addStretch();
-//  btns_layout->addWidget(mlButton, 0, Qt::AlignCenter);
+  mlButton = new QPushButton("Model Cruise Control");
+  QObject::connect(mlButton, &QPushButton::clicked, [=]() {
+    QUIState::ui_state.scene.mlButtonEnabled = !mlEnabled;
+  });
+  mlButton->setFixedWidth(575);
+  mlButton->setFixedHeight(150);
+  btns_layout->addStretch(4);
+  btns_layout->addWidget(mlButton, 0, Qt::AlignHCenter | Qt::AlignBottom);
+  btns_layout->addStretch(3);
 
   dfButton = new QPushButton("DF\nprofile");
   QObject::connect(dfButton, &QPushButton::clicked, [=]() {
@@ -133,7 +133,6 @@ ButtonsWindow::ButtonsWindow(QWidget *parent) : QWidget(parent) {
   });
   dfButton->setFixedWidth(200);
   dfButton->setFixedHeight(200);
-//  btns_layout->addStretch();
   btns_layout->addWidget(dfButton, 0, Qt::AlignRight);
 
   setStyleSheet(R"(
@@ -149,19 +148,24 @@ ButtonsWindow::ButtonsWindow(QWidget *parent) : QWidget(parent) {
 }
 
 void ButtonsWindow::updateState(const UIState &s) {
-  updateDfButton(s.scene.dfButtonStatus);  // update dynamic follow profile button
-//  updateMlButton(s.scene.dfButtonStatus);  // update model longitudinal button  // TODO: add model long back first
-}
-
-void ButtonsWindow::updateDfButton(int status) {
-  if (dfStatus != status) {  // updates (resets) on car start, or on button press
-    dfStatus = status;
+  if (dfStatus != s.scene.dfButtonStatus) {  // update dynamic follow profile button
+    dfStatus = s.scene.dfButtonStatus;
     dfButton->setStyleSheet(QString("font-size: 45px; border-radius: 100px; border-color: %1").arg(dfButtonColors.at(dfStatus)));
 
     MessageBuilder msg;
     auto dfButtonStatus = msg.initEvent().initDynamicFollowButton();
     dfButtonStatus.setStatus(dfStatus);
     QUIState::ui_state.pm->send("dynamicFollowButton", msg);
+  }
+
+  if (mlEnabled != s.scene.mlButtonEnabled) {  // update model longitudinal button
+    mlEnabled = s.scene.mlButtonEnabled;
+    mlButton->setStyleSheet(QString("font-size: 50px; border-radius: 25px; border-color: %1").arg(mlButtonColors.at(mlEnabled)));
+
+    MessageBuilder msg;
+    auto mlButtonEnabled = msg.initEvent().initModelLongButton();
+    mlButtonEnabled.setEnabled(mlEnabled);
+    QUIState::ui_state.pm->send("modelLongButton", msg);
   }
 }
 

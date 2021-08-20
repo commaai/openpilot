@@ -6,6 +6,8 @@ from cereal import log
 import cereal.messaging as messaging
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.lead_mpc import LeadMpc
+from selfdrive.controls.lib.drive_helpers import LON_MPC_N
+from selfdrive.modeld.constants import T_IDXS
 
 
 def RW(v_ego, v_l):
@@ -39,7 +41,7 @@ def run_following_distance_simulation(v_lead, t_end=200.0):
     CS.carState.vEgo = v_ego
     CS.carState.aEgo = a_ego
 
-    # Setup model packet
+    # Setup radarstate packet
     radarstate = messaging.new_message('radarState')
     lead = log.RadarState.LeadData.new_message()
     lead.modelProb = .75
@@ -49,12 +51,21 @@ def run_following_distance_simulation(v_lead, t_end=200.0):
     lead.status = True
     radarstate.radarState.leadOne = lead
 
+    # Setup model packet
+    modelstate = messaging.new_message('modelV2')
+    positions = log.ModelDataV2.XYZTData.new_message()
+    velocities = log.ModelDataV2.XYZTData.new_message()
+    positions.x = (v_ego * np.array(T_IDXS[:LON_MPC_N+1])).tolist()
+    velocities.x = (v_ego * np.ones(LON_MPC_N+1)).tolist()
+    modelstate.modelV2.position = positions
+    modelstate.modelV2.velocity = velocities
+
     # Run MPC
     mpc.set_cur_state(v_ego, a_ego)
     if first:  # Make sure MPC is converged on first timestep
       for _ in range(20):
-        mpc.update(CS.carState, radarstate.radarState, 0)
-    mpc.update(CS.carState, radarstate.radarState, 0)
+        mpc.update(CS.carState, radarstate.radarState, modelstate.modelV2, 0)
+    mpc.update(CS.carState, radarstate.radarState, modelstate.modelV2, 0)
 
     # Choose slowest of two solutions
     v_ego, a_ego = mpc.mpc_solution.v_ego[5], mpc.mpc_solution.a_ego[5]

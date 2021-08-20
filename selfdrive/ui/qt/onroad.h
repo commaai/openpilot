@@ -21,11 +21,15 @@ public:
 
 private:
   QPushButton *dfButton;
-//  QPushButton *mlButton;
+  QPushButton *mlButton;
 
+  // dynamic follow button
   int dfStatus = -1;  // always initialize style sheet and send msg
   const QStringList dfButtonColors = {"#044389", "#24a8bc", "#fcff4b", "#37b868"};
-  void updateDfButton(int status);
+
+  // model long button
+  bool mlEnabled = true;  // triggers initialization
+  const QStringList mlButtonColors = {"#b83737", "#37b868"};
 
 public slots:
   void updateState(const UIState &s);

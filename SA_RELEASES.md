@@ -1,6 +1,7 @@
 Stock Additions Update 2 - 2021-08-15 (0.8.8)
 ===
  * Update SA to 0.8.8 with new model from upstream!
+ * Experimental model cruise control button is back
 
 Stock Additions Update 1 - 2021-08-15 (0.8.7)
 ===

@@ -15,8 +15,6 @@ from selfdrive.controls.lib.lead_mpc import LeadMpc
 from selfdrive.controls.lib.long_mpc import LongitudinalMpc
 from selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, CONTROL_N
 from selfdrive.swaglog import cloudlog
-# from selfdrive.controls.lib.long_mpc_model import LongitudinalMpcModel
-# from common.op_params import opParams
 
 LON_MPC_STEP = 0.2  # first step is 0.2s
 AWARENESS_DECEL = -0.2     # car smoothly decel at .2m/s^2 when user is distracted
@@ -46,44 +44,17 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
   return [a_target[0], min(a_target[1], a_x_allowed)]
 
 
-class ModelMpcHelper:
-  def __init__(self):
-    self.model_t = [i ** 2 / 102.4 for i in range(33)]  # the timesteps of the model predictions
-    self.mpc_t = list(range(10))  # the timesteps of what the LongMpcModel class takes in, 1 sec intervels to 10
-    self.model_t_idx = [sorted(range(len(self.model_t)), key=[abs(idx - t) for t in self.model_t].__getitem__)[0] for idx in self.mpc_t]  # matches 0 to 9 interval to idx from t
-    assert len(self.model_t_idx) == 10, 'Needs to be length 10 for mpc'
-
-  def convert_data(self, sm):
-    modelV2 = sm['modelV2']
-    distances, speeds, accelerations = [], [], []
-    if not sm.alive['modelV2'] or len(modelV2.position.x) == 0:
-      return distances, speeds, accelerations
-
-    speeds = [modelV2.velocity.x[t] for t in self.model_t_idx]
-    distances = [modelV2.position.x[t] for t in self.model_t_idx]
-    for t in self.mpc_t:  # todo these three in one loop
-      if 0 < t < 9:
-        accelerations.append((speeds[t + 1] - speeds[t - 1]) / 2)
-
-    # Extrapolate forward and backward at edges
-    accelerations.append(accelerations[-1] - (accelerations[-2] - accelerations[-1]))
-    accelerations.insert(0, accelerations[0] - (accelerations[1] - accelerations[0]))
-    return distances, speeds, accelerations
-
-
 class Planner():
   def __init__(self, CP):
     self.CP = CP
     self.mpcs = {}
     self.mpcs['lead0'] = LeadMpc(0)
     self.mpcs['lead1'] = LeadMpc(1)
-    self.mpcs['cruise'] = LongitudinalMpc()
-    # self.mpcs['model'] = LongitudinalMpcModel()
+    self.mpcs['cruise'] = LongitudinalMpc(0)
+    self.mpcs['e2e'] = LongitudinalMpc(1)
 
     self.fcw = False
     self.fcw_checker = FCWChecker()
-    # self.op_params = opParams()
-    self.model_mpc_helper = ModelMpcHelper()
 
     self.v_desired = 0.0
     self.a_desired = 0.0
@@ -134,9 +105,9 @@ class Planner():
     next_a = np.inf
     for key in self.mpcs:
       self.mpcs[key].set_cur_state(self.v_desired, self.a_desired)
-      self.mpcs[key].update(sm['carState'], sm['radarState'], v_cruise)
-      # TODO: handle model long enabled check
-      if self.mpcs[key].status and self.mpcs[key].a_solution[5] < next_a:  # picks slowest solution from accel in ~0.2 seconds
+      self.mpcs[key].update(sm['carState'], sm['radarState'], sm['modelV2'], v_cruise)
+      if (self.mpcs[key].status and self.mpcs[key].a_solution[5] < next_a and  # picks slowest solution from accel in ~0.2 seconds
+              ((key == 'e2e' and sm['modelLongButton'].enabled) or key != 'e2e')):
         self.longitudinalPlanSource = key
         self.v_desired_trajectory = self.mpcs[key].v_solution[:CONTROL_N]
         self.a_desired_trajectory = self.mpcs[key].a_solution[:CONTROL_N]

@@ -49,7 +49,7 @@ class LeadMpc():
     self.cur_state[0].v_ego = v_safe
     self.cur_state[0].a_ego = a_safe
 
-  def update(self, CS, radarstate, v_cruise):
+  def update(self, CS, radarstate, modelstate, v_cruise):
     v_ego = CS.vEgo
     if self.lead_id == 0:
       lead = radarstate.leadOne
