@@ -115,6 +115,14 @@ void encoder_thread(int cam_idx) {
   const LogCameraInfo &cam_info = cameras_logged[cam_idx];
   set_thread_name(cam_info.filename);
 
+  if (Hardware::TICI()) {
+    int err;
+    err = set_realtime_priority(1);
+    assert(err == 0);
+    err = set_core_affinity(3);
+    assert(err == 0);
+  }
+
   int cnt = 0, cur_seg = -1;
   int encode_idx = 0;
   LoggerHandle *lh = NULL;
@@ -271,15 +279,7 @@ void rotate_if_needed() {
 } // namespace
 
 int main(int argc, char** argv) {
-  if (Hardware::TICI()) {
-    int err;
-    err = set_realtime_priority(2);
-    assert(err == 0);
-    err = set_core_affinity(2);
-    assert(err == 0);
-  } else {
-    setpriority(PRIO_PROCESS, 0, -20);
-  }
+  setpriority(PRIO_PROCESS, 0, -20);
 
   clear_locks();
 
