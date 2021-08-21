@@ -28,7 +28,7 @@ Panda::Panda(std::string serial) {
       libusb_open(dev_list[i], &dev_handle);
       if (dev_handle == NULL) { goto fail; }
 
-      unsigned char desc_serial[25];
+      unsigned char desc_serial[26] = { 0 };
       int ret = libusb_get_string_descriptor_ascii(dev_handle, desc.iSerialNumber, desc_serial, std::size(desc_serial));
       if (ret < 0) { goto fail; }
 
@@ -125,7 +125,7 @@ std::vector<std::string> Panda::list() {
     if (desc.idVendor == 0xbbaa && desc.idProduct == 0xddcc) {
       libusb_device_handle *handle = NULL;
       libusb_open(device, &handle);
-      unsigned char desc_serial[25];
+      unsigned char desc_serial[26] = { 0 };
       int ret = libusb_get_string_descriptor_ascii(handle, desc.iSerialNumber, desc_serial, std::size(desc_serial));
       libusb_release_interface(handle, 0);
       libusb_close(handle);
