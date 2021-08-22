@@ -135,22 +135,15 @@ def get_can_signals(CP, *, gearbox_msg, gas_pedal_msg):
       ("HUD_SETTING", 50),
       ("EPB_STATUS", 50),
     ]
-  elif CP.carFingerprint == CAR.ACURA_ILX:
+  elif CP.carFingerprint in (CAR.ACURA_ILX, CAR.CRV, CAR.CRV_EU, CAR.ACURA_RDX, CAR.PILOT, CAR.PILOT_2019, CAR.RIDGELINE):
     signals += [("MAIN_ON", "SCM_BUTTONS", 0)]
-  elif CP.carFingerprint in (CAR.CRV, CAR.CRV_EU, CAR.ACURA_RDX, CAR.PILOT_2019, CAR.RIDGELINE):
-    signals += [("MAIN_ON", "SCM_BUTTONS", 0)]
-  elif CP.carFingerprint == CAR.FIT:
-    signals += [("MAIN_ON", "SCM_BUTTONS", 0),
-                ("BRAKE_HOLD_ACTIVE", "VSA_STATUS", 0)]
-  elif CP.carFingerprint == CAR.HRV:
+  elif CP.carFingerprint in (CAR.FIT, CAR.HRV):
     signals += [("MAIN_ON", "SCM_BUTTONS", 0),
                 ("BRAKE_HOLD_ACTIVE", "VSA_STATUS", 0)]
   elif CP.carFingerprint == CAR.ODYSSEY:
     signals += [("MAIN_ON", "SCM_FEEDBACK", 0),
                 ("EPB_STATE", "EPB_STATUS", 0)]
     checks += [("EPB_STATUS", 50)]
-  elif CP.carFingerprint == CAR.PILOT:
-    signals += [("MAIN_ON", "SCM_BUTTONS", 0)]]
   elif CP.carFingerprint == CAR.ODYSSEY_CHN:
     signals += [("MAIN_ON", "SCM_BUTTONS", 0),
                 ("EPB_STATE", "EPB_STATUS", 0)]
