@@ -13,7 +13,7 @@ enum ParamKeyType {
   CLEAR_ON_IGNITION_ON = 0x10,
   CLEAR_ON_IGNITION_OFF = 0x20,
   DONT_LOG = 0x40,
-  ALL = 0x02 | 0x04 | 0x08 | 0x10 | 0x20 | 0x40
+  ALL = 0xFFFFFFFF
 };
 
 class Params {
