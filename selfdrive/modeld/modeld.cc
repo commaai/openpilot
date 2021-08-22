@@ -131,13 +131,12 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client) {
 }
 
 int main(int argc, char **argv) {
-  set_realtime_priority(54);
+  int err;
+  err = set_realtime_priority(54);
+  assert(err == 0);
+  err = set_core_affinity(Hardware::EON() ? 2 : 7);
+  assert(err == 0);
 
-  if (Hardware::EON()) {
-    set_core_affinity(2);
-  } else if (Hardware::TICI()) {
-    set_core_affinity(7);  
-  }
   bool wide_camera = Hardware::TICI() ? Params().getBool("EnableWideCamera") : false;
 
   // start calibration thread

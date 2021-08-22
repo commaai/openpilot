@@ -9,9 +9,9 @@ SshControl::SshControl() : ButtonControl("SSH Keys", "", "Warning: This grants S
   username_label.setStyleSheet("color: #aaaaaa");
   hlayout->insertWidget(1, &username_label);
 
-  QObject::connect(this, &ButtonControl::released, [=]() {
+  QObject::connect(this, &ButtonControl::clicked, [=]() {
     if (text() == "ADD") {
-      QString username = InputDialog::getText("Enter your GitHub username");
+      QString username = InputDialog::getText("Enter your GitHub username", this);
       if (username.length() > 0) {
         setText("LOADING");
         setEnabled(false);
@@ -40,25 +40,27 @@ void SshControl::refresh() {
 }
 
 void SshControl::getUserKeys(const QString &username) {
-  HttpRequest *request = new HttpRequest(this, "https://github.com/" + username + ".keys", false);
+  HttpRequest *request = new HttpRequest(this, false);
   QObject::connect(request, &HttpRequest::receivedResponse, [=](const QString &resp) {
     if (!resp.isEmpty()) {
       params.put("GithubUsername", username.toStdString());
       params.put("GithubSshKeys", resp.toStdString());
     } else {
-      ConfirmationDialog::alert("Username '" + username + "' has no keys on GitHub");
+      ConfirmationDialog::alert("Username '" + username + "' has no keys on GitHub", this);
     }
     refresh();
     request->deleteLater();
   });
   QObject::connect(request, &HttpRequest::failedResponse, [=] {
-    ConfirmationDialog::alert("Username '" + username + "' doesn't exist on GitHub");
+    ConfirmationDialog::alert("Username '" + username + "' doesn't exist on GitHub", this);
     refresh();
     request->deleteLater();
   });
   QObject::connect(request, &HttpRequest::timeoutResponse, [=] {
-    ConfirmationDialog::alert("Request timed out");
+    ConfirmationDialog::alert("Request timed out", this);
     refresh();
     request->deleteLater();
   });
+
+  request->sendRequest("https://github.com/" + username + ".keys");
 }

@@ -388,7 +388,7 @@ void panda_state_thread(bool spoofing_started) {
 
     size_t i = 0;
     for (size_t f = size_t(cereal::PandaState::FaultType::RELAY_MALFUNCTION);
-        f <= size_t(cereal::PandaState::FaultType::INTERRUPT_RATE_TIM9); f++) {
+        f <= size_t(cereal::PandaState::FaultType::INTERRUPT_RATE_TICK); f++) {
       if (fault_bits.test(f)) {
         faults.set(i, cereal::PandaState::FaultType(f));
         i++;
@@ -410,6 +410,8 @@ void hardware_control_thread() {
   uint16_t prev_ir_pwr = 999;
   bool prev_charging_disabled = false;
   unsigned int cnt = 0;
+
+  FirstOrderFilter integ_lines_filter(0, 30.0, 0.05);
 
   while (!do_exit && panda->connected) {
     cnt++;
@@ -443,6 +445,11 @@ void hardware_control_thread() {
     if (sm.updated("driverCameraState")) {
       auto event = sm["driverCameraState"];
       int cur_integ_lines = event.getDriverCameraState().getIntegLines();
+      float cur_gain = event.getDriverCameraState().getGain();
+
+      if (Hardware::TICI()) {
+        cur_integ_lines = integ_lines_filter.update(cur_integ_lines * cur_gain);
+      }
       last_front_frame_t = event.getLogMonoTime();
 
       if (cur_integ_lines <= CUTOFF_IL) {

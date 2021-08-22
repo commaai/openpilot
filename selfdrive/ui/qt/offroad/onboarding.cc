@@ -7,11 +7,20 @@
 #include <QVBoxLayout>
 
 #include "selfdrive/common/util.h"
+#include "selfdrive/common/params.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/widgets/input.h"
 
+TrainingGuide::TrainingGuide(QWidget *parent) : QFrame(parent) {
+  setAttribute(Qt::WA_OpaquePaintEvent);
+}
+
 void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
   if (boundingRect[currentIndex].contains(e->x(), e->y())) {
+    if (currentIndex == 9) {
+      const QRect yes = QRect(692, 842, 492, 148);
+      Params().putBool("RecordFront", yes.contains(e->x(), e->y()));
+    }
     currentIndex += 1;
   } else if (currentIndex == (boundingRect.size() - 2) && boundingRect.last().contains(e->x(), e->y())) {
     currentIndex = 0;
@@ -34,12 +43,18 @@ void TrainingGuide::paintEvent(QPaintEvent *event) {
   QPainter painter(this);
 
   QRect bg(0, 0, painter.device()->width(), painter.device()->height());
-  QBrush bgBrush("#000000");
-  painter.fillRect(bg, bgBrush);
+  painter.fillRect(bg, QColor("#000000"));
 
   QRect rect(image.rect());
   rect.moveCenter(bg.center());
   painter.drawImage(rect.topLeft(), image);
+
+  // progress bar
+  if (currentIndex > 0 && currentIndex < (boundingRect.size() - 2)) {
+    const int h = 20;
+    const int w = (currentIndex / (float)(boundingRect.size() - 2)) * width();
+    painter.fillRect(QRect(0, height() - h, w, h), QColor("#465BEA"));
+  }
 }
 
 void TermsPage::showEvent(QShowEvent *event) {
@@ -82,7 +97,7 @@ void TermsPage::showEvent(QShowEvent *event) {
 
   QPushButton *decline_btn = new QPushButton("Decline");
   buttons->addWidget(decline_btn);
-  QObject::connect(decline_btn, &QPushButton::released, this, &TermsPage::declinedTerms);
+  QObject::connect(decline_btn, &QPushButton::clicked, this, &TermsPage::declinedTerms);
 
   accept_btn = new QPushButton("Scroll to accept");
   accept_btn->setEnabled(false);
@@ -95,7 +110,7 @@ void TermsPage::showEvent(QShowEvent *event) {
     }
   )");
   buttons->addWidget(accept_btn);
-  QObject::connect(accept_btn, &QPushButton::released, this, &TermsPage::acceptedTerms);
+  QObject::connect(accept_btn, &QPushButton::clicked, this, &TermsPage::acceptedTerms);
 }
 
 void TermsPage::enableAccept() {
@@ -125,12 +140,12 @@ void DeclinePage::showEvent(QShowEvent *event) {
   QPushButton *back_btn = new QPushButton("Back");
   buttons->addWidget(back_btn);
 
-  QObject::connect(back_btn, &QPushButton::released, this, &DeclinePage::getBack);
+  QObject::connect(back_btn, &QPushButton::clicked, this, &DeclinePage::getBack);
 
   QPushButton *uninstall_btn = new QPushButton("Decline, uninstall " + getBrand());
   uninstall_btn->setStyleSheet("background-color: #B73D3D");
   buttons->addWidget(uninstall_btn);
-  QObject::connect(uninstall_btn, &QPushButton::released, [=]() {
+  QObject::connect(uninstall_btn, &QPushButton::clicked, [=]() {
     Params().putBool("DoUninstall", true);
   });
 }

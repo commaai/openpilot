@@ -1,10 +1,12 @@
 #include "selfdrive/ui/qt/util.h"
 
+#include <QApplication>
 #include <QLayoutItem>
 #include <QStyleOption>
 
 #include "selfdrive/common/params.h"
 #include "selfdrive/common/swaglog.h"
+#include "selfdrive/hardware/hw.h"
 
 QString getBrand() {
   return Params().getBool("Passive") ? "dashcam" : "openpilot";
@@ -12,6 +14,16 @@ QString getBrand() {
 
 QString getBrandVersion() {
   return getBrand() + " v" + QString::fromStdString(Params().get("Version")).left(14).trimmed();
+}
+
+std::optional<QString> getDongleId() {
+  std::string id = Params().get("DongleId");
+
+  if (!id.empty() && (id != "UnregisteredDevice")) {
+    return QString::fromStdString(id);
+  } else {
+    return {};
+  }
 }
 
 void configFont(QPainter &p, const QString &family, int size, const QString &style) {
@@ -67,6 +79,15 @@ void setQtSurfaceFormat() {
   QSurfaceFormat::setDefaultFormat(fmt);
 }
 
+void initApp() {
+  Hardware::set_display_power(true);
+  Hardware::set_brightness(65);
+  setQtSurfaceFormat();
+  if (Hardware::EON()) {
+    QApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
+  }
+}
+
 ClickableWidget::ClickableWidget(QWidget *parent) : QWidget(parent) { }
 
 void ClickableWidget::mouseReleaseEvent(QMouseEvent *event) {
@@ -84,12 +105,12 @@ void ClickableWidget::paintEvent(QPaintEvent *) {
 
 void swagLogMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg) {
   static std::map<QtMsgType, int> levels = {
-    {QtMsgType::QtDebugMsg, 10},
-    {QtMsgType::QtInfoMsg, 20},
-    {QtMsgType::QtWarningMsg, 30},
-    {QtMsgType::QtCriticalMsg, 40},
-    {QtMsgType::QtSystemMsg, 40},
-    {QtMsgType::QtFatalMsg, 50},
+    {QtMsgType::QtDebugMsg, CLOUDLOG_DEBUG},
+    {QtMsgType::QtInfoMsg, CLOUDLOG_INFO},
+    {QtMsgType::QtWarningMsg, CLOUDLOG_WARNING},
+    {QtMsgType::QtCriticalMsg, CLOUDLOG_ERROR},
+    {QtMsgType::QtSystemMsg, CLOUDLOG_ERROR},
+    {QtMsgType::QtFatalMsg, CLOUDLOG_CRITICAL},
   };
 
   std::string file, function;

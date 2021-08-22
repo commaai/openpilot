@@ -116,6 +116,9 @@ class TestLoggerd(unittest.TestCase):
     if TICI:
       expected_files.add("ecamera.hevc")
 
+    # give camerad time to start
+    time.sleep(5)
+
     for _ in range(5):
       num_segs = random.randint(1, 10)
       length = random.randint(2, 5)
@@ -130,7 +133,7 @@ class TestLoggerd(unittest.TestCase):
         p = Path(f"{route_path}--{n}")
         logged = set([f.name for f in p.iterdir() if f.is_file()])
         diff = logged ^ expected_files
-        self.assertEqual(len(diff), 0)
+        self.assertEqual(len(diff), 0, f"{_=} {route_path=} {n=}, {logged=} {expected_files=}")
 
   def test_bootlog(self):
     # generate bootlog with fake launch log
@@ -209,7 +212,7 @@ class TestLoggerd(unittest.TestCase):
         self.assertEqual(recv_cnt, 0, f"got {recv_cnt} {s} msgs in qlog")
       else:
         # check logged message count matches decimation
-        expected_cnt = len(msgs) // service_list[s].decimation
+        expected_cnt = (len(msgs) - 1) // service_list[s].decimation + 1
         self.assertEqual(recv_cnt, expected_cnt, f"expected {expected_cnt} msgs for {s}, got {recv_cnt}")
 
   def test_rlog(self):

@@ -3,7 +3,7 @@ Replay driving data
 
 **Hardware needed**: none
 
-`unlogger.py` replays data collected with [dashcam](https://github.com/commaai/openpilot/tree/dashcam) or [openpilot](https://githucommaai/openpilot).
+`unlogger.py` replays data collected with [dashcam](https://github.com/commaai/openpilot/tree/dashcam) or [openpilot](https://github.com/commaai/openpilot).
 
 Unlogger with remote data:
 
@@ -20,7 +20,7 @@ python replay/unlogger.py <route-name>
 python replay/ui.py   # Define the environmental variable HORIZONTAL is the ui layout is too tall
 ```
 
-Unlogger with local data downloaded from device or https://my.comma.ai:
+Unlogger with local data downloaded from device or https://connect.comma.ai:
 
 ```
 python replay/unlogger.py <route-name> <path-to-data-directory>

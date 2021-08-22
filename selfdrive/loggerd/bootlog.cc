@@ -12,8 +12,7 @@ static kj::Array<capnp::word> build_boot_log() {
   boot.setWallTimeNanos(nanos_since_epoch());
 
   std::string pstore = "/sys/fs/pstore";
-  std::map<std::string, std::string> pstore_map;
-  util::read_files_in_dir(pstore, &pstore_map);
+  std::map<std::string, std::string> pstore_map = util::read_files_in_dir(pstore);
 
   const std::vector<std::string> log_keywords = {"Kernel panic"};
   auto lpstore = boot.initPstore().initEntries(pstore_map.size());
@@ -31,8 +30,7 @@ static kj::Array<capnp::word> build_boot_log() {
     }
   }
 
-  std::string launchLog = util::read_file("/tmp/launch_log");
-  boot.setLaunchLog(capnp::Text::Reader(launchLog.data(), launchLog.size()));
+  boot.setLaunchLog(util::read_file("/tmp/launch_log"));
   return capnp::messageToFlatArray(msg);
 }
 

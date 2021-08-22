@@ -5,13 +5,12 @@ Import('qt_env', 'arch', 'common', 'messaging', 'gpucommon', 'visionipc',
 base_libs = [gpucommon, common, messaging, cereal, visionipc, transformations, 'zmq',
              'capnp', 'kj', 'm', 'OpenCL', 'ssl', 'crypto', 'pthread'] + qt_env["LIBS"]
 
-maps = arch in ['larch64', 'x86_64'] and \
-  os.path.exists(File("qt/maps/map.cc").srcnode().abspath)
+maps = arch in ['larch64', 'x86_64']
 
 if arch == 'aarch64':
   base_libs += ['log', 'utils', 'gui', 'ui', 'CB', 'gsl', 'adreno_utils', 'cutils', 'uuid']
 
-if maps and arch in ['x86_64']:
+if maps and arch == 'x86_64':
   rpath = [Dir(f"#phonelibs/mapbox-gl-native-qt/{arch}").srcnode().abspath]
   qt_env["RPATH"] += rpath
 
@@ -19,23 +18,28 @@ if arch == "Darwin":
   del base_libs[base_libs.index('OpenCL')]
   qt_env['FRAMEWORKS'] += ['OpenCL']
 
-widgets_src = ["qt/util.cc",
-               "qt/widgets/input.cc", "qt/widgets/drive_stats.cc",
+widgets_src = ["qt/util.cc", "qt/widgets/input.cc", "qt/widgets/drive_stats.cc",
                "qt/widgets/ssh_keys.cc", "qt/widgets/toggle.cc", "qt/widgets/controls.cc",
-               "qt/widgets/offroad_alerts.cc", "qt/widgets/setup.cc", "qt/widgets/keyboard.cc",
+               "qt/widgets/offroad_alerts.cc", "qt/widgets/prime.cc", "qt/widgets/keyboard.cc",
                "qt/widgets/scrollview.cc", "qt/widgets/cameraview.cc", "#phonelibs/qrcode/QrCode.cc", "qt/api.cc",
                "qt/request_repeater.cc"]
 
 if arch != 'aarch64':
   widgets_src += ["qt/offroad/networking.cc", "qt/offroad/wifiManager.cc"]
 
-if maps:
+qt_env['CPPDEFINES'] = []
+if GetOption('setup'):
+  qt_env['CPPDEFINES'] += ["USE_QRC"]
+elif maps:
   base_libs += ['qmapboxgl']
   widgets_src += ["qt/maps/map_helpers.cc", "qt/maps/map_settings.cc", "qt/maps/map.cc"]
-  qt_env['CPPDEFINES'] = ["ENABLE_MAPS"]
+  qt_env['CPPDEFINES'] += ["ENABLE_MAPS"]
 
 widgets = qt_env.Library("qt_widgets", widgets_src, LIBS=base_libs)
 qt_libs = [widgets] + base_libs
+
+# build soundd
+qt_env.Program("_soundd", "soundd.cc", LIBS=base_libs)
 
 # spinner and text window
 qt_env.Program("qt/text", ["qt/text.cc"], LIBS=qt_libs)
@@ -50,19 +54,37 @@ qt_env.Program("_ui", qt_src, LIBS=qt_libs)
 
 # setup, factory resetter, and installer
 if arch != 'aarch64' and GetOption('setup'):
-  qt_env.Program("qt/setup/reset", ["qt/setup/reset.cc"], LIBS=qt_libs)
-  qt_env.Program("qt/setup/setup", ["qt/setup/setup.cc"], LIBS=qt_libs + ['curl', 'common', 'json11'])
-  qt_env.Program("qt/setup/wifi", ["qt/setup/wifi.cc"], LIBS=qt_libs + ['common', 'json11'])
 
+  # TODO: do this for all resources once NEOS has rcc
+  assets = "#selfdrive/assets/assets.cc"
+  assets_src = "#selfdrive/assets/assets.qrc"
+  qt_env.Command(assets, assets_src, f"rcc $SOURCES -o $TARGET")
+  qt_env.Depends(assets, Glob('#selfdrive/assets/*', exclude=[assets, assets_src, "#selfdrive/assets/assets.o"]))
+  asset_obj = qt_env.Object("assets", assets)
+
+  qt_env.Program("qt/setup/reset", ["qt/setup/reset.cc"], LIBS=qt_libs)
+  qt_env.Program("qt/setup/updater", ["qt/setup/updater.cc", asset_obj], LIBS=qt_libs)
+  qt_env.Program("qt/setup/setup", ["qt/setup/setup.cc", asset_obj],
+                 LIBS=qt_libs + ['curl', 'common', 'json11'])
+
+  senv = qt_env.Clone()
+  senv['LINKFLAGS'].append('-Wl,-strip-debug')
   installers = [
-    ("openpilot", "release3-staging"),
+    ("openpilot", "release3"),
     ("openpilot_test", "release3-staging"),
+    ("openpilot_nightly", "master-ci"),
     ("openpilot_internal", "master"),
-    ("dashcam", "dashcam3-staging"),
+    ("dashcam", "dashcam3"),
     ("dashcam_test", "dashcam3-staging"),
   ]
+
+  cont = {}
+  for brand in ("openpilot", "dashcam"):
+    cont[brand] = senv.Command(f"qt/setup/continue_{brand}.o", f"#installer/continue_{brand}.sh",
+                               "ld -r -b binary -o $TARGET $SOURCE")
   for name, branch in installers:
-    d = {'BRANCH': f"'\"{branch}\"'"}
+    brand = "dashcam" if "dashcam" in branch else "openpilot"
+    d = {'BRANCH': f"'\"{branch}\"'", 'BRAND': f"'\"{brand}\"'"}
     if "internal" in name:
       d['INTERNAL'] = "1"
 
@@ -70,8 +92,11 @@ if arch != 'aarch64' and GetOption('setup'):
       r = requests.get("https://github.com/commaci2.keys")
       r.raise_for_status()
       d['SSH_KEYS'] = f'\\"{r.text.strip()}\\"'
-    obj = qt_env.Object(f"qt/setup/installer_{name}.o", ["qt/setup/installer.cc"], CPPDEFINES=d)
-    qt_env.Program(f"qt/setup/installer_{name}", obj, LIBS=qt_libs, CPPDEFINES=d)
+    obj = senv.Object(f"qt/setup/installer_{name}.o", ["qt/setup/installer.cc"], CPPDEFINES=d)
+    f = senv.Program(f"qt/setup/installer_{name}", [obj, cont[brand]], LIBS=qt_libs)
+    # keep installers small
+    assert f[0].get_size() < 300*1e3
+
 
 # build headless replay
 if arch == 'x86_64' and os.path.exists(Dir("#tools/").get_abspath()):

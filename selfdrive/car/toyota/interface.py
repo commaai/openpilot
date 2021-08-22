@@ -180,7 +180,7 @@ class CarInterface(CarInterfaceBase):
       # 2019+ Rav4 TSS2 uses two different steering racks and specific tuning seems to be necessary.
       # See https://github.com/commaai/openpilot/pull/21429#issuecomment-873652891
       for fw in car_fw:
-        if fw.ecu == "eps" and fw.fwVersion.startswith(b'\x02'):
+        if fw.ecu == "eps" and (fw.fwVersion.startswith(b'\x02') or fw.fwVersion in [b'8965B42181\x00\x00\x00\x00\x00\x00']):
           ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.15], [0.05]]
           ret.lateralTuning.pid.kf = 0.00004
           break

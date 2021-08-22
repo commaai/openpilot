@@ -12,22 +12,22 @@
 #define USERDATA "/dev/disk/by-partlabel/userdata"
 
 void Reset::doReset() {
-  std::vector<const char*> cmds = {
-    "sudo umount " NVME " || true",
-    "yes | sudo mkfs.ext4 " NVME " || true",
-    "sudo umount " USERDATA " || true",
-    "yes | sudo mkfs.ext4 " USERDATA,
-    "sudo reboot",
-  };
+  // best effort to wipe nvme
+  std::system("sudo umount " NVME);
+  std::system("yes | sudo mkfs.ext4 " NVME);
 
-  for (auto &cmd : cmds) {
-    int ret = std::system(cmd);
-    if (ret != 0) {
-      body->setText("Reset failed. Reboot to try again.");
-      rebootBtn->show();
-      return;
-    }
+  // we handle two cases here
+  //  * user-prompted factory reset
+  //  * recovering from a corrupt userdata by formatting
+  int rm = std::system("sudo rm -rf /data/*");
+  std::system("sudo umount " USERDATA);
+  int fmt = std::system("yes | sudo mkfs.ext4 " USERDATA);
+
+  if (rm == 0 || fmt == 0) {
+    std::system("sudo reboot");
   }
+  body->setText("Reset failed. Reboot to try again.");
+  rebootBtn->show();
 }
 
 void Reset::confirm() {
@@ -47,34 +47,40 @@ void Reset::confirm() {
 
 Reset::Reset(bool recover, QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
-  main_layout->setContentsMargins(100, 100, 100, 100);
+  main_layout->setContentsMargins(45, 220, 45, 45);
+  main_layout->setSpacing(0);
 
   QLabel *title = new QLabel("System Reset");
-  title->setStyleSheet(R"(font-weight: 500; font-size: 100px;)");
-  main_layout->addWidget(title, 0, Qt::AlignTop);
+  title->setStyleSheet("font-size: 90px; font-weight: 600;");
+  main_layout->addWidget(title, 0, Qt::AlignTop | Qt::AlignLeft);
+
+  main_layout->addSpacing(60);
 
   body = new QLabel("System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.");
   body->setWordWrap(true);
-  body->setAlignment(Qt::AlignCenter);
-  body->setStyleSheet("font-size: 80px;");
-  main_layout->addWidget(body, 1, Qt::AlignCenter);
+  body->setStyleSheet("font-size: 80px; font-weight: light;");
+  main_layout->addWidget(body, 1, Qt::AlignTop | Qt::AlignLeft);
 
   QHBoxLayout *blayout = new QHBoxLayout();
   main_layout->addLayout(blayout);
+  blayout->setSpacing(50);
 
   rejectBtn = new QPushButton("Cancel");
-  blayout->addWidget(rejectBtn, 0, Qt::AlignLeft);
-  QObject::connect(rejectBtn, &QPushButton::released, QCoreApplication::instance(), &QCoreApplication::quit);
+  blayout->addWidget(rejectBtn);
+  QObject::connect(rejectBtn, &QPushButton::clicked, QCoreApplication::instance(), &QCoreApplication::quit);
 
   rebootBtn = new QPushButton("Reboot");
-  blayout->addWidget(rebootBtn, 0, Qt::AlignLeft);
-  QObject::connect(rebootBtn, &QPushButton::released, [=]{
+  blayout->addWidget(rebootBtn);
+#ifdef __aarch64__
+  QObject::connect(rebootBtn, &QPushButton::clicked, [=]{
     std::system("sudo reboot");
   });
+#endif
 
-  confirmBtn  = new QPushButton("Confirm");
-  blayout->addWidget(confirmBtn, 0, Qt::AlignRight);
-  QObject::connect(confirmBtn, &QPushButton::released, this, &Reset::confirm);
+  confirmBtn = new QPushButton("Confirm");
+  confirmBtn->setStyleSheet("background-color: #465BEA;");
+  blayout->addWidget(confirmBtn);
+  QObject::connect(confirmBtn, &QPushButton::clicked, this, &Reset::confirm);
 
   rejectBtn->setVisible(!recover);
   rebootBtn->setVisible(recover);
@@ -88,13 +94,15 @@ Reset::Reset(bool recover, QWidget *parent) : QWidget(parent) {
       color: white;
       background-color: black;
     }
+    QLabel {
+      margin-left: 140;
+    }
     QPushButton {
-      padding: 50px;
-      padding-right: 100px;
-      padding-left: 100px;
-      border: 7px solid white;
-      border-radius: 20px;
-      font-size: 50px;
+      height: 160;
+      font-size: 55px;
+      font-weight: 400;
+      border-radius: 10px;
+      background-color: #333333;
     }
   )");
 }

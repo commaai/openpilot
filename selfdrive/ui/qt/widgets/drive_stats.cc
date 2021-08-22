@@ -7,55 +7,62 @@
 
 #include "selfdrive/common/params.h"
 #include "selfdrive/ui/qt/request_repeater.h"
+#include "selfdrive/ui/qt/util.h"
 
 const double MILE_TO_KM = 1.60934;
 
-namespace {
-
-QLabel* numberLabel() {
-  QLabel* label = new QLabel("0");
-  label->setStyleSheet("font-size: 80px; font-weight: 600;");
+static QLabel* newLabel(const QString& text, const QString &type) {
+  QLabel* label = new QLabel(text);
+  label->setProperty("type", type);
   return label;
 }
 
-QLabel* unitLabel(const QString& name) {
-  QLabel* label = new QLabel(name);
-  label->setStyleSheet("font-size: 45px; font-weight: 500;");
-  return label;
-}
-
-}  // namespace
-
-DriveStats::DriveStats(QWidget* parent) : QWidget(parent) {
+DriveStats::DriveStats(QWidget* parent) : QFrame(parent) {
   metric_ = Params().getBool("IsMetric");
 
-  QGridLayout* main_layout = new QGridLayout(this);
-  main_layout->setMargin(0);
+  QVBoxLayout* main_layout = new QVBoxLayout(this);
+  main_layout->setContentsMargins(50, 50, 50, 60);
 
   auto add_stats_layouts = [=](const QString &title, StatsLabels& labels) {
-    int row = main_layout->rowCount();
-    main_layout->addWidget(new QLabel(title), row++, 0, 1, 3);
+    QGridLayout* grid_layout = new QGridLayout;
+    grid_layout->setVerticalSpacing(10);
+    grid_layout->setContentsMargins(0, 10, 0, 10);
 
-    main_layout->addWidget(labels.routes = numberLabel(), row, 0, Qt::AlignLeft);
-    main_layout->addWidget(labels.distance = numberLabel(), row, 1, Qt::AlignLeft);
-    main_layout->addWidget(labels.hours = numberLabel(), row, 2, Qt::AlignLeft);
+    int row = 0;
+    grid_layout->addWidget(newLabel(title, "title"), row++, 0, 1, 3);
+    grid_layout->addItem(new QSpacerItem(0, 50), row++, 0, 1, 1);
 
-    main_layout->addWidget(unitLabel("DRIVES"), row + 1, 0, Qt::AlignLeft);
-    main_layout->addWidget(labels.distance_unit = unitLabel(getDistanceUnit()), row + 1, 1, Qt::AlignLeft);
-    main_layout->addWidget(unitLabel("HOURS"), row + 1, 2, Qt::AlignLeft);
+    grid_layout->addWidget(labels.routes = newLabel("0", "number"), row, 0, Qt::AlignLeft);
+    grid_layout->addWidget(labels.distance = newLabel("0", "number"), row, 1, Qt::AlignLeft);
+    grid_layout->addWidget(labels.hours = newLabel("0", "number"), row, 2, Qt::AlignLeft);
+
+    grid_layout->addWidget(newLabel("Drives", "unit"), row + 1, 0, Qt::AlignLeft);
+    grid_layout->addWidget(labels.distance_unit = newLabel(getDistanceUnit(), "unit"), row + 1, 1, Qt::AlignLeft);
+    grid_layout->addWidget(newLabel("Hours ", "unit"), row + 1, 2, Qt::AlignLeft);
+
+    main_layout->addLayout(grid_layout);
   };
 
   add_stats_layouts("ALL TIME", all_);
+  main_layout->addStretch();
   add_stats_layouts("PAST WEEK", week_);
 
-  std::string dongle_id = Params().get("DongleId");
-  if (util::is_valid_dongle_id(dongle_id)) {
-    std::string url = "https://api.commadotai.com/v1.1/devices/" + dongle_id + "/stats";
-    RequestRepeater* repeater = new RequestRepeater(this, QString::fromStdString(url), "ApiCache_DriveStats", 30);
+  if (auto dongleId = getDongleId()) {
+    QString url = CommaApi::BASE_URL + "/v1.1/devices/" + *dongleId + "/stats";
+    RequestRepeater* repeater = new RequestRepeater(this, url, "ApiCache_DriveStats", 30);
     QObject::connect(repeater, &RequestRepeater::receivedResponse, this, &DriveStats::parseResponse);
   }
 
-  setStyleSheet(R"(QLabel {font-size: 48px; font-weight: 500;})");
+  setStyleSheet(R"(
+    DriveStats {
+      background-color: #333333;
+      border-radius: 10px;
+    }
+
+    QLabel[type="title"] { font-size: 51px; font-weight: 500; }
+    QLabel[type="number"] { font-size: 78px; font-weight: 500; }
+    QLabel[type="unit"] { font-size: 51px; font-weight: 300; color: #A0A0A0; }
+  )");
 }
 
 void DriveStats::updateStats() {

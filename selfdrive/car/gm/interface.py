@@ -20,7 +20,7 @@ class CarInterface(CarInterfaceBase):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "gm"
     ret.safetyModel = car.CarParams.SafetyModel.gm
-    ret.enableCruise = False  # stock cruise control is kept off
+    ret.pcmCruise = False  # stock cruise control is kept off
 
     # GM port is a community feature
     # TODO: make a port that uses a car harness and it only intercepts the camera

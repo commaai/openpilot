@@ -24,6 +24,7 @@
 #include <QPixmap>
 
 #include "selfdrive/common/params.h"
+#include "selfdrive/common/util.h"
 #include "cereal/messaging/messaging.h"
 
 class MapInstructions : public QWidget {
@@ -85,6 +86,7 @@ private:
   void initLayers();
 
   void mousePressEvent(QMouseEvent *ev) final;
+  void mouseDoubleClickEvent(QMouseEvent *ev) final;
   void mouseMoveEvent(QMouseEvent *ev) final;
   void wheelEvent(QWheelEvent *ev) final;
   bool event(QEvent *event) final;
@@ -105,8 +107,11 @@ private:
   // Position
   std::optional<QMapbox::Coordinate> last_position;
   std::optional<float> last_bearing;
+  FirstOrderFilter velocity_filter;
+  bool localizer_valid = false;
 
   // Route
+  bool allow_open = true;
   bool gps_ok = false;
   QGeoServiceProvider *geoservice_provider;
   QGeoRoutingManager *routing_manager;

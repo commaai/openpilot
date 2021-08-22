@@ -62,11 +62,11 @@ private:
   SafeQueue<OMX_BUFFERHEADERTYPE *> free_in;
   SafeQueue<OMX_BUFFERHEADERTYPE *> done_out;
 
+  // for qcams
   AVFormatContext *ofmt_ctx;
   AVCodecContext *codec_ctx;
   AVStream *out_stream;
   bool remuxing;
-
   bool downscale;
   uint8_t *y_ptr2, *u_ptr2, *v_ptr2;
 };
