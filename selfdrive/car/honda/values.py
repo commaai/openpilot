@@ -10,25 +10,25 @@ class CarControllerParams():
   ACCEL_MAX = 1.6
 
   def __init__(self, CP):
-      self.BRAKE_MAX = 1024//4
-      self.STEER_MAX = CP.lateralParams.torqueBP[-1]
-      # mirror of list (assuming first item is zero) for interp of signed request values
-      assert(CP.lateralParams.torqueBP[0] == 0)
-      assert(CP.lateralParams.torqueBP[0] == 0)
-      self.STEER_LOOKUP_BP = [v * -1 for v in CP.lateralParams.torqueBP][1:][::-1] + list(CP.lateralParams.torqueBP)
-      self.STEER_LOOKUP_V = [v * -1 for v in CP.lateralParams.torqueV][1:][::-1] + list(CP.lateralParams.torqueV)
+    self.BRAKE_MAX = 1024//4
+    self.STEER_MAX = CP.lateralParams.torqueBP[-1]
+    # mirror of list (assuming first item is zero) for interp of signed request values
+    assert(CP.lateralParams.torqueBP[0] == 0)
+    assert(CP.lateralParams.torqueBP[0] == 0)
+    self.STEER_LOOKUP_BP = [v * -1 for v in CP.lateralParams.torqueBP][1:][::-1] + list(CP.lateralParams.torqueBP)
+    self.STEER_LOOKUP_V = [v * -1 for v in CP.lateralParams.torqueV][1:][::-1] + list(CP.lateralParams.torqueV)
 
-      self.NIDEC_ACCEL_LOOKUP_BP = [-1., 0., .6]
-      self.NIDEC_ACCEL_LOOKUP_V = [-4.8, 0., 2.0]
+    self.NIDEC_ACCEL_LOOKUP_BP = [-1., 0., .6]
+    self.NIDEC_ACCEL_LOOKUP_V = [-4.8, 0., 2.0]
 
-      self.NIDEC_MAX_ACCEL_V = [0.5, 2.4, 1.4, 0.6]
-      self.NIDEC_MAX_ACCEL_BP = [0.0, 4.0, 10., 20.]
+    self.NIDEC_MAX_ACCEL_V = [0.5, 2.4, 1.4, 0.6]
+    self.NIDEC_MAX_ACCEL_BP = [0.0, 4.0, 10., 20.]
 
 
-      self.BOSCH_ACCEL_LOOKUP_BP = [-1., 0., 0.6]
-      self.BOSCH_ACCEL_LOOKUP_V = [-3.5, 0., 2.]
-      self.BOSCH_GAS_LOOKUP_BP = [0., 0.6]
-      self.BOSCH_GAS_LOOKUP_V = [0, 2000]
+    self.BOSCH_ACCEL_LOOKUP_BP = [-1., 0., 0.6]
+    self.BOSCH_ACCEL_LOOKUP_V = [-3.5, 0., 2.]
+    self.BOSCH_GAS_LOOKUP_BP = [0., 0.6]
+    self.BOSCH_GAS_LOOKUP_V = [0, 2000]
 
 
 # Car button codes
