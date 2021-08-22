@@ -10,7 +10,7 @@ from selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, SPEED_FACTOR, 
 TransmissionType = car.CarParams.TransmissionType
 
 
-def get_can_signals(CP, gearbox_msg="GEARBOX"):
+def get_can_signals(CP, *, gearbox_msg, gas_pedal_msg):
   # this function generates lists for signal, messages and initial values
   signals = [
     ("XMISSION_SPEED", "ENGINE_DATA", 0),
@@ -72,19 +72,21 @@ def get_can_signals(CP, gearbox_msg="GEARBOX"):
       (gearbox_msg, 100),
     ]
 
+  if gas_pedal_msg:
+    signals += [("CAR_GAS", gas_pedal_msg, 0)]
+    checks += [(gas_pedal_msg, 100)]
+
   if CP.carFingerprint in HONDA_BOSCH_ALT_BRAKE_SIGNAL:
     signals += [("BRAKE_PRESSED", "BRAKE_MODULE", 0)]
     checks += [("BRAKE_MODULE", 50)]
 
   if CP.carFingerprint in HONDA_BOSCH:
     signals += [
-      ("CAR_GAS", "GAS_PEDAL_2", 0),
       ("MAIN_ON", "SCM_FEEDBACK", 0),
       ("EPB_STATE", "EPB_STATUS", 0),
     ]
     checks += [
       ("EPB_STATUS", 50),
-      ("GAS_PEDAL_2", 100),
     ]
 
     if not CP.openpilotLongitudinalControl:
@@ -126,30 +128,20 @@ def get_can_signals(CP, gearbox_msg="GEARBOX"):
     ]
 
   if CP.carFingerprint == CAR.CIVIC:
-    signals += [("CAR_GAS", "GAS_PEDAL_2", 0),
-                ("MAIN_ON", "SCM_FEEDBACK", 0),
+    signals += [("MAIN_ON", "SCM_FEEDBACK", 0),
                 ("IMPERIAL_UNIT", "HUD_SETTING", 0),
                 ("EPB_STATE", "EPB_STATUS", 0)]
     checks += [
       ("HUD_SETTING", 50),
       ("EPB_STATUS", 50),
-      ("GAS_PEDAL_2", 100),
     ]
   elif CP.carFingerprint == CAR.ACURA_ILX:
-    signals += [("CAR_GAS", "GAS_PEDAL_2", 0),
-                ("MAIN_ON", "SCM_BUTTONS", 0)]
-    checks += [
-      ("GAS_PEDAL_2", 100),
-    ]
+    signals += [("MAIN_ON", "SCM_BUTTONS", 0)]
   elif CP.carFingerprint in (CAR.CRV, CAR.CRV_EU, CAR.ACURA_RDX, CAR.PILOT_2019, CAR.RIDGELINE):
     signals += [("MAIN_ON", "SCM_BUTTONS", 0)]
   elif CP.carFingerprint == CAR.FIT:
-    signals += [("CAR_GAS", "GAS_PEDAL_2", 0),
-                ("MAIN_ON", "SCM_BUTTONS", 0),
+    signals += [("MAIN_ON", "SCM_BUTTONS", 0),
                 ("BRAKE_HOLD_ACTIVE", "VSA_STATUS", 0)]
-    checks += [
-      ("GAS_PEDAL_2", 100),
-    ]
   elif CP.carFingerprint == CAR.HRV:
     signals += [("MAIN_ON", "SCM_BUTTONS", 0),
                 ("BRAKE_HOLD_ACTIVE", "VSA_STATUS", 0)]
@@ -158,11 +150,7 @@ def get_can_signals(CP, gearbox_msg="GEARBOX"):
                 ("EPB_STATE", "EPB_STATUS", 0)]
     checks += [("EPB_STATUS", 50)]
   elif CP.carFingerprint == CAR.PILOT:
-    signals += [("MAIN_ON", "SCM_BUTTONS", 0),
-                ("CAR_GAS", "GAS_PEDAL_2", 0)]
-    checks += [
-      ("GAS_PEDAL_2", 0),  # TODO: fix this freq, seems this signal isn't present at all on some models
-    ]
+    signals += [("MAIN_ON", "SCM_BUTTONS", 0)]]
   elif CP.carFingerprint == CAR.ODYSSEY_CHN:
     signals += [("MAIN_ON", "SCM_BUTTONS", 0),
                 ("EPB_STATE", "EPB_STATUS", 0)]
@@ -191,6 +179,13 @@ class CarState(CarStateBase):
     self.gearbox_msg = "GEARBOX"
     if CP.carFingerprint == CAR.ACCORD and CP.transmissionType == TransmissionType.cvt:
       self.gearbox_msg = "GEARBOX_15T"
+    # message containing CAR_GAS, if any
+    self.gas_pedal_msg = "GAS_PEDAL_2"
+    if self.CP.carFingerprint in (CAR.CRV, CAR.CRV_EU, CAR.ODYSSEY, CAR.ACURA_RDX, CAR.RIDGELINE, CAR.PILOT, CAR.PILOT_2019, CAR.ODYSSEY_CHN):
+      # crv et al don't include cruise control
+      self.gas_pedal_msg = None
+    elif self.CP.carFingerprint == CAR.HRV:
+      self.gas_pedal_msg = "GAS_PEDAL"
 
     self.shifter_values = can_define.dv[self.gearbox_msg]["GEAR_SHIFTER"]
     self.steer_status_values = defaultdict(lambda: "UNKNOWN", can_define.dv["STEER_STATUS"]["STEER_STATUS"])
@@ -278,11 +273,10 @@ class CarState(CarStateBase):
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(gear, None))
 
     pedal_gas = cp.vl["POWERTRAIN_DATA"]["PEDAL_GAS"]
-    # crv doesn't include cruise control
-    if self.CP.carFingerprint in (CAR.CRV, CAR.CRV_EU, CAR.HRV, CAR.ODYSSEY, CAR.ACURA_RDX, CAR.RIDGELINE, CAR.PILOT_2019, CAR.ODYSSEY_CHN):
+    if not self.gas_pedal_msg:
       ret.gas = pedal_gas / 256.
     else:
-      ret.gas = cp.vl["GAS_PEDAL_2"]["CAR_GAS"] / 256.
+      ret.gas = cp.vl[self.gas_pedal_msg]["CAR_GAS"] / 256.
 
     # this is a hack for the interceptor. This is now only used in the simulation
     # TODO: Replace tests by toyota so this can go away
@@ -354,7 +348,7 @@ class CarState(CarStateBase):
     return ret
 
   def get_can_parser(self, CP):
-    signals, checks = get_can_signals(CP, self.gearbox_msg)
+    signals, checks = get_can_signals(CP, gearbox_msg=self.gearbox_msg, gas_pedal_msg=self.gas_pedal_msg)
     bus_pt = 1 if CP.carFingerprint in HONDA_BOSCH else 0
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, bus_pt)
 
