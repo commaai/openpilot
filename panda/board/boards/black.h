@@ -127,39 +127,9 @@ void black_set_can_mode(uint8_t mode){
   }
 }
 
-void black_usb_power_mode_tick(uint32_t uptime){
-  UNUSED(uptime);
-  // Not applicable
-}
-
 bool black_check_ignition(void){
   // ignition is checked through harness
   return harness_check_ignition();
-}
-
-uint32_t black_read_current(void){
-  // No current sense on black panda
-  return 0U;
-}
-
-void black_set_ir_power(uint8_t percentage){
-  UNUSED(percentage);
-}
-
-void black_set_fan_power(uint8_t percentage){
-  UNUSED(percentage);
-}
-
-void black_set_phone_power(bool enabled){
-  UNUSED(enabled);
-}
-
-void black_set_clock_source_mode(uint8_t mode){
-  UNUSED(mode);
-}
-
-void black_set_siren(bool enabled){
-  UNUSED(enabled);
 }
 
 void black_init(void) {
@@ -244,12 +214,12 @@ const board board_black = {
   .set_usb_power_mode = black_set_usb_power_mode,
   .set_gps_mode = black_set_gps_mode,
   .set_can_mode = black_set_can_mode,
-  .usb_power_mode_tick = black_usb_power_mode_tick,
+  .usb_power_mode_tick = unused_usb_power_mode_tick,
   .check_ignition = black_check_ignition,
-  .read_current = black_read_current,
-  .set_fan_power = black_set_fan_power,
-  .set_ir_power = black_set_ir_power,
-  .set_phone_power = black_set_phone_power,
-  .set_clock_source_mode = black_set_clock_source_mode,
-  .set_siren = black_set_siren
+  .read_current = unused_read_current,
+  .set_fan_power = unused_set_fan_power,
+  .set_ir_power = unused_set_ir_power,
+  .set_phone_power = unused_set_phone_power,
+  .set_clock_source_mode = unused_set_clock_source_mode,
+  .set_siren = unused_set_siren
 };

@@ -5,17 +5,18 @@ from selfdrive.controls.lib.drive_helpers import rate_limit
 from common.numpy_fast import clip, interp
 from selfdrive.car import create_gas_command
 from selfdrive.car.honda import hondacan
-from selfdrive.car.honda.values import CruiseButtons, CAR, VISUAL_HUD, HONDA_BOSCH, CarControllerParams
+from selfdrive.car.honda.values import OLD_NIDEC_LONG_CONTROL, CruiseButtons, CAR, VISUAL_HUD, HONDA_BOSCH, CarControllerParams
 from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 
+# TODO: not clear this does anything useful
 def actuator_hystereses(brake, braking, brake_steady, v_ego, car_fingerprint):
   # hyst params
   brake_hyst_on = 0.02     # to activate brakes exceed this value
-  brake_hyst_off = 0.005                     # to deactivate brakes below this value
-  brake_hyst_gap = 0.01                      # don't change brake command for small oscillations within this value
+  brake_hyst_off = 0.005   # to deactivate brakes below this value
+  brake_hyst_gap = 0.01    # don't change brake command for small oscillations within this value
 
   #*** hysteresis logic to avoid brake blinking. go above 0.1 to trigger
   if (brake < brake_hyst_on and not braking) or brake < brake_hyst_off:
@@ -72,7 +73,7 @@ def process_hud_alert(hud_alert):
 
 
 HUDData = namedtuple("HUDData",
-                     ["pcm_accel", "v_cruise",  "car",
+                     ["pcm_accel", "v_cruise", "car",
                      "lanes", "fcw", "acc_alert", "steer_required"])
 
 
@@ -84,7 +85,6 @@ class CarController():
     self.apply_brake_last = 0
     self.last_pump_ts = 0.
     self.packer = CANPacker(dbc_name)
-    self.new_radar_config = False
 
     self.params = CarControllerParams(CP)
 
@@ -125,8 +125,6 @@ class CarController():
 
     fcw_display, steer_required, acc_alert = process_hud_alert(hud_alert)
 
-    hud = HUDData(int(pcm_accel), int(round(hud_v_cruise)), hud_car,
-                  hud_lanes, fcw_display, acc_alert, steer_required)
 
     # **** process the car messages ****
 
@@ -148,10 +146,35 @@ class CarController():
     can_sends.append(hondacan.create_steering_control(self.packer, apply_steer,
       lkas_active, CS.CP.carFingerprint, idx, CS.CP.openpilotLongitudinalControl))
 
-    # Send dashboard UI commands.
-    if (frame % 10) == 0:
-      idx = (frame//10) % 4
-      can_sends.extend(hondacan.create_ui_commands(self.packer, pcm_speed, hud, CS.CP.carFingerprint, CS.is_metric, idx, CS.CP.openpilotLongitudinalControl, CS.stock_hud))
+
+    accel = actuators.gas - actuators.brake
+
+    # TODO: pass in LoC.long_control_state and use that to decide starting/stoppping
+    stopping = accel < 0 and CS.out.vEgo < 0.3
+    starting = accel > 0 and CS.out.vEgo < 0.3
+
+    # Prevent rolling backwards
+    accel = -1.0 if stopping else accel
+    if CS.CP.carFingerprint in HONDA_BOSCH:
+      apply_accel = interp(accel, P.BOSCH_ACCEL_LOOKUP_BP, P.BOSCH_ACCEL_LOOKUP_V)
+    else:
+      apply_accel = interp(accel, P.NIDEC_ACCEL_LOOKUP_BP, P.NIDEC_ACCEL_LOOKUP_V)
+
+    # wind brake from air resistance decel at high speed
+    wind_brake = interp(CS.out.vEgo, [0.0, 2.3, 35.0], [0.001, 0.002, 0.15])
+    if CS.CP.carFingerprint in OLD_NIDEC_LONG_CONTROL:
+      #pcm_speed = pcm_speed
+      pcm_accel = int(clip(pcm_accel, 0, 1) * 0xc6)
+    else:
+      max_accel = interp(CS.out.vEgo, P.NIDEC_MAX_ACCEL_BP, P.NIDEC_MAX_ACCEL_V)
+      pcm_accel = int(clip(apply_accel/max_accel, 0.0, 1.0) * 0xc6)
+      pcm_speed_BP = [-wind_brake,
+                      -wind_brake*(3/4),
+                      0.0]
+      pcm_speed_V = [0.0,
+                     clip(CS.out.vEgo + apply_accel/2.0 - 2.0, 0.0, 100.0),
+                     clip(CS.out.vEgo + apply_accel/2.0 + 2.0, 0.0, 100.0)]
+      pcm_speed = interp(accel, pcm_speed_BP, pcm_speed_V)
 
     if not CS.CP.openpilotLongitudinalControl:
       if (frame % 2) == 0:
@@ -168,31 +191,33 @@ class CarController():
       if (frame % 2) == 0:
         idx = frame // 2
         ts = frame * DT_CTRL
+
         if CS.CP.carFingerprint in HONDA_BOSCH:
-          accel = actuators.gas - actuators.brake
-
-          # TODO: pass in LoC.long_control_state and use that to decide starting/stoppping
-          stopping = accel < 0 and CS.out.vEgo < 0.3
-          starting = accel > 0 and CS.out.vEgo < 0.3
-
-          # Prevent rolling backwards
-          accel = -1.0 if stopping else accel
-
-          apply_accel = interp(accel, P.BOSCH_ACCEL_LOOKUP_BP, P.BOSCH_ACCEL_LOOKUP_V)
           apply_gas = interp(accel, P.BOSCH_GAS_LOOKUP_BP, P.BOSCH_GAS_LOOKUP_V)
           can_sends.extend(hondacan.create_acc_commands(self.packer, enabled, apply_accel, apply_gas, idx, stopping, starting, CS.CP.carFingerprint))
 
         else:
-          apply_gas = clip(actuators.gas, 0., 1.)
-          apply_brake = int(clip(self.brake_last * P.BRAKE_MAX, 0, P.BRAKE_MAX - 1))
+          apply_brake = clip(self.brake_last - wind_brake, 0.0, 1.0)
+          apply_brake = int(clip(apply_brake * P.BRAKE_MAX, 0, P.BRAKE_MAX - 1))
           pump_on, self.last_pump_ts = brake_pump_hysteresis(apply_brake, self.apply_brake_last, self.last_pump_ts, ts)
           can_sends.append(hondacan.create_brake_command(self.packer, apply_brake, pump_on,
-            pcm_override, pcm_cancel_cmd, hud.fcw, idx, CS.CP.carFingerprint, CS.stock_brake))
+            pcm_override, pcm_cancel_cmd, fcw_display, idx, CS.CP.carFingerprint, CS.stock_brake))
           self.apply_brake_last = apply_brake
 
           if CS.CP.enableGasInterceptor:
+            # way too aggressive at low speed without this
+            gas_mult = interp(CS.out.vEgo, [0., 10.], [0.4, 1.0])
             # send exactly zero if apply_gas is zero. Interceptor will send the max between read value and apply_gas.
             # This prevents unexpected pedal range rescaling
+            apply_gas = clip(gas_mult * actuators.gas, 0., 1.)
             can_sends.append(create_gas_command(self.packer, apply_gas, idx))
+
+    hud = HUDData(int(pcm_accel), int(round(hud_v_cruise)), hud_car,
+                  hud_lanes, fcw_display, acc_alert, steer_required)
+
+    # Send dashboard UI commands.
+    if (frame % 10) == 0:
+      idx = (frame//10) % 4
+      can_sends.extend(hondacan.create_ui_commands(self.packer, pcm_speed, hud, CS.CP.carFingerprint, CS.is_metric, idx, CS.CP.openpilotLongitudinalControl, CS.stock_hud))
 
     return can_sends

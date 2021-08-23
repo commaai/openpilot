@@ -60,27 +60,36 @@ void VisionBuf::import(){
 }
 
 
-void VisionBuf::sync(int dir) {
+int VisionBuf::sync(int dir) {
   int err = 0;
-  if (!this->buf_cl) return;
+  if (!this->buf_cl) return 0;
 
   if (dir == VISIONBUF_SYNC_FROM_DEVICE) {
     err = clEnqueueReadBuffer(this->copy_q, this->buf_cl, CL_FALSE, 0, this->len, this->addr, 0, NULL, NULL);
   } else {
     err = clEnqueueWriteBuffer(this->copy_q, this->buf_cl, CL_FALSE, 0, this->len, this->addr, 0, NULL, NULL);
   }
-  assert(err == 0);
-  clFinish(this->copy_q);
-}
 
-void VisionBuf::free() {
-  if (this->buf_cl){
-    int err = clReleaseMemObject(this->buf_cl);
-    assert(err == 0);
-
-    clReleaseCommandQueue(this->copy_q);
+  if (err == 0){
+    err = clFinish(this->copy_q);
   }
 
-  munmap(this->addr, this->len);
-  close(this->fd);
+  return err;
+}
+
+int VisionBuf::free() {
+  int err = 0;
+  if (this->buf_cl){
+    err = clReleaseMemObject(this->buf_cl);
+    if (err != 0) return err;
+
+    err = clReleaseCommandQueue(this->copy_q);
+    if (err != 0) return err;
+  }
+
+  err = munmap(this->addr, this->len);
+  if (err != 0) return err;
+
+  err = close(this->fd);
+  return err;
 }

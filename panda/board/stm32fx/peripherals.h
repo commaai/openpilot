@@ -1,5 +1,18 @@
+void gpio_usb_init(void) {
+  // A11,A12: USB
+  set_gpio_alternate(GPIOA, 11, GPIO_AF10_OTG_FS);
+  set_gpio_alternate(GPIOA, 12, GPIO_AF10_OTG_FS);
+  GPIOA->OSPEEDR = GPIO_OSPEEDER_OSPEEDR11 | GPIO_OSPEEDER_OSPEEDR12;
+}
+
+void gpio_usart2_init(void) {
+  // A2,A3: USART 2 for debugging
+  set_gpio_alternate(GPIOA, 2, GPIO_AF7_USART2);
+  set_gpio_alternate(GPIOA, 3, GPIO_AF7_USART2);
+}
+
 // Common GPIO initialization
-void common_init_gpio(void){
+void common_init_gpio(void) {
   // TODO: Is this block actually doing something???
   // pull low to hold ESP in reset??
   // enable OTG out tied to ground
@@ -12,10 +25,7 @@ void common_init_gpio(void){
   // C2: Voltage sense line
   set_gpio_mode(GPIOC, 2, MODE_ANALOG);
 
-  // A11,A12: USB
-  set_gpio_alternate(GPIOA, 11, GPIO_AF10_OTG_FS);
-  set_gpio_alternate(GPIOA, 12, GPIO_AF10_OTG_FS);
-  GPIOA->OSPEEDR = GPIO_OSPEEDER_OSPEEDR11 | GPIO_OSPEEDER_OSPEEDR12;
+  gpio_usb_init();
 
   // A9,A10: USART 1 for talking to the GPS
   set_gpio_alternate(GPIOA, 9, GPIO_AF7_USART1);
@@ -31,8 +41,15 @@ void common_init_gpio(void){
   #endif
 }
 
+void flasher_peripherals_init(void) {
+  RCC->AHB1ENR |= RCC_AHB1ENR_DMA2EN;
+  RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
+  RCC->AHB2ENR |= RCC_AHB2ENR_OTGFSEN;
+  RCC->APB1ENR |= RCC_APB1ENR_USART2EN;
+}
+
 // Peripheral initialization
-void peripherals_init(void){
+void peripherals_init(void) {
   // enable GPIOB, UART2, CAN, USB clock
   RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
   RCC->AHB1ENR |= RCC_AHB1ENR_GPIOBEN;

@@ -23,7 +23,8 @@ from selfdrive.controls.lib.events import Events, ET
 from selfdrive.controls.lib.alertmanager import AlertManager
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.locationd.calibrationd import Calibration
-from selfdrive.hardware import HARDWARE, TICI
+from selfdrive.hardware import HARDWARE, TICI, EON
+from selfdrive.manager.process_config import managed_processes
 
 LDW_MIN_SPEED = 31 * CV.MPH_TO_MS
 LANE_DEPARTURE_THRESHOLD = 0.1
@@ -32,7 +33,11 @@ STEER_ANGLE_SATURATION_THRESHOLD = 2.5  # Degrees
 
 SIMULATION = "SIMULATION" in os.environ
 NOSENSOR = "NOSENSOR" in os.environ
-IGNORE_PROCESSES = set(["rtshield", "uploader", "deleter", "loggerd", "logmessaged", "tombstoned", "logcatd", "proclogd", "clocksd", "updated", "timezoned", "manage_athenad"])
+IGNORE_PROCESSES = {"rtshield", "uploader", "deleter", "loggerd", "logmessaged", "tombstoned",
+                    "logcatd", "proclogd", "clocksd", "updated", "timezoned", "manage_athenad"} | \
+                    {k for k, v in managed_processes.items() if not v.enabled}
+
+ACTUATOR_FIELDS = set(car.CarControl.Actuators.schema.fields.keys())
 
 ThermalStatus = log.DeviceState.ThermalStatus
 State = log.ControlsState.OpenpilotState
@@ -196,6 +201,9 @@ class Controls:
     # TODO: make tici threshold the same
     if self.sm['deviceState'].memoryUsagePercent > (90 if TICI else 65) and not SIMULATION:
       self.events.add(EventName.lowMemory)
+    cpus = list(self.sm['deviceState'].cpuUsagePercent)[:(-1 if EON else None)]
+    if max(cpus, default=0) > 95:
+      self.events.add(EventName.highCpuUsage)
 
     # Alert if fan isn't spinning for 5 seconds
     if self.sm['pandaState'].pandaType in [PandaType.uno, PandaType.dos]:
@@ -496,6 +504,12 @@ class Controls:
 
         if left_deviation or right_deviation:
           self.events.add(EventName.steerSaturated)
+
+    # Ensure no NaNs/Infs
+    for p in ACTUATOR_FIELDS:
+      if not math.isfinite(getattr(actuators, p)):
+        cloudlog.error(f"actuators.{p} not finite {actuators.to_dict()}")
+        setattr(actuators, p, 0.0)
 
     return actuators, lac_log
 

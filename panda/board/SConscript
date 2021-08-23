@@ -8,6 +8,7 @@ if os.getenv("PEDAL"):
   PROJECT = "pedal"
   STARTUP_FILE = "stm32fx/startup_stm32f205xx.s"
   LINKER_SCRIPT = "stm32fx/stm32fx_flash.ld"
+  APP_START_ADDRESS = "0x8004000"
   MAIN = "pedal/main.c"
   PROJECT_FLAGS = [
     "-mcpu=cortex-m3",
@@ -18,12 +19,32 @@ if os.getenv("PEDAL"):
     "-DPEDAL",
   ]
   if os.getenv("PEDAL_USB"):
+    PROJECT = "pedal_usb"
     PROJECT_FLAGS.append("-DPEDAL_USB")
+
+elif os.getenv("PANDA_H7"):
+  PROJECT = "panda_h7"
+  STARTUP_FILE = "stm32h7/startup_stm32h7x5xx.s"
+  LINKER_SCRIPT = "stm32h7/stm32h7x5_flash.ld"
+  APP_START_ADDRESS = "0x8020000"
+  MAIN = "main.c"
+  PROJECT_FLAGS = [
+    "-mcpu=cortex-m7",
+    "-mhard-float",
+    "-DSTM32H7",
+    "-DSTM32H725xx",
+    "-mfpu=fpv5-d16",
+    "-fsingle-precision-constant",
+    "-Os",
+    "-g",
+    "-DPANDA",
+  ]
 
 else:
   PROJECT = "panda"
   STARTUP_FILE = "stm32fx/startup_stm32f413xx.s"
   LINKER_SCRIPT = "stm32fx/stm32fx_flash.ld"
+  APP_START_ADDRESS = "0x8004000"
   MAIN = "main.c"
   PROJECT_FLAGS = [
     "-mcpu=cortex-m4",
@@ -39,13 +60,11 @@ else:
 
 
 def get_version(builder, build_type):
-  version_file = File('../VERSION').srcnode().abspath
-  version = open(version_file).read()
   try:
     git = subprocess.check_output(["git", "rev-parse", "--short=8", "HEAD"], encoding='utf8').strip()
   except subprocess.CalledProcessError:
     git = "unknown"
-  return f"{version}-{builder}-{git}-{build_type}"
+  return f"{builder}-{git}-{build_type}"
 
 
 def to_c_uint32(x):
@@ -110,6 +129,7 @@ else:
 
 includes = [
   "stm32fx/inc",
+  "stm32h7/inc",
   "..",
   ".",
 ]
@@ -150,7 +170,7 @@ bootstub_bin = panda_env.Objcopy(f"obj/bootstub.{PROJECT}.bin", bootstub_elf)
 
 # Build main
 main_elf = panda_env.Program(f"obj/{PROJECT}.elf", [startup, MAIN],
-  LINKFLAGS=["-Wl,--section-start,.isr_vector=0x8004000"] + flags)
+  LINKFLAGS=[f"-Wl,--section-start,.isr_vector={APP_START_ADDRESS}"] + flags)
 main_bin = panda_env.Objcopy(f"obj/{PROJECT}.bin", main_elf)
 
 # Sign main

@@ -151,33 +151,9 @@ uint32_t white_read_current(void){
   return adc_get(ADCCHAN_CURRENT);
 }
 
-void white_usb_power_mode_tick(uint32_t uptime){
-  UNUSED(uptime);
-}
-
-void white_set_ir_power(uint8_t percentage){
-  UNUSED(percentage);
-}
-
-void white_set_fan_power(uint8_t percentage){
-  UNUSED(percentage);
-}
-
 bool white_check_ignition(void){
   // ignition is on PA1
   return !get_gpio_input(GPIOA, 1);
-}
-
-void white_set_phone_power(bool enabled){
-  UNUSED(enabled);
-}
-
-void white_set_clock_source_mode(uint8_t mode){
-  UNUSED(mode);
-}
-
-void white_set_siren(bool enabled){
-  UNUSED(enabled);
 }
 
 void white_grey_common_init(void) {
@@ -277,12 +253,12 @@ const board board_white = {
   .set_usb_power_mode = white_set_usb_power_mode,
   .set_gps_mode = white_set_gps_mode,
   .set_can_mode = white_set_can_mode,
-  .usb_power_mode_tick = white_usb_power_mode_tick,
+  .usb_power_mode_tick = unused_usb_power_mode_tick,
   .check_ignition = white_check_ignition,
   .read_current = white_read_current,
-  .set_fan_power = white_set_fan_power,
-  .set_ir_power = white_set_ir_power,
-  .set_phone_power = white_set_phone_power,
-  .set_clock_source_mode = white_set_clock_source_mode,
-  .set_siren = white_set_siren
+  .set_fan_power = unused_set_fan_power,
+  .set_ir_power = unused_set_ir_power,
+  .set_phone_power = unused_set_phone_power,
+  .set_clock_source_mode = unused_set_clock_source_mode,
+  .set_siren = unused_set_siren
 };

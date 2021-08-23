@@ -289,15 +289,11 @@ struct CanData {
 }
 
 struct DeviceState @0xa4d8b5af2aa492eb {
-  freeSpacePercent @7 :Float32;
-  memoryUsagePercent @19 :Int8;
-  cpuUsagePercent @20 :Int8;
-  gpuUsagePercent @33 :Int8;
   usbOnline @12 :Bool;
   networkType @22 :NetworkType;
   networkInfo @31 :NetworkInfo;
-  offroadPowerUsageUwh @23 :UInt32;
   networkStrength @24 :NetworkStrength;
+  offroadPowerUsageUwh @23 :UInt32;
   carBatteryCapacityUwh @25 :UInt32;
 
   fanSpeedPercentDesired @10 :UInt16;
@@ -305,6 +301,12 @@ struct DeviceState @0xa4d8b5af2aa492eb {
   startedMonoTime @13 :UInt64;
 
   lastAthenaPingTime @32 :UInt64;
+
+  # system utilization
+  freeSpacePercent @7 :Float32;
+  memoryUsagePercent @19 :Int8;
+  gpuUsagePercent @33 :Int8;
+  cpuUsagePercent @34 :List(Int8);  # per-core cpu usage
 
   # power
   batteryPercent @8 :Int16;
@@ -365,6 +367,7 @@ struct DeviceState @0xa4d8b5af2aa492eb {
   gpuDEPRECATED @5 :UInt16;
   batDEPRECATED @6 :UInt32;
   pa0DEPRECATED @21 :UInt16;
+  cpuUsagePercentDEPRECATED @20 :Int8;
 }
 
 struct PandaState @0xa7649e2575e4591e {
@@ -432,7 +435,7 @@ struct PandaState @0xa7649e2575e4591e {
     pedal @4;
     uno @5;
     dos @6;
-    red @7;
+    redPanda @7;
   }
 
   enum UsbPowerMode {
@@ -934,7 +937,7 @@ struct LiveLocationKalman {
   angularVelocityDevice @8 : Measurement;
 
   # orientationNEDCalibrated transforms to rot matrix: NED_from_calibrated
-  orientationNEDCalibrated @9 : Measurement;
+  calibratedOrientationNED @9 : Measurement;
 
   # Calibrated frame is simply device frame
   # aligned with the vehicle

@@ -1,3 +1,19 @@
+Version 0.8.8 (2021-08-27)
+========================
+ * New driving model with improved laneless performance
+   * Trained on 5000+ hours of diverse driving data from 3000+ users in 40+ countries
+   * Better anti-cheating methods during simulator training ensure the model hugs less when in laneless mode
+   * All new desire ground-truthing stack makes the model better at lane changes
+ * New driver monitoring model: improved performance on comma three
+ * NEOS 18 for comma two: update packages
+ * AGNOS 1.3 for comma three: fix display init at high temperatures
+ * Improved auto-exposure on comma three
+ * Honda Accord 2021 support thanks to csouers!
+ * Honda Accord Hybrid 2021 support thanks to csouers!
+ * Hyundai Kona Hybrid 2020 support thanks to haram-KONA!
+ * Hyundai Sonata Hybrid 2021 support thanks to Matt-Wash-Burn!
+ * Kia Niro Hybrid 2021 support thanks to tetious!
+
 Version 0.8.7 (2021-07-31)
 ========================
  * comma three support!

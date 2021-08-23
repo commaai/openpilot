@@ -15,11 +15,7 @@
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/hardware/hw.h"
 
-const std::string DEFAULT_LOG_ROOT =
-    Hardware::PC() ? util::getenv_default("HOME", "/.comma/media/0/realdata", "/data/media/0/realdata")
-                   : "/data/media/0/realdata";
-
-const std::string LOG_ROOT = util::getenv_default("LOG_ROOT", "", DEFAULT_LOG_ROOT.c_str());
+const std::string LOG_ROOT = Path::log_root();
 
 #define LOGGER_MAX_HANDLES 16
 
@@ -43,7 +39,10 @@ class BZFile {
   }
   inline void write(void* data, size_t size) {
     int bzerror;
-    BZ2_bzWrite(&bzerror, bz_file, data, size);
+    do {
+      BZ2_bzWrite(&bzerror, bz_file, data, size);
+    } while (bzerror == BZ_IO_ERROR && errno == EINTR);
+
     if (bzerror != BZ_OK && !error_logged) {
       LOGE("BZ2_bzWrite error, bzerror=%d", bzerror);
       error_logged = true;

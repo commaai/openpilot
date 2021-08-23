@@ -19,11 +19,12 @@ const QString ASSET_PATH = ":/";
 const QString ASSET_PATH = "../assets/";
 #endif
 
-const int vwp_w = (Hardware::TICI() || (getenv("WIDE_UI") != NULL)) ? 2160 : 1920;
+const bool WIDE_UI = Hardware::TICI() || getenv("WIDE_UI") != nullptr;
+const int vwp_w = WIDE_UI ? 2160 : 1920;
 const int vwp_h = 1080;
 
 inline void setMainWindow(QWidget *w) {
-  const float scale = getenv("SCALE") != NULL ? std::stof(getenv("SCALE")) : 1.0;
+  const float scale = util::getenv("SCALE", 1.0f);
   w->setFixedSize(vwp_w*scale, vwp_h*scale);
   w->show();
 

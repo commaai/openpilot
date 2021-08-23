@@ -10,8 +10,8 @@
   *          is using in the C source code, usually in main.c. This file contains:
   *           - Configuration section that allows to select:
   *              - The STM32F2xx device used in the target application
-  *              - To use or not the peripheral’s drivers in application code(i.e.
-  *                code will be based on direct access to peripheral’s registers
+  *              - To use or not the peripheralâ€™s drivers in application code(i.e.
+  *                code will be based on direct access to peripheralâ€™s registers
   *                rather than drivers API), this option is controlled by
   *                "#define USE_HAL_DRIVER"
   *
@@ -74,7 +74,7 @@
 /* Uncomment the line below according to the target STM32 device used in your
    application
   */
-#if !defined (STM32F205xx) && !defined (STM32F215xx) && !defined (STM32F207xx) && !defined (STM32F217xx)
+/* #if !defined (STM32F205xx) && !defined (STM32F215xx) && !defined (STM32F207xx) && !defined (STM32F217xx) */
 
   /* #define STM32F205xx */   /*!< STM32F205RG, STM32F205VG, STM32F205ZG, STM32F205RF, STM32F205VF, STM32F205ZF,
                                    STM32F205RE, STM32F205VE, STM32F205ZE, STM32F205RC, STM32F205VC, STM32F205ZC,
@@ -84,7 +84,7 @@
                                    STM32F207VE, STM32F207ZE, STM32F207IE, STM32F207VC, STM32F207ZC and STM32F207IC Devices */
   /* #define STM32F217xx */   /*!< STM32F217VG, STM32F217ZG, STM32F217IG, STM32F217VE, STM32F217ZE and STM32F217IE Devices */
 
-#endif
+//#endif
 
 /*  Tip: To avoid modifying this file each time you need to switch between these
         devices, you can define the device in your toolchain compiler preprocessor.
@@ -118,14 +118,14 @@
   * @{
   */
 
-#if defined(STM32F205xx)
-  #include "stm32f205xx.h"
-#elif defined(STM32F215xx)
+#if defined(STM32F215xx)
   #include "stm32f215xx.h"
-#elif defined(STM32F207xx)
-  #include "stm32f207xx.h"
-#elif defined(STM32F217xx)
-  #include "stm32f217xx.h"
+#elif defined(STM32F205xx)
+  #include "stm32f205xx.h"
+// #elif defined(STM32F207xx)
+//   #include "stm32f207xx.h"
+// #elif defined(STM32F217xx)
+//   #include "stm32f217xx.h"
 #else
  #error "Please select first the target STM32F2xx device used in your application (in stm32f2xx.h file)"
 #endif

@@ -38,6 +38,7 @@ typedef struct uart_ring {
 // ***************************** Function prototypes *****************************
 void debug_ring_callback(uart_ring *ring);
 void uart_tx_ring(uart_ring *q);
+void uart_send_break(uart_ring *u);
 
 // ******************************** UART buffers ********************************
 
@@ -136,11 +137,6 @@ void uart_flush_sync(uart_ring *q) {
   while (q->w_ptr_tx != q->r_ptr_tx) {
     uart_tx_ring(q);
   }
-}
-
-void uart_send_break(uart_ring *u) {
-  while ((u->uart->CR1 & USART_CR1_SBK) != 0);
-  u->uart->CR1 |= USART_CR1_SBK;
 }
 
 void clear_uart_buff(uart_ring *q) {

@@ -27,15 +27,12 @@
 #define CAMERA_ID_MAX 9
 
 #define UI_BUF_COUNT 4
+
 #define LOG_CAMERA_ID_FCAMERA 0
 #define LOG_CAMERA_ID_DCAMERA 1
 #define LOG_CAMERA_ID_ECAMERA 2
 #define LOG_CAMERA_ID_QCAMERA 3
 #define LOG_CAMERA_ID_MAX 4
-
-#define HLC_THRESH 222
-#define HLC_A 80
-#define HISTO_CEIL_K 5
 
 const bool env_send_driver = getenv("SEND_DRIVER") != NULL;
 const bool env_send_road = getenv("SEND_ROAD") != NULL;
@@ -62,6 +59,7 @@ typedef struct LogCameraInfo {
   bool is_h265;
   bool downscale;
   bool has_qcamera;
+  bool trigger_rotate;
 } LogCameraInfo;
 
 typedef struct FrameMetadata {
@@ -134,7 +132,7 @@ typedef void (*process_thread_cb)(MultiCameraState *s, CameraState *c, int cnt);
 
 void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data);
 kj::Array<uint8_t> get_frame_image(const CameraBuf *b);
-float set_exposure_target(const CameraBuf *b, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip, int analog_gain, bool hist_ceil, bool hl_weighted);
+float set_exposure_target(const CameraBuf *b, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip);
 std::thread start_process_thread(MultiCameraState *cameras, CameraState *cs, process_thread_cb callback);
 void common_process_driver_camera(SubMaster *sm, PubMaster *pm, CameraState *c, int cnt);
 

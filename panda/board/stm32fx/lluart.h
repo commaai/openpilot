@@ -42,6 +42,11 @@ void uart_rx_ring(uart_ring *q){
   }
 }
 
+void uart_send_break(uart_ring *u) {
+  while ((u->uart->CR1 & USART_CR1_SBK) != 0);
+  u->uart->CR1 |= USART_CR1_SBK;
+}
+
 // This function should be called on:
 // * Half-transfer DMA interrupt
 // * Full-transfer DMA interrupt

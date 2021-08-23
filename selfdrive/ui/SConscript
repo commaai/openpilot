@@ -63,7 +63,6 @@ if arch != 'aarch64' and GetOption('setup'):
   asset_obj = qt_env.Object("assets", assets)
 
   qt_env.Program("qt/setup/reset", ["qt/setup/reset.cc"], LIBS=qt_libs)
-  qt_env.Program("qt/setup/wifi", ["qt/setup/wifi.cc"], LIBS=qt_libs + ['common', 'json11'])
   qt_env.Program("qt/setup/updater", ["qt/setup/updater.cc", asset_obj], LIBS=qt_libs)
   qt_env.Program("qt/setup/setup", ["qt/setup/setup.cc", asset_obj],
                  LIBS=qt_libs + ['curl', 'common', 'json11'])
@@ -71,14 +70,21 @@ if arch != 'aarch64' and GetOption('setup'):
   senv = qt_env.Clone()
   senv['LINKFLAGS'].append('-Wl,-strip-debug')
   installers = [
-    ("openpilot", "release3-staging"),
+    ("openpilot", "release3"),
     ("openpilot_test", "release3-staging"),
+    ("openpilot_nightly", "master-ci"),
     ("openpilot_internal", "master"),
-    ("dashcam", "dashcam3-staging"),
+    ("dashcam", "dashcam3"),
     ("dashcam_test", "dashcam3-staging"),
   ]
+
+  cont = {}
+  for brand in ("openpilot", "dashcam"):
+    cont[brand] = senv.Command(f"qt/setup/continue_{brand}.o", f"#installer/continue_{brand}.sh",
+                               "ld -r -b binary -o $TARGET $SOURCE")
   for name, branch in installers:
-    d = {'BRANCH': f"'\"{branch}\"'"}
+    brand = "dashcam" if "dashcam" in branch else "openpilot"
+    d = {'BRANCH': f"'\"{branch}\"'", 'BRAND': f"'\"{brand}\"'"}
     if "internal" in name:
       d['INTERNAL'] = "1"
 
@@ -87,7 +93,7 @@ if arch != 'aarch64' and GetOption('setup'):
       r.raise_for_status()
       d['SSH_KEYS'] = f'\\"{r.text.strip()}\\"'
     obj = senv.Object(f"qt/setup/installer_{name}.o", ["qt/setup/installer.cc"], CPPDEFINES=d)
-    f = senv.Program(f"qt/setup/installer_{name}", obj, LIBS=qt_libs)
+    f = senv.Program(f"qt/setup/installer_{name}", [obj, cont[brand]], LIBS=qt_libs)
     # keep installers small
     assert f[0].get_size() < 300*1e3
 

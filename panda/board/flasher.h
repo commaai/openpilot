@@ -1,6 +1,6 @@
 // flasher state variables
 uint32_t *prog_ptr = NULL;
-int unlocked = 0;
+bool unlocked = false;
 
 #ifdef uart_ring
 void debug_ring_callback(uart_ring *ring) {}
@@ -26,32 +26,27 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, bool hardwired) 
       break;
     // **** 0xb1: unlock flash
     case 0xb1:
-      if (FLASH->CR & FLASH_CR_LOCK) {
-        FLASH->KEYR = 0x45670123;
-        FLASH->KEYR = 0xCDEF89AB;
+      if (flash_is_locked()) {
+        flash_unlock();
         resp[1] = 0xff;
       }
       current_board->set_led(LED_GREEN, 1);
-      unlocked = 1;
-      prog_ptr = (uint32_t *)0x8004000;
+      unlocked = true;
+      prog_ptr = (uint32_t *)APP_START_ADDRESS;
       break;
     // **** 0xb2: erase sector
     case 0xb2:
       sec = setup->b.wValue.w;
-      // don't erase the bootloader
-      if (sec != 0 && sec < 12 && unlocked) {
-        FLASH->CR = (sec << 3) | FLASH_CR_SER;
-        FLASH->CR |= FLASH_CR_STRT;
-        while (FLASH->SR & FLASH_SR_BSY);
+      if (flash_erase_sector(sec, unlocked)) {
         resp[1] = 0xff;
       }
       break;
     // **** 0xd0: fetch serial number
     case 0xd0:
-      #ifdef STM32F4
+      #ifndef STM32F2
         // addresses are OTP
         if (setup->b.wValue.w == 1) {
-          memcpy(resp, (void *)0x1fff79c0, 0x10);
+          memcpy(resp, (void *)DEVICE_SERIAL_NUMBER_ADDRESS, 0x10);
           resp_len = 0x10;
         } else {
           get_provision_chunk(resp);
@@ -93,6 +88,7 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, bool hardwired) 
       break;
     // **** 0xd8: reset ST
     case 0xd8:
+      flush_write_buffer();
       NVIC_SystemReset();
       break;
   }
@@ -122,11 +118,7 @@ void usb_cb_ep2_out(void *usbdata, int len, bool hardwired) {
   UNUSED(hardwired);
   current_board->set_led(LED_RED, 0);
   for (int i = 0; i < len/4; i++) {
-    // program byte 1
-    FLASH->CR = FLASH_CR_PSIZE_1 | FLASH_CR_PG;
-
-    *prog_ptr = *(uint32_t*)(usbdata+(i*4));
-    while (FLASH->SR & FLASH_SR_BSY);
+    flash_write_word(prog_ptr, *(uint32_t*)(usbdata+(i*4)));
 
     //*(uint64_t*)(&spi_tx_buf[0x30+(i*4)]) = *prog_ptr;
     prog_ptr++;
@@ -153,7 +145,7 @@ int spi_cb_rx(uint8_t *data, int len, uint8_t *data_out) {
 
 #ifdef PEDAL
 
-#include "stm32fx/llcan.h"
+#include "stm32fx/llbxcan.h"
 #define CAN CAN1
 
 #define CAN_BL_INPUT 0x1
@@ -278,10 +270,7 @@ void soft_flasher_start(void) {
 
   enter_bootloader_mode = 0;
 
-  RCC->AHB1ENR |= RCC_AHB1ENR_DMA2EN;
-  RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
-  RCC->AHB2ENR |= RCC_AHB2ENR_OTGFSEN;
-  RCC->APB1ENR |= RCC_APB1ENR_USART2EN;
+  flasher_peripherals_init();
 
 // pedal has the canloader
 #ifdef PEDAL
@@ -297,23 +286,8 @@ void soft_flasher_start(void) {
   llcan_init(CAN1);
 #endif
 
-  // A4,A5,A6,A7: setup SPI
-  set_gpio_alternate(GPIOA, 4, GPIO_AF5_SPI1);
-  set_gpio_alternate(GPIOA, 5, GPIO_AF5_SPI1);
-  set_gpio_alternate(GPIOA, 6, GPIO_AF5_SPI1);
-  set_gpio_alternate(GPIOA, 7, GPIO_AF5_SPI1);
-
-  // A2,A3: USART 2 for debugging
-  set_gpio_alternate(GPIOA, 2, GPIO_AF7_USART2);
-  set_gpio_alternate(GPIOA, 3, GPIO_AF7_USART2);
-
-  // A11,A12: USB
-  set_gpio_alternate(GPIOA, 11, GPIO_AF10_OTG_FS);
-  set_gpio_alternate(GPIOA, 12, GPIO_AF10_OTG_FS);
-  GPIOA->OSPEEDR = GPIO_OSPEEDER_OSPEEDR11 | GPIO_OSPEEDER_OSPEEDR12;
-
-  // flasher
-  //spi_init();
+  gpio_usart2_init();
+  gpio_usb_init();
 
   // enable USB
   usb_init();

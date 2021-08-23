@@ -123,7 +123,7 @@ uint8_t device_desc[] = {
   0xFF, 0xFF, 0xFF, 0x40, // Class, Subclass, Protocol, Max Packet Size
   TOUSBORDER(USB_VID), // idVendor
   TOUSBORDER(USB_PID), // idProduct
-  0x00, 0x23, // bcdDevice
+  0x00, 0x00, // bcdDevice
   0x01, 0x02, // Manufacturer, Product
   0x03, 0x01 // Serial Number, Num Configurations
 };
@@ -526,6 +526,8 @@ void usb_setup(void) {
         case USB_DESC_TYPE_DEVICE:
           //puts("    writing device descriptor\n");
 
+          // set bcdDevice to hardware type
+          device_desc[13] = hw_type;
           // setup transfer
           USB_WritePacket(device_desc, MIN(sizeof(device_desc), setup.b.wLength.w), 0);
           USBx_OUTEP(0)->DOEPCTL |= USB_OTG_DOEPCTL_CNAK;

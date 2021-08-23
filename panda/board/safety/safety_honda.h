@@ -7,8 +7,8 @@
 //      brake rising edge
 //      brake > 0mph
 const CanMsg HONDA_N_TX_MSGS[] = {{0xE4, 0, 5}, {0x194, 0, 4}, {0x1FA, 0, 8}, {0x200, 0, 6}, {0x30C, 0, 8}, {0x33D, 0, 5}};
-const CanMsg HONDA_BG_TX_MSGS[] = {{0xE4, 2, 5}, {0xE5, 2, 8}, {0x296, 0, 4}, {0x33D, 2, 5}};  // Bosch Giraffe
-const CanMsg HONDA_BH_TX_MSGS[] = {{0xE4, 0, 5}, {0xE5, 0, 8}, {0x296, 1, 4}, {0x33D, 0, 5}};  // Bosch Harness
+const CanMsg HONDA_BG_TX_MSGS[] = {{0xE4, 2, 5}, {0xE5, 2, 8}, {0x296, 0, 4}, {0x33D, 2, 5}, {0x33DA, 2, 5}, {0x33DB, 2, 8}};  // Bosch Giraffe
+const CanMsg HONDA_BH_TX_MSGS[] = {{0xE4, 0, 5}, {0xE5, 0, 8}, {0x296, 1, 4}, {0x33D, 0, 5}, {0x33DA, 0, 5}, {0x33DB, 0, 8}};  // Bosch Harness
 const CanMsg HONDA_BG_LONG_TX_MSGS[] = {{0xE4, 0, 5}, {0x1DF, 0, 8}, {0x1EF, 0, 8}, {0x1FA, 0, 8}, {0x30C, 0, 8}, {0x33D, 0, 5}, {0x39F, 0, 8}, {0x18DAB0F1, 0, 8}};  // Bosch Giraffe w/ gas and brakes
 const CanMsg HONDA_BH_LONG_TX_MSGS[] = {{0xE4, 1, 5}, {0x1DF, 1, 8}, {0x1EF, 1, 8}, {0x1FA, 1, 8}, {0x30C, 1, 8}, {0x33D, 1, 5}, {0x39F, 1, 8}, {0x18DAB0F1, 1, 8}};  // Bosch Harness w/ gas and brakes
 
@@ -274,7 +274,7 @@ static int honda_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
     }
   }
 
-    // Bosch supplemental control check
+  // Bosch supplemental control check
   if (addr == 0xE5) {
     if ((GET_BYTES_04(to_send) != 0x10800004) || ((GET_BYTES_48(to_send) & 0x00FFFFFF) != 0x0)) {
       tx = 0;
@@ -376,7 +376,7 @@ static int honda_bosch_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
     }
     if (bus_num == bus_rdr_cam)  {
       int addr = GET_ADDR(to_fwd);
-      int is_lkas_msg = (addr == 0xE4) || (addr == 0xE5) || (addr == 0x33D);
+      int is_lkas_msg = (addr == 0xE4) || (addr == 0xE5) || (addr == 0x33D) || (addr == 0x33DA) || (addr == 0x33DB);
       if (!is_lkas_msg) {
         bus_fwd = bus_rdr_car;
       }
