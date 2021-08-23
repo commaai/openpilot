@@ -21,14 +21,14 @@ class LongitudinalMpc():
 
 
   def reset_mpc(self):
-    self.libmpc = libmpc_py.libmpc
+    ffi, self.libmpc = libmpc_py.get_libmpc(self.mpc_id)
     if self.mpc_id == 0:
       self.libmpc.init(0.0, 1.0, 0.0, 50.0, 10000.0)
     else:
       self.libmpc.init(1.0, 1.0, 0.0, 5.0, 10000.0)
 
-    self.mpc_solution = libmpc_py.ffi.new("log_t *")
-    self.cur_state = libmpc_py.ffi.new("state_t *")
+    self.mpc_solution = ffi.new("log_t *")
+    self.cur_state = ffi.new("state_t *")
 
     self.cur_state[0].x_ego = 0
     self.cur_state[0].v_ego = 0
