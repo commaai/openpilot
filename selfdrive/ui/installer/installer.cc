@@ -200,8 +200,12 @@ void Installer::cloneFinished(int exitCode, QProcess::ExitStatus exitStatus) {
   run("chmod +x /data/continue.sh.new");
   run("mv /data/continue.sh.new " CONTINUE_PATH);
 
+#ifdef QCOM
+  QTimer::singleShot(100, &QCoreApplication::quit);
+#endif
   // wait for the installed software's UI to take over
   QTimer::singleShot(60 * 1000, &QCoreApplication::quit);
+#else
 }
 
 int main(int argc, char *argv[]) {
