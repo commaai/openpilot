@@ -202,10 +202,10 @@ void Installer::cloneFinished(int exitCode, QProcess::ExitStatus exitStatus) {
 
 #ifdef QCOM
   QTimer::singleShot(100, &QCoreApplication::quit);
-#endif
+#else
   // wait for the installed software's UI to take over
   QTimer::singleShot(60 * 1000, &QCoreApplication::quit);
-#else
+#endif
 }
 
 int main(int argc, char *argv[]) {
