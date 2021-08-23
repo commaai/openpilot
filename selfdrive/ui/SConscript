@@ -52,7 +52,8 @@ qt_src = ["main.cc", "ui.cc", "paint.cc", "qt/sidebar.cc", "qt/onroad.cc",
 
 qt_env.Program("_ui", qt_src, LIBS=qt_libs)
 
-# setup, factory resetter, and installer
+
+# setup, factory resetter, and agnos updater
 if arch != 'aarch64' and GetOption('setup'):
 
   # TODO: do this for all resources once NEOS has rcc
@@ -67,15 +68,21 @@ if arch != 'aarch64' and GetOption('setup'):
   qt_env.Program("qt/setup/setup", ["qt/setup/setup.cc", asset_obj],
                  LIBS=qt_libs + ['curl', 'common', 'json11'])
 
+
+# build installers
+if GetOption('setup'):
   senv = qt_env.Clone()
   senv['LINKFLAGS'].append('-Wl,-strip-debug')
+
+  release = "release3" if arch == 'larch64' else "release2"
+  dashcam = "dashcam3" if arch == 'larch64' else "dashcam"
   installers = [
-    ("openpilot", "release3"),
-    ("openpilot_test", "release3-staging"),
+    ("openpilot", release),
+    ("openpilot_test", f"{release}-staging"),
     ("openpilot_nightly", "master-ci"),
     ("openpilot_internal", "master"),
-    ("dashcam", "dashcam3"),
-    ("dashcam_test", "dashcam3-staging"),
+    ("dashcam", dashcam),
+    ("dashcam_test", f"{dashcam}-staging"),
   ]
 
   cont = {}

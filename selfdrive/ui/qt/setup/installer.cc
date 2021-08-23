@@ -17,9 +17,14 @@
 #define GIT_URL "https://github.com/commaai/openpilot.git"
 #define GIT_SSH_URL "git@github.com:commaai/openpilot.git"
 
-#define CONTINUE_PATH "/data/continue.sh"
+#ifdef QCOM
+  #define CONTINUE_PATH "/data/data/com.termux/files/continue.sh"
+  #define CACHE_PATH "/system/comma/openpilot"
+#else
+  #define CONTINUE_PATH "/data/continue.sh"
+  #define CACHE_PATH "/usr/comma/openpilot"
+#endif
 
-#define CACHE_PATH "/usr/comma/openpilot"
 #define INSTALL_PATH "/data/openpilot"
 #define TMP_INSTALL_PATH "/data/tmppilot"
 
