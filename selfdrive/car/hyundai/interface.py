@@ -50,7 +50,7 @@ class CarInterface(CarInterfaceBase):
     ret.longitudinalTuning.kpBP = [0.]
     ret.longitudinalTuning.kpV = [0.1]
     ret.longitudinalTuning.kiBP = [0.]
-    ret.longitudinalTuning.kiV = [0.1]
+    ret.longitudinalTuning.kiV = [0.02]
 
     if candidate == CAR.SANTA_FE:
       ret.lateralTuning.pid.kf = 0.00005

@@ -59,14 +59,14 @@ class PIController():
     self.speed = speed
 
     error = float(apply_deadzone(setpoint - measurement, deadzone))
-    self.p = error * self.k_p * (2.5 if neg_extra and error < 0 else 1)
+    self.p = error * self.k_p * (2 if neg_extra and error < -0.1 else 1)
 
     self.f = feedforward * self.k_f
 
     if override:
       self.i -= self.i_unwind_rate * float(np.sign(self.i))
     else:
-      i = self.i + error * self.k_i * self.i_rate
+      i = self.i + error * self.k_i * self.i_rate if neg_extra and error < -0.1 else 0
       control = self.p + self.f + i
 
       if self.convert is not None:
@@ -78,7 +78,7 @@ class PIController():
           (error <= 0 and (control >= self.neg_limit or i > 0.0))) and \
          not freeze_integrator:
         self.i = i
-      if neg_extra and error >= 0:
+      if neg_extra and error >= -0.1:
         self.i = 0
 
     control = self.p + self.f + self.i
