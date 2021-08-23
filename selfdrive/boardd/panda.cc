@@ -32,7 +32,7 @@ Panda::Panda(std::string serial) {
       int ret = libusb_get_string_descriptor_ascii(dev_handle, desc.iSerialNumber, desc_serial, std::size(desc_serial));
       if (ret < 0) { goto fail; }
 
-      usb_serial = std::string(desc_serial, desc_serial+std::size(desc_serial)).c_str();
+      usb_serial = std::string((char *)desc_serial, ret).c_str();
       if (serial.empty() || serial == usb_serial) {
         break;
       }
@@ -131,7 +131,7 @@ std::vector<std::string> Panda::list() {
       libusb_close(handle);
 
       if (ret < 0) { goto finish; }
-      serials.push_back(std::string(desc_serial, desc_serial+std::size(desc_serial)).c_str());
+      serials.push_back(std::string((char *)desc_serial, ret).c_str());
     }
   }
 
