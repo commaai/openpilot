@@ -87,7 +87,7 @@ if GetOption('setup'):
 
   cont = {}
   for brand in ("openpilot", "dashcam"):
-    cont[brand] = senv.Command(f"qt/setup/continue_{brand}.o", f"#installer/continue_{brand}.sh",
+    cont[brand] = senv.Command(f"qt/setup/continue_{brand}.o", f"qt/setup/continue_{brand}.sh",
                                "ld -r -b binary -o $TARGET $SOURCE")
   for name, branch in installers:
     brand = "dashcam" if "dashcam" in branch else "openpilot"
