@@ -14,13 +14,17 @@
 #define FULL_W 852 // should get these numbers from camerad
 
 void dmonitoring_init(DMonitoringModelState* s) {
-  const char *model_path = Hardware::PC() ? "../../models/dmonitoring_model.dlc" : "../../models/dmonitoring_model_q.dlc";
-  int runtime = USE_DSP_RUNTIME;
-  s->m = new DefaultRunModel(model_path, &s->output[0], OUTPUT_SIZE, runtime);
   s->is_rhd = Params().getBool("IsRHD");
+
+  bool use_snpe_model = true;
+#ifdef USE_ONNX_MODEL
+  use_snpe_model = false;
+#endif
+  const char *model_path = use_snpe_model ? "../../models/dmonitoring_model_q.dlc" : "../../models/dmonitoring_model.onnx";
+  s->m = new DefaultRunModel(model_path, &s->output[0], OUTPUT_SIZE, USE_DSP_RUNTIME);
   for (int x = 0; x < std::size(s->tensor); ++x) {
     // for non SNPE running platforms, assume keras model instead has lambda layer
-    s->tensor[x] = Hardware::PC() ? x : (x - 128.f) * 0.0078125f;
+    s->tensor[x] = use_snpe_model ? (x - 128.f) * 0.0078125f : x;
   }
 }
 
