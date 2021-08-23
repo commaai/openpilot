@@ -10,9 +10,9 @@
 #include <QTimer>
 #include <QVBoxLayout>
 
+#include "selfdrive/ui/installer/installer.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/qt_window.h"
-#include "selfdrive/ui/qt/setup/installer.h"
 
 #define GIT_URL "https://github.com/commaai/openpilot.git"
 #define GIT_SSH_URL "git@github.com:commaai/openpilot.git"
@@ -28,8 +28,8 @@
 #define INSTALL_PATH "/data/openpilot"
 #define TMP_INSTALL_PATH "/data/tmppilot"
 
-extern const uint8_t str_continue[] asm("_binary_installer_continue_" BRAND "_sh_start");
-extern const uint8_t str_continue_end[] asm("_binary_installer_continue_" BRAND "_sh_end");
+extern const uint8_t str_continue[] asm("_binary_selfdrive_ui_installer_continue_" BRAND "_sh_start");
+extern const uint8_t str_continue_end[] asm("_binary_selfdrive_ui_installer_continue_" BRAND "_sh_end");
 
 bool time_valid() {
   time_t rawtime;
@@ -205,7 +205,7 @@ void Installer::cloneFinished(int exitCode, QProcess::ExitStatus exitStatus) {
 }
 
 int main(int argc, char *argv[]) {
-  initApp();
+  //initApp();
   QApplication a(argc, argv);
   Installer installer;
   setMainWindow(&installer);

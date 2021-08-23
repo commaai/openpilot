@@ -1,0 +1,41 @@
+import os
+Import('qt_env', 'arch', 'common', 'gpucommon')
+
+base_libs = [gpucommon, common, 'ssl', 'crypto', 'pthread'] + qt_env["LIBS"]
+if arch == 'aarch64':
+  base_libs += ['log', 'utils', 'gui', 'ui', 'CB', 'gsl', 'adreno_utils', 'cutils', 'uuid']
+
+release = "release3" if arch == 'larch64' else "release2"
+dashcam = "dashcam3" if arch == 'larch64' else "dashcam"
+installers = [
+  ("openpilot", release),
+  ("openpilot_test", f"{release}-staging"),
+  ("openpilot_nightly", "master-ci"),
+  ("openpilot_internal", "master"),
+  ("dashcam", dashcam),
+  ("dashcam_test", f"{dashcam}-staging"),
+]
+
+# build installers
+senv = qt_env.Clone()
+senv['LINKFLAGS'].append('-Wl,-strip-debug')
+
+cont = {}
+for brand in ("openpilot", "dashcam"):
+  cont[brand] = senv.Command(f"continue_{brand}.o", f"continue_{brand}.sh",
+                             f"ld -r -b binary -o $TARGET $SOURCE")
+
+for name, branch in installers:
+  brand = "dashcam" if "dashcam" in branch else "openpilot"
+  d = {'BRANCH': f"'\"{branch}\"'", 'BRAND': f"'\"{brand}\"'"}
+  if "internal" in name:
+    d['INTERNAL'] = "1"
+
+    import requests
+    r = requests.get("https://github.com/commaci2.keys")
+    r.raise_for_status()
+    d['SSH_KEYS'] = f'\\"{r.text.strip()}\\"'
+  obj = senv.Object(f"installers/installer_{name}.o", ["installer.cc"], CPPDEFINES=d)
+  f = senv.Program(f"installers/installer_{name}", [obj, cont[brand]], LIBS=base_libs)
+  # keep installers small
+  assert f[0].get_size() < 300*1e3
