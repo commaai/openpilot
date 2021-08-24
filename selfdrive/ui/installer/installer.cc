@@ -10,21 +10,26 @@
 #include <QTimer>
 #include <QVBoxLayout>
 
+#include "selfdrive/ui/installer/installer.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/qt_window.h"
-#include "selfdrive/ui/qt/setup/installer.h"
 
 #define GIT_URL "https://github.com/commaai/openpilot.git"
 #define GIT_SSH_URL "git@github.com:commaai/openpilot.git"
 
-#define CONTINUE_PATH "/data/continue.sh"
+#ifdef QCOM
+  #define CONTINUE_PATH "/data/data/com.termux/files/continue.sh"
+  #define CACHE_PATH "/system/comma/openpilot"
+#else
+  #define CONTINUE_PATH "/data/continue.sh"
+  #define CACHE_PATH "/usr/comma/openpilot"
+#endif
 
-#define CACHE_PATH "/usr/comma/openpilot"
 #define INSTALL_PATH "/data/openpilot"
 #define TMP_INSTALL_PATH "/data/tmppilot"
 
-extern const uint8_t str_continue[] asm("_binary_installer_continue_" BRAND "_sh_start");
-extern const uint8_t str_continue_end[] asm("_binary_installer_continue_" BRAND "_sh_end");
+extern const uint8_t str_continue[] asm("_binary_selfdrive_ui_installer_continue_" BRAND "_sh_start");
+extern const uint8_t str_continue_end[] asm("_binary_selfdrive_ui_installer_continue_" BRAND "_sh_end");
 
 bool time_valid() {
   time_t rawtime;
@@ -195,8 +200,12 @@ void Installer::cloneFinished(int exitCode, QProcess::ExitStatus exitStatus) {
   run("chmod +x /data/continue.sh.new");
   run("mv /data/continue.sh.new " CONTINUE_PATH);
 
+#ifdef QCOM
+  QTimer::singleShot(100, &QCoreApplication::quit);
+#else
   // wait for the installed software's UI to take over
   QTimer::singleShot(60 * 1000, &QCoreApplication::quit);
+#endif
 }
 
 int main(int argc, char *argv[]) {
