@@ -35,10 +35,10 @@ public:
   std::map<std::string, std::string> readAll();
 
   // helpers for reading values
-  std::string get(const char *key, bool block = false);
+  std::string get(const char *key);
 
-  inline std::string get(const std::string &key, bool block = false) {
-    return get(key.c_str(), block);
+  inline std::string get(const std::string &key) {
+    return get(key.c_str());
   }
 
   inline std::string getParamsPath() {
@@ -46,8 +46,8 @@ public:
   }
 
   template <class T>
-  std::optional<T> get(const char *key, bool block = false) {
-    std::istringstream iss(get(key, block));
+  std::optional<T> get(const char *key) {
+    std::istringstream iss(get(key));
     T value{};
     iss >> value;
     return iss.fail() ? std::nullopt : std::optional(value);

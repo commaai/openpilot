@@ -1,4 +1,8 @@
 Import('envCython', 'common')
 
+import cysignals
+import os
+
 envCython.Program('clock.so', 'clock.pyx')
+envCython["CPPPATH"] += [ os.path.dirname(cysignals.__file__)]
 envCython.Program('params_pyx.so', 'params_pyx.pyx', LIBS=envCython['LIBS'] + [common, 'zmq'])

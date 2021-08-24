@@ -19,7 +19,7 @@ cdef extern from "selfdrive/common/params.h":
   cdef cppclass Params:
     Params() nogil
     Params(string) nogil
-    string get(string, bool) nogil
+    string get(string) nogil
     bool getBool(string) nogil
     int remove(string) nogil
     int put(string, string) nogil

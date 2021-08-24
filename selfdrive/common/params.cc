@@ -9,7 +9,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include <csignal>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -32,11 +31,6 @@
   })
 
 namespace {
-
-volatile sig_atomic_t params_do_exit = 0;
-void params_sig_handler(int signal) {
-  params_do_exit = 1;
-}
 
 int fsync_dir(const char* path) {
   int fd = HANDLE_EINTR(open(path, O_RDONLY, 0755));
@@ -302,28 +296,9 @@ int Params::remove(const char *key) {
   return fsync_dir(path.c_str());
 }
 
-std::string Params::get(const char *key, bool block) {
+std::string Params::get(const char *key) {
   std::string path = params_path + "/d/" + key;
-  if (!block) {
-    return util::read_file(path);
-  } else {
-    // blocking read until successful
-    params_do_exit = 0;
-    void (*prev_handler_sigint)(int) = std::signal(SIGINT, params_sig_handler);
-    void (*prev_handler_sigterm)(int) = std::signal(SIGTERM, params_sig_handler);
-
-    std::string value;
-    while (!params_do_exit) {
-      if (value = util::read_file(path); !value.empty()) {
-        break;
-      }
-      util::sleep_for(100);  // 0.1 s
-    }
-
-    std::signal(SIGINT, prev_handler_sigint);
-    std::signal(SIGTERM, prev_handler_sigterm);
-    return value;
-  }
+  return util::read_file(path);
 }
 
 std::map<std::string, std::string> Params::readAll() {

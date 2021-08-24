@@ -6,8 +6,9 @@ from common.params_pxd cimport Params as c_Params, ParamKeyType as c_ParamKeyTyp
 
 import os
 import threading
+import time
 from common.basedir import BASEDIR
-
+from cysignals.signals cimport sig_check
 
 cdef class ParamKeyType:
   PERSISTENT = c_ParamKeyType.PERSISTENT
@@ -59,23 +60,23 @@ cdef class Params:
 
   def get(self, key, bool block=False, encoding=None):
     cdef string k = self.check_key(key)
-
     cdef string val
-    with nogil:
-      val = self.p.get(k, block)
 
-    if val == b"":
-      if block:
-        # If we got no value while running in blocked mode
-        # it means we got an interrupt while waiting
-        raise KeyboardInterrupt
-      else:
+    if not block:
+      with nogil:
+        val = self.p.get(k)
+      if val == b"":
         return None
-
-    if encoding is not None:
-      return val.decode(encoding)
     else:
-      return val
+      while True:
+        sig_check()
+        with nogil:
+          val = self.p.get(k)
+        if len(val):
+          break
+        time.sleep(0.1)
+
+    return val if encoding is None else val.decode(encoding)
 
   def get_bool(self, key):
     cdef string k = self.check_key(key)
