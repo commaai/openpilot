@@ -176,7 +176,9 @@ bool usb_connect() {
   }
 
   connected_once = true;
-  if (tmp_panda->hw_type != cereal::PandaState::PandaType::UNO && tmp_panda->hw_type != cereal::PandaState::PandaType::DOS) {
+  // Temporary , for testing on PC
+  //if (tmp_panda->hw_type != cereal::PandaState::PandaType::BLACK_PANDA && tmp_panda->hw_type != cereal::PandaState::PandaType::DOS) {
+  if (Hardware::TICI() && tmp_panda->hw_type != cereal::PandaState::PandaType::DOS) {
     panda_aux = tmp_panda.release();
   } else {
     panda = tmp_panda.release();
