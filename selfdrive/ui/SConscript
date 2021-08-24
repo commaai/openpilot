@@ -28,15 +28,20 @@ if arch != 'aarch64':
   widgets_src += ["qt/offroad/networking.cc", "qt/offroad/wifiManager.cc"]
 
 qt_env['CPPDEFINES'] = []
-if GetOption('setup'):
-  qt_env['CPPDEFINES'] += ["USE_QRC"]
-elif maps:
+if maps:
   base_libs += ['qmapboxgl']
   widgets_src += ["qt/maps/map_helpers.cc", "qt/maps/map_settings.cc", "qt/maps/map.cc"]
   qt_env['CPPDEFINES'] += ["ENABLE_MAPS"]
 
 widgets = qt_env.Library("qt_widgets", widgets_src, LIBS=base_libs)
 qt_libs = [widgets] + base_libs
+
+# build assets
+assets = "#selfdrive/assets/assets.cc"
+assets_src = "#selfdrive/assets/assets.qrc"
+qt_env.Command(assets, assets_src, f"rcc $SOURCES -o $TARGET")
+qt_env.Depends(assets, Glob('#selfdrive/assets/*', exclude=[assets, assets_src, "#selfdrive/assets/assets.o"]))
+asset_obj = qt_env.Object("assets", assets)
 
 # build soundd
 qt_env.Program("_soundd", "soundd.cc", LIBS=base_libs)
@@ -48,20 +53,13 @@ qt_env.Program("qt/spinner", ["qt/spinner.cc"], LIBS=qt_libs)
 # build main UI
 qt_src = ["main.cc", "ui.cc", "paint.cc", "qt/sidebar.cc", "qt/onroad.cc",
           "qt/window.cc", "qt/home.cc", "qt/offroad/settings.cc",
-          "qt/offroad/onboarding.cc", "qt/offroad/driverview.cc", "#phonelibs/nanovg/nanovg.c"]
-
-qt_env.Program("_ui", qt_src, LIBS=qt_libs)
+          "qt/offroad/onboarding.cc", "qt/offroad/driverview.cc",
+          "#phonelibs/nanovg/nanovg.c"]
+qt_env.Program("_ui", qt_src + [asset_obj], LIBS=qt_libs)
 
 
 # setup, factory resetter, and agnos updater
 if arch != 'aarch64' and GetOption('setup'):
-
-  # TODO: do this for all resources once NEOS has rcc
-  assets = "#selfdrive/assets/assets.cc"
-  assets_src = "#selfdrive/assets/assets.qrc"
-  qt_env.Command(assets, assets_src, f"rcc $SOURCES -o $TARGET")
-  qt_env.Depends(assets, Glob('#selfdrive/assets/*', exclude=[assets, assets_src, "#selfdrive/assets/assets.o"]))
-  asset_obj = qt_env.Object("assets", assets)
 
   qt_env.Program("qt/setup/reset", ["qt/setup/reset.cc"], LIBS=qt_libs)
   qt_env.Program("qt/setup/updater", ["qt/setup/updater.cc", asset_obj], LIBS=qt_libs)
