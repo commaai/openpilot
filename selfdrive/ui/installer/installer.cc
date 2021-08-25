@@ -19,13 +19,12 @@
 
 #ifdef QCOM
   #define CONTINUE_PATH "/data/data/com.termux/files/continue.sh"
-  #define LEGACY_CACHE_PATH "/system/comma/openpilot"
 #else
   #define CONTINUE_PATH "/data/continue.sh"
-  #define LEGACY_CACHE_PATH "/usr/comma/openpilot"
 #endif
 
-#define CACHE_PATH "/data/openpilot.cache"
+const QList<QString> CACHE_PATHS = {"/data/openpilot.cache", "/system/comma/openpilot", "/usr/comma/openpilot"};
+
 #define INSTALL_PATH "/data/openpilot"
 #define TMP_INSTALL_PATH "/data/tmppilot"
 
@@ -107,25 +106,33 @@ void Installer::doInstall() {
   // cleanup
   run("rm -rf " TMP_INSTALL_PATH " " INSTALL_PATH);
 
+  // try do a cached install
+  QString cache;
+  for (const QString &path : CACHE_PATHS) {
+    if (QDir(path).exists()) {
+      cache = path;
+      break;
+    }
+  }
+
   // do the install
-  if (QDir(LEGACY_CACHE_PATH).exists()) {
-    cachedFetch();
+  if (QDir(cache).exists()) {
+    cachedFetch(cache);
   } else {
-    clone();
+    freshClone();
   }
 }
 
-void Installer::clone() {
+void Installer::freshClone() {
   qDebug() << "Doing fresh clone";
-  proc.start("git", {"clone", "--progress", "--depth=1", "--recurse-submodules",
-                     "--reference-if-able", CACHE_PATH, "--dissociate",
-                     "--branch", BRANCH, GIT_URL, TMP_INSTALL_PATH});
+  proc.start("git", {"clone", "--progress", GIT_URL, "-b", BRANCH,
+                     "--depth=1", "--recurse-submodules", TMP_INSTALL_PATH});
 }
 
-void Installer::cachedFetch() {
-  qDebug() << "Fetching with legacy cache";
+void Installer::cachedFetch(const QString &cache) {
+  qDebug() << "Fetching with cache";
 
-  run("cp -rp " LEGACY_CACHE_PATH " " TMP_INSTALL_PATH);
+  run(QString("cp -rp %1 %2").arg(cache, TMP_INSTALL_PATH).toStdString().c_str());
   int err = chdir(TMP_INSTALL_PATH);
   assert(err == 0);
   run("git remote set-branches --add origin " BRANCH);
@@ -164,7 +171,6 @@ void Installer::cloneFinished(int exitCode, QProcess::ExitStatus exitStatus) {
 
   updateProgress(100);
 
-  // TODO: remove after legacy cache clone is removed
   // ensure correct branch is checked out
   int err = chdir(TMP_INSTALL_PATH);
   assert(err == 0);
