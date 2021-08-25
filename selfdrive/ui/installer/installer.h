@@ -23,5 +23,6 @@ private:
   QProcess proc;
 
   void doInstall();
-  void clone(const QString &cache);
+  void clone();
+  void cachedFetch();
 };

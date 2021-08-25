@@ -4,7 +4,6 @@
 #include <cstdlib>
 #include <fstream>
 #include <map>
-#include <vector>
 
 #include <QDebug>
 #include <QDir>
@@ -20,13 +19,13 @@
 
 #ifdef QCOM
   #define CONTINUE_PATH "/data/data/com.termux/files/continue.sh"
+  #define LEGACY_CACHE_PATH "/system/comma/openpilot"
 #else
   #define CONTINUE_PATH "/data/continue.sh"
+  #define LEGACY_CACHE_PATH "/usr/comma/openpilot"
 #endif
 
-// TODO: remove the other paths after a bit
-const QList<QString> CACHE_PATHS = {"/data/openpilot.cache", "/system/comma/openpilot", "/usr/comma/openpilot"};
-
+#define CACHE_PATH "/data/openpilot.cache"
 #define INSTALL_PATH "/data/openpilot"
 #define TMP_INSTALL_PATH "/data/tmppilot"
 
@@ -109,20 +108,32 @@ void Installer::doInstall() {
   run("rm -rf " TMP_INSTALL_PATH " " INSTALL_PATH);
 
   // do the install
-  QString cache = "";
-  for (const QString &path : CACHE_PATHS) {
-    if (QDir(path).exists()) {
-      cache = path;
-      break;
-    }
+  if (QDir(LEGACY_CACHE_PATH).exists()) {
+    cachedFetch();
+  } else {
+    clone();
   }
-  clone(cache);
 }
 
-void Installer::clone(const QString &cache) {
-  qDebug() << "Cloning, cache path: " << cache;
-  proc.start("git", {"clone", "--progress", "--branch", BRANCH, "--depth=1", "--recurse-submodules",
-                     "--reference-if-able", cache, "--dissociate", GIT_URL, TMP_INSTALL_PATH});
+void Installer::clone() {
+  qDebug() << "Doing fresh clone";
+  proc.start("git", {"clone", "--progress", "--depth=1", "--recurse-submodules",
+                     "--reference-if-able", CACHE_PATH, "--dissociate",
+                     "--branch", BRANCH, GIT_URL, TMP_INSTALL_PATH});
+}
+
+void Installer::cachedFetch() {
+  qDebug() << "Fetching with legacy cache";
+
+  run("cp -rp " LEGACY_CACHE_PATH " " TMP_INSTALL_PATH);
+  int err = chdir(TMP_INSTALL_PATH);
+  assert(err == 0);
+  run("git remote set-branches --add origin " BRANCH);
+
+  updateProgress(10);
+
+  proc.setWorkingDirectory(TMP_INSTALL_PATH);
+  proc.start("git", {"fetch", "--progress", "origin", BRANCH});
 }
 
 void Installer::readProgress() {
@@ -153,6 +164,7 @@ void Installer::cloneFinished(int exitCode, QProcess::ExitStatus exitStatus) {
 
   updateProgress(100);
 
+  // TODO: remove after legacy cache clone is removed
   // ensure correct branch is checked out
   int err = chdir(TMP_INSTALL_PATH);
   assert(err == 0);
