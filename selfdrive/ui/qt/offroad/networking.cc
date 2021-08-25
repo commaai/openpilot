@@ -50,7 +50,7 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QFrame(parent) {
   main_layout->addWidget(an);
 
   QPalette pal = palette();
-  pal.setColor(QPalette::Background, QColor(0x29, 0x29, 0x29));
+  pal.setColor(QPalette::Window, QColor(0x29, 0x29, 0x29));
   setAutoFillBackground(true);
   setPalette(pal);
 
