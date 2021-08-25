@@ -23,6 +23,7 @@
   #define CONTINUE_PATH "/data/continue.sh"
 #endif
 
+// TODO: remove the other paths after a bit
 const QList<QString> CACHE_PATHS = {"/data/openpilot.cache", "/system/comma/openpilot", "/usr/comma/openpilot"};
 
 #define INSTALL_PATH "/data/openpilot"
@@ -106,7 +107,7 @@ void Installer::doInstall() {
   // cleanup
   run("rm -rf " TMP_INSTALL_PATH " " INSTALL_PATH);
 
-  // try do a cached install
+  // find the cache path
   QString cache;
   for (const QString &path : CACHE_PATHS) {
     if (QDir(path).exists()) {
