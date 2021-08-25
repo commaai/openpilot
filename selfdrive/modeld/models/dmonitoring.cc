@@ -20,7 +20,7 @@ void dmonitoring_init(DMonitoringModelState* s) {
 #ifdef USE_ONNX_MODEL
   use_snpe_model = false;
 #endif
-  const char *model_path = use_snpe_model ? "../../models/dmonitoring_model_q.dlc" : "../../models/dmonitoring_model.onnx";
+  const char *model_path = use_snpe_model ? "../../models/dmonitoring_model_q.dlc" : "../../models/dmonitoring_model.dlc";
   s->m = new DefaultRunModel(model_path, &s->output[0], OUTPUT_SIZE, USE_DSP_RUNTIME);
   for (int x = 0; x < std::size(s->tensor); ++x) {
     // for non SNPE running platforms, assume keras model instead has lambda layer
