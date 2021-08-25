@@ -116,7 +116,7 @@ void Installer::doInstall() {
   }
 
   // do the install
-  if (QDir(cache).exists()) {
+  if (!cache.isEmpty()) {
     cachedFetch(cache);
   } else {
     freshClone();
@@ -130,7 +130,7 @@ void Installer::freshClone() {
 }
 
 void Installer::cachedFetch(const QString &cache) {
-  qDebug() << "Fetching with cache";
+  qDebug() << "Fetching with cache: " << cache;
 
   run(QString("cp -rp %1 %2").arg(cache, TMP_INSTALL_PATH).toStdString().c_str());
   int err = chdir(TMP_INSTALL_PATH);
