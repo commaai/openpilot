@@ -1,3 +1,6 @@
+Version 0.8.9 (2021-XX-XX)
+========================
+
 Version 0.8.8 (2021-08-27)
 ========================
  * New driving model with improved laneless performance
