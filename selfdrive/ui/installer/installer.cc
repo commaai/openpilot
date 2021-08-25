@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <map>
+#include <vector>
 
 #include <QDebug>
 #include <QDir>
@@ -19,11 +20,12 @@
 
 #ifdef QCOM
   #define CONTINUE_PATH "/data/data/com.termux/files/continue.sh"
-  #define CACHE_PATH "/system/comma/openpilot"
 #else
   #define CONTINUE_PATH "/data/continue.sh"
-  #define CACHE_PATH "/usr/comma/openpilot"
 #endif
+
+// TODO: remove the other paths after a bit
+const QList<QString> CACHE_PATHS = {"/data/openpilot.cache", "/system/comma/openpilot", "/usr/comma/openpilot"};
 
 #define INSTALL_PATH "/data/openpilot"
 #define TMP_INSTALL_PATH "/data/tmppilot"
@@ -107,31 +109,20 @@ void Installer::doInstall() {
   run("rm -rf " TMP_INSTALL_PATH " " INSTALL_PATH);
 
   // do the install
-  if (QDir(CACHE_PATH).exists()) {
-    cachedFetch();
-  } else {
-    freshClone();
+  QString cache = "";
+  for (const QString &path : CACHE_PATHS) {
+    if (QDir(path).exists()) {
+      cache = path;
+      break;
+    }
   }
+  clone(cache);
 }
 
-void Installer::freshClone() {
-  qDebug() << "Doing fresh clone";
-  proc.start("git", {"clone", "--progress", GIT_URL, "-b", BRANCH,
-                     "--depth=1", "--recurse-submodules", TMP_INSTALL_PATH});
-}
-
-void Installer::cachedFetch() {
-  qDebug() << "Fetching with cache";
-
-  run("cp -rp " CACHE_PATH " " TMP_INSTALL_PATH);
-  int err = chdir(TMP_INSTALL_PATH);
-  assert(err == 0);
-  run("git remote set-branches --add origin " BRANCH);
-
-  updateProgress(10);
-
-  proc.setWorkingDirectory(TMP_INSTALL_PATH);
-  proc.start("git", {"fetch", "--progress", "origin", BRANCH});
+void Installer::clone(const QString &cache) {
+  qDebug() << "Cloning, cache path: " << cache;
+  proc.start("git", {"clone", "--progress", "--branch", BRANCH, "--depth=1", "--recurse-submodules",
+                     "--reference-if-able", cache, "--dissociate", GIT_URL, TMP_INSTALL_PATH});
 }
 
 void Installer::readProgress() {
