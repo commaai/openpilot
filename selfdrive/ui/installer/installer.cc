@@ -19,11 +19,12 @@
 
 #ifdef QCOM
   #define CONTINUE_PATH "/data/data/com.termux/files/continue.sh"
-  #define CACHE_PATH "/system/comma/openpilot"
 #else
   #define CONTINUE_PATH "/data/continue.sh"
-  #define CACHE_PATH "/usr/comma/openpilot"
 #endif
+
+// TODO: remove the other paths after a bit
+const QList<QString> CACHE_PATHS = {"/data/openpilot.cache", "/system/comma/openpilot", "/usr/comma/openpilot"};
 
 #define INSTALL_PATH "/data/openpilot"
 #define TMP_INSTALL_PATH "/data/tmppilot"
@@ -106,9 +107,18 @@ void Installer::doInstall() {
   // cleanup
   run("rm -rf " TMP_INSTALL_PATH " " INSTALL_PATH);
 
+  // find the cache path
+  QString cache;
+  for (const QString &path : CACHE_PATHS) {
+    if (QDir(path).exists()) {
+      cache = path;
+      break;
+    }
+  }
+
   // do the install
-  if (QDir(CACHE_PATH).exists()) {
-    cachedFetch();
+  if (!cache.isEmpty()) {
+    cachedFetch(cache);
   } else {
     freshClone();
   }
@@ -120,10 +130,10 @@ void Installer::freshClone() {
                      "--depth=1", "--recurse-submodules", TMP_INSTALL_PATH});
 }
 
-void Installer::cachedFetch() {
-  qDebug() << "Fetching with cache";
+void Installer::cachedFetch(const QString &cache) {
+  qDebug() << "Fetching with cache: " << cache;
 
-  run("cp -rp " CACHE_PATH " " TMP_INSTALL_PATH);
+  run(QString("cp -rp %1 %2").arg(cache, TMP_INSTALL_PATH).toStdString().c_str());
   int err = chdir(TMP_INSTALL_PATH);
   assert(err == 0);
   run("git remote set-branches --add origin " BRANCH);

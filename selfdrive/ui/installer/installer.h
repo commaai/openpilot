@@ -24,5 +24,5 @@ private:
 
   void doInstall();
   void freshClone();
-  void cachedFetch();
+  void cachedFetch(const QString &cache);
 };
