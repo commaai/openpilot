@@ -555,6 +555,7 @@ FW_VERSIONS = {
     (Ecu.esp, 0x7D1, None): [
       b'\xf1\x00OS IEB \r 212 \x11\x13 58520-K4000\xf1\xa02.12',
       b'\xf1\x00OS IEB \r 212 \x11\x13 58520-K4000',
+      b'\xf1\xa01.07',
     ],
     (Ecu.eps, 0x7D4, None): [
       b'\xf1\x00DE  MDPS C 1.00 1.05 56310Q4000\x00 4DEEC105',
