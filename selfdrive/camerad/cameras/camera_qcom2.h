@@ -50,8 +50,6 @@ typedef struct CameraState {
   int idx_offset;
   bool skipped;
 
-  struct cam_req_mgr_session_info req_mgr_session_info;
-
   CameraBuf buf;
 } CameraState;
 
