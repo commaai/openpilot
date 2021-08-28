@@ -250,11 +250,11 @@ static std::pair<uint8_t *, size_t> yuv420_to_jpeg(const CameraBuf *b, int thumb
   // cinfo.dct_method = JDCT_IFAST;
   cinfo.raw_data_in = TRUE;
   // configure sampling factors for yuv420.
-  cinfo.comp_info[0].h_samp_factor = 2;
+  cinfo.comp_info[0].h_samp_factor = 2;  // Y
   cinfo.comp_info[0].v_samp_factor = 2;
-  cinfo.comp_info[1].h_samp_factor = 1;
+  cinfo.comp_info[1].h_samp_factor = 1;  // U
   cinfo.comp_info[1].v_samp_factor = 1;
-  cinfo.comp_info[2].h_samp_factor = 1;
+  cinfo.comp_info[2].h_samp_factor = 1;  // V
   cinfo.comp_info[2].v_samp_factor = 1;
 
   jpeg_set_quality(&cinfo, 50, TRUE);
