@@ -16,15 +16,10 @@
 void dmonitoring_init(DMonitoringModelState* s) {
   s->is_rhd = Params().getBool("IsRHD");
 
-  bool use_snpe_model = true;
-#ifdef USE_ONNX_MODEL
-  use_snpe_model = false;
-#endif
-  const char *model_path = use_snpe_model ? "../../models/dmonitoring_model_q.dlc" : "../../models/dmonitoring_model.dlc";
+  const char *model_path = Hardware::PC() ? "../../models/dmonitoring_model.dlc" : "../../models/dmonitoring_model_q.dlc";
   s->m = new DefaultRunModel(model_path, &s->output[0], OUTPUT_SIZE, USE_DSP_RUNTIME);
   for (int x = 0; x < std::size(s->tensor); ++x) {
-    // for non SNPE running platforms, assume keras model instead has lambda layer
-    s->tensor[x] = use_snpe_model ? (x - 128.f) * 0.0078125f : x;
+    s->tensor[x] = (x - 128.f) * 0.0078125f;
   }
 }
 
