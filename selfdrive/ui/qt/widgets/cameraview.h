@@ -16,7 +16,7 @@ Q_OBJECT
 
 public:
   using QOpenGLWidget::QOpenGLWidget;
-  explicit CameraViewWidget(VisionStreamType stream_type, QWidget* parent = nullptr);
+  explicit CameraViewWidget(VisionStreamType stream_type, bool zoom, QWidget* parent = nullptr);
   ~CameraViewWidget();
 
 signals:
@@ -24,6 +24,7 @@ signals:
 
 protected:
   void paintGL() override;
+  void resizeGL(int w, int h) override;
   void initializeGL() override;
   void showEvent(QShowEvent *event) override;
   void hideEvent(QHideEvent *event) override;
@@ -32,6 +33,7 @@ protected slots:
   void updateFrame();
 
 private:
+  bool zoomed_view;
   VisionBuf *latest_frame = nullptr;
   GLuint frame_vao, frame_vbo, frame_ibo;
   mat4 frame_mat;
