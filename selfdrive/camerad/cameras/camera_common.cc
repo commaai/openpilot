@@ -232,6 +232,7 @@ static std::pair<uint8_t *, size_t> yuv420_to_jpeg(const CameraBuf *b, int thumb
       return {nullptr, 0};
     }
   }
+
   struct jpeg_compress_struct cinfo;
   struct jpeg_error_mgr jerr;
   cinfo.err = jpeg_std_error(&jerr);
@@ -247,8 +248,6 @@ static std::pair<uint8_t *, size_t> yuv420_to_jpeg(const CameraBuf *b, int thumb
 
   jpeg_set_defaults(&cinfo);
   jpeg_set_colorspace(&cinfo, JCS_YCbCr);
-  // cinfo.dct_method = JDCT_IFAST;
-  cinfo.raw_data_in = TRUE;
   // configure sampling factors for yuv420.
   cinfo.comp_info[0].h_samp_factor = 2;  // Y
   cinfo.comp_info[0].v_samp_factor = 2;
@@ -256,26 +255,24 @@ static std::pair<uint8_t *, size_t> yuv420_to_jpeg(const CameraBuf *b, int thumb
   cinfo.comp_info[1].v_samp_factor = 1;
   cinfo.comp_info[2].h_samp_factor = 1;  // V
   cinfo.comp_info[2].v_samp_factor = 1;
+  cinfo.raw_data_in = TRUE;
 
   jpeg_set_quality(&cinfo, 50, TRUE);
   jpeg_start_compress(&cinfo, TRUE);
 
-  const int compress_batch_size = 16;
-  JSAMPROW y[compress_batch_size] = {};
-  JSAMPROW cb[compress_batch_size / 2] = {};
-  JSAMPROW cr[compress_batch_size / 2] = {};
-  JSAMPARRAY planes[3]{y, cb, cr};
+  JSAMPROW y[16], u[8], v[8];
+  JSAMPARRAY planes[3]{y, u, v};
 
-  for (int line = 0; line < cinfo.image_height; line += compress_batch_size) {
-    for (int i = 0; i < compress_batch_size; ++i) {
+  for (int line = 0; line < cinfo.image_height; line += 16) {
+    for (int i = 0; i < 16; ++i) {
       y[i] = y_plane + (line + i) * cinfo.image_width;
       if (i % 2 == 0) {
         int offset = (cinfo.image_width / 2) * ((i + line) / 2);
-        cb[i / 2] = u_plane + offset;
-        cr[i / 2] = v_plane + offset;
+        u[i / 2] = u_plane + offset;
+        v[i / 2] = v_plane + offset;
       }
     }
-    jpeg_write_raw_data(&cinfo, planes, compress_batch_size);
+    jpeg_write_raw_data(&cinfo, planes, 16);
   }
 
   jpeg_finish_compress(&cinfo);
