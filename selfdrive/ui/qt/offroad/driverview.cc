@@ -21,7 +21,7 @@ DriverViewWindow::DriverViewWindow(QWidget* parent) : QWidget(parent) {
   layout->setCurrentWidget(scene);
 }
 
-void DriverViewWindow::mousePressEvent(QMouseEvent* e) {
+void DriverViewWindow::mouseReleaseEvent(QMouseEvent* e) {
   emit done();
 }
 
