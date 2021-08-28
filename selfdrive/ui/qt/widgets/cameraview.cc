@@ -1,6 +1,5 @@
-#include "selfdrive/ui/qt/widgets/cameraview.h"
-
 #include "selfdrive/ui/qt/qt_window.h"
+#include "selfdrive/ui/qt/widgets/cameraview.h"
 
 namespace {
 
@@ -97,9 +96,6 @@ CameraViewWidget::CameraViewWidget(VisionStreamType stream_type, bool zoom, QWid
                                    stream_type(stream_type), zoomed_view(zoom), QOpenGLWidget(parent) {
   setAttribute(Qt::WA_OpaquePaintEvent);
 
-  latest_frame = nullptr;
-  vipc_client = std::make_unique<VisionIpcClient>("camerad", stream_type, true);
-
   timer = new QTimer(this);
   connect(timer, &QTimer::timeout, this, &CameraViewWidget::updateFrame);
 }
@@ -146,6 +142,8 @@ void CameraViewWidget::initializeGL() {
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(frame_indicies), frame_indicies, GL_STATIC_DRAW);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   glBindVertexArray(0);
+
+  vipc_client = std::make_unique<VisionIpcClient>("camerad", stream_type, true);
 }
 
 void CameraViewWidget::showEvent(QShowEvent *event) {
@@ -195,7 +193,6 @@ void CameraViewWidget::resizeGL(int w, int h) {
   }
 }
 
-#include <QDebug>
 void CameraViewWidget::paintGL() {
   if (!latest_frame) {
     glClearColor(0, 0, 0, 1.0);
@@ -219,7 +216,6 @@ void CameraViewWidget::paintGL() {
   glUniform1i(gl_shader->getUniformLocation("uTexture"), 0);
   glUniformMatrix4fv(gl_shader->getUniformLocation("uTransform"), 1, GL_TRUE, frame_mat.v);
 
-  if (glGetError() != GL_NO_ERROR) qDebug() << glGetError();
   assert(glGetError() == GL_NO_ERROR);
   glEnableVertexAttribArray(0);
   glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, (const void *)0);
@@ -244,7 +240,6 @@ void CameraViewWidget::updateFrame() {
       assert(glGetError() == GL_NO_ERROR);
     }
     latest_frame = nullptr;
-
     resizeGL(width(), height());
   }
 
