@@ -840,19 +840,21 @@ FW_VERSIONS = {
     ],
   },
   CAR.FREED: {
-    (Ecu.gateway, 0x18daeff1, None): [
-      b'38897-TDK-J010\x00\x00',
-    ],
+    # NOTE: omitting gateway ECU since it doesn't appear on all models
     (Ecu.eps, 0x18da30f1, None): [
+      b'39990-TDK-J050\x00\x00',
       b'39990-TDK-N020\x00\x00',
     ],
     (Ecu.vsa, 0x18da28f1, None): [
+      b'57114-TDK-J120\x00\x00',
       b'57114-TDK-J330\x00\x00',
     ],
     (Ecu.combinationMeter, 0x18da60f1, None): [
+      b'78109-TDK-J310\x00\x00',
       b'78109-TDK-J320\x00\x00',
     ],
     (Ecu.fwdRadar, 0x18dab0f1, None): [
+      b'36161-TDK-J080\x00\x00',
       b'36161-TDK-J530\x00\x00',
     ],
   },

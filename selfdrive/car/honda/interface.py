@@ -178,7 +178,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2], [0.05]]
 
     elif candidate == CAR.FREED:
-      stop_and_go = False  # TODO: confirm car doesn't support stop_and_go
+      stop_and_go = False
       ret.mass = 2644. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.53
       # the remaining parameters were copied from FIT
