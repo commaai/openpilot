@@ -74,6 +74,23 @@ mat4 get_driver_view_transform() {
   return transform;
 }
 
+mat4 get_fit_view_transform(float widget_aspect_ratio, float frame_aspect_ratio) {
+  float zx = 1, zy = 1;
+  if (frame_aspect_ratio > widget_aspect_ratio) {
+    zy = widget_aspect_ratio / frame_aspect_ratio;
+  } else {
+    zx = frame_aspect_ratio / widget_aspect_ratio;
+  }
+
+  const mat4 frame_transform = {{
+    zx, 0.0, 0.0, 0.0,
+    0.0, zy, 0.0, 0.0,
+    0.0, 0.0, 1.0, 0.0,
+    0.0, 0.0, 0.0, 1.0,
+  }};
+  return frame_transform;
+}
+
 } // namespace
 
 CameraViewWidget::CameraViewWidget(VisionStreamType stream_type, bool zoom, QWidget* parent) :
@@ -141,6 +158,10 @@ void CameraViewWidget::hideEvent(QHideEvent *event) {
   latest_frame = nullptr;
 }
 
+void CameraViewWidget::mouseReleaseEvent(QMouseEvent *event) {
+  emit clicked();
+}
+
 void CameraViewWidget::resizeGL(int w, int h) {
   if (!vipc_client->connected) {
     return;
@@ -168,25 +189,13 @@ void CameraViewWidget::resizeGL(int w, int h) {
     }
   } else {
     // fit frame to widget size
-    float widget_aspect_ratio = (float)width() / height();
-    float video_aspect_ratio = (float)vipc_client->buffers[0].width  / vipc_client->buffers[0].height;
-    float zx = 1, zy = 1;
-    if (video_aspect_ratio > widget_aspect_ratio) {
-      zy = widget_aspect_ratio / video_aspect_ratio;
-    } else {
-      zx = video_aspect_ratio / widget_aspect_ratio;
-    }
-
-    const mat4 frame_transform = {{
-      zx, 0.0, 0.0, 0.0,
-      0.0, zy, 0.0, 0.0,
-      0.0, 0.0, 1.0, 0.0,
-      0.0, 0.0, 0.0, 1.0,
-    }};
-    frame_mat = matmul(device_transform, frame_transform);
+    float w  = (float)width() / height();
+    float f = (float)vipc_client->buffers[0].width  / vipc_client->buffers[0].height;
+    frame_mat = matmul(device_transform, get_fit_view_transform(w, f));
   }
 }
 
+#include <QDebug>
 void CameraViewWidget::paintGL() {
   if (!latest_frame) {
     glClearColor(0, 0, 0, 1.0);
@@ -210,6 +219,7 @@ void CameraViewWidget::paintGL() {
   glUniform1i(gl_shader->getUniformLocation("uTexture"), 0);
   glUniformMatrix4fv(gl_shader->getUniformLocation("uTransform"), 1, GL_TRUE, frame_mat.v);
 
+  if (glGetError() != GL_NO_ERROR) qDebug() << glGetError();
   assert(glGetError() == GL_NO_ERROR);
   glEnableVertexAttribArray(0);
   glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, (const void *)0);
