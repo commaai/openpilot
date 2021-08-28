@@ -202,7 +202,7 @@ class Controls:
     if self.sm['deviceState'].memoryUsagePercent > (90 if TICI else 65) and not SIMULATION:
       self.events.add(EventName.lowMemory)
     cpus = list(self.sm['deviceState'].cpuUsagePercent)[:(-1 if EON else None)]
-    if max(cpus, default=0) > 95:
+    if max(cpus, default=0) > 95 and not SIMULATION:
       self.events.add(EventName.highCpuUsage)
 
     # Alert if fan isn't spinning for 5 seconds
