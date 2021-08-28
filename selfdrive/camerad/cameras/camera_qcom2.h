@@ -33,7 +33,7 @@ typedef struct CameraState {
 
   int camera_num;
 
-  uint32_t session_handle;
+  int32_t session_handle;
 
   uint32_t sensor_dev_handle;
   uint32_t isp_dev_handle;
