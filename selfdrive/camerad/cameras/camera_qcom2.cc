@@ -812,7 +812,7 @@ void cameras_open(MultiCameraState *s) {
   // subscribe
   LOG("-- Subscribing");
   static struct v4l2_event_subscription sub = {0};
-  sub.type = 0x8000000;
+  sub.type = V4L_EVENT_CAM_REQ_MGR_EVENT;
   sub.id = 2; // should use boot time for sof
   ret = ioctl(s->video0_fd, VIDIOC_SUBSCRIBE_EVENT, &sub);
   printf("req mgr subscribe: %d\n", ret);
@@ -1097,7 +1097,7 @@ void cameras_run(MultiCameraState *s) {
 
     struct v4l2_event ev = {0};
     ret = ioctl(fds[0].fd, VIDIOC_DQEVENT, &ev);
-    if (ev.type == 0x8000000) {
+    if (ev.type == V4L_EVENT_CAM_REQ_MGR_EVENT) {
       struct cam_req_mgr_message *event_data = (struct cam_req_mgr_message *)ev.u.data;
       // LOGD("v4l2 event: sess_hdl %d, link_hdl %d, frame_id %d, req_id %lld, timestamp 0x%llx, sof_status %d\n", event_data->session_hdl, event_data->u.frame_msg.link_hdl, event_data->u.frame_msg.frame_id, event_data->u.frame_msg.request_id, event_data->u.frame_msg.timestamp, event_data->u.frame_msg.sof_status);
       // printf("sess_hdl %d, link_hdl %d, frame_id %lu, req_id %lu, timestamp 0x%lx, sof_status %d\n", event_data->session_hdl, event_data->u.frame_msg.link_hdl, event_data->u.frame_msg.frame_id, event_data->u.frame_msg.request_id, event_data->u.frame_msg.timestamp, event_data->u.frame_msg.sof_status);
