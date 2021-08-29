@@ -352,8 +352,8 @@ void panda_state_thread(bool spoofing_started) {
 
     if (Hardware::TICI()) {
       double read_time = millis_since_boot();
-      ps.setVoltage(std::stoi(util::read_file("/sys/class/hwmon/hwmon1/in1_input")));
-      ps.setCurrent(std::stoi(util::read_file("/sys/class/hwmon/hwmon1/curr1_input")));
+      ps.setVoltage(std::atoi(util::read_file("/sys/class/hwmon/hwmon1/in1_input").c_str()));
+      ps.setCurrent(std::atoi(util::read_file("/sys/class/hwmon/hwmon1/curr1_input").c_str()));
       read_time = millis_since_boot() - read_time;
       if (read_time > 50) {
         LOGW("reading hwmon took %lfms", read_time);

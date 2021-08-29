@@ -13,7 +13,7 @@ from cereal.services import service_list
 from common.basedir import BASEDIR
 from common.timeout import Timeout
 from common.params import Params
-from selfdrive.hardware import TICI
+from selfdrive.hardware import EON, TICI
 from selfdrive.loggerd.config import ROOT
 from selfdrive.test.helpers import set_params_enabled
 from tools.lib.logreader import LogReader
@@ -43,6 +43,11 @@ PROCS = {
   "selfdrive.tombstoned": 0,
   "./logcatd": 0,
 }
+
+if EON:
+  PROCS.update({
+    "selfdrive.hardware.eon.androidd": 0.4,
+  })
 
 if TICI:
   PROCS.update({
@@ -157,7 +162,7 @@ class TestOnroad(unittest.TestCase):
 
   def test_model_timings(self):
     #TODO this went up when plannerd cpu usage increased, why?
-    cfgs = [("modelV2", 0.035, 0.03), ("driverState", 0.025, 0.021)]
+    cfgs = [("modelV2", 0.038, 0.036), ("driverState", 0.028, 0.026)]
     for (s, instant_max, avg_max) in cfgs:
       ts = [getattr(getattr(m, s), "modelExecutionTime") for m in self.lr if m.which() == s]
       self.assertLess(min(ts), instant_max, f"high '{s}' execution time: {min(ts)}")

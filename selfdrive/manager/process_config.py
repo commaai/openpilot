@@ -31,11 +31,14 @@ procs = [
   PythonProcess("paramsd", "selfdrive.locationd.paramsd"),
   PythonProcess("plannerd", "selfdrive.controls.plannerd"),
   PythonProcess("radard", "selfdrive.controls.radard"),
-  PythonProcess("rtshield", "selfdrive.rtshield", enabled=EON),
   PythonProcess("thermald", "selfdrive.thermald.thermald", persistent=True),
   PythonProcess("timezoned", "selfdrive.timezoned", enabled=TICI, persistent=True),
   PythonProcess("tombstoned", "selfdrive.tombstoned", enabled=not PC, persistent=True),
   PythonProcess("uploader", "selfdrive.loggerd.uploader", persistent=True),
+
+  # EON only
+  PythonProcess("rtshield", "selfdrive.rtshield", enabled=EON),
+  PythonProcess("androidd", "selfdrive.hardware.eon.androidd", enabled=EON, persistent=True),
 ]
 
 if opParams().get('update_behavior').lower().strip() != 'off' and not os.path.exists('/data/no_ota_updates'):

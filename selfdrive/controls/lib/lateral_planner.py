@@ -1,4 +1,3 @@
-import os
 import math
 import numpy as np
 from common.realtime import sec_since_boot, DT_MDL
@@ -14,8 +13,6 @@ from common.op_params import opParams
 
 LaneChangeState = log.LateralPlan.LaneChangeState
 LaneChangeDirection = log.LateralPlan.LaneChangeDirection
-
-LOG_MPC = os.environ.get('LOG_MPC', False)
 
 LANE_CHANGE_SPEED_MIN = 5 * CV.MPH_TO_MS
 LANE_CHANGE_TIME_MAX = 10.
@@ -243,12 +240,3 @@ class LateralPlanner():
     plan_send.lateralPlan.laneChangeDirection = self.lane_change_direction
 
     pm.send('lateralPlan', plan_send)
-
-    if LOG_MPC:
-      dat = messaging.new_message('liveMpc')
-      dat.liveMpc.x = list(self.mpc_solution.x)
-      dat.liveMpc.y = list(self.mpc_solution.y)
-      dat.liveMpc.psi = list(self.mpc_solution.psi)
-      dat.liveMpc.curvature = list(self.mpc_solution.curvature)
-      dat.liveMpc.cost = self.mpc_solution.cost
-      pm.send('liveMpc', dat)

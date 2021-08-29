@@ -13,15 +13,12 @@ enum ParamKeyType {
   CLEAR_ON_IGNITION_ON = 0x10,
   CLEAR_ON_IGNITION_OFF = 0x20,
   DONT_LOG = 0x40,
-  ALL = 0x02 | 0x04 | 0x08 | 0x10 | 0x20 | 0x40
+  ALL = 0xFFFFFFFF
 };
 
 class Params {
-private:
-  std::string params_path;
-
 public:
-  Params(bool persistent_param = false);
+  Params();
   Params(const std::string &path);
 
   bool checkKey(const std::string &key);
@@ -78,4 +75,7 @@ public:
   inline int putBool(const std::string &key, bool val) {
     return putBool(key.c_str(), val);
   }
+
+private:
+  const std::string params_path;
 };

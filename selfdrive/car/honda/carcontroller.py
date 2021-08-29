@@ -11,12 +11,12 @@ from opendbc.can.packer import CANPacker
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 
-#TODO not clear this does anything useful
+# TODO: not clear this does anything useful
 def actuator_hystereses(brake, braking, brake_steady, v_ego, car_fingerprint):
   # hyst params
   brake_hyst_on = 0.02     # to activate brakes exceed this value
-  brake_hyst_off = 0.005                     # to deactivate brakes below this value
-  brake_hyst_gap = 0.01                      # don't change brake command for small oscillations within this value
+  brake_hyst_off = 0.005   # to deactivate brakes below this value
+  brake_hyst_gap = 0.01    # don't change brake command for small oscillations within this value
 
   #*** hysteresis logic to avoid brake blinking. go above 0.1 to trigger
   if (brake < brake_hyst_on and not braking) or brake < brake_hyst_off:
@@ -85,7 +85,6 @@ class CarController():
     self.apply_brake_last = 0
     self.last_pump_ts = 0.
     self.packer = CANPacker(dbc_name)
-    self.new_radar_config = False
 
     self.params = CarControllerParams(CP)
 
@@ -162,7 +161,7 @@ class CarController():
       apply_accel = interp(accel, P.NIDEC_ACCEL_LOOKUP_BP, P.NIDEC_ACCEL_LOOKUP_V)
 
     # wind brake from air resistance decel at high speed
-    wind_brake = interp(CS.out.vEgo, [0.0, 2.3, 35.0], [0.0, 0.0, 0.15])
+    wind_brake = interp(CS.out.vEgo, [0.0, 2.3, 35.0], [0.001, 0.002, 0.15])
     if CS.CP.carFingerprint in OLD_NIDEC_LONG_CONTROL:
       #pcm_speed = pcm_speed
       pcm_accel = int(clip(pcm_accel, 0, 1) * 0xc6)
@@ -173,8 +172,8 @@ class CarController():
                       -wind_brake*(3/4),
                       0.0]
       pcm_speed_V = [0.0,
-                     CS.out.vEgo + apply_accel/2.0 - 2.0,
-                     CS.out.vEgo + apply_accel/2.0 + 2.0]
+                     clip(CS.out.vEgo + apply_accel/2.0 - 2.0, 0.0, 100.0),
+                     clip(CS.out.vEgo + apply_accel/2.0 + 2.0, 0.0, 100.0)]
       pcm_speed = interp(accel, pcm_speed_BP, pcm_speed_V)
 
     if not CS.CP.openpilotLongitudinalControl:

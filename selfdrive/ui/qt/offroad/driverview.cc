@@ -12,7 +12,7 @@ DriverViewWindow::DriverViewWindow(QWidget* parent) : QWidget(parent) {
   layout = new QStackedLayout(this);
   layout->setStackingMode(QStackedLayout::StackAll);
 
-  cameraView = new CameraViewWidget(VISION_STREAM_RGB_FRONT, this);
+  cameraView = new CameraViewWidget(VISION_STREAM_RGB_FRONT, true, this);
   layout->addWidget(cameraView);
 
   scene = new DriverViewScene(this);
@@ -21,7 +21,7 @@ DriverViewWindow::DriverViewWindow(QWidget* parent) : QWidget(parent) {
   layout->setCurrentWidget(scene);
 }
 
-void DriverViewWindow::mousePressEvent(QMouseEvent* e) {
+void DriverViewWindow::mouseReleaseEvent(QMouseEvent* e) {
   emit done();
 }
 

@@ -11,8 +11,10 @@
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
 
-Panda::Panda() {
+Panda::Panda(std::string serial) {
   // init libusb
+  ssize_t num_devices;
+  libusb_device **dev_list = NULL;
   int err = libusb_init(&ctx);
   if (err != 0) { goto fail; }
 
@@ -22,8 +24,28 @@ Panda::Panda() {
   libusb_set_debug(ctx, 3);
 #endif
 
-  dev_handle = libusb_open_device_with_vid_pid(ctx, 0xbbaa, 0xddcc);
-  if (dev_handle == NULL) { goto fail; }
+  // connect by serial
+  num_devices = libusb_get_device_list(ctx, &dev_list);
+  if (num_devices < 0) { goto fail; }
+  for (size_t i = 0; i < num_devices; ++i) {
+    libusb_device_descriptor desc;
+    libusb_get_device_descriptor(dev_list[i], &desc);
+    if (desc.idVendor == 0xbbaa && desc.idProduct == 0xddcc) {
+      libusb_open(dev_list[i], &dev_handle);
+      if (dev_handle == NULL) { goto fail; }
+
+      unsigned char desc_serial[25];
+      int ret = libusb_get_string_descriptor_ascii(dev_handle, desc.iSerialNumber, desc_serial, sizeof(desc_serial));
+      if (ret < 0) { goto fail; }
+
+      if (serial.empty() || serial.compare(reinterpret_cast<const char*>(desc_serial)) == 0) {
+        break;
+      }
+      libusb_close(dev_handle);
+      dev_handle = NULL;
+    }
+  }
+  libusb_free_device_list(dev_list, 1);
 
   if (libusb_kernel_driver_active(dev_handle, 0) == 1) {
     libusb_detach_kernel_driver(dev_handle, 0);
@@ -47,6 +69,9 @@ Panda::Panda() {
 
 fail:
   cleanup();
+  if (dev_list != NULL) {
+    libusb_free_device_list(dev_list, 1);
+  }
   throw std::runtime_error("Error connecting to panda");
 }
 

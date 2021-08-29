@@ -29,9 +29,6 @@ inline std::string log_root() {
 inline std::string params() {
   return Hardware::PC() ? HOME + "/.comma/params" : "/data/params";
 }
-inline std::string persistent_params() {
-  return Hardware::PC() ? HOME + "/.comma/params" : "/persist/comma/params";
-}
 inline std::string rsa_file() {
   return Hardware::PC() ? HOME + "/.comma/persist/comma/id_rsa" : "/persist/comma/id_rsa";
 }
