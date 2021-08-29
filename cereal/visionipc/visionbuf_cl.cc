@@ -20,7 +20,7 @@ static void *malloc_with_fd(size_t len, int *fd) {
   snprintf(full_path, sizeof(full_path)-1, "/dev/shm/visionbuf_%d_%d", getpid(), offset++);
 #endif
 
-  *fd = open(full_path, O_RDWR | O_CREAT, 0777);
+  *fd = open(full_path, O_RDWR | O_CREAT, 0664);
   assert(*fd >= 0);
 
   unlink(full_path);
