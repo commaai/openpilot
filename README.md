@@ -223,7 +223,8 @@ Most of the branches on this fork are development branches I use as various open
 * [Stock Additions 0.7.5](https://github.com/ShaneSmiskol/openpilot-archive/tree/stock_additions-075)
 * [Stock Additions 0.7.7](https://github.com/ShaneSmiskol/openpilot-archive/tree/stock_additions-077)
 * [Stock Additions 0.7.10](https://github.com/ShaneSmiskol/openpilot-archive/tree/stock_additions-0710)
-* [Stock Additions 0.8](https://github.com/ShaneSmiskol/openpilot/tree/stock_additions-08)
+* [Stock Additions 0.8](https://github.com/ShaneSmiskol/openpilot-archive/tree/stock_additions-08)
+* [Stock Additions 0.8.2](https://github.com/ShaneSmiskol/openpilot-archive/tree/stock_additions-082)
 
 ---
 ### Videos
