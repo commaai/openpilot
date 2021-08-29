@@ -1,0 +1,47 @@
+Import('env', 'arch')
+
+cpp_path = [
+    "#",
+    "#selfdrive",
+    "#phonelibs/acado/include",
+    "#phonelibs/acado/include/acado",
+    "#phonelibs/qpoases/INCLUDE",
+    "#phonelibs/qpoases/INCLUDE/EXTRAS",
+    "#phonelibs/qpoases/SRC/",
+    "#phonelibs/qpoases",
+    "lib_mpc_export",
+]
+
+generated_c = [
+    'lib_mpc_export/acado_auxiliary_functions.c',
+    'lib_mpc_export/acado_qpoases_interface.cpp',
+    'lib_mpc_export/acado_integrator.c',
+    'lib_mpc_export/acado_solver.c',
+]
+
+generated_h = [
+    'lib_mpc_export/acado_common.h',
+    'lib_mpc_export/acado_auxiliary_functions.h',
+    'lib_mpc_export/acado_qpoases_interface.hpp',
+]
+
+interface_dir = Dir('lib_mpc_export')
+
+SConscript(['#phonelibs/qpoases/SConscript'], variant_dir='lib_qp', exports=['interface_dir'])
+
+if GetOption('mpc_generate'):
+  generator_cpp = File('generator.cpp')
+
+  acado_libs = [File(f"#phonelibs/acado/{arch}/lib/libacado_toolkit.a"),
+                File(f"#phonelibs/acado/{arch}/lib/libacado_casadi.a"),
+                File(f"#phonelibs/acado/{arch}/lib/libacado_csparse.a")]
+
+  generator = env.Program('generator', generator_cpp, LIBS=acado_libs, CPPPATH=cpp_path,
+                          CCFLAGS=env['CCFLAGS'] + ["-Wno-deprecated", "-Wno-overloaded-shift-op-parentheses"])
+
+  cmd = f"cd {Dir('.').get_abspath()} && {generator[0].get_abspath()}"
+  env.Command(generated_c + generated_h, generator, cmd)
+
+
+mpc_files = ["longitudinal_mpc.c"] + generated_c
+env.SharedLibrary('mpc', mpc_files, LIBS=['m', 'qpoases'], LIBPATH=['lib_qp'], CPPPATH=cpp_path)
