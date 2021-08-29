@@ -6,6 +6,7 @@
 #include <cassert>
 #include <cerrno>
 #include <cstring>
+#include <dirent.h>
 #include <fstream>
 #include <iomanip>
 #include <sstream>
@@ -121,12 +122,11 @@ bool file_exists(const std::string& fn) {
   return stat(fn.c_str(), &st) != -1;
 }
 
-static bool createDirectory(std::string dir, mode_t mode, bool reset_mode) {
-  auto verify_dir = [](const std::string& dir, mode_t mode) -> bool {
+static bool createDirectory(std::string dir, mode_t mode) {
+  auto verify_dir = [](const std::string& dir) -> bool {
     struct stat st = {};
     if (stat(dir.c_str(), &st) == -1) return false;
     if ((st.st_mode & S_IFMT) != S_IFDIR) return false;
-    if (mode && (st.st_mode & (S_IRWXU | S_IRWXG | S_IRWXO)) != mode) return chmod(dir.c_str(), mode) != -1;
     return true;
   };
   // remove trailing /'s
@@ -135,24 +135,24 @@ static bool createDirectory(std::string dir, mode_t mode, bool reset_mode) {
   }
   // try to mkdir this directory
   if (mkdir(dir.c_str(), mode) == 0) return true;
-  if (errno == EEXIST) return verify_dir(dir, reset_mode ? mode : 0);
+  if (errno == EEXIST) return verify_dir(dir);
   if (errno != ENOENT) return false;
 
   // mkdir failed because the parent dir doesn't exist, so try to create it
   size_t slash = dir.rfind('/');
   if ((slash == std::string::npos || slash < 1) ||
-      !createDirectory(dir.substr(0, slash), mode, reset_mode)) {
+      !createDirectory(dir.substr(0, slash), mode)) {
     return false;
   }
 
   // try again
   if (mkdir(dir.c_str(), mode) == 0) return true;
-  return errno == EEXIST && verify_dir(dir, reset_mode ? mode : 0);
+  return errno == EEXIST && verify_dir(dir);
 }
 
-bool create_directories(const std::string& dir, mode_t mode, bool reset_mode) {
+bool create_directories(const std::string& dir, mode_t mode) {
   if (dir.empty()) return false;
-  return createDirectory(dir, mode, reset_mode);
+  return createDirectory(dir, mode);
 }
 
 std::string getenv(const char* key, const char* default_val) {

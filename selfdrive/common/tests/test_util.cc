@@ -1,4 +1,5 @@
 
+#include <dirent.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 
@@ -116,25 +117,12 @@ TEST_CASE("util::create_directories") {
   }
   SECTION("end with slashs") {
     // one slashs
-    REQUIRE(util::create_directories(dir + "/", 0775, true));
+    REQUIRE(util::create_directories(dir + "/", 0775));
     // multiple slashs
-    REQUIRE(util::create_directories(dir + "///", 0775, true));
+    REQUIRE(util::create_directories(dir + "///", 0775));
     REQUIRE(check_dir_permissions(dir, 0775) == true);
   }
   SECTION("empty") {
-    REQUIRE(util::create_directories("", 0775, true) == false);
+    REQUIRE(util::create_directories("", 0775) == false);
   }
-  SECTION("reset permissions") {
-    REQUIRE(util::create_directories(dir, 0775));
-    REQUIRE(check_dir_permissions(dir, 0775) == true);
-
-    // don't reset permissions
-    REQUIRE(util::create_directories(dir, 0666, false));
-    REQUIRE(check_dir_permissions(dir, 0666) == false);
-    REQUIRE(check_dir_permissions(dir, 0775) == true);
-    // reset permissions
-    REQUIRE(util::create_directories(dir, 0666, true));
-    REQUIRE(check_dir_permissions(dir, 0666) == true);
-  }
-  
 }

@@ -4,6 +4,7 @@
 #define _GNU_SOURCE
 #endif  // _GNU_SOURCE
 
+#include <dirent.h>
 #include <sys/file.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -43,7 +44,7 @@ int fsync_dir(const char* path) {
 
 bool create_params_path(const std::string &param_path, const std::string &key_path) {
   // Make sure params path exists
-  if (!util::file_exists(param_path) && !util::create_directories(param_path, 0777)) {
+  if (!util::file_exists(param_path) && !util::create_directories(param_path, 0775)) {
     return false;
   }
 
