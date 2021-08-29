@@ -237,7 +237,7 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : QWidget(parent) {
       if (enabled) {
         uninstallBtn->setText("UNINSTALL");
       } else {
-        uninstallBtn->setText("Turn off Veh.");
+        uninstallBtn->setText("Turn off car");
       }
     });
   }
