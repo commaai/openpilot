@@ -101,9 +101,9 @@ def get_arg_parser():
   parser.add_argument("--can", action="store_true", help="Parse CAN data")
   parser.add_argument("--stream", action="store_true", help="Start PlotJuggler without a route to stream data using Cereal")
   parser.add_argument("--layout", nargs='?', help="Run PlotJuggler with a pre-defined layout")
-  parser.add_argument("route_name", nargs='?', help="The name of the route that will be plotted.")
-  parser.add_argument("segment_number", type=int, nargs='?', help="The index of the segment that will be plotted")
-  parser.add_argument("segment_count", type=int, nargs='?', help="The number of segments that will be plotted", default=1)
+  parser.add_argument("route_name", nargs='?', help="The route name to plot (cabana share URL accepted)")
+  parser.add_argument("segment_number", type=int, nargs='?', help="The index of the segment to plot")
+  parser.add_argument("segment_count", type=int, nargs='?', help="The number of segments to plot", default=1)
   return parser
 
 if __name__ == "__main__":

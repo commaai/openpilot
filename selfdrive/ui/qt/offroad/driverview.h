@@ -39,7 +39,7 @@ signals:
   void done();
 
 protected:
-  void mousePressEvent(QMouseEvent* e) override;
+  void mouseReleaseEvent(QMouseEvent* e) override;
 
 private:
   CameraViewWidget *cameraView;

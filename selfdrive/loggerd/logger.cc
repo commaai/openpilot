@@ -36,7 +36,7 @@ int logger_mkpath(char* file_path) {
   char* p;
   for (p=strchr(file_path+1, '/'); p; p=strchr(p+1, '/')) {
     *p = '\0';
-    if (mkdir(file_path, 0777)==-1) {
+    if (mkdir(file_path, 0775)==-1) {
       if (errno != EEXIST) {
         *p = '/';
         return -1;
@@ -60,7 +60,7 @@ kj::Array<capnp::word> logger_build_init_data() {
     init.setDeviceType(cereal::InitData::DeviceType::PC);
   }
 
-  init.setVersion(capnp::Text::Reader(COMMA_VERSION));
+  init.setVersion(COMMA_VERSION);
 
   std::ifstream cmdline_stream("/proc/cmdline");
   std::vector<std::string> kernel_args;
@@ -102,7 +102,7 @@ kj::Array<capnp::word> logger_build_init_data() {
   init.setGitRemote(params_map["GitRemote"]);
   init.setPassive(params.getBool("Passive"));
   init.setDongleId(params_map["DongleId"]);
-  
+
   auto lparams = init.initParams().initEntries(params_map.size());
   int i = 0;
   for (auto& [key, value] : params_map) {
@@ -145,8 +145,6 @@ static void log_sentinel(LoggerState *s, cereal::Sentinel::SentinelType type, in
 // ***** logging functions *****
 
 void logger_init(LoggerState *s, const char* log_name, bool has_qlog) {
-  umask(0);
-
   pthread_mutex_init(&s->lock, NULL);
 
   s->part = -1;

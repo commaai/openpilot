@@ -55,15 +55,13 @@ const int ANALOG_GAIN_MAX_IDX = 0xD; // 4.0x
 const int EXPOSURE_TIME_MIN = 2; // with HDR, fastest ss
 const int EXPOSURE_TIME_MAX = 1904; // with HDR, slowest ss
 
-// global var for AE ops
-std::atomic<CameraExpInfo> cam_exp[3] = {{{0}}};
-
 // ************** low level camera helpers ****************
 int cam_control(int fd, int op_code, void *handle, int size) {
   struct cam_control camcontrol = {0};
   camcontrol.op_code = op_code;
   camcontrol.handle = (uint64_t)handle;
-  if (size == 0) { camcontrol.size = 8;
+  if (size == 0) { 
+    camcontrol.size = 8;
     camcontrol.handle_type = CAM_HANDLE_MEM_HANDLE;
   } else {
     camcontrol.size = size;
@@ -495,7 +493,7 @@ void enqueue_buffer(struct CameraState *s, int i, bool dp) {
   struct cam_mem_mgr_map_cmd mem_mgr_map_cmd = {0};
   mem_mgr_map_cmd.mmu_hdls[0] = s->multi_cam_state->device_iommu;
   mem_mgr_map_cmd.num_hdl = 1;
-  mem_mgr_map_cmd.flags = 1;
+  mem_mgr_map_cmd.flags = CAM_MEM_FLAG_HW_READ_WRITE;
   mem_mgr_map_cmd.fd = s->buf.camera_bufs[i].fd;
   ret = cam_control(s->multi_cam_state->video0_fd, CAM_REQ_MGR_MAP_BUF, &mem_mgr_map_cmd, sizeof(mem_mgr_map_cmd));
   // LOGD("map buf req: (fd: %d) 0x%x %d", s->bufs[i].fd, mem_mgr_map_cmd.out.buf_handle, ret);
@@ -814,7 +812,7 @@ void cameras_open(MultiCameraState *s) {
   // subscribe
   LOG("-- Subscribing");
   static struct v4l2_event_subscription sub = {0};
-  sub.type = 0x8000000;
+  sub.type = V4L_EVENT_CAM_REQ_MGR_EVENT;
   sub.id = 2; // should use boot time for sof
   ret = ioctl(s->video0_fd, VIDIOC_SUBSCRIBE_EVENT, &sub);
   printf("req mgr subscribe: %d\n", ret);
@@ -1099,7 +1097,7 @@ void cameras_run(MultiCameraState *s) {
 
     struct v4l2_event ev = {0};
     ret = ioctl(fds[0].fd, VIDIOC_DQEVENT, &ev);
-    if (ev.type == 0x8000000) {
+    if (ev.type == V4L_EVENT_CAM_REQ_MGR_EVENT) {
       struct cam_req_mgr_message *event_data = (struct cam_req_mgr_message *)ev.u.data;
       // LOGD("v4l2 event: sess_hdl %d, link_hdl %d, frame_id %d, req_id %lld, timestamp 0x%llx, sof_status %d\n", event_data->session_hdl, event_data->u.frame_msg.link_hdl, event_data->u.frame_msg.frame_id, event_data->u.frame_msg.request_id, event_data->u.frame_msg.timestamp, event_data->u.frame_msg.sof_status);
       // printf("sess_hdl %d, link_hdl %d, frame_id %lu, req_id %lu, timestamp 0x%lx, sof_status %d\n", event_data->session_hdl, event_data->u.frame_msg.link_hdl, event_data->u.frame_msg.frame_id, event_data->u.frame_msg.request_id, event_data->u.frame_msg.timestamp, event_data->u.frame_msg.sof_status);

@@ -26,20 +26,20 @@ class DRIVER_MONITOR_SETTINGS():
     self._DISTRACTED_PROMPT_TIME_TILL_TERMINAL = 6.
 
     self._FACE_THRESHOLD = 0.5
-    self._PARTIAL_FACE_THRESHOLD = 0.75 if TICI else 0.5
-    self._EYE_THRESHOLD = 0.5
-    self._SG_THRESHOLD = 0.5
-    self._BLINK_THRESHOLD = 0.88 if TICI else 0.6
-    self._BLINK_THRESHOLD_SLACK = 0.98 if TICI else 0.78
-    self._BLINK_THRESHOLD_STRICT = 0.88 if TICI else 0.6
+    self._PARTIAL_FACE_THRESHOLD = 0.765 if TICI else 0.455
+    self._EYE_THRESHOLD = 0.25 if TICI else 0.57
+    self._SG_THRESHOLD = 0.83
+    self._BLINK_THRESHOLD = 0.62 if TICI else 0.68
+    self._BLINK_THRESHOLD_SLACK = 0.82 if TICI else 0.88
+    self._BLINK_THRESHOLD_STRICT = 0.62 if TICI else 0.68
     self._PITCH_WEIGHT = 1.175 if TICI else 1.35  # pitch matters a lot more
-    self._POSESTD_THRESHOLD = 0.318 if TICI else 0.14
+    self._POSESTD_THRESHOLD = 0.2 if TICI else 0.175
     self._E2E_POSE_THRESHOLD = 0.95 if TICI else 0.9
     self._E2E_EYES_THRESHOLD = 0.75
 
-    self._METRIC_THRESHOLD = 0.5 if TICI else 0.4
-    self._METRIC_THRESHOLD_SLACK = 0.6875 if TICI else 0.55
-    self._METRIC_THRESHOLD_STRICT = 0.5 if TICI else 0.4
+    self._METRIC_THRESHOLD = 0.55 if TICI else 0.48
+    self._METRIC_THRESHOLD_SLACK = 0.75 if TICI else 0.66
+    self._METRIC_THRESHOLD_STRICT = 0.55 if TICI else 0.48
     self._PITCH_POS_ALLOWANCE = 0.12  # rad, to not be too sensitive on positive pitch
     self._PITCH_NATURAL_OFFSET = 0.02  # people don't seem to look straight when they drive relaxed, rather a bit up
     self._YAW_NATURAL_OFFSET = 0.08  # people don't seem to look straight when they drive relaxed, rather a bit to the right (center of car)

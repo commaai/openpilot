@@ -10,21 +10,27 @@
 #include <QTimer>
 #include <QVBoxLayout>
 
+#include "selfdrive/ui/installer/installer.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/qt_window.h"
-#include "selfdrive/ui/qt/setup/installer.h"
 
 #define GIT_URL "https://github.com/commaai/openpilot.git"
 #define GIT_SSH_URL "git@github.com:commaai/openpilot.git"
 
-#define CONTINUE_PATH "/data/continue.sh"
+#ifdef QCOM
+  #define CONTINUE_PATH "/data/data/com.termux/files/continue.sh"
+#else
+  #define CONTINUE_PATH "/data/continue.sh"
+#endif
 
-#define CACHE_PATH "/usr/comma/openpilot"
+// TODO: remove the other paths after a bit
+const QList<QString> CACHE_PATHS = {"/data/openpilot.cache", "/system/comma/openpilot", "/usr/comma/openpilot"};
+
 #define INSTALL_PATH "/data/openpilot"
 #define TMP_INSTALL_PATH "/data/tmppilot"
 
-extern const uint8_t str_continue[] asm("_binary_installer_continue_" BRAND "_sh_start");
-extern const uint8_t str_continue_end[] asm("_binary_installer_continue_" BRAND "_sh_end");
+extern const uint8_t str_continue[] asm("_binary_selfdrive_ui_installer_continue_" BRAND "_sh_start");
+extern const uint8_t str_continue_end[] asm("_binary_selfdrive_ui_installer_continue_" BRAND "_sh_end");
 
 bool time_valid() {
   time_t rawtime;
@@ -101,9 +107,18 @@ void Installer::doInstall() {
   // cleanup
   run("rm -rf " TMP_INSTALL_PATH " " INSTALL_PATH);
 
+  // find the cache path
+  QString cache;
+  for (const QString &path : CACHE_PATHS) {
+    if (QDir(path).exists()) {
+      cache = path;
+      break;
+    }
+  }
+
   // do the install
-  if (QDir(CACHE_PATH).exists()) {
-    cachedFetch();
+  if (!cache.isEmpty()) {
+    cachedFetch(cache);
   } else {
     freshClone();
   }
@@ -115,10 +130,10 @@ void Installer::freshClone() {
                      "--depth=1", "--recurse-submodules", TMP_INSTALL_PATH});
 }
 
-void Installer::cachedFetch() {
-  qDebug() << "Fetching with cache";
+void Installer::cachedFetch(const QString &cache) {
+  qDebug() << "Fetching with cache: " << cache;
 
-  run("cp -rp " CACHE_PATH " " TMP_INSTALL_PATH);
+  run(QString("cp -rp %1 %2").arg(cache, TMP_INSTALL_PATH).toStdString().c_str());
   int err = chdir(TMP_INSTALL_PATH);
   assert(err == 0);
   run("git remote set-branches --add origin " BRANCH);
@@ -195,8 +210,12 @@ void Installer::cloneFinished(int exitCode, QProcess::ExitStatus exitStatus) {
   run("chmod +x /data/continue.sh.new");
   run("mv /data/continue.sh.new " CONTINUE_PATH);
 
+#ifdef QCOM
+  QTimer::singleShot(100, &QCoreApplication::quit);
+#else
   // wait for the installed software's UI to take over
   QTimer::singleShot(60 * 1000, &QCoreApplication::quit);
+#endif
 }
 
 int main(int argc, char *argv[]) {

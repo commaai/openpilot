@@ -39,7 +39,10 @@ class BZFile {
   }
   inline void write(void* data, size_t size) {
     int bzerror;
-    BZ2_bzWrite(&bzerror, bz_file, data, size);
+    do {
+      BZ2_bzWrite(&bzerror, bz_file, data, size);
+    } while (bzerror == BZ_IO_ERROR && errno == EINTR);
+
     if (bzerror != BZ_OK && !error_logged) {
       LOGE("BZ2_bzWrite error, bzerror=%d", bzerror);
       error_logged = true;

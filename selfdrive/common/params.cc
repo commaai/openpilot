@@ -52,29 +52,25 @@ int fsync_dir(const char* path) {
   return result;
 }
 
-// TODO: replace by std::filesystem::create_directories
 int mkdir_p(std::string path) {
   char * _path = (char *)path.c_str();
 
-  mode_t prev_mask = umask(0);
   for (char *p = _path + 1; *p; p++) {
     if (*p == '/') {
       *p = '\0'; // Temporarily truncate
-      if (mkdir(_path, 0777) != 0) {
+      if (mkdir(_path, 0775) != 0) {
         if (errno != EEXIST) return -1;
       }
       *p = '/';
     }
   }
-  if (mkdir(_path, 0777) != 0) {
+  if (mkdir(_path, 0775) != 0) {
     if (errno != EEXIST) return -1;
   }
-  chmod(_path, 0777);
-  umask(prev_mask);
   return 0;
 }
 
-static bool create_params_path(const std::string &param_path, const std::string &key_path) {
+bool create_params_path(const std::string &param_path, const std::string &key_path) {
   // Make sure params path exists
   if (!util::file_exists(param_path) && mkdir_p(param_path) != 0) {
     return false;
@@ -94,10 +90,6 @@ static bool create_params_path(const std::string &param_path, const std::string 
       return false;
     }
 
-    if (chmod(tmp_dir, 0777) != 0) {
-      return false;
-    }
-
     std::string link_path = std::string(tmp_dir) + ".link";
     if (symlink(tmp_dir, link_path.c_str()) != 0) {
       return false;
@@ -109,11 +101,10 @@ static bool create_params_path(const std::string &param_path, const std::string 
     }
   }
 
-  // Ensure permissions are correct in case we didn't create the symlink
-  return chmod(key_path.c_str(), 0777) == 0;
+  return true;
 }
 
-static void ensure_params_path(const std::string &params_path) {
+void ensure_params_path(const std::string &params_path) {
   if (!create_params_path(params_path, params_path + "/d")) {
     throw std::runtime_error(util::string_format("Failed to ensure params path, errno=%d", errno));
   }
@@ -194,6 +185,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"PandaFirmware", CLEAR_ON_MANAGER_START | CLEAR_ON_PANDA_DISCONNECT},
     {"PandaFirmwareHex", CLEAR_ON_MANAGER_START | CLEAR_ON_PANDA_DISCONNECT},
     {"PandaDongleId", CLEAR_ON_MANAGER_START | CLEAR_ON_PANDA_DISCONNECT},
+    {"PandaHeartbeatLost", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_OFF},
     {"Passive", PERSISTENT},
     {"PrimeRedirected", PERSISTENT},
     {"RecordFront", PERSISTENT},
@@ -227,15 +219,13 @@ std::unordered_map<std::string, uint32_t> keys = {
 
 } // namespace
 
-Params::Params(bool persistent_param) : Params(persistent_param ? Path::persistent_params() : Path::params()) {}
+Params::Params() : params_path(Path::params()) {
+  static std::once_flag once_flag;
+  std::call_once(once_flag, ensure_params_path, params_path);
+}
 
-std::once_flag default_params_path_ensured;
 Params::Params(const std::string &path) : params_path(path) {
-  if (path == Path::params()) {
-    std::call_once(default_params_path_ensured, ensure_params_path, path);
-  } else {
-    ensure_params_path(path);
-  }
+  ensure_params_path(params_path);
 }
 
 bool Params::checkKey(const std::string &key) {
@@ -266,8 +256,6 @@ int Params::put(const char* key, const char* value, size_t value_size) {
       break;
     }
 
-    // change permissions to 0666 for apks
-    if ((result = fchmod(tmp_fd, 0666)) < 0) break;
     // fsync to force persist the changes.
     if ((result = fsync(tmp_fd)) < 0) break;
 
