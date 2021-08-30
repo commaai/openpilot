@@ -43,12 +43,8 @@ generated_files = [
 ] + build_files
 
 lenv = env.Clone()
-lenv["ENV"]["ACADOS_SOURCE_DIR"] = Dir("#phonelibs/acados/acados").abspath
 lenv.Clean(generated_files, Dir(gen))
 
-import os
-libpath = Dir(f"#phonelibs/acados/{arch}/lib").abspath
-lenv["ENV"]["LD_LIBRARY_PATH"] = os.getenv("LD_LIBRARY_PATH", "") + libpath
 lenv.Command(generated_files,
              ["long_mpc.py"],
              f"cd {Dir('.').abspath} && python long_mpc.py")
@@ -59,5 +55,4 @@ lenv["CCFLAGS"].append("-Wno-unused")
 lenv["LINKFLAGS"].append("-Wl,--disable-new-dtags")
 lenv.SharedLibrary(f"{gen}/acados_ocp_solver_long",
                    build_files,
-                   RPATH=libpath,
                    LIBS=['m', 'acados', 'hpipm', 'blasfeo', 'qpOASES_e'])

@@ -67,11 +67,14 @@ USE_WEBCAM = os.getenv("USE_WEBCAM") is not None
 
 lenv = {
   "PATH": os.environ['PATH'],
+  "LD_LIBRARY_PATH": [Dir(f"#phonelibs/acados/{arch}/lib").abspath],
+  "ACADOS_SOURCE_DIR": Dir("#phonelibs/acados/acados").abspath,
 }
 
+rpath = lenv["LD_LIBRARY_PATH"].copy()
 
 if arch == "aarch64" or arch == "larch64":
-  lenv["LD_LIBRARY_PATH"] = '/data/data/com.termux/files/usr/lib'
+  lenv["LD_LIBRARY_PATH"] += ['/data/data/com.termux/files/usr/lib']
 
   if arch == "aarch64":
     # android
@@ -102,8 +105,9 @@ if arch == "aarch64" or arch == "larch64":
     ]
     cflags = ["-DQCOM2", "-mcpu=cortex-a57"]
     cxxflags = ["-DQCOM2", "-mcpu=cortex-a57"]
-    rpath = ["/usr/local/lib"]
+    rpath += ["/usr/local/lib"]
   else:
+    rpath = []
     libpath += [
       "#phonelibs/snpe/aarch64",
       "#phonelibs/libyuv/lib",
@@ -111,7 +115,6 @@ if arch == "aarch64" or arch == "larch64":
     ]
     cflags = ["-DQCOM", "-D_USING_LIBCXX", "-mcpu=cortex-a57"]
     cxxflags = ["-DQCOM", "-D_USING_LIBCXX", "-mcpu=cortex-a57"]
-    rpath = []
 else:
   cflags = []
   cxxflags = []
@@ -146,14 +149,11 @@ else:
       "/usr/local/lib",
     ]
 
-  rpath = [
-    "phonelibs/snpe/x86_64-linux-clang",
-    "cereal",
-    "selfdrive/common"
+  rpath += [
+    Dir("#phonelibs/snpe/x86_64-linux-clang").abspath,
+    Dir("#cereal").abspath,
+    Dir("#selfdrive/common").abspath
   ]
-
-  # allows shared libraries to work globally
-  rpath = [os.path.join(os.getcwd(), x) for x in rpath]
 
 if GetOption('asan'):
   ccflags = ["-fsanitize=address", "-fno-omit-frame-pointer"]
