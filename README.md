@@ -204,7 +204,7 @@ https://smiskol.com/fork/sshane
   ```
   cd /data/
   mv openpilot openpilot.old  # or equivalent
-  git clone -b SA-master --depth 1 https://github.com/sshane/openpilot
+  git clone -b SA-master --depth 1 --recurse-submodules https://github.com/sshane/openpilot
   sudo reboot
   ```
 
