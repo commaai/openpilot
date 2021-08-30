@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
-
 import time
 import unittest
-import os
 import numpy as np
 
 from selfdrive.test.helpers import with_processes
@@ -33,13 +31,10 @@ class TestCamerad(unittest.TestCase):
     print([i_median, i_mean])
     return med_ex[0] < i_median < med_ex[1] and mean_ex[0] < i_mean < mean_ex[1]
 
-
   @with_processes(['camerad'])
   def test_camera_operation(self):
-    print("checking image outputs")
-
-    start = time.time()
     passed = 0
+    start = time.time()
     while time.time() - start < TEST_TIME and passed < REPEAT:
       rpic, dpic = get_snapshots(frame="roadCameraState", front_frame="driverCameraState")
 
@@ -56,8 +51,7 @@ class TestCamerad(unittest.TestCase):
 
       passed += int(res)
       time.sleep(2)
-    print(passed)
-    self.assertTrue(passed >= REPEAT)
+    self.assertGreaterEqual(passed, REPEAT)
 
 if __name__ == "__main__":
   unittest.main()
