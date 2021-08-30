@@ -48,7 +48,7 @@ lenv.Clean(generated_files, Dir(gen))
 
 import os
 libpath = Dir(f"#phonelibs/acados/{arch}/lib").abspath
-lenv["ENV"]["LD_LIBRARY_PATH"] = os.getenv("LD_LIBRARY_PATH", "") + libpath
+lenv["ENV"]["LD_LIBRARY_PATH"] += ":" + libpath
 lenv.Command(generated_files,
              ["lat_mpc.py"],
              f"cd {Dir('.').abspath} && python lat_mpc.py")

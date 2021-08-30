@@ -8,16 +8,6 @@ from selfdrive.controls.lib.drive_helpers import T_IDXS
 from pyextra.acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
 
 
-#from common.basedir import BASEDIR
-# TODO: clean this up
-#acados_path = os.path.join(BASEDIR, "phonelibs/acados/x86_64")
-#os.environ["TERA_PATH"] = os.path.join(acados_path, "t_renderer")
-#json_path = os.path.join(BASEDIR, "pyextra/acados_template")
-#sys.path.append(os.path.join(BASEDIR, "pyextra"))
-
-
-
-
 LAT_MPC_DIR = os.path.dirname(os.path.abspath(__file__))
 EXPORT_DIR = os.path.join(LAT_MPC_DIR, "c_generated_code")
 JSON_FILE = "acados_ocp_lat.json"
