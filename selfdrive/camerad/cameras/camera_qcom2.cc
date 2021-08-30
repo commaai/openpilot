@@ -751,12 +751,12 @@ static void camera_open(CameraState *s) {
   ret = cam_control(s->multi_cam_state->video0_fd, CAM_REQ_MGR_LINK_CONTROL, &req_mgr_link_control, sizeof(req_mgr_link_control));
   LOGD("link control: %d", ret);
 
-  LOGD("start csiphy: %d", ret);
   ret = device_control(s->csiphy_fd, CAM_START_DEV, s->session_handle, s->csiphy_dev_handle);
-  LOGD("start isp: %d", ret);
+  LOGD("start csiphy: %d", ret);
   ret = device_control(s->multi_cam_state->isp_fd, CAM_START_DEV, s->session_handle, s->isp_dev_handle);
-  LOGD("start sensor: %d", ret);
+  LOGD("start isp: %d", ret);
   ret = device_control(s->sensor_fd, CAM_START_DEV, s->session_handle, s->sensor_dev_handle);
+  LOGD("start sensor: %d", ret);
 
   enqueue_req_multi(s, 1, FRAME_BUF_COUNT, 0);
 }
