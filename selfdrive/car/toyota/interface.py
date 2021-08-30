@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from cereal import car
 from selfdrive.config import Conversions as CV
-from selfdrive.car.toyota.values import Ecu, CAR, TSS2_CAR, NO_DSU_CAR, MIN_ACC_SPEED, PEDAL_HYST_GAP, CarControllerParams
+from selfdrive.car.toyota.values import Ecu, CAR, TSS2_CAR, NO_DSU_CAR, MIN_ACC_SPEED, PEDAL_HYST_GAP
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
 
@@ -9,10 +9,6 @@ EventName = car.CarEvent.EventName
 
 
 class CarInterface(CarInterfaceBase):
-  @staticmethod
-  def compute_gb(accel, speed):
-    return float(accel) / CarControllerParams.ACCEL_SCALE
-
   @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=[]):  # pylint: disable=dangerous-default-value
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
@@ -316,9 +312,6 @@ class CarInterface(CarInterfaceBase):
     ret.communityFeature = ret.enableGasInterceptor or ret.enableDsu or smartDsu
 
     if ret.enableGasInterceptor:
-      # Transitions from original pedal tuning at MIN_ACC_SPEED to default tuning at MIN_ACC_SPEED + hysteresis gap
-      ret.gasMaxBP = [0., MIN_ACC_SPEED]
-      ret.gasMaxV = [0.2, 0.5]
       ret.longitudinalTuning.kpBP = [0., 5., MIN_ACC_SPEED, MIN_ACC_SPEED + PEDAL_HYST_GAP, 35.]
       ret.longitudinalTuning.kpV = [1.2, 0.8, 0.765, 2.255, 1.5]
       ret.longitudinalTuning.kiBP = [0., MIN_ACC_SPEED, MIN_ACC_SPEED + PEDAL_HYST_GAP, 35.]
@@ -331,8 +324,8 @@ class CarInterface(CarInterfaceBase):
       ret.longitudinalTuning.kpV = [1.3, 1.0, 0.7]
       ret.longitudinalTuning.kiBP = [0., 5., 12., 20., 27.]
       ret.longitudinalTuning.kiV = [.35, .23, .20, .17, .1]
-      ret.stoppingBrakeRate = 0.1  # reach stopping target smoothly
-      ret.startingBrakeRate = 2.0  # release brakes fast
+      ret.stoppingDecelRate = 0.3  # reach stopping target smoothly
+      ret.startingAccelRate = 6.0  # release brakes fast
       ret.startAccel = 1.2  # Accelerate from 0 faster
     else:
       # Default longitudinal tune
@@ -363,7 +356,7 @@ class CarInterface(CarInterfaceBase):
       events.add(EventName.lowSpeedLockout)
     if ret.vEgo < self.CP.minEnableSpeed and self.CP.openpilotLongitudinalControl:
       events.add(EventName.belowEngageSpeed)
-      if c.actuators.gas > 0.1:
+      if c.actuators.accel > 0.3:
         # some margin on the actuator to not false trigger cancellation while stopping
         events.add(EventName.speedTooLow)
       if ret.vEgo < 0.001:

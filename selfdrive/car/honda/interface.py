@@ -15,38 +15,7 @@ EventName = car.CarEvent.EventName
 TransmissionType = car.CarParams.TransmissionType
 
 
-def compute_gb_honda_bosch(accel, speed):
-  return float(accel) / 3.5
-
-
-def compute_gb_honda_nidec(accel, speed):
-  creep_brake = 0.0
-  creep_speed = 2.3
-  creep_brake_value = 0.15
-  if speed < creep_speed:
-    creep_brake = (creep_speed - speed) / creep_speed * creep_brake_value
-  return float(accel) / 4.8 - creep_brake
-
-
-def compute_gb_acura(accel, speed):
-  GB_VALUES = [-2., 0.0, 0.8]
-  GB_BP = [-5., 0.0, 4.0]
-  return interp(accel, GB_BP, GB_VALUES)
-
-
 class CarInterface(CarInterfaceBase):
-  def __init__(self, CP, CarController, CarState):
-    super().__init__(CP, CarController, CarState)
-
-    if self.CS.CP.carFingerprint in HONDA_BOSCH:
-      self.compute_gb = compute_gb_honda_bosch
-    else:
-      self.compute_gb = compute_gb_honda_nidec
-
-  @staticmethod
-  def compute_gb(accel, speed): # pylint: disable=method-hidden
-    raise NotImplementedError
-
   @staticmethod
   def calc_accel_override(a_ego, a_target, v_ego, v_target):
 
@@ -333,17 +302,6 @@ class CarInterface(CarInterfaceBase):
     ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront,
                                                                          tire_stiffness_factor=tire_stiffness_factor)
 
-    if candidate in HONDA_BOSCH:
-      ret.gasMaxBP = [0.]  # m/s
-      ret.gasMaxV = [0.6]
-      ret.brakeMaxBP = [0.]  # m/s
-      ret.brakeMaxV = [1.]   # max brake allowed, 3.5m/s^2
-    else:
-      ret.gasMaxBP = [0.]  # m/s
-      ret.gasMaxV = [0.6]  # max gas allowed
-      ret.brakeMaxBP = [5., 20.]  # m/s
-      ret.brakeMaxV = [1., 0.8]   # max brake allowed
-
     ret.startAccel = 0.5
 
     ret.steerActuatorDelay = 0.1
@@ -422,7 +380,7 @@ class CarInterface(CarInterfaceBase):
       # we engage when pcm is active (rising edge)
       if ret.cruiseState.enabled and not self.CS.out.cruiseState.enabled:
         events.add(EventName.pcmEnable)
-      elif not ret.cruiseState.enabled and (c.actuators.brake <= 0. or not self.CP.openpilotLongitudinalControl):
+      elif not ret.cruiseState.enabled and (c.actuators.accel >= 0. or not self.CP.openpilotLongitudinalControl):
         # it can happen that car cruise disables while comma system is enabled: need to
         # keep braking if needed or if the speed is very low
         if ret.vEgo < self.CP.minEnableSpeed + 2.:
