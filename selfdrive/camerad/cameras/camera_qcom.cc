@@ -32,7 +32,7 @@ const uint16_t INFINITY_DAC = 364;
 extern ExitHandler do_exit;
 
 static int cam_ioctl(int fd, unsigned long int request, void *arg, const char *log_msg = nullptr) {
-  int err = ioctl(fd, request, arg);
+  int err = HANDLE_EINTR(ioctl(fd, request, arg));
   if (err != 0 && log_msg) {
     LOG(util::string_format("%s: %d", log_msg, err).c_str());
   }
@@ -82,7 +82,7 @@ static void camera_release_buffer(void* cookie, int buf_idx) {
   CameraState *s = (CameraState *)cookie;
   // printf("camera_release_buffer %d\n", buf_idx);
   s->ss[0].qbuf_info[buf_idx].dirty_buf = 1;
-  ioctl(s->isp_fd, VIDIOC_MSM_ISP_ENQUEUE_BUF, &s->ss[0].qbuf_info[buf_idx]);
+  HANDLE_EINTR(ioctl(s->isp_fd, VIDIOC_MSM_ISP_ENQUEUE_BUF, &s->ss[0].qbuf_info[buf_idx]));
 }
 
 int sensor_write_regs(CameraState *s, struct msm_camera_i2c_reg_array* arr, size_t size, msm_camera_i2c_data_type data_type) {
@@ -94,7 +94,7 @@ int sensor_write_regs(CameraState *s, struct msm_camera_i2c_reg_array* arr, size
     .delay = 0,
   };
   sensorb_cfg_data cfg_data = {.cfgtype = CFG_WRITE_I2C_ARRAY, .cfg.setting = &out_settings};
-  return ioctl(s->sensor_fd, VIDIOC_MSM_SENSOR_CFG, &cfg_data);
+  return HANDLE_EINTR(ioctl(s->sensor_fd, VIDIOC_MSM_SENSOR_CFG, &cfg_data));
 }
 
 static int imx298_apply_exposure(CameraState *s, int gain, int integ_lines, uint32_t frame_length) {
@@ -797,7 +797,7 @@ void actuator_move(CameraState *s, uint16_t target) {
     .curr_lens_pos = s->cur_lens_pos,
     .ringing_params = &actuator_ringing_params,
   };
-  ioctl(s->actuator_fd, VIDIOC_MSM_ACTUATOR_CFG, &actuator_cfg_data);
+  HANDLE_EINTR(ioctl(s->actuator_fd, VIDIOC_MSM_ACTUATOR_CFG, &actuator_cfg_data));
 
   s->cur_step_pos = dest_step_pos;
   s->cur_lens_pos = actuator_cfg_data.cfg.move.curr_lens_pos;
@@ -962,7 +962,7 @@ void cameras_open(MultiCameraState *s) {
 
   // ISPIF: set vfe info
   struct ispif_cfg_data ispif_cfg_data = {.cfg_type = ISPIF_SET_VFE_INFO, .vfe_info.num_vfe = 2};
-  int err = ioctl(s->ispif_fd, VIDIOC_MSM_ISPIF_CFG, &ispif_cfg_data);
+  int err = HANDLE_EINTR(ioctl(s->ispif_fd, VIDIOC_MSM_ISPIF_CFG, &ispif_cfg_data));
   LOG("ispif set vfe info: %d", err);
 
   // ISPIF: setup
@@ -1142,7 +1142,7 @@ void cameras_run(MultiCameraState *s) {
       CameraState *c = cameras[i];
 
       struct v4l2_event ev = {};
-      ret = ioctl(c->isp_fd, VIDIOC_DQEVENT, &ev);
+      ret = HANDLE_EINTR(ioctl(c->isp_fd, VIDIOC_DQEVENT, &ev));
       const msm_isp_event_data *isp_event_data = (const msm_isp_event_data *)ev.u.data;
 
       if (ev.type == ISP_EVENT_BUF_DIVERT) {
@@ -1157,7 +1157,7 @@ void cameras_run(MultiCameraState *s) {
             parse_autofocus(c, (uint8_t *)(ss.bufs[buf_idx].addr));
           }
           ss.qbuf_info[buf_idx].dirty_buf = 1;
-          ioctl(c->isp_fd, VIDIOC_MSM_ISP_ENQUEUE_BUF, &ss.qbuf_info[buf_idx]);
+          HANDLE_EINTR(ioctl(c->isp_fd, VIDIOC_MSM_ISP_ENQUEUE_BUF, &ss.qbuf_info[buf_idx]));
         }
 
       } else if (ev.type == ISP_EVENT_EOF) {
