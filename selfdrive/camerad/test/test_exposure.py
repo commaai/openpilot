@@ -13,11 +13,6 @@ from selfdrive.hardware import EON, TICI
 TEST_TIME = 45
 REPEAT = 5
 
-os.environ["SEND_ROAD"] = "1"
-os.environ["SEND_DRIVER"] = "1"
-if TICI:
-  os.environ["SEND_WIDE_ROAD"] = "1"
-
 class TestCamerad(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
@@ -45,7 +40,7 @@ class TestCamerad(unittest.TestCase):
 
     start = time.time()
     passed = 0
-    while(time.time() - start < TEST_TIME and passed < REPEAT):
+    while time.time() - start < TEST_TIME and passed < REPEAT:
       rpic, dpic = get_snapshots(frame="roadCameraState", front_frame="driverCameraState")
 
       res = self._is_exposure_okay(rpic)
