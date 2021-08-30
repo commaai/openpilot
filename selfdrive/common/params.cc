@@ -261,7 +261,7 @@ int Params::put(const char* key, const char* value, size_t value_size) {
   } while (false);
 
   close(tmp_fd);
-  remove(tmp_path.c_str());
+  ::unlink(tmp_path.c_str());
   return result;
 }
 
