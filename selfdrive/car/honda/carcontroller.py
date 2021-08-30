@@ -5,7 +5,7 @@ from selfdrive.controls.lib.drive_helpers import rate_limit
 from common.numpy_fast import clip, interp
 from selfdrive.car import create_gas_command
 from selfdrive.car.honda import hondacan
-from selfdrive.car.honda.values import OLD_NIDEC_LONG_CONTROL, CruiseButtons, CAR, VISUAL_HUD, HONDA_BOSCH, CarControllerParams
+from selfdrive.car.honda.values import OLD_NIDEC_LONG_CONTROL, CruiseButtons, VISUAL_HUD, HONDA_BOSCH, CarControllerParams
 from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -53,9 +53,6 @@ def actuator_hystereses(brake, braking, brake_steady, v_ego, car_fingerprint):
   elif brake < brake_steady - brake_hyst_gap:
     brake_steady = brake + brake_hyst_gap
   brake = brake_steady
-
-  if (car_fingerprint in (CAR.ACURA_ILX, CAR.CRV, CAR.CRV_EU)) and brake > 0.0:
-    brake += 0.15
 
   return brake, braking, brake_steady
 
