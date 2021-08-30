@@ -64,7 +64,6 @@ public:
   int device_iommu;
   int cdm_iommu;
 
-
   CameraState road_cam{.cam_type = RoadCam};
   CameraState wide_road_cam{.cam_type = WideRoadCam};
   CameraState driver_cam{.cam_type = DriverCam};
