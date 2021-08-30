@@ -462,7 +462,7 @@ phonelibs/snpe/dsp**
 phonelibs/acados/x86_64/**
 phonelibs/acados/aarch64/**
 phonelibs/acados/larch64/**
-phonelibs/acados/acados/acados/**
+phonelibs/acados/include/**
 
 phonelibs/android_frameworks_native/**
 phonelibs/android_hardware_libhardware/**

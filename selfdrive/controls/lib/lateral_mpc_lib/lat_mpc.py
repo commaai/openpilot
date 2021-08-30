@@ -5,7 +5,7 @@ import numpy as np
 from casadi import SX, vertcat, sin, cos
 from selfdrive.controls.lib.drive_helpers import LAT_MPC_N as N
 from selfdrive.controls.lib.drive_helpers import T_IDXS
-from acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
+from pyextra.acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
 
 
 #from common.basedir import BASEDIR

@@ -7,7 +7,7 @@ from selfdrive.swaglog import cloudlog
 from selfdrive.controls.lib.drive_helpers import LON_MPC_N as N
 from selfdrive.modeld.constants import T_IDXS
 
-from acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
+from pyextra.acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
 from casadi import SX, vertcat
 
 
