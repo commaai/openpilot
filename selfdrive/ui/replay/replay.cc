@@ -225,7 +225,7 @@ void Replay::stream() {
       }
 
       uint64_t tm = e.getLogMonoTime();
-      current_ts = std::max(tm - route_start_ts, (unsigned long)0) / 1e9;
+      current_ts = std::max(tm - route_start_ts, (uint64_t)0) / 1e9;
 
       if (socks.contains(type)) {
         float timestamp = (tm - route_start_ts)/1e9;
