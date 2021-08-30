@@ -728,8 +728,10 @@ static void camera_open(CameraState *s) {
     int ret = cam_control(s->csiphy_fd, CAM_CONFIG_DEV, &config_dev_cmd, sizeof(config_dev_cmd));
     assert(ret == 0);
 
-    release(s->multi_cam_state->video0_fd, buf_desc[0].mem_handle);
-    release(s->multi_cam_state->video0_fd, cam_packet_handle);
+    munmap(csiphy_info, buf_desc[0].size);
+    release_fd(s->multi_cam_state->video0_fd, buf_desc[0].mem_handle);
+    munmap(pkt, size);
+    release_fd(s->multi_cam_state->video0_fd, cam_packet_handle);
   }
 
   // link devices
