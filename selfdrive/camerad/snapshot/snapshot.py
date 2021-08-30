@@ -10,7 +10,6 @@ import cereal.messaging as messaging
 from cereal.visionipc.visionipc_pyx import VisionIpcClient, VisionStreamType  # pylint: disable=no-name-in-module, import-error
 from common.params import Params
 from common.realtime import DT_MDL
-from common.transformations.camera import eon_f_frame_size, eon_d_frame_size, tici_f_frame_size
 from selfdrive.hardware import TICI
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
 from selfdrive.manager.process_config import managed_processes
@@ -28,8 +27,7 @@ def jpeg_write(fn, dat):
   img.save(fn, "JPEG")
 
 
-def extract_image(img, frame_sizes):
-  w, h = frame_sizes[len(img) // 3]
+def extract_image(img, w, h):
   b = img[::3].reshape(h, w)
   g = img[1::3].reshape(h, w)
   r = img[2::3].reshape(h, w)
@@ -41,9 +39,6 @@ def rois_in_focus(lapres: List[float]) -> float:
 
 
 def get_snapshots(frame="roadCameraState", front_frame="driverCameraState", focus_perc_threshold=0.):
-  frame_sizes = [eon_f_frame_size, eon_d_frame_size, tici_f_frame_size]
-  frame_sizes = {w * h: (w, h) for (w, h) in frame_sizes}
-
   sockets = [s for s in (frame, front_frame) if s is not None]
   sm = messaging.SubMaster(sockets)
   vipc_clients = {s: VisionIpcClient("camerad", VISION_STREAMS[s], True) for s in sockets}
@@ -53,7 +48,7 @@ def get_snapshots(frame="roadCameraState", front_frame="driverCameraState", focu
     sm.update()
 
   for client in vipc_clients.values():
-    client.connect(False)
+    client.connect(True)
 
   # wait for focus
   start_t = time.monotonic()
@@ -65,10 +60,11 @@ def get_snapshots(frame="roadCameraState", front_frame="driverCameraState", focu
   # grab images
   rear, front = None, None
   if frame is not None:
-    rear = extract_image(vipc_clients[frame].recv(), frame_sizes)
-
-  #rear = extract_image(sm[frame].image, frame_sizes) if frame is not None else None
-  #front = extract_image(sm[front_frame].image, frame_sizes) if front_frame is not None else None
+    c = vipc_clients[frame]
+    rear = extract_image(c.recv(), c.width, c.height)
+  if front_frame is not None:
+    c = vipc_clients[front_frame]
+    front = extract_image(c.recv(), c.width, c.height)
   return rear, front
 
 
