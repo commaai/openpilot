@@ -118,7 +118,7 @@ class Controls:
     self.AM = AlertManager()
     self.events = Events()
 
-    self.LoC = LongControl(self.CP, self.CI.compute_gb)
+    self.LoC = LongControl(self.CP)
     self.VM = VehicleModel(self.CP)
 
     if self.CP.steerControlType == car.CarParams.SteerControlType.angle:
@@ -459,8 +459,8 @@ class Controls:
       self.LoC.reset(v_pid=CS.vEgo)
 
     if not self.joystick_mode:
-      # Gas/Brake PID loop
-      actuators.gas, actuators.brake, self.v_target, self.a_target = self.LoC.update(self.active, CS, self.CP, long_plan)
+      # accel PID loop
+      actuators.accel, self.v_target, self.a_target = self.LoC.update(self.active, CS, self.CP, long_plan)
 
       # Steering PID loop and lateral MPC
       desired_curvature, desired_curvature_rate = get_lag_adjusted_curvature(self.CP, CS.vEgo,
@@ -472,8 +472,7 @@ class Controls:
     else:
       lac_log = log.ControlsState.LateralDebugState.new_message()
       if self.sm.rcv_frame['testJoystick'] > 0 and self.active:
-        gb = clip(self.sm['testJoystick'].axes[0], -1, 1)
-        actuators.gas, actuators.brake = max(gb, 0), max(-gb, 0)
+        actuators.accel = 4.0*clip(self.sm['testJoystick'].axes[0], -1, 1)
 
         steer = clip(self.sm['testJoystick'].axes[1], -1, 1)
         # max angle is 45 for angle-based cars
@@ -528,7 +527,7 @@ class Controls:
     # TODO remove car specific stuff in controls
     # Some override values for Honda
     # brake discount removes a sharp nonlinearity
-    brake_discount = (1.0 - clip(actuators.brake * 3., 0.0, 1.0))
+    brake_discount = (1.0 - clip(-actuators.accel * (3.0/4.0), 0.0, 1.0))
     speed_override = max(0.0, (self.LoC.v_pid + CS.cruiseState.speedOffset) * brake_discount)
     CC.cruiseControl.speedOverride = float(speed_override if self.CP.pcmCruise else 0.0)
     CC.cruiseControl.accelOverride = float(self.CI.calc_accel_override(CS.aEgo, self.a_target,

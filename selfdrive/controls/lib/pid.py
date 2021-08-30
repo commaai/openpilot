@@ -11,7 +11,7 @@ def apply_deadzone(error, deadzone):
   return error
 
 class PIController():
-  def __init__(self, k_p, k_i, k_f=1., pos_limit=None, neg_limit=None, rate=100, sat_limit=0.8, convert=None):
+  def __init__(self, k_p, k_i, k_f=1., pos_limit=None, neg_limit=None, rate=100, sat_limit=0.8):
     self._k_p = k_p  # proportional gain
     self._k_i = k_i  # integral gain
     self.k_f = k_f  # feedforward gain
@@ -23,7 +23,6 @@ class PIController():
     self.i_unwind_rate = 0.3 / rate
     self.i_rate = 1.0 / rate
     self.sat_limit = sat_limit
-    self.convert = convert
 
     self.reset()
 
@@ -68,9 +67,6 @@ class PIController():
       i = self.i + error * self.k_i * self.i_rate
       control = self.p + self.f + i
 
-      if self.convert is not None:
-        control = self.convert(control, speed=self.speed)
-
       # Update when changing i will move the control away from the limits
       # or when i will move towards the sign of the error
       if ((error >= 0 and (control <= self.pos_limit or i < 0.0)) or
@@ -79,9 +75,6 @@ class PIController():
         self.i = i
 
     control = self.p + self.f + self.i
-    if self.convert is not None:
-      control = self.convert(control, speed=self.speed)
-
     self.saturated = self._check_saturation(control, check_saturation, error)
 
     self.control = clip(control, self.neg_limit, self.pos_limit)
