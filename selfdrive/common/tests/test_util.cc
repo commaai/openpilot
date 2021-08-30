@@ -116,11 +116,7 @@ TEST_CASE("util::create_directories") {
     REQUIRE(util::create_directories(dir + "/file/1/2/3", 0775) == false);
   }
   SECTION("end with slashs") {
-    // one slashs
     REQUIRE(util::create_directories(dir + "/", 0775));
-    // multiple slashs
-    REQUIRE(util::create_directories(dir + "///", 0775));
-    REQUIRE(check_dir_permissions(dir, 0775) == true);
   }
   SECTION("empty") {
     REQUIRE(util::create_directories("", 0775) == false);

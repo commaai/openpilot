@@ -125,9 +125,7 @@ bool file_exists(const std::string& fn) {
 static bool createDirectory(std::string dir, mode_t mode) {
   auto verify_dir = [](const std::string& dir) -> bool {
     struct stat st = {};
-    if (stat(dir.c_str(), &st) == -1) return false;
-    if ((st.st_mode & S_IFMT) != S_IFDIR) return false;
-    return true;
+    return (stat(dir.c_str(), &st) == 0 && (st.st_mode & S_IFMT) == S_IFDIR);
   };
   // remove trailing /'s
   while (dir.size() > 1 && dir.back() == '/') {
