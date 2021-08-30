@@ -148,32 +148,6 @@ void CameraViewWidget::initializeGL() {
   glBindVertexArray(0);
 }
 
-void CameraViewWidget::resizeGL(int w, int h) {
-  updateFrameMat(w, h);
-}
-
-void CameraViewWidget::updateFrameMat(int w, int h) {
-  if (stream_type == VISION_STREAM_RGB_FRONT) {
-    frame_mat = matmul(device_transform, get_driver_view_transform());
-  } else {
-    auto intrinsic_matrix = stream_type == VISION_STREAM_RGB_WIDE ? ecam_intrinsic_matrix : fcam_intrinsic_matrix;
-    float zoom = ZOOM / intrinsic_matrix.v[0];
-    if (stream_type == VISION_STREAM_RGB_WIDE) {
-      zoom *= 0.5;
-    }
-    float zx = zoom * 2 * intrinsic_matrix.v[2] / w;
-    float zy = zoom * 2 * intrinsic_matrix.v[5] / h;
-
-    const mat4 frame_transform = {{
-      zx, 0.0, 0.0, 0.0,
-      0.0, zy, 0.0, -y_offset / h * 2,
-      0.0, 0.0, 1.0, 0.0,
-      0.0, 0.0, 0.0, 1.0,
-    }};
-    frame_mat = matmul(device_transform, frame_transform);
-  }
-}
-
 void CameraViewWidget::showEvent(QShowEvent *event) {
   VisionStreamType type = stream_type;
   if (type != VISION_STREAM_RGB_FRONT) {
@@ -197,11 +171,11 @@ void CameraViewWidget::mouseReleaseEvent(QMouseEvent *event) {
 }
 
 void CameraViewWidget::resizeGL(int w, int h) {
-  if (!vipc_client->connected) {
-    return;
-  }
+  updateFrameMat(w, h);
+}
 
-  if (zoomed_view) {
+void CameraViewWidget::updateFrameMat(int w, int h) {
+   if (zoomed_view) {
     if (stream_type == VISION_STREAM_RGB_FRONT) {
       frame_mat = matmul(device_transform, get_driver_view_transform());
     } else {
