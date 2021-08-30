@@ -13,31 +13,20 @@ QFrame *horizontal_line(QWidget *parent = nullptr);
 class ElidedLabel : public QLabel {
   Q_OBJECT
 
- public:
+public:
   explicit ElidedLabel(QWidget *parent = 0);
   explicit ElidedLabel(const QString &text, QWidget *parent = 0);
-
- protected:
-  void paintEvent(QPaintEvent *event) override;
-  void resizeEvent(QResizeEvent* event) override;
-  QString lastText_, elidedText_;
-};
-
-
-class ClickableLabel : public ElidedLabel {
-  Q_OBJECT
-
-public:
-  explicit ClickableLabel(const QString &text, QWidget *parent = 0) : ElidedLabel(text, parent) {}
 
 signals:
   void clicked();
 
 protected:
-  void mouseReleaseEvent(QMouseEvent *event) override {
-    emit clicked();
-  }
+  void paintEvent(QPaintEvent *event) override;
+  void resizeEvent(QResizeEvent* event) override;
+  void mouseReleaseEvent(QMouseEvent *event) override { emit clicked(); }
+  QString lastText_, elidedText_;
 };
+
 
 class AbstractControl : public QFrame {
   Q_OBJECT
