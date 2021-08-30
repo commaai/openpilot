@@ -582,10 +582,12 @@ static void camera_open(CameraState *s) {
   LOGD("-- Probing sensor %d", s->camera_num);
   sensors_init(s->multi_cam_state->video0_fd, s->sensor_fd, s->camera_num);
 
-  memset(&s->req_mgr_session_info, 0, sizeof(s->req_mgr_session_info));
-  ret = cam_control(s->multi_cam_state->video0_fd, CAM_REQ_MGR_CREATE_SESSION, &s->req_mgr_session_info, sizeof(s->req_mgr_session_info));
-  LOGD("get session: %d 0x%X", ret, s->req_mgr_session_info.session_hdl);
-  s->session_handle = s->req_mgr_session_info.session_hdl;
+  // create session
+  struct cam_req_mgr_session_info session_info = {}; 
+  ret = cam_control(s->multi_cam_state->video0_fd, CAM_REQ_MGR_CREATE_SESSION, &session_info, sizeof(session_info));
+  LOGD("get session: %d 0x%X", ret, session_info.session_hdl);
+  s->session_handle = session_info.session_hdl;
+
   // access the sensor
   LOGD("-- Accessing sensor");
   static struct cam_acquire_dev_cmd acquire_dev_cmd = {0};
@@ -865,7 +867,9 @@ static void camera_close(CameraState *s) {
   ret = device_control(s->csiphy_fd, CAM_RELEASE_DEV, s->session_handle, s->csiphy_dev_handle);
   LOGD("release csiphy: %d", ret);
 
-  ret = cam_control(s->multi_cam_state->video0_fd, CAM_REQ_MGR_DESTROY_SESSION, &s->req_mgr_session_info, sizeof(s->req_mgr_session_info));
+  // destroyed session
+  struct cam_req_mgr_session_info session_info = {.session_hdl = s->session_handle};
+  ret = cam_control(s->multi_cam_state->video0_fd, CAM_REQ_MGR_DESTROY_SESSION, &session_info, sizeof(session_info));
   LOGD("destroyed session: %d", ret);
 }
 
@@ -1104,11 +1108,11 @@ void cameras_run(MultiCameraState *s) {
       // LOGD("v4l2 event: sess_hdl %d, link_hdl %d, frame_id %d, req_id %lld, timestamp 0x%llx, sof_status %d\n", event_data->session_hdl, event_data->u.frame_msg.link_hdl, event_data->u.frame_msg.frame_id, event_data->u.frame_msg.request_id, event_data->u.frame_msg.timestamp, event_data->u.frame_msg.sof_status);
       // printf("sess_hdl %d, link_hdl %d, frame_id %lu, req_id %lu, timestamp 0x%lx, sof_status %d\n", event_data->session_hdl, event_data->u.frame_msg.link_hdl, event_data->u.frame_msg.frame_id, event_data->u.frame_msg.request_id, event_data->u.frame_msg.timestamp, event_data->u.frame_msg.sof_status);
 
-      if (event_data->session_hdl == s->road_cam.req_mgr_session_info.session_hdl) {
+      if (event_data->session_hdl == s->road_cam.session_handle) {
         handle_camera_event(&s->road_cam, event_data);
-      } else if (event_data->session_hdl == s->wide_road_cam.req_mgr_session_info.session_hdl) {
+      } else if (event_data->session_hdl == s->wide_road_cam.session_handle) {
         handle_camera_event(&s->wide_road_cam, event_data);
-      } else if (event_data->session_hdl == s->driver_cam.req_mgr_session_info.session_hdl) {
+      } else if (event_data->session_hdl == s->driver_cam.session_handle) {
         handle_camera_event(&s->driver_cam, event_data);
       } else {
         printf("Unknown vidioc event source\n");
