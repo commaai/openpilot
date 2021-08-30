@@ -13,6 +13,17 @@
 #include <string>
 #include <thread>
 
+// keep trying if x gets interrupted by a signal
+#define HANDLE_EINTR(x)                                       \
+  ({                                                          \
+    decltype(x) ret;                                          \
+    int try_cnt = 0;                                          \
+    do {                                                      \
+      ret = (x);                                              \
+    } while (ret == -1 && errno == EINTR && try_cnt++ < 100); \
+    ret;                                                      \
+  })
+
 #ifndef sighandler_t
 typedef void (*sighandler_t)(int sig);
 #endif
