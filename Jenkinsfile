@@ -234,7 +234,6 @@ pipeline {
                   }
                 }
 
-                /*
                 stage('Tici camerad') {
                   steps {
                     phone_steps("tici-party", [
@@ -244,7 +243,6 @@ pipeline {
                     ])
                   }
                 }
-                */
 
               }
             }
