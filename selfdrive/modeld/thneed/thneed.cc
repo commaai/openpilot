@@ -11,7 +11,6 @@
 
 #include "selfdrive/common/clutil.h"
 #include "selfdrive/common/timing.h"
-#include "selfdrive/common/util.h"
 
 //#define RUN_DISASSEMBLER
 //#define RUN_OPTIMIZER
@@ -113,7 +112,7 @@ int ioctl(int filedes, unsigned long request, void *argp) {
     }
   }
 
-  int ret = HANDLE_EINTR(my_ioctl(filedes, request, argp));
+  int ret = my_ioctl(filedes, request, argp);
   if (ret != 0) printf("ioctl returned %d with errno %d\n", ret, errno);
   return ret;
 }
