@@ -363,6 +363,8 @@ def python_replay_process(cfg, lr, fingerprint=None):
   params.put_bool("CommunityFeaturesToggle", True)
 
   os.environ['NO_RADAR_SLEEP'] = "1"
+  os.environ["SIMULATION"] = "1"
+
 
   # TODO: remove after getting new route for civic & accord
   migration = {
@@ -441,7 +443,6 @@ def cpp_replay_process(cfg, lr, fingerprint=None):
   pub_msgs = [msg for msg in all_msgs if msg.which() in list(cfg.pub_sub.keys())]
   log_msgs = []
 
-  os.environ["SIMULATION"] = "1"  # Disable submaster alive checks
   managed_processes[cfg.proc_name].prepare()
   managed_processes[cfg.proc_name].start()
 
