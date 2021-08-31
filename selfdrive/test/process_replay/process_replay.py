@@ -10,8 +10,6 @@ from collections import namedtuple
 import capnp
 from tqdm import tqdm
 
-os.environ["SIMULATION"] = "1"
-
 import cereal.messaging as messaging
 from cereal import car, log
 from cereal.services import service_list
@@ -365,6 +363,8 @@ def python_replay_process(cfg, lr, fingerprint=None):
   params.put_bool("CommunityFeaturesToggle", True)
 
   os.environ['NO_RADAR_SLEEP'] = "1"
+  os.environ["SIMULATION"] = "1"
+
 
   # TODO: remove after getting new route for civic & accord
   migration = {
