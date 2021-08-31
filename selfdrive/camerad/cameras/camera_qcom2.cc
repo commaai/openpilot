@@ -582,8 +582,9 @@ static void camera_open(CameraState *s) {
 
   // access the sensor
   LOGD("-- Accessing sensor");
-  s->sensor_dev_handle = device_acquire(s->sensor_fd, s->session_handle, nullptr).value_or(-1);
-  assert(s->sensor_dev_handle != -1);
+  auto sensor_dev_handle = device_acquire(s->sensor_fd, s->session_handle, nullptr);
+  assert(sensor_dev_handle);
+  s->sensor_dev_handle = *sensor_dev_handle;
   LOGD("acquire sensor dev");
 
   static struct cam_isp_resource isp_resource = {0};
@@ -648,15 +649,17 @@ static void camera_open(CameraState *s) {
     .comp_grp_id = 0x0, .split_point = 0x0, .secure_mode = 0x0,
   };
 
-  s->isp_dev_handle = device_acquire(s->multi_cam_state->isp_fd, s->session_handle, &isp_resource).value_or(-1);
-  assert(s->isp_dev_handle != -1);
+  auto isp_dev_handle = device_acquire(s->multi_cam_state->isp_fd, s->session_handle, &isp_resource);
+  assert(isp_dev_handle);
+  s->isp_dev_handle = *isp_dev_handle; 
   LOGD("acquire isp dev");
   free(in_port_info);
   
   static struct cam_csiphy_acquire_dev_info csiphy_acquire_dev_info = {0};
   csiphy_acquire_dev_info.combo_mode = 0;
-  s->csiphy_dev_handle = device_acquire(s->csiphy_fd, s->session_handle, &csiphy_acquire_dev_info).value_or(-1);
-  assert(s->csiphy_dev_handle != -1);
+  auto csiphy_dev_handle = device_acquire(s->csiphy_fd, s->session_handle, &csiphy_acquire_dev_info);
+  assert(csiphy_dev_handle);
+  s->csiphy_dev_handle = *csiphy_dev_handle;
   LOGD("acquire csiphy dev");
 
   // acquires done
