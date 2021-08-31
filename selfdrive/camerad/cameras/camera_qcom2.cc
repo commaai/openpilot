@@ -654,9 +654,8 @@ static void camera_open(CameraState *s) {
   s->isp_dev_handle = *isp_dev_handle; 
   LOGD("acquire isp dev");
   free(in_port_info);
-  
-  static struct cam_csiphy_acquire_dev_info csiphy_acquire_dev_info = {0};
-  csiphy_acquire_dev_info.combo_mode = 0;
+
+  struct cam_csiphy_acquire_dev_info csiphy_acquire_dev_info = {.combo_mode = 0};
   auto csiphy_dev_handle = device_acquire(s->csiphy_fd, s->session_handle, &csiphy_acquire_dev_info);
   assert(csiphy_dev_handle);
   s->csiphy_dev_handle = *csiphy_dev_handle;
