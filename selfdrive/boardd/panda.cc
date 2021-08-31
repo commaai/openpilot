@@ -37,6 +37,7 @@ Panda::Panda(std::string serial) {
 
   // connect by serial
   num_devices = libusb_get_device_list(ctx, &dev_list);
+  if (num_devices < 0) { goto fail; }
   for (size_t i = 0; i < num_devices; ++i) {
     libusb_device_descriptor desc;
     libusb_get_device_descriptor(dev_list[i], &desc);
