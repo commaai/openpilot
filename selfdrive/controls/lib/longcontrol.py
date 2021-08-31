@@ -73,7 +73,7 @@ class LongControl():
     self.pid.reset()
     self.v_pid = v_pid
 
-  def update(self, active, CS, CP, long_plan):
+  def update(self, active, CS, CP, cruise_speed, long_plan):
     """Update longitudinal control. This updates the state machine and runs a PID loop"""
     # Interp control trajectory
     # TODO estimate car specific lag, use .15s for now
@@ -108,7 +108,12 @@ class LongControl():
       prevent_overshoot = not CP.stoppingControl and CS.vEgo < 1.5 and v_target_future < 0.7
       deadzone = interp(v_ego_pid, CP.longitudinalTuning.deadzoneBP, CP.longitudinalTuning.deadzoneV)
 
-      output_accel = self.pid.update(self.v_pid, v_ego_pid, speed=v_ego_pid, deadzone=deadzone, feedforward=a_target, freeze_integrator=prevent_overshoot)
+      # Don't integrate close to cruise speed
+      # Honda NIDECs integrate unbounded here if not
+      close_to_cruise = cruise_speed - 0.5 < CS.vEgo and CS.vEgo > 5. and output_accel > 0.0
+      freeze_integrator = prevent_overshoot or close_to_cruise
+
+      output_accel = self.pid.update(self.v_pid, v_ego_pid, speed=v_ego_pid, deadzone=deadzone, feedforward=a_target, freeze_integrator=freeze_integrator)
 
       if prevent_overshoot:
         output_accel = min(output_accel, 0.0)
