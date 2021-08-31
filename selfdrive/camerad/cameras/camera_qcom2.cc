@@ -540,41 +540,26 @@ static void camera_init(MultiCameraState *multi_cam_state, VisionIpcServer * v, 
   s->buf.init(device_id, ctx, s, v, FRAME_BUF_COUNT, rgb_type, yuv_type);
 }
 
-// TODO: refactor this to somewhere nicer, perhaps use in camera_qcom as well
-static int open_v4l_by_name_and_index(const char name[], int index, int flags) {
-  char nbuf[0x100];
-  int v4l_index = 0;
-  int cnt_index = index;
-  while (true) {
-    snprintf(nbuf, sizeof(nbuf), "/sys/class/video4linux/v4l-subdev%d/name", v4l_index);
-    FILE *f = fopen(nbuf, "rb");
-    if (f == NULL) return -1;
-    int len = fread(nbuf, 1, sizeof(nbuf), f);
-    fclose(f);
-
-    // name ends with '\n', remove it
-    if (len < 1) return -1;
-    nbuf[len-1] = '\0';
-
-    if (strcmp(nbuf, name) == 0) {
-      if (cnt_index == 0) {
-        snprintf(nbuf, sizeof(nbuf), "/dev/v4l-subdev%d", v4l_index);
-        LOGD("open %s for %s index %d", nbuf, name, index);
-        return open(nbuf, flags);
+int open_v4l_by_name_and_index(const char name[], int index, int flags = O_RDWR | O_NONBLOCK) {
+  for (int v4l_index = 0; /**/; ++v4l_index) {
+    std::string v4l_name = util::read_file(util::string_format("/sys/class/video4linux/v4l-subdev%d/name", v4l_index));
+    if (v4l_name.empty()) return -1;
+    if (v4l_name.find(name) == 0) {
+      if (index == 0) {
+        return open(util::string_format("/dev/v4l-subdev%d", v4l_index).c_str(), flags);
       }
-      cnt_index--;
+      index--;
     }
-    v4l_index++;
   }
 }
 
 static void camera_open(CameraState *s) {
   int ret;
-  s->sensor_fd = open_v4l_by_name_and_index("cam-sensor-driver", s->camera_num, O_RDWR | O_NONBLOCK);
+  s->sensor_fd = open_v4l_by_name_and_index("cam-sensor-driver", s->camera_num);
   assert(s->sensor_fd >= 0);
   LOGD("opened sensor");
 
-  s->csiphy_fd = open_v4l_by_name_and_index("cam-csiphy-driver", s->camera_num, O_RDWR | O_NONBLOCK);
+  s->csiphy_fd = open_v4l_by_name_and_index("cam-csiphy-driver", s->camera_num);
   assert(s->csiphy_fd >= 0);
   LOGD("opened csiphy");
 
