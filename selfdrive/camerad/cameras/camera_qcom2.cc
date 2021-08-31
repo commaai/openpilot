@@ -97,9 +97,15 @@ int device_config(int fd, int32_t session_handle, int32_t dev_handle, uint64_t p
 }
 
 int device_control(int fd, int op_code, int session_handle, int dev_handle) {
-  // start stop and release are all the same
-  struct cam_start_stop_dev_cmd cmd { .session_handle = session_handle, .dev_handle = dev_handle };
-  return cam_control(fd, op_code, &cmd, sizeof(cmd));
+  if (op_code == CAM_START_DEV || op_code == CAM_STOP_DEV) {
+    struct cam_start_stop_dev_cmd cmd { .session_handle = session_handle, .dev_handle = dev_handle };
+    return cam_control(fd, op_code, &cmd, sizeof(cmd));
+  } else if (op_code == CAM_RELEASE_DEV) {
+    struct cam_release_dev_cmd cmd { .session_handle = session_handle, .dev_handle = dev_handle };
+    return cam_control(fd, op_code, &cmd, sizeof(cmd));
+  } else {
+    asssert(0);
+  }
 }
 
 void *alloc_w_mmu_hdl(int video0_fd, int len, uint32_t *handle, int align = 8, int flags = CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE,
