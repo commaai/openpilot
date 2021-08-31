@@ -66,7 +66,7 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context) {
 #if (defined(QCOM) || defined(QCOM2)) && defined(USE_THNEED)
   s->m = std::make_unique<ThneedModel>("../../models/supercombo.thneed", &s->output[0], output_size, USE_GPU_RUNTIME);
 #else
-#ifdef USE_ONNX_MODEL:
+#ifdef USE_ONNX_MODEL
   const char *model_path = "../../models/supercombo.onnx";
 #else
   const char *model_path = "../../models/supercombo.dlc";

@@ -15,7 +15,7 @@
 
 void dmonitoring_init(DMonitoringModelState* s) {
   s->is_rhd = Params().getBool("IsRHD");
-#ifdef USE_ONNX_MODEL:
+#ifdef USE_ONNX_MODEL
   const char *model_path = "../../models/dmonitoring_model.onnx";
 #else
   const char *model_path = "../../models/dmonitoring_model_q.dlc";
