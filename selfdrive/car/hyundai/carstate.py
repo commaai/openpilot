@@ -180,6 +180,7 @@ class CarState(CarStateBase):
     checks = [
       # address, frequency
       ("MDPS12", 50),
+      ("MDPS11", 100),
       ("TCS13", 50),
       ("TCS15", 10),
       ("CLU11", 50),
