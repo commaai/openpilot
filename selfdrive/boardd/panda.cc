@@ -11,18 +11,29 @@
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
 
+static int init_usb_ctx(libusb_context *context) {
+  int err = libusb_init(&context);
+  if (err != 0) {
+    LOGE("libusb initialization error");
+    return err;
+  }
+
+#if LIBUSB_API_VERSION >= 0x01000106
+  libusb_set_option(context, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_INFO);
+#else
+  libusb_set_debug(context, 3);
+#endif
+
+  return err;
+}
+
+
 Panda::Panda(std::string serial) {
   // init libusb
   ssize_t num_devices;
   libusb_device **dev_list = NULL;
-  int err = libusb_init(&ctx);
+  int err = init_usb_ctx(ctx);
   if (err != 0) { goto fail; }
-
-#if LIBUSB_API_VERSION >= 0x01000106
-  libusb_set_option(ctx, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_INFO);
-#else
-  libusb_set_debug(ctx, 3);
-#endif
 
   // connect by serial
   num_devices = libusb_get_device_list(ctx, &dev_list);
@@ -34,11 +45,12 @@ Panda::Panda(std::string serial) {
       libusb_open(dev_list[i], &dev_handle);
       if (dev_handle == NULL) { goto fail; }
 
-      unsigned char desc_serial[25];
-      int ret = libusb_get_string_descriptor_ascii(dev_handle, desc.iSerialNumber, desc_serial, sizeof(desc_serial));
+      unsigned char desc_serial[26] = { 0 };
+      int ret = libusb_get_string_descriptor_ascii(dev_handle, desc.iSerialNumber, desc_serial, std::size(desc_serial));
       if (ret < 0) { goto fail; }
 
-      if (serial.empty() || serial.compare(reinterpret_cast<const char*>(desc_serial)) == 0) {
+      usb_serial = std::string((char *)desc_serial, ret).c_str();
+      if (serial.empty() || serial == usb_serial) {
         break;
       }
       libusb_close(dev_handle);
@@ -90,6 +102,48 @@ void Panda::cleanup() {
   if (ctx) {
     libusb_exit(ctx);
   }
+}
+
+std::vector<std::string> Panda::list() {
+  // init libusb
+  ssize_t num_devices;
+  libusb_context *context = NULL;
+  libusb_device **dev_list = NULL;
+  std::vector<std::string> serials;
+  
+  int err = init_usb_ctx(context);
+  if (err != 0) { return serials; }
+
+  num_devices = libusb_get_device_list(context, &dev_list);
+  if (num_devices < 0) {
+    LOGE("libusb can't get device list");
+    goto finish;
+  }
+  for (size_t i = 0; i < num_devices; ++i) {
+    libusb_device *device = dev_list[i];
+    libusb_device_descriptor desc;
+    libusb_get_device_descriptor(device, &desc);
+    if (desc.idVendor == 0xbbaa && desc.idProduct == 0xddcc) {
+      libusb_device_handle *handle = NULL;
+      libusb_open(device, &handle);
+      unsigned char desc_serial[26] = { 0 };
+      int ret = libusb_get_string_descriptor_ascii(handle, desc.iSerialNumber, desc_serial, std::size(desc_serial));
+      libusb_release_interface(handle, 0);
+      libusb_close(handle);
+
+      if (ret < 0) { goto finish; }
+      serials.push_back(std::string((char *)desc_serial, ret).c_str());
+    }
+  }
+
+finish:
+  if (context) {
+    libusb_exit(context);
+  }
+  if (dev_list != NULL) {
+    libusb_free_device_list(dev_list, 1);
+  }
+  return serials;
 }
 
 void Panda::handle_usb_issue(int err, const char func[]) {
