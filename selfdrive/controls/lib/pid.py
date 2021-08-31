@@ -16,7 +16,11 @@ class PIController():
   def __init__(self, k_p, k_i, k_f=1., pos_limit=None, neg_limit=None, rate=100, sat_limit=0.8):
     self._k_p = k_p  # proportional gain
     self._k_i = k_i  # integral gain
-    self.k_f = k_f  # feedforward gain
+    self.k_f = k_f   # feedforward gain
+    if isinstance(self._k_p, Number):
+      self._k_p = [[self._k_p]]
+    if isinstance(self._k_i, Number):
+      self._k_i = [[self._k_i, ]]
 
     self.pos_limit = pos_limit
     self.neg_limit = neg_limit
@@ -30,14 +34,10 @@ class PIController():
 
   @property
   def k_p(self):
-    if isinstance(self._k_p, Number):
-      return self._k_p
     return interp(self.speed, self._k_p[0], self._k_p[1])
 
   @property
   def k_i(self):
-    if isinstance(self._k_i, Number):
-      return self._k_i
     return interp(self.speed, self._k_i[0], self._k_i[1])
 
   def _check_saturation(self, control, check_saturation, error):
