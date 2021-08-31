@@ -104,7 +104,7 @@ int device_control(int fd, int op_code, int session_handle, int dev_handle) {
     struct cam_release_dev_cmd cmd { .session_handle = session_handle, .dev_handle = dev_handle };
     return cam_control(fd, op_code, &cmd, sizeof(cmd));
   } else {
-    asssert(0);
+    assert(0);
   }
 }
 
