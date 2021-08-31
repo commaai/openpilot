@@ -399,7 +399,7 @@ static void sensors_init(MultiCameraState *s) {
     .output_format = MSM_SENSOR_BAYER,
   }};
 
-  unique_fd sensorinit_fd = open("/dev/v4l-subdev11", O_RDWR | O_NONBLOCK);
+  unique_fd sensorinit_fd = HANDLE_EINTR(open("/dev/v4l-subdev11", O_RDWR | O_NONBLOCK));
   assert(sensorinit_fd >= 0);
   for (auto &info : slave_infos) {
     info.power_setting_array.power_setting = &info.power_setting_array.power_setting_a[0];
@@ -419,29 +419,29 @@ static void camera_open(CameraState *s, bool is_road_cam) {
   // open devices
   const char *sensor_dev;
   if (is_road_cam) {
-    s->csid_fd = open("/dev/v4l-subdev3", O_RDWR | O_NONBLOCK);
+    s->csid_fd = HANDLE_EINTR(open("/dev/v4l-subdev3", O_RDWR | O_NONBLOCK));
     assert(s->csid_fd >= 0);
-    s->csiphy_fd = open("/dev/v4l-subdev0", O_RDWR | O_NONBLOCK);
+    s->csiphy_fd = HANDLE_EINTR(open("/dev/v4l-subdev0", O_RDWR | O_NONBLOCK));
     assert(s->csiphy_fd >= 0);
     sensor_dev = "/dev/v4l-subdev17";
-    s->isp_fd = open("/dev/v4l-subdev13", O_RDWR | O_NONBLOCK);
+    s->isp_fd = HANDLE_EINTR(open("/dev/v4l-subdev13", O_RDWR | O_NONBLOCK));
     assert(s->isp_fd >= 0);
-    s->actuator_fd = open("/dev/v4l-subdev7", O_RDWR | O_NONBLOCK);
+    s->actuator_fd = HANDLE_EINTR(open("/dev/v4l-subdev7", O_RDWR | O_NONBLOCK));
     assert(s->actuator_fd >= 0);
   } else {
-    s->csid_fd = open("/dev/v4l-subdev5", O_RDWR | O_NONBLOCK);
+    s->csid_fd = HANDLE_EINTR(open("/dev/v4l-subdev5", O_RDWR | O_NONBLOCK));
     assert(s->csid_fd >= 0);
-    s->csiphy_fd = open("/dev/v4l-subdev2", O_RDWR | O_NONBLOCK);
+    s->csiphy_fd = HANDLE_EINTR(open("/dev/v4l-subdev2", O_RDWR | O_NONBLOCK));
     assert(s->csiphy_fd >= 0);
     sensor_dev = "/dev/v4l-subdev18";
-    s->isp_fd = open("/dev/v4l-subdev14", O_RDWR | O_NONBLOCK);
+    s->isp_fd = HANDLE_EINTR(open("/dev/v4l-subdev14", O_RDWR | O_NONBLOCK));
     assert(s->isp_fd >= 0);
   }
 
   // wait for sensor device
   // on first startup, these devices aren't present yet
   for (int i = 0; i < 10; i++) {
-    s->sensor_fd = open(sensor_dev, O_RDWR | O_NONBLOCK);
+    s->sensor_fd = HANDLE_EINTR(open(sensor_dev, O_RDWR | O_NONBLOCK));
     if (s->sensor_fd >= 0) break;
     LOGW("waiting for sensors...");
     util::sleep_for(1000); // sleep one second
@@ -927,15 +927,15 @@ void cameras_open(MultiCameraState *s) {
       {.vfe_intf = VFE0, .intftype = RDI2, .num_cids = 1, .cids[0] = CID2, .csid = CSID0},
     },
   };
-  s->msmcfg_fd = open("/dev/media0", O_RDWR | O_NONBLOCK);
+  s->msmcfg_fd = HANDLE_EINTR(open("/dev/media0", O_RDWR | O_NONBLOCK));
   assert(s->msmcfg_fd >= 0);
 
   sensors_init(s);
 
-  s->v4l_fd = open("/dev/video0", O_RDWR | O_NONBLOCK);
+  s->v4l_fd = HANDLE_EINTR(open("/dev/video0", O_RDWR | O_NONBLOCK));
   assert(s->v4l_fd >= 0);
 
-  s->ispif_fd = open("/dev/v4l-subdev15", O_RDWR | O_NONBLOCK);
+  s->ispif_fd = HANDLE_EINTR(open("/dev/v4l-subdev15", O_RDWR | O_NONBLOCK));
   assert(s->ispif_fd >= 0);
 
   // ISPIF: stop
