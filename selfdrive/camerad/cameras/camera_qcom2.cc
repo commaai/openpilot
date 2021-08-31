@@ -733,7 +733,7 @@ static void camera_open(CameraState *s) {
   s->link_handle = req_mgr_link_info.link_hdl;
 
   static struct cam_req_mgr_link_control req_mgr_link_control = {0};
-  req_mgr_link_control.ops = 0;
+  req_mgr_link_control.ops = CAM_REQ_MGR_LINK_ACTIVATE;
   req_mgr_link_control.session_hdl = s->session_handle;
   req_mgr_link_control.num_links = 1;
   req_mgr_link_control.link_hdls[0] = s->link_handle;
@@ -828,7 +828,7 @@ static void camera_close(CameraState *s) {
   // link control stop
   LOG("-- Stop link control");
   static struct cam_req_mgr_link_control req_mgr_link_control = {0};
-  req_mgr_link_control.ops = 1;
+  req_mgr_link_control.ops = CAM_REQ_MGR_LINK_DEACTIVATE;
   req_mgr_link_control.session_hdl = s->session_handle;
   req_mgr_link_control.num_links = 1;
   req_mgr_link_control.link_hdls[0] = s->link_handle;
