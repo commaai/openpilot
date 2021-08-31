@@ -59,7 +59,6 @@ class Panda {
   bool has_rtc = false;
 
   // Static functions
-  static int init_usb(libusb_context *context);
   static std::vector<std::string> list();
 
   // HW communication
