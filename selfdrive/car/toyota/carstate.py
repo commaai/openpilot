@@ -20,7 +20,7 @@ class CarState(CarStateBase):
     # Need to apply an offset as soon as the steering angle measurements are both received
     self.needs_angle_offset = True
     self.accurate_steer_angle_seen = False
-    self.angle_offset = FirstOrderFilter(0, 60.0, DT_CTRL, initialized=False)
+    self.angle_offset = FirstOrderFilter(None, 60.0, DT_CTRL, initialized=False)
 
     self.low_speed_lockout = False
     self.acc_type = 1
@@ -61,9 +61,8 @@ class CarState(CarStateBase):
       if abs(ret.steeringAngleDeg) < 90:
         self.angle_offset.update(torque_sensor_angle_deg - ret.steeringAngleDeg)
 
-      ret.steeringAngleOffsetDeg = self.angle_offset.x
-
       if self.angle_offset.initialized:
+        ret.steeringAngleOffsetDeg = self.angle_offset.x
         ret.steeringAngleDeg = torque_sensor_angle_deg - self.angle_offset.x
 
     ret.steeringRateDeg = cp.vl["STEER_ANGLE_SENSOR"]["STEER_RATE"]
