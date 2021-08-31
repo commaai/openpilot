@@ -81,7 +81,8 @@ int32_t device_acquire(int fd, int32_t session_handle, void *data) {
       .session_handle = session_handle,
       .handle_type = CAM_HANDLE_USER_POINTER,
       .num_resources = (uint32_t)(data ? 1 : 0),
-      .resource_hdl = (uint64_t)data};
+      .resource_hdl = (uint64_t)data,
+  };
   int err = cam_control(fd, CAM_ACQUIRE_DEV, &cmd, sizeof(cmd));
   assert(err == 0);
   return cmd.dev_handle;
@@ -91,7 +92,8 @@ int device_config(int fd, int32_t session_handle, int32_t dev_handle, uint64_t p
   struct cam_config_dev_cmd cmd = {
       .session_handle = session_handle,
       .dev_handle = dev_handle,
-      .packet_handle = packet_handle};
+      .packet_handle = packet_handle,
+  };
   return cam_control(fd, CAM_CONFIG_DEV, &cmd, sizeof(cmd));
 }
 
