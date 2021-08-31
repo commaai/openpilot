@@ -76,12 +76,30 @@ int cam_control(int fd, int op_code, void *handle, int size) {
   return ret;
 }
 
+std::optional<int32_t> device_acquire(int fd, int32_t session_handle, void *data) {
+  struct cam_acquire_dev_cmd cmd = {
+      .session_handle = session_handle,
+      .handle_type = CAM_HANDLE_USER_POINTER,
+      .num_resources = (uint32_t)(data ? 1 : 0),
+      .resource_hdl = (uint64_t)data,
+  };
+  int err = cam_control(fd, CAM_ACQUIRE_DEV, &cmd, sizeof(cmd));
+  return err == 0 ? std::make_optional(cmd.dev_handle) : std::nullopt;
+};
+
+int device_config(int fd, int32_t session_handle, int32_t dev_handle, uint64_t packet_handle) {
+  struct cam_config_dev_cmd cmd = {
+      .session_handle = session_handle,
+      .dev_handle = dev_handle,
+      .packet_handle = packet_handle,
+  };
+  return cam_control(fd, CAM_CONFIG_DEV, &cmd, sizeof(cmd));
+}
+
 int device_control(int fd, int op_code, int session_handle, int dev_handle) {
   // start stop and release are all the same
-  static struct cam_release_dev_cmd release_dev_cmd;
-  release_dev_cmd.session_handle = session_handle;
-  release_dev_cmd.dev_handle = dev_handle;
-  return cam_control(fd, op_code, &release_dev_cmd, sizeof(release_dev_cmd));
+  struct cam_start_stop_dev_cmd cmd { .session_handle = session_handle, .dev_handle = dev_handle };
+  return cam_control(fd, op_code, &cmd, sizeof(cmd));
 }
 
 void *alloc_w_mmu_hdl(int video0_fd, int len, uint32_t *handle, int align = 8, int flags = CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE,
@@ -151,13 +169,7 @@ void sensors_poke(struct CameraState *s, int request_id) {
   pkt->header.op_code = 0x7f;
   pkt->header.request_id = request_id;
 
-  struct cam_config_dev_cmd config_dev_cmd = {};
-  config_dev_cmd.session_handle = s->session_handle;
-  config_dev_cmd.dev_handle = s->sensor_dev_handle;
-  config_dev_cmd.offset = 0;
-  config_dev_cmd.packet_handle = cam_packet_handle;
-
-  int ret = cam_control(s->sensor_fd, CAM_CONFIG_DEV, &config_dev_cmd, sizeof(config_dev_cmd));
+  int ret = device_config(s->sensor_fd, s->session_handle, s->sensor_dev_handle, cam_packet_handle);
   assert(ret == 0);
 
   munmap(pkt, size);
@@ -186,13 +198,7 @@ void sensors_i2c(struct CameraState *s, struct i2c_random_wr_payload* dat, int l
   i2c_random_wr->header.addr_type = CAMERA_SENSOR_I2C_TYPE_WORD;
   memcpy(i2c_random_wr->random_wr_payload, dat, len*sizeof(struct i2c_random_wr_payload));
 
-  struct cam_config_dev_cmd config_dev_cmd = {};
-  config_dev_cmd.session_handle = s->session_handle;
-  config_dev_cmd.dev_handle = s->sensor_dev_handle;
-  config_dev_cmd.offset = 0;
-  config_dev_cmd.packet_handle = cam_packet_handle;
-
-  int ret = cam_control(s->sensor_fd, CAM_CONFIG_DEV, &config_dev_cmd, sizeof(config_dev_cmd));
+  int ret = device_config(s->sensor_fd, s->session_handle, s->sensor_dev_handle, cam_packet_handle);
   assert(ret == 0);
 
   munmap(i2c_random_wr, buf_desc[0].size);
@@ -432,13 +438,8 @@ void config_isp(struct CameraState *s, int io_mem_handle, int fence, int request
     io_cfg[0].framedrop_pattern = 0x1;
   }
 
-  struct cam_config_dev_cmd config_dev_cmd = {};
-  config_dev_cmd.session_handle = s->session_handle;
-  config_dev_cmd.dev_handle = s->isp_dev_handle;
-  config_dev_cmd.offset = 0;
-  config_dev_cmd.packet_handle = cam_packet_handle;
-
-  int ret = cam_control(s->multi_cam_state->isp_fd, CAM_CONFIG_DEV, &config_dev_cmd, sizeof(config_dev_cmd));
+  int ret = device_config(s->multi_cam_state->isp_fd, s->session_handle, s->isp_dev_handle, cam_packet_handle);
+  assert(ret == 0);
   if (ret != 0) {
     printf("ISP CONFIG FAILED\n");
   }
@@ -575,20 +576,12 @@ static void camera_open(CameraState *s) {
 
   // access the sensor
   LOGD("-- Accessing sensor");
-  static struct cam_acquire_dev_cmd acquire_dev_cmd = {0};
-  acquire_dev_cmd.session_handle = s->session_handle;
-  acquire_dev_cmd.handle_type = CAM_HANDLE_USER_POINTER;
-  ret = cam_control(s->sensor_fd, CAM_ACQUIRE_DEV, &acquire_dev_cmd, sizeof(acquire_dev_cmd));
-  LOGD("acquire sensor dev: %d", ret);
-  s->sensor_dev_handle = acquire_dev_cmd.dev_handle;
+  auto sensor_dev_handle = device_acquire(s->sensor_fd, s->session_handle, nullptr);
+  assert(sensor_dev_handle);
+  s->sensor_dev_handle = *sensor_dev_handle;
+  LOGD("acquire sensor dev");
 
   static struct cam_isp_resource isp_resource = {0};
-
-  acquire_dev_cmd.session_handle = s->session_handle;
-  acquire_dev_cmd.handle_type = CAM_HANDLE_USER_POINTER;
-  acquire_dev_cmd.num_resources = 1;
-  acquire_dev_cmd.resource_hdl = (uint64_t)&isp_resource;
-
   isp_resource.resource_id = CAM_ISP_RES_ID_PORT;
   isp_resource.length = sizeof(struct cam_isp_in_port_info) + sizeof(struct cam_isp_out_port_info)*(1-1);
   isp_resource.handle_type = CAM_HANDLE_USER_POINTER;
@@ -650,23 +643,17 @@ static void camera_open(CameraState *s) {
     .comp_grp_id = 0x0, .split_point = 0x0, .secure_mode = 0x0,
   };
 
-  ret = cam_control(s->multi_cam_state->isp_fd, CAM_ACQUIRE_DEV, &acquire_dev_cmd, sizeof(acquire_dev_cmd));
-  LOGD("acquire isp dev: %d", ret);
+  auto isp_dev_handle = device_acquire(s->multi_cam_state->isp_fd, s->session_handle, &isp_resource);
+  assert(isp_dev_handle);
+  s->isp_dev_handle = *isp_dev_handle; 
+  LOGD("acquire isp dev");
   free(in_port_info);
-  s->isp_dev_handle = acquire_dev_cmd.dev_handle;
 
-  static struct cam_csiphy_acquire_dev_info csiphy_acquire_dev_info = {0};
-  csiphy_acquire_dev_info.combo_mode = 0;
-
-  acquire_dev_cmd.session_handle = s->session_handle;
-  acquire_dev_cmd.handle_type = CAM_HANDLE_USER_POINTER;
-  acquire_dev_cmd.num_resources = 1;
-  acquire_dev_cmd.resource_hdl = (uint64_t)&csiphy_acquire_dev_info;
-
-  ret = cam_control(s->csiphy_fd, CAM_ACQUIRE_DEV, &acquire_dev_cmd, sizeof(acquire_dev_cmd));
-
-  LOGD("acquire csiphy dev: %d", ret);
-  s->csiphy_dev_handle = acquire_dev_cmd.dev_handle;
+  struct cam_csiphy_acquire_dev_info csiphy_acquire_dev_info = {.combo_mode = 0};
+  auto csiphy_dev_handle = device_acquire(s->csiphy_fd, s->session_handle, &csiphy_acquire_dev_info);
+  assert(csiphy_dev_handle);
+  s->csiphy_dev_handle = *csiphy_dev_handle;
+  LOGD("acquire csiphy dev");
 
   // acquires done
 
@@ -706,13 +693,7 @@ static void camera_open(CameraState *s) {
     csiphy_info->settle_time = MIPI_SETTLE_CNT * 200000000ULL;
     csiphy_info->data_rate = 48000000;  // Calculated by camera_freqs.py
 
-    static struct cam_config_dev_cmd config_dev_cmd = {};
-    config_dev_cmd.session_handle = s->session_handle;
-    config_dev_cmd.dev_handle = s->csiphy_dev_handle;
-    config_dev_cmd.offset = 0;
-    config_dev_cmd.packet_handle = cam_packet_handle;
-
-    int ret = cam_control(s->csiphy_fd, CAM_CONFIG_DEV, &config_dev_cmd, sizeof(config_dev_cmd));
+    int ret = device_config(s->csiphy_fd, s->session_handle, s->csiphy_dev_handle, cam_packet_handle);
     assert(ret == 0);
 
     munmap(csiphy_info, buf_desc[0].size);
