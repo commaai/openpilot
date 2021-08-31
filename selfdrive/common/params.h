@@ -4,8 +4,6 @@
 #include <sstream>
 #include <string>
 
-#define ERR_NO_VALUE -33
-
 enum ParamKeyType {
   PERSISTENT = 0x02,
   CLEAR_ON_MANAGER_START = 0x04,
