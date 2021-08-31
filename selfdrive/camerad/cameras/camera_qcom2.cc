@@ -76,7 +76,7 @@ int cam_control(int fd, int op_code, void *handle, int size) {
   return ret;
 }
 
-int32_t device_acquire(int fd, int32_t session_handle, void *data) {
+std::optional<int32_t> device_acquire(int fd, int32_t session_handle, void *data) {
   struct cam_acquire_dev_cmd cmd = {
       .session_handle = session_handle,
       .handle_type = CAM_HANDLE_USER_POINTER,
@@ -84,8 +84,7 @@ int32_t device_acquire(int fd, int32_t session_handle, void *data) {
       .resource_hdl = (uint64_t)data,
   };
   int err = cam_control(fd, CAM_ACQUIRE_DEV, &cmd, sizeof(cmd));
-  assert(err == 0);
-  return cmd.dev_handle;
+  return err == 0 ? std::make_optional(cmd.dev_handle) : std::nullopt;
 };
 
 int device_config(int fd, int32_t session_handle, int32_t dev_handle, uint64_t packet_handle) {
@@ -577,7 +576,8 @@ static void camera_open(CameraState *s) {
 
   // access the sensor
   LOGD("-- Accessing sensor");
-  s->sensor_dev_handle = device_acquire(s->sensor_fd, s->session_handle, nullptr);
+  s->sensor_dev_handle = device_acquire(s->sensor_fd, s->session_handle, nullptr).value_or(-1);
+  assert(s->sensor_dev_handle != -1);
   LOGD("acquire sensor dev");
 
   static struct cam_isp_resource isp_resource = {0};
@@ -642,13 +642,15 @@ static void camera_open(CameraState *s) {
     .comp_grp_id = 0x0, .split_point = 0x0, .secure_mode = 0x0,
   };
 
-  s->isp_dev_handle = device_acquire(s->multi_cam_state->isp_fd, s->session_handle, &isp_resource);
+  s->isp_dev_handle = device_acquire(s->multi_cam_state->isp_fd, s->session_handle, &isp_resource).value_or(-1);
+  assert(s->isp_dev_handle != -1);
   LOGD("acquire isp dev");
   free(in_port_info);
   
   static struct cam_csiphy_acquire_dev_info csiphy_acquire_dev_info = {0};
   csiphy_acquire_dev_info.combo_mode = 0;
-  s->csiphy_dev_handle = device_acquire(s->csiphy_fd, s->session_handle, &csiphy_acquire_dev_info);
+  s->csiphy_dev_handle = device_acquire(s->csiphy_fd, s->session_handle, &csiphy_acquire_dev_info).value_or(-1);
+  assert(s->csiphy_dev_handle != -1);
   LOGD("acquire csiphy dev");
 
   // acquires done
