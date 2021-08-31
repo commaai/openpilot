@@ -13,27 +13,25 @@
 #define MODEL_HEIGHT 640
 #define FULL_W 852 // should get these numbers from camerad
 
-#if defined(QCOM) || defined(QCOM2)
-#define input_lambda(x) (x - 128.f) * 0.0078125f
-#else
-#define input_lambda(x) x // for non SNPE running platforms, assume keras model instead has lambda layer
-#endif
-
 void dmonitoring_init(DMonitoringModelState* s, int width, int height) {
-  const char *model_path = Hardware::PC() ? "../../models/dmonitoring_model.dlc" : "../../models/dmonitoring_model_q.dlc";
-  int runtime = USE_DSP_RUNTIME;
-  s->m = new DefaultRunModel(model_path, &s->output[0], OUTPUT_SIZE, runtime);
   s->is_rhd = Params().getBool("IsRHD");
 
+  const char *model_path = Hardware::PC() ? "../../models/dmonitoring_model.dlc" : "../../models/dmonitoring_model_q.dlc";
+  s->m = new DefaultRunModel(model_path, &s->output[0], OUTPUT_SIZE, USE_DSP_RUNTIME);
+  for (int x = 0; x < std::size(s->tensor); ++x) {
+    s->tensor[x] = (x - 128.f) * 0.0078125f;
+  }
+
+  // initialize buffers
   if (Hardware::TICI()) {
     const int full_width_tici = 1928;
     const int full_height_tici = 1208;
     const int adapt_width_tici = 668;
     const int cropped_height = adapt_width_tici / 1.33;
     s->crop_rect = {full_width_tici / 2 - adapt_width_tici / 2,
-                 full_height_tici / 2 - cropped_height / 2 - 196,
-                 cropped_height / 2,
-                 cropped_height};
+                    full_height_tici / 2 - cropped_height / 2 - 196,
+                    cropped_height / 2,
+                    cropped_height};
     if (!s->is_rhd) {
       s->crop_rect.x += adapt_width_tici - s->crop_rect.w + 32;
     }
@@ -45,9 +43,9 @@ void dmonitoring_init(DMonitoringModelState* s, int width, int height) {
     }
   }
 
-  s->cropped_buf = std::make_unique<YUVBuf>(s->crop_rect.w, s->crop_rect.h);
-  s->premirror_cropped_buf = std::make_unique<YUVBuf>(s->crop_rect.w, s->crop_rect.h);
-  s->resized_buf = std::make_unique<YUVBuf>(MODEL_WIDTH, MODEL_HEIGHT);
+  s->cropped_buf.init(s->crop_rect.w, s->crop_rect.h);
+  s->premirror_cropped_buf.init(s->crop_rect.w, s->crop_rect.h);
+  s->resized_buf.init(MODEL_WIDTH, MODEL_HEIGHT);
   s->net_input_buf.resize((MODEL_WIDTH / 2) * (MODEL_HEIGHT / 2) * 6);  // Y|u|v -> y|y|y|y|u|v
 }
 
@@ -64,31 +62,29 @@ void crop_yuv(uint8_t *raw, int width, int height, const YUVBuf *buf, const Rect
 }
 
 DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_buf, int width, int height) {
-  const int resized_width = MODEL_WIDTH;
-  const int resized_height = MODEL_HEIGHT;
   const int crop_w = s->crop_rect.w;
   const int crop_h = s->crop_rect.h;
   if (!s->is_rhd) {
-    crop_yuv((uint8_t *)stream_buf, width, height, s->cropped_buf.get(), s->crop_rect);
+    crop_yuv((uint8_t *)stream_buf, width, height, &s->cropped_buf, s->crop_rect);
   } else {
-    crop_yuv((uint8_t *)stream_buf, width, height, s->premirror_cropped_buf.get(), s->crop_rect);
-    libyuv::I420Mirror(s->premirror_cropped_buf->y, crop_w,
-                       s->premirror_cropped_buf->u, crop_w / 2,
-                       s->premirror_cropped_buf->v, crop_w / 2,
-                       s->cropped_buf->y, crop_w,
-                       s->cropped_buf->u, crop_w / 2,
-                       s->cropped_buf->v, crop_w / 2,
+    crop_yuv((uint8_t *)stream_buf, width, height, &s->premirror_cropped_buf, s->crop_rect);
+    libyuv::I420Mirror(s->premirror_cropped_buf.y, crop_w,
+                       s->premirror_cropped_buf.u, crop_w / 2,
+                       s->premirror_cropped_buf.v, crop_w / 2,
+                       s->cropped_buf.y, crop_w,
+                       s->cropped_buf.u, crop_w / 2,
+                       s->cropped_buf.v, crop_w / 2,
                        crop_w, crop_h);
   }
 
-  libyuv::I420Scale(s->cropped_buf->y, crop_w,
-                    s->cropped_buf->u, crop_w / 2,
-                    s->cropped_buf->v, crop_w / 2,
+  libyuv::I420Scale(s->cropped_buf.y, crop_w,
+                    s->cropped_buf.u, crop_w / 2,
+                    s->cropped_buf.v, crop_w / 2,
                     crop_w, crop_h,
-                    s->resized_buf->y, resized_width,
-                    s->resized_buf->u, resized_width / 2,
-                    s->resized_buf->v, resized_width / 2,
-                    resized_width, resized_height,
+                    s->resized_buf.y, MODEL_WIDTH,
+                    s->resized_buf.u, MODEL_WIDTH / 2,
+                    s->resized_buf.v, MODEL_WIDTH / 2,
+                    MODEL_WIDTH, MODEL_HEIGHT,
                     libyuv::FilterModeEnum::kFilterBilinear);
 
   // one shot conversion, O(n) anyway
@@ -96,17 +92,17 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
   for (int r = 0; r < MODEL_HEIGHT/2; r++) {
     for (int c = 0; c < MODEL_WIDTH/2; c++) {
       // Y_ul
-      net_input_buf[(r*MODEL_WIDTH/2) + c + (0*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = s->tensor[resized_y[(2*r)*resized_width + 2*c]];
+      s->net_input_buf[(r*MODEL_WIDTH/2) + c + (0*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = s->tensor[s->resized_buf.y[(2*r)*MODEL_WIDTH + 2*c]];
       // Y_dl
-      net_input_buf[(r*MODEL_WIDTH/2) + c + (1*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = s->tensor[resized_y[(2*r+1)*resized_width + 2*c]];
+      s->net_input_buf[(r*MODEL_WIDTH/2) + c + (1*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = s->tensor[s->resized_buf.y[(2*r+1)*MODEL_WIDTH + 2*c]];
       // Y_ur
-      net_input_buf[(r*MODEL_WIDTH/2) + c + (2*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = s->tensor[resized_y[(2*r)*resized_width + 2*c+1]];
+      s->net_input_buf[(r*MODEL_WIDTH/2) + c + (2*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = s->tensor[s->resized_buf.y[(2*r)*MODEL_WIDTH + 2*c+1]];
       // Y_dr
-      net_input_buf[(r*MODEL_WIDTH/2) + c + (3*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = s->tensor[resized_y[(2*r+1)*resized_width + 2*c+1]];
+      s->net_input_buf[(r*MODEL_WIDTH/2) + c + (3*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = s->tensor[s->resized_buf.y[(2*r+1)*MODEL_WIDTH + 2*c+1]];
       // U
-      net_input_buf[(r*MODEL_WIDTH/2) + c + (4*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = s->tensor[resized_u[r*resized_width/2 + c]];
+      s->net_input_buf[(r*MODEL_WIDTH/2) + c + (4*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = s->tensor[s->resized_buf.u[r*MODEL_WIDTH/2 + c]];
       // V
-      net_input_buf[(r*MODEL_WIDTH/2) + c + (5*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = s->tensor[resized_v[r*resized_width/2 + c]];
+      s->net_input_buf[(r*MODEL_WIDTH/2) + c + (5*(MODEL_WIDTH/2)*(MODEL_HEIGHT/2))] = s->tensor[s->resized_buf.v[r*MODEL_WIDTH/2 + c]];
     }
   }
 

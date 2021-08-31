@@ -33,27 +33,25 @@ struct Rect {
 
 class YUVBuf {
  public:
-  YUVBuf(int w, int h) : width(w), height(h) {
-    buf = new uint8_t[w * h * 3 / 2];
-    y = buf;
-    u = y + width * height;
-    v = u + (width / 2) * (height / 2);
+  YUVBuf() = default;
+  void init(int w, int h) {
+    y = new uint8_t[w * h * 3 / 2];
+    u = y + w * h;
+    v = u + (w / 2) * (h / 2);
   }
   ~YUVBuf() {
-    delete[] buf;
+    delete[] y;
   }
   uint8_t *y, *u, *v;
-  int width, height;
-  uint8_t* buf;
 };
 
 typedef struct DMonitoringModelState {
   RunModel *m;
   bool is_rhd;
   float output[OUTPUT_SIZE];
-  std::unique_ptr<YUVBuf> resized_buf;
-  std::unique_ptr<YUVBuf> cropped_buf;
-  std::unique_ptr<YUVBuf> premirror_cropped_buf;
+  YUVBuf resized_buf;
+  YUVBuf cropped_buf;
+  YUVBuf premirror_cropped_buf;
   std::vector<float> net_input_buf;
   float tensor[UINT8_MAX + 1];
   Rect crop_rect;
