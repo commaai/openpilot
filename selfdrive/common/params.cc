@@ -330,6 +330,7 @@ void Params::clearAll(ParamKeyType key_type) {
   for (auto &[key, type] : keys) {
     if (type & key_type) {
       path = params_path + "/d/" + key;
+      unlink(path.c_str());
     }
   }
 
