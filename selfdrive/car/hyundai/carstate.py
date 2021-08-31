@@ -42,7 +42,7 @@ class CarState(CarStateBase):
     ret.yawRate = cp.vl["ESP12"]["YAW_RATE"]
     ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_lamp(
       50, cp.vl["CGW1"]["CF_Gway_TurnSigLh"], cp.vl["CGW1"]["CF_Gway_TurnSigRh"])
-    ret.steeringTorque = cp.vl["MDPS12"]["CR_Mdps_StrColTq"]
+    ret.steeringTorque = cp.vl["MDPS11"]['CR_Mdps_DrvTq'] 
     ret.steeringTorqueEps = cp.vl["MDPS12"]["CR_Mdps_OutTq"]
     ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD
     ret.steerWarning = cp.vl["MDPS12"]["CF_Mdps_ToiUnavail"] != 0 or cp.vl["MDPS12"]["CF_Mdps_ToiFlt"] != 0
@@ -165,6 +165,7 @@ class CarState(CarStateBase):
       ("CF_Mdps_ToiUnavail", "MDPS12", 0),
       ("CF_Mdps_ToiFlt", "MDPS12", 0),
       ("CR_Mdps_OutTq", "MDPS12", 0),
+      ("CR_Mdps_DrvTq", "MDPS11", 0),
 
       ("SAS_Angle", "SAS11", 0),
       ("SAS_Speed", "SAS11", 0),
