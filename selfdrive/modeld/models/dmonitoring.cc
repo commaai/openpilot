@@ -15,8 +15,11 @@
 
 void dmonitoring_init(DMonitoringModelState* s) {
   s->is_rhd = Params().getBool("IsRHD");
-
-  const char *model_path = Hardware::PC() ? "../../models/dmonitoring_model.onnx" : "../../models/dmonitoring_model_q.dlc";
+#ifdef USE_ONNX_MODEL:
+  const char *model_path = "../../models/dmonitoring_model.onnx";
+#else
+  const char *model_path = "../../models/dmonitoring_model_q.dlc";
+#endif
   s->m = new DefaultRunModel(model_path, &s->output[0], OUTPUT_SIZE, USE_DSP_RUNTIME);
   for (int x = 0; x < std::size(s->tensor); ++x) {
     s->tensor[x] = (x - 128.f) * 0.0078125f;
