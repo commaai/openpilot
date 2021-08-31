@@ -57,6 +57,7 @@ Panda::Panda(std::string serial) {
       dev_handle = NULL;
     }
   }
+  if (dev_handle == NULL) goto fail;
   libusb_free_device_list(dev_list, 1);
 
   if (libusb_kernel_driver_active(dev_handle, 0) == 1) {
@@ -110,7 +111,7 @@ std::vector<std::string> Panda::list() {
   libusb_context *context = NULL;
   libusb_device **dev_list = NULL;
   std::vector<std::string> serials;
-  
+
   int err = init_usb_ctx(context);
   if (err != 0) { return serials; }
 
