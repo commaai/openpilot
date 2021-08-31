@@ -17,10 +17,9 @@ if [ ! -d acados/ ]; then
   git clone https://github.com/commaai/acados.git $DIR/acados
 fi
 cd acados
-#git fetch
-#git checkout fast_get_set
-#git pull
-#git submodule update --recursive --init
+git fetch
+git checkout 05bcbfe42818738c74572f27d06ad75a28d3b380
+git submodule update --recursive --init
 
 # build
 mkdir -p build
