@@ -18,7 +18,7 @@ class PIController():
     self._k_i = k_i  # integral gain
     self.k_f = k_f   # feedforward gain
     if isinstance(self._k_p, Number):
-      self._k_p = [[self._k_p]]
+      self._k_p = [[self._k_p, ]]
     if isinstance(self._k_i, Number):
       self._k_i = [[self._k_i, ]]
 
