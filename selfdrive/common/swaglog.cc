@@ -1,7 +1,5 @@
 #include "selfdrive/common/swaglog.h"
 
-#include <cassert>
-#include <cstring>
 #include <iostream>
 #include <mutex>
 #include <string>
@@ -27,18 +25,8 @@ protected:
   int print_level_ = CLOUDLOG_WARNING;
 };
 
-LogState::~LogState() {
-  zmq_close(sock_);
-  zmq_ctx_destroy(zctx_);
-}
-
-void LogState::bind(const char* k, const char* v) {
-  ctx_j_[k] = v;
-}
-
 LogState::LogState() {
   zctx_ = zmq_ctx_new();
-
   sock_ = zmq_socket(zctx_, ZMQ_PUSH);
   int timeout = 100;  // 100 ms timeout on shutdown for messages to be received by logmessaged
   zmq_setsockopt(sock_, ZMQ_LINGER, &timeout, sizeof(timeout));
@@ -53,17 +41,28 @@ LogState::LogState() {
     print_level_ = CLOUDLOG_WARNING;
   }
 
-  // openpilot bindings
-  ctx_j_["dongle_id"] = util::getenv("DONGLE_ID");
-  ctx_j_["version"] = COMMA_VERSION;
-  ctx_j_["dirty"] = !getenv("CLEAN");
+  std::string device = "pc";
   if (Hardware::EON()) {
-    ctx_j_["device"] = "eon";
+    device = "eon";
   } else if (Hardware::TICI()) {
-    ctx_j_["device"] = "tici";
-  } else {
-    ctx_j_["device"] = "pc";
+    device = "tici";
   }
+
+  // openpilot bindings
+  ctx_j_ = {{"dongle_id", util::getenv("DONGLE_ID")},
+            {"version", COMMA_VERSION},
+            {"dirty", !getenv("CLEAN")},
+            {"device", device}};
+}
+
+LogState::~LogState() {
+  zmq_close(sock_);
+  zmq_ctx_destroy(zctx_);
+}
+
+void LogState::bind(const char* k, const char* v) {
+  std::lock_guard lk(lock_);
+  ctx_j_[k] = v;
 }
 
 void LogState::log(int levelnum, const char* filename, int lineno, const char* func, const char* msg) {

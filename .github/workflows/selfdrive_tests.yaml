@@ -249,7 +249,6 @@ jobs:
                         $UNIT_TEST selfdrive/hardware/tici && \
                         $UNIT_TEST tools/lib/tests && \
                         ./selfdrive/boardd/tests/test_boardd_usbprotocol && \
-                        ./selfdrive/common/tests/test_util && \
                         ./selfdrive/loggerd/tests/test_logger &&\
                         ./selfdrive/common/tests/test_common && \
                         ./selfdrive/proclogd/tests/test_proclog && \
