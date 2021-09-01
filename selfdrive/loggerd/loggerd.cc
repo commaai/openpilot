@@ -46,7 +46,8 @@ const int DCAM_BITRATE = Hardware::TICI() ? MAIN_BITRATE : 2500000;
 
 #define NO_CAMERA_PATIENCE 500 // fall back to time-based rotation if all cameras are dead
 
-const int SEGMENT_LENGTH = getenv("LOGGERD_TEST") ? atoi(getenv("LOGGERD_SEGMENT_LENGTH")) : 60;
+const bool LOGGERD_TEST = getenv("LOGGERD_TEST");
+const int SEGMENT_LENGTH = LOGGERD_TEST ? atoi(getenv("LOGGERD_SEGMENT_LENGTH")) : 60;
 
 ExitHandler do_exit;
 
@@ -262,7 +263,8 @@ void rotate_if_needed() {
 
   double tms = millis_since_boot();
   if ((tms - s.last_rotate_tms) > SEGMENT_LENGTH * 1000 &&
-      (tms - s.last_camera_seen_tms) > NO_CAMERA_PATIENCE) {
+      (tms - s.last_camera_seen_tms) > NO_CAMERA_PATIENCE &&
+      !LOGGERD_TEST) {
     LOGW("no camera packet seen. auto rotating");
     logger_rotate();
   }
