@@ -109,12 +109,17 @@ def gen_lat_mpc_solver():
 
 
 class LateralMpc():
-  def __init__(self):
+  def __init__(self, x0=np.zeros(6)):
     self.solver = AcadosOcpSolver('lat', N, EXPORT_DIR)
     self.x_sol = np.zeros((N+1, 4))
     self.u_sol = np.zeros((N))
     W = np.eye(3)
     self.Ws = np.tile(W[None], reps=(N,1,1))
+
+    # Somehow needed for stable init
+    self.solver.constraints_set(0, "lbx", x0)
+    self.solver.constraints_set(0, "ubx", x0)
+    self.solver.solve()
 
   def set_weights(self, path_weight, heading_weight, steer_rate_weight):
     self.Ws[:,0,0] = path_weight
@@ -128,8 +133,6 @@ class LateralMpc():
     x0_cp = np.copy(x0)
     self.solver.constraints_set(0, "lbx", x0_cp)
     self.solver.constraints_set(0, "ubx", x0_cp)
-    self.solver.solve()
-
     yref = np.column_stack([y_pts, heading_pts*(v_ego+5.0), np.zeros(N+1)])
     self.solver.cost_set_slice(0, N, "yref", yref[:N])
     self.solver.set(N, "yref", yref[N][:2])
@@ -139,7 +142,6 @@ class LateralMpc():
     self.x_sol = self.solver.get_slice(0, N+1, 'x')
     self.u_sol = self.solver.get_slice(0, N, 'u')
     self.cost = self.solver.get_cost()
-    #print(self.Ws)
 
 
 if __name__ == "__main__":
