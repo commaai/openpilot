@@ -116,9 +116,9 @@ struct LoggerdState {
 
   // Sync logic for startup
   std::atomic<bool> encoders_synced;
-  std::atomic<int> start_frame_id;
   std::atomic<int> encoders_ready;
-  std::atomic<int> latest_frame_id;
+  std::atomic<uint32_t> start_frame_id;
+  std::atomic<uint32_t> latest_frame_id;
 };
 LoggerdState s;
 
@@ -167,10 +167,7 @@ void encoder_thread(const LogCameraInfo &cam_info) {
         }
 
         if (!s.encoders_synced) {
-          // TODO: use atomic max() function
-          if (extra.frame_id > s.latest_frame_id) {
-            s.latest_frame_id = extra.frame_id;
-          }
+          update_max_atomic(s.latest_frame_id, extra.frame_id);
           continue;
         } else {
           // Wait for all encoders to reach the same frame id
@@ -348,7 +345,7 @@ int main(int argc, char** argv) {
         // Small margin in case one of the encoders already dropped the next frame
         s.start_frame_id = s.latest_frame_id + 2;
         s.encoders_synced = true;
-        LOGE("Starting encoders at frame id %d", s.start_frame_id.load());
+        LOGE("starting encoders at frame id %d", s.start_frame_id.load());
       }
     }
 
