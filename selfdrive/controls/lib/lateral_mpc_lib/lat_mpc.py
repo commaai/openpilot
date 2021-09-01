@@ -126,8 +126,8 @@ class LateralMpc():
 
   def run(self, x0, v_ego, car_rotation_radius, y_pts, heading_pts):
     x0_cp = np.copy(x0)
-    self.solver.constraints_set(0, "lbx", x0)
-    self.solver.constraints_set(0, "ubx", x0)
+    self.solver.constraints_set(0, "lbx", x0_cp)
+    self.solver.constraints_set(0, "ubx", x0_cp)
     self.solver.solve()
 
     yref = np.column_stack([y_pts, heading_pts*(v_ego+5.0), np.zeros(N+1)])
@@ -139,8 +139,6 @@ class LateralMpc():
     self.x_sol = self.solver.get_slice(0, N+1, 'x')
     self.u_sol = self.solver.get_slice(0, N, 'u')
     self.cost = self.solver.get_cost()
-    print('real deep: ', x0_cp[3], self.x_sol[0, 3], self.x_sol[16,3])
-    print(self.x_sol)
     #print(self.Ws)
 
 
