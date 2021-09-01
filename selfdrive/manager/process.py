@@ -37,7 +37,7 @@ def launcher(proc):
   except KeyboardInterrupt:
     cloudlog.warning("child %s got SIGINT" % proc)
   except Exception:
-    # can't install the crash handler becuase sys.excepthook doesn't play nice
+    # can't install the crash handler because sys.excepthook doesn't play nice
     # with threads, so catch it here.
     crash.capture_exception()
     raise
@@ -228,7 +228,7 @@ class PythonProcess(ManagerProcess):
 
 
 class DaemonProcess(ManagerProcess):
-  """Python process that has to stay running accross manager restart.
+  """Python process that has to stay running across manager restart.
   This is used for athena so you don't lose SSH access when restarting manager."""
   def __init__(self, name, module, param_name, enabled=True):
     self.name = name

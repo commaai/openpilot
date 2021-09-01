@@ -24,7 +24,3 @@ print(f"Average power: {round(average_power, 4)}W")
 
 if average_power > max_average_power:
   exit(1)
-
-
-
-

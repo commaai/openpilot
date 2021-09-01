@@ -116,6 +116,9 @@ class TestLoggerd(unittest.TestCase):
     if TICI:
       expected_files.add("ecamera.hevc")
 
+    # give camerad time to start
+    time.sleep(5)
+
     for _ in range(5):
       num_segs = random.randint(1, 10)
       length = random.randint(2, 5)
@@ -130,7 +133,7 @@ class TestLoggerd(unittest.TestCase):
         p = Path(f"{route_path}--{n}")
         logged = set([f.name for f in p.iterdir() if f.is_file()])
         diff = logged ^ expected_files
-        self.assertEqual(len(diff), 0)
+        self.assertEqual(len(diff), 0, f"{_=} {route_path=} {n=}, {logged=} {expected_files=}")
 
   def test_bootlog(self):
     # generate bootlog with fake launch log

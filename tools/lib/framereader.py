@@ -15,7 +15,7 @@ from lru import LRU
 import _io
 from tools.lib.cache import cache_path_for_file_path
 from tools.lib.exceptions import DataUnreadableError
-from tools.lib.file_helpers import atomic_write_in_dir
+from common.file_helpers import atomic_write_in_dir
 
 try:
   from xx.chffr.lib.filereader import FileReader

@@ -69,6 +69,15 @@ void OnroadWindow::updateState(const UIState &s) {
   }
 }
 
+void OnroadWindow::mousePressEvent(QMouseEvent* e) {
+  if (map != nullptr) {
+    bool sidebarVisible = geometry().x() > 0;
+    map->setVisible(!sidebarVisible && !map->isVisible());
+  }
+  // propagation event to parent(HomeWindow)
+  QWidget::mousePressEvent(e);
+}
+
 void OnroadWindow::offroadTransition(bool offroad) {
 #ifdef ENABLE_MAPS
   if (!offroad) {
@@ -82,8 +91,9 @@ void OnroadWindow::offroadTransition(bool offroad) {
       settings.setAccessToken(token.trimmed());
 
       MapWindow * m = new MapWindow(settings);
+      m->setFixedWidth(width() / 2 - bdr_s);
       QObject::connect(this, &OnroadWindow::offroadTransitionSignal, m, &MapWindow::offroadTransition);
-      split->addWidget(m);
+      split->addWidget(m, 0, Qt::AlignRight);
       map = m;
     }
   }

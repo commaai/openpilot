@@ -24,7 +24,7 @@ protected:
 private:
   Params params;
   SubMaster sm;
-  QImage face;
+  QImage face_img;
   bool is_rhd = false;
   bool frame_updated = false;
 };
@@ -39,7 +39,7 @@ signals:
   void done();
 
 protected:
-  void mousePressEvent(QMouseEvent* e) override;
+  void mouseReleaseEvent(QMouseEvent* e) override;
 
 private:
   CameraViewWidget *cameraView;

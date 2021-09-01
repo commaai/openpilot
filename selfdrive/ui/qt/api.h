@@ -5,8 +5,11 @@
 #include <QString>
 #include <QTimer>
 
+#include "selfdrive/common/util.h"
+
 namespace CommaApi {
 
+const QString BASE_URL = util::getenv("API_HOST", "https://api.commadotai.com").c_str();
 QByteArray rsa_sign(const QByteArray &data);
 QString create_jwt(const QJsonObject &payloads = {}, int expiry = 3600);
 
@@ -20,8 +23,10 @@ class HttpRequest : public QObject {
   Q_OBJECT
 
 public:
+  enum class Method {GET, DELETE};
+
   explicit HttpRequest(QObject* parent, bool create_jwt = true, int timeout = 20000);
-  void sendRequest(const QString &requestURL);
+  void sendRequest(const QString &requestURL, const Method method = Method::GET);
   bool active();
 
 protected:

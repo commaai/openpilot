@@ -10,6 +10,7 @@ import numpy as np
 import pygame  # pylint: disable=import-error
 
 import cereal.messaging as messaging
+from common.numpy_fast import clip
 from common.basedir import BASEDIR
 from selfdrive.config import UIParams as UP
 from tools.replay.lib.ui_helpers import (_BB_TO_FULL_FRAME, _FULL_FRAME_SIZE,
@@ -146,10 +147,12 @@ def ui_thread(addr, frame_address):
     plot_arr[-1, name_to_arr_idx['angle_steers_des']] = sm['carControl'].actuators.steeringAngleDeg
     plot_arr[-1, name_to_arr_idx['angle_steers_k']] = angle_steers_k
     plot_arr[-1, name_to_arr_idx['gas']] = sm['carState'].gas
-    plot_arr[-1, name_to_arr_idx['computer_gas']] = sm['carControl'].actuators.gas
+    # TODO gas is deprecated
+    plot_arr[-1, name_to_arr_idx['computer_gas']] = clip(sm['carControl'].actuators.accel/4.0, 0.0, 1.0)
     plot_arr[-1, name_to_arr_idx['user_brake']] = sm['carState'].brake
     plot_arr[-1, name_to_arr_idx['steer_torque']] = sm['carControl'].actuators.steer * ANGLE_SCALE
-    plot_arr[-1, name_to_arr_idx['computer_brake']] = sm['carControl'].actuators.brake
+    # TODO brake is deprecated
+    plot_arr[-1, name_to_arr_idx['computer_brake']] = clip(-sm['carControl'].actuators.accel/4.0, 0.0, 1.0)
     plot_arr[-1, name_to_arr_idx['v_ego']] = sm['carState'].vEgo
     plot_arr[-1, name_to_arr_idx['v_pid']] = sm['controlsState'].vPid
     plot_arr[-1, name_to_arr_idx['v_override']] = sm['carControl'].cruiseControl.speedOverride

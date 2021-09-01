@@ -13,15 +13,20 @@ QFrame *horizontal_line(QWidget *parent = nullptr);
 class ElidedLabel : public QLabel {
   Q_OBJECT
 
- public:
+public:
   explicit ElidedLabel(QWidget *parent = 0);
   explicit ElidedLabel(const QString &text, QWidget *parent = 0);
 
- protected:
+signals:
+  void clicked();
+
+protected:
   void paintEvent(QPaintEvent *event) override;
   void resizeEvent(QResizeEvent* event) override;
+  void mouseReleaseEvent(QMouseEvent *event) override { emit clicked(); }
   QString lastText_, elidedText_;
 };
+
 
 class AbstractControl : public QFrame {
   Q_OBJECT
@@ -112,14 +117,19 @@ class ParamControl : public ToggleControl {
 
 public:
   ParamControl(const QString &param, const QString &title, const QString &desc, const QString &icon, QWidget *parent = nullptr) : ToggleControl(title, desc, icon, false, parent) {
-    if (params.getBool(param.toStdString().c_str())) {
-      toggle.togglePosition();
-    }
+    key = param.toStdString();
     QObject::connect(this, &ToggleControl::toggleFlipped, [=](bool state) {
-      params.putBool(param.toStdString().c_str(), state);
+      params.putBool(key, state);
     });
   }
 
+  void showEvent(QShowEvent *event) override {
+    if (params.getBool(key) != toggle.on) {
+      toggle.togglePosition();
+    }
+  };
+
 private:
+  std::string key;
   Params params;
 };
