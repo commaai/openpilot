@@ -12,11 +12,11 @@ elif [ -f /EON ]; then
   BLAS_TARGET="ARMV8A_ARM_CORTEX_A57"
 fi
 
-if [ ! -d acados/ ]; then
+if [ ! -d acados_repo/ ]; then
   #git clone https://github.com/acados/acados.git $DIR/acados
-  git clone https://github.com/commaai/acados.git $DIR/acados
+  git clone https://github.com/commaai/acados.git $DIR/acados_repo
 fi
-cd acados
+cd acados_repo
 git fetch
 git checkout 05bcbfe42818738c74572f27d06ad75a28d3b380
 git submodule update --recursive --init
@@ -31,14 +31,14 @@ INSTALL_DIR="$DIR/$ARCHNAME"
 rm -rf $INSTALL_DIR
 mkdir -p $INSTALL_DIR
 
-rm $DIR/acados/lib/*.json
+rm $DIR/acados_repo/lib/*.json
 
-cp -r $DIR/acados/include $DIR
-cp -r $DIR/acados/lib $INSTALL_DIR
-cp -r $DIR/acados/interfaces/acados_template/acados_template $DIR/../../pyextra
+cp -r $DIR/acados_repo/include $DIR
+cp -r $DIR/acados_repo/lib $INSTALL_DIR
+cp -r $DIR/acados_repo/interfaces/acados_template/acados_template $DIR/../../pyextra
 #pip3 install -e $DIR/acados/interfaces/acados_template
 
 # build tera
-cd $DIR/acados/interfaces/acados_template/tera_renderer/
+cd $DIR/acados_repo/interfaces/acados_template/tera_renderer/
 cargo build --verbose --release
 cp target/release/t_renderer $INSTALL_DIR/
