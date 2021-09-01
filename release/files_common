@@ -59,7 +59,7 @@ common/api/__init__.py
 models/supercombo.dlc
 models/dmonitoring_model_q.dlc
 
-release/build_release2.sh
+release/*
 
 selfdrive/version.py
 
@@ -275,6 +275,7 @@ selfdrive/hardware/hw.h
 selfdrive/hardware/eon/__init__.py
 selfdrive/hardware/eon/hardware.h
 selfdrive/hardware/eon/hardware.py
+selfdrive/hardware/eon/androidd.py
 selfdrive/hardware/tici/__init__.py
 selfdrive/hardware/tici/hardware.py
 selfdrive/hardware/tici/amplifier.py
@@ -310,7 +311,9 @@ selfdrive/logcatd/logcatd_android.cc
 selfdrive/logcatd/logcatd_systemd.cc
 
 selfdrive/proclogd/SConscript
-selfdrive/proclogd/proclogd.cc
+selfdrive/proclogd/main.cc
+selfdrive/proclogd/proclog.cc
+selfdrive/proclogd/proclog.h
 
 selfdrive/loggerd/SConscript
 selfdrive/loggerd/encoder.h
@@ -354,6 +357,7 @@ selfdrive/ui/*.h
 selfdrive/ui/ui
 selfdrive/ui/text
 selfdrive/ui/spinner
+selfdrive/ui/soundd
 
 selfdrive/ui/qt/*.cc
 selfdrive/ui/qt/*.h
@@ -435,7 +439,10 @@ selfdrive/modeld/runners/run.h
 selfdrive/monitoring/dmonitoringd.py
 selfdrive/monitoring/driver_monitor.py
 
+selfdrive/assets/.gitignore
+selfdrive/assets/assets.qrc
 selfdrive/assets/*.png
+selfdrive/assets/*.svg
 selfdrive/assets/fonts/*.ttf
 selfdrive/assets/images/*
 selfdrive/assets/offroad/*
@@ -498,6 +505,7 @@ cereal/log.capnp
 cereal/services.py
 cereal/SConscript
 cereal/include/**
+cereal/logger/logger.h
 cereal/messaging/.gitignore
 cereal/messaging/__init__.py
 cereal/messaging/bridge.cc
@@ -521,7 +529,6 @@ cereal/visionipc/*.pxd
 
 panda/.gitignore
 panda/__init__.py
-panda/VERSION
 panda/board/**
 panda/certs/**
 panda/crypto/**
@@ -573,7 +580,6 @@ opendbc/honda_crv_ex_2017_body_generated.dbc
 opendbc/honda_crv_executive_2016_can_generated.dbc
 opendbc/honda_crv_hybrid_2019_can_generated.dbc
 opendbc/honda_fit_ex_2018_can_generated.dbc
-opendbc/honda_hrv_touring_2019_can_generated.dbc
 opendbc/honda_odyssey_exl_2018_generated.dbc
 opendbc/honda_odyssey_extreme_edition_2018_china_can_generated.dbc
 opendbc/honda_pilot_touring_2017_can_generated.dbc
@@ -616,3 +622,4 @@ opendbc/toyota_tss2_adas.dbc
 opendbc/vw_mqb_2010.dbc
 
 opendbc/tesla_can.dbc
+opendbc/tesla_radar.dbc

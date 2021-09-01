@@ -9,7 +9,7 @@ import pycurl
 from hashlib import sha256
 from io import BytesIO
 from tenacity import retry, wait_random_exponential, stop_after_attempt
-from tools.lib.file_helpers import mkdirs_exists_ok, atomic_write_in_dir
+from common.file_helpers import mkdirs_exists_ok, atomic_write_in_dir
 #  Cache chunk size
 K = 1000
 CHUNK_SIZE = 1000 * K
@@ -87,7 +87,7 @@ class URLFile(object):
 
     file_begin = self._pos
     file_end = self._pos + ll if ll is not None else self.get_length()
-    #  We have to allign with chunks we store. Position is the begginiing of the latest chunk that starts before or at our file
+    #  We have to align with chunks we store. Position is the begginiing of the latest chunk that starts before or at our file
     position = (file_begin // CHUNK_SIZE) * CHUNK_SIZE
     response = b""
     while True:
@@ -117,7 +117,12 @@ class URLFile(object):
     download_range = False
     headers = ["Connection: keep-alive"]
     if self._pos != 0 or ll is not None:
-      end = (self._pos + ll if ll is not None else self.get_length()) - 1
+      if ll is None:
+        end = self.get_length() - 1
+      else:
+        end = min(self._pos + ll, self.get_length()) - 1
+      if self._pos >= end:
+        return b""
       headers.append(f"Range: bytes={self._pos}-{end}")
       download_range = True
 

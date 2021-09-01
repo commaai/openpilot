@@ -4,6 +4,7 @@
 
 #include "selfdrive/common/util.h"
 #include "selfdrive/ui/qt/util.h"
+#include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/request_repeater.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
 #include "selfdrive/ui/qt/widgets/scrollview.h"
@@ -13,7 +14,10 @@ static QString shorten(const QString &str, int max_len) {
 }
 
 MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
-  QVBoxLayout *main_layout = new QVBoxLayout(this);
+  stack = new QStackedWidget;
+
+  QWidget * main_widget = new QWidget;
+  QVBoxLayout *main_layout = new QVBoxLayout(main_widget);
   const int icon_size = 200;
 
   // Home
@@ -57,23 +61,54 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
   ScrollView *recent_scroller = new ScrollView(recent_widget, this);
   main_layout->addWidget(recent_scroller, 1);
 
+  QWidget * no_prime_widget = new QWidget;
+  QVBoxLayout *no_prime_layout = new QVBoxLayout(no_prime_widget);
+  QLabel *signup_header = new QLabel("Try the Navigation Beta");
+  signup_header->setStyleSheet(R"(font-size: 75px; color: white; font-weight:600;)");
+  signup_header->setAlignment(Qt::AlignCenter);
+
+  no_prime_layout->addWidget(signup_header);
+  no_prime_layout->addSpacing(50);
+
+  QLabel *screenshot = new QLabel;
+  QPixmap pm = QPixmap("../assets/navigation/screenshot.png");
+  screenshot->setPixmap(pm.scaledToWidth(vwp_w * 0.5, Qt::SmoothTransformation));
+  no_prime_layout->addWidget(screenshot, 0, Qt::AlignHCenter);
+
+  QLabel *signup = new QLabel("Get turn-by-turn directions displayed and more with a comma \nprime subscription. Sign up now: https://connect.comma.ai");
+  signup->setStyleSheet(R"(font-size: 45px; color: white; font-weight:300;)");
+  signup->setAlignment(Qt::AlignCenter);
+
+  no_prime_layout->addSpacing(50);
+  no_prime_layout->addWidget(signup);
+
+  no_prime_layout->addStretch();
+
+  stack->addWidget(main_widget);
+  stack->addWidget(no_prime_widget);
+  stack->setCurrentIndex(1);
+
+  QVBoxLayout *wrapper = new QVBoxLayout(this);
+  wrapper->addWidget(stack);
+
   clear();
 
-  std::string dongle_id = params.get("DongleId");
-  if (util::is_valid_dongle_id(dongle_id)) {
+  if (auto dongle_id = getDongleId()) {
     // Fetch favorite and recent locations
     {
-      std::string url = "https://api.commadotai.com/v1/navigation/" + dongle_id + "/locations";
-      RequestRepeater* repeater = new RequestRepeater(this, QString::fromStdString(url), "ApiCache_NavDestinations", 30);
+      QString url = CommaApi::BASE_URL + "/v1/navigation/" + *dongle_id + "/locations";
+      RequestRepeater* repeater = new RequestRepeater(this, url, "ApiCache_NavDestinations", 30, true);
       QObject::connect(repeater, &RequestRepeater::receivedResponse, this, &MapPanel::parseResponse);
+      QObject::connect(repeater, &RequestRepeater::failedResponse, this, &MapPanel::failedResponse);
     }
 
     // Destination set while offline
     {
-      std::string url = "https://api.commadotai.com/v1/navigation/" + dongle_id + "/next";
-      RequestRepeater* repeater = new RequestRepeater(this, QString::fromStdString(url), "", 10, true);
+      QString url = CommaApi::BASE_URL + "/v1/navigation/" + *dongle_id + "/next";
+      RequestRepeater* repeater = new RequestRepeater(this, url, "", 10, true);
+      HttpRequest* deleter = new HttpRequest(this);
 
-      QObject::connect(repeater, &RequestRepeater::receivedResponse, [](QString resp) {
+      QObject::connect(repeater, &RequestRepeater::receivedResponse, [=](QString resp) {
         auto params = Params();
         if (resp != "null") {
           if (params.get("NavDestination").empty()) {
@@ -82,6 +117,9 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
           } else {
             qWarning() << "Got location from /next, but NavDestination already set";
           }
+
+          // Send DELETE to clear destination server side
+          deleter->sendRequest(url, HttpRequest::Method::DELETE);
         }
       });
     }
@@ -199,6 +237,12 @@ void MapPanel::parseResponse(const QString &response) {
   }
 
   recent_layout->addStretch();
+  stack->setCurrentIndex(0);
+  repaint();
+}
+
+void MapPanel::failedResponse(const QString &response) {
+  stack->setCurrentIndex(1);
 }
 
 void MapPanel::navigateTo(const QJsonObject &place) {

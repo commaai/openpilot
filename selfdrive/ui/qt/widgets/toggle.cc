@@ -37,13 +37,13 @@ void Toggle::paintEvent(QPaintEvent *e) {
 }
 
 void Toggle::mouseReleaseEvent(QMouseEvent *e) {
-  if(!enabled) {
+  if (!enabled) {
     return;
   }
   const int left = _radius;
   const int right = width() - _radius;
-  if(_x_circle != left && _x_circle != right) {
-    //Don't parse touch events, while the animation is running
+  if ((_x_circle != left && _x_circle != right) || !this->rect().contains(e->localPos().toPoint())) {
+    // If mouse release isn't in rect or animation is running, don't parse touch events
     return;
   }
   if (e->button() & Qt::LeftButton) {
@@ -73,10 +73,10 @@ bool Toggle::getEnabled() {
 
 void Toggle::setEnabled(bool value) {
   enabled = value;
-  if(value) {
+  if (value) {
     circleColor.setRgb(0xfafafa);
     green.setRgb(0x33ab4c);
-  }else{
+  } else {
     circleColor.setRgb(0x888888);
     green.setRgb(0x227722);
   }

@@ -1,4 +1,3 @@
-import os
 import math
 import numpy as np
 from common.realtime import sec_since_boot, DT_MDL
@@ -13,8 +12,6 @@ from cereal import log
 
 LaneChangeState = log.LateralPlan.LaneChangeState
 LaneChangeDirection = log.LateralPlan.LaneChangeDirection
-
-LOG_MPC = os.environ.get('LOG_MPC', False)
 
 LANE_CHANGE_SPEED_MIN = 30 * CV.MPH_TO_MS
 LANE_CHANGE_TIME_MAX = 10.
@@ -55,6 +52,7 @@ class LateralPlanner():
     self.lane_change_direction = LaneChangeDirection.none
     self.lane_change_timer = 0.0
     self.lane_change_ll_prob = 1.0
+    self.keep_pulse_timer = 0.0
     self.prev_one_blinker = False
     self.desire = log.LateralPlan.Desire.none
 
@@ -157,6 +155,16 @@ class LateralPlanner():
 
     self.desire = DESIRES[self.lane_change_direction][self.lane_change_state]
 
+    # Send keep pulse once per second during LaneChangeStart.preLaneChange
+    if self.lane_change_state in [LaneChangeState.off, LaneChangeState.laneChangeStarting]:
+      self.keep_pulse_timer = 0.0
+    elif self.lane_change_state == LaneChangeState.preLaneChange:
+      self.keep_pulse_timer += DT_MDL
+      if self.keep_pulse_timer > 1.0:
+        self.keep_pulse_timer = 0.0
+      elif self.desire in [log.LateralPlan.Desire.keepLeft, log.LateralPlan.Desire.keepRight]:
+        self.desire = log.LateralPlan.Desire.none
+
     # Turn off lanes during lane change
     if self.desire == log.LateralPlan.Desire.laneChangeRight or self.desire == log.LateralPlan.Desire.laneChangeLeft:
       self.LP.lll_prob *= self.lane_change_ll_prob
@@ -226,12 +234,3 @@ class LateralPlanner():
     plan_send.lateralPlan.laneChangeDirection = self.lane_change_direction
 
     pm.send('lateralPlan', plan_send)
-
-    if LOG_MPC:
-      dat = messaging.new_message('liveMpc')
-      dat.liveMpc.x = list(self.mpc_solution.x)
-      dat.liveMpc.y = list(self.mpc_solution.y)
-      dat.liveMpc.psi = list(self.mpc_solution.psi)
-      dat.liveMpc.curvature = list(self.mpc_solution.curvature)
-      dat.liveMpc.cost = self.mpc_solution.cost
-      pm.send('liveMpc', dat)

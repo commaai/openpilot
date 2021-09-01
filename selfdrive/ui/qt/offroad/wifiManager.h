@@ -10,30 +10,37 @@ enum class SecurityType {
   WPA,
   UNSUPPORTED
 };
-enum class ConnectedType{
+enum class ConnectedType {
   DISCONNECTED,
   CONNECTING,
   CONNECTED
+};
+enum class NetworkType {
+  NONE,
+  WIFI,
+  CELL,
+  ETHERNET
 };
 
 typedef QMap<QString, QMap<QString, QVariant>> Connection;
 typedef QVector<QMap<QString, QVariant>> IpConfig;
 
 struct Network {
-  QString path;
   QByteArray ssid;
   unsigned int strength;
   ConnectedType connected;
   SecurityType security_type;
 };
+bool compare_by_strength(const Network &a, const Network &b);
 
 class WifiManager : public QWidget {
   Q_OBJECT
+
 public:
   explicit WifiManager(QWidget* parent);
 
   void requestScan();
-  QVector<Network> seen_networks;
+  QMap<QString, Network> seenNetworks;
   QMap<QDBusObjectPath, QString> knownConnections;
   QString ipv4_address;
 
@@ -41,6 +48,7 @@ public:
   void forgetConnection(const QString &ssid);
   bool isKnownConnection(const QString &ssid);
   void activateWifiConnection(const QString &ssid);
+  NetworkType currentNetworkType();
 
   void connect(const Network &ssid);
   void connect(const Network &ssid, const QString &password);
@@ -55,7 +63,6 @@ public:
   QString getTetheringPassword();
 
 private:
-  QVector<QByteArray> seen_ssids;
   QString adapter;  // Path to network manager wifi-device
   QDBusConnection bus = QDBusConnection::systemBus();
   unsigned int raw_adapter_state;  // Connection status https://developer.gnome.org/NetworkManager/1.26/nm-dbus-types.html#NMDeviceState

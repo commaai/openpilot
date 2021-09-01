@@ -1,9 +1,33 @@
+Version 0.8.9 (2021-XX-XX)
+========================
+
+Version 0.8.8 (2021-08-27)
+========================
+ * New driving model with improved laneless performance
+   * Trained on 5000+ hours of diverse driving data from 3000+ users in 40+ countries
+   * Better anti-cheating methods during simulator training ensure the model hugs less when in laneless mode
+   * All new desire ground-truthing stack makes the model better at lane changes
+ * New driver monitoring model: improved performance on comma three
+ * NEOS 18 for comma two: update packages
+ * AGNOS 1.3 for comma three: fix display init at high temperatures
+ * Improved auto-exposure on comma three
+ * Improved longitudinal control on Honda Nidec cars
+ * Hyundai Kona Hybrid 2020 support thanks to haram-KONA!
+ * Hyundai Sonata Hybrid 2021 support thanks to Matt-Wash-Burn!
+ * Kia Niro Hybrid 2021 support thanks to tetious!
+
+Version 0.8.7 (2021-07-31)
+========================
+ * comma three support!
+ * Navigation alpha for the comma three!
+ * Volkswagen T-Cross 2021 support thanks to jyoung8607!
+
 Version 0.8.6 (2021-07-21)
 ========================
  * Revamp lateral and longitudinal planners
    * Refactor planner output API to be more readable and verbose
    * Planners now output desired trajectories for speed, acceleration, curvature, and curvature rate
-   * Use MPC for longitudinal planning when no lead car is present, this replaces a mostly hardcoded policy and makes accel and deccel smoother
+   * Use MPC for longitudinal planning when no lead car is present, makes accel and decel smoother
  * Remove "CHECK DRIVER FACE VISIBILITY" warning
  * Fixed cruise fault on some TSS2.5 Camrys and international Toyotas
  * Hyundai Elantra Hybrid 2021 support thanks to tecandrew!

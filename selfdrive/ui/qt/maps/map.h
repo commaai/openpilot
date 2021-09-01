@@ -111,6 +111,7 @@ private:
   bool localizer_valid = false;
 
   // Route
+  bool allow_open = true;
   bool gps_ok = false;
   QGeoServiceProvider *geoservice_provider;
   QGeoRoutingManager *routing_manager;

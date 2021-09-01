@@ -88,6 +88,8 @@ class TestEncoder(unittest.TestCase):
         if not record_front and "dcamera" in camera:
           continue
 
+        eon_dcam = EON and (camera == 'dcamera.hevc')
+
         file_path = f"{route_prefix_path}--{i}/{camera}"
 
         # check file size
@@ -103,30 +105,32 @@ class TestEncoder(unittest.TestCase):
           cmd = "LD_LIBRARY_PATH=/usr/local/lib " + cmd
 
         expected_frames = fps * SEGMENT_LENGTH
-        frame_tolerance = 1 if (EON and camera == 'dcamera.hevc') else 0
+        frame_tolerance = 1 if eon_dcam else 0
         probe = subprocess.check_output(cmd, shell=True, encoding='utf8')
         frame_count = int(probe.split('\n')[0].strip())
         counts.append(frame_count)
 
-        if EON:
-          self.assertTrue(abs(expected_frames - frame_count) <= frame_tolerance,
-                          f"{camera} failed frame count check: expected {expected_frames}, got {frame_count}")
-        else:
-          # loggerd waits for the slowest camera, so check count is at least the expected count,
-          # then check the min of the frame counts is exactly the expected frame count
-          self.assertTrue(frame_count >= expected_frames,
-                          f"{camera} failed frame count check: expected {expected_frames}, got {frame_count}")
+        self.assertTrue(abs(expected_frames - frame_count) <= frame_tolerance,
+                        f"{camera} failed frame count check: expected {expected_frames}, got {frame_count}")
 
         # Check encodeIdx
         if encode_idx_name is not None:
           rlog_path = f"{route_prefix_path}--{i}/rlog.bz2"
-          idxs = [getattr(m, encode_idx_name).segmentId for m in LogReader(rlog_path) if m.which() == encode_idx_name]
-          self.assertEqual(frame_count, len(idxs))
+
+          segment_idxs = [getattr(m, encode_idx_name).segmentId for m in LogReader(rlog_path) if m.which() == encode_idx_name]
+          encode_idxs = [getattr(m, encode_idx_name).encodeId for m in LogReader(rlog_path) if m.which() == encode_idx_name]
+
+          # Check frame count
+          self.assertEqual(frame_count, len(segment_idxs))
+          self.assertEqual(frame_count, len(encode_idxs))
 
           # Check for duplicates or skips
-          self.assertEqual(0, idxs[0])
-          self.assertEqual(len(idxs)-1, idxs[-1])
-          self.assertEqual(len(set(idxs)), len(idxs))
+          self.assertEqual(0, segment_idxs[0])
+          self.assertEqual(len(set(segment_idxs)), len(segment_idxs))
+
+          if not eon_dcam:
+            self.assertEqual(expected_frames * i, encode_idxs[0])
+          self.assertEqual(len(set(encode_idxs)), len(encode_idxs))
 
       if TICI:
         expected_frames = fps * SEGMENT_LENGTH

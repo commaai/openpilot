@@ -28,6 +28,8 @@
 #include "selfdrive/camerad/cameras/camera_frame_stream.h"
 #endif
 
+const int YUV_COUNT = 100;
+
 static cl_program build_debayer_program(cl_device_id device_id, cl_context context, const CameraInfo *ci, const CameraBuf *b, const CameraState *s) {
   char args[4096];
   snprintf(args, sizeof(args),
@@ -189,11 +191,11 @@ void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &fr
 }
 
 kj::Array<uint8_t> get_frame_image(const CameraBuf *b) {
-  static const int x_min = getenv("XMIN") ? atoi(getenv("XMIN")) : 0;
-  static const int y_min = getenv("YMIN") ? atoi(getenv("YMIN")) : 0;
-  static const int env_xmax = getenv("XMAX") ? atoi(getenv("XMAX")) : -1;
-  static const int env_ymax = getenv("YMAX") ? atoi(getenv("YMAX")) : -1;
-  static const int scale = getenv("SCALE") ? atoi(getenv("SCALE")) : 1;
+  static const int x_min = util::getenv("XMIN", 0);
+  static const int y_min = util::getenv("YMIN", 0);
+  static const int env_xmax = util::getenv("XMAX", -1);
+  static const int env_ymax = util::getenv("YMAX", -1);
+  static const int scale = util::getenv("SCALE", 1);
 
   assert(b->cur_rgb_buf);
 
@@ -358,7 +360,7 @@ static void driver_cam_auto_exposure(CameraState *c, SubMaster &sm) {
 
   static ExpRect rect = def_rect;
   // use driver face crop for AE
-  if (sm.updated("driverState")) {
+  if (Hardware::EON() && sm.updated("driverState")) {
     if (auto state = sm["driverState"].getDriverState(); state.getFaceProb() > 0.4) {
       auto face_position = state.getFacePosition();
       int x = is_rhd ? 0 : frame_width - (0.5 * frame_height);
@@ -366,8 +368,6 @@ static void driver_cam_auto_exposure(CameraState *c, SubMaster &sm) {
       int y = (face_position[1] + 0.5) * frame_height + y_offset;
       rect = {std::max(0, x - 72), std::min(b->rgb_width - 1, x + 72), 2,
               std::max(0, y - 72), std::min(b->rgb_height - 1, y + 72), 1};
-    } else {
-      rect = def_rect;
     }
   }
 
@@ -375,7 +375,8 @@ static void driver_cam_auto_exposure(CameraState *c, SubMaster &sm) {
 }
 
 void common_process_driver_camera(SubMaster *sm, PubMaster *pm, CameraState *c, int cnt) {
-  if (cnt % 3 == 0) {
+  int j = Hardware::TICI() ? 1 : 3;
+  if (cnt % j == 0) {
     sm->update(0);
     driver_cam_auto_exposure(c, *sm);
   }
