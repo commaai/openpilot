@@ -81,7 +81,7 @@ class LongControl():
     if len(long_plan.speeds) == CONTROL_N:
       v_target = interp(DEFAULT_LONG_LAG, T_IDXS[:CONTROL_N], long_plan.speeds)
       v_target_future = long_plan.speeds[-1]
-      a_target = interp(DEFAULT_LONG_LAG, T_IDXS[:CONTROL_N], long_plan.accels)
+      a_target = 2 * (v_target - long_plan.speeds[0])/DEFAULT_LONG_LAG - long_plan.accels[0]
     else:
       v_target = 0.0
       v_target_future = 0.0
