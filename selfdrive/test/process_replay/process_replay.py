@@ -429,7 +429,10 @@ def python_replay_process(cfg, lr, fingerprint=None):
 
       recv_cnt = len(recv_socks)
       while recv_cnt > 0:
-        m = fpm.wait_for_msg()
+        m = fpm.wait_for_msg().as_builder()
+        m.logMonoTime = msg.logMonoTime
+        m = m.as_reader()
+
         log_msgs.append(m)
         recv_cnt -= m.which() in recv_socks
   return log_msgs
@@ -466,6 +469,10 @@ def cpp_replay_process(cfg, lr, fingerprint=None):
           if response is None:
             print(f"Warning, no response received {i}")
           else:
+
+            response = response.as_builder()
+            response.logMonoTime = msg.logMonoTime
+            response = response.as_reader()
             log_msgs.append(response)
 
         if not len(resp_sockets):  # We only need to wait if we didn't already wait for a response
