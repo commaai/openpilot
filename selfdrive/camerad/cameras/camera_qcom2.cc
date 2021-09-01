@@ -663,7 +663,7 @@ static void camera_open(CameraState *s) {
 
   // link devices
   LOG("-- Link devices");
-  static struct cam_req_mgr_link_info req_mgr_link_info = {0};
+  struct cam_req_mgr_link_info req_mgr_link_info = {0};
   req_mgr_link_info.session_hdl = s->session_handle;
   req_mgr_link_info.num_devices = 2;
   req_mgr_link_info.dev_hdls[0] = s->isp_dev_handle;
@@ -672,7 +672,7 @@ static void camera_open(CameraState *s) {
   LOGD("link: %d", ret);
   s->link_handle = req_mgr_link_info.link_hdl;
 
-  static struct cam_req_mgr_link_control req_mgr_link_control = {0};
+  struct cam_req_mgr_link_control req_mgr_link_control = {0};
   req_mgr_link_control.ops = CAM_REQ_MGR_LINK_ACTIVATE;
   req_mgr_link_control.session_hdl = s->session_handle;
   req_mgr_link_control.num_links = 1;
