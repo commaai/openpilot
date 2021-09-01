@@ -63,9 +63,9 @@ class LateralPlanner():
 
     self.setup_mpc()
 
-  def setup_mpc(self):
-    self.lat_mpc = LateralMpc()
-    self.x0 = np.zeros(6)
+  def setup_mpc(self, x0=np.zeros(6)):
+    self.x0 = x0
+    self.lat_mpc = LateralMpc(x0=self.x0)
 
     self.desired_curvature = 0.0
     self.safe_desired_curvature = 0.0
