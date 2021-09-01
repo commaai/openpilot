@@ -85,7 +85,7 @@ std::map<std::string, std::string> read_files_in_dir(const std::string &path) {
 
   struct dirent *de = NULL;
   while ((de = readdir(d))) {
-    if (isalnum(de->d_name[0])) {
+    if (de->d_type != DT_DIR) {
       ret[de->d_name] = util::read_file(path + "/" + de->d_name);
     }
   }
