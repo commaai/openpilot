@@ -84,6 +84,7 @@ class TestEncoder(unittest.TestCase):
     def check_seg(i):
       # check each camera file size
       counts = []
+      first_frames = []
       for camera, fps, size, encode_idx_name in CAMERAS:
         if not record_front and "dcamera" in camera:
           continue
@@ -119,6 +120,7 @@ class TestEncoder(unittest.TestCase):
 
           segment_idxs = [getattr(m, encode_idx_name).segmentId for m in LogReader(rlog_path) if m.which() == encode_idx_name]
           encode_idxs = [getattr(m, encode_idx_name).encodeId for m in LogReader(rlog_path) if m.which() == encode_idx_name]
+          frame_idxs = [getattr(m, encode_idx_name).frameId for m in LogReader(rlog_path) if m.which() == encode_idx_name]
 
           # Check frame count
           self.assertEqual(frame_count, len(segment_idxs))
@@ -130,7 +132,10 @@ class TestEncoder(unittest.TestCase):
 
           if not eon_dcam:
             self.assertEqual(expected_frames * i, encode_idxs[0])
+            first_frames.append(frame_idxs[0])
           self.assertEqual(len(set(encode_idxs)), len(encode_idxs))
+
+      self.assertEqual(1, len(set(first_frames)))
 
       if TICI:
         expected_frames = fps * SEGMENT_LENGTH
