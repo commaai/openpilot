@@ -149,6 +149,17 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   main_layout->addWidget(new SshToggle());
   main_layout->addWidget(horizontal_line(), 0);
   main_layout->addWidget(new SshControl());
+  main_layout->addWidget(horizontal_line(), 0);
+
+  // Roaming toggle
+  const bool roamingEnabled = params.getBool("GsmRoaming");
+  wifi->setRoamingEnabled(roamingEnabled);
+  ToggleControl *roamingToggle = new ToggleControl("Enable Roaming", "", "", roamingEnabled);
+  QObject::connect(roamingToggle, &SshToggle::toggleFlipped, [=](bool state) {
+    params.putBool("GsmRoaming", state);
+    wifi->setRoamingEnabled(state);
+  });
+  main_layout->addWidget(roamingToggle);
 
   main_layout->addStretch(1);
 }
