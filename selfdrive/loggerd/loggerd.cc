@@ -135,7 +135,7 @@ void encoder_thread(const LogCameraInfo &cam_info) {
 
   while (!do_exit) {
     if (!vipc_client.connect(false)) {
-      util::sleep_for(1);
+      util::sleep_for(5);
       continue;
     }
 
@@ -340,13 +340,11 @@ int main(int argc, char** argv) {
   double start_ts = millis_since_boot();
   while (!do_exit) {
     // Check if all encoders are ready and start encoding at the same time
-    if (!s.encoders_synced) {
-      if (s.encoders_ready == s.max_waiting) {
-        // Small margin in case one of the encoders already dropped the next frame
-        s.start_frame_id = s.latest_frame_id + 2;
-        s.encoders_synced = true;
-        LOGE("starting encoders at frame id %d", s.start_frame_id.load());
-      }
+    if (!s.encoders_synced && (s.encoders_ready == s.max_waiting)) {
+      // Small margin in case one of the encoders already dropped the next frame
+      s.start_frame_id = s.latest_frame_id + 2;
+      s.encoders_synced = true;
+      LOGE("starting encoders at frame id %d", s.start_frame_id.load());
     }
 
 
