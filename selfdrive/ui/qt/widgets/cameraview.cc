@@ -146,19 +146,11 @@ void CameraViewWidget::initializeGL() {
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(frame_indicies), frame_indicies, GL_STATIC_DRAW);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   glBindVertexArray(0);
+
+  setStreamType(stream_type);
 }
 
 void CameraViewWidget::showEvent(QShowEvent *event) {
-  VisionStreamType type = stream_type;
-  if (type != VISION_STREAM_RGB_FRONT) {
-    bool wide_cam = Hardware::TICI() && Params().getBool("EnableWideCamera");
-    type = wide_cam ?  VISION_STREAM_RGB_WIDE : VISION_STREAM_RGB_BACK;
-  }
-  if (!vipc_client || type != stream_type) {
-    stream_type = type;
-    vipc_client.reset(new VisionIpcClient("camerad", stream_type, true));
-    updateFrameMat(width(), height());
-  }
   latest_frame = nullptr;
 }
 
@@ -172,6 +164,14 @@ void CameraViewWidget::mouseReleaseEvent(QMouseEvent *event) {
 
 void CameraViewWidget::resizeGL(int w, int h) {
   updateFrameMat(w, h);
+}
+
+void CameraViewWidget::setStreamType(VisionStreamType type) {
+  if (!vipc_client || type != stream_type) {
+    stream_type = type;
+    vipc_client.reset(new VisionIpcClient("camerad", stream_type, true));
+    updateFrameMat(width(), height());
+  }
 }
 
 void CameraViewWidget::updateFrameMat(int w, int h) {

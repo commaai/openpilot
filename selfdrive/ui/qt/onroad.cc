@@ -9,6 +9,11 @@
 #include "selfdrive/ui/qt/maps/map.h"
 #endif
 
+VisionStreamType getVisionStreamType() {
+  bool wide_cam = Hardware::TICI() && Params().getBool("EnableWideCamera");
+  return wide_cam ? VISION_STREAM_RGB_WIDE : VISION_STREAM_RGB_BACK;
+}
+
 OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout  = new QVBoxLayout(this);
   main_layout->setMargin(bdr_s);
@@ -21,7 +26,9 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   split = new QHBoxLayout(split_wrapper);
   split->setContentsMargins(0, 0, 0, 0);
   split->setSpacing(0);
-  split->addWidget(new NvgWindow(VISION_STREAM_RGB_BACK, this));
+  
+  nvg = new NvgWindow(getVisionStreamType(), this);
+  split->addWidget(nvg);
 
   stacked_layout->addWidget(split_wrapper);
 
@@ -95,6 +102,9 @@ void OnroadWindow::offroadTransition(bool offroad) {
 #endif
 
   alerts->updateAlert({}, bg);
+
+  // update stream type
+  nvg->setStreamType(getVisionStreamType());
 }
 
 void OnroadWindow::paintEvent(QPaintEvent *event) {
