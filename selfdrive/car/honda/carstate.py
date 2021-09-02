@@ -163,12 +163,8 @@ def get_can_signals(CP, gearbox_msg="GEARBOX"):
       ("GAS_PEDAL_2", 100),
     ]
   elif CP.carFingerprint == CAR.HRV:
-    signals += [("CAR_GAS", "GAS_PEDAL", 0),
-                ("MAIN_ON", "SCM_BUTTONS", 0),
+    signals += [("MAIN_ON", "SCM_BUTTONS", 0),
                 ("BRAKE_HOLD_ACTIVE", "VSA_STATUS", 0)]
-    checks += [
-      ("GAS_PEDAL", 100),
-    ]
   elif CP.carFingerprint == CAR.ODYSSEY:
     signals += [("MAIN_ON", "SCM_FEEDBACK", 0),
                 ("EPB_STATE", "EPB_STATUS", 0)]
@@ -296,10 +292,8 @@ class CarState(CarStateBase):
 
     self.pedal_gas = cp.vl["POWERTRAIN_DATA"]["PEDAL_GAS"]
     # crv doesn't include cruise control
-    if self.CP.carFingerprint in (CAR.CRV, CAR.CRV_EU, CAR.ODYSSEY, CAR.ACURA_RDX, CAR.RIDGELINE, CAR.PILOT_2019, CAR.ODYSSEY_CHN):
+    if self.CP.carFingerprint in (CAR.CRV, CAR.CRV_EU, CAR.HRV, CAR.ODYSSEY, CAR.ACURA_RDX, CAR.RIDGELINE, CAR.PILOT_2019, CAR.ODYSSEY_CHN):
       ret.gas = self.pedal_gas / 256.
-    elif self.CP.carFingerprint == CAR.HRV:
-      ret.gas = cp.vl["GAS_PEDAL"]["CAR_GAS"] / 256.
     else:
       ret.gas = cp.vl["GAS_PEDAL_2"]["CAR_GAS"] / 256.
 
