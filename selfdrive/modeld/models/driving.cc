@@ -63,9 +63,9 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context) {
   constexpr int output_size = OUTPUT_SIZE + TEMPORAL_SIZE;
   s->output.resize(output_size);
 
-#if defined(USE_THNEED)
+#ifdef USE_THNEED
   s->m = std::make_unique<ThneedModel>("../../models/supercombo.thneed", &s->output[0], output_size, USE_GPU_RUNTIME);
-#elif defined(USE_ONNX_MODEL)
+#elif USE_ONNX_MODEL
   s->m = std::make_unique<ONNXModel>("../../models/supercombo.onnx", &s->output[0], output_size, USE_GPU_RUNTIME);
 #else
   s->m = std::make_unique<SNPEModel>("../../models/supercombo.dlc", &s->output[0], output_size, USE_GPU_RUNTIME);
