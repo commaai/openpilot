@@ -44,8 +44,7 @@ class FCWChecker():
       ttc = min(2 * x_lead / (math.sqrt(delta) + v_rel), max_ttc)
     return ttc
 
-  def update(self, mpc_solution, cur_time, active, v_ego, a_ego, x_lead, v_lead, a_lead, y_lead, vlat_lead, fcw_lead, blinkers):
-    mpc_solution_a = list(mpc_solution[0].a_ego)
+  def update(self, mpc_solution_a, cur_time, active, v_ego, a_ego, x_lead, v_lead, a_lead, y_lead, vlat_lead, fcw_lead, blinkers):
 
     self.last_min_a = min(mpc_solution_a)
     self.v_lead_max = max(self.v_lead_max, v_lead)

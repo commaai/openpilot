@@ -5,13 +5,7 @@ import numpy as np
 from cereal import log
 import cereal.messaging as messaging
 from selfdrive.config import Conversions as CV
-from selfdrive.controls.lib.lead_mpc import LeadMpc
-
-
-def RW(v_ego, v_l):
-  TR = 1.8
-  G = 9.81
-  return (v_ego * TR - (v_l - v_ego) * TR + v_ego * v_ego / (2 * G) - v_l * v_l / (2 * G))
+from selfdrive.controls.lib.lead_mpc_lib.lead_mpc import RW, LeadMpc
 
 
 class FakePubMaster():
@@ -36,8 +30,8 @@ def run_following_distance_simulation(v_lead, t_end=200.0):
 
     # Setup CarState
     CS = messaging.new_message('carState')
-    CS.carState.vEgo = v_ego
-    CS.carState.aEgo = a_ego
+    CS.carState.vEgo = float(v_ego)
+    CS.carState.aEgo = float(a_ego)
 
     # Setup model packet
     radarstate = messaging.new_message('radarState')
@@ -57,7 +51,7 @@ def run_following_distance_simulation(v_lead, t_end=200.0):
     mpc.update(CS.carState, radarstate.radarState, 0)
 
     # Choose slowest of two solutions
-    v_ego, a_ego = mpc.mpc_solution.v_ego[5], mpc.mpc_solution.a_ego[5]
+    v_ego, a_ego = float(mpc.v_solution[5]), float(mpc.a_solution[5])
 
     # Update state
     x_lead += v_lead * dt
@@ -76,7 +70,7 @@ class TestFollowingDistance(unittest.TestCase):
       simulation_steady_state = run_following_distance_simulation(v_lead)
       correct_steady_state = RW(v_lead, v_lead) + 4.0
 
-      self.assertAlmostEqual(simulation_steady_state, correct_steady_state, delta=.1)
+      self.assertAlmostEqual(simulation_steady_state, correct_steady_state, delta=.2)
 
 
 if __name__ == "__main__":
