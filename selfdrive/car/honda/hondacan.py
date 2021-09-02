@@ -1,7 +1,7 @@
 from selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
-from selfdrive.swaglog import cloudlog
-from selfdrive.config import Conversions as CV
 from selfdrive.car.honda.values import HONDA_BOSCH, CAR
+from selfdrive.config import Conversions as CV
+from selfdrive.swaglog import cloudlog
 
 # CAN bus layout with relay
 # 0 = ACC-CAN - radar side
@@ -181,7 +181,7 @@ def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, is_metric, idx, 
       'SET_TO_1' : 0x01,
     }
     commands.append(packer.make_can_msg('RADAR_HUD', bus_pt, radar_hud_values, idx))
-    
+
     if car_fingerprint == CAR.CIVIC_BOSCH:
       commands.append(packer.make_can_msg("LEGACY_BRAKE_COMMAND", bus_pt, {}, idx))
 

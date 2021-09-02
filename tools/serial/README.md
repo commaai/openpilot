@@ -15,4 +15,7 @@ The serial is available on the [comma shop](https://comma.ai/shop/products/comma
 ```
 sudo screen /dev/ttyUSB0 115200
 ```
-or use `connect.sh` to run the previous command in a loop
+or use `connect.sh` to run the previous command in a loop.
+
+
+The username and password are both `comma`.

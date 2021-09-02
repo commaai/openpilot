@@ -1,8 +1,8 @@
+#include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/widgets/cameraview.h"
 
-#include "selfdrive/ui/qt/qt_window.h"
-
 namespace {
+
 const char frame_vertex_shader[] =
 #ifdef NANOVG_GL3_IMPLEMENTATION
   "#version 150 core\n"
@@ -73,9 +73,27 @@ mat4 get_driver_view_transform() {
   return transform;
 }
 
+mat4 get_fit_view_transform(float widget_aspect_ratio, float frame_aspect_ratio) {
+  float zx = 1, zy = 1;
+  if (frame_aspect_ratio > widget_aspect_ratio) {
+    zy = widget_aspect_ratio / frame_aspect_ratio;
+  } else {
+    zx = frame_aspect_ratio / widget_aspect_ratio;
+  }
+
+  const mat4 frame_transform = {{
+    zx, 0.0, 0.0, 0.0,
+    0.0, zy, 0.0, 0.0,
+    0.0, 0.0, 1.0, 0.0,
+    0.0, 0.0, 0.0, 1.0,
+  }};
+  return frame_transform;
+}
+
 } // namespace
 
-CameraViewWidget::CameraViewWidget(VisionStreamType stream_type, QWidget* parent) : stream_type(stream_type), QOpenGLWidget(parent) {
+CameraViewWidget::CameraViewWidget(VisionStreamType stream_type, bool zoom, QWidget* parent) :
+                                   stream_type(stream_type), zoomed_view(zoom), QOpenGLWidget(parent) {
   setAttribute(Qt::WA_OpaquePaintEvent);
 
   timer = new QTimer(this);
@@ -102,10 +120,10 @@ void CameraViewWidget::initializeGL() {
   auto [x1, x2, y1, y2] = stream_type == VISION_STREAM_RGB_FRONT ? std::tuple(0.f, 1.f, 1.f, 0.f) : std::tuple(1.f, 0.f, 1.f, 0.f);
   const uint8_t frame_indicies[] = {0, 1, 2, 0, 2, 3};
   const float frame_coords[4][4] = {
-    {-1.0, -1.0, x2, y1}, //bl
-    {-1.0,  1.0, x2, y2}, //tl
-    { 1.0,  1.0, x1, y2}, //tr
-    { 1.0, -1.0, x1, y1}, //br
+    {-1.0, -1.0, x2, y1}, // bl
+    {-1.0,  1.0, x2, y2}, // tl
+    { 1.0,  1.0, x1, y2}, // tr
+    { 1.0, -1.0, x1, y1}, // br
   };
 
   glGenVertexArrays(1, &frame_vao);
@@ -125,25 +143,6 @@ void CameraViewWidget::initializeGL() {
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   glBindVertexArray(0);
 
-  if (stream_type == VISION_STREAM_RGB_FRONT) {
-    frame_mat = matmul(device_transform, get_driver_view_transform());
-  } else {
-    auto intrinsic_matrix = stream_type == VISION_STREAM_RGB_WIDE ? ecam_intrinsic_matrix : fcam_intrinsic_matrix;
-    float zoom = ZOOM / intrinsic_matrix.v[0];
-    if (stream_type == VISION_STREAM_RGB_WIDE) {
-      zoom *= 0.5;
-    }
-    float zx = zoom * 2 * intrinsic_matrix.v[2] / width();
-    float zy = zoom * 2 * intrinsic_matrix.v[5] / height();
-
-    const mat4 frame_transform = {{
-      zx, 0.0, 0.0, 0.0,
-      0.0, zy, 0.0, -y_offset / height() * 2,
-      0.0, 0.0, 1.0, 0.0,
-      0.0, 0.0, 0.0, 1.0,
-    }};
-    frame_mat = matmul(device_transform, frame_transform);
-  }
   vipc_client = std::make_unique<VisionIpcClient>("camerad", stream_type, true);
 }
 
@@ -155,6 +154,43 @@ void CameraViewWidget::hideEvent(QHideEvent *event) {
   timer->stop();
   vipc_client->connected = false;
   latest_frame = nullptr;
+}
+
+void CameraViewWidget::mouseReleaseEvent(QMouseEvent *event) {
+  emit clicked();
+}
+
+void CameraViewWidget::resizeGL(int w, int h) {
+  if (!vipc_client->connected) {
+    return;
+  }
+
+  if (zoomed_view) {
+    if (stream_type == VISION_STREAM_RGB_FRONT) {
+      frame_mat = matmul(device_transform, get_driver_view_transform());
+    } else {
+      auto intrinsic_matrix = stream_type == VISION_STREAM_RGB_WIDE ? ecam_intrinsic_matrix : fcam_intrinsic_matrix;
+      float zoom = ZOOM / intrinsic_matrix.v[0];
+      if (stream_type == VISION_STREAM_RGB_WIDE) {
+        zoom *= 0.5;
+      }
+      float zx = zoom * 2 * intrinsic_matrix.v[2] / width();
+      float zy = zoom * 2 * intrinsic_matrix.v[5] / height();
+
+      const mat4 frame_transform = {{
+        zx, 0.0, 0.0, 0.0,
+        0.0, zy, 0.0, -y_offset / height() * 2,
+        0.0, 0.0, 1.0, 0.0,
+        0.0, 0.0, 0.0, 1.0,
+      }};
+      frame_mat = matmul(device_transform, frame_transform);
+    }
+  } else {
+    // fit frame to widget size
+    float w  = (float)width() / height();
+    float f = (float)vipc_client->buffers[0].width  / vipc_client->buffers[0].height;
+    frame_mat = matmul(device_transform, get_fit_view_transform(w, f));
+  }
 }
 
 void CameraViewWidget::paintGL() {
@@ -204,6 +240,7 @@ void CameraViewWidget::updateFrame() {
       assert(glGetError() == GL_NO_ERROR);
     }
     latest_frame = nullptr;
+    resizeGL(width(), height());
   }
 
   if (vipc_client->connected) {
