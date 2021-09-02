@@ -159,7 +159,7 @@ void encoder_thread(const LogCameraInfo &cam_info) {
       VisionBuf* buf = vipc_client.recv(&extra);
       if (buf == nullptr) continue;
 
-      if (cam_info.trigger_rotate) {
+      if (cam_info.trigger_rotate && (s.max_waiting > 1)) {
         if (!ready) {
           LOGE("%s encoder ready", cam_info.filename);
           ++s.encoders_ready;
@@ -176,7 +176,9 @@ void encoder_thread(const LogCameraInfo &cam_info) {
             continue;
           }
         }
+      }
 
+      if (cam_info.trigger_rotate) {
         s.last_camera_seen_tms = millis_since_boot();
       }
 
@@ -340,7 +342,7 @@ int main(int argc, char** argv) {
   double start_ts = millis_since_boot();
   while (!do_exit) {
     // Check if all encoders are ready and start encoding at the same time
-    if (!s.encoders_synced && (s.encoders_ready == s.max_waiting)) {
+    if ((s.max_waiting > 1) && !s.encoders_synced && (s.encoders_ready == s.max_waiting)) {
       // Small margin in case one of the encoders already dropped the next frame
       s.start_frame_id = s.latest_frame_id + 2;
       s.encoders_synced = true;
