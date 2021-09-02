@@ -159,7 +159,7 @@ void encoder_thread(const LogCameraInfo &cam_info) {
       VisionBuf* buf = vipc_client.recv(&extra);
       if (buf == nullptr) continue;
 
-      if (cam_info.trigger_rotate && s.max_waiting > 1) {
+      if (cam_info.trigger_rotate && (s.max_waiting > 1)) {
         if (!ready) {
           LOGE("%s encoder ready", cam_info.filename);
           ++s.encoders_ready;
