@@ -9,9 +9,11 @@
 #include <bitset>
 #include <cassert>
 #include <cerrno>
+#include <chrono>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <future>
 #include <thread>
 #include <unordered_map>
 
@@ -35,7 +37,6 @@
 #define SATURATE_IL 1600
 #define NIBBLE_TO_HEX(n) ((n) < 10 ? (n) + '0' : ((n) - 10) + 'a')
 
-std::atomic<bool> safety_setter_thread_running(false);
 std::atomic<bool> ignition(false);
 
 ExitHandler do_exit;
@@ -47,7 +48,7 @@ std::string get_time_str(const struct tm &time) {
   return s;
 }
 
-void safety_setter_thread(Panda *panda) {
+bool safety_setter_thread(Panda *panda) {
   LOGD("Starting safety setter thread");
   // diagnostic only is the default, needed for VIN query
   panda->set_safety_model(cereal::CarParams::SafetyModel::ELM327);
@@ -57,8 +58,7 @@ void safety_setter_thread(Panda *panda) {
   // switch to SILENT when CarVin param is read
   while (true) {
     if (do_exit || !panda->connected) {
-      safety_setter_thread_running = false;
-      return;
+      return false;
     };
 
     std::string value_vin = p.get("CarVin");
@@ -78,8 +78,7 @@ void safety_setter_thread(Panda *panda) {
   LOGW("waiting for params to set safety model");
   while (true) {
     if (do_exit || !panda->connected) {
-      safety_setter_thread_running = false;
-      return;
+      return false;
     };
 
     if (p.getBool("ControlsReady")) {
@@ -101,8 +100,7 @@ void safety_setter_thread(Panda *panda) {
   LOGW("setting safety model: %d with param %d", (int)safety_model, safety_param);
 
   panda->set_safety_model(safety_model, safety_param);
-
-  safety_setter_thread_running = false;
+  return true;
 }
 
 
@@ -360,10 +358,8 @@ void panda_state_thread(PubMaster *pm, Panda * peripheral_panda, Panda *panda, b
     // clear VIN, CarParams, and set new safety on car start
     if (ignition && !ignition_last) {
       params.clearAll(CLEAR_ON_IGNITION_ON);
-
-      if (!safety_setter_thread_running) {
-        safety_setter_thread_running = true;
-        std::thread(safety_setter_thread, panda).detach();
+      if (!safety_future.valid() || safety_future.wait_for(0ms) == std::future_status::ready) {
+        safety_future = std::async(std::launch::async, safety_setter_thread, panda);
       } else {
         LOGW("Safety setter thread already running");
       }
