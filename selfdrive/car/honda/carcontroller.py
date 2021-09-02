@@ -205,7 +205,7 @@ class CarController():
       # makes the car not react and causes integrator windup in controls.
       # Add 2mph buffer to the cruise speed of the HUD so car always responds.
       # This makes the HUD set speed not match openpilot's.
-      if hud_v_cruise > 0:
+      if enabled:
         hud_v_cruise += 2 * CV.MPH_TO_KPH
 
 
