@@ -183,17 +183,19 @@ class CarController():
 
     # wind brake from air resistance decel at high speed
     wind_brake = interp(CS.out.vEgo, [0.0, 2.3, 35.0], [0.001, 0.002, 0.15])
-
-    # All of this is only relevant for HONDA NIDEC
+    # all of this is only relevant for HONDA NIDEC
     max_accel = interp(CS.out.vEgo, P.NIDEC_MAX_ACCEL_BP, P.NIDEC_MAX_ACCEL_V)
     # TODO this 1.44 is just to maintain previous behavior
     pcm_accel = int(clip((accel/1.44)/max_accel, 0.0, 1.0) * 0xc6)
     pcm_speed_BP = [-wind_brake,
                     -wind_brake*(3/4),
-                      0.0]
+                      0.0,
+                      0.1]
+
     pcm_speed_V = [0.0,
                    clip(CS.out.vEgo + accel/2.0 - 2.0, 0.0, 100.0),
-                   clip(CS.out.vEgo + accel/2.0 + 2.0, 0.0, 100.0)]
+                   clip(CS.out.vEgo + accel/2.0 + 2.0, 0.0, 100.0),
+                   clip(CS.out.vEgo + 5.0, 0.0, 100.0)]
     pcm_speed = interp(-brake, pcm_speed_BP, pcm_speed_V)
 
     if not CS.CP.openpilotLongitudinalControl:
