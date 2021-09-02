@@ -150,12 +150,10 @@ void CameraViewWidget::initializeGL() {
   setStreamType(stream_type);
 }
 
-void CameraViewWidget::showEvent(QShowEvent *event) {
-  latest_frame = nullptr;
-}
 
 void CameraViewWidget::hideEvent(QHideEvent *event) {
   vipc_client->connected = false;
+  latest_frame = nullptr;
 }
 
 void CameraViewWidget::mouseReleaseEvent(QMouseEvent *event) {
