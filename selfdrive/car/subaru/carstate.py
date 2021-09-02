@@ -53,7 +53,7 @@ class CarState(CarStateBase):
 
     if self.car_fingerprint not in PREGLOBAL_CARS and cp.vl["Dashlights"]["UNITS"] == 1:
       ret.cruiseState.speed *= CV.MPH_TO_KPH
-    elif self.car_fingerprint in PREGLOBAL_CARS and cp.vl["Dash_State"]["UNITS"] == 1:
+    elif self.car_fingerprint in PREGLOBAL_CARS and cp.vl["Dash_State2"]["UNITS"] == 1:
       ret.cruiseState.speed *= CV.MPH_TO_KPH
 
     ret.seatbeltUnlatched = cp.vl["Dashlights"]["SEATBELT_FL"] == 1
@@ -136,11 +136,11 @@ class CarState(CarStateBase):
       ]
     else:
       signals += [
-        ("UNITS", "Dash_State", 0),
+        ("UNITS", "Dash_State2", 0),
       ]
 
       checks += [
-        ("Dash_State", 1),
+        ("Dash_State2", 1),
       ]
 
     if CP.carFingerprint == CAR.FORESTER_PREGLOBAL:
