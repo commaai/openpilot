@@ -241,6 +241,9 @@ selfdrive/controls/lib/lead_mpc.py
 
 selfdrive/controls/lib/cluster/*
 
+selfdrive/controls/lib/lateral_mpc_lib/.gitignore
+selfdrive/controls/lib/lead_mpc_lib/.gitignore
+selfdrive/controls/lib/longitudinal_mpc_lib/.gitignore
 selfdrive/controls/lib/lateral_mpc_lib/*
 selfdrive/controls/lib/lead_mpc_lib/*
 selfdrive/controls/lib/longitudinal_mpc_lib/*
