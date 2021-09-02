@@ -188,9 +188,6 @@ selfdrive/debug/*.py
 selfdrive/common/SConscript
 selfdrive/common/version.h
 
-selfdrive/common/framebuffer.h
-selfdrive/common/framebuffer.cc
-selfdrive/common/touch.[c,h]
 selfdrive/common/swaglog.h
 selfdrive/common/swaglog.cc
 selfdrive/common/util.cc
