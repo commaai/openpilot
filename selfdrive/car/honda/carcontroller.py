@@ -7,6 +7,7 @@ from selfdrive.car import create_gas_command
 from selfdrive.car.honda import hondacan
 from selfdrive.car.honda.values import OLD_NIDEC_LONG_CONTROL, CruiseButtons, VISUAL_HUD, HONDA_BOSCH, CarControllerParams
 from opendbc.can.packer import CANPacker
+from selfdrive.config import Conversions as CV
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
@@ -200,6 +201,14 @@ class CarController():
                      clip(CS.out.vEgo + 5.0, 0.0, 100.0)]
       pcm_speed = interp(gas-brake, pcm_speed_BP, pcm_speed_V)
 
+      # NIDEC cars do not allow acceleration when close to cruise speed, this
+      # makes the car not react and causes integrator windup in controls.
+      # Add 2mph buffer to the cruise speed of the HUD so car always responds.
+      # This makes the HUD set speed not match openpilot's.
+      if hud_v_cruise > 0:
+        hud_v_cruise += 2 * CV.MPH_TO_KPH
+
+
     if not CS.CP.openpilotLongitudinalControl:
       if (frame % 2) == 0:
         idx = frame // 2
@@ -236,7 +245,7 @@ class CarController():
             apply_gas = clip(gas_mult * gas, 0., 1.)
             can_sends.append(create_gas_command(self.packer, apply_gas, idx))
 
-    hud = HUDData(int(pcm_accel), int(round(hud_v_cruise + 2.)), hud_car,
+    hud = HUDData(int(pcm_accel), int(round(hud_v_cruise)), hud_car,
                   hud_lanes, fcw_display, acc_alert, steer_required)
 
     # Send dashboard UI commands.
