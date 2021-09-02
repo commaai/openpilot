@@ -108,10 +108,10 @@ class LongControl():
       prevent_overshoot = not CP.stoppingControl and CS.vEgo < 1.5 and v_target_future < 0.7
       deadzone = interp(v_ego_pid, CP.longitudinalTuning.deadzoneBP, CP.longitudinalTuning.deadzoneV)
 
-      # Don't integrate close to cruise speed
-      # Honda NIDECs integrate unbounded here if not
-      close_to_cruise = cruise_speed - 0.5 < CS.vEgo < cruise_speed + 0.5 and CS.vEgo > 5.
-      freeze_integrator = prevent_overshoot or close_to_cruise
+      ## Don't integrate close to cruise speed
+      ## Honda NIDECs integrate unbounded here if not
+      #close_to_cruise = cruise_speed - 0.5 < CS.vEgo < cruise_speed + 0.5 and CS.vEgo > 5.
+      freeze_integrator = prevent_overshoot# or close_to_cruise
 
       output_accel = self.pid.update(self.v_pid, v_ego_pid, speed=v_ego_pid, deadzone=deadzone, feedforward=a_target, freeze_integrator=freeze_integrator)
 

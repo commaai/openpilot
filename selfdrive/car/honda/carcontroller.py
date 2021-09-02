@@ -236,7 +236,7 @@ class CarController():
             apply_gas = clip(gas_mult * gas, 0., 1.)
             can_sends.append(create_gas_command(self.packer, apply_gas, idx))
 
-    hud = HUDData(int(pcm_accel), int(round(hud_v_cruise)), hud_car,
+    hud = HUDData(int(pcm_accel), int(round(hud_v_cruise + 1.)), hud_car,
                   hud_lanes, fcw_display, acc_alert, steer_required)
 
     # Send dashboard UI commands.
