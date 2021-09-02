@@ -115,11 +115,11 @@ def gen_lead_mpc_solver():
   ocp.solver_options.hessian_approx = 'GAUSS_NEWTON'
   ocp.solver_options.integrator_type = 'ERK'
   ocp.solver_options.nlp_solver_type = 'SQP_RTI'
-  ocp.solver_options.nlp_solver_tol_stat = 1e-3
-  ocp.solver_options.tol = 1e-3
+  #ocp.solver_options.nlp_solver_tol_stat = 1e-3
+  #ocp.solver_options.tol = 1e-3
 
-  ocp.solver_options.qp_solver_iter_max = 100
-  ocp.solver_options.qp_tol = 1e-3
+  ocp.solver_options.qp_solver_iter_max = 10
+  #ocp.solver_options.qp_tol = 1e-3
 
   # set prediction horizon
   ocp.solver_options.tf = Tf
@@ -158,13 +158,14 @@ class LeadMpc():
     self.x0 = np.array([0, v, a])
 
   def update(self, carstate, radarstate, v_cruise):
+
+
     v_ego = carstate.vEgo
     if self.lead_id == 0:
       lead = radarstate.leadOne
     else:
       lead = radarstate.leadTwo
     self.status = lead.status
-
     if lead is not None and lead.status:
       x_lead = lead.dRel
       v_lead = max(0.0, lead.vLead)
