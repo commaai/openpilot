@@ -280,7 +280,7 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate == CAR.HONDA_E:
       stop_and_go = True
-      ret.mass = 3338.8. * CV.LB_TO_KG + STD_CARGO_KG
+      ret.mass = 3338.8 * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.5
       ret.centerToFront = ret.wheelbase * 0.39
       ret.steerRatio = 15.0  # Cant find a number for this in spec sheet
