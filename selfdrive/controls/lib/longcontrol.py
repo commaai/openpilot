@@ -6,8 +6,6 @@ from selfdrive.modeld.constants import T_IDXS
 
 LongCtrlState = log.ControlsState.LongControlState
 
-ACCEL_MAX = 2.0
-ACCEL_MIN = -4.0
 STOPPING_EGO_SPEED = 0.5
 STOPPING_TARGET_SPEED_OFFSET = 0.01
 STARTING_TARGET_SPEED = 0.5
@@ -63,8 +61,6 @@ class LongControl():
                             (CP.longitudinalTuning.kiBP, CP.longitudinalTuning.kiV),
                             rate=RATE,
                             sat_limit=0.8)
-    self.pid.pos_limit = ACCEL_MAX
-    self.pid.neg_limit = ACCEL_MIN
     self.v_pid = 0.0
     self.last_output_accel = 0.0
 
@@ -73,7 +69,7 @@ class LongControl():
     self.pid.reset()
     self.v_pid = v_pid
 
-  def update(self, active, CS, CP, long_plan):
+  def update(self, active, CS, CP, long_plan, accel_limits):
     """Update longitudinal control. This updates the state machine and runs a PID loop"""
     # Interp control trajectory
     # TODO estimate car specific lag, use .15s for now
@@ -86,6 +82,8 @@ class LongControl():
       v_target_future = 0.0
       a_target = 0.0
 
+    self.pid.neg_limit = accel_limits[0]
+    self.pid.pos_limit = accel_limits[1]
 
     # Update state machine
     output_accel = self.last_output_accel
@@ -107,8 +105,9 @@ class LongControl():
       # Freeze the integrator so we don't accelerate to compensate, and don't allow positive acceleration
       prevent_overshoot = not CP.stoppingControl and CS.vEgo < 1.5 and v_target_future < 0.7
       deadzone = interp(v_ego_pid, CP.longitudinalTuning.deadzoneBP, CP.longitudinalTuning.deadzoneV)
+      freeze_integrator = prevent_overshoot
 
-      output_accel = self.pid.update(self.v_pid, v_ego_pid, speed=v_ego_pid, deadzone=deadzone, feedforward=a_target, freeze_integrator=prevent_overshoot)
+      output_accel = self.pid.update(self.v_pid, v_ego_pid, speed=v_ego_pid, deadzone=deadzone, feedforward=a_target, freeze_integrator=freeze_integrator)
 
       if prevent_overshoot:
         output_accel = min(output_accel, 0.0)
@@ -118,7 +117,7 @@ class LongControl():
       # Keep applying brakes until the car is stopped
       if not CS.standstill or output_accel > -DECEL_STOPPING_TARGET:
         output_accel -= CP.stoppingDecelRate / RATE
-      output_accel = clip(output_accel, ACCEL_MIN, ACCEL_MAX)
+      output_accel = clip(output_accel, accel_limits[0], accel_limits[1])
 
       self.reset(CS.vEgo)
 
@@ -129,6 +128,6 @@ class LongControl():
       self.reset(CS.vEgo)
 
     self.last_output_accel = output_accel
-    final_accel = clip(output_accel, ACCEL_MIN, ACCEL_MAX)
+    final_accel = clip(output_accel, accel_limits[0], accel_limits[1])
 
     return final_accel, v_target, a_target
