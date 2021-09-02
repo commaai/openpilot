@@ -258,12 +258,12 @@ void CameraViewWidget::updateFrame() {
     latest_frame = buf;
     update();
     emit frameUpdated();
-    return;
-  }
-  // failed to get frame, try again
-  int msec = vipc_client->connected ? 0 : 1000. / UI_FREQ;
-  QTimer::singleShot(msec, this, &CameraViewWidget::updateFrame);
-  if (vipc_client->connected && !Hardware::PC()) {
-    LOGE("visionIPC receive timeout");
+  } else {
+    if (vipc_client->connected && !Hardware::PC()) {
+      LOGE("visionIPC receive timeout");
+    }
+    // failed to get frame, try again
+    int msec = vipc_client->connected ? 0 : 1000. / UI_FREQ;
+    QTimer::singleShot(msec, this, &CameraViewWidget::updateFrame);
   }
 }
