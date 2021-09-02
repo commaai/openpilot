@@ -68,7 +68,10 @@ USE_WEBCAM = os.getenv("USE_WEBCAM") is not None
 lenv = {
   "PATH": os.environ['PATH'],
   "LD_LIBRARY_PATH": [Dir(f"#phonelibs/acados/{arch}/lib").abspath],
+  "PYTHONPATH": Dir("#").abspath + ":" + Dir("#pyextra/").abspath,
+
   "ACADOS_SOURCE_DIR": Dir("#phonelibs/acados/acados").abspath,
+  "TERA_PATH": Dir("#").abspath + f"/phonelibs/acados/{arch}/t_renderer",
 }
 
 rpath = lenv["LD_LIBRARY_PATH"].copy()
@@ -172,10 +175,6 @@ if arch != "Darwin":
 # Enable swaglog include in submodules
 cflags += ["-DSWAGLOG"]
 cxxflags += ["-DSWAGLOG"]
-
-# change pythonpath to this
-lenv["PYTHONPATH"] = Dir("#").abspath + ":" + Dir("#pyextra/").abspath
-lenv["TERA_PATH"] = Dir("#").abspath + f"/phonelibs/acados/{arch}/t_renderer"
 
 env = Environment(
   ENV=lenv,
