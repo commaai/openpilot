@@ -195,7 +195,9 @@ void Installer::cloneFinished(int exitCode, QProcess::ExitStatus exitStatus) {
     param << value;
     param.close();
   }
-  run("cd " INSTALL_PATH " && git remote set-url origin --push " GIT_SSH_URL);
+  run("cd " INSTALL_PATH " && "
+      "git remote set-url origin --push " GIT_SSH_URL " && "
+      "git config remote.origin.fetch \"+refs/heads/*:refs/remotes/origin/*\"");
 #endif
 
   // write continue.sh
