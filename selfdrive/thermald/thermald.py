@@ -4,7 +4,7 @@ import os
 import time
 from pathlib import Path
 from typing import Dict, Optional, Tuple
-from collections import namedtuple
+from collections import namedtuple, OrderedDict
 
 import psutil
 from smbus2 import SMBus
@@ -36,16 +36,16 @@ DAYS_NO_CONNECTIVITY_MAX = 7  # do not allow to engage after a week without inte
 DAYS_NO_CONNECTIVITY_PROMPT = 4  # send an offroad prompt after 4 days with no internet
 DISCONNECT_TIMEOUT = 5.  # wait 5 seconds before going offroad after disconnect so you get an alert
 
-ThermalBand = namedtuple("ThermalBand", ['min_temp', 'max_temp', 'lower_status', 'higher_status'])
+ThermalBand = namedtuple("ThermalBand", ['min_temp', 'max_temp'])
 
 # List of thermal bands. We will stay within this region as long as we are within the bounds.
-# When exiting the bounds, we'll jump to the lower or higher band.
-THERMAL_BANDS = {
-  ThermalStatus.green: ThermalBand(None, 80.0, None, ThermalStatus.yellow),
-  ThermalStatus.yellow: ThermalBand(75.0, 96.0, ThermalStatus.green, ThermalStatus.red),
-  ThermalStatus.red: ThermalBand(80.0, 107., ThermalStatus.yellow, ThermalStatus.danger),
-  ThermalStatus.danger: ThermalBand(94.0, None, ThermalStatus.red, None),
-}
+# When exiting the bounds, we'll jump to the lower or higher band. Bands are ordered in the dict.
+THERMAL_BANDS = OrderedDict({
+  ThermalStatus.green: ThermalBand(None, 80.0),
+  ThermalStatus.yellow: ThermalBand(75.0, 96.0),
+  ThermalStatus.red: ThermalBand(80.0, 107.),
+  ThermalStatus.danger: ThermalBand(94.0, None),
+})
 
 # Override to highest thermal band when offroad and above this temp
 OFFROAD_DANGER_TEMP = 70.0
@@ -322,10 +322,11 @@ def thermald_thread():
       thermal_status = ThermalStatus.danger
     else:
       current_band = THERMAL_BANDS[thermal_status]
+      band_idx = list(THERMAL_BANDS.keys()).index(thermal_status)
       if current_band.min_temp is not None and max_comp_temp < current_band.min_temp:
-        thermal_status = current_band.lower_status
+        thermal_status = list(THERMAL_BANDS.keys())[band_idx - 1]
       elif current_band.max_temp is not None and max_comp_temp > current_band.max_temp:
-        thermal_status = current_band.higher_status
+        thermal_status = list(THERMAL_BANDS.keys())[band_idx + 1]
 
     # **** starting logic ****
 
