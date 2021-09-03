@@ -116,6 +116,8 @@ class LongitudinalMpc():
     self.j_solution = [0.0 for i in range(len(T_IDXS)-1)]
     self.last_cloudlog_t = 0
     self.status = True
+    self.solution_status = 0
+    self.solver.solve()
 
   def set_weights(self):
     W = np.diag([0.0, 1.0, 0.0, 50.0])
@@ -146,7 +148,7 @@ class LongitudinalMpc():
     self.solver.cost_set_slice(0, N, "yref", yref[:N])
     self.solver.set(N, "yref", yref[N][:3])
 
-    self.solver.solve()
+    self.solution_status = self.solver.solve()
     self.x_sol = self.solver.get_slice(0, N+1, 'x')
     self.u_sol = self.solver.get_slice(0, N, 'u')
     self.cost = self.solver.get_cost()
@@ -160,7 +162,7 @@ class LongitudinalMpc():
     nans = np.any(np.isnan(self.x_sol))
 
     t = sec_since_boot()
-    if nans:
+    if nans or self.solution_status != 0:
       if t > self.last_cloudlog_t + 5.0:
         self.last_cloudlog_t = t
         cloudlog.warning("Longitudinal model mpc reset - nans")
