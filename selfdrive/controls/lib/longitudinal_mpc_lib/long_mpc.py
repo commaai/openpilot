@@ -161,6 +161,7 @@ class LongitudinalMpc():
     self.x_sol = np.zeros((N+1, 3))
     self.u_sol = np.zeros((N))
     self.set_weights()
+    self.solver.solve()
 
     self.v_solution = [0.0 for i in range(len(T_IDXS))]
     self.a_solution = [0.0 for i in range(len(T_IDXS))]
