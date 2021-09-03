@@ -97,6 +97,9 @@ class Planner():
       # if required so, force a smooth deceleration
       accel_limits_turns[1] = min(accel_limits_turns[1], AWARENESS_DECEL)
       accel_limits_turns[0] = min(accel_limits_turns[0], accel_limits_turns[1])
+    # clip limits, cannot init MPC outside of bounds
+    accel_limits_turns[0] = min(accel_limits_turns[0], self.a_desired + 0.05)
+    accel_limits_turns[1] = max(accel_limits_turns[1], self.a_desired - 0.05)
     self.mpcs['cruise'].set_accel_limits(accel_limits_turns[0], accel_limits_turns[1])
     next_a = np.inf
     for key in self.mpcs:
