@@ -15,12 +15,12 @@ original_segments = [
   ("HYUNDAI", "02c45f73a2e5c6e9|2021-01-01--19-08-22--1"),     # HYUNDAI.SONATA
   ("TOYOTA", "0982d79ebb0de295|2021-01-04--17-13-21--13"),     # TOYOTA.PRIUS (INDI)
   ("TOYOTA2", "0982d79ebb0de295|2021-01-03--20-03-36--6"),     # TOYOTA.RAV4  (LQR)
-  ("HONDA", "eb140f119469d9ab|2021-06-12--10-46-24--27"),       # HONDA.CIVIC (NIDEC)
-  ("HONDA2", "7d2244f34d1bbcda|2021-06-25--12-25-37--26"),      # HONDA.ACCORD (BOSCH)
-  ("CHRYSLER", "4deb27de11bee626|2021-02-20--11-28-55--8"),   # CHRYSLER.PACIFICA
+  ("HONDA", "eb140f119469d9ab|2021-06-12--10-46-24--27"),      # HONDA.CIVIC (NIDEC)
+  ("HONDA2", "7d2244f34d1bbcda|2021-06-25--12-25-37--26"),     # HONDA.ACCORD (BOSCH)
+  ("CHRYSLER", "4deb27de11bee626|2021-02-20--11-28-55--8"),    # CHRYSLER.PACIFICA
   ("SUBARU", "4d70bc5e608678be|2021-01-15--17-02-04--5"),      # SUBARU.IMPREZA
-  ("GM", "0c58b6a25109da2b|2021-02-23--16-35-50--11"),          # GM.VOLT
-  ("NISSAN", "35336926920f3571|2021-02-12--18-38-48--46"),      # NISSAN.XTRAIL
+  ("GM", "0c58b6a25109da2b|2021-02-23--16-35-50--11"),         # GM.VOLT
+  ("NISSAN", "35336926920f3571|2021-02-12--18-38-48--46"),     # NISSAN.XTRAIL
   ("VOLKSWAGEN", "de9592456ad7d144|2021-06-29--11-00-15--6"),  # VOLKSWAGEN.GOLF
 
   # Enable when port is tested and dascamOnly is no longer set
@@ -32,6 +32,7 @@ segments = [
   ("HYUNDAI", "fakedata|2021-07-09--16-01-34--0"),
   ("TOYOTA", "1d6dfff4b6098f01|2021-07-26--07-56-21--2"),
   ("TOYOTA2", "fakedata|2021-07-09--16-03-56--0"),
+  ("TOYOTA3", "f7d7e3538cda1a2a|2021-08-16--08-55-34--6"),     # TOYOTA.COROLLA_TSS2
   ("HONDA", "fakedata|2021-07-09--16-05-07--0"),
   ("HONDA2", "fakedata|2021-07-09--16-08-28--0"),
   ("CHRYSLER", "fakedata|2021-07-09--16-09-39--0"),

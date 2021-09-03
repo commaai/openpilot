@@ -1,5 +1,5 @@
 from cereal import car
-from common.numpy_fast import clip
+from common.numpy_fast import clip, interp
 from selfdrive.car import apply_toyota_steer_torque_limits, create_gas_command, make_can_msg
 from selfdrive.car.toyota.toyotacan import create_steer_command, create_ui_command, \
                                            create_accel_command, create_acc_cancel_command, \
@@ -7,7 +7,6 @@ from selfdrive.car.toyota.toyotacan import create_steer_command, create_ui_comma
 from selfdrive.car.toyota.values import CAR, STATIC_DSU_MSGS, NO_STOP_TIMER_CAR, TSS2_CAR, \
                                         MIN_ACC_SPEED, PEDAL_HYST_GAP, CarControllerParams
 from opendbc.can.packer import CANPacker
-
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 
@@ -45,7 +44,9 @@ class CarController():
 
     # gas and brake
     interceptor_gas_cmd = 0.
-    pcm_accel_cmd = actuators.gas - actuators.brake
+    # TODO this is needed to preserve behavior, but doesn't make sense
+    # This can all be cleaned up
+    pcm_accel_cmd = actuators.accel / CarControllerParams.ACCEL_SCALE
 
     if CS.CP.enableGasInterceptor:
       # handle hysteresis when around the minimum acc speed
@@ -57,8 +58,9 @@ class CarController():
       if self.use_interceptor and enabled:
         # only send negative accel when using interceptor. gas handles acceleration
         # +0.06 offset to reduce ABS pump usage when OP is engaged
-        interceptor_gas_cmd = clip(actuators.gas, 0., 1.)
-        pcm_accel_cmd = 0.06 - actuators.brake
+        MAX_INTERCEPTOR_GAS = interp(CS.out.vEgo, [0.0, MIN_ACC_SPEED], [0.2, 0.5])
+        interceptor_gas_cmd = clip(actuators.accel/CarControllerParams.ACCEL_SCALE, 0., MAX_INTERCEPTOR_GAS)
+        pcm_accel_cmd = 0.06 - clip(-actuators.accel/CarControllerParams.ACCEL_SCALE, 0., 1.)
 
     pcm_accel_cmd, self.accel_steady = accel_hysteresis(pcm_accel_cmd, self.accel_steady, enabled)
     pcm_accel_cmd = clip(pcm_accel_cmd * CarControllerParams.ACCEL_SCALE, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)

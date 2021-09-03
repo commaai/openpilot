@@ -81,6 +81,7 @@ int {{ model.name }}_acados_sim_create(sim_solver_capsule * capsule)
     int nx = {{ dims.nx }};
     int nu = {{ dims.nu }};
     int nz = {{ dims.nz }};
+    bool tmp_bool;
 
     {#// double Tsim = {{ solver_options.tf / dims.N }};#}
     double Tsim = {{ solver_options.Tsim }};
@@ -242,8 +243,6 @@ int {{ model.name }}_acados_sim_create(sim_solver_capsule * capsule)
     capsule->acados_sim_opts = {{ model.name }}_sim_opts;
     int tmp_int = {{ solver_options.sim_method_newton_iter }};
     sim_opts_set({{ model.name }}_sim_config, {{ model.name }}_sim_opts, "newton_iter", &tmp_int);
-    bool tmp_bool = {{ solver_options.sim_method_jac_reuse }};
-    sim_opts_set({{ model.name }}_sim_config, {{ model.name }}_sim_opts, "jac_reuse", &tmp_bool);
 
 {% if problem_class == "SIM" %}
     tmp_int = {{ solver_options.sim_method_num_stages }};
@@ -269,6 +268,8 @@ int {{ model.name }}_acados_sim_create(sim_solver_capsule * capsule)
     sim_opts_set({{ model.name }}_sim_config, {{ model.name }}_sim_opts, "num_stages", &tmp_int);
     tmp_int = {{ solver_options.sim_method_num_steps[0] }};
     sim_opts_set({{ model.name }}_sim_config, {{ model.name }}_sim_opts, "num_steps", &tmp_int);
+    tmp_bool = {{ solver_options.sim_method_jac_reuse[0] }};
+    sim_opts_set({{ model.name }}_sim_config, {{ model.name }}_sim_opts, "jac_reuse", &tmp_bool);
 {% endif %}
 
     // sim in / out

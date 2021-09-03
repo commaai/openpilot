@@ -129,6 +129,9 @@ def generate_c_code_implicit_ode( model, opts ):
     fun_name = model_name + '_impl_dae_fun_jac_x_xdot_u_z'
     impl_dae_fun_jac_x_xdot_u_z.generate(fun_name, casadi_opts)
 
+    fun_name = model_name + '_impl_dae_fun_jac_x_xdot_u'
+    impl_dae_fun_jac_x_xdot_u.generate(fun_name, casadi_opts)
+
     if generate_hess:
         fun_name = model_name + '_impl_dae_hess'
         impl_dae_hess.generate(fun_name, casadi_opts)

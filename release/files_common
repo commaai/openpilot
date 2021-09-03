@@ -580,7 +580,6 @@ opendbc/honda_crv_ex_2017_body_generated.dbc
 opendbc/honda_crv_executive_2016_can_generated.dbc
 opendbc/honda_crv_hybrid_2019_can_generated.dbc
 opendbc/honda_fit_ex_2018_can_generated.dbc
-opendbc/honda_hrv_touring_2019_can_generated.dbc
 opendbc/honda_odyssey_exl_2018_generated.dbc
 opendbc/honda_odyssey_extreme_edition_2018_china_can_generated.dbc
 opendbc/honda_pilot_touring_2017_can_generated.dbc
@@ -623,3 +622,4 @@ opendbc/toyota_tss2_adas.dbc
 opendbc/vw_mqb_2010.dbc
 
 opendbc/tesla_can.dbc
+opendbc/tesla_radar.dbc

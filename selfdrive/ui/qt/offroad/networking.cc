@@ -51,7 +51,7 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QFrame(parent) {
   main_layout->addWidget(an);
 
   QPalette pal = palette();
-  pal.setColor(QPalette::Background, QColor(0x29, 0x29, 0x29));
+  pal.setColor(QPalette::Window, QColor(0x29, 0x29, 0x29));
   setAutoFillBackground(true);
   setPalette(pal);
 
@@ -147,6 +147,16 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   // SSH keys
   list->addItem(new SshToggle());
   list->addItem(new SshControl());
+
+  // Roaming toggle
+  const bool roamingEnabled = params.getBool("GsmRoaming");
+  wifi->setRoamingEnabled(roamingEnabled);
+  ToggleControl *roamingToggle = new ToggleControl("Enable Roaming", "", "", roamingEnabled);
+  QObject::connect(roamingToggle, &SshToggle::toggleFlipped, [=](bool state) {
+    params.putBool("GsmRoaming", state);
+    wifi->setRoamingEnabled(state);
+  });
+  list->addItem(roamingToggle);
 
   main_layout->addWidget(list);
   main_layout->addStretch(1);
@@ -248,12 +258,12 @@ void WifiUI::refresh() {
     hlayout->setSpacing(50);
 
     // Clickable SSID label
-    QPushButton *ssidLabel = new QPushButton(network.ssid);
+    ElidedLabel *ssidLabel = new ElidedLabel(network.ssid);
     ssidLabel->setObjectName("ssidLabel");
     ssidLabel->setEnabled(network.security_type != SecurityType::UNSUPPORTED);
     ssidLabel->setProperty("disconnected", network.connected == ConnectedType::DISCONNECTED);
     if (network.connected == ConnectedType::DISCONNECTED) {
-      QObject::connect(ssidLabel, &QPushButton::clicked, this, [=]() { emit connectToNetwork(network); });
+      QObject::connect(ssidLabel, &ElidedLabel::clicked, this, [=]() { emit connectToNetwork(network); });
     }
     hlayout->addWidget(ssidLabel, network.connected == ConnectedType::CONNECTING ? 0 : 1);
 

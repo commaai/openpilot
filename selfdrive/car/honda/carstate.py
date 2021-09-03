@@ -163,12 +163,8 @@ def get_can_signals(CP, gearbox_msg="GEARBOX"):
       ("GAS_PEDAL_2", 100),
     ]
   elif CP.carFingerprint == CAR.HRV:
-    signals += [("CAR_GAS", "GAS_PEDAL", 0),
-                ("MAIN_ON", "SCM_BUTTONS", 0),
+    signals += [("MAIN_ON", "SCM_BUTTONS", 0),
                 ("BRAKE_HOLD_ACTIVE", "VSA_STATUS", 0)]
-    checks += [
-      ("GAS_PEDAL", 100),
-    ]
   elif CP.carFingerprint == CAR.ODYSSEY:
     signals += [("MAIN_ON", "SCM_FEEDBACK", 0),
                 ("EPB_STATE", "EPB_STATUS", 0)]
@@ -237,6 +233,7 @@ class CarState(CarStateBase):
       ret.standstill = cp.vl["ENGINE_DATA"]["XMISSION_SPEED"] < 0.1
       ret.doorOpen = bool(cp.vl["SCM_BUTTONS"]["DRIVERS_DOOR_OPEN"])
     elif self.CP.carFingerprint == CAR.HRV:
+      ret.standstill = not cp.vl["STANDSTILL"]["WHEELS_MOVING"]
       ret.doorOpen = bool(cp.vl["SCM_BUTTONS"]["DRIVERS_DOOR_OPEN"])
     else:
       ret.standstill = not cp.vl["STANDSTILL"]["WHEELS_MOVING"]
@@ -257,7 +254,7 @@ class CarState(CarStateBase):
       self.brake_error = cp.vl["STANDSTILL"]["BRAKE_ERROR_1"] or cp.vl["STANDSTILL"]["BRAKE_ERROR_2"]
     ret.espDisabled = cp.vl["VSA_STATUS"]["ESP_DISABLED"] != 0
 
-    speed_factor = SPEED_FACTOR[self.CP.carFingerprint]
+    speed_factor = SPEED_FACTOR.get(self.CP.carFingerprint, 1.)
     ret.wheelSpeeds.fl = cp.vl["WHEEL_SPEEDS"]["WHEEL_SPEED_FL"] * CV.KPH_TO_MS * speed_factor
     ret.wheelSpeeds.fr = cp.vl["WHEEL_SPEEDS"]["WHEEL_SPEED_FR"] * CV.KPH_TO_MS * speed_factor
     ret.wheelSpeeds.rl = cp.vl["WHEEL_SPEEDS"]["WHEEL_SPEED_RL"] * CV.KPH_TO_MS * speed_factor
@@ -311,7 +308,7 @@ class CarState(CarStateBase):
 
     ret.steeringTorque = cp.vl["STEER_STATUS"]["STEER_TORQUE_SENSOR"]
     ret.steeringTorqueEps = cp.vl["STEER_MOTOR_TORQUE"]["MOTOR_TORQUE"]
-    ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD[self.CP.carFingerprint]
+    ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD.get(self.CP.carFingerprint, 1200)
 
     if self.CP.carFingerprint in HONDA_BOSCH:
       if not self.CP.openpilotLongitudinalControl:
