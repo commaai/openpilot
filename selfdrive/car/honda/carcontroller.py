@@ -190,11 +190,11 @@ class CarController():
     pcm_speed_BP = [-wind_brake,
                     -wind_brake*(3/4),
                       0.0,
-                      0.1]
+                      0.5]
 
     pcm_speed_V = [0.0,
-                   clip(CS.out.vEgo + accel/2.0 - 2.0, 0.0, 100.0),
-                   clip(CS.out.vEgo + accel/2.0 + 2.0, 0.0, 100.0),
+                   clip(CS.out.vEgo - 3.0, 0.0, 100.0),
+                   clip(CS.out.vEgo + 0.0, 0.0, 100.0),
                    clip(CS.out.vEgo + 5.0, 0.0, 100.0)]
     pcm_speed = interp(gas-brake, pcm_speed_BP, pcm_speed_V)
 
