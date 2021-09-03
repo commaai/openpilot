@@ -193,7 +193,7 @@ void handle_tty_issue(int err, const char func[]) {
 }
 
 void TTYPigeon::connect(const char * tty) {
-  pigeon_tty_fd = open(tty, O_RDWR);
+  pigeon_tty_fd = HANDLE_EINTR(open(tty, O_RDWR));
   if (pigeon_tty_fd < 0) {
     handle_tty_issue(errno, __func__);
     assert(pigeon_tty_fd >= 0);
@@ -253,7 +253,7 @@ void TTYPigeon::set_baud(int baud) {
 }
 
 void TTYPigeon::send(const std::string &s) {
-  int err = write(pigeon_tty_fd, s.data(), s.length());
+  int err = HANDLE_EINTR(write(pigeon_tty_fd, s.data(), s.length()));
 
   if(err < 0) { handle_tty_issue(err, __func__); }
   err = tcdrain(pigeon_tty_fd);

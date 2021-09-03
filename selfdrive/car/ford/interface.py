@@ -7,11 +7,6 @@ from selfdrive.car.interfaces import CarInterfaceBase
 
 
 class CarInterface(CarInterfaceBase):
-
-  @staticmethod
-  def compute_gb(accel, speed):
-    return float(accel) / 3.0
-
   @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)

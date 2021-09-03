@@ -16,7 +16,8 @@ from common.params import Params, ParamKeyType
 from common.realtime import DT_TRML, sec_since_boot
 from common.dict_helpers import strip_deprecated_keys
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
-from selfdrive.hardware import EON, TICI, HARDWARE
+from selfdrive.controls.lib.pid import PIController
+from selfdrive.hardware import EON, TICI, PC, HARDWARE
 from selfdrive.loggerd.config import get_available_percent
 from selfdrive.pandad import get_expected_signature
 from selfdrive.swaglog import cloudlog
@@ -89,11 +90,9 @@ _TEMP_THRS_H = [50., 65., 80., 10000]
 _TEMP_THRS_L = [42.5, 57.5, 72.5, 10000]
 # fan speed options
 _FAN_SPEEDS = [0, 16384, 32768, 65535]
-# max fan speed only allowed if battery is hot
-_BAT_TEMP_THRESHOLD = 45.
 
 
-def handle_fan_eon(max_cpu_temp, bat_temp, fan_speed, ignition):
+def handle_fan_eon(controller, max_cpu_temp, fan_speed, ignition):
   new_speed_h = next(speed for speed, temp_h in zip(_FAN_SPEEDS, _TEMP_THRS_H) if temp_h > max_cpu_temp)
   new_speed_l = next(speed for speed, temp_l in zip(_FAN_SPEEDS, _TEMP_THRS_L) if temp_l > max_cpu_temp)
 
@@ -104,22 +103,31 @@ def handle_fan_eon(max_cpu_temp, bat_temp, fan_speed, ignition):
     # update speed if using the low thresholds results in fan speed decrement
     fan_speed = new_speed_l
 
-  if bat_temp < _BAT_TEMP_THRESHOLD:
-    # no max fan speed unless battery is hot
-    fan_speed = min(fan_speed, _FAN_SPEEDS[-2])
-
   set_eon_fan(fan_speed // 16384)
 
   return fan_speed
 
 
-def handle_fan_uno(max_cpu_temp, bat_temp, fan_speed, ignition):
+def handle_fan_uno(controller, max_cpu_temp, fan_speed, ignition):
   new_speed = int(interp(max_cpu_temp, [40.0, 80.0], [0, 80]))
 
   if not ignition:
     new_speed = min(30, new_speed)
 
   return new_speed
+
+
+def handle_fan_tici(controller, max_cpu_temp, fan_speed, ignition):
+  controller.neg_limit = -(80 if ignition else 30)
+  controller.pos_limit = -(30 if ignition else 0)
+
+  fan_pwr_out = -int(controller.update(
+                     setpoint=(75 if ignition else 68),
+                     measurement=max_cpu_temp,
+                     feedforward=interp(max_cpu_temp, [60.0, 100.0], [0, -80])
+                  ))
+
+  return fan_pwr_out
 
 
 def set_offroad_alert_if_changed(offroad_alert: str, show_alert: bool, extra_text: Optional[str]=None):
@@ -173,6 +181,9 @@ def thermald_thread():
   HARDWARE.initialize_hardware()
   thermal_config = HARDWARE.get_thermal_config()
 
+  # TODO: use PI controller for UNO
+  controller = PIController(k_p=0, k_i=2e-3, neg_limit=-80, pos_limit=0, rate=(1 / DT_TRML))
+
   if params.get_bool("IsOnroad"):
     cloudlog.event("onroad flag not cleared")
 
@@ -216,7 +227,10 @@ def thermald_thread():
       if handle_fan is None and pandaState.pandaState.pandaType != log.PandaState.PandaType.unknown:
         is_uno = pandaState.pandaState.pandaType == log.PandaState.PandaType.uno
 
-        if (not EON) or is_uno:
+        if TICI:
+          cloudlog.info("Setting up TICI fan handler")
+          handle_fan = handle_fan_tici
+        elif is_uno or PC:
           cloudlog.info("Setting up UNO fan handler")
           handle_fan = handle_fan_uno
         else:
@@ -286,7 +300,7 @@ def thermald_thread():
     bat_temp = msg.deviceState.batteryTempC
 
     if handle_fan is not None:
-      fan_speed = handle_fan(max_cpu_temp, bat_temp, fan_speed, startup_conditions["ignition"])
+      fan_speed = handle_fan(controller, max_cpu_temp, fan_speed, startup_conditions["ignition"])
       msg.deviceState.fanSpeedPercentDesired = fan_speed
 
     # If device is offroad we want to cool down before going onroad
