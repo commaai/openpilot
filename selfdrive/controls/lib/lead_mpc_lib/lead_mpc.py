@@ -114,7 +114,7 @@ def gen_lead_mpc_solver():
   ocp.solver_options.qp_solver = 'PARTIAL_CONDENSING_HPIPM'
   ocp.solver_options.hessian_approx = 'GAUSS_NEWTON'
   ocp.solver_options.integrator_type = 'ERK'
-  ocp.solver_options.nlp_solver_type = 'SQP'
+  ocp.solver_options.nlp_solver_type = 'SQP_RTI'
   #ocp.solver_options.nlp_solver_tol_stat = 1e-3
   #ocp.solver_options.tol = 1e-3
 
@@ -145,6 +145,7 @@ class LeadMpc():
     self.new_lead = False
     self.prev_lead_status = False
     self.prev_lead_x = 10
+    self.solution_status = 0
 
   def set_weights(self):
     W = np.diag([MPC_COST_LONG.TTC, MPC_COST_LONG.DISTANCE,
@@ -153,13 +154,12 @@ class LeadMpc():
     self.solver.cost_set_slice(0, N, 'W', Ws, api='old')
     #TODO hacky weights to keep behavior the same
     self.solver.cost_set(N, 'W', (3./5.)*W[:3,:3])
+    self.solver.solve()
 
   def set_cur_state(self, v, a):
     self.x0 = np.array([0, v, a])
 
   def update(self, carstate, radarstate, v_cruise):
-
-
     v_ego = carstate.vEgo
     if self.lead_id == 0:
       lead = radarstate.leadOne
@@ -203,10 +203,11 @@ class LeadMpc():
         dt = .6
       ps[i] = np.array([x_lead, v_lead])
       self.solver.set(i, "p", ps[i])
-      desired_x = RW(v_ego, v_lead)
-      if x_lead - self.x_sol[i,0] < desired_x:
-        new_x = np.array([x_lead - desired_x, v_lead, 0.0])
-        self.solver.set(i, "x", new_x)
+      #self.solver.set(i, "x", [])
+      #desired_x = RW(v_ego, v_lead)
+      #if x_lead - self.x_sol[i,0] < desired_x:
+        #new_x = np.array([x_lead - desired_x, v_lead, 0.0])
+        #self.solver.set(i, "x", new_x)
       x_ego += v_ego_e * dt
       v_ego_e = max(v_ego_e-3.0 * dt, 0.0)
       a_lead = a_lead_0 * np.exp(-self.a_lead_tau * (t**2)/2.)
@@ -221,7 +222,7 @@ class LeadMpc():
     self.solver.cost_set_slice(0, N, "yref", yref[:N])
     self.solver.set(N, "yref", yref[N][:3])
 
-    self.solver.solve()
+    self.solution_status = self.solver.solve()
     self.x_sol = self.solver.get_slice(0, N+1, 'x')
     self.u_sol = self.solver.get_slice(0, N, 'u')
     self.cost = self.solver.get_cost()
@@ -236,7 +237,7 @@ class LeadMpc():
     crashing = np.any(ps[:,0] - self.x_sol[:,0] < 0)
 
     t = sec_since_boot()
-    if ((crashing) and self.prev_lead_status) or nans:
+    if ((crashing) and self.prev_lead_status) or nans or self.solution_status != 0:
       if t > self.last_cloudlog_t + 5.0:
         self.last_cloudlog_t = t
         cloudlog.warning("Longitudinal mpc %d reset - crashing: %s nan: %s" % (
