@@ -85,8 +85,6 @@ class CarController():
           self.last_resume_frame = frame
 
     if frame % 2 == 0 and CS.CP.openpilotLongitudinalControl:
-      # rouding prevents alternating between very small positive and negative value when stopped
-
       lead_visible = False # TODO
       accel = actuators.accel if enabled else 0
 
