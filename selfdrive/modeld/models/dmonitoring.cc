@@ -13,6 +13,18 @@
 #define MODEL_HEIGHT 640
 #define FULL_W 852 // should get these numbers from camerad
 
+static void crop_yuv(uint8_t *raw, int width, int height, const YUVBuf *buf, const Rect &rect) {
+  uint8_t *raw_y = raw;
+  uint8_t *raw_u = raw_y + (width * height);
+  uint8_t *raw_v = raw_u + ((width / 2) * (height / 2));
+  for (int r = 0; r < rect.h / 2; r++) {
+    memcpy(buf->y + 2 * r * rect.w, raw_y + (2 * r + rect.y) * width + rect.x, rect.w);
+    memcpy(buf->y + (2 * r + 1) * rect.w, raw_y + (2 * r + rect.y + 1) * width + rect.x, rect.w);
+    memcpy(buf->u + r * (rect.w / 2), raw_u + (r + (rect.y / 2)) * width / 2 + (rect.x / 2), rect.w / 2);
+    memcpy(buf->v + r * (rect.w / 2), raw_v + (r + (rect.y / 2)) * width / 2 + (rect.x / 2), rect.w / 2);
+  }
+}
+
 void dmonitoring_init(DMonitoringModelState* s, int width, int height) {
   s->is_rhd = Params().getBool("IsRHD");
   for (int x = 0; x < std::size(s->tensor); ++x) {
@@ -50,18 +62,6 @@ void dmonitoring_init(DMonitoringModelState* s, int width, int height) {
   s->premirror_cropped_buf.init(s->crop_rect.w, s->crop_rect.h);
   s->resized_buf.init(MODEL_WIDTH, MODEL_HEIGHT);
   s->net_input_buf.resize((MODEL_WIDTH / 2) * (MODEL_HEIGHT / 2) * 6);  // Y|u|v -> y|y|y|y|u|v
-}
-
-void crop_yuv(uint8_t *raw, int width, int height, const YUVBuf *buf, const Rect &rect) {
-  uint8_t *raw_y = raw;
-  uint8_t *raw_u = raw_y + (width * height);
-  uint8_t *raw_v = raw_u + ((width / 2) * (height / 2));
-  for (int r = 0; r < rect.h / 2; r++) {
-    memcpy(buf->y + 2 * r * rect.w, raw_y + (2 * r + rect.y) * width + rect.x, rect.w);
-    memcpy(buf->y + (2 * r + 1) * rect.w, raw_y + (2 * r + rect.y + 1) * width + rect.x, rect.w);
-    memcpy(buf->u + r * (rect.w / 2), raw_u + (r + (rect.y / 2)) * width / 2 + (rect.x / 2), rect.w / 2);
-    memcpy(buf->v + r * (rect.w / 2), raw_v + (r + (rect.y / 2)) * width / 2 + (rect.x / 2), rect.w / 2);
-  }
 }
 
 DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_buf, int width, int height) {
