@@ -339,16 +339,8 @@ class Android(HardwareBase):
   def get_battery_capacity(self):
     return self.read_param_file("/sys/class/power_supply/battery/capacity", int, 100)
 
-  def get_battery_status(self):
-    # This does not correspond with actual charging or not.
-    # If a USB cable is plugged in, it responds with 'Charging', even when charging is disabled
-    return self.read_param_file("/sys/class/power_supply/battery/status", lambda x: x.strip(), '')
-
   def get_battery_current(self):
     return self.read_param_file("/sys/class/power_supply/battery/current_now", int)
-
-  def get_battery_voltage(self):
-    return self.read_param_file("/sys/class/power_supply/battery/voltage_now", int)
 
   def get_battery_charging(self):
     # This does correspond with actually charging

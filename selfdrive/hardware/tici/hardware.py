@@ -227,13 +227,7 @@ class Tici(HardwareBase):
   def get_battery_capacity(self):
     return 100
 
-  def get_battery_status(self):
-    return ""
-
   def get_battery_current(self):
-    return 0
-
-  def get_battery_voltage(self):
     return 0
 
   def get_battery_charging(self):
