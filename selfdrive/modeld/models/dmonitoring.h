@@ -32,7 +32,7 @@ struct Rect {
 };
 
 class YUVBuf {
- public:
+public:
   YUVBuf() = default;
   void init(int w, int h) {
     y = new uint8_t[w * h * 3 / 2];
