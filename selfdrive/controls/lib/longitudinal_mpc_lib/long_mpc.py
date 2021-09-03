@@ -100,7 +100,7 @@ def gen_long_mpc_solver():
   j_ego = ocp.model.u[0]
   a_min, a_max = ocp.model.p[0], ocp.model.p[1]
   x_lead_0, v_lead_0 = ocp.model.p[2], ocp.model.p[3]
-  x_lead_1, v_lead_1 = ocp.model.p[3], ocp.model.p[4]
+  x_lead_1, v_lead_1 = ocp.model.p[4], ocp.model.p[5]
 
   ocp.cost.yref = np.zeros((4, ))
   ocp.cost.yref_e = np.zeros((3, ))
@@ -141,15 +141,11 @@ def gen_long_mpc_solver():
   ocp.constraints.uh_e = np.array([1e16, 1e16, 1e16, 1e16, 1e16])
   ocp.constraints.idxsh = np.array([0,1,2,3,4])
 
-  ocp.solver_options.qp_solver = 'FULL_CONDENSING_HPIPM'
+  ocp.solver_options.qp_solver = 'PARTIAL_CONDENSING_HPIPM'
   ocp.solver_options.hessian_approx = 'GAUSS_NEWTON'
   ocp.solver_options.integrator_type = 'ERK'
   ocp.solver_options.nlp_solver_type = 'SQP_RTI'
-  ocp.solver_options.nlp_solver_tol_stat = 1e-3
-  ocp.solver_options.tol = 1e-3
-
   ocp.solver_options.qp_solver_iter_max = 10
-  ocp.solver_options.qp_tol = 1e-3
 
   # set prediction horizon
   ocp.solver_options.tf = Tf
