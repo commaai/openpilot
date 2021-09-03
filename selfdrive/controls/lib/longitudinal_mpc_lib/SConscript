@@ -32,8 +32,8 @@ casadi_constraints = [
   f'{gen}/long_constraints/long_constr_h_e_fun_jac_uxt_zt.c',
 ]
 
-build_files = [f'{gen}/acados_solver_long.c'] + casadi_model + casadi_cost_y + casadi_cost_e + casadi_cost_0 + casadi_cons
-raints
+build_files = [f'{gen}/acados_solver_long.c'] + casadi_model + casadi_cost_y + casadi_cost_e +  \
+              casadi_cost_0 + casadi_constraints
 
 # extra generated files used to trigger a rebuild
 generated_files = [
