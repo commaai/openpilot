@@ -157,6 +157,9 @@ def gen_long_mpc_solver():
 
 class LongitudinalMpc():
   def __init__(self):
+    self.reset_mpc()
+
+  def reset_mpc(self):
     self.solver = AcadosOcpSolver('long', N, EXPORT_DIR)
     self.x_sol = np.zeros((N+1, 3))
     self.u_sol = np.zeros((N))
@@ -170,6 +173,7 @@ class LongitudinalMpc():
     self.status = True
     self.lead_status = False
     self.accel_limit_arr = np.zeros((N+1, 2))
+    self.solution_status = 0
 
   def set_weights(self):
     W = np.diag([0.0, 1.0, 0.0, 50.0])
@@ -224,7 +228,7 @@ class LongitudinalMpc():
     self.solver.cost_set_slice(0, N, "yref", yref[:N])
     self.solver.set(N, "yref", yref[N][:3])
 
-    self.solver.solve()
+    self.solution_status = self.solver.solve()
     self.x_sol = self.solver.get_slice(0, N+1, 'x')
     self.u_sol = self.solver.get_slice(0, N, 'u')
     self.cost = self.solver.get_cost()
@@ -238,12 +242,11 @@ class LongitudinalMpc():
     nans = np.any(np.isnan(self.x_sol))
 
     t = sec_since_boot()
-    if nans:
+    if nans or self.solution_status != 0:
       if t > self.last_cloudlog_t + 5.0:
         self.last_cloudlog_t = t
         cloudlog.warning("Longitudinal model mpc reset - nans")
-      #TODO
-      #self.reset_mpc()
+      self.reset_mpc()
 
 
 if __name__ == "__main__":
