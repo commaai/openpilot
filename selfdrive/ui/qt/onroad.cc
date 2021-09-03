@@ -21,13 +21,12 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   stacked_layout->setStackingMode(QStackedLayout::StackAll);
   main_layout->addLayout(stacked_layout);
 
+  nvg = new NvgWindow(getVisionStreamType(), this);
 
   QWidget * split_wrapper = new QWidget;
   split = new QHBoxLayout(split_wrapper);
   split->setContentsMargins(0, 0, 0, 0);
   split->setSpacing(0);
-  
-  nvg = new NvgWindow(getVisionStreamType(), this);
   split->addWidget(nvg);
 
   stacked_layout->addWidget(split_wrapper);
@@ -174,7 +173,6 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
 }
 
 
-// NvgWindow
 
 void NvgWindow::initializeGL() {
   CameraViewWidget::initializeGL();
