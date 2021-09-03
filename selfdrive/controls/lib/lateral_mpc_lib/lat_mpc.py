@@ -120,6 +120,7 @@ class LateralMpc():
     self.solver.constraints_set(0, "lbx", x0)
     self.solver.constraints_set(0, "ubx", x0)
     self.solver.solve()
+    self.solution_status = 0
 
   def set_weights(self, path_weight, heading_weight, steer_rate_weight):
     self.Ws[:,0,0] = path_weight
@@ -137,8 +138,7 @@ class LateralMpc():
     self.solver.cost_set_slice(0, N, "yref", yref[:N])
     self.solver.set(N, "yref", yref[N][:2])
 
-    #status = self.solver.solve()
-    self.solver.solve()
+    self.solution_status = self.solver.solve()
     self.x_sol = self.solver.get_slice(0, N+1, 'x')
     self.u_sol = self.solver.get_slice(0, N, 'u')
     self.cost = self.solver.get_cost()
