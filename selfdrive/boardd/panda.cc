@@ -23,42 +23,50 @@ static int init_usb_ctx(libusb_context *context) {
 #else
   libusb_set_debug(context, 3);
 #endif
-
   return err;
 }
 
+// Iterate over USB devices, stops iterating if functor return false.
+template<class Functor>
+void enumerate_usb_devices(libusb_context *ctx, Functor functor) {
+  libusb_device **dev_list = nullptr;
+  ssize_t num_devices = libusb_get_device_list(ctx, &dev_list);
+  if (num_devices < 0) {
+    LOGE("libusb can't get device list");
+    return;
+  }
+  for (size_t i = 0; i < num_devices; ++i) {
+    libusb_device_descriptor desc = {};
+    int ret = libusb_get_device_descriptor(dev_list[i], &desc);
+    if (ret == LIBUSB_SUCCESS && desc.idVendor == 0xbbaa && desc.idProduct == 0xddcc) {
+      libusb_device_handle *handle = nullptr;
+      if (libusb_open(dev_list[i], &handle) == LIBUSB_SUCCESS) {
+        unsigned char desc_serial[256] = {};
+        int ret = libusb_get_string_descriptor_ascii(handle, desc.iSerialNumber, desc_serial, std::size(desc_serial) - 1);
+        if (ret > 0 && !functor(handle, (const char *)desc_serial)) {
+          break;
+        }
+        libusb_close(handle);
+      }
+    }
+  }
+  libusb_free_device_list(dev_list, 1);
+}
 
 Panda::Panda(std::string serial) {
   // init libusb
-  ssize_t num_devices;
-  libusb_device **dev_list = NULL;
   int err = init_usb_ctx(ctx);
   if (err != 0) { goto fail; }
 
   // connect by serial
-  num_devices = libusb_get_device_list(ctx, &dev_list);
-  if (num_devices < 0) { goto fail; }
-  for (size_t i = 0; i < num_devices; ++i) {
-    libusb_device_descriptor desc;
-    libusb_get_device_descriptor(dev_list[i], &desc);
-    if (desc.idVendor == 0xbbaa && desc.idProduct == 0xddcc) {
-      libusb_open(dev_list[i], &dev_handle);
-      if (dev_handle == NULL) { goto fail; }
-
-      unsigned char desc_serial[26] = { 0 };
-      int ret = libusb_get_string_descriptor_ascii(dev_handle, desc.iSerialNumber, desc_serial, std::size(desc_serial));
-      if (ret < 0) { goto fail; }
-
-      usb_serial = std::string((char *)desc_serial, ret).c_str();
-      if (serial.empty() || serial == usb_serial) {
-        break;
-      }
-      libusb_close(dev_handle);
-      dev_handle = NULL;
+  enumerate_usb_devices(ctx, [&](libusb_device_handle *handle, const char *name)->bool{
+    if (serial.empty() || serial == name) {
+      dev_handle = handle;
+      return false;
     }
-  }
-  if (dev_handle == NULL) goto fail;
-  libusb_free_device_list(dev_list, 1);
+    return true;
+  });
+  if (dev_handle == nullptr) goto fail;
 
   if (libusb_kernel_driver_active(dev_handle, 0) == 1) {
     libusb_detach_kernel_driver(dev_handle, 0);
@@ -82,9 +90,6 @@ Panda::Panda(std::string serial) {
 
 fail:
   cleanup();
-  if (dev_list != NULL) {
-    libusb_free_device_list(dev_list, 1);
-  }
   throw std::runtime_error("Error connecting to panda");
 }
 
@@ -106,44 +111,16 @@ void Panda::cleanup() {
 }
 
 std::vector<std::string> Panda::list() {
-  // init libusb
-  ssize_t num_devices;
-  libusb_context *context = NULL;
-  libusb_device **dev_list = NULL;
-  std::vector<std::string> serials;
-
+  libusb_context *context = nullptr;
   int err = init_usb_ctx(context);
-  if (err != 0) { return serials; }
-
-  num_devices = libusb_get_device_list(context, &dev_list);
-  if (num_devices < 0) {
-    LOGE("libusb can't get device list");
-    goto finish;
-  }
-  for (size_t i = 0; i < num_devices; ++i) {
-    libusb_device *device = dev_list[i];
-    libusb_device_descriptor desc;
-    libusb_get_device_descriptor(device, &desc);
-    if (desc.idVendor == 0xbbaa && desc.idProduct == 0xddcc) {
-      libusb_device_handle *handle = NULL;
-      libusb_open(device, &handle);
-      unsigned char desc_serial[26] = { 0 };
-      int ret = libusb_get_string_descriptor_ascii(handle, desc.iSerialNumber, desc_serial, std::size(desc_serial));
-      libusb_release_interface(handle, 0);
-      libusb_close(handle);
-
-      if (ret < 0) { goto finish; }
-      serials.push_back(std::string((char *)desc_serial, ret).c_str());
-    }
-  }
-
-finish:
-  if (context) {
-    libusb_exit(context);
-  }
-  if (dev_list != NULL) {
-    libusb_free_device_list(dev_list, 1);
-  }
+  if (err != 0) { return {}; }
+  
+  std::vector<std::string> serials;
+  enumerate_usb_devices(context, [&](libusb_device_handle *handle, const char *name) -> bool {
+    serials.push_back(name);
+    return true;
+  });
+  libusb_exit(context);
   return serials;
 }
 
