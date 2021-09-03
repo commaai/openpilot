@@ -1,7 +1,38 @@
 import crcmod
+from selfdrive.swaglog import cloudlog
+from selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
 from selfdrive.car.hyundai.values import CAR, CHECKSUM
 
+RADAR_ADDR = 0x7D0
+EXT_DIAG_REQUEST = b'\x10\x03'
+EXT_DIAG_RESPONSE = b'\x50\x03'
+COM_CONT_REQUEST = b'\x28\x83\x01'
+COM_CONT_RESPONSE = b''
+
 hyundai_checksum = crcmod.mkCrcFun(0x11D, initCrc=0xFD, rev=False, xorOut=0xdf)
+
+# TODO: merge with honda.hondacan.disable_radar
+def disable_radar(logcan, sendcan, bus=0, timeout=0.1, debug=False):
+  """Silence the radar by disabling sending and receiving messages using UDS 0x28.
+  The radar will stay silent as long as openpilot keeps sending Tester Present.
+  Openpilot will emulate the radar. WARNING: THIS DISABLES AEB!"""
+  cloudlog.warning(f"radar disable {hex(RADAR_ADDR)} ...")
+
+  try:
+    query = IsoTpParallelQuery(sendcan, logcan, bus, [RADAR_ADDR], [EXT_DIAG_REQUEST], [EXT_DIAG_RESPONSE], debug=debug)
+
+    for _, _ in query.get_data(timeout).items():
+      cloudlog.warning("radar communication control disable tx/rx ...")
+
+      query = IsoTpParallelQuery(sendcan, logcan, bus, [RADAR_ADDR], [COM_CONT_REQUEST], [COM_CONT_RESPONSE], debug=debug)
+      query.get_data(0)
+
+      cloudlog.warning("radar disabled")
+      return
+
+  except Exception:
+    cloudlog.exception("radar disable exception")
+  cloudlog.warning("radar disable failed")
 
 
 def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
@@ -91,9 +122,9 @@ def create_acc_commands(packer, enabled, accel, idx, lead_visible, set_speed, st
 
   scc12_values = {
     "ACCMode": 1 if enabled else 0,
-    "StopReq": 1 if stopping else 0,
-    "aReqRaw": accel,
-    "aReqValue": accel, # stock ramps up at 1.0/s and down at 0.5/s until it reaches aReqRaw
+    "StopReq": 1 if enabled and stopping else 0,
+    "aReqRaw": accel if enabled else 0,
+    "aReqValue": accel if enabled else 0, # stock ramps up and down respecting jerk limit until it reaches aReqRaw
     "CR_VSM_Alive": idx % 0xF,
   }
   scc12_dat = packer.make_can_msg("SCC12", 0, scc12_values)[2]
@@ -104,10 +135,10 @@ def create_acc_commands(packer, enabled, accel, idx, lead_visible, set_speed, st
   scc14_values = {
     "ComfortBandUpper": 0.0, # stock usually is 0 but sometimes uses higher values
     "ComfortBandLower": 0.0, # stock usually is 0 but sometimes uses higher values
-    "JerkUpperLimit": 1.0 if enabled else 0, # stock usually is 1.0 but sometimes uses higher values
-    "JerkLowerLimit": 0.5 if enabled else 0, # stock usually is 0.5 but sometimes uses higher values
+    "JerkUpperLimit": 12.7 if enabled else 0, # stock usually is 1.0 but sometimes uses higher values
+    "JerkLowerLimit": 12.7 if enabled else 0, # stock usually is 0.5 but sometimes uses higher values
     "ACCMode": 1 if enabled else 4, # stock will always be 4 instead of 0 after first disengage
-    "ObjGap": 3 if lead_visible else 0, # TODO: 1-5 based on distance to lead vehicle
+    "ObjGap": 3 if lead_visible else 0, # TODO: 1-5 based on distance to lead vehicle or 0 if no lead
   }
   commands.append(packer.make_can_msg("SCC14", 0, scc14_values))
 

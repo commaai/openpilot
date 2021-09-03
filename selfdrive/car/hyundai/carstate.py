@@ -49,6 +49,7 @@ class CarState(CarStateBase):
 
     # cruise state
     if self.CP.openpilotLongitudinalControl:
+      # TODO: since we call create_common_events with pcm_enable=False these don't get checked but probably should
       ret.cruiseState.available = cp.vl["TCS13"]["ACCEnable"] == 0
       ret.cruiseState.enabled = cp.vl["TCS13"]["ACC_REQ"] == 1
       ret.cruiseState.standstill = False
