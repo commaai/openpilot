@@ -6,15 +6,14 @@ from common.numpy_fast import interp
 import cereal.messaging as messaging
 from cereal import log
 from common.realtime import DT_MDL
-from common.realtime import sec_since_boot
+#from common.realtime import sec_since_boot
 from selfdrive.modeld.constants import T_IDXS
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.fcw import FCWChecker
 from selfdrive.controls.lib.longcontrol import LongCtrlState
-from selfdrive.controls.lib.lead_mpc_lib.lead_mpc import LeadMpc
 from selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import LongitudinalMpc
 from selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, CONTROL_N
-from selfdrive.swaglog import cloudlog
+#from selfdrive.swaglog import cloudlog
 
 LON_MPC_STEP = 0.2  # first step is 0.2s
 AWARENESS_DECEL = -0.2     # car smoothly decel at .2m/s^2 when user is distracted
@@ -48,8 +47,8 @@ class Planner():
   def __init__(self, CP):
     self.CP = CP
     self.mpcs = {}
-    self.mpcs['lead0'] = LeadMpc(0)
-    self.mpcs['lead1'] = LeadMpc(1)
+    #self.mpcs['lead0'] = LeadMpc(0)
+    #self.mpcs['lead1'] = LeadMpc(1)
     self.mpcs['cruise'] = LongitudinalMpc()
 
     self.fcw = False
@@ -68,7 +67,7 @@ class Planner():
 
 
   def update(self, sm, CP):
-    cur_time = sec_since_boot()
+    #cur_time = sec_since_boot()
     v_ego = sm['carState'].vEgo
     a_ego = sm['carState'].aEgo
 
@@ -110,17 +109,17 @@ class Planner():
         next_a = self.mpcs[key].a_solution[5]
 
     # determine fcw
-    if self.mpcs['lead0'].new_lead:
-      self.fcw_checker.reset_lead(cur_time)
-    blinkers = sm['carState'].leftBlinker or sm['carState'].rightBlinker
-    self.fcw = self.fcw_checker.update(self.mpcs['lead0'].x_sol[:,2], cur_time,
-                                       sm['controlsState'].active,
-                                       v_ego, sm['carState'].aEgo,
-                                       self.lead_1.dRel, self.lead_1.vLead, self.lead_1.aLeadK,
-                                       self.lead_1.yRel, self.lead_1.vLat,
-                                       self.lead_1.fcw, blinkers) and not sm['carState'].brakePressed
-    if self.fcw:
-      cloudlog.info("FCW triggered %s", self.fcw_checker.counters)
+    #if self.mpcs['lead0'].new_lead:
+    #  self.fcw_checker.reset_lead(cur_time)
+    #blinkers = sm['carState'].leftBlinker or sm['carState'].rightBlinker
+    #self.fcw = self.fcw_checker.update(self.mpcs['lead0'].x_sol[:,2], cur_time,
+    #                                   sm['controlsState'].active,
+    #                                   v_ego, sm['carState'].aEgo,
+    #                                   self.lead_1.dRel, self.lead_1.vLead, self.lead_1.aLeadK,
+    #                                   self.lead_1.yRel, self.lead_1.vLat,
+    #                                   self.lead_1.fcw, blinkers) and not sm['carState'].brakePressed
+    #if self.fcw:
+    #  cloudlog.info("FCW triggered %s", self.fcw_checker.counters)
 
     # Interpolate 0.05 seconds and save as starting point for next iteration
     a_prev = self.a_desired
@@ -140,7 +139,7 @@ class Planner():
     longitudinalPlan.accels = [float(x) for x in self.a_desired_trajectory]
     longitudinalPlan.jerks = [float(x) for x in self.j_desired_trajectory]
 
-    longitudinalPlan.hasLead = self.mpcs['lead0'].status
+    longitudinalPlan.hasLead = self.mpcs['cruise'].lead_status
     longitudinalPlan.longitudinalPlanSource = self.longitudinalPlanSource
     longitudinalPlan.fcw = self.fcw
 
