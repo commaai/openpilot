@@ -91,7 +91,7 @@ class CarState(CarStateBase):
 
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(gear))
 
-    if self.CP.openpilotLongitudinalControl:
+    if not self.CP.openpilotLongitudinalControl:
       if self.CP.carFingerprint in FEATURES["use_fca"]:
         ret.stockAeb = cp.vl["FCA11"]["FCA_CmdAct"] != 0
         ret.stockFcw = cp.vl["FCA11"]["CF_VSM_Warn"] == 2
