@@ -146,6 +146,7 @@ class LeadMpc():
     self.prev_lead_status = False
     self.prev_lead_x = 10
     self.solution_status = 0
+    self.solver.solve()
 
   def set_weights(self):
     W = np.diag([MPC_COST_LONG.TTC, MPC_COST_LONG.DISTANCE,
@@ -154,7 +155,6 @@ class LeadMpc():
     self.solver.cost_set_slice(0, N, 'W', Ws, api='old')
     #TODO hacky weights to keep behavior the same
     self.solver.cost_set(N, 'W', (3./5.)*W[:3,:3])
-    self.solver.solve()
 
   def set_cur_state(self, v, a):
     self.x0 = np.array([0, v, a])
@@ -191,6 +191,7 @@ class LeadMpc():
       self.a_lead_tau = _LEAD_ACCEL_TAU
     self.solver.constraints_set(0, "lbx", self.x0)
     self.solver.constraints_set(0, "ubx", self.x0)
+    self.solver.set(0, "x", self.x0)
 
     dt =.2
     t = .0
@@ -203,13 +204,14 @@ class LeadMpc():
         dt = .6
       ps[i] = np.array([x_lead, v_lead])
       self.solver.set(i, "p", ps[i])
-      #self.solver.set(i, "x", [])
-      #desired_x = RW(v_ego, v_lead)
-      #if x_lead - self.x_sol[i,0] < desired_x:
-        #new_x = np.array([x_lead - desired_x, v_lead, 0.0])
-        #self.solver.set(i, "x", new_x)
-      x_ego += v_ego_e * dt
-      v_ego_e = max(v_ego_e-3.0 * dt, 0.0)
+      desired_x = RW(v_ego, v_lead)
+      if x_lead - self.x_sol[i,0] < desired_x and i > 0:
+        x_old = self.solver.get(i - 1, "x")
+        a_ego = -5.
+        v_ego_e = max(0.0, x_old[1] + dt * a_ego)
+        x_ego = x_old[0] + dt * v_ego
+        x_new = np.array([x_ego, v_ego_e, a_ego])
+        self.solver.set(i, "x", x_new)
       a_lead = a_lead_0 * np.exp(-self.a_lead_tau * (t**2)/2.)
       x_lead += v_lead * dt
       v_lead += a_lead * dt
