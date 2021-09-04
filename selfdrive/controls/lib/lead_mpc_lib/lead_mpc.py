@@ -195,10 +195,9 @@ class LeadMpc():
 
     dt =.2
     t = .0
-    x_ego = 0
-    v_ego_e = v_ego
     a_lead_0 = a_lead
     ps = np.zeros((N+1,2))
+    reset_state = False
     for i in range(N+1):
       if i > 4:
         dt = .6
@@ -206,11 +205,8 @@ class LeadMpc():
       self.solver.set(i, "p", ps[i])
       desired_x = RW(v_ego, v_lead)
       if x_lead - self.x_sol[i,0] < desired_x and i > 0:
-        x_old = self.solver.get(i - 1, "x")
-        a_ego = -5.
-        v_ego_e = max(0.0, x_old[1] + dt * a_ego)
-        x_ego = x_old[0] + dt * v_ego
-        x_new = np.array([x_ego, v_ego_e, a_ego])
+        reset_state = True
+        x_new = np.array([0.0, 0.0, 0.0])
         self.solver.set(i, "x", x_new)
       a_lead = a_lead_0 * np.exp(-self.a_lead_tau * (t**2)/2.)
       x_lead += v_lead * dt
@@ -219,6 +215,10 @@ class LeadMpc():
         a_lead = 0.0
         v_lead = 0.0
       t += dt
+    if reset_state:
+      for i in range(N+1):
+        x_new = np.array([ps[i,0] - ps[0,0], ps[i,1], 0.0])
+        self.solver.set(i, "x", x_new)
 
     yref = np.zeros((N+1,4))
     self.solver.cost_set_slice(0, N, "yref", yref[:N])
