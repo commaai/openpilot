@@ -1,7 +1,6 @@
 #include "selfdrive/ui/qt/widgets/input.h"
 
 #include <QPushButton>
-#include <QTimer>
 
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/qt/util.h"
@@ -107,7 +106,6 @@ InputDialog::InputDialog(const QString &title, QWidget *parent, const QString &s
   )");
 
   line = new QLineEdit();
-  QTimer::singleShot(0, [=]() { line->setFocus(Qt::MouseFocusReason); });
   line->setStyleSheet("lineedit-password-character: 8226; lineedit-password-mask-delay: 1500;");
   textbox_layout->addWidget(line, 1);
 
