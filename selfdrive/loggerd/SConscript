@@ -1,7 +1,7 @@
 Import('env', 'arch', 'cereal', 'messaging', 'common', 'visionipc', 'gpucommon')
 
 
-logger_lib = env.Library('logger', ["logger.cc"])
+logger_lib = env.Library('logger', ["logger.cc", "logging.cc"])
 libs = [logger_lib, common, cereal, messaging, visionipc,
         'zmq', 'capnp', 'kj', 'z',
         'avformat', 'avcodec', 'swscale', 'avutil',
@@ -28,4 +28,4 @@ env.Program(src, LIBS=libs)
 env.Program('bootlog.cc', LIBS=libs)
 
 if GetOption('test'):
-  env.Program('tests/test_logger', ['tests/test_runner.cc', 'tests/test_logger.cc'], LIBS=[libs])
+  env.Program('tests/test_logger', ['tests/test_runner.cc', 'tests/test_logger.cc', 'tests/test_loggerd.cc'], LIBS=[libs])

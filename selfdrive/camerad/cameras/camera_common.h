@@ -48,22 +48,6 @@ typedef struct CameraInfo {
   bool hdr;
 } CameraInfo;
 
-typedef struct LogCameraInfo {
-  CameraType type;
-  const char* filename;
-  const char* frame_packet_name;
-  const char* encode_idx_name;
-  VisionStreamType stream_type;
-  int frame_width, frame_height;
-  int fps;
-  int bitrate;
-  bool is_h265;
-  bool downscale;
-  bool has_qcamera;
-  bool trigger_rotate;
-  bool enable;
-} LogCameraInfo;
-
 typedef struct FrameMetadata {
   uint32_t frame_id;
   unsigned int frame_length;

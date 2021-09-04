@@ -1,27 +1,16 @@
 #include <ftw.h>
-#include <pthread.h>
 #include <sys/resource.h>
 #include <unistd.h>
 
-#include <atomic>
 #include <cassert>
 #include <cerrno>
-#include <condition_variable>
-#include <cstdint>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <mutex>
-#include <random>
 #include <string>
 #include <thread>
 #include <unordered_map>
 
-#include "cereal/messaging/messaging.h"
 #include "cereal/services.h"
 #include "cereal/visionipc/visionipc.h"
 #include "cereal/visionipc/visionipc_client.h"
-#include "selfdrive/camerad/cameras/camera_common.h"
 #include "selfdrive/common/params.h"
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/timing.h"
@@ -29,7 +18,6 @@
 #include "selfdrive/hardware/hw.h"
 
 #include "selfdrive/loggerd/encoder.h"
-#include "selfdrive/loggerd/logger.h"
 #if defined(QCOM) || defined(QCOM2)
 #include "selfdrive/loggerd/omx_encoder.h"
 #define Encoder OmxEncoder
@@ -38,16 +26,13 @@
 #define Encoder RawLogger
 #endif
 
+#include "selfdrive/loggerd/logging.h"
+
 namespace {
 
 constexpr int MAIN_FPS = 20;
 const int MAIN_BITRATE = Hardware::TICI() ? 10000000 : 5000000;
 const int DCAM_BITRATE = Hardware::TICI() ? MAIN_BITRATE : 2500000;
-
-#define NO_CAMERA_PATIENCE 500 // fall back to time-based rotation if all cameras are dead
-
-const bool LOGGERD_TEST = getenv("LOGGERD_TEST");
-const int SEGMENT_LENGTH = LOGGERD_TEST ? atoi(getenv("LOGGERD_SEGMENT_LENGTH")) : 60;
 
 ExitHandler do_exit;
 
@@ -102,24 +87,6 @@ const LogCameraInfo qcam_info = {
   .frame_height = Hardware::TICI() ? 330 : 360 // keep pixel count the same?
 };
 
-struct LoggerdState {
-  Context *ctx;
-  LoggerState logger = {};
-  char segment_path[4096];
-  std::mutex rotate_lock;
-  std::condition_variable rotate_cv;
-  std::atomic<int> rotate_segment;
-  std::atomic<double> last_camera_seen_tms;
-  std::atomic<int> waiting_rotate;
-  int max_waiting = 0;
-  double last_rotate_tms = 0.;
-
-  // Sync logic for startup
-  std::atomic<bool> encoders_synced;
-  std::atomic<int> encoders_ready;
-  std::atomic<uint32_t> start_frame_id;
-  std::atomic<uint32_t> latest_frame_id;
-};
 LoggerdState s;
 
 void encoder_thread(const LogCameraInfo &cam_info) {
@@ -182,23 +149,19 @@ void encoder_thread(const LogCameraInfo &cam_info) {
         s.last_camera_seen_tms = millis_since_boot();
       }
 
-      if (cam_info.trigger_rotate && (cnt >= SEGMENT_LENGTH * MAIN_FPS)) {
-        // trigger rotate and wait logger rotated to new segment
-        ++s.waiting_rotate;
-        std::unique_lock lk(s.rotate_lock);
-        s.rotate_cv.wait(lk, [&] { return s.rotate_segment > cur_seg || do_exit; });
-      }
-      if (do_exit) break;
+      auto segment = s.get_segment(cur_seg, cam_info.trigger_rotate && cnt >= SEGMENT_LENGTH * MAIN_FPS, &do_exit);
+      if (!segment) break;
 
       // rotate the encoder if the logger is on a newer segment
-      if (s.rotate_segment > cur_seg) {
-        cur_seg = s.rotate_segment;
+      auto [segment_id, segment_path] = *segment;
+      if (segment_id > cur_seg) {
+        cur_seg = segment_id;
         cnt = 0;
 
-        LOGW("camera %d rotate encoder to %s", cam_info.type, s.segment_path);
+        LOGW("camera %d rotate encoder to %s", cam_info.type, segment_path.c_str());
         for (auto &e : encoders) {
           e->encoder_close();
-          e->encoder_open(s.segment_path);
+          e->encoder_open(segment_path.c_str());
         }
         if (lh) {
           lh_close(lh);
@@ -269,34 +232,6 @@ void clear_locks() {
   ftw(LOG_ROOT.c_str(), clear_locks_fn, 16);
 }
 
-void logger_rotate() {
-  {
-    std::unique_lock lk(s.rotate_lock);
-    int segment = -1;
-    int err = logger_next(&s.logger, LOG_ROOT.c_str(), s.segment_path, sizeof(s.segment_path), &segment);
-    assert(err == 0);
-    s.rotate_segment = segment;
-    s.waiting_rotate = 0;
-    s.last_rotate_tms = millis_since_boot();
-  }
-  s.rotate_cv.notify_all();
-  LOGW((s.logger.part == 0) ? "logging to %s" : "rotated to %s", s.segment_path);
-}
-
-void rotate_if_needed() {
-  if (s.waiting_rotate == s.max_waiting) {
-    logger_rotate();
-  }
-
-  double tms = millis_since_boot();
-  if ((tms - s.last_rotate_tms) > SEGMENT_LENGTH * 1000 &&
-      (tms - s.last_camera_seen_tms) > NO_CAMERA_PATIENCE &&
-      !LOGGERD_TEST) {
-    LOGW("no camera packet seen. auto rotating");
-    logger_rotate();
-  }
-}
-
 } // namespace
 
 int main(int argc, char** argv) {
@@ -310,14 +245,14 @@ int main(int argc, char** argv) {
   } QlogState;
   std::unordered_map<SubSocket*, QlogState> qlog_states;
 
-  s.ctx = Context::create();
+  Context *ctx = Context::create();
   Poller * poller = Poller::create();
 
   // subscribe to all socks
   for (const auto& it : services) {
     if (!it.should_log) continue;
 
-    SubSocket * sock = SubSocket::create(s.ctx, it.name);
+    SubSocket * sock = SubSocket::create(ctx, it.name);
     assert(sock != NULL);
     poller->registerSocket(sock);
     qlog_states[sock] = {.counter = 0, .freq = it.decimation};
@@ -325,11 +260,10 @@ int main(int argc, char** argv) {
 
   // init logger
   logger_init(&s.logger, "rlog", true);
-  logger_rotate();
+  s.rotate();
   Params().put("CurrentRoute", s.logger.route_name);
 
   // init encoders
-  s.last_camera_seen_tms = millis_since_boot();
   std::vector<std::thread> encoder_threads;
   for (const auto &ci : cameras_logged) {
     if (ci.enable) {
@@ -349,7 +283,6 @@ int main(int argc, char** argv) {
       LOGE("starting encoders at frame id %d", s.start_frame_id.load());
     }
 
-
     // poll for new messages on all sockets
     for (auto sock : poller->poll(1000)) {
       // drain socket
@@ -361,7 +294,7 @@ int main(int argc, char** argv) {
         bytes_count += msg->getSize();
         delete msg;
 
-        rotate_if_needed();
+        s.rotate_if_needed();
 
         if ((++msg_count % 1000) == 0) {
           double seconds = (millis_since_boot() - start_ts) / 1000.0;
@@ -387,7 +320,7 @@ int main(int argc, char** argv) {
   // messaging cleanup
   for (auto &[sock, qs] : qlog_states) delete sock;
   delete poller;
-  delete s.ctx;
+  delete ctx;
 
   return 0;
 }
