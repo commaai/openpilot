@@ -71,7 +71,15 @@ class HardwareBase:
     pass
 
   @abstractmethod
+  def get_battery_status(self):
+    pass
+
+  @abstractmethod
   def get_battery_current(self):
+    pass
+
+  @abstractmethod
+  def get_battery_voltage(self):
     pass
 
   @abstractmethod
