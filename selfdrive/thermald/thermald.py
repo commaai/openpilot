@@ -69,7 +69,6 @@ def read_thermal(thermal_config):
   dat.deviceState.gpuTempC = [read_tz(z) / thermal_config.gpu[1] for z in thermal_config.gpu[0]]
   dat.deviceState.memoryTempC = read_tz(thermal_config.mem[0]) / thermal_config.mem[1]
   dat.deviceState.ambientTempC = read_tz(thermal_config.ambient[0]) / thermal_config.ambient[1]
-  dat.deviceState.batteryTempC = read_tz(thermal_config.bat[0]) / thermal_config.bat[1]
   return dat
 
 
@@ -294,17 +293,8 @@ def thermald_thread():
       msg.deviceState.networkInfo = network_info
 
     msg.deviceState.batteryPercent = HARDWARE.get_battery_capacity()
-    msg.deviceState.batteryStatus = HARDWARE.get_battery_status()
     msg.deviceState.batteryCurrent = HARDWARE.get_battery_current()
-    msg.deviceState.batteryVoltage = HARDWARE.get_battery_voltage()
     msg.deviceState.usbOnline = HARDWARE.get_usb_present()
-
-    # Fake battery levels on uno for frame
-    if (not EON) or is_uno:
-      msg.deviceState.batteryPercent = 100
-      msg.deviceState.batteryStatus = "Charging"
-      msg.deviceState.batteryTempC = 0
-
     current_filter.update(msg.deviceState.batteryCurrent / 1e6)
 
     max_comp_temp = temp_filter.update(
