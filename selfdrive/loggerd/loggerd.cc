@@ -160,14 +160,13 @@ void encoder_thread(const LogCameraInfo &cam_info) {
       if (buf == nullptr) continue;
 
       if (cam_info.trigger_rotate && (s.max_waiting > 1)) {
-        if (!ready) {
-          LOGE("%s encoder ready", cam_info.filename);
-          ++s.encoders_ready;
-          ready = true;
-        }
-
         if (!s.encoders_synced) {
           update_max_atomic(s.latest_frame_id, extra.frame_id);
+          if (!ready) {
+            LOGE("%s encoder ready", cam_info.filename);
+            ++s.encoders_ready;
+            ready = true;
+          }
           continue;
         } else {
           // Wait for all encoders to reach the same frame id
