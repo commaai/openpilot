@@ -12,6 +12,8 @@
 const bool LOGGERD_TEST = getenv("LOGGERD_TEST");
 const int SEGMENT_LENGTH = LOGGERD_TEST ? atoi(getenv("LOGGERD_SEGMENT_LENGTH")) : 60;
 
+const int MAX_CAMERAS = WideRoadCam + 1;
+
 typedef struct LogCameraInfo {
   CameraType type;
   const char* filename;
@@ -35,6 +37,7 @@ public:
   std::optional<std::pair<int, std::string>> get_segment(int cur_seg, bool trigger_rotate, ExitHandler *do_exit);
   bool rotate_if_needed();
   void rotate();
+  bool sync_encoders(CameraType cam_type, uint32_t frame_id);
 
   LoggerState logger = {};
   
@@ -42,11 +45,7 @@ public:
   std::atomic<double> last_camera_seen_tms = 0.;
   int max_waiting = 0;
 
-  // Sync logic for startup
-  std::atomic<bool> encoders_synced;
-  std::atomic<int> encoders_ready;
-  std::atomic<uint32_t> start_frame_id;
-  std::atomic<uint32_t> latest_frame_id;
+ 
 
 protected:
   std::mutex rotate_lock;
@@ -54,6 +53,13 @@ protected:
   int waiting_rotate = 0;
   int rotate_segment = -1;
   double last_rotate_tms = 0.;
+
+  // Sync logic for startup
+  std::mutex sync_lock;
+  int encoders_ready;
+  uint32_t start_frame_id;
+  uint32_t latest_frame_id;
+  bool camera_ready[MAX_CAMERAS] = {};
 
   int segment_length_ms = SEGMENT_LENGTH * 1000;
   int no_camera_patience = NO_CAMERA_PATIENCE;

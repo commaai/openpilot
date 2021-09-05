@@ -44,3 +44,27 @@ bool LoggerdState::rotate_if_needed() {
   }
   return do_rotate;
 }
+
+bool LoggerdState::sync_encoders(CameraType cam_type, uint32_t frame_id) {
+  std::unique_lock lk(sync_lock);
+  if (!camera_ready[cam_type]) {
+    camera_ready[cam_type] = true;
+    ++encoders_ready;
+    LOGE("%d encoder ready", cam_type);
+  }
+  if (max_waiting > 1 && encoders_ready != max_waiting) {
+    if (latest_frame_id < frame_id) {
+      latest_frame_id = frame_id;
+      // Small margin in case one of the encoders already dropped the next frame
+      start_frame_id = latest_frame_id + 2;
+    }
+    return false;
+  } else {
+    // Wait for all encoders to reach the same frame id
+    if (frame_id < start_frame_id) {
+      LOGE("%d waiting for frame %d, cur %d", cam_type, start_frame_id, frame_id);
+      return false;
+    }
+    return true;
+  }
+}
