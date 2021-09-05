@@ -4,6 +4,12 @@ from cereal import car
 from selfdrive.car import dbc_dict
 Ecu = car.CarParams.Ecu
 
+
+# TODO: move into CarControllerParams
+ACCEL_MAX = 2.0  # m/s2
+ACCEL_MIN = -3.5  # m/s2
+
+
 # Steer torque limits
 class CarControllerParams:
   def __init__(self, CP):
@@ -18,7 +24,6 @@ class CarControllerParams:
     self.STEER_DRIVER_ALLOWANCE = 50
     self.STEER_DRIVER_MULTIPLIER = 2
     self.STEER_DRIVER_FACTOR = 1
-
 
 class CAR:
   # Hyundai
