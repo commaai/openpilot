@@ -2,6 +2,7 @@
 
 LoggerdState::LoggerdState(int segment_length_ms, int no_camera_patience, bool testing)
     : segment_length_ms(segment_length_ms), no_camera_patience(no_camera_patience), testing(testing) {
+  assert(no_camera_patience < segment_length_ms);
 }
 
 void LoggerdState::init() {

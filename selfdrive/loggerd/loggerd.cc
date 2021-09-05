@@ -34,6 +34,9 @@ constexpr int MAIN_FPS = 20;
 const int MAIN_BITRATE = Hardware::TICI() ? 10000000 : 5000000;
 const int DCAM_BITRATE = Hardware::TICI() ? MAIN_BITRATE : 2500000;
 
+#define NO_CAMERA_PATIENCE 500 // fall back to time-based rotation if all cameras are dead
+const int SEGMENT_LENGTH = LOGGERD_TEST ? atoi(getenv("LOGGERD_SEGMENT_LENGTH")) : 60;
+
 ExitHandler do_exit;
 
 const LogCameraInfo cameras_logged[] = {
@@ -238,7 +241,7 @@ int main(int argc, char** argv) {
   }
 
   // init logger
-  LoggerdState s;
+  LoggerdState s(SEGMENT_LENGTH * 1000, NO_CAMERA_PATIENCE);
   s.init();
   Params().put("CurrentRoute", s.logger.route_name);
 

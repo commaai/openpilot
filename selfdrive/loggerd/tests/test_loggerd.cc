@@ -3,7 +3,7 @@
 
 ExitHandler do_exit;
 
-const int segment_length = 10;
+const int segment_length = 10; // ms
 const int no_camera_patience = 6;  // ms
 
 const int ENCODER_THREAD_CNT = 10;
@@ -34,7 +34,7 @@ class TestLoggerdState : public LoggerdState {
 };
 
 void encode_thread(TestLoggerdState *s, bool trigger_rotate, bool has_camera) {
-  int cnt = 0, rotated_cnt = 0, cur_seg = -1;
+  int cnt = 0, rotated_cnt = 0, cur_seg = 0;
   while (!do_exit) {
     if (trigger_rotate && has_camera) {
       s->last_camera_seen_tms = millis_since_boot();
@@ -45,20 +45,20 @@ void encode_thread(TestLoggerdState *s, bool trigger_rotate, bool has_camera) {
     auto [segment_id, segment_path] = *segment;
     // rotate if the logger is on a newer segment
     if (segment_id > cur_seg) {
-      SAFE_REQUIRE(s->waiting_rotate == 0);
       SAFE_REQUIRE(segment_id == cur_seg + 1);
-      if (trigger_rotate && cur_seg != -1 && has_camera) {
+      if (trigger_rotate && has_camera) {
         SAFE_REQUIRE(cnt == segment_length);
       }
       ++rotated_cnt;
       cnt = 0;
       cur_seg = segment_id;
+    } else {
+      SAFE_REQUIRE((!trigger_rotate || cnt < segment_length));
     }
     cnt += has_camera;
     util::sleep_for(1);
   };
 
-  SAFE_UNSCOPED_INFO("thread [trigger_rotate=" << trigger_rotate << "][has_camera=" << has_camera << "]");
   SAFE_REQUIRE(rotated_cnt == ROTATE_CNT);
   SAFE_REQUIRE(cur_seg == s->rotate_segment);
 }
@@ -73,7 +73,7 @@ void test_rotation(bool has_camera) {
     s.max_waiting += trigger_rotate;
   }
 
-  for (int rotated = 1; rotated < ROTATE_CNT; /**/) {
+  for (int rotated = 0; rotated < ROTATE_CNT; /**/) {
     double last_camera_seen_tms = s.last_camera_seen_tms;
     if (s.rotate_if_needed()) {
       SAFE_REQUIRE(s.waiting_rotate == 0);
@@ -117,15 +117,18 @@ TEST_CASE("sync encoders") {
     start_frame[cam_type] = frame_id;
   };
 
-  LoggerdState s;
+  TestLoggerdState s(segment_length, no_camera_patience, true);
   s.max_waiting = 3;
   int encoder_start_frame[MAX_CAMERAS] = {};
+  int start_frame_id[MAX_CAMERAS] = {10, 20, 30};
   std::vector<std::thread> threads;
   for (int i = 0; i < MAX_CAMERAS; ++i) {
-    threads.emplace_back(thread_func, &s, (CameraType)i, i, encoder_start_frame);
+    threads.emplace_back(thread_func, &s, (CameraType)i, start_frame_id[i], encoder_start_frame);
   }
   for (auto &t : threads) t.join();
 
-  REQUIRE(encoder_start_frame[RoadCam] == encoder_start_frame[DriverCam]);
-  REQUIRE(encoder_start_frame[RoadCam] == encoder_start_frame[WideRoadCam]);
+  int start_id = *std::max_element(start_frame_id, start_frame_id + MAX_CAMERAS) + 2;
+  REQUIRE(encoder_start_frame[RoadCam] == start_id);
+  REQUIRE(encoder_start_frame[DriverCam] == start_id);
+  REQUIRE(encoder_start_frame[WideRoadCam] == start_id);
 }
