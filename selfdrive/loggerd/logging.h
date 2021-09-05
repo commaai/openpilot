@@ -45,8 +45,6 @@ public:
   std::atomic<double> last_camera_seen_tms = 0.;
   int max_waiting = 0;
 
- 
-
 protected:
   std::mutex rotate_lock;
   char segment_path[4096] = {};
@@ -56,9 +54,9 @@ protected:
 
   // Sync logic for startup
   std::mutex sync_lock;
-  int encoders_ready;
-  uint32_t start_frame_id;
-  uint32_t latest_frame_id;
+  int encoders_ready = 0;
+  uint32_t start_frame_id = 0;
+  uint32_t latest_frame_id = 0;
   bool camera_ready[MAX_CAMERAS] = {};
 
   int segment_length_ms = SEGMENT_LENGTH * 1000;

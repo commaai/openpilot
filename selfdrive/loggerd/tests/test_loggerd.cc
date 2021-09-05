@@ -7,7 +7,7 @@ const int segment_length = 10;
 const int no_camera_patience = 6;  // ms
 
 const int ENCODER_THREAD_CNT = 10;
-const int ROTATE_CNT = 500;
+const int ROTATE_CNT = 100;
 
 // catch2's s macros are not thread safe.
 std::mutex catch2_lock;
@@ -25,9 +25,9 @@ std::mutex catch2_lock;
 
 // helper class to accessing protected varialbes of LoggerdState
 class TestLoggerdState : public LoggerdState {
-public:
+ public:
   TestLoggerdState(int segment_length_ms, int no_camera_patience, bool testing)
-  : LoggerdState(segment_length_ms, no_camera_patience, testing) {}
+      : LoggerdState(segment_length_ms, no_camera_patience, testing) {}
 
   friend void test_rotation(bool has_camera);
   friend void encode_thread(TestLoggerdState *s, bool trigger_rotate, bool has_camera);
@@ -105,4 +105,26 @@ TEST_CASE("log rotation") {
   SECTION("test rotation without camera") {
     test_rotation(false);
   }
+}
+
+TEST_CASE("sync encoders") {
+  auto thread_func = [](LoggerdState *s, CameraType cam_type, int frame_id, int start_frame[]) {
+    while (!s->sync_encoders(cam_type, frame_id)) {
+      ++frame_id;
+      util::sleep_for(1);
+    }
+    start_frame[cam_type] = frame_id;
+  };
+
+  LoggerdState s;
+  s.max_waiting = 3;
+  int encoder_start_frame[MAX_CAMERAS] = {};
+  std::vector<std::thread> threads;
+  for (int i = 0; i < MAX_CAMERAS; ++i) {
+    threads.emplace_back(thread_func, &s, (CameraType)i, i, encoder_start_frame);
+  }
+  for (auto &t : threads) t.join();
+
+  REQUIRE(encoder_start_frame[RoadCam] == encoder_start_frame[DriverCam]);
+  REQUIRE(encoder_start_frame[RoadCam] == encoder_start_frame[WideRoadCam]);
 }
