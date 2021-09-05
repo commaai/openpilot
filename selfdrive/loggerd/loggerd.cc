@@ -87,9 +87,7 @@ const LogCameraInfo qcam_info = {
   .frame_height = Hardware::TICI() ? 330 : 360 // keep pixel count the same?
 };
 
-LoggerdState s;
-
-void encoder_thread(const LogCameraInfo &cam_info) {
+void encoder_thread(LoggerdState &s, const LogCameraInfo &cam_info) {
   set_thread_name(cam_info.filename);
 
   int cnt = 0, cur_seg = -1;
@@ -240,6 +238,7 @@ int main(int argc, char** argv) {
   }
 
   // init logger
+  LoggerdState s;
   s.init();
   Params().put("CurrentRoute", s.logger.route_name);
 
@@ -247,7 +246,7 @@ int main(int argc, char** argv) {
   std::vector<std::thread> encoder_threads;
   for (const auto &ci : cameras_logged) {
     if (ci.enable) {
-      encoder_threads.push_back(std::thread(encoder_thread, ci));
+      encoder_threads.push_back(std::thread(encoder_thread, std::ref(s), ci));
       if (ci.trigger_rotate) s.max_waiting++;
     }
   }
