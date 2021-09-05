@@ -118,7 +118,6 @@ struct LoggerdState {
   // Sync logic for startup
   std::mutex sync_lock;
   int encoders_ready = 0;
-  uint32_t start_frame_id = 0;
   uint32_t latest_frame_id = 0;
   bool camera_ready[MAX_CAMERAS] = {};
 };
@@ -129,8 +128,6 @@ bool sync_encoders(CameraType cam_type, uint32_t frame_id) {
   if (s.max_waiting > 1 && s.encoders_ready != s.max_waiting) {
     if (s.latest_frame_id < frame_id) {
       s.latest_frame_id = frame_id;
-      // Small margin in case one of the encoders already dropped the next frame
-      s.start_frame_id = s.latest_frame_id + 2;
     }
     if (!s.camera_ready[cam_type]) {
       s.camera_ready[cam_type] = true;
@@ -139,9 +136,11 @@ bool sync_encoders(CameraType cam_type, uint32_t frame_id) {
     }
     return false;
   } else {
+    // Small margin in case one of the encoders already dropped the next frame
+    uint32_t start_frame_id = s.latest_frame_id + 2;
     // Wait for all encoders to reach the same frame id
-    if (frame_id < s.start_frame_id) {
-      LOGE("camera %d waiting for frame %d, cur %d", cam_type, s.start_frame_id, frame_id);
+    if (frame_id < start_frame_id) {
+      LOGE("camera %d waiting for frame %d, cur %d", cam_type, start_frame_id, frame_id);
       return false;
     }
     return true;
