@@ -34,6 +34,8 @@ class LoggerdState {
 public:
   LoggerdState() = default;
   LoggerdState(int segment_length_ms, int no_camera_patience, bool testing);
+  void init();
+  void close(ExitHandler *do_exit);
   std::optional<std::pair<int, std::string>> get_segment(int cur_seg, bool trigger_rotate, ExitHandler *do_exit);
   bool rotate_if_needed();
   void rotate();
@@ -41,12 +43,12 @@ public:
 
   LoggerState logger = {};
   
-  std::condition_variable rotate_cv;
   std::atomic<double> last_camera_seen_tms = 0.;
   int max_waiting = 0;
 
 protected:
   std::mutex rotate_lock;
+  std::condition_variable rotate_cv;
   char segment_path[4096] = {};
   int waiting_rotate = 0;
   int rotate_segment = -1;
@@ -55,7 +57,6 @@ protected:
   // Sync logic for startup
   std::mutex sync_lock;
   int encoders_ready = 0;
-  uint32_t start_frame_id = 0;
   uint32_t latest_frame_id = 0;
   bool camera_ready[MAX_CAMERAS] = {};
 

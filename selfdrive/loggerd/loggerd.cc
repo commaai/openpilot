@@ -240,8 +240,7 @@ int main(int argc, char** argv) {
   }
 
   // init logger
-  logger_init(&s.logger, "rlog", true);
-  s.rotate();
+  s.init();
   Params().put("CurrentRoute", s.logger.route_name);
 
   // init encoders
@@ -278,11 +277,8 @@ int main(int argc, char** argv) {
   }
 
   LOGW("closing encoders");
-  s.rotate_cv.notify_all();
+  s.close(&do_exit);
   for (auto &t : encoder_threads) t.join();
-
-  LOGW("closing logger");
-  logger_close(&s.logger, &do_exit);
 
   if (do_exit.power_failure) {
     LOGE("power failure");
