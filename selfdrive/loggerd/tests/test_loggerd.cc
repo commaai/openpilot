@@ -7,7 +7,7 @@ const int segment_length = 10;
 const int no_camera_patience = 6;  // ms
 
 const int ENCODER_THREAD_CNT = 10;
-const int ROTATE_CNT = 100;
+const int ROTATE_CNT = 200;
 
 // catch2's s macros are not thread safe.
 std::mutex catch2_lock;
@@ -93,6 +93,7 @@ void test_rotation(bool has_camera) {
 
   // wait threads finished
   do_exit = true;
+  util::sleep_for(20);
   s.rotate_cv.notify_all();
   for (auto &t : threads) t.join();
 }
