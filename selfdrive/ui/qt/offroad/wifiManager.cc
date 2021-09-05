@@ -341,9 +341,14 @@ void WifiManager::connectionRemoved(const QDBusObjectPath &path) {
 }
 
 void WifiManager::newConnection(const QDBusObjectPath &path) {
-  knownConnections[path] = getConnectionSettings(path).value("802-11-wireless").value("ssid").toString();
-  if (knownConnections[path] != tethering_ssid) {
-    activateWifiConnection(knownConnections[path]);
+  const Connection &settings = getConnectionSettings(path);
+  if (settings.value("connection").value("type") == "802-11-wireless") {
+    knownConnections[path] = settings.value("802-11-wireless").value("ssid").toString();
+    if (knownConnections[path] != tethering_ssid) {
+      activateWifiConnection(knownConnections[path]);
+    }
+  } else if (path.path() != "/") {
+    lteConnectionPath = path.path();
   }
 }
 
