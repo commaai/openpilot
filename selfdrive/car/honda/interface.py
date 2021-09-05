@@ -6,7 +6,7 @@ from common.params import Params
 from selfdrive.car.honda.values import CarControllerParams, CruiseButtons, CAR, HONDA_BOSCH, HONDA_BOSCH_ALT_BRAKE_SIGNAL
 from selfdrive.car.honda.hondacan import disable_radar
 from selfdrive.car import STD_CARGO_KG, CivicParams, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
-from selfdrive.car.interfaces import CarInterfaceBase
+from selfdrive.car.interfaces import CarInterfaceBase, ACCEL_MAX, ACCEL_MIN
 from selfdrive.config import Conversions as CV
 
 
@@ -16,6 +16,14 @@ TransmissionType = car.CarParams.TransmissionType
 
 
 class CarInterface(CarInterfaceBase):
+  @staticmethod
+  def get_pid_accel_limits(current_speed, cruise_speed):
+    # NIDECs don't allow acceleration near cruise_speed,
+    # so limit limits of pid to prevent windup
+    ACCEL_MAX_VALS = [ACCEL_MAX, 0.2]
+    ACCEL_MAX_BP = [cruise_speed - 2., cruise_speed - .2]
+    return ACCEL_MIN, interp(current_speed, ACCEL_MAX_BP, ACCEL_MAX_VALS)
+
   @staticmethod
   def calc_accel_override(a_ego, a_target, v_ego, v_target):
 
