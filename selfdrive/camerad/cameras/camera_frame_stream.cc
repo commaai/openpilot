@@ -22,7 +22,7 @@ CameraInfo cameras_supported[CAMERA_ID_MAX] = {
     .frame_height = FRAME_HEIGHT,
     .frame_stride = FRAME_WIDTH*3,
     .bayer = false,
-    .bayer_flip = false,p
+    .bayer_flip = false,
   },
   [CAMERA_ID_OV8865] = {
     .frame_width = 1632,
