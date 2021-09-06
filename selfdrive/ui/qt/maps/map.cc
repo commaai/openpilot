@@ -116,6 +116,10 @@ void MapWindow::initLayers() {
 }
 
 void MapWindow::timerUpdate() {
+  if (!QUIState::ui_state.scene.started) {
+    return;
+  }
+
   if (isVisible()) {
     update();
   }
@@ -261,11 +265,6 @@ static float get_time_typical(const QGeoRouteSegment &segment) {
 void MapWindow::recomputeRoute() {
   if (!QUIState::ui_state.scene.started) {
     return;
-  }
-
-  // Retry all timed out requests
-  if (!m_map.isNull()) {
-    m_map->connectionEstablished();
   }
 
   if (!last_position) {
