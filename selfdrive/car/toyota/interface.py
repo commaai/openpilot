@@ -10,8 +10,8 @@ EventName = car.CarEvent.EventName
 
 class CarInterface(CarInterfaceBase):
   @staticmethod
-  def get_pid_accel_limits(CP, current_speed, cruise_speed):
-    params = CarControllerParams(CP)
+  def get_pid_accel_limits(current_speed, cruise_speed):
+    params = CarControllerParams()
     return params.ACCEL_MIN, params.ACCEL_MAX
 
   @staticmethod
