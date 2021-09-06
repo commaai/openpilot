@@ -83,8 +83,9 @@ class LongControl():
     # Interp control trajectory
     # TODO estimate car specific lag, use .15s for now
     if len(long_plan.speeds) == CONTROL_N:
-      accel_delay = interp(CS.vEgo, [4.4704, 35.7632], [0.15, 0.3])  # 10 to 80 mph
-      v_target = interp(accel_delay, T_IDXS[:CONTROL_N], long_plan.speeds)
+      accel_delay = interp(CS.vEgo, [5, 35], [0.2, 0.4])  # 10 to 80 mph
+      speed_delay = interp(CS.vEgo, [5, 35], [0.05, 0.1])
+      v_target = interp(speed_delay, T_IDXS[:CONTROL_N], long_plan.speeds)
       v_target_future = long_plan.speeds[-1]
       a_target = interp(accel_delay, T_IDXS[:CONTROL_N], long_plan.accels)
     else:
