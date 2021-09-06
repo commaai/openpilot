@@ -16,6 +16,10 @@ DECEL_STOPPING_TARGET = 2.0  # apply at least this amount of brake to maintain t
 RATE = 100.0
 DEFAULT_LONG_LAG = 0.15
 
+# As per ISO 15622:2018 for all speeds
+ACCEL_MIN_ISO = -3.5 # m/s^2
+ACCEL_MAX_ISO = 2.0 # m/s^2
+
 
 # TODO this logic isn't really car independent, does not belong here
 def long_control_state_trans(active, long_control_state, v_ego, v_target, v_pid,
@@ -81,6 +85,9 @@ class LongControl():
       v_target = 0.0
       v_target_future = 0.0
       a_target = 0.0
+
+    # TODO: This check is not complete and needs to be enforced by MPC
+    a_target = clip(a_target, ACCEL_MIN_ISO, ACCEL_MAX_ISO)
 
     self.pid.neg_limit = accel_limits[0]
     self.pid.pos_limit = accel_limits[1]
