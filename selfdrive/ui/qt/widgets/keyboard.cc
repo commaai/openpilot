@@ -31,9 +31,7 @@ bool KeyButton::event(QEvent *event) {
       QMouseEvent mouseEvent(mouseType, touchEvent->touchPoints().front().pos(), Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
       QPushButton::event(&mouseEvent);
       event->accept();
-      if (mouseType == QEvent::MouseButtonRelease) {
-        parentWidget()->update();
-      }
+      parentWidget()->update();
       return true;
     }
   }
