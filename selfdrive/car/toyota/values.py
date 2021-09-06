@@ -6,13 +6,14 @@ from selfdrive.config import Conversions as CV
 
 Ecu = car.CarParams.Ecu
 MIN_ACC_SPEED = 19. * CV.MPH_TO_MS
+
 PEDAL_HYST_GAP = 3. * CV.MPH_TO_MS
+PEDAL_SCALE = 3.0
 
 class CarControllerParams:
-  ACCEL_HYST_GAP = 0.02  # don't change accel command for small oscilalitons within this value
+  ACCEL_HYST_GAP = 0.06  # don't change accel command for small oscilalitons within this value
   ACCEL_MAX = 1.5  # m/s2
   ACCEL_MIN = -3.0  # m/s2
-  ACCEL_SCALE = max(ACCEL_MAX, -ACCEL_MIN)
 
   STEER_MAX = 1500
   STEER_DELTA_UP = 10       # 1.5s time to peak torque
