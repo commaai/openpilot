@@ -90,11 +90,11 @@ class TestAlerts(unittest.TestCase):
       # set the alert
       alert = self.offroad_alerts[a]
       set_offroad_alert(a, True)
-      self.assertTrue(json.dumps(alert) == params.get(a, encoding='utf8'))
+      self.assertTrue(json.dumps(alert) == params.get_subkey('OffroadAlerts', a, encoding='utf8'))
 
       # then delete it
       set_offroad_alert(a, False)
-      self.assertTrue(params.get(a) is None)
+      self.assertTrue(params.get_subkey('OffroadAlerts', a) is None)
 
   def test_offroad_alerts_extra_text(self):
     params = Params()
@@ -105,7 +105,7 @@ class TestAlerts(unittest.TestCase):
       set_offroad_alert(a, True, extra_text="a"*i)
 
       expected_txt = alert['text'] + "a"*i
-      written_txt = json.loads(params.get(a, encoding='utf8'))['text']
+      written_txt = json.loads(params.get_subkey('OffroadAlerts', a, encoding='utf8'))['text']
       self.assertTrue(expected_txt == written_txt)
 
 if __name__ == "__main__":
