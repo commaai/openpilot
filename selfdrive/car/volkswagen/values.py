@@ -230,6 +230,7 @@ FW_VERSIONS = {
       b'\xf1\x875QN909144A \xf1\x895081\xf1\x82\00571A01A16A1',
       b'\xf1\x875QN909144A \xf1\x895081\xf1\x82\00571A01A18A1',
       b'\xf1\x875QN909144A \xf1\x895081\xf1\x82\x0571A01A17A1',
+      b'\xf1\x875QN909144B \xf1\x895082\xf1\x82\00571A01A18A1',
     ],
     (Ecu.fwdRadar, 0x757, None): [
       b'\xf1\x875Q0907572A \xf1\x890141\xf1\x82\00101',
@@ -241,6 +242,7 @@ FW_VERSIONS = {
       b'\xf1\x875Q0907572H \xf1\x890620',
       b'\xf1\x875Q0907572J \xf1\x890654',
       b'\xf1\x875Q0907572P \xf1\x890682',
+      b'\xf1\x875Q0907572R \xf1\x890771',
     ],
   },
   CAR.JETTA_MK7: {
