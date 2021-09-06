@@ -347,8 +347,6 @@ void WifiManager::newConnection(const QDBusObjectPath &path) {
     if (knownConnections[path] != tethering_ssid) {
       activateWifiConnection(knownConnections[path]);
     }
-  } else if (path.path() != "/") {
-    lteConnectionPath = path.path();
   }
 }
 
