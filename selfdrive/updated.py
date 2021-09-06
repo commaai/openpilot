@@ -347,6 +347,10 @@ def main():
   if psutil.LINUX:
     proc.ionice(psutil.IOPRIO_CLASS_BE, value=7)
 
+  # Check if we just performed an update
+  if Path(os.path.join(STAGING_ROOT, "old_openpilot")).is_dir():
+    cloudlog.event("update installed")
+
   ov_lock_fd = open(LOCK_FILE, 'w')
   try:
     fcntl.flock(ov_lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
