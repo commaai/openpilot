@@ -17,7 +17,7 @@ TransmissionType = car.CarParams.TransmissionType
 
 class CarInterface(CarInterfaceBase):
   @staticmethod
-  def get_pid_accel_limits(CP, current_speed, cruise_speed):
+  def get_pid_accel_limits(current_speed, cruise_speed):
     # NIDECs don't allow acceleration near cruise_speed,
     # so limit limits of pid to prevent windup
     ACCEL_MAX_VALS = [ACCEL_MAX, 0.2]
