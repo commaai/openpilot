@@ -11,7 +11,7 @@ PEDAL_HYST_GAP = 3. * CV.MPH_TO_MS
 PEDAL_SCALE = 3.0
 
 class CarControllerParams:
-  ACCEL_HYST_GAP = 0.02  # don't change accel command for small oscilalitons within this value
+  ACCEL_HYST_GAP = 0.06  # don't change accel command for small oscilalitons within this value
   ACCEL_MAX = 1.5  # m/s2
   ACCEL_MIN = -3.0  # m/s2
 
