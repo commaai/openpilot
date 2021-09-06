@@ -118,7 +118,7 @@ def gen_lead_mpc_solver():
   #ocp.solver_options.nlp_solver_tol_stat = 1e-3
   #ocp.solver_options.tol = 1e-3
 
-  ocp.solver_options.qp_solver_iter_max = 10
+  ocp.solver_options.qp_solver_iter_max = 100
   #ocp.solver_options.qp_tol = 1e-3
 
   # set prediction horizon
@@ -159,6 +159,40 @@ class LeadMpc():
   def set_cur_state(self, v, a):
     self.x0 = np.array([0, v, a])
 
+  def extrapolate_lead(self, x_lead_0, v_lead_0, a_lead_0, a_lead_tau):
+    lead_vals = np.zeros((N+1,2))
+    x_lead, v_lead = x_lead_0, v_lead_0
+    dt =.2
+    t = .0
+    for i in range(N+1):
+      if i > 4:
+        dt = .6
+      lead_vals[i] = np.array([x_lead, v_lead])
+      a_lead = a_lead_0 * np.exp(-a_lead_tau * (t**2)/2.)
+      x_lead += v_lead * dt
+      v_lead += a_lead * dt
+      if v_lead < 0.0:
+        a_lead = 0.0
+        v_lead = 0.0
+      t += dt
+    return lead_vals
+
+  def init_with_sim(self, v_ego, lead_xv, a_lead_0):
+    a_ego = min(0.0, -(v_ego - lead_xv[0,1]) * (v_ego - lead_xv[0,1]) / (2.0 * lead_xv[0,0] + 0.01) + a_lead_0)
+    dt =.2
+    t = .0
+    x_ego = 0.0
+    for i in range(N+1):
+      if i > 4:
+        dt = .6
+      v_ego += a_ego * dt
+      if v_ego <= 0.0:
+        v_ego = 0.0
+        a_ego = 0.0
+      x_ego += v_ego * dt
+      t += dt
+      self.solver.set(i, 'x', np.array([x_ego, v_ego, a_ego]))
+
   def update(self, carstate, radarstate, v_cruise):
     v_ego = carstate.vEgo
     if self.lead_id == 0:
@@ -177,7 +211,9 @@ class LeadMpc():
 
       self.a_lead_tau = lead.aLeadTau
       self.new_lead = False
+      lead_xv = self.extrapolate_lead(x_lead, v_lead, a_lead, self.a_lead_tau)
       if not self.prev_lead_status or abs(x_lead - self.prev_lead_x) > 2.5:
+        self.init_with_sim(v_ego, lead_xv, self.a_lead_tau)
         self.new_lead = True
 
       self.prev_lead_status = True
@@ -189,36 +225,12 @@ class LeadMpc():
       v_lead = v_ego + 10.0
       a_lead = 0.0
       self.a_lead_tau = _LEAD_ACCEL_TAU
+      lead_xv = self.extrapolate_lead(x_lead, v_lead, a_lead, self.a_lead_tau)
     self.solver.constraints_set(0, "lbx", self.x0)
     self.solver.constraints_set(0, "ubx", self.x0)
-    self.solver.set(0, "x", self.x0)
-
-    dt =.2
-    t = .0
-    a_lead_0 = a_lead
-    ps = np.zeros((N+1,2))
-    reset_state = False
     for i in range(N+1):
-      if i > 4:
-        dt = .6
-      ps[i] = np.array([x_lead, v_lead])
-      self.solver.set(i, "p", ps[i])
-      desired_x = RW(v_ego, v_lead)
-      if x_lead - self.x_sol[i,0] < desired_x and i > 0:
-        reset_state = True
-        x_new = np.array([0.0, 0.0, 0.0])
-        self.solver.set(i, "x", x_new)
-      a_lead = a_lead_0 * np.exp(-self.a_lead_tau * (t**2)/2.)
-      x_lead += v_lead * dt
-      v_lead += a_lead * dt
-      if v_lead < 0.0:
-        a_lead = 0.0
-        v_lead = 0.0
-      t += dt
-    if reset_state:
-      for i in range(N+1):
-        x_new = np.array([ps[i,0] - ps[0,0], ps[i,1], 0.0])
-        self.solver.set(i, "x", x_new)
+      self.solver.set(i, 'p', lead_xv[i])
+
 
     yref = np.zeros((N+1,4))
     self.solver.cost_set_slice(0, N, "yref", yref[:N])
@@ -236,10 +248,11 @@ class LeadMpc():
 
     # Reset if NaN or goes through lead car
     nans = np.any(np.isnan(self.x_sol))
-    crashing = np.any(ps[:,0] - self.x_sol[:,0] < 0)
+    crashing = np.any(lead_xv[:,0] - self.x_sol[:,0] < 0)
 
     t = sec_since_boot()
     if ((crashing) and self.prev_lead_status) or nans or self.solution_status != 0:
+      print(crashing, nans, v_ego, self.cost, lead_xv, lead_xv[:,0] - self.x_sol[:,0], self.x_sol[:,2])
       if t > self.last_cloudlog_t + 5.0:
         self.last_cloudlog_t = t
         cloudlog.warning("Longitudinal mpc %d reset - crashing: %s nan: %s" % (
