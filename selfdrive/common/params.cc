@@ -16,6 +16,8 @@
 #include <mutex>
 #include <unordered_map>
 
+#include "json11.hpp"
+
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
 #include "selfdrive/hardware/hw.h"
@@ -121,12 +123,15 @@ private:
   std::string fn_;
 };
 
+json11::Json::object read_json_object(const std::string &path) {
+  std::string err;
+  auto json = json11::Json::parse(util::read_file(path), err);
+  return err.empty() ? json.object_items() : json11::Json::object{};
+}
+
 std::unordered_map<std::string, uint32_t> keys = {
     {"AccessToken", CLEAR_ON_MANAGER_START | DONT_LOG},
-    {"ApiCache_DriveStats", PERSISTENT},
-    {"ApiCache_Device", PERSISTENT},
-    {"ApiCache_Owner", PERSISTENT},
-    {"ApiCache_NavDestinations", PERSISTENT},
+    {"ApiCache", PERSISTENT},
     {"AthenadPid", PERSISTENT},
     {"CalibrationParams", PERSISTENT},
     {"CarBatteryCapacity", PERSISTENT},
@@ -191,18 +196,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"UpdateFailedCount", CLEAR_ON_MANAGER_START},
     {"Version", PERSISTENT},
     {"VisionRadarToggle", PERSISTENT},
-    {"Offroad_ChargeDisabled", CLEAR_ON_MANAGER_START | CLEAR_ON_PANDA_DISCONNECT},
-    {"Offroad_ConnectivityNeeded", CLEAR_ON_MANAGER_START},
-    {"Offroad_ConnectivityNeededPrompt", CLEAR_ON_MANAGER_START},
-    {"Offroad_TemperatureTooHigh", CLEAR_ON_MANAGER_START},
-    {"Offroad_PandaFirmwareMismatch", CLEAR_ON_MANAGER_START | CLEAR_ON_PANDA_DISCONNECT},
-    {"Offroad_InvalidTime", CLEAR_ON_MANAGER_START},
-    {"Offroad_IsTakingSnapshot", CLEAR_ON_MANAGER_START},
-    {"Offroad_NeosUpdate", CLEAR_ON_MANAGER_START},
-    {"Offroad_UpdateFailed", CLEAR_ON_MANAGER_START},
-    {"Offroad_HardwareUnsupported", CLEAR_ON_MANAGER_START},
-    {"Offroad_UnofficialHardware", CLEAR_ON_MANAGER_START},
-    {"Offroad_NvmeMissing", CLEAR_ON_MANAGER_START},
+    {"OffroadAlerts", CLEAR_ON_MANAGER_START},
     {"ForcePowerDown", CLEAR_ON_MANAGER_START},
     {"JoystickDebugMode", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_OFF},
 };
@@ -226,7 +220,7 @@ ParamKeyType Params::getKeyType(const std::string &key) {
   return static_cast<ParamKeyType>(keys[key]);
 }
 
-int Params::put(const char* key, const char* value, size_t value_size) {
+int Params::put(const char* key, const char* value, size_t value_size, bool lock) {
   // Information about safely and atomically writing a file: https://lwn.net/Articles/457667/
   // 1) Create temp file
   // 2) Write data to temp file
@@ -250,15 +244,17 @@ int Params::put(const char* key, const char* value, size_t value_size) {
     if ((result = fsync(tmp_fd)) < 0) break;
 
     FileLock file_lock(params_path + "/.lock", LOCK_EX);
-    std::lock_guard<FileLock> lk(file_lock);
+    if (lock) file_lock.lock();
 
     // Move temp into place.
     std::string path = params_path + "/d/" + std::string(key);
-    if ((result = rename(tmp_path.c_str(), path.c_str())) < 0) break;
+    if ((result = rename(tmp_path.c_str(), path.c_str())) == 0) {
+      // fsync parent directory
+      path = params_path + "/d";
+      result = fsync_dir(path.c_str());
+    }
 
-    // fsync parent directory
-    path = params_path + "/d";
-    result = fsync_dir(path.c_str());
+    if (lock) file_lock.unlock();
   } while (false);
 
   close(tmp_fd);
@@ -327,4 +323,36 @@ void Params::clearAll(ParamKeyType key_type) {
   // fsync parent directory
   path = params_path + "/d";
   fsync_dir(path.c_str());
+}
+
+int Params::put_subkey(const std::string &key, const std::string &subkey, const std::string &val) {
+  FileLock file_lock(params_path + "/.lock", LOCK_EX);
+  std::lock_guard<FileLock> lk(file_lock);
+  
+  auto json = read_json_object(params_path + "/d/" + key);
+  json[subkey] = val;
+  auto data = json11::Json(json).dump();
+  return put(key.c_str(), data.c_str(), data.length(), false);
+}
+
+int Params::remove_subkey(const std::string &key, const std::string &subkey) {
+  FileLock file_lock(params_path + "/.lock", LOCK_EX);
+  std::lock_guard<FileLock> lk(file_lock);
+
+  auto json = read_json_object(params_path + "/d/" + key);
+  if (auto it = json.find(subkey); it != json.end()) {
+    json.erase(it);
+    auto data = json11::Json(json).dump();
+    return put(key.c_str(), data.c_str(), data.length(), false);
+  }
+  return 0;
+}
+
+std::string Params::get_subkey(const std::string &key, const std::string& subkey) {
+  FileLock file_lock(params_path + "/.lock", LOCK_EX);
+  std::lock_guard<FileLock> lk(file_lock);
+
+  auto json = read_json_object(params_path + "/d/" + key);
+  auto it = json.find(subkey);
+  return it != json.end() ? it->second.string_value() : "";
 }

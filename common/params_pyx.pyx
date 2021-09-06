@@ -77,6 +77,21 @@ cdef class Params:
     else:
       return val
 
+  def get_subkey(self, key, subkey, encoding=None):
+    cdef string k = self.check_key(key)
+    cdef string sub_key = ensure_bytes(subkey)
+    cdef string val
+    with nogil:
+      val = self.p.get_subkey(k, sub_key)
+    
+    if val == b"":
+      return None
+    
+    if encoding is not None:
+      return val.decode(encoding)
+    else:
+      return val
+
   def get_bool(self, key):
     cdef string k = self.check_key(key)
     cdef bool r
@@ -95,6 +110,14 @@ cdef class Params:
     cdef string dat_bytes = ensure_bytes(dat)
     with nogil:
       self.p.put(k, dat_bytes)
+  
+  def put_subkey(self, key, subkey, dat):
+    cdef string k = self.check_key(key)
+    cdef string dat_bytes = ensure_bytes(dat)
+    cdef string sub_key = ensure_bytes(subkey)
+    with nogil:
+      self.p.put_subkey(k, sub_key, dat_bytes)
+
 
   def put_bool(self, key, bool val):
     cdef string k = self.check_key(key)
@@ -105,6 +128,12 @@ cdef class Params:
     cdef string k = self.check_key(key)
     with nogil:
       self.p.remove(k)
+
+  def delete_subkey(self, key, subkey):
+    cdef string k = self.check_key(key)
+    cdef string sub_key = ensure_bytes(subkey)
+    with nogil:
+      self.p.remove_subkey(k, sub_key)
 
 
 def put_nonblocking(key, val, d=None):

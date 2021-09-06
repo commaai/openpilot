@@ -34,7 +34,6 @@ public:
 
   // helpers for reading values
   std::string get(const char *key, bool block = false);
-
   inline std::string get(const std::string &key, bool block = false) {
     return get(key.c_str(), block);
   }
@@ -60,7 +59,7 @@ public:
   }
 
   // helpers for writing values
-  int put(const char* key, const char* val, size_t value_size);
+  int put(const char* key, const char* val, size_t value_size, bool lock = true);
 
   inline int put(const std::string &key, const std::string &val) {
     return put(key.c_str(), val.data(), val.size());
@@ -73,6 +72,11 @@ public:
   inline int putBool(const std::string &key, bool val) {
     return putBool(key.c_str(), val);
   }
+
+  // sub keys
+  std::string get_subkey(const std::string &key, const std::string& subkey);
+  int put_subkey(const std::string &key, const std::string &subkey, const std::string &val);
+  int remove_subkey(const std::string &key, const std::string &subkey);
 
 private:
   const std::string params_path;

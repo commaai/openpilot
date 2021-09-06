@@ -255,6 +255,8 @@ def thermald_thread():
         if pandaState.pandaState.pandaType == log.PandaState.PandaType.unknown and \
           pandaState_prev.pandaState.pandaType != log.PandaState.PandaType.unknown:
           params.clear_all(ParamKeyType.CLEAR_ON_PANDA_DISCONNECT)
+          params.delete_subkey("OffroadAlerts", "Offroad_ChargeDisabled")
+          params.delete_subkey("OffroadAlerts", "Offroad_PandaFirmwareMismatch")
       pandaState_prev = pandaState
 
     # get_network_type is an expensive call. update every 10s

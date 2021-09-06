@@ -21,9 +21,9 @@ def set_offroad_alert(alert: str, show_alert: bool, extra_text: Optional[str] = 
     if extra_text is not None:
       a = copy.copy(OFFROAD_ALERTS[alert])
       a['text'] += extra_text
-    Params().put(alert, json.dumps(a))
+    Params().put_subkey('OffroadAlerts', alert, json.dumps(a))
   else:
-    Params().delete(alert)
+    Params().delete_subkey('OffroadAlerts', alert)
 
 
 class AlertManager:

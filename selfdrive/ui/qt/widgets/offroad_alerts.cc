@@ -76,11 +76,12 @@ int OffroadAlert::refresh() {
   }
 
   int alertCount = 0;
+  auto offroad_alerts = QJsonDocument::fromJson(params.get("OffroadAlerts").c_str());
   for (const auto &[key, label] : alerts) {
     QString text;
-    std::string bytes = params.get(key);
-    if (bytes.size()) {
-      auto doc_par = QJsonDocument::fromJson(bytes.c_str());
+    QString v = offroad_alerts[key.c_str()].toString();
+    if (!v.isEmpty()) {
+      auto doc_par = QJsonDocument::fromJson(v.toUtf8());
       text = doc_par["text"].toString();
     }
     label->setText(text);

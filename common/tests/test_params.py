@@ -1,3 +1,5 @@
+import json
+import os
 import threading
 import time
 import tempfile
@@ -5,6 +7,7 @@ import shutil
 import unittest
 
 from common.params import Params, ParamKeyType, UnknownKeyName, put_nonblocking
+from common.basedir import BASEDIR
 
 class TestParams(unittest.TestCase):
   def setUp(self):
@@ -23,6 +26,19 @@ class TestParams(unittest.TestCase):
     st = b"\xe1\x90\xff"
     self.params.put("CarParams", st)
     assert self.params.get("CarParams") == st
+
+  def test_params_put_and_get_with_subkey(self):
+    with open(os.path.join(BASEDIR, "selfdrive/controls/lib/alerts_offroad.json")) as f:
+      offroad_alerts = json.load(f)
+      for key, val in offroad_alerts.items():
+        self.params.put_subkey("OffroadAlerts", key, json.dumps(val))
+        assert json.loads(self.params.get_subkey("OffroadAlerts", key)) == val
+
+      for key, val in offroad_alerts.items():
+        self.params.delete_subkey("OffroadAlerts", key)
+        assert self.params.get_subkey("OffroadAlerts", key) is None
+
+
 
   def test_params_get_cleared_panda_disconnect(self):
     self.params.put("CarParams", "test")
@@ -96,7 +112,6 @@ class TestParams(unittest.TestCase):
     threading.Thread(target=_delayed_writer).start()
     assert q.get("CarParams") is None
     assert q.get("CarParams", True) == b"test"
-
 
 if __name__ == "__main__":
   unittest.main()

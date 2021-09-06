@@ -97,7 +97,7 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
     // Fetch favorite and recent locations
     {
       QString url = CommaApi::BASE_URL + "/v1/navigation/" + *dongle_id + "/locations";
-      RequestRepeater* repeater = new RequestRepeater(this, url, "ApiCache_NavDestinations", 30, true);
+      RequestRepeater* repeater = new RequestRepeater(this, url, "NavDestinations", 30, true);
       QObject::connect(repeater, &RequestRepeater::receivedResponse, this, &MapPanel::parseResponse);
       QObject::connect(repeater, &RequestRepeater::failedResponse, this, &MapPanel::failedResponse);
     }
