@@ -71,11 +71,7 @@ cdef class Params:
         raise KeyboardInterrupt
       else:
         return None
-
-    if encoding is not None:
-      return val.decode(encoding)
-    else:
-      return val
+    return val.decode(encoding) if encoding is not None else val
 
   def get_subkey(self, key, subkey, encoding=None):
     cdef string k = self.check_key(key)
@@ -83,14 +79,10 @@ cdef class Params:
     cdef string val
     with nogil:
       val = self.p.get_subkey(k, sub_key)
-    
+
     if val == b"":
       return None
-    
-    if encoding is not None:
-      return val.decode(encoding)
-    else:
-      return val
+    return val.decode(encoding) if encoding is not None else val
 
   def get_bool(self, key):
     cdef string k = self.check_key(key)

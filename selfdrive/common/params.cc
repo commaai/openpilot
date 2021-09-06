@@ -327,7 +327,7 @@ void Params::clearAll(ParamKeyType key_type) {
 
 int Params::put_subkey(const std::string &key, const std::string &subkey, const std::string &val) {
   FileLock file_lock(params_path + "/.lock", LOCK_EX);
-  std::lock_guard<FileLock> lk(file_lock);
+  std::lock_guard lk(file_lock);
   
   auto json = read_json_object(params_path + "/d/" + key);
   json[subkey] = val;
@@ -337,7 +337,7 @@ int Params::put_subkey(const std::string &key, const std::string &subkey, const 
 
 int Params::remove_subkey(const std::string &key, const std::string &subkey) {
   FileLock file_lock(params_path + "/.lock", LOCK_EX);
-  std::lock_guard<FileLock> lk(file_lock);
+  std::lock_guard lk(file_lock);
 
   auto json = read_json_object(params_path + "/d/" + key);
   if (auto it = json.find(subkey); it != json.end()) {
@@ -350,7 +350,7 @@ int Params::remove_subkey(const std::string &key, const std::string &subkey) {
 
 std::string Params::get_subkey(const std::string &key, const std::string& subkey) {
   FileLock file_lock(params_path + "/.lock", LOCK_EX);
-  std::lock_guard<FileLock> lk(file_lock);
+  std::lock_guard lk(file_lock);
 
   auto json = read_json_object(params_path + "/d/" + key);
   auto it = json.find(subkey);

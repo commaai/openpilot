@@ -34,6 +34,7 @@ public:
 
   // helpers for reading values
   std::string get(const char *key, bool block = false);
+
   inline std::string get(const std::string &key, bool block = false) {
     return get(key.c_str(), block);
   }
@@ -73,7 +74,7 @@ public:
     return putBool(key.c_str(), val);
   }
 
-  // sub keys
+  // sub key functions
   std::string get_subkey(const std::string &key, const std::string& subkey);
   int put_subkey(const std::string &key, const std::string &subkey, const std::string &val);
   int remove_subkey(const std::string &key, const std::string &subkey);

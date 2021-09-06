@@ -38,8 +38,6 @@ class TestParams(unittest.TestCase):
         self.params.delete_subkey("OffroadAlerts", key)
         assert self.params.get_subkey("OffroadAlerts", key) is None
 
-
-
   def test_params_get_cleared_panda_disconnect(self):
     self.params.put("CarParams", "test")
     self.params.put("DongleId", "cb38263377b873ee")
