@@ -18,7 +18,7 @@ EventName = car.CarEvent.EventName
 #          model predictions above this speed can be unpredictable
 MAX_CTRL_SPEED = (V_CRUISE_MAX + 4) * CV.KPH_TO_MS  # 135 + 4 = 86 mph
 ACCEL_MAX = 2.0
-ACCEL_MIN = -4.0
+ACCEL_MIN = -3.5
 
 
 # generic car and radar interfaces
@@ -45,7 +45,7 @@ class CarInterfaceBase():
       self.CC = CarController(self.cp.dbc_name, CP, self.VM)
 
   @staticmethod
-  def get_pid_accel_limits(current_speed, cruise_speed):
+  def get_pid_accel_limits(CP, current_speed, cruise_speed):
     return ACCEL_MIN, ACCEL_MAX
 
   @staticmethod
@@ -87,6 +87,7 @@ class CarInterfaceBase():
     ret.longitudinalTuning.kpV = [1.]
     ret.longitudinalTuning.kiBP = [0.]
     ret.longitudinalTuning.kiV = [1.]
+    ret.longitudinalActuatorDelay = 0.15
     return ret
 
   # returns a car.CarState, pass in car.CarControl

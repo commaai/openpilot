@@ -5,7 +5,16 @@ Ecu = car.CarParams.Ecu
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 class CarControllerParams():
-  ACCEL_MAX = 1.6
+  # Allow small margin below -3.5 m/s^2 from ISO 15622:2018 since we
+  # perform the closed loop control, and might need some
+  # to apply some more braking if we're on a downhill slope.
+  # Our controller should still keep the 2 second average above
+  # -3.5 m/s^2 as per planner limits
+  NIDEC_ACCEL_MIN = -4.0 # m/s^2
+  NIDEC_ACCEL_MAX = 1.6 # m/s^2, lower than 2.0 m/s^2 for tuning reasons
+
+  BOSCH_ACCEL_MIN = -3.5 # m/s^2
+  BOSCH_ACCEL_MAX = 2.0 # m/s^2
 
   def __init__(self, CP):
     self.BRAKE_MAX = 1024//4
@@ -1291,5 +1300,6 @@ SPEED_FACTOR = {
   CAR.HRV: 1.025,
 }
 
+HONDA_NIDEC_ALT_PCM_ACCEL = set([CAR.ODYSSEY])
 HONDA_BOSCH = set([CAR.ACCORD, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_5G, CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G, CAR.HONDA_E])
 HONDA_BOSCH_ALT_BRAKE_SIGNAL = set([CAR.ACCORD, CAR.CRV_5G, CAR.ACURA_RDX_3G])
