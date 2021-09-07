@@ -102,6 +102,11 @@ const LogCameraInfo qcam_info = {
   .frame_height = Hardware::TICI() ? 330 : 360 // keep pixel count the same?
 };
 
+struct QlogState {
+  int counter, freq;
+  inline bool in_qlog() { return freq != -1 && (counter++ % freq == 0); }
+};
+
 struct LoggerdState {
   Context *ctx;
   LoggerState logger = {};
@@ -124,6 +129,12 @@ LoggerdState s;
 
 void encoder_thread(const LogCameraInfo &cam_info) {
   set_thread_name(cam_info.filename);
+
+  QlogState qlog_state = [](CameraType type) {
+    const char *names[] = {"roadEncodeIdx", "driverEncodeIdx", "wideRoadEncodeIdx"};
+    auto it = std::find_if(std::begin(services), std::end(services), [=](service &item) { return strcmp(item.name, names[type]) == 0; });
+    return QlogState{.counter = 0, .freq = it->decimation};
+  }(cam_info.type);
 
   int cnt = 0, cur_seg = -1;
   int encode_idx = 0;
@@ -233,9 +244,8 @@ void encoder_thread(const LogCameraInfo &cam_info) {
           eidx.setSegmentNum(cur_seg);
           eidx.setSegmentId(out_id);
           if (lh) {
-            // TODO: this should read cereal/services.h for qlog decimation
             auto bytes = msg.toBytes();
-            lh_log(lh, bytes.begin(), bytes.size(), true);
+            lh_log(lh, bytes.begin(), bytes.size(), qlog_state.in_qlog());
           }
         }
       }
@@ -305,15 +315,10 @@ int main(int argc, char** argv) {
   clear_locks();
 
   // setup messaging
-  typedef struct QlogState {
-    int counter, freq;
-  } QlogState;
-  std::unordered_map<SubSocket*, QlogState> qlog_states;
-
   s.ctx = Context::create();
   Poller * poller = Poller::create();
-
   // subscribe to all socks
+  std::unordered_map<SubSocket*, QlogState> qlog_states;
   for (const auto& it : services) {
     if (!it.should_log) continue;
 
@@ -356,8 +361,7 @@ int main(int argc, char** argv) {
       QlogState &qs = qlog_states[sock];
       Message *msg = nullptr;
       while (!do_exit && (msg = sock->receive(true))) {
-        const bool in_qlog = qs.freq != -1 && (qs.counter++ % qs.freq == 0);
-        logger_log(&s.logger, (uint8_t *)msg->getData(), msg->getSize(), in_qlog);
+        logger_log(&s.logger, (uint8_t *)msg->getData(), msg->getSize(), qs.in_qlog());
         bytes_count += msg->getSize();
         delete msg;
 
