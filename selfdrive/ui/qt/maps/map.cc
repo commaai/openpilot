@@ -230,7 +230,7 @@ void MapWindow::resizeGL(int w, int h) {
 }
 
 void MapWindow::initializeGL() {
-  m_map.reset(new QMapboxGL(nullptr, m_settings, size(), 1));
+  m_map.reset(new QMapboxGL(this, m_settings, size(), 1));
 
   if (last_position) {
     m_map->setCoordinateZoom(*last_position, MAX_ZOOM);
