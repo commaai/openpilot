@@ -82,10 +82,10 @@ Panda::Panda(std::string serial) {
   return;
 
 fail:
-  cleanup();
   if (dev_list != NULL) {
     libusb_free_device_list(dev_list, 1);
   }
+  cleanup();
   throw std::runtime_error("Error connecting to panda");
 }
 
@@ -138,11 +138,11 @@ std::vector<std::string> Panda::list() {
   }
 
 finish:
-  if (context) {
-    libusb_exit(context);
-  }
   if (dev_list != NULL) {
     libusb_free_device_list(dev_list, 1);
+  }
+  if (context) {
+    libusb_exit(context);
   }
   return serials;
 }
