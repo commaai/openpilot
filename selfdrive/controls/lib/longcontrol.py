@@ -14,7 +14,6 @@ DECEL_THRESHOLD_TO_PID = 0.8
 DECEL_STOPPING_TARGET = 2.0  # apply at least this amount of brake to maintain the vehicle stationary
 
 RATE = 100.0
-DEFAULT_LONG_LAG = 0.15
 
 # As per ISO 15622:2018 for all speeds
 ACCEL_MIN_ISO = -3.5 # m/s^2
@@ -78,9 +77,9 @@ class LongControl():
     # Interp control trajectory
     # TODO estimate car specific lag, use .15s for now
     if len(long_plan.speeds) == CONTROL_N:
-      v_target = interp(DEFAULT_LONG_LAG, T_IDXS[:CONTROL_N], long_plan.speeds)
+      v_target = interp(CP.longitudinalActuatorDelay, T_IDXS[:CONTROL_N], long_plan.speeds)
       v_target_future = long_plan.speeds[-1]
-      a_target = 2 * (v_target - long_plan.speeds[0])/DEFAULT_LONG_LAG - long_plan.accels[0]
+      a_target = 2 * (v_target - long_plan.speeds[0])/CP.longitudinalActuatorDelay - long_plan.accels[0]
     else:
       v_target = 0.0
       v_target_future = 0.0
