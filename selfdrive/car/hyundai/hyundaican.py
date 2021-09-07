@@ -12,7 +12,7 @@ COM_CONT_RESPONSE = b''
 hyundai_checksum = crcmod.mkCrcFun(0x11D, initCrc=0xFD, rev=False, xorOut=0xdf)
 
 # TODO: merge with honda.hondacan.disable_radar
-def disable_radar(logcan, sendcan, bus=0, timeout=0.1, retry=10, debug=False):
+def disable_radar(logcan, sendcan, bus=0, timeout=1.0, retry=10, debug=False):
   """Silence the radar by disabling sending and receiving messages using UDS 0x28.
   The radar will stay silent as long as openpilot keeps sending Tester Present.
   Openpilot will emulate the radar. WARNING: THIS DISABLES AEB!"""
