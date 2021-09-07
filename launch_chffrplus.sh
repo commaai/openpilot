@@ -119,7 +119,7 @@ function tici_init {
   # network manager config
   nmcli connection modify --temporary lte gsm.auto-config yes
   nmcli connection modify --temporary lte gsm.home-only yes
-  rm -rf /data/etc/NetworkManager/system-connections/*.nmmeta
+  sudo rm -f /data/etc/NetworkManager/system-connections/*.nmmeta
 
   # set success flag for current boot slot
   sudo abctl --set_success
