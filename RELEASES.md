@@ -1,6 +1,5 @@
 Version 0.8.9 (2021-XX-XX)
 ========================
- * Škoda Karoq 2019 support thanks to jyoung8607!
 
 Version 0.8.8 (2021-08-27)
 ========================
