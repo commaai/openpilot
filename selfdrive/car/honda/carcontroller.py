@@ -9,7 +9,7 @@ from selfdrive.car.honda.values import CruiseButtons, VISUAL_HUD, HONDA_BOSCH, C
 from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
-
+LongCtrlState = car.CarControl.Actuators.LongControlState
 
 def compute_gb_honda_bosch(accel, speed):
   #TODO returns 0s, is unused
@@ -172,11 +172,8 @@ class CarController():
     can_sends.append(hondacan.create_steering_control(self.packer, apply_steer,
       lkas_active, CS.CP.carFingerprint, idx, CS.CP.openpilotLongitudinalControl))
 
-
-
-    # TODO: pass in LoC.long_control_state and use that to decide starting/stoppping
-    stopping = accel < 0 and CS.out.vEgo < 0.3
-    starting = accel > 0 and CS.out.vEgo < 0.3
+    stopping = actuators.longControlState == LongCtrlState.stopping
+    starting = actuators.longControlState == LongCtrlState.starting
 
     # Prevent rolling backwards
     accel = -4.0 if stopping else accel
