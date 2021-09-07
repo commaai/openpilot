@@ -45,7 +45,7 @@ class CarInterfaceBase():
       self.CC = CarController(self.cp.dbc_name, CP, self.VM)
 
   @staticmethod
-  def get_pid_accel_limits(current_speed, cruise_speed):
+  def get_pid_accel_limits(CP, current_speed, cruise_speed):
     return ACCEL_MIN, ACCEL_MAX
 
   @staticmethod
