@@ -3,7 +3,7 @@ from cereal import car
 from panda import Panda
 from common.params import Params
 from selfdrive.config import Conversions as CV
-from selfdrive.car.hyundai.values import CAR, EV_CAR, HYBRID_CAR, Buttons, ACCEL_MIN, ACCEL_MAX
+from selfdrive.car.hyundai.values import CAR, EV_CAR, HYBRID_CAR, Buttons
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
 from selfdrive.car.hyundai.hyundaican import disable_radar
@@ -12,10 +12,6 @@ ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
 
 class CarInterface(CarInterfaceBase):
-  @staticmethod
-  def get_pid_accel_limits(current_speed, cruise_speed):
-    return ACCEL_MIN, ACCEL_MAX
-
   @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=[]):  # pylint: disable=dangerous-default-value
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
@@ -38,11 +34,12 @@ class CarInterface(CarInterfaceBase):
 
     ret.stoppingControl = True
 
-    # Like honda, but 50% integrator
-    ret.longitudinalTuning.kpBP = [0., 5., 35.]
-    ret.longitudinalTuning.kpV = [1.2, 0.8, 0.5]
-    ret.longitudinalTuning.kiBP = [0., 35.]
-    ret.longitudinalTuning.kiV = [0.09, 0.06]
+    ret.longitudinalTuning.kpBP = [0.]
+    ret.longitudinalTuning.kpV = [0.5]
+    ret.longitudinalTuning.kiBP = [0.]
+    ret.longitudinalTuning.kiV = [0.05]
+
+    ret.longitudinalActuatorDelay = 1.0 # s
 
     if candidate == CAR.SANTA_FE:
       ret.lateralTuning.pid.kf = 0.00005
