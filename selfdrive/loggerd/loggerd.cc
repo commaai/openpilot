@@ -116,9 +116,8 @@ struct LoggerdState {
   double last_rotate_tms = 0.;
 
   // Sync logic for startup
-  std::mutex sync_lock;
-  int encoders_ready = 0;
-  uint32_t latest_frame_id = 0;
+  std::atomic<int> encoders_ready = 0;
+  std::atomic<uint32_t> latest_frame_id = 0;
   bool camera_ready[MAX_CAMERAS] = {};
 };
 LoggerdState s;
@@ -126,7 +125,6 @@ LoggerdState s;
 
 // Wait for all encoders to reach the same frame id
 bool sync_encoders(CameraType cam_type, uint32_t frame_id) {
-  std::unique_lock lk(s.sync_lock);
   if (s.max_waiting > 1 && s.encoders_ready != s.max_waiting) {
     if (std::exchange(s.camera_ready[cam_type], true) == false) {
       ++s.encoders_ready;
