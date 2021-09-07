@@ -93,12 +93,13 @@ TEST_CASE("util::read_files_in_dir") {
   }
 }
 
-TEST_CASE("util::safe_write") {
-  char filename[] = "/tmp/test_read_XXXXXX";
+TEST_CASE("util::safe_fwrite") {
+  char filename[] = "/tmp/XXXXXX";
   int fd = mkstemp(filename);
   close(fd);
-  FILE *f = util::safe_fopen(filename, "wb");
   std::string dat = random_bytes(1024 * 1024);
+
+  FILE *f = util::safe_fopen(filename, "wb");
   REQUIRE(f != nullptr);
   size_t size = util::safe_fwrite(dat.data(), 1, dat.size(), f);
   REQUIRE(size == dat.size());
