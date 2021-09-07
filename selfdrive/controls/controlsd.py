@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import os
 import math
+from numbers import Number
+
 from cereal import car, log
 from common.numpy_fast import clip
 from common.realtime import sec_since_boot, config_realtime_process, Priority, Ratekeeper, DT_CTRL
@@ -507,7 +509,11 @@ class Controls:
 
     # Ensure no NaNs/Infs
     for p in ACTUATOR_FIELDS:
-      if not math.isfinite(getattr(actuators, p)):
+      attr = getattr(actuators, p)
+      if not isinstance(attr, Number):
+        continue
+
+      if not math.isfinite(attr):
         cloudlog.error(f"actuators.{p} not finite {actuators.to_dict()}")
         setattr(actuators, p, 0.0)
 
