@@ -52,8 +52,10 @@ class TestCarModel(unittest.TestCase):
         lr = LogReader(get_url(ROUTES[cls.car_model], seg))
         break
       except Exception:
-        if seg == 0:
-          raise
+        lr = None
+
+    if lr is None:
+      raise Exception("Route not found. Is it uploaded?")
 
     can_msgs = []
     fingerprint = {i: dict() for i in range(3)}
