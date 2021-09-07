@@ -130,7 +130,6 @@ std::vector<std::string> Panda::list() {
       libusb_open(device, &handle);
       unsigned char desc_serial[26] = { 0 };
       int ret = libusb_get_string_descriptor_ascii(handle, desc.iSerialNumber, desc_serial, std::size(desc_serial));
-      libusb_release_interface(handle, 0);
       libusb_close(handle);
 
       if (ret < 0) { goto finish; }
