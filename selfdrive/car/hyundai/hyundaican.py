@@ -12,26 +12,28 @@ COM_CONT_RESPONSE = b''
 hyundai_checksum = crcmod.mkCrcFun(0x11D, initCrc=0xFD, rev=False, xorOut=0xdf)
 
 # TODO: merge with honda.hondacan.disable_radar
-def disable_radar(logcan, sendcan, bus=0, timeout=0.1, debug=False):
+def disable_radar(logcan, sendcan, bus=0, timeout=0.1, retry=10, debug=False):
   """Silence the radar by disabling sending and receiving messages using UDS 0x28.
   The radar will stay silent as long as openpilot keeps sending Tester Present.
   Openpilot will emulate the radar. WARNING: THIS DISABLES AEB!"""
   cloudlog.warning(f"radar disable {hex(RADAR_ADDR)} ...")
 
-  try:
-    query = IsoTpParallelQuery(sendcan, logcan, bus, [RADAR_ADDR], [EXT_DIAG_REQUEST], [EXT_DIAG_RESPONSE], debug=debug)
+  for i in range(retry):
+    try:
+      query = IsoTpParallelQuery(sendcan, logcan, bus, [RADAR_ADDR], [EXT_DIAG_REQUEST], [EXT_DIAG_RESPONSE], debug=debug)
 
-    for _, _ in query.get_data(timeout).items():
-      cloudlog.warning("radar communication control disable tx/rx ...")
+      for _, _ in query.get_data(timeout).items():
+        cloudlog.warning("radar communication control disable tx/rx ...")
 
-      query = IsoTpParallelQuery(sendcan, logcan, bus, [RADAR_ADDR], [COM_CONT_REQUEST], [COM_CONT_RESPONSE], debug=debug)
-      query.get_data(0)
+        query = IsoTpParallelQuery(sendcan, logcan, bus, [RADAR_ADDR], [COM_CONT_REQUEST], [COM_CONT_RESPONSE], debug=debug)
+        query.get_data(0)
 
-      cloudlog.warning("radar disabled")
-      return
+        cloudlog.warning("radar disabled")
+        return
+    except Exception:
+      cloudlog.exception("radar disable exception")
 
-  except Exception:
-    cloudlog.exception("radar disable exception")
+    print(f"ecu disable retry ({i+1}) ...")
   cloudlog.warning("radar disable failed")
 
 
