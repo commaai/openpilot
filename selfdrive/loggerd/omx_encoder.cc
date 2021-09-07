@@ -344,7 +344,10 @@ void OmxEncoder::handle_out_buf(OmxEncoder *e, OMX_BUFFERHEADERTYPE *out_buf) {
 
   if (e->of) {
     //printf("write %d flags 0x%x\n", out_buf->nFilledLen, out_buf->nFlags);
-    util::safe_fwrite(buf_data, 1, out_buf->nFilledLen, e->of);
+    size_t written = util::safe_fwrite(buf_data, 1, out_buf->nFilledLen, e->of);
+    if (written != out_buf->nFilledLen) {
+      LOGE("failed to write file.errno=%d", errno);
+    }
   }
 
   if (e->remuxing) {
