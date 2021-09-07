@@ -180,7 +180,7 @@ class TestCarModel(unittest.TestCase):
 
     # TODO: honda nidec: do same checks in carState and panda
     if "brakePressed" in failed_checks and self.CP.carName == 'honda' and \
-      (self.car_model not in HONDA_BOSCH or self.car_model == HONDA.CRV_HYBRID):
+      (self.car_model not in HONDA_BOSCH or self.car_model in [HONDA.CRV_HYBRID, HONDA.HONDA_E]):
       if failed_checks['brakePressed'] < 150:
         del failed_checks['brakePressed']
 

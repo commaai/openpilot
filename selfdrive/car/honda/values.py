@@ -75,6 +75,7 @@ class CAR:
   PILOT_2019 = "HONDA PILOT 2019"
   RIDGELINE = "HONDA RIDGELINE 2017"
   INSIGHT = "HONDA INSIGHT 2019"
+  HONDA_E = "HONDA E 2020"
 
 # diag message that in some Nidec cars only appear with 1s freq if VIN query is performed
 DIAG_MSGS = {1600: 5, 1601: 8}
@@ -1231,6 +1232,32 @@ FW_VERSIONS = {
       b'78109-TV9-A510\x00\x00',
     ],
   },
+  CAR.HONDA_E:{
+    (Ecu.eps, 0x18DA30F1, None):[
+      b'39990-TYF-N030\x00\x00'
+    ],
+    (Ecu.gateway, 0x18DAEFF1, None):[
+      b'38897-TYF-E140\x00\x00'
+    ],
+    (Ecu.shiftByWire, 0x18DA0BF1, None):[
+      b'54008-TYF-E010\x00\x00'
+    ],
+    (Ecu.srs, 0x18DA53F1, None):[
+      b'77959-TYF-G430\x00\x00'
+    ],
+    (Ecu.combinationMeter, 0x18DA60F1, None):[
+      b'78108-TYF-G610\x00\x00'
+    ],
+    (Ecu.fwdRadar, 0x18DAB0F1, None):[
+      b'36802-TYF-E030\x00\x00'
+    ],
+    (Ecu.fwdCamera, 0x18DAB5F1, None):[
+      b'36161-TYF-E020\x00\x00'
+    ],
+    (Ecu.vsa, 0x18DA28F1, None):[
+      b'57114-TYF-E030\x00\x00'
+    ],
+  },
 }
 
 DBC = {
@@ -1254,6 +1281,7 @@ DBC = {
   CAR.PILOT_2019: dbc_dict('honda_pilot_touring_2017_can_generated', 'acura_ilx_2016_nidec'),
   CAR.RIDGELINE: dbc_dict('honda_ridgeline_black_edition_2017_can_generated', 'acura_ilx_2016_nidec'),
   CAR.INSIGHT: dbc_dict('honda_insight_ex_2019_can_generated', None),
+  CAR.HONDA_E: dbc_dict('acura_rdx_2020_can_generated', None),
 }
 
 STEER_THRESHOLD = {
@@ -1273,5 +1301,5 @@ SPEED_FACTOR = {
 }
 
 HONDA_NIDEC_ALT_PCM_ACCEL = set([CAR.ODYSSEY])
-HONDA_BOSCH = set([CAR.ACCORD, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_5G, CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G])
+HONDA_BOSCH = set([CAR.ACCORD, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_5G, CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G, CAR.HONDA_E])
 HONDA_BOSCH_ALT_BRAKE_SIGNAL = set([CAR.ACCORD, CAR.CRV_5G, CAR.ACURA_RDX_3G])

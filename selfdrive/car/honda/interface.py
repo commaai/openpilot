@@ -289,6 +289,16 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.82
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.18]]
 
+    elif candidate == CAR.HONDA_E:
+      stop_and_go = True
+      ret.mass = 3338.8 * CV.LB_TO_KG + STD_CARGO_KG
+      ret.wheelbase = 2.5
+      ret.centerToFront = ret.wheelbase * 0.5
+      ret.steerRatio = 16.71
+      ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
+      tire_stiffness_factor = 0.82
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.18]] # TODO: can probably use some tuning
+
     else:
       raise ValueError("unsupported car %s" % candidate)
 
