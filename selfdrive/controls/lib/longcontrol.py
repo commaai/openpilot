@@ -1,10 +1,10 @@
-from cereal import log
+from cereal import car
 from common.numpy_fast import clip, interp
 from selfdrive.controls.lib.pid import PIController
 from selfdrive.controls.lib.drive_helpers import CONTROL_N
 from selfdrive.modeld.constants import T_IDXS
 
-LongCtrlState = log.ControlsState.LongControlState
+LongCtrlState = car.CarControl.Actuators.LongControlState
 
 STOPPING_EGO_SPEED = 0.5
 STOPPING_TARGET_SPEED_OFFSET = 0.01
@@ -14,7 +14,10 @@ DECEL_THRESHOLD_TO_PID = 0.8
 DECEL_STOPPING_TARGET = 2.0  # apply at least this amount of brake to maintain the vehicle stationary
 
 RATE = 100.0
-DEFAULT_LONG_LAG = 0.15
+
+# As per ISO 15622:2018 for all speeds
+ACCEL_MIN_ISO = -3.5 # m/s^2
+ACCEL_MAX_ISO = 2.0 # m/s^2
 
 
 # TODO this logic isn't really car independent, does not belong here
@@ -74,13 +77,16 @@ class LongControl():
     # Interp control trajectory
     # TODO estimate car specific lag, use .15s for now
     if len(long_plan.speeds) == CONTROL_N:
-      v_target = interp(DEFAULT_LONG_LAG, T_IDXS[:CONTROL_N], long_plan.speeds)
+      v_target = interp(CP.longitudinalActuatorDelay, T_IDXS[:CONTROL_N], long_plan.speeds)
       v_target_future = long_plan.speeds[-1]
-      a_target = 2 * (v_target - long_plan.speeds[0])/DEFAULT_LONG_LAG - long_plan.accels[0]
+      a_target = 2 * (v_target - long_plan.speeds[0])/CP.longitudinalActuatorDelay - long_plan.accels[0]
     else:
       v_target = 0.0
       v_target_future = 0.0
       a_target = 0.0
+
+    # TODO: This check is not complete and needs to be enforced by MPC
+    a_target = clip(a_target, ACCEL_MIN_ISO, ACCEL_MAX_ISO)
 
     self.pid.neg_limit = accel_limits[0]
     self.pid.pos_limit = accel_limits[1]
