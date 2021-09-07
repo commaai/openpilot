@@ -229,7 +229,7 @@ class LeadMpc():
     self.solver.constraints_set(0, "lbx", self.x0)
     self.solver.constraints_set(0, "ubx", self.x0)
     for i in range(N+1):
-      self.solver.set(i, 'p', lead_xv[i])
+      self.solver.set_param(i, lead_xv[i])
 
 
     yref = np.zeros((N+1,4))
