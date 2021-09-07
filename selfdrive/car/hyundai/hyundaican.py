@@ -140,7 +140,7 @@ def create_acc_commands(packer, enabled, accel, idx, lead_visible, set_speed, st
     "JerkUpperLimit": 12.7 if enabled else 0, # stock usually is 1.0 but sometimes uses higher values
     "JerkLowerLimit": 12.7 if enabled else 0, # stock usually is 0.5 but sometimes uses higher values
     "ACCMode": 1 if enabled else 4, # stock will always be 4 instead of 0 after first disengage
-    "ObjGap": 3 if lead_visible else 0, # TODO: 1-5 based on distance to lead vehicle or 0 if no lead
+    "ObjGap": 2 if lead_visible else 0, # TODO: 1-5 based on distance to lead vehicle or 0 if no lead
   }
   commands.append(packer.make_can_msg("SCC14", 0, scc14_values))
 

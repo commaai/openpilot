@@ -87,7 +87,7 @@ class CarController():
           self.last_resume_frame = frame
 
     if frame % 2 == 0 and CS.CP.openpilotLongitudinalControl:
-      lead_visible = False # TODO
+      lead_visible = bool((frame // 200) % 2)
       accel = actuators.accel if enabled else 0
       accel = clip(accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
 
