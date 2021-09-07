@@ -59,6 +59,7 @@ Panda::Panda(std::string serial) {
   }
   if (dev_handle == NULL) goto fail;
   libusb_free_device_list(dev_list, 1);
+  dev_list = nullptr;
 
   if (libusb_kernel_driver_active(dev_handle, 0) == 1) {
     libusb_detach_kernel_driver(dev_handle, 0);
