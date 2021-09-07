@@ -450,6 +450,7 @@ class Controls:
     long_plan = self.sm['longitudinalPlan']
 
     actuators = car.CarControl.Actuators.new_message()
+    actuators.longControlState = self.LoC.long_control_state
 
     if CS.leftBlinker or CS.rightBlinker:
       self.last_blinker_frame = self.sm.frame
