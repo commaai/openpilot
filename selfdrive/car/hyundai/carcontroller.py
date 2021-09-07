@@ -4,10 +4,11 @@ from common.numpy_fast import clip
 from selfdrive.config import Conversions as CV
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.hyundai.hyundaican import create_lkas11, create_clu11, create_lfahda_mfc, create_acc_commands, create_acc_opt, create_frt_radar_opt
-from selfdrive.car.hyundai.values import Buttons, CarControllerParams, CAR, ACCEL_MIN, ACCEL_MAX
+from selfdrive.car.hyundai.values import Buttons, CarControllerParams, CAR
 from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
+LongCtrlState = car.CarControl.Actuators.LongControlState
 
 
 def process_hud_alert(enabled, fingerprint, visual_alert, left_lane,
@@ -88,11 +89,9 @@ class CarController():
     if frame % 2 == 0 and CS.CP.openpilotLongitudinalControl:
       lead_visible = False # TODO
       accel = actuators.accel if enabled else 0
-      accel = clip(accel, ACCEL_MIN, ACCEL_MAX)
+      accel = clip(accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
 
-      # TODO: pass in LoC.long_control_state and use that to decide starting/stoppping
-      stopping = accel < 0 and CS.out.vEgo < 0.3
-
+      stopping = actuators.longControlState == LongCtrlState.stopping
       set_speed_in_units = hud_speed * (CV.MS_TO_MPH if CS.clu11["CF_Clu_SPEED_UNIT"] == 1 else CV.MS_TO_KPH)
       can_sends.extend(create_acc_commands(self.packer, enabled, accel, int(frame / 2), lead_visible, set_speed_in_units, stopping))
 
