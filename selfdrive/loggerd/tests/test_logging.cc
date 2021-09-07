@@ -6,23 +6,23 @@
 #include "selfdrive/loggerd/logging.h"
 
 TEST_CASE("sync encoders") {
-  auto thread_func = [](LoggerdState *s, CameraType cam_type, int frame_id) -> int {
+  auto thread_func = [](LoggerdState *s, CameraType cam_type) -> int {
+    srand( time(nullptr));
+    int frame_id = rand() % 10;
     while (!sync_encoders(s, cam_type, frame_id)) {
       ++frame_id;
-      util::sleep_for(0);
+      usleep(0);
     }
     return frame_id;
   };
 
-  LoggerdState s;
-  s.max_waiting = MAX_CAMERAS;
-  int start_frame_id[MAX_CAMERAS] = {10, 20, 30};
+  LoggerdState s{.max_waiting = MAX_CAMERAS};
   std::future<int> futures[MAX_CAMERAS];
   for (int i = 0; i < MAX_CAMERAS; ++i) {
-    futures[i] = std::async(std::launch::async, thread_func, &s, (CameraType)i, start_frame_id[i]);
+    futures[i] = std::async(std::launch::async, thread_func, &s, (CameraType)i);
   }
-  int start_id = *std::max_element(start_frame_id, start_frame_id + MAX_CAMERAS) + 2;
-  for (auto &f : futures) {
-    REQUIRE(f.get() == start_id);
-  }
+  int start_frames[] = {futures[0].get(), futures[1].get(), futures[2].get()};
+  REQUIRE(start_frames[0] == start_frames[1]);
+  REQUIRE(start_frames[1] == start_frames[2]);
+  
 }

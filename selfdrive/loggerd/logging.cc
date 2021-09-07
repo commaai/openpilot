@@ -1,13 +1,14 @@
 #include "selfdrive/loggerd/logging.h"
+
+#include "selfdrive/common/util.h"
+
 // Wait for all encoders to reach the same frame id
 bool sync_encoders(LoggerdState *s, CameraType cam_type, uint32_t frame_id) {
   if (s->max_waiting > 1 && s->encoders_ready != s->max_waiting) {
+    update_max_atomic(s->latest_frame_id, frame_id);
     if (std::exchange(s->camera_ready[cam_type], true) == false) {
       ++s->encoders_ready;
       LOGE("camera %d encoder ready", cam_type);
-    }
-    if (s->latest_frame_id < frame_id) {
-      s->latest_frame_id = frame_id;
     }
     return false;
   } else {
