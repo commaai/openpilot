@@ -57,6 +57,7 @@ const LogCameraInfo cameras_logged[] = {
     .stream_type = VISION_STREAM_YUV_BACK,
     .filename = "fcamera.hevc",
     .frame_packet_name = "roadCameraState",
+    .initEncodeIdx = &cereal::Event::Builder::initRoadEncodeIdx,
     .fps = MAIN_FPS,
     .bitrate = MAIN_BITRATE,
     .is_h265 = true,
@@ -70,6 +71,7 @@ const LogCameraInfo cameras_logged[] = {
     .stream_type = VISION_STREAM_YUV_FRONT,
     .filename = "dcamera.hevc",
     .frame_packet_name = "driverCameraState",
+    .initEncodeIdx = &cereal::Event::Builder::initDriverEncodeIdx,
     .fps = MAIN_FPS, // on EONs, more compressed this way
     .bitrate = DCAM_BITRATE,
     .is_h265 = true,
@@ -83,6 +85,7 @@ const LogCameraInfo cameras_logged[] = {
     .stream_type = VISION_STREAM_YUV_WIDE,
     .filename = "ecamera.hevc",
     .frame_packet_name = "wideRoadCameraState",
+    .initEncodeIdx = &cereal::Event::Builder::initWideRoadEncodeIdx,
     .fps = MAIN_FPS,
     .bitrate = MAIN_BITRATE,
     .is_h265 = true,
@@ -218,17 +221,15 @@ void encoder_thread(const LogCameraInfo &cam_info) {
         // publish encode index
         if (i == 0 && out_id != -1) {
           MessageBuilder msg;
-          // this is really ugly
-          auto eidx = cam_info.type == DriverCam ? msg.initEvent().initDriverEncodeIdx() :
-                     (cam_info.type == WideRoadCam ? msg.initEvent().initWideRoadEncodeIdx() : msg.initEvent().initRoadEncodeIdx());
+          auto eidx = (msg.initEvent().*cam_info.initEncodeIdx)();
           eidx.setFrameId(extra.frame_id);
           eidx.setTimestampSof(extra.timestamp_sof);
           eidx.setTimestampEof(extra.timestamp_eof);
-          if (Hardware::TICI()) {
-            eidx.setType(cereal::EncodeIndex::Type::FULL_H_E_V_C);
-          } else {
-            eidx.setType(cam_info.type == DriverCam ? cereal::EncodeIndex::Type::FRONT : cereal::EncodeIndex::Type::FULL_H_E_V_C);
+          cereal::EncodeIndex::Type type = cereal::EncodeIndex::Type::FULL_H_E_V_C;
+          if (!Hardware::TICI() && cam_info.type == DriverCam) {
+            type = cereal::EncodeIndex::Type::FRONT;
           }
+          eidx.setType(type);
           eidx.setEncodeId(encode_idx);
           eidx.setSegmentNum(cur_seg);
           eidx.setSegmentId(out_id);
