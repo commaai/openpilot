@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import math
 import numpy as np
 
 from common.numpy_fast import interp
@@ -136,6 +137,10 @@ class LeadMpc():
     self.x_sol = np.zeros((N+1, 3))
     self.u_sol = np.zeros((N))
     self.set_weights()
+    yref = np.zeros((N+1,4))
+    self.solver.cost_set_slice(0, N, "yref", yref[:N])
+    self.solver.set(N, "yref", yref[N][:3])
+
 
     self.v_solution = [0.0 for i in range(N)]
     self.a_solution = [0.0 for i in range(N)]
@@ -147,6 +152,8 @@ class LeadMpc():
     self.prev_lead_x = 10
     self.solution_status = 0
     self.solver.solve()
+    self.lead_xv = np.zeros((N+1,2))
+    self.x0 = np.zeros(3)
 
   def set_weights(self):
     W = np.diag([MPC_COST_LONG.TTC, MPC_COST_LONG.DISTANCE,
@@ -157,25 +164,23 @@ class LeadMpc():
     self.solver.cost_set(N, 'W', (3./5.)*W[:3,:3])
 
   def set_cur_state(self, v, a):
-    self.x0 = np.array([0, v, a])
+    self.x0[1] = v
+    self.x0[2] = a
 
-  def extrapolate_lead(self, x_lead_0, v_lead_0, a_lead_0, a_lead_tau):
-    lead_vals = np.zeros((N+1,2))
-    x_lead, v_lead = x_lead_0, v_lead_0
+  def extrapolate_lead(self, x_lead, v_lead, a_lead_0, a_lead_tau):
     dt =.2
     t = .0
     for i in range(N+1):
       if i > 4:
         dt = .6
-      lead_vals[i] = np.array([x_lead, v_lead])
-      a_lead = a_lead_0 * np.exp(-a_lead_tau * (t**2)/2.)
+      self.lead_xv[i, 0], self.lead_xv[i, 1] = x_lead, v_lead
+      a_lead = a_lead_0 * math.exp(-a_lead_tau * (t**2)/2.)
       x_lead += v_lead * dt
       v_lead += a_lead * dt
       if v_lead < 0.0:
         a_lead = 0.0
         v_lead = 0.0
       t += dt
-    return lead_vals
 
   def init_with_sim(self, v_ego, lead_xv, a_lead_0):
     a_ego = min(0.0, -(v_ego - lead_xv[0,1]) * (v_ego - lead_xv[0,1]) / (2.0 * lead_xv[0,0] + 0.01) + a_lead_0)
@@ -211,9 +216,9 @@ class LeadMpc():
 
       self.a_lead_tau = lead.aLeadTau
       self.new_lead = False
-      lead_xv = self.extrapolate_lead(x_lead, v_lead, a_lead, self.a_lead_tau)
+      self.extrapolate_lead(x_lead, v_lead, a_lead, self.a_lead_tau)
       if not self.prev_lead_status or abs(x_lead - self.prev_lead_x) > 2.5:
-        self.init_with_sim(v_ego, lead_xv, a_lead)
+        self.init_with_sim(v_ego, self.lead_xv, a_lead)
         self.new_lead = True
 
       self.prev_lead_status = True
@@ -225,16 +230,11 @@ class LeadMpc():
       v_lead = v_ego + 10.0
       a_lead = 0.0
       self.a_lead_tau = _LEAD_ACCEL_TAU
-      lead_xv = self.extrapolate_lead(x_lead, v_lead, a_lead, self.a_lead_tau)
+      self.extrapolate_lead(x_lead, v_lead, a_lead, self.a_lead_tau)
     self.solver.constraints_set(0, "lbx", self.x0)
     self.solver.constraints_set(0, "ubx", self.x0)
     for i in range(N+1):
-      self.solver.set_param(i, lead_xv[i])
-
-
-    yref = np.zeros((N+1,4))
-    self.solver.cost_set_slice(0, N, "yref", yref[:N])
-    self.solver.set(N, "yref", yref[N][:3])
+      self.solver.set_param(i, self.lead_xv[i])
 
     self.solution_status = self.solver.solve()
     self.x_sol = self.solver.get_slice(0, N+1, 'x')
@@ -246,16 +246,15 @@ class LeadMpc():
     self.a_solution = interp(T_IDXS[:CONTROL_N], MPC_T, list(self.x_sol[:,2]))
     self.j_solution = interp(T_IDXS[:CONTROL_N], MPC_T[:-1], list(self.u_sol[:,0]))
 
-    # Reset if NaN or goes through lead car
-    nans = np.any(np.isnan(self.x_sol))
-    crashing = np.any(lead_xv[:,0] - self.x_sol[:,0] < 0)
+    # Reset if goes through lead car
+    crashing = sum(self.lead_xv[:,0] - self.x_sol[:,0] < 0) > 0
 
     t = sec_since_boot()
-    if ((crashing) and self.prev_lead_status) or nans or self.solution_status != 0:
+    if (crashing and self.prev_lead_status) or self.solution_status != 0:
       if t > self.last_cloudlog_t + 5.0:
         self.last_cloudlog_t = t
-        cloudlog.warning("Longitudinal mpc %d reset - crashing: %s nan: %s" % (
-                          self.lead_id, crashing, nans))
+        cloudlog.warning("Longitudinal mpc %d reset - crashing: %s solution_status: %s" % (
+                          self.lead_id, crashing, self.solution_status))
 
       self.prev_lead_status = False
 

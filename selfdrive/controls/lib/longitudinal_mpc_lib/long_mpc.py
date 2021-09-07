@@ -2,6 +2,7 @@
 import os
 import numpy as np
 
+from common.numpy_fast import clip
 from common.realtime import sec_since_boot
 from selfdrive.swaglog import cloudlog
 from selfdrive.controls.lib.drive_helpers import LON_MPC_N as N
@@ -118,6 +119,13 @@ class LongitudinalMpc():
     self.status = True
     self.solution_status = 0
     self.solver.solve()
+    self.x0 = np.zeros(3)
+    self.yref = np.zeros((N+1, 4))
+    self.T_IDXS = np.array(T_IDXS[:N+1])
+    self.min_a = -1.2
+    self.max_a = 1.2
+    self.mins = np.tile(np.array([0.0, 0.0, self.min_a])[None], reps=(N-1,1))
+    self.maxs = np.tile(np.array([0.0, 100.0, self.max_a])[None], reps=(N-1,1))
 
   def set_weights(self):
     W = np.diag([0.0, 1.0, 0.0, 50.0])
@@ -129,24 +137,23 @@ class LongitudinalMpc():
   def set_accel_limits(self, min_a, max_a):
     self.min_a = min_a
     self.max_a = max_a
+    self.mins[:,2] = self.min_a
+    self.maxs[:,2] = self.max_a
+    self.solver.constraints_set_slice(1, N, "lbx", self.mins, api='old')
+    self.solver.constraints_set_slice(1, N, "ubx", self.maxs, api='old')
 
   def set_cur_state(self, v, a):
-    self.x0 = np.array([0, v, a])
+    self.x0[1] = v
+    self.x0[2] = a
     self.solver.constraints_set(0, "lbx", self.x0)
     self.solver.constraints_set(0, "ubx", self.x0)
 
   def update(self, carstate, model, v_cruise):
-    v_cruise_clipped = np.clip(v_cruise, self.x0[1] - 10., self.x0[1] + 10.0)
-    poss = v_cruise_clipped * np.array(T_IDXS[:N+1])
-    speeds = v_cruise_clipped * np.ones(N+1)
-    accels = np.zeros(N+1)
-    yref = np.column_stack([poss, speeds, accels, np.zeros(N+1)])
-    mins = np.tile(np.array([0.0, 0.0,self.min_a])[None], reps=(N-1,1))
-    maxs = np.tile(np.array([0.0, 100.0,self.max_a])[None], reps=(N-1,1))
-    self.solver.constraints_set_slice(1, N, "lbx", mins, api='old')
-    self.solver.constraints_set_slice(1, N, "ubx", maxs, api='old')
-    self.solver.cost_set_slice(0, N, "yref", yref[:N])
-    self.solver.set(N, "yref", yref[N][:3])
+    v_cruise_clipped = clip(v_cruise, self.x0[1] - 10., self.x0[1] + 10.0)
+    self.yref[:,0] = v_cruise_clipped * self.T_IDXS  # position
+    self.yref[:,1] = v_cruise_clipped * np.ones(N+1)  # speed
+    self.solver.cost_set_slice(0, N, "yref", self.yref[:N])
+    self.solver.set(N, "yref", self.yref[N][:3])
 
     self.solution_status = self.solver.solve()
     self.x_sol = self.solver.get_slice(0, N+1, 'x')
@@ -158,14 +165,11 @@ class LongitudinalMpc():
     self.a_solution = list(self.x_sol[:,2])
     self.j_solution = list(self.u_sol[:,0])
 
-    # Reset if NaN or goes through lead car
-    nans = np.any(np.isnan(self.x_sol))
-
     t = sec_since_boot()
-    if nans or self.solution_status != 0:
+    if self.solution_status != 0:
       if t > self.last_cloudlog_t + 5.0:
         self.last_cloudlog_t = t
-        cloudlog.warning("Longitudinal model mpc reset - nans")
+        cloudlog.warning(f'Longitudinal model mpc reset, solution status: {self.solution_status}')
       #TODO
       #self.reset_mpc()
 
