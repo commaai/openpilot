@@ -118,7 +118,7 @@ def gen_lead_mpc_solver():
   #ocp.solver_options.nlp_solver_tol_stat = 1e-3
   #ocp.solver_options.tol = 1e-3
 
-  ocp.solver_options.qp_solver_iter_max = 100
+  ocp.solver_options.qp_solver_iter_max = 10
   #ocp.solver_options.qp_tol = 1e-3
 
   # set prediction horizon
@@ -213,7 +213,7 @@ class LeadMpc():
       self.new_lead = False
       lead_xv = self.extrapolate_lead(x_lead, v_lead, a_lead, self.a_lead_tau)
       if not self.prev_lead_status or abs(x_lead - self.prev_lead_x) > 2.5:
-        self.init_with_sim(v_ego, lead_xv, self.a_lead_tau)
+        self.init_with_sim(v_ego, lead_xv, a_lead)
         self.new_lead = True
 
       self.prev_lead_status = True
@@ -252,7 +252,6 @@ class LeadMpc():
 
     t = sec_since_boot()
     if ((crashing) and self.prev_lead_status) or nans or self.solution_status != 0:
-      print(crashing, nans, v_ego, self.cost, lead_xv, lead_xv[:,0] - self.x_sol[:,0], self.x_sol[:,2])
       if t > self.last_cloudlog_t + 5.0:
         self.last_cloudlog_t = t
         cloudlog.warning("Longitudinal mpc %d reset - crashing: %s nan: %s" % (
