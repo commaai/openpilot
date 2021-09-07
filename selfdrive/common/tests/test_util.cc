@@ -92,3 +92,19 @@ TEST_CASE("util::read_files_in_dir") {
     REQUIRE(k == v);
   }
 }
+
+TEST_CASE("util::safe_write") {
+  char filename[] = "/tmp/test_read_XXXXXX";
+  int fd = mkstemp(filename);
+  close(fd);
+  FILE *f = util::safe_fopen(filename, "wb");
+  std::string dat = random_bytes(1024 * 1024);
+  REQUIRE(f != nullptr);
+  size_t size = util::safe_fwrite(dat.data(), 1, dat.size(), f);
+  REQUIRE(size == dat.size());
+  int ret = util::safe_fflush(f);
+  REQUIRE(ret == 0);
+  ret = fclose(f);
+  REQUIRE(ret == 0);
+  REQUIRE(dat == util::read_file(filename));
+}

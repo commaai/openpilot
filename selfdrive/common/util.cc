@@ -106,6 +106,32 @@ int write_file(const char* path, const void* data, size_t size, int flags, mode_
   return (n >= 0 && (size_t)n == size) ? 0 : -1;
 }
 
+FILE* safe_fopen(const char* filename, const char* mode) {
+  FILE* fp = NULL;
+  do {
+    fp = fopen(filename, mode);
+  } while ((nullptr == fp) && (errno == EINTR));
+  return fp;
+}
+
+size_t safe_fwrite(const void* ptr, size_t size, size_t count, FILE* stream) {
+  size_t written = 0;
+  do {
+    size_t ret = ::fwrite((void*)((char *)ptr + written * size), size, count - written, stream);
+    if (ret == 0 && errno != EINTR) break;
+    written += ret;
+  } while (written != count);
+  return written;
+}
+
+int safe_fflush(FILE *stream) {
+  int ret = EOF;
+  do {
+    ret = fflush(stream);
+  } while ((EOF == ret) && (errno == EINTR));
+  return ret;
+}
+
 std::string readlink(const std::string &path) {
   char buff[4096];
   ssize_t len = ::readlink(path.c_str(), buff, sizeof(buff)-1);
