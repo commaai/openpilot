@@ -1,5 +1,8 @@
-Version 0.8.9 (2021-XX-XX)
+Version 0.8.9 (2021-09-14)
 ========================
+ * Improved fan control on comma three
+ * AGNOS 1.5: improved stability
+ * Honda E 2020 support
 
 Version 0.8.8 (2021-08-27)
 ========================
