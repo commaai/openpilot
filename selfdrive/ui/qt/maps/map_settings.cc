@@ -55,12 +55,41 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
   main_layout->addWidget(horizontal_line());
   main_layout->addSpacing(20);
 
+  // Current route
+  {
+    current_widget = new QWidget(this);
+    QVBoxLayout *current_layout = new QVBoxLayout(current_widget);
+
+    QLabel *title = new QLabel("Current Destination");
+    title->setStyleSheet("font-size: 55px");
+    current_layout->addWidget(title);
+
+    current_route = new ButtonControl("", "CLEAR");
+    current_route->setStyleSheet("padding-left: 40px;");
+    current_layout->addWidget(current_route);
+		QObject::connect(current_route, &ButtonControl::clicked, [=]() {
+      params.remove("NavDestination");
+      updateCurrentRoute();
+    });
+
+    current_layout->addSpacing(10);
+    current_layout->addWidget(horizontal_line());
+    current_layout->addSpacing(20);
+  }
+  main_layout->addWidget(current_widget);
+
   // Recents
+  QLabel *recents_title = new QLabel("Recent Destinations");
+  recents_title->setStyleSheet("font-size: 55px");
+  main_layout->addWidget(recents_title);
+  main_layout->addSpacing(20);
+
   recent_layout = new QVBoxLayout;
   QWidget *recent_widget = new LayoutWidget(recent_layout, this);
   ScrollView *recent_scroller = new ScrollView(recent_widget, this);
-  main_layout->addWidget(recent_scroller, 1);
+  main_layout->addWidget(recent_scroller);
 
+  // No prime upsell
   QWidget * no_prime_widget = new QWidget;
   QVBoxLayout *no_prime_layout = new QVBoxLayout(no_prime_widget);
   QLabel *signup_header = new QLabel("Try the Navigation Beta");
@@ -126,6 +155,10 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
   }
 }
 
+void MapPanel::showEvent(QShowEvent *event) {
+  updateCurrentRoute();
+}
+
 void MapPanel::clear() {
   home_button->setIcon(QPixmap("../assets/navigation/home_inactive.png"));
   home_address->setStyleSheet(R"(font-size: 50px; color: grey;)");
@@ -140,6 +173,16 @@ void MapPanel::clear() {
   clearLayout(recent_layout);
 }
 
+void MapPanel::updateCurrentRoute() {
+  auto dest = QString::fromStdString(params.get("NavDestination"));
+  QJsonDocument doc = QJsonDocument::fromJson(dest.trimmed().toUtf8());
+  if (dest.size() && !doc.isNull()) {
+    auto name = doc["place_name"].toString();
+    auto details = doc["place_details"].toString();
+    current_route->setTitle(shorten(name + " " + details, 45));
+  }
+  current_widget->setVisible(dest.size() && !doc.isNull());
+}
 
 void MapPanel::parseResponse(const QString &response) {
   QJsonDocument doc = QJsonDocument::fromJson(response.trimmed().toUtf8());
