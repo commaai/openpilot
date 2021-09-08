@@ -13,27 +13,29 @@ const int SUBARU_L_DRIVER_TORQUE_ALLOWANCE = 75;
 const int SUBARU_L_DRIVER_TORQUE_FACTOR = 10;
 
 const CanMsg SUBARU_TX_MSGS[] = {{0x122, 0, 8}, {0x221, 0, 8}, {0x322, 0, 8}};
-const int SUBARU_TX_MSGS_LEN = sizeof(SUBARU_TX_MSGS) / sizeof(SUBARU_TX_MSGS[0]);
+#define SUBARU_TX_MSGS_LEN (sizeof(SUBARU_TX_MSGS) / sizeof(SUBARU_TX_MSGS[0]))
 
-AddrCheckStruct subaru_rx_checks[] = {
+AddrCheckStruct subaru_addr_checks[] = {
   {.msg = {{ 0x40, 0, 8, .check_checksum = true, .max_counter = 15U, .expected_timestep = 10000U}, { 0 }, { 0 }}},
   {.msg = {{0x119, 0, 8, .check_checksum = true, .max_counter = 15U, .expected_timestep = 20000U}, { 0 }, { 0 }}},
   {.msg = {{0x139, 0, 8, .check_checksum = true, .max_counter = 15U, .expected_timestep = 20000U}, { 0 }, { 0 }}},
   {.msg = {{0x13a, 0, 8, .check_checksum = true, .max_counter = 15U, .expected_timestep = 20000U}, { 0 }, { 0 }}},
   {.msg = {{0x240, 0, 8, .check_checksum = true, .max_counter = 15U, .expected_timestep = 50000U}, { 0 }, { 0 }}},
 };
-const int SUBARU_RX_CHECK_LEN = sizeof(subaru_rx_checks) / sizeof(subaru_rx_checks[0]);
+#define SUBARU_ADDR_CHECK_LEN (sizeof(subaru_addr_checks) / sizeof(subaru_addr_checks[0]))
+addr_checks subaru_rx_checks = {subaru_addr_checks, SUBARU_ADDR_CHECK_LEN};
 
 const CanMsg SUBARU_L_TX_MSGS[] = {{0x161, 0, 8}, {0x164, 0, 8}};
-const int SUBARU_L_TX_MSGS_LEN = sizeof(SUBARU_L_TX_MSGS) / sizeof(SUBARU_L_TX_MSGS[0]);
+#define SUBARU_L_TX_MSGS_LEN (sizeof(SUBARU_L_TX_MSGS) / sizeof(SUBARU_L_TX_MSGS[0]))
 
 // TODO: do checksum and counter checks after adding the signals to the outback dbc file
-AddrCheckStruct subaru_l_rx_checks[] = {
+AddrCheckStruct subaru_l_addr_checks[] = {
   {.msg = {{0x140, 0, 8, .expected_timestep = 10000U}, { 0 }, { 0 }}},
   {.msg = {{0x371, 0, 8, .expected_timestep = 20000U}, { 0 }, { 0 }}},
   {.msg = {{0x144, 0, 8, .expected_timestep = 50000U}, { 0 }, { 0 }}},
 };
-const int SUBARU_L_RX_CHECK_LEN = sizeof(subaru_l_rx_checks) / sizeof(subaru_l_rx_checks[0]);
+#define SUBARU_L_ADDR_CHECK_LEN (sizeof(subaru_l_addr_checks) / sizeof(subaru_l_addr_checks[0]))
+addr_checks subaru_l_rx_checks = {subaru_addr_checks, SUBARU_L_ADDR_CHECK_LEN};
 
 static uint8_t subaru_get_checksum(CAN_FIFOMailBox_TypeDef *to_push) {
   return (uint8_t)GET_BYTE(to_push, 0);
@@ -55,7 +57,7 @@ static uint8_t subaru_compute_checksum(CAN_FIFOMailBox_TypeDef *to_push) {
 
 static int subaru_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
-  bool valid = addr_safety_check(to_push, subaru_rx_checks, SUBARU_RX_CHECK_LEN,
+  bool valid = addr_safety_check(to_push, &subaru_rx_checks,
                             subaru_get_checksum, subaru_compute_checksum, subaru_get_counter);
 
   if (valid && (GET_BUS(to_push) == 0)) {
@@ -102,8 +104,7 @@ static int subaru_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
 static int subaru_legacy_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
-  bool valid = addr_safety_check(to_push, subaru_l_rx_checks, SUBARU_L_RX_CHECK_LEN,
-                            NULL, NULL, NULL);
+  bool valid = addr_safety_check(to_push, &subaru_l_rx_checks, NULL, NULL, NULL);
 
   if (valid && (GET_BUS(to_push) == 0)) {
     int addr = GET_ADDR(to_push);
@@ -320,22 +321,32 @@ static int subaru_legacy_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) 
   return bus_fwd;
 }
 
+static const addr_checks* subaru_init(int16_t param) {
+  UNUSED(param);
+  controls_allowed = false;
+  relay_malfunction_reset();
+  return &subaru_rx_checks;
+}
+
 const safety_hooks subaru_hooks = {
-  .init = nooutput_init,
+  .init = subaru_init,
   .rx = subaru_rx_hook,
   .tx = subaru_tx_hook,
   .tx_lin = nooutput_tx_lin_hook,
   .fwd = subaru_fwd_hook,
-  .addr_check = subaru_rx_checks,
-  .addr_check_len = sizeof(subaru_rx_checks) / sizeof(subaru_rx_checks[0]),
 };
 
+static const addr_checks* subaru_legacy_init(int16_t param) {
+  UNUSED(param);
+  controls_allowed = false;
+  relay_malfunction_reset();
+  return &subaru_l_rx_checks;
+}
+
 const safety_hooks subaru_legacy_hooks = {
-  .init = nooutput_init,
+  .init = subaru_legacy_init,
   .rx = subaru_legacy_rx_hook,
   .tx = subaru_legacy_tx_hook,
   .tx_lin = nooutput_tx_lin_hook,
   .fwd = subaru_legacy_fwd_hook,
-  .addr_check = subaru_l_rx_checks,
-  .addr_check_len = sizeof(subaru_l_rx_checks) / sizeof(subaru_l_rx_checks[0]),
 };

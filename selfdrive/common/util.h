@@ -13,6 +13,17 @@
 #include <string>
 #include <thread>
 
+// keep trying if x gets interrupted by a signal
+#define HANDLE_EINTR(x)                                       \
+  ({                                                          \
+    decltype(x) ret;                                          \
+    int try_cnt = 0;                                          \
+    do {                                                      \
+      ret = (x);                                              \
+    } while (ret == -1 && errno == EINTR && try_cnt++ < 100); \
+    ret;                                                      \
+  })
+
 #ifndef sighandler_t
 typedef void (*sighandler_t)(int sig);
 #endif
@@ -61,7 +72,7 @@ std::string dir_name(std::string const& path);
 // **** file fhelpers *****
 std::string read_file(const std::string& fn);
 std::map<std::string, std::string> read_files_in_dir(const std::string& path);
-int write_file(const char* path, const void* data, size_t size, int flags = O_WRONLY, mode_t mode = 0777);
+int write_file(const char* path, const void* data, size_t size, int flags = O_WRONLY, mode_t mode = 0664);
 std::string readlink(const std::string& path);
 bool file_exists(const std::string& fn);
 
@@ -130,3 +141,9 @@ public:
 private:
   float x_, k_;
 };
+
+template<typename T>
+void update_max_atomic(std::atomic<T>& max, T const& value) {
+  T prev = max;
+  while(prev < value && !max.compare_exchange_weak(prev, value)) {}
+}

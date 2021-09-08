@@ -116,6 +116,10 @@ void MapWindow::initLayers() {
 }
 
 void MapWindow::timerUpdate() {
+  if (!QUIState::ui_state.scene.started) {
+    return;
+  }
+
   if (isVisible()) {
     update();
   }
@@ -226,7 +230,7 @@ void MapWindow::resizeGL(int w, int h) {
 }
 
 void MapWindow::initializeGL() {
-  m_map.reset(new QMapboxGL(nullptr, m_settings, size(), 1));
+  m_map.reset(new QMapboxGL(this, m_settings, size(), 1));
 
   if (last_position) {
     m_map->setCoordinateZoom(*last_position, MAX_ZOOM);
@@ -261,11 +265,6 @@ static float get_time_typical(const QGeoRouteSegment &segment) {
 void MapWindow::recomputeRoute() {
   if (!QUIState::ui_state.scene.started) {
     return;
-  }
-
-  // Retry all timed out requests
-  if (!m_map.isNull()) {
-    m_map->connectionEstablished();
   }
 
   if (!last_position) {

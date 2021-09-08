@@ -43,8 +43,9 @@
 uint16_t current_safety_mode = SAFETY_SILENT;
 int16_t current_safety_param = 0;
 const safety_hooks *current_hooks = &nooutput_hooks;
+const addr_checks *current_rx_checks = &default_rx_checks;
 
-int safety_rx_hook(CAN_FIFOMailBox_TypeDef *to_push){
+int safety_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   return current_hooks->rx(to_push);
 }
 
@@ -52,7 +53,7 @@ int safety_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
   return current_hooks->tx(to_send);
 }
 
-int safety_tx_lin_hook(int lin_num, uint8_t *data, int len){
+int safety_tx_lin_hook(int lin_num, uint8_t *data, int len) {
   return current_hooks->tx_lin(lin_num, data, len);
 }
 
@@ -126,16 +127,16 @@ int get_addr_check_index(CAN_FIFOMailBox_TypeDef *to_push, AddrCheckStruct addr_
 }
 
 // 1Hz safety function called by main. Now just a check for lagging safety messages
-void safety_tick(const safety_hooks *hooks) {
+void safety_tick(const addr_checks *rx_checks) {
   uint32_t ts = microsecond_timer_get();
-  if (hooks->addr_check != NULL) {
-    for (int i=0; i < hooks->addr_check_len; i++) {
-      uint32_t elapsed_time = get_ts_elapsed(ts, hooks->addr_check[i].last_timestamp);
+  if (rx_checks != NULL) {
+    for (int i=0; i < rx_checks->len; i++) {
+      uint32_t elapsed_time = get_ts_elapsed(ts, rx_checks->check[i].last_timestamp);
       // lag threshold is max of: 1s and MAX_MISSED_MSGS * expected timestep.
       // Quite conservative to not risk false triggers.
       // 2s of lag is worse case, since the function is called at 1Hz
-      bool lagging = elapsed_time > MAX(hooks->addr_check[i].msg[hooks->addr_check[i].index].expected_timestep * MAX_MISSED_MSGS, 1e6);
-      hooks->addr_check[i].lagging = lagging;
+      bool lagging = elapsed_time > MAX(rx_checks->check[i].msg[rx_checks->check[i].index].expected_timestep * MAX_MISSED_MSGS, 1e6);
+      rx_checks->check[i].lagging = lagging;
       if (lagging) {
         controls_allowed = 0;
       }
@@ -171,34 +172,33 @@ void update_addr_timestamp(AddrCheckStruct addr_list[], int index) {
 }
 
 bool addr_safety_check(CAN_FIFOMailBox_TypeDef *to_push,
-                       AddrCheckStruct *rx_checks,
-                       const int rx_checks_len,
+                       const addr_checks *rx_checks,
                        uint8_t (*get_checksum)(CAN_FIFOMailBox_TypeDef *to_push),
                        uint8_t (*compute_checksum)(CAN_FIFOMailBox_TypeDef *to_push),
                        uint8_t (*get_counter)(CAN_FIFOMailBox_TypeDef *to_push)) {
 
-  int index = get_addr_check_index(to_push, rx_checks, rx_checks_len);
-  update_addr_timestamp(rx_checks, index);
+  int index = get_addr_check_index(to_push, rx_checks->check, rx_checks->len);
+  update_addr_timestamp(rx_checks->check, index);
 
   if (index != -1) {
     // checksum check
-    if ((get_checksum != NULL) && (compute_checksum != NULL) && rx_checks[index].msg[rx_checks[index].index].check_checksum) {
+    if ((get_checksum != NULL) && (compute_checksum != NULL) && rx_checks->check[index].msg[rx_checks->check[index].index].check_checksum) {
       uint8_t checksum = get_checksum(to_push);
       uint8_t checksum_comp = compute_checksum(to_push);
-      rx_checks[index].valid_checksum = checksum_comp == checksum;
+      rx_checks->check[index].valid_checksum = checksum_comp == checksum;
     } else {
-      rx_checks[index].valid_checksum = true;
+      rx_checks->check[index].valid_checksum = true;
     }
 
     // counter check (max_counter == 0 means skip check)
-    if ((get_counter != NULL) && (rx_checks[index].msg[rx_checks[index].index].max_counter > 0U)) {
+    if ((get_counter != NULL) && (rx_checks->check[index].msg[rx_checks->check[index].index].max_counter > 0U)) {
       uint8_t counter = get_counter(to_push);
-      update_counter(rx_checks, index, counter);
+      update_counter(rx_checks->check, index, counter);
     } else {
-      rx_checks[index].wrong_counters = 0U;
+      rx_checks->check[index].wrong_counters = 0U;
     }
   }
-  return is_msg_valid(rx_checks, index);
+  return is_msg_valid(rx_checks->check, index);
 }
 
 void generic_rx_checks(bool stock_ecu_detected) {
@@ -296,15 +296,14 @@ int set_safety_hooks(uint16_t mode, int16_t param) {
       current_safety_param = param;
       set_status = 0;  // set
     }
-
-    // reset message index and seen flags in addr struct
-    for (int j = 0; j < safety_hook_registry[i].hooks->addr_check_len; j++) {
-      safety_hook_registry[i].hooks->addr_check[j].index = 0;
-      safety_hook_registry[i].hooks->addr_check[j].msg_seen = false;
-    }
   }
   if ((set_status == 0) && (current_hooks->init != NULL)) {
-    current_hooks->init(param);
+    current_rx_checks = current_hooks->init(param);
+    // reset message index and seen flags in addr struct
+    for (int j = 0; j < current_rx_checks->len; j++) {
+      current_rx_checks->check[j].index = 0;
+      current_rx_checks->check[j].msg_seen = false;
+    }
   }
   return set_status;
 }

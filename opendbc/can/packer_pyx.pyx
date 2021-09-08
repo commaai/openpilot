@@ -33,15 +33,11 @@ cdef class CANPacker:
 
   cdef uint64_t pack(self, addr, values, counter):
     cdef vector[SignalPackValue] values_thing
+    values_thing.reserve(len(values))
     cdef SignalPackValue spv
 
-    names = []
-
     for name, value in values.iteritems():
-      n = name.encode('utf8')
-      names.append(n) # TODO: find better way to keep reference to temp string around
-
-      spv.name = n
+      spv.name = name.encode('utf8')
       spv.value = value
       values_thing.push_back(spv)
 

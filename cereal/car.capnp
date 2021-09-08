@@ -299,12 +299,22 @@ struct CarControl {
 
   struct Actuators {
     # range from 0.0 - 1.0
-    gas @0: Float32;
-    brake @1: Float32;
+    gasDEPRECATED @0: Float32;
+    brakeDEPRECATED @1: Float32;
     # range from -1.0 - 1.0
     steer @2: Float32;
     steeringAngleDeg @3: Float32;
+
     accel @4: Float32; # m/s^2
+    longControlState @5: LongControlState;
+
+    enum LongControlState @0xe40f3a917d908282{
+      off @0;
+      pid @1;
+      stopping @2;
+      starting @3;
+    }
+
   }
 
   struct CruiseControl {
@@ -380,10 +390,10 @@ struct CarParams {
 
   steerMaxBP @11 :List(Float32);
   steerMaxV @12 :List(Float32);
-  gasMaxBP @13 :List(Float32);
-  gasMaxV @14 :List(Float32);
-  brakeMaxBP @15 :List(Float32);
-  brakeMaxV @16 :List(Float32);
+  gasMaxBPDEPRECATED @13 :List(Float32);
+  gasMaxVDEPRECATED @14 :List(Float32);
+  brakeMaxBPDEPRECATED @15 :List(Float32);
+  brakeMaxVDEPRECATED @16 :List(Float32);
 
   # things about the car in the manual
   mass @17 :Float32;            # [kg] curb weight: all fluids no cargo
@@ -416,10 +426,11 @@ struct CarParams {
   steerControlType @34 :SteerControlType;
   radarOffCan @35 :Bool; # True when radar objects aren't visible on CAN
   minSpeedCan @51 :Float32; # Minimum vehicle speed from CAN (below this value drops to 0)
-  stoppingBrakeRate @52 :Float32; # brake_travel/s while trying to stop
-  startingBrakeRate @53 :Float32; # brake_travel/s while releasing on restart
+  stoppingDecelRate @52 :Float32; # m/s^2/s while trying to stop
+  startingAccelRate @53 :Float32; # m/s^2/s while trying to start
 
   steerActuatorDelay @36 :Float32; # Steering wheel actuator delay in seconds
+  longitudinalActuatorDelay @58 :Float32; # Gas/Brake actuator delay in seconds
   openpilotLongitudinalControl @37 :Bool; # is openpilot doing the longitudinal control?
   carVin @38 :Text; # VIN number queried during fingerprinting
   dashcamOnly @41: Bool;

@@ -218,7 +218,7 @@ BO_ 864 Engine_Temp: 8 XXX
 BO_ 866 Fuel: 8 XXX
 
 BO_ 977 Dash_State2: 8 XXX
-  SG_ Units : 15|1@1+ (1,0) [0|1] "" XXX
+ SG_ UNITS : 15|1@1+ (1,0) [0|1] "" XXX
 
 BO_ 1745 Dash_State: 8 XXX
  SG_ Units : 15|1@1+ (1,0) [0|1] "" XXX
@@ -243,9 +243,9 @@ CM_ SG_ 604 L_RCTA "Rear cross traffic alert, only when in R gear";
 CM_ SG_ 642 Counter "Affected by signals";
 CM_ SG_ 642 SEATBELT_FL "Driver seatbelt";
 CM_ SG_ 880 Steering_Voltage_Flat "receives later than 371";
+CM_ SG_ 977 UNITS "0 = Metric, 1 = Imperial";
 
 VAL_ 328 Gear 0 "N" 1 "D" 2 "D" 3 "D" 4 "D" 5 "D" 6 "D" 14 "R" 15 "P";
-VAL_ 1745 Units 0 "Metric" 1 "Imperial";
 
 CM_ "subaru_forester_2017.dbc starts here";
 

@@ -8,7 +8,7 @@
 #define ARRAYSIZE(x) (sizeof(x)/sizeof(x[0]))
 
 struct SignalPackValue {
-  const char* name;
+  std::string name;
   double value;
 };
 

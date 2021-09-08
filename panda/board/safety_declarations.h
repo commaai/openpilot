@@ -43,6 +43,11 @@ typedef struct {
   bool lagging;                      // true if and only if the time between updates is excessive
 } AddrCheckStruct;
 
+typedef struct {
+  AddrCheckStruct *check;
+  int len;
+} addr_checks;
+
 int safety_rx_hook(CAN_FIFOMailBox_TypeDef *to_push);
 int safety_tx_hook(CAN_FIFOMailBox_TypeDef *to_send);
 int safety_tx_lin_hook(int lin_num, uint8_t *data, int len);
@@ -64,8 +69,7 @@ void update_counter(AddrCheckStruct addr_list[], int index, uint8_t counter);
 void update_addr_timestamp(AddrCheckStruct addr_list[], int index);
 bool is_msg_valid(AddrCheckStruct addr_list[], int index);
 bool addr_safety_check(CAN_FIFOMailBox_TypeDef *to_push,
-                       AddrCheckStruct *addr_check,
-                       const int addr_check_len,
+                       const addr_checks *rx_checks,
                        uint8_t (*get_checksum)(CAN_FIFOMailBox_TypeDef *to_push),
                        uint8_t (*compute_checksum)(CAN_FIFOMailBox_TypeDef *to_push),
                        uint8_t (*get_counter)(CAN_FIFOMailBox_TypeDef *to_push));
@@ -73,7 +77,7 @@ void generic_rx_checks(bool stock_ecu_detected);
 void relay_malfunction_set(void);
 void relay_malfunction_reset(void);
 
-typedef void (*safety_hook_init)(int16_t param);
+typedef const addr_checks* (*safety_hook_init)(int16_t param);
 typedef int (*rx_hook)(CAN_FIFOMailBox_TypeDef *to_push);
 typedef int (*tx_hook)(CAN_FIFOMailBox_TypeDef *to_send);
 typedef int (*tx_lin_hook)(int lin_num, uint8_t *data, int len);
@@ -85,11 +89,9 @@ typedef struct {
   tx_hook tx;
   tx_lin_hook tx_lin;
   fwd_hook fwd;
-  AddrCheckStruct *addr_check;
-  const int addr_check_len;
 } safety_hooks;
 
-void safety_tick(const safety_hooks *hooks);
+void safety_tick(const addr_checks *addr_checks);
 
 // This can be set by the safety hooks
 bool controls_allowed = false;
@@ -129,6 +131,7 @@ struct sample_t angle_meas;         // last 3 steer angles
 
 // If using this flag, be aware that harder braking is more likely to lead to rear endings,
 //   and that alone this flag doesn't make braking compliant because there's also a time element.
+// Setting this flag is used for allowing the full -5.0 to +4.0 m/s^2 at lower speeds
 // See ISO 15622:2018 for more information.
 #define UNSAFE_RAISE_LONGITUDINAL_LIMITS_TO_ISO_MAX 8
 

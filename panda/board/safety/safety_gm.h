@@ -24,20 +24,19 @@ const CanMsg GM_TX_MSGS[] = {{384, 0, 4}, {1033, 0, 7}, {1034, 0, 7}, {715, 0, 8
                              {0x104c006c, 3, 3}, {0x10400060, 3, 5}};  // gmlan
 
 // TODO: do checksum and counter checks. Add correct timestep, 0.1s for now.
-
-AddrCheckStruct gm_rx_checks[] = {
+AddrCheckStruct gm_addr_checks[] = {
   {.msg = {{388, 0, 8, .expected_timestep = 100000U}, { 0 }, { 0 }}},
   {.msg = {{842, 0, 5, .expected_timestep = 100000U}, { 0 }, { 0 }}},
   {.msg = {{481, 0, 7, .expected_timestep = 100000U}, { 0 }, { 0 }}},
   {.msg = {{241, 0, 6, .expected_timestep = 100000U}, { 0 }, { 0 }}},
   {.msg = {{417, 0, 7, .expected_timestep = 100000U}, { 0 }, { 0 }}},
 };
-const int GM_RX_CHECK_LEN = sizeof(gm_rx_checks) / sizeof(gm_rx_checks[0]);
+#define GM_RX_CHECK_LEN (sizeof(gm_addr_checks) / sizeof(gm_addr_checks[0]))
+addr_checks gm_rx_checks = {gm_addr_checks, GM_RX_CHECK_LEN};
 
 static int gm_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
-  bool valid = addr_safety_check(to_push, gm_rx_checks, GM_RX_CHECK_LEN,
-                                 NULL, NULL, NULL);
+  bool valid = addr_safety_check(to_push, &gm_rx_checks, NULL, NULL, NULL);
 
   if (valid && (GET_BUS(to_push) == 0)) {
     int addr = GET_ADDR(to_push);
@@ -209,13 +208,17 @@ static int gm_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
   return tx;
 }
 
+static const addr_checks* gm_init(int16_t param) {
+  UNUSED(param);
+  controls_allowed = false;
+  relay_malfunction_reset();
+  return &gm_rx_checks;
+}
 
 const safety_hooks gm_hooks = {
-  .init = nooutput_init,
+  .init = gm_init,
   .rx = gm_rx_hook,
   .tx = gm_tx_hook,
   .tx_lin = nooutput_tx_lin_hook,
   .fwd = default_fwd_hook,
-  .addr_check = gm_rx_checks,
-  .addr_check_len = sizeof(gm_rx_checks) / sizeof(gm_rx_checks[0]),
 };

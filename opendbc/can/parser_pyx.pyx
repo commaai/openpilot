@@ -175,18 +175,15 @@ cdef class CANDefine():
       val = self.dbc[0].vals[i]
 
       sgname = val.name.decode('utf8')
-      address = val.address
       def_val = val.def_val.decode('utf8')
+      address = val.address
+      msgname = address_to_msg_name[address]
 
-      #separate definition/value pairs
+      # separate definition/value pairs
       def_val = def_val.split()
       values = [int(v) for v in def_val[::2]]
       defs = def_val[1::2]
 
-      if address not in dv:
-        dv[address] = {}
-        msgname = address_to_msg_name[address]
-        dv[msgname] = {}
 
       # two ways to lookup: address or msg name
       dv[address][sgname] = dict(zip(values, defs))

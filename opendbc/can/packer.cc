@@ -51,12 +51,11 @@ CANPacker::CANPacker(const std::string& dbc_name) {
 uint64_t CANPacker::pack(uint32_t address, const std::vector<SignalPackValue> &signals, int counter) {
   uint64_t ret = 0;
   for (const auto& sigval : signals) {
-    std::string name = std::string(sigval.name);
     double value = sigval.value;
 
-    auto sig_it = signal_lookup.find(std::make_pair(address, name));
+    auto sig_it = signal_lookup.find(std::make_pair(address, sigval.name));
     if (sig_it == signal_lookup.end()) {
-      WARN("undefined signal %s - %d\n", name.c_str(), address);
+      WARN("undefined signal %s - %d\n", sigval.name.c_str(), address);
       continue;
     }
     const auto& sig = sig_it->second;

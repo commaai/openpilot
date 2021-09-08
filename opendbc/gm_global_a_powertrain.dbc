@@ -163,7 +163,7 @@ BO_ 715 ASCMGasRegenCmd: 8 K124_ASCM
 BO_ 717 ASCM_2CD: 5 K124_ASCM
 
 BO_ 810 TCICOnStarGPSPosition: 8 K73_TCIC
- SG_ GPSLongitude : 39|32@0+ (1,0) [0|0] "milliarcsecond"  NEO
+ SG_ GPSLongitude : 39|32@0+ (1,-2147483648) [0|0] "milliarcsecond"  NEO
  SG_ GPSLatitude : 7|32@0+ (1,0) [0|0] "milliarcsecond"  NEO
 
 BO_ 840 EBCMWheelSpdFront: 4 K17_EBCM

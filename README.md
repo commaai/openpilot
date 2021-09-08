@@ -77,6 +77,7 @@ Supported Cars
 | Honda     | CR-V 2015-16                  | Touring           | openpilot        | 25mph<sup>1</sup>  | 12mph             |
 | Honda     | CR-V 2017-21                  | Honda Sensing     | Stock            | 0mph               | 12mph             |
 | Honda     | CR-V Hybrid 2017-2019         | Honda Sensing     | Stock            | 0mph               | 12mph             |
+| Honda     | e 2020                        | All 		          | Stock            | 0mph               | 3mph              |
 | Honda     | Fit 2018-19                   | Honda Sensing     | openpilot        | 25mph<sup>1</sup>  | 12mph             |
 | Honda     | HR-V 2019-20                  | Honda Sensing     | openpilot        | 25mph<sup>1</sup>  | 12mph             |
 | Honda     | Insight 2019-21               | All               | Stock            | 0mph               | 3mph              |
@@ -138,7 +139,7 @@ Community Maintained Cars and Features
 
 | Make      | Model (US Market Reference)   | Supported Package | ACC              | No ACC accel below | No ALC below |
 | ----------| ------------------------------| ------------------| -----------------| -------------------| -------------|
-| Audi      | A3 2014-18                    | Prestige          | Stock            | 0mph               | 0mph         |
+| Audi      | A3 2014-19                    | Prestige          | Stock            | 0mph               | 0mph         |
 | Audi      | A3 Sportback e-tron 2017-18   | Prestige          | Stock            | 0mph               | 0mph         |
 | Audi      | Q2 2018                       | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Buick     | Regal 2018<sup>1</sup>        | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
@@ -162,7 +163,7 @@ Community Maintained Cars and Features
 | Hyundai   | Ioniq Electric 2020           | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Hyundai   | Ioniq PHEV 2020               | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Hyundai   | Kona 2020                     | SCC + LKAS        | Stock            | 0mph               | 0mph         |
-| Hyundai   | Kona EV 2019                  | SCC + LKAS        | Stock            | 0mph               | 0mph         |
+| Hyundai   | Kona EV 2018-19               | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Hyundai   | Kona Hybrid 2020              | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Hyundai   | Santa Fe 2019-20              | All               | Stock            | 0mph               | 0mph         |
 | Hyundai   | Sonata 2018-2019              | SCC + LKAS        | Stock            | 0mph               | 0mph         |
@@ -170,8 +171,8 @@ Community Maintained Cars and Features
 | Hyundai   | Veloster 2019-20              | SCC + LKAS        | Stock            | 5mph               | 0mph         |
 | Jeep      | Grand Cherokee 2016-18        | Adaptive Cruise   | Stock            | 0mph               | 9mph         |
 | Jeep      | Grand Cherokee 2019-20        | Adaptive Cruise   | Stock            | 0mph               | 39mph        |
-| Kia       | Forte 2018-2021               | SCC + LKAS        | Stock            | 0mph               | 0mph         |
-| Kia       | Niro EV 2020                  | SCC + LKAS        | Stock            | 0mph               | 0mph         |
+| Kia       | Forte 2018-21                 | SCC + LKAS        | Stock            | 0mph               | 0mph         |
+| Kia       | Niro EV 2019-21               | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Kia       | Niro Hybrid 2021              | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Kia       | Niro PHEV 2019                | SCC + LKAS        | Stock            | 10mph              | 32mph        |
 | Kia       | Optima 2017                   | SCC + LKAS        | Stock            | 0mph               | 32mph        |
@@ -187,7 +188,7 @@ Community Maintained Cars and Features
 | Nissan    | X-Trail 2017                  | ProPILOT          | Stock            | 0mph               | 0mph         |
 | SEAT      | Ateca 2018                    | Driver Assistance | Stock            | 0mph               | 0mph         |
 | SEAT      | Leon 2014-2020                | Driver Assistance | Stock            | 0mph               | 0mph         |
-| Škoda     | Kodiaq 2018                   | Driver Assistance | Stock            | 0mph               | 0mph         |
+| Škoda     | Kodiaq 2018-19                | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Škoda     | Octavia 2015, 2018-19         | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Škoda     | Octavia RS 2016               | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Škoda     | Scala 2020                    | Driver Assistance | Stock            | 0mph               | 0mph         |
@@ -198,10 +199,10 @@ Community Maintained Cars and Features
 | Subaru    | Impreza 2017-19               | EyeSight          | Stock            | 0mph               | 0mph         |
 | Volkswagen| Atlas 2018-19                 | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| e-Golf 2014, 2019-20          | Driver Assistance | Stock            | 0mph               | 0mph         |
-| Volkswagen| Golf 2015-19                  | Driver Assistance | Stock            | 0mph               | 0mph         |
+| Volkswagen| Golf 2015-20                  | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Golf Alltrack 2017-18         | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Golf GTE 2016                 | Driver Assistance | Stock            | 0mph               | 0mph         |
-| Volkswagen| Golf GTI 2018-19              | Driver Assistance | Stock            | 0mph               | 0mph         |
+| Volkswagen| Golf GTI 2018-20              | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Golf R 2016-19                | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Golf SportsVan 2016           | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Golf SportWagen 2015          | Driver Assistance | Stock            | 0mph               | 0mph         |

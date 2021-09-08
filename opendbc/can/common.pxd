@@ -66,7 +66,7 @@ cdef extern from "common_dbc.h":
     double value
 
   cdef struct SignalPackValue:
-    const char * name
+    string name
     double value
 
 

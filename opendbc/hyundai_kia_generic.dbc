@@ -1489,6 +1489,7 @@ BO_ 1157 LFAHDA_MFC: 4 XXX
 BO_ 913 BCM_PO_11: 8 Vector__XXX
  SG_ BCM_Door_Dri_Status : 5|1@0+ (1,0) [0|1] "" PT_ESC_ABS
  SG_ BCM_Shift_R_MT_SW_Status : 39|2@0+ (1,0) [0|3] "" PT_ESC_ABS
+ SG_ LFA_Pressed : 4|1@0+ (1,0) [0|1] "" XXX
 
 BO_ 1426 LABEL11: 8 XXX
  SG_ CC_React : 34|1@1+ (1,0) [0|1] "" XXX
@@ -1637,14 +1638,20 @@ BO_ 1042 ICM_412h: 8 ICM
  SG_ PopupMessageOutput_7Level : 54|1@0+ (1,0) [0|1] "" Vector__XXX
  SG_ PopupMessageOutput_8Level : 55|1@0+ (1,0) [0|1] "" Vector__XXX
 
-VAL_ 274 CUR_GR 1 "D" 2 "D" 3 "D" 4 "D" 5 "D" 6 "D" 7 "D" 8 "D" 14 "R" 0 "P";
-VAL_ 871 CF_Lvr_Gear 5 "D" 8 "S" 6 "N" 7 "R" 0 "P";
-VAL_ 882 Elect_Gear_Shifter 5 "D" 8 "S" 6 "N" 7 "R" 0 "P";
-VAL_ 1322 CF_Clu_Gear 1 "P" 2 "R" 4 "N" 8 "D";
-VAL_ 909 CF_VSM_Warn 2 "FCW" 3 "AEB";
-VAL_ 1157 LFA_Icon_State 0 "no_wheel" 1 "white_wheel" 2 "green_wheel" 3 "green_wheel_blink";
-VAL_ 1157 LFA_SysWarning 0 "no_message" 1 "switching_to_hda" 2 "switching_to_scc" 3 "lfa_error" 4 "check_hda" 5 "keep_hands_on_wheel_orange" 6 "keep_hands_on_wheel_red";
-VAL_ 1157 HDA_Icon_State 0 "no_hda" 1 "white_hda" 2 "green_hda";
-VAL_ 1157 HDA_SysWarning 0 "no_message" 1 "driving_convenience_systems_cancelled" 2 "highway_drive_assist_system_cancelled";
+BO_ 1348 Navi_HU: 8 XXX
+ SG_ SpeedLim_Nav_Clu : 7|8@0+ (1,0) [0|255] "" XXX
 
+
+
+
+VAL_ 871 CF_Lvr_Gear 5 "D" 8 "S" 6 "N" 7 "R" 0 "P" ;
+VAL_ 1322 CF_Clu_Gear 1 "P" 2 "R" 4 "N" 8 "D" ;
+VAL_ 274 CUR_GR 1 "D" 2 "D" 3 "D" 4 "D" 5 "D" 6 "D" 7 "D" 8 "D" 14 "R" 0 "P" ;
+VAL_ 909 CF_VSM_Warn 2 "FCW" 3 "AEB" ;
+VAL_ 1157 HDA_Icon_State 0 "no_hda" 1 "white_hda" 2 "green_hda" ;
+VAL_ 1157 LFA_SysWarning 0 "no_message" 1 "switching_to_hda" 2 "switching_to_scc" 3 "lfa_error" 4 "check_hda" 5 "keep_hands_on_wheel_orange" 6 "keep_hands_on_wheel_red" ;
+VAL_ 1157 LFA_Icon_State 0 "no_wheel" 1 "white_wheel" 2 "green_wheel" 3 "green_wheel_blink" ;
+VAL_ 1157 HDA_SysWarning 0 "no_message" 1 "driving_convenience_systems_cancelled" 2 "highway_drive_assist_system_cancelled" ;
+VAL_ 882 Elect_Gear_Shifter 5 "D" 8 "S" 6 "N" 7 "R" 0 "P" ;
 CM_ "BO_ E_EMS11: All (plug-in) hybrids use this gas signal: CR_Vcu_AccPedDep_Pos, and all EVs use the Accel_Pedal_Pos signal. See hyundai/values.py for a specific car list";
+CM_ SG_ 1348 SpeedLim_Nav_Clu "Speed limit displayed on Nav, Cluster and HUD";

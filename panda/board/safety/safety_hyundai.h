@@ -17,24 +17,24 @@ const CanMsg HYUNDAI_TX_MSGS[] = {
   // {1186, 0, 8}  //   4a2SCC, Bus 0
  };
 
-AddrCheckStruct hyundai_rx_checks[] = {
+AddrCheckStruct hyundai_addr_checks[] = {
   {.msg = {{608, 0, 8, .check_checksum = true, .max_counter = 3U, .expected_timestep = 10000U},
            {881, 0, 8, .expected_timestep = 10000U}, { 0 }}},
   {.msg = {{902, 0, 8, .check_checksum = true, .max_counter = 15U, .expected_timestep = 10000U}, { 0 }, { 0 }}},
   {.msg = {{916, 0, 8, .check_checksum = true, .max_counter = 7U, .expected_timestep = 10000U}, { 0 }, { 0 }}},
   {.msg = {{1057, 0, 8, .check_checksum = true, .max_counter = 15U, .expected_timestep = 20000U}, { 0 }, { 0 }}},
 };
-const int HYUNDAI_RX_CHECK_LEN = sizeof(hyundai_rx_checks) / sizeof(hyundai_rx_checks[0]);
+#define HYUNDAI_ADDR_CHECK_LEN (sizeof(hyundai_addr_checks) / sizeof(hyundai_addr_checks[0]))
 
 // older hyundai models have less checks due to missing counters and checksums
-AddrCheckStruct hyundai_legacy_rx_checks[] = {
+AddrCheckStruct hyundai_legacy_addr_checks[] = {
   {.msg = {{608, 0, 8, .check_checksum = true, .max_counter = 3U, .expected_timestep = 10000U},
            {881, 0, 8, .expected_timestep = 10000U}, { 0 }}},
   {.msg = {{902, 0, 8, .expected_timestep = 10000U}, { 0 }, { 0 }}},
   {.msg = {{916, 0, 8, .expected_timestep = 10000U}, { 0 }, { 0 }}},
   {.msg = {{1057, 0, 8, .check_checksum = true, .max_counter = 15U, .expected_timestep = 20000U}, { 0 }, { 0 }}},
 };
-const int HYUNDAI_LEGACY_RX_CHECK_LEN = sizeof(hyundai_legacy_rx_checks) / sizeof(hyundai_legacy_rx_checks[0]);
+#define HYUNDAI_LEGACY_ADDR_CHECK_LEN (sizeof(hyundai_legacy_addr_checks) / sizeof(hyundai_legacy_addr_checks[0]))
 
 const int HYUNDAI_PARAM_EV_GAS = 1;
 const int HYUNDAI_PARAM_HYBRID_GAS = 2;
@@ -42,6 +42,8 @@ const int HYUNDAI_PARAM_HYBRID_GAS = 2;
 bool hyundai_legacy = false;
 bool hyundai_ev_gas_signal = false;
 bool hyundai_hybrid_gas_signal = false;
+
+addr_checks hyundai_rx_checks = {hyundai_addr_checks, HYUNDAI_ADDR_CHECK_LEN};
 
 static uint8_t hyundai_get_counter(CAN_FIFOMailBox_TypeDef *to_push) {
   int addr = GET_ADDR(to_push);
@@ -117,17 +119,9 @@ static uint8_t hyundai_compute_checksum(CAN_FIFOMailBox_TypeDef *to_push) {
 
 static int hyundai_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 
-  bool valid;
-  if (hyundai_legacy) {
-    valid = addr_safety_check(to_push, hyundai_legacy_rx_checks, HYUNDAI_LEGACY_RX_CHECK_LEN,
-                              hyundai_get_checksum, hyundai_compute_checksum,
-                              hyundai_get_counter);
-
-  } else {
-    valid = addr_safety_check(to_push, hyundai_rx_checks, HYUNDAI_RX_CHECK_LEN,
-                              hyundai_get_checksum, hyundai_compute_checksum,
-                              hyundai_get_counter);
-  }
+  bool valid = addr_safety_check(to_push, &hyundai_rx_checks,
+                                 hyundai_get_checksum, hyundai_compute_checksum,
+                                 hyundai_get_counter);
 
   if (valid && (GET_BUS(to_push) == 0)) {
     int addr = GET_ADDR(to_push);
@@ -267,22 +261,26 @@ static int hyundai_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
   return bus_fwd;
 }
 
-static void hyundai_init(int16_t param) {
+static const addr_checks* hyundai_init(int16_t param) {
   controls_allowed = false;
   relay_malfunction_reset();
 
   hyundai_legacy = false;
   hyundai_ev_gas_signal = GET_FLAG(param, HYUNDAI_PARAM_EV_GAS);
   hyundai_hybrid_gas_signal = !hyundai_ev_gas_signal && GET_FLAG(param, HYUNDAI_PARAM_HYBRID_GAS);
+  hyundai_rx_checks = (addr_checks){hyundai_addr_checks, HYUNDAI_ADDR_CHECK_LEN};
+  return &hyundai_rx_checks;
 }
 
-static void hyundai_legacy_init(int16_t param) {
+static const addr_checks* hyundai_legacy_init(int16_t param) {
   controls_allowed = false;
   relay_malfunction_reset();
 
   hyundai_legacy = true;
   hyundai_ev_gas_signal = GET_FLAG(param, HYUNDAI_PARAM_EV_GAS);
   hyundai_hybrid_gas_signal = !hyundai_ev_gas_signal && GET_FLAG(param, HYUNDAI_PARAM_HYBRID_GAS);
+  hyundai_rx_checks = (addr_checks){hyundai_legacy_addr_checks, HYUNDAI_LEGACY_ADDR_CHECK_LEN};
+  return &hyundai_rx_checks;
 }
 
 const safety_hooks hyundai_hooks = {
@@ -291,8 +289,6 @@ const safety_hooks hyundai_hooks = {
   .tx = hyundai_tx_hook,
   .tx_lin = nooutput_tx_lin_hook,
   .fwd = hyundai_fwd_hook,
-  .addr_check = hyundai_rx_checks,
-  .addr_check_len = sizeof(hyundai_rx_checks) / sizeof(hyundai_rx_checks[0]),
 };
 
 const safety_hooks hyundai_legacy_hooks = {
@@ -301,6 +297,4 @@ const safety_hooks hyundai_legacy_hooks = {
   .tx = hyundai_tx_hook,
   .tx_lin = nooutput_tx_lin_hook,
   .fwd = hyundai_fwd_hook,
-  .addr_check = hyundai_legacy_rx_checks,
-  .addr_check_len = sizeof(hyundai_legacy_rx_checks) / sizeof(hyundai_legacy_rx_checks[0]),
 };
