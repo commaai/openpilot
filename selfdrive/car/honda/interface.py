@@ -6,7 +6,7 @@ from common.params import Params
 from selfdrive.car.honda.values import CarControllerParams, CruiseButtons, CAR, HONDA_BOSCH, HONDA_BOSCH_ALT_BRAKE_SIGNAL
 from selfdrive.car.honda.hondacan import disable_radar
 from selfdrive.car import STD_CARGO_KG, CivicParams, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
-from selfdrive.car.interfaces import CarInterfaceBase, ACCEL_MAX, ACCEL_MIN
+from selfdrive.car.interfaces import CarInterfaceBase
 from selfdrive.config import Conversions as CV
 
 
@@ -17,12 +17,15 @@ TransmissionType = car.CarParams.TransmissionType
 
 class CarInterface(CarInterfaceBase):
   @staticmethod
-  def get_pid_accel_limits(current_speed, cruise_speed):
-    # NIDECs don't allow acceleration near cruise_speed,
-    # so limit limits of pid to prevent windup
-    ACCEL_MAX_VALS = [ACCEL_MAX, 0.2]
-    ACCEL_MAX_BP = [cruise_speed - 2., cruise_speed - .2]
-    return ACCEL_MIN, interp(current_speed, ACCEL_MAX_BP, ACCEL_MAX_VALS)
+  def get_pid_accel_limits(CP, current_speed, cruise_speed):
+    if CP.carFingerprint in HONDA_BOSCH:
+      return CarControllerParams.BOSCH_ACCEL_MIN, CarControllerParams.BOSCH_ACCEL_MAX
+    else:
+      # NIDECs don't allow acceleration near cruise_speed,
+      # so limit limits of pid to prevent windup
+      ACCEL_MAX_VALS = [CarControllerParams.NIDEC_ACCEL_MAX, 0.2]
+      ACCEL_MAX_BP = [cruise_speed - 2., cruise_speed - .2]
+      return CarControllerParams.NIDEC_ACCEL_MIN, interp(current_speed, ACCEL_MAX_BP, ACCEL_MAX_VALS)
 
   @staticmethod
   def calc_accel_override(a_ego, a_target, v_ego, v_target):
@@ -54,7 +57,7 @@ class CarInterface(CarInterfaceBase):
     # accelOverride is more or less the max throttle allowed to pcm: usually set to a constant
     # unless aTargetMax is very high and then we scale with it; this help in quicker restart
 
-    return float(max(max_accel, a_target / CarControllerParams.ACCEL_MAX)) * min(speedLimiter, accelLimiter)
+    return float(max(max_accel, a_target / CarControllerParams.NIDEC_ACCEL_MAX)) * min(speedLimiter, accelLimiter)
 
   @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=[]):  # pylint: disable=dangerous-default-value
@@ -285,6 +288,16 @@ class CarInterface(CarInterfaceBase):
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
       tire_stiffness_factor = 0.82
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.18]]
+
+    elif candidate == CAR.HONDA_E:
+      stop_and_go = True
+      ret.mass = 3338.8 * CV.LB_TO_KG + STD_CARGO_KG
+      ret.wheelbase = 2.5
+      ret.centerToFront = ret.wheelbase * 0.5
+      ret.steerRatio = 16.71
+      ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
+      tire_stiffness_factor = 0.82
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.18]] # TODO: can probably use some tuning
 
     else:
       raise ValueError("unsupported car %s" % candidate)

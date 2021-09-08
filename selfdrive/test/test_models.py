@@ -52,8 +52,10 @@ class TestCarModel(unittest.TestCase):
         lr = LogReader(get_url(ROUTES[cls.car_model], seg))
         break
       except Exception:
-        if seg == 0:
-          raise
+        lr = None
+
+    if lr is None:
+      raise Exception("Route not found. Is it uploaded?")
 
     can_msgs = []
     fingerprint = {i: dict() for i in range(3)}
@@ -178,7 +180,7 @@ class TestCarModel(unittest.TestCase):
 
     # TODO: honda nidec: do same checks in carState and panda
     if "brakePressed" in failed_checks and self.CP.carName == 'honda' and \
-      (self.car_model not in HONDA_BOSCH or self.car_model == HONDA.CRV_HYBRID):
+      (self.car_model not in HONDA_BOSCH or self.car_model in [HONDA.CRV_HYBRID, HONDA.HONDA_E]):
       if failed_checks['brakePressed'] < 150:
         del failed_checks['brakePressed']
 

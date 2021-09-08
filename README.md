@@ -77,6 +77,7 @@ Supported Cars
 | Honda     | CR-V 2015-16                  | Touring           | openpilot        | 25mph<sup>1</sup>  | 12mph             |
 | Honda     | CR-V 2017-21                  | Honda Sensing     | Stock            | 0mph               | 12mph             |
 | Honda     | CR-V Hybrid 2017-2019         | Honda Sensing     | Stock            | 0mph               | 12mph             |
+| Honda     | e 2020                        | All 		          | Stock            | 0mph               | 3mph              |
 | Honda     | Fit 2018-19                   | Honda Sensing     | openpilot        | 25mph<sup>1</sup>  | 12mph             |
 | Honda     | HR-V 2019-20                  | Honda Sensing     | openpilot        | 25mph<sup>1</sup>  | 12mph             |
 | Honda     | Insight 2019-21               | All               | Stock            | 0mph               | 3mph              |
@@ -171,7 +172,7 @@ Community Maintained Cars and Features
 | Jeep      | Grand Cherokee 2016-18        | Adaptive Cruise   | Stock            | 0mph               | 9mph         |
 | Jeep      | Grand Cherokee 2019-20        | Adaptive Cruise   | Stock            | 0mph               | 39mph        |
 | Kia       | Forte 2018-21                 | SCC + LKAS        | Stock            | 0mph               | 0mph         |
-| Kia       | Niro EV 2020-21               | SCC + LKAS        | Stock            | 0mph               | 0mph         |
+| Kia       | Niro EV 2019-21               | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Kia       | Niro Hybrid 2021              | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Kia       | Niro PHEV 2019                | SCC + LKAS        | Stock            | 10mph              | 32mph        |
 | Kia       | Optima 2017                   | SCC + LKAS        | Stock            | 0mph               | 32mph        |
@@ -201,7 +202,7 @@ Community Maintained Cars and Features
 | Volkswagen| Golf 2015-20                  | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Golf Alltrack 2017-18         | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Golf GTE 2016                 | Driver Assistance | Stock            | 0mph               | 0mph         |
-| Volkswagen| Golf GTI 2018-19              | Driver Assistance | Stock            | 0mph               | 0mph         |
+| Volkswagen| Golf GTI 2018-20              | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Golf R 2016-19                | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Golf SportsVan 2016           | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Golf SportWagen 2015          | Driver Assistance | Stock            | 0mph               | 0mph         |

@@ -303,7 +303,7 @@ QString WifiManager::getAdapter() {
 
 void WifiManager::stateChange(unsigned int new_state, unsigned int previous_state, unsigned int change_reason) {
   raw_adapter_state = new_state;
-  if (new_state == NM_DEVICE_STATE_NEED_AUTH && change_reason == NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT) {
+  if (new_state == NM_DEVICE_STATE_NEED_AUTH && change_reason == NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT && !connecting_to_network.isEmpty()) {
     forgetConnection(connecting_to_network);
     emit wrongPassword(connecting_to_network);
   } else if (new_state == NM_DEVICE_STATE_ACTIVATED) {
@@ -341,9 +341,12 @@ void WifiManager::connectionRemoved(const QDBusObjectPath &path) {
 }
 
 void WifiManager::newConnection(const QDBusObjectPath &path) {
-  knownConnections[path] = getConnectionSettings(path).value("802-11-wireless").value("ssid").toString();
-  if (knownConnections[path] != tethering_ssid) {
-    activateWifiConnection(knownConnections[path]);
+  const Connection &settings = getConnectionSettings(path);
+  if (settings.value("connection").value("type") == "802-11-wireless") {
+    knownConnections[path] = settings.value("802-11-wireless").value("ssid").toString();
+    if (knownConnections[path] != tethering_ssid) {
+      activateWifiConnection(knownConnections[path]);
+    }
   }
 }
 
