@@ -165,11 +165,6 @@ function launch {
           mv "${STAGING_ROOT}/finalized" $BASEDIR
           cd $BASEDIR
 
-          # Partial mitigation for symlink-related filesystem corruption
-          # Ensure all files match the repo versions after update
-          git reset --hard
-          git submodule foreach --recursive git reset --hard
-
           echo "Restarting launch script ${LAUNCHER_LOCATION}"
           unset REQUIRED_NEOS_VERSION
           unset AGNOS_VERSION
