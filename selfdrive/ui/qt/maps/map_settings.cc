@@ -67,7 +67,7 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
     current_route = new ButtonControl("", "CLEAR");
     current_route->setStyleSheet("padding-left: 40px;");
     current_layout->addWidget(current_route);
-		QObject::connect(current_route, &ButtonControl::clicked, [=]() {
+    QObject::connect(current_route, &ButtonControl::clicked, [=]() {
       params.remove("NavDestination");
       updateCurrentRoute();
     });
