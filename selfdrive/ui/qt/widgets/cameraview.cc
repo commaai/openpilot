@@ -117,6 +117,7 @@ void CameraViewWidget::initializeGL() {
   assert(ret);
   ret = program->addShaderFromSourceCode(QOpenGLShader::Fragment, frame_fragment_shader);
   assert(ret);
+
   program->link();
   GLint frame_pos_loc = program->attributeLocation("aPosition");
   GLint frame_texcoord_loc = program->attributeLocation("aTexCoord");
@@ -258,7 +259,7 @@ void CameraViewWidget::updateFrame() {
       update();
       emit frameUpdated();
     } else if (!Hardware::PC()) {
-        LOGE("visionIPC receive timeout");
+      LOGE("visionIPC receive timeout");
     }
   } else {
     // try to connect again quickly
