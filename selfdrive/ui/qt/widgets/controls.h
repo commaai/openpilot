@@ -33,7 +33,11 @@ class AbstractControl : public QFrame {
 
 public:
   void setDescription(const QString &desc) {
-    if(description) description->setText(desc);
+    if (description) description->setText(desc);
+  }
+
+  void setTitle(const QString &title) {
+    title_label->setText(title);
   }
 
 signals:
