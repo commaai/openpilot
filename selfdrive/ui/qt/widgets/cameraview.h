@@ -31,6 +31,7 @@ protected:
   void hideEvent(QHideEvent *event) override;
   void mouseReleaseEvent(QMouseEvent *event) override;
   void updateFrameMat(int w, int h);
+  std::unique_ptr<VisionIpcClient> vipc_client;
 
 protected slots:
   void updateFrame();
@@ -40,7 +41,6 @@ private:
   VisionBuf *latest_frame = nullptr;
   GLuint frame_vao, frame_vbo, frame_ibo;
   mat4 frame_mat;
-  std::unique_ptr<VisionIpcClient> vipc_client;
   std::unique_ptr<EGLImageTexture> texture[UI_BUF_COUNT];
   QOpenGLShaderProgram *program;
 

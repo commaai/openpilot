@@ -174,7 +174,7 @@ void CameraViewWidget::setStreamType(VisionStreamType type) {
 }
 
 void CameraViewWidget::updateFrameMat(int w, int h) {
-   if (zoomed_view) {
+  if (zoomed_view) {
     if (stream_type == VISION_STREAM_RGB_FRONT) {
       frame_mat = matmul(device_transform, get_driver_view_transform());
     } else {
