@@ -225,11 +225,8 @@ void encoder_thread(const LogCameraInfo &cam_info) {
           eidx.setFrameId(extra.frame_id);
           eidx.setTimestampSof(extra.timestamp_sof);
           eidx.setTimestampEof(extra.timestamp_eof);
-          cereal::EncodeIndex::Type type = cereal::EncodeIndex::Type::FULL_H_E_V_C;
-          if (!Hardware::TICI() && cam_info.type == DriverCam) {
-            type = cereal::EncodeIndex::Type::FRONT;
-          }
-          eidx.setType(type);
+          bool front_type = !Hardware::TICI() && cam_info.type == DriverCam;
+          eidx.setType(front_type ? cereal::EncodeIndex::Type::FRONT : cereal::EncodeIndex::Type::FULL_H_E_V_C);
           eidx.setEncodeId(encode_idx);
           eidx.setSegmentNum(cur_seg);
           eidx.setSegmentId(out_id);
