@@ -514,7 +514,7 @@ void OmxEncoder::encoder_open(const char* path) {
 
   // create camera lock file
   snprintf(this->lock_path, sizeof(this->lock_path), "%s/%s.lock", path, this->filename);
-  int lock_fd = open(this->lock_path, O_RDWR | O_CREAT, 0664);
+  int lock_fd = HANDLE_EINTR(open(this->lock_path, O_RDWR | O_CREAT, 0664));
   assert(lock_fd >= 0);
   close(lock_fd);
 

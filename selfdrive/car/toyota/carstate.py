@@ -1,5 +1,7 @@
 from cereal import car
 from common.numpy_fast import mean
+from common.filter_simple import FirstOrderFilter
+from common.realtime import DT_CTRL
 from opendbc.can.can_define import CANDefine
 from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
@@ -17,8 +19,9 @@ class CarState(CarStateBase):
     # the signal is zeroed to where the steering angle is at start.
     # Need to apply an offset as soon as the steering angle measurements are both received
     self.needs_angle_offset = True
-    self.accurate_steer_angle_seen = CP.hasZss
-    self.angle_offset = 0.
+    self.accurate_steer_angle_seen = False
+    self.angle_offset = FirstOrderFilter(None, 60.0, DT_CTRL, initialized=False)
+    self.has_zss = CP.hasZss
 
     self.low_speed_lockout = False
     self.acc_type = 1
@@ -47,23 +50,24 @@ class CarState(CarStateBase):
 
     ret.standstill = ret.vEgoRaw < 0.001
 
-    # Some newer models have a more accurate angle measurement in the TORQUE_SENSOR message. Use if non-zero
-    if abs(cp.vl["STEER_TORQUE_SENSOR"]["STEER_ANGLE"]) > 1e-3:
+    ret.steeringAngleDeg = cp.vl["STEER_ANGLE_SENSOR"]["STEER_ANGLE"] + cp.vl["STEER_ANGLE_SENSOR"]["STEER_FRACTION"]
+    torque_sensor_angle_deg = cp.vl["STEER_TORQUE_SENSOR"]["STEER_ANGLE"]
+    zss_angle_deg = cp.vl["SECONDARY_STEER_ANGLE"]["ZORRO_STEER"] if self.has_zss else 0.
+
+    # Some newer models have a more accurate angle measurement in the TORQUE_SENSOR message. Use if non-zero or ZSS
+    # Also only get offset when ZSS comes up in case it's slow to start sending messages
+    if abs(torque_sensor_angle_deg) > 1e-3 or (self.has_zss and abs(zss_angle_deg) > 1e-3):
       self.accurate_steer_angle_seen = True
 
     if self.accurate_steer_angle_seen:
-      if self.CP.hasZss:
-        ret.steeringAngleDeg = cp.vl["SECONDARY_STEER_ANGLE"]["ZORRO_STEER"] - self.angle_offset
-      else:
-        ret.steeringAngleDeg = cp.vl["STEER_TORQUE_SENSOR"]["STEER_ANGLE"] - self.angle_offset
+      acc_angle_deg = zss_angle_deg if self.has_zss else torque_sensor_angle_deg
+      # Offset seems to be invalid for large steering angles
+      if abs(ret.steeringAngleDeg) < 90:
+        self.angle_offset.update(acc_angle_deg - ret.steeringAngleDeg)
 
-      if self.needs_angle_offset:
-        angle_wheel = cp.vl["STEER_ANGLE_SENSOR"]["STEER_ANGLE"] + cp.vl["STEER_ANGLE_SENSOR"]["STEER_FRACTION"]
-        if abs(angle_wheel) > 1e-3:
-          self.needs_angle_offset = False
-          self.angle_offset = ret.steeringAngleDeg - angle_wheel
-    else:
-      ret.steeringAngleDeg = cp.vl["STEER_ANGLE_SENSOR"]["STEER_ANGLE"] + cp.vl["STEER_ANGLE_SENSOR"]["STEER_FRACTION"]
+      if self.angle_offset.initialized:
+        ret.steeringAngleOffsetDeg = self.angle_offset.x
+        ret.steeringAngleDeg = acc_angle_deg - self.angle_offset.x
 
     ret.steeringRateDeg = cp.vl["STEER_ANGLE_SENSOR"]["STEER_RATE"]
 

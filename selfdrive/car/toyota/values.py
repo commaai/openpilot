@@ -6,13 +6,14 @@ from selfdrive.config import Conversions as CV
 
 Ecu = car.CarParams.Ecu
 MIN_ACC_SPEED = 19. * CV.MPH_TO_MS
+
 PEDAL_HYST_GAP = 3. * CV.MPH_TO_MS
+PEDAL_SCALE = 3.0
 
 class CarControllerParams:
-  ACCEL_HYST_GAP = 0.02  # don't change accel command for small oscilalitons within this value
-  ACCEL_MAX = 1.5  # m/s2
-  ACCEL_MIN = -3.0  # m/s2
-  ACCEL_SCALE = max(ACCEL_MAX, -ACCEL_MIN)
+  ACCEL_HYST_GAP = 0.06  # don't change accel command for small oscilalitons within this value
+  ACCEL_MAX = 1.5  # m/s2, lower than allowed 2.0 m/s2 for tuning reasons
+  ACCEL_MIN = -3.5  # m/s2
 
   STEER_MAX = 1500
   STEER_DELTA_UP = 10       # 1.5s time to peak torque
@@ -625,6 +626,7 @@ FW_VERSIONS = {
       b'\x018966312P9100\x00\x00\x00\x00',
       b'\x018966312P9200\x00\x00\x00\x00',
       b'\x018966312Q2300\x00\x00\x00\x00',
+      b'\x018966312R0000\x00\x00\x00\x00',
       b'\x018966312R0100\x00\x00\x00\x00',
       b'\x018966312R1000\x00\x00\x00\x00',
       b'\x018966312R1100\x00\x00\x00\x00',
@@ -731,6 +733,7 @@ FW_VERSIONS = {
       b'F152676293\x00\x00\x00\x00\x00\x00',
       b'F152676303\x00\x00\x00\x00\x00\x00',
       b'F152676304\x00\x00\x00\x00\x00\x00',
+      b'F152612D00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x750, 0xf): [
       b'\x018821F3301100\x00\x00\x00\x00',
@@ -831,6 +834,7 @@ FW_VERSIONS = {
       b'\x01896630E64200\x00\x00\x00\x00',
       b'\x01896630EB1000\x00\x00\x00\x00',
       b'\x01896630EB1100\x00\x00\x00\x00',
+      b'\x01896630EB1200\x00\x00\x00\x00',
       b'\x01896630EB2000\x00\x00\x00\x00',
       b'\x01896630EB2100\x00\x00\x00\x00',
       b'\x01896630EB2200\x00\x00\x00\x00',

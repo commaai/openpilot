@@ -5,7 +5,7 @@ from selfdrive.car.toyota.toyotacan import create_steer_command, create_ui_comma
                                            create_accel_command, create_acc_cancel_command, \
                                            create_fcw_command, create_lta_steer_command
 from selfdrive.car.toyota.values import CAR, STATIC_DSU_MSGS, NO_STOP_TIMER_CAR, TSS2_CAR, \
-                                        MIN_ACC_SPEED, PEDAL_HYST_GAP, CarControllerParams
+                                        MIN_ACC_SPEED, PEDAL_HYST_GAP, PEDAL_SCALE, CarControllerParams
 from opendbc.can.packer import CANPacker
 from common.op_params import opParams
 
@@ -62,7 +62,7 @@ class CarController():
 
     # gas and brake
     interceptor_gas_cmd = 0.
-    pcm_accel_cmd = actuators.gas - actuators.brake
+    pcm_accel_cmd = actuators.accel
 
     if CS.CP.enableGasInterceptor:
       # handle hysteresis when around the minimum acc speed
@@ -73,13 +73,13 @@ class CarController():
 
       if self.use_interceptor and enabled:
         # only send negative accel when using interceptor. gas handles acceleration
-        # +0.06 offset to reduce ABS pump usage when OP is engaged
-        if pcm_accel_cmd * CarControllerParams.ACCEL_SCALE > coast_accel(CS.out.vEgo):
-          interceptor_gas_cmd = clip(compute_gb_pedal(pcm_accel_cmd * CarControllerParams.ACCEL_SCALE, CS.out.vEgo), 0., 1.)
-        pcm_accel_cmd = 0.06 - actuators.brake
+        # +0.18 m/s^2 offset to reduce ABS pump usage when OP is engaged
+        if pcm_accel_cmd > coast_accel(CS.out.vEgo):
+          interceptor_gas_cmd = clip(compute_gb_pedal(pcm_accel_cmd, CS.out.vEgo), 0., 1.)
+        pcm_accel_cmd = 0.18 - max(0, -actuators.accel)
 
     pcm_accel_cmd, self.accel_steady = accel_hysteresis(pcm_accel_cmd, self.accel_steady, enabled)
-    pcm_accel_cmd = clip(pcm_accel_cmd * CarControllerParams.ACCEL_SCALE, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
+    pcm_accel_cmd = clip(pcm_accel_cmd, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
 
     # steer torque
     new_steer = int(round(actuators.steer * CarControllerParams.STEER_MAX))

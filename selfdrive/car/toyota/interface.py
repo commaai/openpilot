@@ -12,8 +12,8 @@ EventName = car.CarEvent.EventName
 
 class CarInterface(CarInterfaceBase):
   @staticmethod
-  def compute_gb(accel, speed):
-    return float(accel) / CarControllerParams.ACCEL_SCALE
+  def get_pid_accel_limits(CP, current_speed, cruise_speed):
+    return CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX
 
   @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=[]):  # pylint: disable=dangerous-default-value
@@ -400,8 +400,8 @@ class CarInterface(CarInterfaceBase):
       ret.longitudinalTuning.kpV = [1.3, 1.0, 0.7]
       ret.longitudinalTuning.kiBP = [0., 5., 12., 20., 27.]
       ret.longitudinalTuning.kiV = [.35, .23, .20, .17, .1]
-      ret.stoppingBrakeRate = 0.1  # reach stopping target smoothly
-      ret.startingBrakeRate = 2.0  # release brakes fast
+      ret.stoppingDecelRate = 0.3  # reach stopping target smoothly
+      ret.startingAccelRate = 6.0  # release brakes fast
       ret.startAccel = 1.2  # Accelerate from 0 faster
     else:
       # Default longitudinal tune
@@ -432,7 +432,7 @@ class CarInterface(CarInterfaceBase):
       events.add(EventName.lowSpeedLockout)
     if ret.vEgo < self.CP.minEnableSpeed and self.CP.openpilotLongitudinalControl:
       events.add(EventName.belowEngageSpeed)
-      if c.actuators.gas > 0.2:
+      if c.actuators.accel > 0.6:
         # some margin on the actuator to not false trigger cancellation while stopping
         events.add(EventName.speedTooLow)
       if ret.vEgo < 0.001:

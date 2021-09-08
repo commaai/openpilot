@@ -1,4 +1,4 @@
-from cereal import log
+from cereal import car
 from common.numpy_fast import clip, interp
 from selfdrive.controls.lib.drive_helpers import CONTROL_N
 from selfdrive.modeld.constants import T_IDXS
@@ -6,21 +6,25 @@ from selfdrive.controls.lib.pid import LongPIDController
 from selfdrive.controls.lib.dynamic_gas import DynamicGas
 from common.op_params import opParams
 
-LongCtrlState = log.ControlsState.LongControlState
+LongCtrlState = car.CarControl.Actuators.LongControlState
 
 STOPPING_EGO_SPEED = 0.5
 STOPPING_TARGET_SPEED_OFFSET = 0.01
 STARTING_TARGET_SPEED = 0.5
-BRAKE_THRESHOLD_TO_PID = 0.2
+DECEL_THRESHOLD_TO_PID = 0.8
 
-BRAKE_STOPPING_TARGET = 0.5  # apply at least this amount of brake to maintain the vehicle stationary
+DECEL_STOPPING_TARGET = 2.0  # apply at least this amount of brake to maintain the vehicle stationary
 
 RATE = 100.0
-DEFAULT_LONG_LAG = 0.15
+
+# As per ISO 15622:2018 for all speeds
+ACCEL_MIN_ISO = -3.5 # m/s^2
+ACCEL_MAX_ISO = 2.0 # m/s^2
 
 
+# TODO this logic isn't really car independent, does not belong here
 def long_control_state_trans(active, long_control_state, v_ego, v_target, v_pid,
-                             output_gb, brake_pressed, cruise_standstill, min_speed_can):
+                             output_accel, brake_pressed, cruise_standstill, min_speed_can):
   """Update longitudinal control state machine"""
   stopping_target_speed = min_speed_can + STOPPING_TARGET_SPEED_OFFSET
   stopping_condition = (v_ego < 2.0 and cruise_standstill) or \
@@ -49,14 +53,14 @@ def long_control_state_trans(active, long_control_state, v_ego, v_target, v_pid,
     elif long_control_state == LongCtrlState.starting:
       if stopping_condition:
         long_control_state = LongCtrlState.stopping
-      elif output_gb >= -BRAKE_THRESHOLD_TO_PID:
+      elif output_accel >= -DECEL_THRESHOLD_TO_PID:
         long_control_state = LongCtrlState.pid
 
   return long_control_state
 
 
 class LongControl():
-  def __init__(self, CP, compute_gb):
+  def __init__(self, CP):
     self.long_control_state = LongCtrlState.off  # initialized to off
     # kdBP = [0., 16., 35.]
     # kdV = [0.08, 1.215, 2.51]
@@ -65,10 +69,9 @@ class LongControl():
                                  (CP.longitudinalTuning.kiBP, CP.longitudinalTuning.kiV),
                                  ([0], [0]),
                                  rate=RATE,
-                                 sat_limit=0.8,
-                                 convert=compute_gb)
+                                 sat_limit=0.8)
     self.v_pid = 0.0
-    self.last_output_gb = 0.0
+    self.last_output_accel = 0.0
 
     # self.op_params = opParams()
     # self.dynamic_gas = DynamicGas(CP, candidate)
@@ -78,7 +81,7 @@ class LongControl():
     self.pid.reset()
     self.v_pid = v_pid
 
-  def update(self, active, CS, CP, long_plan, extras):
+  def update(self, active, CS, CP, long_plan, accel_limits, extras):
     """Update longitudinal control. This updates the state machine and runs a PID loop"""
     # Interp control trajectory
     # TODO estimate car specific lag, use .15s for now
@@ -88,64 +91,67 @@ class LongControl():
       v_target = interp(speed_delay, T_IDXS[:CONTROL_N], long_plan.speeds)
       v_target_future = long_plan.speeds[-1]
       a_target = interp(accel_delay, T_IDXS[:CONTROL_N], long_plan.accels)
+      # TODO: experiment with this
+      # v_target = interp(CP.longitudinalActuatorDelay, T_IDXS[:CONTROL_N], long_plan.speeds)
+      # v_target_future = long_plan.speeds[-1]
+      # a_target = 2 * (v_target - long_plan.speeds[0])/CP.longitudinalActuatorDelay - long_plan.accels[0]
     else:
       v_target = 0.0
       v_target_future = 0.0
       a_target = 0.0
 
+    # TODO: This check is not complete and needs to be enforced by MPC
+    a_target = clip(a_target, ACCEL_MIN_ISO, ACCEL_MAX_ISO)
 
-    # Actuation limits
-    gas_max = interp(CS.vEgo, CP.gasMaxBP, CP.gasMaxV)
-    brake_max = interp(CS.vEgo, CP.brakeMaxBP, CP.brakeMaxV)
+    self.pid.neg_limit = accel_limits[0]
+    self.pid.pos_limit = accel_limits[1]
 
     # if self.op_params.get('dynamic_gas'):
     #   gas_max = self.dynamic_gas.update(CS, extras)
 
     # Update state machine
-    output_gb = self.last_output_gb
+    output_accel = self.last_output_accel
     self.long_control_state = long_control_state_trans(active, self.long_control_state, CS.vEgo,
-                                                       v_target_future, self.v_pid, output_gb,
+                                                       v_target_future, self.v_pid, output_accel,
                                                        CS.brakePressed, CS.cruiseState.standstill, CP.minSpeedCan)
 
     v_ego_pid = max(CS.vEgo, CP.minSpeedCan)  # Without this we get jumps, CAN bus reports 0 when speed < 0.3
 
     if self.long_control_state == LongCtrlState.off or CS.gasPressed:
       self.reset(v_ego_pid)
-      output_gb = 0.
+      output_accel = 0.
 
     # tracking objects and driving
     elif self.long_control_state == LongCtrlState.pid:
       self.v_pid = v_target
-      self.pid.pos_limit = gas_max
-      self.pid.neg_limit = - brake_max
 
       # Toyota starts braking more when it thinks you want to stop
       # Freeze the integrator so we don't accelerate to compensate, and don't allow positive acceleration
       prevent_overshoot = not CP.stoppingControl and CS.vEgo < 1.5 and v_target_future < 0.7
       deadzone = interp(v_ego_pid, CP.longitudinalTuning.deadzoneBP, CP.longitudinalTuning.deadzoneV)
+      freeze_integrator = prevent_overshoot
 
-      output_gb = self.pid.update(self.v_pid, v_ego_pid, speed=v_ego_pid, deadzone=deadzone, feedforward=a_target, freeze_integrator=prevent_overshoot)
+      output_accel = self.pid.update(self.v_pid, v_ego_pid, speed=v_ego_pid, deadzone=deadzone, feedforward=a_target, freeze_integrator=freeze_integrator)
 
       if prevent_overshoot:
-        output_gb = min(output_gb, 0.0)
+        output_accel = min(output_accel, 0.0)
 
     # Intention is to stop, switch to a different brake control until we stop
     elif self.long_control_state == LongCtrlState.stopping:
       # Keep applying brakes until the car is stopped
-      if not CS.standstill or output_gb > -BRAKE_STOPPING_TARGET:
-        output_gb -= CP.stoppingBrakeRate / RATE
-      output_gb = clip(output_gb, -brake_max, gas_max)
+      if not CS.standstill or output_accel > -DECEL_STOPPING_TARGET:
+        output_accel -= CP.stoppingDecelRate / RATE
+      output_accel = clip(output_accel, accel_limits[0], accel_limits[1])
 
       self.reset(CS.vEgo)
 
     # Intention is to move again, release brake fast before handing control to PID
     elif self.long_control_state == LongCtrlState.starting:
-      if output_gb < -0.2:
-        output_gb += CP.startingBrakeRate / RATE
+      if output_accel < -DECEL_THRESHOLD_TO_PID:
+        output_accel += CP.startingAccelRate / RATE
       self.reset(CS.vEgo)
 
-    self.last_output_gb = output_gb
-    final_gas = clip(output_gb, 0., gas_max)
-    final_brake = -clip(output_gb, -brake_max, 0.)
+    self.last_output_accel = output_accel
+    final_accel = clip(output_accel, accel_limits[0], accel_limits[1])
 
-    return final_gas, final_brake, v_target, a_target
+    return final_accel, v_target, a_target

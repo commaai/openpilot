@@ -5,7 +5,16 @@ Ecu = car.CarParams.Ecu
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 class CarControllerParams():
-  ACCEL_MAX = 1.6
+  # Allow small margin below -3.5 m/s^2 from ISO 15622:2018 since we
+  # perform the closed loop control, and might need some
+  # to apply some more braking if we're on a downhill slope.
+  # Our controller should still keep the 2 second average above
+  # -3.5 m/s^2 as per planner limits
+  NIDEC_ACCEL_MIN = -4.0 # m/s^2
+  NIDEC_ACCEL_MAX = 1.6 # m/s^2, lower than 2.0 m/s^2 for tuning reasons
+
+  BOSCH_ACCEL_MIN = -3.5 # m/s^2
+  BOSCH_ACCEL_MAX = 2.0 # m/s^2
 
   def __init__(self, CP):
     self.BRAKE_MAX = 1024//4
@@ -22,10 +31,7 @@ class CarControllerParams():
     self.NIDEC_MAX_ACCEL_V = [0.5, 2.4, 1.4, 0.6]
     self.NIDEC_MAX_ACCEL_BP = [0.0, 4.0, 10., 20.]
 
-
-    self.BOSCH_ACCEL_LOOKUP_BP = [-1., 0., 0.6]
-    self.BOSCH_ACCEL_LOOKUP_V = [-3.5, 0., 2.]
-    self.BOSCH_GAS_LOOKUP_BP = [0., 0.6]
+    self.BOSCH_GAS_LOOKUP_BP = [0., 2.0]  # 2m/s^2
     self.BOSCH_GAS_LOOKUP_V = [0, 2000]
 
 
@@ -51,8 +57,6 @@ VISUAL_HUD = {
 class CAR:
   ACCORD = "HONDA ACCORD 2018"
   ACCORDH = "HONDA ACCORD HYBRID 2018"
-  ACCORD_2021 = "HONDA ACCORD 2021"
-  ACCORDH_2021 = "HONDA ACCORD HYBRID 2021"
   CIVIC = "HONDA CIVIC 2016"
   CIVIC_BOSCH = "HONDA CIVIC (BOSCH) 2019"
   CIVIC_BOSCH_DIESEL = "HONDA CIVIC SEDAN 1.6 DIESEL 2019"
@@ -71,6 +75,7 @@ class CAR:
   PILOT_2019 = "HONDA PILOT 2019"
   RIDGELINE = "HONDA RIDGELINE 2017"
   INSIGHT = "HONDA INSIGHT 2019"
+  HONDA_E = "HONDA E 2020"
 
 # diag message that in some Nidec cars only appear with 1s freq if VIN query is performed
 DIAG_MSGS = {1600: 5, 1601: 8}
@@ -289,87 +294,17 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdCamera, 0x18dab5f1, None): [
       b'36161-TWA-A070\x00\x00',
+      b'36161-TWA-A330\x00\x00',
     ],
     (Ecu.fwdRadar, 0x18dab0f1, None): [
       b'36802-TWA-A080\x00\x00',
       b'36802-TWA-A070\x00\x00',
+      b'36802-TWA-A330\x00\x00',
     ],
     (Ecu.eps, 0x18da30f1, None): [
       b'39990-TVA-A160\x00\x00',
       b'39990-TVA-A150\x00\x00',
       b'39990-TVA-A340\x00\x00',
-    ],
-  },
-  CAR.ACCORD_2021: {
-    (Ecu.programmedFuelInjection, 0x18da10f1, None): [
-      b'37805-6B2-C520\x00\x00',
-    ],
-    (Ecu.transmission, 0x18da1ef1, None): [
-      b'28102-6B8-A700\x00\x00',
-    ],
-    (Ecu.electricBrakeBooster, 0x18da2bf1, None): [
-      b'46114-TVA-A320\x00\x00',
-    ],
-    (Ecu.gateway, 0x18daeff1, None): [
-      b'38897-TVA-A020\x00\x00',
-    ],
-    (Ecu.vsa, 0x18da28f1, None): [
-      b'57114-TVA-E520\x00\x00',
-    ],
-    (Ecu.srs, 0x18da53f1, None): [
-      b'77959-TVA-L420\x00\x00',
-    ],
-    (Ecu.combinationMeter, 0x18da60f1, None): [
-      b'78109-TVC-A230\x00\x00',
-    ],
-    (Ecu.hud, 0x18da61f1, None): [
-      b'78209-TVA-A110\x00\x00',
-    ],
-    (Ecu.shiftByWire, 0x18da0bf1, None): [
-      b'54008-TVC-A910\x00\x00',
-    ],
-    (Ecu.fwdCamera, 0x18dab5f1, None): [
-      b'36161-TVC-A330\x00\x00',
-    ],
-    (Ecu.fwdRadar, 0x18dab0f1, None): [
-      b'36802-TVC-A330\x00\x00',
-    ],
-    (Ecu.eps, 0x18da30f1, None): [
-      b'39990-TVA-A340\x00\x00',
-    ],
-    (Ecu.unknown, 0x18da3af1, None): [
-      b'39390-TVA-A120\x00\x00',
-    ],
-  },
-  CAR.ACCORDH_2021: {
-    (Ecu.gateway, 0x18daeff1, None): [
-      b'38897-TWD-J020\x00\x00',
-    ],
-    (Ecu.vsa, 0x18da28f1, None): [
-      b'57114-TWA-A530\x00\x00',
-      b'57114-TWA-B520\x00\x00',
-    ],
-    (Ecu.srs, 0x18da53f1, None): [
-      b'77959-TWA-L420\x00\x00',
-    ],
-    (Ecu.combinationMeter, 0x18da60f1, None): [
-      b'78109-TWA-A030\x00\x00',
-      b'78109-TWA-A230\x00\x00',
-    ],
-    (Ecu.shiftByWire, 0x18da0bf1, None): [
-      b'54008-TWA-A910\x00\x00',
-    ],
-    (Ecu.fwdCamera, 0x18dab5f1, None): [
-      b'36161-TWA-A330\x00\x00',
-    ],
-    (Ecu.fwdRadar, 0x18dab0f1, None): [
-      b'36802-TWA-A330\x00\x00',
-    ],
-    (Ecu.eps, 0x18da30f1, None): [
-      b'39990-TVA-A340\x00\x00',
-    ],
-    (Ecu.unknown, 0x18da3af1, None): [
-      b'39390-TVA-A120\x00\x00',
     ],
   },
   CAR.CIVIC: {
@@ -1297,13 +1232,37 @@ FW_VERSIONS = {
       b'78109-TV9-A510\x00\x00',
     ],
   },
+  CAR.HONDA_E:{
+    (Ecu.eps, 0x18DA30F1, None):[
+      b'39990-TYF-N030\x00\x00'
+    ],
+    (Ecu.gateway, 0x18DAEFF1, None):[
+      b'38897-TYF-E140\x00\x00'
+    ],
+    (Ecu.shiftByWire, 0x18DA0BF1, None):[
+      b'54008-TYF-E010\x00\x00'
+    ],
+    (Ecu.srs, 0x18DA53F1, None):[
+      b'77959-TYF-G430\x00\x00'
+    ],
+    (Ecu.combinationMeter, 0x18DA60F1, None):[
+      b'78108-TYF-G610\x00\x00'
+    ],
+    (Ecu.fwdRadar, 0x18DAB0F1, None):[
+      b'36802-TYF-E030\x00\x00'
+    ],
+    (Ecu.fwdCamera, 0x18DAB5F1, None):[
+      b'36161-TYF-E020\x00\x00'
+    ],
+    (Ecu.vsa, 0x18DA28F1, None):[
+      b'57114-TYF-E030\x00\x00'
+    ],
+  },
 }
 
 DBC = {
   CAR.ACCORD: dbc_dict('honda_accord_2018_can_generated', None),
-  CAR.ACCORD_2021: dbc_dict('honda_accord_2018_can_generated', None),
   CAR.ACCORDH: dbc_dict('honda_accord_2018_can_generated', None),
-  CAR.ACCORDH_2021: dbc_dict('honda_accord_2018_can_generated', None),
   CAR.ACURA_ILX: dbc_dict('acura_ilx_2016_can_generated', 'acura_ilx_2016_nidec'),
   CAR.ACURA_RDX: dbc_dict('acura_rdx_2018_can_generated', 'acura_ilx_2016_nidec'),
   CAR.ACURA_RDX_3G: dbc_dict('acura_rdx_2020_can_generated', None),
@@ -1315,13 +1274,14 @@ DBC = {
   CAR.CRV_EU: dbc_dict('honda_crv_executive_2016_can_generated', 'acura_ilx_2016_nidec'),
   CAR.CRV_HYBRID: dbc_dict('honda_crv_hybrid_2019_can_generated', None),
   CAR.FIT: dbc_dict('honda_fit_ex_2018_can_generated', 'acura_ilx_2016_nidec'),
-  CAR.HRV: dbc_dict('honda_hrv_touring_2019_can_generated', 'acura_ilx_2016_nidec'),
+  CAR.HRV: dbc_dict('honda_fit_ex_2018_can_generated', 'acura_ilx_2016_nidec'),
   CAR.ODYSSEY: dbc_dict('honda_odyssey_exl_2018_generated', 'acura_ilx_2016_nidec'),
   CAR.ODYSSEY_CHN: dbc_dict('honda_odyssey_extreme_edition_2018_china_can_generated', 'acura_ilx_2016_nidec'),
   CAR.PILOT: dbc_dict('honda_pilot_touring_2017_can_generated', 'acura_ilx_2016_nidec'),
   CAR.PILOT_2019: dbc_dict('honda_pilot_touring_2017_can_generated', 'acura_ilx_2016_nidec'),
   CAR.RIDGELINE: dbc_dict('honda_ridgeline_black_edition_2017_can_generated', 'acura_ilx_2016_nidec'),
   CAR.INSIGHT: dbc_dict('honda_insight_ex_2019_can_generated', None),
+  CAR.HONDA_E: dbc_dict('acura_rdx_2020_can_generated', None),
 }
 
 STEER_THRESHOLD = {
@@ -1340,9 +1300,6 @@ SPEED_FACTOR = {
   CAR.HRV: 1.025,
 }
 
-OLD_NIDEC_LONG_CONTROL = set([CAR.ODYSSEY, CAR.ACURA_RDX, CAR.CRV, CAR.HRV])
-HONDA_BOSCH = set([CAR.ACCORD, CAR.ACCORD_2021, CAR.ACCORDH, CAR.ACCORDH_2021, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_5G, CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G])
-HONDA_BOSCH_ALT_BRAKE_SIGNAL = set([CAR.ACCORD, CAR.ACCORD_2021, CAR.CRV_5G, CAR.ACURA_RDX_3G])
-
-# Bosch models with alternate set of LKAS_HUD messages
-HONDA_BOSCH_EXT = set([CAR.ACCORD_2021, CAR.ACCORDH_2021])
+HONDA_NIDEC_ALT_PCM_ACCEL = set([CAR.ODYSSEY])
+HONDA_BOSCH = set([CAR.ACCORD, CAR.ACCORDH, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_5G, CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G, CAR.HONDA_E])
+HONDA_BOSCH_ALT_BRAKE_SIGNAL = set([CAR.ACCORD, CAR.CRV_5G, CAR.ACURA_RDX_3G])

@@ -28,11 +28,11 @@
 
 #define UI_BUF_COUNT 4
 
-#define LOG_CAMERA_ID_FCAMERA 0
-#define LOG_CAMERA_ID_DCAMERA 1
-#define LOG_CAMERA_ID_ECAMERA 2
-#define LOG_CAMERA_ID_QCAMERA 3
-#define LOG_CAMERA_ID_MAX 4
+enum CameraType {
+  RoadCam = 0,
+  DriverCam,
+  WideRoadCam
+};
 
 const bool env_send_driver = getenv("SEND_DRIVER") != NULL;
 const bool env_send_road = getenv("SEND_ROAD") != NULL;
@@ -49,6 +49,7 @@ typedef struct CameraInfo {
 } CameraInfo;
 
 typedef struct LogCameraInfo {
+  CameraType type;
   const char* filename;
   const char* frame_packet_name;
   const char* encode_idx_name;
@@ -60,6 +61,7 @@ typedef struct LogCameraInfo {
   bool downscale;
   bool has_qcamera;
   bool trigger_rotate;
+  bool enable;
 } LogCameraInfo;
 
 typedef struct FrameMetadata {

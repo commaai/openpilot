@@ -15,37 +15,17 @@ EventName = car.CarEvent.EventName
 TransmissionType = car.CarParams.TransmissionType
 
 
-def compute_gb_honda_bosch(accel, speed):
-  return float(accel) / 3.5
-
-
-def compute_gb_honda_nidec(accel, speed):
-  creep_brake = 0.0
-  creep_speed = 2.3
-  creep_brake_value = 0.15
-  if speed < creep_speed:
-    creep_brake = (creep_speed - speed) / creep_speed * creep_brake_value
-  return float(accel) / 4.8 - creep_brake
-
-
-def compute_gb_acura(accel, speed):
-  GB_VALUES = [-2., 0.0, 0.8]
-  GB_BP = [-5., 0.0, 4.0]
-  return interp(accel, GB_BP, GB_VALUES)
-
-
 class CarInterface(CarInterfaceBase):
-  def __init__(self, CP, CarController, CarState):
-    super().__init__(CP, CarController, CarState)
-
-    if self.CS.CP.carFingerprint in HONDA_BOSCH:
-      self.compute_gb = compute_gb_honda_bosch
-    else:
-      self.compute_gb = compute_gb_honda_nidec
-
   @staticmethod
-  def compute_gb(accel, speed): # pylint: disable=method-hidden
-    raise NotImplementedError
+  def get_pid_accel_limits(CP, current_speed, cruise_speed):
+    if CP.carFingerprint in HONDA_BOSCH:
+      return CarControllerParams.BOSCH_ACCEL_MIN, CarControllerParams.BOSCH_ACCEL_MAX
+    else:
+      # NIDECs don't allow acceleration near cruise_speed,
+      # so limit limits of pid to prevent windup
+      ACCEL_MAX_VALS = [CarControllerParams.NIDEC_ACCEL_MAX, 0.2]
+      ACCEL_MAX_BP = [cruise_speed - 2., cruise_speed - .2]
+      return CarControllerParams.NIDEC_ACCEL_MIN, interp(current_speed, ACCEL_MAX_BP, ACCEL_MAX_VALS)
 
   @staticmethod
   def calc_accel_override(a_ego, a_target, v_ego, v_target):
@@ -77,7 +57,7 @@ class CarInterface(CarInterfaceBase):
     # accelOverride is more or less the max throttle allowed to pcm: usually set to a constant
     # unless aTargetMax is very high and then we scale with it; this help in quicker restart
 
-    return float(max(max_accel, a_target / CarControllerParams.ACCEL_MAX)) * min(speedLimiter, accelLimiter)
+    return float(max(max_accel, a_target / CarControllerParams.NIDEC_ACCEL_MAX)) * min(speedLimiter, accelLimiter)
 
   @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=[]):  # pylint: disable=dangerous-default-value
@@ -158,7 +138,7 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 1.
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.8], [0.24]]
 
-    elif candidate in (CAR.ACCORD, CAR.ACCORD_2021, CAR.ACCORDH, CAR.ACCORDH_2021):
+    elif candidate in (CAR.ACCORD, CAR.ACCORDH):
       stop_and_go = True
       ret.mass = 3279. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.83
@@ -309,6 +289,16 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.82
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.18]]
 
+    elif candidate == CAR.HONDA_E:
+      stop_and_go = True
+      ret.mass = 3338.8 * CV.LB_TO_KG + STD_CARGO_KG
+      ret.wheelbase = 2.5
+      ret.centerToFront = ret.wheelbase * 0.5
+      ret.steerRatio = 16.71
+      ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
+      tire_stiffness_factor = 0.82
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.18]] # TODO: can probably use some tuning
+
     else:
       raise ValueError("unsupported car %s" % candidate)
 
@@ -332,17 +322,6 @@ class CarInterface(CarInterfaceBase):
     # mass and CG position, so all cars will have approximately similar dyn behaviors
     ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront,
                                                                          tire_stiffness_factor=tire_stiffness_factor)
-
-    if candidate in HONDA_BOSCH:
-      ret.gasMaxBP = [0.]  # m/s
-      ret.gasMaxV = [0.6]
-      ret.brakeMaxBP = [0.]  # m/s
-      ret.brakeMaxV = [1.]   # max brake allowed, 3.5m/s^2
-    else:
-      ret.gasMaxBP = [0.]  # m/s
-      ret.gasMaxV = [0.6]  # max gas allowed
-      ret.brakeMaxBP = [5., 20.]  # m/s
-      ret.brakeMaxV = [1., 0.8]   # max brake allowed
 
     ret.startAccel = 0.5
 
@@ -422,7 +401,7 @@ class CarInterface(CarInterfaceBase):
       # we engage when pcm is active (rising edge)
       if ret.cruiseState.enabled and not self.CS.out.cruiseState.enabled:
         events.add(EventName.pcmEnable)
-      elif not ret.cruiseState.enabled and (c.actuators.brake <= 0. or not self.CP.openpilotLongitudinalControl):
+      elif not ret.cruiseState.enabled and (c.actuators.accel >= 0. or not self.CP.openpilotLongitudinalControl):
         # it can happen that car cruise disables while comma system is enabled: need to
         # keep braking if needed or if the speed is very low
         if ret.vEgo < self.CP.minEnableSpeed + 2.:
