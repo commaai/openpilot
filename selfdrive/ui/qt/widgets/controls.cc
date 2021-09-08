@@ -45,7 +45,7 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
   if (!desc.isEmpty()) {
     description = new QLabel(desc);
     description->setContentsMargins(40, 20, 40, 20);
-    description->setStyleSheet("font-size: 40px; color:grey");
+    description->setStyleSheet("font-size: 40px; color: grey");
     description->setWordWrap(true);
     description->setVisible(false);
     main_layout->addWidget(description);
