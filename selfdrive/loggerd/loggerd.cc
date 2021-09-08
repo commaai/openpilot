@@ -57,6 +57,7 @@ const LogCameraInfo cameras_logged[] = {
     .stream_type = VISION_STREAM_YUV_BACK,
     .filename = "fcamera.hevc",
     .frame_packet_name = "roadCameraState",
+    .encode_idx_name = "roadEncodeIdx",
     .fps = MAIN_FPS,
     .bitrate = MAIN_BITRATE,
     .is_h265 = true,
@@ -70,6 +71,7 @@ const LogCameraInfo cameras_logged[] = {
     .stream_type = VISION_STREAM_YUV_FRONT,
     .filename = "dcamera.hevc",
     .frame_packet_name = "driverCameraState",
+    .encode_idx_name = "driverEncodeIdx",
     .fps = MAIN_FPS, // on EONs, more compressed this way
     .bitrate = DCAM_BITRATE,
     .is_h265 = true,
@@ -83,6 +85,7 @@ const LogCameraInfo cameras_logged[] = {
     .stream_type = VISION_STREAM_YUV_WIDE,
     .filename = "ecamera.hevc",
     .frame_packet_name = "wideRoadCameraState",
+    .encode_idx_name = "wideRoadEncodeIdx",
     .fps = MAIN_FPS,
     .bitrate = MAIN_BITRATE,
     .is_h265 = true,
@@ -130,11 +133,11 @@ LoggerdState s;
 void encoder_thread(const LogCameraInfo &cam_info) {
   set_thread_name(cam_info.filename);
 
-  QlogState qlog_state = [](CameraType type) {
-    const char *names[] = {"roadEncodeIdx", "driverEncodeIdx", "wideRoadEncodeIdx"};
-    auto it = std::find_if(std::begin(services), std::end(services), [=](service &item) { return strcmp(item.name, names[type]) == 0; });
+  QlogState qlog_state = [&]() {
+    auto it = std::find_if(std::begin(services), std::end(services),
+                           [&](service &item) { return strcmp(item.name, cam_info.encode_idx_name) == 0; });
     return QlogState{.counter = 0, .freq = it->decimation};
-  }(cam_info.type);
+  }();
 
   int cnt = 0, cur_seg = -1;
   int encode_idx = 0;
