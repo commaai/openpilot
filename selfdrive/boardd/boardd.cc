@@ -81,19 +81,22 @@ void safety_setter_thread(Panda *panda) {
     }
     util::sleep_for(100);
   }
-  LOGW("got %d bytes CarParams", params.size());
 
-  AlignedBuffer aligned_buf;
-  capnp::FlatArrayMessageReader cmsg(aligned_buf.align(params.data(), params.size()));
-  cereal::CarParams::Reader car_params = cmsg.getRoot<cereal::CarParams>();
-  cereal::CarParams::SafetyModel safety_model = car_params.getSafetyModel();
+  if (params.size() > 0) {
+    LOGW("got %d bytes CarParams", params.size());
 
-  panda->set_unsafe_mode(0);  // see safety_declarations.h for allowed values
+    AlignedBuffer aligned_buf;
+    capnp::FlatArrayMessageReader cmsg(aligned_buf.align(params.data(), params.size()));
+    cereal::CarParams::Reader car_params = cmsg.getRoot<cereal::CarParams>();
+    cereal::CarParams::SafetyModel safety_model = car_params.getSafetyModel();
 
-  auto safety_param = car_params.getSafetyParam();
-  LOGW("setting safety model: %d with param %d", (int)safety_model, safety_param);
+    panda->set_unsafe_mode(0);  // see safety_declarations.h for allowed values
 
-  panda->set_safety_model(safety_model, safety_param);
+    auto safety_param = car_params.getSafetyParam();
+    LOGW("setting safety model: %d with param %d", (int)safety_model, safety_param);
+
+    panda->set_safety_model(safety_model, safety_param);
+  }
 
   safety_setter_thread_running = false;
 }
