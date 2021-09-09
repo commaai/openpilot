@@ -41,8 +41,8 @@ std::atomic<bool> ignition(false);
 ExitHandler do_exit;
 
 std::string get_time_str(const struct tm &time) {
-  std::string s(30, '\0');
-  std::strftime(&s[0], s.size(), "%Y-%m-%d %H:%M:%S", &time);
+  char s[30] = {'\0'};
+  std::strftime(s, std::size(s), "%Y-%m-%d %H:%M:%S", &time);
   return s;
 }
 
