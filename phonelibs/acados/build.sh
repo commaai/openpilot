@@ -43,10 +43,27 @@ if [ -f /EON ]; then
   pushd $INSTALL_DIR/lib
   for lib in $(ls .); do
     if ! readlink $lib; then
-      patchelf --set-soname "$PWD/$lib" $lib
+      patchelf --set-soname $PWD/$lib $lib
+
+      if [ "$lib" = "libacados.so" ]; then
+        for nlib in "libhpipm.so" "libblasfeo.so" "libqpOASES_e.so.3.1"; do
+          patchelf --replace-needed $nlib $PWD/$nlib $lib
+        done
+      fi
+
+      if [ "$lib" = "libhpipm.so" ]; then
+        patchelf --replace-needed libblasfeo.so $PWD/libblasfeo.so $lib
+      fi
+
+      # pad extra byte to workaround bionic linker bug
+      # https://android.googlesource.com/platform/bionic/+/93ce35434ca5af43a7449e289959543f0a2426fa%5E%21/#F0
+      dd if=/dev/zero bs=1 count=1 >> $lib
     fi
   done
   popd
+
+  cd $DIR
+  git checkout $INSTALL_DIR/t_renderer
 fi
 
 # build tera
