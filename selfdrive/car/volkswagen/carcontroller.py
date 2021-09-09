@@ -96,7 +96,6 @@ class CarController():
       elif enabled and CS.out.standstill:
         # Blip the Resume button if we're engaged at standstill.
         # FIXME: This is a naive implementation, improve with visiond or radar input.
-        # A subset of MQBs like to "creep" too aggressively with this implementation.
         self.graButtonStatesToSend = BUTTON_STATES.copy()
         self.graButtonStatesToSend["resumeCruise"] = True
 
