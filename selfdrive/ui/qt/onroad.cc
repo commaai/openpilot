@@ -119,30 +119,25 @@ void OnroadWindow::paintEvent(QPaintEvent *event) {
 
 OnroadHud::OnroadHud(QWidget *parent) : QWidget(parent) {
   setAttribute(Qt::WA_TransparentForMouseEvents, true);
+  connect(this, &OnroadHud::valueChanged, [=] { update(); });
 
   engage_img = QPixmap("../assets/img_chffr_wheel.png").scaled(img_size, img_size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
   dm_img = QPixmap("../assets/img_driver_face.png").scaled(img_size, img_size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-
-  connect(this, &OnroadHud::valueChanged, [=] { update(); });
 }
 
 void OnroadHud::updateState(const UIState &s) {
+  auto getMaxSpeed = [=](float speed) {
+    const int SET_SPEED_NA = 255;
+    bool setted = speed > 0 && (int)speed != SET_SPEED_NA;
+    return setted ? QString::number((int)(speed * (is_metric ? 1 : 0.6225))) : "N/A";
+  };
+
   SubMaster &sm = *(s.sm);
-
-  auto v = sm["carState"].getCarState().getVEgo() * (is_metric ? 3.6 : 2.2369363);
-  setProperty("speed", QString::number(int(v)));
-  setProperty("speedUnit", is_metric ? "km/h" : "mph");
-
   auto cs = sm["controlsState"].getControlsState();
-  const int SET_SPEED_NA = 255;
-  float vcruise = cs.getVCruise();
-  if (vcruise > 0 && (int)vcruise != SET_SPEED_NA) {
-    float max_speed = vcruise * (is_metric ? 1 : 0.6225);
-    setProperty("maxSpeed", QString::number((int)max_speed));
-  } else {
-    setProperty("maxSpeed", "N/A");
-  }
-
+  int speed = (int)(sm["carState"].getCarState().getVEgo() * (is_metric ? 3.6 : 2.2369363));
+  setProperty("maxSpeed", getMaxSpeed(cs.getVCruise()));
+  setProperty("speed", QString::number(speed));
+  setProperty("speedUnit", is_metric ? "km/h" : "mph");
   setProperty("dmActive", sm["driverMonitoringState"].getDriverMonitoringState().getIsActiveMode());
   setProperty("hideDM", cs.getAlertSize() == cereal::ControlsState::AlertSize::NONE);
   setProperty("engageable", cs.getEngageable());
