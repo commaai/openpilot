@@ -38,7 +38,21 @@ cp -r $DIR/acados_repo/lib $INSTALL_DIR
 cp -r $DIR/acados_repo/interfaces/acados_template/acados_template $DIR/../../pyextra
 #pip3 install -e $DIR/acados/interfaces/acados_template
 
+# hack to workaround no rpath on android
+if [ -f /EON ]; then
+  pushd $INSTALL_DIR/lib
+  for lib in $(ls .); do
+    if ! readlink $lib; then
+      patchelf --set-soname "$PWD/$lib" $lib
+    fi
+  done
+  popd
+fi
+
 # build tera
-cd $DIR/acados_repo/interfaces/acados_template/tera_renderer/
-cargo build --verbose --release
-cp target/release/t_renderer $INSTALL_DIR/
+# build with commaai/termux-packages for NEOS
+if [ ! -f /EON ]; then
+  cd $DIR/acados_repo/interfaces/acados_template/tera_renderer/
+  cargo build --verbose --release
+  cp target/release/t_renderer $INSTALL_DIR/
+fi
