@@ -332,7 +332,7 @@ void sensors_init(int video0_fd, int sensor_fd, int camera_num) {
   power->power_settings[1].power_seq_type = 1;
   power->power_settings[2].power_seq_type = 3;
 
-  LOGD("-- Probing sensor %d", camera_num);
+  LOGD("probing the sensor");
   int ret = cam_control(sensor_fd, CAM_SENSOR_PROBE_CMD, (void *)(uintptr_t)cam_packet_handle, 0);
   assert(ret == 0);
 
@@ -558,11 +558,13 @@ static void camera_open(CameraState *s) {
   s->sensor_fd = open_v4l_by_name_and_index("cam-sensor-driver", s->camera_num);
   assert(s->sensor_fd >= 0);
   LOGD("opened sensor");
+
   s->csiphy_fd = open_v4l_by_name_and_index("cam-csiphy-driver", s->camera_num);
   assert(s->csiphy_fd >= 0);
   LOGD("opened csiphy");
 
   // probe the sensor
+  LOGD("-- Probing sensor %d", s->camera_num);
   sensors_init(s->multi_cam_state->video0_fd, s->sensor_fd, s->camera_num);
 
   // create session
@@ -580,25 +582,44 @@ static void camera_open(CameraState *s) {
 
   struct cam_isp_in_port_info in_port_info = {
       .res_type = (uint32_t[]){CAM_ISP_IFE_IN_RES_PHY_0, CAM_ISP_IFE_IN_RES_PHY_1, CAM_ISP_IFE_IN_RES_PHY_2}[s->camera_num],
+
       .lane_type = CAM_ISP_LANE_TYPE_DPHY,
       .lane_num = 4,
       .lane_cfg = 0x3210,
+
+      .vc = 0x0,
       // .dt = 0x2C; //CSI_RAW12
       .dt = 0x2B,  //CSI_RAW10
       .format = CAM_FORMAT_MIPI_RAW_10,
+
       .test_pattern = 0x2,  // 0x3?
+      .usage_type = 0x0,
+
+      .left_start = 0,
       .left_stop = FRAME_WIDTH - 1,
       .left_width = FRAME_WIDTH,
+
+      .right_start = 0,
       .right_stop = FRAME_WIDTH - 1,
       .right_width = FRAME_WIDTH,
+
+      .line_start = 0,
       .line_stop = FRAME_HEIGHT - 1,
       .height = FRAME_HEIGHT,
+
+      .pixel_clk = 0x0,
+      .batch_size = 0x0,
+      .dsp_mode = 0x0,
+      .hbi_cnt = 0x0,
+      .custom_csid = 0x0,
+
       .num_out_res = 0x1,
       .data[0] = (struct cam_isp_out_port_info){
           .res_type = CAM_ISP_IFE_OUT_RES_RDI_0,
           .format = CAM_FORMAT_MIPI_RAW_10,
           .width = FRAME_WIDTH,
           .height = FRAME_HEIGHT,
+          .comp_grp_id = 0x0, .split_point = 0x0, .secure_mode = 0x0,
       },
   };
   struct cam_isp_resource isp_resource = {
