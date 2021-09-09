@@ -22,6 +22,8 @@ class OnroadHud : public QWidget {
 public:
   OnroadHud(QWidget *parent = 0);
   void updateAlert(const Alert &a, const QColor &color);
+  void setMetric(bool metric) { is_metric = metric; }
+
 public slots:
   void updateState(const UIState &s);
 
@@ -38,7 +40,7 @@ private:
   const int radius = 192;
   const int img_size = 135;
   QString speed_, speedUnit_, maxSpeed_;
-  bool metric = false, engageable_ = false, dmActive_ = false, hideDM_ = false;
+  bool is_metric = false, engageable_ = false, dmActive_ = false, hideDM_ = false;
   int status_ = STATUS_DISENGAGED;
 
 signals:

@@ -105,6 +105,8 @@ void OnroadWindow::offroadTransition(bool offroad) {
   // update stream type
   bool wide_cam = Hardware::TICI() && Params().getBool("EnableWideCamera");
   nvg->setStreamType(wide_cam ? VISION_STREAM_RGB_WIDE : VISION_STREAM_RGB_BACK);
+
+  hud->setMetric(Params().getBool("IsMetric"));
 }
 
 void OnroadWindow::paintEvent(QPaintEvent *event) {
@@ -126,15 +128,15 @@ OnroadHud::OnroadHud(QWidget *parent) : QWidget(parent) {
 void OnroadHud::updateState(const UIState &s) {
   SubMaster &sm = *(s.sm);
 
-  auto v = sm["carState"].getCarState().getVEgo() * (metric ? 3.6 : 2.2369363);
+  auto v = sm["carState"].getCarState().getVEgo() * (is_metric ? 3.6 : 2.2369363);
   setProperty("speed", QString::number(int(v)));
-  setProperty("speedUnit", metric ? "km/h" : "mph");
+  setProperty("speedUnit", is_metric ? "km/h" : "mph");
 
   auto cs = sm["controlsState"].getControlsState();
   const int SET_SPEED_NA = 255;
   float vcruise = cs.getVCruise();
   if (vcruise > 0 && (int)vcruise != SET_SPEED_NA) {
-    float max_speed = vcruise * (metric ? 1 : 0.6225);
+    float max_speed = vcruise * (is_metric ? 1 : 0.6225);
     setProperty("maxSpeed", QString::number((int)max_speed));
   } else {
     setProperty("maxSpeed", "N/A");
