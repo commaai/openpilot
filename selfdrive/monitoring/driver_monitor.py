@@ -1,4 +1,4 @@
-from math import atan2, sqrt
+from math import atan2
 
 from cereal import car
 from common.numpy_fast import interp
@@ -40,7 +40,6 @@ class DRIVER_MONITOR_SETTINGS():
     self._METRIC_THRESHOLD = 0.55 if TICI else 0.48
     self._METRIC_THRESHOLD_SLACK = 0.75 if TICI else 0.66
     self._METRIC_THRESHOLD_STRICT = 0.55 if TICI else 0.48
-    self._PITCH_POS_ALLOWANCE = 0.12  # rad, to not be too sensitive on positive pitch
     self._PITCH_NATURAL_OFFSET = 0.02  # people don't seem to look straight when they drive relaxed, rather a bit up
     self._YAW_NATURAL_OFFSET = 0.08  # people don't seem to look straight when they drive relaxed, rather a bit to the right (center of car)
 
@@ -170,13 +169,11 @@ class DriverStatus():
       pitch_error = pose.pitch - self.pose.pitch_offseter.filtered_stat.mean()
       yaw_error = pose.yaw - self.pose.yaw_offseter.filtered_stat.mean()
 
-    # positive pitch allowance
-    if pitch_error > 0.:
-      pitch_error = max(pitch_error - self.settings._PITCH_POS_ALLOWANCE, 0.)
-    pitch_error *= self.settings._PITCH_WEIGHT
-    pose_metric = sqrt(yaw_error**2 + pitch_error**2)
+    pitch_error = 0 if pitch_error > 0 else abs(pitch_error) # no positive pitch limit
+    yaw_error = abs(yaw_error)
 
-    if pose_metric > self.settings._METRIC_THRESHOLD*pose.cfactor:
+    if pitch_error*self.settings._PITCH_WEIGHT > self.settings._METRIC_THRESHOLD*pose.cfactor or \
+       yaw_error > self.settings._METRIC_THRESHOLD*pose.cfactor:
       return DistractedType.BAD_POSE
     elif (blink.left_blink + blink.right_blink)*0.5 > self.settings._BLINK_THRESHOLD*blink.cfactor:
       return DistractedType.BAD_BLINK
