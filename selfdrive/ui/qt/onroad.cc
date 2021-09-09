@@ -132,10 +132,10 @@ void OnroadHud::updateState(const UIState &s) {
 
   auto cs = sm["controlsState"].getControlsState();
   const int SET_SPEED_NA = 255;
-  auto vcruise = cs.getVCruise();
-  if (vcruise != 0 && vcruise != SET_SPEED_NA) {
-    auto max = vcruise * (metric ? 1 : 0.6225);
-    setProperty("maxSpeed", QString::number((int)max));
+  float vcruise = cs.getVCruise();
+  if (vcruise > 0 && (int)vcruise != SET_SPEED_NA) {
+    float max_speed = vcruise * (metric ? 1 : 0.6225);
+    setProperty("maxSpeed", QString::number((int)max_speed));
   } else {
     setProperty("maxSpeed", "N/A");
   }
@@ -171,8 +171,6 @@ void OnroadHud::paintEvent(QPaintEvent *event) {
 
   // current speed
   configFont(p, "Open Sans", 180, "Bold");
-  speed_ = "0";
-  speedUnit_ = "mph";
   drawText(p, rect().center().x(), rc.center().y(), Qt::AlignVCenter, speed_);
   configFont(p, "Open Sans", 65, "Regular");
   drawText(p, rect().center().x(), rc.bottom() - 20, Qt::AlignTop, speedUnit_, 200);
