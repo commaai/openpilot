@@ -39,7 +39,7 @@ class CarInterface(CarInterfaceBase):
       else:
         ret.transmissionType = TransmissionType.manual
 
-      if [msg for msg in [0x40, 0x86, 0xB2] if msg in fingerprint[1]]:  # Airbag_01, LWI_01, ESP_19
+      if any(msg in fingerprint[1] for msg in [0x40, 0x86, 0xB2]):  # Airbag_01, LWI_01, ESP_19
         ret.networkLocation = NetworkLocation.gateway
       else:
         ret.networkLocation = NetworkLocation.fwdCamera
