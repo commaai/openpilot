@@ -70,6 +70,7 @@ void OnroadWindow::mousePressEvent(QMouseEvent* e) {
   if (map != nullptr) {
     bool sidebarVisible = geometry().x() > 0;
     map->setVisible(!sidebarVisible && !map->isVisible());
+    hud->setMapWidth(map->isVisible() ? map->width() : 0);
   }
   // propagation event to parent(HomeWindow)
   QWidget::mousePressEvent(e);
@@ -171,19 +172,22 @@ void OnroadHud::paintEvent(QPaintEvent *event) {
   configFont(p, "Open Sans", 78, is_cruise_set ? "Bold" : "SemiBold");
   drawText(p, rc.center().x(), rc.bottom() - bdr_s, Qt::AlignBottom, maxSpeed_, is_cruise_set ? 255 : 100);
 
+  QRect hud_rect = rect();
+  hud_rect.setRight(hud_rect.right() - map_width);
+
   // current speed
   configFont(p, "Open Sans", 180, "Bold");
-  drawText(p, rect().center().x(), rc.center().y(), Qt::AlignVCenter, speed_);
+  drawText(p, hud_rect.center().x(), rc.center().y(), Qt::AlignVCenter, speed_);
   configFont(p, "Open Sans", 65, "Regular");
-  drawText(p, rect().center().x(), rc.bottom() - 20, Qt::AlignTop, speedUnit_, 200);
+  drawText(p, hud_rect.center().x(), rc.bottom() - 20, Qt::AlignTop, speedUnit_, 200);
 
   // engage-ability icon
   if (engageable_) {
-    drawIcon(p, rect().right() - radius / 2 - bdr_s * 2, radius / 2 + int(bdr_s * 1.5), engage_img, bg_colors[status_], 1.0);
+    drawIcon(p, hud_rect.right() - radius / 2 - bdr_s * 2, radius / 2 + int(bdr_s * 1.5), engage_img, bg_colors[status_], 1.0);
   }
   // dm icon
   if (!hideDM_) {
-    drawIcon(p, radius / 2 + (bdr_s * 2), rect().bottom() - footer_h / 2, dm_img, QColor(0, 0, 0, 70), dmActive_ ? 1.0 : 0.2);
+    drawIcon(p, radius / 2 + (bdr_s * 2), hud_rect.bottom() - footer_h / 2, dm_img, QColor(0, 0, 0, 70), dmActive_ ? 1.0 : 0.2);
   }
 
   drawAlert(p);

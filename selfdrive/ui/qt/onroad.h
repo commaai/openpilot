@@ -23,6 +23,10 @@ public:
   OnroadHud(QWidget *parent = 0);
   void updateAlert(const Alert &a, const QColor &color);
   void setMetric(bool metric) { is_metric = metric; }
+  void setMapWidth(int width) { 
+    map_width = width; 
+    update();
+  }
 
 public slots:
   void updateState(const UIState &s);
@@ -42,6 +46,7 @@ private:
   QString speed_, speedUnit_, maxSpeed_;
   bool is_metric = false, engageable_ = false, dmActive_ = false, hideDM_ = false;
   int status_ = STATUS_DISENGAGED;
+  int map_width = 0;
 
 signals:
   void valueChanged();
