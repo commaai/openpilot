@@ -30,7 +30,7 @@ def plannerd_thread(sm=None, pm=None):
                              poll=['radarState', 'modelV2'], ignore_avg_freq=['radarState'])
 
   if pm is None:
-    pm = messaging.PubMaster(['longitudinalPlan', 'liveLongitudinalMpc', 'lateralPlan', 'liveMpc'])
+    pm = messaging.PubMaster(['longitudinalPlan', 'lateralPlan'])
 
   while True:
     sm.update()

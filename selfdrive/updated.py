@@ -167,6 +167,8 @@ def init_overlay() -> None:
   params.put_bool("UpdateAvailable", False)
   set_consistent_flag(False)
   dismount_overlay()
+  if TICI:
+    run(["sudo", "rm", "-rf", STAGING_ROOT])
   if os.path.isdir(STAGING_ROOT):
     shutil.rmtree(STAGING_ROOT)
 
@@ -213,6 +215,9 @@ def finalize_update() -> None:
   if os.path.exists(FINALIZED):
     shutil.rmtree(FINALIZED)
   shutil.copytree(OVERLAY_MERGED, FINALIZED, symlinks=True)
+
+  run(["git", "reset", "--hard"], FINALIZED)
+  run(["git", "submodule", "foreach", "--recursive", "git", "reset"], FINALIZED)
 
   set_consistent_flag(True)
   cloudlog.info("done finalizing overlay")
@@ -344,6 +349,10 @@ def main():
   proc = psutil.Process()
   if psutil.LINUX:
     proc.ionice(psutil.IOPRIO_CLASS_BE, value=7)
+
+  # Check if we just performed an update
+  if Path(os.path.join(STAGING_ROOT, "old_openpilot")).is_dir():
+    cloudlog.event("update installed")
 
   ov_lock_fd = open(LOCK_FILE, 'w')
   try:

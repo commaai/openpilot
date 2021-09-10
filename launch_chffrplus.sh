@@ -10,10 +10,20 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
 function two_init {
 
-  # Wifi scan
-  wpa_cli IFNAME=wlan0 SCAN
+  # set IO scheduler
+  setprop sys.io.scheduler noop
+  for f in /sys/block/*/queue/scheduler; do
+    echo noop > $f
+  done
 
   # *** shield cores 2-3 ***
+
+  # TODO: should we enable this?
+  # offline cores 2-3 to force recurring timers onto the other cores
+  #echo 0 > /sys/devices/system/cpu/cpu2/online
+  #echo 0 > /sys/devices/system/cpu/cpu3/online
+  #echo 1 > /sys/devices/system/cpu/cpu2/online
+  #echo 1 > /sys/devices/system/cpu/cpu3/online
 
   # android gets two cores
   echo 0-1 > /dev/cpuset/background/cpus
@@ -75,39 +85,42 @@ function two_init {
   # disable bluetooth
   service call bluetooth_manager 8
 
+  # wifi scan
+  wpa_cli IFNAME=wlan0 SCAN
+
   # Check for NEOS update
   if [ $(< /VERSION) != "$REQUIRED_NEOS_VERSION" ]; then
-    if [ -f "$DIR/scripts/continue.sh" ]; then
-      cp "$DIR/scripts/continue.sh" "/data/data/com.termux/files/continue.sh"
-    fi
-
-    if [ ! -f "$BASEDIR/prebuilt" ]; then
-      # Clean old build products, but preserve the scons cache
-      cd $DIR
-      git clean -xdf
-      git submodule foreach --recursive git clean -xdf
-    fi
-
     "$DIR/installer/updater/updater" "file://$DIR/installer/updater/update.json"
   fi
 }
 
 function tici_init {
+  # wait longer for weston to come up
+  if [ -f "$BASEDIR/prebuilt" ]; then
+    sleep 3
+  fi
+
+  # setup governors
   sudo su -c 'echo "performance" > /sys/class/devfreq/soc:qcom,memlat-cpu0/governor'
   sudo su -c 'echo "performance" > /sys/class/devfreq/soc:qcom,memlat-cpu4/governor'
+
+  # TODO: move this to agnos
+  # network manager config
   nmcli connection modify --temporary lte gsm.auto-config yes
   nmcli connection modify --temporary lte gsm.home-only yes
+  sudo rm -f /data/etc/NetworkManager/system-connections/*.nmmeta
 
   # set success flag for current boot slot
   sudo abctl --set_success
 
   # Check if AGNOS update is required
   if [ $(< /VERSION) != "$AGNOS_VERSION" ]; then
+    AGNOS_PY="$DIR/selfdrive/hardware/tici/agnos.py"
     MANIFEST="$DIR/selfdrive/hardware/tici/agnos.json"
-    $DIR/selfdrive/hardware/tici/agnos.py --swap $MANIFEST
-
-    sleep 1
-    sudo reboot
+    if $AGNOS_PY --verify $MANIFEST; then
+      sudo reboot
+    fi
+    $DIR/selfdrive/hardware/tici/updater $AGNOS_PY $MANIFEST
   fi
 }
 
@@ -140,11 +153,6 @@ function launch {
           mv $BASEDIR /data/safe_staging/old_openpilot
           mv "${STAGING_ROOT}/finalized" $BASEDIR
           cd $BASEDIR
-
-          # Partial mitigation for symlink-related filesystem corruption
-          # Ensure all files match the repo versions after update
-          git reset --hard
-          git submodule foreach --recursive git reset --hard
 
           echo "Restarting launch script ${LAUNCHER_LOCATION}"
           unset REQUIRED_NEOS_VERSION

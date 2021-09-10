@@ -35,6 +35,7 @@ typedef struct DMonitoringModelState {
   std::vector<uint8_t> cropped_buf;
   std::vector<uint8_t> premirror_cropped_buf;
   std::vector<float> net_input_buf;
+  float tensor[UINT8_MAX + 1];
 } DMonitoringModelState;
 
 void dmonitoring_init(DMonitoringModelState* s);

@@ -7,7 +7,7 @@ In order to SSH into your device, you'll need a GitHub account with SSH keys. Se
 * Enable SSH in your device's settings
 * Enter your GitHub username in the device's settings
 * Connect to your device
-  * Username: `root`
+  * Username: `root` (comma two) or `comma` (comma three)
   * Port: `22` or `8022`
 
 Here's an example command for connecting to your device using its tethered connection:

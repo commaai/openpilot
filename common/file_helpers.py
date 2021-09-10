@@ -39,28 +39,6 @@ def get_tmpdir_on_same_filesystem(path):
   return "/tmp"
 
 
-class AutoMoveTempdir():
-  def __init__(self, target_path, temp_dir=None):
-    self._target_path = target_path
-    self._path = tempfile.mkdtemp(dir=temp_dir)
-
-  @property
-  def name(self):
-    return self._path
-
-  def close(self):
-    os.rename(self._path, self._target_path)
-
-  def __enter__(self):
-    return self
-
-  def __exit__(self, exc_type, exc_value, traceback):
-    if exc_type is None:
-      self.close()
-    else:
-      shutil.rmtree(self._path)
-
-
 class NamedTemporaryDir():
   def __init__(self, temp_dir=None):
     self._path = tempfile.mkdtemp(dir=temp_dir)
@@ -79,11 +57,28 @@ class NamedTemporaryDir():
     self.close()
 
 
+class CallbackReader:
+  """Wraps a file, but overrides the read method to also
+  call a callback function with the number of bytes read so far."""
+  def __init__(self, f, callback, *args):
+    self.f = f
+    self.callback = callback
+    self.cb_args = args
+    self.total_read = 0
+
+  def __getattr__(self, attr):
+    return getattr(self.f, attr)
+
+  def read(self, *args, **kwargs):
+    chunk = self.f.read(*args, **kwargs)
+    self.total_read += len(chunk)
+    self.callback(*self.cb_args, self.total_read)
+    return chunk
+
+
 def _get_fileobject_func(writer, temp_dir):
   def _get_fileobject():
-    file_obj = writer.get_fileobject(dir=temp_dir)
-    os.chmod(file_obj.name, 0o644)
-    return file_obj
+    return writer.get_fileobject(dir=temp_dir)
   return _get_fileobject
 
 
@@ -103,20 +98,3 @@ def atomic_write_in_dir(path, **kwargs):
   """
   writer = AtomicWriter(path, **kwargs)
   return writer._open(_get_fileobject_func(writer, os.path.dirname(path)))
-
-
-def atomic_write_in_dir_neos(path, contents, mode=None):
-  """
-  Atomically writes contents to path using a temporary file in the same directory
-  as path. Useful on NEOS, where `os.link` (required by atomic_write_in_dir) is missing.
-  """
-
-  f = tempfile.NamedTemporaryFile(delete=False, prefix=".tmp", dir=os.path.dirname(path))
-  f.write(contents)
-  f.flush()
-  if mode is not None:
-    os.fchmod(f.fileno(), mode)
-  os.fsync(f.fileno())
-  f.close()
-
-  os.rename(f.name, path)

@@ -46,7 +46,7 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) :
 
   const int h = 120;
   map_eta->setFixedHeight(h);
-  map_eta->move(25, 1080 - h);
+  map_eta->move(25, 1080 - h - bdr_s*2);
   map_eta->setVisible(false);
 
   // Routing
@@ -116,6 +116,10 @@ void MapWindow::initLayers() {
 }
 
 void MapWindow::timerUpdate() {
+  if (!QUIState::ui_state.scene.started) {
+    return;
+  }
+
   if (isVisible()) {
     update();
   }
@@ -129,7 +133,7 @@ void MapWindow::timerUpdate() {
 
     if (localizer_valid) {
       auto pos = location.getPositionGeodetic();
-      auto orientation = location.getOrientationNED();
+      auto orientation = location.getCalibratedOrientationNED();
 
       float velocity = location.getVelocityCalibrated().getValue()[0];
       float bearing = RAD2DEG(orientation.getValue()[2]);
@@ -147,7 +151,7 @@ void MapWindow::timerUpdate() {
 
   loaded_once = loaded_once || m_map->isFullyLoaded();
   if (!loaded_once) {
-    map_instructions->showError("Map loading");
+    map_instructions->showError("Map Loading");
     return;
   }
 
@@ -198,7 +202,7 @@ void MapWindow::timerUpdate() {
       }
 
       // Transition to next route segment
-      if (distance_to_maneuver < -MANEUVER_TRANSITION_THRESHOLD) {
+      if (!shouldRecompute() && (distance_to_maneuver < -MANEUVER_TRANSITION_THRESHOLD)) {
         auto next_segment = segment.nextRouteSegment();
         if (next_segment.isValid()) {
           segment = next_segment;
@@ -226,7 +230,7 @@ void MapWindow::resizeGL(int w, int h) {
 }
 
 void MapWindow::initializeGL() {
-  m_map.reset(new QMapboxGL(nullptr, m_settings, size(), 1));
+  m_map.reset(new QMapboxGL(this, m_settings, size(), 1));
 
   if (last_position) {
     m_map->setCoordinateZoom(*last_position, MAX_ZOOM);
@@ -259,9 +263,8 @@ static float get_time_typical(const QGeoRouteSegment &segment) {
 
 
 void MapWindow::recomputeRoute() {
-  // Retry all timed out requests
-  if (!m_map.isNull()) {
-    m_map->connectionEstablished();
+  if (!QUIState::ui_state.scene.started) {
+    return;
   }
 
   if (!last_position) {
@@ -343,6 +346,7 @@ void MapWindow::calculateRoute(QMapbox::Coordinate destination) {
 }
 
 void MapWindow::routeCalculated(QGeoRouteReply *reply) {
+  bool got_route = false;
   if (reply->error() == QGeoRouteReply::NoError) {
     if (reply->routes().size() != 0) {
       qWarning() << "Got route response";
@@ -357,6 +361,7 @@ void MapWindow::routeCalculated(QGeoRouteReply *reply) {
       navSource["data"] = QVariant::fromValue<QMapbox::Feature>(feature);
       m_map->updateSource("navSource", navSource);
       m_map->setLayoutProperty("navLayer", "visibility", "visible");
+      got_route = true;
 
       updateETA();
     } else {
@@ -364,6 +369,10 @@ void MapWindow::routeCalculated(QGeoRouteReply *reply) {
     }
   } else {
     qWarning() << "Got error in route reply" << reply->errorString();
+  }
+
+  if (!got_route) {
+    map_instructions->showError("Failed to Route");
   }
 
   reply->deleteLater();
@@ -415,6 +424,9 @@ void MapWindow::mouseDoubleClickEvent(QMouseEvent *ev) {
   if (last_position) m_map->setCoordinate(*last_position);
   if (last_bearing) m_map->setBearing(*last_bearing);
   m_map->setZoom(util::map_val<float>(velocity_filter.x(), 0, 30, MAX_ZOOM, MIN_ZOOM));
+
+  pan_counter = 0;
+  zoom_counter = 0;
 }
 
 void MapWindow::mouseMoveEvent(QMouseEvent *ev) {
@@ -807,5 +819,5 @@ void MapETA::updateETA(float s, float s_typical, float d) {
   setMask(mask);
 
   // Center
-  move(static_cast<QWidget*>(parent())->width() / 2 - width() / 2, 1080 - height());
+  move(static_cast<QWidget*>(parent())->width() / 2 - width() / 2, 1080 - height() - bdr_s*2);
 }

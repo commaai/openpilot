@@ -3,7 +3,7 @@ from cereal import car
 from common.params import Params
 import cereal.messaging as messaging
 from selfdrive.controls.lib.events import Events
-from selfdrive.monitoring.driver_monitor import DriverStatus, MAX_TERMINAL_ALERTS, MAX_TERMINAL_DURATION
+from selfdrive.monitoring.driver_monitor import DriverStatus
 from selfdrive.locationd.calibrationd import Calibration
 
 
@@ -50,7 +50,8 @@ def dmonitoringd_thread(sm=None, pm=None):
     driver_status.get_pose(sm['driverState'], sm['liveCalibration'].rpyCalib, sm['carState'].vEgo, sm['controlsState'].enabled)
 
     # Block engaging after max number of distrations
-    if driver_status.terminal_alert_cnt >= MAX_TERMINAL_ALERTS or driver_status.terminal_time >= MAX_TERMINAL_DURATION:
+    if driver_status.terminal_alert_cnt >= driver_status.settings._MAX_TERMINAL_ALERTS or \
+       driver_status.terminal_time >= driver_status.settings._MAX_TERMINAL_DURATION:
       events.add(car.CarEvent.EventName.tooDistracted)
 
     # Update events from driver state

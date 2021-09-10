@@ -1,5 +1,5 @@
 from cereal import car
-from selfdrive.car.volkswagen.values import CAR, BUTTON_STATES, TransmissionType, GearShifter
+from selfdrive.car.volkswagen.values import CAR, BUTTON_STATES, CANBUS, NetworkLocation, TransmissionType, GearShifter
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
 
@@ -13,9 +13,12 @@ class CarInterface(CarInterfaceBase):
     self.displayMetricUnitsPrev = None
     self.buttonStatesPrev = BUTTON_STATES.copy()
 
-  @staticmethod
-  def compute_gb(accel, speed):
-    return float(accel) / 4.0
+    if CP.networkLocation == NetworkLocation.fwdCamera:
+      self.ext_bus = CANBUS.pt
+      self.cp_ext = self.cp
+    else:
+      self.ext_bus = CANBUS.cam
+      self.cp_ext = self.cp_cam
 
   @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None):
@@ -27,14 +30,19 @@ class CarInterface(CarInterfaceBase):
     if True:  # pylint: disable=using-constant-test
       # Set global MQB parameters
       ret.safetyModel = car.CarParams.SafetyModel.volkswagen
-      ret.enableBsm = 0x30F in fingerprint[0]
+      ret.enableBsm = 0x30F in fingerprint[0]  # SWA_01
 
       if 0xAD in fingerprint[0]:  # Getriebe_11
         ret.transmissionType = TransmissionType.automatic
       elif 0x187 in fingerprint[0]:  # EV_Gearshift
         ret.transmissionType = TransmissionType.direct
-      else:  # No trans message at all, must be a true stick-shift manual
+      else:
         ret.transmissionType = TransmissionType.manual
+
+      if any(msg in fingerprint[1] for msg in [0x40, 0x86, 0xB2]):  # Airbag_01, LWI_01, ESP_19
+        ret.networkLocation = NetworkLocation.gateway
+      else:
+        ret.networkLocation = NetworkLocation.fwdCamera
 
     # Global tuning defaults, can be overridden per-vehicle
 
@@ -66,6 +74,10 @@ class CarInterface(CarInterfaceBase):
     elif candidate == CAR.PASSAT_MK8:
       ret.mass = 1551 + STD_CARGO_KG
       ret.wheelbase = 2.79
+
+    elif candidate == CAR.TCROSS_MK1:
+      ret.mass = 1150 + STD_CARGO_KG
+      ret.wheelbase = 2.60
 
     elif candidate == CAR.TIGUAN_MK2:
       ret.mass = 1715 + STD_CARGO_KG
@@ -129,7 +141,7 @@ class CarInterface(CarInterfaceBase):
     self.cp.update_strings(can_strings)
     self.cp_cam.update_strings(can_strings)
 
-    ret = self.CS.update(self.cp, self.cp_cam, self.CP.transmissionType)
+    ret = self.CS.update(self.cp, self.cp_cam, self.cp_ext, self.CP.transmissionType)
     ret.canValid = self.cp.can_valid and self.cp_cam.can_valid
     ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
 
@@ -165,7 +177,7 @@ class CarInterface(CarInterfaceBase):
     return self.CS.out
 
   def apply(self, c):
-    can_sends = self.CC.update(c.enabled, self.CS, self.frame, c.actuators,
+    can_sends = self.CC.update(c.enabled, self.CS, self.frame, self.ext_bus, c.actuators,
                    c.hudControl.visualAlert,
                    c.hudControl.leftLaneVisible,
                    c.hudControl.rightLaneVisible,

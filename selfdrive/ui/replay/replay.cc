@@ -45,9 +45,10 @@ Replay::Replay(QString route, SubMaster *sm_, QObject *parent) : sm(sm_), QObjec
     pm = new PubMaster(s);
   }
 
-  const QString url = "https://api.commadotai.com/v1/route/" + route + "/files";
-  http = new HttpRequest(this, url, !Hardware::PC());
+  const QString url = CommaApi::BASE_URL + "/v1/route/" + route + "/files";
+  http = new HttpRequest(this, !Hardware::PC());
   QObject::connect(http, &HttpRequest::receivedResponse, this, &Replay::parseResponse);
+  http->sendRequest(url);
 }
 
 void Replay::parseResponse(const QString &response) {
@@ -74,6 +75,9 @@ void Replay::addSegment(int n) {
   QObject::connect(lrs[n], &LogReader::finished, this, &Replay::mergeEvents);
 
   frs[n] = new FrameReader(qPrintable(camera_paths.at(n).toString()));
+  QThread * t = QThread::create([=]() { frs[n]->process(); });
+  QObject::connect(t, &QThread::finished, t, &QThread::deleteLater);
+  t->start();
 }
 
 void Replay::removeSegment(int n) {
@@ -224,7 +228,7 @@ void Replay::stream() {
       }
 
       uint64_t tm = e.getLogMonoTime();
-      current_ts = std::max(tm - route_start_ts, (unsigned long)0) / 1e9;
+      current_ts = std::max(tm - route_start_ts, (uint64_t)0) / 1e9;
 
       if (socks.contains(type)) {
         float timestamp = (tm - route_start_ts)/1e9;
