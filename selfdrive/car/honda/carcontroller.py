@@ -108,7 +108,7 @@ class CarController():
     self.params = CarControllerParams(CP)
 
   def update(self, enabled, CS, frame, actuators,
-             pcm_speed, pcm_override, pcm_cancel_cmd, pcm_accel,
+             pcm_override, pcm_cancel_cmd,
              hud_v_cruise, hud_show_lanes, hud_show_car, hud_alert):
 
     P = self.params
