@@ -31,7 +31,9 @@ def download_file(url: str, fn: str, sha256: str, display_name: str):
     headers = {"Range": f"bytes={f.tell()}-"}
     r = requests.get(url, stream=True, allow_redirects=True, headers=headers)
 
-    total = int(r.headers.get('Content-Range').split('/')[-1])
+    total = int(r.headers['Content-Length'])
+    if 'Content-Range' in r.headers:
+      total = int(r.headers['Content-Range'].split('/')[-1])
     for chunk in r.iter_content(chunk_size=8192):
       f.write(chunk)
       h.update(chunk)
