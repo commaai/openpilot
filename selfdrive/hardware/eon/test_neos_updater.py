@@ -10,15 +10,18 @@ import shutil
 import socketserver
 import tempfile
 import multiprocessing
+from pathlib import Path
 
-from selfdrive.hardware.eon.neos import RECOVERY_DEV, NEOSUPDATE_DIR, verify_update_ready, \
-                                        download_neos_update
+from selfdrive.hardware.eon.neos import RECOVERY_DEV, NEOSUPDATE_DIR, get_fn, download_file, \
+                                        verify_update_ready, download_neos_update
 
 EON_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)))
 MANIFEST = os.path.join(EON_DIR, "neos.json")
 
+PORT = 8000
 
 def server_thread(port):
+  socketserver.TCPServer.allow_reuse_address = True
   httpd = socketserver.TCPServer(("", port), http.server.SimpleHTTPRequestHandler)
   httpd.serve_forever()
 
@@ -27,22 +30,13 @@ class TestNeosUpdater(unittest.TestCase):
 
   @classmethod
   def setUpClass(cls):
-    # clean up
-    if os.path.exists(NEOSUPDATE_DIR):
-      shutil.rmtree(NEOSUPDATE_DIR)
-
-    # server for update files
-    port = 8000
-    cls.server = multiprocessing.Process(target=server_thread, args=(port, ))
-    cls.server.start()
-
     # generate a fake manifest
     cls.manifest = {}
     for i in ('ota', 'recovery'):
       with tempfile.NamedTemporaryFile(delete=False, dir=os.getcwd()) as f:
         dat = os.urandom(random.randint(1000, 100000))
         f.write(dat)
-        cls.manifest[f"{i}_url"] = f"http://localhost:{port}/" + os.path.relpath(f.name)
+        cls.manifest[f"{i}_url"] = f"http://localhost:{PORT}/" + os.path.relpath(f.name)
         cls.manifest[F"{i}_hash"] = hashlib.sha256(dat).hexdigest()
         if i == "recovery":
           cls.manifest["recovery_len"] = len(dat)
@@ -53,10 +47,22 @@ class TestNeosUpdater(unittest.TestCase):
 
   @classmethod
   def tearDownClass(cls):
-    cls.server.kill()
     os.unlink(cls.fake_manifest)
     os.unlink(os.path.basename(cls.manifest['ota_url']))
     os.unlink(os.path.basename(cls.manifest['recovery_url']))
+
+  def setUp(self):
+    # server for update files
+    self.server = multiprocessing.Process(target=server_thread, args=(PORT, ))
+    self.server.start()
+
+    # clean up
+    if os.path.exists(NEOSUPDATE_DIR):
+      shutil.rmtree(NEOSUPDATE_DIR)
+
+  def tearDown(self):
+    self.server.kill()
+    self.server.join(1)
 
   def _corrupt_recovery(self):
     with open(RECOVERY_DEV, "wb") as f:
@@ -77,7 +83,42 @@ class TestNeosUpdater(unittest.TestCase):
       if url == m['recovery_url']:
         self.assertEqual(int(r.headers['Content-Length']), m['recovery_len'])
 
-  def test_download(self):
+  def test_download_hash_check(self):
+    os.makedirs(NEOSUPDATE_DIR, exist_ok=True)
+    Path(get_fn(self.manifest['ota_url'])).touch()
+    with self.assertRaisesRegex(Exception, "failed hash check"):
+      download_file(self.manifest['ota_url'], get_fn(self.manifest['ota_url']),
+                    self.manifest['ota_hash']+'a', "system")
+
+    # should've unlinked after the failed hash check, should succeed now
+    download_file(self.manifest['ota_url'], get_fn(self.manifest['ota_url']),
+                  self.manifest['ota_hash'], "system")
+
+  # TODO: needs an http server that supports Content-Range
+  #def test_download_resume(self):
+  #  os.makedirs(NEOSUPDATE_DIR, exist_ok=True)
+  #  with open(os.path.basename(self.manifest['ota_url']), "rb") as src, \
+  #       open(get_fn(self.manifest['ota_url']), "wb") as dest:
+  #    l = dest.write(src.read(8192))
+  #    assert l == 8192
+  #  download_file(self.manifest['ota_url'], get_fn(self.manifest['ota_url']),
+  #                self.manifest['ota_hash'], "system")
+
+  def test_download_no_internet(self):
+    self.server.kill()
+    os.makedirs(NEOSUPDATE_DIR, exist_ok=True)
+    # fail, no internet
+    with self.assertRaises(requests.exceptions.ConnectionError):
+      download_file(self.manifest['ota_url'], get_fn(self.manifest['ota_url']),
+                    self.manifest['ota_hash'], "system")
+
+    # already cached, ensure we don't hit the server
+    shutil.copyfile(os.path.basename(self.manifest['ota_url']), get_fn(self.manifest['ota_url']))
+    download_file(self.manifest['ota_url'], get_fn(self.manifest['ota_url']),
+                  self.manifest['ota_hash'], "system")
+
+
+  def test_download_update(self):
     download_neos_update(self.fake_manifest)
     self.assertTrue(verify_update_ready(self.fake_manifest))
 
