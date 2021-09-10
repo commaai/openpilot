@@ -269,9 +269,9 @@ def handle_neos_update(wait_helper: WaitTimeHelper) -> None:
         (time.monotonic() - start_time < 60*60*24):
     wait_helper.ready_event.clear()
     try:
-      download_neos_update(update_manifest)
+      download_neos_update(update_manifest, cloudlog)
       neos_downloaded = True
-    except subprocess.CalledProcessError:
+    except Exception:
       cloudlog.info("NEOS background download failed, retrying")
       wait_helper.sleep(120)
 

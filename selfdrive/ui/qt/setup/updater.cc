@@ -175,10 +175,25 @@ void Updater::updateFinished(int exitCode, QProcess::ExitStatus exitStatus) {
   }
 }
 
+bool Updater::eventFilter(QObject *obj, QEvent *event) {
+#ifdef QCOM
+  // filter out touches while in android activity
+  const static QSet<QEvent::Type> filter_events({QEvent::MouseButtonPress, QEvent::MouseMove, QEvent::TouchBegin, QEvent::TouchUpdate, QEvent::TouchEnd});
+  if (HardwareEon::launched_activity && filter_events.contains(event->type())) {
+    HardwareEon::check_activity();
+    if (HardwareEon::launched_activity) {
+      return true;
+    }
+  }
+#endif
+  return false;
+}
+
 int main(int argc, char *argv[]) {
   initApp();
   QApplication a(argc, argv);
   Updater updater(argv[1], argv[2]);
   setMainWindow(&updater);
+  a.installEventFilter(&updater);
   return a.exec();
 }

@@ -22,21 +22,27 @@ def download_file(url: str, fn: str, sha256: str, display_name: str, cloudlog=lo
     cloudlog.info(f"{display_name} already cached")
     return
 
-  with open(fn, "ab+") as f:
-    headers = {"Range": f"bytes={f.tell()}-"}
-    r = requests.get(url, stream=True, allow_redirects=True, headers=headers)
-    r.raise_for_status()
+  try:
+    with open(fn, "ab+") as f:
+      headers = {"Range": f"bytes={f.tell()}-"}
+      r = requests.get(url, stream=True, allow_redirects=True, headers=headers)
+      r.raise_for_status()
 
-    total = int(r.headers['Content-Length'])
-    if 'Content-Range' in r.headers:
-      total = int(r.headers['Content-Range'].split('/')[-1])
+      total = int(r.headers['Content-Length'])
+      if 'Content-Range' in r.headers:
+        total = int(r.headers['Content-Range'].split('/')[-1])
 
-    for chunk in r.iter_content(chunk_size=1024 * 1024):
-      f.write(chunk)
-      print(f"Downloading {display_name}: {f.tell() / total * 100}")
+      for chunk in r.iter_content(chunk_size=1024 * 1024):
+        f.write(chunk)
+        print(f"Downloading {display_name}: {f.tell() / total * 100}")
+  except Exception:
+    cloudlog.error("download error")
+    if os.path.isfile(fn):
+      os.unlink(fn)
 
   if not check_hash(fn, sha256):
-    os.unlink(fn)
+    if os.path.isfile(fn):
+      os.unlink(fn)
     raise Exception("downloaded update failed hash check")
 
 
