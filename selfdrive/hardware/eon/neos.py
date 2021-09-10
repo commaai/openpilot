@@ -89,6 +89,8 @@ def verify_update_ready(manifest_path: str) -> bool:
 
 def perform_ota_update(manifest_path: str):
   # reboot into recovery
+  with open(manifest_path) as f:
+    m = json.loads(f.read())
   ota_fn = os.path.join(NEOSUPDATE_DIR, os.path.basename(m['ota_url']))
   with open(RECOVERY_COMMAND, "wb") as f:
     f.write(bytes(f"--update_package={ota_fn}\n", encoding='utf-8'))

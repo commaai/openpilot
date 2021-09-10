@@ -168,7 +168,7 @@ void Updater::readProgress() {
 void Updater::updateFinished(int exitCode, QProcess::ExitStatus exitStatus) {
   qDebug() << "finished with " << exitCode;
   if (exitCode == 0) {
-    //Hardware::reboot();
+    Hardware::reboot();
   } else {
     text->setText("Update failed");
     reboot->show();
