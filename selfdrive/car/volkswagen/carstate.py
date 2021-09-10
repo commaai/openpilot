@@ -83,11 +83,7 @@ class CarState(CarStateBase):
 
     # Consume factory LDW data relevant for factory SWA (Lane Change Assist)
     # and capture it for forwarding to the blind spot radar controller
-    self.ldw_lane_warning_left = bool(cam_cp.vl["LDW_02"]["LDW_SW_Warnung_links"])
-    self.ldw_lane_warning_right = bool(cam_cp.vl["LDW_02"]["LDW_SW_Warnung_rechts"])
-    self.ldw_side_dlc_tlc = bool(cam_cp.vl["LDW_02"]["LDW_Seite_DLCTLC"])
-    self.ldw_dlc = cam_cp.vl["LDW_02"]["LDW_DLC"]
-    self.ldw_tlc = cam_cp.vl["LDW_02"]["LDW_TLC"]
+    self.ldw_stock_values = cam_cp.vl["LDW_02"] if self.CP.networkLocation == NetworkLocation.fwdCamera else {}
 
     # Stock FCW is considered active if the release bit for brake-jerk warning
     # is set. Stock AEB considered active if the partial braking or target
@@ -235,21 +231,23 @@ class CarState(CarStateBase):
   @staticmethod
   def get_cam_can_parser(CP):
 
-    signals = [
-      # sig_name, sig_address, default
-      ("LDW_SW_Warnung_links", "LDW_02", 0),          # Blind spot in warning mode on left side due to lane departure
-      ("LDW_SW_Warnung_rechts", "LDW_02", 0),         # Blind spot in warning mode on right side due to lane departure
-      ("LDW_Seite_DLCTLC", "LDW_02", 0),              # Direction of most likely lane departure (left or right)
-      ("LDW_DLC", "LDW_02", 0),                       # Lane departure, distance to line crossing
-      ("LDW_TLC", "LDW_02", 0),                       # Lane departure, time to line crossing
-    ]
+    signals = []
+    checks = []
 
-    checks = [
-      # sig_address, frequency
-      ("LDW_02", 10)        # From R242 Driver assistance camera
-    ]
-
-    if CP.networkLocation == NetworkLocation.gateway:
+    if CP.networkLocation == NetworkLocation.fwdCamera:
+      signals += [
+        # sig_name, sig_address, default
+        ("LDW_SW_Warnung_links", "LDW_02", 0),      # Blind spot in warning mode on left side due to lane departure
+        ("LDW_SW_Warnung_rechts", "LDW_02", 0),     # Blind spot in warning mode on right side due to lane departure
+        ("LDW_Seite_DLCTLC", "LDW_02", 0),          # Direction of most likely lane departure (left or right)
+        ("LDW_DLC", "LDW_02", 0),                   # Lane departure, distance to line crossing
+        ("LDW_TLC", "LDW_02", 0),                   # Lane departure, time to line crossing
+      ]
+      checks += [
+        # sig_address, frequency
+        ("LDW_02", 10)      # From R242 Driver assistance camera
+      ]
+    else:
       # Radars are here on CANBUS.cam
       signals += MqbExtraSignals.fwd_radar_signals
       checks += MqbExtraSignals.fwd_radar_checks
