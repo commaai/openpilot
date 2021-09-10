@@ -35,7 +35,7 @@ public:
   ~AVInitializer() { avformat_network_deinit(); }
 };
 
-FrameReader::FrameReader(const std::string &url, int timeout_sec) : url_(url), timeout_(timeout_sec) {
+FrameReader::FrameReader() {
   static AVInitializer av_initializer;
 }
 
@@ -74,24 +74,14 @@ FrameReader::~FrameReader() {
   }
 }
 
-int FrameReader::check_interrupt(void *p) {
-  FrameReader *fr = static_cast<FrameReader*>(p);
-  return fr->exit_ || (fr->timeout_ > 0 && millis_since_boot() > fr->timeout_ms_);
-}
-
-bool FrameReader::process() {
+bool FrameReader::load(const std::string &url) {
   pFormatCtx_ = avformat_alloc_context();
-  pFormatCtx_->interrupt_callback.callback = &FrameReader::check_interrupt;
-  pFormatCtx_->interrupt_callback.opaque = (void *)this;
-  if (timeout_ > 0) {
-    timeout_ms_ = millis_since_boot() + timeout_ * 1000;
-  }
-  if (avformat_open_input(&pFormatCtx_, url_.c_str(), NULL, NULL) != 0) {
-    printf("error loading %s\n", url_.c_str());
+  if (avformat_open_input(&pFormatCtx_, url.c_str(), NULL, NULL) != 0) {
+    printf("error loading %s\n", url.c_str());
     return false;
   }
   avformat_find_stream_info(pFormatCtx_, NULL);
-  av_dump_format(pFormatCtx_, 0, url_.c_str(), 0);
+  av_dump_format(pFormatCtx_, 0, url.c_str(), 0);
 
   auto pCodecCtxOrig = pFormatCtx_->streams[0]->codec;
   auto pCodec = avcodec_find_decoder(pCodecCtxOrig->codec_id);
@@ -116,7 +106,7 @@ bool FrameReader::process() {
   if (!frmRgb_) return false;
 
   frames_.reserve(60 * 20);  // 20fps, one minute
-  do {
+  for (;;) {
     Frame &frame = frames_.emplace_back();
     int err = av_read_frame(pFormatCtx_, &frame.pkt);
     if (err < 0) {
@@ -124,7 +114,7 @@ bool FrameReader::process() {
       valid_ = (err == AVERROR_EOF);
       break;
     }
-  } while (!exit_);
+  }
 
   if (valid_) {
     decode_thread_ = std::thread(&FrameReader::decodeThread, this);

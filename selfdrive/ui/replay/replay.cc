@@ -1,12 +1,65 @@
 #include "selfdrive/ui/replay/replay.h"
 
+#include <openssl/sha.h>
+#include "curl/curl.h"
+
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QtConcurrent>
 
 #include "cereal/services.h"
 #include "selfdrive/camerad/cameras/camera_common.h"
 #include "selfdrive/common/timing.h"
 #include "selfdrive/hardware/hw.h"
+
+const std::string CACHE_DIR = util::getenv("COMMA_CACHE", "/tmp/comma_download_cache/");
+
+size_t write_data(void *ptr, size_t size, size_t nmemb, FILE *stream) {
+  size_t written = fwrite(ptr, size, nmemb, stream);
+  return written;
+}
+
+bool download_url(const std::string &url, const std::string &file) {
+  CURLcode res = CURLE_FAILED_INIT;
+  CURL *curl = curl_easy_init();
+  if (curl) {
+    FILE *fp = fopen(file.c_str(), "wb");
+    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
+    res = curl_easy_perform(curl);
+    curl_easy_cleanup(curl);
+    fclose(fp);
+  }
+  return CURLE_OK == res;
+}
+
+std::string sha256_string(const std::string &string) {
+  uint8_t hash[SHA256_DIGEST_LENGTH] = {};
+  SHA256_CTX sha256;
+  SHA256_Init(&sha256);
+  SHA256_Update(&sha256, string.c_str(), string.length());
+  SHA256_Final(hash, &sha256);
+  char outputBuffer[2 * SHA256_DIGEST_LENGTH + 1] = {};
+  for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
+    sprintf(outputBuffer + (i * 2), "%02x", hash[i]);
+  }
+  return outputBuffer;
+}
+
+std::optional<std::string> download_segment_file(const std::string &url, const std::string fn) {
+  if (!util::file_exists(CACHE_DIR)) {
+    system(("mkdir " + CACHE_DIR).c_str());
+  }
+  std::string file = CACHE_DIR + sha256_string(fn);
+  if (util::file_exists(file)) return file;
+
+  std::string tmp_file = file + ".tmp";
+  if (util::file_exists(tmp_file)) unlink(tmp_file.c_str());
+  bool ret = download_url(url, tmp_file);
+  ret = ret && (rename(tmp_file.c_str(), file.c_str()) == 0);
+  return ret ? std::make_optional(file) : std::nullopt;
+}
 
 int getch() {
   int ch;
@@ -24,7 +77,7 @@ int getch() {
   return ch;
 }
 
-Replay::Replay(QString route, SubMaster *sm_, QObject *parent) : sm(sm_), QObject(parent) {
+Replay::Replay(QString route, SubMaster *sm_, QObject *parent) : sm(sm_), route_(route), QObject(parent) {
   QStringList block = QString(getenv("BLOCK")).split(",");
   qDebug() << "blocklist" << block;
 
@@ -65,19 +118,26 @@ void Replay::parseResponse(const QString &response) {
 }
 
 void Replay::addSegment(int n) {
-  assert((n >= 0) && (n < log_paths.size()) && (n < camera_paths.size()));
-  if (lrs.find(n) != lrs.end()) {
-    return;
+  {
+    std::lock_guard lk(merge_mutex);
+    assert((n >= 0) && (n < log_paths.size()) && (n < camera_paths.size()));
+    if (lrs.find(n) != lrs.end()) return;
+
+    lrs[n] = new LogReader();
+    frs[n] = new FrameReader();
   }
 
-  lrs[n] = new LogReader(log_paths.at(n).toString());
-  // this is a queued connection, mergeEvents is executed in the main thread.
-  QObject::connect(lrs[n], &LogReader::finished, this, &Replay::mergeEvents);
+  std::string segment_path = util::string_format("%s--%d", route_.toStdString().c_str(), n);
+  std::string log_url = log_paths.at(n).toString().toStdString();
+  std::string road_cam_url = camera_paths.at(n).toString().toStdString();
 
-  frs[n] = new FrameReader(qPrintable(camera_paths.at(n).toString()));
-  QThread * t = QThread::create([=]() { frs[n]->process(); });
-  QObject::connect(t, &QThread::finished, t, &QThread::deleteLater);
-  t->start();
+  std::optional<std::string> log_file = download_segment_file(log_url, segment_path + "/rlog.zip");
+  std::optional<std::string> road_cam_file = download_segment_file(road_cam_url, segment_path + "/road_cam.hevc");
+  if (log_file && road_cam_file && lrs[n]->load(log_file->c_str()) && frs[n]->load(road_cam_file->c_str())) {
+    mergeEvents();
+  } else {
+    LOGW("failed to load segment: %s", segment_path.c_str());
+  }
 }
 
 void Replay::mergeEvents() {
@@ -150,7 +210,7 @@ void Replay::segmentQueueThread() {
     int end_idx = std::min(current_segment + FORWARD_SEGS, log_paths.size());
     for (int i = 0; i < log_paths.size(); i++) {
       if (i >= start_idx && i <= end_idx) {
-        addSegment(i);
+        QtConcurrent::run(this, &Replay::addSegment, i);
       }
     }
     QThread::msleep(100);

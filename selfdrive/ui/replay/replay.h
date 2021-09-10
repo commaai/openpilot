@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <mutex>
 #include <termios.h>
 
 #include <QJsonArray>
@@ -35,6 +36,7 @@ public slots:
   void mergeEvents();
 
 private:
+  QString route_;
   float last_print = 0;
   uint64_t route_start_ts;
   std::atomic<int> seek_ts = 0;
@@ -62,4 +64,5 @@ private:
   PubMaster *pm;
   QVector<std::string> socks;
   VisionIpcServer *vipc_server = nullptr;
+  std::mutex merge_mutex;
 };

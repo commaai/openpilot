@@ -7,9 +7,8 @@ const char *stream_url = "https://commadataci.blob.core.windows.net/openpilotci/
 
 TEST_CASE("FrameReader") {
   SECTION("process&get") {
-    FrameReader fr(stream_url);
-    bool ret = fr.process();
-    REQUIRE(ret == true);
+    FrameReader fr;
+    REQUIRE(fr.load(stream_url));
     REQUIRE(fr.valid() == true);
     REQUIRE(fr.getFrameCount() == 1200);
 
@@ -23,12 +22,5 @@ TEST_CASE("FrameReader") {
     for (int i = 0; i < 50; ++i) {
       REQUIRE(fr.get(i) != nullptr);
     }
-  }
-  SECTION("process with timeout") {
-    FrameReader fr(stream_url, 1);
-    bool ret = fr.process();
-    REQUIRE(ret == false);
-    REQUIRE(fr.valid() == false);
-    REQUIRE(fr.getFrameCount() < 1200);
   }
 }

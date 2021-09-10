@@ -1,37 +1,14 @@
 #pragma once
 
 #include <unordered_map>
-#include <vector>
-
-#include <QElapsedTimer>
 #include <QMultiMap>
-#include <QNetworkAccessManager>
 #include <QString>
-#include <QThread>
 
 #include <capnp/serialize.h>
 
 #include "cereal/gen/cpp/log.capnp.h"
 
 #include "selfdrive/camerad/cameras/camera_common.h"
-
-class FileReader : public QObject {
-  Q_OBJECT
-
-public:
-  FileReader(const QString &fn, QObject *parent = nullptr);
-  void read();
-  void abort();
-
-signals:
-  void finished(const QByteArray &dat);
-  void failed(const QString &err);
-
-private:
-  void startHttpRequest();
-  QNetworkReply *reply_ = nullptr;
-  QUrl url_;
-};
 
 const CameraType ALL_CAMERAS[] = {RoadCam, DriverCam, WideRoadCam};
 const int MAX_CAMERAS = std::size(ALL_CAMERAS);
@@ -58,27 +35,15 @@ public:
   kj::ArrayPtr<const capnp::word> words;
 };
 
-class LogReader : public QObject {
-  Q_OBJECT
-
+class LogReader {
 public:
-  LogReader(const QString &file, QObject *parent = nullptr);
+  LogReader() = default;
   ~LogReader();
-  inline bool valid() const { return valid_; }
+  bool load(const QString &file);
 
   QMultiMap<uint64_t, Event*> events;
   std::unordered_map<uint32_t, EncodeIdx> eidx[MAX_CAMERAS] = {};
 
-signals:
-  void finished(bool success);
-
 private:
-  void parseEvents(const QByteArray &dat);
-
-  std::atomic<bool> exit_ = false;
-  std::atomic<bool> valid_ = false;
   std::vector<uint8_t> raw_;
-
-  FileReader *file_reader_ = nullptr;
-  QThread thread_;
 };
