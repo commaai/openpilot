@@ -49,10 +49,6 @@ class CarInterfaceBase():
     return ACCEL_MIN, ACCEL_MAX
 
   @staticmethod
-  def calc_accel_override(a_ego, a_target, v_ego, v_target):
-    return 1.
-
-  @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None):
     raise NotImplementedError
 
