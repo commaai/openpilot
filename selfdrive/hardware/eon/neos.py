@@ -92,8 +92,8 @@ def perform_ota_update(manifest_path: str):
   with open(manifest_path) as f:
     m = json.loads(f.read())
   ota_fn = os.path.join(NEOSUPDATE_DIR, os.path.basename(m['ota_url']))
-  with open(RECOVERY_COMMAND, "wb") as f:
-    f.write(bytes(f"--update_package={ota_fn}\n", encoding='utf-8'))
+  with open(RECOVERY_COMMAND, "wb") as rf:
+    rf.write(bytes(f"--update_package={ota_fn}\n", encoding='utf-8'))
   os.system("service call power 16 i32 0 s16 recovery i32 1")
 
 
