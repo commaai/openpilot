@@ -10,18 +10,6 @@ from selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, SPEED_FACTOR, 
 TransmissionType = car.CarParams.TransmissionType
 
 
-def calc_cruise_offset(offset, speed):
-  # heuristic formula so that speed is controlled to ~ 0.3m/s below pid_speed
-  # constraints to solve for _K0, _K1, _K2 are:
-  # - speed = 0m/s, out = -0.3
-  # - speed = 34m/s, offset = 20, out = -0.25
-  # - speed = 34m/s, offset = -2.5, out = -1.8
-  _K0 = -0.3
-  _K1 = -0.01879
-  _K2 = 0.01013
-  return min(_K0 + _K1 * speed + _K2 * speed * offset, 0.)
-
-
 def get_can_signals(CP, gearbox_msg="GEARBOX"):
   # this function generates lists for signal, messages and initial values
   signals = [
@@ -317,7 +305,6 @@ class CarState(CarStateBase):
         ret.cruiseState.speed = self.v_cruise_pcm_prev if cp.vl["ACC_HUD"]["CRUISE_SPEED"] > 160.0 else cp.vl["ACC_HUD"]["CRUISE_SPEED"] * CV.KPH_TO_MS
         self.v_cruise_pcm_prev = ret.cruiseState.speed
     else:
-      ret.cruiseState.speedOffset = calc_cruise_offset(cp.vl["CRUISE_PARAMS"]["CRUISE_SPEED_OFFSET"], ret.vEgo)
       ret.cruiseState.speed = cp.vl["CRUISE"]["CRUISE_SPEED_PCM"] * CV.KPH_TO_MS
 
     self.brake_switch = cp.vl["POWERTRAIN_DATA"]["BRAKE_SWITCH"] != 0
