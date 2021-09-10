@@ -135,8 +135,8 @@ void OnroadHud::updateState(const UIState &s) {
   SubMaster &sm = *(s.sm);
   auto cs = sm["controlsState"].getControlsState();
   int speed = (int)(sm["carState"].getCarState().getVEgo() * (is_metric ? 3.6 : 2.2369363));
-  setProperty("maxSpeed", getMaxSpeed(cs.getVCruise()));
   setProperty("speed", QString::number(speed));
+  setProperty("maxSpeed", getMaxSpeed(cs.getVCruise()));
   setProperty("speedUnit", is_metric ? "km/h" : "mph");
   setProperty("dmActive", sm["driverMonitoringState"].getDriverMonitoringState().getIsActiveMode());
   setProperty("hideDM", cs.getAlertSize() == cereal::ControlsState::AlertSize::NONE);
@@ -154,6 +154,8 @@ void OnroadHud::updateAlert(const Alert &a, const QColor &color) {
 
 void OnroadHud::paintEvent(QPaintEvent *event) {
   QPainter p(this);
+  QRect hud_rect = rect();
+  hud_rect.setRight(hud_rect.right() - map_width);
 
   // max speed
   QRect rc(bdr_s * 2, bdr_s * 1.5, 184, 202);
@@ -166,16 +168,11 @@ void OnroadHud::paintEvent(QPaintEvent *event) {
   drawText(p, rc.center().x(), rc.top() + bdr_s + 10, Qt::AlignTop, "MAX", is_cruise_set ? 200 : 100);
   configFont(p, "Open Sans", 78, is_cruise_set ? "Bold" : "SemiBold");
   drawText(p, rc.center().x(), rc.bottom() - bdr_s, Qt::AlignBottom, maxSpeed_, is_cruise_set ? 255 : 100);
-
-  QRect hud_rect = rect();
-  hud_rect.setRight(hud_rect.right() - map_width);
-
   // current speed
   configFont(p, "Open Sans", 180, "Bold");
   drawText(p, hud_rect.center().x(), rc.center().y(), Qt::AlignVCenter, speed_);
   configFont(p, "Open Sans", 65, "Regular");
   drawText(p, hud_rect.center().x(), rc.bottom() - 20, Qt::AlignTop, speedUnit_, 200);
-
   // engage-ability icon
   if (engageable_) {
     drawIcon(p, hud_rect.right() - radius / 2 - bdr_s * 2, radius / 2 + int(bdr_s * 1.5), engage_img, bg_colors[status_], 1.0);
@@ -184,7 +181,7 @@ void OnroadHud::paintEvent(QPaintEvent *event) {
   if (!hideDM_) {
     drawIcon(p, radius / 2 + (bdr_s * 2), hud_rect.bottom() - footer_h / 2, dm_img, QColor(0, 0, 0, 70), dmActive_ ? 1.0 : 0.2);
   }
-
+  // draw alert
   drawAlert(p);
 }
 
