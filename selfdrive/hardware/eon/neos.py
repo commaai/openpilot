@@ -39,6 +39,7 @@ def download_file(url: str, fn: str, sha256: str, display_name: str, cloudlog=lo
     cloudlog.error("download error")
     if os.path.isfile(fn):
       os.unlink(fn)
+    raise
 
   if not check_hash(fn, sha256):
     if os.path.isfile(fn):
