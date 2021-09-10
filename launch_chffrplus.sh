@@ -89,8 +89,13 @@ function two_init {
   wpa_cli IFNAME=wlan0 SCAN
 
   # Check for NEOS update
-  if [ $(< /VERSION) != "$REQUIRED_NEOS_VERSION" ]; then
-    "$DIR/installer/updater/updater" "file://$DIR/installer/updater/update.json"
+  if [ $(< /VERSION) != "$AGNOS_VERSION" ]; then
+    NEOS_PY="$DIR/selfdrive/hardware/eon/neos.py"
+    MANIFEST="$DIR/selfdrive/hardware/eon/neos.json"
+    if $NEOS_PY --verify $MANIFEST; then
+      sudo reboot
+    fi
+    $DIR/selfdrive/hardware/eon/updater $NEOS_PY $MANIFEST
   fi
 }
 

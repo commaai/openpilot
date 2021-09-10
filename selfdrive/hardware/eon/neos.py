@@ -13,18 +13,21 @@ RECOVERY_COMMAND = "/cache/recovery/command"
 # TODO: check storage space before downloading
 
 
-def download_file(url, fn, sha256):
+def download_file(url: str, fn: str, sha256: str, display_name: str):
   # TODO: handle file resuming
   h = hashlib.sha256()
   with open(fn, "wb") as f:
-    r = requests.get(url, stream=True)
-    for chunk in r.iter_content(chunk_size=1024):
-      f.write(chunk)
+    r = requests.get(url, stream=True, allow_redirects=True)
+    total = int(r.headers.get('Content-Length', 0))
+    pos = 0
+    for chunk in r.iter_content(chunk_size=8192):
+      pos += f.write(chunk)
       h.update(chunk)
-  assert h == sha256, "downloaded recovery failed hash check"
+      print(f"Downloading {display_name}: {pos / total * 100}")
+  assert h == sha256, "downloaded update failed hash check"
 
 def check_recovery_hash(sha256, length):
-  with open(RECOVERY_DEV) as f:
+  with open(RECOVERY_DEV, "rb") as f:
     dat = f.read(length)
   return hashlib.sha256(dat).hexdigest() == sha256
 
@@ -39,7 +42,7 @@ def handle_recovery_update(manifest: dict):
 
   # download udpated recovery
   recovery_fn = os.path.join(NEOSUPDATE_DIR, os.path.basename(recovery_url))
-  download_file(recovery_url, recovery_fn, recovery_hash)
+  download_file(recovery_url, recovery_fn, recovery_hash, "recovery")
 
   # write recovery
   with open(recovery_fn, "rb") as update, open(RECOVERY_DEV, "w+b") as recovery:
@@ -64,7 +67,7 @@ def download_neos_update(manifest_path: str) -> str:
 
   # download OTA update
   ota_fn = os.path.join(NEOSUPDATE_DIR, os.path.basename(m['ota_url']))
-  download_file(m['ota_url'], ota_fn, m['ota_hash'])
+  download_file(m['ota_url'], ota_fn, m['ota_hash'], "system")
 
   return ota_fn
 
@@ -79,10 +82,10 @@ def perform_ota_update(ota_fn: str):
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="NEOS update utility",
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-  parser.add_argument("--update", action="store_true", help="Peform update after downloading")
+  parser.add_argument("--swap", action="store_true", help="Peform update after downloading")
   parser.add_argument("manifest", help="Manifest json")
   args = parser.parse_args()
 
   fn = download_neos_update(args.manifest)
-  if args.update:
-    perform_ota_update(fn)
+  #if args.swap:
+  #  perform_ota_update(fn)

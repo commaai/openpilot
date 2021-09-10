@@ -58,17 +58,18 @@ qt_src = ["main.cc", "ui.cc", "paint.cc", "qt/sidebar.cc", "qt/onroad.cc",
 qt_env.Program("_ui", qt_src + [asset_obj], LIBS=qt_libs)
 
 
-# setup, factory resetter, and agnos updater
+# setup and factory resetter
 if arch != 'aarch64' and GetOption('setup'):
-
   qt_env.Program("qt/setup/reset", ["qt/setup/reset.cc"], LIBS=qt_libs)
-  qt_env.Program("qt/setup/updater", ["qt/setup/updater.cc", asset_obj], LIBS=qt_libs)
   qt_env.Program("qt/setup/setup", ["qt/setup/setup.cc", asset_obj],
                  LIBS=qt_libs + ['curl', 'common', 'json11'])
 
 
-# build installers
 if GetOption('setup'):
+  # buidl updater UI
+  qt_env.Program("qt/setup/updater", ["qt/setup/updater.cc", asset_obj], LIBS=qt_libs)
+
+  # build installers
   senv = qt_env.Clone()
   senv['LINKFLAGS'].append('-Wl,-strip-debug')
 
