@@ -79,9 +79,7 @@ class CarController():
 
       can_sends.append(volkswagencan.create_mqb_hud_control(self.packer_pt, CANBUS.pt, enabled,
                                                             CS.out.steeringPressed, hud_alert, left_lane_visible,
-                                                            right_lane_visible, CS.ldw_lane_warning_left,
-                                                            CS.ldw_lane_warning_right, CS.ldw_side_dlc_tlc,
-                                                            CS.ldw_dlc, CS.ldw_tlc, CS.out.standstill,
+                                                            right_lane_visible, CS.ldw_stock_values,
                                                             left_lane_depart, right_lane_depart))
 
     # **** ACC Button Controls ********************************************** #
@@ -96,7 +94,6 @@ class CarController():
       elif enabled and CS.out.standstill:
         # Blip the Resume button if we're engaged at standstill.
         # FIXME: This is a naive implementation, improve with visiond or radar input.
-        # A subset of MQBs like to "creep" too aggressively with this implementation.
         self.graButtonStatesToSend = BUTTON_STATES.copy()
         self.graButtonStatesToSend["resumeCruise"] = True
 

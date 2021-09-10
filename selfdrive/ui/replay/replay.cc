@@ -75,6 +75,9 @@ void Replay::addSegment(int n) {
   QObject::connect(lrs[n], &LogReader::finished, this, &Replay::mergeEvents);
 
   frs[n] = new FrameReader(qPrintable(camera_paths.at(n).toString()));
+  QThread * t = QThread::create([=]() { frs[n]->process(); });
+  QObject::connect(t, &QThread::finished, t, &QThread::deleteLater);
+  t->start();
 }
 
 void Replay::removeSegment(int n) {
