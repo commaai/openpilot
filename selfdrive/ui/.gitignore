@@ -4,7 +4,6 @@ moc_*
 installer/installers/*
 
 replay/replay
-replay/tests/test_replay
 qt/text
 qt/spinner
 qt/setup/setup
