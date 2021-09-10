@@ -1,3 +1,7 @@
+Version 0.8.10 (2021-XX-XX)
+========================
+ * Škoda Karoq 2019 support thanks to jyoung8607!
+
 Version 0.8.9 (2021-09-14)
 ========================
  * Improved fan control on comma three
