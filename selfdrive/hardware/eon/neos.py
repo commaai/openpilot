@@ -51,7 +51,7 @@ def check_hash(fn: str, sha256: str, length: int = -1) -> bool:
   return hashlib.sha256(dat).hexdigest() == sha256
 
 
-def download_neos_update(manifest_path: str) -> str:
+def download_neos_update(manifest_path: str):
   with open(manifest_path) as f:
     m = json.loads(f.read())
 
@@ -74,7 +74,6 @@ def download_neos_update(manifest_path: str) -> str:
   # download OTA update
   ota_fn = os.path.join(NEOSUPDATE_DIR, os.path.basename(m['ota_url']))
   download_file(m['ota_url'], ota_fn, m['ota_hash'], "system")
-  return ota_fn
 
 
 def verify_update_ready(manifest_path: str) -> bool:
@@ -86,8 +85,9 @@ def verify_update_ready(manifest_path: str) -> bool:
   return recovery_flashed and check_hash(ota_fn, m['ota_hash'])
 
 
-def perform_ota_update(ota_fn: str):
+def perform_ota_update(manifest_path: str):
   # reboot into recovery
+  ota_fn = os.path.join(NEOSUPDATE_DIR, os.path.basename(m['ota_url']))
   with open(RECOVERY_COMMAND, "wb") as f:
     f.write(bytes(f"--update_package={ota_fn}\n", encoding='utf-8'))
   os.system("service call power 16 i32 0 s16 recovery i32 1")
@@ -97,13 +97,14 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="NEOS update utility",
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
   parser.add_argument("--swap", action="store_true", help="Peform update after downloading")
-  parser.add_argument("--verify", action="store_true", help="Check if update is ready to be applied")
+  parser.add_argument("--swap-if-ready", action="store_true", help="Perform update if already downloaded")
   parser.add_argument("manifest", help="Manifest json")
   args = parser.parse_args()
 
-  if args.verify:
-    exit(0 if verify_update_ready(args.manifest) else 1)
+  if args.swap_if_ready:
+    if verify_update_ready(args.manifest):
+      perform_ota_update(args.manifest)
   else:
-    fn = download_neos_update(args.manifest)
+    download_neos_update(args.manifest)
     if args.swap:
-      perform_ota_update(fn)
+      perform_ota_update(args.manifest)
