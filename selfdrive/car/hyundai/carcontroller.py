@@ -94,9 +94,6 @@ class CarController():
 
       if accel < 0:
         accel = interp(accel - CS.out.aEgo, [-1.0, -0.5], [2 * accel, accel])
-      else:
-        # accel = interp(CS.out.aEgo - accel, [-1.0, -0.5], [2 * accel, accel])
-        pass
 
       accel = clip(accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
 
