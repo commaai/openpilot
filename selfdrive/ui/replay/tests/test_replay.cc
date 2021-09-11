@@ -14,11 +14,11 @@ TEST_CASE("FrameReader") {
     REQUIRE(fr.getFrameCount() == 1200);
 
     // random get 50 frames
-    srand(time(NULL));
-    for (int i = 0; i < 50; ++i) {
-      int idx = rand() % (fr.getFrameCount() - 1);
-      REQUIRE(fr.get(idx) != nullptr);
-    }
+    // srand(time(NULL));
+    // for (int i = 0; i < 50; ++i) {
+    //   int idx = rand() % (fr.getFrameCount() - 1);
+    //   REQUIRE(fr.get(idx) != nullptr);
+    // }
     // sequence get 50 frames {
     for (int i = 0; i < 50; ++i) {
       REQUIRE(fr.get(i) != nullptr);
