@@ -100,7 +100,7 @@ class CarController():
 
       accel = clip(accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
 
-      stopping = (actuators.longControlState == LongCtrlState.stopping) and CS.out.standstill
+      stopping = (actuators.longControlState == LongCtrlState.stopping)
       set_speed_in_units = hud_speed * (CV.MS_TO_MPH if CS.clu11["CF_Clu_SPEED_UNIT"] == 1 else CV.MS_TO_KPH)
       can_sends.extend(create_acc_commands(self.packer, enabled, accel, jerk, int(frame / 2), lead_visible, set_speed_in_units, stopping))
 
