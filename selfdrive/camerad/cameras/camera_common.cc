@@ -216,7 +216,7 @@ kj::Array<uint8_t> get_frame_image(const CameraBuf *b) {
   return kj::mv(frame_image);
 }
 
-static std::pair<uint8_t *, size_t> yuv420_to_jpeg(const CameraBuf *b, int thumbnail_width, int thumbnail_height) {
+static kj::Array<capnp::byte> yuv420_to_jpeg(const CameraBuf *b, int thumbnail_width, int thumbnail_height) {
   std::unique_ptr<uint8[]> buf(new uint8_t[(thumbnail_width * thumbnail_height * 3) / 2]);
   uint8_t *y_plane = buf.get();
   uint8_t *u_plane = y_plane + thumbnail_width * thumbnail_height;
@@ -229,7 +229,7 @@ static std::pair<uint8_t *, size_t> yuv420_to_jpeg(const CameraBuf *b, int thumb
         thumbnail_width, thumbnail_height, libyuv::kFilterNone);
     if (result != 0) {
       LOGE("Generate YUV thumbnail failed.");
-      return {nullptr, 0};
+      return {};
     }
   }
 
@@ -278,21 +278,22 @@ static std::pair<uint8_t *, size_t> yuv420_to_jpeg(const CameraBuf *b, int thumb
   jpeg_finish_compress(&cinfo);
   jpeg_destroy_compress(&cinfo);
 
-  return {thumbnail_buffer, thumbnail_len};
+  kj::Array<capnp::byte> dat = kj::heapArray<capnp::byte>(thumbnail_buffer, thumbnail_len);
+  free(thumbnail_buffer);
+  return dat;
 }
 
 static void publish_thumbnail(PubMaster *pm, const CameraBuf *b) {
-  auto [thumbnail, len] = yuv420_to_jpeg(b, b->rgb_width / 4, b->rgb_height / 4);
-  if (thumbnail == nullptr) return;
+  auto thumbnail = yuv420_to_jpeg(b, b->rgb_width / 4, b->rgb_height / 4);
+  if (thumbnail.size() == 0) return;
 
   MessageBuilder msg;
   auto thumbnaild = msg.initEvent().initThumbnail();
   thumbnaild.setFrameId(b->cur_frame_data.frame_id);
   thumbnaild.setTimestampEof(b->cur_frame_data.timestamp_eof);
-  thumbnaild.setThumbnail(kj::arrayPtr(thumbnail, len));
+  thumbnaild.setThumbnail(thumbnail);
 
   pm->send("thumbnail", msg);
-  free(thumbnail);
 }
 
 float set_exposure_target(const CameraBuf *b, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip) {
