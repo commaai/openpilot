@@ -5,9 +5,11 @@
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/qt_window.h"
-#include "selfdrive/ui/qt/offroad/networking.h"
 #include "selfdrive/ui/qt/setup/updater.h"
 
+#ifndef QCOM
+#include "selfdrive/ui/qt/offroad/networking.h"
+#endif
 
 Updater::Updater(const QString &updater_path, const QString &manifest_path, QWidget *parent)
   : updater(updater_path), manifest(manifest_path), QStackedWidget(parent) {
@@ -41,7 +43,11 @@ Updater::Updater(const QString &updater_path, const QString &manifest_path, QWid
     QPushButton *connect = new QPushButton("Connect to WiFi");
     connect->setObjectName("navBtn");
     QObject::connect(connect, &QPushButton::clicked, [=]() {
+#ifndef QCOM
       setCurrentWidget(wifi);
+#else
+      HardwareEon::launch_wifi();
+#endif
     });
     hlayout->addWidget(connect);
 
@@ -58,9 +64,11 @@ Updater::Updater(const QString &updater_path, const QString &manifest_path, QWid
     QVBoxLayout *layout = new QVBoxLayout(wifi);
     layout->setContentsMargins(100, 100, 100, 100);
 
+#ifndef QCOM
     Networking *networking = new Networking(this, false);
     networking->setStyleSheet("Networking { background-color: #292929; border-radius: 13px; }");
     layout->addWidget(networking, 1);
+#endif
 
     QPushButton *back = new QPushButton("Back");
     back->setObjectName("navBtn");
@@ -78,7 +86,7 @@ Updater::Updater(const QString &updater_path, const QString &manifest_path, QWid
     layout->setContentsMargins(150, 330, 150, 150);
     layout->setSpacing(0);
 
-    text = new QLabel("Installing...");
+    text = new QLabel("Loading...");
     text->setStyleSheet("font-size: 90px; font-weight: 600;");
     layout->addWidget(text, 0, Qt::AlignTop);
 
@@ -111,6 +119,7 @@ Updater::Updater(const QString &updater_path, const QString &manifest_path, QWid
   setStyleSheet(R"(
     * {
       color: white;
+      outline: none;
       font-family: Inter;
     }
     Updater {
@@ -166,10 +175,25 @@ void Updater::updateFinished(int exitCode, QProcess::ExitStatus exitStatus) {
   }
 }
 
+bool Updater::eventFilter(QObject *obj, QEvent *event) {
+#ifdef QCOM
+  // filter out touches while in android activity
+  const static QSet<QEvent::Type> filter_events({QEvent::MouseButtonPress, QEvent::MouseMove, QEvent::TouchBegin, QEvent::TouchUpdate, QEvent::TouchEnd});
+  if (HardwareEon::launched_activity && filter_events.contains(event->type())) {
+    HardwareEon::check_activity();
+    if (HardwareEon::launched_activity) {
+      return true;
+    }
+  }
+#endif
+  return false;
+}
+
 int main(int argc, char *argv[]) {
   initApp();
   QApplication a(argc, argv);
   Updater updater(argv[1], argv[2]);
   setMainWindow(&updater);
+  a.installEventFilter(&updater);
   return a.exec();
 }
