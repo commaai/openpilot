@@ -73,6 +73,10 @@ class LongControl():
       v_target = interp(CP.longitudinalActuatorDelay, T_IDXS[:CONTROL_N], long_plan.speeds)
       v_target_future = long_plan.speeds[-1]
       a_target = 2 * (v_target - long_plan.speeds[0])/CP.longitudinalActuatorDelay - long_plan.accels[0]
+
+      # Only use lag compensation for braking
+      a_target = min(a_target, long_plan.accels[0])
+      v_target = min(v_target, long_plan.speeds[0])
     else:
       v_target = 0.0
       v_target_future = 0.0
