@@ -61,6 +61,8 @@ models/dmonitoring_model_q.dlc
 
 release/*
 
+installer/updater/updater
+
 selfdrive/version.py
 
 selfdrive/__init__.py
