@@ -40,6 +40,7 @@ class CarInterface(CarInterfaceBase):
 
     ret.longitudinalTuning.kpV = [0.1]
     ret.longitudinalTuning.kiV = [0.0]
+    ret.stoppingDecelRate = 2.0
 
     ret.longitudinalActuatorDelay = 1.0 # s
 
