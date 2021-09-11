@@ -22,10 +22,6 @@ files = [
 ]
 
 if arch == "aarch64":
-  files += [
-    'framebuffer.cc',
-    'touch.c',
-  ]
   _gpu_libs = ['gui', 'adreno_utils']
 elif arch == "larch64":
   _gpu_libs = ["GLESv2"]

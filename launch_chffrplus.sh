@@ -90,7 +90,11 @@ function two_init {
 
   # Check for NEOS update
   if [ $(< /VERSION) != "$REQUIRED_NEOS_VERSION" ]; then
-    "$DIR/installer/updater/updater" "file://$DIR/installer/updater/update.json"
+    echo "Installing NEOS update"
+    NEOS_PY="$DIR/selfdrive/hardware/eon/neos.py"
+    MANIFEST="$DIR/selfdrive/hardware/eon/neos.json"
+    $NEOS_PY --swap-if-ready $MANIFEST
+    $DIR/selfdrive/hardware/eon/updater $NEOS_PY $MANIFEST
   fi
 }
 
