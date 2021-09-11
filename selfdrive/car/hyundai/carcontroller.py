@@ -88,12 +88,14 @@ class CarController():
 
     if frame % 2 == 0 and CS.CP.openpilotLongitudinalControl:
       lead_visible = False
+
       accel = actuators.accel if enabled else 0
-      accel = clip(accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
+      jerk = 1.0 * (accel - CS.out.aEgo)
+      accel = clip(2 * accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
 
       stopping = (actuators.longControlState == LongCtrlState.stopping) and CS.out.standstill
       set_speed_in_units = hud_speed * (CV.MS_TO_MPH if CS.clu11["CF_Clu_SPEED_UNIT"] == 1 else CV.MS_TO_KPH)
-      can_sends.extend(create_acc_commands(self.packer, enabled, accel, int(frame / 2), lead_visible, set_speed_in_units, stopping))
+      can_sends.extend(create_acc_commands(self.packer, enabled, accel, jerk, int(frame / 2), lead_visible, set_speed_in_units, stopping))
 
     # 20 Hz LFA MFA message
     if frame % 5 == 0 and self.car_fingerprint in [CAR.SONATA, CAR.PALISADE, CAR.IONIQ, CAR.KIA_NIRO_EV, CAR.KIA_NIRO_HEV_2021,
