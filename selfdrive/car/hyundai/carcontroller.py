@@ -1,6 +1,6 @@
 from cereal import car
 from common.realtime import DT_CTRL
-from common.numpy_fast import clip
+from common.numpy_fast import clip, interp
 from selfdrive.config import Conversions as CV
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.hyundai.hyundaican import create_lkas11, create_clu11, create_lfahda_mfc, create_acc_commands, create_acc_opt, create_frt_radar_opt
@@ -88,10 +88,17 @@ class CarController():
 
     if frame % 2 == 0 and CS.CP.openpilotLongitudinalControl:
       lead_visible = False
-
       accel = actuators.accel if enabled else 0
-      jerk = 1.0 * (accel - CS.out.aEgo)
-      accel = clip(2 * accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
+
+      jerk = clip(2.0 * (accel - CS.out.aEgo), -12.7, 12.7)
+
+      if accel < 0:
+        accel = interp(accel - CS.out.aEgo, [-1.0, -0.5], [2 * accel, accel])
+      else:
+        # accel = interp(CS.out.aEgo - accel, [-1.0, -0.5], [2 * accel, accel])
+        pass
+
+      accel = clip(accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
 
       stopping = (actuators.longControlState == LongCtrlState.stopping) and CS.out.standstill
       set_speed_in_units = hud_speed * (CV.MS_TO_MPH if CS.clu11["CF_Clu_SPEED_UNIT"] == 1 else CV.MS_TO_KPH)
