@@ -72,8 +72,8 @@ private:
     QRect(303, 755, 718, 189),
   };
 
-  const QString IMG_PATH = vwp_w == 2160 ? "../assets/training_wide/" : "../assets/training/";
-  const QVector<QRect> boundingRect = vwp_w == 2160 ? boundingRectWide : boundingRectStandard;
+  const QString IMG_PATH = WIDE_UI ? "../assets/training_wide/" : "../assets/training/";
+  const QVector<QRect> boundingRect = WIDE_UI ? boundingRectWide : boundingRectStandard;
 
 signals:
   void completedTraining();

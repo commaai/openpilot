@@ -15,7 +15,7 @@ used safely** and openpilot is provided with no warranty of fitness for any purp
 openpilot is developed in good faith to be compliant with FMVSS requirements and to follow
 industry standards of safety for Level 2 Driver Assistance Systems. In particular, we observe
 ISO26262 guidelines, including those from [pertinent documents](https://www.nhtsa.gov/sites/nhtsa.dot.gov/files/documents/13498a_812_573_alcsystemreport.pdf)
-released by NHTSA. In addition, we impose strict coding guidelines (like [MISRA C : 2012](https://www.misra.org.uk/MISRAHome/MISRAC2012/tabid/196/Default.aspx))
+released by NHTSA. In addition, we impose strict coding guidelines (like [MISRA C : 2012](https://www.misra.org.uk/what-is-misra/))
 on parts of openpilot that are safety relevant. We also perform software-in-the-loop,
 hardware-in-the-loop and in-vehicle tests before each software release.
 

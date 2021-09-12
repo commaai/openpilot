@@ -238,7 +238,7 @@ void Thneed::save(const char *filename, bool save_binaries) {
       if (mobj["arg_type"] == "image2d_t" || mobj["arg_type"] == "image1d_t") {
         assert(false);
       } else {
-        // buffers alloced with CL_MEM_HOST_WRITE_ONLY, hence this hack
+        // buffers allocated with CL_MEM_HOST_WRITE_ONLY, hence this hack
         //hexdump((uint32_t*)val, 0x100);
 
         // the worst hack in thneed, the flags are at 0x14

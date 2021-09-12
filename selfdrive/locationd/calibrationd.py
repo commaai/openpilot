@@ -31,7 +31,7 @@ INPUTS_WANTED = 50   # We want a little bit more than we need for stability
 MAX_ALLOWED_SPREAD = np.radians(2)
 RPY_INIT = np.array([0.0,0.0,0.0])
 
-# These values are needed to accomodate biggest modelframe
+# These values are needed to accommodate biggest modelframe
 PITCH_LIMITS = np.array([-0.09074112085129739, 0.14907572052989657])
 YAW_LIMITS = np.array([-0.06912048084718224, 0.06912048084718235])
 DEBUG = os.getenv("DEBUG") is not None
@@ -115,7 +115,7 @@ class Calibrator():
       self.cal_status = Calibration.INVALID
 
     # If spread is too high, assume mounting was changed and reset to last block.
-    # Make the transition smooth. Abrupt transistion are not good foor feedback loop through supercombo model.
+    # Make the transition smooth. Abrupt transitions are not good foor feedback loop through supercombo model.
     if max(self.calib_spread) > MAX_ALLOWED_SPREAD and self.cal_status == Calibration.CALIBRATED:
       self.reset(self.rpys[self.block_idx - 1], valid_blocks=INPUTS_NEEDED, smooth_from=self.rpy)
 

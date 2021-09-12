@@ -42,6 +42,7 @@ public:
   void requestScan();
   QMap<QString, Network> seenNetworks;
   QMap<QDBusObjectPath, QString> knownConnections;
+  QString lteConnectionPath;
   QString ipv4_address;
 
   void refreshNetworks();
@@ -49,6 +50,7 @@ public:
   bool isKnownConnection(const QString &ssid);
   void activateWifiConnection(const QString &ssid);
   NetworkType currentNetworkType();
+  void setRoamingEnabled(bool roaming);
 
   void connect(const Network &ssid);
   void connect(const Network &ssid, const QString &password);
@@ -84,8 +86,8 @@ private:
   unsigned int get_ap_strength(const QString &network_path);
   SecurityType getSecurityType(const QString &path);
   QDBusObjectPath getConnectionPath(const QString &ssid);
+  Connection getConnectionSettings(const QDBusObjectPath &path);
   void initConnections();
-  QString getConnectionSsid(const QDBusObjectPath &path);
   void setup();
 
 signals:

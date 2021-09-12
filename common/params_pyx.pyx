@@ -30,11 +30,11 @@ class UnknownKeyName(Exception):
 cdef class Params:
   cdef c_Params* p
 
-  def __cinit__(self, d=None, bool persistent_params=False):
+  def __cinit__(self, d=None):
     cdef string path
     if d is None:
       with nogil:
-        self.p = new c_Params(persistent_params)
+        self.p = new c_Params()
     else:
       path = <string>d.encode()
       with nogil:

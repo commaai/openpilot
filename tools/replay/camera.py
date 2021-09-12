@@ -66,8 +66,9 @@ def ui_thread(addr, frame_address):
         flags=cv2.WARP_INVERSE_MAP)
     else:
       # actually RGB
-      img = np.frombuffer(yuv_img, dtype=np.uint8).reshape((_FULL_FRAME_SIZE[1], _FULL_FRAME_SIZE[0], 3))
-      img = img[:, :, ::-1]  # Convert BGR to RGB
+      if len(yuv_img) != 0:
+        img = np.frombuffer(yuv_img, dtype=np.uint8).reshape((_FULL_FRAME_SIZE[1], _FULL_FRAME_SIZE[0], 3))
+        img = img[:, :, ::-1]  # Convert BGR to RGB
 
     height, width = img.shape[:2]
     img_resized = cv2.resize(

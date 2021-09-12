@@ -117,7 +117,7 @@ class AcadosSimOpts:
         self.__sens_algebraic = False
         self.__sens_hess = False
         self.__output_z = False
-        self.__sim_method_jac_reuse = False
+        self.__sim_method_jac_reuse = 0
 
     @property
     def integrator_type(self):
@@ -166,7 +166,7 @@ class AcadosSimOpts:
 
     @property
     def sim_method_jac_reuse(self):
-        """Boolean determining if jacobians are reused. Default: False"""
+        """Integer determining if jacobians are reused (0 or 1). Default: 0"""
         return self.__sim_method_jac_reuse
 
     @property
@@ -245,10 +245,10 @@ class AcadosSimOpts:
 
     @sim_method_jac_reuse.setter
     def sim_method_jac_reuse(self, sim_method_jac_reuse):
-        if sim_method_jac_reuse in (True, False):
+        if sim_method_jac_reuse in (0, 1):
             self.__sim_method_jac_reuse = sim_method_jac_reuse
         else:
-            raise Exception('Invalid sim_method_jac_reuse value. sim_method_jac_reuse must be a Boolean.')
+            raise Exception('Invalid sim_method_jac_reuse value. sim_method_jac_reuse must be 0 or 1.')
 
 class AcadosSim:
     """

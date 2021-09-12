@@ -116,6 +116,10 @@ void MapWindow::initLayers() {
 }
 
 void MapWindow::timerUpdate() {
+  if (!QUIState::ui_state.scene.started) {
+    return;
+  }
+
   if (isVisible()) {
     update();
   }
@@ -129,7 +133,7 @@ void MapWindow::timerUpdate() {
 
     if (localizer_valid) {
       auto pos = location.getPositionGeodetic();
-      auto orientation = location.getOrientationNED();
+      auto orientation = location.getCalibratedOrientationNED();
 
       float velocity = location.getVelocityCalibrated().getValue()[0];
       float bearing = RAD2DEG(orientation.getValue()[2]);
@@ -198,7 +202,7 @@ void MapWindow::timerUpdate() {
       }
 
       // Transition to next route segment
-      if (distance_to_maneuver < -MANEUVER_TRANSITION_THRESHOLD) {
+      if (!shouldRecompute() && (distance_to_maneuver < -MANEUVER_TRANSITION_THRESHOLD)) {
         auto next_segment = segment.nextRouteSegment();
         if (next_segment.isValid()) {
           segment = next_segment;
@@ -226,7 +230,7 @@ void MapWindow::resizeGL(int w, int h) {
 }
 
 void MapWindow::initializeGL() {
-  m_map.reset(new QMapboxGL(nullptr, m_settings, size(), 1));
+  m_map.reset(new QMapboxGL(this, m_settings, size(), 1));
 
   if (last_position) {
     m_map->setCoordinateZoom(*last_position, MAX_ZOOM);
@@ -259,9 +263,8 @@ static float get_time_typical(const QGeoRouteSegment &segment) {
 
 
 void MapWindow::recomputeRoute() {
-  // Retry all timed out requests
-  if (!m_map.isNull()) {
-    m_map->connectionEstablished();
+  if (!QUIState::ui_state.scene.started) {
+    return;
   }
 
   if (!last_position) {

@@ -17,7 +17,7 @@ QMapbox::CoordinatesCollections model_to_collection(
 
   Eigen::Vector3d ecef(positionECEF.getValue()[0], positionECEF.getValue()[1], positionECEF.getValue()[2]);
   Eigen::Vector3d orient(calibratedOrientationECEF.getValue()[0], calibratedOrientationECEF.getValue()[1], calibratedOrientationECEF.getValue()[2]);
-  Eigen::Matrix3d ecef_from_local = euler2rot(orient).transpose();
+  Eigen::Matrix3d ecef_from_local = euler2rot(orient);
 
   QMapbox::Coordinates coordinates;
   auto x = line.getX();

@@ -38,7 +38,9 @@ public:
 
 private:
   LabelControl* ipLabel;
+  ToggleControl* tetheringToggle;
   WifiManager* wifi = nullptr;
+  Params params;
 
 signals:
   void backPress();

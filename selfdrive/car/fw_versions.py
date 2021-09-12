@@ -253,7 +253,7 @@ def match_fw_to_car(fw_versions, allow_fuzzy=True):
 def get_fw_versions(logcan, sendcan, bus, extra=None, timeout=0.1, debug=False, progress=False):
   ecu_types = {}
 
-  # Extract ECU adresses to query from fingerprints
+  # Extract ECU addresses to query from fingerprints
   # ECUs using a subadress need be queried one by one, the rest can be done in parallel
   addrs = []
   parallel_addrs = []

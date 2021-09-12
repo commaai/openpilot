@@ -266,6 +266,8 @@ class Tici(HardwareBase):
   def set_power_save(self, powersave_enabled):
     # amplifier, 100mW at idle
     self.amplifier.set_global_shutdown(amp_disabled=powersave_enabled)
+    if not powersave_enabled:
+      self.amplifier.initialize_configuration()
 
     # offline big cluster, leave core 4 online for boardd
     for i in range(5, 8):

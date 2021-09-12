@@ -5,6 +5,7 @@ import time
 
 from panda import BASEDIR as PANDA_BASEDIR, Panda, PandaDFU
 from common.basedir import BASEDIR
+from common.params import Params
 from selfdrive.swaglog import cloudlog
 
 PANDA_FW_FN = os.path.join(PANDA_BASEDIR, "board", "obj", "panda.bin.signed")
@@ -86,6 +87,7 @@ def main() -> None:
   # check health for lost heartbeat
   health = panda.health()
   if health["heartbeat_lost"]:
+    Params().put_bool("PandaHeartbeatLost", True)
     cloudlog.event("heartbeat lost", deviceState=health)
 
   cloudlog.info("Resetting panda")

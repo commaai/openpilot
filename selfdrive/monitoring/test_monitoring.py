@@ -131,7 +131,7 @@ class TestMonitoring(unittest.TestCase):
     self.assertTrue(len(events[int((DISTRACTED_SECONDS_TO_RED+2*_invisible_time+3.5)/DT_DMON)]) == 0)
 
   # engaged, invisible driver, down to orange, driver touches wheel; then down to orange again, driver appears
-  #  - both actions should clear the alert, but momentary appearence should not
+  #  - both actions should clear the alert, but momentary appearance should not
   def test_sometimes_transparent_commuter(self):
       _visible_time = np.random.choice([0.5, 10])
       ds_vector = always_no_face[:]*2

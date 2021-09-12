@@ -45,12 +45,14 @@ class LongitudinalMpc():
     self.cur_state[0].v_ego = v_safe
     self.cur_state[0].a_ego = a_safe
 
-  def update(self, carstate, model, v_cruise):
+  def update(self, carstate, radarstate, v_cruise):
     v_cruise_clipped = np.clip(v_cruise, self.cur_state[0].v_ego - 10., self.cur_state[0].v_ego + 10.0)
     poss = v_cruise_clipped * np.array(T_IDXS[:LON_MPC_N+1])
     speeds = v_cruise_clipped * np.ones(LON_MPC_N+1)
     accels = np.zeros(LON_MPC_N+1)
+    self.update_with_xva(poss, speeds, accels)
 
+  def update_with_xva(self, poss, speeds, accels):
     # Calculate mpc
     self.libmpc.run_mpc(self.cur_state, self.mpc_solution,
                         list(poss), list(speeds), list(accels),
