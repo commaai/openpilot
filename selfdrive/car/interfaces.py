@@ -74,9 +74,11 @@ class CarInterfaceBase():
     ret.openpilotLongitudinalControl = False
     ret.minSpeedCan = 0.3
     ret.startAccel = -0.8
+    ret.stopAccel = -2.0
     ret.stoppingDecelRate = 0.8 # brake_travel/s while trying to stop
     ret.startingAccelRate = 3.2 # brake_travel/s while releasing on restart
     ret.vEgoStopping = 0.5
+    ret.vEgoStarting = 0.5
     ret.stoppingControl = True
     ret.longitudinalTuning.deadzoneBP = [0.]
     ret.longitudinalTuning.deadzoneV = [0.]

@@ -1,5 +1,6 @@
 from cereal import car
 from common.numpy_fast import clip, interp
+from common.realtime import DT_CTRL
 from selfdrive.controls.lib.pid import PIController
 from selfdrive.controls.lib.drive_helpers import CONTROL_N
 from selfdrive.modeld.constants import T_IDXS
@@ -7,11 +8,6 @@ from selfdrive.modeld.constants import T_IDXS
 LongCtrlState = car.CarControl.Actuators.LongControlState
 
 STOPPING_TARGET_SPEED_OFFSET = 0.01
-STARTING_TARGET_SPEED = 0.5
-
-DECEL_STOPPING_TARGET = 2.0  # apply at least this amount of brake to maintain the vehicle stationary
-
-RATE = 100.0
 
 # As per ISO 15622:2018 for all speeds
 ACCEL_MIN_ISO = -3.5 # m/s^2
@@ -27,7 +23,7 @@ def long_control_state_trans(CP, active, long_control_state, v_ego, v_target, v_
                         ((v_pid < stopping_target_speed and v_target < stopping_target_speed) or
                          brake_pressed))
 
-  starting_condition = v_target > STARTING_TARGET_SPEED and not cruise_standstill
+  starting_condition = v_target > CP.vEgoStarting and not cruise_standstill
 
   if not active:
     long_control_state = LongCtrlState.off
@@ -59,7 +55,7 @@ class LongControl():
     self.long_control_state = LongCtrlState.off  # initialized to off
     self.pid = PIController((CP.longitudinalTuning.kpBP, CP.longitudinalTuning.kpV),
                             (CP.longitudinalTuning.kiBP, CP.longitudinalTuning.kiV),
-                            rate=RATE,
+                            rate=1/DT_CTRL,
                             sat_limit=0.8)
     self.v_pid = 0.0
     self.last_output_accel = 0.0
@@ -118,8 +114,8 @@ class LongControl():
     # Intention is to stop, switch to a different brake control until we stop
     elif self.long_control_state == LongCtrlState.stopping:
       # Keep applying brakes until the car is stopped
-      if not CS.standstill or output_accel > -DECEL_STOPPING_TARGET:
-        output_accel -= CP.stoppingDecelRate / RATE
+      if not CS.standstill or output_accel > CP.stopAccel:
+        output_accel -= CP.stoppingDecelRate * DT_CTRL
       output_accel = clip(output_accel, accel_limits[0], accel_limits[1])
 
       self.reset(CS.vEgo)
@@ -127,7 +123,7 @@ class LongControl():
     # Intention is to move again, release brake fast before handing control to PID
     elif self.long_control_state == LongCtrlState.starting:
       if output_accel < CP.startAccel:
-        output_accel += CP.startingAccelRate / RATE
+        output_accel += CP.startingAccelRate * DT_CTRL
       self.reset(CS.vEgo)
 
     self.last_output_accel = output_accel
