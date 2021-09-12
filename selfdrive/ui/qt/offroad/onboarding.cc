@@ -178,10 +178,8 @@ OnboardingWindow::OnboardingWindow(QWidget *parent) : QStackedWidget(parent) {
   TrainingGuide* tr = new TrainingGuide(this);
   addWidget(tr);
   connect(tr, &TrainingGuide::completedTraining, [=]() {
-    if (!training_done) {
-      Params().put("CompletedTrainingVersion", current_training_version);
-      training_done = true;
-    }
+    training_done = true;
+    Params().put("CompletedTrainingVersion", current_training_version);
     updateActiveScreen();
   });
 
@@ -202,5 +200,5 @@ OnboardingWindow::OnboardingWindow(QWidget *parent) : QStackedWidget(parent) {
       background-color: #4F4F4F;
     }
   )");
-  updateActiveScreen();  
+  updateActiveScreen();
 }
