@@ -8,7 +8,6 @@ LongCtrlState = car.CarControl.Actuators.LongControlState
 
 STOPPING_TARGET_SPEED_OFFSET = 0.01
 STARTING_TARGET_SPEED = 0.5
-DECEL_THRESHOLD_TO_PID = 0.8
 
 DECEL_STOPPING_TARGET = 2.0  # apply at least this amount of brake to maintain the vehicle stationary
 
@@ -49,7 +48,7 @@ def long_control_state_trans(CP, active, long_control_state, v_ego, v_target, v_
     elif long_control_state == LongCtrlState.starting:
       if stopping_condition:
         long_control_state = LongCtrlState.stopping
-      elif output_accel >= -DECEL_THRESHOLD_TO_PID:
+      elif output_accel >= CP.startAccel:
         long_control_state = LongCtrlState.pid
 
   return long_control_state
@@ -127,7 +126,7 @@ class LongControl():
 
     # Intention is to move again, release brake fast before handing control to PID
     elif self.long_control_state == LongCtrlState.starting:
-      if output_accel < -DECEL_THRESHOLD_TO_PID:
+      if output_accel < CP.startAccel:
         output_accel += CP.startingAccelRate / RATE
       self.reset(CS.vEgo)
 
