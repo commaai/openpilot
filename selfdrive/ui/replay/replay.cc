@@ -91,7 +91,7 @@ void Replay::mergeEvents() {
     if (auto it = lrs.find(i); it != lrs.end()) {
       *new_events += (*it)->events;
       for (CameraType cam_type : ALL_CAMERAS) {
-        new_eidx[cam_type].merge((*it)->eidx[cam_type]);
+        new_eidx[cam_type].insert((*it)->eidx[cam_type].begin(), (*it)->eidx[cam_type].begin());
       }
     }
   }
@@ -219,6 +219,7 @@ void Replay::stream() {
     for (auto eit = events->lowerBound(t0); !updating_events && eit != events->end(); ++eit) {
       cereal::Event::Reader e = (*eit)->event;
       cur_mono_time = (*eit)->mono_time;
+      current_segment = (cur_mono_time - route_start_ts) / 1e9 / 60;
       std::string type;
       KJ_IF_MAYBE(e_, static_cast<capnp::DynamicStruct::Reader>(e).which()) {
         type = e_->getProto().getName();
