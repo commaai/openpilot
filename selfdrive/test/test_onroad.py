@@ -64,22 +64,22 @@ if TICI:
 
 TIMINGS = {
   # rtols: max/min, rsd
-  "can": [0.4, 0.02],
-  "pandaState": [0.1, 0.02],
-  "sendcan": [0.35, 0.08],
-  "carState": [0.35, 0.08],
-  "carControl": [0.35, 0.08],
-  "controlsState": [0.35, 0.08],
-  "lateralPlan": [0.4, 0.06],
-  "roadCameraState": [0.4, 0.07],
-  "driverCameraState": [0.4, 0.09],
-  "modelV2": [0.4, 0.06],
+  "can": [0.4, 0.1],
+  "pandaState": [0.1, 0.1],
+  "sendcan": [0.35, 0.1],
+  "carState": [0.35, 0.1],
+  "carControl": [0.35, 0.1],
+  "controlsState": [0.35, 0.1],
+  "lateralPlan": [0.4, 0.1],
+  "roadCameraState": [0.4, 0.1],
+  "driverCameraState": [0.4, 0.1],
+  "modelV2": [0.6, 0.1],
   "driverState": [0.4, 0.1],
-  "liveLocationKalman": [0.4, 0.07],
+  "liveLocationKalman": [0.4, 0.1],
 }
 if TICI:
   TIMINGS.update({
-    "wideRoadCameraState": [0.4, 0.07],
+    "wideRoadCameraState": [0.4, 0.1],
   })
 
 
@@ -207,7 +207,7 @@ class TestOnroad(unittest.TestCase):
       ts = np.diff(msgs) / 1e9
       dt = 1 / service_list[s].frequency
 
-      np.testing.assert_allclose(np.mean(ts), dt, rtol=0.01, err_msg=f"{s} - failed mean timing check")
+      np.testing.assert_allclose(np.mean(ts), dt, rtol=0.03, err_msg=f"{s} - failed mean timing check")
       np.testing.assert_allclose([np.max(ts), np.min(ts)], dt, rtol=maxmin, err_msg=f"{s} - failed max/min timing check")
       self.assertLess(np.std(ts) / dt, rsd, msg=f"{s} - failed RSD timing check")
       print(f"{s}: {np.array([np.mean(ts), np.max(ts), np.min(ts)])*1e3}")
