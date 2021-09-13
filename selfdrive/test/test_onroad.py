@@ -77,6 +77,10 @@ TIMINGS = {
   "driverState": [0.6, 0.1],
   "liveLocationKalman": [0.6, 0.1],
 }
+if EON:
+  TIMINGS.update({
+    "lateralPlan": [0.7, 0.2],
+  })
 if TICI:
   TIMINGS.update({
     "wideRoadCameraState": [0.6, 0.1],
