@@ -872,15 +872,15 @@ class AcadosOcpSolver:
         self.shared_lib.ocp_nlp_cost_model_set_slice.argtypes = \
             [c_void_p, c_void_p, c_void_p, c_int, c_int, c_char_p, c_void_p, c_int]
 
-        getattr(self.shared_lib, f"{self.model_name}_acados_solve").argtypes = [c_void_p]
-        getattr(self.shared_lib, f"{self.model_name}_acados_solve").restype = c_int
-
     def solve(self):
         """
         Solve the ocp with current input.
         """
-        #status = getattr(self.shared_lib, f"{self.model_name}_acados_solve")(self.capsule)
-        return 0#status
+
+        getattr(self.shared_lib, f"{self.model_name}_acados_solve").argtypes = [c_void_p]
+        getattr(self.shared_lib, f"{self.model_name}_acados_solve").restype = c_int
+        status = getattr(self.shared_lib, f"{self.model_name}_acados_solve")(self.capsule)
+        return status
 
 
     def get_slice(self, start_stage_, end_stage_, field_):
