@@ -1,5 +1,6 @@
 Version 0.8.10 (2021-XX-XX)
 ========================
+ * RAM 1500 2019-2021 support thanks to the Emergency Midnight RAM 1500 Porting Team!
  * Škoda Karoq 2019 support thanks to jyoung8607!
 
 Version 0.8.9 (2021-09-14)
