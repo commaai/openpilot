@@ -42,7 +42,7 @@ class CarController():
     # **** ACC Button Controls ********************************************** #
 
     if pcm_cancel_cmd:
-      new_msg = create_wheel_buttons(self.packer, self.frame, cancel=True)
+      new_msg = create_wheel_buttons(self.packer, frame, cancel=True)
       can_sends.append(new_msg)
 
     return can_sends
