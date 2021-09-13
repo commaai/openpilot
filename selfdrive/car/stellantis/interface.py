@@ -6,9 +6,6 @@ from selfdrive.car.interfaces import CarInterfaceBase
 
 
 class CarInterface(CarInterfaceBase):
-  def __init__(self, CP, CarController, CarState):
-    super().__init__(CP, CarController, CarState)
-
   @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
@@ -19,9 +16,8 @@ class CarInterface(CarInterfaceBase):
     # RAM port is a community feature, since it was made by Tunder using magic
     ret.communityFeature = True
 
-    ret.wheelbase = 3.88  # 2021 Ram 1500
-    ret.steerRatio = 15.  # just a guess
-    ret.mass = 2493. + STD_CARGO_KG  # kg curb weight 2021 Ram 1500
+    # Global default tuning params
+
     ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kiBP = [[0.], [0.,]]
     ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.15], [0.015]]
     ret.lateralTuning.pid.kf = 0.00006
@@ -29,8 +25,14 @@ class CarInterface(CarInterfaceBase):
     ret.steerRateCost = 1.0  # may need tuning
     ret.steerLimitTimer = 0.4
     ret.centerToFront = ret.wheelbase * 0.4 # just a guess
-
     ret.minSteerSpeed = 14.0  # m/s
+
+    # Per-vehicle tuning params
+
+    if candidate == CAR.RAM_1500_DT:
+      ret.wheelbase = 3.88  # 2021 Ram 1500
+      ret.steerRatio = 15.  # just a guess
+      ret.mass = 2493. + STD_CARGO_KG  # kg curb weight 2021 Ram 1500
 
     # starting with reasonable value for civic and scaling by mass and wheelbase
     ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)

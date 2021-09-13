@@ -1,5 +1,3 @@
-from selfdrive.car import make_can_msg
-
 def create_lkas_command(packer, apply_steer, counter, steer_command_bit):
   values = {
     "LKAS_COMMAND": apply_steer,
