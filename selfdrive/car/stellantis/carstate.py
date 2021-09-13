@@ -4,7 +4,7 @@ from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
 from selfdrive.config import Conversions as CV
 from selfdrive.car.interfaces import CarStateBase
-from selfdrive.car.stellantis.values import DBC, P
+from selfdrive.car.stellantis.values import DBC, CarControllerParams as P
 
 
 class CarState(CarStateBase):
