@@ -872,15 +872,15 @@ class AcadosOcpSolver:
         self.shared_lib.ocp_nlp_cost_model_set_slice.argtypes = \
             [c_void_p, c_void_p, c_void_p, c_int, c_int, c_char_p, c_void_p, c_int]
 
+        getattr(self.shared_lib, f"{self.model_name}_acados_solve").argtypes = [c_void_p]
+        getattr(self.shared_lib, f"{self.model_name}_acados_solve").restype = c_int
+
     def solve(self):
         """
         Solve the ocp with current input.
         """
-
-        getattr(self.shared_lib, f"{self.model_name}_acados_solve").argtypes = [c_void_p]
-        getattr(self.shared_lib, f"{self.model_name}_acados_solve").restype = c_int
-        status = getattr(self.shared_lib, f"{self.model_name}_acados_solve")(self.capsule)
-        return status
+        #status = getattr(self.shared_lib, f"{self.model_name}_acados_solve")(self.capsule)
+        return 0#status
 
 
     def get_slice(self, start_stage_, end_stage_, field_):
@@ -1247,7 +1247,7 @@ class AcadosOcpSolver:
         #stage = c_int(stage_)
 
         #value_data = cast(value_.ctypes.data, POINTER(c_double))
-        self._set_param(self.capsule, stage_, value_.ctypes.data_as(POINTER(c_double)), value_.shape[0])
+        self._set_param(self.capsule, stage_, cast(value_.ctypes.data, c_double), value_.shape[0])
 
     def cost_set(self, start_stage_, field_, value_, api='warn'):
       self.cost_set_slice(start_stage_, start_stage_+1, field_, value_[None], api='warn')
@@ -1302,7 +1302,7 @@ class AcadosOcpSolver:
 
         self.shared_lib.ocp_nlp_constraints_model_set_slice(self.nlp_config, \
             self.nlp_dims, self.nlp_in, start_stage_, end_stage_, field,
-            value_.ctypes.data_as(POINTER(c_void_p)), dim)
+            cast(value_.ctypes.data, c_void_p), dim)
 
 
     def dynamics_get(self, stage_, field_):
