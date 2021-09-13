@@ -50,7 +50,7 @@ class CarState(CarStateBase):
 
     # Update door and seatbelt status
     ret.doorOpen = any([cp.vl["BCM"]["DOOR_OPEN_FL"], cp.vl["BCM"]["DOOR_OPEN_FR"],
-                        cp.vl["BCM"]["DOOR_OPEN_LR"], cp.vl["BCM"]["DOOR_OPEN_RR"]])
+                        cp.vl["BCM"]["DOOR_OPEN_RL"], cp.vl["BCM"]["DOOR_OPEN_RR"]])
     ret.seatbeltUnlatched = bool(cp.vl["ORM"]["DRIVER_SEATBELT_STATUS"])
 
     # TODO: Can we find blindspot radar data?
