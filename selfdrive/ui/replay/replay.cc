@@ -91,7 +91,7 @@ void Replay::mergeEvents() {
     if (auto it = lrs.find(i); it != lrs.end()) {
       *new_events += (*it)->events;
       for (CameraType cam_type : ALL_CAMERAS) {
-        new_eidx[cam_type].insert((*it)->eidx[cam_type].begin(), (*it)->eidx[cam_type].begin());
+        new_eidx[cam_type].insert((*it)->eidx[cam_type].begin(), (*it)->eidx[cam_type].end());
       }
     }
   }
