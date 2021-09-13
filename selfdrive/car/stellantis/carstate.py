@@ -70,8 +70,8 @@ class CarState(CarStateBase):
 
     # Update control button states for turn signals and ACC controls
     # TODO: read in ACC button states for DM reset and future long control
-    ret.leftBlinker = bool(cp.vl["STEERING_LEVERS"]["BLINKER_LEFT"])
-    ret.rightBlinker = bool(cp.vl["STEERING_LEVERS"]["BLINKER_RIGHT"])
+    ret.leftBlinker = bool(cp.vl["SWCM"]["BLINKER_LEFT"])
+    ret.rightBlinker = bool(cp.vl["SWCM"]["BLINKER_RIGHT"])
 
     ret.espDisabled = bool(cp.vl["CENTER_STACK"]["TRAC_OFF"])
 
@@ -93,8 +93,8 @@ class CarState(CarStateBase):
       ("WHEEL_SPEED_RL", "WHEEL_SPEEDS", 0),
       ("WHEEL_SPEED_RR", "WHEEL_SPEEDS", 0),
       ("STEER_ANGLE", "EPS_1", 0),
-      ("BLINKER_LEFT", "STEERING_LEVERS", 0),
-      ("BLINKER_RIGHT", "STEERING_LEVERS", 0),
+      ("BLINKER_LEFT", "SWCM", 0),
+      ("BLINKER_RIGHT", "SWCM", 0),
       ("TORQUE_DRIVER", "EPS_2", 0),
       ("EPS_STATUS", "EPS_2", 0),
       ("TRAC_OFF", "CENTER_STACK", 0),
@@ -109,7 +109,7 @@ class CarState(CarStateBase):
       ("WHEEL_SPEEDS", 50),
       ("SHIFTER_ASSM", 50),
       ("TPS_1", 50),
-      ("STEERING_LEVERS", 10),
+      ("SWCM", 10),
       ("ORM", 1),
       ("BCM", 1),
       ("CENTER_STACK", 20),
