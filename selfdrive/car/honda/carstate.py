@@ -10,7 +10,7 @@ from selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, SPEED_FACTOR, 
 TransmissionType = car.CarParams.TransmissionType
 
 
-def get_can_signals(CP, *, gearbox_msg):
+def get_can_signals(CP, gearbox_msg="GEARBOX"):
   # this function generates lists for signal, messages and initial values
   signals = [
     ("XMISSION_SPEED", "ENGINE_DATA", 0),
@@ -254,16 +254,15 @@ class CarState(CarStateBase):
     gear = int(cp.vl[self.gearbox_msg]["GEAR_SHIFTER"])
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(gear, None))
 
-    pedal_gas = cp.vl["POWERTRAIN_DATA"]["PEDAL_GAS"]
-    ret.gas = pedal_gas / 256.
+    ret.gas = cp.vl["POWERTRAIN_DATA"]["PEDAL_GAS"]
 
     # this is a hack for the interceptor. This is now only used in the simulation
     # TODO: Replace tests by toyota so this can go away
     if self.CP.enableGasInterceptor:
       user_gas = (cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS"] + cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS2"]) / 2.
-      ret.gasPressed = user_gas > 1e-5  # this works because interceptor read < 0 when pedal position is 0. Once calibrated, this will change
+      ret.gasPressed = user_gas > 1e-5  # this works because interceptor reads < 0 when pedal position is 0. Once calibrated, this will change
     else:
-      ret.gasPressed = pedal_gas > 1e-5
+      ret.gasPressed = ret.gas > 1e-5
 
     ret.steeringTorque = cp.vl["STEER_STATUS"]["STEER_TORQUE_SENSOR"]
     ret.steeringTorqueEps = cp.vl["STEER_MOTOR_TORQUE"]["MOTOR_TORQUE"]
