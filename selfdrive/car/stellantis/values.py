@@ -8,15 +8,15 @@ class CarControllerParams:
   STEER_STEP = 2
   HUD_STEP = 8
   STEER_MAX = 255
-  STEER_DELTA_UP = 3
-  STEER_DELTA_DOWN = 3
-  STEER_DRIVER_ALLOWANCE = 120
+  STEER_DELTA_UP = 5
+  STEER_DELTA_DOWN = 10
+  STEER_DRIVER_ALLOWANCE = 80
   STEER_DRIVER_MULTIPLIER = 3
   STEER_DRIVER_FACTOR = 1
-
+  STEER_THRESHOLD = 100
 
 class CAR:
-  RAM_1500 = "Ram 1500 Limited, Laramie, TRX and others"
+  RAM_1500_DT = "RAM 1500 5TH GEN"
 
 FINGERPRINTS = {
   CAR.RAM_1500: [
@@ -70,7 +70,5 @@ FINGERPRINTS = {
 }
 
 DBC = {
-  CAR.RAM_1500: dbc_dict('ram_1500', 'ram_1500'),
+  CAR.RAM_1500_DT: dbc_dict('stellantis_dasm', 'stellantis_dasm'),
 }
-
-STEER_THRESHOLD = 140
