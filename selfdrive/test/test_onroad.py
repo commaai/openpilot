@@ -64,22 +64,22 @@ if TICI:
 
 TIMINGS = {
   # rtols: max/min, rsd
-  "can": [0.4, 0.1],
-  "pandaState": [0.1, 0.1],
-  "sendcan": [0.35, 0.1],
-  "carState": [0.35, 0.1],
-  "carControl": [0.35, 0.1],
-  "controlsState": [0.35, 0.1],
-  "lateralPlan": [0.4, 0.1],
-  "roadCameraState": [0.4, 0.1],
-  "driverCameraState": [0.4, 0.1],
-  "modelV2": [0.6, 0.1],
-  "driverState": [0.4, 0.1],
-  "liveLocationKalman": [0.4, 0.1],
+  "can": [0.6, 0.1],
+  "pandaState": [0.6, 0.1],
+  "sendcan": [0.5, 0.1],
+  "carState": [0.5, 0.1],
+  "carControl": [0.5, 0.1],
+  "controlsState": [0.5, 0.1],
+  "lateralPlan": [0.5, 0.1],
+  "roadCameraState": [0.5, 0.1],
+  "driverCameraState": [0.5, 0.1],
+  "modelV2": [0.7, 0.1],
+  "driverState": [0.5, 0.1],
+  "liveLocationKalman": [0.5, 0.1],
 }
 if TICI:
   TIMINGS.update({
-    "wideRoadCameraState": [0.4, 0.1],
+    "wideRoadCameraState": [0.5, 0.1],
   })
 
 
