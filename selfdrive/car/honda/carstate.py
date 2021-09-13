@@ -10,7 +10,7 @@ from selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, SPEED_FACTOR, 
 TransmissionType = car.CarParams.TransmissionType
 
 
-def get_can_signals(CP, *, gearbox_msg, gas_pedal_msg):
+def get_can_signals(CP, *, gearbox_msg):
   # this function generates lists for signal, messages and initial values
   signals = [
     ("XMISSION_SPEED", "ENGINE_DATA", 0),
@@ -71,10 +71,6 @@ def get_can_signals(CP, *, gearbox_msg, gas_pedal_msg):
     checks += [
       (gearbox_msg, 100),
     ]
-
-  if gas_pedal_msg:
-    signals += [("CAR_GAS", gas_pedal_msg, 0)]
-    checks += [(gas_pedal_msg, 100)]
 
   if CP.carFingerprint in HONDA_BOSCH_ALT_BRAKE_SIGNAL:
     signals += [("BRAKE_PRESSED", "BRAKE_MODULE", 0)]
@@ -172,13 +168,6 @@ class CarState(CarStateBase):
     self.gearbox_msg = "GEARBOX"
     if CP.carFingerprint == CAR.ACCORD and CP.transmissionType == TransmissionType.cvt:
       self.gearbox_msg = "GEARBOX_15T"
-    # message containing CAR_GAS, if any
-    self.gas_pedal_msg = "GAS_PEDAL_2"
-    if self.CP.carFingerprint in (CAR.CRV, CAR.CRV_EU, CAR.ODYSSEY, CAR.ACURA_RDX, CAR.RIDGELINE, CAR.PILOT, CAR.PILOT_2019, CAR.ODYSSEY_CHN):
-      # crv et al don't include cruise control
-      self.gas_pedal_msg = None
-    elif self.CP.carFingerprint == CAR.HRV:
-      self.gas_pedal_msg = "GAS_PEDAL"
 
     self.shifter_values = can_define.dv[self.gearbox_msg]["GEAR_SHIFTER"]
     self.steer_status_values = defaultdict(lambda: "UNKNOWN", can_define.dv["STEER_STATUS"]["STEER_STATUS"])
@@ -266,10 +255,7 @@ class CarState(CarStateBase):
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(gear, None))
 
     pedal_gas = cp.vl["POWERTRAIN_DATA"]["PEDAL_GAS"]
-    if not self.gas_pedal_msg:
-      ret.gas = pedal_gas / 256.
-    else:
-      ret.gas = cp.vl[self.gas_pedal_msg]["CAR_GAS"] / 256.
+    ret.gas = pedal_gas / 256.
 
     # this is a hack for the interceptor. This is now only used in the simulation
     # TODO: Replace tests by toyota so this can go away
@@ -341,7 +327,7 @@ class CarState(CarStateBase):
     return ret
 
   def get_can_parser(self, CP):
-    signals, checks = get_can_signals(CP, gearbox_msg=self.gearbox_msg, gas_pedal_msg=self.gas_pedal_msg)
+    signals, checks = get_can_signals(CP, gearbox_msg=self.gearbox_msg)
     bus_pt = 1 if CP.carFingerprint in HONDA_BOSCH else 0
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, bus_pt)
 
