@@ -64,22 +64,22 @@ if TICI:
 
 TIMINGS = {
   # rtols: max/min, rsd
-  "can": [0.1, 0.02],
+  "can": [0.4, 0.02],
   "pandaState": [0.1, 0.02],
-  "sendcan": [0.4, 0.1],
-  "carState": [0.4, 0.1],
-  "carControl": [0.4, 0.1],
-  "controlsState": [0.4, 0.1],
-  "lateralPlan": [0.4, 0.1],
-  "roadCameraState": [0.4, 0.1],
-  "driverCameraState": [0.4, 0.1],
-  "modelV2": [0.4, 0.1],
+  "sendcan": [0.35, 0.08],
+  "carState": [0.35, 0.08],
+  "carControl": [0.35, 0.08],
+  "controlsState": [0.35, 0.08],
+  "lateralPlan": [0.4, 0.06],
+  "roadCameraState": [0.4, 0.07],
+  "driverCameraState": [0.4, 0.09],
+  "modelV2": [0.4, 0.06],
   "driverState": [0.4, 0.1],
-  "liveLocationKalman": [0.4, 0.1],
+  "liveLocationKalman": [0.4, 0.07],
 }
 if TICI:
   TIMINGS.update({
-    "wideRoadCameraState": [0.4, 0.1],
+    "wideRoadCameraState": [0.4, 0.07],
   })
 
 
@@ -184,7 +184,6 @@ class TestOnroad(unittest.TestCase):
   def test_cpu_usage(self):
     proclogs = [m for m in self.lr if m.which() == 'procLog']
     self.assertGreater(len(proclogs), service_list['procLog'].frequency * 45, "insufficient samples")
-    h
     cpu_ok = check_cpu_usage(proclogs[0], proclogs[-1])
     self.assertTrue(cpu_ok)
 
