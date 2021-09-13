@@ -46,12 +46,12 @@ class CarState(CarStateBase):
     ret.brakePressed = ret.brake > 5  # TODO: verify this threshold
 
     # Update gear position
-    ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(cp.vl["SHIFTER_ASSM"]['SHIFTER_POSITION'], None))
+    ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(cp.vl["SHIFTER_ASSM"]["SHIFTER_POSITION"], None))
 
     # Update door and seatbelt status
     ret.doorOpen = any([cp.vl["BCM"]["DOOR_OPEN_FL"], cp.vl["BCM"]["DOOR_OPEN_FR"],
                         cp.vl["BCM"]["DOOR_OPEN_LR"], cp.vl["BCM"]["DOOR_OPEN_RR"]])
-    ret.seatbeltUnlatched = cp.vl["ORM"]["DRIVER_SEATBELT_STATUS"] == 1
+    ret.seatbeltUnlatched = bool(cp.vl["ORM"]["DRIVER_SEATBELT_STATUS"])
 
     # TODO: Can we find blindspot radar data?
 
@@ -70,10 +70,10 @@ class CarState(CarStateBase):
 
     # Update control button states for turn signals and ACC controls
     # TODO: read in ACC button states for DM reset and future long control
-    ret.leftBlinker = bool(cp.vl["STEERING_LEVERS"]['BLINKER_LEFT'])
-    ret.rightBlinker = bool(cp.vl["STEERING_LEVERS"]['BLINKER_RIGHT'])
+    ret.leftBlinker = bool(cp.vl["STEERING_LEVERS"]["BLINKER_LEFT"])
+    ret.rightBlinker = bool(cp.vl["STEERING_LEVERS"]["BLINKER_RIGHT"])
 
-    ret.espDisabled = (cp.vl["CENTER_STACK"]['TRAC_OFF'] == 1)
+    ret.espDisabled = bool(cp.vl["CENTER_STACK"]["TRAC_OFF"])
 
     return ret
 
