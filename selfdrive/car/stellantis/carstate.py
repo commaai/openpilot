@@ -42,7 +42,7 @@ class CarState(CarStateBase):
     # Update gas, brakes, and gearshift
     ret.gas = cp.vl["TPS_1"]["THROTTLE_POSITION"]
     ret.gasPressed = ret.gas > 10
-    ret.brake = cp.vl["ABS_2"]["DRIVER_BRAKE"]
+    ret.brake = cp.vl["ABS_1"]["BRAKE_PEDAL"]  # TODO: verify this is driver input only
     ret.brakePressed = ret.brake > 5  # TODO: verify this threshold
 
     # Update gear position
@@ -87,7 +87,6 @@ class CarState(CarStateBase):
       ("DOOR_OPEN_RL", "BCM", 0),
       ("DOOR_OPEN_RR", "BCM", 0),
       ("BRAKE_PEDAL", "ABS_1", 0),
-      ("DRIVER_BRAKE", "ABS_2", 0),
       ("THROTTLE_POSITION", "TPS_1", 0),
       ("WHEEL_SPEED_FL", "WHEEL_SPEEDS", 0),
       ("WHEEL_SPEED_FR", "WHEEL_SPEEDS", 0),
@@ -105,7 +104,6 @@ class CarState(CarStateBase):
     checks = [
       # sig_address, frequency
       ("ABS_1", 50),
-      ("ABS_2", 50),
       ("EPS_1", 100),
       ("EPS_2", 100),
       ("WHEEL_SPEEDS", 50),
@@ -115,7 +113,7 @@ class CarState(CarStateBase):
       ("ORM", 1),
       ("BCM", 1),
       ("CENTER_STACK", 20),
-      ("ACC_BUTTONS", 50),
+      #("ACC_BUTTONS", 50),
     ]
 
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
