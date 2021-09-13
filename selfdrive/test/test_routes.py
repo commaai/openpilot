@@ -177,6 +177,8 @@ routes = [
 
   TestRoute("6c14ee12b74823ce|2021-06-30--11-49-02", TESLA.AP1_MODELS),
   TestRoute("bb50caf5f0945ab1|2021-06-19--17-20-18", TESLA.AP2_MODELS),
+
+  TestRoute("1f2d5692fb61243d|2021-09-11--15-57-31", STELLANTIS.RAM_1500_DT),
 ]
 
 forced_dashcam_routes = [
