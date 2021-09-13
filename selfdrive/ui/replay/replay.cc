@@ -201,6 +201,7 @@ void Replay::stream() {
     std::unique_lock lk(lock);
 
     if (!events || events->size() == 0) {
+      lk.unlock();
       qDebug() << "waiting for events";
       QThread::msleep(100);
       continue;
@@ -285,6 +286,7 @@ void Replay::stream() {
         }
       }
     }
+    lk.unlock();
     updating_events = false;
     usleep(0);
   }
