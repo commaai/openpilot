@@ -43,7 +43,8 @@ segments = [
 ]
 
 # dashcamOnly makes don't need to be tested until a full port is done
-excluded_interfaces = ["mock", "ford", "mazda", "tesla"]
+# TODO: temporarily exclude stellantis during early development
+excluded_interfaces = ["mock", "ford", "mazda", "tesla", "stellantis"]
 
 BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
 
