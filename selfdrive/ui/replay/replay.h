@@ -20,6 +20,12 @@ constexpr int BACKWARD_SEGS = 2;
 class Replay : public QObject {
   Q_OBJECT
 
+struct StreamState{
+  std::vector<std::string> socks_name;
+  std::vector<cereal::Event::Which> which_list;
+  QMultiMap<uint64_t, Event *> *events;
+};
+
 public:
   Replay(QString route, SubMaster *sm = nullptr, QObject *parent = 0);
 
@@ -28,7 +34,7 @@ public:
   void seekTime(int ts);
 
 public slots:
-  void stream();
+  void stream(StreamState &stm);
   void keyboardThread();
   void segmentQueueThread();
   void parseResponse(const QString &response);
@@ -62,4 +68,6 @@ private:
   PubMaster *pm;
   QVector<std::string> socks;
   VisionIpcServer *vipc_server = nullptr;
+  std::vector<StreamState*> streams_;
+  std::mutex sm_lock;
 };

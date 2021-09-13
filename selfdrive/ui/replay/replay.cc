@@ -96,6 +96,18 @@ void Replay::mergeEvents() {
     }
   }
 
+  // split into multiple streams
+  for (StreamState *s : streams_) {
+    QMultiMap<uint64_t, Event *> *stream_events = new QMultiMap<uint64_t, Event *>();
+    for (auto which : s->which_list) {
+      for (Event * e : *new_events) {
+        if (e->which == which) {
+          stream_events->insert(e->mono_time, e);
+        }
+      }
+    }
+  }
+
   // update logs
   updating_events = true; // set updating_events to true to force stream thread relase the lock
   lock.lock();
@@ -115,11 +127,13 @@ void Replay::mergeEvents() {
 }
 
 void Replay::start(){
-  thread = new QThread;
-  QObject::connect(thread, &QThread::started, [=](){
-    stream();
-  });
-  thread->start();
+  for (auto s : streams_) {
+    thread = new QThread;
+    QObject::connect(thread, &QThread::started, [=](){
+      stream(*s);
+    });
+    thread->start();
+  }
 
   kb_thread = new QThread;
   QObject::connect(kb_thread, &QThread::started, [=](){
@@ -191,7 +205,7 @@ void Replay::keyboardThread() {
   }
 }
 
-void Replay::stream() {
+void Replay::stream(StreamState &stm) {
   QElapsedTimer timer;
   timer.start();
 
@@ -200,7 +214,7 @@ void Replay::stream() {
   while (true) {
     std::unique_lock lk(lock);
 
-    if (!events || events->size() == 0) {
+    if (!stm.events || stm.events->size() == 0) {
       lk.unlock();
       qDebug() << "waiting for events";
       QThread::msleep(100);
@@ -209,7 +223,7 @@ void Replay::stream() {
 
     // TODO: use initData's logMonoTime
     if (route_start_ts == 0) {
-      route_start_ts = events->firstKey();
+      route_start_ts = stm.events->firstKey();
     }
 
     uint64_t t0 = seek_ts != -1 ? route_start_ts + (seek_ts * 1e9) : cur_mono_time;
@@ -217,7 +231,7 @@ void Replay::stream() {
     qDebug() << "unlogging at" << int((t0 - route_start_ts) / 1e9);
     uint64_t t0r = timer.nsecsElapsed();
 
-    for (auto eit = events->lowerBound(t0); !updating_events && eit != events->end(); ++eit) {
+    for (auto eit = stm.events->lowerBound(t0); !updating_events && eit != stm.events->end(); ++eit) {
       cereal::Event::Reader e = (*eit)->event;
       cur_mono_time = (*eit)->mono_time;
       current_segment = (cur_mono_time - route_start_ts) / 1e9 / 60;
@@ -282,6 +296,7 @@ void Replay::stream() {
         } else {
           std::vector<std::pair<std::string, cereal::Event::Reader>> messages;
           messages.push_back({type, e});
+          std::lock_guard lk(sm_lock);
           sm->update_msgs(nanos_since_boot(), messages);
         }
       }
