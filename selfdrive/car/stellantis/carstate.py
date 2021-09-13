@@ -32,7 +32,7 @@ class CarState(CarStateBase):
     # TODO: see if there's a signal to populate steeringRateDeg
     ret.steeringTorque = cp.vl["EPS_2"]["TORQUE_DRIVER"]
     # TODO: populate ret.steeringTorqueEps from one of the other EPS_2 signals, TBD
-    ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD
+    ret.steeringPressed = abs(ret.steeringTorque) > P.STEER_THRESHOLD
     # TODO: see if there's a signal to populate ret.yawRate, or calculate it
 
     # Verify EPS readiness to accept steering commands
