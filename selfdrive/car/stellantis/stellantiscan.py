@@ -7,7 +7,7 @@ def create_lkas_command(packer, apply_steer, counter, steer_command_bit):
     "COUNTER": counter
   }
 
-  return packer.make_can_msg("DASM_LKAS_COMMAND", 0, values)
+  return packer.make_can_msg("DASM_LKAS_CMD", 0, values)
 
 # TODO: might need to do counter sync, or maybe just filter/forward since we're in position to do so
 def create_wheel_buttons(packer, frame, cancel=False):
