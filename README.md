@@ -354,7 +354,6 @@ Directory Structure
     .
     ├── cereal              # The messaging spec and libs used for all logs
     ├── common              # Library like functionality we've developed here
-    ├── installer/updater   # Manages updates of NEOS
     ├── opendbc             # Files showing how to interpret data from cars
     ├── panda               # Code used to communicate on CAN
     ├── phonelibs           # External libraries

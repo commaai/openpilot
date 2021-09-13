@@ -4,7 +4,6 @@
 #include <termios.h>
 
 #include <QJsonArray>
-#include <QReadWriteLock>
 #include <QThread>
 
 #include <capnp/dynamic.h>
@@ -15,10 +14,8 @@
 #include "selfdrive/ui/replay/filereader.h"
 #include "selfdrive/ui/replay/framereader.h"
 
-
 constexpr int FORWARD_SEGS = 2;
 constexpr int BACKWARD_SEGS = 2;
-
 
 class Replay : public QObject {
   Q_OBJECT
@@ -28,7 +25,6 @@ public:
 
   void start();
   void addSegment(int n);
-  void removeSegment(int n);
   void seekTime(int ts);
 
 public slots:
@@ -50,9 +46,10 @@ private:
   QThread *queue_thread;
 
   // logs
-  QMultiMap<uint64_t, Event*> events;
-  QReadWriteLock events_lock;
-  std::unordered_map<uint32_t, EncodeIdx> eidx[MAX_CAMERAS];
+  std::mutex lock;
+  std::atomic<bool> updating_events = false;
+  QMultiMap<uint64_t, Event *> *events = nullptr;
+  std::unordered_map<uint32_t, EncodeIdx> *eidx = nullptr;
 
   HttpRequest *http;
   QJsonArray camera_paths;
