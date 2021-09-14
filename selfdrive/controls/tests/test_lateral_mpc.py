@@ -4,10 +4,11 @@ from selfdrive.controls.lib.lateral_mpc_lib.lat_mpc import LateralMpc
 from selfdrive.controls.lib.drive_helpers import LAT_MPC_N, CAR_ROTATION_RADIUS
 
 
-def run_mpc(v_ref=30., x_init=0., y_init=0., psi_init=0., curvature_init=0.,
+def run_mpc(lat_mpc=None, v_ref=30., x_init=0., y_init=0., psi_init=0., curvature_init=0.,
             lane_width=3.6, poly_shift=0.):
 
-  lat_mpc = LateralMpc()
+  if lat_mpc is None:
+    lat_mpc = LateralMpc()
   lat_mpc.set_weights(1., 1., 1.)
 
   y_pts = poly_shift * np.ones(LAT_MPC_N + 1)
@@ -15,8 +16,8 @@ def run_mpc(v_ref=30., x_init=0., y_init=0., psi_init=0., curvature_init=0.,
 
   x0 = np.array([x_init, y_init, psi_init, curvature_init, v_ref, CAR_ROTATION_RADIUS])
 
-  # converge in no more than 20 iterations
-  for _ in range(20):
+  # converge in no more than 10 iterations
+  for _ in range(10):
     lat_mpc.run(x0, v_ref,
                 CAR_ROTATION_RADIUS,
                 y_pts, heading_pts)
@@ -71,6 +72,14 @@ class TestLateralMpc(unittest.TestCase):
     sol = run_mpc(y_init=y_init)
     for y in list(sol[:,1]):
       self.assertGreaterEqual(y_init, abs(y))
+
+  def test_switch_convergence(self):
+    lat_mpc = LateralMpc()
+    sol = run_mpc(lat_mpc=lat_mpc, poly_shift=30.0, v_ref=7.0)
+    right_psi_deg = np.degrees(sol[:,2])
+    sol = run_mpc(lat_mpc=lat_mpc, poly_shift=-30.0, v_ref=7.0)
+    left_psi_deg = np.degrees(sol[:,2])
+    np.testing.assert_almost_equal(right_psi_deg, -left_psi_deg, decimal=3)
 
 
 if __name__ == "__main__":
