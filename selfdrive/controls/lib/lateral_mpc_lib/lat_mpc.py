@@ -98,7 +98,7 @@ def gen_lat_mpc_solver():
   ocp.solver_options.hessian_approx = 'GAUSS_NEWTON'
   ocp.solver_options.integrator_type = 'ERK'
   ocp.solver_options.nlp_solver_type = 'SQP_RTI'
-  ocp.solver_options.qp_solver_iter_max = 10
+  ocp.solver_options.qp_solver_iter_max = 1
 
   # set prediction horizon
   ocp.solver_options.tf = Tf
@@ -143,7 +143,8 @@ class LateralMpc():
     x0_cp = np.copy(x0)
     self.solver.constraints_set(0, "lbx", x0_cp)
     self.solver.constraints_set(0, "ubx", x0_cp)
-    self.yref = np.column_stack([y_pts, heading_pts*(v_ego+5.0), np.zeros(N+1)])
+    self.yref[:,0] = y_pts
+    self.yref[:,1] = heading_pts*(v_ego+5.0)
     self.solver.cost_set_slice(0, N, "yref", self.yref[:N])
     self.solver.cost_set(N, "yref", self.yref[N][:2])
 
