@@ -58,7 +58,7 @@ You can also plot logs from a device and replay a drive. See (the tools README f
 Community and Contributing
 ------
 
-openpilot is developed by [comma](https://comma.ai/) and by users like you. We welcome both pull requests and issues on [GitHub](http://github.com/commaai/openpilot). Bug fixes and new car ports are encouraged.
+openpilot is developed by [comma](https://comma.ai/) and by users like you. We welcome both pull requests and issues on [GitHub](http://github.com/commaai/openpilot). Bug fixes and new car ports are encouraged. Check out (the contributing docs)[docs/CONTRIBUTING.md].
 
 You can add support for your car by following guides we have written for [Brand](https://blog.comma.ai/how-to-write-a-car-port-for-openpilot/) and [Model](https://blog.comma.ai/openpilot-port-guide-for-toyota-models/) ports. Generally, a car with adaptive cruise control and lane keep assist is a good candidate. [Join our Discord](https://discord.comma.ai) to discuss car ports: most car makes have a dedicated channel.
 
@@ -94,6 +94,7 @@ Directory Structure
     .
     ├── cereal              # The messaging spec and libs used for all logs
     ├── common              # Library like functionality we've developed here
+    ├── docs                # Documentation
     ├── opendbc             # Files showing how to interpret data from cars
     ├── panda               # Code used to communicate on CAN
     ├── phonelibs           # External libraries
