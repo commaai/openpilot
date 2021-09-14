@@ -24,7 +24,6 @@ class CarInterface(CarInterfaceBase):
     ret.steerActuatorDelay = 0.1  # may need tuning
     ret.steerRateCost = 1.0  # may need tuning
     ret.steerLimitTimer = 0.4
-    ret.centerToFront = ret.wheelbase * 0.4 # just a guess
     ret.minSteerSpeed = 14.0  # m/s
 
     # Per-vehicle tuning params
@@ -34,11 +33,8 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 15.  # just a guess
       ret.mass = 2493. + STD_CARGO_KG  # kg curb weight 2021 Ram 1500
 
-    # starting with reasonable value for civic and scaling by mass and wheelbase
     ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
-
-    # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
-    # mass and CG position, so all cars will have approximately similar dyn behaviors
+    ret.centerToFront = ret.wheelbase * 0.4 # just a guess
     ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront)
 
     return ret
