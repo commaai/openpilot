@@ -23,7 +23,7 @@ PROCS = {
   "selfdrive.controls.controlsd": 50.0,
   "./loggerd": 45.0,
   "./locationd": 9.1,
-  "selfdrive.controls.plannerd": 20.0,
+  "selfdrive.controls.plannerd": 26.0,
   "./_ui": 15.0,
   "selfdrive.locationd.paramsd": 9.1,
   "./camerad": 7.07,
