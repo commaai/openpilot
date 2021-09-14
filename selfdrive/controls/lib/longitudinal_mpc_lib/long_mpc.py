@@ -83,7 +83,7 @@ def gen_long_mpc_solver():
   x0 = np.array([0.0, 0.0, 0.0])
   ocp.constraints.x0 = x0
 
-  l2_penalty = 10000.0
+  l2_penalty = 1.0
   l1_penalty = 0.0
   weights = np.array([0.0, 1e4, 1e4])
   ocp.cost.Zl = l2_penalty * weights
