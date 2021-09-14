@@ -179,8 +179,8 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate == CAR.FREED:
       stop_and_go = False
-      ret.mass = 2644. * CV.LB_TO_KG + STD_CARGO_KG
-      ret.wheelbase = 2.53
+      ret.mass = 3086. * CV.LB_TO_KG + STD_CARGO_KG
+      ret.wheelbase = 2.74
       # the remaining parameters were copied from FIT
       ret.centerToFront = ret.wheelbase * 0.39
       ret.steerRatio = 13.06
