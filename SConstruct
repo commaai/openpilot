@@ -67,10 +67,17 @@ USE_WEBCAM = os.getenv("USE_WEBCAM") is not None
 
 lenv = {
   "PATH": os.environ['PATH'],
+  "LD_LIBRARY_PATH": [Dir(f"#phonelibs/acados/{arch}/lib").abspath],
+  "PYTHONPATH": Dir("#").abspath + ":" + Dir("#pyextra/").abspath,
+
+  "ACADOS_SOURCE_DIR": Dir("#phonelibs/acados/acados").abspath,
+  "TERA_PATH": Dir("#").abspath + f"/phonelibs/acados/{arch}/t_renderer",
 }
 
+rpath = lenv["LD_LIBRARY_PATH"].copy()
+
 if arch == "aarch64" or arch == "larch64":
-  lenv["LD_LIBRARY_PATH"] = '/data/data/com.termux/files/usr/lib'
+  lenv["LD_LIBRARY_PATH"] += ['/data/data/com.termux/files/usr/lib']
 
   if arch == "aarch64":
     # android
@@ -87,6 +94,7 @@ if arch == "aarch64" or arch == "larch64":
     "/system/vendor/lib64",
     "/system/comma/usr/lib",
     "#phonelibs/nanovg",
+    f"#phonelibs/acados/{arch}/lib",
   ]
 
   if arch == "larch64":
@@ -100,8 +108,9 @@ if arch == "aarch64" or arch == "larch64":
     ]
     cflags = ["-DQCOM2", "-mcpu=cortex-a57"]
     cxxflags = ["-DQCOM2", "-mcpu=cortex-a57"]
-    rpath = ["/usr/local/lib"]
+    rpath += ["/usr/local/lib"]
   else:
+    rpath = []
     libpath += [
       "#phonelibs/snpe/aarch64",
       "#phonelibs/libyuv/lib",
@@ -109,7 +118,6 @@ if arch == "aarch64" or arch == "larch64":
     ]
     cflags = ["-DQCOM", "-D_USING_LIBCXX", "-mcpu=cortex-a57"]
     cxxflags = ["-DQCOM", "-D_USING_LIBCXX", "-mcpu=cortex-a57"]
-    rpath = []
 else:
   cflags = []
   cxxflags = []
@@ -134,6 +142,7 @@ else:
     ]
   else:
     libpath = [
+      "#phonelibs/acados/x86_64/lib",
       "#phonelibs/snpe/x86_64-linux-clang",
       "#phonelibs/libyuv/x64/lib",
       "#phonelibs/mapbox-gl-native-qt/x86_64",
@@ -143,14 +152,11 @@ else:
       "/usr/local/lib",
     ]
 
-  rpath = [
-    "phonelibs/snpe/x86_64-linux-clang",
-    "cereal",
-    "selfdrive/common"
+  rpath += [
+    Dir("#phonelibs/snpe/x86_64-linux-clang").abspath,
+    Dir("#cereal").abspath,
+    Dir("#selfdrive/common").abspath
   ]
-
-  # allows shared libraries to work globally
-  rpath = [os.path.join(os.getcwd(), x) for x in rpath]
 
 if GetOption('asan'):
   ccflags = ["-fsanitize=address", "-fno-omit-frame-pointer"]
@@ -164,14 +170,11 @@ else:
 
 # no --as-needed on mac linker
 if arch != "Darwin":
-  ldflags += ["-Wl,--as-needed"]
+  ldflags += ["-Wl,--as-needed", "-Wl,--no-undefined"]
 
 # Enable swaglog include in submodules
 cflags += ["-DSWAGLOG"]
 cxxflags += ["-DSWAGLOG"]
-
-# change pythonpath to this
-lenv["PYTHONPATH"] = Dir("#").path
 
 env = Environment(
   ENV=lenv,
@@ -191,6 +194,9 @@ env = Environment(
 
   CPPPATH=cpppath + [
     "#",
+    "#phonelibs/acados/include",
+    "#phonelibs/acados/include/blasfeo/include",
+    "#phonelibs/acados/include/hpipm/include",
     "#phonelibs/catch2/include",
     "#phonelibs/bzip2",
     "#phonelibs/libyuv/include",
@@ -410,7 +416,7 @@ SConscript(['selfdrive/camerad/SConscript'])
 SConscript(['selfdrive/modeld/SConscript'])
 
 SConscript(['selfdrive/controls/lib/cluster/SConscript'])
-SConscript(['selfdrive/controls/lib/lateral_mpc/SConscript'])
+SConscript(['selfdrive/controls/lib/lateral_mpc_lib/SConscript'])
 SConscript(['selfdrive/controls/lib/lead_mpc_lib/SConscript'])
 SConscript(['selfdrive/controls/lib/longitudinal_mpc_lib/SConscript'])
 
