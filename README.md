@@ -4,11 +4,11 @@ Table of Contents
 =======================
 
 * [What is openpilot?](#what-is-openpilot)
-* [Running in a car](#running-in-a-car)
+* [Running in car](#running-in-car)
+* [Running on PC](#running-on-pc)
+* [Community and Contributing](#community-and-contributing)
 * [User Data and comma Account](#user-data-and-comma-account)
 * [Safety and Testing](#safety-and-testing)
-* [Testing on PC](#testing-on-pc)
-* [Community and Contributing](#community-and-contributing)
 * [Directory Structure](#directory-structure)
 * [Licensing](#licensing)
 
@@ -35,16 +35,36 @@ What is openpilot?
 </table>
 
 
-Running in a car
+Running in car
 ------
 
 To use openpilot in a car, you need four things
 * This software. It's free and avaiable right here.
 * A supported device to run this software. This can be a [comma two](https://comma.ai/shop/products/two), [comma three](https://comma.ai/shop/products/three), or if you like to experiment, a [Ubuntu computer with webcams](https://github.com/commaai/openpilot/tree/master/tools/webcam).
 * One of [the 140+ supported cars](docs/CARS.md). We support Honda, Toyota, Hyundai, Nissan, Kia, Chrysler, Lexus, Acura, Audi, VW, and more. If your car has adaptive cruise control and lane keeping assist, it's likely to be able to run openpilot.
-* A way to connect to your car. With a comma two or three, you need only a [car harness](https://comma.ai/shop/products/car-harness). With an EON or PC, you need a [black panda](https://comma.ai/shop/products/panda)
+* A way to connect to your car. With a comma two or three, you need only a [car harness](https://comma.ai/shop/products/car-harness). With an EON or PC, you also need a [black panda](https://comma.ai/shop/products/panda).
 
 We have detailed instructions for [how to install the device in a car](https://comma.ai/setup).
+
+Running on PC
+------
+
+To run and develop openpilot, you do not need a car or any special hardware.
+
+The easiest way to get started (is with the CARLA simulator)[tools/sim/README.md]. This allows openpilot to drive around a virtual car on your Ubuntu machine. The whole setup should only take a few minutes.
+
+You can also plot logs from a device and replay a drive. See (the tools README for more information on this)[tools/README.md]
+
+Community and Contributing
+------
+
+openpilot is developed by [comma](https://comma.ai/) and by users like you. We welcome both pull requests and issues on [GitHub](http://github.com/commaai/openpilot). Bug fixes and new car ports are encouraged.
+
+You can add support for your car by following guides we have written for [Brand](https://blog.comma.ai/how-to-write-a-car-port-for-openpilot/) and [Model](https://blog.comma.ai/openpilot-port-guide-for-toyota-models/) ports. Generally, a car with adaptive cruise control and lane keep assist is a good candidate. [Join our Discord](https://discord.comma.ai) to discuss car ports: most car makes have a dedicated channel.
+
+Want to get paid to work on openpilot? [comma is hiring](https://comma.ai/jobs/).
+
+And [follow us on Twitter](https://twitter.com/comma_ai).
 
 User Data and comma Account
 ------
@@ -68,37 +88,6 @@ Safety and Testing
 * Internally, we have a hardware in the loop Jenkins test suite that builds and unit tests the various processes.
 * panda has additional hardware in the loop [tests](https://github.com/commaai/panda/blob/master/Jenkinsfile).
 * We run the latest openpilot in a testing closet containing 10 comma devices continuously replaying routes.
-
-Testing on PC
-------
-For simplified development and experimentation, openpilot can be run in the CARLA driving simulator, which allows you to develop openpilot without a car. The whole setup should only take a few minutes.
-
-Steps:
-1) Start the CARLA server on first terminal
-```
-bash -c "$(curl https://raw.githubusercontent.com/commaai/openpilot/master/tools/sim/start_carla.sh)"
-```
-2) Start openpilot on second terminal
-```
-bash -c "$(curl https://raw.githubusercontent.com/commaai/openpilot/master/tools/sim/start_openpilot_docker.sh)"
-```
-3) Press 1 to engage openpilot
-
-See the full [README](tools/sim/README.md)
-
-You should also take a look at the tools directory in master: lots of tools you can use to replay driving data, test, and develop openpilot from your PC.
-
-
-Community and Contributing
-------
-
-openpilot is developed by [comma](https://comma.ai/) and by users like you. We welcome both pull requests and issues on [GitHub](http://github.com/commaai/openpilot). Bug fixes and new car ports are encouraged.
-
-You can add support for your car by following guides we have written for [Brand](https://blog.comma.ai/how-to-write-a-car-port-for-openpilot/) and [Model](https://blog.comma.ai/openpilot-port-guide-for-toyota-models/) ports. Generally, a car with adaptive cruise control and lane keep assist is a good candidate. [Join our Discord](https://discord.comma.ai) to discuss car ports: most car makes have a dedicated channel.
-
-Want to get paid to work on openpilot? [comma is hiring](https://comma.ai/jobs/).
-
-And [follow us on Twitter](https://twitter.com/comma_ai).
 
 Directory Structure
 ------
