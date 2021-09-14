@@ -64,26 +64,23 @@ if TICI:
 
 TIMINGS = {
   # rtols: max/min, rsd
-  "can": [0.7, 0.1],
-  "pandaState": [0.7, 0.1],
-  "sendcan": [0.7, 0.1],
-  "carState": [0.7, 0.1],
-  "carControl": [0.7, 0.1],
-  "controlsState": [0.7, 0.1],
-  "lateralPlan": [0.7, 0.1],
-  "roadCameraState": [0.6, 0.1],
-  "driverCameraState": [0.6, 0.1],
-  "modelV2": [0.7, 0.1],
-  "driverState": [0.6, 0.1],
-  "liveLocationKalman": [0.6, 0.1],
+  "can": [1., 0.1],
+  "pandaState": [1.5, 0.1],
+  "sendcan": [1.5, 0.1],
+  "carState": [1.5, 0.1],
+  "carControl": [1.5, 0.1],
+  "controlsState": [1.5, 0.1],
+  "lateralPlan": [1.5, 0.2],
+  "longitudinalPlan": [1.5, 0.2],
+  "roadCameraState": [1., 0.1],
+  "driverCameraState": [1., 0.1],
+  "modelV2": [1.5, 0.1],
+  "driverState": [1.5, 0.1],
+  "liveLocationKalman": [1.5, 0.1],
 }
-if EON:
-  TIMINGS.update({
-    "lateralPlan": [0.7, 0.2],
-  })
 if TICI:
   TIMINGS.update({
-    "wideRoadCameraState": [0.6, 0.1],
+    "wideRoadCameraState": [1.5, 0.1],
   })
 
 
