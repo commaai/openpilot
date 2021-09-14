@@ -4,10 +4,7 @@ Table of Contents
 =======================
 
 * [What is openpilot?](#what-is-openpilot)
-* [Integration with Stock Features](#integration-with-stock-features)
 * [Supported Hardware](#supported-hardware)
-* [Supported Cars](#supported-cars)
-* [Community Maintained Cars and Features](#community-maintained-cars-and-features)
 * [Installation Instructions](#installation-instructions)
 * [Limitations of openpilot ALC and LDW](#limitations-of-openpilot-alc-and-ldw)
 * [Limitations of openpilot ACC and FCW](#limitations-of-openpilot-acc-and-fcw)
@@ -24,7 +21,7 @@ Table of Contents
 What is openpilot?
 ------
 
-[openpilot](http://github.com/commaai/openpilot) is an open source driver assistance system. Currently, openpilot performs the functions of Adaptive Cruise Control (ACC), Automated Lane Centering (ALC), Forward Collision Warning (FCW) and Lane Departure Warning (LDW) for a growing variety of supported [car makes, models and model years](#supported-cars). In addition, while openpilot is engaged, a camera based Driver Monitoring (DM) feature alerts distracted and asleep drivers.
+[openpilot](http://github.com/commaai/openpilot) is an open source driver assistance system. Currently, openpilot performs the functions of Adaptive Cruise Control (ACC), Automated Lane Centering (ALC), Forward Collision Warning (FCW) and Lane Departure Warning (LDW) for a growing variety of supported [car makes, models and model years](docs/CARS.md). In addition, while openpilot is engaged, a camera based Driver Monitoring (DM) feature alerts distracted and asleep drivers. See more about [the vehicle integration and limitations here](docs/INTEGRATION.md).
 
 <table>
   <tr>
@@ -41,18 +38,6 @@ What is openpilot?
   </tr>
 </table>
 
-Integration with Stock Features
-------
-
-In all supported cars:
-* Stock Lane Keep Assist (LKA) and stock ALC are replaced by openpilot ALC, which only functions when openpilot is engaged by the user.
-* Stock LDW is replaced by openpilot LDW.
-
-Additionally, on specific supported cars (see ACC column in [supported cars](#supported-cars)):
-* Stock ACC is replaced by openpilot ACC.
-* openpilot FCW operates in addition to stock FCW.
-
-openpilot should preserve all other vehicle's stock features, including, but are not limited to: FCW, Automatic Emergency Braking (AEB), auto high-beam, blind spot warning, and side collision warning.
 
 Supported Hardware
 ------
@@ -75,7 +60,7 @@ You will be able to engage openpilot after reviewing the onboarding screens and 
 User Data and comma Account
 ------
 
-By default, openpilot uploads the driving data to our servers. You can also access your data by pairing with the comma connect app ([iOS](https://apps.apple.com/us/app/comma-connect/id1456551889), [Android](https://play.google.com/store/apps/details?id=ai.comma.connect&hl=en_US)). We use your data to train better models and improve openpilot for everyone.
+By default, openpilot uploads the driving data to our servers. You can also access your data through [comma connect](https://connect.comma.ai/). We use your data to train better models and improve openpilot for everyone.
 
 openpilot is open source software: the user is free to disable data collection if they wish to do so.
 
