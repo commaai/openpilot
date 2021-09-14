@@ -62,7 +62,7 @@ class LateralPlanner():
     self.y_pts = np.zeros(TRAJECTORY_SIZE)
 
     self.lat_mpc = LateralMpc()
-    self.reset_mpc()
+    self.reset_mpc(np.zeros(6))
 
   def reset_mpc(self, x0=np.zeros(6)):
     self.x0 = x0
