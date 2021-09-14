@@ -17,7 +17,7 @@ Table of Contents
 What is openpilot?
 ------
 
-[openpilot](http://github.com/commaai/openpilot) is an open source driver assistance system. Currently, openpilot performs the functions of Adaptive Cruise Control (ACC), Automated Lane Centering (ALC), Forward Collision Warning (FCW) and Lane Departure Warning (LDW) for a growing variety of supported [car makes, models and model years](docs/CARS.md). In addition, while openpilot is engaged, a camera based Driver Monitoring (DM) feature alerts distracted and asleep drivers. See more about [the vehicle integration and limitations here](docs/INTEGRATION.md).
+[openpilot](http://github.com/commaai/openpilot) is an open source driver assistance system. Currently, openpilot performs the functions of Adaptive Cruise Control (ACC), Automated Lane Centering (ALC), Forward Collision Warning (FCW) and Lane Departure Warning (LDW) for a growing variety of [supported car makes, models and model years](docs/CARS.md). In addition, while openpilot is engaged, a camera based Driver Monitoring (DM) feature alerts distracted and asleep drivers. See more about [the vehicle integration and limitations here](docs/INTEGRATION.md).
 
 <table>
   <tr>
@@ -39,9 +39,9 @@ Running in a car
 ------
 
 To use openpilot in a car, you need four things
-* This software. It's free and avaiable right here.
+* This software. It's free and available right here.
 * A supported device to run this software. This can be a [comma two](https://comma.ai/shop/products/two), [comma three](https://comma.ai/shop/products/three), or if you like to experiment, a [Ubuntu computer with webcams](https://github.com/commaai/openpilot/tree/master/tools/webcam).
-* One of [the 140+ supported cars](docs/CARS.md). We support Honda, Toyota, Hyundai, Nissan, Kia, Chrysler, Lexus, Acura, Audi, VW, and more. If your car has adaptive cruise control and lane keeping assist, it's likely to be able to run openpilot.
+* One of [the 140+ supported cars](docs/CARS.md). We support Honda, Toyota, Hyundai, Nissan, Kia, Chrysler, Lexus, Acura, Audi, VW, and more. If your car is not supported, but has adaptive cruise control and lane keeping assist, it's likely to be able to run openpilot with under a hundred lines of code.
 * A way to connect to your car. With a comma two or three, you need only a [car harness](https://comma.ai/shop/products/car-harness). With an EON or PC, you also need a [black panda](https://comma.ai/shop/products/panda).
 
 We have detailed instructions for [how to install the device in a car](https://comma.ai/setup).
@@ -51,9 +51,9 @@ Running on PC
 
 To run and develop openpilot, you do not need a car or any special hardware.
 
-The easiest way to get started (is with the CARLA simulator)[tools/sim/README.md]. This allows openpilot to drive around a virtual car on your Ubuntu machine. The whole setup should only take a few minutes.
+The easiest way to get started is [with the CARLA simulator](tools/sim/README.md). This allows openpilot to drive around a virtual car on your Ubuntu machine. The whole setup should only take a few minutes.
 
-You can also plot logs from a device and replay a drive. See (the tools README for more information on this)[tools/README.md]
+You can also plot logs from a device and replay a drive. See [the tools README for more information on this](tools/README.md)
 
 Community and Contributing
 ------
