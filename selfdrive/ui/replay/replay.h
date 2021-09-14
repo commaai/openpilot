@@ -17,14 +17,16 @@
 constexpr int FORWARD_SEGS = 2;
 constexpr int BACKWARD_SEGS = 2;
 
+struct StreamState{
+  std::vector<cereal::Event::Which> which_list;
+  std::vector<Event *> *events = nullptr;
+  std::vector<Event *> *new_events = nullptr;
+  std::atomic<bool> updating_events = false;
+  std::mutex lock;
+};
+
 class Replay : public QObject {
   Q_OBJECT
-
-struct StreamState{
-  std::vector<std::string> socks_name;
-  std::vector<cereal::Event::Which> which_list;
-  QMultiMap<uint64_t, Event *> *events;
-};
 
 public:
   Replay(QString route, SubMaster *sm = nullptr, QObject *parent = 0);
@@ -52,9 +54,9 @@ private:
   QThread *queue_thread;
 
   // logs
-  std::mutex lock;
-  std::atomic<bool> updating_events = false;
-  QMultiMap<uint64_t, Event *> *events = nullptr;
+  // std::mutex lock;
+  // std::atomic<bool> updating_events = false;
+  // QMultiMap<uint64_t, Event *> *events = nullptr;
   std::unordered_map<uint32_t, EncodeIdx> *eidx = nullptr;
 
   HttpRequest *http;

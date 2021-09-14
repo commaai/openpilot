@@ -66,7 +66,7 @@ public:
   ~LogReader();
   inline bool valid() const { return valid_; }
 
-  QMultiMap<uint64_t, Event*> events;
+  std::unordered_map<cereal::Event::Which, std::vector<Event*>> events;
   std::unordered_map<uint32_t, EncodeIdx> eidx[MAX_CAMERAS] = {};
 
 signals:

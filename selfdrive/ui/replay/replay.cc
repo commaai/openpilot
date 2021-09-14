@@ -41,6 +41,66 @@ Replay::Replay(QString route, SubMaster *sm_, QObject *parent) : sm(sm_), QObjec
   }
   qDebug() << "services " << s;
 
+  std::initializer_list<std::pair<std::string, cereal::Event::Which>> stream_group[] = {
+      {
+          {"sensorEvents", cereal::Event::Which::SENSOR_EVENTS},
+          {"gpsNMEA", cereal::Event::Which::GPS_N_M_E_A},
+          {"deviceState", cereal::Event::DEVICE_STATE},
+          {"can", cereal::Event::CAN},
+      },
+      {
+          {"controlsState", cereal::Event::Which::CONTROLS_STATE},
+          {"pandaState", cereal::Event::Which::PANDA_STATE},
+          {"radarState", cereal::Event::Which::RADAR_STATE},
+          {"roadEncodeIdx", cereal::Event::Which::ROAD_ENCODE_IDX},
+          {"liveTracks", cereal::Event::Which::LIVE_TRACKS},
+          {"sendcan", cereal::Event::Which::SENDCAN},
+          {"logMessage", cereal::Event::Which::LOG_MESSAGE},
+          {"liveCalibration", cereal::Event::Which::LIVE_CALIBRATION},
+          {"androidLog", cereal::Event::Which::ANDROID_LOG},
+          {"carState", cereal::Event::Which::CAR_STATE},
+      },
+      {
+          {"carControl", cereal::Event::Which::CAR_CONTROL},
+          {"longitudinalPlan", cereal::Event::Which::LONGITUDINAL_PLAN},
+          {"procLog", cereal::Event::Which::PROC_LOG},
+          {"gpsLocationExternal", cereal::Event::Which::GPS_LOCATION_EXTERNAL},
+          {"ubloxGnss", cereal::Event::Which::UBLOX_GNSS},
+          {"clocks", cereal::Event::Which::CLOCKS},
+          {"ubloxRaw", cereal::Event::Which::UBLOX_RAW},
+          {"liveLocationKalman", cereal::Event::Which::LIVE_LOCATION_KALMAN},
+          {"liveParameters", cereal::Event::Which::LIVE_PARAMETERS},
+      },
+      {
+          {"cameraOdometry", cereal::Event::Which::CAMERA_ODOMETRY},
+          {"lateralPlan", cereal::Event::Which::LATERAL_PLAN},
+          {"thumbnail", cereal::Event::Which::THUMBNAIL},
+          {"carEvents", cereal::Event::Which::CAR_EVENTS},
+          {"carParams", cereal::Event::Which::CAR_PARAMS},
+          {"roadCameraState", cereal::Event::Which::ROAD_CAMERA_STATE},
+          {"driverCameraState", cereal::Event::Which::DRIVER_CAMERA_STATE},
+          {"driverEncodeIdx", cereal::Event::Which::DRIVER_ENCODE_IDX},
+      },
+      {
+          {"driverState", cereal::Event::Which::DRIVER_STATE},
+          {"driverMonitoringState", cereal::Event::Which::DRIVER_MONITORING_STATE},
+          {"wideRoadEncodeIdx", cereal::Event::Which::WIDE_ROAD_ENCODE_IDX},
+          {"wideRoadCameraState", cereal::Event::Which::WIDE_ROAD_CAMERA_STATE},
+          {"modelV2", cereal::Event::Which::MODEL_V2},
+          {"managerState", cereal::Event::Which::MANAGER_STATE},
+          {"uploaderState", cereal::Event::Which::UPLOADER_STATE},
+          {"testJoystick", cereal::Event::Which::TEST_JOYSTICK},
+      },
+  };
+
+  for (auto &group : stream_group) {
+    StreamState *s = new StreamState;
+    for (auto &d : group) {
+      s->which_list.push_back(d.second);
+    }
+    streams_.push_back(s);
+  }
+
   if (sm == nullptr) {
     pm = new PubMaster(s);
   }
@@ -81,45 +141,56 @@ void Replay::addSegment(int n) {
 }
 
 void Replay::mergeEvents() {
-  const int start_idx = std::max(current_segment - BACKWARD_SEGS, 0);
+  const int begin_idx = std::max(current_segment - BACKWARD_SEGS, 0);
   const int end_idx = std::min(current_segment + FORWARD_SEGS, log_paths.size());
 
   // merge logs
-  QMultiMap<uint64_t, Event *> *new_events = new QMultiMap<uint64_t, Event *>();
+std::unordered_map<cereal::Event::Which, std::vector<Event *>> new_events;
   std::unordered_map<uint32_t, EncodeIdx> *new_eidx = new std::unordered_map<uint32_t, EncodeIdx>[MAX_CAMERAS];
-  for (int i = start_idx; i <= end_idx; ++i) {
+  for (int i = begin_idx; i <= end_idx; ++i) {
     if (auto it = lrs.find(i); it != lrs.end()) {
-      *new_events += (*it)->events;
+      for (auto &[which, events] : (*it)->events) {
+        new_events[which].insert(new_events[which].end(), events.begin(), events.end());
+      }
       for (CameraType cam_type : ALL_CAMERAS) {
         new_eidx[cam_type].insert((*it)->eidx[cam_type].begin(), (*it)->eidx[cam_type].end());
       }
     }
   }
 
-  // split into multiple streams
   for (StreamState *s : streams_) {
-    QMultiMap<uint64_t, Event *> *stream_events = new QMultiMap<uint64_t, Event *>();
+    delete s->new_events;
+    s->new_events = new std::vector<Event *>();
     for (auto which : s->which_list) {
-      for (Event * e : *new_events) {
-        if (e->which == which) {
-          stream_events->insert(e->mono_time, e);
-        }
-      }
+      s->new_events->insert(s->new_events->end(), new_events[which].begin(), new_events[which].end());
     }
+    qDebug() << s->new_events->size();
   }
 
   // update logs
-  updating_events = true; // set updating_events to true to force stream thread relase the lock
-  lock.lock();
-  auto prev_events = std::exchange(events, new_events);
+  // updating_events = true; // set updating_events to true to force stream thread relase the lock
+  // lock.lock();
+  for (StreamState *s : streams_) {
+    s->updating_events = true;
+    s->lock.lock();
+    std::swap(s->events, s->new_events);
+    s->updating_events = false;
+    s->lock.unlock();
+  }
+  // auto prev_events = std::exchange(events, new_events);
   auto prev_eidx = std::exchange(eidx, new_eidx);
-  lock.unlock();
+  // lock.unlock();
 
   // free logs
-  delete prev_events;
+  // delete prev_events;
+  for (StreamState *s : streams_) {
+    // std::swap(s->events, s->new_events);
+    delete s->new_events;
+  }
   delete[] prev_eidx;
   for (int i = 0; i < log_paths.size(); i++) {
-    if (i < start_idx || i > end_idx) {
+    if ((i < begin_idx || i > end_idx) && lrs.find(i) != lrs.end()) {
+      qDebug() << "remove segment" << i;
       delete lrs.take(i);
       delete frs.take(i);
     }
@@ -154,7 +225,7 @@ void Replay::seekTime(int ts) {
 
   seek_ts = ts;
   current_segment = ts/60;
-  updating_events = true;
+  // updating_events = true;
 }
 
 void Replay::segmentQueueThread() {
@@ -209,10 +280,10 @@ void Replay::stream(StreamState &stm) {
   QElapsedTimer timer;
   timer.start();
 
-  route_start_ts = 0;
   uint64_t cur_mono_time = 0;
+  cereal::Event::Which which = cereal::Event::Which::INIT_DATA;
   while (true) {
-    std::unique_lock lk(lock);
+    std::unique_lock lk(stm.lock);
 
     if (!stm.events || stm.events->size() == 0) {
       lk.unlock();
@@ -223,17 +294,20 @@ void Replay::stream(StreamState &stm) {
 
     // TODO: use initData's logMonoTime
     if (route_start_ts == 0) {
-      route_start_ts = stm.events->firstKey();
+      route_start_ts = stm.events->at(0)->mono_time;
     }
 
     uint64_t t0 = seek_ts != -1 ? route_start_ts + (seek_ts * 1e9) : cur_mono_time;
     seek_ts = -1;
     qDebug() << "unlogging at" << int((t0 - route_start_ts) / 1e9);
     uint64_t t0r = timer.nsecsElapsed();
-
-    for (auto eit = stm.events->lowerBound(t0); !updating_events && eit != stm.events->end(); ++eit) {
+    auto eit = std::lower_bound(stm.events->begin(), stm.events->end(), t0, [&](const Event *e, uint64_t v) {
+      return e->mono_time < v || (e->mono_time == v && e->which <= which);
+    });
+    for (; !stm.updating_events && eit != stm.events->end(); ++eit) {
       cereal::Event::Reader e = (*eit)->event;
       cur_mono_time = (*eit)->mono_time;
+      which = (*eit)->which;
       current_segment = (cur_mono_time - route_start_ts) / 1e9 / 60;
       std::string type;
       KJ_IF_MAYBE(e_, static_cast<capnp::DynamicStruct::Reader>(e).which()) {
@@ -302,7 +376,6 @@ void Replay::stream(StreamState &stm) {
       }
     }
     lk.unlock();
-    updating_events = false;
     usleep(0);
   }
 }

@@ -86,8 +86,8 @@ LogReader::~LogReader() {
   thread_.wait();
 
   // clear events
-  for (auto e : events) {
-    delete e;
+  for (auto &[which, evts] : events) {
+    for (auto e : evts) delete e;
   }
 }
 
@@ -120,7 +120,7 @@ void LogReader::parseEvents(const QByteArray &dat) {
           break;
       }
       words = kj::arrayPtr(evt->reader.getEnd(), words.end());
-      events.insert(evt->mono_time, evt.release());
+      events[evt->which].push_back(evt.release());
     } catch (const kj::Exception &e) {
       valid_ = false;
       break;
