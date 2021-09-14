@@ -53,7 +53,7 @@ To run and develop openpilot, you do not need a car or any special hardware.
 
 The easiest way to get started is [with the CARLA simulator](tools/sim/README.md). This allows openpilot to drive around a virtual car on your Ubuntu machine. The whole setup should only take a few minutes.
 
-You can also plot logs from a device and replay a drive. See [the tools README for more information on this](tools/README.md).
+You can also plot logs from a device and replay a drive. See [the tools README](tools/README.md) for more information.
 
 Community and Contributing
 ------
