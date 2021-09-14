@@ -112,7 +112,7 @@ class LongitudinalMpc():
 
   def reset(self):
     self.x_sol = np.zeros((N+1, 3))
-    self.u_sol = np.zeros((N))
+    self.u_sol = np.zeros((N, 1))
     self.set_weights()
 
     self.v_solution = [0.0 for i in range(len(T_IDXS))]
@@ -164,9 +164,8 @@ class LongitudinalMpc():
     self.solver.cost_set(N, "yref", self.yref[N][:3])
 
     self.solution_status = self.solver.solve()
-    self.x_sol = self.solver.get_slice(0, N+1, 'x')
-    self.u_sol = self.solver.get_slice(0, N, 'u')
-    self.cost = self.solver.get_cost()
+    self.solver.fill_in_slice(0, N+1, 'x', self.x_sol)
+    self.solver.fill_in_slice(0, N, 'u', self.u_sol)
     #self.solver.print_statistics()
 
     self.v_solution = list(self.x_sol[:,1])
