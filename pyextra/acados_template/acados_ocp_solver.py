@@ -872,6 +872,15 @@ class AcadosOcpSolver:
         self.shared_lib.ocp_nlp_cost_model_set_slice.argtypes = \
             [c_void_p, c_void_p, c_void_p, c_int, c_int, c_char_p, c_void_p, c_int]
 
+        self.shared_lib.ocp_nlp_constraints_model_set.argtypes = \
+            [c_void_p, c_void_p, c_void_p, c_int, c_char_p, c_void_p]
+        self.shared_lib.ocp_nlp_cost_model_set.argtypes = \
+            [c_void_p, c_void_p, c_void_p, c_int, c_char_p, c_void_p]
+        self.shared_lib.ocp_nlp_out_set.argtypes = \
+            [c_void_p, c_void_p, c_void_p, c_int, c_char_p, c_void_p]
+        self.shared_lib.ocp_nlp_set.argtypes = \
+            [c_void_p, c_void_p, c_int, c_char_p, c_void_p]
+
     def solve(self):
         """
         Solve the ocp with current input.
@@ -1213,41 +1222,25 @@ class AcadosOcpSolver:
             msg += 'with dimension {} (you have {})'.format(dims, value_.shape)
             raise Exception(msg)
 
-        value_data = cast(value_.ctypes.data, POINTER(c_double))
-        value_data_p = cast((value_data), c_void_p)
-
+        value_data_p = cast(value_.ctypes.data, c_void_p)
         if field_ in constraints_fields:
-            self.shared_lib.ocp_nlp_constraints_model_set.argtypes = \
-                [c_void_p, c_void_p, c_void_p, c_int, c_char_p, c_void_p]
             self.shared_lib.ocp_nlp_constraints_model_set(self.nlp_config, \
                 self.nlp_dims, self.nlp_in, stage, field, value_data_p)
         elif field_ in cost_fields:
-            self.shared_lib.ocp_nlp_cost_model_set.argtypes = \
-                [c_void_p, c_void_p, c_void_p, c_int, c_char_p, c_void_p]
             self.shared_lib.ocp_nlp_cost_model_set(self.nlp_config, \
                 self.nlp_dims, self.nlp_in, stage, field, value_data_p)
         elif field_ in out_fields:
-            self.shared_lib.ocp_nlp_out_set.argtypes = \
-                [c_void_p, c_void_p, c_void_p, c_int, c_char_p, c_void_p]
             self.shared_lib.ocp_nlp_out_set(self.nlp_config, \
                 self.nlp_dims, self.nlp_out, stage, field, value_data_p)
         elif field_ in mem_fields:
-            self.shared_lib.ocp_nlp_set.argtypes = \
-                [c_void_p, c_void_p, c_int, c_char_p, c_void_p]
             self.shared_lib.ocp_nlp_set(self.nlp_config, \
                 self.nlp_solver, stage, field, value_data_p)
         return
 
 
     def set_param(self, stage_, value_):
-        # cast value_ to avoid conversion issues
-        #if isinstance(value_, (float, int)):
-        #    value_ = np.array([value_])
-        #value_ = value_.astype(float)
-        #stage = c_int(stage_)
-
-        #value_data = cast(value_.ctypes.data, POINTER(c_double))
-        self._set_param(self.capsule, stage_, cast(value_.ctypes.data, c_double), value_.shape[0])
+        value_data = cast(value_.ctypes.data, POINTER(c_double))
+        self._set_param(self.capsule, stage_, value_data, value_.shape[0])
 
     def cost_set(self, start_stage_, field_, value_, api='warn'):
       self.cost_set_slice(start_stage_, start_stage_+1, field_, value_[None], api='warn')
