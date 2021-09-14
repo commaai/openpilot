@@ -33,6 +33,9 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 15.  # just a guess
       ret.mass = 2493. + STD_CARGO_KG  # kg curb weight 2021 Ram 1500
 
+    else:
+      raise ValueError("unsupported car %s" % candidate)
+
     ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
     ret.centerToFront = ret.wheelbase * 0.4 # just a guess
     ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront)
