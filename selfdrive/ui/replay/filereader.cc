@@ -120,13 +120,14 @@ void LogReader::parseEvents(const QByteArray &dat) {
           break;
       }
       words = kj::arrayPtr(evt->reader.getEnd(), words.end());
-      events.insert(evt->mono_time, evt.release());
+      events.push_back(evt.release());
     } catch (const kj::Exception &e) {
       valid_ = false;
       break;
     }
   }
   if (!exit_) {
+    std::sort(events.begin(), events.end(), Event::lessThan());
     emit finished(valid_);  
   }
 }

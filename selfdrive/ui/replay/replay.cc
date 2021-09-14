@@ -63,13 +63,18 @@ void Replay::mergeEvents() {
   const int end_idx = std::min(current_segment + FORWARD_SEGS, log_paths.size());
 
   // merge logs
-  QMultiMap<uint64_t, Event *> *new_events = new QMultiMap<uint64_t, Event *>();
+  std::vector<Event *> *new_events = new std::vector<Event *>();
   std::unordered_map<uint32_t, EncodeIdx> *new_eidx = new std::unordered_map<uint32_t, EncodeIdx>[MAX_CAMERAS];
   for (int i = start_idx; i <= end_idx; ++i) {
     if (auto it = lrs.find(i); it != lrs.end()) {
-      *new_events += (*it)->events;
+      LogReader *log = it.value();
+
+      // merge & sort events
+      auto middle = new_events->insert(new_events->end(), log->events.begin(), log->events.end());
+      std::inplace_merge(new_events->begin(), middle, new_events->end(), Event::lessThan());
+
       for (CameraType cam_type : ALL_CAMERAS) {
-        new_eidx[cam_type].insert((*it)->eidx[cam_type].begin(), (*it)->eidx[cam_type].end());
+        new_eidx[cam_type].insert(log->eidx[cam_type].begin(), log->eidx[cam_type].end());
       }
     }
   }
@@ -138,35 +143,46 @@ void Replay::segmentQueueThread() {
   }
 }
 
-void Replay::stream() {
-  QElapsedTimer timer;
-  timer.start();
+std::optional<std::vector<Event*>::iterator> Replay::nextEvent(cereal::Event::Which which, uint64_t mono_time) {
+  if (!events || events->empty()) return std::nullopt;
 
+  Event cur_event(which, mono_time);
+  auto eit = std::upper_bound(events->begin(), events->end(), &cur_event, Event::lessThan());
+  if (eit == events->end()) return std::nullopt;
+
+  return eit;
+}
+
+void Replay::stream() {
   route_start_ts = 0;
   uint64_t cur_mono_time = 0;
+  cereal::Event::Which cur_which = cereal::Event::Which::INIT_DATA;
+
   while (true) {
     std::unique_lock lk(lock);
 
-    if (!events || events->size() == 0) {
+    uint64_t event_start_ts = seek_ts != -1 ? route_start_ts + (seek_ts * 1e9) : cur_mono_time;
+    auto next_evt = nextEvent(cur_which, event_start_ts);
+    if (!next_evt) {
       lk.unlock();
       qDebug() << "waiting for events";
       QThread::msleep(100);
       continue;
     }
+    seek_ts = -1;
+    auto eit = *next_evt;
 
     // TODO: use initData's logMonoTime
     if (route_start_ts == 0) {
-      route_start_ts = events->firstKey();
+      route_start_ts = events->at(0)->mono_time;
     }
 
-    uint64_t t0 = seek_ts != -1 ? route_start_ts + (seek_ts * 1e9) : cur_mono_time;
-    seek_ts = -1;
-    qDebug() << "unlogging at" << int((t0 - route_start_ts) / 1e9);
-    uint64_t t0r = timer.nsecsElapsed();
-
-    for (auto eit = events->lowerBound(t0); !updating_events && eit != events->end(); ++eit) {
+    qDebug() << "unlogging at" << int((event_start_ts - route_start_ts) / 1e9);
+    uint64_t loop_start_ts = nanos_since_boot();
+    for (/**/; !updating_events && eit != events->end(); ++eit) {
       cereal::Event::Reader e = (*eit)->event;
       cur_mono_time = (*eit)->mono_time;
+      cur_which = (*eit)->which;
       current_segment = (cur_mono_time - route_start_ts) / 1e9 / 60;
       std::string type;
       KJ_IF_MAYBE(e_, static_cast<capnp::DynamicStruct::Reader>(e).which()) {
@@ -176,19 +192,17 @@ void Replay::stream() {
       current_ts = std::max(cur_mono_time - route_start_ts, (uint64_t)0) / 1e9;
 
       if (socks.contains(type)) {
-        float timestamp = (cur_mono_time - route_start_ts)/1e9;
-        if (std::abs(timestamp - last_print) > 5.0) {
-          last_print = timestamp;
+        if (std::abs(current_ts - last_print) > 5.0) {
+          last_print = current_ts;
           qInfo() << "at " << int(last_print) << "s";
         }
 
         // keep time
-        long etime = cur_mono_time-t0;
-        long rtime = timer.nsecsElapsed() - t0r;
-        long us_behind = ((etime-rtime)*1e-3)+0.5;
+        long etime = cur_mono_time - event_start_ts;
+        long rtime = nanos_since_boot() - loop_start_ts;
+        long us_behind = ((etime - rtime) * 1e-3) + 0.5;
         if (us_behind > 0 && us_behind < 1e6) {
           QThread::usleep(us_behind);
-          //qDebug() << "sleeping" << us_behind << etime << timer.nsecsElapsed();
         }
 
         // publish frame

@@ -35,6 +35,8 @@ public slots:
   void mergeEvents();
 
 private:
+  std::optional<std::vector<Event*>::iterator> nextEvent(cereal::Event::Which which, uint64_t mono_time);
+
   float last_print = 0;
   uint64_t route_start_ts;
   std::atomic<int> seek_ts = 0;
@@ -48,7 +50,7 @@ private:
   // logs
   std::mutex lock;
   std::atomic<bool> updating_events = false;
-  QMultiMap<uint64_t, Event *> *events = nullptr;
+  std::vector<Event *> *events = nullptr;
   std::unordered_map<uint32_t, EncodeIdx> *eidx = nullptr;
 
   HttpRequest *http;
