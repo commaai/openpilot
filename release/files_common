@@ -237,33 +237,16 @@ selfdrive/controls/lib/radar_helpers.py
 selfdrive/controls/lib/vehicle_model.py
 selfdrive/controls/lib/fcw.py
 selfdrive/controls/lib/long_mpc.py
-selfdrive/controls/lib/lead_mpc.py
+selfdrive/controls/lib/lead_mpc.py 
 
 selfdrive/controls/lib/cluster/*
 
-selfdrive/controls/lib/lateral_mpc/lib_mpc_export/*
-selfdrive/controls/lib/lateral_mpc/.gitignore
-selfdrive/controls/lib/lateral_mpc/SConscript
-selfdrive/controls/lib/lateral_mpc/__init__.py
-selfdrive/controls/lib/lateral_mpc/generator.cpp
-selfdrive/controls/lib/lateral_mpc/libmpc_py.py
-selfdrive/controls/lib/lateral_mpc/lateral_mpc.c
-
-selfdrive/controls/lib/lead_mpc_lib/lib_mpc_export/*
+selfdrive/controls/lib/lateral_mpc_lib/.gitignore
 selfdrive/controls/lib/lead_mpc_lib/.gitignore
-selfdrive/controls/lib/lead_mpc_lib/SConscript
-selfdrive/controls/lib/lead_mpc_lib/__init__.py
-selfdrive/controls/lib/lead_mpc_lib/generator.cpp
-selfdrive/controls/lib/lead_mpc_lib/libmpc_py.py
-selfdrive/controls/lib/lead_mpc_lib/longitudinal_mpc.c
-
-selfdrive/controls/lib/longitudinal_mpc_lib/lib_mpc_export/*
 selfdrive/controls/lib/longitudinal_mpc_lib/.gitignore
-selfdrive/controls/lib/longitudinal_mpc_lib/SConscript
-selfdrive/controls/lib/longitudinal_mpc_lib/__init__.py
-selfdrive/controls/lib/longitudinal_mpc_lib/generator.cpp
-selfdrive/controls/lib/longitudinal_mpc_lib/libmpc_py.py
-selfdrive/controls/lib/longitudinal_mpc_lib/longitudinal_mpc.c
+selfdrive/controls/lib/lateral_mpc_lib/*
+selfdrive/controls/lib/lead_mpc_lib/*
+selfdrive/controls/lib/longitudinal_mpc_lib/*
 
 selfdrive/hardware/__init__.py
 selfdrive/hardware/base.h
@@ -481,6 +464,11 @@ phonelibs/snpe/aarch64**
 phonelibs/snpe/larch64**
 phonelibs/snpe/dsp**
 
+phonelibs/acados/x86_64/**
+phonelibs/acados/aarch64/**
+phonelibs/acados/larch64/**
+phonelibs/acados/include/**
+
 phonelibs/android_frameworks_native/**
 phonelibs/android_hardware_libhardware/**
 phonelibs/android_system_core/**
@@ -489,6 +477,7 @@ scripts/update_now.sh
 scripts/stop_updater.sh
 
 pyextra/.gitignore
+pyextra/acados_template/**
 
 rednose/**
 
