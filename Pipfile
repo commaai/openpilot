@@ -117,6 +117,7 @@ onnx = "*"
 onnxruntime = "*"
 timezonefinder = "*"
 sentry-sdk = "*"
+gnureadline = "*"
 
 [requires]
 python_version = "3.8"
