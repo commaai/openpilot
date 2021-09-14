@@ -873,6 +873,7 @@ class AcadosOcpSolver:
             [c_void_p, c_void_p, c_void_p, c_int, c_int, c_char_p, c_void_p, c_int]
 
 <<<<<<< HEAD
+<<<<<<< HEAD
         self.shared_lib.ocp_nlp_constraints_model_set.argtypes = \
             [c_void_p, c_void_p, c_void_p, c_int, c_char_p, c_void_p]
         self.shared_lib.ocp_nlp_cost_model_set.argtypes = \
@@ -892,6 +893,8 @@ class AcadosOcpSolver:
 
 >>>>>>> 28aa34c0e (good deal faster)
 >>>>>>> 5b51edcc3 (good deal faster)
+=======
+>>>>>>> f9576a763 (compile)
     def solve(self):
         """
         Solve the ocp with current input.
@@ -1208,7 +1211,6 @@ class AcadosOcpSolver:
 
         # cast value_ to avoid conversion issues
         if isinstance(value_, (float, int)):
-            print('ja')
             value_ = np.array([value_])
         value_ = value_.astype(float)
 
@@ -1217,7 +1219,6 @@ class AcadosOcpSolver:
 
         stage = c_int(stage_)
 
-<<<<<<< HEAD
         if field_ not in constraints_fields + cost_fields + out_fields + mem_fields:
             raise Exception("AcadosOcpSolver.set(): {} is not a valid argument.\
                 \nPossible values are {}. Exiting.".format(field, \
@@ -1248,76 +1249,40 @@ class AcadosOcpSolver:
         elif field_ in mem_fields:
             self.shared_lib.ocp_nlp_set(self.nlp_config, \
                 self.nlp_solver, stage, field, value_data_p)
-=======
-        if True:
-            if field_ not in constraints_fields + cost_fields + out_fields + mem_fields:
-                raise Exception("AcadosOcpSolver.set(): {} is not a valid argument.\
-                    \nPossible values are {}. Exiting.".format(field, \
-                    constraints_fields + cost_fields + out_fields + ['p']))
-
-            self.shared_lib.ocp_nlp_dims_get_from_attr.argtypes = \
-                [c_void_p, c_void_p, c_void_p, c_int, c_char_p]
-            self.shared_lib.ocp_nlp_dims_get_from_attr.restype = c_int
-
-            dims = self.shared_lib.ocp_nlp_dims_get_from_attr(self.nlp_config, \
-                self.nlp_dims, self.nlp_out, stage_, field)
-
-            if value_.shape[0] != dims:
-                msg = 'AcadosOcpSolver.set(): mismatching dimension for field "{}" '.format(field_)
-                msg += 'with dimension {} (you have {})'.format(dims, value_.shape)
-                raise Exception(msg)
-
-            value_data = cast(value_.ctypes.data, POINTER(c_double))
-            value_data_p = cast((value_data), c_void_p)
-
-            if field_ in constraints_fields:
-                self.shared_lib.ocp_nlp_constraints_model_set.argtypes = \
-                    [c_void_p, c_void_p, c_void_p, c_int, c_char_p, c_void_p]
-                self.shared_lib.ocp_nlp_constraints_model_set(self.nlp_config, \
-                    self.nlp_dims, self.nlp_in, stage, field, value_data_p)
-            elif field_ in cost_fields:
-                self.shared_lib.ocp_nlp_cost_model_set.argtypes = \
-                    [c_void_p, c_void_p, c_void_p, c_int, c_char_p, c_void_p]
-                self.shared_lib.ocp_nlp_cost_model_set(self.nlp_config, \
-                    self.nlp_dims, self.nlp_in, stage, field, value_data_p)
-            elif field_ in out_fields:
-                self.shared_lib.ocp_nlp_out_set.argtypes = \
-                    [c_void_p, c_void_p, c_void_p, c_int, c_char_p, c_void_p]
-                self.shared_lib.ocp_nlp_out_set(self.nlp_config, \
-                    self.nlp_dims, self.nlp_out, stage, field, value_data_p)
-            elif field_ in mem_fields:
-                self.shared_lib.ocp_nlp_set.argtypes = \
-                    [c_void_p, c_void_p, c_int, c_char_p, c_void_p]
-                self.shared_lib.ocp_nlp_set(self.nlp_config, \
-                    self.nlp_solver, stage, field, value_data_p)
->>>>>>> 28aa34c0e (good deal faster)
         return
 
 
     def set_param(self, stage_, value_):
 <<<<<<< HEAD
+<<<<<<< HEAD
         value_data = cast(value_.ctypes.data, POINTER(c_double))
         self._set_param(self.capsule, stage_, value_data, value_.shape[0])
 =======
 <<<<<<< HEAD
+=======
+>>>>>>> f9576a763 (compile)
         # cast value_ to avoid conversion issues
         #if isinstance(value_, (float, int)):
         #    value_ = np.array([value_])
         #value_ = value_.astype(float)
         #stage = c_int(stage_)
 
+<<<<<<< HEAD
         #value_data = cast(value_.ctypes.data, POINTER(c_double))
         self._set_param(self.capsule, stage_, cast(value_.ctypes.data, c_double), value_.shape[0])
 =======
         self._set_param(self.capsule, stage_, value_.ctypes.data_as(POINTER(c_double)), value_.shape[0])
 >>>>>>> 28aa34c0e (good deal faster)
 >>>>>>> 5b51edcc3 (good deal faster)
+=======
+        value_data = cast(value_.ctypes.data, POINTER(c_double))
+        self._set_param(self.capsule, stage_, value_data, value_.shape[0])
+>>>>>>> f9576a763 (compile)
 
     def cost_set(self, start_stage_, field_, value_, api='warn'):
       self.cost_set_slice(start_stage_, start_stage_+1, field_, value_[None], api='warn')
 
     def cost_set_slice(self, start_stage_, end_stage_, field_, value_, api='warn'):
-<<<<<<< HEAD
         """
         Set numerical data in the cost module of the solver.
 
@@ -1338,25 +1303,10 @@ class AcadosOcpSolver:
         self.shared_lib.ocp_nlp_cost_model_set_slice(self.nlp_config, \
             self.nlp_dims, self.nlp_in, start_stage_, end_stage_, field,
             cast(value_.ctypes.data, c_void_p), dim)
-=======
-        field = field_.encode('utf-8')
-        if len(value_.shape) == 2:
-          dim = value_.shape[1]
-        else:
-          dim = value_.shape[1] * value_.shape[2]
-
-        self.shared_lib.ocp_nlp_cost_dims_get_from_attr(self.nlp_config, \
-            self.nlp_dims, self.nlp_out, start_stage_, field, self.dims_data)
-
-        self.shared_lib.ocp_nlp_cost_model_set_slice(self.nlp_config, \
-            self.nlp_dims, self.nlp_in, start_stage_, end_stage_, field,
-            value_.ctypes.data_as(POINTER(c_void_p)), dim)
->>>>>>> 28aa34c0e (good deal faster)
 
 
     def constraints_set(self, start_stage_, field_, value_, api='warn'):
       self.constraints_set_slice(start_stage_, start_stage_+1, field_, value_[None], api='warn')
-<<<<<<< HEAD
 
 
     def constraints_set_slice(self, start_stage_, end_stage_, field_, value_, api='warn'):
@@ -1383,23 +1333,6 @@ class AcadosOcpSolver:
         self.shared_lib.ocp_nlp_constraints_model_set_slice(self.nlp_config, \
             self.nlp_dims, self.nlp_in, start_stage_, end_stage_, field,
             cast(value_.ctypes.data, c_void_p), dim)
-=======
-
-
-    def constraints_set_slice(self, start_stage_, end_stage_, field_, value_, api='warn'):
-        field = field_.encode('utf-8')
-        if len(value_.shape) == 2:
-          dim = value_.shape[1]
-        else:
-          dim = value_.shape[1] * value_.shape[2]
-
-        self.shared_lib.ocp_nlp_constraint_dims_get_from_attr(self.nlp_config, \
-            self.nlp_dims, self.nlp_out, start_stage_, field, self.dims_data)
-
-        self.shared_lib.ocp_nlp_constraints_model_set_slice(self.nlp_config, \
-            self.nlp_dims, self.nlp_in, start_stage_, end_stage_, field,
-            value_.ctypes.data_as(POINTER(c_void_p)), dim)
->>>>>>> 28aa34c0e (good deal faster)
 
 
     def dynamics_get(self, stage_, field_):
