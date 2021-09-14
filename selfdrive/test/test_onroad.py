@@ -64,7 +64,7 @@ if TICI:
 
 TIMINGS = {
   # rtols: max/min, rsd
-  "can": [1.5, 0.35],
+  "can": [2.5, 0.35],
   "pandaState": [2.5, 0.35],
   "sendcan": [2.5, 0.35],
   "carState": [2.5, 0.35],
