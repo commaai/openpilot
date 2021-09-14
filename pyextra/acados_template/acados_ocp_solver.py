@@ -872,8 +872,6 @@ class AcadosOcpSolver:
         self.shared_lib.ocp_nlp_cost_model_set_slice.argtypes = \
             [c_void_p, c_void_p, c_void_p, c_int, c_int, c_char_p, c_void_p, c_int]
 
-<<<<<<< HEAD
-<<<<<<< HEAD
         self.shared_lib.ocp_nlp_constraints_model_set.argtypes = \
             [c_void_p, c_void_p, c_void_p, c_int, c_char_p, c_void_p]
         self.shared_lib.ocp_nlp_cost_model_set.argtypes = \
@@ -883,18 +881,6 @@ class AcadosOcpSolver:
         self.shared_lib.ocp_nlp_set.argtypes = \
             [c_void_p, c_void_p, c_int, c_char_p, c_void_p]
 
-=======
-<<<<<<< HEAD
-=======
-        # dim helpers
-        self.dims = np.ascontiguousarray(np.zeros((2,)), dtype=np.intc)
-        self.dims_data = cast(self.dims.ctypes.data, POINTER(c_int))
-
-
->>>>>>> 28aa34c0e (good deal faster)
->>>>>>> 5b51edcc3 (good deal faster)
-=======
->>>>>>> f9576a763 (compile)
     def solve(self):
         """
         Solve the ocp with current input.
@@ -1253,31 +1239,8 @@ class AcadosOcpSolver:
 
 
     def set_param(self, stage_, value_):
-<<<<<<< HEAD
-<<<<<<< HEAD
         value_data = cast(value_.ctypes.data, POINTER(c_double))
         self._set_param(self.capsule, stage_, value_data, value_.shape[0])
-=======
-<<<<<<< HEAD
-=======
->>>>>>> f9576a763 (compile)
-        # cast value_ to avoid conversion issues
-        #if isinstance(value_, (float, int)):
-        #    value_ = np.array([value_])
-        #value_ = value_.astype(float)
-        #stage = c_int(stage_)
-
-<<<<<<< HEAD
-        #value_data = cast(value_.ctypes.data, POINTER(c_double))
-        self._set_param(self.capsule, stage_, cast(value_.ctypes.data, c_double), value_.shape[0])
-=======
-        self._set_param(self.capsule, stage_, value_.ctypes.data_as(POINTER(c_double)), value_.shape[0])
->>>>>>> 28aa34c0e (good deal faster)
->>>>>>> 5b51edcc3 (good deal faster)
-=======
-        value_data = cast(value_.ctypes.data, POINTER(c_double))
-        self._set_param(self.capsule, stage_, value_data, value_.shape[0])
->>>>>>> f9576a763 (compile)
 
     def cost_set(self, start_stage_, field_, value_, api='warn'):
       self.cost_set_slice(start_stage_, start_stage_+1, field_, value_[None], api='warn')
