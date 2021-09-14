@@ -153,7 +153,7 @@ class LongitudinalMpc():
     self.yref[:,0] = v_cruise_clipped * self.T_IDXS  # position
     self.yref[:,1] = v_cruise_clipped * np.ones(N+1)  # speed
     self.solver.cost_set_slice(0, N, "yref", self.yref[:N])
-    self.solver.set(N, "yref", self.yref[N][:3])
+    self.solver.cost_set(N, "yref", self.yref[N][:3])
 
     self.solution_status = self.solver.solve()
     self.x_sol = self.solver.get_slice(0, N+1, 'x')
