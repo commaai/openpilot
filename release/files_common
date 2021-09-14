@@ -7,10 +7,9 @@ launch_openpilot.sh
 Jenkinsfile
 SConstruct
 
-CONTRIBUTING.md
 README.md
 RELEASES.md
-SAFETY.md
+docs/*
 site_scons/site_tools/cython.py
 
 common/.gitignore
