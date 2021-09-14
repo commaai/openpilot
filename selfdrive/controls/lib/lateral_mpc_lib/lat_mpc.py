@@ -111,12 +111,20 @@ def gen_lat_mpc_solver():
 class LateralMpc():
   def __init__(self, x0=np.zeros(6)):
     self.solver = AcadosOcpSolver('lat', N, EXPORT_DIR)
+    self.reset(x0)
+
+  def reset(self, x0=np.zeros(6)):
     self.x_sol = np.zeros((N+1, 4))
     self.u_sol = np.zeros((N))
+    self.yref = np.zeros((N+1, 3))
+    self.solver.cost_set_slice(0, N, "yref", self.yref[:N])
+    self.solver.cost_set(N, "yref", self.yref[N][:2])
     W = np.eye(3)
     self.Ws = np.tile(W[None], reps=(N,1,1))
 
     # Somehow needed for stable init
+    for i in range(N+1):
+      self.solver.set(i, 'x', np.zeros(6))
     self.solver.constraints_set(0, "lbx", x0)
     self.solver.constraints_set(0, "ubx", x0)
     self.solver.solve()
@@ -135,9 +143,9 @@ class LateralMpc():
     x0_cp = np.copy(x0)
     self.solver.constraints_set(0, "lbx", x0_cp)
     self.solver.constraints_set(0, "ubx", x0_cp)
-    yref = np.column_stack([y_pts, heading_pts*(v_ego+5.0), np.zeros(N+1)])
-    self.solver.cost_set_slice(0, N, "yref", yref[:N])
-    self.solver.cost_set(N, "yref", yref[N][:2])
+    self.yref = np.column_stack([y_pts, heading_pts*(v_ego+5.0), np.zeros(N+1)])
+    self.solver.cost_set_slice(0, N, "yref", self.yref[:N])
+    self.solver.cost_set(N, "yref", self.yref[N][:2])
 
     self.solution_status = self.solver.solve()
     self.x_sol = self.solver.get_slice(0, N+1, 'x')

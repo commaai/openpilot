@@ -61,12 +61,12 @@ class LateralPlanner():
     self.t_idxs = np.arange(TRAJECTORY_SIZE)
     self.y_pts = np.zeros(TRAJECTORY_SIZE)
 
-    self.setup_mpc()
+    self.lat_mpc = LateralMpc()
+    self.reset_mpc()
 
-  def setup_mpc(self, x0=np.zeros(6)):
+  def reset_mpc(self, x0=np.zeros(6)):
     self.x0 = x0
-    self.lat_mpc = LateralMpc(x0=self.x0)
-
+    self.lat_mpc.reset(x0=self.x0)
     self.desired_curvature = 0.0
     self.safe_desired_curvature = 0.0
     self.desired_curvature_rate = 0.0
@@ -192,7 +192,7 @@ class LateralPlanner():
     mpc_nans = any(math.isnan(x) for x in self.lat_mpc.x_sol[:,3])
     t = sec_since_boot()
     if mpc_nans or self.lat_mpc.solution_status != 0:
-      self.setup_mpc()
+      self.reset_mpc()
       self.x0[3] = measured_curvature
       if t > self.last_cloudlog_t + 5.0:
         self.last_cloudlog_t = t
