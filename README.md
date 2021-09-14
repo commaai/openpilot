@@ -186,7 +186,7 @@ Community Maintained Cars and Features
 | Nissan    | Leaf 2018-20                  | ProPILOT          | Stock            | 0mph               | 0mph         |
 | Nissan    | Rogue 2018-20                 | ProPILOT          | Stock            | 0mph               | 0mph         |
 | Nissan    | X-Trail 2017                  | ProPILOT          | Stock            | 0mph               | 0mph         |
-| RAM       | 1500                          | LaneSense         | Stock            | 0mph               | 32mph         |
+| RAM       | 1500                          | LaneSense         | Stock            | 0mph               | 32mph        |
 | SEAT      | Ateca 2018                    | Driver Assistance | Stock            | 0mph               | 0mph         |
 | SEAT      | Leon 2014-2020                | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Škoda     | Karoq 2019                    | Driver Assistance | Stock            | 0mph               | 0mph         |
