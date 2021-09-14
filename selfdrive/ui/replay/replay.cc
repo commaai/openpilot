@@ -327,7 +327,7 @@ void Replay::stream(StreamState &stm) {
         long etime = cur_mono_time-t0;
         long rtime = timer.nsecsElapsed() - t0r;
         long us_behind = ((etime-rtime)*1e-3)+0.5;
-        if (us_behind > 0 && us_behind < 1e6) {
+        if (us_behind > 0) {
           QThread::usleep(us_behind);
           //qDebug() << "sleeping" << us_behind << etime << timer.nsecsElapsed();
         }
