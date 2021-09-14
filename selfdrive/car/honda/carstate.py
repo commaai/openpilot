@@ -131,8 +131,6 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
       ("HUD_SETTING", 50),
       ("EPB_STATUS", 50),
     ]
-  elif CP.carFingerprint in (CAR.FIT, CAR.HRV):
-    signals += [("BRAKE_HOLD_ACTIVE", "VSA_STATUS", 0)]
   elif CP.carFingerprint in (CAR.ODYSSEY, CAR.ODYSSEY_CHN):
     signals += [("EPB_STATE", "EPB_STATUS", 0)]
     checks += [("EPB_STATUS", 50)]
