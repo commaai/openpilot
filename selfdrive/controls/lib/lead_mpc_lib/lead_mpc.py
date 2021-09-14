@@ -134,12 +134,17 @@ class LeadMpc():
   def __init__(self, lead_id):
     self.lead_id = lead_id
     self.solver = AcadosOcpSolver('lead', N, EXPORT_DIR)
+    self.reset()
+
+  def reset(self):
     self.x_sol = np.zeros((N+1, 3))
     self.u_sol = np.zeros((N))
     self.set_weights()
     yref = np.zeros((N+1,4))
     self.solver.cost_set_slice(0, N, "yref", yref[:N])
     self.solver.set(N, "yref", yref[N][:3])
+    for i in range(N+1):
+      self.solver.set(i, 'x', np.zeros(3))
 
 
     self.v_solution = [0.0 for i in range(N)]
@@ -255,8 +260,8 @@ class LeadMpc():
         self.last_cloudlog_t = t
         cloudlog.warning("Longitudinal mpc %d reset - crashing: %s solution_status: %s" % (
                           self.lead_id, crashing, self.solution_status))
-
       self.prev_lead_status = False
+      self.reset()
 
 
 if __name__ == "__main__":
