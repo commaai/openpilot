@@ -840,7 +840,9 @@ FW_VERSIONS = {
     ],
   },
   CAR.FREED: {
-    # NOTE: omitting gateway ECU since it doesn't appear on all models
+    (Ecu.gateway, 0x18daeff1, None): [
+      b'38897-TDK-J010\x00\x00',
+    ],
     (Ecu.eps, 0x18da30f1, None): [
       b'39990-TDK-J050\x00\x00',
       b'39990-TDK-N020\x00\x00',
