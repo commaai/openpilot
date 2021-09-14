@@ -10,7 +10,7 @@ from selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, SPEED_FACTOR, 
 TransmissionType = car.CarParams.TransmissionType
 
 
-def get_can_signals(CP, gearbox_msg="GEARBOX"):
+def get_can_signals(CP, gearbox_msg):
   # this function generates lists for signal, messages and initial values
   signals = [
     ("XMISSION_SPEED", "ENGINE_DATA", 0),
@@ -326,7 +326,7 @@ class CarState(CarStateBase):
     return ret
 
   def get_can_parser(self, CP):
-    signals, checks = get_can_signals(CP, gearbox_msg=self.gearbox_msg)
+    signals, checks = get_can_signals(CP, self.gearbox_msg)
     bus_pt = 1 if CP.carFingerprint in HONDA_BOSCH else 0
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, bus_pt)
 
