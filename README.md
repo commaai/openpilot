@@ -4,11 +4,7 @@ Table of Contents
 =======================
 
 * [What is openpilot?](#what-is-openpilot)
-* [Supported Hardware](#supported-hardware)
-* [Installation Instructions](#installation-instructions)
-* [Limitations of openpilot ALC and LDW](#limitations-of-openpilot-alc-and-ldw)
-* [Limitations of openpilot ACC and FCW](#limitations-of-openpilot-acc-and-fcw)
-* [Limitations of openpilot DM](#limitations-of-openpilot-dm)
+* [Running in a car](#running-in-a-car)
 * [User Data and comma Account](#user-data-and-comma-account)
 * [Safety and Testing](#safety-and-testing)
 * [Testing on PC](#testing-on-pc)
@@ -39,23 +35,16 @@ What is openpilot?
 </table>
 
 
-Supported Hardware
+Running in a car
 ------
 
-At the moment, openpilot supports the EON Gold DevKit, [comma two](https://comma.ai/shop/products/two), and [comma three](https://comma.ai/shop/products/three). A [car harness](https://comma.ai/shop/products/car-harness) is recommended to connect your device to the car. For experimental purposes, openpilot can also run on an Ubuntu computer with external [webcams](https://github.com/commaai/openpilot/tree/master/tools/webcam).
+To use openpilot in a car, you need four things
+* This software. It's free and avaiable right here.
+* A supported device to run this software. This can be a [comma two](https://comma.ai/shop/products/two), [comma three](https://comma.ai/shop/products/three), or if you like to experiment, a [Ubuntu computer with webcams](https://github.com/commaai/openpilot/tree/master/tools/webcam).
+* One of [the 140+ supported cars](docs/CARS.md). We support Honda, Toyota, Hyundai, Nissan, Kia, Chrysler, Lexus, Acura, Audi, VW, and more. If your car has adaptive cruise control and lane keeping assist, it's likely to be able to run openpilot.
+* A way to connect to your car. With a comma two or three, you need only a [car harness](https://comma.ai/shop/products/car-harness). With an EON or PC, you need a [black panda](https://comma.ai/shop/products/panda)
 
-openpilot supports over 140 cars, a [full list can be found here](docs/CARS.md)
-
-Installation Instructions
-------
-
-Install openpilot on a supported device by entering ``https://openpilot.comma.ai`` during the installer setup.
-
-Follow these [video instructions](https://youtu.be/lcjqxCymins) to properly mount the device on the windshield. Note: openpilot features an automatic pose calibration routine and openpilot performance should not be affected by small pitch and yaw misalignments caused by imprecise device mounting.
-
-Before placing the device on your windshield, check the state and local laws and ordinances where you drive. Some state laws prohibit or restrict the placement of objects on the windshield of a motor vehicle.
-
-You will be able to engage openpilot after reviewing the onboarding screens and finishing the calibration procedure.
+We have detailed instructions for [how to install the device in a car](https://comma.ai/setup).
 
 User Data and comma Account
 ------
