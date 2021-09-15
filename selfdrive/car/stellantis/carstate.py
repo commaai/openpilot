@@ -105,17 +105,17 @@ class CarState(CarStateBase):
 
     checks = [
       # sig_address, frequency
-      ("ABS_1", 50),
       ("EPS_1", 100),
       ("EPS_2", 100),
+      ("ABS_1", 50),
       ("ABS_4", 50),
+      #("ACC_BUTTONS", 50),
       ("SHIFTER_ASSM", 50),
       ("TPS_1", 50),
+      ("CENTER_STACK", 20),
       ("SWCM", 10),
       ("ORM", 1),
       ("BCM", 1),
-      ("CENTER_STACK", 20),
-      #("ACC_BUTTONS", 50),
     ]
 
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
@@ -126,10 +126,13 @@ class CarState(CarStateBase):
       # sig_name, sig_address, default
       ("ACC_STATUS", "DASM_ACC_CMD_1", 0),
       ("ACC_SET_SPEED_KPH", "DASM_ACC_HUD", 0),
+      ("UNKNOWN", "DASM_LKAS_HUD", 0),
+      ("HIGH_BEAM_CONTROL", "DASM_LKAS_HUD", 0),
     ]
     checks = [
       ("DASM_ACC_CMD_1", 50),
       ("DASM_ACC_HUD", 50),
+      ("DASM_LKAS_HUD", 15),
     ]
 
     return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
