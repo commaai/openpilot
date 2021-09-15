@@ -25,6 +25,8 @@ struct ModelDataRaw {
   float *road_edges;
   float *lead;
   float *lead_prob;
+  float *stop_line;
+  float *stop_line_prob;
   float *desire_state;
   float *meta;
   float *desire_pred;
