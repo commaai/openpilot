@@ -152,6 +152,7 @@ class LeadMpc():
     self.status = False
     self.new_lead = False
     self.prev_lead_status = False
+    self.crashing = False
     self.prev_lead_x = 10
     self.solution_status = 0
     self.x0 = np.zeros(3)
@@ -247,14 +248,14 @@ class LeadMpc():
     self.j_solution = np.interp(T_IDXS[:CONTROL_N], MPC_T[:-1], list(self.u_sol[:,0]))
 
     # Reset if goes through lead car
-    crashing = np.sum(self.lead_xv[:,0] - self.x_sol[:,0] < 0) > 0
+    self.crashing = np.sum(self.lead_xv[:,0] - self.x_sol[:,0] < 0) > 0
 
     t = sec_since_boot()
-    if (crashing and self.prev_lead_status) or self.solution_status != 0:
+    if self.solution_status != 0:
       if t > self.last_cloudlog_t + 5.0:
         self.last_cloudlog_t = t
-        cloudlog.warning("Longitudinal mpc %d reset - crashing: %s solution_status: %s" % (
-                          self.lead_id, crashing, self.solution_status))
+        cloudlog.warning("Longitudinal mpc %d reset, solution_status: %s" % (
+                          self.lead_id, self.solution_status))
       self.prev_lead_status = False
       self.reset()
 
