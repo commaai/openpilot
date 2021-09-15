@@ -14,7 +14,7 @@ def create_lkas_command(packer, apply_steer, counter, steer_command_bit):
 #    "CANCEL": cancel,
 #    "COUNTER": frame % 16
 #  }
-#  return packer.make_can_msg("ACC_BUTTONS", 2, values)
+#  return packer.make_can_msg("CSWC", 2, values)
 
 
 def create_lkas_hud(packer, enabled, left_lane_visible, right_lane_visible, stock_lkas_hud_values):
