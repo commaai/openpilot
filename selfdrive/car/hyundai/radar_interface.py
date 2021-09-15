@@ -60,7 +60,6 @@ class RadarInterface(RadarInterfaceBase):
     if self.rcp is None:
       return ret
 
-    cpt = self.rcp.vl
     errors = []
 
     if not self.rcp.can_valid:
@@ -68,20 +67,20 @@ class RadarInterface(RadarInterfaceBase):
     ret.errors = errors
 
     for addr in range(0x500, 0x500 + 32):
-      msg = f"R_{hex(addr)}"
+      msg = self.rcp.vl[f"R_{hex(addr)}"]
 
       if addr not in self.pts:
         self.pts[addr] = car.RadarData.RadarPoint.new_message()
         self.pts[addr].trackId = self.track_id
         self.track_id += 1
 
-      valid = cpt[msg]['STATE'] == 3
+      valid = msg['STATE'] == 3
       if valid:
         self.pts[addr].measured = True
-        self.pts[addr].dRel = cpt[msg]['LONG_DIST']
-        self.pts[addr].yRel = 0.5 * -math.sin(math.radians(cpt[msg]['AZIMUTH'])) * cpt[msg]['LONG_DIST']
-        self.pts[addr].vRel = cpt[msg]['REL_SPEED']
-        self.pts[addr].aRel = cpt[msg]['REL_ACCEL'] 
+        self.pts[addr].dRel = msg['LONG_DIST']
+        self.pts[addr].yRel = 0.5 * -math.sin(math.radians(msg['AZIMUTH'])) * msg['LONG_DIST']
+        self.pts[addr].vRel = msg['REL_SPEED']
+        self.pts[addr].aRel = msg['REL_ACCEL'] 
         self.pts[addr].yvRel = float('nan')
 
       else:
