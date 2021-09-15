@@ -34,7 +34,7 @@ void loadyuv_queue(LoadYUVState* s, cl_command_queue q,
                    cl_mem out_cl, cl_int global_out_off) {
   CL_CHECK(clSetKernelArg(s->loadys_krnl, 0, sizeof(cl_mem), &y_cl));
   CL_CHECK(clSetKernelArg(s->loadys_krnl, 1, sizeof(cl_mem), &out_cl));
-  CL_CHECK(clSetKernelArg(s->loaduv_krnl, 2, sizeof(cl_int), &global_out_off));
+  CL_CHECK(clSetKernelArg(s->loadys_krnl, 2, sizeof(cl_int), &global_out_off));
 
   const size_t loadys_work_size = (s->width*s->height)/8;
   CL_CHECK(clEnqueueNDRangeKernel(q, s->loadys_krnl, 1, NULL,
