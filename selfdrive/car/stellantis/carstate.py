@@ -21,10 +21,10 @@ class CarState(CarStateBase):
     # Update vehicle speed and acceleration from ABS wheel speeds
     # TODO: Verify wheel speeds match up to labeled positions
     # TODO: Find out why these values go bonkers-high sometimes
-    ret.wheelSpeeds.fl = cp.vl["WHEEL_SPEEDS"]["WHEEL_SPEED_FL"]
-    ret.wheelSpeeds.fr = cp.vl["WHEEL_SPEEDS"]["WHEEL_SPEED_FR"]
-    ret.wheelSpeeds.rl = cp.vl["WHEEL_SPEEDS"]["WHEEL_SPEED_RL"]
-    ret.wheelSpeeds.rr = cp.vl["WHEEL_SPEEDS"]["WHEEL_SPEED_RR"]
+    ret.wheelSpeeds.fl = cp.vl["ABS_4"]["WHEEL_SPEED_FL"]
+    ret.wheelSpeeds.fr = cp.vl["ABS_4"]["WHEEL_SPEED_FR"]
+    ret.wheelSpeeds.rl = cp.vl["ABS_4"]["WHEEL_SPEED_RL"]
+    ret.wheelSpeeds.rr = cp.vl["ABS_4"]["WHEEL_SPEED_RR"]
     ret.vEgoRaw = float(np.mean([ret.wheelSpeeds.fl, ret.wheelSpeeds.fr, ret.wheelSpeeds.rl, ret.wheelSpeeds.rr]))
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
     ret.standstill = ret.vEgoRaw < 0.01
@@ -90,10 +90,10 @@ class CarState(CarStateBase):
       ("DOOR_OPEN_RR", "BCM", 0),
       ("BRAKE_PEDAL", "ABS_1", 0),
       ("THROTTLE_POSITION", "TPS_1", 0),
-      ("WHEEL_SPEED_FL", "WHEEL_SPEEDS", 0),
-      ("WHEEL_SPEED_FR", "WHEEL_SPEEDS", 0),
-      ("WHEEL_SPEED_RL", "WHEEL_SPEEDS", 0),
-      ("WHEEL_SPEED_RR", "WHEEL_SPEEDS", 0),
+      ("WHEEL_SPEED_FL", "ABS_4", 0),
+      ("WHEEL_SPEED_FR", "ABS_4", 0),
+      ("WHEEL_SPEED_RL", "ABS_4", 0),
+      ("WHEEL_SPEED_RR", "ABS_4", 0),
       ("STEER_ANGLE", "EPS_1", 0),
       ("BLINKER_LEFT", "SWCM", 0),
       ("BLINKER_RIGHT", "SWCM", 0),
@@ -108,7 +108,7 @@ class CarState(CarStateBase):
       ("ABS_1", 50),
       ("EPS_1", 100),
       ("EPS_2", 100),
-      ("WHEEL_SPEEDS", 50),
+      ("ABS_4", 50),
       ("SHIFTER_ASSM", 50),
       ("TPS_1", 50),
       ("SWCM", 10),
