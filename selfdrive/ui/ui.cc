@@ -65,6 +65,18 @@ static void update_line_data(const UIState *s, const cereal::ModelDataV2::XYZTDa
   assert(pvd->cnt <= std::size(pvd->v));
 }
 
+static void update_stop_line_data(const UIState *s, const cereal::ModelDataV2::StopLineData::Reader &line,
+                                  float x_off, float y_off, float z_off, line_vertices_data *pvd) {
+  const auto line_x = line.getX(), line_y = line.getY(), line_z = line.getZ();
+  vertex_data *v = &pvd->v[0];
+  calib_frame_to_full_frame(s, line_x + x_off, line_y - y_off, line_z + z_off, v);
+  calib_frame_to_full_frame(s, line_x + x_off, line_y,         line_z + z_off, v);
+  calib_frame_to_full_frame(s, line_x + x_off, line_y + y_off, line_z + z_off, v);
+  calib_frame_to_full_frame(s, line_x - x_off, line_y + y_off, line_z + z_off, v);
+  calib_frame_to_full_frame(s, line_x - x_off, line_y,         line_z + z_off, v);
+  calib_frame_to_full_frame(s, line_x - x_off, line_y - y_off, line_z + z_off, v);
+}
+
 static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
   UIScene &scene = s->scene;
   auto model_position = model.getPosition();
@@ -96,6 +108,12 @@ static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
   }
   max_idx = get_path_length_idx(model_position, max_distance);
   update_line_data(s, model_position, 0.5, 1.22, &scene.track_vertices, max_idx);
+
+  // update stop lines
+  const auto stop_line = model.getStopLine();
+  if (stop_line.getProb() > .5) {
+    update_stop_line_data(s, stop_line, 2, .05, 1.22, &scene.stop_line_vertices);
+  }
 }
 
 static void update_sockets(UIState *s) {
