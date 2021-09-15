@@ -44,9 +44,9 @@ class CarState(CarStateBase):
 
     # Update gas, brakes, and gearshift
     ret.gas = cp.vl["TPS_1"]["THROTTLE_POSITION"]
-    ret.gasPressed = ret.gas > 10
+    ret.gasPressed = ret.gas > 0  # FIXME: varies between vehicles maybe?
     ret.brake = cp.vl["ABS_1"]["BRAKE_PEDAL"]  # TODO: verify this is driver input only
-    ret.brakePressed = ret.brake > 5  # TODO: verify this threshold
+    ret.brakePressed = ret.brake > 0  # FIXME: varies between vehicles maybe?
 
     # Update gear position
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(cp.vl["SHIFTER_ASSM"]["SHIFTER_POSITION"], None))
