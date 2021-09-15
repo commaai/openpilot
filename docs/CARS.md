@@ -16,7 +16,7 @@ Supported Cars
 | Honda     | CR-V 2015-16                  | Touring           | openpilot        | 25mph<sup>1</sup>  | 12mph             |
 | Honda     | CR-V 2017-21                  | Honda Sensing     | Stock            | 0mph               | 12mph             |
 | Honda     | CR-V Hybrid 2017-2019         | Honda Sensing     | Stock            | 0mph               | 12mph             |
-| Honda     | e 2020                        | All 		          | Stock            | 0mph               | 3mph              |
+| Honda     | e 2020                        | All               | Stock            | 0mph               | 3mph              |
 | Honda     | Fit 2018-19                   | Honda Sensing     | openpilot        | 25mph<sup>1</sup>  | 12mph             |
 | Honda     | HR-V 2019-20                  | Honda Sensing     | openpilot        | 25mph<sup>1</sup>  | 12mph             |
 | Honda     | Insight 2019-21               | All               | Stock            | 0mph               | 3mph              |
@@ -57,7 +57,7 @@ Supported Cars
 | Toyota    | Highlander 2020-21            | All               | openpilot        | 0mph               | 0mph              |
 | Toyota    | Highlander Hybrid 2017-19     | All               | Stock<sup>3</sup>| 0mph               | 0mph              |
 | Toyota    | Highlander Hybrid 2020-21     | All               | openpilot        | 0mph               | 0mph              |
-| Toyota    | Mirai 2021	                  | All               | openpilot        | 0mph               | 0mph              |
+| Toyota    | Mirai 2021                    | All               | openpilot        | 0mph               | 0mph              |
 | Toyota    | Prius 2016-20                 | TSS-P             | Stock<sup>3</sup>| 0mph               | 0mph              |
 | Toyota    | Prius 2021                    | All               | openpilot        | 0mph               | 0mph              |
 | Toyota    | Prius Prime 2017-20           | All               | Stock<sup>3</sup>| 0mph               | 0mph              |
