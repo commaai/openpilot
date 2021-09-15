@@ -108,9 +108,6 @@ def gen_long_mpc_solver():
 class LongitudinalMpc():
   def __init__(self):
     self.solver = AcadosOcpSolver('long', N, EXPORT_DIR)
-    self.reset()
-
-  def reset(self):
     self.x_sol = np.zeros((N+1, 3))
     self.u_sol = np.zeros((N, 1))
     self.set_weights()
@@ -118,22 +115,23 @@ class LongitudinalMpc():
     self.v_solution = [0.0 for i in range(len(T_IDXS))]
     self.a_solution = [0.0 for i in range(len(T_IDXS))]
     self.j_solution = [0.0 for i in range(len(T_IDXS)-1)]
-    self.last_cloudlog_t = 0
-    self.status = True
-    self.solution_status = 0
-    for i in range(N+1):
-      self.solver.set(i, 'x', np.zeros(3))
-    self.yref = np.ones((N+1, 2))
+    self.yref = np.ones((N+1, 4))
     self.solver.cost_set_slice(0, N, "yref", self.yref[:N])
     self.solver.cost_set(N, "yref", self.yref[N][:3])
-    self.solver.solve()
-    self.x0 = np.zeros(3)
-    self.yref = np.zeros((N+1, 4))
     self.T_IDXS = np.array(T_IDXS[:N+1])
     self.min_a = -1.2
     self.max_a = 1.2
     self.mins = np.tile(np.array([0.0, 0.0, self.min_a])[None], reps=(N-1,1))
     self.maxs = np.tile(np.array([0.0, 100.0, self.max_a])[None], reps=(N-1,1))
+    self.reset()
+
+  def reset(self):
+    self.last_cloudlog_t = 0
+    self.status = True
+    self.solution_status = 0
+    for i in range(N+1):
+      self.solver.set(i, 'x', np.zeros(3))
+    self.x0 = np.zeros(3)
 
   def set_weights(self):
     W = np.diag([0.0, 1.0, 0.0, 50.0])
