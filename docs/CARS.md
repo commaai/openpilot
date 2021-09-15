@@ -155,7 +155,7 @@ Community Maintained Cars and Features
 | Volkswagen| Touran 2017                   | Driver Assistance | Stock            | 0mph               | 0mph         |
 
 <sup>1</sup>Requires an [OBD-II car harness](https://comma.ai/shop/products/comma-car-harness) and [community built ASCM harness](https://github.com/commaai/openpilot/wiki/GM#hardware). ***NOTE: disconnecting the ASCM disables Automatic Emergency Braking (AEB).*** <br />
-<sup>2</sup>Not including the China market Kamiq, which is based on not-yet-supported PQ34 platform. <br />
+<sup>2</sup>Not including the China market Kamiq, which is based on the (currently) unsupported PQ34 platform. <br />
 <sup>3</sup>Only includes the MQB Passat sold outside of North America. The NMS Passat made in Chattanooga TN is not yet supported. <br />
 Community Maintained Cars and Features are not verified by comma to meet our [safety model](SAFETY.md). Be extra cautious using them. They are only available after enabling the toggle in `Settings->Developer->Enable Community Features`.
 
