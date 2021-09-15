@@ -1,3 +1,4 @@
+from os import environ
 from cereal import car
 from selfdrive.car.volkswagen.values import CAR, BUTTON_STATES, CANBUS, NetworkLocation, TransmissionType, GearShifter
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
@@ -39,7 +40,11 @@ class CarInterface(CarInterfaceBase):
       else:
         ret.transmissionType = TransmissionType.manual
 
-      if any(msg in fingerprint[1] for msg in [0x40, 0x86, 0xB2]):  # Airbag_01, LWI_01, ESP_19
+      # For very old community-built harnesses only; no new harnesses should depend on this
+      legacy_j533_harness = environ.get("LEGACY_J533_HARNESS", False)
+      ret.communityFeature = legacy_j533_harness or ret.communityFeature
+
+      if any(msg in fingerprint[1] for msg in [0x40, 0x86, 0xB2]) or legacy_j533_harness:  # Airbag_01, LWI_01, ESP_19
         ret.networkLocation = NetworkLocation.gateway
       else:
         ret.networkLocation = NetworkLocation.fwdCamera
