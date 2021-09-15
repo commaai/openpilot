@@ -123,6 +123,7 @@ class LongitudinalMpc():
     self.max_a = 1.2
     self.mins = np.tile(np.array([0.0, 0.0, self.min_a])[None], reps=(N-1,1))
     self.maxs = np.tile(np.array([0.0, 100.0, self.max_a])[None], reps=(N-1,1))
+    self.x0 = np.zeros(3)
     self.reset()
 
   def reset(self):
@@ -130,8 +131,7 @@ class LongitudinalMpc():
     self.status = True
     self.solution_status = 0
     for i in range(N+1):
-      self.solver.set(i, 'x', np.zeros(3))
-    self.x0 = np.zeros(3)
+      self.solver.set(i, 'x', self.x0)
 
   def set_weights(self):
     W = np.diag([0.0, 1.0, 0.0, 50.0])
