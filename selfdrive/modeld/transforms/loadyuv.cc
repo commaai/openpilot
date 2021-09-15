@@ -31,16 +31,17 @@ void loadyuv_destroy(LoadYUVState* s) {
 
 void loadyuv_queue(LoadYUVState* s, cl_command_queue q,
                    cl_mem y_cl, cl_mem u_cl, cl_mem v_cl,
-                   cl_mem out_cl) {
+                   cl_mem out_cl, cl_int global_out_off) {
   CL_CHECK(clSetKernelArg(s->loadys_krnl, 0, sizeof(cl_mem), &y_cl));
   CL_CHECK(clSetKernelArg(s->loadys_krnl, 1, sizeof(cl_mem), &out_cl));
+  CL_CHECK(clSetKernelArg(s->loaduv_krnl, 2, sizeof(cl_int), &global_out_off));
 
   const size_t loadys_work_size = (s->width*s->height)/8;
   CL_CHECK(clEnqueueNDRangeKernel(q, s->loadys_krnl, 1, NULL,
                                &loadys_work_size, NULL, 0, 0, NULL));
 
   const size_t loaduv_work_size = ((s->width/2)*(s->height/2))/8;
-  cl_int loaduv_out_off = (s->width*s->height);
+  cl_int loaduv_out_off = global_out_off + (s->width*s->height);
 
   CL_CHECK(clSetKernelArg(s->loaduv_krnl, 0, sizeof(cl_mem), &u_cl));
   CL_CHECK(clSetKernelArg(s->loaduv_krnl, 1, sizeof(cl_mem), &out_cl));

@@ -10,6 +10,7 @@ public:
   void addTrafficConvention(float *state, int state_size);
   void addDesire(float *state, int state_size);
   void execute(float *net_input_buf, int buf_size);
+  cl_mem ThneedModel::getInputBuf();
 private:
   Thneed *thneed = NULL;
   bool recorded;
