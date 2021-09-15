@@ -66,7 +66,7 @@ class RadarInterface(RadarInterfaceBase):
       errors.append("canError")
     ret.errors = errors
 
-    for addr in range(0x500, 0x500 + 32):
+    for addr in range(RADAR_START_ADDR, RADAR_START_ADDR + RADAR_MSG_COUNT):
       msg = self.rcp.vl[f"R_{hex(addr)}"]
 
       if addr not in self.pts:
