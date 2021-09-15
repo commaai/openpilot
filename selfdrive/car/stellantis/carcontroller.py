@@ -1,5 +1,5 @@
 from selfdrive.car import apply_std_steer_torque_limits
-from selfdrive.car.stellantis.stellantiscan import create_lkas_command, create_wheel_buttons
+from selfdrive.car.stellantis.stellantiscan import create_lkas_command, create_lkas_hud, create_wheel_buttons
 from selfdrive.car.stellantis.values import CarControllerParams as P
 from opendbc.can.packer import CANPacker
 
@@ -12,7 +12,7 @@ class CarController():
 
     self.packer = CANPacker(dbc_name)
 
-  def update(self, enabled, CS, frame, actuators, pcm_cancel_cmd):
+  def update(self, enabled, CS, frame, actuators, hudControl, pcm_cancel_cmd):
     can_sends = []
 
     # **** Steering Controls ************************************************ #
@@ -36,8 +36,9 @@ class CarController():
 
     # **** HUD Controls ***************************************************** #
 
-    #    if frame % 5 == 0:
-    #      can_sends.append(create_lkas_hud(self.packer, enabled, leftLaneVisible, rightLaneVisible, autoHighBeamBit))
+    if frame % P.HUD_STEP == 0:
+      can_sends.append(create_lkas_hud(self.packer, enabled, hudControl.leftLaneVisible, hudControl.rightLaneVisible,
+                                       CS.stock_lkas_hud_values))
 
     # **** ACC Button Controls ********************************************** #
 

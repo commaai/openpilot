@@ -16,28 +16,11 @@ def create_wheel_buttons(packer, frame, cancel=False):
   return packer.make_can_msg("ACC_BUTTONS", 2, values)
 
 
-# def create_lkas_hud(packer, enabled, leftLaneVisible, rightLaneVisible, autoHighBeamBit):
-# the HUD message contains the auto high beam bit, and needs to be written in before enabling this again.
-# FCA came up with this scheme, not me
-#  if enabled:
-#    if leftLaneVisible:
-#      if rightLaneVisible:
-#        lane_visibility_signal = 0x3  # Both sides white
-#      else:
-#        lane_visibility_signal = 0x9  # Left only white (GUESS, trying yellows for fun)
-#    elif rightLaneVisible:
-#      lane_visibility_signal = 0xA    # Right only white (GUESS, trying yellows for fun)
-#    else:
-#      lane_visibility_signal = 0x4    # Neither lane border shown
-#  else:
-#    lane_visibility_signal = 0x4      # Neither lane border shown
-#  if CS.out.autoHighBeamBit == 1:
-#    autoHighBeamBit = 1
-#  else: autoHighBeamBit = 0
+def create_lkas_hud(packer, enabled, left_lane_visible, right_lane_visible, stock_lkas_hud_values):
+  values = stock_lkas_hud_values.copy()  # Default to pass through auto high beam control, etc
+  values.update({
+    "LKAS_HUD_1": 0,  # TODO: go back and reanalyze the LKAS HUD lane/warning message logic
+    "LKAS_HUD_2": 0,  # TODO: ditto
+  })
 
-#  values = {
-#    "LKAS_HUD": lane_visibility_signal,
-#    "AUTO_HIGH_BEAM_BIT": autoHighBeamBit,
-#  }
-
-#  return packer.make_can_msg("FORWARD_CAMERA_HUD", 0, values)
+  return packer.make_can_msg("DASM_LKAS_HUD", 0, values)

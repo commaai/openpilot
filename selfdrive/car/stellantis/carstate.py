@@ -68,8 +68,7 @@ class CarState(CarStateBase):
     ret.cruiseState.enabled = cp_cam.vl["DASM_ACC_CMD_1"]["ACC_STATUS"] == 3  # for dev
     ret.cruiseState.speed = cp_cam.vl["DASM_ACC_HUD"]["ACC_SET_SPEED_KPH"] * CV.KPH_TO_MS
 
-    # TODO: accommodate auto high beam signal from DASM and pass through to powertrain
-    #     cp_cam.vl["FORWARD_CAMERA_HUD"]['AUTO_HIGH_BEAM_BIT']  # HUD needs work, going with stock, but we can read this bit for fun
+    self.stock_lkas_hud_values = cp_cam.vl["DASM_LKAS_HUD"]
 
     # Update control button states for turn signals and ACC controls
     # TODO: read in ACC button states for DM reset and future long control
