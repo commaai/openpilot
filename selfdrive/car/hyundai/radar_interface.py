@@ -11,6 +11,9 @@ RADAR_MSG_COUNT = 32
 
 
 def get_radar_can_parser(CP):
+  if DBC[CP.carFingerprint]['radar'] is None:
+    return None
+
   signals = []
   checks = []
 
@@ -34,13 +37,11 @@ class RadarInterface(RadarInterfaceBase):
     self.trigger_msg = RADAR_START_ADDR + RADAR_MSG_COUNT - 1
     self.track_id = 0
 
-    self.radar_off_can = CP.radarOffCan and (DBC[CP.carFingerprint]['radar'] is not None)
-
-    if not self.radar_off_can:
-      self.rcp = get_radar_can_parser(CP)
+    self.radar_off_can = CP.radarOffCan
+    self.rcp = get_radar_can_parser(CP)
 
   def update(self, can_strings):
-    if self.radar_off_can:
+    if self.radar_off_can or (self.rcp is None):
       return super().update(None)
 
     vls = self.rcp.update_strings(can_strings)
@@ -56,9 +57,12 @@ class RadarInterface(RadarInterfaceBase):
 
   def _update(self, updated_messages):
     ret = car.RadarData.new_message()
-    cpt = self.rcp.vl
+    if self.rcp is None:
+      return ret
 
+    cpt = self.rcp.vl
     errors = []
+
     if not self.rcp.can_valid:
       errors.append("canError")
     ret.errors = errors
