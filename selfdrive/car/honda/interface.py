@@ -4,9 +4,9 @@ from panda import Panda
 from common.numpy_fast import interp
 from common.params import Params
 from selfdrive.car.honda.values import CarControllerParams, CruiseButtons, CAR, HONDA_BOSCH, HONDA_BOSCH_ALT_BRAKE_SIGNAL
-from selfdrive.car.honda.hondacan import disable_radar
 from selfdrive.car import STD_CARGO_KG, CivicParams, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
+from selfdrive.car.disable_ecu import disable_ecu
 from selfdrive.config import Conversions as CV
 
 
@@ -300,7 +300,7 @@ class CarInterface(CarInterfaceBase):
   @staticmethod
   def init(CP, logcan, sendcan):
     if CP.carFingerprint in HONDA_BOSCH and CP.openpilotLongitudinalControl:
-      disable_radar(logcan, sendcan)
+      disable_ecu(logcan, sendcan, bus=1, addr=0x18DAB0F1, com_cont_req=b'\x28\x83\x03')
 
   # returns a car.CarState
   def update(self, c, can_strings):

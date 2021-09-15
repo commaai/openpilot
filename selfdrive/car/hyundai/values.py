@@ -6,6 +6,9 @@ Ecu = car.CarParams.Ecu
 
 # Steer torque limits
 class CarControllerParams:
+  ACCEL_MIN = -3.5 # m/s
+  ACCEL_MAX = 2.0 # m/s
+
   def __init__(self, CP):
     if CP.carFingerprint in [CAR.SONATA, CAR.PALISADE, CAR.SANTA_FE, CAR.VELOSTER, CAR.GENESIS_G70,
                              CAR.IONIQ_EV_2020, CAR.KIA_CEED, CAR.KIA_SELTOS, CAR.ELANTRA_2021,
@@ -18,7 +21,6 @@ class CarControllerParams:
     self.STEER_DRIVER_ALLOWANCE = 50
     self.STEER_DRIVER_MULTIPLIER = 2
     self.STEER_DRIVER_FACTOR = 1
-
 
 class CAR:
   # Hyundai
