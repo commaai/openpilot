@@ -189,12 +189,18 @@ class TestOnroad(unittest.TestCase):
     self.assertTrue(cpu_ok)
 
   def test_model_execution_timings(self):
+    result =  "------------------------------------------------\n"
+    result += "----------------- Model Timing -----------------\n"
+    result += "------------------------------------------------\n"
     # TODO: this went up when plannerd cpu usage increased, why?
     cfgs = [("modelV2", 0.038, 0.036), ("driverState", 0.028, 0.026)]
     for (s, instant_max, avg_max) in cfgs:
       ts = [getattr(getattr(m, s), "modelExecutionTime") for m in self.lr if m.which() == s]
       self.assertLess(min(ts), instant_max, f"high '{s}' execution time: {min(ts)}")
       self.assertLess(np.mean(ts), avg_max, f"high avg '{s}' execution time: {np.mean(ts)}")
+      result += f"'{s}' execution time: {min(ts)}'"
+      result += f"'{s}' avg execution time: {np.mean(ts)}"
+    print(result)
 
   def test_timings(self):
 
