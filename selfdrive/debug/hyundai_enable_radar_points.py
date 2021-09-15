@@ -20,17 +20,20 @@ from panda.python.uds import UdsClient, SESSION_TYPE, DATA_IDENTIFIER_TYPE
 
 # If your radar supports changing data identifier 0x0142 as well make a PR to
 # this file to add your firmware version. Make sure to post a drive as proof!
+# NOTE: these firmware versions do not match what openpilot uses
+#       because this script uses a different diagnostic session type
 SUPPORTED_FW_VERSIONS = {
   # 2020 SONATA
   b"DN8_ SCC FHCUP      1.00 1.00 99110-L0000\x19\x08)\x15T    ": {
     "default_config": b"\x00\x00\x00\x01\x00\x00",
     "tracks_enabled": b"\x00\x00\x00\x01\x00\x01",
   },
-  # 2020 PALISADE
-  b"LX2_ SCC FHCUP      1.00 1.04 99110-S8100         ": {
-    "default_config": b"\x00\x00\x00\x01\x00\x00",
-    "tracks_enabled": b"\x00\x00\x00\x01\x00\x01",
-  },
+  # TODO: verify palisade fw version for diagnostic session type 7
+  # # 2020 PALISADE
+  # b"LX2_ SCC FHCUP      1.00 1.04 99110-S8100         ": {
+  #   "default_config": b"\x00\x00\x00\x01\x00\x00",
+  #   "tracks_enabled": b"\x00\x00\x00\x01\x00\x01",
+  # },
 }
 
 if __name__ == "__main__":
