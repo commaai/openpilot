@@ -5,6 +5,7 @@ from opendbc.can.can_define import CANDefine
 from selfdrive.config import Conversions as CV
 from selfdrive.car.interfaces import CarStateBase
 from selfdrive.car.stellantis.values import DBC, CarControllerParams as P
+from selfdrive.controls.lib.vehicle_model import VehicleModel  # temporary for calculating yawRate
 
 
 class CarState(CarStateBase):
@@ -12,6 +13,7 @@ class CarState(CarStateBase):
     super().__init__(CP)
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
     self.shifter_values = can_define.dv["SHIFTER_ASSM"]["SHIFTER_POSITION"]
+    self.VM = VehicleModel(CP)  # temporary for calculating yawRate
 
   def update(self, cp, cp_cam):
     ret = car.CarState.new_message()
@@ -33,7 +35,8 @@ class CarState(CarStateBase):
     ret.steeringTorque = cp.vl["EPS_2"]["TORQUE_DRIVER"]
     # TODO: populate ret.steeringTorqueEps from one of the other EPS_2 signals, TBD
     ret.steeringPressed = abs(ret.steeringTorque) > P.STEER_THRESHOLD
-    # TODO: see if there's a signal to populate ret.yawRate, or calculate it
+    # FIXME: we have a candidate yawRate signal, but temporarily drive with back-calculated yawRate to check scaling
+    self.VM.yaw_rate(ret.steeringAngleDeg * CV.DEG_TO_RAD, ret.vEgo)
 
     # Verify EPS readiness to accept steering commands
     # TODO: plot out enum/can_define for EPS error/warning states, taking original Tunder conditions for now
