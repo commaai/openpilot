@@ -18,6 +18,7 @@ def get_radar_can_parser(CP):
       ("NEW_SIGNAL_3", msg, 0),
       ("NEW_SIGNAL_4", msg, 0),
       ("NEW_SIGNAL_5", msg, 0),
+      ("NEW_SIGNAL_9", msg, 0),
     ]
     checks += [(msg, 50)]
   return CANParser(DBC[CP.carFingerprint]['radar'], signals, checks, 1)
@@ -71,9 +72,13 @@ class RadarInterface(RadarInterfaceBase):
         self.pts[addr].measured = True
         self.pts[addr].dRel = cpt[msg]['NEW_SIGNAL_4']
         self.pts[addr].yRel = 0.5 * -math.sin(math.radians(cpt[msg]['NEW_SIGNAL_2'])) * cpt[msg]['NEW_SIGNAL_4']
-        self.pts[addr].vRel = -cpt[msg]['NEW_SIGNAL_5'] 
+        self.pts[addr].vRel = cpt[msg]['NEW_SIGNAL_9'] / 3.0
+
         self.pts[addr].aRel = float('nan')
         self.pts[addr].yvRel = float('nan')
+
+        # sign?
+        # self.pts[addr].aRel = -cpt[msg]['NEW_SIGNAL_5'] 
       else:
         del self.pts[addr]
 
