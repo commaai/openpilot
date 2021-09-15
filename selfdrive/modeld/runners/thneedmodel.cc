@@ -25,8 +25,9 @@ void ThneedModel::addDesire(float *state, int state_size) {
   desire = state;
 }
 
-cl_mem ThneedModel::getInputBuf() {
-  return thneed->input_clmem[3];
+void* ThneedModel::getInputBuf() {
+  if (thneed->input_clmem.size() > 3) return &(thneed->input_clmem[3]);
+  else return nullptr;
 }
 
 void ThneedModel::execute(float *net_input_buf, int buf_size) {
