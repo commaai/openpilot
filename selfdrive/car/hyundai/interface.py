@@ -44,7 +44,7 @@ class CarInterface(CarInterfaceBase):
     ret.stoppingDecelRate = 2.0
     ret.startAccel = 0.0
 
-    ret.longitudinalActuatorDelay = 1.0 # s
+    ret.longitudinalActuatorDelayUpperBound = 1.0 # s
 
     if candidate == CAR.SANTA_FE:
       ret.lateralTuning.pid.kf = 0.00005
