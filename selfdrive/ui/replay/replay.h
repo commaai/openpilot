@@ -37,8 +37,7 @@ public slots:
 private:
   std::optional<std::vector<Event*>::iterator> nextEvent(cereal::Event::Which which, uint64_t mono_time);
 
-  float last_print = 0;
-  uint64_t route_start_ts;
+  uint64_t route_start_ts = 0;
   std::atomic<int> seek_ts = 0;
   std::atomic<int> current_ts = 0;
   std::atomic<int> current_segment = 0;

@@ -154,7 +154,7 @@ std::optional<std::vector<Event*>::iterator> Replay::nextEvent(cereal::Event::Wh
 }
 
 void Replay::stream() {
-  route_start_ts = 0;
+  float last_print = 0;
   uint64_t cur_mono_time = 0;
   cereal::Event::Which cur_which = cereal::Event::Which::INIT_DATA;
 
@@ -166,33 +166,31 @@ void Replay::stream() {
     if (!next_evt) {
       lk.unlock();
       qDebug() << "waiting for events";
-      QThread::msleep(100);
+      QThread::msleep(10);
       continue;
     }
     seek_ts = -1;
-    auto eit = *next_evt;
 
     // TODO: use initData's logMonoTime
     if (route_start_ts == 0) {
       route_start_ts = events->at(0)->mono_time;
     }
-
     qDebug() << "unlogging at" << int((event_start_ts - route_start_ts) / 1e9);
     uint64_t loop_start_ts = nanos_since_boot();
-    for (/**/; !updating_events && eit != events->end(); ++eit) {
+
+    for (auto eit = *next_evt; !updating_events && eit != events->end(); ++eit) {
       cereal::Event::Reader e = (*eit)->event;
       cur_mono_time = (*eit)->mono_time;
       cur_which = (*eit)->which;
-      current_segment = (cur_mono_time - route_start_ts) / 1e9 / 60;
+      current_ts = (cur_mono_time - route_start_ts) / 1e9;
+      current_segment = current_ts / 60;
+
       std::string type;
       KJ_IF_MAYBE(e_, static_cast<capnp::DynamicStruct::Reader>(e).which()) {
         type = e_->getProto().getName();
       }
-
-      current_ts = std::max(cur_mono_time - route_start_ts, (uint64_t)0) / 1e9;
-
       if (socks.contains(type)) {
-        if (std::abs(current_ts - last_print) > 5.0) {
+        if (current_ts - last_print > 5.0) {
           last_print = current_ts;
           qInfo() << "at " << int(last_print) << "s";
         }
