@@ -201,7 +201,7 @@ class LeadMpc():
       self.solver.set(i, 'x', np.array([x_ego, v_ego, a_ego]))
 
   def update(self, carstate, radarstate, v_cruise):
-    v_ego = carstate.vEgo
+    v_ego = self.x0[1]
     if self.lead_id == 0:
       lead = radarstate.leadOne
     else:
@@ -254,7 +254,7 @@ class LeadMpc():
     if self.solution_status != 0:
       if t > self.last_cloudlog_t + 5.0:
         self.last_cloudlog_t = t
-        cloudlog.warning("Longitudinal mpc %d reset, solution_status: %s" % (
+        cloudlog.warning("Lead mpc %d reset, solution_status: %s" % (
                           self.lead_id, self.solution_status))
       self.prev_lead_status = False
       self.reset()
