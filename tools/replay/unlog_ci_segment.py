@@ -13,6 +13,7 @@ from collections import defaultdict
 import cereal.messaging as messaging
 from tools.lib.framereader import FrameReader
 from tools.lib.logreader import LogReader
+from selfdrive.test.openpilotci import get_url
 
 IGNORE = ['initData', 'sentinel']
 
@@ -21,11 +22,11 @@ def input_ready():
   return select.select([sys.stdin], [], [], 0) == ([sys.stdin], [], [])
 
 
-def replay(route, loop):
+def replay(route, segment, loop):
   route = route.replace('|', '/')
 
-  lr = LogReader(f"cd:/{route}/rlog.bz2")
-  fr = FrameReader(f"cd:/{route}/fcamera.hevc", readahead=True)
+  lr = LogReader(get_url(route, segment))
+  fr = FrameReader(get_url(route, segment, "fcamera"), readahead=True)
 
   # Build mapping from frameId to segmentId from roadEncodeIdx, type == fullHEVC
   msgs = [m for m in lr if m.which() not in IGNORE]
@@ -93,6 +94,7 @@ def replay(route, loop):
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()
   parser.add_argument("--loop", action='store_true')
+  parser.add_argument("route")
   parser.add_argument("segment")
   args = parser.parse_args()
 
@@ -100,7 +102,7 @@ if __name__ == "__main__":
   tty.setcbreak(sys.stdin)
 
   try:
-    replay(args.segment, args.loop)
+    replay(args.route, args.segment, args.loop)
     termios.tcsetattr(sys.stdin, termios.TCSADRAIN, orig_settings)
   except Exception:
     termios.tcsetattr(sys.stdin, termios.TCSADRAIN, orig_settings)

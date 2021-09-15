@@ -4,6 +4,7 @@ from panda import Panda
 from common.params import Params
 from selfdrive.config import Conversions as CV
 from selfdrive.car.hyundai.values import CAR, EV_CAR, HYBRID_CAR, Buttons, CarControllerParams
+from selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
 from selfdrive.car.disable_ecu import disable_ecu
@@ -22,7 +23,7 @@ class CarInterface(CarInterfaceBase):
 
     ret.carName = "hyundai"
     ret.safetyModel = car.CarParams.SafetyModel.hyundai
-    ret.radarOffCan = True
+    ret.radarOffCan = RADAR_START_ADDR not in fingerprint[1]
 
     ret.openpilotLongitudinalControl = Params().get_bool("DisableRadar") and candidate in [CAR.SONATA, CAR.PALISADE]
     ret.safetyParam = 0
