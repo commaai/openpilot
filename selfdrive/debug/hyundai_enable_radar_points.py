@@ -1,4 +1,14 @@
 #!/usr/bin/env python3
+"""Some Hyundai radars can be reconfigured to output (debug) radar points on bus 1.
+Reconfiguration is done over UDS by reading/writing to 0x0142 using the Read/Write Data By Identifier
+endpoints (0x22 & 0x2E). This script checks your radar firmware version against a list of known 
+firmware versions. If you want to try on a new radar make sure to note the default config value
+in case it's different from the other radars and you need to revert the changes.
+
+After changing the config the car should not show any faults when openpilot is not running. 
+
+USE AT YOUR OWN RISK! Safety features, like AEB and FCW, might be affected by these changes."""
+
 import sys
 import argparse
 from subprocess import check_output, CalledProcessError
@@ -6,6 +16,8 @@ from subprocess import check_output, CalledProcessError
 from panda.python import Panda
 from panda.python.uds import UdsClient, SESSION_TYPE, DATA_IDENTIFIER_TYPE
 
+# If your radar supports changing data identifier 0x0142 as well make a PR to
+# this file to add your firmware version. Make sure to post a drive as proof!
 SUPPORTED_FW_VERSIONS = {
   # 2020 SONATA
   b"DN8_ SCC FHCUP      1.00 1.00 99110-L0000         ": {
