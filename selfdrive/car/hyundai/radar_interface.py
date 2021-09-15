@@ -76,7 +76,7 @@ class RadarInterface(RadarInterfaceBase):
         self.pts[addr].measured = True
         self.pts[addr].dRel = cpt[msg]['NEW_SIGNAL_4']
         self.pts[addr].yRel = 0.5 * -math.sin(math.radians(cpt[msg]['NEW_SIGNAL_2'])) * cpt[msg]['NEW_SIGNAL_4']
-        self.pts[addr].vRel = cpt[msg]['NEW_SIGNAL_9'] / 3.0
+        self.pts[addr].vRel = cpt[msg]['NEW_SIGNAL_9']
 
         self.pts[addr].aRel = float('nan')
         self.pts[addr].yvRel = float('nan')
