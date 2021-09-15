@@ -38,3 +38,10 @@ __kernel void loaduv(__global uchar8 const * const in,
   const float8 outv  = convert_float8(inv);
   out[gid + out_offset / 8] = outv;
 }
+
+__kernel void copy(__global float8 * inout,
+                   int in_offset)
+{
+  const int gid = get_global_id(0);
+  inout[gid] = inout[gid + in_offset / 8];
+}

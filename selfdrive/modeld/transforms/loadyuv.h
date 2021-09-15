@@ -4,7 +4,7 @@
 
 typedef struct {
   int width, height;
-  cl_kernel loadys_krnl, loaduv_krnl;
+  cl_kernel loadys_krnl, loaduv_krnl, copy_krnl;
 } LoadYUVState;
 
 void loadyuv_init(LoadYUVState* s, cl_context ctx, cl_device_id device_id, int width, int height);

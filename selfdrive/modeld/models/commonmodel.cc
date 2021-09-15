@@ -31,12 +31,12 @@ float* ModelFrame::prepare(cl_mem yuv_cl, int frame_width, int frame_height, con
     loadyuv_queue(&loadyuv, q, y_cl, u_cl, v_cl, net_input_cl, 0);
 
     std::memmove(&input_frames[0], &input_frames[MODEL_FRAME_SIZE], sizeof(float) * MODEL_FRAME_SIZE);
-    clEnqueueReadBuffer(q, net_input_cl, CL_TRUE, 0, MODEL_FRAME_SIZE * sizeof(float), &input_frames[MODEL_FRAME_SIZE], 0, nullptr, nullptr);
+    CL_CHECK(clEnqueueReadBuffer(q, net_input_cl, CL_TRUE, 0, MODEL_FRAME_SIZE * sizeof(float), &input_frames[MODEL_FRAME_SIZE], 0, nullptr, nullptr));
     clFinish(q);
     return &input_frames[0];
   } else {
-    clEnqueueCopyBuffer(q, *output, *output, sizeof(float) * MODEL_FRAME_SIZE, 0, sizeof(float) * MODEL_FRAME_SIZE, 0, nullptr, nullptr);
     loadyuv_queue(&loadyuv, q, y_cl, u_cl, v_cl, *output, MODEL_FRAME_SIZE);
+    clFinish(q);
     return NULL;
   }
 }
