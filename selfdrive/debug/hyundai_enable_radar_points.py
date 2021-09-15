@@ -6,8 +6,6 @@ firmware versions. If you want to try on a new radar make sure to note the defau
 in case it's different from the other radars and you need to revert the changes.
 
 After changing the config the car should not show any faults when openpilot is not running. 
-These config changes are persistent accross car reboots. You need to run this script again
-to go back to the default values.
 
 USE AT YOUR OWN RISK! Safety features, like AEB and FCW, might be affected by these changes."""
 
@@ -22,7 +20,7 @@ from panda.python.uds import UdsClient, SESSION_TYPE, DATA_IDENTIFIER_TYPE
 # this file to add your firmware version. Make sure to post a drive as proof!
 SUPPORTED_FW_VERSIONS = {
   # 2020 SONATA
-  b"DN8_ SCC FHCUP      1.00 1.00 99110-L0000         ": {
+  b"DN8_ SCC FHCUP      1.00 1.00 99110-L0000\x19\x08)\x15T    ": {
     "default_config": b"\x00\x00\x00\x01\x00\x00",
     "tracks_enabled": b"\x00\x00\x00\x01\x00\x01",
   },
@@ -54,7 +52,7 @@ if __name__ == "__main__":
     sys.exit(0)
 
   panda = Panda() # type: ignore
-  panda.set_safety_mode(Panda.SAFETY_ALLOUTPUT)
+  panda.set_safety_mode(Panda.SAFETY_ELM327)
   uds_client = UdsClient(panda, 0x7D0, bus=args.bus, debug=args.debug)
 
   print("\n[START DIAGNOSTIC SESSION]")
@@ -65,7 +63,7 @@ if __name__ == "__main__":
   fw_version_data_id : DATA_IDENTIFIER_TYPE = 0xf100 # type: ignore
   fw_version = uds_client.read_data_by_identifier(fw_version_data_id)
   print(fw_version)
-  if fw_version != SUPPORTED_FW_VERSIONS:
+  if fw_version not in SUPPORTED_FW_VERSIONS.keys():
     print("radar not supported! (aborted)")
     sys.exit(1)
 
@@ -84,7 +82,8 @@ if __name__ == "__main__":
 
     print("[DONE]")
     print("\nrestart your vehicle and ensure there are no faults")
-    print("you can run this script again with --default to go back to the original (factory) settings")
+    if not args.default:
+      print("you can run this script again with --default to go back to the original (factory) settings")
   else:
     print("[DONE]")
     print("\ncurrent config is already the desired configuration")
