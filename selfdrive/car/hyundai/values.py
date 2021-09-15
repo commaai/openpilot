@@ -763,7 +763,7 @@ DBC = {
   CAR.KONA_EV: dbc_dict('hyundai_kia_generic', None),
   CAR.KONA_HEV: dbc_dict('hyundai_kia_generic', None),
   CAR.SANTA_FE: dbc_dict('hyundai_kia_generic', None),
-  CAR.SONATA: dbc_dict('hyundai_kia_generic', None),
+  CAR.SONATA: dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar'),
   CAR.SONATA_LF: dbc_dict('hyundai_kia_generic', None),
   CAR.PALISADE: dbc_dict('hyundai_kia_generic', None),
   CAR.VELOSTER: dbc_dict('hyundai_kia_generic', None),
