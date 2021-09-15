@@ -572,6 +572,7 @@ opendbc/honda_insight_ex_2019_can_generated.dbc
 opendbc/acura_ilx_2016_nidec.dbc
 
 opendbc/hyundai_kia_generic.dbc
+opendbc/hyundai_kia_mando_front_radar.dbc
 
 opendbc/mazda_2017.dbc
 

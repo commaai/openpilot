@@ -737,6 +737,8 @@ FEATURES = {
 HYBRID_CAR = set([CAR.IONIQ_PHEV, CAR.ELANTRA_HEV_2021, CAR.KIA_NIRO_HEV, CAR.KIA_NIRO_HEV_2021, CAR.SONATA_HYBRID, CAR.KONA_HEV])  # these cars use a different gas signal
 EV_CAR = set([CAR.IONIQ_EV_2020, CAR.IONIQ_EV_LTD, CAR.IONIQ, CAR.KONA_EV, CAR.KIA_NIRO_EV])
 
+# If 0x500 is present on bus 1 it probably has a Mando radar outputting radar points.
+# If no points are outputted by default it might be possible to turn it on using  selfdrive/debug/hyundai_enable_radar_points.py
 DBC = {
   CAR.ELANTRA: dbc_dict('hyundai_kia_generic', None),
   CAR.ELANTRA_2021: dbc_dict('hyundai_kia_generic', None),
@@ -748,24 +750,24 @@ DBC = {
   CAR.HYUNDAI_GENESIS: dbc_dict('hyundai_kia_generic', None),
   CAR.IONIQ_PHEV: dbc_dict('hyundai_kia_generic', None),
   CAR.IONIQ_EV_2020: dbc_dict('hyundai_kia_generic', None),
-  CAR.IONIQ_EV_LTD: dbc_dict('hyundai_kia_generic', None),
+  CAR.IONIQ_EV_LTD: dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar'),
   CAR.IONIQ: dbc_dict('hyundai_kia_generic', None),
   CAR.KIA_FORTE: dbc_dict('hyundai_kia_generic', None),
   CAR.KIA_NIRO_EV: dbc_dict('hyundai_kia_generic', None),
-  CAR.KIA_NIRO_HEV: dbc_dict('hyundai_kia_generic', None),
+  CAR.KIA_NIRO_HEV: dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar'),
   CAR.KIA_NIRO_HEV_2021: dbc_dict('hyundai_kia_generic', None),
   CAR.KIA_OPTIMA: dbc_dict('hyundai_kia_generic', None),
   CAR.KIA_OPTIMA_H: dbc_dict('hyundai_kia_generic', None),
   CAR.KIA_SELTOS: dbc_dict('hyundai_kia_generic', None),
-  CAR.KIA_SORENTO: dbc_dict('hyundai_kia_generic', None),
+  CAR.KIA_SORENTO: dbc_dict('hyundai_kia_generic', None), # Has 0x5XX messages, but different format
   CAR.KIA_STINGER: dbc_dict('hyundai_kia_generic', None),
   CAR.KONA: dbc_dict('hyundai_kia_generic', None),
   CAR.KONA_EV: dbc_dict('hyundai_kia_generic', None),
   CAR.KONA_HEV: dbc_dict('hyundai_kia_generic', None),
   CAR.SANTA_FE: dbc_dict('hyundai_kia_generic', None),
-  CAR.SONATA: dbc_dict('hyundai_kia_generic', None),
-  CAR.SONATA_LF: dbc_dict('hyundai_kia_generic', None),
-  CAR.PALISADE: dbc_dict('hyundai_kia_generic', None),
+  CAR.SONATA: dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar'),
+  CAR.SONATA_LF: dbc_dict('hyundai_kia_generic', None), # Has 0x5XX messages, but different format
+  CAR.PALISADE: dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar'),
   CAR.VELOSTER: dbc_dict('hyundai_kia_generic', None),
   CAR.KIA_CEED: dbc_dict('hyundai_kia_generic', None),
   CAR.SONATA_HYBRID: dbc_dict('hyundai_kia_generic', None),
