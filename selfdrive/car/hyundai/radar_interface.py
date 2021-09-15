@@ -6,12 +6,15 @@ from opendbc.can.parser import CANParser
 from selfdrive.car.interfaces import RadarInterfaceBase
 from selfdrive.car.hyundai.values import DBC
 
+RADAR_START_ADDR = 0x500
+RADAR_MSG_COUNT = 32
+
 
 def get_radar_can_parser(CP):
   signals = []
   checks = []
 
-  for addr in range(0x500, 0x500 + 32):
+  for addr in range(RADAR_START_ADDR, RADAR_START_ADDR + RADAR_MSG_COUNT):
     msg = f"R_{hex(addr)}"
     signals += [
       ("NEW_SIGNAL_2", msg, 0),
@@ -27,13 +30,14 @@ def get_radar_can_parser(CP):
 class RadarInterface(RadarInterfaceBase):
   def __init__(self, CP):
     super().__init__(CP)
-    self.rcp = get_radar_can_parser(CP)
     self.updated_messages = set()
-    self.trigger_msg = 0x500 + 31
+    self.trigger_msg = RADAR_START_ADDR + RADAR_MSG_COUNT - 1
     self.track_id = 0
 
-     # TODO: set based of fingerprint
-    self.radar_off_can = False 
+    self.radar_off_can = CP.radarOffCan and (DBC[CP.carFingerprint]['radar'] is not None)
+
+    if not self.radar_off_can:
+      self.rcp = get_radar_can_parser(CP)
 
   def update(self, can_strings):
     if self.radar_off_can:
