@@ -72,15 +72,15 @@ TIMINGS = {
   "controlsState": [2.5, 0.35],
   "lateralPlan": [2.5, 0.5],
   "longitudinalPlan": [2.5, 0.5],
-  "roadCameraState": [1.5, 0.35],
-  "driverCameraState": [1.5, 0.35],
+  "roadCameraState": [2.0, 0.35],
+  "driverCameraState": [2.0, 0.35],
   "modelV2": [2.5, 0.35],
   "driverState": [2.5, 0.35],
   "liveLocationKalman": [2.5, 0.35],
 }
 if TICI:
   TIMINGS.update({
-    "wideRoadCameraState": [1.5, 0.35],
+    "wideRoadCameraState": [2.0, 0.35],
   })
 
 
