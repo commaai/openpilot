@@ -198,8 +198,8 @@ class TestOnroad(unittest.TestCase):
       ts = [getattr(getattr(m, s), "modelExecutionTime") for m in self.lr if m.which() == s]
       self.assertLess(min(ts), instant_max, f"high '{s}' execution time: {min(ts)}")
       self.assertLess(np.mean(ts), avg_max, f"high avg '{s}' execution time: {np.mean(ts)}")
-      result += f"'{s}' execution time: {min(ts)}'"
-      result += f"'{s}' avg execution time: {np.mean(ts)}"
+      result += f"'{s}' execution time: {min(ts)}\n"
+      result += f"'{s}' avg execution time: {np.mean(ts)}\n"
     print(result)
 
   def test_timings(self):
