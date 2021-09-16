@@ -50,7 +50,7 @@ if __name__ == "__main__":
     if e.returncode != 1: # 1 == no process found (boardd not running)
       raise e
 
-  confirm = input("put your vehicle in accessory mode now and type OK to continue: ").upper().strip()
+  confirm = input("power on the vehicle keeping the engine off (press start button twice) then type OK to continue: ").upper().strip()
   if confirm != "OK":
     print("\nyou didn't type 'OK! (aborted)")
     sys.exit(0)
