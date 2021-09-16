@@ -30,7 +30,7 @@ maneuvers = [
     duration=20.,
     initial_speed=20.,
     lead_relevancy=True,
-    initial_distance_lead=50.,
+    initial_distance_lead=60.,
     speed_lead_values=[20., 0.],
     speed_lead_breakpoints=[0., 1.],
   ),
