@@ -712,7 +712,10 @@ FW_VERSIONS = {
   },
   CAR.SONATA_HYBRID: {
     (Ecu.fwdRadar, 0x7d0, None): [b'\xf1\000DNhe SCC FHCUP      1.00 1.02 99110-L5000         ',],
-    (Ecu.eps, 0x7d4, None): [b'\xf1\x8756310-L5500\xf1\000DN8 MDPS C 1.00 1.02 56310-L5500 4DNHC102\xf1\xa01.02',],
+    (Ecu.eps, 0x7d4, None): [
+      b'\xf1\x8756310-L5500\xf1\000DN8 MDPS C 1.00 1.02 56310-L5500 4DNHC102\xf1\xa01.02',
+      b'\xf1\x8756310-L5450\xf1\x00DN8 MDPS C 1.00 1.02 56310-L5450 4DNHC102\xf1\xa01.02',
+    ],
     (Ecu.fwdCamera, 0x7c4, None): [b'\xf1\000DN8HMFC  AT USA LHD 1.00 1.04 99211-L1000 191016',],
     (Ecu.transmission, 0x7e1, None): [b'\xf1\000PSBG2323  E09\000\000\000\000\000\000\000TDN2H20SA5\x97R\x88\x9e',],
     (Ecu.engine, 0x7e0, None): [b'\xf1\x87391162J012\xf1\xa0000R',],
