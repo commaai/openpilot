@@ -68,7 +68,8 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
     }
 
   } else {
-    crop_rect = {0, 0, height / 2, height};
+    const int adapt_width = 372;
+    crop_rect = {0, 0, adapt_width, height};
     if (!s->is_rhd) {
       crop_rect.x += width - crop_rect.w;
     }
@@ -95,7 +96,8 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
   auto [resized_buf, resized_u, resized_v] = get_yuv_buf(s->resized_buf, resized_width, resized_height);
   uint8_t *resized_y = resized_buf;
   libyuv::FilterMode mode = libyuv::FilterModeEnum::kFilterBilinear;
-  libyuv::I420Scale(cropped_y, crop_rect.w,
+  if (Hardware::TICI()) {
+    libyuv::I420Scale(cropped_y, crop_rect.w,
                     cropped_u, crop_rect.w / 2,
                     cropped_v, crop_rect.w / 2,
                     crop_rect.w, crop_rect.h,
@@ -104,6 +106,17 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
                     resized_v, resized_width / 2,
                     resized_width, resized_height,
                     mode);
+  } else {
+    libyuv::I420Scale(cropped_y, crop_rect.w,
+                    cropped_u, crop_rect.w / 2,
+                    cropped_v, crop_rect.w / 2,
+                    crop_rect.w, crop_rect.h,
+                    resized_y + 96*320, resized_width,
+                    resized_u, resized_width / 2,
+                    resized_v, resized_width / 2,
+                    260, 448,
+                    mode);
+  }
 
   int yuv_buf_len = (MODEL_WIDTH/2) * (MODEL_HEIGHT/2) * 6; // Y|u|v -> y|y|y|y|u|v
   float *net_input_buf = get_buffer(s->net_input_buf, yuv_buf_len);
