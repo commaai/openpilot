@@ -23,7 +23,7 @@ PROCS = {
   "selfdrive.controls.controlsd": 50.0,
   "./loggerd": 45.0,
   "./locationd": 9.1,
-  "selfdrive.controls.plannerd": 26.0,
+  "selfdrive.controls.plannerd": 33.0,
   "./_ui": 15.0,
   "selfdrive.locationd.paramsd": 9.1,
   "./camerad": 7.07,
@@ -55,7 +55,7 @@ if TICI:
     "selfdrive.controls.controlsd": 28.0,
     "./camerad": 31.0,
     "./_ui": 21.0,
-    "selfdrive.controls.plannerd": 12.0,
+    "selfdrive.controls.plannerd": 15.0,
     "selfdrive.locationd.paramsd": 5.0,
     "./_dmonitoringmodeld": 10.0,
     "selfdrive.thermald.thermald": 1.5,
@@ -198,8 +198,8 @@ class TestOnroad(unittest.TestCase):
       ts = [getattr(getattr(m, s), "modelExecutionTime") for m in self.lr if m.which() == s]
       self.assertLess(min(ts), instant_max, f"high '{s}' execution time: {min(ts)}")
       self.assertLess(np.mean(ts), avg_max, f"high avg '{s}' execution time: {np.mean(ts)}")
-      result += f"'{s}' execution time: {min(ts)}'"
-      result += f"'{s}' avg execution time: {np.mean(ts)}"
+      result += f"'{s}' execution time: {min(ts)}\n"
+      result += f"'{s}' avg execution time: {np.mean(ts)}\n"
     print(result)
 
   def test_timings(self):
