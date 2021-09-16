@@ -57,14 +57,14 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
   if (Hardware::TICI()) {
     const int full_width_tici = 1928;
     const int full_height_tici = 1208;
-    const int adapt_width_tici = 668;
+    const int adapt_width_tici = 954;
     const int cropped_height = adapt_width_tici / 1.33;
     crop_rect = {full_width_tici / 2 - adapt_width_tici / 2,
-                 full_height_tici / 2 - cropped_height / 2 - 196,
+                 full_height_tici / 2 - cropped_height / 2 - 144,
                  cropped_height / 2,
                  cropped_height};
     if (!s->is_rhd) {
-      crop_rect.x += adapt_width_tici - crop_rect.w + 32;
+      crop_rect.x += adapt_width_tici - crop_rect.w - 72;
     }
 
   } else {
