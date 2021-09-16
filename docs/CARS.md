@@ -16,7 +16,7 @@ Supported Cars
 | Honda     | CR-V 2015-16                  | Touring           | openpilot        | 25mph<sup>1</sup>  | 12mph             |
 | Honda     | CR-V 2017-21                  | Honda Sensing     | Stock            | 0mph               | 12mph             |
 | Honda     | CR-V Hybrid 2017-2019         | Honda Sensing     | Stock            | 0mph               | 12mph             |
-| Honda     | e 2020                        | All 		          | Stock            | 0mph               | 3mph              |
+| Honda     | e 2020                        | All               | Stock            | 0mph               | 3mph              |
 | Honda     | Fit 2018-19                   | Honda Sensing     | openpilot        | 25mph<sup>1</sup>  | 12mph             |
 | Honda     | HR-V 2019-20                  | Honda Sensing     | openpilot        | 25mph<sup>1</sup>  | 12mph             |
 | Honda     | Insight 2019-21               | All               | Stock            | 0mph               | 3mph              |
@@ -57,7 +57,7 @@ Supported Cars
 | Toyota    | Highlander 2020-21            | All               | openpilot        | 0mph               | 0mph              |
 | Toyota    | Highlander Hybrid 2017-19     | All               | Stock<sup>3</sup>| 0mph               | 0mph              |
 | Toyota    | Highlander Hybrid 2020-21     | All               | openpilot        | 0mph               | 0mph              |
-| Toyota    | Mirai 2021	                  | All               | openpilot        | 0mph               | 0mph              |
+| Toyota    | Mirai 2021                    | All               | openpilot        | 0mph               | 0mph              |
 | Toyota    | Prius 2016-20                 | TSS-P             | Stock<sup>3</sup>| 0mph               | 0mph              |
 | Toyota    | Prius 2021                    | All               | openpilot        | 0mph               | 0mph              |
 | Toyota    | Prius Prime 2017-20           | All               | Stock<sup>3</sup>| 0mph               | 0mph              |
@@ -128,6 +128,7 @@ Community Maintained Cars and Features
 | RAM       | 1500                          | LaneSense         | Stock            | 0mph               | 32mph        |
 | SEAT      | Ateca 2018                    | Driver Assistance | Stock            | 0mph               | 0mph         |
 | SEAT      | Leon 2014-2020                | Driver Assistance | Stock            | 0mph               | 0mph         |
+| Škoda     | Kamiq 2021<sup>2</sup>        | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Škoda     | Karoq 2019                    | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Škoda     | Kodiaq 2018-19                | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Škoda     | Octavia 2015, 2018-19         | Driver Assistance | Stock            | 0mph               | 0mph         |
@@ -149,14 +150,14 @@ Community Maintained Cars and Features
 | Volkswagen| Golf SportWagen 2015          | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Jetta 2018-20                 | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Jetta GLI 2021                | Driver Assistance | Stock            | 0mph               | 0mph         |
-| Volkswagen| Passat 2016-17<sup>2</sup>    | Driver Assistance | Stock            | 0mph               | 0mph         |
+| Volkswagen| Passat 2016-17<sup>3</sup>    | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| T-Cross 2021                  | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Tiguan 2020                   | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Touran 2017                   | Driver Assistance | Stock            | 0mph               | 0mph         |
 
 <sup>1</sup>Requires an [OBD-II car harness](https://comma.ai/shop/products/comma-car-harness) and [community built ASCM harness](https://github.com/commaai/openpilot/wiki/GM#hardware). ***NOTE: disconnecting the ASCM disables Automatic Emergency Braking (AEB).*** <br />
-<sup>2</sup>Only includes the MQB Passat sold outside of North America. The NMS Passat made in Chattanooga TN is not yet supported.
-
+<sup>2</sup>Not including the China market Kamiq, which is based on the (currently) unsupported PQ34 platform. <br />
+<sup>3</sup>Only includes the MQB Passat sold outside of North America. The NMS Passat made in Chattanooga, TN is not yet supported. <br />
 Community Maintained Cars and Features are not verified by comma to meet our [safety model](SAFETY.md). Be extra cautious using them. They are only available after enabling the toggle in `Settings->Developer->Enable Community Features`.
 
 To promote a car from community maintained, it must meet a few requirements. We must own one from the brand, we must sell the harness for it, has full ISO26262 in both panda and openpilot, there must be a path forward for longitudinal control, it must have AEB still enabled, and it must support fingerprinting 2.0

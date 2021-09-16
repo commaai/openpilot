@@ -10,7 +10,7 @@ from selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, SPEED_FACTOR, 
 TransmissionType = car.CarParams.TransmissionType
 
 
-def get_can_signals(CP, gearbox_msg):
+def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
   # this function generates lists for signal, messages and initial values
   signals = [
     ("XMISSION_SPEED", "ENGINE_DATA", 0),
@@ -38,6 +38,7 @@ def get_can_signals(CP, gearbox_msg):
     ("PEDAL_GAS", "POWERTRAIN_DATA", 0),
     ("CRUISE_SETTING", "SCM_BUTTONS", 0),
     ("ACC_STATUS", "POWERTRAIN_DATA", 0),
+    ("MAIN_ON", main_on_sig_msg, 0),
   ]
 
   checks = [
@@ -78,7 +79,6 @@ def get_can_signals(CP, gearbox_msg):
 
   if CP.carFingerprint in HONDA_BOSCH:
     signals += [
-      ("MAIN_ON", "SCM_FEEDBACK", 0),
       ("EPB_STATE", "EPB_STATUS", 0),
     ]
     checks += [
@@ -124,25 +124,14 @@ def get_can_signals(CP, gearbox_msg):
     ]
 
   if CP.carFingerprint == CAR.CIVIC:
-    signals += [("MAIN_ON", "SCM_FEEDBACK", 0),
-                ("IMPERIAL_UNIT", "HUD_SETTING", 0),
+    signals += [("IMPERIAL_UNIT", "HUD_SETTING", 0),
                 ("EPB_STATE", "EPB_STATUS", 0)]
     checks += [
       ("HUD_SETTING", 50),
       ("EPB_STATUS", 50),
     ]
-  elif CP.carFingerprint in (CAR.ACURA_ILX, CAR.CRV, CAR.CRV_EU, CAR.ACURA_RDX, CAR.PILOT, CAR.PILOT_2019, CAR.RIDGELINE):
-    signals += [("MAIN_ON", "SCM_BUTTONS", 0)]
-  elif CP.carFingerprint in (CAR.FIT, CAR.HRV):
-    signals += [("MAIN_ON", "SCM_BUTTONS", 0),
-                ("BRAKE_HOLD_ACTIVE", "VSA_STATUS", 0)]
-  elif CP.carFingerprint == CAR.ODYSSEY:
-    signals += [("MAIN_ON", "SCM_FEEDBACK", 0),
-                ("EPB_STATE", "EPB_STATUS", 0)]
-    checks += [("EPB_STATUS", 50)]
-  elif CP.carFingerprint == CAR.ODYSSEY_CHN:
-    signals += [("MAIN_ON", "SCM_BUTTONS", 0),
-                ("EPB_STATE", "EPB_STATUS", 0)]
+  elif CP.carFingerprint in (CAR.ODYSSEY, CAR.ODYSSEY_CHN):
+    signals += [("EPB_STATE", "EPB_STATUS", 0)]
     checks += [("EPB_STATUS", 50)]
 
   # add gas interceptor reading if we are using it
@@ -168,6 +157,11 @@ class CarState(CarStateBase):
     self.gearbox_msg = "GEARBOX"
     if CP.carFingerprint == CAR.ACCORD and CP.transmissionType == TransmissionType.cvt:
       self.gearbox_msg = "GEARBOX_15T"
+
+    self.main_on_sig_msg = "SCM_FEEDBACK"
+    if CP.carFingerprint in (CAR.ACURA_ILX, CAR.ACURA_RDX, CAR.CRV, CAR.CRV_EU, CAR.FIT, CAR.HRV,
+                             CAR.ODYSSEY_CHN, CAR.PILOT, CAR.PILOT_2019, CAR.RIDGELINE):
+      self.main_on_sig_msg = "SCM_BUTTONS"
 
     self.shifter_values = can_define.dv[self.gearbox_msg]["GEAR_SHIFTER"]
     self.steer_status_values = defaultdict(lambda: "UNKNOWN", can_define.dv["STEER_STATUS"]["STEER_STATUS"])
@@ -240,16 +234,11 @@ class CarState(CarStateBase):
       250, cp.vl["SCM_FEEDBACK"]["LEFT_BLINKER"], cp.vl["SCM_FEEDBACK"]["RIGHT_BLINKER"])
     self.brake_hold = cp.vl["VSA_STATUS"]["BRAKE_HOLD_ACTIVE"]
 
-    if self.CP.carFingerprint in (CAR.CIVIC, CAR.ODYSSEY, CAR.CRV_5G, CAR.ACCORD, CAR.ACCORDH, CAR.CIVIC_BOSCH,
+    if self.CP.carFingerprint in (CAR.CIVIC, CAR.ODYSSEY, CAR.ODYSSEY_CHN, CAR.CRV_5G, CAR.ACCORD, CAR.ACCORDH, CAR.CIVIC_BOSCH,
                                   CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G, CAR.HONDA_E):
       self.park_brake = cp.vl["EPB_STATUS"]["EPB_STATE"] != 0
-      main_on = cp.vl["SCM_FEEDBACK"]["MAIN_ON"]
-    elif self.CP.carFingerprint == CAR.ODYSSEY_CHN:
-      self.park_brake = cp.vl["EPB_STATUS"]["EPB_STATE"] != 0
-      main_on = cp.vl["SCM_BUTTONS"]["MAIN_ON"]
     else:
       self.park_brake = 0  # TODO
-      main_on = cp.vl["SCM_BUTTONS"]["MAIN_ON"]
 
     gear = int(cp.vl[self.gearbox_msg]["GEAR_SHIFTER"])
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(gear, None))
@@ -294,7 +283,7 @@ class CarState(CarStateBase):
 
     ret.brake = cp.vl["VSA_STATUS"]["USER_BRAKE"]
     ret.cruiseState.enabled = cp.vl["POWERTRAIN_DATA"]["ACC_STATUS"] != 0
-    ret.cruiseState.available = bool(main_on)
+    ret.cruiseState.available = bool(cp.vl[self.main_on_sig_msg]["MAIN_ON"])
 
     # Gets rid of Pedal Grinding noise when brake is pressed at slow speeds for some models
     if self.CP.carFingerprint in (CAR.PILOT, CAR.PILOT_2019, CAR.RIDGELINE):
@@ -326,7 +315,7 @@ class CarState(CarStateBase):
     return ret
 
   def get_can_parser(self, CP):
-    signals, checks = get_can_signals(CP, self.gearbox_msg)
+    signals, checks = get_can_signals(CP, self.gearbox_msg, self.main_on_sig_msg)
     bus_pt = 1 if CP.carFingerprint in HONDA_BOSCH else 0
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, bus_pt)
 

@@ -252,17 +252,19 @@ void CameraViewWidget::updateFrame() {
     resizeGL(width(), height());
   }
 
+  VisionBuf *buf = nullptr;
   if (vipc_client->connected) {
-    VisionBuf *buf = vipc_client->recv();
+    buf = vipc_client->recv();
     if (buf != nullptr) {
       latest_frame = buf;
       update();
       emit frameUpdated();
-    } else if (!Hardware::PC()) {
+    } else {
       LOGE("visionIPC receive timeout");
     }
-  } else {
-    // try to connect again quickly
+  }
+  if (buf == nullptr) {
+    // try to connect or recv again
     QTimer::singleShot(1000. / UI_FREQ, this, &CameraViewWidget::updateFrame);
   }
 }

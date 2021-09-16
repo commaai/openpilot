@@ -76,6 +76,7 @@ class CAR:
   AUDI_Q2_MK1 = "AUDI Q2 1ST GEN"             # Chassis GA, Mk1 Audi Q2 (RoW) and Q2L (China only)
   SEAT_ATECA_MK1 = "SEAT ATECA 1ST GEN"       # Chassis 5F, Mk1 SEAT Ateca and CUPRA Ateca
   SEAT_LEON_MK3 = "SEAT LEON 3RD GEN"         # Chassis 5F, Mk3 SEAT Leon and variants
+  SKODA_KAMIQ_MK1 = "SKODA KAMIQ 1ST GEN"     # Chassis NW, Mk1 Skoda Kamiq
   SKODA_KAROQ_MK1 = "SKODA KAROQ 1ST GEN"     # Chassis NU, Mk1 Skoda Karoq
   SKODA_KODIAQ_MK1 = "SKODA KODIAQ 1ST GEN"   # Chassis NS, Mk1 Skoda Kodiaq
   SKODA_SCALA_MK1 = "SKODA SCALA 1ST GEN"     # Chassis NW, Mk1 Skoda Scala and Skoda Kamiq
@@ -478,6 +479,23 @@ FW_VERSIONS = {
       b'\xf1\x875Q0907572B \xf1\x890200\xf1\x82\00101',
       b'\xf1\x875Q0907572H \xf1\x890620',
       b'\xf1\x875Q0907572P \xf1\x890682',
+    ],
+  },
+  CAR.SKODA_KAMIQ_MK1: {
+    (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x8705C906032M \xf1\x891333',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x870CW300020  \xf1\x891906',
+    ],
+    (Ecu.srs, 0x715, None): [
+      b'\xf1\x872Q0959655AM\xf1\x890351\xf1\x82\0222221042111042121040404042E2711152H14',
+    ],
+    (Ecu.eps, 0x712, None): [
+      b'\xf1\x872Q1909144M \xf1\x896041',
+    ],
+    (Ecu.fwdRadar, 0x757, None): [
+      b'\xf1\x872Q0907572T \xf1\x890383',
     ],
   },
   CAR.SKODA_KAROQ_MK1: {
