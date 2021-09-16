@@ -5,12 +5,12 @@ from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from selfdrive.config import Conversions as CV
 from selfdrive.car.interfaces import CarStateBase
-from selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, SPEED_FACTOR, HONDA_BOSCH, HONDA_NIDEC_ALT_SCM_MESSAGES, HONDA_BOSCH_ALT_BRAKE_SIGNAL
+from selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, SPEED_FACTOR, HONDA_BOSCH, HONDA_NIDEC_ALT_SCM_MESSAGES, HONDA_BOSCH_ALT_BRAKE_SIGNAL, HONDA_NO_WHEELS_MOVING_SIGNAL
 
 TransmissionType = car.CarParams.TransmissionType
 
 
-def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
+def get_can_signals(CP, gearbox_msg, main_on_sig_msg, door_sig_msg, door_signals):
   # this function generates lists for signal, messages and initial values
   signals = [
     ("XMISSION_SPEED", "ENGINE_DATA", 0),
@@ -107,23 +107,15 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
     else:
       checks += [("CRUISE_PARAMS", 50)]
 
-  if CP.carFingerprint in (CAR.ACCORD, CAR.ACCORD_2021, CAR.ACCORDH, CAR.ACCORDH_2021, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G, CAR.HONDA_E):
-    signals += [("DRIVERS_DOOR_OPEN", "SCM_FEEDBACK", 1)]
-  elif CP.carFingerprint == CAR.ODYSSEY_CHN:
-    signals += [("DRIVERS_DOOR_OPEN", "SCM_BUTTONS", 1)]
-  elif CP.carFingerprint in (CAR.FREED, CAR.HRV):
-    signals += [("DRIVERS_DOOR_OPEN", "SCM_BUTTONS", 1),
-                ("WHEELS_MOVING", "STANDSTILL", 1)]
-  else:
-    signals += [("DOOR_OPEN_FL", "DOORS_STATUS", 1),
-                ("DOOR_OPEN_FR", "DOORS_STATUS", 1),
-                ("DOOR_OPEN_RL", "DOORS_STATUS", 1),
-                ("DOOR_OPEN_RR", "DOORS_STATUS", 1),
-                ("WHEELS_MOVING", "STANDSTILL", 1)]
-    checks += [
-      ("DOORS_STATUS", 3),
-      ("STANDSTILL", 50),
-    ]
+  signals.extend((signal, door_sig_msg, 1) for signal in door_signals)
+
+  if CP.carFingerprint not in HONDA_NO_WHEELS_MOVING_SIGNAL:
+    signals += [("WHEELS_MOVING", "STANDSTILL", 1)]
+    if CP.carFingerprint != CAR.HRV:
+      checks += [
+        ("DOORS_STATUS", 3),
+        ("STANDSTILL", 50),
+      ]
 
   if CP.carFingerprint == CAR.CIVIC:
     signals += [("IMPERIAL_UNIT", "HUD_SETTING", 0),
@@ -156,6 +148,7 @@ class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
+
     self.gearbox_msg = "GEARBOX"
     if CP.carFingerprint == CAR.ACCORD and CP.transmissionType == TransmissionType.cvt:
       self.gearbox_msg = "GEARBOX_15T"
@@ -163,6 +156,16 @@ class CarState(CarStateBase):
     self.main_on_sig_msg = "SCM_FEEDBACK"
     if CP.carFingerprint in HONDA_NIDEC_ALT_SCM_MESSAGES:
       self.main_on_sig_msg = "SCM_BUTTONS"
+
+    self.door_sig_msg = "DOORS_STATUS"
+    self.door_signals = ("DOOR_OPEN_FL", "DOOR_OPEN_FR", "DOOR_OPEN_RL", "DOOR_OPEN_RR")
+    if CP.carFingerprint in (CAR.ACCORD, CAR.ACCORD_2021, CAR.ACCORDH, CAR.ACCORDH_2021, CAR.ACURA_RDX_3G,
+                             CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_HYBRID, CAR.HONDA_E, CAR.INSIGHT):
+      self.door_sig_msg = "SCM_FEEDBACK"
+      self.door_signals = ("DRIVERS_DOOR_OPEN", )
+    elif CP.carFingerprint in (CAR.FREED, CAR.HRV, CAR.ODYSSEY_CHN):
+      self.door_sig_msg = "SCM_BUTTONS"
+      self.door_signals = ("DRIVERS_DOOR_OPEN", )
 
     self.shifter_values = can_define.dv[self.gearbox_msg]["GEAR_SHIFTER"]
     self.steer_status_values = defaultdict(lambda: "UNKNOWN", can_define.dv["STEER_STATUS"]["STEER_STATUS"])
@@ -184,20 +187,13 @@ class CarState(CarStateBase):
     self.prev_cruise_setting = self.cruise_setting
 
     # ******************* parse out can *******************
-    # TODO: find wheels moving bit in dbc
-    if self.CP.carFingerprint in (CAR.ACCORD, CAR.ACCORD_2021, CAR.ACCORDH, CAR.ACCORDH_2021, CAR.CIVIC_BOSCH, CAR.CIVIC_BOSCH_DIESEL, CAR.CRV_HYBRID, CAR.INSIGHT, CAR.ACURA_RDX_3G, CAR.HONDA_E):
+    if self.CP.carFingerprint in HONDA_NO_WHEELS_MOVING_SIGNAL:
+      # TODO: find wheels moving bit in dbc
       ret.standstill = cp.vl["ENGINE_DATA"]["XMISSION_SPEED"] < 0.1
-      ret.doorOpen = bool(cp.vl["SCM_FEEDBACK"]["DRIVERS_DOOR_OPEN"])
-    elif self.CP.carFingerprint == CAR.ODYSSEY_CHN:
-      ret.standstill = cp.vl["ENGINE_DATA"]["XMISSION_SPEED"] < 0.1
-      ret.doorOpen = bool(cp.vl["SCM_BUTTONS"]["DRIVERS_DOOR_OPEN"])
-    elif self.CP.carFingerprint in (CAR.FREED, CAR.HRV):
-      ret.standstill = not cp.vl["STANDSTILL"]["WHEELS_MOVING"]
-      ret.doorOpen = bool(cp.vl["SCM_BUTTONS"]["DRIVERS_DOOR_OPEN"])
     else:
       ret.standstill = not cp.vl["STANDSTILL"]["WHEELS_MOVING"]
-      ret.doorOpen = any([cp.vl["DOORS_STATUS"]["DOOR_OPEN_FL"], cp.vl["DOORS_STATUS"]["DOOR_OPEN_FR"],
-                          cp.vl["DOORS_STATUS"]["DOOR_OPEN_RL"], cp.vl["DOORS_STATUS"]["DOOR_OPEN_RR"]])
+
+    ret.doorOpen = any(cp.vl[self.door_sig_msg][signal] for signal in self.door_signals)
     ret.seatbeltUnlatched = bool(cp.vl["SEATBELT_STATUS"]["SEATBELT_DRIVER_LAMP"] or not cp.vl["SEATBELT_STATUS"]["SEATBELT_DRIVER_LATCHED"])
 
     steer_status = self.steer_status_values[cp.vl["STEER_STATUS"]["STEER_STATUS"]]
@@ -321,7 +317,8 @@ class CarState(CarStateBase):
     return ret
 
   def get_can_parser(self, CP):
-    signals, checks = get_can_signals(CP, self.gearbox_msg, self.main_on_sig_msg)
+    signals, checks = get_can_signals(CP, self.gearbox_msg, self.main_on_sig_msg,
+                                      self.door_sig_msg, self.door_signals)
     bus_pt = 1 if CP.carFingerprint in HONDA_BOSCH else 0
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, bus_pt)
 
