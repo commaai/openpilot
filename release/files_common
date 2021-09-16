@@ -236,8 +236,6 @@ selfdrive/controls/lib/longitudinal_planner.py
 selfdrive/controls/lib/radar_helpers.py
 selfdrive/controls/lib/vehicle_model.py
 selfdrive/controls/lib/fcw.py
-selfdrive/controls/lib/long_mpc.py
-selfdrive/controls/lib/lead_mpc.py 
 
 selfdrive/controls/lib/cluster/*
 
