@@ -45,7 +45,7 @@ constexpr int LEAD_IDX = RE_IDX + 2*2*2*33;
 constexpr int LEAD_PROB_IDX = LEAD_IDX + LEAD_MHP_N*(LEAD_MHP_GROUP_SIZE);
 constexpr int STOP_LINE_IDX = LEAD_PROB_IDX + 3;
 constexpr int STOP_LINE_PROB_IDX = STOP_LINE_IDX + STOP_LINE_MHP_N*STOP_LINE_MHP_GROUP_SIZE;
-constexpr int DESIRE_STATE_IDX = STOP_LINE_PROB_IDX + 1;
+constexpr int DESIRE_STATE_IDX = STOP_LINE_PROB_IDX + 2;
 constexpr int META_IDX = DESIRE_STATE_IDX + DESIRE_LEN;
 constexpr int POSE_IDX = META_IDX + OTHER_META_SIZE + DESIRE_PRED_SIZE;
 constexpr int OUTPUT_SIZE =  POSE_IDX + POSE_SIZE;
@@ -201,7 +201,7 @@ void fill_lead_v3(cereal::ModelDataV2::LeadDataV3::Builder lead, const float *le
 
 void fill_stop_line(cereal::ModelDataV2::StopLineData::Builder stop_line, const float *stop_line_data, const float *prob) {
   const float *data = get_stop_line_data(stop_line_data);
-  stop_line.setProb(prob[0]);
+  stop_line.setProb(sigmoid(prob[0]));
 
   stop_line.setX(data[0]);
   stop_line.setY(data[1]);
