@@ -290,8 +290,9 @@ class LongitudinalMpc():
 
   def update(self, carstate, radarstate, v_cruise):
     v_ego = self.x0[1]
+    stopping = model.stopLine.prob > 0.5
     self.crashing = False
-    self.status = radarstate.leadOne.status or radarstate.leadTwo.status
+    self.status = radarstate.leadOne.status or radarstate.leadTwo.status or stopping
 
     lead_xv_0 = self.process_lead(radarstate.leadOne)
     lead_xv_1 = self.process_lead(radarstate.leadTwo)
@@ -303,6 +304,10 @@ class LongitudinalMpc():
     # and then treat that as a stopped car/obstacle at this new distance.
     lead_0_obstacle = lead_xv_0[:,0] + get_stopped_equivalence_factor(lead_xv_0[:,1])
     lead_1_obstacle = lead_xv_1[:,0] + get_stopped_equivalence_factor(lead_xv_1[:,1])
+    if stopping:
+      stop_line_obstacle = self.extrapolate_lead(model.stopLine.x + 6.0, 0.0, 0.0, self.a_lead_tau)[:,0]
+    else:
+      stop_line_obstacle = self.extrapolate_lead(50.0, v_ego + 10, 0.0, self.a_lead_tau)[:,0]
 
     # Fake an obstacle for cruise
     # TODO find cleaner way to write hacky fake cruise obstacle
@@ -313,7 +318,7 @@ class LongitudinalMpc():
                                cruise_upper_bound)
     cruise_obstacle = T_IDXS*v_cruise_clipped + get_safe_obstacle_distance(v_cruise_clipped)
 
-    x_obstacles = np.column_stack([lead_0_obstacle, lead_1_obstacle, cruise_obstacle])
+    x_obstacles = np.column_stack([lead_0_obstacle, lead_1_obstacle, stop_line_obstacle, cruise_obstacle])
     self.source = SOURCES[np.argmin(x_obstacles[0])]
     x_obstacle = np.min(x_obstacles, axis=1)
     self.params = np.concatenate([self.accel_limit_arr,
