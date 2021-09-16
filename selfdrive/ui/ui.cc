@@ -68,11 +68,13 @@ static void update_line_data(const UIState *s, const cereal::ModelDataV2::XYZTDa
 static void update_stop_line_data(const UIState *s, const cereal::ModelDataV2::StopLineData::Reader &line,
                                   float x_off, float y_off, float z_off, line_vertices_data *pvd) {
   const auto line_x = line.getX(), line_y = line.getY(), line_z = line.getZ();
-  calib_frame_to_full_frame(s, line_x + x_off, line_y - y_off, line_z + z_off, &pvd->v[0]);
-  calib_frame_to_full_frame(s, line_x + x_off, line_y + y_off, line_z + z_off, &pvd->v[1]);
-  calib_frame_to_full_frame(s, line_x - x_off, line_y + y_off, line_z + z_off, &pvd->v[2]);
-  calib_frame_to_full_frame(s, line_x - x_off, line_y - y_off, line_z + z_off, &pvd->v[3]);
-  pvd->cnt = 4;
+  vertex_data *v = &pvd->v[0];
+  v += calib_frame_to_full_frame(s, line_x + x_off, line_y - y_off, line_z + z_off, v);
+  v += calib_frame_to_full_frame(s, line_x + x_off, line_y + y_off, line_z + z_off, v);
+  v += calib_frame_to_full_frame(s, line_x - x_off, line_y + y_off, line_z + z_off, v);
+  v += calib_frame_to_full_frame(s, line_x - x_off, line_y - y_off, line_z + z_off, v);
+  pvd->cnt = v - pvd->v;
+  assert(pvd->cnt <= std::size(pvd->v));
 }
 
 static void update_model(UIState *s, const cereal::ModelDataV2::Reader &model) {
