@@ -44,7 +44,7 @@ class CarState(CarStateBase):
 
     # Update gas, brakes, and gearshift
     ret.gas = cp.vl["TPS_1"]["THROTTLE_POSITION"]
-    ret.gasPressed = ret.gas > 0  # FIXME: varies between vehicles maybe?
+    ret.gasPressed = ret.gas > 4  # TODO: works for gasser, check for ecodiesel
     ret.brake = cp.vl["ABS_1"]["BRAKE_PEDAL"]  # TODO: verify this is driver input only
     ret.brakePressed = ret.brake > 0  # FIXME: varies between vehicles maybe?
 
