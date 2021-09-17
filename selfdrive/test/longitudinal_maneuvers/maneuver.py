@@ -28,6 +28,7 @@ class Maneuver():
     )
 
     valid = True
+    logs = []
     while plant.current_time() < self.duration:
       speed_lead = np.interp(plant.current_time(), self.speed_lead_breakpoints, self.speed_lead_values)
       log = plant.step(speed_lead)
@@ -36,10 +37,11 @@ class Maneuver():
       v_rel = speed_lead - log['speed'] if self.lead_relevancy else 0.
       log['d_rel'] = d_rel
       log['v_rel'] = v_rel
+      logs.append(np.array([plant.current_time(), log['distance'], log['distance_lead'], log['speed'], speed_lead, log['acceleration']]))
 
       if d_rel < 1.0:
         print("Crashed!!!!")
         valid = False
 
     print("maneuver end", valid)
-    return valid
+    return valid, np.array(logs)
