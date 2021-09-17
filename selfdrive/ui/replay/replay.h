@@ -1,7 +1,6 @@
 #pragma once
 
 #include <iostream>
-#include <termios.h>
 
 #include <QJsonArray>
 #include <QThread>
@@ -25,12 +24,13 @@ public:
 
   void start();
   void addSegment(int n);
-  void seekTime(int ts);
+  void relativeSeek(int seconds);
+  void seekTo(int seconds);
+
+  void stream();
+  void segmentQueueThread();
 
 public slots:
-  void stream();
-  void keyboardThread();
-  void segmentQueueThread();
   void parseResponse(const QString &response);
   void mergeEvents();
 
