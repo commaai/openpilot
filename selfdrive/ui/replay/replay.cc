@@ -166,7 +166,7 @@ void Replay::stream() {
     if (!next_evt) {
       lk.unlock();
       qDebug() << "waiting for events";
-      QThread::msleep(10);
+      QThread::msleep(100);
       continue;
     }
     seek_ts = -1;

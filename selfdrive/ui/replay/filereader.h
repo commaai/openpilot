@@ -3,7 +3,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include <QMultiMap>
 #include <QNetworkAccessManager>
 #include <QString>
 #include <QThread>
