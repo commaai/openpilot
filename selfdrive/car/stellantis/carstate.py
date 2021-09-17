@@ -59,13 +59,21 @@ class CarState(CarStateBase):
     # TODO: Can we find blindspot radar data?
 
     # Update cruise control states
-    # TODO: CC state notes from Tunder:
-    #    ret.cruiseState.enabled = cp_cam.vl["FORWARD_CAMERA_ACC"]['ACC_STATUS'] == 3  # ACC is green.
-    #    ret.cruiseState.available = cp_cam.vl["FORWARD_CAMERA_ACC"]['ACC_STATUS'] == 1 # ACC is white... right???
-    # CRUISE_STATE is a three bit msg, 0 is off, 1 and 2 are Non-ACC mode, 3 and 4 are ACC mode, find if there are other states too
-    # ret.cruiseState.nonAdaptive = cp.vl["DASHBOARD"]['CRUISE_STATE'] in [1, 2]  do we need this at all?
-    ret.cruiseState.available = True  # TODO: there has to be a better ACC mainswitch signal/enum
-    ret.cruiseState.enabled = cp_cam.vl["DASM_ACC_CMD_1"]["ACC_STATUS"] == 3  # for dev
+    # TODO: there exists a CC-only, non-ACC mode, locate and populate cruiseState.nonAdaptive
+    acc_state = cp_cam.vl["DASM_ACC_CMD_1"]["ACC_STATUS"]
+    if acc_state == 1:
+      # Ready but not engaged
+      ret.cruiseState.available = True
+      ret.cruiseState.enabled = False
+    elif acc_state == 3:
+      # Engaged
+      ret.cruiseState.available = True
+      ret.cruiseState.enabled = True
+    else:
+      # Unknown, or fault
+      ret.cruiseState.available =  False
+      ret.cruiseState.enabled = False
+
     ret.cruiseState.speed = cp_cam.vl["DASM_ACC_HUD"]["ACC_SET_SPEED_KPH"] * CV.KPH_TO_MS
 
     self.stock_cswc_values = cp_cam.vl["CSWC"]
