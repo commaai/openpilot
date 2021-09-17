@@ -64,8 +64,7 @@ int main(int argc, char *argv[]){
   QCommandLineParser parser;
   parser.setApplicationDescription("Mock openpilot components by publishing logged messages.");
   parser.addHelpOption();
-  parser.addPositionalArgument("route", "the drive to replay. find your drives at connect.comma.ai\n"
-                                        "here's a public demo route, use '3533c53bb29502d1|2019-12-10--01-13-27'");
+  parser.addPositionalArgument("route", "the drive to replay. find your drives at connect.comma.ai");
   parser.addOption({{"a", "allow"}, "whitelist of services to send", "allow"});
   parser.addOption({{"b", "block"}, "blacklist of services to send", "block"});
   parser.addOption({"demo", "use a demo route instead of providing your own"});
@@ -77,7 +76,6 @@ int main(int argc, char *argv[]){
   }
 
   const QString route = args.empty() ? DEMO_ROUTE : args.first();
-  qDebug() << route;
   Replay *replay = new Replay(route, parser.value("allow").split(","), parser.value("block").split(","));
   replay->start();
 
