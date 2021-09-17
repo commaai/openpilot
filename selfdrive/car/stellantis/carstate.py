@@ -68,6 +68,7 @@ class CarState(CarStateBase):
     ret.cruiseState.enabled = cp_cam.vl["DASM_ACC_CMD_1"]["ACC_STATUS"] == 3  # for dev
     ret.cruiseState.speed = cp_cam.vl["DASM_ACC_HUD"]["ACC_SET_SPEED_KPH"] * CV.KPH_TO_MS
 
+    self.stock_cswc_values = cp_cam.vl["CSWC"]
     self.stock_lkas_hud_values = cp_cam.vl["DASM_LKAS_HUD"]
 
     # Update control button states for turn signals and ACC controls
@@ -101,6 +102,12 @@ class CarState(CarStateBase):
       ("EPS_STATUS", "EPS_2", 0),
       ("TRAC_OFF", "ICS", 0),
       ("DRIVER_SEATBELT_STATUS", "ORM", 0),
+      ("COUNTER", "CSWC", 0),
+      ("MAIN_SWITCH", "CSWC", 0),
+      ("RESUME", "CSWC", 0),
+      ("SET_PLUS", "CSWC", 0),
+      ("SET_MINUS", "CSWC", 0),
+      ("CANCEL", "CSWC", 0),
     ]
 
     checks = [
@@ -109,7 +116,7 @@ class CarState(CarStateBase):
       ("EPS_2", 100),
       ("ABS_1", 50),
       ("ABS_4", 50),
-      #("CSWC", 50),
+      ("CSWC", 50),
       ("SHIFTER_ASSM", 50),
       ("TPS_1", 50),
       ("ICS", 20),

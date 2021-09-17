@@ -7,14 +7,16 @@ def create_lkas_command(packer, apply_steer, counter, steer_command_bit):
 
   return packer.make_can_msg("DASM_LKAS_CMD", 0, values)
 
-# TODO: might need to do counter sync, or maybe just filter/forward since we're in position to do so
-# FIXME: nerf this till I redo it with filter/forward
-#def create_wheel_buttons(packer, frame, cancel=False):
-#  values = {
-#    "CANCEL": cancel,
-#    "COUNTER": frame % 16
-#  }
-#  return packer.make_can_msg("CSWC", 2, values)
+def create_cswc(packer, stock_cswc_values, cancel):
+  if cancel:
+    values = {
+      "COUNTER": stock_cswc_values["CANCEL"],
+      "CANCEL": 1,
+    }
+  else:
+    values = stock_cswc_values.copy()
+
+  return packer.make_can_msg("CSWC", 2, values)
 
 
 def create_lkas_hud(packer, enabled, left_lane_visible, right_lane_visible, stock_lkas_hud_values):

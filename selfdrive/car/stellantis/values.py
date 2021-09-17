@@ -7,6 +7,7 @@ Ecu = car.CarParams.Ecu
 class CarControllerParams:
   STEER_STEP = 2
   HUD_STEP = 5
+  BUTTON_STEP = 5
   STEER_MAX = 255
   STEER_DELTA_UP = 5
   STEER_DELTA_DOWN = 10
