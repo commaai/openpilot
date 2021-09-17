@@ -3,6 +3,7 @@
 #include <termios.h>
 
 #include <QApplication>
+#include <QCommandLineParser>
 #include <QThread>
 
 int getch() {
@@ -58,18 +59,25 @@ void keyboardThread(Replay *replay) {
 int main(int argc, char *argv[]){
   QApplication a(argc, argv);
 
-  QString route(argv[1]);
-  if (route == "") {
-    printf("Usage: ./replay \"route\"\n");
-    printf("  For a public demo route, use '3533c53bb29502d1|2019-12-10--01-13-27'\n");
-    return 1;
+  QCommandLineParser parser;
+  parser.setApplicationDescription("Mock openpilot components by publishing logged messages.");
+  parser.addHelpOption();
+  parser.addPositionalArgument("route", "the drive to replay. find your drives at connect.comma.ai\n"
+                                        "here's a public demo route, use '3533c53bb29502d1|2019-12-10--01-13-27'");
+
+  parser.process(a);
+  if (parser.positionalArguments().empty()) {
+    parser.showHelp();
   }
 
+  QString route = parser.positionalArguments()[0];
   Replay *replay = new Replay(route);
   replay->start();
 
+  // start keyboard control thread
   QThread *t = QThread::create(keyboardThread, replay);
   QObject::connect(t, &QThread::finished, t, &QThread::deleteLater);
   t->start();
+
   return a.exec();
 }
