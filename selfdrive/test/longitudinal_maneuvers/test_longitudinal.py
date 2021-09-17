@@ -17,6 +17,24 @@ def put_default_car_params():
 # TODO: make new FCW tests
 maneuvers = [
   Maneuver(
+    'approach stopped car at 30m/s',
+    duration=20.,
+    initial_speed=30.,
+    lead_relevancy=True,
+    initial_distance_lead=120.,
+    speed_lead_values=[30., 0.],
+    speed_lead_breakpoints=[0., 1.],
+  ),
+  Maneuver(
+    'approach stopped car at 20m/s',
+    duration=20.,
+    initial_speed=20.,
+    lead_relevancy=True,
+    initial_distance_lead=60.,
+    speed_lead_values=[20., 0.],
+    speed_lead_breakpoints=[0., 1.],
+  ),
+  Maneuver(
     'steady state following a car at 20m/s, then lead decel to 0mph at 1m/s^2',
     duration=50.,
     initial_speed=20.,
