@@ -201,6 +201,7 @@ class LeadMpc():
       self.solver.set(i, 'x', np.array([x_ego, v_ego, a_ego]))
 
   def update(self, carstate, radarstate, v_cruise):
+    self.crashing = False
     v_ego = self.x0[1]
     if self.lead_id == 0:
       lead = radarstate.leadOne
@@ -211,6 +212,14 @@ class LeadMpc():
       x_lead = lead.dRel
       v_lead = max(0.0, lead.vLead)
       a_lead = lead.aLeadK
+
+      # MPC will not converge if immidiate crash is expected
+      # Clip lead distance to what is still possible to brake for
+      MIN_ACCEL = -3.5
+      min_x_lead = ((v_ego + v_lead)/2) * (v_ego - v_lead) / (-MIN_ACCEL * 2)
+      if x_lead < min_x_lead:
+        x_lead = min_x_lead
+        self.crashing = True
 
       if (v_lead < 0.1 or -a_lead / 2.0 > v_lead):
         v_lead = 0.0
@@ -248,7 +257,7 @@ class LeadMpc():
     self.j_solution = np.interp(T_IDXS[:CONTROL_N], MPC_T[:-1], list(self.u_sol[:,0]))
 
     # Reset if goes through lead car
-    self.crashing = np.sum(self.lead_xv[:,0] - self.x_sol[:,0] < 0) > 0
+    self.crashing = self.crashing or np.sum(self.lead_xv[:,0] - self.x_sol[:,0] < 0) > 0
 
     t = sec_since_boot()
     if self.solution_status != 0:
