@@ -8,13 +8,7 @@
 #include "selfdrive/common/timing.h"
 #include "selfdrive/hardware/hw.h"
 
-Replay::Replay(QString route, SubMaster *sm_, QObject *parent) : sm(sm_), QObject(parent) {
-  QStringList block = QString(getenv("BLOCK")).split(",");
-  qDebug() << "blocklist" << block;
-
-  QStringList allow = QString(getenv("ALLOW")).split(",");
-  qDebug() << "allowlist" << allow;
-
+Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *sm_, QObject *parent) : sm(sm_), QObject(parent) {
   std::vector<const char*> s;
   for (const auto &it : services) {
     if ((allow[0].size() == 0 || allow.contains(it.name)) &&
