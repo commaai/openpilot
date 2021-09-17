@@ -216,6 +216,7 @@ jobs:
                         ./selfdrive/common/tests/test_util && \
                         ./selfdrive/loggerd/tests/test_logger &&\
                         ./selfdrive/proclogd/tests/test_proclog && \
+                        ./selfdrive/ui/replay/tests/test_replay && \
                         ./selfdrive/camerad/test/ae_gray_test"
     - name: Upload coverage to Codecov
       run: bash <(curl -s https://codecov.io/bash) -v -F unit_tests
