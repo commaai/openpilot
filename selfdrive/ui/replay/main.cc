@@ -3,7 +3,10 @@
 #include <termios.h>
 
 #include <QApplication>
+#include <QCommandLineParser>
 #include <QThread>
+
+const QString DEMO_ROUTE = "3533c53bb29502d1|2019-12-10--01-13-27";
 
 int getch() {
   int ch;
@@ -58,18 +61,28 @@ void keyboardThread(Replay *replay) {
 int main(int argc, char *argv[]){
   QApplication a(argc, argv);
 
-  QString route(argv[1]);
-  if (route == "") {
-    printf("Usage: ./replay \"route\"\n");
-    printf("  For a public demo route, use '3533c53bb29502d1|2019-12-10--01-13-27'\n");
-    return 1;
+  QCommandLineParser parser;
+  parser.setApplicationDescription("Mock openpilot components by publishing logged messages.");
+  parser.addHelpOption();
+  parser.addPositionalArgument("route", "the drive to replay. find your drives at connect.comma.ai");
+  parser.addOption({{"a", "allow"}, "whitelist of services to send", "allow"});
+  parser.addOption({{"b", "block"}, "blacklist of services to send", "block"});
+  parser.addOption({"demo", "use a demo route instead of providing your own"});
+
+  parser.process(a);
+  const QStringList args = parser.positionalArguments();
+  if (args.empty() && !parser.isSet("demo")) {
+    parser.showHelp();
   }
 
-  Replay *replay = new Replay(route);
+  const QString route = args.empty() ? DEMO_ROUTE : args.first();
+  Replay *replay = new Replay(route, parser.value("allow").split(","), parser.value("block").split(","));
   replay->start();
 
+  // start keyboard control thread
   QThread *t = QThread::create(keyboardThread, replay);
   QObject::connect(t, &QThread::finished, t, &QThread::deleteLater);
   t->start();
+
   return a.exec();
 }

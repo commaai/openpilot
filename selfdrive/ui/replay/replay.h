@@ -20,7 +20,7 @@ class Replay : public QObject {
   Q_OBJECT
 
 public:
-  Replay(QString route, SubMaster *sm = nullptr, QObject *parent = 0);
+  Replay(QString route, QStringList allow, QStringList block, SubMaster *sm = nullptr, QObject *parent = 0);
 
   void start();
   void addSegment(int n);
