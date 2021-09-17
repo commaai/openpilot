@@ -6,6 +6,8 @@
 #include <QCommandLineParser>
 #include <QThread>
 
+const QString DEMO_ROUTE = "3533c53bb29502d1|2019-12-10--01-13-27";
+
 int getch() {
   int ch;
   struct termios oldt;
@@ -64,14 +66,19 @@ int main(int argc, char *argv[]){
   parser.addHelpOption();
   parser.addPositionalArgument("route", "the drive to replay. find your drives at connect.comma.ai\n"
                                         "here's a public demo route, use '3533c53bb29502d1|2019-12-10--01-13-27'");
+  parser.addOption({{"a", "allow"}, "whitelist of services to send", "allow"});
+  parser.addOption({{"b", "block"}, "blacklist of services to send", "block"});
+  parser.addOption({"demo", "use a demo route instead of providing your own"});
 
   parser.process(a);
-  if (parser.positionalArguments().empty()) {
+  const QStringList args = parser.positionalArguments();
+  if (args.empty() && !parser.isSet("demo")) {
     parser.showHelp();
   }
 
-  QString route = parser.positionalArguments()[0];
-  Replay *replay = new Replay(route);
+  const QString route = args.empty() ? DEMO_ROUTE : args.first();
+  qDebug() << route;
+  Replay *replay = new Replay(route, parser.value("allow").split(","), parser.value("block").split(","));
   replay->start();
 
   // start keyboard control thread
