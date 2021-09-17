@@ -4,14 +4,6 @@ import unittest
 
 from common.params import Params
 from selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
-from selfdrive.manager.process_config import managed_processes
-
-
-def put_default_car_params():
-  from selfdrive.car.honda.values import CAR
-  from selfdrive.car.honda.interface import CarInterface
-  cp = CarInterface.get_params(CAR.CIVIC)
-  Params().put("CarParams", cp.to_bytes())
 
 
 # TODO: make new FCW tests
@@ -124,12 +116,7 @@ def run_maneuver_worker(k):
   def run(self):
     man = maneuvers[k]
     print(man.title)
-    put_default_car_params()
-    managed_processes['plannerd'].start()
-
-    valid = man.evaluate()
-
-    managed_processes['plannerd'].stop()
+    valid, _ = man.evaluate()
     self.assertTrue(valid)
   return run
 
