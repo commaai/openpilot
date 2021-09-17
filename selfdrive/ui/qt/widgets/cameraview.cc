@@ -91,13 +91,19 @@ mat4 get_fit_view_transform(float widget_aspect_ratio, float frame_aspect_ratio)
 
 } // namespace
 
-CameraViewWidget::CameraViewWidget(VisionStreamType stream_type, bool zoom, QWidget* parent) :
-                                   stream_type(stream_type), zoomed_view(zoom), QOpenGLWidget(parent) {
+CameraViewWidget::CameraViewWidget(VisionStreamType type, bool zoom, QWidget* parent) :
+                                   stream_type(type), zoomed_view(zoom), QOpenGLWidget(parent) {
   setAttribute(Qt::WA_OpaquePaintEvent);
+  vipc_client = new VIPCClient();
+  vipc_client->moveToThread(&thread_);
+  connect(&thread_, &QThread::finished, vipc_client, &QObject::deleteLater);
 
-  QTimer *t = new QTimer(this);
-  connect(t, &QTimer::timeout, this, &CameraViewWidget::updateFrame);
-  t->start(10);
+  qRegisterMetaType<VisionStreamType>("VisionStreamType");
+  connect(this, &CameraViewWidget::updateFrame, vipc_client, &VIPCClient::receiveFrame);
+  connect(this, &QOpenGLWidget::frameSwapped, [=]() { emit updateFrame(stream_type); });
+  connect(vipc_client, &VIPCClient::connected, this, &CameraViewWidget::vipcConnected);
+  connect(vipc_client, &VIPCClient::frameReceived, this, &CameraViewWidget::frameReceived);
+  thread_.start();
 }
 
 CameraViewWidget::~CameraViewWidget() {
@@ -108,6 +114,8 @@ CameraViewWidget::~CameraViewWidget() {
     glDeleteBuffers(1, &frame_ibo);
   }
   doneCurrent();
+  thread_.quit();
+  thread_.wait();
 }
 
 void CameraViewWidget::initializeGL() {
@@ -148,34 +156,15 @@ void CameraViewWidget::initializeGL() {
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(frame_indicies), frame_indicies, GL_STATIC_DRAW);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   glBindVertexArray(0);
-
-  setStreamType(stream_type);
 }
 
+void CameraViewWidget::showEvent(QShowEvent *event) {
+  vipc_client->running_ = true;
+}
 
 void CameraViewWidget::hideEvent(QHideEvent *event) {
-  vipc_client->connected = false;
   latest_frame = nullptr;
-}
-
-void CameraViewWidget::mouseReleaseEvent(QMouseEvent *event) {
-  emit clicked();
-}
-
-void CameraViewWidget::resizeGL(int w, int h) {
-  updateFrameMat(w, h);
-}
-
-void CameraViewWidget::setStreamType(VisionStreamType type) {
-  if (!vipc_client || type != stream_type) {
-    stream_type = type;
-    vipc_client.reset(new VisionIpcClient("camerad", stream_type, true));
-    updateFrameMat(width(), height());
-  }
-}
-
-void CameraViewWidget::setBackgroundColor(QColor color) {
-  bg = color;
+  vipc_client->running_ = false;
 }
 
 void CameraViewWidget::updateFrameMat(int w, int h) {
@@ -199,10 +188,10 @@ void CameraViewWidget::updateFrameMat(int w, int h) {
       }};
       frame_mat = matmul(device_transform, frame_transform);
     }
-  } else if (vipc_client->connected) {
+  } else if (stream_width > 0 && stream_height > 0) {
     // fit frame to widget size
     float widget_aspect_ratio = (float)width() / height();
-    float frame_aspect_ratio = (float)vipc_client->buffers[0].width  / vipc_client->buffers[0].height;
+    float frame_aspect_ratio = (float)stream_width  / stream_height;
     frame_mat = matmul(device_transform, get_fit_view_transform(widget_aspect_ratio, frame_aspect_ratio));
   }
 }
@@ -237,40 +226,54 @@ void CameraViewWidget::paintGL() {
   glBindVertexArray(0);
 }
 
-void CameraViewWidget::updateFrame() {
-  if (!isVisible()) {
-    return;
+void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
+  // init vision
+  makeCurrent();
+  for (int i = 0; i < vipc_client->num_buffers; i++) {
+    texture[i].reset(new EGLImageTexture(&vipc_client->buffers[i]));
+
+    glBindTexture(GL_TEXTURE_2D, texture[i]->frame_tex);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+    // BGR
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_BLUE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
+    assert(glGetError() == GL_NO_ERROR);
+  }
+  latest_frame = nullptr;
+  stream_width = vipc_client->buffers[0].width;
+  stream_height = vipc_client->buffers[0].height;
+  updateFrameMat(width(), height());
+}
+
+void CameraViewWidget::frameReceived(VisionBuf *buf) {
+  latest_frame = buf;
+  update();
+  emit frameUpdated();
+}
+
+void VIPCClient::receiveFrame(VisionStreamType type) {
+  if (!vipc_client_ || stream_type_ != type) {
+    stream_type_ = type;
+    vipc_client_.reset(new VisionIpcClient("camerad", stream_type_, true));
   }
 
-  if (!vipc_client->connected) {
-    makeCurrent();
-    if (vipc_client->connect(false)) {
-      // init vision
-      for (int i = 0; i < vipc_client->num_buffers; i++) {
-        texture[i].reset(new EGLImageTexture(&vipc_client->buffers[i]));
-
-        glBindTexture(GL_TEXTURE_2D, texture[i]->frame_tex);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-        // BGR
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_BLUE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
-        assert(glGetError() == GL_NO_ERROR);
+  while (running_) {
+    if (!vipc_client_->connected) {
+      if (!vipc_client_->connect(false)) {
+        QThread::msleep(100);
+        continue;
       }
-      latest_frame = nullptr;
-      resizeGL(width(), height());
+      emit connected(vipc_client_.get());
     }
-  }
-
-  VisionBuf *buf = nullptr;
-  if (vipc_client->connected) {
-    buf = vipc_client->recv(nullptr, 0);
-    if (buf != nullptr) {
-      latest_frame = buf;
-      update();
-      emit frameUpdated();
+    VisionBuf *buf = vipc_client_->recv();
+    if (!buf) {
+      LOGE("visionIPC receive timeout");
+      continue;
     }
+    emit frameReceived(buf);
+    break;
   }
 }

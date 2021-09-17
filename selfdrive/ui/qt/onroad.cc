@@ -60,6 +60,7 @@ void OnroadWindow::updateState(const UIState &s) {
     }
   }
   if (bg != bgColor) {
+    nvg->setBackgroundColor(bgColor);
     // repaint border
     bg = bgColor;
     update();
