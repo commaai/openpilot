@@ -654,7 +654,10 @@ FW_VERSIONS = {
     (Ecu.transmission, 0x7e1, None): [b'\xf1\x816U2V8051\x00\x00\xf1\x006U2V0_C2\x00\x006U2V8051\x00\x00DJF0T16NL0\t\xd2GW'],
   },
   CAR.ELANTRA_2021: {
-    (Ecu.fwdRadar, 0x7d0, None): [b'\xf1\x00CN7_ SCC FHCUP      1.00 1.01 99110-AA000         '],
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00CN7_ SCC FHCUP      1.00 1.01 99110-AA000         '
+      b'\xf1\x00CN7_ SCC F-CUP      1.00 1.01 99110-AA000         ',
+    ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x87\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xf1\x00CN7 MDPS C 1.00 1.06 \x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 4CNDC106\xf1\xa01.06',
       b'\xf1\x8756310AA050\x00\xf1\x00CN7 MDPS C 1.00 1.06 56310AA050\x00 4CNDC106\xf1\xa01.06',
