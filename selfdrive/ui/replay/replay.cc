@@ -8,22 +8,6 @@
 #include "selfdrive/common/timing.h"
 #include "selfdrive/hardware/hw.h"
 
-int getch() {
-  int ch;
-  struct termios oldt;
-  struct termios newt;
-
-  tcgetattr(STDIN_FILENO, &oldt);
-  newt = oldt;
-  newt.c_lflag &= ~(ICANON | ECHO);
-
-  tcsetattr(STDIN_FILENO, TCSANOW, &newt);
-  ch = getchar();
-  tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
-
-  return ch;
-}
-
 Replay::Replay(QString route, SubMaster *sm_, QObject *parent) : sm(sm_), QObject(parent) {
   QStringList block = QString(getenv("BLOCK")).split(",");
   qDebug() << "blocklist" << block;
@@ -61,7 +45,7 @@ void Replay::parseResponse(const QString &response) {
   camera_paths = doc["cameras"].toArray();
   log_paths = doc["logs"].toArray();
 
-  seekTime(0);
+  seekTo(0);
 }
 
 void Replay::addSegment(int n) {
@@ -101,6 +85,7 @@ void Replay::mergeEvents() {
   lock.lock();
   auto prev_events = std::exchange(events, new_events);
   auto prev_eidx = std::exchange(eidx, new_eidx);
+  updating_events = false;
   lock.unlock();
 
   // free logs
@@ -121,12 +106,6 @@ void Replay::start(){
   });
   thread->start();
 
-  kb_thread = new QThread;
-  QObject::connect(kb_thread, &QThread::started, [=](){
-    keyboardThread();
-  });
-  kb_thread->start();
-
   queue_thread = new QThread;
   QObject::connect(queue_thread, &QThread::started, [=](){
     segmentQueueThread();
@@ -134,13 +113,21 @@ void Replay::start(){
   queue_thread->start();
 }
 
-void Replay::seekTime(int ts) {
-  ts = std::clamp(ts, 0, log_paths.size() * 60);
-  qInfo() << "seeking to " << ts;
-
-  seek_ts = ts;
-  current_segment = ts/60;
+void Replay::seekTo(int seconds) {
   updating_events = true;
+
+  std::unique_lock lk(lock);
+  seconds = std::clamp(seconds, 0, log_paths.size() * 60);
+  qInfo() << "seeking to " << seconds;
+  seek_ts = seconds;
+  current_segment = seconds / 60;
+  updating_events = false;
+}
+
+void Replay::relativeSeek(int seconds) {
+  if (current_ts > 0) {
+    seekTo(current_ts + seconds);
+  }
 }
 
 void Replay::segmentQueueThread() {
@@ -154,40 +141,6 @@ void Replay::segmentQueueThread() {
       }
     }
     QThread::msleep(100);
-  }
-}
-
-void Replay::keyboardThread() {
-  char c;
-  while (true) {
-    c = getch();
-    if(c == '\n'){
-      printf("Enter seek request: ");
-      std::string r;
-      std::cin >> r;
-
-      try {
-        if(r[0] == '#') {
-          r.erase(0, 1);
-          seekTime(std::stoi(r)*60);
-        } else {
-          seekTime(std::stoi(r));
-        }
-      } catch (std::invalid_argument) {
-        qDebug() << "invalid argument";
-      }
-      getch(); // remove \n from entering seek
-    } else if (c == 'm') {
-      seekTime(current_ts + 60);
-    } else if (c == 'M') {
-      seekTime(current_ts - 60);
-    } else if (c == 's') {
-      seekTime(current_ts + 10);
-    } else if (c == 'S') {
-      seekTime(current_ts - 10);
-    } else if (c == 'G') {
-      seekTime(0);
-    }
   }
 }
 
@@ -287,7 +240,6 @@ void Replay::stream() {
       }
     }
     lk.unlock();
-    updating_events = false;
     usleep(0);
   }
 }
