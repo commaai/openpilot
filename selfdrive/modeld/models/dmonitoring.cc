@@ -112,8 +112,8 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
                     cropped_v, crop_rect.w / 2,
                     crop_rect.w, crop_rect.h,
                     resized_y + 96*320, resized_width,
-                    resized_u, resized_width / 2,
-                    resized_v, resized_width / 2,
+                    resized_u + 48*160, resized_width / 2,
+                    resized_v + 48*160, resized_width / 2,
                     260, 448,
                     mode);
   }
