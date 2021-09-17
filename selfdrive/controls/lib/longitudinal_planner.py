@@ -45,7 +45,7 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
 
 
 class Planner():
-  def __init__(self, CP):
+  def __init__(self, CP, init_v=0.0, init_a=0.0):
     self.CP = CP
     self.mpcs = {}
     self.mpcs['lead0'] = LeadMpc(0)
@@ -55,8 +55,8 @@ class Planner():
     self.fcw = False
     self.fcw_checker = FCWChecker()
 
-    self.v_desired = 0.0
-    self.a_desired = 0.0
+    self.v_desired = init_v
+    self.a_desired = init_a
     self.longitudinalPlanSource = 'cruise'
     self.alpha = np.exp(-DT_MDL/2.0)
     self.lead_0 = log.ModelDataV2.LeadDataV3.new_message()
