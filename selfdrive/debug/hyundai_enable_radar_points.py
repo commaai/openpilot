@@ -28,6 +28,11 @@ SUPPORTED_FW_VERSIONS = {
     "default_config": b"\x00\x00\x00\x01\x00\x00",
     "tracks_enabled": b"\x00\x00\x00\x01\x00\x01",
   },
+  # 2021 SONATA HYBRID
+  b"DNhe SCC FHCUP      1.00 1.02 99110-L5000 \x01#\x15#    ": {
+    "default_config": b"\x00\x00\x00\x01\x00\x00",
+    "tracks_enabled": b"\x00\x00\x00\x01\x00\x01",
+  }, 
   # 2020 PALISADE
   b"LX2_ SCC FHCUP      1.00 1.04 99110-S8100\x19\x05\x02\x16V    ": {
     "default_config": b"\x00\x00\x00\x01\x00\x00",
