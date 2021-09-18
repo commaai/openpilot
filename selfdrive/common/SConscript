@@ -33,4 +33,3 @@ Export('_common', '_gpucommon', '_gpu_libs')
 
 if GetOption('test'):
   env.Program('tests/test_util', ['tests/test_util.cc'], LIBS=[_common])
-  env.Program('tests/test_framereader', ['tests/test_framereader.cc'], LIBS=[_common, _gpucommon, 'pthread', 'avutil', 'avcodec', 'avformat', 'swscale'])

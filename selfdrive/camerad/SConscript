@@ -22,7 +22,7 @@ else:
       cameras = ['cameras/camera_frame_stream.cc']
     else:
       libs += ['avutil', 'avcodec', 'avformat', 'swscale']
-      cameras = ['cameras/camera_replay.cc']
+      cameras = ['cameras/camera_replay.cc', env.Object('camera-framereader', '#/selfdrive/ui/replay/framereader.cc')]
 
   if arch == "Darwin":
     del libs[libs.index('OpenCL')]

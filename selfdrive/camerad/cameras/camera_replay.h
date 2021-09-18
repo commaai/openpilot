@@ -1,7 +1,7 @@
 #pragma once
 
 #include "selfdrive/camerad/cameras/camera_common.h"
-#include "selfdrive/common/framereader.h"
+#include "selfdrive/ui/replay/framereader.h"
 
 #define FRAME_BUF_COUNT 16
 

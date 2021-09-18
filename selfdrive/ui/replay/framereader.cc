@@ -1,4 +1,4 @@
-#include "selfdrive/common/framereader.h"
+#include "selfdrive/ui/replay/framereader.h"
 
 #include <cassert>
 
