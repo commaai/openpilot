@@ -72,6 +72,7 @@ class CAR:
   TCROSS_MK1 = "VOLKSWAGEN T-CROSS 1ST GEN"   # Chassis C1, Mk1 VW T-Cross SWB and LWB variants
   TIGUAN_MK2 = "VOLKSWAGEN TIGUAN 2ND GEN"    # Chassis AD/BW, Mk2 VW Tiguan and variants
   TOURAN_MK2 = "VOLKSWAGEN TOURAN 2ND GEN"    # Chassis 1T, Mk2 VW Touran and variants
+  TRANSPORTER_T61 = "VOLKSWAGEN TRANSPORTER T6.1"  # Chassis 7H, T6 Facelift Transporter/California (pre-facelift has no EPS)
   AUDI_A3_MK3 = "AUDI A3 3RD GEN"             # Chassis 8V/FF, Mk3 Audi A3 and variants
   AUDI_Q2_MK1 = "AUDI Q2 1ST GEN"             # Chassis GA, Mk1 Audi Q2 (RoW) and Q2L (China only)
   SEAT_ATECA_MK1 = "SEAT ATECA 1ST GEN"       # Chassis 5F, Mk1 SEAT Ateca and CUPRA Ateca
@@ -373,6 +374,23 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdRadar, 0x757, None): [
       b'\xf1\x873Q0907572C \xf1\x890195',
+    ],
+  },
+  CAR.TRANSPORTER_T61: {
+    (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x8704L906057N \xf1\x890413',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x870BT300012G \xf1\x893102',
+    ],
+    (Ecu.srs, 0x715, None): [
+      b'\xf1\x872Q0959655AE\xf1\x890506\xf1\x82\02316170411110411--04041704161611152S1411',
+    ],
+    (Ecu.eps, 0x712, None): [
+      b'\xf1\x877LA909144F \xf1\x897150\xf1\x82\005323A5519A2',
+    ],
+    (Ecu.fwdRadar, 0x757, None): [
+      b'\xf1\x872Q0907572R \xf1\x890372',
     ],
   },
   CAR.AUDI_A3_MK3: {
