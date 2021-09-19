@@ -69,7 +69,7 @@ void Replay::relativeSeek(int seconds) {
 void Replay::pause(bool pause) {
   updating_events = true;
   std::unique_lock lk(lock);
-  qDebug() << (pause ? "pause..." : "resume");
+  qDebug() << (pause ? "paused..." : "resuming");
   paused_ = pause;
   updating_events = false;
   stream_cv_.notify_one();
