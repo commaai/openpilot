@@ -2,7 +2,13 @@
 
 #include <unistd.h>
 
+#include <atomic>
+#include <condition_variable>
+#include <mutex>
+#include <queue>
 #include <string>
+#include <thread>
+#include <vector>
 
 // independent of QT, needs ffmpeg
 extern "C" {

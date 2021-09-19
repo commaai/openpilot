@@ -190,19 +190,6 @@ selfdrive/debug/*.py
 selfdrive/common/SConscript
 selfdrive/common/version.h
 
-<<<<<<< HEAD
-=======
-selfdrive/common/framebuffer.h
-selfdrive/common/framebuffer.cc
-<<<<<<< HEAD
-selfdrive/common/framereader.h
-selfdrive/common/framereader.cc
-selfdrive/common/glutil.cc
-selfdrive/common/glutil.h
-=======
->>>>>>> remove from release files
-selfdrive/common/touch.[c,h]
->>>>>>> start refactor
 selfdrive/common/swaglog.h
 selfdrive/common/swaglog.cc
 selfdrive/common/util.cc

@@ -174,5 +174,14 @@ uint8_t *FrameReader::decodeFrame(AVPacket *pkt) {
       dat = new uint8_t[getRGBSize()];
     }
 
-  emit finished();
+    int ret = avpicture_fill((AVPicture *)frmRgb_, dat, AV_PIX_FMT_BGR24, f->width, f->height);
+    assert(ret > 0);
+    if (sws_scale(sws_ctx_, (const uint8_t **)f->data, f->linesize, 0,
+                  f->height, frmRgb_->data, frmRgb_->linesize) <= 0) {
+      delete[] dat;
+      dat = nullptr;
+    }
+  }
+  av_frame_free(&f);
+  return dat;
 }
