@@ -3,6 +3,7 @@
 #include <QFrame>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QPainter>
 #include <QPushButton>
 
 #include "selfdrive/common/params.h"
@@ -46,12 +47,6 @@ signals:
 protected:
   AbstractControl(const QString &title, const QString &desc = "", const QString &icon = "", QWidget *parent = nullptr);
   void hideEvent(QHideEvent *e) override;
-
-  QSize minimumSizeHint() const override {
-    QSize size = QFrame::minimumSizeHint();
-    size.setHeight(120);
-    return size;
-  };
 
   QHBoxLayout *hlayout;
   QPushButton *title_label;
@@ -136,4 +131,33 @@ public:
 private:
   std::string key;
   Params params;
+};
+
+class ListWidget : public QWidget {
+  Q_OBJECT
+ public:
+  explicit ListWidget(QWidget *parent = 0) : QWidget(parent), outer_layout(this) {
+    outer_layout.setMargin(0);
+    outer_layout.setSpacing(0);
+    outer_layout.addLayout(&inner_layout);
+    inner_layout.setMargin(0);
+    inner_layout.setSpacing(25); // default spacing is 25
+    outer_layout.addStretch();
+  }
+  inline void addItem(QWidget *w) { inner_layout.addWidget(w); }
+  inline void addItem(QLayout *layout) { inner_layout.addLayout(layout); }
+  inline void setSpacing(int spacing) { inner_layout.setSpacing(spacing); }
+
+private:
+  void paintEvent(QPaintEvent *) override {
+    QPainter p(this);
+    p.setPen(Qt::gray);
+    for (int i = 0; i < inner_layout.count() - 1; ++i) {
+      QRect r = inner_layout.itemAt(i)->geometry();
+      int bottom = r.bottom() + inner_layout.spacing() / 2;
+      p.drawLine(r.left() + 40, bottom, r.right() - 40, bottom);
+    }
+  }
+  QVBoxLayout outer_layout;
+  QVBoxLayout inner_layout;
 };
