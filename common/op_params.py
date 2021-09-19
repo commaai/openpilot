@@ -112,8 +112,6 @@ class opParams:
                         # 'lane_speed_alerts': Param('silent', str, 'Can be: (\'off\', \'silent\', \'audible\')\n'
                         #                                           'Whether you want openpilot to alert you of faster-traveling adjacent lanes'),
                         'upload_on_hotspot': Param(False, bool, 'If False, openpilot will not upload driving data while connected to your phone\'s hotspot'),
-                        # 'enable_long_derivative': Param(False, bool, 'If you have longitudinal overshooting, enable this! This enables derivative-based\n'
-                        #                                              'integral wind-down to help reduce overshooting within the long PID loop'),
                         'disengage_on_gas': Param(False, bool, 'Whether you want openpilot to disengage on gas input or not'),
                         'update_behavior': Param('alert', str, 'Can be: (\'off\', \'alert\', \'auto\') without quotes\n'
                                                                'off will never update, alert shows an alert on-screen\n'
@@ -138,7 +136,7 @@ class opParams:
                         'rav4TSS2_use_indi': Param(False, bool, 'Enable this to use INDI for lat with your TSS2 RAV4', static=True),
                         'standstill_hack': Param(False, bool, 'Some cars support stop and go, you just need to enable this', static=True)}
 
-    self._to_delete = ['long_accel_delay', 'accel_lag_compensation']  # a list of unused params you want to delete from users' params file
+    self._to_delete = ['enable_long_derivative']  # a list of unused params you want to delete from users' params file
     self._to_reset = []  # a list of params you want reset to their default values
     self._run_init()  # restores, reads, and updates params
 

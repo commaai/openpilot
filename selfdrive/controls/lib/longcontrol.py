@@ -2,7 +2,7 @@ from cereal import car
 from common.numpy_fast import clip, interp
 from selfdrive.controls.lib.drive_helpers import CONTROL_N
 from selfdrive.modeld.constants import T_IDXS
-from selfdrive.controls.lib.pid import LongPIDController
+from selfdrive.controls.lib.pid import PIDController
 from selfdrive.controls.lib.dynamic_gas import DynamicGas
 from common.op_params import opParams
 
@@ -62,14 +62,12 @@ def long_control_state_trans(active, long_control_state, v_ego, v_target, v_pid,
 class LongControl():
   def __init__(self, CP):
     self.long_control_state = LongCtrlState.off  # initialized to off
-    # kdBP = [0., 16., 35.]
-    # kdV = [0.08, 1.215, 2.51]
-
-    self.pid = LongPIDController((CP.longitudinalTuning.kpBP, CP.longitudinalTuning.kpV),
-                                 (CP.longitudinalTuning.kiBP, CP.longitudinalTuning.kiV),
-                                 ([0], [0]),
-                                 rate=RATE,
-                                 sat_limit=0.8)
+    self.pid = PIDController((CP.longitudinalTuning.kpBP, CP.longitudinalTuning.kpV),
+                             (CP.longitudinalTuning.kiBP, CP.longitudinalTuning.kiV),
+                             (CP.longitudinalTuning.kdBP, CP.longitudinalTuning.kdV),
+                             rate=RATE,
+                             sat_limit=0.8,
+                             derivative_period=0.5)
     self.v_pid = 0.0
     self.last_output_accel = 0.0
 
