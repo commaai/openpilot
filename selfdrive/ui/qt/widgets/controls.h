@@ -136,28 +136,28 @@ private:
 class ListWidget : public QWidget {
   Q_OBJECT
  public:
-  explicit ListWidget(QWidget *parent = 0) : QWidget(parent), mainLayout_(this) {
-    mainLayout_.setMargin(0);
-    mainLayout_.setSpacing(0);
-    mainLayout_.addLayout(&layout_);
-    layout_.setMargin(0);
-    layout_.setSpacing(25); // default spacing is 25
-    mainLayout_.addStretch();
+  explicit ListWidget(QWidget *parent = 0) : QWidget(parent), outer_layout(this) {
+    outer_layout.setMargin(0);
+    outer_layout.setSpacing(0);
+    outer_layout.addLayout(&inner_layout);
+    inner_layout.setMargin(0);
+    inner_layout.setSpacing(25); // default spacing is 25
+    outer_layout.addStretch();
   }
-  inline void addItem(QWidget *w) { layout_.addWidget(w); }
-  inline void addItem(QLayout *layout) { layout_.addLayout(layout); }
-  inline void setSpacing(int spacing) { layout_.setSpacing(spacing); }
+  inline void addItem(QWidget *w) { inner_layout.addWidget(w); }
+  inline void addItem(QLayout *layout) { inner_layout.addLayout(layout); }
+  inline void setSpacing(int spacing) { inner_layout.setSpacing(spacing); }
 
- private:
+private:
   void paintEvent(QPaintEvent *) override {
     QPainter p(this);
     p.setPen(Qt::gray);
-    for (int i = 0; i < layout_.count() - 1; ++i) {
-      QRect r = layout_.itemAt(i)->geometry();
-      int bottom = r.bottom() + layout_.spacing() / 2;
+    for (int i = 0; i < inner_layout.count() - 1; ++i) {
+      QRect r = inner_layout.itemAt(i)->geometry();
+      int bottom = r.bottom() + inner_layout.spacing() / 2;
       p.drawLine(r.left() + 40, bottom, r.right() - 40, bottom);
     }
   }
-  QVBoxLayout mainLayout_; 
-  QVBoxLayout layout_;
+  QVBoxLayout outer_layout;
+  QVBoxLayout inner_layout;
 };
