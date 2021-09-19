@@ -1,11 +1,9 @@
 #pragma once
 
-#include <iostream>
-
 #include <QThread>
 #include <QVector>
-#include <capnp/dynamic.h>
 
+#include <capnp/dynamic.h>
 #include "cereal/visionipc/visionipc_server.h"
 #include "selfdrive/ui/replay/route.h"
 
@@ -17,6 +15,7 @@ class Replay : public QObject {
 
 public:
   Replay(QString route, QStringList allow, QStringList block, SubMaster *sm = nullptr, QObject *parent = 0);
+  ~Replay();
 
   void start();
   void relativeSeek(int seconds);

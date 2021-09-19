@@ -11,11 +11,7 @@
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/qt/api.h"
 
-Route::Route(const QString &route) : route_(route) {
-  if (!QDir(CACHE_DIR).exists()) {
-    QDir().mkdir(CACHE_DIR);
-  }
-}
+Route::Route(const QString &route) : route_(route) {}
 
 bool Route::load() {
   QEventLoop loop;
@@ -75,29 +71,33 @@ bool Route::loadFromJson(const QString &json) {
 // class Segment
 
 Segment::Segment(int n, const SegmentFile &segment_files) : seg_num_(n), files_(segment_files) {
+  static std::once_flag once_flag;
+  std::call_once(once_flag, [=]() {
+    if (!QDir(CACHE_DIR).exists()) QDir().mkdir(CACHE_DIR);
+  });
+
   // fallback to qcamera
   road_cam_path_ = files_.road_cam.isEmpty() ? files_.qcamera : files_.road_cam;
   valid_ = !files_.rlog.isEmpty() && !road_cam_path_.isEmpty();
   if (!valid_) return;
 
-  int files_need_download = 0;
   if (!QUrl(files_.rlog).isLocalFile()) {
     for (auto &url : {files_.rlog, road_cam_path_, files_.driver_cam, files_.wide_road_cam}) {
       if (!url.isEmpty() && !QFile::exists(localPath(url))) {
         qDebug() << "download" << url;
         downloadFile(url);
-        ++files_need_download;
+        ++downloading_;
       }
     }
   }
-  if (files_need_download == 0) {
+  if (downloading_ == 0) {
     QTimer::singleShot(0, this, &Segment::load);
   }
 }
 
 Segment::~Segment() {
   // cancel download, qnam will not abort requests, need to abort them manually
-  deleting_ = true;
+  aborting_ = true;
   for (QNetworkReply *replay : replies_) {
     if (replay->isRunning()) {
       replay->abort();
@@ -116,11 +116,8 @@ void Segment::downloadFile(const QString &url) {
         file.write(reply->readAll());
       }
     }
-    if (!deleting_) {
-      auto it = std::find_if(replies_.begin(), replies_.end(), [=](auto r) { return !r->isFinished(); });
-      if (it == replies_.end()) {
-        load();
-      }
+    if (--downloading_ == 0 && !aborting_) {
+      load();
     }
   });
 }
@@ -128,15 +125,18 @@ void Segment::downloadFile(const QString &url) {
 // load concurrency
 void Segment::load() {
   std::vector<std::future<bool>> futures;
-
-  log = std::make_unique<LogReader>();
-  futures.emplace_back(std::async(std::launch::async, [=]() { return log->load(localPath(files_.rlog).toStdString()); }));
+  futures.emplace_back(std::async(std::launch::async, [=]() {
+    log = std::make_unique<LogReader>();
+    return log->load(localPath(files_.rlog).toStdString());
+  }));
 
   QString camera_files[] = {road_cam_path_, files_.driver_cam, files_.wide_road_cam};
   for (int i = 0; i < std::size(camera_files); ++i) {
     if (!camera_files[i].isEmpty()) {
-      frames[i] = std::make_unique<FrameReader>();
-      futures.emplace_back(std::async(std::launch::async, [=]() { return frames[i]->load(localPath(camera_files[i]).toStdString()); }));
+      futures.emplace_back(std::async(std::launch::async, [=]() {
+        frames[i] = std::make_unique<FrameReader>();
+        return frames[i]->load(localPath(camera_files[i]).toStdString());
+      }));
     }
   }
 

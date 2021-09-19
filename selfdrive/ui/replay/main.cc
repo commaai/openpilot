@@ -1,5 +1,6 @@
 #include "selfdrive/ui/replay/replay.h"
 
+#include <iostream>
 #include <termios.h>
 
 #include <QApplication>

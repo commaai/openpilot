@@ -35,7 +35,7 @@ protected:
 };
 
 class Segment : public QObject {
-Q_OBJECT
+  Q_OBJECT
 
 public:
   Segment(int n, const SegmentFile &segment_files);
@@ -49,13 +49,14 @@ public:
 signals:
   void loadFinished();
 
-protected: 
+protected:
   void load();
   void downloadFile(const QString &url);
   QString localPath(const QUrl &url);
 
   bool loaded_ = false, valid_ = false;
-  bool deleting_ = false;
+  bool aborting_ = false;
+  int downloading_ = 0;
   int seg_num_ = 0;
   SegmentFile files_;
   QString road_cam_path_;

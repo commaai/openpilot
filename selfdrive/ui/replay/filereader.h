@@ -1,14 +1,11 @@
 #pragma once
 
+#include <QMultiMap>
 #include <unordered_map>
 #include <vector>
 
-#include <QMultiMap>
-
 #include <capnp/serialize.h>
-
 #include "cereal/gen/cpp/log.capnp.h"
-
 #include "selfdrive/camerad/cameras/camera_common.h"
 
 const CameraType ALL_CAMERAS[] = {RoadCam, DriverCam, WideRoadCam};

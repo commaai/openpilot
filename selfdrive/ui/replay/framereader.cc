@@ -1,7 +1,5 @@
 #include "selfdrive/ui/replay/framereader.h"
 
-#include <unistd.h>
-
 #include <cassert>
 
 static int ffmpeg_lockmgr_cb(void **arg, enum AVLockOp op) {
