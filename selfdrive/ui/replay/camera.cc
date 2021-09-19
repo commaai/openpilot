@@ -13,8 +13,8 @@ CameraServer::CameraServer() {
   device_id_ = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
   context_ = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id_, NULL, NULL, &err));
 
-  camera_thread_ = std::thread(&CameraServer::thread, this);
   start();
+  camera_thread_ = std::thread(&CameraServer::thread, this);
 }
 
 CameraServer::~CameraServer() {
