@@ -76,7 +76,9 @@ int main(int argc, char *argv[]){
   }
 
   const QString route = args.empty() ? DEMO_ROUTE : args.first();
-  Replay *replay = new Replay(route, parser.value("allow").split(","), parser.value("block").split(","));
+  QStringList allow = parser.value("allow").isEmpty() ? QStringList{} : parser.value("allow").split(",");
+  QStringList block = parser.value("block").isEmpty() ? QStringList{} : parser.value("block").split(",");
+  Replay *replay = new Replay(route, allow, block);
   replay->start();
 
   // start keyboard control thread
