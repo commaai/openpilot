@@ -2,8 +2,8 @@
 
 #include "cereal/visionipc/visionipc_server.h"
 #include "selfdrive/common/queue.h"
-#include "selfdrive/ui/replay/filereader.h"
 #include "selfdrive/ui/replay/framereader.h"
+#include "selfdrive/ui/replay/logreader.h"
 
 class CameraServer {
 public:
