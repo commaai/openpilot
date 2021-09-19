@@ -2,16 +2,12 @@
 
 #include <iostream>
 
-#include <QJsonArray>
 #include <QThread>
-
+#include <QVector>
 #include <capnp/dynamic.h>
 
 #include "cereal/visionipc/visionipc_server.h"
-#include "selfdrive/common/util.h"
-#include "selfdrive/ui/qt/api.h"
-#include "selfdrive/ui/replay/filereader.h"
-#include "selfdrive/ui/replay/framereader.h"
+#include "selfdrive/ui/replay/route.h"
 
 constexpr int FORWARD_SEGS = 2;
 constexpr int BACKWARD_SEGS = 2;
@@ -23,43 +19,40 @@ public:
   Replay(QString route, QStringList allow, QStringList block, SubMaster *sm = nullptr, QObject *parent = 0);
 
   void start();
-  void addSegment(int n);
   void relativeSeek(int seconds);
   void seekTo(int seconds);
 
+signals:
+ void segmentChanged(int);
+
+protected slots:
+  void queueSegment();
+
+protected:
   void stream();
-  void segmentQueueThread();
+  void setCurrentSegment(int n);
+  void mergeSegments(int begin_idx, int end_idx);
 
-public slots:
-  void parseResponse(const QString &response);
-  void mergeEvents();
-
-private:
   float last_print = 0;
-  uint64_t route_start_ts;
+  uint64_t route_start_ts = 0;
   std::atomic<int> seek_ts = 0;
   std::atomic<int> current_ts = 0;
-  std::atomic<int> current_segment = 0;
+  std::atomic<int> current_segment = -1;
 
   QThread *thread;
-  QThread *kb_thread;
-  QThread *queue_thread;
 
   // logs
   std::mutex lock;
   std::atomic<bool> updating_events = false;
   QMultiMap<uint64_t, Event *> *events = nullptr;
   std::unordered_map<uint32_t, EncodeIdx> *eidx = nullptr;
-
-  HttpRequest *http;
-  QJsonArray camera_paths;
-  QJsonArray log_paths;
-  QMap<int, LogReader*> lrs;
-  QMap<int, FrameReader*> frs;
+  std::vector<std::unique_ptr<Segment>> segments;
+  std::vector<int> segments_merged;
 
   // messaging
   SubMaster *sm;
   PubMaster *pm;
   QVector<std::string> socks;
   VisionIpcServer *vipc_server = nullptr;
+  std::unique_ptr<Route> route_;
 };
