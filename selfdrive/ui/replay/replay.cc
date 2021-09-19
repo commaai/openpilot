@@ -23,7 +23,7 @@ Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *s
   }
 
   route_ = std::make_unique<Route>(route);
-  events = new QMultiMap<uint64_t, Event *>();
+  events = new std::vector<Event *>();
   // queueSegment is always executed in the main thread
   connect(this, &Replay::segmentChanged, this, &Replay::queueSegment);
 }
@@ -111,11 +111,13 @@ void Replay::mergeSegments(int cur_seg, int end_idx) {
     qDebug() << "merge segments" << segments_need_merge;
     segments_merged = segments_need_merge;
 
-    QMultiMap<uint64_t, Event *> *new_events = new QMultiMap<uint64_t, Event *>();
+    std::vector<Event *> *new_events = new std::vector<Event *>();
     std::unordered_map<uint32_t, EncodeIdx> *new_eidx = new std::unordered_map<uint32_t, EncodeIdx>[MAX_CAMERAS];
     for (int n : segments_need_merge) {
       auto &segment = segments[n];
-      *new_events += segment->log->events;
+      // merge & sort events
+      auto middle = new_events->insert(new_events->end(), segment->log->events.begin(), segment->log->events.end());
+      std::inplace_merge(new_events->begin(), middle, new_events->end(), Event::lessThan());
       for (CameraType cam_type : ALL_CAMERAS) {
         new_eidx[cam_type].insert(segment->log->eidx[cam_type].begin(), segment->log->eidx[cam_type].end());
       }
@@ -152,14 +154,16 @@ void Replay::mergeSegments(int cur_seg, int end_idx) {
 }
 
 void Replay::stream() {
-  uint64_t cur_mono_time = 0;
   bool waiting_printed = false;
+  uint64_t cur_mono_time = 0;
+  cereal::Event::Which cur_which = cereal::Event::Which::INIT_DATA;
 
   while (true) {
     std::unique_lock lk(lock);
 
     uint64_t evt_start_ts = seek_ts != -1 ? route_start_ts + (seek_ts * 1e9) : cur_mono_time;
-    auto eit = events->lowerBound(evt_start_ts);
+    Event cur_event(cur_which, evt_start_ts);
+    auto eit = std::upper_bound(events->begin(), events->end(), &cur_event, Event::lessThan());
     if (eit == events->end()) {
       lock.unlock();
       if (std::exchange(waiting_printed, true) == false) {

@@ -1,6 +1,5 @@
 #pragma once
 
-#include <QMultiMap>
 #include <unordered_map>
 #include <vector>
 
@@ -16,6 +15,11 @@ struct EncodeIdx {
 };
 class Event {
 public:
+  Event(cereal::Event::Which which, uint64_t mono_time) : reader(kj::ArrayPtr<capnp::word>{}) {
+    // construct a dummy Event for binary search, e.g std::upper_bound
+    this->which = which;
+    this->mono_time = mono_time;
+  }
   Event(const kj::ArrayPtr<const capnp::word> &amsg) : reader(amsg) {
     words = kj::ArrayPtr<const capnp::word>(amsg.begin(), reader.getEnd());
     event = reader.getRoot<cereal::Event>();
@@ -23,6 +27,12 @@ public:
     mono_time = event.getLogMonoTime();
   }
   inline kj::ArrayPtr<const capnp::byte> bytes() const { return words.asBytes(); }
+
+  struct lessThan {
+    inline bool operator()(const Event *l, const Event *r) {
+      return l->mono_time < r->mono_time || (l->mono_time == r->mono_time && l->which < r->which);
+    }
+  };
 
   uint64_t mono_time;
   cereal::Event::Which which;
@@ -37,10 +47,9 @@ public:
   ~LogReader();
   bool load(const std::string &file);
 
-  QMultiMap<uint64_t, Event*> events;
+  std::vector<Event*> events;
   std::unordered_map<uint32_t, EncodeIdx> eidx[MAX_CAMERAS] = {};
 
 private:
-  void parseEvents(const QByteArray &dat);
   std::vector<uint8_t> raw_;
 };

@@ -1,5 +1,6 @@
 #include "selfdrive/ui/replay/filereader.h"
 
+#include <cassert>
 #include <bzlib.h>
 #include "selfdrive/common/util.h"
 
@@ -59,10 +60,11 @@ bool LogReader::load(const std::string &file) {
           break;
       }
       words = kj::arrayPtr(evt->reader.getEnd(), words.end());
-      events.insert(evt->mono_time, evt.release());
+      events.push_back(evt.release());
     } catch (const kj::Exception &e) {
       return false;
     }
   }
+  std::sort(events.begin(), events.end(), Event::lessThan());
   return true;
 }

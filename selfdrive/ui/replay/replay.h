@@ -43,7 +43,7 @@ protected:
   // logs
   std::mutex lock;
   std::atomic<bool> updating_events = false;
-  QMultiMap<uint64_t, Event *> *events = nullptr;
+  std::vector<Event *> *events = nullptr;
   std::unordered_map<uint32_t, EncodeIdx> *eidx = nullptr;
   std::vector<std::unique_ptr<Segment>> segments;
   std::vector<int> segments_merged;
