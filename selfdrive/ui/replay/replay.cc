@@ -168,7 +168,9 @@ void Replay::mergeSegments(int cur_seg, int end_idx) {
 void Replay::publishFrame(CameraType cam_type, uint32_t frame_id) {
   auto it = eidx[cam_type].find(frame_id);
   if (it == eidx[cam_type].end()) {
-    qDebug() << "camera" << cam_type << "no encode id for frame" << frame_id;
+    if (cam_type != DriverCam) {
+      qDebug() << "camera[" << cam_type << "]: no encode id for frame" << frame_id;
+    }
     return;
   }
 
