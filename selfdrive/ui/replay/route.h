@@ -5,8 +5,8 @@
 #include <vector>
 
 #include "selfdrive/common/util.h"
-#include "selfdrive/ui/replay/filereader.h"
 #include "selfdrive/ui/replay/framereader.h"
+#include "selfdrive/ui/replay/logreader.h"
 
 const QString CACHE_DIR = util::getenv("COMMA_CACHE", "/tmp/comma_download_cache/").c_str();
 
