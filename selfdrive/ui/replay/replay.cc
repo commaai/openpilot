@@ -13,7 +13,7 @@ Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *s
     if ((allow.size() == 0 || allow.contains(it.name)) &&
         !block.contains(it.name)) {
       s.push_back(it.name);
-      socks.append(std::string(it.name));
+      socks.insert(it.name);
     }
   }
   qDebug() << "services " << s;
@@ -38,8 +38,8 @@ void Replay::start(){
     qDebug() << "failed load route" << route_->name() << "from server";
     return;
   }
-  qDebug() << "load route" << route_->name() << route_->size() << "segments";
 
+  qDebug() << "load route" << route_->name() << route_->size() << "segments";
   segments.resize(route_->size());
   setCurrentSegment(0);
 
@@ -114,12 +114,12 @@ void Replay::mergeSegments(int cur_seg, int end_idx) {
     std::vector<Event *> *new_events = new std::vector<Event *>();
     std::unordered_map<uint32_t, EncodeIdx> *new_eidx = new std::unordered_map<uint32_t, EncodeIdx>[MAX_CAMERAS];
     for (int n : segments_need_merge) {
-      auto &segment = segments[n];
+      auto &log = segments[n]->log;
       // merge & sort events
-      auto middle = new_events->insert(new_events->end(), segment->log->events.begin(), segment->log->events.end());
+      auto middle = new_events->insert(new_events->end(), log->events.begin(), log->events.end());
       std::inplace_merge(new_events->begin(), middle, new_events->end(), Event::lessThan());
       for (CameraType cam_type : ALL_CAMERAS) {
-        new_eidx[cam_type].insert(segment->log->eidx[cam_type].begin(), segment->log->eidx[cam_type].end());
+        new_eidx[cam_type].insert(log->eidx[cam_type].begin(), log->eidx[cam_type].end());
       }
     }
 
@@ -174,9 +174,9 @@ void Replay::stream() {
     }
     waiting_printed = false;
     seek_ts = -1;
+    uint64_t loop_start_ts = nanos_since_boot();
     qDebug() << "unlogging at" << int((evt_start_ts - route_start_ts) / 1e9);
 
-    uint64_t loop_start_ts = nanos_since_boot();
     for (/**/; !updating_events && eit != events->end(); ++eit) {
       const Event *evt = (*eit);
       std::string type;
@@ -184,7 +184,7 @@ void Replay::stream() {
         type = e_->getProto().getName();
       }
 
-      if (socks.contains(type)) {
+      if (socks.find(type) != socks.end()) {
         cur_mono_time = evt->mono_time;
         current_ts = (cur_mono_time - route_start_ts) / 1e9;
         setCurrentSegment(current_ts / 60);

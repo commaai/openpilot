@@ -1,7 +1,7 @@
 #pragma once
 
 #include <QThread>
-#include <QVector>
+#include <set>
 
 #include <capnp/dynamic.h>
 #include "cereal/visionipc/visionipc_server.h"
@@ -51,7 +51,7 @@ protected:
   // messaging
   SubMaster *sm;
   PubMaster *pm;
-  QVector<std::string> socks;
+  std::set<std::string> socks;
   VisionIpcServer *vipc_server = nullptr;
   std::unique_ptr<Route> route_;
 };
