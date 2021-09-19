@@ -36,6 +36,7 @@
 #define CUTOFF_IL 200
 #define SATURATE_IL 1600
 #define NIBBLE_TO_HEX(n) ((n) < 10 ? (n) + '0' : ((n) - 10) + 'a')
+using namespace std::chrono_literals;
 
 std::atomic<bool> ignition(false);
 
