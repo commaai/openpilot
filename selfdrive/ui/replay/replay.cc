@@ -32,16 +32,16 @@ Replay::~Replay() {
   // TODO: quit stream thread and free resources.
 }
 
-void Replay::start(){
+void Replay::start(int seconds){
   // load route
   if (!route_->load() || route_->size() == 0) {
     qDebug() << "failed load route" << route_->name() << "from server";
     return;
   }
 
-  qDebug() << "load route" << route_->name() << route_->size() << "segments";
+  qDebug() << "load route" << route_->name() << route_->size() << "segments, start from" << seconds;
   segments.resize(route_->size());
-  setCurrentSegment(0);
+  seekTo(seconds);
 
   // start stream thread
   thread = new QThread;
@@ -58,7 +58,7 @@ void Replay::seekTo(int seconds) {
   seconds = std::clamp(seconds, 0, (int)segments.size() * 60);
   qInfo() << "seeking to " << seconds;
   seek_ts = seconds;
-  setCurrentSegment(seconds / 60);
+  setCurrentSegment(std::clamp(seconds / 60, 0, (int)segments.size() - 1));
   updating_events = false;
 }
 
@@ -179,14 +179,16 @@ void Replay::stream() {
 
     for (/**/; !updating_events && eit != events->end(); ++eit) {
       const Event *evt = (*eit);
+      cur_which = evt->which;
+      cur_mono_time = evt->mono_time;
+      current_ts = (cur_mono_time - route_start_ts) / 1e9;
+
       std::string type;
       KJ_IF_MAYBE(e_, static_cast<capnp::DynamicStruct::Reader>(evt->event).which()) {
         type = e_->getProto().getName();
       }
 
       if (socks.find(type) != socks.end()) {
-        cur_mono_time = evt->mono_time;
-        current_ts = (cur_mono_time - route_start_ts) / 1e9;
         setCurrentSegment(current_ts / 60);
         if (std::abs(current_ts - last_print) > 5.0) {
           last_print = current_ts;

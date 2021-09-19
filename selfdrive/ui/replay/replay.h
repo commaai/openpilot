@@ -17,7 +17,7 @@ public:
   Replay(QString route, QStringList allow, QStringList block, SubMaster *sm = nullptr, QObject *parent = 0);
   ~Replay();
 
-  void start();
+  void start(int seconds = 0);
   void relativeSeek(int seconds);
   void seekTo(int seconds);
 
