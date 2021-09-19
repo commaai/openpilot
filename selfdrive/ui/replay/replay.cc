@@ -11,7 +11,7 @@
 Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *sm_, QObject *parent) : sm(sm_), QObject(parent) {
   std::vector<const char*> s;
   for (const auto &it : services) {
-    if ((allow[0].size() == 0 || allow.contains(it.name)) &&
+    if ((allow.size() == 0 || allow.contains(it.name)) &&
         !block.contains(it.name)) {
       s.push_back(it.name);
       socks.append(std::string(it.name));
