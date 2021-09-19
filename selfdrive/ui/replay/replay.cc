@@ -166,19 +166,17 @@ void Replay::stream() {
 
     for (auto eit = events->lowerBound(t0); !updating_events && eit != events->end(); ++eit) {
       cereal::Event::Reader e = (*eit)->event;
-      cur_mono_time = (*eit)->mono_time;
-      current_segment = (cur_mono_time - route_start_ts) / 1e9 / 60;
       std::string type;
       KJ_IF_MAYBE(e_, static_cast<capnp::DynamicStruct::Reader>(e).which()) {
         type = e_->getProto().getName();
       }
 
-      current_ts = std::max(cur_mono_time - route_start_ts, (uint64_t)0) / 1e9;
-
       if (socks.contains(type)) {
-        float timestamp = (cur_mono_time - route_start_ts)/1e9;
-        if (std::abs(timestamp - last_print) > 5.0) {
-          last_print = timestamp;
+        cur_mono_time = (*eit)->mono_time;
+        current_ts = (cur_mono_time - route_start_ts) / 1e9;
+        current_segment = current_ts / 60;
+        if (std::abs(current_ts - last_print) > 5.0) {
+          last_print = current_ts;
           qInfo() << "at " << int(last_print) << "s";
         }
 
