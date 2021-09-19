@@ -3,7 +3,6 @@
 #include <QApplication>
 
 #include "cereal/services.h"
-#include "selfdrive/camerad/cameras/camera_common.h"
 #include "selfdrive/common/timing.h"
 #include "selfdrive/hardware/hw.h"
 
@@ -43,6 +42,9 @@ void Replay::start(int seconds){
   qDebug() << "load route" << route_->name() << route_->size() << "segments, start from" << seconds;
   segments.resize(route_->size());
   seekTo(seconds);
+
+  // start camera server
+  camera_server_ = std::make_unique<CameraServer>();
 
   // start stream thread
   thread = new QThread;
@@ -163,6 +165,21 @@ void Replay::mergeSegments(int cur_seg, int end_idx) {
   }
 }
 
+void Replay::publishFrame(CameraType cam_type, uint32_t frame_id) {
+  auto it = eidx[cam_type].find(frame_id);
+  if (it == eidx[cam_type].end()) {
+    qDebug() << "camera" << cam_type << "no encode id for frame" << frame_id;
+    return;
+  }
+
+  const EncodeIdx &e = it->second;
+  if (auto &seg = segments[e.segmentNum]; seg && seg->isLoaded()) {
+    if (auto &fr = seg->frames[cam_type]) {
+      camera_server_->pushFrame(cam_type, fr.get(), e.frameEncodeId);
+    }
+  }
+}
+
 void Replay::stream() {
   bool waiting_printed = false;
   uint64_t cur_mono_time = 0;
@@ -215,33 +232,18 @@ void Replay::stream() {
         }
 
         // publish frame
-        // TODO: publish all frames
-        if (evt->which == cereal::Event::ROAD_CAMERA_STATE) {
-          auto it_ = eidx[RoadCam].find(evt->event.getRoadCameraState().getFrameId());
-          if (it_ != eidx[RoadCam].end()) {
-            EncodeIdx &e = it_->second;
-            auto &seg = segments[e.segmentNum]; 
-            if (seg && seg->isLoaded()) {
-              auto &frm = seg->frames[RoadCam];
-              if (vipc_server == nullptr) {
-                cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
-                cl_context context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
-
-                vipc_server = new VisionIpcServer("camerad", device_id, context);
-                vipc_server->create_buffers(VisionStreamType::VISION_STREAM_RGB_BACK, UI_BUF_COUNT,
-                                            true, frm->width, frm->height);
-                vipc_server->start_listener();
-              }
-
-              uint8_t *dat = frm->get(e.frameEncodeId);
-              if (dat) {
-                VisionIpcBufExtra extra = {};
-                VisionBuf *buf = vipc_server->get_buffer(VisionStreamType::VISION_STREAM_RGB_BACK);
-                memcpy(buf->addr, dat, frm->getRGBSize());
-                vipc_server->send(buf, &extra, false);
-              }
-            }
-          }
+        switch (evt->which) {
+          case cereal::Event::ROAD_CAMERA_STATE:
+            publishFrame(RoadCam, evt->event.getRoadCameraState().getFrameId());
+            break;
+          case cereal::Event::DRIVER_CAMERA_STATE:
+            publishFrame(DriverCam, evt->event.getDriverCameraState().getFrameId());
+            break;
+          case cereal::Event::WIDE_ROAD_CAMERA_STATE:
+            publishFrame(WideRoadCam, evt->event.getWideRoadCameraState().getFrameId());
+            break;
+          default:
+            break;
         }
 
         // publish msg

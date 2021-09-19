@@ -4,7 +4,7 @@
 #include <set>
 
 #include <capnp/dynamic.h>
-#include "cereal/visionipc/visionipc_server.h"
+#include "selfdrive/ui/replay/camera.h"
 #include "selfdrive/ui/replay/route.h"
 
 constexpr int FORWARD_SEGS = 2;
@@ -33,6 +33,7 @@ protected:
   void stream();
   void setCurrentSegment(int n);
   void mergeSegments(int begin_idx, int end_idx);
+  void publishFrame(CameraType cam_type, uint32_t frame_id);
 
   bool load_dcam = false, load_ecam = false;
 
@@ -58,6 +59,6 @@ protected:
   SubMaster *sm;
   PubMaster *pm;
   std::set<std::string> socks;
-  VisionIpcServer *vipc_server = nullptr;
   std::unique_ptr<Route> route_;
+  std::unique_ptr<CameraServer> camera_server_;
 };
