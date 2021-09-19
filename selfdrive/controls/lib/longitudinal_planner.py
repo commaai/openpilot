@@ -11,8 +11,8 @@ from selfdrive.modeld.constants import T_IDXS
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.fcw import FCWChecker
 from selfdrive.controls.lib.longcontrol import LongCtrlState
-from selfdrive.controls.lib.lead_mpc import LeadMpc
-from selfdrive.controls.lib.long_mpc import LongitudinalMpc
+from selfdrive.controls.lib.lead_mpc_lib.lead_mpc import LeadMpc
+from selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import LongitudinalMpc
 from selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, CONTROL_N
 from selfdrive.swaglog import cloudlog
 
@@ -45,7 +45,7 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
 
 
 class Planner():
-  def __init__(self, CP):
+  def __init__(self, CP, init_v=0.0, init_a=0.0):
     self.CP = CP
     self.mpcs = {}
     self.mpcs['lead0'] = LeadMpc(0)
@@ -55,8 +55,8 @@ class Planner():
     self.fcw = False
     self.fcw_checker = FCWChecker()
 
-    self.v_desired = 0.0
-    self.a_desired = 0.0
+    self.v_desired = init_v
+    self.a_desired = init_a
     self.longitudinalPlanSource = 'cruise'
     self.alpha = np.exp(-DT_MDL/2.0)
     self.lead_0 = log.ModelDataV2.LeadDataV3.new_message()
@@ -64,6 +64,7 @@ class Planner():
 
     self.v_desired_trajectory = np.zeros(CONTROL_N)
     self.a_desired_trajectory = np.zeros(CONTROL_N)
+    self.j_desired_trajectory = np.zeros(CONTROL_N)
 
 
   def update(self, sm, CP):
@@ -97,10 +98,9 @@ class Planner():
       accel_limits_turns[1] = min(accel_limits_turns[1], AWARENESS_DECEL)
       accel_limits_turns[0] = min(accel_limits_turns[0], accel_limits_turns[1])
     # clip limits, cannot init MPC outside of bounds
-    accel_limits_turns[0] = min(accel_limits_turns[0], self.a_desired)
-    accel_limits_turns[1] = max(accel_limits_turns[1], self.a_desired)
+    accel_limits_turns[0] = min(accel_limits_turns[0], self.a_desired + 0.05)
+    accel_limits_turns[1] = max(accel_limits_turns[1], self.a_desired - 0.05)
     self.mpcs['cruise'].set_accel_limits(accel_limits_turns[0], accel_limits_turns[1])
-
     next_a = np.inf
     for key in self.mpcs:
       self.mpcs[key].set_cur_state(self.v_desired, self.a_desired)
@@ -116,7 +116,7 @@ class Planner():
     if self.mpcs['lead0'].new_lead:
       self.fcw_checker.reset_lead(cur_time)
     blinkers = sm['carState'].leftBlinker or sm['carState'].rightBlinker
-    self.fcw = self.fcw_checker.update(self.mpcs['lead0'].mpc_solution, cur_time,
+    self.fcw = self.fcw_checker.update(self.mpcs['lead0'].x_sol[:,2], cur_time,
                                        sm['controlsState'].active,
                                        v_ego, sm['carState'].aEgo,
                                        self.lead_1.dRel, self.lead_1.vLead, self.lead_1.aLeadK,

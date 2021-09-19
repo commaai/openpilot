@@ -6,13 +6,14 @@ from selfdrive.config import Conversions as CV
 
 Ecu = car.CarParams.Ecu
 MIN_ACC_SPEED = 19. * CV.MPH_TO_MS
+
 PEDAL_HYST_GAP = 3. * CV.MPH_TO_MS
+PEDAL_SCALE = 3.0
 
 class CarControllerParams:
-  ACCEL_HYST_GAP = 0.02  # don't change accel command for small oscilalitons within this value
-  ACCEL_MAX = 1.5  # m/s2
-  ACCEL_MIN = -3.0  # m/s2
-  ACCEL_SCALE = max(ACCEL_MAX, -ACCEL_MIN)
+  ACCEL_HYST_GAP = 0.06  # don't change accel command for small oscilalitons within this value
+  ACCEL_MAX = 1.5  # m/s2, lower than allowed 2.0 m/s2 for tuning reasons
+  ACCEL_MIN = -3.5  # m/s2
 
   STEER_MAX = 1500
   STEER_DELTA_UP = 10       # 1.5s time to peak torque
@@ -624,6 +625,7 @@ FW_VERSIONS = {
       b'\x018966312P9000\x00\x00\x00\x00',
       b'\x018966312P9100\x00\x00\x00\x00',
       b'\x018966312P9200\x00\x00\x00\x00',
+      b'\x018966312P9300\x00\x00\x00\x00',
       b'\x018966312Q2300\x00\x00\x00\x00',
       b'\x018966312R0000\x00\x00\x00\x00',
       b'\x018966312R0100\x00\x00\x00\x00',
@@ -633,8 +635,10 @@ FW_VERSIONS = {
       b'\x018966312S5000\x00\x00\x00\x00',
       b'\x018966312S7000\x00\x00\x00\x00',
       b'\x018966312W3000\x00\x00\x00\x00',
+      b'\x018966312W9000\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x7e0, None): [
+      b'\x0230A11000\x00\x00\x00\x00\x00\x00\x00\x00A0202000\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\x0230ZN4000\x00\x00\x00\x00\x00\x00\x00\x00A0202000\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\x03312M3000\x00\x00\x00\x00\x00\x00\x00\x00A0202000\x00\x00\x00\x00\x00\x00\x00\x00895231203402\x00\x00\x00\x00',
       b'\x03312N6000\x00\x00\x00\x00\x00\x00\x00\x00A0202000\x00\x00\x00\x00\x00\x00\x00\x00895231203202\x00\x00\x00\x00',
@@ -652,12 +656,14 @@ FW_VERSIONS = {
       b'\x018965B12530\x00\x00\x00\x00\x00\x00',
       b'\x018965B1255000\x00\x00\x00\x00',
       b'8965B12361\x00\x00\x00\x00\x00\x00',
+      b'8965B16011\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.esp, 0x7b0, None): [
       b'\x01F152602280\x00\x00\x00\x00\x00\x00',
       b'\x01F152602560\x00\x00\x00\x00\x00\x00',
       b'\x01F152602590\x00\x00\x00\x00\x00\x00',
       b'\x01F152602650\x00\x00\x00\x00\x00\x00',
+      b'\x01F15260A050\x00\x00\x00\x00\x00\x00',
       b'\x01F152612641\x00\x00\x00\x00\x00\x00',
       b'\x01F152612651\x00\x00\x00\x00\x00\x00',
       b'\x01F152612B10\x00\x00\x00\x00\x00\x00',
@@ -683,6 +689,7 @@ FW_VERSIONS = {
       b'\x028646F1202000\x00\x00\x00\x008646G2601200\x00\x00\x00\x00',
       b'\x028646F1202100\x00\x00\x00\x008646G2601400\x00\x00\x00\x00',
       b'\x028646F1202200\x00\x00\x00\x008646G2601500\x00\x00\x00\x00',
+      b'\x028646F1601100\x00\x00\x00\x008646G2601400\x00\x00\x00\x00',
     ],
   },
   CAR.COROLLAH_TSS2: {
@@ -1171,6 +1178,7 @@ FW_VERSIONS = {
       b'\x02896634A13001\x00\x00\x00\x00897CF4801001\x00\x00\x00\x00',
       b'\x02896634A13101\x00\x00\x00\x00897CF4801001\x00\x00\x00\x00',
       b'\x02896634A14001\x00\x00\x00\x00897CF1203001\x00\x00\x00\x00',
+      b'\x02896634A23000\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\x02896634A23001\x00\x00\x00\x00897CF1203001\x00\x00\x00\x00',
       b'\x02896634A14001\x00\x00\x00\x00897CF4801001\x00\x00\x00\x00',
       b'\x02896634A14101\x00\x00\x00\x00897CF4801001\x00\x00\x00\x00',
@@ -1178,6 +1186,7 @@ FW_VERSIONS = {
     (Ecu.esp, 0x7b0, None): [
       b'F152642291\x00\x00\x00\x00\x00\x00',
       b'F152642290\x00\x00\x00\x00\x00\x00',
+      b'F152642322\x00\x00\x00\x00\x00\x00',
       b'F152642330\x00\x00\x00\x00\x00\x00',
       b'F152642331\x00\x00\x00\x00\x00\x00',
       b'F152642531\x00\x00\x00\x00\x00\x00',

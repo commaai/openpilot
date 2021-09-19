@@ -1,5 +1,13 @@
-Version 0.8.9 (2021-XX-XX)
+Version 0.8.10 (2021-XX-XX)
 ========================
+ * Škoda Kamiq 2021 support thanks to jyoung8607!
+ * Škoda Karoq 2019 support thanks to jyoung8607!
+
+Version 0.8.9 (2021-09-14)
+========================
+ * Improved fan control on comma three
+ * AGNOS 1.5: improved stability
+ * Honda e 2020 support
 
 Version 0.8.8 (2021-08-27)
 ========================

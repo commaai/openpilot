@@ -241,6 +241,7 @@ void Thneed::find_inputs_outputs() {
     for (int i = 0; i < k->num_args; i++) {
       if (k->name == "zero_pad_image_float" && k->arg_names[i] == "input") {
         cl_mem aa = *(cl_mem*)(k->args[i].data());
+        input_clmem.push_back(aa);
 
         size_t sz;
         clGetMemObjectInfo(aa, CL_MEM_SIZE, sizeof(sz), &sz, NULL);
@@ -262,7 +263,7 @@ void Thneed::copy_inputs(float **finputs) {
   //cl_int ret;
   for (int idx = 0; idx < inputs.size(); ++idx) {
     if (record & THNEED_DEBUG) printf("copying %lu -- %p -> %p\n", input_sizes[idx], finputs[idx], inputs[idx]);
-    memcpy(inputs[idx], finputs[idx], input_sizes[idx]);
+    if (finputs[idx] != NULL) memcpy(inputs[idx], finputs[idx], input_sizes[idx]);
   }
 }
 

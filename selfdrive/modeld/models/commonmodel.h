@@ -30,7 +30,7 @@ class ModelFrame {
  public:
   ModelFrame(cl_device_id device_id, cl_context context);
   ~ModelFrame();
-  float* prepare(cl_mem yuv_cl, int width, int height, const mat3& transform);
+  float* prepare(cl_mem yuv_cl, int width, int height, const mat3& transform, cl_mem *output);
 
   const int buf_size = MODEL_FRAME_SIZE * 2;
 

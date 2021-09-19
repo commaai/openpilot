@@ -40,6 +40,12 @@ std::atomic<bool> ignition(false);
 
 ExitHandler do_exit;
 
+std::string get_time_str(const struct tm &time) {
+  char s[30] = {'\0'};
+  std::strftime(s, std::size(s), "%Y-%m-%d %H:%M:%S", &time);
+  return s;
+}
+
 void safety_setter_thread(Panda *panda) {
   LOGD("Starting safety setter thread");
   // diagnostic only is the default, needed for VIN query
@@ -61,7 +67,7 @@ void safety_setter_thread(Panda *panda) {
       LOGW("got CarVin %s", value_vin.c_str());
       break;
     }
-    util::sleep_for(100);
+    util::sleep_for(20);
   }
 
   // VIN query done, stop listening to OBDII
@@ -146,13 +152,8 @@ Panda *usb_connect() {
     struct tm rtc_time = panda->get_rtc();
 
     if (!util::time_valid(sys_time) && util::time_valid(rtc_time)) {
-      LOGE("System time wrong, setting from RTC. "
-           "System: %d-%02d-%02d %02d:%02d:%02d RTC: %d-%02d-%02d %02d:%02d:%02d",
-           sys_time.tm_year + 1900, sys_time.tm_mon + 1, sys_time.tm_mday,
-           sys_time.tm_hour, sys_time.tm_min, sys_time.tm_sec,
-           rtc_time.tm_year + 1900, rtc_time.tm_mon + 1, rtc_time.tm_mday,
-           rtc_time.tm_hour, rtc_time.tm_min, rtc_time.tm_sec);
-
+      LOGE("System time wrong, setting from RTC. System: %s RTC: %s",
+           get_time_str(sys_time).c_str(), get_time_str(rtc_time).c_str());
       const struct timeval tv = {mktime(&rtc_time), 0};
       settimeofday(&tv, 0);
     }
@@ -170,7 +171,7 @@ static Panda *usb_retry_connect() {
       LOGW("connected to board");
       return panda;
     }
-    util::sleep_for(100); 
+    util::sleep_for(100);
   };
   return nullptr;
 }
@@ -324,13 +325,8 @@ void panda_state_thread(Panda *&panda, bool spoofing_started) {
 
         if (std::abs(seconds) > 1.1) {
           panda->set_rtc(sys_time);
-          LOGW("Updating panda RTC. dt = %.2f "
-               "System: %d-%02d-%02d %02d:%02d:%02d RTC: %d-%02d-%02d %02d:%02d:%02d",
-               seconds,
-               sys_time.tm_year + 1900, sys_time.tm_mon + 1, sys_time.tm_mday,
-               sys_time.tm_hour, sys_time.tm_min, sys_time.tm_sec,
-               rtc_time.tm_year + 1900, rtc_time.tm_mon + 1, rtc_time.tm_mday,
-               rtc_time.tm_hour, rtc_time.tm_min, rtc_time.tm_sec);
+          LOGW("Updating panda RTC. dt = %.2f System: %s RTC: %s",
+               seconds, get_time_str(sys_time).c_str(), get_time_str(rtc_time).c_str());
         }
       }
     }

@@ -76,6 +76,8 @@ class CAR:
   AUDI_Q2_MK1 = "AUDI Q2 1ST GEN"             # Chassis GA, Mk1 Audi Q2 (RoW) and Q2L (China only)
   SEAT_ATECA_MK1 = "SEAT ATECA 1ST GEN"       # Chassis 5F, Mk1 SEAT Ateca and CUPRA Ateca
   SEAT_LEON_MK3 = "SEAT LEON 3RD GEN"         # Chassis 5F, Mk3 SEAT Leon and variants
+  SKODA_KAMIQ_MK1 = "SKODA KAMIQ 1ST GEN"     # Chassis NW, Mk1 Skoda Kamiq
+  SKODA_KAROQ_MK1 = "SKODA KAROQ 1ST GEN"     # Chassis NU, Mk1 Skoda Karoq
   SKODA_KODIAQ_MK1 = "SKODA KODIAQ 1ST GEN"   # Chassis NS, Mk1 Skoda Kodiaq
   SKODA_SCALA_MK1 = "SKODA SCALA 1ST GEN"     # Chassis NW, Mk1 Skoda Scala and Skoda Kamiq
   SKODA_SUPERB_MK3 = "SKODA SUPERB 3RD GEN"   # Chassis 3V/NP, Mk3 Skoda Superb and variants
@@ -230,6 +232,7 @@ FW_VERSIONS = {
       b'\xf1\x875QN909144A \xf1\x895081\xf1\x82\00571A01A16A1',
       b'\xf1\x875QN909144A \xf1\x895081\xf1\x82\00571A01A18A1',
       b'\xf1\x875QN909144A \xf1\x895081\xf1\x82\x0571A01A17A1',
+      b'\xf1\x875QN909144B \xf1\x895082\xf1\x82\00571A01A18A1',
     ],
     (Ecu.fwdRadar, 0x757, None): [
       b'\xf1\x875Q0907572A \xf1\x890141\xf1\x82\00101',
@@ -241,6 +244,7 @@ FW_VERSIONS = {
       b'\xf1\x875Q0907572H \xf1\x890620',
       b'\xf1\x875Q0907572J \xf1\x890654',
       b'\xf1\x875Q0907572P \xf1\x890682',
+      b'\xf1\x875Q0907572R \xf1\x890771',
     ],
   },
   CAR.JETTA_MK7: {
@@ -332,6 +336,7 @@ FW_VERSIONS = {
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x8709G927158DT\xf1\x893698',
       b'\xf1\x870DL300011N \xf1\x892001',
+      b'\xf1\x870DL300011N \xf1\x892012',
       b'\xf1\x870DL300013A \xf1\x893005',
       b'\xf1\x870DL300013G \xf1\x892120',
     ],
@@ -344,10 +349,12 @@ FW_VERSIONS = {
     (Ecu.eps, 0x712, None): [
       b'\xf1\x875Q0909143M \xf1\x892041\xf1\x820529A6060603',
       b'\xf1\x875QF909144B \xf1\x895582\xf1\x82\00571A60634A1',
+      b'\xf1\x875QM909144B \xf1\x891081\xf1\x82\x0521A60604A1',
       b'\xf1\x875QM909144C \xf1\x891082\xf1\x82\00521A60804A1',
     ],
     (Ecu.fwdRadar, 0x757, None): [
       b'\xf1\x872Q0907572J \xf1\x890156',
+      b'\xf1\x872Q0907572Q \xf1\x890342',
       b'\xf1\x872Q0907572R \xf1\x890372',
     ],
   },
@@ -472,6 +479,40 @@ FW_VERSIONS = {
       b'\xf1\x875Q0907572B \xf1\x890200\xf1\x82\00101',
       b'\xf1\x875Q0907572H \xf1\x890620',
       b'\xf1\x875Q0907572P \xf1\x890682',
+    ],
+  },
+  CAR.SKODA_KAMIQ_MK1: {
+    (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x8705C906032M \xf1\x891333',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x870CW300020  \xf1\x891906',
+    ],
+    (Ecu.srs, 0x715, None): [
+      b'\xf1\x872Q0959655AM\xf1\x890351\xf1\x82\0222221042111042121040404042E2711152H14',
+    ],
+    (Ecu.eps, 0x712, None): [
+      b'\xf1\x872Q1909144M \xf1\x896041',
+    ],
+    (Ecu.fwdRadar, 0x757, None): [
+      b'\xf1\x872Q0907572T \xf1\x890383',
+    ],
+  },
+  CAR.SKODA_KAROQ_MK1: {
+    (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x8705E906018P \xf1\x896020',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x870CW300041S \xf1\x891615',
+    ],
+    (Ecu.srs, 0x715, None): [
+      b'\xf1\x873Q0959655BH\xf1\x890712\xf1\x82\0161213001211001101131122012100',
+    ],
+    (Ecu.eps, 0x712, None): [
+      b'\xf1\x875Q0910143C \xf1\x892211\xf1\x82\00567T6100500',
+    ],
+    (Ecu.fwdRadar, 0x757, None): [
+      b'\xf1\x872Q0907572M \xf1\x890233',
     ],
   },
   CAR.SKODA_KODIAQ_MK1: {
