@@ -66,6 +66,15 @@ void Replay::relativeSeek(int seconds) {
   seekTo(current_ts + seconds);
 }
 
+void Replay::pause(bool pause) {
+  updating_events = true;
+  std::unique_lock lk(lock);
+  qDebug() << (pause ? "paused..." : "resuming");
+  paused_ = pause;
+  updating_events = false;
+  stream_cv_.notify_one();
+}
+
 void Replay::setCurrentSegment(int n) {
   if (current_segment.exchange(n) != n) {
     emit segmentChanged(n);
@@ -160,6 +169,7 @@ void Replay::stream() {
 
   while (true) {
     std::unique_lock lk(lock);
+    stream_cv_.wait(lk, [=]() { return paused_ == false; });
 
     uint64_t evt_start_ts = seek_ts != -1 ? route_start_ts + (seek_ts * 1e9) : cur_mono_time;
     Event cur_event(cur_which, evt_start_ts);

@@ -20,6 +20,8 @@ public:
   void start(int seconds = 0);
   void relativeSeek(int seconds);
   void seekTo(int seconds);
+  void pause(bool pause);
+  bool isPaused() const { return paused_; }
 
 signals:
  void segmentChanged(int);
@@ -42,6 +44,8 @@ protected:
 
   // logs
   std::mutex lock;
+  bool paused_ = false;
+  std::condition_variable stream_cv_;
   std::atomic<bool> updating_events = false;
   std::vector<Event *> *events = nullptr;
   std::unordered_map<uint32_t, EncodeIdx> *eidx = nullptr;

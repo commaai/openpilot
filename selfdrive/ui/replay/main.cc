@@ -55,6 +55,8 @@ void keyboardThread(Replay *replay) {
       replay->relativeSeek(-10);
     } else if (c == 'G') {
       replay->relativeSeek(0);
+    } else if (c == ' ') {
+      replay->pause(!replay->isPaused());
     }
   }
 }
