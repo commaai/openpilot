@@ -189,12 +189,12 @@ void Replay::stream() {
       }
 
       if (socks.find(type) != socks.end()) {
-        setCurrentSegment(current_ts / 60);
         if (std::abs(current_ts - last_print) > 5.0) {
           last_print = current_ts;
           qInfo() << "at " << int(last_print) << "s";
         }
 
+        setCurrentSegment(current_ts / 60);
         // keep time
         long etime = cur_mono_time - evt_start_ts;
         long rtime = nanos_since_boot() - loop_start_ts;
