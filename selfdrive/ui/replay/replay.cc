@@ -257,6 +257,10 @@ void Replay::stream() {
         }
       }
     }
+
+    // wait for all frames to be sent before unlock.(frameReader may be deleted after unlock)
+    camera_server_->waitFramesSent();
+
     lk.unlock();
     usleep(0);
   }
