@@ -153,6 +153,19 @@ void Replay::mergeSegments(int cur_seg, int end_idx) {
   }
 }
 
+const std::string &Replay::eventSocketName(const Event *e) {
+  auto it = eventNameMap.find(e->which);
+  if (it == eventNameMap.end()) {
+    std::string type;
+    KJ_IF_MAYBE(e_, static_cast<capnp::DynamicStruct::Reader>(e->event).which()) {
+      type = e_->getProto().getName();
+    }
+    std::string socket_name = socks.find(type) != socks.end() ? type : "";
+    it = eventNameMap.insert(it, {e->which, socket_name});
+  }
+  return it->second;
+}
+
 void Replay::stream() {
   bool waiting_printed = false;
   uint64_t cur_mono_time = 0;
@@ -183,12 +196,8 @@ void Replay::stream() {
       cur_mono_time = evt->mono_time;
       current_ts = (cur_mono_time - route_start_ts) / 1e9;
 
-      std::string type;
-      KJ_IF_MAYBE(e_, static_cast<capnp::DynamicStruct::Reader>(evt->event).which()) {
-        type = e_->getProto().getName();
-      }
-
-      if (socks.find(type) != socks.end()) {
+      const std::string &socket_name = eventSocketName(evt);
+      if (!socket_name.empty()) {
         if (std::abs(current_ts - last_print) > 5.0) {
           last_print = current_ts;
           qInfo() << "at " << int(last_print) << "s";
@@ -236,9 +245,9 @@ void Replay::stream() {
         // publish msg
         if (sm == nullptr) {
           auto bytes = evt->bytes();
-          pm->send(type.c_str(), (capnp::byte *)bytes.begin(), bytes.size());
+          pm->send(socket_name.c_str(), (capnp::byte *)bytes.begin(), bytes.size());
         } else {
-          sm->update_msgs(nanos_since_boot(), {{type, evt->event}});
+          sm->update_msgs(nanos_since_boot(), {{socket_name, evt->event}});
         }
       }
     }

@@ -31,6 +31,7 @@ protected:
   void stream();
   void setCurrentSegment(int n);
   void mergeSegments(int begin_idx, int end_idx);
+  const std::string &eventSocketName(const Event *e);
 
   float last_print = 0;
   uint64_t route_start_ts = 0;
@@ -52,6 +53,7 @@ protected:
   SubMaster *sm;
   PubMaster *pm;
   std::set<std::string> socks;
+  std::unordered_map<cereal::Event::Which, std::string> eventNameMap;
   VisionIpcServer *vipc_server = nullptr;
   std::unique_ptr<Route> route_;
 };
