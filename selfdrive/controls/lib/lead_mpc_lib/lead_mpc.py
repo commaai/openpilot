@@ -4,6 +4,7 @@ import math
 import numpy as np
 
 from common.realtime import sec_since_boot
+from common.numpy_fast import clip
 from selfdrive.swaglog import cloudlog
 from selfdrive.modeld.constants import T_IDXS
 from selfdrive.controls.lib.drive_helpers import MPC_COST_LONG, CONTROL_N
@@ -211,7 +212,7 @@ class LeadMpc():
     if lead is not None and lead.status:
       x_lead = lead.dRel
       v_lead = max(0.0, lead.vLead)
-      a_lead = lead.aLeadK
+      a_lead = clip(lead.aLeadK, -5.0, 5.0)
 
       # MPC will not converge if immidiate crash is expected
       # Clip lead distance to what is still possible to brake for
