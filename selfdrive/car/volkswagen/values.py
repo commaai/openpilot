@@ -72,7 +72,7 @@ class CAR:
   TCROSS_MK1 = "VOLKSWAGEN T-CROSS 1ST GEN"         # Chassis C1, Mk1 VW T-Cross SWB and LWB variants
   TIGUAN_MK2 = "VOLKSWAGEN TIGUAN 2ND GEN"          # Chassis AD/BW, Mk2 VW Tiguan and variants
   TOURAN_MK2 = "VOLKSWAGEN TOURAN 2ND GEN"          # Chassis 1T, Mk2 VW Touran and variants
-  TRANSPORTER_T61 = "VOLKSWAGEN TRANSPORTER T6.1"   # Chassis 7H, T6-facelift Transporter/California (pre-facelift T6 has no EPS)
+  TRANSPORTER_T61 = "VOLKSWAGEN TRANSPORTER T6.1"   # Chassis 7H/7L, T6-facelift Transporter/Multivan/Caravelle/California
   AUDI_A3_MK3 = "AUDI A3 3RD GEN"                   # Chassis 8V/FF, Mk3 Audi A3 and variants
   AUDI_Q2_MK1 = "AUDI Q2 1ST GEN"                   # Chassis GA, Mk1 Audi Q2 (RoW) and Q2L (China only)
   SEAT_ATECA_MK1 = "SEAT ATECA 1ST GEN"             # Chassis 5F, Mk1 SEAT Ateca and CUPRA Ateca
