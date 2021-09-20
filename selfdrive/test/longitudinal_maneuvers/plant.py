@@ -48,7 +48,7 @@ class Plant():
   def current_time(self):
     return float(self.rk.frame) / self.rate
 
-  def step(self, v_lead=0.0):
+  def step(self, v_lead=0.0, prob=1.0):
     # ******** publish a fake model going straight and fake calibration ********
     # note that this is worst case for MPC, since model will delay long mpc by one time step
     radar = messaging.new_message('radarState')
@@ -61,10 +61,11 @@ class Plant():
       d_rel = np.maximum(0., self.distance_lead - self.distance)
       v_rel = v_lead - self.speed
       if self.only_radar:
-        prob = 0.0
+        status = True
+      elif prob > .5:
+        status = True
       else:
-        prob = 1.0
-      status = True
+        status = False
     else:
       d_rel = 200.
       v_rel = 0.
@@ -81,7 +82,7 @@ class Plant():
     lead.aLeadK = float(a_lead)
     lead.aLeadTau = float(1.5)
     lead.status = status
-    lead.modelProb = prob
+    lead.modelProb = float(prob)
     if not self.only_lead2:
       radar.radarState.leadOne = lead
     radar.radarState.leadTwo = lead
