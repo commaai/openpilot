@@ -8,32 +8,25 @@ const int YUV_BUF_COUNT = 50;
 CameraServer::CameraServer() {
   device_id_ = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
   context_ = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id_, NULL, NULL, &err));
+  camera_thread_ = std::thread(&CameraServer::thread, this);
 }
 
 CameraServer::~CameraServer() {
-  stop();
+  queue_.push({});
+  camera_thread_.join();
+  vipc_server_.reset(nullptr);
   CL_CHECK(clReleaseContext(context_));
 }
 
-void CameraServer::start() {
-  vipc_server_ = new VisionIpcServer("camerad", device_id_, context_);
+void CameraServer::startVipcServer() {
+  vipc_server_.reset(new VisionIpcServer("camerad", device_id_, context_));
   for (auto &cam : cameras_) {
     if (cam.width > 0 && cam.height > 0) {
       vipc_server_->create_buffers(cam.rgb_type, UI_BUF_COUNT, true, cam.width, cam.height);
       vipc_server_->create_buffers(cam.yuv_type, YUV_BUF_COUNT, false, cam.width, cam.height);
     }
   }
-  camera_thread_ = std::thread(&CameraServer::thread, this);
   vipc_server_->start_listener();
-}
-
-void CameraServer::stop() {
-  if (vipc_server_) {
-    queue_.push({});
-    camera_thread_.join();
-    delete vipc_server_;
-    vipc_server_ = nullptr;
-  }
 }
 
 void CameraServer::thread() {
@@ -46,8 +39,7 @@ void CameraServer::thread() {
       cam.width = fr->width;
       cam.height = fr->height;
       std::cout << "camera[" << type << "] frame size changed, restart vipc server" << std::endl;
-      stop();
-      start();
+      startVipcServer();
     }
 
     if (auto dat = fr->get(encodeId)) {
