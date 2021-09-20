@@ -5,17 +5,17 @@
 static int ffmpeg_lockmgr_cb(void **arg, enum AVLockOp op) {
   std::mutex *mutex = (std::mutex *)*arg;
   switch (op) {
-    case AV_LOCK_CREATE:
-      mutex = new std::mutex();
-      break;
-    case AV_LOCK_OBTAIN:
-      mutex->lock();
-      break;
-    case AV_LOCK_RELEASE:
-      mutex->unlock();
-    case AV_LOCK_DESTROY:
-      delete mutex;
-      break;
+  case AV_LOCK_CREATE:
+    mutex = new std::mutex();
+    break;
+  case AV_LOCK_OBTAIN:
+    mutex->lock();
+    break;
+  case AV_LOCK_RELEASE:
+    mutex->unlock();
+  case AV_LOCK_DESTROY:
+    delete mutex;
+    break;
   }
   return 0;
 }
@@ -159,7 +159,7 @@ void FrameReader::decodeThread() {
 
 std::pair<uint8_t *, uint8_t *> FrameReader::decodeFrame(AVPacket *pkt) {
   uint8_t *rgb_data = nullptr, *yuv_data = nullptr;
-  int gotFrame;
+  int gotFrame = 0;
   AVFrame *f = av_frame_alloc();
   avcodec_decode_video2(pCodecCtx_, f, &gotFrame, pkt);
   if (gotFrame) {
@@ -182,8 +182,7 @@ std::pair<uint8_t *, uint8_t *> FrameReader::decodeFrame(AVPacket *pkt) {
                   f->height, frmRgb_->data, frmRgb_->linesize) <= 0) {
       delete[] rgb_data;
       delete[] yuv_data;
-      rgb_data = nullptr;
-      yuv_data = nullptr;
+      rgb_data = yuv_data = nullptr;
     }
   }
   av_frame_free(&f);

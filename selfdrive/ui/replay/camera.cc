@@ -43,7 +43,7 @@ void CameraServer::pushFrame(CameraType type, FrameReader *fr, uint32_t encodeFr
   if (cam.width != fr->width || cam.height != fr->height) {
     cam.width = fr->width;
     cam.height = fr->height;
-    std::cout << "frame changed, restart vipc server" << std::endl;
+    std::cout << "camera["<< type << "] frame changed, restart vipc server" << std::endl;
     stop();
     start();
   }
