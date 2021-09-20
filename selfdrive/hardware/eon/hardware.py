@@ -33,7 +33,15 @@ def parse_service_call_unpack(r, fmt) -> Union[bytes, None]:
 
 
 def parse_service_call_string(r: bytes) -> Union[str, None]:
-  try:# Not sure if we can get this on the LeEco
+  try:
+    r = r[8:]  # Cut off length field
+    r_str = r.decode('utf_16_be')
+
+    # All pairs of two characters seem to be swapped. Not sure why
+    result = ""
+    for a, b, in itertools.zip_longest(r_str[::2], r_str[1::2], fillvalue='\x00'):
+      result += b + a
+
     return result.replace('\x00', '')
   except Exception:
     return None
