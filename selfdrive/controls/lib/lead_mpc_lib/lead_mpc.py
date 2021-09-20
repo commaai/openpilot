@@ -186,7 +186,7 @@ class LeadMpc():
       t += dt
 
   def init_with_sim(self, v_ego, lead_xv, a_lead_0):
-    a_ego = min(0.0, -(v_ego - lead_xv[0,1]) * (v_ego - lead_xv[0,1]) / (2.0 * lead_xv[0,0] + 0.01) + a_lead_0)
+    a_ego = min(0.0, -2 * (v_ego - lead_xv[0,1]) * (v_ego - lead_xv[0,1]) / (2.0 * lead_xv[0,0] + 0.01) + a_lead_0)
     dt =.2
     t = .0
     x_ego = 0.0
