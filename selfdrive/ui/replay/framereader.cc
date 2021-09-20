@@ -21,7 +21,7 @@ static int ffmpeg_lockmgr_cb(void **arg, enum AVLockOp op) {
 }
 
 class AVInitializer {
- public:
+public:
   AVInitializer() {
     int ret = av_lockmgr_register(ffmpeg_lockmgr_cb);
     assert(ret >= 0);
@@ -178,8 +178,7 @@ std::pair<uint8_t *, uint8_t *> FrameReader::decodeFrame(AVPacket *pkt) {
 
     int ret = avpicture_fill((AVPicture *)frmRgb_, rgb_data, AV_PIX_FMT_BGR24, f->width, f->height);
     assert(ret > 0);
-    if (sws_scale(sws_ctx_, (const uint8_t **)f->data, f->linesize, 0,
-                  f->height, frmRgb_->data, frmRgb_->linesize) <= 0) {
+    if (sws_scale(sws_ctx_, (const uint8_t **)f->data, f->linesize, 0, f->height, frmRgb_->data, frmRgb_->linesize) <= 0) {
       delete[] rgb_data;
       delete[] yuv_data;
       rgb_data = yuv_data = nullptr;
