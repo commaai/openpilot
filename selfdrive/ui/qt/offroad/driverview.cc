@@ -72,16 +72,17 @@ void DriverViewScene::paintEvent(QPaintEvent* event) {
 
   // face bounding box
   cereal::DriverState::Reader driver_state = sm["driverState"].getDriverState();
-  bool face_detected = driver_state.getFaceProb() > 0.4;
+  bool face_detected = driver_state.getFaceProb() > 0.5;
   if (face_detected) {
     auto fxy_list = driver_state.getFacePosition();
+    auto std_list = driver_state.getFaceOrientationStd();
     float face_x = fxy_list[0];
     float face_y = fxy_list[1];
+    float face_std = std::max(std_list[0], std_list[1]);
 
-    float alpha = 0.2;
-    float x = std::abs(face_x), y = std::abs(face_y);
-    if (x <= 0.35 && y <= 0.4) {
-      alpha = 0.8 - std::max(x, y) * 0.6 / 0.375;
+    float alpha = 1.0;
+    if (face_std > 0.08) {
+      alpha = std::max(1.0 - (face_std-0.08)*100/12, 0.0);
     }
     const int box_size = 0.6 * rect2.height() / 2;
     int fbox_x = valid_rect.center().x() + (is_rhd ? face_x : -face_x) * valid_rect.width();
