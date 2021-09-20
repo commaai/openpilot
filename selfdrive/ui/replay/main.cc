@@ -11,14 +11,16 @@
 
 const QString DEMO_ROUTE = "4cf7a6ad03080c90|2021-09-29--13-46-36";
 
+struct termios oldt = {};
+
 void sigHandler(int s) {
   std::signal(s, SIG_DFL);
+  tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
   qApp->quit();
 }
 
 int getch() {
   int ch;
-  struct termios oldt;
   struct termios newt;
 
   tcgetattr(STDIN_FILENO, &oldt);
