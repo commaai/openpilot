@@ -87,6 +87,10 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1516 + STD_CARGO_KG
       ret.wheelbase = 2.79
 
+    elif candidate == CAR.TRANSPORTER_T61:
+      ret.mass = 1926 + STD_CARGO_KG
+      ret.wheelbase = 3.00  # SWB, LWB is 3.40, TBD how to detect difference
+
     elif candidate == CAR.AUDI_A3_MK3:
       ret.mass = 1335 + STD_CARGO_KG
       ret.wheelbase = 2.61
