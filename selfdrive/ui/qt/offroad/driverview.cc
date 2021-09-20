@@ -80,9 +80,9 @@ void DriverViewScene::paintEvent(QPaintEvent* event) {
     float face_y = fxy_list[1];
     float face_std = std::max(std_list[0], std_list[1]);
 
-    float alpha = 1.0;
+    float alpha = 0.7;
     if (face_std > 0.08) {
-      alpha = std::max(1.0 - (face_std-0.08)*100/12, 0.0);
+      alpha = std::max(0.7 - (face_std-0.08)*7, 0.0);
     }
     const int box_size = 0.6 * rect2.height() / 2;
     int fbox_x = valid_rect.center().x() + (is_rhd ? face_x : -face_x) * valid_rect.width();
