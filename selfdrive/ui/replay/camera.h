@@ -9,7 +9,9 @@ class CameraServer {
 public:
   CameraServer();
   ~CameraServer();
-  void pushFrame(CameraType type, FrameReader* fr, uint32_t encodeFrameId, const cereal::FrameData::Reader &frame_data);
+  inline void pushFrame(CameraType type, FrameReader* fr, uint32_t encodeFrameId, const cereal::FrameData::Reader &frame_data) {
+    queue_.push({type, fr, encodeFrameId, frame_data});
+  }
   void waitFramesSent();
 
 protected:

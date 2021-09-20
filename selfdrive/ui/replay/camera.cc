@@ -36,24 +36,20 @@ void CameraServer::stop() {
   }
 }
 
-void CameraServer::pushFrame(CameraType type, FrameReader *fr, uint32_t encodeFrameId, const cereal::FrameData::Reader &frame_data) {
-  auto &cam = cameras_[type];
-  if (cam.width != fr->width || cam.height != fr->height) {
-    cam.width = fr->width;
-    cam.height = fr->height;
-    std::cout << "camera["<< type << "] frame changed, restart vipc server" << std::endl;
-    stop();
-    start();
-  }
-  queue_.push({type, fr, encodeFrameId, frame_data});
-}
-
 void CameraServer::thread() {
   while (true) {
     const auto [type, fr, encodeId, frame_data] = queue_.pop();
     if (!fr) break;
 
     auto &cam = cameras_[type];
+    if (cam.width != fr->width || cam.height != fr->height) {
+      cam.width = fr->width;
+      cam.height = fr->height;
+      std::cout << "camera[" << type << "] frame size changed, restart vipc server" << std::endl;
+      stop();
+      start();
+    }
+
     if (auto dat = fr->get(encodeId)) {
       auto [rgb_dat, yuv_dat] = *dat;
       VisionIpcBufExtra extra = {
