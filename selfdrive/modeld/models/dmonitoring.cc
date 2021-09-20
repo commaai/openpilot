@@ -58,13 +58,15 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
     const int full_width_tici = 1928;
     const int full_height_tici = 1208;
     const int adapt_width_tici = 954;
+    const int x_offset_tici = -72;
+    const int y_offset_tici = -144;
     const int cropped_height = adapt_width_tici / 1.33;
     crop_rect = {full_width_tici / 2 - adapt_width_tici / 2,
-                 full_height_tici / 2 - cropped_height / 2 - 144,
+                 full_height_tici / 2 - cropped_height / 2 + y_offset_tici,
                  cropped_height / 2,
                  cropped_height};
     if (!s->is_rhd) {
-      crop_rect.x += adapt_width_tici - crop_rect.w - 72;
+      crop_rect.x += adapt_width_tici - crop_rect.w + x_offset_tici;
     }
 
   } else {
@@ -107,14 +109,18 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
                     resized_width, resized_height,
                     mode);
   } else {
+    const int source_height = 0.7*resized_height;
+    const int extra_height = (resized_height - source_height) / 2;
+    const int extra_width = (resized_width - source_height / 2) / 2;
+    const int source_width = source_height / 2 + extra_width;
     libyuv::I420Scale(cropped_y, crop_rect.w,
                     cropped_u, crop_rect.w / 2,
                     cropped_v, crop_rect.w / 2,
                     crop_rect.w, crop_rect.h,
-                    resized_y + 96*320, resized_width,
-                    resized_u + 48*160, resized_width / 2,
-                    resized_v + 48*160, resized_width / 2,
-                    260, 448,
+                    resized_y + extra_height * resized_width, resized_width,
+                    resized_u + extra_height / 2 * resized_width / 2, resized_width / 2,
+                    resized_v + extra_height / 2 * resized_width / 2, resized_width / 2,
+                    source_width, source_height,
                     mode);
   }
 
