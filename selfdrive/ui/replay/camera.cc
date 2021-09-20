@@ -19,6 +19,7 @@ CameraServer::~CameraServer() {
 }
 
 void CameraServer::startVipcServer() {
+  std::cout << (vipc_server_ ? "start" : "restart") << " vipc server" << std::endl;
   vipc_server_.reset(new VisionIpcServer("camerad", device_id_, context_));
   for (auto &cam : cameras_) {
     if (cam.width > 0 && cam.height > 0) {
@@ -38,7 +39,7 @@ void CameraServer::thread() {
     if (cam.width != fr->width || cam.height != fr->height) {
       cam.width = fr->width;
       cam.height = fr->height;
-      std::cout << "camera[" << type << "] frame size changed, restart vipc server" << std::endl;
+      std::cout << "camera[" << type << "] frame size " << cam.width << "x" << cam.height << std::endl;
       startVipcServer();
     }
 
