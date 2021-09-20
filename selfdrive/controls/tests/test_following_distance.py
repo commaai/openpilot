@@ -5,7 +5,7 @@ import numpy as np
 from cereal import log
 import cereal.messaging as messaging
 from selfdrive.config import Conversions as CV
-from selfdrive.controls.lib.lead_mpc_lib.lead_mpc import RW, LeadMpc
+from selfdrive.controls.lib.lead_mpc_lib.lead_mpc import desired_follow_distance, LeadMpc
 
 
 class FakePubMaster():
@@ -68,7 +68,7 @@ class TestFollowingDistance(unittest.TestCase):
       v_lead = float(speed_mph * CV.MPH_TO_MS)
 
       simulation_steady_state = run_following_distance_simulation(v_lead)
-      correct_steady_state = RW(v_lead, v_lead) + 4.0
+      correct_steady_state = desired_follow_distance(v_lead, v_lead)
 
       self.assertAlmostEqual(simulation_steady_state, correct_steady_state, delta=.2)
 

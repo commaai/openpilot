@@ -9,8 +9,9 @@ class Maneuver():
     self.speed = kwargs.get("initial_speed", 0.0)
     self.lead_relevancy = kwargs.get("lead_relevancy", 0)
 
-    self.speed_lead_values = kwargs.get("speed_lead_values", [0.0, 0.0])
     self.speed_lead_breakpoints = kwargs.get("speed_lead_breakpoints", [0.0, duration])
+    self.speed_lead_values = kwargs.get("speed_lead_values", [0.0, 0.0])
+    self.prob_lead_values = kwargs.get("prob_lead_values", [1.0 for i in range(len(self.speed_lead_breakpoints))])
 
     self.only_lead2 = kwargs.get("only_lead2", False)
     self.only_radar = kwargs.get("only_radar", False)
@@ -31,13 +32,19 @@ class Maneuver():
     logs = []
     while plant.current_time() < self.duration:
       speed_lead = np.interp(plant.current_time(), self.speed_lead_breakpoints, self.speed_lead_values)
-      log = plant.step(speed_lead)
+      prob = np.interp(plant.current_time(), self.speed_lead_breakpoints, self.prob_lead_values)
+      log = plant.step(speed_lead, prob)
 
       d_rel = log['distance_lead'] - log['distance'] if self.lead_relevancy else 200.
       v_rel = speed_lead - log['speed'] if self.lead_relevancy else 0.
       log['d_rel'] = d_rel
       log['v_rel'] = v_rel
-      logs.append(np.array([plant.current_time(), log['distance'], log['distance_lead'], log['speed'], speed_lead, log['acceleration']]))
+      logs.append(np.array([plant.current_time(),
+                            log['distance'],
+                            log['distance_lead'],
+                            log['speed'],
+                            speed_lead,
+                            log['acceleration']]))
 
       if d_rel < 1.0:
         print("Crashed!!!!")
