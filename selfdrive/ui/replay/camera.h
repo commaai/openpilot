@@ -9,28 +9,31 @@ class CameraServer {
 public:
   CameraServer();
   ~CameraServer();
-  inline void pushFrame(CameraType type, FrameReader* fr, uint32_t encodeFrameId) {
-    queue_.push({type, fr, encodeFrameId});
-  }
-  inline void waitFramesSent() {
-    while (!queue_.empty()) {
-      std::this_thread::yield();
-    }
-  }
+  void pushFrame(CameraType type, FrameReader* fr, uint32_t encodeFrameId, const cereal::FrameData::Reader &frame_data);
+  void waitFramesSent();
 
 protected:
-  void start();
-  void thread();
-
   struct Camera {
+    CameraType cam_type;
+    VisionStreamType rgb_type;
+    VisionStreamType yuv_type;
     int width;
     int height;
+    std::thread thread;
+    SafeQueue<std::tuple<FrameReader*, uint32_t, const cereal::FrameData::Reader>> queue;
   };
 
-  std::array<Camera, MAX_CAMERAS> cameras_ = {};
+  void start();
+  void stop();
+  void thread(Camera *cam);
+
+  Camera cameras_[MAX_CAMERAS] = {
+      {.cam_type = RoadCam, .rgb_type = VISION_STREAM_RGB_BACK, .yuv_type = VISION_STREAM_YUV_BACK},
+      {.cam_type = DriverCam, .rgb_type = VISION_STREAM_RGB_FRONT, .yuv_type = VISION_STREAM_YUV_FRONT},
+      {.cam_type = WideRoadCam, .rgb_type = VISION_STREAM_RGB_WIDE, .yuv_type = VISION_STREAM_YUV_WIDE},
+  };
   cl_device_id device_id_ = nullptr;
   cl_context context_ = nullptr;
   VisionIpcServer* vipc_server_ = nullptr;
-  SafeQueue<std::tuple<CameraType, FrameReader*, uint32_t>> queue_;
   std::thread camera_thread_;
 };

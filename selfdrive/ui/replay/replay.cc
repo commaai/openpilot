@@ -43,7 +43,6 @@ void Replay::start(int seconds){
   segments.resize(route_->size());
   seekTo(seconds);
 
-  // start camera server
   camera_server_ = std::make_unique<CameraServer>();
 
   // start stream thread
@@ -165,7 +164,8 @@ void Replay::mergeSegments(int cur_seg, int end_idx) {
   }
 }
 
-void Replay::publishFrame(CameraType cam_type, uint32_t frame_id) {
+void Replay::publishFrame(CameraType cam_type, const cereal::FrameData::Reader &frame) {
+  uint32_t frame_id = frame.getFrameId();
   auto it = eidx[cam_type].find(frame_id);
   if (it == eidx[cam_type].end()) {
     if (cam_type != DriverCam) {
@@ -177,7 +177,7 @@ void Replay::publishFrame(CameraType cam_type, uint32_t frame_id) {
   const EncodeIdx &e = it->second;
   if (auto &seg = segments[e.segmentNum]; seg && seg->isLoaded()) {
     if (auto &fr = seg->frames[cam_type]) {
-      camera_server_->pushFrame(cam_type, fr.get(), e.frameEncodeId);
+      camera_server_->pushFrame(cam_type, fr.get(), e.frameEncodeId, frame);
     }
   }
 }
@@ -236,13 +236,13 @@ void Replay::stream() {
         // publish frame
         switch (evt->which) {
           case cereal::Event::ROAD_CAMERA_STATE:
-            publishFrame(RoadCam, evt->event.getRoadCameraState().getFrameId());
+            publishFrame(RoadCam, evt->event.getRoadCameraState());
             break;
           case cereal::Event::DRIVER_CAMERA_STATE:
-            publishFrame(DriverCam, evt->event.getDriverCameraState().getFrameId());
+            publishFrame(DriverCam, evt->event.getDriverCameraState());
             break;
           case cereal::Event::WIDE_ROAD_CAMERA_STATE:
-            publishFrame(WideRoadCam, evt->event.getWideRoadCameraState().getFrameId());
+            publishFrame(WideRoadCam, evt->event.getWideRoadCameraState());
             break;
           default:
             break;

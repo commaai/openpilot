@@ -33,7 +33,7 @@ protected:
   void stream();
   void setCurrentSegment(int n);
   void mergeSegments(int begin_idx, int end_idx);
-  void publishFrame(CameraType cam_type, uint32_t frame_id);
+  void publishFrame(CameraType cam_type, const cereal::FrameData::Reader &frame);
 
   bool load_dcam = false, load_ecam = false;
 

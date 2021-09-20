@@ -3,62 +3,86 @@
 #include <cassert>
 #include <iostream>
 
-static const VisionStreamType stream_types[] = {
-    [RoadCam] = VISION_STREAM_RGB_BACK,
-    [DriverCam] = VISION_STREAM_RGB_FRONT,
-    [WideRoadCam] = VISION_STREAM_RGB_WIDE,
-};
+const int YUV_BUF_COUNT = 50;
 
 CameraServer::CameraServer() {
   device_id_ = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
   context_ = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id_, NULL, NULL, &err));
-
-  start();
-  camera_thread_ = std::thread(&CameraServer::thread, this);
 }
 
 CameraServer::~CameraServer() {
-  // stop camera thread
-  queue_.push({});
-  camera_thread_.join();
-
-  delete vipc_server_;
+  stop();
   CL_CHECK(clReleaseContext(context_));
 }
 
 void CameraServer::start() {
   vipc_server_ = new VisionIpcServer("camerad", device_id_, context_);
+  for (auto &cam : cameras_) {
+    if (cam.width > 0 && cam.height > 0) {
+      vipc_server_->create_buffers(cam.rgb_type, UI_BUF_COUNT, true, cam.width, cam.height);
+      vipc_server_->create_buffers(cam.yuv_type, YUV_BUF_COUNT, false, cam.width, cam.height);
+    }
+    cam.thread = std::thread(&CameraServer::thread, this, &cam);
+  }
   vipc_server_->start_listener();
 }
 
-void CameraServer::thread() {
+void CameraServer::stop() {
+  if (vipc_server_) {
+    for (auto &cam : cameras_) {
+      cam.queue.push({});
+      cam.thread.join();
+    }
+    delete vipc_server_;
+    vipc_server_ = nullptr;
+  }
+}
+
+void CameraServer::pushFrame(CameraType type, FrameReader *fr, uint32_t encodeFrameId, const cereal::FrameData::Reader &frame_data) {
+  auto &cam = cameras_[type];
+  if (cam.width != fr->width || cam.height != fr->height) {
+    cam.width = fr->width;
+    cam.height = fr->height;
+    std::cout << "frame changed, restart vipc server" << std::endl;
+    stop();
+    start();
+  }
+  cam.queue.push({fr, encodeFrameId, frame_data});
+}
+
+void CameraServer::thread(Camera *cam) {
   while (true) {
-    const auto [cam_type, fr, encodeId] = queue_.pop();
+    const auto [fr, encodeId, frame_data] = cam->queue.pop();
     if (!fr) break;
 
-    Camera &cam = cameras_[cam_type];
-    if (cam.width != fr->width || cam.height != fr->height) {
-      bool buffer_initialized = cam.width > 0 && cam.height > 0;
-      cam.width = fr->width;
-      cam.height = fr->height;
-      if (!buffer_initialized) {
-        vipc_server_->create_buffers(stream_types[cam_type], UI_BUF_COUNT, true, cam.width, cam.height);
-      } else {
-        std::cout << "frame size changed, restart vipc server" << std::endl;
-        delete vipc_server_;
-        cameras_.fill({});
-        start();
-        continue;
-      }
-    }
+    if (auto dat = fr->get(encodeId)) {
+      auto [rgb_dat, yuv_dat] = *dat;
+      VisionIpcBufExtra extra = {
+          frame_data.getFrameId(),
+          frame_data.getTimestampSof(),
+          frame_data.getTimestampEof(),
+      };
 
-    if (uint8_t *dat = fr->get(encodeId)) {
-      VisionIpcBufExtra extra = {};
-      VisionBuf *buf = vipc_server_->get_buffer(stream_types[cam_type]);
-      memcpy(buf->addr, dat, fr->getRGBSize());
-      vipc_server_->send(buf, &extra, false);
+      VisionBuf *rgb_buf = vipc_server_->get_buffer(cam->rgb_type);
+      memcpy(rgb_buf->addr, rgb_dat, fr->getRGBSize());
+      vipc_server_->send(rgb_buf, &extra, false);
+
+      VisionBuf *yuv_buf = vipc_server_->get_buffer(cam->yuv_type);
+      memcpy(yuv_buf->addr, yuv_dat, fr->getYUVSize());
+      vipc_server_->send(yuv_buf, &extra, false);
     } else {
-      std::cout << "failed get frame. camera:" << cam_type << ", encodeId:" << encodeId << std::endl;
+      std::cout << "failed get frame. camera:" << cam->cam_type << ", encodeId:" << encodeId << std::endl;
     }
+  }
+}
+
+void CameraServer::waitFramesSent() {
+  while (true) {
+    bool sent = true;
+    for (auto &cam : cameras_) {
+      sent = sent && cam.queue.empty();
+    }
+    if (sent) break;
+    usleep(0);
   }
 }
