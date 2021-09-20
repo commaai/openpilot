@@ -62,7 +62,6 @@ void CameraServer::thread(Camera *cam) {
           frame_data.getTimestampSof(),
           frame_data.getTimestampEof(),
       };
-
       VisionBuf *rgb_buf = vipc_server_->get_buffer(cam->rgb_type);
       memcpy(rgb_buf->addr, rgb_dat, fr->getRGBSize());
       vipc_server_->send(rgb_buf, &extra, false);

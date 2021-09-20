@@ -18,7 +18,10 @@ TEST_CASE("FrameReader") {
     // }
     // sequence get 50 frames {
     for (int i = 0; i < 50; ++i) {
-      REQUIRE(fr.get(i) != nullptr);
+      auto dat = fr.get(i);
+      REQUIRE(dat);
+      REQUIRE(dat->first != nullptr);
+      REQUIRE(dat->second != nullptr);
     }
   }
 }
