@@ -1,7 +1,6 @@
 #pragma once
 
 #include <QThread>
-#include <set>
 
 #include <capnp/dynamic.h>
 #include "cereal/visionipc/visionipc_server.h"
@@ -55,7 +54,7 @@ protected:
   // messaging
   SubMaster *sm;
   PubMaster *pm;
-  std::set<std::string> socks;
+  std::unique_ptr<const char*[]> sockets_;
   VisionIpcServer *vipc_server = nullptr;
   std::unique_ptr<Route> route_;
   bool load_dcam = false, load_ecam = false;

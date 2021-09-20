@@ -27,11 +27,14 @@ inline void precise_nano_sleep(long sleep_ns) {
 Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *sm_, bool dcam, bool ecam, QObject *parent)
     : sm(sm_), load_dcam(dcam), load_ecam(ecam), QObject(parent) {
   std::vector<const char *> s;
+  auto event_struct = capnp::Schema::from<cereal::Event>().asStruct();
+  sockets_ = std::make_unique<const char*[]>(event_struct.getUnionFields().size());
   for (const auto &it : services) {
     if ((allow.size() == 0 || allow.contains(it.name)) &&
         !block.contains(it.name)) {
       s.push_back(it.name);
-      socks.insert(it.name);
+      uint16_t which = event_struct.getFieldByName(it.name).getProto().getDiscriminantValue();
+      sockets_[which] = it.name;
     }
   }
   qDebug() << "services " << s;
@@ -223,12 +226,7 @@ void Replay::stream() {
       cur_which = evt->which;
       cur_mono_time_ = evt->mono_time;
 
-      std::string type;
-      KJ_IF_MAYBE(e_, static_cast<capnp::DynamicStruct::Reader>(evt->event).which()) {
-        type = e_->getProto().getName();
-      }
-
-      if (socks.find(type) != socks.end()) {
+      if (sockets_[cur_which] != nullptr) {
         int current_ts = (cur_mono_time_ - route_start_ts_) / 1e9;
         if ((current_ts - last_print) > 5.0) {
           last_print = current_ts;
@@ -278,9 +276,9 @@ void Replay::stream() {
         } else {
           if (sm == nullptr) {
             auto bytes = evt->bytes();
-            pm->send(type.c_str(), (capnp::byte *)bytes.begin(), bytes.size());
+            pm->send(sockets_[cur_which], (capnp::byte *)bytes.begin(), bytes.size());
           } else {
-            sm->update_msgs(nanos_since_boot(), {{type, evt->event}});
+            sm->update_msgs(nanos_since_boot(), {{sockets_[cur_which], evt->event}});
           }
         }
       }
