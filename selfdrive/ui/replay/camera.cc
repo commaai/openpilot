@@ -7,7 +7,7 @@ const int YUV_BUF_COUNT = 50;
 
 CameraServer::CameraServer() {
   device_id_ = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
-  context_ = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id_, NULL, NULL, &err));
+  context_ = CL_CHECK_ERR(clCreateContext(nullptr, 1, &device_id_, nullptr, nullptr, &err));
   camera_thread_ = std::thread(&CameraServer::thread, this);
 }
 
@@ -45,26 +45,20 @@ void CameraServer::thread() {
     if (auto dat = fr->get(encodeId)) {
       auto [rgb_dat, yuv_dat] = *dat;
       VisionIpcBufExtra extra = {
-          frame_data.getFrameId(),
-          frame_data.getTimestampSof(),
-          frame_data.getTimestampEof(),
+          .frame_id = frame_data.getFrameId(),
+          .timestamp_sof = frame_data.getTimestampSof(),
+          .timestamp_eof = frame_data.getTimestampEof(),
       };
 
       VisionBuf *rgb_buf = vipc_server_->get_buffer(cam.rgb_type);
       memcpy(rgb_buf->addr, rgb_dat, fr->getRGBSize());
-      vipc_server_->send(rgb_buf, &extra, false);
-
       VisionBuf *yuv_buf = vipc_server_->get_buffer(cam.yuv_type);
       memcpy(yuv_buf->addr, yuv_dat, fr->getYUVSize());
+
+      vipc_server_->send(rgb_buf, &extra, false);
       vipc_server_->send(yuv_buf, &extra, false);
     } else {
-      std::cout << "failed get frame. camera:" << type << ", encodeId:" << encodeId << std::endl;
+      std::cout << "camera[" << type << "] failed to get frame:" << encodeId << std::endl;
     }
-  }
-}
-
-void CameraServer::waitFramesSent() {
-  while (!queue_.empty()) {
-    usleep(0);
   }
 }

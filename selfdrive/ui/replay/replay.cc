@@ -165,20 +165,17 @@ void Replay::mergeSegments(int cur_seg, int end_idx) {
 }
 
 void Replay::publishFrame(CameraType cam_type, const cereal::FrameData::Reader &frame) {
-  uint32_t frame_id = frame.getFrameId();
-  auto it = eidx[cam_type].find(frame_id);
+  auto it = eidx[cam_type].find(frame.getFrameId());
   if (it == eidx[cam_type].end()) {
     if (cam_type != DriverCam) {
-      qDebug() << "camera[" << cam_type << "]: no encode id for frame" << frame_id;
+      qDebug() << "camera[" << cam_type << "] no encode id for frame" << frame.getFrameId();
     }
     return;
   }
 
-  const EncodeIdx &e = it->second;
-  if (auto &seg = segments[e.segmentNum]; seg && seg->isLoaded()) {
-    if (auto &fr = seg->frames[cam_type]) {
-      camera_server_->pushFrame(cam_type, fr.get(), e.frameEncodeId, frame);
-    }
+  auto &seg = segments[it->second.segmentNum];
+  if (seg && seg->isLoaded() && seg->frames[cam_type]) {
+    camera_server_->pushFrame(cam_type, seg->frames[cam_type].get(), it->second.frameEncodeId, frame);
   }
 }
 

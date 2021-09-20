@@ -1,12 +1,9 @@
 #pragma once
 
-#include <unistd.h>
-
 #include <atomic>
 #include <condition_variable>
 #include <mutex>
 #include <optional>
-#include <queue>
 #include <string>
 #include <thread>
 #include <vector>

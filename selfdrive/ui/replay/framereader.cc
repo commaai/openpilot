@@ -156,7 +156,7 @@ void FrameReader::decodeThread() {
     decode_idx_ = -1;
   }
 }
-#include "selfdrive/common/timing.h"
+
 std::pair<uint8_t *, uint8_t *> FrameReader::decodeFrame(AVPacket *pkt) {
   uint8_t *rgb_data = nullptr, *yuv_data = nullptr;
   int gotFrame = 0;

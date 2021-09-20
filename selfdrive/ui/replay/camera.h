@@ -1,5 +1,6 @@
 #pragma once
 
+#include <unistd.h>
 #include "cereal/visionipc/visionipc_server.h"
 #include "selfdrive/common/queue.h"
 #include "selfdrive/ui/replay/framereader.h"
@@ -9,10 +10,12 @@ class CameraServer {
 public:
   CameraServer();
   ~CameraServer();
-  inline void pushFrame(CameraType type, FrameReader* fr, uint32_t encodeFrameId, const cereal::FrameData::Reader &frame_data) {
+  inline void pushFrame(CameraType type, FrameReader* fr, uint32_t encodeFrameId, const cereal::FrameData::Reader& frame_data) {
     queue_.push({type, fr, encodeFrameId, frame_data});
   }
-  void waitFramesSent();
+  inline void waitFramesSent() {
+    while (!queue_.empty()) usleep(0);
+  }
 
 protected:
   void startVipcServer();
