@@ -45,6 +45,7 @@ Replay::~Replay() {
   delete pm;
   delete events;
   delete [] eidx;
+  segments.clear();
   qDebug() << "shutdown: done";
 }
 
