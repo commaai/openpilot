@@ -33,15 +33,7 @@ def parse_service_call_unpack(r, fmt) -> Union[bytes, None]:
 
 
 def parse_service_call_string(r: bytes) -> Union[str, None]:
-  try:
-    r = r[8:]  # Cut off length field
-    r_str = r.decode('utf_16_be')
-
-    # All pairs of two characters seem to be swapped. Not sure why
-    result = ""
-    for a, b, in itertools.zip_longest(r_str[::2], r_str[1::2], fillvalue='\x00'):
-      result += b + a
-
+  try:# Not sure if we can get this on the LeEco
     return result.replace('\x00', '')
   except Exception:
     return None
@@ -388,6 +380,10 @@ class Android(HardwareBase):
 
   def get_modem_version(self):
     return None
+
+  def get_modem_temperature(self):
+    # Not sure if we can get this on the LeEco
+    return 0
 
   def initialize_hardware(self):
     pass
