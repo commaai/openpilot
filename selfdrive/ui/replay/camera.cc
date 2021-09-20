@@ -22,17 +22,15 @@ void CameraServer::start() {
       vipc_server_->create_buffers(cam.rgb_type, UI_BUF_COUNT, true, cam.width, cam.height);
       vipc_server_->create_buffers(cam.yuv_type, YUV_BUF_COUNT, false, cam.width, cam.height);
     }
-    cam.thread = std::thread(&CameraServer::thread, this, &cam);
   }
+  camera_thread_ = std::thread(&CameraServer::thread, this);
   vipc_server_->start_listener();
 }
 
 void CameraServer::stop() {
   if (vipc_server_) {
-    for (auto &cam : cameras_) {
-      cam.queue.push({});
-      cam.thread.join();
-    }
+    queue_.push({});
+    camera_thread_.join();
     delete vipc_server_;
     vipc_server_ = nullptr;
   }
@@ -47,14 +45,15 @@ void CameraServer::pushFrame(CameraType type, FrameReader *fr, uint32_t encodeFr
     stop();
     start();
   }
-  cam.queue.push({fr, encodeFrameId, frame_data});
+  queue_.push({type, fr, encodeFrameId, frame_data});
 }
 
-void CameraServer::thread(Camera *cam) {
+void CameraServer::thread() {
   while (true) {
-    const auto [fr, encodeId, frame_data] = cam->queue.pop();
+    const auto [type, fr, encodeId, frame_data] = queue_.pop();
     if (!fr) break;
 
+    auto &cam = cameras_[type];
     if (auto dat = fr->get(encodeId)) {
       auto [rgb_dat, yuv_dat] = *dat;
       VisionIpcBufExtra extra = {
@@ -62,26 +61,22 @@ void CameraServer::thread(Camera *cam) {
           frame_data.getTimestampSof(),
           frame_data.getTimestampEof(),
       };
-      VisionBuf *rgb_buf = vipc_server_->get_buffer(cam->rgb_type);
+
+      VisionBuf *rgb_buf = vipc_server_->get_buffer(cam.rgb_type);
       memcpy(rgb_buf->addr, rgb_dat, fr->getRGBSize());
       vipc_server_->send(rgb_buf, &extra, false);
 
-      VisionBuf *yuv_buf = vipc_server_->get_buffer(cam->yuv_type);
+      VisionBuf *yuv_buf = vipc_server_->get_buffer(cam.yuv_type);
       memcpy(yuv_buf->addr, yuv_dat, fr->getYUVSize());
       vipc_server_->send(yuv_buf, &extra, false);
     } else {
-      std::cout << "failed get frame. camera:" << cam->cam_type << ", encodeId:" << encodeId << std::endl;
+      std::cout << "failed get frame. camera:" << type << ", encodeId:" << encodeId << std::endl;
     }
   }
 }
 
 void CameraServer::waitFramesSent() {
-  while (true) {
-    bool sent = true;
-    for (auto &cam : cameras_) {
-      sent = sent && cam.queue.empty();
-    }
-    if (sent) break;
+  while (!queue_.empty()) {
     usleep(0);
   }
 }
