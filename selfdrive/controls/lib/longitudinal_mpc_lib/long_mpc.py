@@ -117,8 +117,8 @@ def gen_long_mpc_solver():
   constraints = vertcat(v_ego,
                         a_ego - a_min,
                         a_max - a_ego,
-                        lead_0_x_err/ (.05 + v_ego/20.),
-                        lead_1_x_err/ (.05 + v_ego/20.))
+                        lead_0_x_err/ (1. + v_ego),
+                        lead_1_x_err/ (1. + v_ego))
   ocp.model.con_h_expr = constraints
   ocp.model.con_h_expr_e = constraints
 
@@ -128,7 +128,7 @@ def gen_long_mpc_solver():
 
   l2_penalty = 1.0
   l1_penalty = 0.0
-  weights = np.array([1e4, 1e4, 1e4, .1, .1])
+  weights = np.array([1e4, 1e4, 1e4, 20., 20.])
   ocp.cost.Zl = l2_penalty * weights
   ocp.cost.zl = l1_penalty * weights
   ocp.cost.Zu = 0.0 * weights
