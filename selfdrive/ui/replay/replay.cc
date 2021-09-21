@@ -182,7 +182,7 @@ void Replay::stream() {
     stream_cv_.wait(lk, [=]() { return paused_ == false; });
 
     uint64_t evt_start_ts = seek_ts != -1 ? route_start_ts + (seek_ts * 1e9) : cur_mono_time;
-    auto next_event = nextEvent(evt_start_ts, cur_which);
+    auto next_event = nextEvent(evt_start_ts, (seek_ts != -1 ? cereal::Event::Which::INIT_DATA : cur_which));
     if (!next_event) {
       lock.unlock();
       if (std::exchange(waiting_printed, true) == false) {
