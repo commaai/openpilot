@@ -14,7 +14,7 @@ QString cache_path(const QString &url) {
   return CACHE_DIR + QString(QCryptographicHash::hash(url_no_query, QCryptographicHash::Sha256).toHex());
 }
 
- // check if events is ordered
+// check if events is ordered
 bool is_events_ordered(const std::vector<Event *> &events) {
   REQUIRE(events.size() > 0);
   uint64_t prev_mono_time = 0;
@@ -51,7 +51,7 @@ TEST_CASE("Route") {
 }
 
 TEST_CASE("Readers") {
-   SECTION("FrameReader") {
+  SECTION("FrameReader") {
     FrameReader fr;
     REQUIRE(fr.load(cache_path(route.at(1).road_cam).toStdString()) == true);
     REQUIRE(fr.valid() == true);
@@ -77,7 +77,7 @@ TEST_CASE("Readers") {
 
 // helper class for unit tests
 class TestReplay : public Replay {
-public:
+ public:
   TestReplay(const QString &route) : Replay(route, {}, {}) {}
   void startTest();
 };
@@ -105,16 +105,18 @@ void TestReplay::startTest() {
         }
       }
 
+      REQUIRE(route_start_ts > 0);
+
       // test if all events merged with correct order.
       REQUIRE(events->size() == total_events_cnt);
       REQUIRE(is_events_ordered(*events));
 
-      // test seeking/updating
+      // test seeking/updating events
       for (int i = 0; i < 100; ++i) {
         srand(time(nullptr));
         int idx = rand() % (events->size() - 2);
         auto current_event = events->at(idx);
-        
+
         // ensure that no event will be lost, and the previous event will not be sent again
         auto next_event = nextEvent(current_event->mono_time, current_event->which);
         REQUIRE(next_event);
@@ -125,6 +127,19 @@ void TestReplay::startTest() {
       auto last_event = events->back();
       auto next_event = nextEvent(last_event->mono_time, last_event->which);
       REQUIRE(!next_event);
+
+      // rand seek in 100 seconds
+      for (int i = 0; i < 100; ++i) {
+        srand(time(nullptr));
+        int seconds = 1 + rand() % 100;
+        uint64_t seek_mono_time = route_start_ts + seconds * 1e9;
+        auto next_event = nextEvent(seek_mono_time, cereal::Event::Which::INIT_DATA);
+        REQUIRE(next_event);
+        auto eit = *next_event;
+        REQUIRE((*eit)->mono_time > seek_mono_time);
+        auto prev_event = --eit;
+        REQUIRE(((*prev_event)->mono_time < seek_mono_time || (*prev_event)->mono_time == seek_mono_time && (*prev_event)->which < cereal::Event::Which::INIT_DATA));
+      }
 
       loop.quit();
     }
