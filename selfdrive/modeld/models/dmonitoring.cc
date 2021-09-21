@@ -61,12 +61,12 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
     const int x_offset_tici = -72;
     const int y_offset_tici = -144;
     const int cropped_height = adapt_width_tici / 1.33;
-    crop_rect = {full_width_tici / 2 - adapt_width_tici / 2,
+    crop_rect = {full_width_tici / 2 - adapt_width_tici / 2 + x_offset_tici,
                  full_height_tici / 2 - cropped_height / 2 + y_offset_tici,
                  cropped_height / 2,
                  cropped_height};
     if (!s->is_rhd) {
-      crop_rect.x += adapt_width_tici - crop_rect.w + x_offset_tici;
+      crop_rect.x += adapt_width_tici - crop_rect.w;
     }
 
   } else {
