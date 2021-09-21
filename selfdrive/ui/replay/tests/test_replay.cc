@@ -105,8 +105,8 @@ void TestReplay::testStream() {
         // usleep(0);
       }
 
-      long delay = std::abs(long(nanos_since_boot() - loop_start_ts) - etime);
-      REQUIRE(delay <= 1e5);
+      long delay = std::abs(long(nanos_since_boot() - loop_start_ts) - etime) * 1e-3;
+      REQUIRE(delay <= 200); // 200 microsencond
       auto bytes = e->bytes();
       pm->send(type.c_str(), (capnp::byte *)bytes.begin(), bytes.size());
        
