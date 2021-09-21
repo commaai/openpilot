@@ -9,9 +9,10 @@ class Maneuver():
     self.speed = kwargs.get("initial_speed", 0.0)
     self.lead_relevancy = kwargs.get("lead_relevancy", 0)
 
-    self.speed_lead_breakpoints = kwargs.get("speed_lead_breakpoints", [0.0, duration])
-    self.speed_lead_values = kwargs.get("speed_lead_values", [0.0, 0.0])
-    self.prob_lead_values = kwargs.get("prob_lead_values", [1.0 for i in range(len(self.speed_lead_breakpoints))])
+    self.breakpoints = kwargs.get("breakpoints", [0.0, duration])
+    self.speed_lead_values = kwargs.get("speed_lead_values", [0.0 for i in range(len(self.breakpoints))])
+    self.prob_lead_values = kwargs.get("prob_lead_values", [1.0 for i in range(len(self.breakpoints))])
+    self.cruise_values = kwargs.get("cruise_values", [50.0 for i in range(len(self.breakpoints))])
 
     self.only_lead2 = kwargs.get("only_lead2", False)
     self.only_radar = kwargs.get("only_radar", False)
@@ -31,9 +32,10 @@ class Maneuver():
     valid = True
     logs = []
     while plant.current_time() < self.duration:
-      speed_lead = np.interp(plant.current_time(), self.speed_lead_breakpoints, self.speed_lead_values)
-      prob = np.interp(plant.current_time(), self.speed_lead_breakpoints, self.prob_lead_values)
-      log = plant.step(speed_lead, prob)
+      speed_lead = np.interp(plant.current_time(), self.breakpoints, self.speed_lead_values)
+      prob = np.interp(plant.current_time(), self.breakpoints, self.prob_lead_values)
+      cruise = np.interp(plant.current_time(), self.breakpoints, self.cruise_values)
+      log = plant.step(speed_lead, prob, cruise)
 
       d_rel = log['distance_lead'] - log['distance'] if self.lead_relevancy else 200.
       v_rel = speed_lead - log['speed'] if self.lead_relevancy else 0.
@@ -46,7 +48,7 @@ class Maneuver():
                             speed_lead,
                             log['acceleration']]))
 
-      if d_rel < 1.0:
+      if d_rel < 1.0 and (self.only_radar or prob > 0.5):
         print("Crashed!!!!")
         valid = False
 
