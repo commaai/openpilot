@@ -48,7 +48,7 @@ class Plant():
   def current_time(self):
     return float(self.rk.frame) / self.rate
 
-  def step(self, v_lead=0.0, prob=1.0):
+  def step(self, v_lead=0.0, prob=1.0, v_cruise=50.):
     # ******** publish a fake model going straight and fake calibration ********
     # note that this is worst case for MPC, since model will delay long mpc by one time step
     radar = messaging.new_message('radarState')
@@ -89,7 +89,7 @@ class Plant():
 
 
     control.controlsState.longControlState = LongCtrlState.pid
-    control.controlsState.vCruise = 130
+    control.controlsState.vCruise = float(v_cruise * 3.6)
     car_state.carState.vEgo = float(self.speed)
 
 
