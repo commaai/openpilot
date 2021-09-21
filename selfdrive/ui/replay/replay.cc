@@ -35,8 +35,12 @@ Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *s
 }
 
 Replay::~Replay() {
-  exit_ = true;
   qDebug() << "shutdown: in progress...";
+
+  exit_ = true;
+  if (isPaused()) {
+    pause(false);
+  }
   updating_events = true;
   if (stream_thread) {
     stream_thread->quit();
