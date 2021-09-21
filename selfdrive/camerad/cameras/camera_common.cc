@@ -217,11 +217,8 @@ kj::Array<uint8_t> get_frame_image(const CameraBuf *b) {
 }
 
 static kj::Array<capnp::byte> yuv420_to_jpeg(const CameraBuf *b, int thumbnail_width, int thumbnail_height) {
-  
-  thumbnail_width = (thumbnail_width + 15) & ~15;
-  thumbnail_height = (thumbnail_height + 15) & ~15;
 
-  std::unique_ptr<uint8[]> buf(new uint8_t[(thumbnail_width * thumbnail_height * 3) / 2]);
+  std::unique_ptr<uint8[]> buf(new uint8_t[(thumbnail_width * thumbnail_height * 3)]);
   uint8_t *y_plane = buf.get();
   uint8_t *u_plane = y_plane + thumbnail_width * thumbnail_height;
   uint8_t *v_plane = u_plane + (thumbnail_width * thumbnail_height) / 4;
