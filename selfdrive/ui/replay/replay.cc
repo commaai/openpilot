@@ -217,8 +217,8 @@ void Replay::stream() {
         // keep time
         long etime = cur_mono_time - evt_start_ts;
         long rtime = nanos_since_boot() - loop_start_ts;
-        long us_behind = ((etime - rtime) * 1e-3) + 0.5;
-        if (us_behind > 0 && us_behind < 1e6) {
+        long us_behind = ((etime - rtime) * 1e-3);
+        if (us_behind > 0) {
           QThread::usleep(us_behind);
         }
 

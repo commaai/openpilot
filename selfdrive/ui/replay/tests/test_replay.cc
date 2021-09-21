@@ -80,7 +80,37 @@ class TestReplay : public Replay {
  public:
   TestReplay(const QString &route) : Replay(route, {}, {}) {}
   void startTest();
+  void testStream();
 };
+
+void TestReplay::testStream() {
+  // test 10 seconds
+  uint64_t evt_start_ts = route_start_ts;
+  uint64_t loop_start_ts = nanos_since_boot();
+  for (auto e : *events) {
+    std::string type;
+    KJ_IF_MAYBE(e_, static_cast<capnp::DynamicStruct::Reader>(e->event).which()) {
+      type = e_->getProto().getName();
+    }
+
+    if (socks.find(type) != socks.end()) {
+      long etime = e->mono_time - evt_start_ts;
+      if ((etime * 1e-9) > 10) break;
+
+      // keep time
+      long rtime = nanos_since_boot() - loop_start_ts;
+      long us_behind = ((etime - rtime) * 1e-3);
+      if (us_behind > 0) {
+        QThread::usleep(us_behind);
+      }
+
+      long delay = std::abs(long(nanos_since_boot() - loop_start_ts) - etime);
+      REQUIRE(delay <= 1e6);
+      auto bytes = e->bytes();
+      pm->send(type.c_str(), (capnp::byte *)bytes.begin(), bytes.size());
+    }
+  }
+}
 
 void TestReplay::startTest() {
   QEventLoop loop;
@@ -141,6 +171,7 @@ void TestReplay::startTest() {
         REQUIRE(((*prev_event)->mono_time < seek_mono_time || (*prev_event)->mono_time == seek_mono_time && (*prev_event)->which < cereal::Event::Which::INIT_DATA));
       }
 
+      testStream();
       loop.quit();
     }
   });
