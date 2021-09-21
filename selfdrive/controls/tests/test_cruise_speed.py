@@ -26,7 +26,7 @@ class TestCruiseSpeed(unittest.TestCase):
       cruise_speed = float(speed)
 
       simulation_steady_state = run_cruise_simulation(cruise_speed)
-      self.assertAlmostEqual(simulation_steady_state, cruise_speed, delta=.01)
+      self.assertAlmostEqual(simulation_steady_state, cruise_speed, delta=.01, msg=f'Did not reach {speed} m/s')
 
 
 if __name__ == "__main__":
