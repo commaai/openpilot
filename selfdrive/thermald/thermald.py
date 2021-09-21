@@ -178,6 +178,7 @@ def thermald_thread():
   network_info = None
   modem_version = None
   registered_count = 0
+  nvme_temps = None
 
   current_filter = FirstOrderFilter(0., CURRENT_TAU, DT_TRML)
   temp_filter = FirstOrderFilter(0., TEMP_TAU, DT_TRML)
@@ -258,12 +259,13 @@ def thermald_thread():
           params.clear_all(ParamKeyType.CLEAR_ON_PANDA_DISCONNECT)
       pandaState_prev = pandaState
 
-    # get_network_type is an expensive call. update every 10s
+    # these are expensive calls. update every 10s
     if (count % int(10. / DT_TRML)) == 0:
       try:
         network_type = HARDWARE.get_network_type()
         network_strength = HARDWARE.get_network_strength(network_type)
         network_info = HARDWARE.get_network_info()  # pylint: disable=assignment-from-none
+        nvme_temps = HARDWARE.get_nvme_temps()
 
         # Log modem version once
         if modem_version is None:
@@ -292,6 +294,8 @@ def thermald_thread():
     msg.deviceState.networkStrength = network_strength
     if network_info is not None:
       msg.deviceState.networkInfo = network_info
+    if nvme_temps is not None:
+      msg.deviceState.nvmeTempC = nvme_temps
 
     msg.deviceState.batteryPercent = HARDWARE.get_battery_capacity()
     msg.deviceState.batteryCurrent = HARDWARE.get_battery_current()
