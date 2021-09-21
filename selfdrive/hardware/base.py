@@ -123,6 +123,10 @@ class HardwareBase:
     pass
 
   @abstractmethod
+  def get_modem_temperatures(self):
+    pass
+
+  @abstractmethod
   def initialize_hardware(self):
     pass
 
