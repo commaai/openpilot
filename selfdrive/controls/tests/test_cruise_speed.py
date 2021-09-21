@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 from selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
 
-def run_cruise_simulation(cruise, t_end=150.):
+def run_cruise_simulation(cruise, t_end=100.):
   man = Maneuver(
     '',
     duration=t_end,
@@ -21,7 +21,7 @@ def run_cruise_simulation(cruise, t_end=150.):
 
 class TestFollowingDistance(unittest.TestCase):
   def test_following_distanc(self):
-    for speed in np.arange(25, 40, 5):
+    for speed in np.arange(5, 40, 5):
       print(f'Testing {speed} m/s')
       cruise_speed = float(speed)
 
