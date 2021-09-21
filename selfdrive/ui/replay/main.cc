@@ -7,8 +7,6 @@
 #include <QCommandLineParser>
 #include <QThread>
 
-const QString DEMO_ROUTE = "3533c53bb29502d1|2019-12-10--01-13-27";
-
 int getch() {
   int ch;
   struct termios oldt;

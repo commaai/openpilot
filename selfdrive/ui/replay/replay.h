@@ -9,6 +9,7 @@
 
 constexpr int FORWARD_SEGS = 2;
 constexpr int BACKWARD_SEGS = 2;
+const QString DEMO_ROUTE = "3533c53bb29502d1|2019-12-10--01-13-27";
 
 class Replay : public QObject {
   Q_OBJECT
