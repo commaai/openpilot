@@ -123,7 +123,7 @@ class HardwareBase:
     pass
 
   @abstractmethod
-  def get_modem_temperature(self):
+  def get_modem_temperatures(self):
     pass
 
   @abstractmethod
