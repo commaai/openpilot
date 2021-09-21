@@ -229,7 +229,7 @@ class Tici(HardwareBase):
       command_timeout = 0.2
       temps = modem.Command("AT+QTEMP", int(command_timeout * 1000), dbus_interface=MM_MODEM, timeout=command_timeout)
       return max(map(int, temps.split(' ')[1].split(',')))
-    except Exception as e:
+    except Exception:
       return 0
 
   # We don't have a battery, so let's use some sane constants
