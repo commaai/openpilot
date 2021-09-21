@@ -85,7 +85,7 @@ void DriverViewScene::paintEvent(QPaintEvent* event) {
       alpha = std::max(0.7 - (face_std-0.08)*7, 0.0);
     }
     const int box_size = 0.6 * rect2.height() / 2;
-    int fbox_x = valid_rect.center().x() + (is_rhd ? face_x : -face_x) * valid_rect.width();
+    int fbox_x = valid_rect.center().x() + (is_rhd ? (face_x+0.05) : -face_x) * valid_rect.width();
     int fbox_y = valid_rect.center().y() + face_y * valid_rect.height();
     p.setPen(QPen(QColor(255, 255, 255, alpha * 255), 10));
     p.drawRoundedRect(fbox_x - box_size / 2, fbox_y - box_size / 2, box_size, box_size, 35.0, 35.0);
