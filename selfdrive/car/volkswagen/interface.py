@@ -59,7 +59,11 @@ class CarInterface(CarInterfaceBase):
 
     # Per-chassis tuning values, override tuning defaults here if desired
 
-    if candidate == CAR.ATLAS_MK1:
+    if candidate == CAR.ARTEON_MK1:
+      ret.mass = 1733 + STD_CARGO_KG
+      ret.wheelbase = 2.84
+
+    elif candidate == CAR.ATLAS_MK1:
       ret.mass = 2011 + STD_CARGO_KG
       ret.wheelbase = 2.98
 
