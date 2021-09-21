@@ -147,7 +147,7 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
 
   //printf("preprocess completed. %d \n", yuv_buf_len);
   //FILE *dump_yuv_file = fopen("/tmp/rawdump.yuv", "wb");
-  //fwrite(raw_buf, height*width*3/2, sizeof(uint8_t), dump_yuv_file);
+  //fwrite(resized_buf, yuv_buf_len, sizeof(uint8_t), dump_yuv_file);
   //fclose(dump_yuv_file);
 
   // *** testing ***
