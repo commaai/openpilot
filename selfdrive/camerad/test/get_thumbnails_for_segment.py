@@ -26,8 +26,3 @@ if __name__ == "__main__":
       if msg.which() == 'thumbnail':
           with open(os.path.join(out_path, f"{msg.thumbnail.frameId}.jpg"), 'wb') as f:
               f.write(msg.thumbnail.thumbnail)
-
-
-
-
-
