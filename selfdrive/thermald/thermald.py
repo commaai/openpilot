@@ -69,9 +69,7 @@ def read_thermal(thermal_config):
   dat.deviceState.gpuTempC = [read_tz(z) / thermal_config.gpu[1] for z in thermal_config.gpu[0]]
   dat.deviceState.memoryTempC = read_tz(thermal_config.mem[0]) / thermal_config.mem[1]
   dat.deviceState.ambientTempC = read_tz(thermal_config.ambient[0]) / thermal_config.ambient[1]
-
-  modem_temps = HARDWARE.get_modem_temperatures()
-  dat.deviceState.modemTempC = modem_temps if modem_temps is not None else []
+  dat.deviceState.modemTempC = HARDWARE.get_modem_temperatures()
   return dat
 
 
