@@ -173,7 +173,10 @@ def _get_address_send_func(address):
   return sock.send
 
 def _get_vipc_server(length):
-  w, h = {3 * w * h: (w, h) for (w, h) in [tici_f_frame_size, eon_f_frame_size]}[length]
+  sizes = {3 * w * h: (w, h) for (w, h) in [tici_f_frame_size, eon_f_frame_size]} # RGB
+  sizes.update({(3 * w * h) / 2: (w, h) for (w, h) in [tici_f_frame_size, eon_f_frame_size]}) # YUV
+
+  w, h = sizes[length]
 
   vipc_server = VisionIpcServer("camerad")
   vipc_server.create_buffers(VisionStreamType.VISION_STREAM_RGB_BACK, 4, True, w, h)
