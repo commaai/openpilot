@@ -218,6 +218,7 @@ kj::Array<uint8_t> get_frame_image(const CameraBuf *b) {
 
 static kj::Array<capnp::byte> yuv420_to_jpeg(const CameraBuf *b, int thumbnail_width, int thumbnail_height) {
 
+  // make the buffer big enough for the jpeg_write_raw_data.
   std::unique_ptr<uint8[]> buf(new uint8_t[(thumbnail_width * thumbnail_height * 3)]);
   uint8_t *y_plane = buf.get();
   uint8_t *u_plane = y_plane + thumbnail_width * thumbnail_height;
