@@ -13,9 +13,9 @@
 #include "selfdrive/common/timing.h"
 
 constexpr int DESIRE_PRED_SIZE = 32;
-constexpr int OTHER_META_SIZE = 32;
+constexpr int OTHER_META_SIZE = 48;
 constexpr int NUM_META_INTERVALS = 5;
-constexpr int META_STRIDE = 6;
+constexpr int META_STRIDE = 7;
 
 constexpr int PLAN_MHP_N = 5;
 constexpr int PLAN_MHP_COLUMNS = 15;
@@ -208,6 +208,7 @@ void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const float *meta_da
   fill_sigmoid(&meta_data[DESIRE_LEN+4], brake_3ms2_sigmoid, NUM_META_INTERVALS, META_STRIDE);
   fill_sigmoid(&meta_data[DESIRE_LEN+5], brake_4ms2_sigmoid, NUM_META_INTERVALS, META_STRIDE);
   fill_sigmoid(&meta_data[DESIRE_LEN+6], brake_5ms2_sigmoid, NUM_META_INTERVALS, META_STRIDE);
+  //fill_sigmoid(&meta_data[DESIRE_LEN+7], GAS PRESSED, NUM_META_INTERVALS, META_STRIDE);
 
   std::memmove(prev_brake_5ms2_probs, &prev_brake_5ms2_probs[1], 4*sizeof(float));
   std::memmove(prev_brake_3ms2_probs, &prev_brake_3ms2_probs[1], 2*sizeof(float));
