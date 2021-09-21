@@ -100,12 +100,14 @@ void TestReplay::testStream() {
       // keep time
       long rtime = nanos_since_boot() - loop_start_ts;
       long us_behind = ((etime - rtime) * 1e-3);
+      REQUIRE(us_behind >= -1e3);
       if (us_behind > 0) {
+        // printf("%ld\n", us_behind);
         QThread::usleep(us_behind);
       }
 
       long delay = std::abs(long(nanos_since_boot() - loop_start_ts) - etime);
-      REQUIRE(delay <= 1e6);
+      REQUIRE(delay <= 1e5);
       auto bytes = e->bytes();
       pm->send(type.c_str(), (capnp::byte *)bytes.begin(), bytes.size());
     }
