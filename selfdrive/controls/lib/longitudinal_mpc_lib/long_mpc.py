@@ -128,7 +128,7 @@ def gen_long_mpc_solver():
 
   l2_penalty = 1.0
   l1_penalty = 0.0
-  weights = np.array([1e4, 1e4, 1e4, 20., 20.])
+  weights = np.array([1e4, 1e4, 1e4, 10., 10.])
   ocp.cost.Zl = l2_penalty * weights
   ocp.cost.zl = l1_penalty * weights
   ocp.cost.Zu = 0.0 * weights
@@ -174,11 +174,15 @@ class LongitudinalMpc():
     self.x0 = np.zeros(3)
     self.constraint_cost = np.tile(np.array([1e4, 1e4, 1e4, .0, .0]), (N+1,1))
     self.reset()
+
+  def reset(self):
+    self.new_lead = False
     self.new_lead = False
     self.prev_lead_status = False
     self.prev_lead_x = 0.0
-
-  def reset(self):
+    self.new_lead1 = False
+    self.prev_lead_status1 = False
+    self.prev_lead_x1 = 0.0
     self.last_cloudlog_t = 0
     self.status = True
     self.solution_status = 0
@@ -205,6 +209,26 @@ class LongitudinalMpc():
     self.solver.constraints_set(0, "lbx", self.x0)
     self.solver.constraints_set(0, "ubx", self.x0)
 
+  def init_with_sim(self):
+    x_ego, v_ego, a_ego = self.x0
+    j_ego = -1.0
+    for i in range(N+1):
+      self.solver.set(i, 'x', np.array([x_ego, v_ego, a_ego]))
+      if i < N:
+        self.solver.set(i, 'u', np.array([j_ego]))
+        dt = T_IDXS[i+1] - T_IDXS[i]
+        a_ego += -dt
+        v_ego += a_ego*dt
+        x_ego += v_ego*dt
+        if a_ego <= self.accel_limit_arr[0,0]:
+          a_ego = self.accel_limit_arr[0,0]
+          j_ego = 0.
+        if v_ego <= 0.0:
+          v_ego = 0.0
+          a_ego = 0.0
+          j_ego = 0.0
+
+
   def update(self, carstate, radarstate, v_cruise):
     v_ego = carstate.vEgo
     v_cruise_clipped = np.clip(v_cruise, self.x0[1] - 10., self.x0[1] + 10.0)
@@ -218,6 +242,7 @@ class LongitudinalMpc():
       lead_0_arr = extrapolate_lead(lead_0.dRel, lead_0.vLead, lead_0.aLeadK, lead_0.aLeadTau, v_ego)
       if not self.prev_lead_status or abs(lead_0.dRel - self.prev_lead_x) > 2.5:
         self.new_lead = True
+        self.init_with_sim()
       else:
         self.new_lead = False
       self.prev_lead_x = lead_0.dRel
@@ -228,8 +253,16 @@ class LongitudinalMpc():
     lead_1 = radarstate.leadTwo
     if lead_1.status:
       lead_1_arr = extrapolate_lead(lead_1.dRel, lead_1.vLead, lead_1.aLeadK, lead_1.aLeadTau, v_ego)
+      if not self.prev_lead_status1 or abs(lead_1.dRel - self.prev_lead_x1) > 2.5:
+        self.new_lead1 = True
+        self.init_with_sim()
+      else:
+        self.new_lead1 = False
+      self.prev_lead_x1 = lead_0.dRel
     else:
       lead_1_arr = extrapolate_lead(100, v_ego + 10, 0.0, 0.0, v_ego)
+    self.prev_lead_status1 = lead_1.status
+
 
     self.lead_status = lead_0.status or lead_1.status
     if self.lead_status:
