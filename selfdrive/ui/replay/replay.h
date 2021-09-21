@@ -18,8 +18,8 @@ public:
   ~Replay();
 
   void start(int seconds = 0);
-  void relativeSeek(int seconds);
-  void seekTo(int seconds);
+  void seekTo(int seconds, bool relative = false);
+  void relativeSeek(int seconds) { seekTo(seconds, true); }
   void pause(bool pause);
   bool isPaused() const { return paused_; }
 
@@ -34,10 +34,8 @@ protected:
   void setCurrentSegment(int n);
   void mergeSegments(int begin_idx, int end_idx);
 
-  float last_print = 0;
   uint64_t route_start_ts = 0;
-  std::atomic<int> seek_ts = 0;
-  std::atomic<int> current_ts = 0;
+  uint64_t cur_mono_time_ = 0;
   std::atomic<int> current_segment = -1;
 
   QThread *thread;

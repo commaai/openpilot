@@ -49,21 +49,21 @@ void Replay::start(int seconds){
   thread->start();
 }
 
-void Replay::seekTo(int seconds) {
+void Replay::seekTo(int seconds, bool relative) {
   if (segments.empty()) return;
 
   updating_events = true;
-
   std::unique_lock lk(lock);
-  seconds = std::clamp(seconds, 0, (int)segments.size() * 60);
-  qInfo() << "seeking to " << seconds;
-  seek_ts = seconds;
-  setCurrentSegment(std::clamp(seconds / 60, 0, (int)segments.size() - 1));
-  updating_events = false;
-}
 
-void Replay::relativeSeek(int seconds) {
-  seekTo(current_ts + seconds);
+  if (relative) {
+    seconds += ((cur_mono_time_ - route_start_ts) * 1e-9);
+  }
+  seconds = std::clamp(seconds, 0, (int)segments.size() * 60 -1);
+  cur_mono_time_ = route_start_ts + seconds * 1e9;
+  setCurrentSegment(seconds / 60);
+  qInfo() << "seeking to " << seconds;
+
+  updating_events = false;
 }
 
 void Replay::pause(bool pause) {
@@ -142,6 +142,7 @@ void Replay::mergeSegments(int cur_seg, int end_idx) {
       auto it = std::find_if(new_events->begin(), new_events->end(), [=](auto e) { return e->which == cereal::Event::Which::INIT_DATA; });
       if (it != new_events->end()) {
         route_start_ts = (*it)->mono_time;
+        cur_mono_time_ = route_start_ts;
       }
     }
 
@@ -151,28 +152,34 @@ void Replay::mergeSegments(int cur_seg, int end_idx) {
 
     lock.unlock();
 
-    // free segments
+    // free previous events & eidx
     delete prev_events;
     delete[] prev_eidx;
-    for (int i = 0; i < segments.size(); i++) {
-      if ((i < begin_idx || i > end_idx) && segments[i]) {
-        segments[i].reset(nullptr);
-      }
+  }
+
+  // free segments out of current semgnt window.
+  std::vector<int> removed;
+  for (int i = 0; i < segments.size(); i++) {
+    if ((i < begin_idx || i > end_idx) && segments[i]) {
+      segments[i].reset(nullptr);
+      removed.push_back(i);
     }
+  }
+  if (removed.size() > 0) {
+    qInfo() << "remove segments" << removed;
   }
 }
 
 void Replay::stream() {
+  float last_print = 0;
   bool waiting_printed = false;
-  uint64_t cur_mono_time = 0;
   cereal::Event::Which cur_which = cereal::Event::Which::INIT_DATA;
 
   while (true) {
     std::unique_lock lk(lock);
     stream_cv_.wait(lk, [=]() { return paused_ == false; });
 
-    uint64_t evt_start_ts = seek_ts != -1 ? route_start_ts + (seek_ts * 1e9) : cur_mono_time;
-    Event cur_event(cur_which, evt_start_ts);
+    Event cur_event(cur_which, cur_mono_time_);
     auto eit = std::upper_bound(events->begin(), events->end(), &cur_event, Event::lessThan());
     if (eit == events->end()) {
       lock.unlock();
@@ -183,15 +190,15 @@ void Replay::stream() {
       continue;
     }
     waiting_printed = false;
-    seek_ts = -1;
+
+    uint64_t evt_start_ts = cur_mono_time_;
     uint64_t loop_start_ts = nanos_since_boot();
-    qDebug() << "unlogging at" << int((evt_start_ts - route_start_ts) / 1e9);
+    qDebug() << "unlogging at" << (int)((evt_start_ts - route_start_ts) * 1e-9);
 
     for (/**/; !updating_events && eit != events->end(); ++eit) {
       const Event *evt = (*eit);
       cur_which = evt->which;
-      cur_mono_time = evt->mono_time;
-      current_ts = (cur_mono_time - route_start_ts) / 1e9;
+      cur_mono_time_ = evt->mono_time;
 
       std::string type;
       KJ_IF_MAYBE(e_, static_cast<capnp::DynamicStruct::Reader>(evt->event).which()) {
@@ -199,14 +206,15 @@ void Replay::stream() {
       }
 
       if (socks.find(type) != socks.end()) {
-        if (std::abs(current_ts - last_print) > 5.0) {
+        int current_ts = (cur_mono_time_ - route_start_ts) / 1e9;
+        if ((current_ts - last_print) > 5.0) {
           last_print = current_ts;
-          qInfo() << "at " << int(last_print) << "s";
+          qInfo() << "at " << current_ts << "s";
         }
 
         setCurrentSegment(current_ts / 60);
         // keep time
-        long etime = cur_mono_time - evt_start_ts;
+        long etime = cur_mono_time_ - evt_start_ts;
         long rtime = nanos_since_boot() - loop_start_ts;
         long us_behind = ((etime - rtime) * 1e-3) + 0.5;
         if (us_behind > 0 && us_behind < 1e6) {
