@@ -32,15 +32,17 @@ Replay::~Replay() {
   // TODO: quit stream thread and free resources.
 }
 
-void Replay::start(int seconds){
-  // load route
+bool Replay::load() {
   if (!route_->load() || route_->size() == 0) {
     qDebug() << "failed load route" << route_->name() << "from server";
-    return;
+    return false;
   }
-
-  qDebug() << "load route" << route_->name() << route_->size() << "segments, start from" << seconds;
   segments.resize(route_->size());
+  return true;
+}
+
+void Replay::start(int seconds){
+  qDebug() << "load route" << route_->name() << route_->size() << "segments, start from" << seconds;
   seekTo(seconds);
 
   // start stream thread

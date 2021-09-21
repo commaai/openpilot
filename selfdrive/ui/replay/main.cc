@@ -81,12 +81,14 @@ int main(int argc, char *argv[]){
   QStringList allow = parser.value("allow").isEmpty() ? QStringList{} : parser.value("allow").split(",");
   QStringList block = parser.value("block").isEmpty() ? QStringList{} : parser.value("block").split(",");
   Replay *replay = new Replay(route, allow, block);
-  replay->start(parser.value("start").toInt());
+  if (replay->load()) {
+    replay->start(parser.value("start").toInt());
 
-  // start keyboard control thread
-  QThread *t = QThread::create(keyboardThread, replay);
-  QObject::connect(t, &QThread::finished, t, &QThread::deleteLater);
-  t->start();
+    // start keyboard control thread
+    QThread *t = QThread::create(keyboardThread, replay);
+    QObject::connect(t, &QThread::finished, t, &QThread::deleteLater);
+    t->start();
+  }
 
   return a.exec();
 }
