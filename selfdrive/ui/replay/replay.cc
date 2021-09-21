@@ -166,6 +166,12 @@ void Replay::mergeSegments(int cur_seg, int end_idx) {
   }
 }
 
+std::optional<std::vector<Event *>::iterator> Replay::nextEvent(uint64_t mono_time, cereal::Event::Which which) {
+  Event cur_event(which, mono_time);
+  auto eit = std::upper_bound(events->begin(), events->end(), &cur_event, Event::lessThan());
+  return (eit != events->end()) ? std::make_optional(eit) : std::nullopt;
+}
+
 void Replay::stream() {
   bool waiting_printed = false;
   uint64_t cur_mono_time = 0;
@@ -176,9 +182,8 @@ void Replay::stream() {
     stream_cv_.wait(lk, [=]() { return paused_ == false; });
 
     uint64_t evt_start_ts = seek_ts != -1 ? route_start_ts + (seek_ts * 1e9) : cur_mono_time;
-    Event cur_event(cur_which, evt_start_ts);
-    auto eit = std::upper_bound(events->begin(), events->end(), &cur_event, Event::lessThan());
-    if (eit == events->end()) {
+    auto next_event = nextEvent(evt_start_ts, cur_which);
+    if (!next_event) {
       lock.unlock();
       if (std::exchange(waiting_printed, true) == false) {
         qDebug() << "waiting for events...";
@@ -191,7 +196,7 @@ void Replay::stream() {
     uint64_t loop_start_ts = nanos_since_boot();
     qDebug() << "unlogging at" << int((evt_start_ts - route_start_ts) / 1e9);
 
-    for (/**/; !updating_events && eit != events->end(); ++eit) {
+    for (auto eit = *next_event; !updating_events && eit != events->end(); ++eit) {
       const Event *evt = (*eit);
       cur_which = evt->which;
       cur_mono_time = evt->mono_time;

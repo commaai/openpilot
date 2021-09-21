@@ -32,6 +32,7 @@ protected slots:
   void queueSegment();
 
 protected:
+  std::optional<std::vector<Event *>::iterator> nextEvent(uint64_t mono_time, cereal::Event::Which which);
   void stream();
   void setCurrentSegment(int n);
   void mergeSegments(int begin_idx, int end_idx);
