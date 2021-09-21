@@ -20,7 +20,7 @@ def run_cruise_simulation(cruise, t_end=100.):
 
 
 class TestCruiseSpeed(unittest.TestCase):
-  def test_following_distanc(self):
+  def test_cruise_speed(self):
     for speed in np.arange(5, 40, 5):
       print(f'Testing {speed} m/s')
       cruise_speed = float(speed)
