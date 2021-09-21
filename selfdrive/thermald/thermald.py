@@ -70,6 +70,7 @@ def read_thermal(thermal_config):
   dat.deviceState.memoryTempC = read_tz(thermal_config.mem[0]) / thermal_config.mem[1]
   dat.deviceState.ambientTempC = read_tz(thermal_config.ambient[0]) / thermal_config.ambient[1]
   dat.deviceState.modemTempC = HARDWARE.get_modem_temperatures()
+  dat.deviceState.nvmeTempC = HARDWARE.get_nvme_temps()
   return dat
 
 
