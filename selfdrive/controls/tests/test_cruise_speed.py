@@ -19,7 +19,7 @@ def run_cruise_simulation(cruise, t_end=100.):
   return output[-1,3]
 
 
-class TestFollowingDistance(unittest.TestCase):
+class TestCruiseSpeed(unittest.TestCase):
   def test_following_distanc(self):
     for speed in np.arange(5, 40, 5):
       print(f'Testing {speed} m/s')
