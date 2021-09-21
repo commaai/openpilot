@@ -65,6 +65,7 @@ MQB_LDW_MESSAGES = {
 # Exception: SEAT Leon and SEAT Ateca share a chassis code
 
 class CAR:
+  ARTEON_MK1 = "VOLKSWAGEN ARTEON 1ST GEN"          # Chassis AN, Mk1 VW Arteon and variants
   ATLAS_MK1 = "VOLKSWAGEN ATLAS 1ST GEN"            # Chassis CA, Mk1 VW Atlas and Atlas Cross Sport
   GOLF_MK7 = "VOLKSWAGEN GOLF 7TH GEN"              # Chassis 5G/AU/BA/BE, Mk7 VW Golf and variants
   JETTA_MK7 = "VOLKSWAGEN JETTA 7TH GEN"            # Chassis BU, Mk7 Jetta
@@ -94,6 +95,23 @@ class CAR:
 # them repaired by the tuner before including them in openpilot.
 
 FW_VERSIONS = {
+  CAR.ARTEON_MK1: {
+    (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x873G0906259P \xf1\x890001',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x8709G927158L \xf1\x893611',
+    ],
+    (Ecu.srs, 0x715, None): [
+      b'\xf1\x873Q0959655DL\xf1\x890732\xf1\x82\0161812141812171105141123052J00',
+    ],
+    (Ecu.eps, 0x712, None): [
+      b'\xf1\x875Q0910143C \xf1\x892211\xf1\x82\00567B0020800',
+    ],
+    (Ecu.fwdRadar, 0x757, None): [
+      b'\xf1\x872Q0907572T \xf1\x890383',
+    ],
+  },
   CAR.ATLAS_MK1: {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8703H906026AA\xf1\x899970',
