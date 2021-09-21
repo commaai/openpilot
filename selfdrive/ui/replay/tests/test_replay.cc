@@ -98,7 +98,7 @@ public:
       if (loaded == FORWARD_SEGS + 1) {
         uint64_t total_events_cnt = 0;
         for (auto & segment : segments) {
-          if (segment->isLoaded()) {
+          if (segment && segment->isLoaded()) {
             total_events_cnt += segment->log->events.size();
           }
         }

@@ -42,7 +42,7 @@ protected:
   std::atomic<int> current_ts = 0;
   std::atomic<int> current_segment = -1;
 
-  QThread *thread;
+  QThread *stream_thread = nullptr;
 
   // logs
   std::mutex lock;

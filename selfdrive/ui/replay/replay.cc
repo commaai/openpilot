@@ -42,13 +42,15 @@ bool Replay::load() {
 }
 
 void Replay::start(int seconds){
+  if (segments.empty() || stream_thread != nullptr) return;
+
   qDebug() << "load route" << route_->name() << route_->size() << "segments, start from" << seconds;
   seekTo(seconds);
 
   // start stream thread
-  thread = new QThread;
-  QObject::connect(thread, &QThread::started, [=]() { stream(); });
-  thread->start();
+  stream_thread = new QThread;
+  QObject::connect(stream_thread, &QThread::started, [=]() { stream(); });
+  stream_thread->start();
 }
 
 void Replay::seekTo(int seconds) {
@@ -250,6 +252,7 @@ void Replay::stream() {
           auto bytes = evt->bytes();
           pm->send(type.c_str(), (capnp::byte *)bytes.begin(), bytes.size());
         } else {
+          // TODO: SubMaster is not thread safe
           sm->update_msgs(nanos_since_boot(), {{type, evt->event}});
         }
       }
