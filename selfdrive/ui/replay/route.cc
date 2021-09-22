@@ -14,6 +14,11 @@
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/qt/api.h"
 
+struct CURLGlobalInitializer {
+  CURLGlobalInitializer() { curl_global_init(CURL_GLOBAL_DEFAULT); }
+  ~CURLGlobalInitializer() { curl_global_cleanup(); }
+};
+
 struct MultiPartWriter {
   int64_t offset;
   int64_t end;
@@ -163,6 +168,7 @@ bool Route::loadFromJson(const QString &json) {
 // class Segment
 
 Segment::Segment(int n, const SegmentFile &segment_files, bool load_dcam, bool load_ecam) : seg_num_(n), files_(segment_files) {
+  static CURLGlobalInitializer curl_initializer;
   static std::once_flag once_flag;
   std::call_once(once_flag, [=]() {
     if (!QDir(CACHE_DIR).exists()) QDir().mkdir(CACHE_DIR);
