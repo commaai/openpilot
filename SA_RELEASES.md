@@ -1,6 +1,6 @@
 Stock Additions Update 1 - 2021-09-30 (0.8.10)
 ===
- * Update SA to 0.8.10 (not yet including new model)
+ * Update SA to 0.8.10 with cherry-picked improved lead model
 
 Stock Additions Update 2 - 2021-08-15 (0.8.9)
 ===
