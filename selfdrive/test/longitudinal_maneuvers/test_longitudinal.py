@@ -63,7 +63,6 @@ maneuvers = [
     breakpoints=[0., 15., 19.],
   ),
   Maneuver(
-<<<<<<< HEAD
     "approach stopped car at 20m/s",
     duration=30.,
     initial_speed=20.,
@@ -73,8 +72,6 @@ maneuvers = [
     breakpoints=[1., 11.],
   ),
   Maneuver(
-=======
->>>>>>> b23a68fa4 (rebased)
     "approach slower cut-in car at 20m/s",
     duration=20.,
     initial_speed=20.,
