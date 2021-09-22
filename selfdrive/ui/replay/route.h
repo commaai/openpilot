@@ -64,4 +64,3 @@ protected:
 };
 
 bool httpMultiPartDownload(const std::string &url, const std::string &target_file, int parts, std::atomic<bool> *abort = nullptr);
-

@@ -10,7 +10,6 @@
 #include <QRegExp>
 #include <QThread>
 #include <future>
-#include <set>
 
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/qt/api.h"
@@ -31,27 +30,29 @@ static size_t write_cb(char *data, size_t n, size_t l, void *userp) {
 
 static size_t dumy_write_cb(char *data, size_t n, size_t l, void *userp) { return n * l; }
 
-int64_t getUrlContentLength(const std::string &url) {
+int64_t getDownloadContentLength(const std::string &url) {
   CURL *curl = curl_easy_init();
   curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, dumy_write_cb);
   curl_easy_setopt(curl, CURLOPT_HEADER, 1);
   curl_easy_setopt(curl, CURLOPT_NOBODY, 1);
-  int ret = curl_easy_perform(curl);
-  double content_length = 0;
-  curl_easy_getinfo(curl, CURLINFO_CONTENT_LENGTH_DOWNLOAD, &content_length);
+  CURLcode res = curl_easy_perform(curl);
+  double content_length = -1;
+  if (res == CURLE_OK) {
+    res = curl_easy_getinfo(curl, CURLINFO_CONTENT_LENGTH_DOWNLOAD, &content_length);
+  }
   curl_easy_cleanup(curl);
-  return ret == CURLE_OK ? (int64_t)content_length : -1;
+  return res == CURLE_OK ? (int64_t)content_length : -1;
 }
 
 bool httpMultiPartDownload(const std::string &url, const std::string &target_file, int parts, std::atomic<bool> *abort) {
-  int64_t content_length = getUrlContentLength(url);
+  int64_t content_length = getDownloadContentLength(url);
   if (content_length == -1) return false;
 
   std::string tmp_file = target_file + ".tmp";
   FILE *fp = fopen(tmp_file.c_str(), "wb");
   // create a sparse file
-  fseek(fp, (long)content_length, SEEK_SET);
+  fseek(fp, content_length, SEEK_SET);
 
   CURLM *cm = curl_multi_init();
   std::map<CURL *, MultiPartWriter> writers;
