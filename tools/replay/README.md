@@ -33,7 +33,7 @@ python replay/unlogger.py <route-name>
 python replay/ui.py   # Define the environmental variable HORIZONTAL is the ui layout is too tall
 
 # Or run the normal openpilot UI
-cd selffdrive/ui && ./ui
+cd selfdrive/ui && ./ui
 ```
 
 ![Imgur](https://i.imgur.com/Yppe0h2.png)
