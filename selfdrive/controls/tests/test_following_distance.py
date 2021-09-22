@@ -2,7 +2,7 @@
 import unittest
 import numpy as np
 
-from selfdrive.controls.lib.lead_mpc_lib.lead_mpc import desired_follow_distance
+from selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import desired_follow_distance
 from selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
 
 def run_following_distance_simulation(v_lead, t_end=150.0):
