@@ -15,12 +15,6 @@
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/qt/api.h"
 
-namespace {
-
-QString local_path(const QUrl &url) {
-  QByteArray url_no_query = url.toString(QUrl::RemoveQuery).toUtf8();
-  return CACHE_DIR + QString(QCryptographicHash::hash(url_no_query, QCryptographicHash::Sha256).toHex());
-}
 struct MultiPartWriter {
   int offset;
   int end;
@@ -50,69 +44,64 @@ int32_t getUrlContentLength(const std::string &url) {
   return ret == CURLE_OK ? (int32_t)content_length : -1;
 }
 
-void httpMultiPartDownload(const std::string &url, int parts, bool *abort) {
+bool httpMultiPartDownload(const std::string &url, const std::string &target_file, int parts, std::atomic<bool> *abort) {
   int content_length = getUrlContentLength(url);
-  if (content_length == -1) return;
+  if (content_length == -1) return false;
 
-  std::string cache_file_path = local_path(QString::fromStdString(url)).toStdString();
-  std::string tmp_cache_file_path = cache_file_path + ".tmp";
-  FILE *fp = fopen(tmp_cache_file_path.c_str(), "wb");
+  std::string tmp_file = target_file + ".tmp";
+  FILE *fp = fopen(tmp_file.c_str(), "wb");
   // create a sparse file
   fseek(fp, (long)content_length, SEEK_SET);
-  fputc('\0', fp);
 
   CURLM *cm = curl_multi_init();
-  std::unique_ptr<MultiPartWriter[]> writers = std::make_unique<MultiPartWriter[]>(parts);
-  std::set<CURL *> easy_handles;
+  std::map<CURL *, MultiPartWriter> writers;
   const int part_size = content_length / parts;
-  
   for (int i = 0; i < parts; ++i) {
-    writers[i].fp = fp;
-    writers[i].offset = i * part_size;
-    writers[i].end = i == parts - 1 ? content_length - 1 : writers[i].offset + part_size - 1;
-
     CURL *eh = curl_easy_init();
+    writers[eh] = {
+        .fp = fp,
+        .offset = i * part_size,
+        .end = i == parts - 1 ? content_length - 1 : (i + 1) * part_size - 1,
+    };
     curl_easy_setopt(eh, CURLOPT_WRITEFUNCTION, write_cb);
-    curl_easy_setopt(eh, CURLOPT_WRITEDATA, (void *)(&writers[i]));
+    curl_easy_setopt(eh, CURLOPT_WRITEDATA, (void *)(&writers[eh]));
     curl_easy_setopt(eh, CURLOPT_URL, url.c_str());
-    curl_easy_setopt(eh, CURLOPT_RANGE, util::string_format("%d-%d", writers[i].offset, writers[i].end).c_str());
+    curl_easy_setopt(eh, CURLOPT_RANGE, util::string_format("%d-%d", writers[eh].offset, writers[eh].end).c_str());
     curl_easy_setopt(eh, CURLOPT_HTTPGET, 1);
     curl_easy_setopt(eh, CURLOPT_NOSIGNAL, 1);
     curl_easy_setopt(eh, CURLOPT_FOLLOWLOCATION, 1);
     curl_multi_add_handle(cm, eh);
-    easy_handles.insert(eh);
   }
 
   int msgs_left = -1, still_alive = 1;
-  while (!(*abort)) {
+  while (still_alive && (!abort || abort->load() == false)) {
     curl_multi_perform(cm, &still_alive);
-    if (!still_alive) break;
-
     CURLMsg *msg;
     while ((msg = curl_multi_info_read(cm, &msgs_left))) {
       if (msg->msg == CURLMSG_DONE) {
         curl_multi_remove_handle(cm, msg->easy_handle);
         curl_easy_cleanup(msg->easy_handle);
-        easy_handles.erase(msg->easy_handle);
-      } else {
-        qDebug() << "faild download" << url.c_str() << msg->msg;
+        writers.erase(msg->easy_handle);
       }
     }
-    curl_multi_wait(cm, NULL, 0, 100, NULL);
+    if (still_alive) {
+      curl_multi_wait(cm, NULL, 0, 100, NULL);
+    }
   }
 
   fclose(fp);
-  if (!*abort) {
-    ::rename(tmp_cache_file_path.c_str(), cache_file_path.c_str());
-  }
-  for (auto &e : easy_handles) {
-    curl_multi_remove_handle(cm, e);
-    curl_easy_cleanup(e);
+  bool success = writers.empty();
+  if (success) {
+    ::rename(tmp_file.c_str(), target_file.c_str());
+  } else {
+    for (auto &[e, w] : writers) {
+      curl_multi_remove_handle(cm, e);
+      curl_easy_cleanup(e);
+    }
   }
   curl_multi_cleanup(cm);
+  return writers.empty();
 }
-
-}  // namespace
 
 Route::Route(const QString &route) : route_(route) {}
 
@@ -214,7 +203,7 @@ Segment::~Segment() {
 
 void Segment::downloadFile(const QString &url) {
   QThread *thread = QThread::create([=]() {
-    httpMultiPartDownload(url.toStdString(), 3, &aborting_);
+    httpMultiPartDownload(url.toStdString(), localPath(url).toStdString(), 3, &aborting_);
     if (--downloading_ == 0 && !aborting_) {
       load();
     }
@@ -248,5 +237,7 @@ void Segment::load() {
 
 QString Segment::localPath(const QUrl &url) {
   if (url.isLocalFile()) return url.toString();
-  return local_path(url);
+
+  QByteArray url_no_query = url.toString(QUrl::RemoveQuery).toUtf8();
+  return CACHE_DIR + QString(QCryptographicHash::hash(url_no_query, QCryptographicHash::Sha256).toHex());
 }
