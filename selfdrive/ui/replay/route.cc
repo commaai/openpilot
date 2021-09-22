@@ -10,6 +10,7 @@
 #include <QRegExp>
 #include <QThread>
 #include <future>
+#include <set>
 
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/qt/api.h"
@@ -20,14 +21,14 @@ QString local_path(const QUrl &url) {
   QByteArray url_no_query = url.toString(QUrl::RemoveQuery).toUtf8();
   return CACHE_DIR + QString(QCryptographicHash::hash(url_no_query, QCryptographicHash::Sha256).toHex());
 }
-struct MultiplePartWriter {
+struct MultiPartWriter {
   int offset;
   int end;
   FILE *fp;
 };
 
 static size_t write_cb(char *data, size_t n, size_t l, void *userp) {
-  MultiplePartWriter *w = (MultiplePartWriter *)userp;
+  MultiPartWriter *w = (MultiPartWriter *)userp;
   fseek(w->fp, w->offset, SEEK_SET);
   fwrite(data, l, n, w->fp);
   w->offset += n * l;
@@ -49,20 +50,22 @@ int32_t getUrlContentLength(const std::string &url) {
   return ret == CURLE_OK ? (int32_t)content_length : -1;
 }
 
-void httpMultipleDownload(const std::string &url, int parts, bool *abort) {
+void httpMultiPartDownload(const std::string &url, int parts, bool *abort) {
   int content_length = getUrlContentLength(url);
   if (content_length == -1) return;
-
-  CURLM *cm = curl_multi_init();
 
   std::string cache_file_path = local_path(QString::fromStdString(url)).toStdString();
   std::string tmp_cache_file_path = cache_file_path + ".tmp";
   FILE *fp = fopen(tmp_cache_file_path.c_str(), "wb");
+  // create a sparse file
   fseek(fp, (long)content_length, SEEK_SET);
   fputc('\0', fp);
 
-  std::unique_ptr<MultiplePartWriter[]> writers = std::make_unique<MultiplePartWriter[]>(parts);
+  CURLM *cm = curl_multi_init();
+  std::unique_ptr<MultiPartWriter[]> writers = std::make_unique<MultiPartWriter[]>(parts);
+  std::set<CURL *> easy_handles;
   const int part_size = content_length / parts;
+  
   for (int i = 0; i < parts; ++i) {
     writers[i].fp = fp;
     writers[i].offset = i * part_size;
@@ -77,28 +80,34 @@ void httpMultipleDownload(const std::string &url, int parts, bool *abort) {
     curl_easy_setopt(eh, CURLOPT_NOSIGNAL, 1);
     curl_easy_setopt(eh, CURLOPT_FOLLOWLOCATION, 1);
     curl_multi_add_handle(cm, eh);
+    easy_handles.insert(eh);
   }
 
   int msgs_left = -1, still_alive = 1;
-  while (still_alive && !(*abort)) {
+  while (!(*abort)) {
     curl_multi_perform(cm, &still_alive);
+    if (!still_alive) break;
+
     CURLMsg *msg;
     while ((msg = curl_multi_info_read(cm, &msgs_left))) {
       if (msg->msg == CURLMSG_DONE) {
         curl_multi_remove_handle(cm, msg->easy_handle);
         curl_easy_cleanup(msg->easy_handle);
+        easy_handles.erase(msg->easy_handle);
       } else {
         qDebug() << "faild download" << url.c_str() << msg->msg;
       }
     }
-    if (still_alive) {
-      curl_multi_wait(cm, NULL, 0, 100, NULL);
-    }
+    curl_multi_wait(cm, NULL, 0, 100, NULL);
   }
 
   fclose(fp);
   if (!*abort) {
     ::rename(tmp_cache_file_path.c_str(), cache_file_path.c_str());
+  }
+  for (auto &e : easy_handles) {
+    curl_multi_remove_handle(cm, e);
+    curl_easy_cleanup(e);
   }
   curl_multi_cleanup(cm);
 }
@@ -205,7 +214,7 @@ Segment::~Segment() {
 
 void Segment::downloadFile(const QString &url) {
   QThread *thread = QThread::create([=]() {
-    httpMultipleDownload(url.toStdString(), 5, &aborting_);
+    httpMultiPartDownload(url.toStdString(), 3, &aborting_);
     if (--downloading_ == 0 && !aborting_) {
       load();
     }
