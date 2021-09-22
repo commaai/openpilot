@@ -297,7 +297,7 @@ def bridge(q):
     if is_openpilot_engaged:
       sm.update(0)
       # TODO gas and brake is deprecated
-      throttle_op = clip(sm['carControl'].actuators.accel/4.0, 0.0, 1.0)
+      throttle_op = clip(sm['carControl'].actuators.accel/1.6, 0.0, 1.0)
       brake_op = clip(-sm['carControl'].actuators.accel/4.0, 0.0, 1.0)
       steer_op = sm['carControl'].actuators.steeringAngleDeg
 
