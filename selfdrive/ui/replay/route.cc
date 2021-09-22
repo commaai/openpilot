@@ -16,8 +16,8 @@
 #include "selfdrive/ui/qt/api.h"
 
 struct MultiPartWriter {
-  int offset;
-  int end;
+  int64_t offset;
+  int64_t end;
   FILE *fp;
 };
 
@@ -31,7 +31,7 @@ static size_t write_cb(char *data, size_t n, size_t l, void *userp) {
 
 static size_t dumy_write_cb(char *data, size_t n, size_t l, void *userp) { return n * l; }
 
-int32_t getUrlContentLength(const std::string &url) {
+int64_t getUrlContentLength(const std::string &url) {
   CURL *curl = curl_easy_init();
   curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, dumy_write_cb);
@@ -41,11 +41,11 @@ int32_t getUrlContentLength(const std::string &url) {
   double content_length = 0;
   curl_easy_getinfo(curl, CURLINFO_CONTENT_LENGTH_DOWNLOAD, &content_length);
   curl_easy_cleanup(curl);
-  return ret == CURLE_OK ? (int32_t)content_length : -1;
+  return ret == CURLE_OK ? (int64_t)content_length : -1;
 }
 
 bool httpMultiPartDownload(const std::string &url, const std::string &target_file, int parts, std::atomic<bool> *abort) {
-  int content_length = getUrlContentLength(url);
+  int64_t content_length = getUrlContentLength(url);
   if (content_length == -1) return false;
 
   std::string tmp_file = target_file + ".tmp";
@@ -74,33 +74,32 @@ bool httpMultiPartDownload(const std::string &url, const std::string &target_fil
   }
 
   int msgs_left = -1, still_alive = 1;
-  while (still_alive && (!abort || abort->load() == false)) {
+  int success_cnt = 0;
+  CURLMsg *msg;
+  while (true) {
     curl_multi_perform(cm, &still_alive);
-    CURLMsg *msg;
+
     while ((msg = curl_multi_info_read(cm, &msgs_left))) {
-      if (msg->msg == CURLMSG_DONE) {
-        curl_multi_remove_handle(cm, msg->easy_handle);
-        curl_easy_cleanup(msg->easy_handle);
-        writers.erase(msg->easy_handle);
-      }
+      success_cnt += (msg->msg == CURLMSG_DONE && msg->data.result == CURLE_OK);
     }
-    if (still_alive) {
-      curl_multi_wait(cm, NULL, 0, 100, NULL);
-    }
+    if (!still_alive || (abort && abort->load())) break;
+
+    curl_multi_wait(cm, NULL, 0, 100, NULL);
   }
 
   fclose(fp);
-  bool success = writers.empty();
+  bool success = success_cnt == parts;
   if (success) {
     ::rename(tmp_file.c_str(), target_file.c_str());
-  } else {
-    for (auto &[e, w] : writers) {
-      curl_multi_remove_handle(cm, e);
-      curl_easy_cleanup(e);
-    }
+  }
+
+  // cleanup curl
+  for (auto &[e, w] : writers) {
+    curl_multi_remove_handle(cm, e);
+    curl_easy_cleanup(e);
   }
   curl_multi_cleanup(cm);
-  return writers.empty();
+  return success;
 }
 
 Route::Route(const QString &route) : route_(route) {}
@@ -183,7 +182,6 @@ Segment::Segment(int n, const SegmentFile &segment_files, bool load_dcam, bool l
   if (!QUrl(files_.rlog).isLocalFile()) {
     for (auto &url : {files_.rlog, road_cam_path_, files_.driver_cam, files_.wide_road_cam}) {
       if (!url.isEmpty() && !QFile::exists(localPath(url))) {
-        qDebug() << "download" << url;
         downloadFile(url);
         ++downloading_;
       }
@@ -202,14 +200,13 @@ Segment::~Segment() {
 }
 
 void Segment::downloadFile(const QString &url) {
-  QThread *thread = QThread::create([=]() {
+  qDebug() << "download" << url;
+  download_threads_.emplace_back(QThread::create([=]() {
     httpMultiPartDownload(url.toStdString(), localPath(url).toStdString(), 3, &aborting_);
     if (--downloading_ == 0 && !aborting_) {
       load();
     }
-  });
-  download_threads_.push_back(thread);
-  thread->start();
+  }))->start();
 }
 
 // load concurrency
