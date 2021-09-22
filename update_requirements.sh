@@ -39,3 +39,4 @@ pyenv rehash
 
 echo "precommit install ..."
 pre-commit install
+[ -d "./xx" ] && cd xx && pre-commit install
