@@ -5,6 +5,7 @@
 
 #include <QApplication>
 #include <QCommandLineParser>
+#include <QDebug>
 #include <QThread>
 
 const QString DEMO_ROUTE = "3533c53bb29502d1|2019-12-10--01-13-27";

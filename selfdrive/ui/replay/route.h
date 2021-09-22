@@ -1,6 +1,6 @@
 #pragma once
 
-#include <QNetworkAccessManager>
+#include <QObject>
 #include <QString>
 #include <vector>
 
@@ -60,6 +60,5 @@ protected:
   int seg_num_ = 0;
   SegmentFile files_;
   QString road_cam_path_;
-  QSet<QNetworkReply *> replies_;
-  QNetworkAccessManager qnam_;
+  std::vector<QThread*> download_threads_;
 };

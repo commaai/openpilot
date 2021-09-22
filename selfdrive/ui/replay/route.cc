@@ -1,15 +1,109 @@
 #include "selfdrive/ui/replay/route.h"
 
+#include <curl/curl.h>
+
 #include <QDir>
 #include <QEventLoop>
 #include <QFile>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QRegExp>
+#include <QThread>
 #include <future>
 
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/qt/api.h"
+
+namespace {
+
+QString local_path(const QUrl &url) {
+  QByteArray url_no_query = url.toString(QUrl::RemoveQuery).toUtf8();
+  return CACHE_DIR + QString(QCryptographicHash::hash(url_no_query, QCryptographicHash::Sha256).toHex());
+}
+struct MultiplePartWriter {
+  int offset;
+  int end;
+  FILE *fp;
+};
+
+static size_t write_cb(char *data, size_t n, size_t l, void *userp) {
+  MultiplePartWriter *w = (MultiplePartWriter *)userp;
+  fseek(w->fp, w->offset, SEEK_SET);
+  fwrite(data, l, n, w->fp);
+  w->offset += n * l;
+  return n * l;
+}
+
+static size_t dumy_write_cb(char *data, size_t n, size_t l, void *userp) { return n * l; }
+
+int32_t getUrlContentLength(const std::string &url) {
+  CURL *curl = curl_easy_init();
+  curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, dumy_write_cb);
+  curl_easy_setopt(curl, CURLOPT_HEADER, 1);
+  curl_easy_setopt(curl, CURLOPT_NOBODY, 1);
+  int ret = curl_easy_perform(curl);
+  double content_length = 0;
+  curl_easy_getinfo(curl, CURLINFO_CONTENT_LENGTH_DOWNLOAD, &content_length);
+  curl_easy_cleanup(curl);
+  return ret == CURLE_OK ? (int32_t)content_length : -1;
+}
+
+void httpMultipleDownload(const std::string &url, int parts, bool *abort) {
+  int content_length = getUrlContentLength(url);
+  if (content_length == -1) return;
+
+  CURLM *cm = curl_multi_init();
+
+  std::string cache_file_path = local_path(QString::fromStdString(url)).toStdString();
+  std::string tmp_cache_file_path = cache_file_path + ".tmp";
+  FILE *fp = fopen(tmp_cache_file_path.c_str(), "wb");
+  fseek(fp, (long)content_length, SEEK_SET);
+  fputc('\0', fp);
+
+  std::unique_ptr<MultiplePartWriter[]> writers = std::make_unique<MultiplePartWriter[]>(parts);
+  const int part_size = content_length / parts;
+  for (int i = 0; i < parts; ++i) {
+    writers[i].fp = fp;
+    writers[i].offset = i * part_size;
+    writers[i].end = i == parts - 1 ? content_length - 1 : writers[i].offset + part_size - 1;
+
+    CURL *eh = curl_easy_init();
+    curl_easy_setopt(eh, CURLOPT_WRITEFUNCTION, write_cb);
+    curl_easy_setopt(eh, CURLOPT_WRITEDATA, (void *)(&writers[i]));
+    curl_easy_setopt(eh, CURLOPT_URL, url.c_str());
+    curl_easy_setopt(eh, CURLOPT_RANGE, util::string_format("%d-%d", writers[i].offset, writers[i].end).c_str());
+    curl_easy_setopt(eh, CURLOPT_HTTPGET, 1);
+    curl_easy_setopt(eh, CURLOPT_NOSIGNAL, 1);
+    curl_easy_setopt(eh, CURLOPT_FOLLOWLOCATION, 1);
+    curl_multi_add_handle(cm, eh);
+  }
+
+  int msgs_left = -1, still_alive = 1;
+  while (still_alive && !(*abort)) {
+    curl_multi_perform(cm, &still_alive);
+    CURLMsg *msg;
+    while ((msg = curl_multi_info_read(cm, &msgs_left))) {
+      if (msg->msg == CURLMSG_DONE) {
+        curl_multi_remove_handle(cm, msg->easy_handle);
+        curl_easy_cleanup(msg->easy_handle);
+      } else {
+        qDebug() << "faild download" << url.c_str() << msg->msg;
+      }
+    }
+    if (still_alive) {
+      curl_multi_wait(cm, NULL, 0, 100, NULL);
+    }
+  }
+
+  fclose(fp);
+  if (!*abort) {
+    ::rename(tmp_cache_file_path.c_str(), cache_file_path.c_str());
+  }
+  curl_multi_cleanup(cm);
+}
+
+}  // namespace
 
 Route::Route(const QString &route) : route_(route) {}
 
@@ -103,30 +197,21 @@ Segment::Segment(int n, const SegmentFile &segment_files, bool load_dcam, bool l
 }
 
 Segment::~Segment() {
-  // cancel download, qnam will not abort requests, need to abort them manually
   aborting_ = true;
-  for (QNetworkReply *replay : replies_) {
-    if (replay->isRunning()) {
-      replay->abort();
-    }
-    replay->deleteLater();
+  for (auto &t : download_threads_) {
+    if (t->isRunning()) t->wait();
   }
 }
 
 void Segment::downloadFile(const QString &url) {
-  QNetworkReply *reply = qnam_.get(QNetworkRequest(url));
-  replies_.insert(reply);
-  connect(reply, &QNetworkReply::finished, [=]() {
-    if (reply->error() == QNetworkReply::NoError) {
-      QFile file(localPath(url));
-      if (file.open(QIODevice::WriteOnly)) {
-        file.write(reply->readAll());
-      }
-    }
+  QThread *thread = QThread::create([=]() {
+    httpMultipleDownload(url.toStdString(), 5, &aborting_);
     if (--downloading_ == 0 && !aborting_) {
       load();
     }
   });
+  download_threads_.push_back(thread);
+  thread->start();
 }
 
 // load concurrency
@@ -154,7 +239,5 @@ void Segment::load() {
 
 QString Segment::localPath(const QUrl &url) {
   if (url.isLocalFile()) return url.toString();
-
-  QByteArray url_no_query = url.toString(QUrl::RemoveQuery).toUtf8();
-  return CACHE_DIR + QString(QCryptographicHash::hash(url_no_query, QCryptographicHash::Sha256).toHex());
+  return local_path(url);
 }
