@@ -45,15 +45,6 @@ TEST_CASE("httpMultiPartDownload") {
     std::string checksum = sha_256(QString::fromStdString(content));
     REQUIRE(checksum == "d8ff81560ce7ed6f16d5fb5a6d6dd13aba06c8080c62cfe768327914318744c4");
   }
-  SECTION("abort download") {
-    std::atomic<bool> abort = false;
-    std::future<void> future = std::async(std::launch::async, [&]() -> void {
-      // wait 1.5 second
-      util::sleep_for(1500);
-      abort = true;
-    });
-    REQUIRE(httpMultiPartDownload(stream_url, filename, 5, &abort) == false);
-  }
   SECTION("http 404") {
     REQUIRE(httpMultiPartDownload(util::string_format("%s_abc", stream_url), filename, 5) == false);
   }
