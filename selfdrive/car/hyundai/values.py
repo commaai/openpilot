@@ -317,6 +317,7 @@ FW_VERSIONS = {
       b'\xf1\x00TM__ SCC F-CUP      1.00 1.01 99110-S2000         \xf1\xa01.01',
       b'\xf1\x00TM__ SCC F-CUP      1.00 1.02 99110-S2000         \xf1\xa01.02',
       b'\xf1\x00TM__ SCC F-CUP      1.00 1.03 99110-S2000         \xf1\xa01.03',
+      b'\xf1\x00TM__ SCC F-CUP      1.00 1.00 99110-S1500         ',
     ],
     (Ecu.esp, 0x7d1, None): [
       b'\xf1\x00TM ESC \r 100\x18\x031 58910-S2650\xf1\xa01.00',
@@ -329,19 +330,23 @@ FW_VERSIONS = {
       b'\xf1\x00TM ESC \x03 103\x18\x11\x07 58910-S2600\xf1\xa01.03',
       b'\xf1\x00TM ESC \x0c 103\x18\x11\x08 58910-S2650',
       b'\xf1\x00TM ESC \x0c 103\x18\x11\x08 58910-S2650\xf1\xa01.03',
+      b'\xf1\x00TM ESC \x02 101 \x08\x04 58910-S2GA0',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x81606EA051\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\xf1\x81606G1051\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\xf1\x81606G3051\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'\xf1\x82TMBZN5TMD3XXXG2E',
     ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x00TM  MDPS C 1.00 1.00 56340-S2000 8409',
       b'\xf1\x00TM  MDPS C 1.00 1.00 56340-S2000 8A12',
       b'\xf1\x00TM  MDPS C 1.00 1.01 56340-S2000 9129',
+      b'\xf1\x00TM  MDPS C 1.00 1.02 56370-S2AA0 0B19',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00TM  MFC  AT USA LHD 1.00 1.00 99211-S2000 180409',
+      b'\xf1\x00TMA MFC  AT MEX LHD 1.00 1.01 99211-S2500 210205',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x87LBJSGA7082574HG0\x87www\x98\x88\x88\x88\x99\xaa\xb9\x9afw\x86gx\x99\xa7\x89co\xf8\xffvU_\xffR\xaf\xf1\x816W3C2051\x00\x00\xf1\x006W351_C2\x00\x006W3C2051\x00\x00TTM2T20NS1\x00\xa6\xe0\x91',
@@ -366,6 +371,7 @@ FW_VERSIONS = {
       b'\xf1\x87SDJXAA7656854GG1DEtWUU\x85X\x88\x88\x98\x88w\x88\x87xx\x88\x87\x88\x96o\xfb\xff\x86f\x7f\xff.\xca\xf1\x816W3C2051\x00\x00\xf1\x006W351_C2\x00\x006W3C2051\x00\x00TTM4G24NS2\x00\x00\x00\x00',
       b'\xf1\x87SDKXAA2443414GG1vfvgwv\x87h\x88\x88\x88\x88ww\x87wwwww\x99_\xfc\xffvD?\xffl\xd2\xf1\x816W3E1051\x00\x00\xf1\x006W351_C2\x00\x006W3E1051\x00\x00TTM4G24NS6\x00\x00\x00\x00',
       b'\xf1\x87SBLWAA4899564GG0VfvgUU\x85Xx\x88\x87\x88vfgf\x87wxwvO\xfb\xff\x97f\xb1\xffSB\xf1\x816W3E1051\x00\x00\xf1\x006W351_C2\x00\x006W3E1051\x00\x00TTM2G24NS7\x00\x00\x00\x00',
+      b'\xf1\x00T02601BL  T02730A1  VTMPT25XXX730NS2\xa6\x06\x88\xf7',
     ],
   },
   CAR.KIA_STINGER: {
