@@ -4,19 +4,23 @@ import numpy as np
 
 from common.realtime import sec_since_boot
 from selfdrive.swaglog import cloudlog
-from selfdrive.controls.lib.drive_helpers import LON_MPC_N as N
+#from selfdrive.controls.lib.drive_helpers import LON_MPC_N as N
 from selfdrive.modeld.constants import T_IDXS
 
 from pyextra.acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
-from casadi import SX, vertcat
+from casadi import SX, vertcat, exp, sqrt
 
 
-X_DIM = 4
-COST_DIM = 3
+X_DIM = 3
+COST_DIM = 4
 
 LONG_MPC_DIR = os.path.dirname(os.path.abspath(__file__))
 EXPORT_DIR = os.path.join(LONG_MPC_DIR, "c_generated_code")
 JSON_FILE = "acados_ocp_long.json"
+
+
+MPC_T = list(np.arange(0,1.,.2)) + list(np.arange(1.,10.6,.6))
+N = len(MPC_T) - 1
 
 
 def desired_follow_distance(v_ego, v_lead, TR=1.8):
@@ -35,22 +39,12 @@ def extrapolate_lead(x_lead, v_lead, a_lead, a_lead_tau, v_ego):
   output[0,1] = v_lead
   a_lead_0 = a_lead
   for i in range(1, N+1):
-    dt = T_IDXS[i] - T_IDXS[i-1]
+    dt = MPC_T[i] - MPC_T[i-1]
     output[i, 0] = output[i-1, 0] + dt * output[i-1, 1]
     output[i, 1] = max(0.0, output[i-1, 1] + dt * a_lead)
-    a_lead = a_lead_0 * np.exp(-a_lead_tau * (T_IDXS[i]**2)/2.)
+    a_lead = a_lead_0 * np.exp(-a_lead_tau * (MPC_T[i]**2)/2.)
+  print(output)
   return output
-
-def get_desired_x_ego(x_sol_prev, lead_0, lead_1, v_cruise):
-  #x_sol_prev[:,1] = x_sol_prev[0,1] * np.ones(N+1)
-  desired_follow_distance_0 = lead_0[:,0] - desired_follow_distance(x_sol_prev[:,1], lead_0[:,1])
-  desired_follow_distance_1 = lead_1[:,0] - desired_follow_distance(x_sol_prev[:,1], lead_1[:,1])
-  cruise_desired = v_cruise * np.array(T_IDXS)
-  desired_x_ego = np.min(np.column_stack((desired_follow_distance_0,
-                                          desired_follow_distance_1,
-                                          cruise_desired)),
-                                          axis=1)
-  return desired_x_ego
 
 
 def gen_long_model():
@@ -61,8 +55,7 @@ def gen_long_model():
   x_ego = SX.sym('x_ego')
   v_ego = SX.sym('v_ego')
   a_ego = SX.sym('a_ego')
-  t = SX.sym('t')
-  model.x = vertcat(x_ego, v_ego, a_ego, t)
+  model.x = vertcat(x_ego, v_ego, a_ego)
 
   # controls
   j_ego = SX.sym('j_ego')
@@ -72,8 +65,7 @@ def gen_long_model():
   x_ego_dot = SX.sym('x_ego_dot')
   v_ego_dot = SX.sym('v_ego_dot')
   a_ego_dot = SX.sym('a_ego_dot')
-  t_dot = SX.sym('t_dot')
-  model.xdot = vertcat(x_ego_dot, v_ego_dot, a_ego_dot, t_dot)
+  model.xdot = vertcat(x_ego_dot, v_ego_dot, a_ego_dot)
 
   # live parameters
   x_lead_0 = SX.sym('x_lead_0')
@@ -83,14 +75,12 @@ def gen_long_model():
   a_min = SX.sym('a_min')
   a_max = SX.sym('a_max')
   v_max = SX.sym('v_max')
-  x_desired = SX.sym('x_desired')
   model.p = vertcat(a_min, a_max, v_max,
                     x_lead_0, v_lead_0,
-                    x_lead_1, v_lead_1,
-                    x_desired)
+                    x_lead_1, v_lead_1)
 
   # dynamics model
-  f_expl = vertcat(v_ego, a_ego, j_ego, 1.0)
+  f_expl = vertcat(v_ego, a_ego, j_ego)
   model.f_impl_expr = model.xdot - f_expl
   model.f_expl_expr = f_expl
   return model
@@ -100,7 +90,7 @@ def gen_long_mpc_solver():
   ocp = AcadosOcp()
   ocp.model = gen_long_model()
 
-  Tf = T_IDXS[N]
+  Tf = MPC_T[N]
 
   # set dimensions
   ocp.dims.N = N
@@ -115,43 +105,43 @@ def gen_long_mpc_solver():
   ocp.cost.W = QR
   ocp.cost.W_e = Q
 
-  x_ego, v_ego, a_ego, _ = ocp.model.x[0], ocp.model.x[1], ocp.model.x[2], ocp.model.x[3]
+  x_ego, v_ego, a_ego = ocp.model.x[0], ocp.model.x[1], ocp.model.x[2]
   j_ego = ocp.model.u[0]
   a_min, a_max, v_max = ocp.model.p[0], ocp.model.p[1], ocp.model.p[2]
   x_lead_0, v_lead_0 = ocp.model.p[3], ocp.model.p[4]
   x_lead_1, v_lead_1 = ocp.model.p[5], ocp.model.p[6]
-  x_desired = ocp.model.p[7]
-  lead_0_x_err = x_lead_0 - x_ego - desired_follow_distance(v_ego, v_lead_0, TR=1.2)
-  lead_1_x_err = x_lead_1 - x_ego - desired_follow_distance(v_ego, v_lead_1, TR=1.2)
+  lead_0_x_err = x_lead_0 - x_ego - desired_follow_distance(v_ego, v_lead_0, TR=1.8)
+  lead_1_x_err = x_lead_1 - x_ego - desired_follow_distance(v_ego, v_lead_1, TR=1.8)
+  dist_err = (desired_follow_distance(v_ego, v_lead_0, TR=1.8) - (x_lead_0 - x_ego))/(sqrt(v_ego + 0.5) + 0.1)
+
 
   ocp.cost.yref = np.zeros((COST_DIM+1, ))
   ocp.cost.yref_e = np.zeros((COST_DIM, ))
   #costs = [(x_ego - x_desired)/10,
-  costs = [(x_ego - x_desired)/10,
-           v_ego,
-           a_ego,
-           j_ego]
+  costs = [(lead_0_x_err) / (0.05*v_ego + .5),
+           (lead_1_x_err) / (0.05*v_ego + .5),
+           exp(.3 * dist_err) - 1.,
+           a_ego / (.1*v_ego + 1.),
+           j_ego / (.1*v_ego + 1.)]
   ocp.model.cost_y_expr = vertcat(*costs)
   ocp.model.cost_y_expr_e = vertcat(*costs[:COST_DIM])
-
-
 
   constraints = vertcat((v_ego),
                         (a_ego - a_min),
                         (a_max - a_ego),
                         (v_max - v_ego),
-                        lead_0_x_err/ (10.0),
-                        lead_1_x_err/ (10.0))
+                        0.0*lead_0_x_err/ (10.0),
+                        0.0*lead_1_x_err/ (10.0))
   ocp.model.con_h_expr = constraints
   ocp.model.con_h_expr_e = constraints
 
   x0 = np.zeros(X_DIM)
   ocp.constraints.x0 = x0
-  ocp.parameter_values = np.array([-1.2, 1.2, 100.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+  ocp.parameter_values = np.array([-1.2, 1.2, 100.0, 0.0, 0.0, 0.0, 0.0])
 
-  l2_penalty = 1.0
+  l2_penalty = 0.0
   l1_penalty = 0.0
-  weights = np.array([1e4, 1e4, 1e4, 1e3, 10., 10.])
+  weights = np.array([1e4, 1e4, 1e4, 1e3, 0., 0.])
   ocp.cost.Zl = l2_penalty * weights
   ocp.cost.zl = l1_penalty * weights
   ocp.cost.Zu = 0.0 * weights
@@ -171,7 +161,7 @@ def gen_long_mpc_solver():
 
   # set prediction horizon
   ocp.solver_options.tf = Tf
-  ocp.solver_options.shooting_nodes = np.array(T_IDXS)[:N+1]
+  ocp.solver_options.shooting_nodes = np.array(MPC_T)[:N+1]
 
   ocp.code_export_directory = EXPORT_DIR
   return ocp
@@ -213,11 +203,11 @@ class LongitudinalMpc():
       self.solver.set(i, 'x', self.x0)
 
   def set_weights(self):
-    W = np.diag([1.0, 0.0, 1.0, 10.0])
+    W = np.diag([.1, .0, 5.0, 20.0, 40.0])
     Ws = np.tile(W[None], reps=(N,1,1))
     self.solver.cost_set_slice(0, N, 'W', Ws, api='old')
     #TODO hacky weights to keep behavior the same
-    self.solver.cost_set(N, 'W', (3/20.)*W[:COST_DIM,:COST_DIM])
+    self.solver.cost_set(N, 'W', (3/5.)*W[:COST_DIM,:COST_DIM])
 
   def set_accel_limits(self, min_a, max_a):
     self.accel_limit_arr[:,0] = min_a
@@ -225,10 +215,10 @@ class LongitudinalMpc():
 
   def set_cur_state(self, v, a):
     if abs(self.x0[1] - v) > 1.:
-      self.x0 = np.array([0, v, a, 0.])
+      self.x0 = np.array([0, v, a])
       self.reset()
     else:
-      self.x0 = np.array([0, v, a, 0.])
+      self.x0 = np.array([0, v, a])
     self.solver.constraints_set(0, "lbx", self.x0)
     self.solver.constraints_set(0, "ubx", self.x0)
 
@@ -236,7 +226,7 @@ class LongitudinalMpc():
     x_ego, v_ego, a_ego, _ = self.x0
     j_ego = -1.0
     for i in range(N+1):
-      self.solver.set(i, 'x', np.array([x_ego, v_ego, a_ego, T_IDXS[i]]))
+      self.solver.set(i, 'x', np.array([x_ego, v_ego, a_ego, MPC_T[i]]))
       if i < N:
         self.solver.set(i, 'u', np.array([j_ego]))
         dt = T_IDXS[i+1] - T_IDXS[i]
@@ -254,7 +244,7 @@ class LongitudinalMpc():
 
   def update(self, carstate, radarstate, v_cruise):
     v_ego = carstate.vEgo
-    v_cruise_clipped = np.clip(v_cruise, self.x0[1] - 10., self.x0[1] + 10.0)
+    #v_cruise_clipped = np.clip(v_cruise, self.x0[1] - 10., self.x0[1] + 10.0)
 
     lead_0 = radarstate.leadOne
     if lead_0.status:
@@ -282,22 +272,22 @@ class LongitudinalMpc():
       lead_1_arr = extrapolate_lead(100, v_ego + 10, 0.0, 0.0, v_ego)
     self.prev_lead_status1 = lead_1.status
 
-    poss = get_desired_x_ego(self.x_sol, lead_0_arr, lead_1_arr, v_cruise_clipped)
-    speeds = v_cruise_clipped * np.ones(N+1)
-    accels = np.zeros(N+1)
-    yref = np.column_stack([0*poss, speeds, accels, np.zeros(N+1)])
+    #poss = get_desired_x_ego(self.x_sol, lead_0_arr, lead_1_arr, v_cruise_clipped)
+    #speeds = v_cruise_clipped * np.ones(N+1)
+    #accels = np.zeros(N+1)
+    #yref = np.column_stack([0*poss, 0*speeds, accels, np.zeros(N+1)])
 
 
     self.lead_status = lead_0.status or lead_1.status
     if self.lead_status:
       self.accel_limit_arr[:,0] = -3.5
 
-    params = np.concatenate([self.accel_limit_arr, v_cruise * np.ones((N+1,1)), lead_0_arr, lead_1_arr, poss[:,None]], axis=1)
+    params = np.concatenate([self.accel_limit_arr, v_cruise * np.ones((N+1,1)), lead_0_arr, lead_1_arr], axis=1)
     for i in range(N+1):
       self.solver.set_param(i, params[i])
 
-    self.solver.cost_set_slice(0, N, "yref", yref[:N])
-    self.solver.cost_set(N, "yref", yref[N][:COST_DIM])
+    #self.solver.cost_set_slice(0, N, "yref", yref[:N])
+    #self.solver.cost_set(N, "yref", yref[N][:COST_DIM])
 
     self.solution_status = self.solver.solve()
     self.solver.fill_in_slice(0, N+1, 'x', self.x_sol)
@@ -305,9 +295,9 @@ class LongitudinalMpc():
     self.cost = self.solver.get_cost()
     #self.solver.print_statistics()
 
-    self.v_solution = list(self.x_sol[:,1])
-    self.a_solution = list(self.x_sol[:,2])
-    self.j_solution = list(self.u_sol[:,0])
+    self.v_solution = list(np.interp(T_IDXS, MPC_T, self.x_sol[:,1]))
+    self.a_solution = list(np.interp(T_IDXS, MPC_T, self.x_sol[:,2]))
+    self.j_solution = list(np.interp(T_IDXS, MPC_T[:-1], self.u_sol[:,0]))
 
     # Reset if NaN or goes through lead car
     nans = np.any(np.isnan(self.x_sol))
