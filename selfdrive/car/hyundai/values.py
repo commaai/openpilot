@@ -220,6 +220,7 @@ FW_VERSIONS = {
       b'\xf1\x00DN8_ SCC FHCUP      1.00 1.01 99110-L1000         ',
       b'\xf1\x00DN89110-L0000         \xaa\xaa\xaa\xaa\xaa\xaa\xaa     \xf1\xa01.00\xaa\xaa\xaa\xaa\xaa\xaa\xaa\x00\x00\x00',
       b'\xf1\x00DN8 1.00 99110-L0000         \xaa\xaa\xaa\xaa\xaa\xaa\xaa     \xf1\xa01.00\xaa\xaa\xaa',
+      b'\xf1\x00DN8 1.00 99110-L0000         \xaa\xaa\xaa\xaa\xaa\xaa\xaa\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.esp, 0x7d1, None): [
       b'\xf1\x00DN ESC \a 106 \a\x01 58910-L0100',
@@ -244,6 +245,7 @@ FW_VERSIONS = {
       b'\xf1\x87391162M013\xf1\xa00240',
       b'HM6M1_0a0_F00',
       b'HM6M2_0a0_BD0',
+      b'HM6M1_0a0_G20',
     ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x00DN8 MDPS C 1.00 1.01 \x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 4DNAC101',
