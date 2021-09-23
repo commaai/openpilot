@@ -123,10 +123,6 @@ private:
 
 std::unordered_map<std::string, uint32_t> keys = {
     {"AccessToken", CLEAR_ON_MANAGER_START | DONT_LOG},
-    {"ApiCache_Device", PERSISTENT},
-    {"ApiCache_DriveStats", PERSISTENT},
-    {"ApiCache_NavDestinations", PERSISTENT},
-    {"ApiCache_Owner", PERSISTENT},
     {"AthenadPid", PERSISTENT},
     {"BootedOnroad", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_OFF},
     {"CalibrationParams", PERSISTENT},
@@ -195,18 +191,22 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"UploadRaw", PERSISTENT},
     {"Version", PERSISTENT},
     {"VisionRadarToggle", PERSISTENT},
+    {"ApiCache_Device", PERSISTENT},
+    {"ApiCache_DriveStats", PERSISTENT},
+    {"ApiCache_NavDestinations", PERSISTENT},
+    {"ApiCache_Owner", PERSISTENT},
     {"Offroad_ChargeDisabled", CLEAR_ON_MANAGER_START | CLEAR_ON_PANDA_DISCONNECT},
     {"Offroad_ConnectivityNeeded", CLEAR_ON_MANAGER_START},
     {"Offroad_ConnectivityNeededPrompt", CLEAR_ON_MANAGER_START},
-    {"Offroad_TemperatureTooHigh", CLEAR_ON_MANAGER_START},
-    {"Offroad_PandaFirmwareMismatch", CLEAR_ON_MANAGER_START | CLEAR_ON_PANDA_DISCONNECT},
+    {"Offroad_HardwareUnsupported", CLEAR_ON_MANAGER_START},
     {"Offroad_InvalidTime", CLEAR_ON_MANAGER_START},
     {"Offroad_IsTakingSnapshot", CLEAR_ON_MANAGER_START},
     {"Offroad_NeosUpdate", CLEAR_ON_MANAGER_START},
-    {"Offroad_UpdateFailed", CLEAR_ON_MANAGER_START},
-    {"Offroad_HardwareUnsupported", CLEAR_ON_MANAGER_START},
-    {"Offroad_UnofficialHardware", CLEAR_ON_MANAGER_START},
     {"Offroad_NvmeMissing", CLEAR_ON_MANAGER_START},
+    {"Offroad_PandaFirmwareMismatch", CLEAR_ON_MANAGER_START | CLEAR_ON_PANDA_DISCONNECT},
+    {"Offroad_TemperatureTooHigh", CLEAR_ON_MANAGER_START},
+    {"Offroad_UnofficialHardware", CLEAR_ON_MANAGER_START},
+    {"Offroad_UpdateFailed", CLEAR_ON_MANAGER_START},
 };
 
 } // namespace
