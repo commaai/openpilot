@@ -140,7 +140,7 @@ Community Maintained Cars and Features
 | Subaru    | Impreza 2017-19               | EyeSight          | Stock            | 0mph               | 0mph         |
 | Volkswagen| Arteon 2021<sup>4</sup>       | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Atlas 2018-19                 | Driver Assistance | Stock            | 0mph               | 0mph         |
-| Volkswagen| California 2021<sup>4</sup>   | Driver Assistance | Stock            | 0mph               | 0mph         |
+| Volkswagen| California 2021<sup>4</sup>   | Driver Assistance | Stock            | 0mph               | 32mph        |
 | Volkswagen| e-Golf 2014, 2019-20          | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Golf 2015-20                  | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Golf Alltrack 2017-18         | Driver Assistance | Stock            | 0mph               | 0mph         |
