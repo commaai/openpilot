@@ -49,30 +49,37 @@ void Replay::start(int seconds){
   thread->start();
 }
 
+void Replay::updateEvents(const std::function<void()>& lambda) {
+  // set updating_events to true to force stream thread relase the lock and wait for evnets_udpated.
+  updating_events = true;
+  {
+    std::unique_lock lk(lock);
+    lambda();
+    updating_events = false;
+    events_updated = true;
+  }
+  stream_cv_.notify_one();
+}
+
 void Replay::seekTo(int seconds, bool relative) {
   if (segments.empty()) return;
 
-  updating_events = true;
-  std::unique_lock lk(lock);
-
-  if (relative) {
-    seconds += ((cur_mono_time_ - route_start_ts) * 1e-9);
-  }
-  seconds = std::clamp(seconds, 0, (int)segments.size() * 60 -1);
-  cur_mono_time_ = route_start_ts + seconds * 1e9;
-  setCurrentSegment(seconds / 60);
-  qInfo() << "seeking to " << seconds;
-
-  updating_events = false;
+  updateEvents([&]() {
+    if (relative) {
+      seconds += ((cur_mono_time_ - route_start_ts) * 1e-9);
+    }
+    seconds = std::clamp(seconds, 0, (int)segments.size() * 60 - 1);
+    cur_mono_time_ = route_start_ts + seconds * 1e9;
+    setCurrentSegment(seconds / 60);
+    qInfo() << "seeking to " << seconds;
+  });
 }
 
 void Replay::pause(bool pause) {
-  updating_events = true;
-  std::unique_lock lk(lock);
-  qDebug() << (pause ? "paused..." : "resuming");
-  paused_ = pause;
-  updating_events = false;
-  stream_cv_.notify_one();
+  updateEvents([=]() {
+    qDebug() << (pause ? "paused..." : "resuming");
+    paused_ = pause;
+  });
 }
 
 void Replay::setCurrentSegment(int n) {
@@ -132,26 +139,22 @@ void Replay::mergeSegments(int cur_seg, int end_idx) {
       }
     }
 
-    // update logs
-    // set updating_events to true to force stream thread relase the lock
-    updating_events = true;
-    lock.lock();
-
-    if (route_start_ts == 0) {
-      // get route start time from initData
-      auto it = std::find_if(new_events->begin(), new_events->end(), [=](auto e) { return e->which == cereal::Event::Which::INIT_DATA; });
-      if (it != new_events->end()) {
-        route_start_ts = (*it)->mono_time;
-        cur_mono_time_ = route_start_ts;
+    // update events
+    auto prev_events = events;
+    auto prev_eidx = eidx;
+    updateEvents([=]() {
+      if (route_start_ts == 0) {
+        // get route start time from initData
+        auto it = std::find_if(new_events->begin(), new_events->end(), [=](auto e) { return e->which == cereal::Event::Which::INIT_DATA; });
+        if (it != new_events->end()) {
+          route_start_ts = (*it)->mono_time;
+          cur_mono_time_ = route_start_ts;
+        }
       }
-    }
 
-    auto prev_events = std::exchange(events, new_events);
-    auto prev_eidx = std::exchange(eidx, new_eidx);
-    updating_events = false;
-
-    lock.unlock();
-
+      events = new_events;
+      eidx = new_eidx;
+    });
     delete prev_events;
     delete[] prev_eidx;
   }
@@ -171,28 +174,25 @@ void Replay::mergeSegments(int cur_seg, int end_idx) {
 
 void Replay::stream() {
   float last_print = 0;
-  bool waiting_printed = false;
   cereal::Event::Which cur_which = cereal::Event::Which::INIT_DATA;
 
+  std::unique_lock lk(lock);
+
   while (true) {
-    std::unique_lock lk(lock);
-    stream_cv_.wait(lk, [=]() { return paused_ == false; });
+    stream_cv_.wait(lk, [=]() { return exit_ || (paused_ == false && events_updated); });
+    events_updated = false;
+    if (exit_) break;
 
     Event cur_event(cur_which, cur_mono_time_);
     auto eit = std::upper_bound(events->begin(), events->end(), &cur_event, Event::lessThan());
     if (eit == events->end()) {
-      lock.unlock();
-      if (std::exchange(waiting_printed, true) == false) {
-        qDebug() << "waiting for events...";
-      }
-      QThread::msleep(50);
+      qDebug() << "waiting for events...";
       continue;
     }
-    waiting_printed = false;
 
+    qDebug() << "unlogging at" << (int)((cur_mono_time_ - route_start_ts) * 1e-9);
     uint64_t evt_start_ts = cur_mono_time_;
     uint64_t loop_start_ts = nanos_since_boot();
-    qDebug() << "unlogging at" << (int)((evt_start_ts - route_start_ts) * 1e-9);
 
     for (/**/; !updating_events && eit != events->end(); ++eit) {
       const Event *evt = (*eit);
@@ -210,8 +210,8 @@ void Replay::stream() {
           last_print = current_ts;
           qInfo() << "at " << current_ts << "s";
         }
-
         setCurrentSegment(current_ts / 60);
+
         // keep time
         long etime = cur_mono_time_ - evt_start_ts;
         long rtime = nanos_since_boot() - loop_start_ts;
@@ -259,7 +259,5 @@ void Replay::stream() {
         }
       }
     }
-    lk.unlock();
-    usleep(0);
   }
 }

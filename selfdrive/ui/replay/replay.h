@@ -33,6 +33,7 @@ protected:
   void stream();
   void setCurrentSegment(int n);
   void mergeSegments(int begin_idx, int end_idx);
+  void updateEvents(const std::function<void()>& lambda);
 
   uint64_t route_start_ts = 0;
   uint64_t cur_mono_time_ = 0;
@@ -42,9 +43,10 @@ protected:
 
   // logs
   std::mutex lock;
-  bool paused_ = false;
-  std::condition_variable stream_cv_;
   std::atomic<bool> updating_events = false;
+  std::atomic<bool> paused_ = false;
+  bool events_updated = false;
+  std::condition_variable stream_cv_;
   std::vector<Event *> *events = nullptr;
   std::unordered_map<uint32_t, EncodeIdx> *eidx = nullptr;
   std::vector<std::unique_ptr<Segment>> segments;
@@ -56,4 +58,5 @@ protected:
   std::set<std::string> socks;
   VisionIpcServer *vipc_server = nullptr;
   std::unique_ptr<Route> route_;
+  std::atomic<bool> exit_ = false;
 };
