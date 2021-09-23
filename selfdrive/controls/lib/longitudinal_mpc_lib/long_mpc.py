@@ -11,7 +11,7 @@ from pyextra.acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
 from casadi import SX, vertcat
 
 
-X_DIM = 3
+X_DIM = 4
 COST_DIM = 3
 
 LONG_MPC_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -42,6 +42,7 @@ def extrapolate_lead(x_lead, v_lead, a_lead, a_lead_tau, v_ego):
   return output
 
 def get_desired_x_ego(x_sol_prev, lead_0, lead_1, v_cruise):
+  #x_sol_prev[:,1] = x_sol_prev[0,1] * np.ones(N+1)
   desired_follow_distance_0 = lead_0[:,0] - desired_follow_distance(x_sol_prev[:,1], lead_0[:,1])
   desired_follow_distance_1 = lead_1[:,0] - desired_follow_distance(x_sol_prev[:,1], lead_1[:,1])
   cruise_desired = v_cruise * np.array(T_IDXS)
@@ -60,7 +61,8 @@ def gen_long_model():
   x_ego = SX.sym('x_ego')
   v_ego = SX.sym('v_ego')
   a_ego = SX.sym('a_ego')
-  model.x = vertcat(x_ego, v_ego, a_ego)
+  t = SX.sym('t')
+  model.x = vertcat(x_ego, v_ego, a_ego, t)
 
   # controls
   j_ego = SX.sym('j_ego')
@@ -70,7 +72,8 @@ def gen_long_model():
   x_ego_dot = SX.sym('x_ego_dot')
   v_ego_dot = SX.sym('v_ego_dot')
   a_ego_dot = SX.sym('a_ego_dot')
-  model.xdot = vertcat(x_ego_dot, v_ego_dot, a_ego_dot)
+  t_dot = SX.sym('t_dot')
+  model.xdot = vertcat(x_ego_dot, v_ego_dot, a_ego_dot, t_dot)
 
   # live parameters
   x_lead_0 = SX.sym('x_lead_0')
@@ -80,12 +83,14 @@ def gen_long_model():
   a_min = SX.sym('a_min')
   a_max = SX.sym('a_max')
   v_max = SX.sym('v_max')
+  x_desired = SX.sym('x_desired')
   model.p = vertcat(a_min, a_max, v_max,
                     x_lead_0, v_lead_0,
-                    x_lead_1, v_lead_1)
+                    x_lead_1, v_lead_1,
+                    x_desired)
 
   # dynamics model
-  f_expl = vertcat(v_ego, a_ego, j_ego)
+  f_expl = vertcat(v_ego, a_ego, j_ego, 1.0)
   model.f_impl_expr = model.xdot - f_expl
   model.f_expl_expr = f_expl
   return model
@@ -110,17 +115,19 @@ def gen_long_mpc_solver():
   ocp.cost.W = QR
   ocp.cost.W_e = Q
 
-  x_ego, v_ego, a_ego = ocp.model.x[0], ocp.model.x[1], ocp.model.x[2]
+  x_ego, v_ego, a_ego, _ = ocp.model.x[0], ocp.model.x[1], ocp.model.x[2], ocp.model.x[3]
   j_ego = ocp.model.u[0]
   a_min, a_max, v_max = ocp.model.p[0], ocp.model.p[1], ocp.model.p[2]
   x_lead_0, v_lead_0 = ocp.model.p[3], ocp.model.p[4]
   x_lead_1, v_lead_1 = ocp.model.p[5], ocp.model.p[6]
-  lead_0_x_err = x_lead_0 - x_ego - desired_follow_distance(v_ego, v_lead_0, TR=1.8)
-  lead_1_x_err = x_lead_1 - x_ego - desired_follow_distance(v_ego, v_lead_1, TR=1.8)
+  x_desired = ocp.model.p[7]
+  lead_0_x_err = x_lead_0 - x_ego - desired_follow_distance(v_ego, v_lead_0, TR=1.2)
+  lead_1_x_err = x_lead_1 - x_ego - desired_follow_distance(v_ego, v_lead_1, TR=1.2)
 
   ocp.cost.yref = np.zeros((COST_DIM+1, ))
   ocp.cost.yref_e = np.zeros((COST_DIM, ))
-  costs = [x_ego,
+  #costs = [(x_ego - x_desired)/10,
+  costs = [(x_ego - x_desired)/10,
            v_ego,
            a_ego,
            j_ego]
@@ -129,22 +136,22 @@ def gen_long_mpc_solver():
 
 
 
-  constraints = vertcat(v_ego,
-                        a_ego - a_min,
-                        a_max - a_ego,
-                        v_max - v_ego,
-                        lead_0_x_err/ (5. + v_ego),
-                        lead_1_x_err/ (5. + v_ego))
+  constraints = vertcat((v_ego),
+                        (a_ego - a_min),
+                        (a_max - a_ego),
+                        (v_max - v_ego),
+                        lead_0_x_err/ (10.0),
+                        lead_1_x_err/ (10.0))
   ocp.model.con_h_expr = constraints
   ocp.model.con_h_expr_e = constraints
 
-  x0 = np.array([0.0, 0.0, 0.0])
+  x0 = np.zeros(X_DIM)
   ocp.constraints.x0 = x0
-  ocp.parameter_values = np.array([-1.2, 1.2, 100.0, 0.0, 0.0, 0.0, 0.0])
+  ocp.parameter_values = np.array([-1.2, 1.2, 100.0, 0.0, 0.0, 0.0, 0.0, 0.0])
 
   l2_penalty = 1.0
   l1_penalty = 0.0
-  weights = np.array([1e4, 1e4, 1e4, 1e3, 20., 20.])
+  weights = np.array([1e4, 1e4, 1e4, 1e3, 10., 10.])
   ocp.cost.Zl = l2_penalty * weights
   ocp.cost.zl = l1_penalty * weights
   ocp.cost.Zu = 0.0 * weights
@@ -173,7 +180,7 @@ def gen_long_mpc_solver():
 class LongitudinalMpc():
   def __init__(self):
     self.solver = AcadosOcpSolver('long', N, EXPORT_DIR)
-    self.x_sol = np.zeros((N+1, 3))
+    self.x_sol = np.zeros((N+1, X_DIM))
     self.u_sol = np.zeros((N, 1))
     self.set_weights()
 
@@ -187,7 +194,7 @@ class LongitudinalMpc():
     self.accel_limit_arr = np.zeros((N+1, 2))
     self.accel_limit_arr[:,0] = -1.2
     self.accel_limit_arr[:,1] = 1.2
-    self.x0 = np.zeros(3)
+    self.x0 = np.zeros(X_DIM)
     #self.constraint_cost = np.tile(np.array([1e4, 1e4, 1e4, .0, .0]), (N+1,1))
     self.reset()
 
@@ -206,7 +213,7 @@ class LongitudinalMpc():
       self.solver.set(i, 'x', self.x0)
 
   def set_weights(self):
-    W = np.diag([.01, 0.0, 0.0, 50.0])
+    W = np.diag([1.0, 0.0, 1.0, 10.0])
     Ws = np.tile(W[None], reps=(N,1,1))
     self.solver.cost_set_slice(0, N, 'W', Ws, api='old')
     #TODO hacky weights to keep behavior the same
@@ -218,18 +225,18 @@ class LongitudinalMpc():
 
   def set_cur_state(self, v, a):
     if abs(self.x0[1] - v) > 1.:
-      self.x0 = np.array([0, v, a])
+      self.x0 = np.array([0, v, a, 0.])
       self.reset()
     else:
-      self.x0 = np.array([0, v, a])
+      self.x0 = np.array([0, v, a, 0.])
     self.solver.constraints_set(0, "lbx", self.x0)
     self.solver.constraints_set(0, "ubx", self.x0)
 
   def init_with_sim(self):
-    x_ego, v_ego, a_ego = self.x0
+    x_ego, v_ego, a_ego, _ = self.x0
     j_ego = -1.0
     for i in range(N+1):
-      self.solver.set(i, 'x', np.array([x_ego, v_ego, a_ego]))
+      self.solver.set(i, 'x', np.array([x_ego, v_ego, a_ego, T_IDXS[i]]))
       if i < N:
         self.solver.set(i, 'u', np.array([j_ego]))
         dt = T_IDXS[i+1] - T_IDXS[i]
@@ -254,7 +261,7 @@ class LongitudinalMpc():
       lead_0_arr = extrapolate_lead(lead_0.dRel, lead_0.vLead, lead_0.aLeadK, lead_0.aLeadTau, v_ego)
       if not self.prev_lead_status or abs(lead_0.dRel - self.prev_lead_x) > 2.5:
         self.new_lead = True
-        self.init_with_sim()
+        #self.init_with_sim()
       else:
         self.new_lead = False
       self.prev_lead_x = lead_0.dRel
@@ -267,7 +274,7 @@ class LongitudinalMpc():
       lead_1_arr = extrapolate_lead(lead_1.dRel, lead_1.vLead, lead_1.aLeadK, lead_1.aLeadTau, v_ego)
       if not self.prev_lead_status1 or abs(lead_1.dRel - self.prev_lead_x1) > 2.5:
         self.new_lead1 = True
-        self.init_with_sim()
+        #self.init_with_sim()
       else:
         self.new_lead1 = False
       self.prev_lead_x1 = lead_0.dRel
@@ -275,17 +282,17 @@ class LongitudinalMpc():
       lead_1_arr = extrapolate_lead(100, v_ego + 10, 0.0, 0.0, v_ego)
     self.prev_lead_status1 = lead_1.status
 
-    poss = get_desired_x_ego(self.x_sol, lead_0_arr, lead_1_arr, v_cruise)
+    poss = get_desired_x_ego(self.x_sol, lead_0_arr, lead_1_arr, v_cruise_clipped)
     speeds = v_cruise_clipped * np.ones(N+1)
     accels = np.zeros(N+1)
-    yref = np.column_stack([poss, speeds, accels, np.zeros(N+1)])
+    yref = np.column_stack([0*poss, speeds, accels, np.zeros(N+1)])
 
 
     self.lead_status = lead_0.status or lead_1.status
     if self.lead_status:
       self.accel_limit_arr[:,0] = -3.5
 
-    params = np.concatenate([self.accel_limit_arr, v_cruise * np.ones((N+1,1)), lead_0_arr, lead_1_arr], axis=1)
+    params = np.concatenate([self.accel_limit_arr, v_cruise * np.ones((N+1,1)), lead_0_arr, lead_1_arr, poss[:,None]], axis=1)
     for i in range(N+1):
       self.solver.set_param(i, params[i])
 
