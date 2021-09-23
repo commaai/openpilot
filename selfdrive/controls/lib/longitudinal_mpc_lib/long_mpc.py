@@ -249,7 +249,8 @@ from common.realtime import sec_since_boot
 from common.numpy_fast import clip
 from selfdrive.swaglog import cloudlog
 from selfdrive.modeld.constants import T_IDXS
-from selfdrive.controls.lib.drive_helpers import MPC_COST_LONG, CONTROL_N
+from selfdrive.controls.lib.drive_helpers import MPC_COST_LONG
+from selfdrive.controls.lib.drive_helpers import LON_MPC_N as N
 from selfdrive.controls.lib.radar_helpers import _LEAD_ACCEL_TAU
 
 from pyextra.acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
@@ -258,9 +259,6 @@ from casadi import SX, vertcat, sqrt, exp
 LONG_MPC_DIR = os.path.dirname(os.path.abspath(__file__))
 EXPORT_DIR = os.path.join(LONG_MPC_DIR, "c_generated_code")
 JSON_FILE = "acados_ocp_long.json"
-
-MPC_T = T_IDXS #list(np.arange(0,1.,.2)) + list(np.arange(1.,10.6,.6))
-N = len(MPC_T) - 1
 
 
 def desired_follow_distance(v_ego, v_lead):
@@ -305,7 +303,7 @@ def gen_long_mpc_solver():
   ocp = AcadosOcp()
   ocp.model = gen_long_model()
 
-  Tf = np.array(MPC_T)[-1]
+  Tf = np.array(T_IDXS)[-1]
 
   # set dimensions
   ocp.dims.N = N
@@ -358,7 +356,7 @@ def gen_long_mpc_solver():
 
   # set prediction horizon
   ocp.solver_options.tf = Tf
-  ocp.solver_options.shooting_nodes = np.array(MPC_T)
+  ocp.solver_options.shooting_nodes = np.array(T_IDXS)
 
   ocp.code_export_directory = EXPORT_DIR
   return ocp
@@ -409,8 +407,8 @@ class LongitudinalMpc():
   def extrapolate_lead(self, x_lead, v_lead, a_lead_0, a_lead_tau):
     self.lead_xv[0, 0], self.lead_xv[0, 1] = x_lead, v_lead
     for i in range(1, N+1):
-      dt = MPC_T[i] - MPC_T[i-1]
-      a_lead = a_lead_0 * math.exp(-a_lead_tau * (MPC_T[i]**2)/2.)
+      dt = T_IDXS[i] - T_IDXS[i-1]
+      a_lead = a_lead_0 * math.exp(-a_lead_tau * (T_IDXS[i]**2)/2.)
       x_lead += v_lead * dt
       v_lead += a_lead * dt
       if v_lead < 0.0:
@@ -424,7 +422,7 @@ class LongitudinalMpc():
     x_ego = 0.0
     self.solver.set(0, 'x', np.array([x_ego, v_ego, a_ego]))
     for i in range(1, N+1):
-      dt = MPC_T[i] - MPC_T[i-1]
+      dt = T_IDXS[i] - T_IDXS[i-1]
       v_ego += a_ego * dt
       if v_ego <= 0.0:
         v_ego = 0.0
@@ -484,9 +482,9 @@ class LongitudinalMpc():
     self.solver.fill_in_slice(0, N, 'u', self.u_sol)
     #self.solver.print_statistics()
 
-    self.v_solution = np.interp(T_IDXS[:CONTROL_N], MPC_T, list(self.x_sol[:,1]))
-    self.a_solution = np.interp(T_IDXS[:CONTROL_N], MPC_T, list(self.x_sol[:,2]))
-    self.j_solution = np.interp(T_IDXS[:CONTROL_N], MPC_T[:-1], list(self.u_sol[:,0]))
+    self.v_solution = list(self.x_sol[:,1])
+    self.a_solution = list(self.x_sol[:,2])
+    self.j_solution = list(self.u_sol[:,0])
 
     # Reset if goes through lead car
     self.crashing = self.crashing or np.sum(self.lead_xv[:,0] - self.x_sol[:,0] < 0) > 0
