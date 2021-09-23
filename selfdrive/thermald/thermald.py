@@ -202,20 +202,6 @@ def thermald_thread():
   if params.get_bool("IsOnroad"):
     params.put_bool("BootedOnroad", True)
 
-  # CPR3 logging
-  if EON:
-    base_path = "/sys/kernel/debug/cpr3-regulator/"
-    cpr_files = [p for p in Path(base_path).glob("**/*") if p.is_file()]
-    cpr_files = ["/sys/kernel/debug/regulator/pm8994_s11/voltage"] + cpr_files
-    cpr_data = {}
-    for cf in cpr_files:
-      with open(cf, "r") as f:
-        try:
-          cpr_data[str(cf)] = f.read().strip()
-        except Exception:
-          pass
-    cloudlog.event("CPR", data=cpr_data)
-
   while 1:
     pandaState = messaging.recv_sock(pandaState_sock, wait=True)
     msg = read_thermal(thermal_config)
