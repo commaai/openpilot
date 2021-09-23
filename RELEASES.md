@@ -4,6 +4,7 @@ Version 0.8.10 (2021-XX-XX)
  * Škoda Karoq 2019 support thanks to jyoung8607!
  * Volkswagen Arteon 2021 support thanks to jyoung8607!
  * Volkswagen California 2021 support thanks to jyoung8607!
+ * Hyundai Santa Fe 2022 support thanks to sunnyhaibin!
 
 Version 0.8.9 (2021-09-14)
 ========================
