@@ -128,6 +128,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"ApiCache_Owner", PERSISTENT},
     {"ApiCache_NavDestinations", PERSISTENT},
     {"AthenadPid", PERSISTENT},
+    {"BootedOnroad", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_OFF},
     {"CalibrationParams", PERSISTENT},
     {"CarBatteryCapacity", PERSISTENT},
     {"CarParams", CLEAR_ON_MANAGER_START | CLEAR_ON_PANDA_DISCONNECT | CLEAR_ON_IGNITION_ON},

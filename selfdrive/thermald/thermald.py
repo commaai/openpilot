@@ -198,8 +198,9 @@ def thermald_thread():
   # TODO: use PI controller for UNO
   controller = PIController(k_p=0, k_i=2e-3, neg_limit=-80, pos_limit=0, rate=(1 / DT_TRML))
 
+  # Leave flag for loggerd to indicate device was left onroad
   if params.get_bool("IsOnroad"):
-    cloudlog.event("onroad flag not cleared")
+    params.put_bool("BootedOnroad", True)
 
   # CPR3 logging
   if EON:
