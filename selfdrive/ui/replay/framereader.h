@@ -19,9 +19,9 @@ extern "C" {
 
 class FrameReader {
 public:
-  FrameReader(const std::string &url, int timeout_sec = 0);
+  FrameReader();
   ~FrameReader();
-  bool process();
+  bool load(const std::string &url);
   uint8_t *get(int idx);
   int getRGBSize() const { return width * height * 3; }
   size_t getFrameCount() const { return frames_.size(); }
@@ -32,7 +32,6 @@ public:
 private:
   void decodeThread();
   uint8_t *decodeFrame(AVPacket *pkt);
-  static int check_interrupt(void *p);
   struct Frame {
     AVPacket pkt = {};
     uint8_t *data = nullptr;
@@ -52,8 +51,5 @@ private:
   int decode_idx_ = 0;
   std::atomic<bool> exit_ = false;
   bool valid_ = false;
-  std::string url_;
   std::thread decode_thread_;
-  int timeout_ = 0;
-  double timeout_ms_ = 0;
 };

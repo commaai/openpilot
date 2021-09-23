@@ -115,7 +115,7 @@ class LongitudinalMpc():
     self.v_solution = [0.0 for i in range(len(T_IDXS))]
     self.a_solution = [0.0 for i in range(len(T_IDXS))]
     self.j_solution = [0.0 for i in range(len(T_IDXS)-1)]
-    self.yref = np.ones((N+1, 4))
+    self.yref = np.zeros((N+1, 4))
     self.solver.cost_set_slice(0, N, "yref", self.yref[:N])
     self.solver.cost_set(N, "yref", self.yref[N][:3])
     self.T_IDXS = np.array(T_IDXS[:N+1])
@@ -156,8 +156,15 @@ class LongitudinalMpc():
 
   def update(self, carstate, model, v_cruise):
     v_cruise_clipped = clip(v_cruise, self.x0[1] - 10., self.x0[1] + 10.0)
-    self.yref[:,0] = v_cruise_clipped * self.T_IDXS  # position
-    self.yref[:,1] = v_cruise_clipped * np.ones(N+1)  # speed
+    position = v_cruise_clipped * self.T_IDXS
+    speed = v_cruise_clipped * np.ones(N+1)
+    accel = np.zeros(N+1)
+    self.update_with_xva(position, speed, accel)
+
+  def update_with_xva(self, position, speed, accel):
+    self.yref[:,0] = position
+    self.yref[:,1] = speed
+    self.yref[:,2] = accel
     self.solver.cost_set_slice(0, N, "yref", self.yref[:N])
     self.solver.cost_set(N, "yref", self.yref[N][:3])
 

@@ -223,6 +223,15 @@ class Tici(HardwareBase):
     except Exception:
       return None
 
+  def get_modem_temperatures(self):
+    modem = self.get_modem()
+    try:
+      command_timeout = 0.2
+      temps = modem.Command("AT+QTEMP", int(command_timeout * 1000), dbus_interface=MM_MODEM, timeout=command_timeout)
+      return list(map(int, temps.split(' ')[1].split(',')))
+    except Exception:
+      return []
+
   # We don't have a battery, so let's use some sane constants
   def get_battery_capacity(self):
     return 100

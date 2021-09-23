@@ -4,18 +4,28 @@ import unittest
 
 from common.params import Params
 from selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
-from selfdrive.manager.process_config import managed_processes
-
-
-def put_default_car_params():
-  from selfdrive.car.honda.values import CAR
-  from selfdrive.car.honda.interface import CarInterface
-  cp = CarInterface.get_params(CAR.CIVIC)
-  Params().put("CarParams", cp.to_bytes())
 
 
 # TODO: make new FCW tests
 maneuvers = [
+  Maneuver(
+    'approach stopped car at 30m/s',
+    duration=20.,
+    initial_speed=30.,
+    lead_relevancy=True,
+    initial_distance_lead=120.,
+    speed_lead_values=[30., 0.],
+    breakpoints=[0., 1.],
+  ),
+  Maneuver(
+    'approach stopped car at 20m/s',
+    duration=20.,
+    initial_speed=20.,
+    lead_relevancy=True,
+    initial_distance_lead=60.,
+    speed_lead_values=[20., 0.],
+    breakpoints=[0., 1.],
+  ),
   Maneuver(
     'steady state following a car at 20m/s, then lead decel to 0mph at 1m/s^2',
     duration=50.,
@@ -23,7 +33,7 @@ maneuvers = [
     lead_relevancy=True,
     initial_distance_lead=35.,
     speed_lead_values=[20., 20., 0.],
-    speed_lead_breakpoints=[0., 15., 35.0],
+    breakpoints=[0., 15., 35.0],
   ),
   Maneuver(
     'steady state following a car at 20m/s, then lead decel to 0mph at 2m/s^2',
@@ -32,7 +42,7 @@ maneuvers = [
     lead_relevancy=True,
     initial_distance_lead=35.,
     speed_lead_values=[20., 20., 0.],
-    speed_lead_breakpoints=[0., 15., 25.0],
+    breakpoints=[0., 15., 25.0],
   ),
   Maneuver(
     'steady state following a car at 20m/s, then lead decel to 0mph at 3m/s^2',
@@ -41,7 +51,7 @@ maneuvers = [
     lead_relevancy=True,
     initial_distance_lead=35.,
     speed_lead_values=[20., 20., 0.],
-    speed_lead_breakpoints=[0., 15., 21.66],
+    breakpoints=[0., 15., 21.66],
   ),
   Maneuver(
     'steady state following a car at 20m/s, then lead decel to 0mph at 5m/s^2',
@@ -50,7 +60,7 @@ maneuvers = [
     lead_relevancy=True,
     initial_distance_lead=35.,
     speed_lead_values=[20., 20., 0.],
-    speed_lead_breakpoints=[0., 15., 19.],
+    breakpoints=[0., 15., 19.],
   ),
   Maneuver(
     "approach stopped car at 20m/s",
@@ -59,7 +69,7 @@ maneuvers = [
     lead_relevancy=True,
     initial_distance_lead=50.,
     speed_lead_values=[0., 0.],
-    speed_lead_breakpoints=[1., 11.],
+    breakpoints=[1., 11.],
   ),
   Maneuver(
     "approach slower cut-in car at 20m/s",
@@ -68,7 +78,7 @@ maneuvers = [
     lead_relevancy=True,
     initial_distance_lead=50.,
     speed_lead_values=[15., 15.],
-    speed_lead_breakpoints=[1., 11.],
+    breakpoints=[1., 11.],
     only_lead2=True,
   ),
   Maneuver(
@@ -78,7 +88,8 @@ maneuvers = [
     lead_relevancy=True,
     initial_distance_lead=10.,
     speed_lead_values=[0., 0.],
-    speed_lead_breakpoints=[1., 11.],
+    prob_lead_values=[0., 0.],
+    breakpoints=[1., 11.],
     only_radar=True,
   ),
 ]
@@ -106,12 +117,7 @@ def run_maneuver_worker(k):
   def run(self):
     man = maneuvers[k]
     print(man.title)
-    put_default_car_params()
-    managed_processes['plannerd'].start()
-
-    valid = man.evaluate()
-
-    managed_processes['plannerd'].stop()
+    valid, _ = man.evaluate()
     self.assertTrue(valid)
   return run
 

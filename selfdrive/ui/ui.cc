@@ -108,7 +108,8 @@ static void update_state(UIState *s) {
 
   // update engageability and DM icons at 2Hz
   if (sm.frame % (UI_FREQ / 2) == 0) {
-    scene.engageable = sm["controlsState"].getControlsState().getEngageable();
+    auto cs = sm["controlsState"].getControlsState();
+    scene.engageable = cs.getEngageable() || cs.getEnabled();
     scene.dm_active = sm["driverMonitoringState"].getDriverMonitoringState().getIsActiveMode();
   }
   if (sm.updated("modelV2") && s->vg) {
