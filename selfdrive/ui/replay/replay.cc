@@ -152,7 +152,6 @@ void Replay::mergeSegments(int cur_seg, int end_idx) {
 
     lock.unlock();
 
-    // free previous events & eidx
     delete prev_events;
     delete[] prev_eidx;
   }
