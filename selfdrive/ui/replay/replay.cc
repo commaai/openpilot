@@ -46,6 +46,8 @@ Replay::~Replay() {
     stream_thread->quit();
     stream_thread->wait();
   }
+
+  delete vipc_server;
   delete pm;
   delete events;
   delete [] eidx;
