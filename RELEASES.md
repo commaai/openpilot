@@ -1,5 +1,6 @@
 Version 0.8.10 (2021-XX-XX)
 ========================
+ * Hyundai Santa Fe 2022 support thanks to sunnyhaibin!
  * Škoda Kamiq 2021 support thanks to jyoung8607!
  * Škoda Karoq 2019 support thanks to jyoung8607!
  * Volkswagen Arteon 2021 support thanks to jyoung8607!
