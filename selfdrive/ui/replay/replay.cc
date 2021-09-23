@@ -166,7 +166,7 @@ void Replay::mergeSegments(int cur_seg, int end_idx) {
     }
   }
   if (removed.size() > 0) {
-    qInfo() << "remove segments" << removed;
+    qDebug() << "remove segments" << removed;
   }
 }
 
