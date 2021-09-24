@@ -847,6 +847,7 @@ FW_VERSIONS = {
       b'39990-TDK-J050\x00\x00',
       b'39990-TDK-N020\x00\x00',
     ],
+    # TODO: vsa is "essential" for fpv2 but doesn't appear on some models
     (Ecu.vsa, 0x18da28f1, None): [
       b'57114-TDK-J120\x00\x00',
       b'57114-TDK-J330\x00\x00',
@@ -856,6 +857,7 @@ FW_VERSIONS = {
       b'78109-TDK-J320\x00\x00',
     ],
     (Ecu.fwdRadar, 0x18dab0f1, None): [
+      b'36161-TDK-J070\x00\x00',
       b'36161-TDK-J080\x00\x00',
       b'36161-TDK-J530\x00\x00',
     ],
