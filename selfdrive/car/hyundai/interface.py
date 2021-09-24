@@ -29,7 +29,7 @@ class CarInterface(CarInterfaceBase):
     ret.safetyParam = 0
 
     # Most Hyundai car ports are community features for now
-    ret.communityFeature = candidate not in [CAR.SONATA, CAR.PALISADE] or ret.openpilotLongitudinalControl
+    ret.communityFeature = ret.openpilotLongitudinalControl
     ret.pcmCruise = not ret.openpilotLongitudinalControl
 
     ret.steerActuatorDelay = 0.1  # Default delay
