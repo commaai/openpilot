@@ -87,7 +87,7 @@ QWidget * Setup::network_setup() {
   main_layout->setContentsMargins(55, 50, 55, 50);
 
   // title
-  QLabel *title = new QLabel("Connect to WiFi");
+  QLabel *title = new QLabel("Connect to Wi-Fi");
   title->setStyleSheet("font-size: 90px; font-weight: 500;");
   main_layout->addWidget(title, 0, Qt::AlignLeft | Qt::AlignTop);
 
@@ -122,7 +122,7 @@ QWidget * Setup::network_setup() {
     cont->setEnabled(success);
     if (success) {
       const bool cell = networking->wifi->currentNetworkType() == NetworkType::CELL;
-      cont->setText(cell ? "Continue without WiFi" : "Continue");
+      cont->setText(cell ? "Continue without Wi-Fi" : "Continue");
     } else {
       cont->setText("Waiting for internet");
     }

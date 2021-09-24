@@ -29,7 +29,7 @@ Updater::Updater(const QString &updater_path, const QString &manifest_path, QWid
 
     layout->addSpacing(75);
 
-    QLabel *desc = new QLabel("An operating system update is required. Connect your device to WiFi for the fastest update experience. The download size is approximately 1GB.");
+    QLabel *desc = new QLabel("An operating system update is required. Connect your device to Wi-Fi for the fastest update experience. The download size is approximately 1GB.");
     desc->setWordWrap(true);
     desc->setStyleSheet("font-size: 65px;");
     layout->addWidget(desc);
@@ -40,7 +40,7 @@ Updater::Updater(const QString &updater_path, const QString &manifest_path, QWid
     hlayout->setSpacing(30);
     layout->addLayout(hlayout);
 
-    QPushButton *connect = new QPushButton("Connect to WiFi");
+    QPushButton *connect = new QPushButton("Connect to Wi-Fi");
     connect->setObjectName("navBtn");
     QObject::connect(connect, &QPushButton::clicked, [=]() {
 #ifndef QCOM
