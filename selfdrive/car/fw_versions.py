@@ -288,7 +288,7 @@ def get_fw_versions(logcan, sendcan, bus, extra=None, timeout=0.1, debug=False, 
           if addrs:
             query = IsoTpParallelQuery(sendcan, logcan, bus, addrs, request, response, response_offset, debug=debug)
             t = 2 * timeout if i == 0 else timeout
-            fw_versions.update(query.get_data(t))
+            fw_versions.update(query.get_data(t, total_timeout=10 * timeout))
         except Exception:
           cloudlog.warning(f"FW query exception: {traceback.format_exc()}")
 
