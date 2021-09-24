@@ -73,7 +73,7 @@ class IsoTpParallelQuery:
 
   def get_data(self, timeout, total_timeout=None):
     if total_timeout is None:
-      total_timeout = timeout
+      total_timeout = 10 * timeout
 
     self._drain_rx()
 
