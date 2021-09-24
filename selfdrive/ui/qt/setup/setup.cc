@@ -357,9 +357,8 @@ void Setup::nextPage() {
 
 Setup::Setup(QWidget *parent) : QStackedWidget(parent) {
   std::stringstream buffer;
-  buffer << std::ifstream("/sys/class/hwmonoxx/hwmon1/in1_input").rdbuf();
+  buffer << std::ifstream("/sys/class/hwmon/hwmon1/in1_input").rdbuf();
   float voltage = (float)std::atoi(buffer.str().c_str()) / 1000.;
-  qDebug() << "voltage" << voltage;
   if (voltage < 7) {
     addWidget(low_voltage());
   }
