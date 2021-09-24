@@ -16,9 +16,6 @@ class CarInterface(CarInterfaceBase):
     ret.carName = "nissan"
     ret.safetyModel = car.CarParams.SafetyModel.nissan
 
-    # Nissan port is a community feature, since we don't own one to test
-    ret.communityFeature = True
-
     ret.steerLimitAlert = False
     ret.steerRateCost = 0.5
 
