@@ -7,7 +7,6 @@ from common.realtime import sec_since_boot
 from common.numpy_fast import clip
 from selfdrive.swaglog import cloudlog
 from selfdrive.modeld.constants import T_IDXS
-from selfdrive.controls.lib.drive_helpers import MPC_COST_LONG
 from selfdrive.controls.lib.drive_helpers import LON_MPC_N as N
 from selfdrive.controls.lib.radar_helpers import _LEAD_ACCEL_TAU
 
@@ -25,9 +24,16 @@ COST_E_DIM = 2
 COST_DIM = COST_E_DIM + 1
 MIN_ACCEL = -3.5
 
+X_EGO_COST = 80.
+A_EGO_COST = .1
+J_EGO_COST = .2
+DANGER_ZONE_COST = 1e3
+CRASH_DISTANCE = 1.5
 
 TR = 1.8
 G = 9.81
+
+
 def get_stopped_equivalence_factor(v_lead):
   return TR * v_lead + (v_lead*v_lead) / (2 * G)
 
@@ -122,7 +128,7 @@ def gen_long_mpc_solver():
 
   l2_penalty = 1.0
   l1_penalty = 0.0
-  weights = np.array([1e8, 1e6, 1e6, 1e3, 0.])
+  weights = np.array([1e8, 1e6, 1e6, DANGER_ZONE_COST, 0.])
   ocp.cost.Zl = l2_penalty * weights
   ocp.cost.zl = l1_penalty * weights
   ocp.cost.Zu = 0.0 * weights
@@ -183,9 +189,7 @@ class LongitudinalMpc():
     self.x0 = np.zeros(3)
 
   def set_weights(self):
-    W = np.diag([2*MPC_COST_LONG.DISTANCE*20*20.,
-                 MPC_COST_LONG.ACCELERATION/100.,
-                 MPC_COST_LONG.JERK/100.])
+    W = np.diag([X_EGO_COST, A_EGO_COST, J_EGO_COST])
     Ws = np.tile(W[None], reps=(N,1,1))
     self.solver.cost_set_slice(0, N, 'W', Ws, api='old')
     #TODO hacky weights to keep behavior the same
@@ -285,6 +289,7 @@ class LongitudinalMpc():
     lead_1_obstacle = lead_xv_1[:,0] + get_stopped_equivalence_factor(lead_xv_1[:,1])
 
     # Fake an obstacle for cruise
+    # TODO very hacky costs to keep cruise behavior similar
     v_cruise_clipped = np.clip(v_cruise * np.ones(N+1),
                                self.x0[1] - (1.0 + (1/60)*(15+self.x0[1])*np.array(T_IDXS)),
                                self.x0[1] + .7*(1.0 + np.array(T_IDXS)))
@@ -305,7 +310,7 @@ class LongitudinalMpc():
     self.j_solution = list(self.u_sol[:,0])
 
     # Reset if goes through lead car
-    self.crashing = self.crashing or np.sum(lead_xv_0[:,0] - self.x_sol[:,0] < 0) > 0
+    self.crashing = self.crashing or np.sum(lead_xv_0[:,0] - self.x_sol[:,0] < CRASH_DISTANCE) > 0
 
     t = sec_since_boot()
     if self.solution_status != 0:
