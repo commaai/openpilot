@@ -67,8 +67,8 @@ class TestStartup(unittest.TestCase):
     (EventName.startupNoCar, None, False, COROLLA_FW_VERSIONS[:1]),
 
     # fuzzy match
-    (EventName.startupFuzzyFingerprint, TOYOTA.COROLLA, True, COROLLA_FW_VERSIONS_FUZZY),
-    (EventName.startupFuzzyFingerprint, TOYOTA.COROLLA, False, COROLLA_FW_VERSIONS_FUZZY),
+    (EventName.startupMaster, TOYOTA.COROLLA, True, COROLLA_FW_VERSIONS_FUZZY),
+    (EventName.startupMaster, TOYOTA.COROLLA, False, COROLLA_FW_VERSIONS_FUZZY),
   ])
   @with_processes(['controlsd'])
   def test_startup_alert(self, expected_event, car_model, toggle_enabled, fw_versions):
