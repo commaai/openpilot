@@ -12,7 +12,7 @@ from selfdrive.controls.lib.drive_helpers import LON_MPC_N as N
 from selfdrive.controls.lib.radar_helpers import _LEAD_ACCEL_TAU
 
 from pyextra.acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
-from casadi import SX, vertcat, sqrt, exp
+from casadi import SX, vertcat
 
 LONG_MPC_DIR = os.path.dirname(os.path.abspath(__file__))
 EXPORT_DIR = os.path.join(LONG_MPC_DIR, "c_generated_code")
@@ -21,7 +21,7 @@ JSON_FILE = "acados_ocp_long.json"
 
 X_DIM = 3
 U_DIM = 1
-COST_E_DIM = 3
+COST_E_DIM = 2
 COST_DIM = COST_E_DIM + 1
 MIN_ACCEL = -3.5
 
@@ -99,11 +99,10 @@ def gen_long_mpc_solver():
   ocp.cost.yref = np.zeros((COST_DIM, ))
   ocp.cost.yref_e = np.zeros((COST_E_DIM, ))
 
-  desired_dist = get_safe_obstacle_distance(v_ego)
-  dist_err = (desired_dist - (x_obstacle - x_ego))/(sqrt(v_ego + 0.5) + 0.1)
+  desired_dist_comfort = get_safe_obstacle_distance(v_ego)
+  desired_dist_danger = (7/8) * get_safe_obstacle_distance(v_ego)
 
-  costs = [exp(.3 * dist_err) - 1.,
-           ((x_obstacle - x_ego) - (desired_dist)) / (v_ego + 10.),
+  costs = [((x_obstacle - x_ego) - (desired_dist_comfort)) / (v_ego + 10.),
            a_ego * (1. * v_ego + 10.0),
            j_ego * (1. * v_ego + 10.0)]
   ocp.model.cost_y_expr = vertcat(*costs)
@@ -112,7 +111,7 @@ def gen_long_mpc_solver():
   constraints = vertcat((v_ego),
                         (a_ego - a_min),
                         (a_max - a_ego),
-                        0.0,
+                        ((x_obstacle - x_ego) - (desired_dist_danger)) / (v_ego + 10.),
                         0.0)
   ocp.model.con_h_expr = constraints
   ocp.model.con_h_expr_e = constraints
@@ -123,7 +122,7 @@ def gen_long_mpc_solver():
 
   l2_penalty = 1.0
   l1_penalty = 0.0
-  weights = np.array([1e5, 1e4, 1e5, 0., 0.])
+  weights = np.array([1e8, 1e6, 1e6, 1e3, 0.])
   ocp.cost.Zl = l2_penalty * weights
   ocp.cost.zl = l1_penalty * weights
   ocp.cost.Zu = 0.0 * weights
@@ -160,7 +159,7 @@ class LongitudinalMpc():
     yref = np.zeros((N+1, COST_DIM))
     self.solver.cost_set_slice(0, N, "yref", yref[:N])
     self.solver.set(N, "yref", yref[N][:COST_E_DIM])
-    self.x_sol = np.zeros((N+1, 3))
+    self.x_sol = np.zeros((N+1, COST_DIM))
     self.u_sol = np.zeros((N,1))
     self.reset()
     self.set_weights()
@@ -184,17 +183,23 @@ class LongitudinalMpc():
     self.x0 = np.zeros(3)
 
   def set_weights(self):
-    W = np.diag([2*MPC_COST_LONG.TTC,
-                 2*MPC_COST_LONG.DISTANCE*20*20.,
-                 MPC_COST_LONG.ACCELERATION/100., MPC_COST_LONG.JERK/100.])
+    W = np.diag([2*MPC_COST_LONG.DISTANCE*20*20.,
+                 MPC_COST_LONG.ACCELERATION/100.,
+                 MPC_COST_LONG.JERK/100.])
     Ws = np.tile(W[None], reps=(N,1,1))
     self.solver.cost_set_slice(0, N, 'W', Ws, api='old')
     #TODO hacky weights to keep behavior the same
     self.solver.cost_set(N, 'W', (3./5.)*W[:COST_E_DIM, :COST_E_DIM])
 
   def set_cur_state(self, v, a):
-    self.x0[1] = v
-    self.x0[2] = a
+    if abs(self.x0[1] - v) > 1.:
+      self.x0[1] = v
+      self.x0[2] = a
+      for i in range(0, N+1):
+        self.solver.set(i, 'x', self.x0)
+    else:
+      self.x0[1] = v
+      self.x0[2] = a
 
   def extrapolate_lead(self, x_lead, v_lead, a_lead_0, a_lead_tau):
     lead_xv = np.zeros((N+1,2))
@@ -249,7 +254,7 @@ class LongitudinalMpc():
 
   def init_with_sim(self, v_ego, lead_xv, a_lead_0):
     x_ego = 0.0
-    a_ego = min(0.0, -2 * (v_ego - lead_xv[0,1]) * (v_ego - lead_xv[0,1]) / (2.0 * lead_xv[0,0] + 0.01) + a_lead_0)
+    a_ego = min(0.0, - (v_ego - lead_xv[0,1]) * (v_ego - lead_xv[0,1]) / (2.0 * lead_xv[0,0] + 0.01) + a_lead_0)
     self.solver.set(0, 'x', np.array([x_ego, v_ego, a_ego]))
     for i in range(1, N+1):
       dt = T_IDXS[i] - T_IDXS[i-1]
@@ -278,11 +283,13 @@ class LongitudinalMpc():
     # All leads can be converted to stationary obstacles
     lead_0_obstacle = lead_xv_0[:,0] + get_stopped_equivalence_factor(lead_xv_0[:,1])
     lead_1_obstacle = lead_xv_1[:,0] + get_stopped_equivalence_factor(lead_xv_1[:,1])
+
     # Fake an obstacle for cruise
     v_cruise_clipped = np.clip(v_cruise * np.ones(N+1),
-                               self.x0[1] + .7*(-1.0 - np.array(T_IDXS)),
+                               self.x0[1] - .8*(1.0 + np.array(T_IDXS)),
                                self.x0[1] + .7*(1.0 + np.array(T_IDXS)))
     cruise_obstacle = T_IDXS*v_cruise_clipped + get_safe_obstacle_distance(v_cruise_clipped)
+
     x_obstacle = np.min(np.column_stack([lead_0_obstacle, lead_1_obstacle, cruise_obstacle]), axis=1)
     params = np.concatenate([self.accel_limit_arr,
                              x_obstacle[:,None]], axis=1)
@@ -292,7 +299,6 @@ class LongitudinalMpc():
     self.solution_status = self.solver.solve()
     self.solver.fill_in_slice(0, N+1, 'x', self.x_sol)
     self.solver.fill_in_slice(0, N, 'u', self.u_sol)
-    #self.solver.print_statistics()
 
     self.v_solution = list(self.x_sol[:,1])
     self.a_solution = list(self.x_sol[:,2])
