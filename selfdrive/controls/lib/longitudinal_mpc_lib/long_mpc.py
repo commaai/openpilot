@@ -21,15 +21,21 @@ JSON_FILE = "acados_ocp_long.json"
 
 X_DIM = 3
 U_DIM = 1
-COST_E_DIM = 5
+COST_E_DIM = 3
 COST_DIM = COST_E_DIM + 1
 MIN_ACCEL = -3.5
 
 
+TR = 1.8
+G = 9.81
+def get_stopped_equivalence_factor(v_lead):
+  return TR * v_lead + (v_lead*v_lead) / (2 * G)
+
+def get_safe_obstacle_distance(v_ego):
+  return 2 * TR * v_ego + (v_ego*v_ego) / (2 * G) + 4.0
+
 def desired_follow_distance(v_ego, v_lead):
-  TR = 1.8
-  G = 9.81
-  return (v_ego * TR - (v_lead - v_ego) * TR + v_ego * v_ego / (2 * G) - v_lead * v_lead / (2 * G)) + 4.0
+  return get_safe_obstacle_distance(v_ego) - get_stopped_equivalence_factor(v_lead)
 
 
 def gen_long_model():
@@ -53,16 +59,12 @@ def gen_long_model():
   model.xdot = vertcat(x_ego_dot, v_ego_dot, a_ego_dot)
 
   # live parameters
-  x_lead_0 = SX.sym('x_lead_0')
-  v_lead_0 = SX.sym('v_lead_0')
-  x_lead_1 = SX.sym('x_lead_1')
-  v_lead_1 = SX.sym('v_lead_1')
+  x_obstacle = SX.sym('x_obstacle')
   a_min = SX.sym('a_min')
   a_max = SX.sym('a_max')
   v_max = SX.sym('v_max')
   model.p = vertcat(a_min, a_max, v_max,
-                    x_lead_0, v_lead_0,
-                    x_lead_1, v_lead_1)
+                    x_obstacle)
 
   # dynamics model
   f_expl = vertcat(v_ego, a_ego, j_ego)
@@ -84,8 +86,8 @@ def gen_long_mpc_solver():
   ocp.cost.cost_type = 'NONLINEAR_LS'
   ocp.cost.cost_type_e = 'NONLINEAR_LS'
 
-  QR = np.zeros((COST_E_DIM, COST_E_DIM))
-  Q = np.zeros((COST_DIM, COST_DIM))
+  QR = np.zeros((COST_DIM, COST_DIM))
+  Q = np.zeros((COST_E_DIM, COST_E_DIM))
 
   ocp.cost.W = QR
   ocp.cost.W_e = Q
@@ -94,25 +96,20 @@ def gen_long_mpc_solver():
   j_ego = ocp.model.u[0]
 
   a_min, a_max, v_max = ocp.model.p[0], ocp.model.p[1], ocp.model.p[2]
-  x_lead_0, v_lead_0 = ocp.model.p[3], ocp.model.p[4]
-  x_lead_1, v_lead_1 = ocp.model.p[5], ocp.model.p[6]
+  x_obstacle = ocp.model.p[3]
 
   ocp.cost.yref = np.zeros((COST_DIM, ))
   ocp.cost.yref_e = np.zeros((COST_E_DIM, ))
 
-  desired_dist_0 = desired_follow_distance(v_ego, v_lead_0)
-  desired_dist_1 = desired_follow_distance(v_ego, v_lead_1)
-  dist_err_0 = (desired_dist_0 - (x_lead_0 - x_ego))/(sqrt(v_ego + 0.5) + 0.1)
-  dist_err_1 = (desired_dist_1 - (x_lead_1 - x_ego))/(sqrt(v_ego + 0.5) + 0.1)
+  desired_dist = get_safe_obstacle_distance(v_ego)
+  dist_err = (desired_dist - (x_obstacle - x_ego))/(sqrt(v_ego + 0.5) + 0.1)
 
-  costs = vertcat(exp(.3 * dist_err_0) - 1.,
-                  exp(.3 * dist_err_1) - 1.,
-                  ((x_lead_0 - x_ego) - (desired_dist_0)) / (0.05 * v_ego + 0.5),
-                  ((x_lead_1 - x_ego) - (desired_dist_1)) / (0.05 * v_ego + 0.5),
-                  a_ego * (.1 * v_ego + 1.0),
-                  j_ego * (.1 * v_ego + 1.0))
-  ocp.model.cost_y_expr = costs
-  ocp.model.cost_y_expr_e = costs[:-1]
+  costs = [exp(.3 * dist_err) - 1.,
+           ((x_obstacle - x_ego) - (desired_dist)) / (0.05 * v_ego + 0.5),
+           a_ego * (.1 * v_ego + 1.0),
+           j_ego * (.1 * v_ego + 1.0)]
+  ocp.model.cost_y_expr = vertcat(*costs)
+  ocp.model.cost_y_expr_e = vertcat(*costs[:-1])
 
   constraints = vertcat((v_ego),
                         (a_ego - a_min),
@@ -125,7 +122,7 @@ def gen_long_mpc_solver():
 
   x0 = np.zeros(X_DIM)
   ocp.constraints.x0 = x0
-  ocp.parameter_values = np.array([-1.2, 1.2, 100.0, 0.0, 0.0, 0.0, 0.0])
+  ocp.parameter_values = np.array([-1.2, 1.2, 100.0, 0.0])
 
   l2_penalty = 1.0
   l1_penalty = 0.0
@@ -190,8 +187,8 @@ class LongitudinalMpc():
     self.x0 = np.zeros(3)
 
   def set_weights(self):
-    W = np.diag([MPC_COST_LONG.TTC, MPC_COST_LONG.TTC,
-                 MPC_COST_LONG.DISTANCE, MPC_COST_LONG.DISTANCE,
+    W = np.diag([2*MPC_COST_LONG.TTC,
+                 2*MPC_COST_LONG.DISTANCE,
                  MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK])
     Ws = np.tile(W[None], reps=(N,1,1))
     self.solver.cost_set_slice(0, N, 'W', Ws, api='old')
@@ -280,10 +277,14 @@ class LongitudinalMpc():
     lead_xv_1 = self.process_lead(radarstate.leadTwo)
     self.accel_limit_arr[:,0] = np.interp(float(self.status), [0.0, 1.0], [self.cruise_min_a, MIN_ACCEL])
     self.accel_limit_arr[:,1] = self.cruise_max_a
+
+    # All leads can be converted to stationary obstacles
+    x_obstacle = np.min(np.column_stack([lead_xv_0[:,0] + get_stopped_equivalence_factor(lead_xv_0[:,1]),
+                                         lead_xv_1[:,0] + get_stopped_equivalence_factor(lead_xv_1[:,1])]), axis=1)
+    #print(x_obstacle)
     params = np.concatenate([self.accel_limit_arr,
                              v_cruise*np.ones((N+1,1)),
-                             lead_xv_0,
-                             lead_xv_1], axis=1)
+                             x_obstacle[:,None]], axis=1)
     for i in range(N+1):
       self.solver.set_param(i, params[i])
 
