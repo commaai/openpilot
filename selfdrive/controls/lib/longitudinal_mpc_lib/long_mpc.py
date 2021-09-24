@@ -276,6 +276,7 @@ class LongitudinalMpc():
     self.cruise_max_a = max_a
 
   def update(self, carstate, radarstate, v_cruise):
+    v_ego = self.x0[1]
     self.crashing = False
     self.status = radarstate.leadOne.status or radarstate.leadTwo.status
     self.solver.constraints_set(0, "lbx", self.x0)
@@ -290,11 +291,13 @@ class LongitudinalMpc():
     lead_0_obstacle = lead_xv_0[:,0] + get_stopped_equivalence_factor(lead_xv_0[:,1])
     lead_1_obstacle = lead_xv_1[:,0] + get_stopped_equivalence_factor(lead_xv_1[:,1])
 
-    # Fake an obstacle for cruise
-    # TODO very hacky costs to keep cruise behavior similar
+    # Fake an obstacle for cruisei
+    # TODO find cleaner way to write hacky fake cruise obstacle
+    cruise_lower_bound = v_ego - (1.0 + ((self.x0[1] + 15)/60)*np.array(T_IDXS)),
+    cruise_upper_bound = v_ego + (.7 + .7*np.array(T_IDXS))
     v_cruise_clipped = np.clip(v_cruise * np.ones(N+1),
-                               self.x0[1] - (1.0 + (1/60)*(15+self.x0[1])*np.array(T_IDXS)),
-                               self.x0[1] + .7*(1.0 + np.array(T_IDXS)))
+                               cruise_lower_bound,
+                               cruise_upper_bound)
     cruise_obstacle = T_IDXS*v_cruise_clipped + get_safe_obstacle_distance(v_cruise_clipped)
 
     x_obstacles = np.column_stack([lead_0_obstacle, lead_1_obstacle, cruise_obstacle])
