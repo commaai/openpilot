@@ -269,6 +269,8 @@ class LongitudinalMpc():
 
   def update(self, carstate, radarstate, v_cruise):
     self.crashing = False
+    v_cruise_clipped = np.clip(v_cruise, min(0.0, self.x0[1] - 3*self.cruise_min_a), self.x0[1] + 3*self.cruise_max_a)
+    v_cruise_clipped2 = np.clip(get_safe_obstacle_distance(self.x0[1] + np.array(T_IDXS)*self.cruise_max_a), 0.0, v_cruise_clipped)
     self.status = radarstate.leadOne.status or radarstate.leadTwo.status
     self.solver.constraints_set(0, "lbx", self.x0)
     self.solver.constraints_set(0, "ubx", self.x0)
@@ -280,8 +282,8 @@ class LongitudinalMpc():
 
     # All leads can be converted to stationary obstacles
     x_obstacle = np.min(np.column_stack([lead_xv_0[:,0] + get_stopped_equivalence_factor(lead_xv_0[:,1]),
-                                         lead_xv_1[:,0] + get_stopped_equivalence_factor(lead_xv_1[:,1])]), axis=1)
-    #print(x_obstacle)
+                                         lead_xv_1[:,0] + get_stopped_equivalence_factor(lead_xv_1[:,1]),
+                                         np.array(T_IDXS)*v_cruise_clipped + get_safe_obstacle_distance(v_cruise_clipped2)]), axis=1)
     params = np.concatenate([self.accel_limit_arr,
                              v_cruise*np.ones((N+1,1)),
                              x_obstacle[:,None]], axis=1)
