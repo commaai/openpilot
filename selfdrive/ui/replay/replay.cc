@@ -127,11 +127,11 @@ void Replay::mergeSegments(int cur_seg, int end_idx) {
     qDebug() << "merge segments" << segments_need_merge;
     segments_merged_ = segments_need_merge;
 
+    // merge & sort events
     std::vector<Event *> *new_events = new std::vector<Event *>();
     std::unordered_map<uint32_t, EncodeIdx> *new_eidx = new std::unordered_map<uint32_t, EncodeIdx>[MAX_CAMERAS];
     for (int n : segments_need_merge) {
       auto &log = segments_[n]->log;
-      // merge & sort events
       auto middle = new_events->insert(new_events->end(), log->events.begin(), log->events.end());
       std::inplace_merge(new_events->begin(), middle, new_events->end(), Event::lessThan());
       for (CameraType cam_type : ALL_CAMERAS) {
@@ -160,15 +160,10 @@ void Replay::mergeSegments(int cur_seg, int end_idx) {
   }
 
   // free segments out of current semgnt window.
-  std::vector<int> removed;
   for (int i = 0; i < segments_.size(); i++) {
     if ((i < begin_idx || i > end_idx) && segments_[i]) {
       segments_[i].reset(nullptr);
-      removed.push_back(i);
     }
-  }
-  if (removed.size() > 0) {
-    qDebug() << "remove segments" << removed;
   }
 }
 
@@ -179,7 +174,7 @@ void Replay::stream() {
   std::unique_lock lk(lock_);
 
   while (true) {
-    stream_cv_.wait(lk, [=]() { return exit_ || (paused_ == false && events_updated_); });
+    stream_cv_.wait(lk, [=]() { return exit_ || (events_updated_ && !paused_); });
     events_updated_ = false;
     if (exit_) break;
 
