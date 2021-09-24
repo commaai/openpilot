@@ -99,7 +99,7 @@ class IsoTpParallelQuery:
       request_done[tx_addr] = False
 
     results = {}
-    start_time = time.time()
+    start_time = time.monotonic()
     last_response_time = start_time
     while True:
       self.rx()
@@ -118,7 +118,7 @@ class IsoTpParallelQuery:
         response_valid = dat[:len(expected_response)] == expected_response
 
         if response_valid:
-          last_response_time = time.time()
+          last_response_time = time.monotonic()
           if counter + 1 < len(self.request):
             msg.send(self.request[counter + 1])
             request_counter[tx_addr] += 1
@@ -129,7 +129,7 @@ class IsoTpParallelQuery:
           request_done[tx_addr] = True
           cloudlog.warning(f"iso-tp query bad response: 0x{dat.hex()}")
 
-      cur_time = time.time()
+      cur_time = time.monotonic()
       if cur_time - last_response_time > timeout:
         break
 
