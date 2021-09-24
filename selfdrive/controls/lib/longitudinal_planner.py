@@ -53,7 +53,6 @@ class Planner():
 
     self.v_desired = init_v
     self.a_desired = init_a
-    self.longitudinalPlanSource = 'cruise'
     self.alpha = np.exp(-DT_MDL/2.0)
     self.lead_0 = log.ModelDataV2.LeadDataV3.new_message()
     self.lead_1 = log.ModelDataV2.LeadDataV3.new_message()
@@ -135,7 +134,7 @@ class Planner():
     longitudinalPlan.jerks = [float(x) for x in self.j_desired_trajectory]
 
     longitudinalPlan.hasLead = self.mpc.prev_lead_status
-    longitudinalPlan.longitudinalPlanSource = self.longitudinalPlanSource
+    longitudinalPlan.longitudinalPlanSource = self.mpc.source
     longitudinalPlan.fcw = self.fcw
 
     pm.send('longitudinalPlan', plan_send)
