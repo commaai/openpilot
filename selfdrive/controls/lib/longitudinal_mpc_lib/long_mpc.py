@@ -17,6 +17,7 @@ LONG_MPC_DIR = os.path.dirname(os.path.abspath(__file__))
 EXPORT_DIR = os.path.join(LONG_MPC_DIR, "c_generated_code")
 JSON_FILE = "acados_ocp_long.json"
 
+SOURCES = ['lead0', 'lead1', 'cruise']
 
 X_DIM = 3
 U_DIM = 1
@@ -172,6 +173,7 @@ class LongitudinalMpc():
     self.accel_limit_arr = np.zeros((N+1, 2))
     self.accel_limit_arr[:,0] = -1.2
     self.accel_limit_arr[:,1] = 1.2
+    self.source = SOURCES[2]
 
   def reset(self):
     for i in range(N+1):
@@ -295,7 +297,9 @@ class LongitudinalMpc():
                                self.x0[1] + .7*(1.0 + np.array(T_IDXS)))
     cruise_obstacle = T_IDXS*v_cruise_clipped + get_safe_obstacle_distance(v_cruise_clipped)
 
-    x_obstacle = np.min(np.column_stack([lead_0_obstacle, lead_1_obstacle, cruise_obstacle]), axis=1)
+    x_obstacles = np.column_stack([lead_0_obstacle, lead_1_obstacle, cruise_obstacle])
+    self.source = SOURCES[np.argmin(x_obstacles[0])]
+    x_obstacle = np.min(x_obstacles, axis=1)
     params = np.concatenate([self.accel_limit_arr,
                              x_obstacle[:,None]], axis=1)
     for i in range(N+1):
