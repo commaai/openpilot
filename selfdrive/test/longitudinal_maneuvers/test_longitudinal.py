@@ -92,6 +92,16 @@ maneuvers = [
     breakpoints=[1., 11.],
     only_radar=True,
   ),
+  Maneuver(
+    "NaN recovery",
+    duration=30.,
+    initial_speed=15.,
+    lead_relevancy=True,
+    initial_distance_lead=60.,
+    speed_lead_values=[0., 0., 0.0],
+    breakpoints=[1., 1.01, 11.],
+    cruise_values=[float("nan"), 15., 15.],
+  ),
 ]
 
 

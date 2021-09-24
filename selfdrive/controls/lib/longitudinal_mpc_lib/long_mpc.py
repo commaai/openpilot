@@ -159,6 +159,13 @@ def gen_long_mpc_solver():
 
 class LongitudinalMpc():
   def __init__(self):
+    self.reset()
+    self.accel_limit_arr = np.zeros((N+1, 2))
+    self.accel_limit_arr[:,0] = -1.2
+    self.accel_limit_arr[:,1] = 1.2
+    self.source = SOURCES[2]
+
+  def reset(self):
     self.solver = AcadosOcpSolver('long', N, EXPORT_DIR)
     self.v_solution = [0.0 for i in range(N)]
     self.a_solution = [0.0 for i in range(N)]
@@ -168,14 +175,6 @@ class LongitudinalMpc():
     self.solver.set(N, "yref", yref[N][:COST_E_DIM])
     self.x_sol = np.zeros((N+1, COST_DIM))
     self.u_sol = np.zeros((N,1))
-    self.reset()
-    self.set_weights()
-    self.accel_limit_arr = np.zeros((N+1, 2))
-    self.accel_limit_arr[:,0] = -1.2
-    self.accel_limit_arr[:,1] = 1.2
-    self.source = SOURCES[2]
-
-  def reset(self):
     for i in range(N+1):
       self.solver.set(i, 'x', np.zeros(3))
     self.last_cloudlog_t = 0
@@ -189,6 +188,7 @@ class LongitudinalMpc():
     self.prev_lead_status1 = False
     self.prev_lead_x1 = 0.0
     self.x0 = np.zeros(3)
+    self.set_weights()
 
   def set_weights(self):
     W = np.diag([X_EGO_COST, A_EGO_COST, J_EGO_COST])
