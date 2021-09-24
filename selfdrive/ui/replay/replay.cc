@@ -72,8 +72,9 @@ void Replay::seekTo(int seconds, bool relative) {
     cur_mono_time_ = route_start_ts_ + seconds * 1e9;
     int segment = seconds / 60;
     if (segment != current_segment_) {
-      setCurrentSegment(segment);
+      // segment changed, set events_updated_ to false to let stream thread wait for the new segment to be merged.
       events_updated_ = false;
+      setCurrentSegment(segment);
     }
     qInfo() << "seeking to " << seconds;
   });
