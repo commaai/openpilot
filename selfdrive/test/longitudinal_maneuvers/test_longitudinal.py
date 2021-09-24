@@ -54,20 +54,20 @@ maneuvers = [
     breakpoints=[0., 15., 21.66],
   ),
   Maneuver(
-    'steady state following a car at 20m/s, then lead decel to 0mph at 5m/s^2',
+    'steady state following a car at 20m/s, then lead decel to 0mph at 4m/s^2',
     duration=40.,
     initial_speed=20.,
     lead_relevancy=True,
     initial_distance_lead=35.,
     speed_lead_values=[20., 20., 0.],
-    breakpoints=[0., 15., 19.],
+    breakpoints=[0., 15., 20.],
   ),
   Maneuver(
     "approach stopped car at 20m/s",
     duration=30.,
     initial_speed=20.,
     lead_relevancy=True,
-    initial_distance_lead=50.,
+    initial_distance_lead=60.,
     speed_lead_values=[0., 0.],
     breakpoints=[1., 11.],
   ),
@@ -118,7 +118,7 @@ def run_maneuver_worker(k):
     man = maneuvers[k]
     print(man.title)
     valid, _ = man.evaluate()
-    self.assertTrue(valid)
+    self.assertTrue(valid, msg=man.title)
   return run
 
 

@@ -21,8 +21,8 @@ JSON_FILE = "acados_ocp_long.json"
 
 X_DIM = 3
 U_DIM = 1
-COST_E_DIM = 4
-COST_DIM = 3
+COST_E_DIM = 5
+COST_DIM = COST_E_DIM + 1
 MIN_ACCEL = -3.5
 
 
@@ -95,22 +95,24 @@ def gen_long_mpc_solver():
 
   a_min, a_max, v_max = ocp.model.p[0], ocp.model.p[1], ocp.model.p[2]
   x_lead_0, v_lead_0 = ocp.model.p[3], ocp.model.p[4]
-  #x_lead_1, v_lead_1 = ocp.model.p[5], ocp.model.p[6]
+  x_lead_1, v_lead_1 = ocp.model.p[5], ocp.model.p[6]
 
-  ocp.cost.yref = np.zeros((COST_E_DIM, ))
-  ocp.cost.yref_e = np.zeros((COST_DIM, ))
+  ocp.cost.yref = np.zeros((COST_DIM, ))
+  ocp.cost.yref_e = np.zeros((COST_E_DIM, ))
 
-  desired_dist = desired_follow_distance(v_ego, v_lead_0)
-  dist_err = (desired_dist - (x_lead_0 - x_ego))/(sqrt(v_ego + 0.5) + 0.1)
+  desired_dist_0 = desired_follow_distance(v_ego, v_lead_0)
+  desired_dist_1 = desired_follow_distance(v_ego, v_lead_1)
+  dist_err_0 = (desired_dist_0 - (x_lead_0 - x_ego))/(sqrt(v_ego + 0.5) + 0.1)
+  dist_err_1 = (desired_dist_1 - (x_lead_1 - x_ego))/(sqrt(v_ego + 0.5) + 0.1)
 
-  # TODO hacky weights to keep behavior the same
-  ocp.model.cost_y_expr = vertcat(exp(.3 * dist_err) - 1.,
-                                  ((x_lead_0 - x_ego) - (desired_dist)) / (0.05 * v_ego + 0.5),
-                                  a_ego * (.1 * v_ego + 1.0),
-                                  j_ego * (.1 * v_ego + 1.0))
-  ocp.model.cost_y_expr_e = vertcat(exp(.3 * dist_err) - 1.,
-                                  ((x_lead_0 - x_ego) - (desired_dist)) / (0.05 * v_ego + 0.5),
-                                  a_ego * (.1 * v_ego + 1.0))
+  costs = vertcat(exp(.3 * dist_err_0) - 1.,
+                  exp(.3 * dist_err_1) - 1.,
+                  ((x_lead_0 - x_ego) - (desired_dist_0)) / (0.05 * v_ego + 0.5),
+                  ((x_lead_1 - x_ego) - (desired_dist_1)) / (0.05 * v_ego + 0.5),
+                  a_ego * (.1 * v_ego + 1.0),
+                  j_ego * (.1 * v_ego + 1.0))
+  ocp.model.cost_y_expr = costs
+  ocp.model.cost_y_expr_e = costs[:-1]
 
   constraints = vertcat((v_ego),
                         (a_ego - a_min),
@@ -161,9 +163,9 @@ class LongitudinalMpc():
     self.v_solution = [0.0 for i in range(N)]
     self.a_solution = [0.0 for i in range(N)]
     self.j_solution = [0.0 for i in range(N-1)]
-    yref = np.zeros((N+1,4))
+    yref = np.zeros((N+1, COST_DIM))
     self.solver.cost_set_slice(0, N, "yref", yref[:N])
-    self.solver.set(N, "yref", yref[N][:3])
+    self.solver.set(N, "yref", yref[N][:COST_E_DIM])
     self.x_sol = np.zeros((N+1, 3))
     self.u_sol = np.zeros((N,1))
     self.reset()
@@ -188,12 +190,13 @@ class LongitudinalMpc():
     self.x0 = np.zeros(3)
 
   def set_weights(self):
-    W = np.diag([MPC_COST_LONG.TTC, MPC_COST_LONG.DISTANCE,
+    W = np.diag([MPC_COST_LONG.TTC, MPC_COST_LONG.TTC,
+                 MPC_COST_LONG.DISTANCE, MPC_COST_LONG.DISTANCE,
                  MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK])
     Ws = np.tile(W[None], reps=(N,1,1))
     self.solver.cost_set_slice(0, N, 'W', Ws, api='old')
     #TODO hacky weights to keep behavior the same
-    self.solver.cost_set(N, 'W', (3./5.)*W[:COST_DIM, :COST_DIM])
+    self.solver.cost_set(N, 'W', (3./5.)*W[:COST_E_DIM, :COST_E_DIM])
 
   def set_cur_state(self, v, a):
     self.x0[1] = v
