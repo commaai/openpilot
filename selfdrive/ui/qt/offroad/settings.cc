@@ -44,7 +44,7 @@ TogglesPanel::TogglesPanel(QWidget *parent) : ListWidget(parent) {
                                   this));
   addItem(new ParamControl("IsMetric",
                                   "Use Metric System",
-                                  "Display speed in km/h instead of mp/h.",
+                                  "Display speed in km/h instead of mph.",
                                   "../assets/offroad/icon_metric.png",
                                   this));
   addItem(new ParamControl("CommunityFeaturesToggle",
