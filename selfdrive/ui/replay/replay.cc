@@ -23,7 +23,7 @@ Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *s
   }
 
   route_ = std::make_unique<Route>(route);
-  events = new std::vector<Event *>();
+  events_ = new std::vector<Event *>();
   // queueSegment is always executed in the main thread
   connect(this, &Replay::segmentChanged, this, &Replay::queueSegment);
 }
@@ -40,7 +40,7 @@ void Replay::start(int seconds){
   }
 
   qDebug() << "load route" << route_->name() << route_->size() << "segments, start from" << seconds;
-  segments.resize(route_->size());
+  segments_.resize(route_->size());
   seekTo(seconds);
 
   // start stream thread
@@ -51,25 +51,25 @@ void Replay::start(int seconds){
 
 void Replay::updateEvents(const std::function<void()>& lambda) {
   // set updating_events to true to force stream thread relase the lock and wait for evnets_udpated.
-  updating_events = true;
+  updating_events_ = true;
   {
-    std::unique_lock lk(lock);
+    std::unique_lock lk(lock_);
     lambda();
-    updating_events = false;
-    events_updated = true;
+    updating_events_ = false;
+    events_updated_ = true;
   }
   stream_cv_.notify_one();
 }
 
 void Replay::seekTo(int seconds, bool relative) {
-  if (segments.empty()) return;
+  if (segments_.empty()) return;
 
   updateEvents([&]() {
     if (relative) {
-      seconds += ((cur_mono_time_ - route_start_ts) * 1e-9);
+      seconds += ((cur_mono_time_ - route_start_ts_) * 1e-9);
     }
-    seconds = std::clamp(seconds, 0, (int)segments.size() * 60 - 1);
-    cur_mono_time_ = route_start_ts + seconds * 1e9;
+    seconds = std::clamp(seconds, 0, (int)segments_.size() * 60 - 1);
+    cur_mono_time_ = route_start_ts_ + seconds * 1e9;
     setCurrentSegment(seconds / 60);
     qInfo() << "seeking to " << seconds;
   });
@@ -95,14 +95,14 @@ void Replay::queueSegment() {
   // fetch segments forward
   int cur_seg = current_segment.load();
   int end_idx = cur_seg;
-  for (int i = cur_seg, fwd = 0; i < segments.size() && fwd <= FORWARD_SEGS; ++i) {
-    if (!segments[i]) {
-      segments[i] = std::make_unique<Segment>(i, route_->at(i));
-      QObject::connect(segments[i].get(), &Segment::loadFinished, this, &Replay::queueSegment);
+  for (int i = cur_seg, fwd = 0; i < segments_.size() && fwd <= FORWARD_SEGS; ++i) {
+    if (!segments_[i]) {
+      segments_[i] = std::make_unique<Segment>(i, route_->at(i));
+      QObject::connect(segments_[i].get(), &Segment::loadFinished, this, &Replay::queueSegment);
     }
     end_idx = i;
     // skip invalid segment
-    fwd += segments[i]->isValid();
+    fwd += segments_[i]->isValid();
   }
 
   // merge segments
@@ -114,7 +114,7 @@ void Replay::mergeSegments(int cur_seg, int end_idx) {
   std::vector<int> segments_need_merge;
   const int begin_idx = std::max(cur_seg - BACKWARD_SEGS, 0);
   for (int i = begin_idx; i <= end_idx; ++i) {
-    if (segments[i] && segments[i]->isLoaded()) {
+    if (segments_[i] && segments_[i]->isLoaded()) {
       segments_need_merge.push_back(i);
     } else if (i >= cur_seg) {
       // segment is valid,but still loading. can't skip it to merge the next one.
@@ -123,14 +123,14 @@ void Replay::mergeSegments(int cur_seg, int end_idx) {
     }
   }
 
-  if (segments_need_merge != segments_merged) {
+  if (segments_need_merge != segments_merged_) {
     qDebug() << "merge segments" << segments_need_merge;
-    segments_merged = segments_need_merge;
+    segments_merged_ = segments_need_merge;
 
     std::vector<Event *> *new_events = new std::vector<Event *>();
     std::unordered_map<uint32_t, EncodeIdx> *new_eidx = new std::unordered_map<uint32_t, EncodeIdx>[MAX_CAMERAS];
     for (int n : segments_need_merge) {
-      auto &log = segments[n]->log;
+      auto &log = segments_[n]->log;
       // merge & sort events
       auto middle = new_events->insert(new_events->end(), log->events.begin(), log->events.end());
       std::inplace_merge(new_events->begin(), middle, new_events->end(), Event::lessThan());
@@ -140,20 +140,20 @@ void Replay::mergeSegments(int cur_seg, int end_idx) {
     }
 
     // update events
-    auto prev_events = events;
-    auto prev_eidx = eidx;
+    auto prev_events = events_;
+    auto prev_eidx = eidx_;
     updateEvents([=]() {
-      if (route_start_ts == 0) {
+      if (route_start_ts_ == 0) {
         // get route start time from initData
         auto it = std::find_if(new_events->begin(), new_events->end(), [=](auto e) { return e->which == cereal::Event::Which::INIT_DATA; });
         if (it != new_events->end()) {
-          route_start_ts = (*it)->mono_time;
-          cur_mono_time_ = route_start_ts;
+          route_start_ts_ = (*it)->mono_time;
+          cur_mono_time_ = route_start_ts_;
         }
       }
 
-      events = new_events;
-      eidx = new_eidx;
+      events_ = new_events;
+      eidx_ = new_eidx;
     });
     delete prev_events;
     delete[] prev_eidx;
@@ -161,9 +161,9 @@ void Replay::mergeSegments(int cur_seg, int end_idx) {
 
   // free segments out of current semgnt window.
   std::vector<int> removed;
-  for (int i = 0; i < segments.size(); i++) {
-    if ((i < begin_idx || i > end_idx) && segments[i]) {
-      segments[i].reset(nullptr);
+  for (int i = 0; i < segments_.size(); i++) {
+    if ((i < begin_idx || i > end_idx) && segments_[i]) {
+      segments_[i].reset(nullptr);
       removed.push_back(i);
     }
   }
@@ -176,25 +176,25 @@ void Replay::stream() {
   float last_print = 0;
   cereal::Event::Which cur_which = cereal::Event::Which::INIT_DATA;
 
-  std::unique_lock lk(lock);
+  std::unique_lock lk(lock_);
 
   while (true) {
-    stream_cv_.wait(lk, [=]() { return exit_ || (paused_ == false && events_updated); });
-    events_updated = false;
+    stream_cv_.wait(lk, [=]() { return exit_ || (paused_ == false && events_updated_); });
+    events_updated_ = false;
     if (exit_) break;
 
     Event cur_event(cur_which, cur_mono_time_);
-    auto eit = std::upper_bound(events->begin(), events->end(), &cur_event, Event::lessThan());
-    if (eit == events->end()) {
+    auto eit = std::upper_bound(events_->begin(), events_->end(), &cur_event, Event::lessThan());
+    if (eit == events_->end()) {
       qDebug() << "waiting for events...";
       continue;
     }
 
-    qDebug() << "unlogging at" << (int)((cur_mono_time_ - route_start_ts) * 1e-9);
+    qDebug() << "unlogging at" << (int)((cur_mono_time_ - route_start_ts_) * 1e-9);
     uint64_t evt_start_ts = cur_mono_time_;
     uint64_t loop_start_ts = nanos_since_boot();
 
-    for (/**/; !updating_events && eit != events->end(); ++eit) {
+    for (/**/; !updating_events_ && eit != events_->end(); ++eit) {
       const Event *evt = (*eit);
       cur_which = evt->which;
       cur_mono_time_ = evt->mono_time;
@@ -205,7 +205,7 @@ void Replay::stream() {
       }
 
       if (socks.find(type) != socks.end()) {
-        int current_ts = (cur_mono_time_ - route_start_ts) / 1e9;
+        int current_ts = (cur_mono_time_ - route_start_ts_) / 1e9;
         if ((current_ts - last_print) > 5.0) {
           last_print = current_ts;
           qInfo() << "at " << current_ts << "s";
@@ -223,10 +223,10 @@ void Replay::stream() {
         // publish frame
         // TODO: publish all frames
         if (evt->which == cereal::Event::ROAD_CAMERA_STATE) {
-          auto it_ = eidx[RoadCam].find(evt->event.getRoadCameraState().getFrameId());
-          if (it_ != eidx[RoadCam].end()) {
+          auto it_ = eidx_[RoadCam].find(evt->event.getRoadCameraState().getFrameId());
+          if (it_ != eidx_[RoadCam].end()) {
             EncodeIdx &e = it_->second;
-            auto &seg = segments[e.segmentNum]; 
+            auto &seg = segments_[e.segmentNum]; 
             if (seg && seg->isLoaded()) {
               auto &frm = seg->frames[RoadCam];
               if (vipc_server == nullptr) {
