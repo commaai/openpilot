@@ -62,9 +62,7 @@ def gen_long_model():
   x_obstacle = SX.sym('x_obstacle')
   a_min = SX.sym('a_min')
   a_max = SX.sym('a_max')
-  v_max = SX.sym('v_max')
-  model.p = vertcat(a_min, a_max, v_max,
-                    x_obstacle)
+  model.p = vertcat(a_min, a_max, x_obstacle)
 
   # dynamics model
   f_expl = vertcat(v_ego, a_ego, j_ego)
@@ -95,8 +93,8 @@ def gen_long_mpc_solver():
   x_ego, v_ego, a_ego = ocp.model.x[0], ocp.model.x[1], ocp.model.x[2]
   j_ego = ocp.model.u[0]
 
-  a_min, a_max, v_max = ocp.model.p[0], ocp.model.p[1], ocp.model.p[2]
-  x_obstacle = ocp.model.p[3]
+  a_min, a_max = ocp.model.p[0], ocp.model.p[1]
+  x_obstacle = ocp.model.p[2]
 
   ocp.cost.yref = np.zeros((COST_DIM, ))
   ocp.cost.yref_e = np.zeros((COST_E_DIM, ))
@@ -114,7 +112,6 @@ def gen_long_mpc_solver():
   constraints = vertcat((v_ego),
                         (a_ego - a_min),
                         (a_max - a_ego),
-                        (v_max - v_ego),
                         0.0,
                         0.0)
   ocp.model.con_h_expr = constraints
@@ -122,21 +119,21 @@ def gen_long_mpc_solver():
 
   x0 = np.zeros(X_DIM)
   ocp.constraints.x0 = x0
-  ocp.parameter_values = np.array([-1.2, 1.2, 100.0, 0.0])
+  ocp.parameter_values = np.array([-1.2, 1.2, 0.0])
 
   l2_penalty = 1.0
   l1_penalty = 0.0
-  weights = np.array([1e5, 1e4, 1e5, 1e5, 0., 0.])
+  weights = np.array([1e5, 1e4, 1e5, 0., 0.])
   ocp.cost.Zl = l2_penalty * weights
   ocp.cost.zl = l1_penalty * weights
   ocp.cost.Zu = 0.0 * weights
   ocp.cost.zu = 0.0 * weights
 
-  ocp.constraints.lh = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
-  ocp.constraints.lh_e = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
-  ocp.constraints.uh = np.array([1e3, 1e3, 1e3, 1e3, 1e4, 1e4])
-  ocp.constraints.uh_e = np.array([1e3, 1e3, 1e3, 1e3, 1e6, 1e6])
-  ocp.constraints.idxsh = np.array([0,1,2,3,4,5])
+  ocp.constraints.lh = np.array([0.0, 0.0, 0.0, 0.0, 0.0])
+  ocp.constraints.lh_e = np.array([0.0, 0.0, 0.0, 0.0, 0.0])
+  ocp.constraints.uh = np.array([1e3, 1e3, 1e3, 1e4, 1e4])
+  ocp.constraints.uh_e = np.array([1e3, 1e3, 1e3, 1e6, 1e6])
+  ocp.constraints.idxsh = np.array([0,1,2,3,4])
 
 
   ocp.solver_options.qp_solver = 'PARTIAL_CONDENSING_HPIPM'
@@ -269,8 +266,6 @@ class LongitudinalMpc():
 
   def update(self, carstate, radarstate, v_cruise):
     self.crashing = False
-    v_cruise_clipped = np.clip(v_cruise, min(0.0, self.x0[1] - 3*self.cruise_min_a), self.x0[1] + 3*self.cruise_max_a)
-    v_cruise_clipped2 = np.clip(get_safe_obstacle_distance(self.x0[1] + np.array(T_IDXS)*self.cruise_max_a), 0.0, v_cruise_clipped)
     self.status = radarstate.leadOne.status or radarstate.leadTwo.status
     self.solver.constraints_set(0, "lbx", self.x0)
     self.solver.constraints_set(0, "ubx", self.x0)
@@ -281,11 +276,15 @@ class LongitudinalMpc():
     self.accel_limit_arr[:,1] = self.cruise_max_a
 
     # All leads can be converted to stationary obstacles
-    x_obstacle = np.min(np.column_stack([lead_xv_0[:,0] + get_stopped_equivalence_factor(lead_xv_0[:,1]),
-                                         lead_xv_1[:,0] + get_stopped_equivalence_factor(lead_xv_1[:,1]),
-                                         np.array(T_IDXS)*v_cruise_clipped + get_safe_obstacle_distance(v_cruise_clipped2)]), axis=1)
+    lead_0_obstacle = lead_xv_0[:,0] + get_stopped_equivalence_factor(lead_xv_0[:,1])
+    lead_1_obstacle = lead_xv_1[:,0] + get_stopped_equivalence_factor(lead_xv_1[:,1])
+    # Fake an obstacle for cruise
+    v_cruise_clipped = np.clip(v_cruise * np.ones(N+1),
+                               self.x0[1] + .7*(-1.0 - np.array(T_IDXS)),
+                               self.x0[1] + .7*(1.0 + np.array(T_IDXS)))
+    cruise_obstacle = T_IDXS*v_cruise_clipped + get_safe_obstacle_distance(v_cruise_clipped)
+    x_obstacle = np.min(np.column_stack([lead_0_obstacle, lead_1_obstacle, cruise_obstacle]), axis=1)
     params = np.concatenate([self.accel_limit_arr,
-                             v_cruise*np.ones((N+1,1)),
                              x_obstacle[:,None]], axis=1)
     for i in range(N+1):
       self.solver.set_param(i, params[i])
