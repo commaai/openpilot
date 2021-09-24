@@ -6,7 +6,7 @@ import numpy as np
 from common.realtime import sec_since_boot
 from common.numpy_fast import clip
 from selfdrive.swaglog import cloudlog
-from selfdrive.modeld.constants import T_IDXS
+from selfdrive.modeld.constants import T_IDXS as T_IDXS_LST
 from selfdrive.controls.lib.drive_helpers import LON_MPC_N as N
 from selfdrive.controls.lib.radar_helpers import _LEAD_ACCEL_TAU
 
@@ -30,6 +30,7 @@ A_EGO_COST = .1
 J_EGO_COST = .2
 DANGER_ZONE_COST = 1e3
 CRASH_DISTANCE = 1.5
+T_IDXS = np.array(T_IDXS_LST)
 
 TR = 1.8
 G = 9.81
@@ -82,7 +83,7 @@ def gen_long_mpc_solver():
   ocp = AcadosOcp()
   ocp.model = gen_long_model()
 
-  Tf = np.array(T_IDXS)[-1]
+  Tf = T_IDXS[-1]
 
   # set dimensions
   ocp.dims.N = N
@@ -151,7 +152,7 @@ def gen_long_mpc_solver():
 
   # set prediction horizon
   ocp.solver_options.tf = Tf
-  ocp.solver_options.shooting_nodes = np.array(T_IDXS)
+  ocp.solver_options.shooting_nodes = T_IDXS
 
   ocp.code_export_directory = EXPORT_DIR
   return ocp
@@ -293,8 +294,8 @@ class LongitudinalMpc():
 
     # Fake an obstacle for cruisei
     # TODO find cleaner way to write hacky fake cruise obstacle
-    cruise_lower_bound = v_ego - (1.0 + ((self.x0[1] + 15)/60)*np.array(T_IDXS)),
-    cruise_upper_bound = v_ego + (.7 + .7*np.array(T_IDXS))
+    cruise_lower_bound = v_ego - (1.0 + ((self.x0[1] + 15)/60) * T_IDXS)
+    cruise_upper_bound = v_ego + (.7 + .7*T_IDXS)
     v_cruise_clipped = np.clip(v_cruise * np.ones(N+1),
                                cruise_lower_bound,
                                cruise_upper_bound)
