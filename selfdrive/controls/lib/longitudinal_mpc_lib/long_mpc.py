@@ -103,9 +103,9 @@ def gen_long_mpc_solver():
   dist_err = (desired_dist - (x_obstacle - x_ego))/(sqrt(v_ego + 0.5) + 0.1)
 
   costs = [exp(.3 * dist_err) - 1.,
-           ((x_obstacle - x_ego) - (desired_dist)) / (0.05 * v_ego + 0.5),
-           a_ego * (.1 * v_ego + 1.0),
-           j_ego * (.1 * v_ego + 1.0)]
+           ((x_obstacle - x_ego) - (desired_dist)) / (v_ego + 10.),
+           a_ego * (1. * v_ego + 10.0),
+           j_ego * (1. * v_ego + 10.0)]
   ocp.model.cost_y_expr = vertcat(*costs)
   ocp.model.cost_y_expr_e = vertcat(*costs[:-1])
 
@@ -185,8 +185,8 @@ class LongitudinalMpc():
 
   def set_weights(self):
     W = np.diag([2*MPC_COST_LONG.TTC,
-                 2*MPC_COST_LONG.DISTANCE,
-                 MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK])
+                 2*MPC_COST_LONG.DISTANCE*20*20.,
+                 MPC_COST_LONG.ACCELERATION/100., MPC_COST_LONG.JERK/100.])
     Ws = np.tile(W[None], reps=(N,1,1))
     self.solver.cost_set_slice(0, N, 'W', Ws, api='old')
     #TODO hacky weights to keep behavior the same
