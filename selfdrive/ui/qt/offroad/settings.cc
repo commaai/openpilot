@@ -44,7 +44,7 @@ TogglesPanel::TogglesPanel(QWidget *parent) : ListWidget(parent) {
                                   this));
   addItem(new ParamControl("IsMetric",
                                   "Use Metric System",
-                                  "Display speed in km/h instead of mp/h.",
+                                  "Display speed in km/h instead of mph.",
                                   "../assets/offroad/icon_metric.png",
                                   this));
   addItem(new ParamControl("CommunityFeaturesToggle",
@@ -55,7 +55,7 @@ TogglesPanel::TogglesPanel(QWidget *parent) : ListWidget(parent) {
 
   addItem(new ParamControl("UploadRaw",
                                   "Upload Raw Logs",
-                                  "Upload full logs and full resolution video by default while on WiFi. If not enabled, individual logs can be marked for upload at my.comma.ai/useradmin.",
+                                  "Upload full logs and full resolution video by default while on Wi-Fi. If not enabled, individual logs can be marked for upload at my.comma.ai/useradmin.",
                                   "../assets/offroad/icon_network.png",
                                   this));
 
@@ -267,7 +267,7 @@ QWidget * network_panel(QWidget * parent) {
   ListWidget *list = new ListWidget();
   list->setSpacing(30);
   // wifi + tethering buttons
-  auto wifiBtn = new ButtonControl("WiFi Settings", "OPEN");
+  auto wifiBtn = new ButtonControl("Wi-Fi Settings", "OPEN");
   QObject::connect(wifiBtn, &ButtonControl::clicked, [=]() { HardwareEon::launch_wifi(); });
   list->addItem(wifiBtn);
 
