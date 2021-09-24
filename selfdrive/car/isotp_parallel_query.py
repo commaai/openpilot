@@ -130,7 +130,11 @@ class IsoTpParallelQuery:
           cloudlog.warning(f"iso-tp query bad response: 0x{dat.hex()}")
 
       cur_time = time.time()
-      if (cur_time - last_response_time > timeout) or (cur_time - start_time > total_timeout):
+      if cur_time - last_response_time > timeout:
+        break
+
+      if cur_time - start_time > total_timeout:
+        cloudlog.warning("iso-tp query timeout while receiving data")
         break
 
     return results
