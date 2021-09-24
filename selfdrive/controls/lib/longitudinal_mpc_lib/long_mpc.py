@@ -140,7 +140,7 @@ def gen_long_mpc_solver():
   ocp.solver_options.integrator_type = 'ERK'
   ocp.solver_options.nlp_solver_type = 'SQP_RTI'
 
-  ocp.solver_options.qp_solver_iter_max = 10
+  ocp.solver_options.qp_solver_iter_max = 3
 
   # set prediction horizon
   ocp.solver_options.tf = Tf
@@ -237,7 +237,7 @@ class LongitudinalMpc():
       self.new_lead = False
       lead_xv = self.extrapolate_lead(x_lead, v_lead, a_lead, self.a_lead_tau)
       if not self.prev_lead_status or abs(x_lead - self.prev_lead_x) > 2.5:
-        self.init_with_sim(v_ego, lead_xv, a_lead)
+        #self.init_with_sim(v_ego, lead_xv, a_lead)
         self.new_lead = True
 
       self.prev_lead_status = True
@@ -286,7 +286,7 @@ class LongitudinalMpc():
 
     # Fake an obstacle for cruise
     v_cruise_clipped = np.clip(v_cruise * np.ones(N+1),
-                               self.x0[1] - .8*(1.0 + np.array(T_IDXS)),
+                               self.x0[1] - (1.0 + (1/60)*(15+self.x0[1])*np.array(T_IDXS)),
                                self.x0[1] + .7*(1.0 + np.array(T_IDXS)))
     cruise_obstacle = T_IDXS*v_cruise_clipped + get_safe_obstacle_distance(v_cruise_clipped)
 
