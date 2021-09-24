@@ -37,6 +37,7 @@ void CameraServer::thread() {
 
     auto &cam = cameras_[type];
     if (cam.width != fr->width || cam.height != fr->height) {
+      // camera frame size changed, need to start|restart the vipc server
       cam.width = fr->width;
       cam.height = fr->height;
       std::cout << "camera[" << type << "] frame size " << cam.width << "x" << cam.height << std::endl;
