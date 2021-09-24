@@ -10,7 +10,7 @@ For each segment, openpilot records the following log types:
 
 ## rlog.bz2
 
-rlogs contain all the messages passed amonsgt openpilot's processes. See [cereal/services.py](https://github.com/commaai/cereal/blob/master/services.py) for a list of all the logged services. They're a bzip2 archive of the serialized capnproto messages.
+rlogs contain all the messages passed amongst openpilot's processes. See [cereal/services.py](https://github.com/commaai/cereal/blob/master/services.py) for a list of all the logged services. They're a bzip2 archive of the serialized capnproto messages.
 
 ## {f,e,d}camera.hevc
 
