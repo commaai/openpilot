@@ -41,7 +41,7 @@ protected:
   std::mutex lock_;
   std::condition_variable stream_cv_;
   std::atomic<bool> updating_events_ = false;
-  std::atomic<int> current_segment = -1;
+  std::atomic<int> current_segment_ = -1;
   bool exit_ = false;
   bool paused_ = false;
   bool events_updated_ = false;

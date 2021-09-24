@@ -54,9 +54,9 @@ void Replay::updateEvents(const std::function<void()>& lambda) {
   updating_events_ = true;
   {
     std::unique_lock lk(lock_);
-    lambda();
     updating_events_ = false;
     events_updated_ = true;
+    lambda();
   }
   stream_cv_.notify_one();
 }
@@ -70,7 +70,11 @@ void Replay::seekTo(int seconds, bool relative) {
     }
     seconds = std::clamp(seconds, 0, (int)segments_.size() * 60 - 1);
     cur_mono_time_ = route_start_ts_ + seconds * 1e9;
-    setCurrentSegment(seconds / 60);
+    int segment = seconds / 60;
+    if (segment != current_segment_) {
+      setCurrentSegment(segment);
+      events_updated_ = false;
+    }
     qInfo() << "seeking to " << seconds;
   });
 }
@@ -83,7 +87,7 @@ void Replay::pause(bool pause) {
 }
 
 void Replay::setCurrentSegment(int n) {
-  if (current_segment.exchange(n) != n) {
+  if (current_segment_.exchange(n) != n) {
     emit segmentChanged(n);
   }
 }
@@ -93,7 +97,7 @@ void Replay::queueSegment() {
   assert(QThread::currentThreadId() == qApp->thread()->currentThreadId());
 
   // fetch segments forward
-  int cur_seg = current_segment.load();
+  int cur_seg = current_segment_.load();
   int end_idx = cur_seg;
   for (int i = cur_seg, fwd = 0; i < segments_.size() && fwd <= FORWARD_SEGS; ++i) {
     if (!segments_[i]) {
