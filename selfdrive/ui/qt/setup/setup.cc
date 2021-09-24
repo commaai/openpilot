@@ -93,10 +93,9 @@ QWidget * Setup::low_voltage() {
   cont->setObjectName("navBtn");
   blayout->addWidget(cont);
   QObject::connect(cont, &QPushButton::clicked, this, &Setup::nextPage);
+
   return widget;
 }
-
-
 
 QWidget * Setup::getting_started() {
   QWidget *widget = new QWidget();
@@ -357,7 +356,13 @@ void Setup::nextPage() {
 }
 
 Setup::Setup(QWidget *parent) : QStackedWidget(parent) {
-  addWidget(low_voltage());
+  std::stringstream buffer;
+  buffer << std::ifstream("/sys/class/hwmonoxx/hwmon1/in1_input").rdbuf();
+  float voltage = (float)std::atoi(buffer.str().c_str()) / 1000.;
+  qDebug() << "voltage" << voltage;
+  if (voltage < 7) {
+    addWidget(low_voltage());
+  }
 
   addWidget(getting_started());
   addWidget(network_setup());
