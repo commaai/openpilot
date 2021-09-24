@@ -131,6 +131,9 @@ class IsoTpParallelQuery:
 
       cur_time = time.monotonic()
       if cur_time - last_response_time > timeout:
+        for tx_addr in msgs:
+          if (request_counter[tx_addr] > 0) and (not request_done[tx_addr]):
+            cloudlog.warning(f"iso-tp query timeout after receiving response: {tx_addr}")
         break
 
       if cur_time - start_time > total_timeout:
