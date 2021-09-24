@@ -35,19 +35,19 @@ protected:
   void mergeSegments(int begin_idx, int end_idx);
   void updateEvents(const std::function<void()>& lambda);
 
-  uint64_t route_start_ts_ = 0;
-  uint64_t cur_mono_time_ = 0;
-  std::atomic<int> current_segment = -1;
-
   QThread *thread;
 
   // logs
   std::mutex lock_;
+  std::condition_variable stream_cv_;
   std::atomic<bool> updating_events_ = false;
   std::atomic<bool> paused_ = false;
   std::atomic<bool> exit_ = false;
+  std::atomic<int> current_segment = -1;
+
   bool events_updated_ = false;
-  std::condition_variable stream_cv_;
+  uint64_t route_start_ts_ = 0;
+  uint64_t cur_mono_time_ = 0;
   std::vector<Event *> *events_ = nullptr;
   std::unordered_map<uint32_t, EncodeIdx> *eidx_ = nullptr;
   std::vector<std::unique_ptr<Segment>> segments_;
