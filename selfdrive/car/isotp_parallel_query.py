@@ -71,9 +71,9 @@ class IsoTpParallelQuery:
     messaging.drain_sock(self.logcan)
     self.msg_buffer = defaultdict(list)
 
-  def get_data(self, timeout, total_timout=None):
-    if total_timout is None:
-      total_timout = timeout
+  def get_data(self, timeout, total_timeout=None):
+    if total_timeout is None:
+      total_timeout = timeout
 
     self._drain_rx()
 
@@ -129,9 +129,8 @@ class IsoTpParallelQuery:
           request_done[tx_addr] = True
           cloudlog.warning(f"iso-tp query bad response: 0x{dat.hex()}")
 
-      if time.time() - last_response_time > timeout:
-        break
-      if time.time() - start_time > total_timout:
+      cur_time = time.time()
+      if (cur_time - last_response_time > timeout) or (cur_time - start_time > total_timeout):
         break
 
     return results
