@@ -185,9 +185,6 @@ class LongitudinalMpc():
     self.crashing = False
     self.prev_lead_x = 10
     self.solution_status = 0
-    self.new_lead1 = False
-    self.prev_lead_status1 = False
-    self.prev_lead_x1 = 0.0
     self.x0 = np.zeros(3)
     self.set_weights()
 
