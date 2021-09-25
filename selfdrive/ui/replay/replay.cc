@@ -49,14 +49,13 @@ void Replay::start(int seconds){
   thread->start();
 }
 
-void Replay::updateEvents(const std::function<void()>& lambda) {
+void Replay::updateEvents(const std::function<bool()>& lambda) {
   // set updating_events to true to force stream thread relase the lock and wait for evnets_udpated.
   updating_events_ = true;
   {
     std::unique_lock lk(lock_);
+    events_updated_ = lambda();
     updating_events_ = false;
-    events_updated_ = true;
-    lambda();
   }
   stream_cv_.notify_one();
 }
@@ -69,14 +68,14 @@ void Replay::seekTo(int seconds, bool relative) {
       seconds += ((cur_mono_time_ - route_start_ts_) * 1e-9);
     }
     seconds = std::clamp(seconds, 0, (int)segments_.size() * 60 - 1);
-    cur_mono_time_ = route_start_ts_ + seconds * 1e9;
     int segment = seconds / 60;
-    if (segment != current_segment_) {
-      // segment changed, set events_updated_ to false to let stream thread wait for the new segment to be merged.
-      events_updated_ = false;
-      setCurrentSegment(segment);
-    }
+    bool segment_changed = (segment != current_segment_);
+
+    cur_mono_time_ = route_start_ts_ + seconds * 1e9;
+    setCurrentSegment(segment);
     qInfo() << "seeking to " << seconds;
+    // return false on segment changed, stream thread will wait for the new segment to be merged.
+    return segment_changed ? false : true; 
   });
 }
 
@@ -84,6 +83,7 @@ void Replay::pause(bool pause) {
   updateEvents([=]() {
     qDebug() << (pause ? "paused..." : "resuming");
     paused_ = pause;
+    return true;
   });
 }
 
@@ -159,6 +159,7 @@ void Replay::mergeSegments(int cur_seg, int end_idx) {
 
       events_ = new_events;
       eidx_ = new_eidx;
+      return true;
     });
     delete prev_events;
     delete[] prev_eidx;

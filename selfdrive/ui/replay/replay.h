@@ -33,7 +33,7 @@ protected:
   void stream();
   void setCurrentSegment(int n);
   void mergeSegments(int begin_idx, int end_idx);
-  void updateEvents(const std::function<void()>& lambda);
+  void updateEvents(const std::function<bool()>& lambda);
 
   QThread *thread;
 
