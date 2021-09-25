@@ -320,8 +320,7 @@ class CarInterface(CarInterfaceBase):
       ret.longitudinalTuning.kpV = [1.2, 0.8, 0.765, 2.255, 1.5]
       ret.longitudinalTuning.kiBP = [0., MIN_ACC_SPEED, MIN_ACC_SPEED + PEDAL_HYST_GAP, 35.]
       ret.longitudinalTuning.kiV = [0.18, 0.165, 0.489, 0.36]
-    elif candidate in [CAR.COROLLA_TSS2, CAR.COROLLAH_TSS2, CAR.RAV4_TSS2, CAR.RAV4H_TSS2, CAR.LEXUS_NX_TSS2]:
-      # Improved longitudinal tune
+    else:
       ret.longitudinalTuning.deadzoneBP = [0., 8.05]
       ret.longitudinalTuning.deadzoneV = [.0, .14]
       ret.longitudinalTuning.kpBP = [0., 5., 20.]
@@ -330,14 +329,6 @@ class CarInterface(CarInterfaceBase):
       ret.longitudinalTuning.kiV = [.35, .23, .20, .17, .1]
       ret.stoppingDecelRate = 0.3  # reach stopping target smoothly
       ret.startingAccelRate = 6.0  # release brakes fast
-    else:
-      # Default longitudinal tune
-      ret.longitudinalTuning.deadzoneBP = [0., 9.]
-      ret.longitudinalTuning.deadzoneV = [0., .15]
-      ret.longitudinalTuning.kpBP = [0., 5., 35.]
-      ret.longitudinalTuning.kiBP = [0., 35.]
-      ret.longitudinalTuning.kpV = [3.6, 2.4, 1.5]
-      ret.longitudinalTuning.kiV = [0.54, 0.36]
 
     return ret
 
