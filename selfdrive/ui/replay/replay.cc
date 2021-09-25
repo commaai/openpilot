@@ -68,14 +68,16 @@ void Replay::seekTo(int seconds, bool relative) {
       seconds += ((cur_mono_time_ - route_start_ts_) * 1e-9);
     }
     seconds = std::clamp(seconds, 0, (int)segments_.size() * 60 - 1);
+    qInfo() << "seeking to " << seconds;
+
     int segment = seconds / 60;
     bool segment_changed = (segment != current_segment_);
 
     cur_mono_time_ = route_start_ts_ + seconds * 1e9;
     setCurrentSegment(segment);
-    qInfo() << "seeking to " << seconds;
-    // return false on segment changed, stream thread will wait for the new segment to be merged.
-    return segment_changed ? false : true; 
+    bool segment_loaded = std::find(segments_merged_.begin(), segments_merged_.end(), segment) != segments_merged_.end(); 
+    // return false if segment changed and not loaded yet
+    return !segment_changed || segment_loaded;
   });
 }
 
@@ -130,7 +132,6 @@ void Replay::mergeSegments(int cur_seg, int end_idx) {
 
   if (segments_need_merge != segments_merged_) {
     qDebug() << "merge segments" << segments_need_merge;
-    segments_merged_ = segments_need_merge;
 
     // merge & sort events
     std::vector<Event *> *new_events = new std::vector<Event *>();
@@ -147,7 +148,7 @@ void Replay::mergeSegments(int cur_seg, int end_idx) {
     // update events
     auto prev_events = events_;
     auto prev_eidx = eidx_;
-    updateEvents([=]() {
+    updateEvents([&]() {
       if (route_start_ts_ == 0) {
         // get route start time from initData
         auto it = std::find_if(new_events->begin(), new_events->end(), [=](auto e) { return e->which == cereal::Event::Which::INIT_DATA; });
@@ -159,6 +160,7 @@ void Replay::mergeSegments(int cur_seg, int end_idx) {
 
       events_ = new_events;
       eidx_ = new_eidx;
+      segments_merged_ = segments_need_merge;
       return true;
     });
     delete prev_events;
@@ -195,7 +197,7 @@ void Replay::stream() {
     uint64_t evt_start_ts = cur_mono_time_;
     uint64_t loop_start_ts = nanos_since_boot();
 
-    for (/**/; !updating_events_ && eit != events_->end(); ++eit) {
+    for (auto end = events_->end(); !updating_events_ && eit != end; ++eit) {
       const Event *evt = (*eit);
       cur_which = evt->which;
       cur_mono_time_ = evt->mono_time;
