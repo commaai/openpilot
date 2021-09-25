@@ -117,9 +117,7 @@ typedef struct UIScene {
   uint64_t started_frame;
 } UIScene;
 
-class QUIState;
 typedef struct UIState {
-  QUIState *qUIState = nullptr;
   int fb_w = 0, fb_h = 0;
   NVGcontext *vg;
 
@@ -151,7 +149,7 @@ signals:
   void uiUpdate(const UIState &s);
   void offroadTransition(bool offroad);
 
-public slots:
+private slots:
   void update();
 
 private:

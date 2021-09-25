@@ -184,11 +184,11 @@ void NvgWindow::initializeGL() {
 void NvgWindow::updateState(const UIState &s) {
   // TODO: make camerad startup faster then remove this
   if (s.scene.started) {
-    if (isVisible() != vipc_client->connected) {
-      setVisible(vipc_client->connected);
+    if (isVisible() != vipc_connected) {
+      setVisible(vipc_connected);
     }
     if (!isVisible()) {
-      updateFrame();
+      emit updateFrame(stream_type);
     }
   }
 }
