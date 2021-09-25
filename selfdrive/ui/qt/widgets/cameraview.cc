@@ -287,7 +287,8 @@ void VIPCThread::receive(VisionStreamType type) {
   }
   if (buf == nullptr) {
     // try to connect or recv again
-    QTimer::singleShot(1000. / UI_FREQ, [=]() { receive(type); });
+    int timeout = vipc_client_->connected ? 0 : 1000. / UI_FREQ;
+    QTimer::singleShot(timeout, [=]() { receive(type); });
   }
 }
 
