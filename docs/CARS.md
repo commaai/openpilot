@@ -18,6 +18,7 @@ Supported Cars
 | Honda     | CR-V Hybrid 2017-2019         | Honda Sensing     | Stock            | 0mph               | 12mph             |
 | Honda     | e 2020                        | All               | Stock            | 0mph               | 3mph              |
 | Honda     | Fit 2018-19                   | Honda Sensing     | openpilot        | 25mph<sup>1</sup>  | 12mph             |
+| Honda     | Freed 2020                    | Honda Sensing     | openpilot        | 25mph<sup>1</sup>  | 12mph             |
 | Honda     | HR-V 2019-20                  | Honda Sensing     | openpilot        | 25mph<sup>1</sup>  | 12mph             |
 | Honda     | Insight 2019-21               | All               | Stock            | 0mph               | 3mph              |
 | Honda     | Inspire 2018                  | All               | Stock            | 0mph               | 3mph              |
@@ -105,6 +106,7 @@ Community Maintained Cars and Features
 | Hyundai   | Kona EV 2018-19               | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Hyundai   | Kona Hybrid 2020              | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Hyundai   | Santa Fe 2019-20              | All               | Stock            | 0mph               | 0mph         |
+| Hyundai   | Santa Fe 2022                 | All               | Stock            | 0mph               | 0mph         |
 | Hyundai   | Sonata 2018-2019              | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Hyundai   | Sonata Hybrid 2021            | All               | Stock            | 0mph               | 0mph         |
 | Hyundai   | Veloster 2019-20              | SCC + LKAS        | Stock            | 5mph               | 0mph         |

@@ -12,7 +12,7 @@ class CarControllerParams:
   def __init__(self, CP):
     if CP.carFingerprint in [CAR.SONATA, CAR.PALISADE, CAR.SANTA_FE, CAR.VELOSTER, CAR.GENESIS_G70,
                              CAR.IONIQ_EV_2020, CAR.KIA_CEED, CAR.KIA_SELTOS, CAR.ELANTRA_2021,
-                             CAR.ELANTRA_HEV_2021, CAR.SONATA_HYBRID, CAR.KONA_HEV]:
+                             CAR.ELANTRA_HEV_2021, CAR.SONATA_HYBRID, CAR.KONA_HEV, CAR.SANTA_FE_2022]:
       self.STEER_MAX = 384
     else:
       self.STEER_MAX = 255
@@ -37,6 +37,7 @@ class CAR:
   KONA_EV = "HYUNDAI KONA ELECTRIC 2019"
   KONA_HEV = "HYUNDAI KONA HYBRID 2020"
   SANTA_FE = "HYUNDAI SANTA FE 2019"
+  SANTA_FE_2022 = "HYUNDAI SANTA FE 2022"
   SONATA = "HYUNDAI SONATA 2020"
   SONATA_LF = "HYUNDAI SONATA 2019"
   PALISADE = "HYUNDAI PALISADE 2020"
@@ -368,6 +369,26 @@ FW_VERSIONS = {
       b'\xf1\x87SDJXAA7656854GG1DEtWUU\x85X\x88\x88\x98\x88w\x88\x87xx\x88\x87\x88\x96o\xfb\xff\x86f\x7f\xff.\xca\xf1\x816W3C2051\x00\x00\xf1\x006W351_C2\x00\x006W3C2051\x00\x00TTM4G24NS2\x00\x00\x00\x00',
       b'\xf1\x87SDKXAA2443414GG1vfvgwv\x87h\x88\x88\x88\x88ww\x87wwwww\x99_\xfc\xffvD?\xffl\xd2\xf1\x816W3E1051\x00\x00\xf1\x006W351_C2\x00\x006W3E1051\x00\x00TTM4G24NS6\x00\x00\x00\x00',
       b'\xf1\x87SBLWAA4899564GG0VfvgUU\x85Xx\x88\x87\x88vfgf\x87wxwvO\xfb\xff\x97f\xb1\xffSB\xf1\x816W3E1051\x00\x00\xf1\x006W351_C2\x00\x006W3E1051\x00\x00TTM2G24NS7\x00\x00\x00\x00',
+    ],
+  },
+  CAR.SANTA_FE_2022: {
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00TM__ SCC F-CUP      1.00 1.00 99110-S1500         ',
+    ],
+    (Ecu.esp, 0x7d1, None): [
+      b'\xf1\x00TM ESC \x02 101 \x08\x04 58910-S2GA0',
+    ],
+    (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x82TMBZN5TMD3XXXG2E',
+    ],
+    (Ecu.eps, 0x7d4, None): [
+      b'\xf1\x00TM  MDPS C 1.00 1.02 56370-S2AA0 0B19',
+    ],
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00TMA MFC  AT MEX LHD 1.00 1.01 99211-S2500 210205',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x00T02601BL  T02730A1  VTMPT25XXX730NS2\xa6\x06\x88\xf7',
     ],
   },
   CAR.KIA_STINGER: {
@@ -735,7 +756,7 @@ FW_VERSIONS = {
 }
 
 CHECKSUM = {
-  "crc8": [CAR.SANTA_FE, CAR.SONATA, CAR.PALISADE, CAR.KIA_SELTOS, CAR.ELANTRA_2021, CAR.ELANTRA_HEV_2021, CAR.SONATA_HYBRID],
+  "crc8": [CAR.SANTA_FE, CAR.SONATA, CAR.PALISADE, CAR.KIA_SELTOS, CAR.ELANTRA_2021, CAR.ELANTRA_HEV_2021, CAR.SONATA_HYBRID, CAR.SANTA_FE_2022],
   "6B": [CAR.KIA_SORENTO, CAR.HYUNDAI_GENESIS],
 }
 
@@ -746,7 +767,7 @@ FEATURES = {
   "use_elect_gears": set([CAR.KIA_NIRO_EV, CAR.KIA_NIRO_HEV, CAR.KIA_NIRO_HEV_2021, CAR.KIA_OPTIMA_H, CAR.IONIQ_EV_LTD, CAR.KONA_EV, CAR.IONIQ, CAR.IONIQ_EV_2020, CAR.IONIQ_PHEV, CAR.ELANTRA_HEV_2021,CAR.SONATA_HYBRID, CAR.KONA_HEV]),
 
   # these cars use the FCA11 message for the AEB and FCW signals, all others use SCC12
-  "use_fca": set([CAR.SONATA, CAR.SONATA_HYBRID, CAR.ELANTRA, CAR.ELANTRA_2021, CAR.ELANTRA_HEV_2021, CAR.ELANTRA_GT_I30, CAR.KIA_STINGER, CAR.IONIQ, CAR.IONIQ_EV_2020, CAR.IONIQ_PHEV, CAR.KONA_EV, CAR.KIA_FORTE, CAR.KIA_NIRO_EV, CAR.PALISADE, CAR.GENESIS_G70, CAR.KONA, CAR.SANTA_FE, CAR.KIA_SELTOS, CAR.KONA_HEV]),
+  "use_fca": set([CAR.SONATA, CAR.SONATA_HYBRID, CAR.ELANTRA, CAR.ELANTRA_2021, CAR.ELANTRA_HEV_2021, CAR.ELANTRA_GT_I30, CAR.KIA_STINGER, CAR.IONIQ, CAR.IONIQ_EV_2020, CAR.IONIQ_PHEV, CAR.KONA_EV, CAR.KIA_FORTE, CAR.KIA_NIRO_EV, CAR.PALISADE, CAR.GENESIS_G70, CAR.KONA, CAR.SANTA_FE, CAR.KIA_SELTOS, CAR.KONA_HEV, CAR.SANTA_FE_2022]),
 }
 
 HYBRID_CAR = set([CAR.IONIQ_PHEV, CAR.ELANTRA_HEV_2021, CAR.KIA_NIRO_HEV, CAR.KIA_NIRO_HEV_2021, CAR.SONATA_HYBRID, CAR.KONA_HEV])  # these cars use a different gas signal
@@ -780,6 +801,7 @@ DBC = {
   CAR.KONA_EV: dbc_dict('hyundai_kia_generic', None),
   CAR.KONA_HEV: dbc_dict('hyundai_kia_generic', None),
   CAR.SANTA_FE: dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar'),
+  CAR.SANTA_FE_2022: dbc_dict('hyundai_kia_generic', None),
   CAR.SONATA: dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar'),
   CAR.SONATA_LF: dbc_dict('hyundai_kia_generic', None), # Has 0x5XX messages, but different format
   CAR.PALISADE: dbc_dict('hyundai_kia_generic', 'hyundai_kia_mando_front_radar'),

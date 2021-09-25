@@ -153,8 +153,7 @@ class Controls:
     # TODO: no longer necessary, aside from process replay
     self.sm['liveParameters'].valid = True
 
-    self.startup_event = get_startup_event(car_recognized, controller_available, self.CP.fuzzyFingerprint,
-                                           len(self.CP.carFw) > 0)
+    self.startup_event = get_startup_event(car_recognized, controller_available, len(self.CP.carFw) > 0)
 
     if not sounds_available:
       self.events.add(EventName.soundsUnavailable, static=True)

@@ -47,6 +47,56 @@ void Setup::download(QString url) {
   emit finished(true);
 }
 
+QWidget * Setup::low_voltage() {
+  QWidget *widget = new QWidget();
+  QVBoxLayout *main_layout = new QVBoxLayout(widget);
+  main_layout->setContentsMargins(55, 0, 55, 55);
+  main_layout->setSpacing(0);
+
+  // inner text layout: warning icon, title, and body
+  QVBoxLayout *inner_layout = new QVBoxLayout();
+  inner_layout->setContentsMargins(110, 144, 365, 0);
+  main_layout->addLayout(inner_layout);
+
+  QLabel *triangle = new QLabel();
+  triangle->setPixmap(QPixmap(ASSET_PATH + "offroad/icon_warning.png"));
+  inner_layout->addWidget(triangle, 0, Qt::AlignTop | Qt::AlignLeft);
+  inner_layout->addSpacing(80);
+
+  QLabel *title = new QLabel("WARNING: Low Voltage");
+  title->setStyleSheet("font-size: 90px; font-weight: 500; color: #FF594F;");
+  inner_layout->addWidget(title, 0, Qt::AlignTop | Qt::AlignLeft);
+
+  inner_layout->addSpacing(25);
+
+  QLabel *body = new QLabel("Power your device in a car with a harness or proceed at your own risk.");
+  body->setWordWrap(true);
+  body->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  body->setStyleSheet("font-size: 80px; font-weight: 300;");
+  inner_layout->addWidget(body);
+
+  inner_layout->addStretch();
+
+  // power off + continue buttons
+  QHBoxLayout *blayout = new QHBoxLayout();
+  blayout->setSpacing(50);
+  main_layout->addLayout(blayout, 0);
+
+  QPushButton *poweroff = new QPushButton("Power off");
+  poweroff->setObjectName("navBtn");
+  blayout->addWidget(poweroff);
+  QObject::connect(poweroff, &QPushButton::clicked, this, [=]() {
+    Hardware::poweroff();
+  });
+
+  QPushButton *cont = new QPushButton("Continue");
+  cont->setObjectName("navBtn");
+  blayout->addWidget(cont);
+  QObject::connect(cont, &QPushButton::clicked, this, &Setup::nextPage);
+
+  return widget;
+}
+
 QWidget * Setup::getting_started() {
   QWidget *widget = new QWidget();
 
@@ -87,7 +137,7 @@ QWidget * Setup::network_setup() {
   main_layout->setContentsMargins(55, 50, 55, 50);
 
   // title
-  QLabel *title = new QLabel("Connect to WiFi");
+  QLabel *title = new QLabel("Connect to Wi-Fi");
   title->setStyleSheet("font-size: 90px; font-weight: 500;");
   main_layout->addWidget(title, 0, Qt::AlignLeft | Qt::AlignTop);
 
@@ -122,7 +172,7 @@ QWidget * Setup::network_setup() {
     cont->setEnabled(success);
     if (success) {
       const bool cell = networking->wifi->currentNetworkType() == NetworkType::CELL;
-      cont->setText(cell ? "Continue without WiFi" : "Continue");
+      cont->setText(cell ? "Continue without Wi-Fi" : "Continue");
     } else {
       cont->setText("Waiting for internet");
     }
@@ -306,6 +356,13 @@ void Setup::nextPage() {
 }
 
 Setup::Setup(QWidget *parent) : QStackedWidget(parent) {
+  std::stringstream buffer;
+  buffer << std::ifstream("/sys/class/hwmon/hwmon1/in1_input").rdbuf();
+  float voltage = (float)std::atoi(buffer.str().c_str()) / 1000.;
+  if (voltage < 7) {
+    addWidget(low_voltage());
+  }
+
   addWidget(getting_started());
   addWidget(network_setup());
   addWidget(software_selection());

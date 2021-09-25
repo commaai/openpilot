@@ -39,9 +39,9 @@ class CarInterface(CarInterfaceBase):
       # Disable the radar and let openpilot control longitudinal
       # WARNING: THIS DISABLES AEB!
       ret.openpilotLongitudinalControl = Params().get_bool("DisableRadar")
+      ret.longitudinalActuatorDelayUpperBound = 1.0 # s
 
       ret.pcmCruise = not ret.openpilotLongitudinalControl
-      ret.communityFeature = ret.openpilotLongitudinalControl
     else:
       ret.safetyModel = car.CarParams.SafetyModel.hondaNidec
       ret.enableGasInterceptor = 0x201 in fingerprint[0]
@@ -174,6 +174,17 @@ class CarInterface(CarInterfaceBase):
       ret.centerToFront = ret.wheelbase * 0.39
       ret.steerRatio = 13.06
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
+      tire_stiffness_factor = 0.75
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2], [0.05]]
+
+    elif candidate == CAR.FREED:
+      stop_and_go = False
+      ret.mass = 3086. * CV.LB_TO_KG + STD_CARGO_KG
+      ret.wheelbase = 2.74
+      # the remaining parameters were copied from FIT
+      ret.centerToFront = ret.wheelbase * 0.39
+      ret.steerRatio = 13.06
+      ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]
       tire_stiffness_factor = 0.75
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2], [0.05]]
 
