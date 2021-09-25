@@ -79,11 +79,11 @@ bool httpMultiPartDownload(const std::string &url, const std::string &target_fil
     curl_multi_add_handle(cm, eh);
   }
 
-  int still_alive = 1, success_cnt = 0;
+  int running = 1, success_cnt = 0;
   while (!(abort && abort->load())){
-    CURLMcode ret = curl_multi_perform(cm, &still_alive);
+    CURLMcode ret = curl_multi_perform(cm, &running);
 
-    if (!still_alive) {
+    if (!running) {
       CURLMsg *msg;
       int msgs_left = -1;
       while ((msg = curl_multi_info_read(cm, &msgs_left))) {
@@ -104,7 +104,7 @@ bool httpMultiPartDownload(const std::string &url, const std::string &target_fil
   fclose(fp);
   bool success = success_cnt == parts;
   if (success) {
-    ::rename(tmp_file.c_str(), target_file.c_str());
+    success = ::rename(tmp_file.c_str(), target_file.c_str()) == 0;
   }
 
   // cleanup curl
