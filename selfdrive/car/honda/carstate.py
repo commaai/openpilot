@@ -64,6 +64,11 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg, door_sig_msg, door_signals
       ("SCM_BUTTONS", 25),
     ]
 
+  if door_sig_msg == "DOORS_STATUS":
+    checks += [
+      (door_sig_msg, 3),
+    ]
+
   if CP.carFingerprint in (CAR.CRV_HYBRID, CAR.CIVIC_BOSCH_DIESEL, CAR.ACURA_RDX_3G, CAR.HONDA_E):
     checks += [
       (gearbox_msg, 50),
@@ -111,11 +116,9 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg, door_sig_msg, door_signals
 
   if CP.carFingerprint not in HONDA_NO_WHEELS_MOVING_SIGNAL:
     signals += [("WHEELS_MOVING", "STANDSTILL", 1)]
-    if CP.carFingerprint != CAR.HRV:
-      checks += [
-        ("DOORS_STATUS", 3),
-        ("STANDSTILL", 50),
-      ]
+    checks += [
+      ("STANDSTILL", 50),
+    ]
 
   if CP.carFingerprint == CAR.CIVIC:
     signals += [("IMPERIAL_UNIT", "HUD_SETTING", 0),
