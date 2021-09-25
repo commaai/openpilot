@@ -130,7 +130,7 @@ def gen_long_mpc_solver():
 
   l2_penalty = 1.0
   l1_penalty = 0.0
-  weights = np.array([1e8, 1e6, 1e6, DANGER_ZONE_COST, 0.])
+  weights = np.array([1e6, 1e6, 1e6, DANGER_ZONE_COST, 0.])
   ocp.cost.Zl = l2_penalty * weights
   ocp.cost.zl = l1_penalty * weights
   ocp.cost.Zu = 0.0 * weights
