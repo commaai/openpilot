@@ -38,7 +38,7 @@ public:
   using QOpenGLWidget::QOpenGLWidget;
   explicit CameraViewWidget(VisionStreamType stream_type, bool zoom, QWidget* parent = nullptr);
   ~CameraViewWidget();
-  void setStreamType(VisionStreamType type);
+  void setStreamType(VisionStreamType type) { stream_type = type; }
 
 signals:
   void clicked();
