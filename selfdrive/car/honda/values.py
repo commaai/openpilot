@@ -66,6 +66,7 @@ class CAR:
   CRV_EU = "HONDA CR-V EU 2016"
   CRV_HYBRID = "HONDA CR-V HYBRID 2019"
   FIT = "HONDA FIT 2018"
+  FREED = "HONDA FREED 2020"
   HRV = "HONDA HRV 2019"
   ODYSSEY = "HONDA ODYSSEY 2018"
   ODYSSEY_CHN = "HONDA ODYSSEY CHN 2019"
@@ -838,6 +839,29 @@ FW_VERSIONS = {
       b'77959-T5R-A230\x00\x00',
     ],
   },
+  CAR.FREED: {
+    (Ecu.gateway, 0x18daeff1, None): [
+      b'38897-TDK-J010\x00\x00',
+    ],
+    (Ecu.eps, 0x18da30f1, None): [
+      b'39990-TDK-J050\x00\x00',
+      b'39990-TDK-N020\x00\x00',
+    ],
+    # TODO: vsa is "essential" for fpv2 but doesn't appear on some models
+    (Ecu.vsa, 0x18da28f1, None): [
+      b'57114-TDK-J120\x00\x00',
+      b'57114-TDK-J330\x00\x00',
+    ],
+    (Ecu.combinationMeter, 0x18da60f1, None): [
+      b'78109-TDK-J310\x00\x00',
+      b'78109-TDK-J320\x00\x00',
+    ],
+    (Ecu.fwdRadar, 0x18dab0f1, None): [
+      b'36161-TDK-J070\x00\x00',
+      b'36161-TDK-J080\x00\x00',
+      b'36161-TDK-J530\x00\x00',
+    ],
+  },
   CAR.ODYSSEY: {
     (Ecu.gateway, 0x18daeff1, None): [
       b'38897-THR-A010\x00\x00',
@@ -1275,6 +1299,7 @@ DBC = {
   CAR.CRV_EU: dbc_dict('honda_crv_executive_2016_can_generated', 'acura_ilx_2016_nidec'),
   CAR.CRV_HYBRID: dbc_dict('honda_crv_hybrid_2019_can_generated', None),
   CAR.FIT: dbc_dict('honda_fit_ex_2018_can_generated', 'acura_ilx_2016_nidec'),
+  CAR.FREED: dbc_dict('honda_fit_ex_2018_can_generated', 'acura_ilx_2016_nidec'),
   CAR.HRV: dbc_dict('honda_fit_ex_2018_can_generated', 'acura_ilx_2016_nidec'),
   CAR.ODYSSEY: dbc_dict('honda_odyssey_exl_2018_generated', 'acura_ilx_2016_nidec'),
   CAR.ODYSSEY_CHN: dbc_dict('honda_odyssey_extreme_edition_2018_china_can_generated', 'acura_ilx_2016_nidec'),
