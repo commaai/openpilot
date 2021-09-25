@@ -24,7 +24,7 @@ public slots:
 
 signals:
   void connected(VisionIpcClient *);
-  void recvd(VisionBuf *);
+  void frameReceived(VisionBuf *);
 
  protected:
   VisionStreamType stream_type_;
@@ -44,7 +44,6 @@ signals:
   void clicked();
   void frameUpdated();
   void updateFrame(VisionStreamType);
-  void disconnectVipc();
 
 protected:
   void paintGL() override;
@@ -58,7 +57,7 @@ protected:
 
 protected slots:
   void vipcConnected(VisionIpcClient * vipc_client);
-  void vipcRecvd(VisionBuf *buf);
+  void frameReceived(VisionBuf *buf);
 
 private:
   bool zoomed_view;

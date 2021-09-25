@@ -99,9 +99,8 @@ CameraViewWidget::CameraViewWidget(VisionStreamType type, bool zoom, QWidget* pa
   
   vipc_thread = new VIPCThread();
   connect(vipc_thread, &VIPCThread::connected, this, &CameraViewWidget::vipcConnected);
-  connect(vipc_thread, &VIPCThread::recvd, this, &CameraViewWidget::vipcRecvd);
+  connect(vipc_thread, &VIPCThread::frameReceived, this, &CameraViewWidget::frameReceived);
   connect(this, &CameraViewWidget::updateFrame, vipc_thread, &VIPCThread::receive);
-  connect(this, &CameraViewWidget::disconnectVipc, vipc_thread, &VIPCThread::disconnect);
   connect(this, &QOpenGLWidget::frameSwapped, [=]() { emit updateFrame(stream_type); });
   vipc_thread->start();
 }
@@ -163,7 +162,8 @@ void CameraViewWidget::initializeGL() {
 
 
 void CameraViewWidget::hideEvent(QHideEvent *event) {
-  emit disconnectVipc();
+  // that disconnect() will be invoked on the vipc thread.
+  QMetaObject::invokeMethod(vipc_thread, "disconnect");
   vipc_connected = false;
   latest_frame = nullptr;
 }
@@ -258,7 +258,7 @@ void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
   updateFrameMat(width(), height());
 }
 
-void CameraViewWidget::vipcRecvd(VisionBuf *buf) {
+void CameraViewWidget::frameReceived(VisionBuf *buf) {
   latest_frame = buf;
   update();
   emit frameUpdated();
@@ -280,7 +280,7 @@ void VIPCThread::receive(VisionStreamType type) {
   if (vipc_client_->connected) {
     buf = vipc_client_->recv();
     if (buf != nullptr) {
-      emit recvd(buf);
+      emit frameReceived(buf);
     } else {
       LOGE("visionIPC receive timeout");
     }
