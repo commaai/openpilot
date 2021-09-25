@@ -52,7 +52,7 @@ protected:
   void initializeGL() override;
   void hideEvent(QHideEvent *event) override;
   void mouseReleaseEvent(QMouseEvent *event) override;
-  void updateFrameMat(int w, int h);
+  void updateFrameMat(int width, int height);
   bool vipc_connected = false;
   VisionStreamType stream_type;
 

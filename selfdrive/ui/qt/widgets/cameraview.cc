@@ -176,7 +176,7 @@ void CameraViewWidget::resizeGL(int w, int h) {
   updateFrameMat(w, h);
 }
 
-void CameraViewWidget::updateFrameMat(int w, int h) {
+void CameraViewWidget::updateFrameMat(int width, int height) {
   if (zoomed_view) {
     if (stream_type == VISION_STREAM_RGB_FRONT) {
       frame_mat = matmul(device_transform, get_driver_view_transform());
@@ -186,12 +186,12 @@ void CameraViewWidget::updateFrameMat(int w, int h) {
       if (stream_type == VISION_STREAM_RGB_WIDE) {
         zoom *= 0.5;
       }
-      float zx = zoom * 2 * intrinsic_matrix.v[2] / w;
-      float zy = zoom * 2 * intrinsic_matrix.v[5] / h;
+      float zx = zoom * 2 * intrinsic_matrix.v[2] / width;
+      float zy = zoom * 2 * intrinsic_matrix.v[5] / height;
 
       const mat4 frame_transform = {{
         zx, 0.0, 0.0, 0.0,
-        0.0, zy, 0.0, -y_offset / h * 2,
+        0.0, zy, 0.0, -y_offset / height * 2,
         0.0, 0.0, 1.0, 0.0,
         0.0, 0.0, 0.0, 1.0,
       }};
@@ -199,7 +199,7 @@ void CameraViewWidget::updateFrameMat(int w, int h) {
     }
   } else if (vipc_connected) {
     // fit frame to widget size
-    float w  = (float)w / h;
+    float w  = (float)width / height;
     float f = (float)stream_width  / stream_height;
     frame_mat = matmul(device_transform, get_fit_view_transform(w, f));
   }
