@@ -244,7 +244,6 @@ class LongitudinalMpc():
       self.new_lead = False
       lead_xv = self.extrapolate_lead(x_lead, v_lead, a_lead, self.a_lead_tau)
       if not self.prev_lead_status or abs(x_lead - self.prev_lead_x) > 2.5:
-        self.init_with_sim(v_ego, lead_xv, a_lead)
         self.new_lead = True
 
       self.prev_lead_status = True
@@ -258,19 +257,6 @@ class LongitudinalMpc():
       self.a_lead_tau = _LEAD_ACCEL_TAU
       lead_xv = self.extrapolate_lead(x_lead, v_lead, a_lead, self.a_lead_tau)
     return lead_xv
-
-  def init_with_sim(self, v_ego, lead_xv, a_lead_0):
-    x_ego = 0.0
-    a_ego = min(0.0, - (v_ego - lead_xv[0,1]) * (v_ego - lead_xv[0,1]) / (2.0 * lead_xv[0,0] + 0.01) + a_lead_0)
-    self.solver.set(0, 'x', np.array([x_ego, v_ego, a_ego]))
-    for i in range(1, N+1):
-      dt = T_IDXS[i] - T_IDXS[i-1]
-      v_ego += a_ego * dt
-      if v_ego <= 0.0:
-        v_ego = 0.0
-        a_ego = 0.0
-      x_ego += v_ego * dt
-      self.solver.set(i, 'x', np.array([x_ego, v_ego, a_ego]))
 
   def set_accel_limits(self, min_a, max_a):
     self.cruise_min_a = min_a
