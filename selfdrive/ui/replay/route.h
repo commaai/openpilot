@@ -9,6 +9,7 @@
 #include "selfdrive/ui/replay/logreader.h"
 
 const QString CACHE_DIR = util::getenv("COMMA_CACHE", "/tmp/comma_download_cache/").c_str();
+const int connections_per_file = 3;
 
 struct SegmentFile {
   QString rlog;

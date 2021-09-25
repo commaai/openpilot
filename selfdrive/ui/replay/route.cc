@@ -79,19 +79,27 @@ bool httpMultiPartDownload(const std::string &url, const std::string &target_fil
     curl_multi_add_handle(cm, eh);
   }
 
-  int msgs_left = -1, still_alive = 1;
-  int success_cnt = 0;
-  CURLMsg *msg;
-  while (true) {
-    curl_multi_perform(cm, &still_alive);
+  int still_alive = 1, success_cnt = 0;
+  while (!(abort && abort->load())){
+    CURLMcode ret = curl_multi_perform(cm, &still_alive);
 
-    while ((msg = curl_multi_info_read(cm, &msgs_left))) {
-      success_cnt += (msg->msg == CURLMSG_DONE && msg->data.result == CURLE_OK);
+    if (!still_alive) {
+      CURLMsg *msg;
+      int msgs_left = -1;
+      while ((msg = curl_multi_info_read(cm, &msgs_left))) {
+        if (msg->msg == CURLMSG_DONE && msg->data.result == CURLE_OK) {
+          int http_status_code = 0;
+          curl_easy_getinfo(msg->easy_handle, CURLINFO_RESPONSE_CODE, &http_status_code);
+          success_cnt += (http_status_code == 206);
+        }
+      }
+      break;
     }
-    if (!still_alive || (abort && abort->load())) break;
 
-    curl_multi_wait(cm, NULL, 0, 100, NULL);
-  }
+    if (ret == CURLM_OK) {
+      curl_multi_wait(cm, nullptr, 0, 1000, nullptr);
+    }
+  };
 
   fclose(fp);
   bool success = success_cnt == parts;
@@ -209,7 +217,7 @@ Segment::~Segment() {
 void Segment::downloadFile(const QString &url) {
   qDebug() << "download" << url;
   download_threads_.emplace_back(QThread::create([=]() {
-    httpMultiPartDownload(url.toStdString(), localPath(url).toStdString(), 3, &aborting_);
+    httpMultiPartDownload(url.toStdString(), localPath(url).toStdString(), connections_per_file, &aborting_);
     if (--downloading_ == 0 && !aborting_) {
       load();
     }
