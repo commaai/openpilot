@@ -553,7 +553,7 @@ FW_VERSIONS = {
       b'\xf1\000DL3_ SCC FHCUP      1.00 1.03 99110-L2000         ',
     ],
     (Ecu.eps, 0x7D4, None): [
-      b'\xf1\x8756310-L3110\xf1\000DL3 MDPS C 1.00 1.01 56310-L3110 4DLAC101\xf1\xa01.01',
+      b'\xf1\x8756310-L3110\xf1\000DL3 MDPS C 1.00 1.01 56310-L3110 4DLAC101',
     ],
     (Ecu.fwdCamera, 0x7C4, None): [
       b'\xf1\000DL3 MFC  AT USA LHD 1.00 1.03 99210-L3000 200915',
