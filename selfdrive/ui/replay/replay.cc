@@ -7,8 +7,8 @@
 #include "selfdrive/common/timing.h"
 #include "selfdrive/hardware/hw.h"
 
-const long estimate_ns = 1 * 1e6;  // 1ms
-inline void precise_sleep(long sleep_ns) {
+inline void precise_nano_sleep(long sleep_ns) {
+  const long estimate_ns = 1 * 1e6;  // 1ms
   uint start_sleep, end_sleep;
   struct timespec req = {};
   while (sleep_ns > estimate_ns) {
@@ -228,7 +228,7 @@ void Replay::stream() {
         long rtime = nanos_since_boot() - loop_start_ts;
         long behind_ns = etime - rtime;
         if (behind_ns > 0) {
-          precise_sleep(behind_ns);
+          precise_nano_sleep(behind_ns);
         }
 
         // publish frame
