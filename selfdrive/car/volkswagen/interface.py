@@ -180,7 +180,7 @@ class CarInterface(CarInterfaceBase):
       events.add(EventName.parkBrake)
 
     # Low speed steer alert hysteresis logic
-    if ret.vEgo < (self.CP.minSteerSpeed + 1.):
+    if self.CP.minSteerSpeed > 0. and ret.vEgo < (self.CP.minSteerSpeed + 1.):
       self.low_speed_alert = True
     elif ret.vEgo > (self.CP.minSteerSpeed + 2.):
       self.low_speed_alert = False
