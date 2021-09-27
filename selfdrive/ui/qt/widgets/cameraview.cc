@@ -115,7 +115,7 @@ CameraViewWidget::~CameraViewWidget() {
     glDeleteBuffers(1, &frame_ibo);
   }
   doneCurrent();
-  vipc_client->running_ = false;
+  vipc_client->exit_ = true;
   thread_.quit();
   thread_.wait();
 }
@@ -162,12 +162,12 @@ void CameraViewWidget::initializeGL() {
 
 void CameraViewWidget::showEvent(QShowEvent *event) {
   latest_frame = nullptr;
-  vipc_client->running_ = true;
+  vipc_client->exit_ = false;
 }
 
 void CameraViewWidget::hideEvent(QHideEvent *event) {
   latest_frame = nullptr;
-  vipc_client->running_ = false;
+  vipc_client->exit_ = true;
 }
 
 void CameraViewWidget::updateFrameMat(int w, int h) {
@@ -263,7 +263,7 @@ void VIPCClient::receiveFrame(VisionStreamType type) {
     vipc_client_.reset(new VisionIpcClient("camerad", stream_type_, true));
   }
 
-  while (running_) {
+  while (!exit_) {
     if (!vipc_client_->connected) {
       if (!vipc_client_->connect(false)) {
         QThread::msleep(100);

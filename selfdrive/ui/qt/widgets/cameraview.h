@@ -15,7 +15,7 @@ class VIPCClient : public QObject {
 
 public:
   VIPCClient(QObject *parent = nullptr) : QObject(parent) {}
-  std::atomic<bool> running_ = false;
+  std::atomic<bool> exit_ = false;
 
 public slots:
   void receiveFrame(VisionStreamType);
