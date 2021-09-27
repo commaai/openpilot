@@ -115,6 +115,7 @@ CameraViewWidget::~CameraViewWidget() {
     glDeleteBuffers(1, &frame_ibo);
   }
   doneCurrent();
+  vipc_client->running_ = false;
   thread_.quit();
   thread_.wait();
 }
