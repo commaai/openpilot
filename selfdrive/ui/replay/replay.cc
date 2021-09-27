@@ -97,8 +97,6 @@ void Replay::setCurrentSegment(int n) {
 
 // maintain the segment window
 void Replay::queueSegment() {
-  assert(QThread::currentThreadId() == qApp->thread()->currentThreadId());
-
   // fetch segments forward
   int cur_seg = current_segment_.load();
   int end_idx = cur_seg;
