@@ -21,26 +21,28 @@ SOURCES = ['lead0', 'lead1', 'cruise']
 
 X_DIM = 3
 U_DIM = 1
-COST_E_DIM = 2
+COST_E_DIM = 3
 COST_DIM = COST_E_DIM + 1
 MIN_ACCEL = -3.5
 
 X_EGO_COST = 80.
+X_EGO_E2E_COST = 80.
 A_EGO_COST = .1
 J_EGO_COST = .2
 DANGER_ZONE_COST = 1e3
 CRASH_DISTANCE = 1.5
+LIMIT_COST = 1e6
 T_IDXS = np.array(T_IDXS_LST)
 
-TR = 1.8
-G = 9.81
+T_REACT = 1.8
+MAX_BRAKE = 9.81
 
 
 def get_stopped_equivalence_factor(v_lead):
-  return TR * v_lead + (v_lead*v_lead) / (2 * G)
+  return T_REACT * v_lead + (v_lead*v_lead) / (2 * MAX_BRAKE)
 
 def get_safe_obstacle_distance(v_ego):
-  return 2 * TR * v_ego + (v_ego*v_ego) / (2 * G) + 4.0
+  return 2 * T_REACT * v_ego + (v_ego*v_ego) / (2 * MAX_BRAKE) + 4.0
 
 def desired_follow_distance(v_ego, v_lead):
   return get_safe_obstacle_distance(v_ego) - get_stopped_equivalence_factor(v_lead)
@@ -111,6 +113,7 @@ def gen_long_mpc_solver():
   desired_dist_danger = (7/8) * get_safe_obstacle_distance(v_ego)
 
   costs = [((x_obstacle - x_ego) - (desired_dist_comfort)) / (v_ego + 10.),
+           x_ego,
            a_ego * (1. * v_ego + 10.0),
            j_ego * (1. * v_ego + 10.0)]
   ocp.model.cost_y_expr = vertcat(*costs)
@@ -128,11 +131,15 @@ def gen_long_mpc_solver():
   ocp.constraints.x0 = x0
   ocp.parameter_values = np.array([-1.2, 1.2, 0.0])
 
-  l2_penalty = 1.0
+  # These constraints put hard limits on speed and
+  # acceleration as well as giving an assymetrical
+  # cost on approaching a lead. We only use lower
+  # bounds with an L2 cost.
   l1_penalty = 0.0
-  weights = np.array([1e6, 1e6, 1e6, DANGER_ZONE_COST, 0.])
-  ocp.cost.Zl = l2_penalty * weights
+  l2_penalty = 1.0
+  weights = np.array([1e6, 1e6, 1e6, 0.0, 0.])
   ocp.cost.zl = l1_penalty * weights
+  ocp.cost.Zl = l2_penalty * weights
   ocp.cost.Zu = 0.0 * weights
   ocp.cost.zu = 0.0 * weights
 
@@ -159,25 +166,25 @@ def gen_long_mpc_solver():
 
 
 class LongitudinalMpc():
-  def __init__(self):
-    self.reset()
+  def __init__(self, e2e=False):
+    self.reset(e2e)
     self.accel_limit_arr = np.zeros((N+1, 2))
     self.accel_limit_arr[:,0] = -1.2
     self.accel_limit_arr[:,1] = 1.2
     self.source = SOURCES[2]
 
-  def reset(self):
+  def reset(self, e2e=False):
     self.solver = AcadosOcpSolver('long', N, EXPORT_DIR)
-    self.v_solution = [0.0 for i in range(N)]
-    self.a_solution = [0.0 for i in range(N)]
-    self.j_solution = [0.0 for i in range(N-1)]
-    yref = np.zeros((N+1, COST_DIM))
-    self.solver.cost_set_slice(0, N, "yref", yref[:N])
-    self.solver.set(N, "yref", yref[N][:COST_E_DIM])
-    self.x_sol = np.zeros((N+1, COST_DIM))
+    self.v_solution = [0.0 for i in range(N+1)]
+    self.a_solution = [0.0 for i in range(N+1)]
+    self.j_solution = [0.0 for i in range(N)]
+    self.yref = np.zeros((N+1, COST_DIM))
+    self.solver.cost_set_slice(0, N, "yref", self.yref[:N])
+    self.solver.set(N, "yref", self.yref[N][:COST_E_DIM])
+    self.x_sol = np.zeros((N+1, X_DIM))
     self.u_sol = np.zeros((N,1))
     for i in range(N+1):
-      self.solver.set(i, 'x', np.zeros(3))
+      self.solver.set(i, 'x', np.zeros(X_DIM))
     self.last_cloudlog_t = 0
     self.status = False
     self.new_lead = False
@@ -185,15 +192,35 @@ class LongitudinalMpc():
     self.crashing = False
     self.prev_lead_x = 10
     self.solution_status = 0
-    self.x0 = np.zeros(3)
-    self.set_weights()
+    self.x0 = np.zeros(X_DIM)
+    self.set_weights(e2e)
 
-  def set_weights(self):
-    W = np.diag([X_EGO_COST, A_EGO_COST, J_EGO_COST])
+  def set_weights(self, e2e=False):
+    if e2e:
+      self.set_weights_for_xva_policy()
+    else:
+      self.set_weights_for_lead_policy()
+
+  def set_weights_for_lead_policy(self):
+    W = np.diag([X_EGO_COST, 0.0, A_EGO_COST, J_EGO_COST])
     Ws = np.tile(W[None], reps=(N,1,1))
     self.solver.cost_set_slice(0, N, 'W', Ws, api='old')
     #TODO hacky weights to keep behavior the same
     self.solver.cost_set(N, 'W', (3./5.)*W[:COST_E_DIM, :COST_E_DIM])
+
+    Zl = np.array([LIMIT_COST, LIMIT_COST, LIMIT_COST, DANGER_ZONE_COST, 0.])
+    Zls = np.tile(Zl[None], reps=(N+1,1,1))
+    self.solver.cost_set_slice(0, N+1, 'Zl', Zls, api='old')
+
+  def set_weights_for_xva_policy(self):
+    W = np.diag([0.0, X_EGO_E2E_COST, 0., J_EGO_COST])
+    Ws = np.tile(W[None], reps=(N,1,1))
+    self.solver.cost_set_slice(0, N, 'W', Ws, api='old')
+    self.solver.cost_set(N, 'W', W[:COST_E_DIM, :COST_E_DIM])
+
+    Zl = np.array([LIMIT_COST, LIMIT_COST, LIMIT_COST, 0.0, 0.])
+    Zls = np.tile(Zl[None], reps=(N+1,1,1))
+    self.solver.cost_set_slice(0, N+1, 'Zl', Zls, api='old')
 
   def set_cur_state(self, v, a):
     if abs(self.x0[1] - v) > 1.:
@@ -247,7 +274,7 @@ class LongitudinalMpc():
       self.prev_lead_x = x_lead
     else:
       self.prev_lead_status = False
-      # Fake a fast lead car, so mpc keeps running
+      # Fake a fast lead car, so mpc can keep running in the same mode
       x_lead = 50.0
       v_lead = v_ego + 10.0
       a_lead = 0.0
@@ -263,21 +290,21 @@ class LongitudinalMpc():
     v_ego = self.x0[1]
     self.crashing = False
     self.status = radarstate.leadOne.status or radarstate.leadTwo.status
-    self.solver.constraints_set(0, "lbx", self.x0)
-    self.solver.constraints_set(0, "ubx", self.x0)
 
     lead_xv_0 = self.process_lead(radarstate.leadOne)
     lead_xv_1 = self.process_lead(radarstate.leadTwo)
     self.accel_limit_arr[:,0] = np.interp(float(self.status), [0.0, 1.0], [self.cruise_min_a, MIN_ACCEL])
     self.accel_limit_arr[:,1] = self.cruise_max_a
 
-    # All leads can be converted to stationary obstacles
+    # To consider a safe distance from a moving lead, we calculate how much stopping
+    # distance that lead needs as a minimum. We can add that to the current distance
+    # and then treat that as a stopped car/obstacle at this new distance.
     lead_0_obstacle = lead_xv_0[:,0] + get_stopped_equivalence_factor(lead_xv_0[:,1])
     lead_1_obstacle = lead_xv_1[:,0] + get_stopped_equivalence_factor(lead_xv_1[:,1])
 
-    # Fake an obstacle for cruisei
+    # Fake an obstacle for cruise
     # TODO find cleaner way to write hacky fake cruise obstacle
-    cruise_lower_bound = v_ego - (1.0 + ((self.x0[1] + 15)/60) * T_IDXS)
+    cruise_lower_bound = v_ego - (1.0 + ((v_ego + 15)/60) * T_IDXS)
     cruise_upper_bound = v_ego + (.7 + .7*T_IDXS)
     v_cruise_clipped = np.clip(v_cruise * np.ones(N+1),
                                cruise_lower_bound,
@@ -287,11 +314,30 @@ class LongitudinalMpc():
     x_obstacles = np.column_stack([lead_0_obstacle, lead_1_obstacle, cruise_obstacle])
     self.source = SOURCES[np.argmin(x_obstacles[0])]
     x_obstacle = np.min(x_obstacles, axis=1)
-    params = np.concatenate([self.accel_limit_arr,
+    self.params = np.concatenate([self.accel_limit_arr,
                              x_obstacle[:,None]], axis=1)
-    for i in range(N+1):
-      self.solver.set_param(i, params[i])
+    self.run()
+    self.crashing = self.crashing or np.sum(lead_xv_0[:,0] - self.x_sol[:,0] < CRASH_DISTANCE) > 0
 
+
+  def update_with_xva(self, x, v, a):
+    self.set_weights()
+    self.yref[:,1] = x
+    self.solver.cost_set_slice(0, N, "yref", self.yref[:N])
+    self.solver.set(N, "yref", self.yref[N][:COST_E_DIM])
+    self.accel_limit_arr[:,0] = -10.
+    self.accel_limit_arr[:,1] = 10.
+    x_obstacle = 1e5*np.ones((N+1))
+    self.params = np.concatenate([self.accel_limit_arr,
+                             x_obstacle[:,None]], axis=1)
+    self.run()
+
+
+  def run(self):
+    for i in range(N+1):
+      self.solver.set_param(i, self.params[i])
+    self.solver.constraints_set(0, "lbx", self.x0)
+    self.solver.constraints_set(0, "ubx", self.x0)
     self.solution_status = self.solver.solve()
     self.solver.fill_in_slice(0, N+1, 'x', self.x_sol)
     self.solver.fill_in_slice(0, N, 'u', self.u_sol)
@@ -299,9 +345,6 @@ class LongitudinalMpc():
     self.v_solution = list(self.x_sol[:,1])
     self.a_solution = list(self.x_sol[:,2])
     self.j_solution = list(self.u_sol[:,0])
-
-    # Reset if goes through lead car
-    self.crashing = self.crashing or np.sum(lead_xv_0[:,0] - self.x_sol[:,0] < CRASH_DISTANCE) > 0
 
     t = sec_since_boot()
     if self.solution_status != 0:
