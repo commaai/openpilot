@@ -100,7 +100,6 @@ CameraViewWidget::CameraViewWidget(VisionStreamType type, bool zoom, QWidget* pa
 
   qRegisterMetaType<VisionStreamType>("VisionStreamType");
   connect(this, &QOpenGLWidget::frameSwapped, [=]() {
-    // receiveFrame() will be invoked on the vipc_client thread.
     QMetaObject::invokeMethod(vipc_client, "receiveFrame", Qt::QueuedConnection, Q_ARG(VisionStreamType, stream_type));
   });
   connect(vipc_client, &VIPCClient::connected, this, &CameraViewWidget::vipcConnected);

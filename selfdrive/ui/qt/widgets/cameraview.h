@@ -14,7 +14,7 @@ class VIPCClient : public QObject {
   Q_OBJECT
 
 public:
-  VIPCClient(QObject *parent = nullptr) : stream_type_(VISION_STREAM_RGB_BACK), QObject(parent) {}
+  VIPCClient(QObject *parent = nullptr) : QObject(parent) {}
   std::atomic<bool> running_ = false;
 
 public slots:
@@ -25,7 +25,7 @@ signals:
   void frameReceived(VisionBuf *);
 
 protected:
-  VisionStreamType stream_type_;
+  VisionStreamType stream_type_ = VISION_STREAM_RGB_BACK;
   std::unique_ptr<VisionIpcClient> vipc_client_;
 };
 
