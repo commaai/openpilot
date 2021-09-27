@@ -160,6 +160,7 @@ void CameraViewWidget::initializeGL() {
 }
 
 void CameraViewWidget::showEvent(QShowEvent *event) {
+  latest_frame = nullptr;
   vipc_client->running_ = true;
 }
 
