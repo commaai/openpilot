@@ -9,19 +9,17 @@
 
 inline void precise_nano_sleep(long sleep_ns) {
   const long estimate_ns = 1 * 1e6;  // 1ms
-  uint start_sleep, end_sleep;
-  struct timespec req = {};
+  struct timespec req = {.tv_nsec = estimate_ns};
+  uint64_t start_sleep = nanos_since_boot();
   while (sleep_ns > estimate_ns) {
-    start_sleep = nanos_since_boot();
-    req.tv_nsec = estimate_ns;
     nanosleep(&req, nullptr);
-    end_sleep = nanos_since_boot();
+    uint64_t end_sleep = nanos_since_boot();
     sleep_ns -= (end_sleep - start_sleep);
+    start_sleep = end_sleep;
   }
   // spin wait
   if (sleep_ns > 0) {
-    uint start_spin = nanos_since_boot();
-    while ((nanos_since_boot() - start_spin) < sleep_ns) {};
+    while ((nanos_since_boot() - start_sleep) <= sleep_ns) {/**/}
   }
 }
 
