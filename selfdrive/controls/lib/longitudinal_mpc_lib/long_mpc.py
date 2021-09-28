@@ -26,7 +26,7 @@ COST_DIM = COST_E_DIM + 1
 MIN_ACCEL = -3.5
 
 X_EGO_COST = 80.
-X_EGO_E2E_COST = 80.
+X_EGO_E2E_COST = 100.
 A_EGO_COST = .1
 J_EGO_COST = .2
 DANGER_ZONE_COST = 1e3
@@ -114,8 +114,8 @@ def gen_long_mpc_solver():
 
   costs = [((x_obstacle - x_ego) - (desired_dist_comfort)) / (v_ego + 10.),
            x_ego,
-           a_ego * (1. * v_ego + 10.0),
-           j_ego * (1. * v_ego + 10.0)]
+           a_ego * (v_ego + 10.),
+           j_ego * (v_ego + 10.)]
   ocp.model.cost_y_expr = vertcat(*costs)
   ocp.model.cost_y_expr_e = vertcat(*costs[:-1])
 
@@ -167,13 +167,14 @@ def gen_long_mpc_solver():
 
 class LongitudinalMpc():
   def __init__(self, e2e=False):
-    self.reset(e2e)
+    self.e2e = e2e
+    self.reset()
     self.accel_limit_arr = np.zeros((N+1, 2))
     self.accel_limit_arr[:,0] = -1.2
     self.accel_limit_arr[:,1] = 1.2
     self.source = SOURCES[2]
 
-  def reset(self, e2e=False):
+  def reset(self):
     self.solver = AcadosOcpSolver('long', N, EXPORT_DIR)
     self.v_solution = [0.0 for i in range(N+1)]
     self.a_solution = [0.0 for i in range(N+1)]
@@ -183,6 +184,7 @@ class LongitudinalMpc():
     self.solver.set(N, "yref", self.yref[N][:COST_E_DIM])
     self.x_sol = np.zeros((N+1, X_DIM))
     self.u_sol = np.zeros((N,1))
+    self.params = np.zeros((N+1,3))
     for i in range(N+1):
       self.solver.set(i, 'x', np.zeros(X_DIM))
     self.last_cloudlog_t = 0
@@ -193,30 +195,32 @@ class LongitudinalMpc():
     self.prev_lead_x = 10
     self.solution_status = 0
     self.x0 = np.zeros(X_DIM)
-    self.set_weights(e2e)
+    self.set_weights()
 
-  def set_weights(self, e2e=False):
-    if e2e:
+  def set_weights(self):
+    if self.e2e:
       self.set_weights_for_xva_policy()
     else:
       self.set_weights_for_lead_policy()
 
   def set_weights_for_lead_policy(self):
+    print('setting lead')
     W = np.diag([X_EGO_COST, 0.0, A_EGO_COST, J_EGO_COST])
     Ws = np.tile(W[None], reps=(N,1,1))
     self.solver.cost_set_slice(0, N, 'W', Ws, api='old')
     #TODO hacky weights to keep behavior the same
-    self.solver.cost_set(N, 'W', (3./5.)*W[:COST_E_DIM, :COST_E_DIM])
+    self.solver.cost_set(N, 'W', (3./5.)*np.copy(W[:COST_E_DIM, :COST_E_DIM]))
 
     Zl = np.array([LIMIT_COST, LIMIT_COST, LIMIT_COST, DANGER_ZONE_COST, 0.])
     Zls = np.tile(Zl[None], reps=(N+1,1,1))
     self.solver.cost_set_slice(0, N+1, 'Zl', Zls, api='old')
 
   def set_weights_for_xva_policy(self):
+    print('setting xva')
     W = np.diag([0.0, X_EGO_E2E_COST, 0., J_EGO_COST])
     Ws = np.tile(W[None], reps=(N,1,1))
     self.solver.cost_set_slice(0, N, 'W', Ws, api='old')
-    self.solver.cost_set(N, 'W', W[:COST_E_DIM, :COST_E_DIM])
+    self.solver.cost_set(N, 'W', np.copy(W[:COST_E_DIM, :COST_E_DIM]))
 
     Zl = np.array([LIMIT_COST, LIMIT_COST, LIMIT_COST, 0.0, 0.])
     Zls = np.tile(Zl[None], reps=(N+1,1,1))
@@ -321,9 +325,8 @@ class LongitudinalMpc():
 
 
   def update_with_xva(self, x, v, a):
-    self.set_weights()
     self.yref[:,1] = x
-    self.solver.cost_set_slice(0, N, "yref", self.yref[:N])
+    self.solver.cost_set_slice(0, N, "yref", self.yref[:N], api='old')
     self.solver.set(N, "yref", self.yref[N][:COST_E_DIM])
     self.accel_limit_arr[:,0] = -10.
     self.accel_limit_arr[:,1] = 10.
