@@ -212,8 +212,11 @@ void Replay::stream() {
 
       if (evt->which == cereal::Event::ROAD_ENCODE_IDX) {
         uint64_t sof = evt->event.getRoadEncodeIdx().getTimestampSof();
+        uint64_t eof = evt->event.getRoadEncodeIdx().getTimestampEof();
         if (sof > 0) {
           cur_mono_time_ = sof;
+        } else if (eof > 0) {
+          cur_mono_time_ = eof;
         }
       }
 
