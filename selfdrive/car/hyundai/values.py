@@ -755,7 +755,6 @@ FW_VERSIONS = {
       ],
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x87391162J012',
-      b'\xf1\x87391162J012\xf1\xa0000S',
       ],
   },
 }
