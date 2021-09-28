@@ -34,8 +34,6 @@ class DRIVER_MONITOR_SETTINGS():
     self._BLINK_THRESHOLD_STRICT = self._BLINK_THRESHOLD
     self._PITCH_WEIGHT = 1.175 if TICI else 1.35  # pitch matters a lot more
     self._POSESTD_THRESHOLD = 0.2 if TICI else 0.175
-    self._E2E_POSE_THRESHOLD = 0.95 if TICI else 0.9
-    self._E2E_EYES_THRESHOLD = 0.75
 
     self._METRIC_THRESHOLD = 0.55 if TICI else 0.48
     self._METRIC_THRESHOLD_SLACK = 0.75 if TICI else 0.66
@@ -207,11 +205,8 @@ class DriverStatus():
     self.blink.left_blink = driver_state.leftBlinkProb * (driver_state.leftEyeProb > self.settings._EYE_THRESHOLD) * (driver_state.sunglassesProb < self.settings._SG_THRESHOLD)
     self.blink.right_blink = driver_state.rightBlinkProb * (driver_state.rightEyeProb > self.settings._EYE_THRESHOLD) * (driver_state.sunglassesProb < self.settings._SG_THRESHOLD)
 
-    distracted_normal = self._is_driver_distracted(self.pose, self.blink) > 0 and \
+    self.driver_distracted = self._is_driver_distracted(self.pose, self.blink) > 0 and \
                                    driver_state.faceProb > self.settings._FACE_THRESHOLD and self.pose.low_std
-    distracted_E2E = (driver_state.distractedPose > self.settings._E2E_POSE_THRESHOLD or driver_state.distractedEyes > self.settings._E2E_EYES_THRESHOLD) and \
-                              (self.face_detected and not self.face_partial)
-    self.driver_distracted = distracted_normal or distracted_E2E
     self.driver_distraction_filter.update(self.driver_distracted)
 
     # update offseter
