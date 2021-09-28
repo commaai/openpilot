@@ -29,14 +29,14 @@ class DRIVER_MONITOR_SETTINGS():
     self._PARTIAL_FACE_THRESHOLD = 0.765 if TICI else 0.455
     self._EYE_THRESHOLD = 0.75 if TICI else 0.55
     self._SG_THRESHOLD = 0.888 if TICI else 0.85
-    self._BLINK_THRESHOLD = 0.811 if TICI else 0.6
+    self._BLINK_THRESHOLD = 0.811 if TICI else 0.62
     self._BLINK_THRESHOLD_SLACK = 0.9 if TICI else 0.8
     self._BLINK_THRESHOLD_STRICT = self._BLINK_THRESHOLD
-    self._PITCH_WEIGHT = 1.175 if TICI else 1.35  # pitch matters a lot more
+    self._PITCH_WEIGHT = 1.35  # pitch matters a lot more
     self._POSESTD_THRESHOLD = 0.2 if TICI else 0.175
 
-    self._METRIC_THRESHOLD = 0.55 if TICI else 0.48
-    self._METRIC_THRESHOLD_SLACK = 0.75 if TICI else 0.66
+    self._METRIC_THRESHOLD = 0.48
+    self._METRIC_THRESHOLD_SLACK = 0.66
     self._METRIC_THRESHOLD_STRICT = self._METRIC_THRESHOLD
     self._PITCH_NATURAL_OFFSET = 0.02  # people don't seem to look straight when they drive relaxed, rather a bit up
     self._YAW_NATURAL_OFFSET = 0.08  # people don't seem to look straight when they drive relaxed, rather a bit to the right (center of car)
