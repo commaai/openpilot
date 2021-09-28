@@ -23,6 +23,9 @@ public:
     which = event.which();
     mono_time = event.getLogMonoTime();
 
+    // TODO: Split encodeIndex packets into two events
+    // 1) Send video data at t=timestampEof/timestampSof
+    // 2) Send encodeIndex packet at t=logMonoTime
     if (which == cereal::Event::ROAD_ENCODE_IDX ||
         which == cereal::Event::DRIVER_ENCODE_IDX ||
         which == cereal::Event::WIDE_ROAD_ENCODE_IDX) {
@@ -35,6 +38,7 @@ public:
         idx = event.getWideRoadEncodeIdx();
       }
 
+      // C2 only has eof set, and some older routes have neither
       uint64_t sof = idx.getTimestampSof();
       uint64_t eof = idx.getTimestampEof();
       if (sof > 0) {
