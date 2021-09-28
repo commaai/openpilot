@@ -75,10 +75,6 @@ class CarController():
     else:
       apply_steer_req = 1
 
-    if not enabled and CS.pcm_acc_status:
-      # send pcm acc cancel cmd if drive is disabled but pcm is still on, or if the system can't be activated
-      pcm_cancel_cmd = 1
-
     # on entering standstill, send standstill request
     if CS.out.standstill and not self.last_standstill and CS.CP.carFingerprint not in NO_STOP_TIMER_CAR:
       self.standstill_req = True
