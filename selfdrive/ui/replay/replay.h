@@ -14,7 +14,7 @@ class Replay : public QObject {
   Q_OBJECT
 
 public:
-  Replay(QString route, QStringList allow, QStringList block, SubMaster *sm = nullptr, QObject *parent = 0);
+  Replay(QString route, QStringList allow, QStringList block, SubMaster *sm = nullptr, bool dcam = false, bool ecam = false, QObject *parent = 0);
   ~Replay();
 
   void start(int seconds = 0);
@@ -33,6 +33,8 @@ protected:
   void stream();
   void setCurrentSegment(int n);
   void mergeSegments(int begin_idx, int end_idx);
+
+  bool load_dcam = false, load_ecam = false;
 
   float last_print = 0;
   uint64_t route_start_ts = 0;
