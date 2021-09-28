@@ -23,9 +23,20 @@ public:
     which = event.which();
     mono_time = event.getLogMonoTime();
 
-    if (which == cereal::Event::ROAD_ENCODE_IDX) {
-      uint64_t sof = event.getRoadEncodeIdx().getTimestampSof();
-      uint64_t eof = event.getRoadEncodeIdx().getTimestampEof();
+    if (which == cereal::Event::ROAD_ENCODE_IDX ||
+        which == cereal::Event::DRIVER_ENCODE_IDX ||
+        which == cereal::Event::WIDE_ROAD_ENCODE_IDX) {
+      cereal::EncodeIndex::Reader idx;
+      if (which == cereal::Event::ROAD_ENCODE_IDX) {
+        idx = event.getRoadEncodeIdx();
+      } else if (which == cereal::Event::DRIVER_ENCODE_IDX) {
+        idx = event.getDriverEncodeIdx();
+      } else {
+        idx = event.getWideRoadEncodeIdx();
+      }
+
+      uint64_t sof = idx.getTimestampSof();
+      uint64_t eof = idx.getTimestampEof();
       if (sof > 0) {
         mono_time = sof;
       } else if (eof > 0) {
