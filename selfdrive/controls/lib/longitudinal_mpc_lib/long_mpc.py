@@ -305,7 +305,7 @@ class LongitudinalMpc():
     lead_0_obstacle = lead_xv_0[:,0] + get_stopped_equivalence_factor(lead_xv_0[:,1])
     lead_1_obstacle = lead_xv_1[:,0] + get_stopped_equivalence_factor(lead_xv_1[:,1])
     if stopping:
-      stop_line_obstacle = model.stopLine.x * np.ones(N+1)
+      stop_line_obstacle = (model.stopLine.x + 6.0) * np.ones(N+1)
     else:
       stop_line_obstacle = 400 * np.ones(N+1)
 
