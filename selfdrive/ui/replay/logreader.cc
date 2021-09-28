@@ -38,8 +38,10 @@ bool LogReader::load(const std::string &file) {
     return false;
   }
 
-  auto insertEidx = [&](CameraType type, const cereal::EncodeIndex::Reader &e) {
-    eidx[type][e.getFrameId()] = {e.getSegmentNum(), e.getSegmentId()};
+  std::unordered_map<uint32_t, uint64_t> frame_monotime[MAX_CAMERAS] = {};
+  std::unordered_map<uint32_t, std::pair<const Event *, cereal::EncodeIndex::Reader>> eidx_map[MAX_CAMERAS] = {};
+  auto insertEidx = [&](CameraType type, const cereal::EncodeIndex::Reader &reader, const Event* evt) {
+    eidx_map[type][reader.getFrameId()] = {evt, reader};
   };
 
   kj::ArrayPtr<const capnp::word> words((const capnp::word *)raw_.data(), raw_.size() / sizeof(capnp::word));
@@ -47,22 +49,55 @@ bool LogReader::load(const std::string &file) {
     try {
       std::unique_ptr<Event> evt = std::make_unique<Event>(words);
       switch (evt->which) {
+        case cereal::Event::ROAD_CAMERA_STATE:
+          frame_monotime[RoadCam][evt->event.getRoadCameraState().getFrameId()] = evt->mono_time;
+          break;
+        case cereal::Event::DRIVER_CAMERA_STATE:
+          frame_monotime[DriverCam][evt->event.getDriverCameraState().getFrameId()] = evt->mono_time;
+          break;
+        case cereal::Event::WIDE_ROAD_CAMERA_STATE:
+          frame_monotime[WideRoadCam][evt->event.getWideRoadCameraState().getFrameId()] = evt->mono_time;
+          break;
         case cereal::Event::ROAD_ENCODE_IDX:
-          insertEidx(RoadCam, evt->event.getRoadEncodeIdx());
+          insertEidx(RoadCam, evt->event.getRoadEncodeIdx(), evt.get());
           break;
         case cereal::Event::DRIVER_ENCODE_IDX:
-          insertEidx(DriverCam, evt->event.getDriverEncodeIdx());
+          insertEidx(DriverCam, evt->event.getDriverEncodeIdx(), evt.get());
           break;
         case cereal::Event::WIDE_ROAD_ENCODE_IDX:
-          insertEidx(WideRoadCam, evt->event.getWideRoadEncodeIdx());
+          insertEidx(WideRoadCam, evt->event.getWideRoadEncodeIdx(), evt.get());
           break;
         default:
           break;
       }
-      words = kj::arrayPtr(evt->reader.getEnd(), words.end());
+      words = kj::arrayPtr(evt->reader->getEnd(), words.end());
       events.push_back(evt.release());
     } catch (const kj::Exception &e) {
       return false;
+    }
+  }
+
+  // insert custom eidx events for publish frames.
+  for (auto cam : ALL_CAMERAS) {
+    for (auto [frame_id, val] : eidx_map[cam]) {
+      auto [e, eidx] = val;
+
+      MessageBuilder builder;
+      builder.setRoot(e->event);
+      auto event = builder.getRoot<cereal::Event>();
+
+      auto it = frame_monotime[cam].find(frame_id);
+      if (it != frame_monotime[cam].end()) {
+        // set time to frame's monotime
+        event.setLogMonoTime(it->second);
+      } else if (eidx.getTimestampEof()) {
+        // set time to timestampEof
+        event.setLogMonoTime(eidx.getTimestampEof());
+      } else if (eidx.getTimestampSof()) {
+        // set time to timestampSof
+        event.setLogMonoTime(eidx.getTimestampSof());
+      }
+      events.push_back(new Event(builder));
     }
   }
   std::sort(events.begin(), events.end(), Event::lessThan());

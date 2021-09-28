@@ -134,19 +134,14 @@ void Replay::mergeSegments(int cur_seg, int end_idx) {
 
     // merge & sort events
     std::vector<Event *> *new_events = new std::vector<Event *>();
-    std::unordered_map<uint32_t, EncodeIdx> *new_eidx = new std::unordered_map<uint32_t, EncodeIdx>[MAX_CAMERAS];
     for (int n : segments_need_merge) {
       auto &log = segments_[n]->log;
       auto middle = new_events->insert(new_events->end(), log->events.begin(), log->events.end());
       std::inplace_merge(new_events->begin(), middle, new_events->end(), Event::lessThan());
-      for (CameraType cam_type : ALL_CAMERAS) {
-        new_eidx[cam_type].insert(log->eidx[cam_type].begin(), log->eidx[cam_type].end());
-      }
     }
 
     // update events
     auto prev_events = events_;
-    auto prev_eidx = eidx_;
     updateEvents([&]() {
       if (route_start_ts_ == 0) {
         // get route start time from initData
@@ -158,12 +153,10 @@ void Replay::mergeSegments(int cur_seg, int end_idx) {
       }
 
       events_ = new_events;
-      eidx_ = new_eidx;
       segments_merged_ = segments_need_merge;
       return true;
     });
     delete prev_events;
-    delete[] prev_eidx;
   }
 
   // free segments out of current semgnt window.
@@ -222,13 +215,12 @@ void Replay::stream() {
           QThread::usleep(us_behind);
         }
 
-        // publish frame
-        // TODO: publish all frames
-        if (evt->which == cereal::Event::ROAD_CAMERA_STATE) {
-          auto it_ = eidx_[RoadCam].find(evt->event.getRoadCameraState().getFrameId());
-          if (it_ != eidx_[RoadCam].end()) {
-            EncodeIdx &e = it_->second;
-            auto &seg = segments_[e.segmentNum]; 
+        if (evt->isCustomEvent()) {
+          // publish frame
+          // TODO: publish all frames
+          if (evt->which == cereal::Event::ROAD_ENCODE_IDX) {
+            auto idx = evt->event.getRoadEncodeIdx();
+            auto &seg = segments_[idx.getSegmentNum()];
             if (seg && seg->isLoaded()) {
               auto &frm = seg->frames[RoadCam];
               if (vipc_server == nullptr) {
@@ -241,7 +233,7 @@ void Replay::stream() {
                 vipc_server->start_listener();
               }
 
-              uint8_t *dat = frm->get(e.frameEncodeId);
+              uint8_t *dat = frm->get(idx.getSegmentId());
               if (dat) {
                 VisionIpcBufExtra extra = {};
                 VisionBuf *buf = vipc_server->get_buffer(VisionStreamType::VISION_STREAM_RGB_BACK);
@@ -250,6 +242,7 @@ void Replay::stream() {
               }
             }
           }
+          continue;
         }
 
         // publish msg
