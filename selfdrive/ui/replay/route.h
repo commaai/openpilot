@@ -1,6 +1,6 @@
 #pragma once
 
-#include <QNetworkAccessManager>
+#include <QObject>
 #include <QString>
 #include <vector>
 
@@ -9,6 +9,7 @@
 #include "selfdrive/ui/replay/logreader.h"
 
 const QString CACHE_DIR = util::getenv("COMMA_CACHE", "/tmp/comma_download_cache/").c_str();
+const int connections_per_file = 3;
 
 struct SegmentFile {
   QString rlog;
@@ -55,11 +56,12 @@ protected:
   QString localPath(const QUrl &url);
 
   bool loaded_ = false, valid_ = false;
-  bool aborting_ = false;
+  std::atomic<bool> aborting_ = false;
   int downloading_ = 0;
   int seg_num_ = 0;
   SegmentFile files_;
   QString road_cam_path_;
-  QSet<QNetworkReply *> replies_;
-  QNetworkAccessManager qnam_;
+  std::vector<QThread*> download_threads_;
 };
+
+bool httpMultiPartDownload(const std::string &url, const std::string &target_file, int parts, std::atomic<bool> *abort = nullptr);
