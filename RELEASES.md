@@ -1,5 +1,13 @@
 Version 0.8.10 (2021-XX-XX)
 ========================
+ * New driving model with improved
+   * Trained on one million minutes!!!
+   * Fixed lead training making lead predictions significantly more accurate.
+   * Fixed several localizer dataset bugs and loss function bugs, overall improved accuracy.
+ * Lateral and longitudinal planning MPCs now in [ACADOS](https://github.com/acados/acados)
+ * Combined longitudinal MPCs
+   * All longitudinal planning now happens in a single MPC system
+   * Fixed instability in MPC problem to prevent sporadic CPU usage
  * Honda Freed 2020 support thanks to belm0!
  * Hyundai Santa Fe 2022 support thanks to sunnyhaibin!
  * Škoda Kamiq 2021 support thanks to jyoung8607!
