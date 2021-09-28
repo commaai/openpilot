@@ -270,7 +270,7 @@ class Controls:
       self.events.add(EventName.deviceFalling)
     if log.PandaState.FaultType.relayMalfunction in self.sm['pandaState'].faults:
       self.events.add(EventName.relayMalfunction)
-    if self.sm['longitudinalPlan'].fcw or (self.enabled and self.sm['modelV2'].meta.hardBrakePredicted):
+    if self.sm['longitudinalPlan'].fcw or (not CS.brakePressed and self.sm['modelV2'].meta.hardBrakePredicted):
       self.events.add(EventName.fcw)
 
     if TICI:
