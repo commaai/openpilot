@@ -9,10 +9,7 @@
 
 const CameraType ALL_CAMERAS[] = {RoadCam, DriverCam, WideRoadCam};
 const int MAX_CAMERAS = std::size(ALL_CAMERAS);
-struct EncodeIdx {
-  int segmentNum;
-  uint32_t frameEncodeId;
-};
+
 class Event {
 public:
   Event(cereal::Event::Which which, uint64_t mono_time) : reader(kj::ArrayPtr<capnp::word>{}) {
@@ -48,7 +45,6 @@ public:
   bool load(const std::string &file);
 
   std::vector<Event*> events;
-  std::unordered_map<uint32_t, EncodeIdx> eidx[MAX_CAMERAS] = {};
 
 private:
   std::vector<uint8_t> raw_;
