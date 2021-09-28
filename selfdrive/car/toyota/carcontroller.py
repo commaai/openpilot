@@ -75,6 +75,11 @@ class CarController():
     else:
       apply_steer_req = 1
 
+    # TODO: probably can delete this. CS.pcm_acc_status uses a different signal
+    # than CS.cruiseState.enabled. confirm they're not meaningfully different
+    if not enabled and CS.pcm_acc_status:
+      pcm_cancel_cmd = 1
+
     # on entering standstill, send standstill request
     if CS.out.standstill and not self.last_standstill and CS.CP.carFingerprint not in NO_STOP_TIMER_CAR:
       self.standstill_req = True
