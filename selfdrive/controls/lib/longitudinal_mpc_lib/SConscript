@@ -25,7 +25,15 @@ casadi_cost_0 = [
   f'{gen}/long_cost/long_cost_y_0_hess.c',
 ]
 
-build_files = [f'{gen}/acados_solver_long.c'] + casadi_model + casadi_cost_y + casadi_cost_e + casadi_cost_0
+casadi_constraints = [
+  f'{gen}/long_constraints/long_constr_h_fun.c',
+  f'{gen}/long_constraints/long_constr_h_fun_jac_uxt_zt.c',
+  f'{gen}/long_constraints/long_constr_h_e_fun.c',
+  f'{gen}/long_constraints/long_constr_h_e_fun_jac_uxt_zt.c',
+]
+
+build_files = [f'{gen}/acados_solver_long.c'] + casadi_model + casadi_cost_y + casadi_cost_e +  \
+              casadi_cost_0 + casadi_constraints
 
 # extra generated files used to trigger a rebuild
 generated_files = [
@@ -37,6 +45,8 @@ generated_files = [
   f'{gen}/long_model/long_expl_vde_adj.c',
 
   f'{gen}/long_model/long_model.h',
+  f'{gen}/long_constraints/long_h_constraint.h',
+  f'{gen}/long_constraints/long_h_e_constraint.h',
   f'{gen}/long_cost/long_cost_y_fun.h',
   f'{gen}/long_cost/long_cost_y_e_fun.h',
   f'{gen}/long_cost/long_cost_y_0_fun.h',
