@@ -22,6 +22,16 @@ public:
     event = reader.getRoot<cereal::Event>();
     which = event.which();
     mono_time = event.getLogMonoTime();
+
+    if (which == cereal::Event::ROAD_ENCODE_IDX) {
+      uint64_t sof = event.getRoadEncodeIdx().getTimestampSof();
+      uint64_t eof = event.getRoadEncodeIdx().getTimestampEof();
+      if (sof > 0) {
+        mono_time = sof;
+      } else if (eof > 0) {
+        mono_time = eof;
+      }
+    }
   }
   inline kj::ArrayPtr<const capnp::byte> bytes() const { return words.asBytes(); }
 

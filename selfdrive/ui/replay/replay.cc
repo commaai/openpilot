@@ -210,16 +210,6 @@ void Replay::stream() {
       cur_which = evt->which;
       cur_mono_time_ = evt->mono_time;
 
-      if (evt->which == cereal::Event::ROAD_ENCODE_IDX) {
-        uint64_t sof = evt->event.getRoadEncodeIdx().getTimestampSof();
-        uint64_t eof = evt->event.getRoadEncodeIdx().getTimestampEof();
-        if (sof > 0) {
-          cur_mono_time_ = sof;
-        } else if (eof > 0) {
-          cur_mono_time_ = eof;
-        }
-      }
-
       std::string type;
       KJ_IF_MAYBE(e_, static_cast<capnp::DynamicStruct::Reader>(evt->event).which()) {
         type = e_->getProto().getName();
