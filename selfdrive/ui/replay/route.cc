@@ -70,7 +70,7 @@ bool Route::loadFromJson(const QString &json) {
 
 // class Segment
 
-Segment::Segment(int n, const SegmentFile &segment_files) : seg_num_(n), files_(segment_files) {
+Segment::Segment(int n, const SegmentFile &segment_files, bool load_dcam, bool load_ecam) : seg_num_(n), files_(segment_files) {
   static std::once_flag once_flag;
   std::call_once(once_flag, [=]() {
     if (!QDir(CACHE_DIR).exists()) QDir().mkdir(CACHE_DIR);
@@ -80,6 +80,13 @@ Segment::Segment(int n, const SegmentFile &segment_files) : seg_num_(n), files_(
   road_cam_path_ = files_.road_cam.isEmpty() ? files_.qcamera : files_.road_cam;
   valid_ = !files_.rlog.isEmpty() && !road_cam_path_.isEmpty();
   if (!valid_) return;
+
+  if (!load_dcam) {
+    files_.driver_cam = "";
+  }
+  if (!load_ecam) {
+    files_.wide_road_cam = "";
+  }
 
   if (!QUrl(files_.rlog).isLocalFile()) {
     for (auto &url : {files_.rlog, road_cam_path_, files_.driver_cam, files_.wide_road_cam}) {

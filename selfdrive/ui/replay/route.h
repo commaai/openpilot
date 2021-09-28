@@ -38,7 +38,7 @@ class Segment : public QObject {
   Q_OBJECT
 
 public:
-  Segment(int n, const SegmentFile &segment_files);
+  Segment(int n, const SegmentFile &segment_files, bool load_dcam, bool load_ecam);
   ~Segment();
   inline bool isValid() const { return valid_; };
   inline bool isLoaded() const { return loaded_; }
