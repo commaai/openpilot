@@ -221,7 +221,7 @@ void Replay::stream() {
           if (evt->which == cereal::Event::ROAD_ENCODE_IDX) {
             auto idx = evt->event.getRoadEncodeIdx();
             auto &seg = segments_[idx.getSegmentNum()];
-            if (seg && seg->isLoaded()) {
+            if (seg && seg->isLoaded() && seg->frames[RoadCam]) {
               auto &frm = seg->frames[RoadCam];
               if (vipc_server == nullptr) {
                 cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);

@@ -77,7 +77,7 @@ bool LogReader::load(const std::string &file) {
     }
   }
 
-  // insert custom eidx events for publish frames.
+  // insert custom EncodeIdx events for publish frames.
   for (auto cam : ALL_CAMERAS) {
     for (auto [frame_id, val] : eidx_map[cam]) {
       auto [e, eidx] = val;
