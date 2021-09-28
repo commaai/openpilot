@@ -204,7 +204,6 @@ class LongitudinalMpc():
       self.set_weights_for_lead_policy()
 
   def set_weights_for_lead_policy(self):
-    print('setting lead')
     W = np.diag([X_EGO_COST, 0.0, A_EGO_COST, J_EGO_COST])
     Ws = np.tile(W[None], reps=(N,1,1))
     self.solver.cost_set_slice(0, N, 'W', Ws, api='old')
@@ -216,7 +215,6 @@ class LongitudinalMpc():
     self.solver.cost_set_slice(0, N+1, 'Zl', Zls, api='old')
 
   def set_weights_for_xva_policy(self):
-    print('setting xva')
     W = np.diag([0.0, X_EGO_E2E_COST, 0., J_EGO_COST])
     Ws = np.tile(W[None], reps=(N,1,1))
     self.solver.cost_set_slice(0, N, 'W', Ws, api='old')
