@@ -22,10 +22,6 @@ class CarInterface(CarInterfaceBase):
     ret.safetyModel = car.CarParams.SafetyModel.gm
     ret.pcmCruise = False  # stock cruise control is kept off
 
-    # GM port is a community feature
-    # TODO: make a port that uses a car harness and it only intercepts the camera
-    ret.communityFeature = True
-
     # Presence of a camera on the object bus is ok.
     # Have to go to read_only if ASCM is online (ACC-enabled cars),
     # or camera is on powertrain bus (LKA cars without ACC).
@@ -104,8 +100,6 @@ class CarInterface(CarInterfaceBase):
     ret.longitudinalTuning.kpV = [2.4, 1.5]
     ret.longitudinalTuning.kiBP = [0.]
     ret.longitudinalTuning.kiV = [0.36]
-
-    ret.startAccel = 0.8
 
     ret.steerLimitTimer = 0.4
     ret.radarTimeStep = 0.0667  # GM radar runs at 15Hz instead of standard 20Hz

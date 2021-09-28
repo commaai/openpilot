@@ -125,6 +125,8 @@ void can_clear(can_ring *q) {
   q->w_ptr = 0;
   q->r_ptr = 0;
   EXIT_CRITICAL();
+  // handle TX buffer full with zero ECUs awake on the bus
+  usb_cb_ep3_out_complete();
 }
 
 // assign CAN numbering

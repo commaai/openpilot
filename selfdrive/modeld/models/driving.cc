@@ -13,9 +13,9 @@
 #include "selfdrive/common/timing.h"
 
 constexpr int DESIRE_PRED_SIZE = 32;
-constexpr int OTHER_META_SIZE = 32;
+constexpr int OTHER_META_SIZE = 48;
 constexpr int NUM_META_INTERVALS = 5;
-constexpr int META_STRIDE = 6;
+constexpr int META_STRIDE = 7;
 
 constexpr int PLAN_MHP_N = 5;
 constexpr int PLAN_MHP_COLUMNS = 15;
@@ -23,7 +23,7 @@ constexpr int PLAN_MHP_VALS = 15*33;
 constexpr int PLAN_MHP_SELECTION = 1;
 constexpr int PLAN_MHP_GROUP_SIZE =  (2*PLAN_MHP_VALS + PLAN_MHP_SELECTION);
 
-constexpr int LEAD_MHP_N = 5;
+constexpr int LEAD_MHP_N = 2;
 constexpr int LEAD_TRAJ_LEN = 6;
 constexpr int LEAD_PRED_DIM = 4;
 constexpr int LEAD_MHP_VALS = LEAD_PRED_DIM*LEAD_TRAJ_LEN;
@@ -105,7 +105,8 @@ ModelDataRaw model_eval_frame(ModelState* s, cl_mem yuv_cl, int width, int heigh
 
   //for (int i = 0; i < OUTPUT_SIZE + TEMPORAL_SIZE; i++) { printf("%f ", s->output[i]); } printf("\n");
 
-  auto net_input_buf = s->frame->prepare(yuv_cl, width, height, transform);
+  // if getInputBuf is not NULL, net_input_buf will be
+  auto net_input_buf = s->frame->prepare(yuv_cl, width, height, transform, static_cast<cl_mem*>(s->m->getInputBuf()));
   s->m->execute(net_input_buf, s->frame->buf_size);
 
   // net outputs
@@ -207,6 +208,7 @@ void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const float *meta_da
   fill_sigmoid(&meta_data[DESIRE_LEN+4], brake_3ms2_sigmoid, NUM_META_INTERVALS, META_STRIDE);
   fill_sigmoid(&meta_data[DESIRE_LEN+5], brake_4ms2_sigmoid, NUM_META_INTERVALS, META_STRIDE);
   fill_sigmoid(&meta_data[DESIRE_LEN+6], brake_5ms2_sigmoid, NUM_META_INTERVALS, META_STRIDE);
+  //fill_sigmoid(&meta_data[DESIRE_LEN+7], GAS PRESSED, NUM_META_INTERVALS, META_STRIDE);
 
   std::memmove(prev_brake_5ms2_probs, &prev_brake_5ms2_probs[1], 4*sizeof(float));
   std::memmove(prev_brake_3ms2_probs, &prev_brake_3ms2_probs[1], 2*sizeof(float));

@@ -498,32 +498,17 @@ BO_ 552 GEAR: 8 XXX
  SG_ GEAR_BOX : 36|4@0+ (1,0) [0|15] "" XXX
 
 BO_ 543 CRZ_EVENTS: 8 XXX
- SG_ NEW_SIGNAL_3 : 34|1@0+ (1,0) [0|1] "" XXX
- SG_ CHKSUM : 63|8@0+ (1,0) [0|15] "" XXX
- SG_ NEW_SIGNAL_1 : 55|4@0+ (1,0) [0|15] "" XXX
- SG_ NEW_SIGNAL_5 : 47|4@0+ (1,0) [0|15] "" XXX
- SG_ NEW_SIGNAL_6 : 6|1@0+ (1,0) [0|255] "" XXX
- SG_ NEW_SIGNAL_8 : 0|1@0+ (1,0) [0|31] "" XXX
- SG_ NEW_SIGNAL_9 : 1|1@0+ (1,0) [0|1] "" XXX
- SG_ NEW_SIGNAL_10 : 2|1@0+ (1,0) [0|1] "" XXX
- SG_ NEW_SIGNAL_12 : 10|1@0+ (1,0) [0|1] "" XXX
- SG_ NEW_SIGNAL_13 : 9|1@0+ (1,0) [0|1] "" XXX
- SG_ NEW_SIGNAL_18 : 12|1@0+ (1,0) [0|15] "" XXX
- SG_ NEW_SIGNAL_19 : 14|1@0+ (1,0) [0|1] "" XXX
- SG_ NEW_SIGNAL_20 : 15|1@0+ (1,0) [0|1] "" XXX
- SG_ NEW_SIGNAL_21 : 23|1@0+ (1,0) [0|15] "" XXX
- SG_ NEW_SIGNAL_24 : 31|1@0+ (1,0) [0|1] "" XXX
- SG_ GAS_PEDAL_PRESSED : 32|1@0+ (1,0) [0|255] "" XXX
- SG_ CRZ_STARTED : 18|1@0+ (1,0) [0|1] "" XXX
- SG_ PLUS_ONE_CRZ : 17|1@0+ (1,0) [0|255] "" XXX
- SG_ PLUS_ONE_CRZ_2 : 19|1@0+ (1,0) [0|1] "" XXX
- SG_ GAS_MAYBE : 22|1@0+ (1,0) [0|1] "" XXX
- SG_ NONACC_ACTIVE : 5|1@0+ (1,0) [0|1] "" XXX
- SG_ CRUISE_ACTIVE_CAR_MOVING : 16|1@0+ (1,0) [0|1] "" XXX
- SG_ NONACC_RELATED : 11|1@0+ (1,0) [0|255] "" XXX
  SG_ CTR : 51|4@0+ (1,0) [0|15] "" XXX
- SG_ CAS_CMD_MAYBE : 30|7@0- (1,0) [0|255] "" XXX
- SG_ NEW_SIGNAL_4 : 43|4@0+ (1,0) [0|255] "" XXX
+ SG_ NEW_SIGNAL_21 : 23|1@0+ (1,0) [0|15] "" XXX
+ SG_ GAS_MAYBE : 22|1@0+ (1,0) [0|1] "" XXX
+ SG_ ACCEL_CMD : 46|8@0- (1,0) [0|15] "" XXX
+ SG_ CRUISE_ACTIVE_CAR_MOVING : 16|1@0+ (1,0) [0|1] "" XXX
+ SG_ PLUS_ONE_CRZ : 17|1@0+ (1,0) [0|255] "" XXX
+ SG_ CRZ_STARTED : 18|1@0+ (1,0) [0|1] "" XXX
+ SG_ CHKSUM : 63|8@0+ (1,0) [0|15] "" XXX
+ SG_ PLUS_ONE_CRZ_2 : 19|1@0+ (1,0) [0|1] "" XXX
+ SG_ ACCEL_CMD_LOW_RES : 29|8@0- (1,0) [0|255] "" XXX
+ SG_ CRZ_SPEED : 7|16@0+ (0.005,-0.5) [0|328] "kph" XXX
 
 BO_ 542 NEW_MSG_33: 8 XXX
  SG_ CTR : 48|4@1+ (1,0) [0|15] "" XXX
@@ -564,32 +549,32 @@ BO_ 535 CURVE_CTRS: 8 XXX
  SG_ NEW_SIGNAL_4 : 9|1@0+ (1,0) [0|1] "" XXX
 
 BO_ 540 CRZ_CTRL: 8 XXX
- SG_ NEW_SIGNAL_3 : 1|1@0+ (1,0) [0|1] "" XXX
- SG_ NEW_SIGNAL_4 : 8|1@0+ (1,0) [0|255] "" XXX
- SG_ NEW_SIGNAL_5 : 9|1@0+ (1,0) [0|1] "" XXX
  SG_ NEW_SIGNAL_6 : 10|1@0+ (1,0) [0|1] "" XXX
- SG_ NEW_SIGNAL_7 : 18|3@0+ (1,0) [0|255] "" XXX
  SG_ NEW_SIGNAL_9 : 31|1@0+ (1,0) [0|255] "" XXX
  SG_ NEW_SIGNAL_10 : 30|1@0+ (1,0) [0|1] "" XXX
  SG_ ACC_GAS_MAYBE : 23|1@0+ (1,0) [0|31] "" XXX
  SG_ ACC_GAS_MAYBE2 : 29|1@0+ (1,0) [0|1] "" XXX
- SG_ CRZ_ACTIVE : 3|1@0+ (1,0) [0|1] "" XXX
  SG_ HANDS_OFF_STEERING : 48|1@0+ (1,0) [0|1] "" XXX
  SG_ HANDS_ON_STEER_WARN : 59|4@0+ (1,0) [0|255] "" XXX
  SG_ NEW_SIGNAL_1 : 52|1@0+ (1,0) [0|1] "" XXX
  SG_ NEW_SIGNAL_2 : 45|3@0+ (1,0) [0|255] "" XXX
  SG_ NEW_SIGNAL_8 : 0|1@0+ (1,0) [0|1] "" XXX
+ SG_ NEW_SIGNAL_3 : 1|1@0+ (1,0) [0|1] "" XXX
+ SG_ CRZ_ACTIVE : 3|1@0+ (1,0) [0|1] "" XXX
+ SG_ NEW_SIGNAL_4 : 8|1@0+ (1,0) [0|255] "" XXX
+ SG_ NEW_SIGNAL_5 : 9|1@0+ (1,0) [0|1] "" XXX
+ SG_ CRZ_AVAILABLE : 17|1@0+ (1,0) [0|255] "" XXX
+ SG_ DISTANCE_SETTING : 20|3@0+ (1,0) [0|7] "" XXX
 
 BO_ 539 CRZ_INFO: 8 XXX
- SG_ NEW_SIGNAL_1 : 17|1@0+ (1,0) [0|255] "" XXX
- SG_ NEW_SIGNAL_2 : 16|1@0+ (1,0) [0|1] "" XXX
  SG_ NEW_SIGNAL_5 : 34|1@0+ (1,0) [0|1] "" XXX
  SG_ NEW_SIGNAL_7 : 47|1@0+ (1,0) [0|255] "" XXX
  SG_ CTR1 : 55|8@0+ (1,0) [0|255] "" XXX
  SG_ NEW_SIGNAL_3 : 37|1@0+ (1,0) [0|255] "" XXX
  SG_ ACC_ACTIVE : 33|1@0+ (1,0) [0|1] "" XXX
- SG_ ACCEL_CMD : 31|10@0- (1,0) [0|1] "" XXX
+ SG_ ACCEL_CMD : 31|8@0- (1,0) [0|1] "" XXX
  SG_ CHKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+ SG_ NEW_SIGNAL_1 : 7|16@0+ (1,0) [0|65535] "" XXX
 
 BO_ 121 EPB: 8 XXX
  SG_ NEW_SIGNAL_1 : 4|4@0+ (1,0) [0|255] "" XXX
@@ -774,5 +759,6 @@ CM_ SG_ 552 MORE_GEAR "";
 CM_ SG_ 552 GEAR "0 Shifting, 1 P, 2 R, 3 N, 4 D";
 CM_ SG_ 552 GEAR_BOX "0 P, 14 R, 1 though 6 D for speeds, 15 Shift";
 CM_ SG_ 540 HANDS_ON_STEER_WARN "0 no warning, b warning";
+CM_ SG_ 540 DISTANCE_SETTING "Radar distance 0: disabled, 1: 4 bars, 2: 3 bars, 3: 2 bars, 4: 1 bar";
 CM_ SG_ 1143 REAR_CT_ALERT "Rear Cross Traffic Alert";
 VAL_ 552 GEAR 1 "P" 2 "R" 3 "N" 4 "D" ;

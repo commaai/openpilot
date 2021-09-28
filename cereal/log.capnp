@@ -1,10 +1,6 @@
 using Cxx = import "./include/c++.capnp";
 $Cxx.namespace("cereal");
 
-using Java = import "./include/java.capnp";
-$Java.package("ai.comma.openpilot.cereal");
-$Java.outerClassname("Log");
-
 using Car = import "car.capnp";
 using Legacy = import "legacy.capnp";
 
@@ -319,6 +315,8 @@ struct DeviceState @0xa4d8b5af2aa492eb {
   gpuTempC @27 :List(Float32);
   memoryTempC @28 :Float32;
   ambientTempC @30 :Float32;
+  nvmeTempC @35 :List(Float32);
+  modemTempC @36 :List(Float32);
   thermalStatus @14 :ThermalStatus;
 
   enum ThermalStatus {
@@ -1344,6 +1342,7 @@ struct ManagerState {
     name @0 :Text;
     pid @1 :Int32;
     running @2 :Bool;
+    shouldBeRunning @4 :Bool;
     exitCode @3 :Int32;
   }
 }

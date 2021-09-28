@@ -1,15 +1,14 @@
 #include "selfdrive/ui/qt/onroad.h"
 
-#include <iostream>
 #include <QDebug>
 
-#include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/timing.h"
 #include "selfdrive/ui/paint.h"
 #include "selfdrive/ui/qt/util.h"
 #ifdef ENABLE_MAPS
 #include "selfdrive/ui/qt/maps/map.h"
 #endif
+
 
 OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout  = new QVBoxLayout(this);
@@ -18,8 +17,7 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   stacked_layout->setStackingMode(QStackedLayout::StackAll);
   main_layout->addLayout(stacked_layout);
 
-  // old UI on bottom
-  nvg = new NvgWindow(this);
+  nvg = new NvgWindow(VISION_STREAM_RGB_BACK, this);
   QObject::connect(this, &OnroadWindow::updateStateSignal, nvg, &NvgWindow::updateState);
 
   QWidget * split_wrapper = new QWidget;
@@ -100,6 +98,10 @@ void OnroadWindow::offroadTransition(bool offroad) {
 #endif
 
   alerts->updateAlert({}, bg);
+
+  // update stream type
+  bool wide_cam = Hardware::TICI() && Params().getBool("EnableWideCamera");
+  nvg->setStreamType(wide_cam ? VISION_STREAM_RGB_WIDE : VISION_STREAM_RGB_BACK);
 }
 
 void OnroadWindow::paintEvent(QPaintEvent *event) {
@@ -168,18 +170,8 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
   }
 }
 
-
-NvgWindow::NvgWindow(QWidget *parent) : QOpenGLWidget(parent) {
-  setAttribute(Qt::WA_OpaquePaintEvent);
-}
-
-NvgWindow::~NvgWindow() {
-  makeCurrent();
-  doneCurrent();
-}
-
 void NvgWindow::initializeGL() {
-  initializeOpenGLFunctions();
+  CameraViewWidget::initializeGL();
   qInfo() << "OpenGL version:" << QString((const char*)glGetString(GL_VERSION));
   qInfo() << "OpenGL vendor:" << QString((const char*)glGetString(GL_VENDOR));
   qInfo() << "OpenGL renderer:" << QString((const char*)glGetString(GL_RENDERER));
@@ -190,21 +182,19 @@ void NvgWindow::initializeGL() {
 }
 
 void NvgWindow::updateState(const UIState &s) {
-  // Connecting to visionIPC requires opengl to be current
-  if (s.vipc_client->connected) {
-    makeCurrent();
+  // TODO: make camerad startup faster then remove this
+  if (s.scene.started) {
+    if (isVisible() != vipc_client->connected) {
+      setVisible(vipc_client->connected);
+    }
+    if (!isVisible()) {
+      updateFrame();
+    }
   }
-  if (isVisible() != s.vipc_client->connected) {
-    setVisible(s.vipc_client->connected);
-  }
-  repaint();
-}
-
-void NvgWindow::resizeGL(int w, int h) {
-  ui_resize(&QUIState::ui_state, w, h);
 }
 
 void NvgWindow::paintGL() {
+  CameraViewWidget::paintGL();
   ui_draw(&QUIState::ui_state, width(), height());
 
   double cur_draw_t = millis_since_boot();

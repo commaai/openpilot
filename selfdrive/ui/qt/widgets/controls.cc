@@ -18,6 +18,8 @@ QFrame *horizontal_line(QWidget *parent) {
 }
 
 AbstractControl::AbstractControl(const QString &title, const QString &desc, const QString &icon, QWidget *parent) : QFrame(parent) {
+  setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
+  
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setMargin(0);
 
@@ -36,7 +38,8 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
 
   // title
   title_label = new QPushButton(title);
-  title_label->setStyleSheet("font-size: 50px; font-weight: 400; text-align: left;");
+  title_label->setFixedHeight(120);
+  title_label->setStyleSheet("font-size: 50px; font-weight: 400; text-align: left");
   hlayout->addWidget(title_label);
 
   main_layout->addLayout(hlayout);
@@ -57,6 +60,7 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
       description->setVisible(!description->isVisible());
     });
   }
+  main_layout->addStretch();
 }
 
 void AbstractControl::hideEvent(QHideEvent *e) {
