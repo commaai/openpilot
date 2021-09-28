@@ -97,7 +97,7 @@ class Planner():
     accel_limits_turns[1] = max(accel_limits_turns[1], self.a_desired - 0.05)
     self.mpc.set_accel_limits(accel_limits_turns[0], accel_limits_turns[1])
     self.mpc.set_cur_state(self.v_desired, self.a_desired)
-    self.mpc.update(sm['carState'], sm['radarState'], v_cruise)
+    self.mpc.update(sm['carState'], sm['radarState'], sm['modelV2'], v_cruise)
     self.v_desired_trajectory = self.mpc.v_solution[:CONTROL_N]
     self.a_desired_trajectory = self.mpc.a_solution[:CONTROL_N]
     self.j_desired_trajectory = self.mpc.j_solution[:CONTROL_N]

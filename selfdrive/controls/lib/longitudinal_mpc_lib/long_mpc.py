@@ -288,7 +288,7 @@ class LongitudinalMpc():
     self.cruise_min_a = min_a
     self.cruise_max_a = max_a
 
-  def update(self, carstate, radarstate, v_cruise):
+  def update(self, carstate, radarstate, model, v_cruise):
     v_ego = self.x0[1]
     stopping = model.stopLine.prob > 0.5
     self.crashing = False
