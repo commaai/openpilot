@@ -240,10 +240,8 @@ selfdrive/controls/lib/fcw.py
 selfdrive/controls/lib/cluster/*
 
 selfdrive/controls/lib/lateral_mpc_lib/.gitignore
-selfdrive/controls/lib/lead_mpc_lib/.gitignore
 selfdrive/controls/lib/longitudinal_mpc_lib/.gitignore
 selfdrive/controls/lib/lateral_mpc_lib/*
-selfdrive/controls/lib/lead_mpc_lib/*
 selfdrive/controls/lib/longitudinal_mpc_lib/*
 
 selfdrive/hardware/__init__.py

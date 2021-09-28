@@ -14,7 +14,7 @@ class Replay : public QObject {
   Q_OBJECT
 
 public:
-  Replay(QString route, QStringList allow, QStringList block, SubMaster *sm = nullptr, QObject *parent = 0);
+  Replay(QString route, QStringList allow, QStringList block, SubMaster *sm = nullptr, bool dcam = false, bool ecam = false, QObject *parent = 0);
   ~Replay();
 
   void start(int seconds = 0);
@@ -58,4 +58,5 @@ protected:
   std::set<std::string> socks;
   VisionIpcServer *vipc_server = nullptr;
   std::unique_ptr<Route> route_;
+  bool load_dcam = false, load_ecam = false;
 };

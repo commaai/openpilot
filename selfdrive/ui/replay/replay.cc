@@ -7,7 +7,8 @@
 #include "selfdrive/common/timing.h"
 #include "selfdrive/hardware/hw.h"
 
-Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *sm_, QObject *parent) : sm(sm_), QObject(parent) {
+Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *sm_, bool dcam, bool ecam, QObject *parent)
+    : sm(sm_), load_dcam(dcam), load_ecam(ecam), QObject(parent) {
   std::vector<const char*> s;
   for (const auto &it : services) {
     if ((allow.size() == 0 || allow.contains(it.name)) &&
@@ -102,7 +103,7 @@ void Replay::queueSegment() {
   int end_idx = cur_seg;
   for (int i = cur_seg, fwd = 0; i < segments_.size() && fwd <= FORWARD_SEGS; ++i) {
     if (!segments_[i]) {
-      segments_[i] = std::make_unique<Segment>(i, route_->at(i));
+      segments_[i] = std::make_unique<Segment>(i, route_->at(i), load_dcam, load_ecam);
       QObject::connect(segments_[i].get(), &Segment::loadFinished, this, &Replay::queueSegment);
     }
     end_idx = i;
