@@ -5,6 +5,7 @@
 
 #include <QApplication>
 #include <QCommandLineParser>
+#include <QDebug>
 #include <QThread>
 
 const QString DEMO_ROUTE = "3533c53bb29502d1|2019-12-10--01-13-27";
@@ -72,6 +73,8 @@ int main(int argc, char *argv[]){
   parser.addOption({{"b", "block"}, "blacklist of services to send", "block"});
   parser.addOption({{"s", "start"}, "start from <seconds>", "seconds"});
   parser.addOption({"demo", "use a demo route instead of providing your own"});
+  parser.addOption({"dcam", "load driver camera"});
+  parser.addOption({"ecam", "load wide road camera"});
 
   parser.process(a);
   const QStringList args = parser.positionalArguments();
@@ -82,7 +85,7 @@ int main(int argc, char *argv[]){
   const QString route = args.empty() ? DEMO_ROUTE : args.first();
   QStringList allow = parser.value("allow").isEmpty() ? QStringList{} : parser.value("allow").split(",");
   QStringList block = parser.value("block").isEmpty() ? QStringList{} : parser.value("block").split(",");
-  Replay *replay = new Replay(route, allow, block);
+  Replay *replay = new Replay(route, allow, block, nullptr, parser.isSet("dcam"), parser.isSet("ecam"));
   replay->start(parser.value("start").toInt());
 
   // start keyboard control thread
