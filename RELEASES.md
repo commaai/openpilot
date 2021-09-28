@@ -1,10 +1,10 @@
 Version 0.8.10 (2021-XX-XX)
 ========================
- * New driving model with improved
+ * New driving model
    * Trained on one million minutes!!!
-   * Fixed lead training making lead predictions significantly more accurate.
-   * Fixed several localizer dataset bugs and loss function bugs, overall improved accuracy.
- * Lateral and longitudinal planning MPCs now in [ACADOS](https://github.com/acados/acados)
+   * Fixed lead training making lead predictions significantly more accurate
+   * Fixed several localizer dataset bugs and loss function bugs, overall improved accuracy
+ * Lateral and longitudinal planning MPCs now in ACADOS
  * Combined longitudinal MPCs
    * All longitudinal planning now happens in a single MPC system
    * Fixed instability in MPC problem to prevent sporadic CPU usage
