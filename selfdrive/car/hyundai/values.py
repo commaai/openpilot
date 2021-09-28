@@ -214,7 +214,6 @@ FW_VERSIONS = {
   },
   CAR.SONATA: {
     (Ecu.fwdRadar, 0x7d0, None): [
-      b'\xf1\000DN8_ SCC F-CUP      1.00 1.00 99110-L0000         ',
       b'\xf1\x00DN8_ SCC F-CU-      1.00 1.00 99110-L0000         ',
       b'\xf1\x00DN8_ SCC F-CUP      1.00 1.00 99110-L0000         ',
       b'\xf1\x00DN8_ SCC F-CUP      1.00 1.02 99110-L1000         ',
@@ -226,7 +225,6 @@ FW_VERSIONS = {
       b'\xf1\x8799110L0000\xf1\x00DN8_ SCC FHCUP      1.00 1.00 99110-L0000         ',
     ],
     (Ecu.esp, 0x7d1, None): [
-      b'\xf1\000DN ESC \a 106 \a\001 58910-L0100',
       b'\xf1\x00DN ESC \a 106 \a\x01 58910-L0100',
       b'\xf1\x00DN ESC \x01 102\x19\x04\x13 58910-L1300',
       b'\xf1\x00DN ESC \x03 100 \x08\x01 58910-L0300',
@@ -252,7 +250,7 @@ FW_VERSIONS = {
       b'HM6M1_0a0_G20',
     ],
     (Ecu.eps, 0x7d4, None): [
-      b'\xf1\x8756310L0010\000\xf1\000DN8 MDPS C 1.00 1.01 56310L0010\000 4DNAC101\xf1\xa01.01',
+      b'\xf1\x8756310L0010\000\xf1\000DN8 MDPS C 1.00 1.01 56310L0010\000 4DNAC101',
       b'\xf1\x00DN8 MDPS C 1.00 1.01 \x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 4DNAC101',
       b'\xf1\x00DN8 MDPS C 1.00 1.01 56310-L0010 4DNAC101',
       b'\xf1\x00DN8 MDPS C 1.00 1.01 56310L0010\x00 4DNAC101',
@@ -266,14 +264,12 @@ FW_VERSIONS = {
       b'\xf1\x8756310L0210\x00\xf1\x00DN8 MDPS C 1.00 1.01 56310L0210\x00 4DNAC101',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
-      b'\xf1\000DN8 MFC  AT USA LHD 1.00 1.01 99211-L0000 191016',
       b'\xf1\x00DN8 MFC  AT KOR LHD 1.00 1.02 99211-L1000 190422',
       b'\xf1\x00DN8 MFC  AT RUS LHD 1.00 1.03 99211-L1000 190705',
       b'\xf1\x00DN8 MFC  AT USA LHD 1.00 1.00 99211-L0000 190716',
       b'\xf1\x00DN8 MFC  AT USA LHD 1.00 1.01 99211-L0000 191016',
     ],
     (Ecu.transmission, 0x7e1, None): [
-      b'\xf1\x87SALDBA6347404GJ3wwwwff\x86hx\x88\x97\x88\x88\x88\x88\x88vfgf\x88?\xfc\xff\x86Uo\xff\xec/\xf1\x89HT6WA910A1\xf1\x82SDN8G25NB1\000\000\000\000\000\000',
       b'\xf1\x00bcsh8p54  U903\x00\x00\x00\x00\x00\x00SDN8T16NB0z{\xd4v',
       b'\xf1\x00bcsh8p54  U913\x00\x00\x00\x00\x00\x00SDN8T16NB1\xe3\xc10\xa1',
       b'\xf1\x00bcsh8p54  U913\x00\x00\x00\x00\x00\x00SDN8T16NB2\n\xdd^\xbc',
