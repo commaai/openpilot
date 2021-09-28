@@ -1,7 +1,7 @@
 #include "selfdrive/ui/replay/replay.h"
 
 #include <QApplication>
-
+#include <QDebug>
 #include "cereal/services.h"
 #include "selfdrive/camerad/cameras/camera_common.h"
 #include "selfdrive/common/timing.h"
