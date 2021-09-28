@@ -122,15 +122,6 @@ class CarController():
     # *** apply brake hysteresis ***
     pre_limit_brake, self.braking, self.brake_steady = actuator_hystereses(brake, self.braking, self.brake_steady, CS.out.vEgo, CS.CP.carFingerprint)
 
-    # *** no output if not enabled ***
-    if not enabled and CS.out.cruiseState.enabled:
-      # send pcm acc cancel cmd if drive is disabled but pcm is still on, or if the system can't be activated
-      pcm_cancel_cmd = True
-
-    # Never send cancel command if we never enter cruise state (no cruise if pedal)
-    # Cancel cmd causes brakes to release at a standstill causing grinding
-    pcm_cancel_cmd = pcm_cancel_cmd and CS.CP.pcmCruise
-
     # *** rate limit after the enable check ***
     self.brake_last = rate_limit(pre_limit_brake, self.brake_last, -2., DT_CTRL)
 
