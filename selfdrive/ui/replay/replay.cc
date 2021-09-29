@@ -40,21 +40,18 @@ Replay::~Replay() {
   qDebug() << "shutdown: in progress...";
 
   exit_ = true;
-  if (isPaused()) {
-    pause(false);
-  }
-  updating_events = true;
-  if (stream_thread) {
-    stream_thread->quit();
-    stream_thread->wait();
+  updating_events_ = true;
+  if (stream_thread_) {
+    stream_cv_.notify_one();
+    stream_thread_->quit();
+    stream_thread_->wait();
   }
 
   delete vipc_server;
   CL_CHECK(clReleaseContext(context));
   delete pm;
-  delete events;
-  delete [] eidx;
-  segments.clear();
+  delete events_;
+  segments_.clear();
   qDebug() << "shutdown: done";
 }
 
