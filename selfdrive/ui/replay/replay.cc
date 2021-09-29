@@ -30,6 +30,7 @@ Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *s
 
   route_ = std::make_unique<Route>(route);
   events_ = new std::vector<Event *>();
+  camera_server_ = std::make_unique<CameraServer>();
   // queueSegment is always executed in the main thread
   connect(this, &Replay::segmentChanged, this, &Replay::queueSegment);
 }
@@ -184,6 +185,22 @@ void Replay::mergeSegments(int cur_seg, int end_idx) {
   }
 }
 
+void Replay::publishFrame(const Event *e) {
+  auto publish = [=](CameraType cam_type, const cereal::EncodeIndex::Reader &eidx) {
+    auto &seg = segments_[eidx.getSegmentNum()];
+    if (seg && seg->isLoaded() && seg->frames[cam_type] && eidx.getType() == cereal::EncodeIndex::Type::FULL_H_E_V_C) {
+      camera_server_->pushFrame(cam_type, seg->frames[cam_type].get(), eidx);
+    }
+  };
+  if (e->which == cereal::Event::ROAD_ENCODE_IDX) {
+    publish(RoadCam, e->event.getRoadEncodeIdx());
+  } else if (e->which == cereal::Event::DRIVER_ENCODE_IDX) {
+    publish(DriverCam, e->event.getDriverEncodeIdx());
+  } else if (e->which == cereal::Event::WIDE_ROAD_ENCODE_IDX) {
+    publish(WideRoadCam, e->event.getWideRoadEncodeIdx());
+  }
+}
+
 void Replay::stream() {
   float last_print = 0;
   cereal::Event::Which cur_which = cereal::Event::Which::INIT_DATA;
@@ -227,38 +244,10 @@ void Replay::stream() {
           precise_nano_sleep(behind_ns);
         }
 
-        // publish frame
         if (evt->frame) {
-          // TODO: publish all frames
-          if (evt->which == cereal::Event::ROAD_ENCODE_IDX) {
-            auto idx = evt->event.getRoadEncodeIdx();
-            auto &seg = segments_[idx.getSegmentNum()];
-
-            if (seg && seg->isLoaded() && idx.getType() == cereal::EncodeIndex::Type::FULL_H_E_V_C) {
-              auto &frm = seg->frames[RoadCam];
-
-              if (vipc_server == nullptr) {
-                cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
-                cl_context context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
-
-                vipc_server = new VisionIpcServer("camerad", device_id, context);
-                vipc_server->create_buffers(VisionStreamType::VISION_STREAM_RGB_BACK, UI_BUF_COUNT,
-                                            true, frm->width, frm->height);
-                vipc_server->start_listener();
-              }
-
-              uint8_t *dat = frm->get(idx.getSegmentId());
-              if (dat) {
-                VisionIpcBufExtra extra = {};
-                VisionBuf *buf = vipc_server->get_buffer(VisionStreamType::VISION_STREAM_RGB_BACK);
-                memcpy(buf->addr, dat, frm->getRGBSize());
-                vipc_server->send(buf, &extra, false);
-              }
-            }
-          }
-
-        // publish msg
+          publishFrame(evt);
         } else {
+          // publish msg
           if (sm == nullptr) {
             auto bytes = evt->bytes();
             pm->send(sockets_[cur_which], (capnp::byte *)bytes.begin(), bytes.size());
@@ -268,5 +257,8 @@ void Replay::stream() {
         }
       }
     }
+
+    // wait for frame to be sent before unlock.(frameReader may be deleted after unlock)
+    camera_server_->waitFinish();
   }
 }

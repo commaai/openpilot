@@ -78,7 +78,7 @@ bool FrameReader::load(const std::string &url) {
     return false;
   }
   avformat_find_stream_info(pFormatCtx_, NULL);
-  av_dump_format(pFormatCtx_, 0, url.c_str(), 0);
+  // av_dump_format(pFormatCtx_, 0, url.c_str(), 0);
 
   auto pCodecCtxOrig = pFormatCtx_->streams[0]->codec;
   auto pCodec = avcodec_find_decoder(pCodecCtxOrig->codec_id);
