@@ -232,40 +232,43 @@ void Replay::stream() {
         }
 
         // publish frame
-        // TODO: publish all frames
-        if (evt->which == cereal::Event::ROAD_ENCODE_IDX) {
-          auto idx = evt->event.getRoadEncodeIdx();
-          auto &seg = segments_[idx.getSegmentNum()];
+        if (evt->frame) {
+          // TODO: publish all frames
+          if (evt->which == cereal::Event::ROAD_ENCODE_IDX) {
+            auto idx = evt->event.getRoadEncodeIdx();
+            auto &seg = segments_[idx.getSegmentNum()];
 
-          if (seg && seg->isLoaded() && idx.getType() == cereal::EncodeIndex::Type::FULL_H_E_V_C) {
-            auto &frm = seg->frames[RoadCam];
+            if (seg && seg->isLoaded() && idx.getType() == cereal::EncodeIndex::Type::FULL_H_E_V_C) {
+              auto &frm = seg->frames[RoadCam];
 
-            if (vipc_server == nullptr) {
-              cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
-              cl_context context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
+              if (vipc_server == nullptr) {
+                cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
+                cl_context context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
 
-              vipc_server = new VisionIpcServer("camerad", device_id, context);
-              vipc_server->create_buffers(VisionStreamType::VISION_STREAM_RGB_BACK, UI_BUF_COUNT,
-                                          true, frm->width, frm->height);
-              vipc_server->start_listener();
-            }
+                vipc_server = new VisionIpcServer("camerad", device_id, context);
+                vipc_server->create_buffers(VisionStreamType::VISION_STREAM_RGB_BACK, UI_BUF_COUNT,
+                                            true, frm->width, frm->height);
+                vipc_server->start_listener();
+              }
 
-            uint8_t *dat = frm->get(idx.getSegmentId());
-            if (dat) {
-              VisionIpcBufExtra extra = {};
-              VisionBuf *buf = vipc_server->get_buffer(VisionStreamType::VISION_STREAM_RGB_BACK);
-              memcpy(buf->addr, dat, frm->getRGBSize());
-              vipc_server->send(buf, &extra, false);
+              uint8_t *dat = frm->get(idx.getSegmentId());
+              if (dat) {
+                VisionIpcBufExtra extra = {};
+                VisionBuf *buf = vipc_server->get_buffer(VisionStreamType::VISION_STREAM_RGB_BACK);
+                memcpy(buf->addr, dat, frm->getRGBSize());
+                vipc_server->send(buf, &extra, false);
+              }
             }
           }
-        }
 
         // publish msg
-        if (sm == nullptr) {
-          auto bytes = evt->bytes();
-          pm->send(type.c_str(), (capnp::byte *)bytes.begin(), bytes.size());
         } else {
-          sm->update_msgs(nanos_since_boot(), {{type, evt->event}});
+          if (sm == nullptr) {
+            auto bytes = evt->bytes();
+            pm->send(type.c_str(), (capnp::byte *)bytes.begin(), bytes.size());
+          } else {
+            sm->update_msgs(nanos_since_boot(), {{type, evt->event}});
+          }
         }
       }
     }
