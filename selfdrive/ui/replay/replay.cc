@@ -181,7 +181,7 @@ void Replay::mergeSegments(int cur_seg, int end_idx) {
 
       events_ = new_events;
       segments_merged_ = segments_need_merge;
-      return !segments_merged_.empty();
+      return std::find(segments_merged_.begin(), segments_merged_.end(), cur_seg) != segments_merged_.end();
     });
     delete prev_events;
   }

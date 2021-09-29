@@ -73,29 +73,29 @@ bool is_events_ordered(const std::vector<Event *> &events) {
 }
 
 const QString DEMO_ROUTE = "3533c53bb29502d1|2019-12-10--01-13-27";
-Route demo_route(DEMO_ROUTE);
+// Route demo_route(DEMO_ROUTE);
 
-TEST_CASE("Segment") {
-  REQUIRE(demo_route.load());
-  REQUIRE(demo_route.size() == 121);
+// TEST_CASE("Segment") {
+//   REQUIRE(demo_route.load());
+//   REQUIRE(demo_route.size() == 121);
 
-  QEventLoop loop;
-  Segment segment(0, demo_route.at(0), false, false);
-  REQUIRE(segment.isValid() == true);
-  REQUIRE(segment.isLoaded() == false);
-  QObject::connect(&segment, &Segment::loadFinished, [&]() {
-    REQUIRE(segment.isLoaded() == true);
-    REQUIRE(segment.log != nullptr);
-    REQUIRE(segment.log->events.size() > 0);
-    REQUIRE(is_events_ordered(segment.log->events));
-    REQUIRE(segment.frames[RoadCam] != nullptr);
-    REQUIRE(segment.frames[RoadCam]->getFrameCount() > 0);
-    REQUIRE(segment.frames[DriverCam] == nullptr);
-    REQUIRE(segment.frames[WideRoadCam] == nullptr);
-    loop.quit();
-  });
-  loop.exec();
-}
+//   QEventLoop loop;
+//   Segment segment(0, demo_route.at(0), false, false);
+//   REQUIRE(segment.isValid() == true);
+//   REQUIRE(segment.isLoaded() == false);
+//   QObject::connect(&segment, &Segment::loadFinished, [&]() {
+//     REQUIRE(segment.isLoaded() == true);
+//     REQUIRE(segment.log != nullptr);
+//     REQUIRE(segment.log->events.size() > 0);
+//     REQUIRE(is_events_ordered(segment.log->events));
+//     REQUIRE(segment.frames[RoadCam] != nullptr);
+//     REQUIRE(segment.frames[RoadCam]->getFrameCount() > 0);
+//     REQUIRE(segment.frames[DriverCam] == nullptr);
+//     REQUIRE(segment.frames[WideRoadCam] == nullptr);
+//     loop.quit();
+//   });
+//   loop.exec();
+// }
 
 // helper class for unit tests
 class TestReplay : public Replay {
@@ -120,8 +120,10 @@ void TestReplay::testSeekTo(int seek_to) {
   INFO("seek to [" << seek_to << "s segment " << seek_to / 60 << "]");
   REQUIRE(is_events_ordered(*events_));
   REQUIRE(uint64_t(route_start_ts_ + seek_to * 1e9) == cur_mono_time_);
+  REQUIRE(!events_->empty());
   Event cur_event(cereal::Event::Which::INIT_DATA, cur_mono_time_);
   auto eit = std::upper_bound(events_->begin(), events_->end(), &cur_event, Event::lessThan());
+  
   REQUIRE(eit != events_->end());
   REQUIRE((*eit)->mono_time >= seek_to * 1e9 + route_start_ts_);
   REQUIRE(int(((*eit)->mono_time - route_start_ts_) / 60 / 1e9) == seek_to / 60); // in the same segment
@@ -137,10 +139,12 @@ void TestReplay::test_seek() {
   segments_.resize(5);
   
   std::thread thread = std::thread([&]() {
-    // random seek 200 times in first 3 segments
+    // random seek 200 times in first 3 good segments
     for (int i = 0; i < 200; ++i) {
       testSeekTo(random_int(0, 60 * 3 - 1));
     }
+    // make segment 1 invalid
+    // segmets_[1].
 
     loop.quit();
   });
