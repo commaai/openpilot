@@ -148,7 +148,7 @@ void Replay::mergeSegments(int cur_seg, int end_idx) {
   for (int i = begin_idx; i <= end_idx; ++i) {
     if (segments_[i] && segments_[i]->isLoaded()) {
       segments_need_merge.push_back(i);
-    } else if (i >= cur_seg) {
+    } else if (i >= cur_seg && segments_[i] && segments_[i]->isValid()) {
       // segment is valid,but still loading. can't skip it to merge the next one.
       // otherwise the stream thread may jump to the next segment.
       break;

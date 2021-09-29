@@ -48,6 +48,9 @@ public:
   std::unique_ptr<LogReader> log;
   std::unique_ptr<FrameReader> frames[MAX_CAMERAS] = {};
 
+  // public for unit tests
+  bool loaded_ = false, valid_ = false;
+
 signals:
   void loadFinished();
 

@@ -105,10 +105,10 @@ class TestReplay : public Replay {
   void test_seek();
 
  protected:
-  void testSeekTo(int seek_to);
+  void testSeekTo(int seek_to, int invalid_segment = -1);
 };
 
-void TestReplay::testSeekTo(int seek_to) {
+void TestReplay::testSeekTo(int seek_to, int invalid_segment) {
   seekTo(seek_to);
 
   // wait for seek finish
@@ -118,6 +118,8 @@ void TestReplay::testSeekTo(int seek_to) {
 
   // verify result
   INFO("seek to [" << seek_to << "s segment " << seek_to / 60 << "]");
+  INFO("events size " << events_->size());
+  // INFO("mono" << (cur_mono_time_ - route_start_ts_) / 1e9);
   REQUIRE(is_events_ordered(*events_));
   REQUIRE(uint64_t(route_start_ts_ + seek_to * 1e9) == cur_mono_time_);
   REQUIRE(!events_->empty());
@@ -125,26 +127,40 @@ void TestReplay::testSeekTo(int seek_to) {
   auto eit = std::upper_bound(events_->begin(), events_->end(), &cur_event, Event::lessThan());
   
   REQUIRE(eit != events_->end());
+  const int seek_to_segment = seek_to / 60;
+  const int real_segment = int(((*eit)->mono_time - route_start_ts_) / 60 / 1e9);
+  INFO("event [" << ((*eit)->mono_time - route_start_ts_) / 1e9 << "s segment " << real_segment << "]");
   REQUIRE((*eit)->mono_time >= seek_to * 1e9 + route_start_ts_);
-  REQUIRE(int(((*eit)->mono_time - route_start_ts_) / 60 / 1e9) == seek_to / 60); // in the same segment
-  REQUIRE(int(((*eit)->mono_time - (seek_to * 1e9 + route_start_ts_)) / 1e9) == 0);
+  if (seek_to_segment != invalid_segment) {
+    REQUIRE(real_segment == seek_to_segment); // in the same segment
+  } else {
+    // skipped invalid_segment
+    REQUIRE(real_segment == seek_to_segment + 1); 
+
+  }
 }
 
 void TestReplay::test_seek() {
   QEventLoop loop;
 
   REQUIRE(load());
-  // limit the segment count to 5
-  REQUIRE(route_->size() >= 5);
-  segments_.resize(5);
+  // // limit the segment count to 5
+  // REQUIRE(route_->size() >= 5);
+  // segments_.resize(5);
   
   std::thread thread = std::thread([&]() {
     // random seek 200 times in first 3 good segments
     for (int i = 0; i < 200; ++i) {
       testSeekTo(random_int(0, 60 * 3 - 1));
     }
-    // make segment 1 invalid
-    // segmets_[1].
+
+    // // make segment 1 invalid
+    // segments_[1]->valid_ = segments_[1]->loaded_ = false;
+    // queueSegment();
+    // // random seek 200 times
+    // for (int i = 0; i < 200; ++i) {
+    //   testSeekTo(random_int(0, 60 * 3 - 1), 1);
+    // }
 
     loop.quit();
   });
