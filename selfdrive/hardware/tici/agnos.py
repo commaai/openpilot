@@ -74,6 +74,11 @@ def unsparsify(f: StreamingDecompressor) -> Generator[bytes, None, None]:
       raise Exception("Unhandled sparse chunk type")
 
 
+def noop(f: StreamingDecompressor) -> Generator[bytes, None, None]:
+  while not f.eof:
+    yield f.read(1024 * 1024)
+
+
 def get_target_slot_number() -> int:
   current_slot = subprocess.check_output(["abctl", "--boot_slot"], encoding='utf-8').strip()
   return 1 if current_slot == "_a" else 0
@@ -141,24 +146,17 @@ def flash_partition(target_slot_number: int, partition: dict, cloudlog):
 
   path = get_partition_path(target_slot_number, partition)
   with open(path, 'wb+') as out:
-    partition_size = partition['size']
-
     # Flash partition
-    if partition['sparse']:
-      raw_hash = hashlib.sha256()
-      for chunk in unsparsify(downloader):
-        raw_hash.update(chunk)
-        out.write(chunk)
-        p = int(out.tell() / partition_size * 100)
-        print(f"Installing {partition['name']}: {p}")
+    func = unsparsify if partition['sparse'] else noop
+    raw_hash = hashlib.sha256()
+    for chunk in func(downloader):
+      raw_hash.update(chunk)
+      out.write(chunk)
+      p = int(out.tell() / partition['size'] * 100)
+      print(f"Installing {partition['name']}: {p}")
 
-      if raw_hash.hexdigest().lower() != partition['hash_raw'].lower():
-        raise Exception(f"Unsparse hash mismatch '{raw_hash.hexdigest().lower()}'")
-    else:
-      while not downloader.eof:
-        out.write(downloader.read(1024 * 1024))
-        p = int(out.tell() / partition_size * 100)
-        print(f"Installing {partition['name']}: {p}")
+    if raw_hash.hexdigest().lower() != partition['hash_raw'].lower():
+      raise Exception(f"Hash mismatch '{raw_hash.hexdigest().lower()}'")
 
     if downloader.sha256.hexdigest().lower() != partition['hash'].lower():
       raise Exception("Uncompressed hash mismatch")
