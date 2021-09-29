@@ -98,7 +98,7 @@ class Planner():
     self.a_desired_trajectory = self.mpc.a_solution[:CONTROL_N]
     self.j_desired_trajectory = self.mpc.j_solution[:CONTROL_N]
 
-    # determine fcw
+    #TODO counter is only needed because radar is glitchy, remove once radar is gone
     self.fcw = self.mpc.crash_cnt > 5 and sm['controlsState'].active
     if self.fcw:
       cloudlog.info("FCW triggered")
