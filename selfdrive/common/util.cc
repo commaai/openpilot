@@ -85,7 +85,7 @@ std::map<std::string, std::string> read_files_in_dir(const std::string &path) {
 
   struct dirent *de = NULL;
   while ((de = readdir(d))) {
-    if (isalnum(de->d_name[0])) {
+    if (de->d_type != DT_DIR) {
       ret[de->d_name] = util::read_file(path + "/" + de->d_name);
     }
   }
@@ -95,11 +95,11 @@ std::map<std::string, std::string> read_files_in_dir(const std::string &path) {
 }
 
 int write_file(const char* path, const void* data, size_t size, int flags, mode_t mode) {
-  int fd = open(path, flags, mode);
+  int fd = HANDLE_EINTR(open(path, flags, mode));
   if (fd == -1) {
     return -1;
   }
-  ssize_t n = write(fd, data, size);
+  ssize_t n = HANDLE_EINTR(write(fd, data, size));
   close(fd);
   return (n >= 0 && (size_t)n == size) ? 0 : -1;
 }

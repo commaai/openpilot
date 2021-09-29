@@ -11,6 +11,7 @@
 #include <capnp/serialize.h>
 #include <kj/array.h>
 
+#include "cereal/messaging/messaging.h"
 #include "selfdrive/common/util.h"
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/hardware/hw.h"
@@ -56,8 +57,12 @@ class BZFile {
   BZFILE* bz_file = nullptr;
 };
 
+typedef cereal::Sentinel::SentinelType SentinelType;
+
 typedef struct LoggerHandle {
   pthread_mutex_t lock;
+  SentinelType end_sentinel_type;
+  int exit_signal;
   int refcnt;
   char segment_path[4096];
   char log_path[4096];

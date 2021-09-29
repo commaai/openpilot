@@ -1,13 +1,12 @@
 from cereal import car
-from common.numpy_fast import clip
+from common.numpy_fast import clip, interp
 from selfdrive.car import apply_toyota_steer_torque_limits, create_gas_command, make_can_msg
 from selfdrive.car.toyota.toyotacan import create_steer_command, create_ui_command, \
                                            create_accel_command, create_acc_cancel_command, \
                                            create_fcw_command, create_lta_steer_command
 from selfdrive.car.toyota.values import CAR, STATIC_DSU_MSGS, NO_STOP_TIMER_CAR, TSS2_CAR, \
-                                        MIN_ACC_SPEED, PEDAL_HYST_GAP, CarControllerParams
+                                        MIN_ACC_SPEED, PEDAL_HYST_GAP, PEDAL_SCALE, CarControllerParams
 from opendbc.can.packer import CANPacker
-
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 
@@ -45,7 +44,7 @@ class CarController():
 
     # gas and brake
     interceptor_gas_cmd = 0.
-    pcm_accel_cmd = actuators.gas - actuators.brake
+    pcm_accel_cmd = actuators.accel
 
     if CS.CP.enableGasInterceptor:
       # handle hysteresis when around the minimum acc speed
@@ -56,12 +55,13 @@ class CarController():
 
       if self.use_interceptor and enabled:
         # only send negative accel when using interceptor. gas handles acceleration
-        # +0.06 offset to reduce ABS pump usage when OP is engaged
-        interceptor_gas_cmd = clip(actuators.gas, 0., 1.)
-        pcm_accel_cmd = 0.06 - actuators.brake
+        # +0.18 m/s^2 offset to reduce ABS pump usage when OP is engaged
+        MAX_INTERCEPTOR_GAS = interp(CS.out.vEgo, [0.0, MIN_ACC_SPEED], [0.2, 0.5])
+        interceptor_gas_cmd = clip(actuators.accel / PEDAL_SCALE, 0., MAX_INTERCEPTOR_GAS)
+        pcm_accel_cmd = 0.18 - max(0, -actuators.accel)
 
     pcm_accel_cmd, self.accel_steady = accel_hysteresis(pcm_accel_cmd, self.accel_steady, enabled)
-    pcm_accel_cmd = clip(pcm_accel_cmd * CarControllerParams.ACCEL_SCALE, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
+    pcm_accel_cmd = clip(pcm_accel_cmd, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
 
     # steer torque
     new_steer = int(round(actuators.steer * CarControllerParams.STEER_MAX))
@@ -75,8 +75,9 @@ class CarController():
     else:
       apply_steer_req = 1
 
+    # TODO: probably can delete this. CS.pcm_acc_status uses a different signal
+    # than CS.cruiseState.enabled. confirm they're not meaningfully different
     if not enabled and CS.pcm_acc_status:
-      # send pcm acc cancel cmd if drive is disabled but pcm is still on, or if the system can't be activated
       pcm_cancel_cmd = 1
 
     # on entering standstill, send standstill request

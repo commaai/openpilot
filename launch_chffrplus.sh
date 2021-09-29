@@ -90,18 +90,11 @@ function two_init {
 
   # Check for NEOS update
   if [ $(< /VERSION) != "$REQUIRED_NEOS_VERSION" ]; then
-    if [ -f "$DIR/scripts/continue.sh" ]; then
-      cp "$DIR/scripts/continue.sh" "/data/data/com.termux/files/continue.sh"
-    fi
-
-    if [ ! -f "$BASEDIR/prebuilt" ]; then
-      # Clean old build products, but preserve the scons cache
-      cd $DIR
-      git clean -xdf
-      git submodule foreach --recursive git clean -xdf
-    fi
-
-    "$DIR/installer/updater/updater" "file://$DIR/installer/updater/update.json"
+    echo "Installing NEOS update"
+    NEOS_PY="$DIR/selfdrive/hardware/eon/neos.py"
+    MANIFEST="$DIR/selfdrive/hardware/eon/neos.json"
+    $NEOS_PY --swap-if-ready $MANIFEST
+    $DIR/selfdrive/hardware/eon/updater $NEOS_PY $MANIFEST
   fi
 }
 
@@ -111,10 +104,15 @@ function tici_init {
     sleep 3
   fi
 
+  # setup governors
   sudo su -c 'echo "performance" > /sys/class/devfreq/soc:qcom,memlat-cpu0/governor'
   sudo su -c 'echo "performance" > /sys/class/devfreq/soc:qcom,memlat-cpu4/governor'
+
+  # TODO: move this to agnos
+  # network manager config
   nmcli connection modify --temporary lte gsm.auto-config yes
   nmcli connection modify --temporary lte gsm.home-only yes
+  sudo rm -f /data/etc/NetworkManager/system-connections/*.nmmeta
 
   # set success flag for current boot slot
   sudo abctl --set_success
@@ -159,11 +157,6 @@ function launch {
           mv $BASEDIR /data/safe_staging/old_openpilot
           mv "${STAGING_ROOT}/finalized" $BASEDIR
           cd $BASEDIR
-
-          # Partial mitigation for symlink-related filesystem corruption
-          # Ensure all files match the repo versions after update
-          git reset --hard
-          git submodule foreach --recursive git reset --hard
 
           echo "Restarting launch script ${LAUNCHER_LOCATION}"
           unset REQUIRED_NEOS_VERSION

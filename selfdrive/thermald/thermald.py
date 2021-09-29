@@ -4,6 +4,7 @@ import os
 import time
 from pathlib import Path
 from typing import Dict, Optional, Tuple
+from collections import namedtuple, OrderedDict
 
 import psutil
 from smbus2 import SMBus
@@ -11,12 +12,13 @@ from smbus2 import SMBus
 import cereal.messaging as messaging
 from cereal import log
 from common.filter_simple import FirstOrderFilter
-from common.numpy_fast import clip, interp
+from common.numpy_fast import interp
 from common.params import Params, ParamKeyType
 from common.realtime import DT_TRML, sec_since_boot
 from common.dict_helpers import strip_deprecated_keys
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
-from selfdrive.hardware import EON, TICI, HARDWARE
+from selfdrive.controls.lib.pid import PIController
+from selfdrive.hardware import EON, TICI, PC, HARDWARE
 from selfdrive.loggerd.config import get_available_percent
 from selfdrive.pandad import get_expected_signature
 from selfdrive.swaglog import cloudlog
@@ -29,15 +31,26 @@ ThermalStatus = log.DeviceState.ThermalStatus
 NetworkType = log.DeviceState.NetworkType
 NetworkStrength = log.DeviceState.NetworkStrength
 CURRENT_TAU = 15.   # 15s time constant
-CPU_TEMP_TAU = 5.   # 5s time constant
+TEMP_TAU = 5.   # 5s time constant
 DAYS_NO_CONNECTIVITY_MAX = 7  # do not allow to engage after a week without internet
 DAYS_NO_CONNECTIVITY_PROMPT = 4  # send an offroad prompt after 4 days with no internet
 DISCONNECT_TIMEOUT = 5.  # wait 5 seconds before going offroad after disconnect so you get an alert
 
+ThermalBand = namedtuple("ThermalBand", ['min_temp', 'max_temp'])
+
+# List of thermal bands. We will stay within this region as long as we are within the bounds.
+# When exiting the bounds, we'll jump to the lower or higher band. Bands are ordered in the dict.
+THERMAL_BANDS = OrderedDict({
+  ThermalStatus.green: ThermalBand(None, 80.0),
+  ThermalStatus.yellow: ThermalBand(75.0, 96.0),
+  ThermalStatus.red: ThermalBand(80.0, 107.),
+  ThermalStatus.danger: ThermalBand(94.0, None),
+})
+
+# Override to highest thermal band when offroad and above this temp
+OFFROAD_DANGER_TEMP = 70.0
+
 prev_offroad_states: Dict[str, Tuple[bool, Optional[str]]] = {}
-
-last_eon_fan_val = None
-
 
 def read_tz(x):
   if x is None:
@@ -56,7 +69,6 @@ def read_thermal(thermal_config):
   dat.deviceState.gpuTempC = [read_tz(z) / thermal_config.gpu[1] for z in thermal_config.gpu[0]]
   dat.deviceState.memoryTempC = read_tz(thermal_config.mem[0]) / thermal_config.mem[1]
   dat.deviceState.ambientTempC = read_tz(thermal_config.ambient[0]) / thermal_config.ambient[1]
-  dat.deviceState.batteryTempC = read_tz(thermal_config.bat[0]) / thermal_config.bat[1]
   return dat
 
 
@@ -64,6 +76,7 @@ def setup_eon_fan():
   os.system("echo 2 > /sys/module/dwc3_msm/parameters/otg_switch")
 
 
+last_eon_fan_val = None
 def set_eon_fan(val):
   global last_eon_fan_val
 
@@ -89,11 +102,9 @@ _TEMP_THRS_H = [50., 65., 80., 10000]
 _TEMP_THRS_L = [42.5, 57.5, 72.5, 10000]
 # fan speed options
 _FAN_SPEEDS = [0, 16384, 32768, 65535]
-# max fan speed only allowed if battery is hot
-_BAT_TEMP_THRESHOLD = 45.
 
 
-def handle_fan_eon(max_cpu_temp, bat_temp, fan_speed, ignition):
+def handle_fan_eon(controller, max_cpu_temp, fan_speed, ignition):
   new_speed_h = next(speed for speed, temp_h in zip(_FAN_SPEEDS, _TEMP_THRS_H) if temp_h > max_cpu_temp)
   new_speed_l = next(speed for speed, temp_l in zip(_FAN_SPEEDS, _TEMP_THRS_L) if temp_l > max_cpu_temp)
 
@@ -104,22 +115,31 @@ def handle_fan_eon(max_cpu_temp, bat_temp, fan_speed, ignition):
     # update speed if using the low thresholds results in fan speed decrement
     fan_speed = new_speed_l
 
-  if bat_temp < _BAT_TEMP_THRESHOLD:
-    # no max fan speed unless battery is hot
-    fan_speed = min(fan_speed, _FAN_SPEEDS[-2])
-
   set_eon_fan(fan_speed // 16384)
 
   return fan_speed
 
 
-def handle_fan_uno(max_cpu_temp, bat_temp, fan_speed, ignition):
+def handle_fan_uno(controller, max_cpu_temp, fan_speed, ignition):
   new_speed = int(interp(max_cpu_temp, [40.0, 80.0], [0, 80]))
 
   if not ignition:
     new_speed = min(30, new_speed)
 
   return new_speed
+
+
+def handle_fan_tici(controller, max_cpu_temp, fan_speed, ignition):
+  controller.neg_limit = -(80 if ignition else 30)
+  controller.pos_limit = -(30 if ignition else 0)
+
+  fan_pwr_out = -int(controller.update(
+                     setpoint=(75 if ignition else (OFFROAD_DANGER_TEMP - 2)),
+                     measurement=max_cpu_temp,
+                     feedforward=interp(max_cpu_temp, [60.0, 100.0], [0, -80])
+                  ))
+
+  return fan_pwr_out
 
 
 def set_offroad_alert_if_changed(offroad_alert: str, show_alert: bool, extra_text: Optional[str]=None):
@@ -157,9 +177,11 @@ def thermald_thread():
   network_info = None
   modem_version = None
   registered_count = 0
+  nvme_temps = None
+  modem_temps = None
 
   current_filter = FirstOrderFilter(0., CURRENT_TAU, DT_TRML)
-  cpu_temp_filter = FirstOrderFilter(0., CPU_TEMP_TAU, DT_TRML)
+  temp_filter = FirstOrderFilter(0., TEMP_TAU, DT_TRML)
   pandaState_prev = None
   should_start_prev = False
   handle_fan = None
@@ -173,22 +195,12 @@ def thermald_thread():
   HARDWARE.initialize_hardware()
   thermal_config = HARDWARE.get_thermal_config()
 
-  if params.get_bool("IsOnroad"):
-    cloudlog.event("onroad flag not cleared")
+  # TODO: use PI controller for UNO
+  controller = PIController(k_p=0, k_i=2e-3, neg_limit=-80, pos_limit=0, rate=(1 / DT_TRML))
 
-  # CPR3 logging
-  if EON:
-    base_path = "/sys/kernel/debug/cpr3-regulator/"
-    cpr_files = [p for p in Path(base_path).glob("**/*") if p.is_file()]
-    cpr_files = ["/sys/kernel/debug/regulator/pm8994_s11/voltage"] + cpr_files
-    cpr_data = {}
-    for cf in cpr_files:
-      with open(cf, "r") as f:
-        try:
-          cpr_data[str(cf)] = f.read().strip()
-        except Exception:
-          pass
-    cloudlog.event("CPR", data=cpr_data)
+  # Leave flag for loggerd to indicate device was left onroad
+  if params.get_bool("IsOnroad"):
+    params.put_bool("BootedOnroad", True)
 
   while 1:
     pandaState = messaging.recv_sock(pandaState_sock, wait=True)
@@ -216,7 +228,10 @@ def thermald_thread():
       if handle_fan is None and pandaState.pandaState.pandaType != log.PandaState.PandaType.unknown:
         is_uno = pandaState.pandaState.pandaType == log.PandaState.PandaType.uno
 
-        if (not EON) or is_uno:
+        if TICI:
+          cloudlog.info("Setting up TICI fan handler")
+          handle_fan = handle_fan_tici
+        elif is_uno or PC:
           cloudlog.info("Setting up UNO fan handler")
           handle_fan = handle_fan_uno
         else:
@@ -231,12 +246,14 @@ def thermald_thread():
           params.clear_all(ParamKeyType.CLEAR_ON_PANDA_DISCONNECT)
       pandaState_prev = pandaState
 
-    # get_network_type is an expensive call. update every 10s
+    # these are expensive calls. update every 10s
     if (count % int(10. / DT_TRML)) == 0:
       try:
         network_type = HARDWARE.get_network_type()
         network_strength = HARDWARE.get_network_strength(network_type)
         network_info = HARDWARE.get_network_info()  # pylint: disable=assignment-from-none
+        nvme_temps = HARDWARE.get_nvme_temps()
+        modem_temps = HARDWARE.get_modem_temperatures()
 
         # Log modem version once
         if modem_version is None:
@@ -265,51 +282,36 @@ def thermald_thread():
     msg.deviceState.networkStrength = network_strength
     if network_info is not None:
       msg.deviceState.networkInfo = network_info
+    if nvme_temps is not None:
+      msg.deviceState.nvmeTempC = nvme_temps
+    if modem_temps is not None:
+      msg.deviceState.modemTempC = modem_temps
 
     msg.deviceState.batteryPercent = HARDWARE.get_battery_capacity()
-    msg.deviceState.batteryStatus = HARDWARE.get_battery_status()
     msg.deviceState.batteryCurrent = HARDWARE.get_battery_current()
-    msg.deviceState.batteryVoltage = HARDWARE.get_battery_voltage()
     msg.deviceState.usbOnline = HARDWARE.get_usb_present()
-
-    # Fake battery levels on uno for frame
-    if (not EON) or is_uno:
-      msg.deviceState.batteryPercent = 100
-      msg.deviceState.batteryStatus = "Charging"
-      msg.deviceState.batteryTempC = 0
-
     current_filter.update(msg.deviceState.batteryCurrent / 1e6)
 
-    # TODO: add car battery voltage check
-    max_cpu_temp = cpu_temp_filter.update(max(msg.deviceState.cpuTempC))
-    max_comp_temp = max(max_cpu_temp, msg.deviceState.memoryTempC, max(msg.deviceState.gpuTempC))
-    bat_temp = msg.deviceState.batteryTempC
+    max_comp_temp = temp_filter.update(
+      max(max(msg.deviceState.cpuTempC), msg.deviceState.memoryTempC, max(msg.deviceState.gpuTempC))
+    )
 
     if handle_fan is not None:
-      fan_speed = handle_fan(max_cpu_temp, bat_temp, fan_speed, startup_conditions["ignition"])
+      fan_speed = handle_fan(controller, max_comp_temp, fan_speed, startup_conditions["ignition"])
       msg.deviceState.fanSpeedPercentDesired = fan_speed
 
-    # If device is offroad we want to cool down before going onroad
-    # since going onroad increases load and can make temps go over 107
-    # We only do this if there is a relay that prevents the car from faulting
     is_offroad_for_5_min = (started_ts is None) and ((not started_seen) or (off_ts is None) or (sec_since_boot() - off_ts > 60 * 5))
-    if max_cpu_temp > 107. or bat_temp >= 63. or (is_offroad_for_5_min and max_cpu_temp > 70.0):
-      # onroad not allowed
+    if is_offroad_for_5_min and max_comp_temp > OFFROAD_DANGER_TEMP:
+      # If device is offroad we want to cool down before going onroad
+      # since going onroad increases load and can make temps go over 107
       thermal_status = ThermalStatus.danger
-    elif max_comp_temp > 96.0 or bat_temp > 60.:
-      # hysteresis between onroad not allowed and engage not allowed
-      thermal_status = clip(thermal_status, ThermalStatus.red, ThermalStatus.danger)
-    elif max_cpu_temp > 94.0:
-      # hysteresis between engage not allowed and uploader not allowed
-      thermal_status = clip(thermal_status, ThermalStatus.yellow, ThermalStatus.red)
-    elif max_cpu_temp > 80.0:
-      # uploader not allowed
-      thermal_status = ThermalStatus.yellow
-    elif max_cpu_temp > 75.0:
-      # hysteresis between uploader not allowed and all good
-      thermal_status = clip(thermal_status, ThermalStatus.green, ThermalStatus.yellow)
     else:
-      thermal_status = ThermalStatus.green  # default to good condition
+      current_band = THERMAL_BANDS[thermal_status]
+      band_idx = list(THERMAL_BANDS.keys()).index(thermal_status)
+      if current_band.min_temp is not None and max_comp_temp < current_band.min_temp:
+        thermal_status = list(THERMAL_BANDS.keys())[band_idx - 1]
+      elif current_band.max_temp is not None and max_comp_temp > current_band.max_temp:
+        thermal_status = list(THERMAL_BANDS.keys())[band_idx + 1]
 
     # **** starting logic ****
 

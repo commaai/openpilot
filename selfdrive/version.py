@@ -94,6 +94,12 @@ if (origin is not None) and (branch is not None):
 
 
 if __name__ == "__main__":
+  from common.params import Params
+
+  params = Params()
+  params.put("TermsVersion", terms_version)
+  params.put("TrainingVersion", training_version)
+
   print("Dirty: %s" % dirty)
   print("Version: %s" % version)
   print("Remote: %s" % origin)

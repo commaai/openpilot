@@ -312,6 +312,21 @@ i_out = i_out + 1;
 output_note = strcat(output_note, num2str(i_out), ') CPU time\n ');
 {%- endif %}
 
+{%- if simulink_opts.outputs.CPU_time_sim == 1 %}
+i_out = i_out + 1;
+output_note = strcat(output_note, num2str(i_out), ') CPU time integrator\n ');
+{%- endif %}
+
+{%- if simulink_opts.outputs.CPU_time_qp == 1 %}
+i_out = i_out + 1;
+output_note = strcat(output_note, num2str(i_out), ') CPU time QP solution\n ');
+{%- endif %}
+
+{%- if simulink_opts.outputs.CPU_time_lin == 1 %}
+i_out = i_out + 1;
+output_note = strcat(output_note, num2str(i_out), ') CPU time linearization (including integrator)\n ');
+{%- endif %}
+
 {%- if simulink_opts.outputs.sqp_iter == 1 %}
 i_out = i_out + 1;
 output_note = strcat(output_note, num2str(i_out), ') SQP iterations\n ');

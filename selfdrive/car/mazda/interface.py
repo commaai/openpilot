@@ -22,7 +22,6 @@ class CarInterface(CarInterfaceBase):
     ret.safetyModel = car.CarParams.SafetyModel.mazda
     ret.radarOffCan = True
 
-    ret.communityFeature = True
     ret.dashcamOnly = True
 
     ret.steerActuatorDelay = 0.1

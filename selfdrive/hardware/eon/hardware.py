@@ -389,6 +389,10 @@ class Android(HardwareBase):
   def get_modem_version(self):
     return None
 
+  def get_modem_temperatures(self):
+    # Not sure if we can get this on the LeEco
+    return []
+
   def initialize_hardware(self):
     pass
 

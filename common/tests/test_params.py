@@ -1,9 +1,7 @@
-import os
 import threading
 import time
 import tempfile
 import shutil
-import stat
 import unittest
 
 from common.params import Params, ParamKeyType, UnknownKeyName, put_nonblocking
@@ -20,11 +18,6 @@ class TestParams(unittest.TestCase):
   def test_params_put_and_get(self):
     self.params.put("DongleId", "cb38263377b873ee")
     assert self.params.get("DongleId") == b"cb38263377b873ee"
-
-  def test_persist_params_put_and_get(self):
-    p = Params(persistent_params=True)
-    p.put("DongleId", "cb38263377b873ee")
-    assert p.get("DongleId") == b"cb38263377b873ee"
 
   def test_params_non_ascii(self):
     st = b"\xe1\x90\xff"
@@ -73,13 +66,6 @@ class TestParams(unittest.TestCase):
 
     with self.assertRaises(UnknownKeyName):
       self.params.put_bool("swag", True)
-
-  def test_params_permissions(self):
-    permissions = stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IROTH | stat.S_IWOTH
-
-    self.params.put("DongleId", "cb38263377b873ee")
-    st_mode = os.stat(f"{self.tmpdir}/d/DongleId").st_mode
-    assert (st_mode & permissions) == permissions
 
   def test_delete_not_there(self):
     assert self.params.get("CarParams") is None

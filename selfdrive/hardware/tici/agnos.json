@@ -1,10 +1,10 @@
 [
   {
     "name": "boot",
-    "url": "https://commadist.azureedge.net/agnosupdate/boot-6a5ac08b5c458e24e810dd950185ee69b7c5f3556f9f43b323f1dba4e14f8d44.img.xz",
-    "hash": "6a5ac08b5c458e24e810dd950185ee69b7c5f3556f9f43b323f1dba4e14f8d44",
-    "hash_raw": "6a5ac08b5c458e24e810dd950185ee69b7c5f3556f9f43b323f1dba4e14f8d44",
-    "size": 14776320,
+    "url": "https://commadist.azureedge.net/agnosupdate/boot-e992b0461fc7705ce54f556247cd721b04d4d28885a461cd536389fd0bcb7e9c.img.xz",
+    "hash": "e992b0461fc7705ce54f556247cd721b04d4d28885a461cd536389fd0bcb7e9c",
+    "hash_raw": "e992b0461fc7705ce54f556247cd721b04d4d28885a461cd536389fd0bcb7e9c",
+    "size": 14772224,
     "sparse": false,
     "full_check": true,
     "has_ab": true
@@ -41,9 +41,9 @@
   },
   {
     "name": "system",
-    "url": "https://commadist.azureedge.net/agnosupdate/system-9056640f926b2612be503a9fec621091ae8a86ec3b2eeb15503db39490a6d2f4.img.xz",
-    "hash": "94445bb5db56bb2d462fa3831d3501cb8ffedafed9bf2e57128ffd71f454a4bd",
-    "hash_raw": "9056640f926b2612be503a9fec621091ae8a86ec3b2eeb15503db39490a6d2f4",
+    "url": "https://commadist.azureedge.net/agnosupdate/system-c4e5875c90b2a74e075d555cba9d8b50839fd85d76ac71b89884e5b37312cffc.img.xz",
+    "hash": "93ee8c5eac72289ebae245c1e48707865c5ead7e8ae53f9066bae8a0a58d1a48",
+    "hash_raw": "c4e5875c90b2a74e075d555cba9d8b50839fd85d76ac71b89884e5b37312cffc",
     "size": 10737418240,
     "sparse": true,
     "full_check": false,

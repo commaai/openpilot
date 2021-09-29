@@ -214,7 +214,9 @@ jobs:
                         $UNIT_TEST selfdrive/thermald && \
                         $UNIT_TEST tools/lib/tests && \
                         ./selfdrive/common/tests/test_util && \
+                        ./selfdrive/loggerd/tests/test_logger &&\
                         ./selfdrive/proclogd/tests/test_proclog && \
+                        ./selfdrive/ui/replay/tests/test_replay && \
                         ./selfdrive/camerad/test/ae_gray_test"
     - name: Upload coverage to Codecov
       run: bash <(curl -s https://codecov.io/bash) -v -F unit_tests
@@ -308,8 +310,6 @@ jobs:
     - name: Test car models
       run: |
         ${{ env.RUN }} "scons -j$(nproc) && \
-                        FILEREADER_CACHE=1 coverage run --parallel-mode -m nose --processes=4 --process-timeout=120 \
-                                           selfdrive/test/test_models.py && \
-                        coverage combine"
+                        coverage run selfdrive/test/test_models.py"
     - name: Upload coverage to Codecov
       run: bash <(curl -s https://codecov.io/bash) -v -F test_car_models

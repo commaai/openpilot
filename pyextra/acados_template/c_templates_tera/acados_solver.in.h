@@ -64,6 +64,7 @@ typedef struct nlp_solver_capsule
     external_function_param_casadi *impl_dae_fun;
     external_function_param_casadi *impl_dae_fun_jac_x_xdot_z;
     external_function_param_casadi *impl_dae_jac_x_xdot_u_z;
+    external_function_param_casadi *impl_dae_fun_jac_x_xdot_u;
     external_function_param_casadi *impl_dae_hess;
     external_function_param_casadi *gnsf_phi_fun;
     external_function_param_casadi *gnsf_phi_fun_jac_y;
@@ -108,7 +109,7 @@ typedef struct nlp_solver_capsule
     external_function_param_casadi nl_constr_h_e_fun_jac_hess;
 } nlp_solver_capsule;
 
-nlp_solver_capsule * {{ model.name }}_acados_create_capsule();
+nlp_solver_capsule * {{ model.name }}_acados_create_capsule(void);
 int {{ model.name }}_acados_free_capsule(nlp_solver_capsule *capsule);
 
 int {{ model.name }}_acados_create(nlp_solver_capsule * capsule);

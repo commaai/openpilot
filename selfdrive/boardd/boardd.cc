@@ -35,14 +35,18 @@
 #define SATURATE_IL 1600
 #define NIBBLE_TO_HEX(n) ((n) < 10 ? (n) + '0' : ((n) - 10) + 'a')
 
-Panda * panda = nullptr;
 std::atomic<bool> safety_setter_thread_running(false);
 std::atomic<bool> ignition(false);
 
 ExitHandler do_exit;
 
+std::string get_time_str(const struct tm &time) {
+  char s[30] = {'\0'};
+  std::strftime(s, std::size(s), "%Y-%m-%d %H:%M:%S", &time);
+  return s;
+}
 
-void safety_setter_thread() {
+void safety_setter_thread(Panda *panda) {
   LOGD("Starting safety setter thread");
   // diagnostic only is the default, needed for VIN query
   panda->set_safety_model(cereal::CarParams::SafetyModel::ELM327);
@@ -63,7 +67,7 @@ void safety_setter_thread() {
       LOGW("got CarVin %s", value_vin.c_str());
       break;
     }
-    util::sleep_for(100);
+    util::sleep_for(20);
   }
 
   // VIN query done, stop listening to OBDII
@@ -101,24 +105,21 @@ void safety_setter_thread() {
 }
 
 
-bool usb_connect() {
-  static bool connected_once = false;
-
-  std::unique_ptr<Panda> tmp_panda;
+Panda *usb_connect() {
+  std::unique_ptr<Panda> panda;
   try {
-    assert(panda == nullptr);
-    tmp_panda = std::make_unique<Panda>();
+    panda = std::make_unique<Panda>();
   } catch (std::exception &e) {
-    return false;
+    return nullptr;
   }
 
   Params params = Params();
 
   if (getenv("BOARDD_LOOPBACK")) {
-    tmp_panda->set_loopback(true);
+    panda->set_loopback(true);
   }
 
-  if (auto fw_sig = tmp_panda->get_firmware_version(); fw_sig) {
+  if (auto fw_sig = panda->get_firmware_version(); fw_sig) {
     params.put("PandaFirmware", (const char *)fw_sig->data(), fw_sig->size());
 
     // Convert to hex for offroad
@@ -131,62 +132,58 @@ bool usb_connect() {
 
     params.put("PandaFirmwareHex", fw_sig_hex_buf, 16);
     LOGW("fw signature: %.*s", 16, fw_sig_hex_buf);
-  } else { return false; }
+  } else { return nullptr; }
 
   // get panda serial
-  if (auto serial = tmp_panda->get_serial(); serial) {
+  if (auto serial = panda->get_serial(); serial) {
     params.put("PandaDongleId", serial->c_str(), serial->length());
     LOGW("panda serial: %s", serial->c_str());
-  } else { return false; }
+  } else { return nullptr; }
 
   // power on charging, only the first time. Panda can also change mode and it causes a brief disconneciton
 #ifndef __x86_64__
-  if (!connected_once) {
-    tmp_panda->set_usb_power_mode(cereal::PandaState::UsbPowerMode::CDP);
-  }
+  static std::once_flag connected_once;
+  std::call_once(connected_once, &Panda::set_usb_power_mode, panda, cereal::PandaState::UsbPowerMode::CDP);
 #endif
 
-  if (tmp_panda->has_rtc) {
+  if (panda->has_rtc) {
     setenv("TZ","UTC",1);
     struct tm sys_time = util::get_time();
-    struct tm rtc_time = tmp_panda->get_rtc();
+    struct tm rtc_time = panda->get_rtc();
 
     if (!util::time_valid(sys_time) && util::time_valid(rtc_time)) {
-      LOGE("System time wrong, setting from RTC. "
-           "System: %d-%02d-%02d %02d:%02d:%02d RTC: %d-%02d-%02d %02d:%02d:%02d",
-           sys_time.tm_year + 1900, sys_time.tm_mon + 1, sys_time.tm_mday,
-           sys_time.tm_hour, sys_time.tm_min, sys_time.tm_sec,
-           rtc_time.tm_year + 1900, rtc_time.tm_mon + 1, rtc_time.tm_mday,
-           rtc_time.tm_hour, rtc_time.tm_min, rtc_time.tm_sec);
-
+      LOGE("System time wrong, setting from RTC. System: %s RTC: %s",
+           get_time_str(sys_time).c_str(), get_time_str(rtc_time).c_str());
       const struct timeval tv = {mktime(&rtc_time), 0};
       settimeofday(&tv, 0);
     }
   }
 
-  connected_once = true;
-  panda = tmp_panda.release();
-  return true;
+  return panda.release();
 }
 
 // must be called before threads or with mutex
-static bool usb_retry_connect() {
+static Panda *usb_retry_connect() {
   LOGW("attempting to connect");
-  while (!do_exit && !usb_connect()) { util::sleep_for(100); }
-  if (panda) {
-    LOGW("connected to board");
-  }
-  return !do_exit;
+  while (!do_exit) {
+    Panda *panda = usb_connect();
+    if (panda) {
+      LOGW("connected to board");
+      return panda;
+    }
+    util::sleep_for(100);
+  };
+  return nullptr;
 }
 
-void can_recv(PubMaster &pm) {
+void can_recv(Panda *panda, PubMaster &pm) {
   kj::Array<capnp::word> can_data;
   panda->can_receive(can_data);
   auto bytes = can_data.asBytes();
   pm.send("can", bytes.begin(), bytes.size());
 }
 
-void can_send_thread(bool fake_send) {
+void can_send_thread(Panda *panda, bool fake_send) {
   LOGD("start send thread");
 
   AlignedBuffer aligned_buf;
@@ -223,7 +220,7 @@ void can_send_thread(bool fake_send) {
   delete context;
 }
 
-void can_recv_thread() {
+void can_recv_thread(Panda *panda) {
   LOGD("start recv thread");
 
   // can = 8006
@@ -234,7 +231,7 @@ void can_recv_thread() {
   uint64_t next_frame_time = nanos_since_boot() + dt;
 
   while (!do_exit && panda->connected) {
-    can_recv(pm);
+    can_recv(panda, pm);
 
     uint64_t cur_time = nanos_since_boot();
     int64_t remaining = next_frame_time - cur_time;
@@ -251,7 +248,7 @@ void can_recv_thread() {
   }
 }
 
-void panda_state_thread(bool spoofing_started) {
+void panda_state_thread(Panda *&panda, bool spoofing_started) {
   LOGD("start panda state thread");
   PubMaster pm({"pandaState"});
 
@@ -308,7 +305,7 @@ void panda_state_thread(bool spoofing_started) {
 
       if (!safety_setter_thread_running) {
         safety_setter_thread_running = true;
-        std::thread(safety_setter_thread).detach();
+        std::thread(safety_setter_thread, panda).detach();
       } else {
         LOGW("Safety setter thread already running");
       }
@@ -328,13 +325,8 @@ void panda_state_thread(bool spoofing_started) {
 
         if (std::abs(seconds) > 1.1) {
           panda->set_rtc(sys_time);
-          LOGW("Updating panda RTC. dt = %.2f "
-               "System: %d-%02d-%02d %02d:%02d:%02d RTC: %d-%02d-%02d %02d:%02d:%02d",
-               seconds,
-               sys_time.tm_year + 1900, sys_time.tm_mon + 1, sys_time.tm_mday,
-               sys_time.tm_hour, sys_time.tm_min, sys_time.tm_sec,
-               rtc_time.tm_year + 1900, rtc_time.tm_mon + 1, rtc_time.tm_mday,
-               rtc_time.tm_hour, rtc_time.tm_min, rtc_time.tm_sec);
+          LOGW("Updating panda RTC. dt = %.2f System: %s RTC: %s",
+               seconds, get_time_str(sys_time).c_str(), get_time_str(rtc_time).c_str());
         }
       }
     }
@@ -352,8 +344,8 @@ void panda_state_thread(bool spoofing_started) {
 
     if (Hardware::TICI()) {
       double read_time = millis_since_boot();
-      ps.setVoltage(std::stoi(util::read_file("/sys/class/hwmon/hwmon1/in1_input")));
-      ps.setCurrent(std::stoi(util::read_file("/sys/class/hwmon/hwmon1/curr1_input")));
+      ps.setVoltage(std::atoi(util::read_file("/sys/class/hwmon/hwmon1/in1_input").c_str()));
+      ps.setCurrent(std::atoi(util::read_file("/sys/class/hwmon/hwmon1/curr1_input").c_str()));
       read_time = millis_since_boot() - read_time;
       if (read_time > 50) {
         LOGW("reading hwmon took %lfms", read_time);
@@ -400,7 +392,7 @@ void panda_state_thread(bool spoofing_started) {
   }
 }
 
-void hardware_control_thread() {
+void hardware_control_thread(Panda *panda) {
   LOGD("start hardware control thread");
   SubMaster sm({"deviceState", "driverCameraState"});
 
@@ -481,7 +473,7 @@ static void pigeon_publish_raw(PubMaster &pm, const std::string &dat) {
   pm.send("ubloxRaw", msg);
 }
 
-void pigeon_thread() {
+void pigeon_thread(Panda *panda) {
   PubMaster pm({"ubloxRaw"});
   bool ignition_last = false;
 
@@ -554,28 +546,28 @@ void pigeon_thread() {
   delete pigeon;
 }
 
-
 int main() {
-  int err;
   LOGW("starting boardd");
 
   // set process priority and affinity
-  err = set_realtime_priority(54);
+  int err = set_realtime_priority(54);
   LOG("set priority returns %d", err);
 
   err = set_core_affinity(Hardware::TICI() ? 4 : 3);
   LOG("set affinity returns %d", err);
 
   while (!do_exit) {
+    Panda *panda = nullptr;
     std::vector<std::thread> threads;
-    threads.push_back(std::thread(panda_state_thread, getenv("STARTED") != nullptr));
+    threads.emplace_back(panda_state_thread, std::ref(panda), getenv("STARTED") != nullptr);
 
     // connect to the board
-    if (usb_retry_connect()) {
-      threads.push_back(std::thread(can_send_thread, getenv("FAKESEND") != nullptr));
-      threads.push_back(std::thread(can_recv_thread));
-      threads.push_back(std::thread(hardware_control_thread));
-      threads.push_back(std::thread(pigeon_thread));
+    panda = usb_retry_connect();
+    if (panda != nullptr) {
+      threads.emplace_back(can_send_thread, panda, getenv("FAKESEND") != nullptr);
+      threads.emplace_back(can_recv_thread, panda);
+      threads.emplace_back(hardware_control_thread, panda);
+      threads.emplace_back(pigeon_thread, panda);
     }
 
     for (auto &t : threads) t.join();

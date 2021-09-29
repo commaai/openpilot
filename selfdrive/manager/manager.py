@@ -43,6 +43,9 @@ def manager_init():
   if params.get_bool("RecordFrontLock"):
     params.put_bool("RecordFront", True)
 
+  if not params.get_bool("DisableRadar_Allow"):
+    params.delete("DisableRadar")
+
   # set unset params
   for k, v in default_params:
     if params.get(k) is None:
@@ -54,8 +57,6 @@ def manager_init():
 
   if params.get("Passive") is None:
     raise Exception("Passive must be set to continue")
-
-  os.umask(0)  # Make sure we can create files with 777 permissions
 
   # Create folders needed for msgq
   try:

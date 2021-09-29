@@ -21,8 +21,7 @@ repos:
     -   id: flake8
         exclude: '^(pyextra)|(cereal)|(rednose)|(panda)|(laika)|(opendbc)|(laika_repo)|(rednose_repo)|(selfdrive/debug)/'
         args:
-        - --select=F,E112,E113,E304,E501,E502,E701,E702,E703,E71,E72,E731,W191,W6
-        - --max-line-length=240
+        - --select=F,E112,E113,E304,E502,E701,E702,E703,E71,E72,E731,W191,W6
         - --statistics
 -   repo: local
     hooks:

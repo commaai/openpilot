@@ -1,67 +1,69 @@
+Stream CAN messages to your device
+-------------
+
+Replay CAN messages as they were recorded using a [panda jungle](https://comma.ai/shop/products/panda-jungle). The jungle has 6x OBD-C ports for connecting all your comma devices.
+
+`can_replay.py` is a convenient script for when any CAN data will do.
+
+In order to replay specific route:
+```bash
+MOCK=1 selfdrive/boardd/tests/boardd_old.py
+
+# In another terminal:
+python replay/unlogger.py <route-name> <path-to-data-directory>
+```
+
 Replay driving data
 -------------
 
-**Hardware needed**: none
-
-`unlogger.py` replays data collected with [dashcam](https://github.com/commaai/openpilot/tree/dashcam) or [openpilot](https://github.com/commaai/openpilot).
+`unlogger.py` replays all the messages logged while running openpilot.
 
 Unlogger with remote data:
 
-```
+```bash
 # Log in via browser
 python lib/auth.py
 
 # Start unlogger
 python replay/unlogger.py <route-name>
-#Example:
-#python replay/unlogger.py '3533c53bb29502d1|2019-12-10--01-13-27'
+# Example:
+# python replay/unlogger.py '3533c53bb29502d1|2019-12-10--01-13-27'
 
 # In another terminal you can run a debug visualizer:
 python replay/ui.py   # Define the environmental variable HORIZONTAL is the ui layout is too tall
+
+# Or run the normal openpilot UI
+cd selfdrive/ui && ./ui
 ```
 
-Unlogger with local data downloaded from device or https://connect.comma.ai:
-
-```
-python replay/unlogger.py <route-name> <path-to-data-directory>
-
-#Example:
-
-#python replay/unlogger.py '99c94dc769b5d96e|2018-11-14--13-31-42' /home/batman/unlogger_data
-
-#Within /home/batman/unlogger_data:
-#  99c94dc769b5d96e|2018-11-14--13-31-42--0--fcamera.hevc
-#  99c94dc769b5d96e|2018-11-14--13-31-42--0--rlog.bz2
-#  ...
-```
 ![Imgur](https://i.imgur.com/Yppe0h2.png)
 
-LogReader with remote data
+## usage
+``` bash
+$ ./unlogger.py -h
+usage: unlogger.py [-h] [--no-loop] [--min | --enabled ENABLED] [--disabled DISABLED] [--tl PUBLISH_TIME_LENGTH] [--no-realtime]
+                   [--no-interactive] [--bind-early] [--no-visionipc] [--start-time START_TIME]
+                   [route_name] [data_dir] [address_mapping [address_mapping ...]]
 
-```python
-from tools.lib.logreader import LogReader
-from tools.lib.route import Route
-route = Route('3533c53bb29502d1|2019-12-10--01-13-27')
-log_paths = route.log_paths()
-events_seg0 = list(LogReader(log_paths[0]))
-print(len(events_seg0), 'events logged in first segment')
+Mock openpilot components by publishing logged messages.
+
+positional arguments:
+  route_name            The route whose messages will be published. (default: None)
+  data_dir              Path to directory in which log and camera files are located. (default: None)
+  address_mapping       Pairs <service>=<zmq_addr> to publish <service> on <zmq_addr>. (default: None)
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --no-loop             Stop at the end of the replay. (default: False)
+  --min
+  --enabled ENABLED
+  --disabled DISABLED
+  --tl PUBLISH_TIME_LENGTH
+                        Length of interval in event time for which messages should be published. (default: None)
+  --no-realtime         Publish messages as quickly as possible instead of realtime. (default: True)
+  --no-interactive      Disable interactivity. (default: True)
+  --bind-early          Bind early to avoid dropping messages. (default: False)
+  --no-visionipc        Do not output video over visionipc (default: False)
+  --start-time START_TIME
+                        Seek to this absolute time (in seconds) upon starting playback. (default: 0.0)
 ```
-
-Stream replayed CAN messages to EON
--------------
-
-**Hardware needed**: 2 x [panda](panda.comma.ai), [debug board](https://comma.ai/shop/products/panda-debug-board/), [EON](https://comma.ai/shop/products/eon-gold-dashcam-devkit/).
-
-It is possible to replay CAN messages as they were recorded and forward them to a EON. 
-Connect 2 pandas to the debug board. A panda connects to the PC, the other panda connects to the EON.
-
-Usage:
-```
-# With MOCK=1 boardd will read logged can messages from a replay and send them to the panda.
-MOCK=1 selfdrive/boardd/tests/boardd_old.py
-
-# In another terminal:
-python replay/unlogger.py <route-name> <path-to-data-directory>
-
-```
-![Imgur](https://i.imgur.com/AcurZk8.jpg)

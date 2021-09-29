@@ -8,12 +8,6 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   main_layout = new QStackedLayout(this);
   main_layout->setMargin(0);
 
-  onboardingWindow = new OnboardingWindow(this);
-  main_layout->addWidget(onboardingWindow);
-  QObject::connect(onboardingWindow, &OnboardingWindow::onboardingDone, [=]() {
-    main_layout->setCurrentWidget(homeWindow);
-  });
-
   homeWindow = new HomeWindow(this);
   main_layout->addWidget(homeWindow);
   QObject::connect(homeWindow, &HomeWindow::openSettings, this, &MainWindow::openSettings);
@@ -28,11 +22,21 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   QObject::connect(settingsWindow, &SettingsWindow::closeSettings, this, &MainWindow::closeSettings);
   QObject::connect(&qs, &QUIState::offroadTransition, settingsWindow, &SettingsWindow::offroadTransition);
   QObject::connect(settingsWindow, &SettingsWindow::reviewTrainingGuide, [=]() {
+    onboardingWindow->showTrainingGuide();
     main_layout->setCurrentWidget(onboardingWindow);
   });
   QObject::connect(settingsWindow, &SettingsWindow::showDriverView, [=] {
     homeWindow->showDriverView(true);
   });
+
+  onboardingWindow = new OnboardingWindow(this);
+  main_layout->addWidget(onboardingWindow);
+  QObject::connect(onboardingWindow, &OnboardingWindow::onboardingDone, [=]() {
+    main_layout->setCurrentWidget(homeWindow);
+  });
+  if (!onboardingWindow->completed()) {
+    main_layout->setCurrentWidget(onboardingWindow);
+  }
 
   device.setAwake(true, true);
   QObject::connect(&qs, &QUIState::uiUpdate, &device, &Device::update);

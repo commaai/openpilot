@@ -8,7 +8,6 @@ import cereal.messaging as messaging
 from common.params import Params
 from selfdrive.boardd.boardd_api_impl import can_list_to_can_capnp # pylint: disable=no-name-in-module,import-error
 from selfdrive.car.fingerprints import _FINGERPRINTS
-from selfdrive.car.hyundai.values import CAR as HYUNDAI
 from selfdrive.car.toyota.values import CAR as TOYOTA
 from selfdrive.car.mazda.values import CAR as MAZDA
 from selfdrive.controls.lib.events import EVENT_NAME
@@ -50,10 +49,6 @@ class TestStartup(unittest.TestCase):
     (EventName.startupMaster, TOYOTA.COROLLA, True, COROLLA_FW_VERSIONS_NO_DSU),
     (EventName.communityFeatureDisallowed, TOYOTA.COROLLA, False, COROLLA_FW_VERSIONS_NO_DSU),
 
-    # community supported car
-    (EventName.startupMaster, HYUNDAI.KIA_STINGER, True, None),
-    (EventName.communityFeatureDisallowed, HYUNDAI.KIA_STINGER, False, None),
-
     # dashcamOnly car
     (EventName.startupNoControl, MAZDA.CX5, True, CX5_FW_VERSIONS),
     (EventName.startupNoControl, MAZDA.CX5, False, CX5_FW_VERSIONS),
@@ -67,8 +62,8 @@ class TestStartup(unittest.TestCase):
     (EventName.startupNoCar, None, False, COROLLA_FW_VERSIONS[:1]),
 
     # fuzzy match
-    (EventName.startupFuzzyFingerprint, TOYOTA.COROLLA, True, COROLLA_FW_VERSIONS_FUZZY),
-    (EventName.startupFuzzyFingerprint, TOYOTA.COROLLA, False, COROLLA_FW_VERSIONS_FUZZY),
+    (EventName.startupMaster, TOYOTA.COROLLA, True, COROLLA_FW_VERSIONS_FUZZY),
+    (EventName.startupMaster, TOYOTA.COROLLA, False, COROLLA_FW_VERSIONS_FUZZY),
   ])
   @with_processes(['controlsd'])
   def test_startup_alert(self, expected_event, car_model, toggle_enabled, fw_versions):
