@@ -48,7 +48,6 @@ protected:
   uint64_t route_start_ts_ = 0;
   uint64_t cur_mono_time_ = 0;
   std::vector<Event *> *events_ = nullptr;
-  std::unordered_map<uint32_t, EncodeIdx> *eidx_ = nullptr;
   std::vector<std::unique_ptr<Segment>> segments_;
   std::vector<int> segments_merged_;
 
