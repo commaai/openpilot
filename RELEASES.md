@@ -8,6 +8,7 @@ Version 0.8.10 (2021-XX-XX)
  * Combined longitudinal MPCs
    * All longitudinal planning now happens in a single MPC system
    * Fixed instability in MPC problem to prevent sporadic CPU usage
+ * Moved community-supported cars outside of the Community Features toggle
  * Honda Freed 2020 support thanks to belm0!
  * Hyundai Santa Fe 2022 support thanks to sunnyhaibin!
  * Škoda Kamiq 2021 support thanks to jyoung8607!
