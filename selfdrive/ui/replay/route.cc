@@ -182,9 +182,11 @@ Segment::Segment(int n, const SegmentFile &segment_files, bool load_dcam, bool l
     if (!QDir(CACHE_DIR).exists()) QDir().mkdir(CACHE_DIR);
   });
 
-  // fallback to qcamera
+  // fallback to qcamera/qlog
   road_cam_path_ = files_.road_cam.isEmpty() ? files_.qcamera : files_.road_cam;
-  valid_ = !files_.rlog.isEmpty() && !road_cam_path_.isEmpty();
+  log_path_ = files_.rlog.isEmpty() ? files_.qlog : files_.rlog;
+
+  valid_ = !log_path_.isEmpty() && !road_cam_path_.isEmpty();
   if (!valid_) return;
 
   if (!load_dcam) {
@@ -194,8 +196,8 @@ Segment::Segment(int n, const SegmentFile &segment_files, bool load_dcam, bool l
     files_.wide_road_cam = "";
   }
 
-  if (!QUrl(files_.rlog).isLocalFile()) {
-    for (auto &url : {files_.rlog, road_cam_path_, files_.driver_cam, files_.wide_road_cam}) {
+  if (!QUrl(log_path_).isLocalFile()) {
+    for (auto &url : {log_path_, road_cam_path_, files_.driver_cam, files_.wide_road_cam}) {
       if (!url.isEmpty() && !QFile::exists(localPath(url))) {
         downloadFile(url);
         ++downloading_;
@@ -229,7 +231,7 @@ void Segment::load() {
   std::vector<std::future<bool>> futures;
   futures.emplace_back(std::async(std::launch::async, [=]() {
     log = std::make_unique<LogReader>();
-    return log->load(localPath(files_.rlog).toStdString());
+    return log->load(localPath(log_path_).toStdString());
   }));
 
   QString camera_files[] = {road_cam_path_, files_.driver_cam, files_.wide_road_cam};

@@ -61,6 +61,7 @@ protected:
   int seg_num_ = 0;
   SegmentFile files_;
   QString road_cam_path_;
+  QString log_path_;
   std::vector<QThread*> download_threads_;
 };
 
