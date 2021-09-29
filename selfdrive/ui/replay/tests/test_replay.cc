@@ -2,6 +2,7 @@
 #include <QDebug>
 #include <QEventLoop>
 #include <QString>
+#include <set>
 #include <future>
 
 #include "catch2/catch.hpp"

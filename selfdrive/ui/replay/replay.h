@@ -54,7 +54,7 @@ protected:
   // messaging
   SubMaster *sm;
   PubMaster *pm;
-  std::unique_ptr<const char*[]> sockets_;
+  std::vector<const char*> sockets_;
   VisionIpcServer *vipc_server = nullptr;
   std::unique_ptr<Route> route_;
   bool load_dcam = false, load_ecam = false;

@@ -28,7 +28,7 @@ Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *s
     : sm(sm_), load_dcam(dcam), load_ecam(ecam), QObject(parent) {
   std::vector<const char *> s;
   auto event_struct = capnp::Schema::from<cereal::Event>().asStruct();
-  sockets_ = std::make_unique<const char*[]>(event_struct.getUnionFields().size());
+  sockets_.resize(event_struct.getUnionFields().size());
   for (const auto &it : services) {
     if ((allow.size() == 0 || allow.contains(it.name)) &&
         !block.contains(it.name)) {
@@ -226,7 +226,7 @@ void Replay::stream() {
       cur_which = evt->which;
       cur_mono_time_ = evt->mono_time;
 
-      if (sockets_[cur_which] != nullptr) {
+      if (cur_which < sockets_.size() && sockets_[cur_which] != nullptr) {
         int current_ts = (cur_mono_time_ - route_start_ts_) / 1e9;
         if ((current_ts - last_print) > 5.0) {
           last_print = current_ts;
