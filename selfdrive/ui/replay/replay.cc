@@ -7,6 +7,22 @@
 #include "selfdrive/common/timing.h"
 #include "selfdrive/hardware/hw.h"
 
+inline void precise_nano_sleep(long sleep_ns) {
+  const long estimate_ns = 1 * 1e6;  // 1ms
+  struct timespec req = {.tv_nsec = estimate_ns};
+  uint64_t start_sleep = nanos_since_boot();
+  while (sleep_ns > estimate_ns) {
+    nanosleep(&req, nullptr);
+    uint64_t end_sleep = nanos_since_boot();
+    sleep_ns -= (end_sleep - start_sleep);
+    start_sleep = end_sleep;
+  }
+  // spin wait
+  if (sleep_ns > 0) {
+    while ((nanos_since_boot() - start_sleep) <= sleep_ns) {/**/}
+  }
+}
+
 Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *sm_, bool dcam, bool ecam, QObject *parent)
     : sm(sm_), load_dcam(dcam), load_ecam(ecam), QObject(parent) {
   std::vector<const char*> s;
@@ -217,9 +233,9 @@ void Replay::stream() {
         // keep time
         long etime = cur_mono_time_ - evt_start_ts;
         long rtime = nanos_since_boot() - loop_start_ts;
-        long us_behind = ((etime - rtime) * 1e-3) + 0.5;
-        if (us_behind > 0 && us_behind < 1e6) {
-          QThread::usleep(us_behind);
+        long behind_ns = etime - rtime;
+        if (behind_ns > 0) {
+          precise_nano_sleep(behind_ns);
         }
 
         // publish frame
