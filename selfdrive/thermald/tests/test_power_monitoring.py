@@ -134,7 +134,6 @@ class TestPowerMonitoring(unittest.TestCase):
   # Test to check policy of stopping charging after MAX_TIME_OFFROAD_S
   @parameterized.expand(ALL_PANDA_TYPES)
   def test_max_time_offroad(self, hw_type):
-    global ssb
     BATT_VOLTAGE = 4
     BATT_CURRENT = 0 # To stop shutting down for other reasons
     MOCKED_MAX_OFFROAD_TIME = 3600
@@ -154,7 +153,6 @@ class TestPowerMonitoring(unittest.TestCase):
   # Test to check policy of stopping charging when the car voltage is too low
   @parameterized.expand(ALL_PANDA_TYPES)
   def test_car_voltage(self, hw_type):
-    global ssb
     BATT_VOLTAGE = 4
     BATT_CURRENT = 0 # To stop shutting down for other reasons
     TEST_TIME = 100
@@ -171,7 +169,6 @@ class TestPowerMonitoring(unittest.TestCase):
 
   # Test to check policy of not stopping charging when DisablePowerDown is set
   def test_disable_power_down(self):
-    global ssb
     BATT_VOLTAGE = 4
     BATT_CURRENT = 0 # To stop shutting down for other reasons
     TEST_TIME = 100
@@ -189,7 +186,6 @@ class TestPowerMonitoring(unittest.TestCase):
 
   # Test to check policy of not stopping charging when ignition
   def test_ignition(self):
-    global ssb
     BATT_VOLTAGE = 4
     BATT_CURRENT = 0 # To stop shutting down for other reasons
     TEST_TIME = 100
@@ -206,7 +202,6 @@ class TestPowerMonitoring(unittest.TestCase):
 
   # Test to check policy of not stopping charging when harness is not connected
   def test_harness_connection(self):
-    global ssb
     BATT_VOLTAGE = 4
     BATT_CURRENT = 0 # To stop shutting down for other reasons
     TEST_TIME = 100
