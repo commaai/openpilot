@@ -30,7 +30,7 @@ X_EGO_E2E_COST = 100.
 A_EGO_COST = .1
 J_EGO_COST = .2
 DANGER_ZONE_COST = 1e3
-CRASH_DISTANCE = 2.0
+CRASH_DISTANCE = .5
 LIMIT_COST = 1e6
 T_IDXS = np.array(T_IDXS_LST)
 
@@ -260,7 +260,6 @@ class LongitudinalMpc():
       min_x_lead = ((v_ego + v_lead)/2) * (v_ego - v_lead) / (-MIN_ACCEL * 2)
       if x_lead < min_x_lead:
         x_lead = min_x_lead
-        self.crashing = True
 
       if (v_lead < 0.1 or -a_lead / 2.0 > v_lead):
         v_lead = 0.0
@@ -290,7 +289,6 @@ class LongitudinalMpc():
 
   def update(self, carstate, radarstate, v_cruise):
     v_ego = self.x0[1]
-    self.crashing = False
     self.status = radarstate.leadOne.status or radarstate.leadTwo.status
 
     lead_xv_0 = self.process_lead(radarstate.leadOne)
@@ -319,7 +317,7 @@ class LongitudinalMpc():
     self.params = np.concatenate([self.accel_limit_arr,
                              x_obstacle[:,None]], axis=1)
     self.run()
-    self.crashing = self.crashing or np.sum(lead_xv_0[:,0] - self.x_sol[:,0] < CRASH_DISTANCE) > 0
+    self.crashing = np.sum(lead_xv_0[:,0] - self.x_sol[:,0] < CRASH_DISTANCE) > 0 and radarstate.leadOne.modelProb > 0.9
 
 
   def update_with_xva(self, x, v, a):
