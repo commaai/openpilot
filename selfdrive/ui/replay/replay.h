@@ -16,7 +16,7 @@ class Replay : public QObject {
 public:
   Replay(QString route, QStringList allow, QStringList block, SubMaster *sm = nullptr, bool dcam = false, bool ecam = false, QObject *parent = 0);
   ~Replay();
-
+  bool load();
   void start(int seconds = 0);
   void seekTo(int seconds, bool relative = false);
   void relativeSeek(int seconds) { seekTo(seconds, true); }

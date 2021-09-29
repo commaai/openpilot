@@ -49,17 +49,21 @@ Replay::~Replay() {
   // TODO: quit stream thread and free resources.
 }
 
-void Replay::start(int seconds){
-  // load route
+bool Replay::load() {
   if (!route_->load() || route_->size() == 0) {
     qDebug() << "failed load route" << route_->name() << "from server";
-    return;
+    return false;
   }
 
-  qDebug() << "load route" << route_->name() << route_->size() << "segments, start from" << seconds;
+  qDebug() << "load route" << route_->name() << route_->size() << "segments";
   segments_.resize(route_->size());
-  seekTo(seconds);
+  return true;
+}
 
+void Replay::start(int seconds) {
+  assert(!segments_.empty());
+  seekTo(seconds);
+  qDebug() << "start from" << seconds;
   // start stream thread
   thread = new QThread;
   QObject::connect(thread, &QThread::started, [=]() { stream(); });
@@ -174,7 +178,7 @@ void Replay::mergeSegments(int cur_seg, int end_idx) {
 
       events_ = new_events;
       segments_merged_ = segments_need_merge;
-      return true;
+      return !segments_merged_.empty();
     });
     delete prev_events;
   }
