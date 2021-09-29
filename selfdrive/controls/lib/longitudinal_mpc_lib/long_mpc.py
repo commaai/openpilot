@@ -317,7 +317,7 @@ class LongitudinalMpc():
     self.params = np.concatenate([self.accel_limit_arr,
                              x_obstacle[:,None]], axis=1)
     self.run()
-    if (np.sum(lead_xv_0[:,0] - self.x_sol[:,0] < CRASH_DISTANCE) > 0 and \
+    if (np.any(lead_xv_0[:,0] - self.x_sol[:,0] < CRASH_DISTANCE) and
             radarstate.leadOne.modelProb > 0.9):
       self.crash_cnt += 1
     else:
