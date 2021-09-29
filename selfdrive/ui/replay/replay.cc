@@ -124,11 +124,15 @@ void Replay::queueSegment() {
     }
     end_idx = i;
     // skip invalid segment
-    fwd += segments_[i]->isValid();
+    if (segments_[i]->isValid()) {
+      ++fwd;
+    } else if (i == cur_seg) {
+      ++cur_seg;
+    }
   }
 
   // merge segments
-  mergeSegments(cur_seg, end_idx);
+  mergeSegments(std::min(cur_seg, (int)segments_.size() - 1), end_idx);
 }
 
 void Replay::mergeSegments(int cur_seg, int end_idx) {
