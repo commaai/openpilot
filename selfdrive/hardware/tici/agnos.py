@@ -155,11 +155,11 @@ def flash_partition(target_slot_number: int, partition: dict, cloudlog):
       out.write(chunk)
       p = int(out.tell() / partition['size'] * 100)
       if p != last_p:
-        print(f"Installing {partition['name']}: {p}")
         last_p = p
+        print(f"Installing {partition['name']}: {p}")
 
     if raw_hash.hexdigest().lower() != partition['hash_raw'].lower():
-      raise Exception(f"Hash mismatch '{raw_hash.hexdigest().lower()}'")
+      raise Exception(f"Raw hash mismatch '{raw_hash.hexdigest().lower()}'")
 
     if downloader.sha256.hexdigest().lower() != partition['hash'].lower():
       raise Exception("Uncompressed hash mismatch")
