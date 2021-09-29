@@ -264,7 +264,7 @@ CONFIGS = [
   ProcessConfig(
     proc_name="plannerd",
     pub_sub={
-      "modelV2": ["lateralPlan"], "radarState": ["longitudinalPlan"],
+      "modelV2": ["lateralPlan", "longitudinalPlan"],
       "carState": [], "controlsState": [],
     },
     ignore=["logMonoTime", "valid", "longitudinalPlan.processingDelay"],

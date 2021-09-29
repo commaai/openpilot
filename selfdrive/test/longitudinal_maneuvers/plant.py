@@ -17,7 +17,7 @@ class Plant():
     self.rate = 1. / DT_MDL
 
     if not Plant.messaging_initialized:
-      Plant.radar = messaging.pub_sock('radarState')
+      Plant.model = messaging.pub_sock('modelV2')
       Plant.controls_state = messaging.pub_sock('controlsState')
       Plant.car_state = messaging.pub_sock('carState')
       Plant.plan = messaging.sub_sock('longitudinalPlan')
@@ -51,41 +51,31 @@ class Plant():
   def step(self, v_lead=0.0, prob=1.0, v_cruise=50.):
     # ******** publish a fake model going straight and fake calibration ********
     # note that this is worst case for MPC, since model will delay long mpc by one time step
-    radar = messaging.new_message('radarState')
+    model = messaging.new_message('modelV2')
     control = messaging.new_message('controlsState')
     car_state = messaging.new_message('carState')
-    a_lead = (v_lead - self.v_lead_prev)/self.ts
     self.v_lead_prev = v_lead
 
     if self.lead_relevancy:
       d_rel = np.maximum(0., self.distance_lead - self.distance)
       v_rel = v_lead - self.speed
-      if self.only_radar:
-        status = True
-      elif prob > .5:
-        status = True
-      else:
-        status = False
     else:
       d_rel = 200.
       v_rel = 0.
       prob = 0.0
-      status = False
 
-    lead = log.RadarState.LeadData.new_message()
-    lead.dRel = float(d_rel)
-    lead.yRel = float(0.0)
-    lead.vRel = float(v_rel)
-    lead.aRel = float(a_lead - self.acceleration)
-    lead.vLead = float(v_lead)
-    lead.vLeadK = float(v_lead)
-    lead.aLeadK = float(a_lead)
-    lead.aLeadTau = float(1.5)
-    lead.status = status
-    lead.modelProb = float(prob)
-    if not self.only_lead2:
-      radar.radarState.leadOne = lead
-    radar.radarState.leadTwo = lead
+    leads = []
+    for i in range(2):
+      lead = log.ModelDataV2.LeadDataV3.new_message()
+      lead.t = [float(i) for i in range(0,12,2)]
+      lead.x = [float(d_rel + v_lead*i) for i in range(0,12,2)]
+      lead.v = [float(v_lead) for i in range(0,12,2)]
+      if self.only_lead2 and i == 0:
+        lead.prob = float(0.0)
+      else:
+        lead.prob = float(prob)
+      leads.append(lead)
+    model.modelV2.leadsV3 = leads
 
 
     control.controlsState.longControlState = LongCtrlState.pid
@@ -94,7 +84,7 @@ class Plant():
 
 
     # ******** get controlsState messages for plotting ***
-    sm = {'radarState': radar.radarState,
+    sm = {'modelV2': model.modelV2,
           'carState': car_state.carState,
           'controlsState': control.controlsState}
     self.planner.update(sm, self.CP)
