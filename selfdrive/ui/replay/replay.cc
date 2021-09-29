@@ -140,6 +140,8 @@ void Replay::queueSegment() {
 }
 
 void Replay::mergeSegments(int cur_seg, int end_idx) {
+  // if (!segments_[cur_seg] || !segments_[cur_seg]->isLoaded()) return;
+
   // segments must be merged in sequence.
   std::vector<int> segments_need_merge;
   const int begin_idx = std::max(cur_seg - BACKWARD_SEGS, 0);
@@ -172,7 +174,8 @@ void Replay::mergeSegments(int cur_seg, int end_idx) {
         auto it = std::find_if(new_events->begin(), new_events->end(), [=](auto e) { return e->which == cereal::Event::Which::INIT_DATA; });
         if (it != new_events->end()) {
           route_start_ts_ = (*it)->mono_time;
-          cur_mono_time_ = route_start_ts_;
+          // cur_mono_time_ may be set by seek when route_start_ts_ = 0
+          cur_mono_time_ += route_start_ts_;
         }
       }
 

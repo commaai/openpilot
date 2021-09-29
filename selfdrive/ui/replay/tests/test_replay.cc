@@ -29,29 +29,35 @@ const char *stream_url = "https://commadataci.blob.core.windows.net/openpilotci/
 //   }
 // }
 
-std::string sha_256(const QString &dat) {
-  return QString(QCryptographicHash::hash(dat.toUtf8(), QCryptographicHash::Sha256).toHex()).toStdString();
+// std::string sha_256(const QString &dat) {
+//   return QString(QCryptographicHash::hash(dat.toUtf8(), QCryptographicHash::Sha256).toHex()).toStdString();
+// }
+
+// TEST_CASE("httpMultiPartDownload") {
+//   char filename[] = "/tmp/XXXXXX";
+//   int fd = mkstemp(filename);
+//   REQUIRE(fd != -1);
+//   close(fd);
+
+//   SECTION("http 200") {
+//     REQUIRE(httpMultiPartDownload(stream_url, filename, 5));
+//     std::string content = util::read_file(filename);
+//     REQUIRE(content.size() == 37495242);
+//     std::string checksum = sha_256(QString::fromStdString(content));
+//     REQUIRE(checksum == "d8ff81560ce7ed6f16d5fb5a6d6dd13aba06c8080c62cfe768327914318744c4");
+//   }
+//   SECTION("http 404") {
+//     REQUIRE(httpMultiPartDownload(util::string_format("%s_abc", stream_url), filename, 5) == false);
+//   }
+// }
+
+int random_int(int min, int max) {
+  std::random_device dev;
+  std::mt19937 rng(dev());
+  std::uniform_int_distribution<std::mt19937::result_type> dist(min, max);
+  return dist(rng);
 }
 
-TEST_CASE("httpMultiPartDownload") {
-  char filename[] = "/tmp/XXXXXX";
-  int fd = mkstemp(filename);
-  REQUIRE(fd != -1);
-  close(fd);
-
-  SECTION("http 200") {
-    REQUIRE(httpMultiPartDownload(stream_url, filename, 5));
-    std::string content = util::read_file(filename);
-    REQUIRE(content.size() == 37495242);
-    std::string checksum = sha_256(QString::fromStdString(content));
-    REQUIRE(checksum == "d8ff81560ce7ed6f16d5fb5a6d6dd13aba06c8080c62cfe768327914318744c4");
-  }
-  SECTION("http 404") {
-    REQUIRE(httpMultiPartDownload(util::string_format("%s_abc", stream_url), filename, 5) == false);
-  }
-}
-
-// check if events is ordered
 bool is_events_ordered(const std::vector<Event *> &events) {
   REQUIRE(events.size() > 0);
   uint64_t prev_mono_time = 0;
@@ -111,27 +117,29 @@ void TestReplay::testSeekTo(int seek_to) {
   events_updated_ = false;
 
   // verify result
+  INFO("seek to [" << seek_to << "s segment " << seek_to / 60 << "]");
   REQUIRE(is_events_ordered(*events_));
-  Event cur_event(cereal::Event::Which::INIT_DATA, seek_to + route_start_ts_);
+  REQUIRE(uint64_t(route_start_ts_ + seek_to * 1e9) == cur_mono_time_);
+  Event cur_event(cereal::Event::Which::INIT_DATA, cur_mono_time_);
   auto eit = std::upper_bound(events_->begin(), events_->end(), &cur_event, Event::lessThan());
   REQUIRE(eit != events_->end());
-  REQUIRE((*eit)->mono_time >= seek_to + route_start_ts_);
-  REQUIRE(int(((*eit)->mono_time - route_start_ts_) / (60 * 1e9)) == seek_to / 60); // in the same segment
-  REQUIRE(((*eit)->mono_time - (seek_to * 1e9 + route_start_ts_)) / 1e9 == 0);
+  REQUIRE((*eit)->mono_time >= seek_to * 1e9 + route_start_ts_);
+  REQUIRE(int(((*eit)->mono_time - route_start_ts_) / 60 / 1e9) == seek_to / 60); // in the same segment
+  REQUIRE(int(((*eit)->mono_time - (seek_to * 1e9 + route_start_ts_)) / 1e9) == 0);
 }
 
 void TestReplay::test_seek() {
   QEventLoop loop;
 
+  REQUIRE(load());
+  // limit the segment count to 5
+  REQUIRE(route_->size() >= 5);
+  segments_.resize(5);
+  
   std::thread thread = std::thread([&]() {
-    // random seek 100 times in first 3 segments
-    for (int i = 0; i < 100; ++i) {
-      // seek to x seconds
-      std::random_device dev;
-      std::mt19937 rng(dev());
-      std::uniform_int_distribution<std::mt19937::result_type> dist(0, 60 * 2);
-      testSeekTo(dist(rng));
-    
+    // random seek 200 times in first 3 segments
+    for (int i = 0; i < 200; ++i) {
+      testSeekTo(random_int(0, 60 * 3 - 1));
     }
 
     loop.quit();
@@ -144,5 +152,6 @@ void TestReplay::test_seek() {
 TEST_CASE("Replay") {
   TestReplay replay(DEMO_ROUTE);
   REQUIRE(replay.load());
+  // modify the route
   replay.test_seek();
 }
