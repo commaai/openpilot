@@ -39,7 +39,7 @@ cd openpilot && scons -j$(nproc)
 4. Try out some tools!
 
 Windows
-============
+------------
 
 Neither openpilot nor any of the tools are developed or tested on Windows, but the [Windows Subsystem for Linux (WSL)](https://docs.microsoft.com/en-us/windows/wsl/about) should give Windows users.
 
