@@ -4,7 +4,7 @@ import math
 import numpy as np
 
 from common.realtime import sec_since_boot
-from common.numpy_fast import clip
+from common.numpy_fast import clip, interp
 from selfdrive.swaglog import cloudlog
 from selfdrive.modeld.constants import T_IDXS as T_IDXS_LST
 from selfdrive.controls.lib.drive_helpers import LON_MPC_N as N
@@ -122,8 +122,7 @@ def gen_long_mpc_solver():
   constraints = vertcat((v_ego),
                         (a_ego - a_min),
                         (a_max - a_ego),
-                        ((x_obstacle - x_ego) - (desired_dist_danger)) / (v_ego + 10.),
-                        0.0)
+                        ((x_obstacle - x_ego) - (desired_dist_danger)) / (v_ego + 10.))
   ocp.model.con_h_expr = constraints
   ocp.model.con_h_expr_e = constraints
 
@@ -137,17 +136,17 @@ def gen_long_mpc_solver():
   # bounds with an L2 cost.
   l1_penalty = 0.0
   l2_penalty = 1.0
-  weights = np.array([1e6, 1e6, 1e6, 0.0, 0.])
+  weights = np.array([1e6, 1e6, 1e6, 0.0])
   ocp.cost.zl = l1_penalty * weights
   ocp.cost.Zl = l2_penalty * weights
   ocp.cost.Zu = 0.0 * weights
   ocp.cost.zu = 0.0 * weights
 
-  ocp.constraints.lh = np.array([0.0, 0.0, 0.0, 0.0, 0.0])
-  ocp.constraints.lh_e = np.array([0.0, 0.0, 0.0, 0.0, 0.0])
-  ocp.constraints.uh = np.array([1e3, 1e3, 1e3, 1e4, 1e4])
-  ocp.constraints.uh_e = np.array([1e3, 1e3, 1e3, 1e6, 1e6])
-  ocp.constraints.idxsh = np.array([0,1,2,3,4])
+  ocp.constraints.lh = np.array([0.0, 0.0, 0.0, 0.0])
+  ocp.constraints.lh_e = np.array([0.0, 0.0, 0.0, 0.0])
+  ocp.constraints.uh = np.array([1e3, 1e3, 1e3, 1e4])
+  ocp.constraints.uh_e = np.array([1e3, 1e3, 1e3, 1e6])
+  ocp.constraints.idxsh = np.array([0,1,2,3])
 
 
   ocp.solver_options.qp_solver = 'PARTIAL_CONDENSING_HPIPM'
@@ -210,7 +209,7 @@ class LongitudinalMpc():
     #TODO hacky weights to keep behavior the same
     self.solver.cost_set(N, 'W', (3./5.)*np.copy(W[:COST_E_DIM, :COST_E_DIM]))
 
-    Zl = np.array([LIMIT_COST, LIMIT_COST, LIMIT_COST, DANGER_ZONE_COST, 0.])
+    Zl = np.array([LIMIT_COST, LIMIT_COST, LIMIT_COST, DANGER_ZONE_COST])
     Zls = np.tile(Zl[None], reps=(N+1,1,1))
     self.solver.cost_set_slice(0, N+1, 'Zl', Zls, api='old')
 
@@ -220,7 +219,7 @@ class LongitudinalMpc():
     self.solver.cost_set_slice(0, N, 'W', Ws, api='old')
     self.solver.cost_set(N, 'W', np.copy(W[:COST_E_DIM, :COST_E_DIM]))
 
-    Zl = np.array([LIMIT_COST, LIMIT_COST, LIMIT_COST, 0.0, 0.])
+    Zl = np.array([LIMIT_COST, LIMIT_COST, LIMIT_COST, 0.0])
     Zls = np.tile(Zl[None], reps=(N+1,1,1))
     self.solver.cost_set_slice(0, N+1, 'Zl', Zls, api='old')
 
@@ -295,8 +294,10 @@ class LongitudinalMpc():
 
     lead_xv_0 = self.process_lead(radarstate.leadOne)
     lead_xv_1 = self.process_lead(radarstate.leadTwo)
-    self.accel_limit_arr[:,0] = np.interp(float(self.status), [0.0, 1.0], [self.cruise_min_a, MIN_ACCEL])
-    self.accel_limit_arr[:,1] = self.cruise_max_a
+
+    # set accel limits in params
+    self.params[:,0] = interp(float(self.status), [0.0, 1.0], [self.cruise_min_a, MIN_ACCEL])
+    self.params[:,1] = self.cruise_max_a
 
     # To consider a safe distance from a moving lead, we calculate how much stopping
     # distance that lead needs as a minimum. We can add that to the current distance
@@ -315,9 +316,8 @@ class LongitudinalMpc():
 
     x_obstacles = np.column_stack([lead_0_obstacle, lead_1_obstacle, cruise_obstacle])
     self.source = SOURCES[np.argmin(x_obstacles[0])]
-    x_obstacle = np.min(x_obstacles, axis=1)
-    self.params = np.concatenate([self.accel_limit_arr,
-                             x_obstacle[:,None]], axis=1)
+    self.params[:,2] = np.min(x_obstacles, axis=1)
+
     self.run()
     self.crashing = self.crashing or np.sum(lead_xv_0[:,0] - self.x_sol[:,0] < CRASH_DISTANCE) > 0
 
@@ -343,9 +343,9 @@ class LongitudinalMpc():
     self.solver.fill_in_slice(0, N+1, 'x', self.x_sol)
     self.solver.fill_in_slice(0, N, 'u', self.u_sol)
 
-    self.v_solution = list(self.x_sol[:,1])
-    self.a_solution = list(self.x_sol[:,2])
-    self.j_solution = list(self.u_sol[:,0])
+    self.v_solution = self.x_sol[:,1]
+    self.a_solution = self.x_sol[:,2]
+    self.j_solution = self.u_sol[:,0]
 
     t = sec_since_boot()
     if self.solution_status != 0:
