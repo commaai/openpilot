@@ -157,6 +157,8 @@ def flash_partition(target_slot_number: int, partition: dict, cloudlog):
     else:
       while not downloader.eof:
         out.write(downloader.read(1024 * 1024))
+        p = int(out.tell() / partition_size * 100)
+        print(f"Installing {partition['name']}: {p}")
 
     if downloader.sha256.hexdigest().lower() != partition['hash'].lower():
       raise Exception("Uncompressed hash mismatch")
