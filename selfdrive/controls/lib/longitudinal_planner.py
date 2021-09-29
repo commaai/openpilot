@@ -6,10 +6,8 @@ from common.numpy_fast import interp
 import cereal.messaging as messaging
 from cereal import log
 from common.realtime import DT_MDL
-from common.realtime import sec_since_boot
 from selfdrive.modeld.constants import T_IDXS
 from selfdrive.config import Conversions as CV
-from selfdrive.controls.lib.fcw import FCWChecker
 from selfdrive.controls.lib.longcontrol import LongCtrlState
 from selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import LongitudinalMpc
 from selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, CONTROL_N
@@ -49,7 +47,6 @@ class Planner():
     self.mpc = LongitudinalMpc()
 
     self.fcw = False
-    self.fcw_checker = FCWChecker()
 
     self.v_desired = init_v
     self.a_desired = init_a
@@ -63,7 +60,6 @@ class Planner():
 
 
   def update(self, sm, CP):
-    cur_time = sec_since_boot()
     v_ego = sm['carState'].vEgo
     a_ego = sm['carState'].aEgo
 
@@ -102,18 +98,10 @@ class Planner():
     self.a_desired_trajectory = self.mpc.a_solution[:CONTROL_N]
     self.j_desired_trajectory = self.mpc.j_solution[:CONTROL_N]
 
-    # determine fcw
-    if self.mpc.new_lead:
-      self.fcw_checker.reset_lead(cur_time)
-    blinkers = sm['carState'].leftBlinker or sm['carState'].rightBlinker
-    self.fcw = self.fcw_checker.update(self.mpc.x_sol[:,2], cur_time,
-                                       sm['controlsState'].active,
-                                       v_ego, sm['carState'].aEgo,
-                                       self.lead_1.dRel, self.lead_1.vLead, self.lead_1.aLeadK,
-                                       self.lead_1.yRel, self.lead_1.vLat,
-                                       self.lead_1.fcw, blinkers) and not sm['carState'].brakePressed
+    #TODO counter is only needed because radar is glitchy, remove once radar is gone
+    self.fcw = self.mpc.crash_cnt > 5
     if self.fcw:
-      cloudlog.info("FCW triggered %s", self.fcw_checker.counters)
+      cloudlog.info("FCW triggered")
 
     # Interpolate 0.05 seconds and save as starting point for next iteration
     a_prev = self.a_desired
