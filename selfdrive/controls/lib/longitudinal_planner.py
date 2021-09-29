@@ -99,7 +99,7 @@ class Planner():
     self.j_desired_trajectory = self.mpc.j_solution[:CONTROL_N]
 
     # determine fcw
-    self.fcw = sm['controlsState'].active and self.mpc.crashing
+    self.fcw = self.mpc.crash_cnt > 5 and sm['controlsState'].active
     if self.fcw:
       cloudlog.info("FCW triggered")
 

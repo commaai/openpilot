@@ -191,7 +191,7 @@ class LongitudinalMpc():
     self.status = False
     self.new_lead = False
     self.prev_lead_status = False
-    self.crashing = False
+    self.crash_cnt = 0.0
     self.prev_lead_x = 10
     self.solution_status = 0
     self.x0 = np.zeros(X_DIM)
@@ -317,8 +317,11 @@ class LongitudinalMpc():
     self.params = np.concatenate([self.accel_limit_arr,
                              x_obstacle[:,None]], axis=1)
     self.run()
-    self.crashing = np.sum(lead_xv_0[:,0] - self.x_sol[:,0] < CRASH_DISTANCE) > 0 and radarstate.leadOne.modelProb > 0.9
-
+    if (np.sum(lead_xv_0[:,0] - self.x_sol[:,0] < CRASH_DISTANCE) > 0 and \
+            radarstate.leadOne.modelProb > 0.9):
+      self.crash_cnt += 1
+    else:
+      self.crash_cnt = 0
 
   def update_with_xva(self, x, v, a):
     self.yref[:,1] = x
