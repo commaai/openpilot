@@ -73,7 +73,7 @@ def unsparsify(f: StreamingDecompressor) -> Generator[bytes, None, None]:
     else:
       raise Exception("Unhandled sparse chunk type")
 
-
+# noop wrapper with same API as unsparsify() for non sparse images
 def noop(f: StreamingDecompressor) -> Generator[bytes, None, None]:
   while not f.eof:
     yield f.read(1024 * 1024)
@@ -147,13 +147,16 @@ def flash_partition(target_slot_number: int, partition: dict, cloudlog):
   path = get_partition_path(target_slot_number, partition)
   with open(path, 'wb+') as out:
     # Flash partition
-    func = unsparsify if partition['sparse'] else noop
+    last_p = 0
     raw_hash = hashlib.sha256()
-    for chunk in func(downloader):
+    f = unsparsify if partition['sparse'] else noop
+    for chunk in f(downloader):
       raw_hash.update(chunk)
       out.write(chunk)
       p = int(out.tell() / partition['size'] * 100)
-      print(f"Installing {partition['name']}: {p}")
+      if p != last_p:
+        print(f"Installing {partition['name']}: {p}")
+        last_p = p
 
     if raw_hash.hexdigest().lower() != partition['hash_raw'].lower():
       raise Exception(f"Hash mismatch '{raw_hash.hexdigest().lower()}'")
