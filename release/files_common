@@ -448,8 +448,6 @@ phonelibs/openmax/**
 phonelibs/json11/json11.cpp
 phonelibs/json11/json11.hpp
 
-phonelibs/qpoases/**
-
 phonelibs/qrcode/*.cc
 phonelibs/qrcode/*.hpp
 
