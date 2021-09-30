@@ -443,7 +443,7 @@ def thermald_thread():
       cloudlog.event("STATUS_PACKET",
                      count=count,
                      pandaState=(strip_deprecated_keys(pandaState.to_dict()) if pandaState else None),
-                     peripheralState=(strip_deprecated_keys(pandaState.to_dict()) if pandaState else None),
+                     peripheralState=strip_deprecated_keys(peripheralState.to_dict()),
                      location=(strip_deprecated_keys(sm["gpsLocationExternal"].to_dict()) if sm.alive["gpsLocationExternal"] else None),
                      deviceState=strip_deprecated_keys(msg.to_dict()))
 
