@@ -182,6 +182,7 @@ def thermald_thread():
   temp_filter = FirstOrderFilter(0., TEMP_TAU, DT_TRML)
   pandaState_prev = None
   should_start_prev = False
+  in_car = False
   handle_fan = None
   is_uno = False
   ui_running_prev = False
@@ -401,10 +402,11 @@ def thermald_thread():
     msg.deviceState.carBatteryCapacityUwh = max(0, power_monitor.get_car_battery_capacity())
 
     # Check if we need to disable charging (handled by boardd)
-    msg.deviceState.chargingDisabled = power_monitor.should_disable_charging(pandaState, off_ts)
+    in_car = pandaState.harnessStatus != log.PandaState.HarnessStatus.notConnected
+    msg.deviceState.chargingDisabled = power_monitor.should_disable_charging(pandaState, in_car, off_ts)
 
     # Check if we need to shut down
-    if power_monitor.should_shutdown(peripheralState, startup_conditions["ignition"], off_ts, started_seen):
+    if power_monitor.should_shutdown(peripheralState, startup_conditions["ignition"], in_car, off_ts, started_seen):
       cloudlog.info(f"shutting device down, offroad since {off_ts}")
       # TODO: add function for blocking cloudlog instead of sleep
       time.sleep(10)
