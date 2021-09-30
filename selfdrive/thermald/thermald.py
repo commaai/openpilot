@@ -220,6 +220,7 @@ def thermald_thread():
         no_panda_cnt = 0
         startup_conditions["ignition"] = pandaState.ignitionLine or pandaState.ignitionCan
 
+      in_car = pandaState.harnessStatus != log.PandaState.HarnessStatus.notConnected
       usb_power = peripheralState.usbPowerMode != log.PeripheralState.UsbPowerMode.client
 
       # Setup fan handler on first connect to panda
@@ -402,7 +403,6 @@ def thermald_thread():
     msg.deviceState.carBatteryCapacityUwh = max(0, power_monitor.get_car_battery_capacity())
 
     # Check if we need to disable charging (handled by boardd)
-    in_car = pandaState.harnessStatus != log.PandaState.HarnessStatus.notConnected
     msg.deviceState.chargingDisabled = power_monitor.should_disable_charging(pandaState, in_car, off_ts)
 
     # Check if we need to shut down
