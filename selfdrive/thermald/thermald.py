@@ -219,8 +219,6 @@ def thermald_thread():
         no_panda_cnt = 0
         startup_conditions["ignition"] = pandaState.ignitionLine or pandaState.ignitionCan
 
-      set_offroad_alert_if_changed("Offroad_HardwareUnsupported", not startup_conditions["hardware_supported"])
-
       if peripheralState is not None:
         usb_power = peripheralState.usbPowerMode != log.PeripheralState.UsbPowerMode.client
 
