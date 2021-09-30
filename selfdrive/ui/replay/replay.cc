@@ -131,13 +131,10 @@ void Replay::queueSegment() {
     }
   }
 
-  // merge segments
   mergeSegments(std::min(cur_seg, (int)segments_.size() - 1), end_idx);
 }
 
 void Replay::mergeSegments(int cur_seg, int end_idx) {
-  // if (!segments_[cur_seg] || !segments_[cur_seg]->isLoaded()) return;
-
   // segments must be merged in sequence.
   std::vector<int> segments_need_merge;
   const int begin_idx = std::max(cur_seg - BACKWARD_SEGS, 0);

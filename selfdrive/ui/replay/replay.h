@@ -42,13 +42,14 @@ protected:
   std::condition_variable stream_cv_;
   std::atomic<bool> updating_events_ = false;
   std::atomic<int> current_segment_ = -1;
+  std::vector<std::unique_ptr<Segment>> segments_;
+  // the following variables must be protected with mutex
   bool exit_ = false;
   bool paused_ = false;
   bool events_updated_ = false;
   uint64_t route_start_ts_ = 0;
   uint64_t cur_mono_time_ = 0;
   std::vector<Event *> *events_ = nullptr;
-  std::vector<std::unique_ptr<Segment>> segments_;
   std::vector<int> segments_merged_;
 
   // messaging
