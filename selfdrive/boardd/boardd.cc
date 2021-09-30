@@ -395,8 +395,8 @@ void peripheral_state_thread(Panda *panda) {
 
 }
 
-void hardware_control_thread(Panda *panda) {
-  LOGD("start hardware control thread");
+void peripheral_control_thread(Panda *panda) {
+  LOGD("start peripheral control thread");
   SubMaster sm({"deviceState", "driverCameraState"});
 
   uint64_t last_front_frame_t = 0;
@@ -577,10 +577,12 @@ int main() {
 
     std::vector<std::thread> threads;
     threads.emplace_back(panda_state_thread, &pm, panda, getenv("STARTED") != nullptr);
+    threads.emplace_back(peripheral_state_thread, peripheral_panda);
+    threads.emplace_back(peripheral_control_thread, peripheral_panda);
+    threads.emplace_back(pigeon_thread, panda);
+
     threads.emplace_back(can_send_thread, panda, getenv("FAKESEND") != nullptr);
     threads.emplace_back(can_recv_thread, panda);
-    threads.emplace_back(hardware_control_thread, panda);
-    threads.emplace_back(pigeon_thread, panda);
 
     for (auto &t : threads) t.join();
 
