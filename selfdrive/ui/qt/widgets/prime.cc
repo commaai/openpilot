@@ -72,16 +72,27 @@ PairingDialog::PairingDialog(QWidget *parent) : QDialogBase(parent) {
   vlayout->setSpacing(50);
   hlayout->addLayout(vlayout, 1);
   {
-    QPushButton *close = new QPushButton(QIcon(ASSET_PATH + "icons/close_black.svg"), "", this);
+    QPushButton *close = new QPushButton(QIcon(":/icons/close.svg"), "", this);
+    close->setIconSize(QSize(79, 79));
+    close->setStyleSheet("border: none;");
     vlayout->addWidget(close, 0, Qt::AlignLeft);
     QObject::connect(close, &QPushButton::clicked, this, &QDialog::reject);
+
+    vlayout->addSpacing(30);
 
     QLabel *title = new QLabel("Pair your device to your comma account", this);
     title->setStyleSheet("font-size: 75px; color: black;");
     title->setWordWrap(true);
     vlayout->addWidget(title);
 
-    QLabel *instructions = new QLabel("1. Go to https://connect.comma.ai on your phone\n\n2. Click \"add new device\" and scan the QR code on the right\n\n3. Bookmark connect.comma.ai to our home screen to use it like an app", this);
+    // TODO: why doesn't line height work?
+    QLabel *instructions = new QLabel(R"(
+      <ol type='1' style='margin-left: 15px; line-height: 50%;'>
+        <li>Go to https://connect.comma.ai on your phone</li>
+        <li>Click "add new device" and scan the QR code on the right</li>
+        <li>Bookmark connect.comma.ai to our home screen to use it like an app</li>
+      </ol>
+    )", this);
     instructions->setStyleSheet("font-size: 47px; font-weight: bold; color: black;");
     instructions->setWordWrap(true);
     vlayout->addWidget(instructions);
