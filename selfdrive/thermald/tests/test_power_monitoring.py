@@ -37,14 +37,6 @@ class TestPowerMonitoring(unittest.TestCase):
     params.delete("CarBatteryCapacity")
     params.delete("DisablePowerDown")
 
-  def mock_pandaState(self, ignition, hw_type, harness_status=log.PandaState.HarnessStatus.normal):
-    pandaState = messaging.new_message('pandaState')
-    pandaState.pandaState.pandaType = hw_type
-    pandaState.pandaState.ignitionLine = ignition
-    pandaState.pandaState.ignitionCan = False
-    pandaState.pandaState.harnessStatus = harness_status
-    return pandaState.pandaState
-
   def mock_peripheralState(self, hw_type, car_voltage=12,):
     peripheralState = messaging.new_message('peripheralState')
     peripheralState.peripheralState.pandaType = hw_type
@@ -64,7 +56,7 @@ class TestPowerMonitoring(unittest.TestCase):
   def test_offroad_ignition(self, hw_type):
     pm = PowerMonitoring()
     for _ in range(10):
-      pm.calculate(self.mock_pandaState(True, hw_type), self.mock_peripheralState(hw_type))
+      pm.calculate(self.mock_peripheralState(hw_type), True)
     self.assertEqual(pm.get_power_used(), 0)
 
   # Test to see that it integrates with discharging battery
@@ -76,7 +68,7 @@ class TestPowerMonitoring(unittest.TestCase):
     pm_patch("HARDWARE.get_battery_status", "Discharging"), pm_patch("HARDWARE.get_current_power_draw", None):
       pm = PowerMonitoring()
       for _ in range(TEST_DURATION_S + 1):
-        pm.calculate(self.mock_pandaState(False, hw_type), self.mock_peripheralState(hw_type))
+        pm.calculate(self.mock_peripheralState(hw_type), False)
       expected_power_usage = ((TEST_DURATION_S/3600) * (BATT_VOLTAGE * BATT_CURRENT) * 1e6)
       self.assertLess(abs(pm.get_power_used() - expected_power_usage), 10)
 
@@ -90,7 +82,7 @@ class TestPowerMonitoring(unittest.TestCase):
       pm = PowerMonitoring()
       pm.car_battery_capacity_uWh = 0
       for _ in range(TEST_DURATION_S + 1):
-        pm.calculate(self.mock_pandaState(True, hw_type), self.mock_peripheralState(hw_type))
+        pm.calculate(self.mock_peripheralState(hw_type), True)
       expected_capacity = ((TEST_DURATION_S/3600) * CAR_CHARGING_RATE_W * 1e6)
       self.assertLess(abs(pm.get_car_battery_capacity() - expected_capacity), 10)
 
@@ -104,7 +96,7 @@ class TestPowerMonitoring(unittest.TestCase):
       pm = PowerMonitoring()
       pm.car_battery_capacity_uWh = CAR_BATTERY_CAPACITY_uWh - 1000
       for _ in range(TEST_DURATION_S + 1):
-        pm.calculate(self.mock_pandaState(True, hw_type), self.mock_peripheralState(hw_type))
+        pm.calculate(self.mock_peripheralState(hw_type), True)
       estimated_capacity = CAR_BATTERY_CAPACITY_uWh + (CAR_CHARGING_RATE_W / 3600 * 1e6)
       self.assertLess(abs(pm.get_car_battery_capacity() - estimated_capacity), 10)
 
@@ -118,7 +110,7 @@ class TestPowerMonitoring(unittest.TestCase):
       pm = PowerMonitoring()
       pm.car_battery_capacity_uWh = CAR_BATTERY_CAPACITY_uWh
       for _ in range(TEST_DURATION_S + 1):
-        pm.calculate(self.mock_pandaState(False, hw_type), self.mock_peripheralState(hw_type))
+        pm.calculate(self.mock_peripheralState(hw_type), False)
       expected_capacity = CAR_BATTERY_CAPACITY_uWh - ((TEST_DURATION_S/3600) * (BATT_VOLTAGE * BATT_CURRENT) * 1e6)
       self.assertLess(abs(pm.get_car_battery_capacity() - expected_capacity), 10)
 
@@ -132,7 +124,7 @@ class TestPowerMonitoring(unittest.TestCase):
       pm = PowerMonitoring()
       pm.car_battery_capacity_uWh = 1000
       for _ in range(TEST_DURATION_S + 1):
-        pm.calculate(self.mock_pandaState(False, hw_type), self.mock_peripheralState(hw_type))
+        pm.calculate(self.mock_peripheralState(hw_type), False)
       estimated_capacity = 0 - ((1/3600) * (BATT_VOLTAGE * BATT_CURRENT) * 1e6)
       self.assertLess(abs(pm.get_car_battery_capacity() - estimated_capacity), 10)
 
@@ -148,13 +140,13 @@ class TestPowerMonitoring(unittest.TestCase):
       pm = PowerMonitoring()
       pm.car_battery_capacity_uWh = CAR_BATTERY_CAPACITY_uWh
       start_time = ssb
-      pandaState = self.mock_pandaState(False, hw_type)
+      ignition = False
       peripheralState = self.mock_peripheralState(hw_type)
       while ssb <= start_time + MOCKED_MAX_OFFROAD_TIME:
-        pm.calculate(pandaState, peripheralState)
+        pm.calculate(peripheralState, ignition)
         if (ssb - start_time) % 1000 == 0 and ssb < start_time + MOCKED_MAX_OFFROAD_TIME:
-          self.assertFalse(pm.should_disable_charging(pandaState, start_time))
-      self.assertTrue(pm.should_disable_charging(pandaState, start_time))
+          self.assertFalse(pm.should_disable_charging(ignition, start_time))
+      self.assertTrue(pm.should_disable_charging(ignition, start_time))
 
   # Test to check policy of stopping charging when the car voltage is too low
   @parameterized.expand(ALL_PANDA_TYPES)
@@ -166,13 +158,13 @@ class TestPowerMonitoring(unittest.TestCase):
     pm_patch("HARDWARE.get_battery_status", "Discharging"), pm_patch("HARDWARE.get_current_power_draw", None):
       pm = PowerMonitoring()
       pm.car_battery_capacity_uWh = CAR_BATTERY_CAPACITY_uWh
-      pandaState = self.mock_pandaState(False, hw_type)
+      ignition = False
       peripheralState = self.mock_peripheralState(hw_type, car_voltage=(VBATT_PAUSE_CHARGING - 1))
       for i in range(TEST_TIME):
-        pm.calculate(pandaState, peripheralState)
+        pm.calculate(peripheralState, ignition)
         if i % 10 == 0:
-          self.assertEqual(pm.should_disable_charging(pandaState, ssb), (pm.car_voltage_mV < VBATT_PAUSE_CHARGING*1e3))
-      self.assertTrue(pm.should_disable_charging(pandaState, ssb))
+          self.assertEqual(pm.should_disable_charging(ignition, ssb), (pm.car_voltage_mV < VBATT_PAUSE_CHARGING*1e3))
+      self.assertTrue(pm.should_disable_charging(ignition, ssb))
 
   # Test to check policy of not stopping charging when DisablePowerDown is set
   def test_disable_power_down(self):
@@ -184,13 +176,13 @@ class TestPowerMonitoring(unittest.TestCase):
     pm_patch("HARDWARE.get_battery_status", "Discharging"), pm_patch("HARDWARE.get_current_power_draw", None):
       pm = PowerMonitoring()
       pm.car_battery_capacity_uWh = CAR_BATTERY_CAPACITY_uWh
-      pandaState = self.mock_pandaState(False, log.PandaState.PandaType.uno)
+      ignition = False
       peripheralState = self.mock_peripheralState(log.PandaState.PandaType.uno, car_voltage=(VBATT_PAUSE_CHARGING - 1))
       for i in range(TEST_TIME):
-        pm.calculate(pandaState, peripheralState)
+        pm.calculate(peripheralState, ignition)
         if i % 10 == 0:
-          self.assertFalse(pm.should_disable_charging(pandaState, ssb))
-      self.assertFalse(pm.should_disable_charging(pandaState, ssb))
+          self.assertFalse(pm.should_disable_charging(ignition, ssb))
+      self.assertFalse(pm.should_disable_charging(ignition, ssb))
 
   # Test to check policy of not stopping charging when ignition
   def test_ignition(self):
@@ -201,31 +193,14 @@ class TestPowerMonitoring(unittest.TestCase):
     pm_patch("HARDWARE.get_battery_status", "Discharging"), pm_patch("HARDWARE.get_current_power_draw", None):
       pm = PowerMonitoring()
       pm.car_battery_capacity_uWh = CAR_BATTERY_CAPACITY_uWh
-      pandaState = self.mock_pandaState(True, log.PandaState.PandaType.uno)
+      ignition = True
       peripheralState = self.mock_peripheralState(log.PandaState.PandaType.uno, car_voltage=(VBATT_PAUSE_CHARGING - 1))
       for i in range(TEST_TIME):
-        pm.calculate(pandaState, peripheralState)
+        pm.calculate(peripheralState, ignition)
         if i % 10 == 0:
-          self.assertFalse(pm.should_disable_charging(pandaState, ssb))
-      self.assertFalse(pm.should_disable_charging(pandaState, ssb))
+          self.assertFalse(pm.should_disable_charging(ignition, ssb))
+      self.assertFalse(pm.should_disable_charging(ignition, ssb))
 
-  # Test to check policy of not stopping charging when harness is not connected
-  def test_harness_connection(self):
-    BATT_VOLTAGE = 4
-    BATT_CURRENT = 0 # To stop shutting down for other reasons
-    TEST_TIME = 100
-    with pm_patch("HARDWARE.get_battery_voltage", BATT_VOLTAGE * 1e6), pm_patch("HARDWARE.get_battery_current", BATT_CURRENT * 1e6), \
-    pm_patch("HARDWARE.get_battery_status", "Discharging"), pm_patch("HARDWARE.get_current_power_draw", None):
-      pm = PowerMonitoring()
-      pm.car_battery_capacity_uWh = CAR_BATTERY_CAPACITY_uWh
-      pandaState = self.mock_pandaState(False, log.PandaState.PandaType.uno,
-        harness_status=log.PandaState.HarnessStatus.notConnected)
-      peripheralState = self.mock_peripheralState(log.PandaState.PandaType.uno, car_voltage=(VBATT_PAUSE_CHARGING - 1))
-      for i in range(TEST_TIME):
-        pm.calculate(pandaState, peripheralState)
-        if i % 10 == 0:
-          self.assertFalse(pm.should_disable_charging(pandaState, ssb))
-      self.assertFalse(pm.should_disable_charging(pandaState, ssb))
 
 if __name__ == "__main__":
   unittest.main()
