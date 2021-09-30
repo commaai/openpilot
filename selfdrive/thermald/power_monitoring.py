@@ -46,7 +46,10 @@ class PowerMonitoring:
       now = sec_since_boot()
 
       # If pandaState is None, we're probably not in a car, so we don't care
-      if pandaState is None or peripheralState is None or pandaState.pandaType == log.PandaState.PandaType.unknown:
+      if pandaState is None or peripheralState is None \
+        or pandaState.pandaType == log.PandaState.PandaType.unknown \
+        or peripheralState.pandaType == log.PandaState.PandaType.unknown:
+
         with self.integration_lock:
           self.last_measurement_time = None
           self.next_pulsed_measurement_time = None

@@ -202,7 +202,7 @@ def thermald_thread():
 
   while 1:
     sm.update(pandaState_timeout)
-    peripheralState = sm['peripheralState'] if sm.rcv_frame['peripheralState'] == sm.frame else None
+    peripheralState = sm['peripheralState']
     pandaState = sm['pandaState'] if sm.rcv_frame['pandaState'] == sm.frame else None
 
     msg = read_thermal(thermal_config)
@@ -219,23 +219,22 @@ def thermald_thread():
         no_panda_cnt = 0
         startup_conditions["ignition"] = pandaState.ignitionLine or pandaState.ignitionCan
 
-      if peripheralState is not None:
-        usb_power = peripheralState.usbPowerMode != log.PeripheralState.UsbPowerMode.client
+      usb_power = peripheralState.usbPowerMode != log.PeripheralState.UsbPowerMode.client
 
-        # Setup fan handler on first connect to panda
-        if handle_fan is None and peripheralState.pandaType != log.PandaState.PandaType.unknown:
-          is_uno = peripheralState.pandaType == log.PandaState.PandaType.uno
+      # Setup fan handler on first connect to panda
+      if handle_fan is None and peripheralState.pandaType != log.PandaState.PandaType.unknown:
+        is_uno = peripheralState.pandaType == log.PandaState.PandaType.uno
 
-          if TICI:
-            cloudlog.info("Setting up TICI fan handler")
-            handle_fan = handle_fan_tici
-          elif is_uno or PC:
-            cloudlog.info("Setting up UNO fan handler")
-            handle_fan = handle_fan_uno
-          else:
-            cloudlog.info("Setting up EON fan handler")
-            setup_eon_fan()
-            handle_fan = handle_fan_eon
+        if TICI:
+          cloudlog.info("Setting up TICI fan handler")
+          handle_fan = handle_fan_tici
+        elif is_uno or PC:
+          cloudlog.info("Setting up UNO fan handler")
+          handle_fan = handle_fan_uno
+        else:
+          cloudlog.info("Setting up EON fan handler")
+          setup_eon_fan()
+          handle_fan = handle_fan_eon
 
       # Handle disconnect
       if pandaState_prev is not None:
