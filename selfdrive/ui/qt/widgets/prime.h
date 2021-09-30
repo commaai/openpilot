@@ -70,5 +70,4 @@ private:
 private slots:
   void parseError(const QString &response);
   void replyFinished(const QString &response);
-  void showQrCode();
 };

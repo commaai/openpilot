@@ -252,7 +252,9 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
     }
   )");
   finishRegistationLayout->addWidget(pair);
-  QObject::connect(pair, &QPushButton::clicked, this, &SetupWidget::showQrCode);
+
+  dialog = new PairingDialog(this);
+  QObject::connect(pair, &QPushButton::clicked, dialog, &PairingDialog::exec);
 
   mainLayout->addWidget(finishRegistration);
 
@@ -291,16 +293,10 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
     QObject::connect(repeater, &RequestRepeater::failedResponse, this, &SetupWidget::parseError);
   }
   hide(); // Only show when first request comes back
-  dialog = new PairingDialog(this);
 }
 
 void SetupWidget::parseError(const QString &response) {
   show();
-  dialog->reject();
-}
-
-void SetupWidget::showQrCode() {
-  dialog->exec();
 }
 
 void SetupWidget::replyFinished(const QString &response) {
@@ -314,9 +310,12 @@ void SetupWidget::replyFinished(const QString &response) {
   QJsonObject json = doc.object();
   if (!json["is_paired"].toBool()) {
     mainLayout->setCurrentIndex(0);
-  } else if (!json["prime"].toBool()) {
-    mainLayout->setCurrentWidget(primeAd);
   } else {
-    mainLayout->setCurrentWidget(primeUser);
+    dialog->reject();
+    if (!json["prime"].toBool()) {
+      mainLayout->setCurrentWidget(primeAd);
+    } else {
+      mainLayout->setCurrentWidget(primeUser);
+    }
   }
 }
