@@ -61,7 +61,6 @@ bool Replay::load() {
 }
 
 void Replay::start(int seconds) {
-  assert(!segments_.empty());
   seekTo(seconds);
   qDebug() << "start from" << seconds;
   // start stream thread
@@ -84,6 +83,7 @@ void Replay::updateEvents(const std::function<bool()>& lambda) {
 void Replay::seekTo(int seconds, bool relative) {
   if (segments_.empty()) return;
 
+  std::unique_lock lk(queue_lock_);
   updateEvents([&]() {
     if (relative) {
       seconds += ((cur_mono_time_ - route_start_ts_) * 1e-9);
@@ -114,6 +114,7 @@ void Replay::setCurrentSegment(int n) {
 
 // maintain the segment window
 void Replay::queueSegment() {
+  std::unique_lock lk(queue_lock_);
   // fetch segments forward
   int cur_seg = current_segment_.load();
   int end_idx = cur_seg;
@@ -177,6 +178,10 @@ void Replay::mergeSegments(int cur_seg, int end_idx) {
       return std::find(segments_merged_.begin(), segments_merged_.end(), cur_seg) != segments_merged_.end();
     });
     delete prev_events;
+  } else {
+    updateEvents([&]() {
+      return !segments_merged_.empty();
+    });
   }
 
   // free segments out of current semgnt window.
