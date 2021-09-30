@@ -13,6 +13,7 @@ class PairingQRWidget : public QWidget {
 
 public:
   explicit PairingQRWidget(QWidget* parent = 0);
+  void paintEvent(QPaintEvent*) override;
 
 private:
   QLabel* qrCode;
@@ -29,7 +30,6 @@ class PairingDialog : public QDialogBase {
 
 public:
   explicit PairingDialog(QWidget* parent);
-  static bool show(QWidget *parent);
 };
 
 // widget for paired users with prime

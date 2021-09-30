@@ -12,6 +12,7 @@
 
 #include "selfdrive/ui/qt/request_repeater.h"
 #include "selfdrive/ui/qt/util.h"
+#include "selfdrive/ui/qt/qt_window.h"
 
 using qrcodegen::QrCode;
 
@@ -39,52 +40,54 @@ void PairingQRWidget::refresh() {
 void PairingQRWidget::updateQrCode(const QString &text) {
   QrCode qr = QrCode::encodeText(text.toUtf8().data(), QrCode::Ecc::LOW);
   qint32 sz = qr.getSize();
-  // make the image larger so we can have a white border
-  QImage im(sz + 2, sz + 2, QImage::Format_RGB32);
+  QImage im(sz, sz, QImage::Format_RGB32);
+
   QRgb black = qRgb(0, 0, 0);
   QRgb white = qRgb(255, 255, 255);
-
-  for (int y = 0; y < sz + 2; y++) {
-    for (int x = 0; x < sz + 2; x++) {
-      im.setPixel(x, y, white);
-    }
-  }
   for (int y = 0; y < sz; y++) {
     for (int x = 0; x < sz; x++) {
-      im.setPixel(x + 1, y + 1, qr.getModule(x, y) ? black : white);
+      im.setPixel(x, y, qr.getModule(x, y) ? black : white);
     }
   }
 
   // Integer division to prevent anti-aliasing
-  int approx500 = (500 / (sz + 2)) * (sz + 2);
-  qrCode->setPixmap(QPixmap::fromImage(im.scaled(approx500, approx500, Qt::KeepAspectRatio, Qt::FastTransformation), Qt::MonoOnly));
-  qrCode->setFixedSize(approx500, approx500);
+  int final_sz = (1000 / sz) * sz;
+  qrCode->setPixmap(QPixmap::fromImage(im.scaled(final_sz, final_sz, Qt::KeepAspectRatio), Qt::MonoOnly));
+}
+
+void PairingQRWidget::paintEvent(QPaintEvent *e) {
+  QPainter p(this);
+  p.fillRect(rect(), Qt::white);
 }
 
 
 PairingDialog::PairingDialog(QWidget *parent) : QDialogBase(parent) {
-  QHBoxLayout *hlayout = new QHBoxLayout(this);
+  // wrap in a QFrame for bg color
+  QFrame *container = new QFrame(this);
+  container->setStyleSheet("QFrame { border-radius: 0; background-color: #E0E0E0; margin: 0;}");
+
+  QHBoxLayout *hlayout = new QHBoxLayout(container);
   hlayout->setContentsMargins(0, 0, 0, 0);
   hlayout->setSpacing(0);
 
   // text
   QVBoxLayout *vlayout = new QVBoxLayout();
   vlayout->setContentsMargins(85, 70, 140, 70);
-  hlayout->addLayout(vlayout);
+  hlayout->addLayout(vlayout, 1);
   {
-    QPushButton *close = new QPushButton("X");
+    QPushButton *close = new QPushButton(QIcon(ASSET_PATH + "icons/close_black.svg"), "", this);
     vlayout->addWidget(close, 0, Qt::AlignLeft);
     QObject::connect(close, &QPushButton::clicked, this, &QDialog::reject);
 
-    QLabel *title = new QLabel("Pair your device to your comma account");
-    title->setStyleSheet("font-size: 75px; font-weight: bold;");
+    QLabel *title = new QLabel("Pair your device to your comma account", this);
+    title->setStyleSheet("font-size: 75px; font-weight: bold; color: black;");
     title->setWordWrap(true);
     vlayout->addWidget(title);
 
     vlayout->addSpacing(50);
 
-    QLabel *instructions = new QLabel("1. Go https://connect.comma.ai on your phone\n2. Click \"add new device\" and scan the QR code on the right\n3. Bookmark connect.comma.ai to our home screen to use it like an app");
-    instructions->setStyleSheet("font-size: 47px;");
+    QLabel *instructions = new QLabel("1. Go https://connect.comma.ai on your phone\n\n2. Click \"add new device\" and scan the QR code on the right\n\n3. Bookmark connect.comma.ai to our home screen to use it like an app", this);
+    instructions->setStyleSheet("font-size: 47px; color: black;");
     instructions->setWordWrap(true);
     vlayout->addWidget(instructions);
 
@@ -93,22 +96,7 @@ PairingDialog::PairingDialog(QWidget *parent) : QDialogBase(parent) {
 
   // QR code
   PairingQRWidget *qr = new PairingQRWidget(this);
-  qr->setFixedSize(width() / 2, height());
-  hlayout->addWidget(qr);
-
-  setStyleSheet(R"(
-    PairingDialog {
-      background-color: #E0E0E0;
-    }
-    QLabel {
-      color: black;
-    }
-  )");
-}
-
-bool PairingDialog::show(QWidget *parent) {
-  PairingDialog d = PairingDialog(parent);
-  return d.exec();
+  hlayout->addWidget(qr, 1);
 }
 
 
@@ -262,7 +250,7 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
 
   mainLayout->addWidget(finishRegistration);
 
-  // setup widget
+  // build stacked layout
   QVBoxLayout *outer_layout = new QVBoxLayout(this);
   outer_layout->setContentsMargins(0, 0, 0, 0);
   outer_layout->addWidget(mainLayout);
@@ -301,15 +289,16 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
 
 void SetupWidget::parseError(const QString &response) {
   show();
+  /*
   if (mainLayout->currentIndex() == 1) {
-    showQr = false;
     mainLayout->setCurrentIndex(0);
   }
+  */
 }
 
 void SetupWidget::showQrCode() {
-  showQr = true;
-  PairingDialog::show(this);
+  PairingDialog d = PairingDialog(this);
+  d.exec();
 }
 
 void SetupWidget::replyFinished(const QString &response) {
@@ -322,12 +311,10 @@ void SetupWidget::replyFinished(const QString &response) {
 
   QJsonObject json = doc.object();
   if (!json["is_paired"].toBool()) {
-    mainLayout->setCurrentIndex(showQr);
+    mainLayout->setCurrentIndex(0);
   } else if (!json["prime"].toBool()) {
-    showQr = false;
     mainLayout->setCurrentWidget(primeAd);
   } else {
-    showQr = false;
     mainLayout->setCurrentWidget(primeUser);
   }
 }
