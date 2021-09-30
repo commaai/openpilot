@@ -39,5 +39,7 @@ pyenv rehash
 
 echo "precommit install ..."
 pre-commit install
-[ -d "./xx" ] && cd xx && pre-commit install
-[ -d "./notebooks" ] && cd xx && pre-commit install
+
+# for internal comma repos
+[ -d "./xx" ] && (cd xx && pre-commit install)
+[ -d "./notebooks" ] && (cd notebooks && pre-commit install)
