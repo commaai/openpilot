@@ -88,7 +88,6 @@ PairingPopup::PairingPopup(QWidget *parent) : QDialogBase(parent) {
     title->setWordWrap(true);
     vlayout->addWidget(title);
 
-    // TODO: why doesn't line height work?
     QLabel *instructions = new QLabel(R"(
       <ol type='1' style='margin-left: 15px;'>
         <li style='margin-bottom: 50px;'>Go to https://connect.comma.ai on your phone</li>
@@ -150,7 +149,7 @@ PrimeUserWidget::PrimeUserWidget(QWidget* parent) : QWidget(parent) {
   commaPoints->setStyleSheet("font-size: 41px; font-family: Inter SemiBold;");
   pointsLayout->addWidget(commaPoints, 0, Qt::AlignTop);
 
-  points = new QLabel("210");
+  points = new QLabel("0");
   points->setStyleSheet("font-size: 91px; font-weight: bold;");
   pointsLayout->addWidget(points, 0, Qt::AlignTop);
 
