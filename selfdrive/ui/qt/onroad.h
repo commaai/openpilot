@@ -1,13 +1,10 @@
 #pragma once
 
-#include <QOpenGLFunctions>
-#include <QOpenGLWidget>
 #include <QStackedLayout>
 #include <QWidget>
 #include <QPushButton>
 
-#include "cereal/gen/cpp/log.capnp.h"
-#include "selfdrive/ui/qt/qt_window.h"
+#include "selfdrive/ui/qt/widgets/cameraview.h"
 #include "selfdrive/ui/ui.h"
 
 
@@ -23,7 +20,6 @@ private:
   QPushButton *dfButton;
   QPushButton *mlButton;
 
-  // dynamic follow button
   int dfStatus = -1;  // always initialize style sheet and send msg
   const QStringList dfButtonColors = {"#044389", "#24a8bc", "#fcff4b", "#37b868"};
 
@@ -51,27 +47,21 @@ private:
 };
 
 // container window for the NVG UI
-class NvgWindow : public QOpenGLWidget, protected QOpenGLFunctions {
+class NvgWindow : public CameraViewWidget {
   Q_OBJECT
 
 public:
-  using QOpenGLWidget::QOpenGLWidget;
-  explicit NvgWindow(QWidget* parent = 0);
-  ~NvgWindow();
+  explicit NvgWindow(VisionStreamType type, QWidget* parent = 0) : CameraViewWidget(type, true, parent) {}
+  void updateState(const UIState &s);
+  int prev_width = -1;  // initializes ButtonsWindow width and holds prev width to update it
 
 protected:
   void paintGL() override;
   void initializeGL() override;
-  void resizeGL(int w, int h) override;
-
-private:
   double prev_draw_t = 0;
 
-public slots:
-  void updateState(const UIState &s);
-
 signals:
-  void resizeSignal(int w, int h);
+  void resizeSignal(int w);
 };
 
 // container for all onroad widgets

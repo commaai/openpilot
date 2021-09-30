@@ -3,7 +3,7 @@ import numpy as np
 from common.realtime import sec_since_boot, DT_MDL
 from common.numpy_fast import interp
 from selfdrive.swaglog import cloudlog
-from selfdrive.controls.lib.lateral_mpc import libmpc_py
+from selfdrive.controls.lib.lateral_mpc_lib.lat_mpc import LateralMpc
 from selfdrive.controls.lib.drive_helpers import CONTROL_N, MPC_COST_LAT, LAT_MPC_N, CAR_ROTATION_RADIUS
 from selfdrive.controls.lib.lane_planner import LanePlanner, TRAJECTORY_SIZE
 from selfdrive.config import Conversions as CV
@@ -43,11 +43,11 @@ class LateralPlanner():
   def __init__(self, CP, use_lanelines=True, wide_camera=False):
     self.use_lanelines = use_lanelines
     self.LP = LanePlanner(wide_camera)
+    self.op_params = opParams()
 
     self.last_cloudlog_t = 0
     self.steer_rate_cost = CP.steerRateCost
 
-    self.setup_mpc()
     self.solution_invalid_cnt = 0
     self.lane_change_state = LaneChangeState.off
     self.lane_change_direction = LaneChangeDirection.none
@@ -63,19 +63,12 @@ class LateralPlanner():
     self.t_idxs = np.arange(TRAJECTORY_SIZE)
     self.y_pts = np.zeros(TRAJECTORY_SIZE)
 
-    self.op_params = opParams()
+    self.lat_mpc = LateralMpc()
+    self.reset_mpc(np.zeros(6))
 
-  def setup_mpc(self):
-    self.libmpc = libmpc_py.libmpc
-    self.libmpc.init()
-
-    self.mpc_solution = libmpc_py.ffi.new("log_t *")
-    self.cur_state = libmpc_py.ffi.new("state_t *")
-    self.cur_state[0].x = 0.0
-    self.cur_state[0].y = 0.0
-    self.cur_state[0].psi = 0.0
-    self.cur_state[0].curvature = 0.0
-
+  def reset_mpc(self, x0=np.zeros(6)):
+    self.x0 = x0
+    self.lat_mpc.reset(x0=self.x0)
     self.desired_curvature = 0.0
     self.safe_desired_curvature = 0.0
     self.desired_curvature_rate = 0.0
@@ -176,45 +169,40 @@ class LateralPlanner():
       self.LP.rll_prob *= self.lane_change_ll_prob
     if self.use_lanelines:
       d_path_xyz = self.LP.get_d_path(v_ego, self.t_idxs, self.path_xyz)
-      self.libmpc.set_weights(MPC_COST_LAT.PATH, MPC_COST_LAT.HEADING, CP.steerRateCost)
+      self.lat_mpc.set_weights(MPC_COST_LAT.PATH, MPC_COST_LAT.HEADING, CP.steerRateCost)
     else:
       d_path_xyz = self.path_xyz
       path_cost = np.clip(abs(self.path_xyz[0,1]/self.path_xyz_stds[0,1]), 0.5, 5.0) * MPC_COST_LAT.PATH
       # Heading cost is useful at low speed, otherwise end of plan can be off-heading
       heading_cost = interp(v_ego, [5.0, 10.0], [MPC_COST_LAT.HEADING, 0.0])
-      self.libmpc.set_weights(path_cost, heading_cost, CP.steerRateCost)
+      self.lat_mpc.set_weights(path_cost, heading_cost, CP.steerRateCost)
     y_pts = np.interp(v_ego * self.t_idxs[:LAT_MPC_N + 1], np.linalg.norm(d_path_xyz, axis=1), d_path_xyz[:,1])
     heading_pts = np.interp(v_ego * self.t_idxs[:LAT_MPC_N + 1], np.linalg.norm(self.path_xyz, axis=1), self.plan_yaw)
     self.y_pts = y_pts
 
     assert len(y_pts) == LAT_MPC_N + 1
     assert len(heading_pts) == LAT_MPC_N + 1
-    # for now CAR_ROTATION_RADIUS is disabled
-    # to use it, enable it in the MPC
-    assert abs(CAR_ROTATION_RADIUS) < 1e-3
-    self.libmpc.run_mpc(self.cur_state, self.mpc_solution,
-                        float(v_ego),
-                        CAR_ROTATION_RADIUS,
-                        list(y_pts),
-                        list(heading_pts))
+    self.x0[4] = v_ego
+    self.lat_mpc.run(self.x0,
+                     v_ego,
+                     CAR_ROTATION_RADIUS,
+                     y_pts,
+                     heading_pts)
     # init state for next
-    self.cur_state.x = 0.0
-    self.cur_state.y = 0.0
-    self.cur_state.psi = 0.0
-    self.cur_state.curvature = interp(DT_MDL, self.t_idxs[:LAT_MPC_N + 1], self.mpc_solution.curvature)
+    self.x0[3] = interp(DT_MDL, self.t_idxs[:LAT_MPC_N + 1], self.lat_mpc.x_sol[:,3])
+
 
     #  Check for infeasable MPC solution
-    mpc_nans = any(math.isnan(x) for x in self.mpc_solution.curvature)
+    mpc_nans = any(math.isnan(x) for x in self.lat_mpc.x_sol[:,3])
     t = sec_since_boot()
-    if mpc_nans:
-      self.libmpc.init()
-      self.cur_state.curvature = measured_curvature
-
+    if mpc_nans or self.lat_mpc.solution_status != 0:
+      self.reset_mpc()
+      self.x0[3] = measured_curvature
       if t > self.last_cloudlog_t + 5.0:
         self.last_cloudlog_t = t
         cloudlog.warning("Lateral mpc - nan: True")
 
-    if self.mpc_solution[0].cost > 20000. or mpc_nans:   # TODO: find a better way to detect when MPC did not converge
+    if self.lat_mpc.cost > 20000. or mpc_nans:
       self.solution_invalid_cnt += 1
     else:
       self.solution_invalid_cnt = 0
@@ -225,9 +213,9 @@ class LateralPlanner():
     plan_send.valid = sm.all_alive_and_valid(service_list=['carState', 'controlsState', 'modelV2'])
     plan_send.lateralPlan.laneWidth = float(self.LP.lane_width)
     plan_send.lateralPlan.dPathPoints = [float(x) for x in self.y_pts]
-    plan_send.lateralPlan.psis = [float(x) for x in self.mpc_solution.psi[0:CONTROL_N]]
-    plan_send.lateralPlan.curvatures = [float(x) for x in self.mpc_solution.curvature[0:CONTROL_N]]
-    plan_send.lateralPlan.curvatureRates = [float(x) for x in self.mpc_solution.curvature_rate[0:CONTROL_N-1]] +[0.0]
+    plan_send.lateralPlan.psis = [float(x) for x in self.lat_mpc.x_sol[0:CONTROL_N, 2]]
+    plan_send.lateralPlan.curvatures = [float(x) for x in self.lat_mpc.x_sol[0:CONTROL_N,3]]
+    plan_send.lateralPlan.curvatureRates = [float(x) for x in self.lat_mpc.u_sol[0:CONTROL_N-1]] +[0.0]
     plan_send.lateralPlan.lProb = float(self.LP.lll_prob)
     plan_send.lateralPlan.rProb = float(self.LP.rll_prob)
     plan_send.lateralPlan.dProb = float(self.LP.d_prob)

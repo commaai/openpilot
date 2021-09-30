@@ -23,7 +23,7 @@ PROCS = {
   "selfdrive.controls.controlsd": 50.0,
   "./loggerd": 45.0,
   "./locationd": 9.1,
-  "selfdrive.controls.plannerd": 20.0,
+  "selfdrive.controls.plannerd": 26.0,
   "./_ui": 15.0,
   "selfdrive.locationd.paramsd": 9.1,
   "./camerad": 7.07,
@@ -59,6 +59,28 @@ if TICI:
     "selfdrive.locationd.paramsd": 5.0,
     "./_dmonitoringmodeld": 10.0,
     "selfdrive.thermald.thermald": 1.5,
+  })
+
+
+TIMINGS = {
+  # rtols: max/min, rsd
+  "can": [2.5, 0.35],
+  "pandaState": [2.5, 0.35],
+  "sendcan": [2.5, 0.35],
+  "carState": [2.5, 0.35],
+  "carControl": [2.5, 0.35],
+  "controlsState": [2.5, 0.35],
+  "lateralPlan": [2.5, 0.5],
+  "longitudinalPlan": [2.5, 0.5],
+  "roadCameraState": [1.5, 0.35],
+  "driverCameraState": [1.5, 0.35],
+  "modelV2": [2.5, 0.35],
+  "driverState": [2.5, 0.35],
+  "liveLocationKalman": [2.5, 0.35],
+}
+if TICI:
+  TIMINGS.update({
+    "wideRoadCameraState": [1.5, 0.35],
   })
 
 
@@ -102,6 +124,12 @@ class TestOnroad(unittest.TestCase):
 
   @classmethod
   def setUpClass(cls):
+    if "DEBUG" in os.environ:
+      segs = filter(lambda x: os.path.exists(os.path.join(x, "rlog.bz2")), Path(ROOT).iterdir())
+      segs = sorted(segs, key=lambda x: x.stat().st_mtime)
+      cls.lr = list(LogReader(os.path.join(segs[-2], "rlog.bz2")))
+      return
+
     os.environ['SKIP_FW_QUERY'] = "1"
     os.environ['FINGERPRINT'] = "TOYOTA COROLLA TSS2 2019"
     set_params_enabled()
@@ -160,13 +188,38 @@ class TestOnroad(unittest.TestCase):
     cpu_ok = check_cpu_usage(proclogs[0], proclogs[-1])
     self.assertTrue(cpu_ok)
 
-  def test_model_timings(self):
-    #TODO this went up when plannerd cpu usage increased, why?
+  def test_model_execution_timings(self):
+    result =  "------------------------------------------------\n"
+    result += "----------------- Model Timing -----------------\n"
+    result += "------------------------------------------------\n"
+    # TODO: this went up when plannerd cpu usage increased, why?
     cfgs = [("modelV2", 0.038, 0.036), ("driverState", 0.028, 0.026)]
     for (s, instant_max, avg_max) in cfgs:
       ts = [getattr(getattr(m, s), "modelExecutionTime") for m in self.lr if m.which() == s]
       self.assertLess(min(ts), instant_max, f"high '{s}' execution time: {min(ts)}")
       self.assertLess(np.mean(ts), avg_max, f"high avg '{s}' execution time: {np.mean(ts)}")
+      result += f"'{s}' execution time: {min(ts)}'"
+      result += f"'{s}' avg execution time: {np.mean(ts)}"
+    print(result)
+
+  def test_timings(self):
+
+    print("\n\n")
+    print("="*25, "service timings", "="*25)
+    for s, (maxmin, rsd) in TIMINGS.items():
+      msgs = [m.logMonoTime for m in self.lr if m.which() == s]
+      if not len(msgs):
+        raise Exception(f"missing {s}")
+
+      ts = np.diff(msgs) / 1e9
+      dt = 1 / service_list[s].frequency
+
+      np.testing.assert_allclose(np.mean(ts), dt, rtol=0.03, err_msg=f"{s} - failed mean timing check")
+      np.testing.assert_allclose([np.max(ts), np.min(ts)], dt, rtol=maxmin, err_msg=f"{s} - failed max/min timing check")
+      self.assertLess(np.std(ts) / dt, rsd, msg=f"{s} - failed RSD timing check")
+      print(f"{s}: {np.array([np.mean(ts), np.max(ts), np.min(ts)])*1e3}")
+      print(f"     {np.max(np.absolute([np.max(ts)/dt, np.min(ts)/dt]))} {np.std(ts)/dt}")
+    print("="*67)
 
 if __name__ == "__main__":
   unittest.main()

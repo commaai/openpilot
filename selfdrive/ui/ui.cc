@@ -7,13 +7,9 @@
 #include <cstdio>
 #include <QDebug>
 
-#include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
-#include "selfdrive/common/visionimg.h"
 #include "selfdrive/common/watchdog.h"
 #include "selfdrive/hardware/hw.h"
-#include "selfdrive/ui/paint.h"
-#include "selfdrive/ui/qt/qt_window.h"
 
 #define BACKLIGHT_DT 0.05
 #define BACKLIGHT_TS 10.00
@@ -53,25 +49,6 @@ static bool calib_frame_to_full_frame(const UIState *s, float in_x, float in_y, 
 
   nvgTransformPoint(&out->x, &out->y, s->car_space_transform, x, y);
   return out->x >= -margin && out->x <= s->fb_w + margin && out->y >= -margin && out->y <= s->fb_h + margin;
-}
-
-static void ui_init_vision(UIState *s) {
-  // Invisible until we receive a calibration message.
-  s->scene.world_objects_visible = false;
-
-  for (int i = 0; i < s->vipc_client->num_buffers; i++) {
-    s->texture[i].reset(new EGLImageTexture(&s->vipc_client->buffers[i]));
-
-    glBindTexture(GL_TEXTURE_2D, s->texture[i]->frame_tex);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-    // BGR
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_BLUE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
-  }
-  assert(glGetError() == GL_NO_ERROR);
 }
 
 static int get_path_length_idx(const cereal::ModelDataV2::XYZTData::Reader &line, const float path_height) {
@@ -227,25 +204,6 @@ static void update_params(UIState *s) {
   }
 }
 
-static void update_vision(UIState *s) {
-  if (!s->vipc_client->connected && s->scene.started) {
-    if (s->vipc_client->connect(false)) {
-      ui_init_vision(s);
-    }
-  }
-
-  if (s->vipc_client->connected) {
-    VisionBuf * buf = s->vipc_client->recv();
-    if (buf != nullptr) {
-      s->last_frame = buf;
-    } else if (!Hardware::PC()) {
-      LOGE("visionIPC receive timeout");
-    }
-  } else if (s->scene.started) {
-    util::sleep_for(1000. / UI_FREQ);
-  }
-}
-
 static void update_status(UIState *s) {
   if (s->scene.started && s->sm->updated("controlsState")) {
     auto controls_state = (*s->sm)["controlsState"].getControlsState();
@@ -266,24 +224,11 @@ static void update_status(UIState *s) {
       saInit(s);
       s->status = STATUS_DISENGAGED;
       s->scene.started_frame = s->sm->frame;
-
       s->scene.end_to_end = Params().getBool("EndToEndToggle");
       s->wide_camera = Hardware::TICI() ? Params().getBool("EnableWideCamera") : false;
-
-      // Update intrinsics matrix after possible wide camera toggle change
-      if (s->vg) {
-        ui_resize(s, s->fb_w, s->fb_h);
-      }
-
-      // Choose vision ipc client
-      if (s->wide_camera) {
-        s->vipc_client = s->vipc_client_wide;
-      } else {
-        s->vipc_client = s->vipc_client_rear;
-      }
-    } else {
-      s->vipc_client->connected = false;
     }
+    // Invisible until we receive a calibration message.
+    s->scene.world_objects_visible = false;
   }
   started_prev = s->scene.started;
 }
@@ -296,21 +241,12 @@ QUIState::QUIState(QObject *parent) : QObject(parent) {
   });
   ui_state.pm = std::make_unique<PubMaster, const std::initializer_list<const char *>>({"laneSpeedButton", "dynamicFollowButton", "modelLongButton"});
 
-  ui_state.fb_w = vwp_w;
-  ui_state.fb_h = vwp_h;
-  ui_state.scene.started = false;
-  ui_state.last_frame = nullptr;
   ui_state.wide_camera = Hardware::TICI() ? Params().getBool("EnableWideCamera") : false;
-
-  ui_state.vipc_client_rear = new VisionIpcClient("camerad", VISION_STREAM_RGB_BACK, true);
-  ui_state.vipc_client_wide = new VisionIpcClient("camerad", VISION_STREAM_RGB_WIDE, true);
-
-  ui_state.vipc_client = ui_state.vipc_client_rear;
 
   // update timer
   timer = new QTimer(this);
   QObject::connect(timer, &QTimer::timeout, this, &QUIState::update);
-  timer->start(0);
+  timer->start(1000 / UI_FREQ);
 }
 
 void QUIState::update() {
@@ -318,15 +254,10 @@ void QUIState::update() {
   update_sockets(&ui_state);
   update_state(&ui_state);
   update_status(&ui_state);
-  update_vision(&ui_state);
 
   if (ui_state.scene.started != started_prev || ui_state.sm->frame == 1) {
     started_prev = ui_state.scene.started;
     emit offroadTransition(!ui_state.scene.started);
-
-    // Change timeout to 0 when onroad, this will call update continuously.
-    // This puts visionIPC in charge of update frequency, reducing video latency
-    timer->start(ui_state.scene.started ? 0 : 1000 / UI_FREQ);
   }
 
   watchdog_kick();

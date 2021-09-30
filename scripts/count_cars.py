@@ -2,7 +2,7 @@
 import os
 from common.basedir import BASEDIR
 
-with open(os.path.join(BASEDIR, "README.md")) as f:
+with open(os.path.join(BASEDIR, "docs/CARS.md")) as f:
   lines = f.readlines()
   cars = [l for l in lines if l.strip().startswith("|") and l.strip().endswith("|") and
                               "Make" not in l and any(c.isalpha() for c in l)]

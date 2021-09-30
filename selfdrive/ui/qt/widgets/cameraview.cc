@@ -1,5 +1,6 @@
-#include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/widgets/cameraview.h"
+
+#include "selfdrive/common/swaglog.h"
 
 namespace {
 
@@ -95,9 +96,7 @@ mat4 get_fit_view_transform(float widget_aspect_ratio, float frame_aspect_ratio)
 CameraViewWidget::CameraViewWidget(VisionStreamType stream_type, bool zoom, QWidget* parent) :
                                    stream_type(stream_type), zoomed_view(zoom), QOpenGLWidget(parent) {
   setAttribute(Qt::WA_OpaquePaintEvent);
-
-  timer = new QTimer(this);
-  connect(timer, &QTimer::timeout, this, &CameraViewWidget::updateFrame);
+  connect(this, &QOpenGLWidget::frameSwapped, this, &CameraViewWidget::updateFrame);
 }
 
 CameraViewWidget::~CameraViewWidget() {
@@ -113,9 +112,15 @@ CameraViewWidget::~CameraViewWidget() {
 void CameraViewWidget::initializeGL() {
   initializeOpenGLFunctions();
 
-  gl_shader = std::make_unique<GLShader>(frame_vertex_shader, frame_fragment_shader);
-  GLint frame_pos_loc = glGetAttribLocation(gl_shader->prog, "aPosition");
-  GLint frame_texcoord_loc = glGetAttribLocation(gl_shader->prog, "aTexCoord");
+  program = new QOpenGLShaderProgram(context());
+  bool ret = program->addShaderFromSourceCode(QOpenGLShader::Vertex, frame_vertex_shader);
+  assert(ret);
+  ret = program->addShaderFromSourceCode(QOpenGLShader::Fragment, frame_fragment_shader);
+  assert(ret);
+
+  program->link();
+  GLint frame_pos_loc = program->attributeLocation("aPosition");
+  GLint frame_texcoord_loc = program->attributeLocation("aTexCoord");
 
   auto [x1, x2, y1, y2] = stream_type == VISION_STREAM_RGB_FRONT ? std::tuple(0.f, 1.f, 1.f, 0.f) : std::tuple(1.f, 0.f, 1.f, 0.f);
   const uint8_t frame_indicies[] = {0, 1, 2, 0, 2, 3};
@@ -143,15 +148,11 @@ void CameraViewWidget::initializeGL() {
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   glBindVertexArray(0);
 
-  vipc_client = std::make_unique<VisionIpcClient>("camerad", stream_type, true);
+  setStreamType(stream_type);
 }
 
-void CameraViewWidget::showEvent(QShowEvent *event) {
-  timer->start(0);
-}
 
 void CameraViewWidget::hideEvent(QHideEvent *event) {
-  timer->stop();
   vipc_client->connected = false;
   latest_frame = nullptr;
 }
@@ -161,10 +162,18 @@ void CameraViewWidget::mouseReleaseEvent(QMouseEvent *event) {
 }
 
 void CameraViewWidget::resizeGL(int w, int h) {
-  if (!vipc_client->connected) {
-    return;
-  }
+  updateFrameMat(w, h);
+}
 
+void CameraViewWidget::setStreamType(VisionStreamType type) {
+  if (!vipc_client || type != stream_type) {
+    stream_type = type;
+    vipc_client.reset(new VisionIpcClient("camerad", stream_type, true));
+    updateFrameMat(width(), height());
+  }
+}
+
+void CameraViewWidget::updateFrameMat(int w, int h) {
   if (zoomed_view) {
     if (stream_type == VISION_STREAM_RGB_FRONT) {
       frame_mat = matmul(device_transform, get_driver_view_transform());
@@ -212,9 +221,9 @@ void CameraViewWidget::paintGL() {
                   0, GL_RGB, GL_UNSIGNED_BYTE, latest_frame->addr);
   }
 
-  glUseProgram(gl_shader->prog);
-  glUniform1i(gl_shader->getUniformLocation("uTexture"), 0);
-  glUniformMatrix4fv(gl_shader->getUniformLocation("uTransform"), 1, GL_TRUE, frame_mat.v);
+  glUseProgram(program->programId());
+  glUniform1i(program->uniformLocation("uTexture"), 0);
+  glUniformMatrix4fv(program->uniformLocation("uTransform"), 1, GL_TRUE, frame_mat.v);
 
   assert(glGetError() == GL_NO_ERROR);
   glEnableVertexAttribArray(0);
@@ -249,8 +258,11 @@ void CameraViewWidget::updateFrame() {
       latest_frame = buf;
       update();
       emit frameUpdated();
-    } else {
+    } else if (!Hardware::PC()) {
       LOGE("visionIPC receive timeout");
     }
+  } else {
+    // try to connect again quickly
+    QTimer::singleShot(1000. / UI_FREQ, this, &CameraViewWidget::updateFrame);
   }
 }

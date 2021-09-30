@@ -30,18 +30,18 @@ class CarInterface(CarInterfaceBase):
     if True:  # pylint: disable=using-constant-test
       # Set global MQB parameters
       ret.safetyModel = car.CarParams.SafetyModel.volkswagen
-      ret.enableBsm = 0x30F in fingerprint[0]
+      ret.enableBsm = 0x30F in fingerprint[0]  # SWA_01
 
       if 0xAD in fingerprint[0]:  # Getriebe_11
         ret.transmissionType = TransmissionType.automatic
       elif 0x187 in fingerprint[0]:  # EV_Gearshift
         ret.transmissionType = TransmissionType.direct
-      else:  # No trans message at all, must be a true stick-shift manual
+      else:
         ret.transmissionType = TransmissionType.manual
 
-      if 0x86 in fingerprint[1]:  # LWI_01 seen on bus 1, we're wired to the CAN gateway
+      if any(msg in fingerprint[1] for msg in [0x40, 0x86, 0xB2]):  # Airbag_01, LWI_01, ESP_19
         ret.networkLocation = NetworkLocation.gateway
-      else:  # We're wired to the LKAS camera
+      else:
         ret.networkLocation = NetworkLocation.fwdCamera
 
     # Global tuning defaults, can be overridden per-vehicle
@@ -102,6 +102,14 @@ class CarInterface(CarInterfaceBase):
     elif candidate == CAR.SEAT_LEON_MK3:
       ret.mass = 1227 + STD_CARGO_KG
       ret.wheelbase = 2.64
+
+    elif candidate == CAR.SKODA_KAMIQ_MK1:
+      ret.mass = 1265 + STD_CARGO_KG
+      ret.wheelbase = 2.66
+
+    elif candidate == CAR.SKODA_KAROQ_MK1:
+      ret.mass = 1278 + STD_CARGO_KG
+      ret.wheelbase = 2.66
 
     elif candidate == CAR.SKODA_KODIAQ_MK1:
       ret.mass = 1569 + STD_CARGO_KG
