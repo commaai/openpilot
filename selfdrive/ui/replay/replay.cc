@@ -88,17 +88,13 @@ void Replay::seekTo(int seconds, bool relative) {
     if (relative) {
       seconds += ((cur_mono_time_ - route_start_ts_) * 1e-9);
     }
-    seconds = std::clamp(seconds, 0, (int)segments_.size() * 60 - 1);
-    qInfo() << "seeking to " << seconds;
-
-    int segment = seconds / 60;
-    bool segment_changed = (segment != current_segment_);
-
-    cur_mono_time_ = route_start_ts_ + seconds * 1e9;
+    cur_mono_time_ = route_start_ts_ + std::clamp(seconds, 0, (int)segments_.size() * 60) * 1e9;
+    int segment = std::min(seconds / 60, (int)segments_.size() - 1);
     setCurrentSegment(segment);
-    bool segment_loaded = std::find(segments_merged_.begin(), segments_merged_.end(), segment) != segments_merged_.end();
-    // return false if segment changed and not loaded yet
-    return !segment_changed || segment_loaded;
+
+    qInfo() << "seeking to " << seconds;
+    // return true if segment is already loaded
+    return std::find(segments_merged_.begin(), segments_merged_.end(), segment) != segments_merged_.end();
   });
 }
 
