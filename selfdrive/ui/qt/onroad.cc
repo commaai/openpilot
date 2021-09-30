@@ -23,15 +23,15 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   });
   QObject::connect(this, &OnroadWindow::updateStateSignal, nvg, &NvgWindow::updateState);
 
+  buttons = new ButtonsWindow(this);
+  QObject::connect(this, &OnroadWindow::updateStateSignal, buttons, &ButtonsWindow::updateState);
+  stacked_layout->addWidget(buttons);
+
   QWidget * split_wrapper = new QWidget;
   split = new QHBoxLayout(split_wrapper);
   split->setContentsMargins(0, 0, 0, 0);
   split->setSpacing(0);
   split->addWidget(nvg);
-
-  buttons = new ButtonsWindow(this); // todo: move up
-  QObject::connect(this, &OnroadWindow::updateStateSignal, buttons, &ButtonsWindow::updateState);
-  stacked_layout->addWidget(buttons);
 
   stacked_layout->addWidget(split_wrapper);
 
