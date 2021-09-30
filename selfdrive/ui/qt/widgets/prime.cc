@@ -8,6 +8,7 @@
 #include <QStackedWidget>
 #include <QTimer>
 #include <QVBoxLayout>
+
 #include <QrCode.hpp>
 
 #include "selfdrive/ui/qt/request_repeater.h"
@@ -291,18 +292,15 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
     QString url = CommaApi::BASE_URL + "/v1.1/devices/" + *dongleId + "/";
     RequestRepeater* repeater = new RequestRepeater(this, url, "ApiCache_Device", 5);
 
+    QObject::connect(repeater, &RequestRepeater::failedResponse, this, &SetupWidget::show);
     QObject::connect(repeater, &RequestRepeater::receivedResponse, this, &SetupWidget::replyFinished);
-    QObject::connect(repeater, &RequestRepeater::failedResponse, this, &SetupWidget::parseError);
   }
   hide(); // Only show when first request comes back
 }
 
-void SetupWidget::parseError(const QString &response) {
-  show();
-}
-
 void SetupWidget::replyFinished(const QString &response) {
   show();
+
   QJsonDocument doc = QJsonDocument::fromJson(response.toUtf8());
   if (doc.isNull()) {
     qDebug() << "JSON Parse failed on getting pairing and prime status";
