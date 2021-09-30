@@ -371,6 +371,7 @@ void peripheral_state_thread(Panda *panda) {
     evt.setValid(panda->comms_healthy);
 
     auto ps = evt.initPeripheralState();
+    ps.setPandaType(panda->hw_type);
 
     if (Hardware::TICI()) {
       double read_time = millis_since_boot();

@@ -207,9 +207,6 @@ def thermald_thread():
 
     msg = read_thermal(thermal_config)
 
-    if peripheralState is not None:
-      usb_power = peripheralState.usbPowerMode != log.PeripheralState.UsbPowerMode.client
-
     if pandaState is not None:
       # If we lose connection to the panda, wait 5 seconds before going offroad
       if pandaState.pandaType == log.PandaState.PandaType.unknown:
@@ -222,24 +219,25 @@ def thermald_thread():
         no_panda_cnt = 0
         startup_conditions["ignition"] = pandaState.ignitionLine or pandaState.ignitionCan
 
-      startup_conditions["hardware_supported"] = pandaState.pandaType not in [log.PandaState.PandaType.whitePanda,
-                                                                              log.PandaState.PandaType.greyPanda]
       set_offroad_alert_if_changed("Offroad_HardwareUnsupported", not startup_conditions["hardware_supported"])
 
-      # Setup fan handler on first connect to panda
-      if handle_fan is None and pandaState.pandaType != log.PandaState.PandaType.unknown:
-        is_uno = pandaState.pandaType == log.PandaState.PandaType.uno
+      if peripheralState is not None:
+        usb_power = peripheralState.usbPowerMode != log.PeripheralState.UsbPowerMode.client
 
-        if TICI:
-          cloudlog.info("Setting up TICI fan handler")
-          handle_fan = handle_fan_tici
-        elif is_uno or PC:
-          cloudlog.info("Setting up UNO fan handler")
-          handle_fan = handle_fan_uno
-        else:
-          cloudlog.info("Setting up EON fan handler")
-          setup_eon_fan()
-          handle_fan = handle_fan_eon
+        # Setup fan handler on first connect to panda
+        if handle_fan is None and peripheralState.pandaType != log.PandaState.PandaType.unknown:
+          is_uno = peripheralState.pandaType == log.PandaState.PandaType.uno
+
+          if TICI:
+            cloudlog.info("Setting up TICI fan handler")
+            handle_fan = handle_fan_tici
+          elif is_uno or PC:
+            cloudlog.info("Setting up UNO fan handler")
+            handle_fan = handle_fan_uno
+          else:
+            cloudlog.info("Setting up EON fan handler")
+            setup_eon_fan()
+            handle_fan = handle_fan_eon
 
       # Handle disconnect
       if pandaState_prev is not None:

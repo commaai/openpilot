@@ -81,7 +81,7 @@ class PowerMonitoring:
           self.last_measurement_time = now
       else:
         # No ignition, we integrate the offroad power used by the device
-        is_uno = pandaState.pandaType == log.PandaState.PandaType.uno
+        is_uno = peripheralState.pandaType == log.PandaState.PandaType.uno
         # Get current power draw somehow
         current_power = HARDWARE.get_current_power_draw() # pylint: disable=assignment-from-none
         if current_power is not None:
