@@ -17,13 +17,8 @@
 using qrcodegen::QrCode;
 
 PairingQRWidget::PairingQRWidget(QWidget* parent) : QWidget(parent) {
-  qrCode = new QLabel;
-  qrCode->setScaledContents(true);
-  QVBoxLayout* main_layout = new QVBoxLayout(this);
-  main_layout->addWidget(qrCode, 0, Qt::AlignCenter);
-
   QTimer* timer = new QTimer(this);
-  timer->start(30 * 1000);
+  timer->start(5 * 60 * 1000);
   connect(timer, &QTimer::timeout, this, &PairingQRWidget::refresh);
 }
 
@@ -51,28 +46,30 @@ void PairingQRWidget::updateQrCode(const QString &text) {
   }
 
   // Integer division to prevent anti-aliasing
-  int final_sz = (1000 / sz) * sz;
-  qrCode->setPixmap(QPixmap::fromImage(im.scaled(final_sz, final_sz, Qt::KeepAspectRatio), Qt::MonoOnly));
+  int final_sz = ((width() / sz) - 1) * sz;
+  img = QPixmap::fromImage(im.scaled(final_sz, final_sz, Qt::KeepAspectRatio), Qt::MonoOnly);
 }
 
 void PairingQRWidget::paintEvent(QPaintEvent *e) {
   QPainter p(this);
   p.fillRect(rect(), Qt::white);
+
+  QSize s = (size() - img.size()) / 2;
+  p.drawPixmap(s.width(), s.height(), img);
 }
 
 
 PairingDialog::PairingDialog(QWidget *parent) : QDialogBase(parent) {
-  // wrap in a QFrame for bg color
-  QFrame *container = new QFrame(this);
-  container->setStyleSheet("QFrame { border-radius: 0; background-color: #E0E0E0; margin: 0;}");
-
-  QHBoxLayout *hlayout = new QHBoxLayout(container);
+  QHBoxLayout *hlayout = new QHBoxLayout(this);
   hlayout->setContentsMargins(0, 0, 0, 0);
   hlayout->setSpacing(0);
+
+  setStyleSheet("PairingDialog { background-color: #E0E0E0; }");
 
   // text
   QVBoxLayout *vlayout = new QVBoxLayout();
   vlayout->setContentsMargins(85, 70, 140, 70);
+  vlayout->setSpacing(50);
   hlayout->addLayout(vlayout, 1);
   {
     QPushButton *close = new QPushButton(QIcon(ASSET_PATH + "icons/close_black.svg"), "", this);
@@ -80,14 +77,12 @@ PairingDialog::PairingDialog(QWidget *parent) : QDialogBase(parent) {
     QObject::connect(close, &QPushButton::clicked, this, &QDialog::reject);
 
     QLabel *title = new QLabel("Pair your device to your comma account", this);
-    title->setStyleSheet("font-size: 75px; font-weight: bold; color: black;");
+    title->setStyleSheet("font-size: 75px; color: black;");
     title->setWordWrap(true);
     vlayout->addWidget(title);
 
-    vlayout->addSpacing(50);
-
-    QLabel *instructions = new QLabel("1. Go https://connect.comma.ai on your phone\n\n2. Click \"add new device\" and scan the QR code on the right\n\n3. Bookmark connect.comma.ai to our home screen to use it like an app", this);
-    instructions->setStyleSheet("font-size: 47px; color: black;");
+    QLabel *instructions = new QLabel("1. Go to https://connect.comma.ai on your phone\n\n2. Click \"add new device\" and scan the QR code on the right\n\n3. Bookmark connect.comma.ai to our home screen to use it like an app", this);
+    instructions->setStyleSheet("font-size: 47px; font-weight: bold; color: black;");
     instructions->setWordWrap(true);
     vlayout->addWidget(instructions);
 

@@ -16,7 +16,7 @@ public:
   void paintEvent(QPaintEvent*) override;
 
 private:
-  QLabel* qrCode;
+  QPixmap img;
   void updateQrCode(const QString &text);
   void showEvent(QShowEvent *event) override;
 
