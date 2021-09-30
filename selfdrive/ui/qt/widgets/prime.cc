@@ -27,9 +27,11 @@ void PairingQRWidget::showEvent(QShowEvent *event) {
 }
 
 void PairingQRWidget::refresh() {
-  QString pairToken = CommaApi::create_jwt({{"pair", true}});
-  QString qrString = "https://connect.comma.ai/?pair=" + pairToken;
-  this->updateQrCode(qrString);
+  if (isVisible()) {
+    QString pairToken = CommaApi::create_jwt({{"pair", true}});
+    QString qrString = "https://connect.comma.ai/?pair=" + pairToken;
+    this->updateQrCode(qrString);
+  }
 }
 
 void PairingQRWidget::updateQrCode(const QString &text) {
@@ -73,7 +75,7 @@ PairingPopup::PairingPopup(QWidget *parent) : QDialogBase(parent) {
   hlayout->addLayout(vlayout, 1);
   {
     QPushButton *close = new QPushButton(QIcon(":/icons/close.svg"), "", this);
-    close->setIconSize(QSize(79, 79));
+    close->setIconSize(QSize(80, 80));
     close->setStyleSheet("border: none;");
     vlayout->addWidget(close, 0, Qt::AlignLeft);
     QObject::connect(close, &QPushButton::clicked, this, &QDialog::reject);
@@ -87,10 +89,10 @@ PairingPopup::PairingPopup(QWidget *parent) : QDialogBase(parent) {
 
     // TODO: why doesn't line height work?
     QLabel *instructions = new QLabel(R"(
-      <ol type='1' style='margin-left: 15px; line-height: 50%;'>
-        <li>Go to https://connect.comma.ai on your phone</li>
-        <li>Click "add new device" and scan the QR code on the right</li>
-        <li>Bookmark connect.comma.ai to our home screen to use it like an app</li>
+      <ol type='1' style='margin-left: 15px;'>
+        <li style='margin-bottom: 50px;'>Go to https://connect.comma.ai on your phone</li>
+        <li style='margin-bottom: 50px;'>Click "add new device" and scan the QR code on the right</li>
+        <li style='margin-bottom: 50px;'>Bookmark connect.comma.ai to our home screen to use it like an app</li>
       </ol>
     )", this);
     instructions->setStyleSheet("font-size: 47px; font-weight: bold; color: black;");
