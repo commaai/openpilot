@@ -25,11 +25,11 @@ private slots:
 };
 
 // pairing popup widget
-class PairingDialog : public QDialogBase {
+class PairingPopup : public QDialogBase {
   Q_OBJECT
 
 public:
-  explicit PairingDialog(QWidget* parent);
+  explicit PairingPopup(QWidget* parent);
 };
 
 // widget for paired users with prime
@@ -62,7 +62,7 @@ public:
   explicit SetupWidget(QWidget* parent = 0);
 
 private:
-  PairingDialog *dialog;
+  PairingPopup *popup;
   QStackedWidget *mainLayout;
   PrimeAdWidget *primeAd;
   PrimeUserWidget *primeUser;

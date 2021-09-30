@@ -59,12 +59,12 @@ void PairingQRWidget::paintEvent(QPaintEvent *e) {
 }
 
 
-PairingDialog::PairingDialog(QWidget *parent) : QDialogBase(parent) {
+PairingPopup::PairingPopup(QWidget *parent) : QDialogBase(parent) {
   QHBoxLayout *hlayout = new QHBoxLayout(this);
   hlayout->setContentsMargins(0, 0, 0, 0);
   hlayout->setSpacing(0);
 
-  setStyleSheet("PairingDialog { background-color: #E0E0E0; }");
+  setStyleSheet("PairingPopup { background-color: #E0E0E0; }");
 
   // text
   QVBoxLayout *vlayout = new QVBoxLayout();
@@ -253,8 +253,8 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
   )");
   finishRegistationLayout->addWidget(pair);
 
-  dialog = new PairingDialog(this);
-  QObject::connect(pair, &QPushButton::clicked, dialog, &PairingDialog::exec);
+  popup = new PairingPopup(this);
+  QObject::connect(pair, &QPushButton::clicked, popup, &PairingPopup::exec);
 
   mainLayout->addWidget(finishRegistration);
 
@@ -311,7 +311,7 @@ void SetupWidget::replyFinished(const QString &response) {
   if (!json["is_paired"].toBool()) {
     mainLayout->setCurrentIndex(0);
   } else {
-    dialog->reject();
+    popup->reject();
     if (!json["prime"].toBool()) {
       mainLayout->setCurrentWidget(primeAd);
     } else {
