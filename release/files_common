@@ -427,6 +427,7 @@ selfdrive/assets/assets.qrc
 selfdrive/assets/*.png
 selfdrive/assets/*.svg
 selfdrive/assets/fonts/*.ttf
+selfdrive/assets/icons/*
 selfdrive/assets/images/*
 selfdrive/assets/offroad/*
 selfdrive/assets/sounds/*
