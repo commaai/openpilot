@@ -71,7 +71,7 @@ PairingPopup::PairingPopup(QWidget *parent) : QDialogBase(parent) {
 
   // text
   QVBoxLayout *vlayout = new QVBoxLayout();
-  vlayout->setContentsMargins(85, 70, 140, 70);
+  vlayout->setContentsMargins(85, 70, 50, 70);
   vlayout->setSpacing(50);
   hlayout->addLayout(vlayout, 1);
   {
@@ -92,7 +92,7 @@ PairingPopup::PairingPopup(QWidget *parent) : QDialogBase(parent) {
       <ol type='1' style='margin-left: 15px;'>
         <li style='margin-bottom: 50px;'>Go to https://connect.comma.ai on your phone</li>
         <li style='margin-bottom: 50px;'>Click "add new device" and scan the QR code on the right</li>
-        <li style='margin-bottom: 50px;'>Bookmark connect.comma.ai to our home screen to use it like an app</li>
+        <li style='margin-bottom: 50px;'>Bookmark connect.comma.ai to your home screen to use it like an app</li>
       </ol>
     )", this);
     instructions->setStyleSheet("font-size: 47px; font-weight: bold; color: black;");
