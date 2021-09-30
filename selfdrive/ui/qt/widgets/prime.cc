@@ -54,11 +54,63 @@ void PairingQRWidget::updateQrCode(const QString &text) {
       im.setPixel(x + 1, y + 1, qr.getModule(x, y) ? black : white);
     }
   }
+
   // Integer division to prevent anti-aliasing
   int approx500 = (500 / (sz + 2)) * (sz + 2);
   qrCode->setPixmap(QPixmap::fromImage(im.scaled(approx500, approx500, Qt::KeepAspectRatio, Qt::FastTransformation), Qt::MonoOnly));
   qrCode->setFixedSize(approx500, approx500);
 }
+
+
+PairingDialog::PairingDialog(QWidget *parent) : QDialogBase(parent) {
+  QHBoxLayout *hlayout = new QHBoxLayout(this);
+  hlayout->setContentsMargins(0, 0, 0, 0);
+  hlayout->setSpacing(0);
+
+  // text
+  QVBoxLayout *vlayout = new QVBoxLayout();
+  vlayout->setContentsMargins(85, 70, 140, 70);
+  hlayout->addLayout(vlayout);
+  {
+    QPushButton *close = new QPushButton("X");
+    vlayout->addWidget(close, 0, Qt::AlignLeft);
+    QObject::connect(close, &QPushButton::clicked, this, &QDialog::reject);
+
+    QLabel *title = new QLabel("Pair your device to your comma account");
+    title->setStyleSheet("font-size: 75px; font-weight: bold;");
+    title->setWordWrap(true);
+    vlayout->addWidget(title);
+
+    vlayout->addSpacing(50);
+
+    QLabel *instructions = new QLabel("1. Go https://connect.comma.ai on your phone\n2. Click \"add new device\" and scan the QR code on the right\n3. Bookmark connect.comma.ai to our home screen to use it like an app");
+    instructions->setStyleSheet("font-size: 47px;");
+    instructions->setWordWrap(true);
+    vlayout->addWidget(instructions);
+
+    vlayout->addStretch();
+  }
+
+  // QR code
+  PairingQRWidget *qr = new PairingQRWidget(this);
+  qr->setFixedSize(width() / 2, height());
+  hlayout->addWidget(qr);
+
+  setStyleSheet(R"(
+    PairingDialog {
+      background-color: #E0E0E0;
+    }
+    QLabel {
+      color: black;
+    }
+  )");
+}
+
+bool PairingDialog::show(QWidget *parent) {
+  PairingDialog d = PairingDialog(parent);
+  return d.exec();
+}
+
 
 PrimeUserWidget::PrimeUserWidget(QWidget* parent) : QWidget(parent) {
   mainLayout = new QVBoxLayout(this);
@@ -192,9 +244,9 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
 
   finishRegistationLayout->addStretch();
 
-  QPushButton* finishButton = new QPushButton("Pair device");
-  finishButton->setFixedHeight(220);
-  finishButton->setStyleSheet(R"(
+  QPushButton* pair = new QPushButton("Pair device");
+  pair->setFixedHeight(220);
+  pair->setStyleSheet(R"(
     QPushButton {
       font-size: 55px;
       font-weight: 400;
@@ -205,33 +257,15 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
       background-color: #3049F4;
     }
   )");
-  finishRegistationLayout->addWidget(finishButton);
-  QObject::connect(finishButton, &QPushButton::clicked, this, &SetupWidget::showQrCode);
+  finishRegistationLayout->addWidget(pair);
+  QObject::connect(pair, &QPushButton::clicked, this, &SetupWidget::showQrCode);
 
   mainLayout->addWidget(finishRegistration);
-
-  // Pairing QR code layout
-
-  QWidget* q = new QWidget;
-  q->setObjectName("primeWidget");
-  QVBoxLayout* qrLayout = new QVBoxLayout(q);
-  qrLayout->setContentsMargins(90, 90, 90, 90);
-
-  QLabel* qrLabel = new QLabel("Scan the QR code to pair.");
-  qrLabel->setAlignment(Qt::AlignHCenter);
-  qrLabel->setStyleSheet("font-size: 47px; font-weight: light;");
-  qrLayout->addWidget(qrLabel);
-  qrLayout->addSpacing(50);
-
-  qrLayout->addWidget(new PairingQRWidget);
-  qrLayout->addStretch();
 
   // setup widget
   QVBoxLayout *outer_layout = new QVBoxLayout(this);
   outer_layout->setContentsMargins(0, 0, 0, 0);
   outer_layout->addWidget(mainLayout);
-
-  mainLayout->addWidget(q);
 
   primeAd = new PrimeAdWidget;
   mainLayout->addWidget(primeAd);
@@ -275,7 +309,7 @@ void SetupWidget::parseError(const QString &response) {
 
 void SetupWidget::showQrCode() {
   showQr = true;
-  mainLayout->setCurrentIndex(1);
+  PairingDialog::show(this);
 }
 
 void SetupWidget::replyFinished(const QString &response) {
