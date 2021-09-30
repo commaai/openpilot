@@ -291,20 +291,16 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
     QObject::connect(repeater, &RequestRepeater::failedResponse, this, &SetupWidget::parseError);
   }
   hide(); // Only show when first request comes back
+  dialog = new PairingDialog(this);
 }
 
 void SetupWidget::parseError(const QString &response) {
   show();
-  /*
-  if (mainLayout->currentIndex() == 1) {
-    mainLayout->setCurrentIndex(0);
-  }
-  */
+  dialog->reject();
 }
 
 void SetupWidget::showQrCode() {
-  PairingDialog d = PairingDialog(this);
-  d.exec();
+  dialog->exec();
 }
 
 void SetupWidget::replyFinished(const QString &response) {

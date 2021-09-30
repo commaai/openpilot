@@ -62,10 +62,10 @@ public:
   explicit SetupWidget(QWidget* parent = 0);
 
 private:
-  QStackedWidget* mainLayout;
+  PairingDialog *dialog;
+  QStackedWidget *mainLayout;
   PrimeAdWidget *primeAd;
   PrimeUserWidget *primeUser;
-  bool showQr = false;
 
 private slots:
   void parseError(const QString &response);
