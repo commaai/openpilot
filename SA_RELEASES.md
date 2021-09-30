@@ -1,3 +1,7 @@
+Stock Additions Update 1 - 2021-09-30 (0.8.10)
+===
+ * Update SA to 0.8.10 (not yet including new model)
+
 Stock Additions Update 2 - 2021-08-15 (0.8.9)
 ===
  * Update SA to 0.8.9 with new model from upstream!
