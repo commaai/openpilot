@@ -41,12 +41,12 @@ class PowerMonitoring:
 
 
   # Calculation tick
-  def calculate(self, pandaState):
+  def calculate(self, pandaState, peripheralState):
     try:
       now = sec_since_boot()
 
       # If pandaState is None, we're probably not in a car, so we don't care
-      if pandaState is None or pandaState.pandaState.pandaType == log.PandaState.PandaType.unknown:
+      if pandaState is None or peripheralState is None or pandaState.pandaType == log.PandaState.PandaType.unknown:
         with self.integration_lock:
           self.last_measurement_time = None
           self.next_pulsed_measurement_time = None
@@ -54,8 +54,8 @@ class PowerMonitoring:
         return
 
       # Low-pass battery voltage
-      self.car_voltage_instant_mV = pandaState.pandaState.voltage
-      self.car_voltage_mV = ((pandaState.pandaState.voltage * CAR_VOLTAGE_LOW_PASS_K) + (self.car_voltage_mV * (1 -  CAR_VOLTAGE_LOW_PASS_K)))
+      self.car_voltage_instant_mV = peripheralState.voltage
+      self.car_voltage_mV = ((peripheralState.voltage * CAR_VOLTAGE_LOW_PASS_K) + (self.car_voltage_mV * (1 - CAR_VOLTAGE_LOW_PASS_K)))
 
       # Cap the car battery power and save it in a param every 10-ish seconds
       self.car_battery_capacity_uWh = max(self.car_battery_capacity_uWh, 0)
@@ -70,7 +70,7 @@ class PowerMonitoring:
           self.last_measurement_time = now
           return
 
-      if (pandaState.pandaState.ignitionLine or pandaState.pandaState.ignitionCan):
+      if (pandaState.ignitionLine or pandaState.ignitionCan):
         # If there is ignition, we integrate the charging rate of the car
         with self.integration_lock:
           self.power_used_uWh = 0
@@ -81,7 +81,7 @@ class PowerMonitoring:
           self.last_measurement_time = now
       else:
         # No ignition, we integrate the offroad power used by the device
-        is_uno = pandaState.pandaState.pandaType == log.PandaState.PandaType.uno
+        is_uno = pandaState.pandaType == log.PandaState.PandaType.uno
         # Get current power draw somehow
         current_power = HARDWARE.get_current_power_draw() # pylint: disable=assignment-from-none
         if current_power is not None:
@@ -167,19 +167,19 @@ class PowerMonitoring:
     disable_charging |= (now - offroad_timestamp) > MAX_TIME_OFFROAD_S
     disable_charging |= (self.car_voltage_mV < (VBATT_PAUSE_CHARGING * 1e3)) and (self.car_voltage_instant_mV > (VBATT_INSTANT_PAUSE_CHARGING * 1e3))
     disable_charging |= (self.car_battery_capacity_uWh <= 0)
-    disable_charging &= (not pandaState.pandaState.ignitionLine and not pandaState.pandaState.ignitionCan)
+    disable_charging &= (not pandaState.ignitionLine and not pandaState.ignitionCan)
     disable_charging &= (not self.params.get_bool("DisablePowerDown"))
-    disable_charging &= (pandaState.pandaState.harnessStatus != log.PandaState.HarnessStatus.notConnected)
+    disable_charging &= (pandaState.harnessStatus != log.PandaState.HarnessStatus.notConnected)
     disable_charging |= self.params.get_bool("ForcePowerDown")
     return disable_charging
 
   # See if we need to shutdown
-  def should_shutdown(self, pandaState, offroad_timestamp, started_seen):
+  def should_shutdown(self, pandaState, peripheralState, offroad_timestamp, started_seen):
     if pandaState is None or offroad_timestamp is None:
       return False
 
     now = sec_since_boot()
-    panda_charging = (pandaState.pandaState.usbPowerMode != log.PandaState.UsbPowerMode.client)
+    panda_charging = (peripheralState.usbPowerMode != log.PeripheralState.UsbPowerMode.client)
     BATT_PERC_OFF = 10
 
     should_shutdown = False
