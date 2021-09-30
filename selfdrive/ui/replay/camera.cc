@@ -3,8 +3,7 @@
 #include <cassert>
 #include <iostream>
 
-// TODO: publish YUV frame
-// const int YUV_BUF_COUNT = 50;
+const int YUV_BUF_COUNT = 50;
 
 CameraServer::CameraServer() {
   device_id_ = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
@@ -25,7 +24,7 @@ void CameraServer::startVipcServer() {
   for (auto &cam : cameras_) {
     if (cam.width > 0 && cam.height > 0) {
       vipc_server_->create_buffers(cam.rgb_type, UI_BUF_COUNT, true, cam.width, cam.height);
-      // vipc_server_->create_buffers(cam.yuv_type, YUV_BUF_COUNT, false, cam.width, cam.height);
+      vipc_server_->create_buffers(cam.yuv_type, YUV_BUF_COUNT, false, cam.width, cam.height);
     }
   }
   vipc_server_->start_listener();
@@ -46,7 +45,8 @@ void CameraServer::thread() {
     }
 
     // send frame
-    if (uint8_t *dat = fr->get(eidx.getSegmentId())) {
+    if (auto dat = fr->get(eidx.getSegmentId())) {
+      auto [rgb_dat, yuv_dat] = *dat;
       VisionIpcBufExtra extra = {
           .frame_id = eidx.getFrameId(),
           .timestamp_sof = eidx.getTimestampSof(),
@@ -54,8 +54,12 @@ void CameraServer::thread() {
       };
 
       VisionBuf *rgb_buf = vipc_server_->get_buffer(cam.rgb_type);
-      memcpy(rgb_buf->addr, dat, fr->getRGBSize());
+      memcpy(rgb_buf->addr, rgb_dat, fr->getRGBSize());
+      VisionBuf *yuv_buf = vipc_server_->get_buffer(cam.yuv_type);
+      memcpy(yuv_buf->addr, yuv_dat, fr->getYUVSize());
+
       vipc_server_->send(rgb_buf, &extra, false);
+      vipc_server_->send(yuv_buf, &extra, false);
     } else {
       std::cout << "camera[" << type << "] failed to get frame:" << eidx.getSegmentId() << std::endl;
     }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <unistd.h>
 #include "cereal/visionipc/visionipc_server.h"
 #include "selfdrive/common/queue.h"
 #include "selfdrive/ui/replay/framereader.h"
