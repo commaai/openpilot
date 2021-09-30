@@ -31,7 +31,7 @@ optional arguments:
 
 Example:
 
-`./juggle.py "0982d79ebb0de295|2021-01-17--17-13-08"`
+`./juggle.py "4cf7a6ad03080c90|2021-09-29--13-46-36"`
 
 ## Streaming
 

@@ -8,7 +8,7 @@
 #include <QDebug>
 #include <QThread>
 
-const QString DEMO_ROUTE = "3533c53bb29502d1|2019-12-10--01-13-27";
+const QString DEMO_ROUTE = "4cf7a6ad03080c90|2021-09-29--13-46-36";
 
 int getch() {
   int ch;
