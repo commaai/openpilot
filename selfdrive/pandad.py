@@ -73,7 +73,7 @@ def get_pandas() -> List[Panda]:
     time.sleep(1)
 
   # Ensure we have at least one panda
-  pandas : List[Panda] = []
+  pandas : List[str] = []
   while not pandas:
     pandas = Panda.list()
 
