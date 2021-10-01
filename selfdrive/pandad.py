@@ -72,7 +72,7 @@ def get_pandas() -> List[Panda]:
     time.sleep(1)
 
   # Ensure we have at least one panda
-  pandas = []
+  pandas : List[Panda] = []
   while not pandas:
     pandas = Panda.list()
 
@@ -107,7 +107,7 @@ def main() -> None:
     panda = pandas[0]
   else:
     peripheral_panda = [p for p in pandas if p.get_type() in PERIPHERAL_TYPES][0] # TODO: add error handling if not found
-    panda = [p for p in pandas if p._serial != peripheral_panda._serial]
+    panda = [p for p in pandas if p._serial != peripheral_panda._serial][0]
 
   os.chdir(os.path.join(BASEDIR, "selfdrive/boardd"))
   os.execvp("./boardd", ["./boardd", peripheral_panda._serial, panda._serial])
