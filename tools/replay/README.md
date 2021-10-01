@@ -21,9 +21,6 @@ Replay driving data
 Unlogger with remote data:
 
 ```bash
-# Log in via browser
-python lib/auth.py
-
 # Start unlogger
 python replay/unlogger.py <route-name>
 # Example:
