@@ -40,11 +40,6 @@ std::atomic<bool> ignition(false);
 
 ExitHandler do_exit;
 
-struct IgnitionStats {
-  bool ignition;
-  bool ignition_last;
-  uint32_t no_ignition_cnt;
-};
 
 std::string get_time_str(const struct tm &time) {
   char s[30] = {'\0'};
@@ -254,7 +249,7 @@ void send_empty_peripheral_state(PubMaster *pm) {
   pm->send("peripheralState", msg);
 }
 
-void send_panda_state(PubMaster *pm, Panda *panda, IgnitionStats * ignition_stats, bool spoofing_started) {
+bool send_panda_state(PubMaster *pm, Panda *panda, bool spoofing_started) {
   health_t pandaState = panda->get_state();
 
   if (spoofing_started) {
@@ -266,59 +261,19 @@ void send_panda_state(PubMaster *pm, Panda *panda, IgnitionStats * ignition_stat
     panda->set_safety_model(cereal::CarParams::SafetyModel::NO_OUTPUT);
   }
 
-  ignition_stats->ignition = ((pandaState.ignition_line != 0) || (pandaState.ignition_can != 0));
-
-  if (ignition_stats->ignition) {
-    ignition_stats->no_ignition_cnt = 0;
-  } else {
-    ignition_stats->no_ignition_cnt += 1;
-  }
+  bool ignition = ((pandaState.ignition_line != 0) || (pandaState.ignition_can != 0));
 
 #ifndef __x86_64__
-  bool power_save_desired = !ignition_stats->ignition;
+  bool power_save_desired = !ignition;
   if (pandaState.power_save_enabled != power_save_desired) {
     panda->set_power_saving(power_save_desired);
   }
 
   // set safety mode to NO_OUTPUT when car is off. ELM327 is an alternative if we want to leverage athenad/connect
-  if (!ignition_stats->ignition && (pandaState.safety_model != (uint8_t)(cereal::CarParams::SafetyModel::NO_OUTPUT))) {
+  if (!ignition && (pandaState.safety_model != (uint8_t)(cereal::CarParams::SafetyModel::NO_OUTPUT))) {
     panda->set_safety_model(cereal::CarParams::SafetyModel::NO_OUTPUT);
   }
 #endif
-
-  // clear VIN, CarParams, and set new safety on car start
-  if (ignition_stats->ignition && !ignition_stats->ignition_last) {
-    Params().clearAll(CLEAR_ON_IGNITION_ON);
-
-    if (!safety_setter_thread_running) {
-      safety_setter_thread_running = true;
-      std::thread(safety_setter_thread, panda).detach();
-    } else {
-      LOGW("Safety setter thread already running");
-    }
-  } else if (!ignition_stats->ignition && ignition_stats->ignition_last) {
-    Params().clearAll(CLEAR_ON_IGNITION_OFF);
-  }
-
-  // Write to rtc once per minute when no ignition present
-  if ((panda->has_rtc) && !ignition_stats->ignition && (ignition_stats->no_ignition_cnt % 120 == 1)) {
-    // Write time to RTC if it looks reasonable
-    setenv("TZ","UTC",1);
-    struct tm sys_time = util::get_time();
-
-    if (util::time_valid(sys_time)) {
-      struct tm rtc_time = panda->get_rtc();
-      double seconds = difftime(mktime(&rtc_time), mktime(&sys_time));
-
-      if (std::abs(seconds) > 1.1) {
-        panda->set_rtc(sys_time);
-        LOGW("Updating panda RTC. dt = %.2f System: %s RTC: %s",
-              seconds, get_time_str(sys_time).c_str(), get_time_str(rtc_time).c_str());
-      }
-    }
-  }
-
-  ignition_stats->ignition_last = ignition_stats->ignition;
 
   // build msg
   MessageBuilder msg;
@@ -358,6 +313,8 @@ void send_panda_state(PubMaster *pm, Panda *panda, IgnitionStats * ignition_stat
     }
   }
   pm->send("pandaState", msg);
+  
+  return ignition;
 }
 
 void send_peripheral_state(PubMaster *pm, Panda *panda) {
@@ -392,17 +349,31 @@ void send_peripheral_state(PubMaster *pm, Panda *panda) {
 }
 
 void panda_state_thread(PubMaster *pm, Panda * peripheral_panda, Panda *panda, bool spoofing_started) {
-  LOGD("start panda state thread");
+  Params params;
+  bool ignition_last = false;
 
-  IgnitionStats ignition_stats {.no_ignition_cnt = 0, .ignition = false, .ignition_last = false};
+  LOGD("start panda state thread");
 
   // run at 2hz
   while (!do_exit && panda->connected) {
     send_peripheral_state(pm, peripheral_panda);
-    send_panda_state(pm, panda, &ignition_stats, spoofing_started);
+    ignition = send_panda_state(pm, panda, spoofing_started);
 
-    // Set gobal ignition
-    ignition = ignition_stats.ignition;
+    // clear VIN, CarParams, and set new safety on car start
+    if (ignition && !ignition_last) {
+      params.clearAll(CLEAR_ON_IGNITION_ON);
+
+      if (!safety_setter_thread_running) {
+        safety_setter_thread_running = true;
+        std::thread(safety_setter_thread, panda).detach();
+      } else {
+        LOGW("Safety setter thread already running");
+      }
+    } else if (!ignition && ignition_last) {
+      params.clearAll(CLEAR_ON_IGNITION_OFF);
+    }
+
+    ignition_last = ignition;
 
     panda->send_heartbeat();
     util::sleep_for(500);
@@ -481,6 +452,23 @@ void peripheral_control_thread(Panda *panda) {
       prev_ir_pwr = ir_pwr;
     }
 
+    // Write to rtc once per minute when no ignition present
+    if ((panda->has_rtc) && !ignition && (cnt % 120 == 1)) {
+      // Write time to RTC if it looks reasonable
+      setenv("TZ","UTC",1);
+      struct tm sys_time = util::get_time();
+
+      if (util::time_valid(sys_time)) {
+        struct tm rtc_time = panda->get_rtc();
+        double seconds = difftime(mktime(&rtc_time), mktime(&sys_time));
+
+        if (std::abs(seconds) > 1.1) {
+          panda->set_rtc(sys_time);
+          LOGW("Updating panda RTC. dt = %.2f System: %s RTC: %s",
+                seconds, get_time_str(sys_time).c_str(), get_time_str(rtc_time).c_str());
+        }
+      }
+    }
   }
 }
 
