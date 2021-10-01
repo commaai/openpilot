@@ -3,12 +3,15 @@
 import os
 import time
 
+from typing import List
+
 from panda import BASEDIR as PANDA_BASEDIR, Panda, PandaDFU
 from common.basedir import BASEDIR
 from common.params import Params
 from selfdrive.swaglog import cloudlog
 
 PANDA_FW_FN = os.path.join(PANDA_BASEDIR, "board", "obj", "panda.bin.signed")
+PERIPHERAL_TYPES = [Panda.HW_TYPE_UNO, Panda.HW_TYPE_DOS]
 
 
 def get_expected_signature() -> bytes:
@@ -19,43 +22,17 @@ def get_expected_signature() -> bytes:
     return b""
 
 
-def update_panda() -> Panda:
-  panda = None
-  panda_dfu = None
-
-  cloudlog.info("Connecting to panda")
-
-  while True:
-    # break on normal mode Panda
-    panda_list = Panda.list()
-    if len(panda_list) > 0:
-      cloudlog.info("Panda found, connecting")
-      panda = Panda(panda_list[0])
-      break
-
-    # flash on DFU mode Panda
-    panda_dfu = PandaDFU.list()
-    if len(panda_dfu) > 0:
-      cloudlog.info("Panda in DFU mode found, flashing recovery")
-      panda_dfu = PandaDFU(panda_dfu[0])
-      panda_dfu.recover()
-
-    time.sleep(1)
-
+def flash_panda(panda_serial : str) -> Panda:
   fw_signature = get_expected_signature()
-
-  try:
-    serial = panda.get_serial()[0].decode("utf-8")
-  except Exception:
-    serial = None
+  panda = Panda(panda_serial)
 
   panda_version = "bootstub" if panda.bootstub else panda.get_version()
   panda_signature = b"" if panda.bootstub else panda.get_signature()
-  cloudlog.warning("Panda %s connected, version: %s, signature %s, expected %s" % (
-    serial,
+  cloudlog.warning(f"Panda %s connected, version: %s, signature %s, expected %s" % (
+    panda_serial,
     panda_version,
-    panda_signature.hex(),
-    fw_signature.hex(),
+    panda_signature.hex()[:16],
+    fw_signature.hex()[:16],
   ))
 
   if panda.bootstub or panda_signature != fw_signature:
@@ -81,20 +58,59 @@ def update_panda() -> Panda:
   return panda
 
 
+def get_pandas() -> List[Panda]:
+  panda = None
+  panda_dfu = None
+
+  cloudlog.info("Connecting to panda")
+
+  # Flash all Pandas in DFU mode
+  for p in PandaDFU.list():
+    cloudlog.info(f"Panda in DFU mode found, flashing recovery {p}")
+    panda_dfu = PandaDFU(p)
+    panda_dfu.recover()
+    time.sleep(1)
+
+  # Ensure we have at least one panda
+  pandas = []
+  while not pandas:
+    pandas = Panda.list()
+
+    if not pandas:
+      time.sleep(1)
+
+  cloudlog.info(f"{len(pandas)} panda(s) found, connecting - {pandas}")
+
+  # Flash pandas
+  r = []
+  for serial in pandas:
+    r.append(flash_panda(serial))
+
+  return r
+
+
 def main() -> None:
-  panda = update_panda()
+  pandas = get_pandas()
 
   # check health for lost heartbeat
-  health = panda.health()
-  if health["heartbeat_lost"]:
-    Params().put_bool("PandaHeartbeatLost", True)
-    cloudlog.event("heartbeat lost", deviceState=health)
+  for panda in pandas:
+    health = panda.health()
+    if health["heartbeat_lost"]:
+      Params().put_bool("PandaHeartbeatLost", True)
+      cloudlog.event("heartbeat lost", deviceState=health, serial=panda._serial)
 
-  cloudlog.info("Resetting panda")
-  panda.reset()
+    cloudlog.info(f"Resetting panda {panda._serial}")
+    panda.reset()
+
+  if len(pandas) == 1:
+    peripheral_panda = pandas[0]
+    panda = pandas[0]
+  else:
+    peripheral_panda = [p for p in pandas if p.get_type() in PERIPHERAL_TYPES][0] # TODO: add error handling if not found
+    panda = [p for p in pandas if p._serial != peripheral_panda._serial]
 
   os.chdir(os.path.join(BASEDIR, "selfdrive/boardd"))
-  os.execvp("./boardd", ["./boardd"])
+  os.execvp("./boardd", ["./boardd", peripheral_panda._serial, panda._serial])
 
 
 if __name__ == "__main__":
