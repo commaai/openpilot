@@ -37,6 +37,7 @@
 
 std::atomic<bool> safety_setter_thread_running(false);
 std::atomic<bool> ignition(false);
+std::atomic<bool> all_connected(false);
 
 ExitHandler do_exit;
 
@@ -180,7 +181,7 @@ void can_send_thread(Panda *panda, bool fake_send) {
   subscriber->setTimeout(100);
 
   // run as fast as messages come in
-  while (!do_exit && panda->connected) {
+  while (!do_exit && panda->connected && all_connected) {
     Message * msg = subscriber->receive();
 
     if (!msg) {
@@ -205,6 +206,8 @@ void can_send_thread(Panda *panda, bool fake_send) {
 
   delete subscriber;
   delete context;
+
+  all_connected = false;
 }
 
 void can_recv_thread(Panda *panda) {
@@ -217,7 +220,7 @@ void can_recv_thread(Panda *panda) {
   const uint64_t dt = 10000000ULL;
   uint64_t next_frame_time = nanos_since_boot() + dt;
 
-  while (!do_exit && panda->connected) {
+  while (!do_exit && panda->connected && all_connected) {
     can_recv(panda, pm);
 
     uint64_t cur_time = nanos_since_boot();
@@ -233,6 +236,8 @@ void can_recv_thread(Panda *panda) {
 
     next_frame_time += dt;
   }
+
+  all_connected = false;
 }
 
 void send_empty_peripheral_state(PubMaster *pm) {
@@ -353,7 +358,7 @@ void panda_state_thread(PubMaster *pm, Panda * peripheral_panda, Panda *panda, b
   LOGD("start panda state thread");
 
   // run at 2hz
-  while (!do_exit && panda->connected) {
+  while (!do_exit && panda->connected && all_connected) {
     send_peripheral_state(pm, peripheral_panda);
     ignition = send_panda_state(pm, panda, spoofing_started);
 
@@ -376,6 +381,8 @@ void panda_state_thread(PubMaster *pm, Panda * peripheral_panda, Panda *panda, b
     panda->send_heartbeat();
     util::sleep_for(500);
   }
+
+  all_connected = false;
 }
 
 
@@ -392,7 +399,7 @@ void peripheral_control_thread(Panda *panda) {
 
   FirstOrderFilter integ_lines_filter(0, 30.0, 0.05);
 
-  while (!do_exit && panda->connected) {
+  while (!do_exit && panda->connected && all_connected) {
     cnt++;
     sm.update(1000); // TODO: what happens if EINTR is sent while in sm.update?
 
@@ -468,6 +475,8 @@ void peripheral_control_thread(Panda *panda) {
       }
     }
   }
+
+  all_connected = false;
 }
 
 static void pigeon_publish_raw(PubMaster &pm, const std::string &dat) {
@@ -489,7 +498,7 @@ void pigeon_thread(Panda *panda) {
     {(char)ublox::CLASS_RXM, int64_t(900000000ULL)}, // 0.9s
   };
 
-  while (!do_exit && panda->connected) {
+  while (!do_exit && panda->connected && all_connected) {
     bool need_reset = false;
     std::string recv = pigeon->receive();
 
@@ -548,6 +557,7 @@ void pigeon_thread(Panda *panda) {
   }
 
   delete pigeon;
+  all_connected = false;
 }
 
 int main(int argc, char* argv[]) {
@@ -571,6 +581,8 @@ int main(int argc, char* argv[]) {
   PubMaster pm({"pandaState", "peripheralState"});
 
   while (!do_exit) {
+    std::vector<std::thread> threads;
+
     Panda *peripheral_panda = usb_connect(peripheral_panda_serial);
     Panda *panda = nullptr;
 
@@ -585,12 +597,12 @@ int main(int argc, char* argv[]) {
       send_empty_panda_state(&pm);
       send_empty_peripheral_state(&pm);
       util::sleep_for(500);
-      continue;
+      goto fail;
     }
 
     LOGW("connected to board");
+    all_connected = true;
 
-    std::vector<std::thread> threads;
     threads.emplace_back(panda_state_thread, &pm, peripheral_panda, panda, getenv("STARTED") != nullptr);
     threads.emplace_back(peripheral_control_thread, peripheral_panda);
     threads.emplace_back(pigeon_thread, peripheral_panda);
@@ -600,7 +612,10 @@ int main(int argc, char* argv[]) {
 
     for (auto &t : threads) t.join();
 
+fail:
+    if (peripheral_panda_serial != panda_serial) {
+      delete peripheral_panda;
+    }
     delete panda;
-    panda = nullptr;
   }
 }
