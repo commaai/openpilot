@@ -430,6 +430,7 @@ selfdrive/assets/fonts/*.ttf
 selfdrive/assets/icons/*
 selfdrive/assets/images/*
 selfdrive/assets/offroad/*
+selfdrive/assets/navigation/*
 selfdrive/assets/sounds/*
 selfdrive/assets/training/*
 

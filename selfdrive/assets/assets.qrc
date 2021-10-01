@@ -3,6 +3,9 @@
   <file>img_continue_triangle.svg</file>
   <file>img_circled_check.svg</file>
   <file>img_circled_slash.svg</file>
+  <file>img_driver_face.png</file>
+  <file>img_spinner_comma.png</file>
+  <file>img_spinner_track.png</file>
 
   <file>icons/close.svg</file>
   <file>icons/eye_open.svg</file>
@@ -36,12 +39,99 @@
   <file>offroad/icon_openpilot.png</file>
   <file>offroad/icon_wifi_strength_medium.svg</file>
 
-  <file>offroad/icon_lock_closed.svg</file>
-  <file>offroad/icon_checkmark.svg</file>
-  <file>offroad/icon_warning.png</file>
-  <file>offroad/icon_wifi_strength_low.svg</file>
-  <file>offroad/icon_wifi_strength_medium.svg</file>
-  <file>offroad/icon_wifi_strength_high.svg</file>
-  <file>offroad/icon_wifi_strength_full.svg</file>
+  <file>navigation/direction_arrive_left.png</file>
+  <file>navigation/direction_arrive.png</file>
+  <file>navigation/direction_arrive_right.png</file>
+  <file>navigation/direction_arrive_straight.png</file>
+  <file>navigation/direction_close.png</file>
+  <file>navigation/direction_continue_left.png</file>
+  <file>navigation/direction_continue.png</file>
+  <file>navigation/direction_continue_right.png</file>
+  <file>navigation/direction_continue_slight_left.png</file>
+  <file>navigation/direction_continue_slight_right.png</file>
+  <file>navigation/direction_continue_straight.png</file>
+  <file>navigation/direction_continue_uturn.png</file>
+  <file>navigation/direction_depart_left.png</file>
+  <file>navigation/direction_depart.png</file>
+  <file>navigation/direction_depart_right.png</file>
+  <file>navigation/direction_depart_straight.png</file>
+  <file>navigation/direction_end_of_road_left.png</file>
+  <file>navigation/direction_end_of_road_right.png</file>
+  <file>navigation/direction_flag.png</file>
+  <file>navigation/direction_fork_left.png</file>
+  <file>navigation/direction_fork.png</file>
+  <file>navigation/direction_fork_right.png</file>
+  <file>navigation/direction_fork_slight_left.png</file>
+  <file>navigation/direction_fork_slight_right.png</file>
+  <file>navigation/direction_fork_straight.png</file>
+  <file>navigation/direction_invalid_left.png</file>
+  <file>navigation/direction_invalid.png</file>
+  <file>navigation/direction_invalid_right.png</file>
+  <file>navigation/direction_invalid_slight_left.png</file>
+  <file>navigation/direction_invalid_slight_right.png</file>
+  <file>navigation/direction_invalid_straight.png</file>
+  <file>navigation/direction_invalid_uturn.png</file>
+  <file>navigation/direction_merge_left.png</file>
+  <file>navigation/direction_merge_right.png</file>
+  <file>navigation/direction_merge_slight_left.png</file>
+  <file>navigation/direction_merge_slight_right.png</file>
+  <file>navigation/direction_merge_straight.png</file>
+  <file>navigation/direction_new_name_left.png</file>
+  <file>navigation/direction_new_name_right.png</file>
+  <file>navigation/direction_new_name_sharp_left.png</file>
+  <file>navigation/direction_new_name_sharp_right.png</file>
+  <file>navigation/direction_new_name_slight_left.png</file>
+  <file>navigation/direction_new_name_slight_right.png</file>
+  <file>navigation/direction_new_name_straight.png</file>
+  <file>navigation/direction_notificaiton_right.png</file>
+  <file>navigation/direction_notificaiton_sharp_right.png</file>
+  <file>navigation/direction_notification_left.png</file>
+  <file>navigation/direction_notification_sharp_left.png</file>
+  <file>navigation/direction_notification_slight_left.png</file>
+  <file>navigation/direction_notification_slight_right.png</file>
+  <file>navigation/direction_notification_straight.png</file>
+  <file>navigation/direction_off_ramp_left.png</file>
+  <file>navigation/direction_off_ramp_right.png</file>
+  <file>navigation/direction_off_ramp_slight_left.png</file>
+  <file>navigation/direction_off_ramp_slight_right.png</file>
+  <file>navigation/direction_on_ramp_left.png</file>
+  <file>navigation/direction_on_ramp_right.png</file>
+  <file>navigation/direction_on_ramp_sharp_left.png</file>
+  <file>navigation/direction_on_ramp_sharp_right.png</file>
+  <file>navigation/direction_on_ramp_slight_left.png</file>
+  <file>navigation/direction_on_ramp_slight_right.png</file>
+  <file>navigation/direction_on_ramp_straight.png</file>
+  <file>navigation/direction_rotary_left.png</file>
+  <file>navigation/direction_rotary.png</file>
+  <file>navigation/direction_rotary_right.png</file>
+  <file>navigation/direction_rotary_sharp_left.png</file>
+  <file>navigation/direction_rotary_sharp_right.png</file>
+  <file>navigation/direction_rotary_slight_left.png</file>
+  <file>navigation/direction_rotary_slight_right.png</file>
+  <file>navigation/direction_rotary_straight.png</file>
+  <file>navigation/direction_roundabout_left.png</file>
+  <file>navigation/direction_roundabout.png</file>
+  <file>navigation/direction_roundabout_right.png</file>
+  <file>navigation/direction_roundabout_sharp_left.png</file>
+  <file>navigation/direction_roundabout_sharp_right.png</file>
+  <file>navigation/direction_roundabout_slight_left.png</file>
+  <file>navigation/direction_roundabout_slight_right.png</file>
+  <file>navigation/direction_roundabout_straight.png</file>
+  <file>navigation/direction_turn_left.png</file>
+  <file>navigation/direction_turn_right.png</file>
+  <file>navigation/direction_turn_sharp_left.png</file>
+  <file>navigation/direction_turn_sharp_right.png</file>
+  <file>navigation/direction_turn_slight_left.png</file>
+  <file>navigation/direction_turn_slight_right.png</file>
+  <file>navigation/direction_turn_straight.png</file>
+  <file>navigation/direction_turn_uturn.png</file>
+  <file>navigation/direction_updown.png</file>
+  <file>navigation/home_inactive.png</file>
+  <file>navigation/home.png</file>
+  <file>navigation/home.svg</file>
+  <file>navigation/screenshot.png</file>
+  <file>navigation/work_inactive.png</file>
+  <file>navigation/work.png</file>
+  <file>navigation/work.svg</file>
 </qresource>
 </RCC>
