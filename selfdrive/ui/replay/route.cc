@@ -2,7 +2,6 @@
 
 #include <curl/curl.h>
 
-#include <QDir>
 #include <QEventLoop>
 #include <QFile>
 #include <QJsonArray>
@@ -179,7 +178,7 @@ Segment::Segment(int n, const SegmentFile &segment_files, bool load_dcam, bool l
   static CURLGlobalInitializer curl_initializer;
   static std::once_flag once_flag;
   std::call_once(once_flag, [=]() {
-    if (!QDir(CACHE_DIR).exists()) QDir().mkdir(CACHE_DIR);
+    if (!CACHE_DIR.exists()) QDir().mkdir(CACHE_DIR.absolutePath());
   });
 
   // fallback to qcamera/qlog
@@ -253,5 +252,5 @@ QString Segment::localPath(const QUrl &url) {
   if (url.isLocalFile()) return url.toString();
 
   QByteArray url_no_query = url.toString(QUrl::RemoveQuery).toUtf8();
-  return CACHE_DIR + QString(QCryptographicHash::hash(url_no_query, QCryptographicHash::Sha256).toHex());
+  return CACHE_DIR.filePath(QString(QCryptographicHash::hash(url_no_query, QCryptographicHash::Sha256).toHex()));
 }
