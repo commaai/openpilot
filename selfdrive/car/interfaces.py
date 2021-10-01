@@ -39,6 +39,7 @@ class CarInterfaceBase():
       self.cp = self.CS.get_can_parser(CP)
       self.cp_cam = self.CS.get_cam_can_parser(CP)
       self.cp_body = self.CS.get_body_can_parser(CP)
+      self.cp_panda = self.CS.get_panda_can_parser(CP)
 
     self.CC = None
     if CarController is not None:
@@ -242,4 +243,8 @@ class CarStateBase:
 
   @staticmethod
   def get_body_can_parser(CP):
+    return None
+
+  @staticmethod
+  def get_panda_can_parser(CP):
     return None
