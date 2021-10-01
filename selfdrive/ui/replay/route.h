@@ -30,10 +30,12 @@ public:
   inline int size() const { return segments_.size(); }
   inline SegmentFile &at(int n) { return segments_[n]; }
 
+  // public for unit tests
+  std::vector<SegmentFile> segments_;
+
 protected:
   bool loadFromJson(const QString &json);
   QString route_;
-  std::vector<SegmentFile> segments_;
 };
 
 class Segment : public QObject {
@@ -47,9 +49,6 @@ public:
 
   std::unique_ptr<LogReader> log;
   std::unique_ptr<FrameReader> frames[MAX_CAMERAS] = {};
-
-  // public for unit tests
-  bool loaded_ = false, valid_ = false;
 
 signals:
   void loadFinished();

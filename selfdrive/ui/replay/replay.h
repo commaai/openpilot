@@ -38,7 +38,6 @@ protected:
   QThread *thread;
 
   // logs
-  std::mutex queue_lock_;
   std::mutex stream_lock_;
   std::condition_variable stream_cv_;
   std::atomic<bool> updating_events_ = false;

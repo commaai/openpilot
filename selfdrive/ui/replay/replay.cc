@@ -2,6 +2,7 @@
 
 #include <QApplication>
 #include <QDebug>
+
 #include "cereal/services.h"
 #include "selfdrive/camerad/cameras/camera_common.h"
 #include "selfdrive/common/timing.h"
@@ -25,7 +26,7 @@ inline void precise_nano_sleep(long sleep_ns) {
 
 Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *sm_, bool dcam, bool ecam, QObject *parent)
     : sm(sm_), load_dcam(dcam), load_ecam(ecam), QObject(parent) {
-  std::vector<const char*> s;
+  std::vector<const char *> s;
   for (const auto &it : services) {
     if ((allow.size() == 0 || allow.contains(it.name)) &&
         !block.contains(it.name)) {
@@ -62,14 +63,13 @@ bool Replay::load() {
 
 void Replay::start(int seconds) {
   seekTo(seconds);
-  qDebug() << "start from" << seconds;
   // start stream thread
   thread = new QThread;
   QObject::connect(thread, &QThread::started, [=]() { stream(); });
   thread->start();
 }
 
-void Replay::updateEvents(const std::function<bool()>& lambda) {
+void Replay::updateEvents(const std::function<bool()> &lambda) {
   // set updating_events to true to force stream thread relase the lock and wait for evnets_udpated.
   updating_events_ = true;
   {
@@ -83,24 +83,24 @@ void Replay::updateEvents(const std::function<bool()>& lambda) {
 void Replay::seekTo(int seconds, bool relative) {
   if (segments_.empty()) return;
 
-  // cannot do seek while queueSegment is running, the queueSegment will wake up the stream thread, 
-  // and change the current_segment_ to a value different from seek in the event loop.
-  std::unique_lock lk(queue_lock_);
-
+  bool segment_loaded = false;
   updateEvents([&]() {
     if (relative) {
       seconds += ((cur_mono_time_ - route_start_ts_) * 1e-9);
     }
+    qInfo() << "seeking to" << seconds;
+
     cur_mono_time_ = route_start_ts_ + std::clamp(seconds, 0, (int)segments_.size() * 60) * 1e9;
     current_segment_ = std::min(seconds / 60, (int)segments_.size() - 1);
-    // always emit segmentChanged. the current_segment_ may not correct when seeking cross boundary or invalid segments. 
-    // e.g. seekTo 60s(segment 1), but segment 0 is end at 60.021, or segment 1 is invalid.
-    emit segmentChanged();
-
-    qInfo() << "seeking to " << seconds;
-    // return true if segment is already loaded
-    return segments_[current_segment_] && segments_[current_segment_]->isLoaded();
+    segment_loaded = std::find(segments_merged_.begin(), segments_merged_.end(), current_segment_) != segments_merged_.end();
+    return segment_loaded;
   });
+
+  if (!segment_loaded) {
+    // always emit segmentChanged if segment is not loaded.
+    // the current_segment_ may not valid when seeking cross boundary or seeking to an invalid segment.
+    emit segmentChanged();
+  }
 }
 
 void Replay::pause(bool pause) {
@@ -119,7 +119,6 @@ void Replay::setCurrentSegment(int n) {
 
 // maintain the segment window
 void Replay::queueSegment() {
-  std::unique_lock lk(queue_lock_);
   // fetch segments forward
   int cur_seg = current_segment_.load();
   int end_idx = cur_seg;
@@ -173,20 +172,18 @@ void Replay::mergeSegments(int cur_seg, int end_idx) {
         auto it = std::find_if(new_events->begin(), new_events->end(), [=](auto e) { return e->which == cereal::Event::Which::INIT_DATA; });
         if (it != new_events->end()) {
           route_start_ts_ = (*it)->mono_time;
-          // cur_mono_time_ may be set by seek when route_start_ts_ = 0
+          // cur_mono_time_ is set by seekTo int start() before get route_start_ts_
           cur_mono_time_ += route_start_ts_;
         }
       }
 
       events_ = new_events;
       segments_merged_ = segments_need_merge;
-      return segments_[cur_seg] && segments_[cur_seg]->isLoaded();
+      return true;
     });
     delete prev_events;
   } else {
-    updateEvents([&]() {
-      return segments_[cur_seg] && segments_[cur_seg]->isLoaded();
-    });
+    updateEvents([]() { return true; });
   }
 
   // free segments out of current semgnt window.
