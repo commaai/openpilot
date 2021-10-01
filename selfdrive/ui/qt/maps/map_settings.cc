@@ -4,7 +4,6 @@
 
 #include "selfdrive/common/util.h"
 #include "selfdrive/ui/qt/util.h"
-#include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/request_repeater.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
 #include "selfdrive/ui/qt/widgets/scrollview.h"
@@ -102,7 +101,7 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
 
     QLabel *screenshot = new QLabel;
     QPixmap pm = QPixmap("../assets/navigation/screenshot.png");
-    screenshot->setPixmap(pm.scaledToWidth(vwp_w * 0.5, Qt::SmoothTransformation));
+    screenshot->setPixmap(pm.scaledToWidth(1080, Qt::SmoothTransformation));
     no_prime_layout->addWidget(screenshot, 0, Qt::AlignHCenter);
 
     QLabel *signup = new QLabel("Get turn-by-turn directions displayed and more with a comma \nprime subscription. Sign up now: https://connect.comma.ai");
