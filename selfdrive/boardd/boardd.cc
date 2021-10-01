@@ -235,18 +235,18 @@ void can_recv_thread(Panda *panda) {
   }
 }
 
-void send_empty_panda_state(PubMaster *pm) {
-  MessageBuilder msg;
-  auto pandaState  = msg.initEvent().initPandaState();
-  pandaState.setPandaType(cereal::PandaState::PandaType::UNKNOWN);
-  pm->send("pandaState", msg);
-}
-
 void send_empty_peripheral_state(PubMaster *pm) {
   MessageBuilder msg;
   auto peripheralState  = msg.initEvent().initPeripheralState();
   peripheralState.setPandaType(cereal::PandaState::PandaType::UNKNOWN);
   pm->send("peripheralState", msg);
+}
+
+void send_empty_panda_state(PubMaster *pm) {
+  MessageBuilder msg;
+  auto pandaState  = msg.initEvent().initPandaState();
+  pandaState.setPandaType(cereal::PandaState::PandaType::UNKNOWN);
+  pm->send("pandaState", msg);
 }
 
 bool send_panda_state(PubMaster *pm, Panda *panda, bool spoofing_started) {
