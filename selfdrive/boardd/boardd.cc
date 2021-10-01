@@ -282,8 +282,6 @@ bool send_panda_state(PubMaster *pm, Panda *panda, bool spoofing_started) {
 
   auto ps = evt.initPandaState();
   ps.setUptime(pandaState.uptime);
-
-
   ps.setIgnitionLine(pandaState.ignition_line);
   ps.setIgnitionCan(pandaState.ignition_can);
   ps.setControlsAllowed(pandaState.controls_allowed);
