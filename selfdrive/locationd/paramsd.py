@@ -123,17 +123,14 @@ def main(sm=None, pm=None):
   # When driving in wet conditions the stiffness can go down, and then be too low on the next drive
   # Without a way to detect this we have to reset the stiffness every drive
   params['stiffnessFactor'] = 1.0
-
   learner = ParamsLearner(CP, params['steerRatio'], params['stiffnessFactor'], math.radians(params['angleOffsetAverageDeg']))
-
   angle_offset_average = params['angleOffsetAverageDeg']
   angle_offset = angle_offset_average
 
   while True:
     sm.update()
-
-    for which, updated in sm.updated.items():
-      if updated:
+    for which in sorted(sm.updated.keys(), key=lambda x: sm.logMonoTime[x]):
+      if sm.updated[which]:
         t = sm.logMonoTime[which] * 1e-9
         learner.handle_log(t, which, sm[which])
 
