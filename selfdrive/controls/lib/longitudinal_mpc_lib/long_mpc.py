@@ -25,13 +25,13 @@ COST_E_DIM = 3
 COST_DIM = COST_E_DIM + 1
 MIN_ACCEL = -3.5
 
-X_EGO_COST = 80.
-X_EGO_E2E_COST = 100.
-A_EGO_COST = .1
-J_EGO_COST = .2
-DANGER_ZONE_COST = 1e3
+X_EGO_COST = 1.
+X_EGO_E2E_COST = 10.
+A_EGO_COST = 1.
+J_EGO_COST = 10.
+DANGER_ZONE_COST = 1e2
 CRASH_DISTANCE = .5
-LIMIT_COST = 1e6
+LIMIT_COST = 1e5
 T_IDXS = np.array(T_IDXS_LST)
 
 T_REACT = 1.8
@@ -110,12 +110,12 @@ def gen_long_mpc_solver():
   ocp.cost.yref_e = np.zeros((COST_E_DIM, ))
 
   desired_dist_comfort = get_safe_obstacle_distance(v_ego)
-  desired_dist_danger = (7/8) * get_safe_obstacle_distance(v_ego)
+  desired_dist_danger = (3/4) * get_safe_obstacle_distance(v_ego)
 
   costs = [((x_obstacle - x_ego) - (desired_dist_comfort)) / (v_ego + 10.),
            x_ego,
-           a_ego * (v_ego + 10.),
-           j_ego * (v_ego + 10.)]
+           a_ego,
+           j_ego]
   ocp.model.cost_y_expr = vertcat(*costs)
   ocp.model.cost_y_expr_e = vertcat(*costs[:-1])
 
@@ -154,7 +154,7 @@ def gen_long_mpc_solver():
   ocp.solver_options.integrator_type = 'ERK'
   ocp.solver_options.nlp_solver_type = 'SQP_RTI'
 
-  ocp.solver_options.qp_solver_iter_max = 3
+  ocp.solver_options.qp_solver_iter_max = 10
 
   # set prediction horizon
   ocp.solver_options.tf = Tf
