@@ -581,7 +581,7 @@ int main() {
     Panda *panda = usb_connect();
     Panda *peripheral_panda = panda;
 
-    // Send empty pandaState and try again
+    // Send empty pandaState & peripheralState and try again
     if (panda == nullptr || peripheral_panda == nullptr) {
       send_empty_panda_state(&pm);
       send_empty_peripheral_state(&pm);
