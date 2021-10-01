@@ -1,16 +1,25 @@
 import math
 from cereal import car
 from common.numpy_fast import clip, interp
+from common.params import Params
 from common.realtime import DT_MDL
 from selfdrive.config import Conversions as CV
 from selfdrive.modeld.constants import T_IDXS
 
+IS_METRIC = Params().get_bool("IsMetric")
 
 # kph
 V_CRUISE_MAX = 135
-V_CRUISE_MIN = 8
-V_CRUISE_DELTA = 1.6
-V_CRUISE_ENABLE_MIN = 40
+if IS_METRIC:
+  V_CRUISE_DELTA = 1
+  FAST_CRUISE_MULTIPLIER = 10
+  V_CRUISE_ENABLE_MIN = 30
+  V_CRUISE_MIN = 5
+else:
+  V_CRUISE_DELTA = 1.6
+  FAST_CRUISE_MULTIPLIER = 5
+  V_CRUISE_ENABLE_MIN = 40
+  V_CRUISE_MIN = 8
 LAT_MPC_N = 16
 LON_MPC_N = 32
 CONTROL_N = 17
@@ -75,7 +84,7 @@ def update_v_cruise(v_cruise_kph, buttonEvents, button_timers, enabled):
         break
 
   if button_type:
-    v_cruise_delta = V_CRUISE_DELTA * (5 if long_press else 1)
+    v_cruise_delta = V_CRUISE_DELTA * (FAST_CRUISE_MULTIPLIER if long_press else 1)
     if long_press and v_cruise_kph % v_cruise_delta != 0: # partial interval
       v_cruise_kph = CRUISE_NEAREST_FUNC[button_type](v_cruise_kph / v_cruise_delta) * v_cruise_delta
     else:
