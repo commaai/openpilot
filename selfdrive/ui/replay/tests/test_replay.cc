@@ -111,30 +111,33 @@ void TestReplay::testSeekTo(int seek_to, int invalid_segment) {
   seekTo(seek_to);
 
   // wait for seek finish
-  std::unique_lock lk(lock_);
+  std::unique_lock lk(stream_lock_);
   stream_cv_.wait(lk, [=]() { return events_updated_ == true; });
   events_updated_ = false;
 
   // verify result
   INFO("seek to [" << seek_to << "s segment " << seek_to / 60 << "]");
+  REQUIRE(!events_->empty());
   REQUIRE(is_events_ordered(*events_));
   REQUIRE(uint64_t(route_start_ts_ + seek_to * 1e9) == cur_mono_time_);
-  REQUIRE(!events_->empty());
+
   Event cur_event(cereal::Event::Which::INIT_DATA, cur_mono_time_);
   auto eit = std::upper_bound(events_->begin(), events_->end(), &cur_event, Event::lessThan());
 
   REQUIRE(eit != events_->end());
   const int seek_to_segment = seek_to / 60;
-  current_segment_ = int(((*eit)->mono_time - route_start_ts_) / 60 / 1e9);
-  INFO("event [" << ((*eit)->mono_time - route_start_ts_) / 1e9 << "s segment " << current_segment_ << "]");
-  REQUIRE((*eit)->mono_time >= seek_to * 1e9 + route_start_ts_);
+  const int event_seconds = ((*eit)->mono_time - route_start_ts_) / 1e9;
+  current_segment_ = event_seconds / 60;
+  INFO("event [" << event_seconds << "s segment " << current_segment_ << "]");
+  REQUIRE(event_seconds >= seek_to);
   if (seek_to_segment != invalid_segment) {
     REQUIRE(current_segment_ == seek_to_segment);  // in the same segment
+    REQUIRE(event_seconds == seek_to); // at the same time
   } else {
     // has invalid_segment
     if (current_segment_ == seek_to_segment) {
-      // seek cross-boundary. e.g. seek_to 60s, but the first segment end at 60.021.
-      REQUIRE(std::nearbyint(((*eit)->mono_time - route_start_ts_)/1e9) == seek_to);
+      // seek cross-boundary. e.g. seek_to 60s(segment 1), but segment 0 end at 60.021.
+      REQUIRE(event_seconds == seek_to);
     } else {
       REQUIRE(current_segment_ == seek_to_segment + 1);
     }
@@ -145,19 +148,22 @@ void TestReplay::test_seek() {
   QEventLoop loop;
 
   std::thread thread = std::thread([&]() {
-    // random seek 500 times in first 3 good segments
-    for (int i = 0; i < 200; ++i) {
+    // random seek 500 times in one segment
+    for (int i = 0; i < 500; ++i) {
+      testSeekTo(random_int(0, 60));
+    }
+    // random seek 500 times in 3 segments (this test if fast)
+    for (int i = 0; i < 500; ++i) {
       testSeekTo(random_int(0, 60 * 3 - 1));
     }
 
-    // random seek 200 times in first 3 segments.segment 1 is invalid.
+    // random seek 500 times in 3 segments.segment 1 is invalid.
     // invalid segmen 1
     segments_[1]->valid_ = segments_[1]->loaded_ = false;
     queueSegment();
-    for (int i = 0; i < 200; ++i) {
+    for (int i = 0; i < 500; ++i) {
       testSeekTo(random_int(0, 60 * 3 - 1), 1);
     }
-
     loop.quit();
   });
 

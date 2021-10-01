@@ -73,7 +73,7 @@ void Replay::updateEvents(const std::function<bool()>& lambda) {
   // set updating_events to true to force stream thread relase the lock and wait for evnets_udpated.
   updating_events_ = true;
   {
-    std::unique_lock lk(lock_);
+    std::unique_lock lk(stream_lock_);
     events_updated_ = lambda();
     updating_events_ = false;
   }
@@ -83,18 +83,23 @@ void Replay::updateEvents(const std::function<bool()>& lambda) {
 void Replay::seekTo(int seconds, bool relative) {
   if (segments_.empty()) return;
 
+  // cannot do seek while queueSegment is running, the queueSegment will wake up the stream thread, 
+  // and change the current_segment_ to a value different from seek in the event loop.
   std::unique_lock lk(queue_lock_);
+
   updateEvents([&]() {
     if (relative) {
       seconds += ((cur_mono_time_ - route_start_ts_) * 1e-9);
     }
     cur_mono_time_ = route_start_ts_ + std::clamp(seconds, 0, (int)segments_.size() * 60) * 1e9;
-    int segment = std::min(seconds / 60, (int)segments_.size() - 1);
-    setCurrentSegment(segment);
+    current_segment_ = std::min(seconds / 60, (int)segments_.size() - 1);
+    // always emit segmentChanged. the current_segment_ may not correct when seeking cross boundary or invalid segments. 
+    // e.g. seekTo 60s(segment 1), but segment 0 is end at 60.021, or segment 1 is invalid.
+    emit segmentChanged();
 
     qInfo() << "seeking to " << seconds;
     // return true if segment is already loaded
-    return std::find(segments_merged_.begin(), segments_merged_.end(), segment) != segments_merged_.end();
+    return segments_[current_segment_] && segments_[current_segment_]->isLoaded();
   });
 }
 
@@ -108,7 +113,7 @@ void Replay::pause(bool pause) {
 
 void Replay::setCurrentSegment(int n) {
   if (current_segment_.exchange(n) != n) {
-    emit segmentChanged(n);
+    emit segmentChanged();
   }
 }
 
@@ -175,12 +180,12 @@ void Replay::mergeSegments(int cur_seg, int end_idx) {
 
       events_ = new_events;
       segments_merged_ = segments_need_merge;
-      return !segments_merged_.empty();
+      return segments_[cur_seg] && segments_[cur_seg]->isLoaded();
     });
     delete prev_events;
   } else {
     updateEvents([&]() {
-      return !segments_merged_.empty();
+      return segments_[cur_seg] && segments_[cur_seg]->isLoaded();
     });
   }
 
@@ -196,7 +201,7 @@ void Replay::stream() {
   float last_print = 0;
   cereal::Event::Which cur_which = cereal::Event::Which::INIT_DATA;
 
-  std::unique_lock lk(lock_);
+  std::unique_lock lk(stream_lock_);
 
   while (true) {
     stream_cv_.wait(lk, [=]() { return exit_ || (events_updated_ && !paused_); });

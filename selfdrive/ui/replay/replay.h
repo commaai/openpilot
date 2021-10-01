@@ -24,7 +24,7 @@ public:
   bool isPaused() const { return paused_; }
 
 signals:
- void segmentChanged(int);
+ void segmentChanged();
 
 protected slots:
   void queueSegment();
@@ -38,13 +38,13 @@ protected:
   QThread *thread;
 
   // logs
-  std::mutex lock_;
   std::mutex queue_lock_;
+  std::mutex stream_lock_;
   std::condition_variable stream_cv_;
   std::atomic<bool> updating_events_ = false;
   std::atomic<int> current_segment_ = -1;
   std::vector<std::unique_ptr<Segment>> segments_;
-  // the following variables must be protected with mutex
+  // the following variables must be protected with stream_lock_
   bool exit_ = false;
   bool paused_ = false;
   bool events_updated_ = false;
