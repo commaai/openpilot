@@ -121,27 +121,6 @@ Panda *usb_connect(std::string serial="") {
     panda->set_loopback(true);
   }
 
-  if (auto fw_sig = panda->get_firmware_version(); fw_sig) {
-    params.put("PandaFirmware", (const char *)fw_sig->data(), fw_sig->size());
-
-    // Convert to hex for offroad
-    char fw_sig_hex_buf[16] = {0};
-    const uint8_t *fw_sig_buf = fw_sig->data();
-    for (size_t i = 0; i < 8; i++) {
-      fw_sig_hex_buf[2*i] = NIBBLE_TO_HEX((uint8_t)fw_sig_buf[i] >> 4);
-      fw_sig_hex_buf[2*i+1] = NIBBLE_TO_HEX((uint8_t)fw_sig_buf[i] & 0xF);
-    }
-
-    params.put("PandaFirmwareHex", fw_sig_hex_buf, 16);
-    LOGW("fw signature: %.*s", 16, fw_sig_hex_buf);
-  } else { return nullptr; }
-
-  // get panda serial
-  if (auto serial = panda->get_serial(); serial) {
-    params.put("PandaDongleId", serial->c_str(), serial->length());
-    LOGW("panda serial: %s", serial->c_str());
-  } else { return nullptr; }
-
   // power on charging, only the first time. Panda can also change mode and it causes a brief disconneciton
 #ifndef __x86_64__
   static std::once_flag connected_once;
