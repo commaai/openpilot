@@ -38,10 +38,10 @@ class TestPowerMonitoring(unittest.TestCase):
     params.delete("DisablePowerDown")
 
   def mock_peripheralState(self, hw_type, car_voltage=12):
-    peripheralState = messaging.new_message('peripheralState')
-    peripheralState.peripheralState.pandaType = hw_type
-    peripheralState.peripheralState.voltage = car_voltage * 1e3
-    return peripheralState.peripheralState
+    ps = messaging.new_message('peripheralState').peripheralState
+    ps.pandaType = hw_type
+    ps.voltage = car_voltage * 1e3
+    return ps
 
   # Test to see that it doesn't do anything when pandaState is None
   def test_pandaState_present(self):
