@@ -37,7 +37,7 @@ class TestPowerMonitoring(unittest.TestCase):
     params.delete("CarBatteryCapacity")
     params.delete("DisablePowerDown")
 
-  def mock_peripheralState(self, hw_type, car_voltage=12,):
+  def mock_peripheralState(self, hw_type, car_voltage=12):
     peripheralState = messaging.new_message('peripheralState')
     peripheralState.peripheralState.pandaType = hw_type
     peripheralState.peripheralState.voltage = car_voltage * 1e3
