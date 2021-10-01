@@ -3,6 +3,7 @@
 #include <string>
 
 #include <QApplication>
+#include <QScreen>
 #include <QWidget>
 
 #ifdef QCOM2
@@ -15,12 +16,15 @@
 
 const QString ASSET_PATH = ":/";
 
-const bool WIDE_UI = Hardware::TICI() || getenv("WIDE_UI") != nullptr;
-const int vwp_w = WIDE_UI ? 2160 : 1920;
-const int vwp_h = 1080;
+const int WIDE_WIDTH = 2160;
 
 inline void setMainWindow(QWidget *w) {
+  const bool wide = Hardware::TICI() || (getenv("WIDE_UI") != nullptr) ||
+                    QGuiApplication::primaryScreen()->size().width() >= WIDE_WIDTH;
   const float scale = util::getenv("SCALE", 1.0f);
+  const int vwp_w = wide ? WIDE_WIDTH : 1920;
+  const int vwp_h = 1080;
+
   w->setFixedSize(vwp_w*scale, vwp_h*scale);
   w->show();
 
