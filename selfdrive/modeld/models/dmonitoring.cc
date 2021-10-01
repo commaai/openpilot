@@ -181,6 +181,7 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
   ret.partial_face = s->output[35];
   ret.distracted_pose = s->output[36];
   ret.distracted_eyes = s->output[37];
+  ret.occluded_prob = s->output[38];
   ret.dsp_execution_time = (t2 - t1) / 1000.;
   return ret;
 }
@@ -207,6 +208,7 @@ void dmonitoring_publish(PubMaster &pm, uint32_t frame_id, const DMonitoringResu
   framed.setPartialFace(res.partial_face);
   framed.setDistractedPose(res.distracted_pose);
   framed.setDistractedEyes(res.distracted_eyes);
+  framed.setOccludedProb(res.occluded_prob);
   if (send_raw_pred) {
     framed.setRawPredictions(raw_pred.asBytes());
   }

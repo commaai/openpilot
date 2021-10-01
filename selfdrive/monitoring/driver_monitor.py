@@ -27,6 +27,7 @@ class DRIVER_MONITOR_SETTINGS():
 
     self._FACE_THRESHOLD = 0.5
     self._PARTIAL_FACE_THRESHOLD = 0.765 if TICI else 0.455
+    self._OCCLUDED_FACE_THRESHOLD = 0.9
     self._EYE_THRESHOLD = 0.75 if TICI else 0.55
     self._SG_THRESHOLD = 0.888 if TICI else 0.85
     self._BLINK_THRESHOLD = 0.811 if TICI else 0.62
@@ -118,6 +119,7 @@ class DriverStatus():
     self.driver_distraction_filter = FirstOrderFilter(0., self.settings._DISTRACTED_FILTER_TS, self.settings._DT_DMON)
     self.face_detected = False
     self.face_partial = False
+    self.face_occluded = False
     self.terminal_alert_cnt = 0
     self.terminal_time = 0
     self.step_change = 0.
@@ -196,12 +198,13 @@ class DriverStatus():
 
     self.face_partial = driver_state.partialFace > self.settings._PARTIAL_FACE_THRESHOLD
     self.face_detected = driver_state.faceProb > self.settings._FACE_THRESHOLD or self.face_partial
+    self.face_occluded = self.face_detected and driver_state.occludedProb > self.settings._OCCLUDED_FACE_THRESHOLD
     self.pose.roll, self.pose.pitch, self.pose.yaw = face_orientation_from_net(driver_state.faceOrientation, driver_state.facePosition, cal_rpy, self.is_rhd_region)
     self.pose.pitch_std = driver_state.faceOrientationStd[0]
     self.pose.yaw_std = driver_state.faceOrientationStd[1]
     # self.pose.roll_std = driver_state.faceOrientationStd[2]
     model_std_max = max(self.pose.pitch_std, self.pose.yaw_std)
-    self.pose.low_std = model_std_max < self.settings._POSESTD_THRESHOLD and not self.face_partial
+    self.pose.low_std = model_std_max < self.settings._POSESTD_THRESHOLD and not self.face_partial and not self.face_occluded
     self.blink.left_blink = driver_state.leftBlinkProb * (driver_state.leftEyeProb > self.settings._EYE_THRESHOLD) * (driver_state.sunglassesProb < self.settings._SG_THRESHOLD)
     self.blink.right_blink = driver_state.rightBlinkProb * (driver_state.rightEyeProb > self.settings._EYE_THRESHOLD) * (driver_state.sunglassesProb < self.settings._SG_THRESHOLD)
 
