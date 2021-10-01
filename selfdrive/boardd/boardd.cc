@@ -37,10 +37,14 @@
 
 std::atomic<bool> safety_setter_thread_running(false);
 std::atomic<bool> ignition(false);
-std::atomic<bool> ignition_last(false);
-std::atomic<uint32_t> no_ignition_cnt(0);
 
 ExitHandler do_exit;
+
+struct IgnitionStats {
+  bool ignition;
+  bool ignition_last;
+  uint32_t no_ignition_cnt;
+};
 
 std::string get_time_str(const struct tm &time) {
   char s[30] = {'\0'};
@@ -243,7 +247,14 @@ void send_empty_panda_state(PubMaster *pm) {
   pm->send("pandaState", msg);
 }
 
-void send_panda_state(PubMaster *pm, Panda *panda, bool spoofing_started) {
+void send_empty_peripheral_state(PubMaster *pm) {
+  MessageBuilder msg;
+  auto peripheralState  = msg.initEvent().initPeripheralState();
+  peripheralState.setPandaType(cereal::PandaState::PandaType::UNKNOWN);
+  pm->send("peripheralState", msg);
+}
+
+void send_panda_state(PubMaster *pm, Panda *panda, IgnitionStats * ignition_stats, bool spoofing_started) {
   health_t pandaState = panda->get_state();
 
   if (spoofing_started) {
@@ -255,28 +266,28 @@ void send_panda_state(PubMaster *pm, Panda *panda, bool spoofing_started) {
     panda->set_safety_model(cereal::CarParams::SafetyModel::NO_OUTPUT);
   }
 
-  ignition = ((pandaState.ignition_line != 0) || (pandaState.ignition_can != 0));
+  ignition_stats->ignition = ((pandaState.ignition_line != 0) || (pandaState.ignition_can != 0));
 
-  if (ignition) {
-    no_ignition_cnt = 0;
+  if (ignition_stats->ignition) {
+    ignition_stats->no_ignition_cnt = 0;
   } else {
-    no_ignition_cnt += 1;
+    ignition_stats->no_ignition_cnt += 1;
   }
 
 #ifndef __x86_64__
-  bool power_save_desired = !ignition;
+  bool power_save_desired = !ignition_stats->ignition;
   if (pandaState.power_save_enabled != power_save_desired) {
     panda->set_power_saving(power_save_desired);
   }
 
   // set safety mode to NO_OUTPUT when car is off. ELM327 is an alternative if we want to leverage athenad/connect
-  if (!ignition && (pandaState.safety_model != (uint8_t)(cereal::CarParams::SafetyModel::NO_OUTPUT))) {
+  if (!ignition_stats->ignition && (pandaState.safety_model != (uint8_t)(cereal::CarParams::SafetyModel::NO_OUTPUT))) {
     panda->set_safety_model(cereal::CarParams::SafetyModel::NO_OUTPUT);
   }
 #endif
 
   // clear VIN, CarParams, and set new safety on car start
-  if (ignition && !ignition_last) {
+  if (ignition_stats->ignition && !ignition_stats->ignition_last) {
     Params().clearAll(CLEAR_ON_IGNITION_ON);
 
     if (!safety_setter_thread_running) {
@@ -285,12 +296,12 @@ void send_panda_state(PubMaster *pm, Panda *panda, bool spoofing_started) {
     } else {
       LOGW("Safety setter thread already running");
     }
-  } else if (!ignition && ignition_last) {
+  } else if (!ignition_stats->ignition && ignition_stats->ignition_last) {
     Params().clearAll(CLEAR_ON_IGNITION_OFF);
   }
 
   // Write to rtc once per minute when no ignition present
-  if ((panda->has_rtc) && !ignition && (no_ignition_cnt % 120 == 1)) {
+  if ((panda->has_rtc) && !ignition_stats->ignition && (ignition_stats->no_ignition_cnt % 120 == 1)) {
     // Write time to RTC if it looks reasonable
     setenv("TZ","UTC",1);
     struct tm sys_time = util::get_time();
@@ -307,7 +318,7 @@ void send_panda_state(PubMaster *pm, Panda *panda, bool spoofing_started) {
     }
   }
 
-  ignition_last = ignition.load();
+  ignition_stats->ignition_last = ignition_stats->ignition;
 
   // build msg
   MessageBuilder msg;
@@ -383,13 +394,15 @@ void send_peripheral_state(PubMaster *pm, Panda *panda) {
 void panda_state_thread(PubMaster *pm, Panda * peripheral_panda, Panda *panda, bool spoofing_started) {
   LOGD("start panda state thread");
 
-  no_ignition_cnt = 0;
-  ignition_last = false;
+  IgnitionStats ignition_stats {.no_ignition_cnt = 0, .ignition = false, .ignition_last = false};
 
   // run at 2hz
   while (!do_exit && panda->connected) {
     send_peripheral_state(pm, peripheral_panda);
-    send_panda_state(pm, panda, spoofing_started);
+    send_panda_state(pm, panda, &ignition_stats, spoofing_started);
+
+    // Set gobal ignition
+    ignition = ignition_stats.ignition;
 
     panda->send_heartbeat();
     util::sleep_for(500);
@@ -571,6 +584,7 @@ int main() {
     // Send empty pandaState and try again
     if (panda == nullptr || peripheral_panda == nullptr) {
       send_empty_panda_state(&pm);
+      send_empty_peripheral_state(&pm);
       util::sleep_for(500);
       continue;
     }
