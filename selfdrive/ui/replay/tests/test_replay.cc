@@ -77,7 +77,7 @@ const QString DEMO_ROUTE = "4cf7a6ad03080c90|2021-09-29--13-46-36";
 TEST_CASE("Segment") {
   Route demo_route(DEMO_ROUTE);
   REQUIRE(demo_route.load());
-  REQUIRE(demo_route.size() == 121);
+  REQUIRE(demo_route.size() == 11);
 
   QEventLoop loop;
   Segment segment(0, demo_route.at(0), false, false);
