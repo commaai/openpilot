@@ -182,12 +182,12 @@ WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi)
 
   // load imgs
   for (const auto &s : {"low", "medium", "high", "full"}) {
-    QPixmap pix(ASSET_PATH + "/offroad/icon_wifi_strength_" + s + ".svg");
+    QPixmap pix(QString(":/offroad/icon_wifi_strength_%1.svg").arg(s));
     strengths.push_back(pix.scaledToHeight(68, Qt::SmoothTransformation));
   }
-  lock = QPixmap(ASSET_PATH + "offroad/icon_lock_closed.svg").scaledToWidth(49, Qt::SmoothTransformation);
-  checkmark = QPixmap(ASSET_PATH + "offroad/icon_checkmark.svg").scaledToWidth(49, Qt::SmoothTransformation);
-  circled_slash = QPixmap(ASSET_PATH + "img_circled_slash.svg").scaledToWidth(49, Qt::SmoothTransformation);
+  lock = QPixmap(":/offroad/icon_lock_closed.svg").scaledToWidth(49, Qt::SmoothTransformation);
+  checkmark = QPixmap(":/offroad/icon_checkmark.svg").scaledToWidth(49, Qt::SmoothTransformation);
+  circled_slash = QPixmap(":/img_circled_slash.svg").scaledToWidth(49, Qt::SmoothTransformation);
 
   QLabel *scanning = new QLabel("Scanning for networks...");
   scanning->setStyleSheet("font-size: 65px;");

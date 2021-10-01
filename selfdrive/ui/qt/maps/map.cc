@@ -99,7 +99,7 @@ void MapWindow::initLayers() {
   }
   if (!m_map->layerExists("carPosLayer")) {
     qDebug() << "Initializing carPosLayer";
-    m_map->addImage("label-arrow", QImage("../assets/images/triangle.svg"));
+    m_map->addImage("label-arrow", QImage(":/images/triangle.svg"));
 
     QVariantMap carPos;
     carPos["id"] = "carPosLayer";
@@ -597,7 +597,7 @@ void MapInstructions::updateInstructions(QMap<QString, QVariant> banner, bool fu
 
   // Show arrow with direction
   if (p.contains("type")) {
-    QString fn = "../assets/navigation/direction_" + p["type"].toString();
+    QString fn = ":/navigation/direction_" + p["type"].toString();
     if (p.contains("modifier")) {
       fn += "_" + p["modifier"].toString();
     }
@@ -649,7 +649,7 @@ void MapInstructions::updateInstructions(QMap<QString, QVariant> banner, bool fu
         }
 
         // TODO: Make more images based on active direction and combined directions
-        QString fn = "../assets/navigation/direction_";
+        QString fn = ":/navigation/direction_";
         if (left) {
           fn += "turn_left";
         } else if (right) {

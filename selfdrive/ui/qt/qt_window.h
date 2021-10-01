@@ -13,8 +13,6 @@
 
 #include "selfdrive/hardware/hw.h"
 
-const QString ASSET_PATH = ":/";
-
 const bool WIDE_UI = Hardware::TICI() || getenv("WIDE_UI") != nullptr;
 const int vwp_w = WIDE_UI ? 2160 : 1920;
 const int vwp_h = 1080;

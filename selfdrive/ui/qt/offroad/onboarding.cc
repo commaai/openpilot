@@ -79,7 +79,7 @@ void TermsPage::showEvent(QShowEvent *event) {
   text->setAttribute(Qt::WA_AlwaysStackOnTop);
   text->setClearColor(QColor("#1B1B1B"));
 
-  QString text_view = util::read_file("../assets/offroad/tc.html").c_str();
+  QString text_view = util::read_file(":/offroad/tc.html").c_str();
   text->rootContext()->setContextProperty("text_view", text_view);
 
   text->setSource(QUrl::fromLocalFile("qt/offroad/text_view.qml"));

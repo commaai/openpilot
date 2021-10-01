@@ -101,7 +101,7 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
     no_prime_layout->addSpacing(50);
 
     QLabel *screenshot = new QLabel;
-    QPixmap pm = QPixmap("../assets/navigation/screenshot.png");
+    QPixmap pm = QPixmap(":/navigation/screenshot.png");
     screenshot->setPixmap(pm.scaledToWidth(vwp_w * 0.5, Qt::SmoothTransformation));
     no_prime_layout->addWidget(screenshot, 0, Qt::AlignHCenter);
 
@@ -161,12 +161,12 @@ void MapPanel::showEvent(QShowEvent *event) {
 }
 
 void MapPanel::clear() {
-  home_button->setIcon(QPixmap("../assets/navigation/home_inactive.png"));
+  home_button->setIcon(QPixmap(":/navigation/home_inactive.png"));
   home_address->setStyleSheet(R"(font-size: 50px; color: grey;)");
   home_address->setText("No home\nlocation set");
   home_button->disconnect();
 
-  work_button->setIcon(QPixmap("../assets/navigation/work_inactive.png"));
+  work_button->setIcon(QPixmap(":/navigation/work_inactive.png"));
   work_address->setStyleSheet(R"(font-size: 50px; color: grey;)");
   work_address->setText("No work\nlocation set");
   work_button->disconnect();
@@ -209,7 +209,7 @@ void MapPanel::parseResponse(const QString &response) {
       if (type == "favorite" && label == "home") {
         home_address->setText(name);
         home_address->setStyleSheet(R"(font-size: 50px; color: white;)");
-        home_button->setIcon(QPixmap("../assets/navigation/home.png"));
+        home_button->setIcon(QPixmap(":/navigation/home.png"));
         QObject::connect(home_button, &QPushButton::clicked, [=]() {
           navigateTo(obj);
           emit closeSettings();
@@ -217,7 +217,7 @@ void MapPanel::parseResponse(const QString &response) {
       } else if (type == "favorite" && label == "work") {
         work_address->setText(name);
         work_address->setStyleSheet(R"(font-size: 50px; color: white;)");
-        work_button->setIcon(QPixmap("../assets/navigation/work.png"));
+        work_button->setIcon(QPixmap(":/navigation/work.png"));
         QObject::connect(work_button, &QPushButton::clicked, [=]() {
           navigateTo(obj);
           emit closeSettings();

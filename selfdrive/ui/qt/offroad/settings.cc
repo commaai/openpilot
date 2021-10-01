@@ -30,58 +30,58 @@ TogglesPanel::TogglesPanel(QWidget *parent) : ListWidget(parent) {
   addItem(new ParamControl("OpenpilotEnabledToggle",
                                   "Enable openpilot",
                                   "Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.",
-                                  "../assets/offroad/icon_openpilot.png",
+                                  ":/offroad/icon_openpilot.png",
                                   this));
   addItem(new ParamControl("IsLdwEnabled",
                                   "Enable Lane Departure Warnings",
                                   "Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31mph (50kph).",
-                                  "../assets/offroad/icon_warning.png",
+                                  ":/offroad/icon_warning.png",
                                   this));
   addItem(new ParamControl("IsRHD",
                                   "Enable Right-Hand Drive",
                                   "Allow openpilot to obey left-hand traffic conventions and perform driver monitoring on right driver seat.",
-                                  "../assets/offroad/icon_openpilot_mirrored.png",
+                                  ":/offroad/icon_openpilot_mirrored.png",
                                   this));
   addItem(new ParamControl("IsMetric",
                                   "Use Metric System",
                                   "Display speed in km/h instead of mph.",
-                                  "../assets/offroad/icon_metric.png",
+                                  ":/offroad/icon_metric.png",
                                   this));
   addItem(new ParamControl("CommunityFeaturesToggle",
                                   "Enable Community Features",
                                   "Use features, such as community supported hardware, from the open source community that are not maintained or supported by comma.ai and have not been confirmed to meet the standard safety model. Be extra cautious when using these features",
-                                  "../assets/offroad/icon_shell.png",
+                                  ":/offroad/icon_shell.png",
                                   this));
 
   addItem(new ParamControl("UploadRaw",
                                   "Upload Raw Logs",
                                   "Upload full logs and full resolution video by default while on Wi-Fi. If not enabled, individual logs can be marked for upload at my.comma.ai/useradmin.",
-                                  "../assets/offroad/icon_network.png",
+                                  ":/offroad/icon_network.png",
                                   this));
 
   ParamControl *record_toggle = new ParamControl("RecordFront",
                                                  "Record and Upload Driver Camera",
                                                  "Upload data from the driver facing camera and help improve the driver monitoring algorithm.",
-                                                 "../assets/offroad/icon_monitoring.png",
+                                                 ":/offroad/icon_monitoring.png",
                                                  this);
   addItem(record_toggle);
   addItem(new ParamControl("EndToEndToggle",
                                   "\U0001f96c Disable use of lanelines (Alpha) \U0001f96c",
                                   "In this mode openpilot will ignore lanelines and just drive how it thinks a human would.",
-                                  "../assets/offroad/icon_road.png",
+                                  ":/offroad/icon_road.png",
                                   this));
 #ifdef ENABLE_MAPS
   addItem(new ParamControl("NavSettingTime24h",
                                   "Show ETA in 24h format",
                                   "Use 24h format instead of am/pm",
-                                  "../assets/offroad/icon_metric.png",
+                                  ":/offroad/icon_metric.png",
                                   this));
 #endif
   if (params.getBool("DisableRadar_Allow")) {
     addItem(new ParamControl("DisableRadar",
                              "openpilot Longitudinal Control",
                              "openpilot will disable the car's radar and will take over control of gas and brakes. Warning: this disables AEB!",
-                             "../assets/offroad/icon_speed_limit.png",
+                             ":/offroad/icon_speed_limit.png",
                              this));
 
   }
@@ -147,7 +147,7 @@ DevicePanel::DevicePanel(QWidget* parent) : ListWidget(parent) {
   if (Hardware::TICI()) {
     regulatoryBtn = new ButtonControl("Regulatory", "VIEW", "");
     connect(regulatoryBtn, &ButtonControl::clicked, [=]() {
-      const std::string txt = util::read_file(ASSET_PATH.toStdString() + "/offroad/fcc.html");
+      const std::string txt = util::read_file("../assets/offroad/fcc.html");
       RichTextDialog::alert(QString::fromStdString(txt), this);
     });
   }

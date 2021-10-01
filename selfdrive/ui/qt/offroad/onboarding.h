@@ -72,7 +72,7 @@ private:
     QRect(303, 755, 718, 189),
   };
 
-  const QString IMG_PATH = WIDE_UI ? "../assets/training_wide/" : "../assets/training/";
+  const QString IMG_PATH = WIDE_UI ? ":/training_wide/" : ":/training/";
   const QVector<QRect> boundingRect = WIDE_UI ? boundingRectWide : boundingRectStandard;
 
 signals:

@@ -52,9 +52,9 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   });
 
   // load fonts
-  QFontDatabase::addApplicationFont("../assets/fonts/opensans_regular.ttf");
-  QFontDatabase::addApplicationFont("../assets/fonts/opensans_bold.ttf");
-  QFontDatabase::addApplicationFont("../assets/fonts/opensans_semibold.ttf");
+  QFontDatabase::addApplicationFont(":/fonts/opensans_regular.ttf");
+  QFontDatabase::addApplicationFont(":/fonts/opensans_bold.ttf");
+  QFontDatabase::addApplicationFont(":/fonts/opensans_semibold.ttf");
 
   // no outline to prevent the focus rectangle
   setStyleSheet(R"(

@@ -59,7 +59,7 @@ QWidget * Setup::low_voltage() {
   main_layout->addLayout(inner_layout);
 
   QLabel *triangle = new QLabel();
-  triangle->setPixmap(QPixmap(ASSET_PATH + "offroad/icon_warning.png"));
+  triangle->setPixmap(QPixmap(":/offroad/icon_warning.png"));
   inner_layout->addWidget(triangle, 0, Qt::AlignTop | Qt::AlignLeft);
   inner_layout->addSpacing(80);
 

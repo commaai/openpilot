@@ -26,7 +26,7 @@ void DriverViewWindow::mouseReleaseEvent(QMouseEvent* e) {
 }
 
 DriverViewScene::DriverViewScene(QWidget* parent) : sm({"driverState"}), QWidget(parent) {
-  face_img = QImage("../assets/img_driver_face.png").scaled(FACE_IMG_SIZE, FACE_IMG_SIZE, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+  face_img = QImage(":/img_driver_face.png").scaled(FACE_IMG_SIZE, FACE_IMG_SIZE, Qt::KeepAspectRatio, Qt::SmoothTransformation);
 }
 
 void DriverViewScene::showEvent(QShowEvent* event) {
