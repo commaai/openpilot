@@ -584,13 +584,7 @@ int main(int argc, char* argv[]) {
     std::vector<std::thread> threads;
 
     Panda *peripheral_panda = usb_connect(peripheral_panda_serial);
-    Panda *panda = nullptr;
-
-    if (peripheral_panda_serial == panda_serial) {
-      panda = peripheral_panda;
-    } else {
-      panda = usb_connect(panda_serial);
-    }
+    Panda *panda = peripheral_panda_serial == panda_serial ? peripheral_panda : usb_connect(panda_serial);
 
     // Send empty pandaState & peripheralState and try again
     if (panda == nullptr || peripheral_panda == nullptr) {
