@@ -8,6 +8,7 @@ from typing import List
 from panda import BASEDIR as PANDA_BASEDIR, Panda, PandaDFU
 from common.basedir import BASEDIR
 from common.params import Params
+from hardware import TICI
 from selfdrive.swaglog import cloudlog
 
 PANDA_FW_FN = os.path.join(PANDA_BASEDIR, "board", "obj", "panda.bin.signed")
@@ -102,7 +103,7 @@ def main() -> None:
     cloudlog.info(f"Resetting panda {panda._serial}")
     panda.reset()
 
-  if len(pandas) == 1:
+  if len(pandas) == 1 or not TICI:
     peripheral_panda = pandas[0]
     panda = pandas[0]
   else:
