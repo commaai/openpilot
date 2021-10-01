@@ -12,20 +12,31 @@ from hardware import TICI
 from selfdrive.swaglog import cloudlog
 
 PANDA_FW_FN = os.path.join(PANDA_BASEDIR, "board", "obj", "panda.bin.signed")
+PANDA_H7_FW_FN = os.path.join(PANDA_BASEDIR, "board", "obj", "panda_h7.bin.signed")
+
 PERIPHERAL_TYPES = [Panda.HW_TYPE_UNO, Panda.HW_TYPE_DOS]
 
 
-def get_expected_signature() -> bytes:
+def get_expected_signature(fn) -> bytes:
   try:
-    return Panda.get_signature_from_firmware(PANDA_FW_FN)
+    return Panda.get_signature_from_firmware(fn)
   except Exception:
     cloudlog.exception("Error computing expected signature")
     return b""
 
 
+def get_fw_fn(panda : Panda) -> str:
+  if panda._mcu_type == 2:
+    return PANDA_H7_FW_FN
+  else:
+    return PANDA_FW_FN
+
+
 def flash_panda(panda_serial : str) -> Panda:
-  fw_signature = get_expected_signature()
   panda = Panda(panda_serial)
+
+  fw_fn = get_fw_fn(panda)
+  fw_signature = get_expected_signature(fw_fn)
 
   panda_version = "bootstub" if panda.bootstub else panda.get_version()
   panda_signature = b"" if panda.bootstub else panda.get_signature()
