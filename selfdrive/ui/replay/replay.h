@@ -14,12 +14,12 @@ class Replay : public QObject {
   Q_OBJECT
 
 public:
-  Replay(QString route, QStringList allow, QStringList block, SubMaster *sm = nullptr, QObject *parent = 0);
+  Replay(QString route, QStringList allow, QStringList block, SubMaster *sm = nullptr, bool dcam = false, bool ecam = false, QObject *parent = 0);
   ~Replay();
 
   void start(int seconds = 0);
-  void relativeSeek(int seconds);
-  void seekTo(int seconds);
+  void seekTo(int seconds, bool relative = false);
+  void relativeSeek(int seconds) { seekTo(seconds, true); }
   void pause(bool pause);
   bool isPaused() const { return paused_; }
 
@@ -33,24 +33,23 @@ protected:
   void stream();
   void setCurrentSegment(int n);
   void mergeSegments(int begin_idx, int end_idx);
-
-  float last_print = 0;
-  uint64_t route_start_ts = 0;
-  std::atomic<int> seek_ts = 0;
-  std::atomic<int> current_ts = 0;
-  std::atomic<int> current_segment = -1;
+  void updateEvents(const std::function<bool()>& lambda);
 
   QThread *thread;
 
   // logs
-  std::mutex lock;
-  bool paused_ = false;
+  std::mutex lock_;
   std::condition_variable stream_cv_;
-  std::atomic<bool> updating_events = false;
-  std::vector<Event *> *events = nullptr;
-  std::unordered_map<uint32_t, EncodeIdx> *eidx = nullptr;
-  std::vector<std::unique_ptr<Segment>> segments;
-  std::vector<int> segments_merged;
+  std::atomic<bool> updating_events_ = false;
+  std::atomic<int> current_segment_ = -1;
+  bool exit_ = false;
+  bool paused_ = false;
+  bool events_updated_ = false;
+  uint64_t route_start_ts_ = 0;
+  uint64_t cur_mono_time_ = 0;
+  std::vector<Event *> *events_ = nullptr;
+  std::vector<std::unique_ptr<Segment>> segments_;
+  std::vector<int> segments_merged_;
 
   // messaging
   SubMaster *sm;
@@ -58,4 +57,5 @@ protected:
   std::set<std::string> socks;
   VisionIpcServer *vipc_server = nullptr;
   std::unique_ptr<Route> route_;
+  bool load_dcam = false, load_ecam = false;
 };

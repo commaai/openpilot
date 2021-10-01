@@ -4,15 +4,15 @@ openpilot tools
 SSH
 ============
 
-Connecting to your comma device using [SSH](ssh/README.md)
+Connect to your comma device using [SSH](ssh/README.md)
 
 
 System requirements
 ============
 
-openpilot is developed and tested on **Ubuntu 20.04**, which is the primary development target aside from the [supported embdedded hardware](https://github.com/commaai/openpilot#supported-hardware). We also have a CI test to verify that openpilot builds on macOS, but the tools are untested. For the best experience, stick to Ubuntu 20.04, otherwise openpilot and the tools should work with minimal to no modifications on macOS and other Linux systems.
+openpilot is developed and tested on **Ubuntu 20.04**, which is the primary development target aside from the [supported embdedded hardware](https://github.com/commaai/openpilot#running-on-pc). We also have a CI test to verify that openpilot builds on macOS, but the tools are untested. For the best experience, stick to Ubuntu 20.04, otherwise openpilot and the tools should work with minimal to no modifications on macOS and other Linux systems.
 
-Setup
+Setup your PC
 ============
 1. Clone openpilot into your home directory:
 ``` bash
@@ -38,6 +38,12 @@ cd openpilot && scons -j$(nproc)
 
 4. Try out some tools!
 
+Windows
+------------
+
+Neither openpilot nor any of the tools are developed or tested on Windows, but the [Windows Subsystem for Linux (WSL)](https://docs.microsoft.com/en-us/windows/wsl/about) should get Windows users a similiar experience to Ubuntu.
+
+Follow [these instructions](https://docs.microsoft.com/en-us/windows/wsl/install) to setup the WSL and install the `Ubuntu-20.04` distribution. Once your Ubuntu WSL environment is setup, follow the Linux setup instructions to finish setting up your environment.
 
 Tools
 ============

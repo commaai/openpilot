@@ -235,15 +235,12 @@ selfdrive/controls/lib/pid.py
 selfdrive/controls/lib/longitudinal_planner.py
 selfdrive/controls/lib/radar_helpers.py
 selfdrive/controls/lib/vehicle_model.py
-selfdrive/controls/lib/fcw.py
 
 selfdrive/controls/lib/cluster/*
 
 selfdrive/controls/lib/lateral_mpc_lib/.gitignore
-selfdrive/controls/lib/lead_mpc_lib/.gitignore
 selfdrive/controls/lib/longitudinal_mpc_lib/.gitignore
 selfdrive/controls/lib/lateral_mpc_lib/*
-selfdrive/controls/lib/lead_mpc_lib/*
 selfdrive/controls/lib/longitudinal_mpc_lib/*
 
 selfdrive/hardware/__init__.py
@@ -430,6 +427,7 @@ selfdrive/assets/assets.qrc
 selfdrive/assets/*.png
 selfdrive/assets/*.svg
 selfdrive/assets/fonts/*.ttf
+selfdrive/assets/icons/*
 selfdrive/assets/images/*
 selfdrive/assets/offroad/*
 selfdrive/assets/sounds/*
@@ -449,8 +447,6 @@ phonelibs/openmax/**
 
 phonelibs/json11/json11.cpp
 phonelibs/json11/json11.hpp
-
-phonelibs/qpoases/**
 
 phonelibs/qrcode/*.cc
 phonelibs/qrcode/*.hpp

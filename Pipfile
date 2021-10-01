@@ -74,13 +74,13 @@ parameterized = "*"
 ft4222 = "*"
 hypothesis = "*"
 inputs = "*"
-casadi = "*"
-future-fstrings = "*"  # for acados
 
 [packages]
 atomicwrites = "*"
+casadi = "*"
 cffi = "*"
 crcmod = "*"
+future-fstrings = "*"  # for acados
 hexdump = "*"
 libusb1 = "*"
 numpy = "*"

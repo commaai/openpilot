@@ -27,7 +27,7 @@ python lib/auth.py
 # Start unlogger
 python replay/unlogger.py <route-name>
 # Example:
-# python replay/unlogger.py '3533c53bb29502d1|2019-12-10--01-13-27'
+# python replay/unlogger.py '4cf7a6ad03080c90|2021-09-29--13-46-36'
 
 # In another terminal you can run a debug visualizer:
 python replay/ui.py   # Define the environmental variable HORIZONTAL is the ui layout is too tall
