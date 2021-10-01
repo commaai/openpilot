@@ -580,7 +580,7 @@ int main() {
     threads.emplace_back(panda_state_thread, &pm, panda, getenv("STARTED") != nullptr);
     threads.emplace_back(peripheral_state_thread, peripheral_panda);
     threads.emplace_back(peripheral_control_thread, peripheral_panda);
-    threads.emplace_back(pigeon_thread, panda);
+    threads.emplace_back(pigeon_thread, peripheral_panda);
 
     threads.emplace_back(can_send_thread, panda, getenv("FAKESEND") != nullptr);
     threads.emplace_back(can_recv_thread, panda);
