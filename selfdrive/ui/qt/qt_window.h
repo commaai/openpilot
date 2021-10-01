@@ -19,8 +19,8 @@ const QString ASSET_PATH = ":/";
 const int WIDE_WIDTH = 2160;
 
 inline void setMainWindow(QWidget *w) {
-  const bool wide = Hardware::TICI() || (getenv("WIDE_UI") != nullptr) ||
-                    QGuiApplication::primaryScreen()->size().width() >= WIDE_WIDTH;
+  const bool wide = (QGuiApplication::primaryScreen()->size().width() >= WIDE_WIDTH) ^
+                    (getenv("INVERT_WIDTH") != NULL);
   const float scale = util::getenv("SCALE", 1.0f);
   const int vwp_w = wide ? WIDE_WIDTH : 1920;
   const int vwp_h = 1080;
