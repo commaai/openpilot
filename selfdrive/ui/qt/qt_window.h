@@ -22,10 +22,8 @@ inline void setMainWindow(QWidget *w) {
   const bool wide = (QGuiApplication::primaryScreen()->size().width() >= WIDE_WIDTH) ^
                     (getenv("INVERT_WIDTH") != NULL);
   const float scale = util::getenv("SCALE", 1.0f);
-  const int vwp_w = wide ? WIDE_WIDTH : 1920;
-  const int vwp_h = 1080;
 
-  w->setFixedSize(vwp_w*scale, vwp_h*scale);
+  w->setFixedSize(QSize(wide ? WIDE_WIDTH : 1920, 1080) * scale);
   w->show();
 
 #ifdef QCOM2
