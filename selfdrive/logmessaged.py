@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
 import zmq
+from typing import NoReturn
+
 import cereal.messaging as messaging
-from selfdrive.swaglog import get_le_handler
+from common.logging_extra import SwagLogFileFormatter
+from selfdrive.swaglog import get_file_handler
 
 
-def main():
-  le_handler = get_le_handler()
-  le_level = 20  # logging.INFO
+def main() -> NoReturn:
+  log_handler = get_file_handler()
+  log_handler.setFormatter(SwagLogFileFormatter(None))
+  log_level = 20  # logging.INFO
 
   ctx = zmq.Context().instance()
   sock = ctx.socket(zmq.PULL)
@@ -17,19 +21,14 @@ def main():
 
   while True:
     dat = b''.join(sock.recv_multipart())
-    dat = dat.decode('utf8')
-
-    levelnum = ord(dat[0])
-    dat = dat[1:]
-
-    if levelnum >= le_level:
-      # push to logentries
-      # TODO: push to athena instead
-      le_handler.emit_raw(dat)
+    level = dat[0]
+    record = dat[1:].decode("utf-8")
+    if level >= log_level:
+      log_handler.emit(record)
 
     # then we publish them
     msg = messaging.new_message()
-    msg.logMessage = dat
+    msg.logMessage = record
     pub_sock.send(msg.to_bytes())
 
 

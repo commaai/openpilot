@@ -1,59 +1,118 @@
 import os
-Import('env', 'qt_env', 'arch', 'common', 'messaging', 'gpucommon', 'visionipc',
+Import('qt_env', 'arch', 'common', 'messaging', 'gpucommon', 'visionipc',
        'cereal', 'transformations')
 
+base_libs = [gpucommon, common, messaging, cereal, visionipc, transformations, 'zmq',
+             'capnp', 'kj', 'm', 'OpenCL', 'ssl', 'crypto', 'pthread'] + qt_env["LIBS"]
 
-src = ['ui.cc', 'paint.cc', 'sidebar.cc', '#phonelibs/nanovg/nanovg.c']
-libs = [gpucommon, common, 'zmq', 'capnp', 'kj', 'm', 'OpenCL', cereal, messaging, visionipc, transformations]
+maps = arch in ['larch64', 'x86_64']
 
-if qt_env is None:
-  libs += ['EGL', 'GLESv3', 'gnustl_shared', 'log', 'utils', 'gui', 'hardware',
-           'ui', 'CB', 'gsl', 'adreno_utils', 'OpenSLES', 'cutils', 'uuid', 'OpenCL']
-  linkflags = ['-Wl,-rpath=/system/lib64,-rpath=/system/comma/usr/lib']
+if arch == 'aarch64':
+  base_libs += ['log', 'utils', 'gui', 'ui', 'CB', 'gsl', 'adreno_utils', 'cutils', 'uuid']
 
-  src += ["android/ui.cc", "android/sl_sound.cc"]
-  env.Program('_ui', src,
-    LINKFLAGS=linkflags,
-    LIBS=libs)
-else:
-  qt_libs = qt_env["LIBS"] + libs + ["pthread", "ssl", "crypto"]
+if maps and arch == 'x86_64':
+  rpath = [Dir(f"#phonelibs/mapbox-gl-native-qt/{arch}").srcnode().abspath]
+  qt_env["RPATH"] += rpath
 
-  widgets = qt_env.Library("qt_widgets",
-                 ["qt/qt_sound.cc", "qt/widgets/keyboard.cc", "qt/widgets/input_field.cc", "qt/widgets/drive_stats.cc", "qt/widgets/ssh_keys.cc",
-                  "qt/offroad/networking.cc", "qt/offroad/wifiManager.cc", "qt/widgets/toggle.cc", "qt/widgets/offroad_alerts.cc", "qt/widgets/setup.cc"],
-                 LIBS=qt_libs)
-  qt_libs.append(widgets)
+if arch == "Darwin":
+  del base_libs[base_libs.index('OpenCL')]
+  qt_env['FRAMEWORKS'] += ['OpenCL']
+
+widgets_src = ["qt/util.cc", "qt/widgets/input.cc", "qt/widgets/drive_stats.cc",
+               "qt/widgets/ssh_keys.cc", "qt/widgets/toggle.cc", "qt/widgets/controls.cc",
+               "qt/widgets/offroad_alerts.cc", "qt/widgets/prime.cc", "qt/widgets/keyboard.cc",
+               "qt/widgets/scrollview.cc", "qt/widgets/cameraview.cc", "#phonelibs/qrcode/QrCode.cc", "qt/api.cc",
+               "qt/request_repeater.cc"]
+
+if arch != 'aarch64':
+  widgets_src += ["qt/offroad/networking.cc", "qt/offroad/wifiManager.cc"]
+
+qt_env['CPPDEFINES'] = []
+if maps:
+  base_libs += ['qmapboxgl']
+  widgets_src += ["qt/maps/map_helpers.cc", "qt/maps/map_settings.cc", "qt/maps/map.cc"]
+  qt_env['CPPDEFINES'] += ["ENABLE_MAPS"]
+
+widgets = qt_env.Library("qt_widgets", widgets_src, LIBS=base_libs)
+qt_libs = [widgets] + base_libs
+
+# build assets
+assets = "#selfdrive/assets/assets.cc"
+assets_src = "#selfdrive/assets/assets.qrc"
+qt_env.Command(assets, assets_src, f"rcc $SOURCES -o $TARGET")
+qt_env.Depends(assets, Glob('#selfdrive/assets/*', exclude=[assets, assets_src, "#selfdrive/assets/assets.o"]))
+asset_obj = qt_env.Object("assets", assets)
+
+# build soundd
+qt_env.Program("_soundd", "soundd.cc", LIBS=base_libs)
+
+# spinner and text window
+qt_env.Program("qt/text", ["qt/text.cc"], LIBS=qt_libs)
+qt_env.Program("qt/spinner", ["qt/spinner.cc"], LIBS=qt_libs)
+
+# build main UI
+qt_src = ["main.cc", "ui.cc", "paint.cc", "qt/sidebar.cc", "qt/onroad.cc",
+          "qt/window.cc", "qt/home.cc", "qt/offroad/settings.cc",
+          "qt/offroad/onboarding.cc", "qt/offroad/driverview.cc",
+          "#phonelibs/nanovg/nanovg.c"]
+qt_env.Program("_ui", qt_src + [asset_obj], LIBS=qt_libs)
 
 
-  if arch == "Darwin":
-    # fix OpenCL
-    del qt_libs[qt_libs.index('OpenCL')]
-    qt_env['FRAMEWORKS'] += ['OpenCL']
+# setup and factory resetter
+if arch != 'aarch64' and GetOption('setup'):
+  qt_env.Program("qt/setup/reset", ["qt/setup/reset.cc"], LIBS=qt_libs)
+  qt_env.Program("qt/setup/setup", ["qt/setup/setup.cc", asset_obj],
+                 LIBS=qt_libs + ['curl', 'common', 'json11'])
 
-  qt_src = ["qt/ui.cc", "qt/window.cc", "qt/home.cc", "qt/api.cc", "qt/offroad/settings.cc", "qt/offroad/onboarding.cc", "#phonelibs/qrcode/QrCode.cc"] + src
-  qt_env.Program("_ui", qt_src, LIBS=qt_libs)
 
-  # spinner and text window
-  qt_env.Program("qt/text", ["qt/text.cc"], LIBS=qt_libs)
-  qt_env.Program("qt/spinner", ["qt/spinner.cc"], LIBS=qt_libs)
+if GetOption('setup'):
+  # buidl updater UI
+  qt_env.Program("qt/setup/updater", ["qt/setup/updater.cc", asset_obj], LIBS=qt_libs)
 
-  # build setup, factory resetter, and installer
-  if "BUILD_SETUP" in os.environ:
-    qt_env.Program("qt/setup/reset", ["qt/setup/reset.cc"], LIBS=qt_libs)
-    qt_env.Program("qt/setup/setup", ["qt/setup/setup.cc"], LIBS=qt_libs + ['curl', 'common', 'json11'])
+  # build installers
+  senv = qt_env.Clone()
+  senv['LINKFLAGS'].append('-Wl,-strip-debug')
 
-    installers = [
-      ("openpilot", "master"),
-      #("openpilot_test", "release3-staging"),
-      #("openpilot_internal", "master"),
-      #("dashcam", "dashcam3-staging"),
-      #("dashcam_test", "dashcam3-staging"),
-    ]
-    for name, branch in installers:
-      d = {'BRANCH': f"'\"{branch}\"'"}
-      if "internal" in name:
-        import requests
-        r = requests.get("https://github.com/commaci2.keys")
-        r.raise_for_status()
-        d['SSH_KEYS'] = f'\\"{r.text.strip()}\\"'
-      qt_env.Program(f"qt/setup/installer_{name}", ["qt/setup/installer.cc"], LIBS=qt_libs, CPPDEFINES=d)
+  release = "release3" if arch == 'larch64' else "release2"
+  dashcam = "dashcam3" if arch == 'larch64' else "dashcam"
+  installers = [
+    ("openpilot", release),
+    ("openpilot_test", f"{release}-staging"),
+    ("openpilot_nightly", "master-ci"),
+    ("openpilot_internal", "master"),
+    ("dashcam", dashcam),
+    ("dashcam_test", f"{dashcam}-staging"),
+  ]
+
+  cont = {}
+  for brand in ("openpilot", "dashcam"):
+    cont[brand] = senv.Command(f"installer/continue_{brand}.o", f"installer/continue_{brand}.sh",
+                               "ld -r -b binary -o $TARGET $SOURCE")
+  for name, branch in installers:
+    brand = "dashcam" if "dashcam" in branch else "openpilot"
+    d = {'BRANCH': f"'\"{branch}\"'", 'BRAND': f"'\"{brand}\"'"}
+    if "internal" in name:
+      d['INTERNAL'] = "1"
+
+      import requests
+      r = requests.get("https://github.com/commaci2.keys")
+      r.raise_for_status()
+      d['SSH_KEYS'] = f'\\"{r.text.strip()}\\"'
+    obj = senv.Object(f"installer/installers/installer_{name}.o", ["installer/installer.cc"], CPPDEFINES=d)
+    f = senv.Program(f"installer/installers/installer_{name}", [obj, cont[brand]], LIBS=qt_libs)
+    # keep installers small
+    assert f[0].get_size() < 300*1e3
+
+
+# build headless replay
+if arch in ['x86_64', 'Darwin'] and os.path.exists(Dir("#tools/").get_abspath()):
+  qt_env['CXXFLAGS'] += ["-Wno-deprecated-declarations"]
+
+  replay_lib_src = ["replay/replay.cc", "replay/logreader.cc", "replay/framereader.cc", "replay/route.cc"]
+
+  replay_lib = qt_env.Library("qt_replay", replay_lib_src, LIBS=base_libs)
+  replay_libs = [replay_lib, 'avutil', 'avcodec', 'avformat', 'swscale', 'bz2', 'curl'] + qt_libs
+  qt_env.Program("replay/replay", ["replay/main.cc"], LIBS=replay_libs)
+
+  if GetOption('test'):
+    qt_env.Program('replay/tests/test_replay', ['replay/tests/test_runner.cc', 'replay/tests/test_replay.cc'], LIBS=[replay_libs])

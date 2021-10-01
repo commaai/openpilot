@@ -1,10 +1,12 @@
 #pragma clang diagnostic ignored "-Wexceptions"
 
+#include "selfdrive/modeld/runners/snpemodel.h"
+
 #include <cassert>
-#include <string.h>
-#include <stdlib.h>
-#include "common/util.h"
-#include "snpemodel.h"
+#include <cstdlib>
+#include <cstring>
+
+#include "selfdrive/common/util.h"
 
 void PrintErrorStringAndExit() {
   std::cerr << zdl::DlSystem::getLastErrorString() << std::endl;
@@ -24,14 +26,13 @@ SNPEModel::SNPEModel(const char *path, float *loutput, size_t loutput_size, int 
   }
   assert(zdl::SNPE::SNPEFactory::isRuntimeAvailable(Runtime));
 #endif
-  size_t model_size;
-  model_data = (uint8_t *)read_file(path, &model_size);
-  assert(model_data);
+  model_data = util::read_file(path);
+  assert(model_data.size() > 0);
 
   // load model
-  std::unique_ptr<zdl::DlContainer::IDlContainer> container = zdl::DlContainer::IDlContainer::open(model_data, model_size);
+  std::unique_ptr<zdl::DlContainer::IDlContainer> container = zdl::DlContainer::IDlContainer::open((uint8_t*)model_data.data(), model_data.size());
   if (!container) { PrintErrorStringAndExit(); }
-  printf("loaded model with size: %lu\n", model_size);
+  printf("loaded model with size: %lu\n", model_data.size());
 
   // create model runner
   zdl::SNPE::SNPEBuilder snpeBuilder(container.get());

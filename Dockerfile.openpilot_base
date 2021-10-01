@@ -8,27 +8,30 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     bzip2 \
     ca-certificates \
     capnproto \
-    libcapnp-dev \
     clang \
     cmake \
     cppcheck \
     curl \
     ffmpeg \
+    gcc-arm-none-eabi \
     git \
     iputils-ping \
     libarchive-dev \
     libbz2-dev \
+    libcapnp-dev \
     libcurl4-openssl-dev \
     libeigen3-dev \
     libffi-dev \
-    libglew-dev \
     libgles2-mesa-dev \
+    libglew-dev \
     libglib2.0-0 \
     liblzma-dev \
     libomp-dev \
     libopencv-dev \
-    libssl-dev \
+    libqt5sql5-sqlite \
+    libqt5svg5-dev \
     libsqlite3-dev \
+    libssl-dev \
     libsystemd-dev \
     libusb-1.0-0-dev \
     libzmq3-dev \
@@ -37,8 +40,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ocl-icd-opencl-dev \
     opencl-headers \
     python-dev \
+    qml-module-qtquick2 \
     qt5-default \
+    qtlocation5-dev \
     qtmultimedia5-dev \
+    qtpositioning5-dev \
     qtwebengine5-dev \
     sudo \
     valgrind \
@@ -54,12 +60,11 @@ RUN curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-instal
 ENV PATH="/root/.pyenv/bin:/root/.pyenv/shims:${PATH}"
 
 COPY Pipfile Pipfile.lock /tmp/
-RUN pyenv install 3.8.2 && \
-    pyenv global 3.8.2 && \
+RUN pyenv install 3.8.5 && \
+    pyenv global 3.8.5 && \
     pyenv rehash && \
     pip install --no-cache-dir --upgrade pip==20.1.1 && \
     pip install --no-cache-dir pipenv==2020.8.13 && \
     cd /tmp && \
     pipenv install --system --deploy --dev --clear && \
-    pip uninstall torch tensorflow -y && \
     pip uninstall -y pipenv

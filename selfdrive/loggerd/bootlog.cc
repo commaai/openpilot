@@ -1,8 +1,9 @@
-#include <assert.h>
+#include <cassert>
 #include <string>
-#include "common/swaglog.h"
-#include "logger.h"
-#include "messaging.hpp"
+
+#include "cereal/messaging/messaging.h"
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/loggerd/logger.h"
 
 static kj::Array<capnp::word> build_boot_log() {
   MessageBuilder msg;
@@ -10,14 +11,26 @@ static kj::Array<capnp::word> build_boot_log() {
 
   boot.setWallTimeNanos(nanos_since_epoch());
 
-  std::string lastKmsg = util::read_file("/sys/fs/pstore/console-ramoops");
-  boot.setLastKmsg(capnp::Data::Reader((const kj::byte*)lastKmsg.data(), lastKmsg.size()));
+  std::string pstore = "/sys/fs/pstore";
+  std::map<std::string, std::string> pstore_map = util::read_files_in_dir(pstore);
 
-  std::string lastPmsg = util::read_file("/sys/fs/pstore/pmsg-ramoops-0");
-  boot.setLastPmsg(capnp::Data::Reader((const kj::byte*)lastPmsg.data(), lastPmsg.size()));
+  const std::vector<std::string> log_keywords = {"Kernel panic"};
+  auto lpstore = boot.initPstore().initEntries(pstore_map.size());
+  int i = 0;
+  for (auto& kv : pstore_map) {
+    auto lentry = lpstore[i];
+    lentry.setKey(kv.first);
+    lentry.setValue(capnp::Data::Reader((const kj::byte*)kv.second.data(), kv.second.size()));
+    i++;
 
-  std::string launchLog = util::read_file("/tmp/launch_log");
-  boot.setLaunchLog(capnp::Text::Reader(launchLog.data(), launchLog.size()));
+    for (auto &k : log_keywords) {
+      if (kv.second.find(k) != std::string::npos) {
+        LOGE("%s: found '%s'", kv.first.c_str(), k.c_str());
+      }
+    }
+  }
+
+  boot.setLaunchLog(util::read_file("/tmp/launch_log"));
   return capnp::messageToFlatArray(msg);
 }
 

@@ -1,15 +1,15 @@
-#include <iostream>
-#include <cassert>
-#include <csignal>
-#include <string>
-#include <map>
-
-#include "json11.hpp"
 #include <systemd/sd-journal.h>
 
-#include "common/timing.h"
-#include "common/util.h"
-#include "messaging.hpp"
+#include <cassert>
+#include <csignal>
+#include <map>
+#include <string>
+
+#include "json11.hpp"
+
+#include "cereal/messaging/messaging.h"
+#include "selfdrive/common/timing.h"
+#include "selfdrive/common/util.h"
 
 ExitHandler do_exit;
 int main(int argc, char *argv[]) {
@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
     assert(err >= 0);
 
     // Wait for new message if we didn't receive anything
-    if (err == 0){
+    if (err == 0) {
       err = sd_journal_wait(journal, 1000 * 1000);
       assert (err >= 0);
       continue; // Try again
@@ -43,12 +43,12 @@ int main(int argc, char *argv[]) {
     size_t length;
     std::map<std::string, std::string> kv;
 
-    SD_JOURNAL_FOREACH_DATA(journal, data, length){
+    SD_JOURNAL_FOREACH_DATA(journal, data, length) {
       std::string str((char*)data, length);
 
       // Split "KEY=VALUE"" on "=" and put in map
       std::size_t found = str.find("=");
-      if (found != std::string::npos){
+      if (found != std::string::npos) {
         kv[str.substr(0, found)] = str.substr(found + 1, std::string::npos);
       }
     }

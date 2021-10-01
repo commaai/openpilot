@@ -3,7 +3,6 @@
 *.onnx filter=lfs diff=lfs merge=lfs -text
 *.pb filter=lfs diff=lfs merge=lfs -text
 *.bin filter=lfs diff=lfs merge=lfs -text
-*.apk filter=lfs diff=lfs merge=lfs -text
 *.jpg filter=lfs diff=lfs merge=lfs -text
 *.ipynb filter=nbstripout -diff
 external/ffmpeg/bin/ffmpeg_cuda filter=lfs diff=lfs merge=lfs -text

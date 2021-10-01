@@ -17,13 +17,13 @@ if __name__ == "__main__":
   t = 10 if len(sys.argv) < 2 else int(sys.argv[1])
   while True:
     print("setting alert update")
-    params.put("UpdateAvailable", "1")
+    params.put_bool("UpdateAvailable", True)
     r = open(os.path.join(BASEDIR, "RELEASES.md"), "r").read()
     r = r[:r.find('\n\n')]  # Slice latest release notes
     params.put("ReleaseNotes", r + "\n")
 
     time.sleep(t)
-    params.put("UpdateAvailable", "0")
+    params.put_bool("UpdateAvailable", False)
 
     # cycle through normal alerts
     for a in offroad_alerts:

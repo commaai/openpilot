@@ -23,7 +23,7 @@ Route: [a route with the bug fix]
 
 **Checklist**
 - [ ] added to README
-- [ ] test route added to [test_car_models](../../selfdrive/test/test_car_models.py)
+- [ ] test route added to [test_routes.py](https://github.com/commaai/openpilot/blob/master/selfdrive/test/test_routes.py)
 - [ ] route with openpilot:
 - [ ] route with stock system:
 

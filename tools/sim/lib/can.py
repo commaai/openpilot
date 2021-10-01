@@ -1,15 +1,31 @@
 #!/usr/bin/env python3
 import cereal.messaging as messaging
 from opendbc.can.packer import CANPacker
+from opendbc.can.parser import CANParser
 from selfdrive.boardd.boardd_api_impl import can_list_to_can_capnp  # pylint: disable=no-name-in-module,import-error
 from selfdrive.car.honda.values import FINGERPRINTS, CAR
 from selfdrive.car import crc8_pedal
 
-from selfdrive.test.longitudinal_maneuvers.plant import get_car_can_parser
-cp = get_car_can_parser()
-
 packer = CANPacker("honda_civic_touring_2016_can_generated")
 rpacker = CANPacker("acura_ilx_2016_nidec")
+
+
+def get_car_can_parser():
+  dbc_f = 'honda_civic_touring_2016_can_generated'
+  signals = [
+    ("STEER_TORQUE", 0xe4, 0),
+    ("STEER_TORQUE_REQUEST", 0xe4, 0),
+    ("COMPUTER_BRAKE", 0x1fa, 0),
+    ("COMPUTER_BRAKE_REQUEST", 0x1fa, 0),
+    ("GAS_COMMAND", 0x200, 0),
+  ]
+  checks = [
+    (0xe4, 100),
+    (0x1fa, 50),
+    (0x200, 50),
+  ]
+  return CANParser(dbc_f, signals, checks, 0)
+cp = get_car_can_parser()
 
 def can_function(pm, speed, angle, idx, cruise_button, is_engaged):
 
@@ -39,7 +55,7 @@ def can_function(pm, speed, angle, idx, cruise_button, is_engaged):
   msg.append(packer.make_can_msg("STEER_STATUS", 0, {}, idx))
   msg.append(packer.make_can_msg("STEERING_SENSORS", 0, {"STEER_ANGLE": angle}, idx))
   msg.append(packer.make_can_msg("VSA_STATUS", 0, {}, idx))
-  msg.append(packer.make_can_msg("STANDSTILL", 0, {}, idx))
+  msg.append(packer.make_can_msg("STANDSTILL", 0, {"WHEELS_MOVING": 1 if speed >= 1.0 else 0}, idx))
   msg.append(packer.make_can_msg("STEER_MOTOR_TORQUE", 0, {}, idx))
   msg.append(packer.make_can_msg("EPB_STATUS", 0, {}, idx))
   msg.append(packer.make_can_msg("DOORS_STATUS", 0, {}, idx))

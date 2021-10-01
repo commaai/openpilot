@@ -56,12 +56,21 @@ class MockParams():
   def __init__(self):
     self.params = {
       "DongleId": b"0000000000000000",
-      "IsUploadRawEnabled": b"1",
+      "UploadRaw": b"1",
       "IsOffroad": b"1",
     }
 
-  def get(self, k):
-    return self.params[k]
+  def get(self, k, block=False, encoding=None):
+    val = self.params[k]
+
+    if encoding is not None:
+      return val.decode(encoding)
+    else:
+      return val
+
+  def get_bool(self, k):
+    val = self.params[k]
+    return (val == b'1')
 
 class UploaderTestCase(unittest.TestCase):
   f_type = "UNKNOWN"

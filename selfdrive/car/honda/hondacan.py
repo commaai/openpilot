@@ -1,5 +1,5 @@
+from selfdrive.car.honda.values import HONDA_BOSCH, CAR
 from selfdrive.config import Conversions as CV
-from selfdrive.car.honda.values import HONDA_BOSCH
 
 # CAN bus layout with relay
 # 0 = ACC-CAN - radar side
@@ -17,7 +17,6 @@ def get_lkas_cmd_bus(car_fingerprint, radar_disabled=False):
     return get_pt_bus(car_fingerprint)
   # normally steering commands are sent to radar, which forwards them to powertrain bus
   return 0
-
 
 def create_brake_command(packer, apply_brake, pump_on, pcm_override, pcm_cancel_cmd, fcw, idx, car_fingerprint, stock_brake):
   # TODO: do we loose pressure if we keep pump off for long?
@@ -149,6 +148,9 @@ def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, is_metric, idx, 
       'SET_TO_1' : 0x01,
     }
     commands.append(packer.make_can_msg('RADAR_HUD', bus_pt, radar_hud_values, idx))
+
+    if car_fingerprint == CAR.CIVIC_BOSCH:
+      commands.append(packer.make_can_msg("LEGACY_BRAKE_COMMAND", bus_pt, {}, idx))
 
   return commands
 

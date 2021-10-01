@@ -9,6 +9,7 @@ assignees: ''
 **Checklist**
 
 - [ ] added to README
-- [ ] test route added to [test_car_models](../../selfdrive/test/test_car_models.py)
+- [ ] test route added to [test_routes.py](https://github.com/commaai/openpilot/blob/master/selfdrive/test/test_models.py)
 - [ ] route with openpilot:
 - [ ] route with stock system:
+- [ ] car harness used (if comma doesn't sell it, put N/A):

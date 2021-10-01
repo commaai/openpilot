@@ -1,30 +1,29 @@
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <unistd.h>
-#include <assert.h>
-#include <sys/stat.h>
+#include "selfdrive/loggerd/omx_encoder.h"
+
 #include <fcntl.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
+#include <cassert>
+#include <cstdlib>
+#include <cstdio>
 
 #include <OMX_Component.h>
 #include <OMX_IndexExt.h>
-#include <OMX_VideoExt.h>
 #include <OMX_QCOMExtns.h>
+#include <OMX_VideoExt.h>
+#include "libyuv.h"
 
-#include <libyuv.h>
-#include <msm_media_info.h>
-
-#include "common/util.h"
-#include "common/swaglog.h"
-
-#include "omx_encoder.h"
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/common/util.h"
+#include "selfdrive/loggerd/include/msm_media_info.h"
 
 // Check the OMX error code and assert if an error occurred.
-#define OMX_CHECK(_expr)          \
-  do {                           \
-    assert(OMX_ErrorNone == _expr); \
+#define OMX_CHECK(_expr)              \
+  do {                                \
+    assert(OMX_ErrorNone == (_expr)); \
   } while (0)
 
 extern ExitHandler do_exit;
@@ -349,12 +348,10 @@ void OmxEncoder::handle_out_buf(OmxEncoder *e, OMX_BUFFERHEADERTYPE *out_buf) {
 
   if (e->remuxing) {
     if (!e->wrote_codec_config && e->codec_config_len > 0) {
-      if (e->codec_ctx->extradata_size < e->codec_config_len) {
-        e->codec_ctx->extradata = (uint8_t *)realloc(e->codec_ctx->extradata, e->codec_config_len + AV_INPUT_BUFFER_PADDING_SIZE);
-      }
+      // extradata will be freed by av_free() in avcodec_free_context()
+      e->codec_ctx->extradata = (uint8_t*)av_mallocz(e->codec_config_len + AV_INPUT_BUFFER_PADDING_SIZE);
       e->codec_ctx->extradata_size = e->codec_config_len;
       memcpy(e->codec_ctx->extradata, e->codec_config, e->codec_config_len);
-      memset(e->codec_ctx->extradata + e->codec_ctx->extradata_size, 0, AV_INPUT_BUFFER_PADDING_SIZE);
 
       err = avcodec_parameters_from_context(e->out_stream->codecpar, e->codec_ctx);
       assert(err >= 0);
@@ -517,7 +514,7 @@ void OmxEncoder::encoder_open(const char* path) {
 
   // create camera lock file
   snprintf(this->lock_path, sizeof(this->lock_path), "%s/%s.lock", path, this->filename);
-  int lock_fd = open(this->lock_path, O_RDWR | O_CREAT, 0777);
+  int lock_fd = HANDLE_EINTR(open(this->lock_path, O_RDWR | O_CREAT, 0664));
   assert(lock_fd >= 0);
   close(lock_fd);
 
@@ -586,8 +583,8 @@ OmxEncoder::~OmxEncoder() {
   OMX_CHECK(OMX_FreeHandle(this->handle));
 
   OMX_BUFFERHEADERTYPE *out_buf;
-  while (this->free_in.try_pop(out_buf)); 
-  while (this->done_out.try_pop(out_buf)); 
+  while (this->free_in.try_pop(out_buf));
+  while (this->done_out.try_pop(out_buf));
 
   if (this->codec_config) {
     free(this->codec_config);

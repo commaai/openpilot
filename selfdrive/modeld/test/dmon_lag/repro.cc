@@ -1,13 +1,14 @@
 // clang++ -O2 repro.cc && ./a.out
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdint.h>
-#include <time.h>
 #include <sched.h>
 #include <sys/types.h>
 #include <unistd.h>
+
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <ctime>
 
 static inline double millis_since_boot() {
   struct timespec t;
@@ -92,7 +93,7 @@ float trial() {
 }
 
 int main() {
-  while (1) {
+  while (true) {
     float ret = trial();
     printf("got %f\n", ret);
   }

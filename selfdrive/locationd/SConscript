@@ -1,8 +1,22 @@
-Import('env', 'common', 'cereal', 'messaging')
+Import('env', 'common', 'cereal', 'messaging', 'libkf', 'transformations')
 
-loc_libs = [cereal, messaging, 'zmq', common, 'capnp', 'kj', 'pthread']
+loc_libs = [cereal, messaging, 'zmq', common, 'capnp', 'kj', 'kaitai', 'pthread']
 
-env.Program("ubloxd", ["ubloxd.cc", "ublox_msg.cc", "ubloxd_main.cc"], LIBS=loc_libs)
+if GetOption('kaitai'):
+  generated = Dir('generated').srcnode().abspath
+  cmd = f"kaitai-struct-compiler --target cpp_stl --outdir {generated} $SOURCES"
+  env.Command(['generated/ubx.cpp', 'generated/ubx.h'], 'ubx.ksy', cmd)
+  env.Command(['generated/gps.cpp', 'generated/gps.h'], 'gps.ksy', cmd)
 
-if GetOption("test"):
-  env.Program("ubloxd_test", ["ubloxd_test.cc", "ublox_msg.cc", "ubloxd_main.cc"], LIBS=loc_libs)
+env.Program("ubloxd", ["ubloxd.cc", "ublox_msg.cc", "generated/ubx.cpp", "generated/gps.cpp"], LIBS=loc_libs)
+
+ekf_sym_cc = env.SharedObject("#rednose/helpers/ekf_sym.cc")
+locationd_sources = ["locationd.cc", "models/live_kf.cc", ekf_sym_cc]
+lenv = env.Clone()
+lenv["_LIBFLAGS"] += f' {libkf[0].get_labspath()}'
+locationd = lenv.Program("locationd", locationd_sources, LIBS=loc_libs + transformations)
+lenv.Depends(locationd, libkf)
+
+if File("liblocationd.cc").exists():
+  liblocationd = lenv.SharedLibrary("liblocationd", ["liblocationd.cc"] + locationd_sources, LIBS=loc_libs + transformations)
+  lenv.Depends(liblocationd, libkf)

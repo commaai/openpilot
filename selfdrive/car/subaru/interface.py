@@ -7,10 +7,6 @@ from selfdrive.car.interfaces import CarInterfaceBase
 class CarInterface(CarInterfaceBase):
 
   @staticmethod
-  def compute_gb(accel, speed):
-    return float(accel) / 4.0
-
-  @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
 
@@ -19,14 +15,12 @@ class CarInterface(CarInterfaceBase):
 
     if candidate in PREGLOBAL_CARS:
       ret.safetyModel = car.CarParams.SafetyModel.subaruLegacy
+      ret.enableBsm = 0x25c in fingerprint[0]
     else:
       ret.safetyModel = car.CarParams.SafetyModel.subaru
+      ret.enableBsm = 0x228 in fingerprint[0]
 
-    # Subaru port is a community feature, since we don't own one to test
-    ret.communityFeature = True
     ret.dashcamOnly = candidate in PREGLOBAL_CARS
-
-    ret.enableCamera = True
 
     ret.steerRateCost = 0.7
     ret.steerLimitTimer = 0.4
@@ -120,6 +114,6 @@ class CarInterface(CarInterfaceBase):
   def apply(self, c):
     can_sends = self.CC.update(c.enabled, self.CS, self.frame, c.actuators,
                                c.cruiseControl.cancel, c.hudControl.visualAlert,
-                               c.hudControl.leftLaneVisible, c.hudControl.rightLaneVisible)
+                               c.hudControl.leftLaneVisible, c.hudControl.rightLaneVisible, c.hudControl.leftLaneDepart, c.hudControl.rightLaneDepart)
     self.frame += 1
     return can_sends

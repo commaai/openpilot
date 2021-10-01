@@ -1,4 +1,4 @@
-.git
+**/.git
 .DS_Store
 *.dylib
 *.DSYM
@@ -26,10 +26,8 @@ chffr/backend/env
 selfdrive/nav
 selfdrive/baseui
 chffr/lib/vidindex/vidindex
-chffr/lib/index_log/index_log
 selfdrive/test/simulator2
 **/cache_data
-xx/chffr/lib/index_log/index_log
 xx/chffr/lib/vidindex/vidindex
 xx/plus
 xx/community

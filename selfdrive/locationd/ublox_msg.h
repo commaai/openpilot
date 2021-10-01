@@ -1,191 +1,116 @@
 #pragma once
 
-#include <stdint.h>
-#include "messaging.hpp"
+#include <cassert>
+#include <cstdint>
+#include <memory>
+#include <string>
+#include <unordered_map>
+#include <ctime>
 
-// NAV_PVT
-typedef struct __attribute__((packed)) {
-  uint32_t iTOW;
-  uint16_t year;
-  int8_t month;
-  int8_t day;
-  int8_t hour;
-  int8_t min;
-  int8_t sec;
-  int8_t valid;
-  uint32_t tAcc;
-  int32_t nano;
-  int8_t fixType;
-  int8_t flags;
-  int8_t flags2;
-  int8_t numSV;
-  int32_t lon;
-  int32_t lat;
-  int32_t height;
-  int32_t hMSL;
-  uint32_t hAcc;
-  uint32_t vAcc;
-  int32_t velN;
-  int32_t velE;
-  int32_t velD;
-  int32_t gSpeed;
-  int32_t headMot;
-  uint32_t sAcc;
-  uint32_t headAcc;
-  uint16_t pDOP;
-  int8_t reserverd1[6];
-  int32_t headVeh;
-  int16_t magDec;
-  uint16_t magAcc;
-} nav_pvt_msg;
+#include "cereal/messaging/messaging.h"
+#include "selfdrive/common/util.h"
+#include "selfdrive/locationd/generated/gps.h"
+#include "selfdrive/locationd/generated/ubx.h"
 
-// RXM_RAW
-typedef struct __attribute__((packed)) {
-  double rcvTow;
-  uint16_t week;
-  int8_t leapS;
-  int8_t numMeas;
-  int8_t recStat;
-  int8_t reserved1[3];
-} rxm_raw_msg;
+using namespace std::string_literals;
 
-// Extra data count is in numMeas
-typedef struct __attribute__((packed)) {
-  double prMes;
-  double cpMes;
-  float doMes;
-  int8_t gnssId;
-  int8_t svId;
-  int8_t sigId;
-  int8_t freqId;
-  uint16_t locktime;
-  int8_t cno;
-  int8_t prStdev;
-  int8_t cpStdev;
-  int8_t doStdev;
-  int8_t trkStat;
-  int8_t reserved3;
-} rxm_raw_msg_extra;
-
-// RXM_SFRBX
-typedef struct __attribute__((packed)) {
-  int8_t gnssId;
-  int8_t svid;
-  int8_t reserved1;
-  int8_t freqId;
-  int8_t numWords;
-  int8_t reserved2;
-  int8_t version;
-  int8_t reserved3;
-} rxm_sfrbx_msg;
-
-// Extra data count is in numWords
-typedef struct __attribute__((packed)) {
-  uint32_t dwrd;
-} rxm_sfrbx_msg_extra;
-
-// MON_HW
-typedef struct __attribute__((packed)) {
-  uint32_t pinSel;
-  uint32_t pinBank;
-  uint32_t pinDir;
-  uint32_t pinVal;
-  uint16_t noisePerMS;
-  uint16_t agcCnt;
-  uint8_t aStatus;
-  uint8_t aPower;
-  uint8_t flags;
-  uint8_t reserved1;
-  uint32_t usedMask;
-  uint8_t VP[17];
-  uint8_t jamInd;
-  uint8_t reserved2[2];
-  uint32_t pinIrq;
-  uint32_t pullH;
-  uint32_t pullL;
-} mon_hw_msg;
-
-// MON_HW2
-typedef struct __attribute__((packed)) {
-  int8_t ofsI;
-  uint8_t magI;
-  int8_t ofsQ;
-  uint8_t magQ;
-  uint8_t cfgSource;
-  uint8_t reserved1[3];
-  uint32_t lowLevCfg;
-  uint8_t reserved2[8];
-  uint32_t postStatus;
-  uint8_t reserved3[4];
-} mon_hw2_msg;
-
+// protocol constants
 namespace ublox {
-  // protocol constants
   const uint8_t PREAMBLE1 = 0xb5;
   const uint8_t PREAMBLE2 = 0x62;
-
-  // message classes
-  const uint8_t CLASS_NAV = 0x01;
-  const uint8_t CLASS_RXM = 0x02;
-  const uint8_t CLASS_MON = 0x0A;
-
-  // NAV messages
-  const uint8_t MSG_NAV_PVT = 0x7;
-
-  // RXM messages
-  const uint8_t MSG_RXM_RAW = 0x15;
-  const uint8_t MSG_RXM_SFRBX = 0x13;
-
-  // MON messages
-  const uint8_t MSG_MON_HW = 0x09;
-  const uint8_t MSG_MON_HW2 = 0x0B;
 
   const int UBLOX_HEADER_SIZE = 6;
   const int UBLOX_CHECKSUM_SIZE = 2;
   const int UBLOX_MAX_MSG_SIZE = 65536;
 
-  typedef std::map<uint8_t, std::vector<uint32_t>> subframes_map;
+  // Boardd still uses these:
+  const uint8_t CLASS_NAV = 0x01;
+  const uint8_t CLASS_RXM = 0x02;
+  const uint8_t CLASS_MON = 0x0A;
 
-  class UbloxMsgParser {
-    public:
+  struct ubx_mga_ini_time_utc_t {
+    uint8_t type;
+    uint8_t version;
+    uint8_t ref;
+    int8_t leapSecs;
+    uint16_t year;
+    uint8_t month;
+    uint8_t day;
+    uint8_t hour;
+    uint8_t minute;
+    uint8_t second;
+    uint8_t reserved1;
+    uint32_t ns;
+    uint16_t tAccS;
+    uint16_t reserved2;
+    uint32_t tAccNs;
+  } __attribute__((packed));
 
-      UbloxMsgParser();
-      kj::Array<capnp::word> gen_solution();
-      kj::Array<capnp::word> gen_raw();
-      kj::Array<capnp::word> gen_mon_hw();
-      kj::Array<capnp::word> gen_mon_hw2();
+  inline std::string ubx_add_checksum(const std::string &msg) {
+    assert(msg.size() > 2);
 
-      kj::Array<capnp::word> gen_nav_data();
-      bool add_data(const uint8_t *incoming_data, uint32_t incoming_data_len, size_t &bytes_consumed);
-      inline void reset() {bytes_in_parse_buf = 0;}
-      inline uint8_t msg_class() {
-        return msg_parse_buf[2];
-      }
+    uint8_t ck_a = 0, ck_b = 0;
+    for(int i = 2; i < msg.size(); i++) {
+      ck_a = (ck_a + msg[i]) & 0xFF;
+      ck_b = (ck_b + ck_a) & 0xFF;
+    }
 
-      inline uint8_t msg_id() {
-        return msg_parse_buf[3];
-      }
-      inline int needed_bytes();
+    std::string r = msg;
+    r.push_back(ck_a);
+    r.push_back(ck_b);
+    return r;
+  }
 
-      void hexdump(uint8_t *d, int l) {
-        for (int i = 0; i < l; i++) {
-          if (i%0x10 == 0 && i != 0) printf("\n");
-          printf("%02X ", d[i]);
-        }
-        printf("\n");
-      }
-    private:
-      inline bool valid_cheksum();
-      inline bool valid();
-      inline bool valid_so_far();
+  inline std::string build_ubx_mga_ini_time_utc(struct tm time) {
+    ublox::ubx_mga_ini_time_utc_t payload = {
+      .type = 0x10,
+      .version = 0x0,
+      .ref = 0x0,
+      .leapSecs = -128, // Unknown
+      .year = (uint16_t)(1900 + time.tm_year),
+      .month = (uint8_t)(1 + time.tm_mon),
+      .day = (uint8_t)time.tm_mday,
+      .hour = (uint8_t)time.tm_hour,
+      .minute = (uint8_t)time.tm_min,
+      .second = (uint8_t)time.tm_sec,
+      .reserved1 = 0x0,
+      .ns = 0,
+      .tAccS = 30,
+      .reserved2 = 0x0,
+      .tAccNs = 0,
+    };
+    assert(sizeof(payload) == 24);
 
-      uint8_t msg_parse_buf[UBLOX_HEADER_SIZE + UBLOX_MAX_MSG_SIZE];
-      int bytes_in_parse_buf;
-      std::map<uint8_t, std::map<uint8_t, subframes_map>> nav_frame_buffer;
-  };
+    std::string msg = "\xb5\x62\x13\x40\x18\x00"s;
+    msg += std::string((char*)&payload, sizeof(payload));
 
+    return ubx_add_checksum(msg);
+  }
 }
 
-typedef Message * (*poll_ubloxraw_msg_func)(Poller *poller);
-typedef int (*send_gps_event_func)(PubSocket *s, const void *buf, size_t len);
-int ubloxd_main(poll_ubloxraw_msg_func poll_func, send_gps_event_func send_func);
+class UbloxMsgParser {
+  public:
+    bool add_data(const uint8_t *incoming_data, uint32_t incoming_data_len, size_t &bytes_consumed);
+    inline void reset() {bytes_in_parse_buf = 0;}
+    inline int needed_bytes();
+    inline std::string data() {return std::string((const char*)msg_parse_buf, bytes_in_parse_buf);}
+
+    std::pair<std::string, kj::Array<capnp::word>> gen_msg();
+    kj::Array<capnp::word> gen_nav_pvt(ubx_t::nav_pvt_t *msg);
+    kj::Array<capnp::word> gen_rxm_sfrbx(ubx_t::rxm_sfrbx_t *msg);
+    kj::Array<capnp::word> gen_rxm_rawx(ubx_t::rxm_rawx_t *msg);
+    kj::Array<capnp::word> gen_mon_hw(ubx_t::mon_hw_t *msg);
+    kj::Array<capnp::word> gen_mon_hw2(ubx_t::mon_hw2_t *msg);
+
+  private:
+    inline bool valid_cheksum();
+    inline bool valid();
+    inline bool valid_so_far();
+
+    std::unordered_map<int, std::unordered_map<int, std::string>> gps_subframes;
+
+    size_t bytes_in_parse_buf = 0;
+    uint8_t msg_parse_buf[ublox::UBLOX_HEADER_SIZE + ublox::UBLOX_MAX_MSG_SIZE];
+
+};
+

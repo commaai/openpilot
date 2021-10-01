@@ -40,5 +40,13 @@
   "Offroad_HardwareUnsupported": {
     "text": "White and grey panda are unsupported. Upgrade to comma two or black panda.",
     "severity": 0
+  },
+  "Offroad_UnofficialHardware": {
+    "text": "Device failed to register. It will not connect to or upload to comma.ai servers, and receives no support from comma.ai. If this is an official device, contact support@comma.ai.",
+    "severity": 1
+  },
+  "Offroad_NvmeMissing": {
+    "text": "NVME drive not mounted.",
+    "severity": 1
   }
 }

@@ -14,7 +14,7 @@ else:
 import cereal.messaging as messaging
 from collections import namedtuple
 from tools.lib.logreader import LogReader
-from selfdrive.test.process_replay.test_processes import get_segment
+from selfdrive.test.openpilotci import get_url
 from common.basedir import BASEDIR
 
 ProcessConfig = namedtuple('ProcessConfig', ['proc_name', 'pub_sub', 'ignore', 'command', 'path', 'segment', 'wait_for_response'])
@@ -36,6 +36,9 @@ CONFIGS = [
 
 class TestValgrind(unittest.TestCase):
   def extract_leak_sizes(self, log):
+    if "All heap blocks were freed -- no leaks are possible" in log:
+      return (0,0,0)
+
     log = log.replace(",","")  # fixes casting to int issue with large leaks
     err_lost1 = log.split("definitely lost: ")[1]
     err_lost2 = log.split("indirectly lost: ")[1]
@@ -80,7 +83,9 @@ class TestValgrind(unittest.TestCase):
     thread.daemon = True
     thread.start()
 
-    time.sleep(5)  # We give the process time to start
+    while not all(pm.all_readers_updated(s) for s in config.pub_sub.keys()):
+      time.sleep(0)
+
     for msg in tqdm(pub_msgs):
       pm.send(msg.which(), msg.as_builder())
       if config.wait_for_response:
@@ -89,14 +94,15 @@ class TestValgrind(unittest.TestCase):
     self.done = True
 
   def test_config(self):
-    open(os.path.join(BASEDIR, "selfdrive/test/valgrind_logs.txt"), "w")
+    open(os.path.join(BASEDIR, "selfdrive/test/valgrind_logs.txt"), "w").close()
 
     for cfg in CONFIGS:
       self.done = False
-      URL = cfg.segment
-      lr = LogReader(get_segment(URL))
+      r, n = cfg.segment.rsplit("--", 1)
+      lr = LogReader(get_url(r, n))
       self.replay_process(cfg, lr)
       time.sleep(1)  # Wait for the logs to get written
+      self.assertFalse(self.leak)
 
 if __name__ == "__main__":
   unittest.main()

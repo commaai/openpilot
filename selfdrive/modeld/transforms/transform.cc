@@ -1,9 +1,9 @@
-#include <string.h>
-#include <assert.h>
+#include "selfdrive/modeld/transforms/transform.h"
 
-#include "clutil.h"
+#include <cassert>
+#include <cstring>
 
-#include "transform.h"
+#include "selfdrive/common/clutil.h"
 
 void transform_init(Transform* s, cl_context ctx, cl_device_id device_id) {
   memset(s, 0, sizeof(*s));
@@ -28,7 +28,7 @@ void transform_queue(Transform* s,
                      cl_mem in_yuv, int in_width, int in_height,
                      cl_mem out_y, cl_mem out_u, cl_mem out_v,
                      int out_width, int out_height,
-                     mat3 projection) {
+                     const mat3& projection) {
   const int zero = 0;
 
   // sampled using pixel center origin

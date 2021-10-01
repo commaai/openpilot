@@ -29,11 +29,17 @@ fi
 
 echo "update pip"
 pip install --upgrade pip
+pip install pipenv
 
 echo "pip packages install ..."
+[ -d "./xx" ] && export PIPENV_PIPFILE=./xx/Pipfile
 pipenv install --dev --deploy --system
 # update shims for newly installed executables (e.g. scons)
 pyenv rehash
 
 echo "precommit install ..."
 pre-commit install
+
+# for internal comma repos
+[ -d "./xx" ] && (cd xx && pre-commit install)
+[ -d "./notebooks" ] && (cd notebooks && pre-commit install)

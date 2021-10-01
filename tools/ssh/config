@@ -1,9 +1,0 @@
-Host EON-smays
-  HostName 192.168.5.11
-  Port 8022
-  IdentityFile key/id_rsa
-
-Host EON-wifi
-  HostName 192.168.43.1
-  Port 8022
-  IdentityFile key/id_rsa

@@ -1,45 +1,38 @@
 FROM ghcr.io/commaai/openpilot-base:latest
 
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends\
     apt-utils \
     unzip \
     tar \
     curl \
     xz-utils \
-    beignet-opencl-icd \
-    libglvnd-dev \
     alien \
     dbus \
     gcc-arm-none-eabi \
     tmux \
     vim \
+    lsb-core \
+    libx11-6 \
   && rm -rf /var/lib/apt/lists/*
 
 # Intel OpenCL driver
-ARG INTEL_DRIVER=opencl_runtime_16.1.1_x64_ubuntu_6.4.0.25.tgz
-ARG INTEL_DRIVER_URL=http://registrationcenter-download.intel.com/akdlm/irc_nas/9019
+ARG INTEL_DRIVER=l_opencl_p_18.1.0.015.tgz
+ARG INTEL_DRIVER_URL=http://registrationcenter-download.intel.com/akdlm/irc_nas/vcp/15532
 RUN mkdir -p /tmp/opencl-driver-intel
 WORKDIR /tmp/opencl-driver-intel
-RUN echo INTEL_DRIVER is $INTEL_DRIVER; \
-    curl -O $INTEL_DRIVER_URL/$INTEL_DRIVER; \
-    tar -xzf $INTEL_DRIVER; \
-    for i in $(basename $INTEL_DRIVER .tgz)/rpm/*.rpm; do alien --to-deb $i; done; \
-    dpkg -i *.deb; \
-    rm -rf $INTEL_DRIVER $(basename $INTEL_DRIVER .tgz) *.deb; \
-    mkdir -p /etc/OpenCL/vendors; \
-    echo /opt/intel/*/lib64/libintelocl.so > /etc/OpenCL/vendors/intel.icd; \
-    rm -rf /tmp/opencl-driver-intel;
+RUN echo INTEL_DRIVER is $INTEL_DRIVER && \
+    curl -O $INTEL_DRIVER_URL/$INTEL_DRIVER && \
+    tar -xzf $INTEL_DRIVER && \
+    for i in $(basename $INTEL_DRIVER .tgz)/rpm/*.rpm; do alien --to-deb $i; done && \
+    dpkg -i *.deb && \
+    rm -rf $INTEL_DRIVER $(basename $INTEL_DRIVER .tgz) *.deb && \
+    mkdir -p /etc/OpenCL/vendors && \
+    echo /opt/intel/opencl_compilers_and_libraries_18.1.0.015/linux/compiler/lib/intel64_lin/libintelocl.so > /etc/OpenCL/vendors/intel.icd && \
+    rm -rf /tmp/opencl-driver-intel
 
-# Open[GL,CL] for gpu
-ENV NVIDIA_DRIVER_CAPABILITIES ${NVIDIA_DRIVER_CAPABILITIES},display
-RUN apt-get update && apt-get install -y --no-install-recommends \
-      mesa-utils \
-      ocl-icd-libopencl1 \
-    && rm -rf /var/lib/apt/lists/*
-RUN mkdir -p /etc/OpenCL/vendors && \
-    echo "libnvidia-opencl.so.1" > /etc/OpenCL/vendors/nvidia.icd
 ENV NVIDIA_VISIBLE_DEVICES all
-ENV NVIDIA_DRIVER_CAPABILITIES compute,utility,display
+ENV NVIDIA_DRIVER_CAPABILITIES graphics,utility,compute
+ENV QTWEBENGINE_DISABLE_SANDBOX 1
 
 RUN dbus-uuidgen > /etc/machine-id
 
@@ -57,6 +50,7 @@ RUN mkdir -p $HOME/openpilot
 COPY SConstruct $HOME/openpilot/
 
 COPY ./phonelibs $HOME/openpilot/phonelibs
+COPY ./pyextra $HOME/openpilot/pyextra
 COPY ./site_scons $HOME/openpilot/site_scons
 COPY ./rednose $HOME/openpilot/rednose
 COPY ./common $HOME/openpilot/common

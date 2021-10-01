@@ -13,8 +13,10 @@ def create_steering_control(packer, car_fingerprint, frame, apply_steer, lkas):
   lnv = 0
   er2 = int(lkas["ERR_BIT_2"])
 
-  steering_angle = int(lkas["STEERING_ANGLE"])
-  b2 = int(lkas["ANGLE_ENABLED"])
+  # Some older models do have these, newer models don't.
+  # Either way, they all work just fine if set to zero.
+  steering_angle = 0
+  b2 = 0
 
   tmp = steering_angle + 2048
   ahi = tmp >> 10

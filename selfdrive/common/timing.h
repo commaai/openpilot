@@ -1,8 +1,7 @@
-#ifndef COMMON_TIMING_H
-#define COMMON_TIMING_H
+#pragma once
 
-#include <stdint.h>
-#include <time.h>
+#include <cstdint>
+#include <ctime>
 
 #ifdef __APPLE__
 #define CLOCK_BOOTTIME CLOCK_MONOTONIC
@@ -50,5 +49,3 @@ static inline uint64_t nanos_monotonic_raw() {
   clock_gettime(CLOCK_MONOTONIC_RAW, &t);
   return t.tv_sec * 1000000000ULL + t.tv_nsec;
 }
-
-#endif

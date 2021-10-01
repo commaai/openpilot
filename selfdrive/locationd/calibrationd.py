@@ -7,12 +7,11 @@ and the image input into the neural network is not corrected for roll.
 '''
 
 import os
-import capnp
 import copy
-import json
 import numpy as np
 import cereal.messaging as messaging
-from cereal import car, log
+from cereal import log
+from selfdrive.hardware import TICI
 from common.params import Params, put_nonblocking
 from common.transformations.model import model_height
 from common.transformations.camera import get_view_frame_from_road_frame
@@ -32,7 +31,7 @@ INPUTS_WANTED = 50   # We want a little bit more than we need for stability
 MAX_ALLOWED_SPREAD = np.radians(2)
 RPY_INIT = np.array([0.0,0.0,0.0])
 
-# These values are needed to accomodate biggest modelframe
+# These values are needed to accommodate biggest modelframe
 PITCH_LIMITS = np.array([-0.09074112085129739, 0.14907572052989657])
 YAW_LIMITS = np.array([-0.06912048084718224, 0.06912048084718235])
 DEBUG = os.getenv("DEBUG") is not None
@@ -63,29 +62,17 @@ class Calibrator():
     # Read saved calibration
     params = Params()
     calibration_params = params.get("CalibrationParams")
-
+    self.wide_camera = TICI and params.get_bool('EnableWideCamera')
     rpy_init = RPY_INIT
     valid_blocks = 0
-
-    cached_params = params.get("CarParamsCache")
-    if cached_params is not None:
-      CP = car.CarParams.from_bytes(params.get("CarParams", block=True))
-      cached_params = car.CarParams.from_bytes(cached_params)
-      if cached_params.carFingerprint != CP.carFingerprint:
-        calibration_params = None
 
     if param_put and calibration_params:
       try:
         msg = log.Event.from_bytes(calibration_params)
         rpy_init = list(msg.liveCalibration.rpyCalib)
         valid_blocks = msg.liveCalibration.validBlocks
-      except (ValueError, capnp.lib.capnp.KjException):
-        # TODO: remove this when offroad can read capnp
-        calibration_params = json.loads(calibration_params)
-        rpy_init = calibration_params["calib_radians"]
-        valid_blocks = calibration_params['valid_blocks']
       except Exception:
-        cloudlog.exception("CalibrationParams file found but error encountered")
+        cloudlog.exception("Error reading cached CalibrationParams")
 
     self.reset(rpy_init, valid_blocks)
     self.update_status()
@@ -128,16 +115,13 @@ class Calibrator():
       self.cal_status = Calibration.INVALID
 
     # If spread is too high, assume mounting was changed and reset to last block.
-    # Make the transition smooth. Abrupt transistion are not good foor feedback loop through supercombo model.
+    # Make the transition smooth. Abrupt transitions are not good foor feedback loop through supercombo model.
     if max(self.calib_spread) > MAX_ALLOWED_SPREAD and self.cal_status == Calibration.CALIBRATED:
       self.reset(self.rpys[self.block_idx - 1], valid_blocks=INPUTS_NEEDED, smooth_from=self.rpy)
 
     write_this_cycle = (self.idx == 0) and (self.block_idx % (INPUTS_WANTED//5) == 5)
     if self.param_put and write_this_cycle:
-      # TODO: change to raw bytes when offroad can read capnp
-      cal_params = {"calib_radians": list(self.rpy),
-                    "valid_blocks": int(self.valid_blocks)}
-      put_nonblocking("CalibrationParams", json.dumps(cal_params).encode('utf8'))
+      put_nonblocking("CalibrationParams", self.get_msg().to_bytes())
 
   def handle_v_ego(self, v_ego):
     self.v_ego = v_ego
@@ -152,9 +136,12 @@ class Calibrator():
     self.old_rpy_weight = min(0.0, self.old_rpy_weight - 1/SMOOTH_CYCLES)
 
     straight_and_fast = ((self.v_ego > MIN_SPEED_FILTER) and (trans[0] > MIN_SPEED_FILTER) and (abs(rot[2]) < MAX_YAW_RATE_FILTER))
-    certain_if_calib = ((np.arctan2(trans_std[1], trans[0]) < MAX_VEL_ANGLE_STD) or
+    if self.wide_camera:
+      angle_std_threshold = 4*MAX_VEL_ANGLE_STD
+    else:
+      angle_std_threshold = MAX_VEL_ANGLE_STD
+    certain_if_calib = ((np.arctan2(trans_std[1], trans[0]) < angle_std_threshold) or
                         (self.valid_blocks < INPUTS_NEEDED))
-
     if not (straight_and_fast and certain_if_calib):
       return None
 

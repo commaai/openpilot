@@ -2,10 +2,9 @@ import os
 from common.params import Params
 from common.basedir import BASEDIR
 from selfdrive.version import comma_remote, tested_branch
-from selfdrive.car.fingerprints import eliminate_incompatible_cars, all_known_cars
+from selfdrive.car.fingerprints import eliminate_incompatible_cars, all_legacy_fingerprint_cars
 from selfdrive.car.vin import get_vin, VIN_UNKNOWN
 from selfdrive.car.fw_versions import get_fw_versions, match_fw_to_car
-from selfdrive.hardware import EON
 from selfdrive.swaglog import cloudlog
 import cereal.messaging as messaging
 from selfdrive.car import gen_empty_fingerprint
@@ -14,18 +13,19 @@ from cereal import car
 EventName = car.CarEvent.EventName
 
 
-def get_startup_event(car_recognized, controller_available):
+def get_startup_event(car_recognized, controller_available, fw_seen):
   if comma_remote and tested_branch:
     event = EventName.startup
   else:
     event = EventName.startupMaster
 
   if not car_recognized:
-    event = EventName.startupNoCar
+    if fw_seen:
+      event = EventName.startupNoCar
+    else:
+      event = EventName.startupNoFw
   elif car_recognized and not controller_available:
     event = EventName.startupNoControl
-  elif EON and "letv" not in open("/proc/cmdline").read():
-    event = EventName.startupOneplus
   return event
 
 
@@ -107,16 +107,16 @@ def fingerprint(logcan, sendcan):
       _, vin = get_vin(logcan, sendcan, bus)
       car_fw = get_fw_versions(logcan, sendcan, bus)
 
-    fw_candidates = match_fw_to_car(car_fw)
+    exact_fw_match, fw_candidates = match_fw_to_car(car_fw)
   else:
     vin = VIN_UNKNOWN
-    fw_candidates, car_fw = set(), []
+    exact_fw_match, fw_candidates, car_fw = True, set(), []
 
   cloudlog.warning("VIN %s", vin)
   Params().put("CarVin", vin)
 
   finger = gen_empty_fingerprint()
-  candidate_cars = {i: all_known_cars() for i in [0, 1]}  # attempt fingerprint on both bus 0 and 1
+  candidate_cars = {i: all_legacy_fingerprint_cars() for i in [0, 1]}  # attempt fingerprint on both bus 0 and 1
   frame = 0
   frame_fingerprint = 10  # 0.1s
   car_fingerprint = None
@@ -149,29 +149,32 @@ def fingerprint(logcan, sendcan):
           car_fingerprint = candidate_cars[b][0]
 
     # bail if no cars left or we've been waiting for more than 2s
-    failed = all(len(cc) == 0 for cc in candidate_cars.values()) or frame > 200
+    failed = (all(len(cc) == 0 for cc in candidate_cars.values()) and frame > frame_fingerprint) or frame > 200
     succeeded = car_fingerprint is not None
     done = failed or succeeded
 
     frame += 1
 
+  exact_match = True
   source = car.CarParams.FingerprintSource.can
 
   # If FW query returns exactly 1 candidate, use it
   if len(fw_candidates) == 1:
     car_fingerprint = list(fw_candidates)[0]
     source = car.CarParams.FingerprintSource.fw
+    exact_match = exact_fw_match
 
   if fixed_fingerprint:
     car_fingerprint = fixed_fingerprint
     source = car.CarParams.FingerprintSource.fixed
 
-  cloudlog.warning("fingerprinted %s", car_fingerprint)
-  return car_fingerprint, finger, vin, car_fw, source
+  cloudlog.event("fingerprinted", car_fingerprint=car_fingerprint,
+                 source=source, fuzzy=not exact_match, fw_count=len(car_fw))
+  return car_fingerprint, finger, vin, car_fw, source, exact_match
 
 
 def get_car(logcan, sendcan):
-  candidate, fingerprints, vin, car_fw, source = fingerprint(logcan, sendcan)
+  candidate, fingerprints, vin, car_fw, source, exact_match = fingerprint(logcan, sendcan)
 
   if candidate is None:
     cloudlog.warning("car doesn't match any fingerprints: %r", fingerprints)
@@ -182,5 +185,6 @@ def get_car(logcan, sendcan):
   car_params.carVin = vin
   car_params.carFw = car_fw
   car_params.fingerprintSource = source
+  car_params.fuzzyFingerprint = not exact_match
 
   return CarInterface(car_params, CarController, CarState), car_params

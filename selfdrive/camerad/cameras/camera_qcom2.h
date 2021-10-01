@@ -1,54 +1,40 @@
 #pragma once
 
-#include <stdint.h>
-#include <stdbool.h>
-#include <pthread.h>
+#include <cstdint>
 
-#include "camera_common.h"
-#include "media/cam_req_mgr.h"
+#include <media/cam_req_mgr.h>
+
+#include "selfdrive/camerad/cameras/camera_common.h"
+#include "selfdrive/common/util.h"
 
 #define FRAME_BUF_COUNT 4
-
-#define ANALOG_GAIN_MAX_IDX 15 // 0xF is bypass
-#define EXPOSURE_TIME_MIN 8 // min time limited by HDR exp factor
-#define EXPOSURE_TIME_MAX 1132 // with HDR, no slower than 1/25 sec (1416 lines)
-
-#define HLC_THRESH 240
-#define HLC_A 80
-
-#define EF_LOWPASS_K 0.35
-
 #define DEBAYER_LOCAL_WORKSIZE 16
-
 typedef struct CameraState {
+  MultiCameraState *multi_cam_state;
   CameraInfo ci;
 
-  float analog_gain_frac;
-  uint16_t analog_gain;
-  bool dc_gain_enabled;
+  std::mutex exp_lock;
+
   int exposure_time;
-  int exposure_time_min;
-  int exposure_time_max;
-  float ef_filtered;
+  bool dc_gain_enabled;
+  float analog_gain_frac;
 
-  int device_iommu;
-  int cdm_iommu;
+  float cur_ev[3];
+  float min_ev, max_ev;
 
-  int video0_fd;
-  int video1_fd;
-  int isp_fd;
+  float measured_grey_fraction;
+  float target_grey_fraction;
+  int gain_idx;
 
-  int sensor_fd;
-  int csiphy_fd;
+  unique_fd sensor_fd;
+  unique_fd csiphy_fd;
 
   int camera_num;
 
-
-  uint32_t session_handle;
-
-  uint32_t sensor_dev_handle;
-  uint32_t isp_dev_handle;
-  uint32_t csiphy_dev_handle;
+  int32_t session_handle;
+  int32_t sensor_dev_handle;
+  int32_t isp_dev_handle;
+  int32_t csiphy_dev_handle;
 
   int32_t link_handle;
 
@@ -61,29 +47,21 @@ typedef struct CameraState {
   int idx_offset;
   bool skipped;
 
-  struct cam_req_mgr_session_info req_mgr_session_info;
-
   CameraBuf buf;
 } CameraState;
 
 typedef struct MultiCameraState {
-  int device;
+  unique_fd video0_fd;
+  unique_fd video1_fd;
+  unique_fd isp_fd;
+  int device_iommu;
+  int cdm_iommu;
 
-  int video0_fd;
-  int video1_fd;
-  int isp_fd;
 
-  CameraState rear;
-  CameraState front;
-  CameraState wide;
-
-  pthread_mutex_t isp_lock;
+  CameraState road_cam;
+  CameraState wide_road_cam;
+  CameraState driver_cam;
 
   SubMaster *sm;
   PubMaster *pm;
 } MultiCameraState;
-
-void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx);
-void cameras_open(MultiCameraState *s);
-void cameras_run(MultiCameraState *s);
-void camera_autoexposure(CameraState *s, float grey_frac);

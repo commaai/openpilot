@@ -1,7 +1,7 @@
 #include "panda_dfu.h"
 
-#include "common/swaglog.h"
-#include "common/util.h"
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/common/util.h"
 
 #define DFU_DNLOAD 1
 #define DFU_UPLOAD 2

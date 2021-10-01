@@ -1,15 +1,117 @@
-Version 0.8.2 (2021-XX-XX)
+Version 0.8.10 (2021-XX-XX)
 ========================
- * Use model points directly in MPC (no more polyfits), this makes lateral planning more accurate
+ * New driving model
+   * Trained on one million minutes!!!
+   * Fixed lead training making lead predictions significantly more accurate
+   * Fixed several localizer dataset bugs and loss function bugs, overall improved accuracy
+ * Lateral and longitudinal planning MPCs now in ACADOS
+ * Combined longitudinal MPCs
+   * All longitudinal planning now happens in a single MPC system
+   * Fixed instability in MPC problem to prevent sporadic CPU usage
+ * Moved community-supported cars outside of the Community Features toggle
+ * Honda Freed 2020 support thanks to belm0!
+ * Hyundai Santa Fe 2022 support thanks to sunnyhaibin!
+ * Škoda Kamiq 2021 support thanks to jyoung8607!
+ * Škoda Karoq 2019 support thanks to jyoung8607!
+ * Volkswagen Arteon 2021 support thanks to jyoung8607!
+ * Volkswagen California 2021 support thanks to jyoung8607!
+
+Version 0.8.9 (2021-09-14)
+========================
+ * Improved fan control on comma three
+ * AGNOS 1.5: improved stability
+ * Honda e 2020 support
+
+Version 0.8.8 (2021-08-27)
+========================
+ * New driving model with improved laneless performance
+   * Trained on 5000+ hours of diverse driving data from 3000+ users in 40+ countries
+   * Better anti-cheating methods during simulator training ensure the model hugs less when in laneless mode
+   * All new desire ground-truthing stack makes the model better at lane changes
+ * New driver monitoring model: improved performance on comma three
+ * NEOS 18 for comma two: update packages
+ * AGNOS 1.3 for comma three: fix display init at high temperatures
+ * Improved auto-exposure on comma three
+ * Improved longitudinal control on Honda Nidec cars
+ * Hyundai Kona Hybrid 2020 support thanks to haram-KONA!
+ * Hyundai Sonata Hybrid 2021 support thanks to Matt-Wash-Burn!
+ * Kia Niro Hybrid 2021 support thanks to tetious!
+
+Version 0.8.7 (2021-07-31)
+========================
+ * comma three support!
+ * Navigation alpha for the comma three!
+ * Volkswagen T-Cross 2021 support thanks to jyoung8607!
+
+Version 0.8.6 (2021-07-21)
+========================
+ * Revamp lateral and longitudinal planners
+   * Refactor planner output API to be more readable and verbose
+   * Planners now output desired trajectories for speed, acceleration, curvature, and curvature rate
+   * Use MPC for longitudinal planning when no lead car is present, makes accel and decel smoother
+ * Remove "CHECK DRIVER FACE VISIBILITY" warning
+ * Fixed cruise fault on some TSS2.5 Camrys and international Toyotas
+ * Hyundai Elantra Hybrid 2021 support thanks to tecandrew!
+ * Hyundai Ioniq PHEV 2020 support thanks to YawWashout!
+ * Kia Niro Hybrid 2019 support thanks to jyoung8607!
+ * Škoda Octavia RS 2016 support thanks to jyoung8607!
+ * Toyota Alphard 2020 support thanks to belm0!
+ * Volkswagen Golf SportWagen 2015 support thanks to jona96!
+ * Volkswagen Touran 2017 support thanks to jyoung8607!
+
+Version 0.8.5 (2021-06-11)
+========================
+ * NEOS update: improved reliability and stability with better voltage regulator configuration
+ * Smart model-based Forward Collision Warning
+ * CAN-based fingerprinting moved behind community features toggle
+ * Improved longitudinal control on Toyotas with a comma pedal
+ * Improved auto-brightness using road-facing camera
+ * Added "Software" settings page with updater controls
+ * Audi Q2 2018 support thanks to jyoung8607!
+ * Hyundai Elantra 2021 support thanks to CruiseBrantley!
+ * Lexus UX Hybrid 2019-2020 support thanks to brianhaugen2!
+ * Toyota Avalon Hybrid 2019 support thanks to jbates9011!
+ * SEAT Leon 2017 & 2020 support thanks to jyoung8607!
+ * Škoda Octavia 2015 & 2019 support thanks to jyoung8607!
+
+Version 0.8.4 (2021-05-17)
+========================
+ * Delay controls start until system is ready
+ * Fuzzy car identification, enabled with Community Features toggle
+ * Localizer optimized for increased precision and less CPU usage
+ * Retuned lateral control to be more aggressive when model is confident
+ * Toyota Mirai 2021 support
+ * Lexus NX 300 2020 support thanks to goesreallyfast!
+ * Volkswagen Atlas 2018-19 support thanks to jyoung8607!
+
+Version 0.8.3 (2021-04-01)
+========================
+ * New model
+   * Trained on new diverse dataset from 2000+ users from 30+ countries
+   * Trained with improved segnet from the comma-pencil community project
+   * 🥬 Dramatically improved end-to-end lateral performance 🥬
+ * Toggle added to disable the use of lanelines
+ * NEOS update: update packages and support for new UI
+ * New offroad UI based on Qt
+ * Default SSH key only used for setup
+ * Kia Ceed 2019 support thanks to ZanZaD13!
+ * Kia Seltos 2021 support thanks to speedking456!
+ * Added support for many Volkswagen and Škoda models thanks to jyoung8607!
+
+Version 0.8.2 (2021-02-26)
+========================
+ * Use model points directly in MPC (no more polyfits), making lateral planning more accurate
  * Use model heading prediction for smoother lateral control
  * Smarter actuator delay compensation
+ * Improve qcamera resolution for improved video in explorer and connect
  * Adjust maximum engagement speed to better fit the model's training distribution
  * New driver monitoring model trained with 3x more diverse data
  * Improved face detection with masks
  * More predictable DM alerts when visibility is bad
  * Rewritten video streaming between openpilot processes
  * Improved longitudinal tuning on TSS2 Corolla and Rav4 thanks to briskspirit!
- * Audi A3 2015 support thanks to keeleysam!
+ * Audi A3 2015 and 2017 support thanks to keeleysam!
+ * Nissan Altima 2020 support thanks to avolmensky!
  * Lexus ES Hybrid 2018 support thanks to TheInventorMan!
  * Toyota Camry Hybrid 2021 support thanks to alancyau!
 

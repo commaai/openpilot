@@ -3,52 +3,23 @@
 import os
 import time
 
-from panda import BASEDIR as PANDA_BASEDIR, Panda, PandaDFU, build_st
+from panda import BASEDIR as PANDA_BASEDIR, Panda, PandaDFU
 from common.basedir import BASEDIR
-from common.gpio import gpio_init, gpio_set
-from selfdrive.hardware import TICI
-from selfdrive.hardware.tici.pins import GPIO_HUB_RST_N, GPIO_STM_BOOT0, GPIO_STM_RST_N
+from common.params import Params
 from selfdrive.swaglog import cloudlog
 
-def set_panda_power(power=True):
-  if not TICI:
-    return
-
-  gpio_init(GPIO_STM_RST_N, True)
-  gpio_init(GPIO_STM_BOOT0, True)
-
-  gpio_set(GPIO_STM_RST_N, True)
-  gpio_set(GPIO_HUB_RST_N, True)
-
-  time.sleep(0.1)
-
-  gpio_set(GPIO_STM_RST_N, not power)
+PANDA_FW_FN = os.path.join(PANDA_BASEDIR, "board", "obj", "panda.bin.signed")
 
 
-def get_firmware_fn():
-  signed_fn = os.path.join(PANDA_BASEDIR, "board", "obj", "panda.bin.signed")
-  if os.path.exists(signed_fn):
-    cloudlog.info("Using prebuilt signed firmware")
-    return signed_fn
-  else:
-    cloudlog.info("Building panda firmware")
-    fn = "obj/panda.bin"
-    build_st(fn, clean=False)
-    return os.path.join(PANDA_BASEDIR, "board", fn)
-
-
-def get_expected_signature(fw_fn=None):
-  if fw_fn is None:
-    fw_fn = get_firmware_fn()
-
+def get_expected_signature() -> bytes:
   try:
-    return Panda.get_signature_from_firmware(fw_fn)
+    return Panda.get_signature_from_firmware(PANDA_FW_FN)
   except Exception:
     cloudlog.exception("Error computing expected signature")
     return b""
 
 
-def update_panda():
+def update_panda() -> Panda:
   panda = None
   panda_dfu = None
 
@@ -71,8 +42,7 @@ def update_panda():
 
     time.sleep(1)
 
-  fw_fn = get_firmware_fn()
-  fw_signature = get_expected_signature(fw_fn)
+  fw_signature = get_expected_signature()
 
   try:
     serial = panda.get_serial()[0].decode("utf-8")
@@ -90,7 +60,7 @@ def update_panda():
 
   if panda.bootstub or panda_signature != fw_signature:
     cloudlog.info("Panda firmware out of date, update required")
-    panda.flash(fw_fn)
+    panda.flash()
     cloudlog.info("Done flashing")
 
   if panda.bootstub:
@@ -108,12 +78,20 @@ def update_panda():
     cloudlog.info("Version mismatch after flashing, exiting")
     raise AssertionError
 
+  return panda
+
+
+def main() -> None:
+  panda = update_panda()
+
+  # check health for lost heartbeat
+  health = panda.health()
+  if health["heartbeat_lost"]:
+    Params().put_bool("PandaHeartbeatLost", True)
+    cloudlog.event("heartbeat lost", deviceState=health)
+
   cloudlog.info("Resetting panda")
   panda.reset()
-
-def main():
-  set_panda_power()
-  update_panda()
 
   os.chdir(os.path.join(BASEDIR, "selfdrive/boardd"))
   os.execvp("./boardd", ["./boardd"])

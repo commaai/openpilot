@@ -9,10 +9,21 @@ source "$BASEDIR/launch_env.sh"
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
 function two_init {
-  # Wifi scan
-  wpa_cli IFNAME=wlan0 SCAN
+
+  # set IO scheduler
+  setprop sys.io.scheduler noop
+  for f in /sys/block/*/queue/scheduler; do
+    echo noop > $f
+  done
 
   # *** shield cores 2-3 ***
+
+  # TODO: should we enable this?
+  # offline cores 2-3 to force recurring timers onto the other cores
+  #echo 0 > /sys/devices/system/cpu/cpu2/online
+  #echo 0 > /sys/devices/system/cpu/cpu3/online
+  #echo 1 > /sys/devices/system/cpu/cpu2/online
+  #echo 1 > /sys/devices/system/cpu/cpu3/online
 
   # android gets two cores
   echo 0-1 > /dev/cpuset/background/cpus
@@ -54,8 +65,7 @@ function two_init {
   echo 1 > /proc/irq/6/smp_affinity_list  # MDSS
 
   # USB traffic needs realtime handling on cpu 3
-  [ -d "/proc/irq/733" ] && echo 3 > /proc/irq/733/smp_affinity_list # USB for LeEco
-  [ -d "/proc/irq/736" ] && echo 3 > /proc/irq/736/smp_affinity_list # USB for OP3T
+  [ -d "/proc/irq/733" ] && echo 3 > /proc/irq/733/smp_affinity_list
 
   # GPU and camera get cpu 2
   CAM_IRQS="177 178 179 180 181 182 183 184 185 186 192"
@@ -75,107 +85,55 @@ function two_init {
   # disable bluetooth
   service call bluetooth_manager 8
 
+  # wifi scan
+  wpa_cli IFNAME=wlan0 SCAN
+
   # Check for NEOS update
   if [ $(< /VERSION) != "$REQUIRED_NEOS_VERSION" ]; then
-    if [ -f "$DIR/scripts/continue.sh" ]; then
-      cp "$DIR/scripts/continue.sh" "/data/data/com.termux/files/continue.sh"
-    fi
-
-    if [ ! -f "$BASEDIR/prebuilt" ]; then
-      # Clean old build products, but preserve the scons cache
-      cd $DIR
-      scons --clean
-      git clean -xdf
-      git submodule foreach --recursive git clean -xdf
-    fi
-
-    "$DIR/installer/updater/updater" "file://$DIR/installer/updater/update.json"
-  fi
-
-  # One-time fix for a subset of OP3T with gyro orientation offsets.
-  # Remove and regenerate qcom sensor registry. Only done on OP3T mainboards.
-  # Performed exactly once. The old registry is preserved just-in-case, and
-  # doubles as a flag denoting we've already done the reset.
-  if ! $(grep -q "letv" /proc/cmdline) && [ ! -f "/persist/comma/op3t-sns-reg-backup" ]; then
-    echo "Performing OP3T sensor registry reset"
-    mv /persist/sensors/sns.reg /persist/comma/op3t-sns-reg-backup &&
-      rm -f /persist/sensors/sensors_settings /persist/sensors/error_log /persist/sensors/gyro_sensitity_cal &&
-      echo "restart" > /sys/kernel/debug/msm_subsys/slpi &&
-      sleep 5  # Give Android sensor subsystem a moment to recover
+    echo "Installing NEOS update"
+    NEOS_PY="$DIR/selfdrive/hardware/eon/neos.py"
+    MANIFEST="$DIR/selfdrive/hardware/eon/neos.json"
+    $NEOS_PY --swap-if-ready $MANIFEST
+    $DIR/selfdrive/hardware/eon/updater $NEOS_PY $MANIFEST
   fi
 }
 
 function tici_init {
+  # wait longer for weston to come up
+  if [ -f "$BASEDIR/prebuilt" ]; then
+    sleep 3
+  fi
+
+  # setup governors
   sudo su -c 'echo "performance" > /sys/class/devfreq/soc:qcom,memlat-cpu0/governor'
   sudo su -c 'echo "performance" > /sys/class/devfreq/soc:qcom,memlat-cpu4/governor'
+
+  # TODO: move this to agnos
+  # network manager config
+  nmcli connection modify --temporary lte gsm.auto-config yes
+  nmcli connection modify --temporary lte gsm.home-only yes
+  sudo rm -f /data/etc/NetworkManager/system-connections/*.nmmeta
 
   # set success flag for current boot slot
   sudo abctl --set_success
 
   # Check if AGNOS update is required
   if [ $(< /VERSION) != "$AGNOS_VERSION" ]; then
-    # Get number of slot to switch to
-    CUR_SLOT=$(abctl --boot_slot)
-    if [[ "$CUR_SLOT" == "_a" ]]; then
-      OTHER_SLOT="_b"
-      OTHER_SLOT_NUMBER="1"
-    else
-      OTHER_SLOT="_a"
-      OTHER_SLOT_NUMBER="0"
-    fi
-    echo "Cur slot $CUR_SLOT, target $OTHER_SLOT"
-
-    # Get expected hashes from manifest
+    AGNOS_PY="$DIR/selfdrive/hardware/tici/agnos.py"
     MANIFEST="$DIR/selfdrive/hardware/tici/agnos.json"
-    SYSTEM_HASH_EXPECTED=$(jq -r ".[] | select(.name == \"system\") | .hash_raw" $MANIFEST)
-    SYSTEM_SIZE=$(jq -r ".[] | select(.name == \"system\") | .size" $MANIFEST)
-    BOOT_HASH_EXPECTED=$(jq -r ".[] | select(.name == \"boot\") | .hash_raw" $MANIFEST)
-    BOOT_SIZE=$(jq -r ".[] | select(.name == \"boot\") | .size" $MANIFEST)
-    echo "Expected hashes:"
-    echo "System: $SYSTEM_HASH_EXPECTED"
-    echo "Boot: $BOOT_HASH_EXPECTED"
-
-    # Read hashes from alternate partitions, should already be flashed by updated
-    SYSTEM_HASH=$(dd if="/dev/disk/by-partlabel/system$OTHER_SLOT" bs=1 skip="$SYSTEM_SIZE" count=64 2>/dev/null)
-    BOOT_HASH=$(dd if="/dev/disk/by-partlabel/boot$OTHER_SLOT" bs=1 skip="$BOOT_SIZE" count=64 2>/dev/null)
-    echo "Found hashes:"
-    echo "System: $SYSTEM_HASH"
-    echo "Boot: $BOOT_HASH"
-
-    if [[ "$SYSTEM_HASH" == "$SYSTEM_HASH_EXPECTED" && "$BOOT_HASH" == "$BOOT_HASH_EXPECTED" ]]; then
-      echo "Swapping active slot to $OTHER_SLOT_NUMBER"
-
-      # Clean hashes before swapping to prevent looping
-      dd if=/dev/zero of="/dev/disk/by-partlabel/system$OTHER_SLOT" bs=1 seek="$SYSTEM_SIZE" count=64
-      dd if=/dev/zero of="/dev/disk/by-partlabel/boot$OTHER_SLOT" bs=1 seek="$BOOT_SIZE" count=64
-      sync
-
-      abctl --set_active "$OTHER_SLOT_NUMBER"
-
-      sleep 1
-      sudo reboot
-    else
-      echo "Hash mismatch, downloading agnos"
-      if $DIR/selfdrive/hardware/tici/agnos.py $MANIFEST; then
-        echo "Download done, swapping active slot to $OTHER_SLOT_NUMBER"
-
-        # Clean hashes before swapping to prevent looping
-        dd if=/dev/zero of="/dev/disk/by-partlabel/system$OTHER_SLOT" bs=1 seek="$SYSTEM_SIZE" count=64
-        dd if=/dev/zero of="/dev/disk/by-partlabel/boot$OTHER_SLOT" bs=1 seek="$BOOT_SIZE" count=64
-        sync
-
-        abctl --set_active "$OTHER_SLOT_NUMBER"
-      fi
-
-      sleep 1
+    if $AGNOS_PY --verify $MANIFEST; then
       sudo reboot
     fi
+    $DIR/selfdrive/hardware/tici/updater $AGNOS_PY $MANIFEST
   fi
 }
 
 function launch {
   # Remove orphaned git lock if it exists on boot
   [ -f "$DIR/.git/index.lock" ] && rm -f $DIR/.git/index.lock
+
+  # Pull time from panda
+  $DIR/selfdrive/boardd/set_time.py
 
   # Check to see if there's a valid overlay-based update available. Conditions
   # are as follows:
@@ -200,11 +158,6 @@ function launch {
           mv "${STAGING_ROOT}/finalized" $BASEDIR
           cd $BASEDIR
 
-          # Partial mitigation for symlink-related filesystem corruption
-          # Ensure all files match the repo versions after update
-          git reset --hard
-          git submodule foreach --recursive git reset --hard
-
           echo "Restarting launch script ${LAUNCHER_LOCATION}"
           unset REQUIRED_NEOS_VERSION
           unset AGNOS_VERSION
@@ -219,7 +172,7 @@ function launch {
 
   # handle pythonpath
   ln -sfn $(pwd) /data/pythonpath
-  export PYTHONPATH="$PWD"
+  export PYTHONPATH="$PWD:$PWD/pyextra"
 
   # hardware specific init
   if [ -f /EON ]; then
@@ -232,8 +185,8 @@ function launch {
   tmux capture-pane -pq -S-1000 > /tmp/launch_log
 
   # start manager
-  cd selfdrive
-  ./manager.py
+  cd selfdrive/manager
+  ./build.py && ./manager.py
 
   # if broken, keep on screen error
   while true; do sleep 1; done

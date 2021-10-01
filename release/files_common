@@ -1,6 +1,5 @@
 .gitignore
 LICENSE
-launch.sh
 launch_env.sh
 launch_chffrplus.sh
 launch_openpilot.sh
@@ -8,13 +7,10 @@ launch_openpilot.sh
 Jenkinsfile
 SConstruct
 
-CONTRIBUTING.md
 README.md
 RELEASES.md
-SAFETY.md
+docs/*
 site_scons/site_tools/cython.py
-
-apk/ai.comma*.apk
 
 common/.gitignore
 common/__init__.py
@@ -32,6 +28,7 @@ common/params_pyx.pyx
 common/xattr.py
 common/profiler.py
 common/basedir.py
+common/dict_helpers.py
 common/filter_simple.py
 common/stat_live.py
 common/spinner.py
@@ -61,16 +58,15 @@ common/api/__init__.py
 models/supercombo.dlc
 models/dmonitoring_model_q.dlc
 
-release/build_release2.sh
+release/*
+
+installer/updater/updater
 
 selfdrive/version.py
 
 selfdrive/__init__.py
-selfdrive/registration.py
 selfdrive/config.py
 selfdrive/crash.py
-selfdrive/launcher.py
-selfdrive/manager.py
 selfdrive/swaglog.py
 selfdrive/logmessaged.py
 selfdrive/tombstoned.py
@@ -81,6 +77,7 @@ selfdrive/rtshield.py
 selfdrive/athena/__init__.py
 selfdrive/athena/athenad.py
 selfdrive/athena/manage_athenad.py
+selfdrive/athena/registration.py
 
 selfdrive/boardd/.gitignore
 selfdrive/boardd/SConscript
@@ -98,12 +95,14 @@ selfdrive/boardd/panda_flashing.h
 
 selfdrive/boardd/pigeon.cc
 selfdrive/boardd/pigeon.h
+selfdrive/boardd/set_time.py
 
 selfdrive/car/__init__.py
 selfdrive/car/car_helpers.py
 selfdrive/car/fingerprints.py
 selfdrive/car/interfaces.py
 selfdrive/car/vin.py
+selfdrive/car/disable_ecu.py
 selfdrive/car/fw_versions.py
 selfdrive/car/isotp_parallel_query.py
 selfdrive/car/tests/__init__.py
@@ -178,6 +177,13 @@ selfdrive/car/mazda/radar_interface.py
 selfdrive/car/mazda/values.py
 selfdrive/car/mazda/carcontroller.py
 selfdrive/car/mazda/mazdacan.py
+selfdrive/car/tesla/__init__.py
+selfdrive/car/tesla/teslacan.py
+selfdrive/car/tesla/carcontroller.py
+selfdrive/car/tesla/radar_interface.py
+selfdrive/car/tesla/values.py
+selfdrive/car/tesla/carstate.py
+selfdrive/car/tesla/interface.py
 selfdrive/car/mock/*.py
 
 selfdrive/clocksd/.gitignore
@@ -189,11 +195,6 @@ selfdrive/debug/*.py
 selfdrive/common/SConscript
 selfdrive/common/version.h
 
-selfdrive/common/framebuffer.h
-selfdrive/common/framebuffer.cc
-selfdrive/common/glutil.cc
-selfdrive/common/glutil.h
-selfdrive/common/touch.[c,h]
 selfdrive/common/swaglog.h
 selfdrive/common/swaglog.cc
 selfdrive/common/util.cc
@@ -203,6 +204,8 @@ selfdrive/common/clutil.cc
 selfdrive/common/clutil.h
 selfdrive/common/params.h
 selfdrive/common/params.cc
+selfdrive/common/watchdog.cc
+selfdrive/common/watchdog.h
 
 selfdrive/common/modeldata.h
 selfdrive/common/mat.h
@@ -229,6 +232,7 @@ selfdrive/controls/lib/drive_helpers.py
 selfdrive/controls/lib/latcontrol_pid.py
 selfdrive/controls/lib/latcontrol_indi.py
 selfdrive/controls/lib/latcontrol_lqr.py
+selfdrive/controls/lib/latcontrol_angle.py
 selfdrive/controls/lib/longcontrol.py
 selfdrive/controls/lib/lateral_planner.py
 selfdrive/controls/lib/lane_planner.py
@@ -236,47 +240,29 @@ selfdrive/controls/lib/pid.py
 selfdrive/controls/lib/longitudinal_planner.py
 selfdrive/controls/lib/radar_helpers.py
 selfdrive/controls/lib/vehicle_model.py
-selfdrive/controls/lib/speed_smoother.py
-selfdrive/controls/lib/fcw.py
-selfdrive/controls/lib/long_mpc.py
-selfdrive/controls/lib/long_mpc_model.py
 
 selfdrive/controls/lib/cluster/*
 
-selfdrive/controls/lib/lateral_mpc/lib_mpc_export/*
-selfdrive/controls/lib/lateral_mpc/.gitignore
-selfdrive/controls/lib/lateral_mpc/SConscript
-selfdrive/controls/lib/lateral_mpc/__init__.py
-selfdrive/controls/lib/lateral_mpc/generator.cpp
-selfdrive/controls/lib/lateral_mpc/libmpc_py.py
-selfdrive/controls/lib/lateral_mpc/lateral_mpc.c
-
-selfdrive/controls/lib/longitudinal_mpc/lib_mpc_export/*
-selfdrive/controls/lib/longitudinal_mpc/.gitignore
-selfdrive/controls/lib/longitudinal_mpc/SConscript
-selfdrive/controls/lib/longitudinal_mpc/__init__.py
-selfdrive/controls/lib/longitudinal_mpc/generator.cpp
-selfdrive/controls/lib/longitudinal_mpc/libmpc_py.py
-selfdrive/controls/lib/longitudinal_mpc/longitudinal_mpc.c
-
-selfdrive/controls/lib/longitudinal_mpc_model/lib_mpc_export/*
-selfdrive/controls/lib/longitudinal_mpc_model/.gitignore
-selfdrive/controls/lib/longitudinal_mpc_model/SConscript
-selfdrive/controls/lib/longitudinal_mpc_model/__init__.py
-selfdrive/controls/lib/longitudinal_mpc_model/generator.cpp
-selfdrive/controls/lib/longitudinal_mpc_model/libmpc_py.py
-selfdrive/controls/lib/longitudinal_mpc_model/longitudinal_mpc.c
+selfdrive/controls/lib/lateral_mpc_lib/.gitignore
+selfdrive/controls/lib/longitudinal_mpc_lib/.gitignore
+selfdrive/controls/lib/lateral_mpc_lib/*
+selfdrive/controls/lib/longitudinal_mpc_lib/*
 
 selfdrive/hardware/__init__.py
+selfdrive/hardware/base.h
 selfdrive/hardware/base.py
+selfdrive/hardware/hw.h
 selfdrive/hardware/eon/__init__.py
-selfdrive/hardware/eon/apk.py
+selfdrive/hardware/eon/androidd.py
+selfdrive/hardware/eon/hardware.h
 selfdrive/hardware/eon/hardware.py
+selfdrive/hardware/eon/neos.py
+selfdrive/hardware/eon/neos.json
+selfdrive/hardware/eon/updater
 selfdrive/hardware/tici/__init__.py
 selfdrive/hardware/tici/hardware.py
-selfdrive/hardware/tici/pins.py
-selfdrive/hardware/tici/agnos.py
-selfdrive/hardware/tici/agnos.json
+selfdrive/hardware/tici/amplifier.py
+selfdrive/hardware/tici/iwlist.py
 selfdrive/hardware/pc/__init__.py
 selfdrive/hardware/pc/hardware.py
 
@@ -284,17 +270,22 @@ selfdrive/locationd/__init__.py
 selfdrive/locationd/.gitignore
 selfdrive/locationd/SConscript
 selfdrive/locationd/ubloxd.cc
-selfdrive/locationd/ubloxd_main.cc
 selfdrive/locationd/ublox_msg.cc
 selfdrive/locationd/ublox_msg.h
+selfdrive/locationd/generated/ubx.cpp
+selfdrive/locationd/generated/ubx.h
+selfdrive/locationd/generated/gps.cpp
+selfdrive/locationd/generated/gps.h
 
-selfdrive/locationd/locationd.py
+selfdrive/locationd/locationd.h
+selfdrive/locationd/locationd.cc
 selfdrive/locationd/paramsd.py
 selfdrive/locationd/models/.gitignore
-selfdrive/locationd/models/SConscript
 selfdrive/locationd/models/live_kf.py
 selfdrive/locationd/models/car_kf.py
 selfdrive/locationd/models/constants.py
+selfdrive/locationd/models/live_kf.h
+selfdrive/locationd/models/live_kf.cc
 
 selfdrive/locationd/calibrationd.py
 
@@ -303,7 +294,9 @@ selfdrive/logcatd/logcatd_android.cc
 selfdrive/logcatd/logcatd_systemd.cc
 
 selfdrive/proclogd/SConscript
-selfdrive/proclogd/proclogd.cc
+selfdrive/proclogd/main.cc
+selfdrive/proclogd/proclog.cc
+selfdrive/proclogd/proclog.h
 
 selfdrive/loggerd/SConscript
 selfdrive/loggerd/encoder.h
@@ -328,7 +321,7 @@ selfdrive/sensord/libdiag.h
 selfdrive/sensord/sensors_qcom.cc
 selfdrive/sensord/sensors_qcom2.cc
 selfdrive/sensord/sensors/*.cc
-selfdrive/sensord/sensors/*.hpp
+selfdrive/sensord/sensors/*.h
 selfdrive/sensord/sensord
 
 selfdrive/thermald/thermald.py
@@ -338,31 +331,29 @@ selfdrive/test/__init__.py
 selfdrive/test/helpers.py
 selfdrive/test/setup_device_ci.sh
 selfdrive/test/test_fingerprints.py
-selfdrive/test/test_manager.py
+selfdrive/test/test_onroad.py
 
+selfdrive/ui/.gitignore
 selfdrive/ui/SConscript
 selfdrive/ui/*.cc
-selfdrive/ui/*.hpp
+selfdrive/ui/*.h
 selfdrive/ui/ui
 selfdrive/ui/text
 selfdrive/ui/spinner
-selfdrive/ui/android/spinner/Makefile
-selfdrive/ui/android/spinner/spinner
-selfdrive/ui/android/spinner/spinner.c
-
-selfdrive/ui/android/text/Makefile
-selfdrive/ui/android/text/text
-selfdrive/ui/android/text/text.cc
+selfdrive/ui/soundd
 
 selfdrive/ui/qt/*.cc
-selfdrive/ui/qt/*.hpp
+selfdrive/ui/qt/*.h
 selfdrive/ui/qt/offroad/*.cc
-selfdrive/ui/qt/offroad/*.hpp
+selfdrive/ui/qt/offroad/*.h
+selfdrive/ui/qt/offroad/*.qml
 selfdrive/ui/qt/widgets/*.cc
-selfdrive/ui/qt/widgets/*.hpp
+selfdrive/ui/qt/widgets/*.h
+selfdrive/ui/qt/spinner_aarch64
+selfdrive/ui/qt/text_aarch64
 
-selfdrive/ui/android/*.cc
-selfdrive/ui/android/*.hpp
+selfdrive/ui/replay/framereader.cc
+selfdrive/ui/replay/framereader.h
 
 selfdrive/camerad/SConscript
 selfdrive/camerad/main.cc
@@ -375,8 +366,8 @@ selfdrive/camerad/cameras/camera_frame_stream.cc
 selfdrive/camerad/cameras/camera_frame_stream.h
 selfdrive/camerad/cameras/camera_qcom.cc
 selfdrive/camerad/cameras/camera_qcom.h
-selfdrive/camerad/cameras/camera_qcom2.cc
-selfdrive/camerad/cameras/camera_qcom2.h
+selfdrive/camerad/cameras/camera_replay.cc
+selfdrive/camerad/cameras/camera_replay.h
 selfdrive/camerad/cameras/debayer.cl
 selfdrive/camerad/cameras/sensor_i2c.h
 selfdrive/camerad/cameras/sensor2_i2c.h
@@ -390,6 +381,15 @@ selfdrive/camerad/imgproc/conv.cl
 selfdrive/camerad/imgproc/pool.cl
 selfdrive/camerad/imgproc/utils.cc
 selfdrive/camerad/imgproc/utils.h
+
+selfdrive/manager/__init__.py
+selfdrive/manager/build.py
+selfdrive/manager/helpers.py
+selfdrive/manager/manager.py
+selfdrive/manager/process_config.py
+selfdrive/manager/process.py
+selfdrive/manager/test/__init__.py
+selfdrive/manager/test/test_manager.py
 
 selfdrive/modeld/SConscript
 selfdrive/modeld/modeld.cc
@@ -427,8 +427,15 @@ selfdrive/modeld/runners/run.h
 selfdrive/monitoring/dmonitoringd.py
 selfdrive/monitoring/driver_monitor.py
 
-selfdrive/assets
+selfdrive/assets/.gitignore
+selfdrive/assets/assets.qrc
+selfdrive/assets/*.png
+selfdrive/assets/*.svg
 selfdrive/assets/fonts/*.ttf
+selfdrive/assets/images/*
+selfdrive/assets/offroad/*
+selfdrive/assets/sounds/*
+selfdrive/assets/training/*
 
 phonelibs/SConscript
 
@@ -445,10 +452,11 @@ phonelibs/openmax/**
 phonelibs/json11/json11.cpp
 phonelibs/json11/json11.hpp
 
-phonelibs/qpoases/**
-
 phonelibs/qrcode/*.cc
 phonelibs/qrcode/*.hpp
+
+phonelibs/kaitai/*.h
+phonelibs/kaitai/*.cpp
 
 phonelibs/libyuv/include/**
 phonelibs/libyuv/lib/**
@@ -459,19 +467,20 @@ phonelibs/snpe/aarch64**
 phonelibs/snpe/larch64**
 phonelibs/snpe/dsp**
 
+phonelibs/acados/x86_64/**
+phonelibs/acados/aarch64/**
+phonelibs/acados/larch64/**
+phonelibs/acados/include/**
+
 phonelibs/android_frameworks_native/**
 phonelibs/android_hardware_libhardware/**
 phonelibs/android_system_core/**
-
-installer/updater/updater
-installer/updater/updater.cc
-installer/updater/update.json
-installer/updater/Makefile
 
 scripts/update_now.sh
 scripts/stop_updater.sh
 
 pyextra/.gitignore
+pyextra/acados_template/**
 
 rednose/**
 
@@ -483,19 +492,20 @@ cereal/log.capnp
 cereal/services.py
 cereal/SConscript
 cereal/include/**
+cereal/logger/logger.h
 cereal/messaging/.gitignore
 cereal/messaging/__init__.py
 cereal/messaging/bridge.cc
 cereal/messaging/impl_msgq.cc
-cereal/messaging/impl_msgq.hpp
+cereal/messaging/impl_msgq.h
 cereal/messaging/impl_zmq.cc
-cereal/messaging/impl_zmq.hpp
+cereal/messaging/impl_zmq.h
 cereal/messaging/messaging.cc
-cereal/messaging/messaging.hpp
+cereal/messaging/messaging.h
 cereal/messaging/messaging.pxd
 cereal/messaging/messaging_pyx.pyx
 cereal/messaging/msgq.cc
-cereal/messaging/msgq.hpp
+cereal/messaging/msgq.h
 cereal/messaging/socketmaster.cc
 cereal/visionipc/.gitignore
 cereal/visionipc/__init__.py
@@ -506,11 +516,10 @@ cereal/visionipc/*.pxd
 
 panda/.gitignore
 panda/__init__.py
-panda/VERSION
 panda/board/**
 panda/certs/**
-panda/common/**
 panda/crypto/**
+panda/examples/query_fw_versions.py
 panda/python/**
 
 opendbc/.gitignore
@@ -545,8 +554,7 @@ opendbc/gm_global_a_chassis.dbc
 opendbc/ford_fusion_2018_pt.dbc
 opendbc/ford_fusion_2018_adas.dbc
 
-opendbc/honda_accord_s2t_2018_can_generated.dbc
-opendbc/honda_accord_lx15t_2018_can_generated.dbc
+opendbc/honda_accord_2018_can_generated.dbc
 opendbc/acura_ilx_2016_can_generated.dbc
 opendbc/acura_rdx_2018_can_generated.dbc
 opendbc/acura_rdx_2020_can_generated.dbc
@@ -559,7 +567,6 @@ opendbc/honda_crv_ex_2017_body_generated.dbc
 opendbc/honda_crv_executive_2016_can_generated.dbc
 opendbc/honda_crv_hybrid_2019_can_generated.dbc
 opendbc/honda_fit_ex_2018_can_generated.dbc
-opendbc/honda_hrv_touring_2019_can_generated.dbc
 opendbc/honda_odyssey_exl_2018_generated.dbc
 opendbc/honda_odyssey_extreme_edition_2018_china_can_generated.dbc
 opendbc/honda_pilot_touring_2017_can_generated.dbc
@@ -568,6 +575,7 @@ opendbc/honda_insight_ex_2019_can_generated.dbc
 opendbc/acura_ilx_2016_nidec.dbc
 
 opendbc/hyundai_kia_generic.dbc
+opendbc/hyundai_kia_mando_front_radar.dbc
 
 opendbc/mazda_2017.dbc
 
@@ -600,3 +608,6 @@ opendbc/toyota_adas.dbc
 opendbc/toyota_tss2_adas.dbc
 
 opendbc/vw_mqb_2010.dbc
+
+opendbc/tesla_can.dbc
+opendbc/tesla_radar.dbc

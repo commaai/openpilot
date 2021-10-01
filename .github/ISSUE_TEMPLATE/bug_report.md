@@ -8,15 +8,11 @@ assignees: ''
 
 **Describe the bug**
 
-<!-- A clear and concise description of what the bug is. Add the `car bug` label for vehicle/brand specific bugs and the `bug` label for all other bugs. -->
+<!-- A clear and concise description of what the bug is. -->
 
 **How to reproduce or log data**
 
 <!-- Steps to reproduce the behavior. -->
-
-**Expected behavior**
-
-<!-- A clear and concise description of what you expected to happen. -->
 
 **Device/Version information (please complete the following information):**
  - Device: [e.g. EON/EON Gold/comma two]
@@ -25,6 +21,8 @@ assignees: ''
  - Timestamp: [When in the route the bug occurs (e.g. 4min 30s into the drive)]
  - Version: [commit hash when on a non-release branch, or version number when on devel or release2 (e.g. 0.7.6)]
  - Car make/model: [e.g. Toyota Prius 2016]
+
+<!-- Ensure the full logs are uploaded for the posted route. To do so, ensure the Upload Raw Logs toggle is on and connect the device to wifi until all four colums in my.comma.ai/useradmin are filled. -->
 
 **Additional context**
 

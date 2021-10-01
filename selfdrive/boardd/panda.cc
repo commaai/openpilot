@@ -5,10 +5,10 @@
 #include <unistd.h>
 #include <string>
 
-#include "common/swaglog.h"
-#include "common/gpio.h"
-#include "common/util.h"
-#include "messaging.hpp"
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/common/gpio.h"
+#include "selfdrive/common/util.h"
+#include "cereal/messaging/messaging.h"
 #include "panda.h"
 #include "panda_dfu.h"
 #include "panda_flashing.h"
@@ -17,17 +17,29 @@ void panda_set_power(bool power) {
 #ifdef QCOM2
   int err = 0;
 
-  err += gpio_init(GPIO_STM_RST_N, true);
-  err += gpio_init(GPIO_STM_BOOT0, true);
+#include <cassert>
+#include <stdexcept>
+#include <vector>
 
-  err += gpio_set(GPIO_STM_RST_N, true);
-  err += gpio_set(GPIO_STM_BOOT0, false);
+#include "cereal/messaging/messaging.h"
+#include "selfdrive/common/gpio.h"
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/common/util.h"
 
-  util::sleep_for(100); // 100 ms
+static int init_usb_ctx(libusb_context *context) {
+  int err = libusb_init(&context);
+  if (err != 0) {
+    LOGE("libusb initialization error");
+    return err;
+  }
 
-  err += gpio_set(GPIO_STM_RST_N, !power);
-  assert(err == 0);
+#if LIBUSB_API_VERSION >= 0x01000106
+  libusb_set_option(context, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_INFO);
+#else
+  libusb_set_debug(context, 3);
 #endif
+
+  return err;
 }
 
 #define LIBUSB_ENDPOINT_DIR_MASK 0x80
@@ -86,6 +98,9 @@ PandaComm::PandaComm(uint16_t vid, uint16_t pid, std::string serial) {
   return;
 
 fail:
+  if (dev_list != NULL) {
+    libusb_free_device_list(dev_list, 1);
+  }
   cleanup();
   throw std::runtime_error("Error connecting to panda");
 }
@@ -192,6 +207,7 @@ int PandaComm::usb_bulk_read(unsigned char endpoint, unsigned char* data, int le
     if (err == LIBUSB_ERROR_TIMEOUT) {
       break; // timeout is okay to exit, recv still happened
     } else if (err == LIBUSB_ERROR_OVERFLOW) {
+      comms_healthy = false;
       LOGE_100("overflow got 0x%x", transferred);
     } else if (err != 0) {
       handle_usb_issue(err, __func__);
@@ -291,7 +307,7 @@ void Panda::set_ir_pwr(uint16_t ir_pwr) {
   usb_write(0xb0, ir_pwr, 0);
 }
 
-health_t Panda::get_state(){
+health_t Panda::get_state() {
   health_t health {0};
   usb_read(0xd2, 0, 0, (unsigned char*)&health, sizeof(health));
   return health;
@@ -318,7 +334,7 @@ void Panda::set_power_saving(bool power_saving) {
   usb_write(0xe7, power_saving, 0);
 }
 
-void Panda::set_usb_power_mode(cereal::PandaState::UsbPowerMode power_mode){
+void Panda::set_usb_power_mode(cereal::PandaState::UsbPowerMode power_mode) {
   usb_write(0xe6, (uint16_t)power_mode, 0);
 }
 
@@ -361,9 +377,11 @@ int Panda::can_receive(kj::Array<capnp::word>& out_buf) {
 
   size_t num_msg = recv / 0x10;
   MessageBuilder msg;
-  auto canData = msg.initEvent().initCan(num_msg);
+  auto evt = msg.initEvent();
+  evt.setValid(comms_healthy);
 
   // populate message
+  auto canData = evt.initCan(num_msg);
   for (int i = 0; i < num_msg; i++) {
     if (data[i*4] & 4) {
       // extended

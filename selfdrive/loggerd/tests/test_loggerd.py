@@ -8,15 +8,15 @@ import unittest
 from collections import defaultdict
 from pathlib import Path
 
-from cereal import log
 import cereal.messaging as messaging
+from cereal import log
 from cereal.services import service_list
 from common.basedir import BASEDIR
-from common.timeout import Timeout
 from common.params import Params
-import selfdrive.manager as manager
-from selfdrive.hardware import TICI, PC
+from common.timeout import Timeout
+from selfdrive.hardware import PC, TICI
 from selfdrive.loggerd.config import ROOT
+from selfdrive.manager.process_config import managed_processes
 from selfdrive.test.helpers import with_processes
 from selfdrive.version import version as VERSION
 from tools.lib.logreader import LogReader
@@ -26,8 +26,8 @@ SentinelType = log.Sentinel.SentinelType
 CEREAL_SERVICES = [f for f in log.Event.schema.union_fields if f in service_list
                    and service_list[f].should_log and "encode" not in f.lower()]
 
-class TestLoggerd(unittest.TestCase):
 
+class TestLoggerd(unittest.TestCase):
   # TODO: all tests should work on PC
   @classmethod
   def setUpClass(cls):
@@ -39,17 +39,19 @@ class TestLoggerd(unittest.TestCase):
     return log_dirs[-1]
 
   def _get_log_dir(self, x):
-    for p in x.split(' '):
-      path = Path(p.strip())
-      if path.is_dir():
-        return path
+    for l in x.splitlines():
+      for p in l.split(' '):
+        path = Path(p.strip())
+        if path.is_dir():
+          return path
     return None
 
   def _get_log_fn(self, x):
-    for p in x.split(' '):
-      path = Path(p.strip())
-      if path.is_file():
-        return path
+    for l in x.splitlines():
+      for p in l.split(' '):
+        path = Path(p.strip())
+        if path.is_file():
+          return path
     return None
 
   def _gen_bootlog(self):
@@ -76,9 +78,11 @@ class TestLoggerd(unittest.TestCase):
 
   def test_init_data_values(self):
     os.environ["CLEAN"] = random.choice(["0", "1"])
-    os.environ["DONGLE_ID"] = ''.join(random.choice(string.printable) for n in range(random.randint(1, 100)))
 
+    dongle  = ''.join(random.choice(string.printable) for n in range(random.randint(1, 100)))
     fake_params = [
+      # param, initData field, value
+      ("DongleId", "dongleId", dongle),
       ("GitCommit", "gitCommit", "commit"),
       ("GitBranch", "gitBranch", "branch"),
       ("GitRemote", "gitRemote", "remote"),
@@ -91,7 +95,6 @@ class TestLoggerd(unittest.TestCase):
     initData = lr[0].initData
 
     self.assertTrue(initData.dirty != bool(os.environ["CLEAN"]))
-    self.assertEqual(initData.dongleId, os.environ["DONGLE_ID"])
     self.assertEqual(initData.version, VERSION)
 
     if os.path.isfile("/proc/cmdline"):
@@ -113,21 +116,24 @@ class TestLoggerd(unittest.TestCase):
     if TICI:
       expected_files.add("ecamera.hevc")
 
+    # give camerad time to start
+    time.sleep(5)
+
     for _ in range(5):
       num_segs = random.randint(1, 10)
       length = random.randint(2, 5)
       os.environ["LOGGERD_SEGMENT_LENGTH"] = str(length)
 
-      manager.start_managed_process("loggerd")
+      managed_processes["loggerd"].start()
       time.sleep((num_segs + 1) * length)
-      manager.kill_managed_process("loggerd")
+      managed_processes["loggerd"].stop()
 
       route_path = str(self._get_latest_log_dir()).rsplit("--", 1)[0]
       for n in range(num_segs):
         p = Path(f"{route_path}--{n}")
         logged = set([f.name for f in p.iterdir() if f.is_file()])
         diff = logged ^ expected_files
-        self.assertEqual(len(diff), 0)
+        self.assertEqual(len(diff), 0, f"{_=} {route_path=} {n=}, {logged=} {expected_files=}")
 
   def test_bootlog(self):
     # generate bootlog with fake launch log
@@ -152,25 +158,25 @@ class TestLoggerd(unittest.TestCase):
     assert abs(boot.wallTimeNanos - time.time_ns()) < 5*1e9 # within 5s
     assert boot.launchLog == launch_log
 
-    for field, path in [("lastKmsg", "console-ramoops"), ("lastPmsg", "pmsg-ramoops-0")]:
-      path = Path(os.path.join("/sys/fs/pstore/", path))
-      val = b""
+    for fn in ["console-ramoops", "pmsg-ramoops-0"]:
+      path = Path(os.path.join("/sys/fs/pstore/", fn))
       if path.is_file():
-        val = open(path, "rb").read()
-      self.assertEqual(getattr(boot, field), val)
+        expected_val = open(path, "rb").read()
+        bootlog_val = [e.value for e in boot.pstore.entries if e.key == fn][0]
+        self.assertEqual(expected_val, bootlog_val)
 
   def test_qlog(self):
     qlog_services = [s for s in CEREAL_SERVICES if service_list[s].decimation is not None]
     no_qlog_services = [s for s in CEREAL_SERVICES if service_list[s].decimation is None]
 
-    services = random.sample(qlog_services, random.randint(2, 10)) + \
-               random.sample(no_qlog_services, random.randint(2, 10))
+    services = random.sample(qlog_services, random.randint(2, min(10, len(qlog_services)))) + \
+               random.sample(no_qlog_services, random.randint(2, min(10, len(no_qlog_services))))
 
     pm = messaging.PubMaster(services)
 
     # sleep enough for the first poll to time out
     # TOOD: fix loggerd bug dropping the msgs from the first poll
-    manager.start_managed_process("loggerd")
+    managed_processes["loggerd"].start()
     time.sleep(2)
 
     sent_msgs = defaultdict(list)
@@ -185,7 +191,7 @@ class TestLoggerd(unittest.TestCase):
       time.sleep(0.01)
 
     time.sleep(1)
-    manager.kill_managed_process("loggerd")
+    managed_processes["loggerd"].stop()
 
     qlog_path = os.path.join(self._get_latest_log_dir(), "qlog.bz2")
     lr = list(LogReader(qlog_path))
@@ -206,7 +212,7 @@ class TestLoggerd(unittest.TestCase):
         self.assertEqual(recv_cnt, 0, f"got {recv_cnt} {s} msgs in qlog")
       else:
         # check logged message count matches decimation
-        expected_cnt = len(msgs) // service_list[s].decimation
+        expected_cnt = (len(msgs) - 1) // service_list[s].decimation + 1
         self.assertEqual(recv_cnt, expected_cnt, f"expected {expected_cnt} msgs for {s}, got {recv_cnt}")
 
   def test_rlog(self):
@@ -215,7 +221,7 @@ class TestLoggerd(unittest.TestCase):
 
     # sleep enough for the first poll to time out
     # TOOD: fix loggerd bug dropping the msgs from the first poll
-    manager.start_managed_process("loggerd")
+    managed_processes["loggerd"].start()
     time.sleep(2)
 
     sent_msgs = defaultdict(list)
@@ -230,7 +236,7 @@ class TestLoggerd(unittest.TestCase):
       time.sleep(0.01)
 
     time.sleep(1)
-    manager.kill_managed_process("loggerd")
+    managed_processes["loggerd"].stop()
 
     lr = list(LogReader(os.path.join(self._get_latest_log_dir(), "rlog.bz2")))
 

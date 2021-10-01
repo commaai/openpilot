@@ -1,8 +1,0 @@
-.*.swp
-*.o
-_nui
-moc_*
-nui.app/*
-routes.json
-_nui.app
-

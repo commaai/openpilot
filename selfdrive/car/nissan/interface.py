@@ -10,29 +10,16 @@ class CarInterface(CarInterfaceBase):
     self.cp_adas = self.CS.get_adas_can_parser(CP)
 
   @staticmethod
-  def compute_gb(accel, speed):
-    return float(accel) / 4.0
-
-  @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None):
 
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "nissan"
     ret.safetyModel = car.CarParams.SafetyModel.nissan
 
-    # Nissan port is a community feature, since we don't own one to test
-    ret.communityFeature = True
-
     ret.steerLimitAlert = False
-    ret.enableCamera = True
     ret.steerRateCost = 0.5
 
     ret.steerActuatorDelay = 0.1
-    ret.lateralTuning.pid.kf = 0.00006
-    ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.0], [0.0]]
-    ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.01], [0.005]]
-    ret.steerMaxBP = [0.]  # m/s
-    ret.steerMaxV = [1.]
 
     if candidate in [CAR.ROGUE, CAR.XTRAIL]:
       ret.mass = 1610 + STD_CARGO_KG
@@ -42,6 +29,13 @@ class CarInterface(CarInterfaceBase):
     elif candidate in [CAR.LEAF, CAR.LEAF_IC]:
       ret.mass = 1610 + STD_CARGO_KG
       ret.wheelbase = 2.705
+      ret.centerToFront = ret.wheelbase * 0.44
+      ret.steerRatio = 17
+    elif candidate == CAR.ALTIMA:
+      # Altima has EPS on C-CAN unlike the others that have it on V-CAN
+      ret.safetyParam = 1 # EPS is on alternate bus
+      ret.mass = 1492 + STD_CARGO_KG
+      ret.wheelbase = 2.824
       ret.centerToFront = ret.wheelbase * 0.44
       ret.steerRatio = 17
 

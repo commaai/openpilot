@@ -7,25 +7,15 @@ from selfdrive.car.interfaces import CarInterfaceBase
 
 class CarInterface(CarInterfaceBase):
   @staticmethod
-  def compute_gb(accel, speed):
-    return float(accel) / 3.0
-
-  @staticmethod
-  def get_params(candidate, fingerprint=None, car_fw=None):
-    if fingerprint is None:
-      fingerprint = gen_empty_fingerprint()
-
+  def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "chrysler"
     ret.safetyModel = car.CarParams.SafetyModel.chrysler
 
-    # Chrysler port is a community feature, since we don't own one to test
-    ret.communityFeature = True
-
     # Speed conversion:              20, 45 mph
     ret.wheelbase = 3.089  # in meters for Pacifica Hybrid 2017
     ret.steerRatio = 16.2  # Pacifica Hybrid 2017
-    ret.mass = 2858. + STD_CARGO_KG  # kg curb weight Pacifica Hybrid 2017
+    ret.mass = 2242. + STD_CARGO_KG  # kg curb weight Pacifica Hybrid 2017
     ret.lateralTuning.pid.kpBP, ret.lateralTuning.pid.kiBP = [[9., 20.], [9., 20.]]
     ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.15, 0.30], [0.03, 0.05]]
     ret.lateralTuning.pid.kf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
@@ -52,7 +42,7 @@ class CarInterface(CarInterfaceBase):
     # mass and CG position, so all cars will have approximately similar dyn behaviors
     ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront)
 
-    ret.enableCamera = True
+    ret.enableBsm = 720 in fingerprint[0]
 
     return ret
 

@@ -33,9 +33,9 @@ class CarController():
 
     # STEER
     if (frame % P.STEER_STEP) == 0:
-      lkas_enabled = enabled and not CS.out.steerWarning and CS.out.vEgo > P.MIN_STEER_SPEED
+      lkas_enabled = enabled and not (CS.out.steerWarning or CS.out.steerError) and CS.out.vEgo > P.MIN_STEER_SPEED
       if lkas_enabled:
-        new_steer = actuators.steer * P.STEER_MAX
+        new_steer = int(round(actuators.steer * P.STEER_MAX))
         apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, P)
         self.steer_rate_limited = new_steer != apply_steer
       else:
@@ -46,18 +46,13 @@ class CarController():
 
       can_sends.append(gmcan.create_steering_control(self.packer_pt, CanBus.POWERTRAIN, apply_steer, idx, lkas_enabled))
 
-    # GAS/BRAKE
-    # no output if not enabled, but keep sending keepalive messages
-    # treat pedals as one
-    final_pedal = actuators.gas - actuators.brake
-
     if not enabled:
       # Stock ECU sends max regen when not enabled.
       apply_gas = P.MAX_ACC_REGEN
       apply_brake = 0
     else:
-      apply_gas = int(round(interp(final_pedal, P.GAS_LOOKUP_BP, P.GAS_LOOKUP_V)))
-      apply_brake = int(round(interp(final_pedal, P.BRAKE_LOOKUP_BP, P.BRAKE_LOOKUP_V)))
+      apply_gas = int(round(interp(actuators.accel, P.GAS_LOOKUP_BP, P.GAS_LOOKUP_V)))
+      apply_brake = int(round(interp(actuators.accel, P.BRAKE_LOOKUP_BP, P.BRAKE_LOOKUP_V)))
 
     # Gas/regen and brakes - all at 25Hz
     if (frame % 4) == 0:
@@ -100,7 +95,7 @@ class CarController():
     lka_critical = lka_active and abs(actuators.steer) > 0.9
     lka_icon_status = (lka_active, lka_critical)
     if frame % P.CAMERA_KEEPALIVE_STEP == 0 or lka_icon_status != self.lka_icon_status_last:
-      steer_alert = hud_alert == VisualAlert.steerRequired
+      steer_alert = hud_alert in [VisualAlert.steerRequired, VisualAlert.ldw]
       can_sends.append(gmcan.create_lka_icon_command(CanBus.SW_GMLAN, lka_active, lka_critical, steer_alert))
       self.lka_icon_status_last = lka_icon_status
 

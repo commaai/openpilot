@@ -1,19 +1,22 @@
 #pragma once
 
-#include <stdio.h>
-#include <stdint.h>
+#include <cassert>
 #include <pthread.h>
-#include <memory>
-#include <bzlib.h>
-#include <kj/array.h>
-#include <capnp/serialize.h>
-#include "common/util.h"
 
-#if defined(QCOM) || defined(QCOM2)
-const std::string LOG_ROOT = "/data/media/0/realdata";
-#else
-const std::string LOG_ROOT = util::getenv_default("HOME", "/.comma/media/0/realdata", "/data/media/0/realdata");
-#endif
+#include <cstdint>
+#include <cstdio>
+#include <memory>
+
+#include <bzlib.h>
+#include <capnp/serialize.h>
+#include <kj/array.h>
+
+#include "cereal/messaging/messaging.h"
+#include "selfdrive/common/util.h"
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/hardware/hw.h"
+
+const std::string LOG_ROOT = Path::log_root();
 
 #define LOGGER_MAX_HANDLES 16
 
@@ -37,7 +40,10 @@ class BZFile {
   }
   inline void write(void* data, size_t size) {
     int bzerror;
-    BZ2_bzWrite(&bzerror, bz_file, data, size);
+    do {
+      BZ2_bzWrite(&bzerror, bz_file, data, size);
+    } while (bzerror == BZ_IO_ERROR && errno == EINTR);
+
     if (bzerror != BZ_OK && !error_logged) {
       LOGE("BZ2_bzWrite error, bzerror=%d", bzerror);
       error_logged = true;
@@ -51,8 +57,12 @@ class BZFile {
   BZFILE* bz_file = nullptr;
 };
 
+typedef cereal::Sentinel::SentinelType SentinelType;
+
 typedef struct LoggerHandle {
   pthread_mutex_t lock;
+  SentinelType end_sentinel_type;
+  int exit_signal;
   int refcnt;
   char segment_path[4096];
   char log_path[4096];
@@ -81,7 +91,7 @@ int logger_next(LoggerState *s, const char* root_path,
                             char* out_segment_path, size_t out_segment_path_len,
                             int* out_part);
 LoggerHandle* logger_get_handle(LoggerState *s);
-void logger_close(LoggerState *s);
+void logger_close(LoggerState *s, ExitHandler *exit_handler=nullptr);
 void logger_log(LoggerState *s, uint8_t* data, size_t data_size, bool in_qlog);
 
 void lh_log(LoggerHandle* h, uint8_t* data, size_t data_size, bool in_qlog);

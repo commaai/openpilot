@@ -2,7 +2,7 @@
 import cereal.messaging as messaging
 
 if __name__ == "__main__":
-  modeld_sock = messaging.sub_sock("model")
+  modeld_sock = messaging.sub_sock("modelV2")
 
   last_frame_id = None
   start_t = None
@@ -14,7 +14,7 @@ if __name__ == "__main__":
     if m is None:
       continue
 
-    frame_id = m.model.frameId
+    frame_id = m.modelV2.frameId
     t = m.logMonoTime / 1e9
     frame_cnt += 1
 

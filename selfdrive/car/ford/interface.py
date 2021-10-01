@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 from cereal import car
-from selfdrive.swaglog import cloudlog
 from selfdrive.config import Conversions as CV
 from selfdrive.car.ford.values import MAX_ANGLE
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
@@ -8,11 +7,6 @@ from selfdrive.car.interfaces import CarInterfaceBase
 
 
 class CarInterface(CarInterfaceBase):
-
-  @staticmethod
-  def compute_gb(accel, speed):
-    return float(accel) / 3.0
-
   @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
@@ -43,9 +37,6 @@ class CarInterface(CarInterfaceBase):
 
     ret.steerControlType = car.CarParams.SteerControlType.angle
 
-    ret.enableCamera = True
-    cloudlog.warning("ECU Camera Simulated: %r", ret.enableCamera)
-
     return ret
 
   # returns a car.CarState
@@ -61,7 +52,7 @@ class CarInterface(CarInterfaceBase):
     events = self.create_common_events(ret)
 
     if self.CS.lkas_state not in [2, 3] and ret.vEgo > 13. * CV.MPH_TO_MS and ret.cruiseState.enabled:
-      events.add(car.CarEvent.EventName.steerTempUnavailableMute)
+      events.add(car.CarEvent.EventName.steerTempUnavailable)
 
     ret.events = events.to_msg()
 

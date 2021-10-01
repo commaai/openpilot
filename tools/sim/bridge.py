@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
-# type: ignore
-import carla # pylint: disable=import-error
-import time
-import math
-import atexit
-import numpy as np
-import threading
-import cereal.messaging as messaging
 import argparse
+import carla # pylint: disable=import-error
+import math
+import numpy as np
+import time
+import threading
+from cereal import log
+from multiprocessing import Process, Queue
+from typing import Any
+
+import cereal.messaging as messaging
 from common.params import Params
+from common.numpy_fast import clip
 from common.realtime import Ratekeeper, DT_DMON
 from lib.can import can_function
 from selfdrive.car.honda.values import CruiseButtons
@@ -16,15 +19,11 @@ from selfdrive.test.helpers import set_params_enabled
 
 parser = argparse.ArgumentParser(description='Bridge between CARLA and openpilot.')
 parser.add_argument('--joystick', action='store_true')
-parser.add_argument('--town', type=str, default='Town04')
+parser.add_argument('--low_quality', action='store_true')
+parser.add_argument('--town', type=str, default='Town04_Opt')
 parser.add_argument('--spawn_point', dest='num_selected_spawn_point',
         type=int, default=16)
-parser.add_argument('--cloudyness', default=0.1, type=float)
-parser.add_argument('--precipitation', default=0.0, type=float)
-parser.add_argument('--precipitation_deposits', default=0.0, type=float)
-parser.add_argument('--wind_intensity', default=0.0, type=float)
-parser.add_argument('--sun_azimuth_angle', default=15.0, type=float)
-parser.add_argument('--sun_altitude_angle', default=75.0, type=float)
+
 args = parser.parse_args()
 
 W, H = 1164, 874
@@ -32,13 +31,15 @@ REPEAT_COUNTER = 5
 PRINT_DECIMATION = 100
 STEER_RATIO = 15.
 
-pm = messaging.PubMaster(['roadCameraState', 'sensorEvents', 'can'])
+pm = messaging.PubMaster(['roadCameraState', 'sensorEvents', 'can', "gpsLocationExternal"])
 sm = messaging.SubMaster(['carControl','controlsState'])
 
 class VehicleState:
   def __init__(self):
     self.speed = 0
     self.angle = 0
+    self.bearing_deg = 0.0
+    self.vel = carla.Vector3D()
     self.cruise_button= 0
     self.is_engaged=False
 
@@ -62,13 +63,14 @@ def cam_callback(image):
   dat = messaging.new_message('roadCameraState')
   dat.roadCameraState = {
     "frameId": image.frame,
-    "image": img.tostring(),
+    "image": img.tobytes(),
     "transform": [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
   }
   pm.send('roadCameraState', dat)
   frame_id += 1
 
-def imu_callback(imu):
+def imu_callback(imu, vehicle_state):
+  vehicle_state.bearing_deg = math.degrees(imu.compass)
   dat = messaging.new_message('sensorEvents', 2)
   dat.sensorEvents[0].sensor = 4
   dat.sensorEvents[0].type = 0x10
@@ -81,9 +83,9 @@ def imu_callback(imu):
   dat.sensorEvents[1].gyroUncalibrated.v = [imu.gyroscope.x, imu.gyroscope.y, imu.gyroscope.z]
   pm.send('sensorEvents', dat)
 
-def panda_state_function():
+def panda_state_function(exit_event: threading.Event):
   pm = messaging.PubMaster(['pandaState'])
-  while 1:
+  while not exit_event.is_set():
     dat = messaging.new_message('pandaState')
     dat.valid = True
     dat.pandaState = {
@@ -95,18 +97,38 @@ def panda_state_function():
     pm.send('pandaState', dat)
     time.sleep(0.5)
 
-def fake_gps():
-  # TODO: read GPS from CARLA
-  pm = messaging.PubMaster(['gpsLocationExternal'])
-  while 1:
-    dat = messaging.new_message('gpsLocationExternal')
-    pm.send('gpsLocationExternal', dat)
-    time.sleep(0.01)
+def gps_callback(gps, vehicle_state):
+  dat = messaging.new_message('gpsLocationExternal')
 
-def fake_driver_monitoring():
+  # transform vel from carla to NED
+  # north is -Y in CARLA
+  velNED = [
+    -vehicle_state.vel.y, # north/south component of NED is negative when moving south
+    vehicle_state.vel.x, # positive when moving east, which is x in carla
+    vehicle_state.vel.z,
+  ]
+
+  dat.gpsLocationExternal = {
+    "timestamp": int(time.time() * 1000),
+    "flags": 1, # valid fix
+    "accuracy": 1.0,
+    "verticalAccuracy": 1.0,
+    "speedAccuracy": 0.1,
+    "bearingAccuracyDeg": 0.1,
+    "vNED": velNED,
+    "bearingDeg": vehicle_state.bearing_deg,
+    "latitude": gps.latitude,
+    "longitude": gps.longitude,
+    "altitude": gps.altitude,
+    "speed": vehicle_state.speed,
+    "source": log.GpsLocationData.SensorSource.ublox,
+  }
+
+  pm.send('gpsLocationExternal', dat)
+
+def fake_driver_monitoring(exit_event: threading.Event):
   pm = messaging.PubMaster(['driverState','driverMonitoringState'])
-  while 1:
-
+  while not exit_event.is_set():
     # dmonitoringmodeld output
     dat = messaging.new_message('driverState')
     dat.driverState.faceProb = 1.0
@@ -118,32 +140,39 @@ def fake_driver_monitoring():
       "faceDetected": True,
       "isDistracted": False,
       "awarenessStatus": 1.,
-      "isRHD": False,
     }
     pm.send('driverMonitoringState', dat)
 
     time.sleep(DT_DMON)
 
-def can_function_runner(vs):
+def can_function_runner(vs: VehicleState, exit_event: threading.Event):
   i = 0
-  while 1:
+  while not exit_event.is_set():
     can_function(pm, vs.speed, vs.angle, i, vs.cruise_button, vs.is_engaged)
     time.sleep(0.01)
     i+=1
 
 
-def go(q):
+def bridge(q):
 
   # setup CARLA
   client = carla.Client("127.0.0.1", 2000)
   client.set_timeout(10.0)
   world = client.load_world(args.town)
 
+  if args.low_quality:
+    world.unload_map_layer(carla.MapLayer.Foliage)
+    world.unload_map_layer(carla.MapLayer.Buildings)
+    world.unload_map_layer(carla.MapLayer.ParkedVehicles)
+    world.unload_map_layer(carla.MapLayer.Particles)
+    world.unload_map_layer(carla.MapLayer.Props)
+    world.unload_map_layer(carla.MapLayer.StreetLights)
+
   blueprint_library = world.get_blueprint_library()
 
   world_map = world.get_map()
 
-  vehicle_bp = blueprint_library.filter('vehicle.tesla.*')[0]
+  vehicle_bp = blueprint_library.filter('vehicle.tesla.*')[1]
   spawn_points = world_map.get_spawn_points()
   assert len(spawn_points) > args.num_selected_spawn_point, \
     f'''No spawn point {args.num_selected_spawn_point}, try a value between 0 and
@@ -167,40 +196,29 @@ def go(q):
   blueprint.set_attribute('image_size_y', str(H))
   blueprint.set_attribute('fov', '70')
   blueprint.set_attribute('sensor_tick', '0.05')
-  transform = carla.Transform(carla.Location(x=0.8, z=1.45))
+  transform = carla.Transform(carla.Location(x=0.8, z=1.13))
   camera = world.spawn_actor(blueprint, transform, attach_to=vehicle)
   camera.listen(cam_callback)
 
-  world.set_weather(carla.WeatherParameters(
-    cloudyness=args.cloudyness,
-    precipitation=args.precipitation,
-    precipitation_deposits=args.precipitation_deposits,
-    wind_intensity=args.wind_intensity,
-    sun_azimuth_angle=args.sun_azimuth_angle,
-    sun_altitude_angle=args.sun_altitude_angle
-  ))
+  vehicle_state = VehicleState()
 
   # reenable IMU
   imu_bp = blueprint_library.find('sensor.other.imu')
   imu = world.spawn_actor(imu_bp, transform, attach_to=vehicle)
-  imu.listen(imu_callback)
+  imu.listen(lambda imu: imu_callback(imu, vehicle_state))
 
-  def destroy():
-    print("clean exit")
-    imu.destroy()
-    camera.destroy()
-    vehicle.destroy()
-    print("done")
-  atexit.register(destroy)
-
-
-  vehicle_state = VehicleState()
+  gps_bp = blueprint_library.find('sensor.other.gnss')
+  gps = world.spawn_actor(gps_bp, transform, attach_to=vehicle)
+  gps.listen(lambda gps: gps_callback(gps, vehicle_state))
 
   # launch fake car threads
-  threading.Thread(target=panda_state_function).start()
-  threading.Thread(target=fake_driver_monitoring).start()
-  threading.Thread(target=fake_gps).start()
-  threading.Thread(target=can_function_runner, args=(vehicle_state,)).start()
+  threads = []
+  exit_event = threading.Event()
+  threads.append(threading.Thread(target=panda_state_function, args=(exit_event,)))
+  threads.append(threading.Thread(target=fake_driver_monitoring, args=(exit_event,)))
+  threads.append(threading.Thread(target=can_function_runner, args=(vehicle_state, exit_event,)))
+  for t in threads:
+    t.start()
 
   # can loop
   rk = Ratekeeper(100, print_delay_threshold=0.05)
@@ -230,9 +248,9 @@ def go(q):
     # 3. Send current carstate to op via can
 
     cruise_button = 0
-    throttle_out = steer_out = brake_out = 0
+    throttle_out = steer_out = brake_out = 0.0
     throttle_op = steer_op = brake_op = 0
-    throttle_manual = steer_manual = brake_manual = 0
+    throttle_manual = steer_manual = brake_manual = 0.0
 
     # --------------Step 1-------------------------------
     if not q.empty():
@@ -241,26 +259,28 @@ def go(q):
       if m[0] == "steer":
         steer_manual = float(m[1])
         is_openpilot_engaged = False
-      if m[0] == "throttle":
+      elif m[0] == "throttle":
         throttle_manual = float(m[1])
         is_openpilot_engaged = False
-      if m[0] == "brake":
+      elif m[0] == "brake":
         brake_manual = float(m[1])
         is_openpilot_engaged = False
-      if m[0] == "reverse":
+      elif m[0] == "reverse":
         #in_reverse = not in_reverse
         cruise_button = CruiseButtons.CANCEL
         is_openpilot_engaged = False
-      if m[0] == "cruise":
+      elif m[0] == "cruise":
         if m[1] == "down":
           cruise_button = CruiseButtons.DECEL_SET
           is_openpilot_engaged = True
-        if m[1] == "up":
+        elif m[1] == "up":
           cruise_button = CruiseButtons.RES_ACCEL
           is_openpilot_engaged = True
-        if m[1] == "cancel":
+        elif m[1] == "cancel":
           cruise_button = CruiseButtons.CANCEL
           is_openpilot_engaged = False
+      elif m[0] == "quit":
+        break
 
       throttle_out = throttle_manual * throttle_manual_multiplier
       steer_out = steer_manual * steer_manual_multiplier
@@ -276,9 +296,10 @@ def go(q):
 
     if is_openpilot_engaged:
       sm.update(0)
-      throttle_op = sm['carControl'].actuators.gas #[0,1]
-      brake_op = sm['carControl'].actuators.brake #[0,1]
-      steer_op = sm['controlsState'].angleSteersDes # degrees [-180,180]
+      # TODO gas and brake is deprecated
+      throttle_op = clip(sm['carControl'].actuators.accel/1.6, 0.0, 1.0)
+      brake_op = clip(-sm['carControl'].actuators.accel/4.0, 0.0, 1.0)
+      steer_op = sm['carControl'].actuators.steeringAngleDeg
 
       throttle_out = throttle_op
       steer_out = steer_op
@@ -286,17 +307,6 @@ def go(q):
 
       steer_out = steer_rate_limit(old_steer, steer_out)
       old_steer = steer_out
-
-    # OP Exit conditions
-    # if throttle_out > 0.3:
-    #   cruise_button = CruiseButtons.CANCEL
-    #   is_openpilot_engaged = False
-    # if brake_out > 0.3:
-    #   cruise_button = CruiseButtons.CANCEL
-    #   is_openpilot_engaged = False
-    # if steer_out > 0.3:
-    #   cruise_button = CruiseButtons.CANCEL
-    #   is_openpilot_engaged = False
 
     else:
       if throttle_out==0 and old_throttle>0:
@@ -340,6 +350,7 @@ def go(q):
     vel = vehicle.get_velocity()
     speed = math.sqrt(vel.x**2 + vel.y**2 + vel.z**2) # in m/s
     vehicle_state.speed = speed
+    vehicle_state.vel = vel
     vehicle_state.angle = steer_out
     vehicle_state.cruise_button = cruise_button
     vehicle_state.is_engaged = is_openpilot_engaged
@@ -349,25 +360,41 @@ def go(q):
 
     rk.keep_time()
 
+  # Clean up resources in the opposite order they were created.
+  exit_event.set()
+  for t in reversed(threads):
+    t.join()
+  gps.destroy()
+  imu.destroy()
+  camera.destroy()
+  vehicle.destroy()
+
+def bridge_keep_alive(q: Any):
+  while 1:
+    try:
+      bridge(q)
+      break
+    except RuntimeError:
+      print("Restarting bridge...")
+
 if __name__ == "__main__":
-
   # make sure params are in a good state
-  params = Params()
-  params.clear_all()
   set_params_enabled()
-  params.delete("Offroad_ConnectivityNeeded")
-  params.put("CalibrationParams", '{"calib_radians": [0,0,0], "valid_blocks": 20}')
 
-  from multiprocessing import Process, Queue
-  q = Queue()
-  p = Process(target=go, args=(q,))
-  p.daemon = True
+  msg = messaging.new_message('liveCalibration')
+  msg.liveCalibration.validBlocks = 20
+  msg.liveCalibration.rpyCalib = [0.0, 0.0, 0.0]
+  Params().put("CalibrationParams", msg.to_bytes())
+
+  q: Any = Queue()
+  p = Process(target=bridge_keep_alive, args=(q,), daemon=True)
   p.start()
 
   if args.joystick:
     # start input poll for joystick
     from lib.manual_ctrl import wheel_poll_thread
     wheel_poll_thread(q)
+    p.join()
   else:
     # start input poll for keyboard
     from lib.keyboard_ctrl import keyboard_poll_thread

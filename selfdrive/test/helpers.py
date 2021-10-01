@@ -1,22 +1,21 @@
 import time
-import subprocess
 from functools import wraps
 from nose.tools import nottest
 
-from selfdrive.hardware.eon.apk import update_apks, start_offroad, pm_apply_packages, android_packages
 from selfdrive.hardware import PC
 from selfdrive.version import training_version, terms_version
-from selfdrive.manager import start_managed_process, kill_managed_process, get_running
+from selfdrive.manager.process_config import managed_processes
+
 
 def set_params_enabled():
   from common.params import Params
   params = Params()
   params.put("HasAcceptedTerms", terms_version)
-  params.put("HasCompletedSetup", "1")
-  params.put("OpenpilotEnabledToggle", "1")
-  params.put("CommunityFeaturesToggle", "1")
-  params.put("Passive", "0")
   params.put("CompletedTrainingVersion", training_version)
+  params.put_bool("OpenpilotEnabledToggle", True)
+  params.put_bool("CommunityFeaturesToggle", True)
+  params.put_bool("Passive", False)
+
 
 def phone_only(x):
   if PC:
@@ -24,48 +23,28 @@ def phone_only(x):
   else:
     return x
 
-def with_processes(processes, init_time=0):
+
+def with_processes(processes, init_time=0, ignore_stopped=None):
+  ignore_stopped = [] if ignore_stopped is None else ignore_stopped
+
   def wrapper(func):
     @wraps(func)
     def wrap(*args, **kwargs):
       # start and assert started
       for n, p in enumerate(processes):
-        start_managed_process(p)
-        if n < len(processes)-1:
+        managed_processes[p].start()
+        if n < len(processes) - 1:
           time.sleep(init_time)
-      assert all(get_running()[name].exitcode is None for name in processes)
+      assert all(managed_processes[name].proc.exitcode is None for name in processes)
 
       # call the function
       try:
         func(*args, **kwargs)
         # assert processes are still started
-        assert all(get_running()[name].exitcode is None for name in processes)
+        assert all(managed_processes[name].proc.exitcode is None for name in processes if name not in ignore_stopped)
       finally:
-        # kill and assert all stopped
         for p in processes:
-          kill_managed_process(p)
-        assert len(get_running()) == 0
-    return wrap
-  return wrapper
+          managed_processes[p].stop()
 
-def with_apks():
-  def wrapper(func):
-    @wraps(func)
-    def wrap():
-      update_apks()
-      pm_apply_packages('enable')
-      start_offroad()
-
-      func()
-
-      try:
-        for package in android_packages:
-          apk_is_running = (subprocess.call(["pidof", package]) == 0)
-          assert apk_is_running, package
-      finally:
-        pm_apply_packages('disable')
-        for package in android_packages:
-          apk_is_not_running = (subprocess.call(["pidof", package]) == 1)
-          assert apk_is_not_running, package
     return wrap
   return wrapper

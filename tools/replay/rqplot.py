@@ -63,7 +63,7 @@ if __name__ == "__main__":
       msg = messaging.recv_sock(s)
       #msg = messaging.recv_one_or_none(s)
       if msg is not None:
-        x[i] = np.append(x[i], getattr(msg, 'logMonoTime') / float(1e9))
+        x[i] = np.append(x[i], getattr(msg, 'logMonoTime') / 1e9)
         x[i] = np.delete(x[i], 0)
         y[i] = np.append(y[i], recursive_getattr(msg, subs_name[i]))
         y[i] = np.delete(y[i], 0)

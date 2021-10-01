@@ -15,10 +15,11 @@ env:
       docker pull $DOCKER_REGISTRY/$BASE_IMAGE:latest || true
       docker build --cache-from $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $BASE_IMAGE:latest -f Dockerfile.openpilot_base .
 
-  RUN: docker run --shm-size 1G -v $PWD:/tmp/openpilot -e PYTHONPATH=/tmp/openpilot -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v /tmp/comma_download_cache:/tmp/comma_download_cache $BASE_IMAGE /bin/sh -c
+  RUN: docker run --shm-size 1G -v $PWD:/tmp/openpilot -w /tmp/openpilot -e PYTHONPATH=/tmp/openpilot -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v /tmp/scons_cache:/tmp/scons_cache -v /tmp/comma_download_cache:/tmp/comma_download_cache $BASE_IMAGE /bin/sh -c
   UNIT_TEST: coverage run --append -m unittest discover
 
 jobs:
+  # TODO: once actions/cache supports read only mode, use the cache for all jobs
   build_release:
     name: build release
     runs-on: ubuntu-20.04
@@ -29,10 +30,22 @@ jobs:
     - uses: actions/checkout@v2
       with:
         submodules: true
+    - name: Check submodules
+      if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
+      run: release/check-submodules.sh
+    - name: Cache dependencies
+      id: dependency-cache
+      uses: actions/cache@v2
+      with:
+        path: /tmp/scons_cache
+        key: scons-cache-${{ hashFiles('selfdrive/**') }}
+        restore-keys: scons-cache-
     - name: Strip non-release files
       run: |
         mkdir $STRIPPED_DIR
         cp -pR --parents $(cat release/files_common) $STRIPPED_DIR
+        cp -pR --parents $(cat release/files_tici) $STRIPPED_DIR
+        cp -pR --parents $(cat release/files_pc) $STRIPPED_DIR
         cp Dockerfile.openpilot_base $STRIPPED_DIR
 
         # need this to build on x86
@@ -42,56 +55,61 @@ jobs:
     - name: Build openpilot and run checks
       run: |
           cd $STRIPPED_DIR
-          ${{ env.RUN }} "cd /tmp/openpilot && \
-                          scons -j$(nproc) && \
+          ${{ env.RUN }} "CI=1 python selfdrive/manager/build.py && \
                           python -m unittest discover selfdrive/car"
+    - name: Cleanup scons cache
+      run: |
+          cd $STRIPPED_DIR
+          ${{ env.RUN }} "scons -j$(nproc) && \
+                          rm -rf /tmp/scons_cache/* && \
+                          scons -j$(nproc) --cache-populate"
 
-  build_mac:
-    name: build macos
-    runs-on: macos-10.15
-    timeout-minutes: 60
-    steps:
-    - uses: actions/checkout@v2
-      with:
-        submodules: true
-    - name: Determine pre-existing Homebrew packages
-      if: steps.dependency-cache.outputs.cache-hit != 'true'
-      run: |
-        echo 'EXISTING_CELLAR<<EOF' >> $GITHUB_ENV
-        ls -1 /usr/local/Cellar >> $GITHUB_ENV
-        echo 'EOF' >> $GITHUB_ENV
-    - name: Cache dependencies
-      id: dependency-cache
-      uses: actions/cache@v2
-      with:
-        path: |
-          ~/.pyenv
-          ~/Library/Caches/pip
-          ~/Library/Caches/pipenv
-          /usr/local/Cellar
-          ~/github_brew_cache_entries.txt
-        key: macos-cache-${{ hashFiles('tools/mac_setup.sh') }}
-    - name: Brew link restored dependencies
-      if: steps.dependency-cache.outputs.cache-hit == 'true'
-      run: |
-        while read pkg; do
-          brew link --force "$pkg" # `--force` for keg-only packages
-        done < ~/github_brew_cache_entries.txt
-    - name: Install dependencies
-      run: ./tools/mac_setup.sh
-    - name: Build openpilot
-      run: eval "$(pyenv init -)" && scons -j$(nproc)
-    - name: Remove pre-existing Homebrew packages for caching
-      if: steps.dependency-cache.outputs.cache-hit != 'true'
-      run: |
-        cd /usr/local/Cellar
-        new_cellar=$(ls -1)
-        comm -12 <(echo "$EXISTING_CELLAR") <(echo "$new_cellar") | while read pkg; do
-          if [[ $pkg != "zstd" ]]; then # caching step needs zstd
-            rm -rf "$pkg"
-          fi
-        done
-        comm -13 <(echo "$EXISTING_CELLAR") <(echo "$new_cellar") | tee ~/github_brew_cache_entries.txt
+  #build_mac:
+  #  name: build macos
+  #  runs-on: macos-10.15
+  #  timeout-minutes: 60
+  #  steps:
+  #  - uses: actions/checkout@v2
+  #    with:
+  #      submodules: true
+  #  - name: Determine pre-existing Homebrew packages
+  #    if: steps.dependency-cache.outputs.cache-hit != 'true'
+  #    run: |
+  #      echo 'EXISTING_CELLAR<<EOF' >> $GITHUB_ENV
+  #      ls -1 /usr/local/Cellar >> $GITHUB_ENV
+  #      echo 'EOF' >> $GITHUB_ENV
+  #  - name: Cache dependencies
+  #    id: dependency-cache
+  #    uses: actions/cache@v2
+  #    with:
+  #      path: |
+  #        ~/.pyenv
+  #        ~/Library/Caches/pip
+  #        ~/Library/Caches/pipenv
+  #        /usr/local/Cellar
+  #        ~/github_brew_cache_entries.txt
+  #      key: macos-cache-${{ hashFiles('tools/mac_setup.sh') }}
+  #  - name: Brew link restored dependencies
+  #    if: steps.dependency-cache.outputs.cache-hit == 'true'
+  #    run: |
+  #      while read pkg; do
+  #        brew link --force "$pkg" # `--force` for keg-only packages
+  #      done < ~/github_brew_cache_entries.txt
+  #  - name: Install dependencies
+  #    run: ./tools/mac_setup.sh
+  #  - name: Build openpilot
+  #    run: eval "$(pyenv init -)" && scons -j$(nproc)
+  #  - name: Remove pre-existing Homebrew packages for caching
+  #    if: steps.dependency-cache.outputs.cache-hit != 'true'
+  #    run: |
+  #      cd /usr/local/Cellar
+  #      new_cellar=$(ls -1)
+  #      comm -12 <(echo "$EXISTING_CELLAR") <(echo "$new_cellar") | while read pkg; do
+  #        if [[ $pkg != "zstd" ]]; then # caching step needs zstd
+  #          rm -rf "$pkg"
+  #        fi
+  #      done
+  #      comm -13 <(echo "$EXISTING_CELLAR") <(echo "$new_cellar") | tee ~/github_brew_cache_entries.txt
 
   build_webcam:
     name: build webcam
@@ -107,7 +125,7 @@ jobs:
       run: |
         eval "$BUILD"
         docker pull $DOCKER_REGISTRY/$IMAGE_NAME:latest || true
-        docker build --cache-from $DOCKER_REGISTRY/$BASE_IMAGE:latest --cache-from $DOCKER_REGISTRY/$IMAGE_NAME:latest -t $DOCKER_REGISTRY/$IMAGE_NAME:latest -f tools/webcam/Dockerfile .
+        docker build --cache-from $DOCKER_REGISTRY/$IMAGE_NAME:latest -t $DOCKER_REGISTRY/$IMAGE_NAME:latest -f tools/webcam/Dockerfile .
     - name: Build openpilot
       run: docker run --shm-size 1G --rm -v $PWD:/tmp/openpilot -e PYTHONPATH=/tmp/openpilot $DOCKER_REGISTRY/$IMAGE_NAME /bin/sh -c "cd /tmp/openpilot && USE_WEBCAM=1 scons -j$(nproc)"
     - name: Push to container registry
@@ -144,7 +162,7 @@ jobs:
     - name: Build Docker image
       run: eval "$BUILD"
     - name: pre-commit
-      run: ${{ env.RUN }} "cd /tmp/openpilot/ && git init && git add -A && pre-commit run --all"
+      run: ${{ env.RUN }} "git init && git add -A && pre-commit run --all"
 
   valgrind:
     name: valgrind
@@ -164,8 +182,7 @@ jobs:
       run: eval "$BUILD"
     - name: Run valgrind
       run: |
-        ${{ env.RUN }} "cd /tmp/openpilot && \
-                        scons -j$(nproc) && \
+        ${{ env.RUN }} "scons -j$(nproc) && \
                         FILEREADER_CACHE=1 python selfdrive/test/test_valgrind_replay.py"
     - name: Print logs
       if: always()
@@ -183,8 +200,7 @@ jobs:
       run: eval "$BUILD"
     - name: Run unit tests
       run: |
-        ${{ env.RUN }} "cd /tmp/openpilot && \
-                        scons -j$(nproc) && \
+        ${{ env.RUN }} "scons -j$(nproc) --test && \
                         coverage run selfdrive/test/test_fingerprints.py && \
                         $UNIT_TEST common && \
                         $UNIT_TEST opendbc/can && \
@@ -196,7 +212,12 @@ jobs:
                         $UNIT_TEST selfdrive/locationd && \
                         $UNIT_TEST selfdrive/athena && \
                         $UNIT_TEST selfdrive/thermald && \
-                        $UNIT_TEST tools/lib/tests"
+                        $UNIT_TEST tools/lib/tests && \
+                        ./selfdrive/common/tests/test_util && \
+                        ./selfdrive/loggerd/tests/test_logger &&\
+                        ./selfdrive/proclogd/tests/test_proclog && \
+                        ./selfdrive/ui/replay/tests/test_replay && \
+                        ./selfdrive/camerad/test/ae_gray_test"
     - name: Upload coverage to Codecov
       run: bash <(curl -s https://codecov.io/bash) -v -F unit_tests
 
@@ -218,8 +239,7 @@ jobs:
       run: eval "$BUILD"
     - name: Run replay
       run: |
-        ${{ env.RUN }} "cd /tmp/openpilot && \
-                        scons -j$(nproc) && \
+        ${{ env.RUN }} "scons -j$(nproc) && \
                         FILEREADER_CACHE=1 CI=1 coverage run selfdrive/test/process_replay/test_processes.py"
     - name: Upload coverage to Codecov
       run: bash <(curl -s https://codecov.io/bash) -v -F process_replay
@@ -233,6 +253,21 @@ jobs:
         name: process_replay_diff.txt
         path: selfdrive/test/process_replay/diff.txt
 
+  #model_replay:
+  #  name: model replay
+  #  runs-on: ubuntu-20.04
+  #  timeout-minutes: 50
+  #  steps:
+  #  - uses: actions/checkout@v2
+  #    with:
+  #      submodules: true
+  #  - name: Build Docker image
+  #    run: eval "$BUILD"
+  #  - name: Run replay
+  #    run: |
+  #      ${{ env.RUN }} "scons -j$(nproc) && \
+  #                      selfdrive/test/process_replay/model_replay.py"
+
   test_longitudinal:
     name: longitudinal
     runs-on: ubuntu-20.04
@@ -245,8 +280,7 @@ jobs:
       run: eval "$BUILD"
     - name: Test longitudinal
       run: |
-        ${{ env.RUN }} "mkdir -p /tmp/openpilot/selfdrive/test/out && \
-                        cd /tmp/openpilot/ && \
+        ${{ env.RUN }} "mkdir -p selfdrive/test/out && \
                         scons -j$(nproc) && \
                         cd selfdrive/test/longitudinal_maneuvers && \
                         ./test_longitudinal.py"
@@ -270,15 +304,12 @@ jobs:
       uses: actions/cache@v2
       with:
         path: /tmp/comma_download_cache
-        key: ${{ hashFiles('.github/workflows/test.yaml', 'selfdrive/test/test_car_models.py') }}
+        key: ${{ hashFiles('.github/workflows/test.yaml', 'selfdrive/test/test_routes.py') }}
     - name: Build Docker image
       run: eval "$BUILD"
     - name: Test car models
       run: |
-        ${{ env.RUN }} "cd /tmp/openpilot && \
-                        scons -j$(nproc) && \
-                        FILEREADER_CACHE=1 coverage run --parallel-mode -m nose --processes=4 --process-timeout=60 \
-                                           selfdrive/test/test_models.py && \
-                        coverage combine"
+        ${{ env.RUN }} "scons -j$(nproc) && \
+                        coverage run selfdrive/test/test_models.py"
     - name: Upload coverage to Codecov
       run: bash <(curl -s https://codecov.io/bash) -v -F test_car_models

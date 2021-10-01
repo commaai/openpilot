@@ -1,27 +1,25 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <stdbool.h>
-#include <string.h>
-#include <assert.h>
-#include <time.h>
-#include <errno.h>
-#include <unistd.h>
-#include <sys/stat.h>
+#include "selfdrive/loggerd/logger.h"
 
-#include <iostream>
+#include <sys/stat.h>
+#include <unistd.h>
+
+#include <cassert>
+#include <cerrno>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <ctime>
 #include <fstream>
+#include <iostream>
 #include <streambuf>
 #ifdef QCOM
 #include <cutils/properties.h>
 #endif
 
-#include "common/swaglog.h"
-#include "common/params.h"
-#include "common/version.h"
-#include "messaging.hpp"
-#include "logger.h"
-
+#include "selfdrive/common/params.h"
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/common/version.h"
 
 // ***** logging helpers *****
 
@@ -37,7 +35,7 @@ int logger_mkpath(char* file_path) {
   char* p;
   for (p=strchr(file_path+1, '/'); p; p=strchr(p+1, '/')) {
     *p = '\0';
-    if (mkdir(file_path, 0777)==-1) {
+    if (mkdir(file_path, 0775)==-1) {
       if (errno != EEXIST) {
         *p = '/';
         return -1;
@@ -53,15 +51,15 @@ kj::Array<capnp::word> logger_build_init_data() {
   MessageBuilder msg;
   auto init = msg.initEvent().initInitData();
 
-  if (util::file_exists("/EON")) {
+  if (Hardware::EON()) {
     init.setDeviceType(cereal::InitData::DeviceType::NEO);
-  } else if (util::file_exists("/TICI")) {
+  } else if (Hardware::TICI()) {
     init.setDeviceType(cereal::InitData::DeviceType::TICI);
   } else {
     init.setDeviceType(cereal::InitData::DeviceType::PC);
   }
 
-  init.setVersion(capnp::Text::Reader(COMMA_VERSION));
+  init.setVersion(COMMA_VERSION);
 
   std::ifstream cmdline_stream("/proc/cmdline");
   std::vector<std::string> kernel_args;
@@ -76,6 +74,7 @@ kj::Array<capnp::word> logger_build_init_data() {
   }
 
   init.setKernelVersion(util::read_file("/proc/version"));
+  init.setOsVersion(util::read_file("/VERSION"));
 
 #ifdef QCOM
   {
@@ -91,29 +90,28 @@ kj::Array<capnp::word> logger_build_init_data() {
   }
 #endif
 
-  const char* dongle_id = getenv("DONGLE_ID");
-  if (dongle_id) {
-    init.setDongleId(std::string(dongle_id));
-  }
   init.setDirty(!getenv("CLEAN"));
 
   // log params
-  Params params = Params();
-  init.setGitCommit(params.get("GitCommit"));
-  init.setGitBranch(params.get("GitBranch"));
-  init.setGitRemote(params.get("GitRemote"));
-  init.setPassive(params.read_db_bool("Passive"));
-  {
-    std::map<std::string, std::string> params_map;
-    params.read_db_all(&params_map);
-    auto lparams = init.initParams().initEntries(params_map.size());
-    int i = 0;
-    for (auto& kv : params_map) {
-      auto lentry = lparams[i];
-      lentry.setKey(kv.first);
-      lentry.setValue(kv.second);
-      i++;
+  auto params = Params();
+  std::map<std::string, std::string> params_map = params.readAll();
+
+  init.setGitCommit(params_map["GitCommit"]);
+  init.setGitBranch(params_map["GitBranch"]);
+  init.setGitRemote(params_map["GitRemote"]);
+  init.setPassive(params.getBool("Passive"));
+  init.setDongleId(params_map["DongleId"]);
+
+  auto lparams = init.initParams().initEntries(params_map.size());
+  int i = 0;
+  for (auto& [key, value] : params_map) {
+    auto lentry = lparams[i];
+    lentry.setKey(key);
+    if ( !(params.getKeyType(key) & DONT_LOG) ) {
+      lentry.setValue(capnp::Data::Reader((const kj::byte*)value.data(), value.size()));
     }
+    i++;
+
   }
   return capnp::messageToFlatArray(msg);
 }
@@ -133,20 +131,19 @@ void log_init_data(LoggerState *s) {
 }
 
 
-static void log_sentinel(LoggerState *s, cereal::Sentinel::SentinelType type) {
+static void lh_log_sentinel(LoggerHandle *h, SentinelType type) {
   MessageBuilder msg;
   auto sen = msg.initEvent().initSentinel();
   sen.setType(type);
+  sen.setSignal(h->exit_signal);
   auto bytes = msg.toBytes();
 
-  logger_log(s, bytes.begin(), bytes.size(), true);
+  lh_log(h, bytes.begin(), bytes.size(), true);
 }
 
 // ***** logging functions *****
 
 void logger_init(LoggerState *s, const char* log_name, bool has_qlog) {
-  umask(0);
-
   pthread_mutex_init(&s->lock, NULL);
 
   s->part = -1;
@@ -174,6 +171,8 @@ static LoggerHandle* logger_open(LoggerState *s, const char* root_path) {
   snprintf(h->log_path, sizeof(h->log_path), "%s/%s.bz2", h->segment_path, s->log_name);
   snprintf(h->qlog_path, sizeof(h->qlog_path), "%s/qlog.bz2", h->segment_path);
   snprintf(h->lock_path, sizeof(h->lock_path), "%s.lock", h->log_path);
+  h->end_sentinel_type = SentinelType::END_OF_SEGMENT;
+  h->exit_signal = 0;
 
   err = logger_mkpath(h->log_path);
   if (err) return NULL;
@@ -196,7 +195,6 @@ int logger_next(LoggerState *s, const char* root_path,
                             char* out_segment_path, size_t out_segment_path_len,
                             int* out_part) {
   bool is_start_of_route = !s->cur_handle;
-  if (!is_start_of_route) log_sentinel(s, cereal::Sentinel::SentinelType::END_OF_SEGMENT);
 
   pthread_mutex_lock(&s->lock);
   s->part++;
@@ -223,7 +221,7 @@ int logger_next(LoggerState *s, const char* root_path,
 
   // write beggining of log metadata
   log_init_data(s);
-  log_sentinel(s, is_start_of_route ? cereal::Sentinel::SentinelType::START_OF_ROUTE : cereal::Sentinel::SentinelType::START_OF_SEGMENT);
+  lh_log_sentinel(s->cur_handle, is_start_of_route ? SentinelType::START_OF_ROUTE : SentinelType::START_OF_SEGMENT);
   return 0;
 }
 
@@ -247,11 +245,11 @@ void logger_log(LoggerState *s, uint8_t* data, size_t data_size, bool in_qlog) {
   pthread_mutex_unlock(&s->lock);
 }
 
-void logger_close(LoggerState *s) {
-  log_sentinel(s, cereal::Sentinel::SentinelType::END_OF_ROUTE);
-
+void logger_close(LoggerState *s, ExitHandler *exit_handler) {
   pthread_mutex_lock(&s->lock);
   if (s->cur_handle) {
+    s->cur_handle->exit_signal = exit_handler && exit_handler->signal.load();
+    s->cur_handle->end_sentinel_type = SentinelType::END_OF_ROUTE;
     lh_close(s->cur_handle);
   }
   pthread_mutex_unlock(&s->lock);
@@ -270,6 +268,12 @@ void lh_log(LoggerHandle* h, uint8_t* data, size_t data_size, bool in_qlog) {
 void lh_close(LoggerHandle* h) {
   pthread_mutex_lock(&h->lock);
   assert(h->refcnt > 0);
+  if (h->refcnt == 1) {
+    // a very ugly hack. only here can guarantee sentinel is the last msg
+    pthread_mutex_unlock(&h->lock);
+    lh_log_sentinel(h, h->end_sentinel_type);
+    pthread_mutex_lock(&h->lock);
+  }
   h->refcnt--;
   if (h->refcnt == 0) {
     h->log.reset(nullptr);

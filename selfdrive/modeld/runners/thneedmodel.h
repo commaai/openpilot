@@ -1,7 +1,7 @@
 #pragma once
 
-#include "runmodel.h"
-#include "thneed/thneed.h"
+#include "selfdrive/modeld/runners/runmodel.h"
+#include "selfdrive/modeld/thneed/thneed.h"
 
 class ThneedModel : public RunModel {
 public:
@@ -10,6 +10,7 @@ public:
   void addTrafficConvention(float *state, int state_size);
   void addDesire(float *state, int state_size);
   void execute(float *net_input_buf, int buf_size);
+  void* getInputBuf();
 private:
   Thneed *thneed = NULL;
   bool recorded;

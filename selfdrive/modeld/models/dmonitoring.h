@@ -1,9 +1,11 @@
 #pragma once
+
 #include <vector>
-#include "common/util.h"
-#include "commonmodel.h"
-#include "runners/run.h"
-#include "messaging.hpp"
+
+#include "cereal/messaging/messaging.h"
+#include "selfdrive/common/util.h"
+#include "selfdrive/modeld/models/commonmodel.h"
+#include "selfdrive/modeld/runners/run.h"
 
 #define OUTPUT_SIZE 38
 
@@ -33,6 +35,7 @@ typedef struct DMonitoringModelState {
   std::vector<uint8_t> cropped_buf;
   std::vector<uint8_t> premirror_cropped_buf;
   std::vector<float> net_input_buf;
+  float tensor[UINT8_MAX + 1];
 } DMonitoringModelState;
 
 void dmonitoring_init(DMonitoringModelState* s);

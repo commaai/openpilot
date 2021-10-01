@@ -41,23 +41,27 @@ echo "#define COMMA_VERSION \"$VERSION-release\"" > selfdrive/common/version.h
 git commit -m "openpilot v$VERSION"
 
 # Build signed panda firmware
-pushd panda/board/
-cp -r /tmp/pandaextra /data/openpilot/
-RELEASE=1 make obj/panda.bin
-mv obj/panda.bin /tmp/panda.bin
-make clean
-mv /tmp/panda.bin obj/panda.bin.signed
-rm -rf /data/openpilot/pandaextra
+pushd panda/
+CERT=/tmp/pandaextra/certs/release RELEASE=1 scons -u .
+mv board/obj/panda.bin.signed /tmp/panda.bin.signed
 popd
 
 # Build stuff
 ln -sfn /data/openpilot /data/pythonpath
 export PYTHONPATH="/data/openpilot:/data/openpilot/pyextra"
-SCONS_CACHE=1 scons -j3
+scons -j3
 
 # Run tests
-python selfdrive/test/test_manager.py
+python selfdrive/manager/test/test_manager.py
 selfdrive/car/tests/test_car_interfaces.py
+
+# Ensure no submodules in release
+if test "$(git submodule--helper list | wc -l)" -gt "0"; then
+  echo "submodules found:"
+  git submodule--helper list
+  exit 1
+fi
+git submodule status
 
 # Cleanup
 find . -name '*.a' -delete
@@ -65,7 +69,13 @@ find . -name '*.o' -delete
 find . -name '*.os' -delete
 find . -name '*.pyc' -delete
 find . -name '__pycache__' -delete
+rm -rf panda/board panda/certs panda/crypto
 rm -rf .sconsign.dblite Jenkinsfile release/
+rm models/supercombo.dlc
+
+# Move back signed panda fw
+mkdir -p panda/board/obj
+mv /tmp/panda.bin.signed panda/board/obj/panda.bin.signed
 
 # Restore phonelibs
 git checkout phonelibs/

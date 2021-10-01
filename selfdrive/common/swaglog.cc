@@ -2,22 +2,22 @@
 #define _GNU_SOURCE
 #endif
 
-#include <string>
-#include <string.h>
-#include <assert.h>
+#include "selfdrive/common/swaglog.h"
 
+#include <cassert>
+#include <cstring>
 #include <mutex>
-#include <zmq.h>
+#include <string>
 
+#include <zmq.h>
 #include "json11.hpp"
 
-#include "common/util.h"
-#include "common/version.h"
-
-#include "swaglog.h"
+#include "selfdrive/common/util.h"
+#include "selfdrive/common/version.h"
+#include "selfdrive/hardware/hw.h"
 
 class LogState {
-public:
+ public:
   LogState() = default;
   ~LogState();
   std::mutex lock;
@@ -71,9 +71,9 @@ static void cloudlog_init() {
   s.ctx_j["dirty"] = !getenv("CLEAN");
 
   // device type
-  if (util::file_exists("/EON")) {
+  if (Hardware::EON()) {
     cloudlog_bind_locked("device", "eon");
-  } else if (util::file_exists("/TICI")) {
+  } else if (Hardware::TICI()) {
     cloudlog_bind_locked("device", "tici");
   } else {
     cloudlog_bind_locked("device", "pc");
@@ -89,8 +89,7 @@ void log(int levelnum, const char* filename, int lineno, const char* func, const
     printf("%s: %s\n", filename, msg);
   }
   char levelnum_c = levelnum;
-  zmq_send(s.sock, &levelnum_c, 1, ZMQ_NOBLOCK | ZMQ_SNDMORE);
-  zmq_send(s.sock, log_s.c_str(), log_s.length(), ZMQ_NOBLOCK);
+  zmq_send(s.sock, (levelnum_c + log_s).c_str(), log_s.length() + 1, ZMQ_NOBLOCK);
 }
 
 void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func,

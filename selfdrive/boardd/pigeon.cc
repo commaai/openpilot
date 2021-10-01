@@ -1,14 +1,17 @@
-#include <cassert>
-#include <unistd.h>
+#include "selfdrive/boardd/pigeon.h"
+
 #include <fcntl.h>
-#include <errno.h>
 #include <termios.h>
+#include <unistd.h>
 
-#include "common/swaglog.h"
-#include "common/gpio.h"
-#include "common/util.h"
+#include <cassert>
+#include <cerrno>
+#include <optional>
 
-#include "pigeon.h"
+#include "selfdrive/common/gpio.h"
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/common/util.h"
+#include "selfdrive/locationd/ublox_msg.h"
 
 // Termios on macos doesn't define all baud rate constants
 #ifndef B460800
@@ -17,68 +20,129 @@
 
 using namespace std::string_literals;
 
+extern ExitHandler do_exit;
 
-Pigeon * Pigeon::connect(Panda * p){
+const std::string ack = "\xb5\x62\x05\x01\x02\x00";
+const std::string nack = "\xb5\x62\x05\x00\x02\x00";
+const std::string sos_ack = "\xb5\x62\x09\x14\x08\x00\x02\x00\x00\x00\x01\x00\x00\x00";
+const std::string sos_nack = "\xb5\x62\x09\x14\x08\x00\x02\x00\x00\x00\x00\x00\x00\x00";
+
+Pigeon * Pigeon::connect(Panda * p) {
   PandaPigeon * pigeon = new PandaPigeon();
   pigeon->connect(p);
 
   return pigeon;
 }
 
-Pigeon * Pigeon::connect(const char * tty){
+Pigeon * Pigeon::connect(const char * tty) {
   TTYPigeon * pigeon = new TTYPigeon();
   pigeon->connect(tty);
 
   return pigeon;
 }
 
+bool Pigeon::wait_for_ack(const std::string &ack, const std::string &nack) {
+  std::string s;
+  while (!do_exit) {
+    s += receive();
+
+    if (s.find(ack) != std::string::npos) {
+      LOGD("Received ACK from ublox");
+      return true;
+    } else if (s.find(nack) != std::string::npos) {
+      LOGE("Received NACK from ublox");
+      return false;
+    } else if (s.size() > 0x1000) {
+      LOGE("No response from ublox");
+      return false;
+    }
+
+    util::sleep_for(1); // Allow other threads to be scheduled
+  }
+  return false;
+}
+
+bool Pigeon::wait_for_ack() {
+  return wait_for_ack(ack, nack);
+}
+
+bool Pigeon::send_with_ack(const std::string &cmd) {
+  send(cmd);
+  return wait_for_ack();
+}
+
 void Pigeon::init() {
-  util::sleep_for(1000);
-  LOGW("panda GPS start");
+  for (int i = 0; i < 10; i++) {
+    if (do_exit) return;
+    LOGW("panda GPS start");
 
-  // power off pigeon
-  set_power(false);
-  util::sleep_for(100);
+    // power off pigeon
+    set_power(false);
+    util::sleep_for(100);
 
-  // 9600 baud at init
-  set_baud(9600);
+    // 9600 baud at init
+    set_baud(9600);
 
-  // power on pigeon
-  set_power(true);
-  util::sleep_for(500);
+    // power on pigeon
+    set_power(true);
+    util::sleep_for(500);
 
-  // baud rate upping
-  send("\x24\x50\x55\x42\x58\x2C\x34\x31\x2C\x31\x2C\x30\x30\x30\x37\x2C\x30\x30\x30\x33\x2C\x34\x36\x30\x38\x30\x30\x2C\x30\x2A\x31\x35\x0D\x0A"s);
-  util::sleep_for(100);
+    // baud rate upping
+    send("\x24\x50\x55\x42\x58\x2C\x34\x31\x2C\x31\x2C\x30\x30\x30\x37\x2C\x30\x30\x30\x33\x2C\x34\x36\x30\x38\x30\x30\x2C\x30\x2A\x31\x35\x0D\x0A"s);
+    util::sleep_for(100);
 
-  // set baud rate to 460800
-  set_baud(460800);
-  util::sleep_for(100);
+    // set baud rate to 460800
+    set_baud(460800);
 
-  // init from ubloxd
-  // To generate this data, run test/ubloxd.py with the print statements enabled in the write function in panda/python/serial.py
-  send("\xB5\x62\x06\x00\x14\x00\x03\xFF\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x01\x00\x00\x00\x00\x00\x1E\x7F"s);
-  send("\xB5\x62\x06\x3E\x00\x00\x44\xD2"s);
-  send("\xB5\x62\x06\x00\x14\x00\x00\xFF\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x19\x35"s);
-  send("\xB5\x62\x06\x00\x14\x00\x01\x00\x00\x00\xC0\x08\x00\x00\x00\x08\x07\x00\x01\x00\x01\x00\x00\x00\x00\x00\xF4\x80"s);
-  send("\xB5\x62\x06\x00\x14\x00\x04\xFF\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x1D\x85"s);
-  send("\xB5\x62\x06\x00\x00\x00\x06\x18"s);
-  send("\xB5\x62\x06\x00\x01\x00\x01\x08\x22"s);
-  send("\xB5\x62\x06\x00\x01\x00\x02\x09\x23"s);
-  send("\xB5\x62\x06\x00\x01\x00\x03\x0A\x24"s);
-  send("\xB5\x62\x06\x08\x06\x00\x64\x00\x01\x00\x00\x00\x79\x10"s);
-  send("\xB5\x62\x06\x24\x24\x00\x05\x00\x04\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x5A\x63"s);
-  send("\xB5\x62\x06\x1E\x14\x00\x00\x00\x00\x00\x01\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x3C\x37"s);
-  send("\xB5\x62\x06\x24\x00\x00\x2A\x84"s);
-  send("\xB5\x62\x06\x23\x00\x00\x29\x81"s);
-  send("\xB5\x62\x06\x1E\x00\x00\x24\x72"s);
-  send("\xB5\x62\x06\x01\x03\x00\x01\x07\x01\x13\x51"s);
-  send("\xB5\x62\x06\x01\x03\x00\x02\x15\x01\x22\x70"s);
-  send("\xB5\x62\x06\x01\x03\x00\x02\x13\x01\x20\x6C"s);
-  send("\xB5\x62\x06\x01\x03\x00\x0A\x09\x01\x1E\x70"s);
-  send("\xB5\x62\x06\x01\x03\x00\x0A\x0B\x01\x20\x74"s);
+    // init from ubloxd
+    // To generate this data, run selfdrive/locationd/test/ubloxd.py
+    if (!send_with_ack("\xB5\x62\x06\x00\x14\x00\x03\xFF\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x01\x00\x00\x00\x00\x00\x1E\x7F"s)) continue;
+    if (!send_with_ack("\xB5\x62\x06\x00\x14\x00\x00\xFF\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x19\x35"s)) continue;
+    if (!send_with_ack("\xB5\x62\x06\x00\x14\x00\x01\x00\x00\x00\xC0\x08\x00\x00\x00\x08\x07\x00\x01\x00\x01\x00\x00\x00\x00\x00\xF4\x80"s)) continue;
+    if (!send_with_ack("\xB5\x62\x06\x00\x14\x00\x04\xFF\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x1D\x85"s)) continue;
+    if (!send_with_ack("\xB5\x62\x06\x00\x00\x00\x06\x18"s)) continue;
+    if (!send_with_ack("\xB5\x62\x06\x00\x01\x00\x01\x08\x22"s)) continue;
+    if (!send_with_ack("\xB5\x62\x06\x00\x01\x00\x03\x0A\x24"s)) continue;
+    if (!send_with_ack("\xB5\x62\x06\x08\x06\x00\x64\x00\x01\x00\x00\x00\x79\x10"s)) continue;
+    if (!send_with_ack("\xB5\x62\x06\x24\x24\x00\x05\x00\x04\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x5A\x63"s)) continue;
+    if (!send_with_ack("\xB5\x62\x06\x1E\x14\x00\x00\x00\x00\x00\x01\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x3C\x37"s)) continue;
+    if (!send_with_ack("\xB5\x62\x06\x39\x08\x00\xFF\xAD\x62\xAD\x1E\x63\x00\x00\x83\x0C"s)) continue;
+    if (!send_with_ack("\xB5\x62\x06\x24\x00\x00\x2A\x84"s)) continue;
+    if (!send_with_ack("\xB5\x62\x06\x23\x00\x00\x29\x81"s)) continue;
+    if (!send_with_ack("\xB5\x62\x06\x1E\x00\x00\x24\x72"s)) continue;
+    if (!send_with_ack("\xB5\x62\x06\x39\x00\x00\x3F\xC3"s)) continue;
+    if (!send_with_ack("\xB5\x62\x06\x01\x03\x00\x01\x07\x01\x13\x51"s)) continue;
+    if (!send_with_ack("\xB5\x62\x06\x01\x03\x00\x02\x15\x01\x22\x70"s)) continue;
+    if (!send_with_ack("\xB5\x62\x06\x01\x03\x00\x02\x13\x01\x20\x6C"s)) continue;
+    if (!send_with_ack("\xB5\x62\x06\x01\x03\x00\x0A\x09\x01\x1E\x70"s)) continue;
+    if (!send_with_ack("\xB5\x62\x06\x01\x03\x00\x0A\x0B\x01\x20\x74"s)) continue;
 
-  LOGW("panda GPS on");
+    auto time = util::get_time();
+    if (util::time_valid(time)) {
+      LOGW("Sending current time to ublox");
+      send(ublox::build_ubx_mga_ini_time_utc(time));
+    }
+
+    LOGW("panda GPS on");
+    return;
+  }
+  LOGE("failed to initialize panda GPS");
+}
+
+void Pigeon::stop() {
+  LOGW("Storing almanac in ublox flash");
+
+  // Controlled GNSS stop
+  send("\xB5\x62\x06\x04\x04\x00\x00\x00\x08\x00\x16\x74"s);
+
+  // Store almanac in flash
+  send("\xB5\x62\x09\x14\x04\x00\x00\x00\x00\x00\x21\xEC"s);
+
+  if (wait_for_ack(sos_ack, sos_nack)) {
+    LOGW("Done storing almanac");
+  } else {
+    LOGE("Error storing almanac");
+  }
 }
 
 void PandaPigeon::connect(Panda * p) {
@@ -108,7 +172,7 @@ std::string PandaPigeon::receive() {
   std::string r;
   r.reserve(0x1000 + 0x40);
   unsigned char dat[0x40];
-  while (r.length() < 0x1000){
+  while (r.length() < 0x1000) {
     int len = panda->usb_read(0xe0, 1, 0, dat, sizeof(dat));
     if (len <= 0) break;
     r.append((char*)dat, len);
@@ -121,7 +185,7 @@ void PandaPigeon::set_power(bool power) {
   panda->usb_write(0xd9, power, 0);
 }
 
-PandaPigeon::~PandaPigeon(){
+PandaPigeon::~PandaPigeon() {
 }
 
 void handle_tty_issue(int err, const char func[]) {
@@ -129,11 +193,10 @@ void handle_tty_issue(int err, const char func[]) {
 }
 
 void TTYPigeon::connect(const char * tty) {
-  pigeon_tty_fd = open(tty, O_RDWR);
-  if (pigeon_tty_fd < 0){
+  pigeon_tty_fd = HANDLE_EINTR(open(tty, O_RDWR));
+  if (pigeon_tty_fd < 0) {
     handle_tty_issue(errno, __func__);
     assert(pigeon_tty_fd >= 0);
-  
   }
   int err = tcgetattr(pigeon_tty_fd, &pigeon_tty);
   assert(err == 0);
@@ -159,9 +222,9 @@ void TTYPigeon::connect(const char * tty) {
   assert(err == 0);
 }
 
-void TTYPigeon::set_baud(int baud){
+void TTYPigeon::set_baud(int baud) {
   speed_t baud_const = 0;
-  switch(baud){
+  switch(baud) {
   case 9600:
     baud_const = B9600;
     break;
@@ -190,7 +253,7 @@ void TTYPigeon::set_baud(int baud){
 }
 
 void TTYPigeon::send(const std::string &s) {
-  int err = write(pigeon_tty_fd, s.data(), s.length());
+  int err = HANDLE_EINTR(write(pigeon_tty_fd, s.data(), s.length()));
 
   if(err < 0) { handle_tty_issue(err, __func__); }
   err = tcdrain(pigeon_tty_fd);
@@ -201,11 +264,11 @@ std::string TTYPigeon::receive() {
   std::string r;
   r.reserve(0x1000 + 0x40);
   char dat[0x40];
-  while (r.length() < 0x1000){
+  while (r.length() < 0x1000) {
     int len = read(pigeon_tty_fd, dat, sizeof(dat));
     if(len < 0) {
       handle_tty_issue(len, __func__);
-    } else if (len == 0){
+    } else if (len == 0) {
       break;
     } else {
       r.append(dat, len);
@@ -215,7 +278,7 @@ std::string TTYPigeon::receive() {
   return r;
 }
 
-void TTYPigeon::set_power(bool power){
+void TTYPigeon::set_power(bool power) {
 #ifdef QCOM2
   int err = 0;
   err += gpio_init(GPIO_UBLOX_RST_N, true);
@@ -229,6 +292,6 @@ void TTYPigeon::set_power(bool power){
 #endif
 }
 
-TTYPigeon::~TTYPigeon(){
+TTYPigeon::~TTYPigeon() {
   close(pigeon_tty_fd);
 }

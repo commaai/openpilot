@@ -12,6 +12,7 @@ from selfdrive.config import RADAR_TO_CAMERA
 from selfdrive.controls.lib.cluster.fastcluster_py import cluster_points_centroid
 from selfdrive.controls.lib.radar_helpers import Cluster, Track
 from selfdrive.swaglog import cloudlog
+from selfdrive.hardware import TICI
 
 
 class KalmanParams():
@@ -37,12 +38,12 @@ def laplacian_cdf(x, mu, b):
 
 def match_vision_to_cluster(v_ego, lead, clusters):
   # match vision point to best statistical cluster match
-  offset_vision_dist = lead.xyva[0] - RADAR_TO_CAMERA
+  offset_vision_dist = lead.x[0] - RADAR_TO_CAMERA
 
   def prob(c):
-    prob_d = laplacian_cdf(c.dRel, offset_vision_dist, lead.xyvaStd[0])
-    prob_y = laplacian_cdf(c.yRel, -lead.xyva[1], lead.xyvaStd[1])
-    prob_v = laplacian_cdf(c.vRel, lead.xyva[2], lead.xyvaStd[2])
+    prob_d = laplacian_cdf(c.dRel, offset_vision_dist, lead.xStd[0])
+    prob_y = laplacian_cdf(c.yRel, -lead.y[0], lead.yStd[0])
+    prob_v = laplacian_cdf(c.vRel + v_ego, lead.v[0], lead.vStd[0])
 
     # This is isn't exactly right, but good heuristic
     return prob_d * prob_y * prob_v
@@ -52,7 +53,7 @@ def match_vision_to_cluster(v_ego, lead, clusters):
   # if no 'sane' match is found return -1
   # stationary radar points can be false positives
   dist_sane = abs(cluster.dRel - offset_vision_dist) < max([(offset_vision_dist)*.25, 5.0])
-  vel_sane = (abs(cluster.vRel - lead.xyva[2]) < 10) or (v_ego + cluster.vRel > 3)
+  vel_sane = (abs(cluster.vRel + v_ego - lead.v[0]) < 10) or (v_ego + cluster.vRel > 3)
   if dist_sane and vel_sane:
     return cluster
   else:
@@ -165,15 +166,15 @@ class RadarD():
     radarState.carStateMonoTime = sm.logMonoTime['carState']
 
     if enable_lead:
-      if len(sm['modelV2'].leads) > 1:
-        radarState.leadOne = get_lead(self.v_ego, self.ready, clusters, sm['modelV2'].leads[0], low_speed_override=True)
-        radarState.leadTwo = get_lead(self.v_ego, self.ready, clusters, sm['modelV2'].leads[1], low_speed_override=False)
+      if len(sm['modelV2'].leadsV3) > 1:
+        radarState.leadOne = get_lead(self.v_ego, self.ready, clusters, sm['modelV2'].leadsV3[0], low_speed_override=True)
+        radarState.leadTwo = get_lead(self.v_ego, self.ready, clusters, sm['modelV2'].leadsV3[1], low_speed_override=False)
     return dat
 
 
 # fuses camera and radar data for best lead detection
 def radard_thread(sm=None, pm=None, can_sock=None):
-  config_realtime_process(2, Priority.CTRL_LOW)
+  config_realtime_process(5 if TICI else 2, Priority.CTRL_LOW)
 
   # wait for stats about the car to come in from controls
   cloudlog.info("radard is waiting for CarParams")
@@ -188,7 +189,7 @@ def radard_thread(sm=None, pm=None, can_sock=None):
   if can_sock is None:
     can_sock = messaging.sub_sock('can')
   if sm is None:
-    sm = messaging.SubMaster(['modelV2', 'carState'])
+    sm = messaging.SubMaster(['modelV2', 'carState'], ignore_avg_freq=['modelV2', 'carState'])  # Can't check average frequency, since radar determines timing
   if pm is None:
     pm = messaging.PubMaster(['radarState', 'liveTracks'])
 

@@ -1,12 +1,11 @@
 #pragma once
 
-#include <ctime>
-#include <cstdint>
-#include <pthread.h>
-#include <mutex>
-#include <vector>
-#include <optional>
 #include <atomic>
+#include <cstdint>
+#include <ctime>
+#include <mutex>
+#include <optional>
+#include <vector>
 
 #include <libusb-1.0/libusb.h>
 
@@ -34,8 +33,10 @@ struct __attribute__((packed)) health_t {
   uint8_t car_harness_status;
   uint8_t usb_power_mode;
   uint8_t safety_model;
+  int16_t safety_param;
   uint8_t fault_status;
   uint8_t power_save_enabled;
+  uint8_t heartbeat_lost;
 };
 
 void panda_set_power(bool power);
@@ -52,6 +53,9 @@ public:
   PandaComm(uint16_t vid, uint16_t pid, std::string serial = "");
   ~PandaComm();
   std::atomic<bool> connected = true;
+
+  // Static functions
+  static std::vector<std::string> list();
 
   // HW communication
   int usb_write(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned int timeout=TIMEOUT);

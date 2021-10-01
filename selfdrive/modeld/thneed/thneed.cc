@@ -1,12 +1,16 @@
-#include <cassert>
-#include <sys/mman.h>
+#include "selfdrive/modeld/thneed/thneed.h"
+
 #include <dlfcn.h>
+#include <sys/mman.h>
+
+#include <cassert>
+#include <cerrno>
+#include <cstring>
 #include <map>
 #include <string>
-#include <string.h>
-#include <errno.h>
-#include "common/clutil.h"
-#include "thneed.h"
+
+#include "selfdrive/common/clutil.h"
+#include "selfdrive/common/timing.h"
 
 //#define RUN_DISASSEMBLER
 //#define RUN_OPTIMIZER
@@ -16,12 +20,6 @@ int g_fd = -1;
 map<pair<cl_kernel, int>, string> g_args;
 map<pair<cl_kernel, int>, int> g_args_size;
 map<cl_program, string> g_program_source;
-
-static inline uint64_t nanos_since_boot() {
-  struct timespec t;
-  clock_gettime(CLOCK_BOOTTIME, &t);
-  return t.tv_sec * 1000000000ULL + t.tv_nsec;
-}
 
 void hexdump(uint32_t *d, int len) {
   assert((len%4) == 0);
@@ -243,6 +241,7 @@ void Thneed::find_inputs_outputs() {
     for (int i = 0; i < k->num_args; i++) {
       if (k->name == "zero_pad_image_float" && k->arg_names[i] == "input") {
         cl_mem aa = *(cl_mem*)(k->args[i].data());
+        input_clmem.push_back(aa);
 
         size_t sz;
         clGetMemObjectInfo(aa, CL_MEM_SIZE, sizeof(sz), &sz, NULL);
@@ -264,7 +263,7 @@ void Thneed::copy_inputs(float **finputs) {
   //cl_int ret;
   for (int idx = 0; idx < inputs.size(); ++idx) {
     if (record & THNEED_DEBUG) printf("copying %lu -- %p -> %p\n", input_sizes[idx], finputs[idx], inputs[idx]);
-    memcpy(inputs[idx], finputs[idx], input_sizes[idx]);
+    if (finputs[idx] != NULL) memcpy(inputs[idx], finputs[idx], input_sizes[idx]);
   }
 }
 

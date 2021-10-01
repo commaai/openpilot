@@ -8,6 +8,14 @@ from multiprocessing import Process
 
 from common.timeout import Timeout
 
+
+class MockResponse:
+  def __init__(self, json, status_code):
+    self.json = json
+    self.text = json
+    self.status_code = status_code
+
+
 class EchoSocket():
   def __init__(self, port):
     self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -91,7 +99,7 @@ def with_http_server(func):
         p.start()
         time.sleep(0.1)
 
-    with Timeout(2):
+    with Timeout(2, 'HTTP Server seeding failed'):
       while True:
         try:
           requests.put(f'http://{host}:{port}/qlog.bz2', data='')

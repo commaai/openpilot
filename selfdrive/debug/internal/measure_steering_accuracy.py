@@ -15,7 +15,7 @@ signal.signal(signal.SIGINT, sigint_handler)
 
 if __name__ == "__main__":
 
-  parser = argparse.ArgumentParser(description='Sniff a communcation socket')
+  parser = argparse.ArgumentParser(description='Sniff a communication socket')
   parser.add_argument('--addr', default='127.0.0.1')
   args = parser.parse_args()
 

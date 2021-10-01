@@ -4,6 +4,7 @@ import array
 import os
 import struct
 from fcntl import ioctl
+from typing import NoReturn
 
 # Iterate over the joystick devices.
 print('Available devices:')
@@ -90,7 +91,7 @@ button_names = {
 axis_map = []
 button_map = []
 
-def wheel_poll_thread(q):
+def wheel_poll_thread(q: 'Queue[str]') -> NoReturn:
   # Open the joystick device.
   fn = '/dev/input/js0'
   print('Opening %s...' % fn)
@@ -116,8 +117,8 @@ def wheel_poll_thread(q):
   buf = array.array('B', [0] * 0x40)
   ioctl(jsdev, 0x80406a32, buf)  # JSIOCGAXMAP
 
-  for axis in buf[:num_axes]:
-      axis_name = axis_names.get(axis, 'unknown(0x%02x)' % axis)
+  for _axis in buf[:num_axes]:
+      axis_name = axis_names.get(_axis, 'unknown(0x%02x)' % _axis)
       axis_map.append(axis_name)
       axis_states[axis_name] = 0.0
 
@@ -143,7 +144,7 @@ def wheel_poll_thread(q):
 
   while True:
     evbuf = jsdev.read(8)
-    _, value, mtype, number = struct.unpack('IhBB', evbuf)
+    value, mtype, number = struct.unpack('4xhBB', evbuf)
     # print(mtype, number, value)
     if mtype & 0x02:  # wheel & paddles
       axis = axis_map[number]
@@ -152,38 +153,36 @@ def wheel_poll_thread(q):
         fvalue = value / 32767.0
         axis_states[axis] = fvalue
         normalized = (1 - fvalue) * 50
-        q.put(str("throttle_%f" % normalized))
+        q.put("throttle_%f" % normalized)
 
-      if axis == "rz":  # brake
+      elif axis == "rz":  # brake
         fvalue = value / 32767.0
         axis_states[axis] = fvalue
         normalized = (1 - fvalue) * 50
-        q.put(str("brake_%f" % normalized))
+        q.put("brake_%f" % normalized)
 
-      if axis == "x":  # steer angle
+      elif axis == "x":  # steer angle
         fvalue = value / 32767.0
         axis_states[axis] = fvalue
         normalized = fvalue
-        q.put(str("steer_%f" % normalized))
+        q.put("steer_%f" % normalized)
 
-    if mtype & 0x01:  # buttons
-      if number in [0, 19]:  # X
-        if value == 1:  # press down
-          q.put(str("cruise_down"))
+    elif mtype & 0x01:  # buttons
+      if value == 1: # press down
+        if number in [0, 19]:  # X
+          q.put("cruise_down")
 
-      if number in [3, 18]:  # triangle
-        if value == 1:  # press down
-          q.put(str("cruise_up"))
+        elif number in [3, 18]:  # triangle
+          q.put("cruise_up")
 
-      if number in [1, 6]:  # square
-        if value == 1:  # press down
-          q.put(str("cruise_cancel"))
+        elif number in [1, 6]:  # square
+          q.put("cruise_cancel")
 
-      if number in [10, 21]:  # R3
-        if value == 1:  # press down
-          q.put(str("reverse_switch"))
+        elif number in [10, 21]:  # R3
+          q.put("reverse_switch")
 
 if __name__ == '__main__':
-  from multiprocessing import Process
-  p = Process(target=wheel_poll_thread)
+  from multiprocessing import Process, Queue
+  q: Queue[str] = Queue()
+  p = Process(target=wheel_poll_thread, args=(q,))
   p.start()

@@ -3,6 +3,18 @@ on:
   push:
   pull_request:
 
+env:
+  BASE_IMAGE: openpilot-base
+  DOCKER_REGISTRY: ghcr.io/commaai
+  DOCKER_LOGIN: docker login ghcr.io -u adeebshihadeh -p ${{ secrets.CONTAINER_TOKEN }}
+
+  BUILD: |
+      docker pull $(grep -iohP '(?<=^from)\s+\S+' Dockerfile.openpilot_base) || true
+      docker pull $DOCKER_REGISTRY/$BASE_IMAGE:latest || true
+      docker build --cache-from $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $BASE_IMAGE:latest -f Dockerfile.openpilot_base .
+  RUN: docker run --shm-size 1G -v $PWD:/tmp/openpilot -e PYTHONPATH=/tmp/openpilot -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e \
+       GITHUB_REPOSITORY -e GITHUB_RUN_ID -v /tmp/comma_download_cache:/tmp/comma_download_cache $BASE_IMAGE /bin/sh -c
+
 jobs:
   plotjuggler:
     name: plotjuggler
@@ -12,7 +24,35 @@ jobs:
     - uses: actions/checkout@v2
       with:
         submodules: true
-    - name: Install
-      run: cd tools/plotjuggler && ./install.sh
-    #- name: Juggle Demo
-    #  run: cd tools/plotjuggler && ./juggle.py
+    - name: Build Docker image
+      run: eval "$BUILD"
+    - name: Unit test
+      run: |
+        ${{ env.RUN }} "scons -j$(nproc) --directory=/tmp/openpilot/cereal && \
+                        apt-get update && \
+                        apt-get install -y libdw-dev libqt5svg5-dev libqt5x11extras5-dev && \
+                        cd /tmp/openpilot/tools/plotjuggler && \
+                        ./test_plotjuggler.py"
+
+  simulator:
+    name: simulator
+    runs-on: ubuntu-20.04
+    timeout-minutes: 50
+    env:
+      IMAGE_NAME: openpilot-sim
+    if: github.repository == 'commaai/openpilot'
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+        lfs: true
+    - name: Build Docker image
+      run: |
+        eval "$BUILD"
+        docker pull $DOCKER_REGISTRY/$IMAGE_NAME:latest || true
+        docker build --cache-from $DOCKER_REGISTRY/$IMAGE_NAME:latest -t $DOCKER_REGISTRY/$IMAGE_NAME:latest -f tools/sim/Dockerfile.sim .
+    - name: Push to container registry
+      if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
+      run: |
+        $DOCKER_LOGIN
+        docker push $DOCKER_REGISTRY/$IMAGE_NAME:latest

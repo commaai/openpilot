@@ -37,12 +37,13 @@ class TestPowerMonitoring(unittest.TestCase):
     params.delete("CarBatteryCapacity")
     params.delete("DisablePowerDown")
 
-  def mock_pandaState(self, ignition, hw_type, car_voltage=12):
+  def mock_pandaState(self, ignition, hw_type, car_voltage=12, harness_status=log.PandaState.HarnessStatus.normal):
     pandaState = messaging.new_message('pandaState')
     pandaState.pandaState.pandaType = hw_type
     pandaState.pandaState.voltage = car_voltage * 1e3
     pandaState.pandaState.ignitionLine = ignition
     pandaState.pandaState.ignitionCan = False
+    pandaState.pandaState.harnessStatus = harness_status
     return pandaState
 
   # Test to see that it doesn't do anything when pandaState is None
@@ -133,7 +134,6 @@ class TestPowerMonitoring(unittest.TestCase):
   # Test to check policy of stopping charging after MAX_TIME_OFFROAD_S
   @parameterized.expand(ALL_PANDA_TYPES)
   def test_max_time_offroad(self, hw_type):
-    global ssb
     BATT_VOLTAGE = 4
     BATT_CURRENT = 0 # To stop shutting down for other reasons
     MOCKED_MAX_OFFROAD_TIME = 3600
@@ -153,7 +153,6 @@ class TestPowerMonitoring(unittest.TestCase):
   # Test to check policy of stopping charging when the car voltage is too low
   @parameterized.expand(ALL_PANDA_TYPES)
   def test_car_voltage(self, hw_type):
-    global ssb
     BATT_VOLTAGE = 4
     BATT_CURRENT = 0 # To stop shutting down for other reasons
     TEST_TIME = 100
@@ -170,11 +169,10 @@ class TestPowerMonitoring(unittest.TestCase):
 
   # Test to check policy of not stopping charging when DisablePowerDown is set
   def test_disable_power_down(self):
-    global ssb
     BATT_VOLTAGE = 4
     BATT_CURRENT = 0 # To stop shutting down for other reasons
     TEST_TIME = 100
-    params.put("DisablePowerDown", b"1")
+    params.put_bool("DisablePowerDown", True)
     with pm_patch("HARDWARE.get_battery_voltage", BATT_VOLTAGE * 1e6), pm_patch("HARDWARE.get_battery_current", BATT_CURRENT * 1e6), \
     pm_patch("HARDWARE.get_battery_status", "Discharging"), pm_patch("HARDWARE.get_current_power_draw", None):
       pm = PowerMonitoring()
@@ -188,7 +186,6 @@ class TestPowerMonitoring(unittest.TestCase):
 
   # Test to check policy of not stopping charging when ignition
   def test_ignition(self):
-    global ssb
     BATT_VOLTAGE = 4
     BATT_CURRENT = 0 # To stop shutting down for other reasons
     TEST_TIME = 100
@@ -197,6 +194,23 @@ class TestPowerMonitoring(unittest.TestCase):
       pm = PowerMonitoring()
       pm.car_battery_capacity_uWh = CAR_BATTERY_CAPACITY_uWh
       pandaState = self.mock_pandaState(True, log.PandaState.PandaType.uno, car_voltage=(VBATT_PAUSE_CHARGING - 1))
+      for i in range(TEST_TIME):
+        pm.calculate(pandaState)
+        if i % 10 == 0:
+          self.assertFalse(pm.should_disable_charging(pandaState, ssb))
+      self.assertFalse(pm.should_disable_charging(pandaState, ssb))
+
+  # Test to check policy of not stopping charging when harness is not connected
+  def test_harness_connection(self):
+    BATT_VOLTAGE = 4
+    BATT_CURRENT = 0 # To stop shutting down for other reasons
+    TEST_TIME = 100
+    with pm_patch("HARDWARE.get_battery_voltage", BATT_VOLTAGE * 1e6), pm_patch("HARDWARE.get_battery_current", BATT_CURRENT * 1e6), \
+    pm_patch("HARDWARE.get_battery_status", "Discharging"), pm_patch("HARDWARE.get_current_power_draw", None):
+      pm = PowerMonitoring()
+      pm.car_battery_capacity_uWh = CAR_BATTERY_CAPACITY_uWh
+      pandaState = self.mock_pandaState(False, log.PandaState.PandaType.uno, car_voltage=(VBATT_PAUSE_CHARGING - 1),
+        harness_status=log.PandaState.HarnessStatus.notConnected)
       for i in range(TEST_TIME):
         pm.calculate(pandaState)
         if i % 10 == 0:

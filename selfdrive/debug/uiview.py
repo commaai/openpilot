@@ -1,22 +1,27 @@
 #!/usr/bin/env python3
 import time
 import cereal.messaging as messaging
-from selfdrive.manager import start_managed_process, kill_managed_process
+from selfdrive.manager.process_config import managed_processes
 
-services = ['controlsState', 'deviceState', 'radarState']  # the services needed to be spoofed to start ui offroad
-procs = ['camerad', 'ui', 'modeld', 'calibrationd']
-[start_managed_process(p) for p in procs]  # start needed processes
-pm = messaging.PubMaster(services)
+if __name__ == "__main__":
+  services = ['controlsState', 'deviceState', 'pandaState', 'carParams']
+  procs = ['camerad', 'ui', 'modeld', 'calibrationd']
 
-dat_cs, dat_deviceState, dat_radar = [messaging.new_message(s) for s in services]
-dat_cs.controlsState.rearViewCam = False  # ui checks for these two messages
-dat_deviceState.deviceState.started = True
+  for p in procs:
+    managed_processes[p].start()
 
-try:
-  while True:
-    pm.send('controlsState', dat_cs)
-    pm.send('deviceState', dat_deviceState)
-    pm.send('radarState', dat_radar)
-    time.sleep(1 / 100)  # continually send, rate doesn't matter for deviceState
-except KeyboardInterrupt:
-  [kill_managed_process(p) for p in procs]
+  pm = messaging.PubMaster(services)
+
+  msgs = {s: messaging.new_message(s) for s in services}
+  msgs['deviceState'].deviceState.started = True
+  msgs['pandaState'].pandaState.ignitionLine = True
+  msgs['carParams'].carParams.openpilotLongitudinalControl = True
+
+  try:
+    while True:
+      time.sleep(1 / 100)  # continually send, rate doesn't matter
+      for s in msgs:
+        pm.send(s, msgs[s])
+  except KeyboardInterrupt:
+    for p in procs:
+      managed_processes[p].stop()

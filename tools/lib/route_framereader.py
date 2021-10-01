@@ -9,14 +9,14 @@ class _FrameReaderDict(dict):
     if cache_paths is None:
       cache_paths = {}
     if not isinstance(cache_paths, dict):
-      cache_paths = {k: v for k, v in enumerate(cache_paths)}
+      cache_paths = dict(enumerate(cache_paths))
 
     self._camera_paths = camera_paths
     self._cache_paths = cache_paths
     self._framereader_kwargs = framereader_kwargs
 
   def __missing__(self, key):
-    if key < len(self._camera_paths) and self._camera_paths[key] is not None:
+    if self._camera_paths.get(key, None) is not None:
       frame_reader = FrameReader(self._camera_paths[key],
                                  self._cache_paths.get(key), **self._framereader_kwargs)
       self[key] = frame_reader
@@ -36,7 +36,10 @@ class RouteFrameReader(object):
         kwargs: Forwarded to the FrameReader function. If cache_prefix is included, that path
                 will also be used for frame position indices.
     """
-    self._first_camera_idx = next(i for i in range(len(camera_paths)) if camera_paths[i] is not None)
+    if not isinstance(camera_paths, dict):
+      camera_paths = {int(k.split('?')[0].split('/')[-2]): k for k in camera_paths if k is not None}
+
+    self._first_camera_idx = min(camera_paths.keys())
     self._frame_readers = _FrameReaderDict(camera_paths, cache_paths, kwargs)
     self._frame_id_lookup = frame_id_lookup
 

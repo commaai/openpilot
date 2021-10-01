@@ -1,8 +1,7 @@
 #pragma once
 
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdint>
+#include <cstdlib>
 
 #ifdef __APPLE__
 #include <OpenCL/cl.h>
@@ -12,7 +11,7 @@
 
 #define CL_CHECK(_expr)          \
   do {                           \
-    assert(CL_SUCCESS == _expr); \
+    assert(CL_SUCCESS == (_expr)); \
   } while (0)
 
 #define CL_CHECK_ERR(_expr)           \

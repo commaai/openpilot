@@ -1,126 +1,159 @@
+#include "selfdrive/ui/qt/offroad/onboarding.h"
+
 #include <QLabel>
-#include <QString>
-#include <QPushButton>
-#include <QGridLayout>
+#include <QPainter>
+#include <QQmlContext>
+#include <QQuickWidget>
 #include <QVBoxLayout>
-#include <QDesktopWidget>
-#include <QtWebEngine>
-#include <QWebEngineSettings>
 
-#include "common/params.h"
-#include "onboarding.hpp"
-#include "home.hpp"
-#include "util.h"
+#include "selfdrive/common/util.h"
+#include "selfdrive/common/params.h"
+#include "selfdrive/ui/qt/util.h"
+#include "selfdrive/ui/qt/widgets/input.h"
 
-
-QLabel * title_label(QString text) {
-  QLabel *l = new QLabel(text);
-  l->setStyleSheet(R"(
-    font-size: 100px;
-    font-weight: 400;
-  )");
-  return l;
+TrainingGuide::TrainingGuide(QWidget *parent) : QFrame(parent) {
+  setAttribute(Qt::WA_OpaquePaintEvent);
 }
-
-QWidget * layout2Widget(QLayout* l){
-  QWidget *q = new QWidget;
-  q->setLayout(l);
-  return q;
-}
-
 
 void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
-  int leftOffset = (geometry().width()-1620)/2;
-  int mousex = e->x()-leftOffset;
-  int mousey = e->y();
-
-  // Check for restart
-  if (currentIndex == boundingBox.size()-1) {
-    if (1050 <= mousex && mousex <= 1500 && 773 <= mousey && mousey <= 954){
-      slayout->setCurrentIndex(0);
-      currentIndex = 0;
-      return;
+  if (boundingRect[currentIndex].contains(e->x(), e->y())) {
+    if (currentIndex == 9) {
+      const QRect yes = QRect(692, 842, 492, 148);
+      Params().putBool("RecordFront", yes.contains(e->x(), e->y()));
     }
+    currentIndex += 1;
+  } else if (currentIndex == (boundingRect.size() - 2) && boundingRect.last().contains(e->x(), e->y())) {
+    currentIndex = 0;
   }
 
-  if (boundingBox[currentIndex][0] <= mousex && mousex <= boundingBox[currentIndex][1] && boundingBox[currentIndex][2] <= mousey && mousey <= boundingBox[currentIndex][3]) {
-    slayout->setCurrentIndex(++currentIndex);
-  }
-  if (currentIndex >= boundingBox.size()) {
+  if (currentIndex >= (boundingRect.size() - 1)) {
     emit completedTraining();
+  } else {
+    image.load(IMG_PATH + "step" + QString::number(currentIndex) + ".png");
+    update();
+  }
+}
+
+void TrainingGuide::showEvent(QShowEvent *event) {
+  currentIndex = 0;
+  image.load(IMG_PATH + "step0.png");
+}
+
+void TrainingGuide::paintEvent(QPaintEvent *event) {
+  QPainter painter(this);
+
+  QRect bg(0, 0, painter.device()->width(), painter.device()->height());
+  painter.fillRect(bg, QColor("#000000"));
+
+  QRect rect(image.rect());
+  rect.moveCenter(bg.center());
+  painter.drawImage(rect.topLeft(), image);
+
+  // progress bar
+  if (currentIndex > 0 && currentIndex < (boundingRect.size() - 2)) {
+    const int h = 20;
+    const int w = (currentIndex / (float)(boundingRect.size() - 2)) * width();
+    painter.fillRect(QRect(0, height() - h, w, h), QColor("#465BEA"));
+  }
+}
+
+void TermsPage::showEvent(QShowEvent *event) {
+  // late init, building QML widget takes 200ms
+  if (layout()) {
     return;
   }
-}
 
-TrainingGuide::TrainingGuide(QWidget* parent) {
-  QHBoxLayout* hlayout = new QHBoxLayout;
+  QVBoxLayout *main_layout = new QVBoxLayout(this);
+  main_layout->setContentsMargins(45, 35, 45, 45);
+  main_layout->setSpacing(0);
 
-  slayout = new QStackedLayout(this);
-  for (int i = 0; i < boundingBox.size(); i++) {
-    QWidget* w = new QWidget;
-    w->setStyleSheet(".QWidget {background-image: url(../assets/training/step" + QString::number(i) + ".jpg);}");
-    w->setFixedSize(1620, 1080);
-    slayout->addWidget(w);
-  }
+  QLabel *title = new QLabel("Terms & Conditions");
+  title->setStyleSheet("font-size: 90px; font-weight: 600;");
+  main_layout->addWidget(title);
 
-  QWidget* sw = layout2Widget(slayout);
-  hlayout->addWidget(sw, 1, Qt::AlignCenter);
-  setLayout(hlayout);
-  setStyleSheet(R"(
-    background-color: #072339;
-  )");
-}
+  main_layout->addSpacing(30);
 
+  QQuickWidget *text = new QQuickWidget(this);
+  text->setResizeMode(QQuickWidget::SizeRootObjectToView);
+  text->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+  text->setAttribute(Qt::WA_AlwaysStackOnTop);
+  text->setClearColor(QColor("#1B1B1B"));
 
-QWidget* OnboardingWindow::terms_screen() {
-  QVBoxLayout *main_layout = new QVBoxLayout;
-  main_layout->setContentsMargins(40, 0, 40, 0);
+  QString text_view = util::read_file("../assets/offroad/tc.html").c_str();
+  text->rootContext()->setContextProperty("text_view", text_view);
 
-  view = new QWebEngineView(this);
-  view->settings()->setAttribute(QWebEngineSettings::ShowScrollBars, false);
-  QString html = QString::fromStdString(util::read_file("../assets/offroad/tc.html"));
-  view->setHtml(html);
-  main_layout->addWidget(view);
+  text->setSource(QUrl::fromLocalFile("qt/offroad/text_view.qml"));
+
+  main_layout->addWidget(text, 1);
+  main_layout->addSpacing(50);
+
+  QObject *obj = (QObject*)text->rootObject();
+  QObject::connect(obj, SIGNAL(scroll()), SLOT(enableAccept()));
 
   QHBoxLayout* buttons = new QHBoxLayout;
-  buttons->addWidget(new QPushButton("Decline"));
-  buttons->addSpacing(50);
+  buttons->setMargin(0);
+  buttons->setSpacing(45);
+  main_layout->addLayout(buttons);
+
+  QPushButton *decline_btn = new QPushButton("Decline");
+  buttons->addWidget(decline_btn);
+  QObject::connect(decline_btn, &QPushButton::clicked, this, &TermsPage::declinedTerms);
+
   accept_btn = new QPushButton("Scroll to accept");
   accept_btn->setEnabled(false);
-  buttons->addWidget(accept_btn);
-  QObject::connect(accept_btn, &QPushButton::released, [=]() {
-    Params().write_db_value("HasAcceptedTerms", current_terms_version);
-    updateActiveScreen();
-  });
-
-  QObject::connect(view->page(), SIGNAL(scrollPositionChanged(QPointF)), this, SLOT(scrollPositionChanged(QPointF)));
-  
-  QWidget* w = layout2Widget(buttons);
-  w->setFixedHeight(200);
-  main_layout->addWidget(w);
-
-  QWidget *widget = new QWidget;
-  widget->setLayout(main_layout);
-  widget->setStyleSheet(R"(
+  accept_btn->setStyleSheet(R"(
     QPushButton {
-      font-size: 50px;
-      padding: 50px;
-      border-radius: 10px;
-      background-color: #292929;
+      background-color: #465BEA;
+    }
+    QPushButton:disabled {
+      background-color: #4F4F4F;
     }
   )");
+  buttons->addWidget(accept_btn);
+  QObject::connect(accept_btn, &QPushButton::clicked, this, &TermsPage::acceptedTerms);
+}
 
-  return widget;
+void TermsPage::enableAccept() {
+  accept_btn->setText("Agree");
+  accept_btn->setEnabled(true);
+}
+
+void DeclinePage::showEvent(QShowEvent *event) {
+  if (layout()) {
+    return;
+  }
+
+  QVBoxLayout *main_layout = new QVBoxLayout(this);
+  main_layout->setMargin(45);
+  main_layout->setSpacing(40);
+
+  QLabel *text = new QLabel(this);
+  text->setText("You must accept the Terms and Conditions in order to use openpilot.");
+  text->setStyleSheet(R"(font-size: 80px; font-weight: 300; margin: 200px;)");
+  text->setWordWrap(true);
+  main_layout->addWidget(text, 0, Qt::AlignCenter);
+
+  QHBoxLayout* buttons = new QHBoxLayout;
+  buttons->setSpacing(45);
+  main_layout->addLayout(buttons);
+
+  QPushButton *back_btn = new QPushButton("Back");
+  buttons->addWidget(back_btn);
+
+  QObject::connect(back_btn, &QPushButton::clicked, this, &DeclinePage::getBack);
+
+  QPushButton *uninstall_btn = new QPushButton("Decline, uninstall " + getBrand());
+  uninstall_btn->setStyleSheet("background-color: #B73D3D");
+  buttons->addWidget(uninstall_btn);
+  QObject::connect(uninstall_btn, &QPushButton::clicked, [=]() {
+    Params().putBool("DoUninstall", true);
+  });
 }
 
 void OnboardingWindow::updateActiveScreen() {
-  Params params = Params();
-
-  bool accepted_terms = params.get("HasAcceptedTerms", false).compare(current_terms_version) == 0;
-  bool training_done = params.get("CompletedTrainingVersion", false).compare(current_training_version) == 0;
   if (!accepted_terms) {
     setCurrentIndex(0);
-  } else if (!training_done) {
+  } else if (!training_done && !params.getBool("Passive")) {
     setCurrentIndex(1);
   } else {
     emit onboardingDone();
@@ -128,24 +161,31 @@ void OnboardingWindow::updateActiveScreen() {
 }
 
 OnboardingWindow::OnboardingWindow(QWidget *parent) : QStackedWidget(parent) {
-  Params params = Params();
-  current_terms_version = params.get("TermsVersion", false);
-  current_training_version = params.get("TrainingVersion", false);
-  bool accepted_terms = params.get("HasAcceptedTerms", false).compare(current_terms_version) == 0;
-  bool training_done = params.get("CompletedTrainingVersion", false).compare(current_training_version) == 0;
-  
-  //Don't initialize widgets unless neccesary. 
-  if (accepted_terms && training_done) {
-    return;
-  }
-  addWidget(terms_screen());
+  std::string current_terms_version = params.get("TermsVersion");
+  std::string current_training_version = params.get("TrainingVersion");
+  accepted_terms = params.get("HasAcceptedTerms") == current_terms_version;
+  training_done = params.get("CompletedTrainingVersion") == current_training_version;
 
-  TrainingGuide* tr = new TrainingGuide(this);
-  connect(tr, &TrainingGuide::completedTraining, [=](){
-    Params().write_db_value("CompletedTrainingVersion", current_training_version);
+  TermsPage* terms = new TermsPage(this);
+  addWidget(terms);
+  connect(terms, &TermsPage::acceptedTerms, [=]() {
+    Params().put("HasAcceptedTerms", current_terms_version);
+    accepted_terms = true;
     updateActiveScreen();
   });
+  connect(terms, &TermsPage::declinedTerms, [=]() { setCurrentIndex(2); });
+
+  TrainingGuide* tr = new TrainingGuide(this);
   addWidget(tr);
+  connect(tr, &TrainingGuide::completedTraining, [=]() {
+    training_done = true;
+    Params().put("CompletedTrainingVersion", current_training_version);
+    updateActiveScreen();
+  });
+
+  DeclinePage* declinePage = new DeclinePage(this);
+  addWidget(declinePage);
+  connect(declinePage, &DeclinePage::getBack, [=]() { updateActiveScreen(); });
 
   setStyleSheet(R"(
     * {
@@ -153,22 +193,12 @@ OnboardingWindow::OnboardingWindow(QWidget *parent) : QStackedWidget(parent) {
       background-color: black;
     }
     QPushButton {
-      padding: 50px;
-      border-radius: 30px;
-      background-color: #292929;
-    }
-    QPushButton:disabled {
-      color: #777777;
-      background-color: #222222;
+      height: 160px;
+      font-size: 55px;
+      font-weight: 400;
+      border-radius: 10px;
+      background-color: #4F4F4F;
     }
   )");
-
   updateActiveScreen();
-}
-
-void OnboardingWindow::scrollPositionChanged(QPointF position){
-  if (position.y() > view->page()->contentsSize().height() - 1000){
-    accept_btn->setEnabled(true);
-    accept_btn->setText("Accept");
-  }
 }
