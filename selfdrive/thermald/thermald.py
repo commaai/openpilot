@@ -211,6 +211,8 @@ def thermald_thread():
     msg = read_thermal(thermal_config)
 
     if pandaState is not None:
+      pandaState = pandaState.pandaState
+
       # If we lose connection to the panda, wait 5 seconds before going offroad
       if pandaState.pandaType == log.PandaState.PandaType.unknown:
         no_panda_cnt += 1
@@ -405,7 +407,7 @@ def thermald_thread():
     msg.deviceState.carBatteryCapacityUwh = max(0, power_monitor.get_car_battery_capacity())
 
     # Check if we need to disable charging (handled by boardd)
-    msg.deviceState.chargingDisabled = power_monitor.should_disable_charging(pandaState, in_car, off_ts)
+    msg.deviceState.chargingDisabled = power_monitor.should_disable_charging(startup_conditions["ignition"], in_car, off_ts)
 
     # Check if we need to shut down
     if power_monitor.should_shutdown(peripheralState, startup_conditions["ignition"], in_car, off_ts, started_seen):
