@@ -12,6 +12,8 @@
 // double the FIFO size
 #define RECV_SIZE (0x1000)
 #define TIMEOUT 0
+#define PANDA_VENDOR_ID 0XBBAA
+#define PANDA_PRODUCT_ID 0XDDCC
 
 // copied from panda/board/main.c
 struct __attribute__((packed)) health_t {

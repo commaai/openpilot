@@ -19,9 +19,7 @@ struct UsbContext {
 #endif
   }
 
-  ~UsbContext() {
-    libusb_exit(ctx);
-  }
+  ~UsbContext() { libusb_exit(ctx); }
 
   libusb_context *ctx = nullptr;
 };
@@ -99,7 +97,7 @@ PandaComm::~PandaComm() {
 std::vector<std::string> PandaComm::list() {
   std::vector<std::string> serials;
   UsbDeviceList device_list;
-  for (auto&[dev, serial] : device_list.list(0xbbaa, 0xddcc)) {
+  for (auto&[dev, serial] : device_list.list(PANDA_VENDOR_ID, PANDA_PRODUCT_ID)) {
     serials.push_back(serial);
   }
   return serials;
@@ -171,7 +169,7 @@ void PandaComm::handle_usb_issue(int err, const char func[]) {
 
 // class Panda
 
-Panda::Panda(std::string serial) : PandaComm(0xbbaa, 0xddcc, serial) {
+Panda::Panda(std::string serial) : PandaComm(PANDA_VENDOR_ID, PANDA_PRODUCT_ID, serial) {
   hw_type = get_hw_type();
   typedef cereal::PandaState::PandaType PandaType;
   assert((hw_type != PandaType::WHITE_PANDA) && (hw_type != PandaType::GREY_PANDA));
