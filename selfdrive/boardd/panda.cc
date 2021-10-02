@@ -52,7 +52,7 @@ public:
         if (libusb_open(dev_list[i], &handle) == LIBUSB_SUCCESS) {
           unsigned char serial[256] = {'\0'};
           if (libusb_get_string_descriptor_ascii(handle, desc.iSerialNumber, serial, std::size(serial) - 1) > 0) {
-            result.push_back({dev_list[i], (const char*)serial});
+            result.push_back({dev_list[i], (const char *)serial});
           }
           libusb_close(handle);
         }
@@ -61,7 +61,7 @@ public:
     return result;
   }
 
-private:
+ private:
   libusb_device **dev_list = nullptr;
   ssize_t num_devices = 0;
 };
@@ -70,7 +70,7 @@ private:
 
 PandaComm::PandaComm(uint16_t vid, uint16_t pid, const std::string &serial) {
   UsbDeviceList device_list;
-  for (auto&[dev, device_serial] : device_list.list(vid, pid)) {
+  for (auto &[dev, device_serial] : device_list.list(vid, pid)) {
     if (serial.empty() || serial == device_serial) {
       libusb_open(dev, &dev_handle);
       break;
@@ -97,7 +97,7 @@ PandaComm::~PandaComm() {
 std::vector<std::string> PandaComm::list() {
   std::vector<std::string> serials;
   UsbDeviceList device_list;
-  for (auto&[dev, serial] : device_list.list(PANDA_VENDOR_ID, PANDA_PRODUCT_ID)) {
+  for (auto &[dev, serial] : device_list.list(PANDA_VENDOR_ID, PANDA_PRODUCT_ID)) {
     serials.push_back(serial);
   }
   return serials;
@@ -124,7 +124,7 @@ int PandaComm::usb_read(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsi
   return usb_transfer(LIBUSB_ENDPOINT_IN, bRequest, wValue, wIndex, timeout);
 }
 
-int PandaComm::usb_bulk_write(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout) {
+int PandaComm::usb_bulk_write(unsigned char endpoint, unsigned char *data, int length, unsigned int timeout) {
   int transferred = 0;
   std::lock_guard lk(usb_lock);
   while (connected) {
@@ -141,13 +141,13 @@ int PandaComm::usb_bulk_write(unsigned char endpoint, unsigned char* data, int l
   return transferred;
 }
 
-int PandaComm::usb_bulk_read(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout) {
+int PandaComm::usb_bulk_read(unsigned char endpoint, unsigned char *data, int length, unsigned int timeout) {
   int transferred = 0;
   std::lock_guard lk(usb_lock);
   while (connected) {
     int err = libusb_bulk_transfer(dev_handle, endpoint, data, length, &transferred, timeout);
     if (err == LIBUSB_ERROR_TIMEOUT) {
-      break; // timeout is okay to exit, recv still happened
+      break;  // timeout is okay to exit, recv still happened
     } else if (err == LIBUSB_ERROR_OVERFLOW) {
       comms_healthy = false;
       LOGE_100("overflow got 0x%x", transferred);
