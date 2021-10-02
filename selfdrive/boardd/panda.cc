@@ -80,13 +80,14 @@ PandaComm::PandaComm(uint16_t vid, uint16_t pid, const std::string &serial) {
     if (libusb_kernel_driver_active(dev_handle, 0) == 1) {
       libusb_detach_kernel_driver(dev_handle, 0);
     }
-    bool success = libusb_set_configuration(dev_handle, 1) == 0;
-    success = success && libusb_claim_interface(dev_handle, 0) == 0;
-    if (success) return;
-
-    libusb_close(dev_handle);
+    if (libusb_set_configuration(dev_handle, 1) != 0 || libusb_claim_interface(dev_handle, 0) != 0) {
+      libusb_close(dev_handle);
+      dev_handle = nullptr;
+    }
   }
-  throw std::runtime_error("Error connecting to panda");
+  if (!dev_handle) {
+    throw std::runtime_error("Error connecting to panda");
+  }
 }
 
 PandaComm::~PandaComm() {
