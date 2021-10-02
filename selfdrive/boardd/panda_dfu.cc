@@ -11,26 +11,28 @@
 
 const std::string basedir = util::getenv("BASEDIR", "/data/pythonpath");
 
+PandaDFU::PandaDFU(std::string dfu_serial) : PandaComm(0x0483, 0xdf11, dfu_serial) {}
+
+std::array<uin8_t, 6> PandaDFU::get_status() {
+  std::array<uin8_t, 6> stat = {};
+  control_read(0x21, DFU_GETSTATUS, 0, 0, &stat[0], 6);
+  return stat;
+}
+
 void PandaDFU::status() {
-  std::vector<uint8_t> stat(6);
-  while (true) {
-    control_read(0x21, DFU_GETSTATUS, 0, 0, &stat[0], 6);
-    if (stat[1] == 0) {
-      break;
-    }
-  }
+  while (get_status()[1] != 0)
+    ;
 }
 
 void PandaDFU::clear_status() {
-  std::vector<uint8_t> stat(6);
-  control_read(0x21, DFU_GETSTATUS, 0, 0, &stat[0], 6);
+  auto stat = get_status();
   if (stat[4] == 0xa) {
     control_read(0x21, DFU_CLRSTATUS, 0, 0, nullptr, 0);
-  } else if(stat[4] == 0x9) {
+  } else if (stat[4] == 0x9) {
     control_write(0x21, DFU_ABORT, 0, 0, nullptr, 0);
     status();
   }
-  control_read(0x21, DFU_GETSTATUS, 0, 0, &stat[0], 6);
+  stat = get_status();
 }
 
 void PandaDFU::erase(int adress) {
@@ -56,10 +58,10 @@ void PandaDFU::program(int adress, std::string program) {
   unsigned char padded_program[paddedLength];
   std::fill(padded_program, padded_program + paddedLength, 0xff);
   // Not sure how to copy from string to unsigned char * with one command. For loop works
-  for (int i = 0 ; i < program.length() ; i++) {
+  for (int i = 0; i < program.length(); i++) {
     padded_program[i] = program[i];
   }
-  for (int i = 0 ; i < paddedLength/ blockSize ; i++) {
+  for (int i = 0; i < paddedLength / blockSize; i++) {
     LOGD("Programming with block %d", i);
     control_write(0x21, DFU_DNLOAD, 2 + i, 0, padded_program + blockSize * i, blockSize);
     status();
@@ -76,19 +78,18 @@ void PandaDFU::reset() {
   status();
   try {
     control_write(0x21, DFU_DNLOAD, 2, 0, nullptr, 0);
-    unsigned char buf[6];
-    control_read(0x21, DFU_GETSTATUS, 0, 0, buf, 6);
-  } catch(std::runtime_error &e) {
+    get_status();
+  } catch (std::runtime_error &e) {
     LOGE("DFU reset failed");
   }
 }
 
 void PandaDFU::program_bootstub(std::string program_file) {
-   clear_status();
-   erase(0x8004000);
-   erase(0x8000000);
-   program(0x8000000, program_file);
-   reset();
+  clear_status();
+  erase(0x8004000);
+  erase(0x8000000);
+  program(0x8000000, program_file);
+  reset();
 }
 
 void PandaDFU::recover() {
@@ -96,5 +97,3 @@ void PandaDFU::recover() {
   std::string program = util::read_file(basedir + "/panda/board/obj/bootstub.panda.bin");
   program_bootstub(program);
 }
-
-PandaDFU::PandaDFU(std::string dfu_serial) : PandaComm(0x0483, 0xdf11, dfu_serial){}
