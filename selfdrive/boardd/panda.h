@@ -1,17 +1,19 @@
 #pragma once
 
-#include <libusb-1.0/libusb.h>
-
 #include <atomic>
 #include <mutex>
 #include <optional>
 #include <vector>
 
-#include "cereal/gen/cpp/log.capnp.h"
+#include <libusb-1.0/libusb.h>
+
+#include "cereal/messaging/messaging.h"
 
 // double the FIFO size
 #define RECV_SIZE (0x1000)
 #define TIMEOUT 0
+#define PANDA_VENDOR_ID 0XBBAA
+#define PANDA_PRODUCT_ID 0XDDCC
 
 // copied from panda/board/main.c
 struct __attribute__((packed)) health_t {
@@ -37,15 +39,9 @@ struct __attribute__((packed)) health_t {
 };
 
 class PandaComm {
-private:
-  libusb_device_handle *dev_handle = NULL;
-  libusb_context *ctx = NULL;
-  std::mutex usb_lock;
-  void handle_usb_issue(int err, const char func[]);
-
 public:
-  PandaComm(uint16_t vid, uint16_t pid, std::string serial = "");
-  ~PandaComm();
+  PandaComm(uint16_t vid, uint16_t pid, const std::string& serial = {});
+  virtual ~PandaComm();
   std::atomic<bool> connected = true;
   std::atomic<bool> comms_healthy = true;
 
@@ -54,22 +50,27 @@ public:
 
   // HW communication
   int usb_transfer(libusb_endpoint_direction dir, uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned int timeout = TIMEOUT);
-  int usb_write(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned int timeout=TIMEOUT);
-  int usb_read(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned char *data, uint16_t wLength, unsigned int timeout=TIMEOUT);
-  int usb_bulk_write(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout=TIMEOUT);
-  int usb_bulk_read(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout=TIMEOUT);
-  int control_read(uint8_t request_type, uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned char *data, uint16_t wLength, unsigned int timeout=TIMEOUT);
-  int control_write(uint8_t request_type, uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned char *data, uint16_t wLength, unsigned int timeout=TIMEOUT);
+  int usb_write(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned int timeout = TIMEOUT);
+  int usb_read(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned char* data, uint16_t wLength, unsigned int timeout = TIMEOUT);
+  int usb_bulk_write(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout = TIMEOUT);
+  int usb_bulk_read(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout = TIMEOUT);
+
+ protected:
+  void handle_usb_issue(int err, const char func[]);
+
+  libusb_device_handle* dev_handle = nullptr;
+  std::mutex usb_lock;
 };
 
-class Panda : public PandaComm{
- public:
-  Panda();
+class Panda : public PandaComm {
+public:
+  Panda(std::string serial = {});
+  ~Panda();
 
+  // std::string usb_serial;
   cereal::PandaState::PandaType hw_type = cereal::PandaState::PandaType::UNKNOWN;
-  bool is_pigeon = false;
   bool has_rtc = false;
-  
+
   // Panda functionality
   cereal::PandaState::PandaType get_hw_type();
   void set_safety_model(cereal::CarParams::SafetyModel safety_model, int safety_param=0);

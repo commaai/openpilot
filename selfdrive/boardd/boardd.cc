@@ -26,16 +26,8 @@
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/locationd/ublox_msg.h"
 
-#include "selfdrive/common/util.h"
-#include "selfdrive/common/params.h"
-#include "selfdrive/common/swaglog.h"
-#include "selfdrive/common/timing.h"
-#include "cereal/messaging/messaging.h"
-
-#include "panda.h"
-#include "panda_flashing.h"
-#include "pigeon.h"
-
+#include "selfdrive/boardd/panda.h"
+#include "selfdrive/boardd/pigeon.h"
 
 #define MAX_IR_POWER 0.5f
 #define MIN_IR_POWER 0.0f
@@ -170,20 +162,6 @@ Panda *usb_connect() {
   return panda.release();
 }
 
-// must be called before threads or with mutex
-static Panda *usb_retry_connect() {
-  LOGW("attempting to connect");
-  while (!do_exit) {
-    Panda *panda = usb_connect();
-    if (panda) {
-      LOGW("connected to board");
-      return panda;
-    }
-    util::sleep_for(100);
-  };
-  return nullptr;
-}
-
 void can_recv(Panda *panda, PubMaster &pm) {
   kj::Array<capnp::word> can_data;
   panda->can_receive(can_data);
@@ -256,23 +234,18 @@ void can_recv_thread(Panda *panda) {
   }
 }
 
-void panda_state_thread(Panda *&panda, bool spoofing_started) {
-  LOGD("start panda state thread");
-  PubMaster pm({"pandaState"});
+void send_empty_panda_state(PubMaster *pm) {
+  MessageBuilder msg;
+  auto pandaState  = msg.initEvent().initPandaState();
+  pandaState.setPandaType(cereal::PandaState::PandaType::UNKNOWN);
+  pm->send("pandaState", msg);
+}
 
+void panda_state_thread(PubMaster *pm, Panda *panda, bool spoofing_started) {
+  LOGD("start panda state thread");
   uint32_t no_ignition_cnt = 0;
   bool ignition_last = false;
   Params params = Params();
-
-  // Broadcast empty pandaState message when panda is not yet connected
-  while (!do_exit && !panda) {
-    MessageBuilder msg;
-    auto pandaState  = msg.initEvent().initPandaState();
-
-    pandaState.setPandaType(cereal::PandaState::PandaType::UNKNOWN);
-    pm.send("pandaState", msg);
-    util::sleep_for(500);
-  }
 
   // run at 2hz
   while (!do_exit && panda->connected) {
@@ -394,7 +367,7 @@ void panda_state_thread(Panda *&panda, bool spoofing_started) {
         i++;
       }
     }
-    pm.send("pandaState", msg);
+    pm->send("pandaState", msg);
     panda->send_heartbeat();
     util::sleep_for(500);
   }
@@ -554,12 +527,7 @@ void pigeon_thread(Panda *panda) {
   delete pigeon;
 }
 
-int main(int argc, char* argv[]) {
-  std::string serial = "";
-  if (argc >= 1){
-    serial = std::string(argv[1]);
-  }
-
+int main() {
   LOGW("starting boardd");
 
   // set process priority and affinity
@@ -569,20 +537,27 @@ int main(int argc, char* argv[]) {
   err = set_core_affinity(Hardware::TICI() ? 4 : 3);
   LOG("set affinity returns %d", err);
 
-  while (!do_exit) {
-    update_panda(serial);
-    Panda *panda = nullptr;
-    std::vector<std::thread> threads;
-    threads.emplace_back(panda_state_thread, std::ref(panda), getenv("STARTED") != nullptr);
+  LOGW("attempting to connect");
+  PubMaster pm({"pandaState"});
 
-    // connect to the board
-    panda = usb_retry_connect();
-    if (panda != nullptr) {
-      threads.emplace_back(can_send_thread, panda, getenv("FAKESEND") != nullptr);
-      threads.emplace_back(can_recv_thread, panda);
-      threads.emplace_back(hardware_control_thread, panda);
-      threads.emplace_back(pigeon_thread, panda);
+  while (!do_exit) {
+    Panda *panda = usb_connect();
+
+    // Send empty pandaState and try again
+    if (panda == nullptr) {
+      send_empty_panda_state(&pm);
+      util::sleep_for(500);
+      continue;
     }
+
+    LOGW("connected to board");
+
+    std::vector<std::thread> threads;
+    threads.emplace_back(panda_state_thread, &pm, panda, getenv("STARTED") != nullptr);
+    threads.emplace_back(can_send_thread, panda, getenv("FAKESEND") != nullptr);
+    threads.emplace_back(can_recv_thread, panda);
+    threads.emplace_back(hardware_control_thread, panda);
+    threads.emplace_back(pigeon_thread, panda);
 
     for (auto &t : threads) t.join();
 
