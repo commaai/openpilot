@@ -39,7 +39,6 @@ class CarInterface(CarInterfaceBase):
       # Disable the radar and let openpilot control longitudinal
       # WARNING: THIS DISABLES AEB!
       ret.openpilotLongitudinalControl = Params().get_bool("DisableRadar")
-      ret.longitudinalActuatorDelayUpperBound = 1.0 # s
 
       ret.pcmCruise = not ret.openpilotLongitudinalControl
     else:
@@ -68,6 +67,7 @@ class CarInterface(CarInterfaceBase):
     if candidate in HONDA_BOSCH:
       ret.longitudinalTuning.kpV = [0.1]
       ret.longitudinalTuning.kiV = [0.0]
+      ret.longitudinalActuatorDelayUpperBound = 0.5 # s
     else:
       # default longitudinal tuning for all hondas
       ret.longitudinalTuning.kpBP = [0., 5., 35.]
