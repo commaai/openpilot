@@ -9,8 +9,6 @@
 #include <QColor>
 #include <QTransform>
 
-#include "nanovg.h"
-
 #include "cereal/messaging/messaging.h"
 #include "common/transformations/orientation.hpp"
 #include "selfdrive/camerad/cameras/camera_common.h"
@@ -120,8 +118,6 @@ typedef struct UIScene {
 
 typedef struct UIState {
   int fb_w = 0, fb_h = 0;
-  NVGcontext *vg;
-
   // images
   std::map<std::string, int> images;
 

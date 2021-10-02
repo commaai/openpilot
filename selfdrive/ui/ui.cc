@@ -116,7 +116,7 @@ static void update_state(UIState *s) {
     scene.engageable = cs.getEngageable() || cs.getEnabled();
     scene.dm_active = sm["driverMonitoringState"].getDriverMonitoringState().getIsActiveMode();
   }
-  if (sm.updated("modelV2") && s->vg) {
+  if (sm.updated("modelV2")) {
     auto model = sm["modelV2"].getModelV2();
     update_model(s, model);
     update_leads(s, model);
