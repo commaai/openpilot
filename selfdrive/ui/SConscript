@@ -55,7 +55,7 @@ qt_env.Program("qt/text", ["qt/text.cc"], LIBS=qt_libs)
 qt_env.Program("qt/spinner", ["qt/spinner.cc"], LIBS=qt_libs)
 
 # build main UI
-qt_src = ["main.cc", "ui.cc", "paint.cc", "qt/sidebar.cc", "qt/onroad.cc",
+qt_src = ["main.cc", "ui.cc", "qt/sidebar.cc", "qt/onroad.cc",
           "qt/window.cc", "qt/home.cc", "qt/offroad/settings.cc",
           "qt/offroad/onboarding.cc", "qt/offroad/driverview.cc",
           "#third_party/nanovg/nanovg.c"]

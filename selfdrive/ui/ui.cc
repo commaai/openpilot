@@ -19,16 +19,20 @@
 // image space.
 static bool calib_frame_to_full_frame(const UIState *s, float in_x, float in_y, float in_z, vertex_data *out) {
   const float margin = 500.0f;
+  const QRectF clip_region{-margin, -margin, s->fb_w + 2 * margin, s->fb_h + 2 * margin};
+
   const vec3 pt = (vec3){{in_x, in_y, in_z}};
   const vec3 Ep = matvecmul3(s->scene.view_from_calib, pt);
   const vec3 KEp = matvecmul3(s->wide_camera ? ecam_intrinsic_matrix : fcam_intrinsic_matrix, Ep);
 
   // Project.
-  float x = KEp.v[0] / KEp.v[2];
-  float y = KEp.v[1] / KEp.v[2];
-
-  nvgTransformPoint(&out->x, &out->y, s->car_space_transform, x, y);
-  return out->x >= -margin && out->x <= s->fb_w + margin && out->y >= -margin && out->y <= s->fb_h + margin;
+  QPointF point = s->car_space_transform.map(QPointF{KEp.v[0] / KEp.v[2], KEp.v[1] / KEp.v[2]});
+  if (clip_region.contains(point)) {
+    out->x = point.x();
+    out->y = point.y();
+    return true;
+  }
+  return false;
 }
 
 static int get_path_length_idx(const cereal::ModelDataV2::XYZTData::Reader &line, const float path_height) {

@@ -3,7 +3,6 @@
 #include <QDebug>
 
 #include "selfdrive/common/timing.h"
-#include "selfdrive/ui/paint.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/api.h"
 #ifdef ENABLE_MAPS
@@ -166,7 +165,7 @@ void OnroadHud::paintEvent(QPaintEvent *event) {
   bool is_cruise_set = maxSpeed_ != "N/A";
   configFont(p, "Open Sans", 48, "Regular");
   drawText(p, rc.center().x(), rc.top() + bdr_s + 10, Qt::AlignTop, "MAX", is_cruise_set ? 200 : 100);
-  configFont(p, "Open Sans", 78, is_cruise_set ? "Bold" : "SemiBold");
+  configFont(p, "Open Sans", 88, is_cruise_set ? "Bold" : "SemiBold");
   drawText(p, rc.center().x(), rc.bottom() - bdr_s, Qt::AlignBottom, maxSpeed_, is_cruise_set ? 255 : 100);
   // current speed
   configFont(p, "Open Sans", 180, "Bold");
@@ -262,7 +261,6 @@ void NvgWindow::initializeGL() {
   qInfo() << "OpenGL renderer:" << QString((const char*)glGetString(GL_RENDERER));
   qInfo() << "OpenGL language version:" << QString((const char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
 
-  ui_nvg_init(&QUIState::ui_state);
   prev_draw_t = millis_since_boot();
   setBackgroundColor(bg_colors[STATUS_DISENGAGED]);
 }
@@ -272,18 +270,15 @@ void NvgWindow::addLanLines(QPainterPath &path, const line_vertices_data &vd) {
 
   QPainterPath line_path;
   const vertex_data *v = &vd.v[0];
-  
-  // nvgBeginPath(s->vg);
-  // nvgMoveTo(s->vg, v[0].x, v[0].y);
-  // painter.setColor(color);
   line_path.moveTo(v[0].x, v[0].y);
   for (int i = 1; i < vd.cnt; i++) {
     line_path.lineTo(v[i].x, v[i].y);
   }
+  line_path.setFillRule(Qt::WindingFill);
   path.addPath(line_path);
 }
 
-void NvgWindow::drawVisionLaneLines(UIState *s) {
+void NvgWindow::drawVisionLaneLines(QPainter &painter, UIState *s) {
   const UIScene &scene = s->scene;
   QPainterPath path;
   if (!scene.end_to_end) {
@@ -298,23 +293,92 @@ void NvgWindow::drawVisionLaneLines(UIState *s) {
   }
   // paint path
   addLanLines(path, scene.track_vertices);
-  QPainter painter(this);
+
   painter.setPen(Qt::NoPen);
   QLinearGradient bg(0, height(), 0, height() / 4);
   bg.setColorAt(0, Qt::white);
   bg.setColorAt(1, QColor::fromRgb(255, 255, 255, 0));
-  painter.setBrush(bg);
-  painter.drawPath(path);
+  // painter.setBrush(bg);
+  painter.fillPath(path, bg);
+}
+
+void NvgWindow::drawLead(QPainter &painter, UIState *s, const cereal::ModelDataV2::LeadDataV3::Reader &lead_data, const vertex_data &vd) {
+  // Draw lead car indicator
+  auto [x, y] = vd;
+
+  float fillAlpha = 0;
+  float speedBuff = 10.;
+  float leadBuff = 40.;
+  float d_rel = lead_data.getX()[0];
+  float v_rel = lead_data.getV()[0];
+  if (d_rel < leadBuff) {
+    fillAlpha = 255*(1.0-(d_rel/leadBuff));
+    if (v_rel < 0) {
+      fillAlpha += 255*(-1*(v_rel/speedBuff));
+    }
+    fillAlpha = (int)(fmin(fillAlpha, 255));
+  }
+
+  float sz = std::clamp((25 * 30) / (d_rel / 3 + 30), 15.0f, 30.0f) * 2.35;
+  x = std::clamp(x, 0.f, s->fb_w - sz / 2);
+  y = std::fmin(s->fb_h - sz * .6, y);
+
+  float g_xo = sz/5;
+  float g_yo = sz/10;
+  QPainterPath path1;
+  path1.moveTo(x+(sz*1.35)+g_xo, y+sz+g_yo);
+  path1.lineTo(x, y-g_xo);
+  path1.lineTo(x-(sz*1.35)-g_xo, y+sz+g_yo);
+  painter.fillPath(path1, QColor(218, 202, 37, 255));
+
+  // chevron
+  QPainterPath path2;
+  path2.moveTo(x+(sz*1.25), y+sz);
+  path2.lineTo(x, y);
+  path2.lineTo(x-(sz*1.25), y+sz);
+  painter.fillPath(path2, QColor(201, 34, 49, fillAlpha));
+}
+
+void NvgWindow::resizeGL(int w, int h) {
+  CameraViewWidget::resizeGL(w, h);
+  UIState *s = &QUIState::ui_state;
+  s->fb_w = w;
+  s->fb_h = h;
+  auto intrinsic_matrix = s->wide_camera ? ecam_intrinsic_matrix : fcam_intrinsic_matrix;
+  float zoom = ZOOM / intrinsic_matrix.v[0];
+  if (s->wide_camera) {
+    zoom *= 0.5;
+  }
+
+  // Apply transformation such that video pixel coordinates match video
+  // 1) Put (0, 0) in the middle of the video
+  // 2) Apply same scaling as video
+  // 3) Put (0, 0) in top left corner of video
+  s->car_space_transform.reset();
+  s->car_space_transform.translate(w / 2, h / 2 + y_offset)
+      .scale(zoom, zoom)
+      .translate(-intrinsic_matrix.v[2], -intrinsic_matrix.v[5]);
 }
 
 void NvgWindow::paintGL() {
   CameraViewWidget::paintGL();
-
-  ui_draw(&QUIState::ui_state, width(), height());
-
+  UIState *s = &QUIState::ui_state;
+  
   double t1 = millis_since_boot();
-  drawVisionLaneLines(&QUIState::ui_state);
-  printf("draw vision lane lines %f\n", millis_since_boot() - t1);
+  QPainter painter(this);
+ 
+  drawVisionLaneLines(painter, s);
+  if (s->scene.longitudinal_control) {
+    auto lead_one = (*s->sm)["modelV2"].getModelV2().getLeadsV3()[0];
+    auto lead_two = (*s->sm)["modelV2"].getModelV2().getLeadsV3()[1];
+    if (lead_one.getProb() > .5) {
+      drawLead(painter, s, lead_one, s->scene.lead_vertices[0]);
+    }
+    if (lead_two.getProb() > .5 && (std::abs(lead_one.getX()[0] - lead_two.getX()[0]) > 3.0)) {
+      drawLead(painter, s, lead_two, s->scene.lead_vertices[1]);
+    }
+  }
+  printf("qt paint %f\n", millis_since_boot() - t1);
 
   double cur_draw_t = millis_since_boot();
   double dt = cur_draw_t - prev_draw_t;

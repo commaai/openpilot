@@ -61,8 +61,9 @@ public:
 
 protected:
   void addLanLines(QPainterPath &path, const line_vertices_data &vd);
-  void drawVisionLaneLines(UIState *s);
-
+  void drawVisionLaneLines(QPainter &painter, UIState *s);
+  void drawLead(QPainter &painter, UIState *s, const cereal::ModelDataV2::LeadDataV3::Reader &lead_data, const vertex_data &vd);
+  void resizeGL(int w, int h) override;
   void paintGL() override;
   void initializeGL() override;
   double prev_draw_t = 0;

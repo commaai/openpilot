@@ -7,6 +7,7 @@
 #include <QObject>
 #include <QTimer>
 #include <QColor>
+#include <QTransform>
 
 #include "nanovg.h"
 
@@ -132,7 +133,7 @@ typedef struct UIState {
   bool awake;
   bool has_prime = false;
 
-  float car_space_transform[6];
+  QTransform car_space_transform;
   bool wide_camera;
 } UIState;
 
