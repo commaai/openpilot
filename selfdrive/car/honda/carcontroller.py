@@ -162,8 +162,10 @@ class CarController():
     can_sends.append(hondacan.create_steering_control(self.packer, apply_steer,
       lkas_active, CS.CP.carFingerprint, idx, CS.CP.openpilotLongitudinalControl))
 
-    stopping = actuators.longControlState == LongCtrlState.stopping
-    starting = actuators.longControlState == LongCtrlState.starting
+    # stopping = actuators.longControlState == LongCtrlState.stopping
+    # starting = actuators.longControlState == LongCtrlState.starting
+    stopping = accel < 0 and CS.out.vEgo < 0.3
+    starting = accel > 0 and CS.out.vEgo < 0.3
 
     # Prevent rolling backwards
     accel = -4.0 if stopping else accel
