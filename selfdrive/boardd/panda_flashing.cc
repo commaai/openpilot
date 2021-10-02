@@ -1,35 +1,9 @@
-#include <stdio.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <sched.h>
-#include <errno.h>
-#include <sys/cdefs.h>
-#include <sys/types.h>
-#include <sys/resource.h>
+#include "selfdrive/boardd/panda_flashing.h"
 
-#include <ctime>
 #include <cassert>
-#include <iostream>
-#include <algorithm>
-#include <bitset>
-#include <thread>
-#include <atomic>
 
-#include <libusb-1.0/libusb.h>
-
-#include "cereal/gen/cpp/car.capnp.h"
-
-#include "selfdrive/common/util.h"
-#include "selfdrive/common/params.h"
-#include "selfdrive/common/swaglog.h"
-#include "selfdrive/common/timing.h"
-#include "cereal/messaging/messaging.h"
-
-#include "panda.h"
-#include "panda_dfu.h"
-#include "panda_flashing.h"
-#include "pigeon.h"
+#include "selfdrive/boardd/panda.h"
+#include "selfdrive/boardd/panda_dfu.h"
 
 #define NIBBLE_TO_HEX(n) ((n) < 10 ? (n) + '0' : ((n) - 10) + 'A')
 #define REQUEST_IN 192

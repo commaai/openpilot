@@ -1,4 +1,4 @@
-#include "panda_dfu.h"
+#include "selfdrive/boardd/panda_dfu.h"
 
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
