@@ -69,7 +69,8 @@ if ! command -v "pyenv" > /dev/null 2>&1; then
 fi
 
 # in the openpilot repo
-cd $HOME/openpilot
+TOOLS_DIR="$(cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+cd "$(dirname $TOOLS_DIR)"
 
 source ~/.bashrc
 if [ -z "$OPENPILOT_ENV" ]; then
