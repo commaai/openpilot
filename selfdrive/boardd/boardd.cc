@@ -560,20 +560,17 @@ int main(int argc, char* argv[]) {
     serial = std::string(argv[1]);
   }
 
-  int err;
   LOGW("starting boardd");
 
   // set process priority and affinity
   int err = set_realtime_priority(54);
   LOG("set priority returns %d", err);
 
-  panda_set_power(true);
-  while (!do_exit){
-    update_panda(serial);
   err = set_core_affinity(Hardware::TICI() ? 4 : 3);
   LOG("set affinity returns %d", err);
 
   while (!do_exit) {
+    update_panda(serial);
     Panda *panda = nullptr;
     std::vector<std::thread> threads;
     threads.emplace_back(panda_state_thread, std::ref(panda), getenv("STARTED") != nullptr);

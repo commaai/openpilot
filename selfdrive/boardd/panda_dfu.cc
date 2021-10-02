@@ -9,7 +9,7 @@
 #define DFU_CLRSTATUS 4
 #define DFU_ABORT 6
 
-const std::string basedir = util::getenv_default("BASEDIR", "", "/data/pythonpath");
+const std::string basedir = util::getenv("BASEDIR", "/data/pythonpath");
 
 void PandaDFU::status() {
   std::vector<uint8_t> stat(6);

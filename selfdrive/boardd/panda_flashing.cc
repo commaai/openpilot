@@ -61,7 +61,7 @@ std::string dfu_serial_from_serial(std::string serial){
   return convert(left)+convert(middle)+convert(right);
 }
 
-const std::string basedir = util::getenv_default("BASEDIR", "", "/data/pythonpath");
+const std::string basedir = util::getenv("BASEDIR", "/data/pythonpath");
 
 void build_st(std::string target, bool clean, bool output) {
   std::string cmd = "cd " + basedir + "/panda/board";

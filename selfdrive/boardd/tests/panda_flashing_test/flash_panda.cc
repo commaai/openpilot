@@ -1,4 +1,4 @@
-#include "panda_flashing.h"
+#include "selfdrive/boardd/panda_flashing.h"
 #include <iostream>
 #include <algorithm>
 
