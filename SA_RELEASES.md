@@ -1,6 +1,7 @@
 Stock Additions Update 1 - 2021-09-30 (0.8.10)
 ===
  * Update SA to 0.8.10 with cherry-picked improved lead model
+ * Added UI path coloring back thanks to kata300!
 
 Stock Additions Update 2 - 2021-08-15 (0.8.9)
 ===
