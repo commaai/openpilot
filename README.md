@@ -1,4 +1,22 @@
-![](https://user-images.githubusercontent.com/37757984/127420744-89ca219c-8f8e-46d3-bccf-c1cb53b81bb1.png)
+Stand Back Labs openpilot vehicle extensions
+------
+
+This is a custom fork based on Comma.ai's openpilot project.
+Goals:
+* Remain fully compatible with Comma.ai hardware and infrastructure
+* Keep repository in-step with latest Comma.ai master branches through automation (i.e. bleeding edge)
+* (TODO: also coordinate with comma.ai release packages - tricky due to hotfixing)
+* Follow Comma.ai's rules as closely as possible
+* Maintain customizations such that Comma.ai _could_ upstream (even though they likely will not)
+* Serve as a repository for disenfranchised vehicle ports, which can be used by other fork maintainers
+
+Added vehicles
+------
+This provides basic support for most GM vehicles with a front facing camera and the Lane-keep assist feature.
+Note: if your vehicle has radar-based adaptive cruise, only use this port if you are having steering faults.
+Additionally, this fixes support for any GM vehicles with the so-called "picky" steering column (such as the Bolt EV)
+Models with some success: Bolt EV, Equinox, Escalade, Acadia Denali, Malibu, Tahoe, Volt
+
 
 Table of Contents
 =======================

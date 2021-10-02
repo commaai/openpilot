@@ -25,8 +25,8 @@ class CarControllerParams():
     MAX_GAS = 3072              # Only a safety limit
     ZERO_GAS = 2048
     MAX_BRAKE = 350             # Should be around 3.5m/s^2, including regen
-
-    self.ACCEL_MAX = 2.0 # m/s^2
+    # TODO if this bump works, it belongs in interface per car
+    self.ACCEL_MAX = 4.0 # m/s^2
 
     # Allow small margin below -3.5 m/s^2 from ISO 15622:2018 since we
     # perform the closed loop control, and might need some
