@@ -36,12 +36,6 @@ struct __attribute__((packed)) health_t {
   uint8_t heartbeat_lost;
 };
 
-struct UsbContext {
-  UsbContext();
-  ~UsbContext();
-  libusb_context *ctx = nullptr;
-};
-
 class PandaComm {
 public:
   PandaComm(uint16_t vid, uint16_t pid, const std::string &serial = {});
@@ -63,7 +57,6 @@ protected:
   void handle_usb_issue(int err, const char func[]);
 
   libusb_device_handle *dev_handle = nullptr;
-  UsbContext ctx;
   std::mutex usb_lock;
 };
 

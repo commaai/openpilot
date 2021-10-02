@@ -7,25 +7,34 @@
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
 
-UsbContext::UsbContext() {
-  int err = libusb_init(&ctx);
-  assert(err == 0);
+struct UsbContext {
+  UsbContext() {
+    int err = libusb_init(&ctx);
+    assert(err == 0);
 
 #if LIBUSB_API_VERSION >= 0x01000106
-  libusb_set_option(ctx, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_INFO);
+    libusb_set_option(ctx, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_INFO);
 #else
-  libusb_set_debug(ctx, 3);
+    libusb_set_debug(ctx, 3);
 #endif
-}
+  }
 
-UsbContext::~UsbContext() {
-  libusb_exit(ctx);
+  ~UsbContext() {
+    libusb_exit(ctx);
+  }
+
+  libusb_context *ctx = nullptr;
+};
+
+libusb_context *libUsbContext() {
+  static UsbContext context;
+  return context.ctx;
 }
 
 class UsbDeviceList {
 public:
-  UsbDeviceList(libusb_context *ctx) {
-    num_devices = libusb_get_device_list(ctx, &dev_list);
+  UsbDeviceList() {
+    num_devices = libusb_get_device_list(libUsbContext(), &dev_list);
     if (num_devices < 0) {
       LOGE("libusb can't get device list");
     }
@@ -62,7 +71,7 @@ private:
 // class PandaComm
 
 PandaComm::PandaComm(uint16_t vid, uint16_t pid, const std::string &serial) {
-  UsbDeviceList device_list(ctx.ctx);
+  UsbDeviceList device_list;
   for (auto&[dev, device_serial] : device_list.list(vid, pid)) {
     if (serial.empty() || serial == device_serial) {
       libusb_open(dev, &dev_handle);
@@ -89,8 +98,7 @@ PandaComm::~PandaComm() {
 
 std::vector<std::string> PandaComm::list() {
   std::vector<std::string> serials;
-  UsbContext ctx;
-  UsbDeviceList device_list(ctx.ctx);
+  UsbDeviceList device_list;
   for (auto&[dev, serial] : device_list.list(0xbbaa, 0xddcc)) {
     serials.push_back(serial);
   }
