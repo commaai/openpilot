@@ -60,6 +60,9 @@ public:
   explicit NvgWindow(VisionStreamType type, QWidget* parent = 0) : CameraViewWidget(type, true, parent) {}
 
 protected:
+  void addLanLines(QPainterPath &path, const line_vertices_data &vd);
+  void drawVisionLaneLines(UIState *s);
+
   void paintGL() override;
   void initializeGL() override;
   double prev_draw_t = 0;

@@ -135,8 +135,9 @@ static void ui_draw_world(UIState *s) {
   nvgScissor(s->vg, 0, 0, s->fb_w, s->fb_h);
 
   // Draw lane edges and vision/mpc tracks
+  double t1 = millis_since_boot();
   ui_draw_vision_lane_lines(s);
-
+  printf("ui_draw_vision_lane_lines %f\n", millis_since_boot() - t1);
   // Draw lead indicators if openpilot is handling longitudinal
   if (s->scene.longitudinal_control) {
     auto lead_one = (*s->sm)["modelV2"].getModelV2().getLeadsV3()[0];

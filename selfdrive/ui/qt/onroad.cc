@@ -267,9 +267,54 @@ void NvgWindow::initializeGL() {
   setBackgroundColor(bg_colors[STATUS_DISENGAGED]);
 }
 
+void NvgWindow::addLanLines(QPainterPath &path, const line_vertices_data &vd) {
+  if (vd.cnt == 0) return;
+
+  QPainterPath line_path;
+  const vertex_data *v = &vd.v[0];
+  
+  // nvgBeginPath(s->vg);
+  // nvgMoveTo(s->vg, v[0].x, v[0].y);
+  // painter.setColor(color);
+  line_path.moveTo(v[0].x, v[0].y);
+  for (int i = 1; i < vd.cnt; i++) {
+    line_path.lineTo(v[i].x, v[i].y);
+  }
+  path.addPath(line_path);
+}
+
+void NvgWindow::drawVisionLaneLines(UIState *s) {
+  const UIScene &scene = s->scene;
+  QPainterPath path;
+  if (!scene.end_to_end) {
+    // lanelines
+    for (int i = 0; i < std::size(scene.lane_line_vertices); i++) {
+      addLanLines(path, scene.lane_line_vertices[i]);
+    }
+    // road edges
+    for (int i = 0; i < std::size(scene.road_edge_vertices); i++) {
+      addLanLines(path, scene.road_edge_vertices[i]);
+    }
+  }
+  // paint path
+  addLanLines(path, scene.track_vertices);
+  QPainter painter(this);
+  painter.setPen(Qt::NoPen);
+  QLinearGradient bg(0, height(), 0, height() / 4);
+  bg.setColorAt(0, Qt::white);
+  bg.setColorAt(1, QColor::fromRgb(255, 255, 255, 0));
+  painter.setBrush(bg);
+  painter.drawPath(path);
+}
+
 void NvgWindow::paintGL() {
   CameraViewWidget::paintGL();
+
   ui_draw(&QUIState::ui_state, width(), height());
+
+  double t1 = millis_since_boot();
+  drawVisionLaneLines(&QUIState::ui_state);
+  printf("draw vision lane lines %f\n", millis_since_boot() - t1);
 
   double cur_draw_t = millis_since_boot();
   double dt = cur_draw_t - prev_draw_t;
