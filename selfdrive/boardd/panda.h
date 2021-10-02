@@ -60,18 +60,19 @@ public:
   int usb_bulk_read(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout=TIMEOUT);
 
 protected:
-  libusb_device_handle *dev_handle = NULL;
+  void handle_usb_issue(int err, const char func[]);
+
+  libusb_device_handle *dev_handle = nullptr;
   UsbContext ctx;
   std::mutex usb_lock;
-  void handle_usb_issue(int err, const char func[]);
 };
 
-class Panda : public PandaComm{
+class Panda : public PandaComm {
 public:
-  Panda(std::string serial="");
+  Panda(std::string serial = {});
   ~Panda();
 
-  std::string usb_serial;
+  // std::string usb_serial;
   cereal::PandaState::PandaType hw_type = cereal::PandaState::PandaType::UNKNOWN;
   bool has_rtc = false;
 

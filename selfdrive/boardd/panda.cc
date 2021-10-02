@@ -22,17 +22,19 @@ UsbContext::~UsbContext() {
   libusb_exit(ctx);
 }
 
-class USBDeviceList {
+class UsbDeviceList {
 public:
-  USBDeviceList(libusb_context *ctx) {
+  UsbDeviceList(libusb_context *ctx) {
     num_devices = libusb_get_device_list(ctx, &dev_list);
     if (num_devices < 0) {
       LOGE("libusb can't get device list");
     }
   }
-  ~USBDeviceList() {
+
+  ~UsbDeviceList() {
     if (dev_list) libusb_free_device_list(dev_list, 1);
   }
+
   std::vector<std::pair<libusb_device *, std::string>> list(uint16_t vid, uint16_t pid) {
     std::vector<std::pair<libusb_device *, std::string>> result;
     for (size_t i = 0; i < num_devices; ++i) {
@@ -60,7 +62,7 @@ private:
 // class PandaComm
 
 PandaComm::PandaComm(uint16_t vid, uint16_t pid, const std::string &serial) {
-  USBDeviceList device_list(ctx.ctx);
+  UsbDeviceList device_list(ctx.ctx);
   for (auto&[dev, device_serial] : device_list.list(vid, pid)) {
     if (serial.empty() || serial == device_serial) {
       libusb_open(dev, &dev_handle);
@@ -88,7 +90,7 @@ PandaComm::~PandaComm() {
 std::vector<std::string> PandaComm::list() {
   std::vector<std::string> serials;
   UsbContext ctx;
-  USBDeviceList device_list(ctx.ctx);
+  UsbDeviceList device_list(ctx.ctx);
   for (auto&[dev, serial] : device_list.list(0xbbaa, 0xddcc)) {
     serials.push_back(serial);
   }
