@@ -1,16 +1,13 @@
 #pragma once
 
 #include <atomic>
-#include <cstdint>
-#include <ctime>
 #include <mutex>
 #include <optional>
 #include <vector>
 
 #include <libusb-1.0/libusb.h>
 
-#include "cereal/gen/cpp/car.capnp.h"
-#include "cereal/gen/cpp/log.capnp.h"
+#include "cereal/messaging/messaging.h"
 
 // double the FIFO size
 #define RECV_SIZE (0x1000)
@@ -39,34 +36,44 @@ struct __attribute__((packed)) health_t {
   uint8_t heartbeat_lost;
 };
 
+struct UsbContext {
+  UsbContext();
+  ~UsbContext();
+  libusb_context *ctx = nullptr;
+};
 
-class Panda {
- private:
-  libusb_context *ctx = NULL;
-  libusb_device_handle *dev_handle = NULL;
-  std::mutex usb_lock;
-  std::vector<uint32_t> send;
-  void handle_usb_issue(int err, const char func[]);
-  void cleanup();
-
- public:
-  Panda(std::string serial="");
-  ~Panda();
-
-  std::string usb_serial;
+class PandaComm {
+public:
+  PandaComm(uint16_t vid, uint16_t pid, const std::string &serial = {});
+  virtual ~PandaComm();
   std::atomic<bool> connected = true;
   std::atomic<bool> comms_healthy = true;
-  cereal::PandaState::PandaType hw_type = cereal::PandaState::PandaType::UNKNOWN;
-  bool has_rtc = false;
 
   // Static functions
   static std::vector<std::string> list();
 
   // HW communication
+  int usb_transfer(libusb_endpoint_direction dir, uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned int timeout = TIMEOUT);
   int usb_write(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned int timeout=TIMEOUT);
   int usb_read(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned char *data, uint16_t wLength, unsigned int timeout=TIMEOUT);
   int usb_bulk_write(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout=TIMEOUT);
   int usb_bulk_read(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout=TIMEOUT);
+
+protected:
+  libusb_device_handle *dev_handle = NULL;
+  UsbContext ctx;
+  std::mutex usb_lock;
+  void handle_usb_issue(int err, const char func[]);
+};
+
+class Panda : public PandaComm{
+public:
+  Panda(std::string serial="");
+  ~Panda();
+
+  std::string usb_serial;
+  cereal::PandaState::PandaType hw_type = cereal::PandaState::PandaType::UNKNOWN;
+  bool has_rtc = false;
 
   // Panda functionality
   cereal::PandaState::PandaType get_hw_type();
