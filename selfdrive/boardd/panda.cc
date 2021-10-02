@@ -42,26 +42,25 @@ public:
     if (dev_list) libusb_free_device_list(dev_list, 1);
   }
 
-  std::vector<std::pair<libusb_device *, std::string>> list(uint16_t vid, uint16_t pid) {
+  auto list(uint16_t vid, uint16_t pid) {
     std::vector<std::pair<libusb_device *, std::string>> result;
+    libusb_device_descriptor desc = {};
+    libusb_device_handle *handle = nullptr;
+
     for (size_t i = 0; i < num_devices; ++i) {
-      libusb_device_descriptor desc = {};
       int ret = libusb_get_device_descriptor(dev_list[i], &desc);
-      if (ret == LIBUSB_SUCCESS && desc.idVendor == vid && desc.idProduct == pid) {
-        libusb_device_handle *handle = nullptr;
-        if (libusb_open(dev_list[i], &handle) == LIBUSB_SUCCESS) {
-          unsigned char serial[256] = {'\0'};
-          if (libusb_get_string_descriptor_ascii(handle, desc.iSerialNumber, serial, std::size(serial) - 1) > 0) {
-            result.push_back({dev_list[i], (const char *)serial});
-          }
-          libusb_close(handle);
-        }
+      if (ret == 0 && desc.idVendor == vid && desc.idProduct == pid && libusb_open(dev_list[i], &handle) == 0) {
+        unsigned char serial[256] = {'\0'};
+        libusb_get_string_descriptor_ascii(handle, desc.iSerialNumber, serial, std::size(serial) - 1);
+        result.push_back({dev_list[i], (const char *)serial});
+        libusb_close(handle);
       }
     }
+
     return result;
   }
 
- private:
+private:
   libusb_device **dev_list = nullptr;
   ssize_t num_devices = 0;
 };
@@ -171,8 +170,9 @@ void PandaComm::handle_usb_issue(int err, const char func[]) {
 // class Panda
 
 Panda::Panda(std::string serial) : PandaComm(PANDA_VENDOR_ID, PANDA_PRODUCT_ID, serial) {
-  hw_type = get_hw_type();
   typedef cereal::PandaState::PandaType PandaType;
+
+  hw_type = get_hw_type();
   assert((hw_type != PandaType::WHITE_PANDA) && (hw_type != PandaType::GREY_PANDA));
   has_rtc = (hw_type == PandaType::UNO) || (hw_type == PandaType::DOS);
 }
