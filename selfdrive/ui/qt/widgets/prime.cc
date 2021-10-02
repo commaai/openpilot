@@ -72,20 +72,8 @@ PrimeUserWidget::PrimeUserWidget(QWidget* parent) : QWidget(parent) {
   primeLayout->setMargin(0);
   primeWidget->setContentsMargins(60, 50, 60, 50);
 
-  subscribed = new QLabel("✓ SUBSCRIBED");
-  subscribed->setProperty("prime", true);
-  subscribed->setStyleSheet(R"(
-    QLabel {
-      font-size: 41px;
-      font-weight: bold;
-    }
-    QLabel[prime=true] {
-      color: #86FF4E;
-    }
-    QLabel[prime=false] {
-      color: #ff4e4e;
-    }
-  )");
+  subscribed = new QLabel("✕ NOT SUBSCRIBED");
+  subscribed->setStyleSheet("font-size: 41px; font-weight: bold; color: #ff4e4e;");
   primeLayout->addWidget(subscribed, 0, Qt::AlignTop);
 
   primeLayout->addSpacing(60);
@@ -141,7 +129,7 @@ PrimeUserWidget::PrimeUserWidget(QWidget* parent) : QWidget(parent) {
 
 void PrimeUserWidget::setPrime(bool hasPrime) {
   subscribed->setText(hasPrime ? "✓ SUBSCRIBED" : "✕ NOT SUBSCRIBED");
-  subscribed->setProperty("prime", hasPrime);
+  subscribed->setStyleSheet(QString("font-size: 41px; font-weight: bold; color: %1;").arg(hasPrime ? "#86FF4E" : "#ff4e4e"));
   commaPrime->setText(hasPrime ? "comma prime" : "got prime?");
 }
 
