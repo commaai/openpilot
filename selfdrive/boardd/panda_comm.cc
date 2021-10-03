@@ -17,7 +17,9 @@ struct UsbContext {
 #endif
   }
 
-  ~UsbContext() { libusb_exit(ctx); }
+  ~UsbContext() { 
+    libusb_exit(ctx); 
+  }
 
   libusb_context *ctx = nullptr;
 };
