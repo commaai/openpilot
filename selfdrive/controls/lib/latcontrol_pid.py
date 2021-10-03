@@ -11,7 +11,7 @@ class LatControlPID():
                             (CP.lateralTuning.pid.kiBP, CP.lateralTuning.pid.kiV),
                             k_f=CP.lateralTuning.pid.kf, pos_limit=1.0, neg_limit=-1.0,
                             sat_limit=CP.steerLimitTimer)
-    self.feedforward = CI.get_steer_feedforward
+    self.get_steer_feedforward = CI.get_steer_feedforward
 
   def reset(self):
     self.pid.reset()
@@ -35,7 +35,7 @@ class LatControlPID():
       self.pid.neg_limit = -steers_max
 
       # offset does not contribute to resistive torque
-      steer_feedforward = self.feedforward(angle_steers_des_no_offset, CS.vEgo)
+      steer_feedforward = self.get_steer_feedforward(angle_steers_des_no_offset, CS.vEgo)
 
       deadzone = 0.0
 
