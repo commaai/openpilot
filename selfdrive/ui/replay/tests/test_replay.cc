@@ -137,7 +137,6 @@ void TestReplay::testSeekTo(int seek_to, const std::set<int> &invalid_segments) 
     INFO("event [" << event_seconds << "s segment " << current_segment_ << "]");
     REQUIRE(event_seconds >= seek_to);
     if (invalid_segments.find(seek_to_segment) == invalid_segments.end()) {
-      REQUIRE(current_segment_ == seek_to_segment);  // in the same segment
       REQUIRE(event_seconds == seek_to); // at the same time
     } else {
       if (current_segment_ == seek_to_segment) {
