@@ -9,14 +9,18 @@ LogReader::~LogReader() {
   for (auto e : events) delete e;
 }
 
-bool LogReader::load(const std::string &file) {
-  std::stringstream stream;
-  if (!readBZ2File(file, stream)) {
-    LOGW("bz2 decompress failed");
-    return false;
+bool LogReader::load(const std::string &file, bool is_bz2file) {
+  if (is_bz2file) {
+    std::stringstream stream;
+    if (!readBZ2File(file, stream)) {
+      LOGW("bz2 decompress failed");
+      return false;
+    }
+    raw_ = stream.str();
+  } else {
+    raw_ = util::read_file(file);
   }
 
-  raw_ = stream.str();
   kj::ArrayPtr<const capnp::word> words((const capnp::word *)raw_.data(), raw_.size() / sizeof(capnp::word));
   while (words.size() > 0) {
     try {

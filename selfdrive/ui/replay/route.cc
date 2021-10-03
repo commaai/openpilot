@@ -111,7 +111,13 @@ Segment::~Segment() {
 void Segment::downloadFile(const QString &url) {
   qDebug() << "download" << url;
   download_threads_.emplace_back(QThread::create([=]() {
-    httpMultiPartDownload(url.toStdString(), localPath(url).toStdString(), connections_per_file, &aborting_);
+    const std::string local_file = localPath(url).toStdString();
+    bool ret = httpMultiPartDownload(url.toStdString(), local_file, connections_per_file, &aborting_);
+    if (ret && url == log_path_) {
+      // pre-decompress log file.
+      std::ofstream ostrm(local_file + "_decompressed", std::ios::binary);
+      readBZ2File(local_file, ostrm);
+    }
     if (--downloading_ == 0 && !aborting_) {
       load();
     }
@@ -121,9 +127,13 @@ void Segment::downloadFile(const QString &url) {
 // load concurrency
 void Segment::load() {
   std::vector<std::future<bool>> futures;
+
   futures.emplace_back(std::async(std::launch::async, [=]() {
+    const std::string bzip_file = localPath(log_path_).toStdString();
+    const std::string decompressed_file = bzip_file + "_decompressed";
+    bool is_bzip = !util::file_exists(decompressed_file);
     log = std::make_unique<LogReader>();
-    return log->load(localPath(log_path_).toStdString());
+    return log->load(is_bzip ? bzip_file : decompressed_file, is_bzip);
   }));
 
   QString camera_files[] = {road_cam_path_, files_.driver_cam, files_.wide_road_cam};
