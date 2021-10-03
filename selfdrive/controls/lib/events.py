@@ -219,14 +219,6 @@ def wrong_car_mode_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: boo
   return NoEntryAlert(text, duration_hud_alert=0.)
 
 
-def startup_fuzzy_fingerprint_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
-  return Alert(
-    "WARNING: No Exact Match on Car Model",
-    f"Closest Match: {CP.carFingerprint.title()[:40]}",
-    AlertStatus.userPrompt, AlertSize.mid,
-    Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 10.)
-
-
 def joystick_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
   axes = sm['testJoystick'].axes
   gb, steer = list(axes)[:2] if len(axes) else (0., 0.)
@@ -289,18 +281,6 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       "Always keep hands on wheel and eyes on road",
       AlertStatus.normal, AlertSize.mid,
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 10.),
-  },
-
-  # openpilot uses the version strings from various ECUs to detect the correct car model.
-  # Usually all ECUs are recognized and an exact match to a car model can be made. Sometimes
-  # one or two ECUs have unrecognized versions, but the others are present in the database.
-  # If openpilot is confident about the match to a car model, it fingerprints anyway.
-  # In this case an alert is thrown since there is a small chance the wrong car was detected
-  # and the user should pay extra attention.
-  # This alert can be prevented by adding all ECU firmware version to openpilot:
-  # https://github.com/commaai/openpilot/wiki/Fingerprinting
-  EventName.startupFuzzyFingerprint: {
-    ET.PERMANENT: startup_fuzzy_fingerprint_alert,
   },
 
   EventName.startupNoFw: {
@@ -812,7 +792,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       "",
       AlertStatus.normal, AlertSize.full,
       Priority.LOWEST, VisualAlert.none, AudibleAlert.none, 0., 0., .2, creation_delay=0.5),
-    ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("Reverse Gear"),
+    ET.USER_DISABLE: ImmediateDisableAlert("Reverse Gear"),
     ET.NO_ENTRY: NoEntryAlert("Reverse Gear"),
   },
 

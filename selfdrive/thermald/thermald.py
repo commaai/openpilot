@@ -48,7 +48,7 @@ THERMAL_BANDS = OrderedDict({
 })
 
 # Override to highest thermal band when offroad and above this temp
-OFFROAD_DANGER_TEMP = 70.0
+OFFROAD_DANGER_TEMP = 79.5 if TICI else 70.0
 
 prev_offroad_states: Dict[str, Tuple[bool, Optional[str]]] = {}
 
@@ -177,6 +177,8 @@ def thermald_thread():
   network_info = None
   modem_version = None
   registered_count = 0
+  nvme_temps = None
+  modem_temps = None
 
   current_filter = FirstOrderFilter(0., CURRENT_TAU, DT_TRML)
   temp_filter = FirstOrderFilter(0., TEMP_TAU, DT_TRML)
@@ -196,22 +198,9 @@ def thermald_thread():
   # TODO: use PI controller for UNO
   controller = PIController(k_p=0, k_i=2e-3, neg_limit=-80, pos_limit=0, rate=(1 / DT_TRML))
 
+  # Leave flag for loggerd to indicate device was left onroad
   if params.get_bool("IsOnroad"):
-    cloudlog.event("onroad flag not cleared")
-
-  # CPR3 logging
-  if EON:
-    base_path = "/sys/kernel/debug/cpr3-regulator/"
-    cpr_files = [p for p in Path(base_path).glob("**/*") if p.is_file()]
-    cpr_files = ["/sys/kernel/debug/regulator/pm8994_s11/voltage"] + cpr_files
-    cpr_data = {}
-    for cf in cpr_files:
-      with open(cf, "r") as f:
-        try:
-          cpr_data[str(cf)] = f.read().strip()
-        except Exception:
-          pass
-    cloudlog.event("CPR", data=cpr_data)
+    params.put_bool("BootedOnroad", True)
 
   while 1:
     pandaState = messaging.recv_sock(pandaState_sock, wait=True)
@@ -257,12 +246,14 @@ def thermald_thread():
           params.clear_all(ParamKeyType.CLEAR_ON_PANDA_DISCONNECT)
       pandaState_prev = pandaState
 
-    # get_network_type is an expensive call. update every 10s
+    # these are expensive calls. update every 10s
     if (count % int(10. / DT_TRML)) == 0:
       try:
         network_type = HARDWARE.get_network_type()
         network_strength = HARDWARE.get_network_strength(network_type)
         network_info = HARDWARE.get_network_info()  # pylint: disable=assignment-from-none
+        nvme_temps = HARDWARE.get_nvme_temps()
+        modem_temps = HARDWARE.get_modem_temperatures()
 
         # Log modem version once
         if modem_version is None:
@@ -291,6 +282,10 @@ def thermald_thread():
     msg.deviceState.networkStrength = network_strength
     if network_info is not None:
       msg.deviceState.networkInfo = network_info
+    if nvme_temps is not None:
+      msg.deviceState.nvmeTempC = nvme_temps
+    if modem_temps is not None:
+      msg.deviceState.modemTempC = modem_temps
 
     msg.deviceState.batteryPercent = HARDWARE.get_battery_capacity()
     msg.deviceState.batteryCurrent = HARDWARE.get_battery_current()

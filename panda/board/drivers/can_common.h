@@ -100,7 +100,21 @@ bool can_push(can_ring *q, CAN_FIFOMailBox_TypeDef *elem) {
   if (!ret) {
     can_overflow_cnt++;
     #ifdef DEBUG
-      puts("can_push failed!\n");
+      puts("can_push to ");
+      if (q == &can_rx_q) {
+        puts("can_rx_q");
+      } else if (q == &can_tx1_q) {
+        puts("can_tx1_q");
+      } else if (q == &can_tx2_q) {
+        puts("can_tx2_q");
+      } else if (q == &can_tx3_q) {
+        puts("can_tx3_q");
+      } else if (q == &can_txgmlan_q) {
+        puts("can_txgmlan_q");
+      } else {
+        puts("unknown");
+      }
+      puts(" failed!\n");
     #endif
   }
   return ret;
@@ -125,6 +139,8 @@ void can_clear(can_ring *q) {
   q->w_ptr = 0;
   q->r_ptr = 0;
   EXIT_CRITICAL();
+  // handle TX buffer full with zero ECUs awake on the bus
+  usb_cb_ep3_out_complete();
 }
 
 // assign CAN numbering

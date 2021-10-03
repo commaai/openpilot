@@ -823,9 +823,11 @@ void usb_irqhandler(void) {
       // USBx_OUTEP(3)->DOEPTSIZ = (1U << 19) | 0x40U;
       // USBx_OUTEP(3)->DOEPCTL |= USB_OTG_DOEPCTL_CNAK;
     } else if ((USBx_OUTEP(3)->DOEPINT) != 0) {
-      puts("OUTEP3 error ");
-      puth(USBx_OUTEP(3)->DOEPINT);
-      puts("\n");
+      #ifdef DEBUG_USB
+        puts("OUTEP3 error ");
+        puth(USBx_OUTEP(3)->DOEPINT);
+        puts("\n");
+      #endif
     } else {
       // USBx_OUTEP(3)->DOEPINT is 0, ok to skip
     }

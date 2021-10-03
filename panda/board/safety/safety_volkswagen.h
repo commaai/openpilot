@@ -37,7 +37,7 @@ addr_checks volkswagen_mqb_rx_checks = {volkswagen_mqb_addr_checks, VOLKSWAGEN_M
 #define MSG_MOTOR_2     0x288   // RX from ECU, for CC state and brake switch state
 #define MSG_MOTOR_3     0x380   // RX from ECU, for driver throttle input
 #define MSG_GRA_NEU     0x38A   // TX by OP, ACC control buttons for cancel/resume
-#define MSG_BREMSE_3    0x4A0   // RX from ABS, for wheel speeds
+#define MSG_BREMSE_1    0x1A0   // RX from ABS, for ego speed
 #define MSG_LDW_1       0x5BE   // TX by OP, Lane line recognition and text alerts
 
 // Transmit of GRA_Neu is allowed on bus 0 and 2 to keep compatibility with gateway and camera integration
@@ -48,7 +48,7 @@ AddrCheckStruct volkswagen_pq_addr_checks[] = {
   {.msg = {{MSG_LENKHILFE_3, 0, 6, .check_checksum = true,  .max_counter = 15U, .expected_timestep = 10000U}, { 0 }, { 0 }}},
   {.msg = {{MSG_MOTOR_2, 0, 8, .check_checksum = false, .max_counter = 0U,  .expected_timestep = 20000U}, { 0 }, { 0 }}},
   {.msg = {{MSG_MOTOR_3, 0, 8, .check_checksum = false, .max_counter = 0U,  .expected_timestep = 10000U}, { 0 }, { 0 }}},
-  {.msg = {{MSG_BREMSE_3, 0, 8, .check_checksum = false, .max_counter = 0U,  .expected_timestep = 10000U}, { 0 }, { 0 }}},
+  {.msg = {{MSG_BREMSE_1, 0, 8, .check_checksum = false, .max_counter = 0U,  .expected_timestep = 10000U}, { 0 }, { 0 }}},
 };
 #define VOLKSWAGEN_PQ_ADDR_CHECKS_LEN (sizeof(volkswagen_pq_addr_checks) / sizeof(volkswagen_pq_addr_checks[0]))
 addr_checks volkswagen_pq_rx_checks = {volkswagen_pq_addr_checks, VOLKSWAGEN_PQ_ADDR_CHECKS_LEN};
@@ -208,15 +208,12 @@ static int volkswagen_pq_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   if (valid && (GET_BUS(to_push) == 0)) {
     int addr = GET_ADDR(to_push);
 
-    // Update in-motion state by sampling front wheel speeds
-    // Signal: Bremse_3.Radgeschw__VL_4_1 (front left)
-    // Signal: Bremse_3.Radgeschw__VR_4_1 (front right)
-    if (addr == MSG_BREMSE_3) {
-      int wheel_speed_fl = (GET_BYTE(to_push, 0) | (GET_BYTE(to_push, 1) << 8)) >> 1;
-      int wheel_speed_fr = (GET_BYTE(to_push, 2) | (GET_BYTE(to_push, 3) << 8)) >> 1;
-      // Check for average front speed in excess of 0.3m/s, 1.08km/h
-      // DBC speed scale 0.01: 0.3m/s = 108, sum both wheels to compare
-      vehicle_moving = (wheel_speed_fl + wheel_speed_fr) > 216;
+    // Update in-motion state from speed value.
+    // Signal: Bremse_1.Geschwindigkeit_neu__Bremse_1_
+    if (addr == MSG_BREMSE_1) {
+      int speed = ((GET_BYTE(to_push, 2) & 0xFE) >> 1) | (GET_BYTE(to_push, 3) << 7);
+      // DBC speed scale 0.01: 0.3m/s = 108.
+      vehicle_moving = speed > 108;
     }
 
     // Update driver input torque samples

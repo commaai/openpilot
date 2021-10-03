@@ -74,9 +74,7 @@ void process_can(uint8_t can_number) {
         to_push.RDHR = to_send.RDHR;
         can_send_errs += can_push(&can_rx_q, &to_push) ? 0U : 1U;
 
-        if (can_tx_check_min_slots_free(MAX_CAN_MSGS_PER_BULK_TRANSFER)) {
-          usb_outep3_resume_if_paused();
-        }
+        usb_cb_ep3_out_complete();
       }
     }
 

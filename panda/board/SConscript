@@ -127,6 +127,9 @@ else:
   cert_fn = File("../certs/debug").srcnode().abspath
   flags += ["-DALLOW_DEBUG"]
 
+if os.getenv("DEBUG"):
+  flags += ["-DDEBUG"]
+
 includes = [
   "stm32fx/inc",
   "stm32h7/inc",

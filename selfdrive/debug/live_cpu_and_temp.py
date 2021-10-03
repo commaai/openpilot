@@ -37,8 +37,8 @@ if __name__ == "__main__":
 
   last_temp = 0.0
   last_mem = 0.0
-  total_times = [0., 0., 0., 0.]
-  busy_times = [0., 0., 0.0, 0.]
+  total_times = [0.]*8
+  busy_times = [0.]*8
 
   prev_proclog = None
   prev_proclog_t = None
@@ -54,16 +54,16 @@ if __name__ == "__main__":
     if sm.updated['procLog']:
       m = sm['procLog']
 
-      cores = [0., 0., 0., 0.]
-      total_times_new = [0., 0., 0., 0.]
-      busy_times_new = [0., 0., 0.0, 0.]
+      cores = [0.]*8
+      total_times_new = [0.]*8
+      busy_times_new = [0.]*8
 
       for c in m.cpuTimes:
         n = c.cpuNum
         total_times_new[n] = cputime_total(c)
         busy_times_new[n] = cputime_busy(c)
 
-      for n in range(4):
+      for n in range(8):
         t_busy = busy_times_new[n] - busy_times[n]
         t_total = total_times_new[n] - total_times[n]
         cores[n] = t_busy / t_total
@@ -71,7 +71,7 @@ if __name__ == "__main__":
       total_times = total_times_new[:]
       busy_times = busy_times_new[:]
 
-      print("CPU %.2f%% - RAM: %.2f - Temp %.2f" % (100. * mean(cores), last_mem, last_temp))
+      print("CPU %.2f%% - RAM: %.2f%% - Temp %.2fC" % (100. * mean(cores), last_mem, last_temp))
 
       if args.cpu and prev_proclog is not None:
         procs = {}

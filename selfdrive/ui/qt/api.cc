@@ -92,7 +92,10 @@ void HttpRequest::sendRequest(const QString &requestURL, const HttpRequest::Meth
 
   QNetworkRequest request;
   request.setUrl(QUrl(requestURL));
-  request.setRawHeader(QByteArray("Authorization"), ("JWT " + token).toUtf8());
+
+  if (!token.isEmpty()) {
+    request.setRawHeader(QByteArray("Authorization"), ("JWT " + token).toUtf8());
+  }
 
   if (method == HttpRequest::Method::GET) {
     reply = networkAccessManager->get(request);
@@ -119,8 +122,11 @@ void HttpRequest::requestFinished() {
       success = true;
       emit receivedResponse(response);
     } else {
-      qDebug() << reply->errorString();
       emit failedResponse(reply->errorString());
+
+      if (reply->error() == QNetworkReply::ContentAccessDenied || reply->error() == QNetworkReply::AuthenticationRequiredError) {
+        qWarning() << ">>  Unauthorized. Authenticate with tools/lib/auth.py  <<";
+      }
     }
   } else {
     networkAccessManager->clearAccessCache();

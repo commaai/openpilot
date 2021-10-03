@@ -65,21 +65,25 @@ MQB_LDW_MESSAGES = {
 # Exception: SEAT Leon and SEAT Ateca share a chassis code
 
 class CAR:
-  ATLAS_MK1 = "VOLKSWAGEN ATLAS 1ST GEN"      # Chassis CA, Mk1 VW Atlas and Atlas Cross Sport
-  GOLF_MK7 = "VOLKSWAGEN GOLF 7TH GEN"        # Chassis 5G/AU/BA/BE, Mk7 VW Golf and variants
-  JETTA_MK7 = "VOLKSWAGEN JETTA 7TH GEN"      # Chassis BU, Mk7 Jetta
-  PASSAT_MK8 = "VOLKSWAGEN PASSAT 8TH GEN"    # Chassis 3G, Mk8 Passat and variants
-  TCROSS_MK1 = "VOLKSWAGEN T-CROSS 1ST GEN"   # Chassis C1, Mk1 VW T-Cross SWB and LWB variants
-  TIGUAN_MK2 = "VOLKSWAGEN TIGUAN 2ND GEN"    # Chassis AD/BW, Mk2 VW Tiguan and variants
-  TOURAN_MK2 = "VOLKSWAGEN TOURAN 2ND GEN"    # Chassis 1T, Mk2 VW Touran and variants
-  AUDI_A3_MK3 = "AUDI A3 3RD GEN"             # Chassis 8V/FF, Mk3 Audi A3 and variants
-  AUDI_Q2_MK1 = "AUDI Q2 1ST GEN"             # Chassis GA, Mk1 Audi Q2 (RoW) and Q2L (China only)
-  SEAT_ATECA_MK1 = "SEAT ATECA 1ST GEN"       # Chassis 5F, Mk1 SEAT Ateca and CUPRA Ateca
-  SEAT_LEON_MK3 = "SEAT LEON 3RD GEN"         # Chassis 5F, Mk3 SEAT Leon and variants
-  SKODA_KODIAQ_MK1 = "SKODA KODIAQ 1ST GEN"   # Chassis NS, Mk1 Skoda Kodiaq
-  SKODA_SCALA_MK1 = "SKODA SCALA 1ST GEN"     # Chassis NW, Mk1 Skoda Scala and Skoda Kamiq
-  SKODA_SUPERB_MK3 = "SKODA SUPERB 3RD GEN"   # Chassis 3V/NP, Mk3 Skoda Superb and variants
-  SKODA_OCTAVIA_MK3 = "SKODA OCTAVIA 3RD GEN" # Chassis NE, Mk3 Skoda Octavia and variants
+  ARTEON_MK1 = "VOLKSWAGEN ARTEON 1ST GEN"          # Chassis AN, Mk1 VW Arteon and variants
+  ATLAS_MK1 = "VOLKSWAGEN ATLAS 1ST GEN"            # Chassis CA, Mk1 VW Atlas and Atlas Cross Sport
+  GOLF_MK7 = "VOLKSWAGEN GOLF 7TH GEN"              # Chassis 5G/AU/BA/BE, Mk7 VW Golf and variants
+  JETTA_MK7 = "VOLKSWAGEN JETTA 7TH GEN"            # Chassis BU, Mk7 Jetta
+  PASSAT_MK8 = "VOLKSWAGEN PASSAT 8TH GEN"          # Chassis 3G, Mk8 Passat and variants
+  TCROSS_MK1 = "VOLKSWAGEN T-CROSS 1ST GEN"         # Chassis C1, Mk1 VW T-Cross SWB and LWB variants
+  TIGUAN_MK2 = "VOLKSWAGEN TIGUAN 2ND GEN"          # Chassis AD/BW, Mk2 VW Tiguan and variants
+  TOURAN_MK2 = "VOLKSWAGEN TOURAN 2ND GEN"          # Chassis 1T, Mk2 VW Touran and variants
+  TRANSPORTER_T61 = "VOLKSWAGEN TRANSPORTER T6.1"   # Chassis 7H/7L, T6-facelift Transporter/Multivan/Caravelle/California
+  AUDI_A3_MK3 = "AUDI A3 3RD GEN"                   # Chassis 8V/FF, Mk3 Audi A3 and variants
+  AUDI_Q2_MK1 = "AUDI Q2 1ST GEN"                   # Chassis GA, Mk1 Audi Q2 (RoW) and Q2L (China only)
+  SEAT_ATECA_MK1 = "SEAT ATECA 1ST GEN"             # Chassis 5F, Mk1 SEAT Ateca and CUPRA Ateca
+  SEAT_LEON_MK3 = "SEAT LEON 3RD GEN"               # Chassis 5F, Mk3 SEAT Leon and variants
+  SKODA_KAMIQ_MK1 = "SKODA KAMIQ 1ST GEN"           # Chassis NW, Mk1 Skoda Kamiq
+  SKODA_KAROQ_MK1 = "SKODA KAROQ 1ST GEN"           # Chassis NU, Mk1 Skoda Karoq
+  SKODA_KODIAQ_MK1 = "SKODA KODIAQ 1ST GEN"         # Chassis NS, Mk1 Skoda Kodiaq
+  SKODA_SCALA_MK1 = "SKODA SCALA 1ST GEN"           # Chassis NW, Mk1 Skoda Scala and Skoda Kamiq
+  SKODA_SUPERB_MK3 = "SKODA SUPERB 3RD GEN"         # Chassis 3V/NP, Mk3 Skoda Superb and variants
+  SKODA_OCTAVIA_MK3 = "SKODA OCTAVIA 3RD GEN"       # Chassis NE, Mk3 Skoda Octavia and variants
 
 # All supported cars should return FW from the engine, srs, eps, and fwdRadar. Cars
 # with a manual trans won't return transmission firmware, but all other cars will.
@@ -91,6 +95,23 @@ class CAR:
 # them repaired by the tuner before including them in openpilot.
 
 FW_VERSIONS = {
+  CAR.ARTEON_MK1: {
+    (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x873G0906259P \xf1\x890001',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x8709G927158L \xf1\x893611',
+    ],
+    (Ecu.srs, 0x715, None): [
+      b'\xf1\x873Q0959655DL\xf1\x890732\xf1\x82\0161812141812171105141123052J00',
+    ],
+    (Ecu.eps, 0x712, None): [
+      b'\xf1\x875Q0910143C \xf1\x892211\xf1\x82\00567B0020800',
+    ],
+    (Ecu.fwdRadar, 0x757, None): [
+      b'\xf1\x872Q0907572T \xf1\x890383',
+    ],
+  },
   CAR.ATLAS_MK1: {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8703H906026AA\xf1\x899970',
@@ -128,6 +149,8 @@ FW_VERSIONS = {
       b'\xf1\x8704E906027GR\xf1\x892394',
       b'\xf1\x8704E906027HD\xf1\x893742',
       b'\xf1\x8704E906027MA\xf1\x894958',
+      b'\xf1\x8704L906021DT\xf1\x895520',
+      b'\xf1\x8704L906021N \xf1\x895518',
       b'\xf1\x8704L906026BP\xf1\x897608',
       b'\xf1\x8704L906026NF\xf1\x899528',
       b'\xf1\x8704L906056CL\xf1\x893823',
@@ -158,6 +181,7 @@ FW_VERSIONS = {
       b'\xf1\x870CW300041H \xf1\x891010',
       b'\xf1\x870CW300042F \xf1\x891604',
       b'\xf1\x870CW300043B \xf1\x891601',
+      b'\xf1\x870CW300044S \xf1\x894530',
       b'\xf1\x870CW300045  \xf1\x894531',
       b'\xf1\x870CW300047D \xf1\x895261',
       b'\xf1\x870CW300048J \xf1\x890611',
@@ -167,6 +191,7 @@ FW_VERSIONS = {
       b'\xf1\x870D9300012  \xf1\x895045',
       b'\xf1\x870D9300014M \xf1\x895004',
       b'\xf1\x870D9300020S \xf1\x895201',
+      b'\xf1\x870D9300040A \xf1\x893613',
       b'\xf1\x870D9300040S \xf1\x894311',
       b'\xf1\x870D9300041H \xf1\x895220',
       b'\xf1\x870DD300045K \xf1\x891120',
@@ -188,6 +213,7 @@ FW_VERSIONS = {
       b'\xf1\x875Q0959655BH\xf1\x890336\xf1\x82\02314160011123300314211012230229333463100',
       b'\xf1\x875Q0959655BT\xf1\x890403\xf1\x82\023141600111233003142404A2252229333463100',
       b'\xf1\x875Q0959655BT\xf1\x890403\xf1\x82\023141600111233003142405A2252229333463100',
+      b'\xf1\x875Q0959655C \xf1\x890361\xf1\x82\0211413001112120004110415121610169112',
       b'\xf1\x875Q0959655D \xf1\x890388\xf1\x82\0211413001113120006110417121A101A9113',
       b'\xf1\x875Q0959655J \xf1\x890830\xf1\x82\023271112111312--071104171825102591131211',
       b'\xf1\x875Q0959655J \xf1\x890830\xf1\x82\023271212111312--071104171838103891131211',
@@ -217,6 +243,7 @@ FW_VERSIONS = {
       b'\xf1\x875Q0909144AB\xf1\x891082\xf1\x82\00521A00442A1',
       b'\xf1\x875Q0909144AB\xf1\x891082\xf1\x82\00521A00642A1',
       b'\xf1\x875Q0909144AB\xf1\x891082\xf1\x82\00521A07B05A1',
+      b'\xf1\x875Q0909144L \xf1\x891021\xf1\x82\00521A00602A0',
       b'\xf1\x875Q0909144L \xf1\x891021\xf1\x82\00522A00402A0',
       b'\xf1\x875Q0909144P \xf1\x891043\xf1\x82\00511A00403A0',
       b'\xf1\x875Q0909144R \xf1\x891061\xf1\x82\00516A00604A1',
@@ -233,10 +260,12 @@ FW_VERSIONS = {
       b'\xf1\x875QN909144B \xf1\x895082\xf1\x82\00571A01A18A1',
     ],
     (Ecu.fwdRadar, 0x757, None): [
+      b'\xf1\x875Q0907567G \xf1\x890390\xf1\x82\00101',
       b'\xf1\x875Q0907572A \xf1\x890141\xf1\x82\00101',
       b'\xf1\x875Q0907572B \xf1\x890200\xf1\x82\00101',
       b'\xf1\x875Q0907572C \xf1\x890210\xf1\x82\00101',
       b'\xf1\x875Q0907572D \xf1\x890304\xf1\x82\00101',
+      b'\xf1\x875Q0907572E \xf1\x89X310\xf1\x82\00101',
       b'\xf1\x875Q0907572F \xf1\x890400\xf1\x82\00101',
       b'\xf1\x875Q0907572G \xf1\x890571',
       b'\xf1\x875Q0907572H \xf1\x890620',
@@ -373,6 +402,23 @@ FW_VERSIONS = {
       b'\xf1\x873Q0907572C \xf1\x890195',
     ],
   },
+  CAR.TRANSPORTER_T61: {
+    (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x8704L906057N \xf1\x890413',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x870BT300012G \xf1\x893102',
+    ],
+    (Ecu.srs, 0x715, None): [
+      b'\xf1\x872Q0959655AE\xf1\x890506\xf1\x82\02316170411110411--04041704161611152S1411',
+    ],
+    (Ecu.eps, 0x712, None): [
+      b'\xf1\x877LA909144F \xf1\x897150\xf1\x82\005323A5519A2',
+    ],
+    (Ecu.fwdRadar, 0x757, None): [
+      b'\xf1\x872Q0907572R \xf1\x890372',
+    ],
+  },
   CAR.AUDI_A3_MK3: {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8704E906023AN\xf1\x893695',
@@ -477,6 +523,40 @@ FW_VERSIONS = {
       b'\xf1\x875Q0907572B \xf1\x890200\xf1\x82\00101',
       b'\xf1\x875Q0907572H \xf1\x890620',
       b'\xf1\x875Q0907572P \xf1\x890682',
+    ],
+  },
+  CAR.SKODA_KAMIQ_MK1: {
+    (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x8705C906032M \xf1\x891333',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x870CW300020  \xf1\x891906',
+    ],
+    (Ecu.srs, 0x715, None): [
+      b'\xf1\x872Q0959655AM\xf1\x890351\xf1\x82\0222221042111042121040404042E2711152H14',
+    ],
+    (Ecu.eps, 0x712, None): [
+      b'\xf1\x872Q1909144M \xf1\x896041',
+    ],
+    (Ecu.fwdRadar, 0x757, None): [
+      b'\xf1\x872Q0907572T \xf1\x890383',
+    ],
+  },
+  CAR.SKODA_KAROQ_MK1: {
+    (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x8705E906018P \xf1\x896020',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x870CW300041S \xf1\x891615',
+    ],
+    (Ecu.srs, 0x715, None): [
+      b'\xf1\x873Q0959655BH\xf1\x890712\xf1\x82\0161213001211001101131122012100',
+    ],
+    (Ecu.eps, 0x712, None): [
+      b'\xf1\x875Q0910143C \xf1\x892211\xf1\x82\00567T6100500',
+    ],
+    (Ecu.fwdRadar, 0x757, None): [
+      b'\xf1\x872Q0907572M \xf1\x890233',
     ],
   },
   CAR.SKODA_KODIAQ_MK1: {

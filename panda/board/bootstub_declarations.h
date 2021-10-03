@@ -2,6 +2,7 @@
 void puts(const char *a){ UNUSED(a); }
 void puth(uint8_t i){ UNUSED(i); }
 void puth2(uint8_t i){ UNUSED(i); }
+void puth4(uint8_t i){ UNUSED(i); }
 typedef struct board board;
 typedef struct harness_configuration harness_configuration;
 // No CAN support on bootloader

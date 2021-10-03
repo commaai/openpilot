@@ -25,6 +25,11 @@ void ThneedModel::addDesire(float *state, int state_size) {
   desire = state;
 }
 
+void* ThneedModel::getInputBuf() {
+  if (thneed->input_clmem.size() > 3) return &(thneed->input_clmem[3]);
+  else return nullptr;
+}
+
 void ThneedModel::execute(float *net_input_buf, int buf_size) {
   float *inputs[4] = {recurrent, trafficConvention, desire, net_input_buf};
   if (!recorded) {

@@ -141,9 +141,7 @@ void process_can(uint8_t can_number) {
         CAN->sTxMailBox[0].TDTR = to_send.RDTR;
         CAN->sTxMailBox[0].TIR = to_send.RIR;
 
-        if (can_tx_check_min_slots_free(MAX_CAN_MSGS_PER_BULK_TRANSFER)) {
-          usb_outep3_resume_if_paused();
-        }
+        usb_cb_ep3_out_complete();
       }
     }
 

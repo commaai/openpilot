@@ -181,18 +181,23 @@ void putui(uint32_t i) {
   puts(&str[idx + 1U]);
 }
 
-void puth(unsigned int i) {
+void puthx(uint32_t i, uint8_t len) {
   const char c[] = "0123456789abcdef";
-  for (int pos = 28; pos != -4; pos -= 4) {
+  for (int pos = ((int)len * 4) - 4; pos > -4; pos -= 4) {
     putch(c[(i >> (unsigned int)(pos)) & 0xFU]);
   }
 }
 
+void puth(unsigned int i) {
+  puthx(i, 8U);
+}
+
 void puth2(unsigned int i) {
-  const char c[] = "0123456789abcdef";
-  for (int pos = 4; pos != -4; pos -= 4) {
-    putch(c[(i >> (unsigned int)(pos)) & 0xFU]);
-  }
+  puthx(i, 2U);
+}
+
+void puth4(unsigned int i) {
+  puthx(i, 4U);
 }
 
 void hexdump(const void *a, int l) {

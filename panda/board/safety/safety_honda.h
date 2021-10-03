@@ -323,8 +323,12 @@ static const addr_checks* honda_bosch_giraffe_init(int16_t param) {
   honda_hw = HONDA_BG_HW;
   // Checking for alternate brake override from safety parameter
   honda_alt_brake_msg = GET_FLAG(param, HONDA_PARAM_ALT_BRAKE);
+
   // radar disabled so allow gas/brakes
+#ifdef ALLOW_DEBUG
   honda_bosch_long = GET_FLAG(param, HONDA_PARAM_BOSCH_LONG);
+#endif
+
   honda_rx_checks = (addr_checks){honda_addr_checks, HONDA_ADDR_CHECKS_LEN};
   return &honda_rx_checks;
 }
@@ -335,8 +339,12 @@ static const addr_checks* honda_bosch_harness_init(int16_t param) {
   honda_hw = HONDA_BH_HW;
   // Checking for alternate brake override from safety parameter
   honda_alt_brake_msg = GET_FLAG(param, HONDA_PARAM_ALT_BRAKE);
+
   // radar disabled so allow gas/brakes
+#ifdef ALLOW_DEBUG
   honda_bosch_long = GET_FLAG(param, HONDA_PARAM_BOSCH_LONG);
+#endif
+
   honda_rx_checks = (addr_checks){honda_bh_addr_checks, HONDA_BH_ADDR_CHECKS_LEN};
   return &honda_rx_checks;
 }

@@ -107,8 +107,7 @@ class CarController():
 
     self.params = CarControllerParams(CP)
 
-  def update(self, enabled, CS, frame, actuators,
-             pcm_speed, pcm_override, pcm_cancel_cmd, pcm_accel,
+  def update(self, enabled, CS, frame, actuators, pcm_cancel_cmd,
              hud_v_cruise, hud_show_lanes, hud_show_car, hud_alert):
 
     P = self.params
@@ -122,15 +121,6 @@ class CarController():
 
     # *** apply brake hysteresis ***
     pre_limit_brake, self.braking, self.brake_steady = actuator_hystereses(brake, self.braking, self.brake_steady, CS.out.vEgo, CS.CP.carFingerprint)
-
-    # *** no output if not enabled ***
-    if not enabled and CS.out.cruiseState.enabled:
-      # send pcm acc cancel cmd if drive is disabled but pcm is still on, or if the system can't be activated
-      pcm_cancel_cmd = True
-
-    # Never send cancel command if we never enter cruise state (no cruise if pedal)
-    # Cancel cmd causes brakes to release at a standstill causing grinding
-    pcm_cancel_cmd = pcm_cancel_cmd and CS.CP.pcmCruise
 
     # *** rate limit after the enable check ***
     self.brake_last = rate_limit(pre_limit_brake, self.brake_last, -2., DT_CTRL)
@@ -189,20 +179,23 @@ class CarController():
                       0.5]
     # The Honda ODYSSEY seems to have different PCM_ACCEL
     # msgs, is it other cars too?
-    if CS.CP.carFingerprint in HONDA_NIDEC_ALT_PCM_ACCEL:
+    if CS.CP.enableGasInterceptor:
+      pcm_speed = 0.0
+      pcm_accel = int(0.0)
+    elif CS.CP.carFingerprint in HONDA_NIDEC_ALT_PCM_ACCEL:
       pcm_speed_V = [0.0,
                      clip(CS.out.vEgo - 3.0, 0.0, 100.0),
                      clip(CS.out.vEgo + 0.0, 0.0, 100.0),
                      clip(CS.out.vEgo + 5.0, 0.0, 100.0)]
+      pcm_speed = interp(gas-brake, pcm_speed_BP, pcm_speed_V)
       pcm_accel = int((1.0) * 0xc6)
     else:
       pcm_speed_V = [0.0,
                      clip(CS.out.vEgo - 2.0, 0.0, 100.0),
                      clip(CS.out.vEgo + 2.0, 0.0, 100.0),
                      clip(CS.out.vEgo + 5.0, 0.0, 100.0)]
+      pcm_speed = interp(gas-brake, pcm_speed_BP, pcm_speed_V)
       pcm_accel = int(clip((accel/1.44)/max_accel, 0.0, 1.0) * 0xc6)
-
-    pcm_speed = interp(gas-brake, pcm_speed_BP, pcm_speed_V)
 
     if not CS.CP.openpilotLongitudinalControl:
       if (frame % 2) == 0:
@@ -228,6 +221,8 @@ class CarController():
           apply_brake = clip(self.brake_last - wind_brake, 0.0, 1.0)
           apply_brake = int(clip(apply_brake * P.BRAKE_MAX, 0, P.BRAKE_MAX - 1))
           pump_on, self.last_pump_ts = brake_pump_hysteresis(apply_brake, self.apply_brake_last, self.last_pump_ts, ts)
+
+          pcm_override = True
           can_sends.append(hondacan.create_brake_command(self.packer, apply_brake, pump_on,
             pcm_override, pcm_cancel_cmd, fcw_display, idx, CS.CP.carFingerprint, CS.stock_brake))
           self.apply_brake_last = apply_brake

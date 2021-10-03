@@ -19,7 +19,6 @@ class CarInterface(CarInterfaceBase):
 
     ret.steerControlType = car.CarParams.SteerControlType.angle
     ret.openpilotLongitudinalControl = False
-    ret.communityFeature = True
 
     ret.steerActuatorDelay = 0.1
     ret.steerRateCost = 0.5
