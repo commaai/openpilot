@@ -6,7 +6,10 @@
 
 #include "catch2/catch.hpp"
 #include "selfdrive/common/util.h"
+#include "selfdrive/ui/replay/framereader.h"
 #include "selfdrive/ui/replay/replay.h"
+#include "selfdrive/ui/replay/route.h"
+#include "selfdrive/ui/replay/util.h"
 
 const char *stream_url = "https://commadataci.blob.core.windows.net/openpilotci/0c94aa1e1296d7c6/2021-05-05--19-48-37/0/fcamera.hevc";
 

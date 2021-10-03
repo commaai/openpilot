@@ -1,7 +1,6 @@
 #pragma once
 
 #include <unordered_map>
-#include <vector>
 #include <cassert>
 
 #include <capnp/serialize.h>
@@ -73,5 +72,5 @@ public:
   std::vector<Event*> events;
 
 private:
-  std::vector<uint8_t> raw_;
+  std::string raw_;
 };
