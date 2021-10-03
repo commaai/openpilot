@@ -111,7 +111,7 @@ bool httpMultiPartDownload(const std::string &url, const std::string &target_fil
 }
 
 bool readBZ2File(const std::string_view file, std::ostream &stream) {
-  int bzerror = 0;
+  int bzerror = BZ_OK;
   BZFILE *bz_file = nullptr;
   std::unique_ptr<FILE, decltype(&fclose)> f(fopen(file.data(), "r"), &fclose);
   if (!f || !(bz_file = BZ2_bzReadOpen(&bzerror, f.get(), 0, 0, nullptr, 0))) {
