@@ -111,22 +111,22 @@ bool httpMultiPartDownload(const std::string &url, const std::string &target_fil
 }
 
 bool readBZ2File(const std::string_view file, std::ostream &stream) {
-  int bzerror = BZ_OK;
-  BZFILE *bz_file = nullptr;
   std::unique_ptr<FILE, decltype(&fclose)> f(fopen(file.data(), "r"), &fclose);
-  if (!f || !(bz_file = BZ2_bzReadOpen(&bzerror, f.get(), 0, 0, nullptr, 0))) {
-    return false;
-  }
+  if (!f) return false;
 
-  bzerror = BZ_OK;
+  int bzerror = BZ_OK;
+  BZFILE *bz_file = BZ2_bzReadOpen(&bzerror, f.get(), 0, 0, nullptr, 0);
+  if (!bz_file) return false;
+
   std::array<char, 64 * 1024> buf;
-  while (bzerror == BZ_OK) {
+  do {
     int size = BZ2_bzRead(&bzerror, bz_file, buf.data(), buf.size());
     if (bzerror == BZ_OK || bzerror == BZ_STREAM_END) {
       stream.write(buf.data(), size);
     }
-  }
-  bool ret = bzerror == BZ_STREAM_END;
+  } while (bzerror == BZ_OK);
+
+  bool success = (bzerror == BZ_STREAM_END);
   BZ2_bzReadClose(&bzerror, bz_file);
-  return ret;
+  return success;
 }
