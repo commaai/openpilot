@@ -23,7 +23,7 @@ void verify_segment(const std::string &route_path, int segment, int max_segment,
     const std::string log_file = segment_path + fn;
     INFO(log_file);
     
-    std::stringstream stream;
+    std::ostringstream stream;
     bool ret = readBZ2File(log_file, stream);
     REQUIRE(ret);
     std::string log = stream.str();

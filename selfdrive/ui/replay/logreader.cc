@@ -44,7 +44,7 @@ LogReader::~LogReader() {
 
 bool LogReader::load(const std::string &file, bool is_bz2file) {
   if (is_bz2file) {
-    std::stringstream stream;
+    std::ostringstream stream;
     if (!readBZ2File(file, stream)) {
       LOGW("bz2 decompress failed");
       return false;
