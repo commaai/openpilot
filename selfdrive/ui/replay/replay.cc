@@ -21,7 +21,7 @@ inline void precise_nano_sleep(long sleep_ns) {
   }
   // spin wait
   if (sleep_ns > 0) {
-    while ((nanos_since_boot() - start_sleep) <= sleep_ns) {/**/}
+    while ((nanos_since_boot() - start_sleep) <= sleep_ns) { usleep(0); }
   }
 }
 
