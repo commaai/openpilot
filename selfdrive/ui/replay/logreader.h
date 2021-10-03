@@ -17,7 +17,7 @@ public:
     this->which = which;
     this->mono_time = mono_time;
   }
-  Event(const kj::ArrayPtr<const capnp::word> &amsg, bool frame=false); : reader(amsg), frame(frame) {
+  Event(const kj::ArrayPtr<const capnp::word> &amsg, bool frame = false);
   inline kj::ArrayPtr<const capnp::byte> bytes() const { return words.asBytes(); }
 
   struct lessThan {

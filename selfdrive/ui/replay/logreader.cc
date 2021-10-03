@@ -36,6 +36,8 @@ Event::Event(const kj::ArrayPtr<const capnp::word> &amsg, bool frame) : reader(a
   }
 }
 
+// class LogReader
+
 LogReader::~LogReader() {
   for (auto e : events) delete e;
 }

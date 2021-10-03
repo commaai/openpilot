@@ -3,6 +3,7 @@
 #include <QDir>
 #include <QObject>
 #include <QString>
+#include <map>
 #include <vector>
 
 #include "selfdrive/common/util.h"
@@ -66,4 +67,5 @@ protected:
   QString road_cam_path_;
   QString log_path_;
   std::vector<QThread*> download_threads_;
+  std::map<QString, std::string> local_files_;
 };
