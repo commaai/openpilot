@@ -158,6 +158,8 @@ void Replay::mergeSegments(int cur_seg, int end_idx) {
 
     // merge & sort events
     std::vector<Event *> *new_events = new std::vector<Event *>();
+    new_events->reserve(std::accumulate(segments_need_merge.begin(), segments_need_merge.end(), 0,
+                                        [=](int v, int n) { return v + segments_[n]->log->events.size(); }));
     for (int n : segments_need_merge) {
       auto &log = segments_[n]->log;
       auto middle = new_events->insert(new_events->end(), log->events.begin(), log->events.end());
