@@ -1,5 +1,6 @@
 #include "selfdrive/ui/replay/replay.h"
 
+#include <execution>
 #include <QApplication>
 #include <QDebug>
 
@@ -163,7 +164,7 @@ void Replay::mergeSegments(int cur_seg, int end_idx) {
     for (int n : segments_need_merge) {
       auto &log = segments_[n]->log;
       auto middle = new_events->insert(new_events->end(), log->events.begin(), log->events.end());
-      std::inplace_merge(new_events->begin(), middle, new_events->end(), Event::lessThan());
+      std::inplace_merge(std::execution::par, new_events->begin(), middle, new_events->end(), Event::lessThan());
     }
 
     // update events

@@ -111,7 +111,7 @@ if arch in ['x86_64', 'Darwin'] and os.path.exists(Dir("#tools/").get_abspath())
   replay_lib_src = ["replay/replay.cc", "replay/logreader.cc", "replay/framereader.cc", "replay/route.cc"]
 
   replay_lib = qt_env.Library("qt_replay", replay_lib_src, LIBS=base_libs)
-  replay_libs = [replay_lib, 'avutil', 'avcodec', 'avformat', 'swscale', 'bz2', 'curl'] + qt_libs
+  replay_libs = [replay_lib, 'avutil', 'avcodec', 'avformat', 'swscale', 'bz2', 'curl', 'tbb'] + qt_libs
   qt_env.Program("replay/replay", ["replay/main.cc"], LIBS=replay_libs)
 
   if GetOption('test'):

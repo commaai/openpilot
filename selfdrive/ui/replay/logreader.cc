@@ -1,6 +1,7 @@
 #include "selfdrive/ui/replay/logreader.h"
 
 #include <cassert>
+#include <execution>
 #include <bzlib.h>
 #include "selfdrive/common/util.h"
 
@@ -58,6 +59,6 @@ bool LogReader::load(const std::string &file) {
       return false;
     }
   }
-  std::sort(events.begin(), events.end(), Event::lessThan());
+  std::sort(std::execution::par, events.begin(), events.end(), Event::lessThan());
   return true;
 }
