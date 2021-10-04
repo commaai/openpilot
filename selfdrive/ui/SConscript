@@ -108,7 +108,7 @@ if GetOption('setup'):
 if arch in ['x86_64', 'Darwin'] and os.path.exists(Dir("#tools/").get_abspath()):
   qt_env['CXXFLAGS'] += ["-Wno-deprecated-declarations"]
 
-  replay_lib_src = ["replay/replay.cc", "replay/logreader.cc", "replay/framereader.cc", "replay/route.cc"]
+  replay_lib_src = ["replay/replay.cc", "replay/camera.cc", "replay/logreader.cc", "replay/framereader.cc", "replay/route.cc", "replay/util.cc"]
 
   replay_lib = qt_env.Library("qt_replay", replay_lib_src, LIBS=base_libs)
   replay_libs = [replay_lib, 'avutil', 'avcodec', 'avformat', 'swscale', 'bz2', 'curl'] + qt_libs

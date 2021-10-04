@@ -2,35 +2,24 @@
 
 #include <QApplication>
 #include <QDebug>
+
 #include "cereal/services.h"
 #include "selfdrive/camerad/cameras/camera_common.h"
 #include "selfdrive/common/timing.h"
 #include "selfdrive/hardware/hw.h"
-
-inline void precise_nano_sleep(long sleep_ns) {
-  const long estimate_ns = 1 * 1e6;  // 1ms
-  struct timespec req = {.tv_nsec = estimate_ns};
-  uint64_t start_sleep = nanos_since_boot();
-  while (sleep_ns > estimate_ns) {
-    nanosleep(&req, nullptr);
-    uint64_t end_sleep = nanos_since_boot();
-    sleep_ns -= (end_sleep - start_sleep);
-    start_sleep = end_sleep;
-  }
-  // spin wait
-  if (sleep_ns > 0) {
-    while ((nanos_since_boot() - start_sleep) <= sleep_ns) {/**/}
-  }
-}
+#include "selfdrive/ui/replay/util.h"
 
 Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *sm_, bool dcam, bool ecam, QObject *parent)
     : sm(sm_), load_dcam(dcam), load_ecam(ecam), QObject(parent) {
-  std::vector<const char*> s;
+  std::vector<const char *> s;
+  auto event_struct = capnp::Schema::from<cereal::Event>().asStruct();
+  sockets_.resize(event_struct.getUnionFields().size());
   for (const auto &it : services) {
     if ((allow.size() == 0 || allow.contains(it.name)) &&
         !block.contains(it.name)) {
       s.push_back(it.name);
-      socks.insert(it.name);
+      uint16_t which = event_struct.getFieldByName(it.name).getProto().getDiscriminantValue();
+      sockets_[which] = it.name;
     }
   }
   qDebug() << "services " << s;
@@ -49,28 +38,32 @@ Replay::~Replay() {
   // TODO: quit stream thread and free resources.
 }
 
-void Replay::start(int seconds){
-  // load route
+bool Replay::load() {
   if (!route_->load() || route_->size() == 0) {
     qDebug() << "failed load route" << route_->name() << "from server";
-    return;
+    return false;
   }
 
-  qDebug() << "load route" << route_->name() << route_->size() << "segments, start from" << seconds;
+  qDebug() << "load route" << route_->name() << route_->size() << "segments";
   segments_.resize(route_->size());
+  return true;
+}
+
+void Replay::start(int seconds) {
   seekTo(seconds);
 
+  camera_server_ = std::make_unique<CameraServer>();
   // start stream thread
   thread = new QThread;
   QObject::connect(thread, &QThread::started, [=]() { stream(); });
   thread->start();
 }
 
-void Replay::updateEvents(const std::function<bool()>& lambda) {
+void Replay::updateEvents(const std::function<bool()> &lambda) {
   // set updating_events to true to force stream thread relase the lock and wait for evnets_udpated.
   updating_events_ = true;
   {
-    std::unique_lock lk(lock_);
+    std::unique_lock lk(stream_lock_);
     events_updated_ = lambda();
     updating_events_ = false;
   }
@@ -80,22 +73,24 @@ void Replay::updateEvents(const std::function<bool()>& lambda) {
 void Replay::seekTo(int seconds, bool relative) {
   if (segments_.empty()) return;
 
+  bool segment_loaded = false;
   updateEvents([&]() {
     if (relative) {
       seconds += ((cur_mono_time_ - route_start_ts_) * 1e-9);
     }
-    seconds = std::clamp(seconds, 0, (int)segments_.size() * 60 - 1);
-    qInfo() << "seeking to " << seconds;
+    qInfo() << "seeking to" << seconds;
 
-    int segment = seconds / 60;
-    bool segment_changed = (segment != current_segment_);
-
-    cur_mono_time_ = route_start_ts_ + seconds * 1e9;
-    setCurrentSegment(segment);
-    bool segment_loaded = std::find(segments_merged_.begin(), segments_merged_.end(), segment) != segments_merged_.end();
-    // return false if segment changed and not loaded yet
-    return !segment_changed || segment_loaded;
+    cur_mono_time_ = route_start_ts_ + std::clamp(seconds, 0, (int)segments_.size() * 60) * 1e9;
+    current_segment_ = std::min(seconds / 60, (int)segments_.size() - 1);
+    segment_loaded = std::find(segments_merged_.begin(), segments_merged_.end(), current_segment_) != segments_merged_.end();
+    return segment_loaded;
   });
+
+  if (!segment_loaded) {
+    // always emit segmentChanged if segment is not loaded.
+    // the current_segment_ may not valid when seeking cross boundary or seeking to an invalid segment.
+    emit segmentChanged();
+  }
 }
 
 void Replay::pause(bool pause) {
@@ -108,7 +103,7 @@ void Replay::pause(bool pause) {
 
 void Replay::setCurrentSegment(int n) {
   if (current_segment_.exchange(n) != n) {
-    emit segmentChanged(n);
+    emit segmentChanged();
   }
 }
 
@@ -124,11 +119,14 @@ void Replay::queueSegment() {
     }
     end_idx = i;
     // skip invalid segment
-    fwd += segments_[i]->isValid();
+    if (segments_[i]->isValid()) {
+      ++fwd;
+    } else if (i == cur_seg) {
+      ++cur_seg;
+    }
   }
 
-  // merge segments
-  mergeSegments(cur_seg, end_idx);
+  mergeSegments(std::min(cur_seg, (int)segments_.size() - 1), end_idx);
 }
 
 void Replay::mergeSegments(int cur_seg, int end_idx) {
@@ -138,7 +136,7 @@ void Replay::mergeSegments(int cur_seg, int end_idx) {
   for (int i = begin_idx; i <= end_idx; ++i) {
     if (segments_[i] && segments_[i]->isLoaded()) {
       segments_need_merge.push_back(i);
-    } else if (i >= cur_seg) {
+    } else if (i >= cur_seg && segments_[i] && segments_[i]->isValid()) {
       // segment is valid,but still loading. can't skip it to merge the next one.
       // otherwise the stream thread may jump to the next segment.
       break;
@@ -150,6 +148,8 @@ void Replay::mergeSegments(int cur_seg, int end_idx) {
 
     // merge & sort events
     std::vector<Event *> *new_events = new std::vector<Event *>();
+    new_events->reserve(std::accumulate(segments_need_merge.begin(), segments_need_merge.end(), 0,
+                                        [=](int v, int n) { return v + segments_[n]->log->events.size(); }));
     for (int n : segments_need_merge) {
       auto &log = segments_[n]->log;
       auto middle = new_events->insert(new_events->end(), log->events.begin(), log->events.end());
@@ -164,7 +164,8 @@ void Replay::mergeSegments(int cur_seg, int end_idx) {
         auto it = std::find_if(new_events->begin(), new_events->end(), [=](auto e) { return e->which == cereal::Event::Which::INIT_DATA; });
         if (it != new_events->end()) {
           route_start_ts_ = (*it)->mono_time;
-          cur_mono_time_ = route_start_ts_;
+          // cur_mono_time_ is set by seekTo int start() before get route_start_ts_
+          cur_mono_time_ += route_start_ts_;
         }
       }
 
@@ -173,6 +174,8 @@ void Replay::mergeSegments(int cur_seg, int end_idx) {
       return true;
     });
     delete prev_events;
+  } else {
+    updateEvents([]() { return true; });
   }
 
   // free segments out of current semgnt window.
@@ -183,11 +186,27 @@ void Replay::mergeSegments(int cur_seg, int end_idx) {
   }
 }
 
+void Replay::publishFrame(const Event *e) {
+  auto publish = [=](CameraType cam_type, const cereal::EncodeIndex::Reader &eidx) {
+    auto &seg = segments_[eidx.getSegmentNum()];
+    if (seg && seg->isLoaded() && seg->frames[cam_type] && eidx.getType() == cereal::EncodeIndex::Type::FULL_H_E_V_C) {
+      camera_server_->pushFrame(cam_type, seg->frames[cam_type].get(), eidx);
+    }
+  };
+  if (e->which == cereal::Event::ROAD_ENCODE_IDX) {
+    publish(RoadCam, e->event.getRoadEncodeIdx());
+  } else if (e->which == cereal::Event::DRIVER_ENCODE_IDX) {
+    publish(DriverCam, e->event.getDriverEncodeIdx());
+  } else if (e->which == cereal::Event::WIDE_ROAD_ENCODE_IDX) {
+    publish(WideRoadCam, e->event.getWideRoadEncodeIdx());
+  }
+}
+
 void Replay::stream() {
   float last_print = 0;
   cereal::Event::Which cur_which = cereal::Event::Which::INIT_DATA;
 
-  std::unique_lock lk(lock_);
+  std::unique_lock lk(stream_lock_);
 
   while (true) {
     stream_cv_.wait(lk, [=]() { return exit_ || (events_updated_ && !paused_); });
@@ -210,12 +229,7 @@ void Replay::stream() {
       cur_which = evt->which;
       cur_mono_time_ = evt->mono_time;
 
-      std::string type;
-      KJ_IF_MAYBE(e_, static_cast<capnp::DynamicStruct::Reader>(evt->event).which()) {
-        type = e_->getProto().getName();
-      }
-
-      if (socks.find(type) != socks.end()) {
+      if (cur_which < sockets_.size() && sockets_[cur_which] != nullptr) {
         int current_ts = (cur_mono_time_ - route_start_ts_) / 1e9;
         if ((current_ts - last_print) > 5.0) {
           last_print = current_ts;
@@ -231,46 +245,21 @@ void Replay::stream() {
           precise_nano_sleep(behind_ns);
         }
 
-        // publish frame
         if (evt->frame) {
-          // TODO: publish all frames
-          if (evt->which == cereal::Event::ROAD_ENCODE_IDX) {
-            auto idx = evt->event.getRoadEncodeIdx();
-            auto &seg = segments_[idx.getSegmentNum()];
-
-            if (seg && seg->isLoaded() && idx.getType() == cereal::EncodeIndex::Type::FULL_H_E_V_C) {
-              auto &frm = seg->frames[RoadCam];
-
-              if (vipc_server == nullptr) {
-                cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
-                cl_context context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
-
-                vipc_server = new VisionIpcServer("camerad", device_id, context);
-                vipc_server->create_buffers(VisionStreamType::VISION_STREAM_RGB_BACK, UI_BUF_COUNT,
-                                            true, frm->width, frm->height);
-                vipc_server->start_listener();
-              }
-
-              uint8_t *dat = frm->get(idx.getSegmentId());
-              if (dat) {
-                VisionIpcBufExtra extra = {};
-                VisionBuf *buf = vipc_server->get_buffer(VisionStreamType::VISION_STREAM_RGB_BACK);
-                memcpy(buf->addr, dat, frm->getRGBSize());
-                vipc_server->send(buf, &extra, false);
-              }
-            }
-          }
-
-        // publish msg
+          publishFrame(evt);
         } else {
+          // publish msg
           if (sm == nullptr) {
             auto bytes = evt->bytes();
-            pm->send(type.c_str(), (capnp::byte *)bytes.begin(), bytes.size());
+            pm->send(sockets_[cur_which], (capnp::byte *)bytes.begin(), bytes.size());
           } else {
-            sm->update_msgs(nanos_since_boot(), {{type, evt->event}});
+            sm->update_msgs(nanos_since_boot(), {{sockets_[cur_which], evt->event}});
           }
         }
       }
     }
+
+    // wait for frame to be sent before unlock.(frameReader may be deleted after unlock)
+    camera_server_->waitFinish();
   }
 }

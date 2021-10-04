@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QDir>
 #include <QObject>
 #include <QString>
 #include <vector>
@@ -8,7 +9,7 @@
 #include "selfdrive/ui/replay/framereader.h"
 #include "selfdrive/ui/replay/logreader.h"
 
-const QString CACHE_DIR = util::getenv("COMMA_CACHE", "/tmp/comma_download_cache/").c_str();
+const QDir CACHE_DIR(util::getenv("COMMA_CACHE", "/tmp/comma_download_cache/").c_str());
 const int connections_per_file = 3;
 
 struct SegmentFile {
@@ -29,10 +30,12 @@ public:
   inline int size() const { return segments_.size(); }
   inline SegmentFile &at(int n) { return segments_[n]; }
 
+  // public for unit tests
+  std::vector<SegmentFile> segments_;
+
 protected:
   bool loadFromJson(const QString &json);
   QString route_;
-  std::vector<SegmentFile> segments_;
 };
 
 class Segment : public QObject {
@@ -55,14 +58,12 @@ protected:
   void downloadFile(const QString &url);
   QString localPath(const QUrl &url);
 
-  bool loaded_ = false, valid_ = false;
+  std::atomic<bool> loaded_ = false, valid_ = false;
   std::atomic<bool> aborting_ = false;
-  int downloading_ = 0;
+  std::atomic<int> downloading_ = 0;
   int seg_num_ = 0;
   SegmentFile files_;
   QString road_cam_path_;
   QString log_path_;
   std::vector<QThread*> download_threads_;
 };
-
-bool httpMultiPartDownload(const std::string &url, const std::string &target_file, int parts, std::atomic<bool> *abort = nullptr);
