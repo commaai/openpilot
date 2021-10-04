@@ -98,18 +98,22 @@ Segment::Segment(int n, const SegmentFile &segment_files, bool load_dcam, bool l
   }
   if (downloading_ == 0) {
     QTimer::singleShot(0, this, &Segment::load);
+  } else {
+    qDebug() << "downloading segment" << seg_num_ << "...";
   }
 }
 
 Segment::~Segment() {
   aborting_ = true;
+  if (downloading_ > 0) {
+    qDebug() << "cancel download segment" << seg_num_;
+  }
   for (auto &t : download_threads_) {
     if (t->isRunning()) t->wait();
   }
 }
 
 void Segment::downloadFile(const QString &url) {
-  qDebug() << "download" << url;
   download_threads_.emplace_back(QThread::create([=]() {
     const std::string local_file = localPath(url).toStdString();
     bool ret = httpMultiPartDownload(url.toStdString(), local_file, connections_per_file, &aborting_);
