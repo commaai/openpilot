@@ -49,9 +49,9 @@ def create_acc_commands(packer, enabled, accel, gas, idx, stopping, starting, ca
 
   control_on = 5 if enabled else 0
   # no gas = -30000
-  gas_command = gas if enabled and gas > 0 else -30000
+  gas_command = gas if enabled and gas > -0.2 else -30000
   accel_command = accel if enabled else 0
-  braking = 1 if enabled and accel < 0 else 0
+  braking = 1 if enabled and accel < -0.2 else 0
   standstill = 1 if enabled and stopping else 0
   standstill_release = 1 if enabled and starting else 0
 
