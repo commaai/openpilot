@@ -48,16 +48,16 @@ void camera_close(CameraState *s) {
 void run_camera(CameraState *s) {
   uint32_t stream_frame_id = 0, frame_id = 0;
   size_t buf_idx = 0;
+  std::unique_ptr<uint8_t[]> dat = std::make_unique<uint8_t[]>(s->frame->getRGBSize());
   while (!do_exit) {
     if (stream_frame_id == s->frame->getFrameCount()) {
       // loop stream
       stream_frame_id = 0;
     }
-    if (auto dat = s->frame->get(stream_frame_id++)) {
-      auto [rgb_buf, yuv_buf] = *dat;
+    if (s->frame->get(stream_frame_id++, dat.get())) {
       s->buf.camera_bufs_metadata[buf_idx] = {.frame_id = frame_id};
       auto &buf = s->buf.camera_bufs[buf_idx];
-      CL_CHECK(clEnqueueWriteBuffer(buf.copy_q, buf.buf_cl, CL_TRUE, 0, s->frame->getRGBSize(), rgb_buf, 0, NULL, NULL));
+      CL_CHECK(clEnqueueWriteBuffer(buf.copy_q, buf.buf_cl, CL_TRUE, 0, s->frame->getRGBSize(), dat.get(), 0, NULL, NULL));
       s->buf.queue(buf_idx);
       ++frame_id;
       buf_idx = (buf_idx + 1) % FRAME_BUF_COUNT;
