@@ -109,7 +109,7 @@ if __name__ == "__main__":
   failed = False
   if not update:
     ref_commit = open(ref_commit_fn).read().strip()
-    log_fn = "%s_%s_%s.bz2" % (TEST_ROUTE, "model", ref_commit)
+    log_fn = f"{TEST_ROUTE}_{'model'}_{ref_commit}.bz2"
     cmp_log = LogReader(BASE_URL + log_fn)
 
     ignore = ['logMonoTime', 'valid',
@@ -136,7 +136,7 @@ if __name__ == "__main__":
     print("Uploading new refs")
 
     new_commit = get_git_commit()
-    log_fn = "%s_%s_%s.bz2" % (TEST_ROUTE, "model", new_commit)
+    log_fn = f"{TEST_ROUTE}_{'model'}_{new_commit}.bz2"
     save_log(log_fn, log_msgs)
     try:
       upload_file(log_fn, os.path.basename(log_fn))

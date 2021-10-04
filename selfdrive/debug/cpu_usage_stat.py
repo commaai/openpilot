@@ -110,10 +110,10 @@ if __name__ == "__main__":
           stat['avg'][name] = (stat['avg'][name] * (i - c) + avg * c) / (i)
           stat['cpu_samples'][name] = []
 
-        msg = 'avg: {1:.2%}, min: {2:.2%}, max: {3:.2%} {0}'.format(os.path.basename(k), stat['avg']['total'], stat['min']['total'], stat['max']['total'])
+        msg = f"avg: {stat['avg']['total']:.2%}, min: {stat['min']['total']:.2%}, max: {stat['max']['total']:.2%} {os.path.basename(k)}"
         if args.detailed_times:
           for stat_type in ['avg', 'min', 'max']:
-            msg += '\n {}: {}'.format(stat_type, [name + ':' + str(round(stat[stat_type][name]*100, 2)) for name in cpu_time_names])
+            msg += f"\n {stat_type}: {[(name + ':' + str(round(stat[stat_type][name] * 100, 2))) for name in cpu_time_names]}"
         l.append((os.path.basename(k), stat['avg']['total'], msg))
       l.sort(key=lambda x: -x[1])
       for x in l:

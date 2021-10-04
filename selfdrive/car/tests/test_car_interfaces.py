@@ -59,7 +59,7 @@ class TestCarInterfaces(unittest.TestCase):
       car_interface.apply(CC)
 
     # Test radar interface
-    RadarInterface = importlib.import_module('selfdrive.car.%s.radar_interface' % car_params.carName).RadarInterface
+    RadarInterface = importlib.import_module(f'selfdrive.car.{car_params.carName}.radar_interface').RadarInterface
     radar_interface = RadarInterface(car_params)
     assert radar_interface
 

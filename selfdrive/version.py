@@ -100,8 +100,8 @@ if __name__ == "__main__":
   params.put("TermsVersion", terms_version)
   params.put("TrainingVersion", training_version)
 
-  print("Dirty: %s" % dirty)
-  print("Version: %s" % version)
-  print("Remote: %s" % origin)
-  print("Branch: %s" % branch)
-  print("Prebuilt: %s" % prebuilt)
+  print(f"Dirty: {dirty}")
+  print(f"Version: {version}")
+  print(f"Remote: {origin}")
+  print(f"Branch: {branch}")
+  print(f"Prebuilt: {prebuilt}")

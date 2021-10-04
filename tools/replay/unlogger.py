@@ -282,7 +282,7 @@ def unlogger_thread(command_address, forward_commands_address, data_address, run
             print("binding", typ)
             send_funcs[typ] = _get_address_send_func(address)
           except Exception as e:
-            print("couldn't replay {}: {}".format(typ, e))
+            print(f"couldn't replay {typ}: {e}")
             continue
         else:
           # Skip messages that we are not registered to publish.
@@ -346,7 +346,7 @@ def _get_address_mapping(args):
 
   non_services = set(address_mapping) - set(service_list)
   if non_services:
-    print("WARNING: Unknown services {}".format(list(non_services)))
+    print(f"WARNING: Unknown services {list(non_services)}")
 
   return address_mapping
 
@@ -378,7 +378,7 @@ def keyboard_controller_thread(q, route_start_time):
 
         q.send_pyobj(SeekAbsoluteTime(seek_time))
       except Exception as e:
-        print("Time not understood: {}".format(e))
+        print(f"Time not understood: {e}")
 
 def get_arg_parser():
   parser = argparse.ArgumentParser(
@@ -436,9 +436,9 @@ def get_arg_parser():
 def main(argv):
   args = get_arg_parser().parse_args(sys.argv[1:])
 
-  command_address = "ipc:///tmp/{}".format(uuid4())
-  forward_commands_address = "ipc:///tmp/{}".format(uuid4())
-  data_address = "ipc:///tmp/{}".format(uuid4())
+  command_address = f"ipc:///tmp/{uuid4()}"
+  forward_commands_address = f"ipc:///tmp/{uuid4()}"
+  data_address = f"ipc:///tmp/{uuid4()}"
 
   address_mapping = _get_address_mapping(args)
 

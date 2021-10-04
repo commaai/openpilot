@@ -35,7 +35,7 @@ def launcher(proc):
     # exec the process
     mod.main()
   except KeyboardInterrupt:
-    cloudlog.warning("child %s got SIGINT" % proc)
+    cloudlog.warning(f"child {proc} got SIGINT")
   except Exception:
     # can't install the crash handler because sys.excepthook doesn't play nice
     # with threads, so catch it here.
@@ -190,7 +190,7 @@ class NativeProcess(ManagerProcess):
       return
 
     cwd = os.path.join(BASEDIR, self.cwd)
-    cloudlog.info("starting process %s" % self.name)
+    cloudlog.info(f"starting process {self.name}")
     self.proc = Process(name=self.name, target=nativelauncher, args=(self.cmdline, cwd))
     self.proc.start()
     self.watchdog_seen = False
@@ -210,7 +210,7 @@ class PythonProcess(ManagerProcess):
 
   def prepare(self):
     if self.enabled:
-      cloudlog.info("preimporting %s" % self.module)
+      cloudlog.info(f"preimporting {self.module}")
       importlib.import_module(self.module)
 
   def start(self):
@@ -221,7 +221,7 @@ class PythonProcess(ManagerProcess):
     if self.proc is not None:
       return
 
-    cloudlog.info("starting python %s" % self.module)
+    cloudlog.info(f"starting python {self.module}")
     self.proc = Process(name=self.name, target=launcher, args=(self.module,))
     self.proc.start()
     self.watchdog_seen = False
@@ -256,7 +256,7 @@ class DaemonProcess(ManagerProcess):
         # process is dead
         pass
 
-    cloudlog.info("starting daemon %s" % self.name)
+    cloudlog.info(f"starting daemon {self.name}")
     proc = subprocess.Popen(['python', '-m', self.module],  # pylint: disable=subprocess-popen-preexec-fn
                                stdin=open('/dev/null', 'r'),
                                stdout=open('/dev/null', 'w'),

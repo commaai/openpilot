@@ -22,7 +22,7 @@ class _FrameReaderDict(dict):
       self[key] = frame_reader
       return frame_reader
     else:
-      raise KeyError("Segment index out of bounds: {}".format(key))
+      raise KeyError(f"Segment index out of bounds: {key}")
 
 
 class RouteFrameReader(object):

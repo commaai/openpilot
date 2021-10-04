@@ -9,7 +9,7 @@ TOKEN_PATH = "/data/azure_token"
 
 def get_url(route_name, segment_num, log_type="rlog"):
   ext = "hevc" if log_type in ["fcamera", "dcamera"] else "bz2"
-  return BASE_URL + "%s/%s/%s.%s" % (route_name.replace("|", "/"), segment_num, log_type, ext)
+  return BASE_URL + f"{route_name.replace('|', '/')}/{segment_num}/{log_type}.{ext}"
 
 def upload_file(path, name):
   from azure.storage.blob import BlockBlobService

@@ -10,7 +10,7 @@ from typing import NoReturn
 print('Available devices:')
 for fn in os.listdir('/dev/input'):
     if fn.startswith('js'):
-        print('  /dev/input/%s' % (fn))
+        print(f'  /dev/input/{fn}')
 
 # We'll store the states here.
 axis_states = {}
@@ -94,7 +94,7 @@ button_map = []
 def wheel_poll_thread(q: 'Queue[str]') -> NoReturn:
   # Open the joystick device.
   fn = '/dev/input/js0'
-  print('Opening %s...' % fn)
+  print(f'Opening {fn}...')
   jsdev = open(fn, 'rb')
 
   # Get the device name.
@@ -102,7 +102,7 @@ def wheel_poll_thread(q: 'Queue[str]') -> NoReturn:
   buf = array.array('B', [0] * 64)
   ioctl(jsdev, 0x80006a13 + (0x10000 * len(buf)), buf)  # JSIOCGNAME(len)
   js_name = buf.tobytes().rstrip(b'\x00').decode('utf-8')
-  print('Device name: %s' % js_name)
+  print(f'Device name: {js_name}')
 
   # Get number of axes and buttons.
   buf = array.array('B', [0])
@@ -118,7 +118,7 @@ def wheel_poll_thread(q: 'Queue[str]') -> NoReturn:
   ioctl(jsdev, 0x80406a32, buf)  # JSIOCGAXMAP
 
   for _axis in buf[:num_axes]:
-      axis_name = axis_names.get(_axis, 'unknown(0x%02x)' % _axis)
+      axis_name = axis_names.get(_axis, f'unknown(0x{_axis:02x})')
       axis_map.append(axis_name)
       axis_states[axis_name] = 0.0
 
@@ -127,7 +127,7 @@ def wheel_poll_thread(q: 'Queue[str]') -> NoReturn:
   ioctl(jsdev, 0x80406a34, buf)  # JSIOCGBTNMAP
 
   for btn in buf[:num_buttons]:
-      btn_name = button_names.get(btn, 'unknown(0x%03x)' % btn)
+      btn_name = button_names.get(btn, f'unknown(0x{btn:03x})')
       button_map.append(btn_name)
       button_states[btn_name] = 0
 
@@ -153,19 +153,19 @@ def wheel_poll_thread(q: 'Queue[str]') -> NoReturn:
         fvalue = value / 32767.0
         axis_states[axis] = fvalue
         normalized = (1 - fvalue) * 50
-        q.put("throttle_%f" % normalized)
+        q.put(f"throttle_{normalized:f}")
 
       elif axis == "rz":  # brake
         fvalue = value / 32767.0
         axis_states[axis] = fvalue
         normalized = (1 - fvalue) * 50
-        q.put("brake_%f" % normalized)
+        q.put(f"brake_{normalized:f}")
 
       elif axis == "x":  # steer angle
         fvalue = value / 32767.0
         axis_states[axis] = fvalue
         normalized = fvalue
-        q.put("steer_%f" % normalized)
+        q.put(f"steer_{normalized:f}")
 
     elif mtype & 0x01:  # buttons
       if value == 1: # press down

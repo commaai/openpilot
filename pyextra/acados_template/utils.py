@@ -48,7 +48,7 @@ def get_acados_path():
         acados_path = os.path.join(acados_template_path, '../../../')
         ACADOS_PATH = os.path.realpath(acados_path)
         msg = 'Warning: Did not find environment variable ACADOS_SOURCE_DIR, '
-        msg += 'guessed ACADOS_PATH to be {}.\n'.format(ACADOS_PATH)
+        msg += f'guessed ACADOS_PATH to be {ACADOS_PATH}.\n'
         msg += 'Please export ACADOS_SOURCE_DIR to not avoid this warning.'
         print(msg)
     return ACADOS_PATH
@@ -70,10 +70,10 @@ platform2tera = {
 
 def casadi_version_warning(casadi_version):
     msg =  'Warning: Please note that the following versions of CasADi  are '
-    msg += 'officially supported: {}.\n '.format(" or ".join(ALLOWED_CASADI_VERSIONS))
+    msg += f"officially supported: {' or '.join(ALLOWED_CASADI_VERSIONS)}.\n "
     msg += 'If there is an incompatibility with the CasADi generated code, '
     msg += 'please consider changing your CasADi version.\n'
-    msg += 'Version {} currently in use.'.format(casadi_version)
+    msg += f'Version {casadi_version} currently in use.'
     print(msg)
 
 
@@ -134,7 +134,7 @@ def make_model_consistent(model):
     elif isinstance(x, SX):
         symbol = SX.sym
     else:
-        raise Exception("model.x must be casadi.SX or casadi.MX, got {}".format(type(x)))
+        raise Exception(f"model.x must be casadi.SX or casadi.MX, got {type(x)}")
 
     if is_empty(p):
         model.p = symbol('p', 0, 0)
@@ -157,24 +157,24 @@ def get_tera():
         repo_url, TERA_VERSION, TERA_VERSION, platform2tera[sys.platform])
 
     manual_install = 'For manual installation follow these instructions:\n'
-    manual_install += '1 Download binaries from {}\n'.format(url)
-    manual_install += '2 Copy them in {}/bin\n'.format(acados_path)
+    manual_install += f'1 Download binaries from {url}\n'
+    manual_install += f'2 Copy them in {acados_path}/bin\n'
     manual_install += '3 Strip the version and platform from the binaries: '
     manual_install += 'as t_renderer-v0.0.34-X -> t_renderer)\n'
     manual_install += '4 Enable execution privilege on the file "t_renderer" with:\n'
-    manual_install += '"chmod +x {}"\n\n'.format(tera_path)
+    manual_install += f'"chmod +x {tera_path}"\n\n'
 
     msg = "\n"
     msg += 'Tera template render executable not found, '
-    msg += 'while looking in path:\n{}\n'.format(tera_path)
+    msg += f'while looking in path:\n{tera_path}\n'
     msg += 'In order to be able to render the templates, '
     msg += 'you need to download the tera renderer binaries from:\n'
-    msg += '{}\n\n'.format(repo_url)
+    msg += f'{repo_url}\n\n'
     msg += 'Do you wish to set up Tera renderer automatically?\n'
     msg += 'y/N? (press y to download tera or any key for manual installation)\n'
 
     if input(msg) == 'y':
-        print("Dowloading {}".format(url))
+        print(f"Dowloading {url}")
         with urllib.request.urlopen(url) as response, open(tera_path, 'wb') as out_file:
             shutil.copyfileobj(response, out_file)
         print("Successfully downloaded t_renderer.")
@@ -204,16 +204,10 @@ def render_template(in_file, out_file, template_dir, json_path):
     acados_template_path = acados_path + '/c_templates_tera'
 
     # call tera as system cmd
-    os_cmd = "{tera_path} '{template_glob}' '{in_file}' '{json_path}' '{out_file}'".format(
-        tera_path=tera_path,
-        template_glob=template_glob,
-        json_path=json_path,
-        in_file=in_file,
-        out_file=out_file
-    )
+    os_cmd = f"{tera_path} '{template_glob}' '{in_file}' '{json_path}' '{out_file}'"
     status = os.system(os_cmd)
     if (status != 0):
-        raise Exception('Rendering of {} failed! Exiting.\n'.format(in_file))
+        raise Exception(f'Rendering of {in_file} failed! Exiting.\n')
 
     os.chdir(cwd)
 
@@ -228,7 +222,7 @@ def np_array_to_list(np_array):
         return np_array.full()
     else:
         raise(Exception(
-            "Cannot convert to list type {}".format(type(np_array))
+            f"Cannot convert to list type {type(np_array)}"
         ))
 
 

@@ -71,7 +71,7 @@ if __name__ == "__main__":
       total_times = total_times_new[:]
       busy_times = busy_times_new[:]
 
-      print("CPU %.2f%% - RAM: %.2f%% - Temp %.2fC" % (100. * mean(cores), last_mem, last_temp))
+      print(f"CPU {100.0 * mean(cores):.2f}% - RAM: {last_mem:.2f}% - Temp {last_temp:.2f}C")
 
       if args.cpu and prev_proclog is not None:
         procs = {}

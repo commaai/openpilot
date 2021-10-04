@@ -136,7 +136,7 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.84
 
     else:
-      raise ValueError("unsupported car %s" % candidate)
+      raise ValueError(f"unsupported car {candidate}")
 
     ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
     ret.centerToFront = ret.wheelbase * 0.45

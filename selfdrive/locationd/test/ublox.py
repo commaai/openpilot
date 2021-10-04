@@ -333,19 +333,19 @@ class UBloxDescriptor:
         continue
       v = msg._fields[fieldname]
       if isinstance(v, list):
-        ret += '%s=[' % fieldname
+        ret += f'{fieldname}=['
         for a in range(alen):
-          ret += '%s, ' % v[a]
+          ret += f'{v[a]}, '
         ret = ret[:-2] + '], '
       elif isinstance(v, str):
         ret += '%s="%s", ' % (f, v.rstrip(' \0'))
       else:
-        ret += '%s=%s, ' % (f, v)
+        ret += f'{f}={v}, '
     for r in msg._recs:
       ret += '[ '
       for f in self.fields2:
         v = r[f]
-        ret += '%s=%s, ' % (f, v)
+        ret += f'{f}={v}, '
       ret = ret[:-2] + ' ], '
     return ret[:-2]
 
@@ -608,7 +608,7 @@ class UBloxMessage:
       raise UBloxError('INVALID MESSAGE')
     type = self.msg_type()
     if type not in msg_types:
-      raise UBloxError('Unknown message %s' % str(type))
+      raise UBloxError(f'Unknown message {str(type)}')
     msg_types[type].pack(self)
 
   def name(self):
@@ -783,7 +783,7 @@ class UBlox:
 
   def send_nmea(self, msg):
     if not self.read_only:
-      s = msg + "*%02X" % self.nmea_checksum(msg) + "\r\n"
+      s = msg + f"*{self.nmea_checksum(msg):02X}" + "\r\n"
       self.write(s)
 
   def set_binary(self):

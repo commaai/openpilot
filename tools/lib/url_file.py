@@ -156,7 +156,7 @@ class URLFile(object):
     if self._debug:
       t2 = time.time()
       if t2 - t1 > 0.1:
-        print("get %s %r %.f slow" % (self._url, headers, t2 - t1))
+        print(f"get {self._url} {headers!r} {t2 - t1:.f} slow")
 
     response_code = c.getinfo(pycurl.RESPONSE_CODE)
     if response_code == 416:  # Requested Range Not Satisfiable

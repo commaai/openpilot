@@ -142,7 +142,7 @@ class AcadosOcpSolverFast:
                 # Get elements in column major order
                 value_ = np.ravel(value_, order='F')
             else:
-                raise Exception("Unknown api: '{}'".format(api))
+                raise Exception(f"Unknown api: '{api}'")
 
         if value_shape != expected_shape:
             raise Exception('AcadosOcpSolver.cost_set(): mismatching dimension',
@@ -217,7 +217,7 @@ class AcadosOcpSolverFast:
                 # Get elements in column major order
                 value_ = np.ravel(value_, order='F')
             else:
-                raise Exception("Unknown api: '{}'".format(api))
+                raise Exception(f"Unknown api: '{api}'")
         if value_shape != expected_shape:
             raise Exception('AcadosOcpSolver.constraints_set(): mismatching dimension' \
                 ' for field "{}" with dimension {} (you have {})'.format(field_, expected_shape, value_shape))
@@ -289,8 +289,8 @@ class AcadosOcpSolverFast:
                 self.nlp_dims, self.nlp_out, stage_, field)
 
             if value_.shape[0] != dims:
-                msg = 'AcadosOcpSolver.set(): mismatching dimension for field "{}" '.format(field_)
-                msg += 'with dimension {} (you have {})'.format(dims, value_.shape)
+                msg = f'AcadosOcpSolver.set(): mismatching dimension for field "{field_}" '
+                msg += f'with dimension {dims} (you have {value_.shape})'
                 raise Exception(msg)
 
             value_data = cast(value_.ctypes.data, POINTER(c_double))
@@ -357,7 +357,7 @@ class AcadosOcpSolverFast:
             raise Exception('AcadosOcpSolver.get_slice(): end stage index must be larger than start stage index')
 
         if start_stage_ < 0 or end_stage_ > self.N + 1:
-            raise Exception('AcadosOcpSolver.get_slice(): stage index must be in [0, N], got: {}.'.format(self.N))
+            raise Exception(f'AcadosOcpSolver.get_slice(): stage index must be in [0, N], got: {self.N}.')
         self.shared_lib.ocp_nlp_dims_get_from_attr.argtypes = \
             [c_void_p, c_void_p, c_void_p, c_int, c_char_p]
         self.shared_lib.ocp_nlp_dims_get_from_attr.restype = c_int
