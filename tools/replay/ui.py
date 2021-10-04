@@ -13,7 +13,7 @@ import cereal.messaging as messaging
 from common.numpy_fast import clip
 from common.basedir import BASEDIR
 from selfdrive.config import UIParams as UP
-from tools.replay.lib.ui_helpers import (_BB_TO_FULL_FRAME, _FULL_FRAME_SIZE,
+from tools.replay.lib.ui_helpers import (_BB_TO_FULL_FRAME,
                                          _INTRINSICS, BLACK, GREEN,
                                          YELLOW, Calibration,
                                          get_blank_lid_overlay, init_plots,
