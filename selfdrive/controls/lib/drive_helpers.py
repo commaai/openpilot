@@ -5,12 +5,11 @@ from common.realtime import DT_MDL
 from selfdrive.config import Conversions as CV
 from selfdrive.modeld.constants import T_IDXS
 
-
 # kph
 V_CRUISE_MAX = 135
 V_CRUISE_MIN = 8
-V_CRUISE_DELTA = 1.6
 V_CRUISE_ENABLE_MIN = 40
+
 LAT_MPC_N = 16
 LON_MPC_N = 32
 CONTROL_N = 17
@@ -52,7 +51,7 @@ def get_steer_max(CP, v_ego):
   return interp(v_ego, CP.steerMaxBP, CP.steerMaxV)
 
 
-def update_v_cruise(v_cruise_kph, buttonEvents, button_timers, enabled):
+def update_v_cruise(v_cruise_kph, buttonEvents, button_timers, enabled, metric):
   # handle button presses. TODO: this should be in state_control, but a decelCruise press
   # would have the effect of both enabling and changing speed is checked after the state transition
   if not enabled:
@@ -60,6 +59,9 @@ def update_v_cruise(v_cruise_kph, buttonEvents, button_timers, enabled):
 
   long_press = False
   button_type = None
+
+  v_cruise_delta = 1 if metric else CV.MPH_TO_KPH
+  fast_cruise_multiplier = 10 if metric else 5
 
   for b in buttonEvents:
     if b.type.raw in button_timers and not b.pressed:
@@ -75,7 +77,7 @@ def update_v_cruise(v_cruise_kph, buttonEvents, button_timers, enabled):
         break
 
   if button_type:
-    v_cruise_delta = V_CRUISE_DELTA * (5 if long_press else 1)
+    v_cruise_delta = v_cruise_delta * (fast_cruise_multiplier if long_press else 1)
     if long_press and v_cruise_kph % v_cruise_delta != 0: # partial interval
       v_cruise_kph = CRUISE_NEAREST_FUNC[button_type](v_cruise_kph / v_cruise_delta) * v_cruise_delta
     else:
