@@ -33,8 +33,6 @@ protected:
       {.rgb_type = VISION_STREAM_RGB_FRONT, .yuv_type = VISION_STREAM_YUV_FRONT},
       {.rgb_type = VISION_STREAM_RGB_WIDE, .yuv_type = VISION_STREAM_YUV_WIDE},
   };
-  cl_device_id device_id_;
-  cl_context context_;
   std::thread camera_thread_;
   std::unique_ptr<VisionIpcServer> vipc_server_;
   SafeQueue<std::tuple<CameraType, FrameReader*, const cereal::EncodeIndex::Reader>> queue_;
