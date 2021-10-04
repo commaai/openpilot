@@ -6,8 +6,6 @@
 const int YUV_BUF_COUNT = 50;
 
 CameraServer::CameraServer() {
-  device_id_ = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
-  context_ = CL_CHECK_ERR(clCreateContext(nullptr, 1, &device_id_, nullptr, nullptr, &err));
   camera_thread_ = std::thread(&CameraServer::thread, this);
 }
 
@@ -15,12 +13,11 @@ CameraServer::~CameraServer() {
   queue_.push({});
   camera_thread_.join();
   vipc_server_.reset(nullptr);
-  CL_CHECK(clReleaseContext(context_));
 }
 
 void CameraServer::startVipcServer() {
   std::cout << (vipc_server_ ? "start" : "restart") << " vipc server" << std::endl;
-  vipc_server_.reset(new VisionIpcServer("camerad", device_id_, context_));
+  vipc_server_.reset(new VisionIpcServer("camerad"));
   for (auto &cam : cameras_) {
     if (cam.width > 0 && cam.height > 0) {
       vipc_server_->create_buffers(cam.rgb_type, UI_BUF_COUNT, true, cam.width, cam.height);
