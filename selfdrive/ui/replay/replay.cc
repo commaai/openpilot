@@ -71,9 +71,9 @@ void Replay::start(int seconds) {
 
   camera_server_ = std::make_unique<CameraServer>();
   // start stream thread
-  stream_thread = new QThread(this);
-  QObject::connect(stream_thread, &QThread::started, [=]() { stream(); });
-  stream_thread->start();
+  stream_thread_ = new QThread(this);
+  QObject::connect(stream_thread_, &QThread::started, [=]() { stream(); });
+  stream_thread_->start();
 }
 
 void Replay::updateEvents(const std::function<bool()> &lambda) {

@@ -36,7 +36,7 @@ protected:
   void updateEvents(const std::function<bool()>& lambda);
   void publishFrame(const Event *e);
 
-  QThread *stream_thread = nullptr;
+  QThread *stream_thread_ = nullptr;
 
   // logs
   std::mutex stream_lock_;
