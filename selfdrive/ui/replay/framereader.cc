@@ -1,6 +1,7 @@
 #include "selfdrive/ui/replay/framereader.h"
 
 #include <cassert>
+#include <unistd.h>
 
 static int ffmpeg_lockmgr_cb(void **arg, enum AVLockOp op) {
   std::mutex *mutex = (std::mutex *)*arg;
@@ -82,6 +83,8 @@ bool FrameReader::load(const std::string &url) {
   int ret = avcodec_copy_context(pCodecCtx_, pCodecCtxOrig);
   if (ret != 0) return false;
 
+  pCodecCtx_->thread_count = 0;
+  pCodecCtx_->thread_type = FF_THREAD_FRAME;
   ret = avcodec_open2(pCodecCtx_, pCodec, NULL);
   if (ret < 0) return false;
 
@@ -130,11 +133,18 @@ std::optional<std::pair<uint8_t *, uint8_t *>> FrameReader::get(int idx) {
 void FrameReader::decodeThread() {
   int idx = 0;
   while (!exit_) {
-    const int from = std::max(idx - 15, 0);
+    // find the previous key frame
+    int key_frame = idx;
+    for (int i = idx; i >=0; --i) {
+      if (frames_[i].pkt.flags & AV_PKT_FLAG_KEY) {
+        key_frame = i;
+        break;
+      }
+    }
     const int to = std::min(idx + 20, (int)frames_.size());
     for (int i = 0; i < frames_.size() && !exit_; ++i) {
       Frame &frame = frames_[i];
-      if (i >= from && i < to) {
+      if (i >= key_frame && i < to) {
         if (frame.rgb_data || frame.failed) continue;
 
         auto [rgb_data, yuv_data] = decodeFrame(&frame.pkt);
@@ -162,7 +172,15 @@ std::pair<uint8_t *, uint8_t *> FrameReader::decodeFrame(AVPacket *pkt) {
   uint8_t *rgb_data = nullptr, *yuv_data = nullptr;
   int gotFrame = 0;
   AVFrame *f = av_frame_alloc();
-  avcodec_decode_video2(pCodecCtx_, f, &gotFrame, pkt);
+  while (true) {
+    int ret = avcodec_decode_video2(pCodecCtx_, f, &gotFrame, pkt);
+    if (ret > 0 && !gotFrame) {
+      // decode thread is still receiving the initial packets
+      usleep(0);
+    } else {
+      break;
+    }
+  }
   if (gotFrame) {
     rgb_data = new uint8_t[getRGBSize()];
     yuv_data = new uint8_t[getYUVSize()];
