@@ -1,5 +1,6 @@
 #include "selfdrive/ui/replay/replay.h"
 
+#include <csignal>
 #include <iostream>
 #include <termios.h>
 
@@ -10,9 +11,16 @@
 
 const QString DEMO_ROUTE = "4cf7a6ad03080c90|2021-09-29--13-46-36";
 
+struct termios oldt = {};
+
+void sigHandler(int s) {
+  std::signal(s, SIG_DFL);
+  tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+  qApp->quit();
+}
+
 int getch() {
   int ch;
-  struct termios oldt;
   struct termios newt;
 
   tcgetattr(STDIN_FILENO, &oldt);
@@ -63,7 +71,9 @@ void keyboardThread(Replay *replay) {
 }
 
 int main(int argc, char *argv[]){
-  QApplication a(argc, argv);
+  QApplication app(argc, argv);
+  std::signal(SIGINT, sigHandler);
+  std::signal(SIGTERM, sigHandler);
 
   QCommandLineParser parser;
   parser.setApplicationDescription("Mock openpilot components by publishing logged messages.");
@@ -76,7 +86,7 @@ int main(int argc, char *argv[]){
   parser.addOption({"dcam", "load driver camera"});
   parser.addOption({"ecam", "load wide road camera"});
 
-  parser.process(a);
+  parser.process(app);
   const QStringList args = parser.positionalArguments();
   if (args.empty() && !parser.isSet("demo")) {
     parser.showHelp();
@@ -86,7 +96,7 @@ int main(int argc, char *argv[]){
   QStringList allow = parser.value("allow").isEmpty() ? QStringList{} : parser.value("allow").split(",");
   QStringList block = parser.value("block").isEmpty() ? QStringList{} : parser.value("block").split(",");
 
-  Replay *replay = new Replay(route, allow, block, nullptr, parser.isSet("dcam"), parser.isSet("ecam"));
+  Replay *replay = new Replay(route, allow, block, nullptr, parser.isSet("dcam"), parser.isSet("ecam"), &app);
   if (replay->load()) {
     replay->start(parser.value("start").toInt());
   }
@@ -96,5 +106,5 @@ int main(int argc, char *argv[]){
   QObject::connect(t, &QThread::finished, t, &QThread::deleteLater);
   t->start();
 
-  return a.exec();
+  return app.exec();
 }
