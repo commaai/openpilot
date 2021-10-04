@@ -348,6 +348,7 @@ void send_peripheral_state(PubMaster *pm, Panda *panda) {
 void panda_state_thread(PubMaster *pm, Panda * peripheral_panda, Panda *panda, bool spoofing_started) {
   Params params;
   bool ignition_last = false;
+  std::future<bool> safety_future;
 
   LOGD("start panda state thread");
 
