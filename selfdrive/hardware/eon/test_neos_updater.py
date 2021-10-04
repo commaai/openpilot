@@ -36,7 +36,7 @@ class TestNeosUpdater(unittest.TestCase):
       with tempfile.NamedTemporaryFile(delete=False, dir=os.getcwd()) as f:
         dat = os.urandom(random.randint(1000, 100000))
         f.write(dat)
-        cls.manifest[f"{i}_url"] = f"http://localhost:{PORT}/" + os.path.relpath(f.name)
+        cls.manifest[f"{i}_url"] = f"http://localhost:{PORT}/{os.path.relpath(f.name)}"
         cls.manifest[F"{i}_hash"] = hashlib.sha256(dat).hexdigest()
         if i == "recovery":
           cls.manifest["recovery_len"] = len(dat)
@@ -88,7 +88,7 @@ class TestNeosUpdater(unittest.TestCase):
     Path(get_fn(self.manifest['ota_url'])).touch()
     with self.assertRaisesRegex(Exception, "failed hash check"):
       download_file(self.manifest['ota_url'], get_fn(self.manifest['ota_url']),
-                    self.manifest['ota_hash']+'a', "system")
+                    f"{self.manifest['ota_hash']}a", "system")
 
     # should've unlinked after the failed hash check, should succeed now
     download_file(self.manifest['ota_url'], get_fn(self.manifest['ota_url']),

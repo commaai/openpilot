@@ -139,7 +139,7 @@ def boardd_test_loop():
   can_init()
   cnt = 0
   while 1:
-    can_send_many([[0xbb, 0, "\xaa\xaa\xaa\xaa", 0], [0xaa, 0, "\xaa\xaa\xaa\xaa"+struct.pack("!I", cnt), 1]])
+    can_send_many([[0xbb, 0, "\xaa\xaa\xaa\xaa", 0], [0xaa, 0, f"ªªªª{struct.pack('!I', cnt)}", 1]])
     #can_send_many([[0xaa,0,"\xaa\xaa\xaa\xaa",0]])
     #can_send_many([[0xaa,0,"\xaa\xaa\xaa\xaa",1]])
     # recv @ 100hz

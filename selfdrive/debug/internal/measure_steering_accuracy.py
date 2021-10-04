@@ -71,7 +71,7 @@ if __name__ == "__main__":
       cnt = 0
 
     if msg_cnt % 100 == 0:
-      print(chr(27) + "[2J")
+      print(f"{chr(27)}[2J")
       if cnt != 0:
         print("COLLECTING ...")
       else:

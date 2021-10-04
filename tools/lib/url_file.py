@@ -68,7 +68,7 @@ class URLFile(object):
   def get_length(self):
     if self._length is not None:
       return self._length
-    file_length_path = os.path.join(CACHE_DIR, hash_256(self._url) + "_length")
+    file_length_path = os.path.join(CACHE_DIR, f"{hash_256(self._url)}_length")
     if os.path.exists(file_length_path) and not self._force_download:
       with open(file_length_path, "r") as file_length:
           content = file_length.read()
@@ -93,7 +93,7 @@ class URLFile(object):
     while True:
       self._pos = position
       chunk_number = self._pos / CHUNK_SIZE
-      file_name = hash_256(self._url) + "_" + str(chunk_number)
+      file_name = f"{hash_256(self._url)}_{str(chunk_number)}"
       full_path = os.path.join(CACHE_DIR, str(file_name))
       data = None
       #  If we don't have a file, download it

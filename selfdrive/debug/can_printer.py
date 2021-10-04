@@ -23,7 +23,7 @@ def can_printer(bus=0, max_msg=None, addr="127.0.0.1"):
           msgs[y.address].append(y.dat)
 
     if sec_since_boot() - lp > 0.1:
-      dd = chr(27) + "[2J"
+      dd = f"{chr(27)}[2J"
       dd += f"{sec_since_boot() - start:5.2f}\n"
       for k, v in sorted(zip(msgs.keys(), map(lambda x: binascii.hexlify(x[-1]), msgs.values()))):
         if max_msg is None or k < max_msg:

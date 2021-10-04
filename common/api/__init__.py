@@ -10,7 +10,7 @@ API_HOST = os.getenv('API_HOST', 'https://api.commadotai.com')
 class Api():
   def __init__(self, dongle_id):
     self.dongle_id = dongle_id
-    with open(PERSIST+'/comma/id_rsa') as f:
+    with open(f"{PERSIST}/comma/id_rsa") as f:
       self.private_key = f.read()
 
   def get(self, *args, **kwargs):
@@ -39,8 +39,8 @@ class Api():
 def api_get(endpoint, method='GET', timeout=None, access_token=None, **params):
   headers = {}
   if access_token is not None:
-    headers['Authorization'] = "JWT "+access_token
+    headers['Authorization'] = f"JWT {access_token}"
 
-  headers['User-Agent'] = "openpilot-" + version
+  headers['User-Agent'] = f"openpilot-{version}"
 
-  return requests.request(method, API_HOST + "/" + endpoint, timeout=timeout, headers=headers, params=params)
+  return requests.request(method, f"{API_HOST}/{endpoint}", timeout=timeout, headers=headers, params=params)

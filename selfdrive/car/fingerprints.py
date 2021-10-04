@@ -8,7 +8,7 @@ def get_attr_from_cars(attr, result=dict, combine_brands=True):
   # - values are attr values from all car folders
   result = result()
 
-  for car_folder in [x[0] for x in os.walk(BASEDIR + '/selfdrive/car')]:
+  for car_folder in [x[0] for x in os.walk(f"{BASEDIR}/selfdrive/car")]:
     try:
       car_name = car_folder.split('/')[-1]
       values = __import__(f'selfdrive.car.{car_name}.values', fromlist=[attr])

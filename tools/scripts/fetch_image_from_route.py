@@ -17,8 +17,8 @@ route = sys.argv[1]
 segment = int(sys.argv[2])
 frame = int(sys.argv[3])
 
-url = 'https://api.commadotai.com/v1/route/'+sys.argv[1]+"/files"
-r = requests.get(url, headers={"Authorization": "JWT "+jwt})
+url = f"https://api.commadotai.com/v1/route/{sys.argv[1]}/files"
+r = requests.get(url, headers={"Authorization": f"JWT {jwt}"})
 assert r.status_code == 200
 print("got api response")
 
@@ -31,7 +31,7 @@ if frame >= fr.frame_count:
   raise Exception("frame %d not found, got %d frames" % (frame, fr.frame_count))
 
 im = Image.fromarray(fr.get(frame, count=1, pix_fmt="rgb24")[0])
-fn = "uxxx_"+route.replace("|", "_")+"_%d_%d.png" % (segment, frame)
+fn = f"uxxx_{route.replace('|', '_')}{'_%d_%d.png' % (segment, frame)}"
 im.save(fn)
 print(f"saved {fn}")
 

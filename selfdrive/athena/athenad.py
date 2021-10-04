@@ -285,7 +285,7 @@ def startLocalProxy(global_end_event, remote_ws_uri, local_port):
     dongle_id = params.get("DongleId").decode('utf8')
     identity_token = Api(dongle_id).get_token()
     ws = create_connection(remote_ws_uri,
-                           cookie="jwt=" + identity_token,
+                           cookie=f"jwt={identity_token}",
                            enable_multithread=True)
 
     ssock, csock = socket.socketpair()
@@ -310,10 +310,10 @@ def startLocalProxy(global_end_event, remote_ws_uri, local_port):
 
 @dispatcher.add_method
 def getPublicKey():
-  if not os.path.isfile(PERSIST + '/comma/id_rsa.pub'):
+  if not os.path.isfile(f"{PERSIST}/comma/id_rsa.pub"):
     return None
 
-  with open(PERSIST + '/comma/id_rsa.pub', 'r') as f:
+  with open(f"{PERSIST}/comma/id_rsa.pub", 'r') as f:
     return f.read()
 
 
@@ -542,7 +542,7 @@ def main():
   params = Params()
   dongle_id = params.get("DongleId", encoding='utf-8')
 
-  ws_uri = ATHENA_HOST + "/ws/v2/" + dongle_id
+  ws_uri = f"{ATHENA_HOST}/ws/v2/{dongle_id}"
   api = Api(dongle_id)
 
   conn_retries = 0
@@ -550,7 +550,7 @@ def main():
     try:
       cloudlog.event("athenad.main.connecting_ws", ws_uri=ws_uri)
       ws = create_connection(ws_uri,
-                             cookie="jwt=" + api.get_token(),
+                             cookie=f"jwt={api.get_token()}",
                              enable_multithread=True,
                              timeout=30.0)
       cloudlog.event("athenad.main.connected_ws", ws_uri=ws_uri)

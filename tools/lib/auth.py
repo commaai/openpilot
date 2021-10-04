@@ -41,7 +41,7 @@ def auth_redirect_link():
     'prompt': 'select_account',
   }
 
-  return (redirect_uri, 'https://accounts.google.com/o/oauth2/auth?' + urlencode(params))
+  return (redirect_uri, f"https://accounts.google.com/o/oauth2/auth?{urlencode(params)}")
 
 def login():
   redirect_uri, oauth_uri = auth_redirect_link()

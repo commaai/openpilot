@@ -15,7 +15,7 @@ def ffi_wrap(name, c_code, c_header, tmpdir="/tmp/ccache", cflags="", libraries=
   if libraries is None:
     libraries = []
 
-  cache = name + "_" + hashlib.sha1(c_code.encode('utf-8')).hexdigest()
+  cache = f"{name}_{hashlib.sha1(c_code.encode('utf-8')).hexdigest()}"
   try:
     os.mkdir(tmpdir)
   except OSError:

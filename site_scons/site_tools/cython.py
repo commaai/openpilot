@@ -17,8 +17,8 @@ def pyx_scan(node, env, path, arg=None):
   matches += pyx_import_re.findall(contents)
 
   # Modules can be either .pxd or .pyx files
-  files = [m.replace('.', '/') + '.pxd' for m in matches]
-  files += [m.replace('.', '/') + '.pyx' for m in matches]
+  files = [f"{m.replace('.', '/')}.pxd" for m in matches]
+  files += [f"{m.replace('.', '/')}.pyx" for m in matches]
 
   # cdef extern from <file>
   files += cdef_import_re.findall(contents)

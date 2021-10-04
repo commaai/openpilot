@@ -163,7 +163,7 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA):
         p.terminate()
 
   r = params.get("CurrentRoute", encoding='utf-8')
-  return os.path.join(outdir, r + "--0")
+  return os.path.join(outdir, f"{r}--0")
 
 
 def regen_and_save(route, sidx, upload=False, use_route_meta=True):

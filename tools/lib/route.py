@@ -47,7 +47,7 @@ class Route(object):
 
   def _get_segments_remote(self):
     api = CommaApi(get_token())
-    route_files = api.get('v1/route/' + self.route_name + '/files')
+    route_files = api.get(f"v1/route/{self.route_name}/files")
 
     segments = {}
     for url in chain.from_iterable(route_files.values()):

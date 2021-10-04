@@ -147,7 +147,7 @@ class Uploader():
 
   def do_upload(self, key, fn):
     try:
-      url_resp = self.api.get("v1.3/"+self.dongle_id+"/upload_url/", timeout=10, path=key, access_token=self.api.get_token())
+      url_resp = self.api.get(f"v1.3/{self.dongle_id}/upload_url/", timeout=10, path=key, access_token=self.api.get_token())
       if url_resp.status_code == 412:
         self.last_resp = url_resp
         return

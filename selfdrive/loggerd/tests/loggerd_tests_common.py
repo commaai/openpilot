@@ -13,7 +13,7 @@ def create_random_file(file_path, size_mb, lock=False):
     except OSError:
       pass
 
-    lock_path = file_path + ".lock"
+    lock_path = f"{file_path}.lock"
     os.close(os.open(lock_path, os.O_CREAT | os.O_EXCL))
 
     chunks = 128

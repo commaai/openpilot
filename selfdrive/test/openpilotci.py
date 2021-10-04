@@ -9,7 +9,7 @@ TOKEN_PATH = "/data/azure_token"
 
 def get_url(route_name, segment_num, log_type="rlog"):
   ext = "hevc" if log_type in ["fcamera", "dcamera"] else "bz2"
-  return BASE_URL + f"{route_name.replace('|', '/')}/{segment_num}/{log_type}.{ext}"
+  return f"{BASE_URL}{route_name.replace('|', '/')}/{segment_num}/{log_type}.{ext}"
 
 def upload_file(path, name):
   from azure.storage.blob import BlockBlobService
@@ -23,7 +23,7 @@ def upload_file(path, name):
                                          --expiry $(date -u '+%Y-%m-%dT%H:%M:%SZ' -d '+1 hour') --auth-mode login --as-user --output tsv", shell=True).decode().strip("\n")
   service = BlockBlobService(account_name="commadataci", sas_token=sas_token)
   service.create_blob_from_path("openpilotci", name, path)
-  return "https://commadataci.blob.core.windows.net/openpilotci/" + name
+  return f"https://commadataci.blob.core.windows.net/openpilotci/{name}"
 
 if __name__ == "__main__":
   for f in sys.argv[1:]:

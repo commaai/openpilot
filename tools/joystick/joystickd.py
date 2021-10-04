@@ -64,7 +64,7 @@ def joystick_thread(use_keyboard):
       dat.testJoystick.axes = [joystick.axes_values[a] for a in joystick.axes_values]
       dat.testJoystick.buttons = [joystick.cancel]
       joystick_sock.send(dat.to_bytes())
-      print('\n' + ', '.join([f'{name}: {round(v, 3)}' for name, v in joystick.axes_values.items()]))
+      print(f"\n{', '.join([f'{name}: {round(v, 3)}' for name, v in joystick.axes_values.items()])}")
 
 
 if __name__ == '__main__':

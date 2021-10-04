@@ -42,7 +42,7 @@ def sentry_report(fn, message, contents):
 
 
 def clear_apport_folder():
-  for f in glob.glob(APPORT_DIR + '*'):
+  for f in glob.glob(f"{APPORT_DIR}*"):
     try:
       os.remove(f)
     except Exception:
@@ -146,11 +146,11 @@ def report_tombstone_apport(fn):
         path = path.replace('/data/openpilot/', '')
         message += path
       elif "Signal" in line:
-        message += " - " + line.strip()
+        message += f" - {line.strip()}"
 
         try:
           sig_num = int(line.strip().split(': ')[-1])
-          message += " (" + signal.Signals(sig_num).name + ")"  # pylint: disable=no-member
+          message += f" ({signal.Signals(sig_num).name})"  # pylint: disable=no-member
         except ValueError:
           pass
 
@@ -175,8 +175,8 @@ def report_tombstone_apport(fn):
     crash_function = " ".join(x for x in crash_function.split(' ')[1:] if not x.startswith('0x'))
     crash_function = re.sub(r'\(.*?\)', '', crash_function)
 
-  contents = stacktrace + "\n\n" + contents
-  message = message + " - " + crash_function
+  contents = f"{stacktrace}\n\n{contents}"
+  message = f"{message} - {crash_function}"
   sentry_report(fn, message, contents)
 
   # Copy crashlog to upload folder

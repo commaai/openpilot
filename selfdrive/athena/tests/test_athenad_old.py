@@ -46,7 +46,7 @@ def test_athena():
     while 1:
       try:
         resp = requests.post(
-          "https://athena.comma.ai/" + params.get("DongleId", encoding="utf-8"),
+          f"https://athena.comma.ai/{params.get('DongleId', encoding='utf-8')}",
           headers={
             "Authorization": "JWT thisisnotajwt",
             "Content-Type": "application/json"

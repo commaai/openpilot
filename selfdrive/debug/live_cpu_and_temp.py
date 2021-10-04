@@ -22,7 +22,7 @@ def proc_name(proc):
   if len(proc.cmdline):
     name = proc.cmdline[0]
   if len(proc.exe):
-    name = proc.exe + " - " + name
+    name = f"{proc.exe} - {name}"
 
   return name
 

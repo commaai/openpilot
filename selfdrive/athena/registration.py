@@ -30,14 +30,14 @@ def register(show_spinner=False) -> str:
   # create a key for auth
   # your private key is kept on your device persist partition and never sent to our servers
   # do not erase your persist partition
-  if not os.path.isfile(PERSIST+"/comma/id_rsa.pub"):
+  if not os.path.isfile(f"{PERSIST}/comma/id_rsa.pub"):
     needs_registration = True
     cloudlog.warning("generating your personal RSA key")
-    mkdirs_exists_ok(PERSIST+"/comma")
-    assert os.system("openssl genrsa -out "+PERSIST+"/comma/id_rsa.tmp 2048") == 0
-    assert os.system("openssl rsa -in "+PERSIST+"/comma/id_rsa.tmp -pubout -out "+PERSIST+"/comma/id_rsa.tmp.pub") == 0
-    os.rename(PERSIST+"/comma/id_rsa.tmp", PERSIST+"/comma/id_rsa")
-    os.rename(PERSIST+"/comma/id_rsa.tmp.pub", PERSIST+"/comma/id_rsa.pub")
+    mkdirs_exists_ok(f"{PERSIST}/comma")
+    assert os.system(f"openssl genrsa -out {PERSIST}/comma/id_rsa.tmp 2048") == 0
+    assert os.system(f"openssl rsa -in {PERSIST}/comma/id_rsa.tmp -pubout -out {PERSIST}/comma/id_rsa.tmp.pub") == 0
+    os.rename(f"{PERSIST}/comma/id_rsa.tmp", f"{PERSIST}/comma/id_rsa")
+    os.rename(f"{PERSIST}/comma/id_rsa.tmp.pub", f"{PERSIST}/comma/id_rsa.pub")
 
   if needs_registration:
     if show_spinner:
@@ -45,7 +45,7 @@ def register(show_spinner=False) -> str:
       spinner.update("registering device")
 
     # Create registration token, in the future, this key will make JWTs directly
-    with open(PERSIST+"/comma/id_rsa.pub") as f1, open(PERSIST+"/comma/id_rsa") as f2:
+    with open(f"{PERSIST}/comma/id_rsa.pub") as f1, open(f"{PERSIST}/comma/id_rsa") as f2:
       public_key = f1.read()
       private_key = f2.read()
 

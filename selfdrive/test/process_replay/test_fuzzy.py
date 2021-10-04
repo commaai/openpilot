@@ -110,12 +110,12 @@ def convert_to_lr(msgs):
 def is_finite(d, exclude=[], prefix=""):  # pylint: disable=dangerous-default-value
   ret = True
   for k, v in d.items():
-    name = prefix + f"{k}"
+    name = f"{prefix}{k}"
     if name in exclude:
       continue
 
     if isinstance(v, dict):
-      if not is_finite(v, exclude, name + "."):
+      if not is_finite(v, exclude, f"{name}."):
         ret = False
     else:
       try:

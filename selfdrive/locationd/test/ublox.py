@@ -326,7 +326,7 @@ class UBloxDescriptor:
     '''return a formatted string for a message'''
     if not msg._unpacked:
       self.unpack(msg)
-    ret = self.name + ': '
+    ret = f"{self.name}: "
     for f in self.fields:
       (fieldname, alen) = ArrayParse(f)
       if fieldname not in msg._fields:
@@ -336,7 +336,7 @@ class UBloxDescriptor:
         ret += f'{fieldname}=['
         for a in range(alen):
           ret += f'{v[a]}, '
-        ret = ret[:-2] + '], '
+        ret = f"{ret[:-2]}], "
       elif isinstance(v, str):
         ret += '%s="%s", ' % (f, v.rstrip(' \0'))
       else:
@@ -346,7 +346,7 @@ class UBloxDescriptor:
       for f in self.fields2:
         v = r[f]
         ret += f'{f}={v}, '
-      ret = ret[:-2] + ' ], '
+      ret = f"{ret[:-2]} ], "
     return ret[:-2]
 
 
@@ -783,7 +783,7 @@ class UBlox:
 
   def send_nmea(self, msg):
     if not self.read_only:
-      s = msg + f"*{self.nmea_checksum(msg):02X}" + "\r\n"
+      s = f'{msg}*{self.nmea_checksum(msg):02X}\r\n'
       self.write(s)
 
   def set_binary(self):

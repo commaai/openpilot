@@ -10,15 +10,15 @@ from selfdrive.hardware.tici.amplifier import Amplifier
 from selfdrive.hardware.tici import iwlist
 
 NM = 'org.freedesktop.NetworkManager'
-NM_CON_ACT = NM + '.Connection.Active'
-NM_DEV_WL = NM + '.Device.Wireless'
-NM_AP = NM + '.AccessPoint'
+NM_CON_ACT = f"{NM}.Connection.Active"
+NM_DEV_WL = f"{NM}.Device.Wireless"
+NM_AP = f"{NM}.AccessPoint"
 DBUS_PROPS = 'org.freedesktop.DBus.Properties'
 
 MM = 'org.freedesktop.ModemManager1'
-MM_MODEM = MM + ".Modem"
-MM_MODEM_SIMPLE = MM + ".Modem.Simple"
-MM_SIM = MM + ".Sim"
+MM_MODEM = f"{MM}.Modem"
+MM_MODEM_SIMPLE = f"{MM}.Modem.Simple"
+MM_SIM = f"{MM}.Sim"
 
 class MM_MODEM_STATE(IntEnum):
        FAILED        = -1

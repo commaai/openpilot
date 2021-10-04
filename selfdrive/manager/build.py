@@ -72,13 +72,13 @@ def build(spinner, dirty=False):
                   if any([err in line for err in [b'error: ', b'not found, needed by target']])]
         error_s = "\n".join(errors)
         add_file_handler(cloudlog)
-        cloudlog.error("scons build failed\n" + error_s)
+        cloudlog.error(f"scons build failed\n{error_s}")
 
         # Show TextWindow
         spinner.close()
         if not os.getenv("CI"):
           error_s = "\n \n".join(["\n".join(textwrap.wrap(e, 65)) for e in errors])
-          with TextWindow("openpilot failed to build\n \n" + error_s) as t:
+          with TextWindow(f"openpilot failed to build\n \n{error_s}") as t:
             t.wait_for_exit()
         exit(1)
     else:

@@ -40,15 +40,15 @@ def load_interfaces(brand_names):
   ret = {}
   for brand_name in brand_names:
     path = f'selfdrive.car.{brand_name}'
-    CarInterface = __import__(path + '.interface', fromlist=['CarInterface']).CarInterface
+    CarInterface = __import__(f"{path}.interface", fromlist=['CarInterface']).CarInterface
 
-    if os.path.exists(BASEDIR + '/' + path.replace('.', '/') + '/carstate.py'):
-      CarState = __import__(path + '.carstate', fromlist=['CarState']).CarState
+    if os.path.exists(f"{BASEDIR}/{path.replace('.', '/')}/carstate.py"):
+      CarState = __import__(f"{path}.carstate", fromlist=['CarState']).CarState
     else:
       CarState = None
 
-    if os.path.exists(BASEDIR + '/' + path.replace('.', '/') + '/carcontroller.py'):
-      CarController = __import__(path + '.carcontroller', fromlist=['CarController']).CarController
+    if os.path.exists(f"{BASEDIR}/{path.replace('.', '/')}/carcontroller.py"):
+      CarController = __import__(f"{path}.carcontroller", fromlist=['CarController']).CarController
     else:
       CarController = None
 
@@ -62,7 +62,7 @@ def _get_interface_names():
   # - keys are all the car names that which we have an interface for
   # - values are lists of spefic car models for a given car
   brand_names = {}
-  for car_folder in [x[0] for x in os.walk(BASEDIR + '/selfdrive/car')]:
+  for car_folder in [x[0] for x in os.walk(f"{BASEDIR}/selfdrive/car")]:
     try:
       brand_name = car_folder.split('/')[-1]
       model_names = __import__(f'selfdrive.car.{brand_name}.values', fromlist=['CAR']).CAR

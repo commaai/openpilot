@@ -195,14 +195,14 @@ def ui_thread(addr, frame_address):
 
     lines = [
       info_font.render("ENABLED", True, GREEN if sm['controlsState'].enabled else BLACK),
-      info_font.render("SPEED: " + str(round(sm['carState'].vEgo, 1)) + " m/s", True, YELLOW),
-      info_font.render("LONG CONTROL STATE: " + str(sm['controlsState'].longControlState), True, YELLOW),
-      info_font.render("LONG MPC SOURCE: " + str(sm['longitudinalPlan'].longitudinalPlanSource), True, YELLOW),
+      info_font.render(f"SPEED: {str(round(sm['carState'].vEgo, 1))} m/s", True, YELLOW),
+      info_font.render(f"LONG CONTROL STATE: {str(sm['controlsState'].longControlState)}", True, YELLOW),
+      info_font.render(f"LONG MPC SOURCE: {str(sm['longitudinalPlan'].longitudinalPlanSource)}", True, YELLOW),
       None,
-      info_font.render("ANGLE OFFSET (AVG): " + str(round(sm['liveParameters'].angleOffsetAverageDeg, 2)) + " deg", True, YELLOW),
-      info_font.render("ANGLE OFFSET (INSTANT): " + str(round(sm['liveParameters'].angleOffsetDeg, 2)) + " deg", True, YELLOW),
-      info_font.render("STIFFNESS: " + str(round(sm['liveParameters'].stiffnessFactor * 100., 2)) + " %", True, YELLOW),
-      info_font.render("STEER RATIO: " + str(round(sm['liveParameters'].steerRatio, 2)), True, YELLOW)
+      info_font.render(f"ANGLE OFFSET (AVG): {str(round(sm['liveParameters'].angleOffsetAverageDeg, 2))} deg", True, YELLOW),
+      info_font.render(f"ANGLE OFFSET (INSTANT): {str(round(sm['liveParameters'].angleOffsetDeg, 2))} deg", True, YELLOW),
+      info_font.render(f"STIFFNESS: {str(round(sm['liveParameters'].stiffnessFactor * 100.0, 2))} %", True, YELLOW),
+      info_font.render(f"STEER RATIO: {str(round(sm['liveParameters'].steerRatio, 2))}", True, YELLOW)
     ]
 
     for i, line in enumerate(lines):
