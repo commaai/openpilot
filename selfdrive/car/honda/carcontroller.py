@@ -211,7 +211,6 @@ class CarController():
         ts = frame * DT_CTRL
 
         if CS.CP.carFingerprint in HONDA_BOSCH:
-          accel = P.BOSCH_ACCEL_MIN if stopping else accel # Prevent rolling backwards
           accel = clip(accel, P.BOSCH_ACCEL_MIN, P.BOSCH_ACCEL_MAX)
           bosch_gas = interp(accel, P.BOSCH_GAS_LOOKUP_BP, P.BOSCH_GAS_LOOKUP_V)
           can_sends.extend(hondacan.create_acc_commands(self.packer, enabled, accel, bosch_gas, idx, stopping, starting, CS.CP.carFingerprint))
