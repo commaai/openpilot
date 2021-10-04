@@ -60,7 +60,7 @@ def update_v_cruise(v_cruise_kph, buttonEvents, button_timers, enabled, metric):
   long_press = False
   button_type = None
 
-  v_cruise_delta = 1 if metric else 1.6
+  v_cruise_delta = 1 if metric else CV.MPH_TO_KPH
   fast_cruise_multiplier = 10 if metric else 5
 
   for b in buttonEvents:
