@@ -113,8 +113,8 @@ def ui_thread(addr, frame_address):
     # ***** frame *****
     rgb_img_raw = vipc_client.recv()
 
-    num_px = len(rgb_img_raw) // 3
     if rgb_img_raw is not None and rgb_img_raw.any():
+      num_px = len(rgb_img_raw) // 3
       imgff_shape = (vipc_client.height, vipc_client.width, 3)
 
       if imgff is None or imgff.shape != imgff_shape:
