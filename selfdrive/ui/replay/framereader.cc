@@ -1,28 +1,30 @@
 #include "selfdrive/ui/replay/framereader.h"
 
-#include <cassert>
 #include <unistd.h>
+
+#include <cassert>
+
+#include "libyuv.h"
 
 static int ffmpeg_lockmgr_cb(void **arg, enum AVLockOp op) {
   std::mutex *mutex = (std::mutex *)*arg;
   switch (op) {
-  case AV_LOCK_CREATE:
-    mutex = new std::mutex();
-    break;
-  case AV_LOCK_OBTAIN:
-    mutex->lock();
-    break;
-  case AV_LOCK_RELEASE:
-    mutex->unlock();
-  case AV_LOCK_DESTROY:
-    delete mutex;
-    break;
+    case AV_LOCK_CREATE:
+      mutex = new std::mutex();
+      break;
+    case AV_LOCK_OBTAIN:
+      mutex->lock();
+      break;
+    case AV_LOCK_RELEASE:
+      mutex->unlock();
+    case AV_LOCK_DESTROY:
+      delete mutex;
+      break;
   }
   return 0;
 }
 
-class AVInitializer {
-public:
+struct AVInitializer {
   AVInitializer() {
     int ret = av_lockmgr_register(ffmpeg_lockmgr_cb);
     assert(ret >= 0);
@@ -41,7 +43,6 @@ FrameReader::~FrameReader() {
   // wait until thread is finished.
   exit_ = true;
   cv_decode_.notify_all();
-  cv_frame_.notify_all();
   if (decode_thread_.joinable()) {
     decode_thread_.join();
   }
@@ -49,9 +50,10 @@ FrameReader::~FrameReader() {
   // free all.
   for (auto &f : frames_) {
     av_free_packet(&f.pkt);
+    delete f.buf;
   }
-  if (frmRgb_) {
-    av_frame_free(&frmRgb_);
+  for (Buffer *buf : buffers_) {
+    delete buf;
   }
   if (pCodecCtx_) {
     avcodec_close(pCodecCtx_);
@@ -59,9 +61,6 @@ FrameReader::~FrameReader() {
   }
   if (pFormatCtx_) {
     avformat_close_input(&pFormatCtx_);
-  }
-  if (sws_ctx_) {
-    sws_freeContext(sws_ctx_);
   }
 }
 
@@ -91,14 +90,6 @@ bool FrameReader::load(const std::string &url) {
   width = pCodecCtxOrig->width;
   height = pCodecCtxOrig->height;
 
-  sws_ctx_ = sws_getContext(width, height, AV_PIX_FMT_YUV420P,
-                            width, height, AV_PIX_FMT_BGR24,
-                            SWS_BILINEAR, NULL, NULL, NULL);
-  if (!sws_ctx_) return false;
-
-  frmRgb_ = av_frame_alloc();
-  if (!frmRgb_) return false;
-
   frames_.reserve(60 * 20);  // 20fps, one minute
   do {
     Frame &frame = frames_.emplace_back();
@@ -123,86 +114,88 @@ std::optional<std::pair<uint8_t *, uint8_t *>> FrameReader::get(int idx) {
   std::unique_lock lk(mutex_);
   decode_idx_ = idx;
   cv_decode_.notify_one();
-  cv_frame_.wait(lk, [=] { return exit_ || frames_[idx].rgb_data || frames_[idx].failed; });
-  if (!frames_[idx].rgb_data) {
+  cv_decode_.wait(lk, [=] { return exit_ || frames_[idx].buf || frames_[idx].failed; });
+  if (!frames_[idx].buf) {
     return std::nullopt;
   }
-  return std::make_pair(frames_[idx].rgb_data.get(), frames_[idx].yuv_data.get());
+  return std::make_pair(frames_[idx].buf->rgb.get(), frames_[idx].buf->yuv.get());
 }
 
 void FrameReader::decodeThread() {
-  int idx = 0;
+  // find the previous keyframe
+  auto get_keyframe = [=](int idx) {
+    for (int i = idx; i >= 0; --i) {
+      if (frames_[i].pkt.flags & AV_PKT_FLAG_KEY) return i;
+    }
+    return idx;
+  };
+
+  int frame_id = 0;
+  AVFrame *av_frame = av_frame_alloc();
   while (!exit_) {
-    // find the previous key frame
-    int key_frame = idx;
-    for (int i = idx; i >=0; --i) {
-      if (frames_[i].pkt.flags & AV_PKT_FLAG_KEY) {
-        key_frame = i;
-        break;
-      }
-    }
-    const int to = std::min(idx + 20, (int)frames_.size());
-    for (int i = 0; i < frames_.size() && !exit_; ++i) {
-      Frame &frame = frames_[i];
-      if (i >= key_frame && i < to) {
-        if (frame.rgb_data || frame.failed) continue;
-
-        auto [rgb_data, yuv_data] = decodeFrame(&frame.pkt);
-        std::unique_lock lk(mutex_);
-        frame.rgb_data.reset(rgb_data);
-        frame.yuv_data.reset(yuv_data);
-        frame.failed = !rgb_data;
-        cv_frame_.notify_all();
-      } else {
-        frame.rgb_data.reset(nullptr);
-        frame.yuv_data.reset(nullptr);
-        frame.failed = false;
-      }
+    {
+      std::unique_lock lk(mutex_);
+      cv_decode_.wait(lk, [=] { return exit_ || decode_idx_ != frame_id; });
     }
 
-    // sleep & wait
-    std::unique_lock lk(mutex_);
-    cv_decode_.wait(lk, [=] { return exit_ || decode_idx_ != -1; });
-    idx = decode_idx_;
-    decode_idx_ = -1;
+    while (std::exchange(frame_id, decode_idx_) != frame_id) {
+      const int from_frame = get_keyframe(frame_id);
+      const int to_frame = std::min(frame_id + 10, (int)frames_.size() - 1);
+
+      for (int i = 0; i < frames_.size() && !exit_ && decode_idx_ == frame_id; ++i) {
+        Frame &frame = frames_[i];
+        if (i >= from_frame && i <= to_frame) {
+          if (!frame.decoded || (i >= frame_id && !frame.buf)) {
+            while (true) {
+              int ret = avcodec_decode_video2(pCodecCtx_,av_frame, &frame.decoded, &(frame.pkt));
+              if (ret > 0 && !frame.decoded) {
+                // decode thread is still receiving the initial packets
+                usleep(0);
+              } else {
+                break;
+              }
+            }
+            
+            if (i >= frame_id) {
+              Buffer *buf = frame.decoded ? decodeFrame(av_frame) : nullptr;
+              std::unique_lock lk(mutex_);
+              frame.buf = buf;
+              frame.failed = !buf;
+              cv_decode_.notify_all();
+            }
+          }
+        } else if (frame.buf) {
+          buffers_.push_back(frame.buf);
+          frame.buf = nullptr;
+        }
+      }
+    }
   }
+  av_frame_free(&av_frame);
 }
 
-std::pair<uint8_t *, uint8_t *> FrameReader::decodeFrame(AVPacket *pkt) {
-  uint8_t *rgb_data = nullptr, *yuv_data = nullptr;
-  int gotFrame = 0;
-  AVFrame *f = av_frame_alloc();
-  while (true) {
-    int ret = avcodec_decode_video2(pCodecCtx_, f, &gotFrame, pkt);
-    if (ret > 0 && !gotFrame) {
-      // decode thread is still receiving the initial packets
-      usleep(0);
-    } else {
-      break;
-    }
+FrameReader::Buffer *FrameReader::decodeFrame(AVFrame *f) {
+  Buffer *buf = nullptr;
+  if (!buffers_.empty()) {
+    buf = buffers_.back();
+    buffers_.pop_back();
+  } else {
+    buf = new Buffer(getRGBSize(), getYUVSize());
   }
-  if (gotFrame) {
-    rgb_data = new uint8_t[getRGBSize()];
-    yuv_data = new uint8_t[getYUVSize()];
-    int i, j, k;
-    for (i = 0; i < f->height; i++) {
-      memcpy(yuv_data + f->width * i, f->data[0] + f->linesize[0] * i, f->width);
-    }
-    for (j = 0; j < f->height / 2; j++) {
-      memcpy(yuv_data + f->width * i + f->width / 2 * j, f->data[1] + f->linesize[1] * j, f->width / 2);
-    }
-    for (k = 0; k < f->height / 2; k++) {
-      memcpy(yuv_data + f->width * i + f->width / 2 * j + f->width / 2 * k, f->data[2] + f->linesize[2] * k, f->width / 2);
-    }
+  int i, j, k;
+  uint8_t *y = buf->yuv.get();
+  for (i = 0; i < f->height; i++) {
+    memcpy(y + f->width * i, f->data[0] + f->linesize[0] * i, f->width);
+  }
+  for (j = 0; j < f->height / 2; j++) {
+    memcpy(y + f->width * i + f->width / 2 * j, f->data[1] + f->linesize[1] * j, f->width / 2);
+  }
+  for (k = 0; k < f->height / 2; k++) {
+    memcpy(y + f->width * i + f->width / 2 * j + f->width / 2 * k, f->data[2] + f->linesize[2] * k, f->width / 2);
+  }
 
-    int ret = avpicture_fill((AVPicture *)frmRgb_, rgb_data, AV_PIX_FMT_BGR24, f->width, f->height);
-    assert(ret > 0);
-    if (sws_scale(sws_ctx_, (const uint8_t **)f->data, f->linesize, 0, f->height, frmRgb_->data, frmRgb_->linesize) <= 0) {
-      delete[] rgb_data;
-      delete[] yuv_data;
-      rgb_data = yuv_data = nullptr;
-    }
-  }
-  av_frame_free(&f);
-  return {rgb_data, yuv_data};
+  uint8_t *u = y + f->width * f->height;
+  uint8_t *v = u + (f->width / 2) * (f->height / 2);
+  libyuv::I420ToRGB24(y, f->width, u, f->width / 2, v, f->width / 2, buf->rgb.get(), f->width * 3, f->width, f->height);
+  return buf;
 }
