@@ -8,7 +8,7 @@ from typing import List
 from panda import BASEDIR as PANDA_BASEDIR, Panda, PandaDFU
 from common.basedir import BASEDIR
 from common.params import Params
-from hardware import TICI
+from selfdrive.hardware import TICI
 from selfdrive.swaglog import cloudlog
 
 PANDA_FW_FN = os.path.join(PANDA_BASEDIR, "board", "obj", "panda.bin.signed")
