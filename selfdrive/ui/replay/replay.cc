@@ -30,8 +30,6 @@ Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *s
 
   route_ = std::make_unique<Route>(route);
   events_ = new std::vector<Event *>();
-  device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
-  context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
   // queueSegment is always executed in the main thread
   connect(this, &Replay::segmentChanged, this, &Replay::queueSegment);
 }
@@ -47,8 +45,6 @@ Replay::~Replay() {
     stream_thread_->wait();
   }
 
-  delete vipc_server;
-  CL_CHECK(clReleaseContext(context));
   delete pm;
   delete events_;
   segments_.clear();
@@ -263,36 +259,7 @@ void Replay::stream() {
         }
 
         if (evt->frame) {
-<<<<<<< HEAD
           publishFrame(evt);
-=======
-          // TODO: publish all frames
-          if (evt->which == cereal::Event::ROAD_ENCODE_IDX) {
-            auto idx = evt->event.getRoadEncodeIdx();
-            auto &seg = segments_[idx.getSegmentNum()];
-
-            if (seg && seg->isLoaded() && idx.getType() == cereal::EncodeIndex::Type::FULL_H_E_V_C) {
-              auto &frm = seg->frames[RoadCam];
-
-              if (vipc_server == nullptr) {
-                vipc_server = new VisionIpcServer("camerad", device_id, context);
-                vipc_server->create_buffers(VisionStreamType::VISION_STREAM_RGB_BACK, UI_BUF_COUNT,
-                                            true, frm->width, frm->height);
-                vipc_server->start_listener();
-              }
-
-              uint8_t *dat = frm->get(idx.getSegmentId());
-              if (dat) {
-                VisionIpcBufExtra extra = {};
-                VisionBuf *buf = vipc_server->get_buffer(VisionStreamType::VISION_STREAM_RGB_BACK);
-                memcpy(buf->addr, dat, frm->getRGBSize());
-                vipc_server->send(buf, &extra, false);
-              }
-            }
-          }
-
-        // publish msg
->>>>>>> relase context
         } else {
           // publish msg
           if (sm == nullptr) {
