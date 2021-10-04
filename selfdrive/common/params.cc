@@ -208,6 +208,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"Offroad_TemperatureTooHigh", CLEAR_ON_MANAGER_START},
     {"Offroad_UnofficialHardware", CLEAR_ON_MANAGER_START},
     {"Offroad_UpdateFailed", CLEAR_ON_MANAGER_START},
+    {"CarModel", PERSISTENT},
 };
 
 } // namespace
