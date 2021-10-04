@@ -57,7 +57,7 @@ bool safety_setter_thread(Panda *panda) {
 
   // switch to SILENT when CarVin param is read
   while (true) {
-    if (do_exit || !panda->connected) {
+    if (do_exit || !panda->connected || !ignition) {
       return false;
     };
 
@@ -77,7 +77,7 @@ bool safety_setter_thread(Panda *panda) {
   std::string params;
   LOGW("waiting for params to set safety model");
   while (true) {
-    if (do_exit || !panda->connected) {
+    if (do_exit || !panda->connected || !ignition) {
       return false;
     };
 
@@ -309,7 +309,7 @@ bool send_panda_state(PubMaster *pm, Panda *panda, bool spoofing_started) {
     }
   }
   pm->send("pandaState", msg);
-  
+
   return ignition;
 }
 
