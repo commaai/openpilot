@@ -102,7 +102,6 @@ def ui_thread(addr, frame_address):
   draw_plots = init_plots(plot_arr, name_to_arr_idx, plot_xlims, plot_ylims, plot_names, plot_colors, plot_styles, bigplots=True)
 
   vipc_client = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_RGB_BACK, True)
-  vipc_client.connect(True)
   while 1:
     list(pygame.event.get())
 
@@ -111,6 +110,9 @@ def ui_thread(addr, frame_address):
     top_down = top_down_surface, lid_overlay
 
     # ***** frame *****
+    if not vipc_client.is_connected():
+      vipc_client.connect(True)
+
     rgb_img_raw = vipc_client.recv()
 
     if rgb_img_raw is not None and rgb_img_raw.any():
