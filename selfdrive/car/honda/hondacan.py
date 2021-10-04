@@ -1,4 +1,4 @@
-from selfdrive.car.honda.values import HONDA_BOSCH, CAR
+from selfdrive.car.honda.values import HONDA_BOSCH, CAR, CarControllerParams
 from selfdrive.config import Conversions as CV
 
 # CAN bus layout with relay
@@ -46,20 +46,20 @@ def create_brake_command(packer, apply_brake, pump_on, pcm_override, pcm_cancel_
 def create_acc_commands(packer, enabled, accel, gas, idx, stopping, starting, car_fingerprint):
   commands = []
   bus = get_pt_bus(car_fingerprint)
+  min_gas_accel = CarControllerParams.BOSCH_GAS_LOOKUP_BP[0]
 
   control_on = 5 if enabled else 0
-  # no gas = -30000
-  gas_command = gas if enabled and gas > -0.2 else -30000
+  gas_command = gas if enabled and accel > min_gas_accel else -30000
   accel_command = accel if enabled else 0
-  braking = 1 if enabled and accel < -0.2 else 0
+  braking = 1 if enabled and accel < min_gas_accel else 0
   standstill = 1 if enabled and stopping else 0
   standstill_release = 1 if enabled and starting else 0
 
   acc_control_values = {
     # setting CONTROL_ON causes car to set POWERTRAIN_DATA->ACC_STATUS = 1
     "CONTROL_ON": control_on,
-    "GAS_COMMAND": gas_command, # used for gas
-    "ACCEL_COMMAND": accel_command, # used for brakes
+    "GAS_COMMAND": gas_command,  # used for gas
+    "ACCEL_COMMAND": accel_command,  # used for brakes
     "BRAKE_LIGHTS": braking,
     "BRAKE_REQUEST": braking,
     "STANDSTILL": standstill,
