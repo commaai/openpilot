@@ -119,10 +119,7 @@ Route::Route(const QString &route) : route_(route) {}
 
 bool Route::load() {
   QEventLoop loop;
-  auto onError = [&loop](const QString &err) {
-    qInfo() << err;
-    loop.quit();
-  };
+  auto onError = [&loop](const QString &err) { loop.quit(); };
 
   bool ret = false;
   HttpRequest http(nullptr, !Hardware::PC());
