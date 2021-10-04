@@ -30,10 +30,12 @@ public:
   inline int size() const { return segments_.size(); }
   inline SegmentFile &at(int n) { return segments_[n]; }
 
+  // public for unit tests
+  std::vector<SegmentFile> segments_;
+
 protected:
   bool loadFromJson(const QString &json);
   QString route_;
-  std::vector<SegmentFile> segments_;
 };
 
 class Segment : public QObject {

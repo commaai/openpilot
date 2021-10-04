@@ -85,8 +85,11 @@ int main(int argc, char *argv[]){
   const QString route = args.empty() ? DEMO_ROUTE : args.first();
   QStringList allow = parser.value("allow").isEmpty() ? QStringList{} : parser.value("allow").split(",");
   QStringList block = parser.value("block").isEmpty() ? QStringList{} : parser.value("block").split(",");
+
   Replay *replay = new Replay(route, allow, block, nullptr, parser.isSet("dcam"), parser.isSet("ecam"));
-  replay->start(parser.value("start").toInt());
+  if (replay->load()) {
+    replay->start(parser.value("start").toInt());
+  }
 
   // start keyboard control thread
   QThread *t = QThread::create(keyboardThread, replay);
