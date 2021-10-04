@@ -35,7 +35,21 @@ Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *s
 }
 
 Replay::~Replay() {
-  // TODO: quit stream thread and free resources.
+  qDebug() << "shutdown: in progress...";
+
+  exit_ = true;
+  updating_events_ = true;
+  if (stream_thread_) {
+    stream_cv_.notify_one();
+    stream_thread_->quit();
+    stream_thread_->wait();
+  }
+
+  delete pm;
+  delete events_;
+  segments_.clear();
+  camera_server_.reset(nullptr);
+  qDebug() << "shutdown: done";
 }
 
 bool Replay::load() {
@@ -54,9 +68,9 @@ void Replay::start(int seconds) {
 
   camera_server_ = std::make_unique<CameraServer>();
   // start stream thread
-  thread = new QThread;
-  QObject::connect(thread, &QThread::started, [=]() { stream(); });
-  thread->start();
+  stream_thread_ = new QThread(this);
+  QObject::connect(stream_thread_, &QThread::started, [=]() { stream(); });
+  stream_thread_->start();
 }
 
 void Replay::updateEvents(const std::function<bool()> &lambda) {

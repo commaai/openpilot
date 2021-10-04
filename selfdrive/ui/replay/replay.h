@@ -36,7 +36,7 @@ protected:
   void updateEvents(const std::function<bool()>& lambda);
   void publishFrame(const Event *e);
 
-  QThread *thread;
+  QThread *stream_thread_ = nullptr;
 
   // logs
   std::mutex stream_lock_;
@@ -54,8 +54,8 @@ protected:
   std::vector<int> segments_merged_;
 
   // messaging
-  SubMaster *sm;
-  PubMaster *pm;
+  SubMaster *sm = nullptr;
+  PubMaster *pm = nullptr;
   std::vector<const char*> sockets_;
   std::unique_ptr<Route> route_;
   bool load_dcam = false, load_ecam = false;
