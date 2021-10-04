@@ -48,6 +48,7 @@ Replay::~Replay() {
   delete pm;
   delete events_;
   segments_.clear();
+  camera_server_.reset(nullptr);
   qDebug() << "shutdown: done";
 }
 
