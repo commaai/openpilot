@@ -3,8 +3,6 @@ import argparse
 import os
 import sys
 
-os.environ["OMP_NUM_THREADS"] = "1"
-
 import cv2  # pylint: disable=import-error
 import numpy as np
 import pygame  # pylint: disable=import-error
@@ -26,7 +24,8 @@ os.environ['BASEDIR'] = BASEDIR
 
 ANGLE_SCALE = 5.0
 
-def ui_thread(addr, frame_address):
+def ui_thread(addr):
+  cv2.setNumThreads(1)
   pygame.init()
   pygame.font.init()
   assert pygame_modules_have_loaded()
@@ -57,7 +56,7 @@ def ui_thread(addr, frame_address):
   top_down_surface = pygame.surface.Surface((UP.lidar_x, UP.lidar_y), 0, 8)
 
   sm = messaging.SubMaster(['carState', 'longitudinalPlan', 'carControl', 'radarState', 'liveCalibration', 'controlsState',
-                            'liveTracks', 'modelV2', 'liveParameters', 'lateralPlan', 'roadCameraState'], addr=addr)
+                            'liveTracks', 'modelV2', 'liveParameters', 'lateralPlan'], addr=addr)
 
   img = np.zeros((480, 640, 3), dtype='uint8')
   imgff = None
@@ -99,7 +98,7 @@ def ui_thread(addr, frame_address):
                  ["-", "-", "-", "-"],
                  ["-", "-"]]
 
-  draw_plots = init_plots(plot_arr, name_to_arr_idx, plot_xlims, plot_ylims, plot_names, plot_colors, plot_styles, bigplots=True)
+  draw_plots = init_plots(plot_arr, name_to_arr_idx, plot_xlims, plot_ylims, plot_names, plot_colors, plot_styles)
 
   vipc_client = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_RGB_BACK, True)
   while 1:
@@ -132,7 +131,7 @@ def ui_thread(addr, frame_address):
       img.fill(0)
       intrinsic_matrix = np.eye(3)
 
-    sm.update()
+    sm.update(0)
 
     w = sm['controlsState'].lateralControlState.which()
     if w == 'lqrState':
@@ -232,4 +231,4 @@ if __name__ == "__main__":
     os.environ["ZMQ"] = "1"
     messaging.context = messaging.Context()
 
-  ui_thread(args.ip_address, args.frame_address)
+  ui_thread(args.ip_address)
