@@ -418,7 +418,7 @@ class CarInterface(CarInterfaceBase):
     else:
       hud_v_cruise = 255
 
-    can_sends = self.CC.update(c.enabled, self.CS, self.frame,
+    can_sends = self.CC.update(c.enabled, c.active, self.CS, self.frame,
                                c.actuators,
                                c.cruiseControl.cancel,
                                hud_v_cruise,
