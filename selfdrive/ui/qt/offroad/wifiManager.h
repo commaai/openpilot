@@ -74,7 +74,7 @@ private:
   const QString defaultTetheringPassword = "swagswagcomma";
 
   bool firstScan = true;
-  QString getAdapter(const uint = NM_DEVICE_TYPE_MODEM);
+  QString getAdapter(const uint = NM_DEVICE_TYPE_WIFI);
   uint getAdapterType(const QDBusObjectPath &path);
   bool isWirelessAdapter(const QDBusObjectPath &path);
   QString get_ipv4_address();
