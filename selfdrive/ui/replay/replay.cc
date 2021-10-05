@@ -234,7 +234,6 @@ void Replay::stream() {
       continue;
     }
 
-    qDebug() << "unlogging at" << (int)((cur_mono_time_ - route_start_ts_) * 1e-9);
     uint64_t evt_start_ts = cur_mono_time_;
     uint64_t loop_start_ts = nanos_since_boot();
 
