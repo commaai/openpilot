@@ -163,10 +163,10 @@ def main(sm=None, pm=None):
         0.2 <= msg.liveParameters.stiffnessFactor <= 5.0,
         min_sr <= msg.liveParameters.steerRatio <= max_sr,
       ))
-      msg.liveParameters.steerRatioSTD = float(P[States.STEER_RATIO])
-      msg.liveParameters.stiffnessFactorSTD = float(P[States.STIFFNESS])
-      msg.liveParameters.angleOffsetAverageSTD = float(P[States.ANGLE_OFFSET])
-      msg.liveParameters.angleOffsetFastSTD = float(P[States.ANGLE_OFFSET_FAST])
+      msg.liveParameters.steerRatioStd = float(P[States.STEER_RATIO])
+      msg.liveParameters.stiffnessFactorStd = float(P[States.STIFFNESS])
+      msg.liveParameters.angleOffsetAverageStd = float(P[States.ANGLE_OFFSET])
+      msg.liveParameters.angleOffsetFastStd = float(P[States.ANGLE_OFFSET_FAST])
 
       if sm.frame % 1200 == 0:  # once a minute
         params = {
