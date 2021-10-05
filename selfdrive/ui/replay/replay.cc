@@ -88,6 +88,7 @@ void Replay::seekTo(int seconds, bool relative) {
   if (segments_.empty()) return;
 
   bool segment_loaded = false;
+  bool segment_changed = false;
   updateEvents([&]() {
     if (relative) {
       seconds += ((cur_mono_time_ - route_start_ts_) * 1e-9);
@@ -95,14 +96,13 @@ void Replay::seekTo(int seconds, bool relative) {
     qInfo() << "seeking to" << seconds;
 
     cur_mono_time_ = route_start_ts_ + std::clamp(seconds, 0, (int)segments_.size() * 60) * 1e9;
-    current_segment_ = std::min(seconds / 60, (int)segments_.size() - 1);
-    segment_loaded = std::find(segments_merged_.begin(), segments_merged_.end(), current_segment_) != segments_merged_.end();
+    int segment = std::min(seconds / 60, (int)segments_.size() - 1);
+    segment_changed = current_segment_.exchange(segment) != segment;
+    segment_loaded = std::find(segments_merged_.begin(), segments_merged_.end(), segment) != segments_merged_.end();
     return segment_loaded;
   });
 
-  if (!segment_loaded) {
-    // always emit segmentChanged if segment is not loaded.
-    // the current_segment_ may not valid when seeking cross boundary or seeking to an invalid segment.
+  if (segment_changed || !segment_loaded) {
     emit segmentChanged();
   }
 }
