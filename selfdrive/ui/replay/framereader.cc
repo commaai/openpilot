@@ -66,6 +66,7 @@ FrameReader::~FrameReader() {
 
 bool FrameReader::load(const std::string &url) {
   pFormatCtx_ = avformat_alloc_context();
+  pFormatCtx_->probesize = 10 * 1024 * 1024;  // 10MB
   if (avformat_open_input(&pFormatCtx_, url.c_str(), NULL, NULL) != 0) {
     printf("error loading %s\n", url.c_str());
     return false;
