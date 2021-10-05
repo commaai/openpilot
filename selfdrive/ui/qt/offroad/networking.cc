@@ -165,7 +165,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   ButtonControl *editApnButton = new ButtonControl("APN settings", "EDIT");
   connect(editApnButton, &ButtonControl::clicked, [=]() {
     const QString cur_apn = QString::fromStdString(params.get("GsmApn"));
-    QString apn = InputDialog::getText("Enter APN, leave empty for automatic config", this, "", false, -1, cur_apn);
+    QString apn = InputDialog::getText("Enter APN", this, "leave empty for automatic", false, -1, cur_apn);
     if (apn.isEmpty()) {
       params.remove("GsmApn");
     } else {
