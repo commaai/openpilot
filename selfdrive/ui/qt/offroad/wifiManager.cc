@@ -423,21 +423,7 @@ NetworkType WifiManager::currentNetworkType() {
   return NetworkType::NONE;
 }
 
-void WifiManager::setRoamingEnabled(bool roaming) {
-  if (!lteConnectionPath.isEmpty()) {
-    QDBusInterface nm(NM_DBUS_SERVICE, lteConnectionPath, NM_DBUS_INTERFACE_SETTINGS_CONNECTION, bus);
-    nm.setTimeout(DBUS_TIMEOUT);
-
-    Connection settings = QDBusReply<Connection>(nm.call("GetSettings")).value();
-    if (settings.value("gsm").value("home-only").toBool() == roaming) {
-      qWarning() << "Changing gsm.home-only to" << !roaming;
-      settings["gsm"]["home-only"] = !roaming;
-      nm.call("UpdateUnsaved", QVariant::fromValue(settings));  // update is temporary
-    }
-  }
-}
-
-void WifiManager::setApn(QString apn) {
+void WifiManager::updateGsmSettings(bool roaming, QString apn) {
   if (!lteConnectionPath.isEmpty()) {
     QDBusInterface nm(NM_DBUS_SERVICE, lteConnectionPath, NM_DBUS_INTERFACE_SETTINGS_CONNECTION, bus);
     nm.setTimeout(DBUS_TIMEOUT);
@@ -458,8 +444,15 @@ void WifiManager::setApn(QString apn) {
       changes = true;
     }
 
+    if (settings.value("gsm").value("home-only").toBool() == roaming) {
+      qWarning() << "Changing gsm.home-only to" << !roaming;
+      settings["gsm"]["home-only"] = !roaming;
+      changes = true;
+    }
+
     if (changes) {
       nm.call("UpdateUnsaved", QVariant::fromValue(settings));  // update is temporary
+      // TODO: bring connection down/up
     }
   }
 }
