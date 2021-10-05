@@ -1,10 +1,11 @@
 import itertools
 from typing import Any, Dict, Tuple
 
-import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import pygame  # pylint: disable=import-error
+
+from matplotlib.backends.backend_agg import FigureCanvasAgg
 
 from common.transformations.camera import (eon_f_frame_size, eon_f_focal_length,
                                            tici_f_frame_size, tici_f_focal_length,
@@ -106,7 +107,7 @@ def draw_path(path, color, img, calibration, top_down, lid_color=None, z_off=0):
         img[y + a, x + b] = color
 
 
-def init_plots(arr, name_to_arr_idx, plot_xlims, plot_ylims, plot_names, plot_colors, plot_styles, bigplots=False):
+def init_plots(arr, name_to_arr_idx, plot_xlims, plot_ylims, plot_names, plot_colors, plot_styles):
   color_palette = { "r": (1, 0, 0),
                     "g": (0, 1, 0),
                     "b": (0, 0, 1),
@@ -115,10 +116,9 @@ def init_plots(arr, name_to_arr_idx, plot_xlims, plot_ylims, plot_names, plot_co
                     "p": (0, 1, 1),
                     "m": (1, 0, 1)}
 
-  if bigplots:
-    fig = plt.figure(figsize=(6.4, 7.0))
-  else:
-    fig = plt.figure()
+  dpi = 90
+  fig = plt.figure(figsize=(575 / dpi, 600 / dpi), dpi=dpi)
+  canvas = FigureCanvasAgg(fig)
 
   fig.set_facecolor((0.2, 0.2, 0.2))
 
@@ -149,12 +149,7 @@ def init_plots(arr, name_to_arr_idx, plot_xlims, plot_ylims, plot_names, plot_co
     if i < len(plot_ylims) - 1:
       axs[i].set_xticks([])
 
-  fig.canvas.draw()
-
-  renderer = fig.canvas.get_renderer()
-
-  if matplotlib.get_backend() == "MacOSX":
-    fig.draw(renderer)
+  canvas.draw()
 
   def draw_plots(arr):
     for ax in axs:
@@ -163,19 +158,8 @@ def init_plots(arr, name_to_arr_idx, plot_xlims, plot_ylims, plot_names, plot_co
       plots[i].set_ydata(arr[:, idxs[i]])
       axs[plot_select[i]].draw_artist(plots[i])
 
-    if matplotlib.get_backend() == "QT4Agg":
-      fig.canvas.update()
-      fig.canvas.flush_events()
-
-    raw_data = renderer.tostring_rgb()
-    x, y = fig.canvas.get_width_height()
-
-    # Handle 2x scaling
-    if len(raw_data) == 4 * x * y * 3:
-      plot_surface = pygame.image.frombuffer(raw_data, (2*x, 2*y), "RGB").convert()
-      plot_surface = pygame.transform.scale(plot_surface, (x, y))
-    else:
-      plot_surface = pygame.image.frombuffer(raw_data, fig.canvas.get_width_height(), "RGB").convert()
+    raw_data = canvas.buffer_rgba()
+    plot_surface = pygame.image.frombuffer(raw_data, canvas.get_width_height(), "RGBA").convert()
     return plot_surface
 
   return draw_plots
