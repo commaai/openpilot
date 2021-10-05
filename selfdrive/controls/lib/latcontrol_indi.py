@@ -8,7 +8,7 @@ from common.realtime import DT_CTRL
 from selfdrive.car import apply_toyota_steer_torque_limits
 from selfdrive.car.toyota.values import CarControllerParams
 from selfdrive.controls.lib.drive_helpers import get_steer_max
-from selfdrive.controls.lib.latcontrol import LatControl, MIN_CTRL_SPEED
+from selfdrive.controls.lib.latcontrol import LatControl, MIN_STEER_SPEED
 
 
 class LatControlINDI(LatControl):
@@ -88,7 +88,7 @@ class LatControlINDI(LatControl):
     rate_des = VM.get_steer_from_curvature(-curvature_rate, CS.vEgo, 0)
     indi_log.steeringRateDesiredDeg = math.degrees(rate_des)
 
-    if CS.vEgo < MIN_CTRL_SPEED or not active:
+    if CS.vEgo < MIN_STEER_SPEED or not active:
       indi_log.active = False
       self.output_steer = 0.0
       self.steer_filter.x = 0.0
