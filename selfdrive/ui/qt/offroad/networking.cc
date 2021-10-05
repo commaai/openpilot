@@ -158,6 +158,23 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   });
   list->addItem(roamingToggle);
 
+  // APN settings
+  const QString apn = QString::fromStdString(params.get("GsmApn"));
+  wifi->setApn(apn);
+
+  ButtonControl *editApnButton = new ButtonControl("APN settings", "EDIT");
+  connect(editApnButton, &ButtonControl::clicked, [=]() {
+    const QString cur_apn = QString::fromStdString(params.get("GsmApn"));
+    QString apn = InputDialog::getText("Enter APN, leave empty for automatic config", this, "", false, -1, cur_apn);
+    if (apn.isEmpty()) {
+      params.remove("GsmApn");
+    } else {
+      params.put("GsmApn", apn.toStdString());
+    }
+    wifi->setApn(apn);
+  });
+  list->addItem(editApnButton);
+
   main_layout->addWidget(list);
   main_layout->addStretch(1);
 }
