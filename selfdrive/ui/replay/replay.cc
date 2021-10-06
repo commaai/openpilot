@@ -92,10 +92,10 @@ void Replay::doSeek(int seconds, bool relative) {
     if (relative) {
       seconds += ((cur_mono_time_ - route_start_ts_) * 1e-9);
     }
-    qInfo() << "seeking to" << seconds << QThread::currentThreadId();
+    qInfo() << "seeking to" << seconds;
     cur_mono_time_ = route_start_ts_ + std::clamp(seconds, 0, (int)segments_.size() * 60) * 1e9;
     current_segment_ = std::min(seconds / 60, (int)segments_.size() - 1);
-    return isSegmentLoaded(current_segment_);
+    return false;
   });
   queueSegment();
 }

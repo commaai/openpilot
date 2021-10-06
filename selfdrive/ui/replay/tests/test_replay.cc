@@ -100,7 +100,7 @@ TEST_CASE("Segment") {
   });
   loop.exec();
 }
-/*
+
 // helper class for unit tests
 class TestReplay : public Replay {
 public:
@@ -191,4 +191,4 @@ TEST_CASE("Replay") {
   REQUIRE(replay.load());
   replay.test_seek();
 }
-*/
+
