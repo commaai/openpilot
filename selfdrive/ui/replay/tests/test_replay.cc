@@ -85,8 +85,6 @@ TEST_CASE("Segment") {
 
   QEventLoop loop;
   Segment segment(0, demo_route.at(0), false, false);
-  REQUIRE(segment.isValid() == true);
-  REQUIRE(segment.isLoaded() == false);
   QObject::connect(&segment, &Segment::loadFinished, [&]() {
     REQUIRE(segment.isLoaded() == true);
     REQUIRE(segment.log != nullptr);
