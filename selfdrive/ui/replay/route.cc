@@ -78,8 +78,7 @@ Segment::Segment(int n, const SegmentFile &segment_files, bool load_dcam, bool l
   road_cam_path_ = files_.road_cam.isEmpty() ? files_.qcamera : files_.road_cam;
   log_path_ = files_.rlog.isEmpty() ? files_.qlog : files_.rlog;
 
-  valid_ = !log_path_.isEmpty() && !road_cam_path_.isEmpty();
-  if (!valid_) return;
+  assert (!log_path_.isEmpty() && !road_cam_path_.isEmpty());
 
   if (!load_dcam) {
     files_.driver_cam = "";
@@ -151,7 +150,7 @@ void Segment::load() {
   }
 
   int success_cnt = std::accumulate(futures.begin(), futures.end(), 0, [=](int v, auto &f) { return f.get() + v; });
-  loaded_ = valid_ = (success_cnt == futures.size());
+  loaded_ = (success_cnt == futures.size());
   emit loadFinished();
 }
 
