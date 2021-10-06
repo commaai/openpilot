@@ -148,8 +148,7 @@ void FrameReader::decodeThread() {
       for (int i = 0; i < frames_.size() && !exit_ && decode_idx_ == frame_id; ++i) {
         Frame &frame = frames_[i];
         if (i >= from_frame && i <= to_frame) {
-          // if (!frame.decoded || (i >= frame_id && !frame.buf)) {
-          if (!frame.buf) {
+          if (!frame.decoded || (i >= frame_id && !frame.buf)) {
             while (true) {
               int ret = avcodec_decode_video2(pCodecCtx_,av_frame, &frame.decoded, &(frame.pkt));
               if (ret > 0 && !frame.decoded) {
