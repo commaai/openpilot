@@ -18,16 +18,16 @@ public:
   ~Replay();
   bool load();
   void start(int seconds = 0);
-  void seekTo(int seconds, bool relative = false);
-  void relativeSeek(int seconds) { seekTo(seconds, true); }
-  void pause(bool pause);
   bool isPaused() const { return paused_; }
+  void pause(bool pause);
 
 signals:
  void segmentChanged();
+ void seekTo(int seconds, bool relative);
 
 protected slots:
   void queueSegment();
+  void doSeek(int seconds, bool relative);
 
 protected:
   void stream();

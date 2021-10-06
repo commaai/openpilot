@@ -46,24 +46,24 @@ void keyboardThread(Replay *replay) {
       try {
         if (r[0] == '#') {
           r.erase(0, 1);
-          replay->seekTo(std::stoi(r) * 60);
+          replay->seekTo(std::stoi(r) * 60, false);
         } else {
-          replay->seekTo(std::stoi(r));
+          replay->seekTo(std::stoi(r), false);
         }
       } catch (std::invalid_argument) {
         qDebug() << "invalid argument";
       }
       getch();  // remove \n from entering seek
     } else if (c == 'm') {
-      replay->relativeSeek(+60);
+      replay->seekTo(+60, true);
     } else if (c == 'M') {
-      replay->relativeSeek(-60);
+      replay->seekTo(-60, true);
     } else if (c == 's') {
-      replay->relativeSeek(+10);
+      replay->seekTo(+10, true);
     } else if (c == 'S') {
-      replay->relativeSeek(-10);
+      replay->seekTo(-10, true);
     } else if (c == 'G') {
-      replay->relativeSeek(0);
+      replay->seekTo(0, true);
     } else if (c == ' ') {
       replay->pause(!replay->isPaused());
     }

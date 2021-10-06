@@ -112,15 +112,16 @@ protected:
 };
 
 void TestReplay::testSeekTo(int seek_to, const std::set<int> &invalid_segments) {
-  seekTo(seek_to);
+  qDebug() << "test seek to " << seek_to;
+  seekTo(seek_to, false);
 
   // wait for seek finish
   while (true) {
     std::unique_lock lk(stream_lock_);
     stream_cv_.wait(lk, [=]() { return events_updated_ == true; });
     events_updated_ = false;
-
-    // verify result
+    if (cur_mono_time_ != route_start_ts_ + seek_to * 1e9) continue;
+    INFO("seek to [" << seek_to << "s segment " << seek_to / 60 << "]" << route_start_ts_);
     REQUIRE(uint64_t(route_start_ts_ + seek_to * 1e9) == cur_mono_time_);
 
     Event cur_event(cereal::Event::Which::INIT_DATA, cur_mono_time_);
@@ -130,7 +131,6 @@ void TestReplay::testSeekTo(int seek_to, const std::set<int> &invalid_segments) 
       continue;
     }
 
-    INFO("seek to [" << seek_to << "s segment " << seek_to / 60 << "]");
     REQUIRE(!events_->empty());
     REQUIRE(is_events_ordered(*events_));
 
@@ -141,7 +141,7 @@ void TestReplay::testSeekTo(int seek_to, const std::set<int> &invalid_segments) 
     INFO("event [" << event_seconds << "s segment " << current_segment_ << "]");
     REQUIRE(event_seconds >= seek_to);
     if (invalid_segments.find(seek_to_segment) == invalid_segments.end()) {
-      REQUIRE(event_seconds == seek_to); // at the same time
+      REQUIRE((event_seconds - seek_to) <= 1); // at the same time
     } else {
       if (current_segment_ == seek_to_segment) {
         // seek cross-boundary. e.g. seek_to 60s(segment 1), but segment 0 end at 60.021 and segemnt 1 is invalid.
@@ -176,6 +176,8 @@ void TestReplay::test_seek() {
     }
     for (int i = 0; i < loop_count; ++i) {
       testSeekTo(random_int(4 * 60, 60 * 10), invalid_segments);
+      testSeekTo(490, invalid_segments);
+      testSeekTo(250, invalid_segments);
     }
     loop.quit();
   });

@@ -30,7 +30,8 @@ Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *s
 
   route_ = std::make_unique<Route>(route);
   events_ = new std::vector<Event *>();
-  // queueSegment is always executed in the main thread
+  // doSeek & queueSegment are always executed in the main thread
+  connect(this, &Replay::seekTo, this, &Replay::doSeek);
   connect(this, &Replay::segmentChanged, this, &Replay::queueSegment);
 }
 
@@ -64,7 +65,7 @@ bool Replay::load() {
 }
 
 void Replay::start(int seconds) {
-  seekTo(seconds);
+  seekTo(seconds, false);
 
   camera_server_ = std::make_unique<CameraServer>();
   // start stream thread
@@ -84,27 +85,19 @@ void Replay::updateEvents(const std::function<bool()> &lambda) {
   stream_cv_.notify_one();
 }
 
-void Replay::seekTo(int seconds, bool relative) {
+void Replay::doSeek(int seconds, bool relative) {
   if (segments_.empty()) return;
 
-  bool segment_loaded = false;
-  bool segment_changed = false;
   updateEvents([&]() {
     if (relative) {
       seconds += ((cur_mono_time_ - route_start_ts_) * 1e-9);
     }
-    qInfo() << "seeking to" << seconds;
-
+    qInfo() << "seeking to" << seconds << QThread::currentThreadId();
     cur_mono_time_ = route_start_ts_ + std::clamp(seconds, 0, (int)segments_.size() * 60) * 1e9;
-    int segment = std::min(seconds / 60, (int)segments_.size() - 1);
-    segment_changed = current_segment_.exchange(segment) != segment;
-    segment_loaded = std::find(segments_merged_.begin(), segments_merged_.end(), segment) != segments_merged_.end();
-    return segment_loaded;
+    current_segment_ = std::min(seconds / 60, (int)segments_.size() - 1);
+    return false;
   });
-
-  if (segment_changed || !segment_loaded) {
-    emit segmentChanged();
-  }
+  queueSegment();
 }
 
 void Replay::pause(bool pause) {
@@ -182,14 +175,15 @@ void Replay::mergeSegments(int cur_seg, int end_idx) {
           cur_mono_time_ += route_start_ts_;
         }
       }
-
       events_ = new_events;
       segments_merged_ = segments_need_merge;
       return true;
     });
     delete prev_events;
   } else {
-    updateEvents([]() { return true; });
+    updateEvents([=]() {
+      return segments_[cur_seg] && segments_[cur_seg]->isLoaded();
+    });
   }
 
   // free segments out of current semgnt window.
