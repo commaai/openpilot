@@ -154,7 +154,7 @@ def thermald_thread():
   pm = messaging.PubMaster(['deviceState'])
 
   pandaState_timeout = int(1000 * 2.5 * DT_TRML)  # 2.5x the expected pandaState frequency
-  pandaState_sock = messaging.sub_sock('pandaState', timeout=pandaState_timeout)
+  pandaState_sock = messaging.sub_sock('pandaStates', timeout=pandaState_timeout)
   sm = messaging.SubMaster(["peripheralState", "gpsLocationExternal", "managerState"])
 
   fan_speed = 0
@@ -203,15 +203,15 @@ def thermald_thread():
     params.put_bool("BootedOnroad", True)
 
   while True:
-    pandaState = messaging.recv_sock(pandaState_sock, wait=True)
+    pandaStates = messaging.recv_sock(pandaState_sock, wait=True)
 
     sm.update(0)
     peripheralState = sm['peripheralState']
 
     msg = read_thermal(thermal_config)
 
-    if pandaState is not None:
-      pandaState = pandaState.pandaState
+    if len(pandaStates) > 0:
+      pandaState = pandaStates.pandaState
 
       # If we lose connection to the panda, wait 5 seconds before going offroad
       if pandaState.pandaType == log.PandaState.PandaType.unknown:

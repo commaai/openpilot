@@ -134,8 +134,8 @@ static void update_state(UIState *s) {
       }
     }
   }
-  if (sm.updated("pandaState")) {
-    auto pandaState = sm["pandaState"].getPandaState();
+  if (sm.updated("pandaStates")) {
+    auto pandaState = sm["pandaStates"].getPandaStates()[0];
     scene.pandaType = pandaState.getPandaType();
 
     if (scene.pandaType != cereal::PandaState::PandaType::UNKNOWN) {
@@ -220,7 +220,7 @@ static void update_status(UIState *s) {
 QUIState::QUIState(QObject *parent) : QObject(parent) {
   ui_state.sm = std::make_unique<SubMaster, const std::initializer_list<const char *>>({
     "modelV2", "controlsState", "liveCalibration", "deviceState", "roadCameraState",
-    "pandaState", "carParams", "driverMonitoringState", "sensorEvents", "carState", "liveLocationKalman",
+    "pandaStates", "carParams", "driverMonitoringState", "sensorEvents", "carState", "liveLocationKalman",
   });
 
   ui_state.wide_camera = Hardware::TICI() ? Params().getBool("EnableWideCamera") : false;
