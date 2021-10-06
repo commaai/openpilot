@@ -153,7 +153,7 @@ def gen_long_mpc_solver():
   ocp.solver_options.integrator_type = 'ERK'
   ocp.solver_options.nlp_solver_type = 'SQP_RTI'
 
-  ocp.solver_options.qp_solver_iter_max = 3
+  ocp.solver_options.qp_solver_iter_max = 4
 
   # set prediction horizon
   ocp.solver_options.tf = Tf
