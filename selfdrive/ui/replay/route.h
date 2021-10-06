@@ -46,6 +46,7 @@ public:
   ~Segment();
   inline bool isValid() const { return valid_; };
   inline bool isLoaded() const { return loaded_; }
+  inline bool isQLog() const { return files_.rlog.isEmpty() || files_.road_cam.isEmpty(); }
 
   std::unique_ptr<LogReader> log;
   std::unique_ptr<FrameReader> frames[MAX_CAMERAS] = {};

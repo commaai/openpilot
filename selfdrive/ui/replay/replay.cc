@@ -121,7 +121,7 @@ void Replay::queueSegment() {
   int end_idx = cur_seg;
   for (int i = cur_seg, fwd = 0; i < segments_.size() && fwd <= FORWARD_SEGS; ++i) {
     if (!segments_[i]) {
-      segments_[i] = std::make_unique<Segment>(i, route_->at(i), flags_ & LoadDriverCam, flags_ & LoadWideRoadCam);
+      segments_[i] = std::make_unique<Segment>(i, route_->at(i), flags_ & Replay::Flags::LoadDriverCam, flags_ & Replay::Flags::LoadWideRoadCam);
       QObject::connect(segments_[i].get(), &Segment::loadFinished, this, &Replay::queueSegment);
     }
     end_idx = i;
@@ -175,9 +175,14 @@ void Replay::mergeSegments(int cur_seg, int end_idx) {
           cur_mono_time_ += route_start_ts_;
         }
       }
-
       events_ = new_events;
       segments_merged_ = segments_need_merge;
+
+      if (!(flags_ & Replay::Flags::FallbackToQLog) && isSegmentLoaded(cur_seg) && segments_[cur_seg]->isQLog()) {
+        qDebug() << "only qlog/qcamera in segment" << cur_seg << ", replay stopped";
+        qDebug() << "restart replay with --qlog to enable fallback to qlog/qcamera or seek to a good segment";
+        return false;
+      }
       return true;
     });
     delete prev_events;
@@ -271,7 +276,7 @@ void Replay::stream() {
     // wait for frame to be sent before unlock.(frameReader may be deleted after unlock)
     camera_server_->waitFinish();
 
-    //  loop back to the beginning when it reaches the end
+    //  loop back to the beginning when reaches the end
     if (eit == events_->end() && current_segment_ == segments_.size() - 1 && isSegmentLoaded(current_segment_)) {
       emit seekTo(0, false);
     }

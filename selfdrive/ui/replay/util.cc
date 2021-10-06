@@ -39,6 +39,7 @@ int64_t getDownloadContentLength(const std::string &url) {
   if (res == CURLE_OK) {
     res = curl_easy_getinfo(curl, CURLINFO_CONTENT_LENGTH_DOWNLOAD, &content_length);
   }
+  printf("%s %d %f\n", url.c_str(), res, content_length);
   curl_easy_cleanup(curl);
   return res == CURLE_OK ? (int64_t)content_length : -1;
 }
