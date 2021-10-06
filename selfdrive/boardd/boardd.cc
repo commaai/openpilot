@@ -92,13 +92,22 @@ bool safety_setter_thread(Panda *panda) {
   AlignedBuffer aligned_buf;
   capnp::FlatArrayMessageReader cmsg(aligned_buf.align(params.data(), params.size()));
   cereal::CarParams::Reader car_params = cmsg.getRoot<cereal::CarParams>();
-  cereal::CarParams::SafetyModel safety_model = car_params.getSafetyModel();
+  cereal::CarParams::SafetyModel safety_model;
+  int safety_param;
+
+  auto safety_modes = car_params.getSafetyModes();
+  if (safety_modes.size() > 0) {
+    safety_model = safety_modes[0].getSafetyModel();
+    safety_param = safety_modes[0].getSafetyParam();
+  } else {
+    // If no safety mode is set, default to silent
+    safety_model = cereal::CarParams::SafetyModel::SILENT;
+    safety_param = 0;
+  }
 
   panda->set_unsafe_mode(0);  // see safety_declarations.h for allowed values
 
-  auto safety_param = car_params.getSafetyParam();
   LOGW("setting safety model: %d with param %d", (int)safety_model, safety_param);
-
   panda->set_safety_model(safety_model, safety_param);
   return true;
 }

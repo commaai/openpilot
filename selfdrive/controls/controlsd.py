@@ -49,6 +49,7 @@ LaneChangeState = log.LateralPlan.LaneChangeState
 LaneChangeDirection = log.LateralPlan.LaneChangeDirection
 EventName = car.CarEvent.EventName
 ButtonEvent = car.CarState.ButtonEvent
+SafetyModel = car.CarParams.SafetyModel
 
 
 class Controls:
@@ -241,8 +242,11 @@ class Controls:
       self.events.add(EventName.canError)
 
     for i, pandaState in self.sm['pandaStates']:
-      # TODO: make safetyModel a list
-      safety_mismatch = pandaState.safetyModel != self.CP.safetyModel or pandaState.safetyParam != self.CP.safetyParam
+      # All pandas must match the list of safetyModes, and if outside this list, must be silent
+      if i < len(self.CP.safetyModes):
+        safety_mismatch = pandaState.safetyModel != self.CP.safetyModes[i].safetyModel or pandaState.safetyParam != self.CP.safetyModes[i].safetyParam
+      else:
+        safety_mismatch = pandaState.safetyModel != SafetyModel.silent
       if safety_mismatch or self.mismatch_counter >= 200:
         self.events.add(EventName.controlsMismatch)
 
@@ -358,9 +362,10 @@ class Controls:
     if not self.enabled:
       self.mismatch_counter = 0
 
-    # TODO: loop over all pandas to see which ones have an actual safety mode set
-    if not self.sm['pandaStates'].controlsAllowed and self.enabled:
-      self.mismatch_counter += 1
+    # All pandas not in silent mode must have controlsAllowed when openpilot is enabled
+    for pandaState in self.sm['pandaStates']:
+      if pandaState.safetyModel != SafetyModel.silent and not pandaState.controlsAllowed and self.enabled:
+        self.mismatch_counter += 1
 
     self.distance_traveled += CS.vEgo * DT_CTRL
 
