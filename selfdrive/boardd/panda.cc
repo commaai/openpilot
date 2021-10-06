@@ -11,20 +11,27 @@
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
 
-static int init_usb_ctx(libusb_context *context) {
-  int err = libusb_init(&context);
-  if (err != 0) {
-    LOGE("libusb initialization error");
-    return err;
+static bool default_ctx_initted = false;
+
+static int init_usb_ctx(libusb_context *context = NULL) {
+  if (context != NULL || !default_ctx_initted) {
+    int err = libusb_init((context != NULL) ? &context : NULL);
+    if (err != 0) {
+      LOGE("libusb initialization error");
+      return err;
+    }
+
+    if (context == NULL) {
+      default_ctx_initted = true;
+    }
+
+    #if LIBUSB_API_VERSION >= 0x01000106
+      libusb_set_option(context, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_INFO);
+    #else
+      libusb_set_debug(context, 3);
+    #endif
   }
-
-#if LIBUSB_API_VERSION >= 0x01000106
-  libusb_set_option(context, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_INFO);
-#else
-  libusb_set_debug(context, 3);
-#endif
-
-  return err;
+  return 0;
 }
 
 
@@ -109,14 +116,13 @@ void Panda::cleanup() {
 std::vector<std::string> Panda::list() {
   // init libusb
   ssize_t num_devices;
-  libusb_context *context = NULL;
   libusb_device **dev_list = NULL;
   std::vector<std::string> serials;
 
-  int err = init_usb_ctx(context);
+  int err = init_usb_ctx();
   if (err != 0) { return serials; }
 
-  num_devices = libusb_get_device_list(context, &dev_list);
+  num_devices = libusb_get_device_list(NULL, &dev_list);
   if (num_devices < 0) {
     LOGE("libusb can't get device list");
     goto finish;
@@ -140,9 +146,6 @@ std::vector<std::string> Panda::list() {
 finish:
   if (dev_list != NULL) {
     libusb_free_device_list(dev_list, 1);
-  }
-  if (context) {
-    libusb_exit(context);
   }
   return serials;
 }
