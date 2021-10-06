@@ -35,6 +35,7 @@ protected:
   void mergeSegments(int begin_idx, int end_idx);
   void updateEvents(const std::function<bool()>& lambda);
   void publishFrame(const Event *e);
+  inline bool isSegmentLoaded(int n) { return segments_[n] && segments_[n]->isLoaded(); }
 
   QThread *stream_thread_ = nullptr;
 

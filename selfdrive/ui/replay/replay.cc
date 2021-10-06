@@ -95,7 +95,7 @@ void Replay::doSeek(int seconds, bool relative) {
     qInfo() << "seeking to" << seconds << QThread::currentThreadId();
     cur_mono_time_ = route_start_ts_ + std::clamp(seconds, 0, (int)segments_.size() * 60) * 1e9;
     current_segment_ = std::min(seconds / 60, (int)segments_.size() - 1);
-    return false;
+    return isSegmentLoaded(current_segment_);
   });
   queueSegment();
 }
@@ -141,7 +141,7 @@ void Replay::mergeSegments(int cur_seg, int end_idx) {
   std::vector<int> segments_need_merge;
   const int begin_idx = std::max(cur_seg - BACKWARD_SEGS, 0);
   for (int i = begin_idx; i <= end_idx; ++i) {
-    if (segments_[i] && segments_[i]->isLoaded()) {
+    if (isSegmentLoaded(i)) {
       segments_need_merge.push_back(i);
     } else if (i >= cur_seg && segments_[i] && segments_[i]->isValid()) {
       // segment is valid,but still loading. can't skip it to merge the next one.
@@ -181,9 +181,7 @@ void Replay::mergeSegments(int cur_seg, int end_idx) {
     });
     delete prev_events;
   } else {
-    updateEvents([=]() {
-      return segments_[cur_seg] && segments_[cur_seg]->isLoaded();
-    });
+    updateEvents([=]() { return isSegmentLoaded(cur_seg); });
   }
 
   // free segments out of current semgnt window.
@@ -271,5 +269,10 @@ void Replay::stream() {
 
     // wait for frame to be sent before unlock.(frameReader may be deleted after unlock)
     camera_server_->waitFinish();
+
+    //  loop back to the beginning when it reaches the end
+    if (eit == events_->end() && current_segment_ == segments_.size() - 1 && isSegmentLoaded(current_segment_)) {
+      emit seekTo(0, false);
+    }
   }
 }
