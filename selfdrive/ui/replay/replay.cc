@@ -264,7 +264,10 @@ void Replay::stream() {
           // publish msg
           if (sm == nullptr) {
             auto bytes = evt->bytes();
-            pm->send(sockets_[cur_which], (capnp::byte *)bytes.begin(), bytes.size());
+            if (-1 == pm->send(sockets_[cur_which], (capnp::byte *)bytes.begin(), bytes.size())) {
+              qDebug() << "stop publish" << sockets_[cur_which] << "due to multiple publishers error";
+              sockets_[cur_which] = nullptr;
+            }
           } else {
             sm->update_msgs(nanos_since_boot(), {{sockets_[cur_which], evt->event}});
           }
