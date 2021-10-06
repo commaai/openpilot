@@ -31,7 +31,6 @@ public:
 
 protected:
   bool loadFromJson(const QString &json);
-
   QString route_;
   std::vector<SegmentFile> segments_;
 };

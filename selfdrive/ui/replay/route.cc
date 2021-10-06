@@ -77,7 +77,6 @@ Segment::Segment(int n, const SegmentFile &segment_files, bool load_dcam, bool l
   // fallback to qcamera/qlog
   road_cam_path_ = files_.road_cam.isEmpty() ? files_.qcamera : files_.road_cam;
   log_path_ = files_.rlog.isEmpty() ? files_.qlog : files_.rlog;
-
   assert (!log_path_.isEmpty() && !road_cam_path_.isEmpty());
 
   if (!load_dcam) {

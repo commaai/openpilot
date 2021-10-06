@@ -37,7 +37,6 @@ Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *s
 
 Replay::~Replay() {
   qDebug() << "shutdown: in progress...";
-
   exit_ = true;
   updating_events_ = true;
   if (stream_thread_) {
@@ -54,8 +53,8 @@ Replay::~Replay() {
 }
 
 bool Replay::load() {
-  if (!route_->load() || route_->size() == 0) {
-    qDebug() << "failed load route" << route_->name() << "from server";
+  if (!route_->load()) {
+    qDebug() << "failed to load route" << route_->name() << "from server";
     return false;
   }
 
@@ -126,10 +125,9 @@ void Replay::setCurrentSegment(int n) {
 // maintain the segment window
 void Replay::queueSegment() {
   // forward fetch segments
-  int fwd = 0;
   SegmentMap::iterator begin, end;
-  begin = segments_.lower_bound(current_segment_);
-  for (end = begin; end != segments_.end() && fwd++ <= FORWARD_SEGS; ++end) {
+  begin = end = segments_.lower_bound(current_segment_);
+  for (int fwd = 0; end != segments_.end() && fwd <= FORWARD_SEGS; ++end, ++fwd) {
     auto &[n, seg] = *end;
     if (!seg) {
       seg = std::make_unique<Segment>(n, route_->at(n), flags_ & Replay::Flags::LoadDriverCam, flags_ & Replay::Flags::LoadWideRoadCam);
@@ -138,7 +136,6 @@ void Replay::queueSegment() {
   }
   // merge segments
   mergeSegments(begin, end);
-
   // free segments out of current semgnt window.
   for (auto it = segments_.begin(); it != begin; ++it) {
     it->second.reset(nullptr);
@@ -195,12 +192,11 @@ void Replay::mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::
   }
 }
 
-
 void Replay::publishFrame(const Event *e) {
   auto publish = [=](CameraType cam_type, const cereal::EncodeIndex::Reader &eidx) {
-    auto &seg = segments_[eidx.getSegmentNum()];
-    if (seg && seg->isLoaded() && seg->frames[cam_type] && eidx.getType() == cereal::EncodeIndex::Type::FULL_H_E_V_C) {
-      camera_server_->pushFrame(cam_type, seg->frames[cam_type].get(), eidx);
+    auto it = segments_.find(eidx.getSegmentNum());
+    if (it != segments_.end() && it->second->isLoaded() && it->second->frames[cam_type] && eidx.getType() == cereal::EncodeIndex::Type::FULL_H_E_V_C) {
+      camera_server_->pushFrame(cam_type, it->second->frames[cam_type].get(), eidx);
     }
   };
   if (e->which == cereal::Event::ROAD_ENCODE_IDX) {
@@ -274,7 +270,7 @@ void Replay::stream() {
     camera_server_->waitFinish();
 
     //  loop back to the beginning when reaches the end
-    if (eit == events_->end() && current_segment_ == segments_.size() - 1 && isSegmentLoaded(current_segment_)) {
+    if (eit == events_->end() && current_segment_ == segments_.rbegin()->first && segments_.rbegin()->second->isLoaded()) {
       emit seekTo(0, false);
     }
   }

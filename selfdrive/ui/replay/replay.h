@@ -25,8 +25,8 @@ public:
   ~Replay();
   bool load();
   void start(int seconds = 0);
-  bool isPaused() const { return paused_; }
   void pause(bool pause);
+  bool isPaused() const { return paused_; }
 
 signals:
  void segmentChanged();
@@ -43,7 +43,9 @@ protected:
   void mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::iterator &end);
   void updateEvents(const std::function<bool()>& lambda);
   void publishFrame(const Event *e);
-  inline bool isSegmentLoaded(int n) { return segments_[n] && segments_[n]->isLoaded(); }
+
+  uint32_t flags_ = None;
+  QThread *stream_thread_ = nullptr;
 
   // logs
   std::mutex stream_lock_;
@@ -53,7 +55,7 @@ protected:
   std::unique_ptr<Route> route_;
   SegmentMap segments_;
   std::vector<int> segments_merged_;
-  std::unique_ptr<CameraServer> camera_server_;
+  
   
   // the following variables must be protected with stream_lock_
   bool exit_ = false;
@@ -67,7 +69,5 @@ protected:
   SubMaster *sm = nullptr;
   PubMaster *pm = nullptr;
   std::vector<const char*> sockets_;
-
-  uint32_t flags_ = None;
-  QThread *stream_thread_ = nullptr;
+  std::unique_ptr<CameraServer> camera_server_;
 };

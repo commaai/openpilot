@@ -97,18 +97,17 @@ int main(int argc, char *argv[]){
   QStringList allow = parser.value("allow").isEmpty() ? QStringList{} : parser.value("allow").split(",");
   QStringList block = parser.value("block").isEmpty() ? QStringList{} : parser.value("block").split(",");
 
-  uint32_t flags = Replay::Flags::None;
   std::pair<QString, Replay::Flags> flag_map[] = {
     {"dcam", Replay::Flags::LoadDriverCam},
     {"ecam", Replay::Flags::LoadWideRoadCam},
     {"qlog", Replay::Flags::FallbackToQLog},
   };
+  uint32_t flags = Replay::Flags::None;
   for (const auto &[key, flag] : flag_map) {
     if (parser.isSet(key)) {
       flags |= flag;
     }
   }
-
   Replay *replay = new Replay(route, allow, block, nullptr, flags, &app);
   if (!replay->load()) {
     app.exit(0);
