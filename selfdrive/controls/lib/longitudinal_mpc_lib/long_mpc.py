@@ -187,10 +187,7 @@ class LongitudinalMpc():
       self.solver.set(i, 'x', np.zeros(X_DIM))
     self.last_cloudlog_t = 0
     self.status = False
-    self.new_lead = False
-    self.prev_lead_status = False
     self.crash_cnt = 0.0
-    self.prev_lead_x = 10
     self.solution_status = 0
     self.x0 = np.zeros(X_DIM)
     self.set_weights()
@@ -264,15 +261,9 @@ class LongitudinalMpc():
         a_lead = 0.0
 
       self.a_lead_tau = lead.aLeadTau
-      self.new_lead = False
       lead_xv = self.extrapolate_lead(x_lead, v_lead, a_lead, self.a_lead_tau)
-      if not self.prev_lead_status or abs(x_lead - self.prev_lead_x) > 2.5:
-        self.new_lead = True
 
-      self.prev_lead_status = True
-      self.prev_lead_x = x_lead
     else:
-      self.prev_lead_status = False
       # Fake a fast lead car, so mpc can keep running in the same mode
       x_lead = 50.0
       v_lead = v_ego + 10.0
@@ -353,7 +344,6 @@ class LongitudinalMpc():
         self.last_cloudlog_t = t
         cloudlog.warning("Long mpc reset, solution_status: %s" % (
                           self.solution_status))
-      self.prev_lead_status = False
       self.reset()
 
 
