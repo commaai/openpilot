@@ -108,10 +108,10 @@ public:
   void test_seek();
 
 protected:
-  void testSeekTo(int seek_to, const std::set<int> &invalid_segments = {});
+  void testSeekTo(int seek_to);
 };
 
-void TestReplay::testSeekTo(int seek_to, const std::set<int> &invalid_segments) {
+void TestReplay::testSeekTo(int seek_to) {
   seekTo(seek_to, false);
 
   // wait for the seek to finish
@@ -135,50 +135,23 @@ void TestReplay::testSeekTo(int seek_to, const std::set<int> &invalid_segments) 
     REQUIRE(uint64_t(route_start_ts_ + seek_to * 1e9) == cur_mono_time_);
     REQUIRE(is_events_ordered(*events_));
     const int event_seconds = ((*eit)->mono_time - route_start_ts_) / 1e9;
-    const int seek_to_segment = seek_to / 60;
     current_segment_ = event_seconds / 60;
     INFO("event [" << event_seconds << "s segment " << current_segment_ << "]");
     REQUIRE(event_seconds >= seek_to);
-    if (invalid_segments.find(seek_to_segment) == invalid_segments.end()) {
-      REQUIRE((event_seconds - seek_to) <= 1); // at the same time
-    } else {
-      if (current_segment_ == seek_to_segment) {
-        // seek cross-boundary. e.g. seek_to 60s(segment 1), but segment 0 end at 60.021 and segemnt 1 is invalid.
-        REQUIRE(event_seconds == seek_to);
-      } else {
-        REQUIRE(current_segment_ > seek_to_segment);
-        REQUIRE(invalid_segments.find(current_segment_) == invalid_segments.end());
-      }
-    }
+    // REQUIRE((event_seconds - seek_to) <= 1); // at the same time
     break;
   }
 }
 
 void TestReplay::test_seek() {
+  // random seek 100 times in 5 segments
   QEventLoop loop;
-
   std::thread thread = std::thread([&]() {
-    const int loop_count = 100;
-    // random seek in one segment
-    for (int i = 0; i < loop_count; ++i) {
-      testSeekTo(random_int(0, 60));
-    }
-    // random seek in 3 segments
-    for (int i = 0; i < loop_count; ++i) {
-      testSeekTo(random_int(0, 60 * 3));
-    }
-    // random seek in invalid segments
-    std::set<int> invalid_segments{5, 6, 7, 9};
-    for (int i : invalid_segments) {
-      route_->segments_[i].rlog = route_->segments_[i].qlog = "";
-      route_->segments_[i].road_cam = route_->segments_[i].qcamera = "";
-    }
-    for (int i = 0; i < loop_count; ++i) {
-      testSeekTo(random_int(4 * 60, 60 * 10), invalid_segments);
+    for (int i = 0; i < 100; ++i) {
+      testSeekTo(random_int(1 * 60, 5 * 60));
     }
     loop.quit();
   });
-
   loop.exec();
   thread.join();
 }
