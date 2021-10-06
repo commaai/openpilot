@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from cereal import car
 from selfdrive.car.tesla.values import CAR
-from selfdrive.car import STD_CARGO_KG, gen_empty_fingerprint, scale_rot_inertia, scale_tire_stiffness
+from selfdrive.car import STD_CARGO_KG, gen_empty_fingerprint, scale_rot_inertia, scale_tire_stiffness, get_safety_mode
 from selfdrive.car.interfaces import CarInterfaceBase
 
 
@@ -10,7 +10,7 @@ class CarInterface(CarInterfaceBase):
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "tesla"
-    ret.safetyModel = car.CarParams.SafetyModel.tesla
+    ret.safetyModes = [get_safety_mode(car.CarParams.SafetyModel.tesla)]
 
     # There is no safe way to do steer blending with user torque,
     # so the steering behaves like autopilot. This is not

@@ -46,7 +46,11 @@ def test_boardd_loopback():
 
   # boardd blocks on CarVin and CarParams
   cp = car.CarParams.new_message()
-  cp.safetyModel = car.CarParams.SafetyModel.allOutput
+
+  safety_mode = car.CarParams.SafetyMode.new_message()
+  safety_mode.SafetyModel = car.CarParams.SafetyModel.allOutput
+  cp.safetyModes = [safety_mode]
+
   Params().put("CarVin", b"0"*17)
   Params().put_bool("ControlsReady", True)
   Params().put("CarParams", cp.to_bytes())
