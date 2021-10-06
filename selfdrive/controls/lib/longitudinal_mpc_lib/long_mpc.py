@@ -23,13 +23,15 @@ X_DIM = 3
 U_DIM = 1
 COST_E_DIM = 3
 COST_DIM = COST_E_DIM + 1
+CONSTR_DIM = 4
 MIN_ACCEL = -3.5
 
-X_EGO_COST = 80.
-X_EGO_E2E_COST = 100.
-A_EGO_COST = .1
-J_EGO_COST = .2
-DANGER_ZONE_COST = 1e3
+
+X_EGO_COST = 3.
+X_EGO_E2E_COST = 10.
+A_EGO_COST = 1.
+J_EGO_COST = 10.
+DANGER_ZONE_COST = 100.
 CRASH_DISTANCE = .5
 LIMIT_COST = 1e6
 T_IDXS = np.array(T_IDXS_LST)
@@ -110,21 +112,20 @@ def gen_long_mpc_solver():
   ocp.cost.yref_e = np.zeros((COST_E_DIM, ))
 
   desired_dist_comfort = get_safe_obstacle_distance(v_ego)
-  desired_dist_danger = (7/8) * get_safe_obstacle_distance(v_ego)
 
   costs = [((x_obstacle - x_ego) - (desired_dist_comfort)) / (v_ego + 10.),
            x_ego,
-           a_ego * (v_ego + 10.),
-           j_ego * (v_ego + 10.)]
+           a_ego,
+           j_ego]
   ocp.model.cost_y_expr = vertcat(*costs)
   ocp.model.cost_y_expr_e = vertcat(*costs[:-1])
 
   constraints = vertcat((v_ego),
                         (a_ego - a_min),
                         (a_max - a_ego),
-                        ((x_obstacle - x_ego) - (desired_dist_danger)) / (v_ego + 10.))
+                        ((x_obstacle - x_ego) - (3/4) * (desired_dist_comfort)) / (v_ego + 10.))
   ocp.model.con_h_expr = constraints
-  ocp.model.con_h_expr_e = constraints
+  ocp.model.con_h_expr_e = vertcat(np.zeros(CONSTR_DIM))
 
   x0 = np.zeros(X_DIM)
   ocp.constraints.x0 = x0
@@ -134,19 +135,17 @@ def gen_long_mpc_solver():
   # acceleration as well as giving an assymetrical
   # cost on approaching a lead. We only use lower
   # bounds with an L2 cost.
-  l1_penalty = 0.0
-  l2_penalty = 1.0
-  weights = np.array([1e6, 1e6, 1e6, 0.0])
-  ocp.cost.zl = l1_penalty * weights
-  ocp.cost.Zl = l2_penalty * weights
-  ocp.cost.Zu = 0.0 * weights
-  ocp.cost.zu = 0.0 * weights
+  cost_weights = np.zeros(CONSTR_DIM)
+  ocp.cost.zl = cost_weights
+  ocp.cost.Zl = cost_weights
+  ocp.cost.Zu = cost_weights
+  ocp.cost.zu = cost_weights
 
-  ocp.constraints.lh = np.array([0.0, 0.0, 0.0, 0.0])
-  ocp.constraints.lh_e = np.array([0.0, 0.0, 0.0, 0.0])
-  ocp.constraints.uh = np.array([1e3, 1e3, 1e3, 1e4])
-  ocp.constraints.uh_e = np.array([1e3, 1e3, 1e3, 1e6])
-  ocp.constraints.idxsh = np.array([0,1,2,3])
+  ocp.constraints.lh = np.zeros(CONSTR_DIM)
+  ocp.constraints.lh_e = np.zeros(CONSTR_DIM)
+  ocp.constraints.uh = 1e4*np.ones(CONSTR_DIM)
+  ocp.constraints.uh_e = 1e4*np.ones(CONSTR_DIM)
+  ocp.constraints.idxsh = np.arange(CONSTR_DIM)
 
 
   ocp.solver_options.qp_solver = 'PARTIAL_CONDENSING_HPIPM'
@@ -154,7 +153,7 @@ def gen_long_mpc_solver():
   ocp.solver_options.integrator_type = 'ERK'
   ocp.solver_options.nlp_solver_type = 'SQP_RTI'
 
-  ocp.solver_options.qp_solver_iter_max = 3
+  ocp.solver_options.qp_solver_iter_max = 4
 
   # set prediction horizon
   ocp.solver_options.tf = Tf
@@ -188,10 +187,7 @@ class LongitudinalMpc():
       self.solver.set(i, 'x', np.zeros(X_DIM))
     self.last_cloudlog_t = 0
     self.status = False
-    self.new_lead = False
-    self.prev_lead_status = False
     self.crash_cnt = 0.0
-    self.prev_lead_x = 10
     self.solution_status = 0
     self.x0 = np.zeros(X_DIM)
     self.set_weights()
@@ -265,15 +261,9 @@ class LongitudinalMpc():
         a_lead = 0.0
 
       self.a_lead_tau = lead.aLeadTau
-      self.new_lead = False
       lead_xv = self.extrapolate_lead(x_lead, v_lead, a_lead, self.a_lead_tau)
-      if not self.prev_lead_status or abs(x_lead - self.prev_lead_x) > 2.5:
-        self.new_lead = True
 
-      self.prev_lead_status = True
-      self.prev_lead_x = x_lead
     else:
-      self.prev_lead_status = False
       # Fake a fast lead car, so mpc can keep running in the same mode
       x_lead = 50.0
       v_lead = v_ego + 10.0
@@ -305,8 +295,8 @@ class LongitudinalMpc():
 
     # Fake an obstacle for cruise
     # TODO find cleaner way to write hacky fake cruise obstacle
-    cruise_lower_bound = v_ego - (1.0 + ((v_ego + 15)/60) * T_IDXS)
-    cruise_upper_bound = v_ego + (.7 + .7*T_IDXS)
+    cruise_lower_bound = v_ego + (3/4) * self.cruise_min_a * T_IDXS
+    cruise_upper_bound = v_ego + (3/4) * self.cruise_max_a * T_IDXS
     v_cruise_clipped = np.clip(v_cruise * np.ones(N+1),
                                cruise_lower_bound,
                                cruise_upper_bound)
@@ -354,7 +344,6 @@ class LongitudinalMpc():
         self.last_cloudlog_t = t
         cloudlog.warning("Long mpc reset, solution_status: %s" % (
                           self.solution_status))
-      self.prev_lead_status = False
       self.reset()
 
 
