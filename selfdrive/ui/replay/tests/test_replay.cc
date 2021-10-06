@@ -120,7 +120,11 @@ void TestReplay::testSeekTo(int seek_to, const std::set<int> &invalid_segments) 
     std::unique_lock lk(stream_lock_);
     stream_cv_.wait(lk, [=]() { return events_updated_ == true; });
     events_updated_ = false;
-    if (cur_mono_time_ != route_start_ts_ + seek_to * 1e9) continue;
+    if (cur_mono_time_ != route_start_ts_ + seek_to * 1e9) {
+      // this event is fired by merg, skip it.
+      continue;
+    }
+
     INFO("seek to [" << seek_to << "s segment " << seek_to / 60 << "]" << route_start_ts_);
     REQUIRE(uint64_t(route_start_ts_ + seek_to * 1e9) == cur_mono_time_);
 

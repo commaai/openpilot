@@ -14,7 +14,14 @@ class Replay : public QObject {
   Q_OBJECT
 
 public:
-  Replay(QString route, QStringList allow, QStringList block, SubMaster *sm = nullptr, bool dcam = false, bool ecam = false, QObject *parent = 0);
+  enum Flags {
+    None = 0,
+    LoadDriverCam = 0x1,
+    LoadWideRoadCam = 0x2,
+    FallbackToQLog = 0x4
+  };
+
+  Replay(QString route, QStringList allow, QStringList block, SubMaster *sm = nullptr, uint32_t flag = None, QObject *parent = 0);
   ~Replay();
   bool load();
   void start(int seconds = 0);
@@ -59,6 +66,7 @@ protected:
   PubMaster *pm = nullptr;
   std::vector<const char*> sockets_;
   std::unique_ptr<Route> route_;
-  bool load_dcam = false, load_ecam = false;
   std::unique_ptr<CameraServer> camera_server_;
+
+  uint32_t flags_ = None;
 };

@@ -9,8 +9,8 @@
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/replay/util.h"
 
-Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *sm_, bool dcam, bool ecam, QObject *parent)
-    : sm(sm_), load_dcam(dcam), load_ecam(ecam), QObject(parent) {
+Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *sm_, uint32_t flags, QObject *parent)
+    : sm(sm_), flags_(flags), QObject(parent) {
   std::vector<const char *> s;
   auto event_struct = capnp::Schema::from<cereal::Event>().asStruct();
   sockets_.resize(event_struct.getUnionFields().size());
@@ -121,7 +121,7 @@ void Replay::queueSegment() {
   int end_idx = cur_seg;
   for (int i = cur_seg, fwd = 0; i < segments_.size() && fwd <= FORWARD_SEGS; ++i) {
     if (!segments_[i]) {
-      segments_[i] = std::make_unique<Segment>(i, route_->at(i), load_dcam, load_ecam);
+      segments_[i] = std::make_unique<Segment>(i, route_->at(i), flags_ & LoadDriverCam, flags_ & LoadWideRoadCam);
       QObject::connect(segments_[i].get(), &Segment::loadFinished, this, &Replay::queueSegment);
     }
     end_idx = i;
@@ -175,6 +175,7 @@ void Replay::mergeSegments(int cur_seg, int end_idx) {
           cur_mono_time_ += route_start_ts_;
         }
       }
+
       events_ = new_events;
       segments_merged_ = segments_need_merge;
       return true;
