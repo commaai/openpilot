@@ -97,13 +97,13 @@ int main(int argc, char *argv[]){
   QStringList allow = parser.value("allow").isEmpty() ? QStringList{} : parser.value("allow").split(",");
   QStringList block = parser.value("block").isEmpty() ? QStringList{} : parser.value("block").split(",");
 
-  std::map<QString, Replay::Flags> flag_map = {
-      {"dcam", Replay::Flags::LoadDriverCam},
-      {"ecam", Replay::Flags::LoadWideRoadCam},
-      {"qlog", Replay::Flags::FallbackToQLog},
-  };
   uint32_t flags = Replay::Flags::None;
-  for (auto [key, flag] : flag_map) {
+  std::pair<QString, Replay::Flags> flag_map[] = {
+    {"dcam", Replay::Flags::LoadDriverCam},
+    {"ecam", Replay::Flags::LoadWideRoadCam},
+    {"qlog", Replay::Flags::FallbackToQLog},
+  };
+  for (const auto &[key, flag] : flag_map) {
     if (parser.isSet(key)) {
       flags |= flag;
     }
