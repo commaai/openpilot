@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import os
-import math
 import numpy as np
 
 from common.realtime import sec_since_boot
@@ -35,6 +34,7 @@ DANGER_ZONE_COST = 100.
 CRASH_DISTANCE = .5
 LIMIT_COST = 1e6
 T_IDXS = np.array(T_IDXS_LST)
+T_DIFFS = np.diff(T_IDXS, prepend=[0.])
 
 T_REACT = 1.8
 MAX_BRAKE = 9.81
@@ -229,47 +229,34 @@ class LongitudinalMpc():
       self.x0[1] = v
       self.x0[2] = a
 
-  def extrapolate_lead(self, x_lead, v_lead, a_lead_0, a_lead_tau):
-    lead_xv = np.zeros((N+1,2))
-    lead_xv[0, 0], lead_xv[0, 1] = x_lead, v_lead
-    for i in range(1, N+1):
-      dt = T_IDXS[i] - T_IDXS[i-1]
-      a_lead = a_lead_0 * math.exp(-a_lead_tau * (T_IDXS[i]**2)/2.)
-      x_lead += v_lead * dt
-      v_lead += a_lead * dt
-      if v_lead < 0.0:
-        a_lead = 0.0
-        v_lead = 0.0
-      lead_xv[i, 0], lead_xv[i, 1] = x_lead, v_lead
+  def extrapolate_lead(self, x_lead, v_lead, a_lead, a_lead_tau):
+    a_lead_traj = a_lead * np.exp(-a_lead_tau * (T_IDXS**2)/2.)
+    v_lead_traj = np.clip(v_lead + np.cumsum(T_DIFFS * a_lead_traj), 0.0, 1e8)
+    x_lead_traj = x_lead + np.cumsum(T_DIFFS * v_lead_traj)
+    lead_xv = np.column_stack((x_lead_traj, v_lead_traj))
     return lead_xv
 
   def process_lead(self, lead):
     v_ego = self.x0[1]
     if lead is not None and lead.status:
       x_lead = lead.dRel
-      v_lead = max(0.0, lead.vLead)
-      a_lead = clip(lead.aLeadK, -10.0, 5.0)
-
-      # MPC will not converge if immidiate crash is expected
-      # Clip lead distance to what is still possible to brake for
-      min_x_lead = ((v_ego + v_lead)/2) * (v_ego - v_lead) / (-MIN_ACCEL * 2)
-      if x_lead < min_x_lead:
-        x_lead = min_x_lead
-
-      if (v_lead < 0.1 or -a_lead / 2.0 > v_lead):
-        v_lead = 0.0
-        a_lead = 0.0
-
-      self.a_lead_tau = lead.aLeadTau
-      lead_xv = self.extrapolate_lead(x_lead, v_lead, a_lead, self.a_lead_tau)
-
+      v_lead = lead.vLead
+      a_lead = lead.aLeadK
+      a_lead_tau = lead.aLeadTau
     else:
       # Fake a fast lead car, so mpc can keep running in the same mode
       x_lead = 50.0
       v_lead = v_ego + 10.0
       a_lead = 0.0
-      self.a_lead_tau = _LEAD_ACCEL_TAU
-      lead_xv = self.extrapolate_lead(x_lead, v_lead, a_lead, self.a_lead_tau)
+      a_lead_tau = _LEAD_ACCEL_TAU
+
+    # MPC will not converge if immidiate crash is expected
+    # Clip lead distance to what is still possible to brake for
+    min_x_lead = ((v_ego + v_lead)/2) * (v_ego - v_lead) / (-MIN_ACCEL * 2)
+    x_lead = clip(x_lead, min_x_lead, 1e8)
+    v_lead = clip(v_lead, 0.0, 1e8)
+    a_lead = clip(a_lead, -10., 5.)
+    lead_xv = self.extrapolate_lead(x_lead, v_lead, a_lead, a_lead_tau)
     return lead_xv
 
   def set_accel_limits(self, min_a, max_a):
