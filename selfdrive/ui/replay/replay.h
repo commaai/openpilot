@@ -44,14 +44,14 @@ protected:
   void publishFrame(const Event *e);
   inline bool isSegmentLoaded(int n) { return segments_[n] && segments_[n]->isLoaded(); }
 
-  QThread *stream_thread_ = nullptr;
-
   // logs
   std::mutex stream_lock_;
   std::condition_variable stream_cv_;
   std::atomic<bool> updating_events_ = false;
   std::atomic<int> current_segment_ = -1;
+  std::unique_ptr<Route> route_;
   std::vector<std::unique_ptr<Segment>> segments_;
+  std::unique_ptr<CameraServer> camera_server_;
   // the following variables must be protected with stream_lock_
   bool exit_ = false;
   bool paused_ = false;
@@ -65,8 +65,7 @@ protected:
   SubMaster *sm = nullptr;
   PubMaster *pm = nullptr;
   std::vector<const char*> sockets_;
-  std::unique_ptr<Route> route_;
-  std::unique_ptr<CameraServer> camera_server_;
 
   uint32_t flags_ = None;
+  QThread *stream_thread_ = nullptr;
 };

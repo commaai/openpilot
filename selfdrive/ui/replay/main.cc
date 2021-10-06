@@ -110,10 +110,12 @@ int main(int argc, char *argv[]){
   }
 
   Replay *replay = new Replay(route, allow, block, nullptr, flags, &app);
-  if (replay->load()) {
-    replay->start(parser.value("start").toInt());
+  if (!replay->load()) {
+    app.exit(0);
+    return 0;
   }
 
+  replay->start(parser.value("start").toInt());
   // start keyboard control thread
   QThread *t = QThread::create(keyboardThread, replay);
   QObject::connect(t, &QThread::finished, t, &QThread::deleteLater);

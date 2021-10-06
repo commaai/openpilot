@@ -30,7 +30,7 @@ Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *s
 
   route_ = std::make_unique<Route>(route);
   events_ = new std::vector<Event *>();
-  // doSeek & queueSegment are always executed in the main thread
+  // doSeek & queueSegment are always executed in the same thread
   connect(this, &Replay::seekTo, this, &Replay::doSeek);
   connect(this, &Replay::segmentChanged, this, &Replay::queueSegment);
 }
@@ -152,7 +152,6 @@ void Replay::mergeSegments(int cur_seg, int end_idx) {
 
   if (segments_need_merge != segments_merged_) {
     qDebug() << "merge segments" << segments_need_merge;
-
     // merge & sort events
     std::vector<Event *> *new_events = new std::vector<Event *>();
     new_events->reserve(std::accumulate(segments_need_merge.begin(), segments_need_merge.end(), 0,
