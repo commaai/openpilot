@@ -8,7 +8,6 @@
 #include <thread>
 #include <vector>
 
-// independent of QT, needs ffmpeg
 extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
@@ -54,6 +53,7 @@ private:
   AVCodecContext *pCodecCtx_ = nullptr;
   std::mutex mutex_;
   std::condition_variable cv_decode_;
+  int key_frames_count_ = 0;
   std::atomic<int> decode_idx_ = -1;
   std::atomic<bool> exit_ = false;
   std::vector<Buffer *> buffers_;
