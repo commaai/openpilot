@@ -113,7 +113,7 @@ def gen_long_mpc_solver():
 
   desired_dist_comfort = get_safe_obstacle_distance(v_ego)
 
-  # The main cost in normal operation is a distance from a safe distance
+  # The main cost in normal operation is how close you are to the "desired" distance
   # from an obstacle at every timestep. This obstacle can be a lead car
   # or other object. In e2e mode we can use x_position targets as a cost
   # instead.
@@ -124,9 +124,9 @@ def gen_long_mpc_solver():
   ocp.model.cost_y_expr = vertcat(*costs)
   ocp.model.cost_y_expr_e = vertcat(*costs[:-1])
 
-  # Constraints on speed, acceleration and slack constraint on distance to
-  # the obstacle, which is treated as a slack constraint so it is basically
-  # an assymetrical cost.
+  # Constraints on speed, acceleration and desired distance to
+  # the obstacle, which is treated as a slack constraint so it
+  # behaves like an assymetrical cost.
   constraints = vertcat((v_ego),
                         (a_ego - a_min),
                         (a_max - a_ego),
@@ -160,8 +160,8 @@ def gen_long_mpc_solver():
   ocp.solver_options.integrator_type = 'ERK'
   ocp.solver_options.nlp_solver_type = 'SQP_RTI'
 
-  # More iterations take less time and less lead to inaccurate convergence in
-  # some situations
+  # More iterations take too much time and less lead to inaccurate convergence in
+  # some situations. Ideally we would run just 1 iteration to ensure fixed runtime.
   ocp.solver_options.qp_solver_iter_max = 4
 
   # set prediction horizon
@@ -288,13 +288,14 @@ class LongitudinalMpc():
     self.params[:,0] = interp(float(self.status), [0.0, 1.0], [self.cruise_min_a, MIN_ACCEL])
     self.params[:,1] = self.cruise_max_a
 
-    # To consider a safe distance from a moving lead, we calculate how much stopping
+    # To estimate a safe distance from a moving lead, we calculate how much stopping
     # distance that lead needs as a minimum. We can add that to the current distance
     # and then treat that as a stopped car/obstacle at this new distance.
     lead_0_obstacle = lead_xv_0[:,0] + get_stopped_equivalence_factor(lead_xv_0[:,1])
     lead_1_obstacle = lead_xv_1[:,0] + get_stopped_equivalence_factor(lead_xv_1[:,1])
 
-    # Fake an obstacle for cruise
+    # Fake an obstacle for cruise, this ensures smooth acceleration to set speed
+    # when the leads are no factor.
     cruise_lower_bound = v_ego + (3/4) * self.cruise_min_a * T_IDXS
     cruise_upper_bound = v_ego + (3/4) * self.cruise_max_a * T_IDXS
     v_cruise_clipped = np.clip(v_cruise * np.ones(N+1),
