@@ -112,7 +112,7 @@ class Controls:
                        self.CP.dashcamOnly or community_feature_disallowed
     if self.read_only:
       safety_mode = car.CarParams.SafetyMode.new_message()
-      safety_mode.SafetyModel = car.CarParams.SafetyModel.noOutput
+      safety_mode.safetyModel = car.CarParams.SafetyModel.noOutput
       self.CP.safetyModes = [safety_mode]
 
     # Write CarParams for radard
