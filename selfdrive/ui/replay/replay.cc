@@ -228,15 +228,14 @@ void Replay::stream() {
       const Event *evt = (*eit);
       cur_which = evt->which;
       cur_mono_time_ = evt->mono_time;
+      int current_ts = currentSeconds();
+      if (last_print > current_ts || (current_ts - last_print) > 5.0) {
+        last_print = current_ts;
+        qInfo() << "at " << current_ts << "s";
+      }
+      setCurrentSegment(current_ts / 60);
 
       if (cur_which < sockets_.size() && sockets_[cur_which] != nullptr) {
-        int current_ts = currentSeconds();
-        if (last_print > current_ts || (current_ts - last_print) > 5.0) {
-          last_print = current_ts;
-          qInfo() << "at " << current_ts << "s";
-        }
-        setCurrentSegment(current_ts / 60);
-
         // keep time
         long etime = cur_mono_time_ - evt_start_ts;
         long rtime = nanos_since_boot() - loop_start_ts;
