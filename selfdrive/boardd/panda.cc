@@ -17,7 +17,7 @@ libusb_context *init_usb_ctx() {
   libusb_context *context = nullptr;
   int err = libusb_init(&context);
   if (err != 0) {
-    LOGE("libusb initialization error");
+    LOGE("libusb initialization error %d", err);
     return nullptr;
   }
 
@@ -66,7 +66,7 @@ struct UsbDeviceList {
 libusb_device_handle *open_usb_device(libusb_context *ctx, uint16_t vid, uint16_t pid, const std::string &serial) {
   libusb_device_handle *dev_handle = nullptr;
   UsbDeviceList device_list(ctx);
-  for (auto &[dev, device_serial] : device_list.list(PANDA_VENDOR_ID, PANDA_PRODUCT_ID)) {
+  for (auto &[dev, device_serial] : device_list.list(vid, pid)) {
     if (serial.empty() || serial == device_serial) {
       libusb_open(dev, &dev_handle);
       break;
@@ -92,9 +92,11 @@ Panda::Panda(std::string serial) {
     cleanup();
     throw std::runtime_error("Error connecting to panda");
   }
+
   hw_type = get_hw_type();
   assert((hw_type != cereal::PandaState::PandaType::WHITE_PANDA) &&
          (hw_type != cereal::PandaState::PandaType::GREY_PANDA));
+
   has_rtc = (hw_type == cereal::PandaState::PandaType::UNO) ||
             (hw_type == cereal::PandaState::PandaType::DOS);
 }
