@@ -231,6 +231,10 @@ class CarController():
             # send exactly zero if apply_gas is zero. Interceptor will send the max between read value and apply_gas.
             # This prevents unexpected pedal range rescaling
             apply_gas = clip(gas_mult * gas, 0., 1.)
+            if enabled:
+              apply_gas = clip(gas_mult * (gas - brake + wind_brake*3/4), 0., 1.)
+            else:
+              apply_gas = 0.0
             can_sends.append(create_gas_command(self.packer, apply_gas, idx))
 
     hud = HUDData(int(pcm_accel), int(round(hud_v_cruise)), hud_car,
