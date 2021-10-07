@@ -97,7 +97,7 @@ void Replay::updateEvents(const std::function<bool()> &lambda) {
 void Replay::doSeek(int seconds, bool relative) {
   updateEvents([&]() {
     if (relative) {
-      seconds += ((cur_mono_time_ - route_start_ts_) * 1e-9);
+      seconds += currentSeconds();
     }
     qInfo() << "seeking to" << seconds;
     cur_mono_time_ = route_start_ts_ + std::clamp(seconds, 0, (int)segments_.rbegin()->first * 60) * 1e9;
@@ -111,8 +111,7 @@ void Replay::pause(bool pause) {
   updateEvents([=]() {
     qDebug() << (pause ? "paused..." : "resuming");
     if (pause) {
-      float current_ts = (cur_mono_time_ - route_start_ts_) / 1e9;
-      qInfo() << "at " << current_ts << "s";
+      qInfo() << "at " << currentSeconds() << "s";
     }
     paused_ = pause;
     return true;
@@ -233,7 +232,7 @@ void Replay::stream() {
       cur_mono_time_ = evt->mono_time;
 
       if (cur_which < sockets_.size() && sockets_[cur_which] != nullptr) {
-        int current_ts = (cur_mono_time_ - route_start_ts_) / 1e9;
+        int current_ts = currentSeconds();
         if ((current_ts - last_print) > 5.0) {
           last_print = current_ts;
           qInfo() << "at " << current_ts << "s";
