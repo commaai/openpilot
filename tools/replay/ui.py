@@ -128,7 +128,6 @@ def ui_thread(addr):
 
       intrinsic_matrix = _INTRINSICS[num_px]
     else:
-      img.fill(0)
       intrinsic_matrix = np.eye(3)
 
     sm.update(0)
