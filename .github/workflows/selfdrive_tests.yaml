@@ -49,7 +49,7 @@ jobs:
         cp Dockerfile.openpilot_base $STRIPPED_DIR
 
         # need this to build on x86
-        cp -pR --parents phonelibs/libyuv phonelibs/snpe selfdrive/modeld/runners $STRIPPED_DIR
+        cp -pR --parents third_party/libyuv third_party/snpe selfdrive/modeld/runners $STRIPPED_DIR
     - name: Build Docker image
       run: eval "$BUILD"
     - name: Build openpilot and run checks
