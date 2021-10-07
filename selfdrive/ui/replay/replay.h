@@ -34,7 +34,7 @@ protected:
   void mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::iterator &end);
   void updateEvents(const std::function<bool()>& lambda);
   void publishFrame(const Event *e);
-  inline int32_t currentSeconds() const { return (cur_mono_time_ - route_start_ts_) / 1e9; }
+  inline int currentSeconds() const { return (cur_mono_time_ - route_start_ts_) / 1e9; }
 
   QThread *stream_thread_ = nullptr;
 

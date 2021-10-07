@@ -191,6 +191,7 @@ void Replay::mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::
 
 void Replay::publishFrame(const Event *e) {
   auto publish = [=](CameraType cam_type, const cereal::EncodeIndex::Reader &eidx) {
+    // TODO: segments_.find is not thread safe. it may causes the replay to crash some rare cases.
     auto it = segments_.find(eidx.getSegmentNum());
     if (it != segments_.end() && it->second->isLoaded() && it->second->frames[cam_type] && eidx.getType() == cereal::EncodeIndex::Type::FULL_H_E_V_C) {
       camera_server_->pushFrame(cam_type, it->second->frames[cam_type].get(), eidx);
