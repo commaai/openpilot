@@ -64,31 +64,34 @@ struct UsbDeviceList {
 };
 
 libusb_device_handle *open_usb_device(libusb_context *ctx, uint16_t vid, uint16_t pid, const std::string &serial) {
-  libusb_device_handle *dev_handle = nullptr;
+  auto open_device = [](libusb_device *dev) -> libusb_device_handle * {
+    libusb_device_handle *h = nullptr;
+    if (libusb_open(dev, &h) != 0) return nullptr;
+
+    if (libusb_kernel_driver_active(h, 0) == 1) {
+      libusb_detach_kernel_driver(h, 0);
+    }
+    if (libusb_set_configuration(h, 1) != 0 || libusb_claim_interface(h, 0) != 0) {
+      libusb_close(h);
+      return nullptr;
+    }
+    return h;
+  };
+
   UsbDeviceList device_list(ctx);
   for (auto &[dev, device_serial] : device_list.list(vid, pid)) {
     if (serial.empty() || serial == device_serial) {
-      libusb_open(dev, &dev_handle);
-      break;
+      return open_device(dev);
     }
   }
-  if (dev_handle) {
-    if (libusb_kernel_driver_active(dev_handle, 0) == 1) {
-      libusb_detach_kernel_driver(dev_handle, 0);
-    }
-    if (libusb_set_configuration(dev_handle, 1) != 0 || libusb_claim_interface(dev_handle, 0) != 0) {
-      libusb_close(dev_handle);
-      dev_handle = nullptr;
-    }
-  }
-  return dev_handle;
+  return nullptr;
 }
 
 }  // namespace
 
 Panda::Panda(std::string serial) {
-  ctx = init_usb_ctx();
-  if (!ctx || !(dev_handle = open_usb_device(ctx, PANDA_VENDOR_ID, PANDA_PRODUCT_ID, serial))) {
+  if (!(ctx = init_usb_ctx()) ||
+      !(dev_handle = open_usb_device(ctx, PANDA_VENDOR_ID, PANDA_PRODUCT_ID, serial))) {
     cleanup();
     throw std::runtime_error("Error connecting to panda");
   }
