@@ -11,17 +11,19 @@
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
 
-static int init_usb_ctx(libusb_context *context) {
-  int err = libusb_init(&context);
+static int init_usb_ctx(libusb_context **context) {
+  assert(context != nullptr);
+
+  int err = libusb_init(context);
   if (err != 0) {
     LOGE("libusb initialization error");
     return err;
   }
 
 #if LIBUSB_API_VERSION >= 0x01000106
-  libusb_set_option(context, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_INFO);
+  libusb_set_option(*context, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_INFO);
 #else
-  libusb_set_debug(context, 3);
+  libusb_set_debug(*context, 3);
 #endif
 
   return err;
@@ -32,7 +34,7 @@ Panda::Panda(std::string serial) {
   // init libusb
   ssize_t num_devices;
   libusb_device **dev_list = NULL;
-  int err = init_usb_ctx(ctx);
+  int err = init_usb_ctx(&ctx);
   if (err != 0) { goto fail; }
 
   // connect by serial
@@ -113,7 +115,7 @@ std::vector<std::string> Panda::list() {
   libusb_device **dev_list = NULL;
   std::vector<std::string> serials;
 
-  int err = init_usb_ctx(context);
+  int err = init_usb_ctx(&context);
   if (err != 0) { return serials; }
 
   num_devices = libusb_get_device_list(context, &dev_list);
