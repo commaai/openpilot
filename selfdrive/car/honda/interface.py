@@ -393,10 +393,16 @@ class CarInterface(CarInterfaceBase):
     if self.CS.CP.minEnableSpeed > 0 and ret.vEgo < 0.001:
       events.add(EventName.manualRestart)
 
-    if self.CS.cruise_buttons in [CruiseButtons.RES_ACCEL, CruiseButtons.DECEL_SET]:
-      if not self.CP.pcmCruise:
-        events.add(EventName.buttonEnable)
-    elif self.CS.cruise_buttons == CruiseButtons.CANCEL:
+    # handle button presses
+    for b in ret.buttonEvents:
+
+      # do enable on both accel and decel buttons
+      if b.type in [ButtonType.accelCruise, ButtonType.decelCruise] and not b.pressed:
+        if not self.CP.pcmCruise:
+          events.add(EventName.buttonEnable)
+
+      # do disable on button down
+      if b.type == ButtonType.cancel and b.pressed:
         events.add(EventName.buttonCancel)
 
     ret.events = events.to_msg()
