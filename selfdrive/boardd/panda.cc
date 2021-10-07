@@ -63,33 +63,35 @@ struct UsbDeviceList {
   ssize_t num_devices = 0;
 };
 
+libusb_device_handle *open_usb_device(libusb_context *ctx, uint16_t vid, uint16_t pid, const std::string &serial) {
+  libusb_device_handle *dev_handle = nullptr;
+  UsbDeviceList device_list(ctx);
+  for (auto &[dev, device_serial] : device_list.list(PANDA_VENDOR_ID, PANDA_PRODUCT_ID)) {
+    if (serial.empty() || serial == device_serial) {
+      libusb_open(dev, &dev_handle);
+      break;
+    }
+  }
+  if (dev_handle) {
+    if (libusb_kernel_driver_active(dev_handle, 0) == 1) {
+      libusb_detach_kernel_driver(dev_handle, 0);
+    }
+    if (libusb_set_configuration(dev_handle, 1) != 0 || libusb_claim_interface(dev_handle, 0) != 0) {
+      libusb_close(dev_handle);
+      dev_handle = nullptr;
+    }
+  }
+  return dev_handle;
+}
+
 }  // namespace
 
 Panda::Panda(std::string serial) {
-  std::unique_ptr<libusb_context, decltype(&libusb_exit)> context(init_usb_ctx(), &libusb_exit);
-  if (context) {
-    // connect by serial
-    UsbDeviceList device_list(context.get());
-    for (auto &[dev, device_serial] : device_list.list(PANDA_VENDOR_ID, PANDA_PRODUCT_ID)) {
-      if (serial.empty() || serial == device_serial) {
-        libusb_open(dev, &dev_handle);
-        break;
-      }
-    }
-    if (dev_handle) {
-      if (libusb_kernel_driver_active(dev_handle, 0) == 1) {
-        libusb_detach_kernel_driver(dev_handle, 0);
-      }
-      if (libusb_set_configuration(dev_handle, 1) != 0 || libusb_claim_interface(dev_handle, 0) != 0) {
-        libusb_close(dev_handle);
-        dev_handle = nullptr;
-      }
-    }
-  }
-  if (!dev_handle) {
+  ctx = init_usb_ctx();
+  if (!ctx || !(dev_handle = open_usb_device(ctx, PANDA_VENDOR_ID, PANDA_PRODUCT_ID, serial))) {
+    cleanup();
     throw std::runtime_error("Error connecting to panda");
   }
-  ctx = context.release();
   hw_type = get_hw_type();
   assert((hw_type != cereal::PandaState::PandaType::WHITE_PANDA) &&
          (hw_type != cereal::PandaState::PandaType::GREY_PANDA));
@@ -99,6 +101,11 @@ Panda::Panda(std::string serial) {
 
 Panda::~Panda() {
   std::lock_guard lk(usb_lock);
+  cleanup();
+  connected = false;
+}
+
+void Panda::cleanup() {
   if (dev_handle) {
     libusb_release_interface(dev_handle, 0);
     libusb_close(dev_handle);
@@ -106,7 +113,6 @@ Panda::~Panda() {
   if (ctx) {
     libusb_exit(ctx);
   }
-  connected = false;
 }
 
 std::vector<std::string> Panda::list() {

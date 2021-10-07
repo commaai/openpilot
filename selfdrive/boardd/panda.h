@@ -57,6 +57,7 @@ class Panda {
   std::mutex usb_lock;
   std::vector<uint32_t> send;
   void handle_usb_issue(int err, const char func[]);
+  void cleanup();
 
  public:
   Panda(std::string serial="", uint32_t bus_offset=0);
