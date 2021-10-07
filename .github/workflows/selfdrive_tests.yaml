@@ -211,6 +211,7 @@ jobs:
                         $UNIT_TEST selfdrive/car && \
                         $UNIT_TEST selfdrive/locationd && \
                         $UNIT_TEST selfdrive/athena && \
+                        nosetests -s selfdrive/athena/tests/test_athenad_old.py && \
                         $UNIT_TEST selfdrive/thermald && \
                         $UNIT_TEST tools/lib/tests && \
                         ./selfdrive/common/tests/test_util && \
