@@ -17,6 +17,8 @@
 #define RECV_SIZE (0x1000)
 #define TIMEOUT 0
 #define PANDA_BUS_CNT 4
+#define PANDA_VENDOR_ID 0xBBAA
+#define PANDA_PRODUCT_ID 0xDDCC
 
 // copied from panda/board/main.c
 struct __attribute__((packed)) health_t {
@@ -55,7 +57,6 @@ class Panda {
   std::mutex usb_lock;
   std::vector<uint32_t> send;
   void handle_usb_issue(int err, const char func[]);
-  void cleanup();
 
  public:
   Panda(std::string serial="", uint32_t bus_offset=0);
