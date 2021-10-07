@@ -210,7 +210,7 @@ def thermald_thread():
 
     msg = read_thermal(thermal_config)
 
-    if len(pandaStates) > 0:
+    if pandaStates is not None and len(pandaStates) > 0:
       pandaState = pandaStates.pandaState
 
       # If we lose connection to the panda, wait 5 seconds before going offroad
