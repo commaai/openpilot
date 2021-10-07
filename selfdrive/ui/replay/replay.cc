@@ -231,7 +231,7 @@ void Replay::stream() {
 
       if (cur_which < sockets_.size() && sockets_[cur_which] != nullptr) {
         int current_ts = currentSeconds();
-        if ((current_ts - last_print) > 5.0) {
+        if (last_print > current_ts || (current_ts - last_print) > 5.0) {
           last_print = current_ts;
           qInfo() << "at " << current_ts << "s";
         }
