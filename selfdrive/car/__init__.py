@@ -124,8 +124,8 @@ def make_can_msg(addr, dat, bus):
   return [addr, 0, dat, bus]
 
 
-def get_safety_mode(safety_model, safety_param = None):
-  ret = car.CarParams.SafetyMode.new_message()
+def get_safety_config(safety_model, safety_param = None):
+  ret = car.CarParams.SafetyConfig.new_message()
   ret.safetyModel = safety_model
   if safety_param is not None:
     ret.safetyParam = safety_param

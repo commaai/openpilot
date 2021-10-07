@@ -95,10 +95,10 @@ bool safety_setter_thread(Panda *panda) {
   cereal::CarParams::SafetyModel safety_model;
   int safety_param;
 
-  auto safety_modes = car_params.getSafetyModes();
-  if (safety_modes.size() > 0) {
-    safety_model = safety_modes[0].getSafetyModel();
-    safety_param = safety_modes[0].getSafetyParam();
+  auto safety_configs = car_params.getSafetyConfigs();
+  if (safety_configs.size() > 0) {
+    safety_model = safety_configs[0].getSafetyModel();
+    safety_param = safety_configs[0].getSafetyParam();
   } else {
     // If no safety mode is set, default to silent
     safety_model = cereal::CarParams::SafetyModel::SILENT;

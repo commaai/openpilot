@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from cereal import car
 from selfdrive.car.nissan.values import CAR
-from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_mode
+from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
 
 class CarInterface(CarInterfaceBase):
@@ -14,7 +14,7 @@ class CarInterface(CarInterfaceBase):
 
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "nissan"
-    ret.safetyModes = [get_safety_mode(car.CarParams.SafetyModel.nissan)]
+    ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.nissan)]
 
     ret.steerLimitAlert = False
     ret.steerRateCost = 0.5
@@ -33,7 +33,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 17
     elif candidate == CAR.ALTIMA:
       # Altima has EPS on C-CAN unlike the others that have it on V-CAN
-      ret.safetyModes[0].safetyParam = 1 # EPS is on alternate bus
+      ret.safetyConfigs[0].safetyParam = 1 # EPS is on alternate bus
       ret.mass = 1492 + STD_CARGO_KG
       ret.wheelbase = 2.824
       ret.centerToFront = ret.wheelbase * 0.44

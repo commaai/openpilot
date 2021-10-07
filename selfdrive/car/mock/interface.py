@@ -4,7 +4,7 @@ from cereal import car
 from selfdrive.config import Conversions as CV
 from selfdrive.swaglog import cloudlog
 import cereal.messaging as messaging
-from selfdrive.car import gen_empty_fingerprint, get_safety_mode
+from selfdrive.car import gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
 
 # mocked car interface to work with chffrplus
@@ -37,7 +37,7 @@ class CarInterface(CarInterfaceBase):
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "mock"
-    ret.safetyModes = [get_safety_mode(car.CarParams.SafetyModel.noOutput)]
+    ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.noOutput)]
     ret.mass = 1700.
     ret.rotationalInertia = 2500.
     ret.wheelbase = 2.70

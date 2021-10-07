@@ -111,9 +111,9 @@ class Controls:
     self.read_only = not car_recognized or not controller_available or \
                        self.CP.dashcamOnly or community_feature_disallowed
     if self.read_only:
-      safety_mode = car.CarParams.SafetyMode.new_message()
-      safety_mode.safetyModel = car.CarParams.SafetyModel.noOutput
-      self.CP.safetyModes = [safety_mode]
+      safety_config = car.CarParams.SafetyConfig.new_message()
+      safety_config.safetyModel = car.CarParams.SafetyModel.noOutput
+      self.CP.safetyConfigs = [safety_config]
 
     # Write CarParams for radard
     cp_bytes = self.CP.to_bytes()
@@ -244,9 +244,9 @@ class Controls:
       self.events.add(EventName.canError)
 
     for i, pandaState in enumerate(self.sm['pandaStates']):
-      # All pandas must match the list of safetyModes, and if outside this list, must be silent
-      if i < len(self.CP.safetyModes):
-        safety_mismatch = pandaState.safetyModel != self.CP.safetyModes[i].safetyModel or pandaState.safetyParam != self.CP.safetyModes[i].safetyParam
+      # All pandas must match the list of safetyConfigs, and if outside this list, must be silent
+      if i < len(self.CP.safetyConfigs):
+        safety_mismatch = pandaState.safetyModel != self.CP.safetyConfigs[i].safetyModel or pandaState.safetyParam != self.CP.safetyConfigs[i].safetyParam
       else:
         safety_mismatch = pandaState.safetyModel != SafetyModel.silent
       if safety_mismatch or self.mismatch_counter >= 200:

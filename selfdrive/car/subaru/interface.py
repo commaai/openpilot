@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from cereal import car
 from selfdrive.car.subaru.values import CAR, PREGLOBAL_CARS
-from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_mode
+from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
 
 class CarInterface(CarInterfaceBase):
@@ -14,10 +14,10 @@ class CarInterface(CarInterfaceBase):
     ret.radarOffCan = True
 
     if candidate in PREGLOBAL_CARS:
-      ret.safetyModes = [get_safety_mode(car.CarParams.SafetyModel.subaruLegacy)]
+      ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.subaruLegacy)]
       ret.enableBsm = 0x25c in fingerprint[0]
     else:
-      ret.safetyModes = [get_safety_mode(car.CarParams.SafetyModel.subaru)]
+      ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.subaru)]
       ret.enableBsm = 0x228 in fingerprint[0]
 
     ret.dashcamOnly = candidate in PREGLOBAL_CARS
@@ -56,7 +56,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.01, 0.065, 0.2], [0.001, 0.015, 0.025]]
 
     if candidate in [CAR.FORESTER_PREGLOBAL, CAR.OUTBACK_PREGLOBAL_2018]:
-      ret.safetyModes[0].safetyParam = 1  # Outback 2018-2019 and Forester have reversed driver torque signal
+      ret.safetyConfigs[0].safetyParam = 1  # Outback 2018-2019 and Forester have reversed driver torque signal
       ret.mass = 1568 + STD_CARGO_KG
       ret.wheelbase = 2.67
       ret.centerToFront = ret.wheelbase * 0.5

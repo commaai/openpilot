@@ -94,7 +94,7 @@ class TestCarModel(unittest.TestCase):
 
     # TODO: check safetyModel is in release panda build
     safety = libpandasafety_py.libpandasafety
-    set_status = safety.set_safety_hooks(self.CP.safetyModes[0].safetyModel.raw, self.CP.safetyModes[0].safetyParam)
+    set_status = safety.set_safety_hooks(self.CP.safetyConfigs[0].safetyModel.raw, self.CP.safetyConfigs[0].safetyParam)
     self.assertEqual(0, set_status, f"failed to set safetyModel {self.CP.safetyModes[0].safetyModel}")
 
   def test_car_interface(self):
@@ -130,7 +130,7 @@ class TestCarModel(unittest.TestCase):
       self.skipTest("no need to check panda safety for dashcamOnly")
 
     safety = libpandasafety_py.libpandasafety
-    set_status = safety.set_safety_hooks(self.CP.safetyModes[0].safetyModel.raw, self.CP.safetyModes[0].safetyParam)
+    set_status = safety.set_safety_hooks(self.CP.safetyConfigs[0].safetyModel.raw, self.CP.safetyConfigs[0].safetyParam)
     self.assertEqual(0, set_status)
 
     failed_addrs = Counter()
@@ -150,7 +150,7 @@ class TestCarModel(unittest.TestCase):
       self.skipTest("see comments in test_models.py")
 
     safety = libpandasafety_py.libpandasafety
-    set_status = safety.set_safety_hooks(self.CP.safetyModes[0].safetyModel.raw, self.CP.safetyModes[0].safetyParam)
+    set_status = safety.set_safety_hooks(self.CP.safetyConfigs[0].safetyModel.raw, self.CP.safetyConfigs[0].safetyParam)
     self.assertEqual(0, set_status)
 
     checks = defaultdict(lambda: 0)
