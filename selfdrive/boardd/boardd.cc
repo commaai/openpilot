@@ -505,7 +505,7 @@ void pigeon_thread(Panda *panda) {
     for (const auto& [msg_cls, max_dt] : cls_max_dt) {
       int64_t dt = (int64_t)nanos_since_boot() - (int64_t)last_recv_time[msg_cls];
       if (ignition_last && ignition && dt > max_dt) {
-        LOG("ublox receive timeout, msg class: 0x%02x, dt %llu", msg_cls, dt);
+        LOGD("ublox receive timeout, msg class: 0x%02x, dt %llu", msg_cls, dt);
         // TODO: turn on reset after verification of logs
         // need_reset = true;
       }
