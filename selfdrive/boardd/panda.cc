@@ -1,7 +1,5 @@
 #include "selfdrive/boardd/panda.h"
 
-#include <unistd.h>
-
 #include <cassert>
 #include <stdexcept>
 #include <vector>
@@ -10,8 +8,6 @@
 #include "selfdrive/common/gpio.h"
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
-
-namespace {
 
 libusb_context *init_usb_ctx() {
   libusb_context *context = nullptr;
@@ -29,21 +25,41 @@ libusb_context *init_usb_ctx() {
   return context;
 }
 
-struct UsbDeviceList {
-  UsbDeviceList(libusb_context* ctx) {
+class UsbDevice {
+public:
+  UsbDevice(libusb_context *ctx) {
     num_devices = libusb_get_device_list(ctx, &dev_list);
     if (num_devices < 0) {
       LOGE("libusb can't get device list");
     }
   }
 
-  ~UsbDeviceList() {
+  ~UsbDevice() {
     if (dev_list) libusb_free_device_list(dev_list, 1);
   }
 
-  auto list(uint16_t vid, uint16_t pid) {
-    std::vector<std::pair<libusb_device *, std::string>> result;
+  std::vector<std::string> serial_list(uint16_t vid = PANDA_VENDOR_ID, uint16_t pid = PANDA_PRODUCT_ID) {
+    std::vector<std::string> serials;
+    for (auto &[_, serial] : list(vid, pid)) {
+      serials.push_back(serial);
+    }
+    return serials;
+  }
 
+  libusb_device_handle *open(const std::string &serial, uint16_t vid = PANDA_VENDOR_ID, uint16_t pid = PANDA_PRODUCT_ID) {
+    libusb_device_handle *h = nullptr;
+    for (auto &[dev, dev_serial] : list(vid, pid)) {
+      if (serial.empty() || serial == dev_serial) {
+        libusb_open(dev, &h);
+        break;
+      }
+    }
+    return h;
+  }
+
+private:
+  std::vector<std::pair<libusb_device *, std::string>> list(uint16_t vid, uint16_t pid) {
+    std::vector<std::pair<libusb_device *, std::string>> result;
     for (size_t i = 0; i < num_devices; ++i) {
       libusb_device_descriptor desc = {};
       libusb_device_handle *handle = nullptr;
@@ -55,44 +71,24 @@ struct UsbDeviceList {
         libusb_close(handle);
       }
     }
-
     return result;
   }
-
   libusb_device **dev_list = nullptr;
   ssize_t num_devices = 0;
 };
 
-libusb_device_handle *open_usb_device(libusb_context *ctx, uint16_t vid, uint16_t pid, const std::string &serial) {
-  auto open_device = [](libusb_device *dev) -> libusb_device_handle * {
-    libusb_device_handle *h = nullptr;
-    if (libusb_open(dev, &h) != 0) return nullptr;
-
-    if (libusb_kernel_driver_active(h, 0) == 1) {
-      libusb_detach_kernel_driver(h, 0);
+Panda::Panda(std::string serial, uint32_t bus_offset) : bus_offset(bus_offset) {
+  if ((ctx = init_usb_ctx()) && (dev_handle = UsbDevice(ctx).open(serial))) {
+    if (libusb_kernel_driver_active(dev_handle, 0) == 1) {
+      libusb_detach_kernel_driver(dev_handle, 0);
     }
-    if (libusb_set_configuration(h, 1) != 0 || libusb_claim_interface(h, 0) != 0) {
-      libusb_close(h);
-      return nullptr;
-    }
-    return h;
-  };
-
-  UsbDeviceList device_list(ctx);
-  for (auto &[dev, device_serial] : device_list.list(vid, pid)) {
-    if (serial.empty() || serial == device_serial) {
-      return open_device(dev);
+    if (libusb_set_configuration(dev_handle, 1) != 0 || libusb_claim_interface(dev_handle, 0) != 0) {
+      libusb_close(dev_handle);
+      dev_handle = nullptr;
     }
   }
-  return nullptr;
-}
-
-}  // namespace
-
-Panda::Panda(std::string serial) {
-  if (!(ctx = init_usb_ctx()) ||
-      !(dev_handle = open_usb_device(ctx, PANDA_VENDOR_ID, PANDA_PRODUCT_ID, serial))) {
-    cleanup();
+  if (!dev_handle) {
+    if (ctx) libusb_exit(ctx);
     throw std::runtime_error("Error connecting to panda");
   }
 
@@ -106,27 +102,16 @@ Panda::Panda(std::string serial) {
 
 Panda::~Panda() {
   std::lock_guard lk(usb_lock);
-  cleanup();
+  libusb_release_interface(dev_handle, 0);
+  libusb_close(dev_handle);
+  libusb_exit(ctx);
   connected = false;
-}
-
-void Panda::cleanup() {
-  if (dev_handle) {
-    libusb_release_interface(dev_handle, 0);
-    libusb_close(dev_handle);
-  }
-  if (ctx) {
-    libusb_exit(ctx);
-  }
 }
 
 std::vector<std::string> Panda::list() {
   std::vector<std::string> serials;
   if (libusb_context *context = init_usb_ctx()) {
-    UsbDeviceList device_list(context);
-    for (auto &[dev, serial] : device_list.list(PANDA_VENDOR_ID, PANDA_PRODUCT_ID)) {
-      serials.push_back(serial);
-    }
+    serials = UsbDevice(context).serial_list();
     libusb_exit(context);
   }
   return serials;
