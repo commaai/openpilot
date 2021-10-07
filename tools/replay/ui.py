@@ -114,22 +114,21 @@ def ui_thread(addr):
 
     rgb_img_raw = vipc_client.recv()
 
-    if rgb_img_raw is not None and rgb_img_raw.any():
-      num_px = len(rgb_img_raw) // 3
-      imgff_shape = (vipc_client.height, vipc_client.width, 3)
+    if rgb_img_raw is None or not rgb_img_raw.any():
+      continue
 
-      if imgff is None or imgff.shape != imgff_shape:
-        imgff = np.zeros(imgff_shape, dtype=np.uint8)
+    num_px = len(rgb_img_raw) // 3
+    imgff_shape = (vipc_client.height, vipc_client.width, 3)
 
-      imgff = np.frombuffer(rgb_img_raw, dtype=np.uint8).reshape((vipc_client.height, vipc_client.width, 3))
-      imgff = imgff[:, :, ::-1]  # Convert BGR to RGB
-      zoom_matrix = _BB_TO_FULL_FRAME[num_px]
-      cv2.warpAffine(imgff, zoom_matrix[:2], (img.shape[1], img.shape[0]), dst=img, flags=cv2.WARP_INVERSE_MAP)
+    if imgff is None or imgff.shape != imgff_shape:
+      imgff = np.zeros(imgff_shape, dtype=np.uint8)
 
-      intrinsic_matrix = _INTRINSICS[num_px]
-    else:
-      img.fill(0)
-      intrinsic_matrix = np.eye(3)
+    imgff = np.frombuffer(rgb_img_raw, dtype=np.uint8).reshape((vipc_client.height, vipc_client.width, 3))
+    imgff = imgff[:, :, ::-1]  # Convert BGR to RGB
+    zoom_matrix = _BB_TO_FULL_FRAME[num_px]
+    cv2.warpAffine(imgff, zoom_matrix[:2], (img.shape[1], img.shape[0]), dst=img, flags=cv2.WARP_INVERSE_MAP)
+
+    intrinsic_matrix = _INTRINSICS[num_px]
 
     sm.update(0)
 
