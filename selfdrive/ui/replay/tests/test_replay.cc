@@ -123,15 +123,15 @@ void TestReplay::testSeekTo(int seek_to) {
 void TestReplay::test_seek() {
   QEventLoop loop;
   std::thread thread = std::thread([&]() {
-    // random seek 100 times in 3 segments
-    for (int i = 0; i < 100; ++i) {
+    // random seek 50 times in 3 segments
+    for (int i = 0; i < 50; ++i) {
       testSeekTo(random_int(0, 3 * 60));
     }
-    // random seek 100 times in routes with invalid segments
+    // random seek 50 times in routes with invalid segments
     for (int n : {5, 6, 8}) {
       segments_.erase(n);
     }
-    for (int i =0; i < 100; ++i) {
+    for (int i =0; i < 50; ++i) {
       testSeekTo(520);
       testSeekTo(random_int(4 * 60, 9 * 60));
     }
