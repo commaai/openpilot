@@ -243,7 +243,7 @@ class Controls:
     if self.can_rcv_error or not CS.canValid:
       self.events.add(EventName.canError)
 
-    for i, pandaState in self.sm['pandaStates']:
+    for i, pandaState in enumerate(self.sm['pandaStates']):
       # All pandas must match the list of safetyModes, and if outside this list, must be silent
       if i < len(self.CP.safetyModes):
         safety_mismatch = pandaState.safetyModel != self.CP.safetyModes[i].safetyModel or pandaState.safetyParam != self.CP.safetyModes[i].safetyParam
