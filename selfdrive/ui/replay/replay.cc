@@ -188,10 +188,10 @@ void Replay::mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::
 
 void Replay::publishFrame(const Event *e) {
   auto publish = [=](CameraType cam_type, const cereal::EncodeIndex::Reader &eidx) {
-    int segment = eidx.getSegmentNum();
-    bool segment_loaded = std::find_if(segments_merged_.begin(), segments_merged_.end(), [=](int n) { return n == segment; }) != segments_merged_.end();
-    if (segment_loaded && segments_[segment]->frames[cam_type] && eidx.getType() == cereal::EncodeIndex::Type::FULL_H_E_V_C) {
-      camera_server_->pushFrame(cam_type, segments_[segment]->frames[cam_type].get(), eidx);
+    int n = eidx.getSegmentNum();
+    bool segment_loaded = std::find(segments_merged_.begin(), segments_merged_.end(), n) != segments_merged_.end();
+    if (segment_loaded && segments_[n]->frames[cam_type] && eidx.getType() == cereal::EncodeIndex::Type::FULL_H_E_V_C) {
+      camera_server_->pushFrame(cam_type, segments_[n]->frames[cam_type].get(), eidx);
     }
   };
   if (e->which == cereal::Event::ROAD_ENCODE_IDX) {
