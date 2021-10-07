@@ -1,7 +1,8 @@
+import json
 import os
+import subprocess
 from functools import cached_property
 from enum import IntEnum
-import subprocess
 from pathlib import Path
 
 from cereal import log
