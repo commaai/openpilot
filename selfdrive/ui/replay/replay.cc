@@ -221,14 +221,14 @@ void Replay::stream() {
       continue;
     }
 
-    uint64_t evt_start_ts = cur_mono_time_;
-    uint64_t loop_start_ts = nanos_since_boot();
+    const uint64_t evt_start_ts = cur_mono_time_;
+    const uint64_t loop_start_ts = nanos_since_boot();
 
     for (auto end = events_->end(); !updating_events_ && eit != end; ++eit) {
       const Event *evt = (*eit);
       cur_which = evt->which;
       cur_mono_time_ = evt->mono_time;
-      int current_ts = currentSeconds();
+      const int current_ts = currentSeconds();
       if (last_print > current_ts || (current_ts - last_print) > 5.0) {
         last_print = current_ts;
         qInfo() << "at " << current_ts << "s";
