@@ -44,7 +44,6 @@ protected:
   std::atomic<bool> updating_events_ = false;
   std::atomic<int> current_segment_ = -1;
   SegmentMap segments_;
-  std::vector<int> segments_merged_;
   // the following variables must be protected with stream_lock_
   bool exit_ = false;
   bool paused_ = false;
@@ -52,6 +51,7 @@ protected:
   uint64_t route_start_ts_ = 0;
   uint64_t cur_mono_time_ = 0;
   std::vector<Event *> *events_ = nullptr;
+  std::vector<int> segments_merged_;
 
   // messaging
   SubMaster *sm = nullptr;

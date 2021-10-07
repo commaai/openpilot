@@ -1,10 +1,9 @@
 #include "selfdrive/ui/replay/replay.h"
 
-#include <capnp/dynamic.h>
-
 #include <QApplication>
 #include <QDebug>
 
+#include <capnp/dynamic.h>
 #include "cereal/services.h"
 #include "selfdrive/common/timing.h"
 #include "selfdrive/hardware/hw.h"
@@ -156,7 +155,6 @@ void Replay::mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::
 
   if (segments_need_merge != segments_merged_) {
     qDebug() << "merge segments" << segments_need_merge;
-    segments_merged_ = segments_need_merge;
     // merge & sort events
     std::vector<Event *> *new_events = new std::vector<Event *>();
     new_events->reserve(std::accumulate(segments_need_merge.begin(), segments_need_merge.end(), 0,
@@ -181,6 +179,7 @@ void Replay::mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::
       }
 
       events_ = new_events;
+      segments_merged_ = segments_need_merge;
       return true;
     });
     delete prev_events;
@@ -191,10 +190,10 @@ void Replay::mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::
 
 void Replay::publishFrame(const Event *e) {
   auto publish = [=](CameraType cam_type, const cereal::EncodeIndex::Reader &eidx) {
-    // TODO: segments_.find is not thread safe. it may causes the replay to crash some rare cases.
-    auto it = segments_.find(eidx.getSegmentNum());
-    if (it != segments_.end() && it->second->isLoaded() && it->second->frames[cam_type] && eidx.getType() == cereal::EncodeIndex::Type::FULL_H_E_V_C) {
-      camera_server_->pushFrame(cam_type, it->second->frames[cam_type].get(), eidx);
+    int segment = eidx.getSegmentNum();
+    bool segment_loaded = std::find_if(segments_merged_.begin(), segments_merged_.end(), [=](int n) { return n == segment; }) != segments_merged_.end();
+    if (segment_loaded && segments_[segment]->frames[cam_type] && eidx.getType() == cereal::EncodeIndex::Type::FULL_H_E_V_C) {
+      camera_server_->pushFrame(cam_type, segments_[segment]->frames[cam_type].get(), eidx);
     }
   };
   if (e->which == cereal::Event::ROAD_ENCODE_IDX) {
