@@ -2,8 +2,6 @@
 
 #include <QThread>
 
-#include <capnp/dynamic.h>
-#include "cereal/visionipc/visionipc_server.h"
 #include "selfdrive/ui/replay/camera.h"
 #include "selfdrive/ui/replay/route.h"
 
@@ -18,23 +16,25 @@ public:
   ~Replay();
   bool load();
   void start(int seconds = 0);
-  void seekTo(int seconds, bool relative = false);
-  void relativeSeek(int seconds) { seekTo(seconds, true); }
   void pause(bool pause);
   bool isPaused() const { return paused_; }
 
 signals:
  void segmentChanged();
+ void seekTo(int seconds, bool relative);
 
 protected slots:
   void queueSegment();
+  void doSeek(int seconds, bool relative);
 
 protected:
+  typedef std::map<int, std::unique_ptr<Segment>> SegmentMap;
   void stream();
   void setCurrentSegment(int n);
-  void mergeSegments(int begin_idx, int end_idx);
+  void mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::iterator &end);
   void updateEvents(const std::function<bool()>& lambda);
   void publishFrame(const Event *e);
+  inline int currentSeconds() const { return (cur_mono_time_ - route_start_ts_) / 1e9; }
 
   QThread *stream_thread_ = nullptr;
 
@@ -43,7 +43,7 @@ protected:
   std::condition_variable stream_cv_;
   std::atomic<bool> updating_events_ = false;
   std::atomic<int> current_segment_ = -1;
-  std::vector<std::unique_ptr<Segment>> segments_;
+  SegmentMap segments_;
   // the following variables must be protected with stream_lock_
   bool exit_ = false;
   bool paused_ = false;
