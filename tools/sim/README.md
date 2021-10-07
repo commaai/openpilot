@@ -41,5 +41,6 @@ NOTE: [CARLA requires](https://carla.readthedocs.io/en/latest/build_docker/) an 
 You can also check out the [CARLA python documentation](https://carla.readthedocs.io/en/latest/python_api/) to find more parameters to tune that might increase performance on your system
 
 ## Further Reading
+
 The following resources contain more details and troubleshooting tips.
-* [CARLA on the openpilot wiki](https://github.com/commaai/openpilot/wiki/CARLA) 
+* [CARLA on the openpilot wiki](https://github.com/commaai/openpilot/wiki/CARLA)
