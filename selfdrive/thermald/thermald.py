@@ -255,7 +255,7 @@ def thermald_thread():
         network_type = HARDWARE.get_network_type()
         network_strength = HARDWARE.get_network_strength(network_type)
         network_info = HARDWARE.get_network_info()  # pylint: disable=assignment-from-none
-        nvme_temps = HARDWARE.get_nvme_temps()
+        nvme_temps = HARDWARE.get_nvme_temperatures()
         modem_temps = HARDWARE.get_modem_temperatures()
 
         # Log modem version once
