@@ -62,4 +62,4 @@ COPY ./selfdrive $HOME/openpilot/selfdrive
 COPY ./tools $HOME/openpilot/tools
 
 WORKDIR $HOME/openpilot
-RUN scons -j$(nproc)
+RUN USE_FRAME_STREAM=1 scons -j$(nproc)
