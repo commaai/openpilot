@@ -210,8 +210,8 @@ def thermald_thread():
 
     msg = read_thermal(thermal_config)
 
-    if pandaStates is not None and len(pandaStates) > 0:
-      pandaState = pandaStates.pandaState
+    if pandaStates is not None and len(pandaStates.pandaStates) > 0:
+      pandaState = pandaStates.pandaStates[0]
 
       # If we lose connection to the panda, wait 5 seconds before going offroad
       if pandaState.pandaType == log.PandaState.PandaType.unknown:
@@ -446,7 +446,7 @@ def thermald_thread():
 
       cloudlog.event("STATUS_PACKET",
                      count=count,
-                     pandaState=(strip_deprecated_keys(pandaState.to_dict()) if pandaState else None),
+                     pandaStates=(strip_deprecated_keys(pandaStates.to_dict()) if pandaStates else None),
                      peripheralState=strip_deprecated_keys(peripheralState.to_dict()),
                      location=(strip_deprecated_keys(sm["gpsLocationExternal"].to_dict()) if sm.alive["gpsLocationExternal"] else None),
                      deviceState=strip_deprecated_keys(msg.to_dict()))
