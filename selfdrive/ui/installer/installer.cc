@@ -196,6 +196,7 @@ void Installer::cloneFinished(int exitCode, QProcess::ExitStatus exitStatus) {
     param.close();
   }
   run("cd " INSTALL_PATH " && "
+      "git submodule update --init && "
       "git remote set-url origin --push " GIT_SSH_URL " && "
       "git config remote.origin.fetch \"+refs/heads/*:refs/remotes/origin/*\"");
 #endif
