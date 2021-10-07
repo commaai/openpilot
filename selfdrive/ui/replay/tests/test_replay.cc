@@ -6,6 +6,7 @@
 #include "selfdrive/ui/replay/replay.h"
 #include "selfdrive/ui/replay/util.h"
 
+const QString DEMO_ROUTE = "4cf7a6ad03080c90|2021-09-29--13-46-36";
 std::string sha_256(const QString &dat) {
   return QString(QCryptographicHash::hash(dat.toUtf8(), QCryptographicHash::Sha256).toHex()).toStdString();
 }
@@ -50,8 +51,6 @@ bool is_events_ordered(const std::vector<Event *> &events) {
   return true;
 }
 
-const QString DEMO_ROUTE = "4cf7a6ad03080c90|2021-09-29--13-46-36";
-
 TEST_CASE("Segment") {
   Route demo_route(DEMO_ROUTE);
   REQUIRE(demo_route.load());
@@ -74,7 +73,6 @@ TEST_CASE("Segment") {
     for (int i = 0; i < 50; ++i) {
       REQUIRE(segment.frames[RoadCam]->get(i));
     }
-
     loop.quit();
   });
   loop.exec();
@@ -85,8 +83,6 @@ class TestReplay : public Replay {
 public:
   TestReplay(const QString &route) : Replay(route, {}, {}) {}
   void test_seek();
-
-protected:
   void testSeekTo(int seek_to);
 };
 
@@ -139,7 +135,6 @@ void TestReplay::test_seek() {
       testSeekTo(520);
       testSeekTo(random_int(4 * 60, 9 * 60));
     }
-
     loop.quit();
   });
   loop.exec();

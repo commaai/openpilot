@@ -27,7 +27,6 @@ Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *s
   if (sm == nullptr) {
     pm = new PubMaster(s);
   }
-
   route_ = std::make_unique<Route>(route);
   events_ = new std::vector<Event *>();
   // doSeek & queueSegment are always executed in the same thread
@@ -164,7 +163,6 @@ void Replay::mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::
       auto middle = new_events->insert(new_events->end(), log->events.begin(), log->events.end());
       std::inplace_merge(new_events->begin(), middle, new_events->end(), Event::lessThan());
     }
-
     // update events
     auto prev_events = events_;
     updateEvents([&]() {
