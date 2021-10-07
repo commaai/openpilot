@@ -1,10 +1,11 @@
 #include "selfdrive/ui/replay/replay.h"
 
+#include <capnp/dynamic.h>
+
 #include <QApplication>
 #include <QDebug>
 
 #include "cereal/services.h"
-#include "selfdrive/camerad/cameras/camera_common.h"
 #include "selfdrive/common/timing.h"
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/replay/util.h"
@@ -68,7 +69,7 @@ bool Replay::load() {
     qDebug() << "no valid segments in route" << route_->name();
     return false;
   }
-  qDebug() << "load route" << route_->name() << segments_.size() << "valid segments";
+  qDebug() << "load route" << route_->name() << "with" << segments_.size() << "valid segments";
   return true;
 }
 
@@ -99,8 +100,8 @@ void Replay::doSeek(int seconds, bool relative) {
       seconds += ((cur_mono_time_ - route_start_ts_) * 1e-9);
     }
     qInfo() << "seeking to" << seconds;
-    cur_mono_time_ = route_start_ts_ + std::clamp(seconds, 0, (int)segments_.size() * 60) * 1e9;
-    current_segment_ = std::min(seconds / 60, (int)segments_.size() - 1);
+    cur_mono_time_ = route_start_ts_ + std::clamp(seconds, 0, (int)segments_.rbegin()->first * 60) * 1e9;
+    current_segment_ = std::min(seconds / 60, (int)segments_.rbegin()->first - 1);
     return false;
   });
   queueSegment();
@@ -175,7 +176,7 @@ void Replay::mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::
         auto it = std::find_if(new_events->begin(), new_events->end(), [=](auto e) { return e->which == cereal::Event::Which::INIT_DATA; });
         if (it != new_events->end()) {
           route_start_ts_ = (*it)->mono_time;
-          // cur_mono_time_ is set by seekTo int start() before get route_start_ts_
+          // cur_mono_time_ is set by seekTo in start() before get route_start_ts_
           cur_mono_time_ += route_start_ts_;
         }
       }

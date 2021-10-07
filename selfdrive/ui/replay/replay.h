@@ -2,8 +2,6 @@
 
 #include <QThread>
 
-#include <capnp/dynamic.h>
-#include "cereal/visionipc/visionipc_server.h"
 #include "selfdrive/ui/replay/camera.h"
 #include "selfdrive/ui/replay/route.h"
 

@@ -129,14 +129,16 @@ void TestReplay::testSeekTo(int seek_to) {
       continue;
     }
 
-    INFO("seek to [" << seek_to << "s segment " << seek_to / 60 << "]");
-    REQUIRE(uint64_t(route_start_ts_ + seek_to * 1e9) == cur_mono_time_);
     REQUIRE(is_events_ordered(*events_));
+    const int seek_to_segment = seek_to / 60;
     const int event_seconds = ((*eit)->mono_time - route_start_ts_) / 1e9;
     current_segment_ = event_seconds / 60;
-    INFO("event [" << event_seconds << "s segment " << current_segment_ << "]");
+    INFO("seek to [" << seek_to << "s segment " << seek_to_segment << "], events [" << event_seconds << "s segment" << current_segment_ << "]");
     REQUIRE(event_seconds >= seek_to);
-    // REQUIRE((event_seconds - seek_to) <= 1); // at the same time
+    if (event_seconds > seek_to) {
+      auto it = segments_.lower_bound(seek_to_segment);
+      REQUIRE(it->first == current_segment_);
+    }
     break;
   }
 }
@@ -148,6 +150,15 @@ void TestReplay::test_seek() {
     for (int i = 0; i < 100; ++i) {
       testSeekTo(random_int(0, 3 * 60));
     }
+    // random seek 100 times in routes with invalid segments
+    for (int n : {5, 6, 8}) {
+      segments_.erase(n);
+    }
+    for (int i =0; i < 100; ++i) {
+      testSeekTo(520);
+      testSeekTo(random_int(4 * 60, 9 * 60));
+    }
+
     loop.quit();
   });
   loop.exec();
