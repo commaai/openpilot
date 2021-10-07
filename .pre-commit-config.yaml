@@ -38,7 +38,7 @@ repos:
         entry: cppcheck
         language: system
         types: [c++]
-        exclude: '^(phonelibs)|(pyextra)|(cereal)|(opendbc)|(panda)|(tools)|(selfdrive/modeld/thneed/debug)|(selfdrive/modeld/test)|(selfdrive/camerad/test)/|(installer)'
+        exclude: '^(third_party)|(pyextra)|(cereal)|(opendbc)|(panda)|(tools)|(selfdrive/modeld/thneed/debug)|(selfdrive/modeld/test)|(selfdrive/camerad/test)/|(installer)'
         args:
         - --error-exitcode=1
         - --language=c++

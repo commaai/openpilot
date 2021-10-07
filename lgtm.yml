@@ -1,7 +1,7 @@
 path_classifiers:
   library:
     - external
-    - phonelibs
+    - third_party
     - pyextra
     - tools/lib/mkvparse
 extraction:

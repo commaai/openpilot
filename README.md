@@ -97,8 +97,8 @@ Directory Structure
     ├── docs                # Documentation
     ├── opendbc             # Files showing how to interpret data from cars
     ├── panda               # Code used to communicate on CAN
-    ├── phonelibs           # External libraries
-    ├── pyextra             # Extra python packages not shipped in NEOS
+    ├── third_party         # External libraries
+    ├── pyextra             # Extra python packages
     └── selfdrive           # Code needed to drive the car
         ├── assets          # Fonts, images, and sounds for UI
         ├── athena          # Allows communication with the app

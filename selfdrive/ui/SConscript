@@ -11,7 +11,7 @@ if arch == 'aarch64':
   base_libs += ['log', 'utils', 'gui', 'ui', 'CB', 'gsl', 'adreno_utils', 'cutils', 'uuid']
 
 if maps and arch == 'x86_64':
-  rpath = [Dir(f"#phonelibs/mapbox-gl-native-qt/{arch}").srcnode().abspath]
+  rpath = [Dir(f"#third_party/mapbox-gl-native-qt/{arch}").srcnode().abspath]
   qt_env["RPATH"] += rpath
 
 if arch == "Darwin":
@@ -21,7 +21,7 @@ if arch == "Darwin":
 widgets_src = ["qt/util.cc", "qt/widgets/input.cc", "qt/widgets/drive_stats.cc",
                "qt/widgets/ssh_keys.cc", "qt/widgets/toggle.cc", "qt/widgets/controls.cc",
                "qt/widgets/offroad_alerts.cc", "qt/widgets/prime.cc", "qt/widgets/keyboard.cc",
-               "qt/widgets/scrollview.cc", "qt/widgets/cameraview.cc", "#phonelibs/qrcode/QrCode.cc", "qt/api.cc",
+               "qt/widgets/scrollview.cc", "qt/widgets/cameraview.cc", "#third_party/qrcode/QrCode.cc", "qt/api.cc",
                "qt/request_repeater.cc"]
 
 if arch != 'aarch64':
@@ -54,7 +54,7 @@ qt_env.Program("qt/spinner", ["qt/spinner.cc"], LIBS=qt_libs)
 qt_src = ["main.cc", "ui.cc", "paint.cc", "qt/sidebar.cc", "qt/onroad.cc",
           "qt/window.cc", "qt/home.cc", "qt/offroad/settings.cc",
           "qt/offroad/onboarding.cc", "qt/offroad/driverview.cc",
-          "#phonelibs/nanovg/nanovg.c"]
+          "#third_party/nanovg/nanovg.c"]
 qt_env.Program("_ui", qt_src + [asset_obj], LIBS=qt_libs)
 
 
