@@ -135,13 +135,18 @@ static void update_state(UIState *s) {
     }
   }
   if (sm.updated("pandaStates")) {
-    auto pandaState = sm["pandaStates"].getPandaStates()[0];
-    scene.pandaType = pandaState.getPandaType();
+    auto pandaStates = sm["pandaStates"].getPandaStates();
+    if (pandaStates.size() > 0) {
+      scene.pandaType = pandaStates[0].getPandaType();
 
-    if (scene.pandaType != cereal::PandaState::PandaType::UNKNOWN) {
-      scene.ignition = pandaState.getIgnitionLine() || pandaState.getIgnitionCan();
+      if (scene.pandaType != cereal::PandaState::PandaType::UNKNOWN) {
+        scene.ignition = false;
+        for (const auto& pandaState : pandaStates) {
+          scene.ignition |= pandaState.getIgnitionLine() || pandaState.getIgnitionCan();
+        }
+      }
     }
-  } else if ((s->sm->frame - s->sm->rcv_frame("pandaState")) > 5*UI_FREQ) {
+  } else if ((s->sm->frame - s->sm->rcv_frame("pandaStates")) > 5*UI_FREQ) {
     scene.pandaType = cereal::PandaState::PandaType::UNKNOWN;
   }
   if (sm.updated("carParams")) {
