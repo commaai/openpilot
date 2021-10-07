@@ -97,10 +97,10 @@ int main(int argc, char *argv[]){
   QStringList block = parser.value("block").isEmpty() ? QStringList{} : parser.value("block").split(",");
 
   Replay *replay = new Replay(route, allow, block, nullptr, parser.isSet("dcam"), parser.isSet("ecam"), &app);
-  if (replay->load()) {
-    replay->start(parser.value("start").toInt());
+  if (!replay->load()) {
+    return 0;  
   }
-
+  replay->start(parser.value("start").toInt());
   // start keyboard control thread
   QThread *t = QThread::create(keyboardThread, replay);
   QObject::connect(t, &QThread::finished, t, &QThread::deleteLater);
