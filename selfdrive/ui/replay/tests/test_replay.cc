@@ -17,7 +17,6 @@ TEST_CASE("httpMultiPartDownload") {
   int fd = mkstemp(filename);
   close(fd);
 
-  const char *stream_url = "https://commadataci.blob.core.windows.net/openpilotci/0c94aa1e1296d7c6/2021-05-05--19-48-37/0/fcamera.hevc";
   SECTION("http 200") {
     REQUIRE(httpMultiPartDownload(stream_url, filename, 5));
     std::string content = util::read_file(filename);
