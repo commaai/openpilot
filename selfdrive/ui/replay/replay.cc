@@ -110,6 +110,10 @@ void Replay::seekTo(int seconds, bool relative) {
 void Replay::pause(bool pause) {
   updateEvents([=]() {
     qDebug() << (pause ? "paused..." : "resuming");
+    if (pause) {
+      float current_ts = (cur_mono_time_ - route_start_ts_) / 1e9;
+      qInfo() << "at " << current_ts << "s";
+    }
     paused_ = pause;
     return true;
   });
