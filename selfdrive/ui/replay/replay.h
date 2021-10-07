@@ -8,12 +8,19 @@
 constexpr int FORWARD_SEGS = 2;
 constexpr int BACKWARD_SEGS = 1;
 
+enum REPLAY_FLAGS {
+  REPLAY_FLAG_NONE = 0x0000,
+  REPLAY_FLAG_DCAM = 0x0001,
+  REPLAY_FLAG_ECAM = 0x0002,
+  REPLAY_FLAG_FALLBACK_TO_QLOG = 0x0004,
+  REPLAY_FLAG_YUV = 0x0008,
+};
+
 class Replay : public QObject {
   Q_OBJECT
 
 public:
-  Replay(QString route, QStringList allow, QStringList block, SubMaster *sm = nullptr, bool dcam = false, bool ecam = false,
-         QString data_dir="", QObject *parent = 0);
+  Replay(QString route, QStringList allow, QStringList block, SubMaster *sm = nullptr, uint32_t flags = REPLAY_FLAG_NONE, QString data_dir = "", QObject *parent = 0);
   ~Replay();
   bool load();
   void start(int seconds = 0);
@@ -61,6 +68,6 @@ protected:
   PubMaster *pm = nullptr;
   std::vector<const char*> sockets_;
   std::unique_ptr<Route> route_;
-  bool load_dcam = false, load_ecam = false;
   std::unique_ptr<CameraServer> camera_server_;
+  uint32_t flags_ = REPLAY_FLAG_NONE;
 };

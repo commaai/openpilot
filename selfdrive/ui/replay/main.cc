@@ -86,6 +86,8 @@ int main(int argc, char *argv[]){
   parser.addOption({"data_dir", "local directory with routes", "data_dir"});
   parser.addOption({"dcam", "load driver camera"});
   parser.addOption({"ecam", "load wide road camera"});
+  parser.addOption({"qlog", "fallback to qlog without confirmation"});
+  parser.addOption({"yuv", "publish YUV frames"});
 
   parser.process(app);
   const QStringList args = parser.positionalArguments();
@@ -97,7 +99,20 @@ int main(int argc, char *argv[]){
   QStringList allow = parser.value("allow").isEmpty() ? QStringList{} : parser.value("allow").split(",");
   QStringList block = parser.value("block").isEmpty() ? QStringList{} : parser.value("block").split(",");
 
-  Replay *replay = new Replay(route, allow, block, nullptr, parser.isSet("dcam"), parser.isSet("ecam"), parser.value("data_dir"), &app);
+  uint32_t flags = REPLAY_FLAG_NONE;
+  const std::pair<QString, REPLAY_FLAGS> flag_map[] = {
+      {"dcam", REPLAY_FLAG_DCAM},
+      {"ecam", REPLAY_FLAG_ECAM},
+      {"qlog", REPLAY_FLAG_FALLBACK_TO_QLOG},
+      {"yuv", REPLAY_FLAG_YUV},
+  };
+  for (const auto &[key, flag] : flag_map) {
+    if (parser.isSet(key)) {
+      flags |= flag;
+    }
+  }
+
+  Replay *replay = new Replay(route, allow, block, nullptr, flags, parser.value("data_dir"), &app);
   if (!replay->load()) {
     return 0;
   }
