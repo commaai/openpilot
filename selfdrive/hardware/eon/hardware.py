@@ -393,6 +393,9 @@ class Android(HardwareBase):
     # Not sure if we can get this on the LeEco
     return []
 
+  def get_nvme_temperatures(self):
+    return []
+
   def initialize_hardware(self):
     pass
 
