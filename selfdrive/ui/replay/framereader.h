@@ -33,7 +33,6 @@ private:
   std::pair<uint8_t *, uint8_t *> decodeFrame(AVPacket *pkt);
   struct Frame {
     AVPacket pkt = {};
-    // TODO:: Use a single shared buffer in all FrameReaders to saving memory overhead
     std::unique_ptr<uint8_t[]> rgb_data = nullptr;
     std::unique_ptr<uint8_t[]> yuv_data = nullptr;
     bool failed = false;
