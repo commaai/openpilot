@@ -65,3 +65,24 @@ protected:
   QString log_path_;
   std::vector<QThread*> download_threads_;
 };
+
+class SegmentManager : public QObject {
+  Q_OBJECT
+
+public:
+  SegmentManager(int cache_segment_cnt = 8, QObject *parent = nullptr) : cache_size_(cache_segment_cnt), QObject(parent) {}
+  std::shared_ptr<Segment> get(int n, const SegmentFile &files, bool load_cam, bool load_eccam);
+  inline int getCacheSize() const { return cache_size_; }
+  inline void setCacheSize(int size) { cache_size_ = size; }
+
+signals:
+  void segmentLoaded(int n);
+
+ protected:
+  struct SegmentData {
+    std::shared_ptr<Segment> segment;
+    double last_used;
+  };
+  std::map<int, SegmentData> segments_;
+  int cache_size_;
+};

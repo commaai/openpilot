@@ -17,6 +17,7 @@ public:
   ~Replay();
   bool load();
   void start(int seconds = 0);
+  void setSegmentCacheSize(int size) { segment_manager_.setCacheSize(size); }
   void pause(bool pause);
   bool isPaused() const { return paused_; }
 
@@ -29,7 +30,7 @@ protected slots:
   void doSeek(int seconds, bool relative);
 
 protected:
-  typedef std::map<int, std::unique_ptr<Segment>> SegmentMap;
+  typedef std::map<int, std::shared_ptr<Segment>> SegmentMap;
   void stream();
   void setCurrentSegment(int n);
   void mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::iterator &end);
@@ -45,6 +46,7 @@ protected:
   std::atomic<bool> updating_events_ = false;
   std::atomic<int> current_segment_ = -1;
   SegmentMap segments_;
+  SegmentManager segment_manager_;
   // the following variables must be protected with stream_lock_
   bool exit_ = false;
   bool paused_ = false;

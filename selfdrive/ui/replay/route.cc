@@ -197,3 +197,35 @@ QString Segment::localPath(const QUrl &url) {
   QByteArray url_no_query = url.toString(QUrl::RemoveQuery).toUtf8();
   return CACHE_DIR.filePath(QString(QCryptographicHash::hash(url_no_query, QCryptographicHash::Sha256).toHex()));
 }
+
+std::shared_ptr<Segment> SegmentManager::get(int n, const SegmentFile &files, bool load_cam, bool load_eccam) {
+  // get segment from cache
+  if (auto it = segments_.find(n);it != segments_.end()) {
+    qDebug() << "get segment" << n << "from cache";
+    it->second.last_used = millis_since_boot();
+    return it->second.segment;
+  }
+
+  // remove unused segments from cache
+  while (segments_.size() > cache_size_) {
+    int idx = -1;
+    double last_used = millis_since_boot();
+    for (auto &[n, s] : segments_) {
+      if (s.segment.use_count() == 1 && s.last_used < last_used) {
+        last_used = s.last_used;
+        idx = n;
+      }
+    }
+    if (idx == -1) break;
+
+    segments_.erase(idx);
+  }
+
+  // add segment to cache
+  auto [it, _] = segments_.emplace(n, SegmentData {
+                        .segment = std::make_shared<Segment>(n, files, load_cam, load_eccam),
+                        .last_used = millis_since_boot(),
+                       });
+  QObject::connect(it->second.segment.get(), &Segment::loadFinished, [=]() { emit segmentLoaded(n); });
+  return it->second.segment;
+}

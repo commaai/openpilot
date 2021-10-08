@@ -32,6 +32,7 @@ Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *s
   // doSeek & queueSegment are always executed in the same thread
   connect(this, &Replay::seekTo, this, &Replay::doSeek);
   connect(this, &Replay::segmentChanged, this, &Replay::queueSegment);
+  connect(&segment_manager_, &SegmentManager::segmentLoaded, this, &Replay::queueSegment);
 }
 
 Replay::~Replay() {
@@ -130,18 +131,17 @@ void Replay::queueSegment() {
   for (int fwd = 0; end != segments_.end() && fwd <= FORWARD_SEGS; ++end, ++fwd) {
     auto &[n, seg] = *end;
     if (!seg) {
-      seg = std::make_unique<Segment>(n, route_->at(n), load_dcam, load_ecam);
-      QObject::connect(seg.get(), &Segment::loadFinished, this, &Replay::queueSegment);
+      seg = segment_manager_.get(n, route_->at(n), load_dcam, load_ecam);
     }
   }
   // merge segments
   mergeSegments(begin, end);
   // free segments out of current semgnt window.
   for (auto it = segments_.begin(); it != begin; ++it) {
-    it->second.reset(nullptr);
+    it->second = nullptr;
   }
   for (auto it = end; it != segments_.end(); ++it) {
-    it->second.reset(nullptr);
+    it->second = nullptr;
   }
 }
 
