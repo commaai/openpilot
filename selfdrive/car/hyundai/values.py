@@ -559,6 +559,7 @@ FW_VERSIONS = {
   CAR.KIA_K5_2021: {
     (Ecu.fwdRadar, 0x7D0, None): [
       b'\xf1\000DL3_ SCC FHCUP      1.00 1.03 99110-L2000         ',
+      b'\xf1\x8799110L2000\xf1\000DL3_ SCC FHCUP      1.00 1.03 99110-L2000         ',
     ],
     (Ecu.eps, 0x7D4, None): [
       b'\xf1\x8756310-L3110\xf1\000DL3 MDPS C 1.00 1.01 56310-L3110 4DLAC101',
@@ -568,12 +569,15 @@ FW_VERSIONS = {
     ],
     (Ecu.esp, 0x7D1, None): [
       b'\xf1\000DL ESC \006 101 \004\002 58910-L3200',
+      b'\xf1\x8758910-L3200\xf1\000DL ESC \006 101 \004\002 58910-L3200',
     ],
     (Ecu.engine, 0x7E0, None): [
       b'\xf1\x87391212MKT0\xf1\xa00240',
+      b'\xf1\x87391212MKT0',
     ],
     (Ecu.transmission, 0x7E1, None): [
       b'\xf1\000bcsh8p54  U913\000\000\000\000\000\000TDL2T16NB1ia\v\xb8',
+      b'\xf1\x87SALFEA5652514GK2UUeV\x88\x87\x88xxwg\x87ww\x87wwfwvd/\xfb\xffvU_\xff\x93\xd3\xf1\x81U913\000\000\000\000\000\000\xf1\000bcsh8p54  U913\000\000\000\000\000\000TDL2T16NB1ia\v\xb8',
     ],
   },
   CAR.KONA_EV: {
