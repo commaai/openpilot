@@ -176,7 +176,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   // Set initial config
   wifi->updateGsmSettings(roamingEnabled,  QString::fromStdString(params.get("GsmApn")));
 
-  main_layout->addWidget(list);
+  main_layout->addWidget(new ScrollView(list, this));
   main_layout->addStretch(1);
 }
 
