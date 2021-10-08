@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import os
-import math
 import numpy as np
 
 from common.realtime import sec_since_boot
@@ -23,17 +22,20 @@ X_DIM = 3
 U_DIM = 1
 COST_E_DIM = 3
 COST_DIM = COST_E_DIM + 1
-MIN_ACCEL = -3.5
+CONSTR_DIM = 4
 
-X_EGO_COST = 80.
-X_EGO_E2E_COST = 100.
-A_EGO_COST = .1
-J_EGO_COST = .2
-DANGER_ZONE_COST = 1e3
+X_EGO_COST = 3.
+X_EGO_E2E_COST = 10.
+A_EGO_COST = 1.
+J_EGO_COST = 10.
+DANGER_ZONE_COST = 100.
 CRASH_DISTANCE = .5
 LIMIT_COST = 1e6
-T_IDXS = np.array(T_IDXS_LST)
 
+T_IDXS = np.array(T_IDXS_LST)
+T_DIFFS = np.diff(T_IDXS, prepend=[0.])
+
+MIN_ACCEL = -3.5
 T_REACT = 1.8
 MAX_BRAKE = 9.81
 
@@ -110,51 +112,57 @@ def gen_long_mpc_solver():
   ocp.cost.yref_e = np.zeros((COST_E_DIM, ))
 
   desired_dist_comfort = get_safe_obstacle_distance(v_ego)
-  desired_dist_danger = (7/8) * get_safe_obstacle_distance(v_ego)
 
+  # The main cost in normal operation is how close you are to the "desired" distance
+  # from an obstacle at every timestep. This obstacle can be a lead car
+  # or other object. In e2e mode we can use x_position targets as a cost
+  # instead.
   costs = [((x_obstacle - x_ego) - (desired_dist_comfort)) / (v_ego + 10.),
            x_ego,
-           a_ego * (v_ego + 10.),
-           j_ego * (v_ego + 10.)]
+           a_ego,
+           j_ego]
   ocp.model.cost_y_expr = vertcat(*costs)
   ocp.model.cost_y_expr_e = vertcat(*costs[:-1])
 
+  # Constraints on speed, acceleration and desired distance to
+  # the obstacle, which is treated as a slack constraint so it
+  # behaves like an assymetrical cost.
   constraints = vertcat((v_ego),
                         (a_ego - a_min),
                         (a_max - a_ego),
-                        ((x_obstacle - x_ego) - (desired_dist_danger)) / (v_ego + 10.))
+                        ((x_obstacle - x_ego) - (3/4) * (desired_dist_comfort)) / (v_ego + 10.))
   ocp.model.con_h_expr = constraints
-  ocp.model.con_h_expr_e = constraints
+  ocp.model.con_h_expr_e = vertcat(np.zeros(CONSTR_DIM))
 
   x0 = np.zeros(X_DIM)
   ocp.constraints.x0 = x0
   ocp.parameter_values = np.array([-1.2, 1.2, 0.0])
 
-  # These constraints put hard limits on speed and
-  # acceleration as well as giving an assymetrical
-  # cost on approaching a lead. We only use lower
-  # bounds with an L2 cost.
-  l1_penalty = 0.0
-  l2_penalty = 1.0
-  weights = np.array([1e6, 1e6, 1e6, 0.0])
-  ocp.cost.zl = l1_penalty * weights
-  ocp.cost.Zl = l2_penalty * weights
-  ocp.cost.Zu = 0.0 * weights
-  ocp.cost.zu = 0.0 * weights
+  # We put all constraint cost weights to 0 and only set them at runtime
+  cost_weights = np.zeros(CONSTR_DIM)
+  ocp.cost.zl = cost_weights
+  ocp.cost.Zl = cost_weights
+  ocp.cost.Zu = cost_weights
+  ocp.cost.zu = cost_weights
 
-  ocp.constraints.lh = np.array([0.0, 0.0, 0.0, 0.0])
-  ocp.constraints.lh_e = np.array([0.0, 0.0, 0.0, 0.0])
-  ocp.constraints.uh = np.array([1e3, 1e3, 1e3, 1e4])
-  ocp.constraints.uh_e = np.array([1e3, 1e3, 1e3, 1e6])
-  ocp.constraints.idxsh = np.array([0,1,2,3])
+  ocp.constraints.lh = np.zeros(CONSTR_DIM)
+  ocp.constraints.lh_e = np.zeros(CONSTR_DIM)
+  ocp.constraints.uh = 1e4*np.ones(CONSTR_DIM)
+  ocp.constraints.uh_e = 1e4*np.ones(CONSTR_DIM)
+  ocp.constraints.idxsh = np.arange(CONSTR_DIM)
 
-
+  # The HPIPM solver can give decent solutions even when it is stopped early
+  # Which is critical for our purpose where the compute time is strictly bounded
+  # We use HPIPM in the SPEED_ABS mode, which ensures fastest runtime. This
+  # does not cause issues since the problem is well bounded.
   ocp.solver_options.qp_solver = 'PARTIAL_CONDENSING_HPIPM'
   ocp.solver_options.hessian_approx = 'GAUSS_NEWTON'
   ocp.solver_options.integrator_type = 'ERK'
   ocp.solver_options.nlp_solver_type = 'SQP_RTI'
 
-  ocp.solver_options.qp_solver_iter_max = 3
+  # More iterations take too much time and less lead to inaccurate convergence in
+  # some situations. Ideally we would run just 1 iteration to ensure fixed runtime.
+  ocp.solver_options.qp_solver_iter_max = 4
 
   # set prediction horizon
   ocp.solver_options.tf = Tf
@@ -188,10 +196,7 @@ class LongitudinalMpc():
       self.solver.set(i, 'x', np.zeros(X_DIM))
     self.last_cloudlog_t = 0
     self.status = False
-    self.new_lead = False
-    self.prev_lead_status = False
     self.crash_cnt = 0.0
-    self.prev_lead_x = 10
     self.solution_status = 0
     self.x0 = np.zeros(X_DIM)
     self.set_weights()
@@ -206,9 +211,11 @@ class LongitudinalMpc():
     W = np.diag([X_EGO_COST, 0.0, A_EGO_COST, J_EGO_COST])
     Ws = np.tile(W[None], reps=(N,1,1))
     self.solver.cost_set_slice(0, N, 'W', Ws, api='old')
-    #TODO hacky weights to keep behavior the same
-    self.solver.cost_set(N, 'W', (3./5.)*np.copy(W[:COST_E_DIM, :COST_E_DIM]))
+    # Setting the slice without the copy make the array not contiguous,
+    # causing issues with the C interface.
+    self.solver.cost_set(N, 'W', np.copy(W[:COST_E_DIM, :COST_E_DIM]))
 
+    # Set L2 slack cost on lower bound constraints
     Zl = np.array([LIMIT_COST, LIMIT_COST, LIMIT_COST, DANGER_ZONE_COST])
     Zls = np.tile(Zl[None], reps=(N+1,1,1))
     self.solver.cost_set_slice(0, N+1, 'Zl', Zls, api='old')
@@ -217,8 +224,11 @@ class LongitudinalMpc():
     W = np.diag([0.0, X_EGO_E2E_COST, 0., J_EGO_COST])
     Ws = np.tile(W[None], reps=(N,1,1))
     self.solver.cost_set_slice(0, N, 'W', Ws, api='old')
+    # Setting the slice without the copy make the array not contiguous,
+    # causing issues with the C interface.
     self.solver.cost_set(N, 'W', np.copy(W[:COST_E_DIM, :COST_E_DIM]))
 
+    # Set L2 slack cost on lower bound constraints
     Zl = np.array([LIMIT_COST, LIMIT_COST, LIMIT_COST, 0.0])
     Zls = np.tile(Zl[None], reps=(N+1,1,1))
     self.solver.cost_set_slice(0, N+1, 'Zl', Zls, api='old')
@@ -233,53 +243,34 @@ class LongitudinalMpc():
       self.x0[1] = v
       self.x0[2] = a
 
-  def extrapolate_lead(self, x_lead, v_lead, a_lead_0, a_lead_tau):
-    lead_xv = np.zeros((N+1,2))
-    lead_xv[0, 0], lead_xv[0, 1] = x_lead, v_lead
-    for i in range(1, N+1):
-      dt = T_IDXS[i] - T_IDXS[i-1]
-      a_lead = a_lead_0 * math.exp(-a_lead_tau * (T_IDXS[i]**2)/2.)
-      x_lead += v_lead * dt
-      v_lead += a_lead * dt
-      if v_lead < 0.0:
-        a_lead = 0.0
-        v_lead = 0.0
-      lead_xv[i, 0], lead_xv[i, 1] = x_lead, v_lead
+  def extrapolate_lead(self, x_lead, v_lead, a_lead, a_lead_tau):
+    a_lead_traj = a_lead * np.exp(-a_lead_tau * (T_IDXS**2)/2.)
+    v_lead_traj = np.clip(v_lead + np.cumsum(T_DIFFS * a_lead_traj), 0.0, 1e8)
+    x_lead_traj = x_lead + np.cumsum(T_DIFFS * v_lead_traj)
+    lead_xv = np.column_stack((x_lead_traj, v_lead_traj))
     return lead_xv
 
   def process_lead(self, lead):
     v_ego = self.x0[1]
     if lead is not None and lead.status:
       x_lead = lead.dRel
-      v_lead = max(0.0, lead.vLead)
-      a_lead = clip(lead.aLeadK, -10.0, 5.0)
-
-      # MPC will not converge if immidiate crash is expected
-      # Clip lead distance to what is still possible to brake for
-      min_x_lead = ((v_ego + v_lead)/2) * (v_ego - v_lead) / (-MIN_ACCEL * 2)
-      if x_lead < min_x_lead:
-        x_lead = min_x_lead
-
-      if (v_lead < 0.1 or -a_lead / 2.0 > v_lead):
-        v_lead = 0.0
-        a_lead = 0.0
-
-      self.a_lead_tau = lead.aLeadTau
-      self.new_lead = False
-      lead_xv = self.extrapolate_lead(x_lead, v_lead, a_lead, self.a_lead_tau)
-      if not self.prev_lead_status or abs(x_lead - self.prev_lead_x) > 2.5:
-        self.new_lead = True
-
-      self.prev_lead_status = True
-      self.prev_lead_x = x_lead
+      v_lead = lead.vLead
+      a_lead = lead.aLeadK
+      a_lead_tau = lead.aLeadTau
     else:
-      self.prev_lead_status = False
       # Fake a fast lead car, so mpc can keep running in the same mode
       x_lead = 50.0
       v_lead = v_ego + 10.0
       a_lead = 0.0
-      self.a_lead_tau = _LEAD_ACCEL_TAU
-      lead_xv = self.extrapolate_lead(x_lead, v_lead, a_lead, self.a_lead_tau)
+      a_lead_tau = _LEAD_ACCEL_TAU
+
+    # MPC will not converge if immediate crash is expected
+    # Clip lead distance to what is still possible to brake for
+    min_x_lead = ((v_ego + v_lead)/2) * (v_ego - v_lead) / (-MIN_ACCEL * 2)
+    x_lead = clip(x_lead, min_x_lead, 1e8)
+    v_lead = clip(v_lead, 0.0, 1e8)
+    a_lead = clip(a_lead, -10., 5.)
+    lead_xv = self.extrapolate_lead(x_lead, v_lead, a_lead, a_lead_tau)
     return lead_xv
 
   def set_accel_limits(self, min_a, max_a):
@@ -297,16 +288,16 @@ class LongitudinalMpc():
     self.params[:,0] = interp(float(self.status), [0.0, 1.0], [self.cruise_min_a, MIN_ACCEL])
     self.params[:,1] = self.cruise_max_a
 
-    # To consider a safe distance from a moving lead, we calculate how much stopping
+    # To estimate a safe distance from a moving lead, we calculate how much stopping
     # distance that lead needs as a minimum. We can add that to the current distance
     # and then treat that as a stopped car/obstacle at this new distance.
     lead_0_obstacle = lead_xv_0[:,0] + get_stopped_equivalence_factor(lead_xv_0[:,1])
     lead_1_obstacle = lead_xv_1[:,0] + get_stopped_equivalence_factor(lead_xv_1[:,1])
 
-    # Fake an obstacle for cruise
-    # TODO find cleaner way to write hacky fake cruise obstacle
-    cruise_lower_bound = v_ego - (1.0 + ((v_ego + 15)/60) * T_IDXS)
-    cruise_upper_bound = v_ego + (.7 + .7*T_IDXS)
+    # Fake an obstacle for cruise, this ensures smooth acceleration to set speed
+    # when the leads are no factor.
+    cruise_lower_bound = v_ego + (3/4) * self.cruise_min_a * T_IDXS
+    cruise_upper_bound = v_ego + (3/4) * self.cruise_max_a * T_IDXS
     v_cruise_clipped = np.clip(v_cruise * np.ones(N+1),
                                cruise_lower_bound,
                                cruise_upper_bound)
@@ -354,7 +345,6 @@ class LongitudinalMpc():
         self.last_cloudlog_t = t
         cloudlog.warning("Long mpc reset, solution_status: %s" % (
                           self.solution_status))
-      self.prev_lead_status = False
       self.reset()
 
 

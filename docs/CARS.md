@@ -101,7 +101,7 @@ Community Maintained Cars and Features
 | Hyundai   | Genesis 2015-16               | SCC + LKAS        | Stock            | 19mph              | 37mph        |
 | Hyundai   | Ioniq Electric 2019           | SCC + LKAS        | Stock            | 0mph               | 32mph        |
 | Hyundai   | Ioniq Electric 2020           | SCC + LKAS        | Stock            | 0mph               | 0mph         |
-| Hyundai   | Ioniq PHEV 2020               | SCC + LKAS        | Stock            | 0mph               | 0mph         |
+| Hyundai   | Ioniq PHEV 2020-21            | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Hyundai   | Kona 2020                     | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Hyundai   | Kona EV 2018-19               | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Hyundai   | Kona Hybrid 2020              | SCC + LKAS        | Stock            | 0mph               | 0mph         |
@@ -112,6 +112,7 @@ Community Maintained Cars and Features
 | Hyundai   | Veloster 2019-20              | SCC + LKAS        | Stock            | 5mph               | 0mph         |
 | Jeep      | Grand Cherokee 2016-18        | Adaptive Cruise   | Stock            | 0mph               | 9mph         |
 | Jeep      | Grand Cherokee 2019-20        | Adaptive Cruise   | Stock            | 0mph               | 39mph        |
+| Kia       | Ceed 2019                     | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Kia       | Forte 2018-21                 | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Kia       | K5 2021                       | SCC + LFA         | Stock            | 0mph               | 0mph         |
 | Kia       | Niro EV 2019-21               | SCC + LKAS        | Stock            | 0mph               | 0mph         |
@@ -122,7 +123,6 @@ Community Maintained Cars and Features
 | Kia       | Seltos 2021                   | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Kia       | Sorento 2018-19               | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Kia       | Stinger 2018                  | SCC + LKAS        | Stock            | 0mph               | 0mph         |
-| Kia       | Ceed 2019                     | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Kia       | Telluride 2020                | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Nissan    | Altima 2019-20                | ProPILOT          | Stock            | 0mph               | 0mph         |
 | Nissan    | Leaf 2018-20                  | ProPILOT          | Stock            | 0mph               | 0mph         |
@@ -154,7 +154,7 @@ Community Maintained Cars and Features
 | Volkswagen| Golf SportWagen 2015          | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Jetta 2018-20                 | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Jetta GLI 2021                | Driver Assistance | Stock            | 0mph               | 0mph         |
-| Volkswagen| Passat 2016-17<sup>3</sup>    | Driver Assistance | Stock            | 0mph               | 0mph         |
+| Volkswagen| Passat 2016-18<sup>3</sup>    | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| T-Cross 2021<sup>4</sup>      | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Tiguan 2020                   | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Touran 2017                   | Driver Assistance | Stock            | 0mph               | 0mph         |

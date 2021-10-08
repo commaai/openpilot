@@ -39,7 +39,6 @@ class CarInterface(CarInterfaceBase):
       # Disable the radar and let openpilot control longitudinal
       # WARNING: THIS DISABLES AEB!
       ret.openpilotLongitudinalControl = Params().get_bool("DisableRadar")
-      ret.longitudinalActuatorDelayUpperBound = 1.0 # s
 
       ret.pcmCruise = not ret.openpilotLongitudinalControl
     else:
@@ -65,11 +64,16 @@ class CarInterface(CarInterfaceBase):
     ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
     ret.lateralTuning.pid.kf = 0.00006  # conservative feed-forward
 
-    # default longitudinal tuning for all hondas
-    ret.longitudinalTuning.kpBP = [0., 5., 35.]
-    ret.longitudinalTuning.kpV = [1.2, 0.8, 0.5]
-    ret.longitudinalTuning.kiBP = [0., 35.]
-    ret.longitudinalTuning.kiV = [0.18, 0.12]
+    if candidate in HONDA_BOSCH:
+      ret.longitudinalTuning.kpV = [0.25]
+      ret.longitudinalTuning.kiV = [0.05]
+      ret.longitudinalActuatorDelayUpperBound = 0.5 # s
+    else:
+      # default longitudinal tuning for all hondas
+      ret.longitudinalTuning.kpBP = [0., 5., 35.]
+      ret.longitudinalTuning.kpV = [1.2, 0.8, 0.5]
+      ret.longitudinalTuning.kiBP = [0., 35.]
+      ret.longitudinalTuning.kiV = [0.18, 0.12]
 
     eps_modified = False
     for fw in car_fw:
@@ -414,7 +418,7 @@ class CarInterface(CarInterfaceBase):
     else:
       hud_v_cruise = 255
 
-    can_sends = self.CC.update(c.enabled, self.CS, self.frame,
+    can_sends = self.CC.update(c.enabled, c.active, self.CS, self.frame,
                                c.actuators,
                                c.cruiseControl.cancel,
                                hud_v_cruise,

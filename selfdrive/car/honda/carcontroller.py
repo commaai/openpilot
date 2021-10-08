@@ -107,7 +107,7 @@ class CarController():
 
     self.params = CarControllerParams(CP)
 
-  def update(self, enabled, CS, frame, actuators, pcm_cancel_cmd,
+  def update(self, enabled, active, CS, frame, actuators, pcm_cancel_cmd,
              hud_v_cruise, hud_show_lanes, hud_show_car, hud_alert):
 
     P = self.params
@@ -165,9 +165,6 @@ class CarController():
     stopping = actuators.longControlState == LongCtrlState.stopping
     starting = actuators.longControlState == LongCtrlState.starting
 
-    # Prevent rolling backwards
-    accel = -4.0 if stopping else accel
-
     # wind brake from air resistance decel at high speed
     wind_brake = interp(CS.out.vEgo, [0.0, 2.3, 35.0], [0.001, 0.002, 0.15])
     # all of this is only relevant for HONDA NIDEC
@@ -214,12 +211,13 @@ class CarController():
         ts = frame * DT_CTRL
 
         if CS.CP.carFingerprint in HONDA_BOSCH:
+          accel = clip(accel, P.BOSCH_ACCEL_MIN, P.BOSCH_ACCEL_MAX)
           bosch_gas = interp(accel, P.BOSCH_GAS_LOOKUP_BP, P.BOSCH_GAS_LOOKUP_V)
-          can_sends.extend(hondacan.create_acc_commands(self.packer, enabled, accel, bosch_gas, idx, stopping, starting, CS.CP.carFingerprint))
+          can_sends.extend(hondacan.create_acc_commands(self.packer, enabled, active, accel, bosch_gas, idx, stopping, starting, CS.CP.carFingerprint))
 
         else:
           apply_brake = clip(self.brake_last - wind_brake, 0.0, 1.0)
-          apply_brake = int(clip(apply_brake * P.BRAKE_MAX, 0, P.BRAKE_MAX - 1))
+          apply_brake = int(clip(apply_brake * P.NIDEC_BRAKE_MAX, 0, P.NIDEC_BRAKE_MAX - 1))
           pump_on, self.last_pump_ts = brake_pump_hysteresis(apply_brake, self.apply_brake_last, self.last_pump_ts, ts)
 
           pcm_override = True
@@ -232,7 +230,12 @@ class CarController():
             gas_mult = interp(CS.out.vEgo, [0., 10.], [0.4, 1.0])
             # send exactly zero if apply_gas is zero. Interceptor will send the max between read value and apply_gas.
             # This prevents unexpected pedal range rescaling
-            apply_gas = clip(gas_mult * gas, 0., 1.)
+            # Sending non-zero gas when OP is not enabled will cause the PCM not to respond to throttle as expected
+            # when you do enable.
+            if enabled:
+              apply_gas = clip(gas_mult * (gas - brake + wind_brake*3/4), 0., 1.)
+            else:
+              apply_gas = 0.0
             can_sends.append(create_gas_command(self.packer, apply_gas, idx))
 
     hud = HUDData(int(pcm_accel), int(round(hud_v_cruise)), hud_car,

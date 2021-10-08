@@ -25,7 +25,6 @@ class Route {
 public:
   Route(const QString &route);
   bool load();
-
   inline const QString &name() const { return route_; };
   inline int size() const { return segments_.size(); }
   inline SegmentFile &at(int n) { return segments_[n]; }
@@ -42,7 +41,6 @@ class Segment : public QObject {
 public:
   Segment(int n, const SegmentFile &segment_files, bool load_dcam, bool load_ecam);
   ~Segment();
-  inline bool isValid() const { return valid_; };
   inline bool isLoaded() const { return loaded_; }
 
   std::unique_ptr<LogReader> log;
@@ -56,14 +54,12 @@ protected:
   void downloadFile(const QString &url);
   QString localPath(const QUrl &url);
 
-  bool loaded_ = false, valid_ = false;
+  std::atomic<bool> loaded_ = false;
   std::atomic<bool> aborting_ = false;
-  int downloading_ = 0;
+  std::atomic<int> downloading_ = 0;
   int seg_num_ = 0;
   SegmentFile files_;
   QString road_cam_path_;
   QString log_path_;
   std::vector<QThread*> download_threads_;
 };
-
-bool httpMultiPartDownload(const std::string &url, const std::string &target_file, int parts, std::atomic<bool> *abort = nullptr);
