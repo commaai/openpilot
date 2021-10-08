@@ -16,7 +16,7 @@ CameraServer::~CameraServer() {
 }
 
 void CameraServer::startVipcServer() {
-  std::cout << (vipc_server_ ? "start" : "restart") << " vipc server" << std::endl;
+  std::cout << (vipc_server_ ? "restart" : "start") << " vipc server" << std::endl;
   vipc_server_.reset(new VisionIpcServer("camerad"));
   for (auto &cam : cameras_) {
     if (cam.width > 0 && cam.height > 0) {
