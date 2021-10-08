@@ -78,7 +78,7 @@ public:
 signals:
   void segmentLoaded(int n);
 
- protected:
+protected:
   struct SegmentData {
     std::shared_ptr<Segment> segment;
     double last_used;
