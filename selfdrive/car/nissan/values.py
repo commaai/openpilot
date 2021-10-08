@@ -61,17 +61,14 @@ FW_VERSIONS = {
   CAR.LEAF_IC: {
     # 2018 Leaf IC - UDM / @razemio
     # Ecu, addr, subaddr
-    #(Ecu.esp, 0x7b0, None): [
-    #  b'',
-    #],
+    (Ecu.fwdCamera, 0x707, None): [
+      b'5SH1BDB\x04\x18\x00\x00\x00\x00\x00_-?\x04\x91\xf2\x00\x00\x00\x80',
+    ],
+    (Ecu.esp, 0x740, None): [
+      b'',
+    ],
     (Ecu.eps, 0x742, None): [
       b'5SH2A\x99A\x05\x02N123F\x15\x81\x00\x00\x00\x00\x00\x00\x00\x80',
-    ],
-    #(Ecu.fwdCamera, 0x787, None): [
-    #  b'',
-    #],
-    (Ecu.engine, 0x797, None): [
-      b'5SH4A\x03AB\x075SH4APSMT04\x00\x00\x00\x80',
     ],
     (Ecu.transmission, 0x79d, None): [
       b'5SA2B\x04AB\x071\x03\x80\x12P\x02\x03D\x00\x02\x06\x00\x00\x00\x80',
