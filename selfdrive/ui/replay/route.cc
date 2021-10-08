@@ -124,6 +124,7 @@ Segment::Segment(int n, const SegmentFile &segment_files, bool load_dcam, bool l
     files_.wide_road_cam = "";
   }
 
+  // TODO: download segment in class SegmentManager
   if (!QUrl(log_path_).isLocalFile()) {
     for (auto &url : {log_path_, road_cam_path_, files_.driver_cam, files_.wide_road_cam}) {
       if (!url.isEmpty() && !QFile::exists(localPath(url))) {
