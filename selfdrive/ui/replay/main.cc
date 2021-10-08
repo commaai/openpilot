@@ -86,7 +86,6 @@ int main(int argc, char *argv[]){
   parser.addOption({"data_dir", "local directory with routes", "data_dir"});
   parser.addOption({"dcam", "load driver camera"});
   parser.addOption({"ecam", "load wide road camera"});
-  parser.addOption({"qlog", "fallback to qlog without confirmation"});
   parser.addOption({"yuv", "publish YUV frames"});
 
   parser.process(app);
@@ -103,7 +102,6 @@ int main(int argc, char *argv[]){
   const std::pair<QString, REPLAY_FLAGS> flag_map[] = {
       {"dcam", REPLAY_FLAG_DCAM},
       {"ecam", REPLAY_FLAG_ECAM},
-      {"qlog", REPLAY_FLAG_FALLBACK_TO_QLOG},
       {"yuv", REPLAY_FLAG_YUV},
   };
   for (const auto &[key, flag] : flag_map) {
