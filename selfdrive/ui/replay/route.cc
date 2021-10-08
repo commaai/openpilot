@@ -206,6 +206,7 @@ std::shared_ptr<Segment> SegmentManager::get(int n, const SegmentFile &files, bo
     return it->second.segment;
   }
 
+  // TODO:  dynamically adjust cache_size_ based on the amount of free memory
   // remove unused segments from cache
   while (segments_.size() > cache_size_) {
     int idx = -1;
