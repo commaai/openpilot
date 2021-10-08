@@ -106,7 +106,7 @@ Community Maintained Cars and Features
 | Hyundai   | Kona EV 2018-19               | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Hyundai   | Kona Hybrid 2020              | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Hyundai   | Santa Fe 2019-20              | All               | Stock            | 0mph               | 0mph         |
-| Hyundai   | Santa Fe 2022                 | All               | Stock            | 0mph               | 0mph         |
+| Hyundai   | Santa Fe 2021-22              | All               | Stock            | 0mph               | 0mph         |
 | Hyundai   | Sonata 2018-2019              | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Hyundai   | Sonata Hybrid 2021            | All               | Stock            | 0mph               | 0mph         |
 | Hyundai   | Veloster 2019-20              | SCC + LKAS        | Stock            | 5mph               | 0mph         |
