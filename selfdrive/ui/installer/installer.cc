@@ -18,7 +18,7 @@ std::string get_str(std::string const s) {
   std::string::size_type pos = s.find('?');
   assert(pos != std::string::npos);
   return s.substr(0, pos);
-};
+}
 
 // Leave some extra space for the fork installer
 const std::string GIT_URL = get_str("https://github.com/commaai/openpilot.git" "?                                                                ");
