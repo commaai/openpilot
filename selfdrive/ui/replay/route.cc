@@ -200,7 +200,7 @@ QString Segment::localPath(const QUrl &url) {
 
 std::shared_ptr<Segment> SegmentManager::get(int n, const SegmentFile &files, bool load_cam, bool load_eccam) {
   // get segment from cache
-  if (auto it = segments_.find(n);it != segments_.end()) {
+  if (auto it = segments_.find(n); it != segments_.end()) {
     qDebug() << "get segment" << n << "from cache";
     it->second.last_used = millis_since_boot();
     return it->second.segment;
@@ -222,10 +222,10 @@ std::shared_ptr<Segment> SegmentManager::get(int n, const SegmentFile &files, bo
   }
 
   // add segment to cache
-  auto [it, _] = segments_.emplace(n, SegmentData {
-                        .segment = std::make_shared<Segment>(n, files, load_cam, load_eccam),
-                        .last_used = millis_since_boot(),
-                       });
+  auto [it, _] = segments_.emplace(n, SegmentData{
+                                          .segment = std::make_shared<Segment>(n, files, load_cam, load_eccam),
+                                          .last_used = millis_since_boot(),
+                                      });
   QObject::connect(it->second.segment.get(), &Segment::loadFinished, [=]() { emit segmentLoaded(n); });
   return it->second.segment;
 }
