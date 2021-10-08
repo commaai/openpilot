@@ -92,13 +92,22 @@ bool safety_setter_thread(Panda *panda) {
   AlignedBuffer aligned_buf;
   capnp::FlatArrayMessageReader cmsg(aligned_buf.align(params.data(), params.size()));
   cereal::CarParams::Reader car_params = cmsg.getRoot<cereal::CarParams>();
-  cereal::CarParams::SafetyModel safety_model = car_params.getSafetyModel();
+  cereal::CarParams::SafetyModel safety_model;
+  int safety_param;
+
+  auto safety_configs = car_params.getSafetyConfigs();
+  if (safety_configs.size() > 0) {
+    safety_model = safety_configs[0].getSafetyModel();
+    safety_param = safety_configs[0].getSafetyParam();
+  } else {
+    // If no safety mode is set, default to silent
+    safety_model = cereal::CarParams::SafetyModel::SILENT;
+    safety_param = 0;
+  }
 
   panda->set_unsafe_mode(0);  // see safety_declarations.h for allowed values
 
-  auto safety_param = car_params.getSafetyParam();
   LOGW("setting safety model: %d with param %d", (int)safety_model, safety_param);
-
   panda->set_safety_model(safety_model, safety_param);
   return true;
 }
@@ -242,9 +251,9 @@ void send_empty_peripheral_state(PubMaster *pm) {
 
 void send_empty_panda_state(PubMaster *pm) {
   MessageBuilder msg;
-  auto pandaState  = msg.initEvent().initPandaState();
-  pandaState.setPandaType(cereal::PandaState::PandaType::UNKNOWN);
-  pm->send("pandaState", msg);
+  auto pandaStates = msg.initEvent().initPandaStates(1);
+  pandaStates[0].setPandaType(cereal::PandaState::PandaType::UNKNOWN);
+  pm->send("pandaStates", msg);
 }
 
 bool send_panda_state(PubMaster *pm, Panda *panda, bool spoofing_started) {
@@ -278,27 +287,28 @@ bool send_panda_state(PubMaster *pm, Panda *panda, bool spoofing_started) {
   auto evt = msg.initEvent();
   evt.setValid(panda->comms_healthy);
 
-  auto ps = evt.initPandaState();
-  ps.setUptime(pandaState.uptime);
-  ps.setIgnitionLine(pandaState.ignition_line);
-  ps.setIgnitionCan(pandaState.ignition_can);
-  ps.setControlsAllowed(pandaState.controls_allowed);
-  ps.setGasInterceptorDetected(pandaState.gas_interceptor_detected);
-  ps.setCanRxErrs(pandaState.can_rx_errs);
-  ps.setCanSendErrs(pandaState.can_send_errs);
-  ps.setCanFwdErrs(pandaState.can_fwd_errs);
-  ps.setGmlanSendErrs(pandaState.gmlan_send_errs);
-  ps.setPandaType(panda->hw_type);
-  ps.setSafetyModel(cereal::CarParams::SafetyModel(pandaState.safety_model));
-  ps.setSafetyParam(pandaState.safety_param);
-  ps.setFaultStatus(cereal::PandaState::FaultStatus(pandaState.fault_status));
-  ps.setPowerSaveEnabled((bool)(pandaState.power_save_enabled));
-  ps.setHeartbeatLost((bool)(pandaState.heartbeat_lost));
-  ps.setHarnessStatus(cereal::PandaState::HarnessStatus(pandaState.car_harness_status));
+  // TODO: this has to be adapted to merge in multipanda support
+  auto ps = evt.initPandaStates(1);
+  ps[0].setUptime(pandaState.uptime);
+  ps[0].setIgnitionLine(pandaState.ignition_line);
+  ps[0].setIgnitionCan(pandaState.ignition_can);
+  ps[0].setControlsAllowed(pandaState.controls_allowed);
+  ps[0].setGasInterceptorDetected(pandaState.gas_interceptor_detected);
+  ps[0].setCanRxErrs(pandaState.can_rx_errs);
+  ps[0].setCanSendErrs(pandaState.can_send_errs);
+  ps[0].setCanFwdErrs(pandaState.can_fwd_errs);
+  ps[0].setGmlanSendErrs(pandaState.gmlan_send_errs);
+  ps[0].setPandaType(panda->hw_type);
+  ps[0].setSafetyModel(cereal::CarParams::SafetyModel(pandaState.safety_model));
+  ps[0].setSafetyParam(pandaState.safety_param);
+  ps[0].setFaultStatus(cereal::PandaState::FaultStatus(pandaState.fault_status));
+  ps[0].setPowerSaveEnabled((bool)(pandaState.power_save_enabled));
+  ps[0].setHeartbeatLost((bool)(pandaState.heartbeat_lost));
+  ps[0].setHarnessStatus(cereal::PandaState::HarnessStatus(pandaState.car_harness_status));
 
   // Convert faults bitset to capnp list
   std::bitset<sizeof(pandaState.faults) * 8> fault_bits(pandaState.faults);
-  auto faults = ps.initFaults(fault_bits.count());
+  auto faults = ps[0].initFaults(fault_bits.count());
 
   size_t i = 0;
   for (size_t f = size_t(cereal::PandaState::FaultType::RELAY_MALFUNCTION);
@@ -308,7 +318,7 @@ bool send_panda_state(PubMaster *pm, Panda *panda, bool spoofing_started) {
       i++;
     }
   }
-  pm->send("pandaState", msg);
+  pm->send("pandaStates", msg);
 
   return ignition;
 }
@@ -558,7 +568,7 @@ int main() {
   LOG("set affinity returns %d", err);
 
   LOGW("attempting to connect");
-  PubMaster pm({"pandaState", "peripheralState"});
+  PubMaster pm({"pandaStates", "peripheralState"});
 
   while (!do_exit) {
     Panda *panda = usb_connect();

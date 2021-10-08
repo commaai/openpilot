@@ -71,8 +71,8 @@ if __name__ == "__main__":
       dongles.append(dongle_id)
 
       for msg in lr:
-        if msg.which() == "pandaState":
-          if msg.pandaState.pandaType not in ['uno', 'blackPanda', 'dos']:
+        if msg.which() == "pandaStates":
+          if msg.pandaStates[0].pandaType not in ['uno', 'blackPanda', 'dos']:
             break
 
         elif msg.which() == "carParams":
