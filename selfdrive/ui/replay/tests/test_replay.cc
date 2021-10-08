@@ -12,11 +12,11 @@ std::string sha_256(const QString &dat) {
 }
 
 TEST_CASE("httpMultiPartDownload") {
-  const char *stream_url = "https://commadataci.blob.core.windows.net/openpilotci/0c94aa1e1296d7c6/2021-05-05--19-48-37/0/rlog.bz2";
   char filename[] = "/tmp/XXXXXX";
   int fd = mkstemp(filename);
   close(fd);
 
+  const char *stream_url = "https://commadataci.blob.core.windows.net/openpilotci/0c94aa1e1296d7c6/2021-05-05--19-48-37/0/rlog.bz2";
   SECTION("http 200") {
     REQUIRE(httpMultiPartDownload(stream_url, filename, 5));
     std::string content = util::read_file(filename);
@@ -67,10 +67,14 @@ TEST_CASE("Segment") {
     // LogReader & FrameReader
     REQUIRE(segment.log->events.size() > 0);
     REQUIRE(is_events_ordered(segment.log->events));
-    // sequence get 50 frames {
-    REQUIRE(segment.frames[RoadCam]->getFrameCount() == 1200);
+
+    auto &fr = segment.frames[RoadCam];
+    REQUIRE(fr->getFrameCount() == 1200);
+    std::unique_ptr<uint8_t[]> rgb_buf = std::make_unique<uint8_t[]>(fr->getRGBSize());
+    std::unique_ptr<uint8_t[]> yuv_buf = std::make_unique<uint8_t[]>(fr->getYUVSize());
+    // sequence get 50 frames
     for (int i = 0; i < 50; ++i) {
-      REQUIRE(segment.frames[RoadCam]->get(i));
+      REQUIRE(fr->get(i, rgb_buf.get(), yuv_buf.get()));
     }
     loop.quit();
   });
