@@ -514,7 +514,7 @@ void OmxEncoder::encoder_open(const char* path) {
 
   // create camera lock file
   snprintf(this->lock_path, sizeof(this->lock_path), "%s/%s.lock", path, this->filename);
-  int lock_fd = open(this->lock_path, O_RDWR | O_CREAT, 0777);
+  int lock_fd = HANDLE_EINTR(open(this->lock_path, O_RDWR | O_CREAT, 0664));
   assert(lock_fd >= 0);
   close(lock_fd);
 
@@ -583,8 +583,8 @@ OmxEncoder::~OmxEncoder() {
   OMX_CHECK(OMX_FreeHandle(this->handle));
 
   OMX_BUFFERHEADERTYPE *out_buf;
-  while (this->free_in.try_pop(out_buf)); 
-  while (this->done_out.try_pop(out_buf)); 
+  while (this->free_in.try_pop(out_buf));
+  while (this->done_out.try_pop(out_buf));
 
   if (this->codec_config) {
     free(this->codec_config);

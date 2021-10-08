@@ -62,13 +62,14 @@ find . -name '*.pyc' -delete
 find . -name '__pycache__' -delete
 rm -rf panda/board panda/certs panda/crypto
 rm -rf .sconsign.dblite Jenkinsfile release/
+rm models/supercombo.dlc
 
 # Move back signed panda fw
 mkdir -p panda/board/obj
 mv /tmp/panda.bin.signed panda/board/obj/panda.bin.signed
 
-# Restore phonelibs
-git checkout phonelibs/
+# Restore third_party
+git checkout third_party/
 
 # Mark as prebuilt release
 touch prebuilt

@@ -49,7 +49,7 @@ jobs:
         cp Dockerfile.openpilot_base $STRIPPED_DIR
 
         # need this to build on x86
-        cp -pR --parents phonelibs/libyuv phonelibs/snpe selfdrive/modeld/runners $STRIPPED_DIR
+        cp -pR --parents third_party/libyuv third_party/snpe selfdrive/modeld/runners $STRIPPED_DIR
     - name: Build Docker image
       run: eval "$BUILD"
     - name: Build openpilot and run checks
@@ -211,10 +211,13 @@ jobs:
                         $UNIT_TEST selfdrive/car && \
                         $UNIT_TEST selfdrive/locationd && \
                         $UNIT_TEST selfdrive/athena && \
+                        nosetests -s selfdrive/athena/tests/test_athenad_old.py && \
                         $UNIT_TEST selfdrive/thermald && \
                         $UNIT_TEST tools/lib/tests && \
                         ./selfdrive/common/tests/test_util && \
+                        ./selfdrive/loggerd/tests/test_logger &&\
                         ./selfdrive/proclogd/tests/test_proclog && \
+                        ./selfdrive/ui/replay/tests/test_replay && \
                         ./selfdrive/camerad/test/ae_gray_test"
     - name: Upload coverage to Codecov
       run: bash <(curl -s https://codecov.io/bash) -v -F unit_tests
@@ -308,8 +311,6 @@ jobs:
     - name: Test car models
       run: |
         ${{ env.RUN }} "scons -j$(nproc) && \
-                        FILEREADER_CACHE=1 coverage run --parallel-mode -m nose --processes=4 --process-timeout=120 \
-                                           selfdrive/test/test_models.py && \
-                        coverage combine"
+                        coverage run selfdrive/test/test_models.py"
     - name: Upload coverage to Codecov
       run: bash <(curl -s https://codecov.io/bash) -v -F test_car_models

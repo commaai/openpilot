@@ -1,16 +1,12 @@
 #pragma once
 
-#include <unistd.h>
-
 #include <atomic>
 #include <condition_variable>
 #include <mutex>
-#include <queue>
+#include <optional>
 #include <string>
 #include <thread>
 #include <vector>
-
-#include <QThread>
 
 // independent of QT, needs ffmpeg
 extern "C" {
@@ -19,39 +15,34 @@ extern "C" {
 #include <libswscale/swscale.h>
 }
 
-class FrameReader : public QObject {
-  Q_OBJECT
-
+class FrameReader {
 public:
-  FrameReader(const std::string &url, QObject *parent = nullptr);
+  FrameReader();
   ~FrameReader();
-  uint8_t *get(int idx);
-  int getRGBSize() { return width * height * 3; }
+  bool load(const std::string &url);
+  std::optional<std::pair<uint8_t *, uint8_t*>> get(int idx);
+  int getRGBSize() const { return width * height * 3; }
+  int getYUVSize() const { return width * height * 3 / 2; }
+  size_t getFrameCount() const { return frames_.size(); }
   bool valid() const { return valid_; }
 
   int width = 0, height = 0;
 
-signals:
-  void finished();
-
 private:
-  void process();
-  bool processFrames();
   void decodeThread();
-  uint8_t *decodeFrame(AVPacket *pkt);
-
+  std::pair<uint8_t *, uint8_t *> decodeFrame(AVPacket *pkt);
   struct Frame {
     AVPacket pkt = {};
-    uint8_t *data = nullptr;
+    std::unique_ptr<uint8_t[]> rgb_data = nullptr;
+    std::unique_ptr<uint8_t[]> yuv_data = nullptr;
     bool failed = false;
   };
   std::vector<Frame> frames_;
 
-  AVFormatContext *pFormatCtx_ = NULL;
-  AVCodecContext *pCodecCtx_ = NULL;
+  AVFormatContext *pFormatCtx_ = nullptr;
+  AVCodecContext *pCodecCtx_ = nullptr;
   AVFrame *frmRgb_ = nullptr;
-  std::queue<uint8_t *> buffer_pool;
-  struct SwsContext *sws_ctx_ = NULL;
+  struct SwsContext *sws_ctx_ = nullptr;
 
   std::mutex mutex_;
   std::condition_variable cv_decode_;
@@ -59,7 +50,5 @@ private:
   int decode_idx_ = 0;
   std::atomic<bool> exit_ = false;
   bool valid_ = false;
-  std::string url_;
-  QThread *process_thread_;
   std::thread decode_thread_;
 };

@@ -49,7 +49,8 @@ RUN mkdir -p $HOME/openpilot
 
 COPY SConstruct $HOME/openpilot/
 
-COPY ./phonelibs $HOME/openpilot/phonelibs
+COPY ./third_party $HOME/openpilot/third_party
+COPY ./pyextra $HOME/openpilot/pyextra
 COPY ./site_scons $HOME/openpilot/site_scons
 COPY ./rednose $HOME/openpilot/rednose
 COPY ./common $HOME/openpilot/common
@@ -61,4 +62,4 @@ COPY ./selfdrive $HOME/openpilot/selfdrive
 COPY ./tools $HOME/openpilot/tools
 
 WORKDIR $HOME/openpilot
-RUN scons -j$(nproc)
+RUN USE_FRAME_STREAM=1 scons -j$(nproc)

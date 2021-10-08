@@ -8,7 +8,9 @@
 #include <cstdio>
 #include <stdexcept>
 
+#include "selfdrive/common/util.h"
 #include "selfdrive/common/swaglog.h"
+#include "selfdrive/common/util.h"
 
 #define UNUSED(x) (void)(x)
 
@@ -23,7 +25,7 @@ I2CBus::I2CBus(uint8_t bus_id) {
   char bus_name[20];
   snprintf(bus_name, 20, "/dev/i2c-%d", bus_id);
 
-  i2c_fd = open(bus_name, O_RDWR);
+  i2c_fd = HANDLE_EINTR(open(bus_name, O_RDWR));
   if(i2c_fd < 0) {
     throw std::runtime_error("Failed to open I2C bus");
   }
@@ -36,7 +38,7 @@ I2CBus::~I2CBus() {
 int I2CBus::read_register(uint8_t device_address, uint register_address, uint8_t *buffer, uint8_t len) {
   int ret = 0;
 
-  ret = ioctl(i2c_fd, I2C_SLAVE, device_address);
+  ret = HANDLE_EINTR(ioctl(i2c_fd, I2C_SLAVE, device_address));
   if(ret < 0) { goto fail; }
 
   ret = i2c_smbus_read_i2c_block_data(i2c_fd, register_address, len, buffer);
@@ -49,7 +51,7 @@ fail:
 int I2CBus::set_register(uint8_t device_address, uint register_address, uint8_t data) {
   int ret = 0;
 
-  ret = ioctl(i2c_fd, I2C_SLAVE, device_address);
+  ret = HANDLE_EINTR(ioctl(i2c_fd, I2C_SLAVE, device_address));
   if(ret < 0) { goto fail; }
 
   ret = i2c_smbus_write_byte_data(i2c_fd, register_address, data);

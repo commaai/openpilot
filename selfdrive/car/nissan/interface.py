@@ -10,18 +10,11 @@ class CarInterface(CarInterfaceBase):
     self.cp_adas = self.CS.get_adas_can_parser(CP)
 
   @staticmethod
-  def compute_gb(accel, speed):
-    return float(accel) / 4.0
-
-  @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None):
 
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "nissan"
     ret.safetyModel = car.CarParams.SafetyModel.nissan
-
-    # Nissan port is a community feature, since we don't own one to test
-    ret.communityFeature = True
 
     ret.steerLimitAlert = False
     ret.steerRateCost = 0.5

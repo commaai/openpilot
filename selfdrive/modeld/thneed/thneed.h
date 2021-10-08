@@ -98,6 +98,7 @@ class Thneed {
     void wait();
     int optimize();
 
+    vector<cl_mem> input_clmem;
     vector<void *> inputs;
     vector<size_t> input_sizes;
     cl_mem output = NULL;

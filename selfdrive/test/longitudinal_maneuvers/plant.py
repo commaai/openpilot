@@ -6,6 +6,7 @@ from cereal import log
 import cereal.messaging as messaging
 from common.realtime import Ratekeeper, DT_MDL
 from selfdrive.controls.lib.longcontrol import LongCtrlState
+from selfdrive.controls.lib.longitudinal_planner import Planner
 
 
 class Plant():
@@ -39,24 +40,15 @@ class Plant():
     time.sleep(1)
     self.sm = messaging.SubMaster(['longitudinalPlan'])
 
-    # make sure planner has time to be fully initialized
-    # TODO planner should just be explicitly initialized
-    for i in range(10000):
-      assert i < 10000
-      radar = messaging.new_message('radarState')
-      control = messaging.new_message('controlsState')
-      car_state = messaging.new_message('carState')
-      control.controlsState.longControlState = LongCtrlState.pid
-      control.controlsState.vCruise = speed*3.6
-      car_state.carState.vEgo = self.speed
-      Plant.radar.send(radar.to_bytes())
-      Plant.controls_state.send(control.to_bytes())
-      Plant.car_state.send(car_state.to_bytes())
+    from selfdrive.car.honda.values import CAR
+    from selfdrive.car.honda.interface import CarInterface
+    self.CP = CarInterface.get_params(CAR.CIVIC)
+    self.planner = Planner(self.CP, init_v=self.speed)
 
   def current_time(self):
     return float(self.rk.frame) / self.rate
 
-  def step(self, v_lead=0.0):
+  def step(self, v_lead=0.0, prob=1.0, v_cruise=50.):
     # ******** publish a fake model going straight and fake calibration ********
     # note that this is worst case for MPC, since model will delay long mpc by one time step
     radar = messaging.new_message('radarState')
@@ -69,10 +61,11 @@ class Plant():
       d_rel = np.maximum(0., self.distance_lead - self.distance)
       v_rel = v_lead - self.speed
       if self.only_radar:
-        prob = 0.0
+        status = True
+      elif prob > .5:
+        status = True
       else:
-        prob = 1.0
-      status = True
+        status = False
     else:
       d_rel = 200.
       v_rel = 0.
@@ -89,30 +82,25 @@ class Plant():
     lead.aLeadK = float(a_lead)
     lead.aLeadTau = float(1.5)
     lead.status = status
-    lead.modelProb = prob
+    lead.modelProb = float(prob)
     if not self.only_lead2:
       radar.radarState.leadOne = lead
     radar.radarState.leadTwo = lead
 
 
     control.controlsState.longControlState = LongCtrlState.pid
-    control.controlsState.vCruise = 130
-    car_state.carState.vEgo = self.speed
-    Plant.radar.send(radar.to_bytes())
-    Plant.controls_state.send(control.to_bytes())
-    Plant.car_state.send(car_state.to_bytes())
+    control.controlsState.vCruise = float(v_cruise * 3.6)
+    car_state.carState.vEgo = float(self.speed)
 
 
     # ******** get controlsState messages for plotting ***
-    self.sm.update()
-    while True:
-      time.sleep(0.01)
-      if self.sm.updated['longitudinalPlan']:
-        plan = self.sm['longitudinalPlan']
-        self.speed = plan.speeds[5]
-        self.acceleration = plan.accels[5]
-        fcw = plan.fcw
-        break
+    sm = {'radarState': radar.radarState,
+          'carState': car_state.carState,
+          'controlsState': control.controlsState}
+    self.planner.update(sm, self.CP)
+    self.speed = self.planner.v_desired
+    self.acceleration = self.planner.a_desired
+    fcw = self.planner.fcw
     self.distance_lead = self.distance_lead + v_lead * self.ts
 
     # ******** run the car ********

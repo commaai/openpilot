@@ -75,3 +75,20 @@ TEST_CASE("util::file_exists") {
   }
   ::remove(filename);
 }
+
+TEST_CASE("util::read_files_in_dir") {
+  char tmp_path[] = "/tmp/test_XXXXXX";
+  const std::string test_path = mkdtemp(tmp_path);
+  const std::string files[] = {".test1", "'test2'", "test3"};
+  for (auto fn : files) {
+    std::ofstream{test_path + "/" + fn} << fn;
+  }
+  mkdir((test_path + "/dir").c_str(), 0777);
+
+  std::map<std::string, std::string> result = util::read_files_in_dir(test_path);
+  REQUIRE(result.find("dir") == result.end());
+  REQUIRE(result.size() == std::size(files));
+  for (auto& [k, v] : result) {
+    REQUIRE(k == v);
+  }
+}

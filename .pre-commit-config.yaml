@@ -21,8 +21,7 @@ repos:
     -   id: flake8
         exclude: '^(pyextra)|(cereal)|(rednose)|(panda)|(laika)|(opendbc)|(laika_repo)|(rednose_repo)|(selfdrive/debug)/'
         args:
-        - --select=F,E112,E113,E304,E501,E502,E701,E702,E703,E71,E72,E731,W191,W6
-        - --max-line-length=240
+        - --select=F,E112,E113,E304,E502,E701,E702,E703,E71,E72,E731,W191,W6
         - --statistics
 -   repo: local
     hooks:
@@ -39,7 +38,7 @@ repos:
         entry: cppcheck
         language: system
         types: [c++]
-        exclude: '^(phonelibs)|(pyextra)|(cereal)|(opendbc)|(panda)|(tools)|(selfdrive/modeld/thneed/debug)|(selfdrive/modeld/test)|(selfdrive/camerad/test)/|(installer)'
+        exclude: '^(third_party)|(pyextra)|(cereal)|(opendbc)|(panda)|(tools)|(selfdrive/modeld/thneed/debug)|(selfdrive/modeld/test)|(selfdrive/camerad/test)/|(installer)'
         args:
         - --error-exitcode=1
         - --language=c++

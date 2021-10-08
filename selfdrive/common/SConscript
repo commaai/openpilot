@@ -18,15 +18,10 @@ _common = fxn('common', common_libs, LIBS="json11")
 
 files = [
   'clutil.cc',
-  'glutil.cc',
   'visionimg.cc',
 ]
 
 if arch == "aarch64":
-  files += [
-    'framebuffer.cc',
-    'touch.c',
-  ]
   _gpu_libs = ['gui', 'adreno_utils']
 elif arch == "larch64":
   _gpu_libs = ["GLESv2"]

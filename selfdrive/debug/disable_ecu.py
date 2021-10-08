@@ -10,7 +10,7 @@ EXT_DIAG_RESPONSE = b'\x50\x03'
 COM_CONT_REQUEST = b'\x28\x83\x03'
 COM_CONT_RESPONSE = b''
 
-def disable_ecu(ecu_addr, logcan, sendcan, bus, timeout=0.1, retry=5, debug=False):
+def disable_ecu(ecu_addr, logcan, sendcan, bus, timeout=0.5, retry=5, debug=False):
   print(f"ecu disable {hex(ecu_addr)} ...")
   for i in range(retry):
     try:

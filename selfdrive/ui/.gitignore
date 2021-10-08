@@ -1,11 +1,13 @@
 moc_*
 *.moc
 
+installer/installers/*
+
 replay/replay
+replay/tests/test_replay
 qt/text
 qt/spinner
 qt/setup/setup
 qt/setup/reset
 qt/setup/wifi
 qt/setup/updater
-qt/setup/installer_*

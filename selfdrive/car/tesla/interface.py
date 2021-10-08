@@ -7,11 +7,6 @@ from selfdrive.car.interfaces import CarInterfaceBase
 
 class CarInterface(CarInterfaceBase):
   @staticmethod
-  def compute_gb(accel, speed):
-    # TODO: is this correct?
-    return accel
-
-  @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "tesla"
@@ -24,7 +19,6 @@ class CarInterface(CarInterfaceBase):
 
     ret.steerControlType = car.CarParams.SteerControlType.angle
     ret.openpilotLongitudinalControl = False
-    ret.communityFeature = True
 
     ret.steerActuatorDelay = 0.1
     ret.steerRateCost = 0.5

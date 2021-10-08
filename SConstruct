@@ -37,10 +37,6 @@ AddOption('--compile_db',
           action='store_true',
           help='build clang compilation database')
 
-AddOption('--mpc-generate',
-          action='store_true',
-          help='regenerates the mpc sources')
-
 AddOption('--snpe',
           action='store_true',
           help='use SNPE on PC')
@@ -64,13 +60,21 @@ if arch == "aarch64" and TICI:
   arch = "larch64"
 
 USE_WEBCAM = os.getenv("USE_WEBCAM") is not None
+USE_FRAME_STREAM = os.getenv("USE_FRAME_STREAM") is not None
 
 lenv = {
   "PATH": os.environ['PATH'],
+  "LD_LIBRARY_PATH": [Dir(f"#third_party/acados/{arch}/lib").abspath],
+  "PYTHONPATH": Dir("#").abspath + ":" + Dir("#pyextra/").abspath,
+
+  "ACADOS_SOURCE_DIR": Dir("#third_party/acados/acados").abspath,
+  "TERA_PATH": Dir("#").abspath + f"/third_party/acados/{arch}/t_renderer",
 }
 
+rpath = lenv["LD_LIBRARY_PATH"].copy()
+
 if arch == "aarch64" or arch == "larch64":
-  lenv["LD_LIBRARY_PATH"] = '/data/data/com.termux/files/usr/lib'
+  lenv["LD_LIBRARY_PATH"] += ['/data/data/com.termux/files/usr/lib']
 
   if arch == "aarch64":
     # android
@@ -78,7 +82,7 @@ if arch == "aarch64" or arch == "larch64":
     lenv["ANDROID_ROOT"] = os.environ['ANDROID_ROOT']
 
   cpppath = [
-    "#phonelibs/opencl/include",
+    "#third_party/opencl/include",
   ]
 
   libpath = [
@@ -86,13 +90,14 @@ if arch == "aarch64" or arch == "larch64":
     "/usr/lib",
     "/system/vendor/lib64",
     "/system/comma/usr/lib",
-    "#phonelibs/nanovg",
+    "#third_party/nanovg",
+    f"#third_party/acados/{arch}/lib",
   ]
 
   if arch == "larch64":
     libpath += [
-      "#phonelibs/snpe/larch64",
-      "#phonelibs/libyuv/larch64/lib",
+      "#third_party/snpe/larch64",
+      "#third_party/libyuv/larch64/lib",
       "/usr/lib/aarch64-linux-gnu"
     ]
     cpppath += [
@@ -100,16 +105,16 @@ if arch == "aarch64" or arch == "larch64":
     ]
     cflags = ["-DQCOM2", "-mcpu=cortex-a57"]
     cxxflags = ["-DQCOM2", "-mcpu=cortex-a57"]
-    rpath = ["/usr/local/lib"]
+    rpath += ["/usr/local/lib"]
   else:
+    rpath = []
     libpath += [
-      "#phonelibs/snpe/aarch64",
-      "#phonelibs/libyuv/lib",
+      "#third_party/snpe/aarch64",
+      "#third_party/libyuv/lib",
       "/system/vendor/lib64"
     ]
     cflags = ["-DQCOM", "-D_USING_LIBCXX", "-mcpu=cortex-a57"]
     cxxflags = ["-DQCOM", "-D_USING_LIBCXX", "-mcpu=cortex-a57"]
-    rpath = []
 else:
   cflags = []
   cxxflags = []
@@ -118,7 +123,7 @@ else:
   if arch == "Darwin":
     yuv_dir = "mac" if real_arch != "arm64" else "mac_arm64"
     libpath = [
-      f"#phonelibs/libyuv/{yuv_dir}/lib",
+      f"#third_party/libyuv/{yuv_dir}/lib",
       "/usr/local/lib",
       "/opt/homebrew/lib",
       "/usr/local/opt/openssl/lib",
@@ -134,23 +139,21 @@ else:
     ]
   else:
     libpath = [
-      "#phonelibs/snpe/x86_64-linux-clang",
-      "#phonelibs/libyuv/x64/lib",
-      "#phonelibs/mapbox-gl-native-qt/x86_64",
+      "#third_party/acados/x86_64/lib",
+      "#third_party/snpe/x86_64-linux-clang",
+      "#third_party/libyuv/x64/lib",
+      "#third_party/mapbox-gl-native-qt/x86_64",
       "#cereal",
       "#selfdrive/common",
       "/usr/lib",
       "/usr/local/lib",
     ]
 
-  rpath = [
-    "phonelibs/snpe/x86_64-linux-clang",
-    "cereal",
-    "selfdrive/common"
+  rpath += [
+    Dir("#third_party/snpe/x86_64-linux-clang").abspath,
+    Dir("#cereal").abspath,
+    Dir("#selfdrive/common").abspath
   ]
-
-  # allows shared libraries to work globally
-  rpath = [os.path.join(os.getcwd(), x) for x in rpath]
 
 if GetOption('asan'):
   ccflags = ["-fsanitize=address", "-fno-omit-frame-pointer"]
@@ -164,14 +167,11 @@ else:
 
 # no --as-needed on mac linker
 if arch != "Darwin":
-  ldflags += ["-Wl,--as-needed"]
+  ldflags += ["-Wl,--as-needed", "-Wl,--no-undefined"]
 
 # Enable swaglog include in submodules
 cflags += ["-DSWAGLOG"]
 cxxflags += ["-DSWAGLOG"]
-
-# change pythonpath to this
-lenv["PYTHONPATH"] = Dir("#").path
 
 env = Environment(
   ENV=lenv,
@@ -191,22 +191,25 @@ env = Environment(
 
   CPPPATH=cpppath + [
     "#",
-    "#phonelibs/catch2/include",
-    "#phonelibs/bzip2",
-    "#phonelibs/libyuv/include",
-    "#phonelibs/openmax/include",
-    "#phonelibs/json11",
-    "#phonelibs/curl/include",
-    "#phonelibs/libgralloc/include",
-    "#phonelibs/android_frameworks_native/include",
-    "#phonelibs/android_hardware_libhardware/include",
-    "#phonelibs/android_system_core/include",
-    "#phonelibs/linux/include",
-    "#phonelibs/snpe/include",
-    "#phonelibs/mapbox-gl-native-qt/include",
-    "#phonelibs/nanovg",
-    "#phonelibs/qrcode",
-    "#phonelibs",
+    "#third_party/acados/include",
+    "#third_party/acados/include/blasfeo/include",
+    "#third_party/acados/include/hpipm/include",
+    "#third_party/catch2/include",
+    "#third_party/bzip2",
+    "#third_party/libyuv/include",
+    "#third_party/openmax/include",
+    "#third_party/json11",
+    "#third_party/curl/include",
+    "#third_party/libgralloc/include",
+    "#third_party/android_frameworks_native/include",
+    "#third_party/android_hardware_libhardware/include",
+    "#third_party/android_system_core/include",
+    "#third_party/linux/include",
+    "#third_party/snpe/include",
+    "#third_party/mapbox-gl-native-qt/include",
+    "#third_party/nanovg",
+    "#third_party/qrcode",
+    "#third_party",
     "#cereal",
     "#opendbc/can",
   ],
@@ -221,7 +224,7 @@ env = Environment(
   CXXFLAGS=["-std=c++1z"] + cxxflags,
   LIBPATH=libpath + [
     "#cereal",
-    "#phonelibs",
+    "#third_party",
     "#opendbc/can",
     "#selfdrive/boardd",
     "#selfdrive/common",
@@ -346,7 +349,7 @@ if GetOption("clazy"):
   qt_env['ENV']['CLAZY_IGNORE_DIRS'] = qt_dirs[0]
   qt_env['ENV']['CLAZY_CHECKS'] = ','.join(checks)
 
-Export('env', 'qt_env', 'arch', 'real_arch', 'SHARED', 'USE_WEBCAM')
+Export('env', 'qt_env', 'arch', 'real_arch', 'SHARED', 'USE_WEBCAM', 'USE_FRAME_STREAM')
 
 SConscript(['selfdrive/common/SConscript'])
 Import('_common', '_gpucommon', '_gpu_libs')
@@ -400,7 +403,7 @@ SConscript(['cereal/SConscript'])
 SConscript(['panda/board/SConscript'])
 SConscript(['opendbc/can/SConscript'])
 
-SConscript(['phonelibs/SConscript'])
+SConscript(['third_party/SConscript'])
 
 SConscript(['common/SConscript'])
 SConscript(['common/kalman/SConscript'])
@@ -410,8 +413,7 @@ SConscript(['selfdrive/camerad/SConscript'])
 SConscript(['selfdrive/modeld/SConscript'])
 
 SConscript(['selfdrive/controls/lib/cluster/SConscript'])
-SConscript(['selfdrive/controls/lib/lateral_mpc/SConscript'])
-SConscript(['selfdrive/controls/lib/lead_mpc_lib/SConscript'])
+SConscript(['selfdrive/controls/lib/lateral_mpc_lib/SConscript'])
 SConscript(['selfdrive/controls/lib/longitudinal_mpc_lib/SConscript'])
 
 SConscript(['selfdrive/boardd/SConscript'])

@@ -92,6 +92,12 @@ class Pc(HardwareBase):
   def get_modem_version(self):
     return None
 
+  def get_modem_temperatures(self):
+    return []
+
+  def get_nvme_temperatures(self):
+    return []
+
   def initialize_hardware(self):
     pass
 

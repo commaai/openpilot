@@ -49,7 +49,6 @@ def phone_steps(String device_type, steps) {
 pipeline {
   agent none
   environment {
-    COMMA_JWT = credentials('athena-test-jwt')
     TEST_DIR = "/data/openpilot"
     SOURCE_DIR = "/data/openpilot_source/"
   }
@@ -171,13 +170,12 @@ pipeline {
                   steps {
                     phone_steps("eon", [
                       ["build", "cd selfdrive/manager && ./build.py"],
-                      ["test athena", "nosetests -s selfdrive/athena/tests/test_athenad_old.py"],
                       ["test sounds", "nosetests -s selfdrive/ui/tests/test_sounds.py"],
                       ["test boardd loopback", "nosetests -s selfdrive/boardd/tests/test_boardd_loopback.py"],
                       ["test loggerd", "python selfdrive/loggerd/tests/test_loggerd.py"],
                       ["test encoder", "python selfdrive/loggerd/tests/test_encoder.py"],
                       ["test logcatd", "python selfdrive/logcatd/tests/test_logcatd_android.py"],
-                      //["test updater", "python installer/updater/test_updater.py"],
+                      ["test updater", "python selfdrive/hardware/eon/test_neos_updater.py"],
                     ])
                   }
                 }
@@ -225,15 +223,15 @@ pipeline {
                   }
                 }
 
-                stage('camerad') {
-                  steps {
-                    phone_steps("eon-party", [
-                      ["build", "cd selfdrive/manager && ./build.py"],
-                      ["test camerad", "python selfdrive/camerad/test/test_camerad.py"],
-                      ["test exposure", "python selfdrive/camerad/test/test_exposure.py"],
-                    ])
-                  }
-                }
+                // stage('camerad') {
+                //   steps {
+                //     phone_steps("eon-party", [
+                //       ["build", "cd selfdrive/manager && ./build.py"],
+                //       ["test camerad", "python selfdrive/camerad/test/test_camerad.py"],
+                //       ["test exposure", "python selfdrive/camerad/test/test_exposure.py"],
+                //     ])
+                //   }
+                // }
 
                 stage('Tici camerad') {
                   steps {

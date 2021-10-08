@@ -11,6 +11,7 @@ from typing import Any
 
 import cereal.messaging as messaging
 from common.params import Params
+from common.numpy_fast import clip
 from common.realtime import Ratekeeper, DT_DMON
 from lib.can import can_function
 from selfdrive.car.honda.values import CruiseButtons
@@ -295,9 +296,10 @@ def bridge(q):
 
     if is_openpilot_engaged:
       sm.update(0)
-      throttle_op = sm['carControl'].actuators.gas #[0,1]
-      brake_op = sm['carControl'].actuators.brake #[0,1]
-      steer_op = sm['carControl'].actuators.steeringAngleDeg 
+      # TODO gas and brake is deprecated
+      throttle_op = clip(sm['carControl'].actuators.accel/1.6, 0.0, 1.0)
+      brake_op = clip(-sm['carControl'].actuators.accel/4.0, 0.0, 1.0)
+      steer_op = sm['carControl'].actuators.steeringAngleDeg
 
       throttle_out = throttle_op
       steer_out = steer_op
