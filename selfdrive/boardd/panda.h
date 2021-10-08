@@ -45,6 +45,7 @@ class Panda {
   libusb_context *ctx = NULL;
   libusb_device_handle *dev_handle = NULL;
   std::mutex usb_lock;
+  std::vector<uint32_t> send;
   void handle_usb_issue(int err, const char func[]);
   void cleanup();
 

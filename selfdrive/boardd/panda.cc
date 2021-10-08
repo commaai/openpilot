@@ -344,10 +344,12 @@ void Panda::send_heartbeat() {
 }
 
 void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list) {
-  static std::vector<uint32_t> send;
   const int msg_count = can_data_list.size();
+  const int buf_size = msg_count*0x10;
 
-  send.resize(msg_count*0x10);
+  if (send.size() < buf_size) {
+    send.resize(buf_size);
+  }
 
   for (int i = 0; i < msg_count; i++) {
     auto cmsg = can_data_list[i];
@@ -362,7 +364,7 @@ void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list) {
     memcpy(&send[i*4+2], can_data.begin(), can_data.size());
   }
 
-  usb_bulk_write(3, (unsigned char*)send.data(), send.size(), 5);
+  usb_bulk_write(3, (unsigned char*)send.data(), buf_size, 5);
 }
 
 int Panda::can_receive(kj::Array<capnp::word>& out_buf) {
