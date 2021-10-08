@@ -95,7 +95,7 @@ class TestCarModel(unittest.TestCase):
     # TODO: check safetyModel is in release panda build
     safety = libpandasafety_py.libpandasafety
     set_status = safety.set_safety_hooks(self.CP.safetyConfigs[0].safetyModel.raw, self.CP.safetyConfigs[0].safetyParam)
-    self.assertEqual(0, set_status, f"failed to set safetyModel {self.CP.safetyModes[0].safetyModel}")
+    self.assertEqual(0, set_status, f"failed to set safetyModel {self.CP.safetyConfigs[0].safetyModel}")
 
   def test_car_interface(self):
     # TODO: also check for checkusm and counter violations from can parser
