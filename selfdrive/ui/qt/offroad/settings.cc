@@ -70,6 +70,14 @@ TogglesPanel::TogglesPanel(QWidget *parent) : ListWidget(parent) {
                                   "In this mode openpilot will ignore lanelines and just drive how it thinks a human would.",
                                   "../assets/offroad/icon_road.png",
                                   this));
+
+  // DAEHAHN - added a new feature to system toggle
+  addItem(new ParamControl("EnableGasPedal",
+                                  "Enable to use Gas Pedal",
+                                  "Enable to use gas pedal while Openpilot engaged.",
+                                  "../assets/offroad/icon_openpilot.png",
+                                  this));
+
 #ifdef ENABLE_MAPS
   addItem(new ParamControl("NavSettingTime24h",
                                   "Show ETA in 24h format",
