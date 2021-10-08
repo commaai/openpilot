@@ -66,7 +66,7 @@ FW_VERSIONS = {
       b'5SK0ADB\x04\x18\x00\x00\x00\x00\x00_(5\x07\x9aQ\x00\x00\x00\x80',
     ],
     (Ecu.esp, 0x740, None): [
-      b'',
+      b'476605SK2A',
     ],
     (Ecu.eps, 0x742, None): [
       b'5SH2A\x99A\x05\x02N123F\x15\x81\x00\x00\x00\x00\x00\x00\x00\x80',
