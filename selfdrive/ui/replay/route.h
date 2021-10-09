@@ -57,5 +57,6 @@ protected:
 
   std::atomic<bool> success_ = true, aborting_ = false;
   std::atomic<int> loading_ = 0;
-  std::list<QThread*> loading_threads_;
+  std::vector<QThread*> loading_threads_;
+  const int max_retries_ = 3;
 };

@@ -126,8 +126,10 @@ void Segment::loadFile(int id, const std::string file) {
   bool file_ready = util::file_exists(local_file);
 
   if (!file_ready && is_remote) {
-    // TODO: retry on failure
-    file_ready = httpMultiPartDownload(file, local_file, id < MAX_CAMERAS ? 3 : 1, &aborting_);
+    int retries = 0;
+    while (!file_ready && retries++ < max_retries_) {
+      file_ready = httpMultiPartDownload(file, local_file, id < MAX_CAMERAS ? 3 : 1, &aborting_);
+    }
   }
 
   if (!aborting_ && file_ready) {
