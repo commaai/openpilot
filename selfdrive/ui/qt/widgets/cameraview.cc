@@ -266,7 +266,7 @@ void CameraViewWidget::updateFrame() {
       LOGE("visionIPC receive timeout");
     }
   }
-  if (buf == nullptr) {
+  if (buf == nullptr && isVisible()) {
     // try to connect or recv again
     QTimer::singleShot(1000. / UI_FREQ, this, &CameraViewWidget::updateFrame);
   }
