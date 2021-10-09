@@ -40,7 +40,7 @@ body:
       required: true
 
   - type: input
-    id: route
+    id: version
     attributes:
       label: openpilot version
       description: If you're not on the release, provide the commit hash.
