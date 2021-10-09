@@ -1,6 +1,6 @@
-name: Bug report
-description: For issues with running openpilot on your comma device
-labels: ["bug"]
+name: PC bug report
+description: For issues with running openpilot on PC
+labels: ["PC"]
 body:
 
   - type: markdown
@@ -8,7 +8,6 @@ body:
       value: >
         Before creating a **bug report**, please check the following:
           * Ensure you're running the latest openpilot release.
-          * Ensure you're using officially supported hardware. Issues running on PCs have a different issue template.
           * Ensure there isn't an existing issue for your bug. If there is, leave a comment on the existing issue.
           * Ensure you're running stock openpilot. We cannot look into bug reports from forks.
 
@@ -21,35 +20,21 @@ body:
     validations:
       required: true
 
-  - type: dropdown
-    id: hw
-    attributes:
-      label: What hardware does this issue affect?
-      multiple: false
-      options:
-        - comma three
-        - comma two
-        - EON Gold
-    validations:
-      required: true
-
   - type: input
-    id: route
+    id: os-version
     attributes:
-      label: Provide a route where the issue occurs
-      description: Ensure the route is fully uploaded
-      placeholder: 77611a1fac303767|2020-05-11--16-37-07
+      label: OS Version
+      placeholder: Ubuntu 20.04
     validations:
       required: true
 
   - type: input
     id: version
     attributes:
-      label: openpilot version
-      description: If you're not on release, provide the commit hash
-      placeholder: 0.8.10
+      label: openpilot version or commit
+      placeholder: bd36f2ec8d3559909678eff2690c10a520938367
     validations:
-      required: true
+      required: false
 
   - type: textarea
     attributes:
