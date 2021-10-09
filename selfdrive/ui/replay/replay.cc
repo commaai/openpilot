@@ -15,14 +15,13 @@ Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *s
   auto event_struct = capnp::Schema::from<cereal::Event>().asStruct();
   sockets_.resize(event_struct.getUnionFields().size());
   for (const auto &it : services) {
-    if ((allow.size() == 0 || allow.contains(it.name)) &&
-        !block.contains(it.name)) {
+    if ((allow.empty() || allow.contains(it.name)) && !block.contains(it.name)) {
       s.push_back(it.name);
       uint16_t which = event_struct.getFieldByName(it.name).getProto().getDiscriminantValue();
       sockets_[which] = it.name;
     }
   }
-  qDebug() << "services " << s;
+  qDebug() << "services" << s;
 
   if (sm == nullptr) {
     pm = new PubMaster(s);
@@ -36,14 +35,12 @@ Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *s
 
 Replay::~Replay() {
   qDebug() << "shutdown: in progress...";
-  exit_ = true;
-  updating_events_ = true;
+  exit_ = updating_events_ = true;
   if (stream_thread_) {
     stream_cv_.notify_one();
     stream_thread_->quit();
     stream_thread_->wait();
   }
-
   delete pm;
   delete events_;
   segments_.clear();
