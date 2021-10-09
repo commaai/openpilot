@@ -83,6 +83,6 @@ protected:
     std::shared_ptr<Segment> segment;
     double last_used;
   };
-  std::map<int, SegmentData> segments_;
+  std::map<int, std::unique_ptr<SegmentData>> segments_;
   int cache_size_;
 };

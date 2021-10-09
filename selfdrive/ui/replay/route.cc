@@ -203,31 +203,27 @@ std::shared_ptr<Segment> SegmentManager::get(int n, const SegmentFile &files, bo
   // get segment from cache
   if (auto it = segments_.find(n); it != segments_.end()) {
     qDebug() << "get segment" << n << "from cache";
-    it->second.last_used = millis_since_boot();
-    return it->second.segment;
+    it->second->last_used = millis_since_boot();
+    return it->second->segment;
   }
 
   // TODO:  dynamically adjust cache_size_ based on the amount of free memory
   // remove unused segments from cache
   while (segments_.size() >= cache_size_) {
-    int idx = -1;
-    double last_used = millis_since_boot();
-    for (auto &[n, s] : segments_) {
-      if (s.segment.use_count() == 1 && s.last_used <= last_used) {
-        last_used = s.last_used;
-        idx = n;
-      }
-    }
-    if (idx == -1) break;
-
-    segments_.erase(idx);
+    auto it = std::min_element(segments_.begin(), segments_.end(), [](auto &a, auto &smallest){
+      return a.second->last_used < smallest.second->last_used;
+    });
+    if (it == segments_.end() || it->second->segment.use_count() > 1) break;
+    qDebug() << "remove segment" << it->first << "from cache";
+    segments_.erase(it);
   }
 
   // add segment to cache
-  auto [it, _] = segments_.emplace(n, SegmentData{
-                                          .segment = std::make_shared<Segment>(n, files, load_cam, load_eccam),
-                                          .last_used = millis_since_boot(),
-                                      });
-  QObject::connect(it->second.segment.get(), &Segment::loadFinished, [=]() { emit segmentLoaded(n); });
-  return it->second.segment;
+  SegmentData *s = new SegmentData{
+    .segment = std::make_shared<Segment>(n, files, load_cam, load_eccam),
+    .last_used = millis_since_boot(),
+  };
+  QObject::connect(s->segment.get(), &Segment::loadFinished, [=]() { emit segmentLoaded(n); });
+  segments_.emplace(n, s);
+  return s->segment;
 }
