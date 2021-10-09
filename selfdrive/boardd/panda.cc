@@ -82,22 +82,20 @@ Panda::Panda(std::string serial, uint32_t bus_offset) : bus_offset(bus_offset) {
     if (libusb_kernel_driver_active(dev_handle, 0) == 1) {
       libusb_detach_kernel_driver(dev_handle, 0);
     }
-    if (libusb_set_configuration(dev_handle, 1) != 0 || libusb_claim_interface(dev_handle, 0) != 0) {
-      libusb_close(dev_handle);
-      dev_handle = nullptr;
+    if (libusb_set_configuration(dev_handle, 1) == 0 &&
+        libusb_claim_interface(dev_handle, 0) == 0) {
+      hw_type = get_hw_type();
+      assert((hw_type != cereal::PandaState::PandaType::WHITE_PANDA) &&
+             (hw_type != cereal::PandaState::PandaType::GREY_PANDA));
+
+      has_rtc = (hw_type == cereal::PandaState::PandaType::UNO) ||
+                (hw_type == cereal::PandaState::PandaType::DOS);
+      return;
     }
   }
-  if (!dev_handle) {
-    if (ctx) libusb_exit(ctx);
-    throw std::runtime_error("Error connecting to panda");
-  }
-
-  hw_type = get_hw_type();
-  assert((hw_type != cereal::PandaState::PandaType::WHITE_PANDA) &&
-         (hw_type != cereal::PandaState::PandaType::GREY_PANDA));
-
-  has_rtc = (hw_type == cereal::PandaState::PandaType::UNO) ||
-            (hw_type == cereal::PandaState::PandaType::DOS);
+  if (dev_handle) libusb_close(dev_handle);
+  if (ctx) libusb_exit(ctx);
+  throw std::runtime_error("Error connecting to panda");
 }
 
 Panda::~Panda() {
