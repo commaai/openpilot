@@ -105,7 +105,7 @@ class Planner():
     v_target2 = interp(.05, T_IDXS, self.v_desired_trajectory)
     a_target2 = 2 * (v_target2 - self.v_desired_trajectory[0])/0.05 - self.a_desired_trajectory[0]
     if abs(a_target2 - self.a_desired) > 1.0:
-      raise RuntimeError("DOG")
+      #raise RuntimeError("DOG")
       print("YO DOOOG")
       print(self.mpc.x0)
       print(self.v_desired_trajectory)

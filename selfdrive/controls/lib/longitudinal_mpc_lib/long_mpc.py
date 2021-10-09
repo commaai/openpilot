@@ -34,11 +34,12 @@ LIMIT_COST = 1e6
 
 # Less timestamps doesn't hurt performance and leads to
 # much better convergence of the MPC with low iterations
-T_IDXS_LST = [index_function(idx, max_val=10.0) for idx in range(13)]
+N = 12
+MAX_T = 10.0
+T_IDXS_LST = [index_function(idx, max_val=MAX_T, max_idx=N+1) for idx in range(N+1)]
 
 T_IDXS = np.array(T_IDXS_LST)
 T_DIFFS = np.diff(T_IDXS, prepend=[0.])
-N = len(T_IDXS) - 1
 MIN_ACCEL = -3.5
 T_REACT = 1.8
 MAX_BRAKE = 9.81
