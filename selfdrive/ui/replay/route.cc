@@ -219,10 +219,9 @@ std::shared_ptr<Segment> SegmentManager::get(int n, const SegmentFile &files, bo
   }
 
   // add segment to cache
-  SegmentData *s = new SegmentData{
-    .segment = std::make_shared<Segment>(n, files, load_cam, load_eccam),
-    .last_used = millis_since_boot(),
-  };
+  SegmentData *s = new SegmentData;
+  s->segment = std::make_shared<Segment>(n, files, load_cam, load_eccam),
+  s->last_used = millis_since_boot(),
   QObject::connect(s->segment.get(), &Segment::loadFinished, [=]() { emit segmentLoaded(n); });
   segments_.emplace(n, s);
   return s->segment;
