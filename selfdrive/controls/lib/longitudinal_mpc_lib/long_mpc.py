@@ -4,8 +4,10 @@ import numpy as np
 
 from common.realtime import sec_since_boot
 from common.numpy_fast import clip, interp
+from common.numpy_helpers import deep_interp_np
 from selfdrive.swaglog import cloudlog
-from selfdrive.modeld.constants import T_IDXS as T_IDXS_LST
+from selfdrive.modeld.constants import T_IDXS as T_IDXS_LST_ORIG
+from selfdrive.modeld.constants import index_function
 from selfdrive.controls.lib.drive_helpers import LON_MPC_N as N
 from selfdrive.controls.lib.radar_helpers import _LEAD_ACCEL_TAU
 
@@ -32,9 +34,12 @@ DANGER_ZONE_COST = 100.
 CRASH_DISTANCE = .5
 LIMIT_COST = 1e6
 
+
+T_IDXS_LST = [index_function(idx, max_val=10.0) for idx in range(33)]
+
 T_IDXS = np.array(T_IDXS_LST)
 T_DIFFS = np.diff(T_IDXS, prepend=[0.])
-
+N = len(T_IDXS) - 1
 MIN_ACCEL = -3.5
 T_REACT = 1.8
 MAX_BRAKE = 9.81
@@ -313,6 +318,9 @@ class LongitudinalMpc():
       self.crash_cnt += 1
     else:
       self.crash_cnt = 0
+    #next_state = deep_interp_np(T_IDXS+0.05, T_IDXS, self.x_sol)
+    #for i in range(0, N+1):
+    #  self.solver.set(i, 'x', next_state[i])
 
   def update_with_xva(self, x, v, a):
     self.yref[:,1] = x
@@ -335,9 +343,9 @@ class LongitudinalMpc():
     self.solver.fill_in_slice(0, N+1, 'x', self.x_sol)
     self.solver.fill_in_slice(0, N, 'u', self.u_sol)
 
-    self.v_solution = self.x_sol[:,1]
-    self.a_solution = self.x_sol[:,2]
-    self.j_solution = self.u_sol[:,0]
+    self.v_solution = np.interp(T_IDXS_LST_ORIG, T_IDXS, self.x_sol[:,1])
+    self.a_solution = np.interp(T_IDXS_LST_ORIG, T_IDXS, self.x_sol[:,2])
+    self.j_solution = np.interp(T_IDXS_LST_ORIG, T_IDXS[:-1], self.u_sol[:,0])
 
     t = sec_since_boot()
     if self.solution_status != 0:

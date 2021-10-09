@@ -101,6 +101,15 @@ class Planner():
     a_prev = self.a_desired
     self.a_desired = float(interp(DT_MDL, T_IDXS[:CONTROL_N], self.a_desired_trajectory))
     self.v_desired = self.v_desired + DT_MDL * (self.a_desired + a_prev)/2.0
+    v_target2 = interp(.05, T_IDXS, self.v_desired_trajectory)
+    a_target2 = 2 * (v_target2 - self.v_desired_trajectory[0])/0.05 - self.a_desired_trajectory[0]
+    if abs(a_target2 - self.a_desired) > 2.0:
+      raise RuntimeError("DOG")
+      print("YO DOOOG")
+      print(self.mpc.x0)
+      print(self.v_desired_trajectory)
+      print(self.a_desired_trajectory)
+      print()
 
   def publish(self, sm, pm):
     plan_send = messaging.new_message('longitudinalPlan')
