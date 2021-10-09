@@ -12,11 +12,12 @@ body:
           * Ensure there isn't an existing issue for your bug. If there is, leave a comment on the existing issue.
           * Ensure you're running stock openpilot. We cannot look into bug reports from forks.
 
-        If you're unsure whether, you've hit a bug, check out the [community Discord server](https://discord.comma.ai).
+        If you're unsure whether you've hit a bug, check out the #installation-help channel in the [community Discord server](https://discord.comma.ai).
 
   - type: textarea
     attributes:
       label: Describe the bug
+      description: Also include a description of how to reproduce the bug
     validations:
       required: true
 
@@ -29,6 +30,8 @@ body:
         - comma three
         - comma two
         - EON Gold
+    validations:
+      required: true
 
   - type: input
     id: route
@@ -43,7 +46,12 @@ body:
     id: version
     attributes:
       label: openpilot version
-      description: If you're not on the release, provide the commit hash.
+      description: If you're not on release, provide the commit hash
       placeholder: 0.8.10
     validations:
       required: true
+
+  - type: textarea
+    attributes:
+      label: Additional info
+
