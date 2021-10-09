@@ -1,6 +1,6 @@
-name: Bug report
-description: For issues with running openpilot on your comma device
-labels: ["bug"]
+name: Car bug report
+description: For issues with a particular car make or model
+labels: ["car bug"]
 body:
 
   - type: markdown
@@ -30,6 +30,14 @@ body:
         - comma three
         - comma two
         - EON Gold
+    validations:
+      required: true
+
+  - type: input
+    id: car
+    attributes:
+      label: Which car does this affect?
+      placeholder: Toyota Prius 2017
     validations:
       required: true
 
