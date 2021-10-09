@@ -167,7 +167,7 @@ def gen_long_mpc_solver():
 
   # More iterations take too much time and less lead to inaccurate convergence in
   # some situations. Ideally we would run just 1 iteration to ensure fixed runtime.
-  ocp.solver_options.qp_solver_iter_max = 10
+  ocp.solver_options.qp_solver_iter_max = 4
 
   # set prediction horizon
   ocp.solver_options.tf = Tf
