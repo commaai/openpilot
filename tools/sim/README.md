@@ -1,7 +1,6 @@
 openpilot in simulator
 =====================
 
-
 ## Running the simulator
 
 First, start the CARLA server.

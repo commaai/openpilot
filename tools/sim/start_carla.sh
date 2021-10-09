@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#Requires nvidia docker - https://github.com/NVIDIA/nvidia-docker
+# Requires nvidia docker - https://github.com/NVIDIA/nvidia-docker
 if ! $(apt list --installed | grep -q nvidia-container-toolkit); then
   if [ -z "$INSTALL" ]; then
     echo "Nvidia docker is required. Re-run with INSTALL=1 to automatically install."
@@ -20,9 +20,9 @@ docker pull carlasim/carla:0.9.12
 docker run \
   --rm \
   --net=host \
-  -e DISPLAY= \
   -e SDL_VIDEODRIVER=offscreen \
+  -e SDL_HINT_CUDA_DEVICE=0 \
   -it \
   --gpus all \
   carlasim/carla:0.9.12 \
-  ./CarlaUE4.sh -opengl -nosound -quality-level=Epic
+  ./CarlaUE4.sh -opengl -nosound -RenderOffScreen -quality-level=Epic
