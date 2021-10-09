@@ -37,7 +37,7 @@ ENV QTWEBENGINE_DISABLE_SANDBOX 1
 RUN dbus-uuidgen > /etc/machine-id
 
 # Install CARLA python api
-RUN pip install --no-cache-dir carla
+RUN pip install --no-cache-dir carla==0.9.12
 
 # get same tmux config used on NEOS for debugging
 RUN cd $HOME && \
