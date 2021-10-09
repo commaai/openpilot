@@ -166,8 +166,8 @@ void Replay::mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::
     new_events->reserve(std::accumulate(segments_need_merge.begin(), segments_need_merge.end(), 0,
                                         [=](int v, int n) { return v + segments_[n]->log->events.size(); }));
     for (int n : segments_need_merge) {
-      auto &log = segments_[n]->log;
-      auto middle = new_events->insert(new_events->end(), log->events.begin(), log->events.end());
+      auto &e = segments_[n]->log->events;
+      auto middle = new_events->insert(new_events->end(), e.begin(), e.end());
       std::inplace_merge(new_events->begin(), middle, new_events->end(), Event::lessThan());
     }
     // update events
