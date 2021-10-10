@@ -125,7 +125,7 @@ class opParams:
                         'support_white_panda': Param(False, bool, 'Enable this to allow engagement with the deprecated white panda.\n'
                                                                   'localizer might not work correctly', static=True),
                         'disable_charging': Param(30, NUMBER, 'How many hours until charging is disabled while idle', static=True),
-
+                        'hide_model_long': Param(False, bool, 'Enable this to hide the Model Long button on the screen', static=True),
                         'prius_use_pid': Param(False, bool, 'This enables the PID lateral controller with new a experimental derivative tune\n'
                                                             'False: stock INDI, True: TSS2-tuned PID', static=True),
                         'use_lqr': Param(False, bool, 'Enable this to use LQR as your lateral controller over default with any car', static=True),

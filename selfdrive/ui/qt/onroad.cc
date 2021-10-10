@@ -138,6 +138,11 @@ ButtonsWindow::ButtonsWindow(QWidget *parent) : QWidget(parent) {
   btns_layout->addWidget(mlButton, 0, Qt::AlignHCenter | Qt::AlignBottom);
   btns_layout->addStretch(3);
 
+  std::string hide_model_long = util::read_file("/data/community/params/hide_model_long");
+  if (hide_model_long == "true"){
+    mlButton->hide();
+  }
+
   dfButton = new QPushButton("DF\nprofile");
   QObject::connect(dfButton, &QPushButton::clicked, [=]() {
     QUIState::ui_state.scene.dfButtonStatus = dfStatus < 3 ? dfStatus + 1 : 0;  // wrap back around
