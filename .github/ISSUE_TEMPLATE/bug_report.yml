@@ -25,7 +25,7 @@ body:
     id: hw
     attributes:
       label: What hardware does this issue affect?
-      multiple: false
+      multiple: true
       options:
         - comma three
         - comma two
@@ -37,7 +37,7 @@ body:
     id: route
     attributes:
       label: Provide a route where the issue occurs
-      description: Ensure the route is fully uploaded
+      description: Ensure the route is fully uploaded at https://useradmin.comma.ai
       placeholder: 77611a1fac303767|2020-05-11--16-37-07
     validations:
       required: true
