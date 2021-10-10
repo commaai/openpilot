@@ -5,8 +5,7 @@ import numpy as np
 from common.realtime import sec_since_boot
 from common.numpy_fast import clip, interp
 from selfdrive.swaglog import cloudlog
-from selfdrive.modeld.constants import T_IDXS as T_IDXS_LST
-from selfdrive.controls.lib.drive_helpers import LON_MPC_N as N
+from selfdrive.modeld.constants import index_function
 from selfdrive.controls.lib.radar_helpers import _LEAD_ACCEL_TAU
 
 from pyextra.acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
@@ -32,9 +31,15 @@ DANGER_ZONE_COST = 100.
 CRASH_DISTANCE = .5
 LIMIT_COST = 1e6
 
+
+# Less timestamps doesn't hurt performance and leads to
+# much better convergence of the MPC with low iterations
+N = 12
+MAX_T = 10.0
+T_IDXS_LST = [index_function(idx, max_val=MAX_T, max_idx=N+1) for idx in range(N+1)]
+
 T_IDXS = np.array(T_IDXS_LST)
 T_DIFFS = np.diff(T_IDXS, prepend=[0.])
-
 MIN_ACCEL = -3.5
 T_REACT = 1.8
 MAX_BRAKE = 9.81
@@ -162,7 +167,7 @@ def gen_long_mpc_solver():
 
   # More iterations take too much time and less lead to inaccurate convergence in
   # some situations. Ideally we would run just 1 iteration to ensure fixed runtime.
-  ocp.solver_options.qp_solver_iter_max = 4
+  ocp.solver_options.qp_solver_iter_max = 10
 
   # set prediction horizon
   ocp.solver_options.tf = Tf
