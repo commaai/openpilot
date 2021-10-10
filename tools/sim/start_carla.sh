@@ -19,10 +19,9 @@ docker pull carlasim/carla:0.9.12
 
 docker run \
   --rm \
-  --net=host \
-  -e SDL_VIDEODRIVER=offscreen \
-  -e SDL_HINT_CUDA_DEVICE=0 \
-  -it \
   --gpus all \
+  --net=host \
+  -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
+  -it \
   carlasim/carla:0.9.12 \
-  ./CarlaUE4.sh -opengl -nosound -RenderOffScreen -quality-level=Epic
+  /bin/bash ./CarlaUE4.sh -opengl -nosound -RenderOffScreen -quality-level=Epic
