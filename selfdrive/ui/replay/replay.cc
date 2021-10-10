@@ -67,7 +67,6 @@ bool Replay::load() {
     qInfo() << "no valid segments in route" << route_->name();
     return false;
   }
-  qInfo() << "load route" << route_->name() << "with" << segments_.size() << "valid segments";
   return true;
 }
 
