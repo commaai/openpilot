@@ -86,6 +86,7 @@ int main(int argc, char *argv[]){
   parser.addOption({"data_dir", "local directory with routes", "data_dir"});
   parser.addOption({"dcam", "load driver camera"});
   parser.addOption({"ecam", "load wide road camera"});
+  parser.addOption({"no-loop", "stop at the end of the route"});
   parser.addOption({"yuv", "publish YUV frames"});
 
   parser.process(app);
@@ -98,12 +99,14 @@ int main(int argc, char *argv[]){
   QStringList allow = parser.value("allow").isEmpty() ? QStringList{} : parser.value("allow").split(",");
   QStringList block = parser.value("block").isEmpty() ? QStringList{} : parser.value("block").split(",");
 
-  uint32_t flags = REPLAY_FLAG_NONE;
   const std::pair<QString, REPLAY_FLAGS> flag_map[] = {
       {"dcam", REPLAY_FLAG_DCAM},
       {"ecam", REPLAY_FLAG_ECAM},
+      {"no-loop", REPLAY_FLAG_NO_LOOP},
       {"yuv", REPLAY_FLAG_YUV},
   };
+
+  uint32_t flags = REPLAY_FLAG_NONE;
   for (const auto &[key, flag] : flag_map) {
     if (parser.isSet(key)) {
       flags |= flag;

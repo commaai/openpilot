@@ -13,6 +13,7 @@ enum REPLAY_FLAGS {
   REPLAY_FLAG_DCAM = 0x0001,
   REPLAY_FLAG_ECAM = 0x0002,
   REPLAY_FLAG_YUV = 0x0008,
+  REPLAY_FLAG_NO_LOOP = 0x0010,
 };
 
 class Replay : public QObject {
