@@ -112,7 +112,7 @@ int main(int argc, char *argv[]){
   auto ret = parse_route(args.empty() ? DEMO_ROUTE : args.first());
   if (!ret) {
     qDebug() << "invalid route format";
-    exit(0);
+    return 0;
   }
   auto [route, segment] = *ret;
   int start_from = parser.value("start").isEmpty() ? segment * 60 : parser.value("start").toInt();
