@@ -10,8 +10,9 @@ constexpr int BACKWARD_SEGS = 1;
 
 enum REPLAY_FLAGS {
   REPLAY_FLAG_NONE = 0x0000,
-  REPLAY_FLAG_DCAM = 0x0001,
-  REPLAY_FLAG_ECAM = 0x0002,
+  REPLAY_FLAG_VERBOSE = 0x0001,
+  REPLAY_FLAG_DCAM = 0x0002,
+  REPLAY_FLAG_ECAM = 0x0004,
   REPLAY_FLAG_YUV = 0x0008,
   REPLAY_FLAG_NO_LOOP = 0x0010,
 };
@@ -27,11 +28,11 @@ public:
   void pause(bool pause);
   bool isPaused() const { return paused_; }
 
-signals:
- void segmentChanged();
- void seekTo(int seconds, bool relative);
+ signals:
+  void segmentChanged();
+  void seekTo(int seconds, bool relative);
 
-protected slots:
+ protected slots:
   void queueSegment();
   void doSeek(int seconds, bool relative);
   void segmentLoadFinished(bool sucess);

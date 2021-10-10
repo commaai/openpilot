@@ -54,7 +54,7 @@ Replay::~Replay() {
 
 bool Replay::load() {
   if (!route_->load()) {
-    qDebug() << "failed to load route" << route_->name() << "from server";
+    qInfo() << "failed to load route" << route_->name() << "from server";
     return false;
   }
 
@@ -64,10 +64,10 @@ bool Replay::load() {
     }
   }
   if (segments_.empty()) {
-    qDebug() << "no valid segments in route" << route_->name();
+    qInfo() << "no valid segments in route" << route_->name();
     return false;
   }
-  qDebug() << "load route" << route_->name() << "with" << segments_.size() << "valid segments";
+  qInfo() << "load route" << route_->name() << "with" << segments_.size() << "valid segments";
   return true;
 }
 
@@ -108,7 +108,7 @@ void Replay::doSeek(int seconds, bool relative) {
 
 void Replay::pause(bool pause) {
   updateEvents([=]() {
-    qDebug() << (pause ? "paused..." : "resuming");
+    qInfo() << (pause ? "paused..." : "resuming");
     if (pause) {
       qInfo() << "at " << currentSeconds() << "s";
     }
@@ -243,7 +243,7 @@ void Replay::stream() {
     Event cur_event(cur_which, cur_mono_time_);
     auto eit = std::upper_bound(events_->begin(), events_->end(), &cur_event, Event::lessThan());
     if (eit == events_->end()) {
-      qDebug() << "waiting for events...";
+      qInfo() << "waiting for events...";
       continue;
     }
 
