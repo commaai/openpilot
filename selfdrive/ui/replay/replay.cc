@@ -5,6 +5,7 @@
 
 #include <capnp/dynamic.h>
 #include "cereal/services.h"
+#include "selfdrive/common/params.h"
 #include "selfdrive/common/timing.h"
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/replay/util.h"
@@ -181,21 +182,16 @@ void Replay::mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::
     }
     // update events
     auto prev_events = events_;
+
     updateEvents([&]() {
       if (route_start_ts_ == 0) {
-        // get route start time from initData
-        auto it = std::find_if(new_events->begin(), new_events->end(), [=](auto e) { return e->which == cereal::Event::Which::INIT_DATA; });
-        if (it != new_events->end()) {
-          route_start_ts_ = (*it)->mono_time;
-          // cur_mono_time_ is set by seekTo in start() before get route_start_ts_
-          cur_mono_time_ += route_start_ts_;
-        }
+        initRouteData(new_events);
       }
-
       events_ = new_events;
       segments_merged_ = segments_need_merge;
       return true;
     });
+
     delete prev_events;
   } else {
     updateEvents([=]() { return true; });
