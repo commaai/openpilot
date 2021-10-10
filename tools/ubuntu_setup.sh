@@ -1,5 +1,7 @@
 #!/bin/bash -e
 
+OP_ROOT=$(git rev-parse --show-toplevel)
+
 sudo apt-get update && sudo apt-get install -y --no-install-recommends \
     autoconf \
     build-essential \
@@ -73,8 +75,7 @@ cd $HOME/openpilot
 
 source ~/.bashrc
 if [ -z "$OPENPILOT_ENV" ]; then
-  OP_DIR=$(git rev-parse --show-toplevel)
-  printf "\nsource %s/tools/openpilot_env.sh" "$OP_DIR" >> ~/.bashrc
+  printf "\nsource %s/tools/openpilot_env.sh" "$OP_ROOT" >> ~/.bashrc
   source ~/.bashrc
   echo "added openpilot_env to bashrc"
 fi
@@ -85,7 +86,7 @@ git submodule init
 git submodule update
 
 # install python
-PYENV_PYTHON_VERSION=$(cat .python-version)
+PYENV_PYTHON_VERSION=$(cat $OP_ROOT/.python-version)
 PATH=$HOME/.pyenv/bin:$HOME/.pyenv/shims:$PATH
 pyenv install -s ${PYENV_PYTHON_VERSION}
 pyenv global ${PYENV_PYTHON_VERSION}
