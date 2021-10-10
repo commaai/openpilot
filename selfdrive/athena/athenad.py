@@ -141,7 +141,6 @@ def upload_handler(end_event):
 
       except (requests.exceptions.Timeout, requests.exceptions.ConnectionError, requests.exceptions.SSLError) as e:
         cloudlog.warning(f"athena.upload_handler.retry {e} {cur_upload_items[tid]}")
-
         retry_upload(tid, end_event)
 
     except queue.Empty:
