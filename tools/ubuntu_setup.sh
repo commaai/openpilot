@@ -85,9 +85,10 @@ git submodule init
 git submodule update
 
 # install python
+PYENV_PYTHON_VERSION=$(cat .python-version)
 PATH=$HOME/.pyenv/bin:$HOME/.pyenv/shims:$PATH
-pyenv install -s 3.8.5
-pyenv global 3.8.5
+pyenv install -s ${PYENV_PYTHON_VERSION}
+pyenv global ${PYENV_PYTHON_VERSION}
 pyenv rehash
 eval "$(pyenv init -)"
 
