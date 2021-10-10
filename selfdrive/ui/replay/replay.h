@@ -28,11 +28,11 @@ public:
   void pause(bool pause);
   bool isPaused() const { return paused_; }
 
- signals:
+signals:
   void segmentChanged();
   void seekTo(int seconds, bool relative);
 
- protected slots:
+protected slots:
   void queueSegment();
   void doSeek(int seconds, bool relative);
   void segmentLoadFinished(bool sucess);
