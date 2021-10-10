@@ -187,19 +187,20 @@ void Replay::mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::
 }
 
 void Replay::publishFrame(const Event *e) {
-  auto publish = [=](CameraType cam_type, const cereal::EncodeIndex::Reader &eidx) {
-    int n = eidx.getSegmentNum();
-    bool segment_loaded = std::find(segments_merged_.begin(), segments_merged_.end(), n) != segments_merged_.end();
-    if (segment_loaded && segments_[n]->frames[cam_type] && eidx.getType() == cereal::EncodeIndex::Type::FULL_H_E_V_C) {
-      camera_server_->pushFrame(cam_type, segments_[n]->frames[cam_type].get(), eidx);
-    }
+  static std::map<cereal::Event::Which, CameraType> cam_types{
+      {cereal::Event::ROAD_ENCODE_IDX, RoadCam},
+      {cereal::Event::DRIVER_ENCODE_IDX, DriverCam},
+      {cereal::Event::WIDE_ROAD_ENCODE_IDX, WideRoadCam},
   };
-  if (e->which == cereal::Event::ROAD_ENCODE_IDX) {
-    publish(RoadCam, e->event.getRoadEncodeIdx());
-  } else if (e->which == cereal::Event::DRIVER_ENCODE_IDX) {
-    publish(DriverCam, e->event.getDriverEncodeIdx());
-  } else if (e->which == cereal::Event::WIDE_ROAD_ENCODE_IDX) {
-    publish(WideRoadCam, e->event.getWideRoadEncodeIdx());
+  auto eidx = capnp::AnyStruct::Reader(e->event).getPointerSection()[0].getAs<cereal::EncodeIndex>();
+  if (std::find(segments_merged_.begin(), segments_merged_.end(), eidx.getSegmentNum()) == segments_merged_.end()) {
+    // eidx's segment is not loaded
+    return;
+  }
+  CameraType cam = cam_types[e->which];
+  auto &fr = segments_[eidx.getSegmentNum()]->frames[cam];
+  if (fr && eidx.getType() == cereal::EncodeIndex::Type::FULL_H_E_V_C) {
+    camera_server_->pushFrame(cam, fr.get(), eidx);
   }
 }
 
