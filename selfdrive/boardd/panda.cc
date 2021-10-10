@@ -63,6 +63,7 @@ private:
     for (size_t i = 0; i < num_devices; ++i) {
       libusb_device_descriptor desc = {};
       libusb_device_handle *handle = nullptr;
+
       int ret = libusb_get_device_descriptor(dev_list[i], &desc);
       if (ret == 0 && desc.idVendor == vid && desc.idProduct == pid && libusb_open(dev_list[i], &handle) == 0) {
         unsigned char serial[256] = {'\0'};
@@ -73,15 +74,18 @@ private:
     }
     return result;
   }
+
   libusb_device **dev_list = nullptr;
   ssize_t num_devices = 0;
 };
 
 Panda::Panda(std::string serial, uint32_t bus_offset) : bus_offset(bus_offset) {
   if ((ctx = init_usb_ctx()) && (dev_handle = UsbDevice(ctx).open(serial))) {
+
     if (libusb_kernel_driver_active(dev_handle, 0) == 1) {
       libusb_detach_kernel_driver(dev_handle, 0);
     }
+
     if (libusb_set_configuration(dev_handle, 1) == 0 &&
         libusb_claim_interface(dev_handle, 0) == 0) {
       hw_type = get_hw_type();
@@ -93,6 +97,7 @@ Panda::Panda(std::string serial, uint32_t bus_offset) : bus_offset(bus_offset) {
       return;
     }
   }
+
   if (dev_handle) libusb_close(dev_handle);
   if (ctx) libusb_exit(ctx);
   throw std::runtime_error("Error connecting to panda");
