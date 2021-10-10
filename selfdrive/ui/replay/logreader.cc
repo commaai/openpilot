@@ -1,6 +1,9 @@
 #include "selfdrive/ui/replay/logreader.h"
 
 #include <cassert>
+#if !defined(QCOM) && !defined(QCOM2)
+#include <execution>
+#endif
 #include <sstream>
 #include "selfdrive/common/util.h"
 #include "selfdrive/ui/replay/util.h"
@@ -64,6 +67,10 @@ bool LogReader::load(const std::string &file, bool is_bz2file) {
       return false;
     }
   }
+#if !defined(QCOM) && !defined(QCOM2)
+  std::sort(std::execution::par, events.begin(), events.end(), Event::lessThan());
+#else
   std::sort(events.begin(), events.end(), Event::lessThan());
+#endif
   return true;
 }
