@@ -53,7 +53,7 @@ log_recv_queue: Any = queue.Queue()
 cancelled_uploads: Any = set()
 UploadItem = namedtuple('UploadItem', ['path', 'url', 'headers', 'created_at', 'id', 'retry_count', 'current', 'progress'], defaults=(0, False, 0))
 
-cur_upload_items = {}
+cur_upload_items: Any = {}
 
 
 def handle_long_poll(ws):
