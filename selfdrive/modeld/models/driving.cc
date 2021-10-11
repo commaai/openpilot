@@ -1,8 +1,5 @@
 #include "selfdrive/modeld/models/driving.h"
 
-#include <fcntl.h>
-#include <unistd.h>
-
 #include <cassert>
 #include <cstring>
 
@@ -51,9 +48,6 @@ constexpr int OUTPUT_SIZE =  POSE_IDX + POSE_SIZE;
 constexpr float FCW_THRESHOLD_5MS2_HIGH = 0.15;
 constexpr float FCW_THRESHOLD_5MS2_LOW = 0.05;
 constexpr float FCW_THRESHOLD_3MS2 = 0.7;
-
-float prev_brake_5ms2_probs[5] = {0,0,0,0,0};
-float prev_brake_3ms2_probs[3] = {0,0,0};
 
 // #define DUMP_YUV
 
@@ -141,49 +135,43 @@ static const float *get_plan_data(float *plan) {
   return get_best_data(plan, PLAN_MHP_N, PLAN_MHP_GROUP_SIZE, PLAN_MHP_GROUP_SIZE - 1);
 }
 
-static const float *get_lead_data(const float *lead, int t_offset) {
-  return get_best_data(lead, LEAD_MHP_N, LEAD_MHP_GROUP_SIZE, LEAD_MHP_GROUP_SIZE - LEAD_MHP_SELECTION + t_offset);
+static const float *get_lead_data(const float *lead) {
+  return get_best_data(lead, LEAD_MHP_N, LEAD_MHP_GROUP_SIZE, LEAD_MHP_GROUP_SIZE - LEAD_MHP_SELECTION);
 }
 
-
-void fill_sigmoid(const float *input, float *output, int len, int stride) {
-  for (int i=0; i<len; i++) {
-    output[i] = sigmoid(input[i*stride]);
-  }
-}
-
-void fill_lead_v3(cereal::ModelDataV2::LeadDataV3::Builder lead, const float *lead_data, const float *prob, int t_offset, float prob_t) {
-  float t[LEAD_TRAJ_LEN] = {0.0, 2.0, 4.0, 6.0, 8.0, 10.0};
-  const float *data = get_lead_data(lead_data, t_offset);
-  lead.setProb(sigmoid(prob[t_offset]));
+void fill_lead_v3(cereal::ModelDataV2::LeadDataV3::Builder lead, const float *lead_data, const float prob, float prob_t) {
+  ColumnArray<LEAD_TRAJ_LEN> column(get_lead_data(lead_data), LEAD_PRED_DIM);
+  lead.setProb(sigmoid(prob));
   lead.setProbTime(prob_t);
-  float x_arr[LEAD_TRAJ_LEN];
-  float y_arr[LEAD_TRAJ_LEN];
-  float v_arr[LEAD_TRAJ_LEN];
-  float a_arr[LEAD_TRAJ_LEN];
-  float x_stds_arr[LEAD_TRAJ_LEN];
-  float y_stds_arr[LEAD_TRAJ_LEN];
-  float v_stds_arr[LEAD_TRAJ_LEN];
-  float a_stds_arr[LEAD_TRAJ_LEN];
-  for (int i=0; i<LEAD_TRAJ_LEN; i++) {
-    x_arr[i] = data[i*LEAD_PRED_DIM+0];
-    y_arr[i] = data[i*LEAD_PRED_DIM+1];
-    v_arr[i] = data[i*LEAD_PRED_DIM+2];
-    a_arr[i] = data[i*LEAD_PRED_DIM+3];
-    x_stds_arr[i] = exp(data[LEAD_MHP_VALS + i*LEAD_PRED_DIM+0]);
-    y_stds_arr[i] = exp(data[LEAD_MHP_VALS + i*LEAD_PRED_DIM+1]);
-    v_stds_arr[i] = exp(data[LEAD_MHP_VALS + i*LEAD_PRED_DIM+2]);
-    a_stds_arr[i] = exp(data[LEAD_MHP_VALS + i*LEAD_PRED_DIM+3]);
+  lead.setT( {0.0, 2.0, 4.0, 6.0, 8.0, 10.0});
+  lead.setX(column[0]);
+  lead.setY(column[1]);
+  lead.setV(column[2]);
+  lead.setA(column[3]);
+  lead.setXStd(column[LEAD_MHP_VALS + 0]);
+  lead.setYStd(column[LEAD_MHP_VALS + 1]);
+  lead.setVStd(column[LEAD_MHP_VALS + 2]);
+  lead.setAStd(column[LEAD_MHP_VALS + 3]);
+}
+
+bool get_hard_brake_predicted(float brake_3ms2_probs, float brake_5ms2_probs) {
+  static float prev_brake_5ms2_probs[5] = {0,0,0,0,0};
+  static float prev_brake_3ms2_probs[3] = {0,0,0};
+
+  std::memmove(prev_brake_5ms2_probs, &prev_brake_5ms2_probs[1], 4 * sizeof(float));
+  std::memmove(prev_brake_3ms2_probs, &prev_brake_3ms2_probs[1], 2 * sizeof(float));
+  prev_brake_5ms2_probs[4] = brake_5ms2_probs;
+  prev_brake_3ms2_probs[2] = brake_3ms2_probs;
+
+  bool above_fcw_threshold = true;
+  for (int i = 0; i < 5; i++) {
+    float threshold = i < 2 ? FCW_THRESHOLD_5MS2_LOW : FCW_THRESHOLD_5MS2_HIGH;
+    above_fcw_threshold = above_fcw_threshold && prev_brake_5ms2_probs[i] > threshold;
   }
-  lead.setT(t);
-  lead.setX(x_arr);
-  lead.setY(y_arr);
-  lead.setV(v_arr);
-  lead.setA(a_arr);
-  lead.setXStd(x_stds_arr);
-  lead.setYStd(y_stds_arr);
-  lead.setVStd(v_stds_arr);
-  lead.setAStd(a_stds_arr);
+  for (int i = 0; i < 3; i++) {
+    above_fcw_threshold = above_fcw_threshold && prev_brake_3ms2_probs[i] > FCW_THRESHOLD_3MS2;
+  }
+  return above_fcw_threshold;
 }
 
 void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const float *meta_data) {
@@ -195,83 +183,42 @@ void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const float *meta_da
             &desire_pred_softmax[i*DESIRE_LEN], DESIRE_LEN);
   }
 
-  float gas_disengage_sigmoid[NUM_META_INTERVALS];
-  float brake_disengage_sigmoid[NUM_META_INTERVALS];
-  float steer_override_sigmoid[NUM_META_INTERVALS];
-  float brake_3ms2_sigmoid[NUM_META_INTERVALS];
-  float brake_4ms2_sigmoid[NUM_META_INTERVALS];
-  float brake_5ms2_sigmoid[NUM_META_INTERVALS];
-
-  fill_sigmoid(&meta_data[DESIRE_LEN+1], gas_disengage_sigmoid, NUM_META_INTERVALS, META_STRIDE);
-  fill_sigmoid(&meta_data[DESIRE_LEN+2], brake_disengage_sigmoid, NUM_META_INTERVALS, META_STRIDE);
-  fill_sigmoid(&meta_data[DESIRE_LEN+3], steer_override_sigmoid, NUM_META_INTERVALS, META_STRIDE);
-  fill_sigmoid(&meta_data[DESIRE_LEN+4], brake_3ms2_sigmoid, NUM_META_INTERVALS, META_STRIDE);
-  fill_sigmoid(&meta_data[DESIRE_LEN+5], brake_4ms2_sigmoid, NUM_META_INTERVALS, META_STRIDE);
-  fill_sigmoid(&meta_data[DESIRE_LEN+6], brake_5ms2_sigmoid, NUM_META_INTERVALS, META_STRIDE);
-  //fill_sigmoid(&meta_data[DESIRE_LEN+7], GAS PRESSED, NUM_META_INTERVALS, META_STRIDE);
-
-  std::memmove(prev_brake_5ms2_probs, &prev_brake_5ms2_probs[1], 4*sizeof(float));
-  std::memmove(prev_brake_3ms2_probs, &prev_brake_3ms2_probs[1], 2*sizeof(float));
-  prev_brake_5ms2_probs[4] = brake_5ms2_sigmoid[0];
-  prev_brake_3ms2_probs[2] = brake_3ms2_sigmoid[0];
-
-  bool above_fcw_threshold = true;
-  for (int i=0; i<5; i++) {
-    float threshold = i < 2 ? FCW_THRESHOLD_5MS2_LOW : FCW_THRESHOLD_5MS2_HIGH;
-    above_fcw_threshold = above_fcw_threshold && prev_brake_5ms2_probs[i] > threshold;
-  }
-  for (int i=0; i<3; i++) {
-    above_fcw_threshold = above_fcw_threshold && prev_brake_3ms2_probs[i] > FCW_THRESHOLD_3MS2;
-  }
-
+  ColumnArray<NUM_META_INTERVALS> column(&meta_data[DESIRE_LEN], META_STRIDE, &sigmoid);
   auto disengage = meta.initDisengagePredictions();
   disengage.setT({2,4,6,8,10});
-  disengage.setGasDisengageProbs(gas_disengage_sigmoid);
-  disengage.setBrakeDisengageProbs(brake_disengage_sigmoid);
-  disengage.setSteerOverrideProbs(steer_override_sigmoid);
-  disengage.setBrake3MetersPerSecondSquaredProbs(brake_3ms2_sigmoid);
-  disengage.setBrake4MetersPerSecondSquaredProbs(brake_4ms2_sigmoid);
-  disengage.setBrake5MetersPerSecondSquaredProbs(brake_5ms2_sigmoid);
+  disengage.setGasDisengageProbs(column[1]);
+  disengage.setBrakeDisengageProbs(column[2]);
+  disengage.setSteerOverrideProbs(column[3]);
+  disengage.setBrake3MetersPerSecondSquaredProbs(column[4]);
+  disengage.setBrake4MetersPerSecondSquaredProbs(column[5]);
+  disengage.setBrake5MetersPerSecondSquaredProbs(column[6]);
 
   meta.setEngagedProb(sigmoid(meta_data[DESIRE_LEN]));
   meta.setDesirePrediction(desire_pred_softmax);
   meta.setDesireState(desire_state_softmax);
-  meta.setHardBrakePredicted(above_fcw_threshold);
+  bool brake_predicted = get_hard_brake_predicted(disengage.getBrake3MetersPerSecondSquaredProbs()[0],
+                                                  disengage.getBrake5MetersPerSecondSquaredProbs()[0]);
+  meta.setHardBrakePredicted(brake_predicted);
 }
 
-void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const float * data,
-               int columns, int column_offset, float * plan_t_arr, bool fill_std) {
-  float x_arr[TRAJECTORY_SIZE] = {};
-  float y_arr[TRAJECTORY_SIZE] = {};
-  float z_arr[TRAJECTORY_SIZE] = {};
-  float x_std_arr[TRAJECTORY_SIZE];
-  float y_std_arr[TRAJECTORY_SIZE];
-  float z_std_arr[TRAJECTORY_SIZE];
-  float t_arr[TRAJECTORY_SIZE];
-  for (int i=0; i<TRAJECTORY_SIZE; i++) {
-    // column_offset == -1 means this data is X indexed not T indexed
-    if (column_offset >= 0) {
-      t_arr[i] = T_IDXS[i];
-      x_arr[i] = data[i*columns + 0 + column_offset];
-      x_std_arr[i] = data[columns*(TRAJECTORY_SIZE + i) + 0 + column_offset];
-    } else {
-      t_arr[i] = plan_t_arr[i];
-      x_arr[i] = X_IDXS[i];
-      x_std_arr[i] = NAN;
-    }
-    y_arr[i] = data[i*columns + 1 + column_offset];
-    y_std_arr[i] = data[columns*(TRAJECTORY_SIZE + i) + 1 + column_offset];
-    z_arr[i] = data[i*columns + 2 + column_offset];
-    z_std_arr[i] = data[columns*(TRAJECTORY_SIZE + i) + 2 + column_offset];
+void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const float *data, int stride, float *plan_t_arr = nullptr, bool fill_std = false) {
+  ColumnArray<TRAJECTORY_SIZE> column(data, stride);
+  // if plan_t_arr != nullptr, means this data is X indexed not T indexed
+  if (plan_t_arr == nullptr) {
+    xyzt.setX(column[0]);
+    xyzt.setT(T_IDXS);
+  } else {
+    xyzt.setX(X_IDXS);
+    xyzt.setT({plan_t_arr, TRAJECTORY_SIZE});
   }
-  xyzt.setX(x_arr);
-  xyzt.setY(y_arr);
-  xyzt.setZ(z_arr);
-  xyzt.setT(t_arr);
+  xyzt.setY(column[1]);
+  xyzt.setZ(column[2]);
   if (fill_std) {
-    xyzt.setXStd(x_std_arr);
-    xyzt.setYStd(y_std_arr);
-    xyzt.setZStd(z_std_arr);
+    float nan_stds[TRAJECTORY_SIZE] = {};
+    std::fill_n(nan_stds, std::size(nan_stds), NAN);
+    xyzt.setXStd(!plan_t_arr ? column[0 + stride * TRAJECTORY_SIZE] : kj::ArrayPtr<const float>(nan_stds));
+    xyzt.setYStd(column[1 + stride * TRAJECTORY_SIZE]);
+    xyzt.setZStd(column[2 + stride * TRAJECTORY_SIZE]);
   }
 }
 
@@ -299,31 +246,25 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelDataRaw &net_ou
     }
   }
 
-  fill_xyzt(framed.initPosition(), best_plan, PLAN_MHP_COLUMNS, 0, plan_t_arr, true);
-  fill_xyzt(framed.initVelocity(), best_plan, PLAN_MHP_COLUMNS, 3, plan_t_arr, false);
-  fill_xyzt(framed.initOrientation(), best_plan, PLAN_MHP_COLUMNS, 9, plan_t_arr, false);
-  fill_xyzt(framed.initOrientationRate(), best_plan, PLAN_MHP_COLUMNS, 12, plan_t_arr, false);
+  fill_xyzt(framed.initPosition(), &best_plan[0], PLAN_MHP_COLUMNS, nullptr, true);
+  fill_xyzt(framed.initVelocity(), &best_plan[3], PLAN_MHP_COLUMNS);
+  fill_xyzt(framed.initOrientation(), &best_plan[9], PLAN_MHP_COLUMNS);
+  fill_xyzt(framed.initOrientationRate(), &best_plan[12], PLAN_MHP_COLUMNS);
 
   // lane lines
   auto lane_lines = framed.initLaneLines(4);
-  float lane_line_probs_arr[4];
-  float lane_line_stds_arr[4];
   for (int i = 0; i < 4; i++) {
-    fill_xyzt(lane_lines[i], &net_outputs.lane_lines[i*TRAJECTORY_SIZE*2], 2, -1, plan_t_arr, false);
-    lane_line_probs_arr[i] = sigmoid(net_outputs.lane_lines_prob[i*2+1]);
-    lane_line_stds_arr[i] = exp(net_outputs.lane_lines[2*TRAJECTORY_SIZE*(4 + i)]);
+    fill_xyzt(lane_lines[i], &net_outputs.lane_lines[i * TRAJECTORY_SIZE * 2 - 1], 2, plan_t_arr);
   }
-  framed.setLaneLineProbs(lane_line_probs_arr);
-  framed.setLaneLineStds(lane_line_stds_arr);
+  framed.setLaneLineProbs(ColumnArray<4>(net_outputs.lane_lines_prob, 2, &sigmoid)[1]);
+  framed.setLaneLineStds(ColumnArray<4>(net_outputs.lane_lines, 2 * TRAJECTORY_SIZE, &expf)[8 * TRAJECTORY_SIZE]);
 
   // road edges
   auto road_edges = framed.initRoadEdges(2);
-  float road_edge_stds_arr[2];
   for (int i = 0; i < 2; i++) {
-    fill_xyzt(road_edges[i], &net_outputs.road_edges[i*TRAJECTORY_SIZE*2], 2, -1, plan_t_arr, false);
-    road_edge_stds_arr[i] = exp(net_outputs.road_edges[2*TRAJECTORY_SIZE*(2 + i)]);
+    fill_xyzt(road_edges[i], &net_outputs.road_edges[i * TRAJECTORY_SIZE * 2 - 1], 2, plan_t_arr);
   }
-  framed.setRoadEdgeStds(road_edge_stds_arr);
+  framed.setRoadEdgeStds(ColumnArray<2>(net_outputs.road_edges, 2 * TRAJECTORY_SIZE, &expf)[4 * TRAJECTORY_SIZE]);
 
   // meta
   fill_meta(framed.initMeta(), net_outputs.meta);
@@ -332,7 +273,7 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelDataRaw &net_ou
   auto leads = framed.initLeadsV3(LEAD_MHP_SELECTION);
   float t_offsets[LEAD_MHP_SELECTION] = {0.0, 2.0, 4.0};
   for (int t_offset=0; t_offset<LEAD_MHP_SELECTION; t_offset++) {
-    fill_lead_v3(leads[t_offset], net_outputs.lead, net_outputs.lead_prob, t_offset, t_offsets[t_offset]);
+    fill_lead_v3(leads[t_offset], &net_outputs.lead[t_offset], net_outputs.lead_prob[t_offset], t_offsets[t_offset]);
   }
 }
 
@@ -356,26 +297,18 @@ void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id, flo
 
 void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_dropped_frames,
                      const ModelDataRaw &net_outputs, uint64_t timestamp_eof) {
-  float trans_arr[3];
-  float trans_std_arr[3];
-  float rot_arr[3];
-  float rot_std_arr[3];
-
-  for (int i =0; i < 3; i++) {
-    trans_arr[i] = net_outputs.pose[i];
+  std::array<float, 3> trans_std_arr, rot_std_arr; 
+  for (int i = 0; i < 3; i++) {
     trans_std_arr[i] = exp(net_outputs.pose[6 + i]);
-
-    rot_arr[i] = net_outputs.pose[3 + i];
     rot_std_arr[i] = exp(net_outputs.pose[9 + i]);
   }
 
   MessageBuilder msg;
   auto posenetd = msg.initEvent(vipc_dropped_frames < 1).initCameraOdometry();
-  posenetd.setTrans(trans_arr);
-  posenetd.setRot(rot_arr);
-  posenetd.setTransStd(trans_std_arr);
-  posenetd.setRotStd(rot_std_arr);
-
+  posenetd.setTrans({&net_outputs.pose[0], 3});
+  posenetd.setRot({&net_outputs.pose[3], 3});
+  posenetd.setTransStd({trans_std_arr.data(), 3});
+  posenetd.setRotStd({rot_std_arr.data(), 3});
   posenetd.setTimestampEof(timestamp_eof);
   posenetd.setFrameId(vipc_frame_id);
 

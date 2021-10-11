@@ -31,6 +31,22 @@ struct ModelDataRaw {
   float *pose;
 };
 
+template <std::size_t size>
+class ColumnArray {
+public:
+  ColumnArray(const float *data, int stride, std::function<float(float)> func = nullptr) : data_(data), stride_(stride), func_(func) {}
+  kj::ArrayPtr<const float> operator[](int n) {
+    for (int i = 0, j = 0; i < size; ++i, j += stride_) {
+      array_[i] = (func_ == nullptr) ? data_[j] : func_(data_[j]);
+    }
+    return {array_, size};
+  }
+  const float *data_;
+  const int stride_;
+  float array_[size] = {};
+  std::function<float(float)> func_;
+};
+
 typedef struct ModelState {
   ModelFrame *frame;
   std::vector<float> output;
