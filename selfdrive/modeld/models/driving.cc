@@ -140,7 +140,8 @@ static const float *get_lead_data(const float *lead) {
 }
 
 void fill_lead_v3(cereal::ModelDataV2::LeadDataV3::Builder lead, const float *lead_data, const float prob, float prob_t) {
-  ColumnArray<LEAD_TRAJ_LEN> column(get_lead_data(lead_data), LEAD_PRED_DIM);
+  const float *data = get_lead_data(lead_data);
+  ColumnArray<LEAD_TRAJ_LEN> column(data, LEAD_PRED_DIM);
   lead.setProb(sigmoid(prob));
   lead.setProbTime(prob_t);
   lead.setT( {0.0, 2.0, 4.0, 6.0, 8.0, 10.0});
@@ -148,10 +149,11 @@ void fill_lead_v3(cereal::ModelDataV2::LeadDataV3::Builder lead, const float *le
   lead.setY(column[1]);
   lead.setV(column[2]);
   lead.setA(column[3]);
-  lead.setXStd(column[LEAD_MHP_VALS + 0]);
-  lead.setYStd(column[LEAD_MHP_VALS + 1]);
-  lead.setVStd(column[LEAD_MHP_VALS + 2]);
-  lead.setAStd(column[LEAD_MHP_VALS + 3]);
+  ColumnArray<LEAD_TRAJ_LEN> std_column(&data[LEAD_MHP_VALS], LEAD_PRED_DIM, &expf);
+  lead.setXStd(std_column[0]);
+  lead.setYStd(std_column[1]);
+  lead.setVStd(std_column[2]);
+  lead.setAStd(std_column[3]);
 }
 
 bool get_hard_brake_predicted(float brake_3ms2_probs, float brake_5ms2_probs) {
