@@ -187,7 +187,7 @@ void Replay::mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::
 }
 
 void Replay::publishFrame(const Event *e) {
-  static std::map<cereal::Event::Which, CameraType> cam_types{
+  static const std::map<cereal::Event::Which, CameraType> cam_types{
       {cereal::Event::ROAD_ENCODE_IDX, RoadCam},
       {cereal::Event::DRIVER_ENCODE_IDX, DriverCam},
       {cereal::Event::WIDE_ROAD_ENCODE_IDX, WideRoadCam},
@@ -197,7 +197,7 @@ void Replay::publishFrame(const Event *e) {
     // eidx's segment is not loaded
     return;
   }
-  CameraType cam = cam_types[e->which];
+  CameraType cam = cam_types.at(e->which);
   auto &fr = segments_[eidx.getSegmentNum()]->frames[cam];
   if (fr && eidx.getType() == cereal::EncodeIndex::Type::FULL_H_E_V_C) {
     camera_server_->pushFrame(cam, fr.get(), eidx);
