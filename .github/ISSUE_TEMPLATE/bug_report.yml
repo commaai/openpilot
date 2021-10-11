@@ -7,6 +7,7 @@ body:
     attributes:
       value: >
         Before creating a **bug report**, please check the following:
+          * If the issue likely only affects your car model or make, go back and open a **car bug report** instead.
           * Ensure you're running the latest openpilot release.
           * Ensure you're using officially supported hardware. Issues running on PCs have a different issue template.
           * Ensure there isn't an existing issue for your bug. If there is, leave a comment on the existing issue.
