@@ -1,4 +1,4 @@
-from selfdrive.car.mazda.values import GEN1, Buttons
+from selfdrive.car.mazda.values import GEN1, Buttons, NO_LOCKOUT
 
 def create_steering_control(packer, car_fingerprint, frame, apply_steer, lkas):
 
@@ -57,6 +57,25 @@ def create_steering_control(packer, car_fingerprint, frame, apply_steer, lkas):
     }
 
   return packer.make_can_msg("CAM_LKAS", 0, values)
+
+
+def create_steer_rate(packer, car_fingerprint, msg):
+  values = msg
+
+  # Make the EPS LKAS state look good to the camera
+  if car_fingerprint in NO_LOCKOUT:
+    if values["LKAS_BLOCK"] == 1:
+      values["LKAS_BLOCK"] = 0
+      values["CHKSUM"] = values["CHKSUM"] + 1
+    if values["HANDS_OFF_5_SECONDS"] == 1:
+      # Silence the warning on cars with no lockout
+      values["HANDS_OFF_5_SECONDS"] = 0
+      values["CHKSUM"] = values["CHKSUM"] + 2
+    if values["LKAS_TRACK_STATE"] == 1:
+      values["LKAS_TRACK_STATE"] = 0
+      values["CHKSUM"] = values["CHKSUM"] + 4
+
+  return packer.make_can_msg("STEER_RATE", 2, values)
 
 
 def create_button_cmd(packer, car_fingerprint, button):

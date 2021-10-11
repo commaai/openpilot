@@ -83,6 +83,8 @@ class CarState(CarStateBase):
 
     self.acc_active_last = ret.cruiseState.enabled
 
+    self.steer_rate_msg = cp.vl["STEER_RATE"]
+
     self.cam_lkas = cp_cam.vl["CAM_LKAS"]
     ret.steerError = cp_cam.vl["CAM_LKAS"]["ERR_BIT_1"] == 1
 
@@ -96,7 +98,16 @@ class CarState(CarStateBase):
       ("LEFT_BLINK", "BLINK_INFO", 0),
       ("RIGHT_BLINK", "BLINK_INFO", 0),
       ("STEER_ANGLE", "STEER", 0),
+
+      ("LKAS_REQUEST", "STEER_RATE", 0),
+      ("CTR", "STEER_RATE", 0),
       ("STEER_ANGLE_RATE", "STEER_RATE", 0),
+      ("LKAS_EFFECTIVE", "STEER_RATE", 0),
+      ("LKAS_BLOCK", "STEER_RATE", 0),
+      ("HANDS_OFF_5_SECONDS", "STEER_RATE", 0),
+      ("LKAS_TRACK_STATE", "STEER_RATE", 0),
+      ("CHKSUM", "STEER_RATE", 0),
+
       ("STEER_TORQUE_SENSOR", "STEER_TORQUE", 0),
       ("STEER_TORQUE_MOTOR", "STEER_TORQUE", 0),
       ("FL", "WHEEL_SPEEDS", 0),

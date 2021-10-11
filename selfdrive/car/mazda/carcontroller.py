@@ -46,6 +46,8 @@ class CarController():
 
     self.apply_steer_last = apply_steer
 
+    can_sends.append(mazdacan.create_steer_rate(self.packer, CS.CP.carFingerprint, CS.steer_rate_msg))
+
     can_sends.append(mazdacan.create_steering_control(self.packer, CS.CP.carFingerprint,
                                                       frame, apply_steer, CS.cam_lkas))
     return can_sends
