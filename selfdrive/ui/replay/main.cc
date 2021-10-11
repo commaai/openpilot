@@ -73,13 +73,13 @@ void keyboardThread(Replay *replay) {
 }
 
 std::optional<std::pair<QString, int>> parse_route(const QString &str) {
-  QRegExp rx(R"(^([a-z0-9]{16})[|_](\d{4}-\d{2}-\d{2}--\d{2}-\d{2}-\d{2})(?:--(\d*))?$)");
+  QRegExp rx(R"(^([a-z0-9]{16})([|_/])(\d{4}-\d{2}-\d{2}--\d{2}-\d{2}-\d{2})(?:(--|/)(\d*))?$)");
   if (rx.indexIn(str) == -1) {
     return std::nullopt;
   }
-  QStringList list = rx.capturedTexts();
-  QString route = list[3].isEmpty() ? str : list[1] + "|" + list[2];
-  int segment = list[3].toInt();
+  const QStringList list = rx.capturedTexts();
+  QString route = list[1] + list[2] + list[3];
+  int segment = list[5].toInt();
   return std::make_pair(route, segment);
 }
 
