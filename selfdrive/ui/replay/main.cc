@@ -78,7 +78,7 @@ std::optional<std::pair<QString, int>> parse_route(const QString &str) {
     return std::nullopt;
   }
   const QStringList list = rx.capturedTexts();
-  QString route = list[1] + list[2] + list[3];
+  QString route = list[1] + "|" + list[3];
   int segment = list[5].toInt();
   return std::make_pair(route, segment);
 }
