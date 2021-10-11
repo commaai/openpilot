@@ -241,7 +241,6 @@ void Replay::stream() {
         MessageBuilder msg;
         auto ps = msg.initEvent().initPandaStates(1);
         ps[0].setIgnitionLine(true);
-        ps[0].setIgnitionCan(true);
         ps[0].setPandaType(cereal::PandaState::PandaType::DOS);
         pm->send(sockets_[cereal::Event::Which::PANDA_STATES], msg);
       }
@@ -270,7 +269,6 @@ void Replay::stream() {
             sm->update_msgs(nanos_since_boot(), {{sockets_[cur_which], evt->event}});
           }
         }
-      } else {
       }
     }
 
