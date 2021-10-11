@@ -236,6 +236,16 @@ void Replay::stream() {
       }
       setCurrentSegment(current_ts / 60);
 
+      // migration for pandaState -> pandaStates to keep UI working for old segments
+      if (cur_which == cereal::Event::Which::PANDA_STATE_D_E_P_R_E_C_A_T_E_D) {
+        MessageBuilder msg;
+        auto ps = msg.initEvent().initPandaStates(1);
+        ps[0].setIgnitionLine(true);
+        ps[0].setIgnitionCan(true);
+        ps[0].setPandaType(cereal::PandaState::PandaType::DOS);
+        pm->send(sockets_[cereal::Event::Which::PANDA_STATES], msg);
+      }
+
       if (cur_which < sockets_.size() && sockets_[cur_which] != nullptr) {
         // keep time
         long etime = cur_mono_time_ - evt_start_ts;
@@ -251,14 +261,16 @@ void Replay::stream() {
           // publish msg
           if (sm == nullptr) {
             auto bytes = evt->bytes();
-            if (-1 == pm->send(sockets_[cur_which], (capnp::byte *)bytes.begin(), bytes.size())) {
-              qDebug() << "stop publish" << sockets_[cur_which] << "due to multiple publishers error";
+            int ret = pm->send(sockets_[cur_which], (capnp::byte *)bytes.begin(), bytes.size());
+            if (ret == -1) {
+              qDebug() << "stop publishing" << sockets_[cur_which] << "due to multiple publishers error";
               sockets_[cur_which] = nullptr;
             }
           } else {
             sm->update_msgs(nanos_since_boot(), {{sockets_[cur_which], evt->event}});
           }
         }
+      } else {
       }
     }
 
