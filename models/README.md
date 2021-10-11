@@ -54,7 +54,7 @@ To view the architecture of the ONNX networks, you can use [netron](https://netr
 * **desire state**
   * probability[^1] that the model thinks it is executing each of the 8 potential desire actions : 8
 * **meta** [^2]
-  * Various metadata about the scene : 80 = 1 + 35 + 12 + 2 + 32
+  * Various metadata about the scene : 80 = 1 + 35 + 12 + 32
     * Probability[^1] that openpilot is engaged : 1
     * Probabilities[^1] of various things happening between now and 2,4,6,8,10s : 35 = 5 * 7
       * Disengage of openpilot with gas pedal
@@ -64,7 +64,6 @@ To view the architecture of the ONNX networks, you can use [netron](https://netr
       * 4m/(s*s) of deceleration
       * 5m/(s*s) of deceleration
     * Probabilities[^1] of left or right blinker being active at 0,2,4,6,8,10s : 12 = 6 * 2
-    * Unused : 2
     * Probabilities[^1] that each of the 8 desires is being executed at 0,2,4,6s : 32 = 4 * 8
 
 * **pose** [^2]
