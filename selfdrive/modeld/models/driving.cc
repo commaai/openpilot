@@ -126,11 +126,11 @@ void model_free(ModelState* s) {
   delete s->frame;
 }
 
-static const float *get_best_data(const float *data, int size, int group_size, int offset) {
+static const float *get_best_data(const float *data, int size, int group_size, int weight_idx) {
   int max_idx = 0;
   for (int i = 1; i < size; i++) {
-    if (data[(i + 1) * group_size + offset] >
-        data[(max_idx + 1) * group_size + offset]) {
+    if (data[i * group_size + weight_idx] >
+        data[max_idx * group_size + weight_idx]) {
       max_idx = i;
     }
   }
@@ -138,11 +138,11 @@ static const float *get_best_data(const float *data, int size, int group_size, i
 }
 
 static const float *get_plan_data(float *plan) {
-  return get_best_data(plan, PLAN_MHP_N, PLAN_MHP_GROUP_SIZE, -1);
+  return get_best_data(plan, PLAN_MHP_N, PLAN_MHP_GROUP_SIZE, PLAN_MHP_GROUP_SIZE - 1);
 }
 
 static const float *get_lead_data(const float *lead, int t_offset) {
-  return get_best_data(lead, LEAD_MHP_N, LEAD_MHP_GROUP_SIZE, t_offset - LEAD_MHP_SELECTION);
+  return get_best_data(lead, LEAD_MHP_N, LEAD_MHP_GROUP_SIZE, LEAD_MHP_GROUP_SIZE - LEAD_MHP_SELECTION + t_offset);
 }
 
 
