@@ -228,6 +228,19 @@ void Replay::publishFrame(const Event *e) {
   }
 }
 
+void Replay::publishMessage(const Event *e) {
+  if (sm == nullptr) {
+    auto bytes = e->bytes();
+    int ret = pm->send(sockets_[e->which], (capnp::byte *)bytes.begin(), bytes.size());
+    if (ret == -1) {
+      qInfo() << "stop publish" << sockets_[e->which] << "due to multiple publishers error";
+      sockets_[e->which] = nullptr;
+    }
+  } else {
+    sm->update_msgs(nanos_since_boot(), {{sockets_[e->which], e->event}});
+  }
+}
+
 void Replay::stream() {
   float last_print = 0;
   cereal::Event::Which cur_which = cereal::Event::Which::INIT_DATA;

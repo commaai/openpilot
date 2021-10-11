@@ -46,6 +46,7 @@ protected:
   void updateEvents(const std::function<bool()>& lambda);
   void publishMessage(const Event *e);
   void publishFrame(const Event *e);
+  void publishMessage(const Event *e);
   inline int currentSeconds() const { return (cur_mono_time_ - route_start_ts_) / 1e9; }
 
   QThread *stream_thread_ = nullptr;
