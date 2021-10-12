@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # simple boardd wrapper that updates the panda first
 import os
+import usb1
 import time
 import subprocess
 from typing import List
@@ -77,40 +78,45 @@ def panda_sort_cmp(a : Panda, b : Panda):
 
 def main() -> None:
   while True:
-    # Flash all Pandas in DFU mode
-    for p in PandaDFU.list():
-      cloudlog.info(f"Panda in DFU mode found, flashing recovery {p}")
-      PandaDFU(p).recover()
-    time.sleep(1)
+    try:
+      # Flash all Pandas in DFU mode
+      for p in PandaDFU.list():
+        cloudlog.info(f"Panda in DFU mode found, flashing recovery {p}")
+        PandaDFU(p).recover()
+      time.sleep(1)
 
-    panda_serials = Panda.list()
-    if len(panda_serials) == 0:
+      panda_serials = Panda.list()
+      if len(panda_serials) == 0:
+        continue
+
+      cloudlog.info(f"{len(panda_serials)} panda(s) found, connecting - {panda_serials}")
+
+      # Flash pandas
+      pandas = []
+      for serial in panda_serials:
+        pandas.append(flash_panda(serial))
+
+      # check health for lost heartbeat
+      for panda in pandas:
+        health = panda.health()
+        if health["heartbeat_lost"]:
+          Params().put_bool("PandaHeartbeatLost", True)
+          cloudlog.event("heartbeat lost", deviceState=health, serial=panda.get_usb_serial())
+
+        cloudlog.info(f"Resetting panda {panda.get_usb_serial()}")
+        panda.reset()
+
+      # sort pandas to have deterministic order
+      pandas.sort(key=cmp_to_key(panda_sort_cmp))
+      panda_serials = list(map(lambda p: p.get_usb_serial(), pandas))
+
+      # close all pandas
+      for p in pandas:
+        p.close()
+    except (usb1.USBErrorNoDevice, usb1.USBErrorPipe):
+      # a panda was disconnected while setting everything up. let's try again
+      cloudlog.exception("Panda USB exception while setting up")
       continue
-
-    cloudlog.info(f"{len(panda_serials)} panda(s) found, connecting - {panda_serials}")
-
-    # Flash pandas
-    pandas = []
-    for serial in panda_serials:
-      pandas.append(flash_panda(serial))
-
-    # check health for lost heartbeat
-    for panda in pandas:
-      health = panda.health()
-      if health["heartbeat_lost"]:
-        Params().put_bool("PandaHeartbeatLost", True)
-        cloudlog.event("heartbeat lost", deviceState=health, serial=panda.get_usb_serial())
-
-      cloudlog.info(f"Resetting panda {panda.get_usb_serial()}")
-      panda.reset()
-
-    # sort pandas to have deterministic order
-    pandas.sort(key=cmp_to_key(panda_sort_cmp))
-    panda_serials = list(map(lambda p: p.get_usb_serial(), pandas))
-
-    # close all pandas
-    for p in pandas:
-      p.close()
 
     # run boardd with all connected serials as arguments
     os.chdir(os.path.join(BASEDIR, "selfdrive/boardd"))
