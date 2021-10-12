@@ -66,7 +66,7 @@ class Panda {
   std::atomic<bool> comms_healthy = true;
   cereal::PandaState::PandaType hw_type = cereal::PandaState::PandaType::UNKNOWN;
   bool has_rtc = false;
-  uint32_t bus_offset;
+  const uint32_t bus_offset;
 
   // Static functions
   static std::vector<std::string> list();

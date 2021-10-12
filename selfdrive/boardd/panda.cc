@@ -30,10 +30,7 @@ static int init_usb_ctx(libusb_context **context) {
 }
 
 
-Panda::Panda(std::string serial, uint32_t bus_offset) {
-  // important for filtering the right CAN bus numbers
-  this->bus_offset = bus_offset;
-
+Panda::Panda(std::string serial, uint32_t bus_offset) : bus_offset(bus_offset) {
   // init libusb
   ssize_t num_devices;
   libusb_device **dev_list = NULL;
