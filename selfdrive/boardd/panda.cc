@@ -347,14 +347,8 @@ void Panda::send_heartbeat() {
 }
 
 void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list) {
-  const int msg_count = can_data_list.size();
-  const int buf_size = msg_count*0x10;
-
-  if (send.size() < buf_size) {
-    send.resize(buf_size);
-  }
-
-  for (int i = 0; i < msg_count; i++) {
+  uint32_t msg_cnt = 0;
+  for (int i = 0; i < can_data_list.size(); i++) {
     auto cmsg = can_data_list[i];
 
     // check if the message is intended for this panda
@@ -364,17 +358,19 @@ void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list) {
     }
 
     if (cmsg.getAddress() >= 0x800) { // extended
-      send[i*4] = (cmsg.getAddress() << 3) | 5;
+      send[msg_cnt*4] = (cmsg.getAddress() << 3) | 5;
     } else { // normal
-      send[i*4] = (cmsg.getAddress() << 21) | 1;
+      send[msg_cnt*4] = (cmsg.getAddress() << 21) | 1;
     }
     auto can_data = cmsg.getDat();
     assert(can_data.size() <= 8);
-    send[i*4+1] = can_data.size() | ((bus - bus_offset) << 4);
-    memcpy(&send[i*4+2], can_data.begin(), can_data.size());
+    send[msg_cnt*4+1] = can_data.size() | ((bus - bus_offset) << 4);
+    memcpy(&send[msg_cnt*4+2], can_data.begin(), can_data.size());
+
+    msg_cnt++;
   }
 
-  usb_bulk_write(3, (unsigned char*)send.data(), buf_size, 5);
+  usb_bulk_write(3, (unsigned char*)send.data(), msg_cnt * 0x10, 5);
 }
 
 bool Panda::can_receive(std::vector<can_frame>& out_vec) {
