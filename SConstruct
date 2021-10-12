@@ -124,6 +124,7 @@ else:
     yuv_dir = "mac" if real_arch != "arm64" else "mac_arm64"
     libpath = [
       f"#third_party/libyuv/{yuv_dir}/lib",
+      f"#third_party/acados/{arch}/lib",
       "/usr/local/lib",
       "/opt/homebrew/lib",
       "/usr/local/opt/openssl/lib",

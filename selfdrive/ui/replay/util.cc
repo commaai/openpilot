@@ -4,6 +4,8 @@
 #include <bzlib.h>
 #include <curl/curl.h>
 
+#include <array>
+
 #include "selfdrive/common/timing.h"
 #include "selfdrive/common/util.h"
 
