@@ -1,5 +1,5 @@
 #pragma once
-
+#include <cstring>
 #include "selfdrive/hardware/base.h"
 #include "selfdrive/common/util.h"
 
