@@ -118,8 +118,7 @@ Segment::Segment(int n, const SegmentFile &segment_files, bool load_dcam, bool l
   if (!load_ecam) {
     files_.wide_road_cam = "";
   }
-
-  if (!QUrl(log_path_).isLocalFile()) {
+  if (log_path_.startsWith("https://")) {
     for (auto &url : {log_path_, road_cam_path_, files_.driver_cam, files_.wide_road_cam}) {
       if (!url.isEmpty() && !QFile::exists(localPath(url))) {
         downloadFile(url);
@@ -186,9 +185,9 @@ void Segment::load() {
   emit loadFinished();
 }
 
-QString Segment::localPath(const QUrl &url) {
-  if (url.isLocalFile() || QFile(url.toString()).exists()) return url.toString();
+QString Segment::localPath(const QString &file) {
+  if (!file.startsWith("https://")) return file;
 
-  QByteArray url_no_query = url.toString(QUrl::RemoveQuery).toUtf8();
+  QByteArray url_no_query = QUrl(file).toString(QUrl::RemoveQuery).toUtf8();
   return CACHE_DIR.filePath(QString(QCryptographicHash::hash(url_no_query, QCryptographicHash::Sha256).toHex()));
 }

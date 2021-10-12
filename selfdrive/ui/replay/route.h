@@ -56,7 +56,7 @@ signals:
 protected:
   void load();
   void downloadFile(const QString &url);
-  QString localPath(const QUrl &url);
+  QString localPath(const QString &file);
 
   std::atomic<bool> loaded_ = false;
   std::atomic<bool> aborting_ = false;
