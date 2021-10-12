@@ -2,60 +2,38 @@
 # simple boardd wrapper that updates the panda first
 import os
 import time
+import subprocess
+from typing import List
+from functools import cmp_to_key
 
-from panda import BASEDIR as PANDA_BASEDIR, Panda, PandaDFU
+from panda import DEFAULT_FW_FN, DEFAULT_H7_FW_FN, MCU_TYPE_H7, Panda, PandaDFU
 from common.basedir import BASEDIR
 from common.params import Params
 from selfdrive.swaglog import cloudlog
 
-PANDA_FW_FN = os.path.join(PANDA_BASEDIR, "board", "obj", "panda.bin.signed")
 
+def get_expected_signature(panda : Panda) -> bytes:
+  fn = DEFAULT_H7_FW_FN if (panda.get_mcu_type() == MCU_TYPE_H7) else DEFAULT_FW_FN
 
-def get_expected_signature() -> bytes:
   try:
-    return Panda.get_signature_from_firmware(PANDA_FW_FN)
+    return Panda.get_signature_from_firmware(fn)
   except Exception:
     cloudlog.exception("Error computing expected signature")
     return b""
 
 
-def update_panda() -> Panda:
-  panda = None
-  panda_dfu = None
+def flash_panda(panda_serial : str) -> Panda:
+  panda = Panda(panda_serial)
 
-  cloudlog.info("Connecting to panda")
-
-  while True:
-    # break on normal mode Panda
-    panda_list = Panda.list()
-    if len(panda_list) > 0:
-      cloudlog.info("Panda found, connecting")
-      panda = Panda(panda_list[0])
-      break
-
-    # flash on DFU mode Panda
-    panda_dfu = PandaDFU.list()
-    if len(panda_dfu) > 0:
-      cloudlog.info("Panda in DFU mode found, flashing recovery")
-      panda_dfu = PandaDFU(panda_dfu[0])
-      panda_dfu.recover()
-
-    time.sleep(1)
-
-  fw_signature = get_expected_signature()
-
-  try:
-    serial = panda.get_serial()[0].decode("utf-8")
-  except Exception:
-    serial = None
+  fw_signature = get_expected_signature(panda)
 
   panda_version = "bootstub" if panda.bootstub else panda.get_version()
   panda_signature = b"" if panda.bootstub else panda.get_signature()
   cloudlog.warning("Panda %s connected, version: %s, signature %s, expected %s" % (
-    serial,
+    panda_serial,
     panda_version,
-    panda_signature.hex(),
-    fw_signature.hex(),
+    panda_signature.hex()[:16],
+    fw_signature.hex()[:16],
   ))
 
   if panda.bootstub or panda_signature != fw_signature:
@@ -81,21 +59,71 @@ def update_panda() -> Panda:
   return panda
 
 
+def get_pandas() -> List[Panda]:
+  panda_dfu = None
+
+  # Flash all Pandas in DFU mode
+  for p in PandaDFU.list():
+    cloudlog.info(f"Panda in DFU mode found, flashing recovery {p}")
+    panda_dfu = PandaDFU(p)
+    panda_dfu.recover()
+  time.sleep(1)
+
+  pandas = Panda.list()
+  if len(pandas) == 0:
+    return []
+
+  cloudlog.info(f"{len(pandas)} panda(s) found, connecting - {pandas}")
+
+  # Flash pandas
+  r = []
+  for serial in pandas:
+    r.append(flash_panda(serial))
+
+  return r
+
+def panda_sort_cmp(a : Panda, b : Panda):
+  a_type = a.get_type()
+  b_type = b.get_type()
+
+  # make sure the internal one is always first
+  if a.is_internal() and not b.is_internal():
+    return -1
+  if not a.is_internal() and b.is_internal():
+    return 1
+
+  # sort by hardware type
+  if a_type != b_type:
+    return a_type < b_type
+  
+  # last resort: sort by serial number
+  return a.get_usb_serial() < b.get_usb_serial()
+
 def main() -> None:
-  panda = update_panda()
+  while True:
+    pandas = get_pandas()
 
-  # check health for lost heartbeat
-  health = panda.health()
-  if health["heartbeat_lost"]:
-    Params().put_bool("PandaHeartbeatLost", True)
-    cloudlog.event("heartbeat lost", deviceState=health)
+    # check health for lost heartbeat
+    for panda in pandas:
+      health = panda.health()
+      if health["heartbeat_lost"]:
+        Params().put_bool("PandaHeartbeatLost", True)
+        cloudlog.event("heartbeat lost", deviceState=health, serial=panda.get_usb_serial())
 
-  cloudlog.info("Resetting panda")
-  panda.reset()
+      cloudlog.info(f"Resetting panda {panda.get_usb_serial()}")
+      panda.reset()
 
-  os.chdir(os.path.join(BASEDIR, "selfdrive/boardd"))
-  os.execvp("./boardd", ["./boardd"])
+    # sort pandas to have deterministic order
+    pandas.sort(key=cmp_to_key(panda_sort_cmp))
+    panda_serials = list(map(lambda p: p.get_usb_serial(), pandas))
 
+    # close all pandas
+    for p in pandas:
+      p.close()
+
+    # run boardd with all connected serials as arguments
+    os.chdir(os.path.join(BASEDIR, "selfdrive/boardd"))
+    subprocess.run(["./boardd", *panda_serials], check=True)
 
 if __name__ == "__main__":
   main()

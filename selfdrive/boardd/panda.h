@@ -6,6 +6,7 @@
 #include <mutex>
 #include <optional>
 #include <vector>
+#include <list>
 
 #include <libusb-1.0/libusb.h>
 
@@ -15,6 +16,7 @@
 // double the FIFO size
 #define RECV_SIZE (0x1000)
 #define TIMEOUT 0
+#define PANDA_BUS_CNT 4
 
 // copied from panda/board/main.c
 struct __attribute__((packed)) health_t {
@@ -50,7 +52,7 @@ class Panda {
   void cleanup();
 
  public:
-  Panda(std::string serial="");
+  Panda(std::string serial="", uint32_t bus_offset=0);
   ~Panda();
 
   std::string usb_serial;
@@ -58,6 +60,7 @@ class Panda {
   std::atomic<bool> comms_healthy = true;
   cereal::PandaState::PandaType hw_type = cereal::PandaState::PandaType::UNKNOWN;
   bool has_rtc = false;
+  uint32_t bus_offset;
 
   // Static functions
   static std::vector<std::string> list();

@@ -30,7 +30,10 @@ static int init_usb_ctx(libusb_context **context) {
 }
 
 
-Panda::Panda(std::string serial) {
+Panda::Panda(std::string serial, uint32_t bus_offset) {
+  // important for filtering the right CAN bus numbers
+  this->bus_offset = bus_offset;
+
   // init libusb
   ssize_t num_devices;
   libusb_device **dev_list = NULL;
@@ -353,6 +356,13 @@ void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list) {
 
   for (int i = 0; i < msg_count; i++) {
     auto cmsg = can_data_list[i];
+
+    // check if the message is intended for this panda
+    uint8_t bus = cmsg.getSrc();
+    if (bus < bus_offset || bus >= (bus_offset + PANDA_BUS_CNT)) {
+      continue;
+    }
+
     if (cmsg.getAddress() >= 0x800) { // extended
       send[i*4] = (cmsg.getAddress() << 3) | 5;
     } else { // normal
@@ -360,7 +370,7 @@ void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list) {
     }
     auto can_data = cmsg.getDat();
     assert(can_data.size() <= 8);
-    send[i*4+1] = can_data.size() | (cmsg.getSrc() << 4);
+    send[i*4+1] = can_data.size() | ((bus - bus_offset) << 4);
     memcpy(&send[i*4+2], can_data.begin(), can_data.size());
   }
 
@@ -397,7 +407,7 @@ int Panda::can_receive(kj::Array<capnp::word>& out_buf) {
     canData[i].setBusTime(data[i*4+1] >> 16);
     int len = data[i*4+1]&0xF;
     canData[i].setDat(kj::arrayPtr((uint8_t*)&data[i*4+2], len));
-    canData[i].setSrc((data[i*4+1] >> 4) & 0xff);
+    canData[i].setSrc(((data[i*4+1] >> 4) & 0xff) + bus_offset);
   }
   out_buf = capnp::messageToFlatArray(msg);
   return recv;
