@@ -272,8 +272,8 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelDataRaw &net_ou
   // leads
   auto leads = framed.initLeadsV3(LEAD_MHP_SELECTION);
   float t_offsets[LEAD_MHP_SELECTION] = {0.0, 2.0, 4.0};
-  for (int t_offset=0; t_offset<LEAD_MHP_SELECTION; t_offset++) {
-    fill_lead_v3(leads[t_offset], &net_outputs.lead[t_offset], net_outputs.lead_prob[t_offset], t_offsets[t_offset]);
+  for (int offset = 0; offset < LEAD_MHP_SELECTION; offset++) {
+    fill_lead_v3(leads[offset], &net_outputs.lead[offset], net_outputs.lead_prob[offset], t_offsets[offset]);
   }
 }
 
