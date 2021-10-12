@@ -38,7 +38,9 @@ Event::Event(const kj::ArrayPtr<const capnp::word> &amsg, bool frame) : reader(a
 
 // class LogReader
 
-LogReader::LogReader(size_t memory_pool_block_size) : memory_pool_(memory_pool_block_size) {}
+LogReader::LogReader(size_t memory_pool_block_size) : memory_pool_(memory_pool_block_size) {
+  events.reserve(memory_pool_block_size);
+}
 
 LogReader::~LogReader() {
   for (auto e : events) delete e;
