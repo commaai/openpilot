@@ -186,13 +186,6 @@ Panda *usb_connect(std::string serial="", uint32_t index=0) {
   return panda.release();
 }
 
-void can_recv(Panda *panda, PubMaster &pm) {
-  kj::Array<capnp::word> can_data;
-  panda->can_receive(can_data);
-  auto bytes = can_data.asBytes();
-  pm.send("can", bytes.begin(), bytes.size());
-}
-
 void can_send_thread(std::vector<Panda *> pandas, bool fake_send) {
   LOGD("start send thread");
 
@@ -253,9 +246,23 @@ void can_recv_thread(std::vector<Panda *> pandas) {
       break;
     }
 
+    std::vector<can_frame> raw_can_data;
+    bool comms_healthy = true;
     for (const auto& panda : pandas) {
-      can_recv(panda, pm);
+      comms_healthy &= panda->can_receive(raw_can_data);
     }
+
+    MessageBuilder msg;
+    auto evt = msg.initEvent();
+    evt.setValid(comms_healthy);
+    auto canData = evt.initCan(raw_can_data.size());
+    for (uint i = 0; i<raw_can_data.size(); i++) {
+      canData[i].setAddress(raw_can_data[i].address);
+      canData[i].setBusTime(raw_can_data[i].busTime);
+      canData[i].setDat(kj::arrayPtr((uint8_t*)raw_can_data[i].dat.data(), raw_can_data[i].dat.size()));
+      canData[i].setSrc(raw_can_data[i].src);
+    }
+    pm.send("can", msg);
 
     uint64_t cur_time = nanos_since_boot();
     int64_t remaining = next_frame_time - cur_time;

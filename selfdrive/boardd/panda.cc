@@ -377,7 +377,7 @@ void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list) {
   usb_bulk_write(3, (unsigned char*)send.data(), buf_size, 5);
 }
 
-int Panda::can_receive(kj::Array<capnp::word>& out_buf) {
+bool Panda::can_receive(std::vector<can_frame>& out_vec) {
   uint32_t data[RECV_SIZE/4];
   int recv = usb_bulk_read(0x81, (unsigned char*)data, RECV_SIZE);
 
@@ -388,27 +388,34 @@ int Panda::can_receive(kj::Array<capnp::word>& out_buf) {
     LOGW("Receive buffer full");
   }
 
-  size_t num_msg = recv / 0x10;
-  MessageBuilder msg;
-  auto evt = msg.initEvent();
-  evt.setValid(comms_healthy);
+  if (!comms_healthy) {
+    return false;
+  }
 
-  // populate message
-  auto canData = evt.initCan(num_msg);
+  // Append to the end of the out_vec, such that we can pass it to multiple pandas
+  // We already insert space for all the messages here for speed
+  size_t num_msg = recv / 0x10;
+  out_vec.reserve(out_vec.size() + num_msg);
+
+  // Populate messages
   for (int i = 0; i < num_msg; i++) {
+    can_frame canData;
     if (data[i*4] & 4) {
       // extended
-      canData[i].setAddress(data[i*4] >> 3);
+      canData.address = data[i*4] >> 3;
       //printf("got extended: %x\n", data[i*4] >> 3);
     } else {
       // normal
-      canData[i].setAddress(data[i*4] >> 21);
+      canData.address = data[i*4] >> 21;
     }
-    canData[i].setBusTime(data[i*4+1] >> 16);
-    int len = data[i*4+1]&0xF;
-    canData[i].setDat(kj::arrayPtr((uint8_t*)&data[i*4+2], len));
-    canData[i].setSrc(((data[i*4+1] >> 4) & 0xff) + bus_offset);
+    canData.busTime = data[i*4+1] >> 16;
+    int len = data[i*4+1] & 0xF;
+    canData.dat.assign((char *)&data[i*4+2], len);
+    canData.src = ((data[i*4+1] >> 4) & 0xff) + bus_offset;
+
+    // add to vector
+    out_vec.push_back(canData);
   }
-  out_buf = capnp::messageToFlatArray(msg);
-  return recv;
+
+  return true;
 }
