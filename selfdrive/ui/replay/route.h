@@ -31,7 +31,9 @@ public:
 
 protected:
   bool loadFromLocal();
+  bool loadFromServer();
   bool loadFromJson(const QString &json);
+  void addFileToSegment(int seg_num, const QString &file);
   QString route_;
   QString data_dir_;
   std::vector<SegmentFile> segments_;

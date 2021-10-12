@@ -16,23 +16,27 @@ Route::Route(const QString &route, const QString &data_dir) : route_(route), dat
 
 bool Route::load() {
   if (data_dir_.isEmpty()) {
-    QEventLoop loop;
-    auto onError = [&loop](const QString &err) { loop.quit(); };
-
-    bool ret = false;
-    HttpRequest http(nullptr, !Hardware::PC());
-    QObject::connect(&http, &HttpRequest::failedResponse, onError);
-    QObject::connect(&http, &HttpRequest::timeoutResponse, onError);
-    QObject::connect(&http, &HttpRequest::receivedResponse, [&](const QString json) {
-      ret = loadFromJson(json);
-      loop.quit();
-    });
-    http.sendRequest("https://api.commadotai.com/v1/route/" + route_ + "/files");
-    loop.exec();
-    return ret;
+    return loadFromServer();
   } else {
     return loadFromLocal();
   }
+}
+
+bool Route::loadFromServer() {
+  QEventLoop loop;
+  auto onError = [&loop](const QString &err) { loop.quit(); };
+
+  bool ret = false;
+  HttpRequest http(nullptr, !Hardware::PC());
+  QObject::connect(&http, &HttpRequest::failedResponse, onError);
+  QObject::connect(&http, &HttpRequest::timeoutResponse, onError);
+  QObject::connect(&http, &HttpRequest::receivedResponse, [&](const QString json) {
+    ret = loadFromJson(json);
+    loop.quit();
+  });
+  http.sendRequest("https://api.commadotai.com/v1/route/" + route_ + "/files");
+  loop.exec();
+  return ret;
 }
 
 bool Route::loadFromJson(const QString &json) {
@@ -48,22 +52,7 @@ bool Route::loadFromJson(const QString &json) {
       QString url_str = url.toString();
       if (rx.indexIn(url_str) != -1) {
         const int seg_num = rx.cap(1).toInt();
-        if (segments_.size() <= seg_num) {
-          segments_.resize(seg_num + 1);
-        }
-        if (key == "logs") {
-          segments_[seg_num].rlog = url_str;
-        } else if (key == "qlogs") {
-          segments_[seg_num].qlog = url_str;
-        } else if (key == "cameras") {
-          segments_[seg_num].road_cam = url_str;
-        } else if (key == "dcameras") {
-          segments_[seg_num].driver_cam = url_str;
-        } else if (key == "ecameras") {
-          segments_[seg_num].wide_road_cam = url_str;
-        } else if (key == "qcameras") {
-          segments_[seg_num].qcamera = url_str;
-        }
+        addFileToSegment(seg_num, url_str);
       }
     }
   }
@@ -80,28 +69,34 @@ bool Route::loadFromLocal() {
 
   for (auto folder : folders) {
     const int seg_num = folder.split("--")[2].toInt();
-    if (segments_.size() <= seg_num) {
-      segments_.resize(seg_num + 1);
-    }
     QDir segment_dir(log_dir.filePath(folder));
     for (auto f : segment_dir.entryList(QDir::Files)) {
       const QString file_path = segment_dir.absoluteFilePath(f);
-      if (f.startsWith("rlog")) {
-        segments_[seg_num].rlog = file_path;
-      } else if (f.startsWith("qlog")) {
-        segments_[seg_num].qlog = file_path;
-      } else if (f.startsWith("fcamera")) {
-        segments_[seg_num].road_cam = file_path;
-      } else if (f.startsWith("dcamera")) {
-        segments_[seg_num].driver_cam = file_path;
-      } else if (f.startsWith("ecamera")) {
-        segments_[seg_num].wide_road_cam = file_path;
-      } else if (f.startsWith("qcamera")) {
-        segments_[seg_num].qcamera = file_path;
-      }
+      addFileToSegment(seg_num, file_path);
     }
   }
   return true;
+}
+
+void Route::addFileToSegment(int seg_num, const QString &file) {
+  if (segments_.size() <= seg_num) {
+    segments_.resize(seg_num + 1);
+  }
+
+  QString fn = QUrl(file).fileName();
+  if (fn == "rlog.bz2") {
+    segments_[seg_num].rlog = file;
+  } else if (fn == "qlog.bz2") {
+    segments_[seg_num].qlog = file;
+  } else if (fn == "fcamera.hevc") {
+    segments_[seg_num].road_cam = file;
+  } else if (fn == "dcamera.hevc") {
+    segments_[seg_num].driver_cam = file;
+  } else if (fn == "ecamera.hevc") {
+    segments_[seg_num].wide_road_cam = file;
+  } else if (fn == "qcamera.ts") {
+    segments_[seg_num].qcamera = file;
+  }
 }
 
 // class Segment
