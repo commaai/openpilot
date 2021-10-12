@@ -376,7 +376,11 @@ class Controls:
           df_alert += 'Silent'
           self.AM.SA_add(df_alert, extra_text_1=df_out.model_profile_text + ' (auto)')
           return
+      elif self.op_params.get('df_button_alerts').strip().lower() == 'off':
+        return
       else:
+        if self.op_params.get('df_button_alerts').strip().lower() == 'silent':
+          df_alert += 'Silent'
         self.AM.SA_add(df_alert, extra_text_1=df_out.user_profile_text, extra_text_2='Dynamic follow: {} profile active'.format(df_out.user_profile_text))
         return
 
