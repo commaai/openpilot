@@ -344,6 +344,8 @@ void Panda::send_heartbeat() {
 }
 
 void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list) {
+  send.resize(4 * can_data_list.size());
+
   uint32_t msg_cnt = 0;
   for (int i = 0; i < can_data_list.size(); i++) {
     auto cmsg = can_data_list[i];
