@@ -23,7 +23,7 @@ PROCS = {
   "selfdrive.controls.controlsd": 50.0,
   "./loggerd": 45.0,
   "./locationd": 9.1,
-  "selfdrive.controls.plannerd": 33.0,
+  "selfdrive.controls.plannerd": 22.6,
   "./_ui": 15.0,
   "selfdrive.locationd.paramsd": 9.1,
   "./camerad": 7.07,
@@ -55,7 +55,7 @@ if TICI:
     "selfdrive.controls.controlsd": 28.0,
     "./camerad": 31.0,
     "./_ui": 21.0,
-    "selfdrive.controls.plannerd": 15.0,
+    "selfdrive.controls.plannerd": 11.7,
     "selfdrive.locationd.paramsd": 5.0,
     "./_dmonitoringmodeld": 10.0,
     "selfdrive.thermald.thermald": 1.5,
@@ -65,22 +65,23 @@ if TICI:
 TIMINGS = {
   # rtols: max/min, rsd
   "can": [2.5, 0.35],
-  "pandaState": [2.5, 0.35],
+  "pandaStates": [2.5, 0.35],
+  "peripheralState": [2.5, 0.35],
   "sendcan": [2.5, 0.35],
   "carState": [2.5, 0.35],
   "carControl": [2.5, 0.35],
   "controlsState": [2.5, 0.35],
   "lateralPlan": [2.5, 0.5],
   "longitudinalPlan": [2.5, 0.5],
-  "roadCameraState": [2.0, 0.35],
-  "driverCameraState": [2.0, 0.35],
+  "roadCameraState": [2.5, 0.35],
+  "driverCameraState": [2.5, 0.35],
   "modelV2": [2.5, 0.35],
   "driverState": [2.5, 0.35],
   "liveLocationKalman": [2.5, 0.35],
 }
 if TICI:
   TIMINGS.update({
-    "wideRoadCameraState": [2.0, 0.35],
+    "wideRoadCameraState": [1.5, 0.35],
   })
 
 

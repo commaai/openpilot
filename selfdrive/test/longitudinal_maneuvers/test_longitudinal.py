@@ -9,9 +9,9 @@ from selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
 # TODO: make new FCW tests
 maneuvers = [
   Maneuver(
-    'approach stopped car at 30m/s',
+    'approach stopped car at 20m/s',
     duration=20.,
-    initial_speed=30.,
+    initial_speed=25.,
     lead_relevancy=True,
     initial_distance_lead=120.,
     speed_lead_values=[30., 0.],
@@ -22,7 +22,7 @@ maneuvers = [
     duration=20.,
     initial_speed=20.,
     lead_relevancy=True,
-    initial_distance_lead=60.,
+    initial_distance_lead=90.,
     speed_lead_values=[20., 0.],
     breakpoints=[0., 1.],
   ),
@@ -54,22 +54,26 @@ maneuvers = [
     breakpoints=[0., 15., 21.66],
   ),
   Maneuver(
-    'steady state following a car at 20m/s, then lead decel to 0mph at 5m/s^2',
+    'steady state following a car at 20m/s, then lead decel to 0mph at 3+m/s^2',
     duration=40.,
     initial_speed=20.,
     lead_relevancy=True,
     initial_distance_lead=35.,
     speed_lead_values=[20., 20., 0.],
-    breakpoints=[0., 15., 19.],
+    prob_lead_values=[0., 1., 1.],
+    cruise_values=[20., 20., 20.],
+    breakpoints=[2., 2.01, 8.51],
   ),
   Maneuver(
     "approach stopped car at 20m/s",
     duration=30.,
     initial_speed=20.,
     lead_relevancy=True,
-    initial_distance_lead=50.,
-    speed_lead_values=[0., 0.],
-    breakpoints=[1., 11.],
+    initial_distance_lead=120.,
+    speed_lead_values=[0.0, 0., 0.],
+    prob_lead_values=[0.0, 0., 1.],
+    cruise_values=[20., 20., 20.],
+    breakpoints=[0.0, 2., 2.01],
   ),
   Maneuver(
     "approach slower cut-in car at 20m/s",
@@ -91,6 +95,16 @@ maneuvers = [
     prob_lead_values=[0., 0.],
     breakpoints=[1., 11.],
     only_radar=True,
+  ),
+  Maneuver(
+    "NaN recovery",
+    duration=30.,
+    initial_speed=15.,
+    lead_relevancy=True,
+    initial_distance_lead=60.,
+    speed_lead_values=[0., 0., 0.0],
+    breakpoints=[1., 1.01, 11.],
+    cruise_values=[float("nan"), 15., 15.],
   ),
 ]
 
@@ -118,7 +132,7 @@ def run_maneuver_worker(k):
     man = maneuvers[k]
     print(man.title)
     valid, _ = man.evaluate()
-    self.assertTrue(valid)
+    self.assertTrue(valid, msg=man.title)
   return run
 
 

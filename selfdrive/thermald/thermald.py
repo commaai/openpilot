@@ -48,7 +48,7 @@ THERMAL_BANDS = OrderedDict({
 })
 
 # Override to highest thermal band when offroad and above this temp
-OFFROAD_DANGER_TEMP = 70.0
+OFFROAD_DANGER_TEMP = 79.5 if TICI else 70.0
 
 prev_offroad_states: Dict[str, Tuple[bool, Optional[str]]] = {}
 
@@ -69,7 +69,6 @@ def read_thermal(thermal_config):
   dat.deviceState.gpuTempC = [read_tz(z) / thermal_config.gpu[1] for z in thermal_config.gpu[0]]
   dat.deviceState.memoryTempC = read_tz(thermal_config.mem[0]) / thermal_config.mem[1]
   dat.deviceState.ambientTempC = read_tz(thermal_config.ambient[0]) / thermal_config.ambient[1]
-  dat.deviceState.modemTempC = HARDWARE.get_modem_temperatures()
   return dat
 
 
@@ -155,9 +154,8 @@ def thermald_thread():
   pm = messaging.PubMaster(['deviceState'])
 
   pandaState_timeout = int(1000 * 2.5 * DT_TRML)  # 2.5x the expected pandaState frequency
-  pandaState_sock = messaging.sub_sock('pandaState', timeout=pandaState_timeout)
-  location_sock = messaging.sub_sock('gpsLocationExternal')
-  managerState_sock = messaging.sub_sock('managerState', conflate=True)
+  pandaState_sock = messaging.sub_sock('pandaStates', timeout=pandaState_timeout)
+  sm = messaging.SubMaster(["peripheralState", "gpsLocationExternal", "managerState"])
 
   fan_speed = 0
   count = 0
@@ -179,11 +177,13 @@ def thermald_thread():
   modem_version = None
   registered_count = 0
   nvme_temps = None
+  modem_temps = None
 
   current_filter = FirstOrderFilter(0., CURRENT_TAU, DT_TRML)
   temp_filter = FirstOrderFilter(0., TEMP_TAU, DT_TRML)
   pandaState_prev = None
   should_start_prev = False
+  in_car = False
   handle_fan = None
   is_uno = False
   ui_running_prev = False
@@ -202,15 +202,19 @@ def thermald_thread():
   if params.get_bool("IsOnroad"):
     params.put_bool("BootedOnroad", True)
 
-  while 1:
-    pandaState = messaging.recv_sock(pandaState_sock, wait=True)
+  while True:
+    pandaStates = messaging.recv_sock(pandaState_sock, wait=True)
+
+    sm.update(0)
+    peripheralState = sm['peripheralState']
+
     msg = read_thermal(thermal_config)
 
-    if pandaState is not None:
-      usb_power = pandaState.pandaState.usbPowerMode != log.PandaState.UsbPowerMode.client
+    if pandaStates is not None and len(pandaStates.pandaStates) > 0:
+      pandaState = pandaStates.pandaStates[0]
 
       # If we lose connection to the panda, wait 5 seconds before going offroad
-      if pandaState.pandaState.pandaType == log.PandaState.PandaType.unknown:
+      if pandaState.pandaType == log.PandaState.PandaType.unknown:
         no_panda_cnt += 1
         if no_panda_cnt > DISCONNECT_TIMEOUT / DT_TRML:
           if startup_conditions["ignition"]:
@@ -218,15 +222,14 @@ def thermald_thread():
           startup_conditions["ignition"] = False
       else:
         no_panda_cnt = 0
-        startup_conditions["ignition"] = pandaState.pandaState.ignitionLine or pandaState.pandaState.ignitionCan
+        startup_conditions["ignition"] = pandaState.ignitionLine or pandaState.ignitionCan
 
-      startup_conditions["hardware_supported"] = pandaState.pandaState.pandaType not in [log.PandaState.PandaType.whitePanda,
-                                                                                         log.PandaState.PandaType.greyPanda]
-      set_offroad_alert_if_changed("Offroad_HardwareUnsupported", not startup_conditions["hardware_supported"])
+      in_car = pandaState.harnessStatus != log.PandaState.HarnessStatus.notConnected
+      usb_power = peripheralState.usbPowerMode != log.PeripheralState.UsbPowerMode.client
 
       # Setup fan handler on first connect to panda
-      if handle_fan is None and pandaState.pandaState.pandaType != log.PandaState.PandaType.unknown:
-        is_uno = pandaState.pandaState.pandaType == log.PandaState.PandaType.uno
+      if handle_fan is None and peripheralState.pandaType != log.PandaState.PandaType.unknown:
+        is_uno = peripheralState.pandaType == log.PandaState.PandaType.uno
 
         if TICI:
           cloudlog.info("Setting up TICI fan handler")
@@ -241,8 +244,8 @@ def thermald_thread():
 
       # Handle disconnect
       if pandaState_prev is not None:
-        if pandaState.pandaState.pandaType == log.PandaState.PandaType.unknown and \
-          pandaState_prev.pandaState.pandaType != log.PandaState.PandaType.unknown:
+        if pandaState.pandaType == log.PandaState.PandaType.unknown and \
+          pandaState_prev.pandaType != log.PandaState.PandaType.unknown:
           params.clear_all(ParamKeyType.CLEAR_ON_PANDA_DISCONNECT)
       pandaState_prev = pandaState
 
@@ -252,7 +255,8 @@ def thermald_thread():
         network_type = HARDWARE.get_network_type()
         network_strength = HARDWARE.get_network_strength(network_type)
         network_info = HARDWARE.get_network_info()  # pylint: disable=assignment-from-none
-        nvme_temps = HARDWARE.get_nvme_temps()
+        nvme_temps = HARDWARE.get_nvme_temperatures()
+        modem_temps = HARDWARE.get_modem_temperatures()
 
         # Log modem version once
         if modem_version is None:
@@ -283,6 +287,8 @@ def thermald_thread():
       msg.deviceState.networkInfo = network_info
     if nvme_temps is not None:
       msg.deviceState.nvmeTempC = nvme_temps
+    if modem_temps is not None:
+      msg.deviceState.modemTempC = modem_temps
 
     msg.deviceState.batteryPercent = HARDWARE.get_battery_capacity()
     msg.deviceState.batteryCurrent = HARDWARE.get_battery_current()
@@ -396,27 +402,25 @@ def thermald_thread():
         off_ts = sec_since_boot()
 
     # Offroad power monitoring
-    power_monitor.calculate(pandaState)
+    power_monitor.calculate(peripheralState, startup_conditions["ignition"])
     msg.deviceState.offroadPowerUsageUwh = power_monitor.get_power_used()
     msg.deviceState.carBatteryCapacityUwh = max(0, power_monitor.get_car_battery_capacity())
 
     # Check if we need to disable charging (handled by boardd)
-    msg.deviceState.chargingDisabled = power_monitor.should_disable_charging(pandaState, off_ts)
+    msg.deviceState.chargingDisabled = power_monitor.should_disable_charging(startup_conditions["ignition"], in_car, off_ts)
 
     # Check if we need to shut down
-    if power_monitor.should_shutdown(pandaState, off_ts, started_seen):
+    if power_monitor.should_shutdown(peripheralState, startup_conditions["ignition"], in_car, off_ts, started_seen):
       cloudlog.info(f"shutting device down, offroad since {off_ts}")
       # TODO: add function for blocking cloudlog instead of sleep
       time.sleep(10)
       HARDWARE.shutdown()
 
     # If UI has crashed, set the brightness to reasonable non-zero value
-    manager_state = messaging.recv_one_or_none(managerState_sock)
-    if manager_state is not None:
-      ui_running = "ui" in (p.name for p in manager_state.managerState.processes if p.running)
-      if ui_running_prev and not ui_running:
-        HARDWARE.set_screen_brightness(20)
-      ui_running_prev = ui_running
+    ui_running = "ui" in (p.name for p in sm["managerState"].processes if p.running)
+    if ui_running_prev and not ui_running:
+      HARDWARE.set_screen_brightness(20)
+    ui_running_prev = ui_running
 
     msg.deviceState.chargingError = current_filter.x > 0. and msg.deviceState.batteryPercent < 90  # if current is positive, then battery is being discharged
     msg.deviceState.started = started_ts is not None
@@ -440,11 +444,11 @@ def thermald_thread():
       if EON and started_ts is None and msg.deviceState.memoryUsagePercent > 40:
         cloudlog.event("High offroad memory usage", mem=msg.deviceState.memoryUsagePercent)
 
-      location = messaging.recv_sock(location_sock)
       cloudlog.event("STATUS_PACKET",
                      count=count,
-                     pandaState=(strip_deprecated_keys(pandaState.to_dict()) if pandaState else None),
-                     location=(strip_deprecated_keys(location.gpsLocationExternal.to_dict()) if location else None),
+                     pandaStates=(strip_deprecated_keys(pandaStates.to_dict()) if pandaStates else None),
+                     peripheralState=strip_deprecated_keys(peripheralState.to_dict()),
+                     location=(strip_deprecated_keys(sm["gpsLocationExternal"].to_dict()) if sm.alive["gpsLocationExternal"] else None),
                      deviceState=strip_deprecated_keys(msg.to_dict()))
 
     count += 1

@@ -32,7 +32,6 @@ QDialogBase::QDialogBase(QWidget *parent) : QDialog(parent) {
     QPushButton:pressed {
       background-color: #444444;
     }
-
   )");
 }
 

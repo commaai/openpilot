@@ -6,6 +6,7 @@ Most open source development activity is coordinated through our [GitHub Discuss
 
 ## Getting Started
 
+ * Setup your [development environment](../tools/)
  * Join our [Discord](https://discord.comma.ai)
  * Make sure you have a [GitHub account](https://github.com/signup/free)
  * Fork [our repositories](https://github.com/commaai) on GitHub
@@ -20,7 +21,7 @@ All PRs and commits are automatically checked by GitHub Actions. Check out `.git
 
 Code is automatically checked for style by GitHub Actions as part of the automated tests. You can also run these tests yourself by running `pre-commit run --all`.
 
-## Car Ports (openpilot)
+## Car Ports
 
 We've released a [Model Port guide](https://blog.comma.ai/openpilot-port-guide-for-toyota-models/) for porting to Toyota/Lexus models.
 

@@ -26,6 +26,7 @@
 #include "selfdrive/ui/qt/qt_window.h"
 
 TogglesPanel::TogglesPanel(QWidget *parent) : ListWidget(parent) {
+  auto params = Params();
   addItem(new ParamControl("OpenpilotEnabledToggle",
                                   "Enable openpilot",
                                   "Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.",
@@ -43,18 +44,18 @@ TogglesPanel::TogglesPanel(QWidget *parent) : ListWidget(parent) {
                                   this));
   addItem(new ParamControl("IsMetric",
                                   "Use Metric System",
-                                  "Display speed in km/h instead of mp/h.",
+                                  "Display speed in km/h instead of mph.",
                                   "../assets/offroad/icon_metric.png",
                                   this));
   addItem(new ParamControl("CommunityFeaturesToggle",
                                   "Enable Community Features",
-                                  "Use features from the open source community that are not maintained or supported by comma.ai and have not been confirmed to meet the standard safety model. These features include community supported cars and community supported hardware. Be extra cautious when using these features",
+                                  "Use features, such as community supported hardware, from the open source community that are not maintained or supported by comma.ai and have not been confirmed to meet the standard safety model. Be extra cautious when using these features",
                                   "../assets/offroad/icon_shell.png",
                                   this));
 
   addItem(new ParamControl("UploadRaw",
                                   "Upload Raw Logs",
-                                  "Upload full logs and full resolution video by default while on WiFi. If not enabled, individual logs can be marked for upload at my.comma.ai/useradmin.",
+                                  "Upload full logs and full resolution video by default while on Wi-Fi. If not enabled, individual logs can be marked for upload at useradmin.comma.ai.",
                                   "../assets/offroad/icon_network.png",
                                   this));
 
@@ -69,7 +70,6 @@ TogglesPanel::TogglesPanel(QWidget *parent) : ListWidget(parent) {
                                   "In this mode openpilot will ignore lanelines and just drive how it thinks a human would.",
                                   "../assets/offroad/icon_road.png",
                                   this));
-
 #ifdef ENABLE_MAPS
   addItem(new ParamControl("NavSettingTime24h",
                                   "Show ETA in 24h format",
@@ -77,8 +77,16 @@ TogglesPanel::TogglesPanel(QWidget *parent) : ListWidget(parent) {
                                   "../assets/offroad/icon_metric.png",
                                   this));
 #endif
+  if (params.getBool("DisableRadar_Allow")) {
+    addItem(new ParamControl("DisableRadar",
+                             "openpilot Longitudinal Control",
+                             "openpilot will disable the car's radar and will take over control of gas and brakes. Warning: this disables AEB!",
+                             "../assets/offroad/icon_speed_limit.png",
+                             this));
 
-  bool record_lock = Params().getBool("RecordFrontLock");
+  }
+
+  bool record_lock = params.getBool("RecordFrontLock");
   record_toggle->setEnabled(!record_lock);
 }
 
@@ -259,7 +267,7 @@ QWidget * network_panel(QWidget * parent) {
   ListWidget *list = new ListWidget();
   list->setSpacing(30);
   // wifi + tethering buttons
-  auto wifiBtn = new ButtonControl("WiFi Settings", "OPEN");
+  auto wifiBtn = new ButtonControl("Wi-Fi Settings", "OPEN");
   QObject::connect(wifiBtn, &ButtonControl::clicked, [=]() { HardwareEon::launch_wifi(); });
   list->addItem(wifiBtn);
 

@@ -10,7 +10,7 @@ ifeq ($(UNAME_S),Darwin)
 	SHARED_FLAGS=-Wl,-force_load $^
 endif
 
-PHONELIBS := ../../phonelibs
+PHONELIBS := ../../third_party
 BASEDIR := ../..
 
 WARN_FLAGS = -Werror=implicit-function-declaration \

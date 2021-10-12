@@ -73,10 +73,10 @@ By default, openpilot uploads the driving data to our servers. You can also acce
 
 openpilot is open source software: the user is free to disable data collection if they wish to do so.
 
-openpilot logs the road facing camera, CAN, GPS, IMU, magnetometer, thermal sensors, crashes, and operating system logs.
+openpilot logs the road facing cameras, CAN, GPS, IMU, magnetometer, thermal sensors, crashes, and operating system logs.
 The driver facing camera is only logged if you explicitly opt-in in settings. The microphone is not recorded.
 
-By using openpilot, you agree to [our Privacy Policy](https://connect.comma.ai/privacy). You understand that use of this software or its related services will generate certain types of user data, which may be logged and stored at the sole discretion of comma. By accepting this agreement, you grant an irrevocable, perpetual, worldwide right to comma for the use of this data.
+By using openpilot, you agree to [our Privacy Policy](https://comma.ai/privacy). You understand that use of this software or its related services will generate certain types of user data, which may be logged and stored at the sole discretion of comma. By accepting this agreement, you grant an irrevocable, perpetual, worldwide right to comma for the use of this data.
 
 Safety and Testing
 ----
@@ -97,8 +97,8 @@ Directory Structure
     ├── docs                # Documentation
     ├── opendbc             # Files showing how to interpret data from cars
     ├── panda               # Code used to communicate on CAN
-    ├── phonelibs           # External libraries
-    ├── pyextra             # Extra python packages not shipped in NEOS
+    ├── third_party         # External libraries
+    ├── pyextra             # Extra python packages
     └── selfdrive           # Code needed to drive the car
         ├── assets          # Fonts, images, and sounds for UI
         ├── athena          # Allows communication with the app

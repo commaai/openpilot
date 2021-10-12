@@ -235,15 +235,12 @@ selfdrive/controls/lib/pid.py
 selfdrive/controls/lib/longitudinal_planner.py
 selfdrive/controls/lib/radar_helpers.py
 selfdrive/controls/lib/vehicle_model.py
-selfdrive/controls/lib/fcw.py
 
 selfdrive/controls/lib/cluster/*
 
 selfdrive/controls/lib/lateral_mpc_lib/.gitignore
-selfdrive/controls/lib/lead_mpc_lib/.gitignore
 selfdrive/controls/lib/longitudinal_mpc_lib/.gitignore
 selfdrive/controls/lib/lateral_mpc_lib/*
-selfdrive/controls/lib/lead_mpc_lib/*
 selfdrive/controls/lib/longitudinal_mpc_lib/*
 
 selfdrive/hardware/__init__.py
@@ -430,51 +427,50 @@ selfdrive/assets/assets.qrc
 selfdrive/assets/*.png
 selfdrive/assets/*.svg
 selfdrive/assets/fonts/*.ttf
+selfdrive/assets/icons/*
 selfdrive/assets/images/*
 selfdrive/assets/offroad/*
 selfdrive/assets/sounds/*
 selfdrive/assets/training/*
 
-phonelibs/SConscript
+third_party/SConscript
 
-phonelibs/nanovg/*.c
-phonelibs/nanovg/*.h
+third_party/nanovg/*.c
+third_party/nanovg/*.h
 
-phonelibs/libgralloc/**
-phonelibs/linux/**
-phonelibs/opencl/**
-phonelibs/zlib/*
-phonelibs/bzip2/*
-phonelibs/openmax/**
+third_party/libgralloc/**
+third_party/linux/**
+third_party/opencl/**
+third_party/zlib/*
+third_party/bzip2/*
+third_party/openmax/**
 
-phonelibs/json11/json11.cpp
-phonelibs/json11/json11.hpp
+third_party/json11/json11.cpp
+third_party/json11/json11.hpp
 
-phonelibs/qpoases/**
+third_party/qrcode/*.cc
+third_party/qrcode/*.hpp
 
-phonelibs/qrcode/*.cc
-phonelibs/qrcode/*.hpp
+third_party/kaitai/*.h
+third_party/kaitai/*.cpp
 
-phonelibs/kaitai/*.h
-phonelibs/kaitai/*.cpp
+third_party/libyuv/include/**
+third_party/libyuv/lib/**
+third_party/libyuv/larch64/**
 
-phonelibs/libyuv/include/**
-phonelibs/libyuv/lib/**
-phonelibs/libyuv/larch64/**
+third_party/snpe/include/**
+third_party/snpe/aarch64**
+third_party/snpe/larch64**
+third_party/snpe/dsp**
 
-phonelibs/snpe/include/**
-phonelibs/snpe/aarch64**
-phonelibs/snpe/larch64**
-phonelibs/snpe/dsp**
+third_party/acados/x86_64/**
+third_party/acados/aarch64/**
+third_party/acados/larch64/**
+third_party/acados/include/**
 
-phonelibs/acados/x86_64/**
-phonelibs/acados/aarch64/**
-phonelibs/acados/larch64/**
-phonelibs/acados/include/**
-
-phonelibs/android_frameworks_native/**
-phonelibs/android_hardware_libhardware/**
-phonelibs/android_system_core/**
+third_party/android_frameworks_native/**
+third_party/android_hardware_libhardware/**
+third_party/android_system_core/**
 
 scripts/update_now.sh
 scripts/stop_updater.sh

@@ -10,24 +10,26 @@ In order to replay specific route:
 MOCK=1 selfdrive/boardd/tests/boardd_old.py
 
 # In another terminal:
-python replay/unlogger.py <route-name> <path-to-data-directory>
+selfdrive/ui/replay/replay <route-name>
 ```
 
 Replay driving data
 -------------
 
-`unlogger.py` replays all the messages logged while running openpilot.
+`replay` replays all the messages logged while running openpilot.
 
-Unlogger with remote data:
+Replay with remote data:
 
 ```bash
-# Log in via browser
+# Log in via browser to have access to non public route
 python lib/auth.py
 
-# Start unlogger
-python replay/unlogger.py <route-name>
+# Start replay
+selfdrive/ui/replay/replay <route-name>
 # Example:
-# python replay/unlogger.py '3533c53bb29502d1|2019-12-10--01-13-27'
+# selfdrive/ui/replay/replay '4cf7a6ad03080c90|2021-09-29--13-46-36'
+# or use --demo to replay the default demo route:
+# selfdrive/ui/replay/replay --demo
 
 # In another terminal you can run a debug visualizer:
 python replay/ui.py   # Define the environmental variable HORIZONTAL is the ui layout is too tall
@@ -40,30 +42,20 @@ cd selfdrive/ui && ./ui
 
 ## usage
 ``` bash
-$ ./unlogger.py -h
-usage: unlogger.py [-h] [--no-loop] [--min | --enabled ENABLED] [--disabled DISABLED] [--tl PUBLISH_TIME_LENGTH] [--no-realtime]
-                   [--no-interactive] [--bind-early] [--no-visionipc] [--start-time START_TIME]
-                   [route_name] [data_dir] [address_mapping [address_mapping ...]]
-
+$ selfdrive/ui/replay/replay -h
+Usage: selfdrive/ui/replay/replay [options] route
 Mock openpilot components by publishing logged messages.
 
-positional arguments:
-  route_name            The route whose messages will be published. (default: None)
-  data_dir              Path to directory in which log and camera files are located. (default: None)
-  address_mapping       Pairs <service>=<zmq_addr> to publish <service> on <zmq_addr>. (default: None)
+Options:
+  -h, --help             Displays this help.
+  -a, --allow <allow>    whitelist of services to send
+  -b, --block <block>    blacklist of services to send
+  -s, --start <seconds>  start from <seconds>
+  --demo                 use a demo route instead of providing your own
+  --dcam                 load driver camera
+  --ecam                 load wide road camera
 
-optional arguments:
-  -h, --help            show this help message and exit
-  --no-loop             Stop at the end of the replay. (default: False)
-  --min
-  --enabled ENABLED
-  --disabled DISABLED
-  --tl PUBLISH_TIME_LENGTH
-                        Length of interval in event time for which messages should be published. (default: None)
-  --no-realtime         Publish messages as quickly as possible instead of realtime. (default: True)
-  --no-interactive      Disable interactivity. (default: True)
-  --bind-early          Bind early to avoid dropping messages. (default: False)
-  --no-visionipc        Do not output video over visionipc (default: False)
-  --start-time START_TIME
-                        Seek to this absolute time (in seconds) upon starting playback. (default: 0.0)
+Arguments:
+  route                  the drive to replay. find your drives at
+                         connect.comma.ai
 ```

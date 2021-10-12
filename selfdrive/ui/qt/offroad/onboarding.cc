@@ -29,14 +29,17 @@ void TrainingGuide::mouseReleaseEvent(QMouseEvent *e) {
   if (currentIndex >= (boundingRect.size() - 1)) {
     emit completedTraining();
   } else {
-    image.load(IMG_PATH + "step" + QString::number(currentIndex) + ".png");
+    image.load(img_path + "step" + QString::number(currentIndex) + ".png");
     update();
   }
 }
 
 void TrainingGuide::showEvent(QShowEvent *event) {
+  img_path = width() == WIDE_WIDTH ? "../assets/training_wide/" : "../assets/training/";
+  boundingRect = width() == WIDE_WIDTH ? boundingRectWide : boundingRectStandard;
+
   currentIndex = 0;
-  image.load(IMG_PATH + "step0.png");
+  image.load(img_path + "step0.png");
 }
 
 void TrainingGuide::paintEvent(QPaintEvent *event) {

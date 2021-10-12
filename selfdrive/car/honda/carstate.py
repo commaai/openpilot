@@ -80,9 +80,11 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
   if CP.carFingerprint in HONDA_BOSCH:
     signals += [
       ("EPB_STATE", "EPB_STATUS", 0),
+      ("IMPERIAL_UNIT", "CAR_SPEED", 1),
     ]
     checks += [
       ("EPB_STATUS", 50),
+      ("CAR_SPEED", 10),
     ]
 
     if not CP.openpilotLongitudinalControl:
@@ -109,7 +111,7 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
     signals += [("DRIVERS_DOOR_OPEN", "SCM_FEEDBACK", 1)]
   elif CP.carFingerprint == CAR.ODYSSEY_CHN:
     signals += [("DRIVERS_DOOR_OPEN", "SCM_BUTTONS", 1)]
-  elif CP.carFingerprint == CAR.HRV:
+  elif CP.carFingerprint in (CAR.FREED, CAR.HRV):
     signals += [("DRIVERS_DOOR_OPEN", "SCM_BUTTONS", 1),
                 ("WHEELS_MOVING", "STANDSTILL", 1)]
   else:
@@ -159,7 +161,7 @@ class CarState(CarStateBase):
       self.gearbox_msg = "GEARBOX_15T"
 
     self.main_on_sig_msg = "SCM_FEEDBACK"
-    if CP.carFingerprint in (CAR.ACURA_ILX, CAR.ACURA_RDX, CAR.CRV, CAR.CRV_EU, CAR.FIT, CAR.HRV,
+    if CP.carFingerprint in (CAR.ACURA_ILX, CAR.ACURA_RDX, CAR.CRV, CAR.CRV_EU, CAR.FIT, CAR.FREED, CAR.HRV,
                              CAR.ODYSSEY_CHN, CAR.PILOT, CAR.PILOT_2019, CAR.RIDGELINE):
       self.main_on_sig_msg = "SCM_BUTTONS"
 
@@ -190,7 +192,7 @@ class CarState(CarStateBase):
     elif self.CP.carFingerprint == CAR.ODYSSEY_CHN:
       ret.standstill = cp.vl["ENGINE_DATA"]["XMISSION_SPEED"] < 0.1
       ret.doorOpen = bool(cp.vl["SCM_BUTTONS"]["DRIVERS_DOOR_OPEN"])
-    elif self.CP.carFingerprint == CAR.HRV:
+    elif self.CP.carFingerprint in (CAR.FREED, CAR.HRV):
       ret.standstill = not cp.vl["STANDSTILL"]["WHEELS_MOVING"]
       ret.doorOpen = bool(cp.vl["SCM_BUTTONS"]["DRIVERS_DOOR_OPEN"])
     else:
@@ -291,7 +293,12 @@ class CarState(CarStateBase):
         ret.brakePressed = True
 
     # TODO: discover the CAN msg that has the imperial unit bit for all other cars
-    self.is_metric = not cp.vl["HUD_SETTING"]["IMPERIAL_UNIT"] if self.CP.carFingerprint in (CAR.CIVIC) else False
+    if self.CP.carFingerprint in (CAR.CIVIC, ):
+      self.is_metric = not cp.vl["HUD_SETTING"]["IMPERIAL_UNIT"]
+    elif self.CP.carFingerprint in HONDA_BOSCH:
+      self.is_metric = not cp.vl["CAR_SPEED"]["IMPERIAL_UNIT"]
+    else:
+      self.is_metric = False
 
     if self.CP.carFingerprint in HONDA_BOSCH:
       ret.stockAeb = (not self.CP.openpilotLongitudinalControl) and bool(cp.vl["ACC_CONTROL"]["AEB_STATUS"] and cp.vl["ACC_CONTROL"]["ACCEL_COMMAND"] < -1e-5)
@@ -322,11 +329,9 @@ class CarState(CarStateBase):
   @staticmethod
   def get_cam_can_parser(CP):
     signals = []
-
-    # all hondas except CRV, RDX and 2019 Odyssey@China use 0xe4 for steering
-    checks = [(0xe4, 100)]
-    if CP.carFingerprint in [CAR.CRV, CAR.CRV_EU, CAR.ACURA_RDX, CAR.ODYSSEY_CHN]:
-      checks = [(0x194, 100)]
+    checks = [
+      ("STEERING_CONTROL", 100),
+    ]
 
     if CP.carFingerprint not in HONDA_BOSCH:
       signals += [("COMPUTER_BRAKE", "BRAKE_COMMAND", 0),

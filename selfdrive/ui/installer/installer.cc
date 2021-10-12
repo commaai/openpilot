@@ -14,7 +14,16 @@
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/qt_window.h"
 
-#define GIT_URL "https://github.com/commaai/openpilot.git"
+std::string get_str(std::string const s) {
+  std::string::size_type pos = s.find('?');
+  assert(pos != std::string::npos);
+  return s.substr(0, pos);
+}
+
+// Leave some extra space for the fork installer
+const std::string GIT_URL = get_str("https://github.com/commaai/openpilot.git" "?                                                                ");
+const std::string BRANCH_STR = get_str(BRANCH "?                                                                ");
+
 #define GIT_SSH_URL "git@github.com:commaai/openpilot.git"
 
 #ifdef QCOM
@@ -23,8 +32,7 @@
   #define CONTINUE_PATH "/data/continue.sh"
 #endif
 
-// TODO: remove the other paths after a bit
-const QList<QString> CACHE_PATHS = {"/data/openpilot.cache", "/system/comma/openpilot", "/usr/comma/openpilot"};
+const QString CACHE_PATH = "/data/openpilot.cache";
 
 #define INSTALL_PATH "/data/openpilot"
 #define TMP_INSTALL_PATH "/data/tmppilot"
@@ -104,21 +112,12 @@ void Installer::doInstall() {
     qDebug() << "Waiting for valid time";
   }
 
-  // cleanup
+  // cleanup previous install attemps
   run("rm -rf " TMP_INSTALL_PATH " " INSTALL_PATH);
 
-  // find the cache path
-  QString cache;
-  for (const QString &path : CACHE_PATHS) {
-    if (QDir(path).exists()) {
-      cache = path;
-      break;
-    }
-  }
-
   // do the install
-  if (!cache.isEmpty()) {
-    cachedFetch(cache);
+  if (QDir(CACHE_PATH).exists()) {
+    cachedFetch(CACHE_PATH);
   } else {
     freshClone();
   }
@@ -126,7 +125,7 @@ void Installer::doInstall() {
 
 void Installer::freshClone() {
   qDebug() << "Doing fresh clone";
-  proc.start("git", {"clone", "--progress", GIT_URL, "-b", BRANCH,
+  proc.start("git", {"clone", "--progress", GIT_URL.c_str(), "-b", BRANCH_STR.c_str(),
                      "--depth=1", "--recurse-submodules", TMP_INSTALL_PATH});
 }
 
@@ -136,12 +135,12 @@ void Installer::cachedFetch(const QString &cache) {
   run(QString("cp -rp %1 %2").arg(cache, TMP_INSTALL_PATH).toStdString().c_str());
   int err = chdir(TMP_INSTALL_PATH);
   assert(err == 0);
-  run("git remote set-branches --add origin " BRANCH);
+  run(("git remote set-branches --add origin " + BRANCH_STR).c_str());
 
   updateProgress(10);
 
   proc.setWorkingDirectory(TMP_INSTALL_PATH);
-  proc.start("git", {"fetch", "--progress", "origin", BRANCH});
+  proc.start("git", {"fetch", "--progress", "origin", BRANCH_STR.c_str()});
 }
 
 void Installer::readProgress() {
@@ -175,8 +174,8 @@ void Installer::cloneFinished(int exitCode, QProcess::ExitStatus exitStatus) {
   // ensure correct branch is checked out
   int err = chdir(TMP_INSTALL_PATH);
   assert(err == 0);
-  run("git checkout " BRANCH);
-  run("git reset --hard origin/" BRANCH);
+  run(("git checkout " + BRANCH_STR).c_str());
+  run(("git reset --hard origin/" + BRANCH_STR).c_str());
 
   // move into place
   run("mv " TMP_INSTALL_PATH " " INSTALL_PATH);
@@ -196,6 +195,7 @@ void Installer::cloneFinished(int exitCode, QProcess::ExitStatus exitStatus) {
     param.close();
   }
   run("cd " INSTALL_PATH " && "
+      "git submodule update --init && "
       "git remote set-url origin --push " GIT_SSH_URL " && "
       "git config remote.origin.fetch \"+refs/heads/*:refs/remotes/origin/*\"");
 #endif

@@ -4,7 +4,7 @@ from panda import Panda
 from common.numpy_fast import interp
 from common.params import Params
 from selfdrive.car.honda.values import CarControllerParams, CruiseButtons, CAR, HONDA_BOSCH, HONDA_BOSCH_ALT_BRAKE_SIGNAL
-from selfdrive.car import STD_CARGO_KG, CivicParams, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
+from selfdrive.car import STD_CARGO_KG, CivicParams, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
 from selfdrive.car.disable_ecu import disable_ecu
 from selfdrive.config import Conversions as CV
@@ -33,7 +33,7 @@ class CarInterface(CarInterfaceBase):
     ret.carName = "honda"
 
     if candidate in HONDA_BOSCH:
-      ret.safetyModel = car.CarParams.SafetyModel.hondaBoschHarness
+      ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hondaBoschHarness)]
       ret.radarOffCan = True
 
       # Disable the radar and let openpilot control longitudinal
@@ -41,9 +41,8 @@ class CarInterface(CarInterfaceBase):
       ret.openpilotLongitudinalControl = Params().get_bool("DisableRadar")
 
       ret.pcmCruise = not ret.openpilotLongitudinalControl
-      ret.communityFeature = ret.openpilotLongitudinalControl
     else:
-      ret.safetyModel = car.CarParams.SafetyModel.hondaNidec
+      ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hondaNidec)]
       ret.enableGasInterceptor = 0x201 in fingerprint[0]
       ret.openpilotLongitudinalControl = True
 
@@ -65,11 +64,16 @@ class CarInterface(CarInterfaceBase):
     ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
     ret.lateralTuning.pid.kf = 0.00006  # conservative feed-forward
 
-    # default longitudinal tuning for all hondas
-    ret.longitudinalTuning.kpBP = [0., 5., 35.]
-    ret.longitudinalTuning.kpV = [1.2, 0.8, 0.5]
-    ret.longitudinalTuning.kiBP = [0., 35.]
-    ret.longitudinalTuning.kiV = [0.18, 0.12]
+    if candidate in HONDA_BOSCH:
+      ret.longitudinalTuning.kpV = [0.25]
+      ret.longitudinalTuning.kiV = [0.05]
+      ret.longitudinalActuatorDelayUpperBound = 0.5 # s
+    else:
+      # default longitudinal tuning for all hondas
+      ret.longitudinalTuning.kpBP = [0., 5., 35.]
+      ret.longitudinalTuning.kpV = [1.2, 0.8, 0.5]
+      ret.longitudinalTuning.kiBP = [0., 35.]
+      ret.longitudinalTuning.kiV = [0.18, 0.12]
 
     eps_modified = False
     for fw in car_fw:
@@ -177,6 +181,17 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.75
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2], [0.05]]
 
+    elif candidate == CAR.FREED:
+      stop_and_go = False
+      ret.mass = 3086. * CV.LB_TO_KG + STD_CARGO_KG
+      ret.wheelbase = 2.74
+      # the remaining parameters were copied from FIT
+      ret.centerToFront = ret.wheelbase * 0.39
+      ret.steerRatio = 13.06
+      ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]
+      tire_stiffness_factor = 0.75
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2], [0.05]]
+
     elif candidate == CAR.HRV:
       stop_and_go = False
       ret.mass = 3125 * CV.LB_TO_KG + STD_CARGO_KG
@@ -272,10 +287,10 @@ class CarInterface(CarInterfaceBase):
 
     # These cars use alternate user brake msg (0x1BE)
     if candidate in HONDA_BOSCH_ALT_BRAKE_SIGNAL:
-      ret.safetyParam |= Panda.FLAG_HONDA_ALT_BRAKE
+      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_HONDA_ALT_BRAKE
 
     if ret.openpilotLongitudinalControl and candidate in HONDA_BOSCH:
-      ret.safetyParam |= Panda.FLAG_HONDA_BOSCH_LONG
+      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_HONDA_BOSCH_LONG
 
     # min speed to enable ACC. if car can do stop and go, then set enabling speed
     # to a negative value, so it won't matter. Otherwise, add 0.5 mph margin to not
@@ -403,7 +418,7 @@ class CarInterface(CarInterfaceBase):
     else:
       hud_v_cruise = 255
 
-    can_sends = self.CC.update(c.enabled, self.CS, self.frame,
+    can_sends = self.CC.update(c.enabled, c.active, self.CS, self.frame,
                                c.actuators,
                                c.cruiseControl.cancel,
                                hud_v_cruise,
