@@ -1,8 +1,8 @@
 moc_*
 *.moc
 
+watch3
 installer/installers/*
-
 replay/replay
 replay/tests/test_replay
 qt/text
