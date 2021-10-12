@@ -216,9 +216,7 @@ void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const float *data, i
   xyzt.setY(column[1]);
   xyzt.setZ(column[2]);
   if (fill_std) {
-    float nan_stds[TRAJECTORY_SIZE] = {};
-    std::fill_n(nan_stds, std::size(nan_stds), NAN);
-    xyzt.setXStd(!plan_t_arr ? column[0 + stride * TRAJECTORY_SIZE] : kj::ArrayPtr<const float>(nan_stds));
+    xyzt.setXStd(column[0 + stride * TRAJECTORY_SIZE]);
     xyzt.setYStd(column[1 + stride * TRAJECTORY_SIZE]);
     xyzt.setZStd(column[2 + stride * TRAJECTORY_SIZE]);
   }
