@@ -23,14 +23,16 @@ def can_printer(bus, max_msg, addr):
     if sec_since_boot() - lp > 0.1:
       dd = chr(27) + "[2J"
       dd += "%5.2f\n" % (sec_since_boot() - start)
-      for k, v in sorted(zip(msgs.keys(), map(lambda x: binascii.hexlify(x[-1]), msgs.values()))):
-        if max_msg is None or k < max_msg:
-          dd += "%s(%6d) %s\n" % ("%04X(%4d)" % (k, k), len(msgs[k]), v.decode('ascii'))
+      for addr in sorted(msgs.keys()):
+        a = msgs[addr][-1].decode('ascii')
+        x = binascii.hexlify(msgs[addr][-1]).decode('ascii')
+        if max_msg is None or addr < max_msg:
+          dd += "%04X(%4d)(%6d) %s \"%s\"\n" % (addr, addr, len(msgs[addr]), x, a)
       print(dd)
       lp = sec_since_boot()
 
 if __name__ == "__main__":
-  parser = argparse.ArgumentParser(description="PlotJuggler plugin for reading openpilot logs",
+  parser = argparse.ArgumentParser(description="can data viewer",
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
   parser.add_argument("--bus", help="CAN bus to print out", default=0)
