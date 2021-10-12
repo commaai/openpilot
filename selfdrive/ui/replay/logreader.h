@@ -5,6 +5,7 @@
 #include <memory_resource>
 #endif
 
+#include <capnp/dynamic.h>
 #include "cereal/gen/cpp/log.capnp.h"
 #include "selfdrive/camerad/cameras/camera_common.h"
 #include "selfdrive/ui/replay/filereader.h"
@@ -42,6 +43,7 @@ public:
   cereal::Event::Which which;
   cereal::Event::Reader event;
   capnp::FlatArrayMessageReader reader;
+  capnp::DynamicStruct::Reader dynamic_reader;
   kj::ArrayPtr<const capnp::word> words;
   bool frame;
 };
