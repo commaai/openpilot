@@ -55,6 +55,7 @@ class Route(object):
     qcamera_path_by_seg_num = {s.canonical_name.segment_num: s.qcamera_path for s in self._segments}
     return [qcamera_path_by_seg_num.get(i, None) for i in range(self.max_seg_number+1)]
 
+  # TODO: refactor this, it's super repetitive
   def _get_segments_remote(self):
     api = CommaApi(get_token())
     route_files = api.get('v1/route/' + self.route_name + '/files')
