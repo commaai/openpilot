@@ -83,6 +83,7 @@ int main(int argc, char *argv[]){
   parser.addOption({{"b", "block"}, "blacklist of services to send", "block"});
   parser.addOption({{"s", "start"}, "start from <seconds>", "seconds"});
   parser.addOption({"demo", "use a demo route instead of providing your own"});
+  parser.addOption({"data_dir", "local directory with routes", "data_dir"});
   parser.addOption({"dcam", "load driver camera"});
   parser.addOption({"ecam", "load wide road camera"});
 
@@ -96,7 +97,7 @@ int main(int argc, char *argv[]){
   QStringList allow = parser.value("allow").isEmpty() ? QStringList{} : parser.value("allow").split(",");
   QStringList block = parser.value("block").isEmpty() ? QStringList{} : parser.value("block").split(",");
 
-  Replay *replay = new Replay(route, allow, block, nullptr, parser.isSet("dcam"), parser.isSet("ecam"), &app);
+  Replay *replay = new Replay(route, allow, block, nullptr, parser.isSet("dcam"), parser.isSet("ecam"), parser.value("data_dir"), &app);
   if (!replay->load()) {
     return 0;
   }

@@ -12,7 +12,7 @@
 #include "selfdrive/ui/qt/api.h"
 #include "selfdrive/ui/replay/util.h"
 
-Route::Route(const QString &route, const QString &data_dir) : route_(route), data_dir_("/home/batman/openpilot/xx/projects/ctf/out") {}
+Route::Route(const QString &route, const QString &data_dir) : route_(route), data_dir_(data_dir) {}
 
 bool Route::load() {
   if (data_dir_.isEmpty()) {
