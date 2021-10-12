@@ -5,6 +5,8 @@ watch3
 installer/installers/*
 replay/replay
 replay/tests/test_replay
+replay/logreader_pyx.cpp
+replay/framereader_pyx.cpp
 qt/text
 qt/spinner
 qt/setup/setup

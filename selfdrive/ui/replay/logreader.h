@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <cassert>
 
+#include <capnp/dynamic.h>
 #include <capnp/serialize.h>
 #include "cereal/gen/cpp/log.capnp.h"
 #include "selfdrive/camerad/cameras/camera_common.h"
@@ -30,6 +31,7 @@ public:
   cereal::Event::Which which;
   cereal::Event::Reader event;
   capnp::FlatArrayMessageReader reader;
+  capnp::DynamicStruct::Reader dynamic_reader;
   kj::ArrayPtr<const capnp::word> words;
   bool frame;
 };

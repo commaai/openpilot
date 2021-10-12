@@ -118,3 +118,7 @@ if arch in ['x86_64', 'Darwin'] and os.path.exists(Dir("#tools/").get_abspath())
 
   if GetOption('test'):
     qt_env.Program('replay/tests/test_replay', ['replay/tests/test_runner.cc', 'replay/tests/test_replay.cc'], LIBS=[replay_libs])
+
+  Import('envCython')
+  envCython.Program('logreader_pyx.so', 'replay/logreader_pyx.pyx', LIBS=envCython['LIBS'])
+  envCython.Program('framereader_pyx.so', 'replay/framereader_pyx.pyx', LIBS=envCython['LIBS'])
