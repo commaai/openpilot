@@ -60,6 +60,7 @@ bool Replay::load() {
   for (int i = 0; i < route_->size(); ++i) {
     const SegmentFile &f = route_->at(i);
     if ((!f.rlog.isEmpty() || !f.qlog.isEmpty()) && (!f.road_cam.isEmpty() || !f.qcamera.isEmpty())) {
+      qDebug() << "invalid" << i << f.rlog.isEmpty() << f.qlog.isEmpty() << f.road_cam.isEmpty() << f.qcamera.isEmpty();
       segments_[i] = nullptr;
     }
   }

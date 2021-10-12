@@ -98,7 +98,7 @@ int main(int argc, char *argv[]){
 
   Replay *replay = new Replay(route, allow, block, nullptr, parser.isSet("dcam"), parser.isSet("ecam"), &app);
   if (!replay->load()) {
-    return 0;  
+    return 0;
   }
   replay->start(parser.value("start").toInt());
   // start keyboard control thread

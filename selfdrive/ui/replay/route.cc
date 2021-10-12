@@ -12,7 +12,7 @@
 #include "selfdrive/ui/qt/api.h"
 #include "selfdrive/ui/replay/util.h"
 
-Route::Route(const QString &route, const QString &data_dir) : route_(route), data_dir_(data_dir) {}
+Route::Route(const QString &route, const QString &data_dir) : route_(route), data_dir_("/home/batman/openpilot/xx/projects/ctf/out") {}
 
 bool Route::load() {
   if (data_dir_.isEmpty()) {
@@ -71,11 +71,11 @@ bool Route::loadFromJson(const QString &json) {
 }
 
 bool Route::loadFromLocal() {
-  QStringList list = route_.split('|');
-  if (list.size() != 2) return false;
+  QString prefix = route_.split('|').last();
+  if (prefix.isEmpty()) return false;
 
   QDir log_dir(data_dir_);
-  QStringList folders = log_dir.entryList(QStringList() << list[1] + "*", QDir::Dirs | QDir::NoDot, QDir::NoSort);
+  QStringList folders = log_dir.entryList(QDir::Dirs | QDir::NoDot | QDir::NoDotDot, QDir::NoSort);
   if (folders.isEmpty()) return false;
 
   for (auto folder : folders) {
@@ -85,7 +85,7 @@ bool Route::loadFromLocal() {
     }
     QDir segment_dir(log_dir.filePath(folder));
     for (auto f : segment_dir.entryList(QDir::Files)) {
-      const QString file_path = segment_dir.filePath(f);
+      const QString file_path = segment_dir.absoluteFilePath(f);
       if (f.startsWith("rlog")) {
         segments_[seg_num].rlog = file_path;
       } else if (f.startsWith("qlog")) {
@@ -192,7 +192,7 @@ void Segment::load() {
 }
 
 QString Segment::localPath(const QUrl &url) {
-  if (url.isLocalFile()) return url.toString();
+  if (url.isLocalFile() || QFile(url.toString()).exists()) return url.toString();
 
   QByteArray url_no_query = url.toString(QUrl::RemoveQuery).toUtf8();
   return CACHE_DIR.filePath(QString(QCryptographicHash::hash(url_no_query, QCryptographicHash::Sha256).toHex()));
