@@ -15,6 +15,8 @@ QLOG_FILENAMES = ['qlog.bz2']
 QCAMERA_FILENAMES = ['qcamera.ts']
 LOG_FILENAMES = ['rlog.bz2', 'raw_log.bz2']
 CAMERA_FILENAMES = ['fcamera.hevc', 'video.hevc']
+DCAMERA_FILENAMES = ['dcamera.hevc']
+ECAMERA_FILENAMES = ['ecamera.hevc']
 
 class Route(object):
   def __init__(self, route_name, data_dir=None):
@@ -41,6 +43,14 @@ class Route(object):
     camera_path_by_seg_num = {s.canonical_name.segment_num: s.camera_path for s in self._segments}
     return [camera_path_by_seg_num.get(i, None) for i in range(self.max_seg_number+1)]
 
+  def dcamera_paths(self):
+    dcamera_path_by_seg_num = {s.canonical_name.segment_num: s.dcamera_path for s in self._segments}
+    return [dcamera_path_by_seg_num.get(i, None) for i in range(self.max_seg_number+1)]
+
+  def ecamera_paths(self):
+    ecamera_path_by_seg_num = {s.canonical_name.segment_num: s.ecamera_path for s in self._segments}
+    return [ecamera_path_by_seg_num.get(i, None) for i in range(self.max_seg_number+1)]
+
   def qcamera_paths(self):
     qcamera_path_by_seg_num = {s.canonical_name.segment_num: s.qcamera_path for s in self._segments}
     return [qcamera_path_by_seg_num.get(i, None) for i in range(self.max_seg_number+1)]
@@ -59,6 +69,8 @@ class Route(object):
           url if fn in LOG_FILENAMES else segments[segment_name].log_path,
           url if fn in QLOG_FILENAMES else segments[segment_name].qlog_path,
           url if fn in CAMERA_FILENAMES else segments[segment_name].camera_path,
+          url if fn in DCAMERA_FILENAMES else segments[segment_name].dcamera_path,
+          url if fn in ECAMERA_FILENAMES else segments[segment_name].ecamera_path,
           url if fn in QCAMERA_FILENAMES else segments[segment_name].qcamera_path,
         )
       else:
@@ -67,6 +79,8 @@ class Route(object):
           url if fn in LOG_FILENAMES else None,
           url if fn in QLOG_FILENAMES else None,
           url if fn in CAMERA_FILENAMES else None,
+          url if fn in DCAMERA_FILENAMES else None,
+          url if fn in ECAMERA_FILENAMES else None,
           url if fn in QCAMERA_FILENAMES else None,
         )
 
@@ -118,22 +132,34 @@ class Route(object):
         camera_path = None
 
       try:
+        dcamera_path = next(path for path, filename in files if filename in DCAMERA_FILENAMES)
+      except StopIteration:
+        dcamera_path = None
+
+      try:
+        ecamera_path = next(path for path, filename in files if filename in ECAMERA_FILENAMES)
+      except StopIteration:
+        ecamera_path = None
+
+      try:
         qcamera_path = next(path for path, filename in files if filename in QCAMERA_FILENAMES)
       except StopIteration:
         qcamera_path = None
 
-      segments.append(RouteSegment(segment, log_path, qlog_path, camera_path, qcamera_path))
+      segments.append(RouteSegment(segment, log_path, qlog_path, camera_path, dcamera_path, ecamera_path, qcamera_path))
 
     if len(segments) == 0:
       raise ValueError('Could not find segments for route {} in data directory {}'.format(self.route_name, data_dir))
     return sorted(segments, key=lambda seg: seg.canonical_name.segment_num)
 
 class RouteSegment(object):
-  def __init__(self, name, log_path, qlog_path, camera_path, qcamera_path):
+  def __init__(self, name, log_path, qlog_path, camera_path, dcamera_path, ecamera_path, qcamera_path):
     self._name = RouteSegmentName(name)
     self.log_path = log_path
     self.qlog_path = qlog_path
     self.camera_path = camera_path
+    self.dcamera_path = dcamera_path
+    self.ecamera_path = ecamera_path
     self.qcamera_path = qcamera_path
 
   @property
