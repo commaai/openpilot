@@ -23,15 +23,17 @@ struct SegmentFile {
 
 class Route {
 public:
-  Route(const QString &route);
+  Route(const QString &route, const QString &data_dir = {});
   bool load();
   inline const QString &name() const { return route_; };
   inline int size() const { return segments_.size(); }
   inline SegmentFile &at(int n) { return segments_[n]; }
 
 protected:
+  bool loadFromLocal();
   bool loadFromJson(const QString &json);
   QString route_;
+  QString data_dir_;
   std::vector<SegmentFile> segments_;
 };
 
