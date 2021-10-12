@@ -71,8 +71,7 @@ bool Route::loadFromLocal() {
     const int seg_num = folder.split("--")[2].toInt();
     QDir segment_dir(log_dir.filePath(folder));
     for (auto f : segment_dir.entryList(QDir::Files)) {
-      const QString file_path = segment_dir.absoluteFilePath(f);
-      addFileToSegment(seg_num, file_path);
+      addFileToSegment(seg_num, segment_dir.absoluteFilePath(f));
     }
   }
   return true;
@@ -112,17 +111,16 @@ Segment::Segment(int n, const SegmentFile &segment_files, bool load_dcam, bool l
   log_path_ = files_.rlog.isEmpty() ? files_.qlog : files_.rlog;
   assert (!log_path_.isEmpty() && !road_cam_path_.isEmpty());
 
-  if (!load_dcam) {
-    files_.driver_cam = "";
-  }
-  if (!load_ecam) {
-    files_.wide_road_cam = "";
-  }
+  if (!load_dcam) files_.driver_cam = "";
+  if (!load_ecam) files_.wide_road_cam = "";
+
   if (log_path_.startsWith("https://")) {
     for (auto &url : {log_path_, road_cam_path_, files_.driver_cam, files_.wide_road_cam}) {
-      if (!url.isEmpty() && !QFile::exists(localPath(url))) {
-        downloadFile(url);
-        ++downloading_;
+      if (!url.isEmpty()) {
+        if (auto local_file = localPath(url); !util::file_exists(local_file)) {
+          download(url.toStdString(), local_file);
+          ++downloading_;
+         }
       }
     }
   }
@@ -143,11 +141,10 @@ Segment::~Segment() {
   }
 }
 
-void Segment::downloadFile(const QString &url) {
+void Segment::download(const std::string &url, const std::string &local_file) {
   download_threads_.emplace_back(QThread::create([=]() {
-    const std::string local_file = localPath(url).toStdString();
-    bool ret = httpMultiPartDownload(url.toStdString(), local_file, connections_per_file, &aborting_);
-    if (ret && url == log_path_) {
+    bool ret = httpMultiPartDownload(url, local_file, connections_per_file, &aborting_);
+    if (ret && url == log_path_.toStdString()) {
       // pre-decompress log file.
       std::ofstream ostrm(local_file + "_decompressed", std::ios::binary);
       readBZ2File(local_file, ostrm);
@@ -163,7 +160,7 @@ void Segment::load() {
   std::vector<std::future<bool>> futures;
 
   futures.emplace_back(std::async(std::launch::async, [=]() {
-    const std::string bzip_file = localPath(log_path_).toStdString();
+    const std::string bzip_file = localPath(log_path_);
     const std::string decompressed_file = bzip_file + "_decompressed";
     bool is_bzip = !util::file_exists(decompressed_file);
     log = std::make_unique<LogReader>();
@@ -175,7 +172,7 @@ void Segment::load() {
     if (!camera_files[i].isEmpty()) {
       futures.emplace_back(std::async(std::launch::async, [=]() {
         frames[i] = std::make_unique<FrameReader>();
-        return frames[i]->load(localPath(camera_files[i]).toStdString());
+        return frames[i]->load(localPath(camera_files[i]));
       }));
     }
   }
@@ -185,9 +182,9 @@ void Segment::load() {
   emit loadFinished();
 }
 
-QString Segment::localPath(const QString &file) {
-  if (!file.startsWith("https://")) return file;
+std::string Segment::localPath(const QString &file) {
+  if (!file.startsWith("https://")) return file.toStdString();
 
   QByteArray url_no_query = QUrl(file).toString(QUrl::RemoveQuery).toUtf8();
-  return CACHE_DIR.filePath(QString(QCryptographicHash::hash(url_no_query, QCryptographicHash::Sha256).toHex()));
+  return CACHE_DIR.filePath(QString(QCryptographicHash::hash(url_no_query, QCryptographicHash::Sha256).toHex())).toStdString();
 }
