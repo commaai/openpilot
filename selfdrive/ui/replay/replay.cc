@@ -9,7 +9,7 @@
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/replay/util.h"
 
-Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *sm_, bool dcam, bool ecam, QObject *parent)
+Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *sm_, bool dcam, bool ecam, QString data_dir, QObject *parent)
     : sm(sm_), load_dcam(dcam), load_ecam(ecam), QObject(parent) {
   std::vector<const char *> s;
   auto event_struct = capnp::Schema::from<cereal::Event>().asStruct();
@@ -27,7 +27,7 @@ Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *s
   if (sm == nullptr) {
     pm = new PubMaster(s);
   }
-  route_ = std::make_unique<Route>(route);
+  route_ = std::make_unique<Route>(route, data_dir);
   events_ = new std::vector<Event *>();
   // doSeek & queueSegment are always executed in the same thread
   connect(this, &Replay::seekTo, this, &Replay::doSeek);
