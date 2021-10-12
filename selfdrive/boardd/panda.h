@@ -3,10 +3,10 @@
 #include <atomic>
 #include <cstdint>
 #include <ctime>
+#include <list>
 #include <mutex>
 #include <optional>
 #include <vector>
-#include <list>
 
 #include <libusb-1.0/libusb.h>
 

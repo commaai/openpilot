@@ -58,30 +58,6 @@ def flash_panda(panda_serial : str) -> Panda:
 
   return panda
 
-
-def get_pandas() -> List[Panda]:
-  panda_dfu = None
-
-  # Flash all Pandas in DFU mode
-  for p in PandaDFU.list():
-    cloudlog.info(f"Panda in DFU mode found, flashing recovery {p}")
-    panda_dfu = PandaDFU(p)
-    panda_dfu.recover()
-  time.sleep(1)
-
-  pandas = Panda.list()
-  if len(pandas) == 0:
-    return []
-
-  cloudlog.info(f"{len(pandas)} panda(s) found, connecting - {pandas}")
-
-  # Flash pandas
-  r = []
-  for serial in pandas:
-    r.append(flash_panda(serial))
-
-  return r
-
 def panda_sort_cmp(a : Panda, b : Panda):
   a_type = a.get_type()
   b_type = b.get_type()
@@ -101,7 +77,22 @@ def panda_sort_cmp(a : Panda, b : Panda):
 
 def main() -> None:
   while True:
-    pandas = get_pandas()
+    # Flash all Pandas in DFU mode
+    for p in PandaDFU.list():
+      cloudlog.info(f"Panda in DFU mode found, flashing recovery {p}")
+      PandaDFU(p).recover()
+    time.sleep(1)
+
+    panda_serials = Panda.list()
+    if len(panda_serials) == 0:
+      continue
+
+    cloudlog.info(f"{len(panda_serials)} panda(s) found, connecting - {panda_serials}")
+
+    # Flash pandas
+    pandas = []
+    for serial in panda_serials:
+      pandas.append(flash_panda(serial))
 
     # check health for lost heartbeat
     for panda in pandas:
