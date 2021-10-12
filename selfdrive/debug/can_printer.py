@@ -35,8 +35,8 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="can data viewer",
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-  parser.add_argument("--bus", help="CAN bus to print out", default=0)
-  parser.add_argument("--max_msg", help="max addr ")
+  parser.add_argument("--bus", type=int, help="CAN bus to print out", default=0)
+  parser.add_argument("--max_msg", type=int, help="max addr ")
   parser.add_argument("--addr", default="127.0.0.1")
 
   args = parser.parse_args()
