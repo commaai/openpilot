@@ -190,7 +190,7 @@ void Replay::mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::
     });
     delete prev_events;
   } else {
-    updateEvents([=]() { return begin->second->isLoaded(); });
+    updateEvents([=]() { return true; });
   }
 }
 
