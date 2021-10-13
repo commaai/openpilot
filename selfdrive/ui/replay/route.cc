@@ -134,7 +134,7 @@ void Segment::loadFile(int id, const std::string file) {
       frames[id] = std::make_unique<FrameReader>();
       frames[id]->load(local_file);
     } else {
-      // pre-decompress log file.
+      // decompress log file.
       std::string decompressed = cacheFilePath(local_file + ".decompressed");
       if (!util::file_exists(decompressed)) {
         std::ofstream ostrm(decompressed, std::ios::binary);
