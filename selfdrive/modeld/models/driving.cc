@@ -363,10 +363,10 @@ void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_droppe
 
   for (int i =0; i < 3; i++) {
     trans_arr[i] = net_outputs.pose->trans_arr[i];
-    trans_std_arr[i] = exp(net_outputs.pose->trans_std_arr[6 + i]);
+    trans_std_arr[i] = exp(net_outputs.pose->trans_std_arr[i]);
 
-    rot_arr[i] = net_outputs.pose->rot_arr[3 + i];
-    rot_std_arr[i] = exp(net_outputs.pose->rot_std_arr[9 + i]);
+    rot_arr[i] = net_outputs.pose->rot_arr[i];
+    rot_std_arr[i] = exp(net_outputs.pose->rot_std_arr[i]);
   }
 
   MessageBuilder msg;
