@@ -1,44 +1,27 @@
-Stream CAN messages to your device
--------------
+# replay
 
-Replay CAN messages as they were recorded using a [panda jungle](https://comma.ai/shop/products/panda-jungle). The jungle has 6x OBD-C ports for connecting all your comma devices.
-
-`can_replay.py` is a convenient script for when any CAN data will do.
-
-In order to replay specific route:
-```bash
-MOCK=1 selfdrive/boardd/tests/boardd_old.py
-
-# In another terminal:
-selfdrive/ui/replay/replay <route-name>
-```
-
-Replay driving data
--------------
+## Replay driving data
 
 `replay` replays all the messages logged while running openpilot.
 
-Replay with remote data:
-
 ```bash
-# Log in via browser to have access to non public route
+# Log in via browser to have access to non-public routes
 python lib/auth.py
 
-# Start replay
+# Start a replay
 selfdrive/ui/replay/replay <route-name>
+
 # Example:
 # selfdrive/ui/replay/replay '4cf7a6ad03080c90|2021-09-29--13-46-36'
 # or use --demo to replay the default demo route:
 # selfdrive/ui/replay/replay --demo
 
-# In another terminal you can run a debug visualizer:
-python replay/ui.py   # Define the environmental variable HORIZONTAL is the ui layout is too tall
-
-# Or run the normal openpilot UI
+# watch the replay with the normal openpilot UI
 cd selfdrive/ui && ./ui
-```
 
-![Imgur](https://i.imgur.com/Yppe0h2.png)
+# or try out a debug visualizer:
+python replay/ui.py
+```
 
 ## usage
 ``` bash
@@ -58,4 +41,34 @@ Options:
 Arguments:
   route                  the drive to replay. find your drives at
                          connect.comma.ai
+```
+
+## watch3
+
+watch all three cameras simultaneously from your comma three routes with watch3
+
+simply replay a route using the `--dcam` and `--ecam` flags:
+
+```bash
+# start a replay
+cd selfdrive/ui/replay && ./replay --demo --dcam --ecam
+
+# then start watch3
+cd selfdrive/ui && ./watch3
+```
+
+![](https://i.imgur.com/IeaOdAb.png)
+
+## Stream CAN messages to your device
+
+Replay CAN messages as they were recorded using a [panda jungle](https://comma.ai/shop/products/panda-jungle). The jungle has 6x OBD-C ports for connecting all your comma devices.
+
+`can_replay.py` is a convenient script for when any CAN data will do.
+
+In order to replay specific route:
+```bash
+MOCK=1 selfdrive/boardd/tests/boardd_old.py
+
+# In another terminal:
+selfdrive/ui/replay/replay <route-name>
 ```
