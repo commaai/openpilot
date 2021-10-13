@@ -131,7 +131,7 @@ void Segment::loadFile(int id, const std::string file) {
     file_ready = httpMultiPartDownload(file, local_file, id < MAX_CAMERAS ? 3 : 1, &aborting_);
   }
 
-  if (!aborting_) {
+  if (!aborting_ && file_ready) {
     if (id < MAX_CAMERAS) {
       frames[id] = std::make_unique<FrameReader>();
       success_ = success_ && frames[id]->load(local_file);
@@ -145,9 +145,9 @@ void Segment::loadFile(int id, const std::string file) {
       log = std::make_unique<LogReader>();
       success_ = success_ && log->load(decompressed);
     }
-    if (!aborting_ && --loading_ == 0) {
-      emit loadFinished(success_);
-    }
+  }
+  if (!aborting_ && --loading_ == 0) {
+    emit loadFinished(success_);
   }
 }
 
