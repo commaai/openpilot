@@ -32,7 +32,7 @@ def can_printer(bus, max_msg, addr):
       lp = sec_since_boot()
 
 if __name__ == "__main__":
-  parser = argparse.ArgumentParser(description="can data viewer",
+  parser = argparse.ArgumentParser(description="simple CAN data viewer",
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
   parser.add_argument("--bus", type=int, help="CAN bus to print out", default=0)
