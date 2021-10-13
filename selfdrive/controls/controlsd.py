@@ -72,7 +72,7 @@ class Controls:
 
     self.sm = sm
     if self.sm is None:
-      ignore = ['peripheralState', 'driverCameraState', 'managerState'] if SIMULATION else None
+      ignore = ['driverCameraState', 'managerState'] if SIMULATION else None
       self.sm = messaging.SubMaster(['deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'liveCalibration',
                                      'driverMonitoringState', 'longitudinalPlan', 'lateralPlan', 'liveLocationKalman',
                                      'managerState', 'liveParameters', 'radarState'] + self.camera_packets + joystick_packet,
@@ -216,6 +216,8 @@ class Controls:
           self.events.add(EventName.fanMalfunction)
       else:
         self.last_functional_fan_frame = self.sm.frame
+    #print("peripheralState: ", self.sm['peripheralState'].pandaType, self.sm['peripheralState'].voltage, 
+    #  self.sm['peripheralState'].current,self.sm['peripheralState'].fanSpeedRpm, self.sm['peripheralState'].usbPowerMode)
 
     # Handle calibration status
     cal_status = self.sm['liveCalibration'].calStatus

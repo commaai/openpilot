@@ -97,6 +97,22 @@ def panda_state_function(exit_event: threading.Event):
     pm.send('pandaStates', dat)
     time.sleep(0.5)
 
+def peripheral_state_function(exit_event: threading.Event):
+  pm = messaging.PubMaster(['peripheralState'])
+  while not exit_event.is_set():
+    dat = messaging.new_message('peripheralState')
+    dat.valid = True
+    # fake peripheral state data
+    dat.peripheralState = {
+      'pandaType': "blackPanda",
+      'voltage': 1234,
+      'current': 5678,
+      'fanSpeedRpm': 1000,
+      'usbPowerMode': "client"
+    }
+    pm.send('peripheralState', dat)
+    time.sleep(0.5)
+
 def gps_callback(gps, vehicle_state):
   dat = messaging.new_message('gpsLocationExternal')
 
@@ -215,6 +231,7 @@ def bridge(q):
   threads = []
   exit_event = threading.Event()
   threads.append(threading.Thread(target=panda_state_function, args=(exit_event,)))
+  threads.append(threading.Thread(target=peripheral_state_function, args=(exit_event,)))
   threads.append(threading.Thread(target=fake_driver_monitoring, args=(exit_event,)))
   threads.append(threading.Thread(target=can_function_runner, args=(vehicle_state, exit_event,)))
   for t in threads:
