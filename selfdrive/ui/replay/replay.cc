@@ -121,6 +121,15 @@ void Replay::setCurrentSegment(int n) {
   }
 }
 
+void Replay::segmentLoadFinished(bool success) {
+  Segment *segment = qobject_cast<Segment *>(sender());
+  if (!success) {
+    // remove segment if it failed to load
+    segments_.erase(segment->seg_num);
+  }
+  queueSegment();
+}
+
 // maintain the segment window
 void Replay::queueSegment() {
   // forward fetch segments
@@ -130,7 +139,7 @@ void Replay::queueSegment() {
     auto &[n, seg] = *end;
     if (!seg) {
       seg = std::make_unique<Segment>(n, route_->at(n), load_dcam, load_ecam);
-      QObject::connect(seg.get(), &Segment::loadFinished, this, &Replay::queueSegment);
+      QObject::connect(seg.get(), &Segment::loadFinished, this, &Replay::segmentLoadFinished);
     }
   }
   // merge segments

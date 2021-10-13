@@ -94,7 +94,7 @@ void Route::addFileToSegment(int n, const QString &file) {
 
 // class Segment
 
-Segment::Segment(int n, const SegmentFile &files, bool load_dcam, bool load_ecam) : seg_num_(n) {
+Segment::Segment(int n, const SegmentFile &files, bool load_dcam, bool load_ecam) : seg_num(n) {
   static std::once_flag once_flag;
   std::call_once(once_flag, [=]() { if (!CACHE_DIR.exists()) QDir().mkdir(CACHE_DIR.absolutePath()); });
 
@@ -122,17 +122,19 @@ Segment::~Segment() {
 }
 
 void Segment::loadFile(int id, const std::string file) {
-  bool is_remote = file.find("https://") == 0;
-  std::string local_file = is_remote ? cacheFilePath(file) : file;
-  if (is_remote && !util::file_exists(local_file)) {
+  const bool is_remote = file.find("https://") == 0;
+  const std::string local_file = is_remote ? cacheFilePath(file) : file;
+  bool file_ready = util::file_exists(local_file);
+
+  if (!file_ready && is_remote) {
     // TODO: retry on failure
-    httpMultiPartDownload(file, local_file, id < MAX_CAMERAS ? 3 : 1, &aborting_);
+    file_ready = httpMultiPartDownload(file, local_file, id < MAX_CAMERAS ? 3 : 1, &aborting_);
   }
 
   if (!aborting_) {
     if (id < MAX_CAMERAS) {
       frames[id] = std::make_unique<FrameReader>();
-      frames[id]->load(local_file);
+      success_ = success_ && frames[id]->load(local_file);
     } else {
       // decompress log file.
       std::string decompressed = cacheFilePath(local_file + ".decompressed");
@@ -141,10 +143,10 @@ void Segment::loadFile(int id, const std::string file) {
         readBZ2File(local_file, ostrm);
       }
       log = std::make_unique<LogReader>();
-      log->load(decompressed);
+      success_ = success_ && log->load(decompressed);
     }
     if (!aborting_ && --loading_ == 0) {
-      emit loadFinished();
+      emit loadFinished(success_);
     }
   }
 }

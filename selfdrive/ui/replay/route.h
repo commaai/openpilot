@@ -42,20 +42,20 @@ class Segment : public QObject {
 public:
   Segment(int n, const SegmentFile &files, bool load_dcam, bool load_ecam);
   ~Segment();
-  inline bool isLoaded() const { return loading_ == 0; }
+  inline bool isLoaded() const { return !loading_ && success_; }
 
+  const int seg_num = 0;
   std::unique_ptr<LogReader> log;
   std::unique_ptr<FrameReader> frames[MAX_CAMERAS] = {};
 
 signals:
-  void loadFinished();
+  void loadFinished(bool success);
 
 protected:
   void loadFile(int id, const std::string file);
   std::string cacheFilePath(const std::string &file);
 
-  std::atomic<bool> aborting_ = false;
+  std::atomic<bool> success_ = true, aborting_ = false;
   std::atomic<int> loading_ = 0;
-  int seg_num_ = 0;
   QFutureSynchronizer<void> synchronizer_;
 };

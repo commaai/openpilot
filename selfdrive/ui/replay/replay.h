@@ -27,6 +27,7 @@ signals:
 protected slots:
   void queueSegment();
   void doSeek(int seconds, bool relative);
+  void segmentLoadFinished(bool sucess);
 
 protected:
   typedef std::map<int, std::unique_ptr<Segment>> SegmentMap;
