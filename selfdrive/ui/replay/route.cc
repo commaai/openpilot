@@ -125,8 +125,9 @@ Segment::Segment(int n, const SegmentFile &files, bool load_dcam, bool load_ecam
 
 Segment::~Segment() {
   aborting_ = true;
-  for (auto &t : threads_) {
+  for (QThread *t : threads_) {
     if (t->isRunning()) t->wait();
+    delete t;
   }
 }
 
