@@ -143,7 +143,7 @@ void Segment::loadFile(int id, const std::string file) {
       log = std::make_unique<LogReader>();
       log->load(decompressed);
     }
-    if (--loading_ == 0 && !aborting_) {
+    if (!aborting_ && --loading_ == 0) {
       emit loadFinished();
     }
   }
