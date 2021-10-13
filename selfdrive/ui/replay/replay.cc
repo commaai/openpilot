@@ -122,10 +122,10 @@ void Replay::setCurrentSegment(int n) {
 }
 
 void Replay::segmentLoadFinished(bool success) {
-  Segment *segment = qobject_cast<Segment *>(sender());
   if (!success) {
-    // remove segment if it failed to load
-    segments_.erase(segment->seg_num);
+    Segment *seg = qobject_cast<Segment *>(sender());
+    qInfo() << "failed to load segment" << seg->seg_num << ".remove it from current replay list";
+    segments_.erase(seg->seg_num);
   }
   queueSegment();
 }
