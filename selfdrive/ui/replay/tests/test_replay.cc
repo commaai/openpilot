@@ -132,7 +132,6 @@ void TestReplay::test_seek() {
       segments_.erase(n);
     }
     for (int i =0; i < 50; ++i) {
-      testSeekTo(520);
       testSeekTo(random_int(4 * 60, 9 * 60));
     }
     loop.quit();
