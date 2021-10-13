@@ -54,8 +54,8 @@ signals:
   void loadFinished();
 
 protected:
-  void loadFile(int id, const QString file);
-  std::string localPath(const QString &file);
+  void loadFile(int id, const std::string file);
+  std::string cacheFilePath(const std::string &file);
 
   std::atomic<bool> aborting_ = false;
   std::atomic<int> loading_ = 0;

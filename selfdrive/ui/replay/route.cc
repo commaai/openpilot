@@ -118,7 +118,7 @@ Segment::Segment(int n, const SegmentFile &files, bool load_dcam, bool load_ecam
   for (int i = 0; i < std::size(file_list); ++i) {
     if (!file_list[i].isEmpty()) {
       ++loading_;
-      threads_.emplace_back(QThread::create([=, fn = file_list[i]] { loadFile(i, fn); }))->start();
+      threads_.emplace_back(QThread::create([=, fn = file_list[i]] { loadFile(i, fn.toStdString()); }))->start();
     }
   }
 }
@@ -131,25 +131,23 @@ Segment::~Segment() {
   }
 }
 
-void Segment::loadFile(int id, const QString file) {
-  std::string local_file = localPath(file);
-  std::string decompressed_file = local_file + ".decompressed";
-
-  if (file.startsWith("https://")  && !util::file_exists(local_file)) {
-    if (id == 0) qDebug() << "downloading segment" << seg_num_ << "...";
-
-    bool ret = httpMultiPartDownload(file.toStdString(), local_file, connections_per_file, &aborting_);
-    if (ret && id == MAX_CAMERAS) {
-      // pre-decompress log file.
-      std::ofstream ostrm(decompressed_file, std::ios::binary);
-      readBZ2File(local_file, ostrm);
-    }
+void Segment::loadFile(int id, const std::string file) {
+  bool is_remote_file = file.find("https://") == 0;
+  std::string local_file = is_remote_file ? cacheFilePath(file) : file;
+  if (is_remote_file  && !util::file_exists(local_file)) {
+    httpMultiPartDownload(file, local_file, connections_per_file, &aborting_);
   }
 
   if (!aborting_) {
     if (id == MAX_CAMERAS) {
+      // pre-decompress log file.
+      std::string decompressed_file = cacheFilePath(local_file + ".decompressed");
+      if (!util::file_exists(decompressed_file)) {
+        std::ofstream ostrm(decompressed_file, std::ios::binary);
+        readBZ2File(local_file, ostrm);
+      }
       log = std::make_unique<LogReader>();
-      log->load(util::file_exists(decompressed_file) ? decompressed_file : local_file);
+      log->load(decompressed_file);
     } else {
       frames[id] = std::make_unique<FrameReader>();
       frames[id]->load(local_file);
@@ -160,10 +158,8 @@ void Segment::loadFile(int id, const QString file) {
   }
 }
 
-std::string Segment::localPath(const QString &file) {
-  if (!file.startsWith("https://")) return file.toStdString();
-
-  QUrl url(file);
+std::string Segment::cacheFilePath(const std::string &file) {
+  QUrl url(file.c_str());
   QByteArray url_no_query = url.toString(QUrl::RemoveQuery).toUtf8();
   QString sha256 = QCryptographicHash::hash(url_no_query, QCryptographicHash::Sha256).toHex();
   return CACHE_DIR.filePath(sha256 + "." + QFileInfo(url.fileName()).suffix()).toStdString();
