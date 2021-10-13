@@ -80,9 +80,11 @@ def get_can_signals(CP, gearbox_msg, main_on_sig_msg):
   if CP.carFingerprint in HONDA_BOSCH:
     signals += [
       ("EPB_STATE", "EPB_STATUS", 0),
+      ("IMPERIAL_UNIT", "CAR_SPEED", 1),
     ]
     checks += [
       ("EPB_STATUS", 50),
+      ("CAR_SPEED", 10),
     ]
 
     if not CP.openpilotLongitudinalControl:
@@ -291,7 +293,12 @@ class CarState(CarStateBase):
         ret.brakePressed = True
 
     # TODO: discover the CAN msg that has the imperial unit bit for all other cars
-    self.is_metric = not cp.vl["HUD_SETTING"]["IMPERIAL_UNIT"] if self.CP.carFingerprint in (CAR.CIVIC) else False
+    if self.CP.carFingerprint in (CAR.CIVIC, ):
+      self.is_metric = not cp.vl["HUD_SETTING"]["IMPERIAL_UNIT"]
+    elif self.CP.carFingerprint in HONDA_BOSCH:
+      self.is_metric = not cp.vl["CAR_SPEED"]["IMPERIAL_UNIT"]
+    else:
+      self.is_metric = False
 
     if self.CP.carFingerprint in HONDA_BOSCH:
       ret.stockAeb = (not self.CP.openpilotLongitudinalControl) and bool(cp.vl["ACC_CONTROL"]["AEB_STATUS"] and cp.vl["ACC_CONTROL"]["ACCEL_COMMAND"] < -1e-5)

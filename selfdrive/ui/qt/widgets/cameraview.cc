@@ -233,23 +233,26 @@ void CameraViewWidget::paintGL() {
 }
 
 void CameraViewWidget::updateFrame() {
-  if (!vipc_client->connected && vipc_client->connect(false)) {
-    // init vision
-    for (int i = 0; i < vipc_client->num_buffers; i++) {
-      texture[i].reset(new EGLImageTexture(&vipc_client->buffers[i]));
+  if (!vipc_client->connected) {
+    makeCurrent();
+    if (vipc_client->connect(false)) {
+      // init vision
+      for (int i = 0; i < vipc_client->num_buffers; i++) {
+        texture[i].reset(new EGLImageTexture(&vipc_client->buffers[i]));
 
-      glBindTexture(GL_TEXTURE_2D, texture[i]->frame_tex);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glBindTexture(GL_TEXTURE_2D, texture[i]->frame_tex);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-      // BGR
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_BLUE);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
-      assert(glGetError() == GL_NO_ERROR);
+        // BGR
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_BLUE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
+        assert(glGetError() == GL_NO_ERROR);
+      }
+      latest_frame = nullptr;
+      resizeGL(width(), height());
     }
-    latest_frame = nullptr;
-    resizeGL(width(), height());
   }
 
   VisionBuf *buf = nullptr;
@@ -263,7 +266,7 @@ void CameraViewWidget::updateFrame() {
       LOGE("visionIPC receive timeout");
     }
   }
-  if (buf == nullptr) {
+  if (buf == nullptr && isVisible()) {
     // try to connect or recv again
     QTimer::singleShot(1000. / UI_FREQ, this, &CameraViewWidget::updateFrame);
   }

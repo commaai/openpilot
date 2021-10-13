@@ -84,17 +84,17 @@ def imu_callback(imu, vehicle_state):
   pm.send('sensorEvents', dat)
 
 def panda_state_function(exit_event: threading.Event):
-  pm = messaging.PubMaster(['pandaState'])
+  pm = messaging.PubMaster(['pandaStates'])
   while not exit_event.is_set():
-    dat = messaging.new_message('pandaState')
+    dat = messaging.new_message('pandaStates', 1)
     dat.valid = True
-    dat.pandaState = {
+    dat.pandaStates[0] = {
       'ignitionLine': True,
       'pandaType': "blackPanda",
       'controlsAllowed': True,
       'safetyModel': 'hondaNidec'
     }
-    pm.send('pandaState', dat)
+    pm.send('pandaStates', dat)
     time.sleep(0.5)
 
 def gps_callback(gps, vehicle_state):

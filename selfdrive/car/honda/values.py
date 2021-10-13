@@ -4,35 +4,37 @@ from selfdrive.car import dbc_dict
 Ecu = car.CarParams.Ecu
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
+
 class CarControllerParams():
   # Allow small margin below -3.5 m/s^2 from ISO 15622:2018 since we
   # perform the closed loop control, and might need some
   # to apply some more braking if we're on a downhill slope.
   # Our controller should still keep the 2 second average above
   # -3.5 m/s^2 as per planner limits
-  NIDEC_ACCEL_MIN = -4.0 # m/s^2
-  NIDEC_ACCEL_MAX = 1.6 # m/s^2, lower than 2.0 m/s^2 for tuning reasons
+  NIDEC_ACCEL_MIN = -4.0  # m/s^2
+  NIDEC_ACCEL_MAX = 1.6  # m/s^2, lower than 2.0 m/s^2 for tuning reasons
 
-  BOSCH_ACCEL_MIN = -3.5 # m/s^2
-  BOSCH_ACCEL_MAX = 2.0 # m/s^2
+  NIDEC_ACCEL_LOOKUP_BP = [-1., 0., .6]
+  NIDEC_ACCEL_LOOKUP_V = [-4.8, 0., 2.0]
+
+  NIDEC_MAX_ACCEL_V = [0.5, 2.4, 1.4, 0.6]
+  NIDEC_MAX_ACCEL_BP = [0.0, 4.0, 10., 20.]
+
+  NIDEC_BRAKE_MAX = 1024 // 4
+
+  BOSCH_ACCEL_MIN = -3.5  # m/s^2
+  BOSCH_ACCEL_MAX = 2.0  # m/s^2
+
+  BOSCH_GAS_LOOKUP_BP = [-0.2, 2.0]  # 2m/s^2
+  BOSCH_GAS_LOOKUP_V = [0, 1600]
 
   def __init__(self, CP):
-    self.BRAKE_MAX = 1024//4
     self.STEER_MAX = CP.lateralParams.torqueBP[-1]
     # mirror of list (assuming first item is zero) for interp of signed request values
     assert(CP.lateralParams.torqueBP[0] == 0)
     assert(CP.lateralParams.torqueBP[0] == 0)
     self.STEER_LOOKUP_BP = [v * -1 for v in CP.lateralParams.torqueBP][1:][::-1] + list(CP.lateralParams.torqueBP)
     self.STEER_LOOKUP_V = [v * -1 for v in CP.lateralParams.torqueV][1:][::-1] + list(CP.lateralParams.torqueV)
-
-    self.NIDEC_ACCEL_LOOKUP_BP = [-1., 0., .6]
-    self.NIDEC_ACCEL_LOOKUP_V = [-4.8, 0., 2.0]
-
-    self.NIDEC_MAX_ACCEL_V = [0.5, 2.4, 1.4, 0.6]
-    self.NIDEC_MAX_ACCEL_BP = [0.0, 4.0, 10., 20.]
-
-    self.BOSCH_GAS_LOOKUP_BP = [0., 2.0]  # 2m/s^2
-    self.BOSCH_GAS_LOOKUP_V = [0, 2000]
 
 
 # Car button codes
@@ -414,6 +416,7 @@ FW_VERSIONS = {
       b'37805-5AG-Z910\x00\x00',
       b'37805-5AJ-A750\x00\x00',
       b'37805-5AJ-L750\x00\x00',
+      b'37805-5AK-T530\x00\x00',
       b'37805-5AN-A750\x00\x00',
       b'37805-5AN-A830\x00\x00',
       b'37805-5AN-A840\x00\x00',
@@ -474,6 +477,7 @@ FW_VERSIONS = {
       b'28101-5DJ-A710\x00\x00',
       b'28101-5DV-E330\x00\x00',
       b'28101-5DV-E610\x00\x00',
+      b'28101-5DV-E820\x00\x00',
     ],
     (Ecu.vsa, 0x18da28f1, None): [
       b'57114-TBG-A330\x00\x00',
@@ -505,6 +509,7 @@ FW_VERSIONS = {
       b'77959-TGG-A020\x00\x00',
       b'77959-TGG-A030\x00\x00',
       b'77959-TGG-G010\x00\x00',
+      b'77959-TGG-G110\x00\x00',
       b'77959-TGG-J320\x00\x00',
       b'77959-TGG-Z820\x00\x00',
     ],
@@ -535,6 +540,7 @@ FW_VERSIONS = {
       b'78109-TGL-G120\x00\x00',
       b'78109-TGL-G130\x00\x00',
       b'78109-TGL-G230\x00\x00',
+      b'78109-TGL-GM10\x00\x00',
     ],
     (Ecu.fwdRadar, 0x18dab0f1, None): [
       b'36802-TBA-A150\x00\x00',
@@ -557,6 +563,7 @@ FW_VERSIONS = {
       b'36161-TGG-A120\x00\x00',
       b'36161-TGG-G050\x00\x00',
       b'36161-TGG-G130\x00\x00',
+      b'36161-TGG-G140\x00\x00',
       b'36161-TGK-Q120\x00\x00',
       b'36161-TGL-G050\x00\x00',
       b'36161-TGL-G070\x00\x00',
@@ -1169,6 +1176,7 @@ FW_VERSIONS = {
       b'78109-T6Z-A420\x00\x00',
       b'78109-T6Z-A510\x00\x00',
       b'78109-T6Z-A710\x00\x00',
+      b'78109-T6Z-A810\x00\x00',
       b'78109-T6Z-A910\x00\x00',
       b'78109-T6Z-AA10\x00\x00',
       b'78109-T6Z-C620\x00\x00',
