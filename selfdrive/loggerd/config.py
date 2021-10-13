@@ -31,5 +31,4 @@ def get_available_bytes(default=None):
   except OSError:
     available_bytes = default
     
-  available_bytes=0
   return available_bytes
