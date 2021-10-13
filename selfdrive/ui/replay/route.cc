@@ -134,7 +134,7 @@ Segment::~Segment() {
 void Segment::loadFile(int id, const std::string file) {
   bool is_remote_file = file.find("https://") == 0;
   std::string local_file = is_remote_file ? cacheFilePath(file) : file;
-  if (is_remote_file  && !util::file_exists(local_file)) {
+  if (is_remote_file && !util::file_exists(local_file)) {
     httpMultiPartDownload(file, local_file, connections_per_file, &aborting_);
   }
 
@@ -159,6 +159,8 @@ void Segment::loadFile(int id, const std::string file) {
 }
 
 std::string Segment::cacheFilePath(const std::string &file) {
-  QByteArray url_no_query = QUrl(file.c_str()).toString(QUrl::RemoveQuery).toUtf8();
-  return CACHE_DIR.filePath(QString(QCryptographicHash::hash(url_no_query, QCryptographicHash::Sha256).toHex())).toStdString();
+  QUrl url(file.c_str());
+  QByteArray url_no_query = url.toString(QUrl::RemoveQuery).toUtf8();
+  QString sha256 = QCryptographicHash::hash(url_no_query, QCryptographicHash::Sha256).toHex();
+  return CACHE_DIR.filePath(sha256 + "." + QFileInfo(url.fileName()).suffix()).toStdString();
 }
