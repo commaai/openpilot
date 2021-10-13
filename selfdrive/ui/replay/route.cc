@@ -98,18 +98,16 @@ Segment::Segment(int n, const SegmentFile &files, bool load_dcam, bool load_ecam
   static std::once_flag once_flag;
   std::call_once(once_flag, [=]() { if (!CACHE_DIR.exists()) QDir().mkdir(CACHE_DIR.absolutePath()); });
 
-  // fallback to qcamera/qlog
-  const QString road_cam_path = files.road_cam.isEmpty() ? files.qcamera : files.road_cam;
-  const QString log_path = files.rlog.isEmpty() ? files.qlog : files.rlog;
-  assert(!log_path.isEmpty() && !road_cam_path.isEmpty());
-
-  const QString driver_cam_path = load_dcam ? files.driver_cam : "";
-  const QString wide_road_cam_path = load_ecam ? files.wide_road_cam : "";
-
-  const QString file_list[] = {road_cam_path, driver_cam_path, wide_road_cam_path, log_path};
-  for (int i = 0; i < std::size(file_list); ++i) {
+  // the order is [RoadCam, DriverCam, WideRoadCam, log]. fallback to qcamera/qlog
+  const QString file_list[] = {
+      files.road_cam.isEmpty() ? files.qcamera : files.road_cam,
+      load_dcam ? files.driver_cam : "",
+      load_ecam ? files.wide_road_cam : "",
+      files.rlog.isEmpty() ? files.qlog : files.rlog,
+  };
+  for (int i = 0; i < std::size(file_list); i++) {
     if (!file_list[i].isEmpty()) {
-      ++loading_;
+      loading_++;
       synchronizer_.addFuture(QtConcurrent::run(this, &Segment::loadFile, i, file_list[i].toStdString()));
     }
   }
@@ -136,7 +134,6 @@ void Segment::loadFile(int id, const std::string file) {
       frames[id] = std::make_unique<FrameReader>();
       success_ = success_ && frames[id]->load(local_file);
     } else {
-      // decompress log file.
       std::string decompressed = cacheFilePath(local_file + ".decompressed");
       if (!util::file_exists(decompressed)) {
         std::ofstream ostrm(decompressed, std::ios::binary);
@@ -146,6 +143,7 @@ void Segment::loadFile(int id, const std::string file) {
       success_ = success_ && log->load(decompressed);
     }
   }
+
   if (!aborting_ && --loading_ == 0) {
     emit loadFinished(success_);
   }
