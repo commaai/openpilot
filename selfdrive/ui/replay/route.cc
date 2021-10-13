@@ -132,10 +132,11 @@ Segment::~Segment() {
 }
 
 void Segment::loadFile(int id, const std::string file) {
-  bool is_remote_file = file.find("https://") == 0;
-  std::string local_file = is_remote_file ? cacheFilePath(file) : file;
-  if (is_remote_file && !util::file_exists(local_file)) {
-    httpMultiPartDownload(file, local_file, connections_per_file, &aborting_);
+  bool is_remote = file.find("https://") == 0;
+  std::string local_file = is_remote ? cacheFilePath(file) : file;
+  if (is_remote && !util::file_exists(local_file)) {
+    // TODO: retry on failure
+    httpMultiPartDownload(file, local_file, id < MAX_CAMERAS ? 3 : 1, &aborting_);
   }
 
   if (!aborting_) {
@@ -144,13 +145,13 @@ void Segment::loadFile(int id, const std::string file) {
       frames[id]->load(local_file);
     } else {
       // pre-decompress log file.
-      std::string decompressed_file = cacheFilePath(local_file + ".decompressed");
-      if (!util::file_exists(decompressed_file)) {
-        std::ofstream ostrm(decompressed_file, std::ios::binary);
+      std::string decompressed = cacheFilePath(local_file + ".decompressed");
+      if (!util::file_exists(decompressed)) {
+        std::ofstream ostrm(decompressed, std::ios::binary);
         readBZ2File(local_file, ostrm);
       }
       log = std::make_unique<LogReader>();
-      log->load(decompressed_file);
+      log->load(decompressed);
     }
     if (--loading_ == 0 && !aborting_) {
       emit loadFinished();
