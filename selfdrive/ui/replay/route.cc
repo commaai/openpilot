@@ -63,10 +63,13 @@ bool Route::loadFromLocal() {
   if (folders.isEmpty()) return false;
 
   for (auto folder : folders) {
-    const int seg_num = folder.split("--")[2].toInt();
-    QDir segment_dir(log_dir.filePath(folder));
-    for (auto f : segment_dir.entryList(QDir::Files)) {
-      addFileToSegment(seg_num, segment_dir.absoluteFilePath(f));
+    int seg_num_pos = folder.lastIndexOf("--");
+    if (seg_num_pos != -1) {
+      const int seg_num = folder.mid(seg_num_pos + 2).toInt();
+      QDir segment_dir(log_dir.filePath(folder));
+      for (auto f : segment_dir.entryList(QDir::Files)) {
+        addFileToSegment(seg_num, segment_dir.absoluteFilePath(f));
+      }
     }
   }
   return true;
