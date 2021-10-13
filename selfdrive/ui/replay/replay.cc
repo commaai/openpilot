@@ -230,8 +230,8 @@ void Replay::stream() {
       continue;
     }
 
-    const uint64_t evt_start_ts = cur_mono_time_;
-    const uint64_t loop_start_ts = nanos_since_boot();
+    uint64_t evt_start_ts = cur_mono_time_;
+    uint64_t loop_start_ts = nanos_since_boot();
 
     for (auto end = events_->end(); !updating_events_ && eit != end; ++eit) {
       const Event *evt = (*eit);
@@ -258,7 +258,12 @@ void Replay::stream() {
         long etime = cur_mono_time_ - evt_start_ts;
         long rtime = nanos_since_boot() - loop_start_ts;
         long behind_ns = etime - rtime;
-        if (behind_ns > 0) {
+        // if behind_ns is greater than 1 second, it means that an invalid segemnt is skipped by seeking/replaying
+        if (behind_ns >= 1 * 1e9) {
+          // reset start times
+          evt_start_ts = cur_mono_time_;
+          loop_start_ts = nanos_since_boot();
+        } else if (behind_ns > 0) {
           precise_nano_sleep(behind_ns);
         }
 
