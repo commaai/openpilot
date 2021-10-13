@@ -54,7 +54,7 @@ bool is_events_ordered(const std::vector<Event *> &events) {
 TEST_CASE("Segment") {
   Route demo_route(DEMO_ROUTE);
   REQUIRE(demo_route.load());
-  REQUIRE(demo_route.size() == 11);
+  REQUIRE(demo_route.segments().size() == 11);
 
   QEventLoop loop;
   Segment segment(0, demo_route.at(0), false, false);

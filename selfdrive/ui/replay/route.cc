@@ -73,20 +73,19 @@ bool Route::loadFromLocal() {
 }
 
 void Route::addFileToSegment(int n, const QString &file) {
-  auto &seg = segments_[n]; 
   const QString name = QUrl(file).fileName();
   if (name == "rlog.bz2") {
-    seg.rlog = file;
+    segments_[n].rlog = file;
   } else if (name == "qlog.bz2") {
-    seg.qlog = file;
+    segments_[n].qlog = file;
   } else if (name == "fcamera.hevc") {
-    seg.road_cam = file;
+    segments_[n].road_cam = file;
   } else if (name == "dcamera.hevc") {
-    seg.driver_cam = file;
+    segments_[n].driver_cam = file;
   } else if (name == "ecamera.hevc") {
-    seg.wide_road_cam = file;
+    segments_[n].wide_road_cam = file;
   } else if (name == "qcamera.ts") {
-    seg.qcamera = file;
+    segments_[n].qcamera = file;
   }
 }
 

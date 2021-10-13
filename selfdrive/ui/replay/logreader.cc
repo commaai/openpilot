@@ -1,6 +1,5 @@
 #include "selfdrive/ui/replay/logreader.h"
 
-#include <cassert>
 #include <sstream>
 #include "selfdrive/common/util.h"
 #include "selfdrive/ui/replay/util.h"
