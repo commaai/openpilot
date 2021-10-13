@@ -10,8 +10,6 @@
 #include "selfdrive/ui/qt/api.h"
 #include "selfdrive/ui/replay/util.h"
 
-Route::Route(const QString &route, const QString &data_dir) : route_(route), data_dir_(data_dir) {}
-
 bool Route::load() {
   if (data_dir_.isEmpty()) {
     return loadFromServer();
@@ -49,8 +47,7 @@ bool Route::loadFromJson(const QString &json) {
     for (const auto &url : route_files[key].toArray()) {
       QString url_str = url.toString();
       if (rx.indexIn(url_str) != -1) {
-        const int seg_num = rx.cap(1).toInt();
-        addFileToSegment(seg_num, url_str);
+        addFileToSegment(rx.cap(1).toInt(), url_str);
       }
     }
   }
@@ -76,22 +73,20 @@ bool Route::loadFromLocal() {
 }
 
 void Route::addFileToSegment(int n, const QString &file) {
-  if (segments_.size() <= n) {
-    segments_.resize(n + 1);
-  }
-  QString name = QUrl(file).fileName();
+  auto &seg = segments_[n]; 
+  const QString name = QUrl(file).fileName();
   if (name == "rlog.bz2") {
-    segments_[n].rlog = file;
+    seg.rlog = file;
   } else if (name == "qlog.bz2") {
-    segments_[n].qlog = file;
+    seg.qlog = file;
   } else if (name == "fcamera.hevc") {
-    segments_[n].road_cam = file;
+    seg.road_cam = file;
   } else if (name == "dcamera.hevc") {
-    segments_[n].driver_cam = file;
+    seg.driver_cam = file;
   } else if (name == "ecamera.hevc") {
-    segments_[n].wide_road_cam = file;
+    seg.wide_road_cam = file;
   } else if (name == "qcamera.ts") {
-    segments_[n].qcamera = file;
+    seg.qcamera = file;
   }
 }
 

@@ -1,8 +1,6 @@
 #pragma once
 
 #include <QDir>
-#include <QString>
-#include <vector>
 
 #include "selfdrive/common/util.h"
 #include "selfdrive/ui/replay/framereader.h"
@@ -21,11 +19,11 @@ struct SegmentFile {
 
 class Route {
 public:
-  Route(const QString &route, const QString &data_dir = {});
+  Route(const QString &route, const QString &data_dir = {}) : route_(route), data_dir_(data_dir) {};
   bool load();
   inline const QString &name() const { return route_; };
-  inline int size() const { return segments_.size(); }
-  inline SegmentFile &at(int n) { return segments_[n]; }
+  inline const std::map<int, SegmentFile> &segments() const { return segments_; }
+  inline SegmentFile &at(int n) { return segments_.at(n); }
 
 protected:
   bool loadFromLocal();
@@ -34,7 +32,7 @@ protected:
   void addFileToSegment(int seg_num, const QString &file);
   QString route_;
   QString data_dir_;
-  std::vector<SegmentFile> segments_;
+  std::map<int, SegmentFile> segments_;
 };
 
 class Segment : public QObject {
