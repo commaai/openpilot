@@ -26,14 +26,14 @@ class DRIVER_MONITOR_SETTINGS():
     self._DISTRACTED_PROMPT_TIME_TILL_TERMINAL = 6.
 
     self._FACE_THRESHOLD = 0.5
-    self._PARTIAL_FACE_THRESHOLD = 0.765 if TICI else 0.455
-    self._EYE_THRESHOLD = 0.75 if TICI else 0.55
-    self._SG_THRESHOLD = 0.888 if TICI else 0.85
-    self._BLINK_THRESHOLD = 0.811 if TICI else 0.62
-    self._BLINK_THRESHOLD_SLACK = 0.9 if TICI else 0.8
+    self._PARTIAL_FACE_THRESHOLD = 0.765 if TICI else 0.43
+    self._EYE_THRESHOLD = 0.61 if TICI else 0.55
+    self._SG_THRESHOLD = 0.89 if TICI else 0.86
+    self._BLINK_THRESHOLD = 0.82 if TICI else 0.588
+    self._BLINK_THRESHOLD_SLACK = 0.9 if TICI else 0.77
     self._BLINK_THRESHOLD_STRICT = self._BLINK_THRESHOLD
     self._PITCH_WEIGHT = 1.35  # pitch matters a lot more
-    self._POSESTD_THRESHOLD = 0.2 if TICI else 0.175
+    self._POSESTD_THRESHOLD = 0.38 if TICI else 0.3
 
     self._METRIC_THRESHOLD = 0.48
     self._METRIC_THRESHOLD_SLACK = 0.66
