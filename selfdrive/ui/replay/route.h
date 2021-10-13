@@ -43,9 +43,9 @@ class Segment : public QObject {
   Q_OBJECT
 
 public:
-  Segment(int n, const SegmentFile &segment_files, bool load_dcam, bool load_ecam);
+  Segment(int n, const SegmentFile &files, bool load_dcam, bool load_ecam);
   ~Segment();
-  inline bool isLoaded() const { return loaded_; }
+  inline bool isLoaded() const { return loading_ == 0; }
 
   std::unique_ptr<LogReader> log;
   std::unique_ptr<FrameReader> frames[MAX_CAMERAS] = {};
@@ -54,16 +54,11 @@ signals:
   void loadFinished();
 
 protected:
-  void load();
-  void download(const std::string &url, const std::string &cache_file);
+  void loadFile(int id, const QString file);
   std::string localPath(const QString &file);
 
-  std::atomic<bool> loaded_ = false;
   std::atomic<bool> aborting_ = false;
-  std::atomic<int> downloading_ = 0;
+  std::atomic<int> loading_ = 0;
   int seg_num_ = 0;
-  SegmentFile files_;
-  QString road_cam_path_;
-  QString log_path_;
-  std::vector<QThread*> download_threads_;
+  std::vector<QThread*> threads_;
 };

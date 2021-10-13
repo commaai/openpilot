@@ -100,88 +100,61 @@ void Route::addFileToSegment(int seg_num, const QString &file) {
 
 // class Segment
 
-Segment::Segment(int n, const SegmentFile &segment_files, bool load_dcam, bool load_ecam) : seg_num_(n), files_(segment_files) {
+Segment::Segment(int n, const SegmentFile &files, bool load_dcam, bool load_ecam) : seg_num_(n) {
   static std::once_flag once_flag;
   std::call_once(once_flag, [=]() {
     if (!CACHE_DIR.exists()) QDir().mkdir(CACHE_DIR.absolutePath());
   });
 
   // fallback to qcamera/qlog
-  road_cam_path_ = files_.road_cam.isEmpty() ? files_.qcamera : files_.road_cam;
-  log_path_ = files_.rlog.isEmpty() ? files_.qlog : files_.rlog;
-  assert (!log_path_.isEmpty() && !road_cam_path_.isEmpty());
+  const QString road_cam_path = files.road_cam.isEmpty() ? files.qcamera : files.road_cam;
+  const QString log_path = files.rlog.isEmpty() ? files.qlog : files.rlog;
+  assert(!log_path.isEmpty() && !road_cam_path.isEmpty());
 
-  if (!load_dcam) files_.driver_cam = "";
-  if (!load_ecam) files_.wide_road_cam = "";
+  const QString driver_cam_path = load_dcam ? files.driver_cam : "";
+  const QString wide_road_cam_path = load_ecam ? files.wide_road_cam : "";
 
-  if (log_path_.startsWith("https://")) {
-    for (auto &url : {log_path_, road_cam_path_, files_.driver_cam, files_.wide_road_cam}) {
-      if (!url.isEmpty()) {
-        if (auto cache_file = localPath(url); !util::file_exists(cache_file)) {
-          download(url.toStdString(), cache_file);
-          ++downloading_;
-         }
-      }
+  const QString file_list[] = {road_cam_path, driver_cam_path, wide_road_cam_path, log_path};
+  for (int i = 0; i < std::size(file_list); ++i) {
+    if (!file_list[i].isEmpty()) {
+      ++loading_;
+      threads_.emplace_back(QThread::create([=, fn = file_list[i]] { loadFile(i, fn); }))->start();
     }
-  }
-  if (downloading_ == 0) {
-    QTimer::singleShot(0, this, &Segment::load);
-  } else {
-    qDebug() << "downloading segment" << seg_num_ << "...";
   }
 }
 
 Segment::~Segment() {
   aborting_ = true;
-  if (downloading_ > 0) {
-    qDebug() << "cancel download segment" << seg_num_;
-  }
-  for (auto &t : download_threads_) {
+  for (auto &t : threads_) {
     if (t->isRunning()) t->wait();
   }
 }
 
-void Segment::download(const std::string &url, const std::string &cache_file) {
-  download_threads_.emplace_back(QThread::create([=]() {
-    bool ret = httpMultiPartDownload(url, cache_file, connections_per_file, &aborting_);
-    if (ret && cache_file.rfind(".bz2") == (cache_file.length() - 4)) {
-      // pre-decompress bz2 file.
-      std::ofstream ostrm(cache_file + ".decompressed", std::ios::binary);
-      readBZ2File(cache_file, ostrm);
-    }
-    if (--downloading_ == 0 && !aborting_) {
-      load();
-    }
-  }))->start();
-}
+void Segment::loadFile(int id, const QString file) {
+  std::string local_file = localPath(file);
+  std::string decompressed_file = local_file + ".decompressed";
 
-// load concurrency
-void Segment::load() {
-  std::vector<std::future<bool>> futures;
-
-  futures.emplace_back(std::async(std::launch::async, [=]() {
-    std::string file = localPath(log_path_);
-    const std::string decompressed_file = file + ".decompressed";
-    if (util::file_exists(decompressed_file)) {
-      file = decompressed_file;
-    }
-    log = std::make_unique<LogReader>();
-    return log->load(file);
-  }));
-
-  QString camera_files[] = {road_cam_path_, files_.driver_cam, files_.wide_road_cam};
-  for (int i = 0; i < std::size(camera_files); ++i) {
-    if (!camera_files[i].isEmpty()) {
-      futures.emplace_back(std::async(std::launch::async, [=]() {
-        frames[i] = std::make_unique<FrameReader>();
-        return frames[i]->load(localPath(camera_files[i]));
-      }));
+  if (file.startsWith("https://")  && !util::file_exists(local_file)) {
+    bool ret = httpMultiPartDownload(file.toStdString(), local_file, connections_per_file, &aborting_);
+    if (ret && id == MAX_CAMERAS) {
+      // pre-decompress log file.
+      std::ofstream ostrm(decompressed_file, std::ios::binary);
+      readBZ2File(local_file, ostrm);
     }
   }
 
-  int success_cnt = std::accumulate(futures.begin(), futures.end(), 0, [=](int v, auto &f) { return f.get() + v; });
-  loaded_ = (success_cnt == futures.size());
-  emit loadFinished();
+  if (!aborting_) {
+    if (id == MAX_CAMERAS) {
+      log = std::make_unique<LogReader>();
+      log->load(util::file_exists(decompressed_file) ? decompressed_file : local_file);
+    } else {
+      frames[id] = std::make_unique<FrameReader>();
+      frames[id]->load(local_file);
+    }
+    if (--loading_ == 0) {
+      emit loadFinished();
+    }
+  }
 }
 
 std::string Segment::localPath(const QString &file) {
