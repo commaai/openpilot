@@ -139,7 +139,10 @@ void Segment::loadFile(int id, const std::string file) {
   }
 
   if (!aborting_) {
-    if (id == MAX_CAMERAS) {
+    if (id < MAX_CAMERAS) {
+      frames[id] = std::make_unique<FrameReader>();
+      frames[id]->load(local_file);
+    } else {
       // pre-decompress log file.
       std::string decompressed_file = cacheFilePath(local_file + ".decompressed");
       if (!util::file_exists(decompressed_file)) {
@@ -148,9 +151,6 @@ void Segment::loadFile(int id, const std::string file) {
       }
       log = std::make_unique<LogReader>();
       log->load(decompressed_file);
-    } else {
-      frames[id] = std::make_unique<FrameReader>();
-      frames[id]->load(local_file);
     }
     if (--loading_ == 0 && !aborting_) {
       emit loadFinished();
@@ -159,8 +159,6 @@ void Segment::loadFile(int id, const std::string file) {
 }
 
 std::string Segment::cacheFilePath(const std::string &file) {
-  QUrl url(file.c_str());
-  QByteArray url_no_query = url.toString(QUrl::RemoveQuery).toUtf8();
-  QString sha256 = QCryptographicHash::hash(url_no_query, QCryptographicHash::Sha256).toHex();
-  return CACHE_DIR.filePath(sha256 + "." + QFileInfo(url.fileName()).suffix()).toStdString();
+  QByteArray url_no_query = QUrl(file.c_str()).toString(QUrl::RemoveQuery).toUtf8();
+  return CACHE_DIR.filePath(QString(QCryptographicHash::hash(url_no_query, QCryptographicHash::Sha256).toHex())).toStdString();
 }
