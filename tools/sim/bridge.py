@@ -104,11 +104,10 @@ def peripheral_state_function(exit_event: threading.Event):
     dat.valid = True
     # fake peripheral state data
     dat.peripheralState = {
-      'pandaType': "blackPanda",
-      'voltage': 1234,
+      'pandaType': log.PandaState.PandaType.blackPanda,
+      'voltage': 12000,
       'current': 5678,
-      'fanSpeedRpm': 1000,
-      'usbPowerMode': "client"
+      'fanSpeedRpm': 1000
     }
     pm.send('peripheralState', dat)
     time.sleep(0.5)
