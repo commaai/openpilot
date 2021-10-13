@@ -144,8 +144,8 @@ Segment::~Segment() {
 void Segment::download(const std::string &url, const std::string &cache_file) {
   download_threads_.emplace_back(QThread::create([=]() {
     bool ret = httpMultiPartDownload(url, cache_file, connections_per_file, &aborting_);
-    if (ret && log_path_ == url.c_str()) {
-      // pre-decompress log file.
+    if (ret && cache_file.rfind(".bz2") == (cache_file.length() - 4)) {
+      // pre-decompress bz2 file.
       std::ofstream ostrm(cache_file + ".decompressed", std::ios::binary);
       readBZ2File(cache_file, ostrm);
     }
@@ -189,7 +189,6 @@ std::string Segment::localPath(const QString &file) {
 
   QUrl url(file);
   QByteArray url_no_query = url.toString(QUrl::RemoveQuery).toUtf8();
-  QString extension = QFileInfo(url.fileName()).suffix();
-  QString cache_file = QString(QCryptographicHash::hash(url_no_query, QCryptographicHash::Sha256).toHex()) + "." + extension;
-  return CACHE_DIR.filePath(cache_file).toStdString();
+  QString sha256 = QCryptographicHash::hash(url_no_query, QCryptographicHash::Sha256).toHex();
+  return CACHE_DIR.filePath(sha256 + "." + QFileInfo(url.fileName()).suffix()).toStdString();
 }
