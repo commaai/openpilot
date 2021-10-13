@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QDir>
+#include <QFutureSynchronizer>
 
 #include "selfdrive/common/util.h"
 #include "selfdrive/ui/replay/framereader.h"
@@ -56,5 +57,5 @@ protected:
   std::atomic<bool> aborting_ = false;
   std::atomic<int> loading_ = 0;
   int seg_num_ = 0;
-  std::vector<QThread*> threads_;
+  QFutureSynchronizer<void> synchronizer_;
 };

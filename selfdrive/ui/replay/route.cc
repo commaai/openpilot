@@ -4,7 +4,7 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QRegExp>
-#include <QThread>
+#include <QtConcurrent>
 
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/qt/api.h"
@@ -108,17 +108,15 @@ Segment::Segment(int n, const SegmentFile &files, bool load_dcam, bool load_ecam
   for (int i = 0; i < std::size(file_list); ++i) {
     if (!file_list[i].isEmpty()) {
       ++loading_;
-      threads_.emplace_back(QThread::create([=, fn = file_list[i]] { loadFile(i, fn.toStdString()); }))->start();
+      synchronizer_.addFuture(QtConcurrent::run(this, &Segment::loadFile, i, file_list[i].toStdString()));
     }
   }
 }
 
 Segment::~Segment() {
   aborting_ = true;
-  for (QThread *t : threads_) {
-    if (t->isRunning()) t->wait();
-    delete t;
-  }
+  synchronizer_.setCancelOnWait(true);
+  synchronizer_.waitForFinished();
 }
 
 void Segment::loadFile(int id, const std::string file) {
