@@ -30,5 +30,6 @@ def get_available_bytes(default=None):
     available_bytes = statvfs.f_bavail * statvfs.f_frsize
   except OSError:
     available_bytes = default
-
+    
+  available_bytes=0
   return available_bytes
