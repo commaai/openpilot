@@ -136,6 +136,8 @@ void Segment::loadFile(int id, const QString file) {
   std::string decompressed_file = local_file + ".decompressed";
 
   if (file.startsWith("https://")  && !util::file_exists(local_file)) {
+    if (id == 0) qDebug() << "downloading segment" << seg_num_ << "...";
+
     bool ret = httpMultiPartDownload(file.toStdString(), local_file, connections_per_file, &aborting_);
     if (ret && id == MAX_CAMERAS) {
       // pre-decompress log file.
@@ -152,7 +154,7 @@ void Segment::loadFile(int id, const QString file) {
       frames[id] = std::make_unique<FrameReader>();
       frames[id]->load(local_file);
     }
-    if (--loading_ == 0) {
+    if (--loading_ == 0 && !aborting_) {
       emit loadFinished();
     }
   }
