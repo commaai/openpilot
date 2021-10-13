@@ -1,12 +1,10 @@
 #include "selfdrive/ui/replay/route.h"
 
 #include <QEventLoop>
-#include <QFile>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QRegExp>
 #include <QThread>
-#include <future>
 
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/qt/api.h"
@@ -77,24 +75,23 @@ bool Route::loadFromLocal() {
   return true;
 }
 
-void Route::addFileToSegment(int seg_num, const QString &file) {
-  if (segments_.size() <= seg_num) {
-    segments_.resize(seg_num + 1);
+void Route::addFileToSegment(int n, const QString &file) {
+  if (segments_.size() <= n) {
+    segments_.resize(n + 1);
   }
-
-  QString fn = QUrl(file).fileName();
-  if (fn == "rlog.bz2") {
-    segments_[seg_num].rlog = file;
-  } else if (fn == "qlog.bz2") {
-    segments_[seg_num].qlog = file;
-  } else if (fn == "fcamera.hevc") {
-    segments_[seg_num].road_cam = file;
-  } else if (fn == "dcamera.hevc") {
-    segments_[seg_num].driver_cam = file;
-  } else if (fn == "ecamera.hevc") {
-    segments_[seg_num].wide_road_cam = file;
-  } else if (fn == "qcamera.ts") {
-    segments_[seg_num].qcamera = file;
+  QString name = QUrl(file).fileName();
+  if (name == "rlog.bz2") {
+    segments_[n].rlog = file;
+  } else if (name == "qlog.bz2") {
+    segments_[n].qlog = file;
+  } else if (name == "fcamera.hevc") {
+    segments_[n].road_cam = file;
+  } else if (name == "dcamera.hevc") {
+    segments_[n].driver_cam = file;
+  } else if (name == "ecamera.hevc") {
+    segments_[n].wide_road_cam = file;
+  } else if (name == "qcamera.ts") {
+    segments_[n].qcamera = file;
   }
 }
 
@@ -102,9 +99,7 @@ void Route::addFileToSegment(int seg_num, const QString &file) {
 
 Segment::Segment(int n, const SegmentFile &files, bool load_dcam, bool load_ecam) : seg_num_(n) {
   static std::once_flag once_flag;
-  std::call_once(once_flag, [=]() {
-    if (!CACHE_DIR.exists()) QDir().mkdir(CACHE_DIR.absolutePath());
-  });
+  std::call_once(once_flag, [=]() { if (!CACHE_DIR.exists()) QDir().mkdir(CACHE_DIR.absolutePath()); });
 
   // fallback to qcamera/qlog
   const QString road_cam_path = files.road_cam.isEmpty() ? files.qcamera : files.road_cam;
@@ -160,8 +155,7 @@ void Segment::loadFile(int id, const std::string file) {
 }
 
 std::string Segment::cacheFilePath(const std::string &file) {
-  QUrl url(file.c_str());
-  QByteArray url_no_query = url.toString(QUrl::RemoveQuery).toUtf8();
-  QString sha256 = QCryptographicHash::hash(url_no_query, QCryptographicHash::Sha256).toHex();
-  return CACHE_DIR.filePath(sha256 + "." + QFileInfo(url.fileName()).suffix()).toStdString();
+  QString url_no_query = QUrl(file.c_str()).toString(QUrl::RemoveQuery);
+  QString sha256 = QCryptographicHash::hash(url_no_query.toUtf8(), QCryptographicHash::Sha256).toHex();
+  return CACHE_DIR.filePath(sha256 + "." + QFileInfo(url_no_query).suffix()).toStdString();
 }

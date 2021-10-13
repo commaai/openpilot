@@ -1,7 +1,6 @@
 #pragma once
 
 #include <QDir>
-#include <QObject>
 #include <QString>
 #include <vector>
 
