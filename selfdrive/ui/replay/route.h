@@ -55,7 +55,7 @@ signals:
 
 protected:
   void load();
-  void download(const std::string &url, const std::string &local_file);
+  void download(const std::string &url, const std::string &cache_file);
   std::string localPath(const QString &file);
 
   std::atomic<bool> loaded_ = false;

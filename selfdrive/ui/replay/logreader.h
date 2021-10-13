@@ -38,7 +38,7 @@ class LogReader {
 public:
   LogReader() = default;
   ~LogReader();
-  bool load(const std::string &file, bool is_bz2file);
+  bool load(const std::string &file);
 
   std::vector<Event*> events;
 
