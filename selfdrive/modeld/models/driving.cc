@@ -118,7 +118,7 @@ ModelDataRaw model_eval_frame(ModelState* s, cl_mem yuv_cl, int width, int heigh
   net_outputs.lead = &s->output[LEAD_IDX];
   net_outputs.lead_prob = &s->output[LEAD_PROB_IDX];
   net_outputs.meta = &s->output[DESIRE_STATE_IDX];
-  net_outputs.pose = &s->output[POSE_IDX];
+  net_outputs.pose = (ModelDataRawPose*)&s->output[POSE_IDX];
   return net_outputs;
 }
 
@@ -361,11 +361,11 @@ void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_droppe
   float rot_std_arr[3];
 
   for (int i =0; i < 3; i++) {
-    trans_arr[i] = net_outputs.pose[i];
-    trans_std_arr[i] = exp(net_outputs.pose[6 + i]);
+    trans_arr[i] = net_outputs.pose->trans_arr[i];
+    trans_std_arr[i] = exp(net_outputs.pose->trans_std_arr[i]);
 
-    rot_arr[i] = net_outputs.pose[3 + i];
-    rot_std_arr[i] = exp(net_outputs.pose[9 + i]);
+    rot_arr[i] = net_outputs.pose->rot_arr[i];
+    rot_std_arr[i] = exp(net_outputs.pose->rot_std_arr[i]);
   }
 
   MessageBuilder msg;
