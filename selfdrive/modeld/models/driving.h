@@ -14,6 +14,8 @@
 #include "selfdrive/modeld/models/commonmodel.h"
 #include "selfdrive/modeld/runners/run.h"
 
+constexpr int PLAN_MHP_N = 5;
+
 constexpr int DESIRE_LEN = 8;
 constexpr int TRAFFIC_CONVENTION_LEN = 2;
 constexpr int MODEL_FREQ = 20;
@@ -22,12 +24,80 @@ struct ModelDataRawXYZ {
   float x;
   float y;
   float z;
+
+  constexpr std::array<float, 3> to_array() {
+    std::array<float, 3> arr = {};
+    arr[0] = x;
+    arr[1] = y;
+    arr[2] = z;
+    return arr;
+  }
+
+  constexpr std::array<float, 3> to_array_exp() {
+    std::array<float, 3> arr = {};
+    arr[0] = exp(x);
+    arr[1] = exp(y);
+    arr[2] = exp(z);
+    return arr;
+  }
 };
 
 struct ModelDataRawRPY {
   float roll;
   float pitch;
   float yaw;
+
+  constexpr std::array<float, 3> to_array() {
+    std::array<float, 3> arr = {};
+    arr[0] = roll;
+    arr[1] = pitch;
+    arr[2] = yaw;
+    return arr;
+  }
+
+  constexpr std::array<float, 3> to_array_exp() {
+    std::array<float, 3> arr = {};
+    arr[0] = exp(roll);
+    arr[1] = exp(pitch);
+    arr[2] = exp(yaw);
+    return arr;
+  }
+};
+
+struct ModelDataRawPlanTimeStep {
+  ModelDataRawXYZ position;
+  ModelDataRawXYZ velocity;
+  ModelDataRawXYZ acceleration;
+  ModelDataRawRPY rotation;
+  ModelDataRawRPY rotation_rate;
+};
+
+struct ModelDataRawPlanPrediction {
+  std::array<ModelDataRawPlanTimeStep, TRAJECTORY_SIZE> mean;
+  std::array<ModelDataRawPlanTimeStep, TRAJECTORY_SIZE> std;
+  float prob;
+
+  constexpr std::array<float, TRAJECTORY_SIZE> mean_position_x_array() {
+    std::array<float, TRAJECTORY_SIZE> arr = {};
+    for (int i = 0; i < TRAJECTORY_SIZE; i++) {
+      arr[i] = mean[i].position.x;
+    }
+    return arr;
+  };
+};
+
+struct ModelDataRawPlan {
+  std::array<ModelDataRawPlanPrediction, PLAN_MHP_N> prediction;
+
+  ModelDataRawPlanPrediction *get_best_prediction() {
+    int max_idx = 0;
+    for (int i = 1; i < PLAN_MHP_N; i++) {
+      if (prediction[i].prob > prediction[max_idx].prob) {
+        max_idx = i;
+      }
+    }
+    return &prediction[max_idx];
+  }
 };
 
 struct ModelDataRawPose {

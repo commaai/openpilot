@@ -17,7 +17,6 @@ constexpr int OTHER_META_SIZE = 48;
 constexpr int NUM_META_INTERVALS = 5;
 constexpr int META_STRIDE = 7;
 
-constexpr int PLAN_MHP_N = 5;
 constexpr int PLAN_MHP_COLUMNS = 15;
 constexpr int PLAN_MHP_VALS = 15*33;
 constexpr int PLAN_MHP_SELECTION = 1;
@@ -355,36 +354,17 @@ void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id, flo
 
 void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_dropped_frames,
                      const ModelDataRaw &net_outputs, uint64_t timestamp_eof) {
-  const float v_arr[3] = {
-    net_outputs.pose->velocity_mean.x,
-    net_outputs.pose->velocity_mean.y,
-    net_outputs.pose->velocity_mean.z,
-  };
-
-  const float v_std_arr[3] = {
-    exp(net_outputs.pose->velocity_std.x),
-    exp(net_outputs.pose->velocity_std.y),
-    exp(net_outputs.pose->velocity_std.z),
-  };
-
-  const float rot_arr[3] = {
-    net_outputs.pose->rotation_mean.roll,
-    net_outputs.pose->rotation_mean.pitch,
-    net_outputs.pose->rotation_mean.yaw,
-  };
-
-  const float rot_std_arr[3] = {
-    exp(net_outputs.pose->rotation_std.roll),
-    exp(net_outputs.pose->rotation_std.pitch),
-    exp(net_outputs.pose->rotation_std.yaw),
-  };
+  auto v_arr = net_outputs.pose->velocity_mean.to_array();
+  auto v_std_arr = net_outputs.pose->velocity_std.to_array_exp();
+  auto rot_arr = net_outputs.pose->rotation_mean.to_array();
+  auto rot_std_arr = net_outputs.pose->rotation_std.to_array_exp();
 
   MessageBuilder msg;
   auto posenetd = msg.initEvent(vipc_dropped_frames < 1).initCameraOdometry();
-  posenetd.setTrans(v_arr);
-  posenetd.setRot(rot_arr);
-  posenetd.setTransStd(v_std_arr);
-  posenetd.setRotStd(rot_std_arr);
+  posenetd.setTrans(kj::ArrayPtr<float>(v_arr.data(), v_arr.size()));
+  posenetd.setRot(kj::ArrayPtr<float>(rot_arr.data(), rot_arr.size()));
+  posenetd.setTransStd(kj::ArrayPtr<float>(v_std_arr.data(), v_std_arr.size()));
+  posenetd.setRotStd(kj::ArrayPtr<float>(rot_std_arr.data(), rot_std_arr.size()));
 
   posenetd.setTimestampEof(timestamp_eof);
   posenetd.setFrameId(vipc_frame_id);
