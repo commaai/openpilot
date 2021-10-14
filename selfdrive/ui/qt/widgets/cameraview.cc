@@ -51,9 +51,9 @@ mat4 get_driver_view_transform() {
     // from dmonitoring.cc
     const int full_width_tici = 1928;
     const int full_height_tici = 1208;
-    const int adapt_width_tici = 668;
-    const int crop_x_offset = 32;
-    const int crop_y_offset = -196;
+    const int adapt_width_tici = 954;
+    const int crop_x_offset = -72;
+    const int crop_y_offset = -144;
     const float yscale = full_height_tici * driver_view_ratio / adapt_width_tici;
     const float xscale = yscale*(1080)/(2160)*full_width_tici/full_height_tici;
     transform = (mat4){{
