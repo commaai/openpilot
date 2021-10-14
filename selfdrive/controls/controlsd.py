@@ -51,6 +51,8 @@ EventName = car.CarEvent.EventName
 ButtonEvent = car.CarState.ButtonEvent
 SafetyModel = car.CarParams.SafetyModel
 
+IGNORED_SAFETY_MODES = [SafetyModel.silent, SafetyModel.noOutput]
+
 
 class Controls:
   def __init__(self, sm=None, pm=None, can_sock=None):
@@ -251,7 +253,7 @@ class Controls:
       if i < len(self.CP.safetyConfigs):
         safety_mismatch = pandaState.safetyModel != self.CP.safetyConfigs[i].safetyModel or pandaState.safetyParam != self.CP.safetyConfigs[i].safetyParam
       else:
-        safety_mismatch = pandaState.safetyModel not in [SafetyModel.silent, SafetyModel.noOutput]
+        safety_mismatch = pandaState.safetyModel not in IGNORED_SAFETY_MODES
       if safety_mismatch or self.mismatch_counter >= 200:
         self.events.add(EventName.controlsMismatch)
 
@@ -373,7 +375,8 @@ class Controls:
       self.mismatch_counter = 0
 
     # All pandas not in silent mode must have controlsAllowed when openpilot is enabled
-    if any(map(lambda ps: ps.safetyModel not in [SafetyModel.silent, SafetyModel.noOutput] and not ps.controlsAllowed and self.enabled, self.sm['pandaStates'])):
+    if any(not ps.controlsAllowed and self.enabled for ps in self.sm['pandaStates']
+           if ps.safetyModel not in IGNORED_SAFETY_MODES):
       self.mismatch_counter += 1
 
     self.distance_traveled += CS.vEgo * DT_CTRL
