@@ -97,8 +97,9 @@ void Replay::doSeek(int seconds, bool relative) {
       seconds += currentSeconds();
     }
     qInfo() << "seeking to" << seconds;
-    cur_mono_time_ = route_start_ts_ + std::clamp(seconds, 0, (int)segments_.rbegin()->first * 60) * 1e9;
-    current_segment_ = std::min(seconds / 60, (int)segments_.rbegin()->first - 1);
+    const int max_segment_number = segments_.rbegin()->first;
+    cur_mono_time_ = route_start_ts_ + std::clamp(seconds, 0, (max_segment_number + 1) * 60) * 1e9;
+    current_segment_ = std::min(seconds / 60, max_segment_number);
     return false;
   });
   queueSegment();
@@ -130,16 +131,22 @@ void Replay::segmentLoadFinished(bool success) {
   queueSegment();
 }
 
-// maintain the segment window
 void Replay::queueSegment() {
-  // forward fetch segments
+  // get the current segment window
   SegmentMap::iterator begin, end;
   begin = end = segments_.lower_bound(current_segment_);
-  for (int fwd = 0; end != segments_.end() && fwd <= FORWARD_SEGS; ++end, ++fwd) {
-    auto &[n, seg] = *end;
+  for (int i = 0; i < BACKWARD_SEGS && begin != segments_.begin(); ++i) {
+    --begin;
+  }
+  for (int i = 0; i <= FORWARD_SEGS && end != segments_.end(); ++i) {
+    ++end;
+  }
+  // load segments
+  for (auto it = begin; it != end; ++it) {
+    auto &[n, seg] = *it;
     if (!seg) {
       seg = std::make_unique<Segment>(n, route_->at(n), load_dcam, load_ecam);
-      QObject::connect(seg.get(), &Segment::loadFinished, this, &Replay::segmentLoadFinished);
+      QObject::connect(seg.get(), &Segment::loadFinished, this, &Replay::queueSegment);
       qInfo() << "loading segment" << n << "...";
     }
   }
@@ -168,8 +175,8 @@ void Replay::mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::
     new_events->reserve(std::accumulate(segments_need_merge.begin(), segments_need_merge.end(), 0,
                                         [=](int v, int n) { return v + segments_[n]->log->events.size(); }));
     for (int n : segments_need_merge) {
-      auto &log = segments_[n]->log;
-      auto middle = new_events->insert(new_events->end(), log->events.begin(), log->events.end());
+      auto &e = segments_[n]->log->events;
+      auto middle = new_events->insert(new_events->end(), e.begin(), e.end());
       std::inplace_merge(new_events->begin(), middle, new_events->end(), Event::lessThan());
     }
     // update events
