@@ -3,6 +3,7 @@
 #include <map>
 #include <sstream>
 #include <string>
+#include <optional>
 
 enum ParamKeyType {
   PERSISTENT = 0x02,
