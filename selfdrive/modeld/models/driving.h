@@ -5,6 +5,11 @@
 #define DESIRE
 #define TRAFFIC_CONVENTION
 
+#define XYZ_TO_ARRAY(d) {d.x, d.y, d.z}
+#define XYZ_TO_EXP_ARRAY(d) {exp(d.x), (d.y), (d.z)}
+#define RPY_TO_ARRAY(d) {d.roll, d.pitch, d.yaw}
+#define RPY_TO_EXP_ARRAY(d) {exp(d.roll), exp(d.pitch), exp(d.yaw)}
+
 #include <memory>
 
 #include "cereal/messaging/messaging.h"
@@ -24,44 +29,12 @@ struct ModelDataRawXYZ {
   float x;
   float y;
   float z;
-
-  constexpr std::array<float, 3> to_array() {
-    std::array<float, 3> arr = {};
-    arr[0] = x;
-    arr[1] = y;
-    arr[2] = z;
-    return arr;
-  }
-
-  constexpr std::array<float, 3> to_array_exp() {
-    std::array<float, 3> arr = {};
-    arr[0] = exp(x);
-    arr[1] = exp(y);
-    arr[2] = exp(z);
-    return arr;
-  }
 };
 
 struct ModelDataRawRPY {
   float roll;
   float pitch;
   float yaw;
-
-  constexpr std::array<float, 3> to_array() {
-    std::array<float, 3> arr = {};
-    arr[0] = roll;
-    arr[1] = pitch;
-    arr[2] = yaw;
-    return arr;
-  }
-
-  constexpr std::array<float, 3> to_array_exp() {
-    std::array<float, 3> arr = {};
-    arr[0] = exp(roll);
-    arr[1] = exp(pitch);
-    arr[2] = exp(yaw);
-    return arr;
-  }
 };
 
 struct ModelDataRawPlanTimeStep {

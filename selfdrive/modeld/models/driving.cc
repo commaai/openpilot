@@ -354,17 +354,12 @@ void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id, flo
 
 void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_dropped_frames,
                      const ModelDataRaw &net_outputs, uint64_t timestamp_eof) {
-  auto v_arr = net_outputs.pose->velocity_mean.to_array();
-  auto v_std_arr = net_outputs.pose->velocity_std.to_array_exp();
-  auto rot_arr = net_outputs.pose->rotation_mean.to_array();
-  auto rot_std_arr = net_outputs.pose->rotation_std.to_array_exp();
-
   MessageBuilder msg;
   auto posenetd = msg.initEvent(vipc_dropped_frames < 1).initCameraOdometry();
-  posenetd.setTrans(kj::ArrayPtr<float>(v_arr.data(), v_arr.size()));
-  posenetd.setRot(kj::ArrayPtr<float>(rot_arr.data(), rot_arr.size()));
-  posenetd.setTransStd(kj::ArrayPtr<float>(v_std_arr.data(), v_std_arr.size()));
-  posenetd.setRotStd(kj::ArrayPtr<float>(rot_std_arr.data(), rot_std_arr.size()));
+  posenetd.setTrans(XYZ_TO_ARRAY(net_outputs.pose->velocity_mean));
+  posenetd.setRot(XYZ_TO_EXP_ARRAY(net_outputs.pose->velocity_std));
+  posenetd.setTransStd(RPY_TO_ARRAY(net_outputs.pose->rotation_mean));
+  posenetd.setRotStd(RPY_TO_EXP_ARRAY(net_outputs.pose->rotation_std));
 
   posenetd.setTimestampEof(timestamp_eof);
   posenetd.setFrameId(vipc_frame_id);
