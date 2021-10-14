@@ -77,6 +77,9 @@ FW_VERSIONS = {
     ],
   },
   CAR.XTRAIL: {
+    (Ecu.fwdCamera, 0x707, None): [
+      b'284N86FR2A',
+    ]
     (Ecu.esp, 0x740, None): [
       b'6FU1BD\x11\x02\x00\x02e\x95e\x80iX#\x01\x00\x00\x00\x00\x00\x80',
     ],
