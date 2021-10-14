@@ -355,11 +355,16 @@ void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id, flo
 void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_dropped_frames,
                      const ModelDataRaw &net_outputs, uint64_t timestamp_eof) {
   MessageBuilder msg;
+  auto v_mean = net_outputs.pose->velocity_mean;
+  auto r_mean = net_outputs.pose->rotation_mean;
+  auto v_std = net_outputs.pose->velocity_std;
+  auto r_std = net_outputs.pose->rotation_std;
+
   auto posenetd = msg.initEvent(vipc_dropped_frames < 1).initCameraOdometry();
-  posenetd.setTrans(XYZ_TO_ARRAY(net_outputs.pose->velocity_mean));
-  posenetd.setRot(RPY_TO_ARRAY(net_outputs.pose->rotation_mean));
-  posenetd.setTransStd(XYZ_TO_EXP_ARRAY(net_outputs.pose->velocity_std));
-  posenetd.setRotStd(RPY_TO_EXP_ARRAY(net_outputs.pose->rotation_std));
+  posenetd.setTrans({v_mean.x, v_mean.y, v_mean.z});
+  posenetd.setRot({r_mean.roll, r_mean.pitch, r_mean.yaw});
+  posenetd.setTransStd({exp(v_std.x), exp(v_std.y), exp(v_std.z)});
+  posenetd.setRotStd({exp(r_std.roll), exp(r_std.pitch), exp(r_std.yaw)});
 
   posenetd.setTimestampEof(timestamp_eof);
   posenetd.setFrameId(vipc_frame_id);

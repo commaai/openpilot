@@ -5,11 +5,6 @@
 #define DESIRE
 #define TRAFFIC_CONVENTION
 
-#define XYZ_TO_ARRAY(d) {d.x, d.y, d.z}
-#define XYZ_TO_EXP_ARRAY(d) {exp(d.x), (d.y), (d.z)}
-#define RPY_TO_ARRAY(d) {d.roll, d.pitch, d.yaw}
-#define RPY_TO_EXP_ARRAY(d) {exp(d.roll), exp(d.pitch), exp(d.yaw)}
-
 #include <memory>
 
 #include "cereal/messaging/messaging.h"
