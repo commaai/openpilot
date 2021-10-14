@@ -49,11 +49,12 @@ We have detailed instructions for [how to install the device in a car](https://c
 Running on PC
 ------
 
-To run and develop openpilot, you do not need a car or any special hardware.
+All of openpilot's services can run as normal on a PC, even without special hardware or a car. To develop or experiment with openpilot you can run openpilot on recorded or simulated data.
 
-The easiest way to get started is [with the CARLA simulator](tools/sim/README.md). This allows openpilot to drive around a virtual car on your Ubuntu machine. The whole setup should only take a few minutes.
+With openpilot's tools you can plot logs, replay drives and watch the full-res camera streams. See [the tools README](tools/README.md) for more information.
 
-You can also plot logs from a device and replay a drive. See [the tools README](tools/README.md) for more information.
+You can also run openpilot in simulation [with the CARLA simulator](tools/sim/README.md). This allows openpilot to drive around a virtual car on your Ubuntu machine. The whole setup should only take a few minutes, but does require a decent GPU.
+
 
 Community and Contributing
 ------
