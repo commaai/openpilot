@@ -373,7 +373,7 @@ class Controls:
       self.mismatch_counter = 0
 
     # All pandas not in silent mode must have controlsAllowed when openpilot is enabled
-    if any(map(lambda ps: ps.safetyModel != SafetyModel.silent and not ps.controlsAllowed and self.enabled, self.sm['pandaStates'])):
+    if any(map(lambda ps: ps.safetyModel not in [SafetyModel.silent, SafetyModel.noOutput] and not ps.controlsAllowed and self.enabled, self.sm['pandaStates'])):
       self.mismatch_counter += 1
 
     self.distance_traveled += CS.vEgo * DT_CTRL
