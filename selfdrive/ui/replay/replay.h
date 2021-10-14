@@ -30,6 +30,7 @@ protected slots:
 
 protected:
   typedef std::map<int, std::unique_ptr<Segment>> SegmentMap;
+  void initStream(const Segment *segment);
   void stream();
   void setCurrentSegment(int n);
   void mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::iterator &end);

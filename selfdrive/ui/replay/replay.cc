@@ -5,6 +5,7 @@
 
 #include <capnp/dynamic.h>
 #include "cereal/services.h"
+#include "selfdrive/common/params.h"
 #include "selfdrive/common/timing.h"
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/replay/util.h"
@@ -122,6 +123,26 @@ void Replay::setCurrentSegment(int n) {
   }
 }
 
+void Replay::initStream(const Segment *segment) {
+  auto &events = segment->log->events;
+  // get route start time from initData
+  auto it = std::find_if(events.begin(), events.end(), [](auto e) { return e->which == cereal::Event::Which::INIT_DATA; });
+  if (it != events.end()) {
+    route_start_ts_ = (*it)->mono_time;
+    // cur_mono_time_ is set by seekTo in start() before get route_start_ts_
+    cur_mono_time_ += route_start_ts_;
+  }
+
+  // start camera server
+  std::pair<int, int> camera_size[MAX_CAMERAS] = {};
+  for (auto type : ALL_CAMERAS) {
+    if (auto &fr = segment->frames[type]; fr != nullptr) {
+      camera_size[type] = {fr->width, fr->height};
+    }
+  }
+  camera_server_->start(camera_size);
+}
+
 // maintain the segment window
 void Replay::queueSegment() {
   // forward fetch segments
@@ -166,18 +187,12 @@ void Replay::mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::
     // update events
     auto prev_events = events_;
     updateEvents([&]() {
-      if (route_start_ts_ == 0) {
-        // get route start time from initData
-        auto it = std::find_if(new_events->begin(), new_events->end(), [=](auto e) { return e->which == cereal::Event::Which::INIT_DATA; });
-        if (it != new_events->end()) {
-          route_start_ts_ = (*it)->mono_time;
-          // cur_mono_time_ is set by seekTo in start() before get route_start_ts_
-          cur_mono_time_ += route_start_ts_;
-        }
+      segments_merged_ = segments_need_merge;
+      if (route_start_ts_ == 0 && segments_merged_.size() > 0) {
+        initStream(segments_[segments_merged_[0]].get());
       }
 
       events_ = new_events;
-      segments_merged_ = segments_need_merge;
       return true;
     });
     delete prev_events;
@@ -197,10 +212,10 @@ void Replay::publishFrame(const Event *e) {
     // eidx's segment is not loaded
     return;
   }
-  CameraType cam = cam_types.at(e->which);
-  auto &fr = segments_[eidx.getSegmentNum()]->frames[cam];
+  CameraType type = cam_types.at(e->which);
+  auto &fr = segments_[eidx.getSegmentNum()]->frames[type];
   if (fr && eidx.getType() == cereal::EncodeIndex::Type::FULL_H_E_V_C) {
-    camera_server_->pushFrame(cam, fr.get(), eidx);
+    camera_server_->pushFrame(type, fr.get(), eidx);
   }
 }
 

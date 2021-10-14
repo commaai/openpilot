@@ -10,30 +10,30 @@ class CameraServer {
 public:
   CameraServer();
   ~CameraServer();
-  inline void pushFrame(CameraType type, FrameReader* fr, const cereal::EncodeIndex::Reader& eidx) {
-    queue_.push({type, fr, eidx});
-  }
+  void start(std::pair<int, int> camera_size[MAX_CAMERAS]);
+  void pushFrame(CameraType type, FrameReader* fr, const cereal::EncodeIndex::Reader& eidx);
   inline void waitFinish() {
-    while (!queue_.empty()) usleep(0);
+    while (publishing_ > 0) usleep(0);
   }
 
 protected:
-  void startVipcServer();
-  void thread();
-
   struct Camera {
     VisionStreamType rgb_type;
     VisionStreamType yuv_type;
     int width;
     int height;
+    std::thread thread;
+    SafeQueue<std::pair<FrameReader*, const cereal::EncodeIndex::Reader>> queue;
   };
+  void startVipcServer();
+  void cameraThread(CameraType type, Camera &cam);
 
   Camera cameras_[MAX_CAMERAS] = {
       {.rgb_type = VISION_STREAM_RGB_BACK, .yuv_type = VISION_STREAM_YUV_BACK},
       {.rgb_type = VISION_STREAM_RGB_FRONT, .yuv_type = VISION_STREAM_YUV_FRONT},
       {.rgb_type = VISION_STREAM_RGB_WIDE, .yuv_type = VISION_STREAM_YUV_WIDE},
   };
-  std::thread camera_thread_;
+  
+  std::atomic<int> publishing_ = 0;
   std::unique_ptr<VisionIpcServer> vipc_server_;
-  SafeQueue<std::tuple<CameraType, FrameReader*, const cereal::EncodeIndex::Reader>> queue_;
 };
