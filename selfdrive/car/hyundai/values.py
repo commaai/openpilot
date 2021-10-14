@@ -389,6 +389,7 @@ FW_VERSIONS = {
       b'\xf1\x00TM ESC \x02 101 \x08\x04 58910-S2GA0',
       b'\xf1\x00TM ESC \x03 101 \x08\x02 58910-S2DA0',
       b'\xf1\x8758910-S2DA0\xf1\x00TM ESC \x03 101 \x08\x02 58910-S2DA0',
+      b'\xf1\x8758910-S2GA0\xf1\000TM ESC \002 101 \b\004 58910-S2GA0',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x82TMBZN5TMD3XXXG2E',
@@ -404,6 +405,7 @@ FW_VERSIONS = {
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x00T02601BL  T02730A1  VTMPT25XXX730NS2\xa6\x06\x88\xf7',
       b'\xf1\x87SDMXCA8653204GN1EVugEUuWwwwwww\x87wwwwwv/\xfb\xff\xa8\x88\x9f\xff\xa5\x9c\xf1\x89HT6WAD00A1\xf1\x82STM4G25NH1\x00\x00\x00\x00\x00\x00',
+      b'\xf1\x87954A02N250\000\000\000\000\000\xf1\x81T02730A1  \xf1\000T02601BL  T02730A1  VTMPT25XXX730NS2\xa6\006\x88\xf7',
     ],
   },
   CAR.KIA_STINGER: {
