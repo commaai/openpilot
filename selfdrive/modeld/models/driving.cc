@@ -357,8 +357,8 @@ void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_droppe
   MessageBuilder msg;
   auto posenetd = msg.initEvent(vipc_dropped_frames < 1).initCameraOdometry();
   posenetd.setTrans(XYZ_TO_ARRAY(net_outputs.pose->velocity_mean));
-  posenetd.setRot(XYZ_TO_EXP_ARRAY(net_outputs.pose->velocity_std));
-  posenetd.setTransStd(RPY_TO_ARRAY(net_outputs.pose->rotation_mean));
+  posenetd.setRot(RPY_TO_ARRAY(net_outputs.pose->rotation_mean));
+  posenetd.setTransStd(XYZ_TO_EXP_ARRAY(net_outputs.pose->velocity_std));
   posenetd.setRotStd(RPY_TO_EXP_ARRAY(net_outputs.pose->rotation_std));
 
   posenetd.setTimestampEof(timestamp_eof);
