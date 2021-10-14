@@ -16,24 +16,23 @@ public:
   }
 
 protected:
-  void startVipcServer();
-  void thread();
-
   struct Camera {
-    VisionStreamType rgb_type;
+    VisionStreamType rgb_type; 
     VisionStreamType yuv_type;
     int width;
     int height;
+    std::thread thread;
+    SafeQueue<std::pair<FrameReader*, const cereal::EncodeIndex::Reader>> queue;
   };
+  void startVipcServer();
+  void cameraThread(CameraType type, Camera &cam);
 
   Camera cameras_[MAX_CAMERAS] = {
       {.rgb_type = VISION_STREAM_RGB_BACK, .yuv_type = VISION_STREAM_YUV_BACK},
       {.rgb_type = VISION_STREAM_RGB_FRONT, .yuv_type = VISION_STREAM_YUV_FRONT},
       {.rgb_type = VISION_STREAM_RGB_WIDE, .yuv_type = VISION_STREAM_YUV_WIDE},
   };
-
+  
   std::atomic<int> publishing_ = 0;
-  std::thread camera_thread_;
   std::unique_ptr<VisionIpcServer> vipc_server_;
-  SafeQueue<std::tuple<CameraType, FrameReader*, const cereal::EncodeIndex::Reader>> queue_;
 };
