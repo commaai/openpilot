@@ -355,24 +355,35 @@ void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id, flo
 
 void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_dropped_frames,
                      const ModelDataRaw &net_outputs, uint64_t timestamp_eof) {
-  float trans_arr[3];
-  float trans_std_arr[3];
-  float rot_arr[3];
-  float rot_std_arr[3];
+  const float v_arr[3] = {
+    net_outputs.pose->velocity_mean.x,
+    net_outputs.pose->velocity_mean.y,
+    net_outputs.pose->velocity_mean.z,
+  };
 
-  for (int i =0; i < 3; i++) {
-    trans_arr[i] = net_outputs.pose->trans_arr[i];
-    trans_std_arr[i] = exp(net_outputs.pose->trans_std_arr[i]);
+  const float v_std_arr[3] = {
+    exp(net_outputs.pose->velocity_std.x),
+    exp(net_outputs.pose->velocity_std.y),
+    exp(net_outputs.pose->velocity_std.z),
+  };
 
-    rot_arr[i] = net_outputs.pose->rot_arr[i];
-    rot_std_arr[i] = exp(net_outputs.pose->rot_std_arr[i]);
-  }
+  const float rot_arr[3] = {
+    net_outputs.pose->rotation_mean.roll,
+    net_outputs.pose->rotation_mean.pitch,
+    net_outputs.pose->rotation_mean.yaw,
+  };
+
+  const float rot_std_arr[3] = {
+    exp(net_outputs.pose->rotation_std.roll),
+    exp(net_outputs.pose->rotation_std.pitch),
+    exp(net_outputs.pose->rotation_std.yaw),
+  };
 
   MessageBuilder msg;
   auto posenetd = msg.initEvent(vipc_dropped_frames < 1).initCameraOdometry();
-  posenetd.setTrans(trans_arr);
+  posenetd.setTrans(v_arr);
   posenetd.setRot(rot_arr);
-  posenetd.setTransStd(trans_std_arr);
+  posenetd.setTransStd(v_std_arr);
   posenetd.setRotStd(rot_std_arr);
 
   posenetd.setTimestampEof(timestamp_eof);

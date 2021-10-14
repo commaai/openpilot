@@ -18,11 +18,23 @@ constexpr int DESIRE_LEN = 8;
 constexpr int TRAFFIC_CONVENTION_LEN = 2;
 constexpr int MODEL_FREQ = 20;
 
+struct ModelDataRawXYZ {
+  float x;
+  float y;
+  float z;
+};
+
+struct ModelDataRawRPY {
+  float roll;
+  float pitch;
+  float yaw;
+};
+
 struct ModelDataRawPose {
-  float trans_arr[3];
-  float rot_arr[3];
-  float trans_std_arr[3];
-  float rot_std_arr[3];
+  ModelDataRawXYZ velocity_mean;
+  ModelDataRawRPY rotation_mean;
+  ModelDataRawXYZ velocity_std;
+  ModelDataRawRPY rotation_std;
 };
 
 struct ModelDataRaw {
