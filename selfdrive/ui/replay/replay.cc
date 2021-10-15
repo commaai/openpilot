@@ -202,7 +202,7 @@ void Replay::mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::
   }
 }
 
-void Replay::publisMessage(const Event *e) {
+void Replay::publishMessage(const Event *e) {
   if (sm == nullptr) {
     auto bytes = e->bytes();
     int ret = pm->send(sockets_[e->which], (capnp::byte *)bytes.begin(), bytes.size());
@@ -291,7 +291,7 @@ void Replay::stream() {
         if (evt->frame) {
           publishFrame(evt);
         } else {
-          publisMessage(evt);
+          publishMessage(evt);
         }
       }
     }
