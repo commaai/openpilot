@@ -46,8 +46,6 @@ protected:
   void publishFrame(const Event *e);
   inline int currentSeconds() const { return (cur_mono_time_ - route_start_ts_) / 1e9; }
 
-  QThread *stream_thread_ = nullptr;
-
   // logs
   std::mutex stream_lock_;
   std::condition_variable stream_cv_;
@@ -70,4 +68,5 @@ protected:
   std::unique_ptr<Route> route_;
   std::unique_ptr<CameraServer> camera_server_;
   uint32_t flags_ = REPLAY_FLAG_NONE;
+  QThread *stream_thread_ = nullptr;
 };

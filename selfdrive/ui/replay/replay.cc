@@ -139,8 +139,6 @@ void Replay::startStream(const Segment *cur_segment) {
   if (it != events.end()) {
     auto bytes = (*it)->bytes();
     Params().put("CarParams", (const char *)bytes.begin(), bytes.size());
-    auto car_params = (*it)->event.getCarParams();
-    qInfo() << "CarName:" << car_params.getCarName().cStr();
   } else {
     qInfo() << "failed to read CarParams from current segment";
   }
