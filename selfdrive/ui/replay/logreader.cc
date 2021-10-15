@@ -1,6 +1,5 @@
 #include "selfdrive/ui/replay/logreader.h"
 
-#include <cassert>
 #include <sstream>
 #include "selfdrive/common/util.h"
 #include "selfdrive/ui/replay/util.h"
@@ -32,8 +31,9 @@ LogReader::~LogReader() {
   for (auto e : events) delete e;
 }
 
-bool LogReader::load(const std::string &file, bool is_bz2file) {
-  if (is_bz2file) {
+bool LogReader::load(const std::string &file) {
+  bool is_bz2 = file.rfind(".bz2") == file.length() - 4;
+  if (is_bz2) {
     std::ostringstream stream;
     if (!readBZ2File(file, stream)) {
       LOGW("bz2 decompress failed");
