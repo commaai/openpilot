@@ -19,7 +19,7 @@ int main(int argc, char *argv[]) {
   layout->setSpacing(0);
   layout->addWidget(new CameraViewWidget(VISION_STREAM_RGB_BACK, false));
 
-  QHBoxLayout *hlayout = new QHBoxLayout(&w);
+  QHBoxLayout *hlayout = new QHBoxLayout();
   layout->addLayout(hlayout);
   hlayout->addWidget(new CameraViewWidget(VISION_STREAM_RGB_FRONT, false));
   hlayout->addWidget(new CameraViewWidget(VISION_STREAM_RGB_WIDE, false));
