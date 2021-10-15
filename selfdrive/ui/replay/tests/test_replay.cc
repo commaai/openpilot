@@ -14,7 +14,6 @@ std::string sha_256(const QString &dat) {
 TEST_CASE("httpMultiPartDownload") {
   char filename[] = "/tmp/XXXXXX";
   int fd = mkstemp(filename);
-  REQUIRE(fd != -1);
   close(fd);
 
   const char *stream_url = "https://commadataci.blob.core.windows.net/openpilotci/0c94aa1e1296d7c6/2021-05-05--19-48-37/0/fcamera.hevc";
@@ -54,7 +53,7 @@ bool is_events_ordered(const std::vector<Event *> &events) {
 TEST_CASE("Segment") {
   Route demo_route(DEMO_ROUTE);
   REQUIRE(demo_route.load());
-  REQUIRE(demo_route.size() == 11);
+  REQUIRE(demo_route.segments().size() == 11);
 
   QEventLoop loop;
   Segment segment(0, demo_route.at(0), false, false);
@@ -132,7 +131,6 @@ void TestReplay::test_seek() {
       segments_.erase(n);
     }
     for (int i =0; i < 50; ++i) {
-      testSeekTo(520);
       testSeekTo(random_int(4 * 60, 9 * 60));
     }
     loop.quit();

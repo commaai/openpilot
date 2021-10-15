@@ -1,8 +1,5 @@
 #pragma once
 
-#include <unordered_map>
-#include <cassert>
-
 #include <capnp/serialize.h>
 #include "cereal/gen/cpp/log.capnp.h"
 #include "selfdrive/camerad/cameras/camera_common.h"
@@ -38,7 +35,7 @@ class LogReader {
 public:
   LogReader() = default;
   ~LogReader();
-  bool load(const std::string &file, bool is_bz2file);
+  bool load(const std::string &file);
 
   std::vector<Event*> events;
 
