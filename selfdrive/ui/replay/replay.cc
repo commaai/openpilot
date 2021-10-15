@@ -28,8 +28,11 @@ Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *s
   if (sm == nullptr) {
     pm = new PubMaster(s);
   }
+
   route_ = std::make_unique<Route>(route, data_dir);
   events_ = new std::vector<Event *>();
+  camera_server_ = std::make_unique<CameraServer>();
+
   // doSeek & queueSegment are always executed in the same thread
   connect(this, &Replay::seekTo, this, &Replay::doSeek);
   connect(this, &Replay::segmentChanged, this, &Replay::queueSegment);
@@ -75,7 +78,6 @@ bool Replay::load() {
 void Replay::start(int seconds) {
   seekTo(seconds, false);
 
-  camera_server_ = std::make_unique<CameraServer>();
   // start stream thread
   stream_thread_ = new QThread(this);
   QObject::connect(stream_thread_, &QThread::started, [=]() { stream(); });
