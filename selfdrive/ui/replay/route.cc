@@ -38,7 +38,7 @@ bool Route::loadFromServer() {
 bool Route::loadFromJson(const QString &json) {
   QJsonObject route_files = QJsonDocument::fromJson(json.trimmed().toUtf8()).object();
   if (route_files.empty()) {
-    qDebug() << "JSON Parse failed";
+    qInfo() << "JSON Parse failed";
     return false;
   }
 
@@ -111,14 +111,6 @@ Segment::Segment(int n, const SegmentFile &files, bool load_dcam, bool load_ecam
       synchronizer_.addFuture(QtConcurrent::run(this, &Segment::loadFile, i, file_list[i].toStdString()));
     }
   }
-<<<<<<< HEAD
-=======
-  if (downloading_ == 0) {
-    QTimer::singleShot(0, this, &Segment::load);
-  } else {
-    qInfo() << "downloading segment" << seg_num_ << "...";
-  }
->>>>>>> new verbose mode
 }
 
 Segment::~Segment() {

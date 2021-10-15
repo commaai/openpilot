@@ -10,11 +10,9 @@ constexpr int BACKWARD_SEGS = 1;
 
 enum REPLAY_FLAGS {
   REPLAY_FLAG_NONE = 0x0000,
-  REPLAY_FLAG_VERBOSE = 0x0001,
   REPLAY_FLAG_DCAM = 0x0002,
   REPLAY_FLAG_ECAM = 0x0004,
-  REPLAY_FLAG_YUV = 0x0008,
-  REPLAY_FLAG_NO_LOOP = 0x0010,
+  REPLAY_FLAG_NO_LOOP = 0x0008,
 };
 
 class Replay : public QObject {
@@ -39,14 +37,13 @@ protected slots:
 
 protected:
   typedef std::map<int, std::unique_ptr<Segment>> SegmentMap;
-  void initRouteData(const std::vector<Event *> *events);
+  void startStream(const Segment *cur_segment);
   void stream();
   void setCurrentSegment(int n);
   void mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::iterator &end);
   void updateEvents(const std::function<bool()>& lambda);
   void publishMessage(const Event *e);
   void publishFrame(const Event *e);
-  void publishMessage(const Event *e);
   inline int currentSeconds() const { return (cur_mono_time_ - route_start_ts_) / 1e9; }
 
   QThread *stream_thread_ = nullptr;

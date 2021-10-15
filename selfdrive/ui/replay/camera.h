@@ -8,8 +8,9 @@
 
 class CameraServer {
 public:
-  CameraServer(bool publish_yuv);
+  CameraServer();
   ~CameraServer();
+  void start(std::pair<int, int> cameras[MAX_CAMERAS]);
   void pushFrame(CameraType type, FrameReader* fr, const cereal::EncodeIndex::Reader& eidx);
   inline void waitFinish() {
     while (publishing_ > 0) usleep(0);
@@ -36,5 +37,4 @@ protected:
   std::thread camera_thread_;
   std::unique_ptr<VisionIpcServer> vipc_server_;
   SafeQueue<std::tuple<CameraType, FrameReader*, const cereal::EncodeIndex::Reader>> queue_;
-  bool publish_yuv_ = false;
 };

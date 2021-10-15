@@ -10,9 +10,7 @@
 #include <QThread>
 
 const QString DEMO_ROUTE = "4cf7a6ad03080c90|2021-09-29--13-46-36";
-static bool verbose_mode = false;
 struct termios oldt = {};
-
 
 void sigHandler(int s) {
   std::signal(s, SIG_DFL);
@@ -71,17 +69,8 @@ void keyboardThread(Replay *replay) {
   }
 }
 
-void replayMessageOutput(QtMsgType type, const QMessageLogContext &context, const QString &msg) {
-  if (verbose_mode || type != QtMsgType::QtDebugMsg) {
-    QByteArray localMsg = msg.toLocal8Bit();
-    std::cout << localMsg.constData() << std::endl;
-  }
-}
-
 int main(int argc, char *argv[]){
   QApplication app(argc, argv);
-
-  qInstallMessageHandler(replayMessageOutput);
   std::signal(SIGINT, sigHandler);
   std::signal(SIGTERM, sigHandler);
 
@@ -97,8 +86,6 @@ int main(int argc, char *argv[]){
   parser.addOption({"dcam", "load driver camera"});
   parser.addOption({"ecam", "load wide road camera"});
   parser.addOption({"no-loop", "stop at the end of the route"});
-  parser.addOption({"yuv", "publish YUV frames"});
-  parser.addOption({"verbose", "verbose mode"});
 
   parser.process(app);
   const QStringList args = parser.positionalArguments();
@@ -114,8 +101,6 @@ int main(int argc, char *argv[]){
       {"dcam", REPLAY_FLAG_DCAM},
       {"ecam", REPLAY_FLAG_ECAM},
       {"no-loop", REPLAY_FLAG_NO_LOOP},
-      {"yuv", REPLAY_FLAG_YUV},
-      {"verbose", REPLAY_FLAG_VERBOSE},
   };
 
   uint32_t flags = REPLAY_FLAG_NONE;
@@ -124,7 +109,6 @@ int main(int argc, char *argv[]){
       flags |= flag;
     }
   }
-  verbose_mode = flags & REPLAY_FLAG_VERBOSE;
 
   Replay *replay = new Replay(route, allow, block, nullptr, flags, parser.value("data_dir"), &app);
   if (!replay->load()) {
