@@ -202,6 +202,19 @@ void Replay::mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::
   }
 }
 
+void Replay::publisMessage(const Event *e) {
+  if (sm == nullptr) {
+    auto bytes = e->bytes();
+    int ret = pm->send(sockets_[e->which], (capnp::byte *)bytes.begin(), bytes.size());
+    if (ret == -1) {
+      qDebug() << "stop publishing" << sockets_[e->which] << "due to multiple publishers error";
+      sockets_[e->which] = nullptr;
+    }
+  } else {
+    sm->update_msgs(nanos_since_boot(), {{sockets_[e->which], e->event}});
+  }
+}
+
 void Replay::publishFrame(const Event *e) {
   static const std::map<cereal::Event::Which, CameraType> cam_types{
       {cereal::Event::ROAD_ENCODE_IDX, RoadCam},
@@ -278,17 +291,7 @@ void Replay::stream() {
         if (evt->frame) {
           publishFrame(evt);
         } else {
-          // publish msg
-          if (sm == nullptr) {
-            auto bytes = evt->bytes();
-            int ret = pm->send(sockets_[cur_which], (capnp::byte *)bytes.begin(), bytes.size());
-            if (ret == -1) {
-              qDebug() << "stop publishing" << sockets_[cur_which] << "due to multiple publishers error";
-              sockets_[cur_which] = nullptr;
-            }
-          } else {
-            sm->update_msgs(nanos_since_boot(), {{sockets_[cur_which], evt->event}});
-          }
+          publisMessage(evt);
         }
       }
     }
