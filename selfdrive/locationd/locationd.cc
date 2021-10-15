@@ -187,6 +187,14 @@ VectorXd Localizer::get_position_geodetic() {
   return Vector3d(fix_pos_geo.lat, fix_pos_geo.lon, fix_pos_geo.alt);
 }
 
+VectorXd Localizer::get_state() {
+  return this->kf->get_x();
+}
+
+VectorXd Localizer::get_stdev() {
+  return this->kf->get_P().diagonal().array().sqrt();
+}
+
 void Localizer::handle_sensors(double current_time, const capnp::List<cereal::SensorEventData, capnp::Kind::STRUCT>::Reader& log) {
   // TODO does not yet account for double sensor readings in the log
   for (int i = 0; i < log.size(); i++) {
