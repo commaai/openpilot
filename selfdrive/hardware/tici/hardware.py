@@ -283,6 +283,13 @@ class Tici(HardwareBase):
     except Exception:
       pass
 
+  def get_screen_brightness(self):
+    try:
+      with open("/sys/class/backlight/panel0-backlight/brightness") as f:
+        return int(float(f.read()) / 10.23)
+    except Exception:
+      return 0
+
   def set_power_save(self, powersave_enabled):
     # amplifier, 100mW at idle
     self.amplifier.set_global_shutdown(amp_disabled=powersave_enabled)
