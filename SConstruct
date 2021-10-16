@@ -67,7 +67,7 @@ lenv = {
   "LD_LIBRARY_PATH": [Dir(f"#third_party/acados/{arch}/lib").abspath],
   "PYTHONPATH": Dir("#").abspath + ":" + Dir("#pyextra/").abspath,
 
-  "ACADOS_SOURCE_DIR": Dir("#third_party/acados/acados").abspath,
+  "ACADOS_SOURCE_DIR": Dir("#third_party/acados/include").abspath,
   "TERA_PATH": Dir("#").abspath + f"/third_party/acados/{arch}/t_renderer",
 }
 
@@ -125,15 +125,17 @@ else:
     libpath = [
       f"#third_party/libyuv/{yuv_dir}/lib",
       "/usr/local/lib",
-      "/opt/homebrew/lib",
+      '/usr/local/Homebrew/Library',  # '/opt/homebrew/lib',
       "/usr/local/opt/openssl/lib",
-      "/opt/homebrew/opt/openssl/lib",
+      '/usr/local/Cellar',  # "/opt/homebrew/opt/openssl/lib",
       "/System/Library/Frameworks/OpenGL.framework/Libraries",
-    ]
+      "/System/Library/Frameworks/OpenCL.framework",
+      f"#third_party/acados/{arch}/lib",
+]
     cflags += ["-DGL_SILENCE_DEPRECATION"]
     cxxflags += ["-DGL_SILENCE_DEPRECATION"]
     cpppath += [
-      "/opt/homebrew/include",
+      "/usr/local/include",  # "/opt/homebrew/include",
       "/usr/local/opt/openssl/include",
       "/opt/homebrew/opt/openssl/include"
     ]
@@ -163,11 +165,16 @@ elif GetOption('ubsan'):
   ldflags = ["-fsanitize=undefined"]
 else:
   ccflags = []
-  ldflags = []
+  ldflags = ["-framework", "OpenGL", "-framework", "OpenCL"]
 
 # no --as-needed on mac linker
 if arch != "Darwin":
   ldflags += ["-Wl,--as-needed", "-Wl,--no-undefined"]
+
+# troubleshoot linker
+# cflags += ["-v"]
+# ccflags += ["-v"]
+# ldflags += ["-v"]
 
 # Enable swaglog include in submodules
 cflags += ["-DSWAGLOG"]
@@ -218,6 +225,7 @@ env = Environment(
   CXX='clang++',
   LINKFLAGS=ldflags,
 
+  RPATHPREFIX="-Wl,-rpath,",
   RPATH=rpath,
 
   CFLAGS=["-std=gnu11"] + cflags,
@@ -255,7 +263,7 @@ if os.environ.get('SCONS_PROGRESS'):
 SHARED = False
 
 def abspath(x):
-  if arch == 'aarch64':
+  if arch == 'aarch64' or arch == 'x86_64':
     pth = os.path.join("/data/pythonpath", x[0].path)
     env.Depends(pth, x)
     return File(pth)
@@ -319,7 +327,9 @@ else:
   if arch == "larch64":
     qt_libs += ["GLESv2", "wayland-client"]
   elif arch != "Darwin":
-    qt_libs += ["GL"]
+    # In MacOS X you're not using libraries to include system level APIs, but Frameworks. The proper command line to compile this program would be
+    # qt_libs += ["GL"] # this is for linux
+    qt_libs += ["framework OpenGL"] # this is for macos
 
 qt_env.Tool('qt')
 qt_env['CPPPATH'] += qt_dirs + ["#selfdrive/ui/qt/"]
