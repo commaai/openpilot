@@ -329,7 +329,7 @@ else:
   elif arch != "Darwin":
     # In MacOS X you're not using libraries to include system level APIs, but Frameworks. The proper command line to compile this program would be
     # qt_libs += ["GL"] # this is for linux
-    qt_libs += ["framework OpenGL"] # this is for macos
+    qt_libs += []  # ["framework OpenGL"] # this is for macos
 
 qt_env.Tool('qt')
 qt_env['CPPPATH'] += qt_dirs + ["#selfdrive/ui/qt/"]
