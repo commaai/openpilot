@@ -111,6 +111,10 @@ class HardwareBase:
     pass
 
   @abstractmethod
+  def get_screen_brightness(self):
+    pass
+
+  @abstractmethod
   def set_power_save(self, powersave_enabled):
     pass
 

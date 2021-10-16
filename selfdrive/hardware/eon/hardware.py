@@ -375,6 +375,13 @@ class Android(HardwareBase):
     with open("/sys/class/leds/lcd-backlight/brightness", "w") as f:
       f.write(str(int(percentage * 2.55)))
 
+  def get_screen_brightness(self):
+    try:
+      with open("/sys/class/leds/lcd-backlight/brightness") as f:
+        return int(float(f.read()) / 2.55)
+    except Exception:
+      return 0
+
   def set_power_save(self, powersave_enabled):
     pass
 
