@@ -331,8 +331,8 @@ void Localizer::handle_cam_odo(double current_time, const cereal::CameraOdometry
   this->posenet_stds.push_back(trans_calib_std[0]);
 
   // Multiply by 10 to avoid to high certainty in kalman filter because of temporally correlated noise
-  trans_calib_std *= 10.0;
-  rot_calib_std *= 10.0;
+  trans_calib_std *= 5.0;
+  rot_calib_std *= 5.0;
   MatrixXdr rot_device_cov = rotate_std(this->device_from_calib, rot_calib_std).array().square().matrix().asDiagonal();
   MatrixXdr trans_device_cov = rotate_std(this->device_from_calib, trans_calib_std).array().square().matrix().asDiagonal();
   
