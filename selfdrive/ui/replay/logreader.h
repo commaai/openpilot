@@ -3,7 +3,6 @@
 #include <cassert>
 #include <memory_resource>
 
-#include <capnp/serialize.h>
 #include "cereal/gen/cpp/log.capnp.h"
 #include "selfdrive/camerad/cameras/camera_common.h"
 
