@@ -4,7 +4,6 @@
 #include <cassert>
 #include <mutex>
 #include "libyuv.h"
-#include "selfdrive/common/timing.h"
 
 static int ffmpeg_lockmgr_cb(void **arg, enum AVLockOp op) {
   std::mutex *mutex = (std::mutex *)*arg;
