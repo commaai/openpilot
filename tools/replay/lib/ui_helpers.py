@@ -25,22 +25,34 @@ _FULL_FRAME_SIZE = {
 }
 
 _BB_TO_FULL_FRAME = {}
+_CALIB_BB_TO_FULL = {}
 _FULL_FRAME_TO_BB = {}
 _INTRINSICS = {}
-cams = [(eon_f_frame_size[0], eon_f_frame_size[1], eon_f_focal_length),
-        (tici_f_frame_size[0], tici_f_frame_size[1], tici_f_focal_length)]
-for width, height, focal in cams:
-  sz = width * height
-  _BB_SCALE = width / 640.
+
+eon_f_qcam_frame_size = (480, 360)
+tici_f_qcam_frame_size = (526, 330)
+
+cams = [(eon_f_frame_size, eon_f_focal_length, eon_f_frame_size),
+        (tici_f_frame_size, tici_f_focal_length, tici_f_frame_size),
+        (eon_f_qcam_frame_size, eon_f_focal_length, eon_f_frame_size),
+        (tici_f_qcam_frame_size, tici_f_focal_length, tici_f_frame_size)]
+for size, focal, full_size in cams:
+  sz = size[0] * size[1]
+  _BB_SCALE = size[0] / 640.
   _BB_TO_FULL_FRAME[sz] = np.asarray([
       [_BB_SCALE, 0., 0.],
       [0., _BB_SCALE, 0.],
       [0., 0., 1.]])
+  calib_scale = full_size[0] / 640.
+  _CALIB_BB_TO_FULL[sz] = np.asarray([
+      [calib_scale, 0., 0.],
+      [0., calib_scale, 0.],
+      [0., 0., 1.]])
   _FULL_FRAME_TO_BB[sz] = np.linalg.inv(_BB_TO_FULL_FRAME[sz])
-  _FULL_FRAME_SIZE[sz] = (width, height)
+  _FULL_FRAME_SIZE[sz] = (size[0], size[1])
   _INTRINSICS[sz] = np.array([
-    [focal, 0., width / 2.],
-    [0., focal, height / 2.],
+    [focal, 0., full_size[0] / 2.],
+    [0., focal, full_size[1] / 2.],
     [0., 0., 1.]])
 
 
@@ -50,7 +62,7 @@ class Calibration:
   def __init__(self, num_px, rpy, intrinsic):
     self.intrinsic = intrinsic
     self.extrinsics_matrix = get_view_frame_from_calib_frame(rpy[0], rpy[1], rpy[2], 0.0)[:,:3]
-    self.zoom = _BB_TO_FULL_FRAME[num_px][0, 0]
+    self.zoom = _CALIB_BB_TO_FULL[num_px][0, 0]
 
   def car_space_to_ff(self, x, y, z):
     car_space_projective = np.column_stack((x, y, z)).T
