@@ -46,9 +46,9 @@ void party(cl_device_id device_id, cl_context context) {
 int main(int argc, char *argv[]) {
   set_realtime_priority(53);
   if (Hardware::EON()) {
-    set_core_affinity(2);
+    set_core_affinity({2});
   } else if (Hardware::TICI()) {
-    set_core_affinity(6);
+    set_core_affinity({6});
   }
 
   cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);

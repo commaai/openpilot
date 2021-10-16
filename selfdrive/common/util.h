@@ -31,7 +31,7 @@ typedef void (*sighandler_t)(int sig);
 void set_thread_name(const char* name);
 
 int set_realtime_priority(int level);
-int set_core_affinity(int core);
+int set_core_affinity(std::vector<int> cores);
 
 namespace util {
 
