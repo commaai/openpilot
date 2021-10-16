@@ -246,15 +246,13 @@ void Replay::publishFrame(const Event *e) {
       {cereal::Event::DRIVER_ENCODE_IDX, DriverCam},
       {cereal::Event::WIDE_ROAD_ENCODE_IDX, WideRoadCam},
   };
-  auto eidx = capnp::AnyStruct::Reader(e->event).getPointerSection()[0].getAs<cereal::EncodeIndex>();
-  if (std::find(segments_merged_.begin(), segments_merged_.end(), eidx.getSegmentNum()) == segments_merged_.end()) {
-    // eidx's segment is not loaded
+  if ((e->which == cereal::Event::DRIVER_ENCODE_IDX && !load_dcam) || (e->which == cereal::Event::WIDE_ROAD_ENCODE_IDX && !load_ecam)) {
     return;
   }
-  CameraType cam = cam_types.at(e->which);
-  auto &fr = segments_[eidx.getSegmentNum()]->frames[cam];
-  if (fr && eidx.getType() == cereal::EncodeIndex::Type::FULL_H_E_V_C) {
-    camera_server_->pushFrame(cam, fr.get(), eidx);
+  auto eidx = capnp::AnyStruct::Reader(e->event).getPointerSection()[0].getAs<cereal::EncodeIndex>();
+  if (eidx.getType() == cereal::EncodeIndex::Type::FULL_H_E_V_C && isSegmentLoaded(eidx.getSegmentNum())) {
+    CameraType cam = cam_types.at(e->which);
+    camera_server_->pushFrame(cam, segments_[eidx.getSegmentNum()]->frames[cam].get(), eidx);
   }
 }
 
@@ -323,7 +321,7 @@ void Replay::stream() {
     // wait for frame to be sent before unlock.(frameReader may be deleted after unlock)
     camera_server_->waitFinish();
 
-    if (eit == events_->end() && (current_segment_ == segments_.rbegin()->first)) {
+    if (eit == events_->end() && (current_segment_ == segments_.rbegin()->first) && isSegmentLoaded(current_segment_)) {
       qInfo() << "reaches the end of route, restart from beginning";
       emit seekTo(0, false);
     }
