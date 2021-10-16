@@ -1,5 +1,6 @@
 #include "selfdrive/ui/replay/util.h"
 
+#include <array>
 #include <cassert>
 #include <bzlib.h>
 #include <curl/curl.h>
