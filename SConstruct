@@ -165,7 +165,7 @@ elif GetOption('ubsan'):
   ldflags = ["-fsanitize=undefined"]
 else:
   ccflags = []
-  ldflags = ["-framework", "OpenGL", "-framework", "OpenCL"]
+  ldflags = []  # ["-framework", "OpenGL", "-framework", "OpenCL"]
 
 # no --as-needed on mac linker
 if arch != "Darwin":
