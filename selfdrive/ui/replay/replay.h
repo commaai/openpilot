@@ -39,6 +39,7 @@ protected:
   void publishMessage(const Event *e);
   void publishFrame(const Event *e);
   inline int currentSeconds() const { return (cur_mono_time_ - route_start_ts_) / 1e9; }
+  inline bool isSegmentLoaded(int n);
 
   QThread *stream_thread_ = nullptr;
 

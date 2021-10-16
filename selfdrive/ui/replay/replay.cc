@@ -320,8 +320,12 @@ void Replay::stream() {
         }
       }
     }
-
     // wait for frame to be sent before unlock.(frameReader may be deleted after unlock)
     camera_server_->waitFinish();
+
+    if (eit == events_->end() && (current_segment_ == segments_.rbegin()->first)) {
+      qInfo() << "reaches the end of route, restart from beginning";
+      emit seekTo(0, false);
+    }
   }
 }
