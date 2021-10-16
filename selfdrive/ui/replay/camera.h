@@ -10,6 +10,7 @@ class CameraServer {
 public:
   CameraServer();
   ~CameraServer();
+  void start(std::pair<int, int> cameras[MAX_CAMERAS]);
   void pushFrame(CameraType type, FrameReader* fr, const cereal::EncodeIndex::Reader& eidx);
   inline void waitFinish() {
     while (publishing_ > 0) usleep(0);

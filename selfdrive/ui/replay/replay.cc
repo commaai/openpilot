@@ -6,6 +6,7 @@
 #include <capnp/dynamic.h>
 #include "cereal/services.h"
 #include "selfdrive/common/timing.h"
+#include "selfdrive/common/params.h"
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/replay/util.h"
 
@@ -72,12 +73,6 @@ bool Replay::load() {
 
 void Replay::start(int seconds) {
   seekTo(seconds, false);
-
-  camera_server_ = std::make_unique<CameraServer>();
-  // start stream thread
-  stream_thread_ = new QThread(this);
-  QObject::connect(stream_thread_, &QThread::started, [=]() { stream(); });
-  stream_thread_->start();
 }
 
 void Replay::updateEvents(const std::function<bool()> &lambda) {
@@ -133,14 +128,15 @@ void Replay::segmentLoadFinished(bool success) {
 
 void Replay::queueSegment() {
   // get the current segment window
-  SegmentMap::iterator begin, end;
-  begin = end = segments_.lower_bound(current_segment_);
+  SegmentMap::iterator begin, cur, end;
+  begin = cur = end = segments_.lower_bound(current_segment_);
   for (int i = 0; i < BACKWARD_SEGS && begin != segments_.begin(); ++i) {
     --begin;
   }
   for (int i = 0; i <= FORWARD_SEGS && end != segments_.end(); ++i) {
     ++end;
   }
+
   // load segments
   for (auto it = begin; it != end; ++it) {
     auto &[n, seg] = *it;
@@ -150,14 +146,21 @@ void Replay::queueSegment() {
       qInfo() << "loading segment" << n << "...";
     }
   }
+
   // merge segments
   mergeSegments(begin, end);
+
   // free segments out of current semgnt window.
   for (auto it = segments_.begin(); it != begin; ++it) {
     it->second.reset(nullptr);
   }
   for (auto it = end; it != segments_.end(); ++it) {
     it->second.reset(nullptr);
+  }
+
+  // start stream thread
+  if (stream_thread_ == nullptr && cur != segments_.end() && cur->second->isLoaded()) {
+    startStream(cur->second.get());
   }
 }
 
@@ -182,16 +185,6 @@ void Replay::mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::
     // update events
     auto prev_events = events_;
     updateEvents([&]() {
-      if (route_start_ts_ == 0) {
-        // get route start time from initData
-        auto it = std::find_if(new_events->begin(), new_events->end(), [=](auto e) { return e->which == cereal::Event::Which::INIT_DATA; });
-        if (it != new_events->end()) {
-          route_start_ts_ = (*it)->mono_time;
-          // cur_mono_time_ is set by seekTo in start() before get route_start_ts_
-          cur_mono_time_ += route_start_ts_;
-        }
-      }
-
       events_ = new_events;
       segments_merged_ = segments_need_merge;
       return true;
@@ -200,6 +193,38 @@ void Replay::mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::
   } else {
     updateEvents([=]() { return true; });
   }
+}
+
+void Replay::startStream(const Segment *cur_segment) {
+  const auto &events = cur_segment->log->events;
+
+  // get route start time from initData
+  auto it = std::find_if(events.begin(), events.end(), [](auto e) { return e->which == cereal::Event::Which::INIT_DATA; });
+  route_start_ts_ = it != events.end() ? (*it)->mono_time : events[0]->mono_time;
+  cur_mono_time_ += route_start_ts_;
+
+  // write CarParams
+  it = std::find_if(events.begin(), events.end(), [](auto e) { return e->which == cereal::Event::Which::CAR_PARAMS; });
+  if (it != events.end()) {
+    auto bytes = (*it)->bytes();
+    Params().put("CarParams", (const char *)bytes.begin(), bytes.size());
+  } else {
+    qInfo() << "failed to read CarParams from current segment";
+  }
+
+  // start camera server
+  std::pair<int, int> cameras[MAX_CAMERAS] = {};
+  for (auto type : ALL_CAMERAS) {
+    if (auto &fr = cur_segment->frames[type]) {
+      cameras[type] = {fr->width, fr->height};
+    }
+  }
+  camera_server_ = std::make_unique<CameraServer>();
+  camera_server_->start(cameras);
+
+  // start stream thread
+  stream_thread_ = QThread::create(&Replay::stream, this);
+  stream_thread_->start();
 }
 
 void Replay::publishMessage(const Event *e) {

@@ -15,6 +15,13 @@ CameraServer::~CameraServer() {
   vipc_server_.reset(nullptr);
 }
 
+void CameraServer::start(std::pair<int, int> cameras[MAX_CAMERAS]) {
+  for (auto type : ALL_CAMERAS) {
+    std::tie(cameras_[type].width, cameras_[type].height) = cameras[type];
+  }
+  startVipcServer();
+}
+
 void CameraServer::startVipcServer() {
   std::cout << (vipc_server_ ? "restart" : "start") << " vipc server" << std::endl;
   vipc_server_.reset(new VisionIpcServer("camerad"));
@@ -33,7 +40,7 @@ void CameraServer::thread() {
     if (!fr) break;
 
     auto &cam = cameras_[type];
-    // start|restart the vipc server if frame size changed
+    // restart the vipc server if frame size changed
     if (cam.width != fr->width || cam.height != fr->height) {
       cam.width = fr->width;
       cam.height = fr->height;
