@@ -57,9 +57,6 @@ FrameReader::~FrameReader() {
   if (pFormatCtx_) {
     avformat_close_input(&pFormatCtx_);
   }
-  if (sws_ctx_) {
-    sws_freeContext(sws_ctx_);
-  }
 }
 
 bool FrameReader::load(const std::string &url) {
@@ -85,11 +82,6 @@ bool FrameReader::load(const std::string &url) {
 
   width = pCodecCtxOrig->width;
   height = pCodecCtxOrig->height;
-
-  sws_ctx_ = sws_getContext(width, height, AV_PIX_FMT_YUV420P,
-                            width, height, AV_PIX_FMT_BGR24,
-                            SWS_BILINEAR, NULL, NULL, NULL);
-  if (!sws_ctx_) return false;
 
   frames_.reserve(60 * 20);  // 20fps, one minute
   do {
