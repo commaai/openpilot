@@ -41,7 +41,6 @@ private:
 
   AVFormatContext *pFormatCtx_ = nullptr;
   AVCodecContext *pCodecCtx_ = nullptr;
-  AVFrame *frmRgb_ = nullptr;
   struct SwsContext *sws_ctx_ = nullptr;
 
   std::mutex mutex_;
