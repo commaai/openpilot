@@ -53,7 +53,6 @@ public:
 class LogReader {
 public:
   LogReader(size_t memory_pool_block_size = DEFAULT_EVENT_MEMORY_POOL_BLOCK_SIZE);
-  ~LogReader();
   bool load(const std::string &file);
 
   std::vector<Event*> events;

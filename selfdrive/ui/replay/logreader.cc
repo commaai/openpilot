@@ -42,10 +42,6 @@ LogReader::LogReader(size_t memory_pool_block_size) : memory_pool_(memory_pool_b
   events.reserve(memory_pool_block_size);
 }
 
-LogReader::~LogReader() {
-  for (auto e : events) delete e;
-}
-
 bool LogReader::load(const std::string &file) {
   bool is_bz2 = file.rfind(".bz2") == file.length() - 4;
   if (is_bz2) {
