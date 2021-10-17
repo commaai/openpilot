@@ -106,8 +106,8 @@ void TestReplay::testSeekTo(int seek_to) {
 }
 
 void TestReplay::test_seek() {
-  // pause streaming while testing seek
-  pause(true);
+  // create a dummy stream thread
+  stream_thread_ = new QThread(this);
 
   QEventLoop loop;
   std::thread thread = std::thread([&]() {
