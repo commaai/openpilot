@@ -80,52 +80,11 @@ std::vector<MatrixXdr> LiveKalman::get_R(int kind, int n) {
 
 std::optional<Estimate> LiveKalman::predict_and_observe(double t, int kind, std::vector<VectorXd> meas, std::vector<MatrixXdr> R) {
   std::optional<Estimate> r;
-  switch (kind) {
-  case OBSERVATION_CAMERA_ODO_TRANSLATION:
-    r = this->predict_and_update_odo_trans(meas, t, kind);
-    break;
-  case OBSERVATION_CAMERA_ODO_ROTATION:
-    r = this->predict_and_update_odo_rot(meas, t, kind);
-    break;
-  case OBSERVATION_ODOMETRIC_SPEED:
-    r = this->predict_and_update_odo_speed(meas, t, kind);
-    break;
-  default:
-    if (R.size() == 0) {
-      R = this->get_R(kind, meas.size());
-    }
-    r = this->filter->predict_and_update_batch(t, kind, get_vec_mapvec(meas), get_vec_mapmat(R));
-    break;
+  if (R.size() == 0) {
+    R = this->get_R(kind, meas.size());
   }
+  r = this->filter->predict_and_update_batch(t, kind, get_vec_mapvec(meas), get_vec_mapmat(R));
   return r;
-}
-
-std::optional<Estimate> LiveKalman::predict_and_update_odo_speed(std::vector<VectorXd> speed, double t, int kind) {
-  std::vector<MatrixXdr> R;
-  R.assign(speed.size(), (MatrixXdr(1, 1) << std::pow(0.2, 2)).finished().asDiagonal());
-  return this->filter->predict_and_update_batch(t, kind, get_vec_mapvec(speed), get_vec_mapmat(R));
-}
-
-std::optional<Estimate> LiveKalman::predict_and_update_odo_trans(std::vector<VectorXd> trans, double t, int kind) {
-  std::vector<VectorXd> z;
-  std::vector<MatrixXdr> R;
-  for (VectorXd& trns : trans) {
-    assert(trns.size() == 6); // TODO remove
-    z.push_back(trns.head(3));
-    R.push_back(trns.segment<3>(3).array().square().matrix().asDiagonal());
-  }
-  return this->filter->predict_and_update_batch(t, kind, get_vec_mapvec(z), get_vec_mapmat(R));
-}
-
-std::optional<Estimate> LiveKalman::predict_and_update_odo_rot(std::vector<VectorXd> rot, double t, int kind) {
-  std::vector<VectorXd> z;
-  std::vector<MatrixXdr> R;
-  for (VectorXd& rt : rot) {
-    assert(rt.size() == 6); // TODO remove
-    z.push_back(rt.head(3));
-    R.push_back(rt.segment<3>(3).array().square().matrix().asDiagonal());
-  }
-  return this->filter->predict_and_update_batch(t, kind, get_vec_mapvec(z), get_vec_mapmat(R));
 }
 
 Eigen::VectorXd LiveKalman::get_initial_x() {

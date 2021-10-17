@@ -14,7 +14,7 @@ class HardwarePC : public HardwareNone {
 public:
   static std::string get_os_version() { return "openpilot for PC"; }
   static bool PC() { return true; }
-  static bool TICI() { const char *tici = getenv("TICI"); return (tici != nullptr) && (strcmp(tici, "1") == 0); }
+  static bool TICI() { return util::getenv("TICI", 0) == 1; }
 };
 #define Hardware HardwarePC
 #endif

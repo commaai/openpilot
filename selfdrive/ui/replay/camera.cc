@@ -60,5 +60,12 @@ void CameraServer::thread() {
     } else {
       std::cout << "camera[" << type << "] failed to get frame:" << eidx.getSegmentId() << std::endl;
     }
+
+    --publishing_;
   }
+}
+
+void CameraServer::pushFrame(CameraType type, FrameReader *fr, const cereal::EncodeIndex::Reader &eidx) {
+  ++publishing_;
+  queue_.push({type, fr, eidx});
 }

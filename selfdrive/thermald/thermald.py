@@ -290,6 +290,7 @@ def thermald_thread():
     if modem_temps is not None:
       msg.deviceState.modemTempC = modem_temps
 
+    msg.deviceState.screenBrightnessPercent = HARDWARE.get_screen_brightness()
     msg.deviceState.batteryPercent = HARDWARE.get_battery_capacity()
     msg.deviceState.batteryCurrent = HARDWARE.get_battery_current()
     msg.deviceState.usbOnline = HARDWARE.get_usb_present()

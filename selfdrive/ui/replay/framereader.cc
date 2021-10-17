@@ -1,6 +1,7 @@
 #include "selfdrive/ui/replay/framereader.h"
 
 #include <cassert>
+#include "libyuv.h"
 
 static int ffmpeg_lockmgr_cb(void **arg, enum AVLockOp op) {
   std::mutex *mutex = (std::mutex *)*arg;
@@ -49,18 +50,12 @@ FrameReader::~FrameReader() {
   for (auto &f : frames_) {
     av_free_packet(&f.pkt);
   }
-  if (frmRgb_) {
-    av_frame_free(&frmRgb_);
-  }
   if (pCodecCtx_) {
     avcodec_close(pCodecCtx_);
     avcodec_free_context(&pCodecCtx_);
   }
   if (pFormatCtx_) {
     avformat_close_input(&pFormatCtx_);
-  }
-  if (sws_ctx_) {
-    sws_freeContext(sws_ctx_);
   }
 }
 
@@ -87,14 +82,6 @@ bool FrameReader::load(const std::string &url) {
 
   width = pCodecCtxOrig->width;
   height = pCodecCtxOrig->height;
-
-  sws_ctx_ = sws_getContext(width, height, AV_PIX_FMT_YUV420P,
-                            width, height, AV_PIX_FMT_BGR24,
-                            SWS_BILINEAR, NULL, NULL, NULL);
-  if (!sws_ctx_) return false;
-
-  frmRgb_ = av_frame_alloc();
-  if (!frmRgb_) return false;
 
   frames_.reserve(60 * 20);  // 20fps, one minute
   do {
@@ -176,14 +163,9 @@ std::pair<uint8_t *, uint8_t *> FrameReader::decodeFrame(AVPacket *pkt) {
     for (k = 0; k < f->height / 2; k++) {
       memcpy(yuv_data + f->width * i + f->width / 2 * j + f->width / 2 * k, f->data[2] + f->linesize[2] * k, f->width / 2);
     }
-
-    int ret = avpicture_fill((AVPicture *)frmRgb_, rgb_data, AV_PIX_FMT_BGR24, f->width, f->height);
-    assert(ret > 0);
-    if (sws_scale(sws_ctx_, (const uint8_t **)f->data, f->linesize, 0, f->height, frmRgb_->data, frmRgb_->linesize) <= 0) {
-      delete[] rgb_data;
-      delete[] yuv_data;
-      rgb_data = yuv_data = nullptr;
-    }
+    uint8_t *u = yuv_data + f->width * f->height;
+    uint8_t *v = u + (f->width / 2) * (f->height / 2);
+    libyuv::I420ToRGB24(yuv_data, f->width, u, f->width / 2, v, f->width / 2, rgb_data, f->width * 3, f->width, f->height);
   }
   av_frame_free(&f);
   return {rgb_data, yuv_data};

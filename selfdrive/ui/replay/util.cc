@@ -50,10 +50,12 @@ bool httpMultiPartDownload(const std::string &url, const std::string &target_fil
   int64_t content_length = getDownloadContentLength(url);
   if (content_length == -1) return false;
 
+  // create a tmp sparse file
   std::string tmp_file = target_file + ".tmp";
   FILE *fp = fopen(tmp_file.c_str(), "wb");
-  // create a sparse file
-  fseek(fp, content_length, SEEK_SET);
+  assert(fp);
+  fseek(fp, content_length - 1, SEEK_SET);
+  fwrite("\0", 1, 1, fp);
 
   CURLM *cm = curl_multi_init();
   std::map<CURL *, MultiPartWriter> writers;

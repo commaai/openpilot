@@ -12,7 +12,6 @@
 extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
-#include <libswscale/swscale.h>
 }
 
 class FrameReader {
@@ -41,8 +40,6 @@ private:
 
   AVFormatContext *pFormatCtx_ = nullptr;
   AVCodecContext *pCodecCtx_ = nullptr;
-  AVFrame *frmRgb_ = nullptr;
-  struct SwsContext *sws_ctx_ = nullptr;
 
   std::mutex mutex_;
   std::condition_variable cv_decode_;
