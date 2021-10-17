@@ -30,8 +30,10 @@ static size_t write_cb(char *data, size_t size, size_t count, void *userp) {
 
 static size_t dumy_write_cb(char *data, size_t size, size_t count, void *userp) { return size * count; }
 
-int64_t getDownloadContentLength(const std::string &url) {
+int64_t getRemoteFileSize(const std::string &url) {
   CURL *curl = curl_easy_init();
+  if (!curl) return -1;
+
   curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, dumy_write_cb);
   curl_easy_setopt(curl, CURLOPT_HEADER, 1);
@@ -50,7 +52,7 @@ int64_t getDownloadContentLength(const std::string &url) {
 bool httpMultiPartDownload(const std::string &url, const std::string &target_file, int parts, std::atomic<bool> *abort) {
   static CURLGlobalInitializer curl_initializer;
 
-  int64_t content_length = getDownloadContentLength(url);
+  int64_t content_length = getRemoteFileSize(url);
   if (content_length <= 0) return false;
 
   // create a tmp sparse file
@@ -82,34 +84,27 @@ bool httpMultiPartDownload(const std::string &url, const std::string &target_fil
     curl_multi_add_handle(cm, eh);
   }
 
-  int running = 1;
-  while (running > 0 && !(abort && *abort)) {
+  int still_running = 1;
+  while (still_running > 0 && !(abort && *abort)) {
     curl_multi_wait(cm, nullptr, 0, 1000, nullptr);
-    curl_multi_perform(cm, &running);
+    curl_multi_perform(cm, &still_running);
   }
 
   CURLMsg *msg;
   int msgs_left = -1;
-  int success_cnt = 0;
+  int complete = 0;
   while ((msg = curl_multi_info_read(cm, &msgs_left)) && !(abort && *abort)) {
     if (msg->msg == CURLMSG_DONE) {
-      // At this point, the transfer was completed in some way
       if (msg->data.result == CURLE_OK) {
-        int http_status_code = 0;
-        curl_easy_getinfo(msg->easy_handle, CURLINFO_RESPONSE_CODE, &http_status_code);
-        if (http_status_code == 206) {
-          ++success_cnt;
+        long res_status = 0;
+        curl_easy_getinfo(msg->easy_handle, CURLINFO_RESPONSE_CODE, &res_status);
+        if (res_status == 206) {
+          complete++;
         } else {
-          std::cout << "Download failed: http error code: " << http_status_code << std::endl;
+          std::cout << "Download failed: http error code: " << res_status << std::endl;
         }
       } else {
-        long connect_error = 0;
-        CURLcode res = curl_easy_getinfo(msg->easy_handle, CURLINFO_OS_ERRNO, &connect_error);
-        if (res == CURLE_OK && connect_error) {
-          std::cout << "Download failed: connect error: " << connect_error << std::endl;
-        } else {
-          std::cout << "Download failed: curl error code: " << msg->data.result << std::endl;
-        }
+        std::cout << "Download failed: connection failue";
       }
     }
   }
@@ -122,7 +117,7 @@ bool httpMultiPartDownload(const std::string &url, const std::string &target_fil
   curl_multi_cleanup(cm);
   fclose(fp);
 
-  bool ret = success_cnt == parts;
+  bool ret = complete == parts;
   ret = ret && ::rename(tmp_file.c_str(), target_file.c_str()) == 0;
   return ret;
 }
