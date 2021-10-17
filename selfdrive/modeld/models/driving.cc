@@ -253,16 +253,16 @@ void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const float *data, i
     if (plan_t_arr == nullptr) {
       t_arr[i] = T_IDXS[i];
       x_arr[i] = data[i*columns + 0];
-      x_std_arr[i] = data[columns*(TRAJECTORY_SIZE + i) + 0];
+      x_std_arr[i] = exp(data[columns*(TRAJECTORY_SIZE + i) + 0]);
     } else {
       t_arr[i] = plan_t_arr[i];
       x_arr[i] = X_IDXS[i];
       x_std_arr[i] = NAN;
     }
     y_arr[i] = data[i*columns + 1];
-    y_std_arr[i] = data[columns*(TRAJECTORY_SIZE + i) + 1];
+    y_std_arr[i] = exp(data[columns*(TRAJECTORY_SIZE + i) + 1]);
     z_arr[i] = data[i*columns + 2];
-    z_std_arr[i] = data[columns*(TRAJECTORY_SIZE + i) + 2];
+    z_std_arr[i] = exp(data[columns*(TRAJECTORY_SIZE + i) + 2]);
   }
   xyzt.setX(x_arr);
   xyzt.setY(y_arr);
