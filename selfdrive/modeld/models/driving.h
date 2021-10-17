@@ -81,9 +81,9 @@ struct ModelDataRawPlanPrediction {
       data.rotation.mean.x[i] = mean[i].rotation.x;
       data.rotation.mean.y[i] = mean[i].rotation.y;
       data.rotation.mean.z[i] = mean[i].rotation.z;
-      data.rotation_rate.mean.x[i] = mean[i].rotation.x;
-      data.rotation_rate.mean.y[i] = mean[i].rotation.y;
-      data.rotation_rate.mean.z[i] = mean[i].rotation.z;
+      data.rotation_rate.mean.x[i] = mean[i].rotation_rate.x;
+      data.rotation_rate.mean.y[i] = mean[i].rotation_rate.y;
+      data.rotation_rate.mean.z[i] = mean[i].rotation_rate.z;
 
       data.position.std_exp.x[i] = exp(std[i].position.x);
       data.position.std_exp.y[i] = exp(std[i].position.y);
@@ -97,9 +97,9 @@ struct ModelDataRawPlanPrediction {
       data.rotation.std_exp.x[i] = exp(std[i].rotation.x);
       data.rotation.std_exp.y[i] = exp(std[i].rotation.y);
       data.rotation.std_exp.z[i] = exp(std[i].rotation.z);
-      data.rotation_rate.std_exp.x[i] = exp(std[i].rotation.x);
-      data.rotation_rate.std_exp.y[i] = exp(std[i].rotation.y);
-      data.rotation_rate.std_exp.z[i] = exp(std[i].rotation.z);
+      data.rotation_rate.std_exp.x[i] = exp(std[i].rotation_rate.x);
+      data.rotation_rate.std_exp.y[i] = exp(std[i].rotation_rate.y);
+      data.rotation_rate.std_exp.z[i] = exp(std[i].rotation_rate.z);
     }
     return data;
   }
