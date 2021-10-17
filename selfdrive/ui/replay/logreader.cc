@@ -4,17 +4,6 @@
 #include "selfdrive/common/util.h"
 #include "selfdrive/ui/replay/util.h"
 
-EventMemoryPool::EventMemoryPool(size_t block_size) {
-  const size_t buf_size = sizeof(Event) * block_size;
-  buffer_ = ::operator new(buf_size);
-  mbr_ = new std::pmr::monotonic_buffer_resource(buffer_, buf_size);
-}
-
-EventMemoryPool::~EventMemoryPool() {
-  ::operator delete(buffer_);
-  delete mbr_;
-}
-
 Event::Event(const kj::ArrayPtr<const capnp::word> &amsg, bool frame) : reader(amsg), frame(frame) {
   words = kj::ArrayPtr<const capnp::word>(amsg.begin(), reader.getEnd());
   event = reader.getRoot<cereal::Event>();
@@ -38,8 +27,17 @@ Event::Event(const kj::ArrayPtr<const capnp::word> &amsg, bool frame) : reader(a
 
 // class LogReader
 
-LogReader::LogReader(size_t memory_pool_block_size) : memory_pool_(memory_pool_block_size) {
+LogReader::LogReader(size_t memory_pool_block_size) {
+  const size_t buf_size = sizeof(Event) * memory_pool_block_size;
+  pool_buffer_ = ::operator new(buf_size);
+  mbr_ = new std::pmr::monotonic_buffer_resource(pool_buffer_, buf_size);
+
   events.reserve(memory_pool_block_size);
+}
+
+LogReader::~LogReader() {
+  delete mbr_;
+  ::operator delete(pool_buffer_);
 }
 
 bool LogReader::load(const std::string &file) {
@@ -58,14 +56,14 @@ bool LogReader::load(const std::string &file) {
   kj::ArrayPtr<const capnp::word> words((const capnp::word *)raw_.data(), raw_.size() / sizeof(capnp::word));
   while (words.size() > 0) {
     try {
-      Event *evt = new (memory_pool_) Event(words);
+      Event *evt = new (mbr_) Event(words);
 
       // Add encodeIdx packet again as a frame packet for the video stream
       if (evt->which == cereal::Event::ROAD_ENCODE_IDX ||
           evt->which == cereal::Event::DRIVER_ENCODE_IDX ||
           evt->which == cereal::Event::WIDE_ROAD_ENCODE_IDX) {
 
-          Event *frame_evt = new (memory_pool_) Event(words, true);
+          Event *frame_evt = new (mbr_) Event(words, true);
           events.push_back(frame_evt);
       }
 

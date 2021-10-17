@@ -10,14 +10,6 @@ const CameraType ALL_CAMERAS[] = {RoadCam, DriverCam, WideRoadCam};
 const int MAX_CAMERAS = std::size(ALL_CAMERAS);
 const int DEFAULT_EVENT_MEMORY_POOL_BLOCK_SIZE = 65000;
 
-class EventMemoryPool {
-public:
-  EventMemoryPool(size_t block_size);
-  ~EventMemoryPool();
-  std::pmr::monotonic_buffer_resource *mbr_ = nullptr;
-  void *buffer_ = nullptr;
-};
-
 class Event {
 public:
   Event(cereal::Event::Which which, uint64_t mono_time) : reader(kj::ArrayPtr<capnp::word>{}) {
@@ -34,8 +26,8 @@ public:
     }
   };
 
-  void *operator new(size_t size, EventMemoryPool& pool) {
-    return pool.mbr_->allocate(size);
+  void *operator new(size_t size, std::pmr::monotonic_buffer_resource *mbr) {
+    return mbr->allocate(size);
   }
   void operator delete(void *ptr) {
     // No-op. memory used by EventMemoryPool increases monotonically until the logReader is destroyed. 
@@ -52,11 +44,13 @@ public:
 class LogReader {
 public:
   LogReader(size_t memory_pool_block_size = DEFAULT_EVENT_MEMORY_POOL_BLOCK_SIZE);
+  ~LogReader();
   bool load(const std::string &file);
 
   std::vector<Event*> events;
 
 private:
   std::string raw_;
-  EventMemoryPool memory_pool_;
+  std::pmr::monotonic_buffer_resource *mbr_ = nullptr;
+  void *pool_buffer_ = nullptr;
 };
