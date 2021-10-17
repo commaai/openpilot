@@ -18,9 +18,9 @@ except Exception:
 
 print("Loading log...")
 ROUTE = "77611a1fac303767/2020-03-24--09-50-38"
-NUM_SEGS = 2 # route has 82 segments available
+REPLAY_SEGS = list(range(10, 16))  # route has 82 segments available
 CAN_MSGS = []
-for i in tqdm(list(range(1, NUM_SEGS+1))):
+for i in tqdm(REPLAY_SEGS):
   log_url = f"https://commadataci.blob.core.windows.net/openpilotci/{ROUTE}/{i}/rlog.bz2"
   lr = LogReader(log_url)
   CAN_MSGS += [can_capnp_to_can_list(m.can) for m in lr if m.which() == 'can']
