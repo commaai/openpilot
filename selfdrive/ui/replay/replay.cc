@@ -145,7 +145,6 @@ void Replay::queueSegment() {
   for (auto it = begin; it != end; ++it) {
     auto &[n, seg] = *it;
     if (!seg) {
-      qInfo() << "loading segment" << n << "...";
       seg = segment_manager_.get(n, route_->at(n), load_dcam, load_ecam);
     }
   }

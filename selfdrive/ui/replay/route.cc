@@ -170,11 +170,12 @@ std::shared_ptr<Segment> SegmentManager::get(int n, const SegmentFile &files, bo
       return a.second->last_used < smallest.second->last_used;
     });
     if (it == segments_.end() || it->second->segment.use_count() > 1) break;
-    qDebug() << "remove segment" << it->first << "from cache";
+    // qDebug() << "remove segment" << it->first << "from cache";
     segments_.erase(it);
   }
 
   // add segment to cache
+  qInfo() << "loading segment" << n << "...";
   SegmentData *s = new SegmentData;
   s->segment = std::make_shared<Segment>(n, files, load_cam, load_eccam),
   s->last_used = millis_since_boot(),
