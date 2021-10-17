@@ -12,6 +12,7 @@
 #include <memory>
 #include <string>
 #include <thread>
+#include <vector>
 
 // keep trying if x gets interrupted by a signal
 #define HANDLE_EINTR(x)                                       \
