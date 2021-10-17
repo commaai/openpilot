@@ -9,12 +9,22 @@
 #include "selfdrive/ui/qt/api.h"
 #include "selfdrive/ui/replay/util.h"
 
+Route::Route(const QString &route, const QString &data_dir) : route_(parseRoute(route)), data_dir_(data_dir) {}
+
+RouteIdentifier Route::parseRoute(const QString &str) {
+  QRegExp rx(R"(^([a-z0-9]{16})([|_/])(\d{4}-\d{2}-\d{2}--\d{2}-\d{2}-\d{2})(?:(--|/)(\d*))?$)");
+  if (rx.indexIn(str) == -1) return {};
+
+  const QStringList list = rx.capturedTexts();
+  return {list[1], list[3], list[5].toInt(), list[1] + "|" + list[3]};
+}
+
 bool Route::load() {
-  if (data_dir_.isEmpty()) {
-    return loadFromServer();
-  } else {
-    return loadFromLocal();
+  if (route_.str.isEmpty()) {
+    qInfo() << "invalid route format";
+    return false;
   }
+  return data_dir_.isEmpty() ? loadFromServer() : loadFromLocal();
 }
 
 bool Route::loadFromServer() {
@@ -29,7 +39,7 @@ bool Route::loadFromServer() {
     ret = loadFromJson(json);
     loop.quit();
   });
-  http.sendRequest("https://api.commadotai.com/v1/route/" + route_ + "/files");
+  http.sendRequest("https://api.commadotai.com/v1/route/" + route_.str + "/files");
   loop.exec();
   return ret;
 }
@@ -54,17 +64,14 @@ bool Route::loadFromJson(const QString &json) {
 }
 
 bool Route::loadFromLocal() {
-  QString prefix = route_.split('|').last();
-  if (prefix.isEmpty()) return false;
-
   QDir log_dir(data_dir_);
   QStringList folders = log_dir.entryList(QDir::Dirs | QDir::NoDot | QDir::NoDotDot, QDir::NoSort);
   if (folders.isEmpty()) return false;
 
   for (auto folder : folders) {
-    int seg_num_pos = folder.lastIndexOf("--");
-    if (seg_num_pos != -1) {
-      const int seg_num = folder.mid(seg_num_pos + 2).toInt();
+    int pos = folder.lastIndexOf("--");
+    if (pos != -1 && folder.left(pos) == route_.timestamp) {
+      const int seg_num = folder.mid(pos + 2).toInt();
       QDir segment_dir(log_dir.filePath(folder));
       for (auto f : segment_dir.entryList(QDir::Files)) {
         addFileToSegment(seg_num, segment_dir.absoluteFilePath(f));

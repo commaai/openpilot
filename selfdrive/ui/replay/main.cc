@@ -7,7 +7,6 @@
 #include <QApplication>
 #include <QCommandLineParser>
 #include <QDebug>
-#include <QRegExp>
 #include <QThread>
 
 const QString DEMO_ROUTE = "4cf7a6ad03080c90|2021-09-29--13-46-36";
@@ -71,23 +70,6 @@ void keyboardThread(Replay *replay) {
   }
 }
 
-struct RouteIdentifier {
-  QString dongle_id;
-  QString timestamp;
-  int segment_id;
-  QString str;
-};
-
-bool parse_route(const QString &str, RouteIdentifier &route) {
-  QRegExp rx(R"(^([a-z0-9]{16})([|_/])(\d{4}-\d{2}-\d{2}--\d{2}-\d{2}-\d{2})(?:(--|/)(\d*))?$)");
-  if (rx.indexIn(str) == -1) {
-    return false;
-  }
-  const QStringList list = rx.capturedTexts();
-  route = {list[1], list[3], list[5].toInt(), str};
-  return true;
-}
-
 int main(int argc, char *argv[]){
   QApplication app(argc, argv);
   std::signal(SIGINT, sigHandler);
@@ -111,21 +93,15 @@ int main(int argc, char *argv[]){
     parser.showHelp();
   }
 
+  const QString route = args.empty() ? DEMO_ROUTE : args.first();
   QStringList allow = parser.value("allow").isEmpty() ? QStringList{} : parser.value("allow").split(",");
   QStringList block = parser.value("block").isEmpty() ? QStringList{} : parser.value("block").split(",");
 
-  RouteIdentifier route;
-  if (!parse_route(args.empty() ? DEMO_ROUTE : args.first(), route)) {
-    qDebug() << "invalid route format";
-    return 0;
-  }
-  Replay *replay = new Replay(route.str, allow, block, nullptr, parser.isSet("dcam"), parser.isSet("ecam"), parser.value("data_dir"), &app);
+  Replay *replay = new Replay(route, allow, block, nullptr, parser.isSet("dcam"), parser.isSet("ecam"), parser.value("data_dir"), &app);
   if (!replay->load()) {
     return 0;
   }
-  int start_from = route.segment_id * 60 + parser.value("start").toInt();
-  replay->start(start_from);
-
+  replay->start(parser.value("start").toInt());
   // start keyboard control thread
   QThread *t = QThread::create(keyboardThread, replay);
   QObject::connect(t, &QThread::finished, t, &QThread::deleteLater);
