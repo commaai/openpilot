@@ -16,19 +16,22 @@ Setup your PC
 ============
 1. Clone openpilot into your home directory:
 ``` bash
-cd ~
 git clone --recurse-submodules https://github.com/commaai/openpilot.git
 ```
 
 2. Run the setup script:
 
-Ubuntu:
+Ubuntu 20.04 LTS:
 ``` bash
-openpilot/tools/ubuntu_setup.sh
+openpilot/tools/setup.sh
+```
+Ubuntu (latest):
+```bash
+openpilot/tools/setup.sh --os ubuntu-latest
 ```
 MacOS:
 ``` bash
-openpilot/tools/mac_setup.sh
+openpilot/tools/setup.sh --os macos
 ```
 
 3. Build openpilot by running SCons in the root of the openpilot directory
@@ -37,8 +40,6 @@ cd openpilot && scons -j$(nproc)
 ```
 
 4. Try out some tools!
-
-NOTE: you can always run `update_requirements.sh` to pull in new python dependencies.
 
 Windows
 ------------

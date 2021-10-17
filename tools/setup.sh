@@ -221,19 +221,39 @@ function setup_pyenv() {
     if ! command_exists "pyenv"; then
         echo "setup_pyenv: pyenv not found"
         exit 1
-    else
+    elif ! pyenv prefix ${PYENV_PYTHON_VERSION} &> /dev/null; then
+        export MAKEFLAGS="-j$(nproc)"
         eval "$(pyenv init -)"
         PYENV_PYTHON_VERSION=$(cat $OP_ROOT/.python-version)
-        pyenv install -s ${PYENV_PYTHON_VERSION}
+        CONFIGURE_OPTS=--enable-shared pyenv install -f ${PYENV_PYTHON_VERSION}
         pyenv global ${PYENV_PYTHON_VERSION}
         pyenv rehash
     fi
 }
 
+function setup_packages() {
+    echo "Upgrading pip"
+    pip install --upgrade pip --quiet
+    echo "Installing pipenv"
+    pip install pipenv --quiet
+    [ -d "./xx" ] && export PIPENV_PIPFILE=./xx/Pipfile
+    echo "Installing packages"
+    pipenv install --dev --deploy --system
+    if command_exists "pyenv"; then
+        pyenv rehash
+    fi
+    
+    echo "Installing pre-commit"
+    pre-commit install
+    # For internal comma repos
+    [ -d "./xx" ] && (cd xx && pre-commit install)
+    [ -d "./notebooks" ] && (cd notebooks && pre-commit install)
+}
+
 function setup_help() {
     echo "Setup script for openpilot environment"
     echo "By default it does the following things:"
-    echo -e "\t1. Download required libraries and tools for Ubuntu 20.04LTS."
+    echo -e "\t1. Download required libraries and tools for Ubuntu 20.04 LTS."
     echo -e "\t2. Save openpilot environment script in shell configuration."
     echo -e "\t3. Setup pyenv to build and use configured Python version."
     echo -e "\t4. Download packages from Pipfile using pipenv."
@@ -245,7 +265,7 @@ function setup_help() {
     echo -e "\t--skip-reqs:     Do not download dependencies."
     echo -e "\t--skip-rc:       Do not setup shell evironment."
     echo -e "\t--no-pyenv:      Skip pyenv setup. Will use default Python if pyenv is not installed."
-    echo -e "\t--skip-pipenv:   Do not install pipenv and its requirements from Pipfile."
+    echo -e "\t--skip-packages: Do not install pipenv and its requirements from Pipfile."
     echo -e "Supported OSes: ubuntu-lts, ubuntu-latest, macos (not tested)"
 }
 
@@ -281,8 +301,8 @@ while [ ! -z "$1" ]; do
             SKIP_RC=1
             shift
             ;;
-        --skip-pipenv)
-            SKIP_PIPENV=1
+        --skip-packages)
+            SKIP_PACKAGES=1
             shift
             ;;
         *)
@@ -297,8 +317,13 @@ if [ -z "$RC_FILE" ]; then
     detect_shell_config 
 fi
 
+if [ -n "$RC_FILE" ]; then
+    echo "Shell config detected: $RC_FILE"
+fi
+
 if [ -z "$SKIP_REQS" ]; then
     echo "Selected OS: $SELECTED_OS"
+    echo "Installing required system dependencies"
     case $SELECTED_OS in
         ubuntu-lts)
             install_ubuntu_lts_requirements
@@ -329,7 +354,7 @@ if [ -z "$SKIP_RC" ]; then
         echo -e "\n# openpilot environment" >> $RC_FILE
         echo "export OP_ROOT=$OP_ROOT" >> $RC_FILE
         echo "source $OP_ENV_SCRIPT" >> $RC_FILE
-        echo "Added openpilot environment script to .rc file: $RC_FILE"
+        echo "Added openpilot environment script to shell config: $RC_FILE"
     elif [ -z "$OPENPILOT_ENV" ] && [ ! -f "$RC_FILE" ]; then
         echo "No valid shell configuration file provided."
         echo "Cannot install openpilot environment script."
@@ -348,33 +373,36 @@ if [ -z "$SKIP_RC" ]; then
         exit 1
     fi
 else
-    echo "Skipping installation of openpilot environment script."
+    echo "Skipped installation of openpilot environment script."
 fi
 
 
-echo "Doing the rest of git checkout"
+echo "Doing the rest of git checkout."
 git lfs pull
 git submodule init
 git submodule update
 
 if [ -z "$NO_PYENV" ]; then
-    echo -e "Setting up pyenv"
+    echo "Setting up pyenv."
     setup_pyenv
 else
-    echo "Skipping pyenv setup"
+    echo "Skipped pyenv setup."
 fi
 
-if [ -z "$SKIP_PIPENV" ]; then
-    pip install pipenv==2020.8.13
-    pipenv install --system --deploy
+if [ -z "$SKIP_PACKAGES" ]; then
+    echo "Installing packages."
+    setup_packages
 else
-    echo "Skipping pipenv setup"
+    echo "Skipping installation of packages."
 fi
+
+
 
 echo -e "\n---- OPENPILOT ENVIRONMENT SETUP FINISHED ----"
 echo "Your environment is set up!"
-echo "Use 'source $RC_FILE to reload your shell"
-echo "Also run the update_requirements.sh script in the root folder."
+if [ -f "$RC_FILE " ]; then
+    echo "Use 'source $RC_FILE to reload your shell"
+fi
 echo "Go to $OP_ROOT and compile OP with 'scons -j\$(nproc)'."
 echo "Then try executing these commands in separate windows:"
 echo -e "\t* $OP_ROOT/selfdrive/ui/replay/replay --demo"
