@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cassert>
 #include <memory_resource>
 
 #include "cereal/gen/cpp/log.capnp.h"
