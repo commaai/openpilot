@@ -16,13 +16,13 @@ TEST_CASE("httpMultiPartDownload") {
   int fd = mkstemp(filename);
   close(fd);
 
-  const char *stream_url = "https://commadataci.blob.core.windows.net/openpilotci/0c94aa1e1296d7c6/2021-05-05--19-48-37/0/rlog.bz2";
+  const char *stream_url = "https://commadataci.blob.core.windows.net/openpilotci/0c94aa1e1296d7c6/2021-05-05--19-48-37/0/fcamera.hevc";
   SECTION("http 200") {
     REQUIRE(httpMultiPartDownload(stream_url, filename, 5));
     std::string content = util::read_file(filename);
-    REQUIRE(content.size() == 9112651);
+    REQUIRE(content.size() == 37495242);
     std::string checksum = sha_256(QString::fromStdString(content));
-    REQUIRE(checksum == "e44edfbb545abdddfd17020ced2b18b6ec36506152267f32b6a8e3341f8126d6");
+    REQUIRE(checksum == "d8ff81560ce7ed6f16d5fb5a6d6dd13aba06c8080c62cfe768327914318744c4");
   }
   SECTION("http 404") {
     REQUIRE(httpMultiPartDownload(util::string_format("%s_abc", stream_url), filename, 5) == false);
