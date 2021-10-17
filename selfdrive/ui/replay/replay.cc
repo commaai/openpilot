@@ -16,11 +16,10 @@ Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *s
   auto event_struct = capnp::Schema::from<cereal::Event>().asStruct();
   sockets_.resize(event_struct.getUnionFields().size());
   for (const auto &it : services) {
-    if ((allow.size() == 0 || allow.contains(it.name)) &&
-        !block.contains(it.name)) {
-      s.push_back(it.name);
+    if ((allow.empty() || allow.contains(it.name)) && !block.contains(it.name)) {
       uint16_t which = event_struct.getFieldByName(it.name).getProto().getDiscriminantValue();
       sockets_[which] = it.name;
+      s.push_back(it.name);
     }
   }
   qDebug() << "services " << s;
@@ -30,15 +29,14 @@ Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *s
   }
   route_ = std::make_unique<Route>(route, data_dir);
   events_ = new std::vector<Event *>();
-  // doSeek & queueSegment are always executed in the same thread
+
   connect(this, &Replay::seekTo, this, &Replay::doSeek);
   connect(this, &Replay::segmentChanged, this, &Replay::queueSegment);
 }
 
 Replay::~Replay() {
   qDebug() << "shutdown: in progress...";
-  exit_ = true;
-  updating_events_ = true;
+  exit_ = updating_events_ = true;
   if (stream_thread_) {
     stream_cv_.notify_one();
     stream_thread_->quit();
@@ -137,7 +135,7 @@ void Replay::queueSegment() {
     ++end;
   }
 
-  // load segments
+  // load & merge segments
   for (auto it = begin; it != end; ++it) {
     auto &[n, seg] = *it;
     if (!seg) {
@@ -146,8 +144,6 @@ void Replay::queueSegment() {
       qInfo() << "loading segment" << n << "...";
     }
   }
-
-  // merge segments
   mergeSegments(begin, end);
 
   // free segments out of current semgnt window.
@@ -173,7 +169,6 @@ void Replay::mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::
 
   if (segments_need_merge != segments_merged_) {
     qDebug() << "merge segments" << segments_need_merge;
-    // merge & sort events
     std::vector<Event *> *new_events = new std::vector<Event *>();
     new_events->reserve(std::accumulate(segments_need_merge.begin(), segments_need_merge.end(), 0,
                                         [=](int v, int n) { return v + segments_[n]->log->events.size(); }));

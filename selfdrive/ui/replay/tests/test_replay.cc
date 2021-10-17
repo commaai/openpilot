@@ -74,7 +74,6 @@ public:
 void TestReplay::testSeekTo(int seek_to) {
   seekTo(seek_to, false);
 
-  // wait for the seek to finish
   while (true) {
     std::unique_lock lk(stream_lock_);
     stream_cv_.wait(lk, [=]() { return events_updated_ == true; });
@@ -108,14 +107,12 @@ void TestReplay::testSeekTo(int seek_to) {
 void TestReplay::test_seek() {
   // create a dummy stream thread
   stream_thread_ = new QThread(this);
-
   QEventLoop loop;
   std::thread thread = std::thread([&]() {
-    // random seek 50 times in 3 segments
     for (int i = 0; i < 50; ++i) {
       testSeekTo(random_int(0, 3 * 60));
     }
-    // random seek 50 times in routes with invalid segments
+    // remove 3 segments
     for (int n : {5, 6, 8}) {
       segments_.erase(n);
     }
