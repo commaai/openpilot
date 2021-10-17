@@ -72,15 +72,21 @@ void keyboardThread(Replay *replay) {
   }
 }
 
-std::optional<std::pair<QString, int>> parse_route(const QString &str) {
+struct RouteIdentifier {
+  QString dongle_id;
+  QString timestamp;
+  int segment_id;
+  QString str;
+};
+
+bool parse_route(const QString &str, RouteIdentifier &route) {
   QRegExp rx(R"(^([a-z0-9]{16})([|_/])(\d{4}-\d{2}-\d{2}--\d{2}-\d{2}-\d{2})(?:(--|/)(\d*))?$)");
   if (rx.indexIn(str) == -1) {
-    return std::nullopt;
+    return false;
   }
   const QStringList list = rx.capturedTexts();
-  QString route = list[1] + "|" + list[3];
-  int segment = list[5].toInt();
-  return std::make_pair(route, segment);
+  route = {list[1], list[3], list[5].toInt(), str};
+  return true;
 }
 
 int main(int argc, char *argv[]){
@@ -109,19 +115,19 @@ int main(int argc, char *argv[]){
   QStringList allow = parser.value("allow").isEmpty() ? QStringList{} : parser.value("allow").split(",");
   QStringList block = parser.value("block").isEmpty() ? QStringList{} : parser.value("block").split(",");
 
-  auto ret = parse_route(args.empty() ? DEMO_ROUTE : args.first());
-  if (!ret) {
+  RouteIdentifier route;
+  if (!parse_route(args.empty() ? DEMO_ROUTE : args.first(), route)) {
     qDebug() << "invalid route format";
     return 0;
   }
-  auto [route, segment] = *ret;
-  int start_from = parser.value("start").isEmpty() ? segment * 60 : parser.value("start").toInt();
-
-  Replay *replay = new Replay(route, allow, block, nullptr, parser.isSet("dcam"), parser.isSet("ecam"), parser.value("data_dir"), &app);
+  qDebug() << route.dongle_id << route.timestamp << route.segment_id;
+  Replay *replay = new Replay(route.str, allow, block, nullptr, parser.isSet("dcam"), parser.isSet("ecam"), parser.value("data_dir"), &app);
   if (!replay->load()) {
     return 0;
   }
+  int start_from = route.segment_id * 60 + parser.value("start").toInt();
   replay->start(start_from);
+
   // start keyboard control thread
   QThread *t = QThread::create(keyboardThread, replay);
   QObject::connect(t, &QThread::finished, t, &QThread::deleteLater);
