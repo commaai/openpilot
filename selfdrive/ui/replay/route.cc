@@ -45,22 +45,16 @@ bool Route::loadFromServer() {
 }
 
 bool Route::loadFromJson(const QString &json) {
-  QJsonObject route_files = QJsonDocument::fromJson(json.trimmed().toUtf8()).object();
-  if (route_files.empty()) {
-    qInfo() << "JSON Parse failed";
-    return false;
-  }
-
   QRegExp rx(R"(\/(\d+)\/)");
-  for (const QString &key : route_files.keys()) {
-    for (const auto &url : route_files[key].toArray()) {
+  for (auto value :  QJsonDocument::fromJson(json.trimmed().toUtf8()).object()) {
+    for (const auto &url : value.toArray()) {
       QString url_str = url.toString();
       if (rx.indexIn(url_str) != -1) {
         addFileToSegment(rx.cap(1).toInt(), url_str);
       }
     }
   }
-  return true;
+  return !segments_.empty();
 }
 
 bool Route::loadFromLocal() {
