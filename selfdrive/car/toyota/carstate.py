@@ -1,6 +1,8 @@
+import cereal.messaging as messaging
 from cereal import car
 from common.numpy_fast import mean
 from common.filter_simple import FirstOrderFilter
+from common.op_params import opParams
 from common.realtime import DT_CTRL
 from opendbc.can.can_define import CANDefine
 from selfdrive.car.interfaces import CarStateBase
@@ -25,6 +27,15 @@ class CarState(CarStateBase):
 
     self.low_speed_lockout = False
     self.acc_type = 1
+
+    # Toyota Distance Button
+    op_params = opParams()
+    self.enable_distance_btn = op_params.get('toyota_distance_btn')
+    self.distance_btn = 0
+    self.distance_lines = 0
+    if self.enable_distance_btn:
+      # Previously was publishing from UI
+      self.pm = messaging.PubMaster(['dynamicFollowButton'])
 
   def update(self, cp, cp_cam):
     ret = car.CarState.new_message()
@@ -91,6 +102,14 @@ class CarState(CarStateBase):
 
     if self.CP.carFingerprint in TSS2_CAR:
       self.acc_type = cp_cam.vl["ACC_CONTROL"]["ACC_TYPE"]
+      if self.enable_distance_btn:
+        self.distance_btn = 1 if cp_cam.vl["ACC_CONTROL"]["DISTANCE"] == 1 else 0
+        distance_lines = cp.vl["PCM_CRUISE_SM"]["DISTANCE_LINES"] - 1
+        if distance_lines in range(3) and distance_lines != self.distance_lines:
+          dat = messaging.new_message('dynamicFollowButton')
+          dat.dynamicFollowButton.status = distance_lines
+          self.pm.send('dynamicFollowButton', dat)
+          self.distance_lines = distance_lines
 
     # some TSS2 cars have low speed lockout permanently set, so ignore on those cars
     # these cars are identified by an ACC_TYPE value of 2.
@@ -201,6 +220,10 @@ class CarState(CarStateBase):
         ("BSM", 1)
       ]
 
+    if CP.carFingerprint in TSS2_CAR:
+      signals.append(("DISTANCE_LINES", "PCM_CRUISE_SM", 0))
+      checks.append(("PCM_CRUISE_SM", 1))
+
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 0)
 
   @staticmethod
@@ -219,6 +242,7 @@ class CarState(CarStateBase):
 
     if CP.carFingerprint in TSS2_CAR:
       signals.append(("ACC_TYPE", "ACC_CONTROL", 0))
+      signals.append(("DISTANCE", "ACC_CONTROL", 0))
       checks.append(("ACC_CONTROL", 33))
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 2)

@@ -2,6 +2,7 @@
 
 #include <QDebug>
 
+#include "selfdrive/common/util.h"
 #include "selfdrive/common/timing.h"
 #include "selfdrive/ui/paint.h"
 #include "selfdrive/ui/qt/util.h"
@@ -151,6 +152,10 @@ ButtonsWindow::ButtonsWindow(QWidget *parent) : QWidget(parent) {
   dfButton->setFixedHeight(200);
   btns_layout->addWidget(dfButton, 0, Qt::AlignRight);
 
+  if (QUIState::ui_state.enable_distance_btn) {
+    dfButton->hide();
+  }
+
   setStyleSheet(R"(
     QPushButton {
       color: white;
@@ -168,10 +173,12 @@ void ButtonsWindow::updateState(const UIState &s) {
     dfStatus = s.scene.dfButtonStatus;
     dfButton->setStyleSheet(QString("font-size: 45px; border-radius: 100px; border-color: %1").arg(dfButtonColors.at(dfStatus)));
 
-    MessageBuilder msg;
-    auto dfButtonStatus = msg.initEvent().initDynamicFollowButton();
-    dfButtonStatus.setStatus(dfStatus);
-    QUIState::ui_state.pm->send("dynamicFollowButton", msg);
+    if (!QUIState::ui_state.enable_distance_btn) {
+      MessageBuilder msg;
+      auto dfButtonStatus = msg.initEvent().initDynamicFollowButton();
+      dfButtonStatus.setStatus(dfStatus);
+      QUIState::ui_state.pm->send("dynamicFollowButton", msg);
+    }
   }
 
   if (mlEnabled != s.scene.mlButtonEnabled) {  // update model longitudinal button

@@ -136,6 +136,8 @@ typedef struct UIState {
 
   bool awake;
 
+  bool enable_distance_btn = false;
+
   float car_space_transform[6];
   bool wide_camera;
 } UIState;
