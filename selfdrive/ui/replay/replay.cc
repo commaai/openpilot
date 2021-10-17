@@ -32,7 +32,7 @@ Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *s
   // doSeek & queueSegment are always executed in the same thread
   connect(this, &Replay::seekTo, this, &Replay::doSeek);
   connect(this, &Replay::segmentChanged, this, &Replay::queueSegment);
-  connect(&segment_manager_, &SegmentManager::segmentLoaded, this, &Replay::queueSegment);
+  connect(&segment_manager_, &SegmentManager::segmentLoadFinished, this, &Replay::segmentLoadFinished);
 }
 
 Replay::~Replay() {
@@ -58,10 +58,9 @@ bool Replay::load() {
     return false;
   }
 
-  for (int i = 0; i < route_->size(); ++i) {
-    const SegmentFile &f = route_->at(i);
+  for (auto &[n, f] : route_->segments()) {
     if ((!f.rlog.isEmpty() || !f.qlog.isEmpty()) && (!f.road_cam.isEmpty() || !f.qcamera.isEmpty())) {
-      segments_[i] = nullptr;
+      segments_[n] = nullptr;
     }
   }
   if (segments_.empty()) {
@@ -99,8 +98,9 @@ void Replay::doSeek(int seconds, bool relative) {
       seconds += currentSeconds();
     }
     qInfo() << "seeking to" << seconds;
-    cur_mono_time_ = route_start_ts_ + std::clamp(seconds, 0, (int)segments_.rbegin()->first * 60) * 1e9;
-    current_segment_ = std::min(seconds / 60, (int)segments_.rbegin()->first - 1);
+    const int max_segment_number = segments_.rbegin()->first;
+    cur_mono_time_ = route_start_ts_ + std::clamp(seconds, 0, (max_segment_number + 1) * 60) * 1e9;
+    current_segment_ = std::min(seconds / 60, max_segment_number);
     return false;
   });
   queueSegment();
@@ -123,14 +123,29 @@ void Replay::setCurrentSegment(int n) {
   }
 }
 
-// maintain the segment window
+void Replay::segmentLoadFinished(int n, bool success) {
+  if (!success) {
+    qInfo() << "failed to load segment " << n << ", removing it from current replay list";
+    segments_.erase(n);
+  }
+  queueSegment();
+}
+
 void Replay::queueSegment() {
-  // forward fetch segments
+  // get the current segment window
   SegmentMap::iterator begin, end;
   begin = end = segments_.lower_bound(current_segment_);
-  for (int fwd = 0; end != segments_.end() && fwd <= FORWARD_SEGS; ++end, ++fwd) {
-    auto &[n, seg] = *end;
+  for (int i = 0; i < BACKWARD_SEGS && begin != segments_.begin(); ++i) {
+    --begin;
+  }
+  for (int i = 0; i <= FORWARD_SEGS && end != segments_.end(); ++i) {
+    ++end;
+  }
+  // load segments
+  for (auto it = begin; it != end; ++it) {
+    auto &[n, seg] = *it;
     if (!seg) {
+      qInfo() << "loading segment" << n << "...";
       seg = segment_manager_.get(n, route_->at(n), load_dcam, load_ecam);
     }
   }
@@ -159,8 +174,8 @@ void Replay::mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::
     new_events->reserve(std::accumulate(segments_need_merge.begin(), segments_need_merge.end(), 0,
                                         [=](int v, int n) { return v + segments_[n]->log->events.size(); }));
     for (int n : segments_need_merge) {
-      auto &log = segments_[n]->log;
-      auto middle = new_events->insert(new_events->end(), log->events.begin(), log->events.end());
+      auto &e = segments_[n]->log->events;
+      auto middle = new_events->insert(new_events->end(), e.begin(), e.end());
       std::inplace_merge(new_events->begin(), middle, new_events->end(), Event::lessThan());
     }
     // update events
@@ -182,7 +197,20 @@ void Replay::mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::
     });
     delete prev_events;
   } else {
-    updateEvents([=]() { return begin->second->isLoaded(); });
+    updateEvents([=]() { return true; });
+  }
+}
+
+void Replay::publishMessage(const Event *e) {
+  if (sm == nullptr) {
+    auto bytes = e->bytes();
+    int ret = pm->send(sockets_[e->which], (capnp::byte *)bytes.begin(), bytes.size());
+    if (ret == -1) {
+      qDebug() << "stop publishing" << sockets_[e->which] << "due to multiple publishers error";
+      sockets_[e->which] = nullptr;
+    }
+  } else {
+    sm->update_msgs(nanos_since_boot(), {{sockets_[e->which], e->event}});
   }
 }
 
@@ -222,8 +250,8 @@ void Replay::stream() {
       continue;
     }
 
-    const uint64_t evt_start_ts = cur_mono_time_;
-    const uint64_t loop_start_ts = nanos_since_boot();
+    uint64_t evt_start_ts = cur_mono_time_;
+    uint64_t loop_start_ts = nanos_since_boot();
 
     for (auto end = events_->end(); !updating_events_ && eit != end; ++eit) {
       const Event *evt = (*eit);
@@ -250,24 +278,19 @@ void Replay::stream() {
         long etime = cur_mono_time_ - evt_start_ts;
         long rtime = nanos_since_boot() - loop_start_ts;
         long behind_ns = etime - rtime;
-        if (behind_ns > 0) {
+        // if behind_ns is greater than 1 second, it means that an invalid segemnt is skipped by seeking/replaying
+        if (behind_ns >= 1 * 1e9) {
+          // reset start times
+          evt_start_ts = cur_mono_time_;
+          loop_start_ts = nanos_since_boot();
+        } else if (behind_ns > 0) {
           precise_nano_sleep(behind_ns);
         }
 
         if (evt->frame) {
           publishFrame(evt);
         } else {
-          // publish msg
-          if (sm == nullptr) {
-            auto bytes = evt->bytes();
-            int ret = pm->send(sockets_[cur_which], (capnp::byte *)bytes.begin(), bytes.size());
-            if (ret == -1) {
-              qDebug() << "stop publishing" << sockets_[cur_which] << "due to multiple publishers error";
-              sockets_[cur_which] = nullptr;
-            }
-          } else {
-            sm->update_msgs(nanos_since_boot(), {{sockets_[cur_which], evt->event}});
-          }
+          publishMessage(evt);
         }
       }
     }

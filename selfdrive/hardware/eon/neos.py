@@ -34,7 +34,7 @@ def download_file(url: str, fn: str, sha256: str, display_name: str, cloudlog=lo
 
       for chunk in r.iter_content(chunk_size=1024 * 1024):
         f.write(chunk)
-        print(f"Downloading {display_name}: {f.tell() / total * 100}")
+        print(f"Downloading {display_name}: {f.tell() / total * 100}", flush=True)
   except Exception:
     cloudlog.error("download error")
     if os.path.isfile(fn):

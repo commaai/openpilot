@@ -1,38 +1,38 @@
 #include "selfdrive/ui/replay/route.h"
 
 #include <QEventLoop>
-#include <QFile>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QRegExp>
-#include <QThread>
-#include <future>
+#include <QtConcurrent>
 
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/qt/api.h"
 #include "selfdrive/ui/replay/util.h"
 
-Route::Route(const QString &route, const QString &data_dir) : route_(route), data_dir_(data_dir) {}
-
 bool Route::load() {
   if (data_dir_.isEmpty()) {
-    QEventLoop loop;
-    auto onError = [&loop](const QString &err) { loop.quit(); };
-
-    bool ret = false;
-    HttpRequest http(nullptr, !Hardware::PC());
-    QObject::connect(&http, &HttpRequest::failedResponse, onError);
-    QObject::connect(&http, &HttpRequest::timeoutResponse, onError);
-    QObject::connect(&http, &HttpRequest::receivedResponse, [&](const QString json) {
-      ret = loadFromJson(json);
-      loop.quit();
-    });
-    http.sendRequest("https://api.commadotai.com/v1/route/" + route_ + "/files");
-    loop.exec();
-    return ret;
+    return loadFromServer();
   } else {
     return loadFromLocal();
   }
+}
+
+bool Route::loadFromServer() {
+  QEventLoop loop;
+  auto onError = [&loop](const QString &err) { loop.quit(); };
+
+  bool ret = false;
+  HttpRequest http(nullptr, !Hardware::PC());
+  QObject::connect(&http, &HttpRequest::failedResponse, onError);
+  QObject::connect(&http, &HttpRequest::timeoutResponse, onError);
+  QObject::connect(&http, &HttpRequest::receivedResponse, [&](const QString json) {
+    ret = loadFromJson(json);
+    loop.quit();
+  });
+  http.sendRequest("https://api.commadotai.com/v1/route/" + route_ + "/files");
+  loop.exec();
+  return ret;
 }
 
 bool Route::loadFromJson(const QString &json) {
@@ -47,23 +47,7 @@ bool Route::loadFromJson(const QString &json) {
     for (const auto &url : route_files[key].toArray()) {
       QString url_str = url.toString();
       if (rx.indexIn(url_str) != -1) {
-        const int seg_num = rx.cap(1).toInt();
-        if (segments_.size() <= seg_num) {
-          segments_.resize(seg_num + 1);
-        }
-        if (key == "logs") {
-          segments_[seg_num].rlog = url_str;
-        } else if (key == "qlogs") {
-          segments_[seg_num].qlog = url_str;
-        } else if (key == "cameras") {
-          segments_[seg_num].road_cam = url_str;
-        } else if (key == "dcameras") {
-          segments_[seg_num].driver_cam = url_str;
-        } else if (key == "ecameras") {
-          segments_[seg_num].wide_road_cam = url_str;
-        } else if (key == "qcameras") {
-          segments_[seg_num].qcamera = url_str;
-        }
+        addFileToSegment(rx.cap(1).toInt(), url_str);
       }
     }
   }
@@ -79,124 +63,96 @@ bool Route::loadFromLocal() {
   if (folders.isEmpty()) return false;
 
   for (auto folder : folders) {
-    const int seg_num = folder.split("--")[2].toInt();
-    if (segments_.size() <= seg_num) {
-      segments_.resize(seg_num + 1);
-    }
-    QDir segment_dir(log_dir.filePath(folder));
-    for (auto f : segment_dir.entryList(QDir::Files)) {
-      const QString file_path = segment_dir.absoluteFilePath(f);
-      if (f.startsWith("rlog")) {
-        segments_[seg_num].rlog = file_path;
-      } else if (f.startsWith("qlog")) {
-        segments_[seg_num].qlog = file_path;
-      } else if (f.startsWith("fcamera")) {
-        segments_[seg_num].road_cam = file_path;
-      } else if (f.startsWith("dcamera")) {
-        segments_[seg_num].driver_cam = file_path;
-      } else if (f.startsWith("ecamera")) {
-        segments_[seg_num].wide_road_cam = file_path;
-      } else if (f.startsWith("qcamera")) {
-        segments_[seg_num].qcamera = file_path;
+    int seg_num_pos = folder.lastIndexOf("--");
+    if (seg_num_pos != -1) {
+      const int seg_num = folder.mid(seg_num_pos + 2).toInt();
+      QDir segment_dir(log_dir.filePath(folder));
+      for (auto f : segment_dir.entryList(QDir::Files)) {
+        addFileToSegment(seg_num, segment_dir.absoluteFilePath(f));
       }
     }
   }
   return true;
 }
 
+void Route::addFileToSegment(int n, const QString &file) {
+  const QString name = QUrl(file).fileName();
+  if (name == "rlog.bz2") {
+    segments_[n].rlog = file;
+  } else if (name == "qlog.bz2") {
+    segments_[n].qlog = file;
+  } else if (name == "fcamera.hevc") {
+    segments_[n].road_cam = file;
+  } else if (name == "dcamera.hevc") {
+    segments_[n].driver_cam = file;
+  } else if (name == "ecamera.hevc") {
+    segments_[n].wide_road_cam = file;
+  } else if (name == "qcamera.ts") {
+    segments_[n].qcamera = file;
+  }
+}
+
 // class Segment
 
-Segment::Segment(int n, const SegmentFile &segment_files, bool load_dcam, bool load_ecam) : seg_num_(n), files_(segment_files) {
+Segment::Segment(int n, const SegmentFile &files, bool load_dcam, bool load_ecam) : seg_num(n) {
   static std::once_flag once_flag;
-  std::call_once(once_flag, [=]() {
-    if (!CACHE_DIR.exists()) QDir().mkdir(CACHE_DIR.absolutePath());
-  });
+  std::call_once(once_flag, [=]() { if (!CACHE_DIR.exists()) QDir().mkdir(CACHE_DIR.absolutePath()); });
 
-  // fallback to qcamera/qlog
-  road_cam_path_ = files_.road_cam.isEmpty() ? files_.qcamera : files_.road_cam;
-  log_path_ = files_.rlog.isEmpty() ? files_.qlog : files_.rlog;
-  assert (!log_path_.isEmpty() && !road_cam_path_.isEmpty());
-
-  if (!load_dcam) {
-    files_.driver_cam = "";
-  }
-  if (!load_ecam) {
-    files_.wide_road_cam = "";
-  }
-
-  // TODO: download segment in class SegmentManager
-  if (!QUrl(log_path_).isLocalFile()) {
-    for (auto &url : {log_path_, road_cam_path_, files_.driver_cam, files_.wide_road_cam}) {
-      if (!url.isEmpty() && !QFile::exists(localPath(url))) {
-        downloadFile(url);
-        ++downloading_;
-      }
+  // the order is [RoadCam, DriverCam, WideRoadCam, log]. fallback to qcamera/qlog
+  const QString file_list[] = {
+      files.road_cam.isEmpty() ? files.qcamera : files.road_cam,
+      load_dcam ? files.driver_cam : "",
+      load_ecam ? files.wide_road_cam : "",
+      files.rlog.isEmpty() ? files.qlog : files.rlog,
+  };
+  for (int i = 0; i < std::size(file_list); i++) {
+    if (!file_list[i].isEmpty()) {
+      loading_++;
+      synchronizer_.addFuture(QtConcurrent::run(this, &Segment::loadFile, i, file_list[i].toStdString()));
     }
-  }
-  if (downloading_ == 0) {
-    QTimer::singleShot(0, this, &Segment::load);
-  } else {
-    qDebug() << "downloading segment" << seg_num_ << "...";
   }
 }
 
 Segment::~Segment() {
   aborting_ = true;
-  if (downloading_ > 0) {
-    qDebug() << "cancel download segment" << seg_num_;
-  }
-  for (auto &t : download_threads_) {
-    if (t->isRunning()) t->wait();
-  }
+  synchronizer_.setCancelOnWait(true);
+  synchronizer_.waitForFinished();
 }
 
-void Segment::downloadFile(const QString &url) {
-  download_threads_.emplace_back(QThread::create([=]() {
-    const std::string local_file = localPath(url).toStdString();
-    bool ret = httpMultiPartDownload(url.toStdString(), local_file, connections_per_file, &aborting_);
-    if (ret && url == log_path_) {
-      // pre-decompress log file.
-      std::ofstream ostrm(local_file + "_decompressed", std::ios::binary);
-      readBZ2File(local_file, ostrm);
-    }
-    if (--downloading_ == 0 && !aborting_) {
-      load();
-    }
-  }))->start();
-}
+void Segment::loadFile(int id, const std::string file) {
+  const bool is_remote = file.find("https://") == 0;
+  const std::string local_file = is_remote ? cacheFilePath(file) : file;
+  bool file_ready = util::file_exists(local_file);
 
-// load concurrency
-void Segment::load() {
-  std::vector<std::future<bool>> futures;
+  if (!file_ready && is_remote) {
+    // TODO: retry on failure
+    file_ready = httpMultiPartDownload(file, local_file, id < MAX_CAMERAS ? 3 : 1, &aborting_);
+  }
 
-  futures.emplace_back(std::async(std::launch::async, [=]() {
-    const std::string bzip_file = localPath(log_path_).toStdString();
-    const std::string decompressed_file = bzip_file + "_decompressed";
-    bool is_bzip = !util::file_exists(decompressed_file);
-    log = std::make_unique<LogReader>();
-    return log->load(is_bzip ? bzip_file : decompressed_file, is_bzip);
-  }));
-
-  QString camera_files[] = {road_cam_path_, files_.driver_cam, files_.wide_road_cam};
-  for (int i = 0; i < std::size(camera_files); ++i) {
-    if (!camera_files[i].isEmpty()) {
-      futures.emplace_back(std::async(std::launch::async, [=]() {
-        frames[i] = std::make_unique<FrameReader>();
-        return frames[i]->load(localPath(camera_files[i]).toStdString());
-      }));
+  if (!aborting_ && file_ready) {
+    if (id < MAX_CAMERAS) {
+      frames[id] = std::make_unique<FrameReader>();
+      success_ = success_ && frames[id]->load(local_file);
+    } else {
+      std::string decompressed = cacheFilePath(local_file + ".decompressed");
+      if (!util::file_exists(decompressed)) {
+        std::ofstream ostrm(decompressed, std::ios::binary);
+        readBZ2File(local_file, ostrm);
+      }
+      log = std::make_unique<LogReader>();
+      success_ = success_ && log->load(decompressed);
     }
   }
 
-  int success_cnt = std::accumulate(futures.begin(), futures.end(), 0, [=](int v, auto &f) { return f.get() + v; });
-  loaded_ = (success_cnt == futures.size());
-  emit loadFinished();
+  if (!aborting_ && --loading_ == 0) {
+    emit loadFinished(success_);
+  }
 }
 
-QString Segment::localPath(const QUrl &url) {
-  if (url.isLocalFile() || QFile(url.toString()).exists()) return url.toString();
-
-  QByteArray url_no_query = url.toString(QUrl::RemoveQuery).toUtf8();
-  return CACHE_DIR.filePath(QString(QCryptographicHash::hash(url_no_query, QCryptographicHash::Sha256).toHex()));
+std::string Segment::cacheFilePath(const std::string &file) {
+  QString url_no_query = QUrl(file.c_str()).toString(QUrl::RemoveQuery);
+  QString sha256 = QCryptographicHash::hash(url_no_query.toUtf8(), QCryptographicHash::Sha256).toHex();
+  return CACHE_DIR.filePath(sha256 + "." + QFileInfo(url_no_query).suffix()).toStdString();
 }
 
 std::shared_ptr<Segment> SegmentManager::get(int n, const SegmentFile &files, bool load_cam, bool load_eccam) {
@@ -222,7 +178,7 @@ std::shared_ptr<Segment> SegmentManager::get(int n, const SegmentFile &files, bo
   SegmentData *s = new SegmentData;
   s->segment = std::make_shared<Segment>(n, files, load_cam, load_eccam),
   s->last_used = millis_since_boot(),
-  QObject::connect(s->segment.get(), &Segment::loadFinished, [=]() { emit segmentLoaded(n); });
+  QObject::connect(s->segment.get(), &Segment::loadFinished, [=](bool success) { emit segmentLoadFinished(n, success); });
   segments_.emplace(n, s);
   return s->segment;
 }

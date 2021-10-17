@@ -10,11 +10,9 @@ class CameraServer {
 public:
   CameraServer();
   ~CameraServer();
-  inline void pushFrame(CameraType type, FrameReader* fr, const cereal::EncodeIndex::Reader& eidx) {
-    queue_.push({type, fr, eidx});
-  }
+  void pushFrame(CameraType type, FrameReader* fr, const cereal::EncodeIndex::Reader& eidx);
   inline void waitFinish() {
-    while (!queue_.empty()) usleep(0);
+    while (publishing_ > 0) usleep(0);
   }
 
 protected:
@@ -33,6 +31,8 @@ protected:
       {.rgb_type = VISION_STREAM_RGB_FRONT, .yuv_type = VISION_STREAM_YUV_FRONT},
       {.rgb_type = VISION_STREAM_RGB_WIDE, .yuv_type = VISION_STREAM_YUV_WIDE},
   };
+
+  std::atomic<int> publishing_ = 0;
   std::thread camera_thread_;
   std::unique_ptr<VisionIpcServer> vipc_server_;
   SafeQueue<std::tuple<CameraType, FrameReader*, const cereal::EncodeIndex::Reader>> queue_;
