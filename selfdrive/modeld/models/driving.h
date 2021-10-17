@@ -46,7 +46,7 @@ struct ModelDataRawXYZ {
   float y;
   float z;
 
-  constexpr ModelDataRawXYZ to_exp() const {
+  inline ModelDataRawXYZ to_exp() const {
     return ModelDataRawXYZ {.x=exp(x), .y=exp(y), .z=exp(z)};
   };
 };
@@ -66,7 +66,7 @@ struct ModelDataRawPlanPrediction {
   std::array<ModelDataRawPlanTimeStep, TRAJECTORY_SIZE> std;
   float prob;
 
-  constexpr ModelDataRawPlanPredictionPivot pivot() const {
+  inline ModelDataRawPlanPredictionPivot pivot() const {
     ModelDataRawPlanPredictionPivot data = {};
     for(int i=0; i<TRAJECTORY_SIZE; i++) {
       data.position.mean.x[i] = mean[i].position.x;
