@@ -1,11 +1,14 @@
 #pragma once
+
+#include <array>
+
 const int  TRAJECTORY_SIZE = 33;
 const int LAT_MPC_N = 16;
 const int LON_MPC_N = 32;
 const float MIN_DRAW_DISTANCE = 10.0;
 const float MAX_DRAW_DISTANCE = 100.0;
 
-const double T_IDXS[TRAJECTORY_SIZE] = {
+const std::array<double, TRAJECTORY_SIZE> T_IDXS = {
         0.        ,  0.00976562,  0.0390625 ,  0.08789062,  0.15625   ,
         0.24414062,  0.3515625 ,  0.47851562,  0.625     ,  0.79101562,
         0.9765625 ,  1.18164062,  1.40625   ,  1.65039062,  1.9140625 ,
@@ -21,7 +24,7 @@ constexpr const std::array<float, TRAJECTORY_SIZE> T_IDXS_FLOAT() {
   return t_idxs_float;
 };
 
-const double X_IDXS[TRAJECTORY_SIZE] = {
+const std::array<double, TRAJECTORY_SIZE> X_IDXS = {
          0.    ,   0.1875,   0.75  ,   1.6875,   3.    ,   4.6875,
          6.75  ,   9.1875,  12.    ,  15.1875,  18.75  ,  22.6875,
         27.    ,  31.6875,  36.75  ,  42.1875,  48.    ,  54.1875,
