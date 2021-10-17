@@ -5,6 +5,7 @@
 #define DESIRE
 #define TRAFFIC_CONVENTION
 
+#include <array>
 #include <memory>
 
 #include "cereal/messaging/messaging.h"
@@ -20,63 +21,116 @@ constexpr int DESIRE_LEN = 8;
 constexpr int TRAFFIC_CONVENTION_LEN = 2;
 constexpr int MODEL_FREQ = 20;
 
+template <size_t size>
+struct ModelDataXYZPivot {
+  std::array<float, size> x = {};
+  std::array<float, size> y = {};
+  std::array<float, size> z = {};
+};
+
+struct ModelDataPlanTimestepPivot {
+  ModelDataXYZPivot<TRAJECTORY_SIZE> mean = {};
+  ModelDataXYZPivot<TRAJECTORY_SIZE> std_exp = {};
+};
+
+struct ModelDataRawPlanPredictionPivot {
+  ModelDataPlanTimestepPivot position = {};
+  ModelDataPlanTimestepPivot velocity = {};
+  ModelDataPlanTimestepPivot acceleration = {};
+  ModelDataPlanTimestepPivot rotation = {};
+  ModelDataPlanTimestepPivot rotation_rate = {};
+};
+
 struct ModelDataRawXYZ {
   float x;
   float y;
   float z;
-};
 
-struct ModelDataRawRPY {
-  float roll;
-  float pitch;
-  float yaw;
+  constexpr ModelDataRawXYZ to_exp() const {
+    return ModelDataRawXYZ {.x=exp(x), .y=exp(y), .z=exp(z)};
+  };
 };
+static_assert(sizeof(ModelDataRawXYZ) == sizeof(float)*3);
 
 struct ModelDataRawPlanTimeStep {
   ModelDataRawXYZ position;
   ModelDataRawXYZ velocity;
   ModelDataRawXYZ acceleration;
-  ModelDataRawRPY rotation;
-  ModelDataRawRPY rotation_rate;
+  ModelDataRawXYZ rotation;
+  ModelDataRawXYZ rotation_rate;
 };
+static_assert(sizeof(ModelDataRawPlanTimeStep) == sizeof(ModelDataRawXYZ)*5);
 
 struct ModelDataRawPlanPrediction {
   std::array<ModelDataRawPlanTimeStep, TRAJECTORY_SIZE> mean;
   std::array<ModelDataRawPlanTimeStep, TRAJECTORY_SIZE> std;
   float prob;
 
-  constexpr std::array<float, TRAJECTORY_SIZE> mean_position_x_array() {
-    std::array<float, TRAJECTORY_SIZE> arr = {};
-    for (int i = 0; i < TRAJECTORY_SIZE; i++) {
-      arr[i] = mean[i].position.x;
+  constexpr ModelDataRawPlanPredictionPivot pivot() const {
+    ModelDataRawPlanPredictionPivot data = {};
+    for(int i=0; i<TRAJECTORY_SIZE; i++) {
+      data.position.mean.x[i] = mean[i].position.x;
+      data.position.mean.y[i] = mean[i].position.y;
+      data.position.mean.z[i] = mean[i].position.z;
+      data.velocity.mean.x[i] = mean[i].velocity.x;
+      data.velocity.mean.y[i] = mean[i].velocity.y;
+      data.velocity.mean.z[i] = mean[i].velocity.z;
+      data.acceleration.mean.x[i] = mean[i].acceleration.x;
+      data.acceleration.mean.y[i] = mean[i].acceleration.y;
+      data.acceleration.mean.z[i] = mean[i].acceleration.z;
+      data.rotation.mean.x[i] = mean[i].rotation.x;
+      data.rotation.mean.y[i] = mean[i].rotation.y;
+      data.rotation.mean.z[i] = mean[i].rotation.z;
+      data.rotation_rate.mean.x[i] = mean[i].rotation.x;
+      data.rotation_rate.mean.y[i] = mean[i].rotation.y;
+      data.rotation_rate.mean.z[i] = mean[i].rotation.z;
+
+      data.position.std_exp.x[i] = exp(std[i].position.x);
+      data.position.std_exp.y[i] = exp(std[i].position.y);
+      data.position.std_exp.z[i] = exp(std[i].position.z);
+      data.velocity.std_exp.x[i] = exp(std[i].velocity.x);
+      data.velocity.std_exp.y[i] = exp(std[i].velocity.y);
+      data.velocity.std_exp.z[i] = exp(std[i].velocity.z);
+      data.acceleration.std_exp.x[i] = exp(std[i].acceleration.x);
+      data.acceleration.std_exp.y[i] = exp(std[i].acceleration.y);
+      data.acceleration.std_exp.z[i] = exp(std[i].acceleration.z);
+      data.rotation.std_exp.x[i] = exp(std[i].rotation.x);
+      data.rotation.std_exp.y[i] = exp(std[i].rotation.y);
+      data.rotation.std_exp.z[i] = exp(std[i].rotation.z);
+      data.rotation_rate.std_exp.x[i] = exp(std[i].rotation.x);
+      data.rotation_rate.std_exp.y[i] = exp(std[i].rotation.y);
+      data.rotation_rate.std_exp.z[i] = exp(std[i].rotation.z);
     }
-    return arr;
-  };
+    return data;
+  }
 };
+static_assert(sizeof(ModelDataRawPlanPrediction) == (sizeof(ModelDataRawPlanTimeStep)*TRAJECTORY_SIZE*2) + sizeof(float));
 
 struct ModelDataRawPlan {
   std::array<ModelDataRawPlanPrediction, PLAN_MHP_N> prediction;
 
-  ModelDataRawPlanPrediction *get_best_prediction() {
+  constexpr const ModelDataRawPlanPrediction &best_prediction() const {
     int max_idx = 0;
     for (int i = 1; i < PLAN_MHP_N; i++) {
       if (prediction[i].prob > prediction[max_idx].prob) {
         max_idx = i;
       }
     }
-    return &prediction[max_idx];
+    return prediction[max_idx];
   }
 };
+static_assert(sizeof(ModelDataRawPlan) == sizeof(ModelDataRawPlanPrediction)*PLAN_MHP_N);
 
 struct ModelDataRawPose {
   ModelDataRawXYZ velocity_mean;
-  ModelDataRawRPY rotation_mean;
+  ModelDataRawXYZ rotation_mean;
   ModelDataRawXYZ velocity_std;
-  ModelDataRawRPY rotation_std;
+  ModelDataRawXYZ rotation_std;
 };
+static_assert(sizeof(ModelDataRawPose) == sizeof(ModelDataRawXYZ)*4);
 
 struct ModelDataRaw {
-  float *plan;
+  ModelDataRawPlan *plan;
   float *lane_lines;
   float *lane_lines_prob;
   float *road_edges;

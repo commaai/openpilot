@@ -17,7 +17,6 @@ constexpr int OTHER_META_SIZE = 48;
 constexpr int NUM_META_INTERVALS = 5;
 constexpr int META_STRIDE = 7;
 
-constexpr int PLAN_MHP_COLUMNS = 15;
 constexpr int PLAN_MHP_VALS = 15*33;
 constexpr int PLAN_MHP_SELECTION = 1;
 constexpr int PLAN_MHP_GROUP_SIZE =  (2*PLAN_MHP_VALS + PLAN_MHP_SELECTION);
@@ -55,6 +54,11 @@ float prev_brake_5ms2_probs[5] = {0,0,0,0,0};
 float prev_brake_3ms2_probs[3] = {0,0,0};
 
 // #define DUMP_YUV
+
+template<class T, size_t size>
+constexpr const kj::ArrayPtr<const T> to_kj_array_ptr(const std::array<T, size> &arr) {
+  return kj::ArrayPtr(arr.data(), arr.size());
+}
 
 void model_init(ModelState* s, cl_device_id device_id, cl_context context) {
   s->frame = new ModelFrame(device_id, context);
@@ -110,7 +114,7 @@ ModelDataRaw model_eval_frame(ModelState* s, cl_mem yuv_cl, int width, int heigh
 
   // net outputs
   ModelDataRaw net_outputs;
-  net_outputs.plan = &s->output[PLAN_IDX];
+  net_outputs.plan = (ModelDataRawPlan*)&s->output[PLAN_IDX];
   net_outputs.lane_lines = &s->output[LL_IDX];
   net_outputs.lane_lines_prob = &s->output[LL_PROB_IDX];
   net_outputs.road_edges = &s->output[RE_IDX];
@@ -134,10 +138,6 @@ static const float *get_best_data(const float *data, int size, int group_size, i
     }
   }
   return &data[max_idx * group_size];
-}
-
-static const float *get_plan_data(float *plan) {
-  return get_best_data(plan, PLAN_MHP_N, PLAN_MHP_GROUP_SIZE, PLAN_MHP_GROUP_SIZE - 1);
 }
 
 static const float *get_lead_data(const float *lead, int t_offset) {
@@ -238,6 +238,19 @@ void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const float *meta_da
   meta.setHardBrakePredicted(above_fcw_threshold);
 }
 
+void set_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const ModelDataPlanTimestepPivot &data,
+              const std::array<float, TRAJECTORY_SIZE> &time, bool set_std = false) {
+  xyzt.setX(to_kj_array_ptr(data.mean.x));
+  xyzt.setY(to_kj_array_ptr(data.mean.y));
+  xyzt.setZ(to_kj_array_ptr(data.mean.z));
+  xyzt.setT(to_kj_array_ptr(time));
+  if (set_std) {
+    xyzt.setXStd(to_kj_array_ptr(data.std_exp.x));
+    xyzt.setYStd(to_kj_array_ptr(data.std_exp.y));
+    xyzt.setZStd(to_kj_array_ptr(data.std_exp.z));
+  }
+}
+
 void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const float *data, int columns,
                float *plan_t_arr = nullptr, bool fill_std = false) {
   float x_arr[TRAJECTORY_SIZE] = {};
@@ -275,13 +288,13 @@ void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const float *data, i
 }
 
 void fill_model(cereal::ModelDataV2::Builder &framed, const ModelDataRaw &net_outputs) {
-  const float *best_plan = get_plan_data(net_outputs.plan);
+  auto best_plan = net_outputs.plan->best_prediction();
   float plan_t_arr[TRAJECTORY_SIZE];
   std::fill_n(plan_t_arr, TRAJECTORY_SIZE, NAN);
   plan_t_arr[0] = 0.0;
   for (int xidx=1, tidx=0; xidx<TRAJECTORY_SIZE; xidx++) {
     // increment tidx until we find an element that's further away than the current xidx
-    for (int next_tid = tidx + 1; next_tid < TRAJECTORY_SIZE && best_plan[next_tid*PLAN_MHP_COLUMNS] < X_IDXS[xidx]; next_tid++) {
+    for (int next_tid = tidx + 1; next_tid < TRAJECTORY_SIZE && best_plan.mean[next_tid].position.x < X_IDXS[xidx]; next_tid++) {
       tidx++;
     }
     if (tidx == TRAJECTORY_SIZE - 1) {
@@ -291,16 +304,18 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelDataRaw &net_ou
     }
 
     // interpolate to find `t` for the current xidx
-    float current_x_val = best_plan[tidx * PLAN_MHP_COLUMNS];
-    float next_x_val = best_plan[(tidx+1) * PLAN_MHP_COLUMNS];
+    float current_x_val = best_plan.mean[tidx].position.x;
+    float next_x_val = best_plan.mean[tidx+1].position.x;
     float p = (X_IDXS[xidx] - current_x_val) / (next_x_val - current_x_val);
     plan_t_arr[xidx] = p * T_IDXS[tidx+1] + (1 - p) * T_IDXS[tidx];
   }
 
-  fill_xyzt(framed.initPosition(), &best_plan[0], PLAN_MHP_COLUMNS, nullptr, true);
-  fill_xyzt(framed.initVelocity(), &best_plan[3], PLAN_MHP_COLUMNS);
-  fill_xyzt(framed.initOrientation(), &best_plan[9], PLAN_MHP_COLUMNS);
-  fill_xyzt(framed.initOrientationRate(), &best_plan[12], PLAN_MHP_COLUMNS);
+  auto t_idxs_float = T_IDXS_FLOAT();
+  auto best_plan_pivot = best_plan.pivot();
+  set_xyzt(framed.initPosition(), best_plan_pivot.position, t_idxs_float, true);
+  set_xyzt(framed.initVelocity(), best_plan_pivot.velocity, t_idxs_float);
+  set_xyzt(framed.initOrientation(), best_plan_pivot.rotation, t_idxs_float);
+  set_xyzt(framed.initOrientationRate(), best_plan_pivot.rotation_rate, t_idxs_float);
 
   // lane lines
   auto lane_lines = framed.initLaneLines(4);
@@ -357,14 +372,14 @@ void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_droppe
   MessageBuilder msg;
   auto v_mean = net_outputs.pose->velocity_mean;
   auto r_mean = net_outputs.pose->rotation_mean;
-  auto v_std = net_outputs.pose->velocity_std;
-  auto r_std = net_outputs.pose->rotation_std;
+  auto v_std_exp = net_outputs.pose->velocity_std.to_exp();
+  auto r_std_exp = net_outputs.pose->rotation_std.to_exp();
 
   auto posenetd = msg.initEvent(vipc_dropped_frames < 1).initCameraOdometry();
   posenetd.setTrans({v_mean.x, v_mean.y, v_mean.z});
-  posenetd.setRot({r_mean.roll, r_mean.pitch, r_mean.yaw});
-  posenetd.setTransStd({exp(v_std.x), exp(v_std.y), exp(v_std.z)});
-  posenetd.setRotStd({exp(r_std.roll), exp(r_std.pitch), exp(r_std.yaw)});
+  posenetd.setRot({r_mean.x, r_mean.y, r_mean.z});
+  posenetd.setTransStd({v_std_exp.x, v_std_exp.y, v_std_exp.z});
+  posenetd.setRotStd({r_std_exp.x, r_std_exp.y, r_std_exp.z});
 
   posenetd.setTimestampEof(timestamp_eof);
   posenetd.setFrameId(vipc_frame_id);

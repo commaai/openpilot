@@ -13,7 +13,7 @@ const double T_IDXS[TRAJECTORY_SIZE] = {
         3.90625   ,  4.30664062,  4.7265625 ,  5.16601562,  5.625     ,
         6.10351562,  6.6015625 ,  7.11914062,  7.65625   ,  8.21289062,
         8.7890625 ,  9.38476562, 10.};
-constexpr std::array<float, TRAJECTORY_SIZE> T_IDXS_FLOAT() {
+constexpr const std::array<float, TRAJECTORY_SIZE> T_IDXS_FLOAT() {
   std::array<float, TRAJECTORY_SIZE> t_idxs_float = {};
   for (int i = 0; i < TRAJECTORY_SIZE; i++) {
     t_idxs_float[i] = (float)T_IDXS[i];
