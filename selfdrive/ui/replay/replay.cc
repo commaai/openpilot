@@ -216,6 +216,7 @@ void Replay::startStream(const Segment *cur_segment) {
 
   // start stream thread
   stream_thread_ = QThread::create(&Replay::stream, this);
+  QObject::connect(stream_thread_, &QThread::finished, stream_thread_, &QThread::deleteLater);
   stream_thread_->start();
 }
 
