@@ -29,19 +29,14 @@ bool Route::load() {
 
 bool Route::loadFromServer() {
   QEventLoop loop;
-  auto onError = [&loop](const QString &err) { loop.quit(); };
-
-  bool ret = false;
   HttpRequest http(nullptr, !Hardware::PC());
-  QObject::connect(&http, &HttpRequest::failedResponse, onError);
-  QObject::connect(&http, &HttpRequest::timeoutResponse, onError);
+  QObject::connect(&http, &HttpRequest::failedResponse, [&] { loop.exit(0); });
+  QObject::connect(&http, &HttpRequest::timeoutResponse, [&] { loop.exit(0); });
   QObject::connect(&http, &HttpRequest::receivedResponse, [&](const QString json) {
-    ret = loadFromJson(json);
-    loop.quit();
+    loop.exit(loadFromJson(json));
   });
   http.sendRequest("https://api.commadotai.com/v1/route/" + route_.str + "/files");
-  loop.exec();
-  return ret;
+  return loop.exec();
 }
 
 bool Route::loadFromJson(const QString &json) {
@@ -95,7 +90,7 @@ Segment::Segment(int n, const SegmentFile &files, bool load_dcam, bool load_ecam
   static std::once_flag once_flag;
   std::call_once(once_flag, [=]() { if (!CACHE_DIR.exists()) QDir().mkdir(CACHE_DIR.absolutePath()); });
 
-  // the order is [RoadCam, DriverCam, WideRoadCam, log]. fallback to qcamera/qlog
+  // [RoadCam, DriverCam, WideRoadCam, log]. fallback to qcamera/qlog
   const QString file_list[] = {
       files.road_cam.isEmpty() ? files.qcamera : files.road_cam,
       load_dcam ? files.driver_cam : "",
