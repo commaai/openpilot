@@ -34,7 +34,7 @@ protected:
   void startStream(const Segment *cur_segment);
   void stream();
   void setCurrentSegment(int n);
-  void mergeSegments(const std::vector<int> &merge_segments);
+  void mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::iterator &end);
   void updateEvents(const std::function<bool()>& lambda);
   void publishMessage(const Event *e);
   void publishFrame(const Event *e);

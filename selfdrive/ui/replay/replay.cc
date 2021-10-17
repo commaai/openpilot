@@ -137,19 +137,18 @@ void Replay::queueSegment() {
     ++end;
   }
 
-  // merge segments
-  std::vector<int> merge_segments;
-  for (auto it = begin, prev = segments_.end(); it != end; prev = it, ++it) {
+  // load segments
+  for (auto it = begin; it != end; ++it) {
     auto &[n, seg] = *it;
     if (!seg) {
       seg = std::make_unique<Segment>(n, route_->at(n), load_dcam, load_ecam);
       QObject::connect(seg.get(), &Segment::loadFinished, this, &Replay::segmentLoadFinished);
       qInfo() << "loading segment" << n << "...";
-    } else if (seg->isLoaded() && (prev == segments_.end() || prev->second->isLoaded())) {
-      merge_segments.push_back(n);
     }
   }
-  mergeSegments(merge_segments);
+
+  // merge segments
+  mergeSegments(begin, end);
 
   // free segments out of current semgnt window.
   for (auto it = segments_.begin(); it != begin; ++it) {
@@ -159,19 +158,26 @@ void Replay::queueSegment() {
     it->second.reset(nullptr);
   }
 
-  // start streaming
+  // start stream thread
   if (stream_thread_ == nullptr && cur != segments_.end() && cur->second->isLoaded()) {
     startStream(cur->second.get());
   }
 }
 
-void Replay::mergeSegments(const std::vector<int> &merge_segments) {
-  if (merge_segments != segments_merged_) {
-    qDebug() << "merge segments" << merge_segments;
+void Replay::mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::iterator &end) {
+  // segments must be merged in sequence.
+  std::vector<int> segments_need_merge;
+  for (auto it = begin; it != end && it->second->isLoaded(); ++it) {
+    segments_need_merge.push_back(it->first);
+  }
+
+  if (segments_need_merge != segments_merged_) {
+    qDebug() << "merge segments" << segments_need_merge;
+    // merge & sort events
     std::vector<Event *> *new_events = new std::vector<Event *>();
-    new_events->reserve(std::accumulate(merge_segments.begin(), merge_segments.end(), 0,
+    new_events->reserve(std::accumulate(segments_need_merge.begin(), segments_need_merge.end(), 0,
                                         [=](int v, int n) { return v + segments_[n]->log->events.size(); }));
-    for (int n : merge_segments) {
+    for (int n : segments_need_merge) {
       auto &e = segments_[n]->log->events;
       auto middle = new_events->insert(new_events->end(), e.begin(), e.end());
       std::inplace_merge(new_events->begin(), middle, new_events->end(), Event::lessThan());
@@ -180,7 +186,7 @@ void Replay::mergeSegments(const std::vector<int> &merge_segments) {
     auto prev_events = events_;
     updateEvents([&]() {
       events_ = new_events;
-      segments_merged_ = merge_segments;
+      segments_merged_ = segments_need_merge;
       return true;
     });
     delete prev_events;
