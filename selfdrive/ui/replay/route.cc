@@ -65,10 +65,7 @@ bool Route::loadFromJson(const QString &json) {
 
 bool Route::loadFromLocal() {
   QDir log_dir(data_dir_);
-  QStringList folders = log_dir.entryList(QDir::Dirs | QDir::NoDot | QDir::NoDotDot, QDir::NoSort);
-  if (folders.isEmpty()) return false;
-
-  for (auto folder : folders) {
+  for (auto folder : log_dir.entryList(QDir::Dirs | QDir::NoDot | QDir::NoDotDot, QDir::NoSort)) {
     int pos = folder.lastIndexOf("--");
     if (pos != -1 && folder.left(pos) == route_.timestamp) {
       const int seg_num = folder.mid(pos + 2).toInt();
@@ -78,7 +75,7 @@ bool Route::loadFromLocal() {
       }
     }
   }
-  return true;
+  return !segments_.empty();
 }
 
 void Route::addFileToSegment(int n, const QString &file) {
