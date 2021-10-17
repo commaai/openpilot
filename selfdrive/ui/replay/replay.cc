@@ -159,6 +159,7 @@ void Replay::queueSegment() {
     it->second.reset(nullptr);
   }
 
+  // start streaming
   if (stream_thread_ == nullptr && cur != segments_.end() && cur->second->isLoaded()) {
     startStream(cur->second.get());
   }
