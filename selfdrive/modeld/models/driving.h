@@ -46,7 +46,9 @@ struct ModelDataRawXYZ {
   float y;
   float z;
 
-  constexpr const ModelDataRawXYZ to_exp() const {
+  // inline avoids copying struct when returning it
+  // inline can be changed to constexpr when c2 deprecated
+  inline const ModelDataRawXYZ to_exp() const {
     return ModelDataRawXYZ {.x=exp(x), .y=exp(y), .z=exp(z)};
   };
 };
@@ -66,7 +68,9 @@ struct ModelDataRawPlanPrediction {
   std::array<ModelDataRawPlanTimeStep, TRAJECTORY_SIZE> std;
   float prob;
 
-  constexpr const ModelDataRawPlanPredictionPivot pivot() const {
+  // inline avoids copying array when returning it
+  // inline can be changed to constexpr when c2 deprecated
+  inline const ModelDataRawPlanPredictionPivot pivot() const {
     ModelDataRawPlanPredictionPivot data = {};
     for(int i=0; i<TRAJECTORY_SIZE; i++) {
       data.position.mean.x[i] = mean[i].position.x;

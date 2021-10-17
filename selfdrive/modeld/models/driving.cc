@@ -310,12 +310,11 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelDataRaw &net_ou
     plan_t_arr[xidx] = p * T_IDXS[tidx+1] + (1 - p) * T_IDXS[tidx];
   }
 
-  auto t_idxs_float = T_IDXS_FLOAT();
   auto best_plan_pivot = best_plan.pivot();
-  set_xyzt(framed.initPosition(), best_plan_pivot.position, t_idxs_float, true);
-  set_xyzt(framed.initVelocity(), best_plan_pivot.velocity, t_idxs_float);
-  set_xyzt(framed.initOrientation(), best_plan_pivot.rotation, t_idxs_float);
-  set_xyzt(framed.initOrientationRate(), best_plan_pivot.rotation_rate, t_idxs_float);
+  set_xyzt(framed.initPosition(), best_plan_pivot.position, T_IDXS_FLOAT, true);
+  set_xyzt(framed.initVelocity(), best_plan_pivot.velocity, T_IDXS_FLOAT);
+  set_xyzt(framed.initOrientation(), best_plan_pivot.rotation, T_IDXS_FLOAT);
+  set_xyzt(framed.initOrientationRate(), best_plan_pivot.rotation_rate, T_IDXS_FLOAT);
 
   // lane lines
   auto lane_lines = framed.initLaneLines(4);
