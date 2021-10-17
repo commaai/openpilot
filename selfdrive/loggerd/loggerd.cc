@@ -119,11 +119,14 @@ struct LoggerdState {
   std::atomic<int> encoders_ready = 0;
   std::atomic<uint32_t> latest_frame_id = 0;
   bool camera_ready[WideRoadCam + 1] = {};
+  bool camera_synced[WideRoadCam + 1] = {};
 };
 LoggerdState s;
 
 // Wait for all encoders to reach the same frame id
 bool sync_encoders(LoggerdState *s, CameraType cam_type, uint32_t frame_id) {
+  if (s->camera_synced[cam_type]) return true;
+
   if (s->max_waiting > 1 && s->encoders_ready != s->max_waiting) {
     update_max_atomic(s->latest_frame_id, frame_id);
     if (std::exchange(s->camera_ready[cam_type], true) == false) {
@@ -135,6 +138,7 @@ bool sync_encoders(LoggerdState *s, CameraType cam_type, uint32_t frame_id) {
     // Small margin in case one of the encoders already dropped the next frame
     uint32_t start_frame_id = s->latest_frame_id + 2;
     bool synced = frame_id >= start_frame_id;
+    s->camera_synced[cam_type] = synced;
     if (!synced) LOGE("camera %d waiting for frame %d, cur %d", cam_type, start_frame_id, frame_id);
     return synced;
   }
