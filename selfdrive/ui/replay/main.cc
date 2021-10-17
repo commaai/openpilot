@@ -97,10 +97,7 @@ int main(int argc, char *argv[]){
   const QString route = args.empty() ? DEMO_ROUTE : args.first();
   QStringList allow = parser.value("allow").isEmpty() ? QStringList{} : parser.value("allow").split(",");
   QStringList block = parser.value("block").isEmpty() ? QStringList{} : parser.value("block").split(",");
-  int cache_segments = parser.value("cache").toInt();
-  if (cache_segments < 8) {
-    cache_segments = 8;
-  }
+  int cache_segments = std::max(8, parser.value("cache").toInt());
 
   Replay *replay = new Replay(route, allow, block, nullptr, parser.isSet("dcam"), parser.isSet("ecam"), parser.value("data_dir"), &app);
   if (!replay->load()) {
