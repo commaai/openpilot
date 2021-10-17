@@ -6,13 +6,13 @@
 const int YUV_BUF_COUNT = 50;
 
 CameraServer::CameraServer(std::pair<int, int> cameras[MAX_CAMERAS]) {
-  camera_thread_ = std::thread(&CameraServer::thread, this);
   if (cameras) {
     for (auto type : ALL_CAMERAS) {
       std::tie(cameras_[type].width, cameras_[type].height) = cameras[type];
     }
     startVipcServer();
   }
+  camera_thread_ = std::thread(&CameraServer::thread, this);
 }
 
 CameraServer::~CameraServer() {
