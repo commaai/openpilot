@@ -32,7 +32,7 @@ bool Route::loadFromServer() {
   HttpRequest http(nullptr, !Hardware::PC());
   QObject::connect(&http, &HttpRequest::failedResponse, [&] { loop.exit(0); });
   QObject::connect(&http, &HttpRequest::timeoutResponse, [&] { loop.exit(0); });
-  QObject::connect(&http, &HttpRequest::receivedResponse, [&](const QString json) {
+  QObject::connect(&http, &HttpRequest::receivedResponse, [&](const QString &json) {
     loop.exit(loadFromJson(json));
   });
   http.sendRequest("https://api.commadotai.com/v1/route/" + route_.str + "/files");
@@ -41,7 +41,7 @@ bool Route::loadFromServer() {
 
 bool Route::loadFromJson(const QString &json) {
   QRegExp rx(R"(\/(\d+)\/)");
-  for (auto value :  QJsonDocument::fromJson(json.trimmed().toUtf8()).object()) {
+  for (const auto &value :  QJsonDocument::fromJson(json.trimmed().toUtf8()).object()) {
     for (const auto &url : value.toArray()) {
       QString url_str = url.toString();
       if (rx.indexIn(url_str) != -1) {
@@ -54,12 +54,12 @@ bool Route::loadFromJson(const QString &json) {
 
 bool Route::loadFromLocal() {
   QDir log_dir(data_dir_);
-  for (auto folder : log_dir.entryList(QDir::Dirs | QDir::NoDot | QDir::NoDotDot, QDir::NoSort)) {
+  for (const auto &folder : log_dir.entryList(QDir::Dirs | QDir::NoDot | QDir::NoDotDot, QDir::NoSort)) {
     int pos = folder.lastIndexOf("--");
     if (pos != -1 && folder.left(pos) == route_.timestamp) {
       const int seg_num = folder.mid(pos + 2).toInt();
       QDir segment_dir(log_dir.filePath(folder));
-      for (auto f : segment_dir.entryList(QDir::Files)) {
+      for (const auto &f : segment_dir.entryList(QDir::Files)) {
         addFileToSegment(seg_num, segment_dir.absoluteFilePath(f));
       }
     }

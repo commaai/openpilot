@@ -40,7 +40,7 @@ protected:
   bool loadFromServer();
   bool loadFromJson(const QString &json);
   void addFileToSegment(int seg_num, const QString &file);
-  RouteIdentifier route_;
+  RouteIdentifier route_ = {};
   QString data_dir_;
   std::map<int, SegmentFile> segments_;
 };
