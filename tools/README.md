@@ -34,6 +34,8 @@ MacOS:
 openpilot/tools/setup.sh --os macos
 ```
 
+Execute `openpilot/tools/setup.sh --help` to get more details.
+
 3. Build openpilot by running SCons in the root of the openpilot directory
 ``` bash
 cd openpilot && scons -j$(nproc)
