@@ -115,7 +115,6 @@ struct LoggerdState {
   double last_rotate_tms = 0.;
 
   // Sync logic for startup
-  // Sync logic for startup
   std::atomic<int> encoders_ready = 0;
   std::atomic<uint32_t> latest_frame_id = 0;
   bool camera_ready[WideRoadCam + 1] = {};
