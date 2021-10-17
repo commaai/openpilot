@@ -175,7 +175,7 @@ void Replay::mergeSegments(const std::vector<int> &merge_segments) {
       auto middle = new_events->insert(new_events->end(), e.begin(), e.end());
       std::inplace_merge(new_events->begin(), middle, new_events->end(), Event::lessThan());
     }
-    // update events
+
     auto prev_events = events_;
     updateEvents([&]() {
       events_ = new_events;
@@ -212,8 +212,7 @@ void Replay::startStream(const Segment *cur_segment) {
       cameras[type] = {fr->width, fr->height};
     }
   }
-  camera_server_ = std::make_unique<CameraServer>();
-  camera_server_->start(cameras);
+  camera_server_ = std::make_unique<CameraServer>(cameras);
 
   // start stream thread
   stream_thread_ = QThread::create(&Replay::stream, this);

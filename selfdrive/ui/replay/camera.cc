@@ -5,21 +5,20 @@
 
 const int YUV_BUF_COUNT = 50;
 
-CameraServer::CameraServer() {
+CameraServer::CameraServer(std::pair<int, int> cameras[MAX_CAMERAS]) {
   camera_thread_ = std::thread(&CameraServer::thread, this);
+  if (cameras) {
+    for (auto type : ALL_CAMERAS) {
+      std::tie(cameras_[type].width, cameras_[type].height) = cameras[type];
+    }
+    startVipcServer();
+  }
 }
 
 CameraServer::~CameraServer() {
   queue_.push({});
   camera_thread_.join();
   vipc_server_.reset(nullptr);
-}
-
-void CameraServer::start(std::pair<int, int> cameras[MAX_CAMERAS]) {
-  for (auto type : ALL_CAMERAS) {
-    std::tie(cameras_[type].width, cameras_[type].height) = cameras[type];
-  }
-  startVipcServer();
 }
 
 void CameraServer::startVipcServer() {
@@ -40,7 +39,7 @@ void CameraServer::thread() {
     if (!fr) break;
 
     auto &cam = cameras_[type];
-    // restart the vipc server if frame size changed
+    // restart vipc server if new camera incoming.
     if (cam.width != fr->width || cam.height != fr->height) {
       cam.width = fr->width;
       cam.height = fr->height;
