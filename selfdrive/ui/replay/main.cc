@@ -2,7 +2,6 @@
 
 #include <csignal>
 #include <iostream>
-#include <optional>
 #include <termios.h>
 
 #include <QApplication>
@@ -120,7 +119,6 @@ int main(int argc, char *argv[]){
     qDebug() << "invalid route format";
     return 0;
   }
-  qDebug() << route.dongle_id << route.timestamp << route.segment_id;
   Replay *replay = new Replay(route.str, allow, block, nullptr, parser.isSet("dcam"), parser.isSet("ecam"), parser.value("data_dir"), &app);
   if (!replay->load()) {
     return 0;
