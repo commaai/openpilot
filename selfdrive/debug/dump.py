@@ -13,7 +13,7 @@ from cereal.services import service_list
 
 if __name__ == "__main__":
 
-  parser = argparse.ArgumentParser(description='Sniff a communcation socket')
+  parser = argparse.ArgumentParser(description='Dump communcation sockets. See cereal/services.py for a complete list of available sockets.')
   parser.add_argument('--pipe', action='store_true')
   parser.add_argument('--raw', action='store_true')
   parser.add_argument('--json', action='store_true')
@@ -21,7 +21,7 @@ if __name__ == "__main__":
   parser.add_argument('--no-print', action='store_true')
   parser.add_argument('--addr', default='127.0.0.1')
   parser.add_argument('--values', help='values to monitor (instead of entire event)')
-  parser.add_argument("socket", type=str, nargs='*', help="socket name")
+  parser.add_argument("socket", type=str, nargs='*', help="socket names to dump. defaults to all services defined in cereal")
   args = parser.parse_args()
 
   if args.addr != "127.0.0.1":

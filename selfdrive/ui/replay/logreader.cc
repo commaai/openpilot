@@ -1,41 +1,47 @@
 #include "selfdrive/ui/replay/logreader.h"
 
-#include <cassert>
-#include <bzlib.h>
+#include <sstream>
 #include "selfdrive/common/util.h"
+#include "selfdrive/ui/replay/util.h"
 
-static bool decompressBZ2(std::vector<uint8_t> &dest, const char srcData[], size_t srcSize,
-                          size_t outputSizeIncrement = 0x100000U) {
-  bz_stream strm = {};
-  int ret = BZ2_bzDecompressInit(&strm, 0, 0);
-  assert(ret == BZ_OK);
+Event::Event(const kj::ArrayPtr<const capnp::word> &amsg, bool frame) : reader(amsg), frame(frame) {
+  words = kj::ArrayPtr<const capnp::word>(amsg.begin(), reader.getEnd());
+  event = reader.getRoot<cereal::Event>();
+  which = event.which();
+  mono_time = event.getLogMonoTime();
 
-  strm.next_in = const_cast<char *>(srcData);
-  strm.avail_in = srcSize;
-  do {
-    strm.next_out = (char *)&dest[strm.total_out_lo32];
-    strm.avail_out = dest.size() - strm.total_out_lo32;
-    ret = BZ2_bzDecompress(&strm);
-    if (ret == BZ_OK && strm.avail_in > 0 && strm.avail_out == 0) {
-      dest.resize(dest.size() + outputSizeIncrement);
+  // 1) Send video data at t=timestampEof/timestampSof
+  // 2) Send encodeIndex packet at t=logMonoTime
+  if (frame) {
+    auto idx = capnp::AnyStruct::Reader(event).getPointerSection()[0].getAs<cereal::EncodeIndex>();
+    // C2 only has eof set, and some older routes have neither
+    uint64_t sof = idx.getTimestampSof();
+    uint64_t eof = idx.getTimestampEof();
+    if (sof > 0) {
+      mono_time = sof;
+    } else if (eof > 0) {
+      mono_time = eof;
     }
-  } while (ret == BZ_OK);
-
-  BZ2_bzDecompressEnd(&strm);
-  dest.resize(strm.total_out_lo32);
-  return ret == BZ_STREAM_END;
+  }
 }
+
+// class LogReader
 
 LogReader::~LogReader() {
   for (auto e : events) delete e;
 }
 
 bool LogReader::load(const std::string &file) {
-  raw_.resize(1024 * 1024 * 64);
-  std::string dat = util::read_file(file);
-  if (dat.empty() || !decompressBZ2(raw_, dat.data(), dat.size())) {
-    LOGW("bz2 decompress failed");
-    return false;
+  bool is_bz2 = file.rfind(".bz2") == file.length() - 4;
+  if (is_bz2) {
+    std::ostringstream stream;
+    if (!readBZ2File(file, stream)) {
+      LOGW("bz2 decompress failed");
+      return false;
+    }
+    raw_ = stream.str();
+  } else {
+    raw_ = util::read_file(file);
   }
 
   kj::ArrayPtr<const capnp::word> words((const capnp::word *)raw_.data(), raw_.size() / sizeof(capnp::word));

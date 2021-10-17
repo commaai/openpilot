@@ -45,6 +45,7 @@ class Panda {
   libusb_context *ctx = NULL;
   libusb_device_handle *dev_handle = NULL;
   std::mutex usb_lock;
+  std::vector<uint32_t> send;
   void handle_usb_issue(int err, const char func[]);
   void cleanup();
 
@@ -81,7 +82,7 @@ class Panda {
   std::optional<std::vector<uint8_t>> get_firmware_version();
   std::optional<std::string> get_serial();
   void set_power_saving(bool power_saving);
-  void set_usb_power_mode(cereal::PandaState::UsbPowerMode power_mode);
+  void set_usb_power_mode(cereal::PeripheralState::UsbPowerMode power_mode);
   void send_heartbeat();
   void can_send(capnp::List<cereal::CanData>::Reader can_data_list);
   int can_receive(kj::Array<capnp::word>& out_buf);

@@ -49,6 +49,7 @@ LaneChangeState = log.LateralPlan.LaneChangeState
 LaneChangeDirection = log.LateralPlan.LaneChangeDirection
 EventName = car.CarEvent.EventName
 ButtonEvent = car.CarState.ButtonEvent
+SafetyModel = car.CarParams.SafetyModel
 
 
 class Controls:
@@ -72,7 +73,7 @@ class Controls:
     self.sm = sm
     if self.sm is None:
       ignore = ['driverCameraState', 'managerState'] if SIMULATION else None
-      self.sm = messaging.SubMaster(['deviceState', 'pandaState', 'modelV2', 'liveCalibration',
+      self.sm = messaging.SubMaster(['deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'liveCalibration',
                                      'driverMonitoringState', 'longitudinalPlan', 'lateralPlan', 'liveLocationKalman',
                                      'managerState', 'liveParameters', 'radarState'] + self.camera_packets + joystick_packet,
                                      ignore_alive=ignore, ignore_avg_freq=['radarState', 'longitudinalPlan'])
@@ -110,7 +111,9 @@ class Controls:
     self.read_only = not car_recognized or not controller_available or \
                        self.CP.dashcamOnly or community_feature_disallowed
     if self.read_only:
-      self.CP.safetyModel = car.CarParams.SafetyModel.noOutput
+      safety_config = car.CarParams.SafetyConfig.new_message()
+      safety_config.safetyModel = car.CarParams.SafetyModel.noOutput
+      self.CP.safetyConfigs = [safety_config]
 
     # Write CarParams for radard
     cp_bytes = self.CP.to_bytes()
@@ -127,7 +130,7 @@ class Controls:
     if self.CP.steerControlType == car.CarParams.SteerControlType.angle:
       self.LaC = LatControlAngle(self.CP)
     elif self.CP.lateralTuning.which() == 'pid':
-      self.LaC = LatControlPID(self.CP)
+      self.LaC = LatControlPID(self.CP, self.CI)
     elif self.CP.lateralTuning.which() == 'indi':
       self.LaC = LatControlINDI(self.CP)
     elif self.CP.lateralTuning.which() == 'lqr':
@@ -191,7 +194,8 @@ class Controls:
       return
 
     # Create events for battery, temperature, disk space, and memory
-    if EON and self.sm['deviceState'].batteryPercent < 1 and self.sm['deviceState'].chargingError:
+    if EON and (self.sm['peripheralState'].pandaType != PandaType.uno) and \
+       self.sm['deviceState'].batteryPercent < 1 and self.sm['deviceState'].chargingError:
       # at zero percent battery, while discharging, OP should not allowed
       self.events.add(EventName.lowBattery)
     if self.sm['deviceState'].thermalStatus >= ThermalStatus.red:
@@ -207,8 +211,8 @@ class Controls:
       self.events.add(EventName.highCpuUsage)
 
     # Alert if fan isn't spinning for 5 seconds
-    if self.sm['pandaState'].pandaType in [PandaType.uno, PandaType.dos]:
-      if self.sm['pandaState'].fanSpeedRpm == 0 and self.sm['deviceState'].fanSpeedPercentDesired > 50:
+    if self.sm['peripheralState'].pandaType in [PandaType.uno, PandaType.dos]:
+      if self.sm['peripheralState'].fanSpeedRpm == 0 and self.sm['deviceState'].fanSpeedPercentDesired > 50:
         if (self.sm.frame - self.last_functional_fan_frame) * DT_CTRL > 5.0:
           self.events.add(EventName.fanMalfunction)
       else:
@@ -240,16 +244,21 @@ class Controls:
     if self.can_rcv_error or not CS.canValid:
       self.events.add(EventName.canError)
 
-    safety_mismatch = self.sm['pandaState'].safetyModel != self.CP.safetyModel or self.sm['pandaState'].safetyParam != self.CP.safetyParam
-    if safety_mismatch or self.mismatch_counter >= 200:
-      self.events.add(EventName.controlsMismatch)
+    for i, pandaState in enumerate(self.sm['pandaStates']):
+      # All pandas must match the list of safetyConfigs, and if outside this list, must be silent
+      if i < len(self.CP.safetyConfigs):
+        safety_mismatch = pandaState.safetyModel != self.CP.safetyConfigs[i].safetyModel or pandaState.safetyParam != self.CP.safetyConfigs[i].safetyParam
+      else:
+        safety_mismatch = pandaState.safetyModel != SafetyModel.silent
+      if safety_mismatch or self.mismatch_counter >= 200:
+        self.events.add(EventName.controlsMismatch)
 
     if not self.sm['liveParameters'].valid:
       self.events.add(EventName.vehicleModelInvalid)
 
     if len(self.sm['radarState'].radarErrors):
       self.events.add(EventName.radarFault)
-    elif not self.sm.valid["pandaState"]:
+    elif not self.sm.valid["pandaStates"]:
       self.events.add(EventName.usbError)
     elif not self.sm.all_alive_and_valid():
       self.events.add(EventName.commIssue)
@@ -270,8 +279,9 @@ class Controls:
       self.events.add(EventName.posenetInvalid)
     if not self.sm['liveLocationKalman'].deviceStable:
       self.events.add(EventName.deviceFalling)
-    if log.PandaState.FaultType.relayMalfunction in self.sm['pandaState'].faults:
-      self.events.add(EventName.relayMalfunction)
+    for pandaState in self.sm['pandaStates']:
+      if log.PandaState.FaultType.relayMalfunction in pandaState.faults:
+        self.events.add(EventName.relayMalfunction)
     planner_fcw = self.sm['longitudinalPlan'].fcw and self.enabled
     model_fcw = self.sm['modelV2'].meta.hardBrakePredicted and not CS.brakePressed
     if planner_fcw or model_fcw:
@@ -355,8 +365,10 @@ class Controls:
     if not self.enabled:
       self.mismatch_counter = 0
 
-    if not self.sm['pandaState'].controlsAllowed and self.enabled:
-      self.mismatch_counter += 1
+    # All pandas not in silent mode must have controlsAllowed when openpilot is enabled
+    for pandaState in self.sm['pandaStates']:
+      if pandaState.safetyModel != SafetyModel.silent and not pandaState.controlsAllowed and self.enabled:
+        self.mismatch_counter += 1
 
     self.distance_traveled += CS.vEgo * DT_CTRL
 
@@ -369,7 +381,7 @@ class Controls:
 
     # if stock cruise is completely disabled, then we can use our own set speed logic
     if not self.CP.pcmCruise:
-      self.v_cruise_kph = update_v_cruise(self.v_cruise_kph, CS.buttonEvents, self.button_timers, self.enabled)
+      self.v_cruise_kph = update_v_cruise(self.v_cruise_kph, CS.buttonEvents, self.button_timers, self.enabled, self.is_metric)
     elif self.CP.pcmCruise and CS.cruiseState.enabled:
       self.v_cruise_kph = CS.cruiseState.speed * CV.MS_TO_KPH
 
@@ -537,6 +549,7 @@ class Controls:
 
     CC = car.CarControl.new_message()
     CC.enabled = self.enabled
+    CC.active = self.active
     CC.actuators = actuators
 
     CC.cruiseControl.cancel = CS.cruiseState.enabled and (not self.enabled or not self.CP.pcmCruise)

@@ -156,7 +156,7 @@ def flash_partition(target_slot_number: int, partition: dict, cloudlog):
       p = int(out.tell() / partition['size'] * 100)
       if p != last_p:
         last_p = p
-        print(f"Installing {partition['name']}: {p}")
+        print(f"Installing {partition['name']}: {p}", flush=True)
 
     if raw_hash.hexdigest().lower() != partition['hash_raw'].lower():
       raise Exception(f"Raw hash mismatch '{raw_hash.hexdigest().lower()}'")

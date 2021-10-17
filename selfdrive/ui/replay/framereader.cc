@@ -1,6 +1,7 @@
 #include "selfdrive/ui/replay/framereader.h"
 
 #include <cassert>
+#include "libyuv.h"
 
 static int ffmpeg_lockmgr_cb(void **arg, enum AVLockOp op) {
   std::mutex *mutex = (std::mutex *)*arg;
@@ -48,16 +49,6 @@ FrameReader::~FrameReader() {
   // free all.
   for (auto &f : frames_) {
     av_free_packet(&f.pkt);
-    if (f.data) {
-      delete[] f.data;
-    }
-  }
-  while (!buffer_pool.empty()) {
-    delete[] buffer_pool.front();
-    buffer_pool.pop();
-  }
-  if (frmRgb_) {
-    av_frame_free(&frmRgb_);
   }
   if (pCodecCtx_) {
     avcodec_close(pCodecCtx_);
@@ -66,19 +57,17 @@ FrameReader::~FrameReader() {
   if (pFormatCtx_) {
     avformat_close_input(&pFormatCtx_);
   }
-  if (sws_ctx_) {
-    sws_freeContext(sws_ctx_);
-  }
 }
 
 bool FrameReader::load(const std::string &url) {
   pFormatCtx_ = avformat_alloc_context();
+  pFormatCtx_->probesize = 10 * 1024 * 1024;  // 10MB
   if (avformat_open_input(&pFormatCtx_, url.c_str(), NULL, NULL) != 0) {
     printf("error loading %s\n", url.c_str());
     return false;
   }
   avformat_find_stream_info(pFormatCtx_, NULL);
-  av_dump_format(pFormatCtx_, 0, url.c_str(), 0);
+  // av_dump_format(pFormatCtx_, 0, url.c_str(), 0);
 
   auto pCodecCtxOrig = pFormatCtx_->streams[0]->codec;
   auto pCodec = avcodec_find_decoder(pCodecCtxOrig->codec_id);
@@ -93,14 +82,6 @@ bool FrameReader::load(const std::string &url) {
 
   width = pCodecCtxOrig->width;
   height = pCodecCtxOrig->height;
-
-  sws_ctx_ = sws_getContext(width, height, AV_PIX_FMT_YUV420P,
-                            width, height, AV_PIX_FMT_BGR24,
-                            SWS_BILINEAR, NULL, NULL, NULL);
-  if (!sws_ctx_) return false;
-
-  frmRgb_ = av_frame_alloc();
-  if (!frmRgb_) return false;
 
   frames_.reserve(60 * 20);  // 20fps, one minute
   do {
@@ -119,15 +100,18 @@ bool FrameReader::load(const std::string &url) {
   return valid_;
 }
 
-uint8_t *FrameReader::get(int idx) {
+std::optional<std::pair<uint8_t *, uint8_t *>> FrameReader::get(int idx) {
   if (!valid_ || idx < 0 || idx >= frames_.size()) {
-    return nullptr;
+    return std::nullopt;
   }
   std::unique_lock lk(mutex_);
   decode_idx_ = idx;
   cv_decode_.notify_one();
-  cv_frame_.wait(lk, [=] { return exit_ || frames_[idx].data || frames_[idx].failed; });
-  return frames_[idx].data;
+  cv_frame_.wait(lk, [=] { return exit_ || frames_[idx].rgb_data || frames_[idx].failed; });
+  if (!frames_[idx].rgb_data) {
+    return std::nullopt;
+  }
+  return std::make_pair(frames_[idx].rgb_data.get(), frames_[idx].yuv_data.get());
 }
 
 void FrameReader::decodeThread() {
@@ -138,16 +122,17 @@ void FrameReader::decodeThread() {
     for (int i = 0; i < frames_.size() && !exit_; ++i) {
       Frame &frame = frames_[i];
       if (i >= from && i < to) {
-        if (frame.data || frame.failed) continue;
+        if (frame.rgb_data || frame.failed) continue;
 
-        uint8_t *dat = decodeFrame(&frame.pkt);
+        auto [rgb_data, yuv_data] = decodeFrame(&frame.pkt);
         std::unique_lock lk(mutex_);
-        frame.data = dat;
-        frame.failed = !dat;
+        frame.rgb_data.reset(rgb_data);
+        frame.yuv_data.reset(yuv_data);
+        frame.failed = !rgb_data;
         cv_frame_.notify_all();
-      } else if (frame.data) {
-        buffer_pool.push(frame.data);
-        frame.data = nullptr;
+      } else {
+        frame.rgb_data.reset(nullptr);
+        frame.yuv_data.reset(nullptr);
         frame.failed = false;
       }
     }
@@ -160,28 +145,28 @@ void FrameReader::decodeThread() {
   }
 }
 
-uint8_t *FrameReader::decodeFrame(AVPacket *pkt) {
-  int gotFrame;
+std::pair<uint8_t *, uint8_t *> FrameReader::decodeFrame(AVPacket *pkt) {
+  uint8_t *rgb_data = nullptr, *yuv_data = nullptr;
+  int gotFrame = 0;
   AVFrame *f = av_frame_alloc();
   avcodec_decode_video2(pCodecCtx_, f, &gotFrame, pkt);
-
-  uint8_t *dat = nullptr;
   if (gotFrame) {
-    if (!buffer_pool.empty()) {
-      dat = buffer_pool.front();
-      buffer_pool.pop();
-    } else {
-      dat = new uint8_t[getRGBSize()];
+    rgb_data = new uint8_t[getRGBSize()];
+    yuv_data = new uint8_t[getYUVSize()];
+    int i, j, k;
+    for (i = 0; i < f->height; i++) {
+      memcpy(yuv_data + f->width * i, f->data[0] + f->linesize[0] * i, f->width);
     }
-
-    int ret = avpicture_fill((AVPicture *)frmRgb_, dat, AV_PIX_FMT_BGR24, f->width, f->height);
-    assert(ret > 0);
-    if (sws_scale(sws_ctx_, (const uint8_t **)f->data, f->linesize, 0,
-                  f->height, frmRgb_->data, frmRgb_->linesize) <= 0) {
-      delete[] dat;
-      dat = nullptr;
+    for (j = 0; j < f->height / 2; j++) {
+      memcpy(yuv_data + f->width * i + f->width / 2 * j, f->data[1] + f->linesize[1] * j, f->width / 2);
     }
+    for (k = 0; k < f->height / 2; k++) {
+      memcpy(yuv_data + f->width * i + f->width / 2 * j + f->width / 2 * k, f->data[2] + f->linesize[2] * k, f->width / 2);
+    }
+    uint8_t *u = yuv_data + f->width * f->height;
+    uint8_t *v = u + (f->width / 2) * (f->height / 2);
+    libyuv::I420ToRGB24(yuv_data, f->width, u, f->width / 2, v, f->width / 2, rgb_data, f->width * 3, f->width, f->height);
   }
   av_frame_free(&f);
-  return dat;
+  return {rgb_data, yuv_data};
 }

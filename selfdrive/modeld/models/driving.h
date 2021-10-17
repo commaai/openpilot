@@ -18,6 +18,13 @@ constexpr int DESIRE_LEN = 8;
 constexpr int TRAFFIC_CONVENTION_LEN = 2;
 constexpr int MODEL_FREQ = 20;
 
+struct ModelDataRawPose {
+  float trans_arr[3];
+  float rot_arr[3];
+  float trans_std_arr[3];
+  float rot_std_arr[3];
+};
+
 struct ModelDataRaw {
   float *plan;
   float *lane_lines;
@@ -28,7 +35,7 @@ struct ModelDataRaw {
   float *desire_state;
   float *meta;
   float *desire_pred;
-  float *pose;
+  ModelDataRawPose *pose;
 };
 
 typedef struct ModelState {

@@ -156,7 +156,7 @@ def boardd_loop(rate=100):
 
   # *** publishes can and health
   logcan = messaging.pub_sock('can')
-  health_sock = messaging.pub_sock('pandaState')
+  health_sock = messaging.pub_sock('pandaStates')
 
   # *** subscribes to can send
   sendcan = messaging.sub_sock('sendcan')
@@ -168,14 +168,14 @@ def boardd_loop(rate=100):
     # health packet @ 2hz
     if (rk.frame % (rate // 2)) == 0:
       health = can_health()
-      msg = messaging.new_message('pandaState')
+      msg = messaging.new_message('pandaStates', 1)
 
       # store the health to be logged
-      msg.pandaState.voltage = health['voltage']
-      msg.pandaState.current = health['current']
-      msg.pandaState.ignitionLine = health['ignition_line']
-      msg.pandaState.ignitionCan = health['ignition_can']
-      msg.pandaState.controlsAllowed = True
+      msg.pandaState[0].voltage = health['voltage']
+      msg.pandaState[0].current = health['current']
+      msg.pandaState[0].ignitionLine = health['ignition_line']
+      msg.pandaState[0].ignitionCan = health['ignition_can']
+      msg.pandaState[0].controlsAllowed = True
 
       health_sock.send(msg.to_bytes())
 

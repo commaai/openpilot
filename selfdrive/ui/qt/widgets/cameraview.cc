@@ -51,9 +51,9 @@ mat4 get_driver_view_transform() {
     // from dmonitoring.cc
     const int full_width_tici = 1928;
     const int full_height_tici = 1208;
-    const int adapt_width_tici = 668;
-    const int crop_x_offset = 32;
-    const int crop_y_offset = -196;
+    const int adapt_width_tici = 954;
+    const int crop_x_offset = -72;
+    const int crop_y_offset = -144;
     const float yscale = full_height_tici * driver_view_ratio / adapt_width_tici;
     const float xscale = yscale*(1080)/(2160)*full_width_tici/full_height_tici;
     transform = (mat4){{
@@ -233,23 +233,26 @@ void CameraViewWidget::paintGL() {
 }
 
 void CameraViewWidget::updateFrame() {
-  if (!vipc_client->connected && vipc_client->connect(false)) {
-    // init vision
-    for (int i = 0; i < vipc_client->num_buffers; i++) {
-      texture[i].reset(new EGLImageTexture(&vipc_client->buffers[i]));
+  if (!vipc_client->connected) {
+    makeCurrent();
+    if (vipc_client->connect(false)) {
+      // init vision
+      for (int i = 0; i < vipc_client->num_buffers; i++) {
+        texture[i].reset(new EGLImageTexture(&vipc_client->buffers[i]));
 
-      glBindTexture(GL_TEXTURE_2D, texture[i]->frame_tex);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glBindTexture(GL_TEXTURE_2D, texture[i]->frame_tex);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-      // BGR
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_BLUE);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
-      assert(glGetError() == GL_NO_ERROR);
+        // BGR
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_BLUE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
+        assert(glGetError() == GL_NO_ERROR);
+      }
+      latest_frame = nullptr;
+      resizeGL(width(), height());
     }
-    latest_frame = nullptr;
-    resizeGL(width(), height());
   }
 
   VisionBuf *buf = nullptr;
@@ -263,7 +266,7 @@ void CameraViewWidget::updateFrame() {
       LOGE("visionIPC receive timeout");
     }
   }
-  if (buf == nullptr) {
+  if (buf == nullptr && isVisible()) {
     // try to connect or recv again
     QTimer::singleShot(1000. / UI_FREQ, this, &CameraViewWidget::updateFrame);
   }

@@ -83,6 +83,9 @@ class Pc(HardwareBase):
   def set_screen_brightness(self, percentage):
     pass
 
+  def get_screen_brightness(self):
+    return 0
+
   def set_power_save(self, powersave_enabled):
     pass
 
@@ -93,6 +96,9 @@ class Pc(HardwareBase):
     return None
 
   def get_modem_temperatures(self):
+    return []
+
+  def get_nvme_temperatures(self):
     return []
 
   def initialize_hardware(self):

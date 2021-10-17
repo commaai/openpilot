@@ -3,6 +3,7 @@
 #include <cmath>
 
 #include <QDebug>
+#include <QPainterPath>
 
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/ui/ui.h"

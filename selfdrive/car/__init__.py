@@ -1,4 +1,5 @@
 # functions common among cars
+from cereal import car
 from common.numpy_fast import clip
 
 # kg of standard extra cargo to count for drive, gas, etc...
@@ -121,3 +122,11 @@ def create_gas_command(packer, gas_amount, idx):
 
 def make_can_msg(addr, dat, bus):
   return [addr, 0, dat, bus]
+
+
+def get_safety_config(safety_model, safety_param = None):
+  ret = car.CarParams.SafetyConfig.new_message()
+  ret.safetyModel = safety_model
+  if safety_param is not None:
+    ret.safetyParam = safety_param
+  return ret

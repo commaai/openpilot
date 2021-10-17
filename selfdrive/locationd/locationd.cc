@@ -187,6 +187,14 @@ VectorXd Localizer::get_position_geodetic() {
   return Vector3d(fix_pos_geo.lat, fix_pos_geo.lon, fix_pos_geo.alt);
 }
 
+VectorXd Localizer::get_state() {
+  return this->kf->get_x();
+}
+
+VectorXd Localizer::get_stdev() {
+  return this->kf->get_P().diagonal().array().sqrt();
+}
+
 void Localizer::handle_sensors(double current_time, const capnp::List<cereal::SensorEventData, capnp::Kind::STRUCT>::Reader& log) {
   // TODO does not yet account for double sensor readings in the log
   for (int i = 0; i < log.size(); i++) {
@@ -325,13 +333,13 @@ void Localizer::handle_cam_odo(double current_time, const cereal::CameraOdometry
   // Multiply by 10 to avoid to high certainty in kalman filter because of temporally correlated noise
   trans_calib_std *= 10.0;
   rot_calib_std *= 10.0;
-  VectorXd rot_device_std = rotate_std(this->device_from_calib, rot_calib_std);
-  VectorXd trans_device_std = rotate_std(this->device_from_calib, trans_calib_std);
-
+  MatrixXdr rot_device_cov = rotate_std(this->device_from_calib, rot_calib_std).array().square().matrix().asDiagonal();
+  MatrixXdr trans_device_cov = rotate_std(this->device_from_calib, trans_calib_std).array().square().matrix().asDiagonal();
+  
   this->kf->predict_and_observe(current_time, OBSERVATION_CAMERA_ODO_ROTATION,
-    { (VectorXd(rot_device.rows() + rot_device_std.rows()) << rot_device, rot_device_std).finished() });
+    { rot_device }, { rot_device_cov });
   this->kf->predict_and_observe(current_time, OBSERVATION_CAMERA_ODO_TRANSLATION,
-    { (VectorXd(trans_device.rows() + trans_device_std.rows()) << trans_device, trans_device_std).finished() });
+    { trans_device }, { trans_device_cov });
 }
 
 void Localizer::handle_live_calib(double current_time, const cereal::LiveCalibrationData::Reader& log) {
