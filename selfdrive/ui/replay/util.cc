@@ -125,7 +125,7 @@ bool httpMultiPartDownload(const std::string &url, const std::string &target_fil
     if ((ts - last_print_ts) > 2 * 1000) {
       if (enable_http_logging && last_print_ts > 0) {
         size_t average = (total_written - prev_total_written) / ((ts - last_print_ts) / 1000.);
-        std::cout << "downloading segments at" << formattedDataSize(average) << "/S" << std::endl;
+        std::cout << "downloading segments at " << formattedDataSize(average) << "/S" << std::endl;
       }
       prev_total_written = total_written;
       last_print_ts = ts;

@@ -55,7 +55,6 @@ protected:
   void loadFile(int id, const std::string file);
   bool downloadFile(int id, const std::string &url, const std::string local_file);
   std::string cacheFilePath(const std::string &file);
-  static void download_callback(void *param, size_t downloaded, size_t remote_size);
 
   std::atomic<bool> success_ = true, aborting_ = false;
   std::atomic<int> loading_ = 0;

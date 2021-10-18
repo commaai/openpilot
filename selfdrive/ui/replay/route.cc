@@ -1,7 +1,6 @@
 #include "selfdrive/ui/replay/route.h"
 
 #include <QEventLoop>
-#include <QLocale>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QRegExp>
