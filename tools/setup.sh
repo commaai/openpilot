@@ -356,7 +356,6 @@ if [ -z "$SKIP_REQS" ]; then
 
     echo "Using OS: $SELECTED_OS"
     echo "Installing required system dependencies"
-    exit 1
 
     case $SELECTED_OS in
         ubuntu-lts)
