@@ -24,6 +24,9 @@ protected:
     int height;
     std::thread thread;
     SafeQueue<std::pair<FrameReader*, const cereal::EncodeIndex::Reader>> queue;
+    int cached_id = -1;
+    int cached_seg = -1;
+    std::pair<VisionBuf *, VisionBuf*> cached_buf;
   };
   void startVipcServer();
   void cameraThread(Camera &cam);

@@ -38,23 +38,38 @@ void CameraServer::startVipcServer() {
 }
 
 void CameraServer::cameraThread(Camera &cam) {
+  auto read_frame = [&](FrameReader *fr, int frame_id) -> std::pair<VisionBuf *, VisionBuf *> {
+    VisionBuf *rgb_buf = vipc_server_->get_buffer(cam.rgb_type);
+    VisionBuf *yuv_buf = vipc_server_->get_buffer(cam.yuv_type);
+    if (fr->get(frame_id, (uint8_t *)rgb_buf->addr, (uint8_t *)yuv_buf->addr)) {
+      return {rgb_buf, yuv_buf};
+    }
+    return {nullptr, nullptr};
+  };
+
   while (true) {
     const auto [fr, eidx] = cam.queue.pop();
     if (!fr) break;
 
-    VisionBuf *rgb_buf = vipc_server_->get_buffer(cam.rgb_type);
-    VisionBuf *yuv_buf = vipc_server_->get_buffer(cam.yuv_type);
-    if (fr->get(eidx.getSegmentId(), (uint8_t *)rgb_buf->addr, (uint8_t *)yuv_buf->addr)) {
+    const int id = eidx.getSegmentId();
+    bool prefetched = (id == cam.cached_id && eidx.getSegmentNum() == cam.cached_seg && cam.cached_buf.first && cam.cached_buf.second);
+    auto [rgb, yuv] = prefetched ? cam.cached_buf : read_frame(fr, id);
+
+    if (rgb && yuv) {
       VisionIpcBufExtra extra = {
           .frame_id = eidx.getFrameId(),
           .timestamp_sof = eidx.getTimestampSof(),
           .timestamp_eof = eidx.getTimestampEof(),
       };
-      vipc_server_->send(rgb_buf, &extra, false);
-      vipc_server_->send(yuv_buf, &extra, false);
+      vipc_server_->send(rgb, &extra, false);
+      vipc_server_->send(yuv, &extra, false);
     } else {
       std::cout << "camera[" << cam.type << "] failed to get frame:" << eidx.getSegmentId() << std::endl;
     }
+
+    cam.cached_id = id + 1;
+    cam.cached_seg = eidx.getSegmentNum();
+    cam.cached_buf = read_frame(fr, cam.cached_id);
 
     --publishing_;
   }
