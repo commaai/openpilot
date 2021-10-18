@@ -19,7 +19,6 @@ function detect_os() {
             esac
         fi
     fi
-    echo "OS: $OS_AUTODETECTED"
 }
 
 function detect_shell_config() {
