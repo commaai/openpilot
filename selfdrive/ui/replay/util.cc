@@ -2,6 +2,8 @@
 
 #include <array>
 #include <cassert>
+#include <mutex>
+#include <numeric>
 #include <bzlib.h>
 #include <iostream>
 #include <curl/curl.h>
@@ -17,6 +19,7 @@ struct CURLGlobalInitializer {
 struct MultiPartWriter {
   int64_t offset;
   int64_t end;
+  int64_t written;
   FILE *fp;
 };
 
@@ -24,8 +27,10 @@ static size_t write_cb(char *data, size_t size, size_t count, void *userp) {
   MultiPartWriter *w = (MultiPartWriter *)userp;
   fseek(w->fp, w->offset, SEEK_SET);
   fwrite(data, size, count, w->fp);
-  w->offset += size * count;
-  return size * count;
+  size_t bytes = size * count; 
+  w->offset += bytes;
+  w->written += bytes;
+  return bytes;
 }
 
 static size_t dumy_write_cb(char *data, size_t size, size_t count, void *userp) { return size * count; }
@@ -49,8 +54,22 @@ int64_t getRemoteFileSize(const std::string &url) {
   return res == CURLE_OK ? (int64_t)content_length : -1;
 }
 
-bool httpMultiPartDownload(const std::string &url, const std::string &target_file, int parts, std::atomic<bool> *abort) {
+std::string formattedDataSize(size_t size) {
+  if (size < 1024) {
+    return std::to_string(size) + " B";
+  } else if (size < 1024 * 1024) {
+    return util::string_format("%.2f KB", (float)size / 1024);
+  } else {
+    return util::string_format("%.2f MB", (float)size / (1024 * 1024));
+  }
+}
+
+bool httpMultiPartDownload(const std::string &url, const std::string &target_file,
+                           int parts, std::atomic<bool> *abort, std::function<void(void *, size_t, size_t)> callback, void *param, const std::string log_name) {
   static CURLGlobalInitializer curl_initializer;
+  static std::mutex lock;
+  static uint64_t total_written = 0, prev_total_written = 0;
+  static double last_print_ts = 0;
 
   int64_t content_length = getRemoteFileSize(url);
   if (content_length <= 0) return false;
@@ -85,9 +104,27 @@ bool httpMultiPartDownload(const std::string &url, const std::string &target_fil
   }
 
   int still_running = 1;
+  size_t prev_written = 0;
   while (still_running > 0 && !(abort && *abort)) {
     curl_multi_wait(cm, nullptr, 0, 1000, nullptr);
     curl_multi_perform(cm, &still_running);
+    size_t written = std::accumulate(writers.begin(), writers.end(), 0,
+                                        [=](int v, auto &w) { return v + w.second.written; });
+    int cur_written = written - prev_written;
+    callback(param, cur_written, content_length);
+    prev_written = written;
+
+    double ts = millis_since_boot();
+    std::lock_guard lk(lock);
+    total_written += cur_written;
+    if ((ts - last_print_ts) > 5 * 1000) {
+      if (last_print_ts > 0) {
+        size_t average = (total_written - prev_total_written) / ((ts - last_print_ts) / 1000.);
+        std::cout << "average download speed: " << formattedDataSize(average) << "/S" << std::endl;
+      }
+      prev_total_written = total_written;
+      last_print_ts = ts;
+    }
   }
 
   CURLMsg *msg;

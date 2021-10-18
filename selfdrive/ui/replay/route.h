@@ -1,5 +1,6 @@
 #pragma once
 
+#include <set>
 #include <QDir>
 #include <QThread>
 
@@ -54,9 +55,16 @@ signals:
 protected:
   void loadFile(int id, const std::string file);
   std::string cacheFilePath(const std::string &file);
+  static void download_callback(void *param, size_t downloaded, size_t total_size);
 
   std::atomic<bool> success_ = true, aborting_ = false;
   std::atomic<int> loading_ = 0;
   std::vector<QThread*> loading_threads_;
+  
+  std::mutex lock;
+  std::map<int, size_t> remote_file_size;
+  double start_ts_ = 0;
+  double last_print_ = 0;
+  size_t download_written_ = 0;
   const int max_retries_ = 3;
 };
