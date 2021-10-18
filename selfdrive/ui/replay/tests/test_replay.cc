@@ -36,20 +36,6 @@ int random_int(int min, int max) {
   return dist(rng);
 }
 
-bool is_events_ordered(const std::vector<Event *> &events) {
-  REQUIRE(events.size() > 0);
-  uint64_t prev_mono_time = 0;
-  cereal::Event::Which prev_which = cereal::Event::INIT_DATA;
-  for (auto event : events) {
-    if (event->mono_time < prev_mono_time || (event->mono_time == prev_mono_time && event->which < prev_which)) {
-      return false;
-    }
-    prev_mono_time = event->mono_time;
-    prev_which = event->which;
-  }
-  return true;
-}
-
 TEST_CASE("Segment") {
   Route demo_route(DEMO_ROUTE);
   REQUIRE(demo_route.load());
@@ -66,7 +52,7 @@ TEST_CASE("Segment") {
 
     // LogReader & FrameReader
     REQUIRE(segment.log->events.size() > 0);
-    REQUIRE(is_events_ordered(segment.log->events));
+    REQUIRE(std::is_sorted(segment.log->events.begin(), segment.log->events.end(), Event::lessThan()));
 
     auto &fr = segment.frames[RoadCam];
     REQUIRE(fr->getFrameCount() == 1200);
@@ -92,7 +78,6 @@ public:
 void TestReplay::testSeekTo(int seek_to) {
   seekTo(seek_to, false);
 
-  // wait for the seek to finish
   while (true) {
     std::unique_lock lk(stream_lock_);
     stream_cv_.wait(lk, [=]() { return events_updated_ == true; });
@@ -109,7 +94,7 @@ void TestReplay::testSeekTo(int seek_to) {
       continue;
     }
 
-    REQUIRE(is_events_ordered(*events_));
+    REQUIRE(std::is_sorted(events_->begin(), events_->end(), Event::lessThan()));
     const int seek_to_segment = seek_to / 60;
     const int event_seconds = ((*eit)->mono_time - route_start_ts_) / 1e9;
     current_segment_ = event_seconds / 60;
@@ -124,13 +109,14 @@ void TestReplay::testSeekTo(int seek_to) {
 }
 
 void TestReplay::test_seek() {
+  // create a dummy stream thread
+  stream_thread_ = new QThread(this);
   QEventLoop loop;
   std::thread thread = std::thread([&]() {
-    // random seek 50 times in 3 segments
     for (int i = 0; i < 50; ++i) {
       testSeekTo(random_int(0, 3 * 60));
     }
-    // random seek 50 times in routes with invalid segments
+    // remove 3 segments
     for (int n : {5, 6, 8}) {
       segments_.erase(n);
     }
