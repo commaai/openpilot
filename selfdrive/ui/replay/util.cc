@@ -104,7 +104,7 @@ bool httpMultiPartDownload(const std::string &url, const std::string &target_fil
           std::cout << "Download failed: http error code: " << res_status << std::endl;
         }
       } else {
-        std::cout << "Download failed: connection failue";
+        std::cout << "Download failed: connection failue" << std::endl;
       }
     }
   }
