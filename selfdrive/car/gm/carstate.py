@@ -13,7 +13,6 @@ class CarState(CarStateBase):
     super().__init__(CP)
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
     self.shifter_values = can_define.dv["ECMPRDNL"]["PRNDL"]
-    self.user_gas, self.user_gas_pressed = 0., 0
 
   def update(self, pt_cp):
     ret = car.CarState.new_message()
