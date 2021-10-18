@@ -105,7 +105,6 @@ Segment::Segment(int n, const SegmentFile &files, bool load_dcam, bool load_ecam
       load_ecam ? files.wide_road_cam : "",
       files.rlog.isEmpty() ? files.qlog : files.rlog,
   };
-  start_ts_ = millis_since_boot();
   for (int i = 0; i < std::size(file_list); i++) {
     if (!file_list[i].isEmpty()) {
       loading_++;
@@ -152,15 +151,10 @@ void Segment::loadFile(int id, const std::string file) {
 }
 
 bool Segment::downloadFile(int id, const std::string &url, const std::string local_file) {
-  {
-    std::unique_lock lk(lock);
-    remote_file_size[id] = 0;
-  }
-  int retries = 0;
   bool ret = false;
-  std::pair<Segment *, int> pair{this, id};
+  int retries = 0;
   while (!aborting_) {
-    ret = httpMultiPartDownload(url, local_file, id < MAX_CAMERAS ? 3 : 1, &aborting_, &Segment::download_callback, &pair);
+    ret = httpMultiPartDownload(url, local_file, id < MAX_CAMERAS ? 3 : 1, &aborting_);
     if (ret || aborting_) break;
 
     if (++retries > max_retries_) {
@@ -170,32 +164,6 @@ bool Segment::downloadFile(int id, const std::string &url, const std::string loc
     qInfo() << "download failed, retrying" << retries;
   }
   return ret;
-}
-
-void Segment::download_callback(void *param, size_t cur_written, size_t remote_size) {
-  auto [s, id] = *(static_cast<std::pair<Segment *, int> *>(param));
-  double current_ts = millis_since_boot();
-
-  std::unique_lock lk(s->lock);
-
-  s->download_written_ += cur_written;
-  s->remote_file_size[id] = remote_size;
-  if (s->last_print_ == 0) {
-    s->last_print_ = current_ts;
-  } else if ((current_ts - s->last_print_) > 5 * 1000) {
-    size_t segment_size = 0;
-    for (auto [n, size] : s->remote_file_size) {
-      if (size == 0) return;
-
-      segment_size += size;
-    }
-    int avg_speed = s->download_written_ / ((current_ts - s->start_ts_) / 1000);
-    QString percent = QString("%1%").arg((int)((s->download_written_ / (double)segment_size) * 100));
-    QString eta = avg_speed > 0 ? QString("%1 s").arg((segment_size - s->download_written_) / avg_speed) : "--";
-    qDebug() << "downloading segment" << qPrintable(QString("[%1]").arg(s->seg_num)) << ":"
-             << qPrintable(QLocale().formattedDataSize(segment_size)) << qPrintable(percent) << "eta:" << qPrintable(eta);
-    s->last_print_ = current_ts;
-  }
 }
 
 std::string Segment::cacheFilePath(const std::string &file) {

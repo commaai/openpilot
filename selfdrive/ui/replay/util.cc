@@ -65,8 +65,13 @@ std::string formattedDataSize(size_t size) {
   }
 }
 
-bool httpMultiPartDownload(const std::string &url, const std::string &target_file, int parts, std::atomic<bool> *abort,
-                           std::function<void(void *, size_t, size_t)> callback, void *param) {
+static std::atomic<bool> enable_http_logging = false;
+
+void enableHttpLogging(bool enable) {
+  enable_http_logging = enable;
+}
+
+bool httpMultiPartDownload(const std::string &url, const std::string &target_file, int parts, std::atomic<bool> *abort) {
   static CURLGlobalInitializer curl_initializer;
   static std::mutex lock;
   static uint64_t total_written = 0, prev_total_written = 0;
@@ -112,18 +117,15 @@ bool httpMultiPartDownload(const std::string &url, const std::string &target_fil
 
     size_t written = std::accumulate(writers.begin(), writers.end(), 0, [=](int v, auto &w) { return v + w.second.written; });
     int cur_written = written - prev_written;
-    if (callback) {
-      callback(param, cur_written, content_length);
-    }
     prev_written = written;
 
     double ts = millis_since_boot();
     std::lock_guard lk(lock);
     total_written += cur_written;
-    if ((ts - last_print_ts) > 5 * 1000) {
-      if (last_print_ts > 0) {
+    if ((ts - last_print_ts) > 2 * 1000) {
+      if (enable_http_logging && last_print_ts > 0) {
         size_t average = (total_written - prev_total_written) / ((ts - last_print_ts) / 1000.);
-        std::cout << "average download speed: " << formattedDataSize(average) << "/S" << std::endl;
+        std::cout << "downloading segments at" << formattedDataSize(average) << "/S" << std::endl;
       }
       prev_total_written = total_written;
       last_print_ts = ts;

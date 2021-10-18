@@ -131,6 +131,7 @@ void Replay::queueSegment() {
   if (cur != segments_.end() && cur->second == nullptr) {
     // just load one segment on starting replay or seeking
     end++;
+    enableHttpLogging(true);
   } else {
     for (int i = 0; i < BACKWARD_SEGS && begin != segments_.begin(); ++i) {
       --begin;
@@ -138,6 +139,7 @@ void Replay::queueSegment() {
     for (int i = 0; i <= FORWARD_SEGS && end != segments_.end(); ++i) {
       ++end;
     }
+    enableHttpLogging(false);
   }
 
   // load & merge segments
