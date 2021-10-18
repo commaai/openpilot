@@ -128,11 +128,16 @@ void Replay::queueSegment() {
   // get the current segment window
   SegmentMap::iterator begin, cur, end;
   begin = cur = end = segments_.lower_bound(current_segment_);
-  for (int i = 0; i < BACKWARD_SEGS && begin != segments_.begin(); ++i) {
-    --begin;
-  }
-  for (int i = 0; i <= FORWARD_SEGS && end != segments_.end(); ++i) {
-    ++end;
+  if (cur != segments_.end() && cur->second == nullptr) {
+    // just load one segment on starting replay or seeking
+    end++;
+  } else {
+    for (int i = 0; i < BACKWARD_SEGS && begin != segments_.begin(); ++i) {
+      --begin;
+    }
+    for (int i = 0; i <= FORWARD_SEGS && end != segments_.end(); ++i) {
+      ++end;
+    }
   }
 
   // load & merge segments
