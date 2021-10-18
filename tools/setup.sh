@@ -179,8 +179,10 @@ function setup_pyenv() {
         export MAKEFLAGS="-j$(nproc)"
         eval "$(pyenv init -)"
         PYENV_PYTHON_VERSION=$(cat $OP_ROOT/.python-version)
-        CONFIGURE_OPTS=--enable-shared pyenv install -f ${PYENV_PYTHON_VERSION}
-        pyenv global ${PYENV_PYTHON_VERSION}
+        CONFIGURE_OPTS=--enable-shared pyenv install -s ${PYENV_PYTHON_VERSION}
+        if [ -n "$NO_VENV" ]; then
+            pyenv global ${PYENV_PYTHON_VERSION}
+        fi
         pyenv rehash
     fi
 }
@@ -191,8 +193,15 @@ function setup_packages() {
     echo "Installing pipenv"
     pip install pipenv --quiet
     [ -d "./xx" ] && export PIPENV_PIPFILE=./xx/Pipfile
-    echo "Installing packages"
-    pipenv install --dev --deploy --system
+
+    if [ -n "$NO_VENV" ]; then
+        echo "Installing packages in the system."
+        pipenv install --dev --deploy --system
+    else
+        echo "Installing packages in the virtualenv."
+        pipenv install --dev --deploy
+    fi
+
     if command_exists "pyenv"; then
         pyenv rehash
     fi
@@ -206,8 +215,8 @@ function setup_packages() {
 
 function setup_help() {
     echo "Setup script for openpilot environment"
-    echo "By default it does the following things:"
-    echo -e "\t1. Download required libraries and tools for Ubuntu 20.04 LTS."
+    echo "It does the following:"
+    echo -e "\t1. Download required libraries and tools."
     echo -e "\t2. Save openpilot environment script in shell configuration."
     echo -e "\t3. Setup pyenv to build and use configured Python version."
     echo -e "\t4. Download packages from Pipfile using pipenv."
@@ -220,6 +229,7 @@ function setup_help() {
     echo -e "\t--skip-rc:       Do not setup shell evironment."
     echo -e "\t--no-pyenv:      Skip pyenv setup. Will use default Python if pyenv is not installed."
     echo -e "\t--skip-packages: Do not install pipenv and its requirements from Pipfile."
+    echo -e "\t--no-venv:       Do not use virtualenv and save Python packages to system."
     echo -e "Supported OSes: ubuntu-lts, ubuntu-latest, macos (not tested)"
 }
 
@@ -255,6 +265,10 @@ while [ ! -z "$1" ]; do
             ;;
         --skip-packages)
             SKIP_PACKAGES=1
+            shift
+            ;;
+        --no-venv)
+            NO_VENV=1
             shift
             ;;
         *)
@@ -365,10 +379,14 @@ fi
 
 echo -e "\n---- OPENPILOT ENVIRONMENT SETUP FINISHED ----"
 echo "Your environment is set up!"
+echo "Navigate to $OP_ROOT to continue."
 if [ -f "$RC_FILE " ]; then
     echo "Use 'source $RC_FILE to reload your shell"
 fi
-echo "Go to $OP_ROOT and compile OP with 'scons -j\$(nproc)'."
+if [ -n "$NO_VENV" ]; then
+    echo "Use 'pipenv shell' to run a virtual shell."
+fi
+echo "Compile OP with 'scons -j\$(nproc)'."
 echo "Then try executing these commands in separate windows:"
 echo -e "\t* $OP_ROOT/selfdrive/ui/replay/replay --demo"
 echo -e "\t* $OP_ROOT/selfdrive/ui/ui"
