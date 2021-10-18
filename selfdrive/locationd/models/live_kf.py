@@ -74,7 +74,7 @@ class LiveKalman():
                      (0.05 / 60)**2, (0.05 / 60)**2, (0.05 / 60)**2])
 
   obs_noise_diag = {ObservationKind.ODOMETRIC_SPEED: np.array([0.2**2]),
-                    ObservationKind.PHONE_GYRO: np.array([0.025**2, 0.025**2, 0.025**2]),
+                    ObservationKind.PHONE_GYRO: np.array([0.05**2, 0.05**2, 0.05**2]),
                     ObservationKind.PHONE_ACCEL: np.array([.5**2, .5**2, .5**2]),
                     ObservationKind.CAMERA_ODO_ROTATION: np.array([0.05**2, 0.05**2, 0.05**2]),
                     ObservationKind.IMU_FRAME: np.array([0.05**2, 0.05**2, 0.05**2]),
