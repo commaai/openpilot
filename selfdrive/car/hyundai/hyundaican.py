@@ -121,6 +121,9 @@ def create_acc_commands(packer, enabled, accel, jerk, idx, lead_visible, set_spe
     # test: [(idx % 0xF, -((idx % 0xF) + 2) % 4) for idx in range(0x14)]
     "CR_FCA_Alive": ((-((idx % 0xF) + 2) % 4) << 2) + 1,
     "Supplemental_Counter": idx % 0xF,
+    "PAINT1_Status": 1,
+    "FCA_DrvSetStatus": 1,
+    "FCA_Status": 1, # AEB disabled
   }
   fca11_dat = packer.make_can_msg("FCA11", 0, fca11_values)[2]
   fca11_values["CR_FCA_ChkSum"] = 0x10 - sum([sum(divmod(i, 16)) for i in fca11_dat]) % 0x10
@@ -139,10 +142,8 @@ def create_acc_opt(packer):
   commands.append(packer.make_can_msg("SCC13", 0, scc13_values))
 
   fca12_values = {
-    # stock values may be needed if openpilot has vision based AEB some day
-    # for now we are not setting these because there is no AEB for vision only
-    # "FCA_USM": 3,
-    # "FCA_DrvSetState": 2,
+    "FCA_DrvSetState": 2,
+    "FCA_USM": 1, # AEB disabled
   }
   commands.append(packer.make_can_msg("FCA12", 0, fca12_values))
 

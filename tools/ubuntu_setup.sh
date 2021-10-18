@@ -71,7 +71,7 @@ if ! command -v "pyenv" > /dev/null 2>&1; then
 fi
 
 # in the openpilot repo
-cd $HOME/openpilot
+cd $OP_ROOT
 
 source ~/.bashrc
 if [ -z "$OPENPILOT_ENV" ]; then
