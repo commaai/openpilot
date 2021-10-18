@@ -1,6 +1,5 @@
 #pragma once
 
-#include <set>
 #include <QDir>
 #include <QThread>
 
