@@ -6,7 +6,7 @@ Ecu = car.CarParams.Ecu
 
 class CarControllerParams():
   def __init__(self):
-    self.STEER_MAX = 300
+    self.STEER_MAX = 300              # Note: Escalade required this increased to 550
     self.STEER_STEP = 2              # how often we update the steer cmd
     self.STEER_DELTA_UP = 7          # ~0.75s time to peak torque (255/50hz/0.75s)
     self.STEER_DELTA_DOWN = 17       # ~0.3s from peak torque to zero
@@ -57,6 +57,7 @@ class CAR:
   BOLT_NR = "CHEVROLET BOLT EV NO RADAR"
   EQUINOX_NR = "CHEVROLET EQUINOX NO RADAR"
   TAHOE_NR = "CHEVROLET TAHOE NO RADAR"
+  ESCALADE = "CADILLAC ESCALADE" # This had required hard-coding...
 
 class CruiseButtons:
   INIT = 0
@@ -181,6 +182,11 @@ FINGERPRINTS = {
   {
     190: 6, 193: 8, 197: 8, 201: 8, 209: 7, 211: 2, 241: 6, 249: 8, 257: 8, 288: 5, 289: 8, 298: 8, 304: 1, 309: 8, 311: 8, 313: 8, 320: 3, 328: 1, 352: 5, 381: 8, 384: 4, 386: 8, 388: 8, 413: 8, 451: 8, 452: 8, 453: 6, 455: 7, 463: 3, 479: 3, 481: 7, 485: 8, 489: 8, 497: 8, 500: 6, 501: 8, 510: 8, 528: 5, 532: 6, 560: 8, 562: 8, 563: 5, 565: 5, 608: 8, 609: 6, 610: 6, 611: 6, 612: 8, 613: 8, 707: 8, 715: 8, 717: 5, 753: 5, 761: 7, 789: 5, 800: 6, 810: 8, 840: 5, 842: 5, 844: 8, 869: 4, 880: 6, 977: 8, 1001: 8, 1011: 6, 1017: 8, 1020: 8, 1033: 7, 1034: 7, 1217: 8, 1221: 5, 1233: 8, 1249: 8, 1259: 8, 1261: 7, 1263: 4, 1265: 8, 1267: 1, 1271: 8, 1280: 4, 1296: 4, 1300: 8, 1930: 7
   }],
+  CAR.ESCALADE: [
+  # Escalate
+  {
+    170: 8, 190: 6, 192: 5, 193: 8, 197: 8, 199: 4, 201: 8, 208: 8, 209: 7, 211: 2, 241: 6, 249: 8, 288: 5, 289: 1, 290: 1, 298: 8, 300: 1, 304: 8, 309: 8, 311: 8, 313: 8, 320: 8, 328: 1, 352: 5, 368: 8, 369: 8, 381: 5, 384: 4, 386: 5, 388: 8, 393: 7, 398: 8, 407: 7, 413: 8, 417: 7, 419: 1, 422: 4, 426: 7, 431: 8, 442: 8, 451: 8, 452: 8, 453: 6, 454: 8, 455: 7, 463: 3, 479: 3, 481: 7, 485: 8, 487: 8, 489: 8, 497: 8, 499: 3, 500: 6, 501: 8, 508: 8, 510: 8, 512: 3, 530: 8, 532: 6, 534: 2, 554: 3, 560: 8, 562: 8, 563: 5, 564: 5, 573: 1, 577: 8, 578: 8, 579: 8, 587: 8, 608: 8, 609: 6, 610: 6, 611: 6, 612: 8, 613: 8, 647: 6, 707: 8, 715: 8, 717: 5, 719: 5, 761: 7, 789: 5, 800: 6, 801: 5, 803: 8, 804: 3, 805: 8, 810: 8, 821: 4, 823: 7, 832: 8, 840: 5, 842: 5, 844: 8, 866: 4, 869: 4, 880: 6, 961: 8, 967: 4, 969: 8, 977: 8, 979: 8, 985: 5, 1001: 8, 1005: 6, 1009: 8, 1013: 3, 1017: 8, 1019: 2, 1020: 8, 1033: 7, 1034: 7, 1105: 6, 1217: 8, 1221: 5, 1223: 2, 1225: 7, 1233: 8, 1249: 8, 1257: 6, 1265: 8, 1267: 1, 1280: 4, 1296: 4, 1300: 8, 1322: 6, 1323: 4, 1328: 4, 1417: 8, 1601: 8, 1602: 8, 1603: 7, 1611: 8, 1618: 8, 1906: 7, 1907: 7, 1912: 7, 1917: 7, 1918: 7, 1919: 7, 1920: 7, 1930: 7, 2016: 8, 2018: 8, 2019: 8, 2024: 8, 2026: 8
+  }]
 }
 
 STEER_THRESHOLD = 1.0
@@ -199,4 +205,5 @@ DBC = {
   CAR.BOLT_NR: dbc_dict('gm_global_a_powertrain', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'),
   CAR.EQUINOX_NR: dbc_dict('gm_global_a_powertrain', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'),
   CAR.TAHOE_NR: dbc_dict('gm_global_a_powertrain', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'),
+  CAR.ESCALADE: dbc_dict('gm_global_a_powertrain', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'),
 }
