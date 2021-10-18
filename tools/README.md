@@ -33,7 +33,6 @@ Execute `./tools/setup.sh --help` to get more details.
 3. Build openpilot
 
 ``` bash
-cd openpilot
 pipenv shell
 scons -j$(nproc)
 ```

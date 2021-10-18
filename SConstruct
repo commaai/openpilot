@@ -180,7 +180,7 @@ env = Environment(
     "-fPIC",
     "-O2",
     "-Wunused",
-    "-Werror",
+    # "-Werror",
     "-Wno-unknown-warning-option",
     "-Wno-deprecated-register",
     "-Wno-register",
