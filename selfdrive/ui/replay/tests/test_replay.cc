@@ -53,10 +53,14 @@ TEST_CASE("Segment") {
     // LogReader & FrameReader
     REQUIRE(segment.log->events.size() > 0);
     REQUIRE(std::is_sorted(segment.log->events.begin(), segment.log->events.end(), Event::lessThan()));
-    // sequence get 50 frames {
-    REQUIRE(segment.frames[RoadCam]->getFrameCount() == 1200);
+
+    auto &fr = segment.frames[RoadCam];
+    REQUIRE(fr->getFrameCount() == 1200);
+    std::unique_ptr<uint8_t[]> rgb_buf = std::make_unique<uint8_t[]>(fr->getRGBSize());
+    std::unique_ptr<uint8_t[]> yuv_buf = std::make_unique<uint8_t[]>(fr->getYUVSize());
+    // sequence get 50 frames
     for (int i = 0; i < 50; ++i) {
-      REQUIRE(segment.frames[RoadCam]->get(i));
+      REQUIRE(fr->get(i, rgb_buf.get(), yuv_buf.get()));
     }
     loop.quit();
   });
