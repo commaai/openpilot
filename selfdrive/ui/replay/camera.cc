@@ -31,6 +31,7 @@ void CameraServer::startVipcServer() {
     if (cam.width > 0 && cam.height > 0) {
       vipc_server_->create_buffers(cam.rgb_type, UI_BUF_COUNT, true, cam.width, cam.height);
       vipc_server_->create_buffers(cam.yuv_type, YUV_BUF_COUNT, false, cam.width, cam.height);
+      std::cout << "camera[" << type << "] frame size " << cam.width << "x" << cam.height << std::endl;
       if (!cam.thread.joinable()) {
         cam.thread = std::thread(&CameraServer::cameraThread, this, type, std::ref(cam));
       }
@@ -68,7 +69,6 @@ void CameraServer::pushFrame(CameraType type, FrameReader *fr, const cereal::Enc
   if (cam.width != fr->width || cam.height != fr->height) {
     cam.width = fr->width;
     cam.height = fr->height;
-    std::cout << "camera[" << type << "] frame size " << cam.width << "x" << cam.height << std::endl;
     waitFinish();
     startVipcServer();
   }
