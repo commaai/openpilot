@@ -2,7 +2,7 @@ from cereal import car
 from common.realtime import DT_CTRL
 from common.numpy_fast import interp, clip
 from selfdrive.config import Conversions as CV
-from selfdrive.car import apply_std_steer_torque_limits, create_gas_command
+from selfdrive.car import apply_std_steer_torque_limits, create_gas_command, create_gas_multiplier_command, create_gas_divisor_command, create_gas_offset_command
 from selfdrive.car.gm import gmcan
 from selfdrive.car.gm.values import DBC, CanBus, CarControllerParams
 from opendbc.can.packer import CANPacker
@@ -75,12 +75,14 @@ class CarController():
     elif CS.CP.enableGasInterceptor:
       #It seems in L mode, accel / decel point is around 1/5
       #0----decel-------0.2-------accel----------1
-      new_gas = 0.8 * actuators.gas + 0.2
-      new_brake = 0.2 * actuators.brake
+      #new_gas = 0.8 * actuators.gas + 0.2
+      #new_brake = 0.2 * actuators.brake
       #I am assuming we should not get both a gas and a break value...
-      final_pedal2 = new_gas - new_brake
+      #final_pedal2 = new_gas - new_brake
       #TODO: Hysteresis
       #TODO: Use friction brake via AEB for harder braking
+      # Not sure what the status of the above is - was not being used...
+
 
       #JJS - no adjust yet - scaling needs to be -1 <-> +1
       pedal_gas = clip(actuators.accel, 0., 1.)
@@ -91,6 +93,21 @@ class CarController():
         # send exactly zero if apply_gas is zero. Interceptor will send the max between read value and apply_gas.
         # This prevents unexpected pedal range rescaling
         can_sends.append(create_gas_command(self.packer_pt, pedal_gas, idx))
+
+    if (frame % 8) == 0:
+      can_sends.append(create_gas_multiplier_command(self.packer_pt, 1545, idx))
+      can_sends.append(create_gas_divisor_command(self.packer_pt, 1000, idx))
+      can_sends.append(create_gas_offset_command(self.packer_pt, 25, idx))
+      # The ECM in GM vehicles has a different resistance between signal and ground than honda and toyota
+      # Since the Pedal's resistance doesn't match, the values read by the ADC are incorrect
+      # Output values are fine
+      # formula is new_adc = ((raw_adc * MULTIPLIER) / DIVISOR) + OFFSET
+      # multiplier and divisor are used because we are limited to 16-bit integers on the panda
+      # The read ADC value must be multiplied sufficiently large that the division is integral
+      # Note: might be able to do the * 1000 part on pedal, but this is more flexible...
+      # Technically these only need to be sent once, but pedal may bounce. Sending on the 8's, probably don't need to be so freq
+      # Note: pedal ignores counter for these messages
+
 
     # Send dashboard UI commands (ACC status), 25hz
     if (frame % 4) == 0:
