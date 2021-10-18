@@ -8,7 +8,7 @@
 
 class CameraServer {
 public:
-  CameraServer(std::pair<int, int> camera_size[MAX_CAMERAS] = nullptr);
+  CameraServer(std::pair<int, int> camera_size[MAX_CAMERAS], bool yuv, bool rgb = true);
   ~CameraServer();
   void pushFrame(CameraType type, FrameReader* fr, const cereal::EncodeIndex::Reader& eidx);
   inline void waitFinish() {
@@ -38,4 +38,5 @@ protected:
   };
   std::atomic<int> publishing_ = 0;
   std::unique_ptr<VisionIpcServer> vipc_server_;
+  bool send_yuv_, send_rgb_;
 };

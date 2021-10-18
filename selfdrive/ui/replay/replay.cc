@@ -10,8 +10,8 @@
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/replay/util.h"
 
-Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *sm_, bool dcam, bool ecam, QString data_dir, QObject *parent)
-    : sm(sm_), load_dcam(dcam), load_ecam(ecam), QObject(parent) {
+Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *sm_, uint32_t flags, QString data_dir, QObject *parent)
+    : sm(sm_), flags_(flags), QObject(parent) {
   std::vector<const char *> s;
   auto event_struct = capnp::Schema::from<cereal::Event>().asStruct();
   sockets_.resize(event_struct.getUnionFields().size());
@@ -141,7 +141,7 @@ void Replay::queueSegment() {
   for (int i = 0; end != segments_.end() && i <= fwd; ++end, ++i) {
     auto &[n, seg] = *end;
     if (!seg) {
-      seg = std::make_unique<Segment>(n, route_->at(n), load_dcam, load_ecam);
+      seg = std::make_unique<Segment>(n, route_->at(n), hasFlag(REPLAY_FLAG_DCAM), hasFlag(REPLAY_FLAG_ECAM));
       QObject::connect(seg.get(), &Segment::loadFinished, this, &Replay::segmentLoadFinished);
       qInfo() << "loading segment" << n << "...";
     }
@@ -219,7 +219,7 @@ void Replay::startStream(const Segment *cur_segment) {
       camera_size[type] = {fr->width, fr->height};
     }
   }
-  camera_server_ = std::make_unique<CameraServer>(camera_size);
+  camera_server_ = std::make_unique<CameraServer>(camera_size, hasFlag(REPLAY_FLAG_YUV), true);
 
   // start stream thread
   stream_thread_ = QThread::create(&Replay::stream, this);
@@ -246,7 +246,8 @@ void Replay::publishFrame(const Event *e) {
       {cereal::Event::DRIVER_ENCODE_IDX, DriverCam},
       {cereal::Event::WIDE_ROAD_ENCODE_IDX, WideRoadCam},
   };
-  if ((e->which == cereal::Event::DRIVER_ENCODE_IDX && !load_dcam) || (e->which == cereal::Event::WIDE_ROAD_ENCODE_IDX && !load_ecam)) {
+  if ((e->which == cereal::Event::DRIVER_ENCODE_IDX && !hasFlag(REPLAY_FLAG_DCAM)) ||
+      (e->which == cereal::Event::WIDE_ROAD_ENCODE_IDX && !hasFlag(REPLAY_FLAG_ECAM))) {
     return;
   }
   auto eidx = capnp::AnyStruct::Reader(e->event).getPointerSection()[0].getAs<cereal::EncodeIndex>();
@@ -321,7 +322,7 @@ void Replay::stream() {
     // wait for frame to be sent before unlock.(frameReader may be deleted after unlock)
     camera_server_->waitFinish();
 
-    if (eit == events_->end()) {
+    if (eit == events_->end() && !hasFlag(REPLAY_FLAG_NO_LOOP)) {
       int last_segment = segments_.rbegin()->first;
       if (current_segment_ >= last_segment && isSegmentMerged(last_segment)) {
         qInfo() << "reaches the end of route, restart from beginning";
