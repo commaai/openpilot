@@ -127,8 +127,15 @@ void Segment::loadFile(int id, const std::string file) {
 
   if (!file_ready && is_remote) {
     int retries = 0;
-    while (!file_ready && retries++ < max_retries_) {
+    while (true) {
       file_ready = httpMultiPartDownload(file, local_file, id < MAX_CAMERAS ? 3 : 1, &aborting_);
+      if (file_ready) break;
+
+      if (++retries > max_retries_) {
+        qInfo() << "download failed after retries" << max_retries_;
+        break;
+      }
+      qInfo() << "download failed, retrying" << retries;
     }
   }
 
