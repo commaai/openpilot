@@ -48,19 +48,14 @@ void CameraServer::thread() {
     }
 
     // send frame
-    if (auto dat = fr->get(eidx.getSegmentId())) {
-      auto [rgb_dat, yuv_dat] = *dat;
+    VisionBuf *rgb_buf = vipc_server_->get_buffer(cam.rgb_type);
+    VisionBuf *yuv_buf = vipc_server_->get_buffer(cam.yuv_type);
+    if (fr->get(eidx.getSegmentId(), (uint8_t *)rgb_buf->addr, (uint8_t *)yuv_buf->addr)) {
       VisionIpcBufExtra extra = {
           .frame_id = eidx.getFrameId(),
           .timestamp_sof = eidx.getTimestampSof(),
           .timestamp_eof = eidx.getTimestampEof(),
       };
-
-      VisionBuf *rgb_buf = vipc_server_->get_buffer(cam.rgb_type);
-      memcpy(rgb_buf->addr, rgb_dat, fr->getRGBSize());
-      VisionBuf *yuv_buf = vipc_server_->get_buffer(cam.yuv_type);
-      memcpy(yuv_buf->addr, yuv_dat, fr->getYUVSize());
-
       vipc_server_->send(rgb_buf, &extra, false);
       vipc_server_->send(yuv_buf, &extra, false);
     } else {
