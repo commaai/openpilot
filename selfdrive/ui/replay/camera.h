@@ -8,7 +8,7 @@
 
 class CameraServer {
 public:
-  CameraServer(std::pair<int, int> cameras[MAX_CAMERAS] = nullptr);
+  CameraServer(std::pair<int, int> camera_size[MAX_CAMERAS] = nullptr);
   ~CameraServer();
   void pushFrame(CameraType type, FrameReader* fr, const cereal::EncodeIndex::Reader& eidx);
   inline void waitFinish() {
@@ -17,6 +17,7 @@ public:
 
 protected:
   struct Camera {
+    CameraType type;
     VisionStreamType rgb_type; 
     VisionStreamType yuv_type;
     int width;
@@ -25,12 +26,12 @@ protected:
     SafeQueue<std::pair<FrameReader*, const cereal::EncodeIndex::Reader>> queue;
   };
   void startVipcServer();
-  void cameraThread(CameraType type, Camera &cam);
+  void cameraThread(Camera &cam);
 
   Camera cameras_[MAX_CAMERAS] = {
-      {.rgb_type = VISION_STREAM_RGB_BACK, .yuv_type = VISION_STREAM_YUV_BACK},
-      {.rgb_type = VISION_STREAM_RGB_FRONT, .yuv_type = VISION_STREAM_YUV_FRONT},
-      {.rgb_type = VISION_STREAM_RGB_WIDE, .yuv_type = VISION_STREAM_YUV_WIDE},
+      {.type = RoadCam, .rgb_type = VISION_STREAM_RGB_BACK, .yuv_type = VISION_STREAM_YUV_BACK},
+      {.type = DriverCam, .rgb_type = VISION_STREAM_RGB_FRONT, .yuv_type = VISION_STREAM_YUV_FRONT},
+      {.type = WideRoadCam, .rgb_type = VISION_STREAM_RGB_WIDE, .yuv_type = VISION_STREAM_YUV_WIDE},
   };
   std::atomic<int> publishing_ = 0;
   std::unique_ptr<VisionIpcServer> vipc_server_;

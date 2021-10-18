@@ -213,13 +213,13 @@ void Replay::startStream(const Segment *cur_segment) {
   }
 
   // start camera server
-  std::pair<int, int> cameras[MAX_CAMERAS] = {};
+  std::pair<int, int> camera_size[MAX_CAMERAS] = {};
   for (auto type : ALL_CAMERAS) {
     if (auto &fr = cur_segment->frames[type]) {
-      cameras[type] = {fr->width, fr->height};
+      camera_size[type] = {fr->width, fr->height};
     }
   }
-  camera_server_ = std::make_unique<CameraServer>(cameras);
+  camera_server_ = std::make_unique<CameraServer>(camera_size);
 
   // start stream thread
   stream_thread_ = QThread::create(&Replay::stream, this);
