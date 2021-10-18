@@ -62,15 +62,10 @@ struct ModelDataRawPlanPrediction {
                                                         bool to_exp=false) const {
     ModelDataXYZPivot<TRAJECTORY_SIZE> data = {};
     for(int i=0; i<TRAJECTORY_SIZE; i++) {
-      if (to_exp) {
-        data.x[i] = exp(func(arr[i]).x);
-        data.y[i] = exp(func(arr[i]).y);
-        data.z[i] = exp(func(arr[i]).z);
-      } else {
-        data.x[i] = func(arr[i]).x;
-        data.y[i] = func(arr[i]).y;
-        data.z[i] = func(arr[i]).z;
-      }
+      ModelDataRawXYZ d = to_exp ? func(arr[i]).to_exp() : func(arr[i]);
+      data.x[i] = d.x;
+      data.y[i] = d.y;
+      data.z[i] = d.z;
     }
     return data;
   }
