@@ -2,10 +2,11 @@
 
 #include <array>
 #include <cassert>
+#include <iostream>
 #include <mutex>
 #include <numeric>
+
 #include <bzlib.h>
-#include <iostream>
 #include <curl/curl.h>
 
 #include "selfdrive/common/timing.h"
@@ -27,7 +28,7 @@ static size_t write_cb(char *data, size_t size, size_t count, void *userp) {
   MultiPartWriter *w = (MultiPartWriter *)userp;
   fseek(w->fp, w->offset, SEEK_SET);
   fwrite(data, size, count, w->fp);
-  size_t bytes = size * count; 
+  size_t bytes = size * count;
   w->offset += bytes;
   w->written += bytes;
   return bytes;
@@ -64,8 +65,8 @@ std::string formattedDataSize(size_t size) {
   }
 }
 
-bool httpMultiPartDownload(const std::string &url, const std::string &target_file,
-                           int parts, std::atomic<bool> *abort, std::function<void(void *, size_t, size_t)> callback, void *param, const std::string log_name) {
+bool httpMultiPartDownload(const std::string &url, const std::string &target_file, int parts, std::atomic<bool> *abort,
+                           std::function<void(void *, size_t, size_t)> callback, void *param) {
   static CURLGlobalInitializer curl_initializer;
   static std::mutex lock;
   static uint64_t total_written = 0, prev_total_written = 0;
@@ -108,10 +109,12 @@ bool httpMultiPartDownload(const std::string &url, const std::string &target_fil
   while (still_running > 0 && !(abort && *abort)) {
     curl_multi_wait(cm, nullptr, 0, 1000, nullptr);
     curl_multi_perform(cm, &still_running);
-    size_t written = std::accumulate(writers.begin(), writers.end(), 0,
-                                        [=](int v, auto &w) { return v + w.second.written; });
+
+    size_t written = std::accumulate(writers.begin(), writers.end(), 0, [=](int v, auto &w) { return v + w.second.written; });
     int cur_written = written - prev_written;
-    callback(param, cur_written, content_length);
+    if (callback) {
+      callback(param, cur_written, content_length);
+    }
     prev_written = written;
 
     double ts = millis_since_boot();
@@ -192,7 +195,7 @@ void precise_nano_sleep(long sleep_ns) {
   }
   // spin wait
   if (sleep_ns > 0) {
-    while ((nanos_since_boot() - start_sleep) <= sleep_ns) { 
+    while ((nanos_since_boot() - start_sleep) <= sleep_ns) {
       usleep(0);
     }
   }

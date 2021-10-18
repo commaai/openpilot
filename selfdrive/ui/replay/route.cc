@@ -126,11 +126,12 @@ void Segment::download_callback(void *param, size_t cur_written, size_t total_si
   auto [s, id] = *(static_cast<std::pair<Segment *, int> *>(param));
   double current_ts = millis_since_boot();
   std::unique_lock lk(s->lock);
+
   s->download_written_ += cur_written;
   s->remote_file_size[id] = total_size;
   if (s->last_print_ == 0) {
     s->last_print_ = current_ts;
-  } else if ((current_ts- s->last_print_) > 5 * 1000) {
+  } else if ((current_ts - s->last_print_) > 5 * 1000) {
     size_t total_size = 0;
     for (auto [n, size] : s->remote_file_size) {
       if (size == 0) return;
@@ -139,7 +140,7 @@ void Segment::download_callback(void *param, size_t cur_written, size_t total_si
     }
     int avg_speed = s->download_written_ / ((current_ts - s->start_ts_) / 1000);
     QString percent = QString("%1%").arg((int)((s->download_written_ / (double)total_size) * 100));
-    QString eta = avg_speed > 0 ? QString("%1 s").arg((total_size - s->download_written_) / avg_speed) :"--";
+    QString eta = avg_speed > 0 ? QString("%1 s").arg((total_size - s->download_written_) / avg_speed) : "--";
     qDebug() << "downloading segment" << qPrintable(QString("[%1]").arg(s->seg_num)) << ":"
              << qPrintable(QLocale().formattedDataSize(total_size)) << qPrintable(percent) << "eta:" << qPrintable(eta);
     s->last_print_ = current_ts;
