@@ -119,8 +119,8 @@ bool httpMultiPartDownload(const std::string &url, const std::string &target_fil
     int cur_written = written - prev_written;
     prev_written = written;
 
-    double ts = millis_since_boot();
     std::lock_guard lk(lock);
+    double ts = millis_since_boot();
     total_written += cur_written;
     if ((ts - last_print_ts) > 2 * 1000) {
       if (enable_http_logging && last_print_ts > 0) {
