@@ -28,19 +28,6 @@ struct ModelDataXYZPivot {
   std::array<float, size> z = {};
 };
 
-struct ModelDataPlanTimestepPivot {
-  ModelDataXYZPivot<TRAJECTORY_SIZE> mean = {};
-  ModelDataXYZPivot<TRAJECTORY_SIZE> std_exp = {};
-};
-
-struct ModelDataRawPlanPredictionPivot {
-  ModelDataPlanTimestepPivot position = {};
-  ModelDataPlanTimestepPivot velocity = {};
-  ModelDataPlanTimestepPivot acceleration = {};
-  ModelDataPlanTimestepPivot rotation = {};
-  ModelDataPlanTimestepPivot rotation_rate = {};
-};
-
 struct ModelDataRawXYZ {
   float x;
   float y;
@@ -70,40 +57,20 @@ struct ModelDataRawPlanPrediction {
 
   // inline avoids copying array when returning it
   // inline can be changed to constexpr when c2 deprecated
-  inline const ModelDataRawPlanPredictionPivot pivot() const {
-    ModelDataRawPlanPredictionPivot data = {};
+  inline const ModelDataXYZPivot<TRAJECTORY_SIZE> pivot(const std::array<ModelDataRawPlanTimeStep, TRAJECTORY_SIZE> &arr,
+                                                        std::function<const ModelDataRawXYZ&(const ModelDataRawPlanTimeStep&)> func,
+                                                        bool to_exp=false) const {
+    ModelDataXYZPivot<TRAJECTORY_SIZE> data = {};
     for(int i=0; i<TRAJECTORY_SIZE; i++) {
-      data.position.mean.x[i] = mean[i].position.x;
-      data.position.mean.y[i] = mean[i].position.y;
-      data.position.mean.z[i] = mean[i].position.z;
-      data.velocity.mean.x[i] = mean[i].velocity.x;
-      data.velocity.mean.y[i] = mean[i].velocity.y;
-      data.velocity.mean.z[i] = mean[i].velocity.z;
-      data.acceleration.mean.x[i] = mean[i].acceleration.x;
-      data.acceleration.mean.y[i] = mean[i].acceleration.y;
-      data.acceleration.mean.z[i] = mean[i].acceleration.z;
-      data.rotation.mean.x[i] = mean[i].rotation.x;
-      data.rotation.mean.y[i] = mean[i].rotation.y;
-      data.rotation.mean.z[i] = mean[i].rotation.z;
-      data.rotation_rate.mean.x[i] = mean[i].rotation_rate.x;
-      data.rotation_rate.mean.y[i] = mean[i].rotation_rate.y;
-      data.rotation_rate.mean.z[i] = mean[i].rotation_rate.z;
-
-      data.position.std_exp.x[i] = exp(std[i].position.x);
-      data.position.std_exp.y[i] = exp(std[i].position.y);
-      data.position.std_exp.z[i] = exp(std[i].position.z);
-      data.velocity.std_exp.x[i] = exp(std[i].velocity.x);
-      data.velocity.std_exp.y[i] = exp(std[i].velocity.y);
-      data.velocity.std_exp.z[i] = exp(std[i].velocity.z);
-      data.acceleration.std_exp.x[i] = exp(std[i].acceleration.x);
-      data.acceleration.std_exp.y[i] = exp(std[i].acceleration.y);
-      data.acceleration.std_exp.z[i] = exp(std[i].acceleration.z);
-      data.rotation.std_exp.x[i] = exp(std[i].rotation.x);
-      data.rotation.std_exp.y[i] = exp(std[i].rotation.y);
-      data.rotation.std_exp.z[i] = exp(std[i].rotation.z);
-      data.rotation_rate.std_exp.x[i] = exp(std[i].rotation_rate.x);
-      data.rotation_rate.std_exp.y[i] = exp(std[i].rotation_rate.y);
-      data.rotation_rate.std_exp.z[i] = exp(std[i].rotation_rate.z);
+      if (to_exp) {
+        data.x[i] = exp(func(arr[i]).x);
+        data.y[i] = exp(func(arr[i]).y);
+        data.z[i] = exp(func(arr[i]).z);
+      } else {
+        data.x[i] = func(arr[i]).x;
+        data.y[i] = func(arr[i]).y;
+        data.z[i] = func(arr[i]).z;
+      }
     }
     return data;
   }

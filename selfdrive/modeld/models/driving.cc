@@ -238,17 +238,18 @@ void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const float *meta_da
   meta.setHardBrakePredicted(above_fcw_threshold);
 }
 
-void set_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const ModelDataPlanTimestepPivot &data,
-              const std::array<float, TRAJECTORY_SIZE> &time, bool set_std = false) {
-  xyzt.setX(to_kj_array_ptr(data.mean.x));
-  xyzt.setY(to_kj_array_ptr(data.mean.y));
-  xyzt.setZ(to_kj_array_ptr(data.mean.z));
+void set_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const ModelDataXYZPivot<TRAJECTORY_SIZE> &data,
+              const std::array<float, TRAJECTORY_SIZE> &time) {
+  xyzt.setX(to_kj_array_ptr(data.x));
+  xyzt.setY(to_kj_array_ptr(data.y));
+  xyzt.setZ(to_kj_array_ptr(data.z));
   xyzt.setT(to_kj_array_ptr(time));
-  if (set_std) {
-    xyzt.setXStd(to_kj_array_ptr(data.std_exp.x));
-    xyzt.setYStd(to_kj_array_ptr(data.std_exp.y));
-    xyzt.setZStd(to_kj_array_ptr(data.std_exp.z));
-  }
+}
+
+void set_xyz_std(cereal::ModelDataV2::XYZTData::Builder xyzt, const ModelDataXYZPivot<TRAJECTORY_SIZE> &data) {
+  xyzt.setXStd(to_kj_array_ptr(data.x));
+  xyzt.setYStd(to_kj_array_ptr(data.y));
+  xyzt.setZStd(to_kj_array_ptr(data.z));
 }
 
 void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const float *data, int columns,
@@ -310,11 +311,16 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelDataRaw &net_ou
     plan_t_arr[xidx] = p * T_IDXS[tidx+1] + (1 - p) * T_IDXS[tidx];
   }
 
-  auto best_plan_pivot = best_plan.pivot();
-  set_xyzt(framed.initPosition(), best_plan_pivot.position, T_IDXS_FLOAT, true);
-  set_xyzt(framed.initVelocity(), best_plan_pivot.velocity, T_IDXS_FLOAT);
-  set_xyzt(framed.initOrientation(), best_plan_pivot.rotation, T_IDXS_FLOAT);
-  set_xyzt(framed.initOrientationRate(), best_plan_pivot.rotation_rate, T_IDXS_FLOAT);
+  auto position_xyz = best_plan.pivot(best_plan.mean, [](const ModelDataRawPlanTimeStep &x) { return x.position; });
+  auto position_xyz_std_exp = best_plan.pivot(best_plan.std, [](const ModelDataRawPlanTimeStep &x) { return x.position; }, true);
+  auto velocity_xyz = best_plan.pivot(best_plan.mean, [](const ModelDataRawPlanTimeStep &x) { return x.velocity; });
+  auto rotation_xyz = best_plan.pivot(best_plan.mean, [](const ModelDataRawPlanTimeStep &x) { return x.rotation; });
+  auto rotation_rate_xyz = best_plan.pivot(best_plan.mean, [](const ModelDataRawPlanTimeStep &v) { return v.rotation_rate; });
+  set_xyzt(framed.initPosition(), position_xyz, T_IDXS_FLOAT);
+  set_xyz_std(framed.initPosition(), position_xyz_std_exp);
+  set_xyzt(framed.initVelocity(), velocity_xyz, T_IDXS_FLOAT);
+  set_xyzt(framed.initOrientation(), rotation_xyz, T_IDXS_FLOAT);
+  set_xyzt(framed.initOrientationRate(), rotation_rate_xyz, T_IDXS_FLOAT);
 
   // lane lines
   auto lane_lines = framed.initLaneLines(4);
