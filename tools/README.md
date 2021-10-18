@@ -26,11 +26,16 @@ cd openpilot
 ./tools/setup.sh
 ```
 
+This will download system requirements, install a supported Python version, set up your shell and create a virtual Python environment.
+
 Execute `./tools/setup.sh --help` to get more details.
 
-3. Build openpilot by running SCons in the root of the openpilot directory
+3. Build openpilot
+
 ``` bash
-cd openpilot && scons -j$(nproc)
+cd openpilot
+pipenv shell
+scons -j$(nproc)
 ```
 
 4. Try out some tools!
