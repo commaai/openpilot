@@ -98,62 +98,46 @@ EOS
     fi
 }
 
-function install_ubuntu_latest_requirements() {
+
+# This function is used to merge duplicate ubuntu-lts and ubuntu-latest packages
+function install_ubuntu_common_requirements() {
     sudo apt-get update -qq && sudo apt-get install -qq -y --no-install-recommends \
-        autoconf \
-        build-essential \
-        bzip2 \
-        capnproto \
-        cppcheck \
-        libcapnp-dev \
-        clang \
-        cmake \
-        make \
-        curl \
-        ffmpeg \
-        git \
-        libavformat-dev libavcodec-dev libavdevice-dev libavutil-dev libavfilter-dev \
-        libarchive-dev \
-        libbz2-dev \
-        libcurl4-openssl-dev \
+        autoconf build-essential clang cmake make cppcheck libtool \
+        libstdc++-arm-none-eabi-newlib gcc-arm-none-eabi \
+        bzip2 liblzma-dev libarchive-dev libbz2-dev \
+        capnproto libcapnp-dev \
+        curl libcurl4-openssl-dev wget git \
+        ffmpeg libavcodec-dev libavformat-dev libavcodec-dev libavdevice-dev libavutil-dev libavfilter-dev \
         libeigen3-dev \
         libffi-dev \
-        libglew-dev \
-        libgles2-mesa-dev \
-        libglfw3-dev \
+        libglew-dev libgles2-mesa-dev libglfw3-dev \
         libglib2.0-0 \
-        liblzma-dev \
         libomp-dev \
         libopencv-dev \
         libpng16-16 \
         libssl-dev \
-        libstdc++-arm-none-eabi-newlib \
         libsqlite3-dev \
-        libtool \
         libusb-1.0-0-dev \
         libzmq3-dev \
-        libsdl-image1.2-dev libsdl-mixer1.2-dev libsdl-ttf2.0-dev libsmpeg-dev \
-        libsdl1.2-dev  libportmidi-dev libavformat-dev libavcodec-dev libfreetype6-dev \
+        libsdl1.2-dev libsdl-image1.2-dev libsdl-mixer1.2-dev libsdl-ttf2.0-dev libsmpeg-dev \
+        libportmidi-dev \
+        libfreetype6-dev \
         libsystemd-dev \
         locales \
-        ocl-icd-libopencl1 \
-        ocl-icd-opencl-dev \
-        opencl-headers \
-        python-dev \
-        python3-pip \
-        qml-module-qtquick2 \
-        qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools \
-        qtmultimedia5-dev \
-        qtwebengine5-dev \
-        qtlocation5-dev \
-        qtpositioning5-dev \
-        libqt5sql5-sqlite \
-        libqt5svg5-dev \
-        wget \
-        gcc-arm-none-eabi \
-        libqt5x11extras5-dev \
+        opencl-headers ocl-icd-libopencl1 ocl-icd-opencl-dev \
+        python-dev python3-pip \
+        qml-module-qtquick2 qtmultimedia5-dev qtwebengine5-dev qtlocation5-dev qtpositioning5-dev \
+        libqt5sql5-sqlite libqt5svg5-dev libqt5x11extras5-dev \
         libreadline-dev
+}
 
+function install_ubuntu_latest_requirements() {
+    install_ubuntu_common_requirements
+    
+    # Install Ubuntu 21.10-specific requirements
+    sudo apt-get update -qq && sudo apt-get install -qq -y --no-install-recommends \
+        qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools
+ 
     # install git lfs
     if ! command_exists "git-lfs"; then
         # Note: the line below should be uncommented when there's a build available for the latest version of Ubuntu
@@ -168,73 +152,22 @@ function install_ubuntu_latest_requirements() {
 }
 
 function install_ubuntu_lts_requirements() {
+    install_ubuntu_common_requirements
+
+    # Install Ubuntu 20.04-specific requirements
     sudo apt-get update -qq && sudo apt-get install -qq -y --no-install-recommends \
-        autoconf \
-        build-essential \
-        bzip2 \
-        capnproto \
-        cppcheck \
-        libcapnp-dev \
-        clang \
-        cmake \
-        make \
-        curl \
-        ffmpeg \
-        git \
-        libavformat-dev libavcodec-dev libavdevice-dev libavutil-dev libavresample-dev libavfilter-dev \
-        libarchive-dev \
-        libbz2-dev \
-        libcurl4-openssl-dev \
-        libeigen3-dev \
-        libffi-dev \
-        libglew-dev \
-        libgles2-mesa-dev \
-        libglfw3-dev \
-        libglib2.0-0 \
-        liblzma-dev \
-        libomp-dev \
-        libopencv-dev \
-        libpng16-16 \
-        libssl-dev \
-        libstdc++-arm-none-eabi-newlib \
-        libsqlite3-dev \
-        libtool \
-        libusb-1.0-0-dev \
-        libzmq3-dev \
-        libsdl-image1.2-dev libsdl-mixer1.2-dev libsdl-ttf2.0-dev libsmpeg-dev \
-        libsdl1.2-dev  libportmidi-dev libavformat-dev libavcodec-dev libfreetype6-dev \
-        libsystemd-dev \
-        locales \
-        ocl-icd-libopencl1 \
-        ocl-icd-opencl-dev \
-        opencl-headers \
-        python-dev \
-        python3-pip \
-        qml-module-qtquick2 \
-        qt5-default \
-        qtmultimedia5-dev \
-        qtwebengine5-dev \
-        qtlocation5-dev \
-        qtpositioning5-dev \
-        libqt5sql5-sqlite \
-        libqt5svg5-dev \
-        screen \
-        sudo \
-        wget \
-        gcc-arm-none-eabi \
-        libqt5x11extras5-dev \
-        libreadline-dev
-
-
+        libavresample-dev \
+        qt5-default
+    
     # install git lfs
     if ! command_exists "git-lfs"; then
-      curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
-      sudo apt-get install git-lfs -qq
+        curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
+        sudo apt-get install git-lfs -qq
     fi
 
     # install pyenv
     if ! command_exists "pyenv" && [ -z "$NO_PYENV" ] && [ ! -d "$HOME/.pyenv" ]; then
-      curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash
+        curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash
     fi
 
 }
