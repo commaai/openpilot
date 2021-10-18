@@ -157,8 +157,8 @@ void Segment::loadFile(int id, const std::string file) {
       std::unique_lock lk(lock);
       remote_file_size[id] = 0;
     }
-    int retries = 0;
     std::pair<Segment *, int> pair {this, id};
+    int retries = 0;
     while (!aborting_) {
       file_ready = httpMultiPartDownload(file, local_file, id < MAX_CAMERAS ? 3 : 1, &aborting_, &Segment::download_callback, &pair);
       if (file_ready || aborting_) break;
