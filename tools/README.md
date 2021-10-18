@@ -14,27 +14,19 @@ openpilot is developed and tested on **Ubuntu 20.04**, which is the primary deve
 
 Setup your PC
 ============
-1. Clone openpilot into your home directory:
+1. Clone openpilot:
 ``` bash
 git clone --recurse-submodules https://github.com/commaai/openpilot.git
+cd openpilot
 ```
 
 2. Run the setup script:
 
-Ubuntu 20.04 LTS:
-``` bash
-openpilot/tools/setup.sh
-```
-Ubuntu (latest):
 ```bash
-openpilot/tools/setup.sh --os ubuntu-latest
-```
-MacOS:
-``` bash
-openpilot/tools/setup.sh --os macos
+./tools/setup.sh
 ```
 
-Execute `openpilot/tools/setup.sh --help` to get more details.
+Execute `./tools/setup.sh --help` to get more details.
 
 3. Build openpilot by running SCons in the root of the openpilot directory
 ``` bash

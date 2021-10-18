@@ -1,5 +1,27 @@
 #!/usr/bin/bash -e
 
+function detect_os() {
+    UNAME=`uname`
+
+    if [ "$UNAME" == "darwin"* ]; then
+        OS_AUTODETECTED="macos"
+    elif [ -f "/etc/os-release" ]; then
+        # Pull all variables from /etc/os-release
+        eval `cat /etc/os-release`
+        if [ "$ID" == "ubuntu" ]; then
+            case "$VERSION_ID" in
+                "21.10")
+                    OS_AUTODETECTED="ubuntu-latest"
+                    ;;
+                "20.04")
+                    OS_AUTODETECTED="ubuntu-lts"
+                    ;;
+            esac
+        fi
+    fi
+    echo "OS: $OS_AUTODETECTED"
+}
+
 function detect_shell_config() {
     local BASH_PROFILE="$HOME/.bash_profile"
     local BASHRC="$HOME/.bashrc"
@@ -261,15 +283,13 @@ function setup_help() {
     echo "Syntax: $0 [OPTIONS...]"
     echo "Options:"
     echo -e "\t[-h|--help]:     Print help message."
-    echo -e "\t--os <OS>:       Operating system (ubuntu-lts by default)."
+    echo -e "\t--os <OS>:       Operating system (the script tries to autodetect by default)."
     echo -e "\t--skip-reqs:     Do not download dependencies."
     echo -e "\t--skip-rc:       Do not setup shell evironment."
     echo -e "\t--no-pyenv:      Skip pyenv setup. Will use default Python if pyenv is not installed."
     echo -e "\t--skip-packages: Do not install pipenv and its requirements from Pipfile."
     echo -e "Supported OSes: ubuntu-lts, ubuntu-latest, macos (not tested)"
 }
-
-SELECTED_OS="ubuntu-lts"
 
 # Parse arguments
 while [ ! -z "$1" ]; do
@@ -322,8 +342,22 @@ if [ -n "$RC_FILE" ]; then
 fi
 
 if [ -z "$SKIP_REQS" ]; then
-    echo "Selected OS: $SELECTED_OS"
+    # Try to auto-detect OS if user did not provide any
+    if [ -z "$SELECTED_OS" ]; then
+        detect_os
+        SELECTED_OS="$OS_AUTODETECTED"
+    fi
+
+    # Crash if there is no known OS
+    if [ -z "$SELECTED_OS" ]; then
+        echo "OS not provided or not auto-detected."
+        exit 1
+    fi
+
+    echo "Using OS: $SELECTED_OS"
     echo "Installing required system dependencies"
+    exit 1
+
     case $SELECTED_OS in
         ubuntu-lts)
             install_ubuntu_lts_requirements
