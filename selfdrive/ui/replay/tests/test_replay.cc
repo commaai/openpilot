@@ -19,7 +19,7 @@ TEST_CASE("httpMultiPartDownload") {
   SECTION("5 connections") {
     REQUIRE(httpMultiPartDownload(stream_url, filename, 5));
   }
-  SECTION("1 connections") {
+  SECTION("1 connection") {
     REQUIRE(httpMultiPartDownload(stream_url, filename, 1));
   }
   std::string content = util::read_file(filename);

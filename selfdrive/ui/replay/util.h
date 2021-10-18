@@ -3,7 +3,6 @@
 #include <atomic>
 #include <ostream>
 #include <string>
-#include <vector>
 
 void precise_nano_sleep(long sleep_ns);
 bool readBZ2File(const std::string_view file, std::ostream &stream);
