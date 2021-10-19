@@ -5,7 +5,13 @@
 
 const int YUV_BUF_COUNT = 50;
 
-CameraServer::CameraServer() {
+CameraServer::CameraServer(std::pair<int, int> cameras[MAX_CAMERAS]) {
+  if (cameras) {
+    for (auto type : ALL_CAMERAS) {
+      std::tie(cameras_[type].width, cameras_[type].height) = cameras[type];
+    }
+    startVipcServer();
+  }
   camera_thread_ = std::thread(&CameraServer::thread, this);
 }
 
@@ -33,7 +39,7 @@ void CameraServer::thread() {
     if (!fr) break;
 
     auto &cam = cameras_[type];
-    // start|restart the vipc server if frame size changed
+    // restart vipc server if new camera incoming.
     if (cam.width != fr->width || cam.height != fr->height) {
       cam.width = fr->width;
       cam.height = fr->height;
@@ -42,19 +48,14 @@ void CameraServer::thread() {
     }
 
     // send frame
-    if (auto dat = fr->get(eidx.getSegmentId())) {
-      auto [rgb_dat, yuv_dat] = *dat;
+    VisionBuf *rgb_buf = vipc_server_->get_buffer(cam.rgb_type);
+    VisionBuf *yuv_buf = vipc_server_->get_buffer(cam.yuv_type);
+    if (fr->get(eidx.getSegmentId(), (uint8_t *)rgb_buf->addr, (uint8_t *)yuv_buf->addr)) {
       VisionIpcBufExtra extra = {
           .frame_id = eidx.getFrameId(),
           .timestamp_sof = eidx.getTimestampSof(),
           .timestamp_eof = eidx.getTimestampEof(),
       };
-
-      VisionBuf *rgb_buf = vipc_server_->get_buffer(cam.rgb_type);
-      memcpy(rgb_buf->addr, rgb_dat, fr->getRGBSize());
-      VisionBuf *yuv_buf = vipc_server_->get_buffer(cam.yuv_type);
-      memcpy(yuv_buf->addr, yuv_dat, fr->getYUVSize());
-
       vipc_server_->send(rgb_buf, &extra, false);
       vipc_server_->send(yuv_buf, &extra, false);
     } else {
