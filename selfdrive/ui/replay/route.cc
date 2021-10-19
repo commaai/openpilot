@@ -9,69 +9,62 @@
 #include "selfdrive/ui/qt/api.h"
 #include "selfdrive/ui/replay/util.h"
 
+Route::Route(const QString &route, const QString &data_dir) : route_(parseRoute(route)), data_dir_(data_dir) {}
+
+RouteIdentifier Route::parseRoute(const QString &str) {
+  QRegExp rx(R"(^([a-z0-9]{16})([|_/])(\d{4}-\d{2}-\d{2}--\d{2}-\d{2}-\d{2})(?:(--|/)(\d*))?$)");
+  if (rx.indexIn(str) == -1) return {};
+
+  const QStringList list = rx.capturedTexts();
+  return {list[1], list[3], list[5].toInt(), list[1] + "|" + list[3]};
+}
+
 bool Route::load() {
-  if (data_dir_.isEmpty()) {
-    return loadFromServer();
-  } else {
-    return loadFromLocal();
+  if (route_.str.isEmpty()) {
+    qInfo() << "invalid route format";
+    return false;
   }
+  return data_dir_.isEmpty() ? loadFromServer() : loadFromLocal();
 }
 
 bool Route::loadFromServer() {
   QEventLoop loop;
-  auto onError = [&loop](const QString &err) { loop.quit(); };
-
-  bool ret = false;
   HttpRequest http(nullptr, !Hardware::PC());
-  QObject::connect(&http, &HttpRequest::failedResponse, onError);
-  QObject::connect(&http, &HttpRequest::timeoutResponse, onError);
-  QObject::connect(&http, &HttpRequest::receivedResponse, [&](const QString json) {
-    ret = loadFromJson(json);
-    loop.quit();
+  QObject::connect(&http, &HttpRequest::failedResponse, [&] { loop.exit(0); });
+  QObject::connect(&http, &HttpRequest::timeoutResponse, [&] { loop.exit(0); });
+  QObject::connect(&http, &HttpRequest::receivedResponse, [&](const QString &json) {
+    loop.exit(loadFromJson(json));
   });
-  http.sendRequest("https://api.commadotai.com/v1/route/" + route_ + "/files");
-  loop.exec();
-  return ret;
+  http.sendRequest("https://api.commadotai.com/v1/route/" + route_.str + "/files");
+  return loop.exec();
 }
 
 bool Route::loadFromJson(const QString &json) {
-  QJsonObject route_files = QJsonDocument::fromJson(json.trimmed().toUtf8()).object();
-  if (route_files.empty()) {
-    qInfo() << "JSON Parse failed";
-    return false;
-  }
-
   QRegExp rx(R"(\/(\d+)\/)");
-  for (const QString &key : route_files.keys()) {
-    for (const auto &url : route_files[key].toArray()) {
+  for (const auto &value :  QJsonDocument::fromJson(json.trimmed().toUtf8()).object()) {
+    for (const auto &url : value.toArray()) {
       QString url_str = url.toString();
       if (rx.indexIn(url_str) != -1) {
         addFileToSegment(rx.cap(1).toInt(), url_str);
       }
     }
   }
-  return true;
+  return !segments_.empty();
 }
 
 bool Route::loadFromLocal() {
-  QString prefix = route_.split('|').last();
-  if (prefix.isEmpty()) return false;
-
   QDir log_dir(data_dir_);
-  QStringList folders = log_dir.entryList(QDir::Dirs | QDir::NoDot | QDir::NoDotDot, QDir::NoSort);
-  if (folders.isEmpty()) return false;
-
-  for (auto folder : folders) {
-    int seg_num_pos = folder.lastIndexOf("--");
-    if (seg_num_pos != -1) {
-      const int seg_num = folder.mid(seg_num_pos + 2).toInt();
+  for (const auto &folder : log_dir.entryList(QDir::Dirs | QDir::NoDot | QDir::NoDotDot, QDir::NoSort)) {
+    int pos = folder.lastIndexOf("--");
+    if (pos != -1 && folder.left(pos) == route_.timestamp) {
+      const int seg_num = folder.mid(pos + 2).toInt();
       QDir segment_dir(log_dir.filePath(folder));
-      for (auto f : segment_dir.entryList(QDir::Files)) {
+      for (const auto &f : segment_dir.entryList(QDir::Files)) {
         addFileToSegment(seg_num, segment_dir.absoluteFilePath(f));
       }
     }
   }
-  return true;
+  return !segments_.empty();
 }
 
 void Route::addFileToSegment(int n, const QString &file) {
@@ -97,7 +90,7 @@ Segment::Segment(int n, const SegmentFile &files, bool load_dcam, bool load_ecam
   static std::once_flag once_flag;
   std::call_once(once_flag, [=]() { if (!CACHE_DIR.exists()) QDir().mkdir(CACHE_DIR.absolutePath()); });
 
-  // the order is [RoadCam, DriverCam, WideRoadCam, log]. fallback to qcamera/qlog
+  // [RoadCam, DriverCam, WideRoadCam, log]. fallback to qcamera/qlog
   const QString file_list[] = {
       files.road_cam.isEmpty() ? files.qcamera : files.road_cam,
       load_dcam ? files.driver_cam : "",
