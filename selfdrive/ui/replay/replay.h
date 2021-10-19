@@ -6,7 +6,6 @@
 #include "selfdrive/ui/replay/route.h"
 
 constexpr int FORWARD_SEGS = 2;
-constexpr int BACKWARD_SEGS = 1;
 
 class Replay : public QObject {
   Q_OBJECT
