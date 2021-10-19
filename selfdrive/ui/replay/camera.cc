@@ -38,13 +38,11 @@ void CameraServer::startVipcServer() {
 }
 
 void CameraServer::cameraThread(Camera &cam) {
-  auto read_frame = [&](FrameReader *fr, int frame_id) -> std::pair<VisionBuf *, VisionBuf *> {
+  auto read_frame = [&](FrameReader *fr, int frame_id) {
     VisionBuf *rgb_buf = vipc_server_->get_buffer(cam.rgb_type);
     VisionBuf *yuv_buf = vipc_server_->get_buffer(cam.yuv_type);
-    if (fr->get(frame_id, (uint8_t *)rgb_buf->addr, (uint8_t *)yuv_buf->addr)) {
-      return {rgb_buf, yuv_buf};
-    }
-    return {nullptr, nullptr};
+    bool ret = fr->get(frame_id, (uint8_t *)rgb_buf->addr, (uint8_t *)yuv_buf->addr);
+    return ret ? std::pair{rgb_buf, yuv_buf} : std::pair{nullptr, nullptr};
   };
 
   while (true) {
