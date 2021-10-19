@@ -251,7 +251,7 @@ template<size_t size>
 void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const std::array<float, size> &t,
                const std::array<float, size> &x, const std::array<float, size> &y, const std::array<float, size> &z,
                const std::array<float, size> &x_std, const std::array<float, size> &y_std, const std::array<float, size> &z_std) {
-  fill_xyzt(xyzt, x, y, z, t);
+  fill_xyzt(xyzt, t, x, y, z);
   xyzt.setXStd(to_kj_array_ptr(x_std));
   xyzt.setYStd(to_kj_array_ptr(y_std));
   xyzt.setZStd(to_kj_array_ptr(z_std));
