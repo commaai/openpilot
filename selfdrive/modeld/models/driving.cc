@@ -313,15 +313,20 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelDataRaw &net_ou
     plan_t_arr[xidx] = p * T_IDXS[tidx+1] + (1 - p) * T_IDXS[tidx];
   }
 
-  auto position_xyz = best_plan.pivot(best_plan.mean, [](const ModelDataRawPlanTimeStep &x) { return x.position; });
-  auto position_xyz_std_exp = best_plan.pivot(best_plan.std, [](const ModelDataRawPlanTimeStep &x) { return x.position; }, true);
-  auto velocity_xyz = best_plan.pivot(best_plan.mean, [](const ModelDataRawPlanTimeStep &x) { return x.velocity; });
-  auto rotation_xyz = best_plan.pivot(best_plan.mean, [](const ModelDataRawPlanTimeStep &x) { return x.rotation; });
-  auto rotation_rate_xyz = best_plan.pivot(best_plan.mean, [](const ModelDataRawPlanTimeStep &v) { return v.rotation_rate; });
-  set_xyzt(framed.initPosition(), T_IDXS_FLOAT, position_xyz, position_xyz_std_exp);
-  set_xyzt(framed.initVelocity(), T_IDXS_FLOAT, velocity_xyz);
-  set_xyzt(framed.initOrientation(), T_IDXS_FLOAT, rotation_xyz);
-  set_xyzt(framed.initOrientationRate(), T_IDXS_FLOAT, rotation_rate_xyz);
+  auto best_plan_pivot = best_plan.pivot();
+  set_xyzt(framed.initPosition(), T_IDXS_FLOAT, best_plan_pivot.position.mean, best_plan_pivot.position.std_exp);
+  set_xyzt(framed.initVelocity(), T_IDXS_FLOAT, best_plan_pivot.velocity.mean);
+  set_xyzt(framed.initOrientation(), T_IDXS_FLOAT, best_plan_pivot.rotation.mean);
+  set_xyzt(framed.initOrientationRate(), T_IDXS_FLOAT, best_plan_pivot.rotation_rate.mean);
+  // auto position_xyz = best_plan.pivot(best_plan.mean, [](const ModelDataRawPlanTimeStep &x) { return x.position; });
+  // auto position_xyz_std_exp = best_plan.pivot(best_plan.std, [](const ModelDataRawPlanTimeStep &x) { return x.position; }, true);
+  // auto velocity_xyz = best_plan.pivot(best_plan.mean, [](const ModelDataRawPlanTimeStep &x) { return x.velocity; });
+  // auto rotation_xyz = best_plan.pivot(best_plan.mean, [](const ModelDataRawPlanTimeStep &x) { return x.rotation; });
+  // auto rotation_rate_xyz = best_plan.pivot(best_plan.mean, [](const ModelDataRawPlanTimeStep &v) { return v.rotation_rate; });
+  // set_xyzt(framed.initPosition(), T_IDXS_FLOAT, position_xyz, position_xyz_std_exp);
+  // set_xyzt(framed.initVelocity(), T_IDXS_FLOAT, velocity_xyz);
+  // set_xyzt(framed.initOrientation(), T_IDXS_FLOAT, rotation_xyz);
+  // set_xyzt(framed.initOrientationRate(), T_IDXS_FLOAT, rotation_rate_xyz);
 
   // lane lines
   auto lane_lines = framed.initLaneLines(4);
