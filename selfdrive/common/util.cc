@@ -40,14 +40,16 @@ int set_realtime_priority(int level) {
 #endif
 }
 
-int set_core_affinity(int core) {
+int set_core_affinity(std::vector<int> cores) {
 #ifdef __linux__
   long tid = syscall(SYS_gettid);
-  cpu_set_t rt_cpu;
+  cpu_set_t cpu;
 
-  CPU_ZERO(&rt_cpu);
-  CPU_SET(core, &rt_cpu);
-  return sched_setaffinity(tid, sizeof(rt_cpu), &rt_cpu);
+  CPU_ZERO(&cpu);
+  for (const int n : cores) {
+    CPU_SET(n, &cpu);
+  }
+  return sched_setaffinity(tid, sizeof(cpu), &cpu);
 #else
   return -1;
 #endif
