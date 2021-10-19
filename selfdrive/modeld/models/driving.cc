@@ -238,20 +238,33 @@ void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const float *meta_da
   meta.setHardBrakePredicted(above_fcw_threshold);
 }
 
-void set_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const std::array<float, TRAJECTORY_SIZE> &time,
-              const ModelDataXYZPivot<TRAJECTORY_SIZE> &mean) {
-  xyzt.setT(to_kj_array_ptr(time));
-  xyzt.setX(to_kj_array_ptr(mean.x));
-  xyzt.setY(to_kj_array_ptr(mean.y));
-  xyzt.setZ(to_kj_array_ptr(mean.z));
-}
+template<size_t size>
+void fill_plan_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const std::array<float, size> &time,
+              const ModelDataRawPlanPath &plan, std::function<const ModelDataRawXYZ&(const ModelDataRawPlanTimeStep&)> func,
+              bool set_std=false) {
+  std::array<float, size> x = {}, y = {}, z = {};
+  std::array<float, size> x_std = {}, y_std = {}, z_std = {};
+  for(int i=0; i<size; i++) {
+    x[i] = func(plan.mean[i]).x;
+    y[i] = func(plan.mean[i]).y;
+    z[i] = func(plan.mean[i]).z;
+    if (set_std) {
+      auto std_exp = func(plan.std[i]).to_exp();
+      x_std[i] = std_exp.x;
+      x_std[i] = std_exp.y;
+      x_std[i] = std_exp.z;
+    }
+  }
 
-void set_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const std::array<float, TRAJECTORY_SIZE> &time,
-              const ModelDataXYZPivot<TRAJECTORY_SIZE> &mean, const ModelDataXYZPivot<TRAJECTORY_SIZE> &std) {
-  set_xyzt(xyzt, time, mean);
-  xyzt.setXStd(to_kj_array_ptr(std.x));
-  xyzt.setYStd(to_kj_array_ptr(std.y));
-  xyzt.setZStd(to_kj_array_ptr(std.z));
+  xyzt.setT(to_kj_array_ptr(time));
+  xyzt.setX(to_kj_array_ptr(x));
+  xyzt.setY(to_kj_array_ptr(y));
+  xyzt.setZ(to_kj_array_ptr(z));
+  if (set_std) {
+    xyzt.setXStd(to_kj_array_ptr(x_std));
+    xyzt.setYStd(to_kj_array_ptr(y_std));
+    xyzt.setZStd(to_kj_array_ptr(z_std));
+  }
 }
 
 void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const float *data, int columns,
@@ -291,7 +304,7 @@ void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const float *data, i
 }
 
 void fill_model(cereal::ModelDataV2::Builder &framed, const ModelDataRaw &net_outputs) {
-  auto best_plan = net_outputs.plan->best_prediction();
+  auto best_plan = net_outputs.plan->best_plan();
   float plan_t_arr[TRAJECTORY_SIZE];
   std::fill_n(plan_t_arr, TRAJECTORY_SIZE, NAN);
   plan_t_arr[0] = 0.0;
@@ -313,20 +326,10 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelDataRaw &net_ou
     plan_t_arr[xidx] = p * T_IDXS[tidx+1] + (1 - p) * T_IDXS[tidx];
   }
 
-  auto best_plan_pivot = best_plan.pivot();
-  set_xyzt(framed.initPosition(), T_IDXS_FLOAT, best_plan_pivot.position.mean, best_plan_pivot.position.std_exp);
-  set_xyzt(framed.initVelocity(), T_IDXS_FLOAT, best_plan_pivot.velocity.mean);
-  set_xyzt(framed.initOrientation(), T_IDXS_FLOAT, best_plan_pivot.rotation.mean);
-  set_xyzt(framed.initOrientationRate(), T_IDXS_FLOAT, best_plan_pivot.rotation_rate.mean);
-  // auto position_xyz = best_plan.pivot(best_plan.mean, [](const ModelDataRawPlanTimeStep &x) { return x.position; });
-  // auto position_xyz_std_exp = best_plan.pivot(best_plan.std, [](const ModelDataRawPlanTimeStep &x) { return x.position; }, true);
-  // auto velocity_xyz = best_plan.pivot(best_plan.mean, [](const ModelDataRawPlanTimeStep &x) { return x.velocity; });
-  // auto rotation_xyz = best_plan.pivot(best_plan.mean, [](const ModelDataRawPlanTimeStep &x) { return x.rotation; });
-  // auto rotation_rate_xyz = best_plan.pivot(best_plan.mean, [](const ModelDataRawPlanTimeStep &v) { return v.rotation_rate; });
-  // set_xyzt(framed.initPosition(), T_IDXS_FLOAT, position_xyz, position_xyz_std_exp);
-  // set_xyzt(framed.initVelocity(), T_IDXS_FLOAT, velocity_xyz);
-  // set_xyzt(framed.initOrientation(), T_IDXS_FLOAT, rotation_xyz);
-  // set_xyzt(framed.initOrientationRate(), T_IDXS_FLOAT, rotation_rate_xyz);
+  fill_plan_xyzt(framed.initPosition(), T_IDXS_FLOAT, best_plan, [](auto &x) { return x.position; }, true);
+  fill_plan_xyzt(framed.initVelocity(), T_IDXS_FLOAT, best_plan, [](auto &x) { return x.velocity; });
+  fill_plan_xyzt(framed.initOrientation(), T_IDXS_FLOAT, best_plan, [](auto &x) { return x.rotation; });
+  fill_plan_xyzt(framed.initOrientationRate(), T_IDXS_FLOAT, best_plan, [](auto &x) { return x.rotation_rate; });
 
   // lane lines
   auto lane_lines = framed.initLaneLines(4);
