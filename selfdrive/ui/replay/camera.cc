@@ -5,68 +5,83 @@
 
 const int YUV_BUF_COUNT = 50;
 
-CameraServer::CameraServer(std::pair<int, int> cameras[MAX_CAMERAS]) {
-  if (cameras) {
-    for (auto type : ALL_CAMERAS) {
-      std::tie(cameras_[type].width, cameras_[type].height) = cameras[type];
-    }
-    startVipcServer();
+CameraServer::CameraServer(std::pair<int, int> camera_size[MAX_CAMERAS]) {
+  for (auto &cam : cameras_) {
+    std::tie(cam.width, cam.height) = camera_size[cam.type];
   }
-  camera_thread_ = std::thread(&CameraServer::thread, this);
+  startVipcServer();
 }
 
 CameraServer::~CameraServer() {
-  queue_.push({});
-  camera_thread_.join();
+  for (auto &cam : cameras_) {
+    if (cam.thread.joinable()) {
+      cam.queue.push({});
+      cam.thread.join();
+    }
+  }
   vipc_server_.reset(nullptr);
 }
 
 void CameraServer::startVipcServer() {
-  std::cout << (vipc_server_ ? "restart" : "start") << " vipc server" << std::endl;
   vipc_server_.reset(new VisionIpcServer("camerad"));
   for (auto &cam : cameras_) {
     if (cam.width > 0 && cam.height > 0) {
+      std::cout << "camera[" << cam.type << "] frame size " << cam.width << "x" << cam.height << std::endl;
       vipc_server_->create_buffers(cam.rgb_type, UI_BUF_COUNT, true, cam.width, cam.height);
       vipc_server_->create_buffers(cam.yuv_type, YUV_BUF_COUNT, false, cam.width, cam.height);
+      if (!cam.thread.joinable()) {
+        cam.thread = std::thread(&CameraServer::cameraThread, this, std::ref(cam));
+      }
     }
   }
   vipc_server_->start_listener();
 }
 
-void CameraServer::thread() {
-  while (true) {
-    const auto [type, fr, eidx] = queue_.pop();
-    if (!fr) break;
-
-    auto &cam = cameras_[type];
-    // restart vipc server if new camera incoming.
-    if (cam.width != fr->width || cam.height != fr->height) {
-      cam.width = fr->width;
-      cam.height = fr->height;
-      std::cout << "camera[" << type << "] frame size " << cam.width << "x" << cam.height << std::endl;
-      startVipcServer();
-    }
-
-    // send frame
+void CameraServer::cameraThread(Camera &cam) {
+  auto read_frame = [&](FrameReader *fr, int frame_id) {
     VisionBuf *rgb_buf = vipc_server_->get_buffer(cam.rgb_type);
     VisionBuf *yuv_buf = vipc_server_->get_buffer(cam.yuv_type);
-    if (fr->get(eidx.getSegmentId(), (uint8_t *)rgb_buf->addr, (uint8_t *)yuv_buf->addr)) {
+    bool ret = fr->get(frame_id, (uint8_t *)rgb_buf->addr, (uint8_t *)yuv_buf->addr);
+    return ret ? std::pair{rgb_buf, yuv_buf} : std::pair{nullptr, nullptr};
+  };
+
+  while (true) {
+    const auto [fr, eidx] = cam.queue.pop();
+    if (!fr) break;
+
+    const int id = eidx.getSegmentId();
+    bool prefetched = (id == cam.cached_id && eidx.getSegmentNum() == cam.cached_seg && cam.cached_buf.first && cam.cached_buf.second);
+    auto [rgb, yuv] = prefetched ? cam.cached_buf : read_frame(fr, id);
+
+    if (rgb && yuv) {
       VisionIpcBufExtra extra = {
           .frame_id = eidx.getFrameId(),
           .timestamp_sof = eidx.getTimestampSof(),
           .timestamp_eof = eidx.getTimestampEof(),
       };
-      vipc_server_->send(rgb_buf, &extra, false);
-      vipc_server_->send(yuv_buf, &extra, false);
+      vipc_server_->send(rgb, &extra, false);
+      vipc_server_->send(yuv, &extra, false);
     } else {
-      std::cout << "camera[" << type << "] failed to get frame:" << eidx.getSegmentId() << std::endl;
+      std::cout << "camera[" << cam.type << "] failed to get frame:" << eidx.getSegmentId() << std::endl;
     }
+
+    cam.cached_id = id + 1;
+    cam.cached_seg = eidx.getSegmentNum();
+    cam.cached_buf = read_frame(fr, cam.cached_id);
 
     --publishing_;
   }
 }
 
 void CameraServer::pushFrame(CameraType type, FrameReader *fr, const cereal::EncodeIndex::Reader &eidx) {
+  auto &cam = cameras_[type];
+  if (cam.width != fr->width || cam.height != fr->height) {
+    cam.width = fr->width;
+    cam.height = fr->height;
+    waitFinish();
+    startVipcServer();
+  }
+
   ++publishing_;
-  queue_.push({type, fr, eidx});
+  cam.queue.push({fr, eidx});
 }
