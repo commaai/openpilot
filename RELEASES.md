@@ -20,6 +20,7 @@ Version 0.8.10 (2021-XX-XX)
  * Improved FW fingerprinting reliability for Hyundai/Kia/Genesis
  * Added prerequisites for longitudinal control on Hyndai/Kia/Genesis and Honda Bosch
  * Honda Freed 2020 support thanks to belm0!
+ * Hyundai Ioniq Hybrid 2020-2022 support thanks to sunnyhaibin!
  * Hyundai Santa Fe 2022 support thanks to sunnyhaibin!
  * Kia K5 2021 support thanks to sunnyhaibin!
  * Škoda Kamiq 2021 support thanks to jyoung8607!
