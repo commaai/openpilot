@@ -70,7 +70,7 @@ bool Replay::load() {
 }
 
 void Replay::start(int seconds) {
-  seekTo(seconds, false);
+  seekTo(route_->identifier().segment_id * 60 + seconds, false);
 }
 
 void Replay::updateEvents(const std::function<bool()> &lambda) {
