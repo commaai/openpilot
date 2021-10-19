@@ -25,12 +25,6 @@ struct ModelDataRawXYZ {
   float x;
   float y;
   float z;
-
-  // inline avoids copying struct when returning it
-  // inline can be changed to constexpr when c2 deprecated
-  inline const ModelDataRawXYZ to_exp() const {
-    return ModelDataRawXYZ {.x=exp(x), .y=exp(y), .z=exp(z)};
-  };
 };
 static_assert(sizeof(ModelDataRawXYZ) == sizeof(float)*3);
 

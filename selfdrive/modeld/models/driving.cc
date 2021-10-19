@@ -239,32 +239,22 @@ void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const float *meta_da
 }
 
 template<size_t size>
-void fill_plan_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const std::array<float, size> &time,
-              const ModelDataRawPlanPath &plan, std::function<const ModelDataRawXYZ&(const ModelDataRawPlanTimeStep&)> func,
-              bool set_std=false) {
-  std::array<float, size> x = {}, y = {}, z = {};
-  std::array<float, size> x_std = {}, y_std = {}, z_std = {};
-  for(int i=0; i<size; i++) {
-    x[i] = func(plan.mean[i]).x;
-    y[i] = func(plan.mean[i]).y;
-    z[i] = func(plan.mean[i]).z;
-    if (set_std) {
-      auto std_exp = func(plan.std[i]).to_exp();
-      x_std[i] = std_exp.x;
-      x_std[i] = std_exp.y;
-      x_std[i] = std_exp.z;
-    }
-  }
-
-  xyzt.setT(to_kj_array_ptr(time));
+void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const std::array<float, size> &t,
+               const std::array<float, size> &x, const std::array<float, size> &y, const std::array<float, size> &z) {
+  xyzt.setT(to_kj_array_ptr(t));
   xyzt.setX(to_kj_array_ptr(x));
   xyzt.setY(to_kj_array_ptr(y));
   xyzt.setZ(to_kj_array_ptr(z));
-  if (set_std) {
-    xyzt.setXStd(to_kj_array_ptr(x_std));
-    xyzt.setYStd(to_kj_array_ptr(y_std));
-    xyzt.setZStd(to_kj_array_ptr(z_std));
-  }
+}
+
+template<size_t size>
+void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const std::array<float, size> &t,
+               const std::array<float, size> &x, const std::array<float, size> &y, const std::array<float, size> &z,
+               const std::array<float, size> &x_std, const std::array<float, size> &y_std, const std::array<float, size> &z_std) {
+  fill_xyzt(xyzt, x, y, z, t);
+  xyzt.setXStd(to_kj_array_ptr(x_std));
+  xyzt.setYStd(to_kj_array_ptr(y_std));
+  xyzt.setZStd(to_kj_array_ptr(z_std));
 }
 
 void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const float *data, int columns,
@@ -303,6 +293,37 @@ void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const float *data, i
   }
 }
 
+void fill_plan(cereal::ModelDataV2::Builder &framed, const ModelDataRawPlanPath &plan) {
+  std::array<float, TRAJECTORY_SIZE> pos_x, pos_y, pos_z;
+  std::array<float, TRAJECTORY_SIZE> pos_x_std, pos_y_std, pos_z_std;
+  std::array<float, TRAJECTORY_SIZE> vel_x, vel_y, vel_z;
+  std::array<float, TRAJECTORY_SIZE> rot_x, rot_y, rot_z;
+  std::array<float, TRAJECTORY_SIZE> rot_rate_x, rot_rate_y, rot_rate_z;
+
+  for(int i=0; i<TRAJECTORY_SIZE; i++) {
+    pos_x[i] = plan.mean[i].position.x;
+    pos_y[i] = plan.mean[i].position.y;
+    pos_z[i] = plan.mean[i].position.z;
+    pos_x_std[i] = exp(plan.std[i].position.x);
+    pos_x_std[i] = exp(plan.std[i].position.y);
+    pos_x_std[i] = exp(plan.std[i].position.z);
+    vel_x[i] = plan.mean[i].velocity.x;
+    vel_y[i] = plan.mean[i].velocity.y;
+    vel_z[i] = plan.mean[i].velocity.z;
+    rot_x[i] = plan.mean[i].rotation.x;
+    rot_y[i] = plan.mean[i].rotation.y;
+    rot_z[i] = plan.mean[i].rotation.z;
+    rot_rate_x[i] = plan.mean[i].rotation_rate.x;
+    rot_rate_y[i] = plan.mean[i].rotation_rate.y;
+    rot_rate_z[i] = plan.mean[i].rotation_rate.z;
+  }
+
+  fill_xyzt(framed.initPosition(), T_IDXS_FLOAT, pos_x, pos_y, pos_z, pos_x_std, pos_y_std, pos_z_std);
+  fill_xyzt(framed.initVelocity(), T_IDXS_FLOAT, vel_x, vel_y, vel_z);
+  fill_xyzt(framed.initOrientation(), T_IDXS_FLOAT, rot_x, rot_y, rot_z);
+  fill_xyzt(framed.initOrientationRate(), T_IDXS_FLOAT, rot_rate_x, rot_rate_y, rot_rate_z);
+}
+
 void fill_model(cereal::ModelDataV2::Builder &framed, const ModelDataRaw &net_outputs) {
   auto best_plan = net_outputs.plan->best_plan();
   float plan_t_arr[TRAJECTORY_SIZE];
@@ -326,10 +347,7 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelDataRaw &net_ou
     plan_t_arr[xidx] = p * T_IDXS[tidx+1] + (1 - p) * T_IDXS[tidx];
   }
 
-  fill_plan_xyzt(framed.initPosition(), T_IDXS_FLOAT, best_plan, [](auto &x) { return x.position; }, true);
-  fill_plan_xyzt(framed.initVelocity(), T_IDXS_FLOAT, best_plan, [](auto &x) { return x.velocity; });
-  fill_plan_xyzt(framed.initOrientation(), T_IDXS_FLOAT, best_plan, [](auto &x) { return x.rotation; });
-  fill_plan_xyzt(framed.initOrientationRate(), T_IDXS_FLOAT, best_plan, [](auto &x) { return x.rotation_rate; });
+  fill_plan(framed, best_plan);
 
   // lane lines
   auto lane_lines = framed.initLaneLines(4);
@@ -386,14 +404,14 @@ void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_droppe
   MessageBuilder msg;
   auto v_mean = net_outputs.pose->velocity_mean;
   auto r_mean = net_outputs.pose->rotation_mean;
-  auto v_std_exp = net_outputs.pose->velocity_std.to_exp();
-  auto r_std_exp = net_outputs.pose->rotation_std.to_exp();
+  auto v_std = net_outputs.pose->velocity_std;
+  auto r_std = net_outputs.pose->rotation_std;
 
   auto posenetd = msg.initEvent(vipc_dropped_frames < 1).initCameraOdometry();
   posenetd.setTrans({v_mean.x, v_mean.y, v_mean.z});
   posenetd.setRot({r_mean.x, r_mean.y, r_mean.z});
-  posenetd.setTransStd({v_std_exp.x, v_std_exp.y, v_std_exp.z});
-  posenetd.setRotStd({r_std_exp.x, r_std_exp.y, r_std_exp.z});
+  posenetd.setTransStd({exp(v_std.x), exp(v_std.y), exp(v_std.z)});
+  posenetd.setRotStd({exp(r_std.x), exp(r_std.y), exp(r_std.z)});
 
   posenetd.setTimestampEof(timestamp_eof);
   posenetd.setFrameId(vipc_frame_id);
