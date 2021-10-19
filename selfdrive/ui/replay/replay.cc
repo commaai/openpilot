@@ -160,9 +160,12 @@ void Replay::queueSegment() {
   }
 
   // start stream thread
-  if (stream_thread_ == nullptr && cur != segments_.end() && cur->second->isLoaded()) {
+  bool current_segment_loaded = (cur != segments_.end() && cur->second->isLoaded());
+  if (stream_thread_ == nullptr && current_segment_loaded) {
     startStream(cur->second.get());
   }
+
+  enableHttpLogging(!current_segment_loaded);
 }
 
 void Replay::mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::iterator &end) {
