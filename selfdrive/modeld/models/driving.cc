@@ -238,18 +238,20 @@ void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const float *meta_da
   meta.setHardBrakePredicted(above_fcw_threshold);
 }
 
-void set_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const ModelDataXYZPivot<TRAJECTORY_SIZE> &data,
-              const std::array<float, TRAJECTORY_SIZE> &time) {
-  xyzt.setX(to_kj_array_ptr(data.x));
-  xyzt.setY(to_kj_array_ptr(data.y));
-  xyzt.setZ(to_kj_array_ptr(data.z));
+void set_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const std::array<float, TRAJECTORY_SIZE> &time,
+              const ModelDataXYZPivot<TRAJECTORY_SIZE> &mean) {
   xyzt.setT(to_kj_array_ptr(time));
+  xyzt.setX(to_kj_array_ptr(mean.x));
+  xyzt.setY(to_kj_array_ptr(mean.y));
+  xyzt.setZ(to_kj_array_ptr(mean.z));
 }
 
-void set_xyz_std(cereal::ModelDataV2::XYZTData::Builder xyzt, const ModelDataXYZPivot<TRAJECTORY_SIZE> &data) {
-  xyzt.setXStd(to_kj_array_ptr(data.x));
-  xyzt.setYStd(to_kj_array_ptr(data.y));
-  xyzt.setZStd(to_kj_array_ptr(data.z));
+void set_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const std::array<float, TRAJECTORY_SIZE> &time,
+              const ModelDataXYZPivot<TRAJECTORY_SIZE> &mean, const ModelDataXYZPivot<TRAJECTORY_SIZE> &std) {
+  set_xyzt(xyzt, time, mean);
+  xyzt.setXStd(to_kj_array_ptr(std.x));
+  xyzt.setYStd(to_kj_array_ptr(std.y));
+  xyzt.setZStd(to_kj_array_ptr(std.z));
 }
 
 void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const float *data, int columns,
@@ -316,11 +318,10 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelDataRaw &net_ou
   auto velocity_xyz = best_plan.pivot(best_plan.mean, [](const ModelDataRawPlanTimeStep &x) { return x.velocity; });
   auto rotation_xyz = best_plan.pivot(best_plan.mean, [](const ModelDataRawPlanTimeStep &x) { return x.rotation; });
   auto rotation_rate_xyz = best_plan.pivot(best_plan.mean, [](const ModelDataRawPlanTimeStep &v) { return v.rotation_rate; });
-  set_xyzt(framed.initPosition(), position_xyz, T_IDXS_FLOAT);
-  set_xyz_std(framed.initPosition(), position_xyz_std_exp);
-  set_xyzt(framed.initVelocity(), velocity_xyz, T_IDXS_FLOAT);
-  set_xyzt(framed.initOrientation(), rotation_xyz, T_IDXS_FLOAT);
-  set_xyzt(framed.initOrientationRate(), rotation_rate_xyz, T_IDXS_FLOAT);
+  set_xyzt(framed.initPosition(), T_IDXS_FLOAT, position_xyz, position_xyz_std_exp);
+  set_xyzt(framed.initVelocity(), T_IDXS_FLOAT, velocity_xyz);
+  set_xyzt(framed.initOrientation(), T_IDXS_FLOAT, rotation_xyz);
+  set_xyzt(framed.initOrientationRate(), T_IDXS_FLOAT, rotation_rate_xyz);
 
   // lane lines
   auto lane_lines = framed.initLaneLines(4);
