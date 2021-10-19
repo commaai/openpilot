@@ -126,8 +126,7 @@ void Segment::loadFile(int id, const std::string file) {
   bool file_ready = util::file_exists(local_file);
 
   if (!file_ready && is_remote) {
-    // TODO: retry on failure
-    file_ready = httpMultiPartDownload(file, local_file, id < MAX_CAMERAS ? 3 : 1, &aborting_);
+    file_ready = downloadFile(id, file, local_file);
   }
 
   if (!aborting_ && file_ready) {
@@ -148,6 +147,22 @@ void Segment::loadFile(int id, const std::string file) {
   if (!aborting_ && --loading_ == 0) {
     emit loadFinished(success_);
   }
+}
+
+bool Segment::downloadFile(int id, const std::string &url, const std::string local_file) {
+  bool ret = false;
+  int retries = 0;
+  while (!aborting_) {
+    ret = httpMultiPartDownload(url, local_file, id < MAX_CAMERAS ? 3 : 1, &aborting_);
+    if (ret || aborting_) break;
+
+    if (++retries > max_retries_) {
+      qInfo() << "download failed after retries" << max_retries_;
+      break;
+    }
+    qInfo() << "download failed, retrying" << retries;
+  }
+  return ret;
 }
 
 std::string Segment::cacheFilePath(const std::string &file) {
