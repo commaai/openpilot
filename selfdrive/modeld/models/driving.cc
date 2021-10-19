@@ -305,8 +305,8 @@ void fill_plan(cereal::ModelDataV2::Builder &framed, const ModelDataRawPlanPath 
     pos_y[i] = plan.mean[i].position.y;
     pos_z[i] = plan.mean[i].position.z;
     pos_x_std[i] = exp(plan.std[i].position.x);
-    pos_x_std[i] = exp(plan.std[i].position.y);
-    pos_x_std[i] = exp(plan.std[i].position.z);
+    pos_y_std[i] = exp(plan.std[i].position.y);
+    pos_z_std[i] = exp(plan.std[i].position.z);
     vel_x[i] = plan.mean[i].velocity.x;
     vel_y[i] = plan.mean[i].velocity.y;
     vel_z[i] = plan.mean[i].velocity.z;
