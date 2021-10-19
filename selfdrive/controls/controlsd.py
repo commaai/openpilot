@@ -283,7 +283,8 @@ class Controls:
       if log.PandaState.FaultType.relayMalfunction in pandaState.faults:
         self.events.add(EventName.relayMalfunction)
     planner_fcw = self.sm['longitudinalPlan'].fcw and self.enabled
-    model_fcw = self.sm['modelV2'].meta.hardBrakePredicted and not CS.brakePressed
+    model_fcw = (self.sm['modelV2'].meta.hardBrakePredicted and not CS.brakePressed and
+                 (not self.enabled or self.CP.openpilotLongitudinalControl or CS.aEgo > -1.5))
     if planner_fcw or model_fcw:
       self.events.add(EventName.fcw)
 
