@@ -14,6 +14,7 @@ sudo apt-get update && sudo apt-get install -y --no-install-recommends \
     curl \
     ffmpeg \
     git \
+    git-lfs \
     libavformat-dev libavcodec-dev libavdevice-dev libavutil-dev libswscale-dev libavresample-dev libavfilter-dev \
     libarchive-dev \
     libbz2-dev \
@@ -58,12 +59,6 @@ sudo apt-get update && sudo apt-get install -y --no-install-recommends \
     gcc-arm-none-eabi \
     libqt5x11extras5-dev \
     libreadline-dev
-
-# install git lfs
-if ! command -v "git-lfs" > /dev/null 2>&1; then
-  curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
-  sudo apt-get install git-lfs
-fi
 
 # install pyenv
 if ! command -v "pyenv" > /dev/null 2>&1; then
