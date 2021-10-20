@@ -100,7 +100,7 @@ void Replay::doSeek(int seconds, bool relative) {
     qInfo() << "seeking to" << seconds << "s, segment" << seg;
     current_segment_ = seg;
     cur_mono_time_ = route_start_ts_ + seconds * 1e9;
-    return isSegmentLoaded(seg);
+    return isSegmentMerged(seg);
   });
   queueSegment();
 }
@@ -250,7 +250,7 @@ void Replay::publishFrame(const Event *e) {
     return;
   }
   auto eidx = capnp::AnyStruct::Reader(e->event).getPointerSection()[0].getAs<cereal::EncodeIndex>();
-  if (eidx.getType() == cereal::EncodeIndex::Type::FULL_H_E_V_C && isSegmentLoaded(eidx.getSegmentNum())) {
+  if (eidx.getType() == cereal::EncodeIndex::Type::FULL_H_E_V_C && isSegmentMerged(eidx.getSegmentNum())) {
     CameraType cam = cam_types.at(e->which);
     camera_server_->pushFrame(cam, segments_[eidx.getSegmentNum()]->frames[cam].get(), eidx);
   }
@@ -323,7 +323,7 @@ void Replay::stream() {
 
     if (eit == events_->end()) {
       int last_segment = segments_.rbegin()->first;
-      if (current_segment_ >= last_segment && isSegmentLoaded(last_segment)) {
+      if (current_segment_ >= last_segment && isSegmentMerged(last_segment)) {
         qInfo() << "reaches the end of route, restart from beginning";
         emit seekTo(0, false);
       }
