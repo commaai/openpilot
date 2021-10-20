@@ -8,8 +8,8 @@
 #include <libusb-1.0/libusb.h>
 
 #define TIMEOUT 0
-#define PANDA_VENDOR_ID 0XBBAA
-#define PANDA_PRODUCT_ID 0XDDCC
+#define PANDA_VENDOR_ID 0xBBAA
+#define PANDA_PRODUCT_ID 0xDDCC
 
 class PandaComm {
 public:
