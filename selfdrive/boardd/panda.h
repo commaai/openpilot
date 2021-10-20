@@ -58,4 +58,7 @@ public:
   void send_heartbeat();
   void can_send(capnp::List<cereal::CanData>::Reader can_data_list);
   int can_receive(kj::Array<capnp::word>& out_buf);
+
+private:
+  std::vector<uint32_t> send;
 };
