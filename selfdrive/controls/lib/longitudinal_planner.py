@@ -4,7 +4,6 @@ import numpy as np
 from common.numpy_fast import interp
 
 import cereal.messaging as messaging
-from common.realtime import DT_MDL
 from selfdrive.modeld.constants import T_IDXS
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.longcontrol import LongCtrlState
@@ -50,7 +49,7 @@ class Planner():
 
     self.v_desired = init_v
     self.a_desired = init_a
-    self.alpha = np.exp(-DT_MDL/2.0)
+    self.alpha = np.exp(-CP.radarTimeStep/2.0)
 
     self.v_desired_trajectory = np.zeros(CONTROL_N)
     self.a_desired_trajectory = np.zeros(CONTROL_N)
@@ -100,8 +99,8 @@ class Planner():
 
     # Interpolate 0.05 seconds and save as starting point for next iteration
     a_prev = self.a_desired
-    self.a_desired = float(interp(DT_MDL, T_IDXS[:CONTROL_N], self.a_desired_trajectory))
-    self.v_desired = self.v_desired + DT_MDL * (self.a_desired + a_prev)/2.0
+    self.a_desired = float(interp(CP.radarTimeStep, T_IDXS[:CONTROL_N], self.a_desired_trajectory))
+    self.v_desired = self.v_desired + CP.radarTimeStep * (self.a_desired + a_prev)/2.0
 
   def publish(self, sm, pm):
     plan_send = messaging.new_message('longitudinalPlan')
