@@ -1,6 +1,7 @@
 #pragma once
 
 #if __has_include(<memory_resource>)
+#define HAS_MEMORY_RESOURCE 1
 #include <memory_resource>
 #endif
 
@@ -27,7 +28,7 @@ public:
     }
   };
 
-#if __has_include(<memory_resource>)
+#if HAS_MEMORY_RESOURCE
   void *operator new(size_t size, std::pmr::monotonic_buffer_resource *mbr) {
     return mbr->allocate(size);
   }
@@ -54,7 +55,7 @@ public:
 
 private:
   std::string raw_;
-#if __has_include(<memory_resource>)
+#ifdef HAS_MEMORY_RESOURCE
   std::pmr::monotonic_buffer_resource *mbr_ = nullptr;
   void *pool_buffer_ = nullptr;
 #endif
