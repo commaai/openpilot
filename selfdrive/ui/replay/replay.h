@@ -6,7 +6,6 @@
 #include "selfdrive/ui/replay/route.h"
 
 constexpr int FORWARD_SEGS = 2;
-constexpr int BACKWARD_SEGS = 1;
 
 class Replay : public QObject {
   Q_OBJECT
@@ -39,7 +38,7 @@ protected:
   void publishMessage(const Event *e);
   void publishFrame(const Event *e);
   inline int currentSeconds() const { return (cur_mono_time_ - route_start_ts_) / 1e9; }
-  inline bool isSegmentLoaded(int n) {
+  inline bool isSegmentMerged(int n) {
     return std::find(segments_merged_.begin(), segments_merged_.end(), n) != segments_merged_.end();
   }
 
@@ -49,7 +48,7 @@ protected:
   std::mutex stream_lock_;
   std::condition_variable stream_cv_;
   std::atomic<bool> updating_events_ = false;
-  std::atomic<int> current_segment_ = -1;
+  std::atomic<int> current_segment_ = 0;
   SegmentMap segments_;
   // the following variables must be protected with stream_lock_
   bool exit_ = false;
