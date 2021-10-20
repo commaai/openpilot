@@ -28,8 +28,8 @@ void CameraServer::startVipcServer() {
   for (auto &cam : cameras_) {
     if (cam.width > 0 && cam.height > 0) {
       std::cout << "camera[" << cam.type << "] frame size " << cam.width << "x" << cam.height << std::endl;
-      if (send_yuv_) vipc_server_->create_buffers(cam.rgb_type, UI_BUF_COUNT, true, cam.width, cam.height);
-      if (send_rgb_) vipc_server_->create_buffers(cam.yuv_type, YUV_BUF_COUNT, false, cam.width, cam.height);
+      if (send_rgb_) vipc_server_->create_buffers(cam.rgb_type, UI_BUF_COUNT, true, cam.width, cam.height);
+      if (send_yuv_) vipc_server_->create_buffers(cam.yuv_type, YUV_BUF_COUNT, false, cam.width, cam.height);
       if (!cam.thread.joinable()) {
         cam.thread = std::thread(&CameraServer::cameraThread, this, std::ref(cam));
       }
@@ -42,7 +42,7 @@ void CameraServer::cameraThread(Camera &cam) {
   auto read_frame = [&](FrameReader *fr, int frame_id) {
     VisionBuf *rgb_buf = send_rgb_ ? vipc_server_->get_buffer(cam.rgb_type) : nullptr;
     VisionBuf *yuv_buf = send_yuv_ ? vipc_server_->get_buffer(cam.yuv_type) : nullptr;
-    bool ret = fr->get(frame_id, (uint8_t *)rgb_buf->addr, (uint8_t *)yuv_buf->addr);
+    bool ret = fr->get(frame_id, (uint8_t *)rgb_buf->addr, yuv_buf ? (uint8_t *)yuv_buf->addr : nullptr);
     return ret ? std::pair{rgb_buf, yuv_buf} : std::pair{nullptr, nullptr};
   };
 

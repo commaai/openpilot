@@ -105,6 +105,8 @@ bool FrameReader::get(int idx, uint8_t *rgb, uint8_t *yuv) {
 }
 
 bool FrameReader::decode(int idx, uint8_t *rgb, uint8_t *yuv) {
+  assert(rgb || yuv);
+
   auto get_keyframe = [=](int idx) {
     for (int i = idx; i >= 0 && key_frames_count_ > 1; --i) {
       if (frames_[i].pkt.flags & AV_PKT_FLAG_KEY) return i;
@@ -159,8 +161,8 @@ bool FrameReader::decodeFrame(AVFrame *f, uint8_t *rgb, uint8_t *yuv) {
     memcpy(y + f->width * i + f->width / 2 * j + f->width / 2 * k, f->data[2] + f->linesize[2] * k, f->width / 2);
   }
 
-  uint8_t *u = yuv + f->width * f->height;
+  uint8_t *u = y + f->width * f->height;
   uint8_t *v = u + (f->width / 2) * (f->height / 2);
-  libyuv::I420ToRGB24(yuv, f->width, u, f->width / 2, v, f->width / 2, rgb, f->width * 3, f->width, f->height);
+  libyuv::I420ToRGB24(y, f->width, u, f->width / 2, v, f->width / 2, rgb, f->width * 3, f->width, f->height);
   return true;
 }
