@@ -149,15 +149,15 @@ struct ModelDataRawPose {
 static_assert(sizeof(ModelDataRawPose) == sizeof(ModelDataRawXYZ)*4);
 
 struct ModelDataRaw {
-  const ModelDataRawPlans &plan;
-  const ModelDataRawLaneLines &lane_lines;
-  const ModelDataRawRoadEdges &road_edges;
+  const ModelDataRawPlans *const plan;
+  const ModelDataRawLaneLines *const lane_lines;
+  const ModelDataRawRoadEdges *const road_edges;
   const float *const lead;
   const float *const lead_prob;
   const float *const desire_state;
   const float *const meta;
   const float *const desire_pred;
-  const ModelDataRawPose &pose;
+  const ModelDataRawPose *const pose;
 };
 
 struct ModelState {
