@@ -563,8 +563,8 @@ class Controls:
     CC.hudControl.lanesVisible = self.enabled
     CC.hudControl.leadVisible = self.sm['longitudinalPlan'].hasLead
 
-    right_lane_visible = self.sm['lateralPlan'].rProb > 0.5
-    left_lane_visible = self.sm['lateralPlan'].lProb > 0.5
+    right_lane_visible = self.sm['lateralPlan'].rProb > 0.5 or CS.vEgo < LDW_MIN_SPEED
+    left_lane_visible = self.sm['lateralPlan'].lProb > 0.5 or CS.vEgo < LDW_MIN_SPEED
     CC.hudControl.rightLaneVisible = bool(right_lane_visible)
     CC.hudControl.leftLaneVisible = bool(left_lane_visible)
 
