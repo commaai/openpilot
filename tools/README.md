@@ -22,7 +22,7 @@ git clone --recurse-submodules https://github.com/commaai/openpilot.git
 
 2. Run the setup script:
 
-Ubuntu:
+Ubuntu 20.04 LTS and 21.10:
 ``` bash
 openpilot/tools/ubuntu_setup.sh
 ```

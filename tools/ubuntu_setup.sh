@@ -2,63 +2,80 @@
 
 OP_ROOT=$(git rev-parse --show-toplevel)
 
-sudo apt-get update && sudo apt-get install -y --no-install-recommends \
-    autoconf \
-    build-essential \
-    bzip2 \
-    capnproto \
-    cppcheck \
-    libcapnp-dev \
-    clang \
-    cmake \
-    curl \
-    ffmpeg \
-    git \
-    git-lfs \
-    libavformat-dev libavcodec-dev libavdevice-dev libavutil-dev libswscale-dev libavresample-dev libavfilter-dev \
-    libarchive-dev \
-    libbz2-dev \
-    libcurl4-openssl-dev \
+# Install packages present in all supported versions of Ubuntu
+function install_ubuntu_common_requirements() {
+  sudo apt-get update && sudo apt-get install -y --no-install-recommends \
+    autoconf build-essential clang cmake make cppcheck libtool \
+    libstdc++-arm-none-eabi-newlib gcc-arm-none-eabi \
+    bzip2 liblzma-dev libarchive-dev libbz2-dev \
+    capnproto libcapnp-dev \
+    curl libcurl4-openssl-dev wget git git-lfs \
+    ffmpeg libavformat-dev libavcodec-dev libavdevice-dev libavutil-dev libavfilter-dev \
     libeigen3-dev \
     libffi-dev \
-    libglew-dev \
-    libgles2-mesa-dev \
-    libglfw3-dev \
+    libglew-dev libgles2-mesa-dev libglfw3-dev \
     libglib2.0-0 \
-    liblzma-dev \
     libomp-dev \
     libopencv-dev \
     libpng16-16 \
     libssl-dev \
-    libstdc++-arm-none-eabi-newlib \
     libsqlite3-dev \
-    libtool \
     libusb-1.0-0-dev \
     libzmq3-dev \
-    libsdl-image1.2-dev libsdl-mixer1.2-dev libsdl-ttf2.0-dev libsmpeg-dev \
-    libsdl1.2-dev  libportmidi-dev libswscale-dev libavformat-dev libavcodec-dev libfreetype6-dev \
+    libsdl1.2-dev libsdl-image1.2-dev libsdl-mixer1.2-dev libsdl-ttf2.0-dev libsmpeg-dev \
+    libportmidi-dev \
+    libfreetype6-dev \
     libsystemd-dev \
     locales \
-    ocl-icd-libopencl1 \
-    ocl-icd-opencl-dev \
-    opencl-headers \
-    python-dev \
-    python3-pip \
-    qml-module-qtquick2 \
-    qt5-default \
-    qtmultimedia5-dev \
-    qtwebengine5-dev \
-    qtlocation5-dev \
-    qtpositioning5-dev \
-    libqt5sql5-sqlite \
-    libqt5svg5-dev \
-    screen \
-    sudo \
-    vim \
-    wget \
-    gcc-arm-none-eabi \
-    libqt5x11extras5-dev \
+    opencl-headers ocl-icd-libopencl1 ocl-icd-opencl-dev \
+    python-dev python3-pip \
+    qml-module-qtquick2 qtmultimedia5-dev qtwebengine5-dev qtlocation5-dev qtpositioning5-dev \
+    libqt5sql5-sqlite libqt5svg5-dev libqt5x11extras5-dev \
     libreadline-dev
+}
+
+# Install Ubuntu 21.10 packages
+function install_ubuntu_latest_requirements() {
+  install_ubuntu_common_requirements
+  
+  sudo apt-get update && sudo apt-get install -y --no-install-recommends \
+    qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools
+}
+
+# Install Ubuntu 20.04 packages
+function install_ubuntu_lts_requirements() {
+  install_ubuntu_common_requirements
+
+  sudo apt-get update && sudo apt-get install -y --no-install-recommends \
+    libavresample-dev \
+    qt5-default
+}
+
+# Detect OS using /etc/os-release file
+if [ -f "/etc/os-release" ]; then
+  # Pull all variables from /etc/os-release
+  eval `cat /etc/os-release`
+  if [ "$ID" == "ubuntu" ]; then
+    case "$VERSION_ID" in
+      "21.10")
+        install_ubuntu_latest_requirements
+        ;;
+      "20.04")
+        install_ubuntu_lts_requirements
+        ;;
+      *)
+        echo "Ubuntu version "$VERSION_ID" not supported"
+        exit 1
+    esac
+  else
+    echo "OS is not ubuntu"
+    exit 1
+  fi
+else
+  echo "No /etc/os-release in the system"
+  exit 1
+fi
+
 
 # install pyenv
 if ! command -v "pyenv" > /dev/null 2>&1; then
