@@ -91,16 +91,15 @@ void Replay::doSeek(int seconds, bool relative) {
     if (relative) {
       seconds += currentSeconds();
     }
-    uint64_t mono_time = route_start_ts_ + seconds * 1e9;
     int seg = seconds / 60;
     if (segments_.find(seg) == segments_.end()) {
-      qInfo() << "can't seek to" << seconds << ", segment" << seg << "is invalid";
+      qInfo() << "can't seek to" << seconds << "s, segment" << seg << "is invalid";
       return true;
     }
 
-    qInfo() << "seeking to" << seconds << "s, segment:" << seg;
-    cur_mono_time_ = mono_time;
+    qInfo() << "seeking to" << seconds << "s, segment" << seg;
     current_segment_ = seg;
+    cur_mono_time_ = route_start_ts_ + seconds * 1e9;
     return segments_[seg] && segments_[seg]->isLoaded();
   });
   queueSegment();
