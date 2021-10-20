@@ -70,6 +70,7 @@ class CAR:
   GOLF_MK7 = "VOLKSWAGEN GOLF 7TH GEN"              # Chassis 5G/AU/BA/BE, Mk7 VW Golf and variants
   JETTA_MK7 = "VOLKSWAGEN JETTA 7TH GEN"            # Chassis BU, Mk7 Jetta
   PASSAT_MK8 = "VOLKSWAGEN PASSAT 8TH GEN"          # Chassis 3G, Mk8 Passat and variants
+  TAOS_MK1 = "VOLKSWAGEN TAOS 1ST GEN"              # Chassis B2, Mk1 VW Taos and Tharu
   TCROSS_MK1 = "VOLKSWAGEN T-CROSS 1ST GEN"         # Chassis C1, Mk1 VW T-Cross SWB and LWB variants
   TIGUAN_MK2 = "VOLKSWAGEN TIGUAN 2ND GEN"          # Chassis AD/BW, Mk2 VW Tiguan and variants
   TOURAN_MK2 = "VOLKSWAGEN TOURAN 2ND GEN"          # Chassis 1T, Mk2 VW Touran and variants
@@ -339,6 +340,23 @@ FW_VERSIONS = {
       b'\xf1\x873Q0907572B \xf1\x890192',
       b'\xf1\x873Q0907572C \xf1\x890195',
       b'\xf1\x875Q0907572R \xf1\x890771',
+    ],
+  },
+  CAR.TAOS_MK1: {
+    (Ecu.engine, 0x7e0, None): [
+        b'\xf1\x8705E906013E \xf1\x891624',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+        b'\xf1\x8709S927158BL\xf1\x893791',
+    ],
+    (Ecu.fwdRadar, 0x757, None): [
+        b'\xf1\x872Q0907572T \xf1\x890383',
+    ],
+    (Ecu.eps, 0x712, None): [
+        b'\xf1\x875QM909144C \xf1\x891082\xf1\x82\x0521060605A1',
+    ],
+    (Ecu.srs, 0x715, None): [
+      b'\xf1\x875Q0959655CB\xf1\x890421\xf1\x82\x1311111111333500314646021450149333613100',
     ],
   },
   CAR.TCROSS_MK1: {
