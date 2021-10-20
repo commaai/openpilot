@@ -219,7 +219,7 @@ void Replay::startStream(const Segment *cur_segment) {
       camera_size[type] = {fr->width, fr->height};
     }
   }
-  camera_server_ = std::make_unique<CameraServer>(camera_size, hasFlag(REPLAY_FLAG_YUV), true);
+  camera_server_ = std::make_unique<CameraServer>(camera_size);
 
   // start stream thread
   stream_thread_ = QThread::create(&Replay::stream, this);

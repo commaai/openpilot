@@ -77,7 +77,6 @@ int main(int argc, char *argv[]){
   const std::tuple<QString, REPLAY_FLAGS, QString> flags[] = {
       {"dcam", REPLAY_FLAG_DCAM, "load driver camera"},
       {"ecam", REPLAY_FLAG_ECAM, "load wide road camera"},
-      {"yuv", REPLAY_FLAG_YUV, "send yuv frames"},
       {"no-loop", REPLAY_FLAG_NO_LOOP, "stop at the end of the route"},
   };
 

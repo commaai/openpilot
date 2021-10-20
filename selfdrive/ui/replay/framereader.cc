@@ -105,8 +105,6 @@ bool FrameReader::get(int idx, uint8_t *rgb, uint8_t *yuv) {
 }
 
 bool FrameReader::decode(int idx, uint8_t *rgb, uint8_t *yuv) {
-  assert(rgb || yuv);
-
   auto get_keyframe = [=](int idx) {
     for (int i = idx; i >= 0 && key_frames_count_ > 1; --i) {
       if (frames_[i].pkt.flags & AV_PKT_FLAG_KEY) return i;
