@@ -60,7 +60,8 @@ def create_fcw_command(packer, fcw):
     "FCW": fcw,
     "SET_ME_X20": 0x20,
     "SET_ME_X10": 0x10,
-    "SET_ME_X80": 0x80,
+    "PCS_OFF": 1,
+    "PCS_SENSITIVITY": 0,
   }
   return packer.make_can_msg("ACC_HUD", 0, values)
 
