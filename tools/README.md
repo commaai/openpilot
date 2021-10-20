@@ -38,7 +38,7 @@ cd openpilot && scons -j$(nproc)
 
 4. Try out some tools!
 
-NOTE: you can always run `update_requirements.py` to pull in new python dependencies.
+NOTE: you can always run `update_requirements.sh` to pull in new python dependencies.
 
 Windows
 ------------

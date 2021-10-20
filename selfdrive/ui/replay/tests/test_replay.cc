@@ -13,20 +13,19 @@ std::string sha_256(const QString &dat) {
 
 TEST_CASE("httpMultiPartDownload") {
   char filename[] = "/tmp/XXXXXX";
-  int fd = mkstemp(filename);
-  close(fd);
+  close(mkstemp(filename));
 
-  const char *stream_url = "https://commadataci.blob.core.windows.net/openpilotci/0c94aa1e1296d7c6/2021-05-05--19-48-37/0/fcamera.hevc";
-  SECTION("http 200") {
+  const char *stream_url = "https://commadataci.blob.core.windows.net/openpilotci/0c94aa1e1296d7c6/2021-05-05--19-48-37/0/rlog.bz2";
+  SECTION("5 connections") {
     REQUIRE(httpMultiPartDownload(stream_url, filename, 5));
-    std::string content = util::read_file(filename);
-    REQUIRE(content.size() == 37495242);
-    std::string checksum = sha_256(QString::fromStdString(content));
-    REQUIRE(checksum == "d8ff81560ce7ed6f16d5fb5a6d6dd13aba06c8080c62cfe768327914318744c4");
   }
-  SECTION("http 404") {
-    REQUIRE(httpMultiPartDownload(util::string_format("%s_abc", stream_url), filename, 5) == false);
+  SECTION("1 connection") {
+    REQUIRE(httpMultiPartDownload(stream_url, filename, 1));
   }
+  std::string content = util::read_file(filename);
+  REQUIRE(content.size() == 9112651);
+  std::string checksum = sha_256(QString::fromStdString(content));
+  REQUIRE(checksum == "e44edfbb545abdddfd17020ced2b18b6ec36506152267f32b6a8e3341f8126d6");
 }
 
 int random_int(int min, int max) {
@@ -34,20 +33,6 @@ int random_int(int min, int max) {
   std::mt19937 rng(dev());
   std::uniform_int_distribution<std::mt19937::result_type> dist(min, max);
   return dist(rng);
-}
-
-bool is_events_ordered(const std::vector<Event *> &events) {
-  REQUIRE(events.size() > 0);
-  uint64_t prev_mono_time = 0;
-  cereal::Event::Which prev_which = cereal::Event::INIT_DATA;
-  for (auto event : events) {
-    if (event->mono_time < prev_mono_time || (event->mono_time == prev_mono_time && event->which < prev_which)) {
-      return false;
-    }
-    prev_mono_time = event->mono_time;
-    prev_which = event->which;
-  }
-  return true;
 }
 
 TEST_CASE("Segment") {
@@ -66,11 +51,15 @@ TEST_CASE("Segment") {
 
     // LogReader & FrameReader
     REQUIRE(segment.log->events.size() > 0);
-    REQUIRE(is_events_ordered(segment.log->events));
-    // sequence get 50 frames {
-    REQUIRE(segment.frames[RoadCam]->getFrameCount() == 1200);
+    REQUIRE(std::is_sorted(segment.log->events.begin(), segment.log->events.end(), Event::lessThan()));
+
+    auto &fr = segment.frames[RoadCam];
+    REQUIRE(fr->getFrameCount() == 1200);
+    std::unique_ptr<uint8_t[]> rgb_buf = std::make_unique<uint8_t[]>(fr->getRGBSize());
+    std::unique_ptr<uint8_t[]> yuv_buf = std::make_unique<uint8_t[]>(fr->getYUVSize());
+    // sequence get 50 frames
     for (int i = 0; i < 50; ++i) {
-      REQUIRE(segment.frames[RoadCam]->get(i));
+      REQUIRE(fr->get(i, rgb_buf.get(), yuv_buf.get()));
     }
     loop.quit();
   });
@@ -88,7 +77,6 @@ public:
 void TestReplay::testSeekTo(int seek_to) {
   seekTo(seek_to, false);
 
-  // wait for the seek to finish
   while (true) {
     std::unique_lock lk(stream_lock_);
     stream_cv_.wait(lk, [=]() { return events_updated_ == true; });
@@ -105,7 +93,7 @@ void TestReplay::testSeekTo(int seek_to) {
       continue;
     }
 
-    REQUIRE(is_events_ordered(*events_));
+    REQUIRE(std::is_sorted(events_->begin(), events_->end(), Event::lessThan()));
     const int seek_to_segment = seek_to / 60;
     const int event_seconds = ((*eit)->mono_time - route_start_ts_) / 1e9;
     current_segment_ = event_seconds / 60;
@@ -120,13 +108,14 @@ void TestReplay::testSeekTo(int seek_to) {
 }
 
 void TestReplay::test_seek() {
+  // create a dummy stream thread
+  stream_thread_ = new QThread(this);
   QEventLoop loop;
   std::thread thread = std::thread([&]() {
-    // random seek 50 times in 3 segments
     for (int i = 0; i < 50; ++i) {
       testSeekTo(random_int(0, 3 * 60));
     }
-    // random seek 50 times in routes with invalid segments
+    // remove 3 segments
     for (int n : {5, 6, 8}) {
       segments_.erase(n);
     }

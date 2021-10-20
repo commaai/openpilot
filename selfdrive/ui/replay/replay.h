@@ -31,6 +31,7 @@ protected slots:
 
 protected:
   typedef std::map<int, std::unique_ptr<Segment>> SegmentMap;
+  void startStream(const Segment *cur_segment);
   void stream();
   void setCurrentSegment(int n);
   void mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::iterator &end);
@@ -38,6 +39,9 @@ protected:
   void publishMessage(const Event *e);
   void publishFrame(const Event *e);
   inline int currentSeconds() const { return (cur_mono_time_ - route_start_ts_) / 1e9; }
+  inline bool isSegmentLoaded(int n) {
+    return std::find(segments_merged_.begin(), segments_merged_.end(), n) != segments_merged_.end();
+  }
 
   QThread *stream_thread_ = nullptr;
 

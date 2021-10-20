@@ -1,13 +1,20 @@
 #pragma once
 
 #include <QDir>
-#include <QFutureSynchronizer>
+#include <QThread>
 
 #include "selfdrive/common/util.h"
 #include "selfdrive/ui/replay/framereader.h"
 #include "selfdrive/ui/replay/logreader.h"
 
 const QDir CACHE_DIR(util::getenv("COMMA_CACHE", "/tmp/comma_download_cache/").c_str());
+
+struct RouteIdentifier {
+  QString dongle_id;
+  QString timestamp;
+  int segment_id;
+  QString str;
+};
 
 struct SegmentFile {
   QString rlog;
@@ -20,18 +27,20 @@ struct SegmentFile {
 
 class Route {
 public:
-  Route(const QString &route, const QString &data_dir = {}) : route_(route), data_dir_(data_dir) {};
+  Route(const QString &route, const QString &data_dir = {});
   bool load();
-  inline const QString &name() const { return route_; };
+  inline const QString &name() const { return route_.str; }
+  inline const RouteIdentifier &identifier() const { return route_; }
   inline const std::map<int, SegmentFile> &segments() const { return segments_; }
   inline const SegmentFile &at(int n) { return segments_.at(n); }
+  static RouteIdentifier parseRoute(const QString &str);
 
 protected:
   bool loadFromLocal();
   bool loadFromServer();
   bool loadFromJson(const QString &json);
   void addFileToSegment(int seg_num, const QString &file);
-  QString route_;
+  RouteIdentifier route_ = {};
   QString data_dir_;
   std::map<int, SegmentFile> segments_;
 };
@@ -53,9 +62,11 @@ signals:
 
 protected:
   void loadFile(int id, const std::string file);
+  bool downloadFile(int id, const std::string &url, const std::string local_file);
   std::string cacheFilePath(const std::string &file);
 
   std::atomic<bool> success_ = true, aborting_ = false;
   std::atomic<int> loading_ = 0;
-  QFutureSynchronizer<void> synchronizer_;
+  std::vector<QThread*> loading_threads_;
+  const int max_retries_ = 3;
 };

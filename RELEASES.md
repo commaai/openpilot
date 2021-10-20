@@ -14,8 +14,13 @@ Version 0.8.10 (2021-XX-XX)
    * All longitudinal planning now happens in a single MPC system
    * Fixed instability in MPC problem to prevent sporadic CPU usage
  * AGNOS 2: minor stability improvements and builder repo open sourced
+ * tools: much improved replay thanks to deanlee!
+ * comma three: support for driving on external red/black panda
  * Moved community-supported cars outside of the Community Features toggle
+ * Improved FW fingerprinting reliability for Hyundai/Kia/Genesis
+ * Added prerequisites for longitudinal control on Hyndai/Kia/Genesis and Honda Bosch
  * Honda Freed 2020 support thanks to belm0!
+ * Hyundai Ioniq Hybrid 2020-2022 support thanks to sunnyhaibin!
  * Hyundai Santa Fe 2022 support thanks to sunnyhaibin!
  * Kia K5 2021 support thanks to sunnyhaibin!
  * Škoda Kamiq 2021 support thanks to jyoung8607!
