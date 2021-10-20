@@ -253,7 +253,7 @@ def uploadFileToUrl(fn, url, headers):
 @dispatcher.add_method
 def listUploadQueue():
   items = list(upload_queue.queue) + list(cur_upload_items.values())
-  return [i for i in items if i.id not in cancelled_uploads and i is not None]
+  return [i._asdict() for i in items if i.id not in cancelled_uploads and i is not None]
 
 
 @dispatcher.add_method
