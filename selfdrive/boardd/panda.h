@@ -36,7 +36,6 @@ public:
   Panda(std::string serial = {});
   ~Panda();
 
-  std::string usb_serial;
   cereal::PandaState::PandaType hw_type = cereal::PandaState::PandaType::UNKNOWN;
   bool has_rtc = false;
 

@@ -8,11 +8,14 @@
 #include "selfdrive/common/util.h"
 
 Panda::Panda(std::string serial) : PandaComm(PANDA_VENDOR_ID, PANDA_PRODUCT_ID, serial) {
-  typedef cereal::PandaState::PandaType PandaType;
 
   hw_type = get_hw_type();
-  assert((hw_type != PandaType::WHITE_PANDA) && (hw_type != PandaType::GREY_PANDA));
-  has_rtc = (hw_type == PandaType::UNO) || (hw_type == PandaType::DOS);
+
+  assert((hw_type != cereal::PandaState::PandaType::WHITE_PANDA) &&
+         (hw_type != cereal::PandaState::PandaType::GREY_PANDA));
+
+  has_rtc = (hw_type == cereal::PandaState::PandaType::UNO) ||
+            (hw_type == cereal::PandaState::PandaType::DOS);
 }
 
 Panda::~Panda() {}

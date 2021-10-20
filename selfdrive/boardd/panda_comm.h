@@ -15,11 +15,12 @@ class PandaComm {
 public:
   PandaComm(uint16_t vid, uint16_t pid, const std::string& serial = {});
   virtual ~PandaComm();
+  std::string usb_serial;
   std::atomic<bool> connected = true;
   std::atomic<bool> comms_healthy = true;
 
   // Static functions
-  static std::vector<std::string> list();
+  static std::vector<std::string> list(uint16_t vid, uint16_t pid);
 
   // HW communication
   int usb_transfer(libusb_endpoint_direction dir, uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned int timeout = TIMEOUT);

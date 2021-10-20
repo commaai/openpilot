@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include "selfdrive/common/swaglog.h"
+#include "selfdrive/common/util.h"
 
 namespace {
 
@@ -77,8 +78,9 @@ private:
 
 }  // namespace
 
-PandaComm::PandaComm(uint16_t vid, uint16_t pid, const std::string &serial) {
-  if ((ctx = init_usb_ctx()) && (dev_handle = UsbDevice(ctx).open(serial, vid, pid))) {
+PandaComm::PandaComm(uint16_t vid, uint16_t pid, const std::string &serial) : usb_serial(serial) {
+  if ((ctx = init_usb_ctx()) &&
+      (dev_handle = UsbDevice(ctx).open(serial, vid, pid))) {
     if (libusb_kernel_driver_active(dev_handle, 0) == 1) {
       libusb_detach_kernel_driver(dev_handle, 0);
     }
@@ -91,7 +93,8 @@ PandaComm::PandaComm(uint16_t vid, uint16_t pid, const std::string &serial) {
 
   if (dev_handle) libusb_close(dev_handle);
   if (ctx) libusb_exit(ctx);
-  throw std::runtime_error("Error connecting to panda");
+  std::string error = util::string_format("Error connecting to panda [%d,%d,%s]", vid, pid, serial.c_str());
+  throw std::runtime_error(error);
 }
 
 PandaComm::~PandaComm() {
@@ -101,10 +104,10 @@ PandaComm::~PandaComm() {
   connected = false;
 }
 
-std::vector<std::string> PandaComm::list() {
+std::vector<std::string> PandaComm::list(uint16_t vid, uint16_t pid) {
   std::vector<std::string> serials;
   if (libusb_context *context = init_usb_ctx()) {
-    serials = UsbDevice(context).serial_list();
+    serials = UsbDevice(context).serial_list(vid, pid);
     libusb_exit(context);
   }
   return serials;
