@@ -347,8 +347,8 @@ selfdrive/ui/qt/widgets/*.h
 selfdrive/ui/qt/spinner_aarch64
 selfdrive/ui/qt/text_aarch64
 
-selfdrive/ui/replay/framereader.cc
-selfdrive/ui/replay/framereader.h
+selfdrive/ui/replay/*.cc
+selfdrive/ui/replay/*.h
 
 selfdrive/camerad/SConscript
 selfdrive/camerad/main.cc
