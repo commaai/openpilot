@@ -103,8 +103,8 @@ int main(int argc, char *argv[]){
   }
   replay->start(parser.value("start").toInt());
   // start keyboard control thread
-  QThread *t = QThread::create(keyboardThread, replay);
-  QObject::connect(t, &QThread::finished, t, &QThread::deleteLater);
+  QThread *t = new QThread();
+  QObject::connect(t, &QThread::started, [=]() { keyboardThread(replay); });
   t->start();
 
   return app.exec();

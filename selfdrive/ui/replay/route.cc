@@ -100,7 +100,9 @@ Segment::Segment(int n, const SegmentFile &files, bool load_dcam, bool load_ecam
   for (int i = 0; i < std::size(file_list); i++) {
     if (!file_list[i].isEmpty()) {
       loading_++;
-      loading_threads_.emplace_back(QThread::create(&Segment::loadFile, this, i, file_list[i].toStdString()))->start();
+      QThread *t = new QThread();
+      QObject::connect(t, &QThread::started, [=]() { loadFile(i, file_list[i].toStdString()); });
+      loading_threads_.emplace_back(t)->start();
     }
   }
 }

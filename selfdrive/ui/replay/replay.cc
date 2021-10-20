@@ -222,7 +222,8 @@ void Replay::startStream(const Segment *cur_segment) {
   camera_server_ = std::make_unique<CameraServer>(camera_size);
 
   // start stream thread
-  stream_thread_ = QThread::create(&Replay::stream, this);
+  stream_thread_ = new QThread();
+  QObject::connect(stream_thread_, &QThread::started, [=]() { stream(); });
   QObject::connect(stream_thread_, &QThread::finished, stream_thread_, &QThread::deleteLater);
   stream_thread_->start();
 }
