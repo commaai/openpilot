@@ -31,6 +31,7 @@ public:
  protected:
   void handle_usb_issue(int err, const char func[]);
 
+  libusb_context *ctx = nullptr;
   libusb_device_handle* dev_handle = nullptr;
   std::mutex usb_lock;
 };
