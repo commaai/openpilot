@@ -115,8 +115,8 @@ static_assert(sizeof(ModelDataRawLineProbVal) == sizeof(float)*2);
 
 struct ModelDataRawLinesProb {
   ModelDataRawLineProbVal left_far;
-  ModelDataRawLineProbVal right_near;
   ModelDataRawLineProbVal left_near;
+  ModelDataRawLineProbVal right_near;
   ModelDataRawLineProbVal right_far;
 };
 static_assert(sizeof(ModelDataRawLinesProb) == sizeof(ModelDataRawLineProbVal)*4);
