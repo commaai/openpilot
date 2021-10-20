@@ -112,15 +112,8 @@ void TestReplay::test_seek() {
   stream_thread_ = new QThread(this);
   QEventLoop loop;
   std::thread thread = std::thread([&]() {
-    for (int i = 0; i < 50; ++i) {
-      testSeekTo(random_int(0, 3 * 60));
-    }
-    // remove 3 segments
-    for (int n : {5, 6, 8}) {
-      segments_.erase(n);
-    }
-    for (int i =0; i < 50; ++i) {
-      testSeekTo(random_int(4 * 60, 9 * 60));
+    for (int i = 0; i < 100; ++i) {
+      testSeekTo(random_int(0, 5 * 60));
     }
     loop.quit();
   });
