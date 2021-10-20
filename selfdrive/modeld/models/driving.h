@@ -162,7 +162,7 @@ struct ModelDataRaw {
 
 struct ModelState {
   ModelFrame *frame;
-  std::array<float, NET_OUTPUT_SIZE> output;
+  std::vector<float> output;
   std::unique_ptr<RunModel> m;
 #ifdef DESIRE
   float prev_desire[DESIRE_LEN] = {};
