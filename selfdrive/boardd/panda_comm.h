@@ -29,7 +29,7 @@ public:
   int usb_bulk_write(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout = TIMEOUT);
   int usb_bulk_read(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout = TIMEOUT);
 
- protected:
+protected:
   void handle_usb_issue(int err, const char func[]);
 
   libusb_context *ctx = nullptr;
