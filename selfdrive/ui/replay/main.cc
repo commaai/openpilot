@@ -105,6 +105,7 @@ int main(int argc, char *argv[]){
   // start keyboard control thread
   QThread *t = new QThread();
   QObject::connect(t, &QThread::started, [=]() { keyboardThread(replay); });
+  QObject::connect(t, &QThread::finished, t, &QThread::deleteLater);
   t->start();
 
   return app.exec();
