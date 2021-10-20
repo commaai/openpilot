@@ -100,7 +100,7 @@ void Replay::doSeek(int seconds, bool relative) {
     qInfo() << "seeking to" << seconds << "s, segment" << seg;
     current_segment_ = seg;
     cur_mono_time_ = route_start_ts_ + seconds * 1e9;
-    return segments_[seg] && segments_[seg]->isLoaded();
+    return isSegmentLoaded(seg);
   });
   queueSegment();
 }
