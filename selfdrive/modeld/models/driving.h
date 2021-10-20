@@ -160,9 +160,10 @@ struct ModelDataRaw {
   const ModelDataRawPose *const pose;
 };
 
+// TODO: convert remaining arrays to std::array and update model runners
 struct ModelState {
   ModelFrame *frame;
-  std::array<float, NET_OUTPUT_SIZE> output;
+  std::array<float, NET_OUTPUT_SIZE> output = {};
   std::unique_ptr<RunModel> m;
 #ifdef DESIRE
   float prev_desire[DESIRE_LEN] = {};
