@@ -34,6 +34,10 @@ struct AVInitializer {
 
 FrameReader::FrameReader() {
   static AVInitializer av_initializer;
+
+  pFormatCtx_ = avformat_alloc_context();
+  av_frame_ = av_frame_alloc();
+
 }
 
 FrameReader::~FrameReader() {
@@ -48,10 +52,30 @@ FrameReader::~FrameReader() {
   if (av_frame_) av_frame_free(&av_frame_);
   if (rgb_frame_) av_frame_free(&rgb_frame_);
   if (sws_ctx_) sws_freeContext(sws_ctx_);
+
+  if (avio_ctx_) {
+    av_freep(&avio_ctx_->buffer);
+    av_freep(&avio_ctx_);
+  }
+}
+
+static int readFunction(void* opaque, uint8_t* buf, int buf_size) {
+    auto& me = *reinterpret_cast<std::istringstream*>(opaque);
+    me.read(reinterpret_cast<char*>(buf), buf_size);
+    return me.gcount() ? me.gcount() : AVERROR_EOF;
+}
+
+bool FrameReader::loadFromBuffer(const std::string &buf) {
+  std::istringstream stm(buf);
+  const int avio_ctx_buffer_size = 64 * 1024;
+  unsigned char *avio_ctx_buffer = (unsigned char *)av_malloc(avio_ctx_buffer_size);
+
+  avio_ctx_ = avio_alloc_context(avio_ctx_buffer, avio_ctx_buffer_size, 0, &stm, readFunction, nullptr, nullptr);
+  pFormatCtx_->pb = avio_ctx_;
+  return load("memory.hevc");
 }
 
 bool FrameReader::load(const std::string &url) {
-  pFormatCtx_ = avformat_alloc_context();
   pFormatCtx_->probesize = 10 * 1024 * 1024;  // 10MB
   if (avformat_open_input(&pFormatCtx_, url.c_str(), NULL, NULL) != 0) {
     printf("error loading %s\n", url.c_str());

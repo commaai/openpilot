@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <sstream>
 #include <vector>
 
 extern "C" {
@@ -15,6 +16,7 @@ public:
   FrameReader();
   ~FrameReader();
   bool load(const std::string &url);
+  bool loadFromBuffer(const std::string &buf);
   bool get(int idx, uint8_t *rgb, uint8_t *yuv);
   int getRGBSize() const { return width * height * 3; }
   int getYUVSize() const { return width * height * 3 / 2; }
@@ -39,4 +41,5 @@ private:
   AVCodecContext *pCodecCtx_ = nullptr;
   int key_frames_count_ = 0;
   bool valid_ = false;
+  AVIOContext *avio_ctx_ = nullptr;
 };

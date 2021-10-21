@@ -4,6 +4,8 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QRegExp>
+#include <fstream>
+#include <sstream>
 
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/qt/api.h"
@@ -41,7 +43,7 @@ bool Route::loadFromServer() {
 
 bool Route::loadFromJson(const QString &json) {
   QRegExp rx(R"(\/(\d+)\/)");
-  for (const auto &value :  QJsonDocument::fromJson(json.trimmed().toUtf8()).object()) {
+  for (const auto &value : QJsonDocument::fromJson(json.trimmed().toUtf8()).object()) {
     for (const auto &url : value.toArray()) {
       QString url_str = url.toString();
       if (rx.indexIn(url_str) != -1) {
@@ -86,7 +88,7 @@ void Route::addFileToSegment(int n, const QString &file) {
 
 // class Segment
 
-Segment::Segment(int n, const SegmentFile &files, bool load_dcam, bool load_ecam) : seg_num(n) {
+Segment::Segment(int n, const SegmentFile &files, bool load_dcam, bool load_ecam, bool no_cache) : seg_num(n), no_cache_(no_cache) {
   static std::once_flag once_flag;
   std::call_once(once_flag, [=]() { if (!CACHE_DIR.exists()) QDir().mkdir(CACHE_DIR.absolutePath()); });
 
@@ -119,26 +121,26 @@ Segment::~Segment() {
 }
 
 void Segment::loadFile(int id, const std::string file) {
+  const bool is_cam_file = id < MAX_CAMERAS;
   const bool is_remote = file.find("https://") == 0;
   const std::string local_file = is_remote ? cacheFilePath(file) : file;
-  bool file_ready = util::file_exists(local_file);
-
-  if (!file_ready && is_remote) {
-    file_ready = downloadFile(id, file, local_file);
+  std::string file_content;
+  
+  if (!no_cache_ && util::file_exists(local_file)) {
+    file_content = util::read_file(local_file);
+  } else if (is_remote) {
+    int connections = is_cam_file ? 3 : 1;
+    bool decompress = !is_cam_file;
+    file_content = downloadFile(file, no_cache_ ? "" : local_file, connections, decompress);
   }
 
-  if (!aborting_ && file_ready) {
-    if (id < MAX_CAMERAS) {
+  if (!aborting_ && !file_content.empty()) {
+    if (is_cam_file) {
       frames[id] = std::make_unique<FrameReader>();
-      success_ = success_ && frames[id]->load(local_file);
+      success_ = success_ && frames[id]->loadFromBuffer(file_content);
     } else {
-      std::string decompressed = cacheFilePath(local_file + ".decompressed");
-      if (!util::file_exists(decompressed)) {
-        std::ofstream ostrm(decompressed, std::ios::binary);
-        readBZ2File(local_file, ostrm);
-      }
       log = std::make_unique<LogReader>();
-      success_ = success_ && log->load(decompressed);
+      success_ = success_ && log->load(std::move(file_content));
     }
   }
 
@@ -147,20 +149,33 @@ void Segment::loadFile(int id, const std::string file) {
   }
 }
 
-bool Segment::downloadFile(int id, const std::string &url, const std::string local_file) {
-  bool ret = false;
-  int retries = 0;
-  while (!aborting_) {
-    ret = httpMultiPartDownload(url, local_file, id < MAX_CAMERAS ? 3 : 1, &aborting_);
-    if (ret || aborting_) break;
+std::string Segment::downloadFile(const std::string &url, const std::string &local_file, int connections, bool decompress) {
+  std::string content;
+  size_t remote_file_size = 0;
 
-    if (++retries > max_retries_) {
-      qInfo() << "download failed after retries" << max_retries_;
-      break;
+  for (int i = 1; i <= max_retries_ && !aborting_; ++i) {
+    if (remote_file_size <= 0) {
+      remote_file_size = getRemoteFileSize(url);
+    } 
+    if (remote_file_size > 0) {
+      content.resize(remote_file_size);
+      std::ostringstream stm;
+      stm.rdbuf()->pubsetbuf(content.data(), content.size());
+      bool ret = httpMultiPartDownload(url, stm, connections, remote_file_size, &aborting_);
+      if (ret) {
+        if (decompress) {
+          content = decompressBZ2(content);
+        }
+        if (!local_file.empty()) {
+          std::ofstream stm(local_file, stm.binary | stm.out);
+          stm.write(content.data(), content.size());
+        }
+        return content;
+      }
     }
-    qInfo() << "download failed, retrying" << retries;
+    qInfo() << "download failed, retrying" << i;
   }
-  return ret;
+  return {};
 }
 
 std::string Segment::cacheFilePath(const std::string &file) {

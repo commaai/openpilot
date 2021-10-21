@@ -1,8 +1,6 @@
 #include "selfdrive/ui/replay/logreader.h"
 
-#include <sstream>
 #include "selfdrive/common/util.h"
-#include "selfdrive/ui/replay/util.h"
 
 Event::Event(const kj::ArrayPtr<const capnp::word> &amsg, bool frame) : reader(amsg), frame(frame) {
   words = kj::ArrayPtr<const capnp::word>(amsg.begin(), reader.getEnd());
@@ -47,18 +45,8 @@ LogReader::~LogReader() {
 #endif
 }
 
-bool LogReader::load(const std::string &file) {
-  bool is_bz2 = file.rfind(".bz2") == file.length() - 4;
-  if (is_bz2) {
-    std::ostringstream stream;
-    if (!readBZ2File(file, stream)) {
-      LOGW("bz2 decompress failed");
-      return false;
-    }
-    raw_ = stream.str();
-  } else {
-    raw_ = util::read_file(file);
-  }
+bool LogReader::load(const std::string &&log_content) {
+  raw_ = log_content;
 
   kj::ArrayPtr<const capnp::word> words((const capnp::word *)raw_.data(), raw_.size() / sizeof(capnp::word));
   while (words.size() > 0) {

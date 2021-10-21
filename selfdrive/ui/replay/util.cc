@@ -21,14 +21,14 @@ struct MultiPartWriter {
   int64_t offset;
   int64_t end;
   int64_t written;
-  FILE *fp;
+  std::ostream *stm;
 };
 
 static size_t write_cb(char *data, size_t size, size_t count, void *userp) {
   MultiPartWriter *w = (MultiPartWriter *)userp;
-  fseek(w->fp, w->offset, SEEK_SET);
-  fwrite(data, size, count, w->fp);
+  w->stm->seekp(w->offset);
   size_t bytes = size * count;
+  w->stm->write(data, bytes);
   w->offset += bytes;
   w->written += bytes;
   return bytes;
@@ -71,22 +71,14 @@ void enableHttpLogging(bool enable) {
   enable_http_logging = enable;
 }
 
-bool httpMultiPartDownload(const std::string &url, const std::string &target_file, int parts, std::atomic<bool> *abort) {
+bool httpMultiPartDownload(const std::string &url, std::ostream &stream, int parts, int64_t content_length, std::atomic<bool> *abort) {
   static CURLGlobalInitializer curl_initializer;
   static std::mutex lock;
   static uint64_t total_written = 0, prev_total_written = 0;
   static double last_print_ts = 0;
 
-  int64_t content_length = getRemoteFileSize(url);
-  if (content_length <= 0) return false;
-
-  // create a tmp sparse file
-  const std::string tmp_file = target_file + ".tmp";
-  FILE *fp = fopen(tmp_file.c_str(), "wb");
-  assert(fp);
-  fseek(fp, content_length - 1, SEEK_SET);
-  fwrite("\0", 1, 1, fp);
-
+  stream.seekp(content_length - 1);
+  stream.write("\0", 1);
   CURLM *cm = curl_multi_init();
 
   std::map<CURL *, MultiPartWriter> writers;
@@ -94,7 +86,7 @@ bool httpMultiPartDownload(const std::string &url, const std::string &target_fil
   for (int i = 0; i < parts; ++i) {
     CURL *eh = curl_easy_init();
     writers[eh] = {
-        .fp = fp,
+        .stm = &stream,
         .offset = i * part_size,
         .end = i == parts - 1 ? content_length - 1 : (i + 1) * part_size - 1,
     };
@@ -160,32 +152,35 @@ bool httpMultiPartDownload(const std::string &url, const std::string &target_fil
   }
 
   curl_multi_cleanup(cm);
-  fclose(fp);
-
-  bool ret = complete == parts;
-  ret = ret && ::rename(tmp_file.c_str(), target_file.c_str()) == 0;
-  return ret;
+  return complete == parts;
 }
 
-bool readBZ2File(const std::string_view file, std::ostream &stream) {
-  std::unique_ptr<FILE, decltype(&fclose)> f(fopen(file.data(), "r"), &fclose);
-  if (!f) return false;
+std::string decompressBZ2(const std::string &in) {
+  bz_stream strm = {};
+  int bzerror = BZ2_bzDecompressInit(&strm, 0, 0);
+  assert(bzerror == BZ_OK);
 
-  int bzerror = BZ_OK;
-  BZFILE *bz_file = BZ2_bzReadOpen(&bzerror, f.get(), 0, 0, nullptr, 0);
-  if (!bz_file) return false;
+  strm.next_in = (char *)in.data();
+  strm.avail_in = in.size();
 
   std::array<char, 64 * 1024> buf;
+  std::string out;
+  out.reserve(in.size() * 4);
+
   do {
-    int size = BZ2_bzRead(&bzerror, bz_file, buf.data(), buf.size());
+    strm.next_out = buf.data();
+    strm.avail_out = buf.size();
+    bzerror = BZ2_bzDecompress(&strm);
     if (bzerror == BZ_OK || bzerror == BZ_STREAM_END) {
-      stream.write(buf.data(), size);
+      out.append(buf.data(), buf.size() - strm.avail_out);
     }
   } while (bzerror == BZ_OK);
 
-  bool success = (bzerror == BZ_STREAM_END);
-  BZ2_bzReadClose(&bzerror, bz_file);
-  return success;
+  BZ2_bzDecompressEnd(&strm);
+  if (bzerror == BZ_STREAM_END) {
+    return out;
+  }
+  return {};
 }
 
 void precise_nano_sleep(long sleep_ns) {
