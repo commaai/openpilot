@@ -47,7 +47,6 @@ LogReader::~LogReader() {
 
 bool LogReader::load(const std::string &&log_content) {
   raw_ = log_content;
-
   kj::ArrayPtr<const capnp::word> words((const capnp::word *)raw_.data(), raw_.size() / sizeof(capnp::word));
   while (words.size() > 0) {
     try {
