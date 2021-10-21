@@ -21,9 +21,7 @@ void verify_segment(const std::string &route_path, int segment, int max_segment,
   REQUIRE(!util::file_exists(segment_path + "/rlog.bz2.lock"));
   for (const char *fn : {"/rlog.bz2", "/qlog.bz2"}) {
     const std::string log_file = segment_path + fn;
-    INFO(log_file);
-    
-    std::string log = decompressBZ2(log_file);
+    std::string log = decompressBZ2(util::read_file(log_file));
     REQUIRE(!log.empty());
     int event_cnt = 0, i = 0;
     kj::ArrayPtr<const capnp::word> words((capnp::word *)log.data(), log.size() / sizeof(capnp::word));
