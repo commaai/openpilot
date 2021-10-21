@@ -60,14 +60,14 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 17.7  # Stock 15.7, LiveParameters
       tire_stiffness_factor = 0.469 # Stock Michelin Energy Saver A/S, LiveParameters
       ret.steerRatioRear = 0.
-      ret.centerToFront = ret.wheelbase * 0.45 # from Volt Gen 1
+      ret.centerToFront = ret.wheelbase * 0.45 # Volt Gen 1, TODO corner weigh
 
       ret.lateralTuning.pid.kpBP = [0., 40.]
-      ret.lateralTuning.pid.kpV = [0., 0.18]
+      ret.lateralTuning.pid.kpV = [0., 0.17]
       ret.lateralTuning.pid.kiBP = [0.]
       ret.lateralTuning.pid.kiV = [0.]
-      ret.lateralTuning.pid.kf = 1.  # Volt get_steer_feedforward()
-      ret.steerActuatorDelay = 0.2
+      ret.lateralTuning.pid.kf = 1. # get_steer_feedforward_volt()
+      ret.steerActuatorDelay = 0.2 # measured actuators.steer to torque achieved - time-to-send
 
     elif candidate == CAR.MALIBU:
       # supports stop and go, but initial engage must be above 18mph (which include conservatism)
