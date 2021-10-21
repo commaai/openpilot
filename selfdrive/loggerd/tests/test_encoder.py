@@ -125,6 +125,7 @@ class TestEncoder(unittest.TestCase):
           segment_idxs = [getattr(m, encode_idx_name).segmentId for m in LogReader(rlog_path) if m.which() == encode_idx_name]
           encode_idxs = [getattr(m, encode_idx_name).encodeId for m in LogReader(rlog_path) if m.which() == encode_idx_name]
           frame_idxs = [getattr(m, encode_idx_name).frameId for m in LogReader(rlog_path) if m.which() == encode_idx_name]
+          valid = [getattr(m, encode_idx_name).valid for m in LogReader(rlog_path) if m.which() == encode_idx_name]
 
           # Check frame count
           self.assertEqual(frame_count, len(segment_idxs))
@@ -133,6 +134,8 @@ class TestEncoder(unittest.TestCase):
           # Check for duplicates or skips
           self.assertEqual(0, segment_idxs[0])
           self.assertEqual(len(set(segment_idxs)), len(segment_idxs))
+
+          self.assertTrue(all(valid))
 
           if not eon_dcam:
             self.assertEqual(expected_frames * i, encode_idxs[0])
