@@ -23,10 +23,8 @@ void verify_segment(const std::string &route_path, int segment, int max_segment,
     const std::string log_file = segment_path + fn;
     INFO(log_file);
     
-    std::ostringstream stream;
-    bool ret = readBZ2File(log_file, stream);
-    REQUIRE(ret);
-    std::string log = stream.str();
+    std::string log = decompressBZ2(log_file);
+    REQUIRE(!log.empty());
     int event_cnt = 0, i = 0;
     kj::ArrayPtr<const capnp::word> words((capnp::word *)log.data(), log.size() / sizeof(capnp::word));
     while (words.size() > 0) {

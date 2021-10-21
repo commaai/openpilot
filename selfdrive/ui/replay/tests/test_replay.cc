@@ -1,3 +1,5 @@
+#include <fstream>
+
 #include <QCryptographicHash>
 #include <QDebug>
 #include <QEventLoop>
@@ -16,11 +18,14 @@ TEST_CASE("httpMultiPartDownload") {
   close(mkstemp(filename));
 
   const char *stream_url = "https://commadataci.blob.core.windows.net/openpilotci/0c94aa1e1296d7c6/2021-05-05--19-48-37/0/rlog.bz2";
+  std::ofstream stm(filename, stm.binary | stm.out);
+  auto file_size = getRemoteFileSize(stream_url);
+  REQUIRE(file_size > 0);
   SECTION("5 connections") {
-    REQUIRE(httpMultiPartDownload(stream_url, filename, 5));
+    REQUIRE(httpMultiPartDownload(stream_url, stm, 5, file_size));
   }
   SECTION("1 connection") {
-    REQUIRE(httpMultiPartDownload(stream_url, filename, 1));
+    REQUIRE(httpMultiPartDownload(stream_url, stm, 1, file_size));
   }
   std::string content = util::read_file(filename);
   REQUIRE(content.size() == 9112651);
@@ -41,7 +46,7 @@ TEST_CASE("Segment") {
   REQUIRE(demo_route.segments().size() == 11);
 
   QEventLoop loop;
-  Segment segment(0, demo_route.at(0), false, false);
+  Segment segment(0, demo_route.at(0), false, false, false);
   QObject::connect(&segment, &Segment::loadFinished, [&]() {
     REQUIRE(segment.isLoaded() == true);
     REQUIRE(segment.log != nullptr);
