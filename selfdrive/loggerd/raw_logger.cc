@@ -21,9 +21,10 @@ extern "C" {
 #include "selfdrive/common/util.h"
 
 RawLogger::RawLogger(const char* filename, int width, int height, int fps,
-                     int bitrate, bool h265, bool downscale)
-  : filename(filename),
-    fps(fps) {
+                     int bitrate, bool h265, bool downscale, bool write)
+  : filename(filename), fps(fps) {
+
+  // TODO: respect write arg
 
   av_register_all();
   codec = avcodec_find_encoder(AV_CODEC_ID_FFVHUFF);
