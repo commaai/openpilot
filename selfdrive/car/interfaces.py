@@ -62,9 +62,9 @@ class CarInterfaceBase():
     # TODO: something with lateralPlan.curvatureRates
     return desired_angle * (v_ego**2)
 
-  @staticmethod
-  def get_steer_feedforward_function():
-    return CarInterfaceBase.get_steer_feedforward_default
+  @classmethod
+  def get_steer_feedforward_function(cls):
+    return cls.get_steer_feedforward_default
 
   # returns a set of default params to avoid repetition in car specific params
   @staticmethod
