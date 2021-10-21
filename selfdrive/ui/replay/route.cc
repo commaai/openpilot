@@ -90,7 +90,7 @@ void Route::addFileToSegment(int n, const QString &file) {
 
 Segment::Segment(int n, const SegmentFile &files, bool load_dcam, bool load_ecam, bool no_cache) : seg_num(n), no_cache_(no_cache) {
   static std::once_flag once_flag;
-  std::call_once(once_flag, [=]() { if (!CACHE_DIR.exists()) QDir().mkdir(CACHE_DIR.absolutePath()); });
+  std::call_once(once_flag, [=]() { if (!no_cache_ && !CACHE_DIR.exists()) QDir().mkdir(CACHE_DIR.absolutePath()); });
 
   // [RoadCam, DriverCam, WideRoadCam, log]. fallback to qcamera/qlog
   const QString file_list[] = {
