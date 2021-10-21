@@ -121,11 +121,13 @@ class TestEncoder(unittest.TestCase):
         # Check encodeIdx
         if encode_idx_name is not None:
           rlog_path = f"{route_prefix_path}--{i}/rlog.bz2"
+          msgs = [m for m in LogReader(rlog_path) if m.which() == encode_idx_name]
+          encode_msgs = [getattr(m, encode_idx_name) for m in msgs]
 
-          segment_idxs = [getattr(m, encode_idx_name).segmentId for m in LogReader(rlog_path) if m.which() == encode_idx_name]
-          encode_idxs = [getattr(m, encode_idx_name).encodeId for m in LogReader(rlog_path) if m.which() == encode_idx_name]
-          frame_idxs = [getattr(m, encode_idx_name).frameId for m in LogReader(rlog_path) if m.which() == encode_idx_name]
-          valid = [getattr(m, encode_idx_name).valid for m in LogReader(rlog_path) if m.which() == encode_idx_name]
+          valid = [m.valid for m in msgs]
+          segment_idxs = [m.segmentId for m in encode_msgs]
+          encode_idxs = [m.encodeId for m in encode_msgs]
+          frame_idxs = [m.frameId for m in encode_msgs]
 
           # Check frame count
           self.assertEqual(frame_count, len(segment_idxs))
