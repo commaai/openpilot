@@ -61,7 +61,7 @@ class VehicleModel:
     else:
       return kin_ss_sol(sa, u, self)
 
-  def calc_curvature(self, sa: float, u: float) -> float:
+  def calc_curvature(self, sa: float, u: float, roll: float) -> float:
     """Returns the curvature. Multiplied by the speed this will give the yaw rate.
 
     Args:
@@ -71,7 +71,7 @@ class VehicleModel:
     Returns:
       Curvature factor [1/m]
     """
-    return self.curvature_factor(u) * sa / self.sR
+    return (self.curvature_factor(u) * sa / self.sR) - self.roll_compensation(roll, u)
 
   def curvature_factor(self, u: float) -> float:
     """Returns the curvature factor.
@@ -86,7 +86,7 @@ class VehicleModel:
     sf = calc_slip_factor(self)
     return (1. - self.chi) / (1. - sf * u**2) / self.l
 
-  def get_steer_from_curvature(self, curv: float, u: float) -> float:
+  def get_steer_from_curvature(self, curv: float, u: float, roll: float) -> float:
     """Calculates the required steering wheel angle for a given curvature
 
     Args:
@@ -97,9 +97,13 @@ class VehicleModel:
       Steering wheel angle [rad]
     """
 
-    return curv * self.sR * 1.0 / self.curvature_factor(u)
+    return (curv + self.roll_compensation(roll, u)) * self.sR * 1.0 / self.curvature_factor(u)
 
-  def get_steer_from_yaw_rate(self, yaw_rate: float, u: float) -> float:
+  def roll_compensation(self, roll, u):
+    g = 9.8
+    return (g * roll) / ((1 / calc_slip_factor(self)) + u**2)
+
+  def get_steer_from_yaw_rate(self, yaw_rate: float, u: float, roll: float) -> float:
     """Calculates the required steering wheel angle for a given yaw_rate
 
     Args:
@@ -110,9 +114,9 @@ class VehicleModel:
       Steering wheel angle [rad]
     """
     curv = yaw_rate / u
-    return self.get_steer_from_curvature(curv, u)
+    return self.get_steer_from_curvature(curv, u, roll)
 
-  def yaw_rate(self, sa: float, u: float) -> float:
+  def yaw_rate(self, sa: float, u: float, roll: float) -> float:
     """Calculate yaw rate
 
     Args:
@@ -122,7 +126,7 @@ class VehicleModel:
     Returns:
       Yaw rate [rad/s]
     """
-    return self.calc_curvature(sa, u) * u
+    return self.calc_curvature(sa, u, roll) * u
 
 
 def kin_ss_sol(sa: float, u: float, VM: VehicleModel) -> np.ndarray:
