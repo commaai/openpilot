@@ -1,7 +1,5 @@
 #include "selfdrive/ui/qt/widgets/cameraview.h"
 
-#include "selfdrive/common/swaglog.h"
-
 namespace {
 
 const char frame_vertex_shader[] =
@@ -96,7 +94,7 @@ mat4 get_fit_view_transform(float widget_aspect_ratio, float frame_aspect_ratio)
 CameraViewWidget::CameraViewWidget(VisionStreamType stream_type, bool zoom, QWidget* parent) :
                                    stream_type(stream_type), zoomed_view(zoom), QOpenGLWidget(parent) {
   setAttribute(Qt::WA_OpaquePaintEvent);
-  connect(this, &QOpenGLWidget::frameSwapped, this, &CameraViewWidget::updateFrame);
+  connect(this, &QOpenGLWidget::aboutToCompose, this, &CameraViewWidget::updateFrame);
 }
 
 CameraViewWidget::~CameraViewWidget() {
@@ -257,13 +255,11 @@ void CameraViewWidget::updateFrame() {
 
   VisionBuf *buf = nullptr;
   if (vipc_client->connected) {
-    buf = vipc_client->recv();
+    buf = vipc_client->recv(nullptr, 0);
     if (buf != nullptr) {
       latest_frame = buf;
       update();
       emit frameUpdated();
-    } else {
-      LOGE("visionIPC receive timeout");
     }
   }
   if (buf == nullptr && isVisible()) {
