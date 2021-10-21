@@ -12,40 +12,6 @@
 #include "selfdrive/common/params.h"
 #include "selfdrive/common/timing.h"
 
-constexpr int DESIRE_PRED_SIZE = 32;
-constexpr int OTHER_META_SIZE = 48;
-constexpr int NUM_META_INTERVALS = 5;
-constexpr int META_STRIDE = 7;
-
-constexpr int PLAN_MHP_VALS = 15*33;
-constexpr int PLAN_MHP_SELECTION = 1;
-constexpr int PLAN_MHP_GROUP_SIZE =  (2*PLAN_MHP_VALS + PLAN_MHP_SELECTION);
-
-constexpr int LEAD_MHP_N = 2;
-constexpr int LEAD_TRAJ_LEN = 6;
-constexpr int LEAD_PRED_DIM = 4;
-constexpr int LEAD_MHP_VALS = LEAD_PRED_DIM*LEAD_TRAJ_LEN;
-constexpr int LEAD_MHP_SELECTION = 3;
-constexpr int LEAD_MHP_GROUP_SIZE = (2*LEAD_MHP_VALS + LEAD_MHP_SELECTION);
-
-constexpr int POSE_SIZE = 12;
-
-constexpr int PLAN_IDX = 0;
-constexpr int LL_IDX = PLAN_IDX + PLAN_MHP_N*PLAN_MHP_GROUP_SIZE;
-constexpr int LL_PROB_IDX = LL_IDX + 4*2*2*33;
-constexpr int RE_IDX = LL_PROB_IDX + 8;
-constexpr int LEAD_IDX = RE_IDX + 2*2*2*33;
-constexpr int LEAD_PROB_IDX = LEAD_IDX + LEAD_MHP_N*(LEAD_MHP_GROUP_SIZE);
-constexpr int DESIRE_STATE_IDX = LEAD_PROB_IDX + 3;
-constexpr int META_IDX = DESIRE_STATE_IDX + DESIRE_LEN;
-constexpr int POSE_IDX = META_IDX + OTHER_META_SIZE + DESIRE_PRED_SIZE;
-constexpr int OUTPUT_SIZE =  POSE_IDX + POSE_SIZE;
-#ifdef TEMPORAL
-  constexpr int TEMPORAL_SIZE = 512;
-#else
-  constexpr int TEMPORAL_SIZE = 0;
-#endif
-
 constexpr float FCW_THRESHOLD_5MS2_HIGH = 0.15;
 constexpr float FCW_THRESHOLD_5MS2_LOW = 0.05;
 constexpr float FCW_THRESHOLD_3MS2 = 0.7;
@@ -63,15 +29,12 @@ constexpr const kj::ArrayPtr<const T> to_kj_array_ptr(const std::array<T, size> 
 void model_init(ModelState* s, cl_device_id device_id, cl_context context) {
   s->frame = new ModelFrame(device_id, context);
 
-  constexpr int output_size = OUTPUT_SIZE + TEMPORAL_SIZE;
-  s->output.resize(output_size);
-
 #ifdef USE_THNEED
-  s->m = std::make_unique<ThneedModel>("../../models/supercombo.thneed", &s->output[0], output_size, USE_GPU_RUNTIME);
+  s->m = std::make_unique<ThneedModel>("../../models/supercombo.thneed", &s->output[0], NET_OUTPUT_SIZE, USE_GPU_RUNTIME);
 #elif USE_ONNX_MODEL
-  s->m = std::make_unique<ONNXModel>("../../models/supercombo.onnx", &s->output[0], output_size, USE_GPU_RUNTIME);
+  s->m = std::make_unique<ONNXModel>("../../models/supercombo.onnx", &s->output[0], NET_OUTPUT_SIZE, USE_GPU_RUNTIME);
 #else
-  s->m = std::make_unique<SNPEModel>("../../models/supercombo.dlc", &s->output[0], output_size, USE_GPU_RUNTIME);
+  s->m = std::make_unique<SNPEModel>("../../models/supercombo.dlc", &s->output[0], NET_OUTPUT_SIZE, USE_GPU_RUNTIME);
 #endif
 
 #ifdef TEMPORAL
@@ -106,22 +69,22 @@ ModelDataRaw model_eval_frame(ModelState* s, cl_mem yuv_cl, int width, int heigh
   }
 #endif
 
-  //for (int i = 0; i < OUTPUT_SIZE + TEMPORAL_SIZE; i++) { printf("%f ", s->output[i]); } printf("\n");
+  //for (int i = 0; i < NET_OUTPUT_SIZE; i++) { printf("%f ", s->output[i]); } printf("\n");
 
   // if getInputBuf is not NULL, net_input_buf will be
   auto net_input_buf = s->frame->prepare(yuv_cl, width, height, transform, static_cast<cl_mem*>(s->m->getInputBuf()));
   s->m->execute(net_input_buf, s->frame->buf_size);
 
   // net outputs
-  ModelDataRaw net_outputs;
-  net_outputs.plan = (ModelDataRawPlan*)&s->output[PLAN_IDX];
-  net_outputs.lane_lines = &s->output[LL_IDX];
-  net_outputs.lane_lines_prob = &s->output[LL_PROB_IDX];
-  net_outputs.road_edges = &s->output[RE_IDX];
-  net_outputs.lead = &s->output[LEAD_IDX];
-  net_outputs.lead_prob = &s->output[LEAD_PROB_IDX];
-  net_outputs.meta = &s->output[DESIRE_STATE_IDX];
-  net_outputs.pose = (ModelDataRawPose*)&s->output[POSE_IDX];
+  ModelDataRaw net_outputs {
+    .plan = (ModelDataRawPlans*)&s->output[PLAN_IDX],
+    .lane_lines = (ModelDataRawLaneLines*)&s->output[LL_IDX],
+    .road_edges = (ModelDataRawRoadEdges*)&s->output[RE_IDX],
+    .lead = &s->output[LEAD_IDX],
+    .lead_prob = &s->output[LEAD_PROB_IDX],
+    .meta = &s->output[DESIRE_STATE_IDX],
+    .pose = (ModelDataRawPose*)&s->output[POSE_IDX],
+  };
   return net_outputs;
 }
 
@@ -143,7 +106,6 @@ static const float *get_best_data(const float *data, int size, int group_size, i
 static const float *get_lead_data(const float *lead, int t_offset) {
   return get_best_data(lead, LEAD_MHP_N, LEAD_MHP_GROUP_SIZE, LEAD_MHP_GROUP_SIZE - LEAD_MHP_SELECTION + t_offset);
 }
-
 
 void fill_sigmoid(const float *input, float *output, int len, int stride) {
   for (int i=0; i<len; i++) {
@@ -257,42 +219,6 @@ void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const std::array<flo
   xyzt.setZStd(to_kj_array_ptr(z_std));
 }
 
-void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const float *data, int columns,
-               float *plan_t_arr = nullptr, bool fill_std = false) {
-  float x_arr[TRAJECTORY_SIZE] = {};
-  float y_arr[TRAJECTORY_SIZE] = {};
-  float z_arr[TRAJECTORY_SIZE] = {};
-  float x_std_arr[TRAJECTORY_SIZE];
-  float y_std_arr[TRAJECTORY_SIZE];
-  float z_std_arr[TRAJECTORY_SIZE];
-  float t_arr[TRAJECTORY_SIZE];
-  for (int i=0; i<TRAJECTORY_SIZE; i++) {
-    // plan_t_arr != nullptr means this data is X indexed not T indexed
-    if (plan_t_arr == nullptr) {
-      t_arr[i] = T_IDXS[i];
-      x_arr[i] = data[i*columns + 0];
-      x_std_arr[i] = exp(data[columns*(TRAJECTORY_SIZE + i) + 0]);
-    } else {
-      t_arr[i] = plan_t_arr[i];
-      x_arr[i] = X_IDXS[i];
-      x_std_arr[i] = NAN;
-    }
-    y_arr[i] = data[i*columns + 1];
-    y_std_arr[i] = exp(data[columns*(TRAJECTORY_SIZE + i) + 1]);
-    z_arr[i] = data[i*columns + 2];
-    z_std_arr[i] = exp(data[columns*(TRAJECTORY_SIZE + i) + 2]);
-  }
-  xyzt.setX(x_arr);
-  xyzt.setY(y_arr);
-  xyzt.setZ(z_arr);
-  xyzt.setT(t_arr);
-  if (fill_std) {
-    xyzt.setXStd(x_std_arr);
-    xyzt.setYStd(y_std_arr);
-    xyzt.setZStd(z_std_arr);
-  }
-}
-
 void fill_plan(cereal::ModelDataV2::Builder &framed, const ModelDataRawPlanPath &plan) {
   std::array<float, TRAJECTORY_SIZE> pos_x, pos_y, pos_z;
   std::array<float, TRAJECTORY_SIZE> pos_x_std, pos_y_std, pos_z_std;
@@ -324,10 +250,69 @@ void fill_plan(cereal::ModelDataV2::Builder &framed, const ModelDataRawPlanPath 
   fill_xyzt(framed.initOrientationRate(), T_IDXS_FLOAT, rot_rate_x, rot_rate_y, rot_rate_z);
 }
 
+void fill_lane_lines(cereal::ModelDataV2::Builder &framed, const std::array<float, TRAJECTORY_SIZE> &plan_t_arr,
+                     const ModelDataRawLaneLines &lanes) {
+  std::array<float, TRAJECTORY_SIZE> left_far_y, left_far_z;
+  std::array<float, TRAJECTORY_SIZE> left_near_y, left_near_z;
+  std::array<float, TRAJECTORY_SIZE> right_near_y, right_near_z;
+  std::array<float, TRAJECTORY_SIZE> right_far_y, right_far_z;
+  for (int j=0; j<TRAJECTORY_SIZE; j++) {
+    left_far_y[j] = lanes.mean.left_far[j].y;
+    left_far_z[j] = lanes.mean.left_far[j].z;
+    left_near_y[j] = lanes.mean.left_near[j].y;
+    left_near_z[j] = lanes.mean.left_near[j].z;
+    right_near_y[j] = lanes.mean.right_near[j].y;
+    right_near_z[j] = lanes.mean.right_near[j].z;
+    right_far_y[j] = lanes.mean.right_far[j].y;
+    right_far_z[j] = lanes.mean.right_far[j].z;
+  }
+
+  auto lane_lines = framed.initLaneLines(4);
+  fill_xyzt(lane_lines[0], plan_t_arr, X_IDXS_FLOAT, left_far_y, left_far_z);
+  fill_xyzt(lane_lines[1], plan_t_arr, X_IDXS_FLOAT, left_near_y, left_near_z);
+  fill_xyzt(lane_lines[2], plan_t_arr, X_IDXS_FLOAT, right_near_y, right_near_z);
+  fill_xyzt(lane_lines[3], plan_t_arr, X_IDXS_FLOAT, right_far_y, right_far_z);
+
+  framed.setLaneLineStds({
+    exp(lanes.std.left_far[0].y),
+    exp(lanes.std.left_near[0].y),
+    exp(lanes.std.right_near[0].y),
+    exp(lanes.std.right_far[0].y),
+  });
+
+  framed.setLaneLineProbs({
+    sigmoid(lanes.prob.left_far.val),
+    sigmoid(lanes.prob.left_near.val),
+    sigmoid(lanes.prob.right_near.val),
+    sigmoid(lanes.prob.right_far.val),
+  });
+}
+
+void fill_road_edges(cereal::ModelDataV2::Builder &framed, const std::array<float, TRAJECTORY_SIZE> &plan_t_arr,
+                     const ModelDataRawRoadEdges &edges) {
+  std::array<float, TRAJECTORY_SIZE> left_y, left_z;
+  std::array<float, TRAJECTORY_SIZE> right_y, right_z;
+  for (int j=0; j<TRAJECTORY_SIZE; j++) {
+    left_y[j] = edges.mean.left[j].y;
+    left_z[j] = edges.mean.left[j].z;
+    right_y[j] = edges.mean.right[j].y;
+    right_z[j] = edges.mean.right[j].z;
+  }
+
+  auto road_edges = framed.initRoadEdges(2);
+  fill_xyzt(road_edges[0], plan_t_arr, X_IDXS_FLOAT, left_y, left_z);
+  fill_xyzt(road_edges[1], plan_t_arr, X_IDXS_FLOAT, right_y, right_z);
+
+  framed.setRoadEdgeStds({
+    exp(edges.std.left[0].y),
+    exp(edges.std.right[0].y),
+  });
+}
+
 void fill_model(cereal::ModelDataV2::Builder &framed, const ModelDataRaw &net_outputs) {
-  auto best_plan = net_outputs.plan->best_plan();
-  float plan_t_arr[TRAJECTORY_SIZE];
-  std::fill_n(plan_t_arr, TRAJECTORY_SIZE, NAN);
+  auto best_plan = net_outputs.plan->get_best_plan();
+  std::array<float, TRAJECTORY_SIZE> plan_t_arr;
+  std::fill_n(plan_t_arr.data(), plan_t_arr.size(), NAN);
   plan_t_arr[0] = 0.0;
   for (int xidx=1, tidx=0; xidx<TRAJECTORY_SIZE; xidx++) {
     // increment tidx until we find an element that's further away than the current xidx
@@ -348,27 +333,8 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelDataRaw &net_ou
   }
 
   fill_plan(framed, best_plan);
-
-  // lane lines
-  auto lane_lines = framed.initLaneLines(4);
-  float lane_line_probs_arr[4];
-  float lane_line_stds_arr[4];
-  for (int i = 0; i < 4; i++) {
-    fill_xyzt(lane_lines[i], &net_outputs.lane_lines[i*TRAJECTORY_SIZE*2-1], 2, plan_t_arr);
-    lane_line_probs_arr[i] = sigmoid(net_outputs.lane_lines_prob[i*2+1]);
-    lane_line_stds_arr[i] = exp(net_outputs.lane_lines[2*TRAJECTORY_SIZE*(4 + i)]);
-  }
-  framed.setLaneLineProbs(lane_line_probs_arr);
-  framed.setLaneLineStds(lane_line_stds_arr);
-
-  // road edges
-  auto road_edges = framed.initRoadEdges(2);
-  float road_edge_stds_arr[2];
-  for (int i = 0; i < 2; i++) {
-    fill_xyzt(road_edges[i], &net_outputs.road_edges[i*TRAJECTORY_SIZE*2-1], 2, plan_t_arr);
-    road_edge_stds_arr[i] = exp(net_outputs.road_edges[2*TRAJECTORY_SIZE*(2 + i)]);
-  }
-  framed.setRoadEdgeStds(road_edge_stds_arr);
+  fill_lane_lines(framed, plan_t_arr, *net_outputs.lane_lines);
+  fill_road_edges(framed, plan_t_arr, *net_outputs.road_edges);
 
   // meta
   fill_meta(framed.initMeta(), net_outputs.meta);
