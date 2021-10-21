@@ -2,95 +2,115 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPushButton>
+#include <QTimer>
 #include <QVBoxLayout>
-#include <QWidget>
 
 #include "selfdrive/ui/qt/qt_window.h"
+#include "selfdrive/ui/qt/setup/reset.h"
 
-#define USERDATA "/dev/disk/by-partlabel/userdata"
 #define NVME "/dev/nvme0n1"
+#define USERDATA "/dev/disk/by-partlabel/userdata"
 
-bool do_reset() {
-  std::vector<const char*> cmds = {
-    "sudo umount " NVME,
-    "yes | sudo mkfs.ext4 " NVME,
-    "sudo umount " USERDATA,
-    "yes | sudo mkfs.ext4 " USERDATA,
-    "sudo reboot",
-  };
+void Reset::doReset() {
+  // best effort to wipe nvme
+  std::system("sudo umount " NVME);
+  std::system("yes | sudo mkfs.ext4 " NVME);
 
-  for (auto &cmd : cmds) {
-    int ret = std::system(cmd);
-    if (ret != 0) return false;
+  // we handle two cases here
+  //  * user-prompted factory reset
+  //  * recovering from a corrupt userdata by formatting
+  int rm = std::system("sudo rm -rf /data/*");
+  std::system("sudo umount " USERDATA);
+  int fmt = std::system("yes | sudo mkfs.ext4 " USERDATA);
+
+  if (rm == 0 || fmt == 0) {
+    std::system("sudo reboot");
   }
-  return true;
+  body->setText("Reset failed. Reboot to try again.");
+  rebootBtn->show();
 }
 
-int main(int argc, char *argv[]) {
-  QApplication a(argc, argv);
-  QWidget window;
-  setMainWindow(&window);
+void Reset::confirm() {
+  const QString confirm_txt = "Are you sure you want to reset your device?";
+  if (body->text() != confirm_txt) {
+    body->setText(confirm_txt);
+  } else {
+    body->setText("Resetting device...");
+    rejectBtn->hide();
+    rebootBtn->hide();
+    confirmBtn->hide();
+#ifdef __aarch64__
+    QTimer::singleShot(100, this, &Reset::doReset);
+#endif
+  }
+}
 
-  QVBoxLayout *layout = new QVBoxLayout();
-  layout->setContentsMargins(125, 125, 125, 125);
+Reset::Reset(bool recover, QWidget *parent) : QWidget(parent) {
+  QVBoxLayout *main_layout = new QVBoxLayout(this);
+  main_layout->setContentsMargins(45, 220, 45, 45);
+  main_layout->setSpacing(0);
 
   QLabel *title = new QLabel("System Reset");
-  title->setStyleSheet(R"(
-    font-weight: 500;
-    font-size: 100px;
-  )");
-  layout->addWidget(title, 0, Qt::AlignTop);
+  title->setStyleSheet("font-size: 90px; font-weight: 600;");
+  main_layout->addWidget(title, 0, Qt::AlignTop | Qt::AlignLeft);
 
-  QLabel *body = new QLabel("System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.");
+  main_layout->addSpacing(60);
+
+  body = new QLabel("System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.");
   body->setWordWrap(true);
-  body->setAlignment(Qt::AlignCenter);
-  body->setStyleSheet("font-size: 65px;");
-  layout->addWidget(body, 1, Qt::AlignCenter);
+  body->setStyleSheet("font-size: 80px; font-weight: light;");
+  main_layout->addWidget(body, 1, Qt::AlignTop | Qt::AlignLeft);
 
-  QHBoxLayout *btn_layout = new QHBoxLayout();
+  QHBoxLayout *blayout = new QHBoxLayout();
+  main_layout->addLayout(blayout);
+  blayout->setSpacing(50);
 
-  QPushButton *cancel_btn = new QPushButton("Cancel");
-  btn_layout->addWidget(cancel_btn, 0, Qt::AlignLeft);
-  QObject::connect(cancel_btn, &QPushButton::released, &a, &QApplication::quit);
+  rejectBtn = new QPushButton("Cancel");
+  blayout->addWidget(rejectBtn);
+  QObject::connect(rejectBtn, &QPushButton::clicked, QCoreApplication::instance(), &QCoreApplication::quit);
 
-  QPushButton *confirm_btn  = new QPushButton("Confirm");
-  btn_layout->addWidget(confirm_btn, 0, Qt::AlignRight);
-  QObject::connect(confirm_btn, &QPushButton::released, [=]() {
-    const QString confirm_txt = "Are you sure you want to reset your device?";
-    if (body->text() != confirm_txt) {
-      body->setText(confirm_txt);
-    } else {
-      body->setText("Resetting device...");
-      cancel_btn->hide();
-      confirm_btn->hide();
-      QCoreApplication::processEvents(QEventLoop::AllEvents, 1000);
+  rebootBtn = new QPushButton("Reboot");
+  blayout->addWidget(rebootBtn);
 #ifdef __aarch64__
-      bool ret = do_reset();
-      if (!ret) {
-        body->setText("Reset failed.");
-        cancel_btn->show();
-      }
-#endif
-    }
+  QObject::connect(rebootBtn, &QPushButton::clicked, [=]{
+    std::system("sudo reboot");
   });
+#endif
 
-  layout->addLayout(btn_layout);
+  confirmBtn = new QPushButton("Confirm");
+  confirmBtn->setStyleSheet("background-color: #465BEA;");
+  blayout->addWidget(confirmBtn);
+  QObject::connect(confirmBtn, &QPushButton::clicked, this, &Reset::confirm);
 
-  window.setLayout(layout);
-  window.setStyleSheet(R"(
+  rejectBtn->setVisible(!recover);
+  rebootBtn->setVisible(recover);
+  if (recover) {
+    body->setText("Unable to mount data partition. Press confirm to reset your device.");
+  }
+
+  setStyleSheet(R"(
     * {
+      font-family: Inter;
       color: white;
       background-color: black;
     }
+    QLabel {
+      margin-left: 140;
+    }
     QPushButton {
-      padding: 50px;
-      padding-right: 100px;
-      padding-left: 100px;
-      border: 7px solid white;
-      border-radius: 20px;
-      font-size: 50px;
+      height: 160;
+      font-size: 55px;
+      font-weight: 400;
+      border-radius: 10px;
+      background-color: #333333;
     }
   )");
+}
 
+int main(int argc, char *argv[]) {
+  bool recover = argc > 1 && strcmp(argv[1], "--recover") == 0;
+  QApplication a(argc, argv);
+  Reset reset(recover);
+  setMainWindow(&reset);
   return a.exec();
 }

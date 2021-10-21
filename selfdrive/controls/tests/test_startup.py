@@ -8,7 +8,6 @@ import cereal.messaging as messaging
 from common.params import Params
 from selfdrive.boardd.boardd_api_impl import can_list_to_can_capnp # pylint: disable=no-name-in-module,import-error
 from selfdrive.car.fingerprints import _FINGERPRINTS
-from selfdrive.car.hyundai.values import CAR as HYUNDAI
 from selfdrive.car.toyota.values import CAR as TOYOTA
 from selfdrive.car.mazda.values import CAR as MAZDA
 from selfdrive.controls.lib.events import EVENT_NAME
@@ -18,23 +17,23 @@ EventName = car.CarEvent.EventName
 Ecu = car.CarParams.Ecu
 
 COROLLA_FW_VERSIONS = [
-    (Ecu.engine, 0x7e0, None, b'\x0230ZC2000\x00\x00\x00\x00\x00\x00\x00\x0050212000\x00\x00\x00\x00\x00\x00\x00\x00'),
-    (Ecu.esp, 0x7b0, None, b'F152602190\x00\x00\x00\x00\x00\x00'),
-    (Ecu.eps, 0x7a1, None, b'8965B02181\x00\x00\x00\x00\x00\x00'),
-    (Ecu.fwdRadar, 0x750, 0xf, b'8821F4702100\x00\x00\x00\x00'),
-    (Ecu.fwdCamera, 0x750, 0x6d, b'8646F0201101\x00\x00\x00\x00'),
-    (Ecu.dsu, 0x791, None, b'881510201100\x00\x00\x00\x00'),
+  (Ecu.engine, 0x7e0, None, b'\x0230ZC2000\x00\x00\x00\x00\x00\x00\x00\x0050212000\x00\x00\x00\x00\x00\x00\x00\x00'),
+  (Ecu.esp, 0x7b0, None, b'F152602190\x00\x00\x00\x00\x00\x00'),
+  (Ecu.eps, 0x7a1, None, b'8965B02181\x00\x00\x00\x00\x00\x00'),
+  (Ecu.fwdRadar, 0x750, 0xf, b'8821F4702100\x00\x00\x00\x00'),
+  (Ecu.fwdCamera, 0x750, 0x6d, b'8646F0201101\x00\x00\x00\x00'),
+  (Ecu.dsu, 0x791, None, b'881510201100\x00\x00\x00\x00'),
 ]
 COROLLA_FW_VERSIONS_FUZZY = COROLLA_FW_VERSIONS[:-1] + [(Ecu.dsu, 0x791, None, b'xxxxxx')]
 COROLLA_FW_VERSIONS_NO_DSU = COROLLA_FW_VERSIONS[:-1]
 
 CX5_FW_VERSIONS = [
-    (Ecu.engine, 0x7e0, None, b'PYNF-188K2-F\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'),
-    (Ecu.esp, 0x760, None, b'K123-437K2-E\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'),
-    (Ecu.eps, 0x730, None, b'KJ01-3210X-G-00\x00\x00\x00\x00\x00\x00\x00\x00\x00'),
-    (Ecu.fwdRadar, 0x764, None, b'K123-67XK2-F\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'),
-    (Ecu.fwdCamera, 0x706, None, b'B61L-67XK2-T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'),
-    (Ecu.transmission, 0x7e1, None, b'PYNC-21PS1-B\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'),
+  (Ecu.engine, 0x7e0, None, b'PYNF-188K2-F\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'),
+  (Ecu.esp, 0x760, None, b'K123-437K2-E\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'),
+  (Ecu.eps, 0x730, None, b'KJ01-3210X-G-00\x00\x00\x00\x00\x00\x00\x00\x00\x00'),
+  (Ecu.fwdRadar, 0x764, None, b'K123-67XK2-F\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'),
+  (Ecu.fwdCamera, 0x706, None, b'B61L-67XK2-T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'),
+  (Ecu.transmission, 0x7e1, None, b'PYNC-21PS1-B\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'),
 ]
 
 class TestStartup(unittest.TestCase):
@@ -50,10 +49,6 @@ class TestStartup(unittest.TestCase):
     (EventName.startupMaster, TOYOTA.COROLLA, True, COROLLA_FW_VERSIONS_NO_DSU),
     (EventName.communityFeatureDisallowed, TOYOTA.COROLLA, False, COROLLA_FW_VERSIONS_NO_DSU),
 
-    # community supported car
-    (EventName.startupMaster, HYUNDAI.KIA_STINGER, True, None),
-    (EventName.communityFeatureDisallowed, HYUNDAI.KIA_STINGER, False, None),
-
     # dashcamOnly car
     (EventName.startupNoControl, MAZDA.CX5, True, CX5_FW_VERSIONS),
     (EventName.startupNoControl, MAZDA.CX5, False, CX5_FW_VERSIONS),
@@ -67,15 +62,15 @@ class TestStartup(unittest.TestCase):
     (EventName.startupNoCar, None, False, COROLLA_FW_VERSIONS[:1]),
 
     # fuzzy match
-    (EventName.startupFuzzyFingerprint, TOYOTA.COROLLA, True, COROLLA_FW_VERSIONS_FUZZY),
-    (EventName.communityFeatureDisallowed, TOYOTA.COROLLA, False, COROLLA_FW_VERSIONS_FUZZY),
+    (EventName.startupMaster, TOYOTA.COROLLA, True, COROLLA_FW_VERSIONS_FUZZY),
+    (EventName.startupMaster, TOYOTA.COROLLA, False, COROLLA_FW_VERSIONS_FUZZY),
   ])
   @with_processes(['controlsd'])
   def test_startup_alert(self, expected_event, car_model, toggle_enabled, fw_versions):
 
     # TODO: this should be done without any real sockets
     controls_sock = messaging.sub_sock("controlsState")
-    pm = messaging.PubMaster(['can', 'pandaState'])
+    pm = messaging.PubMaster(['can', 'pandaStates'])
 
     params = Params()
     params.clear_all()
@@ -103,9 +98,9 @@ class TestStartup(unittest.TestCase):
 
     time.sleep(2) # wait for controlsd to be ready
 
-    msg = messaging.new_message('pandaState')
-    msg.pandaState.pandaType = log.PandaState.PandaType.uno
-    pm.send('pandaState', msg)
+    msg = messaging.new_message('pandaStates', 1)
+    msg.pandaStates[0].pandaType = log.PandaState.PandaType.uno
+    pm.send('pandaStates', msg)
 
     # fingerprint
     if (car_model is None) or (fw_versions is not None):

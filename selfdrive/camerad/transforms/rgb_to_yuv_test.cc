@@ -145,8 +145,8 @@ int main(int argc, char** argv) {
   int counter = 0;
   srand (time(NULL));
 
-  for (int i = 0; i < 100; i++){
-    for (int i = 0; i < width * height * 3; i++){
+  for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < width * height * 3; i++) {
       rgb_frame[i] = (uint8_t)rand();
     }
 

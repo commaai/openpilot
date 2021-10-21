@@ -6,7 +6,7 @@ from common.basedir import BASEDIR
 # Initialize visiontest. Ignore output.
 _visiond_dir = os.path.dirname(os.path.abspath(__file__))
 _libvisiontest = "libvisiontest.so"
-try:  # bacause this crashes somtimes when running pipeline
+try:  # because this crashes sometimes when running pipeline
   subprocess.check_output(["make", "-C", _visiond_dir, "-f",
                            os.path.join(_visiond_dir, "visiontest.mk"),
                            _libvisiontest])

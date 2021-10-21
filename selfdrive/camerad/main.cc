@@ -22,7 +22,7 @@
 #elif WEBCAM
 #include "selfdrive/camerad/cameras/camera_webcam.h"
 #else
-#include "selfdrive/camerad/cameras/camera_frame_stream.h"
+#include "selfdrive/camerad/cameras/camera_replay.h"
 #endif
 
 ExitHandler do_exit;
@@ -44,12 +44,11 @@ void party(cl_device_id device_id, cl_context context) {
 #endif
 
 int main(int argc, char *argv[]) {
-  set_realtime_priority(53);
-  if (Hardware::EON()) {
-    set_core_affinity(2);
-  } else if (Hardware::TICI()) {
-    set_core_affinity(6);
-  }
+  int ret;
+  ret = set_realtime_priority(53);
+  assert(ret == 0);
+  ret = set_core_affinity({Hardware::EON() ? 2 : 6});
+  assert(ret == 0);
 
   cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
 

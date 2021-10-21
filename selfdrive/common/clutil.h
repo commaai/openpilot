@@ -11,7 +11,7 @@
 
 #define CL_CHECK(_expr)          \
   do {                           \
-    assert(CL_SUCCESS == _expr); \
+    assert(CL_SUCCESS == (_expr)); \
   } while (0)
 
 #define CL_CHECK_ERR(_expr)           \

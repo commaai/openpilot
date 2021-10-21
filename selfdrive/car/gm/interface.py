@@ -2,35 +2,30 @@
 from cereal import car
 from selfdrive.config import Conversions as CV
 from selfdrive.car.gm.values import CAR, CruiseButtons, \
-                                    AccState
-from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
+                                    AccState, CarControllerParams
+from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
 
 class CarInterface(CarInterfaceBase):
-
   @staticmethod
-  def compute_gb(accel, speed):
-    return float(accel) / 4.0
+  def get_pid_accel_limits(CP, current_speed, cruise_speed):
+    params = CarControllerParams()
+    return params.ACCEL_MIN, params.ACCEL_MAX
 
   @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "gm"
-    ret.safetyModel = car.CarParams.SafetyModel.gm
-    ret.enableCruise = False  # stock cruise control is kept off
-
-    # GM port is a community feature
-    # TODO: make a port that uses a car harness and it only intercepts the camera
-    ret.communityFeature = True
+    ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.gm)]
+    ret.pcmCruise = False  # stock cruise control is kept off
 
     # Presence of a camera on the object bus is ok.
     # Have to go to read_only if ASCM is online (ACC-enabled cars),
     # or camera is on powertrain bus (LKA cars without ACC).
-    ret.enableCamera = True
-    ret.openpilotLongitudinalControl = ret.enableCamera
+    ret.openpilotLongitudinalControl = True
     tire_stiffness_factor = 0.444  # not optimized yet
 
     # Start with a baseline lateral tuning for all GM vehicles. Override tuning as needed in each model section below.
@@ -105,9 +100,6 @@ class CarInterface(CarInterfaceBase):
     ret.longitudinalTuning.kpV = [2.4, 1.5]
     ret.longitudinalTuning.kiBP = [0.]
     ret.longitudinalTuning.kiV = [0.36]
-
-    ret.stoppingControl = True
-    ret.startAccel = 0.8
 
     ret.steerLimitTimer = 0.4
     ret.radarTimeStep = 0.0667  # GM radar runs at 15Hz instead of standard 20Hz

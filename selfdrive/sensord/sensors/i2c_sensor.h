@@ -9,6 +9,7 @@
 
 int16_t read_12_bit(uint8_t lsb, uint8_t msb);
 int16_t read_16_bit(uint8_t lsb, uint8_t msb);
+int32_t read_20_bit(uint8_t b2, uint8_t b1, uint8_t b0);
 
 
 class I2CSensor : public Sensor {

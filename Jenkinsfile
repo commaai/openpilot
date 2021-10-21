@@ -7,6 +7,7 @@ set -e
 
 export CI=1
 export TEST_DIR=${env.TEST_DIR}
+export SOURCE_DIR=${env.SOURCE_DIR}
 export GIT_BRANCH=${env.GIT_BRANCH}
 export GIT_COMMIT=${env.GIT_COMMIT}
 
@@ -48,8 +49,8 @@ def phone_steps(String device_type, steps) {
 pipeline {
   agent none
   environment {
-    COMMA_JWT = credentials('athena-test-jwt')
     TEST_DIR = "/data/openpilot"
+    SOURCE_DIR = "/data/openpilot_source/"
   }
   options {
       timeout(time: 3, unit: 'HOURS')
@@ -69,7 +70,24 @@ pipeline {
       }
       steps {
         phone_steps("eon-build", [
-          ["build release2-staging and dashcam-staging", "cd release && PUSH=1 ./build_release2.sh"],
+          ["build release2-staging & dashcam-staging", "cd release && PUSH=1 ./build_release2.sh"],
+        ])
+      }
+    }
+
+    stage('Build release3') {
+      agent {
+        docker {
+          image 'python:3.7.3'
+          args '--user=root'
+        }
+      }
+      when {
+        branch 'devel-staging'
+      }
+      steps {
+        phone_steps("tici", [
+          ["build release3-staging & dashcam3-staging", "PUSH=1 $SOURCE_DIR/release/build_release3.sh"],
         ])
       }
     }
@@ -78,7 +96,10 @@ pipeline {
       when {
         not {
           anyOf {
-            branch 'master-ci'; branch 'devel'; branch 'devel-staging'; branch 'release2'; branch 'release2-staging'; branch 'dashcam'; branch 'dashcam-staging'; branch 'testing-closet*'; branch 'hotfix-*'
+            branch 'master-ci'; branch 'devel'; branch 'devel-staging';
+            branch 'release2'; branch 'release2-staging'; branch 'dashcam'; branch 'dashcam-staging';
+            branch 'release3'; branch 'release3-staging'; branch 'dashcam3'; branch 'dashcam3-staging';
+            branch 'testing-closet*'; branch 'hotfix-*'
           }
         }
       }
@@ -127,7 +148,8 @@ pipeline {
                 stage('Devel Tests') {
                   steps {
                     phone_steps("eon-build", [
-                      ["build devel", "cd release && DEVEL_TEST=1 ./build_devel.sh"],
+                      ["build devel", "cd $SOURCE_DIR/release && EXTRA_FILES='tools/' ./build_devel.sh"],
+                      ["build openpilot", "cd selfdrive/manager && ./build.py"],
                       ["test manager", "python selfdrive/manager/test/test_manager.py"],
                       ["onroad tests", "cd selfdrive/test/ && ./test_onroad.py"],
                       ["test car interfaces", "cd selfdrive/car/tests/ && ./test_car_interfaces.py"],
@@ -148,13 +170,12 @@ pipeline {
                   steps {
                     phone_steps("eon", [
                       ["build", "cd selfdrive/manager && ./build.py"],
-                      ["test athena", "nosetests -s selfdrive/athena/tests/test_athenad_old.py"],
-                      ["test sounds", "nosetests -s selfdrive/test/test_sounds.py"],
+                      ["test sounds", "nosetests -s selfdrive/ui/tests/test_sounds.py"],
                       ["test boardd loopback", "nosetests -s selfdrive/boardd/tests/test_boardd_loopback.py"],
                       ["test loggerd", "python selfdrive/loggerd/tests/test_loggerd.py"],
                       ["test encoder", "python selfdrive/loggerd/tests/test_encoder.py"],
                       ["test logcatd", "python selfdrive/logcatd/tests/test_logcatd_android.py"],
-                      //["test updater", "python installer/updater/test_updater.py"],
+                      ["test updater", "python selfdrive/hardware/eon/test_neos_updater.py"],
                     ])
                   }
                 }
@@ -180,30 +201,37 @@ pipeline {
                 }
                 */
 
-                stage('Tici Build') {
+                stage('tici Build') {
                   environment {
                     R3_PUSH = "${env.BRANCH_NAME == 'master' ? '1' : ' '}"
                   }
                   steps {
                     phone_steps("tici", [
                       ["build", "cd selfdrive/manager && ./build.py"],
-                      ["test loggerd", "python selfdrive/loggerd/tests/test_loggerd.py"],
-                      ["test encoder", "LD_LIBRARY_PATH=/usr/local/lib python selfdrive/loggerd/tests/test_encoder.py"],
                       ["onroad tests", "cd selfdrive/test/ && ./test_onroad.py"],
-                      //["build release3-staging", "cd release && PUSH=${env.R3_PUSH} ./build_release3.sh"],
                     ])
                   }
                 }
 
-                stage('camerad') {
+                stage('Unit Tests (tici)') {
                   steps {
-                    phone_steps("eon-party", [
+                    phone_steps("tici2", [
                       ["build", "cd selfdrive/manager && ./build.py"],
-                      ["test camerad", "python selfdrive/camerad/test/test_camerad.py"],
-                      ["test exposure", "python selfdrive/camerad/test/test_exposure.py"],
+                      ["test loggerd", "python selfdrive/loggerd/tests/test_loggerd.py"],
+                      ["test encoder", "LD_LIBRARY_PATH=/usr/local/lib python selfdrive/loggerd/tests/test_encoder.py"],
                     ])
                   }
                 }
+
+                // stage('camerad') {
+                //   steps {
+                //     phone_steps("eon-party", [
+                //       ["build", "cd selfdrive/manager && ./build.py"],
+                //       ["test camerad", "python selfdrive/camerad/test/test_camerad.py"],
+                //       ["test exposure", "python selfdrive/camerad/test/test_exposure.py"],
+                //     ])
+                //   }
+                // }
 
                 stage('Tici camerad') {
                   steps {
@@ -224,7 +252,7 @@ pipeline {
               }
               steps {
                 phone_steps("eon-build", [
-                  ["push devel", "cd release && CI_PUSH='master-ci' ./build_devel.sh"],
+                  ["push devel", "cd $SOURCE_DIR/release && PUSH='master-ci' ./build_devel.sh"],
                 ])
               }
             }

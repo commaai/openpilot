@@ -189,7 +189,7 @@ void sensor_loop() {
 
       pm.send("sensorEvents", msg);
 
-      if (re_init_sensors){
+      if (re_init_sensors) {
         LOGE("Resetting sensors");
         re_init_sensors = false;
         break;

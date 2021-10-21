@@ -1,8 +1,7 @@
 #pragma once
 
 #include <QButtonGroup>
-#include <QPushButton>
-#include <QStackedWidget>
+#include <QMovie>
 #include <QVBoxLayout>
 #include <QWidget>
 
@@ -10,17 +9,6 @@
 #include "selfdrive/ui/qt/widgets/input.h"
 #include "selfdrive/ui/qt/widgets/ssh_keys.h"
 #include "selfdrive/ui/qt/widgets/toggle.h"
-
-class NetworkStrengthWidget : public QWidget {
-  Q_OBJECT
-
-public:
-  explicit NetworkStrengthWidget(int strength, QWidget* parent = nullptr) : strength_(strength), QWidget(parent) { setFixedSize(100, 15); }
-
-private:
-  void paintEvent(QPaintEvent* event) override;
-  int strength_ = 0;
-};
 
 class WifiUI : public QWidget {
   Q_OBJECT
@@ -30,17 +18,17 @@ public:
 
 private:
   WifiManager *wifi = nullptr;
-  QVBoxLayout *vlayout;
-
-  QButtonGroup *connectButtons;
-  bool tetheringEnabled;
+  QVBoxLayout* main_layout;
+  QPixmap lock;
+  QPixmap checkmark;
+  QPixmap circled_slash;
+  QVector<QPixmap> strengths;
 
 signals:
   void connectToNetwork(const Network &n);
 
 public slots:
   void refresh();
-  void handleButton(QAbstractButton* m_button);
 };
 
 class AdvancedNetworking : public QWidget {
@@ -50,39 +38,39 @@ public:
 
 private:
   LabelControl* ipLabel;
-  ButtonControl* editPasswordButton;
+  ToggleControl* tetheringToggle;
   WifiManager* wifi = nullptr;
+  Params params;
 
 signals:
   void backPress();
 
 public slots:
-  void toggleTethering(bool enable);
+  void toggleTethering(bool enabled);
   void refresh();
 };
 
-class Networking : public QWidget {
+class Networking : public QFrame {
   Q_OBJECT
 
 public:
   explicit Networking(QWidget* parent = 0, bool show_advanced = true);
+  WifiManager* wifi = nullptr;
 
 private:
-  QStackedLayout* s = nullptr; // nm_warning, wifiScreen, advanced
+  QStackedLayout* main_layout = nullptr;
   QWidget* wifiScreen = nullptr;
   AdvancedNetworking* an = nullptr;
-  bool ui_setup_complete = false;
-  bool show_advanced;
-
-  Network selectedNetwork;
 
   WifiUI* wifiWidget;
-  WifiManager* wifi = nullptr;
-  void attemptInitialization();
+
+protected:
+  void showEvent(QShowEvent* event) override;
+
+public slots:
+  void refresh();
 
 private slots:
   void connectToNetwork(const Network &n);
-  void refresh();
   void wrongPassword(const QString &ssid);
 };
-

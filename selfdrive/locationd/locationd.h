@@ -31,12 +31,15 @@ public:
   void finite_check(double current_time = NAN);
   void time_check(double current_time = NAN);
   void update_reset_tracker();
+  bool isGpsOK();
 
   kj::ArrayPtr<capnp::byte> get_message_bytes(MessageBuilder& msg_builder, uint64_t logMonoTime,
     bool inputsOK, bool sensorsOK, bool gpsOK);
   void build_live_location(cereal::LiveLocationKalman::Builder& fix);
 
   Eigen::VectorXd get_position_geodetic();
+  Eigen::VectorXd get_state();
+  Eigen::VectorXd get_stdev();
 
   void handle_msg_bytes(const char *data, const size_t size);
   void handle_msg(const cereal::Event::Reader& log);

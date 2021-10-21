@@ -3,8 +3,7 @@
 #include <map>
 #include <sstream>
 #include <string>
-
-#define ERR_NO_VALUE -33
+#include <optional>
 
 enum ParamKeyType {
   PERSISTENT = 0x02,
@@ -12,18 +11,17 @@ enum ParamKeyType {
   CLEAR_ON_PANDA_DISCONNECT = 0x08,
   CLEAR_ON_IGNITION_ON = 0x10,
   CLEAR_ON_IGNITION_OFF = 0x20,
-  ALL = 0x02 | 0x04 | 0x08 | 0x10 | 0x20
+  DONT_LOG = 0x40,
+  ALL = 0xFFFFFFFF
 };
 
 class Params {
-private:
-  std::string params_path;
-
 public:
-  Params(bool persistent_param = false);
+  Params();
   Params(const std::string &path);
 
   bool checkKey(const std::string &key);
+  ParamKeyType getKeyType(const std::string &key);
 
   // Delete a value
   int remove(const char *key);
@@ -33,7 +31,7 @@ public:
   void clearAll(ParamKeyType type);
 
   // read all values
-  int readAll(std::map<std::string, std::string> *params);
+  std::map<std::string, std::string> readAll();
 
   // helpers for reading values
   std::string get(const char *key, bool block = false);
@@ -44,6 +42,10 @@ public:
 
   inline std::string getParamsPath() {
     return params_path;
+  }
+
+  inline std::string getParamPath(std::string key) {
+    return params_path + "/d/" + key;
   }
 
   template <class T>
@@ -76,4 +78,7 @@ public:
   inline int putBool(const std::string &key, bool val) {
     return putBool(key.c_str(), val);
   }
+
+private:
+  const std::string params_path;
 };

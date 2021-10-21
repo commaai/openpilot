@@ -21,7 +21,7 @@ class CarState(CarStateBase):
     if self.car_fingerprint in PREGLOBAL_CARS:
       ret.brakePressed = cp.vl["Brake_Pedal"]["Brake_Pedal"] > 2
     else:
-      ret.brakePressed = cp.vl["Brake_Pedal"]["Brake_Pedal"] > 1e-5
+      ret.brakePressed = cp.vl["Brake_Status"]["Brake"] == 1
 
     ret.wheelSpeeds.fl = cp.vl["Wheel_Speeds"]["FL"] * CV.KPH_TO_MS
     ret.wheelSpeeds.fr = cp.vl["Wheel_Speeds"]["FR"] * CV.KPH_TO_MS
@@ -33,8 +33,8 @@ class CarState(CarStateBase):
     ret.standstill = ret.vEgoRaw < 0.01
 
     # continuous blinker signals for assisted lane change
-    ret.leftBlinker, ret.rightBlinker = self.update_blinker(50, cp.vl["Dashlights"]["LEFT_BLINKER"],
-                                                            cp.vl["Dashlights"]["RIGHT_BLINKER"])
+    ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_lamp(
+      50, cp.vl["Dashlights"]["LEFT_BLINKER"], cp.vl["Dashlights"]["RIGHT_BLINKER"])
 
     if self.CP.enableBsm:
       ret.leftBlindspot = (cp.vl["BSD_RCTA"]["L_ADJACENT"] == 1) or (cp.vl["BSD_RCTA"]["L_APPROACHING"] == 1)
@@ -51,11 +51,8 @@ class CarState(CarStateBase):
     ret.cruiseState.available = cp.vl["CruiseControl"]["Cruise_On"] != 0
     ret.cruiseState.speed = cp_cam.vl["ES_DashStatus"]["Cruise_Set_Speed"] * CV.KPH_TO_MS
 
-    # UDM Forester, Legacy: mph = 0
-    if self.car_fingerprint in [CAR.FORESTER_PREGLOBAL, CAR.LEGACY_PREGLOBAL] and cp.vl["Dash_State"]["Units"] == 0:
-      ret.cruiseState.speed *= CV.MPH_TO_KPH
-    # EDM Global: mph = 1, 2; All Outback: mph = 1, UDM Forester: mph = 7
-    elif self.car_fingerprint not in [CAR.FORESTER_PREGLOBAL, CAR.LEGACY_PREGLOBAL] and cp.vl["Dash_State"]["Units"] in [1, 2, 7]:
+    if (self.car_fingerprint in PREGLOBAL_CARS and cp.vl["Dash_State2"]["UNITS"] == 1) or \
+       (self.car_fingerprint not in PREGLOBAL_CARS and cp.vl["Dashlights"]["UNITS"] == 1):
       ret.cruiseState.speed *= CV.MPH_TO_KPH
 
     ret.seatbeltUnlatched = cp.vl["Dashlights"]["SEATBELT_FL"] == 1
@@ -100,7 +97,6 @@ class CarState(CarStateBase):
       ("DOOR_OPEN_FL", "BodyInfo", 1),
       ("DOOR_OPEN_RR", "BodyInfo", 1),
       ("DOOR_OPEN_RL", "BodyInfo", 1),
-      ("Units", "Dash_State", 1),
       ("Gear", "Transmission", 0),
     ]
 
@@ -112,7 +108,6 @@ class CarState(CarStateBase):
       ("Wheel_Speeds", 50),
       ("Transmission", 100),
       ("Steering_Torque", 50),
-      ("Dash_State", 1),
       ("BodyInfo", 1),
     ]
 
@@ -130,12 +125,23 @@ class CarState(CarStateBase):
     if CP.carFingerprint not in PREGLOBAL_CARS:
       signals += [
         ("Steer_Warning", "Steering_Torque", 0),
+        ("Brake", "Brake_Status", 0),
+        ("UNITS", "Dashlights", 0),
       ]
 
       checks += [
         ("Dashlights", 10),
         ("BodyInfo", 10),
+        ("Brake_Status", 50),
         ("CruiseControl", 20),
+      ]
+    else:
+      signals += [
+        ("UNITS", "Dash_State2", 0),
+      ]
+
+      checks += [
+        ("Dash_State2", 1),
       ]
 
     if CP.carFingerprint == CAR.FORESTER_PREGLOBAL:
@@ -207,20 +213,18 @@ class CarState(CarStateBase):
         ("Signal6", "ES_Distance", 0),
 
         ("Counter", "ES_LKAS_State", 0),
-        ("Keep_Hands_On_Wheel", "ES_LKAS_State", 0),
-        ("Empty_Box", "ES_LKAS_State", 0),
+        ("LKAS_Alert_Msg", "ES_LKAS_State", 0),
         ("Signal1", "ES_LKAS_State", 0),
         ("LKAS_ACTIVE", "ES_LKAS_State", 0),
+        ("LKAS_Dash_State", "ES_LKAS_State", 0),
         ("Signal2", "ES_LKAS_State", 0),
         ("Backward_Speed_Limit_Menu", "ES_LKAS_State", 0),
-        ("LKAS_ENABLE_3", "ES_LKAS_State", 0),
+        ("LKAS_Left_Line_Enable", "ES_LKAS_State", 0),
         ("LKAS_Left_Line_Light_Blink", "ES_LKAS_State", 0),
-        ("LKAS_ENABLE_2", "ES_LKAS_State", 0),
+        ("LKAS_Right_Line_Enable", "ES_LKAS_State", 0),
         ("LKAS_Right_Line_Light_Blink", "ES_LKAS_State", 0),
         ("LKAS_Left_Line_Visible", "ES_LKAS_State", 0),
-        ("LKAS_Left_Line_Green", "ES_LKAS_State", 0),
         ("LKAS_Right_Line_Visible", "ES_LKAS_State", 0),
-        ("LKAS_Right_Line_Green", "ES_LKAS_State", 0),
         ("LKAS_Alert", "ES_LKAS_State", 0),
         ("Signal3", "ES_LKAS_State", 0),
       ]

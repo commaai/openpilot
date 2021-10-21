@@ -55,6 +55,14 @@ scons -j3
 python selfdrive/manager/test/test_manager.py
 selfdrive/car/tests/test_car_interfaces.py
 
+# Ensure no submodules in release
+if test "$(git submodule--helper list | wc -l)" -gt "0"; then
+  echo "submodules found:"
+  git submodule--helper list
+  exit 1
+fi
+git submodule status
+
 # Cleanup
 find . -name '*.a' -delete
 find . -name '*.o' -delete
@@ -69,8 +77,8 @@ rm models/supercombo.dlc
 mkdir -p panda/board/obj
 mv /tmp/panda.bin.signed panda/board/obj/panda.bin.signed
 
-# Restore phonelibs
-git checkout phonelibs/
+# Restore third_party
+git checkout third_party/
 
 # Mark as prebuilt release
 touch prebuilt

@@ -1,5 +1,7 @@
 #include "selfdrive/common/util.h"
 
+#include <sys/stat.h>
+
 #include <cassert>
 #include <cerrno>
 #include <cstring>
@@ -38,14 +40,16 @@ int set_realtime_priority(int level) {
 #endif
 }
 
-int set_core_affinity(int core) {
+int set_core_affinity(std::vector<int> cores) {
 #ifdef __linux__
   long tid = syscall(SYS_gettid);
-  cpu_set_t rt_cpu;
+  cpu_set_t cpu;
 
-  CPU_ZERO(&rt_cpu);
-  CPU_SET(core, &rt_cpu);
-  return sched_setaffinity(tid, sizeof(rt_cpu), &rt_cpu);
+  CPU_ZERO(&cpu);
+  for (const int n : cores) {
+    CPU_SET(n, &cpu);
+  }
+  return sched_setaffinity(tid, sizeof(cpu), &cpu);
 #else
   return -1;
 #endif
@@ -54,49 +58,50 @@ int set_core_affinity(int core) {
 namespace util {
 
 std::string read_file(const std::string& fn) {
-  std::ifstream ifs(fn, std::ios::binary | std::ios::ate);
-  if (ifs) {
-    std::ifstream::pos_type pos = ifs.tellg();
-    if (pos != std::ios::beg) {
-      std::string result;
-      result.resize(pos);
-      ifs.seekg(0, std::ios::beg);
-      ifs.read(result.data(), pos);
-      if (ifs) {
+  std::ifstream f(fn, std::ios::binary | std::ios::in);
+  if (f.is_open()) {
+    f.seekg(0, std::ios::end);
+    int size = f.tellg();
+    if (f.good() && size > 0) {
+      std::string result(size, '\0');
+      f.seekg(0, std::ios::beg);
+      f.read(result.data(), size);
+      // return either good() or has reached end-of-file (e.g. /sys/power/wakeup_count)
+      if (f.good() || f.eof()) {
+        result.resize(f.gcount());
         return result;
       }
     }
+    // fallback for files created on read, e.g. procfs
+    std::stringstream buffer;
+    buffer << f.rdbuf();
+    return buffer.str();
   }
-  ifs.close();
-
-  // fallback for files created on read, e.g. procfs
-  std::ifstream f(fn);
-  std::stringstream buffer;
-  buffer << f.rdbuf();
-  return buffer.str();
+  return std::string();
 }
 
-int read_files_in_dir(const std::string &path, std::map<std::string, std::string> *contents) {
+std::map<std::string, std::string> read_files_in_dir(const std::string &path) {
+  std::map<std::string, std::string> ret;
   DIR *d = opendir(path.c_str());
-  if (!d) return -1;
+  if (!d) return ret;
 
   struct dirent *de = NULL;
   while ((de = readdir(d))) {
-    if (isalnum(de->d_name[0])) {
-      (*contents)[de->d_name] = util::read_file(path + "/" + de->d_name);
+    if (de->d_type != DT_DIR) {
+      ret[de->d_name] = util::read_file(path + "/" + de->d_name);
     }
   }
 
   closedir(d);
-  return 0;
+  return ret;
 }
 
 int write_file(const char* path, const void* data, size_t size, int flags, mode_t mode) {
-  int fd = open(path, flags, mode);
+  int fd = HANDLE_EINTR(open(path, flags, mode));
   if (fd == -1) {
     return -1;
   }
-  ssize_t n = write(fd, data, size);
+  ssize_t n = HANDLE_EINTR(write(fd, data, size));
   close(fd);
   return (n >= 0 && (size_t)n == size) ? 0 : -1;
 }
@@ -112,17 +117,23 @@ std::string readlink(const std::string &path) {
 }
 
 bool file_exists(const std::string& fn) {
-  std::ifstream f(fn);
-  return f.good();
+  struct stat st = {};
+  return stat(fn.c_str(), &st) != -1;
 }
 
-std::string getenv_default(const char* env_var, const char * suffix, const char* default_val) {
-  const char* env_val = getenv(env_var);
-  if (env_val != NULL){
-    return std::string(env_val) + std::string(suffix);
-  } else {
-    return std::string(default_val);
-  }
+std::string getenv(const char* key, const char* default_val) {
+  const char* val = ::getenv(key);
+  return val ? val : default_val;
+}
+
+int getenv(const char* key, int default_val) {
+  const char* val = ::getenv(key);
+  return val ? atoi(val) : default_val;
+}
+
+float getenv(const char* key, float default_val) {
+  const char* val = ::getenv(key);
+  return val ? atof(val) : default_val;
 }
 
 std::string tohex(const uint8_t *buf, size_t buf_size) {
@@ -155,7 +166,7 @@ std::string dir_name(std::string const &path) {
   return path.substr(0, pos);
 }
 
-struct tm get_time(){
+struct tm get_time() {
   time_t rawtime;
   time(&rawtime);
 
@@ -165,10 +176,10 @@ struct tm get_time(){
   return sys_time;
 }
 
-bool time_valid(struct tm sys_time){
+bool time_valid(struct tm sys_time) {
   int year = 1900 + sys_time.tm_year;
   int month = 1 + sys_time.tm_mon;
-  return (year > 2020) || (year == 2020 && month >= 10);
+  return (year > 2021) || (year == 2021 && month >= 6);
 }
 
 }  // namespace util

@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# type: ignore
+# pylint: skip-file
+
 import os
 import time
 import numpy as np

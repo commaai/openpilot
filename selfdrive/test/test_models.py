@@ -52,8 +52,10 @@ class TestCarModel(unittest.TestCase):
         lr = LogReader(get_url(ROUTES[cls.car_model], seg))
         break
       except Exception:
-        if seg == 0:
-          raise
+        lr = None
+
+    if lr is None:
+      raise Exception("Route not found. Is it uploaded?")
 
     can_msgs = []
     fingerprint = {i: dict() for i in range(3)}
@@ -90,12 +92,10 @@ class TestCarModel(unittest.TestCase):
       elif tuning == 'indi':
         self.assertTrue(len(self.CP.lateralTuning.indi.outerLoopGainV))
 
-    self.assertTrue(self.CP.enableCamera)
-
     # TODO: check safetyModel is in release panda build
     safety = libpandasafety_py.libpandasafety
-    set_status = safety.set_safety_hooks(self.CP.safetyModel.raw, self.CP.safetyParam)
-    self.assertEqual(0, set_status, f"failed to set safetyModel {self.CP.safetyModel}")
+    set_status = safety.set_safety_hooks(self.CP.safetyConfigs[0].safetyModel.raw, self.CP.safetyConfigs[0].safetyParam)
+    self.assertEqual(0, set_status, f"failed to set safetyModel {self.CP.safetyConfigs[0].safetyModel}")
 
   def test_car_interface(self):
     # TODO: also check for checkusm and counter violations from can parser
@@ -130,7 +130,7 @@ class TestCarModel(unittest.TestCase):
       self.skipTest("no need to check panda safety for dashcamOnly")
 
     safety = libpandasafety_py.libpandasafety
-    set_status = safety.set_safety_hooks(self.CP.safetyModel.raw, self.CP.safetyParam)
+    set_status = safety.set_safety_hooks(self.CP.safetyConfigs[0].safetyModel.raw, self.CP.safetyConfigs[0].safetyParam)
     self.assertEqual(0, set_status)
 
     failed_addrs = Counter()
@@ -150,7 +150,7 @@ class TestCarModel(unittest.TestCase):
       self.skipTest("see comments in test_models.py")
 
     safety = libpandasafety_py.libpandasafety
-    set_status = safety.set_safety_hooks(self.CP.safetyModel.raw, self.CP.safetyParam)
+    set_status = safety.set_safety_hooks(self.CP.safetyConfigs[0].safetyModel.raw, self.CP.safetyConfigs[0].safetyParam)
     self.assertEqual(0, set_status)
 
     checks = defaultdict(lambda: 0)
@@ -180,7 +180,7 @@ class TestCarModel(unittest.TestCase):
 
     # TODO: honda nidec: do same checks in carState and panda
     if "brakePressed" in failed_checks and self.CP.carName == 'honda' and \
-      (self.car_model not in HONDA_BOSCH or self.car_model == HONDA.CRV_HYBRID):
+      (self.car_model not in HONDA_BOSCH or self.car_model in [HONDA.CRV_HYBRID, HONDA.HONDA_E]):
       if failed_checks['brakePressed'] < 150:
         del failed_checks['brakePressed']
 

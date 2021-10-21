@@ -7,7 +7,7 @@
 #include "selfdrive/modeld/models/commonmodel.h"
 #include "selfdrive/modeld/runners/run.h"
 
-#define OUTPUT_SIZE 40
+#define OUTPUT_SIZE 39
 
 typedef struct DMonitoringResult {
   float face_orientation[3];
@@ -24,8 +24,7 @@ typedef struct DMonitoringResult {
   float partial_face;
   float distracted_pose;
   float distracted_eyes;
-  float eyes_on_road;
-  float phone_use;
+  float occluded_prob;
   float dsp_execution_time;
 } DMonitoringResult;
 
@@ -37,6 +36,7 @@ typedef struct DMonitoringModelState {
   std::vector<uint8_t> cropped_buf;
   std::vector<uint8_t> premirror_cropped_buf;
   std::vector<float> net_input_buf;
+  float tensor[UINT8_MAX + 1];
 } DMonitoringModelState;
 
 void dmonitoring_init(DMonitoringModelState* s);

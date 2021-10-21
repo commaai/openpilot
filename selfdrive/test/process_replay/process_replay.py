@@ -240,7 +240,7 @@ CONFIGS = [
     proc_name="controlsd",
     pub_sub={
       "can": ["controlsState", "carState", "carControl", "sendcan", "carEvents", "carParams"],
-      "deviceState": [], "pandaState": [], "liveCalibration": [], "driverMonitoringState": [], "longitudinalPlan": [], "lateralPlan": [], "liveLocationKalman": [], "liveParameters": [], "radarState": [],
+      "deviceState": [], "pandaStates": [], "peripheralState": [], "liveCalibration": [], "driverMonitoringState": [], "longitudinalPlan": [], "lateralPlan": [], "liveLocationKalman": [], "liveParameters": [], "radarState": [],
       "modelV2": [], "driverCameraState": [], "roadCameraState": [], "ubloxRaw": [], "managerState": [],
     },
     ignore=["logMonoTime", "valid", "controlsState.startMonoTime", "controlsState.cumLagMs"],
@@ -270,7 +270,7 @@ CONFIGS = [
     ignore=["logMonoTime", "valid", "longitudinalPlan.processingDelay"],
     init_callback=get_car_params,
     should_recv_callback=None,
-    tolerance=None,
+    tolerance=NUMPY_TOLERANCE,
     fake_pubsubmaster=True,
   ),
   ProcessConfig(
@@ -363,6 +363,8 @@ def python_replay_process(cfg, lr, fingerprint=None):
   params.put_bool("CommunityFeaturesToggle", True)
 
   os.environ['NO_RADAR_SLEEP'] = "1"
+  os.environ["SIMULATION"] = "1"
+
 
   # TODO: remove after getting new route for civic & accord
   migration = {
@@ -427,7 +429,10 @@ def python_replay_process(cfg, lr, fingerprint=None):
 
       recv_cnt = len(recv_socks)
       while recv_cnt > 0:
-        m = fpm.wait_for_msg()
+        m = fpm.wait_for_msg().as_builder()
+        m.logMonoTime = msg.logMonoTime
+        m = m.as_reader()
+
         log_msgs.append(m)
         recv_cnt -= m.which() in recv_socks
   return log_msgs
@@ -441,35 +446,39 @@ def cpp_replay_process(cfg, lr, fingerprint=None):
   pub_msgs = [msg for msg in all_msgs if msg.which() in list(cfg.pub_sub.keys())]
   log_msgs = []
 
-  os.environ["SIMULATION"] = "1"  # Disable submaster alive checks
   managed_processes[cfg.proc_name].prepare()
   managed_processes[cfg.proc_name].start()
 
-  with Timeout(TIMEOUT):
-    while not all(pm.all_readers_updated(s) for s in cfg.pub_sub.keys()):
-      time.sleep(0)
+  try:
+    with Timeout(TIMEOUT):
+      while not all(pm.all_readers_updated(s) for s in cfg.pub_sub.keys()):
+        time.sleep(0)
 
-    # Make sure all subscribers are connected
-    sockets = {s: messaging.sub_sock(s, timeout=2000) for s in sub_sockets}
-    for s in sub_sockets:
-      messaging.recv_one_or_none(sockets[s])
+      # Make sure all subscribers are connected
+      sockets = {s: messaging.sub_sock(s, timeout=2000) for s in sub_sockets}
+      for s in sub_sockets:
+        messaging.recv_one_or_none(sockets[s])
 
-    for i, msg in enumerate(tqdm(pub_msgs, disable=CI)):
-      pm.send(msg.which(), msg.as_builder())
+      for i, msg in enumerate(tqdm(pub_msgs, disable=False)):
+        pm.send(msg.which(), msg.as_builder())
 
-      resp_sockets = cfg.pub_sub[msg.which()] if cfg.should_recv_callback is None else cfg.should_recv_callback(msg)
-      for s in resp_sockets:
-        response = messaging.recv_one(sockets[s])
+        resp_sockets = cfg.pub_sub[msg.which()] if cfg.should_recv_callback is None else cfg.should_recv_callback(msg)
+        for s in resp_sockets:
+          response = messaging.recv_one(sockets[s])
 
-        if response is None:
-          print(f"Warning, no response received {i}")
-        else:
-          log_msgs.append(response)
+          if response is None:
+            print(f"Warning, no response received {i}")
+          else:
 
-      if not len(resp_sockets):  # We only need to wait if we didn't already wait for a response
-        while not pm.all_readers_updated(msg.which()):
-          time.sleep(0)
+            response = response.as_builder()
+            response.logMonoTime = msg.logMonoTime
+            response = response.as_reader()
+            log_msgs.append(response)
 
+        if not len(resp_sockets):  # We only need to wait if we didn't already wait for a response
+          while not pm.all_readers_updated(msg.which()):
+            time.sleep(0)
+  finally:
     managed_processes[cfg.proc_name].signal(signal.SIGKILL)
     managed_processes[cfg.proc_name].stop()
 

@@ -9,6 +9,6 @@ int FileSensor::init() {
   return file.is_open() ? 0 : 1;
 }
 
-FileSensor::~FileSensor(){
+FileSensor::~FileSensor() {
   file.close();
 }

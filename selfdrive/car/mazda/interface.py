@@ -2,7 +2,7 @@
 from cereal import car
 from selfdrive.config import Conversions as CV
 from selfdrive.car.mazda.values import CAR, LKAS_LIMITS
-from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
+from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
 
 ButtonType = car.CarState.ButtonEvent.Type
@@ -19,11 +19,10 @@ class CarInterface(CarInterfaceBase):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
 
     ret.carName = "mazda"
-    ret.safetyModel = car.CarParams.SafetyModel.mazda
+    ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.mazda)]
+    ret.radarOffCan = True
 
     ret.dashcamOnly = True
-
-    ret.radarOffCan = True
 
     ret.steerActuatorDelay = 0.1
     ret.steerRateCost = 1.0
@@ -37,7 +36,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.19], [0.019]]
       ret.lateralTuning.pid.kf = 0.00006
-    elif candidate == CAR.CX9:
+    elif candidate in [CAR.CX9, CAR.CX9_2021]:
       ret.mass = 4217 * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 3.1
       ret.steerRatio = 17.6
@@ -72,8 +71,6 @@ class CarInterface(CarInterfaceBase):
     # mass and CG position, so all cars will have approximately similar dyn behaviors
     ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront,
                                                                          tire_stiffness_factor=tire_stiffness_factor)
-
-    ret.enableCamera = True
 
     return ret
 

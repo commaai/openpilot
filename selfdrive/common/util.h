@@ -12,6 +12,18 @@
 #include <memory>
 #include <string>
 #include <thread>
+#include <vector>
+
+// keep trying if x gets interrupted by a signal
+#define HANDLE_EINTR(x)                                       \
+  ({                                                          \
+    decltype(x) ret;                                          \
+    int try_cnt = 0;                                          \
+    do {                                                      \
+      ret = (x);                                              \
+    } while (ret == -1 && errno == EINTR && try_cnt++ < 100); \
+    ret;                                                      \
+  })
 
 #ifndef sighandler_t
 typedef void (*sighandler_t)(int sig);
@@ -20,7 +32,7 @@ typedef void (*sighandler_t)(int sig);
 void set_thread_name(const char* name);
 
 int set_realtime_priority(int level);
-int set_core_affinity(int core);
+int set_core_affinity(std::vector<int> cores);
 
 namespace util {
 
@@ -41,10 +53,6 @@ T map_val(T x, T a1, T a2, T b1, T b2) {
 
 // ***** string helpers *****
 
-inline bool starts_with(const std::string& s, const std::string& prefix) {
-  return s.compare(0, prefix.size(), prefix) == 0;
-}
-
 template <typename... Args>
 std::string string_format(const std::string& format, Args... args) {
   size_t size = snprintf(nullptr, 0, format.c_str(), args...) + 1;
@@ -53,7 +61,10 @@ std::string string_format(const std::string& format, Args... args) {
   return std::string(buf.get(), buf.get() + size - 1);
 }
 
-std::string getenv_default(const char* env_var, const char* suffix, const char* default_val);
+std::string getenv(const char* key, const char* default_val = "");
+int getenv(const char* key, int default_val);
+float getenv(const char* key, float default_val);
+
 std::string tohex(const uint8_t* buf, size_t buf_size);
 std::string hexdump(const std::string& in);
 std::string base_name(std::string const& path);
@@ -61,8 +72,8 @@ std::string dir_name(std::string const& path);
 
 // **** file fhelpers *****
 std::string read_file(const std::string& fn);
-int read_files_in_dir(const std::string& path, std::map<std::string, std::string>* contents);
-int write_file(const char* path, const void* data, size_t size, int flags = O_WRONLY, mode_t mode = 0777);
+std::map<std::string, std::string> read_files_in_dir(const std::string& path);
+int write_file(const char* path, const void* data, size_t size, int flags = O_WRONLY, mode_t mode = 0664);
 std::string readlink(const std::string& path);
 bool file_exists(const std::string& fn);
 
@@ -126,7 +137,14 @@ public:
     return x_;
   }
   inline void reset(float x) { x_ = x; }
+  inline float x(){ return x_; }
 
 private:
   float x_, k_;
 };
+
+template<typename T>
+void update_max_atomic(std::atomic<T>& max, T const& value) {
+  T prev = max;
+  while(prev < value && !max.compare_exchange_weak(prev, value)) {}
+}

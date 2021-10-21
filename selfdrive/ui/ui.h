@@ -1,6 +1,5 @@
 #pragma once
 
-#include <atomic>
 #include <map>
 #include <memory>
 #include <string>
@@ -12,16 +11,12 @@
 #include "nanovg.h"
 
 #include "cereal/messaging/messaging.h"
-#include "cereal/visionipc/visionipc.h"
-#include "cereal/visionipc/visionipc_client.h"
 #include "common/transformations/orientation.hpp"
 #include "selfdrive/camerad/cameras/camera_common.h"
-#include "selfdrive/common/glutil.h"
 #include "selfdrive/common/mat.h"
 #include "selfdrive/common/modeldata.h"
 #include "selfdrive/common/params.h"
 #include "selfdrive/common/util.h"
-#include "selfdrive/common/visionimg.h"
 
 #define COLOR_BLACK nvgRGBA(0, 0, 0, 255)
 #define COLOR_BLACK_ALPHA(x) nvgRGBA(0, 0, 0, x)
@@ -31,10 +26,12 @@
 #define COLOR_YELLOW nvgRGBA(218, 202, 37, 255)
 #define COLOR_RED nvgRGBA(201, 34, 49, 255)
 
+typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
+
 // TODO: this is also hardcoded in common/transformations/camera.py
 // TODO: choose based on frame input size
-const float y_offset = Hardware::TICI() ? 150.0 : 0.0;
-const float zoom = Hardware::TICI() ? 2912.8 : 2138.5;
+const float y_offset = Hardware::EON() ? 0.0 : 150.0;
+const float ZOOM = Hardware::EON() ? 2138.5 : 2912.8;
 
 typedef struct Rect {
   int x, y, w, h;
@@ -46,6 +43,26 @@ typedef struct Rect {
     return px >= x && px < (x + w) && py >= y && py < (y + h);
   }
 } Rect;
+
+typedef struct Alert {
+  QString text1;
+  QString text2;
+  QString type;
+  cereal::ControlsState::AlertSize size;
+  AudibleAlert sound;
+  bool equal(const Alert &a2) {
+    return text1 == a2.text1 && text2 == a2.text2 && type == a2.type;
+  }
+} Alert;
+
+const Alert CONTROLS_WAITING_ALERT = {"openpilot Unavailable", "Waiting for controls to start", 
+                                      "controlsWaiting", cereal::ControlsState::AlertSize::MID,
+                                      AudibleAlert::NONE};
+
+const Alert CONTROLS_UNRESPONSIVE_ALERT = {"TAKE CONTROL IMMEDIATELY", "Controls Unresponsive",
+                                           "controlsUnresponsive", cereal::ControlsState::AlertSize::FULL,
+                                           AudibleAlert::CHIME_WARNING_REPEAT};
+const int CONTROLS_TIMEOUT = 5;
 
 const int bdr_s = 30;
 const int header_h = 420;
@@ -83,10 +100,6 @@ typedef struct UIScene {
 
   cereal::PandaState::PandaType pandaType;
 
-  // gps
-  int satelliteCount;
-  float gpsAccuracy;
-
   // modelV2
   float lane_line_probs[4];
   float road_edge_stds[2];
@@ -105,15 +118,7 @@ typedef struct UIScene {
 } UIScene;
 
 typedef struct UIState {
-  VisionIpcClient * vipc_client;
-  VisionIpcClient * vipc_client_rear;
-  VisionIpcClient * vipc_client_wide;
-  VisionBuf * last_frame;
-
-  // framebuffer
-  int fb_w, fb_h;
-
-  // NVG
+  int fb_w = 0, fb_h = 0;
   NVGcontext *vg;
 
   // images
@@ -122,21 +127,12 @@ typedef struct UIState {
   std::unique_ptr<SubMaster> sm;
 
   UIStatus status;
-  UIScene scene;
-
-  // graphics
-  std::unique_ptr<GLShader> gl_shader;
-  std::unique_ptr<EGLImageTexture> texture[UI_BUF_COUNT];
-
-  GLuint frame_vao, frame_vbo, frame_ibo;
-  mat4 rear_frame_mat;
+  UIScene scene = {};
 
   bool awake;
 
-  Rect video_rect, viz_rect;
   float car_space_transform[6];
   bool wide_camera;
-  float zoom;
 } UIState;
 
 

@@ -1,9 +1,11 @@
 #include "selfdrive/ui/qt/window.h"
 
+#include <QFontDatabase>
+
 #include "selfdrive/hardware/hw.h"
 
 MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
-  main_layout = new QStackedLayout;
+  main_layout = new QStackedLayout(this);
   main_layout->setMargin(0);
 
   homeWindow = new HomeWindow(this);
@@ -19,26 +21,35 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   main_layout->addWidget(settingsWindow);
   QObject::connect(settingsWindow, &SettingsWindow::closeSettings, this, &MainWindow::closeSettings);
   QObject::connect(&qs, &QUIState::offroadTransition, settingsWindow, &SettingsWindow::offroadTransition);
-  QObject::connect(settingsWindow, &SettingsWindow::reviewTrainingGuide, this, &MainWindow::reviewTrainingGuide);
+  QObject::connect(settingsWindow, &SettingsWindow::reviewTrainingGuide, [=]() {
+    onboardingWindow->showTrainingGuide();
+    main_layout->setCurrentWidget(onboardingWindow);
+  });
   QObject::connect(settingsWindow, &SettingsWindow::showDriverView, [=] {
     homeWindow->showDriverView(true);
   });
 
   onboardingWindow = new OnboardingWindow(this);
-  onboardingDone = onboardingWindow->isOnboardingDone();
   main_layout->addWidget(onboardingWindow);
-
-  main_layout->setCurrentWidget(onboardingWindow);
-  QObject::connect(onboardingWindow, &OnboardingWindow::onboardingDone, [=](){
-    onboardingDone = true;
-    closeSettings();
+  QObject::connect(onboardingWindow, &OnboardingWindow::onboardingDone, [=]() {
+    main_layout->setCurrentWidget(homeWindow);
   });
-  onboardingWindow->updateActiveScreen();
+  if (!onboardingWindow->completed()) {
+    main_layout->setCurrentWidget(onboardingWindow);
+  }
 
   device.setAwake(true, true);
   QObject::connect(&qs, &QUIState::uiUpdate, &device, &Device::update);
-  QObject::connect(&qs, &QUIState::offroadTransition, this, &MainWindow::offroadTransition);
-  QObject::connect(&device, &Device::displayPowerChanged, this, &MainWindow::closeSettings);
+  QObject::connect(&qs, &QUIState::offroadTransition, [=](bool offroad) {
+    if (!offroad) {
+      closeSettings();
+    }
+  });
+  QObject::connect(&device, &Device::displayPowerChanged, [=]() {
+     if(main_layout->currentWidget() != onboardingWindow) {
+       closeSettings();
+     }
+  });
 
   // load fonts
   QFontDatabase::addApplicationFont("../assets/fonts/opensans_regular.ttf");
@@ -46,19 +57,13 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   QFontDatabase::addApplicationFont("../assets/fonts/opensans_semibold.ttf");
 
   // no outline to prevent the focus rectangle
-  setLayout(main_layout);
   setStyleSheet(R"(
     * {
       font-family: Inter;
       outline: none;
     }
   )");
-}
-
-void MainWindow::offroadTransition(bool offroad){
-  if(!offroad){
-    closeSettings();
-  }
+  setAttribute(Qt::WA_NoSystemBackground);
 }
 
 void MainWindow::openSettings() {
@@ -66,20 +71,16 @@ void MainWindow::openSettings() {
 }
 
 void MainWindow::closeSettings() {
-  if(onboardingDone) {
-    main_layout->setCurrentWidget(homeWindow);
+  main_layout->setCurrentWidget(homeWindow);
+
+  if (QUIState::ui_state.scene.started) {
+    emit homeWindow->showSidebar(false);
   }
 }
 
-void MainWindow::reviewTrainingGuide() {
-  onboardingDone = false;
-  main_layout->setCurrentWidget(onboardingWindow);
-  onboardingWindow->updateActiveScreen();
-}
-
-bool MainWindow::eventFilter(QObject *obj, QEvent *event){
+bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
   // wake screen on tap
-  if (event->type() == QEvent::MouseButtonPress) {
+  if (event->type() == QEvent::MouseButtonPress || event->type() == QEvent::TouchBegin) {
     device.setAwake(true, true);
   }
 

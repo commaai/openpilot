@@ -5,9 +5,7 @@
 #include <QFrame>
 #include <QLabel>
 #include <QPushButton>
-#include <QScrollArea>
 #include <QStackedWidget>
-#include <QTimer>
 #include <QWidget>
 
 
@@ -15,7 +13,7 @@
 
 // ********** settings window + top-level panels **********
 
-class DevicePanel : public QWidget {
+class DevicePanel : public ListWidget {
   Q_OBJECT
 public:
   explicit DevicePanel(QWidget* parent = nullptr);
@@ -24,27 +22,29 @@ signals:
   void showDriverView();
 };
 
-class TogglesPanel : public QWidget {
+class TogglesPanel : public ListWidget {
   Q_OBJECT
 public:
   explicit TogglesPanel(QWidget *parent = nullptr);
 };
 
-class SoftwarePanel : public QFrame {
+class SoftwarePanel : public ListWidget {
   Q_OBJECT
 public:
   explicit SoftwarePanel(QWidget* parent = nullptr);
 
-protected:
-  void showEvent(QShowEvent *event) override;
-
 private:
-  QList<LabelControl *> labels;
-  LabelControl *versionLbl;
-  LabelControl *lastUpdateTimeLbl;
-  ButtonControl *updateButton;
+  void showEvent(QShowEvent *event) override;
   void updateLabels();
 
+  LabelControl *gitBranchLbl;
+  LabelControl *gitCommitLbl;
+  LabelControl *osVersionLbl;
+  LabelControl *versionLbl;
+  LabelControl *lastUpdateLbl;
+  ButtonControl *updateBtn;
+
+  Params params;
   QFileSystemWatcher *fs_watch;
 };
 

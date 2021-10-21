@@ -17,12 +17,12 @@ cdef extern from "selfdrive/common/params.h":
     ALL
 
   cdef cppclass Params:
-    Params(bool)
-    Params(string)
+    Params() nogil
+    Params(string) nogil
     string get(string, bool) nogil
-    bool getBool(string)
-    int remove(string)
-    int put(string, string)
-    int putBool(string, bool)
-    bool checkKey(string)
+    bool getBool(string) nogil
+    int remove(string) nogil
+    int put(string, string) nogil
+    int putBool(string, bool) nogil
+    bool checkKey(string) nogil
     void clearAll(ParamKeyType)

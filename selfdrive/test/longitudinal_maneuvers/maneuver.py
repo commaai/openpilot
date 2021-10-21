@@ -1,7 +1,5 @@
-from collections import defaultdict
-from selfdrive.test.longitudinal_maneuvers.maneuverplots import ManeuverPlot
-from selfdrive.test.longitudinal_maneuvers.plant import Plant
 import numpy as np
+from selfdrive.test.longitudinal_maneuvers.plant import Plant
 
 
 class Maneuver():
@@ -11,75 +9,48 @@ class Maneuver():
     self.speed = kwargs.get("initial_speed", 0.0)
     self.lead_relevancy = kwargs.get("lead_relevancy", 0)
 
-    self.grade_values = kwargs.get("grade_values", [0.0, 0.0])
-    self.grade_breakpoints = kwargs.get("grade_breakpoints", [0.0, duration])
-    self.speed_lead_values = kwargs.get("speed_lead_values", [0.0, 0.0])
-    self.speed_lead_breakpoints = kwargs.get("speed_lead_breakpoints", [0.0, duration])
+    self.breakpoints = kwargs.get("breakpoints", [0.0, duration])
+    self.speed_lead_values = kwargs.get("speed_lead_values", [0.0 for i in range(len(self.breakpoints))])
+    self.prob_lead_values = kwargs.get("prob_lead_values", [1.0 for i in range(len(self.breakpoints))])
+    self.cruise_values = kwargs.get("cruise_values", [50.0 for i in range(len(self.breakpoints))])
 
-    self.cruise_button_presses = kwargs.get("cruise_button_presses", [])
-    self.checks = kwargs.get("checks", [])
+    self.only_lead2 = kwargs.get("only_lead2", False)
+    self.only_radar = kwargs.get("only_radar", False)
 
     self.duration = duration
     self.title = title
 
   def evaluate(self):
-    """runs the plant sim and returns (score, run_data)"""
     plant = Plant(
       lead_relevancy=self.lead_relevancy,
       speed=self.speed,
-      distance_lead=self.distance_lead
+      distance_lead=self.distance_lead,
+      only_lead2=self.only_lead2,
+      only_radar=self.only_radar
     )
 
-    logs = defaultdict(list)
-    last_controls_state = None
-    plot = ManeuverPlot(self.title)
-
-    buttons_sorted = sorted(self.cruise_button_presses, key=lambda a: a[1])
-    current_button = 0
+    valid = True
+    logs = []
     while plant.current_time() < self.duration:
-      while buttons_sorted and plant.current_time() >= buttons_sorted[0][1]:
-        current_button = buttons_sorted[0][0]
-        buttons_sorted = buttons_sorted[1:]
-        print("current button changed to {0}".format(current_button))
-
-      grade = np.interp(plant.current_time(), self.grade_breakpoints, self.grade_values)
-      speed_lead = np.interp(plant.current_time(), self.speed_lead_breakpoints, self.speed_lead_values)
-
-      # distance, speed, acceleration, distance_lead, brake, gas, steer_torque, fcw, controls_state= plant.step(speed_lead, current_button, grade)
-      log = plant.step(speed_lead, current_button, grade)
-
-      if log['controls_state_msgs']:
-        last_controls_state = log['controls_state_msgs'][-1]
+      speed_lead = np.interp(plant.current_time(), self.breakpoints, self.speed_lead_values)
+      prob = np.interp(plant.current_time(), self.breakpoints, self.prob_lead_values)
+      cruise = np.interp(plant.current_time(), self.breakpoints, self.cruise_values)
+      log = plant.step(speed_lead, prob, cruise)
 
       d_rel = log['distance_lead'] - log['distance'] if self.lead_relevancy else 200.
       v_rel = speed_lead - log['speed'] if self.lead_relevancy else 0.
       log['d_rel'] = d_rel
       log['v_rel'] = v_rel
+      logs.append(np.array([plant.current_time(),
+                            log['distance'],
+                            log['distance_lead'],
+                            log['speed'],
+                            speed_lead,
+                            log['acceleration']]))
 
-      if last_controls_state:
-        # print(last_controls_state)
-        #develop plots
-        plot.add_data(
-          time=plant.current_time(),
-          gas=log['gas'], brake=log['brake'], steer_torque=log['steer_torque'],
-          distance=log['distance'], speed=log['speed'], acceleration=log['acceleration'],
-          up_accel_cmd=last_controls_state.upAccelCmd, ui_accel_cmd=last_controls_state.uiAccelCmd,
-          uf_accel_cmd=last_controls_state.ufAccelCmd,
-          d_rel=d_rel, v_rel=v_rel, v_lead=speed_lead,
-          v_target_lead=last_controls_state.vTargetLead, pid_speed=last_controls_state.vPid,
-          cruise_speed=last_controls_state.vCruise,
-          a_target=last_controls_state.aTarget,
-          fcw=log['fcw'])
-
-        for k, v in log.items():
-          logs[k].append(v)
-
-    valid = True
-    for check in self.checks:
-      c = check(logs)
-      if not c:
-        print(check.__name__ + " not valid!")
-      valid = valid and c
+      if d_rel < .4 and (self.only_radar or prob > 0.5):
+        print("Crashed!!!!")
+        valid = False
 
     print("maneuver end", valid)
-    return (plot, valid)
+    return valid, np.array(logs)

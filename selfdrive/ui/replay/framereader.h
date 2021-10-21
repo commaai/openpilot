@@ -1,65 +1,40 @@
 #pragma once
 
-#include <unistd.h>
-
-#include <atomic>
-#include <condition_variable>
-#include <mutex>
-#include <queue>
 #include <string>
-#include <thread>
 #include <vector>
 
-#include <QThread>
-
-// independent of QT, needs ffmpeg
 extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
-#include <libswscale/swscale.h>
 }
 
-class FrameReader : public QObject {
-  Q_OBJECT
-
+class FrameReader {
 public:
-  FrameReader(const std::string &url, QObject *parent = nullptr);
+  FrameReader();
   ~FrameReader();
-  uint8_t *get(int idx);
-  int getRGBSize() { return width * height * 3; }
+  bool load(const std::string &url);
+  bool get(int idx, uint8_t *rgb, uint8_t *yuv);
+  int getRGBSize() const { return width * height * 3; }
+  int getYUVSize() const { return width * height * 3 / 2; }
+  size_t getFrameCount() const { return frames_.size(); }
   bool valid() const { return valid_; }
 
   int width = 0, height = 0;
 
-signals:
-  void finished();
-
 private:
-  void process();
-  bool processFrames();
-  void decodeThread();
-  uint8_t *decodeFrame(AVPacket *pkt);
+  bool decode(int idx, uint8_t *rgb, uint8_t *yuv);
+  bool decodeFrame(AVFrame *f, uint8_t *rgb, uint8_t *yuv);
 
   struct Frame {
     AVPacket pkt = {};
-    uint8_t *data = nullptr;
+    int decoded = false;
     bool failed = false;
   };
   std::vector<Frame> frames_;
-
-  AVFormatContext *pFormatCtx_ = NULL;
-  AVCodecContext *pCodecCtx_ = NULL;
-  AVFrame *frmRgb_ = nullptr;
-  std::queue<uint8_t *> buffer_pool;
-  struct SwsContext *sws_ctx_ = NULL;
-
-  std::mutex mutex_;
-  std::condition_variable cv_decode_;
-  std::condition_variable cv_frame_;
-  int decode_idx_ = 0;
-  std::atomic<bool> exit_ = false;
+  AVFrame *av_frame_ = nullptr;
+  AVFormatContext *pFormatCtx_ = nullptr;
+  AVCodecContext *pCodecCtx_ = nullptr;
+  int key_frames_count_ = 0;
+  std::vector<uint8_t> yuv_buf_;
   bool valid_ = false;
-  std::string url_;
-  QThread *process_thread_;
-  std::thread decode_thread_;
 };

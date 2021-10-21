@@ -17,13 +17,13 @@ QMapbox::CoordinatesCollections model_to_collection(
 
   Eigen::Vector3d ecef(positionECEF.getValue()[0], positionECEF.getValue()[1], positionECEF.getValue()[2]);
   Eigen::Vector3d orient(calibratedOrientationECEF.getValue()[0], calibratedOrientationECEF.getValue()[1], calibratedOrientationECEF.getValue()[2]);
-  Eigen::Matrix3d ecef_from_local = euler2rot(orient).transpose();
+  Eigen::Matrix3d ecef_from_local = euler2rot(orient);
 
   QMapbox::Coordinates coordinates;
   auto x = line.getX();
   auto y = line.getY();
   auto z = line.getZ();
-  for (int i = 0; i < x.size(); i++){
+  for (int i = 0; i < x.size(); i++) {
     Eigen::Vector3d point_ecef = ecef_from_local * Eigen::Vector3d(x[i], y[i], z[i]) + ecef;
     Geodetic point_geodetic = ecef2geodetic((ECEF){.x = point_ecef[0], .y = point_ecef[1], .z = point_ecef[2]});
     QMapbox::Coordinate coordinate(point_geodetic.lat, point_geodetic.lon);
@@ -38,7 +38,7 @@ QMapbox::CoordinatesCollections model_to_collection(
   return collections;
 }
 
-QMapbox::CoordinatesCollections coordinate_to_collection(QMapbox::Coordinate c){
+QMapbox::CoordinatesCollections coordinate_to_collection(QMapbox::Coordinate c) {
   QMapbox::Coordinates coordinates;
   coordinates.push_back(c);
 
@@ -53,7 +53,7 @@ QMapbox::CoordinatesCollections coordinate_to_collection(QMapbox::Coordinate c){
 QMapbox::CoordinatesCollections coordinate_list_to_collection(QList<QGeoCoordinate> coordinate_list) {
   QMapbox::Coordinates coordinates;
 
-  for (auto &c : coordinate_list){
+  for (auto &c : coordinate_list) {
     QMapbox::Coordinate coordinate(c.latitude(), c.longitude());
     coordinates.push_back(coordinate);
   }
@@ -66,19 +66,19 @@ QMapbox::CoordinatesCollections coordinate_list_to_collection(QList<QGeoCoordina
   return collections;
 }
 
-static QGeoCoordinate sub(QGeoCoordinate v, QGeoCoordinate w){
+static QGeoCoordinate sub(QGeoCoordinate v, QGeoCoordinate w) {
   return QGeoCoordinate(v.latitude() - w.latitude(), v.longitude() - w.longitude());
 }
 
-static QGeoCoordinate add(QGeoCoordinate v, QGeoCoordinate w){
+static QGeoCoordinate add(QGeoCoordinate v, QGeoCoordinate w) {
   return QGeoCoordinate(v.latitude() + w.latitude(), v.longitude() + w.longitude());
 }
 
-static QGeoCoordinate mul(QGeoCoordinate v, float c){
+static QGeoCoordinate mul(QGeoCoordinate v, float c) {
   return QGeoCoordinate(c * v.latitude(), c * v.longitude());
 }
 
-static float dot(QGeoCoordinate v, QGeoCoordinate w){
+static float dot(QGeoCoordinate v, QGeoCoordinate w) {
   return v.latitude() * w.latitude() + v.longitude() * w.longitude();
 }
 
@@ -122,7 +122,7 @@ std::optional<QMapbox::Coordinate> coordinate_from_param(std::string param) {
   if (doc.isNull()) return {};
 
   QJsonObject json = doc.object();
-  if (json["latitude"].isDouble() && json["longitude"].isDouble()){
+  if (json["latitude"].isDouble() && json["longitude"].isDouble()) {
     QMapbox::Coordinate coord(json["latitude"].toDouble(), json["longitude"].toDouble());
     return coord;
   } else {

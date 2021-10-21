@@ -1,10 +1,12 @@
 from cereal import car
 from common.numpy_fast import mean
+from common.filter_simple import FirstOrderFilter
+from common.realtime import DT_CTRL
 from opendbc.can.can_define import CANDefine
 from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
 from selfdrive.config import Conversions as CV
-from selfdrive.car.toyota.values import CAR, DBC, STEER_THRESHOLD, NO_STOP_TIMER_CAR
+from selfdrive.car.toyota.values import CAR, DBC, STEER_THRESHOLD, NO_STOP_TIMER_CAR, TSS2_CAR
 
 
 class CarState(CarStateBase):
@@ -18,7 +20,10 @@ class CarState(CarStateBase):
     # Need to apply an offset as soon as the steering angle measurements are both received
     self.needs_angle_offset = True
     self.accurate_steer_angle_seen = False
-    self.angle_offset = 0.
+    self.angle_offset = FirstOrderFilter(None, 60.0, DT_CTRL, initialized=False)
+
+    self.low_speed_lockout = False
+    self.acc_type = 1
 
   def update(self, cp, cp_cam):
     ret = car.CarState.new_message()
@@ -44,19 +49,21 @@ class CarState(CarStateBase):
 
     ret.standstill = ret.vEgoRaw < 0.001
 
+    ret.steeringAngleDeg = cp.vl["STEER_ANGLE_SENSOR"]["STEER_ANGLE"] + cp.vl["STEER_ANGLE_SENSOR"]["STEER_FRACTION"]
+    torque_sensor_angle_deg = cp.vl["STEER_TORQUE_SENSOR"]["STEER_ANGLE"]
+
     # Some newer models have a more accurate angle measurement in the TORQUE_SENSOR message. Use if non-zero
-    if abs(cp.vl["STEER_TORQUE_SENSOR"]["STEER_ANGLE"]) > 1e-3:
+    if abs(torque_sensor_angle_deg) > 1e-3:
       self.accurate_steer_angle_seen = True
 
     if self.accurate_steer_angle_seen:
-      ret.steeringAngleDeg = cp.vl["STEER_TORQUE_SENSOR"]["STEER_ANGLE"] - self.angle_offset
-      if self.needs_angle_offset:
-        angle_wheel = cp.vl["STEER_ANGLE_SENSOR"]["STEER_ANGLE"] + cp.vl["STEER_ANGLE_SENSOR"]["STEER_FRACTION"]
-        if abs(angle_wheel) > 1e-3:
-          self.needs_angle_offset = False
-          self.angle_offset = ret.steeringAngleDeg - angle_wheel
-    else:
-      ret.steeringAngleDeg = cp.vl["STEER_ANGLE_SENSOR"]["STEER_ANGLE"] + cp.vl["STEER_ANGLE_SENSOR"]["STEER_FRACTION"]
+      # Offset seems to be invalid for large steering angles
+      if abs(ret.steeringAngleDeg) < 90:
+        self.angle_offset.update(torque_sensor_angle_deg - ret.steeringAngleDeg)
+
+      if self.angle_offset.initialized:
+        ret.steeringAngleOffsetDeg = self.angle_offset.x
+        ret.steeringAngleDeg = torque_sensor_angle_deg - self.angle_offset.x
 
     ret.steeringRateDeg = cp.vl["STEER_ANGLE_SENSOR"]["STEER_RATE"]
 
@@ -74,11 +81,21 @@ class CarState(CarStateBase):
     if self.CP.carFingerprint == CAR.LEXUS_IS:
       ret.cruiseState.available = cp.vl["DSU_CRUISE"]["MAIN_ON"] != 0
       ret.cruiseState.speed = cp.vl["DSU_CRUISE"]["SET_SPEED"] * CV.KPH_TO_MS
-      self.low_speed_lockout = False
     else:
       ret.cruiseState.available = cp.vl["PCM_CRUISE_2"]["MAIN_ON"] != 0
       ret.cruiseState.speed = cp.vl["PCM_CRUISE_2"]["SET_SPEED"] * CV.KPH_TO_MS
+
+    if self.CP.carFingerprint in TSS2_CAR:
+      self.acc_type = cp_cam.vl["ACC_CONTROL"]["ACC_TYPE"]
+
+    # some TSS2 cars have low speed lockout permanently set, so ignore on those cars
+    # these cars are identified by an ACC_TYPE value of 2.
+    # TODO: it is possible to avoid the lockout and gain stop and go if you
+    # send your own ACC_CONTROL msg on startup with ACC_TYPE set to 1
+    if (self.CP.carFingerprint not in TSS2_CAR and self.CP.carFingerprint != CAR.LEXUS_IS) or \
+       (self.CP.carFingerprint in TSS2_CAR and self.acc_type == 1):
       self.low_speed_lockout = cp.vl["PCM_CRUISE_2"]["LOW_SPEED_LOCKOUT"] == 2
+
     self.pcm_acc_status = cp.vl["PCM_CRUISE"]["CRUISE_STATE"]
     if self.CP.carFingerprint in NO_STOP_TIMER_CAR or self.CP.enableGasInterceptor:
       # ignore standstill in hybrid vehicles, since pcm allows to restart without
@@ -183,7 +200,7 @@ class CarState(CarStateBase):
 
     signals = [
       ("FORCE", "PRE_COLLISION", 0),
-      ("PRECOLLISION_ACTIVE", "PRE_COLLISION", 0)
+      ("PRECOLLISION_ACTIVE", "PRE_COLLISION", 0),
     ]
 
     # use steering message to check if panda is connected to frc
@@ -191,5 +208,9 @@ class CarState(CarStateBase):
       ("STEERING_LKA", 42),
       ("PRE_COLLISION", 0), # TODO: figure out why freq is inconsistent
     ]
+
+    if CP.carFingerprint in TSS2_CAR:
+      signals.append(("ACC_TYPE", "ACC_CONTROL", 0))
+      checks.append(("ACC_CONTROL", 33))
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 2)

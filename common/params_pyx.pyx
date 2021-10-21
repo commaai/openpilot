@@ -30,11 +30,15 @@ class UnknownKeyName(Exception):
 cdef class Params:
   cdef c_Params* p
 
-  def __cinit__(self, d=None, bool persistent_params=False):
+  def __cinit__(self, d=None):
+    cdef string path
     if d is None:
-      self.p = new c_Params(persistent_params)
+      with nogil:
+        self.p = new c_Params()
     else:
-      self.p = new c_Params(<string>d.encode())
+      path = <string>d.encode()
+      with nogil:
+        self.p = new c_Params(path)
 
   def __dealloc__(self):
     del self.p
@@ -53,13 +57,12 @@ cdef class Params:
 
     return key
 
-  def get(self, key, block=False, encoding=None):
+  def get(self, key, bool block=False, encoding=None):
     cdef string k = self.check_key(key)
-    cdef bool b = block
 
     cdef string val
     with nogil:
-      val = self.p.get(k, b)
+      val = self.p.get(k, block)
 
     if val == b"":
       if block:
@@ -76,7 +79,10 @@ cdef class Params:
 
   def get_bool(self, key):
     cdef string k = self.check_key(key)
-    return self.p.getBool(k)
+    cdef bool r
+    with nogil:
+      r = self.p.getBool(k)
+    return r
 
   def put(self, key, dat):
     """
@@ -86,16 +92,19 @@ cdef class Params:
     in general try to avoid writing params as much as possible.
     """
     cdef string k = self.check_key(key)
-    dat = ensure_bytes(dat)
-    self.p.put(k, dat)
+    cdef string dat_bytes = ensure_bytes(dat)
+    with nogil:
+      self.p.put(k, dat_bytes)
 
-  def put_bool(self, key, val):
+  def put_bool(self, key, bool val):
     cdef string k = self.check_key(key)
-    self.p.putBool(k, val)
+    with nogil:
+      self.p.putBool(k, val)
 
   def delete(self, key):
     cdef string k = self.check_key(key)
-    self.p.remove(k)
+    with nogil:
+      self.p.remove(k)
 
 
 def put_nonblocking(key, val, d=None):

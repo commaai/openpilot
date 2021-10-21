@@ -21,8 +21,8 @@ def get_token():
     with open(os.path.join(CONFIG_DIR, 'auth.json')) as f:
       auth = json.load(f)
       return auth['access_token']
-  except Exception as e:
-    raise MissingAuthConfigError('Authenticate with tools/lib/auth.py') from e
+  except Exception:
+    return None
 
 
 def set_token(token):

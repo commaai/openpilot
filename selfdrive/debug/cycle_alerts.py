@@ -21,19 +21,16 @@ def cycle_alerts(duration=2000, is_metric=False):
   alerts = [EventName.preLaneChangeLeft, EventName.preLaneChangeRight]
 
   CP = CarInterface.get_params("HONDA CIVIC 2016")
-  sm = messaging.SubMaster(['deviceState', 'pandaState', 'roadCameraState', 'modelV2', 'liveCalibration',
+  sm = messaging.SubMaster(['deviceState', 'pandaStates', 'roadCameraState', 'modelV2', 'liveCalibration',
                             'driverMonitoringState', 'longitudinalPlan', 'lateralPlan', 'liveLocationKalman'])
 
-  controls_state = messaging.pub_sock('controlsState')
-  deviceState = messaging.pub_sock('deviceState')
-
-  idx, last_alert_millis = 0, 0
+  pm = messaging.PubMaster(['controlsState', 'pandaStates', 'deviceState'])
 
   events = Events()
   AM = AlertManager()
 
   frame = 0
-
+  idx, last_alert_millis = 0, 0
   while 1:
     if frame % duration == 0:
       idx = (idx + 1) % len(alerts)
@@ -50,7 +47,6 @@ def cycle_alerts(duration=2000, is_metric=False):
 
     dat = messaging.new_message()
     dat.init('controlsState')
-
     dat.controlsState.alertText1 = AM.alert_text_1
     dat.controlsState.alertText2 = AM.alert_text_2
     dat.controlsState.alertSize = AM.alert_size
@@ -58,14 +54,17 @@ def cycle_alerts(duration=2000, is_metric=False):
     dat.controlsState.alertBlinkingRate = AM.alert_rate
     dat.controlsState.alertType = AM.alert_type
     dat.controlsState.alertSound = AM.audible_alert
-    controls_state.send(dat.to_bytes())
+    pm.send('controlsState', dat)
 
     dat = messaging.new_message()
     dat.init('deviceState')
     dat.deviceState.started = True
-    deviceState.send(dat.to_bytes())
+    pm.send('deviceState', dat)
 
-    frame += 1
+    dat = messaging.new_message('pandaStates', 1)
+    dat.pandaStates[0].ignitionLine = True
+    pm.send('pandaStates', dat)
+
     time.sleep(0.01)
 
 if __name__ == '__main__':

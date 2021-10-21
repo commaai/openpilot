@@ -1,5 +1,7 @@
 #!/bin/bash -e
 
+OP_ROOT=$(git rev-parse --show-toplevel)
+
 sudo apt-get update && sudo apt-get install -y --no-install-recommends \
     autoconf \
     build-essential \
@@ -12,6 +14,7 @@ sudo apt-get update && sudo apt-get install -y --no-install-recommends \
     curl \
     ffmpeg \
     git \
+    git-lfs \
     libavformat-dev libavcodec-dev libavdevice-dev libavutil-dev libswscale-dev libavresample-dev libavfilter-dev \
     libarchive-dev \
     libbz2-dev \
@@ -57,28 +60,20 @@ sudo apt-get update && sudo apt-get install -y --no-install-recommends \
     libqt5x11extras5-dev \
     libreadline-dev
 
-# install git lfs
-if ! command -v "git-lfs" > /dev/null 2>&1; then
-  curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
-  sudo apt-get install git-lfs
-fi
-
 # install pyenv
 if ! command -v "pyenv" > /dev/null 2>&1; then
   curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash
 fi
 
-# install bashrc
+# in the openpilot repo
+cd $OP_ROOT
+
 source ~/.bashrc
 if [ -z "$OPENPILOT_ENV" ]; then
-  OP_DIR=$(git rev-parse --show-toplevel)
-  echo "source $OP_DIR/tools/openpilot_env.sh" >> ~/.bashrc
+  printf "\nsource %s/tools/openpilot_env.sh" "$OP_ROOT" >> ~/.bashrc
   source ~/.bashrc
   echo "added openpilot_env to bashrc"
 fi
-
-# in the openpilot repo
-cd $HOME/openpilot
 
 # do the rest of the git checkout
 git lfs pull
@@ -86,9 +81,10 @@ git submodule init
 git submodule update
 
 # install python
+PYENV_PYTHON_VERSION=$(cat $OP_ROOT/.python-version)
 PATH=$HOME/.pyenv/bin:$HOME/.pyenv/shims:$PATH
-pyenv install -s 3.8.5
-pyenv global 3.8.5
+pyenv install -s ${PYENV_PYTHON_VERSION}
+pyenv global ${PYENV_PYTHON_VERSION}
 pyenv rehash
 eval "$(pyenv init -)"
 

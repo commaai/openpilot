@@ -25,8 +25,10 @@
 #elif WEBCAM
 #include "selfdrive/camerad/cameras/camera_webcam.h"
 #else
-#include "selfdrive/camerad/cameras/camera_frame_stream.h"
+#include "selfdrive/camerad/cameras/camera_replay.h"
 #endif
+
+const int YUV_COUNT = 100;
 
 static cl_program build_debayer_program(cl_device_id device_id, cl_context context, const CameraInfo *ci, const CameraBuf *b, const CameraState *s) {
   char args[4096];
@@ -125,8 +127,6 @@ bool CameraBuf::acquire() {
     const size_t globalWorkSize[] = {size_t(camera_state->ci.frame_width), size_t(camera_state->ci.frame_height)};
     const size_t localWorkSize[] = {DEBAYER_LOCAL_WORKSIZE, DEBAYER_LOCAL_WORKSIZE};
     CL_CHECK(clSetKernelArg(krnl_debayer, 2, localMemSize, 0));
-    int ggain = camera_state->analog_gain + 4*camera_state->dc_gain_enabled;
-    CL_CHECK(clSetKernelArg(krnl_debayer, 3, sizeof(int), &ggain));
     CL_CHECK(clEnqueueNDRangeKernel(q, krnl_debayer, 2, NULL, globalWorkSize, localWorkSize,
                                     0, 0, &debayer_event));
 #else
@@ -163,7 +163,7 @@ bool CameraBuf::acquire() {
 }
 
 void CameraBuf::release() {
-  if (release_callback){
+  if (release_callback) {
     release_callback((void*)camera_state, cur_buf_idx);
   }
 }
@@ -180,20 +180,22 @@ void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &fr
   framed.setTimestampSof(frame_data.timestamp_sof);
   framed.setFrameLength(frame_data.frame_length);
   framed.setIntegLines(frame_data.integ_lines);
-  framed.setGlobalGain(frame_data.global_gain);
+  framed.setGain(frame_data.gain);
+  framed.setHighConversionGain(frame_data.high_conversion_gain);
+  framed.setMeasuredGreyFraction(frame_data.measured_grey_fraction);
+  framed.setTargetGreyFraction(frame_data.target_grey_fraction);
   framed.setLensPos(frame_data.lens_pos);
   framed.setLensSag(frame_data.lens_sag);
   framed.setLensErr(frame_data.lens_err);
   framed.setLensTruePos(frame_data.lens_true_pos);
-  framed.setGainFrac(frame_data.gain_frac);
 }
 
 kj::Array<uint8_t> get_frame_image(const CameraBuf *b) {
-  static const int x_min = getenv("XMIN") ? atoi(getenv("XMIN")) : 0;
-  static const int y_min = getenv("YMIN") ? atoi(getenv("YMIN")) : 0;
-  static const int env_xmax = getenv("XMAX") ? atoi(getenv("XMAX")) : -1;
-  static const int env_ymax = getenv("YMAX") ? atoi(getenv("YMAX")) : -1;
-  static const int scale = getenv("SCALE") ? atoi(getenv("SCALE")) : 1;
+  static const int x_min = util::getenv("XMIN", 0);
+  static const int y_min = util::getenv("YMIN", 0);
+  static const int env_xmax = util::getenv("XMAX", -1);
+  static const int env_ymax = util::getenv("YMAX", -1);
+  static const int scale = util::getenv("SCALE", 1);
 
   assert(b->cur_rgb_buf);
 
@@ -214,101 +216,111 @@ kj::Array<uint8_t> get_frame_image(const CameraBuf *b) {
   return kj::mv(frame_image);
 }
 
-static void publish_thumbnail(PubMaster *pm, const CameraBuf *b) {
-  uint8_t* thumbnail_buffer = NULL;
-  unsigned long thumbnail_len = 0;
-
-  unsigned char *row = (unsigned char *)malloc(b->rgb_width/4*3);
+static kj::Array<capnp::byte> yuv420_to_jpeg(const CameraBuf *b, int thumbnail_width, int thumbnail_height) {
+  // make the buffer big enough. jpeg_write_raw_data requires 16-pixels aligned height to be used.
+  std::unique_ptr<uint8[]> buf(new uint8_t[(thumbnail_width * ((thumbnail_height + 15) & ~15) * 3) / 2]);
+  uint8_t *y_plane = buf.get();
+  uint8_t *u_plane = y_plane + thumbnail_width * thumbnail_height;
+  uint8_t *v_plane = u_plane + (thumbnail_width * thumbnail_height) / 4;
+  {
+    int result = libyuv::I420Scale(
+        b->cur_yuv_buf->y, b->rgb_width, b->cur_yuv_buf->u, b->rgb_width / 2, b->cur_yuv_buf->v, b->rgb_width / 2,
+        b->rgb_width, b->rgb_height,
+        y_plane, thumbnail_width, u_plane, thumbnail_width / 2, v_plane, thumbnail_width / 2,
+        thumbnail_width, thumbnail_height, libyuv::kFilterNone);
+    if (result != 0) {
+      LOGE("Generate YUV thumbnail failed.");
+      return {};
+    }
+  }
 
   struct jpeg_compress_struct cinfo;
   struct jpeg_error_mgr jerr;
-
   cinfo.err = jpeg_std_error(&jerr);
   jpeg_create_compress(&cinfo);
+
+  uint8_t *thumbnail_buffer = nullptr;
+  size_t thumbnail_len = 0;
   jpeg_mem_dest(&cinfo, &thumbnail_buffer, &thumbnail_len);
 
-  cinfo.image_width = b->rgb_width / 4;
-  cinfo.image_height = b->rgb_height / 4;
+  cinfo.image_width = thumbnail_width;
+  cinfo.image_height = thumbnail_height;
   cinfo.input_components = 3;
-  cinfo.in_color_space = JCS_RGB;
 
   jpeg_set_defaults(&cinfo);
-#ifndef __APPLE__
-  jpeg_set_quality(&cinfo, 50, true);
-  jpeg_start_compress(&cinfo, true);
-#else
-  jpeg_set_quality(&cinfo, 50, static_cast<boolean>(true) );
-  jpeg_start_compress(&cinfo, static_cast<boolean>(true) );
-#endif
+  jpeg_set_colorspace(&cinfo, JCS_YCbCr);
+  // configure sampling factors for yuv420.
+  cinfo.comp_info[0].h_samp_factor = 2;  // Y
+  cinfo.comp_info[0].v_samp_factor = 2;
+  cinfo.comp_info[1].h_samp_factor = 1;  // U
+  cinfo.comp_info[1].v_samp_factor = 1;
+  cinfo.comp_info[2].h_samp_factor = 1;  // V
+  cinfo.comp_info[2].v_samp_factor = 1;
+  cinfo.raw_data_in = TRUE;
 
-  JSAMPROW row_pointer[1];
-  const uint8_t *bgr_ptr = (const uint8_t *)b->cur_rgb_buf->addr;
-  for (int ii = 0; ii < b->rgb_height/4; ii+=1) {
-    for (int j = 0; j < b->rgb_width*3; j+=12) {
-      for (int k = 0; k < 3; k++) {
-        uint16_t dat = 0;
-        int i = ii * 4;
-        dat += bgr_ptr[b->rgb_stride*i + j + k];
-        dat += bgr_ptr[b->rgb_stride*i + j+3 + k];
-        dat += bgr_ptr[b->rgb_stride*(i+1) + j + k];
-        dat += bgr_ptr[b->rgb_stride*(i+1) + j+3 + k];
-        dat += bgr_ptr[b->rgb_stride*(i+2) + j + k];
-        dat += bgr_ptr[b->rgb_stride*(i+2) + j+3 + k];
-        dat += bgr_ptr[b->rgb_stride*(i+3) + j + k];
-        dat += bgr_ptr[b->rgb_stride*(i+3) + j+3 + k];
-        row[(j/4) + (2-k)] = dat/8;
+  jpeg_set_quality(&cinfo, 50, TRUE);
+  jpeg_start_compress(&cinfo, TRUE);
+
+  JSAMPROW y[16], u[8], v[8];
+  JSAMPARRAY planes[3]{y, u, v};
+
+  for (int line = 0; line < cinfo.image_height; line += 16) {
+    for (int i = 0; i < 16; ++i) {
+      y[i] = y_plane + (line + i) * cinfo.image_width;
+      if (i % 2 == 0) {
+        int offset = (cinfo.image_width / 2) * ((i + line) / 2);
+        u[i / 2] = u_plane + offset;
+        v[i / 2] = v_plane + offset;
       }
     }
-    row_pointer[0] = row;
-    jpeg_write_scanlines(&cinfo, row_pointer, 1);
+    jpeg_write_raw_data(&cinfo, planes, 16);
   }
+
   jpeg_finish_compress(&cinfo);
   jpeg_destroy_compress(&cinfo);
-  free(row);
+
+  kj::Array<capnp::byte> dat = kj::heapArray<capnp::byte>(thumbnail_buffer, thumbnail_len);
+  free(thumbnail_buffer);
+  return dat;
+}
+
+static void publish_thumbnail(PubMaster *pm, const CameraBuf *b) {
+  auto thumbnail = yuv420_to_jpeg(b, b->rgb_width / 4, b->rgb_height / 4);
+  if (thumbnail.size() == 0) return;
 
   MessageBuilder msg;
   auto thumbnaild = msg.initEvent().initThumbnail();
   thumbnaild.setFrameId(b->cur_frame_data.frame_id);
   thumbnaild.setTimestampEof(b->cur_frame_data.timestamp_eof);
-  thumbnaild.setThumbnail(kj::arrayPtr((const uint8_t*)thumbnail_buffer, thumbnail_len));
+  thumbnaild.setThumbnail(thumbnail);
 
   pm->send("thumbnail", msg);
-  free(thumbnail_buffer);
 }
 
-float set_exposure_target(const CameraBuf *b, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip, int analog_gain, bool hist_ceil, bool hl_weighted) {
-  const uint8_t *pix_ptr = b->cur_yuv_buf->y;
+float set_exposure_target(const CameraBuf *b, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip) {
+  int lum_med;
   uint32_t lum_binning[256] = {0};
+  const uint8_t *pix_ptr = b->cur_yuv_buf->y;
+
   unsigned int lum_total = 0;
   for (int y = y_start; y < y_end; y += y_skip) {
     for (int x = x_start; x < x_end; x += x_skip) {
       uint8_t lum = pix_ptr[(y * b->rgb_width) + x];
-      if (hist_ceil && lum < 80 && lum_binning[lum] > HISTO_CEIL_K * (y_end - y_start) * (x_end - x_start) / x_skip / y_skip / 256) {
-        continue;
-      }
       lum_binning[lum]++;
       lum_total += 1;
     }
   }
 
+
+  // Find mean lumimance value
   unsigned int lum_cur = 0;
-  int lum_med = 0;
-  int lum_med_alt = 0;
-  for (lum_med=255; lum_med>=0; lum_med--) {
+  for (lum_med = 255; lum_med >= 0; lum_med--) {
     lum_cur += lum_binning[lum_med];
-    if (hl_weighted) {
-      int lum_med_tmp = 0;
-      int hb = HLC_THRESH + (10 - analog_gain);
-      if (lum_cur > 0 && lum_med > hb) {
-        lum_med_tmp = (lum_med - hb) + 100;
-      }
-      lum_med_alt = lum_med_alt>lum_med_tmp?lum_med_alt:lum_med_tmp;
-    }
+
     if (lum_cur >= lum_total / 2) {
       break;
     }
   }
-  lum_med = lum_med_alt>0 ? lum_med + lum_med/32*lum_cur*abs(lum_med_alt - lum_med)/lum_total:lum_med;
 
   return lum_med / 256.0;
 }
@@ -351,18 +363,12 @@ static void driver_cam_auto_exposure(CameraState *c, SubMaster &sm) {
   struct ExpRect {int x1, x2, x_skip, y1, y2, y_skip;};
   const CameraBuf *b = &c->buf;
 
-  bool hist_ceil = false, hl_weighted = false;
   int x_offset = 0, y_offset = 0;
   int frame_width = b->rgb_width, frame_height = b->rgb_height;
-#ifndef QCOM2
-  int analog_gain = -1;
-#else
-  int analog_gain = c->analog_gain;
-#endif
+
 
   ExpRect def_rect;
   if (Hardware::TICI()) {
-    hist_ceil = hl_weighted = true;
     x_offset = 630, y_offset = 156;
     frame_width = 668, frame_height = frame_width / 1.33;
     def_rect = {96, 1832, 2, 242, 1148, 4};
@@ -373,7 +379,7 @@ static void driver_cam_auto_exposure(CameraState *c, SubMaster &sm) {
 
   static ExpRect rect = def_rect;
   // use driver face crop for AE
-  if (sm.updated("driverState")) {
+  if (Hardware::EON() && sm.updated("driverState")) {
     if (auto state = sm["driverState"].getDriverState(); state.getFaceProb() > 0.4) {
       auto face_position = state.getFacePosition();
       int x = is_rhd ? 0 : frame_width - (0.5 * frame_height);
@@ -381,16 +387,15 @@ static void driver_cam_auto_exposure(CameraState *c, SubMaster &sm) {
       int y = (face_position[1] + 0.5) * frame_height + y_offset;
       rect = {std::max(0, x - 72), std::min(b->rgb_width - 1, x + 72), 2,
               std::max(0, y - 72), std::min(b->rgb_height - 1, y + 72), 1};
-    } else {
-      rect = def_rect;
     }
   }
 
-  camera_autoexposure(c, set_exposure_target(b, rect.x1, rect.x2, rect.x_skip, rect.y1, rect.y2, rect.y_skip, analog_gain, hist_ceil, hl_weighted));
+  camera_autoexposure(c, set_exposure_target(b, rect.x1, rect.x2, rect.x_skip, rect.y1, rect.y2, rect.y_skip));
 }
 
 void common_process_driver_camera(SubMaster *sm, PubMaster *pm, CameraState *c, int cnt) {
-  if (cnt % 3 == 0) {
+  int j = Hardware::TICI() ? 1 : 3;
+  if (cnt % j == 0) {
     sm->update(0);
     driver_cam_auto_exposure(c, *sm);
   }

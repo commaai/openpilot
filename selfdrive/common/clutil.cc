@@ -88,7 +88,7 @@ cl_program cl_program_from_file(cl_context ctx, cl_device_id device_id, const ch
   return prg;
 }
 
-// Given a cl code and return a string represenation
+// Given a cl code and return a string representation
 #define CL_ERR_TO_STR(err) case err: return #err
 const char* cl_get_error_string(int err) {
   switch (err) {
