@@ -88,9 +88,9 @@ void Route::addFileToSegment(int n, const QString &file) {
 
 // class Segment
 
-Segment::Segment(int n, const SegmentFile &files, bool load_dcam, bool load_ecam, bool no_cache) : seg_num(n), no_cache_(no_cache) {
+Segment::Segment(int n, const SegmentFile &files, bool load_dcam, bool load_ecam, bool no_cache) : seg_num(n), no_local_cache_(no_cache) {
   static std::once_flag once_flag;
-  std::call_once(once_flag, [=]() { if (!no_cache_ && !CACHE_DIR.exists()) QDir().mkdir(CACHE_DIR.absolutePath()); });
+  std::call_once(once_flag, [=]() { if (!no_local_cache_ && !CACHE_DIR.exists()) QDir().mkdir(CACHE_DIR.absolutePath()); });
 
   // [RoadCam, DriverCam, WideRoadCam, log]. fallback to qcamera/qlog
   const QString file_list[] = {
@@ -126,12 +126,12 @@ void Segment::loadFile(int id, const std::string file) {
   const std::string local_file = is_remote ? cacheFilePath(file) : file;
   std::string file_content;
   
-  if (!no_cache_ && util::file_exists(local_file)) {
+  if (!no_local_cache_ && util::file_exists(local_file)) {
     file_content = util::read_file(local_file);
   } else if (is_remote) {
     int connections = is_cam_file ? 3 : 1;
     bool decompress = !is_cam_file;
-    file_content = downloadFile(file, no_cache_ ? "" : local_file, connections, decompress);
+    file_content = downloadFile(file, no_local_cache_ ? "" : local_file, connections, decompress);
   }
 
   if (!aborting_ && !file_content.empty()) {
@@ -173,7 +173,9 @@ std::string Segment::downloadFile(const std::string &url, const std::string &loc
         return content;
       }
     }
-    qInfo() << "download failed, retrying" << i;
+    if (!aborting_) {
+      qInfo() << "download failed, retrying" << i;
+    }
   }
   return {};
 }

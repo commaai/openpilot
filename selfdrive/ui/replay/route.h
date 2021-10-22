@@ -69,5 +69,5 @@ protected:
   std::atomic<int> loading_ = 0;
   std::vector<QThread*> loading_threads_;
   const int max_retries_ = 3;
-  bool no_cache_;
+  bool no_local_cache_;
 };
