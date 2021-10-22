@@ -62,7 +62,7 @@ signals:
 
 protected:
   void loadFile(int id, const std::string file);
-  std::string downloadFile(const std::string &url, const std::string &local_file, int connections, bool decompress = false);
+  std::string downloadFile(const std::string &url, const std::string &local_file, bool decompress = false);
   std::string cacheFilePath(const std::string &file);
 
   std::atomic<bool> success_ = true, aborting_ = false;

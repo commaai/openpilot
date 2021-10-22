@@ -16,7 +16,7 @@ public:
   FrameReader();
   ~FrameReader();
   bool load(const std::string &url);
-  bool loadFromBuffer(const std::string &buf);
+  bool loadFromBuffer(const std::string &&buf);
   bool get(int idx, uint8_t *rgb, uint8_t *yuv);
   int getRGBSize() const { return width * height * 3; }
   int getYUVSize() const { return width * height * 3 / 2; }

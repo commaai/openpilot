@@ -65,7 +65,7 @@ static int readFunction(void* opaque, uint8_t* buf, int buf_size) {
     return me.gcount() ? me.gcount() : AVERROR_EOF;
 }
 
-bool FrameReader::loadFromBuffer(const std::string &buf) {
+bool FrameReader::loadFromBuffer(const std::string &&buf) {
   std::istringstream stm(buf);
   const int avio_ctx_buffer_size = 64 * 1024;
   unsigned char *avio_ctx_buffer = (unsigned char *)av_malloc(avio_ctx_buffer_size);

@@ -126,18 +126,17 @@ void Segment::loadFile(int id, const std::string file) {
   const std::string local_file = is_remote ? cacheFilePath(file) : file;
   std::string file_content;
   
-  if (!no_local_cache_ && util::file_exists(local_file)) {
+  if ((!is_remote || !no_local_cache_) && util::file_exists(local_file)) {
     file_content = util::read_file(local_file);
   } else if (is_remote) {
-    int connections = is_cam_file ? 3 : 1;
     bool decompress = !is_cam_file;
-    file_content = downloadFile(file, no_local_cache_ ? "" : local_file, connections, decompress);
+    file_content = downloadFile(file, no_local_cache_ ? "" : local_file, decompress);
   }
 
   if (!aborting_ && !file_content.empty()) {
     if (is_cam_file) {
       frames[id] = std::make_unique<FrameReader>();
-      success_ = success_ && frames[id]->loadFromBuffer(file_content);
+      success_ = success_ && frames[id]->loadFromBuffer(std::move(file_content));
     } else {
       log = std::make_unique<LogReader>();
       success_ = success_ && log->load(std::move(file_content));
@@ -149,19 +148,21 @@ void Segment::loadFile(int id, const std::string file) {
   }
 }
 
-std::string Segment::downloadFile(const std::string &url, const std::string &local_file, int connections, bool decompress) {
+std::string Segment::downloadFile(const std::string &url, const std::string &local_file, bool decompress) {
+  const int chunk_size = 20 * 1024 * 1024; // 20MB
   std::string content;
   size_t remote_file_size = 0;
 
-  for (int i = 1; i <= max_retries_ && !aborting_; ++i) {
+  for (int i = 1; i <= max_retries_; ++i) {
     if (remote_file_size <= 0) {
       remote_file_size = getRemoteFileSize(url);
     } 
-    if (remote_file_size > 0) {
+    if (remote_file_size > 0 && !aborting_) {
       content.resize(remote_file_size);
       std::ostringstream stm;
       stm.rdbuf()->pubsetbuf(content.data(), content.size());
-      bool ret = httpMultiPartDownload(url, stm, connections, remote_file_size, &aborting_);
+      int chunks = std::nearbyint(remote_file_size / (float)chunk_size);
+      bool ret = httpMultiPartDownload(url, stm, chunks, remote_file_size, &aborting_);
       if (ret) {
         if (decompress) {
           content = decompressBZ2(content);
@@ -173,9 +174,9 @@ std::string Segment::downloadFile(const std::string &url, const std::string &loc
         return content;
       }
     }
-    if (!aborting_) {
-      qInfo() << "download failed, retrying" << i;
-    }
+    if (aborting_) break;
+
+    qInfo() << "download failed, retrying" << i;
   }
   return {};
 }
