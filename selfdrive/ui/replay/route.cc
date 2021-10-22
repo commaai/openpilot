@@ -158,18 +158,18 @@ std::string Segment::downloadFile(const std::string &url, const std::string &loc
       remote_file_size = getRemoteFileSize(url);
     } 
     if (remote_file_size > 0 && !aborting_) {
-      std::ostringstream stm;
+      std::ostringstream oss;
       content.resize(remote_file_size);
-      stm.rdbuf()->pubsetbuf(content.data(), content.size());
+      oss.rdbuf()->pubsetbuf(content.data(), content.size());
       int chunks = std::nearbyint(remote_file_size / (float)chunk_size);
-      bool ret = httpMultiPartDownload(url, stm, chunks, remote_file_size, &aborting_);
+      bool ret = httpMultiPartDownload(url, oss, chunks, remote_file_size, &aborting_);
       if (ret) {
         if (decompress) {
           content = decompressBZ2(content);
         }
         if (!local_file.empty()) {
-          std::ofstream stm(local_file, stm.binary | stm.out);
-          stm.write(content.data(), content.size());
+          std::ofstream fs(local_file, fs.binary | fs.out);
+          fs.write(content.data(), content.size());
         }
         return content;
       }

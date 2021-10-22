@@ -59,18 +59,18 @@ FrameReader::~FrameReader() {
   }
 }
 
-static int readFunction(void* opaque, uint8_t* buf, int buf_size) {
-    auto& me = *reinterpret_cast<std::istringstream*>(opaque);
-    me.read(reinterpret_cast<char*>(buf), buf_size);
-    return me.gcount() ? me.gcount() : AVERROR_EOF;
+static int readFunction(void *opaque, uint8_t *buf, int buf_size) {
+  auto &iss = *reinterpret_cast<std::istringstream *>(opaque);
+  iss.read(reinterpret_cast<char *>(buf), buf_size);
+  return iss.gcount() ? iss.gcount() : AVERROR_EOF;
 }
 
 bool FrameReader::loadFromBuffer(const std::string &&buf) {
-  std::istringstream stm(buf);
+  std::istringstream iss(buf);
   const int avio_ctx_buffer_size = 64 * 1024;
   unsigned char *avio_ctx_buffer = (unsigned char *)av_malloc(avio_ctx_buffer_size);
 
-  avio_ctx_ = avio_alloc_context(avio_ctx_buffer, avio_ctx_buffer_size, 0, &stm, readFunction, nullptr, nullptr);
+  avio_ctx_ = avio_alloc_context(avio_ctx_buffer, avio_ctx_buffer_size, 0, &iss, readFunction, nullptr, nullptr);
   pFormatCtx_->pb = avio_ctx_;
   return load("memory.hevc");
 }

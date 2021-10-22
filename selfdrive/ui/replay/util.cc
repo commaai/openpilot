@@ -21,14 +21,14 @@ struct MultiPartWriter {
   size_t offset;
   size_t end;
   size_t written;
-  std::ostream *stm;
+  std::ostream *os;
 };
 
 static size_t write_cb(char *data, size_t size, size_t count, void *userp) {
   MultiPartWriter *w = (MultiPartWriter *)userp;
-  w->stm->seekp(w->offset);
+  w->os->seekp(w->offset);
   size_t bytes = size * count;
-  w->stm->write(data, bytes);
+  w->os->write(data, bytes);
   w->offset += bytes;
   w->written += bytes;
   return bytes;
@@ -71,14 +71,14 @@ void enableHttpLogging(bool enable) {
   enable_http_logging = enable;
 }
 
-bool httpMultiPartDownload(const std::string &url, std::ostream &stream, int parts, size_t content_length, std::atomic<bool> *abort) {
+bool httpMultiPartDownload(const std::string &url, std::ostream &os, int parts, size_t content_length, std::atomic<bool> *abort) {
   static CURLGlobalInitializer curl_initializer;
   static std::mutex lock;
   static uint64_t total_written = 0, prev_total_written = 0;
   static double last_print_ts = 0;
 
-  stream.seekp(content_length - 1);
-  stream.write("\0", 1);
+  os.seekp(content_length - 1);
+  os.write("\0", 1);
 
   CURLM *cm = curl_multi_init();
 
@@ -87,7 +87,7 @@ bool httpMultiPartDownload(const std::string &url, std::ostream &stream, int par
   for (int i = 0; i < parts; ++i) {
     CURL *eh = curl_easy_init();
     writers[eh] = {
-        .stm = &stream,
+        .os = &os,
         .offset = (size_t)(i * part_size),
         .end = i == parts - 1 ? content_length - 1 : (i + 1) * part_size - 1,
     };

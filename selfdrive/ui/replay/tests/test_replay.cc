@@ -1,7 +1,7 @@
-#include <fstream>
 #include <QCryptographicHash>
 #include <QDebug>
 #include <QEventLoop>
+#include <fstream>
 
 #include "catch2/catch.hpp"
 #include "selfdrive/ui/replay/replay.h"
@@ -72,11 +72,11 @@ TEST_CASE("Segment") {
 
 // helper class for unit tests
 class TestReplay : public Replay {
-public:
- TestReplay(const QString &route, bool no_local_cache)
-     : Replay(route, {}, {}, nullptr, false, false, no_local_cache) {}
- void test_seek();
- void testSeekTo(int seek_to);
+ public:
+  TestReplay(const QString &route, bool no_local_cache)
+      : Replay(route, {}, {}, nullptr, false, false, no_local_cache) {}
+  void test_seek();
+  void testSeekTo(int seek_to);
 };
 
 void TestReplay::testSeekTo(int seek_to) {
