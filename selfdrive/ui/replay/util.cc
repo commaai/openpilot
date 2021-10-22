@@ -163,22 +163,19 @@ std::string decompressBZ2(const std::string &in) {
 
   strm.next_in = (char *)in.data();
   strm.avail_in = in.size();
-
-  std::array<char, 64 * 1024> buf;
-  std::string out;
-  out.reserve(in.size() * 4);
-
+  std::string out(in.size() * 5, '\0');
   do {
-    strm.next_out = buf.data();
-    strm.avail_out = buf.size();
+    strm.next_out = (char *)(&out[strm.total_out_lo32]);
+    strm.avail_out = out.size() - strm.total_out_lo32;
     bzerror = BZ2_bzDecompress(&strm);
-    if (bzerror == BZ_OK || bzerror == BZ_STREAM_END) {
-      out.append(buf.data(), buf.size() - strm.avail_out);
+    if (bzerror == BZ_OK && strm.avail_in > 0 && strm.avail_out == 0) {
+      out.resize(out.size() * 2);
     }
   } while (bzerror == BZ_OK);
 
   BZ2_bzDecompressEnd(&strm);
   if (bzerror == BZ_STREAM_END) {
+    out.resize(strm.total_out_lo32);
     return out;
   }
   return {};
