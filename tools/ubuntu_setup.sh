@@ -4,7 +4,8 @@ OP_ROOT=$(git rev-parse --show-toplevel)
 
 # Install packages present in all supported versions of Ubuntu
 function install_ubuntu_common_requirements() {
-  sudo apt-get update && sudo apt-get install -y --no-install-recommends \
+  sudo apt-get update
+  sudo apt-get install -y --no-install-recommends \
     autoconf \
     build-essential \
     clang \
@@ -72,8 +73,8 @@ function install_ubuntu_common_requirements() {
 # Install Ubuntu 21.10 packages
 function install_ubuntu_latest_requirements() {
   install_ubuntu_common_requirements
-  
-  sudo apt-get update && sudo apt-get install -y --no-install-recommends \
+
+  sudo apt-get install -y --no-install-recommends \
     qtbase5-dev \
     qtchooser \
     qt5-qmake \
@@ -84,7 +85,7 @@ function install_ubuntu_latest_requirements() {
 function install_ubuntu_lts_requirements() {
   install_ubuntu_common_requirements
 
-  sudo apt-get update && sudo apt-get install -y --no-install-recommends \
+  sudo apt-get install -y --no-install-recommends \
     libavresample-dev \
     qt5-default
 }
@@ -105,7 +106,7 @@ if [ -f "/etc/os-release" ]; then
         exit 1
     esac
   else
-    echo "OS '$ID' unsupported. This setup script is written for Ubuntu 20.04."
+    echo "'$ID' is unsupported. This setup script is written for Ubuntu 20.04."
     exit 1
   fi
 else
