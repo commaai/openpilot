@@ -1,5 +1,4 @@
 #include <fstream>
-
 #include <QCryptographicHash>
 #include <QDebug>
 #include <QEventLoop>
@@ -74,9 +73,10 @@ TEST_CASE("Segment") {
 // helper class for unit tests
 class TestReplay : public Replay {
 public:
-  TestReplay(const QString &route) : Replay(route, {}, {}) {}
-  void test_seek();
-  void testSeekTo(int seek_to);
+ TestReplay(const QString &route, bool no_local_cache)
+     : Replay(route, {}, {}, nullptr, false, false, no_local_cache) {}
+ void test_seek();
+ void testSeekTo(int seek_to);
 };
 
 void TestReplay::testSeekTo(int seek_to) {
@@ -118,7 +118,7 @@ void TestReplay::test_seek() {
   QEventLoop loop;
   std::thread thread = std::thread([&]() {
     for (int i = 0; i < 100; ++i) {
-      testSeekTo(random_int(0, 5 * 60));
+      testSeekTo(random_int(0, 3 * 60));
     }
     loop.quit();
   });
@@ -127,7 +127,14 @@ void TestReplay::test_seek() {
 }
 
 TEST_CASE("Replay") {
-  TestReplay replay(DEMO_ROUTE);
-  REQUIRE(replay.load());
-  replay.test_seek();
+  SECTION("cache to local") {
+    TestReplay replay(DEMO_ROUTE, false);
+    REQUIRE(replay.load());
+    replay.test_seek();
+  }
+  SECTION("no local cache") {
+    TestReplay replay(DEMO_ROUTE, true);
+    REQUIRE(replay.load());
+    replay.test_seek();
+  }
 }

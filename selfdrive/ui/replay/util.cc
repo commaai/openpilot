@@ -45,14 +45,14 @@ size_t getRemoteFileSize(const std::string &url) {
   curl_easy_setopt(curl, CURLOPT_HEADER, 1);
   curl_easy_setopt(curl, CURLOPT_NOBODY, 1);
   CURLcode res = curl_easy_perform(curl);
-  double content_length = 0;
+  double content_length = -1;
   if (res == CURLE_OK) {
     res = curl_easy_getinfo(curl, CURLINFO_CONTENT_LENGTH_DOWNLOAD, &content_length);
   } else {
     std::cout << "Download failed: error code: " << res << std::endl;
   }
   curl_easy_cleanup(curl);
-  return res == CURLE_OK ? (size_t)content_length : 0;
+  return content_length > 0 ? content_length : 0;
 }
 
 std::string formattedDataSize(size_t size) {
@@ -79,6 +79,7 @@ bool httpMultiPartDownload(const std::string &url, std::ostream &stream, int par
 
   stream.seekp(content_length - 1);
   stream.write("\0", 1);
+
   CURLM *cm = curl_multi_init();
 
   std::map<CURL *, MultiPartWriter> writers;
