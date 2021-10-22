@@ -18,7 +18,6 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   main_layout->addLayout(stacked_layout);
 
   nvg = new NvgWindow(VISION_STREAM_RGB_BACK, this);
-  nvg->setBackgroundColor(bg_colors[STATUS_DISENGAGED]);
 
   QWidget * split_wrapper = new QWidget;
   split = new QHBoxLayout(split_wrapper);
@@ -179,6 +178,7 @@ void NvgWindow::initializeGL() {
 
   ui_nvg_init(&QUIState::ui_state);
   prev_draw_t = millis_since_boot();
+  setBackgroundColor(bg_colors[STATUS_DISENGAGED]);
 }
 
 void NvgWindow::paintGL() {
