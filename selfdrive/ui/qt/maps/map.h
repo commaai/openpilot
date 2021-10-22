@@ -27,6 +27,8 @@
 #include "selfdrive/common/util.h"
 #include "cereal/messaging/messaging.h"
 
+const QString MAPS_HOST = util::getenv("MAPS_HOST", "https://maps-mapbox-proxy.aks.comma.ai").c_str();
+
 class MapInstructions : public QWidget {
   Q_OBJECT
 
