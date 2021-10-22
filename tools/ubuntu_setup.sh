@@ -92,23 +92,18 @@ function install_ubuntu_lts_requirements() {
 
 # Detect OS using /etc/os-release file
 if [ -f "/etc/os-release" ]; then
-  source  /etc/os-release
-  if [ "$ID" == "ubuntu" ]; then
-    case "$VERSION_ID" in
-      "21.10")
-        install_ubuntu_latest_requirements
-        ;;
-      "20.04")
-        install_ubuntu_lts_requirements
-        ;;
-      *)
-        echo "Ubuntu version "$VERSION_ID" not supported"
-        exit 1
-    esac
-  else
-    echo "'$ID' is unsupported. This setup script is written for Ubuntu 20.04."
-    exit 1
-  fi
+  source /etc/os-release
+  case "$ID $VERSION_ID" in
+    "ubuntu 21.10")
+      install_ubuntu_latest_requirements
+      ;;
+    "ubuntu 20.04")
+      install_ubuntu_lts_requirements
+      ;;
+    *)
+      echo "$ID $VERSION_ID is unsupported. This setup script is written for Ubuntu 20.04."
+      exit 1
+  esac
 else
   echo "No /etc/os-release in the system"
   exit 1
