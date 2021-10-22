@@ -51,7 +51,7 @@ if EON:
 
 if TICI:
   PROCS.update({
-    "./loggerd": 60.0,
+    "./loggerd": 70.0,
     "selfdrive.controls.controlsd": 28.0,
     "./camerad": 31.0,
     "./_ui": 21.0,

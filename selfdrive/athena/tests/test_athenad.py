@@ -245,6 +245,10 @@ class TestAthenadMethods(unittest.TestCase):
     self.assertDictEqual(items[0], item._asdict())
     self.assertFalse(items[0]['current'])
 
+    athenad.cancelled_uploads.add(item.id)
+    items = dispatcher["listUploadQueue"]()
+    self.assertEqual(len(items), 0)
+
   @mock.patch('selfdrive.athena.athenad.create_connection')
   def test_startLocalProxy(self, mock_create_connection):
     end_event = threading.Event()

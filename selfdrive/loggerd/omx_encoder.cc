@@ -156,8 +156,9 @@ static const char* omx_color_fomat_name(uint32_t format) {
 
 // ***** encoder functions *****
 
-OmxEncoder::OmxEncoder(const char* filename, int width, int height, int fps, int bitrate, bool h265, bool downscale) {
+OmxEncoder::OmxEncoder(const char* filename, int width, int height, int fps, int bitrate, bool h265, bool downscale, bool write) {
   this->filename = filename;
+  this->write = write;
   this->width = width;
   this->height = height;
   this->fps = fps;
@@ -503,13 +504,15 @@ void OmxEncoder::encoder_open(const char* path) {
 
     this->wrote_codec_config = false;
   } else {
-    this->of = fopen(this->vid_path, "wb");
-    assert(this->of);
+    if (this->write) {
+      this->of = fopen(this->vid_path, "wb");
+      assert(this->of);
 #ifndef QCOM2
-    if (this->codec_config_len > 0) {
-      fwrite(this->codec_config, this->codec_config_len, 1, this->of);
-    }
+      if (this->codec_config_len > 0) {
+        fwrite(this->codec_config, this->codec_config_len, 1, this->of);
+      }
 #endif
+    }
   }
 
   // create camera lock file
@@ -553,8 +556,10 @@ void OmxEncoder::encoder_close() {
       avio_closep(&this->ofmt_ctx->pb);
       avformat_free_context(this->ofmt_ctx);
     } else {
-      fclose(this->of);
-      this->of = nullptr;
+      if (this->of) {
+        fclose(this->of);
+        this->of = nullptr;
+      }
     }
     unlink(this->lock_path);
   }

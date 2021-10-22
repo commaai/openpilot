@@ -34,6 +34,7 @@ const std::array<double, TRAJECTORY_SIZE> X_IDXS = {
         60.75  ,  67.6875,  75.    ,  82.6875,  90.75  ,  99.1875,
        108.    , 117.1875, 126.75  , 136.6875, 147.    , 157.6875,
        168.75  , 180.1875, 192.};
+const auto X_IDXS_FLOAT = convert_array_to_type<double, float, TRAJECTORY_SIZE>(X_IDXS);
 
 #ifdef __cplusplus
 
