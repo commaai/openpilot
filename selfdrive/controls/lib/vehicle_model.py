@@ -109,7 +109,7 @@ class VehicleModel:
       Steering wheel angle [rad]
     """
 
-    return (curv + self.roll_compensation(roll, u)) * self.sR * 1.0 / self.curvature_factor(u)
+    return (curv - self.roll_compensation(roll, u)) * self.sR * 1.0 / self.curvature_factor(u)
 
   def roll_compensation(self, roll, u):
     g = 9.8
