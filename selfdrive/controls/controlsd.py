@@ -487,6 +487,8 @@ class Controls:
     lat_plan = self.sm['lateralPlan']
     long_plan = self.sm['longitudinalPlan']
 
+    localizer = self.sm['liveLocationKalman']
+
     actuators = car.CarControl.Actuators.new_message()
     actuators.longControlState = self.LoC.long_control_state
 
@@ -510,8 +512,13 @@ class Controls:
                                                                              lat_plan.psis,
                                                                              lat_plan.curvatures,
                                                                              lat_plan.curvatureRates)
+<<<<<<< HEAD
       actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(lat_active, CS, self.CP, self.VM, params,
                                                                              desired_curvature, desired_curvature_rate)
+=======
+      actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(self.active, CS, self.CP, self.VM, params,
+                                                                             desired_curvature, desired_curvature_rate, localizer.orientationNED.value[0])
+>>>>>>> add new vehicle model in controlsd
     else:
       lac_log = log.ControlsState.LateralDebugState.new_message()
       if self.sm.rcv_frame['testJoystick'] > 0 and self.active:
@@ -629,8 +636,9 @@ class Controls:
 
     # Curvature & Steering angle
     params = self.sm['liveParameters']
-    steer_angle_without_offset = math.radians(CS.steeringAngleDeg - params.angleOffsetAverageDeg)
-    curvature = -self.VM.calc_curvature(steer_angle_without_offset, CS.vEgo)
+    localizer = self.sm['liveLocationKalman']
+    steer_angle_without_offset = math.radians(CS.steeringAngleDeg - params.angleOffsetDeg)
+    curvature = -self.VM.calc_curvature(steer_angle_without_offset, CS.vEgo, localizer.orientationNED.value[0])
 
     # controlsState
     dat = messaging.new_message('controlsState')
