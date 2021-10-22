@@ -94,7 +94,10 @@ mat4 get_fit_view_transform(float widget_aspect_ratio, float frame_aspect_ratio)
 CameraViewWidget::CameraViewWidget(VisionStreamType stream_type, bool zoom, QWidget* parent) :
                                    stream_type(stream_type), zoomed_view(zoom), QOpenGLWidget(parent) {
   setAttribute(Qt::WA_OpaquePaintEvent);
-  connect(this, &QOpenGLWidget::aboutToCompose, this, &CameraViewWidget::updateFrame);
+
+  QTimer *t = new QTimer(this);
+  connect(t, &QTimer::timeout, this, &CameraViewWidget::updateFrame);
+  t->start(1000 / UI_FREQ);
 }
 
 CameraViewWidget::~CameraViewWidget() {
@@ -171,6 +174,10 @@ void CameraViewWidget::setStreamType(VisionStreamType type) {
   }
 }
 
+void CameraViewWidget::setBackgroundColor(QColor color) {
+  bg = color;
+}
+
 void CameraViewWidget::updateFrameMat(int w, int h) {
   if (zoomed_view) {
     if (stream_type == VISION_STREAM_RGB_FRONT) {
@@ -202,7 +209,7 @@ void CameraViewWidget::updateFrameMat(int w, int h) {
 
 void CameraViewWidget::paintGL() {
   if (!latest_frame) {
-    glClearColor(0, 0, 0, 1.0);
+    glClearColor(bg.redF(), bg.greenF(), bg.blueF(), bg.alphaF());
     glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
     return;
   }
@@ -231,6 +238,10 @@ void CameraViewWidget::paintGL() {
 }
 
 void CameraViewWidget::updateFrame() {
+  if (!isVisible()) {
+    return;
+  }
+
   if (!vipc_client->connected) {
     makeCurrent();
     if (vipc_client->connect(false)) {
@@ -261,9 +272,5 @@ void CameraViewWidget::updateFrame() {
       update();
       emit frameUpdated();
     }
-  }
-  if (buf == nullptr && isVisible()) {
-    // try to connect or recv again
-    QTimer::singleShot(1000. / UI_FREQ, this, &CameraViewWidget::updateFrame);
   }
 }

@@ -18,7 +18,7 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   main_layout->addLayout(stacked_layout);
 
   nvg = new NvgWindow(VISION_STREAM_RGB_BACK, this);
-  QObject::connect(this, &OnroadWindow::updateStateSignal, nvg, &NvgWindow::updateState);
+  nvg->setBackgroundColor(bg_colors[STATUS_DISENGAGED]);
 
   QWidget * split_wrapper = new QWidget;
   split = new QHBoxLayout(split_wrapper);
@@ -179,18 +179,6 @@ void NvgWindow::initializeGL() {
 
   ui_nvg_init(&QUIState::ui_state);
   prev_draw_t = millis_since_boot();
-}
-
-void NvgWindow::updateState(const UIState &s) {
-  // TODO: make camerad startup faster then remove this
-  if (s.scene.started) {
-    if (isVisible() != vipc_client->connected) {
-      setVisible(vipc_client->connected);
-    }
-    if (!isVisible()) {
-      updateFrame();
-    }
-  }
 }
 
 void NvgWindow::paintGL() {
