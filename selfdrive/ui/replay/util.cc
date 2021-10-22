@@ -18,9 +18,9 @@ struct CURLGlobalInitializer {
 };
 
 struct MultiPartWriter {
-  int64_t offset;
-  int64_t end;
-  int64_t written;
+  size_t offset;
+  size_t end;
+  size_t written;
   std::ostream *stm;
 };
 
@@ -36,7 +36,7 @@ static size_t write_cb(char *data, size_t size, size_t count, void *userp) {
 
 static size_t dumy_write_cb(char *data, size_t size, size_t count, void *userp) { return size * count; }
 
-int64_t getRemoteFileSize(const std::string &url) {
+size_t getRemoteFileSize(const std::string &url) {
   CURL *curl = curl_easy_init();
   if (!curl) return -1;
 
@@ -45,14 +45,14 @@ int64_t getRemoteFileSize(const std::string &url) {
   curl_easy_setopt(curl, CURLOPT_HEADER, 1);
   curl_easy_setopt(curl, CURLOPT_NOBODY, 1);
   CURLcode res = curl_easy_perform(curl);
-  double content_length = -1;
+  double content_length = 0;
   if (res == CURLE_OK) {
     res = curl_easy_getinfo(curl, CURLINFO_CONTENT_LENGTH_DOWNLOAD, &content_length);
   } else {
     std::cout << "Download failed: error code: " << res << std::endl;
   }
   curl_easy_cleanup(curl);
-  return res == CURLE_OK ? (int64_t)content_length : -1;
+  return res == CURLE_OK ? (size_t)content_length : 0;
 }
 
 std::string formattedDataSize(size_t size) {
@@ -71,7 +71,7 @@ void enableHttpLogging(bool enable) {
   enable_http_logging = enable;
 }
 
-bool httpMultiPartDownload(const std::string &url, std::ostream &stream, int parts, int64_t content_length, std::atomic<bool> *abort) {
+bool httpMultiPartDownload(const std::string &url, std::ostream &stream, int parts, size_t content_length, std::atomic<bool> *abort) {
   static CURLGlobalInitializer curl_initializer;
   static std::mutex lock;
   static uint64_t total_written = 0, prev_total_written = 0;
@@ -87,7 +87,7 @@ bool httpMultiPartDownload(const std::string &url, std::ostream &stream, int par
     CURL *eh = curl_easy_init();
     writers[eh] = {
         .stm = &stream,
-        .offset = i * part_size,
+        .offset = (size_t)(i * part_size),
         .end = i == parts - 1 ? content_length - 1 : (i + 1) * part_size - 1,
     };
     curl_easy_setopt(eh, CURLOPT_WRITEFUNCTION, write_cb);

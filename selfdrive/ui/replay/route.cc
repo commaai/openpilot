@@ -158,8 +158,8 @@ std::string Segment::downloadFile(const std::string &url, const std::string &loc
       remote_file_size = getRemoteFileSize(url);
     } 
     if (remote_file_size > 0 && !aborting_) {
-      content.resize(remote_file_size);
       std::ostringstream stm;
+      content.resize(remote_file_size);
       stm.rdbuf()->pubsetbuf(content.data(), content.size());
       int chunks = std::nearbyint(remote_file_size / (float)chunk_size);
       bool ret = httpMultiPartDownload(url, stm, chunks, remote_file_size, &aborting_);
