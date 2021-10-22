@@ -113,7 +113,11 @@ class VehicleModel:
 
   def roll_compensation(self, roll, u):
     g = 9.8
-    return (g * roll) / ((1 / calc_slip_factor(self)) - u**2)
+    sf = calc_slip_factor(self)
+    if sf == 0:
+      return 0
+    else:
+      return (g * roll) / ((1 / sf) - u**2)
 
   def get_steer_from_yaw_rate(self, yaw_rate: float, u: float, roll: float) -> float:
     """Calculates the required steering wheel angle for a given yaw_rate
