@@ -90,7 +90,7 @@ void Route::addFileToSegment(int n, const QString &file) {
 
 Segment::Segment(int n, const SegmentFile &files, bool load_dcam, bool load_ecam, bool no_cache) : seg_num(n), no_local_cache_(no_cache) {
   static std::once_flag once_flag;
-  std::call_once(once_flag, [=]() { if (!no_local_cache_ && !CACHE_DIR.exists()) QDir().mkdir(CACHE_DIR.absolutePath()); });
+  std::call_once(once_flag, [=]() { if (!CACHE_DIR.exists()) QDir().mkdir(CACHE_DIR.absolutePath()); });
 
   // [RoadCam, DriverCam, WideRoadCam, log]. fallback to qcamera/qlog
   const QString file_list[] = {
@@ -133,10 +133,11 @@ void Segment::loadFile(int id, const std::string file) {
     file_content = downloadFile(file, no_local_cache_ ? "" : local_file, decompress);
   }
 
-  if (!aborting_ && !file_content.empty()) {
+  success_ = success_ && !file_content.empty();
+  if (!aborting_ && success_) {
     if (is_cam_file) {
       frames[id] = std::make_unique<FrameReader>();
-      success_ = success_ && frames[id]->loadFromBuffer(std::move(file_content));
+      success_ = success_ && frames[id]->loadFromBuffer(file_content);
     } else {
       log = std::make_unique<LogReader>();
       success_ = success_ && log->load(std::move(file_content));
@@ -161,12 +162,13 @@ std::string Segment::downloadFile(const std::string &url, const std::string &loc
       std::ostringstream oss;
       content.resize(remote_file_size);
       oss.rdbuf()->pubsetbuf(content.data(), content.size());
-      int chunks = std::nearbyint(remote_file_size / (float)chunk_size);
+      int chunks = std::min(1, (int)std::nearbyint(remote_file_size / (float)chunk_size));
       bool ret = httpMultiPartDownload(url, oss, chunks, remote_file_size, &aborting_);
       if (ret) {
         if (decompress) {
           content = decompressBZ2(content);
         }
+        // write to local cache
         if (!local_file.empty()) {
           std::ofstream fs(local_file, fs.binary | fs.out);
           fs.write(content.data(), content.size());
