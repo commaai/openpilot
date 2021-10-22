@@ -1,11 +1,12 @@
 #include "selfdrive/ui/replay/route.h"
 
+#include <fstream>
+#include <sstream>
+
 #include <QEventLoop>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QRegExp>
-#include <fstream>
-#include <sstream>
 
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/qt/api.h"
@@ -125,7 +126,7 @@ void Segment::loadFile(int id, const std::string file) {
   const bool is_remote = file.find("https://") == 0;
   const std::string local_file = is_remote ? cacheFilePath(file) : file;
   std::string file_content;
-  
+
   if ((!is_remote || !no_local_cache_) && util::file_exists(local_file)) {
     file_content = util::read_file(local_file);
   } else if (is_remote) {
@@ -150,19 +151,20 @@ void Segment::loadFile(int id, const std::string file) {
 }
 
 std::string Segment::downloadFile(const std::string &url, const std::string &local_file, bool decompress) {
-  const int chunk_size = 20 * 1024 * 1024; // 20MB
-  std::string content;
+  const int chunk_size = 20 * 1024 * 1024;  // 20MB
   size_t remote_file_size = 0;
+  std::string content;
 
   for (int i = 1; i <= max_retries_; ++i) {
     if (remote_file_size <= 0) {
       remote_file_size = getRemoteFileSize(url);
-    } 
+    }
     if (remote_file_size > 0 && !aborting_) {
       std::ostringstream oss;
       content.resize(remote_file_size);
       oss.rdbuf()->pubsetbuf(content.data(), content.size());
       int chunks = std::min(1, (int)std::nearbyint(remote_file_size / (float)chunk_size));
+
       bool ret = httpMultiPartDownload(url, oss, chunks, remote_file_size, &aborting_);
       if (ret) {
         if (decompress) {

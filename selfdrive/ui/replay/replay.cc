@@ -5,8 +5,8 @@
 
 #include <capnp/dynamic.h>
 #include "cereal/services.h"
-#include "selfdrive/common/timing.h"
 #include "selfdrive/common/params.h"
+#include "selfdrive/common/timing.h"
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/replay/util.h"
 
