@@ -19,12 +19,13 @@ SOURCES = ['lead0', 'lead1', 'cruise']
 
 X_DIM = 3
 U_DIM = 1
-COST_E_DIM = 3
+COST_E_DIM = 4
 COST_DIM = COST_E_DIM + 1
 CONSTR_DIM = 4
 
-X_EGO_COST = 3.
-X_EGO_E2E_COST = 10.
+X_EGO_OBSTACLE_COST = 3.
+V_EGO_COST = 0.
+X_EGO_COST = 0.
 A_EGO_COST = 0.
 J_EGO_COST = 10.
 DANGER_ZONE_COST = 100.
@@ -124,6 +125,7 @@ def gen_long_mpc_solver():
   # instead.
   costs = [((x_obstacle - x_ego) - (desired_dist_comfort)) / (v_ego + 10.),
            x_ego,
+           v_ego,
            a_ego,
            j_ego]
   ocp.model.cost_y_expr = vertcat(*costs)
@@ -213,7 +215,7 @@ class LongitudinalMpc():
       self.set_weights_for_lead_policy()
 
   def set_weights_for_lead_policy(self):
-    W = np.diag([X_EGO_COST, 0.0, A_EGO_COST, J_EGO_COST])
+    W = np.diag([X_EGO_OBSTACLE_COST, X_EGO_COST, V_EGO_COST, A_EGO_COST, J_EGO_COST])
     Ws = np.tile(W[None], reps=(N,1,1))
     self.solver.cost_set_slice(0, N, 'W', Ws, api='old')
     # Setting the slice without the copy make the array not contiguous,
@@ -226,7 +228,7 @@ class LongitudinalMpc():
     self.solver.cost_set_slice(0, N+1, 'Zl', Zls, api='old')
 
   def set_weights_for_xva_policy(self):
-    W = np.diag([0.0, X_EGO_E2E_COST, 0., J_EGO_COST])
+    W = np.diag([0.0, 10., 1., 10.0, 1.0])
     Ws = np.tile(W[None], reps=(N,1,1))
     self.solver.cost_set_slice(0, N, 'W', Ws, api='old')
     # Setting the slice without the copy make the array not contiguous,
@@ -321,6 +323,8 @@ class LongitudinalMpc():
 
   def update_with_xva(self, x, v, a):
     self.yref[:,1] = x
+    self.yref[:,2] = v
+    self.yref[:,3] = a
     self.solver.cost_set_slice(0, N, "yref", self.yref[:N], api='old')
     self.solver.set(N, "yref", self.yref[N][:COST_E_DIM])
     self.accel_limit_arr[:,0] = -10.
