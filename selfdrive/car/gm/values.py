@@ -12,7 +12,7 @@ class CarControllerParams():
   MIN_STEER_SPEED = 3.  # m/s
   STEER_DRIVER_ALLOWANCE = 50
   STEER_DRIVER_MULTIPLIER = 4
-  STEER_DRIVER_FACTOR = 100
+  STEER_DRIVER_FACTOR = 1
   NEAR_STOP_BRAKE_PHASE = 0.5  # m/s
 
   # Heartbeat for dash "Service Adaptive Cruise" and "Service Front Camera"
@@ -38,7 +38,7 @@ class CarControllerParams():
   BRAKE_LOOKUP_BP = [ACCEL_MIN, -1.]
   BRAKE_LOOKUP_V = [MAX_BRAKE, 0.]
 
-STEER_THRESHOLD = 1.0
+STEER_THRESHOLD = CarControllerParams.STEER_DRIVER_ALLOWANCE
 
 class CAR:
   HOLDEN_ASTRA = "HOLDEN ASTRA RS-V BK 2017"
