@@ -74,11 +74,11 @@ TEST_CASE("FrameReader") {
   Route &demo_route = getDemoRoute();
 
   FrameReader no_local_cache_fr;
-  REQUIRE(no_local_cache_fr.load(demo_route.at(0).rlog.toStdString()));
+  REQUIRE(no_local_cache_fr.load(demo_route.at(0).road_cam.toStdString()));
   REQUIRE(no_local_cache_fr.getFrameCount() == 1200);
 
   FrameReader local_cache_fr(true);
-  REQUIRE(local_cache_fr.load(demo_route.at(0).rlog.toStdString()));
+  REQUIRE(local_cache_fr.load(demo_route.at(0).road_cam.toStdString()));
   REQUIRE(local_cache_fr.getFrameCount() == 1200);
 }
 
