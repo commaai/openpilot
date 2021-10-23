@@ -223,17 +223,17 @@ pipeline {
                   }
                 }
 
-                // stage('camerad') {
-                //   steps {
-                //     phone_steps("eon-party", [
-                //       ["build", "cd selfdrive/manager && ./build.py"],
-                //       ["test camerad", "python selfdrive/camerad/test/test_camerad.py"],
-                //       ["test exposure", "python selfdrive/camerad/test/test_exposure.py"],
-                //     ])
-                //   }
-                // }
+                stage('EON camerad') {
+                  steps {
+                    phone_steps("eon-party", [
+                      ["build", "cd selfdrive/manager && ./build.py"],
+                      ["test camerad", "python selfdrive/camerad/test/test_camerad.py"],
+                      ["test exposure", "python selfdrive/camerad/test/test_exposure.py"],
+                    ])
+                  }
+                }
 
-                stage('Tici camerad') {
+                stage('tici camerad') {
                   steps {
                     phone_steps("tici-party", [
                       ["build", "cd selfdrive/manager && ./build.py"],
