@@ -52,7 +52,10 @@ std::string FileReader::download(const std::string &url, std::atomic<bool> *abor
   size_t remote_file_size = 0;
   std::string content;
 
-  for (int i = 1; i <= max_retries_; ++i) {
+  for (int i = 0; i <= max_retries_; ++i) {
+    if (i > 0) {
+      std::cout << "download failed, retrying" << i << std::endl;
+    }
     if (remote_file_size <= 0) {
       remote_file_size = getRemoteFileSize(url);
     }
@@ -67,8 +70,6 @@ std::string FileReader::download(const std::string &url, std::atomic<bool> *abor
       }
     }
     if (abort && *abort) break;
-
-    std::cout << "download failed, retrying" << i << std::endl;
   }
   return {};
 }

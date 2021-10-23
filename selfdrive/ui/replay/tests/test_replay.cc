@@ -1,4 +1,3 @@
-#include <QCryptographicHash>
 #include <QDebug>
 #include <QEventLoop>
 #include <fstream>
@@ -10,8 +9,15 @@
 #include "selfdrive/ui/replay/util.h"
 
 const QString DEMO_ROUTE = "4cf7a6ad03080c90|2021-09-29--13-46-36";
-std::string sha_256(const QString &dat) {
-  return QString(QCryptographicHash::hash(dat.toUtf8(), QCryptographicHash::Sha256).toHex()).toStdString();
+
+Route &getDemoRoute() {
+  static std::once_flag once_flag;
+  static Route demo_route(DEMO_ROUTE);
+  std::call_once(once_flag, [&] {
+    REQUIRE(demo_route.load());
+    REQUIRE(demo_route.segments().size() == 11);
+  });
+  return demo_route;
 }
 
 TEST_CASE("httpMultiPartDownload") {
@@ -34,8 +40,8 @@ TEST_CASE("httpMultiPartDownload") {
     REQUIRE(httpMultiPartDownload(stream_url, oss, 5, file_size));
   }
   REQUIRE(content.size() == 9112651);
-  std::string checksum = sha_256(QString::fromStdString(content));
-  REQUIRE(checksum == "e44edfbb545abdddfd17020ced2b18b6ec36506152267f32b6a8e3341f8126d6");
+  std::string checksum = sha256(content);
+  REQUIRE(checksum == "5b966d4bb21a100a8c4e59195faeb741b975ccbe268211765efd1763d892bfb3");
 }
 
 int random_int(int min, int max) {
@@ -45,11 +51,34 @@ int random_int(int min, int max) {
   return dist(rng);
 }
 
-TEST_CASE("Segment") {
-  Route demo_route(DEMO_ROUTE);
-  REQUIRE(demo_route.load());
-  REQUIRE(demo_route.segments().size() == 11);
+TEST_CASE("LogReader") {
+  Route &demo_route = getDemoRoute();
 
+  LogReader no_local_cache_lr;
+  REQUIRE(no_local_cache_lr.load(demo_route.at(0).rlog.toStdString()));
+  REQUIRE(no_local_cache_lr.events.size() > 0);
+
+  LogReader local_cache_lr(true);
+  REQUIRE(local_cache_lr.load(demo_route.at(0).rlog.toStdString()));
+  REQUIRE(local_cache_lr.events.size() > 0);
+ 
+  REQUIRE(local_cache_lr.events.size() == no_local_cache_lr.events.size());
+}
+
+TEST_CASE("FrameReader") {
+  Route &demo_route = getDemoRoute();
+
+  FrameReader no_local_cache_fr;
+  REQUIRE(no_local_cache_fr.load(demo_route.at(0).rlog.toStdString()));
+  REQUIRE(no_local_cache_fr.getFrameCount() == 1200);
+
+  FrameReader local_cache_fr(true);
+  REQUIRE(no_local_cache_fr.load(demo_route.at(0).rlog.toStdString()));
+  REQUIRE(no_local_cache_fr.getFrameCount() == 1200);
+}
+
+TEST_CASE("Segment") {
+  Route &demo_route = getDemoRoute();
   QEventLoop loop;
   Segment segment(0, demo_route.at(0), false, false, false);
   QObject::connect(&segment, &Segment::loadFinished, [&]() {
