@@ -16,3 +16,6 @@ private:
   int chunk_size_;
   int max_retries_;
 };
+
+std::string cacheFilePath(const std::string &url);
+

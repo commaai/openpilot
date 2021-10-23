@@ -21,14 +21,14 @@ std::string getCacheDir() {
   return cache_dir;
 }
 
+}  // namespace
+
 std::string cacheFilePath(const std::string &url) {
   static std::once_flag once_flag;
   std::call_once(once_flag, [=]() {if (!util::file_exists(getCacheDir())) mkdir(getCacheDir().c_str(), 0666); });
 
   return getCacheDir() + sha256(getUrlWithoutQuery(url));
 }
-
-}  // namespace
 
 std::string FileReader::read(const std::string &file, std::atomic<bool> *abort) {
   const bool is_remote = file.find("https://") == 0;

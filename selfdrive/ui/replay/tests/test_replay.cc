@@ -9,6 +9,8 @@
 #include "selfdrive/ui/replay/util.h"
 
 const QString DEMO_ROUTE = "4cf7a6ad03080c90|2021-09-29--13-46-36";
+const std::string TEST_RLOG_URL = "https://commadataci.blob.core.windows.net/openpilotci/0c94aa1e1296d7c6/2021-05-05--19-48-37/0/rlog.bz2";
+const std::string  TEST_RLOG_CHECKSUM = "5b966d4bb21a100a8c4e59195faeb741b975ccbe268211765efd1763d892bfb3";
 
 Route &getDemoRoute() {
   static std::once_flag once_flag;
@@ -25,22 +27,21 @@ TEST_CASE("httpMultiPartDownload") {
   close(mkstemp(filename));
 
   std::string content;
-  const char *stream_url = "https://commadataci.blob.core.windows.net/openpilotci/0c94aa1e1296d7c6/2021-05-05--19-48-37/0/rlog.bz2";
-  auto file_size = getRemoteFileSize(stream_url);
+  auto file_size = getRemoteFileSize(TEST_RLOG_URL);
   REQUIRE(file_size > 0);
   SECTION("5 connections, download to file") {
     std::ofstream of(filename, of.binary | of.out);
-    REQUIRE(httpMultiPartDownload(stream_url, of, 5, file_size));
+    REQUIRE(httpMultiPartDownload(TEST_RLOG_URL, of, 5, file_size));
     content = util::read_file(filename);
   }
   SECTION("5 connection, download to buffer") {
     std::ostringstream oss;
     content.resize(file_size);
     oss.rdbuf()->pubsetbuf(content.data(), content.size());
-    REQUIRE(httpMultiPartDownload(stream_url, oss, 5, file_size));
+    REQUIRE(httpMultiPartDownload(TEST_RLOG_URL, oss, 5, file_size));
   }
   REQUIRE(content.size() == 9112651);
-  REQUIRE(sha256(content) == "5b966d4bb21a100a8c4e59195faeb741b975ccbe268211765efd1763d892bfb3");
+  REQUIRE(sha256(content) == TEST_RLOG_CHECKSUM);
 }
 
 int random_int(int min, int max) {
@@ -51,9 +52,11 @@ int random_int(int min, int max) {
 }
 
 TEST_CASE("FileReader") {
-  FileReader reader(false);
-  std::string content = reader.read("https://commadataci.blob.core.windows.net/openpilotci/0c94aa1e1296d7c6/2021-05-05--19-48-37/0/rlog.bz2");
-  REQUIRE(sha256(content) == "5b966d4bb21a100a8c4e59195faeb741b975ccbe268211765efd1763d892bfb3");
+  FileReader reader(true);
+  std::string content = reader.read(TEST_RLOG_URL);
+  REQUIRE(sha256(content) == TEST_RLOG_CHECKSUM);
+  std::string cache_file = cacheFilePath(TEST_RLOG_URL);
+  REQUIRE(sha256(util::read_file(cache_file)) == TEST_RLOG_CHECKSUM);
 }
 
 TEST_CASE("LogReader") {
