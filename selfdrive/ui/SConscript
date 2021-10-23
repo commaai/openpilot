@@ -45,6 +45,8 @@ asset_obj = qt_env.Object("assets", assets)
 
 # build soundd
 qt_env.Program("_soundd", "soundd.cc", LIBS=base_libs)
+if GetOption('test'):
+  qt_env.Program("tests/playsound", "tests/playsound.cc", LIBS=base_libs)
 
 # spinner and text window
 qt_env.Program("qt/text", ["qt/text.cc"], LIBS=qt_libs)
