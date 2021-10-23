@@ -61,13 +61,13 @@ qt_env.Program("_ui", qt_src + [asset_obj], LIBS=qt_libs)
 
 
 # setup and factory resetter
-if arch != 'aarch64' and GetOption('setup'):
+if arch != 'aarch64' and GetOption('extras'):
   qt_env.Program("qt/setup/reset", ["qt/setup/reset.cc"], LIBS=qt_libs)
   qt_env.Program("qt/setup/setup", ["qt/setup/setup.cc", asset_obj],
                  LIBS=qt_libs + ['curl', 'common', 'json11'])
 
 
-if GetOption('setup'):
+if GetOption('extras'):
   # buidl updater UI
   qt_env.Program("qt/setup/updater", ["qt/setup/updater.cc", asset_obj], LIBS=qt_libs)
 
