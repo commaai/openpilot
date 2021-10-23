@@ -7,6 +7,7 @@
 
 #include "cereal/gen/cpp/log.capnp.h"
 #include "selfdrive/camerad/cameras/camera_common.h"
+#include "selfdrive/ui/replay/filereader.h"
 
 const CameraType ALL_CAMERAS[] = {RoadCam, DriverCam, WideRoadCam};
 const int MAX_CAMERAS = std::size(ALL_CAMERAS);
@@ -45,11 +46,11 @@ public:
   bool frame;
 };
 
-class LogReader {
+class LogReader : public FileReader {
 public:
-  LogReader(size_t memory_pool_block_size = DEFAULT_EVENT_MEMORY_POOL_BLOCK_SIZE);
+  LogReader(bool local_cache, size_t memory_pool_block_size = DEFAULT_EVENT_MEMORY_POOL_BLOCK_SIZE);
   ~LogReader();
-  bool load(const std::string &log_content);
+  bool load(const std::string &file);
 
   std::vector<Event*> events;
 

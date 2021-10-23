@@ -3,11 +3,14 @@
 #include <array>
 #include <cassert>
 #include <iostream>
+#include <sstream>
+#include <iomanip>
 #include <mutex>
 #include <numeric>
 
 #include <bzlib.h>
 #include <curl/curl.h>
+#include <openssl/sha.h>
 
 #include "selfdrive/common/timing.h"
 #include "selfdrive/common/util.h"
@@ -65,6 +68,11 @@ std::string formattedDataSize(size_t size) {
   }
 }
 
+std::string getUrlWithoutQuery(const std::string &url) {
+  size_t idx = url.find("?");
+  return (idx == std::string::npos ? url : url.substr(0, idx));
+}
+
 static std::atomic<bool> enable_http_logging = false;
 
 void enableHttpLogging(bool enable) {
@@ -120,8 +128,7 @@ bool httpMultiPartDownload(const std::string &url, std::ostream &os, int parts, 
         size_t average = (total_written - prev_total_written) / ((ts - last_print_ts) / 1000.);
         int progress = std::min<int>(100, 100.0 * (double)written / (double)content_length);
 
-        size_t idx = url.find("?");
-        std::cout << "downloading " << (idx == std::string::npos ? url : url.substr(0, idx)) << " - " << progress << "% (" << formattedDataSize(average) << "/s)" << std::endl;
+        std::cout << "downloading " << getUrlWithoutQuery(url) << " - " << progress << "% (" << formattedDataSize(average) << "/s)" << std::endl;
       }
       prev_total_written = total_written;
       last_print_ts = ts;
@@ -199,4 +206,17 @@ void precise_nano_sleep(long sleep_ns) {
       usleep(0);
     }
   }
+}
+
+std::string sha256(const std::string &str) {
+  unsigned char hash[SHA256_DIGEST_LENGTH];
+  SHA256_CTX sha256;
+  SHA256_Init(&sha256);
+  SHA256_Update(&sha256, str.c_str(), str.size());
+  SHA256_Final(hash, &sha256);
+  std::stringstream ss;
+  for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
+    ss << std::hex << std::setw(2) << std::setfill('0') << (int)hash[i];
+  }
+  return ss.str();
 }

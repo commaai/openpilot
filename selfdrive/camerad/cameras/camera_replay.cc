@@ -24,7 +24,7 @@ std::string get_url(std::string route_name, const std::string &camera, int segme
 
 void camera_init(VisionIpcServer *v, CameraState *s, int camera_id, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType rgb_type, VisionStreamType yuv_type, const std::string &url) {
   // TODO: cache url file
-  s->frame = new FrameReader();
+  s->frame = new FrameReader(false);
   if (!s->frame->load(url)) {
     printf("failed to load stream from %s", url.c_str());
     assert(0);

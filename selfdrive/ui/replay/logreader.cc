@@ -26,7 +26,7 @@ Event::Event(const kj::ArrayPtr<const capnp::word> &amsg, bool frame) : reader(a
 
 // class LogReader
 
-LogReader::LogReader(size_t memory_pool_block_size) {
+LogReader::LogReader(bool local_cache, size_t memory_pool_block_size) : FileReader(local_cache) {
 #ifdef HAS_MEMORY_RESOURCE
   const size_t buf_size = sizeof(Event) * memory_pool_block_size;
   pool_buffer_ = ::operator new(buf_size);
@@ -46,8 +46,10 @@ LogReader::~LogReader() {
 #endif
 }
 
-bool LogReader::load(const std::string &log_content) {
-  raw_ = decompressBZ2(log_content);
+bool LogReader::load(const std::string &file) {
+  raw_ = decompressBZ2(read(file));
+  if (raw_.empty()) return false;
+
   kj::ArrayPtr<const capnp::word> words((const capnp::word *)raw_.data(), raw_.size() / sizeof(capnp::word));
   while (words.size() > 0) {
     try {

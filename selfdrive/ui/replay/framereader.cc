@@ -32,12 +32,11 @@ struct AVInitializer {
   ~AVInitializer() { avformat_network_deinit(); }
 };
 
-FrameReader::FrameReader() {
+FrameReader::FrameReader(bool local_cache) : FileReader(local_cache) {
   static AVInitializer av_initializer;
 
   pFormatCtx_ = avformat_alloc_context();
   av_frame_ = av_frame_alloc();
-
 }
 
 FrameReader::~FrameReader() {
@@ -65,17 +64,16 @@ static int readFunction(void *opaque, uint8_t *buf, int buf_size) {
   return iss.gcount() ? iss.gcount() : AVERROR_EOF;
 }
 
-bool FrameReader::loadFromBuffer(const std::string &buf) {
-  std::istringstream iss(buf);
+bool FrameReader::load(const std::string &url) {
+  std::string content = read(url);
+  if (content.empty()) return false;
+
+  std::istringstream iss(content);
   const int avio_ctx_buffer_size = 64 * 1024;
   unsigned char *avio_ctx_buffer = (unsigned char *)av_malloc(avio_ctx_buffer_size);
 
   avio_ctx_ = avio_alloc_context(avio_ctx_buffer, avio_ctx_buffer_size, 0, &iss, readFunction, nullptr, nullptr);
   pFormatCtx_->pb = avio_ctx_;
-  return load("memory.hevc");
-}
-
-bool FrameReader::load(const std::string &url) {
   pFormatCtx_->probesize = 10 * 1024 * 1024;  // 10MB
   if (avformat_open_input(&pFormatCtx_, url.c_str(), NULL, NULL) != 0) {
     printf("error loading %s\n", url.c_str());

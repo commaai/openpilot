@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include "selfdrive/ui/replay/filereader.h"
 
 extern "C" {
 #include <libavcodec/avcodec.h>
@@ -10,12 +11,11 @@ extern "C" {
 #include <libavutil/imgutils.h>
 }
 
-class FrameReader {
+class FrameReader : public FileReader {
 public:
-  FrameReader();
+  FrameReader(bool local_cache);
   ~FrameReader();
   bool load(const std::string &url);
-  bool loadFromBuffer(const std::string &buf);
   bool get(int idx, uint8_t *rgb, uint8_t *yuv);
   int getRGBSize() const { return width * height * 3; }
   int getYUVSize() const { return width * height * 3 / 2; }

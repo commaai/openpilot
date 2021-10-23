@@ -1,8 +1,6 @@
 #include "selfdrive/ui/replay/route.h"
 
-#include <fstream>
-#include <sstream>
-
+#include <QDir>
 #include <QEventLoop>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -90,9 +88,6 @@ void Route::addFileToSegment(int n, const QString &file) {
 // class Segment
 
 Segment::Segment(int n, const SegmentFile &files, bool load_dcam, bool load_ecam, bool no_file_cache) : seg_num(n), no_file_cache_(no_file_cache) {
-  static std::once_flag once_flag;
-  std::call_once(once_flag, [=]() { if (!CACHE_DIR.exists()) QDir().mkdir(CACHE_DIR.absolutePath()); });
-
   // [RoadCam, DriverCam, WideRoadCam, log]. fallback to qcamera/qlog
   const QString file_list[] = {
       files.road_cam.isEmpty() ? files.qcamera : files.road_cam,
@@ -111,7 +106,12 @@ Segment::Segment(int n, const SegmentFile &files, bool load_dcam, bool load_ecam
 }
 
 Segment::~Segment() {
-  aborting_ = true;
+  abort_ = true;
+  for (auto &fr : frames) {
+    if (fr) fr->abort();
+  }
+  if (log) log->abort();
+
   for (QThread *t : loading_threads_) {
     if (t->isRunning()) {
       t->quit();
@@ -122,65 +122,14 @@ Segment::~Segment() {
 }
 
 void Segment::loadFile(int id, const std::string file) {
-  const bool is_remote = file.find("https://") == 0;
-  const std::string local_file = is_remote ? cacheFilePath(file) : file;
-  std::string file_content;
-
-  if ((!is_remote || !no_file_cache_) && util::file_exists(local_file)) {
-    file_content = util::read_file(local_file);
-  } else if (is_remote) {
-    file_content = downloadFile(file);
-    // write to local file cache
-    if (!no_file_cache_ && !file_content.empty()) {
-      std::ofstream fs(local_file, fs.binary | fs.out);
-      fs.write(file_content.data(), file_content.size());
-    }
+  if (id < MAX_CAMERAS) {
+    frames[id] = std::make_unique<FrameReader>(!no_file_cache_);
+    failed_ += frames[id]->load(file) != true;
+  } else {
+    log = std::make_unique<LogReader>(!no_file_cache_);
+    failed_ += log->load(file) != true;
   }
-
-  success_ = success_ && !file_content.empty();
-  if (!aborting_ && success_) {
-    if (id < MAX_CAMERAS) {
-      frames[id] = std::make_unique<FrameReader>();
-      success_ = success_ && frames[id]->loadFromBuffer(file_content);
-    } else {
-      log = std::make_unique<LogReader>();
-      success_ = success_ && log->load(file_content);
-    }
+  if (!abort_ && --loading_ == 0) {
+    emit loadFinished(failed_ == 0);
   }
-
-  if (!aborting_ && --loading_ == 0) {
-    emit loadFinished(success_);
-  }
-}
-
-std::string Segment::downloadFile(const std::string &url) {
-  const int chunk_size = 20 * 1024 * 1024;  // 20MB
-  size_t remote_file_size = 0;
-  std::string content;
-
-  for (int i = 1; i <= max_retries_; ++i) {
-    if (remote_file_size <= 0) {
-      remote_file_size = getRemoteFileSize(url);
-    }
-    if (remote_file_size > 0 && !aborting_) {
-      std::ostringstream oss;
-      content.resize(remote_file_size);
-      oss.rdbuf()->pubsetbuf(content.data(), content.size());
-      int chunks = std::min(1, (int)std::nearbyint(remote_file_size / (float)chunk_size));
-      bool ret = httpMultiPartDownload(url, oss, chunks, remote_file_size, &aborting_);
-      if (ret) {
-        return content;
-      }
-    }
-    if (aborting_) break;
-
-    qInfo() << "download failed, retrying" << i;
-  }
-  return {};
-}
-
-std::string Segment::cacheFilePath(const std::string &file) {
-  QString url_no_query = QUrl(file.c_str()).toString(QUrl::RemoveQuery);
-  QString sha256 = QCryptographicHash::hash(url_no_query.toUtf8(), QCryptographicHash::Sha256).toHex();
-  return CACHE_DIR.filePath(sha256 + "." + QFileInfo(url_no_query).suffix()).toStdString();
 }
