@@ -365,16 +365,13 @@ def main():
     t = datetime.datetime.utcnow().isoformat()
     params.put("InstallDate", t.encode('utf8'))
 
-  # Wait for IsOffroad to be set before our first update attempt
-  wait_helper = WaitTimeHelper(proc)
-  wait_helper.sleep(30)
-
   overlay_init = Path(os.path.join(BASEDIR, ".overlay_init"))
   overlay_init.unlink(missing_ok=True)
 
   first_run = True
   last_fetch_time = 0
   update_failed_count = 0
+  wait_helper = WaitTimeHelper(proc)
 
   # Run the update loop
   #  * every 1m, do a lightweight internet/update check
@@ -385,8 +382,7 @@ def main():
 
     # Don't run updater while onroad or if the time's wrong
     time_wrong = datetime.datetime.utcnow().year < 2019
-    is_onroad = not params.get_bool("IsOffroad")
-    if is_onroad or time_wrong:
+    if time_wrong:
       wait_helper.sleep(30)
       cloudlog.info("not running updater, not offroad")
       continue
