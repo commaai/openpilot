@@ -1,8 +1,6 @@
 import time
 from functools import wraps
-from nose.tools import nottest
 
-from selfdrive.hardware import PC
 from selfdrive.version import training_version, terms_version
 from selfdrive.manager.process_config import managed_processes
 
@@ -17,11 +15,12 @@ def set_params_enabled():
   params.put_bool("Passive", False)
 
 
-def phone_only(x):
-  if PC:
-    return nottest(x)
-  else:
-    return x
+# TODO: rewrite for unittest
+#def phone_only(x):
+#  if PC:
+#    return nottest(x)
+#  else:
+#    return x
 
 
 def with_processes(processes, init_time=0, ignore_stopped=None):
