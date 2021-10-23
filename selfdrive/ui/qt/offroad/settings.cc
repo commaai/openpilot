@@ -202,12 +202,10 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
   lastUpdateLbl = new LabelControl("Last Update Check", "", "The last time openpilot successfully checked for an update. The updater only runs while the car is off.");
   updateBtn = new ButtonControl("Check for Update", "");
   connect(updateBtn, &ButtonControl::clicked, [=]() {
-    if (params.getBool("IsOffroad")) {
-      fs_watch->addPath(QString::fromStdString(params.getParamPath("LastUpdateTime")));
-      fs_watch->addPath(QString::fromStdString(params.getParamPath("UpdateFailedCount")));
-      updateBtn->setText("CHECKING");
-      updateBtn->setEnabled(false);
-    }
+    fs_watch->addPath(QString::fromStdString(params.getParamPath("LastUpdateTime")));
+    fs_watch->addPath(QString::fromStdString(params.getParamPath("UpdateFailedCount")));
+    updateBtn->setText("CHECKING");
+    updateBtn->setEnabled(false);
     std::system("pkill -1 -f selfdrive.updated");
   });
 
