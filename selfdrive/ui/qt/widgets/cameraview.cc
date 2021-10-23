@@ -97,7 +97,7 @@ CameraViewWidget::CameraViewWidget(VisionStreamType stream_type, bool zoom, QWid
 
   QTimer *t = new QTimer(this);
   connect(t, &QTimer::timeout, this, &CameraViewWidget::updateFrame);
-  t->start(1000 / UI_FREQ);
+  t->start(10);
 }
 
 CameraViewWidget::~CameraViewWidget() {
