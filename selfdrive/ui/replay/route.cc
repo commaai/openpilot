@@ -89,7 +89,7 @@ void Route::addFileToSegment(int n, const QString &file) {
 
 // class Segment
 
-Segment::Segment(int n, const SegmentFile &files, bool load_dcam, bool load_ecam, bool no_cache) : seg_num(n), no_local_cache_(no_cache) {
+Segment::Segment(int n, const SegmentFile &files, bool load_dcam, bool load_ecam, bool no_file_cache) : seg_num(n), no_file_cache_(no_file_cache) {
   static std::once_flag once_flag;
   std::call_once(once_flag, [=]() { if (!CACHE_DIR.exists()) QDir().mkdir(CACHE_DIR.absolutePath()); });
 
@@ -122,26 +122,29 @@ Segment::~Segment() {
 }
 
 void Segment::loadFile(int id, const std::string file) {
-  const bool is_cam_file = id < MAX_CAMERAS;
   const bool is_remote = file.find("https://") == 0;
   const std::string local_file = is_remote ? cacheFilePath(file) : file;
   std::string file_content;
 
-  if ((!is_remote || !no_local_cache_) && util::file_exists(local_file)) {
+  if ((!is_remote || !no_file_cache_) && util::file_exists(local_file)) {
     file_content = util::read_file(local_file);
   } else if (is_remote) {
-    bool decompress = !is_cam_file;
-    file_content = downloadFile(file, no_local_cache_ ? "" : local_file, decompress);
+    file_content = downloadFile(file);
+    // write to local file cache
+    if (!no_file_cache_ && !file_content.empty()) {
+      std::ofstream fs(local_file, fs.binary | fs.out);
+      fs.write(file_content.data(), file_content.size());
+    }
   }
 
   success_ = success_ && !file_content.empty();
   if (!aborting_ && success_) {
-    if (is_cam_file) {
+    if (id < MAX_CAMERAS) {
       frames[id] = std::make_unique<FrameReader>();
       success_ = success_ && frames[id]->loadFromBuffer(file_content);
     } else {
       log = std::make_unique<LogReader>();
-      success_ = success_ && log->load(std::move(file_content));
+      success_ = success_ && log->load(file_content);
     }
   }
 
@@ -150,7 +153,7 @@ void Segment::loadFile(int id, const std::string file) {
   }
 }
 
-std::string Segment::downloadFile(const std::string &url, const std::string &local_file, bool decompress) {
+std::string Segment::downloadFile(const std::string &url) {
   const int chunk_size = 20 * 1024 * 1024;  // 20MB
   size_t remote_file_size = 0;
   std::string content;
@@ -164,17 +167,8 @@ std::string Segment::downloadFile(const std::string &url, const std::string &loc
       content.resize(remote_file_size);
       oss.rdbuf()->pubsetbuf(content.data(), content.size());
       int chunks = std::min(1, (int)std::nearbyint(remote_file_size / (float)chunk_size));
-
       bool ret = httpMultiPartDownload(url, oss, chunks, remote_file_size, &aborting_);
       if (ret) {
-        if (decompress) {
-          content = decompressBZ2(content);
-        }
-        // write to local cache
-        if (!local_file.empty()) {
-          std::ofstream fs(local_file, fs.binary | fs.out);
-          fs.write(content.data(), content.size());
-        }
         return content;
       }
     }

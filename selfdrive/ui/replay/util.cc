@@ -157,6 +157,8 @@ bool httpMultiPartDownload(const std::string &url, std::ostream &os, int parts, 
 }
 
 std::string decompressBZ2(const std::string &in) {
+  if (in.empty()) return {};
+
   bz_stream strm = {};
   int bzerror = BZ2_bzDecompressInit(&strm, 0, 0);
   assert(bzerror == BZ_OK);

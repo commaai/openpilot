@@ -49,7 +49,7 @@ class Segment : public QObject {
   Q_OBJECT
 
 public:
-  Segment(int n, const SegmentFile &files, bool load_dcam, bool load_ecam, bool no_cache);
+  Segment(int n, const SegmentFile &files, bool load_dcam, bool load_ecam, bool no_file_cache);
   ~Segment();
   inline bool isLoaded() const { return !loading_ && success_; }
 
@@ -62,12 +62,12 @@ signals:
 
 protected:
   void loadFile(int id, const std::string file);
-  std::string downloadFile(const std::string &url, const std::string &local_file, bool decompress = false);
+  std::string downloadFile(const std::string &url);
   std::string cacheFilePath(const std::string &file);
 
   std::atomic<bool> success_ = true, aborting_ = false;
   std::atomic<int> loading_ = 0;
   std::vector<QThread*> loading_threads_;
   const int max_retries_ = 3;
-  bool no_local_cache_;
+  bool no_file_cache_;
 };

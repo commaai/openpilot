@@ -1,6 +1,7 @@
 #include "selfdrive/ui/replay/logreader.h"
 
 #include "selfdrive/common/util.h"
+#include "selfdrive/ui/replay/util.h"
 
 Event::Event(const kj::ArrayPtr<const capnp::word> &amsg, bool frame) : reader(amsg), frame(frame) {
   words = kj::ArrayPtr<const capnp::word>(amsg.begin(), reader.getEnd());
@@ -45,8 +46,8 @@ LogReader::~LogReader() {
 #endif
 }
 
-bool LogReader::load(const std::string &&log_content) {
-  raw_ = log_content;
+bool LogReader::load(const std::string &log_content) {
+  raw_ = decompressBZ2(log_content);
   kj::ArrayPtr<const capnp::word> words((const capnp::word *)raw_.data(), raw_.size() / sizeof(capnp::word));
   while (words.size() > 0) {
     try {
