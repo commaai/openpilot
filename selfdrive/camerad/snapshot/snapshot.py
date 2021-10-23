@@ -11,7 +11,7 @@ import cereal.messaging as messaging
 from common.params import Params
 from common.realtime import DT_MDL
 from common.transformations.camera import eon_f_frame_size, eon_d_frame_size, tici_f_frame_size
-from selfdrive.hardware import HARDWARE, TICI
+from selfdrive.hardware import TICI
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
 from selfdrive.manager.process_config import managed_processes
 
@@ -92,7 +92,6 @@ def snapshot():
     os.environ["SEND_DRIVER"] = "1"
 
   try:
-    HARDWARE.set_power_save(False)
     managed_processes['camerad'].start()
     frame = "wideRoadCameraState" if TICI else "roadCameraState"
     front_frame = "driverCameraState" if front_camera_allowed else None
@@ -101,8 +100,6 @@ def snapshot():
     rear, front = get_snapshots(frame, front_frame, focus_perc_threshold)
   finally:
     managed_processes['camerad'].stop()
-    HARDWARE.set_power_save(True)
-
     params.put_bool("IsTakingSnapshot", False)
     set_offroad_alert("Offroad_IsTakingSnapshot", False)
 
