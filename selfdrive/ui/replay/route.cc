@@ -87,7 +87,7 @@ void Route::addFileToSegment(int n, const QString &file) {
 
 // class Segment
 
-Segment::Segment(int n, const SegmentFile &files, bool load_dcam, bool load_ecam, bool no_file_cache) : seg_num(n), no_file_cache_(no_file_cache) {
+Segment::Segment(int n, const SegmentFile &files, bool load_dcam, bool load_ecam, bool no_file_cache) : seg_num(n) {
   // [RoadCam, DriverCam, WideRoadCam, log]. fallback to qcamera/qlog
   const QString file_list[] = {
       files.road_cam.isEmpty() ? files.qcamera : files.road_cam,
@@ -99,7 +99,7 @@ Segment::Segment(int n, const SegmentFile &files, bool load_dcam, bool load_ecam
     if (!file_list[i].isEmpty()) {
       loading_++;
       QThread *t = new QThread();
-      QObject::connect(t, &QThread::started, [=]() { loadFile(i, file_list[i].toStdString()); });
+      QObject::connect(t, &QThread::started, [=]() { loadFile(i, file_list[i].toStdString(), no_file_cache); });
       loading_threads_.emplace_back(t)->start();
     }
   }
@@ -121,12 +121,12 @@ Segment::~Segment() {
   }
 }
 
-void Segment::loadFile(int id, const std::string file) {
+void Segment::loadFile(int id, const std::string file, bool no_file_cache) {
   if (id < MAX_CAMERAS) {
-    frames[id] = std::make_unique<FrameReader>(!no_file_cache_);
+    frames[id] = std::make_unique<FrameReader>(!no_file_cache);
     failed_ += frames[id]->load(file) != true;
   } else {
-    log = std::make_unique<LogReader>(!no_file_cache_);
+    log = std::make_unique<LogReader>(!no_file_cache);
     failed_ += log->load(file) != true;
   }
   if (!abort_ && --loading_ == 0) {

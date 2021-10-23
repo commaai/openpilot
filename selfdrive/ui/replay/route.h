@@ -57,10 +57,9 @@ signals:
   void loadFinished(bool success);
 
 protected:
-  void loadFile(int id, const std::string file);
+  void loadFile(int id, const std::string file, bool no_file_cache);
 
-  std::atomic<bool> success_ = true, abort_ = false;
+  std::atomic<bool> abort_ = false;
   std::atomic<int> loading_ = 0, failed_ = 0;
   std::vector<QThread*> loading_threads_;
-  bool no_file_cache_;
 };
