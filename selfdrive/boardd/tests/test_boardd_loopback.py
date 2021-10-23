@@ -14,7 +14,7 @@ from common.timeout import Timeout
 from panda import Panda
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.car import make_can_msg
-from selfdrive.test.helpers import with_processes
+from selfdrive.test.helpers import phone_only, with_processes
 
 
 def reset_panda(fn):
@@ -41,6 +41,7 @@ class TestBoardd(unittest.TestCase):
   def tearDownClass(cls):
     cls.spinner.close()
 
+  @phone_only
   @reset_panda
   @with_processes(['pandad'])
   def test_loopback(self):

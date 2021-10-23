@@ -5,7 +5,8 @@ import unittest
 
 from cereal import log, car
 import cereal.messaging as messaging
-from selfdrive.test.helpers import with_processes
+from selfdrive.test.helpers import phone_only, with_processes
+# TODO: rewrite for unittest
 from common.realtime import DT_CTRL
 from selfdrive.hardware import HARDWARE
 
@@ -33,6 +34,7 @@ class TestSoundd(unittest.TestCase):
   def test_sound_card_init(self):
     assert HARDWARE.get_sound_card_online()
 
+  @phone_only
   @with_processes(['soundd'])
   def test_alert_sounds(self):
     pm = messaging.PubMaster(['controlsState'])
