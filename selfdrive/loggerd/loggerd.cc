@@ -64,6 +64,7 @@ const LogCameraInfo cameras_logged[] = {
     .has_qcamera = true,
     .trigger_rotate = true,
     .enable = true,
+    .record = true,
   },
   {
     .type = DriverCam,
@@ -76,7 +77,8 @@ const LogCameraInfo cameras_logged[] = {
     .downscale = false,
     .has_qcamera = false,
     .trigger_rotate = Hardware::TICI(),
-    .enable = !Hardware::PC() && Params().getBool("RecordFront"),
+    .enable = !Hardware::PC(),
+    .record = Params().getBool("RecordFront"),
   },
   {
     .type = WideRoadCam,
@@ -90,6 +92,7 @@ const LogCameraInfo cameras_logged[] = {
     .has_qcamera = false,
     .trigger_rotate = true,
     .enable = Hardware::TICI(),
+    .record = Hardware::TICI(),
   },
 };
 const LogCameraInfo qcam_info = {
@@ -146,7 +149,8 @@ void encoder_thread(const LogCameraInfo &cam_info) {
 
       // main encoder
       encoders.push_back(new Encoder(cam_info.filename, buf_info.width, buf_info.height,
-                                     cam_info.fps, cam_info.bitrate, cam_info.is_h265, cam_info.downscale));
+                                     cam_info.fps, cam_info.bitrate, cam_info.is_h265,
+                                     cam_info.downscale, cam_info.record));
       // qcamera encoder
       if (cam_info.has_qcamera) {
         encoders.push_back(new Encoder(qcam_info.filename, qcam_info.frame_width, qcam_info.frame_height,

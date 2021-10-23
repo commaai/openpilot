@@ -45,6 +45,8 @@ asset_obj = qt_env.Object("assets", assets)
 
 # build soundd
 qt_env.Program("_soundd", "soundd.cc", LIBS=base_libs)
+if GetOption('test'):
+  qt_env.Program("tests/playsound", "tests/playsound.cc", LIBS=base_libs)
 
 # spinner and text window
 qt_env.Program("qt/text", ["qt/text.cc"], LIBS=qt_libs)
@@ -114,7 +116,7 @@ if arch in ['x86_64', 'Darwin'] or GetOption('extras'):
   replay_libs = [replay_lib, 'avutil', 'avcodec', 'avformat', 'bz2', 'curl', 'yuv'] + qt_libs
   qt_env.Program("replay/replay", ["replay/main.cc"], LIBS=replay_libs)
 
-  qt_env.Program("watch3", ["watch3.cc"], LIBS=qt_libs)
+  qt_env.Program("watch3", ["watch3.cc"], LIBS=qt_libs + ['common', 'json11'])
 
   if GetOption('test'):
     qt_env.Program('replay/tests/test_replay', ['replay/tests/test_runner.cc', 'replay/tests/test_replay.cc'], LIBS=[replay_libs])
