@@ -74,11 +74,11 @@ int main(int argc, char *argv[]){
   std::signal(SIGINT, sigHandler);
   std::signal(SIGTERM, sigHandler);
 
-  const std::tuple<QStringList, REPLAY_FLAGS, QString> flags[] = {
-      {{"dcam"}, REPLAY_FLAG_DCAM, "load driver camera"},
-      {{"ecam"}, REPLAY_FLAG_ECAM, "load wide road camera"},
-      {{"no-loop"}, REPLAY_FLAG_NO_LOOP, "stop at the end of the route"},
-      {{"n", "no-cache"}, REPLAY_FLAG_NO_FILE_CACHE,  "turn off local cache"},
+  const std::tuple<QString, REPLAY_FLAGS, QString> flags[] = {
+      {"dcam", REPLAY_FLAG_DCAM, "load driver camera"},
+      {"ecam", REPLAY_FLAG_ECAM, "load wide road camera"},
+      {"no-loop", REPLAY_FLAG_NO_LOOP, "stop at the end of the route"},
+      {"no-cache", REPLAY_FLAG_NO_FILE_CACHE,  "turn off local cache"},
   };
 
   QCommandLineParser parser;
@@ -105,11 +105,9 @@ int main(int argc, char *argv[]){
   QStringList block = parser.value("block").isEmpty() ? QStringList{} : parser.value("block").split(",");
 
   uint32_t replay_flags = REPLAY_FLAG_NONE;
-  for (const auto &[name_list, flag, _] : flags) {
-    for (auto &name : name_list) {
-      if (parser.isSet(name)) {
-        replay_flags |= flag;
-      }
+  for (const auto &[name, flag, _] : flags) {
+    if (parser.isSet(name)) {
+      replay_flags |= flag;
     }
   }
   Replay *replay = new Replay(route, allow, block, nullptr, replay_flags, parser.value("data_dir"), &app);
