@@ -169,11 +169,8 @@ void TestReplay::startTest() {
 }
 
 TEST_CASE("Replay") {
-  SECTION("cache remote to local") {
+  SECTION("cache to local") {
     TestReplay replay(DEMO_ROUTE);
-  }
-  SECTION("replay from cached files") {
-    TestReplay replay(DEMO_ROUTE, REPLAY_FLAG_NONE);
   }
   SECTION("no local cache") {
     TestReplay replay(DEMO_ROUTE, REPLAY_FLAG_NO_FILE_CACHE);
