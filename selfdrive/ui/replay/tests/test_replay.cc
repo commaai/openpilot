@@ -2,6 +2,7 @@
 #include <QDebug>
 #include <QEventLoop>
 #include <fstream>
+#include <sstream>
 
 #include "catch2/catch.hpp"
 #include "selfdrive/ui/replay/replay.h"
@@ -16,17 +17,23 @@ TEST_CASE("httpMultiPartDownload") {
   char filename[] = "/tmp/XXXXXX";
   close(mkstemp(filename));
 
+  std::string content;
   const char *stream_url = "https://commadataci.blob.core.windows.net/openpilotci/0c94aa1e1296d7c6/2021-05-05--19-48-37/0/rlog.bz2";
-  std::ofstream stm(filename, stm.binary | stm.out);
   auto file_size = getRemoteFileSize(stream_url);
   REQUIRE(file_size > 0);
-  SECTION("5 connections") {
-    REQUIRE(httpMultiPartDownload(stream_url, stm, 5, file_size));
+
+  SECTION("5 connections, download to file") {
+    std::ofstream of(filename, of.binary | of.out);
+    REQUIRE(httpMultiPartDownload(stream_url, of, 5, file_size));
+    content = util::read_file(filename);
   }
-  SECTION("1 connection") {
-    REQUIRE(httpMultiPartDownload(stream_url, stm, 1, file_size));
+  SECTION("5 connection, download to buffer") {
+    std::ostringstream oss;
+    content.resize(file_size);
+    oss.rdbuf()->pubsetbuf(content.data(), content.size());
+    REQUIRE(httpMultiPartDownload(stream_url, oss, 5, file_size));
   }
-  std::string content = util::read_file(filename);
+
   REQUIRE(content.size() == 9112651);
   std::string checksum = sha_256(QString::fromStdString(content));
   REQUIRE(checksum == "e44edfbb545abdddfd17020ced2b18b6ec36506152267f32b6a8e3341f8126d6");
@@ -73,9 +80,12 @@ TEST_CASE("Segment") {
 // helper class for unit tests
 class TestReplay : public Replay {
  public:
-  TestReplay(const QString &route, bool no_local_cache)
-      : Replay(route, {}, {}, nullptr, false, false, no_local_cache) {}
-  void test_seek();
+  TestReplay(const QString &route, uint8_t flags = REPLAY_FLAG_NO_FILE_CACHE)
+      : Replay(route, {}, {}, nullptr, flags) {
+    REQUIRE(load());
+    startTest();
+  }
+  void startTest();
   void testSeekTo(int seek_to);
 };
 
@@ -112,12 +122,12 @@ void TestReplay::testSeekTo(int seek_to) {
   }
 }
 
-void TestReplay::test_seek() {
+void TestReplay::startTest() {
   // create a dummy stream thread
   stream_thread_ = new QThread(this);
   QEventLoop loop;
   std::thread thread = std::thread([&]() {
-    for (int i = 0; i < 100; ++i) {
+    for (int i = 0; i < 50; ++i) {
       testSeekTo(random_int(0, 3 * 60));
     }
     loop.quit();
@@ -127,14 +137,13 @@ void TestReplay::test_seek() {
 }
 
 TEST_CASE("Replay") {
-  SECTION("cache to local") {
-    TestReplay replay(DEMO_ROUTE, false);
-    REQUIRE(replay.load());
-    replay.test_seek();
+  SECTION("cache remote to local") {
+    TestReplay replay(DEMO_ROUTE);
+  }
+  SECTION("replay from cached files") {
+    TestReplay replay(DEMO_ROUTE, REPLAY_FLAG_NONE);
   }
   SECTION("no local cache") {
-    TestReplay replay(DEMO_ROUTE, true);
-    REQUIRE(replay.load());
-    replay.test_seek();
+    TestReplay replay(DEMO_ROUTE, REPLAY_FLAG_NO_FILE_CACHE);
   }
 }
