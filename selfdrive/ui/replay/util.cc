@@ -1,16 +1,15 @@
 #include "selfdrive/ui/replay/util.h"
 
-#include <array>
-#include <cassert>
-#include <iostream>
-#include <sstream>
-#include <iomanip>
-#include <mutex>
-#include <numeric>
-
 #include <bzlib.h>
 #include <curl/curl.h>
 #include <openssl/sha.h>
+
+#include <cassert>
+#include <iomanip>
+#include <iostream>
+#include <mutex>
+#include <numeric>
+#include <sstream>
 
 #include "selfdrive/common/timing.h"
 #include "selfdrive/common/util.h"

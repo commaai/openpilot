@@ -13,19 +13,19 @@
 
 namespace {
 
-std::string getCachePath() {
-  std::string cache_path = util::getenv("COMMA_CACHE", "/tmp/comma_download_cache/");
-  if (cache_path.rfind('/') != cache_path.length() - 1) {
-    cache_path += '/';
+std::string getCacheDir() {
+  std::string cache_dir = util::getenv("COMMA_CACHE", "/tmp/comma_download_cache/");
+  if (cache_dir.rfind('/') != cache_dir.length() - 1) {
+    cache_dir += '/';
   }
-  return cache_path;
+  return cache_dir;
 }
 
 std::string cacheFilePath(const std::string &url) {
   static std::once_flag once_flag;
-  std::call_once(once_flag, [=]() {if (!util::file_exists(getCachePath())) mkdir(getCachePath().c_str(), 0775); });
+  std::call_once(once_flag, [=]() {if (!util::file_exists(getCacheDir())) mkdir(getCacheDir().c_str(), 0666); });
 
-  return getCachePath() + sha256(getUrlWithoutQuery(url));
+  return getCacheDir() + sha256(getUrlWithoutQuery(url));
 }
 
 }  // namespace

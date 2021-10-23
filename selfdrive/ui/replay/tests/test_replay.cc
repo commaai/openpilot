@@ -22,7 +22,6 @@ TEST_CASE("httpMultiPartDownload") {
   const char *stream_url = "https://commadataci.blob.core.windows.net/openpilotci/0c94aa1e1296d7c6/2021-05-05--19-48-37/0/rlog.bz2";
   auto file_size = getRemoteFileSize(stream_url);
   REQUIRE(file_size > 0);
-
   SECTION("5 connections, download to file") {
     std::ofstream of(filename, of.binary | of.out);
     REQUIRE(httpMultiPartDownload(stream_url, of, 5, file_size));
@@ -34,7 +33,6 @@ TEST_CASE("httpMultiPartDownload") {
     oss.rdbuf()->pubsetbuf(content.data(), content.size());
     REQUIRE(httpMultiPartDownload(stream_url, oss, 5, file_size));
   }
-
   REQUIRE(content.size() == 9112651);
   std::string checksum = sha_256(QString::fromStdString(content));
   REQUIRE(checksum == "e44edfbb545abdddfd17020ced2b18b6ec36506152267f32b6a8e3341f8126d6");
@@ -80,9 +78,8 @@ TEST_CASE("Segment") {
 
 // helper class for unit tests
 class TestReplay : public Replay {
- public:
-  TestReplay(const QString &route, uint8_t flags = REPLAY_FLAG_NO_FILE_CACHE)
-      : Replay(route, {}, {}, nullptr, flags) {
+public:
+  TestReplay(const QString &route, uint8_t flags = REPLAY_FLAG_NO_FILE_CACHE) : Replay(route, {}, {}, nullptr, flags) {
     REQUIRE(load());
     startTest();
   }
