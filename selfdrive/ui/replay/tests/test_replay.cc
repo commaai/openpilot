@@ -73,8 +73,8 @@ TEST_CASE("FrameReader") {
   REQUIRE(no_local_cache_fr.getFrameCount() == 1200);
 
   FrameReader local_cache_fr(true);
-  REQUIRE(no_local_cache_fr.load(demo_route.at(0).rlog.toStdString()));
-  REQUIRE(no_local_cache_fr.getFrameCount() == 1200);
+  REQUIRE(local_cache_fr.load(demo_route.at(0).rlog.toStdString()));
+  REQUIRE(local_cache_fr.getFrameCount() == 1200);
 }
 
 TEST_CASE("Segment") {
