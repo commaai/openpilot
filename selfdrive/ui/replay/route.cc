@@ -10,7 +10,9 @@
 #include "selfdrive/ui/qt/api.h"
 #include "selfdrive/ui/replay/util.h"
 
-Route::Route(const QString &route, const QString &data_dir) : route_(parseRoute(route)), data_dir_(data_dir) {}
+Route::Route(const QString &route, const QString &data_dir) : data_dir_(data_dir) {
+  route_ = parseRoute(route);
+}
 
 RouteIdentifier Route::parseRoute(const QString &str) {
   QRegExp rx(R"(^([a-z0-9]{16})([|_/])(\d{4}-\d{2}-\d{2}--\d{2}-\d{2}-\d{2})(?:(--|/)(\d*))?$)");
