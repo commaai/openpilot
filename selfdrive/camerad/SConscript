@@ -22,6 +22,7 @@ else:
       cameras = ['cameras/camera_frame_stream.cc']
     else:
       libs += ['avutil', 'avcodec', 'avformat', 'swscale', 'bz2', 'ssl', 'curl', 'crypto']
+      # TODO: import replay_lib from root SConstruct
       cameras = ['cameras/camera_replay.cc', 
         env.Object('camera-util', '#/selfdrive/ui/replay/util.cc'),
         env.Object('camera-framereader', '#/selfdrive/ui/replay/framereader.cc'),
