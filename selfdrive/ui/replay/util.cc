@@ -15,6 +15,10 @@
 #include "selfdrive/common/timing.h"
 #include "selfdrive/common/util.h"
 
+namespace {
+
+static std::atomic<bool> enable_http_logging = false;
+
 struct CURLGlobalInitializer {
   CURLGlobalInitializer() { curl_global_init(CURL_GLOBAL_DEFAULT); }
   ~CURLGlobalInitializer() { curl_global_cleanup(); }
@@ -27,7 +31,7 @@ struct MultiPartWriter {
   std::ostream *os;
 };
 
-static size_t write_cb(char *data, size_t size, size_t count, void *userp) {
+size_t write_cb(char *data, size_t size, size_t count, void *userp) {
   MultiPartWriter *w = (MultiPartWriter *)userp;
   w->os->seekp(w->offset);
   size_t bytes = size * count;
@@ -37,7 +41,19 @@ static size_t write_cb(char *data, size_t size, size_t count, void *userp) {
   return bytes;
 }
 
-static size_t dumy_write_cb(char *data, size_t size, size_t count, void *userp) { return size * count; }
+size_t dumy_write_cb(char *data, size_t size, size_t count, void *userp) { return size * count; }
+
+std::string formattedDataSize(size_t size) {
+  if (size < 1024) {
+    return std::to_string(size) + " B";
+  } else if (size < 1024 * 1024) {
+    return util::string_format("%.2f KB", (float)size / 1024);
+  } else {
+    return util::string_format("%.2f MB", (float)size / (1024 * 1024));
+  }
+}
+
+} // namespace
 
 size_t getRemoteFileSize(const std::string &url) {
   CURL *curl = curl_easy_init();
@@ -58,22 +74,10 @@ size_t getRemoteFileSize(const std::string &url) {
   return content_length > 0 ? content_length : 0;
 }
 
-std::string formattedDataSize(size_t size) {
-  if (size < 1024) {
-    return std::to_string(size) + " B";
-  } else if (size < 1024 * 1024) {
-    return util::string_format("%.2f KB", (float)size / 1024);
-  } else {
-    return util::string_format("%.2f MB", (float)size / (1024 * 1024));
-  }
-}
-
 std::string getUrlWithoutQuery(const std::string &url) {
   size_t idx = url.find("?");
   return (idx == std::string::npos ? url : url.substr(0, idx));
 }
-
-static std::atomic<bool> enable_http_logging = false;
 
 void enableHttpLogging(bool enable) {
   enable_http_logging = enable;

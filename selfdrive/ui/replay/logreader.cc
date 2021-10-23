@@ -1,6 +1,6 @@
 #include "selfdrive/ui/replay/logreader.h"
 
-#include "selfdrive/common/util.h"
+#include <algorithm>
 #include "selfdrive/ui/replay/util.h"
 
 Event::Event(const kj::ArrayPtr<const capnp::word> &amsg, bool frame) : reader(amsg), frame(frame) {
@@ -26,7 +26,7 @@ Event::Event(const kj::ArrayPtr<const capnp::word> &amsg, bool frame) : reader(a
 
 // class LogReader
 
-LogReader::LogReader(bool local_cache, size_t memory_pool_block_size) : FileReader(local_cache) {
+LogReader::LogReader(bool local_cache, int chunk_size, int retries, size_t memory_pool_block_size) : FileReader(local_cache, chunk_size, retries) {
 #ifdef HAS_MEMORY_RESOURCE
   const size_t buf_size = sizeof(Event) * memory_pool_block_size;
   pool_buffer_ = ::operator new(buf_size);
@@ -46,8 +46,8 @@ LogReader::~LogReader() {
 #endif
 }
 
-bool LogReader::load(const std::string &file) {
-  raw_ = decompressBZ2(read(file));
+bool LogReader::load(const std::string &file, std::atomic<bool> *abort) {
+  raw_ = decompressBZ2(read(file, abort));
   if (raw_.empty()) return false;
 
   kj::ArrayPtr<const capnp::word> words((const capnp::word *)raw_.data(), raw_.size() / sizeof(capnp::word));

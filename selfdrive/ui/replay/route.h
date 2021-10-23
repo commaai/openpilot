@@ -61,5 +61,5 @@ protected:
 
   std::atomic<bool> abort_ = false;
   std::atomic<int> loading_ = 0, failed_ = 0;
-  std::vector<QThread*> loading_threads_;
+  std::vector<QThread *> loading_threads_;
 };

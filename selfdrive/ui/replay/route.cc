@@ -42,7 +42,7 @@ bool Route::loadFromServer() {
 
 bool Route::loadFromJson(const QString &json) {
   QRegExp rx(R"(\/(\d+)\/)");
-  for (const auto &value : QJsonDocument::fromJson(json.trimmed().toUtf8()).object()) {
+  for (const auto &value :  QJsonDocument::fromJson(json.trimmed().toUtf8()).object()) {
     for (const auto &url : value.toArray()) {
       QString url_str = url.toString();
       if (rx.indexIn(url_str) != -1) {
@@ -107,11 +107,6 @@ Segment::Segment(int n, const SegmentFile &files, bool load_dcam, bool load_ecam
 
 Segment::~Segment() {
   abort_ = true;
-  for (auto &fr : frames) {
-    if (fr) fr->abort();
-  }
-  if (log) log->abort();
-
   for (QThread *t : loading_threads_) {
     if (t->isRunning()) {
       t->quit();
@@ -123,11 +118,11 @@ Segment::~Segment() {
 
 void Segment::loadFile(int id, const std::string file, bool no_file_cache) {
   if (id < MAX_CAMERAS) {
-    frames[id] = std::make_unique<FrameReader>(!no_file_cache);
-    failed_ += frames[id]->load(file) != true;
+    frames[id] = std::make_unique<FrameReader>(!no_file_cache, 20 * 1024 * 1024, 3);
+    failed_ += frames[id]->load(file, &abort_) != true;
   } else {
-    log = std::make_unique<LogReader>(!no_file_cache);
-    failed_ += log->load(file) != true;
+    log = std::make_unique<LogReader>(!no_file_cache, -1, 3);
+    failed_ += log->load(file, &abort_) != true;
   }
   if (!abort_ && --loading_ == 0) {
     emit loadFinished(failed_ == 0);

@@ -43,7 +43,7 @@ protected:
   void stream();
   void setCurrentSegment(int n);
   void mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::iterator &end);
-  void updateEvents(const std::function<bool()> &lambda);
+  void updateEvents(const std::function<bool()>& lambda);
   void publishMessage(const Event *e);
   void publishFrame(const Event *e);
   inline int currentSeconds() const { return (cur_mono_time_ - route_start_ts_) / 1e9; }
@@ -71,7 +71,7 @@ protected:
   // messaging
   SubMaster *sm = nullptr;
   PubMaster *pm = nullptr;
-  std::vector<const char *> sockets_;
+  std::vector<const char*> sockets_;
   std::unique_ptr<Route> route_;
   std::unique_ptr<CameraServer> camera_server_;
   uint32_t flags_ = REPLAY_FLAG_NONE;

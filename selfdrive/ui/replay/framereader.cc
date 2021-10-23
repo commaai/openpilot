@@ -4,7 +4,9 @@
 #include <cassert>
 #include <mutex>
 
-static int ffmpeg_lockmgr_cb(void **arg, enum AVLockOp op) {
+namespace {
+
+int ffmpeg_lockmgr_cb(void **arg, enum AVLockOp op) {
   std::mutex *mutex = (std::mutex *)*arg;
   switch (op) {
   case AV_LOCK_CREATE:
@@ -32,7 +34,15 @@ struct AVInitializer {
   ~AVInitializer() { avformat_network_deinit(); }
 };
 
-FrameReader::FrameReader(bool local_cache) : FileReader(local_cache) {
+int readFunction(void *opaque, uint8_t *buf, int buf_size) {
+  auto &iss = *reinterpret_cast<std::istringstream *>(opaque);
+  iss.read(reinterpret_cast<char *>(buf), buf_size);
+  return iss.gcount() ? iss.gcount() : AVERROR_EOF;
+}
+
+} // namespace
+
+FrameReader::FrameReader(bool local_cache, int chunk_size, int retries) : FileReader(local_cache, chunk_size, retries) {
   static AVInitializer av_initializer;
 
   pFormatCtx_ = avformat_alloc_context();
@@ -58,14 +68,8 @@ FrameReader::~FrameReader() {
   }
 }
 
-static int readFunction(void *opaque, uint8_t *buf, int buf_size) {
-  auto &iss = *reinterpret_cast<std::istringstream *>(opaque);
-  iss.read(reinterpret_cast<char *>(buf), buf_size);
-  return iss.gcount() ? iss.gcount() : AVERROR_EOF;
-}
-
-bool FrameReader::load(const std::string &url) {
-  std::string content = read(url);
+bool FrameReader::load(const std::string &url, std::atomic<bool> *abort) {
+  std::string content = read(url, abort);
   if (content.empty()) return false;
 
   std::istringstream iss(content);
@@ -106,7 +110,7 @@ bool FrameReader::load(const std::string &url) {
   if (!sws_ctx_) return false;
 
   frames_.reserve(60 * 20);  // 20fps, one minute
-  while (true) {
+  while (!(abort && *abort)) {
     Frame &frame = frames_.emplace_back();
     int err = av_read_frame(pFormatCtx_, &frame.pkt);
     if (err < 0) {

@@ -48,9 +48,9 @@ public:
 
 class LogReader : public FileReader {
 public:
-  LogReader(bool local_cache, size_t memory_pool_block_size = DEFAULT_EVENT_MEMORY_POOL_BLOCK_SIZE);
+  LogReader(bool local_cache = false, int chunk_size = -1, int retries = 0, size_t memory_pool_block_size = DEFAULT_EVENT_MEMORY_POOL_BLOCK_SIZE);
   ~LogReader();
-  bool load(const std::string &file);
+  bool load(const std::string &file, std::atomic<bool> *abort = nullptr);
 
   std::vector<Event*> events;
 
