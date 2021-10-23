@@ -11,7 +11,7 @@ extern "C" {
 #include <libavutil/imgutils.h>
 }
 
-class FrameReader : public FileReader {
+class FrameReader : protected FileReader {
 public:
   FrameReader(bool local_cache = false, int chunk_size = -1, int retries = 0);
   ~FrameReader();

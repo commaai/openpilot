@@ -46,7 +46,7 @@ public:
   bool frame;
 };
 
-class LogReader : public FileReader {
+class LogReader : protected FileReader {
 public:
   LogReader(bool local_cache = false, int chunk_size = -1, int retries = 0, size_t memory_pool_block_size = DEFAULT_EVENT_MEMORY_POOL_BLOCK_SIZE);
   ~LogReader();
