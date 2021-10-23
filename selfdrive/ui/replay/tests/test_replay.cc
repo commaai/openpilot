@@ -40,8 +40,7 @@ TEST_CASE("httpMultiPartDownload") {
     REQUIRE(httpMultiPartDownload(stream_url, oss, 5, file_size));
   }
   REQUIRE(content.size() == 9112651);
-  std::string checksum = sha256(content);
-  REQUIRE(checksum == "5b966d4bb21a100a8c4e59195faeb741b975ccbe268211765efd1763d892bfb3");
+  REQUIRE(sha256(content) == "5b966d4bb21a100a8c4e59195faeb741b975ccbe268211765efd1763d892bfb3");
 }
 
 int random_int(int min, int max) {
@@ -49,6 +48,12 @@ int random_int(int min, int max) {
   std::mt19937 rng(dev());
   std::uniform_int_distribution<std::mt19937::result_type> dist(min, max);
   return dist(rng);
+}
+
+TEST_CASE("FileReader") {
+  FileReader reader(false);
+  std::string content = reader.read("https://commadataci.blob.core.windows.net/openpilotci/0c94aa1e1296d7c6/2021-05-05--19-48-37/0/rlog.bz2");
+  REQUIRE(sha256(content) == "5b966d4bb21a100a8c4e59195faeb741b975ccbe268211765efd1763d892bfb3");
 }
 
 TEST_CASE("LogReader") {
