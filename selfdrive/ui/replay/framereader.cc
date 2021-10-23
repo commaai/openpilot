@@ -24,16 +24,6 @@ int ffmpeg_lockmgr_cb(void **arg, enum AVLockOp op) {
   return 0;
 }
 
-struct AVInitializer {
-  AVInitializer() {
-    int ret = av_lockmgr_register(ffmpeg_lockmgr_cb);
-    assert(ret >= 0);
-    av_register_all();
-    avformat_network_init();
-  }
-  ~AVInitializer() { avformat_network_deinit(); }
-};
-
 int readFunction(void *opaque, uint8_t *buf, int buf_size) {
   auto &iss = *reinterpret_cast<std::istringstream *>(opaque);
   iss.read(reinterpret_cast<char *>(buf), buf_size);
@@ -43,7 +33,12 @@ int readFunction(void *opaque, uint8_t *buf, int buf_size) {
 } // namespace
 
 FrameReader::FrameReader(bool local_cache, int chunk_size, int retries) : FileReader(local_cache, chunk_size, retries) {
-  static AVInitializer av_initializer;
+  static std::once_flag once_flag;
+  std::call_once(once_flag, [] {
+    int ret = av_lockmgr_register(ffmpeg_lockmgr_cb);
+    assert(ret >= 0);
+    av_register_all();
+  });
 
   pFormatCtx_ = avformat_alloc_context();
   av_frame_ = av_frame_alloc();
