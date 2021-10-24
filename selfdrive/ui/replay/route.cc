@@ -92,6 +92,7 @@ void Route::addFileToSegment(int n, const QString &file) {
 
 Segment::Segment(int n, const SegmentFile &files, bool load_dcam, bool load_ecam, bool no_file_cache) : seg_num(n) {
   thread_pool_.setMaxThreadCount(2 + load_dcam + load_ecam);
+  synchronizer_.setCancelOnWait(true);
 
   // [RoadCam, DriverCam, WideRoadCam, log]. fallback to qcamera/qlog
   const QString file_list[] = {
@@ -100,7 +101,6 @@ Segment::Segment(int n, const SegmentFile &files, bool load_dcam, bool load_ecam
       load_ecam ? files.wide_road_cam : "",
       files.rlog.isEmpty() ? files.qlog : files.rlog,
   };
-  synchronizer_.setCancelOnWait(true);
   for (int i = 0; i < std::size(file_list); i++) {
     if (!file_list[i].isEmpty()) {
       loading_++;

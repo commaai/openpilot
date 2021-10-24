@@ -36,21 +36,20 @@ Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *s
 
 Replay::~Replay() {
   stop();
+  delete pm;
+  delete events_;
 }
 
 void Replay::stop() {
-  if (segments_.empty()) return;
+  if (stream_thread_ == nullptr) return;
 
   qDebug() << "shutdown: in progress...";
   exit_ = updating_events_ = true;
-  if (stream_thread_) {
-    stream_cv_.notify_one();
-    stream_thread_->quit();
-    stream_thread_->wait();
-  }
+  stream_cv_.notify_one();
+  stream_thread_->quit();
+  stream_thread_->wait();
+  stream_thread_ = nullptr;
 
-  delete pm;
-  delete events_;
   segments_.clear();
   camera_server_.reset(nullptr);
   qDebug() << "shutdown: done";
