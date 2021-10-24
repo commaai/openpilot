@@ -5,7 +5,7 @@
 #include "selfdrive/ui/replay/camera.h"
 #include "selfdrive/ui/replay/route.h"
 
-constexpr int FORWARD_SEGS = 2;
+constexpr int FORWARD_SEGS = 5;
 
 enum REPLAY_FLAGS {
   REPLAY_FLAG_NONE = 0x0000,
