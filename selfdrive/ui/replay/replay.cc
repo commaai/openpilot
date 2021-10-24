@@ -174,9 +174,10 @@ void Replay::queueSegment() {
 }
 
 void Replay::mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::iterator &end) {
-  // segments must be merged in sequence.
+  // merge 3 segments in sequence.
   std::vector<int> segments_need_merge;
-  for (auto it = begin; it != end && it->second->isLoaded(); ++it) {
+  int merged_cnt = 0;
+  for (auto it = begin; it != end && it->second->isLoaded() && merged_cnt < 3; ++it, ++merged_cnt) {
     segments_need_merge.push_back(it->first);
   }
 
