@@ -128,8 +128,9 @@ void Segment::loadFile(int id, const std::string file, bool no_file_cache) {
     log = std::make_unique<LogReader>(!no_file_cache, -1, 3);
     success = log->load(file, &abort_);
   }
+
   if (!success) {
-    // abort all loading operations
+    // abort all loading jobs.
     abort_ = true;
   } 
 

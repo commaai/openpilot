@@ -52,37 +52,18 @@ int random_int(int min, int max) {
 }
 
 TEST_CASE("FileReader") {
-  FileReader reader(true);
+  auto enable_local_cache = GENERATE(true, false);
+  std::string cache_file = cacheFilePath(TEST_RLOG_URL);
+  system(("rm " + cache_file + " -f").c_str());
+ 
+  FileReader reader(enable_local_cache);
   std::string content = reader.read(TEST_RLOG_URL);
   REQUIRE(sha256(content) == TEST_RLOG_CHECKSUM);
-  std::string cache_file = cacheFilePath(TEST_RLOG_URL);
-  REQUIRE(sha256(util::read_file(cache_file)) == TEST_RLOG_CHECKSUM);
-}
-
-TEST_CASE("LogReader") {
-  Route &demo_route = getDemoRoute();
-
-  LogReader no_local_cache_lr;
-  REQUIRE(no_local_cache_lr.load(demo_route.at(0).rlog.toStdString()));
-  REQUIRE(no_local_cache_lr.events.size() > 0);
-
-  LogReader local_cache_lr(true);
-  REQUIRE(local_cache_lr.load(demo_route.at(0).rlog.toStdString()));
-  REQUIRE(local_cache_lr.events.size() > 0);
- 
-  REQUIRE(local_cache_lr.events.size() == no_local_cache_lr.events.size());
-}
-
-TEST_CASE("FrameReader") {
-  Route &demo_route = getDemoRoute();
-
-  FrameReader no_local_cache_fr;
-  REQUIRE(no_local_cache_fr.load(demo_route.at(0).road_cam.toStdString()));
-  REQUIRE(no_local_cache_fr.getFrameCount() == 1200);
-
-  FrameReader local_cache_fr(true);
-  REQUIRE(local_cache_fr.load(demo_route.at(0).road_cam.toStdString()));
-  REQUIRE(local_cache_fr.getFrameCount() == 1200);
+  if (enable_local_cache) {
+    REQUIRE(sha256(util::read_file(cache_file)) == TEST_RLOG_CHECKSUM);
+  } else {
+    REQUIRE(util::file_exists(cache_file) == false);
+  }
 }
 
 TEST_CASE("Segment") {
@@ -172,10 +153,6 @@ void TestReplay::startTest() {
 }
 
 TEST_CASE("Replay") {
-  SECTION("cache to local") {
-    TestReplay replay(DEMO_ROUTE);
-  }
-  SECTION("no local cache") {
-    TestReplay replay(DEMO_ROUTE, REPLAY_FLAG_NO_FILE_CACHE);
-  }
+  auto flag = GENERATE(REPLAY_FLAG_NO_FILE_CACHE, REPLAY_FLAG_NONE);
+  TestReplay replay(DEMO_ROUTE, flag);
 }
