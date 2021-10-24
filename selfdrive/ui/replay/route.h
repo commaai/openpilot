@@ -47,7 +47,7 @@ class Segment : public QObject {
 public:
   Segment(int n, const SegmentFile &files, bool load_dcam, bool load_ecam, bool no_file_cache);
   ~Segment();
-  inline bool isLoaded() const { return !loading_ && !failed_; }
+  inline bool isLoaded() const { return !loading_ && !abort_; }
 
   const int seg_num = 0;
   std::unique_ptr<LogReader> log;
@@ -60,6 +60,6 @@ protected:
   void loadFile(int id, const std::string file, bool no_file_cache);
 
   std::atomic<bool> abort_ = false;
-  std::atomic<int> loading_ = 0, failed_ = 0;
+  std::atomic<int> loading_ = 0;
   std::vector<QThread *> loading_threads_;
 };

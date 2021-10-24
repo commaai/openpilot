@@ -108,6 +108,7 @@ Segment::Segment(int n, const SegmentFile &files, bool load_dcam, bool load_ecam
 }
 
 Segment::~Segment() {
+  disconnect();
   abort_ = true;
   for (QThread *t : loading_threads_) {
     if (t->isRunning()) {
@@ -119,14 +120,20 @@ Segment::~Segment() {
 }
 
 void Segment::loadFile(int id, const std::string file, bool no_file_cache) {
+  bool success = false;
   if (id < MAX_CAMERAS) {
     frames[id] = std::make_unique<FrameReader>(!no_file_cache, 20 * 1024 * 1024, 3);
-    failed_ += frames[id]->load(file, &abort_) != true;
+    success = frames[id]->load(file, &abort_);
   } else {
     log = std::make_unique<LogReader>(!no_file_cache, -1, 3);
-    failed_ += log->load(file, &abort_) != true;
+    success = log->load(file, &abort_);
   }
-  if (!abort_ && --loading_ == 0) {
-    emit loadFinished(failed_ == 0);
+  if (!success) {
+    // abort all loading operations
+    abort_ = true;
+  } 
+
+  if (--loading_ == 0) {
+    emit loadFinished(!abort_);
   }
 }
