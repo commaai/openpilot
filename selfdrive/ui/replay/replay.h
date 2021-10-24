@@ -5,7 +5,8 @@
 #include "selfdrive/ui/replay/camera.h"
 #include "selfdrive/ui/replay/route.h"
 
-constexpr int FORWARD_SEGS = 5;
+// one segment uses about 100M of memory
+constexpr int FORWARD_SEGS = 10;
 
 enum REPLAY_FLAGS {
   REPLAY_FLAG_NONE = 0x0000,

@@ -116,6 +116,8 @@ Segment::~Segment() {
 }
 
 void Segment::loadFile(int id, const std::string file, bool no_file_cache) {
+  std::call_once(once_flag_, [=] { qInfo() << "loading segment" << seg_num << "..."; });
+
   bool success = false;
   if (id < MAX_CAMERAS) {
     frames[id] = std::make_unique<FrameReader>(!no_file_cache, 20 * 1024 * 1024, 3);

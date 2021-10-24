@@ -64,4 +64,5 @@ protected:
   std::atomic<int> loading_ = 0;
   QFutureSynchronizer<void> synchronizer_;
   inline static QThreadPool thread_pool_;
+  std::once_flag once_flag_;
 };
