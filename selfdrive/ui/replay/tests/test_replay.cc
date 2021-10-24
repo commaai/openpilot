@@ -10,7 +10,7 @@
 
 const QString DEMO_ROUTE = "4cf7a6ad03080c90|2021-09-29--13-46-36";
 const std::string TEST_RLOG_URL = "https://commadataci.blob.core.windows.net/openpilotci/0c94aa1e1296d7c6/2021-05-05--19-48-37/0/rlog.bz2";
-const std::string  TEST_RLOG_CHECKSUM = "5b966d4bb21a100a8c4e59195faeb741b975ccbe268211765efd1763d892bfb3";
+const std::string TEST_RLOG_CHECKSUM = "5b966d4bb21a100a8c4e59195faeb741b975ccbe268211765efd1763d892bfb3";
 
 Route &getDemoRoute() {
   static std::once_flag once_flag;
@@ -55,7 +55,7 @@ TEST_CASE("FileReader") {
   auto enable_local_cache = GENERATE(true, false);
   std::string cache_file = cacheFilePath(TEST_RLOG_URL);
   system(("rm " + cache_file + " -f").c_str());
- 
+
   FileReader reader(enable_local_cache);
   std::string content = reader.read(TEST_RLOG_URL);
   REQUIRE(sha256(content) == TEST_RLOG_CHECKSUM);
@@ -96,7 +96,7 @@ TEST_CASE("Segment") {
 
 // helper class for unit tests
 class TestReplay : public Replay {
-public:
+ public:
   TestReplay(const QString &route, uint8_t flags = REPLAY_FLAG_NO_FILE_CACHE) : Replay(route, {}, {}, nullptr, flags) {
     REQUIRE(load());
     startTest();

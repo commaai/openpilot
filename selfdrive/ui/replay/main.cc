@@ -11,10 +11,14 @@
 
 const QString DEMO_ROUTE = "4cf7a6ad03080c90|2021-09-29--13-46-36";
 struct termios oldt = {};
+Replay *replay = nullptr;
 
 void sigHandler(int s) {
   std::signal(s, SIG_DFL);
   tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+  if (replay) {
+    replay->stop();
+  }
   qApp->quit();
 }
 
@@ -110,7 +114,7 @@ int main(int argc, char *argv[]){
       replay_flags |= flag;
     }
   }
-  Replay *replay = new Replay(route, allow, block, nullptr, replay_flags, parser.value("data_dir"), &app);
+  replay = new Replay(route, allow, block, nullptr, replay_flags, parser.value("data_dir"), &app);
   if (!replay->load()) {
     return 0;
   }

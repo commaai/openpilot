@@ -5,6 +5,7 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QRegExp>
+#include <QtConcurrent>
 
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/qt/api.h"
@@ -90,6 +91,8 @@ void Route::addFileToSegment(int n, const QString &file) {
 // class Segment
 
 Segment::Segment(int n, const SegmentFile &files, bool load_dcam, bool load_ecam, bool no_file_cache) : seg_num(n) {
+  thread_pool_.setMaxThreadCount(2 + load_dcam + load_ecam);
+
   // [RoadCam, DriverCam, WideRoadCam, log]. fallback to qcamera/qlog
   const QString file_list[] = {
       files.road_cam.isEmpty() ? files.qcamera : files.road_cam,
@@ -97,12 +100,11 @@ Segment::Segment(int n, const SegmentFile &files, bool load_dcam, bool load_ecam
       load_ecam ? files.wide_road_cam : "",
       files.rlog.isEmpty() ? files.qlog : files.rlog,
   };
+  synchronizer_.setCancelOnWait(true);
   for (int i = 0; i < std::size(file_list); i++) {
     if (!file_list[i].isEmpty()) {
       loading_++;
-      QThread *t = new QThread();
-      QObject::connect(t, &QThread::started, [=]() { loadFile(i, file_list[i].toStdString(), no_file_cache); });
-      loading_threads_.emplace_back(t)->start();
+      synchronizer_.addFuture(QtConcurrent::run(&thread_pool_, [=] { loadFile(i, file_list[i].toStdString(), no_file_cache); }));
     }
   }
 }
@@ -110,13 +112,7 @@ Segment::Segment(int n, const SegmentFile &files, bool load_dcam, bool load_ecam
 Segment::~Segment() {
   disconnect();
   abort_ = true;
-  for (QThread *t : loading_threads_) {
-    if (t->isRunning()) {
-      t->quit();
-      t->wait();
-    }
-    delete t;
-  }
+  synchronizer_.waitForFinished();
 }
 
 void Segment::loadFile(int id, const std::string file, bool no_file_cache) {

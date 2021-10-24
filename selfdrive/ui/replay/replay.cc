@@ -35,6 +35,12 @@ Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *s
 }
 
 Replay::~Replay() {
+  stop();
+}
+
+void Replay::stop() {
+  if (segments_.empty()) return;
+
   qDebug() << "shutdown: in progress...";
   exit_ = updating_events_ = true;
   if (stream_thread_) {

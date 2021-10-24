@@ -1,6 +1,7 @@
 #pragma once
 
-#include <QThread>
+#include <QFutureSynchronizer>
+#include <QThreadPool>
 
 #include "selfdrive/ui/replay/framereader.h"
 #include "selfdrive/ui/replay/logreader.h"
@@ -61,5 +62,6 @@ protected:
 
   std::atomic<bool> abort_ = false;
   std::atomic<int> loading_ = 0;
-  std::vector<QThread *> loading_threads_;
+  QFutureSynchronizer<void> synchronizer_;
+  inline static QThreadPool thread_pool_;
 };
