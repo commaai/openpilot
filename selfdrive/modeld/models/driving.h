@@ -24,10 +24,10 @@ constexpr int OTHER_META_SIZE = 48;
 constexpr int NUM_META_INTERVALS = 5;
 constexpr int META_STRIDE = 7;
 
-constexpr int PLAN_MHP_N = 5;
-constexpr int PLAN_MHP_VALS = 15*33;
-constexpr int PLAN_MHP_SELECTION = 1;
-constexpr int PLAN_MHP_GROUP_SIZE =  (2*PLAN_MHP_VALS + PLAN_MHP_SELECTION);
+constexpr int PATH_MHP_N = 5;
+constexpr int PATH_MHP_VALS = 15*33;
+constexpr int PATH_MHP_SELECTION = 1;
+constexpr int PATH_MHP_GROUP_SIZE =  (2*PATH_MHP_VALS + PATH_MHP_SELECTION);
 
 constexpr int LEAD_MHP_N = 2;
 constexpr int LEAD_TRAJ_LEN = 6;
@@ -38,8 +38,8 @@ constexpr int LEAD_MHP_GROUP_SIZE = (2*LEAD_MHP_VALS + LEAD_MHP_SELECTION);
 
 constexpr int POSE_SIZE = 12;
 
-constexpr int PLAN_IDX = 0;
-constexpr int LL_IDX = PLAN_IDX + PLAN_MHP_N*PLAN_MHP_GROUP_SIZE;
+constexpr int PATH_IDX = 0;
+constexpr int LL_IDX = PATH_IDX + PATH_MHP_N*PATH_MHP_GROUP_SIZE;
 constexpr int LL_PROB_IDX = LL_IDX + 4*2*2*33;
 constexpr int RE_IDX = LL_PROB_IDX + 8;
 constexpr int LEAD_IDX = RE_IDX + 2*2*2*33;
@@ -68,36 +68,36 @@ struct ModelDataRawYZ {
 };
 static_assert(sizeof(ModelDataRawYZ) == sizeof(float)*2);
 
-struct ModelDataRawPlanTimeStep {
+struct ModelDataRawPathElement {
   ModelDataRawXYZ position;
   ModelDataRawXYZ velocity;
   ModelDataRawXYZ acceleration;
   ModelDataRawXYZ rotation;
   ModelDataRawXYZ rotation_rate;
 };
-static_assert(sizeof(ModelDataRawPlanTimeStep) == sizeof(ModelDataRawXYZ)*5);
+static_assert(sizeof(ModelDataRawPathElement) == sizeof(ModelDataRawXYZ)*5);
 
-struct ModelDataRawPlanPath {
-  std::array<ModelDataRawPlanTimeStep, TRAJECTORY_SIZE> mean;
-  std::array<ModelDataRawPlanTimeStep, TRAJECTORY_SIZE> std;
+struct ModelDataRawPathPrediction {
+  std::array<ModelDataRawPathElement, TRAJECTORY_SIZE> mean;
+  std::array<ModelDataRawPathElement, TRAJECTORY_SIZE> std;
   float prob;
 };
-static_assert(sizeof(ModelDataRawPlanPath) == (sizeof(ModelDataRawPlanTimeStep)*TRAJECTORY_SIZE*2) + sizeof(float));
+static_assert(sizeof(ModelDataRawPathPrediction) == (sizeof(ModelDataRawPathElement)*TRAJECTORY_SIZE*2) + sizeof(float));
 
-struct ModelDataRawPlans {
-  std::array<ModelDataRawPlanPath, PLAN_MHP_N> path;
+struct ModelDataRawPaths {
+  std::array<ModelDataRawPathPrediction, PATH_MHP_N> prediction;
 
-  constexpr const ModelDataRawPlanPath &get_best_plan() const {
+  constexpr const ModelDataRawPathPrediction &get_best_prediction() const {
     int max_idx = 0;
-    for (int i = 1; i < path.size(); i++) {
-      if (path[i].prob > path[max_idx].prob) {
+    for (int i = 1; i < prediction.size(); i++) {
+      if (prediction[i].prob > prediction[max_idx].prob) {
         max_idx = i;
       }
     }
-    return path[max_idx];
+    return prediction[max_idx];
   }
 };
-static_assert(sizeof(ModelDataRawPlans) == sizeof(ModelDataRawPlanPath)*PLAN_MHP_N);
+static_assert(sizeof(ModelDataRawPaths) == sizeof(ModelDataRawPathPrediction)*PATH_MHP_N);
 
 struct ModelDataRawLinesXY {
   std::array<ModelDataRawYZ, TRAJECTORY_SIZE> left_far;
@@ -140,20 +140,20 @@ struct ModelDataRawRoadEdges {
 };
 static_assert(sizeof(ModelDataRawRoadEdges) == (sizeof(ModelDataRawEdgessXY)*2));
 
-struct ModelDataRawLeadPosition {
+struct ModelDataRawLeadElement {
   float x;
   float y;
   float velocity;
   float acceleration;
 };
-static_assert(sizeof(ModelDataRawLeadPosition) == sizeof(float)*4);
+static_assert(sizeof(ModelDataRawLeadElement) == sizeof(float)*4);
 
 struct ModelDataRawLeadPrediction {
-  std::array<ModelDataRawLeadPosition, LEAD_TRAJ_LEN> mean;
-  std::array<ModelDataRawLeadPosition, LEAD_TRAJ_LEN> std;
+  std::array<ModelDataRawLeadElement, LEAD_TRAJ_LEN> mean;
+  std::array<ModelDataRawLeadElement, LEAD_TRAJ_LEN> std;
   std::array<float, LEAD_MHP_SELECTION> prob;
 };
-static_assert(sizeof(ModelDataRawLeadPrediction) == (sizeof(ModelDataRawLeadPosition)*LEAD_TRAJ_LEN*2) + (sizeof(float)*LEAD_MHP_SELECTION));
+static_assert(sizeof(ModelDataRawLeadPrediction) == (sizeof(ModelDataRawLeadElement)*LEAD_TRAJ_LEN*2) + (sizeof(float)*LEAD_MHP_SELECTION));
 
 struct ModelDataRawLeads {
   std::array<ModelDataRawLeadPrediction, LEAD_MHP_N> prediction;
@@ -180,7 +180,7 @@ struct ModelDataRawPose {
 static_assert(sizeof(ModelDataRawPose) == sizeof(ModelDataRawXYZ)*4);
 
 struct ModelDataRaw {
-  const ModelDataRawPlans *const plan;
+  const ModelDataRawPaths *const path;
   const ModelDataRawLaneLines *const lane_lines;
   const ModelDataRawRoadEdges *const road_edges;
   const ModelDataRawLeads *const leads;

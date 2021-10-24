@@ -77,7 +77,7 @@ ModelDataRaw model_eval_frame(ModelState* s, cl_mem yuv_cl, int width, int heigh
 
   // net outputs
   ModelDataRaw net_outputs {
-    .plan = (ModelDataRawPlans*)&s->output[PLAN_IDX],
+    .path = (ModelDataRawPaths*)&s->output[PATH_IDX],
     .lane_lines = (ModelDataRawLaneLines*)&s->output[LL_IDX],
     .road_edges = (ModelDataRawRoadEdges*)&s->output[RE_IDX],
     .leads = (ModelDataRawLeads*)&s->output[LEAD_IDX],
@@ -97,8 +97,8 @@ void fill_sigmoid(const float *input, float *output, int len, int stride) {
   }
 }
 
-void fill_lead_v3(cereal::ModelDataV2::LeadDataV3::Builder lead, const ModelDataRawLeads &leads, int t_idx, float prob_t) {
-  float t[LEAD_TRAJ_LEN] = {0.0, 2.0, 4.0, 6.0, 8.0, 10.0};
+void fill_lead(cereal::ModelDataV2::LeadDataV3::Builder lead, const ModelDataRawLeads &leads, int t_idx, float prob_t) {
+  std::array<float, LEAD_TRAJ_LEN> lead_t = {0.0, 2.0, 4.0, 6.0, 8.0, 10.0};
   auto best_prediction = leads.get_best_prediction(t_idx);
   lead.setProb(sigmoid(leads.prob[t_idx]));
   lead.setProbTime(prob_t);
@@ -114,7 +114,7 @@ void fill_lead_v3(cereal::ModelDataV2::LeadDataV3::Builder lead, const ModelData
     lead_v_std[i] = exp(best_prediction.std[i].velocity);
     lead_a_std[i] = exp(best_prediction.std[i].acceleration);
   }
-  lead.setT(t);
+  lead.setT(to_kj_array_ptr(lead_t));
   lead.setX(to_kj_array_ptr(lead_x));
   lead.setY(to_kj_array_ptr(lead_y));
   lead.setV(to_kj_array_ptr(lead_v));
@@ -197,7 +197,7 @@ void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const std::array<flo
   xyzt.setZStd(to_kj_array_ptr(z_std));
 }
 
-void fill_plan(cereal::ModelDataV2::Builder &framed, const ModelDataRawPlanPath &plan) {
+void fill_path(cereal::ModelDataV2::Builder &framed, const ModelDataRawPathPrediction &path) {
   std::array<float, TRAJECTORY_SIZE> pos_x, pos_y, pos_z;
   std::array<float, TRAJECTORY_SIZE> pos_x_std, pos_y_std, pos_z_std;
   std::array<float, TRAJECTORY_SIZE> vel_x, vel_y, vel_z;
@@ -205,21 +205,21 @@ void fill_plan(cereal::ModelDataV2::Builder &framed, const ModelDataRawPlanPath 
   std::array<float, TRAJECTORY_SIZE> rot_rate_x, rot_rate_y, rot_rate_z;
 
   for(int i=0; i<TRAJECTORY_SIZE; i++) {
-    pos_x[i] = plan.mean[i].position.x;
-    pos_y[i] = plan.mean[i].position.y;
-    pos_z[i] = plan.mean[i].position.z;
-    pos_x_std[i] = exp(plan.std[i].position.x);
-    pos_y_std[i] = exp(plan.std[i].position.y);
-    pos_z_std[i] = exp(plan.std[i].position.z);
-    vel_x[i] = plan.mean[i].velocity.x;
-    vel_y[i] = plan.mean[i].velocity.y;
-    vel_z[i] = plan.mean[i].velocity.z;
-    rot_x[i] = plan.mean[i].rotation.x;
-    rot_y[i] = plan.mean[i].rotation.y;
-    rot_z[i] = plan.mean[i].rotation.z;
-    rot_rate_x[i] = plan.mean[i].rotation_rate.x;
-    rot_rate_y[i] = plan.mean[i].rotation_rate.y;
-    rot_rate_z[i] = plan.mean[i].rotation_rate.z;
+    pos_x[i] = path.mean[i].position.x;
+    pos_y[i] = path.mean[i].position.y;
+    pos_z[i] = path.mean[i].position.z;
+    pos_x_std[i] = exp(path.std[i].position.x);
+    pos_y_std[i] = exp(path.std[i].position.y);
+    pos_z_std[i] = exp(path.std[i].position.z);
+    vel_x[i] = path.mean[i].velocity.x;
+    vel_y[i] = path.mean[i].velocity.y;
+    vel_z[i] = path.mean[i].velocity.z;
+    rot_x[i] = path.mean[i].rotation.x;
+    rot_y[i] = path.mean[i].rotation.y;
+    rot_z[i] = path.mean[i].rotation.z;
+    rot_rate_x[i] = path.mean[i].rotation_rate.x;
+    rot_rate_y[i] = path.mean[i].rotation_rate.y;
+    rot_rate_z[i] = path.mean[i].rotation_rate.z;
   }
 
   fill_xyzt(framed.initPosition(), T_IDXS_FLOAT, pos_x, pos_y, pos_z, pos_x_std, pos_y_std, pos_z_std);
@@ -228,7 +228,7 @@ void fill_plan(cereal::ModelDataV2::Builder &framed, const ModelDataRawPlanPath 
   fill_xyzt(framed.initOrientationRate(), T_IDXS_FLOAT, rot_rate_x, rot_rate_y, rot_rate_z);
 }
 
-void fill_lane_lines(cereal::ModelDataV2::Builder &framed, const std::array<float, TRAJECTORY_SIZE> &plan_t_arr,
+void fill_lane_lines(cereal::ModelDataV2::Builder &framed, const std::array<float, TRAJECTORY_SIZE> &path_t,
                      const ModelDataRawLaneLines &lanes) {
   std::array<float, TRAJECTORY_SIZE> left_far_y, left_far_z;
   std::array<float, TRAJECTORY_SIZE> left_near_y, left_near_z;
@@ -246,10 +246,10 @@ void fill_lane_lines(cereal::ModelDataV2::Builder &framed, const std::array<floa
   }
 
   auto lane_lines = framed.initLaneLines(4);
-  fill_xyzt(lane_lines[0], plan_t_arr, X_IDXS_FLOAT, left_far_y, left_far_z);
-  fill_xyzt(lane_lines[1], plan_t_arr, X_IDXS_FLOAT, left_near_y, left_near_z);
-  fill_xyzt(lane_lines[2], plan_t_arr, X_IDXS_FLOAT, right_near_y, right_near_z);
-  fill_xyzt(lane_lines[3], plan_t_arr, X_IDXS_FLOAT, right_far_y, right_far_z);
+  fill_xyzt(lane_lines[0], path_t, X_IDXS_FLOAT, left_far_y, left_far_z);
+  fill_xyzt(lane_lines[1], path_t, X_IDXS_FLOAT, left_near_y, left_near_z);
+  fill_xyzt(lane_lines[2], path_t, X_IDXS_FLOAT, right_near_y, right_near_z);
+  fill_xyzt(lane_lines[3], path_t, X_IDXS_FLOAT, right_far_y, right_far_z);
 
   framed.setLaneLineStds({
     exp(lanes.std.left_far[0].y),
@@ -266,7 +266,7 @@ void fill_lane_lines(cereal::ModelDataV2::Builder &framed, const std::array<floa
   });
 }
 
-void fill_road_edges(cereal::ModelDataV2::Builder &framed, const std::array<float, TRAJECTORY_SIZE> &plan_t_arr,
+void fill_road_edges(cereal::ModelDataV2::Builder &framed, const std::array<float, TRAJECTORY_SIZE> &path_t,
                      const ModelDataRawRoadEdges &edges) {
   std::array<float, TRAJECTORY_SIZE> left_y, left_z;
   std::array<float, TRAJECTORY_SIZE> right_y, right_z;
@@ -278,8 +278,8 @@ void fill_road_edges(cereal::ModelDataV2::Builder &framed, const std::array<floa
   }
 
   auto road_edges = framed.initRoadEdges(2);
-  fill_xyzt(road_edges[0], plan_t_arr, X_IDXS_FLOAT, left_y, left_z);
-  fill_xyzt(road_edges[1], plan_t_arr, X_IDXS_FLOAT, right_y, right_z);
+  fill_xyzt(road_edges[0], path_t, X_IDXS_FLOAT, left_y, left_z);
+  fill_xyzt(road_edges[1], path_t, X_IDXS_FLOAT, right_y, right_z);
 
   framed.setRoadEdgeStds({
     exp(edges.std.left[0].y),
@@ -288,40 +288,40 @@ void fill_road_edges(cereal::ModelDataV2::Builder &framed, const std::array<floa
 }
 
 void fill_model(cereal::ModelDataV2::Builder &framed, const ModelDataRaw &net_outputs) {
-  auto best_plan = net_outputs.plan->get_best_plan();
-  std::array<float, TRAJECTORY_SIZE> plan_t_arr;
-  std::fill_n(plan_t_arr.data(), plan_t_arr.size(), NAN);
-  plan_t_arr[0] = 0.0;
+  auto best_path = net_outputs.path->get_best_prediction();
+  std::array<float, TRAJECTORY_SIZE> path_t;
+  std::fill_n(path_t.data(), path_t.size(), NAN);
+  path_t[0] = 0.0;
   for (int xidx=1, tidx=0; xidx<TRAJECTORY_SIZE; xidx++) {
     // increment tidx until we find an element that's further away than the current xidx
-    for (int next_tid = tidx + 1; next_tid < TRAJECTORY_SIZE && best_plan.mean[next_tid].position.x < X_IDXS[xidx]; next_tid++) {
+    for (int next_tid = tidx + 1; next_tid < TRAJECTORY_SIZE && best_path.mean[next_tid].position.x < X_IDXS[xidx]; next_tid++) {
       tidx++;
     }
     if (tidx == TRAJECTORY_SIZE - 1) {
-      // if the plan doesn't extend far enough, set plan_t to the max value (10s), then break
-      plan_t_arr[xidx] = T_IDXS[TRAJECTORY_SIZE - 1];
+      // if the path doesn't extend far enough, set path_t to the max value (10s), then break
+      path_t[xidx] = T_IDXS[TRAJECTORY_SIZE - 1];
       break;
     }
 
     // interpolate to find `t` for the current xidx
-    float current_x_val = best_plan.mean[tidx].position.x;
-    float next_x_val = best_plan.mean[tidx+1].position.x;
+    float current_x_val = best_path.mean[tidx].position.x;
+    float next_x_val = best_path.mean[tidx+1].position.x;
     float p = (X_IDXS[xidx] - current_x_val) / (next_x_val - current_x_val);
-    plan_t_arr[xidx] = p * T_IDXS[tidx+1] + (1 - p) * T_IDXS[tidx];
+    path_t[xidx] = p * T_IDXS[tidx+1] + (1 - p) * T_IDXS[tidx];
   }
 
-  fill_plan(framed, best_plan);
-  fill_lane_lines(framed, plan_t_arr, *net_outputs.lane_lines);
-  fill_road_edges(framed, plan_t_arr, *net_outputs.road_edges);
+  fill_path(framed, best_path);
+  fill_lane_lines(framed, path_t, *net_outputs.lane_lines);
+  fill_road_edges(framed, path_t, *net_outputs.road_edges);
 
   // meta
   fill_meta(framed.initMeta(), net_outputs.meta);
 
   // leads
   auto leads = framed.initLeadsV3(LEAD_MHP_SELECTION);
-  float t_offsets[LEAD_MHP_SELECTION] = {0.0, 2.0, 4.0};
+  std::array<float, LEAD_MHP_SELECTION> t_offsets = {0.0, 2.0, 4.0};
   for (int i=0; i<LEAD_MHP_SELECTION; i++) {
-    fill_lead_v3(leads[i], *net_outputs.leads, i, t_offsets[i]);
+    fill_lead(leads[i], *net_outputs.leads, i, t_offsets[i]);
   }
 }
 
