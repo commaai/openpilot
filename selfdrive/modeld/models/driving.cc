@@ -80,8 +80,7 @@ ModelDataRaw model_eval_frame(ModelState* s, cl_mem yuv_cl, int width, int heigh
     .plan = (ModelDataRawPlans*)&s->output[PLAN_IDX],
     .lane_lines = (ModelDataRawLaneLines*)&s->output[LL_IDX],
     .road_edges = (ModelDataRawRoadEdges*)&s->output[RE_IDX],
-    .lead = &s->output[LEAD_IDX],
-    .lead_prob = &s->output[LEAD_PROB_IDX],
+    .leads = (ModelDataRawLeads*)&s->output[LEAD_IDX],
     .meta = &s->output[DESIRE_STATE_IDX],
     .pose = (ModelDataRawPose*)&s->output[POSE_IDX],
   };
@@ -92,59 +91,38 @@ void model_free(ModelState* s) {
   delete s->frame;
 }
 
-static const float *get_best_data(const float *data, int size, int group_size, int weight_idx) {
-  int max_idx = 0;
-  for (int i = 1; i < size; i++) {
-    if (data[i * group_size + weight_idx] >
-        data[max_idx * group_size + weight_idx]) {
-      max_idx = i;
-    }
-  }
-  return &data[max_idx * group_size];
-}
-
-static const float *get_lead_data(const float *lead, int t_offset) {
-  return get_best_data(lead, LEAD_MHP_N, LEAD_MHP_GROUP_SIZE, LEAD_MHP_GROUP_SIZE - LEAD_MHP_SELECTION + t_offset);
-}
-
 void fill_sigmoid(const float *input, float *output, int len, int stride) {
   for (int i=0; i<len; i++) {
     output[i] = sigmoid(input[i*stride]);
   }
 }
 
-void fill_lead_v3(cereal::ModelDataV2::LeadDataV3::Builder lead, const float *lead_data, const float *prob, int t_offset, float prob_t) {
+void fill_lead_v3(cereal::ModelDataV2::LeadDataV3::Builder lead, const ModelDataRawLeads &leads, int t_idx, float prob_t) {
   float t[LEAD_TRAJ_LEN] = {0.0, 2.0, 4.0, 6.0, 8.0, 10.0};
-  const float *data = get_lead_data(lead_data, t_offset);
-  lead.setProb(sigmoid(prob[t_offset]));
+  auto best_prediction = leads.get_best_prediction(t_idx);
+  lead.setProb(sigmoid(leads.prob[t_idx]));
   lead.setProbTime(prob_t);
-  float x_arr[LEAD_TRAJ_LEN];
-  float y_arr[LEAD_TRAJ_LEN];
-  float v_arr[LEAD_TRAJ_LEN];
-  float a_arr[LEAD_TRAJ_LEN];
-  float x_stds_arr[LEAD_TRAJ_LEN];
-  float y_stds_arr[LEAD_TRAJ_LEN];
-  float v_stds_arr[LEAD_TRAJ_LEN];
-  float a_stds_arr[LEAD_TRAJ_LEN];
+  std::array<float, LEAD_TRAJ_LEN> lead_x, lead_y, lead_v, lead_a;
+  std::array<float, LEAD_TRAJ_LEN> lead_x_std, lead_y_std, lead_v_std, lead_a_std;
   for (int i=0; i<LEAD_TRAJ_LEN; i++) {
-    x_arr[i] = data[i*LEAD_PRED_DIM+0];
-    y_arr[i] = data[i*LEAD_PRED_DIM+1];
-    v_arr[i] = data[i*LEAD_PRED_DIM+2];
-    a_arr[i] = data[i*LEAD_PRED_DIM+3];
-    x_stds_arr[i] = exp(data[LEAD_MHP_VALS + i*LEAD_PRED_DIM+0]);
-    y_stds_arr[i] = exp(data[LEAD_MHP_VALS + i*LEAD_PRED_DIM+1]);
-    v_stds_arr[i] = exp(data[LEAD_MHP_VALS + i*LEAD_PRED_DIM+2]);
-    a_stds_arr[i] = exp(data[LEAD_MHP_VALS + i*LEAD_PRED_DIM+3]);
+    lead_x[i] = best_prediction.mean[i].x;
+    lead_y[i] = best_prediction.mean[i].y;
+    lead_v[i] = best_prediction.mean[i].velocity;
+    lead_a[i] = best_prediction.mean[i].acceleration;
+    lead_x_std[i] = exp(best_prediction.std[i].x);
+    lead_y_std[i] = exp(best_prediction.std[i].y);
+    lead_v_std[i] = exp(best_prediction.std[i].velocity);
+    lead_a_std[i] = exp(best_prediction.std[i].acceleration);
   }
   lead.setT(t);
-  lead.setX(x_arr);
-  lead.setY(y_arr);
-  lead.setV(v_arr);
-  lead.setA(a_arr);
-  lead.setXStd(x_stds_arr);
-  lead.setYStd(y_stds_arr);
-  lead.setVStd(v_stds_arr);
-  lead.setAStd(a_stds_arr);
+  lead.setX(to_kj_array_ptr(lead_x));
+  lead.setY(to_kj_array_ptr(lead_y));
+  lead.setV(to_kj_array_ptr(lead_v));
+  lead.setA(to_kj_array_ptr(lead_a));
+  lead.setXStd(to_kj_array_ptr(lead_x_std));
+  lead.setYStd(to_kj_array_ptr(lead_y_std));
+  lead.setVStd(to_kj_array_ptr(lead_v_std));
+  lead.setAStd(to_kj_array_ptr(lead_a_std));
 }
 
 void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const float *meta_data) {
@@ -342,8 +320,8 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelDataRaw &net_ou
   // leads
   auto leads = framed.initLeadsV3(LEAD_MHP_SELECTION);
   float t_offsets[LEAD_MHP_SELECTION] = {0.0, 2.0, 4.0};
-  for (int t_offset=0; t_offset<LEAD_MHP_SELECTION; t_offset++) {
-    fill_lead_v3(leads[t_offset], net_outputs.lead, net_outputs.lead_prob, t_offset, t_offsets[t_offset]);
+  for (int i=0; i<LEAD_MHP_SELECTION; i++) {
+    fill_lead_v3(leads[i], *net_outputs.leads, i, t_offsets[i]);
   }
 }
 

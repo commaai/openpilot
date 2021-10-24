@@ -140,6 +140,37 @@ struct ModelDataRawRoadEdges {
 };
 static_assert(sizeof(ModelDataRawRoadEdges) == (sizeof(ModelDataRawEdgessXY)*2));
 
+struct ModelDataRawLeadPosition {
+  float x;
+  float y;
+  float velocity;
+  float acceleration;
+};
+static_assert(sizeof(ModelDataRawLeadPosition) == sizeof(float)*4);
+
+struct ModelDataRawLeadPrediction {
+  std::array<ModelDataRawLeadPosition, LEAD_TRAJ_LEN> mean;
+  std::array<ModelDataRawLeadPosition, LEAD_TRAJ_LEN> std;
+  std::array<float, LEAD_MHP_SELECTION> prob;
+};
+static_assert(sizeof(ModelDataRawLeadPrediction) == (sizeof(ModelDataRawLeadPosition)*LEAD_TRAJ_LEN*2) + (sizeof(float)*LEAD_MHP_SELECTION));
+
+struct ModelDataRawLeads {
+  std::array<ModelDataRawLeadPrediction, LEAD_MHP_N> prediction;
+  std::array<float, LEAD_MHP_SELECTION> prob;
+
+  constexpr const ModelDataRawLeadPrediction &get_best_prediction(int t_idx) const {
+    int max_idx = 0;
+    for (int i = 1; i < prediction.size(); i++) {
+      if (prediction[i].prob[t_idx] > prediction[max_idx].prob[t_idx]) {
+        max_idx = i;
+      }
+    }
+    return prediction[max_idx];
+  }
+};
+static_assert(sizeof(ModelDataRawLeads) == (sizeof(ModelDataRawLeadPrediction)*LEAD_MHP_N) + (sizeof(float)*LEAD_MHP_SELECTION));
+
 struct ModelDataRawPose {
   ModelDataRawXYZ velocity_mean;
   ModelDataRawXYZ rotation_mean;
@@ -152,8 +183,7 @@ struct ModelDataRaw {
   const ModelDataRawPlans *const plan;
   const ModelDataRawLaneLines *const lane_lines;
   const ModelDataRawRoadEdges *const road_edges;
-  const float *const lead;
-  const float *const lead_prob;
+  const ModelDataRawLeads *const leads;
   const float *const desire_state;
   const float *const meta;
   const float *const desire_pred;
