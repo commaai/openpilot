@@ -17,7 +17,7 @@ Version 0.8.10 (2021-XX-XX)
  * tools: new and improved replay thanks to deanlee!
  * Moved community-supported cars outside of the Community Features toggle
  * Improved FW fingerprinting reliability for Hyundai/Kia/Genesis
- * Added prerequisites for longitudinal control on Hyndai/Kia/Genesis and Honda Bosch
+ * Added prerequisites for longitudinal control on Hyundai/Kia/Genesis and Honda Bosch
  * Audi S3 2015 support thanks to jyoung8607!
  * Honda Freed 2020 support thanks to belm0!
  * Hyundai Ioniq Hybrid 2020-2022 support thanks to sunnyhaibin!
