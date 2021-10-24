@@ -15,7 +15,9 @@ Replay *replay = nullptr;
 
 void sigHandler(int s) {
   std::signal(s, SIG_DFL);
-  tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+  if (oldt.c_lflag) {
+    tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+  }
   if (replay) {
     replay->stop();
   }
