@@ -142,7 +142,6 @@ void Replay::queueSegment() {
 
   SegmentMap::iterator begin, cur, end;
   begin = cur = end = segments_.lower_bound(std::min(current_segment_.load(), segments_.rbegin()->first));
-  // set fwd to 0 to just load the current segment when seeking to a new window.
   const int fwd = cur->second == nullptr ? 0 : FORWARD_SEGS;
   for (int i = 0; end != segments_.end() && i <= fwd; ++end, ++i) {
     auto &[n, seg] = *end;
@@ -175,8 +174,7 @@ void Replay::queueSegment() {
 void Replay::mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::iterator &end) {
   // merge 3 segments in sequence.
   std::vector<int> segments_need_merge;
-  int merged_cnt = 0;
-  for (auto it = begin; it != end && it->second->isLoaded() && merged_cnt < 3; ++it, ++merged_cnt) {
+  for (auto it = begin; it != end && it->second->isLoaded() && segments_need_merge.size() < 3; ++it) {
     segments_need_merge.push_back(it->first);
   }
 
