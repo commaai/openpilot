@@ -146,7 +146,7 @@ class CarInterfaceBase():
       # persisted for 0.5s and we're certain that the user isn't overriding
       if self.steering_unpressed > int(0.5/DT_CTRL) and self.steer_warning > int(0.5/DT_CTRL):
         events.add(EventName.steerTempUnavailable)
-      else:
+      elif not cs_out.standstill:
         events.add(EventName.steerTempUnavailableSilent)
 
     # Disable on rising edge of gas or brake. Also disable on brake when speed > 0.
