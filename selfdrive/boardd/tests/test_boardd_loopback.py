@@ -28,13 +28,13 @@ def reset_panda(f):
     f(*args, **kwargs)
   return wrapper
 
-os.environ['STARTED'] = '1'
-os.environ['BOARDD_LOOPBACK'] = '1'
 
 class TestBoardd(unittest.TestCase):
 
   @classmethod
   def setUpClass(cls):
+    os.environ['STARTED'] = '1'
+    os.environ['BOARDD_LOOPBACK'] = '1'
     cls.spinner = Spinner()
 
   @classmethod
