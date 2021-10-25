@@ -17,15 +17,15 @@ from selfdrive.car import make_can_msg
 from selfdrive.test.helpers import phone_only, with_processes
 
 
-def reset_panda(fn):
-  @wraps(fn)
-  def wrapper():
+def reset_panda(f):
+  @wraps(f)
+  def wrapper(*args, **kwargs):
     p = Panda()
     for i in [0, 1, 2, 0xFFFF]:
       p.can_clear(i)
     p.reset()
     p.close()
-    fn()
+    f(*args, **kwargs)
   return wrapper
 
 os.environ['STARTED'] = '1'
