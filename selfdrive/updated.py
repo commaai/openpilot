@@ -223,7 +223,7 @@ def finalize_update() -> None:
   cloudlog.info("done finalizing overlay")
 
 
-def handle_agnos_update(wait_helper):
+def handle_agnos_update(wait_helper: WaitTimeHelper) -> None:
   from selfdrive.hardware.tici.agnos import flash_agnos_update, get_target_slot_number
 
   cur_version = HARDWARE.get_os_version()
@@ -282,7 +282,7 @@ def handle_neos_update(wait_helper: WaitTimeHelper) -> None:
   cloudlog.info(f"NEOS background download successful, took {time.monotonic() - start_time} seconds")
 
 
-def check_git_fetch_result(fetch_txt):
+def check_git_fetch_result(fetch_txt: str) -> bool:
   err_msg = "Failed to add the host to the list of known hosts (/data/data/com.termux/files/home/.ssh/known_hosts).\n"
   return len(fetch_txt) > 0 and (fetch_txt != err_msg)
 
