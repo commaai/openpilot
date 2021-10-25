@@ -45,7 +45,7 @@ class Segment : public QObject {
   Q_OBJECT
 
 public:
-  Segment(int n, const SegmentFile &files, bool load_dcam, bool load_ecam, bool no_file_cache);
+  Segment(int n, const SegmentFile &files, bool load_dcam, bool load_ecam, bool local_cache);
   ~Segment();
   inline bool isLoaded() const { return !loading_ && !abort_; }
 
@@ -57,10 +57,9 @@ signals:
   void loadFinished(bool success);
 
 protected:
-  void loadFile(int id, const std::string file, bool no_file_cache);
+  void loadFile(int id, const std::string file, bool local_cache);
 
   std::atomic<bool> abort_ = false;
   std::atomic<int> loading_ = 0;
   QFutureSynchronizer<void> synchronizer_;
-  std::once_flag once_flag_;
 };
