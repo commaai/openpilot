@@ -17,5 +17,4 @@ private:
   int max_retries_;
 };
 
-std::string getCacheDir();
 std::string cacheFilePath(const std::string &url);

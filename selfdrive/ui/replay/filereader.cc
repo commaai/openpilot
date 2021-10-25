@@ -12,26 +12,15 @@
 #include "selfdrive/common/util.h"
 #include "selfdrive/ui/replay/util.h"
 
-std::string getCacheDir() {
-  static std::string cache_dir;
-  static std::once_flag once_flag;
-
-  std::call_once(once_flag, [&] {
-    cache_dir = util::getenv("COMMA_CACHE", "/tmp/comma_download_cache");
-    if (cache_dir.back() != '/') {
-      cache_dir += '/';
-    }
-    if (!util::file_exists(cache_dir)) {
-      int ret = mkdir(cache_dir.c_str(), 0777);
-      assert(ret == 0);
-    }
-  });
-
-  return cache_dir;
-}
+const std::string comma_cache = util::getenv("COMMA_CACHE", "/tmp/comma_download_cache");
 
 std::string cacheFilePath(const std::string &url) {
-  return getCacheDir() + sha256(getUrlWithoutQuery(url));
+  static std::once_flag once_flag;
+  std::call_once(once_flag, [&] {
+    if (!util::file_exists(comma_cache)) mkdir(comma_cache.c_str(), 0777);
+  });
+  std::string sha256_sum = sha256(getUrlWithoutQuery(url));
+  return comma_cache.back() == '/' ?  comma_cache + sha256_sum : comma_cache + "/" + sha256_sum;
 }
 
 std::string FileReader::read(const std::string &file, std::atomic<bool> *abort) {
