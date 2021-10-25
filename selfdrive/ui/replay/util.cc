@@ -130,7 +130,6 @@ bool httpMultiPartDownload(const std::string &url, std::ostream &os, int parts, 
       if (enable_http_logging && last_print_ts > 0) {
         size_t average = (total_written - prev_total_written) / ((ts - last_print_ts) / 1000.);
         int progress = std::min<int>(100, 100.0 * (double)written / (double)content_length);
-
         std::cout << "downloading " << getUrlWithoutQuery(url) << " - " << progress << "% (" << formattedDataSize(average) << "/s)" << std::endl;
       }
       prev_total_written = total_written;

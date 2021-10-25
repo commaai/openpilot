@@ -1,13 +1,13 @@
-#include "selfdrive/ui/replay/replay.h"
-
-#include <csignal>
-#include <iostream>
 #include <termios.h>
 
 #include <QApplication>
 #include <QCommandLineParser>
 #include <QDebug>
 #include <QThread>
+#include <csignal>
+#include <iostream>
+
+#include "selfdrive/ui/replay/replay.h"
 
 const QString DEMO_ROUTE = "4cf7a6ad03080c90|2021-09-29--13-46-36";
 struct termios oldt = {};
@@ -75,7 +75,7 @@ void keyboardThread(Replay *replay) {
   }
 }
 
-int main(int argc, char *argv[]){
+int main(int argc, char *argv[]) {
   QApplication app(argc, argv);
   std::signal(SIGINT, sigHandler);
   std::signal(SIGTERM, sigHandler);
@@ -84,7 +84,7 @@ int main(int argc, char *argv[]){
       {"dcam", REPLAY_FLAG_DCAM, "load driver camera"},
       {"ecam", REPLAY_FLAG_ECAM, "load wide road camera"},
       {"no-loop", REPLAY_FLAG_NO_LOOP, "stop at the end of the route"},
-      {"no-cache", REPLAY_FLAG_NO_FILE_CACHE,  "turn off local cache"},
+      {"no-cache", REPLAY_FLAG_NO_FILE_CACHE, "turn off local cache"},
   };
 
   QCommandLineParser parser;

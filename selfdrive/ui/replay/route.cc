@@ -91,7 +91,6 @@ void Route::addFileToSegment(int n, const QString &file) {
 // class Segment
 
 Segment::Segment(int n, const SegmentFile &files, bool load_dcam, bool load_ecam, bool no_file_cache) : seg_num(n) {
-  thread_pool_.setMaxThreadCount(2 + load_dcam + load_ecam);
   synchronizer_.setCancelOnWait(true);
 
   // [RoadCam, DriverCam, WideRoadCam, log]. fallback to qcamera/qlog
@@ -104,7 +103,7 @@ Segment::Segment(int n, const SegmentFile &files, bool load_dcam, bool load_ecam
   for (int i = 0; i < std::size(file_list); i++) {
     if (!file_list[i].isEmpty()) {
       loading_++;
-      synchronizer_.addFuture(QtConcurrent::run(&thread_pool_, [=] { loadFile(i, file_list[i].toStdString(), no_file_cache); }));
+      synchronizer_.addFuture(QtConcurrent::run([=] { loadFile(i, file_list[i].toStdString(), no_file_cache); }));
     }
   }
 }

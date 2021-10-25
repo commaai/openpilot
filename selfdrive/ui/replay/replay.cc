@@ -96,6 +96,7 @@ void Replay::doSeek(int seconds, bool relative) {
     if (relative) {
       seconds += currentSeconds();
     }
+    seconds = std::max(0, seconds);
     int seg = seconds / 60;
     if (segments_.find(seg) == segments_.end()) {
       qInfo() << "can't seek to" << seconds << "s, segment" << seg << "is invalid";
@@ -139,24 +140,29 @@ void Replay::segmentLoadFinished(bool success) {
 void Replay::queueSegment() {
   if (segments_.empty()) return;
 
-  SegmentMap::iterator begin, cur, end;
-  begin = cur = end = segments_.lower_bound(std::min(current_segment_.load(), segments_.rbegin()->first));
-  const int fwd = cur->second == nullptr ? 0 : FORWARD_SEGS;
-  for (int i = 0; end != segments_.end() && i <= fwd; ++end, ++i) {
-    auto &[n, seg] = *end;
-    if (!seg) {
-      seg = std::make_unique<Segment>(n, route_->at(n), hasFlag(REPLAY_FLAG_DCAM), hasFlag(REPLAY_FLAG_ECAM), hasFlag(REPLAY_FLAG_NO_FILE_CACHE));
-      QObject::connect(seg.get(), &Segment::loadFinished, this, &Replay::segmentLoadFinished);
+  SegmentMap::iterator cur, end;
+  cur = end = segments_.lower_bound(std::min(current_segment_.load(), segments_.rbegin()->first));
+  for (int i = 0; end != segments_.end() && i <= FORWARD_SEGS; ++i) {
+    ++end;
+  }
+  // load one segment at a time
+  for (auto it = cur; it != end; ++it) {
+    if (!it->second) {
+      if (it == cur || std::prev(it)->second->isLoaded()) {
+        auto &[n, seg] = *it;
+        seg = std::make_unique<Segment>(n, route_->at(n), hasFlag(REPLAY_FLAG_DCAM), hasFlag(REPLAY_FLAG_ECAM), hasFlag(REPLAY_FLAG_NO_FILE_CACHE));
+        QObject::connect(seg.get(), &Segment::loadFinished, this, &Replay::segmentLoadFinished);
+      }
+      break;
     }
   }
-
   const auto &cur_segment = cur->second;
   enableHttpLogging(!cur_segment->isLoaded());
 
   // merge the previous adjacent segment if it's loaded
-  auto prev = segments_.find(cur_segment->seg_num - 1);
-  if (prev != segments_.end() && prev->second && prev->second->isLoaded()) {
-    begin = prev;
+  auto begin = segments_.find(cur_segment->seg_num - 1);
+  if (begin == segments_.end() || !(begin->second && begin->second->isLoaded())) {
+    begin = cur;
   }
   mergeSegments(begin, end);
 
