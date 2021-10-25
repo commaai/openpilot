@@ -70,9 +70,9 @@ bool FrameReader::load(const std::string &url, std::atomic<bool> *abort) {
   std::istringstream iss(content);
   const int avio_ctx_buffer_size = 64 * 1024;
   unsigned char *avio_ctx_buffer = (unsigned char *)av_malloc(avio_ctx_buffer_size);
-
   avio_ctx_ = avio_alloc_context(avio_ctx_buffer, avio_ctx_buffer_size, 0, &iss, readFunction, nullptr, nullptr);
   pFormatCtx_->pb = avio_ctx_;
+
   pFormatCtx_->probesize = 10 * 1024 * 1024;  // 10MB
   if (avformat_open_input(&pFormatCtx_, url.c_str(), NULL, NULL) != 0) {
     printf("error loading %s\n", url.c_str());

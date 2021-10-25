@@ -45,7 +45,7 @@ bool Route::loadFromServer() {
 
 bool Route::loadFromJson(const QString &json) {
   QRegExp rx(R"(\/(\d+)\/)");
-  for (const auto &value :  QJsonDocument::fromJson(json.trimmed().toUtf8()).object()) {
+  for (const auto &value : QJsonDocument::fromJson(json.trimmed().toUtf8()).object()) {
     for (const auto &url : value.toArray()) {
       QString url_str = url.toString();
       if (rx.indexIn(url_str) != -1) {
@@ -126,7 +126,7 @@ void Segment::loadFile(int id, const std::string file, bool local_cache) {
   if (!success) {
     // abort all loading jobs.
     abort_ = true;
-  } 
+  }
 
   if (--loading_ == 0) {
     emit loadFinished(!abort_);

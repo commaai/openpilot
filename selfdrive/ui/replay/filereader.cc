@@ -32,7 +32,6 @@ std::string FileReader::read(const std::string &file, std::atomic<bool> *abort) 
     result = util::read_file(local_file);
   } else if (is_remote) {
     result = download(file, abort);
-
     if (cache_to_local_ && !result.empty()) {
       std::ofstream fs(local_file, fs.binary | fs.out);
       fs.write(result.data(), result.size());
