@@ -180,7 +180,7 @@ struct ModelDataRawPose {
 static_assert(sizeof(ModelDataRawPose) == sizeof(ModelDataRawXYZ)*4);
 
 struct ModelDataRaw {
-  const ModelDataRawPlans *const plan;
+  const ModelDataRawPlans *const plans;
   const ModelDataRawLaneLines *const lane_lines;
   const ModelDataRawRoadEdges *const road_edges;
   const ModelDataRawLeads *const leads;

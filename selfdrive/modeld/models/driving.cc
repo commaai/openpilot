@@ -77,7 +77,7 @@ ModelDataRaw model_eval_frame(ModelState* s, cl_mem yuv_cl, int width, int heigh
 
   // net outputs
   ModelDataRaw net_outputs {
-    .plan = (ModelDataRawPlans*)&s->output[PLAN_IDX],
+    .plans = (ModelDataRawPlans*)&s->output[PLAN_IDX],
     .lane_lines = (ModelDataRawLaneLines*)&s->output[LL_IDX],
     .road_edges = (ModelDataRawRoadEdges*)&s->output[RE_IDX],
     .leads = (ModelDataRawLeads*)&s->output[LEAD_IDX],
@@ -288,7 +288,7 @@ void fill_road_edges(cereal::ModelDataV2::Builder &framed, const std::array<floa
 }
 
 void fill_model(cereal::ModelDataV2::Builder &framed, const ModelDataRaw &net_outputs) {
-  auto best_plan = net_outputs.plan->get_best_prediction();
+  auto best_plan = net_outputs.plans->get_best_prediction();
   std::array<float, TRAJECTORY_SIZE> plan_t;
   std::fill_n(plan_t.data(), plan_t.size(), NAN);
   plan_t[0] = 0.0;
