@@ -79,15 +79,15 @@ Community Maintained Cars and Features
 
 | Make      | Model (US Market Reference)   | Supported Package | ACC              | No ACC accel below | No ALC below |
 | ----------| ------------------------------| ------------------| -----------------| -------------------| -------------|
-| Audi      | A3 2014-19                    | Prestige          | Stock            | 0mph               | 0mph         |
-| Audi      | A3 Sportback e-tron 2017-18   | Prestige          | Stock            | 0mph               | 0mph         |
-| Audi      | S3 2015                       | Prestige          | Stock            | 0mph               | 0mph         |
-| Audi      | Q2 2018                       | Driver Assistance | Stock            | 0mph               | 0mph         |
-| Buick     | Regal 2018<sup>1</sup>        | ACC & LKAS        | openpilot        | 0mph               | 7mph         |
-| Cadillac  | ATS 2018<sup>1</sup>          | ACC & LKAS        | openpilot        | 0mph               | 7mph         |
+| Audi      | A3 2014-19                    | ACC + Lane Assist | Stock            | 0mph               | 0mph         |
+| Audi      | A3 Sportback e-tron 2017-18   | ACC + Lane Assist | Stock            | 0mph               | 0mph         |
+| Audi      | Q2 2018                       | ACC + Lane Assist | Stock            | 0mph               | 0mph         |
+| Audi      | S3 2015                       | ACC + Lane Assist | Stock            | 0mph               | 0mph         |
+| Buick     | Regal 2018<sup>1</sup>        | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
+| Cadillac  | ATS 2018<sup>1</sup>          | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
 | Cadillac  | Escalade ESV 2016<sup>1</sup> | ACC & LKAS        | openpilot        | 0mph               | 7mph         |
-| Chevrolet | Malibu 2017<sup>1</sup>       | ACC & LKAS        | openpilot        | 0mph               | 7mph         |
-| Chevrolet | Volt 2017-18<sup>1</sup>      | ACC & LKAS        | openpilot        | 0mph               | 7mph         |
+| Chevrolet | Malibu 2017<sup>1</sup>       | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
+| Chevrolet | Volt 2017-18<sup>1</sup>      | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
 | Chrysler  | Pacifica 2017-18              | Adaptive Cruise   | Stock            | 0mph               | 9mph         |
 | Chrysler  | Pacifica 2020                 | Adaptive Cruise   | Stock            | 0mph               | 39mph        |
 | Chrysler  | Pacifica Hybrid 2017-18       | Adaptive Cruise   | Stock            | 0mph               | 9mph         |
@@ -95,8 +95,8 @@ Community Maintained Cars and Features
 | Genesis   | G70 2018                      | All               | Stock            | 0mph               | 0mph         |
 | Genesis   | G80 2018                      | All               | Stock            | 0mph               | 0mph         |
 | Genesis   | G90 2018                      | All               | Stock            | 0mph               | 0mph         |
-| GMC       | Acadia 2018<sup>1</sup>       | ACC & LKAS        | openpilot        | 0mph               | 7mph         |
-| Holden    | Astra 2017<sup>1</sup>        | ACC & LKAS        | openpilot        | 0mph               | 7mph         |
+| GMC       | Acadia 2018<sup>1</sup>       | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
+| Holden    | Astra 2017<sup>1</sup>        | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
 | Hyundai   | Elantra 2017-19               | SCC + LKAS        | Stock            | 19mph              | 34mph        |
 | Hyundai   | Elantra 2021                  | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Hyundai   | Elantra Hybrid 2021           | SCC + LKAS        | Stock            | 0mph               | 0mph         |
