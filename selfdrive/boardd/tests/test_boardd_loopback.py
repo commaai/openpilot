@@ -2,96 +2,104 @@
 import os
 import random
 import time
+import unittest
 from collections import defaultdict
 from functools import wraps
 
 import cereal.messaging as messaging
 from cereal import car
-from common.basedir import BASEDIR
 from common.params import Params
 from common.spinner import Spinner
 from common.timeout import Timeout
 from panda import Panda
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.car import make_can_msg
-from selfdrive.test.helpers import with_processes
+from selfdrive.test.helpers import phone_only, with_processes
 
 
-def reset_panda(fn):
-  @wraps(fn)
-  def wrapper():
+def reset_panda(f):
+  @wraps(f)
+  def wrapper(*args, **kwargs):
     p = Panda()
     for i in [0, 1, 2, 0xFFFF]:
       p.can_clear(i)
     p.reset()
     p.close()
-    fn()
+    f(*args, **kwargs)
   return wrapper
 
 os.environ['STARTED'] = '1'
 os.environ['BOARDD_LOOPBACK'] = '1'
-os.environ['BASEDIR'] = BASEDIR
 
-@reset_panda
-@with_processes(['pandad'])
-def test_boardd_loopback():
-  # wait for boardd to init
-  spinner = Spinner()
-  time.sleep(2)
+class TestBoardd(unittest.TestCase):
 
-  with Timeout(60, "boardd didn't start"):
-    sm = messaging.SubMaster(['pandaStates'])
-    while sm.rcv_frame['pandaStates'] < 1:
-      sm.update(1000)
+  @classmethod
+  def setUpClass(cls):
+    cls.spinner = Spinner()
 
-  # boardd blocks on CarVin and CarParams
-  cp = car.CarParams.new_message()
+  @classmethod
+  def tearDownClass(cls):
+    cls.spinner.close()
 
-  safety_config = car.CarParams.SafetyConfig.new_message()
-  safety_config.safetyModel = car.CarParams.SafetyModel.allOutput
-  cp.safetyConfigs = [safety_config]
+  @phone_only
+  @reset_panda
+  @with_processes(['pandad'])
+  def test_loopback(self):
+    # wait for boardd to init
+    time.sleep(2)
 
-  Params().put("CarVin", b"0"*17)
-  Params().put_bool("ControlsReady", True)
-  Params().put("CarParams", cp.to_bytes())
+    with Timeout(60, "boardd didn't start"):
+      sm = messaging.SubMaster(['pandaStates'])
+      while sm.rcv_frame['pandaStates'] < 1:
+        sm.update(1000)
 
-  sendcan = messaging.pub_sock('sendcan')
-  can = messaging.sub_sock('can', conflate=False, timeout=100)
+    # boardd blocks on CarVin and CarParams
+    cp = car.CarParams.new_message()
 
-  time.sleep(1)
+    safety_config = car.CarParams.SafetyConfig.new_message()
+    safety_config.safetyModel = car.CarParams.SafetyModel.allOutput
+    cp.safetyConfigs = [safety_config]
 
-  n = 1000
-  for i in range(n):
-    spinner.update(f"boardd loopback {i}/{n}")
+    params = Params()
+    params.put("CarVin", b"0"*17)
+    params.put_bool("ControlsReady", True)
+    params.put("CarParams", cp.to_bytes())
 
-    sent_msgs = defaultdict(set)
-    for _ in range(random.randrange(10)):
-      to_send = []
-      for __ in range(random.randrange(100)):
-        bus = random.randrange(3)
-        addr = random.randrange(1, 1<<29)
-        dat = bytes([random.getrandbits(8) for _ in range(random.randrange(1, 9))])
-        sent_msgs[bus].add((addr, dat))
-        to_send.append(make_can_msg(addr, dat, bus))
-      sendcan.send(can_list_to_can_capnp(to_send, msgtype='sendcan'))
+    sendcan = messaging.pub_sock('sendcan')
+    can = messaging.sub_sock('can', conflate=False, timeout=100)
 
-    max_recv = 10
-    while max_recv > 0 and any(len(sent_msgs[bus]) for bus in range(3)):
-      recvd = messaging.drain_sock(can, wait_for_one=True)
-      for msg in recvd:
-        for m in msg.can:
-          if m.src >= 128:
-            k = (m.address, m.dat)
-            assert k in sent_msgs[m.src-128]
-            sent_msgs[m.src-128].discard(k)
-      max_recv -= 1
+    time.sleep(1)
 
-    # if a set isn't empty, messages got dropped
-    for bus in range(3):
-      assert not len(sent_msgs[bus]), f"loop {i}: bus {bus} missing {len(sent_msgs[bus])} messages"
+    n = 1000
+    for i in range(n):
+      self.spinner.update(f"boardd loopback {i}/{n}")
 
-  spinner.close()
+      sent_msgs = defaultdict(set)
+      for _ in range(random.randrange(10)):
+        to_send = []
+        for __ in range(random.randrange(100)):
+          bus = random.randrange(3)
+          addr = random.randrange(1, 1<<29)
+          dat = bytes([random.getrandbits(8) for _ in range(random.randrange(1, 9))])
+          sent_msgs[bus].add((addr, dat))
+          to_send.append(make_can_msg(addr, dat, bus))
+        sendcan.send(can_list_to_can_capnp(to_send, msgtype='sendcan'))
+
+      max_recv = 10
+      while max_recv > 0 and any(len(sent_msgs[bus]) for bus in range(3)):
+        recvd = messaging.drain_sock(can, wait_for_one=True)
+        for msg in recvd:
+          for m in msg.can:
+            if m.src >= 128:
+              k = (m.address, m.dat)
+              assert k in sent_msgs[m.src-128]
+              sent_msgs[m.src-128].discard(k)
+        max_recv -= 1
+
+      # if a set isn't empty, messages got dropped
+      for bus in range(3):
+        assert not len(sent_msgs[bus]), f"loop {i}: bus {bus} missing {len(sent_msgs[bus])} messages"
 
 
 if __name__ == "__main__":
-    test_boardd_loopback()
+  unittest.main()
