@@ -20,7 +20,7 @@ std::string cacheFilePath(const std::string &url) {
     if (!util::file_exists(comma_cache)) mkdir(comma_cache.c_str(), 0777);
   });
   std::string sha256_sum = sha256(getUrlWithoutQuery(url));
-  return comma_cache.back() == '/' ?  comma_cache + sha256_sum : comma_cache + "/" + sha256_sum;
+  return comma_cache.back() == '/' ? comma_cache + sha256_sum : comma_cache + "/" + sha256_sum;
 }
 
 std::string FileReader::read(const std::string &file, std::atomic<bool> *abort) {
