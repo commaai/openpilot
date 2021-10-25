@@ -14,6 +14,8 @@ if __name__ == "__main__":
   cnt_events: Counter = Counter()
 
   for q in tqdm(r.qlog_paths()):
+    if q is None:
+      continue
     lr = list(LogReader(q))
     for msg in lr:
       if msg.which() == 'carEvents':
