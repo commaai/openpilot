@@ -314,6 +314,7 @@ void SetupWidget::replyFinished(const QString &response) {
     if (!json["prime"].toBool()) {
       mainLayout->setCurrentWidget(primeAd);
     } else {
+      QUIState::ui_state.has_prime = true;
       mainLayout->setCurrentWidget(primeUser);
     }
   }

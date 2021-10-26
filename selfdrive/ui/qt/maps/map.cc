@@ -53,6 +53,7 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) :
   // Routing
   QVariantMap parameters;
   parameters["mapbox.access_token"] = m_settings.accessToken();
+  parameters["mapbox.directions_api_url"] = MAPS_HOST + "/directions/v5/mapbox/";
 
   geoservice_provider = new QGeoServiceProvider("mapbox", parameters);
   routing_manager = geoservice_provider->routingManager();
