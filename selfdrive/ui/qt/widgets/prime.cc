@@ -312,9 +312,9 @@ void SetupWidget::replyFinished(const QString &response) {
   } else {
     popup->reject();
     if (!json["prime"].toBool()) {
-      QUIState::ui_state.has_prime = true;
       mainLayout->setCurrentWidget(primeAd);
     } else {
+      QUIState::ui_state.has_prime = true;
       mainLayout->setCurrentWidget(primeUser);
     }
   }
