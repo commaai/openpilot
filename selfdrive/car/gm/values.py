@@ -5,41 +5,40 @@ from selfdrive.car import dbc_dict
 Ecu = car.CarParams.Ecu
 
 class CarControllerParams():
-  def __init__(self):
-    self.STEER_MAX = 300
-    self.STEER_STEP = 2              # how often we update the steer cmd
-    self.STEER_DELTA_UP = 7          # ~0.75s time to peak torque (255/50hz/0.75s)
-    self.STEER_DELTA_DOWN = 17       # ~0.3s from peak torque to zero
-    self.MIN_STEER_SPEED = 3.
-    self.STEER_DRIVER_ALLOWANCE = 50   # allowed driver torque before start limiting
-    self.STEER_DRIVER_MULTIPLIER = 4   # weight driver torque heavily
-    self.STEER_DRIVER_FACTOR = 100     # from dbc
-    self.NEAR_STOP_BRAKE_PHASE = 0.5  # m/s, more aggressive braking near full stop
+  STEER_MAX = 300  # Safety limit, not LKA max. Trucks use 600.
+  STEER_STEP = 2  # control frames per command
+  STEER_DELTA_UP = 7
+  STEER_DELTA_DOWN = 17
+  MIN_STEER_SPEED = 3.  # m/s
+  STEER_DRIVER_ALLOWANCE = 50
+  STEER_DRIVER_MULTIPLIER = 4
+  STEER_DRIVER_FACTOR = 100
+  NEAR_STOP_BRAKE_PHASE = 0.5  # m/s
 
-    # Takes case of "Service Adaptive Cruise" and "Service Front Camera"
-    # dashboard messages.
-    self.ADAS_KEEPALIVE_STEP = 100
-    self.CAMERA_KEEPALIVE_STEP = 100
+  # Heartbeat for dash "Service Adaptive Cruise" and "Service Front Camera"
+  ADAS_KEEPALIVE_STEP = 100
+  CAMERA_KEEPALIVE_STEP = 100
 
-    # pedal lookups, only for Volt
-    MAX_GAS = 3072              # Only a safety limit
-    ZERO_GAS = 2048
-    MAX_BRAKE = 350             # Should be around 3.5m/s^2, including regen
+  # Volt gasbrake lookups
+  MAX_GAS = 3072 # Safety limit, not ACC max. Stock ACC >4096 from standstill.
+  ZERO_GAS = 2048 # Coasting
+  MAX_BRAKE = 350 # ~ -3.5 m/s^2 with regen
 
-    self.ACCEL_MAX = 2.0 # m/s^2
+  # Allow small margin below -3.5 m/s^2 from ISO 15622:2018 since we
+  # perform the closed loop control, and might need some
+  # to apply some more braking if we're on a downhill slope.
+  # Our controller should still keep the 2 second average above
+  # -3.5 m/s^2 as per planner limits
+  ACCEL_MAX = 2. # m/s^2
+  ACCEL_MIN = -4. # m/s^2
 
-    # Allow small margin below -3.5 m/s^2 from ISO 15622:2018 since we
-    # perform the closed loop control, and might need some
-    # to apply some more braking if we're on a downhill slope.
-    # Our controller should still keep the 2 second average above
-    # -3.5 m/s^2 as per planner limits
-    self.ACCEL_MIN = -4.0 # m/s^2
+  MAX_ACC_REGEN = 1404  # Max ACC regen is slightly less than max paddle regen
+  GAS_LOOKUP_BP = [-1., 0., ACCEL_MAX]
+  GAS_LOOKUP_V = [MAX_ACC_REGEN, ZERO_GAS, MAX_GAS]
+  BRAKE_LOOKUP_BP = [ACCEL_MIN, -1.]
+  BRAKE_LOOKUP_V = [MAX_BRAKE, 0.]
 
-    self.MAX_ACC_REGEN = 1404  # ACC Regen braking is slightly less powerful than max regen paddle
-    self.GAS_LOOKUP_BP = [-1.0, 0., self.ACCEL_MAX]
-    self.GAS_LOOKUP_V = [self.MAX_ACC_REGEN, ZERO_GAS, MAX_GAS]
-    self.BRAKE_LOOKUP_BP = [self.ACCEL_MIN, -1.0]
-    self.BRAKE_LOOKUP_V = [MAX_BRAKE, 0]
+STEER_THRESHOLD = 1.0
 
 class CAR:
   HOLDEN_ASTRA = "HOLDEN ASTRA RS-V BK 2017"
@@ -108,8 +107,6 @@ FINGERPRINTS = {
     190: 6, 193: 8, 197: 8, 199: 4, 201: 8, 208: 8, 209: 7, 211: 2, 241: 6, 249: 8, 288: 5, 289: 8, 298: 8, 304: 1, 309: 8, 313: 8, 320: 3, 322: 7, 328: 1, 338: 6, 340: 6, 352: 5, 381: 8, 384: 4, 386: 8, 388: 8, 393: 8, 398: 8, 413: 8, 417: 7, 419: 1, 422: 4, 426: 7, 431: 8, 442: 8, 451: 8, 452: 8, 453: 6, 454: 8, 455: 7, 462: 4, 463: 3, 479: 3, 481: 7, 485: 8, 489: 8, 497: 8, 499: 3, 500: 6, 501: 8, 508: 8, 510: 8, 532: 6, 554: 3, 560: 8, 562: 8, 563: 5, 564: 5, 567: 5, 573: 1, 577: 8, 608: 8, 609: 6, 610: 6, 611: 6, 612: 8, 613: 8, 647: 6, 707: 8, 715: 8, 717: 5, 753: 5, 761: 7, 840: 5, 842: 5, 844: 8, 866: 4, 869: 4, 880: 6, 961: 8, 969: 8, 977: 8, 979: 8, 985: 5, 1001: 8, 1005: 6, 1009: 8, 1017: 8, 1020: 8, 1033: 7, 1034: 7, 1105: 6, 1217: 8, 1221: 5, 1225: 8, 1233: 8, 1249: 8, 1257: 6, 1265: 8, 1267: 1, 1280: 4, 1296: 4, 1300: 8, 1322: 6, 1328: 4, 1417: 8, 1601: 8, 1906: 7, 1907: 7, 1912: 7, 1914: 7, 1919: 7, 1920: 7, 1930: 7, 2016: 8, 2024: 8
   }],
 }
-
-STEER_THRESHOLD = 1.0
 
 DBC = {
   CAR.HOLDEN_ASTRA: dbc_dict('gm_global_a_powertrain', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'),
