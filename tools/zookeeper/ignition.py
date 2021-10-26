@@ -1,8 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import sys
 from tools.zookeeper import Zookeeper
 
-z = Zookeeper()
-z.set_device_ignition(1 if int(sys.argv[1]) > 0 else 0)
+
+if __name__ == "__main__":
+  z = Zookeeper()
+  z.set_device_ignition(1 if int(sys.argv[1]) > 0 else 0)
 
