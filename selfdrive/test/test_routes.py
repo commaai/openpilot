@@ -185,6 +185,8 @@ routes = [
 
   TestRoute("6c14ee12b74823ce|2021-06-30--11-49-02", TESLA.AP1_MODELS),
   TestRoute("bb50caf5f0945ab1|2021-06-19--17-20-18", TESLA.AP2_MODELS),
+
+  TestRoute("46460f0da08e621e|2021-10-26--07-21-46", GM.ESCALADE_ESV),
 ]
 
 forced_dashcam_routes = [
