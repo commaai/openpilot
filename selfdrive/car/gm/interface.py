@@ -118,7 +118,12 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 17.3
       ret.steerRatioRear = 0.
       ret.centerToFront = ret.wheelbase * 0.49
-      
+      #PID tunning to prevent jerky steering
+      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[10., 41.0], [10., 41.0]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.13, 0.24], [0.01, 0.02]]
+      ret.lateralTuning.pid.kf = 0.000045
+      tire_stiffness_factor = 1.0
+            
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase
     ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
