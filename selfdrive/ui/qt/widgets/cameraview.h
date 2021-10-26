@@ -52,7 +52,6 @@ protected slots:
   void vipcFrameReceived(VisionBuf *buf);
 
 Q_SIGNALS:
-  void updateFrame(VisionStreamType);
   void vipcThreadConnected(VisionIpcClient *);
   void vipcThreadFrameReceived(VisionBuf *);
 };
