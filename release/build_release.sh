@@ -1,12 +1,6 @@
-#!/usr/bin/env bash
-set -e
+#!/usr/bin/bash -e
 
-export GIT_COMMITTER_NAME="Vehicle Researcher"
-export GIT_COMMITTER_EMAIL="user@comma.ai"
-export GIT_AUTHOR_NAME="Vehicle Researcher"
-export GIT_AUTHOR_EMAIL="user@comma.ai"
-
-export GIT_SSH_COMMAND="ssh -i /data/gitkey"
+# git diff --name-status origin/release3-staging | grep "^A" | less
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
 
@@ -15,48 +9,56 @@ cd $DIR
 BUILD_DIR=/data/openpilot
 SOURCE_DIR="$(git rev-parse --show-toplevel)"
 
-# set CLEAN to build outside of CI
-if [ ! -z "$CLEAN" ]; then
-  # Create folders
-  rm -rf /data/openpilot
-  mkdir -p /data/openpilot
-  cd /data/openpilot
-
-  # Create git repo
-  git init
-  git remote add origin git@github.com:commaai/openpilot.git
-  git fetch origin devel-staging
+if [ -f /TICI ]; then
+  FILES_SRC="release/files_tici"
+  RELEASE_BRANCH=release3-staging
+  DASHBAM_BRANCH=dashcam3-staging
+elif [ -f /EON ]; then
+  FILES_SRC="release/files_eon"
+  RELEASE_BRANCH=release2-staging
+  DASHBAM_BRANCH=dashcam-staging
 else
-  cd /data/openpilot
-  git clean -xdf
-  git branch -D release2-staging || true
+  exit 0
 fi
 
-git fetch origin release2-staging
-git fetch origin dashcam-staging
+# set git identity
+source $DIR/identity.sh
 
-# Create release2 with no history
-if [ ! -z "$CLEAN" ]; then
-  git checkout --orphan release2-staging origin/devel-staging
-else
-  git checkout --orphan release2-staging
-fi
+echo "[-] Setting up repo T=$SECONDS"
+rm -rf $BUILD_DIR
+mkdir -p $BUILD_DIR
+cd $BUILD_DIR
+git init
+git remote add origin git@github.com:commaai/openpilot.git
+git checkout -f -B $RELEASE_BRANCH
+
+# do the files copy
+echo "[-] copying files T=$SECONDS"
+cd $SOURCE_DIR
+cp -pR --parents $(cat release/files_common) $BUILD_DIR/
+cp -pR --parents $(cat $FILE_SRC) $BUILD_DIR/
+
+# in the directory
+cd $BUILD_DIR
+
+rm -f panda/board/obj/panda.bin.signed
 
 VERSION=$(cat selfdrive/common/version.h | awk -F[\"-]  '{print $2}')
 echo "#define COMMA_VERSION \"$VERSION-release\"" > selfdrive/common/version.h
 
-git commit -m "openpilot v$VERSION"
+echo "[-] committing version $VERSION T=$SECONDS"
+git add -f .
+git commit -a -m "openpilot v$VERSION release"
 
-# Build signed panda firmware
+# Build panda firmware
 pushd panda/
-CERT=/tmp/pandaextra/certs/release RELEASE=1 scons -u .
+CERT=/data/pandaextra/certs/release RELEASE=1 scons -u .
 mv board/obj/panda.bin.signed /tmp/panda.bin.signed
 popd
 
-# Build stuff
-ln -sfn /data/openpilot /data/pythonpath
-export PYTHONPATH="/data/openpilot:/data/openpilot/pyextra"
-scons -j3
+# Build
+export PYTHONPATH="$BUILD_DIR"
+scons -j$(nproc)
 
 # Run tests
 TEST_FILES="tools/"
@@ -64,7 +66,7 @@ cd $SOURCE_DIR
 cp -pR -n --parents $TEST_FILES $BUILD_DIR/
 cd $BUILD_DIR
 RELEASE=1 selfdrive/test/test_onroad.py
-selfdrive/manager/test/test_manager.py
+#selfdrive/manager/test/test_manager.py
 selfdrive/car/tests/test_car_interfaces.py
 rm -rf $TEST_FILES
 
@@ -81,6 +83,7 @@ find . -name '*.a' -delete
 find . -name '*.o' -delete
 find . -name '*.os' -delete
 find . -name '*.pyc' -delete
+find . -name 'moc_*' -delete
 find . -name '__pycache__' -delete
 rm -rf panda/board panda/certs panda/crypto
 rm -rf .sconsign.dblite Jenkinsfile release/
@@ -100,18 +103,15 @@ touch prebuilt
 git add -f .
 git commit --amend -m "openpilot v$VERSION"
 
-# Print committed files that are normally gitignored
-#git status --ignored
-
 if [ ! -z "$PUSH" ]; then
+  echo "[-] pushing T=$SECONDS"
   git remote set-url origin git@github.com:commaai/openpilot.git
+  git push -f origin $RELEASE_BRANCH
 
-  # Push to release2-staging
-  git push -f origin release2-staging
-
-  # Create dashcam release
+  # Create dashcam
   git rm selfdrive/car/*/carcontroller.py
-
-  git commit -m "create dashcam release from release2"
-  git push -f origin release2-staging:dashcam-staging
+  git commit -m "create dashcam release from release"
+  git push -f origin $RELEASE_BRANCH:$DASHCAM_BRANCH
 fi
+
+echo "[-] done T=$SECONDS"
