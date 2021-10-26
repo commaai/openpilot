@@ -355,6 +355,8 @@ class Controls:
 
     if not self.sm['pandaState'].controlsAllowed and self.enabled:
       self.mismatch_counter += 1
+    else:
+      self.mismatch_counter = 0
 
     self.distance_traveled += CS.vEgo * DT_CTRL
 
