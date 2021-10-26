@@ -221,7 +221,6 @@ void CameraViewWidget::paintGL() {
 }
 
 void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
-  // init vision
   makeCurrent();
   for (int i = 0; i < vipc_client->num_buffers; i++) {
     texture[i].reset(new EGLImageTexture(&vipc_client->buffers[i]));
