@@ -79,8 +79,7 @@ void OnroadWindow::mousePressEvent(QMouseEvent* e) {
 void OnroadWindow::offroadTransition(bool offroad) {
 #ifdef ENABLE_MAPS
   if (!offroad) {
-    bool has_prime = true; // TODO: Add prime state to global UIState
-    if (map == nullptr && has_prime) {
+    if (map == nullptr && QUIState::ui_state.has_prime) {
       QMapboxGLSettings settings;
 
       // Valid for 4 weeks since we can't swap tokens on the fly
