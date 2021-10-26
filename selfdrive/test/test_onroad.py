@@ -8,6 +8,7 @@ import unittest
 from collections import Counter
 from pathlib import Path
 
+from cereal import car
 import cereal.messaging as messaging
 from cereal.services import service_list
 from common.basedir import BASEDIR
@@ -171,6 +172,9 @@ class TestOnroad(unittest.TestCase):
       if proc.wait(60) is None:
         proc.kill()
 
+    cls.lrs = [list(LogReader(os.path.join(str(s), "rlog.bz2"))) for s in cls.segments]
+
+    # use the second segment by default as it's the first full segment
     cls.lr = list(LogReader(os.path.join(str(cls.segments[1]), "rlog.bz2")))
 
   def test_cloudlog_size(self):
@@ -221,6 +225,16 @@ class TestOnroad(unittest.TestCase):
       print(f"{s}: {np.array([np.mean(ts), np.max(ts), np.min(ts)])*1e3}")
       print(f"     {np.max(np.absolute([np.max(ts)/dt, np.min(ts)/dt]))} {np.std(ts)/dt}")
     print("="*67)
+
+  def test_startup(self):
+    lr = self.lrs[0]
+    startup_event = None
+    for msg in lr:
+      if msg.which() == "carEvents":
+        for evt in msg.carEvents:
+          print(evt)
+    self.assertEqual(startup_event, car.CarEvent.EventName.startup)
+
 
 if __name__ == "__main__":
   unittest.main()
