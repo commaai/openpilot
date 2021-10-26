@@ -272,7 +272,7 @@ void VIPCClient::receiveFrame(VisionStreamType type) {
       emit connected(vipc_client_.get());
     }
 
-    VisionBuf *buf = vipc_client_->recv();
+    VisionBuf *buf = vipc_client_->recv(nullptr, 1000);
     if (!buf) {
       LOGE("visionIPC receive timeout");
       continue;
