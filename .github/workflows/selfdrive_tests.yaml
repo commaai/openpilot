@@ -310,7 +310,7 @@ jobs:
       run: eval "$BUILD"
     - name: Test car models
       run: |
-        ${{ env.RUN }} "scons -j$(nproc) && \
+        ${{ env.RUN }} "scons -j$(nproc) --test && \
                         coverage run selfdrive/test/test_models.py"
     - name: Upload coverage to Codecov
       run: bash <(curl -s https://codecov.io/bash) -v -F test_car_models
