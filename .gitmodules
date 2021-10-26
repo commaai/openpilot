@@ -1,9 +1,6 @@
 [submodule "panda"]
 	path = panda
 	url = ../../commaai/panda.git
-[submodule "opendbc"]
-	path = opendbc
-	url = ../../thekirkmiller/opendbc.git
 [submodule "laika_repo"]
 	path = laika_repo
 	url = ../../commaai/laika.git
