@@ -1,4 +1,32 @@
-![](https://user-images.githubusercontent.com/37757984/127420744-89ca219c-8f8e-46d3-bccf-c1cb53b81bb1.png)
+Stand Back Labs openpilot GM vehicle extensions
+------
+
+This is a custom fork of Comma.ai's openpilot project that adds support for many GM vehicles, including the Chevy Bolt EV.
+
+Goals:
+* Remain fully compatible with Comma.ai hardware and infrastructure
+* Follow Comma.ai's rules as closely as possible
+* Maintain customizations such that Comma.ai _could_ upstream (even though they likely will not)
+
+**Note: If you include any of the changes from this fork in your fork, please don't be a jerk (ahem Hanabi95) - please give credit where it is due**
+
+Added vehicles
+------
+This provides basic support for most GM vehicles with a front facing camera and the Lane-keep assist feature.
+Note: if your vehicle has radar-based adaptive cruise, only use this port if you are having steering faults.
+Additionally, this fixes support for any GM vehicles with the so-called "picky" steering column (such as the Bolt EV)
+Models with some success: Bolt EV, Equinox, Escalade, Acadia Denali, Malibu, Tahoe, Volt
+
+Copying / Contributing
+------
+Feel free to fork and enhance this code, all we ask is that you give us credit. If you are able to fix or improve tuning, functionality, etc please consider submitting a PR.
+Contact us at support@standbacklabs.com with any questions.
+
+**ALL existing Bolt ports, as well as most GM giraffes,GM  harnesses and GM Pedals, pedal firmware changes, panda code changes are derived from the original port created by Jason Shuler**
+The efforts are chronicled here: https://youtube.com/standbacklabs
+Hanabi95 used the entirety of this port and distributed it as his own. Currenlty many people believe his port to be original work.
+Considering he stole credit for some work, it is impossible to know what efforts were actually his.
+
 
 Table of Contents
 =======================

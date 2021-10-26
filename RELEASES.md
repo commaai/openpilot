@@ -1,3 +1,17 @@
+Version 0.8.9-GM2.1.5 (2021-10-26)
+========================
+ * Chevy Bolt EV Support
+ * Non-ASCM (aka non-radar) GM initial lateral support
+ * Support for GM vehicles with problematic EPS controllers
+ * GM longitudinal support using Pedal Interceptor (no braking on non-EV)
+ * Front Camera passthrough & forwarding
+ * Grey & White Panda Support restored
+ * Improved camera detection within Panda (will not forward if camera not detected)
+ * Pedal supports runtime configurable scale and offset
+ * TODO: Pedal params could be trained automatically by fully pressing the pedal!!!
+ * TODO: Auto-detection of B-mode
+ * TODO: Auto-detection of B-mode zero-point
+
 Version 0.8.9 (2021-09-14)
 ========================
  * Improved fan control on comma three

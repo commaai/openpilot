@@ -2,7 +2,7 @@
 from cereal import car
 from selfdrive.config import Conversions as CV
 from selfdrive.car.gm.values import CAR, CruiseButtons, \
-                                    AccState, CarControllerParams
+                                    AccState, CarControllerParams, NO_ASCM
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
 from selfdrive.car.interfaces import CarInterfaceBase
 
@@ -23,7 +23,6 @@ class CarInterface(CarInterfaceBase):
     ret.pcmCruise = False  # stock cruise control is kept off
 
     # GM port is a community feature
-    # TODO: make a port that uses a car harness and it only intercepts the camera
     ret.communityFeature = True
 
     # Presence of a camera on the object bus is ok.
@@ -39,8 +38,11 @@ class CarInterface(CarInterfaceBase):
     ret.lateralTuning.pid.kf = 0.00004   # full torque for 20 deg at 80mph means 0.00007818594
     ret.steerRateCost = 1.0
     ret.steerActuatorDelay = 0.1  # Default delay, not measured yet
+    ret.enableGasInterceptor = 0x201 in fingerprint[0]
+    if ret.enableGasInterceptor:
+      ret.radarOffCan = False
 
-    if candidate == CAR.VOLT:
+    if candidate == CAR.VOLT or candidate == CAR.VOLT_NR:
       # supports stop and go, but initial engage must be above 18mph (which include conservatism)
       ret.minEnableSpeed = 18 * CV.MPH_TO_MS
       ret.mass = 1607. + STD_CARGO_KG
@@ -49,7 +51,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatioRear = 0.
       ret.centerToFront = ret.wheelbase * 0.4  # wild guess
 
-    elif candidate == CAR.MALIBU:
+    elif candidate == CAR.MALIBU or candidate == CAR.MALIBU_NR:
       # supports stop and go, but initial engage must be above 18mph (which include conservatism)
       ret.minEnableSpeed = 18 * CV.MPH_TO_MS
       ret.mass = 1496. + STD_CARGO_KG
@@ -67,13 +69,15 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 15.7
       ret.steerRatioRear = 0.
 
-    elif candidate == CAR.ACADIA:
+    elif candidate == CAR.ACADIA or candidate == CAR.ACADIA_NR:
       ret.minEnableSpeed = -1.  # engage speed is decided by pcm
-      ret.mass = 4353. * CV.LB_TO_KG + STD_CARGO_KG
-      ret.wheelbase = 2.86
-      ret.steerRatio = 14.4  # end to end is 13.46
+      ret.mass = 3956. * CV.LB_TO_KG + STD_CARGO_KG # from vin decoder
+      ret.wheelbase = 2.86 # Confirmed from vin decoder
+      ret.steerRatio = 16.5  # end to end is 13.46 - seems to be undocumented, using JYoung value
       ret.steerRatioRear = 0.
       ret.centerToFront = ret.wheelbase * 0.4
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.5], [0.1]] # using JYoung overrides
+      ret.lateralTuning.pid.kf = 0.00004   # Using JYoung value - full torque for 20 deg at 80mph means 0.00007818594
 
     elif candidate == CAR.BUICK_REGAL:
       ret.minEnableSpeed = 18 * CV.MPH_TO_MS
@@ -90,6 +94,43 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 15.3
       ret.steerRatioRear = 0.
       ret.centerToFront = ret.wheelbase * 0.49
+
+    elif candidate == CAR.BOLT_NR:
+      ret.minEnableSpeed = 25 * CV.MPH_TO_MS
+      if ret.enableGasInterceptor:
+        ret.minEnableSpeed = 5 * CV.MPH_TO_MS #steering works down to 5mph; pedal to 0
+      ret.mass = 1616. + STD_CARGO_KG
+      ret.wheelbase = 2.60096
+      ret.steerRatio = 16.8
+      ret.steerRatioRear = 0.
+      ret.centerToFront = 2.0828 #ret.wheelbase * 0.4 # wild guess
+      tire_stiffness_factor = 1.0
+
+    elif candidate == CAR.EQUINOX_NR:
+      ret.minEnableSpeed = 18 * CV.MPH_TO_MS
+      ret.mass = 3500. * CV.LB_TO_KG + STD_CARGO_KG # (3849+3708)/2
+      ret.wheelbase = 2.72 #107.3 inches in meters
+      ret.steerRatio = 14.4 # guess for tourx
+      ret.steerRatioRear = 0. # unknown online
+      ret.centerToFront = ret.wheelbase * 0.4 # wild guess
+
+    elif candidate == CAR.TAHOE_NR:
+      ret.minEnableSpeed = 18 * CV.MPH_TO_MS
+      ret.mass = 5602. * CV.LB_TO_KG + STD_CARGO_KG # (3849+3708)/2
+      ret.wheelbase = 2.95 #116 inches in meters
+      ret.steerRatio = 17.3 # guess for tourx
+      ret.steerRatioRear = 0. # unknown online
+      ret.centerToFront = 2.59  # ret.wheelbase * 0.4 # wild guess
+
+    elif candidate == CAR.ESCALADE:
+      # supports stop and go, but initial engage must be above 18mph (which include conservatism)
+      ret.minEnableSpeed = 18 * CV.MPH_TO_MS
+      ret.mass = 2645. + STD_CARGO_KG
+      ret.wheelbase = 3.30
+      ret.steerRatio = 17.3
+      ret.steerRatioRear = 0.
+      ret.centerToFront = ret.wheelbase * 0.4  # wild guess
+
 
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase
@@ -138,7 +179,8 @@ class CarInterface(CarInterfaceBase):
       elif but == CruiseButtons.DECEL_SET:
         be.type = ButtonType.decelCruise
       elif but == CruiseButtons.CANCEL:
-        be.type = ButtonType.cancel
+        if not self.CP.enableGasInterceptor: #need to use cancel to disable cc with Pedal TODO: auto-disengage CC
+          be.type = ButtonType.cancel
       elif but == CruiseButtons.MAIN:
         be.type = ButtonType.altButton3
       buttonEvents.append(be)
@@ -153,7 +195,7 @@ class CarInterface(CarInterfaceBase):
       events.add(EventName.parkBrake)
     if ret.cruiseState.standstill:
       events.add(EventName.resumeRequired)
-    if self.CS.pcm_acc_status == AccState.FAULTED:
+    if (self.CS.CP.carFingerprint not in NO_ASCM) and self.CS.pcm_acc_status == AccState.FAULTED:
       events.add(EventName.accFaulted)
     if ret.vEgo < self.CP.minSteerSpeed:
       events.add(car.CarEvent.EventName.belowSteerSpeed)
@@ -181,7 +223,11 @@ class CarInterface(CarInterfaceBase):
 
     # For Openpilot, "enabled" includes pre-enable.
     # In GM, PCM faults out if ACC command overlaps user gas.
-    enabled = c.enabled and not self.CS.out.gasPressed
+    # Does not apply when no built-in ACC
+    if not self.CP.enableGasInterceptor or self.CP.carFingerprint in NO_ASCM:
+      enabled = c.enabled and not self.CS.out.gasPressed
+    else:
+      enabled = c.enabled
 
     can_sends = self.CC.update(enabled, self.CS, self.frame,
                                c.actuators,

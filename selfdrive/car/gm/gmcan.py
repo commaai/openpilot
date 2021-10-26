@@ -1,4 +1,4 @@
-from selfdrive.car import make_can_msg
+from selfdrive.car import make_can_msg, crc8_pedal
 
 def create_steering_control(packer, bus, apply_steer, idx, lkas_active):
 
@@ -123,3 +123,62 @@ def create_lka_icon_command(bus, active, critical, steer):
   else:
     dat = b"\x00\x00\x00"
   return make_can_msg(0x104c006c, dat, bus)
+
+def create_gas_multiplier_command(packer, gas_scale_multiplier, idx):
+  # Generate message to send scale value to Pedal
+
+  values = {
+    "ENABLE": 1,
+    "COUNTER_PEDAL": idx & 0xF,
+    "GAS_COMMAND": gas_scale_multiplier,
+    "GAS_COMMAND2": 0xFACE,
+  }
+
+  dat = packer.make_can_msg("GAS_COMMAND", 0, values)[2]
+
+  checksum = crc8_pedal(dat[:-1])
+  values["CHECKSUM_PEDAL"] = checksum
+
+  return packer.make_can_msg("GAS_COMMAND", 0, values)
+
+def create_gas_divisor_command(packer, gas_scale_divisor, idx):
+  # Generate message to send scale value to Pedal
+
+  values = {
+    "ENABLE": 1,
+    "COUNTER_PEDAL": idx & 0xF,
+    "GAS_COMMAND": gas_scale_divisor,
+    "GAS_COMMAND2": 0xDEAD,
+  }
+
+  dat = packer.make_can_msg("GAS_COMMAND", 0, values)[2]
+
+  checksum = crc8_pedal(dat[:-1])
+  values["CHECKSUM_PEDAL"] = checksum
+
+  return packer.make_can_msg("GAS_COMMAND", 0, values)
+
+def create_gas_offset_command(packer, scale_offset, idx):
+  # Generate message to send offset value to Pedal
+  # TODO: fix dirty hack (use new msg)
+
+  offset2 = scale_offset
+  magicflag = 0xBABE
+  # unsigned int16 - offset could be negative.
+  if (scale_offset < 0):
+    magicflag = 0xBEEF
+    offset2 = scale_offset * -1
+
+  values = {
+    "ENABLE": 1,
+    "COUNTER_PEDAL": idx & 0xF,
+    "GAS_COMMAND": offset2,
+    "GAS_COMMAND2": magicflag,
+  }
+
+  dat = packer.make_can_msg("GAS_COMMAND", 0, values)[2]
+
+  checksum = crc8_pedal(dat[:-1])
+  values["CHECKSUM_PEDAL"] = checksum
+
+  return packer.make_can_msg("GAS_COMMAND", 0, values)
