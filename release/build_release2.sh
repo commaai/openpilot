@@ -8,6 +8,13 @@ export GIT_AUTHOR_EMAIL="user@comma.ai"
 
 export GIT_SSH_COMMAND="ssh -i /data/gitkey"
 
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
+
+cd $DIR
+
+BUILD_DIR=/data/openpilot_test
+SOURCE_DIR="$(git rev-parse --show-toplevel)"
+
 # set CLEAN to build outside of CI
 if [ ! -z "$CLEAN" ]; then
   # Create folders
