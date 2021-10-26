@@ -36,3 +36,4 @@ cdef extern from "visionipc_client.h":
     VisionIpcClient(string, VisionStreamType, bool, void*, void*)
     VisionBuf * recv(VisionIpcBufExtra *, int)
     bool connect(bool)
+    bool is_connected()

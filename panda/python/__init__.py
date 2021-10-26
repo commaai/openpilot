@@ -150,6 +150,7 @@ class Panda(object):
 
   FLAG_HONDA_ALT_BRAKE = 1
   FLAG_HONDA_BOSCH_LONG = 2
+  FLAG_HYUNDAI_LONG = 4
 
   def __init__(self, serial=None, claim=True):
     self._serial = serial
@@ -452,10 +453,11 @@ class Panda(object):
     self._handle.controlWrite(Panda.REQUEST_OUT, 0xda, int(bootmode), 0, b'')
     time.sleep(0.2)
 
-  def set_safety_mode(self, mode=SAFETY_SILENT, disable_heartbeat=True):
+  def set_safety_mode(self, mode=SAFETY_SILENT, disable_checks=True):
     self._handle.controlWrite(Panda.REQUEST_OUT, 0xdc, mode, 0, b'')
-    if disable_heartbeat:
+    if disable_checks:
       self.set_heartbeat_disabled()
+      self.set_power_save(0)
 
   def set_can_forwarding(self, from_bus, to_bus):
     # TODO: This feature may not work correctly with saturated buses

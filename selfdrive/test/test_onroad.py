@@ -8,14 +8,16 @@ import unittest
 from collections import Counter
 from pathlib import Path
 
+from cereal import car
 import cereal.messaging as messaging
 from cereal.services import service_list
 from common.basedir import BASEDIR
 from common.timeout import Timeout
 from common.params import Params
+from selfdrive.controls.lib.events import EVENTS, ET
 from selfdrive.hardware import EON, TICI
 from selfdrive.loggerd.config import ROOT
-from selfdrive.test.helpers import set_params_enabled
+from selfdrive.test.helpers import set_params_enabled, release_only
 from tools.lib.logreader import LogReader
 
 # Baseline CPU usage by process
@@ -23,7 +25,7 @@ PROCS = {
   "selfdrive.controls.controlsd": 50.0,
   "./loggerd": 45.0,
   "./locationd": 9.1,
-  "selfdrive.controls.plannerd": 20.0,
+  "selfdrive.controls.plannerd": 22.6,
   "./_ui": 15.0,
   "selfdrive.locationd.paramsd": 9.1,
   "./camerad": 7.07,
@@ -51,14 +53,38 @@ if EON:
 
 if TICI:
   PROCS.update({
-    "./loggerd": 60.0,
+    "./loggerd": 70.0,
     "selfdrive.controls.controlsd": 28.0,
     "./camerad": 31.0,
     "./_ui": 21.0,
-    "selfdrive.controls.plannerd": 12.0,
-    "selfdrive.locationd.paramsd": 5.0,
+    "selfdrive.controls.plannerd": 11.7,
     "./_dmonitoringmodeld": 10.0,
+    "selfdrive.locationd.paramsd": 5.0,
+    "selfdrive.controls.radard": 3.6,
     "selfdrive.thermald.thermald": 1.5,
+  })
+
+
+TIMINGS = {
+  # rtols: max/min, rsd
+  "can": [2.5, 0.35],
+  "pandaStates": [2.5, 0.35],
+  "peripheralState": [2.5, 0.35],
+  "sendcan": [2.5, 0.35],
+  "carState": [2.5, 0.35],
+  "carControl": [2.5, 0.35],
+  "controlsState": [2.5, 0.35],
+  "lateralPlan": [2.5, 0.5],
+  "longitudinalPlan": [2.5, 0.5],
+  "roadCameraState": [2.5, 0.35],
+  "driverCameraState": [2.5, 0.35],
+  "modelV2": [2.5, 0.35],
+  "driverState": [2.5, 0.35],
+  "liveLocationKalman": [2.5, 0.35],
+}
+if TICI:
+  TIMINGS.update({
+    "wideRoadCameraState": [1.5, 0.35],
   })
 
 
@@ -102,6 +128,12 @@ class TestOnroad(unittest.TestCase):
 
   @classmethod
   def setUpClass(cls):
+    if "DEBUG" in os.environ:
+      segs = filter(lambda x: os.path.exists(os.path.join(x, "rlog.bz2")), Path(ROOT).iterdir())
+      segs = sorted(segs, key=lambda x: x.stat().st_mtime)
+      cls.lr = list(LogReader(os.path.join(segs[-1], "rlog.bz2")))
+      return
+
     os.environ['SKIP_FW_QUERY'] = "1"
     os.environ['FINGERPRINT'] = "TOYOTA COROLLA TSS2 2019"
     set_params_enabled()
@@ -142,6 +174,9 @@ class TestOnroad(unittest.TestCase):
       if proc.wait(60) is None:
         proc.kill()
 
+    cls.lrs = [list(LogReader(os.path.join(str(s), "rlog.bz2"))) for s in cls.segments]
+
+    # use the second segment by default as it's the first full segment
     cls.lr = list(LogReader(os.path.join(str(cls.segments[1]), "rlog.bz2")))
 
   def test_cloudlog_size(self):
@@ -160,13 +195,50 @@ class TestOnroad(unittest.TestCase):
     cpu_ok = check_cpu_usage(proclogs[0], proclogs[-1])
     self.assertTrue(cpu_ok)
 
-  def test_model_timings(self):
-    #TODO this went up when plannerd cpu usage increased, why?
+  def test_model_execution_timings(self):
+    result =  "------------------------------------------------\n"
+    result += "----------------- Model Timing -----------------\n"
+    result += "------------------------------------------------\n"
+    # TODO: this went up when plannerd cpu usage increased, why?
     cfgs = [("modelV2", 0.038, 0.036), ("driverState", 0.028, 0.026)]
     for (s, instant_max, avg_max) in cfgs:
       ts = [getattr(getattr(m, s), "modelExecutionTime") for m in self.lr if m.which() == s]
       self.assertLess(min(ts), instant_max, f"high '{s}' execution time: {min(ts)}")
       self.assertLess(np.mean(ts), avg_max, f"high avg '{s}' execution time: {np.mean(ts)}")
+      result += f"'{s}' execution time: {min(ts)}\n"
+      result += f"'{s}' avg execution time: {np.mean(ts)}\n"
+    print(result)
+
+  def test_timings(self):
+
+    print("\n\n")
+    print("="*25, "service timings", "="*25)
+    for s, (maxmin, rsd) in TIMINGS.items():
+      msgs = [m.logMonoTime for m in self.lr if m.which() == s]
+      if not len(msgs):
+        raise Exception(f"missing {s}")
+
+      ts = np.diff(msgs) / 1e9
+      dt = 1 / service_list[s].frequency
+
+      np.testing.assert_allclose(np.mean(ts), dt, rtol=0.03, err_msg=f"{s} - failed mean timing check")
+      np.testing.assert_allclose([np.max(ts), np.min(ts)], dt, rtol=maxmin, err_msg=f"{s} - failed max/min timing check")
+      self.assertLess(np.std(ts) / dt, rsd, msg=f"{s} - failed RSD timing check")
+      print(f"{s}: {np.array([np.mean(ts), np.max(ts), np.min(ts)])*1e3}")
+      print(f"     {np.max(np.absolute([np.max(ts)/dt, np.min(ts)/dt]))} {np.std(ts)/dt}")
+    print("="*67)
+
+  @release_only
+  def test_startup(self):
+    startup_alert = None
+    for msg in self.lrs[0]:
+      # can't use carEvents because the first msg can be dropped while loggerd is starting up
+      if msg.which() == "controlsState":
+        startup_alert = msg.controlsState.alertText1
+        break
+    expected = EVENTS[car.CarEvent.EventName.startup][ET.PERMANENT].alert_text_1
+    self.assertEqual(startup_alert, expected, "wrong startup alert")
+
 
 if __name__ == "__main__":
   unittest.main()

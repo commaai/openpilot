@@ -66,22 +66,27 @@ void DriverViewScene::paintEvent(QPaintEvent* event) {
   const QRect& blackout_rect = Hardware::TICI() ? rect() : rect2;
   p.fillRect(blackout_rect.adjusted(0, 0, valid_rect.left() - blackout_rect.right(), 0), bg);
   p.fillRect(blackout_rect.adjusted(valid_rect.right() - blackout_rect.left(), 0, 0, 0), bg);
+  if (Hardware::TICI()) {
+    p.fillRect(blackout_rect.adjusted(valid_rect.left()-blackout_rect.left()+1, 0, valid_rect.right()-blackout_rect.right()-1, -valid_rect.height()*7/10), bg); // top dz
+  }
 
   // face bounding box
   cereal::DriverState::Reader driver_state = sm["driverState"].getDriverState();
-  bool face_detected = driver_state.getFaceProb() > 0.4;
+  bool face_detected = driver_state.getFaceProb() > 0.5;
   if (face_detected) {
     auto fxy_list = driver_state.getFacePosition();
+    auto std_list = driver_state.getFaceOrientationStd();
     float face_x = fxy_list[0];
     float face_y = fxy_list[1];
+    float face_std = std::max(std_list[0], std_list[1]);
 
-    float alpha = 0.2;
-    float x = std::abs(face_x), y = std::abs(face_y);
-    if (x <= 0.35 && y <= 0.4) {
-      alpha = 0.8 - std::max(x, y) * 0.6 / 0.375;
+    float alpha = 0.7;
+    if (face_std > 0.08) {
+      alpha = std::max(0.7 - (face_std-0.08)*7, 0.0);
     }
     const int box_size = 0.6 * rect2.height() / 2;
-    int fbox_x = valid_rect.center().x() + (is_rhd ? face_x : -face_x) * valid_rect.width();
+    const float rhd_offset = 0.05; // lhd is shifted, so rhd is not mirrored
+    int fbox_x = valid_rect.center().x() + (is_rhd ? (face_x + rhd_offset) : -face_x) * valid_rect.width();
     int fbox_y = valid_rect.center().y() + face_y * valid_rect.height();
     p.setPen(QPen(QColor(255, 255, 255, alpha * 255), 10));
     p.drawRoundedRect(fbox_x - box_size / 2, fbox_y - box_size / 2, box_size, box_size, 35.0, 35.0);

@@ -71,7 +71,10 @@ class IsoTpParallelQuery:
     messaging.drain_sock(self.logcan)
     self.msg_buffer = defaultdict(list)
 
-  def get_data(self, timeout):
+  def get_data(self, timeout, total_timeout=None):
+    if total_timeout is None:
+      total_timeout = 10 * timeout
+
     self._drain_rx()
 
     # Create message objects
@@ -96,7 +99,8 @@ class IsoTpParallelQuery:
       request_done[tx_addr] = False
 
     results = {}
-    start_time = time.time()
+    start_time = time.monotonic()
+    last_response_time = start_time
     while True:
       self.rx()
 
@@ -104,7 +108,12 @@ class IsoTpParallelQuery:
         break
 
       for tx_addr, msg in msgs.items():
-        dat: Optional[bytes] = msg.recv()
+        try:
+          dat: Optional[bytes] = msg.recv()
+        except Exception:
+          cloudlog.exception("Error processing UDS response")
+          request_done[tx_addr] = True
+          continue
 
         if not dat:
           continue
@@ -114,6 +123,7 @@ class IsoTpParallelQuery:
         response_valid = dat[:len(expected_response)] == expected_response
 
         if response_valid:
+          last_response_time = time.monotonic()
           if counter + 1 < len(self.request):
             msg.send(self.request[counter + 1])
             request_counter[tx_addr] += 1
@@ -124,7 +134,15 @@ class IsoTpParallelQuery:
           request_done[tx_addr] = True
           cloudlog.warning(f"iso-tp query bad response: 0x{dat.hex()}")
 
-      if time.time() - start_time > timeout:
+      cur_time = time.monotonic()
+      if cur_time - last_response_time > timeout:
+        for tx_addr in msgs:
+          if (request_counter[tx_addr] > 0) and (not request_done[tx_addr]):
+            cloudlog.warning(f"iso-tp query timeout after receiving response: {tx_addr}")
+        break
+
+      if cur_time - start_time > total_timeout:
+        cloudlog.warning("iso-tp query timeout while receiving data")
         break
 
     return results

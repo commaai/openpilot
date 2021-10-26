@@ -2,6 +2,7 @@
 void puts(const char *a);
 void puth(unsigned int i);
 void puth2(unsigned int i);
+void puth4(unsigned int i);
 typedef struct board board;
 typedef struct harness_configuration harness_configuration;
 

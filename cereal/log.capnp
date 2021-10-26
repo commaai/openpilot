@@ -1,10 +1,6 @@
 using Cxx = import "./include/c++.capnp";
 $Cxx.namespace("cereal");
 
-using Java = import "./include/java.capnp";
-$Java.package("ai.comma.openpilot.cereal");
-$Java.outerClassname("Log");
-
 using Car = import "car.capnp";
 using Legacy = import "legacy.capnp";
 
@@ -293,14 +289,10 @@ struct DeviceState @0xa4d8b5af2aa492eb {
   networkType @22 :NetworkType;
   networkInfo @31 :NetworkInfo;
   networkStrength @24 :NetworkStrength;
-  offroadPowerUsageUwh @23 :UInt32;
-  carBatteryCapacityUwh @25 :UInt32;
+  lastAthenaPingTime @32 :UInt64;
 
-  fanSpeedPercentDesired @10 :UInt16;
   started @11 :Bool;
   startedMonoTime @13 :UInt64;
-
-  lastAthenaPingTime @32 :UInt64;
 
   # system utilization
   freeSpacePercent @7 :Float32;
@@ -313,13 +305,20 @@ struct DeviceState @0xa4d8b5af2aa492eb {
   batteryCurrent @15 :Int32;
   chargingError @17 :Bool;
   chargingDisabled @18 :Bool;
+  offroadPowerUsageUwh @23 :UInt32;
+  carBatteryCapacityUwh @25 :UInt32;
 
   # device thermals
   cpuTempC @26 :List(Float32);
   gpuTempC @27 :List(Float32);
   memoryTempC @28 :Float32;
   ambientTempC @30 :Float32;
+  nvmeTempC @35 :List(Float32);
+  modemTempC @36 :List(Float32);
   thermalStatus @14 :ThermalStatus;
+
+  fanSpeedPercentDesired @10 :UInt16;
+  screenBrightnessPercent @37 :Int8;
 
   enum ThermalStatus {
     green @0;
@@ -371,20 +370,14 @@ struct DeviceState @0xa4d8b5af2aa492eb {
 }
 
 struct PandaState @0xa7649e2575e4591e {
-  # from can health
-  voltage @0 :UInt32;
-  current @1 :UInt32;
   ignitionLine @2 :Bool;
   controlsAllowed @3 :Bool;
   gasInterceptorDetected @4 :Bool;
-  hasGps @6 :Bool;
   canSendErrs @7 :UInt32;
   canFwdErrs @8 :UInt32;
   canRxErrs @19 :UInt32;
   gmlanSendErrs @9 :UInt32;
   pandaType @10 :PandaType;
-  fanSpeedRpm @11 :UInt16;
-  usbPowerMode @12 :UsbPowerMode;
   ignitionCan @13 :Bool;
   safetyModel @14 :Car.CarParams.SafetyModel;
   safetyParam @20 :Int16;
@@ -438,13 +431,6 @@ struct PandaState @0xa7649e2575e4591e {
     redPanda @7;
   }
 
-  enum UsbPowerMode {
-    none @0;
-    client @1;
-    cdp @2;
-    dcp @3;
-  }
-
   enum HarnessStatus {
     notConnected @0;
     normal @1;
@@ -452,6 +438,26 @@ struct PandaState @0xa7649e2575e4591e {
   }
 
   startedSignalDetectedDEPRECATED @5 :Bool;
+  voltageDEPRECATED @0 :UInt32;
+  currentDEPRECATED @1 :UInt32;
+  hasGpsDEPRECATED @6 :Bool;
+  fanSpeedRpmDEPRECATED @11 :UInt16;
+  usbPowerModeDEPRECATED @12 :PeripheralState.UsbPowerMode;
+}
+
+struct PeripheralState {
+  pandaType @0 :PandaState.PandaType;
+  voltage @1 :UInt32;
+  current @2 :UInt32;
+  fanSpeedRpm @3 :UInt16;
+  usbPowerMode @4 :UsbPowerMode;
+
+  enum UsbPowerMode @0xa8883583b32c9877 {
+    none @0;
+    client @1;
+    cdp @2;
+    dcp @3;
+  }
 }
 
 struct RadarState @0x9a185389d6fdd05f {
@@ -859,7 +865,7 @@ struct LateralPlan @0xe1e9318e2ae8b51e {
   desire @17 :Desire;
   laneChangeState @18 :LaneChangeState;
   laneChangeDirection @19 :LaneChangeDirection;
-
+  useLaneLines @29 :Bool;
 
   # desired curvatures over next 2.5s in rad/m
   psis @26 :List(Float32);
@@ -1248,6 +1254,7 @@ struct DriverState {
   distractedEyes @20 :Float32;
   eyesOnRoad @21 :Float32;
   phoneUse @22 :Float32;
+  occludedProb @23 :Float32;
 
   irPwrDEPRECATED @10 :Float32;
   descriptorDEPRECATED @1 :List(Float32);
@@ -1295,6 +1302,10 @@ struct LiveParametersData {
   yawRate @7 :Float32;
   posenetSpeed @8 :Float32;
   posenetValid @9 :Bool;
+  angleOffsetFastStd @10 :Float32;
+  angleOffsetAverageStd @11 :Float32;
+  stiffnessFactorStd @12 :Float32;
+  steerRatioStd @13 :Float32;
 }
 
 struct LiveMapDataDEPRECATED {
@@ -1344,6 +1355,7 @@ struct ManagerState {
     name @0 :Text;
     pid @1 :Int32;
     running @2 :Bool;
+    shouldBeRunning @4 :Bool;
     exitCode @3 :Int32;
   }
 }
@@ -1377,7 +1389,8 @@ struct Event {
     can @5 :List(CanData);
     controlsState @7 :ControlsState;
     sensorEvents @11 :List(SensorEventData);
-    pandaState @12 :PandaState;
+    pandaStates @81 :List(PandaState);
+    peripheralState @80 :PeripheralState;
     radarState @13 :RadarState;
     liveTracks @16 :List(LiveTracks);
     sendcan @17 :List(CanData);
@@ -1457,5 +1470,6 @@ struct Event {
     kalmanOdometryDEPRECATED @65 :Legacy.KalmanOdometry;
     gpsLocationDEPRECATED @21 :GpsLocationData;
     uiLayoutStateDEPRECATED @57 :Legacy.UiLayoutState;
+    pandaStateDEPRECATED @12 :PandaState;
   }
 }

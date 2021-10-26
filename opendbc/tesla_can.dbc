@@ -34,14 +34,14 @@ NS_ :
 BS_:
 
 BU_:
-    NEO
-    MCU
-    GTW
-    EPAS
-    DI
-    ESP
-    SBW
-    STW
+	NEO
+	MCU
+	GTW
+	EPAS
+	DI
+	ESP
+	SBW
+	STW
 	APP
 	DAS
 	XXX
@@ -70,6 +70,17 @@ BO_ 1160 DAS_steeringControl: 4 NEO
  SG_ DAS_steeringControlCounter : 19|4@0+ (1,0) [0|0] "" EPAS
  SG_ DAS_steeringAngleRequest : 6|15@0+ (0.1,-1638.35) [-1638.35|1638.35] "deg" EPAS
  SG_ DAS_steeringHapticRequest : 7|1@0+ (1,0) [0|0] "" EPAS
+
+BO_ 697 DAS_control: 8 NEO
+ SG_ DAS_setSpeed : 0|12@1+ (0.1,0) [0|409.4] "kph" NEO
+ SG_ DAS_accState : 12|4@1+ (1,0) [0|0] "" NEO
+ SG_ DAS_aebEvent : 16|2@1+ (1,0) [0|3] "" NEO
+ SG_ DAS_jerkMin : 18|9@1+ (0.03,-15.232) [-15.232|0.098] "m/s^3" NEO
+ SG_ DAS_jerkMax : 27|8@1+ (0.059,0) [0|15.045] "m/s^3" NEO
+ SG_ DAS_accelMin : 35|9@1+ (0.04,-15) [-15|5.44] "m/s^2" NEO
+ SG_ DAS_accelMax : 44|9@1+ (0.04,-15) [-15|5.44] "m/s^2" NEO
+ SG_ DAS_controlCounter : 53|3@1+ (1,0) [0|0] "" NEO
+ SG_ DAS_controlChecksum : 56|8@1+ (1,0) [0|0] "" NEO
 
 BO_ 257 GTW_epasControl: 3 NEO
  SG_ GTW_epasControlChecksum : 23|8@0+ (1,0) [0|255] ""  NEO
@@ -102,7 +113,6 @@ BO_ 3 STW_ANGL_STAT: 8 STW
  SG_ CRC_STW_ANGL_STAT : 63|8@0+ (1,0) [0|255] ""  NEO
 
 BO_ 14 STW_ANGLHP_STAT: 8 STW
-
  SG_ StW_AnglHP : 5|14@0+ (0.1,-819.2) [-819.2|819] "deg"  NEO
  SG_ StW_AnglHP_Spd : 21|14@0+ (0.5,-4096) [-4096|4095.5] "deg/s"  NEO
  SG_ StW_AnglHP_Sens_Stat : 33|2@0+ (1,0) [0|0] ""  NEO
@@ -691,6 +701,13 @@ VAL_ 643 MPkBrk_Stat 1 "ENGG" 0 "RELS" ;
 VAL_ 643 RevGr_Engg 0 "DISENGG" 1 "ENGG" 2 "NDEF2" 3 "SNA" ;
 VAL_ 643 StW_Cond_Stat 3 "BLINK" 1 "NDEF1" 0 "OFF" 2 "ON" ;
 VAL_ 643 Trlr_Stat 2 "NDEF2" 0 "NONE" 1 "OK" 3 "SNA" ;
+VAL_ 697 DAS_setSpeed 4095 "SNA" ;
+VAL_ 697 DAS_accState 15 "FAULT_SNA" 13 "ACC_CANCEL_GENERIC_SILENT" 11 "APC_SELFPARK_START" 10 "APC_UNPARK_COMPLETE" 9 "APC_PAUSE" 8 "APC_ABORT" 7 "APC_COMPLETE" 6 "APC_FORWARD" 5 "APC_BACKWARD" 4 "ACC_ON" 3 "ACC_HOLD" 0 "ACC_CANCEL_GENERIC" ;
+VAL_ 697 DAS_aebEvent 3 "AEB_SNA" 2 "AEB_FAULT" 1 "AEB_ACTIVE" 0 "AEB_NOT_ACTIVE" ;
+VAL_ 697 DAS_jerkMin 511 "SNA" ;
+VAL_ 697 DAS_jerkMax 255 "SNA" ;
+VAL_ 697 DAS_accelMin 511 "SNA" ;
+VAL_ 697 DAS_accelMax 511 "SNA" ;
 VAL_ 792 BOOT_STATE 2 "Init" 3 "SNA" 0 "closed" 1 "open" ;
 VAL_ 792 CERRD 1 "CAN error detect" 0 "no Can error detected" ;
 VAL_ 792 DAY 1 "Init" 0 "SNA" ;

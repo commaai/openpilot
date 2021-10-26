@@ -72,6 +72,7 @@ bool VisionIpcClient::connect(bool blocking){
     if (device_id) buffers[i].init_cl(device_id, ctx);
   }
 
+  close(socket_fd);
   connected = true;
   return true;
 }

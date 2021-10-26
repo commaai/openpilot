@@ -131,7 +131,7 @@ def denormalize(img_pts, intrinsics=fcam_intrinsics, width=W, height=H):
   img_pts = np.array(img_pts)
   input_shape = img_pts.shape
   img_pts = np.atleast_2d(img_pts)
-  img_pts = np.hstack((img_pts, np.ones((img_pts.shape[0], 1))))
+  img_pts = np.hstack((img_pts, np.ones((img_pts.shape[0], 1), dtype=img_pts.dtype)))
   img_pts_denormalized = img_pts.dot(intrinsics.T)
   img_pts_denormalized[img_pts_denormalized[:, 0] > width] = np.nan
   img_pts_denormalized[img_pts_denormalized[:, 0] < 0] = np.nan

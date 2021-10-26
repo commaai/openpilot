@@ -7,10 +7,9 @@ launch_openpilot.sh
 Jenkinsfile
 SConstruct
 
-CONTRIBUTING.md
 README.md
 RELEASES.md
-SAFETY.md
+docs/*
 site_scons/site_tools/cython.py
 
 common/.gitignore
@@ -61,6 +60,8 @@ models/dmonitoring_model_q.dlc
 
 release/*
 
+installer/updater/updater
+
 selfdrive/version.py
 
 selfdrive/__init__.py
@@ -96,6 +97,7 @@ selfdrive/car/car_helpers.py
 selfdrive/car/fingerprints.py
 selfdrive/car/interfaces.py
 selfdrive/car/vin.py
+selfdrive/car/disable_ecu.py
 selfdrive/car/fw_versions.py
 selfdrive/car/isotp_parallel_query.py
 selfdrive/car/tests/__init__.py
@@ -188,11 +190,6 @@ selfdrive/debug/*.py
 selfdrive/common/SConscript
 selfdrive/common/version.h
 
-selfdrive/common/framebuffer.h
-selfdrive/common/framebuffer.cc
-selfdrive/common/glutil.cc
-selfdrive/common/glutil.h
-selfdrive/common/touch.[c,h]
 selfdrive/common/swaglog.h
 selfdrive/common/swaglog.cc
 selfdrive/common/util.cc
@@ -238,44 +235,25 @@ selfdrive/controls/lib/pid.py
 selfdrive/controls/lib/longitudinal_planner.py
 selfdrive/controls/lib/radar_helpers.py
 selfdrive/controls/lib/vehicle_model.py
-selfdrive/controls/lib/fcw.py
-selfdrive/controls/lib/long_mpc.py
-selfdrive/controls/lib/lead_mpc.py
 
 selfdrive/controls/lib/cluster/*
 
-selfdrive/controls/lib/lateral_mpc/lib_mpc_export/*
-selfdrive/controls/lib/lateral_mpc/.gitignore
-selfdrive/controls/lib/lateral_mpc/SConscript
-selfdrive/controls/lib/lateral_mpc/__init__.py
-selfdrive/controls/lib/lateral_mpc/generator.cpp
-selfdrive/controls/lib/lateral_mpc/libmpc_py.py
-selfdrive/controls/lib/lateral_mpc/lateral_mpc.c
-
-selfdrive/controls/lib/lead_mpc_lib/lib_mpc_export/*
-selfdrive/controls/lib/lead_mpc_lib/.gitignore
-selfdrive/controls/lib/lead_mpc_lib/SConscript
-selfdrive/controls/lib/lead_mpc_lib/__init__.py
-selfdrive/controls/lib/lead_mpc_lib/generator.cpp
-selfdrive/controls/lib/lead_mpc_lib/libmpc_py.py
-selfdrive/controls/lib/lead_mpc_lib/longitudinal_mpc.c
-
-selfdrive/controls/lib/longitudinal_mpc_lib/lib_mpc_export/*
+selfdrive/controls/lib/lateral_mpc_lib/.gitignore
 selfdrive/controls/lib/longitudinal_mpc_lib/.gitignore
-selfdrive/controls/lib/longitudinal_mpc_lib/SConscript
-selfdrive/controls/lib/longitudinal_mpc_lib/__init__.py
-selfdrive/controls/lib/longitudinal_mpc_lib/generator.cpp
-selfdrive/controls/lib/longitudinal_mpc_lib/libmpc_py.py
-selfdrive/controls/lib/longitudinal_mpc_lib/longitudinal_mpc.c
+selfdrive/controls/lib/lateral_mpc_lib/*
+selfdrive/controls/lib/longitudinal_mpc_lib/*
 
 selfdrive/hardware/__init__.py
 selfdrive/hardware/base.h
 selfdrive/hardware/base.py
 selfdrive/hardware/hw.h
 selfdrive/hardware/eon/__init__.py
+selfdrive/hardware/eon/androidd.py
 selfdrive/hardware/eon/hardware.h
 selfdrive/hardware/eon/hardware.py
-selfdrive/hardware/eon/androidd.py
+selfdrive/hardware/eon/neos.py
+selfdrive/hardware/eon/neos.json
+selfdrive/hardware/eon/updater
 selfdrive/hardware/tici/__init__.py
 selfdrive/hardware/tici/hardware.py
 selfdrive/hardware/tici/amplifier.py
@@ -369,6 +347,9 @@ selfdrive/ui/qt/widgets/*.h
 selfdrive/ui/qt/spinner_aarch64
 selfdrive/ui/qt/text_aarch64
 
+selfdrive/ui/replay/framereader.cc
+selfdrive/ui/replay/framereader.h
+
 selfdrive/camerad/SConscript
 selfdrive/camerad/main.cc
 
@@ -380,6 +361,8 @@ selfdrive/camerad/cameras/camera_frame_stream.cc
 selfdrive/camerad/cameras/camera_frame_stream.h
 selfdrive/camerad/cameras/camera_qcom.cc
 selfdrive/camerad/cameras/camera_qcom.h
+selfdrive/camerad/cameras/camera_replay.cc
+selfdrive/camerad/cameras/camera_replay.h
 selfdrive/camerad/cameras/debayer.cl
 selfdrive/camerad/cameras/sensor_i2c.h
 selfdrive/camerad/cameras/sensor2_i2c.h
@@ -444,56 +427,56 @@ selfdrive/assets/assets.qrc
 selfdrive/assets/*.png
 selfdrive/assets/*.svg
 selfdrive/assets/fonts/*.ttf
+selfdrive/assets/icons/*
 selfdrive/assets/images/*
 selfdrive/assets/offroad/*
 selfdrive/assets/sounds/*
 selfdrive/assets/training/*
 
-phonelibs/SConscript
+third_party/SConscript
 
-phonelibs/nanovg/*.c
-phonelibs/nanovg/*.h
+third_party/nanovg/*.c
+third_party/nanovg/*.h
 
-phonelibs/libgralloc/**
-phonelibs/linux/**
-phonelibs/opencl/**
-phonelibs/zlib/*
-phonelibs/bzip2/*
-phonelibs/openmax/**
+third_party/libgralloc/**
+third_party/linux/**
+third_party/opencl/**
+third_party/zlib/*
+third_party/bzip2/*
+third_party/openmax/**
 
-phonelibs/json11/json11.cpp
-phonelibs/json11/json11.hpp
+third_party/json11/json11.cpp
+third_party/json11/json11.hpp
 
-phonelibs/qpoases/**
+third_party/qrcode/*.cc
+third_party/qrcode/*.hpp
 
-phonelibs/qrcode/*.cc
-phonelibs/qrcode/*.hpp
+third_party/kaitai/*.h
+third_party/kaitai/*.cpp
 
-phonelibs/kaitai/*.h
-phonelibs/kaitai/*.cpp
+third_party/libyuv/include/**
+third_party/libyuv/lib/**
+third_party/libyuv/larch64/**
 
-phonelibs/libyuv/include/**
-phonelibs/libyuv/lib/**
-phonelibs/libyuv/larch64/**
+third_party/snpe/include/**
+third_party/snpe/aarch64**
+third_party/snpe/larch64**
+third_party/snpe/dsp**
 
-phonelibs/snpe/include/**
-phonelibs/snpe/aarch64**
-phonelibs/snpe/larch64**
-phonelibs/snpe/dsp**
+third_party/acados/x86_64/**
+third_party/acados/aarch64/**
+third_party/acados/larch64/**
+third_party/acados/include/**
 
-phonelibs/android_frameworks_native/**
-phonelibs/android_hardware_libhardware/**
-phonelibs/android_system_core/**
-
-installer/updater/updater
-installer/updater/updater.cc
-installer/updater/update.json
-installer/updater/Makefile
+third_party/android_frameworks_native/**
+third_party/android_hardware_libhardware/**
+third_party/android_system_core/**
 
 scripts/update_now.sh
 scripts/stop_updater.sh
 
 pyextra/.gitignore
+pyextra/acados_template/**
 
 rednose/**
 
@@ -588,6 +571,7 @@ opendbc/honda_insight_ex_2019_can_generated.dbc
 opendbc/acura_ilx_2016_nidec.dbc
 
 opendbc/hyundai_kia_generic.dbc
+opendbc/hyundai_kia_mando_front_radar.dbc
 
 opendbc/mazda_2017.dbc
 

@@ -62,6 +62,7 @@ typedef struct LogCameraInfo {
   bool has_qcamera;
   bool trigger_rotate;
   bool enable;
+  bool record;
 } LogCameraInfo;
 
 typedef struct FrameMetadata {

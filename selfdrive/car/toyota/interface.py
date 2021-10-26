@@ -2,7 +2,7 @@
 from cereal import car
 from selfdrive.config import Conversions as CV
 from selfdrive.car.toyota.values import Ecu, CAR, TSS2_CAR, NO_DSU_CAR, MIN_ACC_SPEED, PEDAL_HYST_GAP, CarControllerParams
-from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
+from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
 
 EventName = car.CarEvent.EventName
@@ -18,7 +18,7 @@ class CarInterface(CarInterfaceBase):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
 
     ret.carName = "toyota"
-    ret.safetyModel = car.CarParams.SafetyModel.toyota
+    ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.toyota)]
 
     ret.steerActuatorDelay = 0.12  # Default delay, Prius has larger delay
     ret.steerLimitTimer = 0.4
@@ -31,7 +31,7 @@ class CarInterface(CarInterfaceBase):
 
     if candidate == CAR.PRIUS:
       stop_and_go = True
-      ret.safetyParam = 66  # see conversion factor for STEER_TORQUE_EPS in dbc file
+      ret.safetyConfigs[0].safetyParam = 66  # see conversion factor for STEER_TORQUE_EPS in dbc file
       ret.wheelbase = 2.70
       ret.steerRatio = 15.74   # unknown end-to-end spec
       tire_stiffness_factor = 0.6371   # hand-tune
@@ -50,7 +50,7 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate in [CAR.RAV4, CAR.RAV4H]:
       stop_and_go = True if (candidate in CAR.RAV4H) else False
-      ret.safetyParam = 73
+      ret.safetyConfigs[0].safetyParam = 73
       ret.wheelbase = 2.65
       ret.steerRatio = 16.88   # 14.5 is spec end-to-end
       tire_stiffness_factor = 0.5533
@@ -69,7 +69,7 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate == CAR.COROLLA:
       stop_and_go = False
-      ret.safetyParam = 88
+      ret.safetyConfigs[0].safetyParam = 88
       ret.wheelbase = 2.70
       ret.steerRatio = 18.27
       tire_stiffness_factor = 0.444  # not optimized yet
@@ -79,7 +79,7 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate == CAR.LEXUS_RX:
       stop_and_go = True
-      ret.safetyParam = 73
+      ret.safetyConfigs[0].safetyParam = 73
       ret.wheelbase = 2.79
       ret.steerRatio = 14.8
       tire_stiffness_factor = 0.5533
@@ -89,7 +89,7 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate == CAR.LEXUS_RXH:
       stop_and_go = True
-      ret.safetyParam = 73
+      ret.safetyConfigs[0].safetyParam = 73
       ret.wheelbase = 2.79
       ret.steerRatio = 16.  # 14.8 is spec end-to-end
       tire_stiffness_factor = 0.444  # not optimized yet
@@ -99,7 +99,7 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate == CAR.LEXUS_RX_TSS2:
       stop_and_go = True
-      ret.safetyParam = 73
+      ret.safetyConfigs[0].safetyParam = 73
       ret.wheelbase = 2.79
       ret.steerRatio = 14.8
       tire_stiffness_factor = 0.5533  # not optimized yet
@@ -109,7 +109,7 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate == CAR.LEXUS_RXH_TSS2:
       stop_and_go = True
-      ret.safetyParam = 73
+      ret.safetyConfigs[0].safetyParam = 73
       ret.wheelbase = 2.79
       ret.steerRatio = 16.0  # 14.8 is spec end-to-end
       tire_stiffness_factor = 0.444  # not optimized yet
@@ -119,7 +119,7 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate in [CAR.CHR, CAR.CHRH]:
       stop_and_go = True
-      ret.safetyParam = 73
+      ret.safetyConfigs[0].safetyParam = 73
       ret.wheelbase = 2.63906
       ret.steerRatio = 13.6
       tire_stiffness_factor = 0.7933
@@ -129,7 +129,7 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate in [CAR.CAMRY, CAR.CAMRYH, CAR.CAMRY_TSS2, CAR.CAMRYH_TSS2]:
       stop_and_go = True
-      ret.safetyParam = 73
+      ret.safetyConfigs[0].safetyParam = 73
       ret.wheelbase = 2.82448
       ret.steerRatio = 13.7
       tire_stiffness_factor = 0.7933
@@ -139,7 +139,7 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate in [CAR.HIGHLANDER_TSS2, CAR.HIGHLANDERH_TSS2]:
       stop_and_go = True
-      ret.safetyParam = 73
+      ret.safetyConfigs[0].safetyParam = 73
       ret.wheelbase = 2.84988  # 112.2 in = 2.84988 m
       ret.steerRatio = 16.0
       tire_stiffness_factor = 0.8
@@ -149,7 +149,7 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate in [CAR.HIGHLANDER, CAR.HIGHLANDERH]:
       stop_and_go = True
-      ret.safetyParam = 73
+      ret.safetyConfigs[0].safetyParam = 73
       ret.wheelbase = 2.78
       ret.steerRatio = 16.0
       tire_stiffness_factor = 0.8
@@ -159,7 +159,7 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate in [CAR.AVALON, CAR.AVALON_2019, CAR.AVALONH_2019]:
       stop_and_go = False
-      ret.safetyParam = 73
+      ret.safetyConfigs[0].safetyParam = 73
       ret.wheelbase = 2.82
       ret.steerRatio = 14.8  # Found at https://pressroom.toyota.com/releases/2016+avalon+product+specs.download
       tire_stiffness_factor = 0.7983
@@ -169,7 +169,7 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate in [CAR.RAV4_TSS2, CAR.RAV4H_TSS2]:
       stop_and_go = True
-      ret.safetyParam = 73
+      ret.safetyConfigs[0].safetyParam = 73
       ret.wheelbase = 2.68986
       ret.steerRatio = 14.3
       tire_stiffness_factor = 0.7933
@@ -187,7 +187,7 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate in [CAR.COROLLA_TSS2, CAR.COROLLAH_TSS2]:
       stop_and_go = True
-      ret.safetyParam = 73
+      ret.safetyConfigs[0].safetyParam = 73
       ret.wheelbase = 2.67  # Average between 2.70 for sedan and 2.64 for hatchback
       ret.steerRatio = 13.9
       tire_stiffness_factor = 0.444  # not optimized yet
@@ -197,7 +197,7 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate in [CAR.LEXUS_ES_TSS2, CAR.LEXUS_ESH_TSS2]:
       stop_and_go = True
-      ret.safetyParam = 73
+      ret.safetyConfigs[0].safetyParam = 73
       ret.wheelbase = 2.8702
       ret.steerRatio = 16.0  # not optimized
       tire_stiffness_factor = 0.444  # not optimized yet
@@ -207,7 +207,7 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate == CAR.LEXUS_ESH:
       stop_and_go = True
-      ret.safetyParam = 73
+      ret.safetyConfigs[0].safetyParam = 73
       ret.wheelbase = 2.8190
       ret.steerRatio = 16.06
       tire_stiffness_factor = 0.444  # not optimized yet
@@ -217,7 +217,7 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate == CAR.SIENNA:
       stop_and_go = True
-      ret.safetyParam = 73
+      ret.safetyConfigs[0].safetyParam = 73
       ret.wheelbase = 3.03
       ret.steerRatio = 15.5
       tire_stiffness_factor = 0.444
@@ -227,7 +227,7 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate == CAR.LEXUS_IS:
       stop_and_go = False
-      ret.safetyParam = 77
+      ret.safetyConfigs[0].safetyParam = 77
       ret.wheelbase = 2.79908
       ret.steerRatio = 13.3
       tire_stiffness_factor = 0.444
@@ -237,7 +237,7 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate == CAR.LEXUS_CTH:
       stop_and_go = True
-      ret.safetyParam = 100
+      ret.safetyConfigs[0].safetyParam = 100
       ret.wheelbase = 2.60
       ret.steerRatio = 18.6
       tire_stiffness_factor = 0.517
@@ -247,7 +247,7 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate in [CAR.LEXUS_NXH, CAR.LEXUS_NX, CAR.LEXUS_NX_TSS2]:
       stop_and_go = True
-      ret.safetyParam = 73
+      ret.safetyConfigs[0].safetyParam = 73
       ret.wheelbase = 2.66
       ret.steerRatio = 14.7
       tire_stiffness_factor = 0.444  # not optimized yet
@@ -257,7 +257,7 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate == CAR.PRIUS_TSS2:
       stop_and_go = True
-      ret.safetyParam = 73
+      ret.safetyConfigs[0].safetyParam = 73
       ret.wheelbase = 2.70002  # from toyota online sepc.
       ret.steerRatio = 13.4   # True steerRation from older prius
       tire_stiffness_factor = 0.6371   # hand-tune
@@ -267,7 +267,7 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate == CAR.MIRAI:
       stop_and_go = True
-      ret.safetyParam = 73
+      ret.safetyConfigs[0].safetyParam = 73
       ret.wheelbase = 2.91
       ret.steerRatio = 14.8
       tire_stiffness_factor = 0.8
@@ -277,7 +277,7 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate == CAR.ALPHARD_TSS2:
       stop_and_go = True
-      ret.safetyParam = 73
+      ret.safetyConfigs[0].safetyParam = 73
       ret.wheelbase = 3.00
       ret.steerRatio = 14.2
       tire_stiffness_factor = 0.444
@@ -330,7 +330,6 @@ class CarInterface(CarInterfaceBase):
       ret.longitudinalTuning.kiV = [.35, .23, .20, .17, .1]
       ret.stoppingDecelRate = 0.3  # reach stopping target smoothly
       ret.startingAccelRate = 6.0  # release brakes fast
-      ret.startAccel = 1.2  # Accelerate from 0 faster
     else:
       # Default longitudinal tune
       ret.longitudinalTuning.deadzoneBP = [0., 9.]

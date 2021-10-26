@@ -1,10 +1,6 @@
 using Cxx = import "./include/c++.capnp";
 $Cxx.namespace("cereal");
 
-using Java = import "./include/java.capnp";
-$Java.package("ai.comma.openpilot.cereal");
-$Java.outerClassname("Legacy");
-
 @0x80ef1ec4889c2a63;
 
 # legacy.capnp: a home for deprecated structs

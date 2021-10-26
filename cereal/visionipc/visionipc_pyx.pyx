@@ -88,3 +88,6 @@ cdef class VisionIpcClient:
 
   def connect(self, bool blocking):
     return self.client.connect(blocking)
+
+  def is_connected(self):
+    return self.client.is_connected()

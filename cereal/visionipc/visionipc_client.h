@@ -29,4 +29,5 @@ public:
   ~VisionIpcClient();
   VisionBuf * recv(VisionIpcBufExtra * extra=nullptr, const int timeout_ms=100);
   bool connect(bool blocking=true);
+  bool is_connected() { return connected; }
 };

@@ -13,7 +13,7 @@
 
 // ********** settings window + top-level panels **********
 
-class DevicePanel : public QWidget {
+class DevicePanel : public ListWidget {
   Q_OBJECT
 public:
   explicit DevicePanel(QWidget* parent = nullptr);
@@ -22,13 +22,13 @@ signals:
   void showDriverView();
 };
 
-class TogglesPanel : public QWidget {
+class TogglesPanel : public ListWidget {
   Q_OBJECT
 public:
   explicit TogglesPanel(QWidget *parent = nullptr);
 };
 
-class SoftwarePanel : public QWidget {
+class SoftwarePanel : public ListWidget {
   Q_OBJECT
 public:
   explicit SoftwarePanel(QWidget* parent = nullptr);
