@@ -214,7 +214,7 @@ void encoder_thread(const LogCameraInfo &cam_info) {
       for (int i = 0; i < encoders.size(); ++i) {
         int out_id = encoders[i]->encode_frame(buf->y, buf->u, buf->v,
                                                buf->width, buf->height, extra.timestamp_eof);
-        
+
         if (out_id == -1) {
           LOGE("Failed to encode frame. frame_id: %d encode_id: %d", extra.frame_id, encode_idx);
         }
@@ -223,8 +223,9 @@ void encoder_thread(const LogCameraInfo &cam_info) {
         if (i == 0 && out_id != -1) {
           MessageBuilder msg;
           // this is really ugly
-          auto eidx = cam_info.type == DriverCam ? msg.initEvent().initDriverEncodeIdx() :
-                     (cam_info.type == WideRoadCam ? msg.initEvent().initWideRoadEncodeIdx() : msg.initEvent().initRoadEncodeIdx());
+          bool valid = (buf->get_frame_id() == extra.frame_id);
+          auto eidx = cam_info.type == DriverCam ? msg.initEvent(valid).initDriverEncodeIdx() :
+                     (cam_info.type == WideRoadCam ? msg.initEvent(valid).initWideRoadEncodeIdx() : msg.initEvent(valid).initRoadEncodeIdx());
           eidx.setFrameId(extra.frame_id);
           eidx.setTimestampSof(extra.timestamp_sof);
           eidx.setTimestampEof(extra.timestamp_eof);
