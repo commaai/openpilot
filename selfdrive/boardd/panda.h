@@ -41,12 +41,12 @@ struct __attribute__((packed)) health_t {
   uint8_t heartbeat_lost;
 };
 
-typedef struct {
+struct can_frame {
 	long address;
 	std::string dat;
 	long busTime;
 	long src;
-} can_frame;
+};
 
 class Panda {
  private:
