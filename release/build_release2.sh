@@ -61,7 +61,7 @@ scons -j3
 # Run tests
 TEST_FILES="tools/"
 cd $SOURCE_DIR
-cp -pR --parents $TEST_FILES $BUILD_DIR/
+cp -pR -n --parents $TEST_FILES $BUILD_DIR/
 cd $BUILD_DIR
 RELEASE=1 selfdrive/test/test_onroad.py
 selfdrive/manager/test/test_manager.py
