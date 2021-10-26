@@ -151,7 +151,7 @@ void Replay::queueSegment() {
     if (!it->second) {
       if (it == cur || std::prev(it)->second->isLoaded()) {
         auto &[n, seg] = *it;
-        seg = std::make_unique<Segment>(n, route_->at(n), hasFlag(REPLAY_FLAG_DCAM), hasFlag(REPLAY_FLAG_ECAM), !hasFlag(REPLAY_FLAG_NO_FILE_CACHE));
+        seg = std::make_unique<Segment>(n, route_->at(n), hasFlag(REPLAY_FLAG_DCAM), hasFlag(REPLAY_FLAG_ECAM), !hasFlag(REPLAY_FLAG_NO_FILE_CACHE), hasFlag(REPLAY_FLAG_CUDA));
         QObject::connect(seg.get(), &Segment::loadFinished, this, &Replay::segmentLoadFinished);
         qDebug() << "loading segment" << n << "...";
       }

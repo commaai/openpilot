@@ -14,6 +14,7 @@ extern "C" {
 class FrameReader : protected FileReader {
 public:
   FrameReader(bool local_cache = false, int chunk_size = -1, int retries = 0);
+  void setEnableCuda(bool enable) { cuda_ = enable; }
   ~FrameReader();
   bool load(const std::string &url, std::atomic<bool> *abort = nullptr);
   bool get(int idx, uint8_t *rgb, uint8_t *yuv);
@@ -41,4 +42,5 @@ private:
   int key_frames_count_ = 0;
   bool valid_ = false;
   AVIOContext *avio_ctx_ = nullptr;
+  bool cuda_ = false;
 };

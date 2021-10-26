@@ -86,16 +86,25 @@ bool FrameReader::load(const std::string &url, std::atomic<bool> *abort) {
   // av_dump_format(pFormatCtx_, 0, url.c_str(), 0);
 
   auto pCodecCtxOrig = pFormatCtx_->streams[0]->codec;
-  auto pCodec = avcodec_find_decoder(pCodecCtxOrig->codec_id);
-  if (!pCodec) return false;
+  AVCodec *decodec = nullptr;
+  if (cuda_) {
+    if (pCodecCtxOrig->codec_id == AV_CODEC_ID_H264) {
+      decodec = avcodec_find_decoder_by_name("h264_cuvid");
+    } else if (pCodecCtxOrig->codec_id == AV_CODEC_ID_HEVC) {
+      decodec = avcodec_find_decoder_by_name("hevc_cuvid");
+    } else {
+      decodec = avcodec_find_decoder(pCodecCtxOrig->codec_id);
+    }
+  }
+  if (!decodec) return false;
 
-  pCodecCtx_ = avcodec_alloc_context3(pCodec);
+  pCodecCtx_ = avcodec_alloc_context3(decodec);
   int ret = avcodec_copy_context(pCodecCtx_, pCodecCtxOrig);
   if (ret != 0) return false;
 
   // pCodecCtx_->thread_count = 0;
   // pCodecCtx_->thread_type = FF_THREAD_FRAME;
-  ret = avcodec_open2(pCodecCtx_, pCodec, NULL);
+  ret = avcodec_open2(pCodecCtx_, decodec, NULL);
   if (ret < 0) return false;
 
   width = (pCodecCtxOrig->width + 3) & ~3;

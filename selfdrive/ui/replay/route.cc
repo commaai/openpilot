@@ -90,7 +90,7 @@ void Route::addFileToSegment(int n, const QString &file) {
 
 // class Segment
 
-Segment::Segment(int n, const SegmentFile &files, bool load_dcam, bool load_ecam, bool local_cache) : seg_num(n) {
+Segment::Segment(int n, const SegmentFile &files, bool load_dcam, bool load_ecam, bool local_cache, bool cuda) : seg_num(n), cuda_(cuda) {
   // [RoadCam, DriverCam, WideRoadCam, log]. fallback to qcamera/qlog
   const QString file_list[] = {
       files.road_cam.isEmpty() ? files.qcamera : files.road_cam,
@@ -117,6 +117,7 @@ void Segment::loadFile(int id, const std::string file, bool local_cache) {
   bool success = false;
   if (id < MAX_CAMERAS) {
     frames[id] = std::make_unique<FrameReader>(local_cache, 20 * 1024 * 1024, 3);
+    frames[id]->setEnableCuda(cuda_);
     success = frames[id]->load(file, &abort_);
   } else {
     log = std::make_unique<LogReader>(local_cache, -1, 3);
