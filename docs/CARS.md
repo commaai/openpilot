@@ -85,6 +85,7 @@ Community Maintained Cars and Features
 | Audi      | S3 2015                       | ACC + Lane Assist | Stock            | 0mph               | 0mph         |
 | Buick     | Regal 2018<sup>1</sup>        | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
 | Cadillac  | ATS 2018<sup>1</sup>          | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
+| Cadillac  | Escalade ESV 2016<sup>1</sup> | ACC + LKAS        | openpilot        | 0mph               | 7mph         |
 | Chevrolet | Malibu 2017<sup>1</sup>       | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
 | Chevrolet | Volt 2017-18<sup>1</sup>      | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
 | Chrysler  | Pacifica 2017-18              | Adaptive Cruise   | Stock            | 0mph               | 9mph         |
