@@ -42,8 +42,7 @@ git commit -a -m "openpilot v$VERSION release"
 
 # Build panda firmware
 pushd panda/
-#CERT=/data/pandaextra/certs/release RELEASE=1 scons -u .
-CERT=/data/pandaextra/certs/release scons -u .
+CERT=/data/pandaextra/certs/release RELEASE=1 scons -u .
 mv board/obj/panda.bin.signed /tmp/panda.bin.signed
 popd
 
@@ -96,12 +95,12 @@ git commit --amend -m "openpilot v$VERSION"
 if [ ! -z "$PUSH" ]; then
   echo "[-] pushing T=$SECONDS"
   git remote set-url origin git@github.com:commaai/openpilot.git
-  #git push -f origin $BRANCH
+  git push -f origin $BRANCH
 
   # Create dashcam
   git rm selfdrive/car/*/carcontroller.py
   git commit -m "create dashcam release from release"
-  #git push -f origin $BRANCH:dashcam3-staging
+  git push -f origin $BRANCH:dashcam3-staging
 fi
 
 echo "[-] done T=$SECONDS"
