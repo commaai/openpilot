@@ -14,9 +14,10 @@ from cereal.services import service_list
 from common.basedir import BASEDIR
 from common.timeout import Timeout
 from common.params import Params
+from selfdrive.controls.lib.events import EVENT_NAME
 from selfdrive.hardware import EON, TICI
 from selfdrive.loggerd.config import ROOT
-from selfdrive.test.helpers import set_params_enabled
+from selfdrive.test.helpers import set_params_enabled, release_only
 from tools.lib.logreader import LogReader
 
 # Baseline CPU usage by process
@@ -129,7 +130,7 @@ class TestOnroad(unittest.TestCase):
     if "DEBUG" in os.environ:
       segs = filter(lambda x: os.path.exists(os.path.join(x, "rlog.bz2")), Path(ROOT).iterdir())
       segs = sorted(segs, key=lambda x: x.stat().st_mtime)
-      cls.lr = list(LogReader(os.path.join(segs[-2], "rlog.bz2")))
+      cls.lr = list(LogReader(os.path.join(segs[-1], "rlog.bz2")))
       return
 
     os.environ['SKIP_FW_QUERY'] = "1"
@@ -226,14 +227,18 @@ class TestOnroad(unittest.TestCase):
       print(f"     {np.max(np.absolute([np.max(ts)/dt, np.min(ts)/dt]))} {np.std(ts)/dt}")
     print("="*67)
 
+  @release_only
   def test_startup(self):
     lr = self.lrs[0]
     startup_event = None
     for msg in lr:
       if msg.which() == "carEvents":
         for evt in msg.carEvents:
-          print(evt)
-    self.assertEqual(startup_event, car.CarEvent.EventName.startup)
+          if str(evt.name).startswith('startup'):
+            startup_event = str(evt.name)
+            break
+        break
+    self.assertEqual(startup_event, EVENT_NAME[car.CarEvent.EventName.startup])
 
 
 if __name__ == "__main__":
