@@ -94,7 +94,7 @@ mat4 get_fit_view_transform(float widget_aspect_ratio, float frame_aspect_ratio)
 CameraViewWidget::CameraViewWidget(VisionStreamType type, bool zoom, QWidget* parent) :
                                    stream_type(type), zoomed_view(zoom), QOpenGLWidget(parent) {
   setAttribute(Qt::WA_OpaquePaintEvent);
-  connect(this, &CameraViewWidget::vipcThreadConnected, this, &CameraViewWidget::vipcConnected);
+  connect(this, &CameraViewWidget::vipcThreadConnected, this, &CameraViewWidget::vipcConnected, Qt::BlockingQueuedConnection);
   connect(this, &CameraViewWidget::vipcThreadFrameReceived, this, &CameraViewWidget::vipcFrameReceived);
 }
 
@@ -113,8 +113,7 @@ void CameraViewWidget::initializeGL() {
 
   program = new QOpenGLShaderProgram(context());
   bool ret = program->addShaderFromSourceCode(QOpenGLShader::Vertex, frame_vertex_shader);
-  assert(ret);
-  ret = program->addShaderFromSourceCode(QOpenGLShader::Fragment, frame_fragment_shader);
+  ret = ret && program->addShaderFromSourceCode(QOpenGLShader::Fragment, frame_fragment_shader);
   assert(ret);
 
   program->link();
