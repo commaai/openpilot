@@ -66,11 +66,14 @@ pipeline {
         }
       }
       when {
-        branch 'devel-staging'
+        //branch 'devel-staging'
+        branch 'release-tests'
       }
       steps {
         phone_steps("eon-build", [
-          ["build release2-staging & dashcam-staging", "cd release && PUSH=1 ./build_release2.sh"],
+          ["build release2-staging & dashcam-staging", "cd release && ./build_release2.sh"],
+          ["copy tools/", "cp -r $SOURCE_DIR/tools $TEST_DIR"],
+          ["onroad tests", "cd selfdrive/test/ && ./test_onroad.py"],
         ])
       }
     }
@@ -96,6 +99,7 @@ pipeline {
       when {
         not {
           anyOf {
+            branch 'release-tests';
             branch 'master-ci'; branch 'devel'; branch 'devel-staging';
             branch 'release2'; branch 'release2-staging'; branch 'dashcam'; branch 'dashcam-staging';
             branch 'release3'; branch 'release3-staging'; branch 'dashcam3'; branch 'dashcam3-staging';
