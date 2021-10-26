@@ -45,7 +45,7 @@ SUPPORTED_FW_VERSIONS = {
   },
 
   # 2020 GENESIS G70
-    b'IK__ SCC F-CUP      1.00 1.02 96400-G9100\x18\x07\x06\x17\x12    ': {
+  b'IK__ SCC F-CUP      1.00 1.02 96400-G9100\x18\x07\x06\x17\x12    ': {
     "default config": b"\x00\x00\x00\x01\x00\x00",
     "tracks_enabled": b"\x00\x00\x00\x01\x00\x01",
   },
