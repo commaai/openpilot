@@ -10,3 +10,6 @@
 [submodule "rednose_repo"]
 	path = rednose_repo
 	url = ../../commaai/rednose.git
+[submodule "opendbc"]
+	path = opendbc
+	url = https://github.com/thekirkmiller/opendbc
