@@ -10,25 +10,6 @@
 #include "selfdrive/common/visionimg.h"
 #include "selfdrive/ui/ui.h"
 
-class VIPCClient : public QObject {
-  Q_OBJECT
-
-public:
-  VIPCClient(QObject *parent = nullptr) : QObject(parent) {}
-  std::atomic<bool> exit_ = false;
-
-public slots:
-  void receiveFrame(VisionStreamType);
-
-signals:
-  void connected(VisionIpcClient *);
-  void frameReceived(VisionBuf *);
-
-protected:
-  VisionStreamType stream_type_ = VISION_STREAM_RGB_BACK;
-  std::unique_ptr<VisionIpcClient> vipc_client_;
-};
-
 class CameraViewWidget : public QOpenGLWidget, protected QOpenGLFunctions {
   Q_OBJECT
 
@@ -43,18 +24,15 @@ signals:
   void clicked();
   void frameUpdated();
 
-public slots:
-  void vipcConnected(VisionIpcClient * vipc_client);
-  void frameReceived(VisionBuf *buf);
-
 protected:
   void paintGL() override;
   void initializeGL() override;
+  void resizeGL(int w, int h) override { updateFrameMat(w, h); }
   void showEvent(QShowEvent *event) override;
   void hideEvent(QHideEvent *event) override;
-  void resizeGL(int w, int h) override { updateFrameMat(w, h); }
   void mouseReleaseEvent(QMouseEvent *event) override { emit clicked(); }
   void updateFrameMat(int w, int h);
+  void vipcThread();
 
   bool zoomed_view;
   VisionBuf *latest_frame = nullptr;
@@ -62,12 +40,19 @@ protected:
   mat4 frame_mat;
   std::unique_ptr<EGLImageTexture> texture[UI_BUF_COUNT];
   QOpenGLShaderProgram *program;
-  VisionStreamType stream_type;
-  int stream_width = 0, stream_height = 0;
-  VIPCClient *vipc_client = nullptr;
-  QThread thread_;
   QColor bg = QColor("#000000");
+
+  int stream_width = 0, stream_height = 0;
+  std::atomic<VisionStreamType> stream_type;
+  std::atomic<bool> exit_ = false;
+  QThread *thread_ = nullptr;
+
+protected slots:
+  void vipcConnected(VisionIpcClient * vipc_client);
+  void vipcFrameReceived(VisionBuf *buf);
 
 Q_SIGNALS:
   void updateFrame(VisionStreamType);
+  void vipcThreadConnected(VisionIpcClient *);
+  void vipcThreadFrameReceived(VisionBuf *);
 };

@@ -94,17 +94,8 @@ mat4 get_fit_view_transform(float widget_aspect_ratio, float frame_aspect_ratio)
 CameraViewWidget::CameraViewWidget(VisionStreamType type, bool zoom, QWidget* parent) :
                                    stream_type(type), zoomed_view(zoom), QOpenGLWidget(parent) {
   setAttribute(Qt::WA_OpaquePaintEvent);
-  vipc_client = new VIPCClient();
-  vipc_client->moveToThread(&thread_);
-  connect(&thread_, &QThread::finished, vipc_client, &QObject::deleteLater);
-
-  qRegisterMetaType<VisionStreamType>("VisionStreamType");
-  connect(this, &QOpenGLWidget::frameSwapped, [=]() {
-    QMetaObject::invokeMethod(vipc_client, "receiveFrame", Qt::QueuedConnection, Q_ARG(VisionStreamType, stream_type));
-  });
-  connect(vipc_client, &VIPCClient::connected, this, &CameraViewWidget::vipcConnected);
-  connect(vipc_client, &VIPCClient::frameReceived, this, &CameraViewWidget::frameReceived);
-  thread_.start();
+  connect(this, &CameraViewWidget::vipcThreadConnected, this, &CameraViewWidget::vipcConnected);
+  connect(this, &CameraViewWidget::vipcThreadFrameReceived, this, &CameraViewWidget::vipcFrameReceived);
 }
 
 CameraViewWidget::~CameraViewWidget() {
@@ -115,9 +106,6 @@ CameraViewWidget::~CameraViewWidget() {
     glDeleteBuffers(1, &frame_ibo);
   }
   doneCurrent();
-  vipc_client->exit_ = true;
-  thread_.quit();
-  thread_.wait();
 }
 
 void CameraViewWidget::initializeGL() {
@@ -162,12 +150,19 @@ void CameraViewWidget::initializeGL() {
 
 void CameraViewWidget::showEvent(QShowEvent *event) {
   latest_frame = nullptr;
-  vipc_client->exit_ = false;
+  exit_ = false;
+  thread_ = new QThread();
+  connect(thread_, &QThread::started, [=](){vipcThread();});
+  connect(thread_, &QThread::finished, thread_, &QObject::deleteLater);
+  thread_->start();
+  
 }
 
 void CameraViewWidget::hideEvent(QHideEvent *event) {
   latest_frame = nullptr;
-  vipc_client->exit_ = true;
+  exit_ = true;
+  thread_->quit();
+  thread_->wait();
 }
 
 void CameraViewWidget::updateFrameMat(int w, int h) {
@@ -205,6 +200,7 @@ void CameraViewWidget::paintGL() {
     glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
     return;
   }
+  
 
   glViewport(0, 0, width(), height());
 
@@ -251,33 +247,34 @@ void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
   updateFrameMat(width(), height());
 }
 
-void CameraViewWidget::frameReceived(VisionBuf *buf) {
+void CameraViewWidget::vipcFrameReceived(VisionBuf *buf) {
   latest_frame = buf;
   update();
   emit frameUpdated();
 }
 
-void VIPCClient::receiveFrame(VisionStreamType type) {
-  if (!vipc_client_ || stream_type_ != type) {
-    stream_type_ = type;
-    vipc_client_.reset(new VisionIpcClient("camerad", stream_type_, true));
-  }
-
+void CameraViewWidget::vipcThread() {
+  VisionStreamType cur_stream_type = stream_type;
+  std::unique_ptr<VisionIpcClient> vipc_client_;
   while (!exit_) {
+    if (!vipc_client_ || cur_stream_type != stream_type) {
+      cur_stream_type = stream_type;
+      vipc_client_.reset(new VisionIpcClient("camerad", cur_stream_type, true));
+    }
+
     if (!vipc_client_->connected) {
       if (!vipc_client_->connect(false)) {
         QThread::msleep(100);
         continue;
       }
-      emit connected(vipc_client_.get());
+      emit vipcThreadConnected(vipc_client_.get());
     }
 
     VisionBuf *buf = vipc_client_->recv(nullptr, 1000);
-    if (!buf) {
+    if (buf) {
+      emit vipcThreadFrameReceived(buf);
+    } else {
       LOGE("visionIPC receive timeout");
-      continue;
     }
-    emit frameReceived(buf);
-    break;
   }
 }
