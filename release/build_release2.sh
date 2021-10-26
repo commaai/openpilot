@@ -52,8 +52,14 @@ export PYTHONPATH="/data/openpilot:/data/openpilot/pyextra"
 scons -j3
 
 # Run tests
-python selfdrive/manager/test/test_manager.py
+TEST_FILES="tools/"
+cd $SOURCE_DIR
+cp -pR --parents $TEST_FILES $BUILD_DIR/
+cd $BUILD_DIR
+RELEASE=1 selfdrive/test/test_onroad.py
+selfdrive/manager/test/test_manager.py
 selfdrive/car/tests/test_car_interfaces.py
+rm -rf $TEST_FILES
 
 # Ensure no submodules in release
 if test "$(git submodule--helper list | wc -l)" -gt "0"; then

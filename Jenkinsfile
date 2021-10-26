@@ -72,8 +72,6 @@ pipeline {
       steps {
         phone_steps("eon-build", [
           ["build release2-staging & dashcam-staging", "cd release && ./build_release2.sh"],
-          ["copy tools/", "cp -r $SOURCE_DIR/tools $TEST_DIR"],
-          ["onroad tests", "cd selfdrive/test/ && ./test_onroad.py"],
         ])
       }
     }
@@ -86,7 +84,8 @@ pipeline {
         }
       }
       when {
-        branch 'devel-staging'
+        //branch 'devel-staging'
+        branch 'release-tests'
       }
       steps {
         phone_steps("tici", [

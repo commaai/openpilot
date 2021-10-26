@@ -58,8 +58,9 @@ if TICI:
     "./camerad": 31.0,
     "./_ui": 21.0,
     "selfdrive.controls.plannerd": 11.7,
-    "selfdrive.locationd.paramsd": 5.0,
     "./_dmonitoringmodeld": 10.0,
+    "selfdrive.locationd.paramsd": 5.0,
+    "selfdrive.controls.radard": 3.6,
     "selfdrive.thermald.thermald": 1.5,
   })
 

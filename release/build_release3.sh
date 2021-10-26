@@ -6,7 +6,7 @@ DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
 
 cd $DIR
 
-BUILD_DIR=/data/openpilot
+BUILD_DIR=/data/openpilot_test
 SOURCE_DIR="$(git rev-parse --show-toplevel)"
 
 BRANCH=release3-staging
@@ -42,7 +42,8 @@ git commit -a -m "openpilot v$VERSION release"
 
 # Build panda firmware
 pushd panda/
-CERT=/data/pandaextra/certs/release RELEASE=1 scons -u .
+#CERT=/data/pandaextra/certs/release RELEASE=1 scons -u .
+CERT=/data/pandaextra/certs/release scons -u .
 mv board/obj/panda.bin.signed /tmp/panda.bin.signed
 popd
 
@@ -51,8 +52,22 @@ export PYTHONPATH="$BUILD_DIR"
 scons -j$(nproc)
 
 # Run tests
-#python selfdrive/manager/test/test_manager.py
+TEST_FILES="tools/"
+cd $SOURCE_DIR
+cp -pR --parents $TEST_FILES $BUILD_DIR/
+cd $BUILD_DIR
+RELEASE=1 selfdrive/test/test_onroad.py
+#selfdrive/manager/test/test_manager.py
 selfdrive/car/tests/test_car_interfaces.py
+rm -rf $TEST_FILES
+
+# Ensure no submodules in release
+if test "$(git submodule--helper list | wc -l)" -gt "0"; then
+  echo "submodules found:"
+  git submodule--helper list
+  exit 1
+fi
+git submodule status
 
 # Cleanup
 find . -name '*.a' -delete
@@ -81,12 +96,12 @@ git commit --amend -m "openpilot v$VERSION"
 if [ ! -z "$PUSH" ]; then
   echo "[-] pushing T=$SECONDS"
   git remote set-url origin git@github.com:commaai/openpilot.git
-  git push -f origin $BRANCH
+  #git push -f origin $BRANCH
 
   # Create dashcam
   git rm selfdrive/car/*/carcontroller.py
   git commit -m "create dashcam release from release"
-  git push -f origin $BRANCH:dashcam3-staging
+  #git push -f origin $BRANCH:dashcam3-staging
 fi
 
 echo "[-] done T=$SECONDS"
