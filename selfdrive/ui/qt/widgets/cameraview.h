@@ -22,7 +22,8 @@ public:
 
 signals:
   void clicked();
-  void frameUpdated();
+  void vipcThreadConnected(VisionIpcClient *);
+  void vipcThreadFrameReceived(VisionBuf *);
 
 protected:
   void paintGL() override;
@@ -50,8 +51,4 @@ protected:
 protected slots:
   void vipcConnected(VisionIpcClient * vipc_client);
   void vipcFrameReceived(VisionBuf *buf);
-
-Q_SIGNALS:
-  void vipcThreadConnected(VisionIpcClient *);
-  void vipcThreadFrameReceived(VisionBuf *);
 };
