@@ -45,7 +45,6 @@ protected:
 
   int stream_width = 0, stream_height = 0;
   std::atomic<VisionStreamType> stream_type;
-  std::unique_ptr<VisionIpcClient> vipc_client_;
   QThread *vipc_thread_ = nullptr;
 
 protected slots:

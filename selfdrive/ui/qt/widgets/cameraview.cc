@@ -244,11 +244,12 @@ void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
 void CameraViewWidget::vipcFrameReceived(VisionBuf *buf) {
   latest_frame = buf;
   update();
-  emit frameUpdated();
 }
 
 void CameraViewWidget::vipcThread() {
   VisionStreamType cur_stream_type = stream_type;
+  std::unique_ptr<VisionIpcClient> vipc_client_;
+
   while (!QThread::currentThread()->isInterruptionRequested()) {
     if (!vipc_client_ || cur_stream_type != stream_type) {
       cur_stream_type = stream_type;
