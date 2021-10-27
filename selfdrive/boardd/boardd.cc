@@ -268,16 +268,16 @@ bool send_panda_state(PubMaster *pm, Panda *panda, bool spoofing_started) {
     panda->set_safety_model(cereal::CarParams::SafetyModel::NO_OUTPUT);
   }
 
-  bool local_ignition = ((pandaState.ignition_line != 0) || (pandaState.ignition_can != 0));
+  bool ignition_local = ((pandaState.ignition_line != 0) || (pandaState.ignition_can != 0));
 
 #ifndef __x86_64__
-  bool power_save_desired = !local_ignition;
+  bool power_save_desired = !ignition_local;
   if (pandaState.power_save_enabled != power_save_desired) {
     panda->set_power_saving(power_save_desired);
   }
 
   // set safety mode to NO_OUTPUT when car is off. ELM327 is an alternative if we want to leverage athenad/connect
-  if (!local_ignition && (pandaState.safety_model != (uint8_t)(cereal::CarParams::SafetyModel::NO_OUTPUT))) {
+  if (!ignition_local && (pandaState.safety_model != (uint8_t)(cereal::CarParams::SafetyModel::NO_OUTPUT))) {
     panda->set_safety_model(cereal::CarParams::SafetyModel::NO_OUTPUT);
   }
 #endif
@@ -320,7 +320,7 @@ bool send_panda_state(PubMaster *pm, Panda *panda, bool spoofing_started) {
   }
   pm->send("pandaStates", msg);
 
-  return local_ignition;
+  return ignition_local;
 }
 
 void send_peripheral_state(PubMaster *pm, Panda *panda) {
@@ -498,11 +498,11 @@ void pigeon_thread(Panda *panda) {
 
   while (!do_exit && panda->connected) {
     bool need_reset = false;
-    bool local_ignition = ignition;
+    bool ignition_local = ignition;
     std::string recv = pigeon->receive();
 
     // Parse message header
-    if (local_ignition && recv.length() >= 3) {
+    if (ignition_local && recv.length() >= 3) {
       if (recv[0] == (char)ublox::PREAMBLE1 && recv[1] == (char)ublox::PREAMBLE2) {
         const char msg_cls = recv[2];
         uint64_t t = nanos_since_boot();
@@ -515,7 +515,7 @@ void pigeon_thread(Panda *panda) {
     // Check based on message frequency
     for (const auto& [msg_cls, max_dt] : cls_max_dt) {
       int64_t dt = (int64_t)nanos_since_boot() - (int64_t)last_recv_time[msg_cls];
-      if (ignition_last && local_ignition && dt > max_dt) {
+      if (ignition_last && ignition_local && dt > max_dt) {
         LOGD("ublox receive timeout, msg class: 0x%02x, dt %llu", msg_cls, dt);
         // TODO: turn on reset after verification of logs
         // need_reset = true;
@@ -523,7 +523,7 @@ void pigeon_thread(Panda *panda) {
     }
 
     // Check based on null bytes
-    if (local_ignition && recv.length() > 0 && recv[0] == (char)0x00) {
+    if (ignition_local && recv.length() > 0 && recv[0] == (char)0x00) {
       need_reset = true;
       LOGW("received invalid ublox message while onroad, resetting panda GPS");
     }
@@ -534,7 +534,7 @@ void pigeon_thread(Panda *panda) {
 
     // init pigeon on rising ignition edge
     // since it was turned off in low power mode
-    if((local_ignition && !ignition_last) || need_reset) {
+    if((ignition_local && !ignition_last) || need_reset) {
       pigeon->init();
 
       // Set receive times to current time
@@ -542,14 +542,14 @@ void pigeon_thread(Panda *panda) {
       for (const auto& [msg_cls, dt] : cls_max_dt) {
         last_recv_time[msg_cls] = t;
       }
-    } else if (!local_ignition && ignition_last) {
+    } else if (!ignition_local && ignition_last) {
       // power off on falling edge of ignition
       LOGD("powering off pigeon\n");
       pigeon->stop();
       pigeon->set_power(false);
     }
 
-    ignition_last = local_ignition;
+    ignition_last = ignition_local;
 
     // 10ms - 100 Hz
     util::sleep_for(10);
