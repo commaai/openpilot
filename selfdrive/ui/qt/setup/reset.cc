@@ -9,12 +9,15 @@
 #include "selfdrive/ui/qt/setup/reset.h"
 
 #define NVME "/dev/nvme0n1"
+#define SDCARD "/dev/mmcblk0"
 #define USERDATA "/dev/disk/by-partlabel/userdata"
 
 void Reset::doReset() {
-  // best effort to wipe nvme
+  // best effort to wipe nvme and sd card
   std::system("sudo umount " NVME);
   std::system("yes | sudo mkfs.ext4 " NVME);
+  std::system("sudo umount " SDCARD);
+  std::system("yes | sudo mkfs.ext4 " SDCARD);
 
   // we handle two cases here
   //  * user-prompted factory reset
