@@ -34,8 +34,9 @@ cdef class FrameReader:
 
   def get(self, id):
     addr = self.fr.get(id)
+    if not addr:
+      return None
     cdef cnp.ndarray dat = np.empty(self.rgbSize, dtype=np.uint8)
     cdef char[:] dat_view = dat
     memcpy(&dat_view[0], addr, self.rgbSize)
     return dat
-

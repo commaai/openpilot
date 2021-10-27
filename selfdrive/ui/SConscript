@@ -129,4 +129,4 @@ if maps:
   qt_env.Program("navd/_navd", navd_src, LIBS=qt_libs + ['common', 'json11'])
   Import('envCython')
   envCython.Program('logreader_pyx.so', 'replay/logreader_pyx.pyx', LIBS=envCython['LIBS'])
-  envCython.Program('framereader_pyx.so', 'replay/framereader_pyx.pyx', LIBS=envCython['LIBS'])
+  envCython.Program('framereader_pyx.so', 'replay/framereader_pyx.pyx', LIBS=envCython['LIBS'] + ['avutil', 'avcodec', 'avformat', 'libyuv'])
