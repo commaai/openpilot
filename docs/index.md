@@ -1,9 +1,7 @@
-# Welcome to the openpilot Documentation
-
-## General Documentation
+# openpilot Documentation
 
 ```{toctree}
-:caption: 'Contents'
+:caption: 'General'
 :maxdepth: 4
 
 CARS.md
@@ -20,9 +18,7 @@ SAFETY.md
 overview.rst
 ```
 
-
-
-## Source Code API Documentation
+## API Documentation
 
 - {ref}`genindex`
 - {ref}`modindex`
