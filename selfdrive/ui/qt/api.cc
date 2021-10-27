@@ -1,6 +1,6 @@
 #include "selfdrive/ui/qt/api.h"
 
-#include <sys/stat.h>
+#include <mutex>
 
 #include <openssl/bio.h>
 #include <openssl/pem.h>
@@ -20,16 +20,11 @@
 
 namespace CommaApi {
 
-const std::string &get_private_key() {
-  static std::string key;
-  if (key.empty()) {
-    key = util::read_file(Path::rsa_file());
-  }
-  return key;
-}
-
 QByteArray rsa_sign(const QByteArray &data) {
-  const std::string &key = get_private_key();
+  static std::string key;
+  static std::once_flag once_flag;
+  std::call_once(once_flag, [&] { key = util::read_file(Path::rsa_file()); });
+
   if (key.empty()) {
     qDebug() << "No RSA private key found, please run manager.py or registration.py";
     return {};
