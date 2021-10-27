@@ -8,7 +8,6 @@ from selfdrive.swaglog import cloudlog
 
 
 TESTED_BRANCHES = ['devel', 'release2-staging', 'release3-staging', 'dashcam-staging', 'release2', 'release3', 'dashcam']
-TESTED_BRANCHES += ['release-tests']
 
 def run_cmd(cmd: List[str]) -> str:
     return subprocess.check_output(cmd, encoding='utf8').strip()

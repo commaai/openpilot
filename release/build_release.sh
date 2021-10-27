@@ -105,7 +105,6 @@ git commit --amend -m "openpilot v$VERSION"
 
 if [ ! -z "$PUSH" ]; then
   echo "[-] pushing T=$SECONDS"
-  git remote set-url origin git@github.com:commaai/openpilot.git
   git push -f origin $RELEASE_BRANCH
 
   # Create dashcam
