@@ -40,14 +40,19 @@ class TestVehicleModel(unittest.TestCase):
     """Verifies that dyn_ss_sol mathes a simulation"""
     for u in np.linspace(1, 30, num=10):
       A, B = create_dyn_state_matrices(u, self.VM)
+
+      # Convert to discrete time system
       ss = StateSpace(A, B, np.eye(2), np.zeros((2, 1)))
       ss = ss.sample(0.001)
 
       for sa in np.linspace(math.radians(-20), math.radians(20), num=11):
+
+        # Simulate for 1 second
         x1 = np.zeros((2, 1))
         for _ in range(1000):
           x1 = ss.A @ x1 + ss.B * sa
 
+        # Compute steady state solution directly
         x2 = dyn_ss_sol(sa, u, self.VM)
 
         np.testing.assert_almost_equal(x1, x2, decimal=3)
