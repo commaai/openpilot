@@ -36,6 +36,7 @@ clean:
 			-not -path "*/.*" \
 			-not -path "./build/*" \
 			-not -path "./docs/*" \
+			-not -path "./xx/*" \
 			-exec cp --parents "{}" ./build/docs/ \;
 
 	@echo "Building rst files..."
