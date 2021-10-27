@@ -10,5 +10,8 @@ cdef extern from "selfdrive/ui/replay/framereader.h":
     bool load(string)
     int getRGBSize()
     int getYUVSize()
-    int getFrameCount()
+    int frame_count()
     void *get(int)
+    int width
+    int height
+

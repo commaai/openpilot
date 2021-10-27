@@ -21,6 +21,14 @@ cdef class FrameReader:
     return self.fr.load(file.encode())
 
   @property
+  def width(self):
+    return self.fr.width
+
+  @property
+  def height(self):
+    return self.fr.height
+
+  @property
   def rgbSize(self):
     return self.fr.getRGBSize()
   
@@ -29,8 +37,8 @@ cdef class FrameReader:
     return self.fr.getYUVSize()
   
   @property
-  def frameCount(self):
-    return self.fr.getFrameCount()
+  def frame_count(self):
+    return self.fr.frame_count()
 
   def get(self, id):
     addr = self.fr.get(id)

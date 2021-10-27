@@ -80,7 +80,7 @@ TEST_CASE("Segment") {
     REQUIRE(std::is_sorted(segment.log->events.begin(), segment.log->events.end(), Event::lessThan()));
 
     auto &fr = segment.frames[RoadCam];
-    REQUIRE(fr->getFrameCount() == 1200);
+    REQUIRE(fr->frame_count() == 1200);
     std::unique_ptr<uint8_t[]> rgb_buf = std::make_unique<uint8_t[]>(fr->getRGBSize());
     std::unique_ptr<uint8_t[]> yuv_buf = std::make_unique<uint8_t[]>(fr->getYUVSize());
     // sequence get 50 frames

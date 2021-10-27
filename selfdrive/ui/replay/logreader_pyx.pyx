@@ -17,4 +17,4 @@ cdef class LogReader:
     del self.lr
 
   def load(self, logfile):
-    return self.lr.load(logfile)
+    return self.lr.load(logfile.encode())

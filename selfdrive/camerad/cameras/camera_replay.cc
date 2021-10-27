@@ -50,7 +50,7 @@ void run_camera(CameraState *s) {
   std::unique_ptr<uint8_t[]> rgb_buf = std::make_unique<uint8_t[]>(s->frame->getRGBSize());
   std::unique_ptr<uint8_t[]> yuv_buf = std::make_unique<uint8_t[]>(s->frame->getYUVSize());
   while (!do_exit) {
-    if (stream_frame_id == s->frame->getFrameCount()) {
+    if (stream_frame_id == s->frame->frame_count()) {
       // loop stream
       stream_frame_id = 0;
     }

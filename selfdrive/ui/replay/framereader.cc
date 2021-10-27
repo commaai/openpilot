@@ -130,7 +130,7 @@ bool FrameReader::load(const std::string &url, std::atomic<bool> *abort) {
 }
 
 bool FrameReader::get(int idx, uint8_t *rgb, uint8_t *yuv) {
-  assert(rgb != nullptr && yuv != nullptr);
+  assert(rgb != nullptr || yuv != nullptr);
   if (!valid_ || idx < 0 || idx >= frames_.size()) {
     return false;
   }
