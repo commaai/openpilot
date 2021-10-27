@@ -70,7 +70,7 @@ pipeline {
       }
       steps {
         phone_steps("eon-build", [
-          ["build release2-staging & dashcam-staging", "cd release && PUSH=1 ./build_release.sh"],
+          ["build release2-staging & dashcam-staging", "PUSH=1 $SOURCE_DIR/release/build_release.sh"],
         ])
       }
     }
