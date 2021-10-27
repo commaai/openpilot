@@ -110,6 +110,10 @@ bool FrameReader::load(const std::string &url, std::atomic<bool> *abort) {
                             SWS_FAST_BILINEAR, NULL, NULL, NULL);
   if (!yuv_sws_ctx_) return false;
 
+  // init buffers
+  yuv_buf_.resize(getYUVSize());
+  rgb_buf_.resize(getRGBSize());
+
   frames_.reserve(60 * 20);  // 20fps, one minute
   while (!(abort && *abort)) {
     Frame &frame = frames_.emplace_back();

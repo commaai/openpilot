@@ -41,4 +41,5 @@ private:
   int key_frames_count_ = 0;
   bool valid_ = false;
   AVIOContext *avio_ctx_ = nullptr;
+  std::vector<uint8_t> yuv_buf_, rgb_buf_;
 };
