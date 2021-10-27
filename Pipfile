@@ -76,6 +76,7 @@ parameterized = "*"
 ft4222 = "*"
 hypothesis = "*"
 inputs = "*"
+myst-parser = "*"
 
 [packages]
 atomicwrites = "*"
