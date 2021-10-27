@@ -18,7 +18,7 @@ from selfdrive.test.openpilotci import BASE_URL, get_url
 from selfdrive.test.process_replay.compare_logs import compare_logs, save_log
 from selfdrive.test.process_replay.test_processes import format_diff
 from selfdrive.version import get_git_commit
-from selfdrive.ui.replay.framereader_pyx import FrameReader
+from selfdrive.ui.replay.framereader_pyx import FrameReader # pylint: disable=no-name-in-module, import-error
 from tools.lib.logreader import LogReader
 
 TEST_ROUTE = "99c94dc769b5d96e|2019-08-03--14-19-59"
