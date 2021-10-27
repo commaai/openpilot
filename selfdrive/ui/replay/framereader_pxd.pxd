@@ -8,3 +8,7 @@ cdef extern from "selfdrive/ui/replay/framereader.h":
   cdef cppclass FrameReader:
     FrameReader()
     bool load(string)
+    int getRGBSize()
+    int getYUVSize()
+    int getFrameCount()
+    void *get(int)
