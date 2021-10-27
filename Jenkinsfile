@@ -66,13 +66,11 @@ pipeline {
         }
       }
       when {
-        //branch 'devel-staging'
-        branch 'release-tests'
+        branch 'devel-staging'
       }
       steps {
         phone_steps("eon-build", [
-          //["build release2-staging & dashcam-staging", "cd release && PUSH=1 ./build_release.sh"],
-          ["build release2-staging & dashcam-staging", "$SOURCE_DIR/release/build_release.sh"],
+          ["build release2-staging & dashcam-staging", "cd release && PUSH=1 ./build_release.sh"],
         ])
       }
     }
@@ -85,13 +83,11 @@ pipeline {
         }
       }
       when {
-        //branch 'devel-staging'
-        branch 'release-tests'
+        branch 'devel-staging'
       }
       steps {
         phone_steps("tici", [
-          //["build release3-staging & dashcam3-staging", "PUSH=1 $SOURCE_DIR/release/build_release.sh"],
-          ["build release3-staging & dashcam3-staging", "$SOURCE_DIR/release/build_release.sh"],
+          ["build release3-staging & dashcam3-staging", "PUSH=1 $SOURCE_DIR/release/build_release.sh"],
         ])
       }
     }
@@ -100,7 +96,6 @@ pipeline {
       when {
         not {
           anyOf {
-            branch 'release-tests';
             branch 'master-ci'; branch 'devel'; branch 'devel-staging';
             branch 'release2'; branch 'release2-staging'; branch 'dashcam'; branch 'dashcam-staging';
             branch 'release3'; branch 'release3-staging'; branch 'dashcam3'; branch 'dashcam3-staging';
