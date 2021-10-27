@@ -6,7 +6,7 @@ DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
 
 cd $DIR
 
-BUILD_DIR=/data/openpilot
+BUILD_DIR=/data/openpilot_testing
 SOURCE_DIR="$(git rev-parse --show-toplevel)"
 
 if [ -f /TICI ]; then
@@ -50,26 +50,18 @@ echo "#define COMMA_VERSION \"$VERSION-release\"" > selfdrive/common/version.h
 echo "[-] committing version $VERSION T=$SECONDS"
 git add -f .
 git commit -a -m "openpilot v$VERSION release"
+git branch --set-upstream-to=origin/$RELEASE_BRANCH
 
 # Build panda firmware
 pushd panda/
-CERT=/data/pandaextra/certs/release RELEASE=1 scons -u .
+#CERT=/data/pandaextra/certs/release RELEASE=1 scons -u .
+CERT=/data/pandaextra/certs/release scons -u .
 mv board/obj/panda.bin.signed /tmp/panda.bin.signed
 popd
 
 # Build
 export PYTHONPATH="$BUILD_DIR"
 scons -j$(nproc)
-
-# Run tests
-TEST_FILES="tools/"
-cd $SOURCE_DIR
-cp -pR -n --parents $TEST_FILES $BUILD_DIR/
-cd $BUILD_DIR
-RELEASE=1 selfdrive/test/test_onroad.py
-#selfdrive/manager/test/test_manager.py
-selfdrive/car/tests/test_car_interfaces.py
-rm -rf $TEST_FILES
 
 # Ensure no submodules in release
 if test "$(git submodule--helper list | wc -l)" -gt "0"; then
@@ -103,6 +95,16 @@ touch prebuilt
 # Add built files to git
 git add -f .
 git commit --amend -m "openpilot v$VERSION"
+
+# Run tests
+TEST_FILES="tools/"
+cd $SOURCE_DIR
+cp -pR -n --parents $TEST_FILES $BUILD_DIR/
+cd $BUILD_DIR
+RELEASE=1 selfdrive/test/test_onroad.py
+#selfdrive/manager/test/test_manager.py
+selfdrive/car/tests/test_car_interfaces.py
+rm -rf $TEST_FILES
 
 if [ ! -z "$PUSH" ]; then
   echo "[-] pushing T=$SECONDS"
