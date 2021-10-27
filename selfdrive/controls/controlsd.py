@@ -487,11 +487,8 @@ class Controls:
     lat_plan = self.sm['lateralPlan']
     long_plan = self.sm['longitudinalPlan']
 
-    localizer = self.sm['liveLocationKalman']
-    if localizer.orientationNED.valid:
-      roll = localizer.orientationNED.value[0]
-    else:
-      roll = 0
+    orientation = self.sm['liveLocationKalman'].orientationNED
+    roll = orientation.value[0] if orientation.valid else 0
 
     actuators = car.CarControl.Actuators.new_message()
     actuators.longControlState = self.LoC.long_control_state
@@ -635,11 +632,10 @@ class Controls:
 
     # Curvature & Steering angle
     params = self.sm['liveParameters']
-    localizer = self.sm['liveLocationKalman']
-    if localizer.orientationNED.valid:
-      roll = localizer.orientationNED.value[0]
-    else:
-      roll = 0
+
+    orientation = self.sm['liveLocationKalman'].orientationNED
+    roll = orientation.value[0] if orientation.valid else 0
+
     steer_angle_without_offset = math.radians(CS.steeringAngleDeg - params.angleOffsetDeg)
     curvature = -self.VM.calc_curvature(steer_angle_without_offset, CS.vEgo, roll)
 
