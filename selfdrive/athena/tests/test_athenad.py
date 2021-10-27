@@ -25,7 +25,7 @@ class TestAthenadMethods(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
     cls.SOCKET_PORT = 45454
-    athenad.PARAMS = MockParams()
+    athenad.params = MockParams()
     athenad.ROOT = tempfile.mkdtemp()
     athenad.SWAGLOG_DIR = swaglog.SWAGLOG_DIR = tempfile.mkdtemp()
     athenad.Api = MockApi
