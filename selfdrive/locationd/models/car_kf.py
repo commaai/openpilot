@@ -5,6 +5,7 @@ from typing import Any, Dict
 
 import numpy as np
 
+from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
 from selfdrive.locationd.models.constants import ObservationKind
 from selfdrive.swaglog import cloudlog
 
@@ -18,7 +19,6 @@ else:
 
 
 i = 0
-ACCELERATION_DUE_TO_GRAVITY = 9.8
 
 def _slice(n):
   global i
@@ -92,7 +92,7 @@ class CarKalman(KalmanFilter):
   def generate_code(generated_dir):
     dim_state = CarKalman.initial_x.shape[0]
     name = CarKalman.name
-    
+
     # vehicle models comes from The Science of Vehicle Dynamics: Handling, Braking, and Ride of Road and Race Cars
     # Model used is in 6.15 with formula from 6.198
 

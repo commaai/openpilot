@@ -5,7 +5,7 @@ Dynamic bicycle model from "The Science of Vehicle Dynamics (2014), M. Guiggiani
 The state is x = [v, r]^T
 with v lateral speed [m/s], and r rotational speed [rad/s]
 
-The input u is the steering angle [rad]
+The input u is the steering angle [rad], and roll [rad]
 
 The system is defined by
 x_dot = A*x + B*u
@@ -18,6 +18,8 @@ import numpy as np
 from numpy.linalg import solve
 
 from cereal import car
+
+ACCELERATION_DUE_TO_GRAVITY = 9.8
 
 class VehicleModel:
   def __init__(self, CP: car.CarParams):
@@ -43,7 +45,7 @@ class VehicleModel:
     self.cR = stiffness_factor * self.cR_orig
     self.sR = steer_ratio
 
-  def steady_state_sol(self, sa: float, u: float) -> np.ndarray:
+  def steady_state_sol(self, sa: float, u: float, roll: float) -> np.ndarray:
     """Returns the steady state solution.
 
     If the speed is too low we can't use the dynamic model (tire slip is undefined),
@@ -57,7 +59,7 @@ class VehicleModel:
       2x1 matrix with steady state solution (lateral speed, rotational speed)
     """
     if u > 0.1:
-      return dyn_ss_sol(sa, u, self)
+      return dyn_ss_sol(sa, u, roll, self)
     else:
       return kin_ss_sol(sa, u, self)
 
@@ -156,6 +158,7 @@ class VehicleModel:
       """
       return self.calc_curvature_old(sa, u) * u
 
+
 def kin_ss_sol(sa: float, u: float, VM: VehicleModel) -> np.ndarray:
   """Calculate the steady state solution at low speeds
   At low speeds the tire slip is undefined, so a kinematic
@@ -183,7 +186,7 @@ def create_dyn_state_matrices(u: float, VM: VehicleModel) -> Tuple[np.ndarray, n
     VM: Vehicle model
 
   Returns:
-    A tuple with the 2x2 A matrix, and 2x1 B matrix
+    A tuple with the 2x2 A matrix, and 2x2 B matrix
 
   Parameters in the vehicle model:
     cF: Tire stiffness Front [N/rad]
@@ -196,17 +199,23 @@ def create_dyn_state_matrices(u: float, VM: VehicleModel) -> Tuple[np.ndarray, n
     chi: Steer ratio rear [-]
   """
   A = np.zeros((2, 2))
-  B = np.zeros((2, 1))
+  B = np.zeros((2, 2))
   A[0, 0] = - (VM.cF + VM.cR) / (VM.m * u)
   A[0, 1] = - (VM.cF * VM.aF - VM.cR * VM.aR) / (VM.m * u) - u
   A[1, 0] = - (VM.cF * VM.aF - VM.cR * VM.aR) / (VM.j * u)
   A[1, 1] = - (VM.cF * VM.aF**2 + VM.cR * VM.aR**2) / (VM.j * u)
+
+  # Steering input
   B[0, 0] = (VM.cF + VM.chi * VM.cR) / VM.m / VM.sR
   B[1, 0] = (VM.cF * VM.aF - VM.chi * VM.cR * VM.aR) / VM.j / VM.sR
+
+  # Roll input
+  B[0, 1] = ACCELERATION_DUE_TO_GRAVITY
+
   return A, B
 
 
-def dyn_ss_sol(sa: float, u: float, VM: VehicleModel) -> np.ndarray:
+def dyn_ss_sol(sa: float, u: float, roll: float, VM: VehicleModel) -> np.ndarray:
   """Calculate the steady state solution when x_dot = 0,
   Ax + Bu = 0 => x = -A^{-1} B u
 
@@ -219,7 +228,8 @@ def dyn_ss_sol(sa: float, u: float, VM: VehicleModel) -> np.ndarray:
     2x1 matrix with steady state solution
   """
   A, B = create_dyn_state_matrices(u, VM)
-  return -solve(A, B) * sa
+  inp = np.array([[sa], [roll]])
+  return -solve(A, B) @ inp
 
 
 def calc_slip_factor(VM):
