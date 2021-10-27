@@ -36,7 +36,7 @@ git checkout -f -B $RELEASE_BRANCH
 echo "[-] copying files T=$SECONDS"
 cd $SOURCE_DIR
 cp -pR --parents $(cat release/files_common) $BUILD_DIR/
-cp -pR --parents $(cat $FILE_SRC) $BUILD_DIR/
+cp -pR --parents $(cat $FILES_SRC) $BUILD_DIR/
 
 # in the directory
 cd $BUILD_DIR
