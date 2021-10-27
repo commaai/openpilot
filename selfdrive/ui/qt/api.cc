@@ -20,7 +20,7 @@
 
 namespace CommaApi {
 
-const std::string& get_private_key() {
+const std::string &get_private_key() {
   static std::string key;
   static time_t mtime = 0;
 
