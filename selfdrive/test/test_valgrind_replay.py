@@ -4,6 +4,7 @@ import time
 import unittest
 import subprocess
 import signal
+import bz2
 
 if "CI" in os.environ:
   def tqdm(x):
@@ -13,7 +14,8 @@ else:
 
 import cereal.messaging as messaging
 from collections import namedtuple
-from tools.lib.logreader import LogReader
+from tools.lib.filereader import FileReader
+from selfdrive.ui.replay.logreader_pyx import LogReader # pylint: disable=no-name-in-module, import-error
 from selfdrive.test.openpilotci import get_url
 from common.basedir import BASEDIR
 
@@ -75,9 +77,9 @@ class TestValgrind(unittest.TestCase):
     pm = messaging.PubMaster(pub_sockets)
     sm = messaging.SubMaster(sub_sockets)
 
-    print("Sorting logs")
-    all_msgs = sorted(logreader, key=lambda msg: msg.logMonoTime)
-    pub_msgs = [msg for msg in all_msgs if msg.which() in list(config.pub_sub.keys())]
+    #print("Sorting logs")
+    #all_msgs = sorted(logreader, key=lambda msg: msg.logMonoTime)
+    #pub_msgs = [msg for msg in all_msgs if msg.which() in list(config.pub_sub.keys())]
 
     thread = threading.Thread(target=self.valgrindlauncher, args=(config.command, config.path))
     thread.daemon = True
@@ -86,7 +88,7 @@ class TestValgrind(unittest.TestCase):
     while not all(pm.all_readers_updated(s) for s in config.pub_sub.keys()):
       time.sleep(0)
 
-    for msg in tqdm(pub_msgs):
+    for msg in tqdm(logreader):
       pm.send(msg.which(), msg.as_builder())
       if config.wait_for_response:
         sm.update(100)
@@ -99,10 +101,16 @@ class TestValgrind(unittest.TestCase):
     for cfg in CONFIGS:
       self.done = False
       r, n = cfg.segment.rsplit("--", 1)
-      lr = LogReader(get_url(r, n))
-      self.replay_process(cfg, lr)
-      time.sleep(1)  # Wait for the logs to get written
-      self.assertFalse(self.leak)
+      lr = LogReader()
+      lr.set_allow(cfg.pub_sub.keys())
+      
+      with FileReader(get_url(r, n)) as f:
+        dat = f.read()
+        lr.load(bz2.decompress(dat))
+        print("here")
+        self.replay_process(cfg, lr)
+        time.sleep(1)  # Wait for the logs to get written
+        self.assertFalse(self.leak)
 
 if __name__ == "__main__":
   unittest.main()

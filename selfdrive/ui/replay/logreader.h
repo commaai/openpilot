@@ -45,6 +45,9 @@ public:
   capnp::FlatArrayMessageReader reader;
   capnp::DynamicStruct::Reader dynamic_reader;
   kj::ArrayPtr<const capnp::word> words;
+  std::vector<char> getMsg() {
+    return {};
+  }
   bool frame;
 };
 

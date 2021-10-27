@@ -1,11 +1,15 @@
 # distutils: language = c++
 # cython: language_level = 3
 from libcpp cimport bool
+from libcpp.vector cimport vector
 from libcpp.string cimport string
-from logreader_pxd cimport LogReader as cpp_LogReader
 
-import os
-from common.basedir import BASEDIR
+cdef extern from "selfdrive/ui/replay/logreader.h":
+  cdef cppclass cpp_LogReader "LogReader":
+    cpp_LogReader()
+    bool load(string)
+    void setAllow(vector[string])
+
 
 cdef class LogReader:
   cdef cpp_LogReader* lr
@@ -16,5 +20,9 @@ cdef class LogReader:
   def __dealloc__(self):
     del self.lr
 
+  def set_allow(self, allow_list):
+    print([x.encode() for x in allow_list])
+    self.lr.setAllow([x.encode() for x in allow_list])
+
   def load(self, logfile):
-    return self.lr.load(logfile.encode())
+    return self.lr.load(logfile)

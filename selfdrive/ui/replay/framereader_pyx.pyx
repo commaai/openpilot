@@ -6,7 +6,18 @@ import numpy as np
 cimport numpy as cnp
 from cython.view cimport array
 from libc.string cimport memcpy
-from framereader_pxd cimport FrameReader as cpp_FrameReader
+
+cdef extern from "selfdrive/ui/replay/framereader.h":
+  cdef cppclass cpp_FrameReader "FrameReader":
+    cpp_FrameReader()
+    bool load(string)
+    int getRGBSize()
+    int getYUVSize()
+    int frame_count()
+    void *get(int)
+    void *get_yuv(int)
+    int width
+    int height
 
 cdef class FrameReader:
   cdef cpp_FrameReader* fr

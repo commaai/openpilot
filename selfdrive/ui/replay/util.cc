@@ -164,32 +164,6 @@ bool httpMultiPartDownload(const std::string &url, std::ostream &os, int parts, 
   return complete == parts;
 }
 
-std::string decompressBZ2(const std::string &in) {
-  if (in.empty()) return {};
-
-  bz_stream strm = {};
-  int bzerror = BZ2_bzDecompressInit(&strm, 0, 0);
-  assert(bzerror == BZ_OK);
-
-  strm.next_in = (char *)in.data();
-  strm.avail_in = in.size();
-  std::string out(in.size() * 5, '\0');
-  do {
-    strm.next_out = (char *)(&out[strm.total_out_lo32]);
-    strm.avail_out = out.size() - strm.total_out_lo32;
-    bzerror = BZ2_bzDecompress(&strm);
-    if (bzerror == BZ_OK && strm.avail_in > 0 && strm.avail_out == 0) {
-      out.resize(out.size() * 2);
-    }
-  } while (bzerror == BZ_OK);
-
-  BZ2_bzDecompressEnd(&strm);
-  if (bzerror == BZ_STREAM_END) {
-    out.resize(strm.total_out_lo32);
-    return out;
-  }
-  return {};
-}
 
 void precise_nano_sleep(long sleep_ns) {
   const long estimate_ns = 1 * 1e6;  // 1ms
