@@ -1,6 +1,7 @@
 Version 0.8.11 (2021-XX-XX)
 ========================
  * Cadillac Escalade ESV 2016 support thanks to Gibby!
+ * Kia Niro EV 2022 support thanks to sunnyhaibin!
 
 Version 0.8.10 (2021-11-01)
 ========================
