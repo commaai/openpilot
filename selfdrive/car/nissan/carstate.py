@@ -185,7 +185,8 @@ class CarState(CarStateBase):
     elif CP.carFingerprint in [CAR.LEAF, CAR.LEAF_IC]:
       signals += [
         ("BRAKE_PEDAL", "BRAKE_PEDAL", 0),
-
+        ("USER_BRAKE_PRESSED", "CRUISE_THROTTLE", 1),
+        
         ("GAS_PEDAL", "CRUISE_THROTTLE", 0),
         ("CRUISE_AVAILABLE", "CRUISE_THROTTLE", 0),
         ("SPEED_MPH", "HUD_SETTINGS", 0),
