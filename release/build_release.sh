@@ -30,7 +30,8 @@ mkdir -p $BUILD_DIR
 cd $BUILD_DIR
 git init
 git remote add origin git@github.com:commaai/openpilot.git
-git checkout -f -B $RELEASE_BRANCH
+git fetch origin $RELEASE_BRANCH
+git checkout --orphan $RELEASE_BRANCH
 
 # do the files copy
 echo "[-] copying files T=$SECONDS"
