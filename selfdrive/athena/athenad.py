@@ -44,6 +44,8 @@ RETRY_DELAY = 10  # seconds
 MAX_RETRY_COUNT = 30  # Try for at most 5 minutes if upload fails immediately
 WS_FRAME_SIZE = 4096
 
+PARAMS = Params()
+
 dispatcher["echo"] = lambda s: s
 recv_queue: Any = queue.Queue()
 send_queue: Any = queue.Queue()
@@ -111,6 +113,7 @@ def upload_handler(end_event):
 
     try:
       cur_upload_items[tid] = upload_queue.get(timeout=1)._replace(current=True)
+
       if cur_upload_items[tid].id in cancelled_uploads:
         cancelled_uploads.remove(cur_upload_items[tid].id)
         continue
@@ -120,6 +123,7 @@ def upload_handler(end_event):
           cur_upload_items[tid] = cur_upload_items[tid]._replace(progress=cur / sz if sz else 1)
 
         _do_upload(cur_upload_items[tid], cb)
+        cache_upload_queue(upload_queue)
       except (requests.exceptions.Timeout, requests.exceptions.ConnectionError, requests.exceptions.SSLError) as e:
         cloudlog.warning(f"athena.upload_handler.retry {e} {cur_upload_items[tid]}")
 
@@ -131,6 +135,8 @@ def upload_handler(end_event):
             current=False
           )
           upload_queue.put_nowait(item)
+          cache_upload_queue(upload_queue)
+
           cur_upload_items[tid] = None
 
           for _ in range(RETRY_DELAY):
@@ -188,7 +194,7 @@ def setNavDestination(latitude=0, longitude=0):
     "latitude": latitude,
     "longitude": longitude,
   }
-  Params().put("NavDestination", json.dumps(destination))
+  PARAMS.put("NavDestination", json.dumps(destination))
 
   return {"success": 1}
 
@@ -246,6 +252,7 @@ def uploadFileToUrl(fn, url, headers):
   item = item._replace(id=upload_id)
 
   upload_queue.put_nowait(item)
+  cache_upload_queue(upload_queue)
 
   return {"enqueued": 1, "item": item._asdict()}
 
@@ -278,8 +285,7 @@ def startLocalProxy(global_end_event, remote_ws_uri, local_port):
 
     cloudlog.debug("athena.startLocalProxy.starting")
 
-    params = Params()
-    dongle_id = params.get("DongleId").decode('utf8')
+    dongle_id = PARAMS.get("DongleId").decode('utf8')
     identity_token = Api(dongle_id).get_token()
     ws = create_connection(remote_ws_uri,
                            cookie="jwt=" + identity_token,
@@ -316,7 +322,7 @@ def getPublicKey():
 
 @dispatcher.add_method
 def getSshAuthorizedKeys():
-  return Params().get("GithubSshKeys", encoding='utf8') or ''
+  return PARAMS.get("GithubSshKeys", encoding='utf8') or ''
 
 
 @dispatcher.add_method
@@ -486,7 +492,7 @@ def ws_recv(ws, end_event):
         recv_queue.put_nowait(data)
       elif opcode == ABNF.OPCODE_PING:
         last_ping = int(sec_since_boot() * 1e9)
-        Params().put("LastAthenaPingTime", str(last_ping))
+        PARAMS.put("LastAthenaPingTime", str(last_ping))
     except WebSocketTimeoutException:
       ns_since_last_ping = int(sec_since_boot() * 1e9) - last_ping
       if ns_since_last_ping > RECONNECT_TIMEOUT_S * 1e9:
@@ -520,9 +526,20 @@ def backoff(retries):
   return random.randrange(0, min(128, int(2 ** retries)))
 
 
+def init_upload_queue(upload_queue):
+  upload_queue_json = PARAMS.get("AthenadUploadQueue")
+  for item in json.loads(upload_queue_json):
+    upload_queue.put(UploadItem(**item))
+
+
+def cache_upload_queue(upload_queue):
+  items = [i._asdict() for i in upload_queue.queue if i.id not in cancelled_uploads] 
+  PARAMS.put("AthenadUploadQueue", json.dumps(items))
+
+
 def main():
-  params = Params()
-  dongle_id = params.get("DongleId", encoding='utf-8')
+  dongle_id = PARAMS.get("DongleId", encoding='utf-8')
+  init_upload_queue(upload_queue)
 
   ws_uri = ATHENA_HOST + "/ws/v2/" + dongle_id
   api = Api(dongle_id)
@@ -536,7 +553,7 @@ def main():
                              enable_multithread=True,
                              timeout=30.0)
       cloudlog.event("athenad.main.connected_ws", ws_uri=ws_uri)
-      params.delete("PrimeRedirected")
+      PARAMS.delete("PrimeRedirected")
 
       conn_retries = 0
       cur_upload_items.clear()
@@ -546,23 +563,23 @@ def main():
       break
     except (ConnectionError, TimeoutError, WebSocketException):
       conn_retries += 1
-      params.delete("PrimeRedirected")
-      params.delete("LastAthenaPingTime")
+      PARAMS.delete("PrimeRedirected")
+      PARAMS.delete("LastAthenaPingTime")
     except socket.timeout:
       try:
         r = requests.get("http://api.commadotai.com/v1/me", allow_redirects=False,
                          headers={"User-Agent": f"openpilot-{version}"}, timeout=15.0)
         if r.status_code == 302 and r.headers['Location'].startswith("http://u.web2go.com"):
-          params.put_bool("PrimeRedirected", True)
+          PARAMS.put_bool("PrimeRedirected", True)
       except Exception:
         cloudlog.exception("athenad.socket_timeout.exception")
-      params.delete("LastAthenaPingTime")
+      PARAMS.delete("LastAthenaPingTime")
     except Exception:
       cloudlog.exception("athenad.main.exception")
 
       conn_retries += 1
-      params.delete("PrimeRedirected")
-      params.delete("LastAthenaPingTime")
+      PARAMS.delete("PrimeRedirected")
+      PARAMS.delete("LastAthenaPingTime")
 
     time.sleep(backoff(conn_retries))
 
