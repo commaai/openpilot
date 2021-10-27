@@ -25,7 +25,7 @@ class TestAthenadMethods(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
     cls.SOCKET_PORT = 45454
-    athenad.params = MockParams()
+    athenad.Params = MockParams
     athenad.ROOT = tempfile.mkdtemp()
     athenad.SWAGLOG_DIR = swaglog.SWAGLOG_DIR = tempfile.mkdtemp()
     athenad.Api = MockApi
@@ -256,11 +256,11 @@ class TestAthenadMethods(unittest.TestCase):
 
     # serialize item
     athenad.upload_queue.put_nowait(item)
-    athenad.cache_upload_queue(athenad.upload_queue)
+    athenad.UploadQueueCache.cache(athenad.upload_queue)
 
     # deserialize item 
     athenad.upload_queue.queue.clear() 
-    athenad.init_upload_queue(athenad.upload_queue) 
+    athenad.UploadQueueCache.initialize(athenad.upload_queue) 
 
     self.assertEqual(athenad.upload_queue.qsize(), 1)
     self.assertDictEqual(athenad.upload_queue.queue[-1]._asdict(), item._asdict())

@@ -44,8 +44,6 @@ RETRY_DELAY = 10  # seconds
 MAX_RETRY_COUNT = 30  # Try for at most 5 minutes if upload fails immediately
 WS_FRAME_SIZE = 4096
 
-params = Params()
-
 dispatcher["echo"] = lambda s: s
 recv_queue: Any = queue.Queue()
 send_queue: Any = queue.Queue()
@@ -56,6 +54,24 @@ cancelled_uploads: Any = set()
 UploadItem = namedtuple('UploadItem', ['path', 'url', 'headers', 'created_at', 'id', 'retry_count', 'current', 'progress'], defaults=(0, False, 0))
 
 cur_upload_items = {}
+
+
+class UploadQueueCache():
+  params = Params()
+
+  @staticmethod
+  def initialize(upload_queue):
+    upload_queue_json = UploadQueueCache.params.get("AthenadUploadQueue")
+    try:
+      for item in json.loads(upload_queue_json):
+        upload_queue.put(UploadItem(**item))
+    except (json.JSONDecodeError):
+      cloudlog.exception("athena.UploadQueueCache.initialize.exception")
+
+  @staticmethod
+  def cache(upload_queue):
+    items = [i._asdict() for i in upload_queue.queue if i.id not in cancelled_uploads] 
+    UploadQueueCache.params.put("AthenadUploadQueue", json.dumps(items))
 
 
 def handle_long_poll(ws):
@@ -123,7 +139,7 @@ def upload_handler(end_event):
           cur_upload_items[tid] = cur_upload_items[tid]._replace(progress=cur / sz if sz else 1)
 
         _do_upload(cur_upload_items[tid], cb)
-        cache_upload_queue(upload_queue)
+        UploadQueueCache.cache(upload_queue)
       except (requests.exceptions.Timeout, requests.exceptions.ConnectionError, requests.exceptions.SSLError) as e:
         cloudlog.warning(f"athena.upload_handler.retry {e} {cur_upload_items[tid]}")
 
@@ -135,7 +151,7 @@ def upload_handler(end_event):
             current=False
           )
           upload_queue.put_nowait(item)
-          cache_upload_queue(upload_queue)
+          UploadQueueCache.cache(upload_queue)
 
           cur_upload_items[tid] = None
 
@@ -194,7 +210,7 @@ def setNavDestination(latitude=0, longitude=0):
     "latitude": latitude,
     "longitude": longitude,
   }
-  params.put("NavDestination", json.dumps(destination))
+  Params().put("NavDestination", json.dumps(destination))
 
   return {"success": 1}
 
@@ -252,7 +268,7 @@ def uploadFileToUrl(fn, url, headers):
   item = item._replace(id=upload_id)
 
   upload_queue.put_nowait(item)
-  cache_upload_queue(upload_queue)
+  UploadQueueCache.cache(upload_queue)
 
   return {"enqueued": 1, "item": item._asdict()}
 
@@ -285,7 +301,7 @@ def startLocalProxy(global_end_event, remote_ws_uri, local_port):
 
     cloudlog.debug("athena.startLocalProxy.starting")
 
-    dongle_id = params.get("DongleId").decode('utf8')
+    dongle_id = Params().get("DongleId").decode('utf8')
     identity_token = Api(dongle_id).get_token()
     ws = create_connection(remote_ws_uri,
                            cookie="jwt=" + identity_token,
@@ -322,7 +338,7 @@ def getPublicKey():
 
 @dispatcher.add_method
 def getSshAuthorizedKeys():
-  return params.get("GithubSshKeys", encoding='utf8') or ''
+  return Params().get("GithubSshKeys", encoding='utf8') or ''
 
 
 @dispatcher.add_method
@@ -492,7 +508,7 @@ def ws_recv(ws, end_event):
         recv_queue.put_nowait(data)
       elif opcode == ABNF.OPCODE_PING:
         last_ping = int(sec_since_boot() * 1e9)
-        params.put("LastAthenaPingTime", str(last_ping))
+        Params().put("LastAthenaPingTime", str(last_ping))
     except WebSocketTimeoutException:
       ns_since_last_ping = int(sec_since_boot() * 1e9) - last_ping
       if ns_since_last_ping > RECONNECT_TIMEOUT_S * 1e9:
@@ -526,20 +542,10 @@ def backoff(retries):
   return random.randrange(0, min(128, int(2 ** retries)))
 
 
-def init_upload_queue(upload_queue):
-  upload_queue_json = params.get("AthenadUploadQueue")
-  for item in json.loads(upload_queue_json):
-    upload_queue.put(UploadItem(**item))
-
-
-def cache_upload_queue(upload_queue):
-  items = [i._asdict() for i in upload_queue.queue if i.id not in cancelled_uploads] 
-  params.put("AthenadUploadQueue", json.dumps(items))
-
-
 def main():
+  params = Params()
   dongle_id = params.get("DongleId", encoding='utf-8')
-  init_upload_queue(upload_queue)
+  UploadQueueCache.initialize(upload_queue)
 
   ws_uri = ATHENA_HOST + "/ws/v2/" + dongle_id
   api = Api(dongle_id)
