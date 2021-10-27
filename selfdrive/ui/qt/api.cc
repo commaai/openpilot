@@ -1,5 +1,7 @@
 #include "selfdrive/ui/qt/api.h"
 
+#include <sys/stat.h>
+
 #include <openssl/bio.h>
 #include <openssl/pem.h>
 #include <openssl/rsa.h>
@@ -18,15 +20,27 @@
 
 namespace CommaApi {
 
-QByteArray rsa_sign(const QByteArray &data) {
-  auto file = QFile(Path::rsa_file().c_str());
-  if (!file.open(QIODevice::ReadOnly)) {
-    qDebug() << "No RSA private key found, please run manager.py or registration.py";
-    return QByteArray();
+const std::string& get_private_key() {
+  static std::string key;
+  static time_t mtime = 0;
+
+  struct stat st = {};
+  if (stat(Path::rsa_file().c_str(), &st) == -1) {
+    key.clear();
+  } else if (st.st_mtime != mtime) {
+    mtime = st.st_mtime;
+    key = util::read_file(Path::rsa_file());
   }
-  auto key = file.readAll();
-  file.close();
-  file.deleteLater();
+  return key;
+}
+
+QByteArray rsa_sign(const QByteArray &data) {
+  const std::string &key = get_private_key();
+  if (key.empty()) {
+    qDebug() << "No RSA private key found, please run manager.py or registration.py";
+    return {};
+  }
+
   BIO* mem = BIO_new_mem_buf(key.data(), key.size());
   assert(mem);
   RSA* rsa_private = PEM_read_bio_RSAPrivateKey(mem, NULL, NULL, NULL);
