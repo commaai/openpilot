@@ -12,6 +12,7 @@ cdef extern from "selfdrive/ui/replay/framereader.h":
     int getYUVSize()
     int frame_count()
     void *get(int)
+    void *get_yuv(int)
     int width
     int height
 

@@ -48,3 +48,12 @@ cdef class FrameReader:
     cdef char[:] dat_view = dat
     memcpy(&dat_view[0], addr, self.rgbSize)
     return dat
+
+  def get_yuv(self, id):
+    addr = self.fr.get_yuv(id)
+    if (not addr):
+      return None
+    cdef cnp.ndarray dat = np.empty(self.yuvSize, dtype=np.uint8)
+    cdef char[:] dat_view = dat
+    memcpy(&dat_view[0], addr, self.yuvSize)
+    return dat

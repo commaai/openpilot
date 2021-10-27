@@ -18,7 +18,7 @@ from selfdrive.test.openpilotci import BASE_URL, get_url
 from selfdrive.test.process_replay.compare_logs import compare_logs, save_log
 from selfdrive.test.process_replay.test_processes import format_diff
 from selfdrive.version import get_git_commit
-from tools.lib.framereader import FrameReader
+from selfdrive.ui.replay.framereader_pyx import FrameReader
 from tools.lib.logreader import LogReader
 
 TEST_ROUTE = "99c94dc769b5d96e|2019-08-03--14-19-59"
@@ -67,7 +67,7 @@ def model_replay(lr, fr, desire=None, calib=None):
         f = msg.as_builder()
         pm.send(msg.which(), f)
 
-        img = fr.get(frame_idx, pix_fmt="yuv420p")[0]
+        img = fr.get_yuv(frame_idx)
         if vipc_server is None:
           w, h = {int(3*w*h/2): (w, h) for (w, h) in [tici_f_frame_size, eon_f_frame_size]}[len(img)]
           vipc_server = VisionIpcServer("camerad")
@@ -102,7 +102,8 @@ if __name__ == "__main__":
   ref_commit_fn = os.path.join(replay_dir, "model_replay_ref_commit")
 
   lr = LogReader(get_url(TEST_ROUTE, 0))
-  fr = FrameReader(get_url(TEST_ROUTE, 0, log_type="fcamera"))
+  fr = FrameReader()
+  fr.load(get_url(TEST_ROUTE, 0, log_type="fcamera"))
 
   log_msgs = model_replay(list(lr), fr)
 

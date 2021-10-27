@@ -142,6 +142,11 @@ void *FrameReader::get(int idx) {
   return ret ? rgb_buf_.data() : nullptr;
 }
 
+void *FrameReader::get_yuv(int idx) {
+  bool ret = get(idx, nullptr, yuv_buf_.data());
+  return ret ? yuv_buf_.data() : nullptr;
+}
+
 bool FrameReader::decode(int idx, uint8_t *rgb, uint8_t *yuv) {
   auto get_keyframe = [=](int idx) {
     for (int i = idx; i >= 0 && key_frames_count_ > 1; --i) {

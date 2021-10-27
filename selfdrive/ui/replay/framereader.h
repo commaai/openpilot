@@ -17,6 +17,8 @@ public:
   ~FrameReader();
   bool load(const std::string &url, std::atomic<bool> *abort = nullptr);
   void *get(int idx);
+  void *get_yuv(int idx);
+  // void *get_rgb(int idx);
   bool get(int idx, uint8_t *rgb, uint8_t *yuv);
   int getRGBSize() const { return width * height * 3; }
   int getYUVSize() const { return width * height * 3 / 2; }
