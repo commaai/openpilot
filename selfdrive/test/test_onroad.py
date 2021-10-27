@@ -235,6 +235,7 @@ class TestOnroad(unittest.TestCase):
     for msg in lr:
       if msg.which() == "carEvents":
         for evt in msg.carEvents:
+          print(evt)
           if str(evt.name).startswith('startup'):
             startup_event = str(evt.name)
             break
