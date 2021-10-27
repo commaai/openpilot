@@ -46,7 +46,7 @@ clean:
 		../scripts \
 		../selfdrive/modeld \
 		../selfdrive/debug \
-		$(find .. -type d -name "*test*")
+		$(shell find .. -type d -name "*test*")
 
 	@echo "Building html files..."
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(DOCSBUILDDIR)" $(SPHINXOPTS) $(O)
