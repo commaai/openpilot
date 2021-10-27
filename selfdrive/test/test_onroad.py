@@ -14,7 +14,7 @@ from cereal.services import service_list
 from common.basedir import BASEDIR
 from common.timeout import Timeout
 from common.params import Params
-from selfdrive.controls.lib.events import EVENT_NAME
+from selfdrive.controls.lib.events import EVENTS, ET
 from selfdrive.hardware import EON, TICI
 from selfdrive.loggerd.config import ROOT
 from selfdrive.test.helpers import set_params_enabled, release_only
@@ -230,20 +230,14 @@ class TestOnroad(unittest.TestCase):
 
   @release_only
   def test_startup(self):
-    lr = self.lrs[0]
-    startup_event = None
-    for msg in lr:
-      if msg.which() == "carEvents":
-        initializing = len(msg.carEvents) == 1 and \
-                       msg.carEvents[0].name == car.CarEvent.EventName.controlsInitializing
-        if not initializing:
-          for evt in msg.carEvents:
-            print(evt)
-            if str(evt.name).startswith('startup'):
-              startup_event = str(evt.name)
-              break
-          break
-    self.assertEqual(startup_event, EVENT_NAME[car.CarEvent.EventName.startup])
+    startup_alert = None
+    for msg in self.lrs[0]:
+      # can't use carEvents because the first msg can be dropped while loggerd is starting up
+      if msg.which() == "controlsState":
+        startup_alert = msg.controlsState.alertText1
+        break
+    expected = EVENTS[car.CarEvent.EventName.startup][ET.PERMANENT].alert_text_1
+    self.assertEqual(startup_alert, expected, "wrong startup alert")
 
 
 if __name__ == "__main__":
