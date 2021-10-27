@@ -22,13 +22,7 @@ namespace CommaApi {
 
 const std::string &get_private_key() {
   static std::string key;
-  static time_t mtime = 0;
-
-  struct stat st = {};
-  if (stat(Path::rsa_file().c_str(), &st) == -1) {
-    key.clear();
-  } else if (st.st_mtime != mtime) {
-    mtime = st.st_mtime;
+  if (key.empty()) {
     key = util::read_file(Path::rsa_file());
   }
   return key;
