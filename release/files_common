@@ -60,6 +60,8 @@ models/dmonitoring_model_q.dlc
 
 release/*
 
+tools/lib/*
+
 installer/updater/updater
 
 selfdrive/version.py
