@@ -235,7 +235,7 @@ class CarInterface(CarInterfaceBase):
     elif candidate == CAR.GENESIS_G70_2020:
       ret.lateralTuning.pid.kf = 0.00005
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.10], [0.005]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.005]]
       ret.mass = 3673.0 * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.83
       ret.steerRatio = 14.5   # value from learner
