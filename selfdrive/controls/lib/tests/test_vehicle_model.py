@@ -25,22 +25,7 @@ class TestVehicleModel(unittest.TestCase):
 
           self.assertAlmostEqual(sa, new_sa)
 
-  def test_dyn_ss_sol_against_yaw_rate_no_roll(self):
-    """Verify that the yaw_rate helper function matches the results
-    from the state space model."""
-
-    roll = 0
-    for u in np.linspace(1, 30, num=10):
-      for sa in np.linspace(math.radians(-20), math.radians(20), num=11):
-
-        # Compute yaw rate based on state space model
-        _, yr1 = dyn_ss_sol(sa, u, roll, self.VM)
-
-        # Compute yaw rate using direct computations
-        yr2 = self.VM.yaw_rate(sa, u, roll)
-        self.assertAlmostEqual(float(yr1), yr2)
-
-  def test_dyn_ss_sol_against_yaw_rate_with_roll(self):
+  def test_dyn_ss_sol_against_yaw_rate(self):
     """Verify that the yaw_rate helper function matches the results
     from the state space model."""
 

@@ -210,7 +210,7 @@ def create_dyn_state_matrices(u: float, VM: VehicleModel) -> Tuple[np.ndarray, n
   B[1, 0] = (VM.cF * VM.aF - VM.chi * VM.cR * VM.aR) / VM.j / VM.sR
 
   # Roll input
-  B[0, 1] = ACCELERATION_DUE_TO_GRAVITY
+  B[0, 1] = -ACCELERATION_DUE_TO_GRAVITY
 
   return A, B
 
