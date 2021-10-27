@@ -560,12 +560,13 @@ void pigeon_thread(Panda *panda) {
 int main() {
   LOGW("starting boardd");
 
-  // set process priority and affinity
-  int err = set_realtime_priority(54);
-  LOG("set priority returns %d", err);
-
-  err = set_core_affinity({Hardware::TICI() ? 4 : 3});
-  LOG("set affinity returns %d", err);
+  if (!Hardware::PC()) {
+    int err;
+    err = set_realtime_priority(54);
+    assert(err == 0);
+    err = set_core_affinity({Hardware::TICI() ? 4 : 3});
+    assert(err == 0);
+  }
 
   LOGW("attempting to connect");
   PubMaster pm({"pandaStates", "peripheralState"});

@@ -306,7 +306,7 @@ void rotate_if_needed() {
 int main(int argc, char** argv) {
   if (Hardware::EON()) {
     setpriority(PRIO_PROCESS, 0, -20);
-  } else {
+  } else if (Hardware::TICI()) {
     int ret;
     ret = set_core_affinity({0, 1, 2, 3});
     assert(ret == 0);
