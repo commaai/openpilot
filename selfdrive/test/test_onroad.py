@@ -234,12 +234,15 @@ class TestOnroad(unittest.TestCase):
     startup_event = None
     for msg in lr:
       if msg.which() == "carEvents":
-        for evt in msg.carEvents:
-          print(evt)
-          if str(evt.name).startswith('startup'):
-            startup_event = str(evt.name)
-            break
-        break
+        initializing = len(msg.carEvents) == 1 and \
+                       msg.carEvents[0].name == car.CarEvent.EventName.controlsInitializing
+        if not initializing:
+          for evt in msg.carEvents:
+            print(evt)
+            if str(evt.name).startswith('startup'):
+              startup_event = str(evt.name)
+              break
+          break
     self.assertEqual(startup_event, EVENT_NAME[car.CarEvent.EventName.startup])
 
 
