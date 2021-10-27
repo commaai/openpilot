@@ -21,6 +21,7 @@ from cereal import car
 
 ACCELERATION_DUE_TO_GRAVITY = 9.8
 
+
 class VehicleModel:
   def __init__(self, CP: car.CarParams):
     """
@@ -63,18 +64,6 @@ class VehicleModel:
     else:
       return kin_ss_sol(sa, u, self)
 
-  def calc_curvature_old(self, sa: float, u: float) -> float:
-    """Returns the curvature. Multiplied by the speed this will give the yaw rate.
-
-    Args:
-      sa: Steering wheel angle [rad]
-      u: Speed [m/s]
-
-    Returns:
-      Curvature factor [1/m]
-    """
-    return (self.curvature_factor(u) * sa / self.sR)
-
   def calc_curvature(self, sa: float, u: float, roll: float) -> float:
     """Returns the curvature. Multiplied by the speed this will give the yaw rate.
 
@@ -114,12 +103,12 @@ class VehicleModel:
     return (curv - self.roll_compensation(roll, u)) * self.sR * 1.0 / self.curvature_factor(u)
 
   def roll_compensation(self, roll, u):
-    g = 9.8
     sf = calc_slip_factor(self)
-    if sf == 0:
+
+    if abs(sf) < 1e-6:
       return 0
     else:
-      return (g * roll) / ((1 / sf) - u**2)
+      return (ACCELERATION_DUE_TO_GRAVITY * roll) / ((1 / sf) - u**2)
 
   def get_steer_from_yaw_rate(self, yaw_rate: float, u: float, roll: float) -> float:
     """Calculates the required steering wheel angle for a given yaw_rate
@@ -145,18 +134,6 @@ class VehicleModel:
       Yaw rate [rad/s]
     """
     return self.calc_curvature(sa, u, roll) * u
-
-  def yaw_rate_old(self, sa: float, u: float) -> float:
-      """Calculate yaw rate
-
-      Args:
-        sa: Steering wheel angle [rad]
-        u: Speed [m/s]
-
-      Returns:
-        Yaw rate [rad/s]
-      """
-      return self.calc_curvature_old(sa, u) * u
 
 
 def kin_ss_sol(sa: float, u: float, VM: VehicleModel) -> np.ndarray:
