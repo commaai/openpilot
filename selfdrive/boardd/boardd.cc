@@ -39,6 +39,7 @@
 using namespace std::chrono_literals;
 
 std::atomic<bool> ignition(false);
+std::atomic<bool> pigeon_active(false);
 
 ExitHandler do_exit;
 
@@ -271,7 +272,7 @@ bool send_panda_state(PubMaster *pm, Panda *panda, bool spoofing_started) {
   bool ignition_local = ((pandaState.ignition_line != 0) || (pandaState.ignition_can != 0));
 
 #ifndef __x86_64__
-  bool power_save_desired = !ignition_local;
+  bool power_save_desired = !ignition_local && !pigeon_active;
   if (pandaState.power_save_enabled != power_save_desired) {
     panda->set_power_saving(power_save_desired);
   }
@@ -535,6 +536,7 @@ void pigeon_thread(Panda *panda) {
     // init pigeon on rising ignition edge
     // since it was turned off in low power mode
     if((ignition_local && !ignition_last) || need_reset) {
+      pigeon_active = true;
       pigeon->init();
 
       // Set receive times to current time
@@ -547,6 +549,7 @@ void pigeon_thread(Panda *panda) {
       LOGD("powering off pigeon\n");
       pigeon->stop();
       pigeon->set_power(false);
+      pigeon_active = false;
     }
 
     ignition_last = ignition_local;
