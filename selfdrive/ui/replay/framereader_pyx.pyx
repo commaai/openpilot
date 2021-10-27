@@ -18,7 +18,7 @@ cdef class FrameReader:
     del self.fr
 
   def load(self, file):
-    return self.fr.load(file)
+    return self.fr.load(file.encode())
 
   @property
   def rgbSize(self):
