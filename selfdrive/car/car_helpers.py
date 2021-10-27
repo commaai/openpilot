@@ -14,8 +14,6 @@ EventName = car.CarEvent.EventName
 
 
 def get_startup_event(car_recognized, controller_available, fw_seen):
-  from selfdrive.version import origin, branch
-  print("getting startup event", comma_remote, tested_branch, origin, branch)
   if comma_remote and tested_branch:
     event = EventName.startup
   else:
