@@ -31,12 +31,28 @@ MacOS:
 openpilot/tools/mac_setup.sh
 ```
 
-3. Build openpilot by running SCons in the root of the openpilot directory
+3. Ensure you have a working OpenCL runtime:
+
+You can verify your OpenCL installation with the `clinfo` command.
+
+If you do not have any working platforms, you can download drivers from your GPU vendor's site.
+On Ubuntu you can just install one of the packages returned by `apt search opencl-icd`.
+
+4. Activate the Python environment:
+
+Execute the following command in root openpilot directory:
+```bash
+pipenv shell
+```
+
+Your shell prompt should change to something similar to `(openpilot) user@machine:~/openpilot$ `.
+
+5. Build openpilot by running SCons in the root of the openpilot directory
 ``` bash
 cd openpilot && scons -j$(nproc)
 ```
 
-4. Try out some tools!
+6. Try out some tools!
 
 NOTE: you can always run `update_requirements.sh` to pull in new python dependencies.
 
