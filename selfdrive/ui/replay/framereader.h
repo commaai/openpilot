@@ -6,6 +6,8 @@
 extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
+#include <libswscale/swscale.h>
+#include <libavutil/imgutils.h>
 }
 
 class FrameReader {
@@ -31,10 +33,10 @@ private:
     bool failed = false;
   };
   std::vector<Frame> frames_;
-  AVFrame *av_frame_ = nullptr;
+  SwsContext *sws_ctx_ = nullptr;
+  AVFrame *av_frame_, *rgb_frame_ = nullptr;
   AVFormatContext *pFormatCtx_ = nullptr;
   AVCodecContext *pCodecCtx_ = nullptr;
   int key_frames_count_ = 0;
-  std::vector<uint8_t> yuv_buf_;
   bool valid_ = false;
 };

@@ -3,7 +3,6 @@
 #include <unistd.h>
 #include <cassert>
 #include <mutex>
-#include "libyuv.h"
 
 static int ffmpeg_lockmgr_cb(void **arg, enum AVLockOp op) {
   std::mutex *mutex = (std::mutex *)*arg;
@@ -45,12 +44,10 @@ FrameReader::~FrameReader() {
     avcodec_close(pCodecCtx_);
     avcodec_free_context(&pCodecCtx_);
   }
-  if (pFormatCtx_) {
-    avformat_close_input(&pFormatCtx_);
-  }
-  if (av_frame_) {
-    av_frame_free(&av_frame_);
-  }
+  if (pFormatCtx_) avformat_close_input(&pFormatCtx_);
+  if (av_frame_) av_frame_free(&av_frame_);
+  if (rgb_frame_) av_frame_free(&rgb_frame_);
+  if (sws_ctx_) sws_freeContext(sws_ctx_);
 }
 
 bool FrameReader::load(const std::string &url) {
@@ -77,9 +74,14 @@ bool FrameReader::load(const std::string &url) {
   if (ret < 0) return false;
 
   av_frame_ = av_frame_alloc();
+  rgb_frame_ = av_frame_alloc();
 
   width = pCodecCtxOrig->width;
   height = pCodecCtxOrig->height;
+  sws_ctx_ = sws_getContext(width, height, AV_PIX_FMT_YUV420P,
+                            width, height, AV_PIX_FMT_BGR24,
+                            SWS_FAST_BILINEAR, NULL, NULL, NULL);
+  if (!sws_ctx_) return false;
 
   frames_.reserve(60 * 20);  // 20fps, one minute
   while (true) {
@@ -97,7 +99,7 @@ bool FrameReader::load(const std::string &url) {
 }
 
 bool FrameReader::get(int idx, uint8_t *rgb, uint8_t *yuv) {
-  assert(rgb != nullptr);
+  assert(rgb != nullptr && yuv != nullptr);
   if (!valid_ || idx < 0 || idx >= frames_.size()) {
     return false;
   }
@@ -140,27 +142,11 @@ bool FrameReader::decode(int idx, uint8_t *rgb, uint8_t *yuv) {
 }
 
 bool FrameReader::decodeFrame(AVFrame *f, uint8_t *rgb, uint8_t *yuv) {
-  uint8_t *y = yuv;
-  if (!yuv) {
-    if (yuv_buf_.empty()) {
-      yuv_buf_.resize(getYUVSize());
-    }
-    y = yuv_buf_.data();
-  }
+  // images is going to be written to output buffers, no alignment (align = 1)
+  int ret = av_image_copy_to_buffer(yuv, getYUVSize(), f->data, f->linesize, AV_PIX_FMT_YUV420P, f->width, f->height, 1);
+  if (ret < 0) return false;
 
-  int i, j, k;
-  for (i = 0; i < f->height; i++) {
-    memcpy(y + f->width * i, f->data[0] + f->linesize[0] * i, f->width);
-  }
-  for (j = 0; j < f->height / 2; j++) {
-    memcpy(y + f->width * i + f->width / 2 * j, f->data[1] + f->linesize[1] * j, f->width / 2);
-  }
-  for (k = 0; k < f->height / 2; k++) {
-    memcpy(y + f->width * i + f->width / 2 * j + f->width / 2 * k, f->data[2] + f->linesize[2] * k, f->width / 2);
-  }
-
-  uint8_t *u = y + f->width * f->height;
-  uint8_t *v = u + (f->width / 2) * (f->height / 2);
-  libyuv::I420ToRGB24(y, f->width, u, f->width / 2, v, f->width / 2, rgb, f->width * 3, f->width, f->height);
-  return true;
+  av_image_fill_arrays(rgb_frame_->data, rgb_frame_->linesize, rgb, AV_PIX_FMT_BGR24, f->width, f->height, 1);
+  ret = sws_scale(sws_ctx_, (const uint8_t **)f->data, f->linesize, 0, f->height, rgb_frame_->data, rgb_frame_->linesize);
+  return ret >= 0;
 }
