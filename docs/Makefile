@@ -32,7 +32,7 @@ clean:
 	@echo "Copying docs & config to build folder..."
 	cp -a "$(DOCSDIR)" "$(BUILDDIR)"
 	cd "$(OPENPILOT_ROOT)" && \
-		find . -type f \( -name "*.md" -o -name "*.rst" \) \
+		find . -type f \( -name "*.md" -o -name "*.rst" -o -name "*.png" -o -name "*.jpg" \) \
 			-not -path "*/.*" \
 			-not -path "./build/*" \
 			-not -path "./docs/*" \
