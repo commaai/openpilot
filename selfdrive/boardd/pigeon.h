@@ -16,7 +16,7 @@ class Pigeon {
   void init();
   void stop();
   bool wait_for_ack();
-  bool wait_for_ack(const std::string &ack, const std::string &nack);
+  bool wait_for_ack(const std::string &ack, const std::string &nack, int timeout_ms = 1000);
   bool send_with_ack(const std::string &cmd);
   virtual void set_baud(int baud) = 0;
   virtual void send(const std::string &s) = 0;
