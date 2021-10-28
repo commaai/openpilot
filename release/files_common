@@ -26,7 +26,6 @@ common/file_helpers.py
 common/logging_extra.py
 common/numpy_fast.py
 common/params.py
-common/params_pxd.pxd
 common/params_pyx.pyx
 common/xattr.py
 common/profiler.py
