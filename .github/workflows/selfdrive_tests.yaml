@@ -331,4 +331,5 @@ jobs:
     - name: Push docker container
       if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
       run: |
+        $DOCKER_LOGIN
         docker push $DOCKER_REGISTRY/openpilot-docs:latest
