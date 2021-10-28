@@ -1,5 +1,7 @@
 #!/bin/bash -e
 
+OP_ROOT=$(git rev-parse --show-toplevel)
+
 # Install brew if required
 if [[ $(command -v brew) == "" ]]; then
   echo "Installing Hombrew"
@@ -50,16 +52,17 @@ export PATH="$PATH:/usr/local/bin"
 
 # OpenPilot environment variables
 if [ -z "$OPENPILOT_ENV" ] && [ -n "$RC_FILE" ] && [ -z "$CI" ]; then
-  OP_DIR=$(git rev-parse --show-toplevel)
   echo "export PATH=\"\$PATH:$HOME/.cargo/bin\"" >> $RC_FILE
-  echo "source $OP_DIR/tools/openpilot_env.sh" >> $RC_FILE
+  echo "source $OP_ROOT/tools/openpilot_env.sh" >> $RC_FILE
   export PATH="$PATH:\"\$HOME/.cargo/bin\""
-  source "$OP_DIR/tools/openpilot_env.sh"
+  source "$OP_ROOT/tools/openpilot_env.sh"
   echo "Added openpilot_env to RC file: $RC_FILE"
 fi
 
-pyenv install -s 3.8.5
-pyenv global 3.8.5
+# install python
+PYENV_PYTHON_VERSION=$(cat $OP_ROOT/.python-version)
+pyenv install -s ${PYENV_PYTHON_VERSION}
+pyenv global ${PYENV_PYTHON_VERSION}
 pyenv rehash
 eval "$(pyenv init -)"
 

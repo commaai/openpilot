@@ -1,163 +1,165 @@
 #include "selfdrive/ui/replay/route.h"
 
 #include <QEventLoop>
-#include <QFile>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QRegExp>
-#include <QThread>
-#include <future>
 
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/qt/api.h"
 #include "selfdrive/ui/replay/util.h"
 
-Route::Route(const QString &route) : route_(route) {}
+Route::Route(const QString &route, const QString &data_dir) : route_(parseRoute(route)), data_dir_(data_dir) {}
+
+RouteIdentifier Route::parseRoute(const QString &str) {
+  QRegExp rx(R"(^([a-z0-9]{16})([|_/])(\d{4}-\d{2}-\d{2}--\d{2}-\d{2}-\d{2})(?:(--|/)(\d*))?$)");
+  if (rx.indexIn(str) == -1) return {};
+
+  const QStringList list = rx.capturedTexts();
+  return {list[1], list[3], list[5].toInt(), list[1] + "|" + list[3]};
+}
 
 bool Route::load() {
-  QEventLoop loop;
-  auto onError = [&loop](const QString &err) { loop.quit(); };
+  if (route_.str.isEmpty()) {
+    qInfo() << "invalid route format";
+    return false;
+  }
+  return data_dir_.isEmpty() ? loadFromServer() : loadFromLocal();
+}
 
-  bool ret = false;
+bool Route::loadFromServer() {
+  QEventLoop loop;
   HttpRequest http(nullptr, !Hardware::PC());
-  QObject::connect(&http, &HttpRequest::failedResponse, onError);
-  QObject::connect(&http, &HttpRequest::timeoutResponse, onError);
-  QObject::connect(&http, &HttpRequest::receivedResponse, [&](const QString json) {
-    ret = loadFromJson(json);
-    loop.quit();
+  QObject::connect(&http, &HttpRequest::failedResponse, [&] { loop.exit(0); });
+  QObject::connect(&http, &HttpRequest::timeoutResponse, [&] { loop.exit(0); });
+  QObject::connect(&http, &HttpRequest::receivedResponse, [&](const QString &json) {
+    loop.exit(loadFromJson(json));
   });
-  http.sendRequest("https://api.commadotai.com/v1/route/" + route_ + "/files");
-  loop.exec();
-  return ret;
+  http.sendRequest("https://api.commadotai.com/v1/route/" + route_.str + "/files");
+  return loop.exec();
 }
 
 bool Route::loadFromJson(const QString &json) {
-  QJsonObject route_files = QJsonDocument::fromJson(json.trimmed().toUtf8()).object();
-  if (route_files.empty()) {
-    qInfo() << "JSON Parse failed";
-    return false;
-  }
-
   QRegExp rx(R"(\/(\d+)\/)");
-  for (const QString &key : route_files.keys()) {
-    for (const auto &url : route_files[key].toArray()) {
+  for (const auto &value :  QJsonDocument::fromJson(json.trimmed().toUtf8()).object()) {
+    for (const auto &url : value.toArray()) {
       QString url_str = url.toString();
       if (rx.indexIn(url_str) != -1) {
-        const int seg_num = rx.cap(1).toInt();
-        if (segments_.size() <= seg_num) {
-          segments_.resize(seg_num + 1);
-        }
-        if (key == "logs") {
-          segments_[seg_num].rlog = url_str;
-        } else if (key == "qlogs") {
-          segments_[seg_num].qlog = url_str;
-        } else if (key == "cameras") {
-          segments_[seg_num].road_cam = url_str;
-        } else if (key == "dcameras") {
-          segments_[seg_num].driver_cam = url_str;
-        } else if (key == "ecameras") {
-          segments_[seg_num].wide_road_cam = url_str;
-        } else if (key == "qcameras") {
-          segments_[seg_num].qcamera = url_str;
-        }
+        addFileToSegment(rx.cap(1).toInt(), url_str);
       }
     }
   }
-  return true;
+  return !segments_.empty();
+}
+
+bool Route::loadFromLocal() {
+  QDir log_dir(data_dir_);
+  for (const auto &folder : log_dir.entryList(QDir::Dirs | QDir::NoDot | QDir::NoDotDot, QDir::NoSort)) {
+    int pos = folder.lastIndexOf("--");
+    if (pos != -1 && folder.left(pos) == route_.timestamp) {
+      const int seg_num = folder.mid(pos + 2).toInt();
+      QDir segment_dir(log_dir.filePath(folder));
+      for (const auto &f : segment_dir.entryList(QDir::Files)) {
+        addFileToSegment(seg_num, segment_dir.absoluteFilePath(f));
+      }
+    }
+  }
+  return !segments_.empty();
+}
+
+void Route::addFileToSegment(int n, const QString &file) {
+  const QString name = QUrl(file).fileName();
+  if (name == "rlog.bz2") {
+    segments_[n].rlog = file;
+  } else if (name == "qlog.bz2") {
+    segments_[n].qlog = file;
+  } else if (name == "fcamera.hevc") {
+    segments_[n].road_cam = file;
+  } else if (name == "dcamera.hevc") {
+    segments_[n].driver_cam = file;
+  } else if (name == "ecamera.hevc") {
+    segments_[n].wide_road_cam = file;
+  } else if (name == "qcamera.ts") {
+    segments_[n].qcamera = file;
+  }
 }
 
 // class Segment
 
-Segment::Segment(int n, const SegmentFile &segment_files, bool load_dcam, bool load_ecam) : seg_num_(n), files_(segment_files) {
+Segment::Segment(int n, const SegmentFile &files, bool load_dcam, bool load_ecam) : seg_num(n) {
   static std::once_flag once_flag;
-  std::call_once(once_flag, [=]() {
-    if (!CACHE_DIR.exists()) QDir().mkdir(CACHE_DIR.absolutePath());
-  });
+  std::call_once(once_flag, [=]() { if (!CACHE_DIR.exists()) QDir().mkdir(CACHE_DIR.absolutePath()); });
 
-  // fallback to qcamera/qlog
-  road_cam_path_ = files_.road_cam.isEmpty() ? files_.qcamera : files_.road_cam;
-  log_path_ = files_.rlog.isEmpty() ? files_.qlog : files_.rlog;
-
-  valid_ = !log_path_.isEmpty() && !road_cam_path_.isEmpty();
-  if (!valid_) return;
-
-  if (!load_dcam) {
-    files_.driver_cam = "";
-  }
-  if (!load_ecam) {
-    files_.wide_road_cam = "";
-  }
-
-  if (!QUrl(log_path_).isLocalFile()) {
-    for (auto &url : {log_path_, road_cam_path_, files_.driver_cam, files_.wide_road_cam}) {
-      if (!url.isEmpty() && !QFile::exists(localPath(url))) {
-        downloadFile(url);
-        ++downloading_;
-      }
+  // [RoadCam, DriverCam, WideRoadCam, log]. fallback to qcamera/qlog
+  const QString file_list[] = {
+      files.road_cam.isEmpty() ? files.qcamera : files.road_cam,
+      load_dcam ? files.driver_cam : "",
+      load_ecam ? files.wide_road_cam : "",
+      files.rlog.isEmpty() ? files.qlog : files.rlog,
+  };
+  for (int i = 0; i < std::size(file_list); i++) {
+    if (!file_list[i].isEmpty()) {
+      loading_++;
+      loading_threads_.emplace_back(QThread::create(&Segment::loadFile, this, i, file_list[i].toStdString()))->start();
     }
-  }
-  if (downloading_ == 0) {
-    QTimer::singleShot(0, this, &Segment::load);
-  } else {
-    qDebug() << "downloading segment" << seg_num_ << "...";
   }
 }
 
 Segment::~Segment() {
   aborting_ = true;
-  if (downloading_ > 0) {
-    qDebug() << "cancel download segment" << seg_num_;
-  }
-  for (auto &t : download_threads_) {
+  for (QThread *t : loading_threads_) {
     if (t->isRunning()) t->wait();
+    delete t;
   }
 }
 
-void Segment::downloadFile(const QString &url) {
-  download_threads_.emplace_back(QThread::create([=]() {
-    const std::string local_file = localPath(url).toStdString();
-    bool ret = httpMultiPartDownload(url.toStdString(), local_file, connections_per_file, &aborting_);
-    if (ret && url == log_path_) {
-      // pre-decompress log file.
-      std::ofstream ostrm(local_file + "_decompressed", std::ios::binary);
-      readBZ2File(local_file, ostrm);
-    }
-    if (--downloading_ == 0 && !aborting_) {
-      load();
-    }
-  }))->start();
-}
+void Segment::loadFile(int id, const std::string file) {
+  const bool is_remote = file.find("https://") == 0;
+  const std::string local_file = is_remote ? cacheFilePath(file) : file;
+  bool file_ready = util::file_exists(local_file);
 
-// load concurrency
-void Segment::load() {
-  std::vector<std::future<bool>> futures;
+  if (!file_ready && is_remote) {
+    file_ready = downloadFile(id, file, local_file);
+  }
 
-  futures.emplace_back(std::async(std::launch::async, [=]() {
-    const std::string bzip_file = localPath(log_path_).toStdString();
-    const std::string decompressed_file = bzip_file + "_decompressed";
-    bool is_bzip = !util::file_exists(decompressed_file);
-    log = std::make_unique<LogReader>();
-    return log->load(is_bzip ? bzip_file : decompressed_file, is_bzip);
-  }));
-
-  QString camera_files[] = {road_cam_path_, files_.driver_cam, files_.wide_road_cam};
-  for (int i = 0; i < std::size(camera_files); ++i) {
-    if (!camera_files[i].isEmpty()) {
-      futures.emplace_back(std::async(std::launch::async, [=]() {
-        frames[i] = std::make_unique<FrameReader>();
-        return frames[i]->load(localPath(camera_files[i]).toStdString());
-      }));
+  if (!aborting_ && file_ready) {
+    if (id < MAX_CAMERAS) {
+      frames[id] = std::make_unique<FrameReader>();
+      success_ = success_ && frames[id]->load(local_file);
+    } else {
+      std::string decompressed = cacheFilePath(local_file + ".decompressed");
+      if (!util::file_exists(decompressed)) {
+        std::ofstream ostrm(decompressed, std::ios::binary);
+        readBZ2File(local_file, ostrm);
+      }
+      log = std::make_unique<LogReader>();
+      success_ = success_ && log->load(decompressed);
     }
   }
 
-  int success_cnt = std::accumulate(futures.begin(), futures.end(), 0, [=](int v, auto &f) { return f.get() + v; });
-  loaded_ = valid_ = (success_cnt == futures.size());
-  emit loadFinished();
+  if (!aborting_ && --loading_ == 0) {
+    emit loadFinished(success_);
+  }
 }
 
-QString Segment::localPath(const QUrl &url) {
-  if (url.isLocalFile()) return url.toString();
+bool Segment::downloadFile(int id, const std::string &url, const std::string local_file) {
+  bool ret = false;
+  int retries = 0;
+  while (!aborting_) {
+    ret = httpMultiPartDownload(url, local_file, id < MAX_CAMERAS ? 3 : 1, &aborting_);
+    if (ret || aborting_) break;
 
-  QByteArray url_no_query = url.toString(QUrl::RemoveQuery).toUtf8();
-  return CACHE_DIR.filePath(QString(QCryptographicHash::hash(url_no_query, QCryptographicHash::Sha256).toHex()));
+    if (++retries > max_retries_) {
+      qInfo() << "download failed after retries" << max_retries_;
+      break;
+    }
+    qInfo() << "download failed, retrying" << retries;
+  }
+  return ret;
+}
+
+std::string Segment::cacheFilePath(const std::string &file) {
+  QString url_no_query = QUrl(file.c_str()).toString(QUrl::RemoveQuery);
+  QString sha256 = QCryptographicHash::hash(url_no_query.toUtf8(), QCryptographicHash::Sha256).toHex();
+  return CACHE_DIR.filePath(sha256 + "." + QFileInfo(url_no_query).suffix()).toStdString();
 }

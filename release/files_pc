@@ -1,3 +1,5 @@
-phonelibs/mapbox-gl-native-qt/x86_64/**
+selfdrive/ui/replay/*
 
-phonelibs/qt-plugins/x86_64/**
+third_party/mapbox-gl-native-qt/x86_64/**
+
+third_party/qt-plugins/x86_64/**

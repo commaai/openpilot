@@ -19,14 +19,12 @@
 namespace CommaApi {
 
 QByteArray rsa_sign(const QByteArray &data) {
-  auto file = QFile(Path::rsa_file().c_str());
-  if (!file.open(QIODevice::ReadOnly)) {
+  static std::string key = util::read_file(Path::rsa_file());
+  if (key.empty()) {
     qDebug() << "No RSA private key found, please run manager.py or registration.py";
-    return QByteArray();
+    return {};
   }
-  auto key = file.readAll();
-  file.close();
-  file.deleteLater();
+
   BIO* mem = BIO_new_mem_buf(key.data(), key.size());
   assert(mem);
   RSA* rsa_private = PEM_read_bio_RSAPrivateKey(mem, NULL, NULL, NULL);

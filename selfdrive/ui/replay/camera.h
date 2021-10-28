@@ -8,34 +8,34 @@
 
 class CameraServer {
 public:
-  CameraServer();
+  CameraServer(std::pair<int, int> camera_size[MAX_CAMERAS] = nullptr);
   ~CameraServer();
-  inline void pushFrame(CameraType type, FrameReader* fr, const cereal::EncodeIndex::Reader& eidx) {
-    queue_.push({type, fr, eidx});
-  }
+  void pushFrame(CameraType type, FrameReader* fr, const cereal::EncodeIndex::Reader& eidx);
   inline void waitFinish() {
-    while (!queue_.empty()) usleep(0);
+    while (publishing_ > 0) usleep(0);
   }
 
 protected:
-  void startVipcServer();
-  void thread();
-
   struct Camera {
-    VisionStreamType rgb_type;
+    CameraType type;
+    VisionStreamType rgb_type; 
     VisionStreamType yuv_type;
     int width;
     int height;
+    std::thread thread;
+    SafeQueue<std::pair<FrameReader*, const cereal::EncodeIndex::Reader>> queue;
+    int cached_id = -1;
+    int cached_seg = -1;
+    std::pair<VisionBuf *, VisionBuf*> cached_buf;
   };
+  void startVipcServer();
+  void cameraThread(Camera &cam);
 
   Camera cameras_[MAX_CAMERAS] = {
-      {.rgb_type = VISION_STREAM_RGB_BACK, .yuv_type = VISION_STREAM_YUV_BACK},
-      {.rgb_type = VISION_STREAM_RGB_FRONT, .yuv_type = VISION_STREAM_YUV_FRONT},
-      {.rgb_type = VISION_STREAM_RGB_WIDE, .yuv_type = VISION_STREAM_YUV_WIDE},
+      {.type = RoadCam, .rgb_type = VISION_STREAM_RGB_BACK, .yuv_type = VISION_STREAM_YUV_BACK},
+      {.type = DriverCam, .rgb_type = VISION_STREAM_RGB_FRONT, .yuv_type = VISION_STREAM_YUV_FRONT},
+      {.type = WideRoadCam, .rgb_type = VISION_STREAM_RGB_WIDE, .yuv_type = VISION_STREAM_YUV_WIDE},
   };
-  cl_device_id device_id_;
-  cl_context context_;
-  std::thread camera_thread_;
+  std::atomic<int> publishing_ = 0;
   std::unique_ptr<VisionIpcServer> vipc_server_;
-  SafeQueue<std::tuple<CameraType, FrameReader*, const cereal::EncodeIndex::Reader>> queue_;
 };

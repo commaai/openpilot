@@ -22,7 +22,7 @@ git clone --recurse-submodules https://github.com/commaai/openpilot.git
 
 2. Run the setup script:
 
-Ubuntu:
+Ubuntu 20.04 LTS:
 ``` bash
 openpilot/tools/ubuntu_setup.sh
 ```
@@ -38,10 +38,12 @@ cd openpilot && scons -j$(nproc)
 
 4. Try out some tools!
 
+NOTE: you can always run `update_requirements.sh` to pull in new python dependencies.
+
 Windows
 ------------
 
-Neither openpilot nor any of the tools are developed or tested on Windows, but the [Windows Subsystem for Linux (WSL)](https://docs.microsoft.com/en-us/windows/wsl/about) should get Windows users a similiar experience to Ubuntu.
+Neither openpilot nor any of the tools are developed or tested on Windows, but the [Windows Subsystem for Linux (WSL)](https://docs.microsoft.com/en-us/windows/wsl/about) should get Windows users a similiar experience to Ubuntu. [WSL 2](https://docs.microsoft.com/en-us/windows/wsl/compare-versions) specifically has been reported by several users to be a seamless experience.
 
 Follow [these instructions](https://docs.microsoft.com/en-us/windows/wsl/install) to setup the WSL and install the `Ubuntu-20.04` distribution. Once your Ubuntu WSL environment is setup, follow the Linux setup instructions to finish setting up your environment.
 

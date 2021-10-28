@@ -35,8 +35,8 @@ class CarState(CarStateBase):
     can_gear = int(cp.vl["GEAR"]["GEAR"])
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(can_gear, None))
 
-    ret.leftBlinker = cp.vl["BLINK_INFO"]["LEFT_BLINK"] == 1
-    ret.rightBlinker = cp.vl["BLINK_INFO"]["RIGHT_BLINK"] == 1
+    ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_lamp(40, cp.vl["BLINK_INFO"]["LEFT_BLINK"] == 1,
+                                                                      cp.vl["BLINK_INFO"]["RIGHT_BLINK"] == 1)
 
     ret.steeringAngleDeg = cp.vl["STEER"]["STEER_ANGLE"]
     ret.steeringTorque = cp.vl["STEER_TORQUE"]["STEER_TORQUE_SENSOR"]
@@ -78,8 +78,9 @@ class CarState(CarStateBase):
         self.low_speed_lockout = False
         self.low_speed_alert = False
 
-    # On if no driver torque the last 5 seconds
-    ret.steerWarning = cp.vl["STEER_RATE"]["HANDS_OFF_5_SECONDS"] == 1
+    # Check if LKAS is disabled due to lack of driver torque when all other states indicate
+    # it should be enabled (steer lockout)
+    ret.steerWarning = self.lkas_allowed and (cp.vl["STEER_RATE"]["LKAS_BLOCK"] == 1)
 
     self.acc_active_last = ret.cruiseState.enabled
 

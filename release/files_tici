@@ -1,4 +1,4 @@
-phonelibs/mapbox-gl-native-qt/include/*
+third_party/mapbox-gl-native-qt/include/*
 
 selfdrive/timezoned.py
 

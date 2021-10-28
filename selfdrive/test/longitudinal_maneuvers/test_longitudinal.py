@@ -54,7 +54,7 @@ maneuvers = [
     breakpoints=[0., 15., 21.66],
   ),
   Maneuver(
-    'steady state following a car at 20m/s, then lead decel to 0mph at 4m/s^2',
+    'steady state following a car at 20m/s, then lead decel to 0mph at 3+m/s^2',
     duration=40.,
     initial_speed=20.,
     lead_relevancy=True,
@@ -62,7 +62,7 @@ maneuvers = [
     speed_lead_values=[20., 20., 0.],
     prob_lead_values=[0., 1., 1.],
     cruise_values=[20., 20., 20.],
-    breakpoints=[2., 2.01, 7.01],
+    breakpoints=[2., 2.01, 8.51],
   ),
   Maneuver(
     "approach stopped car at 20m/s",

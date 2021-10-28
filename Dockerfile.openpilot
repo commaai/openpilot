@@ -16,7 +16,7 @@ RUN pip install --no-cache-dir pipenv==2020.8.13 && \
 COPY SConstruct ${OPENPILOT_PATH}
 
 COPY ./pyextra ${OPENPILOT_PATH}/pyextra
-COPY ./phonelibs ${OPENPILOT_PATH}/phonelibs
+COPY ./third_party ${OPENPILOT_PATH}/third_party
 COPY ./site_scons ${OPENPILOT_PATH}/site_scons
 COPY ./laika ${OPENPILOT_PATH}/laika
 COPY ./laika_repo ${OPENPILOT_PATH}/laika_repo

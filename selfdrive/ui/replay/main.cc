@@ -1,5 +1,6 @@
 #include "selfdrive/ui/replay/replay.h"
 
+#include <csignal>
 #include <iostream>
 #include <termios.h>
 
@@ -9,10 +10,16 @@
 #include <QThread>
 
 const QString DEMO_ROUTE = "4cf7a6ad03080c90|2021-09-29--13-46-36";
+struct termios oldt = {};
+
+void sigHandler(int s) {
+  std::signal(s, SIG_DFL);
+  tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+  qApp->quit();
+}
 
 int getch() {
   int ch;
-  struct termios oldt;
   struct termios newt;
 
   tcgetattr(STDIN_FILENO, &oldt);
@@ -38,24 +45,24 @@ void keyboardThread(Replay *replay) {
       try {
         if (r[0] == '#') {
           r.erase(0, 1);
-          replay->seekTo(std::stoi(r) * 60);
+          replay->seekTo(std::stoi(r) * 60, false);
         } else {
-          replay->seekTo(std::stoi(r));
+          replay->seekTo(std::stoi(r), false);
         }
       } catch (std::invalid_argument) {
         qDebug() << "invalid argument";
       }
       getch();  // remove \n from entering seek
     } else if (c == 'm') {
-      replay->relativeSeek(+60);
+      replay->seekTo(+60, true);
     } else if (c == 'M') {
-      replay->relativeSeek(-60);
+      replay->seekTo(-60, true);
     } else if (c == 's') {
-      replay->relativeSeek(+10);
+      replay->seekTo(+10, true);
     } else if (c == 'S') {
-      replay->relativeSeek(-10);
+      replay->seekTo(-10, true);
     } else if (c == 'G') {
-      replay->relativeSeek(0);
+      replay->seekTo(0, true);
     } else if (c == ' ') {
       replay->pause(!replay->isPaused());
     }
@@ -63,7 +70,15 @@ void keyboardThread(Replay *replay) {
 }
 
 int main(int argc, char *argv[]){
-  QApplication a(argc, argv);
+  QApplication app(argc, argv);
+  std::signal(SIGINT, sigHandler);
+  std::signal(SIGTERM, sigHandler);
+
+  const std::tuple<QString, REPLAY_FLAGS, QString> flags[] = {
+      {"dcam", REPLAY_FLAG_DCAM, "load driver camera"},
+      {"ecam", REPLAY_FLAG_ECAM, "load wide road camera"},
+      {"no-loop", REPLAY_FLAG_NO_LOOP, "stop at the end of the route"},
+  };
 
   QCommandLineParser parser;
   parser.setApplicationDescription("Mock openpilot components by publishing logged messages.");
@@ -73,10 +88,12 @@ int main(int argc, char *argv[]){
   parser.addOption({{"b", "block"}, "blacklist of services to send", "block"});
   parser.addOption({{"s", "start"}, "start from <seconds>", "seconds"});
   parser.addOption({"demo", "use a demo route instead of providing your own"});
-  parser.addOption({"dcam", "load driver camera"});
-  parser.addOption({"ecam", "load wide road camera"});
+  parser.addOption({"data_dir", "local directory with routes", "data_dir"});
+  for (auto &[name, _, desc] : flags) {
+    parser.addOption({name, desc});
+  }
 
-  parser.process(a);
+  parser.process(app);
   const QStringList args = parser.positionalArguments();
   if (args.empty() && !parser.isSet("demo")) {
     parser.showHelp();
@@ -86,15 +103,21 @@ int main(int argc, char *argv[]){
   QStringList allow = parser.value("allow").isEmpty() ? QStringList{} : parser.value("allow").split(",");
   QStringList block = parser.value("block").isEmpty() ? QStringList{} : parser.value("block").split(",");
 
-  Replay *replay = new Replay(route, allow, block, nullptr, parser.isSet("dcam"), parser.isSet("ecam"));
-  if (replay->load()) {
-    replay->start(parser.value("start").toInt());
+  uint32_t replay_flags = REPLAY_FLAG_NONE;
+  for (const auto &[name, flag, _] : flags) {
+    if (parser.isSet(name)) {
+      replay_flags |= flag;
+    }
   }
-
+  Replay *replay = new Replay(route, allow, block, nullptr, replay_flags, parser.value("data_dir"), &app);
+  if (!replay->load()) {
+    return 0;
+  }
+  replay->start(parser.value("start").toInt());
   // start keyboard control thread
   QThread *t = QThread::create(keyboardThread, replay);
   QObject::connect(t, &QThread::finished, t, &QThread::deleteLater);
   t->start();
 
-  return a.exec();
+  return app.exec();
 }

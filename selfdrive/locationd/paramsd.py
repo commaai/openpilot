@@ -123,22 +123,20 @@ def main(sm=None, pm=None):
   # When driving in wet conditions the stiffness can go down, and then be too low on the next drive
   # Without a way to detect this we have to reset the stiffness every drive
   params['stiffnessFactor'] = 1.0
-
   learner = ParamsLearner(CP, params['steerRatio'], params['stiffnessFactor'], math.radians(params['angleOffsetAverageDeg']))
-
   angle_offset_average = params['angleOffsetAverageDeg']
   angle_offset = angle_offset_average
 
   while True:
     sm.update()
-
-    for which, updated in sm.updated.items():
-      if updated:
+    for which in sorted(sm.updated.keys(), key=lambda x: sm.logMonoTime[x]):
+      if sm.updated[which]:
         t = sm.logMonoTime[which] * 1e-9
         learner.handle_log(t, which, sm[which])
 
     if sm.updated['liveLocationKalman']:
       x = learner.kf.x
+      P = np.sqrt(learner.kf.P.diagonal())
       if not all(map(math.isfinite, x)):
         cloudlog.error("NaN in liveParameters estimate. Resetting to default values")
         learner = ParamsLearner(CP, CP.steerRatio, 1.0, 0.0)
@@ -162,6 +160,10 @@ def main(sm=None, pm=None):
         0.2 <= msg.liveParameters.stiffnessFactor <= 5.0,
         min_sr <= msg.liveParameters.steerRatio <= max_sr,
       ))
+      msg.liveParameters.steerRatioStd = float(P[States.STEER_RATIO])
+      msg.liveParameters.stiffnessFactorStd = float(P[States.STIFFNESS])
+      msg.liveParameters.angleOffsetAverageStd = float(P[States.ANGLE_OFFSET])
+      msg.liveParameters.angleOffsetFastStd = float(P[States.ANGLE_OFFSET_FAST])
 
       if sm.frame % 1200 == 0:  # once a minute
         params = {

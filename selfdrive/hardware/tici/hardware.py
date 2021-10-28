@@ -1,7 +1,8 @@
+import json
 import os
+import subprocess
 from functools import cached_property
 from enum import IntEnum
-import subprocess
 from pathlib import Path
 
 from cereal import log
@@ -232,6 +233,16 @@ class Tici(HardwareBase):
     except Exception:
       return []
 
+  def get_nvme_temperatures(self):
+    ret = []
+    try:
+      out = subprocess.check_output("sudo smartctl -aj /dev/nvme0", shell=True)
+      dat = json.loads(out)
+      ret = list(map(int, dat["nvme_smart_health_information_log"]["temperature_sensors"]))
+    except Exception:
+      pass
+    return ret
+
   # We don't have a battery, so let's use some sane constants
   def get_battery_capacity(self):
     return 100
@@ -271,6 +282,13 @@ class Tici(HardwareBase):
         f.write(str(int(percentage * 10.23)))
     except Exception:
       pass
+
+  def get_screen_brightness(self):
+    try:
+      with open("/sys/class/backlight/panel0-backlight/brightness") as f:
+        return int(float(f.read()) / 10.23)
+    except Exception:
+      return 0
 
   def set_power_save(self, powersave_enabled):
     # amplifier, 100mW at idle

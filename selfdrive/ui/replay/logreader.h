@@ -1,14 +1,13 @@
 #pragma once
 
-#include <unordered_map>
-#include <cassert>
+#include <memory_resource>
 
-#include <capnp/serialize.h>
 #include "cereal/gen/cpp/log.capnp.h"
 #include "selfdrive/camerad/cameras/camera_common.h"
 
 const CameraType ALL_CAMERAS[] = {RoadCam, DriverCam, WideRoadCam};
 const int MAX_CAMERAS = std::size(ALL_CAMERAS);
+const int DEFAULT_EVENT_MEMORY_POOL_BLOCK_SIZE = 65000;
 
 class Event {
 public:
@@ -26,6 +25,13 @@ public:
     }
   };
 
+  void *operator new(size_t size, std::pmr::monotonic_buffer_resource *mbr) {
+    return mbr->allocate(size);
+  }
+  void operator delete(void *ptr) {
+    // No-op. memory used by EventMemoryPool increases monotonically until the logReader is destroyed. 
+  }
+
   uint64_t mono_time;
   cereal::Event::Which which;
   cereal::Event::Reader event;
@@ -36,12 +42,14 @@ public:
 
 class LogReader {
 public:
-  LogReader() = default;
+  LogReader(size_t memory_pool_block_size = DEFAULT_EVENT_MEMORY_POOL_BLOCK_SIZE);
   ~LogReader();
-  bool load(const std::string &file, bool is_bz2file);
+  bool load(const std::string &file);
 
   std::vector<Event*> events;
 
 private:
   std::string raw_;
+  std::pmr::monotonic_buffer_resource *mbr_ = nullptr;
+  void *pool_buffer_ = nullptr;
 };

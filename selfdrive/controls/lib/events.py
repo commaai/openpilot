@@ -286,7 +286,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
   EventName.startupNoFw: {
     ET.PERMANENT: Alert(
       "Car Unrecognized",
-      "Check All Connections",
+      "Check comma power connections",
       AlertStatus.userPrompt, AlertSize.mid,
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 10.),
   },

@@ -30,8 +30,8 @@ typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
 
 // TODO: this is also hardcoded in common/transformations/camera.py
 // TODO: choose based on frame input size
-const float y_offset = Hardware::TICI() ? 150.0 : 0.0;
-const float ZOOM = Hardware::TICI() ? 2912.8 : 2138.5;
+const float y_offset = Hardware::EON() ? 0.0 : 150.0;
+const float ZOOM = Hardware::EON() ? 2138.5 : 2912.8;
 
 typedef struct Rect {
   int x, y, w, h;
@@ -55,7 +55,7 @@ typedef struct Alert {
   }
 } Alert;
 
-const Alert CONTROLS_WAITING_ALERT = {"openpilot Unavailable", "Waiting for controls to start", 
+const Alert CONTROLS_WAITING_ALERT = {"openpilot Unavailable", "Waiting for controls to start",
                                       "controlsWaiting", cereal::ControlsState::AlertSize::MID,
                                       AudibleAlert::NONE};
 
@@ -130,6 +130,7 @@ typedef struct UIState {
   UIScene scene = {};
 
   bool awake;
+  bool has_prime = false;
 
   float car_space_transform[6];
   bool wide_camera;

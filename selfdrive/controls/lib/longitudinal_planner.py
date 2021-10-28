@@ -4,12 +4,12 @@ import numpy as np
 from common.numpy_fast import interp
 
 import cereal.messaging as messaging
-from cereal import log
 from common.realtime import DT_MDL
 from selfdrive.modeld.constants import T_IDXS
 from selfdrive.config import Conversions as CV
 from selfdrive.controls.lib.longcontrol import LongCtrlState
 from selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import LongitudinalMpc
+from selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import T_IDXS as T_IDXS_MPC
 from selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, CONTROL_N
 from selfdrive.swaglog import cloudlog
 
@@ -51,8 +51,6 @@ class Planner():
     self.v_desired = init_v
     self.a_desired = init_a
     self.alpha = np.exp(-DT_MDL/2.0)
-    self.lead_0 = log.ModelDataV2.LeadDataV3.new_message()
-    self.lead_1 = log.ModelDataV2.LeadDataV3.new_message()
 
     self.v_desired_trajectory = np.zeros(CONTROL_N)
     self.a_desired_trajectory = np.zeros(CONTROL_N)
@@ -69,9 +67,6 @@ class Planner():
 
     long_control_state = sm['controlsState'].longControlState
     force_slow_decel = sm['controlsState'].forceDecel
-
-    self.lead_0 = sm['radarState'].leadOne
-    self.lead_1 = sm['radarState'].leadTwo
 
     enabled = (long_control_state == LongCtrlState.pid) or (long_control_state == LongCtrlState.stopping)
     if not enabled or sm['carState'].gasPressed:
@@ -94,9 +89,9 @@ class Planner():
     self.mpc.set_accel_limits(accel_limits_turns[0], accel_limits_turns[1])
     self.mpc.set_cur_state(self.v_desired, self.a_desired)
     self.mpc.update(sm['carState'], sm['radarState'], v_cruise)
-    self.v_desired_trajectory = self.mpc.v_solution[:CONTROL_N]
-    self.a_desired_trajectory = self.mpc.a_solution[:CONTROL_N]
-    self.j_desired_trajectory = self.mpc.j_solution[:CONTROL_N]
+    self.v_desired_trajectory = np.interp(T_IDXS[:CONTROL_N], T_IDXS_MPC, self.mpc.v_solution)
+    self.a_desired_trajectory = np.interp(T_IDXS[:CONTROL_N], T_IDXS_MPC, self.mpc.a_solution)
+    self.j_desired_trajectory = np.interp(T_IDXS[:CONTROL_N], T_IDXS_MPC[:-1], self.mpc.j_solution)
 
     #TODO counter is only needed because radar is glitchy, remove once radar is gone
     self.fcw = self.mpc.crash_cnt > 5
@@ -121,7 +116,7 @@ class Planner():
     longitudinalPlan.accels = [float(x) for x in self.a_desired_trajectory]
     longitudinalPlan.jerks = [float(x) for x in self.j_desired_trajectory]
 
-    longitudinalPlan.hasLead = self.mpc.prev_lead_status
+    longitudinalPlan.hasLead = sm['radarState'].leadOne.status
     longitudinalPlan.longitudinalPlanSource = self.mpc.source
     longitudinalPlan.fcw = self.fcw
 

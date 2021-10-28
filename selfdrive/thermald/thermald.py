@@ -32,8 +32,8 @@ NetworkType = log.DeviceState.NetworkType
 NetworkStrength = log.DeviceState.NetworkStrength
 CURRENT_TAU = 15.   # 15s time constant
 TEMP_TAU = 5.   # 5s time constant
-DAYS_NO_CONNECTIVITY_MAX = 7  # do not allow to engage after a week without internet
-DAYS_NO_CONNECTIVITY_PROMPT = 4  # send an offroad prompt after 4 days with no internet
+DAYS_NO_CONNECTIVITY_MAX = 14     # do not allow to engage after this many days
+DAYS_NO_CONNECTIVITY_PROMPT = 10  # send an offroad prompt after this many days
 DISCONNECT_TIMEOUT = 5.  # wait 5 seconds before going offroad after disconnect so you get an alert
 
 ThermalBand = namedtuple("ThermalBand", ['min_temp', 'max_temp'])
@@ -154,7 +154,7 @@ def thermald_thread():
   pm = messaging.PubMaster(['deviceState'])
 
   pandaState_timeout = int(1000 * 2.5 * DT_TRML)  # 2.5x the expected pandaState frequency
-  pandaState_sock = messaging.sub_sock('pandaState', timeout=pandaState_timeout)
+  pandaState_sock = messaging.sub_sock('pandaStates', timeout=pandaState_timeout)
   sm = messaging.SubMaster(["peripheralState", "gpsLocationExternal", "managerState"])
 
   fan_speed = 0
@@ -203,15 +203,15 @@ def thermald_thread():
     params.put_bool("BootedOnroad", True)
 
   while True:
-    pandaState = messaging.recv_sock(pandaState_sock, wait=True)
+    pandaStates = messaging.recv_sock(pandaState_sock, wait=True)
 
     sm.update(0)
     peripheralState = sm['peripheralState']
 
     msg = read_thermal(thermal_config)
 
-    if pandaState is not None:
-      pandaState = pandaState.pandaState
+    if pandaStates is not None and len(pandaStates.pandaStates) > 0:
+      pandaState = pandaStates.pandaStates[0]
 
       # If we lose connection to the panda, wait 5 seconds before going offroad
       if pandaState.pandaType == log.PandaState.PandaType.unknown:
@@ -255,7 +255,7 @@ def thermald_thread():
         network_type = HARDWARE.get_network_type()
         network_strength = HARDWARE.get_network_strength(network_type)
         network_info = HARDWARE.get_network_info()  # pylint: disable=assignment-from-none
-        nvme_temps = HARDWARE.get_nvme_temps()
+        nvme_temps = HARDWARE.get_nvme_temperatures()
         modem_temps = HARDWARE.get_modem_temperatures()
 
         # Log modem version once
@@ -290,6 +290,7 @@ def thermald_thread():
     if modem_temps is not None:
       msg.deviceState.modemTempC = modem_temps
 
+    msg.deviceState.screenBrightnessPercent = HARDWARE.get_screen_brightness()
     msg.deviceState.batteryPercent = HARDWARE.get_battery_capacity()
     msg.deviceState.batteryCurrent = HARDWARE.get_battery_current()
     msg.deviceState.usbOnline = HARDWARE.get_usb_present()
@@ -379,7 +380,7 @@ def thermald_thread():
     set_offroad_alert_if_changed("Offroad_TemperatureTooHigh", (not startup_conditions["device_temp_good"]))
 
     if TICI:
-      set_offroad_alert_if_changed("Offroad_NvmeMissing", (not Path("/data/media").is_mount()))
+      set_offroad_alert_if_changed("Offroad_StorageMissing", (not Path("/data/media").is_mount()))
 
     # Handle offroad/onroad transition
     should_start = all(startup_conditions.values())
@@ -446,7 +447,7 @@ def thermald_thread():
 
       cloudlog.event("STATUS_PACKET",
                      count=count,
-                     pandaState=(strip_deprecated_keys(pandaState.to_dict()) if pandaState else None),
+                     pandaStates=(strip_deprecated_keys(pandaStates.to_dict()) if pandaStates else None),
                      peripheralState=strip_deprecated_keys(peripheralState.to_dict()),
                      location=(strip_deprecated_keys(sm["gpsLocationExternal"].to_dict()) if sm.alive["gpsLocationExternal"] else None),
                      deviceState=strip_deprecated_keys(msg.to_dict()))

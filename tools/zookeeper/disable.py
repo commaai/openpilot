@@ -1,7 +1,8 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 from tools.zookeeper import Zookeeper
 
-z = Zookeeper()
-z.set_device_power(False)
+if __name__ == "__main__":
+  z = Zookeeper()
+  z.set_device_power(False)
 

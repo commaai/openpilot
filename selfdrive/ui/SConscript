@@ -11,7 +11,7 @@ if arch == 'aarch64':
   base_libs += ['log', 'utils', 'gui', 'ui', 'CB', 'gsl', 'adreno_utils', 'cutils', 'uuid']
 
 if maps and arch == 'x86_64':
-  rpath = [Dir(f"#phonelibs/mapbox-gl-native-qt/{arch}").srcnode().abspath]
+  rpath = [Dir(f"#third_party/mapbox-gl-native-qt/{arch}").srcnode().abspath]
   qt_env["RPATH"] += rpath
 
 if arch == "Darwin":
@@ -21,7 +21,7 @@ if arch == "Darwin":
 widgets_src = ["qt/util.cc", "qt/widgets/input.cc", "qt/widgets/drive_stats.cc",
                "qt/widgets/ssh_keys.cc", "qt/widgets/toggle.cc", "qt/widgets/controls.cc",
                "qt/widgets/offroad_alerts.cc", "qt/widgets/prime.cc", "qt/widgets/keyboard.cc",
-               "qt/widgets/scrollview.cc", "qt/widgets/cameraview.cc", "#phonelibs/qrcode/QrCode.cc", "qt/api.cc",
+               "qt/widgets/scrollview.cc", "qt/widgets/cameraview.cc", "#third_party/qrcode/QrCode.cc", "qt/api.cc",
                "qt/request_repeater.cc"]
 
 if arch != 'aarch64':
@@ -45,6 +45,8 @@ asset_obj = qt_env.Object("assets", assets)
 
 # build soundd
 qt_env.Program("_soundd", "soundd.cc", LIBS=base_libs)
+if GetOption('test'):
+  qt_env.Program("tests/playsound", "tests/playsound.cc", LIBS=base_libs)
 
 # spinner and text window
 qt_env.Program("qt/text", ["qt/text.cc"], LIBS=qt_libs)
@@ -54,7 +56,7 @@ qt_env.Program("qt/spinner", ["qt/spinner.cc"], LIBS=qt_libs)
 qt_src = ["main.cc", "ui.cc", "paint.cc", "qt/sidebar.cc", "qt/onroad.cc",
           "qt/window.cc", "qt/home.cc", "qt/offroad/settings.cc",
           "qt/offroad/onboarding.cc", "qt/offroad/driverview.cc",
-          "#phonelibs/nanovg/nanovg.c"]
+          "#third_party/nanovg/nanovg.c"]
 qt_env.Program("_ui", qt_src + [asset_obj], LIBS=qt_libs)
 
 
@@ -111,8 +113,10 @@ if arch in ['x86_64', 'Darwin'] and os.path.exists(Dir("#tools/").get_abspath())
   replay_lib_src = ["replay/replay.cc", "replay/camera.cc", "replay/logreader.cc", "replay/framereader.cc", "replay/route.cc", "replay/util.cc"]
 
   replay_lib = qt_env.Library("qt_replay", replay_lib_src, LIBS=base_libs)
-  replay_libs = [replay_lib, 'avutil', 'avcodec', 'avformat', 'swscale', 'bz2', 'curl'] + qt_libs
+  replay_libs = [replay_lib, 'avutil', 'avcodec', 'avformat', 'bz2', 'curl', 'yuv'] + qt_libs
   qt_env.Program("replay/replay", ["replay/main.cc"], LIBS=replay_libs)
+
+  qt_env.Program("watch3", ["watch3.cc"], LIBS=qt_libs + ['common', 'json11'])
 
   if GetOption('test'):
     qt_env.Program('replay/tests/test_replay', ['replay/tests/test_runner.cc', 'replay/tests/test_replay.cc'], LIBS=[replay_libs])
