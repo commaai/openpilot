@@ -141,7 +141,7 @@ class CarState(CarStateBase):
     ]
 
     checks = [
-      ("ASCMLKASteeringCmd", 50),  # reduced openpilot send rate for sensitive EPS firmware
+      ("ASCMLKASteeringCmd", 50),
     ]
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, CanBus.LOOPBACK)
