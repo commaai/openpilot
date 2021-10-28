@@ -14,9 +14,6 @@ RUN pip install --no-cache-dir pipenv==2020.8.13 && \
     pip uninstall -y pipenv
 
 
-# TODO: add to pipfile
-RUN pip install sphinx-rtd-theme==1.0.0 sphinx==4.2.0 myst-parser==0.15.2
-
 COPY SConstruct ${OPENPILOT_PATH}
 
 COPY ./pyextra ${OPENPILOT_PATH}/pyextra
