@@ -191,20 +191,30 @@ void MapWindow::timerUpdate() {
     auto attrs = cur_maneuver.extendedAttributes();
     if (cur_maneuver.isValid() && attrs.contains("mapbox.banner_instructions")) {
       float along_geometry = distance_along_geometry(segment.path(), to_QGeoCoordinate(*last_position));
-      float distance_to_maneuver = segment.distance() - along_geometry;
-      emit distanceChanged(std::max(0.0f, distance_to_maneuver));
+      float distance_to_maneuver_along_geometry = segment.distance() - along_geometry;
+      emit distanceChanged(std::max(0.0f, distance_to_maneuver_along_geometry));
 
       m_map->setPitch(MAX_PITCH); // TODO: smooth pitching based on maneuver distance
 
-      auto banner = attrs["mapbox.banner_instructions"].toList();
-      if (banner.size()) {
-        auto banner_0 = banner[0].toMap();
-        float show_at = banner_0["distance_along_geometry"].toDouble();
-        emit instructionsChanged(banner_0, distance_to_maneuver < show_at);
+      auto banners = attrs["mapbox.banner_instructions"].toList();
+      if (banners.size()) {
+        auto banner = banners[0].toMap();
+
+        for (auto &b : banners) {
+          auto bb = b.toMap();
+          if (distance_to_maneuver_along_geometry < bb["distance_along_geometry"].toDouble()) {
+            banner = bb;
+          }
+        }
+
+        // Show full banner if ready to show, otherwise give summarized version of first banner in segment
+        emit instructionsChanged(banner, distance_to_maneuver_along_geometry < banner["distance_along_geometry"].toDouble());
+      } else {
+        map_instructions->hideIfNoError();
       }
 
       // Transition to next route segment
-      if (!shouldRecompute() && (distance_to_maneuver < -MANEUVER_TRANSITION_THRESHOLD)) {
+      if (!shouldRecompute() && (distance_to_maneuver_along_geometry < -MANEUVER_TRANSITION_THRESHOLD)) {
         auto next_segment = segment.nextRouteSegment();
         if (next_segment.isValid()) {
           segment = next_segment;
@@ -610,16 +620,6 @@ void MapInstructions::updateInstructions(QMap<QString, QVariant> banner, bool fu
     icon_01->setPixmap(pix.scaledToWidth(200, Qt::SmoothTransformation));
     icon_01->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
     icon_01->setVisible(true);
-  }
-
-  // Parse components (e.g. lanes, exit number)
-  auto components = p["components"].toList();
-  QString icon_fn;
-  for (auto &c : components) {
-    auto cc = c.toMap();
-    if (cc["type"].toString() == "icon") {
-      icon_fn = cc["imageBaseURL"].toString() + "@3x.png";
-    }
   }
 
   if (banner.contains("secondary") && full) {
