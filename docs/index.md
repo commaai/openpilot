@@ -1,5 +1,8 @@
 # openpilot Documentation
 
+```{include} README.md
+```
+
 ```{toctree}
 :caption: 'General'
 :maxdepth: 4
