@@ -660,7 +660,7 @@ int main(int argc, char* argv[]) {
     }
 
     // send empty pandaState & peripheralState and try again
-    if (pandas.size() == 0) {
+    if (pandas.size() != serials.size()) {
       send_empty_panda_state(&pm);
       send_empty_peripheral_state(&pm);
       util::sleep_for(500);
