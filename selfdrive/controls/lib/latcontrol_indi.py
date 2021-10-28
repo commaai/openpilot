@@ -12,8 +12,8 @@ from selfdrive.controls.lib.latcontrol import LatControl, MIN_STEER_SPEED
 
 
 class LatControlINDI(LatControl):
-  def __init__(self, CP):
-    super().__init__(CP)
+  def __init__(self, CP, CI):
+    super().__init__(CP, CI)
     self.angle_steers_des = 0.
 
     A = np.array([[1.0, DT_CTRL, 0.0],

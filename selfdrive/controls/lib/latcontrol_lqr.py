@@ -9,8 +9,8 @@ from selfdrive.controls.lib.latcontrol import LatControl, MIN_STEER_SPEED
 
 
 class LatControlLQR(LatControl):
-  def __init__(self, CP):
-    super().__init__(CP)
+  def __init__(self, CP, CI):
+    super().__init__(CP, CI)
     self.scale = CP.lateralTuning.lqr.scale
     self.ki = CP.lateralTuning.lqr.ki
 
