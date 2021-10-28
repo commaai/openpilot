@@ -35,8 +35,9 @@ class CarState(CarStateBase):
     can_gear = int(cp.vl["GEAR"]["GEAR"])
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(can_gear, None))
 
-    ret.leftBlinker = cp.vl["BLINK_INFO"]["LEFT_BLINK"] == 1
-    ret.rightBlinker = cp.vl["BLINK_INFO"]["RIGHT_BLINK"] == 1
+    # TODO: see if there's a signal for blinker state instead of lamp state
+    ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_stalk(250, cp.vl["BLINK_INFO"]["LEFT_BLINK"] == 1,
+                                                                       cp.vl["BLINK_INFO"]["RIGHT_BLINK"] == 1)
 
     ret.steeringAngleDeg = cp.vl["STEER"]["STEER_ANGLE"]
     ret.steeringTorque = cp.vl["STEER_TORQUE"]["STEER_TORQUE_SENSOR"]
