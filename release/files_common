@@ -9,7 +9,10 @@ SConstruct
 
 README.md
 RELEASES.md
-docs/*
+docs/CARS.md
+docs/CONTRIBUTING.md
+docs/INTEGRATION.md
+docs/LIMITATIONS.md
 site_scons/site_tools/cython.py
 
 common/.gitignore

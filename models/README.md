@@ -1,4 +1,4 @@
-# Neural networks in openpilot
+## Neural networks in openpilot
 To view the architecture of the ONNX networks, you can use [netron](https://netron.app/)
 
 ## Supercombo
@@ -43,12 +43,12 @@ To view the architecture of the ONNX networks, you can use [netron](https://netr
       * z position in current frame (meters)
 * **leads**
   * 2 hypotheses for potential lead cars : 102 = 2 * 51
-    * predicted mean and stadard deviation for the following values at 0,2,4,6,8,10s : 48 = 2 * 6 * 4 
+    * predicted mean and stadard deviation for the following values at 0,2,4,6,8,10s : 48 = 2 * 6 * 4
       * x position of lead in current frame (meters)
       * y position of lead in current frame (meters)
       * speed of lead (meters/s)
       * acceleration of lead(meters/(s*s))
-    * probabilities[^1] this hypothesis is the most likely hypothesis at 0s, 2s or 4s from now : 3 
+    * probabilities[^1] this hypothesis is the most likely hypothesis at 0s, 2s or 4s from now : 3
 * **lead probabilities**
   * probability[^1] that there is a lead car at 0s, 2s, 4s from now : 3 = 1 * 3
 * **desire state**
