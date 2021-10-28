@@ -327,7 +327,7 @@ jobs:
       run: |
         docker pull $DOCKER_REGISTRY/$BASE_IMAGE:latest || true
         docker pull $DOCKER_REGISTRY/openpilot-docs:latest || true
-        docker build --cache-from $DOCKER_REGISTRY/openpilot-docs:latest -t $DOCKER_REGISTRY/openpilot-docs:latest -f docs/docker/Dockerfile .
+        DOCKER_BUILDKIT=1 docker build --cache-from $DOCKER_REGISTRY/openpilot-docs:latest -t $DOCKER_REGISTRY/openpilot-docs:latest -f docs/docker/Dockerfile .
     - name: Push docker container
       if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
       run: |
