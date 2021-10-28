@@ -132,7 +132,12 @@ typedef struct UIScene {
   uint64_t started_frame;
 } UIScene;
 
-typedef struct UIState {
+class UIState : public QObject {
+  Q_OBJECT
+
+public:
+  UIState(QObject* parent = 0);
+
   int fb_w = 0, fb_h = 0;
   NVGcontext *vg;
 
@@ -144,24 +149,12 @@ typedef struct UIState {
   UIStatus status;
   UIScene scene = {};
 
-  bool awake;
+  bool awake = true;
   bool has_prime = false;
 
   QTransform car_space_transform;
   bool wide_camera;
-  
   float running_time;
-} UIState;
-
-
-class QUIState : public QObject {
-  Q_OBJECT
-
-public:
-  QUIState(QObject* parent = 0);
-
-  // TODO: get rid of this, only use signal
-  inline static UIState ui_state = {0};
 
 signals:
   void uiUpdate(const UIState &s);
@@ -175,6 +168,7 @@ private:
   bool started_prev = true;
 };
 
+UIState *uiState();
 
 // device management class
 

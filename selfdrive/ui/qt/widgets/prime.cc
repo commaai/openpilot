@@ -314,8 +314,8 @@ void SetupWidget::replyFinished(const QString &response) {
 
     bool prime = json["prime"].toBool();
 
-    if (QUIState::ui_state.has_prime != prime) {
-      QUIState::ui_state.has_prime = prime;
+    if (uiState()->has_prime != prime) {
+      uiState()->has_prime = prime;
       Params().putBool("HasPrime", prime);
     }
 

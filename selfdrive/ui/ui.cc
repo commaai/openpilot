@@ -227,36 +227,36 @@ static void update_status(UIState *s) {
 }
 
 
-QUIState::QUIState(QObject *parent) : QObject(parent) {
-  ui_state.sm = std::make_unique<SubMaster, const std::initializer_list<const char *>>({
+UIState::UIState(QObject *parent) : QObject(parent) {
+  sm = std::make_unique<SubMaster, const std::initializer_list<const char *>>({
     "modelV2", "controlsState", "liveCalibration", "radarState", "deviceState", "roadCameraState",
     "pandaStates", "carParams", "driverMonitoringState", "sensorEvents", "carState", "liveLocationKalman",
   });
 
   Params params;
-  ui_state.wide_camera = Hardware::TICI() ? params.getBool("EnableWideCamera") : false;
-  ui_state.has_prime = params.getBool("HasPrime");
+  wide_camera = Hardware::TICI() ? params.getBool("EnableWideCamera") : false;
+  has_prime = params.getBool("HasPrime");
 
   // update timer
   timer = new QTimer(this);
-  QObject::connect(timer, &QTimer::timeout, this, &QUIState::update);
+  QObject::connect(timer, &QTimer::timeout, this, &UIState::update);
   timer->start(1000 / UI_FREQ);
 }
 
-void QUIState::update() {
-  update_sockets(&ui_state);
-  update_state(&ui_state);
-  update_status(&ui_state);
+void UIState::update() {
+  update_sockets(this);
+  update_state(this);
+  update_status(this);
 
-  if (ui_state.scene.started != started_prev || ui_state.sm->frame == 1) {
-    started_prev = ui_state.scene.started;
-    emit offroadTransition(!ui_state.scene.started);
+  if (scene.started != started_prev || sm->frame == 1) {
+    started_prev = scene.started;
+    emit offroadTransition(!scene.started);
   }
 
   if (ui_state.sm->frame % UI_FREQ == 0) {
     watchdog_kick();
   }
-  emit uiUpdate(ui_state);
+  emit uiUpdate(*this);
 }
 
 Device::Device(QObject *parent) : brightness_filter(BACKLIGHT_OFFROAD, BACKLIGHT_TS, BACKLIGHT_DT), QObject(parent) {
@@ -267,7 +267,7 @@ void Device::update(const UIState &s) {
   updateWakefulness(s);
 
   // TODO: remove from UIState and use signals
-  QUIState::ui_state.awake = awake;
+  uiState()->awake = awake;
 }
 
 void Device::setAwake(bool on, bool reset) {
@@ -335,4 +335,9 @@ void Device::updateWakefulness(const UIState &s) {
   }
 
   setAwake(awake_timeout, should_wake);
+}
+
+UIState *uiState() {
+  static UIState ui_state;
+  return &ui_state;
 }

@@ -35,8 +35,8 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   alerts->raise();
 
   setAttribute(Qt::WA_OpaquePaintEvent);
-  QObject::connect(this, &OnroadWindow::updateStateSignal, this, &OnroadWindow::updateState);
-  QObject::connect(this, &OnroadWindow::offroadTransitionSignal, this, &OnroadWindow::offroadTransition);
+  QObject::connect(uiState(), &UIState::uiUpdate, this, &OnroadWindow::updateState);
+  QObject::connect(uiState(), &UIState::offroadTransition, this, &OnroadWindow::offroadTransition);
 }
 
 void OnroadWindow::updateState(const UIState &s) {
@@ -67,10 +67,10 @@ void OnroadWindow::mousePressEvent(QMouseEvent* e) {
 void OnroadWindow::offroadTransition(bool offroad) {
 #ifdef ENABLE_MAPS
   if (!offroad) {
-    if (map == nullptr && (QUIState::ui_state.has_prime || !MAPBOX_TOKEN.isEmpty())) {
+    if (map == nullptr && (uiState()->has_prime || !MAPBOX_TOKEN.isEmpty())) {
       MapWindow * m = new MapWindow(get_mapbox_settings());
       m->setFixedWidth(topWidget(this)->width() / 2);
-      QObject::connect(this, &OnroadWindow::offroadTransitionSignal, m, &MapWindow::offroadTransition);
+      QObject::connect(uiState(), &UIState::offroadTransition, m, &MapWindow::offroadTransition);
       split->addWidget(m, 0, Qt::AlignRight);
       map = m;
     }
@@ -157,14 +157,14 @@ void NvgWindow::initializeGL() {
   qInfo() << "OpenGL renderer:" << QString((const char*)glGetString(GL_RENDERER));
   qInfo() << "OpenGL language version:" << QString((const char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
 
-  ui_nvg_init(&QUIState::ui_state);
+  ui_nvg_init(uiState());
   prev_draw_t = millis_since_boot();
   setBackgroundColor(bg_colors[STATUS_DISENGAGED]);
 }
 
 void NvgWindow::paintGL() {
   CameraViewWidget::paintGL();
-  ui_draw(&QUIState::ui_state, width(), height());
+  ui_draw(uiState(), width(), height());
 
   double cur_draw_t = millis_since_boot();
   double dt = cur_draw_t - prev_draw_t;

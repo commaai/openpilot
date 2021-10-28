@@ -171,7 +171,7 @@ DevicePanel::DevicePanel(QWidget* parent) : ListWidget(parent) {
 
   for (auto btn : {dcamBtn, resetCalibBtn, retrainingBtn, regulatoryBtn}) {
     if (btn) {
-      connect(parent, SIGNAL(offroadTransition(bool)), btn, SLOT(setEnabled(bool)));
+      connect(uiState(), &UIState::offroadTransition, btn, &QPushButton::setEnabled);
       addItem(btn);
     }
   }
@@ -249,7 +249,7 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
       params.putBool("DoUninstall", true);
     }
   });
-  connect(parent, SIGNAL(offroadTransition(bool)), uninstallBtn, SLOT(setEnabled(bool)));
+  connect(uiState(), &UIState::offroadTransition, uninstallBtn, &QPushButton::setEnabled);
 
   QWidget *widgets[] = {versionLbl, lastUpdateLbl, updateBtn, gitBranchLbl, gitCommitLbl, osVersionLbl, uninstallBtn};
   for (QWidget* w : widgets) {
