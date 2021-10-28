@@ -1,0 +1,46 @@
+Import('env', 'arch', 'cereal', 'messaging', 'common', 'gpucommon', 'visionipc', 'USE_WEBCAM', 'USE_FRAME_STREAM')
+
+libs = ['m', 'pthread', common, 'jpeg', 'OpenCL', 'yuv', cereal, messaging, 'zmq', 'capnp', 'kj', visionipc, gpucommon]
+
+if arch == "aarch64":
+  libs += ['gsl', 'CB', 'adreno_utils', 'EGL', 'GLESv3', 'cutils', 'ui']
+  cameras = ['cameras/camera_qcom.cc']
+elif arch == "larch64":
+  libs += ['atomic']
+  cameras = ['cameras/camera_qcom2.cc']
+else:
+  env['CXXFLAGS'] += ["-Wno-deprecated-declarations"]
+  if USE_WEBCAM:
+    libs += ['opencv_core', 'opencv_highgui', 'opencv_imgproc', 'opencv_videoio']
+    cameras = ['cameras/camera_webcam.cc']
+    env = env.Clone()
+    env.Append(CXXFLAGS = '-DWEBCAM')
+    env.Append(CFLAGS = '-DWEBCAM')
+    env.Append(CPPPATH = ['/usr/include/opencv4', '/usr/local/include/opencv4'])
+  else:
+    if USE_FRAME_STREAM:
+      cameras = ['cameras/camera_frame_stream.cc']
+    else:
+      libs += ['avutil', 'avcodec', 'avformat', 'swscale']
+      cameras = ['cameras/camera_replay.cc', env.Object('camera-framereader', '#/selfdrive/ui/replay/framereader.cc')]
+
+  if arch == "Darwin":
+    del libs[libs.index('OpenCL')]
+    del libs[libs.index(gpucommon)][gpucommon.index('GL')]
+    env = env.Clone()
+    env['FRAMEWORKS'] = ['OpenCL', 'OpenGL']
+
+env.Program('camerad', [
+    'main.cc',
+    'cameras/camera_common.cc',
+    'transforms/rgb_to_yuv.cc',
+    'imgproc/utils.cc',
+    cameras,
+  ], LIBS=libs)
+
+if GetOption("test"):
+  env.Program('test/ae_gray_test', [
+      'test/ae_gray_test.cc',
+      'cameras/camera_common.cc',
+      'transforms/rgb_to_yuv.cc',
+    ], LIBS=libs)
