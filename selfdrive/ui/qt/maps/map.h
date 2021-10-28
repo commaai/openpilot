@@ -27,7 +27,8 @@
 #include "selfdrive/common/util.h"
 #include "cereal/messaging/messaging.h"
 
-const QString MAPS_HOST = util::getenv("MAPS_HOST", "https://maps.comma.ai").c_str();
+const QString MAPBOX_TOKEN = util::getenv("MAPBOX_TOKEN").c_str();
+const QString MAPS_HOST = util::getenv("MAPS_HOST", MAPBOX_TOKEN.isEmpty() ? "https://maps.comma.ai" : "https://api.mapbox.com").c_str();
 
 class MapInstructions : public QWidget {
   Q_OBJECT
