@@ -30,6 +30,7 @@ COPY ./opendbc ${OPENPILOT_PATH}/opendbc
 COPY ./cereal ${OPENPILOT_PATH}/cereal
 COPY ./panda ${OPENPILOT_PATH}/panda
 COPY ./selfdrive ${OPENPILOT_PATH}/selfdrive
+COPY ./*.md ${OPENPILOT_PATH}/
 
 RUN scons -j$(nproc)
 
