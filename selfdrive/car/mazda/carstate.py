@@ -35,9 +35,8 @@ class CarState(CarStateBase):
     can_gear = int(cp.vl["GEAR"]["GEAR"])
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(can_gear, None))
 
-    # TODO: see if there's a signal for blinker state instead of lamp state
-    ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_stalk(250, cp.vl["BLINK_INFO"]["LEFT_BLINK"] == 1,
-                                                                       cp.vl["BLINK_INFO"]["RIGHT_BLINK"] == 1)
+    ret.leftBlinker = bool(cp.vl["TURN_SWITCH"]["TURN_LEFT_SWITCH"])
+    ret.rightBlinker = bool(cp.vl["TURN_SWITCH"]["TURN_RIGHT_SWITCH"])
 
     ret.steeringAngleDeg = cp.vl["STEER"]["STEER_ANGLE"]
     ret.steeringTorque = cp.vl["STEER_TORQUE"]["STEER_TORQUE_SENSOR"]
@@ -95,8 +94,8 @@ class CarState(CarStateBase):
     # this function generates lists for signal, messages and initial values
     signals = [
       # sig_name, sig_address, default
-      ("LEFT_BLINK", "BLINK_INFO", 0),
-      ("RIGHT_BLINK", "BLINK_INFO", 0),
+      ("TURN_LEFT_SWITCH", "TURN_SWITCH", 0),
+      ("TURN_RIGHT_SWITCH", "TURN_SWITCH", 0),
       ("STEER_ANGLE", "STEER", 0),
       ("STEER_ANGLE_RATE", "STEER_RATE", 0),
       ("STEER_TORQUE_SENSOR", "STEER_TORQUE", 0),
@@ -109,7 +108,7 @@ class CarState(CarStateBase):
 
     checks = [
       # sig_address, frequency
-      ("BLINK_INFO", 10),
+      ("TURN_SWITCH", 10),
       ("STEER", 67),
       ("STEER_RATE", 83),
       ("STEER_TORQUE", 83),
