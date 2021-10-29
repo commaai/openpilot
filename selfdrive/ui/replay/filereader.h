@@ -12,9 +12,9 @@ public:
 
 private:
   std::string download(const std::string &url, std::atomic<bool> *abort);
-  bool cache_to_local_;
   int chunk_size_;
   int max_retries_;
+  bool cache_to_local_;
 };
 
 std::string cacheFilePath(const std::string &url);

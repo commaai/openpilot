@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <cassert>
 #include <mutex>
+#include <sstream>
 
 namespace {
 
