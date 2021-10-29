@@ -18,7 +18,9 @@ public:
   Params(const std::string &path = {});
   bool checkKey(const std::string &key);
   ParamKeyType getKeyType(const std::string &key);
-  inline std::string getParamPath(const std::string &key) { return params_path + "/d/" + key; }
+  inline std::string getParamPath(const std::string &key) {
+    return params_path + "/d/" + key;
+  }
 
   // Delete a value
   int remove(const std::string &key);
@@ -26,13 +28,19 @@ public:
 
   // helpers for reading values
   std::string get(const std::string &key, bool block = false);
-  inline bool getBool(const std::string &key) { return get(key) == "1"; }
+  inline bool getBool(const std::string &key) {
+    return get(key) == "1";
+  }
   std::map<std::string, std::string> readAll();
 
   // helpers for writing values
   int put(const char *key, const char *val, size_t value_size);
-  inline int put(const std::string &key, const std::string &val) { return put(key.c_str(), val.data(), val.size()); }
-  inline int putBool(const std::string &key, bool val) { return put(key.data(), val ? "1" : "0"); }
+  inline int put(const std::string &key, const std::string &val) {
+    return put(key.c_str(), val.data(), val.size());
+  }
+  inline int putBool(const std::string &key, bool val) {
+    return put(key.data(), val ? "1" : "0");
+  }
 
 private:
   const std::string params_path;
