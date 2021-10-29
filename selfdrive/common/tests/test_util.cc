@@ -93,6 +93,24 @@ TEST_CASE("util::read_files_in_dir") {
   }
 }
 
+
+TEST_CASE("util::safe_fwrite") {
+  char filename[] = "/tmp/XXXXXX";
+  int fd = mkstemp(filename);
+  close(fd);
+  std::string dat = random_bytes(1024 * 1024);
+
+  FILE *f = util::safe_fopen(filename, "wb");
+  REQUIRE(f != nullptr);
+  size_t size = util::safe_fwrite(dat.data(), 1, dat.size(), f);
+  REQUIRE(size == dat.size());
+  int ret = util::safe_fflush(f);
+  REQUIRE(ret == 0);
+  ret = fclose(f);
+  REQUIRE(ret == 0);
+  REQUIRE(dat == util::read_file(filename));
+}
+
 TEST_CASE("util::create_directories") {
   system("rm /tmp/test_create_directories -rf");
   std::string dir = "/tmp/test_create_directories/a/b/c/d/e/f";
