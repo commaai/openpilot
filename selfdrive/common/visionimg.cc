@@ -53,6 +53,7 @@ EGLImageTexture::~EGLImageTexture() {
 EGLImageTexture::EGLImageTexture(const VisionBuf *buf) {
   glGenTextures(1, &frame_tex);
   glBindTexture(GL_TEXTURE_2D, frame_tex);
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, buf->width, buf->height, 0, GL_RGB, GL_UNSIGNED_BYTE, buf->addr);
   glGenerateMipmap(GL_TEXTURE_2D);
 }
