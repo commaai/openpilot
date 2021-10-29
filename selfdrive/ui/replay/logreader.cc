@@ -28,16 +28,23 @@ Event::Event(const kj::ArrayPtr<const capnp::word> &amsg, bool frame) : reader(a
 // class LogReader
 
 LogReader::LogReader(size_t memory_pool_block_size) {
+#ifdef HAS_MEMORY_RESOURCE
   const size_t buf_size = sizeof(Event) * memory_pool_block_size;
   pool_buffer_ = ::operator new(buf_size);
   mbr_ = new std::pmr::monotonic_buffer_resource(pool_buffer_, buf_size);
-
+#endif
   events.reserve(memory_pool_block_size);
 }
 
 LogReader::~LogReader() {
+#ifdef HAS_MEMORY_RESOURCE
   delete mbr_;
   ::operator delete(pool_buffer_);
+#else
+  for (Event *e : events) {
+    delete e;
+  }
+#endif
 }
 
 bool LogReader::load(const std::string &file) {
@@ -56,15 +63,22 @@ bool LogReader::load(const std::string &file) {
   kj::ArrayPtr<const capnp::word> words((const capnp::word *)raw_.data(), raw_.size() / sizeof(capnp::word));
   while (words.size() > 0) {
     try {
+#ifdef HAS_MEMORY_RESOURCE
       Event *evt = new (mbr_) Event(words);
+#else
+      Event *evt = new Event(words);
+#endif
 
       // Add encodeIdx packet again as a frame packet for the video stream
       if (evt->which == cereal::Event::ROAD_ENCODE_IDX ||
           evt->which == cereal::Event::DRIVER_ENCODE_IDX ||
           evt->which == cereal::Event::WIDE_ROAD_ENCODE_IDX) {
-
-          Event *frame_evt = new (mbr_) Event(words, true);
-          events.push_back(frame_evt);
+#ifdef HAS_MEMORY_RESOURCE
+        Event *frame_evt = new (mbr_) Event(words, true);
+#else
+        Event *frame_evt = new Event(words, true);
+#endif
+        events.push_back(frame_evt);
       }
 
       words = kj::arrayPtr(evt->reader.getEnd(), words.end());

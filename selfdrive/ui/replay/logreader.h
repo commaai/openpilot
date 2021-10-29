@@ -1,6 +1,9 @@
 #pragma once
 
+#if __has_include(<memory_resource>)
+#define HAS_MEMORY_RESOURCE 1
 #include <memory_resource>
+#endif
 
 #include "cereal/gen/cpp/log.capnp.h"
 #include "selfdrive/camerad/cameras/camera_common.h"
@@ -25,12 +28,14 @@ public:
     }
   };
 
+#if HAS_MEMORY_RESOURCE
   void *operator new(size_t size, std::pmr::monotonic_buffer_resource *mbr) {
     return mbr->allocate(size);
   }
   void operator delete(void *ptr) {
     // No-op. memory used by EventMemoryPool increases monotonically until the logReader is destroyed. 
   }
+#endif
 
   uint64_t mono_time;
   cereal::Event::Which which;
@@ -50,6 +55,8 @@ public:
 
 private:
   std::string raw_;
+#ifdef HAS_MEMORY_RESOURCE
   std::pmr::monotonic_buffer_resource *mbr_ = nullptr;
   void *pool_buffer_ = nullptr;
+#endif
 };
