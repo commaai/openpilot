@@ -18,8 +18,8 @@ void params_sig_handler(int signal) {
   params_do_exit = 1;
 }
 
-int fsync_dir(const char* path) {
-  int fd = HANDLE_EINTR(open(path, O_RDONLY, 0755));
+int fsync_dir(const std::string &path) {
+  int fd = HANDLE_EINTR(open(path.c_str(), O_RDONLY, 0755));
   if (fd < 0) {
     return -1;
   }
@@ -227,12 +227,10 @@ int Params::put(const char* key, const char* value, size_t value_size) {
     std::lock_guard<FileLock> lk(file_lock);
 
     // Move temp into place.
-    std::string path = params_path + "/d/" + std::string(key);
-    if ((result = rename(tmp_path.c_str(), path.c_str())) < 0) break;
+    if ((result = rename(tmp_path.c_str(), getParamPath(key).c_str())) < 0) break;
 
     // fsync parent directory
-    path = params_path + "/d";
-    result = fsync_dir(path.c_str());
+    result = fsync_dir(getParamPath());
   } while (false);
 
   close(tmp_fd);
@@ -244,18 +242,16 @@ int Params::remove(const std::string &key) {
   FileLock file_lock(params_path + "/.lock", LOCK_EX);
   std::lock_guard<FileLock> lk(file_lock);
   // Delete value.
-  std::string path = params_path + "/d/" + key;
-  int result = unlink(path.c_str());
+  int result = unlink(getParamPath(key).c_str());
   if (result != 0) {
     return result;
   }
   // fsync parent directory
-  path = params_path + "/d";
-  return fsync_dir(path.c_str());
+  return fsync_dir(getParamPath());
 }
 
 std::string Params::get(const std::string &key, bool block) {
-  std::string path = params_path + "/d/" + key;
+  std::string path = getParamPath(key);
   if (!block) {
     return util::read_file(path);
   } else {
@@ -282,8 +278,7 @@ std::map<std::string, std::string> Params::readAll() {
   FileLock file_lock(params_path + "/.lock", LOCK_SH);
   std::lock_guard<FileLock> lk(file_lock);
 
-  std::string key_path = params_path + "/d";
-  return util::read_files_in_dir(key_path);
+  return util::read_files_in_dir(getParamPath());
 }
 
 void Params::clearAll(ParamKeyType key_type) {
@@ -293,12 +288,10 @@ void Params::clearAll(ParamKeyType key_type) {
   std::string path;
   for (auto &[key, type] : keys) {
     if (type & key_type) {
-      path = params_path + "/d/" + key;
-      unlink(path.c_str());
+      unlink(getParamPath(key).c_str());
     }
   }
 
   // fsync parent directory
-  path = params_path + "/d";
-  fsync_dir(path.c_str());
+  fsync_dir(getParamPath());
 }
