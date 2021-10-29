@@ -75,6 +75,11 @@ std::string dir_name(std::string const& path);
 std::string read_file(const std::string& fn);
 std::map<std::string, std::string> read_files_in_dir(const std::string& path);
 int write_file(const char* path, const void* data, size_t size, int flags = O_WRONLY, mode_t mode = 0664);
+
+FILE* safe_fopen(const char* filename, const char* mode);
+size_t safe_fwrite(const void * ptr, size_t size, size_t count, FILE * stream);
+int safe_fflush(FILE *stream);
+
 std::string readlink(const std::string& path);
 bool file_exists(const std::string& fn);
 bool create_directories(const std::string &dir, mode_t mode);
