@@ -1,6 +1,7 @@
 #pragma once
 
 #include <fcntl.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 #include <algorithm>
@@ -76,6 +77,7 @@ std::map<std::string, std::string> read_files_in_dir(const std::string& path);
 int write_file(const char* path, const void* data, size_t size, int flags = O_WRONLY, mode_t mode = 0664);
 std::string readlink(const std::string& path);
 bool file_exists(const std::string& fn);
+bool create_directories(const std::string &dir, mode_t mode);
 
 inline void sleep_for(const int milliseconds) {
   std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
