@@ -1,14 +1,15 @@
 #include "selfdrive/common/util.h"
 
 #include <sys/stat.h>
+#include <dirent.h>
 
 #include <cassert>
 #include <cerrno>
 #include <cstring>
 #include <dirent.h>
 #include <fstream>
-#include <sstream>
 #include <iomanip>
+#include <sstream>
 
 #ifdef __linux__
 #include <sys/prctl.h>
@@ -145,6 +146,37 @@ std::string readlink(const std::string &path) {
 bool file_exists(const std::string& fn) {
   struct stat st = {};
   return stat(fn.c_str(), &st) != -1;
+}
+
+static bool createDirectory(std::string dir, mode_t mode) {
+  auto verify_dir = [](const std::string& dir) -> bool {
+    struct stat st = {};
+    return (stat(dir.c_str(), &st) == 0 && (st.st_mode & S_IFMT) == S_IFDIR);
+  };
+  // remove trailing /'s
+  while (dir.size() > 1 && dir.back() == '/') {
+    dir.pop_back();
+  }
+  // try to mkdir this directory
+  if (mkdir(dir.c_str(), mode) == 0) return true;
+  if (errno == EEXIST) return verify_dir(dir);
+  if (errno != ENOENT) return false;
+
+  // mkdir failed because the parent dir doesn't exist, so try to create it
+  size_t slash = dir.rfind('/');
+  if ((slash == std::string::npos || slash < 1) ||
+      !createDirectory(dir.substr(0, slash), mode)) {
+    return false;
+  }
+
+  // try again
+  if (mkdir(dir.c_str(), mode) == 0) return true;
+  return errno == EEXIST && verify_dir(dir);
+}
+
+bool create_directories(const std::string& dir, mode_t mode) {
+  if (dir.empty()) return false;
+  return createDirectory(dir, mode);
 }
 
 std::string getenv(const char* key, const char* default_val) {

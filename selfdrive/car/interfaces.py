@@ -39,6 +39,7 @@ class CarInterfaceBase():
       self.cp = self.CS.get_can_parser(CP)
       self.cp_cam = self.CS.get_cam_can_parser(CP)
       self.cp_body = self.CS.get_body_can_parser(CP)
+      self.cp_loopback = self.CS.get_loopback_can_parser(CP)
 
     self.CC = None
     if CarController is not None:
@@ -144,7 +145,8 @@ class CarInterfaceBase():
     elif cs_out.steerWarning:
       # only escalate to the harsher alert after the condition has
       # persisted for 0.5s and we're certain that the user isn't overriding
-      if self.steering_unpressed > int(0.5/DT_CTRL) and self.steer_warning > int(0.5/DT_CTRL):
+      if not cs_out.standstill and self.steering_unpressed > int(0.5 / DT_CTRL) and \
+         self.steer_warning > int(0.5 / DT_CTRL):
         events.add(EventName.steerTempUnavailable)
       else:
         events.add(EventName.steerTempUnavailableSilent)
@@ -252,4 +254,8 @@ class CarStateBase:
 
   @staticmethod
   def get_body_can_parser(CP):
+    return None
+
+  @staticmethod
+  def get_loopback_can_parser(CP):
     return None

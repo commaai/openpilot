@@ -41,27 +41,10 @@ int fsync_dir(const char* path) {
   return result;
 }
 
-int mkdir_p(std::string path) {
-  char * _path = (char *)path.c_str();
-
-  for (char *p = _path + 1; *p; p++) {
-    if (*p == '/') {
-      *p = '\0'; // Temporarily truncate
-      if (mkdir(_path, 0775) != 0) {
-        if (errno != EEXIST) return -1;
-      }
-      *p = '/';
-    }
-  }
-  if (mkdir(_path, 0775) != 0) {
-    if (errno != EEXIST) return -1;
-  }
-  return 0;
-}
 
 bool create_params_path(const std::string &param_path, const std::string &key_path) {
   // Make sure params path exists
-  if (!util::file_exists(param_path) && mkdir_p(param_path) != 0) {
+  if (!util::file_exists(param_path) && !util::create_directories(param_path, 0775)) {
     return false;
   }
 
@@ -169,7 +152,6 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"LastUpdateException", PERSISTENT},
     {"LastUpdateTime", PERSISTENT},
     {"LiveParameters", PERSISTENT},
-    {"MapboxToken", PERSISTENT | DONT_LOG},
     {"NavDestination", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_OFF},
     {"NavSettingTime24h", PERSISTENT},
     {"OpenpilotEnabledToggle", PERSISTENT},
@@ -204,7 +186,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"Offroad_InvalidTime", CLEAR_ON_MANAGER_START},
     {"Offroad_IsTakingSnapshot", CLEAR_ON_MANAGER_START},
     {"Offroad_NeosUpdate", CLEAR_ON_MANAGER_START},
-    {"Offroad_NvmeMissing", CLEAR_ON_MANAGER_START},
+    {"Offroad_StorageMissing", CLEAR_ON_MANAGER_START},
     {"Offroad_PandaFirmwareMismatch", CLEAR_ON_MANAGER_START | CLEAR_ON_PANDA_DISCONNECT},
     {"Offroad_TemperatureTooHigh", CLEAR_ON_MANAGER_START},
     {"Offroad_UnofficialHardware", CLEAR_ON_MANAGER_START},

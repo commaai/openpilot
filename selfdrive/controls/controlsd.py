@@ -206,9 +206,11 @@ class Controls:
     # TODO: make tici threshold the same
     if self.sm['deviceState'].memoryUsagePercent > (90 if TICI else 65) and not SIMULATION:
       self.events.add(EventName.lowMemory)
-    cpus = list(self.sm['deviceState'].cpuUsagePercent)[:(-1 if EON else None)]
-    if max(cpus, default=0) > 95 and not SIMULATION:
-      self.events.add(EventName.highCpuUsage)
+
+    # TODO: enable this once loggerd CPU usage is more reasonable
+    #cpus = list(self.sm['deviceState'].cpuUsagePercent)[:(-1 if EON else None)]
+    #if max(cpus, default=0) > 95 and not SIMULATION:
+    #  self.events.add(EventName.highCpuUsage)
 
     # Alert if fan isn't spinning for 5 seconds
     if self.sm['peripheralState'].pandaType in [PandaType.uno, PandaType.dos]:
@@ -563,10 +565,8 @@ class Controls:
     CC.hudControl.lanesVisible = self.enabled
     CC.hudControl.leadVisible = self.sm['longitudinalPlan'].hasLead
 
-    right_lane_visible = self.sm['lateralPlan'].rProb > 0.5
-    left_lane_visible = self.sm['lateralPlan'].lProb > 0.5
-    CC.hudControl.rightLaneVisible = bool(right_lane_visible)
-    CC.hudControl.leftLaneVisible = bool(left_lane_visible)
+    CC.hudControl.rightLaneVisible = True
+    CC.hudControl.leftLaneVisible = True
 
     recent_blinker = (self.sm.frame - self.last_blinker_frame) * DT_CTRL < 5.0  # 5s blinker cooldown
     ldw_allowed = self.is_ldw_enabled and CS.vEgo > LDW_MIN_SPEED and not recent_blinker \
@@ -574,6 +574,8 @@ class Controls:
 
     meta = self.sm['modelV2'].meta
     if len(meta.desirePrediction) and ldw_allowed:
+      right_lane_visible = self.sm['lateralPlan'].rProb > 0.5
+      left_lane_visible = self.sm['lateralPlan'].lProb > 0.5
       l_lane_change_prob = meta.desirePrediction[Desire.laneChangeLeft - 1]
       r_lane_change_prob = meta.desirePrediction[Desire.laneChangeRight - 1]
       l_lane_close = left_lane_visible and (self.sm['modelV2'].laneLines[1].y[0] > -(1.08 + CAMERA_OFFSET))

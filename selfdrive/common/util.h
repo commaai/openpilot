@@ -1,6 +1,7 @@
 #pragma once
 
 #include <fcntl.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 #include <algorithm>
@@ -81,6 +82,7 @@ int safe_fflush(FILE *stream);
 
 std::string readlink(const std::string& path);
 bool file_exists(const std::string& fn);
+bool create_directories(const std::string &dir, mode_t mode);
 
 inline void sleep_for(const int milliseconds) {
   std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));

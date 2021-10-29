@@ -15,7 +15,7 @@
 std::string random_bytes(int size) {
   std::random_device rd;
   std::independent_bits_engine<std::default_random_engine, CHAR_BIT, unsigned char> rbe(rd());
-  std::string bytes(size+1, '\0');
+  std::string bytes(size + 1, '\0');
   std::generate(bytes.begin(), bytes.end(), std::ref(rbe));
   return bytes;
 }
@@ -93,6 +93,7 @@ TEST_CASE("util::read_files_in_dir") {
   }
 }
 
+
 TEST_CASE("util::safe_fwrite") {
   char filename[] = "/tmp/XXXXXX";
   int fd = mkstemp(filename);
@@ -108,4 +109,37 @@ TEST_CASE("util::safe_fwrite") {
   ret = fclose(f);
   REQUIRE(ret == 0);
   REQUIRE(dat == util::read_file(filename));
+}
+
+TEST_CASE("util::create_directories") {
+  system("rm /tmp/test_create_directories -rf");
+  std::string dir = "/tmp/test_create_directories/a/b/c/d/e/f";
+
+  auto check_dir_permissions = [](const std::string &dir, mode_t mode) -> bool {
+    struct stat st = {};
+    return stat(dir.c_str(), &st) == 0 && (st.st_mode & S_IFMT) == S_IFDIR && (st.st_mode & (S_IRWXU | S_IRWXG | S_IRWXO)) == mode;
+  };
+
+  SECTION("create_directories") {
+    REQUIRE(util::create_directories(dir, 0755));
+    REQUIRE(check_dir_permissions(dir, 0755));
+  }
+  SECTION("dir already exists") {
+    REQUIRE(util::create_directories(dir, 0755));
+    REQUIRE(util::create_directories(dir, 0755));
+  }
+  SECTION("a file exists with the same name") {
+    REQUIRE(util::create_directories(dir, 0755));
+    int f = open((dir + "/file").c_str(), O_RDWR | O_CREAT);
+    REQUIRE(f != -1);
+    close(f);
+    REQUIRE(util::create_directories(dir + "/file", 0755) == false);
+    REQUIRE(util::create_directories(dir + "/file/1/2/3", 0755) == false);
+  }
+  SECTION("end with slashs") {
+    REQUIRE(util::create_directories(dir + "/", 0755));
+  }
+  SECTION("empty") {
+    REQUIRE(util::create_directories("", 0755) == false);
+  }
 }

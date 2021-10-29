@@ -1,5 +1,5 @@
+## CTF
 Welcome to the first part of the comma CTF!
-----------------
 
 * all the flags are contained in this route: `0c7f0c7f0c7f0c7f|2021-10-13--13-00-00`
 * there's 2 flags in each segment, with roughly increasing difficulty

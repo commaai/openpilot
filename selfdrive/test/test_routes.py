@@ -35,11 +35,11 @@ routes = [
   TestRoute("3d84727705fecd04|2021-05-25--08-38-56", CHRYSLER.PACIFICA_2020),
 
   TestRoute("f1b4c567731f4a1b|2018-04-30--10-15-35", FORD.FUSION),
-
-  TestRoute("c950e28c26b5b168|2018-05-30--22-03-41", GM.VOLT),
-  # TODO: use another route that has radar data at start
+  
   TestRoute("7cc2a8365b4dd8a9|2018-12-02--12-10-44", GM.ACADIA),
   TestRoute("aa20e335f61ba898|2019-02-05--16-59-04", GM.BUICK_REGAL),
+  TestRoute("46460f0da08e621e|2021-10-26--07-21-46", GM.ESCALADE_ESV),
+  TestRoute("c950e28c26b5b168|2018-05-30--22-03-41", GM.VOLT),
 
   TestRoute("0e7a2ba168465df5|2020-10-18--14-14-22", HONDA.ACURA_RDX_3G),
   TestRoute("a74b011b32b51b56|2020-07-26--17-09-36", HONDA.CIVIC),

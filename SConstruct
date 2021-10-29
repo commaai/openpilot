@@ -13,9 +13,9 @@ AddOption('--test',
           action='store_true',
           help='build test files')
 
-AddOption('--setup',
+AddOption('--extras',
           action='store_true',
-          help='build setup and installer files')
+          help='build misc extras, like setup and installer files')
 
 AddOption('--kaitai',
           action='store_true',
@@ -428,6 +428,9 @@ SConscript(['selfdrive/ui/SConscript'])
 
 if arch != "Darwin":
   SConscript(['selfdrive/logcatd/SConscript'])
+
+if GetOption('test'):
+  SConscript('panda/tests/safety/SConscript')
 
 external_sconscript = GetOption('external_sconscript')
 if external_sconscript:

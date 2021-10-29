@@ -310,7 +310,26 @@ jobs:
       run: eval "$BUILD"
     - name: Test car models
       run: |
-        ${{ env.RUN }} "scons -j$(nproc) && \
+        ${{ env.RUN }} "scons -j$(nproc) --test && \
                         coverage run selfdrive/test/test_models.py"
     - name: Upload coverage to Codecov
       run: bash <(curl -s https://codecov.io/bash) -v -F test_car_models
+
+  docs:
+    name: build docs
+    runs-on: ubuntu-20.04
+    timeout-minutes: 50
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Build docker container
+      run: |
+        docker pull $DOCKER_REGISTRY/$BASE_IMAGE:latest || true
+        docker pull $DOCKER_REGISTRY/openpilot-docs:latest || true
+        DOCKER_BUILDKIT=1 docker build --cache-from $DOCKER_REGISTRY/openpilot-docs:latest -t $DOCKER_REGISTRY/openpilot-docs:latest -f docs/docker/Dockerfile .
+    - name: Push docker container
+      if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
+      run: |
+        $DOCKER_LOGIN
+        docker push $DOCKER_REGISTRY/openpilot-docs:latest
