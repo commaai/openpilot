@@ -49,7 +49,7 @@ public:
     CL_CHECK(clReleaseProgram(prg_debayer));
   }
 
-  void queue(cl_command_queue q, cl_event &debayer_event, cl_mem cam_buf_cl, cl_mem buf_cl, int width, int height, float gain) {
+  void queue(cl_command_queue q, cl_mem cam_buf_cl, cl_mem buf_cl, int width, int height, float gain, cl_event *debayer_event) {
     CL_CHECK(clSetKernelArg(krnl_, 0, sizeof(cl_mem), &cam_buf_cl));
     CL_CHECK(clSetKernelArg(krnl_, 1, sizeof(cl_mem), &buf_cl));
 
@@ -59,11 +59,11 @@ public:
       const size_t globalWorkSize[] = {size_t(width), size_t(height)};
       const size_t localWorkSize[] = {debayer_local_worksize, debayer_local_worksize};
       CL_CHECK(clSetKernelArg(krnl_, 2, localMemSize, 0));
-      CL_CHECK(clEnqueueNDRangeKernel(q, krnl_, 2, NULL, globalWorkSize, localWorkSize, 0, 0, &debayer_event));
+      CL_CHECK(clEnqueueNDRangeKernel(q, krnl_, 2, NULL, globalWorkSize, localWorkSize, 0, 0, debayer_event));
     } else {
       const size_t debayer_work_size = height;  // doesn't divide evenly, is this okay?
       CL_CHECK(clSetKernelArg(krnl_, 2, sizeof(float), &gain));
-      CL_CHECK(clEnqueueNDRangeKernel(q, krnl_, 1, NULL, &debayer_work_size, NULL, 0, 0, &debayer_event));
+      CL_CHECK(clEnqueueNDRangeKernel(q, krnl_, 1, NULL, &debayer_work_size, NULL, 0, 0, debayer_event));
     }
   }
 
@@ -154,7 +154,7 @@ bool CameraBuf::acquire() {
     if ((int)gain == 0) gain = 1.0;
 #endif
 
-    debayer->queue(q, event, camrabuf_cl, cur_rgb_buf->buf_cl, rgb_width, rgb_height, gain);
+    debayer->queue(q, camrabuf_cl, cur_rgb_buf->buf_cl, rgb_width, rgb_height, gain, &event);
   } else {
     assert(rgb_stride == camera_state->ci.frame_stride);
     CL_CHECK(clEnqueueCopyBuffer(q, camrabuf_cl, cur_rgb_buf->buf_cl, 0, 0, cur_rgb_buf->len, 0, 0, &event));
