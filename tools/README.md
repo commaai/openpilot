@@ -31,12 +31,28 @@ MacOS:
 openpilot/tools/mac_setup.sh
 ```
 
-3. Build openpilot by running SCons in the root of the openpilot directory
+3. Ensure you have a working OpenCL runtime:
+
+You can verify your OpenCL installation with the `clinfo` command.
+
+If you do not have any working platforms, you can download drivers from your GPU vendor's site.
+On Ubuntu you can just install one of the packages returned by `apt search opencl-icd`.
+
+4. Activate the Python environment:
+
+Execute the following command in root openpilot directory:
+```bash
+pipenv shell
+```
+
+Your shell prompt should change to something similar to `(openpilot) user@machine:~/openpilot$ `.
+
+5. Build openpilot by running SCons in the root of the openpilot directory
 ``` bash
 cd openpilot && scons -j$(nproc)
 ```
 
-4. Try out some tools!
+6. Try out some tools!
 
 NOTE: you can always run `update_requirements.sh` to pull in new python dependencies.
 
@@ -46,6 +62,8 @@ Windows
 Neither openpilot nor any of the tools are developed or tested on Windows, but the [Windows Subsystem for Linux (WSL)](https://docs.microsoft.com/en-us/windows/wsl/about) should get Windows users a similiar experience to Ubuntu. [WSL 2](https://docs.microsoft.com/en-us/windows/wsl/compare-versions) specifically has been reported by several users to be a seamless experience.
 
 Follow [these instructions](https://docs.microsoft.com/en-us/windows/wsl/install) to setup the WSL and install the `Ubuntu-20.04` distribution. Once your Ubuntu WSL environment is setup, follow the Linux setup instructions to finish setting up your environment.
+
+GUI applications do not work with WSL out of the box. You will have to either [upgrade your system to Windows 11](https://docs.microsoft.com/en-us/windows/wsl/tutorials/gui-apps) or [set up an Xorg server](https://techcommunity.microsoft.com/t5/windows-dev-appconsult/running-wsl-gui-apps-on-windows-10/ba-p/1493242).  
 
 Tools
 ============

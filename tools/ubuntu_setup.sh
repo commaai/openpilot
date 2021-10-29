@@ -57,6 +57,7 @@ function install_ubuntu_common_requirements() {
     opencl-headers \
     ocl-icd-libopencl1 \
     ocl-icd-opencl-dev \
+    clinfo \
     python-dev \
     python3-pip \
     qml-module-qtquick2 \
