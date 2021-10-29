@@ -136,14 +136,13 @@ git submodule update
 PYENV_PYTHON_VERSION=$(cat $OP_ROOT/.python-version)
 PATH=$HOME/.pyenv/bin:$HOME/.pyenv/shims:$PATH
 pyenv install -s ${PYENV_PYTHON_VERSION}
-pyenv global ${PYENV_PYTHON_VERSION}
 pyenv rehash
 eval "$(pyenv init -)"
 
 # **** in python env ****
 pip install --upgrade pip==20.2.4
 pip install pipenv==2020.8.13
-pipenv install --dev --system --deploy
+pipenv install --dev --deploy
 
 echo
 echo "----   FINISH OPENPILOT SETUP   ----"
