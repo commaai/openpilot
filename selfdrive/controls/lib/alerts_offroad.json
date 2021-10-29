@@ -21,10 +21,6 @@
     "severity": 1,
     "_comment": "Append the command and error to the text."
   },
-  "Offroad_PandaFirmwareMismatch": {
-    "text": "Unexpected panda firmware version. System won't start. Reboot your device to reflash panda.",
-    "severity": 1
-  },
   "Offroad_InvalidTime": {
     "text": "Invalid date and time settings, system won't start. Connect to internet to set time.",
     "severity": 1
