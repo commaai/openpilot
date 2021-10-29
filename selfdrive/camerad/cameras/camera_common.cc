@@ -149,10 +149,10 @@ bool CameraBuf::acquire() {
   if (debayer) {
     float gain = 0.0;
 
-    if (Hardware::EON()) {
-      gain = camera_state->digital_gain;
-      if ((int)gain == 0) gain = 1.0;
-    }
+#ifndef QCOM2
+    gain = camera_state->digital_gain;
+    if ((int)gain == 0) gain = 1.0;
+#endif
 
     debayer->queue(q, event, camrabuf_cl, cur_rgb_buf->buf_cl, rgb_width, rgb_height, gain);
   } else {
