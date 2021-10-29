@@ -40,10 +40,6 @@ public:
     return get(key.c_str(), block);
   }
 
-  inline std::string getParamsPath() {
-    return params_path;
-  }
-
   inline std::string getParamPath(std::string key) {
     return params_path + "/d/" + key;
   }
