@@ -104,9 +104,9 @@ class CarInterface(CarInterfaceBase):
       ret.centerToFront = ret.wheelbase * 0.4
 
       ret.lateralTuning.pid.kpBP = [0., 40.]
-      ret.lateralTuning.pid.kpV = [0., 0.08]
+      ret.lateralTuning.pid.kpV = [0., 0.16]
       ret.lateralTuning.pid.kiBP = [0.]
-      ret.lateralTuning.pid.kiV = [0.]
+      ret.lateralTuning.pid.kiV = [0.1]
       ret.lateralTuning.pid.kf = 1. # get_steer_feedforward_acadia()
       ret.steerActuatorDelay = 0.2
 
