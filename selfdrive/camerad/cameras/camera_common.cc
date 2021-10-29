@@ -30,19 +30,50 @@
 
 const int YUV_COUNT = 100;
 
-static cl_program build_debayer_program(cl_device_id device_id, cl_context context, const CameraInfo *ci, const CameraBuf *b, const CameraState *s) {
-  char args[4096];
-  snprintf(args, sizeof(args),
-           "-cl-fast-relaxed-math -cl-denorms-are-zero "
-           "-DFRAME_WIDTH=%d -DFRAME_HEIGHT=%d -DFRAME_STRIDE=%d "
-           "-DRGB_WIDTH=%d -DRGB_HEIGHT=%d -DRGB_STRIDE=%d "
-           "-DBAYER_FLIP=%d -DHDR=%d -DCAM_NUM=%d",
-           ci->frame_width, ci->frame_height, ci->frame_stride,
-           b->rgb_width, b->rgb_height, b->rgb_stride,
-           ci->bayer_flip, ci->hdr, s->camera_num);
-  const char *cl_file = Hardware::TICI() ? "cameras/real_debayer.cl" : "cameras/debayer.cl";
-  return cl_program_from_file(context, device_id, cl_file, args);
-}
+class Debayer {
+public:
+  Debayer(cl_device_id device_id, cl_context context, const CameraBuf *b, const CameraState *s) {
+    char args[4096];
+    const CameraInfo *ci = &s->ci;
+    snprintf(args, sizeof(args),
+             "-cl-fast-relaxed-math -cl-denorms-are-zero "
+             "-DFRAME_WIDTH=%d -DFRAME_HEIGHT=%d -DFRAME_STRIDE=%d "
+             "-DRGB_WIDTH=%d -DRGB_HEIGHT=%d -DRGB_STRIDE=%d "
+             "-DBAYER_FLIP=%d -DHDR=%d -DCAM_NUM=%d",
+             ci->frame_width, ci->frame_height, ci->frame_stride,
+             b->rgb_width, b->rgb_height, b->rgb_stride,
+             ci->bayer_flip, ci->hdr, s->camera_num);
+    const char *cl_file = Hardware::TICI() ? "cameras/real_debayer.cl" : "cameras/debayer.cl";
+    cl_program prg_debayer = cl_program_from_file(context, device_id, cl_file, args);
+    krnl_ = CL_CHECK_ERR(clCreateKernel(prg_debayer, "debayer10", &err));
+    CL_CHECK(clReleaseProgram(prg_debayer));
+  }
+
+  void queue(cl_command_queue q, cl_mem cam_buf_cl, cl_mem buf_cl, int width, int height, float gain, cl_event *debayer_event) {
+    CL_CHECK(clSetKernelArg(krnl_, 0, sizeof(cl_mem), &cam_buf_cl));
+    CL_CHECK(clSetKernelArg(krnl_, 1, sizeof(cl_mem), &buf_cl));
+
+    if (Hardware::TICI()) {
+      const int debayer_local_worksize = 16;
+      constexpr int localMemSize = (debayer_local_worksize + 2 * (3 / 2)) * (debayer_local_worksize + 2 * (3 / 2)) * sizeof(short int);
+      const size_t globalWorkSize[] = {size_t(width), size_t(height)};
+      const size_t localWorkSize[] = {debayer_local_worksize, debayer_local_worksize};
+      CL_CHECK(clSetKernelArg(krnl_, 2, localMemSize, 0));
+      CL_CHECK(clEnqueueNDRangeKernel(q, krnl_, 2, NULL, globalWorkSize, localWorkSize, 0, 0, debayer_event));
+    } else {
+      const size_t debayer_work_size = height;  // doesn't divide evenly, is this okay?
+      CL_CHECK(clSetKernelArg(krnl_, 2, sizeof(float), &gain));
+      CL_CHECK(clEnqueueNDRangeKernel(q, krnl_, 1, NULL, &debayer_work_size, NULL, 0, 0, debayer_event));
+    }
+  }
+
+  ~Debayer() {
+    CL_CHECK(clReleaseKernel(krnl_));
+  }
+
+private:
+  cl_kernel krnl_;
+};
 
 void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType rgb_type, VisionStreamType yuv_type, release_cb release_callback) {
   vipc_server = v;
@@ -81,11 +112,8 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
   vipc_server->create_buffers(yuv_type, YUV_COUNT, false, rgb_width, rgb_height);
 
   if (ci->bayer) {
-    cl_program prg_debayer = build_debayer_program(device_id, context, ci, this, s);
-    krnl_debayer = CL_CHECK_ERR(clCreateKernel(prg_debayer, "debayer10", &err));
-    CL_CHECK(clReleaseProgram(prg_debayer));
+    debayer = new Debayer(device_id, context, this, s);
   }
-
   rgb2yuv = std::make_unique<Rgb2Yuv>(context, device_id, rgb_width, rgb_height, rgb_stride);
 
 #ifdef __APPLE__
@@ -100,8 +128,7 @@ CameraBuf::~CameraBuf() {
   for (int i = 0; i < frame_buf_count; i++) {
     camera_bufs[i].free();
   }
-
-  if (krnl_debayer) CL_CHECK(clReleaseKernel(krnl_debayer));
+  if (debayer) delete debayer;
   if (q) CL_CHECK(clReleaseCommandQueue(q));
 }
 
@@ -116,37 +143,25 @@ bool CameraBuf::acquire() {
 
   cur_frame_data = camera_bufs_metadata[cur_buf_idx];
   cur_rgb_buf = vipc_server->get_buffer(rgb_type);
-
-  cl_event debayer_event;
   cl_mem camrabuf_cl = camera_bufs[cur_buf_idx].buf_cl;
-  if (camera_state->ci.bayer) {
-    CL_CHECK(clSetKernelArg(krnl_debayer, 0, sizeof(cl_mem), &camrabuf_cl));
-    CL_CHECK(clSetKernelArg(krnl_debayer, 1, sizeof(cl_mem), &cur_rgb_buf->buf_cl));
-#ifdef QCOM2
-    constexpr int localMemSize = (DEBAYER_LOCAL_WORKSIZE + 2 * (3 / 2)) * (DEBAYER_LOCAL_WORKSIZE + 2 * (3 / 2)) * sizeof(short int);
-    const size_t globalWorkSize[] = {size_t(camera_state->ci.frame_width), size_t(camera_state->ci.frame_height)};
-    const size_t localWorkSize[] = {DEBAYER_LOCAL_WORKSIZE, DEBAYER_LOCAL_WORKSIZE};
-    CL_CHECK(clSetKernelArg(krnl_debayer, 2, localMemSize, 0));
-    CL_CHECK(clEnqueueNDRangeKernel(q, krnl_debayer, 2, NULL, globalWorkSize, localWorkSize,
-                                    0, 0, &debayer_event));
-#else
-    float digital_gain = camera_state->digital_gain;
-    if ((int)digital_gain == 0) {
-      digital_gain = 1.0;
-    }
-    CL_CHECK(clSetKernelArg(krnl_debayer, 2, sizeof(float), &digital_gain));
-    const size_t debayer_work_size = rgb_height;  // doesn't divide evenly, is this okay?
-    CL_CHECK(clEnqueueNDRangeKernel(q, krnl_debayer, 1, NULL,
-                                    &debayer_work_size, NULL, 0, 0, &debayer_event));
+  cl_event event;
+
+  if (debayer) {
+    float gain = 0.0;
+
+#ifndef QCOM2
+    gain = camera_state->digital_gain;
+    if ((int)gain == 0) gain = 1.0;
 #endif
+
+    debayer->queue(q, camrabuf_cl, cur_rgb_buf->buf_cl, rgb_width, rgb_height, gain, &event);
   } else {
     assert(rgb_stride == camera_state->ci.frame_stride);
-    CL_CHECK(clEnqueueCopyBuffer(q, camrabuf_cl, cur_rgb_buf->buf_cl, 0, 0,
-                               cur_rgb_buf->len, 0, 0, &debayer_event));
+    CL_CHECK(clEnqueueCopyBuffer(q, camrabuf_cl, cur_rgb_buf->buf_cl, 0, 0, cur_rgb_buf->len, 0, 0, &event));
   }
 
-  clWaitForEvents(1, &debayer_event);
-  CL_CHECK(clReleaseEvent(debayer_event));
+  clWaitForEvents(1, &event);
+  CL_CHECK(clReleaseEvent(event));
 
   cur_yuv_buf = vipc_server->get_buffer(yuv_type);
   rgb2yuv->queue(q, cur_rgb_buf->buf_cl, cur_yuv_buf->buf_cl);
@@ -156,6 +171,8 @@ bool CameraBuf::acquire() {
                         cur_frame_data.timestamp_sof,
                         cur_frame_data.timestamp_eof,
   };
+  cur_rgb_buf->set_frame_id(cur_frame_data.frame_id);
+  cur_yuv_buf->set_frame_id(cur_frame_data.frame_id);
   vipc_server->send(cur_rgb_buf, &extra);
   vipc_server->send(cur_yuv_buf, &extra);
 

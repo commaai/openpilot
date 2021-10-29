@@ -344,7 +344,10 @@ void OmxEncoder::handle_out_buf(OmxEncoder *e, OMX_BUFFERHEADERTYPE *out_buf) {
 
   if (e->of) {
     //printf("write %d flags 0x%x\n", out_buf->nFilledLen, out_buf->nFlags);
-    fwrite(buf_data, out_buf->nFilledLen, 1, e->of);
+    size_t written = util::safe_fwrite(buf_data, 1, out_buf->nFilledLen, e->of);
+    if (written != out_buf->nFilledLen) {
+      LOGE("failed to write file.errno=%d", errno);
+    }
   }
 
   if (e->remuxing) {
@@ -505,11 +508,11 @@ void OmxEncoder::encoder_open(const char* path) {
     this->wrote_codec_config = false;
   } else {
     if (this->write) {
-      this->of = fopen(this->vid_path, "wb");
+      this->of = util::safe_fopen(this->vid_path, "wb");
       assert(this->of);
 #ifndef QCOM2
       if (this->codec_config_len > 0) {
-        fwrite(this->codec_config, this->codec_config_len, 1, this->of);
+        util::safe_fwrite(this->codec_config, 1, this->codec_config_len, this->of);
       }
 #endif
     }
@@ -557,6 +560,7 @@ void OmxEncoder::encoder_close() {
       avformat_free_context(this->ofmt_ctx);
     } else {
       if (this->of) {
+        util::safe_fflush(this->of);
         fclose(this->of);
         this->of = nullptr;
       }

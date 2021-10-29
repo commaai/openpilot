@@ -8,14 +8,16 @@ import unittest
 from collections import Counter
 from pathlib import Path
 
+from cereal import car
 import cereal.messaging as messaging
 from cereal.services import service_list
 from common.basedir import BASEDIR
 from common.timeout import Timeout
 from common.params import Params
+from selfdrive.controls.lib.events import EVENTS, ET
 from selfdrive.hardware import EON, TICI
 from selfdrive.loggerd.config import ROOT
-from selfdrive.test.helpers import set_params_enabled
+from selfdrive.test.helpers import set_params_enabled, release_only
 from tools.lib.logreader import LogReader
 
 # Baseline CPU usage by process
@@ -56,8 +58,9 @@ if TICI:
     "./camerad": 31.0,
     "./_ui": 21.0,
     "selfdrive.controls.plannerd": 11.7,
-    "selfdrive.locationd.paramsd": 5.0,
     "./_dmonitoringmodeld": 10.0,
+    "selfdrive.locationd.paramsd": 5.0,
+    "selfdrive.controls.radard": 3.6,
     "selfdrive.thermald.thermald": 1.5,
   })
 
@@ -128,7 +131,7 @@ class TestOnroad(unittest.TestCase):
     if "DEBUG" in os.environ:
       segs = filter(lambda x: os.path.exists(os.path.join(x, "rlog.bz2")), Path(ROOT).iterdir())
       segs = sorted(segs, key=lambda x: x.stat().st_mtime)
-      cls.lr = list(LogReader(os.path.join(segs[-2], "rlog.bz2")))
+      cls.lr = list(LogReader(os.path.join(segs[-1], "rlog.bz2")))
       return
 
     os.environ['SKIP_FW_QUERY'] = "1"
@@ -171,6 +174,9 @@ class TestOnroad(unittest.TestCase):
       if proc.wait(60) is None:
         proc.kill()
 
+    cls.lrs = [list(LogReader(os.path.join(str(s), "rlog.bz2"))) for s in cls.segments]
+
+    # use the second segment by default as it's the first full segment
     cls.lr = list(LogReader(os.path.join(str(cls.segments[1]), "rlog.bz2")))
 
   def test_cloudlog_size(self):
@@ -221,6 +227,18 @@ class TestOnroad(unittest.TestCase):
       print(f"{s}: {np.array([np.mean(ts), np.max(ts), np.min(ts)])*1e3}")
       print(f"     {np.max(np.absolute([np.max(ts)/dt, np.min(ts)/dt]))} {np.std(ts)/dt}")
     print("="*67)
+
+  @release_only
+  def test_startup(self):
+    startup_alert = None
+    for msg in self.lrs[0]:
+      # can't use carEvents because the first msg can be dropped while loggerd is starting up
+      if msg.which() == "controlsState":
+        startup_alert = msg.controlsState.alertText1
+        break
+    expected = EVENTS[car.CarEvent.EventName.startup][ET.PERMANENT].alert_text_1
+    self.assertEqual(startup_alert, expected, "wrong startup alert")
+
 
 if __name__ == "__main__":
   unittest.main()

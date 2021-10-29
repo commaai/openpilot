@@ -377,18 +377,7 @@ void config_isp(struct CameraState *s, int io_mem_handle, int fence, int request
   buf_desc[0].mem_handle = buf0_mem_handle;
   buf_desc[0].offset = buf0_offset;
 
-  buf_desc[1].size = 324;
-	if (io_mem_handle != 0) {
-    buf_desc[1].length = 228; // 0 works here too
-    buf_desc[1].offset = 0x60;
-	} else {
-    buf_desc[1].length = 324;
-  }
-  buf_desc[1].type = CAM_CMD_BUF_GENERIC;
-  buf_desc[1].meta_data = CAM_ISP_PACKET_META_GENERIC_BLOB_COMMON;
-  uint32_t *buf2 = (uint32_t *)alloc_w_mmu_hdl(s->multi_cam_state->video0_fd, buf_desc[1].size, (uint32_t*)&buf_desc[1].mem_handle, 0x20);
-
-  // cam_isp_packet_generic_blob_handler
+   // cam_isp_packet_generic_blob_handler
   uint32_t tmp[] = {
     // size is 0x20, type is 0(CAM_ISP_GENERIC_BLOB_TYPE_HFR_CONFIG)
     0x2000,
@@ -410,6 +399,13 @@ void config_isp(struct CameraState *s, int io_mem_handle, int fence, int request
     0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
     0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
     0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
+
+  buf_desc[1].size = sizeof(tmp);
+  buf_desc[1].offset = io_mem_handle != 0 ? 0x60 : 0;
+  buf_desc[1].length = buf_desc[1].size - buf_desc[1].offset;
+  buf_desc[1].type = CAM_CMD_BUF_GENERIC;
+  buf_desc[1].meta_data = CAM_ISP_PACKET_META_GENERIC_BLOB_COMMON;
+  uint32_t *buf2 = (uint32_t *)alloc_w_mmu_hdl(s->multi_cam_state->video0_fd, buf_desc[1].size, (uint32_t*)&buf_desc[1].mem_handle, 0x20);
   memcpy(buf2, tmp, sizeof(tmp));
 
   if (io_mem_handle != 0) {

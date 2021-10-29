@@ -1,4 +1,9 @@
-Version 0.8.10 (2021-XX-XX)
+Version 0.8.11 (2021-XX-XX)
+========================
+ * Navigation: Show more detailed instructions when approaching maneuver
+ * Cadillac Escalade ESV 2016 support thanks to Gibby!
+
+Version 0.8.10 (2021-11-01)
 ========================
  * New driving model
    * Trained on one million minutes!!!

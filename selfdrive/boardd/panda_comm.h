@@ -20,7 +20,7 @@ public:
   std::atomic<bool> comms_healthy = true;
 
   // Static functions
-  static std::vector<std::string> list(uint16_t vid, uint16_t pid);
+  static std::vector<std::string> list(uint16_t vid = PANDA_VENDOR_ID, uint16_t pid = PANDA_PRODUCT_ID);
 
   // HW communication
   int usb_transfer(libusb_endpoint_direction dir, uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned int timeout = TIMEOUT);
