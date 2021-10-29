@@ -49,10 +49,10 @@ public:
     CL_CHECK(clReleaseProgram(prg_debayer));
   }
 
-  void queue(cl_command_queue q, cl_mem cam_buf_cl, cl_mem buf_cl, int width, int height, float gain) {
-    cl_event debayer_event;
+  void queue(cl_command_queue q, cl_event &debayer_event, cl_mem cam_buf_cl, cl_mem buf_cl, int width, int height, float gain) {
     CL_CHECK(clSetKernelArg(krnl_, 0, sizeof(cl_mem), &cam_buf_cl));
     CL_CHECK(clSetKernelArg(krnl_, 1, sizeof(cl_mem), &buf_cl));
+
     if (Hardware::TICI()) {
       const int debayer_local_worksize = 16;
       constexpr int localMemSize = (debayer_local_worksize + 2 * (3 / 2)) * (debayer_local_worksize + 2 * (3 / 2)) * sizeof(short int);
@@ -65,8 +65,6 @@ public:
       CL_CHECK(clSetKernelArg(krnl_, 2, sizeof(float), &gain));
       CL_CHECK(clEnqueueNDRangeKernel(q, krnl_, 1, NULL, &debayer_work_size, NULL, 0, 0, &debayer_event));
     }
-    clWaitForEvents(1, &debayer_event);
-    CL_CHECK(clReleaseEvent(debayer_event));
   }
 
   ~Debayer() {
@@ -146,22 +144,24 @@ bool CameraBuf::acquire() {
   cur_frame_data = camera_bufs_metadata[cur_buf_idx];
   cur_rgb_buf = vipc_server->get_buffer(rgb_type);
   cl_mem camrabuf_cl = camera_bufs[cur_buf_idx].buf_cl;
+  cl_event event;
 
   if (debayer) {
-    float gain = 0.;
-    // TODO: remove preprocessor directives
-#ifndef QCOM2
-    gain = camera_state->digital_gain;
-    if ((int)gain == 0) gain = 1.0;
-#endif
-    debayer->queue(q, camrabuf_cl, cur_rgb_buf->buf_cl, rgb_width, rgb_height, gain);
+    float gain = 0.0;
+
+    if (Hardware::EON()) {
+      gain = camera_state->digital_gain;
+      if ((int)gain == 0) gain = 1.0;
+    }
+
+    debayer->queue(q, event, camrabuf_cl, cur_rgb_buf->buf_cl, rgb_width, rgb_height, gain);
   } else {
-    cl_event event;
     assert(rgb_stride == camera_state->ci.frame_stride);
     CL_CHECK(clEnqueueCopyBuffer(q, camrabuf_cl, cur_rgb_buf->buf_cl, 0, 0, cur_rgb_buf->len, 0, 0, &event));
-    clWaitForEvents(1, &event);
-    CL_CHECK(clReleaseEvent(event));
   }
+
+  clWaitForEvents(1, &event);
+  CL_CHECK(clReleaseEvent(event));
 
   cur_yuv_buf = vipc_server->get_buffer(yuv_type);
   rgb2yuv->queue(q, cur_rgb_buf->buf_cl, cur_yuv_buf->buf_cl);
