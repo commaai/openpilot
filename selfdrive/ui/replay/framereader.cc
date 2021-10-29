@@ -76,9 +76,9 @@ bool FrameReader::load(const std::string &url) {
   av_frame_ = av_frame_alloc();
   rgb_frame_ = av_frame_alloc();
 
-  width = pCodecCtxOrig->width;
+  width = (pCodecCtxOrig->width + 3) & ~3;
   height = pCodecCtxOrig->height;
-  sws_ctx_ = sws_getContext(width, height, AV_PIX_FMT_YUV420P,
+  sws_ctx_ = sws_getContext(pCodecCtxOrig->width, pCodecCtxOrig->height, AV_PIX_FMT_YUV420P,
                             width, height, AV_PIX_FMT_BGR24,
                             SWS_FAST_BILINEAR, NULL, NULL, NULL);
   if (!sws_ctx_) return false;
@@ -146,7 +146,7 @@ bool FrameReader::decodeFrame(AVFrame *f, uint8_t *rgb, uint8_t *yuv) {
   int ret = av_image_copy_to_buffer(yuv, getYUVSize(), f->data, f->linesize, AV_PIX_FMT_YUV420P, f->width, f->height, 1);
   if (ret < 0) return false;
 
-  av_image_fill_arrays(rgb_frame_->data, rgb_frame_->linesize, rgb, AV_PIX_FMT_BGR24, f->width, f->height, 1);
+  av_image_fill_arrays(rgb_frame_->data, rgb_frame_->linesize, rgb, AV_PIX_FMT_BGR24, width, height, 1);
   ret = sws_scale(sws_ctx_, (const uint8_t **)f->data, f->linesize, 0, f->height, rgb_frame_->data, rgb_frame_->linesize);
   return ret >= 0;
 }

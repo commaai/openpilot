@@ -222,7 +222,6 @@ void CameraViewWidget::paintGL() {
   glBindTexture(GL_TEXTURE_2D, texture[latest_frame->idx]->frame_tex);
   if (!Hardware::EON()) {
     // this is handled in ion on QCOM
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, latest_frame->width, latest_frame->height,
                   0, GL_RGB, GL_UNSIGNED_BYTE, latest_frame->addr);
   }
