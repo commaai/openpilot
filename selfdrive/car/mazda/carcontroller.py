@@ -45,8 +45,13 @@ class CarController():
 
     self.apply_steer_last = apply_steer
 
+    # send HUD alerts
+    if frame % 50 == 0:
+      ldw = c.hudControl.visualAlert == VisualAlert.ldw
+      steer_required = c.hudControl.visualAlert == VisualAlert.steerRequired
+      can_sends.append(mazdacan.create_alert_command(self.packer, CS.cam_laneinfo, ldw, steer_required))
+
     # send steering command
-    ldw = c.hudControl.visualAlert == VisualAlert.ldw
     can_sends.append(mazdacan.create_steering_control(self.packer, CS.CP.carFingerprint,
-                                                      frame, apply_steer, ldw, CS.cam_lkas))
+                                                      frame, apply_steer, CS.cam_lkas))
     return can_sends

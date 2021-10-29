@@ -82,6 +82,7 @@ class CarState(CarStateBase):
     self.acc_active_last = ret.cruiseState.enabled
 
     self.cam_lkas = cp_cam.vl["CAM_LKAS"]
+    self.cam_laneinfo = cp_cam.vl["CAM_LANEINFO"]
     ret.steerError = cp_cam.vl["CAM_LKAS"]["ERR_BIT_1"] == 1
 
     return ret
@@ -101,10 +102,21 @@ class CarState(CarStateBase):
       ("FR", "WHEEL_SPEEDS", 0),
       ("RL", "WHEEL_SPEEDS", 0),
       ("RR", "WHEEL_SPEEDS", 0),
+
+      ("LINE_VISIBLE", "CAM_LANEINFO", 0),
+      ("LINE_NOT_VISIBLE", "CAM_LANEINFO", 1),
+      ("BIT1", "CAM_LANEINFO", 0),
+      ("BIT2", "CAM_LANEINFO", 0),
+      ("BIT3", "CAM_LANEINFO", 0),
+      ("NO_ERR_BIT", "CAM_LANEINFO", 1),
+      ("LANE_LINES", "CAM_LANEINFO", 0),
+      ("S1", "CAM_LANEINFO", 0),
+      ("S1_HBEAM", "CAM_LANEINFO", 0),
     ]
 
     checks = [
       # sig_address, frequency
+      ("CAM_LANEINFO", 2),
       ("BLINK_INFO", 10),
       ("STEER", 67),
       ("STEER_RATE", 83),

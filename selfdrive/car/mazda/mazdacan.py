@@ -1,6 +1,9 @@
+import copy
+
 from selfdrive.car.mazda.values import GEN1, Buttons
 
-def create_steering_control(packer, car_fingerprint, frame, apply_steer, ldw, lkas):
+
+def create_steering_control(packer, car_fingerprint, frame, apply_steer, lkas):
 
   tmp = apply_steer + 2048
 
@@ -11,6 +14,7 @@ def create_steering_control(packer, car_fingerprint, frame, apply_steer, ldw, lk
   b1 = int(lkas["BIT_1"])
   er1 = int(lkas["ERR_BIT_1"])
   lnv = 0
+  ldw = 0
   er2 = int(lkas["ERR_BIT_2"])
 
   # Some older models do have these, newer models don't.
@@ -57,6 +61,21 @@ def create_steering_control(packer, car_fingerprint, frame, apply_steer, ldw, lk
     }
 
   return packer.make_can_msg("CAM_LKAS", 0, values)
+
+
+def create_alert_command(packer, cam_msg, ldw, steer_required):
+  values = copy.copy(cam_msg)
+  values.update({
+    # TODO: what's the difference between all these? do we need to send all?
+    "HANDS_WARN_3_BITS": steer_required,
+    "HANDS_ON_STEER_WARN": steer_required,
+    "HANDS_ON_STEER_WARN_2": steer_required,
+
+    # TODO: need to do something about L/R
+    "LDW_WARN_LL": ldw,
+    "LDW_WARN_RL": 0,
+  })
+  return packer.make_can_msg("CAM_LANEINFO", 0, values)
 
 
 def create_button_cmd(packer, car_fingerprint, button):
