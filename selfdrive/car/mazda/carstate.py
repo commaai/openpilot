@@ -14,7 +14,6 @@ class CarState(CarStateBase):
 
     self.cruise_speed = 0
     self.acc_active_last = False
-    self.low_speed_lockout = True
     self.low_speed_alert = False
     self.lkas_allowed = False
 
@@ -69,13 +68,9 @@ class CarState(CarStateBase):
     ret.cruiseState.speed = cp.vl["CRZ_EVENTS"]["CRZ_SPEED"] * CV.KPH_TO_MS
 
     if ret.cruiseState.enabled:
-      if not self.lkas_allowed:
-        if not self.acc_active_last:
-          self.low_speed_lockout = True
-        else:
-          self.low_speed_alert = True
+      if not self.lkas_allowed and self.acc_active_last:
+        self.low_speed_alert = True
       else:
-        self.low_speed_lockout = False
         self.low_speed_alert = False
 
     # Check if LKAS is disabled due to lack of driver torque when all other states indicate
