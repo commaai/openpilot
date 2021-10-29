@@ -76,78 +76,52 @@ bool check_all_connected(const std::vector<Panda *> &pandas) {
 }
 
 bool safety_setter_thread(std::vector<Panda *> pandas) {
+  auto block_read_param = [&](std::function<std::string()> read_param) {
+    while (!do_exit && check_all_connected(pandas) && ignition) {
+      if (std::string result = read_param(); result.size() > 0) return result;
+      util::sleep_for(20);
+    }
+    throw std::runtime_error("exit safety_setter_thread");
+  };
+
   LOGD("Starting safety setter thread");
-
   // there should be at least one panda connected
-  if (pandas.size() == 0) {
-    return false;
-  }
-
-  pandas[0]->set_safety_model(cereal::CarParams::SafetyModel::ELM327);
+  if (pandas.size() == 0) return false;
 
   Params p = Params();
+  try {
+    pandas[0]->set_safety_model(cereal::CarParams::SafetyModel::ELM327, 0);
+    // switch to SILENT when CarVin param is read
+    std::string value_vin = block_read_param([&] { return p.get("CarVin"); });
+    assert(value_vin.size() == 17);
+    LOGW("got CarVin %s", value_vin.c_str());
+    pandas[0]->set_safety_model(cereal::CarParams::SafetyModel::ELM327, 1);
 
-  // switch to SILENT when CarVin param is read
-  while (true) {
-    if (do_exit || !check_all_connected(pandas) || !ignition) {
-      return false;
-    }
+    LOGW("waiting for params to set safety model");
+    std::string params = block_read_param([&] { return p.getBool("ControlsReady") ? p.get("CarParams") : ""; });
+    LOGW("got %d bytes CarParams", params.size());
 
-    std::string value_vin = p.get("CarVin");
-    if (value_vin.size() > 0) {
-      // sanity check VIN format
-      assert(value_vin.size() == 17);
-      LOGW("got CarVin %s", value_vin.c_str());
-      break;
-    }
-    util::sleep_for(20);
-  }
-
-  pandas[0]->set_safety_model(cereal::CarParams::SafetyModel::ELM327, 1);
-
-  std::string params;
-  LOGW("waiting for params to set safety model");
-  while (true) {
-    for (const auto& panda : pandas) {
-      if (do_exit || !panda->connected || !ignition) {
-        return false;
+    AlignedBuffer aligned_buf;
+    capnp::FlatArrayMessageReader cmsg(aligned_buf.align(params.data(), params.size()));
+    auto safety_configs = cmsg.getRoot<cereal::CarParams>().getSafetyConfigs();
+    for (uint32_t i = 0; i < pandas.size(); i++) {
+      auto panda = pandas[i];
+      // If no safety mode is set, default to silent
+      int safety_param = 0;
+      cereal::CarParams::SafetyModel safety_model = cereal::CarParams::SafetyModel::SILENT;
+      if (safety_configs.size() > i) {
+        safety_model = safety_configs[i].getSafetyModel();
+        safety_param = safety_configs[i].getSafetyParam();
       }
-    }
+      LOGW("panda %d: setting safety model: %d with param %d", i, (int)safety_model, safety_param);
 
-    if (p.getBool("ControlsReady")) {
-      params = p.get("CarParams");
-      if (params.size() > 0) break;
+      panda->set_unsafe_mode(0);  // see safety_declarations.h for allowed values
+      panda->set_safety_model(safety_model, safety_param);
     }
-    util::sleep_for(100);
+    return true;
+  } catch (std::exception &e) {
+    return false;
   }
-  LOGW("got %d bytes CarParams", params.size());
-
-  AlignedBuffer aligned_buf;
-  capnp::FlatArrayMessageReader cmsg(aligned_buf.align(params.data(), params.size()));
-  cereal::CarParams::Reader car_params = cmsg.getRoot<cereal::CarParams>();
-  cereal::CarParams::SafetyModel safety_model;
-  int safety_param;
-
-  auto safety_configs = car_params.getSafetyConfigs();
-  for (uint32_t i=0; i<pandas.size(); i++) {
-    auto panda = pandas[i];
-
-    if (safety_configs.size() > i) {
-      safety_model = safety_configs[i].getSafetyModel();
-      safety_param = safety_configs[i].getSafetyParam();
-    } else {
-      // If no safety mode is specified, default to silent
-      safety_model = cereal::CarParams::SafetyModel::SILENT;
-      safety_param = 0;
-    }
-
-    LOGW("panda %d: setting safety model: %d with param %d", i, (int)safety_model, safety_param);
-
-    panda->set_unsafe_mode(0);  // see safety_declarations.h for allowed values
-    panda->set_safety_model(safety_model, safety_param);
-  }
-
-  return true;
 }
 
 Panda *usb_connect(std::string serial="", uint32_t index=0) {
