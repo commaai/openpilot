@@ -21,10 +21,10 @@ def cycle_alerts(duration=2000, is_metric=False):
   alerts = [EventName.preLaneChangeLeft, EventName.preLaneChangeRight]
 
   CP = CarInterface.get_params("HONDA CIVIC 2016")
-  sm = messaging.SubMaster(['deviceState', 'pandaState', 'roadCameraState', 'modelV2', 'liveCalibration',
+  sm = messaging.SubMaster(['deviceState', 'pandaStates', 'roadCameraState', 'modelV2', 'liveCalibration',
                             'driverMonitoringState', 'longitudinalPlan', 'lateralPlan', 'liveLocationKalman'])
 
-  pm = messaging.PubMaster(['controlsState', 'pandaState', 'deviceState'])
+  pm = messaging.PubMaster(['controlsState', 'pandaStates', 'deviceState'])
 
   events = Events()
   AM = AlertManager()
@@ -61,10 +61,9 @@ def cycle_alerts(duration=2000, is_metric=False):
     dat.deviceState.started = True
     pm.send('deviceState', dat)
 
-    dat = messaging.new_message()
-    dat.init('pandaState')
-    dat.pandaState.ignitionLine = True
-    pm.send('pandaState', dat)
+    dat = messaging.new_message('pandaStates', 1)
+    dat.pandaStates[0].ignitionLine = True
+    pm.send('pandaStates', dat)
 
     time.sleep(0.01)
 

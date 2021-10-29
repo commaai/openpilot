@@ -16,7 +16,6 @@ os.environ['FAKEUPLOAD'] = "1"
 
 
 def test_athena():
-  print("ATHENA")
   start = sec_since_boot()
   managed_processes['manage_athenad'].start()
 
@@ -30,14 +29,14 @@ def test_athena():
     assert False, "manage_athenad is dead"
 
   def expect_athena_starts(timeout=30):
-    now = time.time()
+    now = time.monotonic()
     athenad_pid = None
     while athenad_pid is None:
       try:
         athenad_pid = subprocess.check_output(["pgrep", "-P", manage_athenad_pid], encoding="utf-8").strip()
         return athenad_pid
       except subprocess.CalledProcessError:
-        if time.time() - now > timeout:
+        if time.monotonic() - now > timeout:
           assert False, f"Athena did not start within {timeout} seconds"
         time.sleep(0.5)
 
@@ -48,7 +47,7 @@ def test_athena():
         resp = requests.post(
           "https://athena.comma.ai/" + params.get("DongleId", encoding="utf-8"),
           headers={
-            "Authorization": "JWT " + os.getenv("COMMA_JWT"),
+            "Authorization": "JWT thisisnotajwt",
             "Content-Type": "application/json"
           },
           data=json.dumps(payload),

@@ -4,17 +4,19 @@ import cereal.messaging as messaging
 from selfdrive.manager.process_config import managed_processes
 
 if __name__ == "__main__":
-  services = ['controlsState', 'deviceState', 'pandaState']  # the services needed to be spoofed to start ui offroad
   procs = ['camerad', 'ui', 'modeld', 'calibrationd']
 
   for p in procs:
     managed_processes[p].start()
 
-  pm = messaging.PubMaster(services)
+  pm = messaging.PubMaster(['controlsState', 'deviceState', 'pandaStates', 'carParams'])
 
-  msgs = {s: messaging.new_message(s) for s in services}
+  msgs = {s: messaging.new_message(s) for s in ['controlsState', 'deviceState', 'carParams']}
   msgs['deviceState'].deviceState.started = True
-  msgs['pandaState'].pandaState.ignitionLine = True
+  msgs['carParams'].carParams.openpilotLongitudinalControl = True
+
+  msgs['pandaStates'] = messaging.new_message('pandaStates', 1)
+  msgs['pandaStates'].pandaStates[0].ignitionLine = True
 
   try:
     while True:

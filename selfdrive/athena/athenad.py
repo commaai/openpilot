@@ -22,10 +22,11 @@ from websocket import ABNF, WebSocketTimeoutException, WebSocketException, creat
 import cereal.messaging as messaging
 from cereal.services import service_list
 from common.api import Api
+from common.file_helpers import CallbackReader
 from common.basedir import PERSIST
 from common.params import Params
 from common.realtime import sec_since_boot
-from selfdrive.hardware import HARDWARE, PC, TICI
+from selfdrive.hardware import HARDWARE, PC
 from selfdrive.loggerd.config import ROOT
 from selfdrive.loggerd.xattr_cache import getxattr, setxattr
 from selfdrive.swaglog import cloudlog, SWAGLOG_DIR
@@ -41,6 +42,7 @@ RECONNECT_TIMEOUT_S = 70
 
 RETRY_DELAY = 10  # seconds
 MAX_RETRY_COUNT = 30  # Try for at most 5 minutes if upload fails immediately
+WS_FRAME_SIZE = 4096
 
 dispatcher["echo"] = lambda s: s
 recv_queue: Any = queue.Queue()
@@ -49,7 +51,9 @@ upload_queue: Any = queue.Queue()
 log_send_queue: Any = queue.Queue()
 log_recv_queue: Any = queue.Queue()
 cancelled_uploads: Any = set()
-UploadItem = namedtuple('UploadItem', ['path', 'url', 'headers', 'created_at', 'id', 'retry_count'], defaults=(0,))
+UploadItem = namedtuple('UploadItem', ['path', 'url', 'headers', 'created_at', 'id', 'retry_count', 'current', 'progress'], defaults=(0, False, 0))
+
+cur_upload_items = {}
 
 
 def handle_long_poll(ws):
@@ -100,35 +104,53 @@ def jsonrpc_handler(end_event):
 
 
 def upload_handler(end_event):
+  tid = threading.get_ident()
+
   while not end_event.is_set():
+    cur_upload_items[tid] = None
+
     try:
-      item = upload_queue.get(timeout=1)
-      if item.id in cancelled_uploads:
-        cancelled_uploads.remove(item.id)
+      cur_upload_items[tid] = upload_queue.get(timeout=1)._replace(current=True)
+      if cur_upload_items[tid].id in cancelled_uploads:
+        cancelled_uploads.remove(cur_upload_items[tid].id)
         continue
 
       try:
-        _do_upload(item)
-      except (requests.exceptions.Timeout, requests.exceptions.ConnectionError, requests.exceptions.SSLError) as e:
-        cloudlog.warning(f"athena.upload_handler.retry {e} {item}")
+        def cb(sz, cur):
+          cur_upload_items[tid] = cur_upload_items[tid]._replace(progress=cur / sz if sz else 1)
 
-        if item.retry_count < MAX_RETRY_COUNT:
-          item = item._replace(retry_count=item.retry_count + 1)
+        _do_upload(cur_upload_items[tid], cb)
+      except (requests.exceptions.Timeout, requests.exceptions.ConnectionError, requests.exceptions.SSLError) as e:
+        cloudlog.warning(f"athena.upload_handler.retry {e} {cur_upload_items[tid]}")
+
+        if cur_upload_items[tid].retry_count < MAX_RETRY_COUNT:
+          item = cur_upload_items[tid]
+          item = item._replace(
+            retry_count=item.retry_count + 1,
+            progress=0,
+            current=False
+          )
           upload_queue.put_nowait(item)
+          cur_upload_items[tid] = None
 
           for _ in range(RETRY_DELAY):
             time.sleep(1)
             if end_event.is_set():
               break
+
     except queue.Empty:
       pass
     except Exception:
       cloudlog.exception("athena.upload_handler.exception")
 
 
-def _do_upload(upload_item):
+def _do_upload(upload_item, callback=None):
   with open(upload_item.path, "rb") as f:
     size = os.fstat(f.fileno()).st_size
+
+    if callback:
+      f = CallbackReader(f, callback, size)
+
     return requests.put(upload_item.url,
                         data=f,
                         headers={**upload_item.headers, 'Content-Length': str(size)},
@@ -171,10 +193,28 @@ def setNavDestination(latitude=0, longitude=0):
   return {"success": 1}
 
 
-@dispatcher.add_method
-def listDataDirectory():
-  files = [os.path.relpath(os.path.join(dp, f), ROOT) for dp, dn, fn in os.walk(ROOT) for f in fn]
+def scan_dir(path, prefix):
+  files = list()
+  # only walk directories that match the prefix
+  # (glob and friends traverse entire dir tree)
+  with os.scandir(path) as i:
+    for e in i:
+      rel_path = os.path.relpath(e.path, ROOT)
+      if e.is_dir(follow_symlinks=False):
+        # add trailing slash
+        rel_path = os.path.join(rel_path, '')
+        # if prefix is a partial dir name, current dir will start with prefix
+        # if prefix is a partial file name, prefix with start with dir name
+        if rel_path.startswith(prefix) or prefix.startswith(rel_path):
+          files.extend(scan_dir(e.path, prefix))
+      else:
+        if rel_path.startswith(prefix):
+          files.append(rel_path)
   return files
+
+@dispatcher.add_method
+def listDataDirectory(prefix=''):
+  return scan_dir(ROOT, prefix)
 
 
 @dispatcher.add_method
@@ -212,7 +252,8 @@ def uploadFileToUrl(fn, url, headers):
 
 @dispatcher.add_method
 def listUploadQueue():
-  return [item._asdict() for item in list(upload_queue.queue)]
+  items = list(upload_queue.queue) + list(cur_upload_items.values())
+  return [i._asdict() for i in items if (i is not None) and (i.id not in cancelled_uploads)]
 
 
 @dispatcher.add_method
@@ -227,9 +268,6 @@ def cancelUpload(upload_id):
 
 @dispatcher.add_method
 def primeActivated(activated):
-  dongle_id = Params().get("DongleId", encoding='utf-8')
-  api = Api(dongle_id)
-  manage_tokens(api)
   return {"success": 1}
 
 
@@ -466,7 +504,11 @@ def ws_send(ws, end_event):
         data = send_queue.get_nowait()
       except queue.Empty:
         data = log_send_queue.get(timeout=1)
-      ws.send(data)
+      for i in range(0, len(data), WS_FRAME_SIZE):
+        frame = data[i:i+WS_FRAME_SIZE]
+        last = i + WS_FRAME_SIZE >= len(data)
+        opcode = ABNF.OPCODE_TEXT if i == 0 else ABNF.OPCODE_CONT
+        ws.send_frame(ABNF.create_frame(frame, opcode, last))
     except queue.Empty:
       pass
     except Exception:
@@ -476,21 +518,6 @@ def ws_send(ws, end_event):
 
 def backoff(retries):
   return random.randrange(0, min(128, int(2 ** retries)))
-
-
-def manage_tokens(api):
-  if not TICI:
-    return
-
-  try:
-    params = Params()
-    mapbox = api.get(f"/v1/tokens/mapbox/{api.dongle_id}/", timeout=5.0, access_token=api.get_token())
-    if mapbox.status_code == 200:
-      params.put("MapboxToken", mapbox.json()["token"])
-    else:
-      params.delete("MapboxToken")
-  except Exception:
-    cloudlog.exception("Failed to update tokens")
 
 
 def main():
@@ -511,9 +538,9 @@ def main():
       cloudlog.event("athenad.main.connected_ws", ws_uri=ws_uri)
       params.delete("PrimeRedirected")
 
-      manage_tokens(api)
-
       conn_retries = 0
+      cur_upload_items.clear()
+
       handle_long_poll(ws)
     except (KeyboardInterrupt, SystemExit):
       break

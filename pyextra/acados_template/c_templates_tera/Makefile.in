@@ -153,6 +153,12 @@ MODEL_OBJ+= {{ model.name }}_model/{{ model.name }}_impl_dae_jac_x_xdot_u_z.o
 {%- if hessian_approx == "EXACT" %}
 MODEL_OBJ+= {{ model.name }}_model/{{ model.name }}_impl_dae_hess.o
 {%- endif %}
+{%- elif solver_options.integrator_type == "LIFTED_IRK" %}
+MODEL_OBJ+= {{ model.name }}_model/{{ model.name }}_impl_dae_fun.o
+MODEL_OBJ+= {{ model.name }}_model/{{ model.name }}_impl_dae_fun_jac_x_xdot_u.o
+{%- if hessian_approx == "EXACT" %}
+MODEL_OBJ+= {{ model.name }}_model/{{ model.name }}_impl_dae_hess.o
+{%- endif %}
 {%- elif solver_options.integrator_type == "GNSF" %}
 MODEL_OBJ+= {{ model.name }}_model/{{ model.name }}_gnsf_phi_fun.o
 MODEL_OBJ+= {{ model.name }}_model/{{ model.name }}_gnsf_phi_fun_jac_y.o
@@ -284,6 +290,14 @@ CASADI_MODEL_SOURCE+= {{ model.name }}_expl_ode_hess.c
 CASADI_MODEL_SOURCE+= {{ model.name }}_impl_dae_fun.c
 CASADI_MODEL_SOURCE+= {{ model.name }}_impl_dae_fun_jac_x_xdot_z.c
 CASADI_MODEL_SOURCE+= {{ model.name }}_impl_dae_jac_x_xdot_u_z.c
+{%- if hessian_approx == "EXACT" %}
+CASADI_MODEL_SOURCE+= {{ model.name }}_impl_dae_hess.c
+{%- endif %}
+{%- elif solver_options.integrator_type == "LIFTED_IRK" %}
+CASADI_MODEL_SOURCE+= {{ model.name }}_impl_dae_fun.c
+# CASADI_MODEL_SOURCE+= {{ model.name }}_impl_dae_fun_jac_x_xdot_z.c
+# CASADI_MODEL_SOURCE+= {{ model.name }}_impl_dae_jac_x_xdot_u_z.c
+CASADI_MODEL_SOURCE+= {{ model.name }}_impl_dae_fun_jac_x_xdot_u.c
 {%- if hessian_approx == "EXACT" %}
 CASADI_MODEL_SOURCE+= {{ model.name }}_impl_dae_hess.c
 {%- endif %}

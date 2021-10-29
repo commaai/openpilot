@@ -2,27 +2,31 @@
 # cython: language_level = 3
 from libcpp cimport bool
 from libcpp.string cimport string
-from common.params_pxd cimport Params as c_Params, ParamKeyType as c_ParamKeyType
-
-import os
 import threading
-from common.basedir import BASEDIR
 
+cdef extern from "selfdrive/common/params.h":
+  cpdef enum ParamKeyType:
+    PERSISTENT
+    CLEAR_ON_MANAGER_START
+    CLEAR_ON_PANDA_DISCONNECT
+    CLEAR_ON_IGNITION_ON
+    CLEAR_ON_IGNITION_OFF
+    ALL
 
-cdef class ParamKeyType:
-  PERSISTENT = c_ParamKeyType.PERSISTENT
-  CLEAR_ON_MANAGER_START = c_ParamKeyType.CLEAR_ON_MANAGER_START
-  CLEAR_ON_PANDA_DISCONNECT = c_ParamKeyType.CLEAR_ON_PANDA_DISCONNECT
-  CLEAR_ON_IGNITION_ON = c_ParamKeyType.CLEAR_ON_IGNITION_ON
-  CLEAR_ON_IGNITION_OFF = c_ParamKeyType.CLEAR_ON_IGNITION_OFF
-  ALL = c_ParamKeyType.ALL
+  cdef cppclass c_Params "Params":
+    c_Params() nogil
+    c_Params(string) nogil
+    string get(string, bool) nogil
+    bool getBool(string) nogil
+    int remove(string) nogil
+    int put(string, string) nogil
+    int putBool(string, bool) nogil
+    bool checkKey(string) nogil
+    void clearAll(ParamKeyType)
+
 
 def ensure_bytes(v):
-  if isinstance(v, str):
-    return v.encode()
-  else:
-    return v
-
+  return v.encode() if isinstance(v, str) else v;
 
 class UnknownKeyName(Exception):
   pass
@@ -30,11 +34,11 @@ class UnknownKeyName(Exception):
 cdef class Params:
   cdef c_Params* p
 
-  def __cinit__(self, d=None, bool persistent_params=False):
+  def __cinit__(self, d=None):
     cdef string path
     if d is None:
       with nogil:
-        self.p = new c_Params(persistent_params)
+        self.p = new c_Params()
     else:
       path = <string>d.encode()
       with nogil:

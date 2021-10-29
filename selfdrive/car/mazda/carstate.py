@@ -35,8 +35,8 @@ class CarState(CarStateBase):
     can_gear = int(cp.vl["GEAR"]["GEAR"])
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(can_gear, None))
 
-    ret.leftBlinker = cp.vl["BLINK_INFO"]["LEFT_BLINK"] == 1
-    ret.rightBlinker = cp.vl["BLINK_INFO"]["RIGHT_BLINK"] == 1
+    ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_lamp(40, cp.vl["BLINK_INFO"]["LEFT_BLINK"] == 1,
+                                                                      cp.vl["BLINK_INFO"]["RIGHT_BLINK"] == 1)
 
     ret.steeringAngleDeg = cp.vl["STEER"]["STEER_ANGLE"]
     ret.steeringTorque = cp.vl["STEER_TORQUE"]["STEER_TORQUE_SENSOR"]
@@ -64,15 +64,9 @@ class CarState(CarStateBase):
     elif speed_kph < LKAS_LIMITS.DISABLE_SPEED:
       self.lkas_allowed = False
 
-    # if any of the cruize buttons is pressed force state update
-    if any([cp.vl["CRZ_BTNS"]["RES"],
-                cp.vl["CRZ_BTNS"]["SET_P"],
-                cp.vl["CRZ_BTNS"]["SET_M"]]):
-      self.cruise_speed = ret.vEgoRaw
-
-    ret.cruiseState.available = True
+    ret.cruiseState.available = cp.vl["CRZ_CTRL"]["CRZ_AVAILABLE"] == 1
     ret.cruiseState.enabled = cp.vl["CRZ_CTRL"]["CRZ_ACTIVE"] == 1
-    ret.cruiseState.speed = self.cruise_speed
+    ret.cruiseState.speed = cp.vl["CRZ_EVENTS"]["CRZ_SPEED"] * CV.KPH_TO_MS
 
     if ret.cruiseState.enabled:
       if not self.lkas_allowed:
@@ -84,8 +78,9 @@ class CarState(CarStateBase):
         self.low_speed_lockout = False
         self.low_speed_alert = False
 
-    # On if no driver torque the last 5 seconds
-    ret.steerWarning = cp.vl["STEER_RATE"]["HANDS_OFF_5_SECONDS"] == 1
+    # Check if LKAS is disabled due to lack of driver torque when all other states indicate
+    # it should be enabled (steer lockout)
+    ret.steerWarning = self.lkas_allowed and (cp.vl["STEER_RATE"]["LKAS_BLOCK"] == 1)
 
     self.acc_active_last = ret.cruiseState.enabled
 
@@ -126,6 +121,8 @@ class CarState(CarStateBase):
         ("LKAS_TRACK_STATE", "STEER_RATE", 0),
         ("HANDS_OFF_5_SECONDS", "STEER_RATE", 0),
         ("CRZ_ACTIVE", "CRZ_CTRL", 0),
+        ("CRZ_AVAILABLE", "CRZ_CTRL", 0),
+        ("CRZ_SPEED", "CRZ_EVENTS", 0),
         ("STANDSTILL", "PEDALS", 0),
         ("BRAKE_ON", "PEDALS", 0),
         ("BRAKE_PRESSURE", "BRAKE", 0),
@@ -148,6 +145,7 @@ class CarState(CarStateBase):
       checks += [
         ("ENGINE_DATA", 100),
         ("CRZ_CTRL", 50),
+        ("CRZ_EVENTS", 50),
         ("CRZ_BTNS", 10),
         ("PEDALS", 50),
         ("BRAKE", 50),

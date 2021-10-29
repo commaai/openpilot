@@ -3,7 +3,6 @@ import cereal.messaging as messaging
 from opendbc.can.packer import CANPacker
 from opendbc.can.parser import CANParser
 from selfdrive.boardd.boardd_api_impl import can_list_to_can_capnp  # pylint: disable=no-name-in-module,import-error
-from selfdrive.car.honda.values import FINGERPRINTS, CAR
 from selfdrive.car import crc8_pedal
 
 packer = CANPacker("honda_civic_touring_2016_can_generated")
@@ -74,12 +73,6 @@ def can_function(pm, speed, angle, idx, cruise_button, is_engaged):
     msg.append(rpacker.make_can_msg("RADAR_DIAGNOSTIC", 1, {"RADAR_STATE": 0x79}, -1))
     for i in range(16):
       msg.append(rpacker.make_can_msg("TRACK_%d" % i, 1, {"LONG_DIST": 255.5}, -1))
-
-  # fill in the rest for fingerprint
-  done = set([x[0] for x in msg])
-  for k, v in FINGERPRINTS[CAR.CIVIC][0].items():
-    if k not in done and k not in [0xE4, 0x194]:
-      msg.append([k, 0, b'\x00'*v, 0])
 
   pm.send('can', can_list_to_can_capnp(msg))
 

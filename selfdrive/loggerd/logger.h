@@ -11,6 +11,7 @@
 #include <capnp/serialize.h>
 #include <kj/array.h>
 
+#include "cereal/messaging/messaging.h"
 #include "selfdrive/common/util.h"
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/hardware/hw.h"
@@ -39,7 +40,10 @@ class BZFile {
   }
   inline void write(void* data, size_t size) {
     int bzerror;
-    BZ2_bzWrite(&bzerror, bz_file, data, size);
+    do {
+      BZ2_bzWrite(&bzerror, bz_file, data, size);
+    } while (bzerror == BZ_IO_ERROR && errno == EINTR);
+
     if (bzerror != BZ_OK && !error_logged) {
       LOGE("BZ2_bzWrite error, bzerror=%d", bzerror);
       error_logged = true;
@@ -53,8 +57,12 @@ class BZFile {
   BZFILE* bz_file = nullptr;
 };
 
+typedef cereal::Sentinel::SentinelType SentinelType;
+
 typedef struct LoggerHandle {
   pthread_mutex_t lock;
+  SentinelType end_sentinel_type;
+  int exit_signal;
   int refcnt;
   char segment_path[4096];
   char log_path[4096];

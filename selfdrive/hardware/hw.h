@@ -14,6 +14,7 @@ class HardwarePC : public HardwareNone {
 public:
   static std::string get_os_version() { return "openpilot for PC"; }
   static bool PC() { return true; }
+  static bool TICI() { return util::getenv("TICI", 0) == 1; }
 };
 #define Hardware HardwarePC
 #endif
@@ -28,9 +29,6 @@ inline std::string log_root() {
 }
 inline std::string params() {
   return Hardware::PC() ? HOME + "/.comma/params" : "/data/params";
-}
-inline std::string persistent_params() {
-  return Hardware::PC() ? HOME + "/.comma/params" : "/persist/comma/params";
 }
 inline std::string rsa_file() {
   return Hardware::PC() ? HOME + "/.comma/persist/comma/id_rsa" : "/persist/comma/id_rsa";

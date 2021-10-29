@@ -240,7 +240,7 @@ CONFIGS = [
     proc_name="controlsd",
     pub_sub={
       "can": ["controlsState", "carState", "carControl", "sendcan", "carEvents", "carParams"],
-      "deviceState": [], "pandaState": [], "liveCalibration": [], "driverMonitoringState": [], "longitudinalPlan": [], "lateralPlan": [], "liveLocationKalman": [], "liveParameters": [], "radarState": [],
+      "deviceState": [], "pandaStates": [], "peripheralState": [], "liveCalibration": [], "driverMonitoringState": [], "longitudinalPlan": [], "lateralPlan": [], "liveLocationKalman": [], "liveParameters": [], "radarState": [],
       "modelV2": [], "driverCameraState": [], "roadCameraState": [], "ubloxRaw": [], "managerState": [],
     },
     ignore=["logMonoTime", "valid", "controlsState.startMonoTime", "controlsState.cumLagMs"],
@@ -264,13 +264,13 @@ CONFIGS = [
   ProcessConfig(
     proc_name="plannerd",
     pub_sub={
-      "modelV2": ["lateralPlan"], "radarState": ["longitudinalPlan"],
-      "carState": [], "controlsState": [],
+      "modelV2": ["lateralPlan", "longitudinalPlan"],
+      "carState": [], "controlsState": [], "radarState": [],
     },
     ignore=["logMonoTime", "valid", "longitudinalPlan.processingDelay"],
     init_callback=get_car_params,
     should_recv_callback=None,
-    tolerance=None,
+    tolerance=NUMPY_TOLERANCE,
     fake_pubsubmaster=True,
   ),
   ProcessConfig(
@@ -363,6 +363,8 @@ def python_replay_process(cfg, lr, fingerprint=None):
   params.put_bool("CommunityFeaturesToggle", True)
 
   os.environ['NO_RADAR_SLEEP'] = "1"
+  os.environ["SIMULATION"] = "1"
+
 
   # TODO: remove after getting new route for civic & accord
   migration = {
@@ -427,7 +429,10 @@ def python_replay_process(cfg, lr, fingerprint=None):
 
       recv_cnt = len(recv_socks)
       while recv_cnt > 0:
-        m = fpm.wait_for_msg()
+        m = fpm.wait_for_msg().as_builder()
+        m.logMonoTime = msg.logMonoTime
+        m = m.as_reader()
+
         log_msgs.append(m)
         recv_cnt -= m.which() in recv_socks
   return log_msgs
@@ -441,7 +446,6 @@ def cpp_replay_process(cfg, lr, fingerprint=None):
   pub_msgs = [msg for msg in all_msgs if msg.which() in list(cfg.pub_sub.keys())]
   log_msgs = []
 
-  os.environ["SIMULATION"] = "1"  # Disable submaster alive checks
   managed_processes[cfg.proc_name].prepare()
   managed_processes[cfg.proc_name].start()
 
@@ -465,6 +469,10 @@ def cpp_replay_process(cfg, lr, fingerprint=None):
           if response is None:
             print(f"Warning, no response received {i}")
           else:
+
+            response = response.as_builder()
+            response.logMonoTime = msg.logMonoTime
+            response = response.as_reader()
             log_msgs.append(response)
 
         if not len(resp_sockets):  # We only need to wait if we didn't already wait for a response

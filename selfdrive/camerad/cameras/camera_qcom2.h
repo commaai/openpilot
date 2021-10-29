@@ -1,7 +1,5 @@
 #pragma once
 
-#include <pthread.h>
-
 #include <cstdint>
 
 #include <media/cam_req_mgr.h>
@@ -33,11 +31,10 @@ typedef struct CameraState {
 
   int camera_num;
 
-  uint32_t session_handle;
-
-  uint32_t sensor_dev_handle;
-  uint32_t isp_dev_handle;
-  uint32_t csiphy_dev_handle;
+  int32_t session_handle;
+  int32_t sensor_dev_handle;
+  int32_t isp_dev_handle;
+  int32_t csiphy_dev_handle;
 
   int32_t link_handle;
 
@@ -50,14 +47,10 @@ typedef struct CameraState {
   int idx_offset;
   bool skipped;
 
-  struct cam_req_mgr_session_info req_mgr_session_info;
-
   CameraBuf buf;
 } CameraState;
 
 typedef struct MultiCameraState {
-  int device;
-
   unique_fd video0_fd;
   unique_fd video1_fd;
   unique_fd isp_fd;
@@ -68,8 +61,6 @@ typedef struct MultiCameraState {
   CameraState road_cam;
   CameraState wide_road_cam;
   CameraState driver_cam;
-
-  pthread_mutex_t isp_lock;
 
   SubMaster *sm;
   PubMaster *pm;

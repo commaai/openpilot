@@ -42,17 +42,18 @@ namespace {
 
 constexpr int MAIN_FPS = 20;
 const int MAIN_BITRATE = Hardware::TICI() ? 10000000 : 5000000;
-const int MAX_CAM_IDX = Hardware::TICI() ? LOG_CAMERA_ID_ECAMERA : LOG_CAMERA_ID_DCAMERA;
 const int DCAM_BITRATE = Hardware::TICI() ? MAIN_BITRATE : 2500000;
 
 #define NO_CAMERA_PATIENCE 500 // fall back to time-based rotation if all cameras are dead
 
-const int SEGMENT_LENGTH = getenv("LOGGERD_TEST") ? atoi(getenv("LOGGERD_SEGMENT_LENGTH")) : 60;
+const bool LOGGERD_TEST = getenv("LOGGERD_TEST");
+const int SEGMENT_LENGTH = LOGGERD_TEST ? atoi(getenv("LOGGERD_SEGMENT_LENGTH")) : 60;
 
 ExitHandler do_exit;
 
-LogCameraInfo cameras_logged[LOG_CAMERA_ID_MAX] = {
-  [LOG_CAMERA_ID_FCAMERA] = {
+const LogCameraInfo cameras_logged[] = {
+  {
+    .type = RoadCam,
     .stream_type = VISION_STREAM_YUV_BACK,
     .filename = "fcamera.hevc",
     .frame_packet_name = "roadCameraState",
@@ -61,9 +62,12 @@ LogCameraInfo cameras_logged[LOG_CAMERA_ID_MAX] = {
     .is_h265 = true,
     .downscale = false,
     .has_qcamera = true,
-    .trigger_rotate = true
+    .trigger_rotate = true,
+    .enable = true,
+    .record = true,
   },
-  [LOG_CAMERA_ID_DCAMERA] = {
+  {
+    .type = DriverCam,
     .stream_type = VISION_STREAM_YUV_FRONT,
     .filename = "dcamera.hevc",
     .frame_packet_name = "driverCameraState",
@@ -73,8 +77,11 @@ LogCameraInfo cameras_logged[LOG_CAMERA_ID_MAX] = {
     .downscale = false,
     .has_qcamera = false,
     .trigger_rotate = Hardware::TICI(),
+    .enable = !Hardware::PC(),
+    .record = Params().getBool("RecordFront"),
   },
-  [LOG_CAMERA_ID_ECAMERA] = {
+  {
+    .type = WideRoadCam,
     .stream_type = VISION_STREAM_YUV_WIDE,
     .filename = "ecamera.hevc",
     .frame_packet_name = "wideRoadCameraState",
@@ -83,17 +90,19 @@ LogCameraInfo cameras_logged[LOG_CAMERA_ID_MAX] = {
     .is_h265 = true,
     .downscale = false,
     .has_qcamera = false,
-    .trigger_rotate = true
+    .trigger_rotate = true,
+    .enable = Hardware::TICI(),
+    .record = Hardware::TICI(),
   },
-  [LOG_CAMERA_ID_QCAMERA] = {
-    .filename = "qcamera.ts",
-    .fps = MAIN_FPS,
-    .bitrate = 256000,
-    .is_h265 = false,
-    .downscale = true,
-    .frame_width = Hardware::TICI() ? 526 : 480,
-    .frame_height = Hardware::TICI() ? 330 : 360 // keep pixel count the same?
-  },
+};
+const LogCameraInfo qcam_info = {
+  .filename = "qcamera.ts",
+  .fps = MAIN_FPS,
+  .bitrate = 256000,
+  .is_h265 = false,
+  .downscale = true,
+  .frame_width = Hardware::TICI() ? 526 : 480,
+  .frame_height = Hardware::TICI() ? 330 : 360 // keep pixel count the same?
 };
 
 struct LoggerdState {
@@ -107,12 +116,16 @@ struct LoggerdState {
   std::atomic<int> waiting_rotate;
   int max_waiting = 0;
   double last_rotate_tms = 0.;
+
+  // Sync logic for startup
+  std::atomic<bool> encoders_synced;
+  std::atomic<int> encoders_ready;
+  std::atomic<uint32_t> start_frame_id;
+  std::atomic<uint32_t> latest_frame_id;
 };
 LoggerdState s;
 
-void encoder_thread(int cam_idx) {
-  assert(cam_idx < LOG_CAMERA_ID_MAX-1);
-  const LogCameraInfo &cam_info = cameras_logged[cam_idx];
+void encoder_thread(const LogCameraInfo &cam_info) {
   set_thread_name(cam_info.filename);
 
   int cnt = 0, cur_seg = -1;
@@ -121,9 +134,11 @@ void encoder_thread(int cam_idx) {
   std::vector<Encoder *> encoders;
   VisionIpcClient vipc_client = VisionIpcClient("camerad", cam_info.stream_type, false);
 
+  bool ready = false;
+
   while (!do_exit) {
     if (!vipc_client.connect(false)) {
-      util::sleep_for(100);
+      util::sleep_for(5);
       continue;
     }
 
@@ -134,13 +149,11 @@ void encoder_thread(int cam_idx) {
 
       // main encoder
       encoders.push_back(new Encoder(cam_info.filename, buf_info.width, buf_info.height,
-                                     cam_info.fps, cam_info.bitrate, cam_info.is_h265, cam_info.downscale));
-
+                                     cam_info.fps, cam_info.bitrate, cam_info.is_h265,
+                                     cam_info.downscale, cam_info.record));
       // qcamera encoder
       if (cam_info.has_qcamera) {
-        LogCameraInfo &qcam_info = cameras_logged[LOG_CAMERA_ID_QCAMERA];
-        encoders.push_back(new Encoder(qcam_info.filename,
-                                       qcam_info.frame_width, qcam_info.frame_height,
+        encoders.push_back(new Encoder(qcam_info.filename, qcam_info.frame_width, qcam_info.frame_height,
                                        qcam_info.fps, qcam_info.bitrate, qcam_info.is_h265, qcam_info.downscale));
       }
     }
@@ -149,6 +162,25 @@ void encoder_thread(int cam_idx) {
       VisionIpcBufExtra extra;
       VisionBuf* buf = vipc_client.recv(&extra);
       if (buf == nullptr) continue;
+
+      if (cam_info.trigger_rotate && (s.max_waiting > 1)) {
+        if (!ready) {
+          LOGE("%s encoder ready", cam_info.filename);
+          ++s.encoders_ready;
+          ready = true;
+        }
+
+        if (!s.encoders_synced) {
+          update_max_atomic(s.latest_frame_id, extra.frame_id);
+          continue;
+        } else {
+          // Wait for all encoders to reach the same frame id
+          if (extra.frame_id < s.start_frame_id) {
+            LOGE("%s waiting for frame %d, cur %d", cam_info.filename, s.start_frame_id.load(), extra.frame_id);
+            continue;
+          }
+        }
+      }
 
       if (cam_info.trigger_rotate) {
         s.last_camera_seen_tms = millis_since_boot();
@@ -167,7 +199,7 @@ void encoder_thread(int cam_idx) {
         cur_seg = s.rotate_segment;
         cnt = 0;
 
-        LOGW("camera %d rotate encoder to %s", cam_idx, s.segment_path);
+        LOGW("camera %d rotate encoder to %s", cam_info.type, s.segment_path);
         for (auto &e : encoders) {
           e->encoder_close();
           e->encoder_open(s.segment_path);
@@ -182,7 +214,7 @@ void encoder_thread(int cam_idx) {
       for (int i = 0; i < encoders.size(); ++i) {
         int out_id = encoders[i]->encode_frame(buf->y, buf->u, buf->v,
                                                buf->width, buf->height, extra.timestamp_eof);
-        
+
         if (out_id == -1) {
           LOGE("Failed to encode frame. frame_id: %d encode_id: %d", extra.frame_id, encode_idx);
         }
@@ -191,21 +223,21 @@ void encoder_thread(int cam_idx) {
         if (i == 0 && out_id != -1) {
           MessageBuilder msg;
           // this is really ugly
-          auto eidx = cam_idx == LOG_CAMERA_ID_DCAMERA ? msg.initEvent().initDriverEncodeIdx() :
-                     (cam_idx == LOG_CAMERA_ID_ECAMERA ? msg.initEvent().initWideRoadEncodeIdx() : msg.initEvent().initRoadEncodeIdx());
+          bool valid = (buf->get_frame_id() == extra.frame_id);
+          auto eidx = cam_info.type == DriverCam ? msg.initEvent(valid).initDriverEncodeIdx() :
+                     (cam_info.type == WideRoadCam ? msg.initEvent(valid).initWideRoadEncodeIdx() : msg.initEvent(valid).initRoadEncodeIdx());
           eidx.setFrameId(extra.frame_id);
           eidx.setTimestampSof(extra.timestamp_sof);
           eidx.setTimestampEof(extra.timestamp_eof);
           if (Hardware::TICI()) {
             eidx.setType(cereal::EncodeIndex::Type::FULL_H_E_V_C);
           } else {
-            eidx.setType(cam_idx == LOG_CAMERA_ID_DCAMERA ? cereal::EncodeIndex::Type::FRONT : cereal::EncodeIndex::Type::FULL_H_E_V_C);
+            eidx.setType(cam_info.type == DriverCam ? cereal::EncodeIndex::Type::FRONT : cereal::EncodeIndex::Type::FULL_H_E_V_C);
           }
           eidx.setEncodeId(encode_idx);
           eidx.setSegmentNum(cur_seg);
           eidx.setSegmentId(out_id);
           if (lh) {
-            // TODO: this should read cereal/services.h for qlog decimation
             auto bytes = msg.toBytes();
             lh_log(lh, bytes.begin(), bytes.size(), true);
           }
@@ -262,7 +294,8 @@ void rotate_if_needed() {
 
   double tms = millis_since_boot();
   if ((tms - s.last_rotate_tms) > SEGMENT_LENGTH * 1000 &&
-      (tms - s.last_camera_seen_tms) > NO_CAMERA_PATIENCE) {
+      (tms - s.last_camera_seen_tms) > NO_CAMERA_PATIENCE &&
+      !LOGGERD_TEST) {
     LOGW("no camera packet seen. auto rotating");
     logger_rotate();
   }
@@ -271,7 +304,16 @@ void rotate_if_needed() {
 } // namespace
 
 int main(int argc, char** argv) {
-  setpriority(PRIO_PROCESS, 0, -20);
+  if (Hardware::EON()) {
+    setpriority(PRIO_PROCESS, 0, -20);
+  } else if (Hardware::TICI()) {
+    int ret;
+    ret = set_core_affinity({0, 1, 2, 3});
+    assert(ret == 0);
+    // TODO: why does this impact camerad timings?
+    //ret = set_realtime_priority(1);
+    //assert(ret == 0);
+  }
 
   clear_locks();
 
@@ -294,38 +336,33 @@ int main(int argc, char** argv) {
     qlog_states[sock] = {.counter = 0, .freq = it.decimation};
   }
 
-  Params params;
-
   // init logger
   logger_init(&s.logger, "rlog", true);
   logger_rotate();
-  params.put("CurrentRoute", s.logger.route_name);
+  Params().put("CurrentRoute", s.logger.route_name);
 
   // init encoders
   s.last_camera_seen_tms = millis_since_boot();
-  // TODO: create these threads dynamically on frame packet presence
   std::vector<std::thread> encoder_threads;
-  encoder_threads.push_back(std::thread(encoder_thread, LOG_CAMERA_ID_FCAMERA));
-  if (cameras_logged[LOG_CAMERA_ID_FCAMERA].trigger_rotate) {
-    s.max_waiting += 1;
-  }
-
-  if (!Hardware::PC() && params.getBool("RecordFront")) {
-    encoder_threads.push_back(std::thread(encoder_thread, LOG_CAMERA_ID_DCAMERA));
-    if (cameras_logged[LOG_CAMERA_ID_DCAMERA].trigger_rotate) {
-      s.max_waiting += 1;
-    }
-  }
-  if (Hardware::TICI()) {
-    encoder_threads.push_back(std::thread(encoder_thread, LOG_CAMERA_ID_ECAMERA));
-    if (cameras_logged[LOG_CAMERA_ID_ECAMERA].trigger_rotate) {
-      s.max_waiting += 1;
+  for (const auto &ci : cameras_logged) {
+    if (ci.enable) {
+      encoder_threads.push_back(std::thread(encoder_thread, ci));
+      if (ci.trigger_rotate) s.max_waiting++;
     }
   }
 
   uint64_t msg_count = 0, bytes_count = 0;
   double start_ts = millis_since_boot();
   while (!do_exit) {
+    // Check if all encoders are ready and start encoding at the same time
+    if ((s.max_waiting > 1) && !s.encoders_synced && (s.encoders_ready == s.max_waiting)) {
+      // Small margin in case one of the encoders already dropped the next frame
+      s.start_frame_id = s.latest_frame_id + 2;
+      s.encoders_synced = true;
+      LOGE("starting encoders at frame id %d", s.start_frame_id.load());
+    }
+
+
     // poll for new messages on all sockets
     for (auto sock : poller->poll(1000)) {
       // drain socket

@@ -1,5 +1,7 @@
 #include "selfdrive/common/util.h"
 
+#include <sys/stat.h>
+
 #include <cassert>
 #include <cerrno>
 #include <cstring>
@@ -38,14 +40,16 @@ int set_realtime_priority(int level) {
 #endif
 }
 
-int set_core_affinity(int core) {
+int set_core_affinity(std::vector<int> cores) {
 #ifdef __linux__
   long tid = syscall(SYS_gettid);
-  cpu_set_t rt_cpu;
+  cpu_set_t cpu;
 
-  CPU_ZERO(&rt_cpu);
-  CPU_SET(core, &rt_cpu);
-  return sched_setaffinity(tid, sizeof(rt_cpu), &rt_cpu);
+  CPU_ZERO(&cpu);
+  for (const int n : cores) {
+    CPU_SET(n, &cpu);
+  }
+  return sched_setaffinity(tid, sizeof(cpu), &cpu);
 #else
   return -1;
 #endif
@@ -83,7 +87,7 @@ std::map<std::string, std::string> read_files_in_dir(const std::string &path) {
 
   struct dirent *de = NULL;
   while ((de = readdir(d))) {
-    if (isalnum(de->d_name[0])) {
+    if (de->d_type != DT_DIR) {
       ret[de->d_name] = util::read_file(path + "/" + de->d_name);
     }
   }
@@ -93,11 +97,11 @@ std::map<std::string, std::string> read_files_in_dir(const std::string &path) {
 }
 
 int write_file(const char* path, const void* data, size_t size, int flags, mode_t mode) {
-  int fd = open(path, flags, mode);
+  int fd = HANDLE_EINTR(open(path, flags, mode));
   if (fd == -1) {
     return -1;
   }
-  ssize_t n = write(fd, data, size);
+  ssize_t n = HANDLE_EINTR(write(fd, data, size));
   close(fd);
   return (n >= 0 && (size_t)n == size) ? 0 : -1;
 }
@@ -113,8 +117,8 @@ std::string readlink(const std::string &path) {
 }
 
 bool file_exists(const std::string& fn) {
-  std::ifstream f(fn);
-  return f.good();
+  struct stat st = {};
+  return stat(fn.c_str(), &st) != -1;
 }
 
 std::string getenv(const char* key, const char* default_val) {

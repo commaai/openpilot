@@ -1,67 +1,74 @@
-Replay driving data
--------------
+# Replay
 
-**Hardware needed**: none
+## Replay driving data
 
-`unlogger.py` replays data collected with [dashcam](https://github.com/commaai/openpilot/tree/dashcam) or [openpilot](https://githucommaai/openpilot).
+`replay` replays all the messages logged while running openpilot.
 
-Unlogger with remote data:
-
-```
-# Log in via browser
+```bash
+# Log in via browser to have access to non-public routes
 python lib/auth.py
 
-# Start unlogger
-python replay/unlogger.py <route-name>
-#Example:
-#python replay/unlogger.py '3533c53bb29502d1|2019-12-10--01-13-27'
+# Start a replay
+selfdrive/ui/replay/replay <route-name>
 
-# In another terminal you can run a debug visualizer:
-python replay/ui.py   # Define the environmental variable HORIZONTAL is the ui layout is too tall
+# Example:
+# selfdrive/ui/replay/replay '4cf7a6ad03080c90|2021-09-29--13-46-36'
+# or use --demo to replay the default demo route:
+# selfdrive/ui/replay/replay --demo
+
+# watch the replay with the normal openpilot UI
+cd selfdrive/ui && ./ui
+
+# or try out a debug visualizer:
+python replay/ui.py
 ```
 
-Unlogger with local data downloaded from device or https://connect.comma.ai:
+## usage
+``` bash
+$ selfdrive/ui/replay/replay -h
+Usage: selfdrive/ui/replay/replay [options] route
+Mock openpilot components by publishing logged messages.
 
-```
-python replay/unlogger.py <route-name> <path-to-data-directory>
+Options:
+  -h, --help             Displays this help.
+  -a, --allow <allow>    whitelist of services to send
+  -b, --block <block>    blacklist of services to send
+  -s, --start <seconds>  start from <seconds>
+  --demo                 use a demo route instead of providing your own
+  --dcam                 load driver camera
+  --ecam                 load wide road camera
 
-#Example:
-
-#python replay/unlogger.py '99c94dc769b5d96e|2018-11-14--13-31-42' /home/batman/unlogger_data
-
-#Within /home/batman/unlogger_data:
-#  99c94dc769b5d96e|2018-11-14--13-31-42--0--fcamera.hevc
-#  99c94dc769b5d96e|2018-11-14--13-31-42--0--rlog.bz2
-#  ...
-```
-![Imgur](https://i.imgur.com/Yppe0h2.png)
-
-LogReader with remote data
-
-```python
-from tools.lib.logreader import LogReader
-from tools.lib.route import Route
-route = Route('3533c53bb29502d1|2019-12-10--01-13-27')
-log_paths = route.log_paths()
-events_seg0 = list(LogReader(log_paths[0]))
-print(len(events_seg0), 'events logged in first segment')
+Arguments:
+  route                  the drive to replay. find your drives at
+                         connect.comma.ai
 ```
 
-Stream replayed CAN messages to EON
--------------
+## watch3
 
-**Hardware needed**: 2 x [panda](panda.comma.ai), [debug board](https://comma.ai/shop/products/panda-debug-board/), [EON](https://comma.ai/shop/products/eon-gold-dashcam-devkit/).
+watch all three cameras simultaneously from your comma three routes with watch3
 
-It is possible to replay CAN messages as they were recorded and forward them to a EON. 
-Connect 2 pandas to the debug board. A panda connects to the PC, the other panda connects to the EON.
+simply replay a route using the `--dcam` and `--ecam` flags:
 
-Usage:
+```bash
+# start a replay
+cd selfdrive/ui/replay && ./replay --demo --dcam --ecam
+
+# then start watch3
+cd selfdrive/ui && ./watch3
 ```
-# With MOCK=1 boardd will read logged can messages from a replay and send them to the panda.
+
+![](https://i.imgur.com/IeaOdAb.png)
+
+## Stream CAN messages to your device
+
+Replay CAN messages as they were recorded using a [panda jungle](https://comma.ai/shop/products/panda-jungle). The jungle has 6x OBD-C ports for connecting all your comma devices.
+
+`can_replay.py` is a convenient script for when any CAN data will do.
+
+In order to replay specific route:
+```bash
 MOCK=1 selfdrive/boardd/tests/boardd_old.py
 
 # In another terminal:
-python replay/unlogger.py <route-name> <path-to-data-directory>
-
+selfdrive/ui/replay/replay <route-name>
 ```
-![Imgur](https://i.imgur.com/AcurZk8.jpg)

@@ -21,9 +21,9 @@
 #include "selfdrive/loggerd/include/msm_media_info.h"
 
 // Check the OMX error code and assert if an error occurred.
-#define OMX_CHECK(_expr)          \
-  do {                           \
-    assert(OMX_ErrorNone == _expr); \
+#define OMX_CHECK(_expr)              \
+  do {                                \
+    assert(OMX_ErrorNone == (_expr)); \
   } while (0)
 
 extern ExitHandler do_exit;
@@ -156,8 +156,9 @@ static const char* omx_color_fomat_name(uint32_t format) {
 
 // ***** encoder functions *****
 
-OmxEncoder::OmxEncoder(const char* filename, int width, int height, int fps, int bitrate, bool h265, bool downscale) {
+OmxEncoder::OmxEncoder(const char* filename, int width, int height, int fps, int bitrate, bool h265, bool downscale, bool write) {
   this->filename = filename;
+  this->write = write;
   this->width = width;
   this->height = height;
   this->fps = fps;
@@ -503,18 +504,20 @@ void OmxEncoder::encoder_open(const char* path) {
 
     this->wrote_codec_config = false;
   } else {
-    this->of = fopen(this->vid_path, "wb");
-    assert(this->of);
+    if (this->write) {
+      this->of = fopen(this->vid_path, "wb");
+      assert(this->of);
 #ifndef QCOM2
-    if (this->codec_config_len > 0) {
-      fwrite(this->codec_config, this->codec_config_len, 1, this->of);
-    }
+      if (this->codec_config_len > 0) {
+        fwrite(this->codec_config, this->codec_config_len, 1, this->of);
+      }
 #endif
+    }
   }
 
   // create camera lock file
   snprintf(this->lock_path, sizeof(this->lock_path), "%s/%s.lock", path, this->filename);
-  int lock_fd = open(this->lock_path, O_RDWR | O_CREAT, 0777);
+  int lock_fd = HANDLE_EINTR(open(this->lock_path, O_RDWR | O_CREAT, 0664));
   assert(lock_fd >= 0);
   close(lock_fd);
 
@@ -553,8 +556,10 @@ void OmxEncoder::encoder_close() {
       avio_closep(&this->ofmt_ctx->pb);
       avformat_free_context(this->ofmt_ctx);
     } else {
-      fclose(this->of);
-      this->of = nullptr;
+      if (this->of) {
+        fclose(this->of);
+        this->of = nullptr;
+      }
     }
     unlink(this->lock_path);
   }
@@ -583,8 +588,8 @@ OmxEncoder::~OmxEncoder() {
   OMX_CHECK(OMX_FreeHandle(this->handle));
 
   OMX_BUFFERHEADERTYPE *out_buf;
-  while (this->free_in.try_pop(out_buf)); 
-  while (this->done_out.try_pop(out_buf)); 
+  while (this->free_in.try_pop(out_buf));
+  while (this->done_out.try_pop(out_buf));
 
   if (this->codec_config) {
     free(this->codec_config);

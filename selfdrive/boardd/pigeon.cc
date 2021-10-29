@@ -41,8 +41,9 @@ Pigeon * Pigeon::connect(const char * tty) {
   return pigeon;
 }
 
-bool Pigeon::wait_for_ack(const std::string &ack, const std::string &nack) {
+bool Pigeon::wait_for_ack(const std::string &ack, const std::string &nack, int timeout_ms) {
   std::string s;
+  const double start_t = millis_since_boot();
   while (!do_exit) {
     s += receive();
 
@@ -52,7 +53,7 @@ bool Pigeon::wait_for_ack(const std::string &ack, const std::string &nack) {
     } else if (s.find(nack) != std::string::npos) {
       LOGE("Received NACK from ublox");
       return false;
-    } else if (s.size() > 0x1000) {
+    } else if (s.size() > 0x1000 || ((millis_since_boot() - start_t) > timeout_ms)) {
       LOGE("No response from ublox");
       return false;
     }
@@ -193,7 +194,7 @@ void handle_tty_issue(int err, const char func[]) {
 }
 
 void TTYPigeon::connect(const char * tty) {
-  pigeon_tty_fd = open(tty, O_RDWR);
+  pigeon_tty_fd = HANDLE_EINTR(open(tty, O_RDWR));
   if (pigeon_tty_fd < 0) {
     handle_tty_issue(errno, __func__);
     assert(pigeon_tty_fd >= 0);
@@ -253,7 +254,7 @@ void TTYPigeon::set_baud(int baud) {
 }
 
 void TTYPigeon::send(const std::string &s) {
-  int err = write(pigeon_tty_fd, s.data(), s.length());
+  int err = HANDLE_EINTR(write(pigeon_tty_fd, s.data(), s.length()));
 
   if(err < 0) { handle_tty_issue(err, __func__); }
   err = tcdrain(pigeon_tty_fd);

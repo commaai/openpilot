@@ -3,6 +3,7 @@
 #include <string>
 
 #include <QApplication>
+#include <QScreen>
 #include <QWidget>
 
 #ifdef QCOM2
@@ -13,18 +14,16 @@
 
 #include "selfdrive/hardware/hw.h"
 
-#ifdef USE_QRC
 const QString ASSET_PATH = ":/";
-#else
-const QString ASSET_PATH = "../assets/";
-#endif
 
-const int vwp_w = (Hardware::TICI() || (getenv("WIDE_UI") != NULL)) ? 2160 : 1920;
-const int vwp_h = 1080;
+const int WIDE_WIDTH = 2160;
 
 inline void setMainWindow(QWidget *w) {
+  const bool wide = (QGuiApplication::primaryScreen()->size().width() >= WIDE_WIDTH) ^
+                    (getenv("INVERT_WIDTH") != NULL);
   const float scale = util::getenv("SCALE", 1.0f);
-  w->setFixedSize(vwp_w*scale, vwp_h*scale);
+
+  w->setFixedSize(QSize(wide ? WIDE_WIDTH : 1920, 1080) * scale);
   w->show();
 
 #ifdef QCOM2

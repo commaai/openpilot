@@ -42,13 +42,16 @@ public:
   void requestScan();
   QMap<QString, Network> seenNetworks;
   QMap<QDBusObjectPath, QString> knownConnections;
+  QDBusObjectPath lteConnectionPath;
   QString ipv4_address;
 
   void refreshNetworks();
   void forgetConnection(const QString &ssid);
   bool isKnownConnection(const QString &ssid);
   void activateWifiConnection(const QString &ssid);
+  void activateModemConnection(const QDBusObjectPath &path);
   NetworkType currentNetworkType();
+  void updateGsmSettings(bool roaming, QString apn);
 
   void connect(const Network &ssid);
   void connect(const Network &ssid, const QString &password);
@@ -71,21 +74,23 @@ private:
   const QString defaultTetheringPassword = "swagswagcomma";
 
   bool firstScan = true;
-  QString getAdapter();
+  QString getAdapter(const uint = NM_DEVICE_TYPE_WIFI);
+  uint getAdapterType(const QDBusObjectPath &path);
   bool isWirelessAdapter(const QDBusObjectPath &path);
   QString get_ipv4_address();
   void connect(const QByteArray &ssid, const QString &username, const QString &password, SecurityType security_type);
   QString activeAp;
   void initActiveAp();
-  void deactivateConnection(const QString &ssid);
+  void deactivateConnectionBySsid(const QString &ssid);
+  void deactivateConnection(const QDBusObjectPath &path);
   QVector<QDBusObjectPath> get_active_connections();
   uint get_wifi_device_state();
   QByteArray get_property(const QString &network_path, const QString &property);
   unsigned int get_ap_strength(const QString &network_path);
   SecurityType getSecurityType(const QString &path);
   QDBusObjectPath getConnectionPath(const QString &ssid);
+  Connection getConnectionSettings(const QDBusObjectPath &path);
   void initConnections();
-  QString getConnectionSsid(const QDBusObjectPath &path);
   void setup();
 
 signals:

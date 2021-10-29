@@ -4,7 +4,6 @@
 
 #include "selfdrive/common/util.h"
 #include "selfdrive/ui/qt/util.h"
-#include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/request_repeater.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
 #include "selfdrive/ui/qt/widgets/scrollview.h"
@@ -55,34 +54,64 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
   main_layout->addWidget(horizontal_line());
   main_layout->addSpacing(20);
 
+  // Current route
+  {
+    current_widget = new QWidget(this);
+    QVBoxLayout *current_layout = new QVBoxLayout(current_widget);
+
+    QLabel *title = new QLabel("Current Destination");
+    title->setStyleSheet("font-size: 55px");
+    current_layout->addWidget(title);
+
+    current_route = new ButtonControl("", "CLEAR");
+    current_route->setStyleSheet("padding-left: 40px;");
+    current_layout->addWidget(current_route);
+    QObject::connect(current_route, &ButtonControl::clicked, [=]() {
+      params.remove("NavDestination");
+      updateCurrentRoute();
+    });
+
+    current_layout->addSpacing(10);
+    current_layout->addWidget(horizontal_line());
+    current_layout->addSpacing(20);
+  }
+  main_layout->addWidget(current_widget);
+
   // Recents
+  QLabel *recents_title = new QLabel("Recent Destinations");
+  recents_title->setStyleSheet("font-size: 55px");
+  main_layout->addWidget(recents_title);
+  main_layout->addSpacing(20);
+
   recent_layout = new QVBoxLayout;
   QWidget *recent_widget = new LayoutWidget(recent_layout, this);
   ScrollView *recent_scroller = new ScrollView(recent_widget, this);
-  main_layout->addWidget(recent_scroller, 1);
+  main_layout->addWidget(recent_scroller);
 
+  // No prime upsell
   QWidget * no_prime_widget = new QWidget;
-  QVBoxLayout *no_prime_layout = new QVBoxLayout(no_prime_widget);
-  QLabel *signup_header = new QLabel("Try the Navigation Beta");
-  signup_header->setStyleSheet(R"(font-size: 75px; color: white; font-weight:600;)");
-  signup_header->setAlignment(Qt::AlignCenter);
+  {
+    QVBoxLayout *no_prime_layout = new QVBoxLayout(no_prime_widget);
+    QLabel *signup_header = new QLabel("Try the Navigation Beta");
+    signup_header->setStyleSheet(R"(font-size: 75px; color: white; font-weight:600;)");
+    signup_header->setAlignment(Qt::AlignCenter);
 
-  no_prime_layout->addWidget(signup_header);
-  no_prime_layout->addSpacing(50);
+    no_prime_layout->addWidget(signup_header);
+    no_prime_layout->addSpacing(50);
 
-  QLabel *screenshot = new QLabel;
-  QPixmap pm = QPixmap("../assets/navigation/screenshot.png");
-  screenshot->setPixmap(pm.scaledToWidth(vwp_w * 0.5, Qt::SmoothTransformation));
-  no_prime_layout->addWidget(screenshot, 0, Qt::AlignHCenter);
+    QLabel *screenshot = new QLabel;
+    QPixmap pm = QPixmap("../assets/navigation/screenshot.png");
+    screenshot->setPixmap(pm.scaledToWidth(1080, Qt::SmoothTransformation));
+    no_prime_layout->addWidget(screenshot, 0, Qt::AlignHCenter);
 
-  QLabel *signup = new QLabel("Get turn-by-turn directions displayed and more with a comma \nprime subscription. Sign up now: https://connect.comma.ai");
-  signup->setStyleSheet(R"(font-size: 45px; color: white; font-weight:300;)");
-  signup->setAlignment(Qt::AlignCenter);
+    QLabel *signup = new QLabel("Get turn-by-turn directions displayed and more with a comma \nprime subscription. Sign up now: https://connect.comma.ai");
+    signup->setStyleSheet(R"(font-size: 45px; color: white; font-weight:300;)");
+    signup->setAlignment(Qt::AlignCenter);
 
-  no_prime_layout->addSpacing(50);
-  no_prime_layout->addWidget(signup);
-
-  no_prime_layout->addStretch();
+    no_prime_layout->addSpacing(20);
+    no_prime_layout->addWidget(signup);
+    no_prime_layout->addStretch();
+  }
 
   stack->addWidget(main_widget);
   stack->addWidget(no_prime_widget);
@@ -126,6 +155,10 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
   }
 }
 
+void MapPanel::showEvent(QShowEvent *event) {
+  updateCurrentRoute();
+}
+
 void MapPanel::clear() {
   home_button->setIcon(QPixmap("../assets/navigation/home_inactive.png"));
   home_address->setStyleSheet(R"(font-size: 50px; color: grey;)");
@@ -140,6 +173,16 @@ void MapPanel::clear() {
   clearLayout(recent_layout);
 }
 
+void MapPanel::updateCurrentRoute() {
+  auto dest = QString::fromStdString(params.get("NavDestination"));
+  QJsonDocument doc = QJsonDocument::fromJson(dest.trimmed().toUtf8());
+  if (dest.size() && !doc.isNull()) {
+    auto name = doc["place_name"].toString();
+    auto details = doc["place_details"].toString();
+    current_route->setTitle(shorten(name + " " + details, 42));
+  }
+  current_widget->setVisible(dest.size() && !doc.isNull());
+}
 
 void MapPanel::parseResponse(const QString &response) {
   QJsonDocument doc = QJsonDocument::fromJson(response.trimmed().toUtf8());

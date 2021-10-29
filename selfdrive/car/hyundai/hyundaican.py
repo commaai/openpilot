@@ -3,7 +3,6 @@ from selfdrive.car.hyundai.values import CAR, CHECKSUM
 
 hyundai_checksum = crcmod.mkCrcFun(0x11D, initCrc=0xFD, rev=False, xorOut=0xdf)
 
-
 def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
                   lkas11, sys_warning, sys_state, enabled,
                   left_lane, right_lane,
@@ -17,7 +16,9 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
   values["CF_Lkas_ActToi"] = steer_req
   values["CF_Lkas_MsgCount"] = frame % 0x10
 
-  if car_fingerprint in [CAR.SONATA, CAR.PALISADE, CAR.KIA_NIRO_EV, CAR.SANTA_FE, CAR.IONIQ_EV_2020, CAR.IONIQ_PHEV, CAR.KIA_SELTOS, CAR.ELANTRA_2021, CAR.ELANTRA_HEV_2021]:
+  if car_fingerprint in [CAR.SONATA, CAR.PALISADE, CAR.KIA_NIRO_EV, CAR.KIA_NIRO_HEV_2021, CAR.SANTA_FE,
+                         CAR.IONIQ_EV_2020, CAR.IONIQ_PHEV, CAR.KIA_SELTOS, CAR.ELANTRA_2021,
+                         CAR.ELANTRA_HEV_2021, CAR.SONATA_HYBRID, CAR.KONA_EV, CAR.KONA_HEV, CAR.SANTA_FE_2022, CAR.KIA_K5_2021, CAR.IONIQ_HEV_2022]:
     values["CF_Lkas_LdwsActivemode"] = int(left_lane) + (int(right_lane) << 1)
     values["CF_Lkas_LdwsOpt_USM"] = 2
 
@@ -76,7 +77,7 @@ def create_lfahda_mfc(packer, enabled, hda_set_speed=0):
   }
   return packer.make_can_msg("LFAHDA_MFC", 0, values)
 
-def create_acc_commands(packer, enabled, accel, idx, lead_visible, set_speed, stopping):
+def create_acc_commands(packer, enabled, accel, jerk, idx, lead_visible, set_speed, stopping):
   commands = []
 
   scc11_values = {
@@ -84,14 +85,19 @@ def create_acc_commands(packer, enabled, accel, idx, lead_visible, set_speed, st
     "TauGapSet": 4,
     "VSetDis": set_speed if enabled else 0,
     "AliveCounterACC": idx % 0x10,
+    "ObjValid": 1 if lead_visible else 0,
+    "ACC_ObjStatus": 1 if lead_visible else 0,
+    "ACC_ObjLatPos": 0,
+    "ACC_ObjRelSpd": 0,
+    "ACC_ObjDist": 0,
   }
   commands.append(packer.make_can_msg("SCC11", 0, scc11_values))
 
   scc12_values = {
     "ACCMode": 1 if enabled else 0,
-    "StopReq": 1 if stopping else 0,
-    "aReqRaw": accel,
-    "aReqValue": accel, # stock ramps up at 1.0/s and down at 0.5/s until it reaches aReqRaw
+    "StopReq": 1 if enabled and stopping else 0,
+    "aReqRaw": accel if enabled else 0,
+    "aReqValue": accel if enabled else 0, # stock ramps up and down respecting jerk limit until it reaches aReqRaw
     "CR_VSM_Alive": idx % 0xF,
   }
   scc12_dat = packer.make_can_msg("SCC12", 0, scc12_values)[2]
@@ -102,10 +108,10 @@ def create_acc_commands(packer, enabled, accel, idx, lead_visible, set_speed, st
   scc14_values = {
     "ComfortBandUpper": 0.0, # stock usually is 0 but sometimes uses higher values
     "ComfortBandLower": 0.0, # stock usually is 0 but sometimes uses higher values
-    "JerkUpperLimit": 1.0 if enabled else 0, # stock usually is 1.0 but sometimes uses higher values
-    "JerkLowerLimit": 0.5 if enabled else 0, # stock usually is 0.5 but sometimes uses higher values
+    "JerkUpperLimit": max(jerk, 1.0) if (enabled and not stopping) else 0, # stock usually is 1.0 but sometimes uses higher values
+    "JerkLowerLimit": max(-jerk, 1.0) if enabled else 0, # stock usually is 0.5 but sometimes uses higher values
     "ACCMode": 1 if enabled else 4, # stock will always be 4 instead of 0 after first disengage
-    "ObjGap": 3 if lead_visible else 0, # TODO: 1-5 based on distance to lead vehicle
+    "ObjGap": 2 if lead_visible else 0, # 5: >30, m, 4: 25-30 m, 3: 20-25 m, 2: < 20 m, 0: no lead
   }
   commands.append(packer.make_can_msg("SCC14", 0, scc14_values))
 
@@ -115,6 +121,9 @@ def create_acc_commands(packer, enabled, accel, idx, lead_visible, set_speed, st
     # test: [(idx % 0xF, -((idx % 0xF) + 2) % 4) for idx in range(0x14)]
     "CR_FCA_Alive": ((-((idx % 0xF) + 2) % 4) << 2) + 1,
     "Supplemental_Counter": idx % 0xF,
+    "PAINT1_Status": 1,
+    "FCA_DrvSetStatus": 1,
+    "FCA_Status": 1, # AEB disabled
   }
   fca11_dat = packer.make_can_msg("FCA11", 0, fca11_values)[2]
   fca11_values["CR_FCA_ChkSum"] = 0x10 - sum([sum(divmod(i, 16)) for i in fca11_dat]) % 0x10
@@ -133,10 +142,8 @@ def create_acc_opt(packer):
   commands.append(packer.make_can_msg("SCC13", 0, scc13_values))
 
   fca12_values = {
-    # stock values may be needed if openpilot has vision based AEB some day
-    # for now we are not setting these because there is no AEB for vision only
-    # "FCA_USM": 3,
-    # "FCA_DrvSetState": 2,
+    "FCA_DrvSetState": 2,
+    "FCA_USM": 1, # AEB disabled
   }
   commands.append(packer.make_can_msg("FCA12", 0, fca12_values))
 

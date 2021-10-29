@@ -1,6 +1,6 @@
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v3.4.0
+    rev: v4.0.1
     hooks:
     -   id: check-ast
         exclude: '^(pyextra)/'
@@ -10,19 +10,19 @@ repos:
     -   id: check-merge-conflict
     -   id: check-symlinks
 -   repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v0.800
+    rev: v0.910-1
     hooks:
     -   id: mypy
         exclude: '^(pyextra)|(cereal)|(rednose)|(panda)|(laika)|(opendbc)|(laika_repo)|(rednose_repo)/'
-        additional_dependencies: ['git+https://github.com/numpy/numpy-stubs']
+        additional_dependencies: ['git+https://github.com/numpy/numpy-stubs', 'types-requests', 'types-atomicwrites',
+                                  'types-pycurl']
 -   repo: https://github.com/PyCQA/flake8
-    rev: 3.8.4
+    rev: 4.0.1
     hooks:
     -   id: flake8
         exclude: '^(pyextra)|(cereal)|(rednose)|(panda)|(laika)|(opendbc)|(laika_repo)|(rednose_repo)|(selfdrive/debug)/'
         args:
-        - --select=F,E112,E113,E304,E501,E502,E701,E702,E703,E71,E72,E731,W191,W6
-        - --max-line-length=240
+        - --select=F,E112,E113,E304,E502,E701,E702,E703,E71,E72,E731,W191,W6
         - --statistics
 -   repo: local
     hooks:
@@ -39,7 +39,7 @@ repos:
         entry: cppcheck
         language: system
         types: [c++]
-        exclude: '^(phonelibs)|(pyextra)|(cereal)|(opendbc)|(panda)|(tools)|(selfdrive/modeld/thneed/debug)|(selfdrive/modeld/test)|(selfdrive/camerad/test)/|(installer)'
+        exclude: '^(third_party)|(pyextra)|(cereal)|(opendbc)|(panda)|(tools)|(selfdrive/modeld/thneed/debug)|(selfdrive/modeld/test)|(selfdrive/camerad/test)/|(installer)'
         args:
         - --error-exitcode=1
         - --language=c++
