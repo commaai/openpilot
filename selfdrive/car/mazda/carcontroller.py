@@ -13,7 +13,7 @@ class CarController():
     self.steer_rate_limited = False
     self.brake_counter = 0
 
-  def update(self, c, CS, frame, actuators):
+  def update(self, c, CS, frame):
     can_sends = []
     apply_steer = 0
 
