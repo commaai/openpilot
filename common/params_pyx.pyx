@@ -14,7 +14,6 @@ cdef extern from "selfdrive/common/params.h":
     ALL
 
   cdef cppclass c_Params "Params":
-    c_Params() nogil
     c_Params(string) nogil
     string get(string, bool) nogil
     bool getBool(string) nogil
@@ -34,15 +33,10 @@ class UnknownKeyName(Exception):
 cdef class Params:
   cdef c_Params* p
 
-  def __cinit__(self, d=None):
-    cdef string path
-    if d is None:
-      with nogil:
-        self.p = new c_Params()
-    else:
-      path = <string>d.encode()
-      with nogil:
-        self.p = new c_Params(path)
+  def __cinit__(self, d=""):
+    cdef string path = <string>d.encode()
+    with nogil:
+      self.p = new c_Params(path)
 
   def __dealloc__(self):
     del self.p

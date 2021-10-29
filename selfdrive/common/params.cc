@@ -1,18 +1,9 @@
 #include "selfdrive/common/params.h"
 
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif  // _GNU_SOURCE
-
 #include <dirent.h>
 #include <sys/file.h>
-#include <sys/stat.h>
-#include <unistd.h>
 
 #include <csignal>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
 #include <mutex>
 #include <unordered_map>
 
@@ -192,13 +183,13 @@ std::unordered_map<std::string, uint32_t> keys = {
 
 } // namespace
 
-Params::Params() : params_path(Path::params()) {
+Params::Params(const std::string &path) : params_path(path.empty() ? Path::params() : path) {
   static std::once_flag once_flag;
-  std::call_once(once_flag, ensure_params_path, params_path);
-}
-
-Params::Params(const std::string &path) : params_path(path) {
-  ensure_params_path(params_path);
+  if (path.empty()) {
+    std::call_once(once_flag, ensure_params_path, params_path);
+  } else {
+    ensure_params_path(params_path);
+  }
 }
 
 bool Params::checkKey(const std::string &key) {
@@ -249,7 +240,7 @@ int Params::put(const char* key, const char* value, size_t value_size) {
   return result;
 }
 
-int Params::remove(const char *key) {
+int Params::remove(const std::string &key) {
   FileLock file_lock(params_path + "/.lock", LOCK_EX);
   std::lock_guard<FileLock> lk(file_lock);
   // Delete value.
@@ -263,7 +254,7 @@ int Params::remove(const char *key) {
   return fsync_dir(path.c_str());
 }
 
-std::string Params::get(const char *key, bool block) {
+std::string Params::get(const std::string &key, bool block) {
   std::string path = params_path + "/d/" + key;
   if (!block) {
     return util::read_file(path);
