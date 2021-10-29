@@ -1,7 +1,10 @@
+from cereal import car
+from opendbc.can.packer import CANPacker
 from selfdrive.car.mazda import mazdacan
 from selfdrive.car.mazda.values import CarControllerParams, Buttons
-from opendbc.can.packer import CANPacker
 from selfdrive.car import apply_std_steer_torque_limits
+
+VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 class CarController():
   def __init__(self, dbc_name, CP, VM):
@@ -10,16 +13,13 @@ class CarController():
     self.steer_rate_limited = False
     self.brake_counter = 0
 
-  def update(self, enabled, CS, frame, actuators):
-    """ Controls thread """
-
+  def update(self, c, CS, frame, actuators):
     can_sends = []
+    apply_steer = 0
 
-    ### STEER ###
-
-    if enabled:
+    if c.enabled:
       # calculate steer and also set limits due to driver torque
-      new_steer = int(round(actuators.steer * CarControllerParams.STEER_MAX))
+      new_steer = int(round(c.actuators.steer * CarControllerParams.STEER_MAX))
       apply_steer = apply_std_steer_torque_limits(new_steer, self.apply_steer_last,
                                                   CS.out.steeringTorque, CarControllerParams)
       self.steer_rate_limited = new_steer != apply_steer
@@ -30,7 +30,6 @@ class CarController():
         # TODO: improve the resume trigger logic by looking at actual radar data
         can_sends.append(mazdacan.create_button_cmd(self.packer, CS.CP.carFingerprint, Buttons.RESUME))
     else:
-      apply_steer = 0
       self.steer_rate_limited = False
       if CS.out.cruiseState.enabled:
         # if brake is pressed, let us wait >20ms before trying to disable crz to avoid
@@ -46,6 +45,8 @@ class CarController():
 
     self.apply_steer_last = apply_steer
 
+    # send steering command
+    ldw = c.hudControl.visualAlert == VisualAlert.ldw
     can_sends.append(mazdacan.create_steering_control(self.packer, CS.CP.carFingerprint,
-                                                      frame, apply_steer, CS.cam_lkas))
+                                                      frame, apply_steer, ldw, CS.cam_lkas))
     return can_sends
