@@ -1,7 +1,6 @@
 #include <sched.h>
 #include <sys/cdefs.h>
 #include <sys/resource.h>
-#include <sys/resource.h>
 #include <sys/types.h>
 #include <unistd.h>
 
