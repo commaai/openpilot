@@ -33,8 +33,8 @@ private:
     bool failed = false;
   };
   std::vector<Frame> frames_;
-  SwsContext *sws_ctx_ = nullptr;
-  AVFrame *av_frame_, *rgb_frame_ = nullptr;
+  SwsContext *rgb_sws_ctx_ = nullptr, *yuv_sws_ctx_ = nullptr;
+  AVFrame *av_frame_, *rgb_frame_, *yuv_frame_ = nullptr;
   AVFormatContext *pFormatCtx_ = nullptr;
   AVCodecContext *pCodecCtx_ = nullptr;
   int key_frames_count_ = 0;
