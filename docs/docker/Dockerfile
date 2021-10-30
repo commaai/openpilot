@@ -34,10 +34,14 @@ COPY ./*.md ${OPENPILOT_PATH}/
 
 RUN scons -j$(nproc)
 
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    doxygen \
+    graphviz
+
 COPY ./docs ${OPENPILOT_PATH}/docs
 RUN git init .
 WORKDIR ${OPENPILOT_PATH}/docs
-RUN make html
+RUN mkdir build && cd build && cmake ../ && cmake --build .
 
 FROM nginx:1.21
 COPY --from=0  /home/batman/openpilot/build/docs/html /usr/share/nginx/html
