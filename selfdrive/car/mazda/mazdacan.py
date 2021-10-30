@@ -79,7 +79,7 @@ def create_alert_command(packer, cam_msg: dict, ldw: bool, steer_required: bool)
   return packer.make_can_msg("CAM_LANEINFO", 0, values)
 
 
-def create_button_cmd(packer, car_fingerprint, button):
+def create_button_cmd(packer, car_fingerprint, counter, button):
 
   can = int(button == Buttons.CANCEL)
   res = int(button == Buttons.RESUME)
@@ -113,7 +113,7 @@ def create_button_cmd(packer, car_fingerprint, button):
       "BIT1": 1,
       "BIT2": 1,
       "BIT3": 1,
-      "CTR": 0
+      "CTR": (counter + 1) % 16,
     }
 
     return packer.make_can_msg("CRZ_BTNS", 0, values)

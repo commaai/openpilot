@@ -30,7 +30,7 @@ class CarController():
         # Mazda Stop and Go requires a RES button (or gas) press if the car stops more than 3 seconds
         # Send Resume button at 20hz if we're engaged at standstill to support full stop and go!
         # TODO: improve the resume trigger logic by looking at actual radar data
-        can_sends.append(mazdacan.create_button_cmd(self.packer, CS.CP.carFingerprint, Buttons.RESUME))
+        can_sends.append(mazdacan.create_button_cmd(self.packer, CS.CP.carFingerprint, CS.crz_btns_counter, Buttons.RESUME))
 
     if c.cruiseControl.cancel or (CS.out.cruiseState.enabled and not c.enabled):
       # if brake is pressed, let us wait >20ms before trying to disable crz to avoid
@@ -40,7 +40,7 @@ class CarController():
       if frame % 20 == 0 and not (CS.out.brakePressed and self.brake_counter < 3):
         # Cancel Stock ACC if it's enabled while OP is disengaged
         # Send at a rate of 5hz until we sync with stock ACC state
-        can_sends.append(mazdacan.create_button_cmd(self.packer, CS.CP.carFingerprint, Buttons.CANCEL))
+        can_sends.append(mazdacan.create_button_cmd(self.packer, CS.CP.carFingerprint, CS.crz_btns_counter, Buttons.CANCEL))
     else:
       self.brake_counter = 0
 
