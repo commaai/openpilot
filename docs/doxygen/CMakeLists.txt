@@ -11,7 +11,7 @@ file(TO_NATIVE_PATH ${CMAKE_BINARY_DIR} abs_top_builddir)
 
 set(HAVE_DOT ${DOXYGEN_DOT_FOUND})
 
-set(DOXYGEN_IN ${CMAKE_CURRENT_SOURCE_DIR}/doxygen/Doxyfile)
+set(DOXYGEN_IN ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile)
 set(DOXYGEN_OUT ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile.out)
 
 configure_file(
@@ -22,9 +22,6 @@ configure_file(
 
 set(BUILT_DIRS ${CMAKE_CURRENT_BINARY_DIR}/html)
 
-########################################################################
-# Make and install doxygen docs
-########################################################################
 add_custom_command(
     OUTPUT ${BUILT_DIRS}
     COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}

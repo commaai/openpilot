@@ -21,11 +21,11 @@ find_package(Doxygen REQUIRED)
 
 # set these variables using traditional `-DVARIABLE=VALUE`
 option(SPHINXOPTS "Sphinx options" "")
-option(SPHINXBUILD "" "sphinx-build")
+option(SPHINXBUILD "" "sphinx-build")   # TODO: put in FindSphinx.cmake Module
 option(DOCSDIR "" ${OPENPILOT_ROOT}/docs)
-option(SOURCEDIR "" ${OPENPILOT_ROOT}/build/docs)
-option(DOCSBUILDDIR "" ${OPENPILOT_ROOT}/build/docs)
-option(BUILDDIR "" ${OPENPILOT_ROOT}/build)
+# option(SOURCEDIR "" ${OPENPILOT_ROOT}/build/docs) # replaced by CMAKE_SOURCE_DIR
+option(DOCSBUILDDIR "" ${CMAKE_BINARY_DIR}/docs)
+# option(BUILDDIR "" ${OPENPILOT_ROOT}/build)   # replaced by CMAKE_BUILD_DIR
 
 
 find_package(SphinxDepends REQUIRED)
@@ -60,12 +60,11 @@ list(APPEND rst_srcs ${rst_srcs_xtra})
 # message(STATUS "rst_srcs: ${rst_srcs}")   # DEBUG
 
 # build rst files...
-message(STATUS "Building rst files...")
 add_custom_command(
     OUTPUT ${DOCSBUILDDIR}
     COMMAND ${SPHINXBUILD} -M "docs" ${SOURCEDIR} ${DOCSBUILDDIR} ${SPHINXOPTS}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    COMMENT "Generating C/C++ documentation with doxygen"
+    COMMENT "Building rst files for Sphinx"
     VERBATIM
 )
 

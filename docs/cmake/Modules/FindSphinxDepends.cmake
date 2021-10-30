@@ -1,6 +1,6 @@
 if(NOT SPHINX_DEPS_FOUND)
 
-    message(STATUS "Searching for Sphinx docs & configs...")
+    # message(STATUS "Searching for Sphinx docs & configs...")
     file(GLOB_RECURSE SPHINX_DEPS_SRCS
         "${OPENPILOT_ROOT}/*.md"
         "${OPENPILOT_ROOT}/*.rst"
