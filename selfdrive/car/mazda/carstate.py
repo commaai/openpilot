@@ -12,6 +12,7 @@ class CarState(CarStateBase):
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
     self.shifter_values = can_define.dv["GEAR"]["GEAR"]
 
+    self.crz_btns_counter = 0
     self.acc_active_last = False
     self.low_speed_alert = False
     self.lkas_allowed = False
@@ -84,6 +85,7 @@ class CarState(CarStateBase):
 
     self.cam_lkas = cp_cam.vl["CAM_LKAS"]
     self.cam_laneinfo = cp_cam.vl["CAM_LANEINFO"]
+    self.crz_btns_counter = cp.vl["CRZ_BTNS"]["CTR"]
     ret.steerError = cp_cam.vl["CAM_LKAS"]["ERR_BIT_1"] == 1
 
     return ret
@@ -134,9 +136,6 @@ class CarState(CarStateBase):
         ("BR", "DOORS", 0),
         ("PEDAL_GAS", "ENGINE_DATA", 0),
         ("SPEED", "ENGINE_DATA", 0),
-        ("RES", "CRZ_BTNS", 0),
-        ("SET_P", "CRZ_BTNS", 0),
-        ("SET_M", "CRZ_BTNS", 0),
         ("CTR", "CRZ_BTNS", 0),
         ("LEFT_BS1", "BSM", 0),
         ("RIGHT_BS1", "BSM", 0),
