@@ -19,8 +19,6 @@ class CarInterface(CarInterfaceBase):
   # Determined by iteratively plotting and minimizing error for f(angle, speed) = steer.
   @staticmethod
   def get_steer_feedforward_volt(desired_angle, v_ego):
-    # maps [-inf,inf] to [-1,1]: sigmoid(34.4 deg) = sigmoid(1) = 0.5
-    # 1 / 0.02904609 = 34.4 deg ~= 36 deg ~= 1/10 circle? Arbitrary?
     desired_angle *= 0.02904609
     sigmoid = desired_angle / (1 + fabs(desired_angle))
     return 0.10006696 * sigmoid * (v_ego + 3.12485927)
@@ -106,9 +104,9 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpBP = [0., 40.]
       ret.lateralTuning.pid.kpV = [0., 0.16]
       ret.lateralTuning.pid.kiBP = [0.]
-      ret.lateralTuning.pid.kiV = [0.1]
+      ret.lateralTuning.pid.kiV = [0.05]
       ret.lateralTuning.pid.kf = 1. # get_steer_feedforward_acadia()
-      ret.steerActuatorDelay = 0.2
+      ret.steerActuatorDelay = 0.1
 
     elif candidate == CAR.BUICK_REGAL:
       ret.minEnableSpeed = 18 * CV.MPH_TO_MS
