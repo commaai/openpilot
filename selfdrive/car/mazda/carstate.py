@@ -33,6 +33,7 @@ class CarState(CarStateBase):
     can_gear = int(cp.vl["GEAR"]["GEAR"])
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(can_gear, None))
 
+    ret.genericToggle = bool(cp.vl["BLINK_INFO"]["HIGH_BEAMS"])
     ret.leftBlindspot = cp.vl["BSM"]["LEFT_BS1"] == 1
     ret.rightBlindspot = cp.vl["BSM"]["RIGHT_BS1"] == 1
     ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_lamp(40, cp.vl["BLINK_INFO"]["LEFT_BLINK"] == 1,
@@ -82,6 +83,7 @@ class CarState(CarStateBase):
     self.acc_active_last = ret.cruiseState.enabled
 
     self.cam_lkas = cp_cam.vl["CAM_LKAS"]
+    self.cam_laneinfo = cp_cam.vl["CAM_LANEINFO"]
     ret.steerError = cp_cam.vl["CAM_LKAS"]["ERR_BIT_1"] == 1
 
     return ret
@@ -93,6 +95,7 @@ class CarState(CarStateBase):
       # sig_name, sig_address, default
       ("LEFT_BLINK", "BLINK_INFO", 0),
       ("RIGHT_BLINK", "BLINK_INFO", 0),
+      ("HIGH_BEAMS", "BLINK_INFO", 0),
       ("STEER_ANGLE", "STEER", 0),
       ("STEER_ANGLE_RATE", "STEER_RATE", 0),
       ("STEER_TORQUE_SENSOR", "STEER_TORQUE", 0),
@@ -162,21 +165,31 @@ class CarState(CarStateBase):
     if CP.carFingerprint in GEN1:
       signals += [
         # sig_name, sig_address, default
-        ("LKAS_REQUEST",     "CAM_LKAS", 0),
-        ("CTR",              "CAM_LKAS", 0),
-        ("ERR_BIT_1",        "CAM_LKAS", 0),
+        ("LKAS_REQUEST", "CAM_LKAS", 0),
+        ("CTR", "CAM_LKAS", 0),
+        ("ERR_BIT_1", "CAM_LKAS", 0),
         ("LINE_NOT_VISIBLE", "CAM_LKAS", 0),
-        ("LDW",              "CAM_LKAS", 0),
-        ("BIT_1",            "CAM_LKAS", 1),
-        ("ERR_BIT_2",        "CAM_LKAS", 0),
-        ("STEERING_ANGLE",   "CAM_LKAS", 0),
-        ("ANGLE_ENABLED",    "CAM_LKAS", 0),
-        ("CHKSUM",           "CAM_LKAS", 0),
+        ("BIT_1", "CAM_LKAS", 1),
+        ("ERR_BIT_2", "CAM_LKAS", 0),
+        ("STEERING_ANGLE", "CAM_LKAS", 0),
+        ("ANGLE_ENABLED", "CAM_LKAS", 0),
+        ("CHKSUM", "CAM_LKAS", 0),
+
+        ("LINE_VISIBLE", "CAM_LANEINFO", 0),
+        ("LINE_NOT_VISIBLE", "CAM_LANEINFO", 1),
+        ("LANE_LINES", "CAM_LANEINFO", 0),
+        ("BIT1", "CAM_LANEINFO", 0),
+        ("BIT2", "CAM_LANEINFO", 0),
+        ("BIT3", "CAM_LANEINFO", 0),
+        ("NO_ERR_BIT", "CAM_LANEINFO", 1),
+        ("S1", "CAM_LANEINFO", 0),
+        ("S1_HBEAM", "CAM_LANEINFO", 0),
       ]
 
       checks += [
         # sig_address, frequency
-        ("CAM_LKAS",      16),
+        ("CAM_LANEINFO", 2),
+        ("CAM_LKAS", 16),
       ]
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 2)
