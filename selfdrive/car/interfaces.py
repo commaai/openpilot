@@ -139,8 +139,6 @@ class CarInterfaceBase():
 
     # Handle permanent and temporary steering faults
     self.steering_unpressed = 0 if cs_out.steeringPressed else self.steering_unpressed + 1
-    if cs_out.steerError:
-      events.add(EventName.steerUnavailable)
     if cs_out.steerWarning:
       # if the user overrode recently, show a less harsh alert
       if self.silent_steer_warning or cs_out.standstill or self.steering_unpressed < int(1.5 / DT_CTRL):
@@ -150,6 +148,8 @@ class CarInterfaceBase():
         events.add(EventName.steerTempUnavailable)
     else:
       self.silent_steer_warning = False
+    if cs_out.steerError:
+      events.add(EventName.steerUnavailable)
 
     # Disable on rising edge of gas or brake. Also disable on brake when speed > 0.
     # Optionally allow to press gas at zero speed to resume.
