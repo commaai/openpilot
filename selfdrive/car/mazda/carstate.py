@@ -184,6 +184,11 @@ class CarState(CarStateBase):
         ("LANE_LINES", "CAM_LANEINFO", 0),
         ("S1", "CAM_LANEINFO", 0),
         ("S1_HBEAM", "CAM_LANEINFO", 0),
+
+        # TODO: delete these
+        ("HANDS_WARN_3_BITS", "CAM_LANEINFO", 0),
+        ("HANDS_ON_STEER_WARN", "CAM_LANEINFO", 0),
+        ("HANDS_ON_STEER_WARN_2", "CAM_LANEINFO", 0),
       ]
 
       checks += [

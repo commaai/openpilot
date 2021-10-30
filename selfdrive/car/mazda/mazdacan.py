@@ -63,16 +63,17 @@ def create_steering_control(packer, car_fingerprint, frame, apply_steer, lkas):
   return packer.make_can_msg("CAM_LKAS", 0, values)
 
 
-def create_alert_command(packer, cam_msg, ldw, steer_required):
+def create_alert_command(packer, cam_msg, ldw, steer_required, CS):
   values = copy.copy(cam_msg)
   values.update({
     # TODO: what's the difference between all these? do we need to send all?
-    "HANDS_WARN_3_BITS": steer_required,
-    "HANDS_ON_STEER_WARN": steer_required,
-    "HANDS_ON_STEER_WARN_2": steer_required,
+    "HANDS_WARN_3_BITS": 0b111 if CS.rightBlinker else 0,
+    "HANDS_ON_STEER_WARN": 0,
+    "HANDS_ON_STEER_WARN_2": CS.leftBlinker,
 
+    # TODO: right lane works, left doesn't
     # TODO: need to do something about L/R
-    "LDW_WARN_LL": ldw,
+    "LDW_WARN_LL": 0,
     "LDW_WARN_RL": 0,
   })
   return packer.make_can_msg("CAM_LANEINFO", 0, values)

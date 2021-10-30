@@ -145,11 +145,7 @@ class CarInterfaceBase():
     elif cs_out.steerWarning:
       # only escalate to the harsher alert after the condition has
       # persisted for 0.5s and we're certain that the user isn't overriding
-      if not cs_out.standstill and self.steering_unpressed > int(0.5 / DT_CTRL) and \
-         self.steer_warning > int(0.5 / DT_CTRL):
-        events.add(EventName.steerTempUnavailable)
-      else:
-        events.add(EventName.steerTempUnavailableSilent)
+      events.add(EventName.steerTempUnavailableSilent)
 
     # Disable on rising edge of gas or brake. Also disable on brake when speed > 0.
     # Optionally allow to press gas at zero speed to resume.
