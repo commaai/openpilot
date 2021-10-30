@@ -19,19 +19,14 @@ void params_sig_handler(int signal) {
 }
 
 int fsync_dir(const std::string &path) {
+  int result = -1;
   int fd = HANDLE_EINTR(open(path.c_str(), O_RDONLY, 0755));
-  if (fd < 0) {
-    return -1;
-  }
-
-  int result = fsync(fd);
-  int result_close = close(fd);
-  if (result_close < 0) {
-    result = result_close;
+  if (fd >= 0) {
+    result = fsync(fd);
+    close(fd);
   }
   return result;
 }
-
 
 bool create_params_path(const std::string &param_path, const std::string &key_path) {
   // Make sure params path exists
@@ -241,9 +236,8 @@ int Params::remove(const std::string &key) {
 }
 
 std::string Params::get(const std::string &key, bool block) {
-  std::string path = getParamPath(key);
   if (!block) {
-    return util::read_file(path);
+    return util::read_file(getParamPath(key));
   } else {
     // blocking read until successful
     params_do_exit = 0;
@@ -252,7 +246,7 @@ std::string Params::get(const std::string &key, bool block) {
 
     std::string value;
     while (!params_do_exit) {
-      if (value = util::read_file(path); !value.empty()) {
+      if (value = util::read_file(getParamPath(key)); !value.empty()) {
         break;
       }
       util::sleep_for(100);  // 0.1 s
