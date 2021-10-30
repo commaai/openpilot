@@ -63,13 +63,15 @@ def create_steering_control(packer, car_fingerprint, frame, apply_steer, lkas):
   return packer.make_can_msg("CAM_LKAS", 0, values)
 
 
-def create_alert_command(packer, cam_msg, ldw, steer_required, CS):
+def create_alert_command(packer, cam_msg: dict, ldw: bool, steer_required: bool, CS):
   values = copy.copy(cam_msg)
   values.update({
     # TODO: what's the difference between all these? do we need to send all?
-    "HANDS_WARN_3_BITS": 0b111 if CS.rightBlinker else 0,
-    "HANDS_ON_STEER_WARN": CS.rightBlinker,
-    "HANDS_ON_STEER_WARN_2": CS.rightBlinker,
+    "HANDS_WARN_3_BITS": 0b111 if steer_required else 0,
+    "HANDS_ON_STEER_WARN": steer_required,
+    "HANDS_ON_STEER_WARN_2": steer_required,
+
+    "LANE_LINES": 2,
 
     # TODO: right lane works, left doesn't
     # TODO: need to do something about L/R
