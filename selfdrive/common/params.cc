@@ -36,9 +36,8 @@ bool create_params_path(const std::string &param_path, const std::string &key_pa
   // See if the symlink exists, otherwise create it
   if (!util::file_exists(key_path)) {
     // 1) Create temp folder
-    // 2) Set permissions
-    // 3) Symlink it to temp link
-    // 4) Move symlink to <params>/d
+    // 2) Symlink it to temp link
+    // 3) Move symlink to <params>/d
 
     std::string tmp_path = param_path + "/.tmp_XXXXXX";
     // this should be OK since mkdtemp just replaces characters in place
