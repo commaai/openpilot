@@ -39,7 +39,7 @@ public:
     return put(key.c_str(), val.data(), val.size());
   }
   inline int putBool(const std::string &key, bool val) {
-    return put(key.data(), val ? "1" : "0");
+    return put(key.c_str(), val ? "1" : "0", 1);
   }
 
 private:
