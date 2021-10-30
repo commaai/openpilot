@@ -33,6 +33,7 @@ class CarState(CarStateBase):
     can_gear = int(cp.vl["GEAR"]["GEAR"])
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(can_gear, None))
 
+    ret.genericToggle = bool(cp.vl["BLINK_INFO"]["HIGH_BEAMS"])
     ret.leftBlindspot = cp.vl["BSM"]["LEFT_BS1"] == 1
     ret.rightBlindspot = cp.vl["BSM"]["RIGHT_BS1"] == 1
     ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_lamp(40, cp.vl["BLINK_INFO"]["LEFT_BLINK"] == 1,
@@ -94,6 +95,7 @@ class CarState(CarStateBase):
       # sig_name, sig_address, default
       ("LEFT_BLINK", "BLINK_INFO", 0),
       ("RIGHT_BLINK", "BLINK_INFO", 0),
+      ("HIGH_BEAMS", "BLINK_INFO", 0),
       ("STEER_ANGLE", "STEER", 0),
       ("STEER_ANGLE_RATE", "STEER_RATE", 0),
       ("STEER_TORQUE_SENSOR", "STEER_TORQUE", 0),
