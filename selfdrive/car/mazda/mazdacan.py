@@ -68,8 +68,8 @@ def create_alert_command(packer, cam_msg, ldw, steer_required, CS):
   values.update({
     # TODO: what's the difference between all these? do we need to send all?
     "HANDS_WARN_3_BITS": 0b111 if CS.rightBlinker else 0,
-    "HANDS_ON_STEER_WARN": 0,
-    "HANDS_ON_STEER_WARN_2": CS.leftBlinker,
+    "HANDS_ON_STEER_WARN": CS.rightBlinker,
+    "HANDS_ON_STEER_WARN_2": CS.rightBlinker,
 
     # TODO: right lane works, left doesn't
     # TODO: need to do something about L/R
@@ -81,14 +81,8 @@ def create_alert_command(packer, cam_msg, ldw, steer_required, CS):
 
 def create_button_cmd(packer, car_fingerprint, button):
 
-  can = 0
-  res = 0
-  if button == Buttons.CANCEL:
-    can = 1
-    res = 0
-  elif button == Buttons.RESUME:
-    can = 0
-    res = 1
+  can = int(button == Buttons.CANCEL)
+  res = int(button == Buttons.RESUME)
 
   if car_fingerprint in GEN1:
     values = {
