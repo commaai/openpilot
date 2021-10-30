@@ -74,25 +74,17 @@ void ensure_params_path(const std::string &params_path) {
 }
 
 class FileLock {
- public:
-  FileLock(const std::string& file_name, int op) : fn_(file_name), op_(op) {}
-
-  void lock() {
-    fd_ = HANDLE_EINTR(open(fn_.c_str(), O_CREAT, 0775));
-    if (fd_ < 0) {
-      LOGE("Failed to open lock file %s, errno=%d", fn_.c_str(), errno);
-      return;
-    }
-    if (HANDLE_EINTR(flock(fd_, op_)) < 0) {
-      LOGE("Failed to lock file %s, errno=%d", fn_.c_str(), errno);
+public:
+  FileLock(const std::string &fn) {
+    fd_ = HANDLE_EINTR(open(fn.c_str(), O_CREAT, 0775));
+    if (fd_ < 0 || HANDLE_EINTR(flock(fd_, LOCK_EX)) < 0) {
+      LOGE("Failed to lock file %s, errno=%d", fn.c_str(), errno);
     }
   }
-
-  void unlock() { close(fd_); }
+  ~FileLock() { close(fd_); }
 
 private:
-  int fd_ = -1, op_;
-  std::string fn_;
+  int fd_ = -1;
 };
 
 std::unordered_map<std::string, uint32_t> keys = {
@@ -223,8 +215,7 @@ int Params::put(const char* key, const char* value, size_t value_size) {
     // fsync to force persist the changes.
     if ((result = fsync(tmp_fd)) < 0) break;
 
-    FileLock file_lock(params_path + "/.lock", LOCK_EX);
-    std::lock_guard<FileLock> lk(file_lock);
+    FileLock file_lock(params_path + "/.lock");
 
     // Move temp into place.
     if ((result = rename(tmp_path.c_str(), getParamPath(key).c_str())) < 0) break;
@@ -239,8 +230,7 @@ int Params::put(const char* key, const char* value, size_t value_size) {
 }
 
 int Params::remove(const std::string &key) {
-  FileLock file_lock(params_path + "/.lock", LOCK_EX);
-  std::lock_guard<FileLock> lk(file_lock);
+  FileLock file_lock(params_path + "/.lock");
   // Delete value.
   int result = unlink(getParamPath(key).c_str());
   if (result != 0) {
@@ -275,15 +265,12 @@ std::string Params::get(const std::string &key, bool block) {
 }
 
 std::map<std::string, std::string> Params::readAll() {
-  FileLock file_lock(params_path + "/.lock", LOCK_SH);
-  std::lock_guard<FileLock> lk(file_lock);
-
+  FileLock file_lock(params_path + "/.lock");
   return util::read_files_in_dir(getParamPath());
 }
 
 void Params::clearAll(ParamKeyType key_type) {
-  FileLock file_lock(params_path + "/.lock", LOCK_EX);
-  std::lock_guard<FileLock> lk(file_lock);
+  FileLock file_lock(params_path + "/.lock");
 
   std::string path;
   for (auto &[key, type] : keys) {
