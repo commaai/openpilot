@@ -177,6 +177,7 @@ class CarState(CarStateBase):
 
         ("LINE_VISIBLE", "CAM_LANEINFO", 0),
         ("LINE_NOT_VISIBLE", "CAM_LANEINFO", 1),
+        ("LANE_LINES", "CAM_LANEINFO", 0),
         ("BIT1", "CAM_LANEINFO", 0),
         ("BIT2", "CAM_LANEINFO", 0),
         ("BIT3", "CAM_LANEINFO", 0),
