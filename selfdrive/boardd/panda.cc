@@ -355,7 +355,6 @@ uint8_t Panda::len_to_dlc(uint8_t len) {
 }
 
 void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list) {
-  unsigned char dlc_to_len[] = {0U, 1U, 2U, 3U, 4U, 5U, 6U, 7U, 8U, 12U, 16U, 20U, 24U, 32U, 48U, 64U};
   send.resize(72 * can_data_list.size()); // TODO: need to include 1 byte for each usb 64bytes frame
 
   uint32_t pos = 0;
@@ -400,8 +399,6 @@ void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list) {
 }
 
 bool Panda::can_receive(std::vector<can_frame>& out_vec) {
-  unsigned char dlc_to_len[] = {0U, 1U, 2U, 3U, 4U, 5U, 6U, 7U, 8U, 12U, 16U, 20U, 24U, 32U, 48U, 64U};
-
   uint8_t data[RECV_SIZE];
   int recv = usb_bulk_read(0x81, (uint8_t*)data, RECV_SIZE);
 
