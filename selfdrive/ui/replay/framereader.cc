@@ -154,7 +154,7 @@ bool FrameReader::decodeFrame(AVFrame *f, uint8_t *rgb, uint8_t *yuv) {
   av_image_fill_arrays(yuv_frame_->data, yuv_frame_->linesize, yuv, AV_PIX_FMT_YUV420P, width, height, 1);
   int ret = sws_scale(yuv_sws_ctx_, (const uint8_t **)f->data, f->linesize, 0, f->height, yuv_frame_->data, yuv_frame_->linesize);
   if (ret < 0) return false;
-  
+
   av_image_fill_arrays(rgb_frame_->data, rgb_frame_->linesize, rgb, AV_PIX_FMT_BGR24, width, height, 1);
   ret = sws_scale(rgb_sws_ctx_, (const uint8_t **)f->data, f->linesize, 0, f->height, rgb_frame_->data, rgb_frame_->linesize);
   return ret >= 0;
