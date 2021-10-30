@@ -63,7 +63,7 @@ def create_steering_control(packer, car_fingerprint, frame, apply_steer, lkas):
   return packer.make_can_msg("CAM_LKAS", 0, values)
 
 
-def create_alert_command(packer, cam_msg: dict, ldw: bool, steer_required: bool, CS):
+def create_alert_command(packer, cam_msg: dict, ldw: bool, steer_required: bool):
   values = copy.copy(cam_msg)
   values.update({
     # TODO: what's the difference between all these? do we need to send all?
