@@ -4,7 +4,6 @@
 #include <sys/file.h>
 
 #include <csignal>
-#include <mutex>
 #include <unordered_map>
 
 #include "selfdrive/common/swaglog.h"
@@ -62,10 +61,12 @@ bool create_params_path(const std::string &param_path, const std::string &key_pa
   return true;
 }
 
-void ensure_params_path(const std::string &params_path) {
+std::string ensure_params_path(const std::string &path = {}) {
+  std::string params_path = path.empty() ? Path::params() : path;
   if (!create_params_path(params_path, params_path + "/d")) {
     throw std::runtime_error(util::string_format("Failed to ensure params path, errno=%d", errno));
   }
+  return params_path;
 }
 
 class FileLock {
@@ -170,13 +171,9 @@ std::unordered_map<std::string, uint32_t> keys = {
 
 } // namespace
 
-Params::Params(const std::string &path) : params_path(path.empty() ? Path::params() : path) {
-  static std::once_flag once_flag;
-  if (path.empty()) {
-    std::call_once(once_flag, ensure_params_path, params_path);
-  } else {
-    ensure_params_path(params_path);
-  }
+Params::Params(const std::string &path) {
+  static std::string default_param_path = ensure_params_path();
+  params_path = path.empty() ? default_param_path : ensure_params_path(path);
 }
 
 bool Params::checkKey(const std::string &key) {
@@ -226,12 +223,10 @@ int Params::put(const char* key, const char* value, size_t value_size) {
 
 int Params::remove(const std::string &key) {
   FileLock file_lock(params_path + "/.lock");
-  // Delete value.
   int result = unlink(getParamPath(key).c_str());
   if (result != 0) {
     return result;
   }
-  // fsync parent directory
   return fsync_dir(getParamPath());
 }
 
@@ -273,6 +268,5 @@ void Params::clearAll(ParamKeyType key_type) {
     }
   }
 
-  // fsync parent directory
   fsync_dir(getParamPath());
 }

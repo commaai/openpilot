@@ -19,7 +19,7 @@ public:
   bool checkKey(const std::string &key);
   ParamKeyType getKeyType(const std::string &key);
   inline std::string getParamPath(const std::string &key = {}) {
-    return key.empty()? params_path + "/d" : params_path + "/d/" + key;
+    return key.empty() ? params_path + "/d" : params_path + "/d/" + key;
   }
 
   // Delete a value
@@ -43,5 +43,5 @@ public:
   }
 
 private:
-  const std::string params_path;
+  std::string params_path;
 };
