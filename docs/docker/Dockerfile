@@ -44,5 +44,7 @@ WORKDIR ${OPENPILOT_PATH}/docs
 RUN mkdir build && cd build && cmake ../ && cmake --build .
 
 FROM nginx:1.21
-COPY --from=0  /home/batman/openpilot/build/docs/html /usr/share/nginx/html
+# DEBUG -- publish doxygen docs instead
+# COPY --from=0  /home/batman/openpilot/build/docs/html /usr/share/nginx/html
+COPY --from=0  /home/batman/openpilot/docs/build/doxygen/html /usr/share/nginx/html
 COPY ./docs/docker/nginx.conf /etc/nginx/conf.d/default.conf

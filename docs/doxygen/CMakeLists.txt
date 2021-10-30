@@ -1,12 +1,12 @@
-set(LOGO_IMAGE "${CMAKE_CURRENT_SOURCE_DIR}/images/logo.png" CACHE INTERNAL "Doxygen Logo Path" FORCE)
-set(IMAGE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/images/" CACHE INTERNAL "Doxygen Image Path" FORCE)
+set(LOGO_IMAGE "${CMAKE_CURRENT_SOURCE_DIR}/img/logo.png" CACHE INTERNAL "Doxygen Logo Path" FORCE)
+set(IMAGE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/img/" CACHE INTERNAL "Doxygen Images Path" FORCE)
 
 ########################################################################
 # Create the doxygen configuration file
 ########################################################################
-file(TO_NATIVE_PATH ${CMAKE_SOURCE_DIR} top_srcdir)
+file(TO_NATIVE_PATH ${OPENPILOT_ROOT} top_srcdir)
 file(TO_NATIVE_PATH ${CMAKE_BINARY_DIR} top_builddir)
-file(TO_NATIVE_PATH ${CMAKE_SOURCE_DIR} abs_top_srcdir)
+file(TO_NATIVE_PATH ${OPENPILOT_ROOT} abs_top_srcdir)
 file(TO_NATIVE_PATH ${CMAKE_BINARY_DIR} abs_top_builddir)
 
 set(HAVE_DOT ${DOXYGEN_DOT_FOUND})
@@ -20,17 +20,17 @@ configure_file(
     @ONLY
 )
 
-set(BUILT_DIRS ${CMAKE_CURRENT_BINARY_DIR}/html)
+set(DOXY_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/html)
 
 add_custom_command(
-    OUTPUT ${BUILT_DIRS}
+    OUTPUT ${DOXY_BUILD_DIR}
     COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    COMMENT "Generating C/C++ documentation with doxygen"
+    COMMENT "Generating C/C++ documentation with doxygen..."
     VERBATIM
 )
 
 add_custom_target(c_docs
     ALL
-    DEPENDS ${BUILT_DIRS}
+    DEPENDS ${DOXY_BUILD_DIR}
 )

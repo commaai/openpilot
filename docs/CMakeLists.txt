@@ -25,7 +25,7 @@ option(SPHINXBUILD "" "sphinx-build")   # TODO: put in FindSphinx.cmake Module
 option(DOCSDIR "" ${OPENPILOT_ROOT}/docs)
 # option(SOURCEDIR "" ${OPENPILOT_ROOT}/build/docs) # replaced by CMAKE_SOURCE_DIR
 option(DOCSBUILDDIR "" ${CMAKE_BINARY_DIR}/docs)
-# option(BUILDDIR "" ${OPENPILOT_ROOT}/build)   # replaced by CMAKE_BUILD_DIR
+# option(BUILDDIR "" ${OPENPILOT_ROOT}/build)   # replaced by CMAKE_BUILD_DIR?
 
 
 find_package(SphinxDepends REQUIRED)
@@ -59,20 +59,31 @@ string(REPLACE "\n" ";" rst_srcs_xtra "${rst_srcs_xtra}")
 list(APPEND rst_srcs ${rst_srcs_xtra})
 # message(STATUS "rst_srcs: ${rst_srcs}")   # DEBUG
 
-# build rst files...
+# build rst files... # TODO: add `sphinx-apidoc` cmd to .cmake module search
 add_custom_command(
     OUTPUT ${DOCSBUILDDIR}
-    COMMAND ${SPHINXBUILD} -M "docs" ${SOURCEDIR} ${DOCSBUILDDIR} ${SPHINXOPTS}
+    COMMAND sphinx-apidoc -o ${DOCSBUILDDIR} ../ ${rst_srcs_xtra}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    COMMENT "Building rst files for Sphinx"
+    COMMENT "Building rst files for Sphinx..."
     VERBATIM
 )
 
-add_custom_target(sphinx_docs
+add_custom_target(sphinx_rst
     ALL
     DEPENDS ${DOCSBUILDDIR}
 )
 
-
 # build html files...
+add_custom_command(
+    OUTPUT ${CMAKE_BINARY_DIR}
+    COMMAND ${SPHINXBUILD} -M "docs" ${SOURCEDIR} ${DOCSBUILDDIR} ${SPHINXOPTS}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    COMMENT "Building base html files using Sphinx..."
+    VERBATIM
+)
+
+add_custom_target(sphinx
+    ALL
+    DEPENDS ${DOCSBUILDDIR}
+)
 add_subdirectory(doxygen)
