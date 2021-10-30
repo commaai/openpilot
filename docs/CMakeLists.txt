@@ -44,14 +44,20 @@ list(APPEND rst_srcs
     ${OPENPILOT_ROOT}/selfdrive/debug
 )
 
-set(RST_XTRA_SEARCH_CMD "find .. -type d -name '*test*'")
-
+set(RST_XTRA_SEARCH_CMD "find ${OPENPILOT_ROOT} -type d -name '*test*'")
 execute_process(
     COMMAND bash -c ${RST_XTRA_SEARCH_CMD}
-    RESULTS_VARIABLE rst_srcs_xtra
+    OUTPUT_VARIABLE rst_srcs_xtra
+    # COMMAND_ECHO STDOUT
+    OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 
+string(REPLACE "\n" ";" rst_srcs_xtra "${rst_srcs_xtra}")
+# message(STATUS "rst_srcs_xtra: ${rst_srcs_xtra}") # DEBUG
+
+
 list(APPEND rst_srcs ${rst_srcs_xtra})
+# message(STATUS "rst_srcs: ${rst_srcs}")   # DEBUG
 
 # build rst files...
 message(STATUS "Building rst files...")
