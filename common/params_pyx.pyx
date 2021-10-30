@@ -41,23 +41,17 @@ cdef class Params:
   def __dealloc__(self):
     del self.p
 
-  def clear_all(self, tx_type=None):
-    if tx_type is None:
-      tx_type = ParamKeyType.ALL
-
+  def clear_all(self, tx_type=ParamKeyType.ALL):
     self.p.clearAll(tx_type)
 
   def check_key(self, key):
     key = ensure_bytes(key)
-
     if not self.p.checkKey(key):
       raise UnknownKeyName(key)
-
     return key
 
   def get(self, key, bool block=False, encoding=None):
     cdef string k = self.check_key(key)
-
     cdef string val
     with nogil:
       val = self.p.get(k, block)
@@ -70,10 +64,7 @@ cdef class Params:
       else:
         return None
 
-    if encoding is not None:
-      return val.decode(encoding)
-    else:
-      return val
+    return val if encoding is None else val.decode(encoding)
 
   def get_bool(self, key):
     cdef string k = self.check_key(key)
@@ -104,8 +95,7 @@ cdef class Params:
     with nogil:
       self.p.remove(k)
 
-
-def put_nonblocking(key, val, d=None):
+def put_nonblocking(key, val, d=""):
   def f(key, val):
     params = Params(d)
     cdef string k = ensure_bytes(key)
