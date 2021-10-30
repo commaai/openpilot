@@ -49,6 +49,7 @@ class CarController():
     if frame % 50 == 0:
       ldw = c.hudControl.visualAlert == VisualAlert.ldw
       steer_required = c.hudControl.visualAlert == VisualAlert.steerRequired
+      ldw = c.enabled and CS.vEgo > 15.5
       can_sends.append(mazdacan.create_alert_command(self.packer, CS.cam_laneinfo, ldw, steer_required))
 
     # send steering command
