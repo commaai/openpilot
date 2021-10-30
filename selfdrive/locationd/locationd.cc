@@ -18,6 +18,7 @@ const double MIN_STD_SANITY_CHECK = 1e-5; // m or rad
 const double VALID_TIME_SINCE_RESET = 1.0; // s
 const double VALID_POS_STD = 50.0; // m
 const double MAX_RESET_TRACKER = 5.0;
+const double RADIUS_OF_EARTH = 6378000.0; // m
 
 static VectorXd floatlist2vector(const capnp::List<float, capnp::Kind::PRIMITIVE>::Reader& floatlist) {
   VectorXd res(floatlist.size());
@@ -305,6 +306,10 @@ void Localizer::handle_car_state(double current_time, const cereal::CarState::Re
   this->car_speed = std::abs(log.getVEgo());
   if (log.getStandstill()) {
     this->kf->predict_and_observe(current_time, OBSERVATION_NO_ROT, { Vector3d(0.0, 0.0, 0.0) });
+  }
+  if (this->isGpsOK() == false){
+    this->kf->predict_and_observe(current_time, OBSERVATION_EARTH_RADIUS_WHEN_NO_GPS, { (VectorXd(1) << RADIUS_OF_EARTH).finished() });
+    this->kf->predict_and_observe(current_time, OBSERVATION_ODOMETRIC_SPEED, { (VectorXd(1) << car_speed).finished() });
   }
 }
 

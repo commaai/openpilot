@@ -81,7 +81,8 @@ class LiveKalman():
                     ObservationKind.NO_ROT: np.array([0.005**2, 0.005**2, 0.005**2]),
                     ObservationKind.ECEF_POS: np.array([5**2, 5**2, 5**2]),
                     ObservationKind.ECEF_VEL: np.array([.5**2, .5**2, .5**2]),
-                    ObservationKind.ECEF_ORIENTATION_FROM_GPS: np.array([.2**2, .2**2, .2**2, .2**2])}
+                    ObservationKind.ECEF_ORIENTATION_FROM_GPS: np.array([.2**2, .2**2, .2**2, .2**2]),
+                    ObservationKind.EARTH_RADIUS_WHEN_NO_GPS: np.array([10**2])}
 
   @staticmethod
   def generate_code(generated_dir):
@@ -98,7 +99,6 @@ class LiveKalman():
     omega = state[States.ANGULAR_VELOCITY, :]
     vroll, vpitch, vyaw = omega
     roll_bias, pitch_bias, yaw_bias = state[States.GYRO_BIAS, :]
-    odo_scale = state[States.ODO_SCALE, :][0, :]
     acceleration = state[States.ACCELERATION, :]
     imu_angles = state[States.IMU_OFFSET, :]
 
@@ -182,12 +182,13 @@ class LiveKalman():
                                       vyaw + yaw_bias])
 
     pos = sp.Matrix([x, y, z])
-    gravity = quat_rot.T * ((EARTH_GM / ((x**2 + y**2 + z**2)**(3.0 / 2.0))) * pos)
+    earth_radius = (x**2 + y**2 + z**2)**0.5
+    gravity = quat_rot.T * ((EARTH_GM / (earth_radius**(3.0))) * pos)
     h_acc_sym = (gravity + acceleration)
     h_phone_rot_sym = sp.Matrix([vroll, vpitch, vyaw])
 
     speed = sp.sqrt(vx**2 + vy**2 + vz**2 + 1e-6)
-    h_speed_sym = sp.Matrix([speed * odo_scale])
+    h_speed_sym = sp.Matrix([speed])
 
     h_pos_sym = sp.Matrix([x, y, z])
     h_vel_sym = sp.Matrix([vx, vy, vz])
@@ -195,6 +196,7 @@ class LiveKalman():
     h_imu_frame_sym = sp.Matrix(imu_angles)
 
     h_relative_motion = sp.Matrix(quat_rot.T * v)
+    h_earth_radius = sp.Matrix([earth_radius])
 
     obs_eqs = [[h_speed_sym, ObservationKind.ODOMETRIC_SPEED, None],
                [h_gyro_sym, ObservationKind.PHONE_GYRO, None],
@@ -205,7 +207,8 @@ class LiveKalman():
                [h_orientation_sym, ObservationKind.ECEF_ORIENTATION_FROM_GPS, None],
                [h_relative_motion, ObservationKind.CAMERA_ODO_TRANSLATION, None],
                [h_phone_rot_sym, ObservationKind.CAMERA_ODO_ROTATION, None],
-               [h_imu_frame_sym, ObservationKind.IMU_FRAME, None]]
+               [h_imu_frame_sym, ObservationKind.IMU_FRAME, None],
+               [h_earth_radius, ObservationKind.EARTH_RADIUS_WHEN_NO_GPS, None]]
 
     # this returns a sympy routine for the jacobian of the observation function of the local vel
     in_vec = sp.MatrixSymbol('in_vec', 6, 1)  # roll, pitch, yaw, vx, vy, vz
