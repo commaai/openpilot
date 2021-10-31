@@ -36,13 +36,13 @@ int readFunction(void *opaque, uint8_t *buf, int buf_size) {
 FrameReader::FrameReader(bool local_cache, int chunk_size, int retries) : FileReader(local_cache, chunk_size, retries) {
   static std::once_flag once_flag;
   std::call_once(once_flag, [] {
-    int ret = av_lockmgr_register(ffmpeg_lockmgr_cb);
-    assert(ret >= 0);
+    av_lockmgr_register(ffmpeg_lockmgr_cb);
     av_register_all();
   });
 
   pFormatCtx_ = avformat_alloc_context();
   av_frame_ = av_frame_alloc();
+  rgb_frame_ = av_frame_alloc();
 }
 
 FrameReader::~FrameReader() {
@@ -91,9 +91,6 @@ bool FrameReader::load(const std::string &url, std::atomic<bool> *abort) {
   pCodecCtx_->thread_type = FF_THREAD_FRAME;
   ret = avcodec_open2(pCodecCtx_, pCodec, NULL);
   if (ret < 0) return false;
-
-  av_frame_ = av_frame_alloc();
-  rgb_frame_ = av_frame_alloc();
 
   width = pCodecCtxOrig->width;
   height = pCodecCtxOrig->height;
