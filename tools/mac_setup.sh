@@ -62,12 +62,11 @@ fi
 # install python
 PYENV_PYTHON_VERSION=$(cat $OP_ROOT/.python-version)
 pyenv install -s ${PYENV_PYTHON_VERSION}
-pyenv global ${PYENV_PYTHON_VERSION}
 pyenv rehash
 eval "$(pyenv init -)"
 
 pip install pipenv==2020.8.13
-pipenv install --system --deploy
+pipenv install --dev --deploy
 
 echo
 echo "----   FINISH OPENPILOT SETUP   ----"
