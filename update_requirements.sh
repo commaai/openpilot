@@ -48,5 +48,5 @@ echo "precommit install ..."
 $RUN pre-commit install
 
 # for internal comma repos
-[ -d "./xx" ] && (cd xx && pre-commit install)
-[ -d "./notebooks" ] && (cd notebooks && pre-commit install)
+[ -d "./xx" ] && (cd xx && $RUN pre-commit install)
+[ -d "./notebooks" ] && (cd notebooks && $RUN pre-commit install)
