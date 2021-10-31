@@ -32,8 +32,12 @@ pip install --upgrade pip
 pip install pipenv
 
 echo "pip packages install ..."
-[ -d "./xx" ] && export PIPENV_PIPFILE=./xx/Pipfile
-pipenv install --dev --deploy
+if [ -d "./xx" ]; then
+    export PIPENV_PIPFILE=./xx/Pipfile
+    pipenv install --system --dev --deploy
+else
+    pipenv install --dev --deploy
+fi
 # update shims for newly installed executables (e.g. scons)
 pyenv rehash
 
