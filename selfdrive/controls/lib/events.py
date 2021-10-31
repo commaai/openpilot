@@ -183,6 +183,11 @@ class NormalPermanentAlert(Alert):
 
 
 # ********** alert callback functions **********
+def below_engage_speed_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
+  speed = int(round(CP.minEnableSpeed * (CV.MS_TO_KPH if metric else CV.MS_TO_MPH)))
+  unit = "km/h" if metric else "mph"
+  return NoEntryAlert("Speed Below %d %s" % (speed, unit))
+
 def below_steer_speed_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
   speed = int(round(CP.minSteerSpeed * (CV.MS_TO_KPH if metric else CV.MS_TO_MPH)))
   unit = "km/h" if metric else "mph"
@@ -582,7 +587,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
   },
 
   EventName.belowEngageSpeed: {
-    ET.NO_ENTRY: NoEntryAlert("Speed Too Low"),
+    ET.NO_ENTRY: below_engage_speed_alert,
   },
 
   EventName.sensorDataInvalid: {
