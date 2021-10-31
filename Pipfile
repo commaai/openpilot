@@ -79,6 +79,7 @@ SQLAlchemy = "*"
 subprocess32 = "*"
 tenacity = "*"
 Werkzeug = "*"
+breathe = "*"
 
 [packages]
 atomicwrites = "*"
