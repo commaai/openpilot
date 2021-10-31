@@ -39,15 +39,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     graphviz
 
 COPY ./docs ${OPENPILOT_PATH}/docs
+RUN mkdir build && cd build && mkdir docs/
 RUN git init .
 WORKDIR ${OPENPILOT_PATH}/docs
 RUN mkdir build && cd build && cmake ../
-RUN cd build && cmake --build . --target sphinx_rst_build -- -j$(nproc)
-RUN cd build && cmake --build . --target sphinx_build -- -j$(nproc)
-RUN cd build && cmake --build . --target doxy_build -- -j$(nproc)
+RUN cd build && cmake --build . --target doxy_build -j$(nproc)
+RUN cd build && cmake --build . --target sphinx_build -j$(nproc)
+RUN cd build && cmake --install . -j$(nproc)
 
-# FROM nginx:1.21
-## DEBUG -- publish doxygen docs instead
-# COPY --from=0  /home/batman/openpilot/build/docs/html /usr/share/nginx/html
-# COPY --from=0  /home/batman/openpilot/docs/build/doxygen/html /usr/share/nginx/html
-# COPY ./docs/docker/nginx.conf /etc/nginx/conf.d/default.conf
+FROM nginx:1.21
+COPY --from=0  /home/batman/openpilot/docs/build/sphinx/html /usr/share/nginx/html
+COPY ./docs/docker/nginx.conf /etc/nginx/conf.d/default.conf

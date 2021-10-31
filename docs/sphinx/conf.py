@@ -41,7 +41,7 @@ extensions = [
 ]
 
 # Breathe Configuration
-breathe_default_project = "docs"
+breathe_default_project = "c_docs"
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
