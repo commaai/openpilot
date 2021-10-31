@@ -33,16 +33,19 @@ pip install pipenv==2021.5.29
 
 echo "pip packages install ..."
 if [ -d "./xx" ]; then
-    export PIPENV_PIPFILE=./xx/Pipfile
-    pipenv install --system --dev --deploy
+  export PIPENV_PIPFILE=./xx/Pipfile
+  pipenv install --system --dev --deploy
+  RUN=""
 else
-    pipenv install --dev --deploy
+  pipenv install --dev --deploy
+  RUN="pipenv run"
 fi
+
 # update shims for newly installed executables (e.g. scons)
 pyenv rehash
 
 echo "precommit install ..."
-pre-commit install
+$RUN pre-commit install
 
 # for internal comma repos
 [ -d "./xx" ] && (cd xx && pre-commit install)
