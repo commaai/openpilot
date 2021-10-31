@@ -49,10 +49,7 @@ FrameReader::~FrameReader() {
   for (auto &f : frames_) {
     av_free_packet(&f.pkt);
   }
-  if (pCodecCtx_) {
-    avcodec_close(pCodecCtx_);
-    avcodec_free_context(&pCodecCtx_);
-  }
+  if (pCodecCtx_) avcodec_free_context(&pCodecCtx_);
   if (pFormatCtx_) avformat_close_input(&pFormatCtx_);
   if (av_frame_) av_frame_free(&av_frame_);
   if (rgb_frame_) av_frame_free(&rgb_frame_);

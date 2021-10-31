@@ -12,16 +12,6 @@ const QString DEMO_ROUTE = "4cf7a6ad03080c90|2021-09-29--13-46-36";
 const std::string TEST_RLOG_URL = "https://commadataci.blob.core.windows.net/openpilotci/0c94aa1e1296d7c6/2021-05-05--19-48-37/0/rlog.bz2";
 const std::string TEST_RLOG_CHECKSUM = "5b966d4bb21a100a8c4e59195faeb741b975ccbe268211765efd1763d892bfb3";
 
-Route &getDemoRoute() {
-  static std::once_flag once_flag;
-  static Route demo_route(DEMO_ROUTE);
-  std::call_once(once_flag, [&] {
-    REQUIRE(demo_route.load());
-    REQUIRE(demo_route.segments().size() == 11);
-  });
-  return demo_route;
-}
-
 TEST_CASE("httpMultiPartDownload") {
   char filename[] = "/tmp/XXXXXX";
   close(mkstemp(filename));
@@ -67,7 +57,10 @@ TEST_CASE("FileReader") {
 }
 
 TEST_CASE("Segment") {
-  Route &demo_route = getDemoRoute();
+  Route demo_route(DEMO_ROUTE);
+  REQUIRE(demo_route.load());
+  REQUIRE(demo_route.segments().size() == 11);
+
   QEventLoop loop;
   Segment segment(0, demo_route.at(0), false, false, false);
   QObject::connect(&segment, &Segment::loadFinished, [&]() {
@@ -97,11 +90,8 @@ TEST_CASE("Segment") {
 // helper class for unit tests
 class TestReplay : public Replay {
  public:
-  TestReplay(const QString &route, uint8_t flags = REPLAY_FLAG_NO_FILE_CACHE) : Replay(route, {}, {}, nullptr, flags) {
-    REQUIRE(load());
-    startTest();
-  }
-  void startTest();
+  TestReplay(const QString &route, uint8_t flags = REPLAY_FLAG_NO_FILE_CACHE) : Replay(route, {}, {}, nullptr, flags) {}
+  void test_seek();
   void testSeekTo(int seek_to);
 };
 
@@ -138,12 +128,12 @@ void TestReplay::testSeekTo(int seek_to) {
   }
 }
 
-void TestReplay::startTest() {
+void TestReplay::test_seek() {
   // create a dummy stream thread
   stream_thread_ = new QThread(this);
   QEventLoop loop;
   std::thread thread = std::thread([&]() {
-    for (int i = 0; i < 50; ++i) {
+    for (int i = 0; i < 100; ++i) {
       testSeekTo(random_int(0, 3 * 60));
     }
     loop.quit();
@@ -155,4 +145,6 @@ void TestReplay::startTest() {
 TEST_CASE("Replay") {
   auto flag = GENERATE(REPLAY_FLAG_NO_FILE_CACHE, REPLAY_FLAG_NONE);
   TestReplay replay(DEMO_ROUTE, flag);
+  REQUIRE(replay.load());
+  replay.test_seek();
 }
