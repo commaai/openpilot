@@ -37,7 +37,11 @@ extensions = [
         'sphinx.ext.viewcode',  # Add view code link to modules
         'sphinx_rtd_theme',     # Read The Docs theme
         'myst_parser',          # Markdown parsing
+        'breathe',              # C/C++ Doxygen integration
 ]
+
+# Breathe Configuration
+breathe_default_project = "docs"
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

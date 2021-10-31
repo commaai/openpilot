@@ -1,3 +1,18 @@
+########################################################################
+# CMake instructions to build https://docs.comma.ai/
+#
+# instructions (local build): opening `index.html`
+#   mkdir build && cd build && cmake ../ && cmake --build . -- -j$(nproc)
+#
+# instructions (docker build): http://localhost:3000/
+#   docker build -t ghcr.io/commaai/openpilot-docs:latest -f docker/Dockerfile ..
+#   docker run --rm -d 3000:80 ghcr.io/commaai/openpilot-docs:latest
+#
+#   on non-amd64 systems (needs github registry access via personal access token):
+#       docker buildx build --platform linux/amd64 -t ghcr.io/<github_username>/openpilot-docs:latest -f docker/Dockerfile .. -- push
+#       ddocker run --rm -d 3000:80 ghcr.io/<github_username>/openpilot-docs:latest
+########################################################################
+
 cmake_minimum_required(VERSION 3.10)
 project(docs
     DESCRIPTION "comma.ai developer documentation"
@@ -15,75 +30,7 @@ execute_process(
     OUTPUT_VARIABLE OPENPILOT_ROOT
     OUTPUT_STRIP_TRAILING_WHITESPACE
 )
-set(OPENPILOT_ROOT ${OPENPILOT_ROOT} CACHE STRING "openpilot absolute root directory")
+set(OPENPILOT_ROOT ${OPENPILOT_ROOT} CACHE STRING "openpilot root directory")
 
-find_package(Doxygen REQUIRED)
-
-# set these variables using traditional `-DVARIABLE=VALUE`
-option(SPHINXOPTS "Sphinx options" "")
-option(SPHINXBUILD "" "sphinx-build")   # TODO: put in FindSphinx.cmake Module
-option(DOCSDIR "" ${OPENPILOT_ROOT}/docs)
-# option(SOURCEDIR "" ${OPENPILOT_ROOT}/build/docs) # replaced by CMAKE_SOURCE_DIR
-option(DOCSBUILDDIR "" ${CMAKE_BINARY_DIR}/docs)
-# option(BUILDDIR "" ${OPENPILOT_ROOT}/build)   # replaced by CMAKE_BUILD_DIR?
-
-
-find_package(SphinxDepends REQUIRED)
-
-list(APPEND rst_srcs
-    ${OPENPILOT_ROOT}/xx
-    ${OPENPILOT_ROOT}/laika_repo
-    ${OPENPILOT_ROOT}/rednose_repo
-    ${OPENPILOT_ROOT}/pyextra
-    ${OPENPILOT_ROOT}/notebooks
-    ${OPENPILOT_ROOT}/panda_jungle
-    ${OPENPILOT_ROOT}/third_party
-    ${OPENPILOT_ROOT}/panda/examples
-    ${OPENPILOT_ROOT}/scripts
-    ${OPENPILOT_ROOT}/selfdrive/modeld
-    ${OPENPILOT_ROOT}/selfdrive/debug
-)
-
-set(RST_XTRA_SEARCH_CMD "find ${OPENPILOT_ROOT} -type d -name '*test*'")
-execute_process(
-    COMMAND bash -c ${RST_XTRA_SEARCH_CMD}
-    OUTPUT_VARIABLE rst_srcs_xtra
-    # COMMAND_ECHO STDOUT
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-
-string(REPLACE "\n" ";" rst_srcs_xtra "${rst_srcs_xtra}")
-# message(STATUS "rst_srcs_xtra: ${rst_srcs_xtra}") # DEBUG
-
-
-list(APPEND rst_srcs ${rst_srcs_xtra})
-# message(STATUS "rst_srcs: ${rst_srcs}")   # DEBUG
-
-# build rst files... # TODO: add `sphinx-apidoc` cmd to .cmake module search
-add_custom_command(
-    OUTPUT ${DOCSBUILDDIR}
-    COMMAND sphinx-apidoc -o ${DOCSBUILDDIR} ../ ${rst_srcs_xtra}
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    COMMENT "Building rst files for Sphinx..."
-    VERBATIM
-)
-
-add_custom_target(sphinx_rst
-    ALL
-    DEPENDS ${DOCSBUILDDIR}
-)
-
-# build html files...
-add_custom_command(
-    OUTPUT ${CMAKE_BINARY_DIR}
-    COMMAND ${SPHINXBUILD} -M "docs" ${SOURCEDIR} ${DOCSBUILDDIR} ${SPHINXOPTS}
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    COMMENT "Building base html files using Sphinx..."
-    VERBATIM
-)
-
-add_custom_target(sphinx
-    ALL
-    DEPENDS ${DOCSBUILDDIR}
-)
 add_subdirectory(doxygen)
+add_subdirectory(sphinx)

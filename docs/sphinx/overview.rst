@@ -77,3 +77,9 @@ tools
    Simulator <tools/sim/README.md>
    tools/ssh/README.md
    Webcam <tools/webcam/README.md>
+
+Docs
+====
+
+.. doxygenstruct:: docs
+   :members:
