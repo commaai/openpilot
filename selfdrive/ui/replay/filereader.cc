@@ -6,21 +6,19 @@
 #include <cmath>
 #include <fstream>
 #include <iostream>
-#include <mutex>
 #include <sstream>
 
 #include "selfdrive/common/util.h"
 #include "selfdrive/ui/replay/util.h"
 
-const std::string comma_cache = util::getenv("COMMA_CACHE", "/tmp/comma_download_cache");
-
 std::string cacheFilePath(const std::string &url) {
-  static std::once_flag once_flag;
-  std::call_once(once_flag, [&] {
-    if (!util::file_exists(comma_cache)) mkdir(comma_cache.c_str(), 0777);
-  });
-  std::string sha256_sum = sha256(getUrlWithoutQuery(url));
-  return comma_cache.back() == '/' ? comma_cache + sha256_sum : comma_cache + "/" + sha256_sum;
+  static std::string cache_path = [] {
+    const std::string comma_cache = util::getenv("COMMA_CACHE", "/tmp/comma_download_cache/");
+    util::create_directories(comma_cache, 0755);
+    return comma_cache.back() == '/' ? comma_cache : comma_cache + "/";
+  }();
+
+  return cache_path + sha256(getUrlWithoutQuery(url));;
 }
 
 std::string FileReader::read(const std::string &file, std::atomic<bool> *abort) {
