@@ -28,7 +28,7 @@ if ! command -v pipenv &> /dev/null; then
 fi
 
 echo "update pip"
-pip install --upgrade pip==21.3.1
+pip install pip==21.3.1
 pip install pipenv==2021.5.29
 
 echo "pip packages install ..."

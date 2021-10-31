@@ -140,7 +140,7 @@ pyenv rehash
 eval "$(pyenv init -)"
 
 # **** in python env ****
-pip install --upgrade pip==21.3.1
+pip install pip==21.3.1
 pip install pipenv==2021.5.29
 pipenv install --dev --deploy
 
