@@ -30,7 +30,7 @@ private:
   int counter = 0;
   bool is_open = false;
 
-  std::string vid_path, lock_path;
+  std::string vid_path;
 
   AVCodec *codec = NULL;
   AVCodecContext *codec_ctx = NULL;

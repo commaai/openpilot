@@ -36,7 +36,6 @@ private:
 
   int width, height, fps;
   char vid_path[1024];
-  char lock_path[1024];
   bool is_open = false;
   bool dirty = false;
   bool write = false;

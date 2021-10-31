@@ -518,12 +518,6 @@ void OmxEncoder::encoder_open(const char* path) {
     }
   }
 
-  // create camera lock file
-  snprintf(this->lock_path, sizeof(this->lock_path), "%s/%s.lock", path, this->filename);
-  int lock_fd = HANDLE_EINTR(open(this->lock_path, O_RDWR | O_CREAT, 0664));
-  assert(lock_fd >= 0);
-  close(lock_fd);
-
   this->is_open = true;
   this->counter = 0;
 }
@@ -565,7 +559,6 @@ void OmxEncoder::encoder_close() {
         this->of = nullptr;
       }
     }
-    unlink(this->lock_path);
   }
   this->is_open = false;
 }

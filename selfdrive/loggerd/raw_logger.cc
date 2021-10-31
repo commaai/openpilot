@@ -66,15 +66,6 @@ RawLogger::~RawLogger() {
 void RawLogger::encoder_open(const char* path) {
   vid_path = util::string_format("%s/%s.mkv", path, filename);
 
-  // create camera lock file
-  lock_path = util::string_format("%s/%s.lock", path, filename);
-
-  LOG("open %s\n", lock_path.c_str());
-
-  int lock_fd = HANDLE_EINTR(open(lock_path.c_str(), O_RDWR | O_CREAT, 0664));
-  assert(lock_fd >= 0);
-  close(lock_fd);
-
   format_ctx = NULL;
   avformat_alloc_output_context2(&format_ctx, NULL, NULL, vid_path.c_str());
   assert(format_ctx);
@@ -112,8 +103,6 @@ void RawLogger::encoder_close() {
 
   avformat_free_context(format_ctx);
   format_ctx = NULL;
-
-  unlink(lock_path.c_str());
   is_open = false;
 }
 
