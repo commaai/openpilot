@@ -41,16 +41,16 @@ Pigeon * Pigeon::connect(const char * tty) {
   return pigeon;
 }
 
-bool Pigeon::wait_for_ack(const std::string &ack, const std::string &nack, int timeout_ms) {
+bool Pigeon::wait_for_ack(const std::string &ack_, const std::string &nack_, int timeout_ms) {
   std::string s;
   const double start_t = millis_since_boot();
   while (!do_exit) {
     s += receive();
 
-    if (s.find(ack) != std::string::npos) {
+    if (s.find(ack_) != std::string::npos) {
       LOGD("Received ACK from ublox");
       return true;
-    } else if (s.find(nack) != std::string::npos) {
+    } else if (s.find(nack_) != std::string::npos) {
       LOGE("Received NACK from ublox");
       return false;
     } else if (s.size() > 0x1000 || ((millis_since_boot() - start_t) > timeout_ms)) {
