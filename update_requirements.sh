@@ -28,8 +28,8 @@ if ! command -v pipenv &> /dev/null; then
 fi
 
 echo "update pip"
-pip install --upgrade pip
-pip install pipenv
+pip install --upgrade pip==21.3.1
+pip install pipenv==2021.5.29
 
 echo "pip packages install ..."
 if [ -d "./xx" ]; then
