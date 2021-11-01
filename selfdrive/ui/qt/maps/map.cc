@@ -343,6 +343,7 @@ MapInstructions::MapInstructions(QWidget * parent) : QWidget(parent) {
 }
 
 void MapInstructions::updateDistance(float d) {
+  d = std::max(d, 0.0f);
   QString distance_str;
 
   if (QUIState::ui_state.scene.is_metric) {
