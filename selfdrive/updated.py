@@ -38,7 +38,6 @@ from common.basedir import BASEDIR
 from common.params import Params
 from selfdrive.hardware import EON, TICI, HARDWARE
 from selfdrive.swaglog import cloudlog
-from selfdrive.controls.lib.alertmanager import set_offroad_alert
 
 LOCK_FILE = os.getenv("UPDATER_LOCK_FILE", "/tmp/safe_staging_overlay.lock")
 STAGING_ROOT = os.getenv("UPDATER_STAGING_ROOT", "/data/safe_staging")
@@ -238,12 +237,10 @@ def handle_agnos_update(wait_helper: WaitTimeHelper) -> None:
   set_consistent_flag(False)
 
   cloudlog.info(f"Beginning background installation for AGNOS {updated_version}")
-  set_offroad_alert("Offroad_NeosUpdate", True)
 
   manifest_path = os.path.join(OVERLAY_MERGED, "selfdrive/hardware/tici/agnos.json")
   target_slot_number = get_target_slot_number()
   flash_agnos_update(manifest_path, target_slot_number, cloudlog)
-  set_offroad_alert("Offroad_NeosUpdate", False)
 
 
 def handle_neos_update(wait_helper: WaitTimeHelper) -> None:
@@ -258,7 +255,6 @@ def handle_neos_update(wait_helper: WaitTimeHelper) -> None:
     return
 
   cloudlog.info(f"Beginning background download for NEOS {updated_neos}")
-  set_offroad_alert("Offroad_NeosUpdate", True)
 
   update_manifest = os.path.join(OVERLAY_MERGED, "selfdrive/hardware/eon/neos.json")
 
@@ -276,7 +272,6 @@ def handle_neos_update(wait_helper: WaitTimeHelper) -> None:
       wait_helper.sleep(120)
 
   # If the download failed, we'll show the alert again when we retry
-  set_offroad_alert("Offroad_NeosUpdate", False)
   if not neos_downloaded:
     raise Exception("Failed to download NEOS update")
   cloudlog.info(f"NEOS background download successful, took {time.monotonic() - start_time} seconds")

@@ -29,10 +29,6 @@
     "text": "Taking camera snapshots. System won't start until finished.",
     "severity": 0
   },
-  "Offroad_NeosUpdate": {
-    "text": "An update to your device's operating system is downloading in the background. You will be prompted to update when it's ready to install.",
-    "severity": 0
-  },
   "Offroad_UnofficialHardware": {
     "text": "Device failed to register. It will not connect to or upload to comma.ai servers, and receives no support from comma.ai. If this is an official device, contact support@comma.ai.",
     "severity": 1

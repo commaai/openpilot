@@ -182,7 +182,6 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"Offroad_HardwareUnsupported", CLEAR_ON_MANAGER_START},
     {"Offroad_InvalidTime", CLEAR_ON_MANAGER_START},
     {"Offroad_IsTakingSnapshot", CLEAR_ON_MANAGER_START},
-    {"Offroad_NeosUpdate", CLEAR_ON_MANAGER_START},
     {"Offroad_StorageMissing", CLEAR_ON_MANAGER_START},
     {"Offroad_PandaFirmwareMismatch", CLEAR_ON_MANAGER_START | CLEAR_ON_PANDA_DISCONNECT},
     {"Offroad_TemperatureTooHigh", CLEAR_ON_MANAGER_START},
