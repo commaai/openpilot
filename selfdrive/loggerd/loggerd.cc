@@ -258,9 +258,9 @@ void encoder_thread(const LogCameraInfo &cam_info) {
   }
 }
 
-bool clear_locks(const std::string &dir, const std::string &exclude_dir) {
+void clear_locks(const std::string &dir, const std::string &exclude_dir) {
   DIR *d = opendir(dir.c_str());
-  if (!d) return false;
+  if (!d) return;
 
   struct dirent *entry;
   std::string path;
@@ -274,7 +274,6 @@ bool clear_locks(const std::string &dir, const std::string &exclude_dir) {
     }
   }
   closedir(d);
-  return true;
 }
 
 void logger_rotate() {
@@ -341,8 +340,11 @@ int main(int argc, char** argv) {
   // init logger
   logger_init(&s.logger, "rlog", true);
   logger_rotate();
-  std::future<bool> clear_locks_future = std::async(std::launch::async, clear_locks, LOG_ROOT, s.segment_path);
-  Params().put("CurrentRoute", s.logger.route_name);
+  std::future<bool> clear_locks_future = std::async(std::launch::async, [=] {
+    Params().put("CurrentRoute", s.logger.route_name);
+    clear_locks(LOG_ROOT, s.segment_path);
+    return true;
+  });
 
   // init encoders
   s.last_camera_seen_tms = millis_since_boot();
