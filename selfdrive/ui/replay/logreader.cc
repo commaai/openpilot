@@ -3,27 +3,6 @@
 #include <algorithm>
 #include "selfdrive/ui/replay/util.h"
 
-bool readBZ2File(const std::string_view file, std::ostream &stream) {
-  std::unique_ptr<FILE, decltype(&fclose)> f(fopen(file.data(), "r"), &fclose);
-  if (!f) return false;
-
-  int bzerror = BZ_OK;
-  BZFILE *bz_file = BZ2_bzReadOpen(&bzerror, f.get(), 0, 0, nullptr, 0);
-  if (!bz_file) return false;
-
-  std::array<char, 64 * 1024> buf;
-  do {
-    int size = BZ2_bzRead(&bzerror, bz_file, buf.data(), buf.size());
-    if (bzerror == BZ_OK || bzerror == BZ_STREAM_END) {
-      stream.write(buf.data(), size);
-    }
-  } while (bzerror == BZ_OK);
-
-  bool success = (bzerror == BZ_STREAM_END);
-  BZ2_bzReadClose(&bzerror, bz_file);
-  return success;
-}
-
 Event::Event(const kj::ArrayPtr<const capnp::word> &amsg, bool frame) : reader(amsg), frame(frame) {
   words = kj::ArrayPtr<const capnp::word>(amsg.begin(), reader.getEnd());
   event = reader.getRoot<cereal::Event>();
@@ -102,11 +81,11 @@ bool LogReader::load(const std::string &file, std::atomic<bool> *abort) {
   return true;
 }
 
-void LogReader::setAllow(std::vector<std::string> allow_list) {
-  auto event_struct = capnp::Schema::from<cereal::Event>().asStruct();
-  allow_.resize(event_struct.getUnionFields().size());
-  for (auto &name : allow_list) {
-     uint16_t which = event_struct.getFieldByName(name).getProto().getDiscriminantValue();
-     allow_[which] = true;
-  }
-}
+// void LogReader::setAllow(std::vector<std::string> allow_list) {
+//   auto event_struct = capnp::Schema::from<cereal::Event>().asStruct();
+//   allow_.resize(event_struct.getUnionFields().size());
+//   for (auto &name : allow_list) {
+//      uint16_t which = event_struct.getFieldByName(name).getProto().getDiscriminantValue();
+//      allow_[which] = true;
+//   }
+// }
