@@ -79,10 +79,8 @@ tools
    Webcam <tools/webcam/README.md>
 
 c/c++ docs
-=========
-.. doxygenclass:: Thneed
-
-doxygenindex::
+============
+.. doxygenindex::
    :project: c_docs
    :outline:
    :no-link:

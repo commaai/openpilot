@@ -440,7 +440,7 @@ INLINE_SIMPLE_STRUCTS  = NO
 # types are typedef'ed and only the typedef is referenced, never the tag name.
 # The default value is: NO.
 
-TYPEDEF_HIDES_STRUCT   = NO
+TYPEDEF_HIDES_STRUCT   = YES
 
 # The size of the symbol lookup cache can be set using LOOKUP_CACHE_SIZE. This
 # cache is used to resolve symbols given their name and scope. Since this can be
@@ -628,7 +628,7 @@ SORT_BRIEF_DOCS        = NO
 # detailed member documentation.
 # The default value is: NO.
 
-SORT_MEMBERS_CTORS_1ST = NO
+SORT_MEMBERS_CTORS_1ST = YES
 
 # If the SORT_GROUP_NAMES tag is set to YES then doxygen will sort the hierarchy
 # of group names into alphabetical order. If set to NO the group names will
@@ -879,8 +879,17 @@ EXCLUDE                = @abs_top_builddir@/docs/doxygen/html \
                          @abs_top_builddir@/docs/doxygen/xml \
                          @abs_top_srcdir@/docs/cmake \
                          @abs_top_srcdir@/third_party \
-                         @abs_top_srcdir@/panda/board/stm32fx/inc \
-                         @abs_top_srcdir@/panda/board/stm32h7/inc
+                         @abs_top_srcdir@/rednose \
+                         @abs_top_srcdir@/panda/board/stm32fx \
+                         @abs_top_srcdir@/panda/board/stm32h7 \
+                         @abs_top_srcdir@/panda/drivers/windows \
+                         @abs_top_srcdir@/selfdrive/modeld/thneed/include \
+                         @abs_top_srcdir@/selfdrive/camerad/include/msmb_isp.h \
+                         @abs_top_srcdir@/selfdrive/camerad/cameras \
+                         @abs_top_srcdir@/selfdrive/ui/replay/replay.h \
+                         @abs_top_srcdir@/selfdrive/ui/replay/camera.h \
+                         @abs_top_srcdir@/pyextra/acados_template/c_templates_tera/acados_solver.in.h \
+                         @abs_top_srcdir@/cereal/gen
 
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or
