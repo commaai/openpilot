@@ -212,12 +212,6 @@ std::string hexdump(const std::string& in) {
     return ss.str();
 }
 
-std::string base_name(std::string const &path) {
-  size_t pos = path.find_last_of("/");
-  if (pos == std::string::npos) return path;
-  return path.substr(pos + 1);
-}
-
 std::string dir_name(std::string const &path) {
   size_t pos = path.find_last_of("/");
   if (pos == std::string::npos) return "";

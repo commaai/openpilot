@@ -22,7 +22,7 @@ class CarInterface(CarInterfaceBase):
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.mazda)]
     ret.radarOffCan = True
 
-    ret.dashcamOnly = True
+    ret.dashcamOnly = candidate not in [CAR.CX9_2021]
 
     ret.steerActuatorDelay = 0.1
     ret.steerRateCost = 1.0

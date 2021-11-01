@@ -23,9 +23,9 @@ original_segments = [
   ("GM", "0c58b6a25109da2b|2021-02-23--16-35-50--11"),         # GM.VOLT
   ("NISSAN", "35336926920f3571|2021-02-12--18-38-48--46"),     # NISSAN.XTRAIL
   ("VOLKSWAGEN", "de9592456ad7d144|2021-06-29--11-00-15--6"),  # VOLKSWAGEN.GOLF
+  ("MAZDA", "bd6a637565e91581|2021-10-30--15-14-53--2"),       # MAZDA.CX9_2021
 
   # Enable when port is tested and dascamOnly is no longer set
-  #("MAZDA", "32a319f057902bb3|2020-04-27--15-18-58--2"),      # MAZDA.CX5
   #("TESLA", "bb50caf5f0945ab1|2021-06-19--17-20-18--3"),      # TESLA.AP2_MODELS
 ]
 
@@ -41,6 +41,7 @@ segments = [
   ("GM", "fakedata|2021-10-07--16-05-26--0"),
   ("NISSAN", "fakedata|2021-10-07--16-09-53--0"),
   ("VOLKSWAGEN", "fakedata|2021-10-07--16-11-11--0"),
+  ("MAZDA", "bd6a637565e91581|2021-10-30--15-14-53--2"),
 ]
 
 # dashcamOnly makes don't need to be tested until a full port is done

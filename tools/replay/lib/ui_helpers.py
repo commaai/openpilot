@@ -30,7 +30,7 @@ _FULL_FRAME_TO_BB = {}
 _INTRINSICS = {}
 
 eon_f_qcam_frame_size = (480, 360)
-tici_f_qcam_frame_size = (526, 330)
+tici_f_qcam_frame_size = (528, 330)
 
 cams = [(eon_f_frame_size, eon_f_focal_length, eon_f_frame_size),
         (tici_f_frame_size, tici_f_focal_length, tici_f_frame_size),
