@@ -2,6 +2,7 @@
 #include <set>
 
 #include "json11.hpp"
+#include "selfdrive/common/util.h"
 #include "selfdrive/modeld/thneed/thneed.h"
 using namespace json11;
 
@@ -10,23 +11,16 @@ extern map<cl_program, string> g_program_source;
 void Thneed::load(const char *filename) {
   printf("Thneed::load: loading from %s\n", filename);
 
-  FILE *f = fopen(filename, "rb");
-  fseek(f, 0L, SEEK_END);
-  int sz = ftell(f);
-  fseek(f, 0L, SEEK_SET);
-  char *buf = (char*)malloc(sz);
-  fread(buf, 1, sz, f);
-  fclose(f);
-
-  int jsz = *(int *)buf;
-  string jj(buf+4, jsz);
+  string buf = util::read_file(filename);
+  int jsz = *(int *)buf.data();
   string err;
+  string jj(buf.data() + sizeof(int), jsz);
   Json jdat = Json::parse(jj, err);
 
   map<cl_mem, cl_mem> real_mem;
   real_mem[NULL] = NULL;
 
-  int ptr = 4+jsz;
+  int ptr = sizeof(int)+jsz;
   for (auto &obj : jdat["objects"].array_items()) {
     auto mobj = obj.object_items();
     int sz = mobj["size"].int_value();
@@ -135,7 +129,6 @@ void Thneed::load(const char *filename) {
     kq.push_back(kk);
   }
 
-  free(buf);
   clFinish(command_queue);
 }
 
