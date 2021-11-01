@@ -1,12 +1,10 @@
-#include <termios.h>
-
 #include <QApplication>
 #include <QCommandLineParser>
 #include <QDebug>
 #include <QThread>
 #include <csignal>
-#include <iostream>
 
+#include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/navd/route_engine.h"
 
 RouteEngine* route_engine = nullptr;
@@ -20,6 +18,8 @@ void sigHandler(int s) {
 
 
 int main(int argc, char *argv[]) {
+  qInstallMessageHandler(swagLogMessageHandler);
+
   QApplication app(argc, argv);
   std::signal(SIGINT, sigHandler);
   std::signal(SIGTERM, sigHandler);
