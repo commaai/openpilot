@@ -122,3 +122,7 @@ if arch in ['x86_64', 'Darwin'] or GetOption('extras'):
 
   if GetOption('test'):
     qt_env.Program('replay/tests/test_replay', ['replay/tests/test_runner.cc', 'replay/tests/test_replay.cc'], LIBS=[replay_libs])
+
+# navd
+navd_src = ["navd/main.cc"]
+qt_env.Program("navd/navd", navd_src, LIBS=qt_libs + ['common', 'json11'])
