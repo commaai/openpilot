@@ -17,8 +17,35 @@ static float get_time_typical(const QGeoRouteSegment &segment) {
   return attrs.contains("mapbox.duration_typical") ? attrs["mapbox.duration_typical"].toDouble() : segment.travelTime();
 }
 
+static void parse_banner(cereal::NavInstruction::Builder &instruction, const QMap<QString, QVariant> &banner, bool full) {
+  QString primary_str, secondary_str;
+
+  auto p = banner["primary"].toMap();
+  primary_str += p["text"].toString();
+
+
+  if (p.contains("type")) {
+    instruction.setManeuverType(p["type"].toString().toStdString());
+  }
+
+  if (p.contains("modifier")) {
+    instruction.setManeuverModifier(p["modifier"].toString().toStdString());
+  }
+
+  if (banner.contains("secondary") && full) {
+    auto s = banner["secondary"].toMap();
+    secondary_str += s["text"].toString();
+  }
+
+  // TODO: Lanes
+
+  instruction.setManeuverPrimaryText(primary_str.toStdString());
+  instruction.setManeuverSecondaryText(secondary_str.toStdString());
+}
+
 RouteEngine::RouteEngine() {
   sm = new SubMaster({"liveLocationKalman"});
+  pm = new PubMaster({"navInstruction"});
 
   // Timers
   timer = new QTimer(this);
@@ -70,6 +97,10 @@ void RouteEngine::timerUpdate() {
     }
   }
 
+  MessageBuilder msg;
+  cereal::Event::Builder evt = msg.initEvent(segment.isValid());
+  cereal::NavInstruction::Builder instruction = evt.initNavInstruction();
+
   // Show route instructions
   if (segment.isValid()) {
     auto cur_maneuver = segment.maneuver();
@@ -89,8 +120,8 @@ void RouteEngine::timerUpdate() {
           }
         }
 
-        qInfo() << "Distance" << std::max(0.0f, distance_to_maneuver_along_geometry);
-        qInfo() << "Banner" << banner;
+        instruction.setManeuverDistance(distance_to_maneuver_along_geometry);
+        parse_banner(instruction, banner, distance_to_maneuver_along_geometry < banner["distance_along_geometry"].toDouble());
 
         // ETA
         float progress = distance_along_geometry(segment.path(), to_QGeoCoordinate(*last_position)) / segment.distance();
@@ -106,7 +137,9 @@ void RouteEngine::timerUpdate() {
 
           s = s.nextRouteSegment();
         }
-        qInfo() << "ETA" << total_time << total_time_typical << total_distance;
+        instruction.setTimeRemaining(total_time);
+        instruction.setTimeRemainingTypical(total_time_typical);
+        instruction.setDistanceRemaining(total_distance);
       }
 
       // Transition to next route segment
@@ -130,6 +163,8 @@ void RouteEngine::timerUpdate() {
       }
     }
   }
+
+  pm->send("navInstruction", msg);
 }
 
 void RouteEngine::clearRoute() {

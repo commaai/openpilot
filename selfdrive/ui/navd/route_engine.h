@@ -19,6 +19,7 @@ public:
   RouteEngine();
 
   SubMaster *sm;
+  PubMaster *pm;
 
   QTimer* timer;
 
