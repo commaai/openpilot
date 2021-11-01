@@ -1,18 +1,12 @@
-#include <ftw.h>
-#include <pthread.h>
+#include <dirent.h>
 #include <sys/resource.h>
-#include <unistd.h>
 
 #include <atomic>
 #include <cassert>
-#include <cerrno>
 #include <condition_variable>
-#include <cstdint>
-#include <cstdio>
-#include <cstdlib>
 #include <cstring>
+#include <future>
 #include <mutex>
-#include <random>
 #include <string>
 #include <thread>
 #include <unordered_map>
@@ -264,16 +258,23 @@ void encoder_thread(const LogCameraInfo &cam_info) {
   }
 }
 
-int clear_locks_fn(const char* fpath, const struct stat *sb, int tyupeflag) {
-  const char* dot = strrchr(fpath, '.');
-  if (dot && strcmp(dot, ".lock") == 0) {
-    unlink(fpath);
-  }
-  return 0;
-}
+bool clear_locks(const std::string &dir, const std::string &exclude_dir) {
+  DIR *d = opendir(dir.c_str());
+  if (!d) return false;
 
-void clear_locks() {
-  ftw(LOG_ROOT.c_str(), clear_locks_fn, 16);
+  struct dirent *entry;
+  std::string path;
+  while ((entry = readdir(d)) != nullptr) {
+    path = dir + "/" + entry->d_name;
+    if (entry->d_type == DT_DIR) {
+      if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0 && path != exclude_dir)
+        clear_locks(path, exclude_dir);
+    } else if (path.rfind(".lock") == (path.size() - 5)) {
+      unlink(path.c_str());
+    }
+  }
+  closedir(d);
+  return true;
 }
 
 void logger_rotate() {
@@ -318,8 +319,6 @@ int main(int argc, char** argv) {
     //assert(ret == 0);
   }
 
-  clear_locks();
-
   // setup messaging
   typedef struct QlogState {
     int counter, freq;
@@ -342,6 +341,7 @@ int main(int argc, char** argv) {
   // init logger
   logger_init(&s.logger, "rlog", true);
   logger_rotate();
+  std::future<bool> clear_locks_future = std::async(std::launch::async, clear_locks, LOG_ROOT, s.segment_path);
   Params().put("CurrentRoute", s.logger.route_name);
 
   // init encoders
