@@ -227,8 +227,7 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
 
   fs_watch = new QFileSystemWatcher(this);
   QObject::connect(fs_watch, &QFileSystemWatcher::fileChanged, [=](const QString path) {
-    int update_failed_count = params.get<int>("UpdateFailedCount").value_or(0);
-    if (path.contains("UpdateFailedCount") && update_failed_count > 0) {
+    if (path.contains("UpdateFailedCount") && std::atoi(params.get("UpdateFailedCount").c_str()) > 0) {
       lastUpdateLbl->setText("failed to fetch update");
       updateBtn->setText("CHECK");
       updateBtn->setEnabled(true);
