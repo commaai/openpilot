@@ -113,10 +113,13 @@ def set_params(new_version: bool, failed_count: int, exception: Optional[str]) -
 
   if new_version:
     try:
-      with open(os.path.join(FINALIZED, "RELEASES.md"), "r") as f:
+      with open(os.path.join(FINALIZED, "RELEASES.md"), "rb") as f:
         r = f.read()
-      r = r[:r.find('\n\n')]  # Slice latest release notes
-      params.put("ReleaseNotes", markdown.markdown(r, tab_length=2))
+      r = r[:r.find(b'\n\n')]  # Slice latest release notes
+      try:
+        params.put("ReleaseNotes", markdown.markdown(r.decode("utf-8"), tab_length=2))
+      except Exception:
+        params.put("ReleaseNotes", r + b"\n")
     except Exception:
       params.put("ReleaseNotes", "")
     params.put_bool("UpdateAvailable", True)
