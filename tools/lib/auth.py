@@ -1,4 +1,26 @@
 #!/usr/bin/env python3
+"""
+Usage::
+
+  usage: auth.py [-h] [{google,apple,github,jwt}] [jwt]
+
+  Login to your comma account
+
+  positional arguments:
+    {google,apple,github,jwt}
+    jwt
+
+  optional arguments:
+    -h, --help            show this help message and exit
+
+
+Examples::
+
+  ./auth.py  # Log in with google account
+  ./auth.py github  # Log in with GitHub Account
+  ./auth.py jwt ey......hw  # Log in with a JWT from https://jwt.comma.ai, for use in CI
+"""
+
 import argparse
 import sys
 import pprint
