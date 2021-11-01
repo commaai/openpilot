@@ -1,20 +1,26 @@
-#include "selfdrive/ui/replay/replay.h"
-
-#include <csignal>
-#include <iostream>
 #include <termios.h>
 
 #include <QApplication>
 #include <QCommandLineParser>
 #include <QDebug>
 #include <QThread>
+#include <csignal>
+#include <iostream>
+
+#include "selfdrive/ui/replay/replay.h"
 
 const QString DEMO_ROUTE = "4cf7a6ad03080c90|2021-09-29--13-46-36";
 struct termios oldt = {};
+Replay *replay = nullptr;
 
 void sigHandler(int s) {
   std::signal(s, SIG_DFL);
-  tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+  if (oldt.c_lflag) {
+    tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+  }
+  if (replay) {
+    replay->stop();
+  }
   qApp->quit();
 }
 
@@ -69,7 +75,7 @@ void keyboardThread(Replay *replay) {
   }
 }
 
-int main(int argc, char *argv[]){
+int main(int argc, char *argv[]) {
   QApplication app(argc, argv);
   std::signal(SIGINT, sigHandler);
   std::signal(SIGTERM, sigHandler);
@@ -78,6 +84,7 @@ int main(int argc, char *argv[]){
       {"dcam", REPLAY_FLAG_DCAM, "load driver camera"},
       {"ecam", REPLAY_FLAG_ECAM, "load wide road camera"},
       {"no-loop", REPLAY_FLAG_NO_LOOP, "stop at the end of the route"},
+      {"no-cache", REPLAY_FLAG_NO_FILE_CACHE, "turn off local cache"},
   };
 
   QCommandLineParser parser;
@@ -109,13 +116,14 @@ int main(int argc, char *argv[]){
       replay_flags |= flag;
     }
   }
-  Replay *replay = new Replay(route, allow, block, nullptr, replay_flags, parser.value("data_dir"), &app);
+  replay = new Replay(route, allow, block, nullptr, replay_flags, parser.value("data_dir"), &app);
   if (!replay->load()) {
     return 0;
   }
   replay->start(parser.value("start").toInt());
   // start keyboard control thread
-  QThread *t = QThread::create(keyboardThread, replay);
+  QThread *t = new QThread();
+  QObject::connect(t, &QThread::started, [=]() { keyboardThread(replay); });
   QObject::connect(t, &QThread::finished, t, &QThread::deleteLater);
   t->start();
 

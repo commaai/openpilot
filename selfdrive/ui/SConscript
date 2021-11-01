@@ -22,7 +22,7 @@ widgets_src = ["qt/util.cc", "qt/widgets/input.cc", "qt/widgets/drive_stats.cc",
                "qt/widgets/ssh_keys.cc", "qt/widgets/toggle.cc", "qt/widgets/controls.cc",
                "qt/widgets/offroad_alerts.cc", "qt/widgets/prime.cc", "qt/widgets/keyboard.cc",
                "qt/widgets/scrollview.cc", "qt/widgets/cameraview.cc", "#third_party/qrcode/QrCode.cc", "qt/api.cc",
-               "qt/request_repeater.cc"]
+               "qt/request_repeater.cc", "qt/qt_window.cc"]
 
 if arch != 'aarch64':
   widgets_src += ["qt/offroad/networking.cc", "qt/offroad/wifiManager.cc"]
@@ -48,6 +48,8 @@ qt_env.Program("_soundd", "soundd.cc", LIBS=base_libs)
 if GetOption('test'):
   qt_env.Program("tests/playsound", "tests/playsound.cc", LIBS=base_libs)
 
+qt_env.SharedLibrary("qt/python_helpers", ["qt/qt_window.cc"], LIBS=qt_libs)
+
 # spinner and text window
 qt_env.Program("qt/text", ["qt/text.cc"], LIBS=qt_libs)
 qt_env.Program("qt/spinner", ["qt/spinner.cc"], LIBS=qt_libs)
@@ -61,13 +63,13 @@ qt_env.Program("_ui", qt_src + [asset_obj], LIBS=qt_libs)
 
 
 # setup and factory resetter
-if arch != 'aarch64' and GetOption('setup'):
+if arch != 'aarch64' and GetOption('extras'):
   qt_env.Program("qt/setup/reset", ["qt/setup/reset.cc"], LIBS=qt_libs)
   qt_env.Program("qt/setup/setup", ["qt/setup/setup.cc", asset_obj],
                  LIBS=qt_libs + ['curl', 'common', 'json11'])
 
 
-if GetOption('setup'):
+if GetOption('extras'):
   # buidl updater UI
   qt_env.Program("qt/setup/updater", ["qt/setup/updater.cc", asset_obj], LIBS=qt_libs)
 
@@ -107,13 +109,13 @@ if GetOption('setup'):
 
 
 # build headless replay
-if arch in ['x86_64', 'Darwin'] and os.path.exists(Dir("#tools/").get_abspath()):
+if arch in ['x86_64', 'Darwin'] or GetOption('extras'):
   qt_env['CXXFLAGS'] += ["-Wno-deprecated-declarations"]
 
-  replay_lib_src = ["replay/replay.cc", "replay/camera.cc", "replay/logreader.cc", "replay/framereader.cc", "replay/route.cc", "replay/util.cc"]
+  replay_lib_src = ["replay/replay.cc", "replay/camera.cc", "replay/filereader.cc", "replay/logreader.cc", "replay/framereader.cc", "replay/route.cc", "replay/util.cc"]
 
   replay_lib = qt_env.Library("qt_replay", replay_lib_src, LIBS=base_libs)
-  replay_libs = [replay_lib, 'avutil', 'avcodec', 'avformat', 'bz2', 'curl', 'yuv'] + qt_libs
+  replay_libs = [replay_lib, 'avutil', 'avcodec', 'avformat', 'bz2', 'curl', 'swscale'] + qt_libs
   qt_env.Program("replay/replay", ["replay/main.cc"], LIBS=replay_libs)
 
   qt_env.Program("watch3", ["watch3.cc"], LIBS=qt_libs + ['common', 'json11'])

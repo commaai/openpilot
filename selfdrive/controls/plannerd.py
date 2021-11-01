@@ -38,7 +38,6 @@ def plannerd_thread(sm=None, pm=None):
     if sm.updated['modelV2']:
       lateral_planner.update(sm, CP)
       lateral_planner.publish(sm, pm)
-    if sm.updated['radarState']:
       longitudinal_planner.update(sm, CP)
       longitudinal_planner.publish(sm, pm)
 

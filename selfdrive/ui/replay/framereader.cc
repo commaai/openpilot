@@ -3,9 +3,11 @@
 #include <unistd.h>
 #include <cassert>
 #include <mutex>
-#include "libyuv.h"
+#include <sstream>
 
-static int ffmpeg_lockmgr_cb(void **arg, enum AVLockOp op) {
+namespace {
+
+int ffmpeg_lockmgr_cb(void **arg, enum AVLockOp op) {
   std::mutex *mutex = (std::mutex *)*arg;
   switch (op) {
   case AV_LOCK_CREATE:
@@ -23,38 +25,56 @@ static int ffmpeg_lockmgr_cb(void **arg, enum AVLockOp op) {
   return 0;
 }
 
-struct AVInitializer {
-  AVInitializer() {
-    int ret = av_lockmgr_register(ffmpeg_lockmgr_cb);
-    assert(ret >= 0);
-    av_register_all();
-    avformat_network_init();
-  }
-  ~AVInitializer() { avformat_network_deinit(); }
-};
+int readFunction(void *opaque, uint8_t *buf, int buf_size) {
+  auto &iss = *reinterpret_cast<std::istringstream *>(opaque);
+  iss.read(reinterpret_cast<char *>(buf), buf_size);
+  return iss.gcount() ? iss.gcount() : AVERROR_EOF;
+}
 
-FrameReader::FrameReader() {
-  static AVInitializer av_initializer;
+} // namespace
+
+FrameReader::FrameReader(bool local_cache, int chunk_size, int retries) : FileReader(local_cache, chunk_size, retries) {
+  static std::once_flag once_flag;
+  std::call_once(once_flag, [] {
+    av_lockmgr_register(ffmpeg_lockmgr_cb);
+    av_register_all();
+  });
+
+  pFormatCtx_ = avformat_alloc_context();
+  av_frame_ = av_frame_alloc();
+  rgb_frame_ = av_frame_alloc();
+  yuv_frame_ = av_frame_alloc();;
+
 }
 
 FrameReader::~FrameReader() {
   for (auto &f : frames_) {
     av_free_packet(&f.pkt);
   }
-  if (pCodecCtx_) {
-    avcodec_close(pCodecCtx_);
-    avcodec_free_context(&pCodecCtx_);
-  }
-  if (pFormatCtx_) {
-    avformat_close_input(&pFormatCtx_);
-  }
-  if (av_frame_) {
-    av_frame_free(&av_frame_);
+  if (pCodecCtx_) avcodec_free_context(&pCodecCtx_);
+  if (pFormatCtx_) avformat_close_input(&pFormatCtx_);
+  if (av_frame_) av_frame_free(&av_frame_);
+  if (rgb_frame_) av_frame_free(&rgb_frame_);
+  if (yuv_frame_) av_frame_free(&yuv_frame_);
+  if (rgb_sws_ctx_) sws_freeContext(rgb_sws_ctx_);
+  if (yuv_sws_ctx_) sws_freeContext(yuv_sws_ctx_);
+
+  if (avio_ctx_) {
+    av_freep(&avio_ctx_->buffer);
+    av_freep(&avio_ctx_);
   }
 }
 
-bool FrameReader::load(const std::string &url) {
-  pFormatCtx_ = avformat_alloc_context();
+bool FrameReader::load(const std::string &url, std::atomic<bool> *abort) {
+  std::string content = read(url, abort);
+  if (content.empty()) return false;
+
+  std::istringstream iss(content);
+  const int avio_ctx_buffer_size = 64 * 1024;
+  unsigned char *avio_ctx_buffer = (unsigned char *)av_malloc(avio_ctx_buffer_size);
+  avio_ctx_ = avio_alloc_context(avio_ctx_buffer, avio_ctx_buffer_size, 0, &iss, readFunction, nullptr, nullptr);
+  pFormatCtx_->pb = avio_ctx_;
+
   pFormatCtx_->probesize = 10 * 1024 * 1024;  // 10MB
   if (avformat_open_input(&pFormatCtx_, url.c_str(), NULL, NULL) != 0) {
     printf("error loading %s\n", url.c_str());
@@ -76,13 +96,20 @@ bool FrameReader::load(const std::string &url) {
   ret = avcodec_open2(pCodecCtx_, pCodec, NULL);
   if (ret < 0) return false;
 
-  av_frame_ = av_frame_alloc();
-
-  width = pCodecCtxOrig->width;
+  width = (pCodecCtxOrig->width + 3) & ~3;
   height = pCodecCtxOrig->height;
+  rgb_sws_ctx_ = sws_getContext(pCodecCtxOrig->width, pCodecCtxOrig->height, AV_PIX_FMT_YUV420P,
+                            width, height, AV_PIX_FMT_BGR24,
+                            SWS_FAST_BILINEAR, NULL, NULL, NULL);
+  if (!rgb_sws_ctx_) return false;
+
+  yuv_sws_ctx_ = sws_getContext(pCodecCtxOrig->width, pCodecCtxOrig->height, AV_PIX_FMT_YUV420P,
+                            width, height, AV_PIX_FMT_YUV420P,
+                            SWS_FAST_BILINEAR, NULL, NULL, NULL);
+  if (!yuv_sws_ctx_) return false;
 
   frames_.reserve(60 * 20);  // 20fps, one minute
-  while (true) {
+  while (!(abort && *abort)) {
     Frame &frame = frames_.emplace_back();
     int err = av_read_frame(pFormatCtx_, &frame.pkt);
     if (err < 0) {
@@ -97,7 +124,7 @@ bool FrameReader::load(const std::string &url) {
 }
 
 bool FrameReader::get(int idx, uint8_t *rgb, uint8_t *yuv) {
-  assert(rgb != nullptr);
+  assert(rgb != nullptr && yuv != nullptr);
   if (!valid_ || idx < 0 || idx >= frames_.size()) {
     return false;
   }
@@ -140,27 +167,12 @@ bool FrameReader::decode(int idx, uint8_t *rgb, uint8_t *yuv) {
 }
 
 bool FrameReader::decodeFrame(AVFrame *f, uint8_t *rgb, uint8_t *yuv) {
-  uint8_t *y = yuv;
-  if (!yuv) {
-    if (yuv_buf_.empty()) {
-      yuv_buf_.resize(getYUVSize());
-    }
-    y = yuv_buf_.data();
-  }
+  // images is going to be written to output buffers, no alignment (align = 1)
+  av_image_fill_arrays(yuv_frame_->data, yuv_frame_->linesize, yuv, AV_PIX_FMT_YUV420P, width, height, 1);
+  int ret = sws_scale(yuv_sws_ctx_, (const uint8_t **)f->data, f->linesize, 0, f->height, yuv_frame_->data, yuv_frame_->linesize);
+  if (ret < 0) return false;
 
-  int i, j, k;
-  for (i = 0; i < f->height; i++) {
-    memcpy(y + f->width * i, f->data[0] + f->linesize[0] * i, f->width);
-  }
-  for (j = 0; j < f->height / 2; j++) {
-    memcpy(y + f->width * i + f->width / 2 * j, f->data[1] + f->linesize[1] * j, f->width / 2);
-  }
-  for (k = 0; k < f->height / 2; k++) {
-    memcpy(y + f->width * i + f->width / 2 * j + f->width / 2 * k, f->data[2] + f->linesize[2] * k, f->width / 2);
-  }
-
-  uint8_t *u = y + f->width * f->height;
-  uint8_t *v = u + (f->width / 2) * (f->height / 2);
-  libyuv::I420ToRGB24(y, f->width, u, f->width / 2, v, f->width / 2, rgb, f->width * 3, f->width, f->height);
-  return true;
+  av_image_fill_arrays(rgb_frame_->data, rgb_frame_->linesize, rgb, AV_PIX_FMT_BGR24, width, height, 1);
+  ret = sws_scale(rgb_sws_ctx_, (const uint8_t **)f->data, f->linesize, 0, f->height, rgb_frame_->data, rgb_frame_->linesize);
+  return ret >= 0;
 }
