@@ -103,8 +103,9 @@ static QString markdownToHtml(const QString &markdown) {
   for (auto s : markdown.split("\n")) {
     if (i == 0) {
       html += "<h1>" + s + "</h1>";
-    } else if (s.startsWith(" *") || s.startsWith("   *")) {
-      int level = s.startsWith("   *") ? 2 : 1;
+    } else if (i > 1) {
+      int pos = s.indexOf("*");
+      int level = pos == -1 ? 0 : pos / 2 + 1;
       if (ul_level < level) {
         html += "<ul>";
         ++ul_level;
@@ -112,12 +113,13 @@ static QString markdownToHtml(const QString &markdown) {
         html += "</ul>";
         --ul_level;
       }
-      html += "<li>" + s.mid(s.indexOf('*') + 1) + "</li>";
-    } else if (s.isEmpty()) {
-      html += "</ul>";
+      if (pos != -1) {
+        html += "<li>" + s.mid(pos + 1) + "</li>";
+      }
     }
     ++i;
   }
+  printf("%s\n", html.toStdString().c_str());
   return html;
 }
 
