@@ -250,20 +250,26 @@ class TestAthenadMethods(unittest.TestCase):
     athenad.cancelled_uploads.add(item.id)
     items = dispatcher["listUploadQueue"]()
     self.assertEqual(len(items), 0)
-  
+
   def test_upload_queue_persistence(self):
-    item = athenad.UploadItem(path="_", url="_", headers={}, created_at=int(time.time()), id='id')
+    item1 = athenad.UploadItem(path="_", url="_", headers={}, created_at=int(time.time()), id='id1')
+    item2 = athenad.UploadItem(path="_", url="_", headers={}, created_at=int(time.time()), id='id2')
+
+    athenad.upload_queue.put_nowait(item1)
+    athenad.upload_queue.put_nowait(item2)
+
+    # Ensure cancelled items are not persisted
+    athenad.cancelled_uploads.add(item2.id)
 
     # serialize item
-    athenad.upload_queue.put_nowait(item)
     athenad.UploadQueueCache.cache(athenad.upload_queue)
 
-    # deserialize item 
-    athenad.upload_queue.queue.clear() 
-    athenad.UploadQueueCache.initialize(athenad.upload_queue) 
+    # deserialize item
+    athenad.upload_queue.queue.clear()
+    athenad.UploadQueueCache.initialize(athenad.upload_queue)
 
     self.assertEqual(athenad.upload_queue.qsize(), 1)
-    self.assertDictEqual(athenad.upload_queue.queue[-1]._asdict(), item._asdict())
+    self.assertDictEqual(athenad.upload_queue.queue[-1]._asdict(), item1._asdict())
 
   @mock.patch('selfdrive.athena.athenad.create_connection')
   def test_startLocalProxy(self, mock_create_connection):
