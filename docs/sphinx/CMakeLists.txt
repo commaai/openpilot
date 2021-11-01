@@ -29,8 +29,7 @@ add_custom_command(
     OUTPUT ${SPHINX_BUILDDIR}
     COMMAND ${SPHINX_RST_EXEC} -o ${SPHINX_BUILDDIR} ${OPENPILOT_ROOT} ${SPHINX_RST_EXCLUDE_SRCS}
     COMMAND ${SPHINX_EXEC} ${CMAKE_CURRENT_BINARY_DIR} ${SPHINX_BUILDDIR} ${SPHINXOPTS}
-    # -Dbreathe_projects.c_docs=${OPENPILOT_ROOT}/build/docs/xml    # FIXME breathe can't build some generated XML files..
-    -Dbreathe_projects.c_docs=${DOXY_BUILD_DIR}    # FIXME breathe can't build some generated XML files..
+    -Dbreathe_projects.c_docs=${DOXY_BUILD_DIR}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     COMMENT "generating rst files for sphinx..."
     VERBATIM

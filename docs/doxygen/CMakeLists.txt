@@ -1,5 +1,3 @@
-find_package(Doxygen REQUIRED)
-
 set(LOGO_IMAGE "${CMAKE_CURRENT_SOURCE_DIR}/img/logo.png" CACHE INTERNAL "doxygen logo path" FORCE)
 set(IMAGE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/img/" CACHE INTERNAL "doxygen misc images path" FORCE)
 

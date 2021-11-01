@@ -78,7 +78,11 @@ tools
    tools/ssh/README.md
    Webcam <tools/webcam/README.md>
 
-c_docs
+c/c++ docs
 =========
-.. doxygenstruct:: c_docs
-   :members:
+.. doxygenclass:: Thneed
+
+doxygenindex::
+   :project: c_docs
+   :outline:
+   :no-link:

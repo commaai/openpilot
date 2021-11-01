@@ -45,7 +45,7 @@ WORKDIR ${OPENPILOT_PATH}/docs
 RUN mkdir build && cd build && cmake ../
 RUN cd build && cmake --build . --target doxy_build -j$(nproc)
 RUN cd build && cmake --build . --target sphinx_build -j$(nproc)
-RUN cd build && cmake --install . -j$(nproc)
+RUN cd build && cmake --install .
 
 FROM nginx:1.21
 COPY --from=0  /home/batman/openpilot/docs/build/sphinx/html /usr/share/nginx/html
