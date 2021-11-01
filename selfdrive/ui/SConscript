@@ -125,4 +125,4 @@ if arch in ['x86_64', 'Darwin'] or GetOption('extras'):
 
 # navd
 navd_src = ["navd/main.cc", "navd/route_engine.cc"]
-qt_env.Program("navd/navd", navd_src, LIBS=qt_libs + ['common', 'json11'])
+qt_env.Program("navd/_navd", navd_src, LIBS=qt_libs + ['common', 'json11'])

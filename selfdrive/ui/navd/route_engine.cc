@@ -17,12 +17,25 @@ static float get_time_typical(const QGeoRouteSegment &segment) {
   return attrs.contains("mapbox.duration_typical") ? attrs["mapbox.duration_typical"].toDouble() : segment.travelTime();
 }
 
+static cereal::NavInstruction::Direction string_to_direction(QString d) {
+  if (d.contains("left")) {
+    return cereal::NavInstruction::Direction::LEFT;
+  } else if (d.contains("right")) {
+    return cereal::NavInstruction::Direction::RIGHT;
+  } else if (d.contains("straight")) {
+    return cereal::NavInstruction::Direction::STRAIGHT;
+  }
+
+  return cereal::NavInstruction::Direction::NONE;
+}
+
 static void parse_banner(cereal::NavInstruction::Builder &instruction, const QMap<QString, QVariant> &banner, bool full) {
   QString primary_str, secondary_str;
 
   auto p = banner["primary"].toMap();
   primary_str += p["text"].toString();
 
+  instruction.setShowFull(full);
 
   if (p.contains("type")) {
     instruction.setManeuverType(p["type"].toString().toStdString());
@@ -32,15 +45,53 @@ static void parse_banner(cereal::NavInstruction::Builder &instruction, const QMa
     instruction.setManeuverModifier(p["modifier"].toString().toStdString());
   }
 
-  if (banner.contains("secondary") && full) {
+  if (banner.contains("secondary")) {
     auto s = banner["secondary"].toMap();
     secondary_str += s["text"].toString();
   }
 
-  // TODO: Lanes
-
   instruction.setManeuverPrimaryText(primary_str.toStdString());
   instruction.setManeuverSecondaryText(secondary_str.toStdString());
+
+  if (banner.contains("sub")) {
+    auto s = banner["sub"].toMap();
+    auto components = s["components"].toList();
+
+    size_t num_lanes = 0;
+    for (auto &c : components) {
+      auto cc = c.toMap();
+      if (cc["type"].toString() == "lane") {
+        num_lanes += 1;
+      }
+    }
+
+    auto lanes = instruction.initLanes(num_lanes);
+
+    size_t i = 0;
+    for (auto &c : components) {
+      auto cc = c.toMap();
+      if (cc["type"].toString() == "lane") {
+        auto lane = lanes[i];
+        lane.setActive(cc["active"].toBool());
+
+        if (cc.contains("active_direction")) {
+          lane.setActiveDirection(string_to_direction(cc["active_direction"].toString()));
+        }
+
+        auto directions = lane.initDirections(cc["directions"].toList().size());
+
+        size_t j = 0;
+        for (auto &dir : cc["directions"].toList()) {
+          directions.set(j, string_to_direction(dir.toString()));
+          j++;
+        }
+
+
+        i++;
+      }
+    }
+  }
+
 }
 
 RouteEngine::RouteEngine() {
