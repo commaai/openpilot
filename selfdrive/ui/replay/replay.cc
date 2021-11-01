@@ -41,15 +41,16 @@ Replay::~Replay() {
 }
 
 void Replay::stop() {
-  if (stream_thread_ == nullptr) return;
+  if (!stream_thread_ && segments_.empty()) return;
 
   qDebug() << "shutdown: in progress...";
-  exit_ = updating_events_ = true;
-  stream_cv_.notify_one();
-  stream_thread_->quit();
-  stream_thread_->wait();
-  stream_thread_ = nullptr;
-
+  if (stream_thread_ != nullptr) {
+    exit_ = updating_events_ = true;
+    stream_cv_.notify_one();
+    stream_thread_->quit();
+    stream_thread_->wait();
+    stream_thread_ = nullptr;
+  }
   segments_.clear();
   camera_server_.reset(nullptr);
   qDebug() << "shutdown: done";
