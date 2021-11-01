@@ -44,7 +44,6 @@ FrameReader::FrameReader(bool local_cache, int chunk_size, int retries) : FileRe
   av_frame_ = av_frame_alloc();
   rgb_frame_ = av_frame_alloc();
   yuv_frame_ = av_frame_alloc();;
-
 }
 
 FrameReader::~FrameReader() {
