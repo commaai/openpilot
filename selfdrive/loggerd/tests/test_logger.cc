@@ -2,6 +2,7 @@
 
 #include <climits>
 #include <condition_variable>
+#include <future>
 #include <sstream>
 #include <thread>
 
@@ -146,26 +147,29 @@ TEST_CASE("logger") {
 }
 
 TEST_CASE("clear_locks") {
-  const int cnt = 10;
-  const std::string current_segment = LOG_ROOT + "/" + std::to_string(0);
-  for (int i = 0; i < cnt; ++i) {
-    std::string path = LOG_ROOT + "/" + std::to_string(i);
+  std::vector<std::string> dirs;
+  std::string current_segment;
+  for (int i = 0; i < 10; ++i) {
+    std::string &path = dirs.emplace_back(LOG_ROOT + "/" + std::to_string(i));
     REQUIRE(util::create_directories(path, 0775));
     std::ofstream{path + "/.lock"};
     REQUIRE(util::file_exists(path + "/.lock"));
+    if (i == 0) current_segment = path;
   }
-
-  clear_locks(LOG_ROOT, current_segment);
-
-  for (int i = 0; i < cnt; ++i) {
-    std::string path = LOG_ROOT + "/" + std::to_string(i);
-    std::string lock_file = path + "/.lock";
-    if (path == current_segment) {
+  {
+    std::future<bool> clear_locks_future = std::async(std::launch::async, [=] {
+      clear_locks(LOG_ROOT, current_segment.c_str());
+      return true;
+    });
+  }
+  for (const auto &dir : dirs) {
+    std::string lock_file = dir + "/.lock";
+    if (dir == current_segment) {
       REQUIRE(util::file_exists(lock_file));
       ::unlink(lock_file.c_str());
     } else {
       REQUIRE(util::file_exists(lock_file) == false);
     }
-    rmdir(path.c_str());
+    rmdir(dir.c_str());
   }
 }
