@@ -100,7 +100,7 @@ UpdateAlert::UpdateAlert(QWidget *parent) : AbstractAlert(true, parent) {
 static QString markdownToHtml(const QString &markdown) {
   QString html = "";
   int i = 0, ul_level = 0;
-  for (auto s : markdown.split("\n")) {
+  for (const auto &s : markdown.split("\n")) {
     if (i == 0) {
       html += "<h1>" + s + "</h1>";
     } else if (i > 1) {
