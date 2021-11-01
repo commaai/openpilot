@@ -18,7 +18,7 @@ std::string cacheFilePath(const std::string &url) {
     return comma_cache.back() == '/' ? comma_cache : comma_cache + "/";
   }();
 
-  return cache_path + sha256(getUrlWithoutQuery(url));;
+  return cache_path + sha256(getUrlWithoutQuery(url));
 }
 
 std::string FileReader::read(const std::string &file, std::atomic<bool> *abort) {
