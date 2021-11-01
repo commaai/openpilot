@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 import argparse
 import sys
+import pprint
 import webbrowser
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from typing import Any, Dict
 from urllib.parse import parse_qs, urlencode
 
-from tools.lib.api import APIError, CommaApi
-from tools.lib.auth_config import set_token
+from tools.lib.api import APIError, CommaApi, UnauthorizedError
+from tools.lib.auth_config import set_token, get_token
 
 PORT = 3000
 
@@ -18,7 +19,6 @@ class ClientRedirectServer(HTTPServer):
 
 class ClientRedirectHandler(BaseHTTPRequestHandler):
   def do_GET(self):
-    print(self.path)
     if not self.path.startswith('/auth'):
       self.send_response(204)
       return
@@ -95,7 +95,6 @@ def login(method):
   try:
     auth_resp = CommaApi().post('v2/auth/', data={'code': web_server.query_params['code'], 'provider': web_server.query_params['provider']})
     set_token(auth_resp['access_token'])
-    print('Authenticated')
   except APIError as e:
     print(f'Authentication Error: {e}', file=sys.stderr)
 
@@ -114,3 +113,11 @@ if __name__ == '__main__':
     set_token(args.jwt)
   else:
     login(args.method)
+
+  try:
+    me = CommaApi(token=get_token()).get('/v1/me')
+    print("Authenticated!")
+    pprint.pprint(me)
+  except UnauthorizedError:
+    print("Got invalid JWT")
+    exit(1)
