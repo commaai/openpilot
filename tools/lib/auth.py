@@ -1,20 +1,25 @@
 #!/usr/bin/env python3
+import argparse
 import sys
 import webbrowser
-from http.server import HTTPServer, BaseHTTPRequestHandler
-from urllib.parse import urlencode, parse_qs
-from tools.lib.api import CommaApi, APIError
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from typing import Any, Dict
+from urllib.parse import parse_qs, urlencode
+
+from tools.lib.api import APIError, CommaApi
 from tools.lib.auth_config import set_token
-from typing import Dict, Any
 
 PORT = 3000
+
 
 class ClientRedirectServer(HTTPServer):
   query_params: Dict[str, Any] = {}
 
+
 class ClientRedirectHandler(BaseHTTPRequestHandler):
   def do_GET(self):
-    if not self.path.startswith('/auth/g/redirect'):
+    print(self.path)
+    if not self.path.startswith('/auth'):
       self.send_response(204)
       return
 
@@ -30,21 +35,48 @@ class ClientRedirectHandler(BaseHTTPRequestHandler):
   def log_message(self, format, *args):  # pylint: disable=redefined-builtin
     pass  # this prevent http server from dumping messages to stdout
 
-def auth_redirect_link():
-  redirect_uri = f'http://localhost:{PORT}/auth/g/redirect'
+
+def auth_redirect_link(method):
+  provider_id = {
+    'google': 'g',
+    'apple': 'a',
+    'github': 'h',
+  }[method]
+
   params = {
-    'type': 'web_server',
-    'client_id': '45471411055-ornt4svd2miog6dnopve7qtmh5mnu6id.apps.googleusercontent.com',
-    'redirect_uri': redirect_uri,
-    'response_type': 'code',
-    'scope': 'https://www.googleapis.com/auth/userinfo.email',
-    'prompt': 'select_account',
+    'redirect_uri': f"https://api.comma.ai/v2/auth/{provider_id}/redirect/",
+    'state': f'service,localhost:{PORT}',
   }
 
-  return (redirect_uri, 'https://accounts.google.com/o/oauth2/auth?' + urlencode(params))
+  if method == 'google':
+    params.update({
+      'type': 'web_server',
+      'client_id': '45471411055-ornt4svd2miog6dnopve7qtmh5mnu6id.apps.googleusercontent.com',
+      'response_type': 'code',
+      'scope': 'https://www.googleapis.com/auth/userinfo.email',
+      'prompt': 'select_account',
+    })
+    return 'https://accounts.google.com/o/oauth2/auth?' + urlencode(params)
+  elif method == 'github':
+    params.update({
+      'client_id': '28c4ecb54bb7272cb5a4',
+      'scope': 'read:user',
+    })
+    return 'https://github.com/login/oauth/authorize?' + urlencode(params)
+  elif method == 'apple':
+      params.update({
+        'client_id': 'ai.comma.login',
+        'response_type': 'code',
+        'response_mode': 'form_post',
+        'scope': 'name email',
+      })
+      return 'https://appleid.apple.com/auth/authorize?' + urlencode(params)
+  else:
+    raise NotImplementedError(f"no redirect implemented for method {method}")
 
-def login():
-  redirect_uri, oauth_uri = auth_redirect_link()
+
+def login(method):
+  oauth_uri = auth_redirect_link(method)
 
   web_server = ClientRedirectServer(('localhost', PORT), ClientRedirectHandler)
   print(f'To sign in, use your browser and navigate to {oauth_uri}')
@@ -53,7 +85,6 @@ def login():
   while True:
     web_server.handle_request()
     if 'code' in web_server.query_params:
-      code = web_server.query_params['code']
       break
     elif 'error' in web_server.query_params:
       print('Authentication Error: "%s". Description: "%s" ' % (
@@ -62,11 +93,24 @@ def login():
       break
 
   try:
-    auth_resp = CommaApi().post('v2/auth/', data={'code': code, 'redirect_uri': redirect_uri})
+    auth_resp = CommaApi().post('v2/auth/', data={'code': web_server.query_params['code'], 'provider': web_server.query_params['provider']})
     set_token(auth_resp['access_token'])
     print('Authenticated')
   except APIError as e:
     print(f'Authentication Error: {e}', file=sys.stderr)
 
+
 if __name__ == '__main__':
-  login()
+  parser = argparse.ArgumentParser(description='Login to your comma account')
+  parser.add_argument('method', default='google', const='google', nargs='?', choices=['google', 'apple', 'github', 'jwt'])
+  parser.add_argument('jwt', nargs='?')
+
+  args = parser.parse_args()
+  if args.method == 'jwt':
+    if args.jwt is None:
+      print("method JWT selected, but no JWT was provided")
+      exit(1)
+
+    set_token(args.jwt)
+  else:
+    login(args.method)
