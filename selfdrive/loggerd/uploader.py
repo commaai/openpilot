@@ -38,16 +38,6 @@ def listdir_by_creation(d):
     cloudlog.exception("listdir_by_creation failed")
     return list()
 
-def clear_locks(root):
-  for logname in os.listdir(root):
-    path = os.path.join(root, logname)
-    try:
-      for fname in os.listdir(path):
-        if fname.endswith(".lock"):
-          os.unlink(os.path.join(path, fname))
-    except OSError:
-      cloudlog.exception("clear_locks failed")
-
 
 class Uploader():
   def __init__(self, dongle_id, root):
