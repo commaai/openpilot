@@ -270,11 +270,37 @@ void clear_locks(const std::string &dir, const std::string &exclude_dir) {
       if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0 && path != exclude_dir) {
         clear_locks(path, exclude_dir);
       }
-    } else if (path.rfind(".lock") == (path.size() - 5)) {
+    } else if (path.rfind(".lock") == (path.length() - 5)) {
       unlink(path.c_str());
     }
   }
   closedir(d);
+}
+
+// TODO: move to CATCH2 unit test framework
+void test_clear_locks() {
+  const int cnt = 10;
+  for (int i = 0; i < cnt; ++i) {
+    std::string path = util::string_format("%s/%d", LOG_ROOT.c_str(), i);
+    assert(util::create_directories(path, 0775));
+    std::ofstream{path + "/.lock"};
+    assert(util::file_exists(path + "/.lock"));
+  }
+
+  clear_locks(LOG_ROOT, util::string_format("%s/%d", LOG_ROOT.c_str(), 0));
+
+  for (int i = 0; i < cnt; ++i) {
+    std::string path = util::string_format("%s/%d", LOG_ROOT.c_str(), i);
+    std::string lock_file = path + "/.lock";
+    if (i == 0) {
+      assert(util::file_exists(lock_file));
+      ::unlink(lock_file.c_str());
+    } else {
+      assert(util::file_exists(lock_file) == false);
+    }
+    rmdir(path.c_str());
+  }
+  printf("test ok\n");
 }
 
 void logger_rotate() {
@@ -308,6 +334,11 @@ void rotate_if_needed() {
 } // namespace
 
 int main(int argc, char** argv) {
+  if (argc > 1 && strcmp(argv[1] , "--test") == 0) {
+    test_clear_locks();
+    return 0;
+  }
+
   if (Hardware::EON()) {
     setpriority(PRIO_PROCESS, 0, -20);
   } else if (Hardware::TICI()) {
