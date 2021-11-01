@@ -97,10 +97,34 @@ UpdateAlert::UpdateAlert(QWidget *parent) : AbstractAlert(true, parent) {
   scrollable_layout->addWidget(releaseNotes);
 }
 
+static QString markdownToHtml(const QString &markdown) {
+  QString html = "";
+  int i = 0, ul_level = 0;
+  for (auto s : markdown.split("\n")) {
+    if (i == 0) {
+      html += "<h1>" + s + "</h1>";
+    } else if (s.startsWith(" *") || s.startsWith("   *")) {
+      int level = s.startsWith("   *") ? 2 : 1;
+      if (ul_level < level) {
+        html += "<ul>";
+        ++ul_level;
+      } else if (ul_level > level) {
+        html += "</ul>";
+        --ul_level;
+      }
+      html += "<li>" + s.mid(s.indexOf('*') + 1) + "</li>";
+    } else if (s.isEmpty()) {
+      html += "</ul>";
+    }
+    ++i;
+  }
+  return html;
+}
+
 bool UpdateAlert::refresh() {
   bool updateAvailable = params.getBool("UpdateAvailable");
   if (updateAvailable) {
-    releaseNotes->setText(params.get("ReleaseNotes").c_str());
+    releaseNotes->setText(markdownToHtml(params.get("ReleaseNotes").c_str()));
   }
   return updateAvailable;
 }
