@@ -119,7 +119,6 @@ static QString markdownToHtml(const QString &markdown) {
     }
     ++i;
   }
-  printf("%s\n", html.toStdString().c_str());
   return html;
 }
 
