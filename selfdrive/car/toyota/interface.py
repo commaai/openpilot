@@ -285,6 +285,16 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 4305. * CV.LB_TO_KG + STD_CARGO_KG
       ret.lateralTuning.pid.kf = 0.00007818594
 
+    elif candidate in [CAR.PRIUS_ALPHA]:
+      stop_and_go = False
+      ret.safetyConfigs[0].safetyParam = 73
+      ret.wheelbase = 2.78
+      ret.steerRatio = 17.8
+      tire_stiffness_factor = 0.5533
+      ret.mass = 4387. * CV.LB_TO_KG + STD_CARGO_KG
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.3], [0.025]]
+      ret.lateralTuning.pid.kf = 0.00003
+
     ret.steerRateCost = 1.
     ret.centerToFront = ret.wheelbase * 0.44
 
