@@ -1,7 +1,11 @@
 import math
 
 from cereal import log
+from common.realtime import DT_CTRL
 from selfdrive.controls.lib.latcontrol import LatControl, MIN_STEER_SPEED
+
+STEER_ANGLE_SATURATION_TIMEOUT = 1.0 / DT_CTRL
+STEER_ANGLE_SATURATION_THRESHOLD = 2.5  # Degrees
 
 
 class LatControlAngle(LatControl):
@@ -16,8 +20,13 @@ class LatControlAngle(LatControl):
       angle_steers_des = math.degrees(VM.get_steer_from_curvature(-desired_curvature, CS.vEgo, params.roll))
       angle_steers_des += params.angleOffsetDeg
 
-    angle_log.saturated = False
+    angle_control_saturated = abs(angle_steers_des - CS.steeringAngleDeg) > STEER_ANGLE_SATURATION_THRESHOLD
+    if angle_control_saturated and not CS.steeringPressed and active:
+      self.sat_count += 1
+    else:
+      self.sat_count = 0
+
+    angle_log.saturated = self.sat_count > STEER_ANGLE_SATURATION_TIMEOUT
     angle_log.steeringAngleDeg = float(CS.steeringAngleDeg)
     angle_log.steeringAngleDesiredDeg = angle_steers_des
-
     return 0, float(angle_steers_des), angle_log
