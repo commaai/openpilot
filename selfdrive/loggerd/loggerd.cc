@@ -267,8 +267,9 @@ void clear_locks(const std::string &dir, const std::string &exclude_dir) {
   while ((entry = readdir(d)) != nullptr) {
     path = dir + "/" + entry->d_name;
     if (entry->d_type == DT_DIR) {
-      if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0 && path != exclude_dir)
+      if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0 && path != exclude_dir) {
         clear_locks(path, exclude_dir);
+      }
     } else if (path.rfind(".lock") == (path.size() - 5)) {
       unlink(path.c_str());
     }
