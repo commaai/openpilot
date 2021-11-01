@@ -90,9 +90,9 @@ typedef struct OMX_TIME_CONFIG_SEEKMODETYPE {
 /** Structure representing a time stamp used with the following configs
  * on the Clock Component (CC):
  *
- * OMX_IndexConfigTimeCurrentWallTime: query of the CCs current wall
+ * OMX_IndexConfigTimeCurrentWallTime: query of the CC�s current wall
  *     time
- * OMX_IndexConfigTimeCurrentMediaTime: query of the CCs current media
+ * OMX_IndexConfigTimeCurrentMediaTime: query of the CC�s current media
  *     time
  * OMX_IndexConfigTimeCurrentAudioReference and
  * OMX_IndexConfigTimeCurrentVideoReference: audio/video reference
@@ -103,7 +103,7 @@ typedef struct OMX_TIME_CONFIG_SEEKMODETYPE {
  *     OMX_BUFFERFLAG_STARTTIME set. It must use the timestamp
  *     specified by that buffer for nStartTimestamp.
  *
- * Its also used with the following config on components in general:
+ * It�s also used with the following config on components in general:
  *
  * OMX_IndexConfigTimePosition: IL client querying component position
  * (GetConfig) or commanding a component to seek to the given location
@@ -247,7 +247,7 @@ typedef struct OMX_TIME_CONFIG_SCALETYPE {
                                      * scaling the media time */
 } OMX_TIME_CONFIG_SCALETYPE;
 
-/** Bits used to identify a clock port. Used in OMX_TIME_CONFIG_CLOCKSTATETYPEs nWaitMask field */
+/** Bits used to identify a clock port. Used in OMX_TIME_CONFIG_CLOCKSTATETYPE�s nWaitMask field */
 #define OMX_CLOCKPORT0 0x00000001
 #define OMX_CLOCKPORT1 0x00000002
 #define OMX_CLOCKPORT2 0x00000004

@@ -877,9 +877,10 @@ RECURSIVE              = YES
 
 EXCLUDE                = @abs_top_builddir@/docs/doxygen/html \
                          @abs_top_builddir@/docs/doxygen/xml \
-                         @abs_top_builddir@/docs/doxygen/other/doxypy.py \
-                         @abs_top_builddir@/_CPack_Packages \
-                         @abs_top_srcdir@/cmake
+                         @abs_top_srcdir@/docs/cmake \
+                         @abs_top_srcdir@/third_party \
+                         @abs_top_srcdir@/panda/board/stm32fx/inc \
+                         @abs_top_srcdir@/panda/board/stm32h7/inc
 
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or
