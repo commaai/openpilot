@@ -44,8 +44,8 @@ class States():
 class LiveKalman():
   name = 'live'
 
-  initial_x = np.array([-2.7e6, 4.2e6, 3.8e6,
-                        1, 0, 0, 0,
+  initial_x = np.array([-2.45e6, -4.77e6, 3.42e6,
+                        0.24983653, -0.74900454, -0.45731771, -0.40918751, # NED [0,0,0] -> ECEF Quat
                         0, 0, 0,
                         0, 0, 0,
                         0, 0, 0,
@@ -54,8 +54,8 @@ class LiveKalman():
                         0, 0, 0])
 
   # state covariance
-  initial_P_diag = np.array([1e16, 1e16, 1e16,
-                             10**2, 10**2, 10**2,
+  initial_P_diag = np.array([10**2, 10**2, 10**2,
+                             0.01**2, 0.01**2, 0.01**2,
                              10**2, 10**2, 10**2,
                              1**2, 1**2, 1**2,
                              1**2, 1**2, 1**2,
@@ -176,10 +176,11 @@ class LiveKalman():
     #
     # Observation functions
     #
-    #imu_rot = euler_rotate(*imu_angles)
-    h_gyro_sym = sp.Matrix([vroll + roll_bias,
-                                      vpitch + pitch_bias,
-                                      vyaw + yaw_bias])
+    # imu_rot = euler_rotate(*imu_angles)
+    h_gyro_sym = sp.Matrix([
+      vroll + roll_bias,
+      vpitch + pitch_bias,
+      vyaw + yaw_bias])
 
     pos = sp.Matrix([x, y, z])
     earth_radius = (x**2 + y**2 + z**2)**0.5
