@@ -75,6 +75,10 @@ FW_VERSIONS = {
       b'5SA2B\x04AB\x071\x03\x80\x12P\x02\x03D\x00\x02\x06\x00\x00\x00\x80',
       b'5SA3B\x04AB\x071\x03\x80\x12P\x02\x03D\x00\x01\x06\x00\x00\x00\x80',
     ],
+    (Ecu.gateway, 0x18dad0f1, None): [
+      b'284U25SH3A',
+      b'284U25SK2D',
+    ],
   },
   CAR.XTRAIL: {
     (Ecu.fwdCamera, 0x707, None): [
@@ -91,6 +95,9 @@ FW_VERSIONS = {
     ],
     (Ecu.engine, 0x7e0, None): [
       b'6FU9B\xa0A\x06\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x80',
+    ],
+    (Ecu.gateway, 0x18dad0f1, None): [
+      b'284U26FR0E',
     ],
   },
 }
