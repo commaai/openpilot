@@ -113,49 +113,49 @@ static void log_sentinel(Logger *h, SentinelType type, int signal = 0) {
 
 // Logger
 
-Logger::Logger(const std::string& route_path, int part, kj::ArrayPtr<kj::byte> init_data) : part(part) {
-  segment_path = route_path + "--" + std::to_string(part);
-  const std::string log_path = segment_path + "/rlog.bz2";
-  const std::string qlog_path = segment_path + "/qlog.bz2";
+Logger::Logger(const std::string& route_path, int part, kj::ArrayPtr<kj::byte> init_data) : part_(part) {
+  segment_path_ = route_path + "--" + std::to_string(part);
+  const std::string log_path = segment_path_ + "/rlog.bz2";
+  const std::string qlog_path = segment_path_ + "/qlog.bz2";
 
   // mkpath & create lock file.
   bool ret = util::create_directories(log_path, 0775);
   assert(ret == true);
-  lock_path = segment_path + "/log.lock";
-  std::ofstream{lock_path};
+  lock_path_ = segment_path_ + "/log.lock";
+  std::ofstream{lock_path_};
 
-  log = std::make_unique<BZFile>(log_path.c_str());
-  qlog = std::make_unique<BZFile>(qlog_path.c_str());
+  log_ = std::make_unique<BZFile>(log_path.c_str());
+  qlog_ = std::make_unique<BZFile>(qlog_path.c_str());
 
   // log init data & sentinel type.
   write(init_data, true);
-  log_sentinel(this, part > 0 ? SentinelType::START_OF_SEGMENT : SentinelType::START_OF_ROUTE);
+  log_sentinel(this, part_ > 0 ? SentinelType::START_OF_SEGMENT : SentinelType::START_OF_ROUTE);
 }
 
 void Logger::write(uint8_t* data, size_t data_size, bool in_qlog) {
-  std::lock_guard lk(lock);
-  log->write(data, data_size);
-  if (in_qlog) qlog->write(data, data_size);
+  std::lock_guard lk(lock_);
+  log_->write(data, data_size);
+  if (in_qlog) qlog_->write(data, data_size);
 }
 
 void Logger::end_of_route(int signal) {
-  end_sentinel_type = SentinelType::END_OF_ROUTE;
+  end_sentinel_type_ = SentinelType::END_OF_ROUTE;
   signal_ = signal;
 }
 
 Logger::~Logger() {
-  log_sentinel(this, end_sentinel_type, signal_);
-  ::unlink(lock_path.c_str());
+  log_sentinel(this, end_sentinel_type_, signal_);
+  ::unlink(lock_path_.c_str());
 }
 
 // LoggerManager
 
 LoggerManager::LoggerManager(const std::string& log_root) {
-  route_name = logger_get_route_name();
-  route_path = log_root + "/" + route_name;
-  init_data = logger_build_init_data();
+  route_name_ = logger_get_route_name();
+  route_path_ = log_root + "/" + route_name_;
+  init_data_ = logger_build_init_data();
 }
 
 std::shared_ptr<Logger> LoggerManager::next() {
-  return std::make_shared<Logger>(route_path, ++part, init_data.asBytes());
+  return std::make_shared<Logger>(route_path_, ++part_, init_data_.asBytes());
 }

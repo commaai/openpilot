@@ -61,28 +61,28 @@ public:
   void end_of_route(int signal);
   void write(uint8_t* data, size_t data_size, bool in_qlog);
   inline void write(kj::ArrayPtr<capnp::byte> array, bool in_qlog) { write(array.begin(), array.size(), in_qlog); }
-  inline int segment() const { return part; }
-  inline const std::string& segmentPath() const { return segment_path; }
+  inline int segment() const { return part_; }
+  inline const std::string& segmentPath() const { return segment_path_; }
 
 protected:
-  std::mutex lock;
-  int part = -1, signal_ = 0;
-  std::string segment_path, lock_path;
-  std::unique_ptr<BZFile> log, qlog;
-  SentinelType end_sentinel_type = SentinelType::END_OF_SEGMENT;
+  std::mutex lock_;
+  int part_ = -1, signal_ = 0;
+  std::string segment_path_, lock_path_;
+  std::unique_ptr<BZFile> log_, qlog_;
+  SentinelType end_sentinel_type_ = SentinelType::END_OF_SEGMENT;
 };
 
 class LoggerManager {
 public:
   LoggerManager(const std::string& log_root);
   std::shared_ptr<Logger> next();
-  inline const std::string& routePath() const { return route_path; }
-  inline const std::string& routeName() const { return route_name; }
+  inline const std::string& routePath() const { return route_path_; }
+  inline const std::string& routeName() const { return route_name_; }
 
 protected:
-  int part = -1;
-  std::string route_path, route_name;
-  kj::Array<capnp::word> init_data;
+  int part_ = -1;
+  std::string route_path_, route_name_;
+  kj::Array<capnp::word> init_data_;
 };
 
 kj::Array<capnp::word> logger_build_init_data();
