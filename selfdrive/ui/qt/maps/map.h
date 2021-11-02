@@ -96,6 +96,7 @@ private:
   QTimer* timer;
 
   bool loaded_once = false;
+  bool allow_open = true;
 
   // Panning
   QPointF m_lastPos;

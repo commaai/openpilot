@@ -187,6 +187,12 @@ void MapWindow::timerUpdate() {
     navSource["data"] = QVariant::fromValue<QMapbox::Feature>(feature);
     m_map->updateSource("navSource", navSource);
     m_map->setLayoutProperty("navLayer", "visibility", "visible");
+
+    // Only open the map on setting destination the first time
+    if (allow_open) {
+      setVisible(true); // Show map on destination set/change
+      allow_open = false;
+    }
   }
 }
 
@@ -229,6 +235,7 @@ void MapWindow::clearRoute() {
 
   map_instructions->hideIfNoError();
   map_eta->setVisible(false);
+  allow_open = true;
 }
 
 void MapWindow::mousePressEvent(QMouseEvent *ev) {
