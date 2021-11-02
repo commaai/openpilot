@@ -28,7 +28,7 @@
 | Honda     | Pilot 2016-21                 | Honda Sensing     | openpilot        | 25mph<sup>1</sup>  | 12mph             |
 | Honda     | Ridgeline 2017-21             | Honda Sensing     | openpilot        | 25mph<sup>1</sup>  | 12mph             |
 | Hyundai   | Palisade 2020-21              | All               | Stock            | 0mph               | 0mph              |
-| Hyundai   | Sonata 2020-21                | All               | Stock            | 0mph               | 0mph              |
+| Hyundai   | Sonata 2020-22                | All               | Stock            | 0mph               | 0mph              |
 | Lexus     | CT Hybrid 2017-18             | LSS               | Stock<sup>3</sup>| 0mph               | 0mph              |
 | Lexus     | ES 2019-21                    | All               | openpilot        | 0mph               | 0mph              |
 | Lexus     | ES Hybrid 2017-18             | LSS               | Stock<sup>3</sup>| 0mph               | 0mph              |
@@ -128,6 +128,7 @@
 | Kia       | Sorento 2018-19               | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Kia       | Stinger 2018                  | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Kia       | Telluride 2020                | SCC + LKAS        | Stock            | 0mph               | 0mph         |
+| Mazda     | CX-9 2021                     | All               | Stock            | 0mph               | 28mph        |
 | Nissan    | Altima 2019-20                | ProPILOT          | Stock            | 0mph               | 0mph         |
 | Nissan    | Leaf 2018-22                  | ProPILOT          | Stock            | 0mph               | 0mph         |
 | Nissan    | Rogue 2018-20                 | ProPILOT          | Stock            | 0mph               | 0mph         |

@@ -28,18 +28,25 @@ if ! command -v pipenv &> /dev/null; then
 fi
 
 echo "update pip"
-pip install --upgrade pip
-pip install pipenv
+pip install pip==21.3.1
+pip install pipenv==2021.5.29
 
 echo "pip packages install ..."
-[ -d "./xx" ] && export PIPENV_PIPFILE=./xx/Pipfile
-pipenv install --dev --deploy --system
+if [ -d "./xx" ]; then
+  export PIPENV_PIPFILE=./xx/Pipfile
+  pipenv install --system --dev --deploy
+  RUN=""
+else
+  pipenv install --dev --deploy
+  RUN="pipenv run"
+fi
+
 # update shims for newly installed executables (e.g. scons)
 pyenv rehash
 
 echo "precommit install ..."
-pre-commit install
+$RUN pre-commit install
 
 # for internal comma repos
-[ -d "./xx" ] && (cd xx && pre-commit install)
-[ -d "./notebooks" ] && (cd notebooks && pre-commit install)
+[ -d "./xx" ] && (cd xx && $RUN pre-commit install)
+[ -d "./notebooks" ] && (cd notebooks && $RUN pre-commit install)

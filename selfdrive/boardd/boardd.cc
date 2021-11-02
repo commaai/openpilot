@@ -66,7 +66,7 @@ std::string get_time_str(const struct tm &time) {
   return s;
 }
 
-bool check_all_connected(std::vector<Panda *> pandas) {
+bool check_all_connected(const std::vector<Panda *> &pandas) {
   for (const auto& panda : pandas) {
     if (!panda->connected) return false;
   }
@@ -291,7 +291,7 @@ void send_empty_panda_state(PubMaster *pm) {
   pm->send("pandaStates", msg);
 }
 
-bool send_panda_states(PubMaster *pm, std::vector<Panda *> pandas, bool spoofing_started) {
+bool send_panda_states(PubMaster *pm, const std::vector<Panda *> &pandas, bool spoofing_started) {
   bool ignition_local = false;
 
   // build msg

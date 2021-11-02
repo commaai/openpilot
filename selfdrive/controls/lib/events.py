@@ -181,24 +181,30 @@ class NormalPermanentAlert(Alert):
                      AlertStatus.normal, AlertSize.mid if len(alert_text_2) else AlertSize.small,
                      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., duration_text),
 
+# ********** helper functions **********
+def get_display_speed(speed_ms: float, metric: bool) -> str:
+  speed = int(round(speed_ms * (CV.MS_TO_KPH if metric else CV.MS_TO_MPH)))
+  unit = 'km/h' if metric else 'mph'
+  return f"{speed} {unit}"
+
 
 # ********** alert callback functions **********
+def below_engage_speed_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
+  return NoEntryAlert(f"Speed Below {get_display_speed(CP.minEnableSpeed, metric)}")
+
+
 def below_steer_speed_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
-  speed = int(round(CP.minSteerSpeed * (CV.MS_TO_KPH if metric else CV.MS_TO_MPH)))
-  unit = "km/h" if metric else "mph"
   return Alert(
-    "Steer Unavailable Below %d %s" % (speed, unit),
+    f"Steer Unavailable Below {get_display_speed(CP.minSteerSpeed, metric)}",
     "",
     AlertStatus.userPrompt, AlertSize.small,
     Priority.MID, VisualAlert.steerRequired, AudibleAlert.chimePrompt, 0., 0.4, .3)
 
 
 def calibration_incomplete_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
-  speed = int(MIN_SPEED_FILTER * (CV.MS_TO_KPH if metric else CV.MS_TO_MPH))
-  unit = "km/h" if metric else "mph"
   return Alert(
     "Calibration in Progress: %d%%" % sm['liveCalibration'].calPerc,
-    "Drive Above %d %s" % (speed, unit),
+    f"Drive Above {get_display_speed(MIN_SPEED_FILTER, metric)}",
     AlertStatus.normal, AlertSize.mid,
     Priority.LOWEST, VisualAlert.none, AudibleAlert.none, 0., 0., .2)
 
@@ -582,7 +588,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
   },
 
   EventName.belowEngageSpeed: {
-    ET.NO_ENTRY: NoEntryAlert("Speed Too Low"),
+    ET.NO_ENTRY: below_engage_speed_alert,
   },
 
   EventName.sensorDataInvalid: {

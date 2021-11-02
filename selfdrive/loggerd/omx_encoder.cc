@@ -30,9 +30,9 @@ extern ExitHandler do_exit;
 
 // ***** OMX callback functions *****
 
-void OmxEncoder::wait_for_state(OMX_STATETYPE state) {
+void OmxEncoder::wait_for_state(OMX_STATETYPE state_) {
   std::unique_lock lk(this->state_lock);
-  while (this->state != state) {
+  while (this->state != state_) {
     this->state_cv.wait(lk);
   }
 }

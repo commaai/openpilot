@@ -2,6 +2,7 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <sstream>
 
 #include <QApplication>
 #include <QLabel>
