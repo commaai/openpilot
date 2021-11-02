@@ -93,8 +93,8 @@ bool FrameReader::load(const std::string &url, std::atomic<bool> *abort) {
   int ret = avcodec_copy_context(pCodecCtx_, pCodecCtxOrig);
   if (ret != 0) return false;
 
-  pCodecCtx_->thread_count = 0;
-  pCodecCtx_->thread_type = FF_THREAD_FRAME;
+  // pCodecCtx_->thread_count = 0;
+  // pCodecCtx_->thread_type = FF_THREAD_FRAME;
   ret = avcodec_open2(pCodecCtx_, pCodec, NULL);
   if (ret < 0) return false;
 
@@ -150,15 +150,7 @@ bool FrameReader::decode(int idx, uint8_t *rgb, uint8_t *yuv) {
   for (int i = from_idx; i <= idx; ++i) {
     Frame &frame = frames_[i];
     if ((!frame.decoded || i == idx) && !frame.failed) {
-      while (true) {
-        int ret = avcodec_decode_video2(pCodecCtx_, av_frame_, &frame.decoded, &(frame.pkt));
-        if (ret > 0 && !frame.decoded) {
-          // decode thread is still receiving the initial packets
-          usleep(0);
-        } else {
-          break;
-        }
-      }
+      avcodec_decode_video2(pCodecCtx_, av_frame_, &frame.decoded, &(frame.pkt));
       frame.failed = !frame.decoded;
       if (frame.decoded && i == idx) {
         return decodeFrame(av_frame_, rgb, yuv);
