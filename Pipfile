@@ -122,7 +122,6 @@ tqdm = "*"
 urllib3 = "*"
 utm = "*"
 websocket_client = "*"
-bitstruct = "*"
 
 [requires]
 python_version = "3.8"
