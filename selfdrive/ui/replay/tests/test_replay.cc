@@ -57,17 +57,13 @@ TEST_CASE("FileReader") {
 }
 
 TEST_CASE("Segment") {
-  auto test_qlog = GENERATE(false, true);
+  auto flags = GENERATE(REPLAY_FLAG_NONE, REPLAY_FLAG_QCAMERA);
   Route demo_route(DEMO_ROUTE);
   REQUIRE(demo_route.load());
   REQUIRE(demo_route.segments().size() == 11);
-  if (test_qlog) {
-    demo_route.at(0).road_cam = "";
-    demo_route.at(0).rlog = "";
-  }
 
   QEventLoop loop;
-  Segment segment(0, demo_route.at(0), false, false, false);
+  Segment segment(0, demo_route.at(0), flags);
   QObject::connect(&segment, &Segment::loadFinished, [&]() {
     REQUIRE(segment.isLoaded() == true);
     REQUIRE(segment.log != nullptr);

@@ -90,18 +90,18 @@ void Route::addFileToSegment(int n, const QString &file) {
 
 // class Segment
 
-Segment::Segment(int n, const SegmentFile &files, bool load_dcam, bool load_ecam, bool local_cache) : seg_num(n) {
+Segment::Segment(int n, const SegmentFile &files, uint32_t flags) : seg_num(n) {
   // [RoadCam, DriverCam, WideRoadCam, log]. fallback to qcamera/qlog
   const QString file_list[] = {
-      files.road_cam.isEmpty() ? files.qcamera : files.road_cam,
-      load_dcam ? files.driver_cam : "",
-      load_ecam ? files.wide_road_cam : "",
+      (flags & REPLAY_FLAG_QCAMERA) || files.road_cam.isEmpty() ? files.qcamera : files.road_cam,
+      flags & REPLAY_FLAG_DCAM ? files.driver_cam : "",
+      flags & REPLAY_FLAG_ECAM ? files.wide_road_cam : "",
       files.rlog.isEmpty() ? files.qlog : files.rlog,
   };
   for (int i = 0; i < std::size(file_list); i++) {
     if (!file_list[i].isEmpty()) {
       loading_++;
-      synchronizer_.addFuture(QtConcurrent::run([=] { loadFile(i, file_list[i].toStdString(), local_cache); }));
+      synchronizer_.addFuture(QtConcurrent::run([=] { loadFile(i, file_list[i].toStdString(), !(flags & REPLAY_FLAG_NO_FILE_CACHE)); }));
     }
   }
 }

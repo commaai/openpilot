@@ -4,6 +4,7 @@
 
 #include "selfdrive/ui/replay/framereader.h"
 #include "selfdrive/ui/replay/logreader.h"
+#include "selfdrive/ui/replay/util.h"
 
 struct RouteIdentifier {
   QString dongle_id;
@@ -28,7 +29,7 @@ public:
   inline const QString &name() const { return route_.str; }
   inline const RouteIdentifier &identifier() const { return route_; }
   inline const std::map<int, SegmentFile> &segments() const { return segments_; }
-  inline SegmentFile &at(int n) { return segments_.at(n); }
+  inline const SegmentFile &at(int n) { return segments_.at(n); }
   static RouteIdentifier parseRoute(const QString &str);
 
 protected:
@@ -45,7 +46,7 @@ class Segment : public QObject {
   Q_OBJECT
 
 public:
-  Segment(int n, const SegmentFile &files, bool load_dcam, bool load_ecam, bool local_cache);
+  Segment(int n, const SegmentFile &files, uint32_t flags);
   ~Segment();
   inline bool isLoaded() const { return !loading_ && !abort_; }
 
