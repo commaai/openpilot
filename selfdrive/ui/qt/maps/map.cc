@@ -143,6 +143,8 @@ void MapWindow::timerUpdate() {
   if (!localizer_valid) {
     map_instructions->showError("Waiting for GPS");
   } else {
+    map_instructions->noError();
+
     // Update current location marker
     auto point = coordinate_to_collection(*last_position);
     QMapbox::Feature feature1(QMapbox::Feature::PointType, point, {}, {});
@@ -167,11 +169,14 @@ void MapWindow::timerUpdate() {
 
   if (sm->updated("navInstruction")) {
     if (sm->valid("navInstruction")) {
-      m_map->setPitch(MAX_PITCH); // TODO: smooth pitching based on maneuver distance
       auto i = (*sm)["navInstruction"].getNavInstruction();
       emit ETAChanged(i.getTimeRemaining(), i.getTimeRemainingTypical(), i.getDistanceRemaining());
-      emit distanceChanged(i.getManeuverDistance()); // TODO: combine with instructionsChanged
-      emit instructionsChanged(i);
+
+      if (localizer_valid) {
+        m_map->setPitch(MAX_PITCH); // TODO: smooth pitching based on maneuver distance
+        emit distanceChanged(i.getManeuverDistance()); // TODO: combine with instructionsChanged
+        emit instructionsChanged(i);
+      }
     } else {
       m_map->setPitch(MIN_PITCH);
       clearRoute();
@@ -397,10 +402,14 @@ void MapInstructions::showError(QString error_text) {
   icon_01->setVisible(false);
 
   last_banner = {};
-  error = true;
+  this->error = true;
 
   setVisible(true);
   adjustSize();
+}
+
+void MapInstructions::noError() {
+  error = false;
 }
 
 void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruction) {
@@ -469,8 +478,6 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
     icon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
     lane_layout->addWidget(icon);
   }
-
-  error = false;
 
   show();
   adjustSize();

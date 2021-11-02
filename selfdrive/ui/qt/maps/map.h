@@ -40,6 +40,7 @@ private:
 public:
   MapInstructions(QWidget * parent=nullptr);
   void showError(QString error);
+  void noError();
   void hideIfNoError();
 
 public slots:
