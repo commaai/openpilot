@@ -58,7 +58,7 @@ void Replay::stop() {
 
 bool Replay::load() {
   if (!route_->load()) {
-    qDebug() << "failed to load route" << route_->name() << "from server";
+    qCritical() << "failed to load route" << route_->name() << "from server";
     return false;
   }
 
@@ -68,10 +68,10 @@ bool Replay::load() {
     }
   }
   if (segments_.empty()) {
-    qDebug() << "no valid segments in route" << route_->name();
+    qCritical() << "no valid segments in route" << route_->name();
     return false;
   }
-  qDebug() << "load route" << route_->name() << "with" << segments_.size() << "valid segments";
+  qInfo() << "load route" << route_->name() << "with" << segments_.size() << "valid segments";
   return true;
 }
 
@@ -100,7 +100,7 @@ void Replay::doSeek(int seconds, bool relative) {
     seconds = std::max(0, seconds);
     int seg = seconds / 60;
     if (segments_.find(seg) == segments_.end()) {
-      qInfo() << "can't seek to" << seconds << "s, segment" << seg << "is invalid";
+      qWarning() << "can't seek to" << seconds << "s, segment" << seg << "is invalid";
       return true;
     }
 
@@ -114,7 +114,7 @@ void Replay::doSeek(int seconds, bool relative) {
 
 void Replay::pause(bool pause) {
   updateEvents([=]() {
-    qDebug() << (pause ? "paused..." : "resuming");
+    qInfo() << (pause ? "paused..." : "resuming");
     if (pause) {
       qInfo() << "at " << currentSeconds() << "s";
     }
@@ -132,7 +132,7 @@ void Replay::setCurrentSegment(int n) {
 void Replay::segmentLoadFinished(bool success) {
   if (!success) {
     Segment *seg = qobject_cast<Segment *>(sender());
-    qInfo() << "failed to load segment " << seg->seg_num << ", removing it from current replay list";
+    qWarning() << "failed to load segment " << seg->seg_num << ", removing it from current replay list";
     segments_.erase(seg->seg_num);
   }
   queueSegment();
@@ -153,7 +153,7 @@ void Replay::queueSegment() {
         auto &[n, seg] = *it;
         seg = std::make_unique<Segment>(n, route_->at(n), hasFlag(REPLAY_FLAG_DCAM), hasFlag(REPLAY_FLAG_ECAM), !hasFlag(REPLAY_FLAG_NO_FILE_CACHE));
         QObject::connect(seg.get(), &Segment::loadFinished, this, &Replay::segmentLoadFinished);
-        qInfo() << "loading segment" << n << "...";
+        qDebug() << "loading segment" << n << "...";
       }
       break;
     }
@@ -220,7 +220,7 @@ void Replay::startStream(const Segment *cur_segment) {
     auto bytes = (*it)->bytes();
     Params().put("CarParams", (const char *)bytes.begin(), bytes.size());
   } else {
-    qInfo() << "failed to read CarParams from current segment";
+    qWarning() << "failed to read CarParams from current segment";
   }
 
   // start camera server
