@@ -81,8 +81,7 @@ class LiveKalman():
                     ObservationKind.NO_ROT: np.array([0.005**2, 0.005**2, 0.005**2]),
                     ObservationKind.ECEF_POS: np.array([5**2, 5**2, 5**2]),
                     ObservationKind.ECEF_VEL: np.array([.5**2, .5**2, .5**2]),
-                    ObservationKind.ECEF_ORIENTATION_FROM_GPS: np.array([.2**2, .2**2, .2**2, .2**2]),
-                    ObservationKind.EARTH_RADIUS_WHEN_NO_GPS: np.array([10**2])}
+                    ObservationKind.ECEF_ORIENTATION_FROM_GPS: np.array([.2**2, .2**2, .2**2, .2**2])}
 
   @staticmethod
   def generate_code(generated_dir):
@@ -197,7 +196,6 @@ class LiveKalman():
     h_imu_frame_sym = sp.Matrix(imu_angles)
 
     h_relative_motion = sp.Matrix(quat_rot.T * v)
-    h_earth_radius = sp.Matrix([earth_radius])
 
     obs_eqs = [[h_speed_sym, ObservationKind.ODOMETRIC_SPEED, None],
                [h_gyro_sym, ObservationKind.PHONE_GYRO, None],
@@ -208,8 +206,7 @@ class LiveKalman():
                [h_orientation_sym, ObservationKind.ECEF_ORIENTATION_FROM_GPS, None],
                [h_relative_motion, ObservationKind.CAMERA_ODO_TRANSLATION, None],
                [h_phone_rot_sym, ObservationKind.CAMERA_ODO_ROTATION, None],
-               [h_imu_frame_sym, ObservationKind.IMU_FRAME, None],
-               [h_earth_radius, ObservationKind.EARTH_RADIUS_WHEN_NO_GPS, None]]
+               [h_imu_frame_sym, ObservationKind.IMU_FRAME, None]]
 
     # this returns a sympy routine for the jacobian of the observation function of the local vel
     in_vec = sp.MatrixSymbol('in_vec', 6, 1)  # roll, pitch, yaw, vx, vy, vz
