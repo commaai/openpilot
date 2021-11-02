@@ -65,7 +65,6 @@ def _write_param(key, value):
   param_path = os.path.join(PARAMS_DIR, key)
   with atomic_write(param_path, overwrite=True) as f:
     f.write(json.dumps(value))
-  os.chmod(param_path, 0o666)
 
 
 def _import_params():
