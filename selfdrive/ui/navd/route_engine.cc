@@ -140,11 +140,8 @@ void RouteEngine::timerUpdate() {
       auto pos = location.getPositionGeodetic();
       auto orientation = location.getCalibratedOrientationNED();
 
-      float bearing = RAD2DEG(orientation.getValue()[2]);
-      auto coordinate = QMapbox::Coordinate(pos.getValue()[0], pos.getValue()[1]);
-
-      last_position = coordinate;
-      last_bearing = bearing;
+      last_bearing = RAD2DEG(orientation.getValue()[2]);
+      last_position = QMapbox::Coordinate(pos.getValue()[0], pos.getValue()[1]);
     }
   }
 
