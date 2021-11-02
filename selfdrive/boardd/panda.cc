@@ -357,45 +357,55 @@ uint8_t Panda::len_to_dlc(uint8_t len) {
 void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list) {
   send.resize(72 * can_data_list.size()); // TODO: need to include 1 byte for each usb 64bytes frame
 
-  uint32_t pos = 0;
-  for (int i = 0; i < can_data_list.size(); i++) {
-    auto cmsg = can_data_list[i];
+  int msg_count = 0;
 
-    // check if the message is intended for this panda
-    uint8_t bus = cmsg.getSrc();
-    if (bus < bus_offset || bus >= (bus_offset + PANDA_BUS_CNT)) {
-      continue;
-    }
+  while (msg_count < can_data_list.size()) {
+    uint32_t pos = 0;
+    while (pos < 256) {
+      if (msg_count == can_data_list.size()) { break; }
+      auto cmsg = can_data_list[msg_count];
 
-    if (cmsg.getAddress() >= 0x800) { // extended
-      *(uint32_t*)&send[pos+1] = (cmsg.getAddress() << 3) | (1 << 2);
-    } else { // normal
-      *(uint32_t*)&send[pos+1] = (cmsg.getAddress() << 3);
-    }
-
-    auto can_data = cmsg.getDat();
-    assert(can_data.size() <= 8);
-    uint8_t data_len_code = len_to_dlc(can_data.size());
-    send[pos] = data_len_code << 4 | ((bus - bus_offset) << 1);
-    memcpy(&send[pos+5], can_data.begin(), can_data.size());
-
-    if (can_data.size() < dlc_to_len[data_len_code]) {
-      for (int c = can_data.size(); c < dlc_to_len[data_len_code]; c++) {
-        send[pos+5+c] = 0xCC;
+      // check if the message is intended for this panda
+      uint8_t bus = cmsg.getSrc();
+      if (bus < bus_offset || bus >= (bus_offset + PANDA_BUS_CNT)) {
+        msg_count++;
+        continue;
       }
+
+      if (cmsg.getAddress() >= 0x800) { // extended
+        *(uint32_t*)&send[pos+1] = (cmsg.getAddress() << 3) | (1 << 2);
+      } else { // normal
+        *(uint32_t*)&send[pos+1] = (cmsg.getAddress() << 3);
+      }
+
+      auto can_data = cmsg.getDat();
+      assert(can_data.size() <= 8);
+      uint8_t data_len_code = len_to_dlc(can_data.size());
+      send[pos] = data_len_code << 4 | ((bus - bus_offset) << 1);
+      memcpy(&send[pos+5], can_data.begin(), can_data.size());
+
+      if (can_data.size() < dlc_to_len[data_len_code]) {
+        for (int c = can_data.size(); c < dlc_to_len[data_len_code]; c++) {
+          send[pos+5+c] = 0xCC;
+        }
+      }
+      pos += CANPACKET_HEAD_SIZE + dlc_to_len[data_len_code];
+      msg_count++;
     }
-    pos += CANPACKET_HEAD_SIZE + dlc_to_len[data_len_code];
-  }
 
-  // insert counter
-  uint8_t counter = 0;
-  for (int i = 0; i < pos; i += 64) {
-    send.insert(send.begin() + i, counter);
-    counter++;
-    pos++;
+    if (pos > 0) { // Helps not to spam with ZLP
+      // insert counter
+      uint8_t counter = 0;
+      for (int i = 0; i < pos; i += 64) {
+        send.insert(send.begin() + i, counter);
+        counter++;
+        pos++;
+      }
+      usb_bulk_write(3, (uint8_t*)send.data(), pos, 5);
+    }
   }
-
-  usb_bulk_write(3, (uint8_t*)send.data(), pos, 5);
+  if (can_data_list.size() > 0) {
+  }
 }
 
 bool Panda::can_receive(std::vector<can_frame>& out_vec) {
@@ -425,7 +435,7 @@ bool Panda::can_receive(std::vector<can_frame>& out_vec) {
       break;
     }
     counter++;
-    uint8_t chunk_len = ((recv - i) > 64) ? 63 : (recv - i);
+    uint8_t chunk_len = ((recv - i) > 64) ? 63 : (recv - i - 1); // as 1 is always reserved for counter
     uint8_t chunk[72];
     memcpy(chunk, tail, tail_size);
     memcpy(&chunk[tail_size], &data[i+1], chunk_len);
@@ -447,15 +457,6 @@ bool Panda::can_receive(std::vector<can_frame>& out_vec) {
         if (returned) { canData.src += 128; }
         canData.dat.assign((char*)&chunk[pos+5], data_len);
 
-        LOGW("address %d", canData.address);
-        LOGW("bus %d", canData.src);
-        LOGW("data len %d", data_len);
-        LOGW("counter %d", counter);
-        LOGW("pos %d", pos);
-        LOGW("data %s", canData.dat.c_str());
-        LOGW("data raw 0 %c", chunk[pos+5]);
-        LOGW("+++++++++++++++++++++++++++");
-
         pos += pckt_len;
 
         // add to vector
@@ -467,13 +468,5 @@ bool Panda::can_receive(std::vector<can_frame>& out_vec) {
       }
     }
   }
-
-  if (recv > 0) {
-    LOGW("=============================");
-    LOGW("recv %d", recv);
-    LOGW("out_vec size %d", out_vec.size());
-    LOGW("=============================");
-  }
-
   return true;
 }
