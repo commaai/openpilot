@@ -299,7 +299,6 @@ void RouteEngine::routeCalculated(QGeoRouteReply *reply) {
       route = reply->routes().at(0);
       segment = route.firstRouteSegment();
 
-      // TODO: send route to UI
       auto path = route.path();
       auto coordinates = nav_route.initCoordinates(path.size());
 
