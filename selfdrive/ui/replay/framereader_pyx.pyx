@@ -7,6 +7,15 @@ cimport numpy as cnp
 from cython.view cimport array
 from libc.string cimport memcpy
 
+cdef extern from "selfdrive/ui/replay/framereader.cc":
+  pass
+
+cdef extern from "selfdrive/ui/replay/filereader.cc":
+  pass
+
+cdef extern from "selfdrive/ui/replay/util.cc":
+  pass
+
 cdef extern from "selfdrive/ui/replay/framereader.h":
   cdef cppclass cpp_FrameReader "FrameReader":
     cpp_FrameReader()

@@ -81,11 +81,11 @@ bool LogReader::load(const std::string &file, std::atomic<bool> *abort) {
   return true;
 }
 
-// void LogReader::setAllow(std::vector<std::string> allow_list) {
-//   auto event_struct = capnp::Schema::from<cereal::Event>().asStruct();
-//   allow_.resize(event_struct.getUnionFields().size());
-//   for (auto &name : allow_list) {
-//      uint16_t which = event_struct.getFieldByName(name).getProto().getDiscriminantValue();
-//      allow_[which] = true;
-//   }
-// }
+void LogReader::setAllow(const std::vector<std::string> &allow_list) {
+  auto event_struct = capnp::Schema::from<cereal::Event>().asStruct();
+  allow_.resize(event_struct.getUnionFields().size());
+  for (auto &name : allow_list) {
+     uint16_t which = event_struct.getFieldByName(name).getProto().getDiscriminantValue();
+     allow_[which] = true;
+  }
+}

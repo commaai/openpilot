@@ -29,6 +29,7 @@ if segment >= len(cameras):
 
 fr = FrameReader()
 fr.load(cameras[segment])
+print("loaded\n")
 if frame >= fr.frame_count:
   raise Exception("frame %d not found, got %d frames" % (frame, fr.frame_count))
 

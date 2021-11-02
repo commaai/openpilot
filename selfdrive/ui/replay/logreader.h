@@ -56,8 +56,10 @@ public:
   LogReader(bool local_cache = false, int chunk_size = -1, int retries = 0, size_t memory_pool_block_size = DEFAULT_EVENT_MEMORY_POOL_BLOCK_SIZE);
   ~LogReader();
   bool load(const std::string &file, std::atomic<bool> *abort = nullptr);
+  void setAllow(const std::vector<std::string>& allow_list);
 
   std::vector<Event*> events;
+  std::vector<bool> allow_;
 
 private:
   std::string raw_;

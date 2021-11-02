@@ -14,7 +14,6 @@ else:
 
 import cereal.messaging as messaging
 from collections import namedtuple
-from tools.lib.filereader import FileReader
 from selfdrive.ui.replay.logreader_pyx import LogReader # pylint: disable=no-name-in-module, import-error
 from selfdrive.test.openpilotci import get_url
 from common.basedir import BASEDIR
@@ -103,14 +102,11 @@ class TestValgrind(unittest.TestCase):
       r, n = cfg.segment.rsplit("--", 1)
       lr = LogReader()
       lr.set_allow(cfg.pub_sub.keys())
-      
-      with FileReader(get_url(r, n)) as f:
-        dat = f.read()
-        lr.load(bz2.decompress(dat))
-        print("here")
-        self.replay_process(cfg, lr)
-        time.sleep(1)  # Wait for the logs to get written
-        self.assertFalse(self.leak)
+      lr.load(get_url(r, n))
+      print("here")
+      self.replay_process(cfg, lr)
+      time.sleep(1)  # Wait for the logs to get written
+      self.assertFalse(self.leak)
 
 if __name__ == "__main__":
   unittest.main()

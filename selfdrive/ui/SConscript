@@ -128,5 +128,5 @@ if maps:
   navd_src = ["navd/main.cc", "navd/route_engine.cc"]
   qt_env.Program("navd/_navd", navd_src, LIBS=qt_libs + ['common', 'json11'])
   Import('envCython')
-  envCython.Program('replay/logreader_pyx.so', 'replay/logreader_pyx.pyx', LIBS=envCython['LIBS'] + ['capnp', 'kj', 'libbz2', 'curl', 'json11', 'zmq', common, messaging, cereal])
-  envCython.Program('replay/framereader_pyx.so', 'replay/framereader_pyx.pyx', LIBS=envCython['LIBS'] + ['avutil', 'avcodec', 'avformat', 'swscale'])
+  envCython.Program('replay/logreader_pyx.so', 'replay/logreader_pyx.pyx', LIBS=envCython['LIBS'] + ['avutil', 'avformat', 'capnp', 'kj', 'libbz2', 'curl', 'json11', 'zmq', common, messaging, cereal])
+  envCython.Program('replay/framereader_pyx.so', 'replay/framereader_pyx.pyx', LIBS=envCython['LIBS'] + ['avutil', 'avcodec', 'avformat', 'swscale', 'curl', 'libbz2', common])
