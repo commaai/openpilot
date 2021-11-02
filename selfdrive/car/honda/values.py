@@ -1012,6 +1012,9 @@ FW_VERSIONS = {
       b'36161-TGS-A130\x00\x00',
       b'36161-TGT-A030\x00\x00',
     ],
+    (Ecu.fwdRadar, 0x18dab0f1, None): [
+      b'36161-TGS-A030\x00\x00',
+    ],
     (Ecu.srs, 0x18da53f1, None): [
       b'77959-TG7-A210\x00\x00',
       b'77959-TG7-Y210\x00\x00',
@@ -1036,6 +1039,7 @@ FW_VERSIONS = {
       b'78109-TGS-AP20\x00\x00',
       b'78109-TGT-AJ20\x00\x00',
       b'78109-TG7-AT20\x00\x00',
+      b'78109-TGS-AT20\x00\x00',
     ],
     (Ecu.vsa, 0x18da28f1, None): [
       b'57114-TG7-A630\x00\x00',
@@ -1044,6 +1048,15 @@ FW_VERSIONS = {
       b'57114-TG8-A730\x00\x00',
       b'57114-TGS-A530\x00\x00',
       b'57114-TGT-A530\x00\x00',
+    ],
+    (Ecu.shiftByWire, 0x18da0bf1, None): [
+      b'54008-TG7-A530\x00\x00',
+    ],
+    (Ecu.transmission, 0x18da1ef1, None): [
+      b'28101-5EZ-A600\x00\x00',
+    ],
+    (Ecu.programmedFuelInjection, 0x18da10f1, None): [
+      b'37805-RLV-B220\x00\x00',
     ],
   },
   CAR.ACURA_RDX: {
