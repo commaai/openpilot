@@ -58,6 +58,17 @@ FINGERPRINTS = {
 }
 
 FW_VERSIONS = {
+  CAR.ALTIMA: {
+    (Ecu.fwdCamera, 0x707, None): [
+      b'284N86CA1D',
+    ],
+    (Ecu.engine, 0x7e0, None): [
+      b'237109HE2B',
+    ],
+    (Ecu.gateway, 0x18dad0f1, None): [
+      b'284U29HE0A',
+    ],
+  },  
   CAR.LEAF_IC: {
     (Ecu.fwdCamera, 0x707, None): [
       b'5SH1BDB\x04\x18\x00\x00\x00\x00\x00_-?\x04\x91\xf2\x00\x00\x00\x80',
