@@ -85,7 +85,7 @@ class TestBoardd(unittest.TestCase):
           to_send.append(make_can_msg(addr, dat, bus))
         sendcan.send(can_list_to_can_capnp(to_send, msgtype='sendcan'))
 
-      max_recv = 100
+      max_recv = 10
       while max_recv > 0 and any(len(sent_msgs[bus]) for bus in range(3)):
         recvd = messaging.drain_sock(can, wait_for_one=True)
         for msg in recvd:
