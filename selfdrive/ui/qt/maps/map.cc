@@ -424,7 +424,34 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
 
   // Show lanes
   clearLayout(lane_layout);
-  // TODO
+
+  for (auto const &lane: instruction.getLanes()) {
+    bool active = lane.getActive();
+
+    // TODO: only use active direction if active
+    bool left = false, straight = false, right = false;
+    for (auto const &direction: lane.getDirections()) {
+      left |= direction == cereal::NavInstruction::Direction::LEFT;
+      right |= direction == cereal::NavInstruction::Direction::RIGHT;
+      straight |= direction == cereal::NavInstruction::Direction::STRAIGHT;
+    }
+
+    // TODO: Make more images based on active direction and combined directions
+    QString fn = "../assets/navigation/direction_";
+    if (left) {
+      fn += "turn_left";
+    } else if (right) {
+      fn += "turn_right";
+    } else if (straight) {
+      fn += "turn_straight";
+    }
+
+    QPixmap pix(fn + ".png");
+    auto icon = new QLabel;
+    icon->setPixmap(pix.scaledToWidth(active ? 125 : 75, Qt::SmoothTransformation));
+    icon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
+    lane_layout->addWidget(icon);
+  }
 
   error = false;
 
