@@ -29,6 +29,7 @@ class States():
   ODO_SCALE = slice(16, 17)  # odometer scale
   ACCELERATION = slice(17, 20)  # Acceleration in device frame in m/s**2
   IMU_OFFSET = slice(20, 23)  # imu offset angles in radians
+  ACC_BIAS = slice(23, 26)
 
   # Error-state has different slices because it is an ESKF
   ECEF_POS_ERR = slice(0, 3)
@@ -39,6 +40,7 @@ class States():
   ODO_SCALE_ERR = slice(15, 16)
   ACCELERATION_ERR = slice(16, 19)
   IMU_OFFSET_ERR = slice(19, 22)
+  ACC_BIAS_ERR = slice(22, 25)
 
 
 class LiveKalman():
@@ -51,6 +53,7 @@ class LiveKalman():
                         0, 0, 0,
                         1,
                         0, 0, 0,
+                        0, 0, 0,
                         0, 0, 0])
 
   # state covariance
@@ -61,7 +64,8 @@ class LiveKalman():
                              1**2, 1**2, 1**2,
                              0.02**2,
                              1**2, 1**2, 1**2,
-                             (0.01)**2, (0.01)**2, (0.01)**2])
+                             (0.01)**2, (0.01)**2, (0.01)**2,
+                             0.1**2, 0.1**2, 0.1**2])
 
   # process noise
   Q_diag = np.array([0.03**2, 0.03**2, 0.03**2,
@@ -71,7 +75,8 @@ class LiveKalman():
                      (0.005 / 100)**2, (0.005 / 100)**2, (0.005 / 100)**2,
                      (0.02 / 100)**2,
                      3**2, 3**2, 3**2,
-                     (0.05 / 60)**2, (0.05 / 60)**2, (0.05 / 60)**2])
+                     (0.05 / 60)**2, (0.05 / 60)**2, (0.05 / 60)**2,
+                     0.01**2, 0.01**2, 0.01**2])
 
   obs_noise_diag = {ObservationKind.ODOMETRIC_SPEED: np.array([0.2**2]),
                     ObservationKind.PHONE_GYRO: np.array([0.025**2, 0.025**2, 0.025**2]),
@@ -100,6 +105,7 @@ class LiveKalman():
     roll_bias, pitch_bias, yaw_bias = state[States.GYRO_BIAS, :]
     acceleration = state[States.ACCELERATION, :]
     imu_angles = state[States.IMU_OFFSET, :]
+    acc_bias = state[States.ACC_BIAS, :]
 
     dt = sp.Symbol('dt')
 
@@ -120,7 +126,7 @@ class LiveKalman():
     state_dot = sp.Matrix(np.zeros((dim_state, 1)))
     state_dot[States.ECEF_POS, :] = v
     state_dot[States.ECEF_ORIENTATION, :] = q_dot
-    state_dot[States.ECEF_VELOCITY, 0] = quat_rot * acceleration
+    state_dot[States.ECEF_VELOCITY, 0] = quat_rot * (acceleration + acc_bias)
 
     # Basic descretization, 1st order intergrator
     # Can be pretty bad if dt is big
@@ -132,6 +138,8 @@ class LiveKalman():
     v_err = state_err[States.ECEF_VELOCITY_ERR, :]
     omega_err = state_err[States.ANGULAR_VELOCITY_ERR, :]
     acceleration_err = state_err[States.ACCELERATION_ERR, :]
+    acc_bias_err = state_err[States.ACC_BIAS_ERR, :]
+
 
     # Time derivative of the state error as a function of state error and state
     quat_err_matrix = euler_rotate(quat_err[0], quat_err[1], quat_err[2])
@@ -139,7 +147,7 @@ class LiveKalman():
     state_err_dot = sp.Matrix(np.zeros((dim_state_err, 1)))
     state_err_dot[States.ECEF_POS_ERR, :] = v_err
     state_err_dot[States.ECEF_ORIENTATION_ERR, :] = q_err_dot
-    state_err_dot[States.ECEF_VELOCITY_ERR, :] = quat_err_matrix * quat_rot * (acceleration + acceleration_err)
+    state_err_dot[States.ECEF_VELOCITY_ERR, :] = quat_err_matrix * quat_rot * (acceleration + acceleration_err + acc_bias + acc_bias_err)
     f_err_sym = state_err + dt * state_err_dot
 
     # Observation matrix modifier
@@ -183,7 +191,7 @@ class LiveKalman():
 
     pos = sp.Matrix([x, y, z])
     gravity = quat_rot.T * ((EARTH_GM / ((x**2 + y**2 + z**2)**(3.0 / 2.0))) * pos)
-    h_acc_sym = (gravity + acceleration)
+    h_acc_sym = (gravity + acceleration + acc_bias)
     h_phone_rot_sym = sp.Matrix([vroll, vpitch, vyaw])
 
     speed = sp.sqrt(vx**2 + vy**2 + vz**2 + 1e-6)
