@@ -75,8 +75,11 @@ bool FrameReader::load(const std::string &url, std::atomic<bool> *abort) {
   pFormatCtx_->pb = avio_ctx_;
 
   pFormatCtx_->probesize = 10 * 1024 * 1024;  // 10MB
-  if (avformat_open_input(&pFormatCtx_, url.c_str(), NULL, NULL) != 0) {
-    printf("error loading %s\n", url.c_str());
+  int err = avformat_open_input(&pFormatCtx_, url.c_str(), NULL, NULL);
+  if (err != 0) {
+    char err_str[1024] = {0};
+    av_strerror(err, err_str, std::size(err_str));
+    printf("Error loading video - %s - %s\n", err_str, url.c_str());
     return false;
   }
   avformat_find_stream_info(pFormatCtx_, NULL);
