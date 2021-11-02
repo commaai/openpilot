@@ -142,11 +142,15 @@ Here are the main parameters you can change with this fork:
   - `upload_on_hotspot`: Controls whether your EON will upload driving data on your phone's hotspot
   - [`update_behavior`](#Automatic-updates): `off` will never update, `alert` shows an alert on-screen. `auto` will reboot the device when an update is seen
   - `disengage_on_gas`: Whether you want openpilot to disengage on gas input or not
+  - `hide_model_long`: Enable this to hide the Model Long button on the screen
 - **Dynamic params**:
   - `dynamic_gas`: Whether to use [dynamic gas](#dynamic-gas) if your car is supported
   - `global_df_mod` **`(live!)`**: The multiplier for the current distance used by dynamic follow. The range is limited from 0.85 to 2.5. Smaller values will get you closer, larger will get you farther. This is applied to ALL profiles!
   - `min_TR` **`(live!)`**: The minimum allowed following distance in seconds. Default is 0.9 seconds, the range of this mod is limited from 0.85 to 1.3 seconds. This is applied to ALL profiles!
   - `hide_auto_df_alerts`: Hides the alert that shows what profile the model has chosen
+  - `df_button_alerts`: How you want to be alerted when you change your dynamic following profile, can be: 'off', 'silent', or 'audible' (default)
+  - `toyota_distance_btn`: Set to True to use the steering wheel distance button on Toyota vehicles to control the dynamic follow profile.
+  Works on TSS2 vehicles and on TSS1 vehicles with an sDSU with a [Sep. 2020](https://github.com/wocsor/panda/commit/b5120f6427551345c543b490fe47da189c1e48e1) firmware or newer.'
   - [`dynamic_camera_offset`](#Dynamic-camera-offset-based-on-oncoming-traffic): Whether to automatically keep away from oncoming traffic. Works from 35 to ~60 mph
     - [`dynamic_camera_offset_time`](#Dynamic-camera-offset-based-on-oncoming-traffic): How long to keep the offset after losing the oncoming lane/radar track in seconds
   - `dynamic_follow`: *Deprecated, use the on-screen button to change profiles*
@@ -156,7 +160,7 @@ Here are the main parameters you can change with this fork:
   - `corollaTSS2_use_indi`: Enable this to use INDI for lat with your TSS2 Corolla *(can be enabled for all years by request)*
   - `standstill_hack`: Some cars support stop and go, you just need to enable this
 
-A full list of parameters that you can modify are [located here](common/op_params.py#L40).
+A full list of parameters that you can modify are [located here](common/op_params.py#L101).
 
 An archive of opParams [lives here.](https://github.com/sshane/op_params)
 

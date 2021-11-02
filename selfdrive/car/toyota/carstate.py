@@ -102,14 +102,19 @@ class CarState(CarStateBase):
 
     if self.CP.carFingerprint in TSS2_CAR:
       self.acc_type = cp_cam.vl["ACC_CONTROL"]["ACC_TYPE"]
-      if self.enable_distance_btn:
+
+    if self.enable_distance_btn:
+      if self.CP.carFingerprint in TSS2_CAR:
         self.distance_btn = 1 if cp_cam.vl["ACC_CONTROL"]["DISTANCE"] == 1 else 0
-        distance_lines = cp.vl["PCM_CRUISE_SM"]["DISTANCE_LINES"] - 1
-        if distance_lines in range(3) and distance_lines != self.distance_lines:
-          dat = messaging.new_message('dynamicFollowButton')
-          dat.dynamicFollowButton.status = distance_lines
-          self.pm.send('dynamicFollowButton', dat)
-          self.distance_lines = distance_lines
+      elif self.CP.smartDsu:
+        self.distance_btn = 1 if cp.vl["SDSU"]["FD_BUTTON"] == 1 else 0
+
+      distance_lines = cp.vl["PCM_CRUISE_SM"]["DISTANCE_LINES"] - 1
+      if distance_lines in range(3) and distance_lines != self.distance_lines:
+        dat = messaging.new_message('dynamicFollowButton')
+        dat.dynamicFollowButton.status = distance_lines
+        self.pm.send('dynamicFollowButton', dat)
+        self.distance_lines = distance_lines
 
     # some TSS2 cars have low speed lockout permanently set, so ignore on those cars
     # these cars are identified by an ACC_TYPE value of 2.
@@ -172,6 +177,7 @@ class CarState(CarStateBase):
       ("TURN_SIGNALS", "STEERING_LEVERS", 3),   # 3 is no blinkers
       ("LKA_STATE", "EPS_STATUS", 0),
       ("AUTO_HIGH_BEAM", "LIGHT_STALK", 0),
+      ("DISTANCE_LINES", "PCM_CRUISE_SM", 0),
     ]
 
     checks = [
@@ -187,6 +193,7 @@ class CarState(CarStateBase):
       ("STEER_ANGLE_SENSOR", 80),
       ("PCM_CRUISE", 33),
       ("STEER_TORQUE_SENSOR", 50),
+      ("PCM_CRUISE_SM", 1),
     ]
 
     if CP.carFingerprint == CAR.LEXUS_IS:
@@ -220,9 +227,9 @@ class CarState(CarStateBase):
         ("BSM", 1)
       ]
 
-    if CP.carFingerprint in TSS2_CAR:
-      signals.append(("DISTANCE_LINES", "PCM_CRUISE_SM", 0))
-      checks.append(("PCM_CRUISE_SM", 1))
+    if CP.smartDsu:
+      signals.append(("FD_BUTTON", "SDSU", 0))
+      checks.append(("SDSU", 33))
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 0)
 
