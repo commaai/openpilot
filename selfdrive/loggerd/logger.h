@@ -66,7 +66,7 @@ public:
 
 protected:
   std::mutex lock;
-  int part = -1, signal = 0;
+  int part = -1, signal_ = 0;
   std::string segment_path, lock_path;
   std::unique_ptr<BZFile> log, qlog;
   SentinelType end_sentinel_type = SentinelType::END_OF_SEGMENT;

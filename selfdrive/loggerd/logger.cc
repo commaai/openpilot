@@ -119,8 +119,8 @@ Logger::Logger(const std::string& route_path, int part, kj::ArrayPtr<kj::byte> i
   const std::string qlog_path = segment_path + "/qlog.bz2";
 
   // mkpath & create lock file.
-  int err = logger_mkpath((char*)log_path.c_str());
-  assert(err == 0);
+  bool ret = util::create_directories(log_path, 0775);
+  assert(ret == true);
   lock_path = segment_path + "/log.lock";
   std::ofstream{lock_path};
 
@@ -140,11 +140,11 @@ void Logger::write(uint8_t* data, size_t data_size, bool in_qlog) {
 
 void Logger::end_of_route(int signal) {
   end_sentinel_type = SentinelType::END_OF_ROUTE;
-  this->signal = signal;
+  signal_ = signal;
 }
 
 Logger::~Logger() {
-  log_sentinel(this, end_sentinel_type, signal);
+  log_sentinel(this, end_sentinel_type, signal_);
   ::unlink(lock_path.c_str());
 }
 
