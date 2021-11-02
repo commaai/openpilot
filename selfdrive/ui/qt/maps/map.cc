@@ -24,7 +24,7 @@ const float MAP_SCALE = 2;
 
 MapWindow::MapWindow(const QMapboxGLSettings &settings) :
   m_settings(settings), velocity_filter(0, 10, 0.1) {
-  sm = new SubMaster({"liveLocationKalman", "navInstruction"});
+  sm = new SubMaster({"liveLocationKalman", "navInstruction", "navRoute"});
 
   timer = new QTimer(this);
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(timerUpdate()));
@@ -177,6 +177,17 @@ void MapWindow::timerUpdate() {
       m_map->setPitch(MIN_PITCH);
       clearRoute();
     }
+  }
+
+  if (sm->updated("navRoute")) {
+    auto route = (*sm)["navRoute"].getNavRoute();
+    auto route_points = capnp_coordinate_list_to_collection(route.getCoordinates());
+    QMapbox::Feature feature(QMapbox::Feature::LineStringType, route_points, {}, {});
+    QVariantMap navSource;
+    navSource["type"] = "geojson";
+    navSource["data"] = QVariant::fromValue<QMapbox::Feature>(feature);
+    m_map->updateSource("navSource", navSource);
+    m_map->setLayoutProperty("navLayer", "visibility", "visible");
   }
 }
 
