@@ -115,17 +115,14 @@ static void log_sentinel(Logger *h, SentinelType type, int signal = 0) {
 
 Logger::Logger(const std::string& route_path, int part, kj::ArrayPtr<kj::byte> init_data) : part_(part) {
   segment_path_ = route_path + "--" + std::to_string(part);
-  const std::string log_path = segment_path_ + "/rlog.bz2";
-  const std::string qlog_path = segment_path_ + "/qlog.bz2";
-
   // mkpath & create lock file.
-  bool ret = util::create_directories(log_path, 0775);
+  bool ret = util::create_directories(segment_path_, 0775);
   assert(ret == true);
   lock_path_ = segment_path_ + "/log.lock";
   std::ofstream{lock_path_};
 
-  log_ = std::make_unique<BZFile>(log_path.c_str());
-  qlog_ = std::make_unique<BZFile>(qlog_path.c_str());
+  log_ = std::make_unique<BZFile>(segment_path_ + "/rlog.bz2");
+  qlog_ = std::make_unique<BZFile>(segment_path_ + "/qlog.bz2");
 
   // log init data & sentinel type.
   write(init_data, true);

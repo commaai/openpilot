@@ -16,8 +16,8 @@ const std::string LOG_ROOT = Path::log_root();
 
 class BZFile {
  public:
-  BZFile(const char* path) {
-    file = util::safe_fopen(path, "wb");
+  BZFile(const std::string &path) {
+    file = util::safe_fopen(path.c_str(), "wb");
     assert(file != nullptr);
     int bzerror;
     bz_file = BZ2_bzWriteOpen(&bzerror, file, 9, 0, 30);
