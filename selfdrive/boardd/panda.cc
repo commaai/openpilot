@@ -371,24 +371,19 @@ void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list) {
         msg_count++;
         continue;
       }
+      auto can_data = cmsg.getDat();
+      uint8_t data_len_code = len_to_dlc(can_data.size());
+      assert(can_data.size() <= (hw_type == cereal::PandaState::PandaType::RED_PANDA) ? 64 : 8);
+      assert(can_data.size() == dlc_to_len[data_len_code]);
 
       if (cmsg.getAddress() >= 0x800) { // extended
         *(uint32_t*)&send[pos+1] = (cmsg.getAddress() << 3) | (1 << 2);
       } else { // normal
         *(uint32_t*)&send[pos+1] = (cmsg.getAddress() << 3);
       }
-
-      auto can_data = cmsg.getDat();
-      assert(can_data.size() <= 8);
-      uint8_t data_len_code = len_to_dlc(can_data.size());
       send[pos] = data_len_code << 4 | ((bus - bus_offset) << 1);
       memcpy(&send[pos+5], can_data.begin(), can_data.size());
 
-      if (can_data.size() < dlc_to_len[data_len_code]) {
-        for (int c = can_data.size(); c < dlc_to_len[data_len_code]; c++) {
-          send[pos+5+c] = 0xCC;
-        }
-      }
       pos += CANPACKET_HEAD_SIZE + dlc_to_len[data_len_code];
       msg_count++;
     }
