@@ -576,9 +576,9 @@ void MapInstructions::updateDistance(float d) {
   distance->setText(distance_str);
 }
 
-void MapInstructions::showError(QString error) {
+void MapInstructions::showError(QString error_text) {
   primary->setText("");
-  distance->setText(error);
+  distance->setText(error_text);
   distance->setAlignment(Qt::AlignCenter);
 
   secondary->setVisible(false);

@@ -344,12 +344,12 @@ void Localizer::handle_cam_odo(double current_time, const cereal::CameraOdometry
 
 void Localizer::handle_live_calib(double current_time, const cereal::LiveCalibrationData::Reader& log) {
   if (log.getRpyCalib().size() > 0) {
-    auto calib = floatlist2vector(log.getRpyCalib());
-    if ((calib.minCoeff() < -CALIB_RPY_SANITY_CHECK) || (calib.maxCoeff() > CALIB_RPY_SANITY_CHECK)) {
+    auto live_calib = floatlist2vector(log.getRpyCalib());
+    if ((live_calib.minCoeff() < -CALIB_RPY_SANITY_CHECK) || (live_calib.maxCoeff() > CALIB_RPY_SANITY_CHECK)) {
       return;
     }
 
-    this->calib = calib;
+    this->calib = live_calib;
     this->device_from_calib = euler2rot(this->calib);
     this->calib_from_device = this->device_from_calib.transpose();
     this->calibrated = log.getCalStatus() == 1;

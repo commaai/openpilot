@@ -201,9 +201,9 @@ void CameraViewWidget::updateFrameMat(int w, int h) {
     }
   } else if (vipc_client->connected) {
     // fit frame to widget size
-    float w  = (float)width() / height();
-    float f = (float)vipc_client->buffers[0].width  / vipc_client->buffers[0].height;
-    frame_mat = matmul(device_transform, get_fit_view_transform(w, f));
+    float widget_aspect_ratio = (float)width() / height();
+    float frame_aspect_ratio = (float)vipc_client->buffers[0].width  / vipc_client->buffers[0].height;
+    frame_mat = matmul(device_transform, get_fit_view_transform(widget_aspect_ratio, frame_aspect_ratio));
   }
 }
 
