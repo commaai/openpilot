@@ -142,7 +142,14 @@ void MapWindow::timerUpdate() {
 
   if (!localizer_valid) {
     map_instructions->showError("Waiting for GPS");
-    return;
+  } else {
+    // Update current location marker
+    auto point = coordinate_to_collection(*last_position);
+    QMapbox::Feature feature1(QMapbox::Feature::PointType, point, {}, {});
+    QVariantMap carPosSource;
+    carPosSource["type"] = "geojson";
+    carPosSource["data"] = QVariant::fromValue<QMapbox::Feature>(feature1);
+    m_map->updateSource("carPosSource", carPosSource);
   }
 
   if (pan_counter == 0) {
@@ -157,14 +164,6 @@ void MapWindow::timerUpdate() {
   } else {
     zoom_counter--;
   }
-
-  // Update current location marker
-  auto point = coordinate_to_collection(*last_position);
-  QMapbox::Feature feature1(QMapbox::Feature::PointType, point, {}, {});
-  QVariantMap carPosSource;
-  carPosSource["type"] = "geojson";
-  carPosSource["data"] = QVariant::fromValue<QMapbox::Feature>(feature1);
-  m_map->updateSource("carPosSource", carPosSource);
 
   if (sm->updated("navInstruction")) {
     if (sm->valid("navInstruction")) {
