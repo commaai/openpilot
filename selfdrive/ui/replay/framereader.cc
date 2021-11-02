@@ -113,7 +113,7 @@ bool FrameReader::load(const std::string &url, std::atomic<bool> *abort) {
   frames_.reserve(60 * 20);  // 20fps, one minute
   while (!(abort && *abort)) {
     Frame &frame = frames_.emplace_back();
-    int err = av_read_frame(pFormatCtx_, &frame.pkt);
+    err = av_read_frame(pFormatCtx_, &frame.pkt);
     if (err < 0) {
       frames_.pop_back();
       valid_ = (err == AVERROR_EOF);
