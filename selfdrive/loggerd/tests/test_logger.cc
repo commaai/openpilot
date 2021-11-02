@@ -1,8 +1,7 @@
 #include <sys/stat.h>
 
-#include <climits>
-#include <condition_variable>
-#include <sstream>
+// #include <climits>
+// #include <sstream>
 #include <thread>
 
 #include "catch2/catch.hpp"
@@ -56,80 +55,50 @@ void verify_segment(const std::string &route_path, int segment, int max_segment,
   }
 }
 
-void write_msg(Logger *logger) {
-  MessageBuilder msg;
-  msg.initEvent().initClocks();
-  auto bytes = msg.toBytes();
-  logger->write(bytes.begin(), bytes.size(), true);
-}
-
 TEST_CASE("logger") {
-  const std::string log_root = "/tmp/test_logger";
-  system(("rm " + log_root + " -rf").c_str());
+  const std::string tmp_dir = "/tmp/test_logger_XXXXXX";
+  const char *log_root = mkdtemp((char*)tmp_dir.c_str());
+
+  const int segment_cnt = 10, thread_cnt = 10;
+  std::atomic<int> event_cnt[segment_cnt] = {};
+  std::atomic<bool> do_exit = false;
+
   LoggerManager logger_manager(log_root);
+  std::shared_ptr main_logger = logger_manager.next();
 
-  SECTION("single thread logging & rotation(100 segments, one thread)") {
-    const int segment_cnt = 100;
-    for (int i = 0; i < segment_cnt; ++i) {
-      std::shared_ptr logger =  logger_manager.next();
-      REQUIRE(util::file_exists(logger->segmentPath() + "/log.lock"));
-      REQUIRE(logger->segment() == i);
-      write_msg(logger.get());
-      if (i == segment_cnt - 1) {
-        logger->end_of_route(1);
-      }
-    }
-    for (int i = 0; i < segment_cnt; ++i) {
-      verify_segment(logger_manager.routePath(), i, segment_cnt, 1);
-    }
-  }
-  SECTION("multiple threads logging & rotation(100 segments, 10 threads") {
-    const int segment_cnt = 100, thread_cnt = 10;
-    std::atomic<int> event_cnt[segment_cnt] = {};
-    std::atomic<bool> do_exit = false;
-
-    auto logging_thread = [&](std::shared_ptr<Logger> &main_logger) -> void {
+  auto logging_thread = [&]() -> void {
+    while (!do_exit) {
       std::shared_ptr logger = main_logger;
-      int delayed_cnt = 0;
-      while (!do_exit) {
-        // write 2 more messages in the current segment and then rotate to the new segment.
-        if (main_logger != logger && ++delayed_cnt == 2) {
-          logger = main_logger;
-          delayed_cnt = 0;
-        }
-        write_msg(logger.get());
-        event_cnt[logger->segment()] += 1;
-        usleep(1);
-      }
-    };
 
-    // start logging
-    std::vector<std::thread> threads;
-    std::shared_ptr<Logger> main_logger;
-    for (int i = 0; i < segment_cnt; ++i) {
-      main_logger = logger_manager.next();
-      REQUIRE(main_logger->segment() == i);
-      if (i == 0) {
-        for (int j = 0; i < thread_cnt; ++j) {
-          threads.push_back(std::thread(logging_thread, std::ref(main_logger)));
-        }
-      }
-      for (int j = 0; j < 100; ++j) {
-        write_msg(main_logger.get());
-        usleep(1);
-      }
-      event_cnt[main_logger->segment()] += 100;
+      MessageBuilder msg;
+      msg.initEvent().initClocks();
+      auto bytes = msg.toBytes();
+      logger->write(bytes.begin(), bytes.size(), true);
+
+      event_cnt[logger->segment()] += 1;
+      usleep(0);
     }
+  };
 
-    // end logging
-    do_exit = true;
-    for (auto &t : threads) t.join();
-    main_logger->end_of_route(true);
-    REQUIRE(main_logger.use_count() == 1);
-    main_logger = nullptr;
+  // start logging
+  std::vector<std::thread> threads;
+  for (int i = 0; i < thread_cnt; ++i) {
+    threads.emplace_back(logging_thread);
+  }
+  for (int i = 1; i < segment_cnt; ++i) {
+    main_logger = logger_manager.next();
+    REQUIRE(main_logger->segment() == i);
+    util::sleep_for(300);
+  }
 
-    for (int i = 0; i < segment_cnt; ++i) {
-      verify_segment(logger_manager.routePath(), i, segment_cnt, event_cnt[i]);
-    }
+  // end logging
+  do_exit = true;
+  for (auto &t : threads) t.join();
+  main_logger->end_of_route(true);
+  REQUIRE(main_logger.use_count() == 1);
+  main_logger = nullptr;
+
+  for (int i = 0; i < segment_cnt; ++i) {
+    verify_segment(logger_manager.routePath(), i, segment_cnt, event_cnt[i]);
   }
 }
