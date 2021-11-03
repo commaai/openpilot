@@ -1,0 +1,38 @@
+#pragma once
+
+#include <atomic>
+#include <mutex>
+#include <vector>
+
+#include <libusb-1.0/libusb.h>
+
+#define TIMEOUT 0
+#define PANDA_VENDOR_ID 0xBBAA
+#define PANDA_PRODUCT_ID 0xDDCC
+
+class USBDevice {
+public:
+  USBDevice();
+  ~USBDevice();
+  int write(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned int timeout = TIMEOUT);
+  int read(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, uint8_t *data, uint16_t wLength, unsigned int timeout = TIMEOUT);
+  int bulk_write(uint8_t endpoint, uint8_t *data, int length, unsigned int timeout = TIMEOUT);
+  int bulk_read(uint8_t endpoint, uint8_t *data, int length, unsigned int timeout = TIMEOUT);
+  static USBDevice connect();
+  static std::vector<std::string> list();
+
+  std::atomic<bool> comms_healthy = true;
+  std::atomic<bool> connected = true;
+  std::string usb_serial;
+
+protected:
+  bool open(const std::string &serial);
+
+private:
+  int control_transfer(libusb_endpoint_direction dir, uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned int timeout = TIMEOUT);
+  int bulk_transfer(uint8_t endpoint, uint8_t *data, int length, unsigned int timeout = TIMEOUT);
+  
+  std::mutex usb_lock;
+  libusb_context *ctx = nullptr;
+  libusb_device_handle *dev_handle = nullptr;
+};
