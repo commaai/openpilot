@@ -309,7 +309,9 @@ void MapWindow::pinchTriggered(QPinchGesture *gesture) {
 }
 
 void MapWindow::offroadTransition(bool offroad) {
-  if (!offroad) {
+  if (offroad) {
+    clearRoute();
+  } else {
     auto dest = coordinate_from_param("NavDestination");
     setVisible(dest.has_value());
   }
