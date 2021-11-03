@@ -2,7 +2,6 @@
 
 #include <cassert>
 #include <stdexcept>
-#include <vector>
 
 #include "cereal/messaging/messaging.h"
 #include "selfdrive/common/gpio.h"
@@ -16,7 +15,6 @@ libusb_context *init_usb_ctx() {
     LOGE("libusb initialization error %d", err);
     return nullptr;
   }
-
 #if LIBUSB_API_VERSION >= 0x01000106
   libusb_set_option(context, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_INFO);
 #else
@@ -60,12 +58,13 @@ public:
 private:
   std::vector<std::pair<libusb_device *, std::string>> list(uint16_t vid, uint16_t pid) {
     std::vector<std::pair<libusb_device *, std::string>> result;
-    for (size_t i = 0; i < num_devices; ++i) {
+    for (ssize_t i = 0; i < num_devices; ++i) {
       libusb_device_descriptor desc = {};
-      libusb_device_handle *handle = nullptr;
-
       int ret = libusb_get_device_descriptor(dev_list[i], &desc);
-      if (ret == 0 && desc.idVendor == vid && desc.idProduct == pid && libusb_open(dev_list[i], &handle) == 0) {
+      if (ret < 0 ||desc.idVendor != vid || desc.idProduct != pid) continue;
+
+      libusb_device_handle *handle = nullptr;
+      if (libusb_open(dev_list[i], &handle) == 0) {
         unsigned char serial[256] = {'\0'};
         libusb_get_string_descriptor_ascii(handle, desc.iSerialNumber, serial, std::size(serial) - 1);
         result.push_back({dev_list[i], (const char *)serial});
@@ -80,7 +79,8 @@ private:
 };
 
 Panda::Panda(std::string serial, uint32_t bus_offset) : bus_offset(bus_offset) {
-  if ((ctx = init_usb_ctx()) && (dev_handle = UsbDevice(ctx).open(serial))) {
+  if ((ctx = init_usb_ctx()) &&
+      (dev_handle = UsbDevice(ctx).open(serial))) {
 
     if (libusb_kernel_driver_active(dev_handle, 0) == 1) {
       libusb_detach_kernel_driver(dev_handle, 0);
