@@ -76,6 +76,7 @@ class CAR:
   ACURA_RDX_3G = "ACURA RDX 2020"
   PILOT = "HONDA PILOT 2017"
   PILOT_2019 = "HONDA PILOT 2019"
+  PASSPORT = "HONDA PASSPORT 2021"
   RIDGELINE = "HONDA RIDGELINE 2017"
   INSIGHT = "HONDA INSIGHT 2019"
   HONDA_E = "HONDA E 2020"
@@ -1012,9 +1013,6 @@ FW_VERSIONS = {
       b'36161-TGS-A130\x00\x00',
       b'36161-TGT-A030\x00\x00',
     ],
-    (Ecu.fwdRadar, 0x18dab0f1, None): [
-      b'36161-TGS-A030\x00\x00',
-    ],
     (Ecu.srs, 0x18da53f1, None): [
       b'77959-TG7-A210\x00\x00',
       b'77959-TG7-Y210\x00\x00',
@@ -1039,7 +1037,6 @@ FW_VERSIONS = {
       b'78109-TGS-AP20\x00\x00',
       b'78109-TGT-AJ20\x00\x00',
       b'78109-TG7-AT20\x00\x00',
-      b'78109-TGS-AT20\x00\x00',
     ],
     (Ecu.vsa, 0x18da28f1, None): [
       b'57114-TG7-A630\x00\x00',
@@ -1049,14 +1046,34 @@ FW_VERSIONS = {
       b'57114-TGS-A530\x00\x00',
       b'57114-TGT-A530\x00\x00',
     ],
+  },
+  CAR.PASSPORT: {
+    (Ecu.programmedFuelInjection, 0x18da10f1, None): [
+      b'37805-RLV-B220\x00\x00',
+    ],
+    (Ecu.eps, 0x18da30f1, None): [
+      b'39990-TGS-A230\x00\x00',
+    ],
+    (Ecu.fwdRadar, 0x18dab0f1, None): [
+      b'36161-TGS-A030\x00\x00',
+    ],
+    (Ecu.gateway, 0x18daeff1, None): [
+      b'38897-TG7-A040\x00\x00',
+    ],
+    (Ecu.srs, 0x18da53f1, None): [
+      b'77959-TGS-A010\x00\x00',
+    ],
     (Ecu.shiftByWire, 0x18da0bf1, None): [
       b'54008-TG7-A530\x00\x00',
     ],
     (Ecu.transmission, 0x18da1ef1, None): [
       b'28101-5EZ-A600\x00\x00',
     ],
-    (Ecu.programmedFuelInjection, 0x18da10f1, None): [
-      b'37805-RLV-B220\x00\x00',
+    (Ecu.combinationMeter, 0x18da60f1, None): [
+      b'78109-TGS-AT20\x00\x00',
+    ],
+    (Ecu.vsa, 0x18da28f1, None): [
+      b'57114-TGS-A530\x00\x00',
     ],
   },
   CAR.ACURA_RDX: {
@@ -1297,6 +1314,7 @@ DBC = {
   CAR.ODYSSEY_CHN: dbc_dict('honda_odyssey_extreme_edition_2018_china_can_generated', 'acura_ilx_2016_nidec'),
   CAR.PILOT: dbc_dict('honda_pilot_touring_2017_can_generated', 'acura_ilx_2016_nidec'),
   CAR.PILOT_2019: dbc_dict('honda_pilot_touring_2017_can_generated', 'acura_ilx_2016_nidec'),
+  CAR.PASSPORT: dbc_dict('honda_pilot_touring_2017_can_generated', 'acura_ilx_2016_nidec'),
   CAR.RIDGELINE: dbc_dict('honda_ridgeline_black_edition_2017_can_generated', 'acura_ilx_2016_nidec'),
   CAR.INSIGHT: dbc_dict('honda_insight_ex_2019_can_generated', None),
   CAR.HONDA_E: dbc_dict('acura_rdx_2020_can_generated', None),
