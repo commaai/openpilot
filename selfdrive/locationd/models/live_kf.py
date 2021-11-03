@@ -126,7 +126,7 @@ class LiveKalman():
     state_dot = sp.Matrix(np.zeros((dim_state, 1)))
     state_dot[States.ECEF_POS, :] = v
     state_dot[States.ECEF_ORIENTATION, :] = q_dot
-    state_dot[States.ECEF_VELOCITY, 0] = quat_rot * (acceleration + acc_bias)
+    state_dot[States.ECEF_VELOCITY, 0] = quat_rot * acceleration
 
     # Basic descretization, 1st order intergrator
     # Can be pretty bad if dt is big
@@ -138,7 +138,6 @@ class LiveKalman():
     v_err = state_err[States.ECEF_VELOCITY_ERR, :]
     omega_err = state_err[States.ANGULAR_VELOCITY_ERR, :]
     acceleration_err = state_err[States.ACCELERATION_ERR, :]
-    acc_bias_err = state_err[States.ACC_BIAS_ERR, :]
 
 
     # Time derivative of the state error as a function of state error and state
@@ -147,7 +146,7 @@ class LiveKalman():
     state_err_dot = sp.Matrix(np.zeros((dim_state_err, 1)))
     state_err_dot[States.ECEF_POS_ERR, :] = v_err
     state_err_dot[States.ECEF_ORIENTATION_ERR, :] = q_err_dot
-    state_err_dot[States.ECEF_VELOCITY_ERR, :] = quat_err_matrix * quat_rot * (acceleration + acceleration_err + acc_bias + acc_bias_err)
+    state_err_dot[States.ECEF_VELOCITY_ERR, :] = quat_err_matrix * quat_rot * (acceleration + acceleration_err)
     f_err_sym = state_err + dt * state_err_dot
 
     # Observation matrix modifier
