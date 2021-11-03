@@ -33,6 +33,7 @@ generated_files = [
 
   f'{gen}/main_lat.c',
   f'{gen}/acados_solver_lat.h',
+  f'{gen}/acados_solver.pxd',
 
   f'{gen}/lat_model/lat_expl_vde_adj.c',
 

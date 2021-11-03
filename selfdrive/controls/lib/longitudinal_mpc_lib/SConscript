@@ -41,6 +41,7 @@ generated_files = [
 
   f'{gen}/main_long.c',
   f'{gen}/acados_solver_long.h',
+  f'{gen}/acados_solver.pxd',
 
   f'{gen}/long_model/long_expl_vde_adj.c',
 
