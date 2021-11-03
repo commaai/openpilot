@@ -227,6 +227,11 @@ bool RouteEngine::shouldRecompute() {
     return true;
   }
 
+  // Don't recompute in last segment, assume destination is reached
+  if (!segment.nextRouteSegment().isValid()) {
+    return false;
+  }
+
   // Compute closest distance to all line segments in the current path
   float min_d = REROUTE_DISTANCE + 1;
   auto path = segment.path();
