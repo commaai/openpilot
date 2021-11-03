@@ -101,7 +101,7 @@ RouteEngine::RouteEngine() {
   // Timers
   timer = new QTimer(this);
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(timerUpdate()));
-  timer->start(100);
+  timer->start(1000);
 
   recompute_timer = new QTimer(this);
   QObject::connect(recompute_timer, SIGNAL(timeout()), this, SLOT(recomputeRoute()));
@@ -130,19 +130,21 @@ RouteEngine::RouteEngine() {
 
 void RouteEngine::timerUpdate() {
   sm->update(0);
-  if (sm->updated("liveLocationKalman")) {
-    auto location = (*sm)["liveLocationKalman"].getLiveLocationKalman();
-    gps_ok = location.getGpsOK();
+  if (!sm->updated("liveLocationKalman")) {
+    return;
+  }
 
-    localizer_valid = location.getStatus() == cereal::LiveLocationKalman::Status::VALID;
+  auto location = (*sm)["liveLocationKalman"].getLiveLocationKalman();
+  gps_ok = location.getGpsOK();
 
-    if (localizer_valid) {
-      auto pos = location.getPositionGeodetic();
-      auto orientation = location.getCalibratedOrientationNED();
+  localizer_valid = location.getStatus() == cereal::LiveLocationKalman::Status::VALID;
 
-      last_bearing = RAD2DEG(orientation.getValue()[2]);
-      last_position = QMapbox::Coordinate(pos.getValue()[0], pos.getValue()[1]);
-    }
+  if (localizer_valid) {
+    auto pos = location.getPositionGeodetic();
+    auto orientation = location.getCalibratedOrientationNED();
+
+    last_bearing = RAD2DEG(orientation.getValue()[2]);
+    last_position = QMapbox::Coordinate(pos.getValue()[0], pos.getValue()[1]);
   }
 
   MessageBuilder msg;
@@ -243,7 +245,7 @@ bool RouteEngine::shouldRecompute() {
 }
 
 void RouteEngine::recomputeRoute() {
-  if (!last_position) {
+  if (!sm->alive("liveLocationKalman") || !last_position) {
     return;
   }
 
