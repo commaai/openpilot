@@ -8,7 +8,11 @@ from selfdrive.swaglog import cloudlog
 from selfdrive.modeld.constants import index_function
 from selfdrive.controls.lib.radar_helpers import _LEAD_ACCEL_TAU
 
-from pyextra.acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
+if __name__ == '__main__':  # generating code
+  from pyextra.acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
+else:
+  from selfdrive.controls.lib.longitudinal_mpc_lib.c_generated_code.acados_ocp_solver_pyx import AcadosOcpSolverFast  # pylint: disable=no-name-in-module
+
 from casadi import SX, vertcat
 
 LONG_MPC_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -190,7 +194,7 @@ class LongitudinalMpc():
     self.source = SOURCES[2]
 
   def reset(self):
-    self.solver = AcadosOcpSolver('long', N, EXPORT_DIR)
+    self.solver = AcadosOcpSolverFast('long', N, EXPORT_DIR)
     self.v_solution = [0.0 for i in range(N+1)]
     self.a_solution = [0.0 for i in range(N+1)]
     self.j_solution = [0.0 for i in range(N)]

@@ -645,6 +645,10 @@ def ocp_render_templates(acados_ocp, json_file):
     out_file = f'acados_solver_{name}.h'
     render_template(in_file, out_file, template_dir, json_path)
 
+    in_file = 'acados_solver.in.pxd'
+    out_file = f'acados_solver.pxd'
+    render_template(in_file, out_file, template_dir, json_path)
+
     in_file = 'Makefile.in'
     out_file = 'Makefile'
     render_template(in_file, out_file, template_dir, json_path)

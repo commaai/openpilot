@@ -18,7 +18,7 @@ if [ ! -d acados_repo/ ]; then
 fi
 cd acados_repo
 git fetch
-git checkout 43ba28e95062f9ac9b48facd3b45698d57666fa3
+git checkout 08b4ad0b290ea0825c8ddc28111f5071e40d6b43
 git submodule update --recursive --init
 
 # build
