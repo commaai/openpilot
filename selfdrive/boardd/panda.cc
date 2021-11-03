@@ -1,10 +1,7 @@
 #include "selfdrive/boardd/panda.h"
 
-#include <unistd.h>
-
 #include <cassert>
 #include <stdexcept>
-#include <vector>
 
 #include "cereal/messaging/messaging.h"
 #include "panda/board/dlc_to_len.h"
@@ -12,81 +9,73 @@
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
 
-static int init_usb_ctx(libusb_context **context) {
-  assert(context != nullptr);
-
-  int err = libusb_init(context);
+static libusb_context *init_usb_ctx() {
+  libusb_context *context = nullptr;
+  int err = libusb_init(&context);
   if (err != 0) {
-    LOGE("libusb initialization error");
-    return err;
+    LOGE("libusb initialization error %d", err);
+    return nullptr;
   }
-
 #if LIBUSB_API_VERSION >= 0x01000106
-  libusb_set_option(*context, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_INFO);
+  libusb_set_option(context, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_INFO);
 #else
-  libusb_set_debug(*context, 3);
+  libusb_set_debug(context, 3);
 #endif
-
-  return err;
+  return context;
 }
 
+class PandaIterator {
+public:
+  PandaIterator(libusb_context *ctx, uint16_t vendor_id = PANDA_VENDOR_ID, uint16_t product_id = PANDA_PRODUCT_ID) {
+    ssize_t num_devices = libusb_get_device_list(ctx, &dev_list);
+    for (ssize_t i = 0; i < num_devices; ++i) {
+      libusb_device_descriptor desc = {};
+      int ret = libusb_get_device_descriptor(dev_list[i], &desc);
+      if (ret < 0 || desc.idVendor != vendor_id || desc.idProduct != product_id) continue;
 
-Panda::Panda(std::string serial, uint32_t bus_offset) : bus_offset(bus_offset) {
-  // init libusb
-  ssize_t num_devices;
-  libusb_device **dev_list = NULL;
-  int err = init_usb_ctx(&ctx);
-  if (err != 0) { goto fail; }
-
-  // connect by serial
-  num_devices = libusb_get_device_list(ctx, &dev_list);
-  if (num_devices < 0) { goto fail; }
-  for (size_t i = 0; i < num_devices; ++i) {
-    libusb_device_descriptor desc;
-    libusb_get_device_descriptor(dev_list[i], &desc);
-    if (desc.idVendor == 0xbbaa && desc.idProduct == 0xddcc) {
-      libusb_open(dev_list[i], &dev_handle);
-      if (dev_handle == NULL) { goto fail; }
-
-      unsigned char desc_serial[26] = { 0 };
-      int ret = libusb_get_string_descriptor_ascii(dev_handle, desc.iSerialNumber, desc_serial, std::size(desc_serial));
-      if (ret < 0) { goto fail; }
-
-      usb_serial = std::string((char *)desc_serial, ret).c_str();
-      if (serial.empty() || serial == usb_serial) {
-        break;
+      libusb_device_handle *handle = nullptr;
+      if (libusb_open(dev_list[i], &handle) == 0) {
+        unsigned char serial[256] = {'\0'};
+        libusb_get_string_descriptor_ascii(handle, desc.iSerialNumber, serial, std::size(serial) - 1);
+        devices_[(const char *)serial] = dev_list[i];
+        libusb_close(handle);
       }
-      libusb_close(dev_handle);
-      dev_handle = NULL;
     }
   }
-  if (dev_handle == NULL) goto fail;
-  libusb_free_device_list(dev_list, 1);
-  dev_list = nullptr;
 
-  if (libusb_kernel_driver_active(dev_handle, 0) == 1) {
-    libusb_detach_kernel_driver(dev_handle, 0);
+  ~PandaIterator() {
+    if (dev_list) libusb_free_device_list(dev_list, 1);
   }
 
-  err = libusb_set_configuration(dev_handle, 1);
-  if (err != 0) { goto fail; }
+  std::map<std::string, libusb_device *>::iterator begin() { return devices_.begin(); }
+  std::map<std::string, libusb_device *>::iterator end() { return devices_.end(); }
+  std::map<std::string, libusb_device *> devices_;
+  libusb_device **dev_list = nullptr;
+};
 
-  err = libusb_claim_interface(dev_handle, 0);
-  if (err != 0) { goto fail; }
+Panda::Panda(std::string serial, uint32_t bus_offset) : bus_offset(bus_offset) {
+  if ((ctx = init_usb_ctx()) != nullptr) {
+    for (const auto &[s, device] : PandaIterator(ctx)) {
+      if (serial.empty() || serial == s) {
+        libusb_open(device, &dev_handle);
+        break;
+      }
+    }
+    if (dev_handle) {
+      if (libusb_kernel_driver_active(dev_handle, 0) == 1) {
+        libusb_detach_kernel_driver(dev_handle, 0);
+      }
 
-  hw_type = get_hw_type();
-
-  assert((hw_type != cereal::PandaState::PandaType::WHITE_PANDA) &&
-         (hw_type != cereal::PandaState::PandaType::GREY_PANDA));
-
-  has_rtc = (hw_type == cereal::PandaState::PandaType::UNO) ||
-            (hw_type == cereal::PandaState::PandaType::DOS);
-
-  return;
-
-fail:
-  if (dev_list != NULL) {
-    libusb_free_device_list(dev_list, 1);
+      if (libusb_set_configuration(dev_handle, 1) == 0 &&
+          libusb_claim_interface(dev_handle, 0) == 0) {
+        hw_type = get_hw_type();
+        assert((hw_type != cereal::PandaState::PandaType::WHITE_PANDA) &&
+               (hw_type != cereal::PandaState::PandaType::GREY_PANDA));
+        has_rtc = (hw_type == cereal::PandaState::PandaType::UNO) ||
+                  (hw_type == cereal::PandaState::PandaType::DOS);
+        return;
+      }
+    }
   }
   cleanup();
   throw std::runtime_error("Error connecting to panda");
@@ -110,41 +99,11 @@ void Panda::cleanup() {
 }
 
 std::vector<std::string> Panda::list() {
-  // init libusb
-  ssize_t num_devices;
-  libusb_context *context = NULL;
-  libusb_device **dev_list = NULL;
   std::vector<std::string> serials;
-
-  int err = init_usb_ctx(&context);
-  if (err != 0) { return serials; }
-
-  num_devices = libusb_get_device_list(context, &dev_list);
-  if (num_devices < 0) {
-    LOGE("libusb can't get device list");
-    goto finish;
-  }
-  for (size_t i = 0; i < num_devices; ++i) {
-    libusb_device *device = dev_list[i];
-    libusb_device_descriptor desc;
-    libusb_get_device_descriptor(device, &desc);
-    if (desc.idVendor == 0xbbaa && desc.idProduct == 0xddcc) {
-      libusb_device_handle *handle = NULL;
-      libusb_open(device, &handle);
-      unsigned char desc_serial[26] = { 0 };
-      int ret = libusb_get_string_descriptor_ascii(handle, desc.iSerialNumber, desc_serial, std::size(desc_serial));
-      libusb_close(handle);
-
-      if (ret < 0) { goto finish; }
-      serials.push_back(std::string((char *)desc_serial, ret).c_str());
+  if (libusb_context *context = init_usb_ctx()) {
+    for (auto it : PandaIterator(context)) {
+      serials.push_back(it.first);
     }
-  }
-
-finish:
-  if (dev_list != NULL) {
-    libusb_free_device_list(dev_list, 1);
-  }
-  if (context) {
     libusb_exit(context);
   }
   return serials;

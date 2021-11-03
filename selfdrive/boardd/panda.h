@@ -1,16 +1,12 @@
 #pragma once
 
 #include <atomic>
-#include <cstdint>
-#include <ctime>
-#include <list>
 #include <mutex>
 #include <optional>
 #include <vector>
 
 #include <libusb-1.0/libusb.h>
 
-#include "cereal/gen/cpp/car.capnp.h"
 #include "cereal/gen/cpp/log.capnp.h"
 
 #define TIMEOUT 0
@@ -22,6 +18,8 @@
 #define CANPACKET_MAX_SIZE  72U
 #define CANPACKET_REJECTED  (0xC0U)
 #define CANPACKET_RETURNED  (0x80U)
+#define PANDA_VENDOR_ID 0xBBAA
+#define PANDA_PRODUCT_ID 0xDDCC
 
 // copied from panda/board/main.c
 struct __attribute__((packed)) health_t {
