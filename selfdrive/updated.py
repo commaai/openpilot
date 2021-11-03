@@ -102,11 +102,11 @@ def parse_markdown(text: str, tab_length: int = 2) -> str:
   output: List[str] = []
   list_level = 0
 
-  def end_outstanding_lists(start_level, end_level):
-    while start_level > end_level:
-      start_level -= 1
+  def end_outstanding_lists(level: int, end_level: int) -> int:
+    while level > end_level:
+      level -= 1
       output.append("</ul>")
-      if start_level > 0:
+      if level > 0:
         output.append("</li>")
     return end_level
 
@@ -151,8 +151,7 @@ def set_params(new_version: bool, failed_count: int, exception: Optional[str]) -
   if new_version:
     try:
       with open(os.path.join(FINALIZED, "RELEASES.md"), "rb") as f:
-        r = f.read()
-      r = r[:r.find(b'\n\n')]  # Slice latest release notes
+        r = f.read().split(b'\n\n', 1)[0]  # Slice latest release notes
       try:
         params.put("ReleaseNotes", parse_markdown(r.decode("utf-8")))
       except Exception:

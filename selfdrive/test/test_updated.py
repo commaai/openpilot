@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import datetime
+import markdown
 import os
 import time
 import tempfile
@@ -53,7 +54,7 @@ class TestUpdated(unittest.TestCase):
       f"cd {self.basedir} && scons -j{os.cpu_count()} cereal/ common/"
     ])
 
-    self.params = Params(db=os.path.join(self.basedir, "persist/params"))
+    self.params = Params(os.path.join(self.basedir, "persist/params"))
     self.params.clear_all()
     os.sync()
 
@@ -175,6 +176,13 @@ class TestUpdated(unittest.TestCase):
     update = self._read_param("UpdateAvailable")
     self.assertEqual(update == "1", update_available, f"UpdateAvailable: {repr(update)}")
     self.assertEqual(self._read_param("UpdateFailedCount"), "0")
+
+    if update_available:
+      # validate our simple markdown parser produces the same output as `markdown` from pip
+      release_notes = self._read_param("ReleaseNotes")
+      with open(os.path.join(self.basedir, "RELEASES.md")) as f:
+        r = f.read().split("\n\n", 1)[0]
+      self.assertEqual(markdown.markdown(r, tab_length=2), release_notes)
 
     # TODO: check that the finalized update actually matches remote
     # check the .overlay_init and .overlay_consistent flags
