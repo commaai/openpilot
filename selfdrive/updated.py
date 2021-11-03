@@ -24,7 +24,6 @@
 
 import os
 import datetime
-import markdown
 import subprocess
 import psutil
 import shutil
@@ -98,6 +97,44 @@ def set_consistent_flag(consistent: bool) -> None:
   os.sync()
 
 
+def parse_markdown(text: str, tab_length: int = 2) -> str:
+  lines = text.split("\n")
+  output: List[str] = []
+  list_level = 0
+
+  def end_outstanding_lists(start_level, end_level):
+    while start_level > end_level:
+      start_level -= 1
+      output.append("</ul>")
+      if start_level > 0:
+        output.append("</li>")
+    return end_level
+
+  for i, line in enumerate(lines):
+    if i+1 < len(lines) and lines[i+1].startswith("==="): # heading
+      output.append(f"<h1>{line}</h1>")
+    elif line.startswith("==="):
+      pass
+    elif line.lstrip().startswith("* "): # list
+      line_level = 1 + line.count(" " * tab_length, 0, line.index("*"))
+      if list_level >= line_level:
+        list_level = end_outstanding_lists(list_level, line_level)
+      else:
+        list_level += 1
+        if list_level == 1:
+          output.append("<ul>")
+        else:
+          output[-1] = output[-1].replace("</li>", "<ul>")
+      output.append(f"<li>{line.replace('*', '', 1).lstrip()}</li>")
+    else: # catchall
+      list_level = end_outstanding_lists(list_level, 0)
+      if len(line) > 0:
+        output.append(line)
+
+  end_outstanding_lists(list_level, 0)
+  return '\n'.join(output)
+
+
 def set_params(new_version: bool, failed_count: int, exception: Optional[str]) -> None:
   params = Params()
 
@@ -117,7 +154,7 @@ def set_params(new_version: bool, failed_count: int, exception: Optional[str]) -
         r = f.read()
       r = r[:r.find(b'\n\n')]  # Slice latest release notes
       try:
-        params.put("ReleaseNotes", markdown.markdown(r.decode("utf-8"), tab_length=2))
+        params.put("ReleaseNotes", parse_markdown(r.decode("utf-8")))
       except Exception:
         params.put("ReleaseNotes", r + b"\n")
     except Exception:
