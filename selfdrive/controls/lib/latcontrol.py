@@ -1,4 +1,3 @@
-from common.numpy_fast import clip
 from common.realtime import DT_CTRL
 
 MIN_STEER_SPEED = 0.3
@@ -12,14 +11,9 @@ class LatControl:
   def reset(self):
     self.sat_count = 0.
 
-  def _check_saturation(self, control, limit, CS):
-    saturated = limit - abs(control) < 1e-3
-
+  def _check_saturation(self, saturated, CS):
     if saturated and CS.vEgo > 10. and not CS.steeringRateLimited and not CS.steeringPressed:
       self.sat_count += self.sat_count_rate
     else:
       self.sat_count -= self.sat_count_rate
-
-    self.sat_count = clip(self.sat_count, 0.0, 1.0)
-
     return self.sat_count > self.sat_limit

@@ -82,5 +82,5 @@ class LatControlLQR(LatControl):
     lqr_log.i = self.i_lqr
     lqr_log.output = output_steer
     lqr_log.lqrOutput = lqr_output
-    lqr_log.saturated = self._check_saturation(output_steer, steers_max, CS)
+    lqr_log.saturated = self._check_saturation(steers_max - abs(output_steer) < 1e-3, CS)
     return output_steer, desired_angle, lqr_log

@@ -21,12 +21,7 @@ class LatControlAngle(LatControl):
       angle_steers_des += params.angleOffsetDeg
 
     angle_control_saturated = abs(angle_steers_des - CS.steeringAngleDeg) > STEER_ANGLE_SATURATION_THRESHOLD
-    if angle_control_saturated and not CS.steeringPressed and active:
-      self.sat_count += 1
-    else:
-      self.sat_count = 0
-
-    angle_log.saturated = self.sat_count > STEER_ANGLE_SATURATION_TIMEOUT
+    angle_log.saturated = self._check_saturation(angle_control_saturated, CS)
     angle_log.steeringAngleDeg = float(CS.steeringAngleDeg)
     angle_log.steeringAngleDesiredDeg = angle_steers_des
     return 0, float(angle_steers_des), angle_log

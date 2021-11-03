@@ -130,6 +130,6 @@ class LatControlINDI(LatControl):
       indi_log.delayedOutput = float(self.steer_filter.x)
       indi_log.delta = float(delta_u)
       indi_log.output = float(self.output_steer)
-      indi_log.saturated = self._check_saturation(self.output_steer, steers_max, CS)
+      indi_log.saturated = self._check_saturation(steers_max - abs(self.output_steer) < 1e-3, CS)
 
     return float(self.output_steer), float(steers_des), indi_log
