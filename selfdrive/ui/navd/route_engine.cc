@@ -103,10 +103,6 @@ RouteEngine::RouteEngine() {
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(timerUpdate()));
   timer->start(1000);
 
-  recompute_timer = new QTimer(this);
-  QObject::connect(recompute_timer, SIGNAL(timeout()), this, SLOT(recomputeRoute()));
-  recompute_timer->start(1000);
-
   // Build routing engine
   QVariantMap parameters;
   QString token = MAPBOX_TOKEN.isEmpty() ? CommaApi::create_jwt({}, 4 * 7 * 24 * 3600) : MAPBOX_TOKEN;
@@ -146,6 +142,8 @@ void RouteEngine::timerUpdate() {
     last_bearing = RAD2DEG(orientation.getValue()[2]);
     last_position = QMapbox::Coordinate(pos.getValue()[0], pos.getValue()[1]);
   }
+
+  recomputeRoute();
 
   MessageBuilder msg;
   cereal::Event::Builder evt = msg.initEvent(segment.isValid());
@@ -193,7 +191,7 @@ void RouteEngine::timerUpdate() {
       }
 
       // Transition to next route segment
-      if (!shouldRecompute() && (distance_to_maneuver_along_geometry < -MANEUVER_TRANSITION_THRESHOLD)) {
+      if (distance_to_maneuver_along_geometry < -MANEUVER_TRANSITION_THRESHOLD) {
         auto next_segment = segment.nextRouteSegment();
         if (next_segment.isValid()) {
           segment = next_segment;
@@ -250,10 +248,6 @@ bool RouteEngine::shouldRecompute() {
 }
 
 void RouteEngine::recomputeRoute() {
-  if (!sm->alive("liveLocationKalman") || !last_position) {
-    return;
-  }
-
   auto new_destination = coordinate_from_param("NavDestination");
   if (!new_destination) {
     clearRoute();

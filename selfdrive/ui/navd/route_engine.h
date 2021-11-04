@@ -37,7 +37,6 @@ public:
   bool localizer_valid = false;
 
   // Route recompute
-  QTimer* recompute_timer;
   int recompute_backoff = 0;
   int recompute_countdown = 0;
   void calculateRoute(QMapbox::Coordinate destination);
