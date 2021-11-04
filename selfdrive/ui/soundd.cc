@@ -6,6 +6,7 @@
 #include <QString>
 #include <QSoundEffect>
 
+#include "selfdrive/ui/qt/util.h"
 #include "cereal/messaging/messaging.h"
 #include "selfdrive/common/util.h"
 #include "selfdrive/hardware/hw.h"
@@ -13,6 +14,10 @@
 
 // TODO: detect when we can't play sounds
 // TODO: detect when we can't display the UI
+
+void sigHandler(int s) {
+  qApp->quit();
+}
 
 class Sound : public QObject {
 public:
@@ -100,9 +105,13 @@ private:
 };
 
 int main(int argc, char **argv) {
+  qInstallMessageHandler(swagLogMessageHandler);
   setpriority(PRIO_PROCESS, 0, -20);
 
   QApplication a(argc, argv);
+  std::signal(SIGINT, sigHandler);
+  std::signal(SIGTERM, sigHandler);
+
   Sound sound;
   return a.exec();
 }
