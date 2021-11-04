@@ -1,10 +1,8 @@
 import math
 
 from cereal import log
-from common.realtime import DT_CTRL
 from selfdrive.controls.lib.latcontrol import LatControl, MIN_STEER_SPEED
 
-STEER_ANGLE_SATURATION_TIMEOUT = 1.0 / DT_CTRL
 STEER_ANGLE_SATURATION_THRESHOLD = 2.5  # Degrees
 
 
