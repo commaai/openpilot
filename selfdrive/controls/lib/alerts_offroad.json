@@ -21,10 +21,6 @@
     "severity": 1,
     "_comment": "Append the command and error to the text."
   },
-  "Offroad_PandaFirmwareMismatch": {
-    "text": "Unexpected panda firmware version. System won't start. Reboot your device to reflash panda.",
-    "severity": 1
-  },
   "Offroad_InvalidTime": {
     "text": "Invalid date and time settings, system won't start. Connect to internet to set time.",
     "severity": 1
@@ -37,16 +33,12 @@
     "text": "An update to your device's operating system is downloading in the background. You will be prompted to update when it's ready to install.",
     "severity": 0
   },
-  "Offroad_HardwareUnsupported": {
-    "text": "White and grey panda are unsupported. Upgrade to comma two or black panda.",
-    "severity": 0
-  },
   "Offroad_UnofficialHardware": {
     "text": "Device failed to register. It will not connect to or upload to comma.ai servers, and receives no support from comma.ai. If this is an official device, contact support@comma.ai.",
     "severity": 1
   },
-  "Offroad_NvmeMissing": {
-    "text": "NVME drive not mounted.",
+  "Offroad_StorageMissing": {
+    "text": "Storage drive not mounted.",
     "severity": 1
   }
 }

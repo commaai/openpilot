@@ -19,12 +19,13 @@ private slots:
   void updateFinished(int exitCode, QProcess::ExitStatus exitStatus);
 
 private:
+  bool eventFilter(QObject *obj, QEvent *event) override;
+
+  QProcess proc;
   QString updater, manifest;
 
   QLabel *text;
   QProgressBar *bar;
   QPushButton *reboot;
-  QProcess proc;
-
   QWidget *prompt, *wifi, *progress;
 };

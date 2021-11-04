@@ -72,8 +72,8 @@ private:
     QRect(303, 755, 718, 189),
   };
 
-  const QString IMG_PATH = WIDE_UI ? "../assets/training_wide/" : "../assets/training/";
-  const QVector<QRect> boundingRect = WIDE_UI ? boundingRectWide : boundingRectStandard;
+  QString img_path;
+  QVector<QRect> boundingRect;
 
 signals:
   void completedTraining();
@@ -117,14 +117,14 @@ class OnboardingWindow : public QStackedWidget {
 
 public:
   explicit OnboardingWindow(QWidget *parent = 0);
+  inline void showTrainingGuide() { setCurrentIndex(1); }
+  inline bool completed() const { return accepted_terms && training_done; }
 
 private:
-  void showEvent(QShowEvent *event) override;
   void updateActiveScreen();
 
   Params params;
-  std::string current_terms_version;
-  std::string current_training_version;
+  bool accepted_terms = false, training_done = false;
 
 signals:
   void onboardingDone();

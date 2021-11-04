@@ -15,6 +15,7 @@ original_segments = [
   ("HYUNDAI", "02c45f73a2e5c6e9|2021-01-01--19-08-22--1"),     # HYUNDAI.SONATA
   ("TOYOTA", "0982d79ebb0de295|2021-01-04--17-13-21--13"),     # TOYOTA.PRIUS (INDI)
   ("TOYOTA2", "0982d79ebb0de295|2021-01-03--20-03-36--6"),     # TOYOTA.RAV4  (LQR)
+  ("TOYOTA3", "f7d7e3538cda1a2a|2021-08-16--08-55-34--6"),     # TOYOTA.COROLLA_TSS2
   ("HONDA", "eb140f119469d9ab|2021-06-12--10-46-24--27"),      # HONDA.CIVIC (NIDEC)
   ("HONDA2", "7d2244f34d1bbcda|2021-06-25--12-25-37--26"),     # HONDA.ACCORD (BOSCH)
   ("CHRYSLER", "4deb27de11bee626|2021-02-20--11-28-55--8"),    # CHRYSLER.PACIFICA
@@ -22,24 +23,25 @@ original_segments = [
   ("GM", "0c58b6a25109da2b|2021-02-23--16-35-50--11"),         # GM.VOLT
   ("NISSAN", "35336926920f3571|2021-02-12--18-38-48--46"),     # NISSAN.XTRAIL
   ("VOLKSWAGEN", "de9592456ad7d144|2021-06-29--11-00-15--6"),  # VOLKSWAGEN.GOLF
+  ("MAZDA", "bd6a637565e91581|2021-10-30--15-14-53--2"),       # MAZDA.CX9_2021
 
   # Enable when port is tested and dascamOnly is no longer set
-  #("MAZDA", "32a319f057902bb3|2020-04-27--15-18-58--2"),      # MAZDA.CX5
   #("TESLA", "bb50caf5f0945ab1|2021-06-19--17-20-18--3"),      # TESLA.AP2_MODELS
 ]
 
 segments = [
-  ("HYUNDAI", "fakedata|2021-07-09--16-01-34--0"),
-  ("TOYOTA", "1d6dfff4b6098f01|2021-07-26--07-56-21--2"),
-  ("TOYOTA2", "fakedata|2021-07-09--16-03-56--0"),
-  ("TOYOTA3", "f7d7e3538cda1a2a|2021-08-16--08-55-34--6"),     # TOYOTA.COROLLA_TSS2
-  ("HONDA", "fakedata|2021-07-09--16-05-07--0"),
-  ("HONDA2", "fakedata|2021-07-09--16-08-28--0"),
-  ("CHRYSLER", "fakedata|2021-07-09--16-09-39--0"),
-  ("SUBARU", "fakedata|2021-07-09--16-10-50--0"),
-  ("GM", "fakedata|2021-07-09--16-13-53--0"),
-  ("NISSAN", "fakedata|2021-07-09--16-17-35--0"),
-  ("VOLKSWAGEN", "fakedata|2021-07-09--16-29-13--0"),
+  ("HYUNDAI", "fakedata|2021-10-07--15-56-26--0"),
+  ("TOYOTA", "fakedata|2021-10-07--15-57-47--0"),
+  ("TOYOTA2", "fakedata|2021-10-07--15-59-03--0"),
+  ("TOYOTA3", "fakedata|2021-10-07--15-53-21--0"),
+  ("HONDA", "fakedata|2021-10-07--16-00-19--0"),
+  ("HONDA2", "fakedata|2021-10-07--16-01-35--0"),
+  ("CHRYSLER", "fakedata|2021-10-07--16-02-52--0"),
+  ("SUBARU", "fakedata|2021-10-07--16-04-09--0"),
+  ("GM", "fakedata|2021-10-07--16-05-26--0"),
+  ("NISSAN", "fakedata|2021-10-07--16-09-53--0"),
+  ("VOLKSWAGEN", "fakedata|2021-10-07--16-11-11--0"),
+  ("MAZDA", "bd6a637565e91581|2021-10-30--15-14-53--2"),
 ]
 
 # dashcamOnly makes don't need to be tested until a full port is done

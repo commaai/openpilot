@@ -11,28 +11,30 @@
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
 
-static int init_usb_ctx(libusb_context *context) {
-  int err = libusb_init(&context);
+static int init_usb_ctx(libusb_context **context) {
+  assert(context != nullptr);
+
+  int err = libusb_init(context);
   if (err != 0) {
     LOGE("libusb initialization error");
     return err;
   }
 
 #if LIBUSB_API_VERSION >= 0x01000106
-  libusb_set_option(context, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_INFO);
+  libusb_set_option(*context, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_INFO);
 #else
-  libusb_set_debug(context, 3);
+  libusb_set_debug(*context, 3);
 #endif
 
   return err;
 }
 
 
-Panda::Panda(std::string serial) {
+Panda::Panda(std::string serial, uint32_t bus_offset) : bus_offset(bus_offset) {
   // init libusb
   ssize_t num_devices;
   libusb_device **dev_list = NULL;
-  int err = init_usb_ctx(ctx);
+  int err = init_usb_ctx(&ctx);
   if (err != 0) { goto fail; }
 
   // connect by serial
@@ -113,7 +115,7 @@ std::vector<std::string> Panda::list() {
   libusb_device **dev_list = NULL;
   std::vector<std::string> serials;
 
-  int err = init_usb_ctx(context);
+  int err = init_usb_ctx(&context);
   if (err != 0) { return serials; }
 
   num_devices = libusb_get_device_list(context, &dev_list);
@@ -333,7 +335,7 @@ void Panda::set_power_saving(bool power_saving) {
   usb_write(0xe7, power_saving, 0);
 }
 
-void Panda::set_usb_power_mode(cereal::PandaState::UsbPowerMode power_mode) {
+void Panda::set_usb_power_mode(cereal::PeripheralState::UsbPowerMode power_mode) {
   usb_write(0xe6, (uint16_t)power_mode, 0);
 }
 
@@ -342,28 +344,35 @@ void Panda::send_heartbeat() {
 }
 
 void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list) {
-  static std::vector<uint32_t> send;
-  const int msg_count = can_data_list.size();
+  send.resize(4 * can_data_list.size());
 
-  send.resize(msg_count*0x10);
-
-  for (int i = 0; i < msg_count; i++) {
+  uint32_t msg_cnt = 0;
+  for (int i = 0; i < can_data_list.size(); i++) {
     auto cmsg = can_data_list[i];
+
+    // check if the message is intended for this panda
+    uint8_t bus = cmsg.getSrc();
+    if (bus < bus_offset || bus >= (bus_offset + PANDA_BUS_CNT)) {
+      continue;
+    }
+
     if (cmsg.getAddress() >= 0x800) { // extended
-      send[i*4] = (cmsg.getAddress() << 3) | 5;
+      send[msg_cnt*4] = (cmsg.getAddress() << 3) | 5;
     } else { // normal
-      send[i*4] = (cmsg.getAddress() << 21) | 1;
+      send[msg_cnt*4] = (cmsg.getAddress() << 21) | 1;
     }
     auto can_data = cmsg.getDat();
     assert(can_data.size() <= 8);
-    send[i*4+1] = can_data.size() | (cmsg.getSrc() << 4);
-    memcpy(&send[i*4+2], can_data.begin(), can_data.size());
+    send[msg_cnt*4+1] = can_data.size() | ((bus - bus_offset) << 4);
+    memcpy(&send[msg_cnt*4+2], can_data.begin(), can_data.size());
+
+    msg_cnt++;
   }
 
-  usb_bulk_write(3, (unsigned char*)send.data(), send.size(), 5);
+  usb_bulk_write(3, (unsigned char*)send.data(), msg_cnt * 0x10, 5);
 }
 
-int Panda::can_receive(kj::Array<capnp::word>& out_buf) {
+bool Panda::can_receive(std::vector<can_frame>& out_vec) {
   uint32_t data[RECV_SIZE/4];
   int recv = usb_bulk_read(0x81, (unsigned char*)data, RECV_SIZE);
 
@@ -374,27 +383,34 @@ int Panda::can_receive(kj::Array<capnp::word>& out_buf) {
     LOGW("Receive buffer full");
   }
 
-  size_t num_msg = recv / 0x10;
-  MessageBuilder msg;
-  auto evt = msg.initEvent();
-  evt.setValid(comms_healthy);
+  if (!comms_healthy) {
+    return false;
+  }
 
-  // populate message
-  auto canData = evt.initCan(num_msg);
+  // Append to the end of the out_vec, such that we can pass it to multiple pandas
+  // We already insert space for all the messages here for speed
+  size_t num_msg = recv / 0x10;
+  out_vec.reserve(out_vec.size() + num_msg);
+
+  // Populate messages
   for (int i = 0; i < num_msg; i++) {
+    can_frame canData;
     if (data[i*4] & 4) {
       // extended
-      canData[i].setAddress(data[i*4] >> 3);
+      canData.address = data[i*4] >> 3;
       //printf("got extended: %x\n", data[i*4] >> 3);
     } else {
       // normal
-      canData[i].setAddress(data[i*4] >> 21);
+      canData.address = data[i*4] >> 21;
     }
-    canData[i].setBusTime(data[i*4+1] >> 16);
-    int len = data[i*4+1]&0xF;
-    canData[i].setDat(kj::arrayPtr((uint8_t*)&data[i*4+2], len));
-    canData[i].setSrc((data[i*4+1] >> 4) & 0xff);
+    canData.busTime = data[i*4+1] >> 16;
+    int len = data[i*4+1] & 0xF;
+    canData.dat.assign((char *)&data[i*4+2], len);
+    canData.src = ((data[i*4+1] >> 4) & 0xff) + bus_offset;
+
+    // add to vector
+    out_vec.push_back(canData);
   }
-  out_buf = capnp::messageToFlatArray(msg);
-  return recv;
+
+  return true;
 }

@@ -160,6 +160,7 @@ class ManagerProcess(ABC):
     state.name = self.name
     if self.proc:
       state.running = self.proc.is_alive()
+      state.shouldBeRunning = self.proc is not None and not self.shutting_down
       state.pid = self.proc.pid or 0
       state.exitCode = self.proc.exitcode or 0
     return state

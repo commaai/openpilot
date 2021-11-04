@@ -16,24 +16,6 @@ except Exception:
   PandaJungle = None  # type: ignore
 
 
-print("Loading log...")
-ROUTE = "77611a1fac303767/2020-03-24--09-50-38"
-NUM_SEGS = 2 # route has 82 segments available
-CAN_MSGS = []
-for i in tqdm(list(range(1, NUM_SEGS+1))):
-  log_url = f"https://commadataci.blob.core.windows.net/openpilotci/{ROUTE}/{i}/rlog.bz2"
-  lr = LogReader(log_url)
-  CAN_MSGS += [can_capnp_to_can_list(m.can) for m in lr if m.which() == 'can']
-
-
-# set both to cycle ignition
-IGN_ON = int(os.getenv("ON", "0"))
-IGN_OFF = int(os.getenv("OFF", "0"))
-ENABLE_IGN = IGN_ON > 0 and IGN_OFF > 0
-if ENABLE_IGN:
-  print(f"Cycling ignition: on for {IGN_ON}s, off for {IGN_OFF}s")
-
-
 def send_thread(s, flock):
   if "Jungle" in str(type(s)):
     if "FLASH" in os.environ:
@@ -99,4 +81,21 @@ def connect():
 
 
 if __name__ == "__main__":
+  print("Loading log...")
+  ROUTE = "77611a1fac303767/2020-03-24--09-50-38"
+  REPLAY_SEGS = list(range(10, 16))  # route has 82 segments available
+  CAN_MSGS = []
+  for i in tqdm(REPLAY_SEGS):
+    log_url = f"https://commadataci.blob.core.windows.net/openpilotci/{ROUTE}/{i}/rlog.bz2"
+    lr = LogReader(log_url)
+    CAN_MSGS += [can_capnp_to_can_list(m.can) for m in lr if m.which() == 'can']
+
+
+  # set both to cycle ignition
+  IGN_ON = int(os.getenv("ON", "0"))
+  IGN_OFF = int(os.getenv("OFF", "0"))
+  ENABLE_IGN = IGN_ON > 0 and IGN_OFF > 0
+  if ENABLE_IGN:
+    print(f"Cycling ignition: on for {IGN_ON}s, off for {IGN_OFF}s")
+
   connect()

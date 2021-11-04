@@ -1,0 +1,58 @@
+name: Bug report
+description: For issues with running openpilot on your comma device
+labels: ["bug"]
+body:
+
+  - type: markdown
+    attributes:
+      value: >
+        Before creating a **bug report**, please check the following:
+          * If the issue likely only affects your car model or make, go back and open a **car bug report** instead.
+          * Ensure you're running the latest openpilot release.
+          * Ensure you're using officially supported hardware. Issues running on PCs have a different issue template.
+          * Ensure there isn't an existing issue for your bug. If there is, leave a comment on the existing issue.
+          * Ensure you're running stock openpilot. We cannot look into bug reports from forks.
+
+        If you're unsure whether you've hit a bug, check out the #installation-help channel in the [community Discord server](https://discord.comma.ai).
+
+  - type: textarea
+    attributes:
+      label: Describe the bug
+      description: Also include a description of how to reproduce the bug
+    validations:
+      required: true
+
+  - type: dropdown
+    id: hw
+    attributes:
+      label: What hardware does this issue affect?
+      multiple: true
+      options:
+        - comma three
+        - comma two
+        - EON Gold
+    validations:
+      required: true
+
+  - type: input
+    id: route
+    attributes:
+      label: Provide a route where the issue occurs
+      description: Ensure the route is fully uploaded at https://useradmin.comma.ai
+      placeholder: 77611a1fac303767|2020-05-11--16-37-07
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: openpilot version
+      description: If you're not on release, provide the commit hash
+      placeholder: 0.8.10
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Additional info
+

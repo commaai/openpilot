@@ -30,9 +30,9 @@ extern ExitHandler do_exit;
 
 // ***** OMX callback functions *****
 
-void OmxEncoder::wait_for_state(OMX_STATETYPE state) {
+void OmxEncoder::wait_for_state(OMX_STATETYPE state_) {
   std::unique_lock lk(this->state_lock);
-  while (this->state != state) {
+  while (this->state != state_) {
     this->state_cv.wait(lk);
   }
 }
@@ -156,8 +156,9 @@ static const char* omx_color_fomat_name(uint32_t format) {
 
 // ***** encoder functions *****
 
-OmxEncoder::OmxEncoder(const char* filename, int width, int height, int fps, int bitrate, bool h265, bool downscale) {
+OmxEncoder::OmxEncoder(const char* filename, int width, int height, int fps, int bitrate, bool h265, bool downscale, bool write) {
   this->filename = filename;
+  this->write = write;
   this->width = width;
   this->height = height;
   this->fps = fps;
@@ -343,7 +344,10 @@ void OmxEncoder::handle_out_buf(OmxEncoder *e, OMX_BUFFERHEADERTYPE *out_buf) {
 
   if (e->of) {
     //printf("write %d flags 0x%x\n", out_buf->nFilledLen, out_buf->nFlags);
-    fwrite(buf_data, out_buf->nFilledLen, 1, e->of);
+    size_t written = util::safe_fwrite(buf_data, 1, out_buf->nFilledLen, e->of);
+    if (written != out_buf->nFilledLen) {
+      LOGE("failed to write file.errno=%d", errno);
+    }
   }
 
   if (e->remuxing) {
@@ -503,13 +507,15 @@ void OmxEncoder::encoder_open(const char* path) {
 
     this->wrote_codec_config = false;
   } else {
-    this->of = fopen(this->vid_path, "wb");
-    assert(this->of);
+    if (this->write) {
+      this->of = util::safe_fopen(this->vid_path, "wb");
+      assert(this->of);
 #ifndef QCOM2
-    if (this->codec_config_len > 0) {
-      fwrite(this->codec_config, this->codec_config_len, 1, this->of);
-    }
+      if (this->codec_config_len > 0) {
+        util::safe_fwrite(this->codec_config, 1, this->codec_config_len, this->of);
+      }
 #endif
+    }
   }
 
   // create camera lock file
@@ -553,8 +559,11 @@ void OmxEncoder::encoder_close() {
       avio_closep(&this->ofmt_ctx->pb);
       avformat_free_context(this->ofmt_ctx);
     } else {
-      fclose(this->of);
-      this->of = nullptr;
+      if (this->of) {
+        util::safe_fflush(this->of);
+        fclose(this->of);
+        this->of = nullptr;
+      }
     }
     unlink(this->lock_path);
   }

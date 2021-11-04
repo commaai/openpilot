@@ -6,11 +6,12 @@ from cereal import log
 
 
 class LatControlPID():
-  def __init__(self, CP):
+  def __init__(self, CP, CI):
     self.pid = PIController((CP.lateralTuning.pid.kpBP, CP.lateralTuning.pid.kpV),
                             (CP.lateralTuning.pid.kiBP, CP.lateralTuning.pid.kiV),
                             k_f=CP.lateralTuning.pid.kf, pos_limit=1.0, neg_limit=-1.0,
                             sat_limit=CP.steerLimitTimer)
+    self.get_steer_feedforward = CI.get_steer_feedforward_function()
 
   def reset(self):
     self.pid.reset()
@@ -23,7 +24,7 @@ class LatControlPID():
     angle_steers_des_no_offset = math.degrees(VM.get_steer_from_curvature(-desired_curvature, CS.vEgo))
     angle_steers_des = angle_steers_des_no_offset + params.angleOffsetDeg
 
-    pid_log.angleError = angle_steers_des - CS.steeringAngleDeg 
+    pid_log.angleError = angle_steers_des - CS.steeringAngleDeg
     if CS.vEgo < 0.3 or not active:
       output_steer = 0.0
       pid_log.active = False
@@ -33,9 +34,8 @@ class LatControlPID():
       self.pid.pos_limit = steers_max
       self.pid.neg_limit = -steers_max
 
-      # TODO: feedforward something based on lat_plan.rateSteers
-      steer_feedforward = angle_steers_des_no_offset  # offset does not contribute to resistive torque
-      steer_feedforward *= CS.vEgo**2  # proportional to realigning tire momentum (~ lateral accel)
+      # offset does not contribute to resistive torque
+      steer_feedforward = self.get_steer_feedforward(angle_steers_des_no_offset, CS.vEgo)
 
       deadzone = 0.0
 

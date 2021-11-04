@@ -16,7 +16,7 @@ extern "C" {
 class RawLogger : public VideoEncoder {
  public:
   RawLogger(const char* filename, int width, int height, int fps,
-            int bitrate, bool h265, bool downscale);
+            int bitrate, bool h265, bool downscale, bool write = true);
   ~RawLogger();
   int encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
                    int in_width, int in_height, uint64_t ts);
@@ -25,6 +25,7 @@ class RawLogger : public VideoEncoder {
 
 private:
   const char* filename;
+  //bool write;
   int fps;
   int counter = 0;
   bool is_open = false;

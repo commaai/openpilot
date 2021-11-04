@@ -1,20 +1,11 @@
-from selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
-from selfdrive.car.honda.values import HONDA_BOSCH, CAR
+from selfdrive.car.honda.values import HONDA_BOSCH, CAR, CarControllerParams
 from selfdrive.config import Conversions as CV
-from selfdrive.swaglog import cloudlog
 
 # CAN bus layout with relay
 # 0 = ACC-CAN - radar side
 # 1 = F-CAN B - powertrain
 # 2 = ACC-CAN - camera side
 # 3 = F-CAN A - OBDII port
-
-RADAR_ADDR = 0x18DAB0F1
-EXT_DIAG_REQUEST = b'\x10\x03'
-EXT_DIAG_RESPONSE = b'\x50\x03'
-COM_CONT_REQUEST = b'\x28\x83\x03'
-COM_CONT_RESPONSE = b''
-
 
 def get_pt_bus(car_fingerprint):
   return 1 if car_fingerprint in HONDA_BOSCH else 0
@@ -26,30 +17,6 @@ def get_lkas_cmd_bus(car_fingerprint, radar_disabled=False):
     return get_pt_bus(car_fingerprint)
   # normally steering commands are sent to radar, which forwards them to powertrain bus
   return 0
-
-
-def disable_radar(logcan, sendcan, bus=1, timeout=0.1, debug=False):
-  """Silence the radar by disabling sending and receiving messages using UDS 0x28.
-  The radar will stay silent as long as openpilot keeps sending Tester Present.
-  Openpilot will emulate the radar. WARNING: THIS DISABLES AEB!"""
-  cloudlog.warning(f"radar disable {hex(RADAR_ADDR)} ...")
-
-  try:
-    query = IsoTpParallelQuery(sendcan, logcan, bus, [RADAR_ADDR], [EXT_DIAG_REQUEST], [EXT_DIAG_RESPONSE], debug=debug)
-
-    for _, _ in query.get_data(timeout).items():
-      cloudlog.warning("radar communication control disable tx/rx ...")
-
-      query = IsoTpParallelQuery(sendcan, logcan, bus, [RADAR_ADDR], [COM_CONT_REQUEST], [COM_CONT_RESPONSE], debug=debug)
-      query.get_data(0)
-
-      cloudlog.warning("radar disabled")
-      return
-
-  except Exception:
-    cloudlog.exception("radar disable exception")
-  cloudlog.warning("radar disable failed")
-
 
 def create_brake_command(packer, apply_brake, pump_on, pcm_override, pcm_cancel_cmd, fcw, idx, car_fingerprint, stock_brake):
   # TODO: do we loose pressure if we keep pump off for long?
@@ -76,23 +43,23 @@ def create_brake_command(packer, apply_brake, pump_on, pcm_override, pcm_cancel_
   return packer.make_can_msg("BRAKE_COMMAND", bus, values, idx)
 
 
-def create_acc_commands(packer, enabled, accel, gas, idx, stopping, starting, car_fingerprint):
+def create_acc_commands(packer, enabled, active, accel, gas, idx, stopping, starting, car_fingerprint):
   commands = []
   bus = get_pt_bus(car_fingerprint)
+  min_gas_accel = CarControllerParams.BOSCH_GAS_LOOKUP_BP[0]
 
   control_on = 5 if enabled else 0
-  # no gas = -30000
-  gas_command = gas if enabled and gas > 0 else -30000
-  accel_command = accel if enabled else 0
-  braking = 1 if enabled and accel < 0 else 0
-  standstill = 1 if enabled and stopping else 0
-  standstill_release = 1 if enabled and starting else 0
+  gas_command = gas if active and accel > min_gas_accel else -30000
+  accel_command = accel if active else 0
+  braking = 1 if active and accel < min_gas_accel else 0
+  standstill = 1 if active and stopping else 0
+  standstill_release = 1 if active and starting else 0
 
   acc_control_values = {
     # setting CONTROL_ON causes car to set POWERTRAIN_DATA->ACC_STATUS = 1
     "CONTROL_ON": control_on,
-    "GAS_COMMAND": gas_command, # used for gas
-    "ACCEL_COMMAND": accel_command, # used for brakes
+    "GAS_COMMAND": gas_command,  # used for gas
+    "ACCEL_COMMAND": accel_command,  # used for brakes
     "BRAKE_LIGHTS": braking,
     "BRAKE_REQUEST": braking,
     "STANDSTILL": standstill,
@@ -148,6 +115,7 @@ def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, is_metric, idx, 
         'ACC_ON': hud.car != 0,
         'SET_TO_X1': 1,
         'IMPERIAL_UNIT': int(not is_metric),
+        'FCM_OFF': 1,
       }
     else:
       acc_hud_values = {
@@ -178,7 +146,8 @@ def create_ui_commands(packer, pcm_speed, hud, car_fingerprint, is_metric, idx, 
 
   if radar_disabled and car_fingerprint in HONDA_BOSCH:
     radar_hud_values = {
-      'SET_TO_1' : 0x01,
+      'CMBS_OFF': 0x01,
+      'SET_TO_1': 0x01,
     }
     commands.append(packer.make_can_msg('RADAR_HUD', bus_pt, radar_hud_values, idx))
 

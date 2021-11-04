@@ -375,6 +375,13 @@ class Android(HardwareBase):
     with open("/sys/class/leds/lcd-backlight/brightness", "w") as f:
       f.write(str(int(percentage * 2.55)))
 
+  def get_screen_brightness(self):
+    try:
+      with open("/sys/class/leds/lcd-backlight/brightness") as f:
+        return int(float(f.read()) / 2.55)
+    except Exception:
+      return 0
+
   def set_power_save(self, powersave_enabled):
     pass
 
@@ -388,6 +395,13 @@ class Android(HardwareBase):
 
   def get_modem_version(self):
     return None
+
+  def get_modem_temperatures(self):
+    # Not sure if we can get this on the LeEco
+    return []
+
+  def get_nvme_temperatures(self):
+    return []
 
   def initialize_hardware(self):
     pass
