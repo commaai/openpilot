@@ -103,6 +103,8 @@ void MapWindow::timerUpdate() {
     return;
   }
 
+  update();
+
   if (m_map.isNull()) {
     return;
   }
@@ -213,7 +215,6 @@ void MapWindow::initializeGL() {
   m_map->setPitch(MIN_PITCH);
   m_map->setStyleUrl("mapbox://styles/commaai/ckr64tlwp0azb17nqvr9fj13s");
 
-  connect(m_map.data(), SIGNAL(needsRendering()), this, SLOT(update()));
   QObject::connect(m_map.data(), &QMapboxGL::mapChanged, [=](QMapboxGL::MapChange change) {
     if (change == QMapboxGL::MapChange::MapChangeDidFinishLoadingMap) {
       loaded_once = true;
@@ -222,7 +223,7 @@ void MapWindow::initializeGL() {
 }
 
 void MapWindow::paintGL() {
-  if (!isVisible()) return;
+  if (!isVisible() || m_map.isNull()) return;
   m_map->render();
 }
 
@@ -246,6 +247,7 @@ void MapWindow::mouseDoubleClickEvent(QMouseEvent *ev) {
   if (last_position) m_map->setCoordinate(*last_position);
   if (last_bearing) m_map->setBearing(*last_bearing);
   m_map->setZoom(util::map_val<float>(velocity_filter.x(), 0, 30, MAX_ZOOM, MIN_ZOOM));
+  update();
 
   pan_counter = 0;
   zoom_counter = 0;
@@ -257,6 +259,7 @@ void MapWindow::mouseMoveEvent(QMouseEvent *ev) {
   if (!delta.isNull()) {
     pan_counter = PAN_TIMEOUT;
     m_map->moveBy(delta / MAP_SCALE);
+    update();
   }
 
   m_lastPos = ev->localPos();
@@ -274,6 +277,8 @@ void MapWindow::wheelEvent(QWheelEvent *ev) {
   }
 
   m_map->scaleBy(1 + factor, ev->pos() / MAP_SCALE);
+  update();
+
   zoom_counter = PAN_TIMEOUT;
   ev->accept();
 }
@@ -298,6 +303,7 @@ void MapWindow::pinchTriggered(QPinchGesture *gesture) {
   if (changeFlags & QPinchGesture::ScaleFactorChanged) {
     // TODO: figure out why gesture centerPoint doesn't work
     m_map->scaleBy(gesture->scaleFactor(), {width() / 2.0 / MAP_SCALE, height() / 2.0 / MAP_SCALE});
+    update();
     zoom_counter = PAN_TIMEOUT;
   }
 }
