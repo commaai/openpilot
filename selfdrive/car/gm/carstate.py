@@ -14,6 +14,7 @@ class CarState(CarStateBase):
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
     self.shifter_values = can_define.dv["ECMPRDNL"]["PRNDL"]
     self.lka_steering_cmd_counter = 0
+    self.interceptor_has_transform = False
 
   def update(self, pt_cp, loopback_cp):
     ret = car.CarState.new_message()
@@ -38,6 +39,7 @@ class CarState(CarStateBase):
     if self.CP.enableGasInterceptor:
       ret.gas = (pt_cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS"] + pt_cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS2"]) / 2.
       ret.gasPressed = ret.gas > 15
+      self.interceptor_has_transform = (pt_cp.vl["STATE"]["INTERCEPTOR_GAS"] & 8) == 8
     else:
       ret.gas = pt_cp.vl["AcceleratorPedal"]["AcceleratorPedal"] / 254.
       ret.gasPressed = ret.gas > 1e-5
@@ -131,6 +133,7 @@ class CarState(CarStateBase):
     if CP.enableGasInterceptor:
       signals.append(("INTERCEPTOR_GAS", "GAS_SENSOR", 0))
       signals.append(("INTERCEPTOR_GAS2", "GAS_SENSOR", 0))
+      signals.append(("STATE", "GAS_SENSOR", 4))
       checks.append(("GAS_SENSOR", 50))
 
     if CP.carFingerprint in EV_CAR:
