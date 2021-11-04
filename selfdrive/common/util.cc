@@ -194,22 +194,13 @@ float getenv(const char* key, float default_val) {
   return val ? atof(val) : default_val;
 }
 
-std::string tohex(const uint8_t *buf, size_t buf_size) {
-  std::unique_ptr<char[]> hexbuf(new char[buf_size * 2 + 1]);
-  for (size_t i = 0; i < buf_size; i++) {
-    sprintf(&hexbuf[i * 2], "%02x", buf[i]);
+std::string hexdump(const uint8_t* in, const size_t size) {
+  std::stringstream ss;
+  ss << std::hex << std::setfill('0');
+  for (size_t i = 0; i < size; i++) {
+    ss << std::setw(2) << static_cast<unsigned int>(in[i]);
   }
-  hexbuf[buf_size * 2] = 0;
-  return std::string(hexbuf.get(), hexbuf.get() + buf_size * 2);
-}
-
-std::string hexdump(const std::string& in) {
-    std::stringstream ss;
-    ss << std::hex << std::setfill('0');
-    for (size_t i = 0; i < in.size(); i++) {
-        ss << std::setw(2) << static_cast<unsigned int>(static_cast<unsigned char>(in[i]));
-    }
-    return ss.str();
+  return ss.str();
 }
 
 std::string dir_name(std::string const &path) {
