@@ -11,7 +11,6 @@
 
 #include "selfdrive/common/clutil.h"
 #include "selfdrive/common/timing.h"
-#include "selfdrive/common/util.h"
 //#define RUN_DISASSEMBLER
 //#define RUN_OPTIMIZER
 
@@ -24,7 +23,11 @@ map<cl_program, string> g_program_source;
 void hexdump(uint8_t *d, int len) {
   assert((len%4) == 0);
   printf("  dumping %p len 0x%x\n", d, len);
-  printf("%s\n", util::hexdump(d, len).c_str());
+  for (int i = 0; i < len/4; i++) {
+    if (i != 0 && (i%0x10) == 0) printf("\n");
+    printf("%8x ", d[i]);
+  }
+  printf("\n");
 }
 
 // *********** ioctl interceptor ***********
