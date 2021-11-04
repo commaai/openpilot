@@ -21,7 +21,6 @@ const float MAX_PITCH = 50;
 const float MIN_PITCH = 0;
 const float MAP_SCALE = 2;
 
-
 MapWindow::MapWindow(const QMapboxGLSettings &settings) :
   m_settings(settings), velocity_filter(0, 10, 0.1) {
   sm = new SubMaster({"liveLocationKalman", "navInstruction", "navRoute"});
@@ -104,8 +103,8 @@ void MapWindow::timerUpdate() {
     return;
   }
 
-  if (isVisible()) {
-    update();
+  if (m_map.isNull()) {
+    return;
   }
 
   sm->update(0);
@@ -127,11 +126,6 @@ void MapWindow::timerUpdate() {
       velocity_filter.update(velocity);
     }
   }
-
-  if (m_map.isNull()) {
-    return;
-  }
-
   loaded_once = loaded_once || m_map->isFullyLoaded();
   if (!loaded_once) {
     map_instructions->showError("Map Loading");
@@ -330,8 +324,7 @@ MapInstructions::MapInstructions(QWidget * parent) : QWidget(parent) {
   }
 
   {
-    QWidget *w = new QWidget;
-    QVBoxLayout *layout = new QVBoxLayout(w);
+    QVBoxLayout *layout = new QVBoxLayout;
 
     distance = new QLabel;
     distance->setStyleSheet(R"(font-size: 90px;)");
@@ -347,10 +340,13 @@ MapInstructions::MapInstructions(QWidget * parent) : QWidget(parent) {
     secondary->setWordWrap(true);
     layout->addWidget(secondary);
 
-    lane_layout = new QHBoxLayout;
-    layout->addLayout(lane_layout);
+    lane_widget = new QWidget;
+    lane_widget->setFixedHeight(125);
 
-    main_layout->addWidget(w);
+    lane_layout = new QHBoxLayout(lane_widget);
+    layout->addWidget(lane_widget);
+
+    main_layout->addLayout(layout);
   }
 
   setStyleSheet(R"(
@@ -403,11 +399,10 @@ void MapInstructions::showError(QString error_text) {
   secondary->setVisible(false);
   icon_01->setVisible(false);
 
-  last_banner = {};
   this->error = true;
+  lane_widget->setVisible(false);
 
   setVisible(true);
-  adjustSize();
 }
 
 void MapInstructions::noError() {
@@ -415,11 +410,6 @@ void MapInstructions::noError() {
 }
 
 void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruction) {
-  // Need multiple calls to adjustSize for it to properly resize
-  // seems like it takes a little bit of time for the images to change and
-  // the size can only be changed afterwards
-  adjustSize();
-
   // Word wrap widgets need fixed width
   primary->setFixedWidth(width() - 250);
   secondary->setFixedWidth(width() - 250);
@@ -451,9 +441,10 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
   }
 
   // Show lanes
+  bool has_lanes = false;
   clearLayout(lane_layout);
-
   for (auto const &lane: instruction.getLanes()) {
+    has_lanes = true;
     bool active = lane.getActive();
 
     // TODO: only use active direction if active
@@ -476,14 +467,17 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
 
     QPixmap pix(fn + ".png");
     auto icon = new QLabel;
-    icon->setPixmap(pix.scaledToWidth(active ? 125 : 75, Qt::SmoothTransformation));
+    int wh = active ? 125 : 75;
+    icon->setPixmap(pix.scaled(wh, wh, Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
     icon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
     lane_layout->addWidget(icon);
   }
+  lane_widget->setVisible(has_lanes);
 
   show();
-  adjustSize();
+  resize(sizeHint());
 }
+
 
 void MapInstructions::hideIfNoError() {
   if (!error) {

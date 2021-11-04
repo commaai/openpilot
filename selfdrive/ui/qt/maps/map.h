@@ -33,8 +33,8 @@ private:
   QLabel *primary;
   QLabel *secondary;
   QLabel *icon_01;
+  QWidget *lane_widget;
   QHBoxLayout *lane_layout;
-  QMap<QString, QVariant> last_banner;
   bool error = false;
 
 public:

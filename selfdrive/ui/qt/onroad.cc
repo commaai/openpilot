@@ -10,7 +10,6 @@
 #include "selfdrive/ui/qt/maps/map.h"
 #endif
 
-
 OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   QVBoxLayout *main_layout  = new QVBoxLayout(this);
   main_layout->setMargin(bdr_s);
@@ -93,7 +92,7 @@ void OnroadWindow::offroadTransition(bool offroad) {
       settings.setAccessToken(token.trimmed());
 
       MapWindow * m = new MapWindow(settings);
-      m->setFixedWidth(width() / 2 - bdr_s);
+      m->setFixedWidth(topWidget(this)->width() / 2);
       QObject::connect(this, &OnroadWindow::offroadTransitionSignal, m, &MapWindow::offroadTransition);
       split->addWidget(m, 0, Qt::AlignRight);
       map = m;
