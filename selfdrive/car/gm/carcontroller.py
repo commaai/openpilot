@@ -101,19 +101,21 @@ class CarController():
         # This prevents unexpected pedal range rescaling
         can_sends.append(create_gas_command(self.packer_pt, pedal_gas, idx))
 
-      if (frame % 8) == 0:
-        can_sends.append(create_gas_multiplier_command(self.packer_pt, 1545, idx))
-        can_sends.append(create_gas_divisor_command(self.packer_pt, 1000, idx))
-        can_sends.append(create_gas_offset_command(self.packer_pt, 25, idx))
-        # The ECM in GM vehicles has a different resistance between signal and ground than honda and toyota
-        # Since the Pedal's resistance doesn't match, the values read by the ADC are incorrect
-        # Output values are fine
-        # formula is new_adc = ((raw_adc * MULTIPLIER) / DIVISOR) + OFFSET
-        # multiplier and divisor are used because we are limited to 16-bit integers on the panda
-        # The read ADC value must be multiplied sufficiently large that the division is integral
-        # Note: might be able to do the * 1000 part on pedal, but this is more flexible...
-        # Technically these only need to be sent once, but pedal may bounce. Sending on the 8's, probably don't need to be so freq
-        # Note: pedal ignores counter for these messages
+        #Only send transform when transform isn't populated
+        if (not CS.interceptor_has_transform) and (frame % 8) == 0:
+          can_sends.append(create_gas_multiplier_command(self.packer_pt, 1545, idx))
+          can_sends.append(create_gas_divisor_command(self.packer_pt, 1000, idx))
+          can_sends.append(create_gas_offset_command(self.packer_pt, 25, idx))
+          # The ECM in GM vehicles has a different resistance between signal and ground than honda and toyota
+          # Since the Pedal's resistance doesn't match, the values read by the ADC are incorrect
+          # Output values are fine
+          # formula is new_adc = ((raw_adc * MULTIPLIER) / DIVISOR) + OFFSET
+          # multiplier and divisor are used because we are limited to 16-bit integers on the panda
+          # The read ADC value must be multiplied sufficiently large that the division is integral
+          # Note: might be able to do the * 1000 part on pedal, but this is more flexible...
+          # Technically these only need to be sent once, but pedal may bounce. Sending on the 8's, probably don't need to be so freq
+          # Note: pedal ignores counter for these messages
+          # Note: by using the same counter as the actual last gas command, these will be ignored by older pedal firmware
 
     if CS.CP.carFingerprint not in NO_ASCM:
       # Send dashboard UI commands (ACC status), 25hz
