@@ -44,7 +44,7 @@ qt_env.Depends(assets, Glob('#selfdrive/assets/*', exclude=[assets, assets_src, 
 asset_obj = qt_env.Object("assets", assets)
 
 # build soundd
-qt_env.Program("_soundd", "soundd.cc", LIBS=base_libs)
+qt_env.Program("_soundd", "soundd.cc", LIBS=qt_libs)
 if GetOption('test'):
   qt_env.Program("tests/playsound", "tests/playsound.cc", LIBS=base_libs)
 
