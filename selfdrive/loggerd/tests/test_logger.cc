@@ -66,7 +66,7 @@ void write_msg(LoggerHandle *logger) {
 TEST_CASE("logger") {
   const std::string log_root = "/tmp/test_logger";
   system(("rm " + log_root + " -rf").c_str());
-  
+
   ExitHandler do_exit;
 
   LoggerState logger = {};
@@ -121,11 +121,11 @@ TEST_CASE("logger") {
       REQUIRE(segment == i);
       main_segment = segment;
       if (i == 0) {
-        for (int i = 0; i < thread_cnt; ++i) {
+        for (int j = 0; j < thread_cnt; ++j) {
           threads.push_back(std::thread(logging_thread));
         }
       }
-      for (int i = 0; i < 100; ++i) {
+      for (int j = 0; j < 100; ++j) {
         write_msg(logger.cur_handle);
         usleep(1);
       }

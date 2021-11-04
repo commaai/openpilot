@@ -689,8 +689,8 @@ static void camera_open(CameraState *s) {
     csiphy_info->settle_time = MIPI_SETTLE_CNT * 200000000ULL;
     csiphy_info->data_rate = 48000000;  // Calculated by camera_freqs.py
 
-    int ret = device_config(s->csiphy_fd, s->session_handle, s->csiphy_dev_handle, cam_packet_handle);
-    assert(ret == 0);
+    int ret_ = device_config(s->csiphy_fd, s->session_handle, s->csiphy_dev_handle, cam_packet_handle);
+    assert(ret_ == 0);
 
     munmap(csiphy_info, buf_desc[0].size);
     release_fd(s->multi_cam_state->video0_fd, buf_desc[0].mem_handle);

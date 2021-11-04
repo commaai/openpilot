@@ -18,6 +18,7 @@ void setQtSurfaceFormat();
 QString timeAgo(const QDateTime &date);
 void swagLogMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg);
 void initApp();
+QWidget* topWidget (QWidget* widget);
 
 
 // convenience class for wrapping layouts

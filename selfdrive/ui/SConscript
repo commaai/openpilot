@@ -44,7 +44,7 @@ qt_env.Depends(assets, Glob('#selfdrive/assets/*', exclude=[assets, assets_src, 
 asset_obj = qt_env.Object("assets", assets)
 
 # build soundd
-qt_env.Program("_soundd", "soundd.cc", LIBS=base_libs)
+qt_env.Program("_soundd", "soundd.cc", LIBS=qt_libs)
 if GetOption('test'):
   qt_env.Program("tests/playsound", "tests/playsound.cc", LIBS=base_libs)
 
@@ -122,3 +122,8 @@ if arch in ['x86_64', 'Darwin'] or GetOption('extras'):
 
   if GetOption('test'):
     qt_env.Program('replay/tests/test_replay', ['replay/tests/test_runner.cc', 'replay/tests/test_replay.cc'], LIBS=[replay_libs])
+
+# navd
+if maps:
+  navd_src = ["navd/main.cc", "navd/route_engine.cc"]
+  qt_env.Program("navd/_navd", navd_src, LIBS=qt_libs + ['common', 'json11'])

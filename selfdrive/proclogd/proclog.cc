@@ -225,8 +225,8 @@ void buildProcs(cereal::ProcLog::Builder &builder) {
     const ProcCache &extra_info = Parser::getProcExtraInfo(r.pid, r.name);
     l.setExe(extra_info.exe);
     auto lcmdline = l.initCmdline(extra_info.cmdline.size());
-    for (size_t i = 0; i < lcmdline.size(); i++) {
-      lcmdline.set(i, extra_info.cmdline[i]);
+    for (size_t j = 0; j < lcmdline.size(); j++) {
+      lcmdline.set(j, extra_info.cmdline[j]);
     }
   }
 }

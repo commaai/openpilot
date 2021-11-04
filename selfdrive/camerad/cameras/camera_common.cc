@@ -75,11 +75,11 @@ private:
   cl_kernel krnl_;
 };
 
-void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType rgb_type, VisionStreamType yuv_type, release_cb release_callback) {
+void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType init_rgb_type, VisionStreamType init_yuv_type, release_cb init_release_callback) {
   vipc_server = v;
-  this->rgb_type = rgb_type;
-  this->yuv_type = yuv_type;
-  this->release_callback = release_callback;
+  this->rgb_type = init_rgb_type;
+  this->yuv_type = init_yuv_type;
+  this->release_callback = init_release_callback;
 
   const CameraInfo *ci = &s->ci;
   camera_state = s;

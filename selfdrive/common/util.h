@@ -16,14 +16,14 @@
 #include <vector>
 
 // keep trying if x gets interrupted by a signal
-#define HANDLE_EINTR(x)                                       \
-  ({                                                          \
-    decltype(x) ret;                                          \
-    int try_cnt = 0;                                          \
-    do {                                                      \
-      ret = (x);                                              \
-    } while (ret == -1 && errno == EINTR && try_cnt++ < 100); \
-    ret;                                                      \
+#define HANDLE_EINTR(x)                                        \
+  ({                                                           \
+    decltype(x) ret_;                                          \
+    int try_cnt = 0;                                           \
+    do {                                                       \
+      ret_ = (x);                                              \
+    } while (ret_ == -1 && errno == EINTR && try_cnt++ < 100); \
+    ret_;                                                       \
   })
 
 #ifndef sighandler_t
@@ -66,8 +66,7 @@ std::string getenv(const char* key, const char* default_val = "");
 int getenv(const char* key, int default_val);
 float getenv(const char* key, float default_val);
 
-std::string tohex(const uint8_t* buf, size_t buf_size);
-std::string hexdump(const std::string& in);
+std::string hexdump(const uint8_t* in, const size_t size);
 std::string dir_name(std::string const& path);
 
 // **** file fhelpers *****

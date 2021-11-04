@@ -18,7 +18,7 @@ std::string cacheFilePath(const std::string &url) {
     return comma_cache.back() == '/' ? comma_cache : comma_cache + "/";
   }();
 
-  return cache_path + sha256(getUrlWithoutQuery(url));;
+  return cache_path + sha256(getUrlWithoutQuery(url));
 }
 
 std::string FileReader::read(const std::string &file, std::atomic<bool> *abort) {
@@ -52,7 +52,7 @@ std::string FileReader::download(const std::string &url, std::atomic<bool> *abor
       std::ostringstream oss;
       result.resize(remote_file_size);
       oss.rdbuf()->pubsetbuf(result.data(), result.size());
-      int chunks = chunk_size_ > 0 ? std::min(1, (int)std::nearbyint(remote_file_size / (float)chunk_size_)) : 1;
+      int chunks = chunk_size_ > 0 ? std::max(1, (int)std::nearbyint(remote_file_size / (float)chunk_size_)) : 1;
       if (httpMultiPartDownload(url, oss, chunks, remote_file_size, abort)) {
         return result;
       }

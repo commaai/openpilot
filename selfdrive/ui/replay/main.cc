@@ -39,7 +39,7 @@ int getch() {
   return ch;
 }
 
-void keyboardThread(Replay *replay) {
+void keyboardThread(Replay *replay_) {
   char c;
   while (true) {
     c = getch();
@@ -51,31 +51,46 @@ void keyboardThread(Replay *replay) {
       try {
         if (r[0] == '#') {
           r.erase(0, 1);
-          replay->seekTo(std::stoi(r) * 60, false);
+          replay_->seekTo(std::stoi(r) * 60, false);
         } else {
-          replay->seekTo(std::stoi(r), false);
+          replay_->seekTo(std::stoi(r), false);
         }
       } catch (std::invalid_argument) {
         qDebug() << "invalid argument";
       }
       getch();  // remove \n from entering seek
     } else if (c == 'm') {
-      replay->seekTo(+60, true);
+      replay_->seekTo(+60, true);
     } else if (c == 'M') {
-      replay->seekTo(-60, true);
+      replay_->seekTo(-60, true);
     } else if (c == 's') {
-      replay->seekTo(+10, true);
+      replay_->seekTo(+10, true);
     } else if (c == 'S') {
-      replay->seekTo(-10, true);
+      replay_->seekTo(-10, true);
     } else if (c == 'G') {
-      replay->seekTo(0, true);
+      replay_->seekTo(0, true);
     } else if (c == ' ') {
-      replay->pause(!replay->isPaused());
+      replay_->pause(!replay_->isPaused());
     }
   }
 }
 
+void replayMessageOutput(QtMsgType type, const QMessageLogContext &context, const QString &msg) {
+  QByteArray localMsg = msg.toLocal8Bit();
+  if (type == QtDebugMsg) {
+    std::cout << "\033[38;5;248m" << localMsg.constData() << "\033[00m" << std::endl;
+  } else if (type == QtWarningMsg) {
+    std::cout << "\033[38;5;227m" << localMsg.constData() << "\033[00m" << std::endl;
+  } else if (type == QtCriticalMsg) {
+    std::cout << "\033[38;5;196m" << localMsg.constData() << "\033[00m" << std::endl;
+  } else {
+    std::cout << localMsg.constData() << std::endl;
+  }
+}
+
 int main(int argc, char *argv[]) {
+  qInstallMessageHandler(replayMessageOutput);
+
   QApplication app(argc, argv);
   std::signal(SIGINT, sigHandler);
   std::signal(SIGTERM, sigHandler);

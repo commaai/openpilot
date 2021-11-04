@@ -44,7 +44,6 @@ FrameReader::FrameReader(bool local_cache, int chunk_size, int retries) : FileRe
   av_frame_ = av_frame_alloc();
   rgb_frame_ = av_frame_alloc();
   yuv_frame_ = av_frame_alloc();;
-
 }
 
 FrameReader::~FrameReader() {
@@ -76,8 +75,11 @@ bool FrameReader::load(const std::string &url, std::atomic<bool> *abort) {
   pFormatCtx_->pb = avio_ctx_;
 
   pFormatCtx_->probesize = 10 * 1024 * 1024;  // 10MB
-  if (avformat_open_input(&pFormatCtx_, url.c_str(), NULL, NULL) != 0) {
-    printf("error loading %s\n", url.c_str());
+  int err = avformat_open_input(&pFormatCtx_, url.c_str(), NULL, NULL);
+  if (err != 0) {
+    char err_str[1024] = {0};
+    av_strerror(err, err_str, std::size(err_str));
+    printf("Error loading video - %s - %s\n", err_str, url.c_str());
     return false;
   }
   avformat_find_stream_info(pFormatCtx_, NULL);
@@ -91,8 +93,8 @@ bool FrameReader::load(const std::string &url, std::atomic<bool> *abort) {
   int ret = avcodec_copy_context(pCodecCtx_, pCodecCtxOrig);
   if (ret != 0) return false;
 
-  pCodecCtx_->thread_count = 0;
-  pCodecCtx_->thread_type = FF_THREAD_FRAME;
+  // pCodecCtx_->thread_count = 0;
+  // pCodecCtx_->thread_type = FF_THREAD_FRAME;
   ret = avcodec_open2(pCodecCtx_, pCodec, NULL);
   if (ret < 0) return false;
 
@@ -111,7 +113,7 @@ bool FrameReader::load(const std::string &url, std::atomic<bool> *abort) {
   frames_.reserve(60 * 20);  // 20fps, one minute
   while (!(abort && *abort)) {
     Frame &frame = frames_.emplace_back();
-    int err = av_read_frame(pFormatCtx_, &frame.pkt);
+    err = av_read_frame(pFormatCtx_, &frame.pkt);
     if (err < 0) {
       frames_.pop_back();
       valid_ = (err == AVERROR_EOF);
@@ -148,15 +150,7 @@ bool FrameReader::decode(int idx, uint8_t *rgb, uint8_t *yuv) {
   for (int i = from_idx; i <= idx; ++i) {
     Frame &frame = frames_[i];
     if ((!frame.decoded || i == idx) && !frame.failed) {
-      while (true) {
-        int ret = avcodec_decode_video2(pCodecCtx_, av_frame_, &frame.decoded, &(frame.pkt));
-        if (ret > 0 && !frame.decoded) {
-          // decode thread is still receiving the initial packets
-          usleep(0);
-        } else {
-          break;
-        }
-      }
+      avcodec_decode_video2(pCodecCtx_, av_frame_, &frame.decoded, &(frame.pkt));
       frame.failed = !frame.decoded;
       if (frame.decoded && i == idx) {
         return decodeFrame(av_frame_, rgb, yuv);
