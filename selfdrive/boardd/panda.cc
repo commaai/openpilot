@@ -358,7 +358,6 @@ void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list) {
   send.resize(72 * can_data_list.size()); // TODO: need to include 1 byte for each usb 64bytes frame
 
   int msg_count = 0;
-
   while (msg_count < can_data_list.size()) {
     uint32_t pos = 0;
     while (pos < 256) {
@@ -399,8 +398,6 @@ void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list) {
       usb_bulk_write(3, (uint8_t*)send.data(), pos, 5);
     }
   }
-  if (can_data_list.size() > 0) {
-  }
 }
 
 bool Panda::can_receive(std::vector<can_frame>& out_vec) {
@@ -423,7 +420,6 @@ bool Panda::can_receive(std::vector<can_frame>& out_vec) {
   uint8_t tail[72];
   uint8_t tail_size = 0;
   uint8_t counter = 0;
-
   for (int i = 0; i < recv; i += 64) {
     if (counter != data[i]) {
       LOGE("CAN: MALFORMED USB RECV PACKET");
