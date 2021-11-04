@@ -101,6 +101,13 @@ class CarController():
         # This prevents unexpected pedal range rescaling
         can_sends.append(create_gas_command(self.packer_pt, pedal_gas, idx))
 
+        # TODO: Test crossflashed brake controller
+        # This is only for testing hacked brakes. Assuming command is the same but on PT bus...
+        at_full_stop = enabled and CS.out.standstill
+        near_stop = enabled and (CS.out.vEgo < P.NEAR_STOP_BRAKE_PHASE)
+        can_sends.append(gmcan.create_friction_brake_command(self.packer_pt, CanBus.POWERTRAIN, apply_brake, idx, near_stop, at_full_stop))
+
+
         #Only send transform when transform isn't populated
         if (not CS.interceptor_has_transform) and (frame % 8) == 0:
           can_sends.append(create_gas_multiplier_command(self.packer_pt, 1545, idx))
