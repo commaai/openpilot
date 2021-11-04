@@ -60,7 +60,6 @@ void CameraServer::cameraThread(Camera &cam) {
           .timestamp_sof = eidx.getTimestampSof(),
           .timestamp_eof = eidx.getTimestampEof(),
       };
-
       if (rgb) vipc_server_->send(rgb, &extra, false);
       if (yuv) vipc_server_->send(yuv, &extra, false);
     } else {
