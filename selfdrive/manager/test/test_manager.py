@@ -49,7 +49,7 @@ class TestManager(unittest.TestCase):
       self.assertTrue(state.running, f"{p} not running")
 
       exit_code = managed_processes[p].stop(retry=False)
-      if (p == 'ui') or (EON and p == 'logcatd'):
+      if (p == 'ui') or (EON and p == 'logcatd') or (p == 'soundd'):
         # TODO: make Qt UI exit gracefully
         continue
 
