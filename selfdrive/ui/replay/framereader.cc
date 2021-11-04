@@ -31,7 +31,7 @@ int readFunction(void *opaque, uint8_t *buf, int buf_size) {
   return iss.gcount() ? iss.gcount() : AVERROR_EOF;
 }
 
-} // namespace
+}  // namespace
 
 FrameReader::FrameReader(bool local_cache, int chunk_size, int retries) : FileReader(local_cache, chunk_size, retries) {
   static std::once_flag once_flag;
@@ -43,7 +43,7 @@ FrameReader::FrameReader(bool local_cache, int chunk_size, int retries) : FileRe
   pFormatCtx_ = avformat_alloc_context();
   av_frame_ = av_frame_alloc();
   rgb_frame_ = av_frame_alloc();
-  yuv_frame_ = av_frame_alloc();;
+  yuv_frame_ = av_frame_alloc();
 }
 
 FrameReader::~FrameReader() {
