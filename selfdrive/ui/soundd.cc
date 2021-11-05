@@ -67,8 +67,8 @@ public:
   }
 
   void setAlert(AudibleAlert sound) {
-    if (current_sound_ != sound) {
-      current_sound_ = sound;
+    if (current_sound != sound) {
+      current_sound = sound;
       // stop sounds
       for (auto &[s, loops] : sounds) {
         // Only stop repeating sounds
@@ -87,7 +87,7 @@ public:
   }
 
 private:
-  AudibleAlert current_sound_ = AudibleAlert::NONE;
+  AudibleAlert current_sound = AudibleAlert::NONE;
   QMap<AudibleAlert, QPair<QSoundEffect*, int>> sounds;
   SubMaster sm;
 };
