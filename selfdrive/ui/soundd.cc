@@ -63,6 +63,9 @@ private slots:
       // scale volume with speed
       volume = util::map_val((*sm)["carState"].getCarState().getVEgo(), 0.f, 20.f,
                              Hardware::MIN_VOLUME, Hardware::MAX_VOLUME);
+      for (auto &[s, loops] : sounds) {
+        s->setVolume(std::round(100 * volume) / 100);
+      }
     }
     if (sm->updated("controlsState")) {
       const cereal::ControlsState::Reader &cs = (*sm)["controlsState"].getControlsState();
@@ -91,7 +94,6 @@ private slots:
       if (alert.sound != AudibleAlert::NONE) {
         auto &[s, loops] = sounds[alert.sound];
         s->setLoopCount(loops);
-        s->setVolume(volume);
         s->play();
       }
     }
