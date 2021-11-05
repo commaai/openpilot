@@ -126,14 +126,17 @@ def fingerprint(logcan, sendcan):
     a = get_one_can(logcan)
 
     for can in a.can:
-      # need to independently try to fingerprint both bus 0 and 1 to work
-      # for the combo black_panda and honda_bosch. Ignore extended messages
-      # and VIN query response.
-      # Include bus 2 for toyotas to disambiguate cars using camera messages
-      # (ideally should be done for all cars but we can't for Honda Bosch)
-      if can.src in range(0, 4):
+      # The fingerprint dict is generated for all buses, this way the car interface
+      # can use it to detect a (valid) multipanda setup and initialize accordingly
+      if can.src < 128:
+        if can.src not in finger.keys():
+          finger[can.src] = {}
         finger[can.src][can.address] = len(can.dat)
+
       for b in candidate_cars:
+        # Include bus 2 for toyotas to disambiguate cars using camera messages
+        # (ideally should be done for all cars but we can't for Honda Bosch)
+        # Ignore extended messages and VIN query response.
         if (can.src == b or (only_toyota_left(candidate_cars[b]) and can.src == 2)) and \
            can.address < 0x800 and can.address not in [0x7df, 0x7e0, 0x7e8]:
           candidate_cars[b] = eliminate_incompatible_cars(can, candidate_cars[b])
