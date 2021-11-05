@@ -45,11 +45,11 @@ public:
 
     QTimer *timer = new QTimer(this);
     QObject::connect(timer, &QTimer::timeout, this, &Sound::update);
-    timer->start();
+    timer->start(1000 / UI_FREQ);
   };
 
   void update() {
-    sm.update(100);
+    sm.update(0);
     if (sm.updated("carState")) {
       // scale volume with speed
       float volume = util::map_val(sm["carState"].getCarState().getVEgo(), 0.f, 20.f,
