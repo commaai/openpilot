@@ -52,4 +52,7 @@ private slots:
   void routeCalculated(QGeoRouteReply *reply);
   void recomputeRoute();
   void sendRoute();
+
+signals:
+  void positionUpdated(QMapbox::Coordinate position, float bearing);
 };

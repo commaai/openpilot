@@ -10,6 +10,7 @@
 
 const qreal REROUTE_DISTANCE = 25;
 const float MANEUVER_TRANSITION_THRESHOLD = 10;
+const float UPDATE_FREQ = 2.0;  // Hz
 
 static float get_time_typical(const QGeoRouteSegment &segment) {
   auto maneuver = segment.maneuver();
@@ -101,12 +102,11 @@ RouteEngine::RouteEngine() {
   // Timers
   timer = new QTimer(this);
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(timerUpdate()));
-  timer->start(1000);
+  timer->start(1000 * 1 / UPDATE_FREQ);
 
   // Build routing engine
   QVariantMap parameters;
-  QString token = MAPBOX_TOKEN.isEmpty() ? CommaApi::create_jwt({}, 4 * 7 * 24 * 3600) : MAPBOX_TOKEN;
-  parameters["mapbox.access_token"] = token;
+  parameters["mapbox.access_token"] = get_mapbox_token();
   parameters["mapbox.directions_api_url"] = MAPS_HOST + "/directions/v5/mapbox/";
 
   geoservice_provider = new QGeoServiceProvider("mapbox", parameters);
@@ -153,6 +153,7 @@ void RouteEngine::timerUpdate() {
   if (localizer_valid) {
     last_bearing = RAD2DEG(orientation.getValue()[2]);
     last_position = QMapbox::Coordinate(pos.getValue()[0], pos.getValue()[1]);
+    emit positionUpdated(*last_position, *last_bearing);
   }
 
   recomputeRoute();

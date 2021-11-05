@@ -5,12 +5,20 @@
 #include <QMapboxGL>
 #include <QGeoCoordinate>
 
+#include "selfdrive/common/util.h"
 #include "common/transformations/coordinates.hpp"
 #include "common/transformations/orientation.hpp"
 #include "cereal/messaging/messaging.h"
 
+const float METER_2_MILE = 0.000621371;
+const float METER_2_FOOT = 3.28084;
+
+const QString MAPBOX_TOKEN = util::getenv("MAPBOX_TOKEN").c_str();
+const QString MAPS_HOST = util::getenv("MAPS_HOST", MAPBOX_TOKEN.isEmpty() ? "https://maps.comma.ai" : "https://api.mapbox.com").c_str();
+
 #define RAD2DEG(x) ((x) * 180.0 / M_PI)
 
+QString get_mapbox_token();
 QGeoCoordinate to_QGeoCoordinate(const QMapbox::Coordinate &in);
 QMapbox::CoordinatesCollections model_to_collection(
   const cereal::LiveLocationKalman::Measurement::Reader &calibratedOrientationECEF,

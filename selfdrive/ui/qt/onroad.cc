@@ -5,9 +5,9 @@
 #include "selfdrive/common/timing.h"
 #include "selfdrive/ui/paint.h"
 #include "selfdrive/ui/qt/util.h"
-#include "selfdrive/ui/qt/api.h"
 #ifdef ENABLE_MAPS
 #include "selfdrive/ui/qt/maps/map.h"
+#include "selfdrive/ui/qt/maps/map_helpers.h"
 #endif
 
 OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
@@ -70,15 +70,12 @@ void OnroadWindow::offroadTransition(bool offroad) {
     if (map == nullptr && (QUIState::ui_state.has_prime || !MAPBOX_TOKEN.isEmpty())) {
       QMapboxGLSettings settings;
 
-      // Valid for 4 weeks since we can't swap tokens on the fly
-      QString token = MAPBOX_TOKEN.isEmpty() ? CommaApi::create_jwt({}, 4 * 7 * 24 * 3600) : MAPBOX_TOKEN;
-
       if (!Hardware::PC()) {
         settings.setCacheDatabasePath("/data/mbgl-cache.db");
       }
       settings.setApiBaseUrl(MAPS_HOST);
       settings.setCacheDatabaseMaximumSize(20 * 1024 * 1024);
-      settings.setAccessToken(token.trimmed());
+      settings.setAccessToken(get_mapbox_token());
 
       MapWindow * m = new MapWindow(settings);
       m->setFixedWidth(topWidget(this)->width() / 2);
