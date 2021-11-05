@@ -339,13 +339,12 @@ class CarInterface(CarInterfaceBase):
       ret.longitudinalTuning.kpV = [3.6, 2.4, 1.5]
       ret.longitudinalTuning.kiV = [0.54, 0.36]
 
-    if candidate in TSS2_CAR:
-      # Matches TSS2 Camry Hybrid
-      ret.startAccel = 0.0
-      ret.stopAccel = -0.4
-      # just something extra:
-      ret.stoppingDecelRate = 0.3  # reach stopping target smoothly
-      # accel rate shouldn't help much
+    # Matches TSS2 Camry Hybrid
+    ret.startAccel = 0.0
+    ret.stopAccel = -0.4
+    # just something extra:
+    ret.stoppingDecelRate = 0.3  # reach stopping target smoothly
+    # accel rate shouldn't help much
 
     return ret
 
