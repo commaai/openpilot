@@ -25,17 +25,20 @@ public:
     // TODO: merge again and add EQ in the amp config
     const QString sound_asset_path = Hardware::TICI() ? "../assets/sounds_tici/" : "../assets/sounds/";
     std::tuple<AudibleAlert, QString, bool> sound_list[] = {
-        {AudibleAlert::CHIME_DISENGAGE, "disengaged.wav", false},
-        {AudibleAlert::CHIME_ENGAGE, "engaged.wav", false},
-        {AudibleAlert::CHIME_WARNING1, "warning_1.wav", false},
-        {AudibleAlert::CHIME_WARNING2, "warning_2.wav", false},
-        {AudibleAlert::CHIME_WARNING2_REPEAT, "warning_2.wav", true},
-        {AudibleAlert::CHIME_WARNING_REPEAT, "warning_repeat.wav", true},
-        {AudibleAlert::CHIME_ERROR, "error.wav", false},
-        {AudibleAlert::CHIME_PROMPT, "error.wav", false}};
+      {AudibleAlert::CHIME_DISENGAGE, "disengaged.wav", false},
+      {AudibleAlert::CHIME_ENGAGE, "engaged.wav", false},
+      {AudibleAlert::CHIME_WARNING1, "warning_1.wav", false},
+      {AudibleAlert::CHIME_WARNING2, "warning_2.wav", false},
+      {AudibleAlert::CHIME_WARNING2_REPEAT, "warning_2.wav", true},
+      {AudibleAlert::CHIME_WARNING_REPEAT, "warning_repeat.wav", true},
+      {AudibleAlert::CHIME_ERROR, "error.wav", false},
+      {AudibleAlert::CHIME_PROMPT, "error.wav", false},
+    };
     for (auto &[alert, fn, loops] : sound_list) {
       QSoundEffect *s = new QSoundEffect(this);
-      QObject::connect(s, &QSoundEffect::statusChanged, [=]() { assert(s->status() != QSoundEffect::Error); });
+      QObject::connect(s, &QSoundEffect::statusChanged, [=]() {
+        assert(s->status() != QSoundEffect::Error);
+      });
       s->setSource(QUrl::fromLocalFile(sound_asset_path + fn));
       sounds[alert] = {s, loops ? QSoundEffect::Infinite : 0};
     }
