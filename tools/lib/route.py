@@ -20,6 +20,7 @@ ECAMERA_FILENAMES = ['ecamera.hevc']
 
 class Route(object):
   def __init__(self, route_name, data_dir=None):
+    self.files = None
     self.route_name = route_name.replace('_', '|')
     if data_dir is not None:
       self._segments = self._get_segments_local(data_dir)
@@ -59,9 +60,10 @@ class Route(object):
   def _get_segments_remote(self):
     api = CommaApi(get_token())
     route_files = api.get('v1/route/' + self.route_name + '/files')
+    self.files = list(chain.from_iterable(route_files.values()))
 
     segments = {}
-    for url in chain.from_iterable(route_files.values()):
+    for url in self.files:
       _, dongle_id, time_str, segment_num, fn = urlparse(url).path.rsplit('/', maxsplit=4)
       segment_name = f'{dongle_id}|{time_str}--{segment_num}'
       if segments.get(segment_name):
