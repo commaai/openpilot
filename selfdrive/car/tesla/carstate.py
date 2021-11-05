@@ -16,6 +16,7 @@ class CarState(CarStateBase):
     self.msg_stw_actn_req = None
     self.hands_on_level = 0
     self.steer_warning = None
+    self.acc_state = 0
 
   def update(self, cp, cp_cam):
     ret = car.CarState.new_message()
@@ -88,6 +89,7 @@ class CarState(CarStateBase):
 
     # Messages needed by carcontroller
     self.msg_stw_actn_req = copy.copy(cp.vl["STW_ACTN_RQ"])
+    self.acc_state = cp_cam.vl["DAS_control"]["DAS_accState"]
 
     return ret
 
@@ -174,8 +176,10 @@ class CarState(CarStateBase):
   def get_cam_can_parser(CP):
     signals = [
       # sig_name, sig_address, default
+      ("DAS_accState", "DAS_control", 0),
     ]
     checks = [
       # sig_address, frequency
+      ("DAS_control", 40),
     ]
-    return CANParser(DBC[CP.carFingerprint]['chassis'], signals, checks, CANBUS.autopilot)
+    return CANParser(DBC[CP.carFingerprint]['chassis'], signals, checks, CANBUS.autopilot_chassis)

@@ -18,8 +18,9 @@ from selfdrive.hardware import TICI
 class KalmanParams():
   def __init__(self, dt):
     # Lead Kalman Filter params, calculating K from A, C, Q, R requires the control library.
-    # hardcoding a lookup table to compute K for values of radar_ts between 0.1s and 1.0s
-    assert dt > .01 and dt < .1, "Radar time step must be between .01s and 0.1s"
+    # hardcoding a lookup table to compute K for values of radar_ts between 0.01s and 0.15s
+    # TODO: calculate new values for radar_ts > 0.1s
+    assert dt > .01 and dt < .15, "Radar time step must be between .01s and 0.15s"
     self.A = [[1.0, dt], [0.0, 1.0]]
     self.C = [1.0, 0.0]
     #Q = np.matrix([[10., 0.0], [0.0, 100.]])
