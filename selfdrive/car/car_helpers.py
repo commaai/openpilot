@@ -79,10 +79,6 @@ interface_names = _get_interface_names()
 interfaces = load_interfaces(interface_names)
 
 
-def only_toyota_left(candidate_cars):
-  return all(("TOYOTA" in c or "LEXUS" in c) for c in candidate_cars) and len(candidate_cars) > 0
-
-
 # **** for use live only ****
 def fingerprint(logcan, sendcan):
   fixed_fingerprint = os.environ.get('FINGERPRINT', "")
@@ -134,22 +130,16 @@ def fingerprint(logcan, sendcan):
         finger[can.src][can.address] = len(can.dat)
 
       for b in candidate_cars:
-        # Include bus 2 for toyotas to disambiguate cars using camera messages
-        # (ideally should be done for all cars but we can't for Honda Bosch)
         # Ignore extended messages and VIN query response.
-        if (can.src == b or (only_toyota_left(candidate_cars[b]) and can.src == 2)) and \
-           can.address < 0x800 and can.address not in [0x7df, 0x7e0, 0x7e8]:
+        if can.src == b and can.address < 0x800 and can.address not in [0x7df, 0x7e0, 0x7e8]:
           candidate_cars[b] = eliminate_incompatible_cars(can, candidate_cars[b])
 
     # if we only have one car choice and the time since we got our first
     # message has elapsed, exit
     for b in candidate_cars:
-      # Toyota needs higher time to fingerprint, since DSU does not broadcast immediately
-      if only_toyota_left(candidate_cars[b]):
-        frame_fingerprint = 100  # 1s
       if len(candidate_cars[b]) == 1 and frame > frame_fingerprint:
-          # fingerprint done
-          car_fingerprint = candidate_cars[b][0]
+        # fingerprint done
+        car_fingerprint = candidate_cars[b][0]
 
     # bail if no cars left or we've been waiting for more than 2s
     failed = (all(len(cc) == 0 for cc in candidate_cars.values()) and frame > frame_fingerprint) or frame > 200
