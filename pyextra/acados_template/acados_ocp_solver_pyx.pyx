@@ -99,11 +99,11 @@ cdef class AcadosOcpSolverFast:
     def get_slice(self, int start_stage_, int end_stage_, str field_):
         field = field_.encode('utf-8')
         dims = acados_solver_common.ocp_nlp_dims_get_from_attr(self.nlp_config, self.nlp_dims, self.nlp_out, start_stage_, field)
-        out = np.ascontiguousarray(np.zeros((end_stage_ - start_stage_, dims)), dtype=np.float64)
+        out = np.zeros((end_stage_ - start_stage_, dims), order='C', dtype=np.float64)
         self.fill_in_slice(start_stage_, end_stage_, field_, out)
         return out
 
-    def fill_in_slice(self, int start_stage_, int end_stage_, str field_, double[:,:] arr):
+    def fill_in_slice(self, int start_stage_, int end_stage_, str field_, double[:,::1] arr):
         out_fields = ['x', 'u', 'z', 'pi', 'lam', 't']
         mem_fields = ['sl', 'su']
 
@@ -256,7 +256,7 @@ cdef class AcadosOcpSolverFast:
                     \n Possible values are {}. Exiting.'.format(fields, fields))
 
         if field_ in ['sqp_iter', 'stat_m', 'stat_n']:
-            out = np.ascontiguousarray(np.zeros((1,)), dtype=np.int64)
+            out = np.zeros((1,), order='C', dtype=np.int64)
             out_data = out.data
 
         elif field_ == 'statistics':
@@ -266,7 +266,7 @@ cdef class AcadosOcpSolverFast:
 
             min_size = min([stat_m, sqp_iter+1])
 
-            out = np.ascontiguousarray(np.zeros((stat_n[0]+1, min_size[0])), dtype=np.float64)
+            out = np.zeros((stat_n[0]+1, min_size[0]), order='C', dtype=np.float64)
             out_data = out.data
 
         elif field_ == 'qp_iter':
@@ -277,7 +277,7 @@ cdef class AcadosOcpSolverFast:
                 out = full_stats[2, :]
 
         else:
-            out = np.ascontiguousarray(np.zeros((1,)), dtype=np.float64)
+            out = np.zeros((1,), order='C', dtype=np.float64)
             out_data = out.data
 
         if not field_ == 'qp_iter':
@@ -297,8 +297,7 @@ cdef class AcadosOcpSolverFast:
         cdef double out
 
         # call getter
-        field = "cost_value".encode('utf-8')
-        acados_solver_common.ocp_nlp_get(self.nlp_config, self.nlp_solver, field, <void *> &out)
+        acados_solver_common.ocp_nlp_get(self.nlp_config, self.nlp_solver, "cost_value", <void *> &out)
 
         return out
 
@@ -312,20 +311,13 @@ cdef class AcadosOcpSolverFast:
             acados_solver_common.ocp_nlp_eval_residuals(self.nlp_solver, self.nlp_in, self.nlp_out)
 
         # create output array
-        out = np.ascontiguousarray(np.zeros((4, 1)), dtype=np.float64)
+        out = np.zeros((4, 1), order='C', dtype=np.float64)
 
         # call getters
-        field = "res_stat".encode('utf-8')
-        acados_solver_common.ocp_nlp_get(self.nlp_config, self.nlp_solver, field, <void *> out.data)
-
-        field = "res_eq".encode('utf-8')
-        acados_solver_common.ocp_nlp_get(self.nlp_config, self.nlp_solver, field, <void *> out[1].data)
-
-        field = "res_ineq".encode('utf-8')
-        acados_solver_common.ocp_nlp_get(self.nlp_config, self.nlp_solver, field, <void *> out[2].data)
-
-        field = "res_comp".encode('utf-8')
-        acados_solver_common.ocp_nlp_get(self.nlp_config, self.nlp_solver, field, <void *> out[3].data)
+        acados_solver_common.ocp_nlp_get(self.nlp_config, self.nlp_solver, "res_stat", <void *> out[0].data)
+        acados_solver_common.ocp_nlp_get(self.nlp_config, self.nlp_solver, "res_eq", <void *> out[1].data)
+        acados_solver_common.ocp_nlp_get(self.nlp_config, self.nlp_solver, "res_ineq", <void *> out[2].data)
+        acados_solver_common.ocp_nlp_get(self.nlp_config, self.nlp_solver, "res_comp", <void *> out[3].data)
         return out.flatten()
 
 
@@ -375,7 +367,7 @@ cdef class AcadosOcpSolverFast:
             msg += 'with dimension {} (you have {})'.format(dims, value_.shape)
             raise Exception(msg)
 
-        cdef double[:] value = np.ascontiguousarray(value_, dtype=np.double)
+        cdef double[::1] value = np.ascontiguousarray(value_, dtype=np.double)
 
         value_data_p = <void *> &value[0]
         if field_ in constraints_fields:
@@ -389,7 +381,7 @@ cdef class AcadosOcpSolverFast:
         return
 
 
-    def set_param(self, int stage_, double[:] value):
+    def set_param(self, int stage_, double[::1] value):
         acados_solver.acados_update_params(self.capsule, stage_, <double *> &value[0], value.shape[0])
 
     def cost_set(self, int start_stage_, field_, value_, api='warn'):
@@ -411,7 +403,7 @@ cdef class AcadosOcpSolverFast:
           dim = value_.shape[1]
           value_ = value_[None,:,:]
 
-        cdef double[:,:,:] value = np.ascontiguousarray(value_, dtype=np.double)
+        cdef double[:,:,::1] value = np.ascontiguousarray(value_, dtype=np.double)
 
         acados_solver_common.ocp_nlp_cost_model_set_slice(self.nlp_config, self.nlp_dims, self.nlp_in,
             start_stage_, end_stage_, field, <void *> &value[0][0][0], dim)
@@ -437,7 +429,7 @@ cdef class AcadosOcpSolverFast:
           dim = value_.shape[1]
           value_ = value_[None,:,:]
 
-        cdef double[:,:,:] value = np.ascontiguousarray(value_, dtype=np.double)
+        cdef double[:,:,::1] value = np.ascontiguousarray(value_, dtype=np.double)
         acados_solver_common.ocp_nlp_constraints_model_set_slice(self.nlp_config, self.nlp_dims, self.nlp_in,
             start_stage_, end_stage_, field, <void*> &value[0][0][0], dim)
 
@@ -458,8 +450,7 @@ cdef class AcadosOcpSolverFast:
         acados_solver_common.ocp_nlp_dynamics_dims_get_from_attr(self.nlp_config, self.nlp_dims, self.nlp_out, stage, field, &dims[0])
 
         # create output data
-        out = np.ascontiguousarray(np.zeros((dims[0]*dims[1],)), dtype=np.float64)
-        out = out.reshape(dims[0], dims[1], order='F')
+        out = np.zeros((dims[0], dims[1]), order='F', dtype=np.float64)
 
         # call getter
         acados_solver_common.ocp_nlp_get_at_stage(self.nlp_config, self.nlp_dims, self.nlp_solver, stage, field, <void *> out.data)
@@ -484,7 +475,7 @@ cdef class AcadosOcpSolverFast:
 
         cdef int int_value
         cdef double double_value
-        cdef unsigned char[:] string_value
+        cdef unsigned char[::1] string_value
 
         # check field availability and type
         if field_ in int_fields:
