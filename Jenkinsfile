@@ -213,10 +213,11 @@ pipeline {
                   }
                 }
 
-                stage('Unit Tests (tici)') {
+                stage('HW + Unit Tests (tici)') {
                   steps {
                     phone_steps("tici2", [
                       ["build", "cd selfdrive/manager && ./build.py"],
+                      ["test boardd loopback", "python selfdrive/boardd/tests/test_boardd_loopback.py"],
                       ["test loggerd", "python selfdrive/loggerd/tests/test_loggerd.py"],
                       ["test encoder", "LD_LIBRARY_PATH=/usr/local/lib python selfdrive/loggerd/tests/test_encoder.py"],
                     ])
