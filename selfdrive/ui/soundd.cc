@@ -59,9 +59,9 @@ public:
       }
     }
 
-    auto alert = get_alert(sm, 0);
+    auto alert = get_alert(sm, 1);
     if (alert) {
-      setAlert((*alert).type, (*alert).sound);
+      setAlert(alert->type, alert->sound);
     } else {
       // stop alert.
       setAlert("", AudibleAlert::NONE);
