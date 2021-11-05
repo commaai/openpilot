@@ -59,12 +59,12 @@ public:
       }
     }
 
-    auto cs = sm["controlsState"].getControlsState();
-    if (sm.updated("controlsState")) {
-      setAlert(cs.getAlertType().cStr(), cs.getAlertSound());
-    } else if (sm.rcv_frame("controlsState") > 0 && cs.getEnabled() &&
-               ((nanos_since_boot() - sm.rcv_time("controlsState")) / 1e9 > CONTROLS_TIMEOUT)) {
-      setAlert(CONTROLS_UNRESPONSIVE_ALERT.type, CONTROLS_UNRESPONSIVE_ALERT.sound);
+    auto alert = get_alert(sm, 0);
+    if (alert) {
+      setAlert((*alert).type, (*alert).sound);
+    } else {
+      // stop alert.
+      setAlert("", AudibleAlert::NONE);
     }
   }
 
