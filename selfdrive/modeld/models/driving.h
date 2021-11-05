@@ -88,13 +88,9 @@ struct ModelDataRawPlans {
   std::array<ModelDataRawPlanPrediction, PLAN_MHP_N> prediction;
 
   constexpr const ModelDataRawPlanPrediction &get_best_prediction() const {
-    int max_idx = 0;
-    for (int i = 1; i < prediction.size(); i++) {
-      if (prediction[i].prob > prediction[max_idx].prob) {
-        max_idx = i;
-      }
-    }
-    return prediction[max_idx];
+    return *std::max_element(prediction.begin(), prediction.end(), [](const auto &a, const auto &b) {
+      return a.prob < b.prob;
+    });
   }
 };
 static_assert(sizeof(ModelDataRawPlans) == sizeof(ModelDataRawPlanPrediction)*PLAN_MHP_N);
@@ -160,13 +156,9 @@ struct ModelDataRawLeads {
   std::array<float, LEAD_MHP_SELECTION> prob;
 
   constexpr const ModelDataRawLeadPrediction &get_best_prediction(int t_idx) const {
-    int max_idx = 0;
-    for (int i = 1; i < prediction.size(); i++) {
-      if (prediction[i].prob[t_idx] > prediction[max_idx].prob[t_idx]) {
-        max_idx = i;
-      }
-    }
-    return prediction[max_idx];
+    return *std::max_element(prediction.begin(), prediction.end(), [=](const auto &a, const auto &b) {
+      return a.prob[t_idx] < b.prob[t_idx];
+    });
   }
 };
 static_assert(sizeof(ModelDataRawLeads) == (sizeof(ModelDataRawLeadPrediction)*LEAD_MHP_N) + (sizeof(float)*LEAD_MHP_SELECTION));
