@@ -58,7 +58,7 @@ class CarState(CarStateBase):
     elif speed_units == "MPH":
       ret.cruiseState.speed = cp.vl["DI_state"]["DI_digitalSpeed"] * CV.MPH_TO_MS
     ret.cruiseState.available = ((cruise_state == "STANDBY") or ret.cruiseState.enabled)
-    ret.cruiseState.standstill = (cruise_state == "STANDSTILL")
+    ret.cruiseState.standstill = False # This needs to be false, since we can resume from stop without sending anything special
 
     # Gear
     ret.gearShifter = GEAR_MAP[self.can_define.dv["DI_torque2"]["DI_gear"].get(int(cp.vl["DI_torque2"]["DI_gear"]), "DI_GEAR_INVALID")]
