@@ -58,16 +58,19 @@ public:
         s->setVolume(std::round(100 * volume) / 100);
       }
     }
+
+    auto cs = sm["controlsState"].getControlsState();
     if (sm.updated("controlsState")) {
-      setAlert(sm["controlsState"].getControlsState().getAlertSound());
-    } else if (sm.rcv_frame("controlsState") > 0 && sm["controlsState"].getControlsState().getEnabled() &&
+      setAlert(cs.getAlertType().cStr(), cs.getAlertSound());
+    } else if (sm.rcv_frame("controlsState") > 0 && cs.getEnabled() &&
                ((nanos_since_boot() - sm.rcv_time("controlsState")) / 1e9 > CONTROLS_TIMEOUT)) {
-      setAlert(CONTROLS_UNRESPONSIVE_ALERT.sound);
+      setAlert(CONTROLS_UNRESPONSIVE_ALERT.type, CONTROLS_UNRESPONSIVE_ALERT.sound);
     }
   }
 
-  void setAlert(AudibleAlert sound) {
-    if (current_sound != sound) {
+  void setAlert(const QString &alert_type, AudibleAlert sound) {
+    if (alert_type != current_alert_type || current_sound != sound) {
+      current_alert_type = alert_type;
       current_sound = sound;
       // stop sounds
       for (auto &[s, loops] : sounds) {
@@ -88,6 +91,8 @@ public:
 
 private:
   AudibleAlert current_sound = AudibleAlert::NONE;
+  QString current_alert_type;
+
   QMap<AudibleAlert, QPair<QSoundEffect*, int>> sounds;
   SubMaster sm;
 };
