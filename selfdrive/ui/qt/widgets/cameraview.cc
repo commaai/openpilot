@@ -113,7 +113,8 @@ void CameraViewWidget::initializeGL() {
 
   program = new QOpenGLShaderProgram(context());
   bool ret = program->addShaderFromSourceCode(QOpenGLShader::Vertex, frame_vertex_shader);
-  ret = ret && program->addShaderFromSourceCode(QOpenGLShader::Fragment, frame_fragment_shader);
+  assert(ret);
+  ret = program->addShaderFromSourceCode(QOpenGLShader::Fragment, frame_fragment_shader);
   assert(ret);
 
   program->link();
@@ -264,11 +265,8 @@ void CameraViewWidget::vipcThread() {
       emit vipcThreadConnected(vipc_client_.get());
     }
 
-    VisionBuf *buf = vipc_client_->recv(nullptr, 1000);
-    if (buf) {
+    if (VisionBuf *buf = vipc_client_->recv(nullptr, 1000)) {
       emit vipcThreadFrameReceived(buf);
-    } else {
-      LOGE("visionIPC receive timeout");
     }
   }
 }
