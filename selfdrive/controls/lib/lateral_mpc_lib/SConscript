@@ -60,19 +60,18 @@ lib_solver = lenv.SharedLibrary(f"{gen}/acados_ocp_solver_lat",
 
 # generate cython stuff
 acados_ocp_solver_pyx = File("#pyextra/acados_template/acados_ocp_solver_pyx.pyx")
-libacados_ocp_solver_lat = File('#selfdrive/controls/lib/lateral_mpc_lib/c_generated_code/libacados_ocp_solver_lat.so')
-libacados_ocp_solver_lat_pxd = File('#selfdrive/controls/lib/lateral_mpc_lib/c_generated_code/acados_solver.pxd')
-libacados_ocp_solver_lat_c = File('#selfdrive/controls/lib/lateral_mpc_lib/c_generated_code/acados_ocp_solver_pyx.c')
+acados_ocp_solver_common = File("#pyextra/acados_template/acados_solver_common.pxd")
+libacados_ocp_solver_pxd = File(f'{gen}/acados_solver.pxd')
+libacados_ocp_solver_c = File(f'{gen}/acados_ocp_solver_pyx.c')
 
 lenv2 = envCython.Clone()
-lenv2["LINKFLAGS"] += [libacados_ocp_solver_lat.get_labspath()]
-lenv2.Command(libacados_ocp_solver_lat_c,
-  [acados_ocp_solver_pyx, libacados_ocp_solver_lat_pxd],  # TODO fix
+lenv2["LINKFLAGS"] += [lib_solver[0].get_labspath()]
+lenv2.Command(libacados_ocp_solver_c,
+  [acados_ocp_solver_pyx, acados_ocp_solver_common, libacados_ocp_solver_pxd],
   f'cython' + \
-  f' -o {libacados_ocp_solver_lat_c.get_labspath()}' + \
-  f' -I {libacados_ocp_solver_lat_pxd.get_dir().get_labspath()}' + \
-  f' -I {acados_ocp_solver_pyx.get_dir().get_labspath()}' + \
+  f' -o {libacados_ocp_solver_c.get_labspath()}' + \
+  f' -I {libacados_ocp_solver_pxd.get_dir().get_labspath()}' + \
+  f' -I {acados_ocp_solver_common.get_dir().get_labspath()}' + \
   f' {acados_ocp_solver_pyx.get_labspath()}')
-lib_cython = lenv2.Program(f'{libacados_ocp_solver_lat_c.get_dir().get_labspath()}/acados_ocp_solver_pyx.so',
-  [libacados_ocp_solver_lat_c])
+lib_cython = lenv2.Program(f'{gen}/acados_ocp_solver_pyx.so', [libacados_ocp_solver_c])
 lenv2.Depends(lib_cython, lib_solver)
