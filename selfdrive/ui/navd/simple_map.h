@@ -25,4 +25,5 @@ private:
 
 public slots:
   void updatePosition(QMapbox::Coordinate position, float bearing);
+  void updateRoute(QList<QGeoCoordinate> coordinates);
 };

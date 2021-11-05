@@ -309,6 +309,9 @@ void RouteEngine::routeCalculated(QGeoRouteReply *reply) {
 
       route = reply->routes().at(0);
       segment = route.firstRouteSegment();
+
+      auto path = route.path();
+      emit routeUpdated(path);
     } else {
       qWarning() << "Got empty route response";
     }

@@ -53,6 +53,7 @@ int main(int argc, char *argv[]) {
     m->setFixedHeight(640);
 
     QObject::connect(route_engine, &RouteEngine::positionUpdated, m, &SimpleMap::updatePosition);
+    QObject::connect(route_engine, &RouteEngine::routeUpdated, m, &SimpleMap::updateRoute);
 
     m->show();
   }
