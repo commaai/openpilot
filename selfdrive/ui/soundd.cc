@@ -99,18 +99,22 @@ public:
   SubMaster sm;
 };
 
+const int test_loop_cnt = 2;
+
 void test_sound() {
   PubMaster pm({"controlsState"});
-  const int DT_CTRL = 10; // ms
-  for (auto &[alert, fn, loops] : sound_list) {
-    printf("testing %s\n", qPrintable(fn));
-    for (int i = 0; i < 1000 / DT_CTRL; ++i) {
-      MessageBuilder msg;
-      auto cs = msg.initEvent().initControlsState();
-      cs.setAlertSound(alert);
-      cs.setAlertType(fn.toStdString());
-      pm.send("controlsState", msg);
-      QThread::msleep(DT_CTRL);
+  const int DT_CTRL = 10;  // ms
+  for (int i = 0; i < test_loop_cnt; ++i) {
+    for (auto &[alert, fn, loops] : sound_list) {
+      printf("testing %s\n", qPrintable(fn));
+      for (int j = 0; j < 1000 / DT_CTRL; ++j) {
+        MessageBuilder msg;
+        auto cs = msg.initEvent().initControlsState();
+        cs.setAlertSound(alert);
+        cs.setAlertType(fn.toStdString());
+        pm.send("controlsState", msg);
+        QThread::msleep(DT_CTRL);
+      }
     }
   }
   QThread::currentThread()->quit();
@@ -119,7 +123,7 @@ void test_sound() {
 void run_test(Sound *sound) {
   static QMap<AudibleAlert, int> stats;
   for (auto i = sound->sounds.constBegin(); i != sound->sounds.constEnd(); ++i) {
-    QObject::connect(i.value().first, &QSoundEffect::playingChanged, [s=i.value().first, a = i.key()]() {
+    QObject::connect(i.value().first, &QSoundEffect::playingChanged, [s = i.value().first, a = i.key()]() {
       if (s->isPlaying()) {
         stats[a]++;
       }
@@ -128,11 +132,11 @@ void run_test(Sound *sound) {
 
   QThread *t = new QThread(qApp);
   QObject::connect(t, &QThread::started, [=]() { test_sound(); });
-  QObject::connect(t, &QThread::finished, [&]() { 
+  QObject::connect(t, &QThread::finished, [&]() {
     for (int n : stats) {
-      assert(n == 1);
+      assert(n == test_loop_cnt);
     }
-    qApp->quit(); 
+    qApp->quit();
   });
   t->start();
 }
