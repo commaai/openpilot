@@ -125,6 +125,8 @@ void run_test(Sound *sound) {
   for (auto i = sound->sounds.constBegin(); i != sound->sounds.constEnd(); ++i) {
     QObject::connect(i.value().first, &QSoundEffect::playingChanged, [s = i.value().first, a = i.key()]() {
       if (s->isPlaying()) {
+        bool repeat = a == AudibleAlert::CHIME_WARNING_REPEAT || a == AudibleAlert::CHIME_WARNING2_REPEAT;
+        assert(s->loopsRemaining() == repeat ? QSoundEffect::Infinite : 1);
         stats[a]++;
       }
     });
