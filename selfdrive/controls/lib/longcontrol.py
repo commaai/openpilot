@@ -97,10 +97,8 @@ class LongControl():
                                                        v_target_future, self.v_pid, output_accel,
                                                        CS.brakePressed, CS.cruiseState.standstill, CP.minSpeedCan)
 
-    v_ego_pid = max(CS.vEgo, CP.minSpeedCan)  # Without this we get jumps, CAN bus reports 0 when speed < 0.3
-
     if self.long_control_state == LongCtrlState.off or CS.gasPressed:
-      self.reset(v_ego_pid)
+      self.reset(CS.vEgo)
       output_accel = 0.
 
     # tracking objects and driving
@@ -110,10 +108,10 @@ class LongControl():
       # Toyota starts braking more when it thinks you want to stop
       # Freeze the integrator so we don't accelerate to compensate, and don't allow positive acceleration
       prevent_overshoot = not CP.stoppingControl and CS.vEgo < 1.5 and v_target_future < 0.7
-      deadzone = interp(v_ego_pid, CP.longitudinalTuning.deadzoneBP, CP.longitudinalTuning.deadzoneV)
+      deadzone = interp(CS.vEgo, CP.longitudinalTuning.deadzoneBP, CP.longitudinalTuning.deadzoneV)
       freeze_integrator = prevent_overshoot
 
-      output_accel = self.pid.update(self.v_pid, v_ego_pid, speed=v_ego_pid, deadzone=deadzone, feedforward=a_target, freeze_integrator=freeze_integrator)
+      output_accel = self.pid.update(self.v_pid, CS.vEgo, speed=CS.vEgo, deadzone=deadzone, feedforward=a_target, freeze_integrator=freeze_integrator)
 
       if prevent_overshoot:
         output_accel = min(output_accel, 0.0)
