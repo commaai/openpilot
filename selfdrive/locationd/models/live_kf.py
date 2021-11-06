@@ -44,8 +44,8 @@ class States():
 class LiveKalman():
   name = 'live'
 
-  initial_x = np.array([-2.45e6, -4.77e6, 3.42e6,
-                        0.24983653, -0.74900454, -0.45731771, -0.40918751, # NED [0,0,0] -> ECEF Quat
+  initial_x = np.array([3.88e6, -3.37e6, 3.76e6,
+                        0.42254641, -0.31238054, -0.83602975, -0.15788347,  # NED [0,0,0] -> ECEF Quat
                         0, 0, 0,
                         0, 0, 0,
                         0, 0, 0,
