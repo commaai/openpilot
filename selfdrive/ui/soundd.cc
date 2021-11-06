@@ -30,6 +30,7 @@ static std::tuple<AudibleAlert, QString, bool> sound_list[] = {
     {AudibleAlert::CHIME_ERROR, "error.wav", false},
     {AudibleAlert::CHIME_PROMPT, "error.wav", false},
 };
+
 class Sound : public QObject {
 public:
   explicit Sound(QObject *parent = 0) : sm({"carState", "controlsState"}) {
@@ -41,6 +42,7 @@ public:
         assert(s->status() != QSoundEffect::Error);
       });
       s->setSource(QUrl::fromLocalFile(sound_asset_path + fn));
+      s->setVolume(current_volume);
       sounds[alert] = {s, loops ? QSoundEffect::Infinite : 0};
     }
 
@@ -93,7 +95,7 @@ public:
 
   AudibleAlert current_sound = AudibleAlert::NONE;
   QString current_alert_type;
-  float current_volume = 0.; 
+  float current_volume = Hardware::MIN_VOLUME; 
 
   QMap<AudibleAlert, QPair<QSoundEffect*, int>> sounds;
   SubMaster sm;
