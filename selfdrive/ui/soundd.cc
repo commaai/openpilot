@@ -54,8 +54,11 @@ public:
       // scale volume with speed
       float volume = util::map_val(sm["carState"].getCarState().getVEgo(), 0.f, 20.f,
                                    Hardware::MIN_VOLUME, Hardware::MAX_VOLUME);
-      for (auto &[s, loops] : sounds) {
-        s->setVolume(std::round(100 * volume) / 100);
+      if (current_volume != volume) {
+        current_volume = volume;
+        for (auto &[s, loops] : sounds) {
+          s->setVolume(std::round(100 * volume) / 100);
+        }
       }
     }
 
@@ -92,6 +95,7 @@ public:
 private:
   AudibleAlert current_sound = AudibleAlert::NONE;
   QString current_alert_type;
+  float current_volume = 0.; 
 
   QMap<AudibleAlert, QPair<QSoundEffect*, int>> sounds;
   SubMaster sm;
