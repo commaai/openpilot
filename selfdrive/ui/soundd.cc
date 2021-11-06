@@ -121,13 +121,15 @@ void test_sound() {
 }
 
 void run_test(Sound *sound) {
-  static QMap<AudibleAlert, int> stats;
+  static QMap<AudibleAlert, std::pair<int, int>> stats;
   for (auto i = sound->sounds.constBegin(); i != sound->sounds.constEnd(); ++i) {
     QObject::connect(i.value().first, &QSoundEffect::playingChanged, [s = i.value().first, a = i.key()]() {
       if (s->isPlaying()) {
         bool repeat = a == AudibleAlert::CHIME_WARNING_REPEAT || a == AudibleAlert::CHIME_WARNING2_REPEAT;
         assert(s->loopsRemaining() == repeat ? QSoundEffect::Infinite : 1);
-        stats[a]++;
+        stats[a].first++;
+      } else {
+        stats[a].second++;
       }
     });
   }
@@ -135,8 +137,8 @@ void run_test(Sound *sound) {
   QThread *t = new QThread(qApp);
   QObject::connect(t, &QThread::started, [=]() { test_sound(); });
   QObject::connect(t, &QThread::finished, [&]() {
-    for (int n : stats) {
-      assert(n == test_loop_cnt);
+    for (auto [play, stop] : stats) {
+      assert(play == test_loop_cnt && stop == test_loop_cnt);
     }
     qApp->quit();
   });
