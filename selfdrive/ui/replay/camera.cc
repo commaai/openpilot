@@ -6,8 +6,8 @@
 const int YUV_BUF_COUNT = 50;
 
 CameraServer::CameraServer(std::pair<int, int> camera_size[MAX_CAMERAS], bool send_yuv) : send_yuv_(send_yuv) {
-  for (auto &cam : cameras_) {
-    std::tie(cam.width, cam.height) = camera_size[cam.type];
+  for (int i = 0; i < MAX_CAMERAS; ++i) {
+    std::tie(cameras_[i].width, cameras_[i].height) = camera_size[i];
   }
   startVipcServer();
 }
