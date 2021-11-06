@@ -91,7 +91,7 @@ To view the architecture of the ONNX networks, you can use [netron](https://netr
   * normalized, ranging from -1.0 to 1.0
 
 ### output format
-* 39 x float32 outputs
+* 39 x float32 outputs ([parsing example](https://github.com/commaai/openpilot/blob/master/selfdrive/modeld/models/dmonitoring.cc#L165))
   * face pose: 12 = 6 + 6
     * face orientation [pitch, yaw, roll] in camera frame: 3
     * face position [dx, dy] relative to image center: 2
