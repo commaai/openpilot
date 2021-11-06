@@ -355,6 +355,8 @@ class CarInterface(CarInterfaceBase):
     # events
     events = self.create_common_events(ret)
 
+    if self.CS.brake_hold and self.CS.CP.openpilotLongitudinalControl:
+      events.add(EventName.brakeHold)
     if self.CS.low_speed_lockout and self.CP.openpilotLongitudinalControl:
       events.add(EventName.lowSpeedLockout)
     if ret.vEgo < self.CP.minEnableSpeed and self.CP.openpilotLongitudinalControl:
