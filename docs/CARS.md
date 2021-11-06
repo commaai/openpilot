@@ -160,6 +160,7 @@
 | Volkswagen| Jetta 2018-20                 | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Jetta GLI 2021                | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Passat 2016-18<sup>3</sup>    | Driver Assistance | Stock            | 0mph               | 0mph         |
+| Volkswagen| Polo 2020                     | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| T-Cross 2021<sup>4</sup>      | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Taos 2022<sup>4</sup>         | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Tiguan 2020                   | Driver Assistance | Stock            | 0mph               | 0mph         |
