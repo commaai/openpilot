@@ -41,8 +41,7 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 
 void OnroadWindow::updateState(const UIState &s) {
   QColor bgColor = bg_colors[s.status];
-  auto alert = get_alert(*(s.sm), s.scene.started_frame);
-  if (alert) {
+  if (auto alert = Alert::get(*(s.sm), s.scene.started_frame)) {
     if (alert->type == "controlsUnresponsive") {
       bgColor = bg_colors[STATUS_ALERT];
     }

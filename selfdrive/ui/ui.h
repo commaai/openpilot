@@ -27,6 +27,10 @@
 #define COLOR_YELLOW nvgRGBA(218, 202, 37, 255)
 #define COLOR_RED nvgRGBA(201, 34, 49, 255)
 
+const int bdr_s = 30;
+const int header_h = 420;
+const int footer_h = 280;
+
 const int UI_FREQ = 20;   // Hz
 
 typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
@@ -47,7 +51,7 @@ typedef struct Rect {
   }
 } Rect;
 
-typedef struct Alert {
+struct Alert {
   QString text1;
   QString text2;
   QString type;
@@ -56,38 +60,31 @@ typedef struct Alert {
   bool equal(const Alert &a2) {
     return text1 == a2.text1 && text2 == a2.text2 && type == a2.type;
   }
-} Alert;
 
-const Alert CONTROLS_WAITING_ALERT = {"openpilot Unavailable", "Waiting for controls to start",
-                                      "controlsWaiting", cereal::ControlsState::AlertSize::MID,
-                                      AudibleAlert::NONE};
-
-const Alert CONTROLS_UNRESPONSIVE_ALERT = {"TAKE CONTROL IMMEDIATELY", "Controls Unresponsive",
-                                           "controlsUnresponsive", cereal::ControlsState::AlertSize::FULL,
-                                           AudibleAlert::CHIME_WARNING_REPEAT};
-inline std::optional<Alert> get_alert(const SubMaster &sm, uint64_t started_frame) {
-  const int CONTROLS_TIMEOUT = 5;
-
-  if (sm.updated("controlsState")) {
-    const cereal::ControlsState::Reader &cs = sm["controlsState"].getControlsState();
-    return Alert{cs.getAlertText1().cStr(), cs.getAlertText2().cStr(), cs.getAlertType().cStr(),
-                 cs.getAlertSize(), cs.getAlertSound()};
-  } else if ((sm.frame - started_frame) > 5 * UI_FREQ) {
-    // Handle controls timeout
-    if (sm.rcv_frame("controlsState") < started_frame) {
-      // car is started, but controlsState hasn't been seen at all
-      return CONTROLS_WAITING_ALERT;
-    } else if ((nanos_since_boot() - sm.rcv_time("controlsState")) / 1e9 > CONTROLS_TIMEOUT) {
-      // car is started, but controls is lagging or died
-      return CONTROLS_UNRESPONSIVE_ALERT;
+  static std::optional<Alert> get(const SubMaster &sm, uint64_t started_frame) {
+    if (sm.updated("controlsState")) {
+      const cereal::ControlsState::Reader &cs = sm["controlsState"].getControlsState();
+      return Alert{cs.getAlertText1().cStr(), cs.getAlertText2().cStr(),
+               cs.getAlertType().cStr(), cs.getAlertSize(),
+               cs.getAlertSound()};
+    } else if ((sm.frame - started_frame) > 5 * UI_FREQ) {
+      const int CONTROLS_TIMEOUT = 5;
+      // Handle controls timeout
+      if (sm.rcv_frame("controlsState") < started_frame) {
+        // car is started, but controlsState hasn't been seen at all
+        return Alert{"openpilot Unavailable", "Waiting for controls to start",
+                 "controlsWaiting", cereal::ControlsState::AlertSize::MID,
+                 AudibleAlert::NONE};
+      } else if ((nanos_since_boot() - sm.rcv_time("controlsState")) / 1e9 > CONTROLS_TIMEOUT) {
+        // car is started, but controls is lagging or died
+        return Alert{"TAKE CONTROL IMMEDIATELY", "Controls Unresponsive",
+                 "controlsUnresponsive", cereal::ControlsState::AlertSize::FULL,
+                 AudibleAlert::CHIME_WARNING_REPEAT};
+      }
     }
+    return std::nullopt;
   }
-  return std::nullopt;
-}
-
-const int bdr_s = 30;
-const int header_h = 420;
-const int footer_h = 280;
+};
 
 typedef enum UIStatus {
   STATUS_DISENGAGED,

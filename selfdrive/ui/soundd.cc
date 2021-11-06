@@ -62,12 +62,10 @@ public:
       }
     }
 
-    auto alert = get_alert(sm, 1);
-    if (alert) {
+    if (auto alert = Alert::get(sm, 1)) {
       setAlert(alert->type, alert->sound);
     } else {
-      // stop alert.
-      setAlert("", AudibleAlert::NONE);
+      setAlert({}, AudibleAlert::NONE);
     }
   }
 
