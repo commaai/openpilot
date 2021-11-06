@@ -5,6 +5,7 @@
 #include <QApplication>
 #include <QString>
 #include <QSoundEffect>
+#include <QThread>
 
 #include "selfdrive/ui/qt/util.h"
 #include "cereal/messaging/messaging.h"
@@ -19,21 +20,21 @@ void sigHandler(int s) {
   qApp->quit();
 }
 
+static std::tuple<AudibleAlert, QString, bool> sound_list[] = {
+    {AudibleAlert::CHIME_DISENGAGE, "disengaged.wav", false},
+    {AudibleAlert::CHIME_ENGAGE, "engaged.wav", false},
+    {AudibleAlert::CHIME_WARNING1, "warning_1.wav", false},
+    {AudibleAlert::CHIME_WARNING2, "warning_2.wav", false},
+    {AudibleAlert::CHIME_WARNING2_REPEAT, "warning_2.wav", true},
+    {AudibleAlert::CHIME_WARNING_REPEAT, "warning_repeat.wav", true},
+    {AudibleAlert::CHIME_ERROR, "error.wav", false},
+    {AudibleAlert::CHIME_PROMPT, "error.wav", false},
+};
 class Sound : public QObject {
 public:
   explicit Sound(QObject *parent = 0) : sm({"carState", "controlsState"}) {
     // TODO: merge again and add EQ in the amp config
     const QString sound_asset_path = Hardware::TICI() ? "../assets/sounds_tici/" : "../assets/sounds/";
-    std::tuple<AudibleAlert, QString, bool> sound_list[] = {
-      {AudibleAlert::CHIME_DISENGAGE, "disengaged.wav", false},
-      {AudibleAlert::CHIME_ENGAGE, "engaged.wav", false},
-      {AudibleAlert::CHIME_WARNING1, "warning_1.wav", false},
-      {AudibleAlert::CHIME_WARNING2, "warning_2.wav", false},
-      {AudibleAlert::CHIME_WARNING2_REPEAT, "warning_2.wav", true},
-      {AudibleAlert::CHIME_WARNING_REPEAT, "warning_repeat.wav", true},
-      {AudibleAlert::CHIME_ERROR, "error.wav", false},
-      {AudibleAlert::CHIME_PROMPT, "error.wav", false},
-    };
     for (auto &[alert, fn, loops] : sound_list) {
       QSoundEffect *s = new QSoundEffect(this);
       QObject::connect(s, &QSoundEffect::statusChanged, [=]() {
@@ -90,7 +91,6 @@ public:
     }
   }
 
-private:
   AudibleAlert current_sound = AudibleAlert::NONE;
   QString current_alert_type;
   float current_volume = 0.; 
@@ -98,6 +98,44 @@ private:
   QMap<AudibleAlert, QPair<QSoundEffect*, int>> sounds;
   SubMaster sm;
 };
+
+void test_sound() {
+  PubMaster pm({"controlsState"});
+  const int DT_CTRL = 10; // ms
+  for (auto &[alert, fn, loops] : sound_list) {
+    printf("testing %s\n", qPrintable(fn));
+    for (int i = 0; i < 1000 / DT_CTRL; ++i) {
+      MessageBuilder msg;
+      auto cs = msg.initEvent().initControlsState();
+      cs.setAlertSound(alert);
+      cs.setAlertType(fn.toStdString());
+      pm.send("controlsState", msg);
+      QThread::msleep(DT_CTRL);
+    }
+  }
+  QThread::currentThread()->quit();
+}
+
+void run_test(Sound *sound) {
+  static QMap<AudibleAlert, int> stats;
+  for (auto i = sound->sounds.constBegin(); i != sound->sounds.constEnd(); ++i) {
+    QObject::connect(i.value().first, &QSoundEffect::playingChanged, [s=i.value().first, a = i.key()]() {
+      if (s->isPlaying()) {
+        stats[a]++;
+      }
+    });
+  }
+
+  QThread *t = new QThread(qApp);
+  QObject::connect(t, &QThread::started, [=]() { test_sound(); });
+  QObject::connect(t, &QThread::finished, [&]() { 
+    for (int n : stats) {
+      assert(n == 1);
+    }
+    qApp->quit(); 
+  });
+  t->start();
+}
 
 int main(int argc, char **argv) {
   qInstallMessageHandler(swagLogMessageHandler);
@@ -108,5 +146,8 @@ int main(int argc, char **argv) {
   std::signal(SIGTERM, sigHandler);
 
   Sound sound;
+  if (argc > 1 && strcmp(argv[1], "--test") == 0) {
+    run_test(&sound);
+  }
   return a.exec();
 }
