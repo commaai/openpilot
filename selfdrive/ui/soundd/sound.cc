@@ -1,5 +1,8 @@
 #include "selfdrive/ui/soundd/sound.h"
 
+#include "cereal/messaging/messaging.h"
+#include "selfdrive/common/util.h"
+
 // TODO: detect when we can't play sounds
 // TODO: detect when we can't display the UI
 
@@ -62,49 +65,3 @@ void Sound::setAlert(const QString &alert_type, AudibleAlert sound) {
     }
   }
 }
-
-// const int test_loop_cnt = 2;
-
-// void test_sound() {
-//   PubMaster pm({"controlsState"});
-//   const int DT_CTRL = 10;  // ms
-//   for (int i = 0; i < test_loop_cnt; ++i) {
-//     for (auto &[alert, fn, loops] : sound_list) {
-//       printf("testing %s\n", qPrintable(fn));
-//       for (int j = 0; j < 1000 / DT_CTRL; ++j) {
-//         MessageBuilder msg;
-//         auto cs = msg.initEvent().initControlsState();
-//         cs.setAlertSound(alert);
-//         cs.setAlertType(fn.toStdString());
-//         pm.send("controlsState", msg);
-//         QThread::msleep(DT_CTRL);
-//       }
-//     }
-//   }
-//   QThread::currentThread()->quit();
-// }
-
-// void run_test(Sound *sound) {
-//   static QMap<AudibleAlert, std::pair<int, int>> stats;
-//   for (auto i = sound->sounds.constBegin(); i != sound->sounds.constEnd(); ++i) {
-//     QObject::connect(i.value().first, &QSoundEffect::playingChanged, [s = i.value().first, a = i.key()]() {
-//       if (s->isPlaying()) {
-//         bool repeat = a == AudibleAlert::CHIME_WARNING_REPEAT || a == AudibleAlert::CHIME_WARNING2_REPEAT;
-//         assert(s->loopsRemaining() == repeat ? QSoundEffect::Infinite : 1);
-//         stats[a].first++;
-//       } else {
-//         stats[a].second++;
-//       }
-//     });
-//   }
-
-//   QThread *t = new QThread(qApp);
-//   QObject::connect(t, &QThread::started, [=]() { test_sound(); });
-//   QObject::connect(t, &QThread::finished, [&]() {
-//     for (auto [play, stop] : stats) {
-//       assert(play == test_loop_cnt && stop == test_loop_cnt);
-//     }
-//     qApp->quit();
-//   });
-//   t->start();
-// }

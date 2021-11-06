@@ -1,13 +1,7 @@
-#include <sys/resource.h>
-
-#include <QApplication>
+#include <QMap>
 #include <QSoundEffect>
 #include <QString>
-#include <QThread>
-#include <map>
 
-#include "cereal/messaging/messaging.h"
-#include "selfdrive/common/util.h"
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/ui.h"
 

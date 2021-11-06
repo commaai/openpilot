@@ -1,6 +1,9 @@
-#include "selfdrive/ui/soundd/sound.h"
+#include <sys/resource.h>
+
+#include <QApplication>
 
 #include "selfdrive/ui/qt/util.h"
+#include "selfdrive/ui/soundd/sound.h"
 
 void sigHandler(int s) {
   qApp->quit();
