@@ -49,9 +49,10 @@ class CarController():
     # send HUD alerts
     if frame % 50 == 0:
       ldw = c.hudControl.visualAlert == VisualAlert.ldw
-      # TODO: disable alerts for now until we find a way to silence audible warnings
+      # TODO: find a way to silence audible warnings so we can add more hud alerts
+      # hud alert for steer lockout
       # steer_required = c.hudControl.visualAlert == VisualAlert.steerRequired
-      steer_required = False
+      steer_required = CS.out.steerWarning
       can_sends.append(mazdacan.create_alert_command(self.packer, CS.cam_laneinfo, ldw, steer_required))
 
     # send steering command
