@@ -22,10 +22,9 @@ public:
 
 protected:
   void update();
-  void setAlert(const QString &alert_type, AudibleAlert sound);
+  void setAlert(const Alert &alert);
 
-  AudibleAlert current_sound = AudibleAlert::NONE;
-  QString current_alert_type;
+  Alert current_alert = {};
   float current_volume = Hardware::MIN_VOLUME;
   QMap<AudibleAlert, QPair<QSoundEffect *, int>> sounds;
   SubMaster sm;

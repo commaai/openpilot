@@ -38,14 +38,12 @@ void Sound::update() {
     }
   }
 
-  auto alert = Alert::get(sm, 1);
-  setAlert(alert.type, alert.sound);
+  setAlert(Alert::get(sm, 1));
 }
 
-void Sound::setAlert(const QString &alert_type, AudibleAlert sound) {
-  if (alert_type != current_alert_type || current_sound != sound) {
-    current_alert_type = alert_type;
-    current_sound = sound;
+void Sound::setAlert(const Alert &alert) {
+  if (!current_alert.equal(alert)) {
+    current_alert = alert;
     // stop sounds
     for (auto &[s, loops] : sounds) {
       // Only stop repeating sounds
@@ -55,8 +53,8 @@ void Sound::setAlert(const QString &alert_type, AudibleAlert sound) {
     }
 
     // play sound
-    if (sound != AudibleAlert::NONE) {
-      auto &[s, loops] = sounds[sound];
+    if (alert.sound != AudibleAlert::NONE) {
+      auto &[s, loops] = sounds[alert.sound];
       s->setLoopCount(loops);
       s->play();
     }
