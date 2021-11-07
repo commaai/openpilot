@@ -46,6 +46,7 @@ asset_obj = qt_env.Object("assets", assets)
 # build soundd
 qt_env.Program("soundd/_soundd", ["soundd/main.cc", "soundd/sound.cc"], LIBS=qt_libs)
 if GetOption('test'):
+  qt_env.Program("tests/playsound", "tests/playsound.cc", LIBS=base_libs)
   qt_env.Program('tests/test_sound', ['tests/test_runner.cc', 'soundd/sound.cc', 'tests/test_sound.cc'], LIBS=[base_libs])
 
 qt_env.SharedLibrary("qt/python_helpers", ["qt/qt_window.cc"], LIBS=qt_libs)

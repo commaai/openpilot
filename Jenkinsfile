@@ -170,6 +170,7 @@ pipeline {
                   steps {
                     phone_steps("eon", [
                       ["build", "cd selfdrive/manager && ./build.py"],
+                      ["test sounds", "python selfdrive/ui/tests/test_soundd.py"],
                       ["test boardd loopback", "python selfdrive/boardd/tests/test_boardd_loopback.py"],
                       ["test loggerd", "python selfdrive/loggerd/tests/test_loggerd.py"],
                       ["test encoder", "python selfdrive/loggerd/tests/test_encoder.py"],
