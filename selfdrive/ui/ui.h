@@ -2,6 +2,7 @@
 
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 
 #include <QObject>
@@ -60,29 +61,28 @@ struct Alert {
     return text1 == a2.text1 && text2 == a2.text2 && type == a2.type;
   }
 
-  static Alert get(const SubMaster &sm, uint64_t started_frame) {
-    Alert alert{};
+  static std::optional<Alert> get(const SubMaster &sm, uint64_t started_frame) {
     if (sm.updated("controlsState")) {
       const cereal::ControlsState::Reader &cs = sm["controlsState"].getControlsState();
-      alert = {cs.getAlertText1().cStr(), cs.getAlertText2().cStr(),
-               cs.getAlertType().cStr(), cs.getAlertSize(),
-               cs.getAlertSound()};
+      return Alert{cs.getAlertText1().cStr(), cs.getAlertText2().cStr(),
+                   cs.getAlertType().cStr(), cs.getAlertSize(),
+                   cs.getAlertSound()};
     } else if ((sm.frame - started_frame) > 5 * UI_FREQ) {
       const int CONTROLS_TIMEOUT = 5;
       // Handle controls timeout
       if (sm.rcv_frame("controlsState") < started_frame) {
         // car is started, but controlsState hasn't been seen at all
-        alert = {"openpilot Unavailable", "Waiting for controls to start",
-                 "controlsWaiting", cereal::ControlsState::AlertSize::MID,
-                 AudibleAlert::NONE};
+        return Alert{"openpilot Unavailable", "Waiting for controls to start",
+                     "controlsWaiting", cereal::ControlsState::AlertSize::MID,
+                     AudibleAlert::NONE};
       } else if ((nanos_since_boot() - sm.rcv_time("controlsState")) / 1e9 > CONTROLS_TIMEOUT) {
         // car is started, but controls is lagging or died
-        alert = {"TAKE CONTROL IMMEDIATELY", "Controls Unresponsive",
-                 "controlsUnresponsive", cereal::ControlsState::AlertSize::FULL,
-                 AudibleAlert::CHIME_WARNING_REPEAT};
+        return Alert{"TAKE CONTROL IMMEDIATELY", "Controls Unresponsive",
+                     "controlsUnresponsive", cereal::ControlsState::AlertSize::FULL,
+                     AudibleAlert::CHIME_WARNING_REPEAT};
       }
     }
-    return alert;
+    return std::nullopt;
   }
 };
 
