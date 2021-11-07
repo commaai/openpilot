@@ -6,8 +6,8 @@
 // no-op base hw class
 class HardwareNone {
 public:
-  static constexpr float MAX_VOLUME = 1.0;
-  static constexpr float MIN_VOLUME = 0.5;
+  static constexpr float MAX_VOLUME = 0.7;
+  static constexpr float MIN_VOLUME = 0.2;
 
   static std::string get_os_version() { return ""; }
 
