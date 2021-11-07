@@ -27,7 +27,7 @@ int main(int argc, char *argv[]) {
   std::signal(SIGTERM, sigHandler);
 
   QCommandLineParser parser;
-  parser.setApplicationDescription("Navigation server. Runs stand-alone, or using pre-computer route");
+  parser.setApplicationDescription("Navigation server. Runs stand-alone, or using pre-computed route");
   parser.addHelpOption();
   parser.process(app);
   const QStringList args = parser.positionalArguments();

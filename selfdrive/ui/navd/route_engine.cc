@@ -1,6 +1,10 @@
 #include "selfdrive/ui/navd/route_engine.h"
 
 #include <QDebug>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonValue>
 
 #include "selfdrive/ui/qt/maps/map.h"
 #include "selfdrive/ui/qt/maps/map_helpers.h"
@@ -85,7 +89,6 @@ static void parse_banner(cereal::NavInstruction::Builder &instruction, const QMa
           directions.set(j, string_to_direction(dir.toString()));
           j++;
         }
-
 
         i++;
       }
@@ -213,6 +216,11 @@ void RouteEngine::routeUpdate() {
         instruction.setTimeRemaining(total_time);
         instruction.setTimeRemainingTypical(total_time_typical);
         instruction.setDistanceRemaining(total_distance);
+      }
+
+      // auto speed_limit = attrs["mapbox.banner_instructions"].toList();
+      for (auto &key : attrs.keys()) {
+        qWarning() << "Maneuver Extended Attributes: " << key << attrs[key];
       }
 
       // Transition to next route segment
@@ -347,6 +355,20 @@ void RouteEngine::sendRoute() {
 
   auto path = route.path();
   auto coordinates = nav_route.initCoordinates(path.size());
+
+  qWarning() << "Distance: " << route.distance();
+  auto metadata = ((QGeoRouteMapbox *) &route)->metadata();
+  QList<QVariantMap> annotations;
+  const QByteArray &rawReply = metadata["osrm.reply-json"].toByteArray();
+  QJsonDocument document = QJsonDocument::fromJson(rawReply);
+  QJsonObject object = document.object();
+  QJsonArray osrmRoutes = object.value(QLatin1String("routes")).toArray();
+  QJsonValue osrmRoute = osrmRoutes.at(0); 
+
+  qWarning() << "Route: " << osrmRoute;
+  // for (auto &key : metadata.keys()) {
+  //   qWarning() << "Route metadata: " << key << metadata[key];
+  // }
 
   size_t i = 0;
   for (auto const &c : route.path()) {
