@@ -381,8 +381,8 @@ void MapInstructions::updateDistance(float d) {
       distance_str += " m";
     }
   } else {
-    float miles = d * METER_2_MILE;
-    float feet = d * METER_2_FOOT;
+    float miles = d * METER_TO_MILE;
+    float feet = d * METER_TO_FOOT;
 
     if (feet > 500) {
       distance_str.setNum(miles, 'f', 1);
@@ -597,7 +597,7 @@ void MapETA::updateETA(float s, float s_typical, float d) {
     num = d / 1000.0;
     distance_unit->setText("km");
   } else {
-    num = d * METER_2_MILE;
+    num = d * METER_TO_MILE;
     distance_unit->setText("mi");
   }
 
