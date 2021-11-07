@@ -427,7 +427,7 @@ bool Panda::can_receive(std::vector<can_frame>& out_vec) {
     }
     counter++;
     uint8_t chunk_len = ((recv - i) > 64) ? 63 : (recv - i - 1); // as 1 is always reserved for counter
-    static uint8_t chunk[72];
+    uint8_t chunk[72];
     memcpy(chunk, tail, tail_size);
     memcpy(&chunk[tail_size], &data[i+1], chunk_len);
     chunk_len += tail_size;
