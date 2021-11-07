@@ -38,11 +38,8 @@ void Sound::update() {
     }
   }
 
-  if (auto alert = Alert::get(sm, 1)) {
-    setAlert(alert->type, alert->sound);
-  } else {
-    setAlert({}, AudibleAlert::NONE);
-  }
+  auto alert = Alert::get(sm, 1);
+  setAlert(alert.type, alert.sound);
 }
 
 void Sound::setAlert(const QString &alert_type, AudibleAlert sound) {
