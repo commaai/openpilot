@@ -40,16 +40,8 @@ from common.params import Params
 from selfdrive.hardware import EON, TICI, HARDWARE
 from selfdrive.swaglog import cloudlog
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
-
-LOCK_FILE = os.getenv("UPDATER_LOCK_FILE", "/tmp/safe_staging_overlay.lock")
-STAGING_ROOT = os.getenv("UPDATER_STAGING_ROOT", "/data/safe_staging")
-
-NEOSUPDATE_DIR = os.getenv("UPDATER_NEOSUPDATE_DIR", "/data/neoupdate")
-
-OVERLAY_UPPER = os.path.join(STAGING_ROOT, "upper")
-OVERLAY_METADATA = os.path.join(STAGING_ROOT, "metadata")
-OVERLAY_MERGED = os.path.join(STAGING_ROOT, "merged")
-FINALIZED = os.path.join(STAGING_ROOT, "finalized")
+from selfdrive.updated.helpers import LOCK_FILE, STAGING_ROOT, NEOSUPDATE_DIR, FINALIZED, \
+                                      OVERLAY_UPPER, OVERLAY_METADATA, OVERLAY_MERGED
 
 
 class WaitTimeHelper:
