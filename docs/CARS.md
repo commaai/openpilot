@@ -119,8 +119,7 @@ Community Maintained Cars and Features
 | Kia       | Ceed 2019                     | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Kia       | Forte 2018-21                 | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Kia       | K5 2021                       | SCC + LFA         | Stock            | 0mph               | 0mph         |
-| Kia       | Niro EV 2019-21               | SCC + LKAS        | Stock            | 0mph               | 0mph         |
-| Kia       | Niro EV 2022                  | SCC + LKAS        | Stock            | 0mph               | 0mph         |
+| Kia       | Niro EV 2019-22               | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Kia       | Niro Hybrid 2021              | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Kia       | Niro PHEV 2019                | SCC + LKAS        | Stock            | 10mph              | 32mph        |
 | Kia       | Optima 2017                   | SCC + LKAS        | Stock            | 0mph               | 32mph        |
