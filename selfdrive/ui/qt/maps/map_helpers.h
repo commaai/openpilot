@@ -9,8 +9,6 @@
 #include "common/transformations/orientation.hpp"
 #include "cereal/messaging/messaging.h"
 
-const float METER_2_MILE = 0.000621371;
-const float METER_2_FOOT = 3.28084;
 #define RAD2DEG(x) ((x) * 180.0 / M_PI)
 
 QGeoCoordinate to_QGeoCoordinate(const QMapbox::Coordinate &in);

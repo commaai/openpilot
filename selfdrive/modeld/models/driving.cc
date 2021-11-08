@@ -99,7 +99,7 @@ void fill_sigmoid(const float *input, float *output, int len, int stride) {
 
 void fill_lead(cereal::ModelDataV2::LeadDataV3::Builder lead, const ModelDataRawLeads &leads, int t_idx, float prob_t) {
   std::array<float, LEAD_TRAJ_LEN> lead_t = {0.0, 2.0, 4.0, 6.0, 8.0, 10.0};
-  auto best_prediction = leads.get_best_prediction(t_idx);
+  const auto &best_prediction = leads.get_best_prediction(t_idx);
   lead.setProb(sigmoid(leads.prob[t_idx]));
   lead.setProbTime(prob_t);
   std::array<float, LEAD_TRAJ_LEN> lead_x, lead_y, lead_v, lead_a;
@@ -288,7 +288,7 @@ void fill_road_edges(cereal::ModelDataV2::Builder &framed, const std::array<floa
 }
 
 void fill_model(cereal::ModelDataV2::Builder &framed, const ModelDataRaw &net_outputs) {
-  auto best_plan = net_outputs.plans->get_best_prediction();
+  const auto &best_plan = net_outputs.plans->get_best_prediction();
   std::array<float, TRAJECTORY_SIZE> plan_t;
   std::fill_n(plan_t.data(), plan_t.size(), NAN);
   plan_t[0] = 0.0;
