@@ -182,8 +182,7 @@ class LiveKalman():
       vyaw + yaw_bias])
 
     pos = sp.Matrix([x, y, z])
-    earth_radius = (x**2 + y**2 + z**2)**0.5
-    gravity = quat_rot.T * ((EARTH_GM / (earth_radius**(3.0))) * pos)
+    gravity = quat_rot.T * ((EARTH_GM / ((x**2 + y**2 + z**2)**(3.0 / 2.0))) * pos)
     h_acc_sym = (gravity + acceleration)
     h_phone_rot_sym = sp.Matrix([vroll, vpitch, vyaw])
 
