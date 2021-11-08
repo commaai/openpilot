@@ -150,16 +150,16 @@ void CameraViewWidget::initializeGL() {
 
 void CameraViewWidget::showEvent(QShowEvent *event) {
   latest_frame = nullptr;
-  vipc_thread_ = new QThread();
-  connect(vipc_thread_, &QThread::started, [=]() { vipcThread(); });
-  connect(vipc_thread_, &QThread::finished, vipc_thread_, &QObject::deleteLater);
-  vipc_thread_->start();
+  vipc_thread = new QThread();
+  connect(vipc_thread, &QThread::started, [=]() { vipcThread(); });
+  connect(vipc_thread, &QThread::finished, vipc_thread, &QObject::deleteLater);
+  vipc_thread->start();
 }
 
 void CameraViewWidget::hideEvent(QHideEvent *event) {
-  vipc_thread_->requestInterruption();
-  vipc_thread_->quit();
-  vipc_thread_->wait();
+  vipc_thread->requestInterruption();
+  vipc_thread->quit();
+  vipc_thread->wait();
 }
 
 void CameraViewWidget::updateFrameMat(int w, int h) {
@@ -249,23 +249,23 @@ void CameraViewWidget::vipcFrameReceived(VisionBuf *buf) {
 
 void CameraViewWidget::vipcThread() {
   VisionStreamType cur_stream_type = stream_type;
-  std::unique_ptr<VisionIpcClient> vipc_client_;
+  std::unique_ptr<VisionIpcClient> vipc_client;
 
   while (!QThread::currentThread()->isInterruptionRequested()) {
-    if (!vipc_client_ || cur_stream_type != stream_type) {
+    if (!vipc_client || cur_stream_type != stream_type) {
       cur_stream_type = stream_type;
-      vipc_client_.reset(new VisionIpcClient("camerad", cur_stream_type, true));
+      vipc_client.reset(new VisionIpcClient("camerad", cur_stream_type, true));
     }
 
-    if (!vipc_client_->connected) {
-      if (!vipc_client_->connect(false)) {
+    if (!vipc_client->connected) {
+      if (!vipc_client->connect(false)) {
         QThread::msleep(100);
         continue;
       }
-      emit vipcThreadConnected(vipc_client_.get());
+      emit vipcThreadConnected(vipc_client.get());
     }
 
-    if (VisionBuf *buf = vipc_client_->recv(nullptr, 1000)) {
+    if (VisionBuf *buf = vipc_client->recv(nullptr, 1000)) {
       emit vipcThreadFrameReceived(buf);
     }
   }
