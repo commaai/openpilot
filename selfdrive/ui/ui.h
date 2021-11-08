@@ -64,21 +64,21 @@ struct Alert {
     if (sm.updated("controlsState")) {
       const cereal::ControlsState::Reader &cs = sm["controlsState"].getControlsState();
       return {cs.getAlertText1().cStr(), cs.getAlertText2().cStr(),
-               cs.getAlertType().cStr(), cs.getAlertSize(),
-               cs.getAlertSound()};
+              cs.getAlertType().cStr(), cs.getAlertSize(),
+              cs.getAlertSound()};
     } else if ((sm.frame - started_frame) > 5 * UI_FREQ) {
       const int CONTROLS_TIMEOUT = 5;
       // Handle controls timeout
       if (sm.rcv_frame("controlsState") < started_frame) {
         // car is started, but controlsState hasn't been seen at all
         return {"openpilot Unavailable", "Waiting for controls to start",
-                 "controlsWaiting", cereal::ControlsState::AlertSize::MID,
-                 AudibleAlert::NONE};
+                "controlsWaiting", cereal::ControlsState::AlertSize::MID,
+                AudibleAlert::NONE};
       } else if ((nanos_since_boot() - sm.rcv_time("controlsState")) / 1e9 > CONTROLS_TIMEOUT) {
         // car is started, but controls is lagging or died
         return {"TAKE CONTROL IMMEDIATELY", "Controls Unresponsive",
-                 "controlsUnresponsive", cereal::ControlsState::AlertSize::FULL,
-                 AudibleAlert::CHIME_WARNING_REPEAT};
+                "controlsUnresponsive", cereal::ControlsState::AlertSize::FULL,
+                AudibleAlert::CHIME_WARNING_REPEAT};
       }
     }
     return {};

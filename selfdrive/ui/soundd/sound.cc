@@ -7,7 +7,6 @@
 // TODO: detect when we can't display the UI
 
 Sound::Sound(QObject *parent) : sm({"carState", "controlsState"}) {
-  // TODO: merge again and add EQ in the amp config
   const QString sound_asset_path = Hardware::TICI() ? "../../assets/sounds_tici/" : "../../assets/sounds/";
   for (auto &[alert, fn, loops] : sound_list) {
     QSoundEffect *s = new QSoundEffect(this);
