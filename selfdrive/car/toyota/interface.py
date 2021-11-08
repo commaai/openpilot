@@ -355,19 +355,16 @@ class CarInterface(CarInterfaceBase):
     # events
     events = self.create_common_events(ret)
 
-    if self.CS.CP.openpilotLongitudinalControl:
-      if self.CS.brake_hold:
-        events.add(EventName.brakeHold)
-      if self.CS.low_speed_lockout:
-        events.add(EventName.lowSpeedLockout)
-      if ret.vEgo < self.CP.minEnableSpeed:
-        events.add(EventName.belowEngageSpeed)
-        if c.actuators.accel > 0.3:
-          # some margin on the actuator to not false trigger cancellation while stopping
-          events.add(EventName.speedTooLow)
-        if ret.vEgo < 0.001:
-          # while in standstill, send a user alert
-          events.add(EventName.manualRestart)
+    if self.CS.low_speed_lockout and self.CP.openpilotLongitudinalControl:
+      events.add(EventName.lowSpeedLockout)
+    if ret.vEgo < self.CP.minEnableSpeed and self.CP.openpilotLongitudinalControl:
+      events.add(EventName.belowEngageSpeed)
+      if c.actuators.accel > 0.3:
+        # some margin on the actuator to not false trigger cancellation while stopping
+        events.add(EventName.speedTooLow)
+      if ret.vEgo < 0.001:
+        # while in standstill, send a user alert
+        events.add(EventName.manualRestart)
 
     ret.events = events.to_msg()
 
