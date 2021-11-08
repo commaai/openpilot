@@ -76,7 +76,6 @@ selfdrive/swaglog.py
 selfdrive/logmessaged.py
 selfdrive/tombstoned.py
 selfdrive/pandad.py
-selfdrive/updated.py
 selfdrive/rtshield.py
 
 selfdrive/athena/__init__.py
@@ -357,6 +356,8 @@ selfdrive/ui/qt/text_aarch64
 
 selfdrive/ui/replay/*.cc
 selfdrive/ui/replay/*.h
+
+selfdrive/updated/*
 
 selfdrive/camerad/SConscript
 selfdrive/camerad/main.cc
