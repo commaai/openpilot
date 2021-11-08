@@ -14,7 +14,7 @@ Sound::Sound(QObject *parent) : sm({"carState", "controlsState"}) {
       assert(s->status() != QSoundEffect::Error);
     });
     s->setSource(QUrl::fromLocalFile(sound_asset_path + fn));
-    s->setVolume(current_volume);
+    s->setVolume(Hardware::MIN_VOLUME);
     sounds[alert] = {s, loops ? QSoundEffect::Infinite : 0};
   }
 
@@ -29,11 +29,8 @@ void Sound::update() {
     // scale volume with speed
     float volume = util::map_val(sm["carState"].getCarState().getVEgo(), 0.f, 20.f,
                                  Hardware::MIN_VOLUME, Hardware::MAX_VOLUME);
-    if (current_volume != volume) {
-      current_volume = volume;
-      for (auto &[s, loops] : sounds) {
-        s->setVolume(std::round(100 * volume) / 100);
-      }
+    for (auto &[s, loops] : sounds) {
+      s->setVolume(std::round(100 * volume) / 100);
     }
   }
 

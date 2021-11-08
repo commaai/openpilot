@@ -25,7 +25,6 @@ protected:
   void setAlert(const Alert &alert);
 
   Alert current_alert = {};
-  float current_volume = Hardware::MIN_VOLUME;
   QMap<AudibleAlert, QPair<QSoundEffect *, int>> sounds;
   SubMaster sm;
 };
