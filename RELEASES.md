@@ -1,7 +1,7 @@
 Version 0.8.11 (2021-XX-XX)
 ========================
  * Navigation: Show more detailed instructions when approaching maneuver
- * Nissan ECU firmware fingerprinting thanks to robin-beckman!
+ * Nissan ECU firmware fingerprinting thanks to robin-reckmann, martinl and razem-io!
  * Cadillac Escalade ESV 2016 support thanks to Gibby!
  * Mazda CX-9 2021 support thanks to Jacar!
  * Volkswagen Polo 2020 support thanks to jyoung8607!
