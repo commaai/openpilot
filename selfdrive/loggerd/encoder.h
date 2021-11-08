@@ -1,12 +1,27 @@
 #pragma once
 
-#include <cstdint>
+#include <vector>
 
-class VideoEncoder {
+extern "C" {
+#include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
+#include <libavutil/imgutils.h>
+}
+#include <OMX_Component.h>
+
+class FFmpegEncoder {
 public:
-  virtual ~VideoEncoder() {}
-  virtual int encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
-                           int in_width, int in_height, uint64_t ts) = 0;
-  virtual void encoder_open(const char* path) = 0;
-  virtual void encoder_close() = 0;
+  FFmpegEncoder(AVCodecID codec_id, int width, int height, int fps);
+  ~FFmpegEncoder();
+  void open(const char *vid_path);
+  void remux(OMX_BUFFERHEADERTYPE *out_buf);
+  bool encode(AVFrame *frame, const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr);
+  void writeHeader(const std::vector<uint8_t> &header = {});
+  void close();
+
+  AVStream *stream = nullptr;
+  AVCodec *codec = nullptr;
+  AVCodecContext *codec_ctx = nullptr;
+  AVFormatContext *format_ctx = nullptr;
+  int fps;
 };

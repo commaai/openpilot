@@ -1,19 +1,14 @@
 #pragma once
 
-#include <cstdint>
-#include <cstdio>
 #include <vector>
 
 #include <OMX_Component.h>
-extern "C" {
-#include <libavformat/avformat.h>
-}
 
 #include "selfdrive/common/queue.h"
 #include "selfdrive/loggerd/encoder.h"
 
 // OmxEncoder, lossey codec using hardware hevc
-class OmxEncoder : public VideoEncoder {
+class OmxEncoder {
 public:
   OmxEncoder(const char* filename, int width, int height, int fps, int bitrate, bool h265, bool downscale, bool write = true);
   ~OmxEncoder();
@@ -45,8 +40,7 @@ private:
   const char* filename;
   FILE *of = nullptr;
 
-  size_t codec_config_len;
-  uint8_t *codec_config = NULL;
+  std::vector<uint8_t> codec_config;
   bool wrote_codec_config;
 
   std::mutex state_lock;
@@ -62,12 +56,7 @@ private:
 
   SafeQueue<OMX_BUFFERHEADERTYPE *> free_in;
   SafeQueue<OMX_BUFFERHEADERTYPE *> done_out;
-
-  AVFormatContext *ofmt_ctx;
-  AVCodecContext *codec_ctx;
-  AVStream *out_stream;
-  bool remuxing;
-
   bool downscale;
   uint8_t *y_ptr2, *u_ptr2, *v_ptr2;
+  std::unique_ptr<FFmpegEncoder> remuxing = nullptr;
 };

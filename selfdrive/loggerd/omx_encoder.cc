@@ -4,11 +4,7 @@
 
 #include <fcntl.h>
 #include <sys/stat.h>
-#include <unistd.h>
-
 #include <cassert>
-#include <cstdlib>
-#include <cstdio>
 
 #include <OMX_Component.h>
 #include <OMX_IndexExt.h>
@@ -162,7 +158,6 @@ OmxEncoder::OmxEncoder(const char* filename, int width, int height, int fps, int
   this->width = width;
   this->height = height;
   this->fps = fps;
-  this->remuxing = !h265;
 
   this->downscale = downscale;
   if (this->downscale) {
@@ -272,6 +267,8 @@ OmxEncoder::OmxEncoder(const char* filename, int width, int height, int fps, int
     avc.bconstIpred = OMX_TRUE;
 
     OMX_CHECK(OMX_SetParameter(this->handle, OMX_IndexParamVideoAvc, &avc));
+
+    remuxing = std::make_unique<FFmpegEncoder>(AV_CODEC_ID_H264, width, height, fps);
   }
 
 
@@ -328,64 +325,27 @@ OmxEncoder::OmxEncoder(const char* filename, int width, int height, int fps, int
 }
 
 void OmxEncoder::handle_out_buf(OmxEncoder *e, OMX_BUFFERHEADERTYPE *out_buf) {
-  int err;
   uint8_t *buf_data = out_buf->pBuffer + out_buf->nOffset;
-
   if (out_buf->nFlags & OMX_BUFFERFLAG_CODECCONFIG) {
-    if (e->codec_config_len < out_buf->nFilledLen) {
-      e->codec_config = (uint8_t *)realloc(e->codec_config, out_buf->nFilledLen);
-    }
-    e->codec_config_len = out_buf->nFilledLen;
-    memcpy(e->codec_config, buf_data, out_buf->nFilledLen);
+    e->codec_config.resize(out_buf->nFilledLen);
+    memcpy(e->codec_config.data(), buf_data, out_buf->nFilledLen);
 #ifdef QCOM2
     out_buf->nTimeStamp = 0;
 #endif
   }
 
   if (e->of) {
-    //printf("write %d flags 0x%x\n", out_buf->nFilledLen, out_buf->nFlags);
     size_t written = util::safe_fwrite(buf_data, 1, out_buf->nFilledLen, e->of);
     if (written != out_buf->nFilledLen) {
       LOGE("failed to write file.errno=%d", errno);
     }
-  }
-
-  if (e->remuxing) {
-    if (!e->wrote_codec_config && e->codec_config_len > 0) {
-      // extradata will be freed by av_free() in avcodec_free_context()
-      e->codec_ctx->extradata = (uint8_t*)av_mallocz(e->codec_config_len + AV_INPUT_BUFFER_PADDING_SIZE);
-      e->codec_ctx->extradata_size = e->codec_config_len;
-      memcpy(e->codec_ctx->extradata, e->codec_config, e->codec_config_len);
-
-      err = avcodec_parameters_from_context(e->out_stream->codecpar, e->codec_ctx);
-      assert(err >= 0);
-      err = avformat_write_header(e->ofmt_ctx, NULL);
-      assert(err >= 0);
-
+  } else if (e->remuxing) {
+    if (!e->wrote_codec_config && e->codec_config.size() > 0) {
+      e->remuxing->writeHeader(e->codec_config);
       e->wrote_codec_config = true;
     }
-
     if (out_buf->nTimeStamp > 0) {
-      // input timestamps are in microseconds
-      AVRational in_timebase = {1, 1000000};
-
-      AVPacket pkt;
-      av_init_packet(&pkt);
-      pkt.data = buf_data;
-      pkt.size = out_buf->nFilledLen;
-
-      enum AVRounding rnd = static_cast<enum AVRounding>(AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX);
-      pkt.pts = pkt.dts = av_rescale_q_rnd(out_buf->nTimeStamp, in_timebase, e->ofmt_ctx->streams[0]->time_base, rnd);
-      pkt.duration = av_rescale_q(50*1000, in_timebase, e->ofmt_ctx->streams[0]->time_base);
-
-      if (out_buf->nFlags & OMX_BUFFERFLAG_SYNCFRAME) {
-        pkt.flags |= AV_PKT_FLAG_KEY;
-      }
-
-      err = av_write_frame(e->ofmt_ctx, &pkt);
-      if (err < 0) { LOGW("ts encoder write issue"); }
-
-      av_free_packet(&pkt);
+      e->remuxing->remux(out_buf);
     }
   }
 
@@ -400,10 +360,7 @@ void OmxEncoder::handle_out_buf(OmxEncoder *e, OMX_BUFFERHEADERTYPE *out_buf) {
 
 int OmxEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
                              int in_width, int in_height, uint64_t ts) {
-  int err;
-  if (!this->is_open) {
-    return -1;
-  }
+  if (!this->is_open) return -1;
 
   // this sometimes freezes... put it outside the encoder lock so we can still trigger rotates...
   // THIS IS A REALLY BAD IDEA, but apparently the race has to happen 30 times to trigger this
@@ -415,10 +372,7 @@ int OmxEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const u
     }
   }
 
-  //pthread_mutex_lock(&this->lock);
-
   int ret = this->counter;
-
   uint8_t *in_buf_ptr = in_buf->pBuffer;
   // printf("in_buf ptr %p\n", in_buf_ptr);
 
@@ -442,7 +396,7 @@ int OmxEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const u
     u_ptr = this->u_ptr2;
     v_ptr = this->v_ptr2;
   }
-  err = libyuv::I420ToNV12(y_ptr, this->width,
+  int err = libyuv::I420ToNV12(y_ptr, this->width,
                    u_ptr, this->width/2,
                    v_ptr, this->width/2,
                    in_y_ptr, in_y_stride,
@@ -469,53 +423,26 @@ int OmxEncoder::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const u
   }
 
   this->dirty = true;
-
   this->counter++;
 
   return ret;
 }
 
 void OmxEncoder::encoder_open(const char* path) {
-  int err;
-
   snprintf(this->vid_path, sizeof(this->vid_path), "%s/%s", path, this->filename);
-  LOGD("encoder_open %s remuxing:%d", this->vid_path, this->remuxing);
+  LOGD("encoder_open %s remuxing:%d", this->vid_path, this->remuxing != nullptr);
 
   if (this->remuxing) {
-    avformat_alloc_output_context2(&this->ofmt_ctx, NULL, NULL, this->vid_path);
-    assert(this->ofmt_ctx);
-
-    this->out_stream = avformat_new_stream(this->ofmt_ctx, NULL);
-    assert(this->out_stream);
-
-    // set codec correctly
-    av_register_all();
-
-    AVCodec *codec = NULL;
-    codec = avcodec_find_encoder(AV_CODEC_ID_H264);
-    assert(codec);
-
-    this->codec_ctx = avcodec_alloc_context3(codec);
-    assert(this->codec_ctx);
-    this->codec_ctx->width = this->width;
-    this->codec_ctx->height = this->height;
-    this->codec_ctx->pix_fmt = AV_PIX_FMT_YUV420P;
-    this->codec_ctx->time_base = (AVRational){ 1, this->fps };
-
-    err = avio_open(&this->ofmt_ctx->pb, this->vid_path, AVIO_FLAG_WRITE);
-    assert(err >= 0);
-
+    remuxing->open(vid_path);
     this->wrote_codec_config = false;
-  } else {
-    if (this->write) {
-      this->of = util::safe_fopen(this->vid_path, "wb");
-      assert(this->of);
+  } else if (this->write) {
+    this->of = util::safe_fopen(this->vid_path, "wb");
+    assert(this->of);
 #ifndef QCOM2
-      if (this->codec_config_len > 0) {
-        util::safe_fwrite(this->codec_config, 1, this->codec_config_len, this->of);
-      }
-#endif
+    if (this->codec_config.size() > 0) {
+      util::safe_fwrite(this->codec_config.data(), 1, this->codec_config.size(), this->of);
     }
+#endif
   }
 
   // create camera lock file
@@ -554,16 +481,11 @@ void OmxEncoder::encoder_close() {
     }
 
     if (this->remuxing) {
-      av_write_trailer(this->ofmt_ctx);
-      avcodec_free_context(&this->codec_ctx);
-      avio_closep(&this->ofmt_ctx->pb);
-      avformat_free_context(this->ofmt_ctx);
-    } else {
-      if (this->of) {
-        util::safe_fflush(this->of);
-        fclose(this->of);
-        this->of = nullptr;
-      }
+      this->remuxing->close();
+    } else if (this->of) {
+      util::safe_fflush(this->of);
+      fclose(this->of);
+      this->of = nullptr;
     }
     unlink(this->lock_path);
   }
@@ -594,10 +516,6 @@ OmxEncoder::~OmxEncoder() {
   OMX_BUFFERHEADERTYPE *out_buf;
   while (this->free_in.try_pop(out_buf));
   while (this->done_out.try_pop(out_buf));
-
-  if (this->codec_config) {
-    free(this->codec_config);
-  }
 
   if (this->downscale) {
     free(this->y_ptr2);

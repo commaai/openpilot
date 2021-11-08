@@ -7,7 +7,7 @@ libs = [logger_lib, common, cereal, messaging, visionipc,
         'avformat', 'avcodec', 'swscale', 'avutil',
         'yuv', 'bz2', 'OpenCL']
 
-src = ['loggerd.cc']
+src = ['loggerd.cc', 'encoder.cc']
 if arch in ["aarch64", "larch64"]:
   src += ['omx_encoder.cc']
   libs += ['OmxCore', 'gsl', 'CB'] + gpucommon
