@@ -81,22 +81,6 @@ class CAR:
   INSIGHT = "HONDA INSIGHT 2019"
   HONDA_E = "HONDA E 2020"
 
-# diag message that in some Nidec cars only appear with 1s freq if VIN query is performed
-DIAG_MSGS = {1600: 5, 1601: 8}
-
-FINGERPRINTS = {
-  CAR.ODYSSEY_CHN: [{
-    57: 3, 145: 8, 316: 8, 342: 6, 344: 8, 380: 8, 398: 3, 399: 7, 401: 8, 404: 4, 411: 5, 420: 8, 422: 8, 423: 2, 426: 8, 432: 7, 450: 8, 464: 8, 490: 8, 506: 8, 507: 1, 512: 6, 513: 6, 597: 8, 610: 8, 611: 8, 612: 8, 617: 8, 660: 8, 661: 4, 773: 7, 780: 8, 804: 8, 808: 8, 829: 5, 862: 8, 884: 7, 892: 8, 923: 2, 929: 8, 1030: 5, 1137: 8, 1302: 8, 1348: 5, 1361: 5, 1365: 5, 1600: 5, 1601: 8, 1639: 8
-  }],
-}
-
-# add DIAG_MSGS to fingerprints
-for c in FINGERPRINTS:
-  for f, _ in enumerate(FINGERPRINTS[c]):
-    for d in DIAG_MSGS:
-      FINGERPRINTS[c][f][d] = DIAG_MSGS[d]
-
-# TODO: Figure out what is relevant
 FW_VERSIONS = {
   CAR.ACCORD: {
     (Ecu.programmedFuelInjection, 0x18da10f1, None): [
