@@ -50,6 +50,8 @@ class RobustLogReader(LogReader):
       except capnp.lib.capnp.KjException:
         if progress is None:
           progress = tqdm.tqdm(total=len(dat))
+
+        # Cut off bytes at the end until capnp is able to read
         dat = dat[:-1]
         progress.update(1)
 
