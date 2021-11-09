@@ -7,23 +7,20 @@ from selfdrive.modeld.constants import T_IDXS
 
 LongCtrlState = car.CarControl.Actuators.LongControlState
 
+STOPPING_TARGET_SPEED_OFFSET = 0.01
+
 # As per ISO 15622:2018 for all speeds
 ACCEL_MIN_ISO = -3.5 # m/s^2
 ACCEL_MAX_ISO = 2.0 # m/s^2
 
-STOPPING_SPEED = 0.3
 
-
-def long_control_state_trans(CP, active, long_control_state, v_ego, v_target,
-                             output_accel, brake_pressed, cruise_standstill):
+def long_control_state_trans(CP, active, long_control_state, v_ego, v_target, v_pid,
+                             output_accel, brake_pressed, cruise_standstill, min_speed_can):
   """Update longitudinal control state machine"""
-
-  # STOPPING_SPEED: max speed for entering stopping state in normal cruise
-  # vEgoStopping: max speed for allowing engagement with brakes
-
+  stopping_target_speed = min_speed_can + STOPPING_TARGET_SPEED_OFFSET
   stopping_condition = (v_ego < 2.0 and cruise_standstill) or \
                        (v_ego < CP.vEgoStopping and
-                        ((v_ego < STOPPING_SPEED and v_target < STOPPING_SPEED) or
+                        ((v_pid < stopping_target_speed and v_target < stopping_target_speed) or
                          brake_pressed))
 
   starting_condition = v_target > CP.vEgoStarting and not cruise_standstill
@@ -60,11 +57,13 @@ class LongControl():
                             (CP.longitudinalTuning.kiBP, CP.longitudinalTuning.kiV),
                             rate=1/DT_CTRL,
                             sat_limit=0.8)
+    self.v_pid = 0.0
     self.last_output_accel = 0.0
 
-  def reset(self):
+  def reset(self, v_pid):
     """Reset PID controller and change setpoint"""
     self.pid.reset()
+    self.v_pid = v_pid
 
   def update(self, active, CS, CP, long_plan, accel_limits):
     """Update longitudinal control. This updates the state machine and runs a PID loop"""
@@ -95,22 +94,26 @@ class LongControl():
     # Update state machine
     output_accel = self.last_output_accel
     self.long_control_state = long_control_state_trans(CP, active, self.long_control_state, CS.vEgo,
-                                                       v_target_future, output_accel,
-                                                       CS.brakePressed, CS.cruiseState.standstill)
+                                                       v_target_future, self.v_pid, output_accel,
+                                                       CS.brakePressed, CS.cruiseState.standstill, CP.minSpeedCan)
+
+    v_ego_pid = max(CS.vEgo, CP.minSpeedCan)  # Without this we get jumps, CAN bus reports 0 when speed < 0.3
 
     if self.long_control_state == LongCtrlState.off or CS.gasPressed:
-      self.reset()
+      self.reset(v_ego_pid)
       output_accel = 0.
 
     # tracking objects and driving
     elif self.long_control_state == LongCtrlState.pid:
+      self.v_pid = v_target
+
       # Toyota starts braking more when it thinks you want to stop
       # Freeze the integrator so we don't accelerate to compensate, and don't allow positive acceleration
       prevent_overshoot = not CP.stoppingControl and CS.vEgo < 1.5 and v_target_future < 0.7
-      deadzone = interp(CS.vEgo, CP.longitudinalTuning.deadzoneBP, CP.longitudinalTuning.deadzoneV)
+      deadzone = interp(v_ego_pid, CP.longitudinalTuning.deadzoneBP, CP.longitudinalTuning.deadzoneV)
       freeze_integrator = prevent_overshoot
 
-      output_accel = self.pid.update(v_target, CS.vEgo, speed=CS.vEgo, deadzone=deadzone, feedforward=a_target, freeze_integrator=freeze_integrator)
+      output_accel = self.pid.update(self.v_pid, v_ego_pid, speed=v_ego_pid, deadzone=deadzone, feedforward=a_target, freeze_integrator=freeze_integrator)
 
       if prevent_overshoot:
         output_accel = min(output_accel, 0.0)
@@ -122,13 +125,13 @@ class LongControl():
         output_accel -= CP.stoppingDecelRate * DT_CTRL
       output_accel = clip(output_accel, accel_limits[0], accel_limits[1])
 
-      self.reset()
+      self.reset(CS.vEgo)
 
     # Intention is to move again, release brake fast before handing control to PID
     elif self.long_control_state == LongCtrlState.starting:
       if output_accel < CP.startAccel:
         output_accel += CP.startingAccelRate * DT_CTRL
-      self.reset()
+      self.reset(CS.vEgo)
 
     self.last_output_accel = output_accel
     final_accel = clip(output_accel, accel_limits[0], accel_limits[1])
