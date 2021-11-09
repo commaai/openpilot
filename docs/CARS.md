@@ -172,7 +172,7 @@
 <sup>4</sup>Model-years 2021 and beyond may have a new camera harness design, which isn't yet available from the comma store. Before ordering,
 remove the Lane Assist camera cover and check to see if the connector is black (older design) or light brown (newer design). For the newer design,
 in the interim, choose "VW J533 Development" from the vehicle drop-down for a harness that integrates at the CAN gateway inside the dashboard.<br />
-Community Maintained Cars and Features are not verified by comma to meet our [safety model](SAFETY.md). Be extra cautious using them. They are only available after enabling the toggle in `Settings->Developer->Enable Community Features`.
+Community Maintained Cars and Features are not verified by comma to meet our [safety model](SAFETY.md). Be extra cautious using them.
 
 To promote a car from community maintained, it must meet a few requirements. We must own one from the brand, we must sell the harness for it, has full ISO26262 in both panda and openpilot, there must be a path forward for longitudinal control, it must have AEB still enabled, and it must support fingerprinting 2.0
 
