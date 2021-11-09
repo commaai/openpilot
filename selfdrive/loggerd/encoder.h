@@ -15,7 +15,7 @@ public:
   ~FFmpegEncoder();
   void open(const char *vid_path);
   void remux(OMX_BUFFERHEADERTYPE *out_buf);
-  bool encode(AVFrame *frame, const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr);
+  bool encode(AVFrame *frame);
   void writeHeader(const std::vector<uint8_t> &header = {});
   void close();
 

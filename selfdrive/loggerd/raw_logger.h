@@ -11,9 +11,7 @@ public:
   ~RawLogger();
   void encoder_open(const char* path);
   void encoder_close();
-  int encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr, int in_width, int in_height, uint64_t ts) {
-    return encode(frame, y_ptr, u_ptr, v_ptr) ? counter++ : -1;
-  }
+  int encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr, int in_width, int in_height, uint64_t ts);
 
 private:
   const char* filename;

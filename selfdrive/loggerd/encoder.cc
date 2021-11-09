@@ -17,6 +17,7 @@ FFmpegEncoder::FFmpegEncoder(AVCodecID codec_id, int width, int height, int fps)
   codec_ctx->height = height;
   codec_ctx->pix_fmt = AV_PIX_FMT_YUV420P;
   codec_ctx->time_base = (AVRational){1, fps};
+  CHECK_ERR(avcodec_open2(codec_ctx, codec, NULL));
 }
 
 FFmpegEncoder::~FFmpegEncoder() {
@@ -76,10 +77,13 @@ void FFmpegEncoder::remux(OMX_BUFFERHEADERTYPE *out_buf) {
   av_packet_unref(&pkt);
 }
 
-bool FFmpegEncoder::encode(AVFrame *frame, const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr) {
+bool FFmpegEncoder::encode(AVFrame *frame) {
   int got_output = 0;
   AVPacket pkt = {};
   av_init_packet(&pkt);
+  pkt.data = NULL;
+  pkt.size = 0;
+
   int err = avcodec_encode_video2(codec_ctx, &pkt, frame, &got_output);
   if (err != 0 || !got_output) return false;
 
