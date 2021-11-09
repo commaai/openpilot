@@ -6,6 +6,7 @@
 #include <QOpenGLShaderProgram>
 #include <QOpenGLWidget>
 #include <QThread>
+#include <QOpenGLBuffer>
 #include "cereal/visionipc/visionipc_client.h"
 #include "selfdrive/common/visionimg.h"
 #include "selfdrive/ui/ui.h"
@@ -37,7 +38,7 @@ protected:
 
   bool zoomed_view;
   VisionBuf *latest_frame = nullptr;
-  GLuint frame_vao, frame_vbo, frame_ibo;
+  GLuint frame_vao, frame_vbo, frame_ibo;//, frame_buffer;
   mat4 frame_mat;
   std::unique_ptr<EGLImageTexture> texture[UI_BUF_COUNT];
   QOpenGLShaderProgram *program;

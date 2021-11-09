@@ -55,9 +55,17 @@ EGLImageTexture::EGLImageTexture(const VisionBuf *buf) {
   glBindTexture(GL_TEXTURE_2D, frame_tex);
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, buf->width, buf->height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
   glGenerateMipmap(GL_TEXTURE_2D);
+
+  glGenBuffers(1, &frame_buf);
+  glBindBuffer(GL_PIXEL_UNPACK_BUFFER, frame_buf);
+  glBufferData(GL_PIXEL_UNPACK_BUFFER, buf->len, nullptr, GL_DYNAMIC_DRAW);
+  buffer = glMapBufferRange(GL_PIXEL_UNPACK_BUFFER, 0, buf->len, GL_MAP_WRITE_BIT);
+  assert(buffer);
+  glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 }
 
 EGLImageTexture::~EGLImageTexture() {
   glDeleteTextures(1, &frame_tex);
+  glDeleteBuffers(1, &frame_buf);
 }
 #endif // ifdef QCOM

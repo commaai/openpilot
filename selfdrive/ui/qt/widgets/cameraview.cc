@@ -1,5 +1,5 @@
 #include "selfdrive/ui/qt/widgets/cameraview.h"
-
+// #include <OpenGLES/ES2/glext.h>
 namespace {
 
 const char frame_vertex_shader[] =
@@ -197,17 +197,22 @@ void CameraViewWidget::paintGL() {
     glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
     return;
   }
+  
 
   glViewport(0, 0, width(), height());
 
   glBindVertexArray(frame_vao);
   glActiveTexture(GL_TEXTURE0);
-
+ 
   glBindTexture(GL_TEXTURE_2D, texture[latest_frame->idx]->frame_tex);
   if (!Hardware::EON()) {
     // this is handled in ion on QCOM
+    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, texture[latest_frame->idx]->frame_buf);
+    glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, latest_frame->width, latest_frame->height,
-                    GL_RGB, GL_UNSIGNED_BYTE, latest_frame->addr);
+                    GL_RGB, GL_UNSIGNED_BYTE, 0);
+    texture[latest_frame->idx]->buffer = glMapBufferRange(GL_PIXEL_UNPACK_BUFFER, 0, latest_frame->len, GL_MAP_WRITE_BIT);
+    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
   }
 
   glUseProgram(program->programId());
@@ -219,6 +224,7 @@ void CameraViewWidget::paintGL() {
   glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, (const void *)0);
   glDisableVertexAttribArray(0);
   glBindVertexArray(0);
+  
 }
 
 void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
@@ -236,6 +242,7 @@ void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
     assert(glGetError() == GL_NO_ERROR);
   }
+
   latest_frame = nullptr;
   stream_width = vipc_client->buffers[0].width;
   stream_height = vipc_client->buffers[0].height;
@@ -266,6 +273,9 @@ void CameraViewWidget::vipcThread() {
     }
 
     if (VisionBuf *buf = vipc_client->recv(nullptr, 1000)) {
+      if (!Hardware::EON()) {
+        memcpy(texture[buf->idx]->buffer, buf->addr, buf->len);
+      }
       emit vipcThreadFrameReceived(buf);
     }
   }
