@@ -100,6 +100,8 @@ int main(int argc, char *argv[]) {
       {"ecam", REPLAY_FLAG_ECAM, "load wide road camera"},
       {"no-loop", REPLAY_FLAG_NO_LOOP, "stop at the end of the route"},
       {"no-cache", REPLAY_FLAG_NO_FILE_CACHE, "turn off local cache"},
+      {"qcam", REPLAY_FLAG_QCAMERA, "load qcamera"},
+      {"yuv", REPLAY_FLAG_SEND_YUV, "send yuv frame"},
   };
 
   QCommandLineParser parser;
