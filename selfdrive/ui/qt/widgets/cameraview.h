@@ -43,7 +43,7 @@ protected:
   QOpenGLShaderProgram *program;
   QColor bg = QColor("#000000");
 
-  int stream_width = 0
+  int stream_width = 0;
   int stream_height = 0;
   std::atomic<VisionStreamType> stream_type;
   QThread *vipc_thread = nullptr;
