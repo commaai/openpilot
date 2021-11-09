@@ -68,7 +68,6 @@ class Panda {
   cereal::PandaState::PandaType hw_type = cereal::PandaState::PandaType::UNKNOWN;
   bool has_rtc = false;
   const uint32_t bus_offset;
-  const unsigned char dlc_to_len[16] = {0U, 1U, 2U, 3U, 4U, 5U, 6U, 7U, 8U, 12U, 16U, 20U, 24U, 32U, 48U, 64U};
 
   // Static functions
   static std::vector<std::string> list();

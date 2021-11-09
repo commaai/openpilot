@@ -10,6 +10,7 @@
 #include "selfdrive/common/gpio.h"
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
+#include "panda/board/dlc_to_len.h"
 
 static int init_usb_ctx(libusb_context **context) {
   assert(context != nullptr);
