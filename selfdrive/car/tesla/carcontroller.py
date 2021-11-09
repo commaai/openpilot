@@ -2,7 +2,6 @@ from common.numpy_fast import clip, interp
 from opendbc.can.packer import CANPacker
 from selfdrive.car.tesla.teslacan import TeslaCAN
 from selfdrive.car.tesla.values import DBC, CANBUS, CarControllerParams
-from selfdrive.controls.lib.longcontrol import ACCEL_MIN_ISO, ACCEL_MAX_ISO
 
 class CarController():
   def __init__(self, dbc_name, CP, VM):
@@ -41,8 +40,8 @@ class CarController():
     if self.CP.openpilotLongitudinalControl and ((frame % 5) in [0, 2]):
       target_accel = actuators.accel
       target_speed = max(CS.out.vEgo + (target_accel * CarControllerParams.ACCEL_TO_SPEED_MULTIPLIER), 0)
-      max_accel = ACCEL_MAX_ISO if target_accel < 0 else target_accel
-      min_accel = ACCEL_MIN_ISO if target_accel > 0 else target_accel
+      max_accel = 0 if target_accel < 0 else target_accel
+      min_accel = 0 if target_accel > 0 else target_accel
 
       can_sends.extend(self.tesla_can.create_longitudinal_commands(CS.acc_state, target_speed, min_accel, max_accel, self.long_control_counter))
       self.long_control_counter += 1
