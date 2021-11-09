@@ -68,7 +68,6 @@ typedef struct LoggerHandle {
   char segment_path[4096];
   char log_path[4096];
   char qlog_path[4096];
-  char lock_path[4096];
   std::unique_ptr<BZFile> log, q_log;
 } LoggerHandle;
 

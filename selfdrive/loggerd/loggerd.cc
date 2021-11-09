@@ -108,7 +108,8 @@ const LogCameraInfo qcam_info = {
 struct LoggerdState {
   Context *ctx;
   LoggerState logger = {};
-  char segment_path[4096];
+  char segment_path[4096] = {};
+  std::string lock_file;
   std::mutex rotate_lock;
   std::condition_variable rotate_cv;
   std::atomic<int> rotate_segment;
@@ -279,12 +280,21 @@ void clear_locks() {
 void logger_rotate() {
   {
     std::unique_lock lk(s.rotate_lock);
+
+    if (!s.lock_file.empty()) {
+      ::unlink(s.lock_file.c_str());
+    }
+
     int segment = -1;
     int err = logger_next(&s.logger, LOG_ROOT.c_str(), s.segment_path, sizeof(s.segment_path), &segment);
     assert(err == 0);
     s.rotate_segment = segment;
     s.waiting_rotate = 0;
     s.last_rotate_tms = millis_since_boot();
+
+    s.lock_file = util::string_format("%s/.lock", s.segment_path);
+    std::ofstream f(s.lock_file);
+    assert(f.good());
   }
   s.rotate_cv.notify_all();
   LOGW((s.logger.part == 0) ? "logging to %s" : "rotated to %s", s.segment_path);

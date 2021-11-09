@@ -152,15 +152,10 @@ static LoggerHandle* logger_open(LoggerState *s, const char* root_path) {
 
   snprintf(h->log_path, sizeof(h->log_path), "%s/%s.bz2", h->segment_path, s->log_name);
   snprintf(h->qlog_path, sizeof(h->qlog_path), "%s/qlog.bz2", h->segment_path);
-  snprintf(h->lock_path, sizeof(h->lock_path), "%s/.lock", h->segment_path);
   h->end_sentinel_type = SentinelType::END_OF_SEGMENT;
   h->exit_signal = 0;
 
   if (!util::create_directories(h->segment_path, 0775)) return nullptr;
-
-  FILE* lock_file = fopen(h->lock_path, "wb");
-  if (lock_file == NULL) return NULL;
-  fclose(lock_file);
 
   h->log = std::make_unique<BZFile>(h->log_path);
   if (s->has_qlog) {
@@ -259,7 +254,6 @@ void lh_close(LoggerHandle* h) {
   if (h->refcnt == 0) {
     h->log.reset(nullptr);
     h->q_log.reset(nullptr);
-    unlink(h->lock_path);
     pthread_mutex_unlock(&h->lock);
     pthread_mutex_destroy(&h->lock);
     return;
