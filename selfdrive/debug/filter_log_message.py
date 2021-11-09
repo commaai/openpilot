@@ -3,7 +3,7 @@ import argparse
 import json
 
 import cereal.messaging as messaging
-from tools.lib.logreader import LogReader
+from tools.lib.robust_logreader import RobustLogReader as LogReader
 from tools.lib.route import Route
 
 LEVELS = {
