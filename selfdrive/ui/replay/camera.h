@@ -38,5 +38,5 @@ protected:
   };
   std::atomic<int> publishing_ = 0;
   std::unique_ptr<VisionIpcServer> vipc_server_;
-  bool send_yuv_;
+  bool send_yuv;
 };

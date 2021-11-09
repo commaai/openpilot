@@ -9,6 +9,7 @@
 
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/qt/api.h"
+#include "selfdrive/ui/replay/replay.h"
 #include "selfdrive/ui/replay/util.h"
 
 Route::Route(const QString &route, const QString &data_dir) : data_dir_(data_dir) {
