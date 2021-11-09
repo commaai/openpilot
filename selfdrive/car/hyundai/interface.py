@@ -294,8 +294,6 @@ class CarInterface(CarInterfaceBase):
 
     if self.CS.brake_error:
       events.add(EventName.brakeUnavailable)
-    if self.CS.brake_hold and self.CS.CP.openpilotLongitudinalControl:
-      events.add(EventName.brakeHold)
     if self.CS.park_brake:
       events.add(EventName.parkBrake)
 

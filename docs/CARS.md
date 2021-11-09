@@ -63,7 +63,7 @@
 | Toyota    | Prius 2016-20                 | TSS-P             | Stock<sup>3</sup>| 0mph               | 0mph              |
 | Toyota    | Prius 2021                    | All               | openpilot        | 0mph               | 0mph              |
 | Toyota    | Prius Prime 2017-20           | All               | Stock<sup>3</sup>| 0mph               | 0mph              |
-| Toyota    | Prius Prime 2021              | All               | openpilot        | 0mph               | 0mph              |
+| Toyota    | Prius Prime 2021-22           | All               | openpilot        | 0mph               | 0mph              |
 | Toyota    | Rav4 2016-18                  | TSS-P             | Stock<sup>3</sup>| 20mph<sup>1</sup>  | 0mph              |
 | Toyota    | Rav4 2019-21                  | All               | openpilot        | 0mph               | 0mph              |
 | Toyota    | Rav4 Hybrid 2016-18           | TSS-P             | Stock<sup>3</sup>| 0mph               | 0mph              |
@@ -160,6 +160,7 @@
 | Volkswagen| Jetta 2018-20                 | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Jetta GLI 2021                | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Passat 2016-18<sup>3</sup>    | Driver Assistance | Stock            | 0mph               | 0mph         |
+| Volkswagen| Polo 2020                     | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| T-Cross 2021<sup>4</sup>      | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Taos 2022<sup>4</sup>         | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Tiguan 2020                   | Driver Assistance | Stock            | 0mph               | 0mph         |
@@ -171,7 +172,7 @@
 <sup>4</sup>Model-years 2021 and beyond may have a new camera harness design, which isn't yet available from the comma store. Before ordering,
 remove the Lane Assist camera cover and check to see if the connector is black (older design) or light brown (newer design). For the newer design,
 in the interim, choose "VW J533 Development" from the vehicle drop-down for a harness that integrates at the CAN gateway inside the dashboard.<br />
-Community Maintained Cars and Features are not verified by comma to meet our [safety model](SAFETY.md). Be extra cautious using them. They are only available after enabling the toggle in `Settings->Developer->Enable Community Features`.
+Community Maintained Cars and Features are not verified by comma to meet our [safety model](SAFETY.md). Be extra cautious using them.
 
 To promote a car from community maintained, it must meet a few requirements. We must own one from the brand, we must sell the harness for it, has full ISO26262 in both panda and openpilot, there must be a path forward for longitudinal control, it must have AEB still enabled, and it must support fingerprinting 2.0
 
