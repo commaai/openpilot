@@ -151,72 +151,86 @@ static void ui_draw_world(UIState *s) {
   nvgResetScissor(s->vg);
 }
 
-static void ui_draw_vision_maxspeed(UIState *s) {
+static void ui_draw_vision_maxspeed(UIState *s, const float ratio) {
   const int SET_SPEED_NA = 255;
   float maxspeed = (*s->sm)["controlsState"].getControlsState().getVCruise();
   const bool is_cruise_set = maxspeed != 0 && maxspeed != SET_SPEED_NA;
   if (is_cruise_set && !s->scene.is_metric) { maxspeed *= KM_TO_MILE; }
 
-  const Rect rect = {bdr_s * 2, int(bdr_s * 1.5), 184, 202};
+  const Rect rect = {int(bdr_s * 2 * ratio), int(bdr_s * 1.5 * ratio),
+    int(184 * ratio), int(202 * ratio)};
   ui_fill_rect(s->vg, rect, COLOR_BLACK_ALPHA(100), 30.);
   ui_draw_rect(s->vg, rect, COLOR_WHITE_ALPHA(100), 10, 20.);
 
   nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
-  ui_draw_text(s, rect.centerX(), 118, "MAX", 26 * 2.5, COLOR_WHITE_ALPHA(is_cruise_set ? 200 : 100), "sans-regular");
+  ui_draw_text(s, rect.centerX(), 118 * ratio, "MAX",
+      26 * 2.5 * ratio, COLOR_WHITE_ALPHA(is_cruise_set ? 200 : 100), "sans-regular");
   if (is_cruise_set) {
     const std::string maxspeed_str = std::to_string((int)std::nearbyint(maxspeed));
-    ui_draw_text(s, rect.centerX(), 212, maxspeed_str.c_str(), 48 * 2.5, COLOR_WHITE, "sans-bold");
+    ui_draw_text(s, rect.centerX(), 212 * ratio, maxspeed_str.c_str(),
+        48 * 2.5 * ratio, COLOR_WHITE, "sans-bold");
   } else {
-    ui_draw_text(s, rect.centerX(), 212, "N/A", 42 * 2.5, COLOR_WHITE_ALPHA(100), "sans-semibold");
+    ui_draw_text(s, rect.centerX(), 212 * ratio, "N/A",
+        42 * 2.5 * ratio, COLOR_WHITE_ALPHA(100), "sans-semibold");
   }
 }
 
-static void ui_draw_vision_speed(UIState *s) {
+static void ui_draw_vision_speed(UIState *s, const float ratio) {
   const float speed = std::max(0.0, (*s->sm)["carState"].getCarState().getVEgo() * (s->scene.is_metric ? MS_TO_KPH : MS_TO_MPH));
   const std::string speed_str = std::to_string((int)std::nearbyint(speed));
   nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
-  ui_draw_text(s, s->fb_w/2, 210, speed_str.c_str(), 96 * 2.5, COLOR_WHITE, "sans-bold");
-  ui_draw_text(s, s->fb_w/2, 290, s->scene.is_metric ? "km/h" : "mph", 36 * 2.5, COLOR_WHITE_ALPHA(200), "sans-regular");
+  ui_draw_text(s, s->fb_w/2, 210 * ratio, speed_str.c_str(),
+      96 * 2.5 * ratio, COLOR_WHITE, "sans-bold");
+  ui_draw_text(s, s->fb_w/2, 290 * ratio, s->scene.is_metric ? "km/h" : "mph",
+      36 * 2.5 * ratio, COLOR_WHITE_ALPHA(200), "sans-regular");
 }
 
-static void ui_draw_vision_event(UIState *s) {
+static void ui_draw_vision_event(UIState *s, const float ratio) {
   if (s->scene.engageable) {
     // draw steering wheel
-    const int radius = 96;
-    const int center_x = s->fb_w - radius - bdr_s * 2;
-    const int center_y = radius  + (bdr_s * 1.5);
+    const int radius = 96 * ratio;
+    const int center_x = s->fb_w - radius - (bdr_s * ratio* 2);
+    const int center_y = radius  + (bdr_s * ratio * 1.5);
     const QColor &color = bg_colors[s->status];
     NVGcolor nvg_color = nvgRGBA(color.red(), color.green(), color.blue(), color.alpha());
     ui_draw_circle_image(s, center_x, center_y, radius, "wheel", nvg_color, 1.0f);
   }
 }
 
-static void ui_draw_vision_face(UIState *s) {
-  const int radius = 96;
-  const int center_x = radius + (bdr_s * 2);
-  const int center_y = s->fb_h - footer_h / 2;
+static void ui_draw_vision_face(UIState *s, const float ratio) {
+  const int radius = 96 * ratio;
+  const int center_x = radius + (bdr_s * ratio * 2);
+  const int center_y = s->fb_h - (footer_h * ratio / 2);
   ui_draw_circle_image(s, center_x, center_y, radius, "driver_face", s->scene.dm_active);
 }
 
-static void ui_draw_vision_header(UIState *s) {
+static void ui_draw_vision_header(UIState *s, const float ratio) {
   NVGpaint gradient = nvgLinearGradient(s->vg, 0, header_h - (header_h / 2.5), 0, header_h,
                                         nvgRGBAf(0, 0, 0, 0.45), nvgRGBAf(0, 0, 0, 0));
   ui_fill_rect(s->vg, {0, 0, s->fb_w , header_h}, gradient);
-  ui_draw_vision_maxspeed(s);
-  ui_draw_vision_speed(s);
-  ui_draw_vision_event(s);
+  ui_draw_vision_maxspeed(s, ratio);
+  ui_draw_vision_speed(s, ratio);
+  ui_draw_vision_event(s, ratio);
 }
 
-static void ui_draw_vision(UIState *s) {
+static void ui_draw_vision(UIState *s, const float ratio) {
   const UIScene *scene = &s->scene;
   // Draw augmented elements
   if (scene->world_objects_visible) {
     ui_draw_world(s);
   }
   // Set Speed, Current Speed, Status/Events
-  ui_draw_vision_header(s);
+  ui_draw_vision_header(s, ratio);
   if ((*s->sm)["controlsState"].getControlsState().getAlertSize() == cereal::ControlsState::AlertSize::NONE) {
-    ui_draw_vision_face(s);
+    ui_draw_vision_face(s, ratio);
+  }
+}
+
+inline float resize_ratio(int w, int h) {
+  if constexpr (Hardware::PC()) {
+    return std::min<int>(w, h) / 1080.0; // 1080 is min of default 1920 x 1080
+  } else {
+    return 1.0;
   }
 }
 
@@ -228,7 +242,7 @@ void ui_draw(UIState *s, int w, int h) {
   glEnable(GL_BLEND);
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   nvgBeginFrame(s->vg, s->fb_w, s->fb_h, 1.0f);
-  ui_draw_vision(s);
+  ui_draw_vision(s, resize_ratio(w, h));
   nvgEndFrame(s->vg);
   glDisable(GL_BLEND);
 }

@@ -33,6 +33,32 @@ void configFont(QPainter &p, const QString &family, int size, const QString &sty
   p.setFont(f);
 }
 
+void configFont(QPainter &p, const QRect &r, const QString &family, int size,
+    const QString &style, const QString &text) {
+  if constexpr (Hardware::PC()) {
+    int szTemp = 1;
+    QFont f(family);
+    f.setStyleName(style);
+    while (true) {
+      f.setPixelSize(szTemp);
+      QRect rTemp = QFontMetrics(f).boundingRect(r, Qt::AlignCenter, text);
+      if (rTemp.height() < r.height() &&
+          rTemp.width() < r.width() &&
+          szTemp <= size) {
+        ++szTemp;
+      } else {
+        p.setFont(f);
+        return;
+      }
+    }
+  } else {
+    QFont f(family);
+    f.setPixelSize(size);
+    f.setStyleName(style);
+    p.setFont(f);
+  }
+}
+
 void clearLayout(QLayout* layout) {
   while (QLayoutItem* item = layout->takeAt(0)) {
     if (QWidget* widget = item->widget()) {
