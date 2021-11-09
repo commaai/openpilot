@@ -81,6 +81,9 @@ model_frame_from_road_frame = np.dot(model_intrinsics,
 bigmodel_frame_from_road_frame = np.dot(bigmodel_intrinsics,
   get_view_frame_from_road_frame(0, 0, 0, model_height))
 
+bigmodel_frame_from_calib_frame = np.dot(bigmodel_intrinsics,
+  get_view_frame_from_calib_frame(0, 0, 0, 0))
+
 medmodel_frame_from_road_frame = np.dot(medmodel_intrinsics,
   get_view_frame_from_road_frame(0, 0, 0, model_height))
 
