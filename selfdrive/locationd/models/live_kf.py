@@ -76,7 +76,7 @@ class LiveKalman():
                      (0.02 / 100)**2,
                      3**2, 3**2, 3**2,
                      (0.05 / 60)**2, (0.05 / 60)**2, (0.05 / 60)**2,
-                     0.01**2, 0.01**2, 0.01**2])
+                     0.005**2, 0.005**2, 0.005**2])
 
   obs_noise_diag = {ObservationKind.ODOMETRIC_SPEED: np.array([0.2**2]),
                     ObservationKind.PHONE_GYRO: np.array([0.025**2, 0.025**2, 0.025**2]),
@@ -84,6 +84,7 @@ class LiveKalman():
                     ObservationKind.CAMERA_ODO_ROTATION: np.array([0.05**2, 0.05**2, 0.05**2]),
                     ObservationKind.IMU_FRAME: np.array([0.05**2, 0.05**2, 0.05**2]),
                     ObservationKind.NO_ROT: np.array([0.005**2, 0.005**2, 0.005**2]),
+                    ObservationKind.NO_ACCEL: np.array([0.005**2, 0.005**2, 0.005**2]),
                     ObservationKind.ECEF_POS: np.array([5**2, 5**2, 5**2]),
                     ObservationKind.ECEF_VEL: np.array([.5**2, .5**2, .5**2]),
                     ObservationKind.ECEF_ORIENTATION_FROM_GPS: np.array([.2**2, .2**2, .2**2, .2**2])}
@@ -191,6 +192,7 @@ class LiveKalman():
     pos = sp.Matrix([x, y, z])
     gravity = quat_rot.T * ((EARTH_GM / ((x**2 + y**2 + z**2)**(3.0 / 2.0))) * pos)
     h_acc_sym = (gravity + acceleration + acc_bias)
+    h_acc_stationary_sym = acceleration
     h_phone_rot_sym = sp.Matrix([vroll, vpitch, vyaw])
 
     speed = sp.sqrt(vx**2 + vy**2 + vz**2 + 1e-6)
@@ -212,7 +214,8 @@ class LiveKalman():
                [h_orientation_sym, ObservationKind.ECEF_ORIENTATION_FROM_GPS, None],
                [h_relative_motion, ObservationKind.CAMERA_ODO_TRANSLATION, None],
                [h_phone_rot_sym, ObservationKind.CAMERA_ODO_ROTATION, None],
-               [h_imu_frame_sym, ObservationKind.IMU_FRAME, None]]
+               [h_imu_frame_sym, ObservationKind.IMU_FRAME, None],
+               [h_acc_stationary_sym, ObservationKind.NO_ACCEL, None]]
 
     # this returns a sympy routine for the jacobian of the observation function of the local vel
     in_vec = sp.MatrixSymbol('in_vec', 6, 1)  # roll, pitch, yaw, vx, vy, vz
