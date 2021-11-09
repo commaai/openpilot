@@ -5,14 +5,12 @@ from selfdrive.hardware import TICI
 
 ## -- hardcoded hardware params --
 eon_f_focal_length = 910.0
-eon_d_focal_length = 860.0
-leon_d_focal_length = 650.0
+eon_d_focal_length = 650.0
 tici_f_focal_length = 2648.0
 tici_e_focal_length = tici_d_focal_length = 567.0 # probably wrong? magnification is not consistent across frame
 
 eon_f_frame_size = (1164, 874)
-eon_d_frame_size = (1152, 864)
-leon_d_frame_size = (816, 612)
+eon_d_frame_size = (816, 612)
 tici_f_frame_size = tici_e_frame_size = tici_d_frame_size = (1928, 1208)
 
 # aka 'K' aka camera_frame_from_view_frame
@@ -21,11 +19,6 @@ eon_fcam_intrinsics = np.array([
   [0.0,  eon_f_focal_length,  float(eon_f_frame_size[1])/2],
   [0.0,  0.0,                                          1.0]])
 eon_intrinsics = eon_fcam_intrinsics # xx
-
-leon_dcam_intrinsics = np.array([
-  [leon_d_focal_length,  0.0,  float(leon_d_frame_size[0])/2],
-  [0.0,  leon_d_focal_length,  float(leon_d_frame_size[1])/2],
-  [0.0,  0.0,                                            1.0]])
 
 eon_dcam_intrinsics = np.array([
   [eon_d_focal_length,  0.0,  float(eon_d_frame_size[0])/2],
@@ -138,7 +131,7 @@ def denormalize(img_pts, intrinsics=fcam_intrinsics, width=W, height=H):
   img_pts = np.array(img_pts)
   input_shape = img_pts.shape
   img_pts = np.atleast_2d(img_pts)
-  img_pts = np.hstack((img_pts, np.ones((img_pts.shape[0], 1))))
+  img_pts = np.hstack((img_pts, np.ones((img_pts.shape[0], 1), dtype=img_pts.dtype)))
   img_pts_denormalized = img_pts.dot(intrinsics.T)
   img_pts_denormalized[img_pts_denormalized[:, 0] > width] = np.nan
   img_pts_denormalized[img_pts_denormalized[:, 0] < 0] = np.nan

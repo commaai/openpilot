@@ -1,26 +1,24 @@
-#include "onnxmodel.h"
-#include <stdio.h>
-#include <string>
-#include <string.h>
-#include <poll.h>
-#include <signal.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <stdexcept>
-#include "common/util.h"
-#include "common/swaglog.h"
-#include <cassert>
+#include "selfdrive/modeld/runners/onnxmodel.h"
 
+#include <poll.h>
+#include <unistd.h>
+
+#include <cassert>
+#include <csignal>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <stdexcept>
+#include <string>
+
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/common/util.h"
 
 ONNXModel::ONNXModel(const char *path, float *_output, size_t _output_size, int runtime) {
+  LOGD("loading model %s", path);
+
   output = _output;
   output_size = _output_size;
-
-  char tmp[1024];
-  strncpy(tmp, path, sizeof(tmp));
-  strstr(tmp, ".dlc")[0] = '\0';
-  strcat(tmp, ".onnx");
-  LOGD("loading model %s", tmp);
 
   int err = pipe(pipein);
   assert(err == 0);
@@ -33,7 +31,7 @@ ONNXModel::ONNXModel(const char *path, float *_output, size_t _output_size, int 
   proc_pid = fork();
   if (proc_pid == 0) {
     LOGD("spawning onnx process %s", onnx_runner.c_str());
-    char *argv[] = {(char*)onnx_runner.c_str(), tmp, NULL};
+    char *argv[] = {(char*)onnx_runner.c_str(), (char*)path, nullptr};
     dup2(pipein[0], 0);
     dup2(pipeout[1], 1);
     close(pipein[0]);

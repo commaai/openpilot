@@ -1,22 +1,21 @@
 #pragma once
 
-#include <stdio.h>
-#include <stdint.h>
-#include <stdbool.h>
+#include <cstdint>
+#include <cstdio>
 #include <vector>
-#include <OMX_Component.h>
 
+#include <OMX_Component.h>
 extern "C" {
-  #include <libavformat/avformat.h>
+#include <libavformat/avformat.h>
 }
 
-#include "encoder.h"
-#include "common/queue.h"
+#include "selfdrive/common/queue.h"
+#include "selfdrive/loggerd/encoder.h"
 
 // OmxEncoder, lossey codec using hardware hevc
 class OmxEncoder : public VideoEncoder {
 public:
-  OmxEncoder(const char* filename, int width, int height, int fps, int bitrate, bool h265, bool downscale);
+  OmxEncoder(const char* filename, int width, int height, int fps, int bitrate, bool h265, bool downscale, bool write = true);
   ~OmxEncoder();
   int encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const uint8_t *v_ptr,
                    int in_width, int in_height, uint64_t ts);
@@ -40,10 +39,11 @@ private:
   char lock_path[1024];
   bool is_open = false;
   bool dirty = false;
+  bool write = false;
   int counter = 0;
 
   const char* filename;
-  FILE *of;
+  FILE *of = nullptr;
 
   size_t codec_config_len;
   uint8_t *codec_config = NULL;

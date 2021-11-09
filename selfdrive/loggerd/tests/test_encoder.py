@@ -15,7 +15,6 @@ from common.params import Params
 from common.timeout import Timeout
 from selfdrive.hardware import EON, TICI
 from selfdrive.loggerd.config import ROOT
-from selfdrive.test.helpers import with_processes
 from selfdrive.manager.process_config import managed_processes
 from tools.lib.logreader import LogReader
 
@@ -66,9 +65,14 @@ class TestEncoder(unittest.TestCase):
 
   # TODO: this should run faster than real time
   @parameterized.expand([(True, ), (False, )])
-  @with_processes(['camerad', 'sensord', 'loggerd'], init_time=3, ignore_stopped=['loggerd'])
   def test_log_rotation(self, record_front):
-    Params().put("RecordFront", str(int(record_front)))
+    Params().put_bool("RecordFront", record_front)
+
+    managed_processes['sensord'].start()
+    managed_processes['loggerd'].start()
+
+    time.sleep(1.0)
+    managed_processes['camerad'].start()
 
     num_segments = int(os.getenv("SEGMENTS", random.randint(10, 15)))
 
@@ -84,9 +88,12 @@ class TestEncoder(unittest.TestCase):
     def check_seg(i):
       # check each camera file size
       counts = []
+      first_frames = []
       for camera, fps, size, encode_idx_name in CAMERAS:
         if not record_front and "dcamera" in camera:
           continue
+
+        eon_dcam = EON and (camera == 'dcamera.hevc')
 
         file_path = f"{route_prefix_path}--{i}/{camera}"
 
@@ -103,30 +110,41 @@ class TestEncoder(unittest.TestCase):
           cmd = "LD_LIBRARY_PATH=/usr/local/lib " + cmd
 
         expected_frames = fps * SEGMENT_LENGTH
-        frame_tolerance = 1 if (EON and camera == 'dcamera.hevc') else 0
+        frame_tolerance = 1 if eon_dcam else 0
         probe = subprocess.check_output(cmd, shell=True, encoding='utf8')
         frame_count = int(probe.split('\n')[0].strip())
         counts.append(frame_count)
 
-        if EON:
-          self.assertTrue(abs(expected_frames - frame_count) <= frame_tolerance,
-                          f"{camera} failed frame count check: expected {expected_frames}, got {frame_count}")
-        else:
-          # loggerd waits for the slowest camera, so check count is at least the expected count,
-          # then check the min of the frame counts is exactly the expected frame count
-          self.assertTrue(frame_count >= expected_frames,
-                          f"{camera} failed frame count check: expected {expected_frames}, got {frame_count}")
+        self.assertTrue(abs(expected_frames - frame_count) <= frame_tolerance,
+                        f"{camera} failed frame count check: expected {expected_frames}, got {frame_count}")
 
         # Check encodeIdx
         if encode_idx_name is not None:
           rlog_path = f"{route_prefix_path}--{i}/rlog.bz2"
-          idxs = [getattr(m, encode_idx_name).segmentId for m in LogReader(rlog_path) if m.which() == encode_idx_name]
-          self.assertEqual(frame_count, len(idxs))
+          msgs = [m for m in LogReader(rlog_path) if m.which() == encode_idx_name]
+          encode_msgs = [getattr(m, encode_idx_name) for m in msgs]
+
+          valid = [m.valid for m in msgs]
+          segment_idxs = [m.segmentId for m in encode_msgs]
+          encode_idxs = [m.encodeId for m in encode_msgs]
+          frame_idxs = [m.frameId for m in encode_msgs]
+
+          # Check frame count
+          self.assertEqual(frame_count, len(segment_idxs))
+          self.assertEqual(frame_count, len(encode_idxs))
 
           # Check for duplicates or skips
-          self.assertEqual(0, idxs[0])
-          self.assertEqual(len(idxs)-1, idxs[-1])
-          self.assertEqual(len(set(idxs)), len(idxs))
+          self.assertEqual(0, segment_idxs[0])
+          self.assertEqual(len(set(segment_idxs)), len(segment_idxs))
+
+          self.assertTrue(all(valid))
+
+          if not eon_dcam:
+            self.assertEqual(expected_frames * i, encode_idxs[0])
+            first_frames.append(frame_idxs[0])
+          self.assertEqual(len(set(encode_idxs)), len(encode_idxs))
+
+      self.assertEqual(1, len(set(first_frames)))
 
       if TICI:
         expected_frames = fps * SEGMENT_LENGTH
@@ -135,11 +153,13 @@ class TestEncoder(unittest.TestCase):
 
     for i in trange(num_segments + 1):
       # poll for next segment
-      with Timeout(int(SEGMENT_LENGTH*2), error_msg=f"timed out waiting for segment {i}"):
+      with Timeout(int(SEGMENT_LENGTH*10), error_msg=f"timed out waiting for segment {i}"):
         while Path(f"{route_prefix_path}--{i}") not in Path(ROOT).iterdir():
           time.sleep(0.1)
 
     managed_processes['loggerd'].stop()
+    managed_processes['camerad'].stop()
+    managed_processes['sensord'].stop()
 
     for i in trange(num_segments):
       check_seg(i)

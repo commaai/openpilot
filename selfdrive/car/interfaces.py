@@ -13,7 +13,13 @@ from selfdrive.controls.lib.vehicle_model import VehicleModel
 
 GearShifter = car.CarState.GearShifter
 EventName = car.CarEvent.EventName
+
+# WARNING: this value was determined based on the model's training distribution,
+#          model predictions above this speed can be unpredictable
 MAX_CTRL_SPEED = (V_CRUISE_MAX + 4) * CV.KPH_TO_MS  # 135 + 4 = 86 mph
+ACCEL_MAX = 2.0
+ACCEL_MIN = -3.5
+
 
 # generic car and radar interfaces
 
@@ -24,29 +30,42 @@ class CarInterfaceBase():
     self.VM = VehicleModel(CP)
 
     self.frame = 0
+    self.steering_unpressed = 0
     self.low_speed_alert = False
+    self.silent_steer_warning = True
 
     if CarState is not None:
       self.CS = CarState(CP)
       self.cp = self.CS.get_can_parser(CP)
       self.cp_cam = self.CS.get_cam_can_parser(CP)
       self.cp_body = self.CS.get_body_can_parser(CP)
+      self.cp_loopback = self.CS.get_loopback_can_parser(CP)
 
     self.CC = None
     if CarController is not None:
       self.CC = CarController(self.cp.dbc_name, CP, self.VM)
 
   @staticmethod
-  def calc_accel_override(a_ego, a_target, v_ego, v_target):
-    return 1.
-
-  @staticmethod
-  def compute_gb(accel, speed):
-    raise NotImplementedError
+  def get_pid_accel_limits(CP, current_speed, cruise_speed):
+    return ACCEL_MIN, ACCEL_MAX
 
   @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None):
     raise NotImplementedError
+
+  @staticmethod
+  def init(CP, logcan, sendcan):
+    pass
+
+  @staticmethod
+  def get_steer_feedforward_default(desired_angle, v_ego):
+    # Proportional to realigning tire momentum: lateral acceleration.
+    # TODO: something with lateralPlan.curvatureRates
+    return desired_angle * (v_ego**2)
+
+  @classmethod
+  def get_steer_feedforward_function(cls):
+    return cls.get_steer_feedforward_default
 
   # returns a set of default params to avoid repetition in car specific params
   @staticmethod
@@ -60,26 +79,26 @@ class CarInterfaceBase():
     ret.steerMaxV = [1.]
     ret.minSteerSpeed = 0.
 
-    # stock ACC by default
-    ret.enableCruise = True
-    ret.minEnableSpeed = -1.  # enable is done by stock ACC, so ignore this
+    ret.pcmCruise = True     # openpilot's state is tied to the PCM's cruise state on most cars
+    ret.minEnableSpeed = -1. # enable is done by stock ACC, so ignore this
     ret.steerRatioRear = 0.  # no rear steering, at least on the listed cars aboveA
-    ret.gasMaxBP = [0.]
-    ret.gasMaxV = [.5]  # half max brake
-    ret.brakeMaxBP = [0.]
-    ret.brakeMaxV = [1.]
     ret.openpilotLongitudinalControl = False
-    ret.startAccel = 0.0
     ret.minSpeedCan = 0.3
-    ret.stoppingBrakeRate = 0.2 # brake_travel/s while trying to stop
-    ret.startingBrakeRate = 0.8 # brake_travel/s while releasing on restart
-    ret.stoppingControl = False
+    ret.startAccel = -0.8
+    ret.stopAccel = -2.0
+    ret.startingAccelRate = 3.2 # brake_travel/s while releasing on restart
+    ret.stoppingDecelRate = 0.8 # brake_travel/s while trying to stop
+    ret.vEgoStopping = 0.5
+    ret.vEgoStarting = 0.5
+    ret.stoppingControl = True
     ret.longitudinalTuning.deadzoneBP = [0.]
     ret.longitudinalTuning.deadzoneV = [0.]
     ret.longitudinalTuning.kpBP = [0.]
     ret.longitudinalTuning.kpV = [1.]
     ret.longitudinalTuning.kiBP = [0.]
     ret.longitudinalTuning.kiV = [1.]
+    ret.longitudinalActuatorDelayLowerBound = 0.15
+    ret.longitudinalActuatorDelayUpperBound = 0.15
     return ret
 
   # returns a car.CarState, pass in car.CarControl
@@ -90,14 +109,15 @@ class CarInterfaceBase():
   def apply(self, c):
     raise NotImplementedError
 
-  def create_common_events(self, cs_out, extra_gears=[], gas_resume_speed=-1, pcm_enable=True):  # pylint: disable=dangerous-default-value
+  def create_common_events(self, cs_out, extra_gears=None, gas_resume_speed=-1, pcm_enable=True):
     events = Events()
 
     if cs_out.doorOpen:
       events.add(EventName.doorOpen)
     if cs_out.seatbeltUnlatched:
       events.add(EventName.seatbeltNotLatched)
-    if cs_out.gearShifter != GearShifter.drive and cs_out.gearShifter not in extra_gears:
+    if cs_out.gearShifter != GearShifter.drive and (extra_gears is None or
+       cs_out.gearShifter not in extra_gears):
       events.add(EventName.wrongGear)
     if cs_out.gearShifter == GearShifter.reverse:
       events.add(EventName.reverseGear)
@@ -115,14 +135,23 @@ class CarInterfaceBase():
       events.add(EventName.speedTooHigh)
     if cs_out.cruiseState.nonAdaptive:
       events.add(EventName.wrongCruiseMode)
+    if cs_out.brakeHoldActive and self.CP.openpilotLongitudinalControl:
+      events.add(EventName.brakeHold)
 
-    if cs_out.steerError:
-      events.add(EventName.steerUnavailable)
-    elif cs_out.steerWarning:
-      if cs_out.steeringPressed:
-        events.add(EventName.steerTempUnavailableUserOverride)
+
+    # Handle permanent and temporary steering faults
+    self.steering_unpressed = 0 if cs_out.steeringPressed else self.steering_unpressed + 1
+    if cs_out.steerWarning:
+      # if the user overrode recently, show a less harsh alert
+      if self.silent_steer_warning or cs_out.standstill or self.steering_unpressed < int(1.5 / DT_CTRL):
+        self.silent_steer_warning = True
+        events.add(EventName.steerTempUnavailableSilent)
       else:
         events.add(EventName.steerTempUnavailable)
+    else:
+      self.silent_steer_warning = False
+    if cs_out.steerError:
+      events.add(EventName.steerUnavailable)
 
     # Disable on rising edge of gas or brake. Also disable on brake when speed > 0.
     # Optionally allow to press gas at zero speed to resume.
@@ -164,6 +193,8 @@ class CarStateBase:
     self.cruise_buttons = 0
     self.left_blinker_cnt = 0
     self.right_blinker_cnt = 0
+    self.left_blinker_prev = False
+    self.right_blinker_prev = False
 
     # Q = np.matrix([[10.0, 0.0], [0.0, 100.0]])
     # R = 1e3
@@ -179,10 +210,36 @@ class CarStateBase:
     v_ego_x = self.v_ego_kf.update(v_ego_raw)
     return float(v_ego_x[0]), float(v_ego_x[1])
 
-  def update_blinker(self, blinker_time: int, left_blinker_lamp: bool, right_blinker_lamp: bool):
+  def update_blinker_from_lamp(self, blinker_time: int, left_blinker_lamp: bool, right_blinker_lamp: bool):
+    """Update blinkers from lights. Enable output when light was seen within the last `blinker_time`
+    iterations"""
+    # TODO: Handle case when switching direction. Now both blinkers can be on at the same time
     self.left_blinker_cnt = blinker_time if left_blinker_lamp else max(self.left_blinker_cnt - 1, 0)
     self.right_blinker_cnt = blinker_time if right_blinker_lamp else max(self.right_blinker_cnt - 1, 0)
     return self.left_blinker_cnt > 0, self.right_blinker_cnt > 0
+
+  def update_blinker_from_stalk(self, blinker_time: int, left_blinker_stalk: bool, right_blinker_stalk: bool):
+    """Update blinkers from stalk position. When stalk is seen the blinker will be on for at least blinker_time,
+    or until the stalk is turned off, whichever is longer. If the opposite stalk direction is seen the blinker
+    is forced to the other side. On a rising edge of the stalk the timeout is reset."""
+
+    if left_blinker_stalk:
+      self.right_blinker_cnt = 0
+      if not self.left_blinker_prev:
+        self.left_blinker_cnt = blinker_time
+
+    if right_blinker_stalk:
+      self.left_blinker_cnt = 0
+      if not self.right_blinker_prev:
+        self.right_blinker_cnt = blinker_time
+
+    self.left_blinker_cnt = max(self.left_blinker_cnt - 1, 0)
+    self.right_blinker_cnt = max(self.right_blinker_cnt - 1, 0)
+
+    self.left_blinker_prev = left_blinker_stalk
+    self.right_blinker_prev = right_blinker_stalk
+
+    return bool(left_blinker_stalk or self.left_blinker_cnt > 0), bool(right_blinker_stalk or self.right_blinker_cnt > 0)
 
   @staticmethod
   def parse_gear_shifter(gear: str) -> car.CarState.GearShifter:
@@ -199,4 +256,8 @@ class CarStateBase:
 
   @staticmethod
   def get_body_can_parser(CP):
+    return None
+
+  @staticmethod
+  def get_loopback_can_parser(CP):
     return None

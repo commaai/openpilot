@@ -1,27 +1,29 @@
-#include <thread>
-#include <stdio.h>
 #include <poll.h>
-#include <assert.h>
-#include <unistd.h>
 #include <sys/socket.h>
+#include <unistd.h>
 
-#if defined(QCOM) && !defined(QCOM_REPLAY)
-#include "cameras/camera_qcom.h"
+#include <cassert>
+#include <cstdio>
+#include <thread>
+
+#include "libyuv.h"
+
+#include "cereal/visionipc/visionipc_server.h"
+#include "selfdrive/common/clutil.h"
+#include "selfdrive/common/params.h"
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/common/util.h"
+#include "selfdrive/hardware/hw.h"
+
+#ifdef QCOM
+#include "selfdrive/camerad/cameras/camera_qcom.h"
 #elif QCOM2
-#include "cameras/camera_qcom2.h"
+#include "selfdrive/camerad/cameras/camera_qcom2.h"
 #elif WEBCAM
-#include "cameras/camera_webcam.h"
+#include "selfdrive/camerad/cameras/camera_webcam.h"
 #else
-#include "cameras/camera_frame_stream.h"
+#include "selfdrive/camerad/cameras/camera_replay.h"
 #endif
-
-#include <libyuv.h>
-
-#include "clutil.h"
-#include "common/params.h"
-#include "common/swaglog.h"
-#include "common/util.h"
-#include "visionipc_server.h"
 
 ExitHandler do_exit;
 
@@ -42,12 +44,13 @@ void party(cl_device_id device_id, cl_context context) {
 #endif
 
 int main(int argc, char *argv[]) {
-  set_realtime_priority(53);
-#if defined(QCOM)
-  set_core_affinity(2);
-#elif defined(QCOM2)
-  set_core_affinity(6);
-#endif
+  if (!Hardware::PC()) {
+    int ret;
+    ret = set_realtime_priority(53);
+    assert(ret == 0);
+    ret = set_core_affinity({Hardware::EON() ? 2 : 6});
+    assert(ret == 0 || Params().getBool("IsOffroad")); // failure ok while offroad due to offlining cores
+  }
 
   cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
 

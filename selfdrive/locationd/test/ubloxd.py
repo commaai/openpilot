@@ -35,6 +35,12 @@ def configure_ublox(dev):
                                             0, 0, 0, 0, 0,
                                             0, 0, 0, 0, 0)
   dev.configure_poll(ublox.CLASS_CFG, ublox.MSG_CFG_ODO, payload)
+  #bits_ITMF_config1 = '10101101011000101010110111111111'
+  #bits_ITMF_config2 = '00000000000000000110001100011110'
+  ITMF_config1 = 2908925439
+  ITMF_config2 = 25374
+  payload = struct.pack('<II', ITMF_config1, ITMF_config2)
+  dev.configure_poll(ublox.CLASS_CFG, ublox.MSG_CFG_ITMF, payload)
   #payload = struct.pack('<HHIBBBBBBBBBBH6BBB2BH4B3BB', 0, 8192, 0, 0, 0,
   #                                                     0, 0, 0, 0, 0, 0,
   #                                                     0, 0, 0, 0, 0, 0,
@@ -46,6 +52,7 @@ def configure_ublox(dev):
   dev.configure_poll(ublox.CLASS_CFG, ublox.MSG_CFG_NAV5)
   dev.configure_poll(ublox.CLASS_CFG, ublox.MSG_CFG_NAVX5)
   dev.configure_poll(ublox.CLASS_CFG, ublox.MSG_CFG_ODO)
+  dev.configure_poll(ublox.CLASS_CFG, ublox.MSG_CFG_ITMF)
 
   # Configure RAW, PVT and HW messages to be sent every solution cycle
   dev.configure_message_rate(ublox.CLASS_NAV, ublox.MSG_NAV_PVT, 1)
@@ -53,6 +60,16 @@ def configure_ublox(dev):
   dev.configure_message_rate(ublox.CLASS_RXM, ublox.MSG_RXM_SFRBX, 1)
   dev.configure_message_rate(ublox.CLASS_MON, ublox.MSG_MON_HW, 1)
   dev.configure_message_rate(ublox.CLASS_MON, ublox.MSG_MON_HW2, 1)
+
+  print("send on stop:")
+
+  # Save on shutdown
+  # Controlled GNSS stop and hot start
+  payload = struct.pack('<HBB', 0x0000, 0x08, 0x00)
+  dev.send_message(ublox.CLASS_CFG, ublox.MSG_CFG_RST, payload)
+
+  # UBX-UPD-SOS backup
+  dev.send_message(0x09, 0x14, b"\x00\x00\x00\x00")
 
 
 if __name__ == "__main__":

@@ -32,6 +32,9 @@ class Pc(HardwareBase):
   def get_subscriber_info(self):
     return ""
 
+  def get_network_info(self):
+    return None
+
   def get_network_type(self):
     return NetworkType.wifi
 
@@ -80,5 +83,26 @@ class Pc(HardwareBase):
   def set_screen_brightness(self, percentage):
     pass
 
-  def set_power_save(self, enabled):
+  def get_screen_brightness(self):
+    return 0
+
+  def set_power_save(self, powersave_enabled):
     pass
+
+  def get_gpu_usage_percent(self):
+    return 0
+
+  def get_modem_version(self):
+    return None
+
+  def get_modem_temperatures(self):
+    return []
+
+  def get_nvme_temperatures(self):
+    return []
+
+  def initialize_hardware(self):
+    pass
+
+  def get_networks(self):
+    return None

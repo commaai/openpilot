@@ -1,24 +1,19 @@
 #pragma once
 
-#include <stdint.h>
-#include <stdbool.h>
-#include <pthread.h>
-#include <memory>
 #include <atomic>
-#include "messaging.hpp"
+#include <cstdint>
+#include <memory>
 
-#include "msmb_isp.h"
-#include "msmb_ispif.h"
-#include "msmb_camera.h"
-#include "msm_cam_sensor.h"
-
-#include "visionbuf.h"
-
-#include "common/mat.h"
-#include "common/util.h"
-#include "imgproc/utils.h"
-
-#include "camera_common.h"
+#include "cereal/messaging/messaging.h"
+#include "cereal/visionipc/visionbuf.h"
+#include "selfdrive/camerad/cameras/camera_common.h"
+#include "selfdrive/camerad/imgproc/utils.h"
+#include "selfdrive/camerad/include/msm_cam_sensor.h"
+#include "selfdrive/camerad/include/msmb_camera.h"
+#include "selfdrive/camerad/include/msmb_isp.h"
+#include "selfdrive/camerad/include/msmb_ispif.h"
+#include "selfdrive/common/mat.h"
+#include "selfdrive/common/util.h"
 
 #define FRAME_BUF_COUNT 4
 #define METADATA_BUF_COUNT 4
@@ -71,6 +66,10 @@ typedef struct CameraState {
   unsigned int max_gain;
   float cur_exposure_frac, cur_gain_frac;
   int cur_gain, cur_integ_lines;
+
+  float measured_grey_fraction;
+  float target_grey_fraction;
+
   std::atomic<float> digital_gain;
   camera_apply_exposure_func apply_exposure;
 

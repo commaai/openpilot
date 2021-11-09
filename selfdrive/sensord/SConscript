@@ -14,6 +14,7 @@ else:
     'sensors/lsm6ds3_accel.cc',
     'sensors/lsm6ds3_gyro.cc',
     'sensors/lsm6ds3_temp.cc',
+    'sensors/mmc5603nj_magn.cc',
   ]
   libs = [common, cereal, messaging, 'capnp', 'zmq', 'kj']
   if arch == "larch64":

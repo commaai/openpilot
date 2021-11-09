@@ -1,9 +1,9 @@
-#include <string.h>
-#include <assert.h>
+#include "selfdrive/modeld/transforms/transform.h"
 
-#include "clutil.h"
+#include <cassert>
+#include <cstring>
 
-#include "transform.h"
+#include "selfdrive/common/clutil.h"
 
 void transform_init(Transform* s, cl_context ctx, cl_device_id device_id) {
   memset(s, 0, sizeof(*s));

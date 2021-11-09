@@ -7,6 +7,9 @@ from common.basedir import BASEDIR
 from selfdrive.swaglog import cloudlog
 
 
+TESTED_BRANCHES = ['devel', 'release2-staging', 'release3-staging', 'dashcam-staging', 'release2', 'release3', 'dashcam']
+
+
 def run_cmd(cmd: List[str]) -> str:
     return subprocess.check_output(cmd, encoding='utf8').strip()
 
@@ -39,9 +42,12 @@ def get_git_remote(default: Optional[str] = None) -> Optional[str]:
     return run_cmd_default(["git", "config", "--get", "remote.origin.url"], default=default)
 
 
-with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "common", "version.h")) as _versionf:
-  version = _versionf.read().split('"')[1]
+def get_version():
+  with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "common", "version.h")) as _versionf:
+    version = _versionf.read().split('"')[1]
+  return version
 
+version = get_version()
 prebuilt = os.path.exists(os.path.join(BASEDIR, 'prebuilt'))
 
 training_version: bytes = b"0.2.0"
@@ -57,7 +63,7 @@ commit = get_git_commit()
 if (origin is not None) and (branch is not None):
   try:
     comma_remote = origin.startswith('git@github.com:commaai') or origin.startswith('https://github.com/commaai')
-    tested_branch = get_git_branch() in ['devel', 'release2-staging', 'dashcam-staging', 'release2', 'dashcam']
+    tested_branch = get_git_branch() in TESTED_BRANCHES
 
     dirty = False
 
@@ -88,6 +94,12 @@ if (origin is not None) and (branch is not None):
 
 
 if __name__ == "__main__":
+  from common.params import Params
+
+  params = Params()
+  params.put("TermsVersion", terms_version)
+  params.put("TrainingVersion", training_version)
+
   print("Dirty: %s" % dirty)
   print("Version: %s" % version)
   print("Remote: %s" % origin)

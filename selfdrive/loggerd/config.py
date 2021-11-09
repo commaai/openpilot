@@ -2,8 +2,8 @@ import os
 from pathlib import Path
 from selfdrive.hardware import PC
 
-if os.environ.get('LOGGERD_ROOT', False):
-  ROOT = os.environ['LOGGERD_ROOT']
+if os.environ.get('LOG_ROOT', False):
+  ROOT = os.environ['LOG_ROOT']
 elif PC:
   ROOT = os.path.join(str(Path.home()), ".comma", "media", "0", "realdata")
 else:

@@ -382,9 +382,11 @@ class LocKalman():
       self.computer = LstSqComputer(generated_dir, N)
       self.max_tracks = max_tracks
 
+    self.quaternion_idxs = [3,] + [(self.dim_main + i*self.dim_augment + 3)for i in range(self.N)]
+
     # init filter
     self.filter = EKF_sym(generated_dir, name, Q, x_initial, P_initial, self.dim_main, self.dim_main_err,
-                          N, self.dim_augment, self.dim_augment_err, self.maha_test_kinds)
+                          N, self.dim_augment, self.dim_augment_err, self.maha_test_kinds, self.quaternion_idxs)
 
   @property
   def x(self):
@@ -453,11 +455,6 @@ class LocKalman():
     # Should not continue if the quats behave this weirdly
     if not 0.1 < quat_norm < 10:
       raise RuntimeError("Sir! The filter's gone all wobbly!")
-    self.filter.normalize_state(3, 7)
-    for i in range(self.N):
-      d1 = self.dim_main
-      d3 = self.dim_augment
-      self.filter.normalize_state(d1 + d3 * i + 3, d1 + d3 * i + 7)
     return r
 
   def get_R(self, kind, n):

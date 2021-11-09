@@ -1,16 +1,16 @@
+#include "ublox_msg.h"
+
+#include <unistd.h>
+
+#include <cassert>
+#include <chrono>
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
-#include <unistd.h>
-#include <cmath>
 #include <ctime>
-#include <chrono>
-#include <iostream>
-#include <cassert>
 #include <unordered_map>
 
-#include "common/swaglog.h"
-
-#include "ublox_msg.h"
+#include "selfdrive/common/swaglog.h"
 
 const double gpsPi = 3.1415926535898;
 #define UBLOX_MSG_SIZE(hdr) (*(uint16_t *)&hdr[4])
@@ -117,7 +117,7 @@ std::pair<std::string, kj::Array<capnp::word>> UbloxMsgParser::gen_msg() {
     return {"ubloxGnss", gen_mon_hw2(static_cast<ubx_t::mon_hw2_t*>(body))};
     break;
   default:
-    LOGE("Unkown message type %x", ubx_message.msg_type());
+    LOGE("Unknown message type %x", ubx_message.msg_type());
     return {"ubloxGnss", kj::Array<capnp::word>()};
     break;
   }
@@ -172,12 +172,14 @@ kj::Array<capnp::word> UbloxMsgParser::gen_rxm_sfrbx(ubx_t::rxm_sfrbx_t *msg) {
     }
 
     // Collect subframes in map and parse when we have all the parts
-    kaitai::kstream stream(subframe_data);
-    gps_t subframe(&stream);
-    int subframe_id = subframe.how()->subframe_id();
+    {
+      kaitai::kstream stream(subframe_data);
+      gps_t subframe(&stream);
+      int subframe_id = subframe.how()->subframe_id();
 
-    if (subframe_id == 1) gps_subframes[msg->sv_id()].clear();
-    gps_subframes[msg->sv_id()][subframe_id] = subframe_data;
+      if (subframe_id == 1) gps_subframes[msg->sv_id()].clear();
+      gps_subframes[msg->sv_id()][subframe_id] = subframe_data;
+    }
 
     if (gps_subframes[msg->sv_id()].size() == 5) {
       MessageBuilder msg_builder;
@@ -302,6 +304,7 @@ kj::Array<capnp::word> UbloxMsgParser::gen_mon_hw(ubx_t::mon_hw_t *msg) {
   MessageBuilder msg_builder;
   auto hwStatus = msg_builder.initEvent().initUbloxGnss().initHwStatus();
   hwStatus.setNoisePerMS(msg->noise_per_ms());
+  hwStatus.setFlags(msg->flags());
   hwStatus.setAgcCnt(msg->agc_cnt());
   hwStatus.setAStatus((cereal::UbloxGnss::HwStatus::AntennaSupervisorState) msg->a_status());
   hwStatus.setAPower((cereal::UbloxGnss::HwStatus::AntennaPowerStatus) msg->a_power());

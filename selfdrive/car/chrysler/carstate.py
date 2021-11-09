@@ -9,48 +9,47 @@ from selfdrive.car.chrysler.values import DBC, STEER_THRESHOLD
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
-    can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
-    self.shifter_values = can_define.dv["GEAR"]['PRNDL']
+    can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
+    self.shifter_values = can_define.dv["GEAR"]["PRNDL"]
 
   def update(self, cp, cp_cam):
 
     ret = car.CarState.new_message()
 
-    self.frame = int(cp.vl["EPS_STATUS"]['COUNTER'])
+    self.frame = int(cp.vl["EPS_STATUS"]["COUNTER"])
 
-    ret.doorOpen = any([cp.vl["DOORS"]['DOOR_OPEN_FL'],
-                        cp.vl["DOORS"]['DOOR_OPEN_FR'],
-                        cp.vl["DOORS"]['DOOR_OPEN_RL'],
-                        cp.vl["DOORS"]['DOOR_OPEN_RR']])
-    ret.seatbeltUnlatched = cp.vl["SEATBELT_STATUS"]['SEATBELT_DRIVER_UNLATCHED'] == 1
+    ret.doorOpen = any([cp.vl["DOORS"]["DOOR_OPEN_FL"],
+                        cp.vl["DOORS"]["DOOR_OPEN_FR"],
+                        cp.vl["DOORS"]["DOOR_OPEN_RL"],
+                        cp.vl["DOORS"]["DOOR_OPEN_RR"]])
+    ret.seatbeltUnlatched = cp.vl["SEATBELT_STATUS"]["SEATBELT_DRIVER_UNLATCHED"] == 1
 
-    ret.brakePressed = cp.vl["BRAKE_2"]['BRAKE_PRESSED_2'] == 5  # human-only
+    ret.brakePressed = cp.vl["BRAKE_2"]["BRAKE_PRESSED_2"] == 5  # human-only
     ret.brake = 0
-    ret.brakeLights = ret.brakePressed
-    ret.gas = cp.vl["ACCEL_GAS_134"]['ACCEL_134']
+    ret.gas = cp.vl["ACCEL_GAS_134"]["ACCEL_134"]
     ret.gasPressed = ret.gas > 1e-5
 
-    ret.espDisabled = (cp.vl["TRACTION_BUTTON"]['TRACTION_OFF'] == 1)
+    ret.espDisabled = (cp.vl["TRACTION_BUTTON"]["TRACTION_OFF"] == 1)
 
-    ret.wheelSpeeds.fl = cp.vl['WHEEL_SPEEDS']['WHEEL_SPEED_FL']
-    ret.wheelSpeeds.rr = cp.vl['WHEEL_SPEEDS']['WHEEL_SPEED_RR']
-    ret.wheelSpeeds.rl = cp.vl['WHEEL_SPEEDS']['WHEEL_SPEED_RL']
-    ret.wheelSpeeds.fr = cp.vl['WHEEL_SPEEDS']['WHEEL_SPEED_FR']
-    ret.vEgoRaw = (cp.vl['SPEED_1']['SPEED_LEFT'] + cp.vl['SPEED_1']['SPEED_RIGHT']) / 2.
+    ret.wheelSpeeds.fl = cp.vl["WHEEL_SPEEDS"]["WHEEL_SPEED_FL"]
+    ret.wheelSpeeds.rr = cp.vl["WHEEL_SPEEDS"]["WHEEL_SPEED_RR"]
+    ret.wheelSpeeds.rl = cp.vl["WHEEL_SPEEDS"]["WHEEL_SPEED_RL"]
+    ret.wheelSpeeds.fr = cp.vl["WHEEL_SPEEDS"]["WHEEL_SPEED_FR"]
+    ret.vEgoRaw = (cp.vl["SPEED_1"]["SPEED_LEFT"] + cp.vl["SPEED_1"]["SPEED_RIGHT"]) / 2.
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
     ret.standstill = not ret.vEgoRaw > 0.001
 
-    ret.leftBlinker = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 1
-    ret.rightBlinker = cp.vl["STEERING_LEVERS"]['TURN_SIGNALS'] == 2
-    ret.steeringAngleDeg = cp.vl["STEERING"]['STEER_ANGLE']
-    ret.steeringRateDeg = cp.vl["STEERING"]['STEERING_RATE']
-    ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(cp.vl['GEAR']['PRNDL'], None))
+    ret.leftBlinker = cp.vl["STEERING_LEVERS"]["TURN_SIGNALS"] == 1
+    ret.rightBlinker = cp.vl["STEERING_LEVERS"]["TURN_SIGNALS"] == 2
+    ret.steeringAngleDeg = cp.vl["STEERING"]["STEER_ANGLE"]
+    ret.steeringRateDeg = cp.vl["STEERING"]["STEERING_RATE"]
+    ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(cp.vl["GEAR"]["PRNDL"], None))
 
-    ret.cruiseState.enabled = cp.vl["ACC_2"]['ACC_STATUS_2'] == 7  # ACC is green.
+    ret.cruiseState.enabled = cp.vl["ACC_2"]["ACC_STATUS_2"] == 7  # ACC is green.
     ret.cruiseState.available = ret.cruiseState.enabled  # FIXME: for now same as enabled
-    ret.cruiseState.speed = cp.vl["DASHBOARD"]['ACC_SPEED_CONFIG_KPH'] * CV.KPH_TO_MS
+    ret.cruiseState.speed = cp.vl["DASHBOARD"]["ACC_SPEED_CONFIG_KPH"] * CV.KPH_TO_MS
     # CRUISE_STATE is a three bit msg, 0 is off, 1 and 2 are Non-ACC mode, 3 and 4 are ACC mode, find if there are other states too
-    ret.cruiseState.nonAdaptive = cp.vl["DASHBOARD"]['CRUISE_STATE'] in [1, 2]
+    ret.cruiseState.nonAdaptive = cp.vl["DASHBOARD"]["CRUISE_STATE"] in [1, 2]
 
     ret.steeringTorque = cp.vl["EPS_STATUS"]["TORQUE_DRIVER"]
     ret.steeringTorqueEps = cp.vl["EPS_STATUS"]["TORQUE_MOTOR"]
@@ -58,11 +57,15 @@ class CarState(CarStateBase):
     steer_state = cp.vl["EPS_STATUS"]["LKAS_STATE"]
     ret.steerError = steer_state == 4 or (steer_state == 0 and ret.vEgo > self.CP.minSteerSpeed)
 
-    ret.genericToggle = bool(cp.vl["STEERING_LEVERS"]['HIGH_BEAM_FLASH'])
+    ret.genericToggle = bool(cp.vl["STEERING_LEVERS"]["HIGH_BEAM_FLASH"])
 
-    self.lkas_counter = cp_cam.vl["LKAS_COMMAND"]['COUNTER']
-    self.lkas_car_model = cp_cam.vl["LKAS_HUD"]['CAR_MODEL']
-    self.lkas_status_ok = cp_cam.vl["LKAS_HEARTBIT"]['LKAS_STATUS_OK']
+    if self.CP.enableBsm:
+      ret.leftBlindspot = cp.vl["BLIND_SPOT_WARNINGS"]["BLIND_SPOT_LEFT"] == 1
+      ret.rightBlindspot = cp.vl["BLIND_SPOT_WARNINGS"]["BLIND_SPOT_RIGHT"] == 1
+
+    self.lkas_counter = cp_cam.vl["LKAS_COMMAND"]["COUNTER"]
+    self.lkas_car_model = cp_cam.vl["LKAS_HUD"]["CAR_MODEL"]
+    self.lkas_status_ok = cp_cam.vl["LKAS_HEARTBIT"]["LKAS_STATUS_OK"]
 
     return ret
 
@@ -115,7 +118,14 @@ class CarState(CarStateBase):
       ("TRACTION_BUTTON", 1),
     ]
 
-    return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
+    if CP.enableBsm:
+      signals += [
+        ("BLIND_SPOT_RIGHT", "BLIND_SPOT_WARNINGS", 0),
+        ("BLIND_SPOT_LEFT", "BLIND_SPOT_WARNINGS", 0),
+      ]
+      checks += [("BLIND_SPOT_WARNINGS", 2)]
+
+    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 0)
 
   @staticmethod
   def get_cam_can_parser(CP):
@@ -131,4 +141,4 @@ class CarState(CarStateBase):
       ("LKAS_HUD", 4),
     ]
 
-    return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
+    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 2)

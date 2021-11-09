@@ -42,15 +42,12 @@ UDS_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) 
   p16(uds.DATA_IDENTIFIER_TYPE.APPLICATION_SOFTWARE_IDENTIFICATION)
 
 
-HYUNDAI_VERSION_REQUEST_SHORT = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
-  p16(0xf1a0)  # 4 Byte version number
 HYUNDAI_VERSION_REQUEST_LONG = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
   p16(0xf100)  # Long description
 HYUNDAI_VERSION_REQUEST_MULTI = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
   p16(uds.DATA_IDENTIFIER_TYPE.VEHICLE_MANUFACTURER_SPARE_PART_NUMBER) + \
   p16(uds.DATA_IDENTIFIER_TYPE.APPLICATION_SOFTWARE_IDENTIFICATION) + \
-  p16(0xf100) + \
-  p16(0xf1a0)
+  p16(0xf100) 
 HYUNDAI_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40])
 
 
@@ -69,15 +66,27 @@ OBD_VERSION_RESPONSE = b'\x49\x04'
 DEFAULT_RX_OFFSET = 0x8
 VOLKSWAGEN_RX_OFFSET = 0x6a
 
+MAZDA_VERSION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
+  p16(uds.DATA_IDENTIFIER_TYPE.VEHICLE_MANUFACTURER_ECU_SOFTWARE_NUMBER)
+MAZDA_VERSION_RESPONSE =  bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + \
+  p16(uds.DATA_IDENTIFIER_TYPE.VEHICLE_MANUFACTURER_ECU_SOFTWARE_NUMBER)
+
+NISSAN_DIAGNOSTIC_REQUEST_KWP = bytes([uds.SERVICE_TYPE.DIAGNOSTIC_SESSION_CONTROL, 0xc0])
+NISSAN_DIAGNOSTIC_RESPONSE_KWP = bytes([uds.SERVICE_TYPE.DIAGNOSTIC_SESSION_CONTROL + 0x40, 0xc0])
+
+NISSAN_VERSION_REQUEST_KWP = b'\x21\x83'
+NISSAN_VERSION_RESPONSE_KWP = b'\x61\x83'
+
+NISSAN_VERSION_REQUEST_STANDARD = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
+  p16(uds.DATA_IDENTIFIER_TYPE.VEHICLE_MANUFACTURER_ECU_SOFTWARE_NUMBER)
+NISSAN_VERSION_RESPONSE_STANDARD =  bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + \
+  p16(uds.DATA_IDENTIFIER_TYPE.VEHICLE_MANUFACTURER_ECU_SOFTWARE_NUMBER)
+
+NISSAN_RX_OFFSET = 0x20
+
 # brand, request, response, response offset
 REQUESTS = [
   # Hyundai
-  (
-    "hyundai",
-    [HYUNDAI_VERSION_REQUEST_SHORT],
-    [HYUNDAI_VERSION_RESPONSE],
-    DEFAULT_RX_OFFSET,
-  ),
   (
     "hyundai",
     [HYUNDAI_VERSION_REQUEST_LONG],
@@ -128,6 +137,32 @@ REQUESTS = [
     [VOLKSWAGEN_VERSION_REQUEST_MULTI],
     [VOLKSWAGEN_VERSION_RESPONSE],
     DEFAULT_RX_OFFSET,
+  ),
+  # Mazda
+  (
+    "mazda",
+    [MAZDA_VERSION_REQUEST],
+    [MAZDA_VERSION_RESPONSE],
+    DEFAULT_RX_OFFSET,
+  ),
+  # Nissan
+  (
+    "nissan",
+    [NISSAN_DIAGNOSTIC_REQUEST_KWP, NISSAN_VERSION_REQUEST_KWP],
+    [NISSAN_DIAGNOSTIC_RESPONSE_KWP, NISSAN_VERSION_RESPONSE_KWP],
+    DEFAULT_RX_OFFSET,
+  ),
+  (
+    "nissan",
+    [NISSAN_DIAGNOSTIC_REQUEST_KWP, NISSAN_VERSION_REQUEST_KWP],
+    [NISSAN_DIAGNOSTIC_RESPONSE_KWP, NISSAN_VERSION_RESPONSE_KWP],
+    NISSAN_RX_OFFSET,
+  ),
+  (
+    "nissan",
+    [NISSAN_VERSION_REQUEST_STANDARD],
+    [NISSAN_VERSION_RESPONSE_STANDARD],
+    NISSAN_RX_OFFSET,
   ),
 ]
 
@@ -204,12 +239,12 @@ def match_fw_to_car_exact(fw_versions_dict):
       ecu_type = ecu[0]
       addr = ecu[1:]
       found_version = fw_versions_dict.get(addr, None)
-      ESSENTIAL_ECUS = [Ecu.engine, Ecu.eps, Ecu.esp, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.vsa, Ecu.electricBrakeBooster]
+      ESSENTIAL_ECUS = [Ecu.engine, Ecu.eps, Ecu.esp, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.vsa]
       if ecu_type == Ecu.esp and candidate in [TOYOTA.RAV4, TOYOTA.COROLLA, TOYOTA.HIGHLANDER] and found_version is None:
         continue
 
       # On some Toyota models, the engine can show on two different addresses
-      if ecu_type == Ecu.engine and candidate in [TOYOTA.COROLLA_TSS2, TOYOTA.CHR, TOYOTA.LEXUS_IS, TOYOTA.AVALON] and found_version is None:
+      if ecu_type == Ecu.engine and candidate in [TOYOTA.CAMRY, TOYOTA.COROLLA_TSS2, TOYOTA.CHR, TOYOTA.LEXUS_IS] and found_version is None:
         continue
 
       # Ignore non essential ecus
@@ -241,7 +276,7 @@ def match_fw_to_car(fw_versions, allow_fuzzy=True):
 def get_fw_versions(logcan, sendcan, bus, extra=None, timeout=0.1, debug=False, progress=False):
   ecu_types = {}
 
-  # Extract ECU adresses to query from fingerprints
+  # Extract ECU addresses to query from fingerprints
   # ECUs using a subadress need be queried one by one, the rest can be done in parallel
   addrs = []
   parallel_addrs = []

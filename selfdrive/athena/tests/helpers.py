@@ -8,6 +8,14 @@ from multiprocessing import Process
 
 from common.timeout import Timeout
 
+
+class MockResponse:
+  def __init__(self, json, status_code):
+    self.json = json
+    self.text = json
+    self.status_code = status_code
+
+
 class EchoSocket():
   def __init__(self, port):
     self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

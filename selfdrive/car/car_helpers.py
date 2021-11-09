@@ -2,7 +2,7 @@ import os
 from common.params import Params
 from common.basedir import BASEDIR
 from selfdrive.version import comma_remote, tested_branch
-from selfdrive.car.fingerprints import eliminate_incompatible_cars, all_known_cars
+from selfdrive.car.fingerprints import eliminate_incompatible_cars, all_legacy_fingerprint_cars
 from selfdrive.car.vin import get_vin, VIN_UNKNOWN
 from selfdrive.car.fw_versions import get_fw_versions, match_fw_to_car
 from selfdrive.swaglog import cloudlog
@@ -13,18 +13,19 @@ from cereal import car
 EventName = car.CarEvent.EventName
 
 
-def get_startup_event(car_recognized, controller_available, fuzzy_fingerprint):
+def get_startup_event(car_recognized, controller_available, fw_seen):
   if comma_remote and tested_branch:
     event = EventName.startup
   else:
     event = EventName.startupMaster
 
   if not car_recognized:
-    event = EventName.startupNoCar
+    if fw_seen:
+      event = EventName.startupNoCar
+    else:
+      event = EventName.startupNoFw
   elif car_recognized and not controller_available:
     event = EventName.startupNoControl
-  elif car_recognized and fuzzy_fingerprint:
-    event = EventName.startupFuzzyFingerprint
   return event
 
 
@@ -78,10 +79,6 @@ interface_names = _get_interface_names()
 interfaces = load_interfaces(interface_names)
 
 
-def only_toyota_left(candidate_cars):
-  return all(("TOYOTA" in c or "LEXUS" in c) for c in candidate_cars) and len(candidate_cars) > 0
-
-
 # **** for use live only ****
 def fingerprint(logcan, sendcan):
   fixed_fingerprint = os.environ.get('FINGERPRINT', "")
@@ -115,7 +112,7 @@ def fingerprint(logcan, sendcan):
   Params().put("CarVin", vin)
 
   finger = gen_empty_fingerprint()
-  candidate_cars = {i: all_known_cars() for i in [0, 1]}  # attempt fingerprint on both bus 0 and 1
+  candidate_cars = {i: all_legacy_fingerprint_cars() for i in [0, 1]}  # attempt fingerprint on both bus 0 and 1
   frame = 0
   frame_fingerprint = 10  # 0.1s
   car_fingerprint = None
@@ -125,27 +122,24 @@ def fingerprint(logcan, sendcan):
     a = get_one_can(logcan)
 
     for can in a.can:
-      # need to independently try to fingerprint both bus 0 and 1 to work
-      # for the combo black_panda and honda_bosch. Ignore extended messages
-      # and VIN query response.
-      # Include bus 2 for toyotas to disambiguate cars using camera messages
-      # (ideally should be done for all cars but we can't for Honda Bosch)
-      if can.src in range(0, 4):
+      # The fingerprint dict is generated for all buses, this way the car interface
+      # can use it to detect a (valid) multipanda setup and initialize accordingly
+      if can.src < 128:
+        if can.src not in finger.keys():
+          finger[can.src] = {}
         finger[can.src][can.address] = len(can.dat)
+
       for b in candidate_cars:
-        if (can.src == b or (only_toyota_left(candidate_cars[b]) and can.src == 2)) and \
-           can.address < 0x800 and can.address not in [0x7df, 0x7e0, 0x7e8]:
+        # Ignore extended messages and VIN query response.
+        if can.src == b and can.address < 0x800 and can.address not in [0x7df, 0x7e0, 0x7e8]:
           candidate_cars[b] = eliminate_incompatible_cars(can, candidate_cars[b])
 
     # if we only have one car choice and the time since we got our first
     # message has elapsed, exit
     for b in candidate_cars:
-      # Toyota needs higher time to fingerprint, since DSU does not broadcast immediately
-      if only_toyota_left(candidate_cars[b]):
-        frame_fingerprint = 100  # 1s
       if len(candidate_cars[b]) == 1 and frame > frame_fingerprint:
-          # fingerprint done
-          car_fingerprint = candidate_cars[b][0]
+        # fingerprint done
+        car_fingerprint = candidate_cars[b][0]
 
     # bail if no cars left or we've been waiting for more than 2s
     failed = (all(len(cc) == 0 for cc in candidate_cars.values()) and frame > frame_fingerprint) or frame > 200
@@ -167,7 +161,8 @@ def fingerprint(logcan, sendcan):
     car_fingerprint = fixed_fingerprint
     source = car.CarParams.FingerprintSource.fixed
 
-  cloudlog.warning("fingerprinted %s", car_fingerprint)
+  cloudlog.event("fingerprinted", car_fingerprint=car_fingerprint,
+                 source=source, fuzzy=not exact_match, fw_count=len(car_fw))
   return car_fingerprint, finger, vin, car_fw, source, exact_match
 
 

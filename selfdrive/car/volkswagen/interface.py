@@ -1,7 +1,6 @@
 from cereal import car
-from selfdrive.swaglog import cloudlog
-from selfdrive.car.volkswagen.values import CAR, BUTTON_STATES, TransmissionType, GearShifter
-from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
+from selfdrive.car.volkswagen.values import CAR, BUTTON_STATES, CANBUS, NetworkLocation, TransmissionType, GearShifter
+from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
 
 EventName = car.CarEvent.EventName
@@ -14,37 +13,39 @@ class CarInterface(CarInterfaceBase):
     self.displayMetricUnitsPrev = None
     self.buttonStatesPrev = BUTTON_STATES.copy()
 
-  @staticmethod
-  def compute_gb(accel, speed):
-    return float(accel) / 4.0
+    if CP.networkLocation == NetworkLocation.fwdCamera:
+      self.ext_bus = CANBUS.pt
+      self.cp_ext = self.cp
+    else:
+      self.ext_bus = CANBUS.cam
+      self.cp_ext = self.cp_cam
 
   @staticmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
-
-    # VW port is a community feature, since we don't own one to test
-    ret.communityFeature = True
+    ret.carName = "volkswagen"
+    ret.radarOffCan = True
 
     if True:  # pylint: disable=using-constant-test
-      # Set common MQB parameters that will apply globally
-      ret.carName = "volkswagen"
-      ret.radarOffCan = True
-      ret.safetyModel = car.CarParams.SafetyModel.volkswagen
-      ret.steerActuatorDelay = 0.05
+      # Set global MQB parameters
+      ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.volkswagen)]
+      ret.enableBsm = 0x30F in fingerprint[0]  # SWA_01
 
-      if 0xAD in fingerprint[0]:
-        # Getriebe_11 detected: traditional automatic or DSG gearbox
+      if 0xAD in fingerprint[0]:  # Getriebe_11
         ret.transmissionType = TransmissionType.automatic
-      elif 0x187 in fingerprint[0]:
-        # EV_Gearshift detected: e-Golf or similar direct-drive electric
+      elif 0x187 in fingerprint[0]:  # EV_Gearshift
         ret.transmissionType = TransmissionType.direct
       else:
-        # No trans message at all, must be a true stick-shift manual
         ret.transmissionType = TransmissionType.manual
-      cloudlog.info("Detected transmission type: %s", ret.transmissionType)
+
+      if any(msg in fingerprint[1] for msg in [0x40, 0x86, 0xB2, 0xFD]):  # Airbag_01, LWI_01, ESP_19, ESP_21
+        ret.networkLocation = NetworkLocation.gateway
+      else:
+        ret.networkLocation = NetworkLocation.fwdCamera
 
     # Global tuning defaults, can be overridden per-vehicle
 
+    ret.steerActuatorDelay = 0.05
     ret.steerRateCost = 1.0
     ret.steerLimitTimer = 0.4
     ret.steerRatio = 15.6  # Let the params learner figure this out
@@ -57,65 +58,98 @@ class CarInterface(CarInterfaceBase):
 
     # Per-chassis tuning values, override tuning defaults here if desired
 
-    if candidate == CAR.GOLF_MK7:
-      # Averages of all AU Golf variants
+    if candidate == CAR.ARTEON_MK1:
+      ret.mass = 1733 + STD_CARGO_KG
+      ret.wheelbase = 2.84
+
+    elif candidate == CAR.ATLAS_MK1:
+      ret.mass = 2011 + STD_CARGO_KG
+      ret.wheelbase = 2.98
+
+    elif candidate == CAR.GOLF_MK7:
       ret.mass = 1397 + STD_CARGO_KG
       ret.wheelbase = 2.62
 
     elif candidate == CAR.JETTA_MK7:
-      # Averages of all BU Jetta variants
       ret.mass = 1328 + STD_CARGO_KG
       ret.wheelbase = 2.71
 
     elif candidate == CAR.PASSAT_MK8:
-      # Averages of all 3C Passat variants
       ret.mass = 1551 + STD_CARGO_KG
       ret.wheelbase = 2.79
 
+    elif candidate == CAR.POLO_MK6:
+      ret.mass = 1230 + STD_CARGO_KG
+      ret.wheelbase = 2.55
+
+    elif candidate == CAR.TAOS_MK1:
+      ret.mass = 1498 + STD_CARGO_KG
+      ret.wheelbase = 2.69
+
+    elif candidate == CAR.TCROSS_MK1:
+      ret.mass = 1150 + STD_CARGO_KG
+      ret.wheelbase = 2.60
+
     elif candidate == CAR.TIGUAN_MK2:
-      # Average of SWB and LWB variants
       ret.mass = 1715 + STD_CARGO_KG
       ret.wheelbase = 2.74
 
+    elif candidate == CAR.TOURAN_MK2:
+      ret.mass = 1516 + STD_CARGO_KG
+      ret.wheelbase = 2.79
+
+    elif candidate == CAR.TRANSPORTER_T61:
+      ret.mass = 1926 + STD_CARGO_KG
+      ret.wheelbase = 3.00  # SWB, LWB is 3.40, TBD how to detect difference
+      ret.minSteerSpeed = 14.0
+
     elif candidate == CAR.AUDI_A3_MK3:
-      # Averages of all 8V A3 variants
       ret.mass = 1335 + STD_CARGO_KG
       ret.wheelbase = 2.61
 
+    elif candidate == CAR.AUDI_Q2_MK1:
+      ret.mass = 1205 + STD_CARGO_KG
+      ret.wheelbase = 2.61
+
     elif candidate == CAR.SEAT_ATECA_MK1:
-      # Averages of all 5F Ateca variants
       ret.mass = 1900 + STD_CARGO_KG
       ret.wheelbase = 2.64
 
+    elif candidate == CAR.SEAT_LEON_MK3:
+      ret.mass = 1227 + STD_CARGO_KG
+      ret.wheelbase = 2.64
+
+    elif candidate == CAR.SKODA_KAMIQ_MK1:
+      ret.mass = 1265 + STD_CARGO_KG
+      ret.wheelbase = 2.66
+
+    elif candidate == CAR.SKODA_KAROQ_MK1:
+      ret.mass = 1278 + STD_CARGO_KG
+      ret.wheelbase = 2.66
+
     elif candidate == CAR.SKODA_KODIAQ_MK1:
-      # Averages of all 5N Kodiaq variants
       ret.mass = 1569 + STD_CARGO_KG
       ret.wheelbase = 2.79
 
+    elif candidate == CAR.SKODA_OCTAVIA_MK3:
+      ret.mass = 1388 + STD_CARGO_KG
+      ret.wheelbase = 2.68
+
     elif candidate == CAR.SKODA_SCALA_MK1:
-      # Averages of all NW Scala variants
       ret.mass = 1192 + STD_CARGO_KG
       ret.wheelbase = 2.65
 
     elif candidate == CAR.SKODA_SUPERB_MK3:
-      # Averages of all 3V/NP Scala variants
       ret.mass = 1505 + STD_CARGO_KG
       ret.wheelbase = 2.84
 
-    ret.centerToFront = ret.wheelbase * 0.45
+    else:
+      raise ValueError("unsupported car %s" % candidate)
 
-    ret.enableCamera = True
-    ret.enableBsm = 0x30F in fingerprint[0]
-
-    # TODO: get actual value, for now starting with reasonable value for
-    # civic and scaling by mass and wheelbase
     ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
-
-    # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
-    # mass and CG position, so all cars will have approximately similar dyn behaviors
+    ret.centerToFront = ret.wheelbase * 0.45
     ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront,
                                                                          tire_stiffness_factor=tire_stiffness_factor)
-
     return ret
 
   # returns a car.CarState
@@ -128,7 +162,7 @@ class CarInterface(CarInterfaceBase):
     self.cp.update_strings(can_strings)
     self.cp_cam.update_strings(can_strings)
 
-    ret = self.CS.update(self.cp, self.cp_cam, self.CP.transmissionType)
+    ret = self.CS.update(self.cp, self.cp_cam, self.cp_ext, self.CP.transmissionType)
     ret.canValid = self.cp.can_valid and self.cp_cam.can_valid
     ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
 
@@ -147,13 +181,19 @@ class CarInterface(CarInterfaceBase):
         be.pressed = self.CS.buttonStates[button]
         buttonEvents.append(be)
 
-    events = self.create_common_events(ret, extra_gears=[GearShifter.eco, GearShifter.sport])
+    events = self.create_common_events(ret, extra_gears=[GearShifter.eco, GearShifter.sport, GearShifter.manumatic])
 
     # Vehicle health and operation safety checks
     if self.CS.parkingBrakeSet:
       events.add(EventName.parkBrake)
-    if self.CS.steeringFault:
-      events.add(EventName.steerTempUnavailable)
+
+    # Low speed steer alert hysteresis logic
+    if self.CP.minSteerSpeed > 0. and ret.vEgo < (self.CP.minSteerSpeed + 1.):
+      self.low_speed_alert = True
+    elif ret.vEgo > (self.CP.minSteerSpeed + 2.):
+      self.low_speed_alert = False
+    if self.low_speed_alert:
+      events.add(EventName.belowSteerSpeed)
 
     ret.events = events.to_msg()
     ret.buttonEvents = buttonEvents
@@ -166,9 +206,11 @@ class CarInterface(CarInterfaceBase):
     return self.CS.out
 
   def apply(self, c):
-    can_sends = self.CC.update(c.enabled, self.CS, self.frame, c.actuators,
+    can_sends = self.CC.update(c.enabled, self.CS, self.frame, self.ext_bus, c.actuators,
                    c.hudControl.visualAlert,
                    c.hudControl.leftLaneVisible,
-                   c.hudControl.rightLaneVisible)
+                   c.hudControl.rightLaneVisible,
+                   c.hudControl.leftLaneDepart,
+                   c.hudControl.rightLaneDepart)
     self.frame += 1
     return can_sends

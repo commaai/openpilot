@@ -1,10 +1,14 @@
+import json
 import os
 import subprocess
+from functools import cached_property
+from enum import IntEnum
 from pathlib import Path
-from smbus2 import SMBus
 
 from cereal import log
 from selfdrive.hardware.base import HardwareBase, ThermalConfig
+from selfdrive.hardware.tici.amplifier import Amplifier
+from selfdrive.hardware.tici import iwlist
 
 NM = 'org.freedesktop.NetworkManager'
 NM_CON_ACT = NM + '.Connection.Active'
@@ -17,7 +21,20 @@ MM_MODEM = MM + ".Modem"
 MM_MODEM_SIMPLE = MM + ".Modem.Simple"
 MM_SIM = MM + ".Sim"
 
-MM_MODEM_STATE_CONNECTED = 11
+class MM_MODEM_STATE(IntEnum):
+       FAILED        = -1
+       UNKNOWN       = 0
+       INITIALIZING  = 1
+       LOCKED        = 2
+       DISABLED      = 3
+       DISABLING     = 4
+       ENABLING      = 5
+       ENABLED       = 6
+       SEARCHING     = 7
+       REGISTERED    = 8
+       DISCONNECTING = 9
+       CONNECTING    = 10
+       CONNECTED     = 11
 
 TIMEOUT = 0.1
 
@@ -28,22 +45,23 @@ NetworkStrength = log.DeviceState.NetworkStrength
 MM_MODEM_ACCESS_TECHNOLOGY_UMTS = 1 << 5
 MM_MODEM_ACCESS_TECHNOLOGY_LTE = 1 << 14
 
-AMP_I2C_BUS = 0
-AMP_ADDRESS = 0x10
-
-def write_amplifier_reg(reg, val, offset, mask):
-  with SMBus(AMP_I2C_BUS) as bus:
-    v = bus.read_byte_data(AMP_ADDRESS, reg, force=True)
-    v = (v & (~mask)) | ((val << offset) & mask)
-    bus.write_byte_data(AMP_ADDRESS, reg, v, force=True)
-
 class Tici(HardwareBase):
-  def __init__(self):
+  @cached_property
+  def bus(self):
     import dbus  # pylint: disable=import-error
+    return dbus.SystemBus()
 
-    self.bus = dbus.SystemBus()
-    self.nm = self.bus.get_object(NM, '/org/freedesktop/NetworkManager')
-    self.mm = self.bus.get_object(MM, '/org/freedesktop/ModemManager1')
+  @cached_property
+  def nm(self):
+    return self.bus.get_object(NM, '/org/freedesktop/NetworkManager')
+
+  @cached_property
+  def mm(self):
+    return self.bus.get_object(MM, '/org/freedesktop/ModemManager1')
+
+  @cached_property
+  def amplifier(self):
+    return Amplifier()
 
   def get_os_version(self):
     with open("/VERSION") as f:
@@ -71,19 +89,27 @@ class Tici(HardwareBase):
     try:
       primary_connection = self.nm.Get(NM, 'PrimaryConnection', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
       primary_connection = self.bus.get_object(NM, primary_connection)
-      tp = primary_connection.Get(NM_CON_ACT, 'Type', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
+      primary_type = primary_connection.Get(NM_CON_ACT, 'Type', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
+      primary_id = primary_connection.Get(NM_CON_ACT, 'Id', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
 
-      if tp in ['802-3-ethernet', '802-11-wireless']:
+      if primary_type == '802-3-ethernet':
+        return NetworkType.ethernet
+      elif primary_type == '802-11-wireless' and primary_id != 'Hotspot':
         return NetworkType.wifi
-      elif tp in ['gsm']:
-        modem = self.get_modem()
-        access_t = modem.Get(MM_MODEM, 'AccessTechnologies', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
-        if access_t >= MM_MODEM_ACCESS_TECHNOLOGY_LTE:
-          return NetworkType.cell4G
-        elif access_t >= MM_MODEM_ACCESS_TECHNOLOGY_UMTS:
-          return NetworkType.cell3G
-        else:
-          return NetworkType.cell2G
+      else:
+        active_connections = self.nm.Get(NM, 'ActiveConnections', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
+        for conn in active_connections:
+          c = self.bus.get_object(NM, conn)
+          tp = c.Get(NM_CON_ACT, 'Type', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
+          if tp == 'gsm':
+            modem = self.get_modem()
+            access_t = modem.Get(MM_MODEM, 'AccessTechnologies', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
+            if access_t >= MM_MODEM_ACCESS_TECHNOLOGY_LTE:
+              return NetworkType.cell4G
+            elif access_t >= MM_MODEM_ACCESS_TECHNOLOGY_UMTS:
+              return NetworkType.cell3G
+            else:
+              return NetworkType.cell2G
     except Exception:
       pass
 
@@ -117,7 +143,7 @@ class Tici(HardwareBase):
         'mcc_mnc': str(sim.Get(MM_SIM, 'OperatorIdentifier', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)),
         'network_type': ["Unknown"],
         'sim_state': ["READY"],
-        'data_connected': modem.Get(MM_MODEM, 'State', dbus_interface=DBUS_PROPS, timeout=TIMEOUT) == MM_MODEM_STATE_CONNECTED,
+        'data_connected': modem.Get(MM_MODEM, 'State', dbus_interface=DBUS_PROPS, timeout=TIMEOUT) == MM_MODEM_STATE.CONNECTED,
       }
 
   def get_subscriber_info(self):
@@ -128,6 +154,36 @@ class Tici(HardwareBase):
       return ""
 
     return str(self.get_modem().Get(MM_MODEM, 'EquipmentIdentifier', dbus_interface=DBUS_PROPS, timeout=TIMEOUT))
+
+  def get_network_info(self):
+    modem = self.get_modem()
+    try:
+      info = modem.Command("AT+QNWINFO", int(TIMEOUT * 1000), dbus_interface=MM_MODEM, timeout=TIMEOUT)
+      extra = modem.Command('AT+QENG="servingcell"', int(TIMEOUT * 1000), dbus_interface=MM_MODEM, timeout=TIMEOUT)
+      state = modem.Get(MM_MODEM, 'State', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
+    except Exception:
+      return None
+
+    if info and info.startswith('+QNWINFO: '):
+      info = info.replace('+QNWINFO: ', '').replace('"', '').split(',')
+      extra = "" if extra is None else extra.replace('+QENG: "servingcell",', '').replace('"', '')
+      state = "" if state is None else MM_MODEM_STATE(state).name
+
+      if len(info) != 4:
+        return None
+
+      technology, operator, band, channel = info
+
+      return({
+        'technology': technology,
+        'operator': operator,
+        'band': band,
+        'channel': int(channel),
+        'extra': extra,
+        'state': state,
+      })
+    else:
+      return None
 
   def parse_strength(self, percentage):
       if percentage < 25:
@@ -160,6 +216,32 @@ class Tici(HardwareBase):
       pass
 
     return network_strength
+
+  def get_modem_version(self):
+    try:
+      modem = self.get_modem()
+      return modem.Get(MM_MODEM, 'Revision', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
+    except Exception:
+      return None
+
+  def get_modem_temperatures(self):
+    modem = self.get_modem()
+    try:
+      command_timeout = 0.2
+      temps = modem.Command("AT+QTEMP", int(command_timeout * 1000), dbus_interface=MM_MODEM, timeout=command_timeout)
+      return list(map(int, temps.split(' ')[1].split(',')))
+    except Exception:
+      return []
+
+  def get_nvme_temperatures(self):
+    ret = []
+    try:
+      out = subprocess.check_output("sudo smartctl -aj /dev/nvme0", shell=True)
+      dat = json.loads(out)
+      ret = list(map(int, dat["nvme_smart_health_information_log"]["temperature_sensors"]))
+    except Exception:
+      pass
+    return ret
 
   # We don't have a battery, so let's use some sane constants
   def get_battery_capacity(self):
@@ -201,16 +283,58 @@ class Tici(HardwareBase):
     except Exception:
       pass
 
-  def set_power_save(self, enabled):
+  def get_screen_brightness(self):
+    try:
+      with open("/sys/class/backlight/panel0-backlight/brightness") as f:
+        return int(float(f.read()) / 10.23)
+    except Exception:
+      return 0
+
+  def set_power_save(self, powersave_enabled):
     # amplifier, 100mW at idle
-    write_amplifier_reg(0x51, 0b0 if enabled else 0b1, 7, 0b10000000)
+    self.amplifier.set_global_shutdown(amp_disabled=powersave_enabled)
+    if not powersave_enabled:
+      self.amplifier.initialize_configuration()
 
     # offline big cluster, leave core 4 online for boardd
     for i in range(5, 8):
       # TODO: fix permissions with udev
-      val = "0" if enabled else "1"
+      val = "0" if powersave_enabled else "1"
       os.system(f"sudo su -c 'echo {val} > /sys/devices/system/cpu/cpu{i}/online'")
 
-if __name__ == "__main__":
-  import sys
-  Tici().set_power_save(bool(int(sys.argv[1])))
+  def get_gpu_usage_percent(self):
+    try:
+      used, total = open('/sys/class/kgsl/kgsl-3d0/gpubusy').read().strip().split()
+      return 100.0 * int(used) / int(total)
+    except Exception:
+      return 0
+
+  def initialize_hardware(self):
+    self.amplifier.initialize_configuration()
+
+  def get_networks(self):
+    r = {}
+
+    wlan = iwlist.scan()
+    if wlan is not None:
+      r['wlan'] = wlan
+
+    lte_info = self.get_network_info()
+    if lte_info is not None:
+      extra = lte_info['extra']
+
+      # <state>,"LTE",<is_tdd>,<mcc>,<mnc>,<cellid>,<pcid>,<earfcn>,<freq_band_ind>,
+      # <ul_bandwidth>,<dl_bandwidth>,<tac>,<rsrp>,<rsrq>,<rssi>,<sinr>,<srxlev>
+      if 'LTE' in extra:
+        extra = extra.split(',')
+        try:
+          r['lte'] = [{
+            "mcc": int(extra[3]),
+            "mnc": int(extra[4]),
+            "cid": int(extra[5], 16),
+            "nmr": [{"pci": int(extra[6]), "earfcn": int(extra[7])}],
+          }]
+        except (ValueError, IndexError):
+          pass
+
+    return r

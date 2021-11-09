@@ -13,6 +13,10 @@ AddOption('--test',
           action='store_true',
           help='build test files')
 
+AddOption('--extras',
+          action='store_true',
+          help='build misc extras, like setup and installer files')
+
 AddOption('--kaitai',
           action='store_true',
           help='Regenerate kaitai struct parsers')
@@ -33,15 +37,20 @@ AddOption('--compile_db',
           action='store_true',
           help='build clang compilation database')
 
-AddOption('--mpc-generate',
+AddOption('--snpe',
           action='store_true',
-          help='regenerates the mpc sources')
+          help='use SNPE on PC')
 
 AddOption('--external-sconscript',
           action='store',
           metavar='FILE',
           dest='external_sconscript',
           help='add an external SConscript to the build')
+
+AddOption('--no-thneed',
+          action='store_true',
+          dest='no_thneed',
+          help='avoid using thneed')
 
 real_arch = arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
 if platform.system() == "Darwin":
@@ -51,14 +60,21 @@ if arch == "aarch64" and TICI:
   arch = "larch64"
 
 USE_WEBCAM = os.getenv("USE_WEBCAM") is not None
-QCOM_REPLAY = arch == "aarch64" and os.getenv("QCOM_REPLAY") is not None
+USE_FRAME_STREAM = os.getenv("USE_FRAME_STREAM") is not None
 
 lenv = {
   "PATH": os.environ['PATH'],
+  "LD_LIBRARY_PATH": [Dir(f"#third_party/acados/{arch}/lib").abspath],
+  "PYTHONPATH": Dir("#").abspath + ":" + Dir("#pyextra/").abspath,
+
+  "ACADOS_SOURCE_DIR": Dir("#third_party/acados/acados").abspath,
+  "TERA_PATH": Dir("#").abspath + f"/third_party/acados/{arch}/t_renderer",
 }
 
+rpath = lenv["LD_LIBRARY_PATH"].copy()
+
 if arch == "aarch64" or arch == "larch64":
-  lenv["LD_LIBRARY_PATH"] = '/data/data/com.termux/files/usr/lib'
+  lenv["LD_LIBRARY_PATH"] += ['/data/data/com.termux/files/usr/lib']
 
   if arch == "aarch64":
     # android
@@ -66,7 +82,7 @@ if arch == "aarch64" or arch == "larch64":
     lenv["ANDROID_ROOT"] = os.environ['ANDROID_ROOT']
 
   cpppath = [
-    "#phonelibs/opencl/include",
+    "#third_party/opencl/include",
   ]
 
   libpath = [
@@ -74,66 +90,70 @@ if arch == "aarch64" or arch == "larch64":
     "/usr/lib",
     "/system/vendor/lib64",
     "/system/comma/usr/lib",
-    "#phonelibs/nanovg",
+    "#third_party/nanovg",
+    f"#third_party/acados/{arch}/lib",
   ]
 
   if arch == "larch64":
     libpath += [
-      "#phonelibs/snpe/larch64",
-      "#phonelibs/libyuv/larch64/lib",
+      "#third_party/snpe/larch64",
+      "#third_party/libyuv/larch64/lib",
       "/usr/lib/aarch64-linux-gnu"
+    ]
+    cpppath += [
+      "#selfdrive/camerad/include",
     ]
     cflags = ["-DQCOM2", "-mcpu=cortex-a57"]
     cxxflags = ["-DQCOM2", "-mcpu=cortex-a57"]
-    rpath = ["/usr/local/lib"]
+    rpath += ["/usr/local/lib"]
   else:
+    rpath = []
     libpath += [
-      "#phonelibs/snpe/aarch64",
-      "#phonelibs/libyuv/lib",
+      "#third_party/snpe/aarch64",
+      "#third_party/libyuv/lib",
       "/system/vendor/lib64"
     ]
-    cflags = ["-DQCOM", "-mcpu=cortex-a57"]
-    cxxflags = ["-DQCOM", "-mcpu=cortex-a57"]
-    rpath = []
-
-    if QCOM_REPLAY:
-      cflags += ["-DQCOM_REPLAY"]
-      cxxflags += ["-DQCOM_REPLAY"]
+    cflags = ["-DQCOM", "-D_USING_LIBCXX", "-mcpu=cortex-a57"]
+    cxxflags = ["-DQCOM", "-D_USING_LIBCXX", "-mcpu=cortex-a57"]
 else:
   cflags = []
   cxxflags = []
   cpppath = []
 
   if arch == "Darwin":
+    yuv_dir = "mac" if real_arch != "arm64" else "mac_arm64"
     libpath = [
-      "#phonelibs/libyuv/mac/lib",
-      "#cereal",
-      "#selfdrive/common",
+      f"#third_party/libyuv/{yuv_dir}/lib",
       "/usr/local/lib",
+      "/opt/homebrew/lib",
       "/usr/local/opt/openssl/lib",
+      "/opt/homebrew/opt/openssl/lib",
       "/System/Library/Frameworks/OpenGL.framework/Libraries",
     ]
     cflags += ["-DGL_SILENCE_DEPRECATION"]
     cxxflags += ["-DGL_SILENCE_DEPRECATION"]
-    cpppath += ["/usr/local/opt/openssl/include"]
+    cpppath += [
+      "/opt/homebrew/include",
+      "/usr/local/opt/openssl/include",
+      "/opt/homebrew/opt/openssl/include"
+    ]
   else:
     libpath = [
-      "#phonelibs/snpe/x86_64-linux-clang",
-      "#phonelibs/libyuv/x64/lib",
+      "#third_party/acados/x86_64/lib",
+      "#third_party/snpe/x86_64-linux-clang",
+      "#third_party/libyuv/x64/lib",
+      "#third_party/mapbox-gl-native-qt/x86_64",
       "#cereal",
       "#selfdrive/common",
       "/usr/lib",
       "/usr/local/lib",
     ]
 
-  rpath = [
-    "phonelibs/snpe/x86_64-linux-clang",
-    "cereal",
-    "selfdrive/common"
+  rpath += [
+    Dir("#third_party/snpe/x86_64-linux-clang").abspath,
+    Dir("#cereal").abspath,
+    Dir("#selfdrive/common").abspath
   ]
-
-  # allows shared libraries to work globally
-  rpath = [os.path.join(os.getcwd(), x) for x in rpath]
 
 if GetOption('asan'):
   ccflags = ["-fsanitize=address", "-fno-omit-frame-pointer"]
@@ -147,10 +167,11 @@ else:
 
 # no --as-needed on mac linker
 if arch != "Darwin":
-  ldflags += ["-Wl,--as-needed"]
+  ldflags += ["-Wl,--as-needed", "-Wl,--no-undefined"]
 
-# change pythonpath to this
-lenv["PYTHONPATH"] = Dir("#").path
+# Enable swaglog include in submodules
+cflags += ["-DSWAGLOG"]
+cxxflags += ["-DSWAGLOG"]
 
 env = Environment(
   ENV=lenv,
@@ -160,6 +181,7 @@ env = Environment(
     "-O2",
     "-Wunused",
     "-Werror",
+    "-Wshadow",
     "-Wno-unknown-warning-option",
     "-Wno-deprecated-register",
     "-Wno-register",
@@ -170,33 +192,26 @@ env = Environment(
 
   CPPPATH=cpppath + [
     "#",
-    "#selfdrive",
-    "#phonelibs/catch2/include",
-    "#phonelibs/bzip2",
-    "#phonelibs/libyuv/include",
-    "#phonelibs/openmax/include",
-    "#phonelibs/json11",
-    "#phonelibs/curl/include",
-    "#phonelibs/libgralloc/include",
-    "#phonelibs/android_frameworks_native/include",
-    "#phonelibs/android_hardware_libhardware/include",
-    "#phonelibs/android_system_core/include",
-    "#phonelibs/linux/include",
-    "#phonelibs/snpe/include",
-    "#phonelibs/nanovg",
-    "#phonelibs/qrcode",
-    "#phonelibs",
-    "#selfdrive/boardd",
-    "#selfdrive/common",
-    "#selfdrive/camerad",
-    "#selfdrive/camerad/include",
-    "#selfdrive/loggerd/include",
-    "#selfdrive/modeld",
-    "#selfdrive/sensord",
-    "#selfdrive/ui",
+    "#third_party/acados/include",
+    "#third_party/acados/include/blasfeo/include",
+    "#third_party/acados/include/hpipm/include",
+    "#third_party/catch2/include",
+    "#third_party/bzip2",
+    "#third_party/libyuv/include",
+    "#third_party/openmax/include",
+    "#third_party/json11",
+    "#third_party/curl/include",
+    "#third_party/libgralloc/include",
+    "#third_party/android_frameworks_native/include",
+    "#third_party/android_hardware_libhardware/include",
+    "#third_party/android_system_core/include",
+    "#third_party/linux/include",
+    "#third_party/snpe/include",
+    "#third_party/mapbox-gl-native-qt/include",
+    "#third_party/nanovg",
+    "#third_party/qrcode",
+    "#third_party",
     "#cereal",
-    "#cereal/messaging",
-    "#cereal/visionipc",
     "#opendbc/can",
   ],
 
@@ -210,7 +225,7 @@ env = Environment(
   CXXFLAGS=["-std=c++1z"] + cxxflags,
   LIBPATH=libpath + [
     "#cereal",
-    "#phonelibs",
+    "#third_party",
     "#opendbc/can",
     "#selfdrive/boardd",
     "#selfdrive/common",
@@ -223,15 +238,10 @@ env = Environment(
 if GetOption('compile_db'):
   env.CompilationDatabase('compile_commands.json')
 
-if os.environ.get('SCONS_CACHE'):
-  cache_dir = '/tmp/scons_cache'
-  if TICI:
-    cache_dir = '/data/scons_cache'
-
-  if QCOM_REPLAY:
-    cache_dir = '/tmp/scons_cache_qcom_replay'
-
-  CacheDir(cache_dir)
+# Setup cache dir
+cache_dir = '/data/scons_cache' if TICI else '/tmp/scons_cache'
+CacheDir(cache_dir)
+Clean(["."], cache_dir)
 
 node_interval = 5
 node_count = 0
@@ -258,7 +268,7 @@ def abspath(x):
 py_include = sysconfig.get_paths()['include']
 envCython = env.Clone()
 envCython["CPPPATH"] += [py_include, np.get_include()]
-envCython["CCFLAGS"] += ["-Wno-#warnings", "-Wno-deprecated-declarations"]
+envCython["CCFLAGS"] += ["-Wno-#warnings", "-Wno-shadow", "-Wno-deprecated-declarations"]
 
 envCython["LIBS"] = []
 if arch == "Darwin":
@@ -273,13 +283,16 @@ Export('envCython')
 
 # Qt build environment
 qt_env = env.Clone()
-qt_modules = ["Widgets", "Gui", "Core", "Network", "Concurrent", "Multimedia", "Quick", "Qml", "QuickWidgets"]
+qt_modules = ["Widgets", "Gui", "Core", "Network", "Concurrent", "Multimedia", "Quick", "Qml", "QuickWidgets", "Location", "Positioning"]
 if arch != "aarch64":
   qt_modules += ["DBus"]
 
 qt_libs = []
 if arch == "Darwin":
-  qt_env['QTDIR'] = "/usr/local/opt/qt@5"
+  if real_arch == "arm64":
+    qt_env['QTDIR'] = "/opt/homebrew/opt/qt@5"
+  else:
+    qt_env['QTDIR'] = "/usr/local/opt/qt@5"
   qt_dirs = [
     os.path.join(qt_env['QTDIR'], "include"),
   ]
@@ -319,7 +332,8 @@ qt_flags = [
   "-DQT_QUICK_LIB",
   "-DQT_QUICKWIDGETS_LIB",
   "-DQT_QML_LIB",
-  "-DQT_CORE_LIB"
+  "-DQT_CORE_LIB",
+  "-DQT_MESSAGELOGCONTEXT",
 ]
 qt_env['CXXFLAGS'] += qt_flags
 qt_env['LIBPATH'] += ['#selfdrive/ui']
@@ -336,7 +350,18 @@ if GetOption("clazy"):
   qt_env['ENV']['CLAZY_IGNORE_DIRS'] = qt_dirs[0]
   qt_env['ENV']['CLAZY_CHECKS'] = ','.join(checks)
 
-Export('env', 'qt_env', 'arch', 'real_arch', 'SHARED', 'USE_WEBCAM', 'QCOM_REPLAY')
+Export('env', 'qt_env', 'arch', 'real_arch', 'SHARED', 'USE_WEBCAM', 'USE_FRAME_STREAM')
+
+SConscript(['selfdrive/common/SConscript'])
+Import('_common', '_gpucommon', '_gpu_libs')
+
+if SHARED:
+  common, gpucommon = abspath(common), abspath(gpucommon)
+else:
+  common = [_common, 'json11']
+  gpucommon = [_gpucommon] + _gpu_libs
+
+Export('common', 'gpucommon')
 
 # cereal and messaging are shared with the system
 SConscript(['cereal/SConscript'])
@@ -348,18 +373,7 @@ else:
   messaging = [File('#cereal/libmessaging.a')]
   visionipc = [File('#cereal/libvisionipc.a')]
 
-Export('cereal', 'messaging')
-
-SConscript(['selfdrive/common/SConscript'])
-Import('_common', '_gpucommon', '_gpu_libs')
-
-if SHARED:
-  common, gpucommon = abspath(common), abspath(gpucommon)
-else:
-  common = [_common, 'json11']
-  gpucommon = [_gpucommon] + _gpu_libs
-
-Export('common', 'gpucommon', 'visionipc')
+Export('cereal', 'messaging', 'visionipc')
 
 # Build rednose library and ekf models
 
@@ -390,7 +404,7 @@ SConscript(['cereal/SConscript'])
 SConscript(['panda/board/SConscript'])
 SConscript(['opendbc/can/SConscript'])
 
-SConscript(['phonelibs/SConscript'])
+SConscript(['third_party/SConscript'])
 
 SConscript(['common/SConscript'])
 SConscript(['common/kalman/SConscript'])
@@ -400,9 +414,8 @@ SConscript(['selfdrive/camerad/SConscript'])
 SConscript(['selfdrive/modeld/SConscript'])
 
 SConscript(['selfdrive/controls/lib/cluster/SConscript'])
-SConscript(['selfdrive/controls/lib/lateral_mpc/SConscript'])
-SConscript(['selfdrive/controls/lib/longitudinal_mpc/SConscript'])
-SConscript(['selfdrive/controls/lib/longitudinal_mpc_model/SConscript'])
+SConscript(['selfdrive/controls/lib/lateral_mpc_lib/SConscript'])
+SConscript(['selfdrive/controls/lib/longitudinal_mpc_lib/SConscript'])
 
 SConscript(['selfdrive/boardd/SConscript'])
 SConscript(['selfdrive/proclogd/SConscript'])
@@ -416,6 +429,9 @@ SConscript(['selfdrive/ui/SConscript'])
 
 if arch != "Darwin":
   SConscript(['selfdrive/logcatd/SConscript'])
+
+if GetOption('test'):
+  SConscript('panda/tests/safety/SConscript')
 
 external_sconscript = GetOption('external_sconscript')
 if external_sconscript:

@@ -8,7 +8,7 @@ VisualAlert = car.CarControl.HUDControl.VisualAlert
 def create_lkas_hud(packer, gear, lkas_active, hud_alert, hud_count, lkas_car_model):
   # LKAS_HUD 0x2a6 (678) Controls what lane-keeping icon is displayed.
 
-  if hud_alert == VisualAlert.steerRequired:
+  if hud_alert in [VisualAlert.steerRequired, VisualAlert.ldw]:
     msg = b'\x00\x00\x00\x03\x00\x00\x00\x00'
     return make_can_msg(0x2a6, msg, 0)
 

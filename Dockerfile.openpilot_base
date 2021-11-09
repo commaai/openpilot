@@ -28,6 +28,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     liblzma-dev \
     libomp-dev \
     libopencv-dev \
+    libqt5sql5-sqlite \
+    libqt5svg5-dev \
     libsqlite3-dev \
     libssl-dev \
     libsystemd-dev \
@@ -40,7 +42,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python-dev \
     qml-module-qtquick2 \
     qt5-default \
+    qtlocation5-dev \
     qtmultimedia5-dev \
+    qtpositioning5-dev \
     qtwebengine5-dev \
     sudo \
     valgrind \
@@ -56,11 +60,11 @@ RUN curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-instal
 ENV PATH="/root/.pyenv/bin:/root/.pyenv/shims:${PATH}"
 
 COPY Pipfile Pipfile.lock /tmp/
-RUN pyenv install 3.8.5 && \
-    pyenv global 3.8.5 && \
+RUN pyenv install 3.8.10 && \
+    pyenv global 3.8.10 && \
     pyenv rehash && \
-    pip install --no-cache-dir --upgrade pip==20.1.1 && \
-    pip install --no-cache-dir pipenv==2020.8.13 && \
+    pip install --no-cache-dir --upgrade pip==21.3.1 && \
+    pip install --no-cache-dir pipenv==2021.5.29 && \
     cd /tmp && \
     pipenv install --system --deploy --dev --clear && \
     pip uninstall -y pipenv

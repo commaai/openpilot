@@ -26,3 +26,6 @@ if arch == "Darwin":
 
 env.Program(src, LIBS=libs)
 env.Program('bootlog.cc', LIBS=libs)
+
+if GetOption('test'):
+  env.Program('tests/test_logger', ['tests/test_runner.cc', 'tests/test_logger.cc', env.Object('logger_util', '#/selfdrive/ui/replay/util.cc')], LIBS=[libs] + ['curl', 'crypto'])

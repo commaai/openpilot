@@ -7,11 +7,11 @@ export OPENBLAS_NUM_THREADS=1
 export VECLIB_MAXIMUM_THREADS=1
 
 if [ -z "$REQUIRED_NEOS_VERSION" ]; then
-  export REQUIRED_NEOS_VERSION="16.2"
+  export REQUIRED_NEOS_VERSION="18"
 fi
 
 if [ -z "$AGNOS_VERSION" ]; then
-  export AGNOS_VERSION="0.13"
+  export AGNOS_VERSION="2"
 fi
 
 if [ -z "$PASSIVE" ]; then

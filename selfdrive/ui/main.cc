@@ -1,22 +1,24 @@
-#include <QApplication>
+#include <sys/resource.h>
 
-#include "qt/window.hpp"
-#include "qt/qt_window.hpp"
+#include <QApplication>
+#include <QSslConfiguration>
+
+#include "selfdrive/hardware/hw.h"
+#include "selfdrive/ui/qt/qt_window.h"
+#include "selfdrive/ui/qt/util.h"
+#include "selfdrive/ui/qt/window.h"
 
 int main(int argc, char *argv[]) {
-  QSurfaceFormat fmt;
-#ifdef __APPLE__
-  fmt.setVersion(3, 2);
-  fmt.setProfile(QSurfaceFormat::OpenGLContextProfile::CoreProfile);
-  fmt.setRenderableType(QSurfaceFormat::OpenGL);
-#else
-  fmt.setRenderableType(QSurfaceFormat::OpenGLES);
-#endif
-  QSurfaceFormat::setDefaultFormat(fmt);
+  setpriority(PRIO_PROCESS, 0, -20);
 
-#ifdef QCOM
-  QApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
-#endif
+  qInstallMessageHandler(swagLogMessageHandler);
+  initApp();
+
+  if (Hardware::EON()) {
+    QSslConfiguration ssl = QSslConfiguration::defaultConfiguration();
+    ssl.setCaCertificates(QSslCertificate::fromPath("/usr/etc/tls/cert.pem"));
+    QSslConfiguration::setDefaultConfiguration(ssl);
+  }
 
   QApplication a(argc, argv);
   MainWindow w;

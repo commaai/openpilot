@@ -8,8 +8,11 @@ from tempfile import NamedTemporaryFile
 
 from common.basedir import BASEDIR
 from selfdrive.test.process_replay.compare_logs import save_log
-from tools.lib.route import Route
+from tools.lib.api import CommaApi
+from tools.lib.auth_config import get_token
 from tools.lib.logreader import LogReader
+from tools.lib.route import Route
+from urllib.parse import urlparse, parse_qs
 
 juggle_dir = os.path.dirname(os.path.realpath(__file__))
 
@@ -24,44 +27,52 @@ def load_segment(segment_name):
     print(f"Error parsing {segment_name}: {e}")
     return []
 
-def juggle_file(fn, dbc=None, layout=None):
+def start_juggler(fn=None, dbc=None, layout=None):
   env = os.environ.copy()
   env["BASEDIR"] = BASEDIR
+  pj = os.getenv("PLOTJUGGLER_PATH", os.path.join(juggle_dir, "bin/plotjuggler"))
 
   if dbc:
     env["DBC_NAME"] = dbc
 
-  pj = os.getenv("PLOTJUGGLER_PATH", "plotjuggler")
-  extra_args = ""
+  extra_args = []
+  if fn is not None:
+    extra_args.append(f'-d {fn}')
+
   if layout is not None:
-    extra_args += f'-l {layout}'
-  subprocess.call(f'{pj} --plugin_folders {os.path.join(juggle_dir, "bin")} -d {fn} {extra_args}', shell=True, env=env, cwd=juggle_dir)
+    extra_args.append(f'-l {layout}')
 
-def juggle_route(route_name, segment_number, qlog, can, layout):
+  extra_args = " ".join(extra_args)
+  subprocess.call(f'{pj} --plugin_folders {os.path.join(juggle_dir, "bin")} {extra_args}', shell=True, env=env, cwd=juggle_dir)
 
-  if route_name.startswith("http://") or route_name.startswith("https://"):
+def juggle_route(route_name, segment_number, segment_count, qlog, can, layout):
+  if 'cabana' in route_name:
+    query = parse_qs(urlparse(route_name).query)
+    api = CommaApi(get_token())
+    logs = api.get(f'v1/route/{query["route"][0]}/log_urls?sig={query["sig"][0]}&exp={query["exp"][0]}')
+  elif route_name.startswith("http://") or route_name.startswith("https://") or os.path.isfile(route_name):
     logs = [route_name]
   else:
     r = Route(route_name)
     logs = r.qlog_paths() if qlog else r.log_paths()
 
   if segment_number is not None:
-    logs = logs[segment_number:segment_number+1]
+    logs = logs[segment_number:segment_number+segment_count]
 
   if None in logs:
     fallback_answer = input("At least one of the rlogs in this segment does not exist, would you like to use the qlogs? (y/n) : ")
     if fallback_answer == 'y':
       logs = r.qlog_paths()
       if segment_number is not None:
-        logs = logs[segment_number:segment_number+1]
+        logs = logs[segment_number:segment_number+segment_count]
     else:
       print(f"Please try a different {'segment' if segment_number is not None else 'route'}")
       return
 
   all_data = []
-  pool = multiprocessing.Pool(24)
-  for d in pool.map(load_segment, logs):
-    all_data += d
+  with multiprocessing.Pool(24) as pool:
+    for d in pool.map(load_segment, logs):
+      all_data += d
 
   if not can:
     all_data = [d for d in all_data if d.which() not in ['can', 'sendcan']]
@@ -80,17 +91,19 @@ def juggle_route(route_name, segment_number, qlog, can, layout):
   save_log(tempfile.name, all_data, compress=False)
   del all_data
 
-  juggle_file(tempfile.name, dbc, layout)
+  start_juggler(tempfile.name, dbc, layout)
 
 def get_arg_parser():
-  parser = argparse.ArgumentParser(description="PlotJuggler plugin for reading rlogs",
+  parser = argparse.ArgumentParser(description="PlotJuggler plugin for reading openpilot logs",
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
   parser.add_argument("--qlog", action="store_true", help="Use qlogs")
   parser.add_argument("--can", action="store_true", help="Parse CAN data")
+  parser.add_argument("--stream", action="store_true", help="Start PlotJuggler without a route to stream data using Cereal")
   parser.add_argument("--layout", nargs='?', help="Run PlotJuggler with a pre-defined layout")
-  parser.add_argument("route_name", nargs='?', help="The name of the route that will be plotted.")
-  parser.add_argument("segment_number", type=int, nargs='?', help="The index of the segment that will be plotted")
+  parser.add_argument("route_name", nargs='?', help="The route name to plot (cabana share URL accepted)")
+  parser.add_argument("segment_number", type=int, nargs='?', help="The index of the segment to plot")
+  parser.add_argument("segment_count", type=int, nargs='?', help="The number of segments to plot", default=1)
   return parser
 
 if __name__ == "__main__":
@@ -99,4 +112,8 @@ if __name__ == "__main__":
     arg_parser.print_help()
     sys.exit()
   args = arg_parser.parse_args(sys.argv[1:])
-  juggle_route(args.route_name, args.segment_number, args.qlog, args.can, args.layout)
+
+  if args.stream:
+    start_juggler()
+  else:
+    juggle_route(args.route_name, args.segment_number, args.segment_count, args.qlog, args.can, args.layout)

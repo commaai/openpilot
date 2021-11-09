@@ -1,24 +1,22 @@
 #pragma once
 
-#include <fstream>
-#include <string>
-#include <memory>
-
 #include <eigen3/Eigen/Dense>
+#include <fstream>
+#include <memory>
+#include <string>
 
-#include "messaging.hpp"
-#include "common/params.h"
-#include "common/util.h"
-#include "common/swaglog.h"
-#include "common/timing.h"
+#include "cereal/messaging/messaging.h"
 #include "common/transformations/coordinates.hpp"
 #include "common/transformations/orientation.hpp"
-#include "selfdrive/sensord/sensors/constants.hpp"
+#include "selfdrive/common/params.h"
+#include "selfdrive/common/swaglog.h"
+#include "selfdrive/common/timing.h"
+#include "selfdrive/common/util.h"
 
-#include "models/live_kf.h"
-
+#include "selfdrive/sensord/sensors/constants.h"
 #define VISION_DECIMATION 2
 #define SENSOR_DECIMATION 10
+#include "selfdrive/locationd/models/live_kf.h"
 
 #define POSENET_STD_HIST_HALF 20
 
@@ -30,12 +28,18 @@ public:
 
   void reset_kalman(double current_time = NAN);
   void reset_kalman(double current_time, Eigen::VectorXd init_orient, Eigen::VectorXd init_pos);
+  void finite_check(double current_time = NAN);
+  void time_check(double current_time = NAN);
+  void update_reset_tracker();
+  bool isGpsOK();
 
   kj::ArrayPtr<capnp::byte> get_message_bytes(MessageBuilder& msg_builder, uint64_t logMonoTime,
     bool inputsOK, bool sensorsOK, bool gpsOK);
   void build_live_location(cereal::LiveLocationKalman::Builder& fix);
 
   Eigen::VectorXd get_position_geodetic();
+  Eigen::VectorXd get_state();
+  Eigen::VectorXd get_stdev();
 
   void handle_msg_bytes(const char *data, const size_t size);
   void handle_msg(const cereal::Event::Reader& log);
@@ -54,16 +58,13 @@ private:
   bool calibrated = false;
 
   double car_speed = 0.0;
+  double last_reset_time = NAN;
   std::deque<double> posenet_stds;
 
   std::unique_ptr<LocalCoord> converter;
 
   int64_t unix_timestamp_millis = 0;
   double last_gps_fix = 0;
+  double reset_tracker = 0.0;
   bool device_fell = false;
-
-  int gyro_counter = 0;
-  int acc_counter = 0;
-  int speed_counter = 0;
-  int cam_counter = 0;
 };

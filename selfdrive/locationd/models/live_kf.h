@@ -29,6 +29,7 @@ public:
 
   Eigen::VectorXd get_x();
   MatrixXdr get_P();
+  double get_filter_time();
   std::vector<MatrixXdr> get_R(int kind, int n);
 
   std::optional<Estimate> predict_and_observe(double t, int kind, std::vector<Eigen::VectorXd> meas, std::vector<MatrixXdr> R = {});
