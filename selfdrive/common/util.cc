@@ -209,6 +209,22 @@ std::string dir_name(std::string const &path) {
   return path.substr(0, pos);
 }
 
+std::string check_output(const std::string& command) {
+  char buffer[128];
+  std::string result;
+  std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(command.c_str(), "r"), pclose);
+
+  if (!pipe) {
+    return "";
+  }
+
+  while (fgets(buffer, std::size(buffer), pipe.get()) != nullptr) {
+    result += std::string(buffer);
+  }
+
+  return result;
+}
+
 struct tm get_time() {
   time_t rawtime;
   time(&rawtime);
