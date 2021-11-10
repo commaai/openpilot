@@ -202,6 +202,7 @@ selfdrive/common/util.h
 selfdrive/common/queue.h
 selfdrive/common/clutil.cc
 selfdrive/common/clutil.h
+selfdrive/common/parameters.h
 selfdrive/common/params.h
 selfdrive/common/params.cc
 selfdrive/common/watchdog.cc

@@ -4,8 +4,8 @@
 #include <sys/file.h>
 
 #include <csignal>
-#include <unordered_map>
 
+#include "selfdrive/common/parameters.h"
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
 #include "selfdrive/hardware/hw.h"
@@ -82,92 +82,6 @@ private:
   int fd_ = -1;
 };
 
-std::unordered_map<std::string, uint32_t> keys = {
-    {"AccessToken", CLEAR_ON_MANAGER_START | DONT_LOG},
-    {"AthenadPid", PERSISTENT},
-    {"BootedOnroad", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_OFF},
-    {"CalibrationParams", PERSISTENT},
-    {"CarBatteryCapacity", PERSISTENT},
-    {"CarParams", CLEAR_ON_MANAGER_START | CLEAR_ON_PANDA_DISCONNECT | CLEAR_ON_IGNITION_ON},
-    {"CarParamsCache", CLEAR_ON_MANAGER_START | CLEAR_ON_PANDA_DISCONNECT},
-    {"CarVin", CLEAR_ON_MANAGER_START | CLEAR_ON_PANDA_DISCONNECT | CLEAR_ON_IGNITION_ON},
-    {"CommunityFeaturesToggle", PERSISTENT},
-    {"CompletedTrainingVersion", PERSISTENT},
-    {"ControlsReady", CLEAR_ON_MANAGER_START | CLEAR_ON_PANDA_DISCONNECT | CLEAR_ON_IGNITION_ON},
-    {"CurrentRoute", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_ON},
-    {"DisablePowerDown", PERSISTENT},
-    {"DisableRadar_Allow", PERSISTENT},
-    {"DisableRadar", PERSISTENT}, // WARNING: THIS DISABLES AEB
-    {"DisableUpdates", PERSISTENT},
-    {"DongleId", PERSISTENT},
-    {"DoUninstall", CLEAR_ON_MANAGER_START},
-    {"EnableWideCamera", CLEAR_ON_MANAGER_START},
-    {"EndToEndToggle", PERSISTENT},
-    {"ForcePowerDown", CLEAR_ON_MANAGER_START},
-    {"GitBranch", PERSISTENT},
-    {"GitCommit", PERSISTENT},
-    {"GitDiff", PERSISTENT},
-    {"GithubSshKeys", PERSISTENT},
-    {"GithubUsername", PERSISTENT},
-    {"GitRemote", PERSISTENT},
-    {"GsmApn", PERSISTENT},
-    {"GsmRoaming", PERSISTENT},
-    {"HardwareSerial", PERSISTENT},
-    {"HasAcceptedTerms", PERSISTENT},
-    {"HasPrime", PERSISTENT},
-    {"IMEI", PERSISTENT},
-    {"InstallDate", PERSISTENT},
-    {"IsDriverViewEnabled", CLEAR_ON_MANAGER_START},
-    {"IsLdwEnabled", PERSISTENT},
-    {"IsMetric", PERSISTENT},
-    {"IsOffroad", CLEAR_ON_MANAGER_START},
-    {"IsOnroad", PERSISTENT},
-    {"IsRHD", PERSISTENT},
-    {"IsTakingSnapshot", CLEAR_ON_MANAGER_START},
-    {"IsUpdateAvailable", CLEAR_ON_MANAGER_START},
-    {"JoystickDebugMode", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_OFF},
-    {"LastAthenaPingTime", CLEAR_ON_MANAGER_START},
-    {"LastGPSPosition", PERSISTENT},
-    {"LastUpdateException", PERSISTENT},
-    {"LastUpdateTime", PERSISTENT},
-    {"LiveParameters", PERSISTENT},
-    {"NavDestination", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_OFF},
-    {"NavSettingTime24h", PERSISTENT},
-    {"OpenpilotEnabledToggle", PERSISTENT},
-    {"PandaHeartbeatLost", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_OFF},
-    {"Passive", PERSISTENT},
-    {"PrimeRedirected", PERSISTENT},
-    {"RecordFront", PERSISTENT},
-    {"RecordFrontLock", PERSISTENT},  // for the internal fleet
-    {"ReleaseNotes", PERSISTENT},
-    {"ShouldDoUpdate", CLEAR_ON_MANAGER_START},
-    {"SnoozeUpdate", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_OFF},
-    {"SshEnabled", PERSISTENT},
-    {"SubscriberInfo", PERSISTENT},
-    {"TermsVersion", PERSISTENT},
-    {"Timezone", PERSISTENT},
-    {"TrainingVersion", PERSISTENT},
-    {"UpdateAvailable", CLEAR_ON_MANAGER_START},
-    {"UpdateFailedCount", CLEAR_ON_MANAGER_START},
-    {"UploadRaw", PERSISTENT},
-    {"Version", PERSISTENT},
-    {"VisionRadarToggle", PERSISTENT},
-    {"ApiCache_Device", PERSISTENT},
-    {"ApiCache_DriveStats", PERSISTENT},
-    {"ApiCache_NavDestinations", PERSISTENT},
-    {"ApiCache_Owner", PERSISTENT},
-    {"Offroad_ChargeDisabled", CLEAR_ON_MANAGER_START | CLEAR_ON_PANDA_DISCONNECT},
-    {"Offroad_ConnectivityNeeded", CLEAR_ON_MANAGER_START},
-    {"Offroad_ConnectivityNeededPrompt", CLEAR_ON_MANAGER_START},
-    {"Offroad_InvalidTime", CLEAR_ON_MANAGER_START},
-    {"Offroad_IsTakingSnapshot", CLEAR_ON_MANAGER_START},
-    {"Offroad_NeosUpdate", CLEAR_ON_MANAGER_START},
-    {"Offroad_StorageMissing", CLEAR_ON_MANAGER_START},
-    {"Offroad_TemperatureTooHigh", CLEAR_ON_MANAGER_START},
-    {"Offroad_UnofficialHardware", CLEAR_ON_MANAGER_START},
-    {"Offroad_UpdateFailed", CLEAR_ON_MANAGER_START},
-};
-
 } // namespace
 
 Params::Params(const std::string &path) {
@@ -176,11 +90,11 @@ Params::Params(const std::string &path) {
 }
 
 bool Params::checkKey(const std::string &key) {
-  return keys.find(key) != keys.end();
+  return parameters.find(key) != parameters.end();
 }
 
 ParamKeyType Params::getKeyType(const std::string &key) {
-  return static_cast<ParamKeyType>(keys[key]);
+  return static_cast<ParamKeyType>(parameters.at(key));
 }
 
 int Params::put(const char* key, const char* value, size_t value_size) {
@@ -261,7 +175,7 @@ void Params::clearAll(ParamKeyType key_type) {
   FileLock file_lock(params_path + "/.lock");
 
   std::string path;
-  for (auto &[key, type] : keys) {
+  for (auto &[key, type] : parameters) {
     if (type & key_type) {
       unlink(getParamPath(key).c_str());
     }
