@@ -5,7 +5,13 @@
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/loggerd/logger.h"
 
+
 static kj::Array<capnp::word> build_boot_log() {
+  std::vector<std::string> bootlog_commands;
+  if (Hardware::TICI()) {
+    bootlog_commands.push_back("journalctl");
+  }
+
   MessageBuilder msg;
   auto boot = msg.initEvent().initBoot();
 
@@ -28,6 +34,20 @@ static kj::Array<capnp::word> build_boot_log() {
         LOGE("%s: found '%s'", kv.first.c_str(), k.c_str());
       }
     }
+  }
+
+  // Gather output of commands
+  i = 0;
+  auto commands = boot.initCommands().initEntries(bootlog_commands.size());
+  for (auto &command : bootlog_commands) {
+    auto lentry = commands[i];
+
+    lentry.setKey(command);
+
+    const std::string result = util::check_output(command);
+    lentry.setValue(capnp::Data::Reader((const kj::byte*)result.data(), result.size()));
+
+    i++;
   }
 
   boot.setLaunchLog(util::read_file("/tmp/launch_log"));
