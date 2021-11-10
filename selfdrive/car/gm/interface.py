@@ -92,9 +92,9 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate == CAR.ACADIA or candidate == CAR.ACADIA_NR:
       ret.minEnableSpeed = -1.  # engage speed is decided by pcm
-      ret.mass = 3956. * CV.LB_TO_KG + STD_CARGO_KG # from vin decoder
-      ret.wheelbase = 2.86 # Confirmed from vin decoder
-      ret.steerRatio = 16.5  # end to end is 13.46 - seems to be undocumented, using JYoung value
+      ret.mass = 4353. * CV.LB_TO_KG + STD_CARGO_KG
+      ret.wheelbase = 2.86
+      ret.steerRatio = 14.4  # end to end is 13.46
       ret.steerRatioRear = 0.
       ret.centerToFront = ret.wheelbase * 0.4
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.5], [0.1]] # using JYoung overrides
