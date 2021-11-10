@@ -5,7 +5,7 @@
 
 namespace {
 
-const static std::unordered_map<std::string, uint32_t> parameters = {
+const std::unordered_map<std::string, uint32_t> parameters = {
   {"AccessToken", CLEAR_ON_MANAGER_START | DONT_LOG},
   {"AthenadPid", PERSISTENT},
   {"BootedOnroad", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_OFF},
