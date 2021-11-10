@@ -4,6 +4,7 @@ void setMainWindow(QWidget *w) {
   const QSize sz = QGuiApplication::primaryScreen()->size();
   if (Hardware::PC() && sz.width() <= 1920 && sz.height() <= 1080) {
     w->setMinimumSize(QSize(640, 480)); // allow resize smaller than fullscreen
+    w->setMaximumSize(QSize(2160, 1080));
     w->resize(sz);
   } else {
     const bool wide = (sz.width() >= WIDE_WIDTH) ^ (getenv("INVERT_WIDTH") != NULL);
