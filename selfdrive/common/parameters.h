@@ -4,6 +4,7 @@
 #include "selfdrive/common/params.h"
 
 namespace {
+
 const static std::unordered_map<std::string, uint32_t> parameters = {
   {"AccessToken", CLEAR_ON_MANAGER_START | DONT_LOG},
   {"AthenadPid", PERSISTENT},
@@ -89,4 +90,5 @@ const static std::unordered_map<std::string, uint32_t> parameters = {
   {"Offroad_UnofficialHardware", CLEAR_ON_MANAGER_START},
   {"Offroad_UpdateFailed", CLEAR_ON_MANAGER_START},
 };
-}
+
+} // namespace
