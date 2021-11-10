@@ -174,7 +174,7 @@ static void update_state(UIState *s) {
     float max_gain = Hardware::EON() ? 1.0: 10.0;
     float max_ev = max_lines * max_gain;
 
-    if (Hardware::TICI) {
+    if (Hardware::TICI()) {
       max_ev /= 6;
     }
 
