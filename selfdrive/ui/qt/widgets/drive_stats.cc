@@ -9,8 +9,6 @@
 #include "selfdrive/ui/qt/request_repeater.h"
 #include "selfdrive/ui/qt/util.h"
 
-const double MILE_TO_KM = 1.60934;
-
 static QLabel* newLabel(const QString& text, const QString &type) {
   QLabel* label = new QLabel(text);
   label->setProperty("type", type);

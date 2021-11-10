@@ -63,8 +63,8 @@ COPY Pipfile Pipfile.lock /tmp/
 RUN pyenv install 3.8.10 && \
     pyenv global 3.8.10 && \
     pyenv rehash && \
-    pip install --no-cache-dir --upgrade pip==20.1.1 && \
-    pip install --no-cache-dir pipenv==2020.8.13 && \
+    pip install --no-cache-dir --upgrade pip==21.3.1 && \
+    pip install --no-cache-dir pipenv==2021.5.29 && \
     cd /tmp && \
     pipenv install --system --deploy --dev --clear && \
     pip uninstall -y pipenv

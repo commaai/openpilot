@@ -335,7 +335,6 @@ void Localizer::handle_cam_odo(double current_time, const cereal::CameraOdometry
   rot_calib_std *= 10.0;
   MatrixXdr rot_device_cov = rotate_std(this->device_from_calib, rot_calib_std).array().square().matrix().asDiagonal();
   MatrixXdr trans_device_cov = rotate_std(this->device_from_calib, trans_calib_std).array().square().matrix().asDiagonal();
-  
   this->kf->predict_and_observe(current_time, OBSERVATION_CAMERA_ODO_ROTATION,
     { rot_device }, { rot_device_cov });
   this->kf->predict_and_observe(current_time, OBSERVATION_CAMERA_ODO_TRANSLATION,
