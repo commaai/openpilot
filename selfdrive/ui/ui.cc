@@ -228,7 +228,9 @@ QUIState::QUIState(QObject *parent) : QObject(parent) {
     "pandaStates", "carParams", "driverMonitoringState", "sensorEvents", "carState", "liveLocationKalman",
   });
 
-  ui_state.wide_camera = Hardware::TICI() ? Params().getBool("EnableWideCamera") : false;
+  Params params;
+  ui_state.wide_camera = Hardware::TICI() ? params.getBool("EnableWideCamera") : false;
+  ui_state.has_prime = params.getBool("HasPrime");
 
   // update timer
   timer = new QTimer(this);
