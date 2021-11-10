@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from cereal import car
 from selfdrive.config import Conversions as CV
-from selfdrive.car.toyota.tunes import long_tunes
+from selfdrive.car.toyota.tunes import long_tunes, lat_tunes
 from selfdrive.car.toyota.values import Ecu, CAR, TSS2_CAR, NO_DSU_CAR, MIN_ACC_SPEED, CarControllerParams
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
@@ -41,15 +41,7 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.6371   # hand-tune
       ret.mass = 3045. * CV.LB_TO_KG + STD_CARGO_KG
 
-      ret.lateralTuning.init('indi')
-      ret.lateralTuning.indi.innerLoopGainBP = [0.]
-      ret.lateralTuning.indi.innerLoopGainV = [4.0]
-      ret.lateralTuning.indi.outerLoopGainBP = [0.]
-      ret.lateralTuning.indi.outerLoopGainV = [3.0]
-      ret.lateralTuning.indi.timeConstantBP = [0.]
-      ret.lateralTuning.indi.timeConstantV = [1.0]
-      ret.lateralTuning.indi.actuatorEffectivenessBP = [0.]
-      ret.lateralTuning.indi.actuatorEffectivenessV = [1.0]
+      ret.lateralTuning = lat_tunes['PRIUS_INDI']
       ret.steerActuatorDelay = 0.3
 
     elif candidate in [CAR.RAV4, CAR.RAV4H]:
@@ -59,17 +51,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 16.88   # 14.5 is spec end-to-end
       tire_stiffness_factor = 0.5533
       ret.mass = 3650. * CV.LB_TO_KG + STD_CARGO_KG  # mean between normal and hybrid
-      ret.lateralTuning.init('lqr')
-
-      ret.lateralTuning.lqr.scale = 1500.0
-      ret.lateralTuning.lqr.ki = 0.05
-
-      ret.lateralTuning.lqr.a = [0., 1., -0.22619643, 1.21822268]
-      ret.lateralTuning.lqr.b = [-1.92006585e-04, 3.95603032e-05]
-      ret.lateralTuning.lqr.c = [1., 0.]
-      ret.lateralTuning.lqr.k = [-110.73572306, 451.22718255]
-      ret.lateralTuning.lqr.l = [0.3233671, 0.3185757]
-      ret.lateralTuning.lqr.dcGain = 0.002237852961363602
+      ret.lateralTuning = lat_tunes['RAV4_LQR']
 
     elif candidate == CAR.COROLLA:
       stop_and_go = False
