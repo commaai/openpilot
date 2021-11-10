@@ -108,7 +108,7 @@ class Alert:
                alert_text_2: str,
                alert_status: log.ControlsState.AlertStatus,
                alert_size: log.ControlsState.AlertSize,
-               alert_priority: Priority,
+               priority: Priority,
                visual_alert: car.CarControl.HUDControl.VisualAlert,
                audible_alert: car.CarControl.HUDControl.AudibleAlert,
                duration_sound: float,
@@ -121,7 +121,7 @@ class Alert:
     self.alert_text_2 = alert_text_2
     self.alert_status = alert_status
     self.alert_size = alert_size
-    self.alert_priority = alert_priority
+    self.priority = priority
     self.visual_alert = visual_alert
     self.audible_alert = audible_alert
 
@@ -132,15 +132,14 @@ class Alert:
     self.alert_rate = alert_rate
     self.creation_delay = creation_delay
 
-    self.start_time = 0.
     self.alert_type = ""
     self.event_type = None
 
   def __str__(self) -> str:
-    return f"{self.alert_text_1}/{self.alert_text_2} {self.alert_priority} {self.visual_alert} {self.audible_alert}"
+    return f"{self.alert_text_1}/{self.alert_text_2} {self.priority} {self.visual_alert} {self.audible_alert}"
 
   def __gt__(self, alert2) -> bool:
-    return self.alert_priority > alert2.alert_priority
+    return self.priority > alert2.priority
 
 
 class NoEntryAlert(Alert):
