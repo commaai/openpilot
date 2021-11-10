@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from cereal import car
 from selfdrive.config import Conversions as CV
-from selfdrive.car.toyota.tunes import long_tunes, lat_tunes
+from selfdrive.car.toyota.tunes import set_long_tune, set_lat_tune
 from selfdrive.car.toyota.values import Ecu, CAR, TSS2_CAR, NO_DSU_CAR, MIN_ACC_SPEED, CarControllerParams
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
@@ -29,247 +29,210 @@ class CarInterface(CarInterfaceBase):
 
     ret.stoppingControl = False  # Toyota starts braking more when it thinks you want to stop
 
-    if candidate not in [CAR.PRIUS, CAR.RAV4, CAR.RAV4H]:  # These cars use LQR/INDI
-      ret.lateralTuning.init('pid')
-      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
-
     if candidate == CAR.PRIUS:
       stop_and_go = True
-      ret.safetyConfigs[0].safetyParam = 66  # see conversion factor for STEER_TORQUE_EPS in dbc file
       ret.wheelbase = 2.70
       ret.steerRatio = 15.74   # unknown end-to-end spec
       tire_stiffness_factor = 0.6371   # hand-tune
       ret.mass = 3045. * CV.LB_TO_KG + STD_CARGO_KG
 
-      ret.lateralTuning = lat_tunes['PRIUS_INDI']
+      set_lat_tune(ret.lateralTuning, 'INDI_PRIUS')
       ret.steerActuatorDelay = 0.3
 
     elif candidate in [CAR.RAV4, CAR.RAV4H]:
       stop_and_go = True if (candidate in CAR.RAV4H) else False
-      ret.safetyConfigs[0].safetyParam = 73
       ret.wheelbase = 2.65
       ret.steerRatio = 16.88   # 14.5 is spec end-to-end
       tire_stiffness_factor = 0.5533
       ret.mass = 3650. * CV.LB_TO_KG + STD_CARGO_KG  # mean between normal and hybrid
-      ret.lateralTuning = lat_tunes['RAV4_LQR']
+      set_lat_tune(ret.lateralTuning, 'LQR_RAV4')
 
     elif candidate == CAR.COROLLA:
       stop_and_go = False
-      ret.safetyConfigs[0].safetyParam = 88
       ret.wheelbase = 2.70
       ret.steerRatio = 18.27
       tire_stiffness_factor = 0.444  # not optimized yet
       ret.mass = 2860. * CV.LB_TO_KG + STD_CARGO_KG  # mean between normal and hybrid
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2], [0.05]]
-      ret.lateralTuning.pid.kf = 0.00003   # full torque for 20 deg at 80mph means 0.00007818594
+      set_lat_tune(ret.lateralTuning, 'PID_A')
 
     elif candidate == CAR.LEXUS_RX:
       stop_and_go = True
-      ret.safetyConfigs[0].safetyParam = 73
       ret.wheelbase = 2.79
       ret.steerRatio = 14.8
       tire_stiffness_factor = 0.5533
       ret.mass = 4387. * CV.LB_TO_KG + STD_CARGO_KG
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.05]]
-      ret.lateralTuning.pid.kf = 0.00006
+      set_lat_tune(ret.lateralTuning, 'PID_B')
+
 
     elif candidate == CAR.LEXUS_RXH:
       stop_and_go = True
-      ret.safetyConfigs[0].safetyParam = 73
       ret.wheelbase = 2.79
       ret.steerRatio = 16.  # 14.8 is spec end-to-end
       tire_stiffness_factor = 0.444  # not optimized yet
       ret.mass = 4481. * CV.LB_TO_KG + STD_CARGO_KG  # mean between min and max
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.1]]
-      ret.lateralTuning.pid.kf = 0.00006   # full torque for 10 deg at 80mph means 0.00007818594
+      set_lat_tune(ret.lateralTuning, 'PID_C')
 
     elif candidate == CAR.LEXUS_RX_TSS2:
       stop_and_go = True
-      ret.safetyConfigs[0].safetyParam = 73
       ret.wheelbase = 2.79
       ret.steerRatio = 14.8
       tire_stiffness_factor = 0.5533  # not optimized yet
       ret.mass = 4387. * CV.LB_TO_KG + STD_CARGO_KG
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.1]]
-      ret.lateralTuning.pid.kf = 0.00007818594
+      set_lat_tune(ret.lateralTuning, 'PID_D')
 
     elif candidate == CAR.LEXUS_RXH_TSS2:
       stop_and_go = True
-      ret.safetyConfigs[0].safetyParam = 73
       ret.wheelbase = 2.79
       ret.steerRatio = 16.0  # 14.8 is spec end-to-end
       tire_stiffness_factor = 0.444  # not optimized yet
       ret.mass = 4481.0 * CV.LB_TO_KG + STD_CARGO_KG  # mean between min and max
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.15]]
-      ret.lateralTuning.pid.kf = 0.00007818594
+      set_lat_tune(ret.lateralTuning, 'PID_E')
 
     elif candidate in [CAR.CHR, CAR.CHRH]:
       stop_and_go = True
-      ret.safetyConfigs[0].safetyParam = 73
       ret.wheelbase = 2.63906
       ret.steerRatio = 13.6
       tire_stiffness_factor = 0.7933
       ret.mass = 3300. * CV.LB_TO_KG + STD_CARGO_KG
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.723], [0.0428]]
-      ret.lateralTuning.pid.kf = 0.00006
+      set_lat_tune(ret.lateralTuning, 'PID_F')
 
     elif candidate in [CAR.CAMRY, CAR.CAMRYH, CAR.CAMRY_TSS2, CAR.CAMRYH_TSS2]:
       stop_and_go = True
-      ret.safetyConfigs[0].safetyParam = 73
       ret.wheelbase = 2.82448
       ret.steerRatio = 13.7
       tire_stiffness_factor = 0.7933
       ret.mass = 3400. * CV.LB_TO_KG + STD_CARGO_KG  # mean between normal and hybrid
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.1]]
-      ret.lateralTuning.pid.kf = 0.00006
+      set_lat_tune(ret.lateralTuning, 'PID_C')
 
     elif candidate in [CAR.HIGHLANDER_TSS2, CAR.HIGHLANDERH_TSS2]:
       stop_and_go = True
-      ret.safetyConfigs[0].safetyParam = 73
       ret.wheelbase = 2.84988  # 112.2 in = 2.84988 m
       ret.steerRatio = 16.0
       tire_stiffness_factor = 0.8
       ret.mass = 4700. * CV.LB_TO_KG + STD_CARGO_KG  # 4260 + 4-5 people
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.18], [0.015]]  # community tuning
-      ret.lateralTuning.pid.kf = 0.00012  # community tuning
+      set_lat_tune(ret.lateralTuning, 'PID_F')
 
     elif candidate in [CAR.HIGHLANDER, CAR.HIGHLANDERH]:
       stop_and_go = True
-      ret.safetyConfigs[0].safetyParam = 73
       ret.wheelbase = 2.78
       ret.steerRatio = 16.0
       tire_stiffness_factor = 0.8
       ret.mass = 4607. * CV.LB_TO_KG + STD_CARGO_KG  # mean between normal and hybrid limited
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.18], [0.015]]  # community tuning
-      ret.lateralTuning.pid.kf = 0.00012  # community tuning
+      set_lat_tune(ret.lateralTuning, 'PID_G')
 
     elif candidate in [CAR.AVALON, CAR.AVALON_2019, CAR.AVALONH_2019]:
       stop_and_go = False
-      ret.safetyConfigs[0].safetyParam = 73
       ret.wheelbase = 2.82
       ret.steerRatio = 14.8  # Found at https://pressroom.toyota.com/releases/2016+avalon+product+specs.download
       tire_stiffness_factor = 0.7983
       ret.mass = 3505. * CV.LB_TO_KG + STD_CARGO_KG  # mean between normal and hybrid
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.17], [0.03]]
-      ret.lateralTuning.pid.kf = 0.00006
+      set_lat_tune(ret.lateralTuning, 'PID_H')
 
     elif candidate in [CAR.RAV4_TSS2, CAR.RAV4H_TSS2]:
       stop_and_go = True
-      ret.safetyConfigs[0].safetyParam = 73
       ret.wheelbase = 2.68986
       ret.steerRatio = 14.3
       tire_stiffness_factor = 0.7933
       ret.mass = 3585. * CV.LB_TO_KG + STD_CARGO_KG  # Average between ICE and Hybrid
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.1]]
-      ret.lateralTuning.pid.kf = 0.00007818594
+      set_lat_tune(ret.lateralTuning, 'PID_D')
 
       # 2019+ Rav4 TSS2 uses two different steering racks and specific tuning seems to be necessary.
       # See https://github.com/commaai/openpilot/pull/21429#issuecomment-873652891
       for fw in car_fw:
         if fw.ecu == "eps" and (fw.fwVersion.startswith(b'\x02') or fw.fwVersion in [b'8965B42181\x00\x00\x00\x00\x00\x00']):
-          ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.15], [0.05]]
-          ret.lateralTuning.pid.kf = 0.00004
+          set_lat_tune(ret.lateralTuning, 'PID_I')
           break
 
     elif candidate in [CAR.COROLLA_TSS2, CAR.COROLLAH_TSS2]:
       stop_and_go = True
-      ret.safetyConfigs[0].safetyParam = 73
       ret.wheelbase = 2.67  # Average between 2.70 for sedan and 2.64 for hatchback
       ret.steerRatio = 13.9
       tire_stiffness_factor = 0.444  # not optimized yet
       ret.mass = 3060. * CV.LB_TO_KG + STD_CARGO_KG
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.1]]
-      ret.lateralTuning.pid.kf = 0.00007818594
+      set_lat_tune(ret.lateralTuning, 'PID_D')
 
     elif candidate in [CAR.LEXUS_ES_TSS2, CAR.LEXUS_ESH_TSS2]:
       stop_and_go = True
-      ret.safetyConfigs[0].safetyParam = 73
       ret.wheelbase = 2.8702
       ret.steerRatio = 16.0  # not optimized
       tire_stiffness_factor = 0.444  # not optimized yet
       ret.mass = 3704. * CV.LB_TO_KG + STD_CARGO_KG
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.1]]
-      ret.lateralTuning.pid.kf = 0.00007818594
+      set_lat_tune(ret.lateralTuning, 'PID_D')
 
     elif candidate == CAR.LEXUS_ESH:
       stop_and_go = True
-      ret.safetyConfigs[0].safetyParam = 73
       ret.wheelbase = 2.8190
       ret.steerRatio = 16.06
       tire_stiffness_factor = 0.444  # not optimized yet
       ret.mass = 3682. * CV.LB_TO_KG + STD_CARGO_KG
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.1]]
-      ret.lateralTuning.pid.kf = 0.00007818594
+      set_lat_tune(ret.lateralTuning, 'PID_D')
 
     elif candidate == CAR.SIENNA:
       stop_and_go = True
-      ret.safetyConfigs[0].safetyParam = 73
       ret.wheelbase = 3.03
       ret.steerRatio = 15.5
       tire_stiffness_factor = 0.444
       ret.mass = 4590. * CV.LB_TO_KG + STD_CARGO_KG
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.19], [0.02]]
-      ret.lateralTuning.pid.kf = 0.00007818594
+      set_lat_tune(ret.lateralTuning, 'PID_J')
 
     elif candidate == CAR.LEXUS_IS:
       stop_and_go = False
-      ret.safetyConfigs[0].safetyParam = 77
       ret.wheelbase = 2.79908
       ret.steerRatio = 13.3
       tire_stiffness_factor = 0.444
       ret.mass = 3736.8 * CV.LB_TO_KG + STD_CARGO_KG
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.3], [0.05]]
-      ret.lateralTuning.pid.kf = 0.00006
+      set_lat_tune(ret.lateralTuning, 'PID_L')
 
     elif candidate == CAR.LEXUS_CTH:
       stop_and_go = True
-      ret.safetyConfigs[0].safetyParam = 100
       ret.wheelbase = 2.60
       ret.steerRatio = 18.6
       tire_stiffness_factor = 0.517
       ret.mass = 3108 * CV.LB_TO_KG + STD_CARGO_KG  # mean between min and max
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.3], [0.05]]
-      ret.lateralTuning.pid.kf = 0.00007
+      set_lat_tune(ret.lateralTuning, 'PID_M')
 
     elif candidate in [CAR.LEXUS_NXH, CAR.LEXUS_NX, CAR.LEXUS_NX_TSS2]:
       stop_and_go = True
-      ret.safetyConfigs[0].safetyParam = 73
       ret.wheelbase = 2.66
       ret.steerRatio = 14.7
       tire_stiffness_factor = 0.444  # not optimized yet
       ret.mass = 4070 * CV.LB_TO_KG + STD_CARGO_KG
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.1]]
-      ret.lateralTuning.pid.kf = 0.00006
+      set_lat_tune(ret.lateralTuning, 'PID_C')
 
     elif candidate == CAR.PRIUS_TSS2:
       stop_and_go = True
-      ret.safetyConfigs[0].safetyParam = 73
       ret.wheelbase = 2.70002  # from toyota online sepc.
       ret.steerRatio = 13.4   # True steerRation from older prius
       tire_stiffness_factor = 0.6371   # hand-tune
       ret.mass = 3115. * CV.LB_TO_KG + STD_CARGO_KG
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.35], [0.15]]
-      ret.lateralTuning.pid.kf = 0.00007818594
+      set_lat_tune(ret.lateralTuning, 'PID_N')
 
     elif candidate == CAR.MIRAI:
       stop_and_go = True
-      ret.safetyConfigs[0].safetyParam = 73
       ret.wheelbase = 2.91
       ret.steerRatio = 14.8
       tire_stiffness_factor = 0.8
       ret.mass = 4300. * CV.LB_TO_KG + STD_CARGO_KG
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.1]]
-      ret.lateralTuning.pid.kf = 0.00006
+      set_lat_tune(ret.lateralTuning, 'PID_C')
 
     elif candidate == CAR.ALPHARD_TSS2:
       stop_and_go = True
-      ret.safetyConfigs[0].safetyParam = 73
       ret.wheelbase = 3.00
       ret.steerRatio = 14.2
       tire_stiffness_factor = 0.444
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.19], [0.02]]
       ret.mass = 4305. * CV.LB_TO_KG + STD_CARGO_KG
-      ret.lateralTuning.pid.kf = 0.00007818594
+      set_lat_tune(ret.lateralTuning, 'PID_J')
+
+    if candidate in [CAR.LEXUS_CTH,]:
+      ret.safetyConfigs[0].safetyParam = 100
+    elif candidate in [CAR.LEXUS_IS,]:
+      ret.safetyConfigs[0].safetyParam = 77
+    elif candidate in [CAR.COROLLA,]:
+      ret.safetyConfigs[0].safetyParam = 88
+    elif candidate in [CAR.PRIUS,]:
+      ret.safetyConfigs[0].safetyParam = 66  # see conversion factor for STEER_TORQUE_EPS in dbc file
+    else:
+      ret.safetyConfigs[0].safetyParam = 73
 
     ret.steerRateCost = 1.
     ret.centerToFront = ret.wheelbase * 0.44
@@ -302,13 +265,13 @@ class CarInterface(CarInterfaceBase):
     ret.communityFeature = ret.enableGasInterceptor or ret.enableDsu or smartDsu
 
     if ret.enableGasInterceptor:
-      ret.longitudinalTuning = long_tunes['pedal']
+      set_long_tune(ret.longitudinalTuning, 'PEDAL')
     elif candidate in [CAR.COROLLA_TSS2, CAR.COROLLAH_TSS2, CAR.RAV4_TSS2, CAR.RAV4H_TSS2, CAR.LEXUS_NX_TSS2]:
-      ret.longitudinalTuning = long_tunes['TSS2']
+      set_long_tune(ret.longitudinalTuning, 'TSS2')
       ret.stoppingDecelRate = 0.3  # reach stopping target smoothly
       ret.startingAccelRate = 6.0  # release brakes fast
     else:
-      ret.longitudinalTuning = long_tunes['TSSP']
+      set_long_tune(ret.longitudinalTuning, 'TSS')
 
     return ret
 
