@@ -120,6 +120,7 @@ struct LoggerdState {
   // Sync logic for startup
   std::atomic<int> encoders_ready = 0;
   std::atomic<uint32_t> latest_frame_id = 0;
+  std::atomic<uint32_t> start_frame_id = 0;
   bool camera_ready[WideRoadCam + 1] = {};
   bool camera_synced[WideRoadCam + 1] = {};
 };
@@ -138,10 +139,10 @@ bool sync_encoders(LoggerdState *state, CameraType cam_type, uint32_t frame_id) 
     return false;
   } else {
     // Small margin in case one of the encoders already dropped the next frame
-    uint32_t start_frame_id = state->latest_frame_id + 2;
-    bool synced = frame_id >= start_frame_id;
+    state->start_frame_id = state->latest_frame_id + 2;
+    bool synced = frame_id >= state->start_frame_id;
     state->camera_synced[cam_type] = synced;
-    if (!synced) LOGE("camera %d waiting for frame %d, cur %d", cam_type, start_frame_id, frame_id);
+    if (!synced) LOGE("camera %d waiting for frame %d, cur %d", cam_type, (int)state->start_frame_id, frame_id);
     return synced;
   }
 }
@@ -149,7 +150,7 @@ bool sync_encoders(LoggerdState *state, CameraType cam_type, uint32_t frame_id) 
 void encoder_thread(const LogCameraInfo &cam_info) {
   set_thread_name(cam_info.filename);
 
-  int cnt = 0, cur_seg = -1;
+  int cur_seg = -1;
   int encode_idx = 0;
   LoggerHandle *lh = NULL;
   std::vector<Encoder *> encoders;
@@ -187,20 +188,20 @@ void encoder_thread(const LogCameraInfo &cam_info) {
         if (!sync_encoders(&s, cam_info.type, extra.frame_id)) {
           continue;
         }
-      }
 
-      if (cam_info.trigger_rotate && (cnt >= SEGMENT_LENGTH * MAIN_FPS)) {
-        // trigger rotate and wait logger rotated to new segment
-        ++s.waiting_rotate;
-        std::unique_lock lk(s.rotate_lock);
-        s.rotate_cv.wait(lk, [&] { return s.rotate_segment > cur_seg || do_exit; });
+        const int frames_per_seg = SEGMENT_LENGTH * MAIN_FPS;
+        if (extra.frame_id >= (cur_seg * frames_per_seg) + s.start_frame_id) {
+          // trigger rotate and wait logger rotated to new segment
+          ++s.waiting_rotate;
+          std::unique_lock lk(s.rotate_lock);
+          s.rotate_cv.wait(lk, [&] { return s.rotate_segment > cur_seg || do_exit; });
+        }
       }
       if (do_exit) break;
 
       // rotate the encoder if the logger is on a newer segment
       if (s.rotate_segment > cur_seg) {
         cur_seg = s.rotate_segment;
-        cnt = 0;
 
         LOGW("camera %d rotate encoder to %s", cam_info.type, s.segment_path);
         for (auto &e : encoders) {
@@ -247,7 +248,6 @@ void encoder_thread(const LogCameraInfo &cam_info) {
         }
       }
 
-      cnt++;
       encode_idx++;
     }
 
