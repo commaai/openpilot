@@ -1,7 +1,7 @@
 cimport acados_solver_common
 
 cdef extern from "acados_solver_{{ model.name }}.h":
-    ctypedef struct nlp_solver_capsule:
+    ctypedef struct nlp_solver_capsule "{{ model.name }}_solver_capsule":
         pass
 
     nlp_solver_capsule * acados_create_capsule "{{ model.name }}_acados_create_capsule"()

@@ -1,7 +1,3 @@
-# cython: language_level=3
-# cython: profile=True
-# distutils: language = c
-
 # -*- coding: future_fstrings -*-
 #
 # Copyright 2019 Gianluca Frison, Dimitris Kouzoupis, Robin Verschueren,
@@ -73,24 +69,24 @@ cdef extern from "acados_c/ocp_nlp_interface.h":
     ctypedef struct ocp_nlp_solver:
         pass
 
-    int ocp_nlp_cost_model_set_slice(ocp_nlp_config *config, ocp_nlp_dims *dims, ocp_nlp_in *in_,
-        int start_stage, int end_stage, const char *field, void *value, int dim)
     int ocp_nlp_cost_model_set(ocp_nlp_config *config, ocp_nlp_dims *dims, ocp_nlp_in *in_,
         int start_stage, const char *field, void *value)
-    int ocp_nlp_constraints_model_set_slice(ocp_nlp_config *config, ocp_nlp_dims *dims, ocp_nlp_in *in_,
-        int start_stage, int end_stage, const char *field, void *value, int dim)
     int ocp_nlp_constraints_model_set(ocp_nlp_config *config, ocp_nlp_dims *dims,
         ocp_nlp_in *in_, int stage, const char *field, void *value)
 
     # out
     void ocp_nlp_out_set(ocp_nlp_config *config, ocp_nlp_dims *dims, ocp_nlp_out *out,
         int stage, const char *field, void *value)
-    void ocp_nlp_out_get_slice(ocp_nlp_config *config, ocp_nlp_dims *dims, ocp_nlp_out *out,
-        int start_stage, int end_stage, const char *field, void *value)
+    void ocp_nlp_out_get(ocp_nlp_config *config, ocp_nlp_dims *dims, ocp_nlp_out *out,
+        int stage, const char *field, void *value)
     void ocp_nlp_get_at_stage(ocp_nlp_config *config, ocp_nlp_dims *dims, ocp_nlp_solver *solver,
         int stage, const char *field, void *value)
     int ocp_nlp_dims_get_from_attr(ocp_nlp_config *config, ocp_nlp_dims *dims, ocp_nlp_out *out,
         int stage, const char *field)
+    void ocp_nlp_constraint_dims_get_from_attr(ocp_nlp_config *config, ocp_nlp_dims *dims, ocp_nlp_out *out,
+        int stage, const char *field, int *dims_out)
+    void ocp_nlp_cost_dims_get_from_attr(ocp_nlp_config *config, ocp_nlp_dims *dims, ocp_nlp_out *out,
+        int stage, const char *field, int *dims_out)
     void ocp_nlp_dynamics_dims_get_from_attr(ocp_nlp_config *config, ocp_nlp_dims *dims, ocp_nlp_out *out,
         int stage, const char *field, int *dims_out)
 
