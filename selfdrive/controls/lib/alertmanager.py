@@ -30,6 +30,7 @@ def set_offroad_alert(alert: str, show_alert: bool, extra_text: Optional[str] = 
 @dataclass
 class AlertEntry:
   alert: Optional[Alert] = None
+  start_frame: int = -1
   end_frame: int = -1
 
 
@@ -53,6 +54,7 @@ class AlertManager:
     for alert in alerts:
       alert_duration = max(alert.duration_sound, alert.duration_hud_alert, alert.duration_text)
       self.activealerts[alert.alert_type].alert = alert
+      self.activealerts[alert.alert_type].start_frame = frame
       self.activealerts[alert.alert_type].end_frame = frame + int(alert_duration / DT_CTRL)
 
   def process_alerts(self, frame: int, clear_event_type=None) -> None:
@@ -64,9 +66,9 @@ class AlertManager:
       if v.alert.event_type == clear_event_type:
         self.activealerts[k].end_frame = -1
 
-      # sort by priority first and then by end_frame
+      # sort by priority first and then by start_frame
       active = self.activealerts[k].end_frame > frame
-      greater = current_alert.alert is None or (v.alert.priority, v.end_frame) > (current_alert.alert.priority, current_alert.end_frame)
+      greater = current_alert.alert is None or (v.alert.priority, v.start_frame) > (current_alert.alert.priority, current_alert.start_frame)
       if active and greater:
         current_alert = v
 
