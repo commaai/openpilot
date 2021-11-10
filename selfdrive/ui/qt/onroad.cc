@@ -163,7 +163,6 @@ void NvgWindow::fillAlertBackground() {
     return 0.375 * cos((millis_since_boot() / 1000) * 2 * M_PI * blink_rate) + 0.625;
   };
 
-  // double t1 = millis_since_boot();
   QPainter p(this);
 
   const int h = getAlertHeight(alert.size, height());
@@ -182,8 +181,6 @@ void NvgWindow::fillAlertBackground() {
   p.setCompositionMode(QPainter::CompositionMode_DestinationOver);
   p.setBrush(QBrush(g));
   p.fillRect(r, g);
-  // double t2 = millis_since_boot();
-  // printf("fillAlertBackground %f\n", t2 - t1);
 }
 
 void NvgWindow::paintGL() {
