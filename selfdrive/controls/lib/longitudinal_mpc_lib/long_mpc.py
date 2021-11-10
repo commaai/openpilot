@@ -11,6 +11,7 @@ from selfdrive.controls.lib.radar_helpers import _LEAD_ACCEL_TAU
 if __name__ == '__main__':  # generating code
   from pyextra.acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
 else:
+  # from pyextra.acados_template import AcadosOcpSolver as AcadosOcpSolverFast
   from selfdrive.controls.lib.longitudinal_mpc_lib.c_generated_code.acados_ocp_solver_pyx import AcadosOcpSolverFast  # pylint: disable=no-name-in-module, import-error
 
 from casadi import SX, vertcat
@@ -199,8 +200,9 @@ class LongitudinalMpc():
     self.a_solution = [0.0 for i in range(N+1)]
     self.j_solution = [0.0 for i in range(N)]
     self.yref = np.zeros((N+1, COST_DIM))
-    self.solver.cost_set_slice(0, N, "yref", self.yref[:N])
-    self.solver.set(N, "yref", self.yref[N][:COST_E_DIM])
+    for i in range(N):
+      self.solver.cost_set(i, "yref", self.yref[i])
+    self.solver.cost_set(N, "yref", self.yref[N][:COST_E_DIM])
     self.x_sol = np.zeros((N+1, X_DIM))
     self.u_sol = np.zeros((N,1))
     self.params = np.zeros((N+1,3))
@@ -221,29 +223,29 @@ class LongitudinalMpc():
 
   def set_weights_for_lead_policy(self):
     W = np.diag([X_EGO_OBSTACLE_COST, X_EGO_COST, V_EGO_COST, A_EGO_COST, J_EGO_COST])
-    Ws = np.tile(W[None], reps=(N,1,1))
-    self.solver.cost_set_slice(0, N, 'W', Ws, api='old')
+    for i in range(N):
+      self.solver.cost_set(i, 'W', W, api='new')
     # Setting the slice without the copy make the array not contiguous,
     # causing issues with the C interface.
     self.solver.cost_set(N, 'W', np.copy(W[:COST_E_DIM, :COST_E_DIM]))
 
     # Set L2 slack cost on lower bound constraints
     Zl = np.array([LIMIT_COST, LIMIT_COST, LIMIT_COST, DANGER_ZONE_COST])
-    Zls = np.tile(Zl[None], reps=(N+1,1,1))
-    self.solver.cost_set_slice(0, N+1, 'Zl', Zls, api='old')
+    for i in range(N):
+      self.solver.cost_set(i, 'Zl', Zl, api='new')
 
   def set_weights_for_xva_policy(self):
     W = np.diag([0., 10., 1., 10., 1.])
-    Ws = np.tile(W[None], reps=(N,1,1))
-    self.solver.cost_set_slice(0, N, 'W', Ws, api='old')
+    for i in range(N):
+      self.solver.cost_set(i, 'W', W, api='new')
     # Setting the slice without the copy make the array not contiguous,
     # causing issues with the C interface.
     self.solver.cost_set(N, 'W', np.copy(W[:COST_E_DIM, :COST_E_DIM]))
 
     # Set L2 slack cost on lower bound constraints
     Zl = np.array([LIMIT_COST, LIMIT_COST, LIMIT_COST, 0.0])
-    Zls = np.tile(Zl[None], reps=(N+1,1,1))
-    self.solver.cost_set_slice(0, N+1, 'Zl', Zls, api='old')
+    for i in range(N):
+      self.solver.cost_set(i, 'Zl', Zl, api='new')
 
   def set_cur_state(self, v, a):
     if abs(self.x0[1] - v) > 1.:
@@ -330,8 +332,9 @@ class LongitudinalMpc():
     self.yref[:,1] = x
     self.yref[:,2] = v
     self.yref[:,3] = a
-    self.solver.cost_set_slice(0, N, "yref", self.yref[:N], api='old')
-    self.solver.set(N, "yref", self.yref[N][:COST_E_DIM])
+    for i in range(N):
+      self.solver.cost_set(i, "yref", self.yref[i], api='new')
+    self.solver.cost_set(N, "yref", self.yref[N][:COST_E_DIM])
     self.accel_limit_arr[:,0] = -10.
     self.accel_limit_arr[:,1] = 10.
     x_obstacle = 1e5*np.ones((N+1))
@@ -342,12 +345,14 @@ class LongitudinalMpc():
 
   def run(self):
     for i in range(N+1):
-      self.solver.set_param(i, self.params[i])
+      self.solver.set(i, 'p', self.params[i])
     self.solver.constraints_set(0, "lbx", self.x0)
     self.solver.constraints_set(0, "ubx", self.x0)
     self.solution_status = self.solver.solve()
-    self.solver.fill_in_slice(0, N+1, 'x', self.x_sol)
-    self.solver.fill_in_slice(0, N, 'u', self.u_sol)
+    for i in range(N+1):
+      self.x_sol[i] = self.solver.get(i, 'x')
+    for i in range(N):
+      self.u_sol[i] = self.solver.get(i, 'u')
 
     self.v_solution = self.x_sol[:,1]
     self.a_solution = self.x_sol[:,2]

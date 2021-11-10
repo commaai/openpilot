@@ -9,6 +9,7 @@ from selfdrive.controls.lib.drive_helpers import T_IDXS
 if __name__ == '__main__':  # generating code
   from pyextra.acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
 else:
+  # from pyextra.acados_template import AcadosOcpSolverFast
   from selfdrive.controls.lib.lateral_mpc_lib.c_generated_code.acados_ocp_solver_pyx import AcadosOcpSolverFast  # pylint: disable=no-name-in-module, import-error
 
 LAT_MPC_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -120,7 +121,8 @@ class LateralMpc():
     self.x_sol = np.zeros((N+1, X_DIM))
     self.u_sol = np.zeros((N, 1))
     self.yref = np.zeros((N+1, 3))
-    self.solver.cost_set_slice(0, N, "yref", self.yref[:N])
+    for i in range(N):
+      self.solver.cost_set(i, "yref", self.yref[i])
     self.solver.cost_set(N, "yref", self.yref[N][:2])
     W = np.eye(3)
     self.Ws = np.tile(W[None], reps=(N,1,1))
@@ -138,7 +140,8 @@ class LateralMpc():
     self.Ws[:,0,0] = path_weight
     self.Ws[:,1,1] = heading_weight
     self.Ws[:,2,2] = steer_rate_weight
-    self.solver.cost_set_slice(0, N, 'W', self.Ws, api='old')
+    for i in range(N):
+      self.solver.cost_set(i, 'W', self.Ws[i], api='new')
     #TODO hacky weights to keep behavior the same
     self.solver.cost_set(N, 'W', (3/20.)*self.Ws[0,:2,:2])
 
@@ -148,12 +151,15 @@ class LateralMpc():
     self.solver.constraints_set(0, "ubx", x0_cp)
     self.yref[:,0] = y_pts
     self.yref[:,1] = heading_pts*(v_ego+5.0)
-    self.solver.cost_set_slice(0, N, "yref", self.yref[:N])
+    for i in range(N):
+      self.solver.cost_set(i, "yref", self.yref[i])
     self.solver.cost_set(N, "yref", self.yref[N][:2])
 
     self.solution_status = self.solver.solve()
-    self.solver.fill_in_slice(0, N+1, 'x', self.x_sol)
-    self.solver.fill_in_slice(0, N, 'u', self.u_sol)
+    for i in range(N+1):
+      self.x_sol[i] = self.solver.get(i, 'x')
+    for i in range(N):
+      self.u_sol[i] = self.solver.get(i, 'u')
     self.cost = self.solver.get_cost()
 
 
