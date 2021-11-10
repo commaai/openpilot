@@ -58,6 +58,7 @@ class CAR:
   EQUINOX_NR = "CHEVROLET EQUINOX NO RADAR"
   TAHOE_NR = "CHEVROLET TAHOE NO RADAR"
   ESCALADE_ESV = "CADILLAC ESCALADE ESV 2016"
+  SILVERADO_NR = "CHEVROLET SILVERADO NO RADAR"
 
 class CruiseButtons:
   INIT = 0
@@ -192,10 +193,14 @@ FINGERPRINTS = {
   {
     309: 1, 848: 8, 849: 8, 850: 8, 851: 8, 852: 8, 853: 8, 854: 3, 1056: 6, 1057: 8, 1058: 8, 1059: 8, 1060: 8, 1061: 8, 1062: 8, 1063: 8, 1064: 8, 1065: 8, 1066: 8, 1067: 8, 1068: 8, 1120: 8, 1121: 8, 1122: 8, 1123: 8, 1124: 8, 1125: 8, 1126: 8, 1127: 8, 1128: 8, 1129: 8, 1130: 8, 1131: 8, 1132: 8, 1133: 8, 1134: 8, 1135: 8, 1136: 8, 1137: 8, 1138: 8, 1139: 8, 1140: 8, 1141: 8, 1142: 8, 1143: 8, 1146: 8, 1147: 8, 1148: 8, 1149: 8, 1150: 8, 1151: 8, 1216: 8, 1217: 8, 1218: 8, 1219: 8, 1220: 8, 1221: 8, 1222: 8, 1223: 8, 1224: 8, 1225: 8, 1226: 8, 1232: 8, 1233: 8, 1234: 8, 1235: 8, 1236: 8, 1237: 8, 1238: 8, 1239: 8, 1240: 8, 1241: 8, 1242: 8, 1787: 8, 1788: 8
   }],
+  CAR.SILVERADO_NR: [
+  {
+    190: 6, 193: 8, 197: 8, 201: 8, 208: 8, 209: 7, 211: 2, 241: 6, 249: 8, 257: 8, 288: 5, 289: 8, 298: 8, 304: 3, 309: 8, 311: 8, 313: 8, 320: 4, 322: 7, 328: 1, 352: 5, 381: 8, 384: 4, 386: 8, 388: 8, 413: 8, 451: 8, 452: 8, 453: 6, 455: 7, 460: 5, 463: 3, 479: 3, 481: 7, 485: 8, 489: 8, 497: 8, 500: 6, 501: 8, 528: 5, 532: 6, 560: 8, 562: 8, 563: 5, 565: 5, 608: 8, 609: 6, 610: 6, 611: 6, 612: 8, 613: 8, 707: 8, 715: 8, 717: 5, 761: 7, 789: 5, 800: 6, 810: 8, 840: 5, 842: 5, 844: 8, 848: 4, 869: 4, 880: 6, 977: 8, 1001: 8, 1011: 6, 1017: 8, 1020: 8, 1033: 7, 1034: 7, 1217: 8, 1221: 5, 1233: 8, 1249: 8, 1259: 8, 1261: 7, 1263: 4, 1265: 8, 1267: 1, 1271: 8, 1280: 4, 1296: 4, 1300: 8, 1930: 7
+   }],
 }
 
 EV_CAR = set([CAR.BOLT_NR, CAR.VOLT, CAR.VOLT_NR])
-NO_ASCM = set([CAR.VOLT_NR, CAR.MALIBU_NR, CAR.ACADIA_NR, CAR.BOLT_NR, CAR.EQUINOX_NR, CAR.TAHOE_NR])
+NO_ASCM = set([CAR.VOLT_NR, CAR.MALIBU_NR, CAR.ACADIA_NR, CAR.BOLT_NR, CAR.EQUINOX_NR, CAR.TAHOE_NR, CAR.SILVERADO_NR])
 
 DBC = {
   CAR.HOLDEN_ASTRA: dbc_dict('gm_global_a_powertrain', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'),
@@ -212,4 +217,5 @@ DBC = {
   CAR.BOLT_NR: dbc_dict('gm_global_a_powertrain', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'),
   CAR.EQUINOX_NR: dbc_dict('gm_global_a_powertrain', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'),
   CAR.TAHOE_NR: dbc_dict('gm_global_a_powertrain', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'),
+  CAR.SILVERADO_NR: dbc_dict('gm_global_a_powertrain', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'),
 }
