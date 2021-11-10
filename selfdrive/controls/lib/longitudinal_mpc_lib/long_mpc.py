@@ -166,6 +166,7 @@ def gen_long_mpc_solver():
   ocp.solver_options.hessian_approx = 'GAUSS_NEWTON'
   ocp.solver_options.integrator_type = 'ERK'
   ocp.solver_options.nlp_solver_type = 'SQP_RTI'
+  ocp.solver_options.qp_solver_cond_N = N//4
 
   # More iterations take too much time and less lead to inaccurate convergence in
   # some situations. Ideally we would run just 1 iteration to ensure fixed runtime.
