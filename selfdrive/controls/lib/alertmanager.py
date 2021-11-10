@@ -1,6 +1,8 @@
 import copy
 import os
 import json
+from collections import defaultdict
+from dataclasses import dataclass
 from typing import List, Dict, Optional
 
 from cereal import car, log
@@ -26,11 +28,17 @@ def set_offroad_alert(alert: str, show_alert: bool, extra_text: Optional[str] = 
     Params().delete(alert)
 
 
+@dataclass
+class AlertEntry:
+  alert: Alert = None
+  end_frame: int = -1
+
+
 class AlertManager:
 
   def __init__(self):
     self.reset()
-    self.activealerts: Dict[str, Tuple[Alert, int]] = {}
+    self.activealerts: Dict[str, AlertEntry] = defaultdict(AlertEntry)
 
   def reset(self) -> None:
     self.alert_type: str = ""
@@ -45,29 +53,34 @@ class AlertManager:
   def add_many(self, frame: int, alerts: List[Alert], enabled: bool = True) -> None:
     for alert in alerts:
       alert_duration = max(alert.duration_sound, alert.duration_hud_alert, alert.duration_text)
-      self.activealerts[alert.alert_type] = (alert, frame + int(alert_duration / DT_CTRL))
+      self.activealerts[alert.alert_type].alert = alert
+      self.activealerts[alert.alert_type].end_frame = frame + int(alert_duration / DT_CTRL)
 
   def process_alerts(self, frame: int, clear_event_type=None) -> None:
-    current_alert = None
-    for k, (alert, end_time) in self.activealerts.items():
-      if alert.event_type == clear_event_type:
-        self.activealerts[k][1] = -1
+    current_alert = AlertEntry()
+    for k, v in self.activealerts.items():
+      if v.alert is None:
+        continue
 
-      # TODO: also sort by time
-      # sort by priority first and then by start_time
-      active = self.activealerts[k][1] > frame
-      if active and (current_alert is None or alert.priority > current_alert.priority):
-        current_alert = alert
+      if v.alert.event_type == clear_event_type:
+        self.activealerts[k].end_frame = -1
+
+      # sort by priority first and then by end_frame
+      active = self.activealerts[k].end_frame > frame
+      greater = current_alert.alert is None or (v.alert.priority, v.end_frame) > (current_alert.alert.priority, current_alert.end_frame)
+      if active and greater:
+        current_alert = v
 
     # clear current alert
     self.reset()
 
-    if current_alert is not None:
-      self.alert_type = current_alert.alert_type
-      self.audible_alert = current_alert.audible_alert
-      self.visual_alert = current_alert.visual_alert
-      self.alert_text_1 = current_alert.alert_text_1
-      self.alert_text_2 = current_alert.alert_text_2
-      self.alert_status = current_alert.alert_status
-      self.alert_size = current_alert.alert_size
-      self.alert_rate = current_alert.alert_rate
+    a = current_alert.alert
+    if a is not None:
+      self.alert_type = a.alert_type
+      self.audible_alert = a.audible_alert
+      self.visual_alert = a.visual_alert
+      self.alert_text_1 = a.alert_text_1
+      self.alert_text_2 = a.alert_text_2
+      self.alert_status = a.alert_status
+      self.alert_size = a.alert_size
+      self.alert_rate = a.alert_rate
