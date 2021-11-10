@@ -30,11 +30,16 @@ class NvgWindow : public CameraViewWidget {
 
 public:
   explicit NvgWindow(VisionStreamType type, QWidget* parent = 0) : CameraViewWidget(type, true, parent) {}
+  void updateAlert(const Alert &a, const QColor &color);
 
 protected:
   void paintGL() override;
   void initializeGL() override;
+  void fillAlertBackground();
+
   double prev_draw_t = 0;
+  QColor alert_bg;
+  Alert alert = {};
 };
 
 // container for all onroad widgets

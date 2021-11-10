@@ -54,8 +54,10 @@ struct Alert {
   QString text1;
   QString text2;
   QString type;
-  cereal::ControlsState::AlertSize size;
+  cereal::ControlsState::AlertSize size = cereal::ControlsState::AlertSize::NONE;
   AudibleAlert sound;
+  float blinking_rate = 0;
+
   bool equal(const Alert &a2) {
     return text1 == a2.text1 && text2 == a2.text2 && type == a2.type;
   }
@@ -65,7 +67,7 @@ struct Alert {
       const cereal::ControlsState::Reader &cs = sm["controlsState"].getControlsState();
       return {cs.getAlertText1().cStr(), cs.getAlertText2().cStr(),
               cs.getAlertType().cStr(), cs.getAlertSize(),
-              cs.getAlertSound()};
+              cs.getAlertSound(), cs.getAlertBlinkingRate()};
     } else if ((sm.frame - started_frame) > 5 * UI_FREQ) {
       const int CONTROLS_TIMEOUT = 5;
       // Handle controls timeout
@@ -78,7 +80,7 @@ struct Alert {
         // car is started, but controls is lagging or died
         return {"TAKE CONTROL IMMEDIATELY", "Controls Unresponsive",
                 "controlsUnresponsive", cereal::ControlsState::AlertSize::FULL,
-                AudibleAlert::CHIME_WARNING_REPEAT};
+                AudibleAlert::CHIME_WARNING_REPEAT, .75};
       }
     }
     return {};
