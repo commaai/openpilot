@@ -131,7 +131,7 @@ void Localizer::build_live_location(cereal::LiveLocationKalman::Builder& fix) {
 
   // write measurements to msg
   init_measurement(fix.initPositionGeodetic(), fix_pos_geo_vec, nans, true);
-  init_measurement(fix.initPositionECEF(), fix_ecef, fix_ecef_std, true);
+  init_measurement(fix.initPositionECEF(), fix_ecef, fix_ecef_std, this->last_gps_fix > 0);
   init_measurement(fix.initVelocityECEF(), vel_ecef, vel_ecef_std, true);
   init_measurement(fix.initVelocityNED(), ned_vel, nans, true);
   init_measurement(fix.initVelocityDevice(), vel_device, vel_device_std, true);
