@@ -155,23 +155,23 @@ class SoftDisableAlert(Alert):
 
 
 class ImmediateDisableAlert(Alert):
-  def __init__(self, alert_text_2, alert_text_1="TAKE CONTROL IMMEDIATELY"):
-    super().__init__(alert_text_1, alert_text_2,
+  def __init__(self, alert_text_2):
+    super().__init__("TAKE CONTROL IMMEDIATELY", alert_text_2,
                      AlertStatus.critical, AlertSize.full,
                      Priority.HIGHEST, VisualAlert.steerRequired,
                      AudibleAlert.chimeWarningRepeatInfinite, 4.),
 
 
 class EngagementAlert(Alert):
-  def __init__(self, audible_alert=True):
+  def __init__(self, audible_alert: car.CarControl.HUDControl.AudibleAlert):
     super().__init__("", "",
                      AlertStatus.normal, AlertSize.none,
                      Priority.MID, VisualAlert.none,
-                     audible_alert, .2),
+                     audible_alert, .02),
 
 
 class NormalPermanentAlert(Alert):
-  def __init__(self, alert_text_1: str, alert_text_2: str, duration: float = 0.2):
+  def __init__(self, alert_text_1: str, alert_text_2: str = "", duration: float = 0.2):
     super().__init__(alert_text_1, alert_text_2,
                      AlertStatus.normal, AlertSize.mid if len(alert_text_2) else AlertSize.small,
                      Priority.LOWER, VisualAlert.none, AudibleAlert.none, duration),
@@ -223,11 +223,8 @@ def wrong_car_mode_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: boo
 def joystick_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> Alert:
   axes = sm['testJoystick'].axes
   gb, steer = list(axes)[:2] if len(axes) else (0., 0.)
-  return Alert(
-    "Joystick Mode",
-    f"Gas: {round(gb * 100.)}%, Steer: {round(steer * 100.)}%",
-    AlertStatus.normal, AlertSize.mid,
-    Priority.LOW, VisualAlert.none, AudibleAlert.none, .1)
+  vals = f"Gas: {round(gb * 100.)}%, Steer: {round(steer * 100.)}%"
+  return NormalPermanentAlert("Joystick Mode", vals)
 
 
 EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, bool], Alert]]]] = {
@@ -239,11 +236,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
 
   EventName.joystickDebug: {
     ET.WARNING: joystick_alert,
-    ET.PERMANENT: Alert(
-      "Joystick Mode",
-      "",
-      AlertStatus.normal, AlertSize.small,
-      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0.1),
+    ET.PERMANENT: NormalPermanentAlert("Joystick Mode"),
   },
 
   EventName.controlsInitializing: {
@@ -572,12 +565,8 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
   },
 
   EventName.outOfSpace: {
-    ET.PERMANENT: Alert(
-      "Out of Storage",
-      "",
-      AlertStatus.normal, AlertSize.small,
-      Priority.LOWER, VisualAlert.none, AudibleAlert.none, .2),
-    ET.NO_ENTRY: NoEntryAlert("Out of Storage Space"),
+    ET.PERMANENT: NormalPermanentAlert("Out of Storage"),
+    ET.NO_ENTRY: NoEntryAlert("Out of Storage"),
   },
 
   EventName.belowEngageSpeed: {
@@ -607,11 +596,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
   },
 
   EventName.overheat: {
-    ET.PERMANENT: Alert(
-      "System Overheated",
-      "",
-      AlertStatus.normal, AlertSize.small,
-      Priority.LOWER, VisualAlert.none, AudibleAlert.none, .2),
+    ET.PERMANENT: NormalPermanentAlert("System Overheated"),
     ET.SOFT_DISABLE: SoftDisableAlert("System Overheated"),
     ET.NO_ENTRY: NoEntryAlert("System Overheated"),
   },
