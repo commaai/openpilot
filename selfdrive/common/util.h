@@ -89,6 +89,8 @@ std::string readlink(const std::string& path);
 bool file_exists(const std::string& fn);
 bool create_directories(const std::string &dir, mode_t mode);
 
+std::string check_output(const std::string& command);
+
 inline void sleep_for(const int milliseconds) {
   std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
 }
