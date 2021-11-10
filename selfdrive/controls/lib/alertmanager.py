@@ -1,7 +1,8 @@
-import os
 import copy
+import os
 import json
-from typing import List, Optional
+from collections import namedtuple
+from typing import List, Dict, Optional
 
 from cereal import car, log
 from common.basedir import BASEDIR
@@ -26,13 +27,16 @@ def set_offroad_alert(alert: str, show_alert: bool, extra_text: Optional[str] = 
     Params().delete(alert)
 
 
+AlertEntry = namedtuple('AlertEntry', ['alert', 'start_time'])
+
+
 class AlertManager:
 
   def __init__(self):
-    self.activealerts: List[Alert] = []
-    self.clear_current_alert()
+    self.reset()
+    self.activealerts: Dict[str, AlertEntry] = {}
 
-  def clear_current_alert(self) -> None:
+  def reset(self) -> None:
     self.alert_type: str = ""
     self.alert_text_1: str = ""
     self.alert_text_2: str = ""
@@ -44,42 +48,32 @@ class AlertManager:
 
   def add_many(self, frame: int, alerts: List[Alert], enabled: bool = True) -> None:
     for alert in alerts:
-      added_alert = copy.copy(alert)
-      added_alert.start_time = frame * DT_CTRL
-
-      # if new alert is higher priority, log it
-      if not len(self.activealerts) or added_alert.alert_priority > self.activealerts[0].alert_priority:
-        cloudlog.event('alert_add', alert_type=added_alert.alert_type, enabled=enabled)
-
-      self.activealerts.append(added_alert)
+      alert_duration = max(alert.duration_sound, alert.duration_hud_alert, alert.duration_text)
+      self.activealerts[alert.alert_type] = (alert, frame + int(alert_duration / DT_CTRL))
 
   def process_alerts(self, frame: int, clear_event_type=None) -> None:
-    cur_time = frame * DT_CTRL
+    current_alert = None
+    for k, (alert, end_time) in self.activealerts.items():
+      if alert.event_type == clear_event_type:
+        self.activealerts[k][1] = -1
 
-    # first get rid of all the expired alerts
-    self.activealerts = [a for a in self.activealerts if a.event_type != clear_event_type and
-                         a.start_time + max(a.duration_sound, a.duration_hud_alert, a.duration_text) > cur_time]
+      # TODO: also sort by time
+      # sort by priority first and then by start_time
+      active = self.activealerts[k][1] > frame
+      if active and (current_alert is None or alert.priority > current_alert.priority):
+        current_alert = alert
 
-    # sort by priority first and then by start_time
-    self.activealerts.sort(key=lambda k: (k.alert_priority, k.start_time), reverse=True)
+    print(current_alert)
 
-    # start with assuming no alerts
-    self.clear_current_alert()
+    # clear current alert
+    self.reset()
 
-    if len(self.activealerts):
-      current_alert = self.activealerts[0]
-
+    if current_alert is not None:
       self.alert_type = current_alert.alert_type
-
-      if current_alert.start_time + current_alert.duration_sound > cur_time:
-        self.audible_alert = current_alert.audible_alert
-
-      if current_alert.start_time + current_alert.duration_hud_alert > cur_time:
-        self.visual_alert = current_alert.visual_alert
-
-      if current_alert.start_time + current_alert.duration_text > cur_time:
-        self.alert_text_1 = current_alert.alert_text_1
-        self.alert_text_2 = current_alert.alert_text_2
-        self.alert_status = current_alert.alert_status
-        self.alert_size = current_alert.alert_size
-        self.alert_rate = current_alert.alert_rate
+      self.audible_alert = current_alert.audible_alert
+      self.visual_alert = current_alert.visual_alert
+      self.alert_text_1 = current_alert.alert_text_1
+      self.alert_text_2 = current_alert.alert_text_2
+      self.alert_status = current_alert.alert_status
+      self.alert_size = current_alert.alert_size
+      self.alert_rate = current_alert.alert_rate
