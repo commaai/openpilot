@@ -143,12 +143,12 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.5
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
-    elif candidate == CAR.TUCSON:
+    elif candidate == CAR.TUCSON_2021:
       ret.lateralTuning.pid.kf = 0.00005
       ret.mass = 3948. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.667
       ret.steerActuatorDelay = 0.12
-      ret.steerRatio = 13.75 * 1.15 # 15% higher at the center seems reasonable
+      ret.steerRatio = 16 * 1.15 # 15% higher at the center seems reasonable
       tire_stiffness_factor = 0.5
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.25], [0.05]]
