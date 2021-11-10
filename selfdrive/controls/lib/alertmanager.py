@@ -52,10 +52,9 @@ class AlertManager:
 
   def add_many(self, frame: int, alerts: List[Alert], enabled: bool = True) -> None:
     for alert in alerts:
-      alert_duration = max(alert.duration_sound, alert.duration_hud_alert, alert.duration_text)
       self.activealerts[alert.alert_type].alert = alert
       self.activealerts[alert.alert_type].start_frame = frame
-      self.activealerts[alert.alert_type].end_frame = frame + int(alert_duration / DT_CTRL)
+      self.activealerts[alert.alert_type].end_frame = frame + int(alert.duration / DT_CTRL)
 
   def process_alerts(self, frame: int, clear_event_type=None) -> None:
     current_alert = AlertEntry()
