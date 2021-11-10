@@ -76,26 +76,11 @@ class CAR:
   ACURA_RDX_3G = "ACURA RDX 2020"
   PILOT = "HONDA PILOT 2017"
   PILOT_2019 = "HONDA PILOT 2019"
+  PASSPORT = "HONDA PASSPORT 2021"
   RIDGELINE = "HONDA RIDGELINE 2017"
   INSIGHT = "HONDA INSIGHT 2019"
   HONDA_E = "HONDA E 2020"
 
-# diag message that in some Nidec cars only appear with 1s freq if VIN query is performed
-DIAG_MSGS = {1600: 5, 1601: 8}
-
-FINGERPRINTS = {
-  CAR.ODYSSEY_CHN: [{
-    57: 3, 145: 8, 316: 8, 342: 6, 344: 8, 380: 8, 398: 3, 399: 7, 401: 8, 404: 4, 411: 5, 420: 8, 422: 8, 423: 2, 426: 8, 432: 7, 450: 8, 464: 8, 490: 8, 506: 8, 507: 1, 512: 6, 513: 6, 597: 8, 610: 8, 611: 8, 612: 8, 617: 8, 660: 8, 661: 4, 773: 7, 780: 8, 804: 8, 808: 8, 829: 5, 862: 8, 884: 7, 892: 8, 923: 2, 929: 8, 1030: 5, 1137: 8, 1302: 8, 1348: 5, 1361: 5, 1365: 5, 1600: 5, 1601: 8, 1639: 8
-  }],
-}
-
-# add DIAG_MSGS to fingerprints
-for c in FINGERPRINTS:
-  for f, _ in enumerate(FINGERPRINTS[c]):
-    for d in DIAG_MSGS:
-      FINGERPRINTS[c][f][d] = DIAG_MSGS[d]
-
-# TODO: Figure out what is relevant
 FW_VERSIONS = {
   CAR.ACCORD: {
     (Ecu.programmedFuelInjection, 0x18da10f1, None): [
@@ -1046,6 +1031,35 @@ FW_VERSIONS = {
       b'57114-TGT-A530\x00\x00',
     ],
   },
+  CAR.PASSPORT: {
+    (Ecu.programmedFuelInjection, 0x18da10f1, None): [
+      b'37805-RLV-B220\x00\x00',
+    ],
+    (Ecu.eps, 0x18da30f1, None): [
+      b'39990-TGS-A230\x00\x00',
+    ],
+    (Ecu.fwdRadar, 0x18dab0f1, None): [
+      b'36161-TGS-A030\x00\x00',
+    ],
+    (Ecu.gateway, 0x18daeff1, None): [
+      b'38897-TG7-A040\x00\x00',
+    ],
+    (Ecu.srs, 0x18da53f1, None): [
+      b'77959-TGS-A010\x00\x00',
+    ],
+    (Ecu.shiftByWire, 0x18da0bf1, None): [
+      b'54008-TG7-A530\x00\x00',
+    ],
+    (Ecu.transmission, 0x18da1ef1, None): [
+      b'28101-5EZ-A600\x00\x00',
+    ],
+    (Ecu.combinationMeter, 0x18da60f1, None): [
+      b'78109-TGS-AT20\x00\x00',
+    ],
+    (Ecu.vsa, 0x18da28f1, None): [
+      b'57114-TGS-A530\x00\x00',
+    ],
+  },
   CAR.ACURA_RDX: {
     (Ecu.vsa, 0x18da28f1, None): [
       b'57114-TX5-A220\x00\x00',
@@ -1284,6 +1298,7 @@ DBC = {
   CAR.ODYSSEY_CHN: dbc_dict('honda_odyssey_extreme_edition_2018_china_can_generated', 'acura_ilx_2016_nidec'),
   CAR.PILOT: dbc_dict('honda_pilot_touring_2017_can_generated', 'acura_ilx_2016_nidec'),
   CAR.PILOT_2019: dbc_dict('honda_pilot_touring_2017_can_generated', 'acura_ilx_2016_nidec'),
+  CAR.PASSPORT: dbc_dict('honda_pilot_touring_2017_can_generated', 'acura_ilx_2016_nidec'),
   CAR.RIDGELINE: dbc_dict('honda_ridgeline_black_edition_2017_can_generated', 'acura_ilx_2016_nidec'),
   CAR.INSIGHT: dbc_dict('honda_insight_ex_2019_can_generated', None),
   CAR.HONDA_E: dbc_dict('acura_rdx_2020_can_generated', None),

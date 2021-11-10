@@ -44,8 +44,8 @@ class States():
 class LiveKalman():
   name = 'live'
 
-  initial_x = np.array([-2.7e6, 4.2e6, 3.8e6,
-                        1, 0, 0, 0,
+  initial_x = np.array([3.88e6, -3.37e6, 3.76e6,
+                        0.42254641, -0.31238054, -0.83602975, -0.15788347,  # NED [0,0,0] -> ECEF Quat
                         0, 0, 0,
                         0, 0, 0,
                         0, 0, 0,
@@ -54,8 +54,8 @@ class LiveKalman():
                         0, 0, 0])
 
   # state covariance
-  initial_P_diag = np.array([1e16, 1e16, 1e16,
-                             10**2, 10**2, 10**2,
+  initial_P_diag = np.array([10**2, 10**2, 10**2,
+                             0.01**2, 0.01**2, 0.01**2,
                              10**2, 10**2, 10**2,
                              1**2, 1**2, 1**2,
                              1**2, 1**2, 1**2,
@@ -98,7 +98,6 @@ class LiveKalman():
     omega = state[States.ANGULAR_VELOCITY, :]
     vroll, vpitch, vyaw = omega
     roll_bias, pitch_bias, yaw_bias = state[States.GYRO_BIAS, :]
-    odo_scale = state[States.ODO_SCALE, :][0, :]
     acceleration = state[States.ACCELERATION, :]
     imu_angles = state[States.IMU_OFFSET, :]
 
@@ -176,10 +175,11 @@ class LiveKalman():
     #
     # Observation functions
     #
-    #imu_rot = euler_rotate(*imu_angles)
-    h_gyro_sym = sp.Matrix([vroll + roll_bias,
-                                      vpitch + pitch_bias,
-                                      vyaw + yaw_bias])
+    # imu_rot = euler_rotate(*imu_angles)
+    h_gyro_sym = sp.Matrix([
+      vroll + roll_bias,
+      vpitch + pitch_bias,
+      vyaw + yaw_bias])
 
     pos = sp.Matrix([x, y, z])
     gravity = quat_rot.T * ((EARTH_GM / ((x**2 + y**2 + z**2)**(3.0 / 2.0))) * pos)
@@ -187,7 +187,7 @@ class LiveKalman():
     h_phone_rot_sym = sp.Matrix([vroll, vpitch, vyaw])
 
     speed = sp.sqrt(vx**2 + vy**2 + vz**2 + 1e-6)
-    h_speed_sym = sp.Matrix([speed * odo_scale])
+    h_speed_sym = sp.Matrix([speed])
 
     h_pos_sym = sp.Matrix([x, y, z])
     h_vel_sym = sp.Matrix([vx, vy, vz])

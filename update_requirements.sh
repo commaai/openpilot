@@ -33,7 +33,7 @@ pip install pipenv==2021.5.29
 
 echo "pip packages install ..."
 if [ -d "./xx" ]; then
-  export PIPENV_PIPFILE=./xx/Pipfile
+  PIPENV_PIPFILE=./xx/Pipfile pipenv install --system --dev --deploy
   pipenv install --system --dev --deploy
   RUN=""
 else

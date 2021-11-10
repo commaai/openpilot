@@ -31,7 +31,7 @@ int readFunction(void *opaque, uint8_t *buf, int buf_size) {
   return iss.gcount() ? iss.gcount() : AVERROR_EOF;
 }
 
-} // namespace
+}  // namespace
 
 FrameReader::FrameReader(bool local_cache, int chunk_size, int retries) : FileReader(local_cache, chunk_size, retries) {
   static std::once_flag once_flag;
@@ -43,7 +43,7 @@ FrameReader::FrameReader(bool local_cache, int chunk_size, int retries) : FileRe
   pFormatCtx_ = avformat_alloc_context();
   av_frame_ = av_frame_alloc();
   rgb_frame_ = av_frame_alloc();
-  yuv_frame_ = av_frame_alloc();;
+  yuv_frame_ = av_frame_alloc();
 }
 
 FrameReader::~FrameReader() {
@@ -126,7 +126,7 @@ bool FrameReader::load(const std::string &url, std::atomic<bool> *abort) {
 }
 
 bool FrameReader::get(int idx, uint8_t *rgb, uint8_t *yuv) {
-  assert(rgb != nullptr && yuv != nullptr);
+  assert(rgb || yuv);
   if (!valid_ || idx < 0 || idx >= frames_.size()) {
     return false;
   }
@@ -162,11 +162,13 @@ bool FrameReader::decode(int idx, uint8_t *rgb, uint8_t *yuv) {
 
 bool FrameReader::decodeFrame(AVFrame *f, uint8_t *rgb, uint8_t *yuv) {
   // images is going to be written to output buffers, no alignment (align = 1)
-  av_image_fill_arrays(yuv_frame_->data, yuv_frame_->linesize, yuv, AV_PIX_FMT_YUV420P, width, height, 1);
-  int ret = sws_scale(yuv_sws_ctx_, (const uint8_t **)f->data, f->linesize, 0, f->height, yuv_frame_->data, yuv_frame_->linesize);
-  if (ret < 0) return false;
+  if (yuv) {
+    av_image_fill_arrays(yuv_frame_->data, yuv_frame_->linesize, yuv, AV_PIX_FMT_YUV420P, width, height, 1);
+    int ret = sws_scale(yuv_sws_ctx_, (const uint8_t **)f->data, f->linesize, 0, f->height, yuv_frame_->data, yuv_frame_->linesize);
+    if (ret < 0) return false;
+  }
 
   av_image_fill_arrays(rgb_frame_->data, rgb_frame_->linesize, rgb, AV_PIX_FMT_BGR24, width, height, 1);
-  ret = sws_scale(rgb_sws_ctx_, (const uint8_t **)f->data, f->linesize, 0, f->height, rgb_frame_->data, rgb_frame_->linesize);
+  int ret = sws_scale(rgb_sws_ctx_, (const uint8_t **)f->data, f->linesize, 0, f->height, rgb_frame_->data, rgb_frame_->linesize);
   return ret >= 0;
 }

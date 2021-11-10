@@ -36,7 +36,7 @@ PROCS = {
   "./_dmonitoringmodeld": 2.67,
   "selfdrive.thermald.thermald": 2.41,
   "selfdrive.locationd.calibrationd": 2.0,
-  "./_soundd": 2.0,
+  "./_soundd": 1.0,
   "selfdrive.monitoring.dmonitoringd": 1.90,
   "./proclogd": 1.54,
   "selfdrive.logmessaged": 0.2,
@@ -82,6 +82,10 @@ TIMINGS = {
   "driverState": [2.5, 0.35],
   "liveLocationKalman": [2.5, 0.35],
 }
+if EON:
+  TIMINGS.update({
+    "roadCameraState": [2.5, 0.45],
+  })
 if TICI:
   TIMINGS.update({
     "wideRoadCameraState": [1.5, 0.35],

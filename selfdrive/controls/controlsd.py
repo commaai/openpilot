@@ -379,7 +379,7 @@ class Controls:
            if ps.safetyModel not in IGNORED_SAFETY_MODES):
       self.mismatch_counter += 1
     else:
-      self.mismatch_counter = 0
+      self.mismatch_counter = 0 # Reset mismatch couter when mismatch is cleared
 
     self.distance_traveled += CS.vEgo * DT_CTRL
 
