@@ -1,7 +1,6 @@
 import copy
 import os
 import json
-from collections import namedtuple
 from typing import List, Dict, Optional
 
 from cereal import car, log
@@ -27,14 +26,11 @@ def set_offroad_alert(alert: str, show_alert: bool, extra_text: Optional[str] = 
     Params().delete(alert)
 
 
-AlertEntry = namedtuple('AlertEntry', ['alert', 'start_time'])
-
-
 class AlertManager:
 
   def __init__(self):
     self.reset()
-    self.activealerts: Dict[str, AlertEntry] = {}
+    self.activealerts: Dict[str, Tuple[Alert, int]] = {}
 
   def reset(self) -> None:
     self.alert_type: str = ""
@@ -62,8 +58,6 @@ class AlertManager:
       active = self.activealerts[k][1] > frame
       if active and (current_alert is None or alert.priority > current_alert.priority):
         current_alert = alert
-
-    print(current_alert)
 
     # clear current alert
     self.reset()

@@ -185,6 +185,9 @@ class Controls:
     self.events.add_from_msg(CS.events)
     self.events.add_from_msg(self.sm['driverMonitoringState'].events)
 
+    for _ in range(50):
+      self.events.add(EventName.localizerMalfunction)
+
     # Handle startup event
     if self.startup_event is not None:
       self.events.add(self.startup_event)
@@ -289,9 +292,6 @@ class Controls:
     for pandaState in self.sm['pandaStates']:
       if log.PandaState.FaultType.relayMalfunction in pandaState.faults:
         self.events.add(EventName.relayMalfunction)
-
-    for _ in range(50):
-      self.events.add(EventName.controlsMismatch)
 
     stock_long_is_braking = self.enabled and not self.CP.openpilotLongitudinalControl and CS.aEgo < -1.5
     model_fcw = self.sm['modelV2'].meta.hardBrakePredicted and not CS.brakePressed and not stock_long_is_braking
