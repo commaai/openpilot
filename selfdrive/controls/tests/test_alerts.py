@@ -82,7 +82,7 @@ class TestAlerts(unittest.TestCase):
         if a.alert_size == AlertSize.small:
           self.assertEqual(0, len(a.alert_text_2))
 
-      self.assertTrue(all([n >= 0. for n in [a.duration_sound, a.duration_hud_alert, a.duration_text]]))
+      self.assertGreaterEqual(a.duration, 0.)
 
   def test_offroad_alerts(self):
     params = Params()
