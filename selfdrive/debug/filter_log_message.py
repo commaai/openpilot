@@ -3,7 +3,7 @@ import argparse
 import json
 
 import cereal.messaging as messaging
-from tools.lib.logreader import LogReader
+from tools.lib.robust_logreader import RobustLogReader as LogReader
 from tools.lib.route import Route
 
 LEVELS = {
@@ -56,7 +56,7 @@ if __name__ == "__main__":
   logs = None
   if len(args.route):
     r = Route(args.route[0])
-    logs = [q if r is None else r for (q, r) in zip(r.qlog_paths(), r.log_paths())]
+    logs = r.log_paths()
 
   if len(args.route) == 2 and logs:
     n = int(args.route[1])

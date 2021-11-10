@@ -10,7 +10,7 @@ from common.basedir import BASEDIR
 from selfdrive.test.process_replay.compare_logs import save_log
 from tools.lib.api import CommaApi
 from tools.lib.auth_config import get_token
-from tools.lib.logreader import LogReader
+from tools.lib.robust_logreader import RobustLogReader
 from tools.lib.route import Route
 from urllib.parse import urlparse, parse_qs
 
@@ -22,7 +22,7 @@ def load_segment(segment_name):
     return []
 
   try:
-    return list(LogReader(segment_name))
+    return list(RobustLogReader(segment_name))
   except ValueError as e:
     print(f"Error parsing {segment_name}: {e}")
     return []

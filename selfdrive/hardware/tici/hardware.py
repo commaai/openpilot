@@ -1,14 +1,15 @@
 import json
+import math
 import os
 import subprocess
-from functools import cached_property
 from enum import IntEnum
+from functools import cached_property
 from pathlib import Path
 
 from cereal import log
 from selfdrive.hardware.base import HardwareBase, ThermalConfig
-from selfdrive.hardware.tici.amplifier import Amplifier
 from selfdrive.hardware.tici import iwlist
+from selfdrive.hardware.tici.amplifier import Amplifier
 
 NM = 'org.freedesktop.NetworkManager'
 NM_CON_ACT = NM + '.Connection.Active'
@@ -158,8 +159,8 @@ class Tici(HardwareBase):
   def get_network_info(self):
     modem = self.get_modem()
     try:
-      info = modem.Command("AT+QNWINFO", int(TIMEOUT * 1000), dbus_interface=MM_MODEM, timeout=TIMEOUT)
-      extra = modem.Command('AT+QENG="servingcell"', int(TIMEOUT * 1000), dbus_interface=MM_MODEM, timeout=TIMEOUT)
+      info = modem.Command("AT+QNWINFO", math.ceil(TIMEOUT), dbus_interface=MM_MODEM, timeout=TIMEOUT)
+      extra = modem.Command('AT+QENG="servingcell"', math.ceil(TIMEOUT), dbus_interface=MM_MODEM, timeout=TIMEOUT)
       state = modem.Get(MM_MODEM, 'State', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
     except Exception:
       return None
@@ -225,10 +226,10 @@ class Tici(HardwareBase):
       return None
 
   def get_modem_temperatures(self):
-    modem = self.get_modem()
+    timeout = 0.2  # Default timeout is too short
     try:
-      command_timeout = 0.2
-      temps = modem.Command("AT+QTEMP", int(command_timeout * 1000), dbus_interface=MM_MODEM, timeout=command_timeout)
+      modem = self.get_modem()
+      temps = modem.Command("AT+QTEMP", math.ceil(timeout), dbus_interface=MM_MODEM, timeout=timeout)
       return list(map(int, temps.split(' ')[1].split(',')))
     except Exception:
       return []
