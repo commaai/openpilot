@@ -20,8 +20,6 @@ class EGLImageTexture {
   EGLImageTexture(const VisionBuf *buf);
   ~EGLImageTexture();
   GLuint frame_tex = 0;
-  GLuint frame_buf = 0;
-  void *buffer = nullptr;
 #ifdef QCOM
   void *private_handle = nullptr;
   EGLImageKHR img_khr = 0;
