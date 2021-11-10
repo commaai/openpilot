@@ -11,10 +11,12 @@
 #endif
 
 int getAlertHeight(cereal::ControlsState::AlertSize size, int full_height) {
-  if (size == cereal::ControlsState::AlertSize::SMALL) return 271;
-  if (size == cereal::ControlsState::AlertSize::MID) return 420;
-  if (size == cereal::ControlsState::AlertSize::FULL) return full_height;
-  return 0;
+  switch (size) {
+    case cereal::ControlsState::AlertSize::SMALL: return 271;
+    case cereal::ControlsState::AlertSize::MID: return 420;
+    case cereal::ControlsState::AlertSize::FULL: return full_height;
+    default: return 0;
+  }
 }
 
 OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
