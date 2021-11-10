@@ -10,7 +10,6 @@ from common.basedir import BASEDIR
 from common.params import Params
 from common.realtime import DT_CTRL
 from selfdrive.controls.lib.events import Alert
-from selfdrive.swaglog import cloudlog
 
 
 with open(os.path.join(BASEDIR, "selfdrive/controls/lib/alerts_offroad.json")) as f:
@@ -30,7 +29,7 @@ def set_offroad_alert(alert: str, show_alert: bool, extra_text: Optional[str] = 
 
 @dataclass
 class AlertEntry:
-  alert: Alert = None
+  alert: Optional[Alert] = None
   end_frame: int = -1
 
 

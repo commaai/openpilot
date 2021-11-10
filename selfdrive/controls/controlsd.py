@@ -185,9 +185,6 @@ class Controls:
     self.events.add_from_msg(CS.events)
     self.events.add_from_msg(self.sm['driverMonitoringState'].events)
 
-    for _ in range(50):
-      self.events.add(EventName.localizerMalfunction)
-
     # Handle startup event
     if self.startup_event is not None:
       self.events.add(self.startup_event)
