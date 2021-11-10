@@ -210,7 +210,7 @@ std::string dir_name(std::string const &path) {
 }
 
 std::string check_output(const std::string& command) {
-  std::array<char, 128> buffer;
+  char buffer[128];
   std::string result;
   std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(command.c_str(), "r"), pclose);
 
@@ -218,8 +218,8 @@ std::string check_output(const std::string& command) {
     return "";
   }
 
-  while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
-    result += buffer.data();
+  while (fgets(buffer, std::size(buffer), pipe.get()) != nullptr) {
+    result += std::string(buffer);
   }
 
   return result;
