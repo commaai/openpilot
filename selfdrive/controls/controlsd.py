@@ -147,6 +147,7 @@ class Controls:
     self.v_cruise_kph = 255
     self.v_cruise_kph_last = 0
     self.mismatch_counter = 0
+    self.cruise_mismatch_counter = 0
     self.can_error_counter = 0
     self.last_blinker_frame = 0
     self.saturated_count = 0
@@ -260,9 +261,7 @@ class Controls:
       if log.PandaState.FaultType.relayMalfunction in pandaState.faults:
         self.events.add(EventName.relayMalfunction)
 
-    if not self.sm['liveParameters'].valid:
-      self.events.add(EventName.vehicleModelInvalid)
-
+    # Check for HW or system issues
     if len(self.sm['radarState'].radarErrors):
       self.events.add(EventName.radarFault)
     elif not self.sm.valid["pandaStates"]:
@@ -277,6 +276,8 @@ class Controls:
     else:
       self.logged_comm_issue = False
 
+    if not self.sm['liveParameters'].valid:
+      self.events.add(EventName.vehicleModelInvalid)
     if not self.sm['lateralPlan'].mpcSolutionValid:
       self.events.add(EventName.plannerError)
     if not self.sm['liveLocationKalman'].sensorsOK and not NOSENSOR:
@@ -290,6 +291,13 @@ class Controls:
       if log.PandaState.FaultType.relayMalfunction in pandaState.faults:
         self.events.add(EventName.relayMalfunction)
 
+    # Check for mismatch between openpilot and car's PCM
+    cruise_mismatch = CS.cruiseState.enabled and (not self.enabled or not self.CP.pcmCruise)
+    self.cruise_mismatch_counter = self.cruise_mismatch_counter + 1 if cruise_mismatch else 0
+    if self.cruise_mismatch_counter > int(1. / DT_CTRL):
+      self.events.add(EventName.cruiseMismatch)
+
+    # Check for FCW
     stock_long_is_braking = self.enabled and not self.CP.openpilotLongitudinalControl and CS.aEgo < -1.5
     model_fcw = self.sm['modelV2'].meta.hardBrakePredicted and not CS.brakePressed and not stock_long_is_braking
     planner_fcw = self.sm['longitudinalPlan'].fcw and self.enabled

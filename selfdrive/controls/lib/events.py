@@ -301,6 +301,10 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, .2),
   },
 
+  EventName.cruiseMismatch: {
+    ET.PERMANENT: ImmediateDisableAlert("openpilot failed to cancel cruise"),
+  },
+
   # Some features or cars are marked as community features. If openpilot
   # detects the use of a community feature it switches to dashcam mode
   # until these features are allowed using a toggle in settings.
