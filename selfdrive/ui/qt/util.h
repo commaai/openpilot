@@ -13,8 +13,6 @@ QString getBrand();
 QString getBrandVersion();
 std::optional<QString> getDongleId();
 void configFont(QPainter &p, const QString &family, int size, const QString &style);
-void configFont(QPainter &p, const QRect &r, const QString &family, int size,
-    const QString &style, const QString &text);
 void clearLayout(QLayout* layout);
 void setQtSurfaceFormat();
 QString timeAgo(const QDateTime &date);

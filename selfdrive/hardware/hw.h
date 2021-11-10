@@ -13,7 +13,7 @@
 class HardwarePC : public HardwareNone {
 public:
   static std::string get_os_version() { return "openpilot for PC"; }
-  static constexpr bool PC() { return true; }
+  static bool PC() { return true; }
   static bool TICI() { return util::getenv("TICI", 0) == 1; }
 };
 #define Hardware HardwarePC

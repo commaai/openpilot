@@ -3,14 +3,9 @@
 void setMainWindow(QWidget *w) {
   const bool wide = (QGuiApplication::primaryScreen()->size().width() >= WIDE_WIDTH) ^
                     (getenv("INVERT_WIDTH") != NULL);
-  if constexpr (Hardware::PC()) {
-    w->setMinimumSize(QSize(640, 480));
-    w->setMaximumSize(QSize(WIDE_WIDTH, 1080));
-    w->resize(QSize(1920, 1080));
-  } else {
-    w->setFixedSize(QSize(wide ? WIDE_WIDTH : 1920, 1080));
-  }
+  const float scale = util::getenv("SCALE", 1.0f);
 
+  w->setFixedSize(QSize(wide ? WIDE_WIDTH : 1920, 1080) * scale);
   w->show();
 
 #ifdef QCOM2

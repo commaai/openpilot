@@ -122,60 +122,18 @@ void OnroadAlerts::updateAlert(const Alert &a, const QColor &color) {
   }
 }
 
-struct Rects
-{
-  int x, y, w, h;     // bounding box for total text area
-  int x1, y1, w1, h1; // bounding box for alert text 1
-  int x2, y2, w2, h2; // bounding box for alert text 2
-
-  Rects()
-  {
-    memset(this, 0, sizeof(Rects));
-  }
-};
-
-template<typename T>
-void getRects(T t, Rects &r, Alert alert) {
-  // returns bounding boxes for text area, alert1, alert2
-  // w - width, h - height, windows starting position x, y
-
-  const int heightMax = 1080; // adjust to change text box scale
-  const int width = t->width();
-  const int height = t->height();
-
-  switch (alert.size) {
-    case cereal::ControlsState::AlertSize::SMALL:
-      r.h = height * (271.0 / heightMax);
-      break;
-    case cereal::ControlsState::AlertSize::MID:
-      r.h = height * (420.0 / heightMax);
-      break;
-    case cereal::ControlsState::AlertSize::FULL:
-      r.h = height;
-      break;
-    case cereal::ControlsState::AlertSize::NONE:
-      break;
-  }
-
-  r.w = width;
-  r.w1 = r.w;
-  r.w2 = r.w1;
-
-  r.h1 = r.h / 2.0;
-  r.h2 = r.h1;
-
-  r.y = height - r.h;
-  r.y1 = r.y;
-  r.y2 = r.y1 + r.h1;
-}
-
 void OnroadAlerts::paintEvent(QPaintEvent *event) {
   if (alert.size == cereal::ControlsState::AlertSize::NONE) {
     return;
   }
-  Rects R;
-  getRects(this, R, alert);
-  QRect r = QRect(R.x, R.y, R.w, R.h);
+  static std::map<cereal::ControlsState::AlertSize, const int> alert_sizes = {
+    {cereal::ControlsState::AlertSize::SMALL, 271},
+    {cereal::ControlsState::AlertSize::MID, 420},
+    {cereal::ControlsState::AlertSize::FULL, height()},
+  };
+  int h = alert_sizes[alert.size];
+  QRect r = QRect(0, height() - h, width(), h);
+
   QPainter p(this);
 
   // draw background + gradient
@@ -195,28 +153,23 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
   p.setCompositionMode(QPainter::CompositionMode_SourceOver);
 
   // text
+  const QPoint c = r.center();
   p.setPen(QColor(0xff, 0xff, 0xff));
   p.setRenderHint(QPainter::TextAntialiasing);
-
-  const QRect a1 = QRect(R.x1, R.y1, R.w1, R.h1);
-  const QRect a2 = QRect(R.x2, R.y2, R.w2, R.h2);
-
-  const int textBoxFlag = Qt::AlignCenter;
-
   if (alert.size == cereal::ControlsState::AlertSize::SMALL) {
-    configFont(p, r, "Open Sans", 74, "SemiBold", alert.text1);
-    p.drawText(r, textBoxFlag, alert.text1);
+    configFont(p, "Open Sans", 74, "SemiBold");
+    p.drawText(r, Qt::AlignCenter, alert.text1);
   } else if (alert.size == cereal::ControlsState::AlertSize::MID) {
-    configFont(p, a1, "Open Sans", 88, "Bold", alert.text1);
-    p.drawText(a1, textBoxFlag, alert.text1);
-    configFont(p, a2, "Open Sans", 66, "Regular", alert.text2);
-    p.drawText(a2, textBoxFlag, alert.text2);
+    configFont(p, "Open Sans", 88, "Bold");
+    p.drawText(QRect(0, c.y() - 125, width(), 150), Qt::AlignHCenter | Qt::AlignTop, alert.text1);
+    configFont(p, "Open Sans", 66, "Regular");
+    p.drawText(QRect(0, c.y() + 21, width(), 90), Qt::AlignHCenter, alert.text2);
   } else if (alert.size == cereal::ControlsState::AlertSize::FULL) {
     bool l = alert.text1.length() > 15;
-    configFont(p, a1, "Open Sans", l ? 132 : 177, "Bold", alert.text1);
-    p.drawText(a1, textBoxFlag, alert.text1);
-    configFont(p, a2, "Open Sans", 88, "Regular", alert.text2);
-    p.drawText(a2, textBoxFlag, alert.text2);
+    configFont(p, "Open Sans", l ? 132 : 177, "Bold");
+    p.drawText(QRect(0, r.y() + (l ? 240 : 270), width(), 600), Qt::AlignHCenter | Qt::TextWordWrap, alert.text1);
+    configFont(p, "Open Sans", 88, "Regular");
+    p.drawText(QRect(0, r.height() - (l ? 361 : 420), width(), 300), Qt::AlignHCenter | Qt::TextWordWrap, alert.text2);
   }
 }
 
