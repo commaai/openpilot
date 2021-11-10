@@ -60,7 +60,7 @@ def set_lat_tune(tune, name):
     tune.init('pid')
     tune.pid.kiBP = [0.0]
     tune.pid.kpBP = [0.0]
-    if name == 'PID_B':
+    if name == 'PID_A':
       tune.pid.kpV = [0.2]
       tune.pid.kiV = [0.05]
       tune.pid.kf = 0.00003
