@@ -16,6 +16,7 @@ from selfdrive.swaglog import cloudlog
 
 
 MAX_ANGLE_OFFSET_DELTA = 20 * DT_MDL  # Max 20 deg/s
+ROLL_MIN, ROLL_MAX = math.radians(10), math.radians(-10)
 
 class ParamsLearner:
   def __init__(self, CP, steer_ratio, stiffness_factor, angle_offset):
@@ -43,7 +44,7 @@ class ParamsLearner:
 
       roll = msg.orientationNED.value[0]
       # roll_std = msg.orientationNED.std[2]
-      roll_valid = msg.orientationNED.valid
+      roll_valid = msg.orientationNED.valid and ROLL_MIN < roll < ROLL_MAX
 
       yaw_rate_valid = msg.angularVelocityCalibrated.valid
       yaw_rate_valid = yaw_rate_valid and 0 < yaw_rate_std < 10  # rad/s
@@ -163,6 +164,7 @@ def main(sm=None, pm=None):
       msg.liveParameters.sensorValid = True
       msg.liveParameters.steerRatio = float(x[States.STEER_RATIO])
       msg.liveParameters.stiffnessFactor = float(x[States.STIFFNESS])
+      msg.liveParameters.roll = float(x[States.ROAD_ROLL])
       msg.liveParameters.angleOffsetAverageDeg = angle_offset_average
       msg.liveParameters.angleOffsetDeg = angle_offset
       msg.liveParameters.valid = all((

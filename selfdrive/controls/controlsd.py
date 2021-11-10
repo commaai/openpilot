@@ -487,8 +487,7 @@ class Controls:
     lat_plan = self.sm['lateralPlan']
     long_plan = self.sm['longitudinalPlan']
 
-    orientation = self.sm['liveLocationKalman'].orientationNED
-    roll = orientation.value[0] if orientation.valid else 0
+    roll = self.sm['liveParameters'].roll
 
     actuators = car.CarControl.Actuators.new_message()
     actuators.longControlState = self.LoC.long_control_state
@@ -513,7 +512,7 @@ class Controls:
                                                                              lat_plan.psis,
                                                                              lat_plan.curvatures,
                                                                              lat_plan.curvatureRates)
-      actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(self.active, CS, self.CP, self.VM, params,
+      actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(lat_active, CS, self.CP, self.VM, params,
                                                                              desired_curvature, desired_curvature_rate, roll)
     else:
       lac_log = log.ControlsState.LateralDebugState.new_message()
