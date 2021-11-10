@@ -226,9 +226,10 @@ class Tici(HardwareBase):
       return None
 
   def get_modem_temperatures(self):
-    modem = self.get_modem()
+    timeout = 0.2  # Default timeout is too short
     try:
-      temps = modem.Command("AT+QTEMP", math.ceil(TIMEOUT), dbus_interface=MM_MODEM, timeout=TIMEOUT)
+      modem = self.get_modem()
+      temps = modem.Command("AT+QTEMP", math.ceil(timeout), dbus_interface=MM_MODEM, timeout=timeout)
       return list(map(int, temps.split(' ')[1].split(',')))
     except Exception:
       return []
