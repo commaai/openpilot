@@ -1,11 +1,35 @@
 #!/usr/bin/env python3
+from enum import Enum
 from selfdrive.car.toyota.values import MIN_ACC_SPEED, PEDAL_HYST_GAP
 
+
+class LongTunes(Enum):
+  PEDAL = 0
+  TSS2 = 1
+  TSS = 2
+
+class LatTunes(Enum):
+  INDI_PRIUS = 0
+  LQR_RAV4 = 1
+  PID_A = 2
+  PID_B = 3
+  PID_C = 4
+  PID_D = 5
+  PID_E = 6
+  PID_F = 7
+  PID_G = 8
+  PID_I = 9
+  PID_H = 10
+  PID_J = 11
+  PID_K = 12
+  PID_L = 13
+  PID_M = 14
+  PID_N = 15
 
 
 ###### LONG ######
 def set_long_tune(tune, name):
-  if name == 'PEDAL':
+  if name == LongTunes.PEDAL:
     tune.deadzoneBP = [0.]
     tune.deadzoneV = [0.]
     tune.kpBP = [0., 5., MIN_ACC_SPEED, MIN_ACC_SPEED + PEDAL_HYST_GAP, 35.]
@@ -13,7 +37,7 @@ def set_long_tune(tune, name):
     tune.kiBP = [0., MIN_ACC_SPEED, MIN_ACC_SPEED + PEDAL_HYST_GAP, 35.]
     tune.kiV = [0.18, 0.165, 0.489, 0.36]
   # Improved longitudinal tune
-  elif name == 'TSS2':
+  elif name == LongTunes.TSS2:
     tune.deadzoneBP = [0., 8.05]
     tune.deadzoneV = [.0, .14]
     tune.kpBP = [0., 5., 20.]
@@ -21,7 +45,7 @@ def set_long_tune(tune, name):
     tune.kiBP = [0., 5., 12., 20., 27.]
     tune.kiV = [.35, .23, .20, .17, .1]
   # Default longitudinal tune
-  elif name == 'TSS':
+  elif name == LongTunes.TSS:
     tune.deadzoneBP = [0., 9.]
     tune.deadzoneV = [0., .15]
     tune.kpBP = [0., 5., 35.]
@@ -34,7 +58,7 @@ def set_long_tune(tune, name):
 
 ###### LAT ######
 def set_lat_tune(tune, name):
-  if name == 'INDI_PRIUS':
+  if name == LatTunes.INDI_PRIUS:
     tune.init('indi')
     tune.indi.innerLoopGainBP = [0.]
     tune.indi.innerLoopGainV = [4.0]
@@ -45,7 +69,7 @@ def set_lat_tune(tune, name):
     tune.indi.actuatorEffectivenessBP = [0.]
     tune.indi.actuatorEffectivenessV = [1.0]
 
-  elif name == 'LQR_RAV4':
+  elif name == LatTunes.LQR_RAV4:
     tune.init('lqr')
     tune.lqr.scale = 1500.0
     tune.lqr.ki = 0.05
@@ -56,59 +80,59 @@ def set_lat_tune(tune, name):
     tune.lqr.l = [0.3233671, 0.3185757]
     tune.lqr.dcGain = 0.002237852961363602
 
-  elif 'PID' in name:
+  elif 'PID' in str(name):
     tune.init('pid')
     tune.pid.kiBP = [0.0]
     tune.pid.kpBP = [0.0]
-    if name == 'PID_A':
+    if name == LatTunes.PID_A:
       tune.pid.kpV = [0.2]
       tune.pid.kiV = [0.05]
       tune.pid.kf = 0.00003
-    elif name == 'PID_B':
+    elif name == LatTunes.PID_B:
       tune.pid.kpV = [0.6]
       tune.pid.kiV = [0.05]
       tune.pid.kf = 0.00006
-    elif name == 'PID_C':
+    elif name == LatTunes.PID_C:
       tune.pid.kpV = [0.6]
       tune.pid.kiV = [0.1]
       tune.pid.kf = 0.00006
-    elif name == 'PID_D':
+    elif name == LatTunes.PID_D:
       tune.pid.kpV = [0.6]
       tune.pid.kiV = [0.1]
       tune.pid.kf = 0.00007818594
-    elif name == 'PID_E':
+    elif name == LatTunes.PID_E:
       tune.pid.kpV = [0.6]
       tune.pid.kiV = [0.15]
       tune.pid.kf = 0.00007818594
-    elif name == 'PID_F':
+    elif name == LatTunes.PID_F:
       tune.pid.kpV = [0.723]
       tune.pid.kiV = [0.0428]
       tune.pid.kf = 0.00006
-    elif name == 'PID_G':
+    elif name == LatTunes.PID_G:
       tune.pid.kpV = [0.18]
       tune.pid.kiV = [0.015]
       tune.pid.kf = 0.00012
-    elif name == 'PID_H':
+    elif name == LatTunes.PID_H:
       tune.pid.kpV = [0.17]
       tune.pid.kiV = [0.03]
       tune.pid.kf = 0.00006
-    elif name == 'PID_I':
+    elif name == LatTunes.PID_I:
       tune.pid.kpV = [0.15]
       tune.pid.kiV = [0.05]
       tune.pid.kf = 0.00004
-    elif name == 'PID_J':
+    elif name == LatTunes.PID_J:
       tune.pid.kpV = [0.19]
       tune.pid.kiV = [0.02]
       tune.pid.kf = 0.00007818594
-    elif name == 'PID_L':
+    elif name == LatTunes.PID_L:
       tune.pid.kpV = [0.3]
       tune.pid.kiV = [0.05]
       tune.pid.kf = 0.00006
-    elif name == 'PID_M':
+    elif name == LatTunes.PID_M:
       tune.pid.kpV = [0.3]
       tune.pid.kiV = [0.05]
       tune.pid.kf = 0.00007
-    elif name == 'PID_N':
+    elif name == LatTunes.PID_N:
       tune.pid.kpV = [0.35]
       tune.pid.kiV = [0.15]
       tune.pid.kf = 0.00007818594
