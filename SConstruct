@@ -398,8 +398,7 @@ Export('rednose_config')
 SConscript(['cereal/SConscript'])
 #SConscript(['rednose/SConscript'])
 
-# TODO: fix gcc-arm-embedded on M1
-# SConscript(['panda/board/SConscript'])
+SConscript(['panda/board/SConscript'])
 
 SConscript(['opendbc/can/SConscript'])
 
