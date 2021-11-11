@@ -13,7 +13,7 @@
     "_comment": "Append the number of days at the end of the text"
   },
   "Offroad_ConnectivityNeeded": {
-    "text": "Connect to internet to check for updates. openpilot won't start until it connects to internet to check for updates.",
+    "text": "Connect to internet to check for updates. openpilot won't automatically start until it connects to internet to check for updates.",
     "severity": 1
   },
   "Offroad_UpdateFailed": {
