@@ -60,7 +60,7 @@ typedef struct LogCameraInfo {
   bool is_h265;
   bool downscale;
   bool has_qcamera;
-  bool trigger_rotate;
+  bool participates_in_rotation;
   bool enable;
   bool record;
 } LogCameraInfo;
