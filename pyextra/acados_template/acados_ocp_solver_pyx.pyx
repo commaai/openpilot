@@ -278,7 +278,40 @@ cdef class AcadosOcpSolverFast:
                     self.nlp_dims, self.nlp_out, stage, field, <void *> &value[0])
 
 
-    def cost_set(self, int stage, str field_, value_):
+    def cost_set_slice(self, int start_stage, int end_stage, bytes field, value_, bint const=False):
+        """
+        """
+        assert len(value_.shape) >= 2
+
+        cdef int i, idx
+        cdef int dims[2]
+        cdef double[:,:,:] value
+
+        value_shape = value_.shape
+        if len(value_shape) == 2:
+            value = value_[:,:,None]
+            value_shape = (value_shape[0], value_shape[1], 0)
+        else:
+            value = value_
+
+        assert value.strides[1] == 8  # list of column-major matrices; [:,::1,:]
+
+        for i in range(start_stage, end_stage):
+            idx = 0 if const else i
+
+            acados_solver_common.ocp_nlp_cost_dims_get_from_attr(self.nlp_config, \
+                self.nlp_dims, self.nlp_out, i, field, &dims[0])
+
+            if value_shape[1] != dims[0] or value_shape[2] != dims[1]:
+                raise Exception('AcadosOcpSolver.cost_set(): mismatching dimension', \
+                    ' for field "{}" with dimension {} (you have {})'.format( \
+                    field, tuple(dims), value_shape))
+
+            acados_solver_common.ocp_nlp_cost_model_set(self.nlp_config, \
+                self.nlp_dims, self.nlp_in, i, field, <void *> &value[idx][0][0])
+
+
+    def cost_set(self, int stage, bytes field, value_):
         """
         Set numerical data in the cost module of the solver.
 
@@ -286,8 +319,6 @@ cdef class AcadosOcpSolverFast:
             :param field: string, e.g. 'yref', 'W', 'ext_cost_num_hess'
             :param value: of appropriate size
         """
-        field = field_.encode('utf-8')
-
         cdef int dims[2]
         acados_solver_common.ocp_nlp_cost_dims_get_from_attr(self.nlp_config, \
             self.nlp_dims, self.nlp_out, stage, field, &dims[0])
@@ -306,7 +337,7 @@ cdef class AcadosOcpSolverFast:
         if value_shape[0] != dims[0] or value_shape[1] != dims[1]:
             raise Exception('AcadosOcpSolver.cost_set(): mismatching dimension', \
                 ' for field "{}" with dimension {} (you have {})'.format( \
-                field_, tuple(dims), value_shape))
+                field, tuple(dims), value_shape))
 
         acados_solver_common.ocp_nlp_cost_model_set(self.nlp_config, \
             self.nlp_dims, self.nlp_in, stage, field, <void *> &value[0][0])

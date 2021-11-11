@@ -121,9 +121,8 @@ class LateralMpc():
     self.x_sol = np.zeros((N+1, X_DIM))
     self.u_sol = np.zeros((N, 1))
     self.yref = np.zeros((N+1, 3))
-    for i in range(N):
-      self.solver.cost_set(i, "yref", self.yref[i])
-    self.solver.cost_set(N, "yref", self.yref[N][:2])
+    self.solver.cost_set_slice(0, N, b"yref", self.yref)
+    self.solver.cost_set(N, b"yref", self.yref[N][:2])
 
     # Somehow needed for stable init
     for i in range(N+1):
@@ -136,10 +135,9 @@ class LateralMpc():
 
   def set_weights(self, path_weight, heading_weight, steer_rate_weight):
     W = np.asfortranarray(np.diag([path_weight, heading_weight, steer_rate_weight]))
-    for i in range(N):
-      self.solver.cost_set(i, 'W', W)
+    self.solver.cost_set_slice(0, N, b'W', W[None,:,:], const=True)
     #TODO hacky weights to keep behavior the same
-    self.solver.cost_set(N, 'W', (3/20.)*W[:2,:2])
+    self.solver.cost_set(N, b'W', (3/20.)*W[:2,:2])
 
   def run(self, x0, v_ego, car_rotation_radius, y_pts, heading_pts):
     x0_cp = np.copy(x0)
@@ -147,9 +145,8 @@ class LateralMpc():
     self.solver.constraints_set(0, "ubx", x0_cp)
     self.yref[:,0] = y_pts
     self.yref[:,1] = heading_pts*(v_ego+5.0)
-    for i in range(N):
-      self.solver.cost_set(i, "yref", self.yref[i])
-    self.solver.cost_set(N, "yref", self.yref[N][:2])
+    self.solver.cost_set_slice(0, N, b"yref", self.yref)
+    self.solver.cost_set(N, b"yref", self.yref[N][:2])
 
     self.solution_status = self.solver.solve()
     for i in range(N+1):
