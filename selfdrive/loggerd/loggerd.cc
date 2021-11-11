@@ -332,7 +332,8 @@ int main(int argc, char** argv) {
   // subscribe to all socks
   for (const auto& it : services) {
     if (!it.should_log) continue;
-
+    if(strstr(it.name,"CameraState") && getenv("USE_FRAME_STREAM")) continue;
+    
     SubSocket * sock = SubSocket::create(s.ctx, it.name);
     assert(sock != NULL);
     poller->registerSocket(sock);
