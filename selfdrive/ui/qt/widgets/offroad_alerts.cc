@@ -96,7 +96,7 @@ int OffroadAlert::refresh() {
     label->setVisible(!text.isEmpty());
     alertCount += !text.isEmpty();
   }
-  snooze_btn->setVisible(alerts["Offroad_ConnectivityNeeded"]->isVisible());
+  snooze_btn->setVisible(!alerts["Offroad_ConnectivityNeeded"]->text().isEmpty());
   return alertCount;
 }
 
