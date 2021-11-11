@@ -112,13 +112,12 @@ void MapWindow::timerUpdate() {
   sm->update(0);
   if (sm->updated("liveLocationKalman")) {
     auto location = (*sm)["liveLocationKalman"].getLiveLocationKalman();
+    auto pos = location.getPositionGeodetic();
+    auto orientation = location.getCalibratedOrientationNED();
 
-    localizer_valid = location.getStatus() == cereal::LiveLocationKalman::Status::VALID;
+    localizer_valid = (location.getStatus() == cereal::LiveLocationKalman::Status::VALID) && pos.getValid();
 
     if (localizer_valid) {
-      auto pos = location.getPositionGeodetic();
-      auto orientation = location.getCalibratedOrientationNED();
-
       float velocity = location.getVelocityCalibrated().getValue()[0];
       float bearing = RAD2DEG(orientation.getValue()[2]);
       auto coordinate = QMapbox::Coordinate(pos.getValue()[0], pos.getValue()[1]);

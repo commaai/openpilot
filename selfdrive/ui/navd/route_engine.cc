@@ -131,14 +131,14 @@ void RouteEngine::timerUpdate() {
   }
 
   auto location = (*sm)["liveLocationKalman"].getLiveLocationKalman();
+  auto pos = location.getPositionGeodetic();
+  auto orientation = location.getCalibratedOrientationNED();
+
   gps_ok = location.getGpsOK();
 
-  localizer_valid = location.getStatus() == cereal::LiveLocationKalman::Status::VALID;
+  localizer_valid = (location.getStatus() == cereal::LiveLocationKalman::Status::VALID) && pos.getValid();
 
   if (localizer_valid) {
-    auto pos = location.getPositionGeodetic();
-    auto orientation = location.getCalibratedOrientationNED();
-
     last_bearing = RAD2DEG(orientation.getValue()[2]);
     last_position = QMapbox::Coordinate(pos.getValue()[0], pos.getValue()[1]);
   }
