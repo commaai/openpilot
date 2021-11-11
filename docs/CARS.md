@@ -56,7 +56,7 @@
 | Toyota    | Corolla Hatchback 2019-22     | All               | openpilot        | 0mph               | 0mph              |
 | Toyota    | Corolla Hybrid 2020-22        | All               | openpilot        | 0mph               | 0mph              |
 | Toyota    | Highlander 2017-19            | All               | Stock<sup>3</sup>| 0mph               | 0mph              |
-| Toyota    | Highlander 2020-21            | All               | openpilot        | 0mph               | 0mph              |
+| Toyota    | Highlander 2020-22            | All               | openpilot        | 0mph               | 0mph              |
 | Toyota    | Highlander Hybrid 2017-19     | All               | Stock<sup>3</sup>| 0mph               | 0mph              |
 | Toyota    | Highlander Hybrid 2020-21     | All               | openpilot        | 0mph               | 0mph              |
 | Toyota    | Mirai 2021                    | All               | openpilot        | 0mph               | 0mph              |
