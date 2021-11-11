@@ -46,16 +46,10 @@ class CarController():
     interceptor_gas_cmd = 0.
     pcm_accel_cmd = actuators.accel
 
-    if CS.CP.enableGasInterceptor:
-      # handle hysteresis when around the minimum acc speed
-      if CS.out.vEgo > MIN_ACC_SPEED + PEDAL_TRANSITION:
-        self.use_interceptor = True
-
-      if self.use_interceptor and enabled:
-        MAX_INTERCEPTOR_GAS = interp(CS.out.vEgo, [0.0, MIN_ACC_SPEED], [0.5, 0.5])
-        PEDAL_SCALE = interp(CS.out.vEgo, [0.0, MIN_ACC_SPEED], [6.0, 3.0])
-        PEDAL_MULT = interp(CS.out.vEgo, [MIN_ACC_SPEED, MIN_ACC_SPEED + PEDAL_TRANSITION], [1.0, 0.0])
-        interceptor_gas_cmd = PEDAL_MULT * clip(actuators.accel / PEDAL_SCALE, 0., MAX_INTERCEPTOR_GAS)
+    if CS.CP.enableGasInterceptor and enabled:
+      MAX_INTERCEPTOR_GAS = 0.5
+      PEDAL_SCALE = interp(CS.out.vEgo, [0.0, MIN_ACC_SPEED, MIN_ACC_SPEED + PEDAL_TRANSITION], [0.15, 0.3, 0.0])
+      interceptor_gas_cmd = clip(PEDAL_SCALE * actuators.accel, 0., MAX_INTERCEPTOR_GAS)
 
     pcm_accel_cmd, self.accel_steady = accel_hysteresis(pcm_accel_cmd, self.accel_steady, enabled)
     pcm_accel_cmd = clip(pcm_accel_cmd, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
