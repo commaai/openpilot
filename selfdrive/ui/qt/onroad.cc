@@ -54,6 +54,7 @@ void OnroadWindow::updateState(const UIState &s) {
   if (alert.type == "controlsUnresponsive") {
     bgColor = bg_colors[STATUS_ALERT];
   }
+
   alerts->updateAlert(alert, bgColor);
   nvg->updateAlert(alert, bgColor);
   if (bg != bgColor) {

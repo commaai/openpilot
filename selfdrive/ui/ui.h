@@ -55,7 +55,7 @@ struct Alert {
   QString text2;
   QString type;
   cereal::ControlsState::AlertSize size = cereal::ControlsState::AlertSize::NONE;
-  AudibleAlert sound;
+  AudibleAlert sound = AudibleAlert::NONE;
   float blinking_rate = 0;
 
   bool equal(const Alert &a2) {
