@@ -32,7 +32,7 @@
 # POSSIBILITY OF SUCH DAMAGE.;
 #
 # cython: language_level=3
-# cython: profile=False
+# cython: profile=True
 # distutils: language=c
 
 cimport cython
@@ -277,10 +277,8 @@ cdef class AcadosOcpSolverFast:
                 acados_solver_common.ocp_nlp_out_set(self.nlp_config,
                     self.nlp_dims, self.nlp_out, stage, field, <void *> &value[0])
 
-        return
 
-
-    def cost_set(self, int stage, str field_, value_, api='warn'):
+    def cost_set(self, int stage, str field_, value_):
         """
         Set numerical data in the cost module of the solver.
 
@@ -288,58 +286,33 @@ cdef class AcadosOcpSolverFast:
             :param field: string, e.g. 'yref', 'W', 'ext_cost_num_hess'
             :param value: of appropriate size
         """
-        # cast value_ to avoid conversion issues
-        if isinstance(value_, (float, int)):
-            value_ = np.array([value_])
-        value_ = value_.astype(float)
-
         field = field_.encode('utf-8')
 
         cdef int dims[2]
         acados_solver_common.ocp_nlp_cost_dims_get_from_attr(self.nlp_config, \
             self.nlp_dims, self.nlp_out, stage, field, &dims[0])
 
+        cdef double[::1] value
+
         value_shape = value_.shape
         if len(value_shape) == 1:
             value_shape = (value_shape[0], 0)
-            # value_ = np.ravel(value_, order='F')
+            data_ptr = np.asfortranarray(value_)
 
         elif len(value_shape) == 2:
-            if api=='old':
-                pass
-            elif api=='warn':
-                if not np.all(np.ravel(value_, order='F')==np.ravel(value_, order='K')):
-                    raise Exception("Ambiguity in API detected.\n"
-                                    "Are you making an acados model from scrach? Add api='new' to cost_set and carry on.\n"
-                                    "Are you seeing this error suddenly in previously running code? Read on.\n"
-                                    "  You are relying on a now-fixed bug in cost_set for field '{}'.\n".format(field_) +
-                                    "  acados_template now correctly passes on any matrices to acados in column major format.\n" +
-                                    "  Two options to fix this error: \n" +
-                                    "   * Add api='old' to cost_set to restore old incorrect behaviour\n" +
-                                    "   * Add api='new' to cost_set and remove any unnatural manipulation of the value argument " +
-                                    "such as non-mathematical transposes, reshaping, casting to fortran order, etc... " +
-                                    "If there is no such manipulation, then you have probably been getting an incorrect solution before.")
-                # Get elements in column major order
-                value_ = np.ravel(value_, order='F')
-            elif api=='new':
-                # Get elements in column major order
-                value_ = np.ravel(value_, order='F')
-            else:
-                raise Exception("Unknown api: '{}'".format(api))
+            # Get elements in column major order
+            value = np.ravel(value_, order='F')
 
         if value_shape[0] != dims[0] or value_shape[1] != dims[1]:
             raise Exception('AcadosOcpSolver.cost_set(): mismatching dimension', \
                 ' for field "{}" with dimension {} (you have {})'.format( \
                 field_, tuple(dims), value_shape))
 
-        cdef double[::1] value = np.asfortranarray(value_, dtype=np.double)
         acados_solver_common.ocp_nlp_cost_model_set(self.nlp_config, \
             self.nlp_dims, self.nlp_in, stage, field, <void *> &value[0])
 
-        return
 
-
-    def constraints_set(self, int stage, str field_, value_, api='warn'):
+    def constraints_set(self, int stage, str field_, value_):
         """
         Set numerical data in the constraint module of the solver.
 
@@ -347,50 +320,27 @@ cdef class AcadosOcpSolverFast:
             :param field: string in ['lbx', 'ubx', 'lbu', 'ubu', 'lg', 'ug', 'lh', 'uh', 'uphi', 'C', 'D']
             :param value: of appropriate size
         """
-        # cast value_ to avoid conversion issues
-        if isinstance(value_, (float, int)):
-            value_ = np.array([value_])
-        value_ = value_.astype(float)
-
         field = field_.encode('utf-8')
 
         cdef int dims[2]
         acados_solver_common.ocp_nlp_constraint_dims_get_from_attr(self.nlp_config, \
             self.nlp_dims, self.nlp_out, stage, field, &dims[0])
 
+        cdef double[::1] value
+
         value_shape = value_.shape
         if len(value_shape) == 1:
             value_shape = (value_shape[0], 0)
-            # value_ = np.ravel(value_, order='F')
+            value = np.asfortranarray(value_)
 
         elif len(value_shape) == 2:
-            if api=='old':
-                pass
-            elif api=='warn':
-                if not np.all(np.ravel(value_, order='F')==np.ravel(value_, order='K')):
-                    raise Exception("Ambiguity in API detected.\n"
-                                    "Are you making an acados model from scrach? Add api='new' to constraints_set and carry on.\n"
-                                    "Are you seeing this error suddenly in previously running code? Read on.\n"
-                                    "  You are relying on a now-fixed bug in constraints_set for field '{}'.\n".format(field_) +
-                                    "  acados_template now correctly passes on any matrices to acados in column major format.\n" +
-                                    "  Two options to fix this error: \n" +
-                                    "   * Add api='old' to constraints_set to restore old incorrect behaviour\n" +
-                                    "   * Add api='new' to constraints_set and remove any unnatural manipulation of the value argument " +
-                                    "such as non-mathematical transposes, reshaping, casting to fortran order, etc... " +
-                                    "If there is no such manipulation, then you have probably been getting an incorrect solution before.")
-                # Get elements in column major order
-                value_ = np.ravel(value_, order='F')
-            elif api=='new':
-                # Get elements in column major order
-                value_ = np.ravel(value_, order='F')
-            else:
-                raise Exception("Unknown api: '{}'".format(api))
+            # Get elements in column major order
+            value = np.ravel(value_, order='F')
 
         if value_shape[0] != dims[0] or value_shape[1] != dims[1]:
             raise Exception('AcadosOcpSolver.constraints_set(): mismatching dimension' \
                 ' for field "{}" with dimension {} (you have {})'.format(field_, tuple(dims), value_shape))
 
-        cdef double[::1] value = np.asfortranarray(value_, dtype=np.double)
         acados_solver_common.ocp_nlp_constraints_model_set(self.nlp_config, \
             self.nlp_dims, self.nlp_in, stage, field, <void *> &value[0])
 

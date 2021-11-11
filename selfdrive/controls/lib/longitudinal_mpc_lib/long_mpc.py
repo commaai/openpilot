@@ -222,9 +222,9 @@ class LongitudinalMpc():
       self.set_weights_for_lead_policy()
 
   def set_weights_for_lead_policy(self):
-    W = np.diag([X_EGO_OBSTACLE_COST, X_EGO_COST, V_EGO_COST, A_EGO_COST, J_EGO_COST])
+    W = np.asfortranarray(np.diag([X_EGO_OBSTACLE_COST, X_EGO_COST, V_EGO_COST, A_EGO_COST, J_EGO_COST]))
     for i in range(N):
-      self.solver.cost_set(i, 'W', W, api='new')
+      self.solver.cost_set(i, 'W', W)
     # Setting the slice without the copy make the array not contiguous,
     # causing issues with the C interface.
     self.solver.cost_set(N, 'W', np.copy(W[:COST_E_DIM, :COST_E_DIM]))
@@ -232,12 +232,12 @@ class LongitudinalMpc():
     # Set L2 slack cost on lower bound constraints
     Zl = np.array([LIMIT_COST, LIMIT_COST, LIMIT_COST, DANGER_ZONE_COST])
     for i in range(N):
-      self.solver.cost_set(i, 'Zl', Zl, api='new')
+      self.solver.cost_set(i, 'Zl', Zl)
 
   def set_weights_for_xva_policy(self):
-    W = np.diag([0., 10., 1., 10., 1.])
+    W = np.asfortranarray(np.diag([0., 10., 1., 10., 1.]))
     for i in range(N):
-      self.solver.cost_set(i, 'W', W, api='new')
+      self.solver.cost_set(i, 'W', W)
     # Setting the slice without the copy make the array not contiguous,
     # causing issues with the C interface.
     self.solver.cost_set(N, 'W', np.copy(W[:COST_E_DIM, :COST_E_DIM]))
@@ -245,7 +245,7 @@ class LongitudinalMpc():
     # Set L2 slack cost on lower bound constraints
     Zl = np.array([LIMIT_COST, LIMIT_COST, LIMIT_COST, 0.0])
     for i in range(N):
-      self.solver.cost_set(i, 'Zl', Zl, api='new')
+      self.solver.cost_set(i, 'Zl', Zl)
 
   def set_cur_state(self, v, a):
     if abs(self.x0[1] - v) > 1.:
@@ -333,7 +333,7 @@ class LongitudinalMpc():
     self.yref[:,2] = v
     self.yref[:,3] = a
     for i in range(N):
-      self.solver.cost_set(i, "yref", self.yref[i], api='new')
+      self.solver.cost_set(i, "yref", self.yref[i])
     self.solver.cost_set(N, "yref", self.yref[N][:COST_E_DIM])
     self.accel_limit_arr[:,0] = -10.
     self.accel_limit_arr[:,1] = 10.
