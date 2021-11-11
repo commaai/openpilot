@@ -241,8 +241,8 @@ class TestOnroad(unittest.TestCase):
         result += f"{s} - failed RSD timing check\n"
         passed = False
 
-      result += f"{s}: {np.array([np.mean(ts), np.max(ts), np.min(ts)])*1e3}\n"
-      result += f"     {np.max(np.absolute([np.max(ts)/dt, np.min(ts)/dt]))} {np.std(ts)/dt}\n"
+      result += f"{s.ljust(40)}: {np.array([np.mean(ts), np.max(ts), np.min(ts)])*1e3}\n"
+      result += f"{''.ljust(40)}  {np.max(np.absolute([np.max(ts)/dt, np.min(ts)/dt]))} {np.std(ts)/dt}\n"
     result += "="*67
     print(result)
     self.assertTrue(passed)
