@@ -1,7 +1,4 @@
 #!/usr/bin/env python3
-import pstats
-import cProfile
-
 from cereal import car
 from common.params import Params
 from common.realtime import Priority, config_realtime_process
@@ -35,22 +32,14 @@ def plannerd_thread(sm=None, pm=None):
   if pm is None:
     pm = messaging.PubMaster(['longitudinalPlan', 'lateralPlan'])
 
-  with cProfile.Profile(builtins=False) as pr:
-    i = 0
-    while True:
-      sm.update()
+  while True:
+    sm.update()
 
-      if sm.updated['modelV2']:
-        lateral_planner.update(sm, CP)
-        lateral_planner.publish(sm, pm)
-        longitudinal_planner.update(sm, CP)
-        longitudinal_planner.publish(sm, pm)
-
-        i+= 1
-        if i == 80:
-          stats = pstats.Stats(pr)
-          stats.sort_stats('time')
-          stats.dump_stats('/tmp/plannerd_stats')
+    if sm.updated['modelV2']:
+      lateral_planner.update(sm, CP)
+      lateral_planner.publish(sm, pm)
+      longitudinal_planner.update(sm, CP)
+      longitudinal_planner.publish(sm, pm)
 
 
 def main(sm=None, pm=None):
