@@ -35,6 +35,7 @@ AbstractAlert::AbstractAlert(bool hasRebootBtn, QWidget *parent) : QFrame(parent
     params.putBool("SnoozeUpdate", true);
   });
   QObject::connect(snooze_btn, &QPushButton::clicked, this, &AbstractAlert::dismiss);
+  snooze_btn->setStyleSheet(R"(color: white; background-color: #4F4F4F;)");
 
   if (hasRebootBtn) {
     QPushButton *rebootBtn = new QPushButton("Reboot and Update");
