@@ -292,16 +292,16 @@ cdef class AcadosOcpSolverFast:
         acados_solver_common.ocp_nlp_cost_dims_get_from_attr(self.nlp_config, \
             self.nlp_dims, self.nlp_out, stage, field, &dims[0])
 
-        cdef double[::1] value
+        cdef double[::1,:] value
 
         value_shape = value_.shape
         if len(value_shape) == 1:
             value_shape = (value_shape[0], 0)
-            value = np.asfortranarray(value_)
+            value = np.asfortranarray(value_[None,:])
 
         elif len(value_shape) == 2:
             # Get elements in column major order
-            value = np.ravel(value_, order='F')
+            value = np.asfortranarray(value_)
 
         if value_shape[0] != dims[0] or value_shape[1] != dims[1]:
             raise Exception('AcadosOcpSolver.cost_set(): mismatching dimension', \
@@ -309,7 +309,7 @@ cdef class AcadosOcpSolverFast:
                 field_, tuple(dims), value_shape))
 
         acados_solver_common.ocp_nlp_cost_model_set(self.nlp_config, \
-            self.nlp_dims, self.nlp_in, stage, field, <void *> &value[0])
+            self.nlp_dims, self.nlp_in, stage, field, <void *> &value[0][0])
 
 
     def constraints_set(self, int stage, str field_, value_):
@@ -326,23 +326,23 @@ cdef class AcadosOcpSolverFast:
         acados_solver_common.ocp_nlp_constraint_dims_get_from_attr(self.nlp_config, \
             self.nlp_dims, self.nlp_out, stage, field, &dims[0])
 
-        cdef double[::1] value
+        cdef double[::1,:] value
 
         value_shape = value_.shape
         if len(value_shape) == 1:
             value_shape = (value_shape[0], 0)
-            value = np.asfortranarray(value_)
+            value = np.asfortranarray(value_[None,:])
 
         elif len(value_shape) == 2:
             # Get elements in column major order
-            value = np.ravel(value_, order='F')
+            value = np.asfortranarray(value_)
 
         if value_shape[0] != dims[0] or value_shape[1] != dims[1]:
             raise Exception('AcadosOcpSolver.constraints_set(): mismatching dimension' \
                 ' for field "{}" with dimension {} (you have {})'.format(field_, tuple(dims), value_shape))
 
         acados_solver_common.ocp_nlp_constraints_model_set(self.nlp_config, \
-            self.nlp_dims, self.nlp_in, stage, field, <void *> &value[0])
+            self.nlp_dims, self.nlp_in, stage, field, <void *> &value[0][0])
 
         return
 
