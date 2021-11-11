@@ -5,7 +5,7 @@ from selfdrive.car.toyota.toyotacan import create_steer_command, create_ui_comma
                                            create_accel_command, create_acc_cancel_command, \
                                            create_fcw_command, create_lta_steer_command
 from selfdrive.car.toyota.values import CAR, STATIC_DSU_MSGS, NO_STOP_TIMER_CAR, TSS2_CAR, \
-                                        MIN_ACC_SPEED, PEDAL_HYST_GAP, PEDAL_SCALE, CarControllerParams
+                                        MIN_ACC_SPEED, PEDAL_TRANSITION, CarControllerParams
 from opendbc.can.packer import CANPacker
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
@@ -48,17 +48,14 @@ class CarController():
 
     if CS.CP.enableGasInterceptor:
       # handle hysteresis when around the minimum acc speed
-      if CS.out.vEgo < MIN_ACC_SPEED:
+      if CS.out.vEgo > MIN_ACC_SPEED + PEDAL_TRANSITION:
         self.use_interceptor = True
-      elif CS.out.vEgo > MIN_ACC_SPEED + PEDAL_HYST_GAP:
-        self.use_interceptor = False
 
       if self.use_interceptor and enabled:
-        # only send negative accel when using interceptor. gas handles acceleration
-        # +0.18 m/s^2 offset to reduce ABS pump usage when OP is engaged
-        MAX_INTERCEPTOR_GAS = interp(CS.out.vEgo, [0.0, MIN_ACC_SPEED], [0.2, 0.5])
-        interceptor_gas_cmd = clip(actuators.accel / PEDAL_SCALE, 0., MAX_INTERCEPTOR_GAS)
-        pcm_accel_cmd = 0.18 - max(0, -actuators.accel)
+        MAX_INTERCEPTOR_GAS = interp(CS.out.vEgo, [0.0, MIN_ACC_SPEED], [0.5, 0.5])
+        PEDAL_SCALE = interp(CS.out.vEgo, [0.0, MIN_ACC_SPEED], [6.0, 3.0])
+        PEDAL_MULT = interp(CS.out.vEgo, [MIN_ACC_SPEED, MIN_ACC_SPEED + PEDAL_TRANSITION], [1.0, 0.0])
+        interceptor_gas_cmd = PEDAL_MULT * clip(actuators.accel / PEDAL_SCALE, 0., MAX_INTERCEPTOR_GAS)
 
     pcm_accel_cmd, self.accel_steady = accel_hysteresis(pcm_accel_cmd, self.accel_steady, enabled)
     pcm_accel_cmd = clip(pcm_accel_cmd, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
