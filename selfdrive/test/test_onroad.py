@@ -97,7 +97,8 @@ def cputime_total(ct):
 
 
 def check_cpu_usage(first_proc, last_proc):
-  result =  "------------------------------------------------\n"
+  result = "\n"
+  result += "------------------------------------------------\n"
   result += "------------------ CPU Usage -------------------\n"
   result += "------------------------------------------------\n"
 
@@ -212,6 +213,7 @@ class TestOnroad(unittest.TestCase):
       self.assertLess(np.mean(ts), avg_max, f"high avg '{s}' execution time: {np.mean(ts)}")
       result += f"'{s}' execution time: {min(ts)}\n"
       result += f"'{s}' avg execution time: {np.mean(ts)}\n"
+    result += "------------------------------------------------\n"
     print(result)
 
   def test_timings(self):
@@ -232,15 +234,15 @@ class TestOnroad(unittest.TestCase):
         np.testing.assert_allclose(np.mean(ts), dt, rtol=0.03, err_msg=f"{s} - failed mean timing check")
         np.testing.assert_allclose([np.max(ts), np.min(ts)], dt, rtol=maxmin, err_msg=f"{s} - failed max/min timing check")
       except Exception as e:
-        result += str(e)
+        result += str(e) + "\n"
         passed = False
 
       if np.std(ts) / dt > rsd:
-        result += f"{s} - failed RSD timing check"
+        result += f"{s} - failed RSD timing check\n"
         passed = False
 
-      result += f"{s}: {np.array([np.mean(ts), np.max(ts), np.min(ts)])*1e3}"
-      result += f"     {np.max(np.absolute([np.max(ts)/dt, np.min(ts)/dt]))} {np.std(ts)/dt}"
+      result += f"{s}: {np.array([np.mean(ts), np.max(ts), np.min(ts)])*1e3}\n"
+      result += f"     {np.max(np.absolute([np.max(ts)/dt, np.min(ts)/dt]))} {np.std(ts)/dt}\n"
     result += "="*67
     print(result)
     self.assertTrue(passed)
