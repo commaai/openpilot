@@ -112,10 +112,9 @@ def check_cpu_usage(first_proc, last_proc):
       cpu_usage = cpu_time / dt * 100.
       if cpu_usage > max(normal_cpu_usage * 1.15, normal_cpu_usage + 5.0):
         # cpu usage is high while playing sounds
-        if proc_name == "./_soundd" and cpu_usage < 65.:
-          continue
-        result += f"Warning {proc_name} using more CPU than normal\n"
-        r = False
+        if not (proc_name == "./_soundd" and cpu_usage < 65.):
+          result += f"Warning {proc_name} using more CPU than normal\n"
+          r = False
       elif cpu_usage < min(normal_cpu_usage * 0.65, max(normal_cpu_usage - 1.0, 0.0)):
         result += f"Warning {proc_name} using less CPU than normal\n"
         r = False
@@ -201,7 +200,8 @@ class TestOnroad(unittest.TestCase):
     self.assertTrue(cpu_ok)
 
   def test_model_execution_timings(self):
-    result =  "------------------------------------------------\n"
+    result = "\n"
+    result += "------------------------------------------------\n"
     result += "----------------- Model Timing -----------------\n"
     result += "------------------------------------------------\n"
     # TODO: this went up when plannerd cpu usage increased, why?
@@ -215,9 +215,11 @@ class TestOnroad(unittest.TestCase):
     print(result)
 
   def test_timings(self):
-
-    print("\n\n")
-    print("="*25, "service timings", "="*25)
+    passed = True
+    result = "\n"
+    result += "------------------------------------------------\n"
+    result += "----------------- Service Timings --------------\n"
+    result += "------------------------------------------------\n"
     for s, (maxmin, rsd) in TIMINGS.items():
       msgs = [m.logMonoTime for m in self.lr if m.which() == s]
       if not len(msgs):
@@ -226,12 +228,22 @@ class TestOnroad(unittest.TestCase):
       ts = np.diff(msgs) / 1e9
       dt = 1 / service_list[s].frequency
 
-      np.testing.assert_allclose(np.mean(ts), dt, rtol=0.03, err_msg=f"{s} - failed mean timing check")
-      np.testing.assert_allclose([np.max(ts), np.min(ts)], dt, rtol=maxmin, err_msg=f"{s} - failed max/min timing check")
-      self.assertLess(np.std(ts) / dt, rsd, msg=f"{s} - failed RSD timing check")
-      print(f"{s}: {np.array([np.mean(ts), np.max(ts), np.min(ts)])*1e3}")
-      print(f"     {np.max(np.absolute([np.max(ts)/dt, np.min(ts)/dt]))} {np.std(ts)/dt}")
-    print("="*67)
+      try:
+        np.testing.assert_allclose(np.mean(ts), dt, rtol=0.03, err_msg=f"{s} - failed mean timing check")
+        np.testing.assert_allclose([np.max(ts), np.min(ts)], dt, rtol=maxmin, err_msg=f"{s} - failed max/min timing check")
+      except Exception as e:
+        result += str(e)
+        passed = False
+
+      if np.std(ts) / dt > rsd:
+        result += f"{s} - failed RSD timing check"
+        passed = False
+
+      result += f"{s}: {np.array([np.mean(ts), np.max(ts), np.min(ts)])*1e3}"
+      result += f"     {np.max(np.absolute([np.max(ts)/dt, np.min(ts)/dt]))} {np.std(ts)/dt}"
+    result += "="*67
+    print(result)
+    self.assertTrue(passed)
 
   @release_only
   def test_startup(self):
