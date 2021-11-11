@@ -297,7 +297,7 @@ cdef class AcadosOcpSolverFast:
         value_shape = value_.shape
         if len(value_shape) == 1:
             value_shape = (value_shape[0], 0)
-            data_ptr = np.asfortranarray(value_)
+            value = np.asfortranarray(value_)
 
         elif len(value_shape) == 2:
             # Get elements in column major order
