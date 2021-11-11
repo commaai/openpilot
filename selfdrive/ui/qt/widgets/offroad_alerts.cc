@@ -22,7 +22,7 @@ AbstractAlert::AbstractAlert(bool hasRebootBtn, QWidget *parent) : QFrame(parent
   QHBoxLayout *footer_layout = new QHBoxLayout();
   main_layout->addLayout(footer_layout);
 
-  QPushButton *dismiss_btn = new QPushButton("Dismiss");
+  QPushButton *dismiss_btn = new QPushButton("Close");
   dismiss_btn->setFixedSize(400, 125);
   footer_layout->addWidget(dismiss_btn, 0, Qt::AlignBottom | Qt::AlignLeft);
   QObject::connect(dismiss_btn, &QPushButton::clicked, this, &AbstractAlert::dismiss);
@@ -34,6 +34,7 @@ AbstractAlert::AbstractAlert(bool hasRebootBtn, QWidget *parent) : QFrame(parent
   QObject::connect(snooze_btn, &QPushButton::clicked, [=]() {
     params.putBool("SnoozeUpdate", true);
   });
+  QObject::connect(snooze_btn, &QPushButton::clicked, this, &AbstractAlert::dismiss);
 
   if (hasRebootBtn) {
     QPushButton *rebootBtn = new QPushButton("Reboot and Update");
