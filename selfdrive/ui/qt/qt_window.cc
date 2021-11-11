@@ -1,11 +1,16 @@
 #include "selfdrive/ui/qt/qt_window.h"
 
 void setMainWindow(QWidget *w) {
-  const bool wide = (QGuiApplication::primaryScreen()->size().width() >= WIDE_WIDTH) ^
-                    (getenv("INVERT_WIDTH") != NULL);
-  const float scale = util::getenv("SCALE", 1.0f);
-
-  w->setFixedSize(QSize(wide ? WIDE_WIDTH : 1920, 1080) * scale);
+  const QSize sz = QGuiApplication::primaryScreen()->size();
+  if (Hardware::PC() && sz.width() <= 1920 && sz.height() <= 1080 && getenv("SCALE") == nullptr) {
+    w->setMinimumSize(QSize(640, 480)); // allow resize smaller than fullscreen
+    w->setMaximumSize(QSize(2160, 1080));
+    w->resize(sz);
+  } else {
+    const float scale = util::getenv("SCALE", 1.0f);
+    const bool wide = (sz.width() >= WIDE_WIDTH) ^ (getenv("INVERT_WIDTH") != NULL);
+    w->setFixedSize(QSize(wide ? WIDE_WIDTH : 1920, 1080) * scale);
+  }
   w->show();
 
 #ifdef QCOM2
