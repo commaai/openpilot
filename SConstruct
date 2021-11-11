@@ -71,6 +71,11 @@ lenv = {
   "TERA_PATH": Dir("#").abspath + f"/third_party/acados/{arch}/t_renderer",
 }
 
+# Propagate Nix environ variables to configure the compiler
+for k, v in os.environ.items():
+  if k.startswith('NIX'):
+    lenv[k] = v
+
 rpath = lenv["LD_LIBRARY_PATH"].copy()
 
 if arch == "aarch64" or arch == "larch64":
@@ -124,18 +129,10 @@ else:
     yuv_dir = "mac" if real_arch != "arm64" else "mac_arm64"
     libpath = [
       f"#third_party/libyuv/{yuv_dir}/lib",
-      "/usr/local/lib",
-      "/opt/homebrew/lib",
-      "/usr/local/opt/openssl/lib",
-      "/opt/homebrew/opt/openssl/lib",
-      "/System/Library/Frameworks/OpenGL.framework/Libraries",
     ]
     cflags += ["-DGL_SILENCE_DEPRECATION"]
     cxxflags += ["-DGL_SILENCE_DEPRECATION"]
     cpppath += [
-      "/opt/homebrew/include",
-      "/usr/local/opt/openssl/include",
-      "/opt/homebrew/opt/openssl/include"
     ]
   else:
     libpath = [
@@ -145,8 +142,6 @@ else:
       "#third_party/mapbox-gl-native-qt/x86_64",
       "#cereal",
       "#selfdrive/common",
-      "/usr/lib",
-      "/usr/local/lib",
     ]
 
   rpath += [
@@ -397,12 +392,15 @@ if arch not in ["aarch64", "larch64"]:
   })
 
 Export('rednose_config')
-SConscript(['rednose/SConscript'])
 
 # Build openpilot
 
 SConscript(['cereal/SConscript'])
-SConscript(['panda/board/SConscript'])
+#SConscript(['rednose/SConscript'])
+
+# TODO: fix gcc-arm-embedded on M1
+# SConscript(['panda/board/SConscript'])
+
 SConscript(['opendbc/can/SConscript'])
 
 SConscript(['third_party/SConscript'])
@@ -415,8 +413,8 @@ SConscript(['selfdrive/camerad/SConscript'])
 SConscript(['selfdrive/modeld/SConscript'])
 
 SConscript(['selfdrive/controls/lib/cluster/SConscript'])
-SConscript(['selfdrive/controls/lib/lateral_mpc_lib/SConscript'])
-SConscript(['selfdrive/controls/lib/longitudinal_mpc_lib/SConscript'])
+#SConscript(['selfdrive/controls/lib/lateral_mpc_lib/SConscript'])
+#SConscript(['selfdrive/controls/lib/longitudinal_mpc_lib/SConscript'])
 
 SConscript(['selfdrive/boardd/SConscript'])
 SConscript(['selfdrive/proclogd/SConscript'])
@@ -424,9 +422,10 @@ SConscript(['selfdrive/clocksd/SConscript'])
 
 SConscript(['selfdrive/loggerd/SConscript'])
 
-SConscript(['selfdrive/locationd/SConscript'])
+#SConscript(['selfdrive/locationd/SConscript'])
 SConscript(['selfdrive/sensord/SConscript'])
-SConscript(['selfdrive/ui/SConscript'])
+
+#SConscript(['selfdrive/ui/SConscript'])
 
 if arch != "Darwin":
   SConscript(['selfdrive/logcatd/SConscript'])
