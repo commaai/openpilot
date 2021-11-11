@@ -23,6 +23,8 @@ public:
 
   QTimer* timer;
 
+  std::optional<int> ui_pid;
+
   // Route
   bool gps_ok = false;
   QGeoServiceProvider *geoservice_provider;
@@ -47,4 +49,5 @@ private slots:
   void timerUpdate();
   void routeCalculated(QGeoRouteReply *reply);
   void recomputeRoute();
+  void sendRoute();
 };
