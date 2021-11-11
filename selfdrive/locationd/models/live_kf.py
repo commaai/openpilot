@@ -84,7 +84,7 @@ class LiveKalman():
                     ObservationKind.CAMERA_ODO_ROTATION: np.array([0.05**2, 0.05**2, 0.05**2]),
                     ObservationKind.IMU_FRAME: np.array([0.05**2, 0.05**2, 0.05**2]),
                     ObservationKind.NO_ROT: np.array([0.005**2, 0.005**2, 0.005**2]),
-                    ObservationKind.NO_ACCEL: np.array([0.005**2, 0.005**2, 0.005**2]),
+                    ObservationKind.NO_ACCEL: np.array([0.0005**2, 0.0005**2, 0.0005**2]),
                     ObservationKind.ECEF_POS: np.array([5**2, 5**2, 5**2]),
                     ObservationKind.ECEF_VEL: np.array([.5**2, .5**2, .5**2]),
                     ObservationKind.ECEF_ORIENTATION_FROM_GPS: np.array([.2**2, .2**2, .2**2, .2**2])}
