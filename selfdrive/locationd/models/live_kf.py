@@ -29,6 +29,7 @@ class States():
   ODO_SCALE = slice(16, 17)  # odometer scale
   ACCELERATION = slice(17, 20)  # Acceleration in device frame in m/s**2
   IMU_OFFSET = slice(20, 23)  # imu offset angles in radians
+  ACC_BIAS = slice(23, 26)
 
   # Error-state has different slices because it is an ESKF
   ECEF_POS_ERR = slice(0, 3)
@@ -39,6 +40,7 @@ class States():
   ODO_SCALE_ERR = slice(15, 16)
   ACCELERATION_ERR = slice(16, 19)
   IMU_OFFSET_ERR = slice(19, 22)
+  ACC_BIAS_ERR = slice(22, 25)
 
 
 class LiveKalman():
@@ -51,6 +53,7 @@ class LiveKalman():
                         0, 0, 0,
                         1,
                         0, 0, 0,
+                        0, 0, 0,
                         0, 0, 0])
 
   # state covariance
@@ -60,8 +63,9 @@ class LiveKalman():
                              1**2, 1**2, 1**2,
                              1**2, 1**2, 1**2,
                              0.02**2,
-                             1**2, 1**2, 1**2,
-                             (0.01)**2, (0.01)**2, (0.01)**2])
+                             100**2, 100**2, 100**2,
+                             0.01**2, 0.01**2, 0.01**2,
+                             0.01**2, 0.01**2, 0.01**2])
 
   # process noise
   Q_diag = np.array([0.03**2, 0.03**2, 0.03**2,
@@ -71,7 +75,8 @@ class LiveKalman():
                      (0.005 / 100)**2, (0.005 / 100)**2, (0.005 / 100)**2,
                      (0.02 / 100)**2,
                      3**2, 3**2, 3**2,
-                     (0.05 / 60)**2, (0.05 / 60)**2, (0.05 / 60)**2])
+                     (0.05 / 60)**2, (0.05 / 60)**2, (0.05 / 60)**2,
+                     0.005**2, 0.005**2, 0.005**2])
 
   obs_noise_diag = {ObservationKind.ODOMETRIC_SPEED: np.array([0.2**2]),
                     ObservationKind.PHONE_GYRO: np.array([0.025**2, 0.025**2, 0.025**2]),
@@ -79,6 +84,7 @@ class LiveKalman():
                     ObservationKind.CAMERA_ODO_ROTATION: np.array([0.05**2, 0.05**2, 0.05**2]),
                     ObservationKind.IMU_FRAME: np.array([0.05**2, 0.05**2, 0.05**2]),
                     ObservationKind.NO_ROT: np.array([0.005**2, 0.005**2, 0.005**2]),
+                    ObservationKind.NO_ACCEL: np.array([0.05**2, 0.05**2, 0.05**2]),
                     ObservationKind.ECEF_POS: np.array([5**2, 5**2, 5**2]),
                     ObservationKind.ECEF_VEL: np.array([.5**2, .5**2, .5**2]),
                     ObservationKind.ECEF_ORIENTATION_FROM_GPS: np.array([.2**2, .2**2, .2**2, .2**2])}
@@ -100,6 +106,7 @@ class LiveKalman():
     roll_bias, pitch_bias, yaw_bias = state[States.GYRO_BIAS, :]
     acceleration = state[States.ACCELERATION, :]
     imu_angles = state[States.IMU_OFFSET, :]
+    acc_bias = state[States.ACC_BIAS, :]
 
     dt = sp.Symbol('dt')
 
@@ -132,6 +139,7 @@ class LiveKalman():
     v_err = state_err[States.ECEF_VELOCITY_ERR, :]
     omega_err = state_err[States.ANGULAR_VELOCITY_ERR, :]
     acceleration_err = state_err[States.ACCELERATION_ERR, :]
+
 
     # Time derivative of the state error as a function of state error and state
     quat_err_matrix = euler_rotate(quat_err[0], quat_err[1], quat_err[2])
@@ -183,7 +191,8 @@ class LiveKalman():
 
     pos = sp.Matrix([x, y, z])
     gravity = quat_rot.T * ((EARTH_GM / ((x**2 + y**2 + z**2)**(3.0 / 2.0))) * pos)
-    h_acc_sym = (gravity + acceleration)
+    h_acc_sym = (gravity + acceleration + acc_bias)
+    h_acc_stationary_sym = acceleration
     h_phone_rot_sym = sp.Matrix([vroll, vpitch, vyaw])
 
     speed = sp.sqrt(vx**2 + vy**2 + vz**2 + 1e-6)
@@ -205,7 +214,8 @@ class LiveKalman():
                [h_orientation_sym, ObservationKind.ECEF_ORIENTATION_FROM_GPS, None],
                [h_relative_motion, ObservationKind.CAMERA_ODO_TRANSLATION, None],
                [h_phone_rot_sym, ObservationKind.CAMERA_ODO_ROTATION, None],
-               [h_imu_frame_sym, ObservationKind.IMU_FRAME, None]]
+               [h_imu_frame_sym, ObservationKind.IMU_FRAME, None],
+               [h_acc_stationary_sym, ObservationKind.NO_ACCEL, None]]
 
     # this returns a sympy routine for the jacobian of the observation function of the local vel
     in_vec = sp.MatrixSymbol('in_vec', 6, 1)  # roll, pitch, yaw, vx, vy, vz
