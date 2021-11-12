@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+
 #include "selfdrive/ui/replay/filereader.h"
 
 extern "C" {
@@ -26,7 +27,8 @@ public:
 
 private:
   bool decode(int idx, uint8_t *rgb, uint8_t *yuv);
-  bool decodeFrame(AVFrame *f, uint8_t *rgb, uint8_t *yuv);
+  bool decodeFrame(AVPacket *pkt);
+  bool copyBuffers(AVFrame *f, uint8_t *rgb, uint8_t *yuv);
 
   struct Frame {
     AVPacket pkt = {};
