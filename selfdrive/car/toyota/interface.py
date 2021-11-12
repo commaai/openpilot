@@ -112,7 +112,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 16.0
       tire_stiffness_factor = 0.8
       ret.mass = 4700. * CV.LB_TO_KG + STD_CARGO_KG  # 4260 + 4-5 people
-      set_lat_tune(ret.lateralTuning, LatTunes.PID_F)
+      set_lat_tune(ret.lateralTuning, LatTunes.PID_G)
 
     elif candidate in [CAR.HIGHLANDER, CAR.HIGHLANDERH]:
       stop_and_go = True
