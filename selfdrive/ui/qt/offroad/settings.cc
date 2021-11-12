@@ -175,7 +175,7 @@ DevicePanel::DevicePanel(QWidget* parent) : ListWidget(parent) {
         }
       }
     } else {
-      ConfirmationDialog::alert("Reboot not Possible While Engaged", this);
+      ConfirmationDialog::alert("Disengage to Reboot", this);
     }
   });
 
@@ -191,7 +191,7 @@ DevicePanel::DevicePanel(QWidget* parent) : ListWidget(parent) {
         }
       }
     } else {
-      ConfirmationDialog::alert("Power Off not Possible While Engaged", this);
+      ConfirmationDialog::alert("Disengage to Power Off", this);
     }
   });
 
