@@ -37,7 +37,7 @@ class TestSoundd(unittest.TestCase):
   @phone_only
   @with_processes(['soundd'])
   def test_alert_sounds(self):
-    pm = messaging.PubMaster(['controlsState'])
+    pm = messaging.PubMaster(['deviceState', 'controlsState'])
 
     # make sure they're all defined
     alert_sounds = {v: k for k, v in car.CarControl.HUDControl.AudibleAlert.schema.enumerants.items()}
@@ -52,7 +52,10 @@ class TestSoundd(unittest.TestCase):
       start_writes = get_total_writes()
 
       for _ in range(int(9 / DT_CTRL)):
-        msg = messaging.new_message('controlsState')
+        msg = messaging.new_message('deviceState')
+        msg.deviceState.started = True
+        pm.send('deviceState', msg)
+
         msg.controlsState.alertSound = sound
         msg.controlsState.alertType = str(sound)
         msg.controlsState.alertText1 = "Testing Sounds"
