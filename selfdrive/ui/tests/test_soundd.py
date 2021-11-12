@@ -56,6 +56,7 @@ class TestSoundd(unittest.TestCase):
         msg.deviceState.started = True
         pm.send('deviceState', msg)
 
+        msg = messaging.new_message('controlsState')
         msg.controlsState.alertSound = sound
         msg.controlsState.alertType = str(sound)
         msg.controlsState.alertText1 = "Testing Sounds"
