@@ -41,8 +41,8 @@ jobs:
         CACHE_SKIP_SAVE: true
       with:
         path: /tmp/scons_cache
-        key: scons-cache-${{ steps.stamps.outputs.time }}
-        restore-keys: scons-cache-
+        key: scons-build-cache-${{ steps.stamps.outputs.time }}
+        restore-keys: scons-build-cache-
     - name: Strip non-release files
       run: |
         mkdir $STRIPPED_DIR
@@ -155,8 +155,8 @@ jobs:
         CACHE_SKIP_SAVE: ${{ github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot' }}
       with:
         path: /tmp/scons_cache
-        key: scons-cache-${{ steps.stamps.outputs.time }}
-        restore-keys: scons-cache-
+        key: scons-build-cache-${{ steps.stamps.outputs.time }}
+        restore-keys: scons-build-cache-
     - name: Build Docker image
       run: eval "$BUILD"
     - name: Push to container registry
@@ -180,8 +180,8 @@ jobs:
         CACHE_SKIP_SAVE: true
       with:
         path: /tmp/scons_cache
-        key: scons-cache-${{ steps.stamps.outputs.time }}
-        restore-keys: scons-cache-
+        key: scons-build-cache-${{ steps.stamps.outputs.time }}
+        restore-keys: scons-build-cache-
     - name: Build Docker image
       run: eval "$BUILD"
     - name: pre-commit
@@ -209,8 +209,8 @@ jobs:
         CACHE_SKIP_SAVE: true
       with:
         path: /tmp/scons_cache
-        key: scons-cache-${{ steps.stamps.outputs.time }}
-        restore-keys: scons-cache-
+        key: scons-build-cache-${{ steps.stamps.outputs.time }}
+        restore-keys: scons-build-cache-
     - name: Build Docker image
       run: eval "$BUILD"
     - name: Run valgrind
@@ -237,8 +237,8 @@ jobs:
         CACHE_SKIP_SAVE: true
       with:
         path: /tmp/scons_cache
-        key: scons-cache-${{ steps.stamps.outputs.time }}
-        restore-keys: scons-cache-
+        key: scons-build-cache-${{ steps.stamps.outputs.time }}
+        restore-keys: scons-build-cache-
     - name: Build Docker image
       run: eval "$BUILD"
     - name: Run unit tests
@@ -286,8 +286,8 @@ jobs:
         CACHE_SKIP_SAVE: true
       with:
         path: /tmp/scons_cache
-        key: scons-cache-${{ steps.stamps.outputs.time }}
-        restore-keys: scons-cache-
+        key: scons-build-cache-${{ steps.stamps.outputs.time }}
+        restore-keys: scons-build-cache-
     - name: Build Docker image
       run: eval "$BUILD"
     - name: Run replay
@@ -337,8 +337,8 @@ jobs:
         CACHE_SKIP_SAVE: true
       with:
         path: /tmp/scons_cache
-        key: scons-cache-${{ steps.stamps.outputs.time }}
-        restore-keys: scons-cache-
+        key: scons-build-cache-${{ steps.stamps.outputs.time }}
+        restore-keys: scons-build-cache-
     - name: Build Docker image
       run: eval "$BUILD"
     - name: Test longitudinal
@@ -376,8 +376,8 @@ jobs:
         CACHE_SKIP_SAVE: true
       with:
         path: /tmp/scons_cache
-        key: scons-cache-${{ steps.stamps.outputs.time }}
-        restore-keys: scons-cache-
+        key: scons-build-cache-${{ steps.stamps.outputs.time }}
+        restore-keys: scons-build-cache-
     - name: Build Docker image
       run: eval "$BUILD"
     - name: Test car models
