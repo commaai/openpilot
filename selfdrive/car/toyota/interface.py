@@ -317,9 +317,9 @@ class CarInterface(CarInterfaceBase):
 
     if ret.enableGasInterceptor:
       ret.longitudinalTuning.kpBP = [0.]
-      ret.longitudinalTuning.kpV = [0.1]
+      ret.longitudinalTuning.kpV = [0.]
       ret.longitudinalTuning.kpBP = [0.]
-      ret.longitudinalTuning.kiV = [0.05]
+      ret.longitudinalTuning.kiV = [0.]
       ret.longitudinalActuatorDelayLowerBound = 0.7
       ret.longitudinalActuatorDelayUpperBound = 0.7
     elif candidate in [CAR.COROLLA_TSS2, CAR.COROLLAH_TSS2, CAR.RAV4_TSS2, CAR.RAV4H_TSS2, CAR.LEXUS_NX_TSS2]:
