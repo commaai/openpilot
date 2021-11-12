@@ -10,21 +10,6 @@ from opendbc.can.packer import CANPacker
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 
-def accel_hysteresis(accel, accel_steady, enabled):
-
-  # for small accel oscillations within ACCEL_HYST_GAP, don't change the accel command
-  if not enabled:
-    # send 0 when disabled, otherwise acc faults
-    accel_steady = 0.
-  elif accel > accel_steady + CarControllerParams.ACCEL_HYST_GAP:
-    accel_steady = accel - CarControllerParams.ACCEL_HYST_GAP
-  elif accel < accel_steady - CarControllerParams.ACCEL_HYST_GAP:
-    accel_steady = accel + CarControllerParams.ACCEL_HYST_GAP
-  accel = accel_steady
-
-  return accel, accel_steady
-
-
 class CarController():
   def __init__(self, dbc_name, CP, VM):
     self.last_steer = 0
@@ -41,18 +26,13 @@ class CarController():
              left_line, right_line, lead, left_lane_depart, right_lane_depart):
 
     # *** compute control surfaces ***
-
-    # gas and brake
-    interceptor_gas_cmd = 0.
-    pcm_accel_cmd = actuators.accel
-
     if CS.CP.enableGasInterceptor and enabled:
       MAX_INTERCEPTOR_GAS = 0.5
       PEDAL_SCALE = interp(CS.out.vEgo, [0.0, MIN_ACC_SPEED, MIN_ACC_SPEED + PEDAL_TRANSITION], [0.15, 0.3, 0.0])
       interceptor_gas_cmd = clip(PEDAL_SCALE * actuators.accel, 0., MAX_INTERCEPTOR_GAS)
-
-    pcm_accel_cmd, self.accel_steady = accel_hysteresis(pcm_accel_cmd, self.accel_steady, enabled)
-    pcm_accel_cmd = clip(pcm_accel_cmd, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
+    else:
+      interceptor_gas_cmd = 0.
+    pcm_accel_cmd = clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
 
     # steer torque
     new_steer = int(round(actuators.steer * CarControllerParams.STEER_MAX))
@@ -79,7 +59,6 @@ class CarController():
       self.standstill_req = False
 
     self.last_steer = apply_steer
-    self.last_accel = pcm_accel_cmd
     self.last_standstill = CS.out.standstill
 
     can_sends = []
