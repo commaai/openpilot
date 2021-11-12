@@ -159,7 +159,13 @@ def manager_thread():
     pm.send('managerState', msg)
 
     # Exit main loop when uninstall/shutdown/reboot is needed
-    if any(params.get_bool(p) for p in ("DoUninstall", "DoShutdown", "DoReboot")):
+    shutdown = False
+    for param in ("DoUninstall", "DoShutdown", "DoReboot"):
+      if params.get_bool(param):
+        cloudlog.warning(f"Shutting down manager - {param} set")
+        shutdown = True
+
+    if shutdown:
       break
 
 
