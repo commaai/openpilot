@@ -22,6 +22,9 @@ from panda.tests.safety.common import package_can_msg
 
 PandaType = log.PandaState.PandaType
 
+NUM_JOBS = int(os.environ.get("NUM_JOBS", "1"))
+JOB_ID = int(os.environ.get("JOB_ID", "0"))
+
 ROUTES = {rt.car_fingerprint: rt.route for rt in routes}
 
 # TODO: get updated routes for these cars
@@ -34,11 +37,12 @@ ignore_carstate_check = [
   CHRYSLER.PACIFICA_2017_HYBRID,
 ]
 
-@parameterized_class(('car_model'), [(car,) for car in all_known_cars()])
+@parameterized_class(('car_model'), [(car,) for i, car in enumerate(all_known_cars()) if i % NUM_JOBS == JOB_ID])
 class TestCarModel(unittest.TestCase):
 
   @classmethod
   def setUpClass(cls):
+    print(cls.car_model)
     if cls.car_model not in ROUTES:
       # TODO: get routes for missing cars and remove this
       if cls.car_model in non_tested_cars:

@@ -295,6 +295,9 @@ jobs:
     name: car models
     runs-on: ubuntu-20.04
     timeout-minutes: 50
+    strategy:
+      matrix:
+        job: [0, 1, 2, 3]
     steps:
     - uses: actions/checkout@v2
       with:
@@ -311,6 +314,9 @@ jobs:
       run: |
         ${{ env.RUN }} "scons -j$(nproc) --test && \
                         coverage run selfdrive/test/test_models.py"
+      env:
+        NUM_JOBS: 4
+        JOB_ID: ${{ matrix.job }}
     - name: Upload coverage to Codecov
       run: bash <(curl -s https://codecov.io/bash) -v -F test_car_models
 
