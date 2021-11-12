@@ -133,13 +133,13 @@ void Localizer::build_live_location(cereal::LiveLocationKalman::Builder& fix) {
   init_measurement(fix.initPositionGeodetic(), fix_pos_geo_vec, nans, this->last_gps_fix > 0);
   init_measurement(fix.initPositionECEF(), fix_ecef, fix_ecef_std, this->last_gps_fix > 0);
   init_measurement(fix.initVelocityECEF(), vel_ecef, vel_ecef_std, this->last_gps_fix > 0);
-  init_measurement(fix.initVelocityNED(), ned_vel, nans, true);
+  init_measurement(fix.initVelocityNED(), ned_vel, nans, this->last_gps_fix > 0);
   init_measurement(fix.initVelocityDevice(), vel_device, vel_device_std, true);
   init_measurement(fix.initAccelerationDevice(), accDevice, accDeviceErr, true);
   init_measurement(fix.initOrientationECEF(), orientation_ecef, orientation_ecef_std, this->last_gps_fix > 0);
   init_measurement(fix.initCalibratedOrientationECEF(), calibrated_orientation_ecef, nans, this->calibrated && this->last_gps_fix > 0);
-  init_measurement(fix.initOrientationNED(), orientation_ned, nans, true);
-  init_measurement(fix.initCalibratedOrientationNED(), calibrated_orientation_ned, nans, true);
+  init_measurement(fix.initOrientationNED(), orientation_ned, nans, this->last_gps_fix > 0);
+  init_measurement(fix.initCalibratedOrientationNED(), calibrated_orientation_ned, nans, this->calibrated && this->last_gps_fix > 0);
   init_measurement(fix.initAngularVelocityDevice(), angVelocityDevice, angVelocityDeviceErr, true);
   init_measurement(fix.initVelocityCalibrated(), vel_calib, vel_calib_std, this->calibrated);
   init_measurement(fix.initAngularVelocityCalibrated(), ang_vel_calib, ang_vel_calib_std, this->calibrated);
