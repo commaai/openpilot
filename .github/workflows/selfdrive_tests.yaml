@@ -307,13 +307,13 @@ jobs:
       uses: actions/cache@v2
       with:
         path: /tmp/comma_download_cache
-        key: ${{ hashFiles('.github/workflows/test.yaml', 'selfdrive/test/test_routes.py') }}-${{ matrix.job }}
+        key: car-models-${{ hashFiles('selfdrive/test/test_models.py', 'selfdrive/test/test_routes.py') }}-${{ matrix.job }}
     - name: Build Docker image
       run: eval "$BUILD"
     - name: Test car models
       run: |
         ${{ env.RUN }} "scons -j$(nproc) --test && \
-                        coverage run selfdrive/test/test_models.py"
+                        FILEREADER_CACHE=1 coverage run selfdrive/test/test_models.py"
       env:
         NUM_JOBS: 4
         JOB_ID: ${{ matrix.job }}
