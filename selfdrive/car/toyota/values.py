@@ -8,7 +8,6 @@ Ecu = car.CarParams.Ecu
 MIN_ACC_SPEED = 19. * CV.MPH_TO_MS
 
 PEDAL_TRANSITION = 10. * CV.MPH_TO_MS
-PEDAL_SCALE = 3.0
 
 class CarControllerParams:
   ACCEL_HYST_GAP = 0.06  # don't change accel command for small oscilalitons within this value
