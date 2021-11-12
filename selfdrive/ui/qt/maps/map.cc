@@ -478,15 +478,8 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
     } else if (straight) {
       fn += "turn_straight";
     }
-    fn +=  + ".png";
-    if (is_rhd) {
-      QString rhd_fn = fn.replace(".png", "_rhd.png");
-      if (QFileInfo::exists(rhd_fn)) {
-        fn = rhd_fn;
-      }
-    }
 
-    QPixmap pix(fn);
+    QPixmap pix(fn + ".png");
     auto icon = new QLabel;
     int wh = active ? 125 : 75;
     icon->setPixmap(pix.scaled(wh, wh, Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
