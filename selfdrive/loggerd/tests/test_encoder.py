@@ -53,8 +53,7 @@ class TestEncoder(unittest.TestCase):
     os.environ["LOGGERD_SEGMENT_LENGTH"] = str(SEGMENT_LENGTH)
 
   def tearDown(self):
-    #self._clear_logs()
-    pass
+    self._clear_logs()
 
   def _clear_logs(self):
     if os.path.exists(ROOT):
