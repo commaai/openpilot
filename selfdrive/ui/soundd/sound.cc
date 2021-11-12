@@ -34,7 +34,8 @@ void Sound::update() {
 
   // no sounds while offroad
   // also no sounds if nothing is alive in case thermald crashes while offroad
-  if (!started || (!sm.alive("deviceState") && !sm.alive("controlsState"))) {
+  const bool crashed = (sm.frame - std::max(sm.rcv_frame("deviceState"), sm.rcv_frame("controlsState"))) > 10*UI_FREQ;
+  if (!started || crashed) {
     setAlert({});
     return;
   }
