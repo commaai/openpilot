@@ -57,7 +57,7 @@ struct Alert {
   cereal::ControlsState::AlertSize size;
   AudibleAlert sound;
   bool equal(const Alert &a2) {
-    return text1 == a2.text1 && text2 == a2.text2 && type == a2.type;
+    return text1 == a2.text1 && text2 == a2.text2 && type == a2.type && sound == a2.sound;
   }
 
   static Alert get(const SubMaster &sm, uint64_t started_frame) {
