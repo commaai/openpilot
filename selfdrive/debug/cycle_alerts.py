@@ -17,8 +17,8 @@ def cycle_alerts(duration=2000, is_metric=False):
   alerts = list(EVENTS.keys())
   print(alerts)
 
-  #alerts = [EventName.preDriverDistracted, EventName.promptDriverDistracted, EventName.driverDistracted]
-  alerts = [EventName.preLaneChangeLeft, EventName.preLaneChangeRight]
+  alerts = [EventName.preDriverDistracted, EventName.promptDriverDistracted, EventName.driverDistracted]
+  #alerts = [EventName.preLaneChangeLeft, EventName.preLaneChangeRight]
 
   CP = CarInterface.get_params("HONDA CIVIC 2016")
   sm = messaging.SubMaster(['deviceState', 'pandaStates', 'roadCameraState', 'modelV2', 'liveCalibration',
