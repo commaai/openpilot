@@ -22,6 +22,9 @@ const float MAX_PITCH = 50;
 const float MIN_PITCH = 0;
 const float MAP_SCALE = 2;
 
+const QString ICON_SUFFIX = ".png";
+const QString ICON_SUFFIX_RHD = "_rhd.png";
+
 MapWindow::MapWindow(const QMapboxGLSettings &settings) :
   m_settings(settings), velocity_filter(0, 10, 0.1) {
   sm = new SubMaster({"liveLocationKalman", "navInstruction", "navRoute"});
@@ -439,13 +442,12 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
     if (!modifier.isEmpty()) {
       fn += "_" + modifier;
     }
-    fn +=  + ".png";
     fn = fn.replace(' ', '_');
-    if (is_rhd) {
-      QString rhd_fn = fn.replace(".png", "_rhd.png");
-      if (QFileInfo::exists(rhd_fn)) {
-        fn = rhd_fn;
-      }
+
+    if (is_rhd && QFileInfo::exists(fn + ICON_SUFFIX_RHD)) {
+      fn = fn + ICON_SUFFIX_RHD;
+    } else {
+      fn = fn + ICON_SUFFIX;
     }
 
     QPixmap pix(fn);
@@ -479,7 +481,7 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
       fn += "turn_straight";
     }
 
-    QPixmap pix(fn + ".png");
+    QPixmap pix(fn + ICON_SUFFIX);
     auto icon = new QLabel;
     int wh = active ? 125 : 75;
     icon->setPixmap(pix.scaled(wh, wh, Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
