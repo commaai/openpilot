@@ -347,16 +347,14 @@ cdef class AcadosOcpSolverFast:
         return
 
 
-    def dynamics_get(self, int stage, field_):
+    def dynamics_get(self, int stage, str field_):
         """
         Get numerical data from the dynamics module of the solver:
 
             :param stage: integer corresponding to shooting node
             :param field: string, e.g. 'A'
         """
-
-        field = field_
-        field = field.encode('utf-8')
+        field = field_.encode('utf-8')
 
         # get dims
         cdef int[2] dims
@@ -371,7 +369,7 @@ cdef class AcadosOcpSolverFast:
         return out
 
 
-    def options_set(self, bytes field_, value_):
+    def options_set(self, str field_, value_):
         """
         Set options of the solver.
 
@@ -383,8 +381,7 @@ cdef class AcadosOcpSolverFast:
         string_fields = ['globalization']
 
         # encode
-        field = field_
-        field = field.encode('utf-8')
+        field = field_.encode('utf-8')
 
         cdef int int_value
         cdef double double_value

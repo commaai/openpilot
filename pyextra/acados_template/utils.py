@@ -55,8 +55,11 @@ def get_acados_path():
 
 
 def get_python_interface_path():
-    acados_path = get_acados_path()
-    return os.path.join(acados_path, 'interfaces', 'acados_template', 'acados_template')
+    ACADOS_PYTHON_INTERFACE_PATH = os.environ.get('ACADOS_PYTHON_INTERFACE_PATH')
+    if not ACADOS_PYTHON_INTERFACE_PATH:
+        acados_path = get_acados_path()
+        ACADOS_PYTHON_INTERFACE_PATH = os.path.join(acados_path, 'interfaces', 'acados_template', 'acados_template')
+    return ACADOS_PYTHON_INTERFACE_PATH
 
 
 def get_tera_exec_path():
@@ -268,9 +271,9 @@ def acados_class2dict(class_instance):
 
 
 def get_ocp_nlp_layout():
-    current_module = sys.modules[__name__]
-    acados_path = os.path.dirname(current_module.__file__)
-    with open(acados_path + '/acados_layout.json', 'r') as f:
+    python_interface_path = get_python_interface_path()
+    abs_path = os.path.join(python_interface_path, 'acados_layout.json')
+    with open(abs_path, 'r') as f:
         ocp_nlp_layout = json.load(f)
     return ocp_nlp_layout
 

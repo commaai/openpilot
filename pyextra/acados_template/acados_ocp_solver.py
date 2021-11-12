@@ -786,9 +786,7 @@ class AcadosOcpSolver:
         model = acados_ocp.model
 
         if simulink_opts is None:
-            json_path = os.path.dirname(os.path.realpath(__file__))
-            with open(json_path + '/simulink_default_opts.json', 'r') as f:
-                simulink_opts = json.load(f)
+            simulink_opts = get_simulink_default_opts()
 
         # make dims consistent
         make_ocp_dims_consistent(acados_ocp)
