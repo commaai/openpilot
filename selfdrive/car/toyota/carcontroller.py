@@ -26,7 +26,7 @@ class CarController():
     # *** compute control surfaces ***
     if CS.CP.enableGasInterceptor and enabled:
       MAX_INTERCEPTOR_GAS = 0.5
-      PEDAL_SCALE = interp(CS.out.vEgo, [0.0, MIN_ACC_SPEED, MIN_ACC_SPEED + PEDAL_TRANSITION], [0.15, 0.3, 0.0])
+      PEDAL_SCALE = interp(CS.out.vEgo, [0.0, MIN_ACC_SPEED, MIN_ACC_SPEED + PEDAL_TRANSITION], [0.1, 0.3, 0.0])
       interceptor_gas_cmd = clip(PEDAL_SCALE * actuators.accel, 0., MAX_INTERCEPTOR_GAS)
     else:
       interceptor_gas_cmd = 0.
