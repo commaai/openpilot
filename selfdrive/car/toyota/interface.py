@@ -26,7 +26,11 @@ class CarInterface(CarInterfaceBase):
 
     ret.stoppingControl = False  # Toyota starts braking more when it thinks you want to stop
 
+    # Most cars use this default safety param
+    ret.safetyConfigs[0].safetyParam = 73
+
     if candidate == CAR.PRIUS:
+      ret.safetyConfigs[0].safetyParam = 66  # see conversion factor for STEER_TORQUE_EPS in dbc file
       stop_and_go = True
       ret.wheelbase = 2.70
       ret.steerRatio = 15.74   # unknown end-to-end spec
@@ -45,6 +49,7 @@ class CarInterface(CarInterfaceBase):
       set_lat_tune(ret.lateralTuning, LatTunes.LQR_RAV4)
 
     elif candidate == CAR.COROLLA:
+      ret.safetyConfigs[0].safetyParam = 88
       stop_and_go = False
       ret.wheelbase = 2.70
       ret.steerRatio = 18.27
@@ -173,6 +178,7 @@ class CarInterface(CarInterfaceBase):
       set_lat_tune(ret.lateralTuning, LatTunes.PID_J)
 
     elif candidate == CAR.LEXUS_IS:
+      ret.safetyConfigs[0].safetyParam = 77
       stop_and_go = False
       ret.wheelbase = 2.79908
       ret.steerRatio = 13.3
@@ -181,6 +187,7 @@ class CarInterface(CarInterfaceBase):
       set_lat_tune(ret.lateralTuning, LatTunes.PID_L)
 
     elif candidate == CAR.LEXUS_CTH:
+      ret.safetyConfigs[0].safetyParam = 100
       stop_and_go = True
       ret.wheelbase = 2.60
       ret.steerRatio = 18.6
@@ -219,17 +226,6 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.444
       ret.mass = 4305. * CV.LB_TO_KG + STD_CARGO_KG
       set_lat_tune(ret.lateralTuning, LatTunes.PID_J)
-
-    if candidate in [CAR.LEXUS_CTH,]:
-      ret.safetyConfigs[0].safetyParam = 100
-    elif candidate in [CAR.LEXUS_IS,]:
-      ret.safetyConfigs[0].safetyParam = 77
-    elif candidate in [CAR.COROLLA,]:
-      ret.safetyConfigs[0].safetyParam = 88
-    elif candidate in [CAR.PRIUS,]:
-      ret.safetyConfigs[0].safetyParam = 66  # see conversion factor for STEER_TORQUE_EPS in dbc file
-    else:
-      ret.safetyConfigs[0].safetyParam = 73
 
     ret.steerRateCost = 1.
     ret.centerToFront = ret.wheelbase * 0.44
