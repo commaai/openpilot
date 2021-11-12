@@ -477,6 +477,8 @@ class Controls:
     sr = max(params.steerRatio, 0.1)
     self.VM.update_params(x, sr)
 
+    self.roll = self.sm['liveLocationKalman'].orientationNED[0]
+    self.pitch = self.sm['liveLocationKalman'].orientationNED[1]
     lat_plan = self.sm['lateralPlan']
     long_plan = self.sm['longitudinalPlan']
 
@@ -569,6 +571,9 @@ class Controls:
     CC.enabled = self.enabled
     CC.active = self.active
     CC.actuators = actuators
+
+    CC.roll = self.roll
+    CC.pitch = self.pitch
 
     CC.cruiseControl.cancel = CS.cruiseState.enabled and (not self.enabled or not self.CP.pcmCruise)
     if self.joystick_mode and self.sm.rcv_frame['testJoystick'] > 0 and self.sm['testJoystick'].buttons[0]:
