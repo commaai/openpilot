@@ -4,6 +4,7 @@
 
 #include <QDebug>
 #include <QPainterPath>
+#include <QFileInfo>
 
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/ui/ui.h"
@@ -319,6 +320,7 @@ void MapWindow::offroadTransition(bool offroad) {
 }
 
 MapInstructions::MapInstructions(QWidget * parent) : QWidget(parent) {
+  is_rhd = Params().getBool("IsRHD");
   QHBoxLayout *main_layout = new QHBoxLayout(this);
   main_layout->setContentsMargins(11, 50, 11, 11);
   {
@@ -439,6 +441,12 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
     }
     fn +=  + ".png";
     fn = fn.replace(' ', '_');
+    if (is_rhd) {
+      QString rhd_fn = fn.replace(".png", "_rhd.png");
+      if (QFileInfo::exists(rhd_fn)) {
+        fn = rhd_fn;
+      }
+    }
 
     QPixmap pix(fn);
     icon_01->setPixmap(pix.scaledToWidth(200, Qt::SmoothTransformation));
@@ -470,8 +478,15 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
     } else if (straight) {
       fn += "turn_straight";
     }
+    fn +=  + ".png";
+    if (is_rhd) {
+      QString rhd_fn = fn.replace(".png", "_rhd.png");
+      if (QFileInfo::exists(rhd_fn)) {
+        fn = rhd_fn;
+      }
+    }
 
-    QPixmap pix(fn + ".png");
+    QPixmap pix(fn);
     auto icon = new QLabel;
     int wh = active ? 125 : 75;
     icon->setPixmap(pix.scaled(wh, wh, Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
