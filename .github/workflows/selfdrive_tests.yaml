@@ -41,8 +41,8 @@ jobs:
         CACHE_SKIP_SAVE: true
       with:
         path: /tmp/scons_cache
-        key: scons-cache-${{ steps.stamps.outputs.time }}
-        restore-keys: scons-cache-
+        key: scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
+        restore-keys: scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
     - name: Strip non-release files
       run: |
         mkdir $STRIPPED_DIR
@@ -144,6 +144,13 @@ jobs:
     if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
     needs: static_analysis # hack to ensure slow tests run first since this and static_analysis are fast
     steps:
+    - name: Get current date
+      id: date
+      run: echo "::set-output name=time::$(date +'%s')"
+    - name: Output timestamp
+      run: echo $TIMESTAMP
+      env:
+        TIMESTAMP: ${{ steps.date.outputs.time }}
     - uses: actions/checkout@v2
       with:
         submodules: true
@@ -155,8 +162,8 @@ jobs:
         CACHE_SKIP_SAVE: ${{ github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot' }}
       with:
         path: /tmp/scons_cache
-        key: scons-cache-${{ steps.stamps.outputs.time }}
-        restore-keys: scons-cache-
+        key: scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-${{ steps.date.outputs.time }}
+        restore-keys: scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
     - name: Build Docker image
       run: eval "$BUILD"
     - name: Push to container registry
@@ -180,8 +187,8 @@ jobs:
         CACHE_SKIP_SAVE: true
       with:
         path: /tmp/scons_cache
-        key: scons-cache-${{ steps.stamps.outputs.time }}
-        restore-keys: scons-cache-
+        key: scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
+        restore-keys: scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
     - name: Build Docker image
       run: eval "$BUILD"
     - name: pre-commit
@@ -200,7 +207,7 @@ jobs:
       uses: actions/cache@v2
       with:
         path: /tmp/comma_download_cache
-        key: ${{ hashFiles('.github/workflows/test.yaml', 'selfdrive/test/test_valgrind_replay.py') }}
+        key: ${{ hashFiles('.github/workflows/selfdrive_tests.yaml', 'selfdrive/test/test_valgrind_replay.py') }}
     - name: Cache scons
       id: scons-cache
       # TODO: Change the version to the released version when https://github.com/actions/cache/pull/489 (or 571) is merged.
@@ -209,8 +216,8 @@ jobs:
         CACHE_SKIP_SAVE: true
       with:
         path: /tmp/scons_cache
-        key: scons-cache-${{ steps.stamps.outputs.time }}
-        restore-keys: scons-cache-
+        key: scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
+        restore-keys: scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
     - name: Build Docker image
       run: eval "$BUILD"
     - name: Run valgrind
@@ -237,8 +244,8 @@ jobs:
         CACHE_SKIP_SAVE: true
       with:
         path: /tmp/scons_cache
-        key: scons-cache-${{ steps.stamps.outputs.time }}
-        restore-keys: scons-cache-
+        key: scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
+        restore-keys: scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
     - name: Build Docker image
       run: eval "$BUILD"
     - name: Run unit tests
@@ -277,7 +284,7 @@ jobs:
       uses: actions/cache@v2
       with:
         path: /tmp/comma_download_cache
-        key: ${{ hashFiles('.github/workflows/test.yaml', 'selfdrive/test/process_replay/test_processes.py') }}
+        key: ${{ hashFiles('.github/workflows/selfdrive_tests.yaml', 'selfdrive/test/process_replay/test_processes.py') }}
     - name: Cache scons
       id: scons-cache
       # TODO: Change the version to the released version when https://github.com/actions/cache/pull/489 (or 571) is merged.
@@ -286,8 +293,8 @@ jobs:
         CACHE_SKIP_SAVE: true
       with:
         path: /tmp/scons_cache
-        key: scons-cache-${{ steps.stamps.outputs.time }}
-        restore-keys: scons-cache-
+        key: scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
+        restore-keys: scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
     - name: Build Docker image
       run: eval "$BUILD"
     - name: Run replay
@@ -337,8 +344,8 @@ jobs:
         CACHE_SKIP_SAVE: true
       with:
         path: /tmp/scons_cache
-        key: scons-cache-${{ steps.stamps.outputs.time }}
-        restore-keys: scons-cache-
+        key: scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
+        restore-keys: scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
     - name: Build Docker image
       run: eval "$BUILD"
     - name: Test longitudinal
@@ -379,8 +386,8 @@ jobs:
         CACHE_SKIP_SAVE: true
       with:
         path: /tmp/scons_cache
-        key: scons-cache-${{ steps.stamps.outputs.time }}
-        restore-keys: scons-cache-
+        key: scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
+        restore-keys: scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
     - name: Build Docker image
       run: eval "$BUILD"
     - name: Test car models
