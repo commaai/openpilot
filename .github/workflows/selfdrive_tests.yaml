@@ -377,7 +377,7 @@ jobs:
       uses: actions/cache@v2
       with:
         path: /tmp/comma_download_cache
-        key: car-models-${{ hashFiles('selfdrive/test/test_models.py', 'selfdrive/test/test_routes.py') }}-${{ matrix.job }}
+        key: car_models-${{ hashFiles('selfdrive/test/test_models.py', 'selfdrive/test/test_routes.py') }}-${{ matrix.job }}
     - name: Cache scons
       id: scons-cache
       # TODO: Change the version to the released version when https://github.com/actions/cache/pull/489 (or 571) is merged.
