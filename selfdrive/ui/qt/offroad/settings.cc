@@ -168,7 +168,7 @@ DevicePanel::DevicePanel(QWidget* parent) : ListWidget(parent) {
   power_layout->addWidget(reboot_btn);
   QObject::connect(reboot_btn, &QPushButton::clicked, [=]() {
     if (ConfirmationDialog::confirm("Are you sure you want to reboot?", this)) {
-      Hardware::reboot();
+      Params().putBool("DoReboot", true);
     }
   });
 
@@ -177,7 +177,7 @@ DevicePanel::DevicePanel(QWidget* parent) : ListWidget(parent) {
   power_layout->addWidget(poweroff_btn);
   QObject::connect(poweroff_btn, &QPushButton::clicked, [=]() {
     if (ConfirmationDialog::confirm("Are you sure you want to power off?", this)) {
-      Hardware::poweroff();
+      Params().putBool("DoShutdown", true);
     }
   });
 

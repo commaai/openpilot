@@ -158,9 +158,8 @@ def manager_thread():
     msg.managerState.processes = [p.get_process_state_msg() for p in managed_processes.values()]
     pm.send('managerState', msg)
 
-    # TODO: let UI handle this
-    # Exit main loop when uninstall is needed
-    if params.get_bool("DoUninstall"):
+    # Exit main loop when uninstall/shutdown/reboot is needed
+    if any(params.get_bool(p) for p in ("DoUninstall", "DoShutdown", "DoReboot")):
       break
 
 
@@ -189,9 +188,16 @@ def main():
   finally:
     manager_cleanup()
 
-  if Params().get_bool("DoUninstall"):
+  params = Params()
+  if params.get_bool("DoUninstall"):
     cloudlog.warning("uninstalling")
     HARDWARE.uninstall()
+  elif params.get_bool("DoReboot"):
+    cloudlog.warning("reboot")
+    HARDWARE.reboot()
+  elif params.get_bool("DoShutdown"):
+    cloudlog.warning("shutdown")
+    HARDWARE.shutdown()
 
 
 if __name__ == "__main__":
