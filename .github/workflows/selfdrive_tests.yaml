@@ -15,7 +15,7 @@ env:
       docker pull $DOCKER_REGISTRY/$BASE_IMAGE:latest || true
       docker build --cache-from $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $BASE_IMAGE:latest -f Dockerfile.openpilot_base .
 
-  RUN: docker run --shm-size 1G -v $PWD:/tmp/openpilot -w /tmp/openpilot -e PYTHONPATH=/tmp/openpilot -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v /tmp/scons_cache:/tmp/scons_cache -v /tmp/comma_download_cache:/tmp/comma_download_cache $BASE_IMAGE /bin/sh -c
+  RUN: docker run --shm-size 1G -v $PWD:/tmp/openpilot -w /tmp/openpilot -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v /tmp/scons_cache:/tmp/scons_cache -v /tmp/comma_download_cache:/tmp/comma_download_cache $BASE_IMAGE /bin/sh -c
   UNIT_TEST: coverage run --append -m unittest discover
 
 jobs:
@@ -42,7 +42,9 @@ jobs:
       with:
         path: /tmp/scons_cache
         key: scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
-        restore-keys: scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
+        restore-keys: |
+          scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
+          scons-
     - name: Strip non-release files
       run: |
         mkdir $STRIPPED_DIR
@@ -188,7 +190,9 @@ jobs:
       with:
         path: /tmp/scons_cache
         key: scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
-        restore-keys: scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
+        restore-keys: |
+          scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
+          scons-
     - name: Build Docker image
       run: eval "$BUILD"
     - name: pre-commit
@@ -217,7 +221,9 @@ jobs:
       with:
         path: /tmp/scons_cache
         key: scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
-        restore-keys: scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
+        restore-keys: |
+          scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
+          scons-
     - name: Build Docker image
       run: eval "$BUILD"
     - name: Run valgrind
@@ -245,7 +251,9 @@ jobs:
       with:
         path: /tmp/scons_cache
         key: scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
-        restore-keys: scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
+        restore-keys: |
+          scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
+          scons-
     - name: Build Docker image
       run: eval "$BUILD"
     - name: Run unit tests
@@ -294,7 +302,9 @@ jobs:
       with:
         path: /tmp/scons_cache
         key: scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
-        restore-keys: scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
+        restore-keys: |
+          scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
+          scons-
     - name: Build Docker image
       run: eval "$BUILD"
     - name: Run replay
@@ -345,7 +355,9 @@ jobs:
       with:
         path: /tmp/scons_cache
         key: scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
-        restore-keys: scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
+        restore-keys: |
+          scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
+          scons-
     - name: Build Docker image
       run: eval "$BUILD"
     - name: Test longitudinal
@@ -365,6 +377,9 @@ jobs:
     name: car models
     runs-on: ubuntu-20.04
     timeout-minutes: 50
+    strategy:
+      matrix:
+        job: [0, 1, 2, 3]
     steps:
     - uses: actions/checkout@v2
       with:
@@ -374,7 +389,7 @@ jobs:
       uses: actions/cache@v2
       with:
         path: /tmp/comma_download_cache
-        key: ${{ hashFiles('.github/workflows/selfdrive_tests.yaml', 'selfdrive/test/test_routes.py') }}
+        key: car_models-${{ hashFiles('selfdrive/test/test_models.py', 'selfdrive/test/test_routes.py') }}-${{ matrix.job }}
     - name: Cache scons
       id: scons-cache
       # TODO: Change the version to the released version when https://github.com/actions/cache/pull/489 (or 571) is merged.
@@ -384,13 +399,19 @@ jobs:
       with:
         path: /tmp/scons_cache
         key: scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
-        restore-keys: scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
+        restore-keys: |
+          scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
+          scons-
     - name: Build Docker image
       run: eval "$BUILD"
     - name: Test car models
       run: |
         ${{ env.RUN }} "scons -j$(nproc) --test && \
-                        coverage run selfdrive/test/test_models.py"
+                        FILEREADER_CACHE=1 coverage run selfdrive/test/test_models.py && \
+                        chmod -R 777 /tmp/comma_download_cache"
+      env:
+        NUM_JOBS: 4
+        JOB_ID: ${{ matrix.job }}
     - name: Upload coverage to Codecov
       run: bash <(curl -s https://codecov.io/bash) -v -F test_car_models
 
