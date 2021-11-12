@@ -13,12 +13,10 @@ VisualAlert = car.CarControl.HUDControl.VisualAlert
 class CarController():
   def __init__(self, dbc_name, CP, VM):
     self.last_steer = 0
-    self.accel_steady = 0.
     self.alert_active = False
     self.last_standstill = False
     self.standstill_req = False
     self.steer_rate_limited = False
-    self.use_interceptor = False
 
     self.packer = CANPacker(dbc_name)
 
