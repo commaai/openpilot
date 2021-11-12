@@ -45,11 +45,11 @@ extern "C" {
 
 typedef enum
 {
-	ERK,
-	IRK,
-	GNSF,
-	LIFTED_IRK,
-	INVALID_SIM_SOLVER,
+    ERK,
+    IRK,
+    GNSF,
+    LIFTED_IRK,
+    INVALID_SIM_SOLVER,
 } sim_solver_t;
 
 

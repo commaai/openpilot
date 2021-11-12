@@ -42,12 +42,46 @@
 #include "acados_c/external_function_interface.h"
 #include "acados_solver_{{ model.name }}.h"
 
+#define NX     {{ model.name | upper }}_NX
+#define NZ     {{ model.name | upper }}_NZ
+#define NU     {{ model.name | upper }}_NU
+#define NP     {{ model.name | upper }}_NP
+#define NBX    {{ model.name | upper }}_NBX
+#define NBX0   {{ model.name | upper }}_NBX0
+#define NBU    {{ model.name | upper }}_NBU
+#define NSBX   {{ model.name | upper }}_NSBX
+#define NSBU   {{ model.name | upper }}_NSBU
+#define NSH    {{ model.name | upper }}_NSH
+#define NSG    {{ model.name | upper }}_NSG
+#define NSPHI  {{ model.name | upper }}_NSPHI
+#define NSHN   {{ model.name | upper }}_NSHN
+#define NSGN   {{ model.name | upper }}_NSGN
+#define NSPHIN {{ model.name | upper }}_NSPHIN
+#define NSBXN  {{ model.name | upper }}_NSBXN
+#define NS     {{ model.name | upper }}_NS
+#define NSN    {{ model.name | upper }}_NSN
+#define NG     {{ model.name | upper }}_NG
+#define NBXN   {{ model.name | upper }}_NBXN
+#define NGN    {{ model.name | upper }}_NGN
+#define NY0    {{ model.name | upper }}_NY0
+#define NY     {{ model.name | upper }}_NY
+#define NYN    {{ model.name | upper }}_NYN
+#define NH     {{ model.name | upper }}_NH
+#define NPHI   {{ model.name | upper }}_NPHI
+#define NHN    {{ model.name | upper }}_NHN
+#define NPHIN  {{ model.name | upper }}_NPHIN
+#define NR     {{ model.name | upper }}_NR
+
 
 int main()
 {
 
-    nlp_solver_capsule *acados_ocp_capsule = {{ model.name }}_acados_create_capsule();
-    int status = {{ model.name }}_acados_create(acados_ocp_capsule);
+    {{ model.name }}_solver_capsule *acados_ocp_capsule = {{ model.name }}_acados_create_capsule();
+    // there is an opportunity to change the number of shooting intervals in C without new code generation
+    int N = {{ model.name | upper }}_N;
+    // allocate the array and fill it accordingly
+    double* new_time_steps = NULL;
+    int status = {{ model.name }}_acados_create_with_discretization(acados_ocp_capsule, N, new_time_steps);
 
     if (status)
     {
@@ -63,13 +97,13 @@ int main()
     void *nlp_opts = {{ model.name }}_acados_get_nlp_opts(acados_ocp_capsule);
 
     // initial condition
-    int idxbx0[{{ dims.nbx_0 }}];
+    int idxbx0[NBX0];
     {%- for i in range(end=dims.nbx_0) %}
     idxbx0[{{ i }}] = {{ constraints.idxbx_0[i] }};
     {%- endfor %}
 
-    double lbx0[{{ dims.nbx_0 }}];
-    double ubx0[{{ dims.nbx_0 }}];
+    double lbx0[NBX0];
+    double ubx0[NBX0];
     {%- for i in range(end=dims.nbx_0) %}
     lbx0[{{ i }}] = {{ constraints.lbx_0[i] }};
     ubx0[{{ i }}] = {{ constraints.ubx_0[i] }};
@@ -80,13 +114,13 @@ int main()
     ocp_nlp_constraints_model_set(nlp_config, nlp_dims, nlp_in, 0, "ubx", ubx0);
 
     // initialization for state values
-    double x_init[{{ dims.nx }}];
+    double x_init[NX];
     {%- for i in range(end=dims.nx) %}
     x_init[{{ i }}] = 0.0;
     {%- endfor %}
 
     // initial value for control input
-    double u0[{{ dims.nu }}];
+    double u0[NU];
     {%- for i in range(end=dims.nu) %}
     u0[{{ i }}] = 0.0;
     {%- endfor %}
@@ -94,14 +128,14 @@ int main()
 
   {%- if dims.np > 0 %}
     // set parameters
-    double p[{{ dims.np }}];
-    {% for item in parameter_values %}
+    double p[NP];
+    {%- for item in parameter_values %}
     p[{{ loop.index0 }}] = {{ item }};
-    {% endfor %}
+    {%- endfor %}
 
-    for (int ii = 0; ii <= {{ dims.N }}; ii++)
+    for (int ii = 0; ii <= N; ii++)
     {
-        {{ model.name }}_acados_update_params(acados_ocp_capsule, ii, p, {{ dims.np }});
+        {{ model.name }}_acados_update_params(acados_ocp_capsule, ii, p, NP);
     }
   {% endif %}{# if np > 0 #}
 
@@ -112,8 +146,8 @@ int main()
     double elapsed_time;
     int sqp_iter;
 
-    double xtraj[{{ dims.nx }} * ({{ dims.N }}+1)];
-    double utraj[{{ dims.nu }} * ({{ dims.N }})];
+    double xtraj[NX * (N+1)];
+    double utraj[NU * N];
 
 
     // solve ocp in loop
@@ -135,14 +169,14 @@ int main()
 
     /* print solution and statistics */
     for (int ii = 0; ii <= nlp_dims->N; ii++)
-        ocp_nlp_out_get(nlp_config, nlp_dims, nlp_out, ii, "x", &xtraj[ii*{{ dims.nx }}]);
+        ocp_nlp_out_get(nlp_config, nlp_dims, nlp_out, ii, "x", &xtraj[ii*NX]);
     for (int ii = 0; ii < nlp_dims->N; ii++)
-        ocp_nlp_out_get(nlp_config, nlp_dims, nlp_out, ii, "u", &utraj[ii*{{ dims.nu }}]);
+        ocp_nlp_out_get(nlp_config, nlp_dims, nlp_out, ii, "u", &utraj[ii*NU]);
 
     printf("\n--- xtraj ---\n");
-    d_print_exp_tran_mat( {{ dims.nx }}, {{ dims.N }}+1, xtraj, {{ dims.nx }} );
+    d_print_exp_tran_mat( NX, N+1, xtraj, NX);
     printf("\n--- utraj ---\n");
-    d_print_exp_tran_mat( {{ dims.nu }}, {{ dims.N }}, utraj, {{ dims.nu }} );
+    d_print_exp_tran_mat( NU, N, utraj, NU );
     // ocp_nlp_out_print(nlp_solver->dims, nlp_out);
 
     printf("\nsolved ocp %d times, solution printed above\n\n", NTIMINGS);

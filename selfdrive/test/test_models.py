@@ -42,7 +42,6 @@ class TestCarModel(unittest.TestCase):
 
   @classmethod
   def setUpClass(cls):
-    print(cls.car_model)
     if cls.car_model not in ROUTES:
       # TODO: get routes for missing cars and remove this
       if cls.car_model in non_tested_cars:
