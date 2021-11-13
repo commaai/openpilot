@@ -125,7 +125,7 @@ struct LoggerdState {
 };
 LoggerdState s;
 
-// Wait for all encoders to reach the same frame id
+// Handle initial encoder syncing by waiting for all encoders to reach the same frame id
 bool sync_encoders(LoggerdState *state, CameraType cam_type, uint32_t frame_id) {
   if (state->camera_synced[cam_type]) return true;
 
@@ -138,6 +138,7 @@ bool sync_encoders(LoggerdState *state, CameraType cam_type, uint32_t frame_id) 
     }
     return false;
   } else {
+    if (state->max_waiting == 1) update_max_atomic(state->start_frame_id, frame_id);
     bool synced = frame_id >= state->start_frame_id;
     state->camera_synced[cam_type] = synced;
     if (!synced) LOGE("camera %d waiting for frame %d, cur %d", cam_type, (int)state->start_frame_id, frame_id);
@@ -193,10 +194,12 @@ void encoder_thread(const LogCameraInfo &cam_info) {
           // trigger rotate and wait until the main logger has rotated to the new segment
           ++s.ready_to_rotate;
           std::unique_lock lk(s.rotate_lock);
-          s.rotate_cv.wait(lk, [&] { return s.rotate_segment > cur_seg || do_exit; });
+          s.rotate_cv.wait(lk, [&] {
+            return s.rotate_segment > cur_seg || do_exit;
+          });
+          if (do_exit) break;
         }
       }
-      if (do_exit) break;
 
       // rotate the encoder if the logger is on a newer segment
       if (s.rotate_segment > cur_seg) {
