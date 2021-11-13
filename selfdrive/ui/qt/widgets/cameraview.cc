@@ -11,32 +11,37 @@ const char frame_vertex_shader[] =
 #else
   "#version 300 es\n"
 #endif
-  "in vec4 aPosition;\n"
-  "in vec4 aTexCoord;\n"
+  "layout(location = 0) in vec4 aPosition;\n"
+  "layout(location = 1) in vec2 aTexCoord;\n"
   "uniform mat4 uTransform;\n"
-  "out vec4 vTexCoord;\n"
+  "out vec2 vTexCoord;\n"
   "void main() {\n"
   "  gl_Position = uTransform * aPosition;\n"
   "  vTexCoord = aTexCoord;\n"
   "}\n";
 
-const char frame_fragment_shader[] =
-#ifdef NANOVG_GL3_IMPLEMENTATION
-  "#version 150 core\n"
-#else
-  "#version 300 es\n"
-#endif
-  "precision mediump float;\n"
-  "uniform sampler2D uTexture;\n"
-  "in vec4 vTexCoord;\n"
-  "out vec4 colorOut;\n"
-  "void main() {\n"
-  "  colorOut = texture(uTexture, vTexCoord.xy);\n"
-#ifdef QCOM
-  "  vec3 dz = vec3(0.0627f, 0.0627f, 0.0627f);\n"
-  "  colorOut.rgb = ((vec3(1.0f, 1.0f, 1.0f) - dz) * colorOut.rgb / vec3(1.0f, 1.0f, 1.0f)) + dz;\n"
-#endif
-  "}\n";
+const char yuv_fragment_shader[] = R"(
+#version 300 es
+precision highp float;
+in vec2 vTexCoord;  
+out vec4 fragColor;
+uniform lowp sampler2D texture_y;  
+uniform lowp sampler2D texture_u;  
+uniform lowp sampler2D texture_v;   
+const highp mat3 yuv2rgb = mat3(1, 1, 1,
+                                0, -0.39465, 2.03211,
+                                1.13983, -0.58060, 0);
+void main() {  
+  float y = texture2D(texture_y, vTexCoord).r;  
+  float u = texture2D(texture_u, vTexCoord).r - 0.5;  
+  float v = texture2D(texture_v, vTexCoord).r - 0.5;  
+  float r = y + 1.402 * v;  
+  float g = y - 0.344 * u - 0.714 * v;  
+  float b = y + 1.772 * u;  
+  fragColor = vec4(r, g, b, 1.0);
+}
+)";
+
 
 const mat4 device_transform = {{
   1.0,  0.0, 0.0, 0.0,
@@ -117,7 +122,7 @@ void CameraViewWidget::initializeGL() {
   program = new QOpenGLShaderProgram(context());
   bool ret = program->addShaderFromSourceCode(QOpenGLShader::Vertex, frame_vertex_shader);
   assert(ret);
-  ret = program->addShaderFromSourceCode(QOpenGLShader::Fragment, frame_fragment_shader);
+  ret = program->addShaderFromSourceCode(QOpenGLShader::Fragment, yuv_fragment_shader);
   assert(ret);
 
   program->link();
@@ -139,8 +144,7 @@ void CameraViewWidget::initializeGL() {
   glBindBuffer(GL_ARRAY_BUFFER, frame_vbo);
   glBufferData(GL_ARRAY_BUFFER, sizeof(frame_coords), frame_coords, GL_STATIC_DRAW);
   glEnableVertexAttribArray(frame_pos_loc);
-  glVertexAttribPointer(frame_pos_loc, 2, GL_FLOAT, GL_FALSE,
-                        sizeof(frame_coords[0]), (const void *)0);
+  glVertexAttribPointer(frame_pos_loc, 2, GL_FLOAT, GL_FALSE, sizeof(frame_coords[0]), (const void *)0);
   glEnableVertexAttribArray(frame_texcoord_loc);
   glVertexAttribPointer(frame_texcoord_loc, 2, GL_FLOAT, GL_FALSE,
                         sizeof(frame_coords[0]), (const void *)(sizeof(float) * 2));
@@ -149,6 +153,11 @@ void CameraViewWidget::initializeGL() {
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(frame_indicies), frame_indicies, GL_STATIC_DRAW);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   glBindVertexArray(0);
+
+  glUseProgram(program->programId());
+  glUniform1i(program->uniformLocation("texture_y"), 0);
+  glUniform1i(program->uniformLocation("texture_u"), 1);
+  glUniform1i(program->uniformLocation("texture_v"), 2);
 }
 
 void CameraViewWidget::showEvent(QShowEvent *event) {
@@ -208,15 +217,20 @@ void CameraViewWidget::paintGL() {
   std::unique_lock lk(texture_lock);
 
   glViewport(0, 0, width(), height());
-
   glBindVertexArray(frame_vao);
-  glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, texture[latest_frame->idx]->frame_tex);
 
   glUseProgram(program->programId());
-  glUniform1i(program->uniformLocation("uTexture"), 0);
-  glUniformMatrix4fv(program->uniformLocation("uTransform"), 1, GL_TRUE, frame_mat.v);
+  uint8_t *address[3] = {latest_frame->y, latest_frame->u, latest_frame->v};
+  for (int i = 0; i < 3; ++i) {
+    glActiveTexture(GL_TEXTURE0 + i);
+    glBindTexture(GL_TEXTURE_2D, textures[i]);
+    int width = i == 0 ? stream_width : stream_width / 2;
+    int height = i == 0 ? stream_height : stream_height / 2;
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_LUMINANCE, GL_UNSIGNED_BYTE, address[i]);
+    assert(glGetError() == GL_NO_ERROR);
+  }
 
+  glUniformMatrix4fv(program->uniformLocation("uTransform"), 1, GL_TRUE, frame_mat.v);
   assert(glGetError() == GL_NO_ERROR);
   glEnableVertexAttribArray(0);
   glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_BYTE, (const void *)0);
@@ -226,22 +240,24 @@ void CameraViewWidget::paintGL() {
 
 void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
   makeCurrent();
-  for (int i = 0; i < vipc_client->num_buffers; i++) {
-    texture[i].reset(new EGLImageTexture(&vipc_client->buffers[i]));
-
-    glBindTexture(GL_TEXTURE_2D, texture[i]->frame_tex);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-    // BGR
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_BLUE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
-    assert(glGetError() == GL_NO_ERROR);
-  }
   latest_frame = nullptr;
   stream_width = vipc_client->buffers[0].width;
   stream_height = vipc_client->buffers[0].height;
+
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+  glGenTextures(3, textures);
+  for (int i = 0; i < 3; ++i) {
+    glBindTexture(GL_TEXTURE_2D, textures[i]);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    int width = i == 0 ? stream_width : stream_width / 2;
+    int height = i == 0 ? stream_height : stream_height / 2;
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, width, height, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, nullptr);
+    assert(glGetError() == GL_NO_ERROR);
+  }
+
   updateFrameMat(width(), height());
 }
 

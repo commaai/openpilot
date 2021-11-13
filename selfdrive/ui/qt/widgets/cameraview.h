@@ -49,7 +49,7 @@ protected:
   std::atomic<VisionStreamType> stream_type;
   QThread *vipc_thread = nullptr;
 
-  std::mutex texture_lock;
+  GLuint textures[3];
 
 protected slots:
   void vipcConnected(VisionIpcClient *vipc_client);
