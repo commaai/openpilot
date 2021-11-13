@@ -1,24 +1,22 @@
 #include "selfdrive/ui/replay/framereader.h"
 
 #include <cassert>
-#include <mutex>
 
 namespace {
 
 struct buffer_data {
-  uint8_t *ptr;
-  size_t size;  // size left in the buffer
+  const uint8_t *data;
+  int64_t offset;
+  size_t size;
 };
 
 int readPacket(void *opaque, uint8_t *buf, int buf_size) {
   struct buffer_data *bd = (struct buffer_data *)opaque;
-  buf_size = std::min((size_t)buf_size, bd->size);
-
+  buf_size = std::min((size_t)buf_size, bd->size - bd->offset);
   if (!buf_size) return AVERROR_EOF;
 
-  memcpy(buf, bd->ptr, buf_size);
-  bd->ptr += buf_size;
-  bd->size -= buf_size;
+  memcpy(buf, bd->data + bd->offset, buf_size);
+  bd->offset += buf_size;
   return buf_size;
 }
 
@@ -62,7 +60,8 @@ bool FrameReader::load(const std::string &url, bool no_cuda, std::atomic<bool> *
   if (content.empty()) return false;
 
   struct buffer_data bd = {
-    .ptr = (uint8_t *)content.data(),
+    .data = (uint8_t *)content.data(),
+    .offset = 0,
     .size = content.size(),
   };
   const int avio_ctx_buffer_size = 64 * 1024;
