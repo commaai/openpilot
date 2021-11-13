@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "cereal/messaging/messaging.h"
+#include "panda/board/dlc_to_len.h"
 #include "selfdrive/common/gpio.h"
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
@@ -343,42 +344,70 @@ void Panda::send_heartbeat() {
   usb_write(0xf3, 1, 0);
 }
 
-void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list) {
-  send.resize(4 * can_data_list.size());
-
-  uint32_t msg_cnt = 0;
-  for (int i = 0; i < can_data_list.size(); i++) {
-    auto cmsg = can_data_list[i];
-
-    // check if the message is intended for this panda
-    uint8_t bus = cmsg.getSrc();
-    if (bus < bus_offset || bus >= (bus_offset + PANDA_BUS_CNT)) {
-      continue;
-    }
-
-    if (cmsg.getAddress() >= 0x800) { // extended
-      send[msg_cnt*4] = (cmsg.getAddress() << 3) | 5;
-    } else { // normal
-      send[msg_cnt*4] = (cmsg.getAddress() << 21) | 1;
-    }
-    auto can_data = cmsg.getDat();
-    assert(can_data.size() <= 8);
-    send[msg_cnt*4+1] = can_data.size() | ((bus - bus_offset) << 4);
-    memcpy(&send[msg_cnt*4+2], can_data.begin(), can_data.size());
-
-    msg_cnt++;
+uint8_t Panda::len_to_dlc(uint8_t len) {
+  if (len <= 8) {
+    return len;
   }
+  if (len <= 24) {
+    return 8 + ((len - 8) / 4) + (len % 4) ? 1 : 0;
+  } else {
+    return 11 + (len / 16) + (len % 16) ? 1 : 0;
+  }
+}
 
-  usb_bulk_write(3, (unsigned char*)send.data(), msg_cnt * 0x10, 5);
+void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list) {
+  send.resize(72 * can_data_list.size()); // TODO: need to include 1 byte for each usb 64bytes frame
+
+  int msg_count = 0;
+  while (msg_count < can_data_list.size()) {
+    uint32_t pos = 0;
+    while (pos < 256) {
+      if (msg_count == can_data_list.size()) { break; }
+      auto cmsg = can_data_list[msg_count];
+
+      // check if the message is intended for this panda
+      uint8_t bus = cmsg.getSrc();
+      if (bus < bus_offset || bus >= (bus_offset + PANDA_BUS_CNT)) {
+        msg_count++;
+        continue;
+      }
+      auto can_data = cmsg.getDat();
+      uint8_t data_len_code = len_to_dlc(can_data.size());
+      assert(can_data.size() <= (hw_type == cereal::PandaState::PandaType::RED_PANDA) ? 64 : 8);
+      assert(can_data.size() == dlc_to_len[data_len_code]);
+
+      *(uint32_t*)&send[pos+1] = (cmsg.getAddress() << 3);
+      if (cmsg.getAddress() >= 0x800) {
+        *(uint32_t*)&send[pos+1] |= (1 << 2);
+      }
+      send[pos] = data_len_code << 4 | ((bus - bus_offset) << 1);
+      memcpy(&send[pos+5], can_data.begin(), can_data.size());
+
+      pos += CANPACKET_HEAD_SIZE + dlc_to_len[data_len_code];
+      msg_count++;
+    }
+
+    if (pos > 0) { // Helps not to spam with ZLP
+      // insert counter
+      uint8_t counter = 0;
+      for (int i = 0; i < pos; i += 64) {
+        send.insert(send.begin() + i, counter);
+        counter++;
+        pos++;
+      }
+      usb_bulk_write(3, (uint8_t*)send.data(), pos, 5);
+    }
+  }
 }
 
 bool Panda::can_receive(std::vector<can_frame>& out_vec) {
-  uint32_t data[RECV_SIZE/4];
-  int recv = usb_bulk_read(0x81, (unsigned char*)data, RECV_SIZE);
+  uint8_t data[RECV_SIZE];
+  int recv = usb_bulk_read(0x81, (uint8_t*)data, RECV_SIZE);
 
   // Not sure if this can happen
   if (recv < 0) recv = 0;
 
+  // TODO: Might change from full to overloaded? if > some threshold that is lower than RECV_SIZE, let's say 80-90%
   if (recv == RECV_SIZE) {
     LOGW("Receive buffer full");
   }
@@ -387,30 +416,49 @@ bool Panda::can_receive(std::vector<can_frame>& out_vec) {
     return false;
   }
 
-  // Append to the end of the out_vec, such that we can pass it to multiple pandas
-  // We already insert space for all the messages here for speed
-  size_t num_msg = recv / 0x10;
-  out_vec.reserve(out_vec.size() + num_msg);
+  out_vec.reserve(out_vec.size() + (recv / CANPACKET_HEAD_SIZE));
 
-  // Populate messages
-  for (int i = 0; i < num_msg; i++) {
-    can_frame canData;
-    if (data[i*4] & 4) {
-      // extended
-      canData.address = data[i*4] >> 3;
-      //printf("got extended: %x\n", data[i*4] >> 3);
-    } else {
-      // normal
-      canData.address = data[i*4] >> 21;
+  static uint8_t tail[72];
+  uint8_t tail_size = 0;
+  uint8_t counter = 0;
+  for (int i = 0; i < recv; i += 64) {
+    if (counter != data[i]) {
+      LOGE("CAN: MALFORMED USB RECV PACKET");
+      break;
     }
-    canData.busTime = data[i*4+1] >> 16;
-    int len = data[i*4+1] & 0xF;
-    canData.dat.assign((char *)&data[i*4+2], len);
-    canData.src = ((data[i*4+1] >> 4) & 0xff) + bus_offset;
+    counter++;
+    uint8_t chunk_len = ((recv - i) > 64) ? 63 : (recv - i - 1); // as 1 is always reserved for counter
+    uint8_t chunk[72];
+    memcpy(chunk, tail, tail_size);
+    memcpy(&chunk[tail_size], &data[i+1], chunk_len);
+    chunk_len += tail_size;
+    tail_size = 0;
+    uint8_t pos = 0;
+    while (pos < chunk_len) {
+      uint8_t data_len = dlc_to_len[(chunk[pos] >> 4)];
+      uint8_t pckt_len = CANPACKET_HEAD_SIZE + data_len;
+      if (pckt_len <= (chunk_len - pos)) {
+        can_frame canData;
+        canData.busTime = 0;
+        canData.address = (*(uint32_t*)&chunk[pos+1]) >> 3;
+        canData.src = (chunk[pos] >> 1) & 0x7;
 
-    // add to vector
-    out_vec.push_back(canData);
+        bool rejected = chunk[pos+1] & 0x1;
+        bool returned = (chunk[pos+1] >> 1) & 0x1;
+        if (rejected) { canData.src += CANPACKET_REJECTED; }
+        if (returned) { canData.src += CANPACKET_RETURNED; }
+        canData.dat.assign((char*)&chunk[pos+5], data_len);
+
+        pos += pckt_len;
+
+        // add to vector
+        out_vec.push_back(canData);
+      } else {
+        tail_size = (chunk_len - pos);
+        memcpy(tail, &chunk[pos], tail_size);
+        break;
+      }
+    }
   }
-
   return true;
 }
