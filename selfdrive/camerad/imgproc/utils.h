@@ -1,8 +1,7 @@
 #pragma once
 
-#include <stddef.h>
-#include <stdint.h>
-
+#include <cstddef>
+#include <cstdint>
 #include <vector>
 
 #include "selfdrive/common/clutil.h"

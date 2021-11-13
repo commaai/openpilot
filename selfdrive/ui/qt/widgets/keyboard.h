@@ -1,17 +1,22 @@
 #pragma once
 
-#include <vector>
-
-#include <QAbstractButton>
 #include <QFrame>
+#include <QPushButton>
 #include <QStackedLayout>
-#include <QString>
-#include <QWidget>
+
+class KeyButton : public QPushButton {
+  Q_OBJECT
+
+public:
+  KeyButton(const QString &text, QWidget *parent = 0);
+  bool event(QEvent *event) override;
+};
+
 class KeyboardLayout : public QWidget {
   Q_OBJECT
 
 public:
- explicit KeyboardLayout(QWidget* parent, const std::vector<QVector<QString>>& layout);
+  explicit KeyboardLayout(QWidget* parent, const std::vector<QVector<QString>>& layout);
 };
 
 class Keyboard : public QFrame {
@@ -27,5 +32,7 @@ private slots:
   void handleButton(QAbstractButton* m_button);
 
 signals:
-  void emitButton(const QString &s);
+  void emitKey(const QString &s);
+  void emitBackspace();
+  void emitEnter();
 };

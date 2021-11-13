@@ -19,6 +19,11 @@ def make_pie(msgs, typ):
 
   sizes = sorted(compressed_length_by_type.items(), key=lambda kv: kv[1])
 
+  print(f"{typ} - Total {total / 1024:.2f} kB")
+  for (name, sz) in sizes:
+    print(f"{name} - {sz / 1024:.2f} kB")
+  print()
+
   sizes_large = [(k, sz) for (k, sz) in sizes if sz >= total * MIN_SIZE / 100]
   sizes_large += [('other', sum([sz for (_, sz) in sizes if sz < total * MIN_SIZE / 100]))]
 

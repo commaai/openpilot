@@ -1,10 +1,5 @@
-#include <assert.h>
 #include <cutils/log.h>
 #include <hardware/sensors.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <sys/cdefs.h>
 #include <sys/resource.h>
 #include <sys/time.h>
@@ -12,6 +7,11 @@
 #include <unistd.h>
 #include <utils/Timers.h>
 
+#include <cassert>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <map>
 #include <set>
 
@@ -189,7 +189,7 @@ void sensor_loop() {
 
       pm.send("sensorEvents", msg);
 
-      if (re_init_sensors){
+      if (re_init_sensors) {
         LOGE("Resetting sensors");
         re_init_sensors = false;
         break;

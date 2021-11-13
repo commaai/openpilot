@@ -1,8 +1,9 @@
-#include <stdint.h>
-#include <stdio.h>
 #include <sys/resource.h>
 #include <sys/time.h>
 #include <unistd.h>
+
+#include <cstdint>
+#include <cstdio>
 
 // Apple doesn't have timerfd
 #ifdef __APPLE__
@@ -49,10 +50,13 @@ int main() {
 
   uint64_t expirations = 0;
   while (!do_exit && (err = read(timerfd, &expirations, sizeof(expirations)))) {
-    if (err < 0) break;
+    if (err < 0) {
+      if (errno == EINTR) continue;
+      break;
+    }
 #else
   // Just run at 1Hz on apple
-  while (!do_exit){
+  while (!do_exit) {
     util::sleep_for(1000);
 #endif
 

@@ -1,8 +1,9 @@
 #include "selfdrive/camerad/cameras/camera_webcam.h"
 
-#include <assert.h>
-#include <string.h>
 #include <unistd.h>
+
+#include <cassert>
+#include <cstring>
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wundefined-inline"
@@ -18,8 +19,8 @@
 #include "selfdrive/common/util.h"
 
 // id of the video capturing device
-const int ROAD_CAMERA_ID = getenv("ROADCAM_ID") ? atoi(getenv("ROADCAM_ID")) : 1;
-const int DRIVER_CAMERA_ID = getenv("DRIVERCAM_ID") ? atoi(getenv("DRIVERCAM_ID")) : 2;
+const int ROAD_CAMERA_ID = util::getenv("ROADCAM_ID", 1);
+const int DRIVER_CAMERA_ID = util::getenv("DRIVERCAM_ID", 2);
 
 #define FRAME_WIDTH  1164
 #define FRAME_HEIGHT 874
@@ -78,6 +79,8 @@ void run_camera(CameraState *s, cv::VideoCapture &video_cap, float *ts) {
   while (!do_exit) {
     cv::Mat frame_mat, transformed_mat;
     video_cap >> frame_mat;
+    if (frame_mat.empty()) continue;
+
     cv::warpPerspective(frame_mat, transformed_mat, transform, size, cv::INTER_LINEAR, cv::BORDER_CONSTANT, 0);
 
     s->buf.camera_bufs_metadata[buf_idx] = {.frame_id = frame_id};

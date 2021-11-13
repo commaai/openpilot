@@ -11,7 +11,6 @@ from selfdrive.car.fingerprints import all_known_cars
 from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.honda.values import HONDA_BOSCH
 from selfdrive.car.honda.values import CAR as HONDA
-from selfdrive.car.toyota.values import CAR as TOYOTA
 from selfdrive.car.chrysler.values import CAR as CHRYSLER
 from selfdrive.car.hyundai.values import CAR as HYUNDAI
 from selfdrive.test.test_routes import routes, non_tested_cars
@@ -23,34 +22,22 @@ from panda.tests.safety.common import package_can_msg
 
 PandaType = log.PandaState.PandaType
 
-ROUTES = {v['carFingerprint']: k for k, v in routes.items() if 'enableCamera' not in v or v['enableCamera']}
+NUM_JOBS = int(os.environ.get("NUM_JOBS", "1"))
+JOB_ID = int(os.environ.get("JOB_ID", "0"))
+
+ROUTES = {rt.car_fingerprint: rt.route for rt in routes}
 
 # TODO: get updated routes for these cars
 ignore_can_valid = [
-  HONDA.ACURA_ILX,
-  TOYOTA.LEXUS_RXH,
-  TOYOTA.AVALON,
-  HONDA.PILOT_2019,
   HYUNDAI.SANTA_FE,
-
-  # TODO: get new routes for these cars, current routes are from giraffe with different buses
-  HONDA.CRV_HYBRID,
-  HONDA.INSIGHT,
-  HONDA.ACCORDH,
 ]
 
 ignore_carstate_check = [
   # TODO: chrysler gas state in panda also checks wheel speed, refactor so it's only gas
   CHRYSLER.PACIFICA_2017_HYBRID,
-
-  # TODO: get new routes for these cars, current routes are from giraffe with different buses
-  HONDA.CRV_HYBRID,
-  HONDA.ACCORD,
-  HONDA.INSIGHT,
-  HONDA.ACCORDH,
 ]
 
-@parameterized_class(('car_model'), [(car,) for car in all_known_cars()])
+@parameterized_class(('car_model'), [(car,) for i, car in enumerate(all_known_cars()) if i % NUM_JOBS == JOB_ID])
 class TestCarModel(unittest.TestCase):
 
   @classmethod
@@ -68,8 +55,10 @@ class TestCarModel(unittest.TestCase):
         lr = LogReader(get_url(ROUTES[cls.car_model], seg))
         break
       except Exception:
-        if seg == 0:
-          raise
+        lr = None
+
+    if lr is None:
+      raise Exception("Route not found. Is it uploaded?")
 
     can_msgs = []
     fingerprint = {i: dict() for i in range(3)}
@@ -106,12 +95,10 @@ class TestCarModel(unittest.TestCase):
       elif tuning == 'indi':
         self.assertTrue(len(self.CP.lateralTuning.indi.outerLoopGainV))
 
-    self.assertTrue(self.CP.enableCamera)
-
     # TODO: check safetyModel is in release panda build
     safety = libpandasafety_py.libpandasafety
-    set_status = safety.set_safety_hooks(self.CP.safetyModel.raw, self.CP.safetyParam)
-    self.assertEqual(0, set_status, f"failed to set safetyModel {self.CP.safetyModel}")
+    set_status = safety.set_safety_hooks(self.CP.safetyConfigs[0].safetyModel.raw, self.CP.safetyConfigs[0].safetyParam)
+    self.assertEqual(0, set_status, f"failed to set safetyModel {self.CP.safetyConfigs[0].safetyModel}")
 
   def test_car_interface(self):
     # TODO: also check for checkusm and counter violations from can parser
@@ -146,7 +133,7 @@ class TestCarModel(unittest.TestCase):
       self.skipTest("no need to check panda safety for dashcamOnly")
 
     safety = libpandasafety_py.libpandasafety
-    set_status = safety.set_safety_hooks(self.CP.safetyModel.raw, self.CP.safetyParam)
+    set_status = safety.set_safety_hooks(self.CP.safetyConfigs[0].safetyModel.raw, self.CP.safetyConfigs[0].safetyParam)
     self.assertEqual(0, set_status)
 
     failed_addrs = Counter()
@@ -166,7 +153,7 @@ class TestCarModel(unittest.TestCase):
       self.skipTest("see comments in test_models.py")
 
     safety = libpandasafety_py.libpandasafety
-    set_status = safety.set_safety_hooks(self.CP.safetyModel.raw, self.CP.safetyParam)
+    set_status = safety.set_safety_hooks(self.CP.safetyConfigs[0].safetyModel.raw, self.CP.safetyConfigs[0].safetyParam)
     self.assertEqual(0, set_status)
 
     checks = defaultdict(lambda: 0)
@@ -189,12 +176,14 @@ class TestCarModel(unittest.TestCase):
     failed_checks = {k: v for k, v in checks.items() if v > 25}
 
     # TODO: the panda and openpilot interceptor thresholds should match
-    if "gasPressed" in failed_checks and self.CP.enableGasInterceptor:
-      if failed_checks['gasPressed'] < 150:
+    skip_gas_check = self.CP.carName == 'chrysler'
+    if "gasPressed" in failed_checks and (self.CP.enableGasInterceptor or skip_gas_check):
+      if failed_checks['gasPressed'] < 150 or skip_gas_check:
         del failed_checks['gasPressed']
 
     # TODO: honda nidec: do same checks in carState and panda
-    if "brakePressed" in failed_checks and self.car_model.startswith(("HONDA", "ACURA")) and self.car_model not in HONDA_BOSCH:
+    if "brakePressed" in failed_checks and self.CP.carName == 'honda' and \
+      (self.car_model not in HONDA_BOSCH or self.car_model in [HONDA.CRV_HYBRID, HONDA.HONDA_E]):
       if failed_checks['brakePressed'] < 150:
         del failed_checks['brakePressed']
 

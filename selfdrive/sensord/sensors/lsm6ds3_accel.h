@@ -12,11 +12,13 @@
 
 // Constants
 #define LSM6DS3_ACCEL_CHIP_ID        0x69
+#define LSM6DS3TRC_ACCEL_CHIP_ID     0x6A
 #define LSM6DS3_ACCEL_ODR_104HZ      (0b0100 << 4)
 
 
 class LSM6DS3_Accel : public I2CSensor {
   uint8_t get_device_address() {return LSM6DS3_ACCEL_I2C_ADDR;}
+  cereal::SensorEventData::SensorSource source = cereal::SensorEventData::SensorSource::LSM6DS3;
 public:
   LSM6DS3_Accel(I2CBus *bus);
   int init();

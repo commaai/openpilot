@@ -1,22 +1,46 @@
 #pragma once
 
-#include <QtWidgets>
+#include <optional>
 
-inline void configFont(QPainter &p, QString family, int size, const QString &style) {
-  QFont f(family);
-  f.setPixelSize(size);
-  f.setStyleName(style);
-  p.setFont(f);
-}
+#include <QDateTime>
+#include <QLayout>
+#include <QMouseEvent>
+#include <QPainter>
+#include <QSurfaceFormat>
+#include <QWidget>
 
-inline void clearLayout(QLayout* layout) {
-  while (QLayoutItem* item = layout->takeAt(0)) {
-    if (QWidget* widget = item->widget()) {
-      widget->deleteLater();
-    }
-    if (QLayout* childLayout = item->layout()) {
-      clearLayout(childLayout);
-    }
-    delete item;
-  }
-}
+QString getBrand();
+QString getBrandVersion();
+std::optional<QString> getDongleId();
+void configFont(QPainter &p, const QString &family, int size, const QString &style);
+void clearLayout(QLayout* layout);
+void setQtSurfaceFormat();
+QString timeAgo(const QDateTime &date);
+void swagLogMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg);
+void initApp();
+QWidget* topWidget (QWidget* widget);
+
+
+// convenience class for wrapping layouts
+class LayoutWidget : public QWidget {
+  Q_OBJECT
+
+public:
+  LayoutWidget(QLayout *l, QWidget *parent = nullptr) : QWidget(parent) {
+    setLayout(l);
+  };
+};
+
+class ClickableWidget : public QWidget {
+  Q_OBJECT
+
+public:
+  ClickableWidget(QWidget *parent = nullptr);
+
+protected:
+  void mouseReleaseEvent(QMouseEvent *event) override;
+  void paintEvent(QPaintEvent *) override;
+
+signals:
+  void clicked();
+};

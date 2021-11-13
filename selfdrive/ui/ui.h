@@ -1,26 +1,22 @@
 #pragma once
 
-#include <atomic>
 #include <map>
 #include <memory>
 #include <string>
 
 #include <QObject>
 #include <QTimer>
+#include <QColor>
 
 #include "nanovg.h"
 
 #include "cereal/messaging/messaging.h"
-#include "cereal/visionipc/visionipc.h"
-#include "cereal/visionipc/visionipc_client.h"
 #include "common/transformations/orientation.hpp"
 #include "selfdrive/camerad/cameras/camera_common.h"
-#include "selfdrive/common/glutil.h"
 #include "selfdrive/common/mat.h"
 #include "selfdrive/common/modeldata.h"
 #include "selfdrive/common/params.h"
 #include "selfdrive/common/util.h"
-#include "selfdrive/common/visionimg.h"
 
 #define COLOR_BLACK nvgRGBA(0, 0, 0, 255)
 #define COLOR_BLACK_ALPHA(x) nvgRGBA(0, 0, 0, x)
@@ -29,6 +25,19 @@
 #define COLOR_RED_ALPHA(x) nvgRGBA(201, 34, 49, x)
 #define COLOR_YELLOW nvgRGBA(218, 202, 37, 255)
 #define COLOR_RED nvgRGBA(201, 34, 49, 255)
+
+const int bdr_s = 30;
+const int header_h = 420;
+const int footer_h = 280;
+
+const int UI_FREQ = 20;   // Hz
+
+typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
+
+// TODO: this is also hardcoded in common/transformations/camera.py
+// TODO: choose based on frame input size
+const float y_offset = Hardware::EON() ? 0.0 : 150.0;
+const float ZOOM = Hardware::EON() ? 2138.5 : 2912.8;
 
 typedef struct Rect {
   int x, y, w, h;
@@ -41,11 +50,40 @@ typedef struct Rect {
   }
 } Rect;
 
-const int bdr_s = 30;
-const int header_h = 420;
-const int footer_h = 280;
+struct Alert {
+  QString text1;
+  QString text2;
+  QString type;
+  cereal::ControlsState::AlertSize size;
+  AudibleAlert sound;
+  bool equal(const Alert &a2) {
+    return text1 == a2.text1 && text2 == a2.text2 && type == a2.type && sound == a2.sound;
+  }
 
-const int UI_FREQ = 20;   // Hz
+  static Alert get(const SubMaster &sm, uint64_t started_frame) {
+    if (sm.updated("controlsState")) {
+      const cereal::ControlsState::Reader &cs = sm["controlsState"].getControlsState();
+      return {cs.getAlertText1().cStr(), cs.getAlertText2().cStr(),
+              cs.getAlertType().cStr(), cs.getAlertSize(),
+              cs.getAlertSound()};
+    } else if ((sm.frame - started_frame) > 5 * UI_FREQ) {
+      const int CONTROLS_TIMEOUT = 5;
+      // Handle controls timeout
+      if (sm.rcv_frame("controlsState") < started_frame) {
+        // car is started, but controlsState hasn't been seen at all
+        return {"openpilot Unavailable", "Waiting for controls to start",
+                "controlsWaiting", cereal::ControlsState::AlertSize::MID,
+                AudibleAlert::NONE};
+      } else if ((nanos_since_boot() - sm.rcv_time("controlsState")) / 1e9 > CONTROLS_TIMEOUT) {
+        // car is started, but controls is lagging or died
+        return {"TAKE CONTROL IMMEDIATELY", "Controls Unresponsive",
+                "controlsUnresponsive", cereal::ControlsState::AlertSize::FULL,
+                AudibleAlert::CHIME_WARNING_REPEAT};
+      }
+    }
+    return {};
+  }
+};
 
 typedef enum UIStatus {
   STATUS_DISENGAGED,
@@ -54,11 +92,11 @@ typedef enum UIStatus {
   STATUS_ALERT,
 } UIStatus;
 
-static std::map<UIStatus, NVGcolor> bg_colors = {
-  {STATUS_DISENGAGED, nvgRGBA(0x17, 0x33, 0x49, 0xc8)},
-  {STATUS_ENGAGED, nvgRGBA(0x17, 0x86, 0x44, 0xf1)},
-  {STATUS_WARNING, nvgRGBA(0xDA, 0x6F, 0x25, 0xf1)},
-  {STATUS_ALERT, nvgRGBA(0xC9, 0x22, 0x31, 0xf1)},
+const QColor bg_colors [] = {
+  [STATUS_DISENGAGED] =  QColor(0x17, 0x33, 0x49, 0xc8),
+  [STATUS_ENGAGED] = QColor(0x17, 0x86, 0x44, 0xf1),
+  [STATUS_WARNING] = QColor(0xDA, 0x6F, 0x25, 0xf1),
+  [STATUS_ALERT] = QColor(0xC9, 0x22, 0x31, 0xf1),
 };
 
 typedef struct {
@@ -75,14 +113,7 @@ typedef struct UIScene {
   mat3 view_from_calib;
   bool world_objects_visible;
 
-  bool is_rhd;
-  bool driver_view;
-
   cereal::PandaState::PandaType pandaType;
-
-  // gps
-  int satelliteCount;
-  float gpsAccuracy;
 
   // modelV2
   float lane_line_probs[4];
@@ -90,6 +121,8 @@ typedef struct UIScene {
   line_vertices_data track_vertices;
   line_vertices_data lane_line_vertices[4];
   line_vertices_data road_edge_vertices[2];
+
+  bool dm_active, engageable;
 
   // lead
   vertex_data lead_vertices[2];
@@ -100,16 +133,7 @@ typedef struct UIScene {
 } UIScene;
 
 typedef struct UIState {
-  VisionIpcClient * vipc_client;
-  VisionIpcClient * vipc_client_front;
-  VisionIpcClient * vipc_client_rear;
-  VisionIpcClient * vipc_client_wide;
-  VisionBuf * last_frame;
-
-  // framebuffer
-  int fb_w, fb_h;
-
-  // NVG
+  int fb_w = 0, fb_h = 0;
   NVGcontext *vg;
 
   // images
@@ -118,21 +142,13 @@ typedef struct UIState {
   std::unique_ptr<SubMaster> sm;
 
   UIStatus status;
-  UIScene scene;
-
-  // graphics
-  std::unique_ptr<GLShader> gl_shader;
-  std::unique_ptr<EGLImageTexture> texture[UI_BUF_COUNT];
-
-  GLuint frame_vao[2], frame_vbo[2], frame_ibo[2];
-  mat4 rear_frame_mat, front_frame_mat;
+  UIScene scene = {};
 
   bool awake;
+  bool has_prime = false;
 
-  Rect video_rect, viz_rect;
   float car_space_transform[6];
   bool wide_camera;
-  float zoom;
 } UIState;
 
 
@@ -174,8 +190,6 @@ private:
   int awake_timeout = 0;
   float accel_prev = 0;
   float gyro_prev = 0;
-  float brightness_b = 0;
-  float brightness_m = 0;
   float last_brightness = 0;
   FirstOrderFilter brightness_filter;
 

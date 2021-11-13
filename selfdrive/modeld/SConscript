@@ -26,23 +26,27 @@ thneed_src = [
   "runners/thneedmodel.cc",
 ]
 
+use_thneed = not GetOption('no_thneed')
+
 if arch == "aarch64" or arch == "larch64":
   libs += ['gsl', 'CB']
   libs += ['gnustl_shared'] if arch == "aarch64" else ['pthread', 'dl']
 
-  common_src += thneed_src
-  dlsym_offset = get_dlsym_offset()
-  lenv['CXXFLAGS'].append("-DUSE_THNEED")
-  lenv['CXXFLAGS'].append(f"-DDLSYM_OFFSET={dlsym_offset}")
+  if use_thneed:
+    common_src += thneed_src
+    dlsym_offset = get_dlsym_offset()
+    lenv['CXXFLAGS'].append("-DUSE_THNEED")
+    lenv['CXXFLAGS'].append(f"-DDLSYM_OFFSET={dlsym_offset}")
 else:
   libs += ['pthread']
 
-  # for onnx support
-  common_src += ['runners/onnxmodel.cc']
+  if not GetOption('snpe'):
+    # for onnx support
+    common_src += ['runners/onnxmodel.cc']
 
-  # tell runners to use onnx
-  lenv['CFLAGS'].append("-DUSE_ONNX_MODEL")
-  lenv['CXXFLAGS'].append("-DUSE_ONNX_MODEL")
+    # tell runners to use onnx
+    lenv['CFLAGS'].append("-DUSE_ONNX_MODEL")
+    lenv['CXXFLAGS'].append("-DUSE_ONNX_MODEL")
 
   if arch == "Darwin":
     # fix OpenCL
@@ -56,10 +60,9 @@ else:
 
 common_model = lenv.Object(common_src)
 
-
 # build thneed model
-if arch == "aarch64" or arch == "larch64":
-  compiler = lenv.Program('thneed/compile', ["thneed/compile.cc" ]+common_model, LIBS=libs)
+if use_thneed and arch in ("aarch64", "larch64"):
+  compiler = lenv.Program('thneed/compile', ["thneed/compile.cc"]+common_model, LIBS=libs)
   cmd = f"cd {Dir('.').abspath} && {compiler[0].abspath} ../../models/supercombo.dlc ../../models/supercombo.thneed --binary"
 
   lib_paths = ':'.join([Dir(p).abspath for p in lenv["LIBPATH"]])
@@ -75,4 +78,3 @@ lenv.Program('_modeld', [
     "modeld.cc",
     "models/driving.cc",
   ]+common_model, LIBS=libs)
-

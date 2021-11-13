@@ -1,13 +1,13 @@
-#include "onnxmodel.h"
+#include "selfdrive/modeld/runners/onnxmodel.h"
 
 #include <poll.h>
-#include <signal.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
 
 #include <cassert>
+#include <csignal>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <stdexcept>
 #include <string>
 
@@ -15,14 +15,10 @@
 #include "selfdrive/common/util.h"
 
 ONNXModel::ONNXModel(const char *path, float *_output, size_t _output_size, int runtime) {
+  LOGD("loading model %s", path);
+
   output = _output;
   output_size = _output_size;
-
-  char tmp[1024];
-  strncpy(tmp, path, sizeof(tmp));
-  strstr(tmp, ".dlc")[0] = '\0';
-  strcat(tmp, ".onnx");
-  LOGD("loading model %s", tmp);
 
   int err = pipe(pipein);
   assert(err == 0);
@@ -35,7 +31,7 @@ ONNXModel::ONNXModel(const char *path, float *_output, size_t _output_size, int 
   proc_pid = fork();
   if (proc_pid == 0) {
     LOGD("spawning onnx process %s", onnx_runner.c_str());
-    char *argv[] = {(char*)onnx_runner.c_str(), tmp, NULL};
+    char *argv[] = {(char*)onnx_runner.c_str(), (char*)path, nullptr};
     dup2(pipein[0], 0);
     dup2(pipeout[1], 1);
     close(pipein[0]);

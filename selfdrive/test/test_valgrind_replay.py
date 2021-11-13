@@ -14,7 +14,7 @@ else:
 import cereal.messaging as messaging
 from collections import namedtuple
 from tools.lib.logreader import LogReader
-from selfdrive.test.process_replay.test_processes import get_segment
+from selfdrive.test.openpilotci import get_url
 from common.basedir import BASEDIR
 
 ProcessConfig = namedtuple('ProcessConfig', ['proc_name', 'pub_sub', 'ignore', 'command', 'path', 'segment', 'wait_for_response'])
@@ -98,8 +98,8 @@ class TestValgrind(unittest.TestCase):
 
     for cfg in CONFIGS:
       self.done = False
-      URL = cfg.segment
-      lr = LogReader(get_segment(URL))
+      r, n = cfg.segment.rsplit("--", 1)
+      lr = LogReader(get_url(r, n))
       self.replay_process(cfg, lr)
       time.sleep(1)  # Wait for the logs to get written
       self.assertFalse(self.leak)

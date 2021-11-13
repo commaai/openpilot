@@ -1,11 +1,11 @@
 #include "selfdrive/boardd/pigeon.h"
 
-#include <errno.h>
 #include <fcntl.h>
 #include <termios.h>
 #include <unistd.h>
 
 #include <cassert>
+#include <cerrno>
 #include <optional>
 
 #include "selfdrive/common/gpio.h"
@@ -27,32 +27,33 @@ const std::string nack = "\xb5\x62\x05\x00\x02\x00";
 const std::string sos_ack = "\xb5\x62\x09\x14\x08\x00\x02\x00\x00\x00\x01\x00\x00\x00";
 const std::string sos_nack = "\xb5\x62\x09\x14\x08\x00\x02\x00\x00\x00\x00\x00\x00\x00";
 
-Pigeon * Pigeon::connect(Panda * p){
+Pigeon * Pigeon::connect(Panda * p) {
   PandaPigeon * pigeon = new PandaPigeon();
   pigeon->connect(p);
 
   return pigeon;
 }
 
-Pigeon * Pigeon::connect(const char * tty){
+Pigeon * Pigeon::connect(const char * tty) {
   TTYPigeon * pigeon = new TTYPigeon();
   pigeon->connect(tty);
 
   return pigeon;
 }
 
-bool Pigeon::wait_for_ack(std::string ack, std::string nack){
+bool Pigeon::wait_for_ack(const std::string &ack_, const std::string &nack_, int timeout_ms) {
   std::string s;
-  while (!do_exit){
+  const double start_t = millis_since_boot();
+  while (!do_exit) {
     s += receive();
 
-    if (s.find(ack) != std::string::npos){
+    if (s.find(ack_) != std::string::npos) {
       LOGD("Received ACK from ublox");
       return true;
-    } else if (s.find(nack) != std::string::npos) {
+    } else if (s.find(nack_) != std::string::npos) {
       LOGE("Received NACK from ublox");
       return false;
-    } else if (s.size() > 0x1000) {
+    } else if (s.size() > 0x1000 || ((millis_since_boot() - start_t) > timeout_ms)) {
       LOGE("No response from ublox");
       return false;
     }
@@ -62,17 +63,17 @@ bool Pigeon::wait_for_ack(std::string ack, std::string nack){
   return false;
 }
 
-bool Pigeon::wait_for_ack(){
+bool Pigeon::wait_for_ack() {
   return wait_for_ack(ack, nack);
 }
 
-bool Pigeon::send_with_ack(std::string cmd){
+bool Pigeon::send_with_ack(const std::string &cmd) {
   send(cmd);
   return wait_for_ack();
 }
 
 void Pigeon::init() {
-  for (int i = 0; i < 10; i++){
+  for (int i = 0; i < 10; i++) {
     if (do_exit) return;
     LOGW("panda GPS start");
 
@@ -118,7 +119,7 @@ void Pigeon::init() {
     if (!send_with_ack("\xB5\x62\x06\x01\x03\x00\x0A\x0B\x01\x20\x74"s)) continue;
 
     auto time = util::get_time();
-    if (util::time_valid(time)){
+    if (util::time_valid(time)) {
       LOGW("Sending current time to ublox");
       send(ublox::build_ubx_mga_ini_time_utc(time));
     }
@@ -129,7 +130,7 @@ void Pigeon::init() {
   LOGE("failed to initialize panda GPS");
 }
 
-void Pigeon::stop(){
+void Pigeon::stop() {
   LOGW("Storing almanac in ublox flash");
 
   // Controlled GNSS stop
@@ -172,7 +173,7 @@ std::string PandaPigeon::receive() {
   std::string r;
   r.reserve(0x1000 + 0x40);
   unsigned char dat[0x40];
-  while (r.length() < 0x1000){
+  while (r.length() < 0x1000) {
     int len = panda->usb_read(0xe0, 1, 0, dat, sizeof(dat));
     if (len <= 0) break;
     r.append((char*)dat, len);
@@ -185,7 +186,7 @@ void PandaPigeon::set_power(bool power) {
   panda->usb_write(0xd9, power, 0);
 }
 
-PandaPigeon::~PandaPigeon(){
+PandaPigeon::~PandaPigeon() {
 }
 
 void handle_tty_issue(int err, const char func[]) {
@@ -193,8 +194,8 @@ void handle_tty_issue(int err, const char func[]) {
 }
 
 void TTYPigeon::connect(const char * tty) {
-  pigeon_tty_fd = open(tty, O_RDWR);
-  if (pigeon_tty_fd < 0){
+  pigeon_tty_fd = HANDLE_EINTR(open(tty, O_RDWR));
+  if (pigeon_tty_fd < 0) {
     handle_tty_issue(errno, __func__);
     assert(pigeon_tty_fd >= 0);
   }
@@ -222,9 +223,9 @@ void TTYPigeon::connect(const char * tty) {
   assert(err == 0);
 }
 
-void TTYPigeon::set_baud(int baud){
+void TTYPigeon::set_baud(int baud) {
   speed_t baud_const = 0;
-  switch(baud){
+  switch(baud) {
   case 9600:
     baud_const = B9600;
     break;
@@ -253,7 +254,7 @@ void TTYPigeon::set_baud(int baud){
 }
 
 void TTYPigeon::send(const std::string &s) {
-  int err = write(pigeon_tty_fd, s.data(), s.length());
+  int err = HANDLE_EINTR(write(pigeon_tty_fd, s.data(), s.length()));
 
   if(err < 0) { handle_tty_issue(err, __func__); }
   err = tcdrain(pigeon_tty_fd);
@@ -264,11 +265,11 @@ std::string TTYPigeon::receive() {
   std::string r;
   r.reserve(0x1000 + 0x40);
   char dat[0x40];
-  while (r.length() < 0x1000){
+  while (r.length() < 0x1000) {
     int len = read(pigeon_tty_fd, dat, sizeof(dat));
     if(len < 0) {
       handle_tty_issue(len, __func__);
-    } else if (len == 0){
+    } else if (len == 0) {
       break;
     } else {
       r.append(dat, len);
@@ -278,7 +279,7 @@ std::string TTYPigeon::receive() {
   return r;
 }
 
-void TTYPigeon::set_power(bool power){
+void TTYPigeon::set_power(bool power) {
 #ifdef QCOM2
   int err = 0;
   err += gpio_init(GPIO_UBLOX_RST_N, true);
@@ -292,6 +293,6 @@ void TTYPigeon::set_power(bool power){
 #endif
 }
 
-TTYPigeon::~TTYPigeon(){
+TTYPigeon::~TTYPigeon() {
   close(pigeon_tty_fd);
 }

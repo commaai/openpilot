@@ -53,7 +53,7 @@ class TestUpdated(unittest.TestCase):
       f"cd {self.basedir} && scons -j{os.cpu_count()} cereal/ common/"
     ])
 
-    self.params = Params(db=os.path.join(self.basedir, "persist/params"))
+    self.params = Params(os.path.join(self.basedir, "persist/params"))
     self.params.clear_all()
     os.sync()
 
@@ -118,7 +118,7 @@ class TestUpdated(unittest.TestCase):
     self._update_now()
     t = self._read_param("LastUpdateTime", timeout=timeout)
     if t is None:
-      raise Exception("timed out waiting for update to complate")
+      raise Exception("timed out waiting for update to complete")
 
   def _make_commit(self):
     all_dirs, all_files = [], []

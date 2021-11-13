@@ -1,8 +1,0 @@
-Import('env')
-from sysconfig import get_paths
-env['CPPPATH'] += [get_paths()['include']]
-
-from Cython.Build import cythonize
-cythonize("cframereader.pyx")
-env.SharedLibrary(File('cframereader.so'), ['cframereader.cpp', 'framereader.cc'], LIBS=['avformat', 'avcodec', 'avutil', 'swscale'])
-

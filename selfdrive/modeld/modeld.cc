@@ -1,6 +1,5 @@
-#include <stdio.h>
-#include <stdlib.h>
-
+#include <cstdio>
+#include <cstdlib>
 #include <mutex>
 
 #include <eigen3/Eigen/Dense>
@@ -43,10 +42,10 @@ void calibration_thread(bool wide_camera) {
 
   while (!do_exit) {
     sm.update(100);
-    if(sm.updated("liveCalibration")){
+    if(sm.updated("liveCalibration")) {
       auto extrinsic_matrix = sm["liveCalibration"].getLiveCalibration().getExtrinsicMatrix();
       Eigen::Matrix<float, 3, 4> extrinsic_matrix_eigen;
-      for (int i = 0; i < 4*3; i++){
+      for (int i = 0; i < 4*3; i++) {
         extrinsic_matrix_eigen(i / 4, i % 4) = extrinsic_matrix[i];
       }
 
@@ -79,7 +78,6 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client) {
 
   uint32_t frame_id = 0, last_vipc_frame_id = 0;
   double last = 0;
-  int desire = -1;
   uint32_t run_count = 0;
 
   while (!do_exit) {
@@ -94,7 +92,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client) {
 
     // TODO: path planner timeout?
     sm.update(0);
-    desire = ((int)sm["lateralPlan"].getLateralPlan().getDesire());
+    int desire = ((int)sm["lateralPlan"].getLateralPlan().getDesire());
     frame_id = sm["roadCameraState"].getRoadCameraState().getFrameId();
 
     if (run_model_this_iter) {
@@ -133,13 +131,14 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client) {
 }
 
 int main(int argc, char **argv) {
-  set_realtime_priority(54);
-
-  if (Hardware::EON()) {
-    set_core_affinity(2);
-  } else if (Hardware::TICI()) {
-    set_core_affinity(7);  
+  if (!Hardware::PC()) {
+    int ret;
+    ret = set_realtime_priority(54);
+    assert(ret == 0);
+    set_core_affinity({Hardware::EON() ? 2 : 7});
+    assert(ret == 0);
   }
+
   bool wide_camera = Hardware::TICI() ? Params().getBool("EnableWideCamera") : false;
 
   // start calibration thread

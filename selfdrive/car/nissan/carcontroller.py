@@ -31,7 +31,7 @@ class CarController():
     lkas_hud_info_msg = CS.lkas_hud_info_msg
     apply_angle = actuators.steeringAngleDeg
 
-    steer_hud_alert = 1 if hud_alert == VisualAlert.steerRequired else 0
+    steer_hud_alert = 1 if hud_alert in [VisualAlert.steerRequired, VisualAlert.ldw] else 0
 
     if enabled:
       # # windup slower

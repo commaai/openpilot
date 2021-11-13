@@ -2,7 +2,7 @@
 from cereal import car
 from selfdrive.config import Conversions as CV
 from selfdrive.car.mazda.values import CAR, LKAS_LIMITS
-from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
+from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
 
 ButtonType = car.CarState.ButtonEvent.Type
@@ -19,11 +19,10 @@ class CarInterface(CarInterfaceBase):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
 
     ret.carName = "mazda"
-    ret.safetyModel = car.CarParams.SafetyModel.mazda
-
-    ret.dashcamOnly = True
-
+    ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.mazda)]
     ret.radarOffCan = True
+
+    ret.dashcamOnly = candidate not in [CAR.CX9_2021]
 
     ret.steerActuatorDelay = 0.1
     ret.steerRateCost = 1.0
@@ -37,17 +36,24 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.19], [0.019]]
       ret.lateralTuning.pid.kf = 0.00006
-    elif candidate == CAR.CX9:
+    elif candidate in [CAR.CX9, CAR.CX9_2021]:
       ret.mass = 4217 * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 3.1
       ret.steerRatio = 17.6
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.19], [0.019]]
       ret.lateralTuning.pid.kf = 0.00006
-    elif candidate == CAR.Mazda3:
+    elif candidate == CAR.MAZDA3:
       ret.mass = 2875 * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.7
       ret.steerRatio = 14.0
+      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.19], [0.019]]
+      ret.lateralTuning.pid.kf = 0.00006
+    elif candidate == CAR.MAZDA6:
+      ret.mass = 3443 * CV.LB_TO_KG + STD_CARGO_KG
+      ret.wheelbase = 2.83
+      ret.steerRatio = 15.5
       ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.19], [0.019]]
       ret.lateralTuning.pid.kf = 0.00006
@@ -66,8 +72,6 @@ class CarInterface(CarInterfaceBase):
     ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront,
                                                                          tire_stiffness_factor=tire_stiffness_factor)
 
-    ret.enableCamera = True
-
     return ret
 
   # returns a car.CarState
@@ -82,9 +86,6 @@ class CarInterface(CarInterfaceBase):
     # events
     events = self.create_common_events(ret)
 
-    if self.CS.low_speed_lockout:
-      events.add(EventName.belowEngageSpeed)
-
     if self.CS.low_speed_alert:
       events.add(EventName.belowSteerSpeed)
 
@@ -94,6 +95,6 @@ class CarInterface(CarInterfaceBase):
     return self.CS.out
 
   def apply(self, c):
-    can_sends = self.CC.update(c.enabled, self.CS, self.frame, c.actuators)
+    can_sends = self.CC.update(c, self.CS, self.frame)
     self.frame += 1
     return can_sends

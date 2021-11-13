@@ -1,7 +1,7 @@
+#!/usr/bin/env python3
 import os
 import time
 import json
-
 import jwt
 
 from datetime import datetime, timedelta
@@ -50,6 +50,8 @@ def register(show_spinner=False) -> str:
       private_key = f2.read()
 
     # Block until we get the imei
+    serial = HARDWARE.get_serial()
+    start_time = time.monotonic()
     imei1, imei2 = None, None
     while imei1 is None and imei2 is None:
       try:
@@ -58,11 +60,14 @@ def register(show_spinner=False) -> str:
         cloudlog.exception("Error getting imei, trying again...")
         time.sleep(1)
 
-    serial = HARDWARE.get_serial()
+      if time.monotonic() - start_time > 60 and show_spinner:
+        spinner.update(f"registering device - serial: {serial}, IMEI: ({imei1}, {imei2})")
+
     params.put("IMEI", imei1)
     params.put("HardwareSerial", serial)
 
     backoff = 0
+    start_time = time.monotonic()
     while True:
       try:
         register_token = jwt.encode({'register': True, 'exp': datetime.utcnow() + timedelta(hours=1)}, private_key, algorithm='RS256')
@@ -81,6 +86,9 @@ def register(show_spinner=False) -> str:
         cloudlog.exception("failed to authenticate")
         backoff = min(backoff + 1, 15)
         time.sleep(backoff)
+
+      if time.monotonic() - start_time > 60 and show_spinner:
+        spinner.update(f"registering device - serial: {serial}, IMEI: ({imei1}, {imei2})")
 
     if show_spinner:
       spinner.close()

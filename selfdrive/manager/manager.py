@@ -12,7 +12,7 @@ from common.basedir import BASEDIR
 from common.params import Params, ParamKeyType
 from common.text_window import TextWindow
 from selfdrive.boardd.set_time import set_time
-from selfdrive.hardware import HARDWARE, PC, TICI
+from selfdrive.hardware import HARDWARE, PC
 from selfdrive.manager.helpers import unblock_stdout
 from selfdrive.manager.process import ensure_running
 from selfdrive.manager.process_config import managed_processes
@@ -21,6 +21,8 @@ from selfdrive.swaglog import cloudlog, add_file_handler
 from selfdrive.version import dirty, get_git_commit, version, origin, branch, commit, \
                               terms_version, training_version, comma_remote, \
                               get_git_branch, get_git_remote
+
+sys.path.append(os.path.join(BASEDIR, "pyextra"))
 
 def manager_init():
 
@@ -33,16 +35,16 @@ def manager_init():
   default_params = [
     ("CompletedTrainingVersion", "0"),
     ("HasAcceptedTerms", "0"),
-    ("LastUpdateTime", datetime.datetime.utcnow().isoformat().encode('utf8')),
     ("OpenpilotEnabledToggle", "1"),
   ]
-
-  if TICI:
-    default_params.append(("EnableLteOnroad", "1"))
-    default_params.append(("IsUploadRawEnabled", "1"))
+  if not PC:
+    default_params.append(("LastUpdateTime", datetime.datetime.utcnow().isoformat().encode('utf8')))
 
   if params.get_bool("RecordFrontLock"):
     params.put_bool("RecordFront", True)
+
+  if not params.get_bool("DisableRadar_Allow"):
+    params.delete("DisableRadar")
 
   # set unset params
   for k, v in default_params:
@@ -55,8 +57,6 @@ def manager_init():
 
   if params.get("Passive") is None:
     raise Exception("Passive must be set to continue")
-
-  os.umask(0)  # Make sure we can create files with 777 permissions
 
   # Create folders needed for msgq
   try:
@@ -118,7 +118,7 @@ def manager_thread():
   params = Params()
 
   ignore = []
-  if params.get("DongleId") == UNREGISTERED_DONGLE_ID:
+  if params.get("DongleId", encoding='utf8') == UNREGISTERED_DONGLE_ID:
     ignore += ["manage_athenad", "uploader"]
   if os.getenv("NOBOARD") is not None:
     ignore.append("pandad")
@@ -158,9 +158,14 @@ def manager_thread():
     msg.managerState.processes = [p.get_process_state_msg() for p in managed_processes.values()]
     pm.send('managerState', msg)
 
-    # TODO: let UI handle this
-    # Exit main loop when uninstall is needed
-    if params.get_bool("DoUninstall"):
+    # Exit main loop when uninstall/shutdown/reboot is needed
+    shutdown = False
+    for param in ("DoUninstall", "DoShutdown", "DoReboot"):
+      if params.get_bool(param):
+        cloudlog.warning(f"Shutting down manager - {param} set")
+        shutdown = True
+
+    if shutdown:
       break
 
 
@@ -189,9 +194,16 @@ def main():
   finally:
     manager_cleanup()
 
-  if Params().get_bool("DoUninstall"):
+  params = Params()
+  if params.get_bool("DoUninstall"):
     cloudlog.warning("uninstalling")
     HARDWARE.uninstall()
+  elif params.get_bool("DoReboot"):
+    cloudlog.warning("reboot")
+    HARDWARE.reboot()
+  elif params.get_bool("DoShutdown"):
+    cloudlog.warning("shutdown")
+    HARDWARE.shutdown()
 
 
 if __name__ == "__main__":

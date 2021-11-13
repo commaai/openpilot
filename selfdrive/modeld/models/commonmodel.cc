@@ -1,54 +1,55 @@
-#include "commonmodel.h"
-
-#include <assert.h>
-#include <math.h>
+#include "selfdrive/modeld/models/commonmodel.h"
 
 #include <algorithm>
+#include <cassert>
+#include <cmath>
+#include <cstring>
 
 #include "selfdrive/common/clutil.h"
 #include "selfdrive/common/mat.h"
 #include "selfdrive/common/timing.h"
 
-void frame_init(ModelFrame* frame, int width, int height,
-                      cl_device_id device_id, cl_context context) {
-  transform_init(&frame->transform, context, device_id);
-  frame->width = width;
-  frame->height = height;
+ModelFrame::ModelFrame(cl_device_id device_id, cl_context context) {
+  input_frames = std::make_unique<float[]>(buf_size);
 
-  frame->y_cl = CL_CHECK_ERR(clCreateBuffer(context, CL_MEM_READ_WRITE, (size_t)width*height, NULL, &err));
-  frame->u_cl = CL_CHECK_ERR(clCreateBuffer(context, CL_MEM_READ_WRITE, (size_t)(width/2)*(height/2), NULL, &err));
-  frame->v_cl = CL_CHECK_ERR(clCreateBuffer(context, CL_MEM_READ_WRITE, (size_t)(width/2)*(height/2), NULL, &err));
-  frame->net_input_size = ((width*height*3)/2)*sizeof(float);
-  frame->net_input = CL_CHECK_ERR(clCreateBuffer(context, CL_MEM_READ_WRITE,
-                                frame->net_input_size, (void*)NULL, &err));
-  loadyuv_init(&frame->loadyuv, context, device_id, width, height);
+  q = CL_CHECK_ERR(clCreateCommandQueue(context, device_id, 0, &err));
+  y_cl = CL_CHECK_ERR(clCreateBuffer(context, CL_MEM_READ_WRITE, MODEL_WIDTH * MODEL_HEIGHT, NULL, &err));
+  u_cl = CL_CHECK_ERR(clCreateBuffer(context, CL_MEM_READ_WRITE, (MODEL_WIDTH / 2) * (MODEL_HEIGHT / 2), NULL, &err));
+  v_cl = CL_CHECK_ERR(clCreateBuffer(context, CL_MEM_READ_WRITE, (MODEL_WIDTH / 2) * (MODEL_HEIGHT / 2), NULL, &err));
+  net_input_cl = CL_CHECK_ERR(clCreateBuffer(context, CL_MEM_READ_WRITE, MODEL_FRAME_SIZE * sizeof(float), NULL, &err));
+
+  transform_init(&transform, context, device_id);
+  loadyuv_init(&loadyuv, context, device_id, MODEL_WIDTH, MODEL_HEIGHT);
 }
 
-float *frame_prepare(ModelFrame* frame, cl_command_queue q,
-                           cl_mem yuv_cl, int width, int height,
-                           const mat3 &transform) {
-  transform_queue(&frame->transform, q,
-                  yuv_cl, width, height,
-                  frame->y_cl, frame->u_cl, frame->v_cl,
-                  frame->width, frame->height,
-                  transform);
-  loadyuv_queue(&frame->loadyuv, q,
-                frame->y_cl, frame->u_cl, frame->v_cl,
-                frame->net_input);
-  float *net_input_buf = (float *)CL_CHECK_ERR(clEnqueueMapBuffer(q, frame->net_input, CL_TRUE,
-                                            CL_MAP_READ, 0, frame->net_input_size,
-                                            0, NULL, NULL, &err));
-  clFinish(q);
-  return net_input_buf;
+float* ModelFrame::prepare(cl_mem yuv_cl, int frame_width, int frame_height, const mat3 &projection, cl_mem *output) {
+  transform_queue(&this->transform, q,
+                  yuv_cl, frame_width, frame_height,
+                  y_cl, u_cl, v_cl, MODEL_WIDTH, MODEL_HEIGHT, projection);
+
+  if (output == NULL) {
+    loadyuv_queue(&loadyuv, q, y_cl, u_cl, v_cl, net_input_cl);
+
+    std::memmove(&input_frames[0], &input_frames[MODEL_FRAME_SIZE], sizeof(float) * MODEL_FRAME_SIZE);
+    CL_CHECK(clEnqueueReadBuffer(q, net_input_cl, CL_TRUE, 0, MODEL_FRAME_SIZE * sizeof(float), &input_frames[MODEL_FRAME_SIZE], 0, nullptr, nullptr));
+    clFinish(q);
+    return &input_frames[0];
+  } else {
+    loadyuv_queue(&loadyuv, q, y_cl, u_cl, v_cl, *output, true);
+    // NOTE: Since thneed is using a different command queue, this clFinish is needed to ensure the image is ready.
+    clFinish(q);
+    return NULL;
+  }
 }
 
-void frame_free(ModelFrame* frame) {
-  transform_destroy(&frame->transform);
-  loadyuv_destroy(&frame->loadyuv);
-  CL_CHECK(clReleaseMemObject(frame->net_input));
-  CL_CHECK(clReleaseMemObject(frame->v_cl));
-  CL_CHECK(clReleaseMemObject(frame->u_cl));
-  CL_CHECK(clReleaseMemObject(frame->y_cl));
+ModelFrame::~ModelFrame() {
+  transform_destroy(&transform);
+  loadyuv_destroy(&loadyuv);
+  CL_CHECK(clReleaseMemObject(net_input_cl));
+  CL_CHECK(clReleaseMemObject(v_cl));
+  CL_CHECK(clReleaseMemObject(u_cl));
+  CL_CHECK(clReleaseMemObject(y_cl));
+  CL_CHECK(clReleaseCommandQueue(q));
 }
 
 void softmax(const float* input, float* output, size_t len) {

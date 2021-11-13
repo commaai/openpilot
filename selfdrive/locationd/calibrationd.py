@@ -7,12 +7,10 @@ and the image input into the neural network is not corrected for roll.
 '''
 
 import os
-import capnp
 import copy
-import json
 import numpy as np
 import cereal.messaging as messaging
-from cereal import car, log
+from cereal import log
 from selfdrive.hardware import TICI
 from common.params import Params, put_nonblocking
 from common.transformations.model import model_height
@@ -33,7 +31,7 @@ INPUTS_WANTED = 50   # We want a little bit more than we need for stability
 MAX_ALLOWED_SPREAD = np.radians(2)
 RPY_INIT = np.array([0.0,0.0,0.0])
 
-# These values are needed to accomodate biggest modelframe
+# These values are needed to accommodate biggest modelframe
 PITCH_LIMITS = np.array([-0.09074112085129739, 0.14907572052989657])
 YAW_LIMITS = np.array([-0.06912048084718224, 0.06912048084718235])
 DEBUG = os.getenv("DEBUG") is not None
@@ -68,25 +66,13 @@ class Calibrator():
     rpy_init = RPY_INIT
     valid_blocks = 0
 
-    cached_params = params.get("CarParamsCache")
-    if cached_params is not None:
-      CP = car.CarParams.from_bytes(params.get("CarParams", block=True))
-      cached_params = car.CarParams.from_bytes(cached_params)
-      if cached_params.carFingerprint != CP.carFingerprint:
-        calibration_params = None
-
     if param_put and calibration_params:
       try:
         msg = log.Event.from_bytes(calibration_params)
         rpy_init = list(msg.liveCalibration.rpyCalib)
         valid_blocks = msg.liveCalibration.validBlocks
-      except (ValueError, capnp.lib.capnp.KjException):
-        # TODO: remove this after next release
-        calibration_params = json.loads(calibration_params)
-        rpy_init = calibration_params["calib_radians"]
-        valid_blocks = calibration_params['valid_blocks']
       except Exception:
-        cloudlog.exception("CalibrationParams file found but error encountered")
+        cloudlog.exception("Error reading cached CalibrationParams")
 
     self.reset(rpy_init, valid_blocks)
     self.update_status()
@@ -129,7 +115,7 @@ class Calibrator():
       self.cal_status = Calibration.INVALID
 
     # If spread is too high, assume mounting was changed and reset to last block.
-    # Make the transition smooth. Abrupt transistion are not good foor feedback loop through supercombo model.
+    # Make the transition smooth. Abrupt transitions are not good foor feedback loop through supercombo model.
     if max(self.calib_spread) > MAX_ALLOWED_SPREAD and self.cal_status == Calibration.CALIBRATED:
       self.reset(self.rpys[self.block_idx - 1], valid_blocks=INPUTS_NEEDED, smooth_from=self.rpy)
 

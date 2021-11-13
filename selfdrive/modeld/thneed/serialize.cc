@@ -1,8 +1,9 @@
-#include <assert.h>
-
+#include <cassert>
 #include <set>
 
 #include "json11.hpp"
+#include "selfdrive/common/util.h"
+#include "selfdrive/common/clutil.h"
 #include "selfdrive/modeld/thneed/thneed.h"
 using namespace json11;
 
@@ -11,23 +12,16 @@ extern map<cl_program, string> g_program_source;
 void Thneed::load(const char *filename) {
   printf("Thneed::load: loading from %s\n", filename);
 
-  FILE *f = fopen(filename, "rb");
-  fseek(f, 0L, SEEK_END);
-  int sz = ftell(f);
-  fseek(f, 0L, SEEK_SET);
-  char *buf = (char*)malloc(sz);
-  fread(buf, 1, sz, f);
-  fclose(f);
-
-  int jsz = *(int *)buf;
-  string jj(buf+4, jsz);
+  string buf = util::read_file(filename);
+  int jsz = *(int *)buf.data();
   string err;
+  string jj(buf.data() + sizeof(int), jsz);
   Json jdat = Json::parse(jj, err);
 
   map<cl_mem, cl_mem> real_mem;
   real_mem[NULL] = NULL;
 
-  int ptr = 4+jsz;
+  int ptr = sizeof(int)+jsz;
   for (auto &obj : jdat["objects"].array_items()) {
     auto mobj = obj.object_items();
     int sz = mobj["size"].int_value();
@@ -68,44 +62,17 @@ void Thneed::load(const char *filename) {
   }
 
   map<string, cl_program> g_programs;
-  for (auto &obj : jdat["programs"].object_items()) {
-    const char *srcs[1];
-    srcs[0] = (const char *)obj.second.string_value().c_str();
-    size_t length = obj.second.string_value().size();
-
-    if (record & THNEED_DEBUG) printf("building %s with size %zu\n", obj.first.c_str(), length);
-
-    cl_program program = clCreateProgramWithSource(context, 1, srcs, &length, NULL);
-    int err = clBuildProgram(program, 1, &device_id, "", NULL, NULL);
-    if (err != 0) {
-      printf("got err %d\n", err);
-      size_t length;
-      char buffer[2048];
-      clGetProgramBuildInfo(program, device_id, CL_PROGRAM_BUILD_LOG, sizeof(buffer), buffer, &length);
-      buffer[length] = '\0';
-      printf("%s\n", buffer);
-    }
-    assert(err == 0);
-
-    g_programs[obj.first] = program;
+  for (const auto &[name, source] : jdat["programs"].object_items()) {
+    if (record & THNEED_DEBUG) printf("building %s with size %zu\n", name.c_str(), source.string_value().size());
+    g_programs[name] = cl_program_from_source(context, device_id, source.string_value());
   }
 
   for (auto &obj : jdat["binaries"].array_items()) {
     string name = obj["name"].string_value();
     size_t length = obj["length"].int_value();
-    const unsigned char *srcs[1];
-    srcs[0] = (const unsigned char *)&buf[ptr];
-    ptr += length;
-
     if (record & THNEED_DEBUG) printf("binary %s with size %zu\n", name.c_str(), length);
-
-    cl_int err;
-    cl_program program = clCreateProgramWithBinary(context, 1, &device_id, &length, srcs, NULL, &err);
-    assert(program != NULL && err == CL_SUCCESS);
-    err = clBuildProgram(program, 1, &device_id, "", NULL, NULL);
-    assert(err == CL_SUCCESS);
-
-    g_programs[name] = program;
+    g_programs[name] = cl_program_from_binary(context, device_id, (const uint8_t*)&buf[ptr], length);
+    ptr += length;
   }
 
   for (auto &obj : jdat["kernels"].array_items()) {
@@ -136,7 +103,6 @@ void Thneed::load(const char *filename) {
     kq.push_back(kk);
   }
 
-  free(buf);
   clFinish(command_queue);
 }
 
@@ -239,7 +205,7 @@ void Thneed::save(const char *filename, bool save_binaries) {
       if (mobj["arg_type"] == "image2d_t" || mobj["arg_type"] == "image1d_t") {
         assert(false);
       } else {
-        // buffers alloced with CL_MEM_HOST_WRITE_ONLY, hence this hack
+        // buffers allocated with CL_MEM_HOST_WRITE_ONLY, hence this hack
         //hexdump((uint32_t*)val, 0x100);
 
         // the worst hack in thneed, the flags are at 0x14

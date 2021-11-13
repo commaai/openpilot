@@ -1,6 +1,6 @@
 #pragma once
 
-#include "visionbuf.h"
+#include "cereal/visionipc/visionbuf.h"
 
 #ifdef __APPLE__
 #include <OpenGL/gl3.h>

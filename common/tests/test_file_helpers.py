@@ -14,7 +14,6 @@ class TestFileHelpers(unittest.TestCase):
 
     with open(path) as f:
       self.assertEqual(f.read(), "test")
-    self.assertEqual(os.stat(path).st_mode & 0o777, 0o644)
     os.remove(path)
 
   def test_atomic_write_on_fs_tmp(self):

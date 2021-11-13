@@ -3,28 +3,29 @@ import argparse
 import os
 import sys
 
-os.environ["OMP_NUM_THREADS"] = "1"
-
 import cv2  # pylint: disable=import-error
 import numpy as np
 import pygame  # pylint: disable=import-error
 
 import cereal.messaging as messaging
+from common.numpy_fast import clip
 from common.basedir import BASEDIR
 from selfdrive.config import UIParams as UP
-from tools.replay.lib.ui_helpers import (_BB_TO_FULL_FRAME, _FULL_FRAME_SIZE,
+from tools.replay.lib.ui_helpers import (_BB_TO_FULL_FRAME,
                                          _INTRINSICS, BLACK, GREEN,
                                          YELLOW, Calibration,
                                          get_blank_lid_overlay, init_plots,
                                          maybe_update_radar_points, plot_lead,
                                          plot_model,
                                          pygame_modules_have_loaded)
+from cereal.visionipc.visionipc_pyx import VisionIpcClient, VisionStreamType # pylint: disable=no-name-in-module, import-error
 
 os.environ['BASEDIR'] = BASEDIR
 
 ANGLE_SCALE = 5.0
 
-def ui_thread(addr, frame_address):
+def ui_thread(addr):
+  cv2.setNumThreads(1)
   pygame.init()
   pygame.font.init()
   assert pygame_modules_have_loaded()
@@ -54,9 +55,8 @@ def ui_thread(addr, frame_address):
   camera_surface = pygame.surface.Surface((640, 480), 0, 24).convert()
   top_down_surface = pygame.surface.Surface((UP.lidar_x, UP.lidar_y), 0, 8)
 
-  frame = messaging.sub_sock('roadCameraState', addr=addr, conflate=True)
   sm = messaging.SubMaster(['carState', 'longitudinalPlan', 'carControl', 'radarState', 'liveCalibration', 'controlsState',
-                            'liveTracks', 'modelV2', 'liveMpc', 'liveParameters', 'lateralPlan', 'roadCameraState'], addr=addr)
+                            'liveTracks', 'modelV2', 'liveParameters', 'lateralPlan'], addr=addr)
 
   img = np.zeros((480, 640, 3), dtype='uint8')
   imgff = None
@@ -79,14 +79,13 @@ def ui_thread(addr, frame_address):
                       "v_override": 10,
                       "v_cruise": 11,
                       "a_ego": 12,
-                      "a_target": 13,
-                      "accel_override": 14}
+                      "a_target": 13}
 
   plot_arr = np.zeros((100, len(name_to_arr_idx.values())))
 
   plot_xlims = [(0, plot_arr.shape[0]), (0, plot_arr.shape[0]), (0, plot_arr.shape[0]), (0, plot_arr.shape[0])]
   plot_ylims = [(-0.1, 1.1), (-ANGLE_SCALE, ANGLE_SCALE), (0., 75.), (-3.0, 2.0)]
-  plot_names = [["gas", "computer_gas", "user_brake", "computer_brake", "accel_override"],
+  plot_names = [["gas", "computer_gas", "user_brake", "computer_brake"],
                 ["angle_steers", "angle_steers_des", "angle_steers_k", "steer_torque"],
                 ["v_ego", "v_override", "v_pid", "v_cruise"],
                 ["a_ego", "a_target"]]
@@ -99,8 +98,9 @@ def ui_thread(addr, frame_address):
                  ["-", "-", "-", "-"],
                  ["-", "-"]]
 
-  draw_plots = init_plots(plot_arr, name_to_arr_idx, plot_xlims, plot_ylims, plot_names, plot_colors, plot_styles, bigplots=True)
+  draw_plots = init_plots(plot_arr, name_to_arr_idx, plot_xlims, plot_ylims, plot_names, plot_colors, plot_styles)
 
+  vipc_client = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_RGB_BACK, True)
   while 1:
     list(pygame.event.get())
 
@@ -109,29 +109,28 @@ def ui_thread(addr, frame_address):
     top_down = top_down_surface, lid_overlay
 
     # ***** frame *****
-    fpkt = messaging.recv_one(frame)
-    rgb_img_raw = fpkt.roadCameraState.image
+    if not vipc_client.is_connected():
+      vipc_client.connect(True)
+
+    rgb_img_raw = vipc_client.recv()
+
+    if rgb_img_raw is None or not rgb_img_raw.any():
+      continue
 
     num_px = len(rgb_img_raw) // 3
-    if rgb_img_raw and num_px in _FULL_FRAME_SIZE.keys():
-      FULL_FRAME_SIZE = _FULL_FRAME_SIZE[num_px]
+    imgff_shape = (vipc_client.height, vipc_client.width, 3)
 
-      imgff_shape = (FULL_FRAME_SIZE[1], FULL_FRAME_SIZE[0], 3)
+    if imgff is None or imgff.shape != imgff_shape:
+      imgff = np.zeros(imgff_shape, dtype=np.uint8)
 
-      if imgff is None or imgff.shape != imgff_shape:
-        imgff = np.zeros(imgff_shape, dtype=np.uint8)
+    imgff = np.frombuffer(rgb_img_raw, dtype=np.uint8).reshape((vipc_client.height, vipc_client.width, 3))
+    imgff = imgff[:, :, ::-1]  # Convert BGR to RGB
+    zoom_matrix = _BB_TO_FULL_FRAME[num_px]
+    cv2.warpAffine(imgff, zoom_matrix[:2], (img.shape[1], img.shape[0]), dst=img, flags=cv2.WARP_INVERSE_MAP)
 
-      imgff = np.frombuffer(rgb_img_raw, dtype=np.uint8).reshape((FULL_FRAME_SIZE[1], FULL_FRAME_SIZE[0], 3))
-      imgff = imgff[:, :, ::-1]  # Convert BGR to RGB
-      zoom_matrix = _BB_TO_FULL_FRAME[num_px]
-      cv2.warpAffine(imgff, zoom_matrix[:2], (img.shape[1], img.shape[0]), dst=img, flags=cv2.WARP_INVERSE_MAP)
+    intrinsic_matrix = _INTRINSICS[num_px]
 
-      intrinsic_matrix = _INTRINSICS[num_px]
-    else:
-      img.fill(0)
-      intrinsic_matrix = np.eye(3)
-
-    sm.update()
+    sm.update(0)
 
     w = sm['controlsState'].lateralControlState.which()
     if w == 'lqrState':
@@ -143,20 +142,22 @@ def ui_thread(addr, frame_address):
 
     plot_arr[:-1] = plot_arr[1:]
     plot_arr[-1, name_to_arr_idx['angle_steers']] = sm['carState'].steeringAngleDeg
-    plot_arr[-1, name_to_arr_idx['angle_steers_des']] = sm['controlsState'].steeringAngleDesiredDeg
+    plot_arr[-1, name_to_arr_idx['angle_steers_des']] = sm['carControl'].actuators.steeringAngleDeg
     plot_arr[-1, name_to_arr_idx['angle_steers_k']] = angle_steers_k
     plot_arr[-1, name_to_arr_idx['gas']] = sm['carState'].gas
-    plot_arr[-1, name_to_arr_idx['computer_gas']] = sm['carControl'].actuators.gas
+    # TODO gas is deprecated
+    plot_arr[-1, name_to_arr_idx['computer_gas']] = clip(sm['carControl'].actuators.accel/4.0, 0.0, 1.0)
     plot_arr[-1, name_to_arr_idx['user_brake']] = sm['carState'].brake
     plot_arr[-1, name_to_arr_idx['steer_torque']] = sm['carControl'].actuators.steer * ANGLE_SCALE
-    plot_arr[-1, name_to_arr_idx['computer_brake']] = sm['carControl'].actuators.brake
+    # TODO brake is deprecated
+    plot_arr[-1, name_to_arr_idx['computer_brake']] = clip(-sm['carControl'].actuators.accel/4.0, 0.0, 1.0)
     plot_arr[-1, name_to_arr_idx['v_ego']] = sm['carState'].vEgo
     plot_arr[-1, name_to_arr_idx['v_pid']] = sm['controlsState'].vPid
-    plot_arr[-1, name_to_arr_idx['v_override']] = sm['carControl'].cruiseControl.speedOverride
     plot_arr[-1, name_to_arr_idx['v_cruise']] = sm['carState'].cruiseState.speed
     plot_arr[-1, name_to_arr_idx['a_ego']] = sm['carState'].aEgo
-    plot_arr[-1, name_to_arr_idx['a_target']] = sm['longitudinalPlan'].aTarget
-    plot_arr[-1, name_to_arr_idx['accel_override']] = sm['carControl'].cruiseControl.accelOverride
+
+    if len(sm['longitudinalPlan'].accels):
+      plot_arr[-1, name_to_arr_idx['a_target']] = sm['longitudinalPlan'].accels[0]
 
     if sm.rcv_frame['modelV2']:
       plot_model(sm['modelV2'], img, calibration, top_down)
@@ -229,4 +230,4 @@ if __name__ == "__main__":
     os.environ["ZMQ"] = "1"
     messaging.context = messaging.Context()
 
-  ui_thread(args.ip_address, args.frame_address)
+  ui_thread(args.ip_address)

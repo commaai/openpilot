@@ -9,12 +9,25 @@
 
 #include "selfdrive/ui/qt/widgets/keyboard.h"
 
-class InputDialog : public QDialog {
+
+class QDialogBase : public QDialog {
+  Q_OBJECT
+
+protected:
+  QDialogBase(QWidget *parent);
+  bool eventFilter(QObject *o, QEvent *e) override;
+
+public slots:
+  int exec() override;
+};
+
+class InputDialog : public QDialogBase {
   Q_OBJECT
 
 public:
-  explicit InputDialog(const QString &prompt_text, QWidget* parent = 0);
-  static QString getText(const QString &prompt, int minLength = -1);
+  explicit InputDialog(const QString &title, QWidget *parent, const QString &subtitle = "", bool secret = false);
+  static QString getText(const QString &title, QWidget *parent, const QString &substitle = "",
+                         bool secret = false, int minLength = -1, const QString &defaultText = "");
   QString text();
   void setMessage(const QString &message, bool clearInputField = true);
   void setMinLength(int length);
@@ -25,32 +38,33 @@ private:
   QLineEdit *line;
   Keyboard *k;
   QLabel *label;
-  QVBoxLayout *layout;
-
-public slots:
-  int exec() override;
+  QLabel *sublabel;
+  QVBoxLayout *main_layout;
+  QPushButton *eye_btn;
 
 private slots:
-  void handleInput(const QString &s);
+  void handleEnter();
 
 signals:
   void cancel();
   void emitText(const QString &text);
 };
 
-class ConfirmationDialog : public QDialog {
+class ConfirmationDialog : public QDialogBase {
   Q_OBJECT
 
 public:
-  explicit ConfirmationDialog(const QString &prompt_text, const QString &confirm_text = "Ok",
-                              const QString &cancel_text = "Cancel", QWidget* parent = 0);
-  static bool alert(const QString &prompt_text, QWidget *parent = 0);
-  static bool confirm(const QString &prompt_text, QWidget *parent = 0);
+  explicit ConfirmationDialog(const QString &prompt_text, const QString &confirm_text,
+                              const QString &cancel_text, QWidget* parent);
+  static bool alert(const QString &prompt_text, QWidget *parent);
+  static bool confirm(const QString &prompt_text, QWidget *parent);
+};
 
-private:
-  QLabel *prompt;
-  QVBoxLayout *layout;
+// larger ConfirmationDialog for rich text
+class RichTextDialog : public QDialogBase {
+  Q_OBJECT
 
-public slots:
-  int exec() override;
+public:
+  explicit RichTextDialog(const QString &prompt_text, const QString &btn_text, QWidget* parent);
+  static bool alert(const QString &prompt_text, QWidget *parent);
 };

@@ -2,7 +2,6 @@
 import os
 import sys
 from common.basedir import BASEDIR
-from selfdrive.car.fingerprints import IGNORED_FINGERPRINTS
 
 # messages reserved for CAN based ignition (see can_ignition_hook function in panda/board/drivers/can)
 # (addr, len)
@@ -59,39 +58,38 @@ def check_can_ignition_conflicts(fingerprints, brands):
           sys.exit(1)
 
 
-fingerprints = _get_fingerprints()
 
-fingerprints_flat = []
-car_names = []
-brand_names = []
-for brand in fingerprints:
-  for car in fingerprints[brand]:
-    if car in IGNORED_FINGERPRINTS:
-      continue
+if __name__ == "__main__":
+  fingerprints = _get_fingerprints()
 
-    fingerprints_flat += fingerprints[brand][car]
-    for i in range(len(fingerprints[brand][car])):
-      car_names.append(car)
-      brand_names.append(brand)
+  fingerprints_flat = []
+  car_names = []
+  brand_names = []
+  for brand in fingerprints:
+    for car in fingerprints[brand]:
+      fingerprints_flat += fingerprints[brand][car]
+      for i in range(len(fingerprints[brand][car])):
+        car_names.append(car)
+        brand_names.append(brand)
 
-# first check if CAN ignition specific messages are unexpectedly included in other fingerprints
-check_can_ignition_conflicts(fingerprints_flat, brand_names)
+  # first check if CAN ignition specific messages are unexpectedly included in other fingerprints
+  check_can_ignition_conflicts(fingerprints_flat, brand_names)
 
-valid = True
-for idx1, f1 in enumerate(fingerprints_flat):
-  for idx2, f2 in enumerate(fingerprints_flat):
-    if idx1 < idx2 and not check_fingerprint_consistency(f1, f2):
-      valid = False
-      print("Those two fingerprints are inconsistent {0} {1}".format(car_names[idx1], car_names[idx2]))
-      print("")
-      print(', '.join("%d: %d" % v for v in sorted(f1.items())))
-      print("")
-      print(', '.join("%d: %d" % v for v in sorted(f2.items())))
-      print("")
+  valid = True
+  for idx1, f1 in enumerate(fingerprints_flat):
+    for idx2, f2 in enumerate(fingerprints_flat):
+      if idx1 < idx2 and not check_fingerprint_consistency(f1, f2):
+        valid = False
+        print("Those two fingerprints are inconsistent {0} {1}".format(car_names[idx1], car_names[idx2]))
+        print("")
+        print(', '.join("%d: %d" % v for v in sorted(f1.items())))
+        print("")
+        print(', '.join("%d: %d" % v for v in sorted(f2.items())))
+        print("")
 
-print("Found {0} individual fingerprints".format(len(fingerprints_flat)))
-if not valid or len(fingerprints_flat) == 0:
-  print("TEST FAILED")
-  sys.exit(1)
-else:
-  print("TEST SUCESSFUL")
+  print("Found {0} individual fingerprints".format(len(fingerprints_flat)))
+  if not valid or len(fingerprints_flat) == 0:
+    print("TEST FAILED")
+    sys.exit(1)
+  else:
+    print("TEST SUCESSFUL")

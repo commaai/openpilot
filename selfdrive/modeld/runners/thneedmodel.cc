@@ -1,6 +1,6 @@
-#include "thneedmodel.h"
+#include "selfdrive/modeld/runners/thneedmodel.h"
 
-#include <assert.h>
+#include <cassert>
 
 ThneedModel::ThneedModel(const char *path, float *loutput, size_t loutput_size, int runtime) {
   thneed = new Thneed(true);
@@ -23,6 +23,11 @@ void ThneedModel::addTrafficConvention(float *state, int state_size) {
 
 void ThneedModel::addDesire(float *state, int state_size) {
   desire = state;
+}
+
+void* ThneedModel::getInputBuf() {
+  if (thneed->input_clmem.size() > 3) return &(thneed->input_clmem[3]);
+  else return nullptr;
 }
 
 void ThneedModel::execute(float *net_input_buf, int buf_size) {

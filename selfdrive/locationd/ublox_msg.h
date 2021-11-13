@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cassert>
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -45,7 +46,7 @@ namespace ublox {
     uint32_t tAccNs;
   } __attribute__((packed));
 
-  inline std::string ubx_add_checksum(std::string msg){
+  inline std::string ubx_add_checksum(const std::string &msg) {
     assert(msg.size() > 2);
 
     uint8_t ck_a = 0, ck_b = 0;

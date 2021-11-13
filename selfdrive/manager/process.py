@@ -37,7 +37,7 @@ def launcher(proc):
   except KeyboardInterrupt:
     cloudlog.warning("child %s got SIGINT" % proc)
   except Exception:
-    # can't install the crash handler becuase sys.excepthook doesn't play nice
+    # can't install the crash handler because sys.excepthook doesn't play nice
     # with threads, so catch it here.
     crash.capture_exception()
     raise
@@ -96,8 +96,8 @@ class ManagerProcess(ABC):
 
     if dt > self.watchdog_max_dt:
       # Only restart while offroad for now
-      if self.watchdog_seen and ENABLE_WATCHDOG and (not started):
-        cloudlog.error(f"Watchdog timeout for {self.name} (exitcode {self.proc.exitcode}) restarting")
+      if self.watchdog_seen and ENABLE_WATCHDOG:
+        cloudlog.error(f"Watchdog timeout for {self.name} (exitcode {self.proc.exitcode}) restarting ({started=})")
         self.restart()
     else:
       self.watchdog_seen = True
@@ -160,6 +160,7 @@ class ManagerProcess(ABC):
     state.name = self.name
     if self.proc:
       state.running = self.proc.is_alive()
+      state.shouldBeRunning = self.proc is not None and not self.shutting_down
       state.pid = self.proc.pid or 0
       state.exitCode = self.proc.exitcode or 0
     return state
@@ -228,7 +229,7 @@ class PythonProcess(ManagerProcess):
 
 
 class DaemonProcess(ManagerProcess):
-  """Python process that has to stay running accross manager restart.
+  """Python process that has to stay running across manager restart.
   This is used for athena so you don't lose SSH access when restarting manager."""
   def __init__(self, name, module, param_name, enabled=True):
     self.name = name

@@ -1,9 +1,9 @@
-#include <assert.h>
 #include <poll.h>
-#include <stdio.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include <cassert>
+#include <cstdio>
 #include <thread>
 
 #include "libyuv.h"
@@ -19,14 +19,14 @@
 #include "selfdrive/common/util.h"
 #include "selfdrive/hardware/hw.h"
 
-#if defined(QCOM) && !defined(QCOM_REPLAY)
+#ifdef QCOM
 #include "selfdrive/camerad/cameras/camera_qcom.h"
 #elif QCOM2
 #include "selfdrive/camerad/cameras/camera_qcom2.h"
 #elif WEBCAM
 #include "selfdrive/camerad/cameras/camera_webcam.h"
 #else
-#include "selfdrive/camerad/cameras/camera_frame_stream.h"
+#include "selfdrive/camerad/cameras/camera_replay.h"
 #endif
 
 ExitHandler do_exit;
@@ -44,16 +44,18 @@ void party(cl_device_id device_id, cl_context context) {
 }
 
 int main(int argc, char *argv[]) {
-  set_realtime_priority(53);
-  if (Hardware::EON()) {
-    set_core_affinity(2);
-  } else if (Hardware::TICI()) {
-    const int core = 6;
-    set_core_affinity(core);
+  if (!Hardware::PC()) {
+    int ret;
+    ret = set_realtime_priority(53);
+    assert(ret == 0);
+    ret = set_core_affinity({Hardware::EON() ? 2 : 6});
+    assert(ret == 0 || Params().getBool("IsOffroad")); // failure ok while offroad due to offlining cores
 
     // setup IRQs
-    for (int i = 231; i <= 243; i++) {
-      std::system(util::string_format("echo %d | sudo tee /proc/irq/%d/smp_affinity_list", core, i).c_str());
+    if (Hardware::TICI()) {
+      for (int i = 231; i <= 243; i++) {
+        std::system(util::string_format("echo %d | sudo tee /proc/irq/%d/smp_affinity_list", core, i).c_str());
+      }
     }
   }
 

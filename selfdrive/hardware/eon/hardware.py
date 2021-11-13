@@ -2,8 +2,10 @@ import binascii
 import itertools
 import os
 import re
+import serial
 import struct
 import subprocess
+from typing import List, Union
 
 from cereal import log
 from selfdrive.hardware.base import HardwareBase, ThermalConfig
@@ -11,8 +13,9 @@ from selfdrive.hardware.base import HardwareBase, ThermalConfig
 NetworkType = log.DeviceState.NetworkType
 NetworkStrength = log.DeviceState.NetworkStrength
 
+MODEM_PATH = "/dev/smd11"
 
-def service_call(call):
+def service_call(call: List[str]) -> Union[bytes, None]:
   try:
     ret = subprocess.check_output(["service", "call", *call], encoding='utf8').strip()
     if 'Parcel' not in ret:
@@ -22,31 +25,29 @@ def service_call(call):
     return None
 
 
-def parse_service_call_unpack(r, fmt):
+def parse_service_call_unpack(r, fmt) -> Union[bytes, None]:
   try:
     return struct.unpack(fmt, r)[0]
   except Exception:
     return None
 
 
-def parse_service_call_string(r):
+def parse_service_call_string(r: bytes) -> Union[str, None]:
   try:
     r = r[8:]  # Cut off length field
-    r = r.decode('utf_16_be')
+    r_str = r.decode('utf_16_be')
 
     # All pairs of two characters seem to be swapped. Not sure why
     result = ""
-    for a, b, in itertools.zip_longest(r[::2], r[1::2], fillvalue='\x00'):
-        result += b + a
+    for a, b, in itertools.zip_longest(r_str[::2], r_str[1::2], fillvalue='\x00'):
+      result += b + a
 
-    result = result.replace('\x00', '')
-
-    return result
+    return result.replace('\x00', '')
   except Exception:
     return None
 
 
-def parse_service_call_bytes(ret):
+def parse_service_call_bytes(ret: str) -> Union[bytes, None]:
   try:
     r = b""
     for hex_part in re.findall(r'[ (]([0-9a-f]{8})', ret):
@@ -56,8 +57,11 @@ def parse_service_call_bytes(ret):
     return None
 
 
-def getprop(key):
-  return subprocess.check_output(["getprop", key], encoding='utf8').strip()
+def getprop(key: str) -> Union[str, None]:
+  try:
+    return subprocess.check_output(["getprop", key], encoding='utf8').strip()
+  except subprocess.CalledProcessError:
+    return None
 
 
 class Android(HardwareBase):
@@ -131,7 +135,22 @@ class Android(HardwareBase):
     }
 
   def get_network_info(self):
-    return None
+    msg = log.DeviceState.NetworkInfo.new_message()
+    msg.state = getprop("gsm.sim.state") or ""
+    msg.technology = getprop("gsm.network.type") or ""
+    msg.operator = getprop("gsm.sim.operator.numeric") or ""
+
+    try:
+      modem = serial.Serial(MODEM_PATH, 115200, timeout=0.1)
+      modem.write(b"AT$QCRSRP?\r")
+      msg.extra = modem.read_until(b"OK\r\n").decode('utf-8')
+
+      rsrp = msg.extra.split("$QCRSRP: ")[1].split("\r")[0].split(",")
+      msg.channel = int(rsrp[1])
+    except Exception:
+      pass
+
+    return msg
 
   def get_network_type(self):
     wifi_check = parse_service_call_string(service_call(["connectivity", "2"]))
@@ -356,5 +375,36 @@ class Android(HardwareBase):
     with open("/sys/class/leds/lcd-backlight/brightness", "w") as f:
       f.write(str(int(percentage * 2.55)))
 
-  def set_power_save(self, enabled):
+  def get_screen_brightness(self):
+    try:
+      with open("/sys/class/leds/lcd-backlight/brightness") as f:
+        return int(float(f.read()) / 2.55)
+    except Exception:
+      return 0
+
+  def set_power_save(self, powersave_enabled):
     pass
+
+  def get_gpu_usage_percent(self):
+    try:
+      used, total = open('/sys/devices/soc/b00000.qcom,kgsl-3d0/kgsl/kgsl-3d0/gpubusy').read().strip().split()
+      perc = 100.0 * int(used) / int(total)
+      return min(max(perc, 0), 100)
+    except Exception:
+      return 0
+
+  def get_modem_version(self):
+    return None
+
+  def get_modem_temperatures(self):
+    # Not sure if we can get this on the LeEco
+    return []
+
+  def get_nvme_temperatures(self):
+    return []
+
+  def initialize_hardware(self):
+    pass
+
+  def get_networks(self):
+    return None

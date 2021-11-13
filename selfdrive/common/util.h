@@ -1,143 +1,101 @@
 #pragma once
 
 #include <fcntl.h>
+#include <sys/stat.h>
 #include <unistd.h>
-#include <dirent.h>
 
 #include <algorithm>
 #include <atomic>
-#include <cassert>
 #include <chrono>
 #include <csignal>
-#include <cstdio>
-#include <cstring>
-#include <fstream>
+#include <ctime>
+#include <map>
 #include <memory>
 #include <string>
 #include <thread>
-#include <map>
-#include <ctime>
-#include <sstream>
-#include <iomanip>
+#include <vector>
+
+// keep trying if x gets interrupted by a signal
+#define HANDLE_EINTR(x)                                        \
+  ({                                                           \
+    decltype(x) ret_;                                          \
+    int try_cnt = 0;                                           \
+    do {                                                       \
+      ret_ = (x);                                              \
+    } while (ret_ == -1 && errno == EINTR && try_cnt++ < 100); \
+    ret_;                                                       \
+  })
 
 #ifndef sighandler_t
 typedef void (*sighandler_t)(int sig);
 #endif
 
+const double MILE_TO_KM = 1.609344;
+const double KM_TO_MILE = 1. / MILE_TO_KM;
+const double MS_TO_KPH = 3.6;
+const double MS_TO_MPH = MS_TO_KPH * KM_TO_MILE;
+const double METER_TO_MILE = KM_TO_MILE / 1000.0;
+const double METER_TO_FOOT = 3.28084;
+
 void set_thread_name(const char* name);
 
 int set_realtime_priority(int level);
-int set_core_affinity(int core);
+int set_core_affinity(std::vector<int> cores);
 
 namespace util {
 
-// Time helpers
-inline struct tm get_time(){
-  time_t rawtime;
-  time(&rawtime);
-
-  struct tm sys_time;
-  gmtime_r(&rawtime, &sys_time);
-
-  return sys_time;
-}
-
-inline bool time_valid(struct tm sys_time){
-  int year = 1900 + sys_time.tm_year;
-  int month = 1 + sys_time.tm_mon;
-  return (year > 2020) || (year == 2020 && month >= 10);
-}
+// ***** Time helpers *****
+struct tm get_time();
+bool time_valid(struct tm sys_time);
 
 // ***** math helpers *****
 
 // map x from [a1, a2] to [b1, b2]
-template<typename T>
+template <typename T>
 T map_val(T x, T a1, T a2, T b1, T b2) {
   x = std::clamp(x, a1, a2);
   T ra = a2 - a1;
   T rb = b2 - b1;
-  return (x - a1)*rb / ra + b1;
+  return (x - a1) * rb / ra + b1;
 }
 
 // ***** string helpers *****
 
-inline bool starts_with(const std::string &s, const std::string &prefix) {
-  return s.compare(0, prefix.size(), prefix) == 0;
-}
-
 template <typename... Args>
-inline std::string string_format(const std::string& format, Args... args) {
+std::string string_format(const std::string& format, Args... args) {
   size_t size = snprintf(nullptr, 0, format.c_str(), args...) + 1;
   std::unique_ptr<char[]> buf(new char[size]);
   snprintf(buf.get(), size, format.c_str(), args...);
   return std::string(buf.get(), buf.get() + size - 1);
 }
 
-std::string read_file(const std::string &fn);
+std::string getenv(const char* key, const char* default_val = "");
+int getenv(const char* key, int default_val);
+float getenv(const char* key, float default_val);
 
-int read_files_in_dir(std::string path, std::map<std::string, std::string> *contents);
+std::string hexdump(const uint8_t* in, const size_t size);
+std::string dir_name(std::string const& path);
 
-int write_file(const char* path, const void* data, size_t size, int flags = O_WRONLY, mode_t mode = 0777);
+// **** file fhelpers *****
+std::string read_file(const std::string& fn);
+std::map<std::string, std::string> read_files_in_dir(const std::string& path);
+int write_file(const char* path, const void* data, size_t size, int flags = O_WRONLY, mode_t mode = 0664);
 
-inline std::string tohex(const uint8_t* buf, size_t buf_size) {
-  std::unique_ptr<char[]> hexbuf(new char[buf_size*2+1]);
-  for (size_t i=0; i < buf_size; i++) {
-    sprintf(&hexbuf[i*2], "%02x", buf[i]);
-  }
-  hexbuf[buf_size*2] = 0;
-  return std::string(hexbuf.get(), hexbuf.get() + buf_size*2);
-}
+FILE* safe_fopen(const char* filename, const char* mode);
+size_t safe_fwrite(const void * ptr, size_t size, size_t count, FILE * stream);
+int safe_fflush(FILE *stream);
 
-inline std::string base_name(std::string const & path) {
-  size_t pos = path.find_last_of("/");
-  if (pos == std::string::npos) return path;
-  return path.substr(pos + 1);
-}
+std::string readlink(const std::string& path);
+bool file_exists(const std::string& fn);
+bool create_directories(const std::string &dir, mode_t mode);
 
-inline std::string dir_name(std::string const & path) {
-  size_t pos = path.find_last_of("/");
-  if (pos == std::string::npos) return "";
-  return path.substr(0, pos);
-}
-
-inline std::string readlink(const std::string &path) {
-  char buff[4096];
-  ssize_t len = ::readlink(path.c_str(), buff, sizeof(buff)-1);
-  if (len != -1) {
-    buff[len] = '\0';
-    return std::string(buff);
-  }
-  return "";
-}
-
-inline std::string getenv_default(const char* env_var, const char * suffix, const char* default_val) {
-  const char* env_val = getenv(env_var);
-  if (env_val != NULL){
-    return std::string(env_val) + std::string(suffix);
-  } else {
-    return std::string(default_val);
-  }
-}
+std::string check_output(const std::string& command);
 
 inline void sleep_for(const int milliseconds) {
   std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
 }
 
-inline bool file_exists(const std::string& fn) {
-  std::ifstream f(fn);
-  return f.good();
-}
-
-inline std::string hexdump(const std::string& in) {
-    std::stringstream ss;
-    ss << std::hex << std::setfill('0');
-    for (size_t i = 0; i < in.size(); i++) {
-        ss << std::setw(2) << static_cast<unsigned int>(static_cast<unsigned char>(in[i]));
-    }
-    return ss.str();
-}
-
-}
+}  // namespace util
 
 class ExitHandler {
 public:
@@ -150,8 +108,10 @@ public:
 #endif
   };
   inline static std::atomic<bool> power_failure = false;
+  inline static std::atomic<int> signal = 0;
   inline operator bool() { return do_exit; }
   inline ExitHandler& operator=(bool v) {
+    signal = 0;
     do_exit = v;
     return *this;
   }
@@ -160,6 +120,7 @@ private:
 #ifndef __APPLE__
     power_failure = (sig == SIGPWR);
 #endif
+    signal = sig;
     do_exit = true;
   }
   inline static std::atomic<bool> do_exit = false;
@@ -190,7 +151,14 @@ public:
     return x_;
   }
   inline void reset(float x) { x_ = x; }
+  inline float x(){ return x_; }
 
 private:
   float x_, k_;
 };
+
+template<typename T>
+void update_max_atomic(std::atomic<T>& max, T const& value) {
+  T prev = max;
+  while(prev < value && !max.compare_exchange_weak(prev, value)) {}
+}

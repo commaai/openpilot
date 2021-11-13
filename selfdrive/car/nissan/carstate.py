@@ -12,7 +12,7 @@ TORQUE_SAMPLES = 12
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
-    can_define = CANDefine(DBC[CP.carFingerprint]['pt'])
+    can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
 
     self.lkas_hud_msg = None
     self.lkas_hud_info_msg = None
@@ -33,7 +33,7 @@ class CarState(CarStateBase):
     if self.CP.carFingerprint in [CAR.ROGUE, CAR.XTRAIL, CAR.ALTIMA]:
       ret.brakePressed = bool(cp.vl["DOORS_LIGHTS"]["USER_BRAKE_PRESSED"])
     elif self.CP.carFingerprint in [CAR.LEAF, CAR.LEAF_IC]:
-      ret.brakePressed = bool(cp.vl["BRAKE_PEDAL"]["BRAKE_PEDAL"] > 3)
+      ret.brakePressed = bool(cp.vl["CRUISE_THROTTLE"]["USER_BRAKE_PRESSED"])
 
     ret.wheelSpeeds.fl = cp.vl["WHEEL_SPEEDS_FRONT"]["WHEEL_SPEED_FL"] * CV.KPH_TO_MS
     ret.wheelSpeeds.fr = cp.vl["WHEEL_SPEEDS_FRONT"]["WHEEL_SPEED_FR"] * CV.KPH_TO_MS
@@ -184,8 +184,7 @@ class CarState(CarStateBase):
 
     elif CP.carFingerprint in [CAR.LEAF, CAR.LEAF_IC]:
       signals += [
-        ("BRAKE_PEDAL", "BRAKE_PEDAL", 0),
-
+        ("USER_BRAKE_PRESSED", "CRUISE_THROTTLE", 1),
         ("GAS_PEDAL", "CRUISE_THROTTLE", 0),
         ("CRUISE_AVAILABLE", "CRUISE_THROTTLE", 0),
         ("SPEED_MPH", "HUD_SETTINGS", 0),
@@ -216,7 +215,7 @@ class CarState(CarStateBase):
         ("LKAS_SETTINGS", 10),
         ("PROPILOT_HUD", 50),
       ]
-      return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 1)
+      return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 1)
 
     signals += [
       ("STEER_TORQUE_DRIVER", "STEER_TORQUE_SENSOR", 0),
@@ -225,7 +224,7 @@ class CarState(CarStateBase):
       ("STEER_TORQUE_SENSOR", 100),
     ]
 
-    return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
+    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 0)
 
   @staticmethod
   def get_adas_can_parser(CP):
@@ -337,7 +336,7 @@ class CarState(CarStateBase):
         ("LKAS", 100),
       ]
 
-    return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 2)
+    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 2)
 
   @staticmethod
   def get_cam_can_parser(CP):
@@ -358,7 +357,7 @@ class CarState(CarStateBase):
       checks += [
         ("STEER_TORQUE_SENSOR", 100),
       ]
-      return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 0)
+      return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 0)
 
 
-    return CANParser(DBC[CP.carFingerprint]['pt'], signals, checks, 1)
+    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 1)

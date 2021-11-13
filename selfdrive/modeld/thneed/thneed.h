@@ -4,13 +4,13 @@
 #define __user __attribute__(())
 #endif
 
-#include <CL/cl.h>
-#include <stdint.h>
-#include <stdlib.h>
-
+#include <cstdint>
+#include <cstdlib>
 #include <memory>
 #include <string>
 #include <vector>
+
+#include <CL/cl.h>
 
 #include "selfdrive/modeld/thneed/include/msm_kgsl.h"
 
@@ -98,6 +98,7 @@ class Thneed {
     void wait();
     int optimize();
 
+    vector<cl_mem> input_clmem;
     vector<void *> inputs;
     vector<size_t> input_sizes;
     cl_mem output = NULL;

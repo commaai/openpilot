@@ -1,7 +1,9 @@
 #pragma once
 
-#include <float.h>
-#include <stdlib.h>
+#include <cfloat>
+#include <cstdlib>
+
+#include <memory>
 
 #define CL_USE_DEPRECATED_OPENCL_1_2_APIS
 #ifdef __APPLE__
@@ -14,24 +16,28 @@
 #include "selfdrive/modeld/transforms/loadyuv.h"
 #include "selfdrive/modeld/transforms/transform.h"
 
+constexpr int MODEL_WIDTH = 512;
+constexpr int MODEL_HEIGHT = 256;
+constexpr int MODEL_FRAME_SIZE = MODEL_WIDTH * MODEL_HEIGHT * 3 / 2;
+
 const bool send_raw_pred = getenv("SEND_RAW_PRED") != NULL;
 
 void softmax(const float* input, float* output, size_t len);
 float softplus(float input);
 float sigmoid(float input);
 
-typedef struct ModelFrame {
-  Transform transform;
-  int width, height;
-  cl_mem y_cl, u_cl, v_cl;
-  LoadYUVState loadyuv;
-  cl_mem net_input;
-  size_t net_input_size;
-} ModelFrame;
+class ModelFrame {
+ public:
+  ModelFrame(cl_device_id device_id, cl_context context);
+  ~ModelFrame();
+  float* prepare(cl_mem yuv_cl, int width, int height, const mat3& transform, cl_mem *output);
 
-void frame_init(ModelFrame* frame, int width, int height,
-                      cl_device_id device_id, cl_context context);
-float *frame_prepare(ModelFrame* frame, cl_command_queue q,
-                           cl_mem yuv_cl, int width, int height,
-                           const mat3 &transform);
-void frame_free(ModelFrame* frame);
+  const int buf_size = MODEL_FRAME_SIZE * 2;
+
+ private:
+  Transform transform;
+  LoadYUVState loadyuv;
+  cl_command_queue q;
+  cl_mem y_cl, u_cl, v_cl, net_input_cl;
+  std::unique_ptr<float[]> input_frames;
+};
