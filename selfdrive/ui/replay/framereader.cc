@@ -37,8 +37,8 @@ FrameReader::FrameReader(bool local_cache, int chunk_size, int retries) : FileRe
 }
 
 FrameReader::~FrameReader() {
-  for (auto &f : frames_) {
-    av_packet_unref(&f.pkt);
+  for (AVPacket *pkt : packets) {
+    av_packet_free(&pkt);
   }
 
   if (decoder_ctx) avcodec_free_context(&decoder_ctx);
@@ -105,17 +105,18 @@ bool FrameReader::load(const std::string &url, bool no_cuda, std::atomic<bool> *
   ret = avcodec_open2(decoder_ctx, decoder, NULL);
   if (ret < 0) return false;
 
-  frames_.reserve(60 * 20);  // 20fps, one minute
+  packets.reserve(60 * 20);  // 20fps, one minute
   while (!(abort && *abort)) {
-    Frame &frame = frames_.emplace_back();
-    ret = av_read_frame(input_ctx, &frame.pkt);
+    AVPacket *pkt = av_packet_alloc();
+    ret = av_read_frame(input_ctx, pkt);
     if (ret < 0) {
-      frames_.pop_back();
+      av_packet_free(&pkt);
       valid_ = (ret == AVERROR_EOF);
       break;
     }
+    packets.push_back(pkt);
     // some stream seems to contian no keyframes
-    key_frames_count_ += frame.pkt.flags & AV_PKT_FLAG_KEY;
+    key_frames_count_ += pkt->flags & AV_PKT_FLAG_KEY;
   }
   return valid_;
 }
@@ -148,35 +149,29 @@ bool FrameReader::initHardwareDecoder(AVHWDeviceType hw_device_type) {
 
 bool FrameReader::get(int idx, uint8_t *rgb, uint8_t *yuv) {
   assert(rgb || yuv);
-  if (!valid_ || idx < 0 || idx >= frames_.size()) {
+  if (!valid_ || idx < 0 || idx >= packets.size()) {
     return false;
   }
   return decode(idx, rgb, yuv);
 }
 
 bool FrameReader::decode(int idx, uint8_t *rgb, uint8_t *yuv) {
-  auto get_keyframe = [=](int idx) {
-    for (int i = idx; i >= 0 && key_frames_count_ > 1; --i) {
-      if (frames_[i].pkt.flags & AV_PKT_FLAG_KEY) return i;
-    }
-    return idx;
-  };
-
   int from_idx = idx;
-  if (idx > 0 && !frames_[idx].decoded && !frames_[idx - 1].decoded) {
-    // find the previous keyframe
-    from_idx = get_keyframe(idx);
+  if (idx != prev_idx + 1 && key_frames_count_ > 1) {
+    // seeking to the nearest key frame
+    for (int i = idx; i >= 0; --i) {
+      if (packets[i]->flags & AV_PKT_FLAG_KEY) {
+        from_idx = i;
+        break;
+      }
+    }
   }
+  prev_idx = idx;
 
   for (int i = from_idx; i <= idx; ++i) {
-    Frame &frame = frames_[i];
-    if ((!frame.decoded || i == idx) && !frame.failed) {
-      AVFrame *f = decodeFrame(&frame.pkt);
-      frame.decoded = f != nullptr;
-      frame.failed = !frame.decoded;
-      if (frame.decoded && i == idx) {
-        return copyBuffers(f, rgb, yuv);
-      }
+    AVFrame *f = decodeFrame(packets[i]);
+    if (f && i == idx) {
+      return copyBuffers(f, rgb, yuv);
     }
   }
   return false;
