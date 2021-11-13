@@ -6,7 +6,6 @@ from selfdrive.config import Conversions as CV
 
 Ecu = car.CarParams.Ecu
 MIN_ACC_SPEED = 19. * CV.MPH_TO_MS
-
 PEDAL_TRANSITION = 10. * CV.MPH_TO_MS
 
 class CarControllerParams:
