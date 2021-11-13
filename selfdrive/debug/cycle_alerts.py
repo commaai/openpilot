@@ -5,7 +5,7 @@
 
 import time
 
-from cereal import car
+from cereal import car, log
 import cereal.messaging as messaging
 from selfdrive.car.honda.interface import CarInterface
 from selfdrive.controls.lib.events import ET, EVENTS, Events
@@ -63,6 +63,7 @@ def cycle_alerts(duration=2000, is_metric=False):
 
     dat = messaging.new_message('pandaStates', 1)
     dat.pandaStates[0].ignitionLine = True
+    dat.pandaStates[0].pandaType = log.PandaState.PandaType.uno
     pm.send('pandaStates', dat)
 
     time.sleep(0.01)
