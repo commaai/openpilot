@@ -14,9 +14,12 @@
 #include "cereal/gen/cpp/log.capnp.h"
 
 // double the FIFO size
-#define RECV_SIZE (0x1000)
+#define RECV_SIZE (0x4000)
 #define TIMEOUT 0
 #define PANDA_BUS_CNT 4
+#define CANPACKET_HEAD_SIZE (0x5U)
+#define CANPACKET_REJECTED  (0xC0U)
+#define CANPACKET_RETURNED  (0x80U)
 
 // copied from panda/board/main.c
 struct __attribute__((packed)) health_t {
@@ -53,7 +56,7 @@ class Panda {
   libusb_context *ctx = NULL;
   libusb_device_handle *dev_handle = NULL;
   std::mutex usb_lock;
-  std::vector<uint32_t> send;
+  std::vector<uint8_t> send;
   void handle_usb_issue(int err, const char func[]);
   void cleanup();
 
@@ -93,6 +96,7 @@ class Panda {
   void set_power_saving(bool power_saving);
   void set_usb_power_mode(cereal::PeripheralState::UsbPowerMode power_mode);
   void send_heartbeat();
+  uint8_t len_to_dlc(uint8_t len);
   void can_send(capnp::List<cereal::CanData>::Reader can_data_list);
   bool can_receive(std::vector<can_frame>& out_vec);
 };
