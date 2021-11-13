@@ -376,10 +376,9 @@ void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list) {
       assert(can_data.size() <= (hw_type == cereal::PandaState::PandaType::RED_PANDA) ? 64 : 8);
       assert(can_data.size() == dlc_to_len[data_len_code]);
 
-      if (cmsg.getAddress() >= 0x800) { // extended
-        *(uint32_t*)&send[pos+1] = (cmsg.getAddress() << 3) | (1 << 2);
-      } else { // normal
-        *(uint32_t*)&send[pos+1] = (cmsg.getAddress() << 3);
+      *(uint32_t*)&send[pos+1] = (cmsg.getAddress() << 3);
+      if (cmsg.getAddress() >= 0x800) {
+        *(uint32_t*)&send[pos+1] |= (1 << 2);
       }
       send[pos] = data_len_code << 4 | ((bus - bus_offset) << 1);
       memcpy(&send[pos+5], can_data.begin(), can_data.size());
@@ -408,7 +407,8 @@ bool Panda::can_receive(std::vector<can_frame>& out_vec) {
   // Not sure if this can happen
   if (recv < 0) recv = 0;
 
-  if (recv == RECV_SIZE) { // TODO: Might change from full to overloaded? if > some threshold that is lower than RECV_SIZE, let's say 80-90%
+  // TODO: Might change from full to overloaded? if > some threshold that is lower than RECV_SIZE, let's say 80-90%
+  if (recv == RECV_SIZE) {
     LOGW("Receive buffer full");
   }
 
