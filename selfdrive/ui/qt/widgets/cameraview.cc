@@ -279,6 +279,7 @@ void CameraViewWidget::vipcThread() {
         QThread::msleep(100);
         continue;
       }
+
       if (!Hardware::EON()) {
         gl_buffer.reset(new QOpenGLBuffer(QOpenGLBuffer::PixelUnpackBuffer));
         gl_buffer->create();
@@ -286,21 +287,26 @@ void CameraViewWidget::vipcThread() {
         gl_buffer->setUsagePattern(QOpenGLBuffer::StreamDraw);
         gl_buffer->allocate(vipc_client->buffers[0].len);
       }
+
       emit vipcThreadConnected(vipc_client.get());
     }
 
     if (VisionBuf *buf = vipc_client->recv(nullptr, 1000)) {
       if (!Hardware::EON()) {
         std::unique_lock lk(texture_lock);
+
         void *texture_buffer = gl_buffer->map(QOpenGLBuffer::WriteOnly);
         memcpy(texture_buffer, buf->addr, buf->len);
         gl_buffer->unmap();
 
+        // copy pixels from PBO to texture object
         glBindTexture(GL_TEXTURE_2D, texture[buf->idx]->frame_tex);
         glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, buf->width, buf->height, GL_RGB, GL_UNSIGNED_BYTE, 0);
         glBindTexture(GL_TEXTURE_2D, 0);
         assert(glGetError() == GL_NO_ERROR);
+
         emit vipcThreadFrameReceived(buf);
+
         glFlush();
       } else {
         emit vipcThreadFrameReceived(buf);
