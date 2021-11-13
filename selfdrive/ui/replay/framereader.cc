@@ -1,14 +1,25 @@
 #include "selfdrive/ui/replay/framereader.h"
 
 #include <cassert>
-#include <sstream>
+#include <mutex>
 
 namespace {
 
-int readFunction(void *opaque, uint8_t *buf, int buf_size) {
-  auto &iss = *reinterpret_cast<std::istringstream *>(opaque);
-  iss.read(reinterpret_cast<char *>(buf), buf_size);
-  return iss.gcount() ? iss.gcount() : AVERROR_EOF;
+struct buffer_data {
+  uint8_t *ptr;
+  size_t size;  // size left in the buffer
+};
+
+int readPacket(void *opaque, uint8_t *buf, int buf_size) {
+  struct buffer_data *bd = (struct buffer_data *)opaque;
+  buf_size = std::min((size_t)buf_size, bd->size);
+
+  if (!buf_size) return AVERROR_EOF;
+
+  memcpy(buf, bd->ptr, buf_size);
+  bd->ptr += buf_size;
+  bd->size -= buf_size;
+  return buf_size;
 }
 
 enum AVPixelFormat get_hw_format(AVCodecContext *ctx, const enum AVPixelFormat *pix_fmts) {
@@ -50,10 +61,13 @@ bool FrameReader::load(const std::string &url, bool no_cuda, std::atomic<bool> *
   std::string content = read(url, abort);
   if (content.empty()) return false;
 
-  std::istringstream iss(content);
+  struct buffer_data bd = {
+    .ptr = (uint8_t *)content.data(),
+    .size = content.size(),
+  };
   const int avio_ctx_buffer_size = 64 * 1024;
   unsigned char *avio_ctx_buffer = (unsigned char *)av_malloc(avio_ctx_buffer_size);
-  avio_ctx_ = avio_alloc_context(avio_ctx_buffer, avio_ctx_buffer_size, 0, &iss, readFunction, nullptr, nullptr);
+  avio_ctx_ = avio_alloc_context(avio_ctx_buffer, avio_ctx_buffer_size, 0, &bd, readPacket, nullptr, nullptr);
   input_ctx->pb = avio_ctx_;
 
   input_ctx->probesize = 10 * 1024 * 1024;  // 10MB
