@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
     // setup IRQs
     if (Hardware::TICI()) {
       for (int i = 231; i <= 243; i++) {
-        std::system(util::string_format("echo %d | sudo tee /proc/irq/%d/smp_affinity_list", core, i).c_str());
+        std::system(util::string_format("echo %d | sudo tee /proc/irq/%d/smp_affinity_list", 6, i).c_str());
       }
     }
   }
