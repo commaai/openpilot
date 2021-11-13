@@ -445,8 +445,8 @@ bool Panda::can_receive(std::vector<can_frame>& out_vec) {
 
         bool rejected = chunk[pos+1] & 0x1;
         bool returned = (chunk[pos+1] >> 1) & 0x1;
-        if (rejected) { canData.src += 192; }
-        if (returned) { canData.src += 128; }
+        if (rejected) { canData.src += CANPACKET_REJECTED; }
+        if (returned) { canData.src += CANPACKET_RETURNED; }
         canData.dat.assign((char*)&chunk[pos+5], data_len);
 
         pos += pckt_len;

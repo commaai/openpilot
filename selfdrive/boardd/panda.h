@@ -18,6 +18,8 @@
 #define TIMEOUT 0
 #define PANDA_BUS_CNT 4
 #define CANPACKET_HEAD_SIZE (0x5U)
+#define CANPACKET_REJECTED  (0xC0U)
+#define CANPACKET_RETURNED  (0x80U)
 
 // copied from panda/board/main.c
 struct __attribute__((packed)) health_t {
