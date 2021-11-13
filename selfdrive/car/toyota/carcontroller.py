@@ -1,5 +1,4 @@
 from cereal import car
-from math import sin
 from common.numpy_fast import clip, interp
 from selfdrive.car import apply_toyota_steer_torque_limits, create_gas_command, make_can_msg
 from selfdrive.car.toyota.toyotacan import create_steer_command, create_ui_command, \
@@ -9,8 +8,6 @@ from selfdrive.car.toyota.values import CAR, STATIC_DSU_MSGS, NO_STOP_TIMER_CAR,
                                         MIN_ACC_SPEED, PEDAL_TRANSITION, CarControllerParams
 from opendbc.can.packer import CANPacker
 VisualAlert = car.CarControl.HUDControl.VisualAlert
-
-G = 9.81
 
 
 class CarController():
@@ -35,8 +32,8 @@ class CarController():
         PEDAL_SCALE = interp(CS.out.vEgo, [0.0, MIN_ACC_SPEED, MIN_ACC_SPEED + PEDAL_TRANSITION], [0.1, 0.3, 0.0])
       else:
         PEDAL_SCALE = interp(CS.out.vEgo, [0.0, MIN_ACC_SPEED, MIN_ACC_SPEED + PEDAL_TRANSITION], [0.4, 0.5, 0.0])
-      pitch_accel = -sin(pitch) * G
-      interceptor_gas_cmd = clip(PEDAL_SCALE * (actuators.accel - pitch_accel), 0., MAX_INTERCEPTOR_GAS)
+      #pitch_accel = -sin(pitch) * 9.81
+      interceptor_gas_cmd = clip(PEDAL_SCALE * actuators.accel, 0., MAX_INTERCEPTOR_GAS)
     else:
       interceptor_gas_cmd = 0.
     pcm_accel_cmd = clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
