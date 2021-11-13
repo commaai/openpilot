@@ -62,7 +62,7 @@ const LogCameraInfo cameras_logged[] = {
     .is_h265 = true,
     .downscale = false,
     .has_qcamera = true,
-    .participates_in_rotation = true,
+    .trigger_rotate = true,
     .enable = true,
     .record = true,
   },
@@ -76,7 +76,7 @@ const LogCameraInfo cameras_logged[] = {
     .is_h265 = true,
     .downscale = false,
     .has_qcamera = false,
-    .participates_in_rotation = Hardware::TICI(),
+    .trigger_rotate = Hardware::TICI(),
     .enable = !Hardware::PC(),
     .record = Params().getBool("RecordFront"),
   },
@@ -90,7 +90,7 @@ const LogCameraInfo cameras_logged[] = {
     .is_h265 = true,
     .downscale = false,
     .has_qcamera = false,
-    .participates_in_rotation = true,
+    .trigger_rotate = true,
     .enable = Hardware::TICI(),
     .record = Hardware::TICI(),
   },
@@ -114,8 +114,8 @@ struct LoggerdState {
   std::atomic<int> rotate_segment;
   std::atomic<double> last_camera_seen_tms;
   std::atomic<int> ready_to_rotate;  // count of encoders ready to rotate
-  int num_synced_encoders = 0;
-  double last_rotate_time = 0.;      // last rotate time in ms
+  int max_waiting = 0;
+  double last_rotate_tms = 0.;      // last rotate time in ms
 
   // Sync logic for startup
   std::atomic<int> encoders_ready = 0;
@@ -129,7 +129,7 @@ LoggerdState s;
 bool sync_encoders(LoggerdState *state, CameraType cam_type, uint32_t frame_id) {
   if (state->camera_synced[cam_type]) return true;
 
-  if (state->num_synced_encoders > 1 && state->encoders_ready != state->num_synced_encoders) {
+  if (state->max_waiting > 1 && state->encoders_ready != state->max_waiting) {
     // add a small margin to the start frame id in case one of the encoders already dropped the next frame
     update_max_atomic(state->start_frame_id, frame_id + 2);
     if (std::exchange(state->camera_ready[cam_type], true) == false) {
@@ -181,7 +181,7 @@ void encoder_thread(const LogCameraInfo &cam_info) {
       VisionBuf* buf = vipc_client.recv(&extra);
       if (buf == nullptr) continue;
 
-      if (cam_info.participates_in_rotation) {
+      if (cam_info.trigger_rotate) {
         s.last_camera_seen_tms = millis_since_boot();
         if (!sync_encoders(&s, cam_info.type, extra.frame_id)) {
           continue;
@@ -283,19 +283,19 @@ void logger_rotate() {
     assert(err == 0);
     s.rotate_segment = segment;
     s.ready_to_rotate = 0;
-    s.last_rotate_time = millis_since_boot();
+    s.last_rotate_tms = millis_since_boot();
   }
   s.rotate_cv.notify_all();
   LOGW((s.logger.part == 0) ? "logging to %s" : "rotated to %s", s.segment_path);
 }
 
 void rotate_if_needed() {
-  if (s.ready_to_rotate == s.num_synced_encoders) {
+  if (s.ready_to_rotate == s.max_waiting) {
     logger_rotate();
   }
 
   double tms = millis_since_boot();
-  if ((tms - s.last_rotate_time) > SEGMENT_LENGTH * 1000 &&
+  if ((tms - s.last_rotate_tms) > SEGMENT_LENGTH * 1000 &&
       (tms - s.last_camera_seen_tms) > NO_CAMERA_PATIENCE &&
       !LOGGERD_TEST) {
     LOGW("no camera packet seen. auto rotating");
@@ -349,7 +349,7 @@ int main(int argc, char** argv) {
   for (const auto &cam : cameras_logged) {
     if (cam.enable) {
       encoder_threads.push_back(std::thread(encoder_thread, cam));
-      if (cam.participates_in_rotation) s.num_synced_encoders++;
+      if (cam.trigger_rotate) s.max_waiting++;
     }
   }
 
