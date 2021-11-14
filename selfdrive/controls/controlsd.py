@@ -248,8 +248,11 @@ class Controls:
       self.events.add(EventName.laneChange)
 
     if self.can_rcv_error or not CS.canValid:
-      if (not CS.canValid):
-        cloudlog.error("###@@@ controlsd.py.Controls.update_events: CS.canValid false")
+      pass
+      # TODO: JJS - figure out why - CS.canValid is false so much
+      # This is firing a LOT on GM...
+      # if (not CS.canValid):
+      #   cloudlog.error("###@@@ controlsd.py.Controls.update_events: CS.canValid false")
       #self.events.add(EventName.canError)
 
     for i, pandaState in enumerate(self.sm['pandaStates']):
