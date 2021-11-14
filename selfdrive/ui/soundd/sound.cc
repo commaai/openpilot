@@ -6,7 +6,7 @@
 // TODO: detect when we can't play sounds
 // TODO: detect when we can't display the UI
 
-Sound::Sound(QObject *parent) : sm({"carState", "controlsState"}) {
+Sound::Sound(QObject *parent) : sm({"carState", "controlsState", "deviceState"}) {
   const QString sound_asset_path = Hardware::TICI() ? "../../assets/sounds_tici/" : "../../assets/sounds/";
   for (auto &[alert, fn, loops] : sound_list) {
     QSoundEffect *s = new QSoundEffect(this);
@@ -24,7 +24,21 @@ Sound::Sound(QObject *parent) : sm({"carState", "controlsState"}) {
 };
 
 void Sound::update() {
+  const bool started_prev = sm["deviceState"].getDeviceState().getStarted();
   sm.update(0);
+
+  const bool started = sm["deviceState"].getDeviceState().getStarted();
+  if (started && !started_prev) {
+    started_frame = sm.frame;
+  }
+
+  // no sounds while offroad
+  // also no sounds if nothing is alive in case thermald crashes while offroad
+  const bool crashed = (sm.frame - std::max(sm.rcv_frame("deviceState"), sm.rcv_frame("controlsState"))) > 10*UI_FREQ;
+  if (!started || crashed) {
+    setAlert({});
+    return;
+  }
 
   // scale volume with speed
   if (sm.updated("carState")) {
@@ -35,7 +49,7 @@ void Sound::update() {
     }
   }
 
-  setAlert(Alert::get(sm, 1));
+  setAlert(Alert::get(sm, started_frame));
 }
 
 void Sound::setAlert(const Alert &alert) {

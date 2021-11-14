@@ -133,7 +133,7 @@ class TestLoggerd(unittest.TestCase):
         p = Path(f"{route_path}--{n}")
         logged = set([f.name for f in p.iterdir() if f.is_file()])
         diff = logged ^ expected_files
-        self.assertEqual(len(diff), 0, f"{_=} {route_path=} {n=}, {logged=} {expected_files=}")
+        self.assertEqual(len(diff), 0, f"didn't get all expected files. run={_} seg={n} {route_path=}, {diff=}\n{logged=} {expected_files=}")
 
   def test_bootlog(self):
     # generate bootlog with fake launch log

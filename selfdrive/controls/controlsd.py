@@ -33,6 +33,7 @@ LANE_DEPARTURE_THRESHOLD = 0.1
 STEER_ANGLE_SATURATION_TIMEOUT = 1.0 / DT_CTRL
 STEER_ANGLE_SATURATION_THRESHOLD = 2.5  # Degrees
 
+REPLAY = "REPLAY" in os.environ
 SIMULATION = "SIMULATION" in os.environ
 NOSENSOR = "NOSENSOR" in os.environ
 IGNORE_PROCESSES = {"rtshield", "uploader", "deleter", "loggerd", "logmessaged", "tombstoned",
@@ -291,11 +292,12 @@ class Controls:
       if log.PandaState.FaultType.relayMalfunction in pandaState.faults:
         self.events.add(EventName.relayMalfunction)
 
-    # Check for mismatch between openpilot and car's PCM
-    cruise_mismatch = CS.cruiseState.enabled and (not self.enabled or not self.CP.pcmCruise)
-    self.cruise_mismatch_counter = self.cruise_mismatch_counter + 1 if cruise_mismatch else 0
-    if self.cruise_mismatch_counter > int(1. / DT_CTRL):
-      self.events.add(EventName.cruiseMismatch)
+    if not REPLAY:
+      # Check for mismatch between openpilot and car's PCM
+      cruise_mismatch = CS.cruiseState.enabled and (not self.enabled or not self.CP.pcmCruise)
+      self.cruise_mismatch_counter = self.cruise_mismatch_counter + 1 if cruise_mismatch else 0
+      if self.cruise_mismatch_counter > int(1. / DT_CTRL):
+        self.events.add(EventName.cruiseMismatch)
 
     # Check for FCW
     stock_long_is_braking = self.enabled and not self.CP.openpilotLongitudinalControl and CS.aEgo < -1.5
@@ -571,6 +573,10 @@ class Controls:
     CC.enabled = self.enabled
     CC.active = self.active
     CC.actuators = actuators
+
+    if len(self.sm['liveLocationKalman'].orientationNED.value) > 2:
+      CC.roll = self.sm['liveLocationKalman'].orientationNED.value[0]
+      CC.pitch = self.sm['liveLocationKalman'].orientationNED.value[1]
 
     CC.cruiseControl.cancel = CS.cruiseState.enabled and (not self.enabled or not self.CP.pcmCruise)
     if self.joystick_mode and self.sm.rcv_frame['testJoystick'] > 0 and self.sm['testJoystick'].buttons[0]:

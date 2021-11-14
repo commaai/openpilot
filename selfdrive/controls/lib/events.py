@@ -167,7 +167,7 @@ class EngagementAlert(Alert):
     super().__init__("", "",
                      AlertStatus.normal, AlertSize.none,
                      Priority.MID, VisualAlert.none,
-                     audible_alert, .02),
+                     audible_alert, .2),
 
 
 class NormalPermanentAlert(Alert):
@@ -494,7 +494,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       "TAKE CONTROL",
       "Turn Exceeds Steering Limit",
       AlertStatus.userPrompt, AlertSize.mid,
-      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.chimePrompt, 1.),
+      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.chimeWarning2RepeatInfinite, 1.),
   },
 
   # Thrown when the fan is driven at >50% but is not rotating

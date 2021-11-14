@@ -138,6 +138,7 @@ class TestOnroad(unittest.TestCase):
       cls.lr = list(LogReader(os.path.join(segs[-1], "rlog.bz2")))
       return
 
+    os.environ['REPLAY'] = "1"
     os.environ['SKIP_FW_QUERY'] = "1"
     os.environ['FINGERPRINT'] = "TOYOTA COROLLA TSS2 2019"
     set_params_enabled()
