@@ -881,6 +881,15 @@ class AcadosOcpSolver:
         self.shared_lib.ocp_nlp_set.argtypes = \
             [c_void_p, c_void_p, c_int, c_char_p, c_void_p]
 
+        self.shared_lib.ocp_nlp_dims_get_from_attr.argtypes = \
+            [c_void_p, c_void_p, c_void_p, c_int, c_char_p]
+        self.shared_lib.ocp_nlp_dims_get_from_attr.restype = c_int
+        self.shared_lib.ocp_nlp_out_get_slice.argtypes = \
+            [c_void_p, c_void_p, c_void_p, c_int, c_int, c_char_p, c_void_p]
+        self.shared_lib.ocp_nlp_get_at_stage.argtypes = \
+            [c_void_p, c_void_p, c_void_p, c_int, c_char_p, c_void_p]
+
+
     def solve(self):
         """
         Solve the ocp with current input.
@@ -893,24 +902,13 @@ class AcadosOcpSolver:
 
 
     def get_slice(self, start_stage_, end_stage_, field_):
-        """
-        Get the last solution of the solver:
+        dims = self.shared_lib.ocp_nlp_dims_get_from_attr(self.nlp_config, \
+            self.nlp_dims, self.nlp_out, start_stage_, field_)
+        out = np.ascontiguousarray(np.zeros((end_stage_ - start_stage_, dims)), dtype=np.float64)
+        self.fill_in_slice(start_stage_, end_stage_, field_, out)
+        return out
 
-            :param start_stage: integer corresponding to shooting node that indicates start of slice
-            :param end_stage: integer corresponding to shooting node that indicates end of slice
-            :param field: string in ['x', 'u', 'z', 'pi', 'lam', 't', 'sl', 'su',]
-
-            .. note:: regarding lam, t: \n
-                    the inequalities are internally organized in the following order: \n
-                    [ lbu lbx lg lh lphi ubu ubx ug uh uphi; \n
-                      lsbu lsbx lsg lsh lsphi usbu usbx usg ush usphi]
-
-            .. note:: pi: multipliers for dynamics equality constraints \n
-                      lam: multipliers for inequalities \n
-                      t: slack variables corresponding to evaluation of all inequalities (at the solution) \n
-                      sl: slack variables of soft lower inequality constraints \n
-                      su: slack variables of soft upper inequality constraints \n
-        """
+    def fill_in_slice(self, start_stage_, end_stage_, field_, arr):
         out_fields = ['x', 'u', 'z', 'pi', 'lam', 't']
         mem_fields = ['sl', 'su']
         field = field_
@@ -931,29 +929,15 @@ class AcadosOcpSolver:
 
         if start_stage_ < 0 or end_stage_ > self.N + 1:
             raise Exception('AcadosOcpSolver.get_slice(): stage index must be in [0, N], got: {}.'.format(self.N))
-        self.shared_lib.ocp_nlp_dims_get_from_attr.argtypes = \
-            [c_void_p, c_void_p, c_void_p, c_int, c_char_p]
-        self.shared_lib.ocp_nlp_dims_get_from_attr.restype = c_int
 
-        dims = self.shared_lib.ocp_nlp_dims_get_from_attr(self.nlp_config, \
-            self.nlp_dims, self.nlp_out, start_stage_, field)
-
-        out = np.ascontiguousarray(np.zeros((end_stage_ - start_stage_, dims)), dtype=np.float64)
-        out_data = cast(out.ctypes.data, POINTER(c_double))
+        out_data = cast(arr.ctypes.data, POINTER(c_double))
 
         if (field_ in out_fields):
-            self.shared_lib.ocp_nlp_out_get_slice.argtypes = \
-                [c_void_p, c_void_p, c_void_p, c_int, c_int, c_char_p, c_void_p]
             self.shared_lib.ocp_nlp_out_get_slice(self.nlp_config, \
                 self.nlp_dims, self.nlp_out, start_stage_, end_stage_, field, out_data)
         elif field_ in mem_fields:
-            self.shared_lib.ocp_nlp_get_at_stage.argtypes = \
-                [c_void_p, c_void_p, c_void_p, c_int, c_char_p, c_void_p]
             self.shared_lib.ocp_nlp_get_at_stage(self.nlp_config, \
                 self.nlp_dims, self.nlp_solver, start_stage_, end_stage_, field, out_data)
-
-        return out
-
 
     def get(self, stage_, field_):
         return self.get_slice(stage_, stage_ + 1, field_)[0]
@@ -1255,13 +1239,10 @@ class AcadosOcpSolver:
         """
         # cast value_ to avoid conversion issues
         field = field_.encode('utf-8')
-        dim = np.product(value_.shape[1:])
-
-        dims = np.ascontiguousarray(np.zeros((2,)), dtype=np.intc)
-        dims_data = cast(dims.ctypes.data, POINTER(c_int))
-
-        self.shared_lib.ocp_nlp_cost_dims_get_from_attr(self.nlp_config, \
-            self.nlp_dims, self.nlp_out, start_stage_, field, dims_data)
+        if len(value_.shape) > 2:
+          dim = value_.shape[1]*value_.shape[2]
+        else:
+          dim = value_.shape[1]
 
         self.shared_lib.ocp_nlp_cost_model_set_slice(self.nlp_config, \
             self.nlp_dims, self.nlp_in, start_stage_, end_stage_, field,
@@ -1280,18 +1261,12 @@ class AcadosOcpSolver:
             :param field: string in ['lbx', 'ubx', 'lbu', 'ubu', 'lg', 'ug', 'lh', 'uh', 'uphi']
             :param value: of appropriate size
         """
-        # cast value_ to avoid conversion issues
-        if isinstance(value_, (float, int)):
-            value_ = np.array([value_])
 
         field = field_.encode('utf-8')
-        dim = np.product(value_.shape[1:])
-
-        dims = np.ascontiguousarray(np.zeros((2,)), dtype=np.intc)
-        dims_data = cast(dims.ctypes.data, POINTER(c_int))
-
-        self.shared_lib.ocp_nlp_constraint_dims_get_from_attr(self.nlp_config, \
-            self.nlp_dims, self.nlp_out, start_stage_, field, dims_data)
+        if len(value_.shape) > 2:
+          dim = value_.shape[1]*value_.shape[2]
+        else:
+          dim = value_.shape[1]
 
         self.shared_lib.ocp_nlp_constraints_model_set_slice(self.nlp_config, \
             self.nlp_dims, self.nlp_in, start_stage_, end_stage_, field,

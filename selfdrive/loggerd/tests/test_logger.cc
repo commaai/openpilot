@@ -1,37 +1,17 @@
 #include <sys/stat.h>
 
-#include <condition_variable>
-#include <thread>
-
 #include <climits>
+#include <condition_variable>
+#include <sstream>
+#include <thread>
 
 #include "catch2/catch.hpp"
 #include "cereal/messaging/messaging.h"
 #include "selfdrive/common/util.h"
 #include "selfdrive/loggerd/logger.h"
+#include "selfdrive/ui/replay/util.h"
 
 typedef cereal::Sentinel::SentinelType SentinelType;
-
-bool decompressBZ2(std::vector<uint8_t> &dest, const char srcData[], size_t srcSize, size_t outputSizeIncrement = 0x100000U) {
-  bz_stream strm = {};
-  int ret = BZ2_bzDecompressInit(&strm, 0, 0);
-  assert(ret == BZ_OK);
-  dest.resize(1024 * 1024);
-  strm.next_in = const_cast<char *>(srcData);
-  strm.avail_in = srcSize;
-  do {
-    strm.next_out = (char *)&dest[strm.total_out_lo32];
-    strm.avail_out = dest.size() - strm.total_out_lo32;
-    ret = BZ2_bzDecompress(&strm);
-    if (ret == BZ_OK && strm.avail_in > 0 && strm.avail_out == 0) {
-      dest.resize(dest.size() + outputSizeIncrement);
-    }
-  } while (ret == BZ_OK && strm.avail_in > 0);
-
-  BZ2_bzDecompressEnd(&strm);
-  dest.resize(strm.total_out_lo32);
-  return ret == BZ_STREAM_END;
-}
 
 void verify_segment(const std::string &route_path, int segment, int max_segment, int required_event_cnt) {
   const std::string segment_path = route_path + "--" + std::to_string(segment);
@@ -42,13 +22,11 @@ void verify_segment(const std::string &route_path, int segment, int max_segment,
   for (const char *fn : {"/rlog.bz2", "/qlog.bz2"}) {
     const std::string log_file = segment_path + fn;
     INFO(log_file);
-    std::string log_bz2 = util::read_file(log_file);
-    REQUIRE(log_bz2.size() > 0);
-
-    std::vector<uint8_t> log;
-    bool ret = decompressBZ2(log, log_bz2.data(), log_bz2.size());
+    
+    std::ostringstream stream;
+    bool ret = readBZ2File(log_file, stream);
     REQUIRE(ret);
-
+    std::string log = stream.str();
     int event_cnt = 0, i = 0;
     kj::ArrayPtr<const capnp::word> words((capnp::word *)log.data(), log.size() / sizeof(capnp::word));
     while (words.size() > 0) {

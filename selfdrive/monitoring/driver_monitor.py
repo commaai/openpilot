@@ -26,20 +26,18 @@ class DRIVER_MONITOR_SETTINGS():
     self._DISTRACTED_PROMPT_TIME_TILL_TERMINAL = 6.
 
     self._FACE_THRESHOLD = 0.5
-    self._PARTIAL_FACE_THRESHOLD = 0.765 if TICI else 0.455
-    self._EYE_THRESHOLD = 0.25 if TICI else 0.57
-    self._SG_THRESHOLD = 0.83
-    self._BLINK_THRESHOLD = 0.62 if TICI else 0.68
-    self._BLINK_THRESHOLD_SLACK = 0.82 if TICI else 0.88
-    self._BLINK_THRESHOLD_STRICT = 0.62 if TICI else 0.68
-    self._PITCH_WEIGHT = 1.175 if TICI else 1.35  # pitch matters a lot more
-    self._POSESTD_THRESHOLD = 0.2 if TICI else 0.175
-    self._E2E_POSE_THRESHOLD = 0.95 if TICI else 0.9
-    self._E2E_EYES_THRESHOLD = 0.75
+    self._PARTIAL_FACE_THRESHOLD = 0.765 if TICI else 0.43
+    self._EYE_THRESHOLD = 0.61 if TICI else 0.55
+    self._SG_THRESHOLD = 0.89 if TICI else 0.86
+    self._BLINK_THRESHOLD = 0.82 if TICI else 0.588
+    self._BLINK_THRESHOLD_SLACK = 0.9 if TICI else 0.77
+    self._BLINK_THRESHOLD_STRICT = self._BLINK_THRESHOLD
+    self._PITCH_WEIGHT = 1.35  # pitch matters a lot more
+    self._POSESTD_THRESHOLD = 0.38 if TICI else 0.3
 
-    self._METRIC_THRESHOLD = 0.55 if TICI else 0.48
-    self._METRIC_THRESHOLD_SLACK = 0.75 if TICI else 0.66
-    self._METRIC_THRESHOLD_STRICT = 0.55 if TICI else 0.48
+    self._METRIC_THRESHOLD = 0.48
+    self._METRIC_THRESHOLD_SLACK = 0.66
+    self._METRIC_THRESHOLD_STRICT = self._METRIC_THRESHOLD
     self._PITCH_NATURAL_OFFSET = 0.02  # people don't seem to look straight when they drive relaxed, rather a bit up
     self._YAW_NATURAL_OFFSET = 0.08  # people don't seem to look straight when they drive relaxed, rather a bit to the right (center of car)
 
@@ -207,11 +205,8 @@ class DriverStatus():
     self.blink.left_blink = driver_state.leftBlinkProb * (driver_state.leftEyeProb > self.settings._EYE_THRESHOLD) * (driver_state.sunglassesProb < self.settings._SG_THRESHOLD)
     self.blink.right_blink = driver_state.rightBlinkProb * (driver_state.rightEyeProb > self.settings._EYE_THRESHOLD) * (driver_state.sunglassesProb < self.settings._SG_THRESHOLD)
 
-    distracted_normal = self._is_driver_distracted(self.pose, self.blink) > 0 and \
+    self.driver_distracted = self._is_driver_distracted(self.pose, self.blink) > 0 and \
                                    driver_state.faceProb > self.settings._FACE_THRESHOLD and self.pose.low_std
-    distracted_E2E = (driver_state.distractedPose > self.settings._E2E_POSE_THRESHOLD or driver_state.distractedEyes > self.settings._E2E_EYES_THRESHOLD) and \
-                              (self.face_detected and not self.face_partial)
-    self.driver_distracted = distracted_normal or distracted_E2E
     self.driver_distraction_filter.update(self.driver_distracted)
 
     # update offseter

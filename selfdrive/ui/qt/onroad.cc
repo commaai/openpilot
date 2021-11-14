@@ -19,13 +19,12 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   main_layout->addLayout(stacked_layout);
 
   nvg = new NvgWindow(VISION_STREAM_RGB_BACK, this);
-  QObject::connect(nvg, &NvgWindow::resizeSignal, [=](int w){
-    buttons->setFixedWidth(w);
-  });
-  QObject::connect(this, &OnroadWindow::updateStateSignal, nvg, &NvgWindow::updateState);
 
   buttons = new ButtonsWindow(this);
   QObject::connect(this, &OnroadWindow::updateStateSignal, buttons, &ButtonsWindow::updateState);
+  QObject::connect(nvg, &NvgWindow::resizeSignal, [=](int w){
+    buttons->setFixedWidth(w);
+  });
   stacked_layout->addWidget(buttons);
 
   QWidget * split_wrapper = new QWidget;
@@ -260,18 +259,7 @@ void NvgWindow::initializeGL() {
 
   ui_nvg_init(&QUIState::ui_state);
   prev_draw_t = millis_since_boot();
-}
-
-void NvgWindow::updateState(const UIState &s) {
-  // TODO: make camerad startup faster then remove this
-  if (s.scene.started) {
-    if (isVisible() != vipc_client->connected) {
-      setVisible(vipc_client->connected);
-    }
-    if (!isVisible()) {
-      updateFrame();
-    }
-  }
+  setBackgroundColor(bg_colors[STATUS_DISENGAGED]);
 }
 
 void NvgWindow::paintGL() {

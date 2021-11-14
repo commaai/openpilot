@@ -19,6 +19,7 @@ public:
   explicit CameraViewWidget(VisionStreamType stream_type, bool zoom, QWidget* parent = nullptr);
   ~CameraViewWidget();
   void setStreamType(VisionStreamType type);
+  void setBackgroundColor(QColor color);
 
 signals:
   void clicked();
@@ -45,4 +46,5 @@ private:
   QOpenGLShaderProgram *program;
 
   VisionStreamType stream_type;
+  QColor bg = QColor("#000000");
 };

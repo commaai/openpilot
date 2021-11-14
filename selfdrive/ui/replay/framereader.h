@@ -1,59 +1,40 @@
 #pragma once
 
-#include <unistd.h>
-
-#include <atomic>
-#include <condition_variable>
-#include <mutex>
-#include <queue>
 #include <string>
-#include <thread>
 #include <vector>
 
-// independent of QT, needs ffmpeg
 extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
-#include <libswscale/swscale.h>
 }
 
 class FrameReader {
 public:
-  FrameReader(const std::string &url, int timeout_sec = 0);
+  FrameReader();
   ~FrameReader();
-  bool process();
-  uint8_t *get(int idx);
+  bool load(const std::string &url);
+  bool get(int idx, uint8_t *rgb, uint8_t *yuv);
   int getRGBSize() const { return width * height * 3; }
+  int getYUVSize() const { return width * height * 3 / 2; }
   size_t getFrameCount() const { return frames_.size(); }
   bool valid() const { return valid_; }
 
   int width = 0, height = 0;
 
 private:
-  void decodeThread();
-  uint8_t *decodeFrame(AVPacket *pkt);
-  static int check_interrupt(void *p);
+  bool decode(int idx, uint8_t *rgb, uint8_t *yuv);
+  bool decodeFrame(AVFrame *f, uint8_t *rgb, uint8_t *yuv);
+
   struct Frame {
     AVPacket pkt = {};
-    uint8_t *data = nullptr;
+    int decoded = false;
     bool failed = false;
   };
   std::vector<Frame> frames_;
-
+  AVFrame *av_frame_ = nullptr;
   AVFormatContext *pFormatCtx_ = nullptr;
   AVCodecContext *pCodecCtx_ = nullptr;
-  AVFrame *frmRgb_ = nullptr;
-  std::queue<uint8_t *> buffer_pool;
-  struct SwsContext *sws_ctx_ = nullptr;
-
-  std::mutex mutex_;
-  std::condition_variable cv_decode_;
-  std::condition_variable cv_frame_;
-  int decode_idx_ = 0;
-  std::atomic<bool> exit_ = false;
+  int key_frames_count_ = 0;
+  std::vector<uint8_t> yuv_buf_;
   bool valid_ = false;
-  std::string url_;
-  std::thread decode_thread_;
-  int timeout_ = 0;
-  double timeout_ms_ = 0;
 };

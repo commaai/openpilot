@@ -52,7 +52,6 @@ class NvgWindow : public CameraViewWidget {
 
 public:
   explicit NvgWindow(VisionStreamType type, QWidget* parent = 0) : CameraViewWidget(type, true, parent) {}
-  void updateState(const UIState &s);
   int prev_width = -1;  // initializes ButtonsWindow width and holds prev width to update it
 
 protected:

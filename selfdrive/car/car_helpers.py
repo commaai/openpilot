@@ -13,7 +13,7 @@ from cereal import car
 EventName = car.CarEvent.EventName
 
 
-def get_startup_event(car_recognized, controller_available, fuzzy_fingerprint, fw_seen, CP):
+def get_startup_event(car_recognized, controller_available, fw_seen, CP):
   if (comma_remote or smiskol_remote) and tested_branch:
     event = EventName.startupZss if CP.hasZss else EventName.startup
   else:
@@ -26,8 +26,6 @@ def get_startup_event(car_recognized, controller_available, fuzzy_fingerprint, f
       event = EventName.startupNoFw
   elif car_recognized and not controller_available:
     event = EventName.startupNoControl
-  elif car_recognized and fuzzy_fingerprint:
-    event = EventName.startupFuzzyFingerprint
   return event
 
 

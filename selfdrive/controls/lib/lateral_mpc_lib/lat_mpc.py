@@ -11,7 +11,7 @@ from pyextra.acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
 LAT_MPC_DIR = os.path.dirname(os.path.abspath(__file__))
 EXPORT_DIR = os.path.join(LAT_MPC_DIR, "c_generated_code")
 JSON_FILE = "acados_ocp_lat.json"
-
+X_DIM = 6
 
 def gen_lat_model():
   model = AcadosModel()
@@ -56,7 +56,6 @@ def gen_lat_mpc_solver():
   ocp = AcadosOcp()
   ocp.model = gen_lat_model()
 
-  N = 16
   Tf = np.array(T_IDXS)[N]
 
   # set dimensions
@@ -109,13 +108,13 @@ def gen_lat_mpc_solver():
 
 
 class LateralMpc():
-  def __init__(self, x0=np.zeros(6)):
+  def __init__(self, x0=np.zeros(X_DIM)):
     self.solver = AcadosOcpSolver('lat', N, EXPORT_DIR)
     self.reset(x0)
 
-  def reset(self, x0=np.zeros(6)):
-    self.x_sol = np.zeros((N+1, 4))
-    self.u_sol = np.zeros((N))
+  def reset(self, x0=np.zeros(X_DIM)):
+    self.x_sol = np.zeros((N+1, X_DIM))
+    self.u_sol = np.zeros((N, 1))
     self.yref = np.zeros((N+1, 3))
     self.solver.cost_set_slice(0, N, "yref", self.yref[:N])
     self.solver.cost_set(N, "yref", self.yref[N][:2])
@@ -124,7 +123,7 @@ class LateralMpc():
 
     # Somehow needed for stable init
     for i in range(N+1):
-      self.solver.set(i, 'x', np.zeros(6))
+      self.solver.set(i, 'x', np.zeros(X_DIM))
     self.solver.constraints_set(0, "lbx", x0)
     self.solver.constraints_set(0, "ubx", x0)
     self.solver.solve()
@@ -149,8 +148,8 @@ class LateralMpc():
     self.solver.cost_set(N, "yref", self.yref[N][:2])
 
     self.solution_status = self.solver.solve()
-    self.x_sol = self.solver.get_slice(0, N+1, 'x')
-    self.u_sol = self.solver.get_slice(0, N, 'u')
+    self.solver.fill_in_slice(0, N+1, 'x', self.x_sol)
+    self.solver.fill_in_slice(0, N, 'u', self.u_sol)
     self.cost = self.solver.get_cost()
 
 

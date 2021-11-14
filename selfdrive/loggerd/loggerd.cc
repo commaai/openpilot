@@ -64,6 +64,7 @@ const LogCameraInfo cameras_logged[] = {
     .has_qcamera = true,
     .trigger_rotate = true,
     .enable = true,
+    .record = true,
   },
   {
     .type = DriverCam,
@@ -76,7 +77,8 @@ const LogCameraInfo cameras_logged[] = {
     .downscale = false,
     .has_qcamera = false,
     .trigger_rotate = Hardware::TICI(),
-    .enable = !Hardware::PC() && Params().getBool("RecordFront"),
+    .enable = !Hardware::PC(),
+    .record = Params().getBool("RecordFront"),
   },
   {
     .type = WideRoadCam,
@@ -90,6 +92,7 @@ const LogCameraInfo cameras_logged[] = {
     .has_qcamera = false,
     .trigger_rotate = true,
     .enable = Hardware::TICI(),
+    .record = Hardware::TICI(),
   },
 };
 const LogCameraInfo qcam_info = {
@@ -146,7 +149,8 @@ void encoder_thread(const LogCameraInfo &cam_info) {
 
       // main encoder
       encoders.push_back(new Encoder(cam_info.filename, buf_info.width, buf_info.height,
-                                     cam_info.fps, cam_info.bitrate, cam_info.is_h265, cam_info.downscale));
+                                     cam_info.fps, cam_info.bitrate, cam_info.is_h265,
+                                     cam_info.downscale, cam_info.record));
       // qcamera encoder
       if (cam_info.has_qcamera) {
         encoders.push_back(new Encoder(qcam_info.filename, qcam_info.frame_width, qcam_info.frame_height,
@@ -299,7 +303,16 @@ void rotate_if_needed() {
 } // namespace
 
 int main(int argc, char** argv) {
-  setpriority(PRIO_PROCESS, 0, -20);
+  if (Hardware::EON()) {
+    setpriority(PRIO_PROCESS, 0, -20);
+  } else {
+    int ret;
+    ret = set_core_affinity({0, 1, 2, 3});
+    assert(ret == 0);
+    // TODO: why does this impact camerad timings?
+    //ret = set_realtime_priority(1);
+    //assert(ret == 0);
+  }
 
   clear_locks();
 

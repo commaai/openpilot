@@ -118,7 +118,7 @@ def regen_segment(lr, frs=None, outdir=FAKEDATA):
     ],
     'pandad': [
       multiprocessing.Process(target=replay_service, args=('can', lr)),
-      multiprocessing.Process(target=replay_service, args=('pandaState', lr)),
+      multiprocessing.Process(target=replay_service, args=('pandaStates', lr)),
     ],
     #'managerState': [
     #  multiprocessing.Process(target=replay_service, args=('managerState', lr)),

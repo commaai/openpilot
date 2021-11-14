@@ -1,6 +1,6 @@
 from cereal import car
 from selfdrive.car.volkswagen.values import CAR, BUTTON_STATES, CANBUS, NetworkLocation, TransmissionType, GearShifter
-from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint
+from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
 
 EventName = car.CarEvent.EventName
@@ -24,12 +24,11 @@ class CarInterface(CarInterfaceBase):
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None):
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "volkswagen"
-    ret.communityFeature = True
     ret.radarOffCan = True
 
     if True:  # pylint: disable=using-constant-test
       # Set global MQB parameters
-      ret.safetyModel = car.CarParams.SafetyModel.volkswagen
+      ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.volkswagen)]
       ret.enableBsm = 0x30F in fingerprint[0]  # SWA_01
 
       if 0xAD in fingerprint[0]:  # Getriebe_11
@@ -39,7 +38,7 @@ class CarInterface(CarInterfaceBase):
       else:
         ret.transmissionType = TransmissionType.manual
 
-      if any(msg in fingerprint[1] for msg in [0x40, 0x86, 0xB2]):  # Airbag_01, LWI_01, ESP_19
+      if any(msg in fingerprint[1] for msg in [0x40, 0x86, 0xB2, 0xFD]):  # Airbag_01, LWI_01, ESP_19, ESP_21
         ret.networkLocation = NetworkLocation.gateway
       else:
         ret.networkLocation = NetworkLocation.fwdCamera
@@ -59,7 +58,11 @@ class CarInterface(CarInterfaceBase):
 
     # Per-chassis tuning values, override tuning defaults here if desired
 
-    if candidate == CAR.ATLAS_MK1:
+    if candidate == CAR.ARTEON_MK1:
+      ret.mass = 1733 + STD_CARGO_KG
+      ret.wheelbase = 2.84
+
+    elif candidate == CAR.ATLAS_MK1:
       ret.mass = 2011 + STD_CARGO_KG
       ret.wheelbase = 2.98
 
@@ -75,6 +78,10 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1551 + STD_CARGO_KG
       ret.wheelbase = 2.79
 
+    elif candidate == CAR.TAOS_MK1:
+      ret.mass = 1498 + STD_CARGO_KG
+      ret.wheelbase = 2.69
+
     elif candidate == CAR.TCROSS_MK1:
       ret.mass = 1150 + STD_CARGO_KG
       ret.wheelbase = 2.60
@@ -86,6 +93,11 @@ class CarInterface(CarInterfaceBase):
     elif candidate == CAR.TOURAN_MK2:
       ret.mass = 1516 + STD_CARGO_KG
       ret.wheelbase = 2.79
+
+    elif candidate == CAR.TRANSPORTER_T61:
+      ret.mass = 1926 + STD_CARGO_KG
+      ret.wheelbase = 3.00  # SWB, LWB is 3.40, TBD how to detect difference
+      ret.minSteerSpeed = 14.0
 
     elif candidate == CAR.AUDI_A3_MK3:
       ret.mass = 1335 + STD_CARGO_KG
@@ -127,16 +139,13 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1505 + STD_CARGO_KG
       ret.wheelbase = 2.84
 
-    # TODO: get actual value, for now starting with reasonable value for
-    # civic and scaling by mass and wheelbase
-    ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
+    else:
+      raise ValueError("unsupported car %s" % candidate)
 
-    # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
-    # mass and CG position, so all cars will have approximately similar dyn behaviors
+    ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
     ret.centerToFront = ret.wheelbase * 0.45
     ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront,
                                                                          tire_stiffness_factor=tire_stiffness_factor)
-
     return ret
 
   # returns a car.CarState
@@ -173,6 +182,14 @@ class CarInterface(CarInterfaceBase):
     # Vehicle health and operation safety checks
     if self.CS.parkingBrakeSet:
       events.add(EventName.parkBrake)
+
+    # Low speed steer alert hysteresis logic
+    if self.CP.minSteerSpeed > 0. and ret.vEgo < (self.CP.minSteerSpeed + 1.):
+      self.low_speed_alert = True
+    elif ret.vEgo > (self.CP.minSteerSpeed + 2.):
+      self.low_speed_alert = False
+    if self.low_speed_alert:
+      events.add(EventName.belowSteerSpeed)
 
     ret.events = events.to_msg()
     ret.buttonEvents = buttonEvents

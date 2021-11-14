@@ -28,12 +28,21 @@ SUPPORTED_FW_VERSIONS = {
     "default_config": b"\x00\x00\x00\x01\x00\x00",
     "tracks_enabled": b"\x00\x00\x00\x01\x00\x01",
   },
-  # TODO: verify palisade fw version for diagnostic session type 7
-  # # 2020 PALISADE
-  # b"LX2_ SCC FHCUP      1.00 1.04 99110-S8100         ": {
-  #   "default_config": b"\x00\x00\x00\x01\x00\x00",
-  #   "tracks_enabled": b"\x00\x00\x00\x01\x00\x01",
-  # },
+  # 2021 SONATA HYBRID
+  b"DNhe SCC FHCUP      1.00 1.02 99110-L5000 \x01#\x15#    ": {
+    "default_config": b"\x00\x00\x00\x01\x00\x00",
+    "tracks_enabled": b"\x00\x00\x00\x01\x00\x01",
+  }, 
+  # 2020 PALISADE
+  b"LX2_ SCC FHCUP      1.00 1.04 99110-S8100\x19\x05\x02\x16V    ": {
+    "default_config": b"\x00\x00\x00\x01\x00\x00",
+    "tracks_enabled": b"\x00\x00\x00\x01\x00\x01",
+  },
+  # 2020 SANTA FE
+  b"TM__ SCC F-CUP      1.00 1.03 99110-S2000\x19\x050\x13'    ": {
+    "default config": b"\x00\x00\x00\x01\x00\x00",
+    "tracks_enabled": b"\x00\x00\x00\x01\x00\x01",
+  }
 }
 
 if __name__ == "__main__":
@@ -51,7 +60,7 @@ if __name__ == "__main__":
     if e.returncode != 1: # 1 == no process found (boardd not running)
       raise e
 
-  confirm = input("put your vehicle in accessory mode now and type OK to continue: ").upper().strip()
+  confirm = input("power on the vehicle keeping the engine off (press start button twice) then type OK to continue: ").upper().strip()
   if confirm != "OK":
     print("\nyou didn't type 'OK! (aborted)")
     sys.exit(0)

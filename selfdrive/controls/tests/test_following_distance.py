@@ -2,92 +2,34 @@
 import unittest
 import numpy as np
 
-from cereal import log
-import cereal.messaging as messaging
-from selfdrive.config import Conversions as CV
-from selfdrive.controls.lib.lead_mpc import LeadMpc
-from selfdrive.controls.lib.drive_helpers import LON_MPC_N
-from selfdrive.modeld.constants import T_IDXS
+from selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import desired_follow_distance
+from selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
 
-
-def RW(v_ego, v_l):
-  TR = 1.8
-  G = 9.81
-  return (v_ego * TR - (v_l - v_ego) * TR + v_ego * v_ego / (2 * G) - v_l * v_l / (2 * G))
-
-
-class FakePubMaster():
-  def send(self, s, data):
-    assert data
-
-
-def run_following_distance_simulation(v_lead, t_end=200.0):
-  dt = 0.2
-  t = 0.
-
-  x_lead = 200.0
-
-  x_ego = 0.0
-  v_ego = v_lead
-  a_ego = 0.0
-
-  mpc = LeadMpc(0, test=True)
-
-  first = True
-  while t < t_end:
-
-    # Setup CarState
-    CS = messaging.new_message('carState')
-    CS.carState.vEgo = v_ego
-    CS.carState.aEgo = a_ego
-
-    # Setup radarstate packet
-    radarstate = messaging.new_message('radarState')
-    lead = log.RadarState.LeadData.new_message()
-    lead.modelProb = .75
-    lead.dRel = x_lead - x_ego
-    lead.vLead = v_lead
-    lead.aLeadK = 0.0
-    lead.status = True
-    radarstate.radarState.leadOne = lead
-
-    # Setup model packet
-    modelstate = messaging.new_message('modelV2')
-    positions = log.ModelDataV2.XYZTData.new_message()
-    velocities = log.ModelDataV2.XYZTData.new_message()
-    positions.x = (v_ego * np.array(T_IDXS[:LON_MPC_N+1])).tolist()
-    velocities.x = (v_ego * np.ones(LON_MPC_N+1)).tolist()
-    modelstate.modelV2.position = positions
-    modelstate.modelV2.velocity = velocities
-
-    # Run MPC
-    mpc.set_cur_state(v_ego, a_ego)
-    if first:  # Make sure MPC is converged on first timestep
-      for _ in range(20):
-        mpc.update(CS.carState, radarstate.radarState, modelstate.modelV2, 0)
-    mpc.update(CS.carState, radarstate.radarState, modelstate.modelV2, 0)
-
-    # Choose slowest of two solutions
-    v_ego, a_ego = mpc.mpc_solution.v_ego[5], mpc.mpc_solution.a_ego[5]
-
-    # Update state
-    x_lead += v_lead * dt
-    x_ego += v_ego * dt
-    t += dt
-    first = False
-
-  return x_lead - x_ego
+def run_following_distance_simulation(v_lead, t_end=100.0):
+  man = Maneuver(
+    '',
+    duration=t_end,
+    initial_speed=float(v_lead),
+    lead_relevancy=True,
+    initial_distance_lead=100,
+    speed_lead_values=[v_lead],
+    breakpoints=[0.],
+  )
+  valid, output = man.evaluate()
+  assert valid
+  return output[-1,2] - output[-1,1]
 
 
 class TestFollowingDistance(unittest.TestCase):
   def test_following_distanc(self):
-    for speed_mph in np.linspace(10, 100, num=10):
-      v_lead = float(speed_mph * CV.MPH_TO_MS)
+    for speed in np.arange(0, 40, 5):
+      print(f'Testing {speed} m/s')
+      v_lead = float(speed)
 
       simulation_steady_state = run_following_distance_simulation(v_lead)
-      correct_steady_state = RW(v_lead, v_lead) + 4.0
+      correct_steady_state = desired_follow_distance(v_lead, v_lead)
 
-      self.assertAlmostEqual(simulation_steady_state, correct_steady_state, delta=.1)
+      self.assertAlmostEqual(simulation_steady_state, correct_steady_state, delta=(correct_steady_state*.1 + .3))
 
 
 if __name__ == "__main__":

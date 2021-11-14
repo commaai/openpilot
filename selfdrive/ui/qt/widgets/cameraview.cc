@@ -1,7 +1,5 @@
 #include "selfdrive/ui/qt/widgets/cameraview.h"
 
-#include "selfdrive/common/swaglog.h"
-
 namespace {
 
 const char frame_vertex_shader[] =
@@ -51,9 +49,9 @@ mat4 get_driver_view_transform() {
     // from dmonitoring.cc
     const int full_width_tici = 1928;
     const int full_height_tici = 1208;
-    const int adapt_width_tici = 668;
-    const int crop_x_offset = 32;
-    const int crop_y_offset = -196;
+    const int adapt_width_tici = 954;
+    const int crop_x_offset = -72;
+    const int crop_y_offset = -144;
     const float yscale = full_height_tici * driver_view_ratio / adapt_width_tici;
     const float xscale = yscale*(1080)/(2160)*full_width_tici/full_height_tici;
     transform = (mat4){{
@@ -96,7 +94,10 @@ mat4 get_fit_view_transform(float widget_aspect_ratio, float frame_aspect_ratio)
 CameraViewWidget::CameraViewWidget(VisionStreamType stream_type, bool zoom, QWidget* parent) :
                                    stream_type(stream_type), zoomed_view(zoom), QOpenGLWidget(parent) {
   setAttribute(Qt::WA_OpaquePaintEvent);
-  connect(this, &QOpenGLWidget::frameSwapped, this, &CameraViewWidget::updateFrame);
+
+  QTimer *t = new QTimer(this);
+  connect(t, &QTimer::timeout, this, &CameraViewWidget::updateFrame);
+  t->start(10);
 }
 
 CameraViewWidget::~CameraViewWidget() {
@@ -173,6 +174,10 @@ void CameraViewWidget::setStreamType(VisionStreamType type) {
   }
 }
 
+void CameraViewWidget::setBackgroundColor(QColor color) {
+  bg = color;
+}
+
 void CameraViewWidget::updateFrameMat(int w, int h) {
   if (zoomed_view) {
     if (stream_type == VISION_STREAM_RGB_FRONT) {
@@ -194,7 +199,7 @@ void CameraViewWidget::updateFrameMat(int w, int h) {
       }};
       frame_mat = matmul(device_transform, frame_transform);
     }
-  } else {
+  } else if (vipc_client->connected) {
     // fit frame to widget size
     float w  = (float)width() / height();
     float f = (float)vipc_client->buffers[0].width  / vipc_client->buffers[0].height;
@@ -204,7 +209,7 @@ void CameraViewWidget::updateFrameMat(int w, int h) {
 
 void CameraViewWidget::paintGL() {
   if (!latest_frame) {
-    glClearColor(0, 0, 0, 1.0);
+    glClearColor(bg.redF(), bg.greenF(), bg.blueF(), bg.alphaF());
     glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
     return;
   }
@@ -233,36 +238,39 @@ void CameraViewWidget::paintGL() {
 }
 
 void CameraViewWidget::updateFrame() {
-  if (!vipc_client->connected && vipc_client->connect(false)) {
-    // init vision
-    for (int i = 0; i < vipc_client->num_buffers; i++) {
-      texture[i].reset(new EGLImageTexture(&vipc_client->buffers[i]));
-
-      glBindTexture(GL_TEXTURE_2D, texture[i]->frame_tex);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-      // BGR
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_BLUE);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
-      assert(glGetError() == GL_NO_ERROR);
-    }
-    latest_frame = nullptr;
-    resizeGL(width(), height());
+  if (!isVisible()) {
+    return;
   }
 
+  if (!vipc_client->connected) {
+    makeCurrent();
+    if (vipc_client->connect(false)) {
+      // init vision
+      for (int i = 0; i < vipc_client->num_buffers; i++) {
+        texture[i].reset(new EGLImageTexture(&vipc_client->buffers[i]));
+
+        glBindTexture(GL_TEXTURE_2D, texture[i]->frame_tex);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+        // BGR
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_BLUE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
+        assert(glGetError() == GL_NO_ERROR);
+      }
+      latest_frame = nullptr;
+      resizeGL(width(), height());
+    }
+  }
+
+  VisionBuf *buf = nullptr;
   if (vipc_client->connected) {
-    VisionBuf *buf = vipc_client->recv();
+    buf = vipc_client->recv(nullptr, 0);
     if (buf != nullptr) {
       latest_frame = buf;
       update();
       emit frameUpdated();
-    } else if (!Hardware::PC()) {
-      LOGE("visionIPC receive timeout");
     }
-  } else {
-    // try to connect again quickly
-    QTimer::singleShot(1000. / UI_FREQ, this, &CameraViewWidget::updateFrame);
   }
 }

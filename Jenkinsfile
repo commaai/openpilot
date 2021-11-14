@@ -170,9 +170,8 @@ pipeline {
                   steps {
                     phone_steps("eon", [
                       ["build", "cd selfdrive/manager && ./build.py"],
-                      ["test athena", "nosetests -s selfdrive/athena/tests/test_athenad_old.py"],
-                      ["test sounds", "nosetests -s selfdrive/ui/tests/test_sounds.py"],
-                      ["test boardd loopback", "nosetests -s selfdrive/boardd/tests/test_boardd_loopback.py"],
+                      ["test sounds", "python selfdrive/ui/tests/test_soundd.py"],
+                      ["test boardd loopback", "python selfdrive/boardd/tests/test_boardd_loopback.py"],
                       ["test loggerd", "python selfdrive/loggerd/tests/test_loggerd.py"],
                       ["test encoder", "python selfdrive/loggerd/tests/test_encoder.py"],
                       ["test logcatd", "python selfdrive/logcatd/tests/test_logcatd_android.py"],
@@ -224,7 +223,7 @@ pipeline {
                   }
                 }
 
-                stage('camerad') {
+                stage('EON camerad') {
                   steps {
                     phone_steps("eon-party", [
                       ["build", "cd selfdrive/manager && ./build.py"],
@@ -234,7 +233,7 @@ pipeline {
                   }
                 }
 
-                stage('Tici camerad') {
+                stage('tici camerad') {
                   steps {
                     phone_steps("tici-party", [
                       ["build", "cd selfdrive/manager && ./build.py"],
