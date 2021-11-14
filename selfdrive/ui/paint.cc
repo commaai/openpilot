@@ -144,7 +144,7 @@ static void ui_draw_world(UIState *s) {
     if (lead_one.getProb() > .5) {
       draw_lead(s, lead_one.getX()[0], lead_one.getV()[0], s->scene.lead_vertices[0]);
     } else if (v_ego < 4. && lead_one_radar.getStatus()) {  // draw leads from low speed override
-      draw_lead(s, lead_one_radar.getDRel(), lead_one_radar.getVRel(), s->scene.lead_vertices[0]);
+      draw_lead(s, lead_one_radar.getDRel(), v_ego + lead_one_radar.getVRel(), s->scene.lead_vertices[0]);
     }
     if (lead_two.getProb() > .5 && (std::abs(lead_one.getX()[0] - lead_two.getX()[0]) > 3.0)) {
       draw_lead(s, lead_two.getX()[0], lead_two.getV()[0], s->scene.lead_vertices[1]);
