@@ -1,9 +1,9 @@
 [submodule "panda"]
 	path = panda
-	url = ../../StandBackPilot/panda.git
+	url = ../../opgm/panda.git
 [submodule "opendbc"]
 	path = opendbc
-	url = ../../StandBackPilot/opendbc.git
+	url = ../../opgm/opendbc.git
 [submodule "laika_repo"]
 	path = laika_repo
 	url = ../../commaai/laika.git
