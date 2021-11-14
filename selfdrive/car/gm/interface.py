@@ -6,6 +6,7 @@ from selfdrive.car.gm.values import CAR, CruiseButtons, \
                                     AccState, CarControllerParams, NO_ASCM
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
+from selfdrive.swaglog import cloudlog
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
@@ -189,6 +190,10 @@ class CarInterface(CarInterfaceBase):
     ret = self.CS.update(self.cp, self.cp_loopback)
 
     ret.canValid = self.cp.can_valid and self.cp_loopback.can_valid
+    if not self.cp.can_valid:
+      cloudlog.error("###@@@ gm interface.py.CarInterfact.update self.cp.can_valid is false")
+    if not self.cp_loopback.can_valid:
+      cloudlog.error("###@@@ gm interface.py.CarInterfact.update self.cp_loopback.can_valid is false")
     ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
 
     buttonEvents = []

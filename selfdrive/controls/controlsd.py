@@ -248,6 +248,10 @@ class Controls:
       self.events.add(EventName.laneChange)
 
     if self.can_rcv_error or not CS.canValid:
+      if (self.can_rcv_error):
+        cloudlog.error("###@@@ controlsd.py.Controls.update_events: self.can_rcv_error true")
+      if (not CS.canValid):
+        cloudlog.error("###@@@ controlsd.py.Controls.update_events: CS.canValid false")
       self.events.add(EventName.canError)
 
     for i, pandaState in enumerate(self.sm['pandaStates']):
@@ -374,6 +378,8 @@ class Controls:
     if not can_strs:
       self.can_error_counter += 1
       self.can_rcv_error = True
+      cloudlog.error("###@@@ gm controlsd.py can_strs (timeout?) false")
+      
     else:
       self.can_rcv_error = False
 
