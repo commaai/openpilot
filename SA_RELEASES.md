@@ -1,3 +1,11 @@
+Stock Additions Update 2 - 2021-11-14 (0.8.11)
+===
+ * Merge in rest of changes from 0.8.10, including:
+   * New MPC library ACADOS
+   * New wide FOV DM model on C3
+   * AGNOS 2
+ * TODO: Update dynamic follow to work with ACADOS
+
 Stock Additions Update 1 - 2021-09-30 (0.8.10)
 ===
  * Update SA to 0.8.10 with cherry-picked improved lead model
