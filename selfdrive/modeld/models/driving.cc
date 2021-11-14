@@ -77,11 +77,10 @@ ModelDataRaw model_eval_frame(ModelState* s, cl_mem yuv_cl, int width, int heigh
 
   // net outputs
   ModelDataRaw net_outputs {
-    .plan = (ModelDataRawPlans*)&s->output[PLAN_IDX],
+    .plans = (ModelDataRawPlans*)&s->output[PLAN_IDX],
     .lane_lines = (ModelDataRawLaneLines*)&s->output[LL_IDX],
     .road_edges = (ModelDataRawRoadEdges*)&s->output[RE_IDX],
-    .lead = &s->output[LEAD_IDX],
-    .lead_prob = &s->output[LEAD_PROB_IDX],
+    .leads = (ModelDataRawLeads*)&s->output[LEAD_IDX],
     .meta = &s->output[DESIRE_STATE_IDX],
     .pose = (ModelDataRawPose*)&s->output[POSE_IDX],
   };
@@ -92,59 +91,38 @@ void model_free(ModelState* s) {
   delete s->frame;
 }
 
-static const float *get_best_data(const float *data, int size, int group_size, int weight_idx) {
-  int max_idx = 0;
-  for (int i = 1; i < size; i++) {
-    if (data[i * group_size + weight_idx] >
-        data[max_idx * group_size + weight_idx]) {
-      max_idx = i;
-    }
-  }
-  return &data[max_idx * group_size];
-}
-
-static const float *get_lead_data(const float *lead, int t_offset) {
-  return get_best_data(lead, LEAD_MHP_N, LEAD_MHP_GROUP_SIZE, LEAD_MHP_GROUP_SIZE - LEAD_MHP_SELECTION + t_offset);
-}
-
 void fill_sigmoid(const float *input, float *output, int len, int stride) {
   for (int i=0; i<len; i++) {
     output[i] = sigmoid(input[i*stride]);
   }
 }
 
-void fill_lead_v3(cereal::ModelDataV2::LeadDataV3::Builder lead, const float *lead_data, const float *prob, int t_offset, float prob_t) {
-  float t[LEAD_TRAJ_LEN] = {0.0, 2.0, 4.0, 6.0, 8.0, 10.0};
-  const float *data = get_lead_data(lead_data, t_offset);
-  lead.setProb(sigmoid(prob[t_offset]));
+void fill_lead(cereal::ModelDataV2::LeadDataV3::Builder lead, const ModelDataRawLeads &leads, int t_idx, float prob_t) {
+  std::array<float, LEAD_TRAJ_LEN> lead_t = {0.0, 2.0, 4.0, 6.0, 8.0, 10.0};
+  const auto &best_prediction = leads.get_best_prediction(t_idx);
+  lead.setProb(sigmoid(leads.prob[t_idx]));
   lead.setProbTime(prob_t);
-  float x_arr[LEAD_TRAJ_LEN];
-  float y_arr[LEAD_TRAJ_LEN];
-  float v_arr[LEAD_TRAJ_LEN];
-  float a_arr[LEAD_TRAJ_LEN];
-  float x_stds_arr[LEAD_TRAJ_LEN];
-  float y_stds_arr[LEAD_TRAJ_LEN];
-  float v_stds_arr[LEAD_TRAJ_LEN];
-  float a_stds_arr[LEAD_TRAJ_LEN];
+  std::array<float, LEAD_TRAJ_LEN> lead_x, lead_y, lead_v, lead_a;
+  std::array<float, LEAD_TRAJ_LEN> lead_x_std, lead_y_std, lead_v_std, lead_a_std;
   for (int i=0; i<LEAD_TRAJ_LEN; i++) {
-    x_arr[i] = data[i*LEAD_PRED_DIM+0];
-    y_arr[i] = data[i*LEAD_PRED_DIM+1];
-    v_arr[i] = data[i*LEAD_PRED_DIM+2];
-    a_arr[i] = data[i*LEAD_PRED_DIM+3];
-    x_stds_arr[i] = exp(data[LEAD_MHP_VALS + i*LEAD_PRED_DIM+0]);
-    y_stds_arr[i] = exp(data[LEAD_MHP_VALS + i*LEAD_PRED_DIM+1]);
-    v_stds_arr[i] = exp(data[LEAD_MHP_VALS + i*LEAD_PRED_DIM+2]);
-    a_stds_arr[i] = exp(data[LEAD_MHP_VALS + i*LEAD_PRED_DIM+3]);
+    lead_x[i] = best_prediction.mean[i].x;
+    lead_y[i] = best_prediction.mean[i].y;
+    lead_v[i] = best_prediction.mean[i].velocity;
+    lead_a[i] = best_prediction.mean[i].acceleration;
+    lead_x_std[i] = exp(best_prediction.std[i].x);
+    lead_y_std[i] = exp(best_prediction.std[i].y);
+    lead_v_std[i] = exp(best_prediction.std[i].velocity);
+    lead_a_std[i] = exp(best_prediction.std[i].acceleration);
   }
-  lead.setT(t);
-  lead.setX(x_arr);
-  lead.setY(y_arr);
-  lead.setV(v_arr);
-  lead.setA(a_arr);
-  lead.setXStd(x_stds_arr);
-  lead.setYStd(y_stds_arr);
-  lead.setVStd(v_stds_arr);
-  lead.setAStd(a_stds_arr);
+  lead.setT(to_kj_array_ptr(lead_t));
+  lead.setX(to_kj_array_ptr(lead_x));
+  lead.setY(to_kj_array_ptr(lead_y));
+  lead.setV(to_kj_array_ptr(lead_v));
+  lead.setA(to_kj_array_ptr(lead_a));
+  lead.setXStd(to_kj_array_ptr(lead_x_std));
+  lead.setYStd(to_kj_array_ptr(lead_y_std));
+  lead.setVStd(to_kj_array_ptr(lead_v_std));
+  lead.setAStd(to_kj_array_ptr(lead_a_std));
 }
 
 void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const float *meta_data) {
@@ -219,7 +197,7 @@ void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const std::array<flo
   xyzt.setZStd(to_kj_array_ptr(z_std));
 }
 
-void fill_plan(cereal::ModelDataV2::Builder &framed, const ModelDataRawPlanPath &plan) {
+void fill_plan(cereal::ModelDataV2::Builder &framed, const ModelDataRawPlanPrediction &plan) {
   std::array<float, TRAJECTORY_SIZE> pos_x, pos_y, pos_z;
   std::array<float, TRAJECTORY_SIZE> pos_x_std, pos_y_std, pos_z_std;
   std::array<float, TRAJECTORY_SIZE> vel_x, vel_y, vel_z;
@@ -250,7 +228,7 @@ void fill_plan(cereal::ModelDataV2::Builder &framed, const ModelDataRawPlanPath 
   fill_xyzt(framed.initOrientationRate(), T_IDXS_FLOAT, rot_rate_x, rot_rate_y, rot_rate_z);
 }
 
-void fill_lane_lines(cereal::ModelDataV2::Builder &framed, const std::array<float, TRAJECTORY_SIZE> &plan_t_arr,
+void fill_lane_lines(cereal::ModelDataV2::Builder &framed, const std::array<float, TRAJECTORY_SIZE> &plan_t,
                      const ModelDataRawLaneLines &lanes) {
   std::array<float, TRAJECTORY_SIZE> left_far_y, left_far_z;
   std::array<float, TRAJECTORY_SIZE> left_near_y, left_near_z;
@@ -268,10 +246,10 @@ void fill_lane_lines(cereal::ModelDataV2::Builder &framed, const std::array<floa
   }
 
   auto lane_lines = framed.initLaneLines(4);
-  fill_xyzt(lane_lines[0], plan_t_arr, X_IDXS_FLOAT, left_far_y, left_far_z);
-  fill_xyzt(lane_lines[1], plan_t_arr, X_IDXS_FLOAT, left_near_y, left_near_z);
-  fill_xyzt(lane_lines[2], plan_t_arr, X_IDXS_FLOAT, right_near_y, right_near_z);
-  fill_xyzt(lane_lines[3], plan_t_arr, X_IDXS_FLOAT, right_far_y, right_far_z);
+  fill_xyzt(lane_lines[0], plan_t, X_IDXS_FLOAT, left_far_y, left_far_z);
+  fill_xyzt(lane_lines[1], plan_t, X_IDXS_FLOAT, left_near_y, left_near_z);
+  fill_xyzt(lane_lines[2], plan_t, X_IDXS_FLOAT, right_near_y, right_near_z);
+  fill_xyzt(lane_lines[3], plan_t, X_IDXS_FLOAT, right_far_y, right_far_z);
 
   framed.setLaneLineStds({
     exp(lanes.std.left_far[0].y),
@@ -288,7 +266,7 @@ void fill_lane_lines(cereal::ModelDataV2::Builder &framed, const std::array<floa
   });
 }
 
-void fill_road_edges(cereal::ModelDataV2::Builder &framed, const std::array<float, TRAJECTORY_SIZE> &plan_t_arr,
+void fill_road_edges(cereal::ModelDataV2::Builder &framed, const std::array<float, TRAJECTORY_SIZE> &plan_t,
                      const ModelDataRawRoadEdges &edges) {
   std::array<float, TRAJECTORY_SIZE> left_y, left_z;
   std::array<float, TRAJECTORY_SIZE> right_y, right_z;
@@ -300,8 +278,8 @@ void fill_road_edges(cereal::ModelDataV2::Builder &framed, const std::array<floa
   }
 
   auto road_edges = framed.initRoadEdges(2);
-  fill_xyzt(road_edges[0], plan_t_arr, X_IDXS_FLOAT, left_y, left_z);
-  fill_xyzt(road_edges[1], plan_t_arr, X_IDXS_FLOAT, right_y, right_z);
+  fill_xyzt(road_edges[0], plan_t, X_IDXS_FLOAT, left_y, left_z);
+  fill_xyzt(road_edges[1], plan_t, X_IDXS_FLOAT, right_y, right_z);
 
   framed.setRoadEdgeStds({
     exp(edges.std.left[0].y),
@@ -310,18 +288,18 @@ void fill_road_edges(cereal::ModelDataV2::Builder &framed, const std::array<floa
 }
 
 void fill_model(cereal::ModelDataV2::Builder &framed, const ModelDataRaw &net_outputs) {
-  auto best_plan = net_outputs.plan->get_best_plan();
-  std::array<float, TRAJECTORY_SIZE> plan_t_arr;
-  std::fill_n(plan_t_arr.data(), plan_t_arr.size(), NAN);
-  plan_t_arr[0] = 0.0;
+  const auto &best_plan = net_outputs.plans->get_best_prediction();
+  std::array<float, TRAJECTORY_SIZE> plan_t;
+  std::fill_n(plan_t.data(), plan_t.size(), NAN);
+  plan_t[0] = 0.0;
   for (int xidx=1, tidx=0; xidx<TRAJECTORY_SIZE; xidx++) {
     // increment tidx until we find an element that's further away than the current xidx
     for (int next_tid = tidx + 1; next_tid < TRAJECTORY_SIZE && best_plan.mean[next_tid].position.x < X_IDXS[xidx]; next_tid++) {
       tidx++;
     }
     if (tidx == TRAJECTORY_SIZE - 1) {
-      // if the plan doesn't extend far enough, set plan_t to the max value (10s), then break
-      plan_t_arr[xidx] = T_IDXS[TRAJECTORY_SIZE - 1];
+      // if the Plan doesn't extend far enough, set plan_t to the max value (10s), then break
+      plan_t[xidx] = T_IDXS[TRAJECTORY_SIZE - 1];
       break;
     }
 
@@ -329,21 +307,21 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelDataRaw &net_ou
     float current_x_val = best_plan.mean[tidx].position.x;
     float next_x_val = best_plan.mean[tidx+1].position.x;
     float p = (X_IDXS[xidx] - current_x_val) / (next_x_val - current_x_val);
-    plan_t_arr[xidx] = p * T_IDXS[tidx+1] + (1 - p) * T_IDXS[tidx];
+    plan_t[xidx] = p * T_IDXS[tidx+1] + (1 - p) * T_IDXS[tidx];
   }
 
   fill_plan(framed, best_plan);
-  fill_lane_lines(framed, plan_t_arr, *net_outputs.lane_lines);
-  fill_road_edges(framed, plan_t_arr, *net_outputs.road_edges);
+  fill_lane_lines(framed, plan_t, *net_outputs.lane_lines);
+  fill_road_edges(framed, plan_t, *net_outputs.road_edges);
 
   // meta
   fill_meta(framed.initMeta(), net_outputs.meta);
 
   // leads
   auto leads = framed.initLeadsV3(LEAD_MHP_SELECTION);
-  float t_offsets[LEAD_MHP_SELECTION] = {0.0, 2.0, 4.0};
-  for (int t_offset=0; t_offset<LEAD_MHP_SELECTION; t_offset++) {
-    fill_lead_v3(leads[t_offset], net_outputs.lead, net_outputs.lead_prob, t_offset, t_offsets[t_offset]);
+  std::array<float, LEAD_MHP_SELECTION> t_offsets = {0.0, 2.0, 4.0};
+  for (int i=0; i<LEAD_MHP_SELECTION; i++) {
+    fill_lead(leads[i], *net_outputs.leads, i, t_offsets[i]);
   }
 }
 

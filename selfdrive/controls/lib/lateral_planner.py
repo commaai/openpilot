@@ -139,10 +139,12 @@ class LateralPlanner():
       elif self.lane_change_state == LaneChangeState.laneChangeFinishing:
         # fade in laneline over 1s
         self.lane_change_ll_prob = min(self.lane_change_ll_prob + DT_MDL, 1.0)
-        if one_blinker and self.lane_change_ll_prob > 0.99:
-          self.lane_change_state = LaneChangeState.preLaneChange
-        elif self.lane_change_ll_prob > 0.99:
-          self.lane_change_state = LaneChangeState.off
+        if self.lane_change_ll_prob > 0.99:
+          self.lane_change_direction = LaneChangeDirection.none
+          if one_blinker:
+            self.lane_change_state = LaneChangeState.preLaneChange
+          else:
+            self.lane_change_state = LaneChangeState.off
 
     if self.lane_change_state in [LaneChangeState.off, LaneChangeState.preLaneChange]:
       self.lane_change_timer = 0.0
@@ -224,6 +226,7 @@ class LateralPlanner():
     plan_send.lateralPlan.mpcSolutionValid = bool(plan_solution_valid)
 
     plan_send.lateralPlan.desire = self.desire
+    plan_send.lateralPlan.useLaneLines = self.use_lanelines
     plan_send.lateralPlan.laneChangeState = self.lane_change_state
     plan_send.lateralPlan.laneChangeDirection = self.lane_change_direction
 

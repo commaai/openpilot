@@ -97,10 +97,8 @@ class TestEncoder(unittest.TestCase):
 
         file_path = f"{route_prefix_path}--{i}/{camera}"
 
-        # check file size
-        self.assertTrue(os.path.exists(file_path))
-        file_size = os.path.getsize(file_path)
-        self.assertTrue(math.isclose(file_size, size, rel_tol=FILE_SIZE_TOLERANCE))
+        # check file exists
+        self.assertTrue(os.path.exists(file_path), f"segment #{i}: '{file_path}' missing")
 
         # TODO: this ffprobe call is really slow
         # check frame count
@@ -116,15 +114,22 @@ class TestEncoder(unittest.TestCase):
         counts.append(frame_count)
 
         self.assertTrue(abs(expected_frames - frame_count) <= frame_tolerance,
-                        f"{camera} failed frame count check: expected {expected_frames}, got {frame_count}")
+                        f"segment #{i}: {camera} failed frame count check: expected {expected_frames}, got {frame_count}")
+
+        # sanity check file size
+        file_size = os.path.getsize(file_path)
+        self.assertTrue(math.isclose(file_size, size, rel_tol=FILE_SIZE_TOLERANCE))
 
         # Check encodeIdx
         if encode_idx_name is not None:
           rlog_path = f"{route_prefix_path}--{i}/rlog.bz2"
+          msgs = [m for m in LogReader(rlog_path) if m.which() == encode_idx_name]
+          encode_msgs = [getattr(m, encode_idx_name) for m in msgs]
 
-          segment_idxs = [getattr(m, encode_idx_name).segmentId for m in LogReader(rlog_path) if m.which() == encode_idx_name]
-          encode_idxs = [getattr(m, encode_idx_name).encodeId for m in LogReader(rlog_path) if m.which() == encode_idx_name]
-          frame_idxs = [getattr(m, encode_idx_name).frameId for m in LogReader(rlog_path) if m.which() == encode_idx_name]
+          valid = [m.valid for m in msgs]
+          segment_idxs = [m.segmentId for m in encode_msgs]
+          encode_idxs = [m.encodeId for m in encode_msgs]
+          frame_idxs = [m.frameId for m in encode_msgs]
 
           # Check frame count
           self.assertEqual(frame_count, len(segment_idxs))
@@ -133,6 +138,8 @@ class TestEncoder(unittest.TestCase):
           # Check for duplicates or skips
           self.assertEqual(0, segment_idxs[0])
           self.assertEqual(len(set(segment_idxs)), len(segment_idxs))
+
+          self.assertTrue(all(valid))
 
           if not eon_dcam:
             self.assertEqual(expected_frames * i, encode_idxs[0])
@@ -146,15 +153,16 @@ class TestEncoder(unittest.TestCase):
         self.assertEqual(min(counts), expected_frames)
       shutil.rmtree(f"{route_prefix_path}--{i}")
 
-    for i in trange(num_segments + 1):
-      # poll for next segment
-      with Timeout(int(SEGMENT_LENGTH*10), error_msg=f"timed out waiting for segment {i}"):
-        while Path(f"{route_prefix_path}--{i}") not in Path(ROOT).iterdir():
-          time.sleep(0.1)
-
-    managed_processes['loggerd'].stop()
-    managed_processes['camerad'].stop()
-    managed_processes['sensord'].stop()
+    try:
+      for i in trange(num_segments + 1):
+        # poll for next segment
+        with Timeout(int(SEGMENT_LENGTH*10), error_msg=f"timed out waiting for segment {i}"):
+          while Path(f"{route_prefix_path}--{i}") not in Path(ROOT).iterdir():
+            time.sleep(0.1)
+    finally:
+      managed_processes['loggerd'].stop()
+      managed_processes['camerad'].stop()
+      managed_processes['sensord'].stop()
 
     for i in trange(num_segments):
       check_seg(i)

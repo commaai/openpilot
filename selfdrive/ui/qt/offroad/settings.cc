@@ -167,8 +167,15 @@ DevicePanel::DevicePanel(QWidget* parent) : ListWidget(parent) {
   reboot_btn->setObjectName("reboot_btn");
   power_layout->addWidget(reboot_btn);
   QObject::connect(reboot_btn, &QPushButton::clicked, [=]() {
-    if (ConfirmationDialog::confirm("Are you sure you want to reboot?", this)) {
-      Hardware::reboot();
+    if (QUIState::ui_state.status == UIStatus::STATUS_DISENGAGED) {
+      if (ConfirmationDialog::confirm("Are you sure you want to reboot?", this)) {
+        // Check engaged again in case it changed while the dialog was open
+        if (QUIState::ui_state.status == UIStatus::STATUS_DISENGAGED) {
+          Params().putBool("DoReboot", true);
+        }
+      }
+    } else {
+      ConfirmationDialog::alert("Disengage to Reboot", this);
     }
   });
 
@@ -176,8 +183,15 @@ DevicePanel::DevicePanel(QWidget* parent) : ListWidget(parent) {
   poweroff_btn->setObjectName("poweroff_btn");
   power_layout->addWidget(poweroff_btn);
   QObject::connect(poweroff_btn, &QPushButton::clicked, [=]() {
-    if (ConfirmationDialog::confirm("Are you sure you want to power off?", this)) {
-      Hardware::poweroff();
+    if (QUIState::ui_state.status == UIStatus::STATUS_DISENGAGED) {
+      if (ConfirmationDialog::confirm("Are you sure you want to power off?", this)) {
+        // Check engaged again in case it changed while the dialog was open
+        if (QUIState::ui_state.status == UIStatus::STATUS_DISENGAGED) {
+          Params().putBool("DoShutdown", true);
+        }
+      }
+    } else {
+      ConfirmationDialog::alert("Disengage to Power Off", this);
     }
   });
 
@@ -227,8 +241,7 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
 
   fs_watch = new QFileSystemWatcher(this);
   QObject::connect(fs_watch, &QFileSystemWatcher::fileChanged, [=](const QString path) {
-    int update_failed_count = params.get<int>("UpdateFailedCount").value_or(0);
-    if (path.contains("UpdateFailedCount") && update_failed_count > 0) {
+    if (path.contains("UpdateFailedCount") && std::atoi(params.get("UpdateFailedCount").c_str()) > 0) {
       lastUpdateLbl->setText("failed to fetch update");
       updateBtn->setText("CHECK");
       updateBtn->setEnabled(true);

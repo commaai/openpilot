@@ -57,6 +57,7 @@ function install_ubuntu_common_requirements() {
     opencl-headers \
     ocl-icd-libopencl1 \
     ocl-icd-opencl-dev \
+    clinfo \
     python-dev \
     python3-pip \
     qml-module-qtquick2 \
@@ -67,7 +68,8 @@ function install_ubuntu_common_requirements() {
     libqt5sql5-sqlite \
     libqt5svg5-dev \
     libqt5x11extras5-dev \
-    libreadline-dev
+    libreadline-dev \
+    libdw1
 }
 
 # Install Ubuntu 21.10 packages
@@ -134,14 +136,13 @@ git submodule update
 PYENV_PYTHON_VERSION=$(cat $OP_ROOT/.python-version)
 PATH=$HOME/.pyenv/bin:$HOME/.pyenv/shims:$PATH
 pyenv install -s ${PYENV_PYTHON_VERSION}
-pyenv global ${PYENV_PYTHON_VERSION}
 pyenv rehash
 eval "$(pyenv init -)"
 
 # **** in python env ****
-pip install --upgrade pip==20.2.4
-pip install pipenv==2020.8.13
-pipenv install --dev --system --deploy
+pip install pip==21.3.1
+pip install pipenv==2021.5.29
+pipenv install --dev --deploy
 
 echo
 echo "----   FINISH OPENPILOT SETUP   ----"

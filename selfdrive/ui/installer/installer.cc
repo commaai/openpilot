@@ -176,6 +176,7 @@ void Installer::cloneFinished(int exitCode, QProcess::ExitStatus exitStatus) {
   assert(err == 0);
   run(("git checkout " + BRANCH_STR).c_str());
   run(("git reset --hard origin/" + BRANCH_STR).c_str());
+  run("git submodule update --init");
 
   // move into place
   run("mv " TMP_INSTALL_PATH " " INSTALL_PATH);
@@ -195,7 +196,6 @@ void Installer::cloneFinished(int exitCode, QProcess::ExitStatus exitStatus) {
     param.close();
   }
   run("cd " INSTALL_PATH " && "
-      "git submodule update --init && "
       "git remote set-url origin --push " GIT_SSH_URL " && "
       "git config --replace-all remote.origin.fetch \"+refs/heads/*:refs/remotes/origin/*\"");
 #endif

@@ -32,15 +32,16 @@ class CarInterfaceBase():
     self.op_params = opParams()
 
     self.frame = 0
-    self.steer_warning = 0
     self.steering_unpressed = 0
     self.low_speed_alert = False
+    self.silent_steer_warning = True
 
     if CarState is not None:
       self.CS = CarState(CP)
       self.cp = self.CS.get_can_parser(CP)
       self.cp_cam = self.CS.get_cam_can_parser(CP)
       self.cp_body = self.CS.get_body_can_parser(CP)
+      self.cp_loopback = self.CS.get_loopback_can_parser(CP)
 
     self.CC = None
     if CarController is not None:
@@ -136,20 +137,23 @@ class CarInterfaceBase():
       events.add(EventName.speedTooHigh)
     if cs_out.cruiseState.nonAdaptive:
       events.add(EventName.wrongCruiseMode)
+    if cs_out.brakeHoldActive and self.CP.openpilotLongitudinalControl:
+      events.add(EventName.brakeHold)
 
-    self.steer_warning = self.steer_warning + 1 if cs_out.steerWarning else 0
-    self.steering_unpressed = 0 if cs_out.steeringPressed else self.steering_unpressed + 1
 
     # Handle permanent and temporary steering faults
+    self.steering_unpressed = 0 if cs_out.steeringPressed else self.steering_unpressed + 1
+    if cs_out.steerWarning:
+      # if the user overrode recently, show a less harsh alert
+      if self.silent_steer_warning or cs_out.standstill or self.steering_unpressed < int(1.5 / DT_CTRL):
+        self.silent_steer_warning = True
+        events.add(EventName.steerTempUnavailableSilent)
+      else:
+        events.add(EventName.steerTempUnavailable)
+    else:
+      self.silent_steer_warning = False
     if cs_out.steerError:
       events.add(EventName.steerUnavailable)
-    elif cs_out.steerWarning:
-      # only escalate to the harsher alert after the condition has
-      # persisted for 0.5s and we're certain that the user isn't overriding
-      if self.steering_unpressed > int(0.5/DT_CTRL) and self.steer_warning > int(0.5/DT_CTRL):
-        events.add(EventName.steerTempUnavailable)
-      else:
-        events.add(EventName.steerTempUnavailableSilent)
 
     # Disable on rising edge of gas or brake. Also disable on brake when speed > 0.
     # Optionally allow to press gas at zero speed to resume.
@@ -254,4 +258,8 @@ class CarStateBase:
 
   @staticmethod
   def get_body_can_parser(CP):
+    return None
+
+  @staticmethod
+  def get_loopback_can_parser(CP):
     return None

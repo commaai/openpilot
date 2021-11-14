@@ -348,10 +348,18 @@ void SetupWidget::replyFinished(const QString &response) {
     mainLayout->setCurrentIndex(0);
   } else {
     popup->reject();
-    if (!json["prime"].toBool() && !Params().getBool("PrimeAdDismissed")) {  // always show points, but remind the user of prime...always
-      mainLayout->setCurrentWidget(primeAd);
-    } else {
+
+    bool prime = json["prime"].toBool();
+
+    if (QUIState::ui_state.has_prime != prime) {
+      QUIState::ui_state.has_prime = prime;
+      Params().putBool("HasPrime", prime);
+    }
+
+    if (prime || Params().getBool("PrimeAdDismissed")) {
       showPrimeWidget(json["prime"].toBool());
+    } else {
+      mainLayout->setCurrentWidget(primeAd);
     }
   }
 }

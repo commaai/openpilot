@@ -94,13 +94,13 @@ typedef struct CameraExpInfo {
 
 struct MultiCameraState;
 struct CameraState;
+class Debayer;
 
 class CameraBuf {
 private:
   VisionIpcServer *vipc_server;
   CameraState *camera_state;
-  cl_kernel krnl_debayer;
-
+  Debayer *debayer = nullptr;
   std::unique_ptr<Rgb2Yuv> rgb2yuv;
 
   VisionStreamType rgb_type, yuv_type;

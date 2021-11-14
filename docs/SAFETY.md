@@ -1,5 +1,4 @@
-openpilot Safety
-======
+# Safety
 
 openpilot is an Adaptive Cruise Control (ACC) and Automated Lane Centering (ALC) system.
 Like other ACC and ALC systems, openpilot is a failsafe passive system and it requires the

@@ -66,7 +66,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     const mxArray *C_ocp = prhs[2];
     // capsule
     ptr = (long long *) mxGetData( mxGetField( C_ocp, 0, "capsule" ) );
-    nlp_solver_capsule *capsule = (nlp_solver_capsule *) ptr[0];
+    {{ model.name }}_solver_capsule *capsule = ({{ model.name }}_solver_capsule *) ptr[0];
     // plan
     ptr = (long long *) mxGetData( mxGetField( C_ocp, 0, "plan" ) );
     ocp_nlp_plan *plan = (ocp_nlp_plan *) ptr[0];

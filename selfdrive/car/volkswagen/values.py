@@ -68,8 +68,9 @@ class CAR:
   ARTEON_MK1 = "VOLKSWAGEN ARTEON 1ST GEN"          # Chassis AN, Mk1 VW Arteon and variants
   ATLAS_MK1 = "VOLKSWAGEN ATLAS 1ST GEN"            # Chassis CA, Mk1 VW Atlas and Atlas Cross Sport
   GOLF_MK7 = "VOLKSWAGEN GOLF 7TH GEN"              # Chassis 5G/AU/BA/BE, Mk7 VW Golf and variants
-  JETTA_MK7 = "VOLKSWAGEN JETTA 7TH GEN"            # Chassis BU, Mk7 Jetta
-  PASSAT_MK8 = "VOLKSWAGEN PASSAT 8TH GEN"          # Chassis 3G, Mk8 Passat and variants
+  JETTA_MK7 = "VOLKSWAGEN JETTA 7TH GEN"            # Chassis BU, Mk7 VW Jetta
+  PASSAT_MK8 = "VOLKSWAGEN PASSAT 8TH GEN"          # Chassis 3G, Mk8 VW Passat and variants
+  POLO_MK6 = "VOLKSWAGEN POLO 6TH GEN"              # Chassis AW, Mk6 VW Polo
   TAOS_MK1 = "VOLKSWAGEN TAOS 1ST GEN"              # Chassis B2, Mk1 VW Taos and Tharu
   TCROSS_MK1 = "VOLKSWAGEN T-CROSS 1ST GEN"         # Chassis C1, Mk1 VW T-Cross SWB and LWB variants
   TIGUAN_MK2 = "VOLKSWAGEN TIGUAN 2ND GEN"          # Chassis AD/BW, Mk2 VW Tiguan and variants
@@ -118,6 +119,7 @@ FW_VERSIONS = {
       b'\xf1\x8703H906026AA\xf1\x899970',
       b'\xf1\x8703H906026F \xf1\x896696',
       b'\xf1\x8703H906026F \xf1\x899970',
+      b'\xf1\x8703H906026J \xf1\x896026',
       b'\xf1\x8703H906026S \xf1\x896693',
       b'\xf1\x8703H906026S \xf1\x899970',
     ],
@@ -246,6 +248,7 @@ FW_VERSIONS = {
       b'\xf1\x875Q0909144AB\xf1\x891082\xf1\x82\00521A07B05A1',
       b'\xf1\x875Q0909144L \xf1\x891021\xf1\x82\00521A00602A0',
       b'\xf1\x875Q0909144L \xf1\x891021\xf1\x82\00522A00402A0',
+      b'\xf1\x875Q0909144L \xf1\x891021\xf1\x82\x0521A00502A0',
       b'\xf1\x875Q0909144P \xf1\x891043\xf1\x82\00511A00403A0',
       b'\xf1\x875Q0909144R \xf1\x891061\xf1\x82\00516A00604A1',
       b'\xf1\x875Q0909144S \xf1\x891063\xf1\x82\00516A00604A1',
@@ -298,8 +301,10 @@ FW_VERSIONS = {
       b'\xf1\x875Q0959655BM\xf1\x890403\xf1\x82\02314171231313500314643011650169333463100',
       b'\xf1\x875Q0959655BR\xf1\x890403\xf1\x82\02311170031313300314240011150119333433100',
       b'\xf1\x875Q0959655BR\xf1\x890403\xf1\x82\02319170031313300314240011550159333463100',
+      b'\xf1\x875Q0959655CB\xf1\x890421\xf1\x82\x1314171231313500314643021650169333613100',
     ],
     (Ecu.eps, 0x712, None): [
+      b'\xf1\x873Q0909144M \xf1\x895082\xf1\x82\x0571A10A11A1',
       b'\xf1\x875QM909144B \xf1\x891081\xf1\x82\00521A10A01A1',
       b'\xf1\x875QM909144B \xf1\x891081\xf1\x82\x0521B00404A1',
       b'\xf1\x875QM909144C \xf1\x891082\xf1\x82\00521A00642A1',
@@ -340,6 +345,23 @@ FW_VERSIONS = {
       b'\xf1\x873Q0907572B \xf1\x890192',
       b'\xf1\x873Q0907572C \xf1\x890195',
       b'\xf1\x875Q0907572R \xf1\x890771',
+    ],
+  },
+  CAR.POLO_MK6: {
+    (Ecu.engine, 0x7e0, None): [
+        b'\xf1\x8704C906025H \xf1\x895177',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+        b'\xf1\x870CW300050D \xf1\x891908',
+    ],
+    (Ecu.srs, 0x715, None): [
+      b'\xf1\x872Q0959655AJ\xf1\x890250\xf1\x82\x1248130411110416--04040404784811152H14',
+    ],
+    (Ecu.eps, 0x712, None): [
+        b'\xf1\x872Q1909144M \xf1\x896041',
+    ],
+    (Ecu.fwdRadar, 0x757, None): [
+      b'\xf1\x872Q0907572R \xf1\x890372',
     ],
   },
   CAR.TAOS_MK1: {

@@ -23,7 +23,7 @@ const std::string LOG_ROOT = Path::log_root();
 class BZFile {
  public:
   BZFile(const char* path) {
-    file = fopen(path, "wb");
+    file = util::safe_fopen(path, "wb");
     assert(file != nullptr);
     int bzerror;
     bz_file = BZ2_bzWriteOpen(&bzerror, file, 9, 0, 30);
@@ -35,6 +35,7 @@ class BZFile {
     if (bzerror != BZ_OK) {
       LOGE("BZ2_bzWriteClose error, bzerror=%d", bzerror);
     }
+    util::safe_fflush(file);
     int err = fclose(file);
     assert(err == 0);
   }
@@ -83,7 +84,6 @@ typedef struct LoggerState {
   LoggerHandle* cur_handle;
 } LoggerState;
 
-int logger_mkpath(char* file_path);
 kj::Array<capnp::word> logger_build_init_data();
 std::string logger_get_route_name();
 void logger_init(LoggerState *s, const char* log_name, bool has_qlog);

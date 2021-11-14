@@ -1,93 +1,97 @@
 #include "selfdrive/ui/replay/framereader.h"
 
-#include <unistd.h>
 #include <cassert>
-#include <mutex>
-#include "libyuv.h"
+#include <sstream>
 
-static int ffmpeg_lockmgr_cb(void **arg, enum AVLockOp op) {
-  std::mutex *mutex = (std::mutex *)*arg;
-  switch (op) {
-  case AV_LOCK_CREATE:
-    mutex = new std::mutex();
-    break;
-  case AV_LOCK_OBTAIN:
-    mutex->lock();
-    break;
-  case AV_LOCK_RELEASE:
-    mutex->unlock();
-  case AV_LOCK_DESTROY:
-    delete mutex;
-    break;
-  }
-  return 0;
+namespace {
+
+int readFunction(void *opaque, uint8_t *buf, int buf_size) {
+  auto &iss = *reinterpret_cast<std::istringstream *>(opaque);
+  iss.read(reinterpret_cast<char *>(buf), buf_size);
+  return iss.gcount() ? iss.gcount() : AVERROR_EOF;
 }
 
-struct AVInitializer {
-  AVInitializer() {
-    int ret = av_lockmgr_register(ffmpeg_lockmgr_cb);
-    assert(ret >= 0);
-    av_register_all();
-    avformat_network_init();
-  }
-  ~AVInitializer() { avformat_network_deinit(); }
-};
+}  // namespace
 
-FrameReader::FrameReader() {
-  static AVInitializer av_initializer;
+FrameReader::FrameReader(bool local_cache, int chunk_size, int retries) : FileReader(local_cache, chunk_size, retries) {
+  pFormatCtx_ = avformat_alloc_context();
+  av_frame_ = av_frame_alloc();
+  rgb_frame_ = av_frame_alloc();
+  yuv_frame_ = av_frame_alloc();
 }
 
 FrameReader::~FrameReader() {
   for (auto &f : frames_) {
     av_free_packet(&f.pkt);
   }
-  if (pCodecCtx_) {
-    avcodec_close(pCodecCtx_);
-    avcodec_free_context(&pCodecCtx_);
-  }
-  if (pFormatCtx_) {
-    avformat_close_input(&pFormatCtx_);
-  }
-  if (av_frame_) {
-    av_frame_free(&av_frame_);
+
+  if (pCodecCtx_) avcodec_free_context(&pCodecCtx_);
+  if (pFormatCtx_) avformat_close_input(&pFormatCtx_);
+  if (av_frame_) av_frame_free(&av_frame_);
+  if (rgb_frame_) av_frame_free(&rgb_frame_);
+  if (yuv_frame_) av_frame_free(&yuv_frame_);
+  if (rgb_sws_ctx_) sws_freeContext(rgb_sws_ctx_);
+  if (yuv_sws_ctx_) sws_freeContext(yuv_sws_ctx_);
+
+  if (avio_ctx_) {
+    av_freep(&avio_ctx_->buffer);
+    av_freep(&avio_ctx_);
   }
 }
 
-bool FrameReader::load(const std::string &url) {
-  pFormatCtx_ = avformat_alloc_context();
+bool FrameReader::load(const std::string &url, std::atomic<bool> *abort) {
+  std::string content = read(url, abort);
+  if (content.empty()) return false;
+
+  std::istringstream iss(content);
+  const int avio_ctx_buffer_size = 64 * 1024;
+  unsigned char *avio_ctx_buffer = (unsigned char *)av_malloc(avio_ctx_buffer_size);
+  avio_ctx_ = avio_alloc_context(avio_ctx_buffer, avio_ctx_buffer_size, 0, &iss, readFunction, nullptr, nullptr);
+  pFormatCtx_->pb = avio_ctx_;
+
   pFormatCtx_->probesize = 10 * 1024 * 1024;  // 10MB
-  if (avformat_open_input(&pFormatCtx_, url.c_str(), NULL, NULL) != 0) {
-    printf("error loading %s\n", url.c_str());
+  int ret = avformat_open_input(&pFormatCtx_, url.c_str(), NULL, NULL);
+  if (ret != 0) {
+    char err_str[1024] = {0};
+    av_strerror(ret, err_str, std::size(err_str));
+    printf("Error loading video - %s - %s\n", err_str, url.c_str());
     return false;
   }
   avformat_find_stream_info(pFormatCtx_, NULL);
   // av_dump_format(pFormatCtx_, 0, url.c_str(), 0);
 
-  auto pCodecCtxOrig = pFormatCtx_->streams[0]->codec;
-  auto pCodec = avcodec_find_decoder(pCodecCtxOrig->codec_id);
+  AVStream *video = pFormatCtx_->streams[0];
+  auto pCodec = avcodec_find_decoder(video->codec->codec_id);
   if (!pCodec) return false;
 
   pCodecCtx_ = avcodec_alloc_context3(pCodec);
-  int ret = avcodec_copy_context(pCodecCtx_, pCodecCtxOrig);
+  ret = avcodec_parameters_to_context(pCodecCtx_, video->codecpar);
   if (ret != 0) return false;
 
-  pCodecCtx_->thread_count = 0;
-  pCodecCtx_->thread_type = FF_THREAD_FRAME;
+  // pCodecCtx_->thread_count = 0;
+  // pCodecCtx_->thread_type = FF_THREAD_FRAME;
   ret = avcodec_open2(pCodecCtx_, pCodec, NULL);
   if (ret < 0) return false;
 
-  av_frame_ = av_frame_alloc();
+  width = (pCodecCtx_->width + 3) & ~3;
+  height = pCodecCtx_->height;
+  rgb_sws_ctx_ = sws_getContext(pCodecCtx_->width, pCodecCtx_->height, AV_PIX_FMT_YUV420P,
+                            width, height, AV_PIX_FMT_BGR24,
+                            SWS_FAST_BILINEAR, NULL, NULL, NULL);
+  if (!rgb_sws_ctx_) return false;
 
-  width = pCodecCtxOrig->width;
-  height = pCodecCtxOrig->height;
+  yuv_sws_ctx_ = sws_getContext(pCodecCtx_->width, pCodecCtx_->height, AV_PIX_FMT_YUV420P,
+                            width, height, AV_PIX_FMT_YUV420P,
+                            SWS_FAST_BILINEAR, NULL, NULL, NULL);
+  if (!yuv_sws_ctx_) return false;
 
   frames_.reserve(60 * 20);  // 20fps, one minute
-  while (true) {
+  while (!(abort && *abort)) {
     Frame &frame = frames_.emplace_back();
-    int err = av_read_frame(pFormatCtx_, &frame.pkt);
-    if (err < 0) {
+    ret = av_read_frame(pFormatCtx_, &frame.pkt);
+    if (ret < 0) {
       frames_.pop_back();
-      valid_ = (err == AVERROR_EOF);
+      valid_ = (ret == AVERROR_EOF);
       break;
     }
     // some stream seems to contian no keyframes
@@ -97,7 +101,7 @@ bool FrameReader::load(const std::string &url) {
 }
 
 bool FrameReader::get(int idx, uint8_t *rgb, uint8_t *yuv) {
-  assert(rgb != nullptr);
+  assert(rgb || yuv);
   if (!valid_ || idx < 0 || idx >= frames_.size()) {
     return false;
   }
@@ -121,46 +125,35 @@ bool FrameReader::decode(int idx, uint8_t *rgb, uint8_t *yuv) {
   for (int i = from_idx; i <= idx; ++i) {
     Frame &frame = frames_[i];
     if ((!frame.decoded || i == idx) && !frame.failed) {
-      while (true) {
-        int ret = avcodec_decode_video2(pCodecCtx_, av_frame_, &frame.decoded, &(frame.pkt));
-        if (ret > 0 && !frame.decoded) {
-          // decode thread is still receiving the initial packets
-          usleep(0);
-        } else {
-          break;
-        }
-      }
+      frame.decoded = decodeFrame(&frame.pkt);
       frame.failed = !frame.decoded;
       if (frame.decoded && i == idx) {
-        return decodeFrame(av_frame_, rgb, yuv);
+        return copyBuffers(av_frame_, rgb, yuv);
       }
     }
   }
   return false;
 }
 
-bool FrameReader::decodeFrame(AVFrame *f, uint8_t *rgb, uint8_t *yuv) {
-  uint8_t *y = yuv;
-  if (!yuv) {
-    if (yuv_buf_.empty()) {
-      yuv_buf_.resize(getYUVSize());
-    }
-    y = yuv_buf_.data();
+bool FrameReader::decodeFrame(AVPacket *pkt) {
+  int ret = avcodec_send_packet(pCodecCtx_, pkt);
+  if (ret < 0) {
+    printf("Error sending a packet for decoding\n");
+    return false;
+  }
+  ret = avcodec_receive_frame(pCodecCtx_, av_frame_);
+  return ret == 0;
+}
+
+bool FrameReader::copyBuffers(AVFrame *f, uint8_t *rgb, uint8_t *yuv) {
+  // images is going to be written to output buffers, no alignment (align = 1)
+  if (yuv) {
+    av_image_fill_arrays(yuv_frame_->data, yuv_frame_->linesize, yuv, AV_PIX_FMT_YUV420P, width, height, 1);
+    int ret = sws_scale(yuv_sws_ctx_, (const uint8_t **)f->data, f->linesize, 0, f->height, yuv_frame_->data, yuv_frame_->linesize);
+    if (ret < 0) return false;
   }
 
-  int i, j, k;
-  for (i = 0; i < f->height; i++) {
-    memcpy(y + f->width * i, f->data[0] + f->linesize[0] * i, f->width);
-  }
-  for (j = 0; j < f->height / 2; j++) {
-    memcpy(y + f->width * i + f->width / 2 * j, f->data[1] + f->linesize[1] * j, f->width / 2);
-  }
-  for (k = 0; k < f->height / 2; k++) {
-    memcpy(y + f->width * i + f->width / 2 * j + f->width / 2 * k, f->data[2] + f->linesize[2] * k, f->width / 2);
-  }
-
-  uint8_t *u = y + f->width * f->height;
-  uint8_t *v = u + (f->width / 2) * (f->height / 2);
-  libyuv::I420ToRGB24(y, f->width, u, f->width / 2, v, f->width / 2, rgb, f->width * 3, f->width, f->height);
-  return true;
+  av_image_fill_arrays(rgb_frame_->data, rgb_frame_->linesize, rgb, AV_PIX_FMT_BGR24, width, height, 1);
+  int ret = sws_scale(rgb_sws_ctx_, (const uint8_t **)f->data, f->linesize, 0, f->height, rgb_frame_->data, rgb_frame_->linesize);
+  return ret >= 0;
 }

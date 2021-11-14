@@ -172,14 +172,14 @@ static void update_state(UIState *s) {
   if (sm.updated("carParams")) {
     scene.longitudinal_control = sm["carParams"].getCarParams().getOpenpilotLongitudinalControl();
   }
-  if (sm.updated("sensorEvents")) {
+  if (!scene.started && sm.updated("sensorEvents")) {
     for (auto sensor : sm["sensorEvents"].getSensorEvents()) {
-      if (!scene.started && sensor.which() == cereal::SensorEventData::ACCELERATION) {
+      if (sensor.which() == cereal::SensorEventData::ACCELERATION) {
         auto accel = sensor.getAcceleration().getV();
         if (accel.totalSize().wordCount) { // TODO: sometimes empty lists are received. Figure out why
           scene.accel_sensor = accel[2];
         }
-      } else if (!scene.started && sensor.which() == cereal::SensorEventData::GYRO_UNCALIBRATED) {
+      } else if (sensor.which() == cereal::SensorEventData::GYRO_UNCALIBRATED) {
         auto gyro = sensor.getGyroUncalibrated().getV();
         if (gyro.totalSize().wordCount) {
           scene.gyro_sensor = gyro[1];
@@ -194,7 +194,7 @@ static void update_state(UIState *s) {
     float max_gain = Hardware::EON() ? 1.0: 10.0;
     float max_ev = max_lines * max_gain;
 
-    if (Hardware::TICI) {
+    if (Hardware::TICI()) {
       max_ev /= 6;
     }
 
@@ -257,7 +257,9 @@ QUIState::QUIState(QObject *parent) : QObject(parent) {
     ui_state.pm = std::make_unique<PubMaster, const std::initializer_list<const char *>>({"laneSpeedButton", "dynamicFollowButton", "modelLongButton"});
   }
 
-  ui_state.wide_camera = Hardware::TICI() ? Params().getBool("EnableWideCamera") : false;
+  Params params;
+  ui_state.wide_camera = Hardware::TICI() ? params.getBool("EnableWideCamera") : false;
+  ui_state.has_prime = params.getBool("HasPrime");
 
   // update timer
   timer = new QTimer(this);

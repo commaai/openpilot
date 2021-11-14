@@ -13,17 +13,13 @@
     "_comment": "Append the number of days at the end of the text"
   },
   "Offroad_ConnectivityNeeded": {
-    "text": "Connect to internet to check for updates. openpilot won't start until it connects to internet to check for updates.",
+    "text": "Connect to internet to check for updates. openpilot won't automatically start until it connects to internet to check for updates.",
     "severity": 1
   },
   "Offroad_UpdateFailed": {
     "text": "Unable to download updates\n",
     "severity": 1,
     "_comment": "Append the command and error to the text."
-  },
-  "Offroad_PandaFirmwareMismatch": {
-    "text": "Unexpected panda firmware version. System won't start. Reboot your device to reflash panda.",
-    "severity": 1
   },
   "Offroad_InvalidTime": {
     "text": "Invalid date and time settings, system won't start. Connect to internet to set time.",
@@ -41,8 +37,8 @@
     "text": "Device failed to register. It will not connect to or upload to comma.ai servers, and receives no support from comma.ai. If this is an official device, contact support@comma.ai.",
     "severity": 1
   },
-  "Offroad_NvmeMissing": {
-    "text": "NVME drive not mounted.",
+  "Offroad_StorageMissing": {
+    "text": "Storage drive not mounted.",
     "severity": 1
   }
 }

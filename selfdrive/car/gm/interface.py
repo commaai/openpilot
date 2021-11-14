@@ -111,6 +111,17 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatioRear = 0.
       ret.centerToFront = ret.wheelbase * 0.49
 
+    elif candidate == CAR.ESCALADE_ESV:
+      ret.minEnableSpeed = -1.  # engage speed is decided by pcm
+      ret.mass = 2739. + STD_CARGO_KG
+      ret.wheelbase = 3.302
+      ret.steerRatio = 17.3
+      ret.centerToFront = ret.wheelbase * 0.49
+      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[10., 41.0], [10., 41.0]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.13, 0.24], [0.01, 0.02]]
+      ret.lateralTuning.pid.kf = 0.000045
+      tire_stiffness_factor = 1.0
+            
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase
     ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
@@ -133,10 +144,11 @@ class CarInterface(CarInterfaceBase):
   # returns a car.CarState
   def update(self, c, can_strings):
     self.cp.update_strings(can_strings)
+    self.cp_loopback.update_strings(can_strings)
 
-    ret = self.CS.update(self.cp)
+    ret = self.CS.update(self.cp, self.cp_loopback)
 
-    ret.canValid = self.cp.can_valid
+    ret.canValid = self.cp.can_valid and self.cp_loopback.can_valid
     ret.steeringRateLimited = self.CC.steer_rate_limited if self.CC is not None else False
 
     buttonEvents = []

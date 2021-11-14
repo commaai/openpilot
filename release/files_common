@@ -9,7 +9,10 @@ SConstruct
 
 README.md
 RELEASES.md
-docs/*
+docs/CARS.md
+docs/CONTRIBUTING.md
+docs/INTEGRATION.md
+docs/LIMITATIONS.md
 site_scons/site_tools/cython.py
 
 common/.gitignore
@@ -22,8 +25,8 @@ common/ffi_wrapper.py
 common/file_helpers.py
 common/logging_extra.py
 common/numpy_fast.py
+common/markdown.py
 common/params.py
-common/params_pxd.pxd
 common/params_pyx.pyx
 common/xattr.py
 common/profiler.py
@@ -64,6 +67,8 @@ models/supercombo.dlc
 models/dmonitoring_model_q.dlc
 
 release/*
+
+tools/lib/*
 
 installer/updater/updater
 
@@ -342,7 +347,10 @@ selfdrive/ui/*.h
 selfdrive/ui/ui
 selfdrive/ui/text
 selfdrive/ui/spinner
-selfdrive/ui/soundd
+selfdrive/ui/soundd/*.cc
+selfdrive/ui/soundd/*.h
+selfdrive/ui/soundd/soundd
+selfdrive/ui/soundd/.gitignore
 
 selfdrive/ui/qt/*.cc
 selfdrive/ui/qt/*.h
@@ -354,8 +362,8 @@ selfdrive/ui/qt/widgets/*.h
 selfdrive/ui/qt/spinner_aarch64
 selfdrive/ui/qt/text_aarch64
 
-selfdrive/ui/replay/framereader.cc
-selfdrive/ui/replay/framereader.h
+selfdrive/ui/replay/*.cc
+selfdrive/ui/replay/*.h
 
 selfdrive/camerad/SConscript
 selfdrive/camerad/main.cc

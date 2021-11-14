@@ -149,5 +149,6 @@ int RawLogger::encode_frame(const uint8_t *y_ptr, const uint8_t *u_ptr, const ui
     }
   }
 
+  av_packet_unref(&pkt);
   return ret;
 }

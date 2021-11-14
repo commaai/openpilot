@@ -22,7 +22,7 @@ class CarInterface(CarInterfaceBase):
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.mazda)]
     ret.radarOffCan = True
 
-    ret.dashcamOnly = True
+    ret.dashcamOnly = candidate not in [CAR.CX9_2021]
 
     ret.steerActuatorDelay = 0.1
     ret.steerRateCost = 1.0
@@ -86,9 +86,6 @@ class CarInterface(CarInterfaceBase):
     # events
     events = self.create_common_events(ret)
 
-    if self.CS.low_speed_lockout:
-      events.add(EventName.belowEngageSpeed)
-
     if self.CS.low_speed_alert:
       events.add(EventName.belowSteerSpeed)
 
@@ -98,6 +95,6 @@ class CarInterface(CarInterfaceBase):
     return self.CS.out
 
   def apply(self, c):
-    can_sends = self.CC.update(c.enabled, self.CS, self.frame, c.actuators)
+    can_sends = self.CC.update(c, self.CS, self.frame)
     self.frame += 1
     return can_sends
