@@ -248,11 +248,9 @@ class Controls:
       self.events.add(EventName.laneChange)
 
     if self.can_rcv_error or not CS.canValid:
-      if (self.can_rcv_error):
-        cloudlog.error("###@@@ controlsd.py.Controls.update_events: self.can_rcv_error true")
       if (not CS.canValid):
         cloudlog.error("###@@@ controlsd.py.Controls.update_events: CS.canValid false")
-      self.events.add(EventName.canError)
+      #self.events.add(EventName.canError)
 
     for i, pandaState in enumerate(self.sm['pandaStates']):
       # All pandas must match the list of safetyConfigs, and if outside this list, must be silent or noOutput
