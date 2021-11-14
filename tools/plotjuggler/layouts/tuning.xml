@@ -55,7 +55,7 @@
        <limitY/>
        <curve color="#dc267f" name="/carState/cruiseState/speed"/>
        <curve color="#009e73" name="/longitudinalPlan/speeds/0"/>
-       <curve color="#0072b2" name="/liveLocationKalman/velocityCalibrated/value/0"/>
+       <curve color="#0072b2" name="/carState/vEgo"/>
       </plot>
      </DockArea>
      <DockArea name="Acceleration [m/s^2] True [blue] Actuator [purple] Plan [green]">
@@ -165,7 +165,7 @@ end</function>
    <additionalSources>
     <v1>/carState/steeringPressed</v1>
     <v2>/carControl/enabled</v2>
-    <v3>/carState/vEgo</v3>
+    <v3>/liveLocationKalman/velocityCalibrated/value/0</v3>
    </additionalSources>
   </snippet>
   <snippet name="engaged curvature vehicle model">
