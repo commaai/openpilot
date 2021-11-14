@@ -52,15 +52,14 @@ class DistanceModController:
 
 
 class DynamicFollow:
-  def __init__(self, mpc_id):
-    self.mpc_id = mpc_id
+  def __init__(self):
     self.op_params = opParams()
     self.df_profiles = dfProfiles()
     self.df_manager = dfManager()
     self.dmc_v_rel = DistanceModController(k_i=0.042, k_d=0.08, x_clip=[-1, 0, 0.66], mods=[1.15, 1., 0.95])
     self.dmc_a_rel = DistanceModController(k_i=0.042 * 1.05, k_d=0.08, x_clip=[-1, 0, 0.33], mods=[1.15, 1., 0.98])  # a_lead loop is 5% faster
 
-    if not travis and mpc_id == 1:
+    if not travis:
       self.pm = messaging.PubMaster(['dynamicFollowData'])
     else:
       self.pm = None
@@ -108,12 +107,12 @@ class DynamicFollow:
     self.auto_df_model_data = []
     self._get_live_params()  # so they're defined just in case
 
-  def update(self, CS, libmpc):
+  def update(self, CS):
     self._get_live_params()
     self._update_car(CS)
     self._get_profiles()
 
-    if self.mpc_id == 1 and self.log_auto_df:
+    if self.log_auto_df:
       self._gather_data()
 
     if not self.lead_data.status:
@@ -123,7 +122,6 @@ class DynamicFollow:
       self.TR = self._get_TR()
 
     if not travis:
-      self._change_cost(libmpc)
       self._send_cur_state()
 
     return self.TR
@@ -159,29 +157,11 @@ class DynamicFollow:
     return interp(x, self.model_scales[name], [0, 1])
 
   def _send_cur_state(self):
-    if self.mpc_id == 1 and self.pm is not None:
+    if self.pm is not None:
       dat = messaging.new_message('dynamicFollowData')
       dat.dynamicFollowData.mpcTR = self.TR
       dat.dynamicFollowData.profilePred = self.model_profile
       self.pm.send('dynamicFollowData', dat)
-
-  def _change_cost(self, libmpc):
-    TRs = [0.9, 1.8, 2.7]
-    costs = [1., 0.1, 0.01]
-    cost = interp(self.TR, TRs, costs)
-
-    # change_time = sec_since_boot() - self.profile_change_time
-    # change_time_x = [0, 0.5, 4]  # for three seconds after effective profile has changed
-    # change_mod_y = [3, 6, 1]  # multiply cost by multiplier to quickly change distance
-    # if change_time < change_time_x[-1]:  # if profile changed in last 3 seconds
-    #   cost_mod = interp(change_time, change_time_x, change_mod_y)
-    #   cost_mod_speeds = [0, 20 * CV.MPH_TO_MS]  # don't change cost too much under 20 mph
-    #   cost_mods = [cost_mod * 0.01, cost_mod]
-    #   cost *= interp(cost_mod, cost_mod_speeds, cost_mods)
-
-    if self.last_cost != cost:
-      libmpc.change_costs(MPC_COST_LONG.TTC, cost, MPC_COST_LONG.ACCELERATION, MPC_COST_LONG.JERK)  # todo: jerk is the derivative of acceleration, could tune that
-      self.last_cost = cost
 
   def _store_df_data(self):
     cur_time = sec_since_boot()

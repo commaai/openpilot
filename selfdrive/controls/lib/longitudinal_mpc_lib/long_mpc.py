@@ -7,6 +7,7 @@ from common.numpy_fast import clip, interp
 from selfdrive.swaglog import cloudlog
 from selfdrive.modeld.constants import index_function
 from selfdrive.controls.lib.radar_helpers import _LEAD_ACCEL_TAU
+from selfdrive.controls.lib.dynamic_follow import DynamicFollow
 
 if __name__ == '__main__':  # generating code
   from pyextra.acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
@@ -189,6 +190,7 @@ def gen_long_mpc_solver():
 
 class LongitudinalMpc():
   def __init__(self, e2e=False, desired_TR=T_REACT):
+    self.dynamic_follow = DynamicFollow()
     self.e2e = e2e
     self.desired_TR = desired_TR
     self.v_ego = 0.
@@ -278,19 +280,23 @@ class LongitudinalMpc():
     lead_xv = np.column_stack((x_lead_traj, v_lead_traj))
     return lead_xv
 
-  def process_lead(self, lead):
+  def process_lead(self, lead, id):
     v_ego = self.x0[1]
     if lead is not None and lead.status:
       x_lead = lead.dRel
       v_lead = lead.vLead
       a_lead = lead.aLeadK
       a_lead_tau = lead.aLeadTau
+      if id == 0:
+        self.dynamic_follow.update_lead(v_lead, a_lead, x_lead, lead.status, False)
     else:
       # Fake a fast lead car, so mpc can keep running in the same mode
       x_lead = 50.0
       v_lead = v_ego + 10.0
       a_lead = 0.0
       a_lead_tau = _LEAD_ACCEL_TAU
+      if id == 0:
+        self.dynamic_follow.update_lead(new_lead=False)
 
     # MPC will not converge if immediate crash is expected
     # Clip lead distance to what is still possible to brake for
@@ -306,7 +312,7 @@ class LongitudinalMpc():
     self.cruise_max_a = max_a
 
   def set_desired_TR(self, desired_TR):
-    self.desired_TR = clip(desired_TR, 1.2, 2.7)
+    self.desired_TR = desired_TR
     self.set_weights()
 
   def update(self, carstate, radarstate, v_cruise):
@@ -314,8 +320,10 @@ class LongitudinalMpc():
     v_ego = self.x0[1]
     self.status = radarstate.leadOne.status or radarstate.leadTwo.status
 
-    lead_xv_0 = self.process_lead(radarstate.leadOne)
-    lead_xv_1 = self.process_lead(radarstate.leadTwo)
+    lead_xv_0 = self.process_lead(radarstate.leadOne, 0)
+    lead_xv_1 = self.process_lead(radarstate.leadTwo, 1)
+
+    self.set_desired_TR(self.dynamic_follow.update(carstate))  # update dynamic follow and get desired TR
 
     # set accel limits in params
     self.params[:,0] = interp(float(self.status), [0.0, 1.0], [self.cruise_min_a, MIN_ACCEL])
