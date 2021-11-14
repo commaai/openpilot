@@ -107,6 +107,5 @@ class TestBoardd(unittest.TestCase):
         assert not len(sent_msgs[bus]), f"loop {i}: bus {bus} missing {len(sent_msgs[bus])} messages"
 
 
-
 if __name__ == "__main__":
   unittest.main()
