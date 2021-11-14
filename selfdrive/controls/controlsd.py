@@ -291,13 +291,13 @@ class Controls:
     for pandaState in self.sm['pandaStates']:
       if log.PandaState.FaultType.relayMalfunction in pandaState.faults:
         self.events.add(EventName.relayMalfunction)
-
-    if not REPLAY:
-      # Check for mismatch between openpilot and car's PCM
-      cruise_mismatch = CS.cruiseState.enabled and (not self.enabled or not self.CP.pcmCruise)
-      self.cruise_mismatch_counter = self.cruise_mismatch_counter + 1 if cruise_mismatch else 0
-      if self.cruise_mismatch_counter > int(1. / DT_CTRL):
-        self.events.add(EventName.cruiseMismatch)
+    ## # TODO: JJS TEMP: Throwing fault on GM no radar
+    # if not REPLAY:
+    #   # Check for mismatch between openpilot and car's PCM
+    #   cruise_mismatch = CS.cruiseState.enabled and (not self.enabled or not self.CP.pcmCruise)
+    #   self.cruise_mismatch_counter = self.cruise_mismatch_counter + 1 if cruise_mismatch else 0
+    #   if self.cruise_mismatch_counter > int(1. / DT_CTRL):
+    #     self.events.add(EventName.cruiseMismatch)
 
     # Check for FCW
     stock_long_is_braking = self.enabled and not self.CP.openpilotLongitudinalControl and CS.aEgo < -1.5
