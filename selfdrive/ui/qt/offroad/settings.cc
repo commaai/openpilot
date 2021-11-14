@@ -222,7 +222,7 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
       updateBtn->setText("CHECKING");
       updateBtn->setEnabled(false);
     }
-    std::system("pkill -1 -f selfdrive.updated");
+    std::system("pkill -1 -f selfdrive.updated.updated");
   });
 
 

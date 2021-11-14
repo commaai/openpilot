@@ -41,7 +41,8 @@ from selfdrive.hardware import EON, TICI, HARDWARE
 from selfdrive.swaglog import cloudlog
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
 from selfdrive.updated.helpers import LOCK_FILE, STAGING_ROOT, NEOSUPDATE_DIR, FINALIZED, \
-                                      OVERLAY_UPPER, OVERLAY_METADATA, OVERLAY_MERGED
+                                      OVERLAY_UPPER, OVERLAY_METADATA, OVERLAY_MERGED, \
+                                      run, git_dir_modified
 
 
 class WaitTimeHelper:
@@ -72,12 +73,6 @@ class WaitTimeHelper:
 
   def sleep(self, t: float) -> None:
     self.ready_event.wait(timeout=t)
-
-
-def run(cmd: List[str], cwd: Optional[str] = None, low_priority: bool = False):
-  if low_priority:
-    cmd = ["nice", "-n", "19"] + cmd
-  return subprocess.check_output(cmd, cwd=cwd, stderr=subprocess.STDOUT, encoding='utf8')
 
 
 def set_consistent_flag(consistent: bool) -> None:
@@ -150,7 +145,7 @@ def init_overlay() -> None:
   if overlay_init_file.is_file():
     git_dir_path = os.path.join(BASEDIR, ".git")
     new_files = run(["find", git_dir_path, "-newer", str(overlay_init_file)])
-    if not len(new_files.splitlines()):
+    if not git_dir_modified():
       # A valid overlay already exists
       return
     else:

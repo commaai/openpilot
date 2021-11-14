@@ -2,7 +2,7 @@
 import sys
 
 # NOTE: this file cannot import anything that must be built
-from selfdrive.updated.helpers import OLD_OPENPILOT, OVERLAY_INIT, FINALIZED
+from selfdrive.updated.helpers import OLD_OPENPILOT, OVERLAY_INIT, FINALIZED, git_dir_modified
 
 def should_swap() -> bool:
   # Check to see if there's a valid update available. Conditions:
@@ -15,15 +15,17 @@ def should_swap() -> bool:
 
 
   if OVERLAY_INIT.is_file():
-    # TODO: check against git dir
-    if FINALIZED.is_file():
-      if OLD_OPENPILOT.is_dir():
-        # TODO: restore backup? This means the updater didn't start after swapping
-        print("openpilot backup found, not updating")
-      else:
-        return True
+    if git_dir_modified():
+      print("git modifications found, skipping update")
+    else:
+      if FINALIZED.is_file():
+        if OLD_OPENPILOT.is_dir():
+          # TODO: restore backup? This means the updater didn't start after swapping
+          print("openpilot backup found, not updating")
+        else:
+          return True
 
-  return True
+  return False
 
 if __name__ == "__main__":
   sys.exit(0 if should_swap() else 1)
