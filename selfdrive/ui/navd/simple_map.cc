@@ -46,7 +46,6 @@ SimpleMap::SimpleMap(const QMapboxGLSettings &settings) : m_settings(settings) {
   });
 }
 
-
 void SimpleMap::updatePosition(QMapbox::Coordinate position, float bearing) {
   if (m_map.isNull()) {
     return;
@@ -57,6 +56,7 @@ void SimpleMap::updatePosition(QMapbox::Coordinate position, float bearing) {
   m_map->setBearing(bearing);
   update();
 }
+
 void SimpleMap::update() {
   gl_functions->glClear(GL_COLOR_BUFFER_BIT);
   m_map->render();
@@ -68,7 +68,6 @@ void SimpleMap::update() {
   snprintf(tmp, sizeof(tmp)-1, "/tmp/cap/%04d.png", fn++);
   cap.save(tmp);
 }
-
 
 void SimpleMap::updateRoute(QList<QGeoCoordinate> coordinates) {
   if (m_map.isNull()) return;
@@ -84,7 +83,6 @@ void SimpleMap::updateRoute(QList<QGeoCoordinate> coordinates) {
 }
 
 void SimpleMap::initLayers() {
-  // This doesn't work from initializeGL
   if (!m_map->layerExists("navLayer")) {
     QVariantMap nav;
     nav["id"] = "navLayer";
@@ -97,9 +95,5 @@ void SimpleMap::initLayers() {
   }
 }
 
-// void SimpleMap::initializeGL() {
-// }
-
 SimpleMap::~SimpleMap() {
-  // makeCurrent();
 }
