@@ -75,6 +75,11 @@ public:
   }
 };
 
+struct RouteGeometrySegment {
+  double distance;
+  double speed_limit;
+};
+
 class RouteEngine : public QObject {
   Q_OBJECT
 
@@ -96,6 +101,7 @@ public:
   QGeoRoute route;
   QGeoRouteSegment segment;
   QMapbox::Coordinate nav_destination;
+  QList<RouteGeometrySegment> route_geometry_segments = {};
 
   // Position
   std::optional<QMapbox::Coordinate> last_position;
