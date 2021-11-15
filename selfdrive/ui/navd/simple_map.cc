@@ -3,10 +3,13 @@
 #include <QDebug>
 
 #include "selfdrive/ui/qt/maps/map_helpers.h"
+#include "selfdrive/common/timing.h"
 
 const float ZOOM = 14;
 const int WIDTH = 512;
 const int HEIGHT = 512;
+
+const int NUM_VIPC_BUFFERS = 4;
 
 SimpleMap::SimpleMap(const QMapboxGLSettings &settings) : m_settings(settings) {
   QSurfaceFormat fmt;
@@ -44,6 +47,10 @@ SimpleMap::SimpleMap(const QMapboxGLSettings &settings) : m_settings(settings) {
       loaded_once = true;
     }
   });
+
+  vipc_server.reset(new VisionIpcServer("navd"));
+  vipc_server->create_buffers(VisionStreamType::VISION_STREAM_RGB_MAP, NUM_VIPC_BUFFERS, true, WIDTH, HEIGHT);
+  vipc_server->start_listener();
 }
 
 void SimpleMap::updatePosition(QMapbox::Coordinate position, float bearing) {
@@ -61,12 +68,20 @@ void SimpleMap::update() {
   gl_functions->glClear(GL_COLOR_BUFFER_BIT);
   m_map->render();
 
-  // Save to png
-  static int fn = 0;
   QImage cap = fbo->toImage().convertToFormat(QImage::Format_RGB888, Qt::AutoColor);
-  char tmp[100];
-  snprintf(tmp, sizeof(tmp)-1, "/tmp/cap/%04d.png", fn++);
-  cap.save(tmp);
+
+  uint64_t ts = nanos_since_boot();
+
+  VisionBuf* buf = vipc_server->get_buffer(VisionStreamType::VISION_STREAM_RGB_MAP);
+  VisionIpcBufExtra extra = {
+    .frame_id = frame_id++,
+    .timestamp_sof = ts,
+    .timestamp_eof = ts,
+  };
+
+  assert(cap.sizeInBytes() == buf->len);
+  memcpy(buf->addr, cap.bits(), buf->len);
+  vipc_server->send(buf, &extra);
 }
 
 void SimpleMap::updateRoute(QList<QGeoCoordinate> coordinates) {
@@ -89,8 +104,8 @@ void SimpleMap::initLayers() {
     nav["type"] = "line";
     nav["source"] = "navSource";
     m_map->addLayer(nav, "road-intersection");
-    m_map->setPaintProperty("navLayer", "line-color", QColor("red"));
-    m_map->setPaintProperty("navLayer", "line-width", 7.5);
+    m_map->setPaintProperty("navLayer", "line-color", QColor("blue"));
+    m_map->setPaintProperty("navLayer", "line-width", 3);
     m_map->setLayoutProperty("navLayer", "line-cap", "round");
   }
 }

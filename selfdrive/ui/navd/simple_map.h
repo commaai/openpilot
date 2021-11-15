@@ -11,6 +11,8 @@
 #include <QOpenGLFunctions>
 #include <QOpenGLFramebufferObject>
 
+#include "cereal/visionipc/visionipc_server.h"
+
 
 class SimpleMap : public QObject {
   Q_OBJECT
@@ -25,6 +27,8 @@ private:
   std::unique_ptr<QOpenGLFunctions> gl_functions;
   std::unique_ptr<QOpenGLFramebufferObject> fbo;
 
+  std::unique_ptr<VisionIpcServer> vipc_server;
+
   QMapboxGLSettings m_settings;
   QScopedPointer<QMapboxGL> m_map;
 
@@ -32,6 +36,7 @@ private:
   void update();
 
   bool loaded_once = false;
+  uint32_t frame_id = 0;
 
 public slots:
   void updatePosition(QMapbox::Coordinate position, float bearing);

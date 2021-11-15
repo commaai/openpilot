@@ -10,7 +10,7 @@
 
 const qreal REROUTE_DISTANCE = 25;
 const float MANEUVER_TRANSITION_THRESHOLD = 10;
-const float UPDATE_FREQ = 2.0;  // Hz
+const float UPDATE_FREQ = 20.0;  // Hz
 
 static float get_time_typical(const QGeoRouteSegment &segment) {
   auto maneuver = segment.maneuver();

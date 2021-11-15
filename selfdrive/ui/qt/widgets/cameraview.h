@@ -15,7 +15,7 @@ class CameraViewWidget : public QOpenGLWidget, protected QOpenGLFunctions {
 
 public:
   using QOpenGLWidget::QOpenGLWidget;
-  explicit CameraViewWidget(VisionStreamType stream_type, bool zoom, QWidget* parent = nullptr);
+  explicit CameraViewWidget(std::string stream_name, VisionStreamType stream_type, bool zoom, QWidget* parent = nullptr);
   ~CameraViewWidget();
   void setStreamType(VisionStreamType type) { stream_type = type; }
   void setBackgroundColor(const QColor &color) { bg = color; }
@@ -43,6 +43,7 @@ protected:
   QOpenGLShaderProgram *program;
   QColor bg = QColor("#000000");
 
+  std::string stream_name;
   int stream_width = 0;
   int stream_height = 0;
   std::atomic<VisionStreamType> stream_type;

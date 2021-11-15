@@ -17,12 +17,20 @@ int main(int argc, char *argv[]) {
   QVBoxLayout *layout = new QVBoxLayout(&w);
   layout->setMargin(0);
   layout->setSpacing(0);
-  layout->addWidget(new CameraViewWidget(VISION_STREAM_RGB_BACK, false));
 
-  QHBoxLayout *hlayout = new QHBoxLayout();
-  layout->addLayout(hlayout);
-  hlayout->addWidget(new CameraViewWidget(VISION_STREAM_RGB_FRONT, false));
-  hlayout->addWidget(new CameraViewWidget(VISION_STREAM_RGB_WIDE, false));
+  {
+    QHBoxLayout *hlayout = new QHBoxLayout();
+    layout->addLayout(hlayout);
+    hlayout->addWidget(new CameraViewWidget("navd", VISION_STREAM_RGB_MAP, false));
+    hlayout->addWidget(new CameraViewWidget("camerad", VISION_STREAM_RGB_BACK, false));
+  }
+
+  {
+    QHBoxLayout *hlayout = new QHBoxLayout();
+    layout->addLayout(hlayout);
+    hlayout->addWidget(new CameraViewWidget("camerad", VISION_STREAM_RGB_FRONT, false));
+    hlayout->addWidget(new CameraViewWidget("camerad", VISION_STREAM_RGB_WIDE, false));
+  }
 
   return a.exec();
 }
