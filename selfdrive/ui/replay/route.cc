@@ -120,13 +120,7 @@ void Segment::loadFile(int id, const std::string file) {
   if (id < MAX_CAMERAS) {
     frames[id] = std::make_unique<FrameReader>(local_cache, 20 * 1024 * 1024, 3);
 
-    AVHWDeviceType hw_device_type = AV_HWDEVICE_TYPE_NONE;
-    if (flags & REPLAY_FLAG_CUDA) {
-      hw_device_type = AV_HWDEVICE_TYPE_CUDA;
-    } else if (flags & REPLAY_FLAG_MEDIACODEC) {
-      hw_device_type = AV_HWDEVICE_TYPE_MEDIACODEC;
-    }
-
+    AVHWDeviceType hw_device_type = flags & REPLAY_FLAG_CUDA ? AV_HWDEVICE_TYPE_CUDA : AV_HWDEVICE_TYPE_NONE;
     success = frames[id]->load(file, hw_device_type, &abort_);
   } else {
     log = std::make_unique<LogReader>(local_cache, -1, 3);
