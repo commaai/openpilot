@@ -23,9 +23,6 @@ Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *s
     }
   }
   qDebug() << "services " << s;
-  if (flags & REPLAY_FLAG_CUDA) {
-    qInfo() << "decode frames with CUDA";
-  }
 
   if (sm == nullptr) {
     pm = new PubMaster(s);

@@ -119,9 +119,7 @@ void Segment::loadFile(int id, const std::string file) {
   bool success = false;
   if (id < MAX_CAMERAS) {
     frames[id] = std::make_unique<FrameReader>(local_cache, 20 * 1024 * 1024, 3);
-
-    AVHWDeviceType hw_device_type = flags & REPLAY_FLAG_CUDA ? AV_HWDEVICE_TYPE_CUDA : AV_HWDEVICE_TYPE_NONE;
-    success = frames[id]->load(file, hw_device_type, &abort_);
+    success = frames[id]->load(file, flags & REPLAY_FLAG_NO_CUDA, &abort_);
   } else {
     log = std::make_unique<LogReader>(local_cache, -1, 3);
     success = log->load(file, &abort_);

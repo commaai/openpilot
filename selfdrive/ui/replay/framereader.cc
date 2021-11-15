@@ -49,7 +49,7 @@ FrameReader::~FrameReader() {
   }
 }
 
-bool FrameReader::load(const std::string &url, AVHWDeviceType hw_device_type, std::atomic<bool> *abort) {
+bool FrameReader::load(const std::string &url, bool no_cuda, std::atomic<bool> *abort) {
   std::string content = read(url, abort);
   if (content.empty()) return false;
 
@@ -85,8 +85,8 @@ bool FrameReader::load(const std::string &url, AVHWDeviceType hw_device_type, st
   width = (decoder_ctx->width + 3) & ~3;
   height = decoder_ctx->height;
 
-  if (hw_device_type != AV_HWDEVICE_TYPE_NONE) {
-    if (!initHardwareDecoder(hw_device_type)) {
+  if (!no_cuda) {
+    if (!initHardwareDecoder(AV_HWDEVICE_TYPE_CUDA)) {
       return false;
     }
   }
