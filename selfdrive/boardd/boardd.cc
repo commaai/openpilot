@@ -669,21 +669,23 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  peripheral_panda = pandas[0];
+  if (pandas.size()) {
+    peripheral_panda = pandas[0];
 
-  LOGW("connected to board");
+    LOGW("connected to board");
 
-  threads.emplace_back(panda_state_thread, &pm, pandas, getenv("STARTED") != nullptr);
-  threads.emplace_back(peripheral_control_thread, peripheral_panda);
-  threads.emplace_back(pigeon_thread, peripheral_panda);
+    threads.emplace_back(panda_state_thread, &pm, pandas, getenv("STARTED") != nullptr);
+    threads.emplace_back(peripheral_control_thread, peripheral_panda);
+    threads.emplace_back(pigeon_thread, peripheral_panda);
 
-  threads.emplace_back(can_send_thread, pandas, getenv("FAKESEND") != nullptr);
-  threads.emplace_back(can_recv_thread, pandas);
+    threads.emplace_back(can_send_thread, pandas, getenv("FAKESEND") != nullptr);
+    threads.emplace_back(can_recv_thread, pandas);
 
-  for (auto &t : threads) t.join();
+    for (auto &t : threads) t.join();
 
-  // we have exited, clean up pandas
-  for (const auto& panda : pandas){
-    delete panda;
+    // we have exited, clean up pandas
+    for (const auto& panda : pandas){
+      delete panda;
+    }
   }
 }
