@@ -49,13 +49,9 @@ int main(int argc, char *argv[]) {
     settings.setAccessToken(get_mapbox_token());
 
     SimpleMap * m = new SimpleMap(settings);
-    m->setFixedWidth(640);
-    m->setFixedHeight(640);
 
     QObject::connect(route_engine, &RouteEngine::positionUpdated, m, &SimpleMap::updatePosition);
     QObject::connect(route_engine, &RouteEngine::routeUpdated, m, &SimpleMap::updateRoute);
-
-    m->show();
   }
 
   return app.exec();
