@@ -669,6 +669,11 @@ int main(int argc, char* argv[]) {
     }
   }
 
+  if (pandas.size() == 0) {
+    // do_exit was set while not connected to a panda
+    return 0;
+  }
+
   peripheral_panda = pandas[0];
 
   LOGW("connected to board");
