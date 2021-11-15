@@ -10,6 +10,7 @@ from common.numpy_fast import clip
 from common.realtime import sec_since_boot, config_realtime_process, Priority, Ratekeeper, DT_CTRL
 from common.profiler import Profiler
 from common.params import Params, put_nonblocking
+from common.travis_checker import gh_actions
 import cereal.messaging as messaging
 import selfdrive.crash as crash
 from selfdrive.config import Conversions as CV
@@ -63,7 +64,7 @@ IGNORED_SAFETY_MODES = [SafetyModel.silent, SafetyModel.noOutput]
 
 
 def log_fingerprint(candidate, timeout=15):
-  if "CI" not in os.environ and smiskol_remote:
+  if not gh_actions and smiskol_remote:
     try:
       requests.get('https://sentry.io', timeout=timeout)
       crash.init()
