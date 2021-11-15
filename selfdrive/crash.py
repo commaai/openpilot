@@ -1,7 +1,7 @@
 """Install exception handler for process crash."""
 from selfdrive.swaglog import cloudlog
 from selfdrive.version import version
-from selfdrive.version import origin, branch, dirty, smiskol_remote, get_git_commit
+from selfdrive.version import origin, branch, SA_dirty, get_git_commit
 from common.op_params import opParams
 
 import sentry_sdk
@@ -37,7 +37,7 @@ def init() -> None:
   sentry_sdk.init(sentry_uri, default_integrations=False,
                   integrations=[ThreadingIntegration(propagate_hub=True)], release=version)
 
-  error_tags = {'dirty': dirty, 'origin': origin, 'branch': branch, 'commit': get_git_commit(), 'username': opParams().get('username')}
+  error_tags = {'dirty': SA_dirty, 'origin': origin, 'branch': branch, 'commit': get_git_commit(), 'username': opParams().get('username')}
   if error_tags['username'] is None or not isinstance(error_tags['username'], str):
     error_tags['username'] = 'undefined'
   for tag in error_tags:

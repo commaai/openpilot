@@ -13,6 +13,7 @@ from common.params import Params, put_nonblocking
 import cereal.messaging as messaging
 import selfdrive.crash as crash
 from selfdrive.config import Conversions as CV
+from selfdrive.version import smiskol_remote
 from selfdrive.swaglog import cloudlog
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.car.car_helpers import get_car, get_startup_event, get_one_can
@@ -62,7 +63,7 @@ IGNORED_SAFETY_MODES = [SafetyModel.silent, SafetyModel.noOutput]
 
 
 def log_fingerprint(candidate, timeout=15):
-  if "CI" not in os.environ:
+  if "CI" not in os.environ and smiskol_remote:
     try:
       requests.get('https://sentry.io', timeout=timeout)
       crash.init()

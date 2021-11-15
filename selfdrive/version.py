@@ -55,6 +55,7 @@ training_version: bytes = b"0.2.0"
 terms_version: bytes = b"2"
 
 dirty: bool = True
+SA_dirty: bool = False
 comma_remote: bool = False
 smiskol_remote: bool = False
 tested_branch: bool = False
@@ -71,6 +72,7 @@ if (origin is not None) and (branch is not None):
     tested_branch = get_git_branch() in (TESTED_BRANCHES + SA_BRANCHES)
 
     dirty = False
+    SA_dirty = False
 
     # Actually check dirty files
     if not prebuilt:
@@ -82,19 +84,21 @@ if (origin is not None) and (branch is not None):
       dirty = (subprocess.call(["git", "diff-index", "--quiet", branch, "--"]) != 0)
 
       # Log dirty files
-      if dirty and (comma_remote or smiskol_remote):
+      if dirty and comma_remote:
         try:
           dirty_files = run_cmd(["git", "diff-index", branch, "--"])
-          cloudlog.event("dirty SA branch", version=version, dirty=dirty, origin=origin, branch=branch,
+          cloudlog.event("dirty comma branch", version=version, dirty=dirty, origin=origin, branch=branch,
                          dirty_files=dirty_files, commit=commit, origin_commit=get_git_commit(branch))
         except subprocess.CalledProcessError:
           pass
 
-    dirty = dirty or (not comma_remote and not smiskol_remote)
+    SA_dirty = dirty or (not smiskol_remote)
+    dirty = dirty or (not comma_remote)
     dirty = dirty or ('master' in branch)
 
   except subprocess.CalledProcessError:
     dirty = True
+    SA_dirty = True
     cloudlog.exception("git subprocess failed while checking dirty")
 
 
