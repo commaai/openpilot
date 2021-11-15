@@ -110,6 +110,7 @@ CameraViewWidget::~CameraViewWidget() {
     glDeleteVertexArrays(1, &frame_vao);
     glDeleteBuffers(1, &frame_vbo);
     glDeleteBuffers(1, &frame_ibo);
+    glDeleteBuffers(3, textures);
   }
   doneCurrent();
 }
