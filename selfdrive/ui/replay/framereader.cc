@@ -14,10 +14,9 @@ int readFunction(void *opaque, uint8_t *buf, int buf_size) {
 enum AVPixelFormat get_hw_format(AVCodecContext *ctx, const enum AVPixelFormat *pix_fmts) {
   enum AVPixelFormat *hw_pix_fmt = reinterpret_cast<enum AVPixelFormat *>(ctx->opaque);
   for (const enum AVPixelFormat *p = pix_fmts; *p != -1; p++) {
-    if (*p == *hw_pix_fmt) {
-      return *p;
-    }
+    if (*p == *hw_pix_fmt) return *p;
   }
+  printf("Please run replay with the --no-cuda flag!\n");
   assert(0);
   return AV_PIX_FMT_NONE;
 }
@@ -26,14 +25,12 @@ enum AVPixelFormat get_hw_format(AVCodecContext *ctx, const enum AVPixelFormat *
 
 FrameReader::FrameReader(bool local_cache, int chunk_size, int retries) : FileReader(local_cache, chunk_size, retries) {
   input_ctx = avformat_alloc_context();
-  av_frame_.reset(av_frame_alloc());
-  yuv_frame.reset(av_frame_alloc());
-  rgb_frame.reset(av_frame_alloc());
+  sws_frame.reset(av_frame_alloc());
 }
 
 FrameReader::~FrameReader() {
   for (auto &f : frames_) {
-    av_free_packet(&f.pkt);
+    av_packet_unref(&f.pkt);
   }
 
   if (decoder_ctx) avcodec_free_context(&decoder_ctx);
@@ -45,7 +42,7 @@ FrameReader::~FrameReader() {
 
   if (avio_ctx_) {
     av_freep(&avio_ctx_->buffer);
-    av_freep(&avio_ctx_);
+    avio_context_free(&avio_ctx_);
   }
 }
 
@@ -75,7 +72,7 @@ bool FrameReader::load(const std::string &url, bool no_cuda, std::atomic<bool> *
   }
 
   AVStream *video = input_ctx->streams[0];
-  auto decoder = avcodec_find_decoder(video->codec->codec_id);
+  AVCodec *decoder = avcodec_find_decoder(video->codec->codec_id);
   if (!decoder) return false;
 
   decoder_ctx = avcodec_alloc_context3(decoder);
@@ -87,7 +84,7 @@ bool FrameReader::load(const std::string &url, bool no_cuda, std::atomic<bool> *
 
   if (!no_cuda) {
     if (!initHardwareDecoder(AV_HWDEVICE_TYPE_CUDA)) {
-      return false;
+      printf("No CUDA capable device was found. fallback to CPU decoding.\n");
     }
   }
 
@@ -119,8 +116,6 @@ bool FrameReader::load(const std::string &url, bool no_cuda, std::atomic<bool> *
 }
 
 bool FrameReader::initHardwareDecoder(AVHWDeviceType hw_device_type) {
-  decoder_ctx->opaque = &hw_pix_fmt;
-  decoder_ctx->get_format = get_hw_format;
   for (int i = 0;; i++) {
     const AVCodecHWConfig *config = avcodec_get_hw_config(decoder_ctx->codec, i);
     if (!config) {
@@ -149,8 +144,11 @@ bool FrameReader::initHardwareDecoder(AVHWDeviceType hw_device_type) {
       break;
     }
   }
+  av_hwframe_constraints_free(&hw_frames_const);
 
   decoder_ctx->hw_device_ctx = av_buffer_ref(hw_device_ctx);
+  decoder_ctx->opaque = &hw_pix_fmt;
+  decoder_ctx->get_format = get_hw_format;
   return true;
 }
 
@@ -197,6 +195,7 @@ AVFrame *FrameReader::decodeFrame(AVPacket *pkt) {
     return nullptr;
   }
 
+  av_frame_.reset(av_frame_alloc());
   ret = avcodec_receive_frame(decoder_ctx, av_frame_.get());
   if (ret != 0) {
     return nullptr;
@@ -217,12 +216,12 @@ AVFrame *FrameReader::decodeFrame(AVPacket *pkt) {
 bool FrameReader::copyBuffers(AVFrame *f, uint8_t *rgb, uint8_t *yuv) {
   // images is going to be written to output buffers, no alignment (align = 1)
   if (yuv) {
-    av_image_fill_arrays(yuv_frame->data, yuv_frame->linesize, yuv, AV_PIX_FMT_YUV420P, width, height, 1);
-    int ret = sws_scale(yuv_sws_ctx_, (const uint8_t **)f->data, f->linesize, 0, f->height, yuv_frame->data, yuv_frame->linesize);
+    av_image_fill_arrays(sws_frame->data, sws_frame->linesize, yuv, AV_PIX_FMT_YUV420P, width, height, 1);
+    int ret = sws_scale(yuv_sws_ctx_, (const uint8_t **)f->data, f->linesize, 0, f->height, sws_frame->data, sws_frame->linesize);
     if (ret < 0) return false;
   }
 
-  av_image_fill_arrays(rgb_frame->data, rgb_frame->linesize, rgb, AV_PIX_FMT_BGR24, width, height, 1);
-  int ret = sws_scale(rgb_sws_ctx_, (const uint8_t **)f->data, f->linesize, 0, f->height, rgb_frame->data, rgb_frame->linesize);
+  av_image_fill_arrays(sws_frame->data, sws_frame->linesize, rgb, AV_PIX_FMT_BGR24, width, height, 1);
+  int ret = sws_scale(rgb_sws_ctx_, (const uint8_t **)f->data, f->linesize, 0, f->height, sws_frame->data, sws_frame->linesize);
   return ret >= 0;
 }

@@ -44,7 +44,7 @@ private:
   std::vector<Frame> frames_;
   AVPixelFormat sws_src_format = AV_PIX_FMT_YUV420P;
   SwsContext *rgb_sws_ctx_ = nullptr, *yuv_sws_ctx_ = nullptr;
-  std::unique_ptr<AVFrame, AVFrameDeleter>av_frame_, rgb_frame, yuv_frame, hw_frame;
+  std::unique_ptr<AVFrame, AVFrameDeleter>av_frame_, sws_frame, hw_frame;
   AVFormatContext *input_ctx = nullptr;
   AVCodecContext *decoder_ctx = nullptr;
   int key_frames_count_ = 0;
