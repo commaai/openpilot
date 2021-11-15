@@ -34,6 +34,8 @@ const double MILE_TO_KM = 1.609344;
 const double KM_TO_MILE = 1. / MILE_TO_KM;
 const double MS_TO_KPH = 3.6;
 const double MS_TO_MPH = MS_TO_KPH * KM_TO_MILE;
+const double KPH_TO_MS = 1. / MS_TO_KPH;
+const double MPH_TO_MS = 1. / MS_TO_MPH;
 const double METER_TO_MILE = KM_TO_MILE / 1000.0;
 const double METER_TO_FOOT = 3.28084;
 

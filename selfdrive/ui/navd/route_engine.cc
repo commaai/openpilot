@@ -353,29 +353,66 @@ void RouteEngine::sendRoute() {
   cereal::Event::Builder evt = msg.initEvent();
   cereal::NavRoute::Builder nav_route = evt.initNavRoute();
 
-  auto path = route.path();
-  auto coordinates = nav_route.initCoordinates(path.size());
-
   qWarning() << "Distance: " << route.distance();
   auto metadata = ((QGeoRouteMapbox *) &route)->metadata();
   QList<QVariantMap> annotations;
   const QByteArray &rawReply = metadata["osrm.reply-json"].toByteArray();
-  QJsonDocument document = QJsonDocument::fromJson(rawReply);
-  QJsonObject object = document.object();
-  QJsonArray osrmRoutes = object.value(QLatin1String("routes")).toArray();
-  QJsonValue osrmRoute = osrmRoutes.at(0); 
+  QJsonArray osrmRoutes = QJsonDocument::fromJson(rawReply).object().value(QLatin1String("routes")).toArray();
+  QList<float> maxSpeeds;
 
-  qWarning() << "Route: " << osrmRoute;
-  // for (auto &key : metadata.keys()) {
-  //   qWarning() << "Route metadata: " << key << metadata[key];
-  // }
+  for (const auto &r : osrmRoutes) {
+    if (!r.isObject())
+        continue;
+
+    auto routeObject = r.toObject();
+    auto distance = routeObject.value(QLatin1String("distance")).toDouble();
+    if (distance != route.distance()) {
+        qWarning() << "Skipping route. Distance mismatch" << distance << route.distance();
+        continue;
+    }
+
+    qWarning() << "Route: " << routeObject;
+
+    auto legs = routeObject.value(QLatin1String("legs")).toArray();
+    for (const auto &l : legs) {
+      auto leg = l.toObject();
+      auto annotation = leg.value(QLatin1String("annotation")).toObject();
+      auto maxspeed = annotation.value(QLatin1String("maxspeed")).toArray();
+      for (const auto &s : maxspeed) {
+        auto entry = s.toObject();
+        auto unknown = entry.value(QLatin1String("unknown")).toBool();
+        auto speed = entry.value(QLatin1String("speed")).toDouble();
+        auto unit = entry.value(QLatin1String("unit")).toString();
+        auto speedLimit =
+          unknown ? 0
+          : unit == QLatin1String("km/h") ? speed * KPH_TO_MS
+          : unit == QLatin1String("mph") ? speed * MPH_TO_MS
+          : 0;
+        maxSpeeds.append(speedLimit);
+      }
+    }
+  }
+
+  auto path = route.path();
+  qWarning() << "Max speeds: " << maxSpeeds;
+  qWarning() << "Path: " << path;
+
+  auto coordinates = nav_route.initCoordinates(path.size());
+  auto speedLimits = nav_route.initSpeedLimits(path.size());
 
   size_t i = 0;
-  for (auto const &c : route.path()) {
-    coordinates[i].setLatitude(c.latitude());
-    coordinates[i].setLongitude(c.longitude());
-    i++;
+  // Qt seems to create duplicate coordinates in the path when decoding the polyline, so the corresponding annotations don't match up
+  for (int pathIndex = 0; pathIndex < path.size(); pathIndex++) {
+    auto const &c = path.at(pathIndex);
+    if (pathIndex == 0 || c != path.at(pathIndex-1)) {
+      coordinates[i].setLatitude(c.latitude());
+      coordinates[i].setLongitude(c.longitude());
+      speedLimits.set(i, maxSpeeds.size() > i ? maxSpeeds.at(i) : maxSpeeds.last());
+      i++;
+    }
   }
+
+  qWarning() << "Route length: supposedly " << path.size() << "  |  actually " << i;
 
   pm->send("navRoute", msg);
 }
