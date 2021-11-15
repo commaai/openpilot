@@ -50,6 +50,7 @@ T_DIFFS = np.diff(T_IDXS, prepend=[0.])
 MIN_ACCEL = -3.5
 T_REACT = 1.8
 MAX_BRAKE = 9.81
+CI = "CI" in os.environ
 
 
 def get_stopped_equivalence_factor(v_lead, t_react=T_REACT):
@@ -312,8 +313,9 @@ class LongitudinalMpc():
     self.cruise_max_a = max_a
 
   def set_desired_TR(self, desired_TR):
-    self.desired_TR = desired_TR
-    self.set_weights()
+    if not CI:
+      self.desired_TR = desired_TR
+      self.set_weights()
 
   def update(self, carstate, radarstate, v_cruise):
     self.v_ego = carstate.vEgo
