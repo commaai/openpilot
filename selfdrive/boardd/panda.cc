@@ -441,7 +441,7 @@ bool Panda::can_receive(std::vector<can_frame>& out_vec) {
         can_frame canData;
         canData.busTime = 0;
         canData.address = (*(uint32_t*)&chunk[pos+1]) >> 3;
-        canData.src = (chunk[pos] >> 1) & 0x7;
+        canData.src = ((chunk[pos] >> 1) & 0x7) + bus_offset;
 
         bool rejected = chunk[pos+1] & 0x1;
         bool returned = (chunk[pos+1] >> 1) & 0x1;

@@ -1,4 +1,4 @@
-Version 0.8.11-GM-0.2.7 (2021-11-10)
+Version 0.8.11-GM-0.2.8 (2021-11-15)
 ========================
  * Chevy Bolt EV Support (And several others)
  * TEST of cross-flashed Bolt Brake controller
@@ -13,9 +13,11 @@ Version 0.8.11-GM-0.2.7 (2021-11-10)
  * TODO: Auto-detection of B-mode
  * TODO: Auto-detection of B-mode zero-point
 
-Version 0.8.11 (2021-XX-XX)
+Version 0.8.11 (2021-11-22)
 ========================
+ * Support for an external panda on the comma three
  * Navigation: Show more detailed instructions when approaching maneuver
+ * Fixed occasional steering faults on GM cars thanks to jyoung8607!
  * Nissan ECU firmware fingerprinting thanks to robin-reckmann, martinl and razem-io!
  * Cadillac Escalade ESV 2016 support thanks to Gibby!
  * Mazda CX-9 2021 support thanks to Jacar!
