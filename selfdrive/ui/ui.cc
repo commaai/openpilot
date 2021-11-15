@@ -105,6 +105,7 @@ static void update_sockets(UIState *s) {
 static void update_state(UIState *s) {
   SubMaster &sm = *(s->sm);
   UIScene &scene = s->scene;
+  s->running_time = 1e-9 * (sm["deviceState"].getLogMonoTime()  - sm["deviceState"].getDeviceState().getStartedMonoTime());
 
   // update engageability and DM icons at 2Hz
   if (sm.frame % (UI_FREQ / 2) == 0) {
@@ -301,7 +302,7 @@ void Device::updateBrightness(const UIState &s) {
   }
 
   if (brightness != last_brightness) {
-    std::thread{Hardware::set_brightness, brightness}.detach();
+    std::thread{Hardware::set_brightness, brightness, s.running_time}.detach();
   }
   last_brightness = brightness;
 }

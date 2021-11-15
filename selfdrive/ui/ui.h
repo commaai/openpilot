@@ -149,6 +149,8 @@ typedef struct UIState {
 
   float car_space_transform[6];
   bool wide_camera;
+  
+  float running_time;
 } UIState;
 
 
