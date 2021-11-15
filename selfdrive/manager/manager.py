@@ -18,7 +18,7 @@ from selfdrive.manager.process import ensure_running
 from selfdrive.manager.process_config import managed_processes
 from selfdrive.athena.registration import register, UNREGISTERED_DONGLE_ID
 from selfdrive.swaglog import cloudlog, add_file_handler
-from selfdrive.version import dirty, get_git_commit, version, origin, branch, commit, \
+from selfdrive.version import dirty, SA_dirty, get_git_commit, version, origin, branch, commit, \
                               terms_version, training_version, smiskol_remote, \
                               get_git_branch, get_git_remote
 
@@ -86,13 +86,13 @@ def manager_init():
   if not dirty:
     os.environ['CLEAN'] = '1'
 
-  cloudlog.bind_global(dongle_id=dongle_id, version=version, dirty=dirty,
+  cloudlog.bind_global(dongle_id=dongle_id, version=version, dirty=SA_dirty,
                        device=HARDWARE.get_device_type())
 
   if smiskol_remote and not (os.getenv("NOLOG") or os.getenv("NOCRASH") or PC):
     crash.init()
   crash.bind_user(id=dongle_id)
-  crash.bind_extra(dirty=dirty, origin=origin, branch=branch, commit=commit,
+  crash.bind_extra(dirty=SA_dirty, origin=origin, branch=branch, commit=commit,
                    device=HARDWARE.get_device_type())
 
 
