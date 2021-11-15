@@ -9,10 +9,6 @@ const std::string watchdog_fn_prefix = "/dev/shm/wd_";  // + <pid>
 bool watchdog_kick() {
   static std::string fn = watchdog_fn_prefix + std::to_string(getpid());
 
-  char str[64];
-  auto [ptr, ec] = std::to_chars(str, str + std::size(str), nanos_since_boot());
-  if (ec == std::errc()) {
-    return util::write_file(fn.c_str(), str, ptr - str, O_WRONLY | O_CREAT) > 0;
-  }
-  return false;
+  uint64_t ts = nanos_since_boot();
+  return util::write_file(fn.c_str(), &ts, sizeof(ts), O_WRONLY | O_CREAT) > 0;
 }
