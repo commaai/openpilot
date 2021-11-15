@@ -84,11 +84,11 @@ bool FrameReader::load(const std::string &url, AVHWDeviceType hw_device_type, st
 
   width = (decoder_ctx->width + 3) & ~3;
   height = decoder_ctx->height;
+
   if (hw_device_type != AV_HWDEVICE_TYPE_NONE) {
     if (!initHardwareDecoder(hw_device_type)) {
       return false;
     }
-    height = (decoder_ctx->height + 15) & ~15;
   }
 
   rgb_sws_ctx_ = sws_getContext(decoder_ctx->width, decoder_ctx->height, sws_src_format,
