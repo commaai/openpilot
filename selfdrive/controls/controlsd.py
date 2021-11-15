@@ -62,13 +62,14 @@ IGNORED_SAFETY_MODES = [SafetyModel.silent, SafetyModel.noOutput]
 
 
 def log_fingerprint(candidate, timeout=15):
-  try:
-    requests.get('https://sentry.io', timeout=timeout)
-    crash.init()
-    crash.capture_message("fingerprinted {}".format(candidate), level='info')
-    return
-  except:
-    pass
+  if "CI" not in os.environ:
+    try:
+      requests.get('https://sentry.io', timeout=timeout)
+      crash.init()
+      crash.capture_message("fingerprinted {}".format(candidate), level='info')
+      return
+    except:
+      pass
 
 
 class Controls:
