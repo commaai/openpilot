@@ -17,6 +17,13 @@ def capture_exception(*args, **kwargs) -> None:
   except Exception:
     cloudlog.exception("sentry exception")
 
+def capture_message(*args, **kwargs) -> None:
+  try:
+    sentry_sdk.capture_message(*args, **kwargs)
+    sentry_sdk.flush()  # https://github.com/getsentry/sentry-python/issues/291
+  except Exception:
+    cloudlog.exception("sentry exception")
+
 def bind_user(**kwargs) -> None:
   sentry_sdk.set_user(kwargs)
 
@@ -25,10 +32,7 @@ def bind_extra(**kwargs) -> None:
     sentry_sdk.set_tag(k, v)
 
 def init() -> None:
-  if smiskol_remote:  # CHANGE TO YOUR remote and sentry key to receive errors if you fork this fork
-    sentry_uri = 'https://a83947fe6772400bb220c3f0e4a6e63b@o237581.ingest.sentry.io/5252098'
-  else:
-    sentry_uri = 'https://30d4f5e7d35c4a0d84455c03c0e80706@o237581.ingest.sentry.io/5844043'  # stock
+  sentry_uri = 'https://30d4f5e7d35c4a0d84455c03c0e80706@o237581.ingest.sentry.io/5844043'
 
   sentry_sdk.init(sentry_uri, default_integrations=False,
                   integrations=[ThreadingIntegration(propagate_hub=True)], release=version)

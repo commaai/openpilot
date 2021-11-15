@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import os
 import math
+import requests
+import threading
 from numbers import Number
 
 from cereal import car, log
@@ -9,6 +11,7 @@ from common.realtime import sec_since_boot, config_realtime_process, Priority, R
 from common.profiler import Profiler
 from common.params import Params, put_nonblocking
 import cereal.messaging as messaging
+import selfdrive.crash as crash
 from selfdrive.config import Conversions as CV
 from selfdrive.swaglog import cloudlog
 from selfdrive.boardd.boardd import can_list_to_can_capnp
@@ -58,6 +61,16 @@ SafetyModel = car.CarParams.SafetyModel
 IGNORED_SAFETY_MODES = [SafetyModel.silent, SafetyModel.noOutput]
 
 
+def log_fingerprint(candidate, timeout=15):
+  try:
+    requests.get('https://sentry.io', timeout=timeout)
+    crash.init()
+    crash.capture_message("fingerprinted {}".format(candidate), level='info')
+    return
+  except:
+    pass
+
+
 class Controls:
   def __init__(self, sm=None, pm=None, can_sock=None):
     config_realtime_process(4 if TICI else 3, Priority.CTRL_HIGH)
@@ -104,7 +117,8 @@ class Controls:
     print("Waiting for CAN messages...")
     get_one_can(self.can_sock)
 
-    self.CI, self.CP = get_car(self.can_sock, self.pm.sock['sendcan'])
+    self.CI, self.CP, candidate = get_car(self.can_sock, self.pm.sock['sendcan'])
+    threading.Thread(target=log_fingerprint, args=[candidate]).start()
 
     # read params
     self.is_metric = params.get_bool("IsMetric")

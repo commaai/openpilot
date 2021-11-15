@@ -186,7 +186,7 @@ def get_car_params(msgs, fsm, can_sock, fingerprint):
     canmsgs = [msg for msg in msgs if msg.which() == 'can']
     for m in canmsgs[:300]:
       can.send(m.as_builder().to_bytes())
-    _, CP = get_car(can, sendcan)
+    _, CP, _ = get_car(can, sendcan)
   Params().put("CarParams", CP.to_bytes())
 
 def controlsd_rcv_callback(msg, CP, cfg, fsm):
