@@ -255,49 +255,49 @@ jobs:
     - name: Upload coverage to Codecov
       run: bash <(curl -s https://codecov.io/bash) -v -F unit_tests
 
-  process_replay:
-    name: process replay
-    runs-on: ubuntu-20.04
-    timeout-minutes: 50
-    steps:
-    - uses: actions/checkout@v2
-      with:
-        submodules: true
-    - name: Cache dependencies
-      id: dependency-cache
-      uses: actions/cache@v2
-      with:
-        path: /tmp/comma_download_cache
-        key: ${{ hashFiles('.github/workflows/selfdrive_tests.yaml', 'selfdrive/test/process_replay/test_processes.py') }}
-    - name: Cache scons
-      id: scons-cache
-      # TODO: Change the version to the released version when https://github.com/actions/cache/pull/489 (or 571) is merged.
-      uses: actions/cache@03e00da99d75a2204924908e1cca7902cafce66b
-      env:
-        CACHE_SKIP_SAVE: true
-      with:
-        path: /tmp/scons_cache
-        key: scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
-        restore-keys: |
-          scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
-          scons-
-    - name: Build Docker image
-      run: eval "$BUILD"
-    - name: Run replay
-      run: |
-        ${{ env.RUN }} "scons -j$(nproc) && \
-                        FILEREADER_CACHE=1 CI=1 coverage run selfdrive/test/process_replay/test_processes.py"
-    - name: Upload coverage to Codecov
-      run: bash <(curl -s https://codecov.io/bash) -v -F process_replay
-    - name: Print diff
-      if: always()
-      run: cat selfdrive/test/process_replay/diff.txt
-    - uses: actions/upload-artifact@v2
-      if: always()
-      continue-on-error: true
-      with:
-        name: process_replay_diff.txt
-        path: selfdrive/test/process_replay/diff.txt
+#  process_replay:
+#    name: process replay
+#    runs-on: ubuntu-20.04
+#    timeout-minutes: 50
+#    steps:
+#    - uses: actions/checkout@v2
+#      with:
+#        submodules: true
+#    - name: Cache dependencies
+#      id: dependency-cache
+#      uses: actions/cache@v2
+#      with:
+#        path: /tmp/comma_download_cache
+#        key: ${{ hashFiles('.github/workflows/selfdrive_tests.yaml', 'selfdrive/test/process_replay/test_processes.py') }}
+#    - name: Cache scons
+#      id: scons-cache
+#      # TODO: Change the version to the released version when https://github.com/actions/cache/pull/489 (or 571) is merged.
+#      uses: actions/cache@03e00da99d75a2204924908e1cca7902cafce66b
+#      env:
+#        CACHE_SKIP_SAVE: true
+#      with:
+#        path: /tmp/scons_cache
+#        key: scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
+#        restore-keys: |
+#          scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
+#          scons-
+#    - name: Build Docker image
+#      run: eval "$BUILD"
+#    - name: Run replay
+#      run: |
+#        ${{ env.RUN }} "scons -j$(nproc) && \
+#                        FILEREADER_CACHE=1 CI=1 coverage run selfdrive/test/process_replay/test_processes.py"
+#    - name: Upload coverage to Codecov
+#      run: bash <(curl -s https://codecov.io/bash) -v -F process_replay
+#    - name: Print diff
+#      if: always()
+#      run: cat selfdrive/test/process_replay/diff.txt
+#    - uses: actions/upload-artifact@v2
+#      if: always()
+#      continue-on-error: true
+#      with:
+#        name: process_replay_diff.txt
+#        path: selfdrive/test/process_replay/diff.txt
 
   #model_replay:
   #  name: model replay
