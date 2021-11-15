@@ -669,23 +669,26 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  if (pandas.size()) {
-    peripheral_panda = pandas[0];
+  if (pandas.size() == 0) {
+    // do_exit was set while not connected to a panda
+    return 0;
+  }
 
-    LOGW("connected to board");
+  peripheral_panda = pandas[0];
 
-    threads.emplace_back(panda_state_thread, &pm, pandas, getenv("STARTED") != nullptr);
-    threads.emplace_back(peripheral_control_thread, peripheral_panda);
-    threads.emplace_back(pigeon_thread, peripheral_panda);
+  LOGW("connected to board");
 
-    threads.emplace_back(can_send_thread, pandas, getenv("FAKESEND") != nullptr);
-    threads.emplace_back(can_recv_thread, pandas);
+  threads.emplace_back(panda_state_thread, &pm, pandas, getenv("STARTED") != nullptr);
+  threads.emplace_back(peripheral_control_thread, peripheral_panda);
+  threads.emplace_back(pigeon_thread, peripheral_panda);
 
-    for (auto &t : threads) t.join();
+  threads.emplace_back(can_send_thread, pandas, getenv("FAKESEND") != nullptr);
+  threads.emplace_back(can_recv_thread, pandas);
 
-    // we have exited, clean up pandas
-    for (const auto& panda : pandas){
-      delete panda;
-    }
+  for (auto &t : threads) t.join();
+
+  // we have exited, clean up pandas
+  for (const auto& panda : pandas){
+    delete panda;
   }
 }
