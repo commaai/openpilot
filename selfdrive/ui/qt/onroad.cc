@@ -18,16 +18,12 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   stacked_layout->setStackingMode(QStackedLayout::StackAll);
   main_layout->addLayout(stacked_layout);
 
-<<<<<<< HEAD
   QStackedLayout *road_view_layout = new QStackedLayout;
   road_view_layout->setStackingMode(QStackedLayout::StackAll);
-  nvg = new NvgWindow(VISION_STREAM_RGB_BACK, this);
+  nvg = new NvgWindow(VISION_STREAM_YUV_BACK, this);
   road_view_layout->addWidget(nvg);
   hud = new OnroadHud(this);
   road_view_layout->addWidget(hud);
-=======
-  nvg = new NvgWindow(VISION_STREAM_YUV_BACK, this);
->>>>>>> 1d2595009 (display yuv in opengl)
 
   QWidget * split_wrapper = new QWidget;
   split = new QHBoxLayout(split_wrapper);
