@@ -277,19 +277,12 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
   },
 
   EventName.dashcamMode: {
-    ET.PERMANENT: Alert(
-      "Dashcam Mode",
-      "",
-      AlertStatus.normal, AlertSize.small,
-      Priority.LOWEST, VisualAlert.none, AudibleAlert.none, .2),
+    ET.PERMANENT: NormalPermanentAlert("Dashcam Mode"),
   },
 
   EventName.invalidLkasSetting: {
-    ET.PERMANENT: Alert(
-      "Stock LKAS is turned on",
-      "Turn off stock LKAS to engage",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOWER, VisualAlert.none, AudibleAlert.none, .2),
+    ET.PERMANENT: NormalPermanentAlert("Stock LKAS is turned on",
+                                       "Turn off stock LKAS to engage"),
   },
 
   EventName.cruiseMismatch: {
@@ -300,23 +293,16 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
   # detects the use of a community feature it switches to dashcam mode
   # until these features are allowed using a toggle in settings.
   EventName.communityFeatureDisallowed: {
-    # LOW priority to overcome Cruise Error
-    ET.PERMANENT: Alert(
-      "openpilot Not Available",
-      "Enable Community Features in Settings to Engage",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOW, VisualAlert.none, AudibleAlert.none, .2),
+    ET.PERMANENT: NormalPermanentAlert("openpilot Not Available",
+                                       "Enable Community Features in Settings to Engage"),
   },
 
   # openpilot doesn't recognize the car. This switches openpilot into a
   # read-only mode. This can be solved by adding your fingerprint.
   # See https://github.com/commaai/openpilot/wiki/Fingerprinting for more information
   EventName.carUnrecognized: {
-    ET.PERMANENT: Alert(
-      "Dashcam Mode",
-      "Car Unrecognized",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOWEST, VisualAlert.none, AudibleAlert.none, .2),
+    ET.PERMANENT: NormalPermanentAlert("Dashcam Mode",
+                                       "Car Unrecognized"),
   },
 
   EventName.stockAeb: {
@@ -365,11 +351,6 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
   EventName.vehicleModelInvalid: {
     ET.NO_ENTRY: NoEntryAlert("Vehicle Parameter Identification Failed"),
     ET.SOFT_DISABLE: SoftDisableAlert("Vehicle Parameter Identification Failed"),
-    ET.WARNING: Alert(
-      "Vehicle Parameter Identification Failed",
-      "",
-      AlertStatus.normal, AlertSize.small,
-      Priority.LOWEST, VisualAlert.none, AudibleAlert.none, .1),
   },
 
   EventName.steerTempUnavailableSilent: {
