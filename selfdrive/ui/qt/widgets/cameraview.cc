@@ -28,9 +28,6 @@ out vec4 fragColor;
 uniform lowp sampler2D texture_y;  
 uniform lowp sampler2D texture_u;  
 uniform lowp sampler2D texture_v;   
-const highp mat3 yuv2rgb = mat3(1, 1, 1,
-                                0, -0.39465, 2.03211,
-                                1.13983, -0.58060, 0);
 void main() {  
   float y = texture2D(texture_y, vTexCoord).r;  
   float u = texture2D(texture_u, vTexCoord).r - 0.5;  
