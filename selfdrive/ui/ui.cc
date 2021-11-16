@@ -186,12 +186,8 @@ static void update_state(UIState *s) {
   scene.started = sm["deviceState"].getDeviceState().getStarted() && scene.ignition;
 }
 
-static void update_params(UIState *s) {
-  const uint64_t frame = s->sm->frame;
-  UIScene &scene = s->scene;
-  if (frame % (5*UI_FREQ) == 0) {
-    scene.is_metric = Params().getBool("IsMetric");
-  }
+void ui_update_params(UIState *s) {
+  s->scene.is_metric = Params().getBool("IsMetric");
 }
 
 static void update_status(UIState *s) {
@@ -240,7 +236,6 @@ QUIState::QUIState(QObject *parent) : QObject(parent) {
 }
 
 void QUIState::update() {
-  update_params(&ui_state);
   update_sockets(&ui_state);
   update_state(&ui_state);
   update_status(&ui_state);
