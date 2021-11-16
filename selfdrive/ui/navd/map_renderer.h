@@ -14,12 +14,12 @@
 #include "cereal/visionipc/visionipc_server.h"
 
 
-class SimpleMap : public QObject {
+class MapRenderer : public QObject {
   Q_OBJECT
 
 public:
-  SimpleMap(const QMapboxGLSettings &);
-  ~SimpleMap();
+  MapRenderer(const QMapboxGLSettings &);
+  ~MapRenderer();
 
 private:
   std::unique_ptr<QOpenGLContext> ctx;

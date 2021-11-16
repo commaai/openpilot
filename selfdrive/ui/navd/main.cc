@@ -7,7 +7,7 @@
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/maps/map_helpers.h"
 #include "selfdrive/ui/navd/route_engine.h"
-#include "selfdrive/ui/navd/simple_map.h"
+#include "selfdrive/ui/navd/map_renderer.h"
 #include "selfdrive/hardware/hw.h"
 
 const bool DRAW_MAP = true;
@@ -48,10 +48,10 @@ int main(int argc, char *argv[]) {
     settings.setCacheDatabaseMaximumSize(20 * 1024 * 1024);
     settings.setAccessToken(get_mapbox_token());
 
-    SimpleMap * m = new SimpleMap(settings);
+    MapRenderer * m = new MapRenderer(settings);
 
-    QObject::connect(route_engine, &RouteEngine::positionUpdated, m, &SimpleMap::updatePosition);
-    QObject::connect(route_engine, &RouteEngine::routeUpdated, m, &SimpleMap::updateRoute);
+    QObject::connect(route_engine, &RouteEngine::positionUpdated, m, &MapRenderer::updatePosition);
+    QObject::connect(route_engine, &RouteEngine::routeUpdated, m, &MapRenderer::updateRoute);
   }
 
   return app.exec();

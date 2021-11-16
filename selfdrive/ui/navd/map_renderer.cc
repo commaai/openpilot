@@ -1,4 +1,4 @@
-#include "selfdrive/ui/navd/simple_map.h"
+#include "selfdrive/ui/navd/map_renderer.h"
 
 #include <QDebug>
 
@@ -11,7 +11,7 @@ const int HEIGHT = 512;
 
 const int NUM_VIPC_BUFFERS = 4;
 
-SimpleMap::SimpleMap(const QMapboxGLSettings &settings) : m_settings(settings) {
+MapRenderer::MapRenderer(const QMapboxGLSettings &settings) : m_settings(settings) {
   QSurfaceFormat fmt;
   fmt.setRenderableType(QSurfaceFormat::OpenGLES);
 
@@ -53,7 +53,7 @@ SimpleMap::SimpleMap(const QMapboxGLSettings &settings) : m_settings(settings) {
   vipc_server->start_listener();
 }
 
-void SimpleMap::updatePosition(QMapbox::Coordinate position, float bearing) {
+void MapRenderer::updatePosition(QMapbox::Coordinate position, float bearing) {
   if (m_map.isNull()) {
     return;
   }
@@ -64,7 +64,7 @@ void SimpleMap::updatePosition(QMapbox::Coordinate position, float bearing) {
   update();
 }
 
-void SimpleMap::update() {
+void MapRenderer::update() {
   gl_functions->glClear(GL_COLOR_BUFFER_BIT);
   m_map->render();
 
@@ -84,7 +84,7 @@ void SimpleMap::update() {
   vipc_server->send(buf, &extra);
 }
 
-void SimpleMap::updateRoute(QList<QGeoCoordinate> coordinates) {
+void MapRenderer::updateRoute(QList<QGeoCoordinate> coordinates) {
   if (m_map.isNull()) return;
   initLayers();
 
@@ -97,7 +97,7 @@ void SimpleMap::updateRoute(QList<QGeoCoordinate> coordinates) {
   m_map->setLayoutProperty("navLayer", "visibility", "visible");
 }
 
-void SimpleMap::initLayers() {
+void MapRenderer::initLayers() {
   if (!m_map->layerExists("navLayer")) {
     QVariantMap nav;
     nav["id"] = "navLayer";
@@ -110,5 +110,5 @@ void SimpleMap::initLayers() {
   }
 }
 
-SimpleMap::~SimpleMap() {
+MapRenderer::~MapRenderer() {
 }
