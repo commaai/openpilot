@@ -31,7 +31,6 @@ const int header_h = 420;
 const int footer_h = 280;
 
 const int UI_FREQ = 20;   // Hz
-  
 typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
 
 // TODO: this is also hardcoded in common/transformations/camera.py
