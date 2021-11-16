@@ -190,4 +190,5 @@ void NvgWindow::paintGL() {
 void NvgWindow::showEvent(QShowEvent *event) {
   CameraViewWidget::showEvent(event);
   ui_update_params(&QUIState::ui_state);
+  prev_draw_t = millis_since_boot();
 }
