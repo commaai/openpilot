@@ -32,7 +32,7 @@ def wait_ready(lib, renderer):
     # The main qt app is not execed, so we need to periodically process events for e.g. network requests
     lib.map_renderer_process(renderer)
 
-    time.sleep(0.1)
+    time.sleep(0.01)
 
 
 def get_image(lib, renderer):
@@ -51,7 +51,6 @@ if __name__ == "__main__":
 
   ffi, lib = get_ffi()
   renderer = lib.map_renderer_init()
-
 
   POSITIONS = [
     (32.71569271952601, -117.16384270868463, 0), (32.71569271952601, -117.16384270868463, 45),  # San Diego
