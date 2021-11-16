@@ -158,8 +158,6 @@ Panda *usb_connect(std::string serial="", uint32_t index=0) {
     return nullptr;
   }
 
-  Params params = Params();
-
   if (getenv("BOARDD_LOOPBACK")) {
     panda->set_loopback(true);
   }
