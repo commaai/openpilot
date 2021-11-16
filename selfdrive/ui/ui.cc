@@ -12,7 +12,7 @@
 
 #define BACKLIGHT_DT 0.05
 #define BACKLIGHT_TS 10.00
-#define BACKLIGHT_OFFROAD 75
+#define BACKLIGHT_OFFROAD 50
 
 
 // Projects a point in car to space to the corresponding point in full frame
@@ -105,7 +105,7 @@ static void update_sockets(UIState *s) {
 static void update_state(UIState *s) {
   SubMaster &sm = *(s->sm);
   UIScene &scene = s->scene;
-  s->running_time = 1e-9 * (sm["deviceState"].getLogMonoTime()  - sm["deviceState"].getDeviceState().getStartedMonoTime());
+  s->running_time = 1e-9 * (nanos_since_boot() - sm["deviceState"].getDeviceState().getStartedMonoTime());
 
   // update engageability and DM icons at 2Hz
   if (sm.frame % (UI_FREQ / 2) == 0) {
@@ -279,29 +279,30 @@ void Device::setAwake(bool on, bool reset) {
 }
 
 void Device::updateBrightness(const UIState &s) {
-  // Scale to 0% to 100%
-  float clipped_brightness = 100.0 * s.scene.light_sensor;
+  float clipped_brightness = BACKLIGHT_OFFROAD;
+  if (s.scene.started) {
+    // Scale to 0% to 100%
+    float clipped_brightness = 100.0 * s.scene.light_sensor;
 
-  // CIE 1931 - https://www.photonstophotos.net/GeneralTopics/Exposure/Psychometric_Lightness_and_Gamma.htm
-  if (clipped_brightness <= 8) {
-    clipped_brightness = (clipped_brightness / 903.3);
-  } else {
-    clipped_brightness = std::pow((clipped_brightness + 16.0) / 116.0, 3.0);
-  }
+    // CIE 1931 - https://www.photonstophotos.net/GeneralTopics/Exposure/Psychometric_Lightness_and_Gamma.htm
+    if (clipped_brightness <= 8) {
+      clipped_brightness = (clipped_brightness / 903.3);
+    } else {
+      clipped_brightness = std::pow((clipped_brightness + 16.0) / 116.0, 3.0);
+    }
 
+    // Scale back to 10% to 100%
+    clipped_brightness = std::clamp(100.0f * clipped_brightness, 10.0f, 100.0f);
 
-  // Limit brightness if running for too long
-  float ui_running_hours = s.running_time / SECONDS_IN_HOUR;
-  float anti_burnin_max_percent = std::clamp(BRIGHTNESS_LIMIT_MAX - 
-                                             HOURLY_BRIGHTNESS_DECREASE * (ui_running_hours - MAX_BRIGHTNESS_HOURS),
-                                             BRIGHTNESS_LIMIT_MIN,
-                                             BRIGHTNESS_LIMIT_MAX);
-
-  // Scale back to 10% to 100%
-  clipped_brightness = std::clamp(100.0f * clipped_brightness, 10.0f, anti_burnin_max_percent);
-
-  if (!s.scene.started) {
-    clipped_brightness = BACKLIGHT_OFFROAD;
+    // Limit brightness if running for too long
+    if (Hardware::TICI()) {
+      const float MAX_BRIGHTNESS_HOURS = 4;
+      const float HOURLY_BRIGHTNESS_DECREASE = 5;
+      float ui_running_hours = s.running_time / (60*60);
+      float anti_burnin_max_percent = std::max(100.0f - HOURLY_BRIGHTNESS_DECREASE * (ui_running_hours - MAX_BRIGHTNESS_HOURS),
+                                               30.0f, 100.0f);
+      clipped_brightness = std::min(clipped_brightness, anti_burnin_max_percent);
+    }
   }
 
   int brightness = brightness_filter.update(clipped_brightness);
