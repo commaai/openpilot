@@ -114,6 +114,7 @@ private:
   MapETA* map_eta;
 
   void clearRoute();
+  uint64_t route_rcv_frame = 0;
 
 private slots:
   void timerUpdate();
