@@ -401,7 +401,6 @@ void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list) {
       for (int i = 0; i < pos; i += 64) {
         send.insert(send.begin() + i, counter);
         counter++;
-        pos++;
       }
       usb_bulk_write(3, (uint8_t*)send.data(), pos, 5);
     }
