@@ -677,7 +677,7 @@ int main(int argc, char *argv[]) {
   }
 
   // we have exited, clean up pandas
-  for (const auto &panda : pandas) {
+  for (Panda *panda : pandas) {
     delete panda;
   }
 }
