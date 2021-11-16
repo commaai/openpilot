@@ -230,6 +230,7 @@ class LongitudinalMpc():
   def set_weights_for_lead_policy(self):
     W = np.asfortranarray(np.diag([X_EGO_OBSTACLE_COST, X_EGO_COST, V_EGO_COST, A_EGO_COST, A_CHANGE_COST, J_EGO_COST]))
     for i in range(N):
+      W[4,4] = A_CHANGE_COST * np.interp(T_IDXS[i], [0.0, 1.0, 2.0], [1.0, 1.0, 0.0])
       self.solver.cost_set(i, 'W', W)
     # Setting the slice without the copy make the array not contiguous,
     # causing issues with the C interface.
@@ -366,7 +367,7 @@ class LongitudinalMpc():
     self.a_solution = self.x_sol[:,2]
     self.j_solution = self.u_sol[:,0]
 
-    self.prev_a = self.a_solution
+    self.prev_a = interp(T_IDXS + 0.05, T_IDXS, self.a_solution)
 
     t = sec_since_boot()
     if self.solution_status != 0:
