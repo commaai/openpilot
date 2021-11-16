@@ -348,12 +348,6 @@ class Controls:
       #if self.sm.rcv_frame['managerState'] and (not_running - IGNORE_PROCESSES):
       #  self.events.add(EventName.processNotRunning)
 
-      # Check for mismatch between openpilot and car's PCM
-      cruise_mismatch = CS.cruiseState.enabled and (not self.enabled or not self.CP.pcmCruise)
-      self.cruise_mismatch_counter = self.cruise_mismatch_counter + 1 if cruise_mismatch else 0
-      if self.cruise_mismatch_counter > int(1. / DT_CTRL):
-        self.events.add(EventName.cruiseMismatch)
-
     # Only allow engagement with brake pressed when stopped behind another stopped car
     speeds = self.sm['longitudinalPlan'].speeds
     if len(speeds) > 1:
