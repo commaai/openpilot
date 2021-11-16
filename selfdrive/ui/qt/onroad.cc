@@ -186,3 +186,8 @@ void NvgWindow::paintGL() {
   }
   prev_draw_t = cur_draw_t;
 }
+
+void NvgWindow::showEvent(QShowEvent *event) {
+  CameraViewWidget::showEvent(event);
+  ui_update_params(&QUIState::ui_state);
+}

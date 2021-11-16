@@ -186,6 +186,10 @@ static void update_state(UIState *s) {
   scene.started = sm["deviceState"].getDeviceState().getStarted() && scene.ignition;
 }
 
+void ui_update_params(UIState *s) {
+  s->scene.is_metric = Params().getBool("IsMetric");
+}
+
 static void update_status(UIState *s) {
   if (s->scene.started && s->sm->updated("controlsState")) {
     auto controls_state = (*s->sm)["controlsState"].getControlsState();
@@ -203,12 +207,10 @@ static void update_status(UIState *s) {
   static bool started_prev = false;
   if (s->scene.started != started_prev) {
     if (s->scene.started) {
-      Params params;
       s->status = STATUS_DISENGAGED;
       s->scene.started_frame = s->sm->frame;
-      s->scene.is_metric = params.getBool("IsMetric");
-      s->scene.end_to_end = params.getBool("EndToEndToggle");
-      s->wide_camera = Hardware::TICI() ? params.getBool("EnableWideCamera") : false;
+      s->scene.end_to_end = Params().getBool("EndToEndToggle");
+      s->wide_camera = Hardware::TICI() ? Params().getBool("EnableWideCamera") : false;
     }
     // Invisible until we receive a calibration message.
     s->scene.world_objects_visible = false;
