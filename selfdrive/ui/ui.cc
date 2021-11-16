@@ -295,7 +295,7 @@ void Device::updateBrightness(const UIState &s) {
   float anti_burnin_max_percent = std::clamp(BRIGHTNESS_LIMIT_MAX - 
                                              HOURLY_BRIGHTNESS_DECREASE * (ui_running_hours - MAX_BRIGHTNESS_HOURS),
                                              BRIGHTNESS_LIMIT_MIN,
-                                             BRIGHTNESS_LIMIT_MIN);
+                                             BRIGHTNESS_LIMIT_MAX);
 
   // Scale back to 10% to 100%
   clipped_brightness = std::clamp(100.0f * clipped_brightness, 10.0f, anti_burnin_max_percent);
