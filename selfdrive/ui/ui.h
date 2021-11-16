@@ -32,12 +32,6 @@ const int footer_h = 280;
 
 const int UI_FREQ = 20;   // Hz
   
-const float SECONDS_IN_HOUR = 60*60;
-const float HOURLY_BRIGHTNESS_DECREASE = 5;
-const float BRIGHTNESS_LIMIT_MIN = 30;
-const float BRIGHTNESS_LIMIT_MAX = 100;
-const float MAX_BRIGHTNESS_HOURS = 4;
-
 typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
 
 // TODO: this is also hardcoded in common/transformations/camera.py
