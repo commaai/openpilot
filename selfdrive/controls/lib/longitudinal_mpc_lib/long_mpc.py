@@ -87,7 +87,8 @@ def gen_long_model():
   x_obstacle = SX.sym('x_obstacle')
   a_min = SX.sym('a_min')
   a_max = SX.sym('a_max')
-  model.p = vertcat(a_min, a_max, x_obstacle)
+  prev_a = SX.sym('prev_a')
+  model.p = vertcat(a_min, a_max, x_obstacle, prev_a)
 
   # dynamics model
   f_expl = vertcat(v_ego, a_ego, j_ego)
@@ -152,7 +153,7 @@ def gen_long_mpc_solver():
 
   x0 = np.zeros(X_DIM)
   ocp.constraints.x0 = x0
-  ocp.parameter_values = np.array([-1.2, 1.2, 0.0])
+  ocp.parameter_values = np.array([-1.2, 1.2, 0.0, 0.0])
 
   # We put all constraint cost weights to 0 and only set them at runtime
   cost_weights = np.zeros(CONSTR_DIM)
