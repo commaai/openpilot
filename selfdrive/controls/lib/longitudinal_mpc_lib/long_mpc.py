@@ -24,15 +24,17 @@ SOURCES = ['lead0', 'lead1', 'cruise']
 
 X_DIM = 3
 U_DIM = 1
-COST_E_DIM = 4
+PARAM_DIM= 4
+COST_E_DIM = 5
 COST_DIM = COST_E_DIM + 1
 CONSTR_DIM = 4
 
 X_EGO_OBSTACLE_COST = 3.
-V_EGO_COST = 0.
 X_EGO_COST = 0.
+V_EGO_COST = 0.
 A_EGO_COST = 0.
 J_EGO_COST = 10.
+A_CHANGE_COST = 5.
 DANGER_ZONE_COST = 100.
 CRASH_DISTANCE = .5
 LIMIT_COST = 1e6
@@ -118,6 +120,7 @@ def gen_long_mpc_solver():
 
   a_min, a_max = ocp.model.p[0], ocp.model.p[1]
   x_obstacle = ocp.model.p[2]
+  prev_a = ocp.model.p[3]
 
   ocp.cost.yref = np.zeros((COST_DIM, ))
   ocp.cost.yref_e = np.zeros((COST_E_DIM, ))
@@ -132,6 +135,7 @@ def gen_long_mpc_solver():
            x_ego,
            v_ego,
            a_ego,
+           a_ego - prev_a,
            j_ego]
   ocp.model.cost_y_expr = vertcat(*costs)
   ocp.model.cost_y_expr_e = vertcat(*costs[:-1])
@@ -198,6 +202,7 @@ class LongitudinalMpc():
     self.solver = AcadosOcpSolverFast('long', N, EXPORT_DIR)
     self.v_solution = [0.0 for i in range(N+1)]
     self.a_solution = [0.0 for i in range(N+1)]
+    self.prev_a = self.a_solution
     self.j_solution = [0.0 for i in range(N)]
     self.yref = np.zeros((N+1, COST_DIM))
     for i in range(N):
@@ -205,7 +210,7 @@ class LongitudinalMpc():
     self.solver.cost_set(N, "yref", self.yref[N][:COST_E_DIM])
     self.x_sol = np.zeros((N+1, X_DIM))
     self.u_sol = np.zeros((N,1))
-    self.params = np.zeros((N+1,3))
+    self.params = np.zeros((N+1, PARAM_DIM))
     for i in range(N+1):
       self.solver.set(i, 'x', np.zeros(X_DIM))
     self.last_cloudlog_t = 0
@@ -320,6 +325,7 @@ class LongitudinalMpc():
     x_obstacles = np.column_stack([lead_0_obstacle, lead_1_obstacle, cruise_obstacle])
     self.source = SOURCES[np.argmin(x_obstacles[0])]
     self.params[:,2] = np.min(x_obstacles, axis=1)
+    self.params[:,3] = self.prev_a
 
     self.run()
     if (np.any(lead_xv_0[:,0] - self.x_sol[:,0] < CRASH_DISTANCE) and
@@ -339,7 +345,8 @@ class LongitudinalMpc():
     self.accel_limit_arr[:,1] = 10.
     x_obstacle = 1e5*np.ones((N+1))
     self.params = np.concatenate([self.accel_limit_arr,
-                             x_obstacle[:,None]], axis=1)
+                             x_obstacle[:,None],
+                             self.prev_a], axis=1)
     self.run()
 
 
@@ -357,6 +364,8 @@ class LongitudinalMpc():
     self.v_solution = self.x_sol[:,1]
     self.a_solution = self.x_sol[:,2]
     self.j_solution = self.u_sol[:,0]
+
+    self.prev_a = self.a_solution
 
     t = sec_since_boot()
     if self.solution_status != 0:
