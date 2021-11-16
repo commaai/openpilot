@@ -135,7 +135,7 @@ extern "C" {
     settings.setApiBaseUrl(MAPS_HOST);
     settings.setAccessToken(get_mapbox_token());
 
-    return new MapRenderer(settings);
+    return new MapRenderer(settings, false);
   }
 
   void map_renderer_update_position(MapRenderer *inst, float lat, float lon, float bearing) {
