@@ -11,7 +11,7 @@ const int HEIGHT = 512;
 
 const int NUM_VIPC_BUFFERS = 4;
 
-MapRenderer::MapRenderer(const QMapboxGLSettings &settings) : m_settings(settings) {
+MapRenderer::MapRenderer(const QMapboxGLSettings &settings, bool enable_vipc) : m_settings(settings) {
   QSurfaceFormat fmt;
   fmt.setRenderableType(QSurfaceFormat::OpenGLES);
 
@@ -48,9 +48,11 @@ MapRenderer::MapRenderer(const QMapboxGLSettings &settings) : m_settings(setting
     }
   });
 
-  vipc_server.reset(new VisionIpcServer("navd"));
-  vipc_server->create_buffers(VisionStreamType::VISION_STREAM_RGB_MAP, NUM_VIPC_BUFFERS, true, WIDTH, HEIGHT);
-  vipc_server->start_listener();
+  if (enable_vipc) {
+    vipc_server.reset(new VisionIpcServer("navd"));
+    vipc_server->create_buffers(VisionStreamType::VISION_STREAM_RGB_MAP, NUM_VIPC_BUFFERS, true, WIDTH, HEIGHT);
+    vipc_server->start_listener();
+  }
 }
 
 void MapRenderer::updatePosition(QMapbox::Coordinate position, float bearing) {
@@ -68,20 +70,20 @@ void MapRenderer::update() {
   gl_functions->glClear(GL_COLOR_BUFFER_BIT);
   m_map->render();
 
-  QImage cap = fbo->toImage().convertToFormat(QImage::Format_RGB888, Qt::AutoColor);
+  if (vipc_server) {
+    QImage cap = fbo->toImage().convertToFormat(QImage::Format_RGB888, Qt::AutoColor);
+    uint64_t ts = nanos_since_boot();
+    VisionBuf* buf = vipc_server->get_buffer(VisionStreamType::VISION_STREAM_RGB_MAP);
+    VisionIpcBufExtra extra = {
+      .frame_id = frame_id++,
+      .timestamp_sof = ts,
+      .timestamp_eof = ts,
+    };
 
-  uint64_t ts = nanos_since_boot();
-
-  VisionBuf* buf = vipc_server->get_buffer(VisionStreamType::VISION_STREAM_RGB_MAP);
-  VisionIpcBufExtra extra = {
-    .frame_id = frame_id++,
-    .timestamp_sof = ts,
-    .timestamp_eof = ts,
-  };
-
-  assert(cap.sizeInBytes() == buf->len);
-  memcpy(buf->addr, cap.bits(), buf->len);
-  vipc_server->send(buf, &extra);
+    assert(cap.sizeInBytes() == buf->len);
+    memcpy(buf->addr, cap.bits(), buf->len);
+    vipc_server->send(buf, &extra);
+  }
 }
 
 void MapRenderer::updateRoute(QList<QGeoCoordinate> coordinates) {

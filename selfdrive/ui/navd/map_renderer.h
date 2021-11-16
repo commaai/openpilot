@@ -18,7 +18,7 @@ class MapRenderer : public QObject {
   Q_OBJECT
 
 public:
-  MapRenderer(const QMapboxGLSettings &);
+  MapRenderer(const QMapboxGLSettings &, bool enable_vipc=true);
   ~MapRenderer();
 
 private:
