@@ -40,13 +40,5 @@
   "Offroad_StorageMissing": {
     "text": "Storage drive not mounted.",
     "severity": 1
-  },
-  "Offroad_CarUnrecognized": {
-    "text": "openpilot was unable to identify your car... TODO",
-    "severity": 0
-  },
-  "Offroad_NoFirmware": {
-    "text": "openpilot was unable to identify your car (no fw)... TODO",
-    "severity": 0
   }
 }
