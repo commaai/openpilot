@@ -282,7 +282,7 @@ void Device::updateBrightness(const UIState &s) {
   float clipped_brightness = BACKLIGHT_OFFROAD;
   if (s.scene.started) {
     // Scale to 0% to 100%
-    float clipped_brightness = 100.0 * s.scene.light_sensor;
+    clipped_brightness = 100.0 * s.scene.light_sensor;
 
     // CIE 1931 - https://www.photonstophotos.net/GeneralTopics/Exposure/Psychometric_Lightness_and_Gamma.htm
     if (clipped_brightness <= 8) {
@@ -299,8 +299,8 @@ void Device::updateBrightness(const UIState &s) {
       const float MAX_BRIGHTNESS_HOURS = 4;
       const float HOURLY_BRIGHTNESS_DECREASE = 5;
       float ui_running_hours = s.running_time / (60*60);
-      float anti_burnin_max_percent = std::max(100.0f - HOURLY_BRIGHTNESS_DECREASE * (ui_running_hours - MAX_BRIGHTNESS_HOURS),
-                                               30.0f, 100.0f);
+      float anti_burnin_max_percent = std::clamp(100.0f - HOURLY_BRIGHTNESS_DECREASE * (ui_running_hours - MAX_BRIGHTNESS_HOURS),
+                                                 30.0f, 100.0f);
       clipped_brightness = std::min(clipped_brightness, anti_burnin_max_percent);
     }
   }
