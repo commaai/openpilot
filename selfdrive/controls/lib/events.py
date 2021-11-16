@@ -171,10 +171,10 @@ class EngagementAlert(Alert):
 
 
 class NormalPermanentAlert(Alert):
-  def __init__(self, alert_text_1: str, alert_text_2: str = "", duration: float = 0.2):
+  def __init__(self, alert_text_1: str, alert_text_2: str = "", duration: float = 0.2, priority: Priority = Priority.LOWER):
     super().__init__(alert_text_1, alert_text_2,
                      AlertStatus.normal, AlertSize.mid if len(alert_text_2) else AlertSize.small,
-                     Priority.LOWER, VisualAlert.none, AudibleAlert.none, duration),
+                     priority, VisualAlert.none, AudibleAlert.none, duration),
 
 
 class StartupAlert(Alert):
@@ -277,7 +277,8 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
   },
 
   EventName.dashcamMode: {
-    ET.PERMANENT: NormalPermanentAlert("Dashcam Mode"),
+    ET.PERMANENT: NormalPermanentAlert("Dashcam Mode",
+                                       priority=Priority.LOWEST),
   },
 
   EventName.invalidLkasSetting: {
@@ -302,7 +303,8 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
   # See https://github.com/commaai/openpilot/wiki/Fingerprinting for more information
   EventName.carUnrecognized: {
     ET.PERMANENT: NormalPermanentAlert("Dashcam Mode",
-                                       "Car Unrecognized"),
+                                       "Car Unrecognized",
+                                       priority=Priority.LOWEST),
   },
 
   EventName.stockAeb: {
