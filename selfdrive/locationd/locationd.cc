@@ -254,6 +254,11 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
     return;
   }
 
+  // Sanity checks v2
+  if (log.getAccuracy() >= 2) {
+    return;
+  }
+
   if ((std::abs(log.getLatitude()) > 90) || (std::abs(log.getLongitude()) > 180) || (std::abs(log.getAltitude()) > ALTITUDE_SANITY_CHECK)) {
     return;
   }
@@ -277,7 +282,7 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
 
   VectorXd orientation_ecef = quat2euler(vector2quat(this->kf->get_x().segment<STATE_ECEF_ORIENTATION_LEN>(STATE_ECEF_ORIENTATION_START)));
   VectorXd orientation_ned = ned_euler_from_ecef({ ecef_pos(0), ecef_pos(1), ecef_pos(2) }, orientation_ecef);
-  VectorXd orientation_ned_gps = Vector3d(0.0, 0.0, DEG2RAD(log.getBearingDeg()));
+  VectorXd orientation_ned_gps = Vector3d(orientation_ned[0], orientation_ned[1], DEG2RAD(log.getBearingDeg()));
   VectorXd orientation_error = (orientation_ned - orientation_ned_gps).array() - M_PI;
   for (int i = 0; i < orientation_error.size(); i++) {
     orientation_error(i) = std::fmod(orientation_error(i), 2.0 * M_PI);
@@ -294,7 +299,7 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
     this->kf->predict_and_observe(current_time, OBSERVATION_ECEF_ORIENTATION_FROM_GPS, { initial_pose_ecef_quat });
   } else if (gps_est_error > 100.0) {
     LOGE("Locationd vs ubloxLocation position difference too large, kalman reset");
-    this->reset_kalman(NAN, initial_pose_ecef_quat, ecef_pos);
+    this->gps_reset_kalman(NAN, initial_pose_ecef_quat, ecef_pos);
   }
 
   this->kf->predict_and_observe(current_time, OBSERVATION_ECEF_POS, { ecef_pos }, { ecef_pos_R });
@@ -398,6 +403,30 @@ void Localizer::reset_kalman(double current_time, VectorXd init_orient, VectorXd
   init_x.head(3) = init_pos;
 
   this->kf->init_state(init_x, init_P, current_time);
+  this->last_reset_time = current_time;
+  this->reset_tracker += 1.0;
+}
+
+void Localizer::gps_reset_kalman(double current_time, VectorXd init_orient, VectorXd init_pos) {
+  IOFormat CommaInitFmt(StreamPrecision, DontAlignCols, ", ", ", ", "", "", " << ", ";");
+  MatrixXdr reset_P = this->kf->get_reset_P();
+  VectorXd current_x = this->kf->get_x();
+  MatrixXdr current_P = this->kf->get_P();
+
+  std::cout<<reset_P.diagonal().format(CommaInitFmt)<<"\n\n\n\n";
+  std::cout<<current_x.format(CommaInitFmt)<<"\n\n";
+  std::cout<<current_P.diagonal().format(CommaInitFmt)<<"\n\n\n\n";
+  
+  current_x.segment<4>(3) = init_orient;
+  current_x.head(3) = init_pos;
+  reset_P.block<16,16>(9,9).diagonal() = current_P.block<16,16>(9,9).diagonal();
+  // current_P.block<9,9>(0,0).diagonal() = reset_P.block<9,9>(0,0).diagonal();
+
+  std::cout<<current_x.format(CommaInitFmt)<<"\n\n";
+  std::cout<<reset_P.diagonal().format(CommaInitFmt)<<"\n\n\n\n";
+  
+  this->kf->init_state(current_x, reset_P, current_time);
+  // this->kf->init_state(current_x, current_P, current_time);
   this->last_reset_time = current_time;
   this->reset_tracker += 1.0;
 }
