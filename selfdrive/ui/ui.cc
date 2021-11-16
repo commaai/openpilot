@@ -289,8 +289,16 @@ void Device::updateBrightness(const UIState &s) {
     clipped_brightness = std::pow((clipped_brightness + 16.0) / 116.0, 3.0);
   }
 
+
+  // Limit brightness if running for too long
+  float ui_running_hours = s.running_time / SECONDS_IN_HOUR;
+  float anti_burnin_max_percent = std::clamp(BRIGHTNESS_LIMIT_MAX - 
+                                             HOURLY_BRIGHTNESS_DECREASE * (ui_running_hours - MAX_BRIGHTNESS_HOURS),
+                                             BRIGHTNESS_LIMIT_MIN,
+                                             BRIGHTNESS_LIMIT_MIN);
+
   // Scale back to 10% to 100%
-  clipped_brightness = std::clamp(100.0f * clipped_brightness, 10.0f, 100.0f);
+  clipped_brightness = std::clamp(100.0f * clipped_brightness, 10.0f, anti_burnin_max_percent);
 
   if (!s.scene.started) {
     clipped_brightness = BACKLIGHT_OFFROAD;
@@ -302,7 +310,7 @@ void Device::updateBrightness(const UIState &s) {
   }
 
   if (brightness != last_brightness) {
-    std::thread{Hardware::set_brightness, brightness, s.running_time}.detach();
+    std::thread{Hardware::set_brightness, brightness}.detach();
   }
   last_brightness = brightness;
 }

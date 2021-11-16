@@ -22,7 +22,7 @@ public:
 
   static void reboot() { std::system("reboot"); };
   static void poweroff() { std::system("LD_LIBRARY_PATH= svc power shutdown"); };
-  static void set_brightness(int percent, float ui_running_time) {
+  static void set_brightness(int percent) {
     std::ofstream brightness_control("/sys/class/leds/lcd-backlight/brightness");
     if (brightness_control.is_open()) {
       brightness_control << (int)(percent * (255/100.)) << "\n";
