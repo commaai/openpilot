@@ -1,5 +1,6 @@
 #include "selfdrive/ui/navd/map_renderer.h"
 
+#include <QApplication>
 #include <QDebug>
 
 #include "selfdrive/ui/qt/maps/map_helpers.h"
@@ -42,12 +43,6 @@ MapRenderer::MapRenderer(const QMapboxGLSettings &settings, bool enable_vipc) : 
   m_map->setFramebufferObject(fbo->handle(), fbo->size());
   gl_functions->glViewport(0, 0, WIDTH, HEIGHT);
 
-  QObject::connect(m_map.data(), &QMapboxGL::mapChanged, [=](QMapboxGL::MapChange change) {
-    if (change == QMapboxGL::MapChange::MapChangeDidFinishLoadingMap) {
-      loaded_once = true;
-    }
-  });
-
   if (enable_vipc) {
     vipc_server.reset(new VisionIpcServer("navd"));
     vipc_server->create_buffers(VisionStreamType::VISION_STREAM_RGB_MAP, NUM_VIPC_BUFFERS, true, WIDTH, HEIGHT);
@@ -60,10 +55,13 @@ void MapRenderer::updatePosition(QMapbox::Coordinate position, float bearing) {
     return;
   }
 
-  loaded_once = loaded_once || m_map->isFullyLoaded();
   m_map->setCoordinate(position);
   m_map->setBearing(bearing);
   update();
+}
+
+bool MapRenderer::loaded() {
+  return m_map->isFullyLoaded();
 }
 
 void MapRenderer::update() {
@@ -84,6 +82,14 @@ void MapRenderer::update() {
     memcpy(buf->addr, cap.bits(), buf->len);
     vipc_server->send(buf, &extra);
   }
+}
+
+uint8_t* MapRenderer::getImage() {
+  QImage cap = fbo->toImage().convertToFormat(QImage::Format_RGB888, Qt::AutoColor);
+  uint8_t* buf = new uint8_t[cap.sizeInBytes()];
+  memcpy(buf, cap.bits(), cap.sizeInBytes());
+
+  return buf;
 }
 
 void MapRenderer::updateRoute(QList<QGeoCoordinate> coordinates) {
@@ -113,4 +119,47 @@ void MapRenderer::initLayers() {
 }
 
 MapRenderer::~MapRenderer() {
+}
+
+extern "C" {
+  MapRenderer* map_renderer_init() {
+    char *argv[] = {
+      (char*)"navd",
+      nullptr
+    };
+    int argc = 0;
+    QApplication *app = new QApplication(argc, argv);
+    assert(app);
+
+    QMapboxGLSettings settings;
+    settings.setApiBaseUrl(MAPS_HOST);
+    settings.setAccessToken(get_mapbox_token());
+
+    return new MapRenderer(settings);
+  }
+
+  void map_renderer_update_position(MapRenderer *inst, float lat, float lon, float bearing) {
+    inst->updatePosition({lat, lon}, bearing);
+    QApplication::processEvents();
+  }
+
+  void map_renderer_update(MapRenderer *inst) {
+    inst->update();
+  }
+
+  void map_renderer_process(MapRenderer *inst) {
+    QApplication::processEvents();
+  }
+
+  bool map_renderer_loaded(MapRenderer *inst) {
+    return inst->loaded();
+  }
+
+  uint8_t * map_renderer_get_image(MapRenderer *inst) {
+    return inst->getImage();
+  }
+
+  void map_renderer_free_image(MapRenderer *inst, uint8_t * buf) {
+    delete[] buf;
+  }
 }

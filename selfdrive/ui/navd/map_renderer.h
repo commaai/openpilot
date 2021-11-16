@@ -19,7 +19,11 @@ class MapRenderer : public QObject {
 
 public:
   MapRenderer(const QMapboxGLSettings &, bool enable_vipc=true);
+  uint8_t* getImage();
+  void update();
+  bool loaded();
   ~MapRenderer();
+
 
 private:
   std::unique_ptr<QOpenGLContext> ctx;
@@ -33,9 +37,7 @@ private:
   QScopedPointer<QMapboxGL> m_map;
 
   void initLayers();
-  void update();
 
-  bool loaded_once = false;
   uint32_t frame_id = 0;
 
 public slots:
