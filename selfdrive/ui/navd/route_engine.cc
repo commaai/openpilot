@@ -10,7 +10,7 @@
 
 const qreal REROUTE_DISTANCE = 25;
 const float MANEUVER_TRANSITION_THRESHOLD = 10;
-const float UPDATE_FREQ = 20.0;  // Hz
+const float UPDATE_FREQ = 2.0;  // Hz
 
 static float get_time_typical(const QGeoRouteSegment &segment) {
   auto maneuver = segment.maneuver();
@@ -92,7 +92,6 @@ static void parse_banner(cereal::NavInstruction::Builder &instruction, const QMa
       }
     }
   }
-
 }
 
 RouteEngine::RouteEngine() {
@@ -100,9 +99,13 @@ RouteEngine::RouteEngine() {
   pm = new PubMaster({"navInstruction", "navRoute"});
 
   // Timers
-  timer = new QTimer(this);
-  QObject::connect(timer, SIGNAL(timeout()), this, SLOT(timerUpdate()));
-  timer->start(1000 * 1 / UPDATE_FREQ);
+  route_timer = new QTimer(this);
+  QObject::connect(route_timer, SIGNAL(timeout()), this, SLOT(routeUpdate()));
+  route_timer->start(1000 * 1 / UPDATE_FREQ);
+
+  msg_timer = new QTimer(this);
+  QObject::connect(msg_timer, SIGNAL(timeout()), this, SLOT(msgUpdate()));
+  msg_timer->start(50);
 
   // Build routing engine
   QVariantMap parameters;
@@ -124,7 +127,7 @@ RouteEngine::RouteEngine() {
   }
 }
 
-void RouteEngine::timerUpdate() {
+void RouteEngine::msgUpdate() {
   sm->update(0);
   if (!sm->updated("liveLocationKalman")) {
     return;
@@ -155,7 +158,9 @@ void RouteEngine::timerUpdate() {
     last_position = QMapbox::Coordinate(pos.getValue()[0], pos.getValue()[1]);
     emit positionUpdated(*last_position, *last_bearing);
   }
+}
 
+void RouteEngine::routeUpdate() {
   recomputeRoute();
 
   MessageBuilder msg;
