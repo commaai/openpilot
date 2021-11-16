@@ -408,25 +408,15 @@ void Localizer::reset_kalman(double current_time, VectorXd init_orient, VectorXd
 }
 
 void Localizer::gps_reset_kalman(double current_time, VectorXd init_orient, VectorXd init_pos) {
-  IOFormat CommaInitFmt(StreamPrecision, DontAlignCols, ", ", ", ", "", "", " << ", ";");
   MatrixXdr reset_P = this->kf->get_reset_P();
   VectorXd current_x = this->kf->get_x();
   MatrixXdr current_P = this->kf->get_P();
 
-  std::cout<<reset_P.diagonal().format(CommaInitFmt)<<"\n\n\n\n";
-  std::cout<<current_x.format(CommaInitFmt)<<"\n\n";
-  std::cout<<current_P.diagonal().format(CommaInitFmt)<<"\n\n\n\n";
-  
   current_x.segment<4>(3) = init_orient;
   current_x.head(3) = init_pos;
   reset_P.block<16,16>(9,9).diagonal() = current_P.block<16,16>(9,9).diagonal();
-  // current_P.block<9,9>(0,0).diagonal() = reset_P.block<9,9>(0,0).diagonal();
 
-  std::cout<<current_x.format(CommaInitFmt)<<"\n\n";
-  std::cout<<reset_P.diagonal().format(CommaInitFmt)<<"\n\n\n\n";
-  
   this->kf->init_state(current_x, reset_P, current_time);
-  // this->kf->init_state(current_x, current_P, current_time);
   this->last_reset_time = current_time;
   this->reset_tracker += 1.0;
 }
