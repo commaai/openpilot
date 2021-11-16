@@ -42,6 +42,7 @@ public:
   bool localizer_valid = false;
 
   // Route recompute
+  bool active = false;
   int recompute_backoff = 0;
   int recompute_countdown = 0;
   void calculateRoute(QMapbox::Coordinate destination);

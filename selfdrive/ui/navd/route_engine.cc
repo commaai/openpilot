@@ -128,10 +128,12 @@ RouteEngine::RouteEngine() {
 }
 
 void RouteEngine::msgUpdate() {
-  sm->update(0);
+  sm->update(1000);
   if (!sm->updated("liveLocationKalman")) {
+    active = false;
     return;
   }
+
 
   if (sm->updated("managerState")) {
     for (auto const &p : (*sm)["managerState"].getManagerState().getProcesses()) {
@@ -158,9 +160,15 @@ void RouteEngine::msgUpdate() {
     last_position = QMapbox::Coordinate(pos.getValue()[0], pos.getValue()[1]);
     emit positionUpdated(*last_position, *last_bearing);
   }
+
+  active = true;
 }
 
 void RouteEngine::routeUpdate() {
+  if (!active) {
+    return;
+  }
+
   recomputeRoute();
 
   MessageBuilder msg;
@@ -267,6 +275,10 @@ bool RouteEngine::shouldRecompute() {
 }
 
 void RouteEngine::recomputeRoute() {
+  if (!last_position) {
+    return;
+  }
+
   auto new_destination = coordinate_from_param("NavDestination");
   if (!new_destination) {
     clearRoute();

@@ -10,7 +10,7 @@
 #include "selfdrive/ui/navd/map_renderer.h"
 #include "selfdrive/hardware/hw.h"
 
-const bool DRAW_MAP = true;
+const bool DRAW_MAP = getenv("DRAW_MAP") != nullptr;
 
 
 void sigHandler(int s) {
@@ -41,9 +41,9 @@ int main(int argc, char *argv[]) {
     QMapboxGLSettings settings;
 
     // TODO: Check if the cache is safe to access from two processes
-    // if (!Hardware::PC()) {
-    //   settings.setCacheDatabasePath("/data/mbgl-cache.db");
-    // }
+    if (!Hardware::PC()) {
+      settings.setCacheDatabasePath("/data/mbgl-cache-navd.db");
+    }
     settings.setApiBaseUrl(MAPS_HOST);
     settings.setCacheDatabaseMaximumSize(20 * 1024 * 1024);
     settings.setAccessToken(get_mapbox_token());
