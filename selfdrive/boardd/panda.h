@@ -44,6 +44,16 @@ struct __attribute__((packed)) health_t {
   uint8_t heartbeat_lost;
 };
 
+struct __attribute__((packed)) can_header {
+  uint8_t reserved : 1;
+  uint8_t bus : 3;
+  uint8_t data_len_code : 4;
+  uint8_t rejected : 1;
+  uint8_t returned : 1;
+  uint8_t extended : 1;
+  uint32_t addr : 29;
+};
+
 struct can_frame {
 	long address;
 	std::string dat;

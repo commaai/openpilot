@@ -447,12 +447,14 @@ bool Panda::can_receive(std::vector<can_frame>& out_vec) {
       uint8_t pckt_len = CANPACKET_HEAD_SIZE + data_len;
       if (pckt_len <= (chunk_len - pos)) {
         can_frame canData;
+        can_header header;
+        memcpy(&header, &chunk[pos], 5);
         canData.busTime = 0;
-        canData.address = (*(uint32_t*)&chunk[pos+1]) >> 3;
-        canData.src = ((chunk[pos] >> 1) & 0x7) + bus_offset;
+        canData.address = header.addr;
+        canData.src = header.bus + bus_offset;
 
-        bool rejected = chunk[pos+1] & 0x1;
-        bool returned = (chunk[pos+1] >> 1) & 0x1;
+        bool rejected = header.rejected;
+        bool returned = header.returned;
         if (rejected) { canData.src += CANPACKET_REJECTED; }
         if (returned) { canData.src += CANPACKET_RETURNED; }
         canData.dat.assign((char*)&chunk[pos+5], data_len);
