@@ -22,7 +22,7 @@ const float MIN_PITCH = 0;
 const float MAP_SCALE = 2;
 
 MapWindow::MapWindow(const QMapboxGLSettings &settings) :
-  m_settings(settings), velocity_filter(0, 10, 0.1) {
+  m_settings(settings), velocity_filter(0, 10, 0.05) {
   sm = new SubMaster({"liveLocationKalman", "navInstruction", "navRoute"});
 
   // Connect now, so any navRoutes sent while the map is initializing are not dropped
@@ -30,7 +30,7 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) :
 
   timer = new QTimer(this);
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(timerUpdate()));
-  timer->start(100);
+  timer->start(50);
 
   // Instructions
   map_instructions = new MapInstructions(this);
