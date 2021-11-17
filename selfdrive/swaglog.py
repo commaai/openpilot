@@ -104,16 +104,19 @@ def add_file_handler(log):
 
 
 cloudlog = log = SwagLogger()
+log.setLevel(logging.DEBUG)
+
+
+outhandler = logging.StreamHandler()
 
 print_level = os.environ.get('LOGPRINT', 'warning')
 if print_level == 'debug':
-  log.setLevel(logging.DEBUG)
+  outhandler.setLevel(logging.DEBUG)
 elif print_level == 'info':
-  log.setLevel(logging.INFO)
+  outhandler.setLevel(logging.INFO)
 elif print_level == 'warning':
-  log.setLevel(logging.WARNING)
+  outhandler.setLevel(logging.WARNING)
 
-outhandler = logging.StreamHandler()
 log.addHandler(outhandler)
 # logs are sent through IPC before writing to disk to prevent disk I/O blocking
 log.addHandler(UnixDomainSocketHandler(SwagFormatter(log)))
