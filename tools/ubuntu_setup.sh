@@ -102,12 +102,14 @@ if [ -f "/etc/os-release" ]; then
     "ubuntu 20.04")
       install_ubuntu_lts_requirements
       ;;
-    "linuxmint 20.2")
-      install_ubuntu_lts_requirements
-      ;;
     *)
       echo "$ID $VERSION_ID is unsupported. This setup script is written for Ubuntu 20.04."
-      exit 1
+      read -p "Would you like to attempt installation anyway? " -n 1 -r
+      echo ""
+      if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        exit 1
+      fi
+      install_ubuntu_lts_requirements
   esac
 else
   echo "No /etc/os-release in the system"

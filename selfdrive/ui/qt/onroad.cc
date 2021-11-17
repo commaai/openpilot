@@ -42,10 +42,12 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 void OnroadWindow::updateState(const UIState &s) {
   QColor bgColor = bg_colors[s.status];
   Alert alert = Alert::get(*(s.sm), s.scene.started_frame);
-  if (alert.type == "controlsUnresponsive") {
-    bgColor = bg_colors[STATUS_ALERT];
+  if (s.sm->updated("controlsState") || !alert.equal({})) {
+    if (alert.type == "controlsUnresponsive") {
+      bgColor = bg_colors[STATUS_ALERT];
+    }
+    alerts->updateAlert(alert, bgColor);
   }
-  alerts->updateAlert(alert, bgColor);
   if (bg != bgColor) {
     // repaint border
     bg = bgColor;
@@ -183,4 +185,10 @@ void NvgWindow::paintGL() {
     LOGW("slow frame time: %.2f", dt);
   }
   prev_draw_t = cur_draw_t;
+}
+
+void NvgWindow::showEvent(QShowEvent *event) {
+  CameraViewWidget::showEvent(event);
+  ui_update_params(&QUIState::ui_state);
+  prev_draw_t = millis_since_boot();
 }

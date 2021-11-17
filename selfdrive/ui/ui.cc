@@ -12,7 +12,7 @@
 
 #define BACKLIGHT_DT 0.05
 #define BACKLIGHT_TS 10.00
-#define BACKLIGHT_OFFROAD 75
+#define BACKLIGHT_OFFROAD 50
 
 
 // Projects a point in car to space to the corresponding point in full frame
@@ -105,6 +105,7 @@ static void update_sockets(UIState *s) {
 static void update_state(UIState *s) {
   SubMaster &sm = *(s->sm);
   UIScene &scene = s->scene;
+  s->running_time = 1e-9 * (nanos_since_boot() - sm["deviceState"].getDeviceState().getStartedMonoTime());
 
   // update engageability and DM icons at 2Hz
   if (sm.frame % (UI_FREQ / 2) == 0) {
@@ -185,12 +186,8 @@ static void update_state(UIState *s) {
   scene.started = sm["deviceState"].getDeviceState().getStarted() && scene.ignition;
 }
 
-static void update_params(UIState *s) {
-  const uint64_t frame = s->sm->frame;
-  UIScene &scene = s->scene;
-  if (frame % (5*UI_FREQ) == 0) {
-    scene.is_metric = Params().getBool("IsMetric");
-  }
+void ui_update_params(UIState *s) {
+  s->scene.is_metric = Params().getBool("IsMetric");
 }
 
 static void update_status(UIState *s) {
@@ -239,7 +236,6 @@ QUIState::QUIState(QObject *parent) : QObject(parent) {
 }
 
 void QUIState::update() {
-  update_params(&ui_state);
   update_sockets(&ui_state);
   update_state(&ui_state);
   update_status(&ui_state);
@@ -278,21 +274,30 @@ void Device::setAwake(bool on, bool reset) {
 }
 
 void Device::updateBrightness(const UIState &s) {
-  // Scale to 0% to 100%
-  float clipped_brightness = 100.0 * s.scene.light_sensor;
+  float clipped_brightness = BACKLIGHT_OFFROAD;
+  if (s.scene.started) {
+    // Scale to 0% to 100%
+    clipped_brightness = 100.0 * s.scene.light_sensor;
 
-  // CIE 1931 - https://www.photonstophotos.net/GeneralTopics/Exposure/Psychometric_Lightness_and_Gamma.htm
-  if (clipped_brightness <= 8) {
-    clipped_brightness = (clipped_brightness / 903.3);
-  } else {
-    clipped_brightness = std::pow((clipped_brightness + 16.0) / 116.0, 3.0);
-  }
+    // CIE 1931 - https://www.photonstophotos.net/GeneralTopics/Exposure/Psychometric_Lightness_and_Gamma.htm
+    if (clipped_brightness <= 8) {
+      clipped_brightness = (clipped_brightness / 903.3);
+    } else {
+      clipped_brightness = std::pow((clipped_brightness + 16.0) / 116.0, 3.0);
+    }
 
-  // Scale back to 10% to 100%
-  clipped_brightness = std::clamp(100.0f * clipped_brightness, 10.0f, 100.0f);
+    // Scale back to 10% to 100%
+    clipped_brightness = std::clamp(100.0f * clipped_brightness, 10.0f, 100.0f);
 
-  if (!s.scene.started) {
-    clipped_brightness = BACKLIGHT_OFFROAD;
+    // Limit brightness if running for too long
+    if (Hardware::TICI()) {
+      const float MAX_BRIGHTNESS_HOURS = 4;
+      const float HOURLY_BRIGHTNESS_DECREASE = 5;
+      float ui_running_hours = s.running_time / (60*60);
+      float anti_burnin_max_percent = std::clamp(100.0f - HOURLY_BRIGHTNESS_DECREASE * (ui_running_hours - MAX_BRIGHTNESS_HOURS),
+                                                 30.0f, 100.0f);
+      clipped_brightness = std::min(clipped_brightness, anti_burnin_max_percent);
+    }
   }
 
   int brightness = brightness_filter.update(clipped_brightness);
