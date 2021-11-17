@@ -9,6 +9,7 @@ struct PandaTest : public Panda {
 };
 
 void PandaTest::test_can_packets() {
+
 }
 
 TEST_CASE("send/recv can packets") {
