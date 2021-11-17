@@ -411,62 +411,41 @@ void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list) {
 bool Panda::can_receive(std::vector<can_frame>& out_vec) {
   uint8_t data[RECV_SIZE];
   int recv = usb_bulk_read(0x81, (uint8_t*)data, RECV_SIZE);
-
   // Not sure if this can happen
-  if (recv < 0) recv = 0;
-
+  if (recv <= 0) return true;
   // TODO: Might change from full to overloaded? if > some threshold that is lower than RECV_SIZE, let's say 80-90%
   if (recv == RECV_SIZE) {
     LOGW("Receive buffer full");
   }
 
-  if (!comms_healthy) {
-    return false;
+  if (!comms_healthy) return false;
+
+  std::vector<uint8_t> can_data;
+  can_data.reserve(RECV_SIZE);
+  for (int i = 0, counter = 0; i < recv; i += 64, counter++) {
+    if (counter != data[i]) {
+      LOGE("CAN: MALFORMED USB RECV PACKET");
+      return true;
+    }
+    can_data.insert(can_data.end(), &data[i + 1], &data[i + 64]);
   }
 
   out_vec.reserve(out_vec.size() + (recv / CANPACKET_HEAD_SIZE));
+  for (int pos = 0, pckt_len = 0; pos < can_data.size(); pos += pckt_len) {
+    const uint8_t data_len = dlc_to_len[(can_data[pos] >> 4)];
+    pckt_len = CANPACKET_HEAD_SIZE + data_len;
 
-  static uint8_t tail[72];
-  uint8_t tail_size = 0;
-  uint8_t counter = 0;
-  for (int i = 0; i < recv; i += 64) {
-    if (counter != data[i]) {
-      LOGE("CAN: MALFORMED USB RECV PACKET");
-      break;
-    }
-    counter++;
-    uint8_t chunk_len = ((recv - i) > 64) ? 63 : (recv - i - 1); // as 1 is always reserved for counter
-    uint8_t chunk[72];
-    memcpy(chunk, tail, tail_size);
-    memcpy(&chunk[tail_size], &data[i+1], chunk_len);
-    chunk_len += tail_size;
-    tail_size = 0;
-    uint8_t pos = 0;
-    while (pos < chunk_len) {
-      uint8_t data_len = dlc_to_len[(chunk[pos] >> 4)];
-      uint8_t pckt_len = CANPACKET_HEAD_SIZE + data_len;
-      if (pckt_len <= (chunk_len - pos)) {
-        can_frame canData;
-        canData.busTime = 0;
-        canData.address = (*(uint32_t*)&chunk[pos+1]) >> 3;
-        canData.src = ((chunk[pos] >> 1) & 0x7) + bus_offset;
+    can_frame &can = out_vec.emplace_back();
+    can.busTime = 0;
+    can.address = (*(uint32_t *)&can_data[pos + 1]) >> 3;
 
-        bool rejected = chunk[pos+1] & 0x1;
-        bool returned = (chunk[pos+1] >> 1) & 0x1;
-        if (rejected) { canData.src += CANPACKET_REJECTED; }
-        if (returned) { canData.src += CANPACKET_RETURNED; }
-        canData.dat.assign((char*)&chunk[pos+5], data_len);
+    can.src = ((can_data[pos] >> 1) & 0x7) + bus_offset;
+    bool rejected = can_data[pos + 1] & 0x1;
+    bool returned = !rejected && ((can_data[pos + 1] >> 1) & 0x1);
+    if (rejected) can.src += CANPACKET_REJECTED;
+    if (returned) can.src += CANPACKET_RETURNED;
 
-        pos += pckt_len;
-
-        // add to vector
-        out_vec.push_back(canData);
-      } else {
-        tail_size = (chunk_len - pos);
-        memcpy(tail, &chunk[pos], tail_size);
-        break;
-      }
-    }
+    can.dat.assign((char *)&can_data[pos + 5], data_len);
   }
   return true;
 }
