@@ -430,8 +430,6 @@ bool Panda::can_receive(std::vector<can_frame>& out_vec) {
     return false;
   }
 
-  out_vec.reserve(out_vec.size() + (recv / CANPACKET_HEAD_SIZE));
-
   static uint8_t tail[CANPACKET_MAX_SIZE];
   uint8_t tail_size = 0;
   uint8_t counter = 0;
