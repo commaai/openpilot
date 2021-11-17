@@ -1,3 +1,6 @@
+Version 0.8.12 (202X-XX-XX)
+========================
+
 Version 0.8.11 (2021-11-22)
 ========================
  * Support for an external panda on the comma three
