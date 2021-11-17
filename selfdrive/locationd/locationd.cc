@@ -254,11 +254,6 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
     return;
   }
 
-  // Sanity checks v2
-  if (log.getAccuracy() >= 2) {
-    return;
-  }
-
   if ((std::abs(log.getLatitude()) > 90) || (std::abs(log.getLongitude()) > 180) || (std::abs(log.getAltitude()) > ALTITUDE_SANITY_CHECK)) {
     return;
   }
@@ -299,7 +294,7 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
     this->kf->predict_and_observe(current_time, OBSERVATION_ECEF_ORIENTATION_FROM_GPS, { initial_pose_ecef_quat });
   } else if (gps_est_error > 100.0) {
     LOGE("Locationd vs ubloxLocation position difference too large, kalman reset");
-    this->gps_reset_kalman(NAN, initial_pose_ecef_quat, ecef_pos);
+    this->gps_reset_kalman(NAN, initial_pose_ecef_quat, ecef_pos, ecef_vel, ecef_pos_R, ecef_vel_R);
   }
 
   this->kf->predict_and_observe(current_time, OBSERVATION_ECEF_POS, { ecef_pos }, { ecef_pos_R });
@@ -407,15 +402,19 @@ void Localizer::reset_kalman(double current_time, VectorXd init_orient, VectorXd
   this->reset_tracker += 1.0;
 }
 
-void Localizer::gps_reset_kalman(double current_time, VectorXd init_orient, VectorXd init_pos) {
-  MatrixXdr reset_P = this->kf->get_reset_P();
+void Localizer::gps_reset_kalman(double current_time, VectorXd init_orient, VectorXd init_pos, VectorXd init_vel, MatrixXdr init_pos_R, MatrixXdr init_vel_R) {
   VectorXd current_x = this->kf->get_x();
   MatrixXdr current_P = this->kf->get_P();
+  MatrixXdr reset_P = this->kf->get_reset_P();
 
   current_x.segment<4>(3) = init_orient;
+  current_x.segment<3>(7) = init_vel;
   current_x.head(3) = init_pos;
-  reset_P.block<16,16>(9,9).diagonal() = current_P.block<16,16>(9,9).diagonal();
 
+  reset_P.block<3,3>(0,0).diagonal() = init_pos_R.diagonal();
+  reset_P.block<3,3>(6,6).diagonal() = init_vel_R.diagonal();
+  reset_P.block<16,16>(9,9).diagonal() = current_P.block<16,16>(9,9).diagonal();
+  
   this->kf->init_state(current_x, reset_P, current_time);
   this->last_reset_time = current_time;
   this->reset_tracker += 1.0;

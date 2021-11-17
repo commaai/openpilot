@@ -28,8 +28,7 @@ public:
 
   void reset_kalman(double current_time = NAN);
   void reset_kalman(double current_time, Eigen::VectorXd init_orient, Eigen::VectorXd init_pos);
-  void gps_reset_kalman(double current_time, Eigen::VectorXd init_orient, Eigen::VectorXd init_pos);
-  void gps_reset_kalman2(double current_time, Eigen::VectorXd init_orient, Eigen::VectorXd init_pos);
+  void gps_reset_kalman(double current_time, Eigen::VectorXd init_orient, Eigen::VectorXd init_pos, Eigen::VectorXd init_vel, MatrixXdr init_pos_R, MatrixXdr init_vel_R);
   void finite_check(double current_time = NAN);
   void time_check(double current_time = NAN);
   void update_reset_tracker();
