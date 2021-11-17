@@ -12,7 +12,7 @@ def get_url(route_name, segment_num, log_type="rlog"):
   return BASE_URL + "%s/%s/%s.%s" % (route_name.replace("|", "/"), segment_num, log_type, ext)
 
 def upload_file(path, name):
-  from azure.storage.blob import BlockBlobService
+  from azure.storage.blob import BlockBlobService  # pylint: disable=import-error
 
   sas_token = None
   if os.path.isfile(TOKEN_PATH):
