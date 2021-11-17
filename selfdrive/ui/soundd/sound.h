@@ -15,7 +15,7 @@ const std::tuple<AudibleAlert, QString, int> sound_list[] = {
   {AudibleAlert::PROMPT_REPEAT, "prompt.wav", QSoundEffect::Infinite},
 
   {AudibleAlert::WARNING_SOFT, "warning_soft.wav", QSoundEffect::Infinite},
-  {AudibleAlert::WARNING_IMMEDIATE, "warning_immediate.wav", QSoundEffect::Infinite},
+  {AudibleAlert::WARNING_IMMEDIATE, "warning_immediate.wav", 10},
   {AudibleAlert::WARNING_DISTRACTED, "warning_distracted.wav", QSoundEffect::Infinite},
 };
 
