@@ -384,11 +384,12 @@ void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list) {
       assert(can_data.size() <= (hw_type == cereal::PandaState::PandaType::RED_PANDA) ? 64 : 8);
       assert(can_data.size() == dlc_to_len[data_len_code]);
 
-      *(uint32_t*)&send[pos+1] = (cmsg.getAddress() << 3);
-      if (cmsg.getAddress() >= 0x800) {
-        *(uint32_t*)&send[pos+1] |= (1 << 2);
-      }
-      send[pos] = data_len_code << 4 | ((bus - bus_offset) << 1);
+      can_header header;
+      header.addr = cmsg.getAddress();
+      header.extended = (cmsg.getAddress() >= 0x800) ? 1 : 0;
+      header.data_len_code = data_len_code;
+      header.bus = bus - bus_offset;
+      memcpy(&send[pos], &header, 5);
       memcpy(&send[pos+5], can_data.begin(), can_data.size());
 
       pos += CANPACKET_HEAD_SIZE + dlc_to_len[data_len_code];
@@ -396,7 +397,7 @@ void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list) {
     }
 
     if (pos > 0) { // Helps not to spam with ZLP
-      // insert counter
+      // Counter needs to be inserted every 64 bytes (first byte of 64 bytes USB packet)
       uint8_t counter = 0;
       for (int i = 0; i < pos; i += 64) {
         send.insert(send.begin() + i, counter);
@@ -430,6 +431,7 @@ bool Panda::can_receive(std::vector<can_frame>& out_vec) {
   uint8_t tail_size = 0;
   uint8_t counter = 0;
   for (int i = 0; i < recv; i += 64) {
+    // Check for counter every 64 bytes (length of USB packet)
     if (counter != data[i]) {
       LOGE("CAN: MALFORMED USB RECV PACKET");
       break;
@@ -464,6 +466,7 @@ bool Panda::can_receive(std::vector<can_frame>& out_vec) {
         // add to vector
         out_vec.push_back(canData);
       } else {
+        // Keep partial CAN packet until next USB packet
         tail_size = (chunk_len - pos);
         memcpy(tail, &chunk[pos], tail_size);
         break;
