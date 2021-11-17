@@ -245,7 +245,9 @@ void QUIState::update() {
     emit offroadTransition(!ui_state.scene.started);
   }
 
-  watchdog_kick();
+  if (ui_state.sm->frame % UI_FREQ == 0) {
+    watchdog_kick();
+  }
   emit uiUpdate(ui_state);
 }
 
