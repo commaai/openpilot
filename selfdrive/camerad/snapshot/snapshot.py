@@ -101,16 +101,6 @@ def snapshot():
     managed_processes['camerad'].stop()
     params.put_bool("IsTakingSnapshot", False)
     set_offroad_alert("Offroad_IsTakingSnapshot", False)
-  managed_processes['camerad'].start()
-  frame = "wideRoadCameraState" if TICI else "roadCameraState"
-  front_frame = "driverCameraState" if front_camera_allowed else None
-  focus_perc_threshold = 0. if TICI else 10 / 12.
-
-  rear, front = get_snapshots(frame, front_frame, focus_perc_threshold)
-  managed_processes['camerad'].stop()
-
-  params.put_bool("IsTakingSnapshot", False)
-  set_offroad_alert("Offroad_IsTakingSnapshot", False)
 
   if not front_camera_allowed:
     front = None
