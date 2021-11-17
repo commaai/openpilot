@@ -45,16 +45,12 @@ static int get_path_length_idx(const cereal::ModelDataV2::XYZTData::Reader &line
 }
 
 static void update_leads(UIState *s, const cereal::ModelDataV2::Reader &model) {
-  const float v_ego = (*s->sm)["carState"].getCarState().getVEgo();
-  auto lead_one_radar = (*s->sm)["radarState"].getRadarState().getLeadOne();
   auto leads = model.getLeadsV3();
   auto model_position = model.getPosition();
   for (int i = 0; i < 2; ++i) {
     if (leads[i].getProb() > 0.5) {
       float z = model_position.getZ()[get_path_length_idx(model_position, leads[i].getX()[0])];
       calib_frame_to_full_frame(s, leads[i].getX()[0], leads[i].getY()[0], z + 1.22, &s->scene.lead_vertices[i]);
-    } else if (i == 0 && v_ego < 4. && lead_one_radar.getStatus()) {
-      calib_frame_to_full_frame(s, lead_one_radar.getDRel(), lead_one_radar.getYRel(), 1.22, &s->scene.lead_vertices[i]);
     }
   }
 }
@@ -229,7 +225,7 @@ static void update_status(UIState *s) {
 
 QUIState::QUIState(QObject *parent) : QObject(parent) {
   ui_state.sm = std::make_unique<SubMaster, const std::initializer_list<const char *>>({
-    "modelV2", "radarState", "controlsState", "liveCalibration", "deviceState", "roadCameraState",
+    "modelV2", "controlsState", "liveCalibration", "deviceState", "roadCameraState",
     "pandaStates", "carParams", "driverMonitoringState", "sensorEvents", "carState", "liveLocationKalman",
   });
 
