@@ -4,13 +4,20 @@
 #include "selfdrive/boardd/panda.h"
 
 const int CHUNK_SIZE = 64;
+std::string TEST_DATA = [](int size) {
+  std::random_device rd;
+  std::independent_bits_engine<std::default_random_engine, CHAR_BIT, unsigned char> rbe(rd());
+  std::string bytes(size + 1, '\0');
+  std::generate(bytes.begin(), bytes.end(), std::ref(rbe));
+  return bytes;
+}(4);
+
 const unsigned char dlc_to_len[] = {0U, 1U, 2U, 3U, 4U, 5U, 6U, 7U, 8U, 12U, 16U, 20U, 24U, 32U, 48U, 64U};
-uint8_t dat[] = {1, 2, 3, 4, 5};
 
 struct PandaTest : public Panda {
   PandaTest(uint32_t bus_offset) : Panda(bus_offset) {}
   void test_can_send(capnp::List<cereal::CanData>::Reader can_data_list, int total_pakets_size);
-  void test_can_recv(capnp::List<cereal::CanData>::Reader can_data_list, int total_pakets_size);
+  void test_can_recv(capnp::List<cereal::CanData>::Reader can_data_list);
 };
 
 void PandaTest::test_can_send(capnp::List<cereal::CanData>::Reader can_data_list, int total_pakets_size) {
@@ -25,7 +32,6 @@ void PandaTest::test_can_send(capnp::List<cereal::CanData>::Reader can_data_list
       size_left -= (len + 1);
     }
   });
-
   REQUIRE(unpacked_data.size() == total_pakets_size);
 
   int cnt = 0;
@@ -35,20 +41,22 @@ void PandaTest::test_can_send(capnp::List<cereal::CanData>::Reader can_data_list
     pckt_len = CANPACKET_HEAD_SIZE + data_len;
 
     REQUIRE(*(uint32_t *)&unpacked_data[pos + 1] == cnt << 3);
-    REQUIRE(memcmp(dat, &unpacked_data[pos + 5], sizeof(dat)) == 0);
+    REQUIRE(memcmp(TEST_DATA.data(), &unpacked_data[pos + 5], TEST_DATA.size()) == 0);
     ++cnt;
   }
   REQUIRE(cnt == can_data_list.size());
 }
 
-void PandaTest::test_can_recv(capnp::List<cereal::CanData>::Reader can_data_list, int total_pakets_size) {
-  std::string unpacked_data;
-  std::vector<can_frame> out;
+void PandaTest::test_can_recv(capnp::List<cereal::CanData>::Reader can_data_list) {
+  std::vector<can_frame> frames;
   write_can_packets(can_data_list, [&](uint8_t *data, size_t size) {
-    read_can_packets(data, size, out);
+    read_can_packets(data, size, frames);
   });
-  REQUIRE(out.size() == can_data_list.size());
-  for (auto can : out) {
+
+  REQUIRE(frames.size() == can_data_list.size());
+  for (int i = 0; i < frames.size(); ++i) {
+    REQUIRE(frames[i].address == i);
+    REQUIRE(memcmp(TEST_DATA.data(), frames[i].dat.data(), TEST_DATA.size()) == 0);
   }
 }
 
@@ -63,8 +71,8 @@ TEST_CASE("test can") {
     can.setAddress(i);
     can.setBusTime(i);
     can.setSrc(1);
-    can.setDat(kj::ArrayPtr(dat, std::size(dat)));
-    total_pakets_size += CANPACKET_HEAD_SIZE + sizeof(dat);
+    can.setDat(kj::ArrayPtr((uint8_t*)TEST_DATA.data(), TEST_DATA.size()));
+    total_pakets_size += CANPACKET_HEAD_SIZE + TEST_DATA.size();
   }
 
   PandaTest test(0);
@@ -73,8 +81,8 @@ TEST_CASE("test can") {
     test.test_can_send(can_list.asReader(), total_pakets_size);
   }
 
-  SECTION("recv_can") {
-      INFO("read " << can_list_size << " packets");
-      test.test_can_recv(can_list.asReader(), total_pakets_size);
+  SECTION("can_receive") {
+    INFO("read " << can_list_size << " packets");
+    test.test_can_recv(can_list.asReader());
   }
 }
