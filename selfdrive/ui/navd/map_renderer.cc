@@ -68,20 +68,26 @@ void MapRenderer::update() {
   gl_functions->glClear(GL_COLOR_BUFFER_BIT);
   m_map->render();
 
-  if (vipc_server) {
-    QImage cap = fbo->toImage().convertToFormat(QImage::Format_RGB888, Qt::AutoColor);
-    uint64_t ts = nanos_since_boot();
-    VisionBuf* buf = vipc_server->get_buffer(VisionStreamType::VISION_STREAM_RGB_MAP);
-    VisionIpcBufExtra extra = {
-      .frame_id = frame_id++,
-      .timestamp_sof = ts,
-      .timestamp_eof = ts,
-    };
+  sendVipc();
+}
 
-    assert(cap.sizeInBytes() == buf->len);
-    memcpy(buf->addr, cap.bits(), buf->len);
-    vipc_server->send(buf, &extra);
+void MapRenderer::sendVipc() {
+  if (!vipc_server || !loaded()) {
+    return;
   }
+
+  QImage cap = fbo->toImage().convertToFormat(QImage::Format_RGB888, Qt::AutoColor);
+  uint64_t ts = nanos_since_boot();
+  VisionBuf* buf = vipc_server->get_buffer(VisionStreamType::VISION_STREAM_RGB_MAP);
+  VisionIpcBufExtra extra = {
+    .frame_id = frame_id++,
+    .timestamp_sof = ts,
+    .timestamp_eof = ts,
+  };
+
+  assert(cap.sizeInBytes() == buf->len);
+  memcpy(buf->addr, cap.bits(), buf->len);
+  vipc_server->send(buf, &extra);
 }
 
 uint8_t* MapRenderer::getImage() {

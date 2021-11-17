@@ -32,6 +32,7 @@ private:
   std::unique_ptr<QOpenGLFramebufferObject> fbo;
 
   std::unique_ptr<VisionIpcServer> vipc_server;
+  void sendVipc();
 
   QMapboxGLSettings m_settings;
   QScopedPointer<QMapboxGL> m_map;
