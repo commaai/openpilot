@@ -364,47 +364,30 @@ uint8_t Panda::len_to_dlc(uint8_t len) {
 }
 
 void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list) {
-  send.resize(72 * can_data_list.size()); // TODO: need to include 1 byte for each usb 64bytes frame
-
-  int msg_count = 0;
-  while (msg_count < can_data_list.size()) {
-    uint32_t pos = 0;
-    while (pos < 256) {
-      if (msg_count == can_data_list.size()) { break; }
-      auto cmsg = can_data_list[msg_count];
-
-      // check if the message is intended for this panda
-      uint8_t bus = cmsg.getSrc();
-      if (bus < bus_offset || bus >= (bus_offset + PANDA_BUS_CNT)) {
-        msg_count++;
-        continue;
-      }
-      auto can_data = cmsg.getDat();
-      uint8_t data_len_code = len_to_dlc(can_data.size());
-      assert(can_data.size() <= (hw_type == cereal::PandaState::PandaType::RED_PANDA) ? 64 : 8);
-      assert(can_data.size() == dlc_to_len[data_len_code]);
-
-      *(uint32_t*)&send[pos+1] = (cmsg.getAddress() << 3);
-      if (cmsg.getAddress() >= 0x800) {
-        *(uint32_t*)&send[pos+1] |= (1 << 2);
-      }
-      send[pos] = data_len_code << 4 | ((bus - bus_offset) << 1);
-      memcpy(&send[pos+5], can_data.begin(), can_data.size());
-
-      pos += CANPACKET_HEAD_SIZE + dlc_to_len[data_len_code];
-      msg_count++;
+  for (auto cmsg : can_data_list) {
+    // check if the message is intended for this panda
+    uint8_t bus = cmsg.getSrc();
+    if (bus < bus_offset || bus >= (bus_offset + PANDA_BUS_CNT)) {
+      continue;
     }
 
-    if (pos > 0) { // Helps not to spam with ZLP
-      // insert counter
-      uint8_t counter = 0;
-      for (int i = 0; i < pos; i += 64) {
-        send.insert(send.begin() + i, counter);
-        counter++;
-        pos++;
-      }
-      usb_bulk_write(3, (uint8_t*)send.data(), pos, 5);
+    capnp::Data::Reader can_data = cmsg.getDat();
+    uint8_t data_len_code = len_to_dlc(can_data.size());
+    assert(can_data.size() <= (hw_type == cereal::PandaState::PandaType::RED_PANDA) ? 64 : 8);
+    assert(can_data.size() == dlc_to_len[data_len_code]);
+    uint8_t len = data_len_code << 4 | ((bus - bus_offset) << 1);
+    uint32_t address = (cmsg.getAddress() << 3);
+    if (cmsg.getAddress() >= 0x800) address |= (1 << 2);
+
+    send.append(&len, sizeof(len)).append((uint8_t *)&address, sizeof(address)).append(can_data.begin(), can_data.size());
+    if (send.size() >= 256) {
+      usb_bulk_write(3, send.data(), send.size(), 5);
+      send.clear();
     }
+  }
+  if (!send.empty()) {
+    usb_bulk_write(3, send.data(), send.size(), 5);
+    send.clear();
   }
 }
 
