@@ -24,8 +24,8 @@ from selfdrive.version import dirty, get_git_commit, version, origin, branch, co
 
 sys.path.append(os.path.join(BASEDIR, "pyextra"))
 
-def manager_init():
 
+def manager_init():
   # update system time from panda
   set_time(cloudlog)
 
@@ -105,11 +105,11 @@ def manager_cleanup():
   for p in managed_processes.values():
     p.stop()
 
-  cloudlog.info("everything is dead")
+  cloudlog.warning("everything is dead")
 
 
 def manager_thread():
-  cloudlog.info("manager start")
+  cloudlog.warning("manager start")
   cloudlog.info({"environ": os.environ})
 
   # save boot log
@@ -149,9 +149,10 @@ def manager_thread():
 
     started_prev = started
 
-    running_list = ["%s%s\u001b[0m" % ("\u001b[32m" if p.proc.is_alive() else "\u001b[31m", p.name)
-                    for p in managed_processes.values() if p.proc]
-    cloudlog.debug(' '.join(running_list))
+    running = ' '.join(["%s%s\u001b[0m" % ("\u001b[32m" if p.proc.is_alive() else "\u001b[31m", p.name)
+                       for p in managed_processes.values() if p.proc])
+    print(running)
+    cloudlog.debug(running)
 
     # send managerState
     msg = messaging.new_message('managerState')
