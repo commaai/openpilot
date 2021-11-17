@@ -364,6 +364,7 @@ uint8_t Panda::len_to_dlc(uint8_t len) {
 }
 
 void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list) {
+  uint8_t counter = 0;
   for (auto cmsg : can_data_list) {
     // check if the message is intended for this panda
     uint8_t bus = cmsg.getSrc();
@@ -379,10 +380,15 @@ void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list) {
     uint32_t address = (cmsg.getAddress() << 3);
     if (cmsg.getAddress() >= 0x800) address |= (1 << 2);
 
-    send.append(&len, sizeof(len)).append((uint8_t *)&address, sizeof(address)).append(can_data.begin(), can_data.size());
+    send.append(&counter, sizeof(counter))
+        .append(&len, sizeof(len))
+        .append((uint8_t *)&address, sizeof(address))
+        .append(can_data.begin(), can_data.size());
+    counter++;
     if (send.size() >= 256) {
       usb_bulk_write(3, send.data(), send.size(), 5);
       send.clear();
+      counter = 0;
     }
   }
   if (!send.empty()) {
