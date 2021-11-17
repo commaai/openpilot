@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import sys
 import subprocess
-from azure.storage.blob import BlockBlobService
+from azure.storage.blob import BlockBlobService  # pylint: disable=import-error
 
 from selfdrive.test.test_routes import routes as test_car_models_routes
 from selfdrive.test.process_replay.test_processes import original_segments as replay_segments
