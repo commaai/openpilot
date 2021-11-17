@@ -364,7 +364,7 @@ uint8_t Panda::len_to_dlc(uint8_t len) {
 }
 
 void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list) {
-  if send.size() < (can_data_list.size() * CANPACKET_MAX_SIZE) {
+  if (send.size() < (can_data_list.size() * CANPACKET_MAX_SIZE)) {
     send.resize(can_data_list.size() * CANPACKET_MAX_SIZE);
   }
 
