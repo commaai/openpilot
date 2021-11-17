@@ -302,12 +302,10 @@ void ui_resize(UIState *s, int width, int height) {
 
   // Apply transformation such that video pixel coordinates match video
   // 1) Put (0, 0) in the middle of the video
-  nvgTranslate(s->vg, width / 2, height / 2 + y_offset);
   // 2) Apply same scaling as video
-  nvgScale(s->vg, zoom, zoom);
   // 3) Put (0, 0) in top left corner of video
-  nvgTranslate(s->vg, -intrinsic_matrix.v[2], -intrinsic_matrix.v[5]);
-
-  nvgCurrentTransform(s->vg, s->car_space_transform);
-  nvgResetTransform(s->vg);
+  s->car_space_transform.reset();
+  s->car_space_transform.translate(width / 2, height / 2 + y_offset)
+      .scale(zoom, zoom)
+      .translate(-intrinsic_matrix.v[2], -intrinsic_matrix.v[5]);
 }
