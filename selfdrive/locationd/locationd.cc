@@ -277,7 +277,7 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
 
   VectorXd orientation_ecef = quat2euler(vector2quat(this->kf->get_x().segment<STATE_ECEF_ORIENTATION_LEN>(STATE_ECEF_ORIENTATION_START)));
   VectorXd orientation_ned = ned_euler_from_ecef({ ecef_pos(0), ecef_pos(1), ecef_pos(2) }, orientation_ecef);
-  VectorXd orientation_ned_gps = Vector3d(orientation_ned[0], orientation_ned[1], DEG2RAD(log.getBearingDeg()));
+  VectorXd orientation_ned_gps = Vector3d(0, 0, DEG2RAD(log.getBearingDeg()));
   VectorXd orientation_error = (orientation_ned - orientation_ned_gps).array() - M_PI;
   for (int i = 0; i < orientation_error.size(); i++) {
     orientation_error(i) = std::fmod(orientation_error(i), 2.0 * M_PI);
@@ -290,7 +290,7 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
 
   if (ecef_vel.norm() > 5.0 && orientation_error.norm() > 1.0) {
     LOGE("Locationd vs ubloxLocation orientation difference too large, kalman reset");
-    this->reset_kalman(NAN, initial_pose_ecef_quat, ecef_pos);
+    this->gps_reset_kalman(NAN, initial_pose_ecef_quat, ecef_pos, ecef_vel, ecef_pos_R, ecef_vel_R);
     this->kf->predict_and_observe(current_time, OBSERVATION_ECEF_ORIENTATION_FROM_GPS, { initial_pose_ecef_quat });
   } else if (gps_est_error > 100.0) {
     LOGE("Locationd vs ubloxLocation position difference too large, kalman reset");
