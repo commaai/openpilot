@@ -76,7 +76,6 @@ class Controls:
     self.sm = sm
     if self.sm is None:
       ignore = ['driverCameraState', 'managerState'] if SIMULATION else None
-      ignore = ['radarState','longitudinalPlan','lateralPlan'] # JJS More silverado debugging - these aren't working right...
       self.sm = messaging.SubMaster(['deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'liveCalibration',
                                      'driverMonitoringState', 'longitudinalPlan', 'lateralPlan', 'liveLocationKalman',
                                      'managerState', 'liveParameters', 'radarState'] + self.camera_packets + joystick_packet,
@@ -273,13 +272,14 @@ class Controls:
       self.events.add(EventName.radarFault)
     elif not self.sm.valid["pandaStates"]:
       self.events.add(EventName.usbError)
-    elif not self.sm.all_alive_and_valid():
-      self.events.add(EventName.commIssue)
-      if not self.logged_comm_issue:
-        invalid = [s for s, valid in self.sm.valid.items() if not valid]
-        not_alive = [s for s, alive in self.sm.alive.items() if not alive]
-        cloudlog.event("commIssue", invalid=invalid, not_alive=not_alive)
-        self.logged_comm_issue = True
+    # TODO: JJS - Silverado is throwing this on engage. Shock and awe campaign to stop it...  
+    # elif not self.sm.all_alive_and_valid():
+    #   self.events.add(EventName.commIssue)
+    #   if not self.logged_comm_issue:
+    #     invalid = [s for s, valid in self.sm.valid.items() if not valid]
+    #     not_alive = [s for s, alive in self.sm.alive.items() if not alive]
+    #     cloudlog.event("commIssue", invalid=invalid, not_alive=not_alive)
+    #     self.logged_comm_issue = True
     else:
       self.logged_comm_issue = False
 
