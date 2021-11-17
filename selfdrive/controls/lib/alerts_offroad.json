@@ -42,11 +42,11 @@
     "severity": 1
   },
   "Offroad_CarUnrecognized": {
-    "text": "openpilot was unable to identify your car... TODO",
+    "text": "openpilot was unable to identify your car. Your vehicle has new firmware versions that aren't recognized. Add new firmware to the proper vehicle. Need help? Join discord.comma.ai.",
     "severity": 0
   },
   "Offroad_NoFirmware": {
-    "text": "openpilot was unable to identify your car (no fw)... TODO",
+    "text": "openpilot was unable to identify your car. Ensure the comma power is fully inserted in the OBD-II port of the vehicle. Need help? Join discord.comma.ai.",
     "severity": 0
   }
 }
