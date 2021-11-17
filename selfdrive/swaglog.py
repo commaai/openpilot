@@ -104,7 +104,14 @@ def add_file_handler(log):
 
 
 cloudlog = log = SwagLogger()
-log.setLevel(logging.DEBUG)
+
+print_level = os.environ.get('LOGPRINT', 'warning')
+if print_level == 'debug':
+  log.setLevel(logging.DEBUG)
+elif print_level == 'info':
+  log.setLevel(logging.INFO)
+elif print_level == 'warning':
+  log.setLevel(logging.WARNING)
 
 outhandler = logging.StreamHandler()
 log.addHandler(outhandler)
