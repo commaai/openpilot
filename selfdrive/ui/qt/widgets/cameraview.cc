@@ -1,5 +1,8 @@
 #include "selfdrive/ui/qt/widgets/cameraview.h"
 
+#include <QOpenGLBuffer>
+#include <QOffscreenSurface>
+
 namespace {
 
 const char frame_vertex_shader[] =
@@ -197,18 +200,13 @@ void CameraViewWidget::paintGL() {
     glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
     return;
   }
+  std::unique_lock lk(texture_lock);
 
   glViewport(0, 0, width(), height());
 
   glBindVertexArray(frame_vao);
   glActiveTexture(GL_TEXTURE0);
-
   glBindTexture(GL_TEXTURE_2D, texture[latest_frame->idx]->frame_tex);
-  if (!Hardware::EON()) {
-    // this is handled in ion on QCOM
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, latest_frame->width, latest_frame->height,
-                    GL_RGB, GL_UNSIGNED_BYTE, latest_frame->addr);
-  }
 
   glUseProgram(program->programId());
   glUniform1i(program->uniformLocation("uTexture"), 0);
@@ -251,6 +249,25 @@ void CameraViewWidget::vipcThread() {
   VisionStreamType cur_stream_type = stream_type;
   std::unique_ptr<VisionIpcClient> vipc_client;
 
+  std::unique_ptr<QOpenGLContext> ctx;
+  std::unique_ptr<QOffscreenSurface> surface;
+  std::unique_ptr<QOpenGLBuffer> gl_buffer;
+
+  if (!Hardware::EON()) {
+    ctx = std::make_unique<QOpenGLContext>();
+    ctx->setFormat(context()->format());
+    ctx->setShareContext(context());
+    ctx->create();
+    assert(ctx->isValid());
+
+    surface = std::make_unique<QOffscreenSurface>();
+    surface->setFormat(ctx->format());
+    surface->create();
+    ctx->makeCurrent(surface.get());
+    assert(QOpenGLContext::currentContext() == ctx.get());
+    initializeOpenGLFunctions();
+  }
+
   while (!QThread::currentThread()->isInterruptionRequested()) {
     if (!vipc_client || cur_stream_type != stream_type) {
       cur_stream_type = stream_type;
@@ -262,11 +279,37 @@ void CameraViewWidget::vipcThread() {
         QThread::msleep(100);
         continue;
       }
+
+      if (!Hardware::EON()) {
+        gl_buffer.reset(new QOpenGLBuffer(QOpenGLBuffer::PixelUnpackBuffer));
+        gl_buffer->create();
+        gl_buffer->bind();
+        gl_buffer->setUsagePattern(QOpenGLBuffer::StreamDraw);
+        gl_buffer->allocate(vipc_client->buffers[0].len);
+      }
+
       emit vipcThreadConnected(vipc_client.get());
     }
 
     if (VisionBuf *buf = vipc_client->recv(nullptr, 1000)) {
-      emit vipcThreadFrameReceived(buf);
+      if (!Hardware::EON()) {
+        std::unique_lock lk(texture_lock);
+
+        void *texture_buffer = gl_buffer->map(QOpenGLBuffer::WriteOnly);
+        memcpy(texture_buffer, buf->addr, buf->len);
+        gl_buffer->unmap();
+
+        // copy pixels from PBO to texture object
+        glBindTexture(GL_TEXTURE_2D, texture[buf->idx]->frame_tex);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, buf->width, buf->height, GL_RGB, GL_UNSIGNED_BYTE, 0);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        assert(glGetError() == GL_NO_ERROR);
+
+        emit vipcThreadFrameReceived(buf);
+
+      } else {
+        emit vipcThreadFrameReceived(buf);
+      }
     }
   }
 }

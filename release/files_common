@@ -130,6 +130,7 @@ selfdrive/car/hyundai/carcontroller.py
 selfdrive/car/hyundai/hyundaican.py
 selfdrive/car/toyota/__init__.py
 selfdrive/car/toyota/carstate.py
+selfdrive/car/toyota/tunes.py
 selfdrive/car/toyota/interface.py
 selfdrive/car/toyota/radar_interface.py
 selfdrive/car/toyota/values.py
