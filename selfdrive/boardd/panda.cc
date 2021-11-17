@@ -364,12 +364,12 @@ uint8_t Panda::len_to_dlc(uint8_t len) {
 }
 
 void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list) {
-  send.resize(72 * can_data_list.size()); // TODO: need to include 1 byte for each usb 64bytes frame
+  send.resize(can_data_list.size() * CANPACKET_MAX_SIZE);
 
   int msg_count = 0;
   while (msg_count < can_data_list.size()) {
     uint32_t pos = 0;
-    while (pos < 256) {
+    while (pos < USB_TX_SOFT_LIMIT) {
       if (msg_count == can_data_list.size()) { break; }
       auto cmsg = can_data_list[msg_count];
 
@@ -389,8 +389,8 @@ void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list) {
       header.extended = (cmsg.getAddress() >= 0x800) ? 1 : 0;
       header.data_len_code = data_len_code;
       header.bus = bus - bus_offset;
-      memcpy(&send[pos], &header, 5);
-      memcpy(&send[pos+5], can_data.begin(), can_data.size());
+      memcpy(&send[pos], &header, CANPACKET_HEAD_SIZE);
+      memcpy(&send[pos+CANPACKET_HEAD_SIZE], can_data.begin(), can_data.size());
 
       pos += CANPACKET_HEAD_SIZE + dlc_to_len[data_len_code];
       msg_count++;
@@ -399,12 +399,16 @@ void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list) {
     if (pos > 0) { // Helps not to spam with ZLP
       // Counter needs to be inserted every 64 bytes (first byte of 64 bytes USB packet)
       uint8_t counter = 0;
-      for (int i = 0; i < pos; i += 64) {
-        send.insert(send.begin() + i, counter);
+      uint8_t to_write[USB_TX_SOFT_LIMIT+128];
+      int ptr = 0;
+      for (int i = 0; i < pos; i += 63) {
+        to_write[ptr] = counter;
+        int copy_size = ((pos - i) < 63) ? (pos - i) : 63;
+        memcpy(&to_write[ptr+1], &(send.data()[i]) , copy_size);
+        ptr += copy_size + 1;
         counter++;
-        pos++;
       }
-      usb_bulk_write(3, (uint8_t*)send.data(), pos, 5);
+      usb_bulk_write(3, to_write, ptr, 5);
     }
   }
 }
@@ -416,7 +420,6 @@ bool Panda::can_receive(std::vector<can_frame>& out_vec) {
   // Not sure if this can happen
   if (recv < 0) recv = 0;
 
-  // TODO: Might change from full to overloaded? if > some threshold that is lower than RECV_SIZE, let's say 80-90%
   if (recv == RECV_SIZE) {
     LOGW("Receive buffer full");
   }
@@ -427,7 +430,7 @@ bool Panda::can_receive(std::vector<can_frame>& out_vec) {
 
   out_vec.reserve(out_vec.size() + (recv / CANPACKET_HEAD_SIZE));
 
-  static uint8_t tail[72];
+  static uint8_t tail[CANPACKET_MAX_SIZE];
   uint8_t tail_size = 0;
   uint8_t counter = 0;
   for (int i = 0; i < recv; i += 64) {
@@ -438,7 +441,7 @@ bool Panda::can_receive(std::vector<can_frame>& out_vec) {
     }
     counter++;
     uint8_t chunk_len = ((recv - i) > 64) ? 63 : (recv - i - 1); // as 1 is always reserved for counter
-    uint8_t chunk[72];
+    uint8_t chunk[CANPACKET_MAX_SIZE];
     memcpy(chunk, tail, tail_size);
     memcpy(&chunk[tail_size], &data[i+1], chunk_len);
     chunk_len += tail_size;
@@ -450,7 +453,7 @@ bool Panda::can_receive(std::vector<can_frame>& out_vec) {
       if (pckt_len <= (chunk_len - pos)) {
         can_frame canData;
         can_header header;
-        memcpy(&header, &chunk[pos], 5);
+        memcpy(&header, &chunk[pos], CANPACKET_HEAD_SIZE);
         canData.busTime = 0;
         canData.address = header.addr;
         canData.src = header.bus + bus_offset;
@@ -459,7 +462,7 @@ bool Panda::can_receive(std::vector<can_frame>& out_vec) {
         bool returned = header.returned;
         if (rejected) { canData.src += CANPACKET_REJECTED; }
         if (returned) { canData.src += CANPACKET_RETURNED; }
-        canData.dat.assign((char*)&chunk[pos+5], data_len);
+        canData.dat.assign((char*)&chunk[pos+CANPACKET_HEAD_SIZE], data_len);
 
         pos += pckt_len;
 
