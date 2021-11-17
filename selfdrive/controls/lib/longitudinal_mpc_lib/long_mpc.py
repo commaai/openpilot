@@ -25,7 +25,7 @@ SOURCES = ['lead0', 'lead1', 'cruise']
 X_DIM = 3
 U_DIM = 1
 PARAM_DIM= 4
-COST_E_DIM = 5
+COST_E_DIM = 6
 COST_DIM = COST_E_DIM + 1
 CONSTR_DIM = 4
 
@@ -34,6 +34,7 @@ X_EGO_COST = 0.
 V_EGO_COST = 0.
 A_EGO_COST = 0.
 J_EGO_COST = 5.0
+MOVING_COST = 3.0
 A_CHANGE_COST = .5
 DANGER_ZONE_COST = 100.
 CRASH_DISTANCE = .5
@@ -137,6 +138,7 @@ def gen_long_mpc_solver():
            v_ego,
            a_ego,
            20*(a_ego - prev_a),
+           v_ego / (v_ego + .1),
            j_ego]
   ocp.model.cost_y_expr = vertcat(*costs)
   ocp.model.cost_y_expr_e = vertcat(*costs[:-1])
@@ -228,7 +230,7 @@ class LongitudinalMpc():
       self.set_weights_for_lead_policy()
 
   def set_weights_for_lead_policy(self):
-    W = np.asfortranarray(np.diag([X_EGO_OBSTACLE_COST, X_EGO_COST, V_EGO_COST, A_EGO_COST, A_CHANGE_COST, J_EGO_COST]))
+    W = np.asfortranarray(np.diag([X_EGO_OBSTACLE_COST, X_EGO_COST, V_EGO_COST, A_EGO_COST, A_CHANGE_COST, MOVING_COST, J_EGO_COST]))
     for i in range(N):
       W[4,4] = A_CHANGE_COST * np.interp(T_IDXS[i], [0.0, 1.0, 2.0], [1.0, 1.0, 0.0])
       self.solver.cost_set(i, 'W', W)
