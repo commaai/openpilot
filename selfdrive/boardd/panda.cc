@@ -385,6 +385,7 @@ void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list) {
         .append((uint8_t *)&address, sizeof(address))
         .append(can_data.begin(), can_data.size());
     counter++;
+
     if (send.size() >= 256) {
       usb_bulk_write(3, send.data(), send.size(), 5);
       send.clear();
