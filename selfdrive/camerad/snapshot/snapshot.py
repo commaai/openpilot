@@ -22,12 +22,14 @@ VISION_STREAMS = {
   "wideRoadCameraState": VisionStreamType.VISION_STREAM_RGB_WIDE,
 }
 
+
 def jpeg_write(fn, dat):
   img = Image.fromarray(dat)
   img.save(fn, "JPEG")
 
 
-def extract_image(img, w, h):
+def extract_image(buf, w, h, stride):
+  img = np.hstack([buf[i * stride:i * stride + 3 * w] for i in range(h)])
   b = img[::3].reshape(h, w)
   g = img[1::3].reshape(h, w)
   r = img[2::3].reshape(h, w)
@@ -61,10 +63,10 @@ def get_snapshots(frame="roadCameraState", front_frame="driverCameraState", focu
   rear, front = None, None
   if frame is not None:
     c = vipc_clients[frame]
-    rear = extract_image(c.recv(), c.width, c.height)
+    rear = extract_image(c.recv(), c.width, c.height, c.stride)
   if front_frame is not None:
     c = vipc_clients[front_frame]
-    front = extract_image(c.recv(), c.width, c.height)
+    front = extract_image(c.recv(), c.width, c.height, c.stride)
   return rear, front
 
 
