@@ -307,7 +307,6 @@ void CameraViewWidget::vipcThread() {
 
         emit vipcThreadFrameReceived(buf);
 
-        glFlush();
       } else {
         emit vipcThreadFrameReceived(buf);
       }
