@@ -5,10 +5,10 @@
 
 struct PandaTest : public Panda {
   PandaTest(uint32_t bus_offset) : Panda(bus_offset) {}
-  void test_can_packets();
+  void test_can_send();
 };
 
-void PandaTest::test_can_packets() {
+void PandaTest::test_can_send() {
   auto can_list_size = GENERATE(1, 2, 3, 10, 20, 40, 60, 80, 100);
 
   MessageBuilder msg;
@@ -44,7 +44,7 @@ void PandaTest::test_can_packets() {
   REQUIRE(chunks == (int)std::ceil(total_pakets_size / 63.0));
 }
 
-TEST_CASE("send/recv can packets") {
+TEST_CASE("can_send") {
   PandaTest test(0);
-  test.test_can_packets();
+  test.test_can_send();
 }
