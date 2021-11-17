@@ -16,6 +16,19 @@ env:
        GITHUB_REPOSITORY -e GITHUB_RUN_ID -v /tmp/comma_download_cache:/tmp/comma_download_cache $BASE_IMAGE /bin/sh -c
 
 jobs:
+  build_ubuntu_latest:
+    name: ubuntu latest
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: setup
+      run: tools/ubuntu_setup.sh
+    - name: build
+      run: scons -j$(nproc)
+
   plotjuggler:
     name: plotjuggler
     runs-on: ubuntu-20.04
