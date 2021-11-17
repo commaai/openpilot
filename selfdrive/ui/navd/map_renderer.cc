@@ -67,6 +67,7 @@ bool MapRenderer::loaded() {
 void MapRenderer::update() {
   gl_functions->glClear(GL_COLOR_BUFFER_BIT);
   m_map->render();
+  gl_functions->glFlush();
 
   sendVipc();
 }
