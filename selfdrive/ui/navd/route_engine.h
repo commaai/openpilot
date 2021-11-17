@@ -1,7 +1,5 @@
 #pragma once
 
-#include <optional>
-
 #include <QThread>
 #include <QGeoCoordinate>
 #include <QGeoManeuver>
