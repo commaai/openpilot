@@ -46,7 +46,16 @@ class CarInterface(CarInterfaceBase):
     # Presence of a camera on the object bus is ok.
     # Have to go to read_only if ASCM is online (ACC-enabled cars),
     # or camera is on powertrain bus (LKA cars without ACC).
-    ret.openpilotLongitudinalControl = True
+    
+    
+    # JJS Testing for silverado crash
+    if candidate in NO_ASCM:
+      ret.openpilotLongitudinalControl = False
+      ret.radarOffCan = True
+    else:
+      ret.openpilotLongitudinalControl = True
+      ret.radarOffCan = False
+    
     tire_stiffness_factor = 0.444  # not optimized yet
 
     # Start with a baseline lateral tuning for all GM vehicles. Override tuning as needed in each model section below.
@@ -58,7 +67,8 @@ class CarInterface(CarInterfaceBase):
     ret.steerActuatorDelay = 0.1  # Default delay, not measured yet
     ret.enableGasInterceptor = 0x201 in fingerprint[0]
     if ret.enableGasInterceptor:
-      ret.radarOffCan = False
+      ret.openpilotLongitudinalControl = True
+      #ret.radarOffCan = False
 
     if candidate == CAR.VOLT or candidate == CAR.VOLT_NR:
       # supports stop and go, but initial engage must be above 18mph (which include conservatism)
