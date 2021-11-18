@@ -114,7 +114,7 @@ void PandaTest::test_can_recv() {
 }
 
 TEST_CASE("send/recv can packets") {
-  auto bus_offset = GENERATE(2, 4);
+  auto bus_offset = GENERATE(0, 4);
   auto can_list_size = GENERATE(1, 3, 5, 10, 30, 60, 100, 200);
   PandaTest test(bus_offset, can_list_size);
 
