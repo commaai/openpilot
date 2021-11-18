@@ -451,7 +451,6 @@ bool Panda::can_receive(std::vector<can_frame>& out_vec) {
       uint8_t data_len = dlc_to_len[(chunk[pos] >> 4)];
       uint8_t pckt_len = CANPACKET_HEAD_SIZE + data_len;
       if (pckt_len <= (chunk_len - pos)) {
-        can_frame canData;
         can_header header;
         memcpy(&header, &chunk[pos], CANPACKET_HEAD_SIZE);
 
