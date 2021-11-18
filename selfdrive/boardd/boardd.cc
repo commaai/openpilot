@@ -158,8 +158,6 @@ Panda *usb_connect(std::string serial="", uint32_t index=0) {
     return nullptr;
   }
 
-  Params params = Params();
-
   if (getenv("BOARDD_LOOPBACK")) {
     panda->set_loopback(true);
   }
@@ -667,6 +665,11 @@ int main(int argc, char* argv[]) {
     } else {
       break;
     }
+  }
+
+  if (pandas.size() == 0) {
+    // do_exit was set while not connected to a panda
+    return 0;
   }
 
   peripheral_panda = pandas[0];

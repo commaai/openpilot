@@ -57,6 +57,7 @@ public:
 protected:
   void paintGL() override;
   void initializeGL() override;
+  void showEvent(QShowEvent *event) override;
   double prev_draw_t = 0;
 
 signals:

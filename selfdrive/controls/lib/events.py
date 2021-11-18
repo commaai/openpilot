@@ -149,7 +149,7 @@ class NoEntryAlert(Alert):
 class SoftDisableAlert(Alert):
   def __init__(self, alert_text_2):
     super().__init__("TAKE CONTROL IMMEDIATELY", alert_text_2,
-                     AlertStatus.critical, AlertSize.full,
+                     AlertStatus.userPrompt, AlertSize.full,
                      Priority.MID, VisualAlert.steerRequired,
                      AudibleAlert.chimeWarningRepeatInfinite, 2.),
 
@@ -171,10 +171,18 @@ class EngagementAlert(Alert):
 
 
 class NormalPermanentAlert(Alert):
-  def __init__(self, alert_text_1: str, alert_text_2: str = "", duration: float = 0.2):
+  def __init__(self, alert_text_1: str, alert_text_2: str = "", duration: float = 0.2, priority: Priority = Priority.LOWER):
     super().__init__(alert_text_1, alert_text_2,
                      AlertStatus.normal, AlertSize.mid if len(alert_text_2) else AlertSize.small,
-                     Priority.LOWER, VisualAlert.none, AudibleAlert.none, duration),
+                     priority, VisualAlert.none, AudibleAlert.none, duration),
+
+
+class StartupAlert(Alert):
+  def __init__(self, alert_text_1: str, alert_text_2: str = "Always keep hands on wheel and eyes on road", alert_status=AlertStatus.normal):
+    super().__init__(alert_text_1, alert_text_2,
+                     alert_status, AlertSize.mid,
+                     Priority.LOWER, VisualAlert.none, AudibleAlert.none, 5.),
+
 
 # ********** helper functions **********
 def get_display_speed(speed_ms: float, metric: bool) -> str:
@@ -300,96 +308,63 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
   },
 
   EventName.startup: {
-    ET.PERMANENT: Alert(
-      "Be ready to take over at any time",
-      "Always keep hands on wheel and eyes on road",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 5.),
+    ET.PERMANENT: StartupAlert("Be ready to take over at any time")
   },
 
   EventName.startupMaster: {
-    ET.PERMANENT: Alert(
-      "WARNING: This branch is not tested",
-      "Always keep hands on wheel and eyes on road",
-      AlertStatus.userPrompt, AlertSize.mid,
-      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 5.),
+    ET.PERMANENT: StartupAlert("WARNING: This branch is not tested",
+                               alert_status=AlertStatus.userPrompt),
   },
 
   # Car is recognized, but marked as dashcam only
   EventName.startupNoControl: {
-    ET.PERMANENT: Alert(
-      "Dashcam mode",
-      "Always keep hands on wheel and eyes on road",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 10.),
+    ET.PERMANENT: StartupAlert("Dashcam mode"),
   },
 
   # Car is not recognized
   EventName.startupNoCar: {
-    ET.PERMANENT: Alert(
-      "Dashcam mode for unsupported car",
-      "Always keep hands on wheel and eyes on road",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 10.),
+    ET.PERMANENT: StartupAlert("Dashcam mode for unsupported car"),
   },
 
   EventName.startupZss: {
-    ET.PERMANENT: Alert(
-      "Using Zorro steering sensor",
-      "Always keep hands on wheel and eyes on road",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 0., 0., 5.),
+    ET.PERMANENT: StartupAlert("Using Zorro steering sensor"),
   },
 
   EventName.startupNoFw: {
-    ET.PERMANENT: Alert(
-      "Car Unrecognized",
-      "Check comma power connections",
-      AlertStatus.userPrompt, AlertSize.mid,
-      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 10.),
+    ET.PERMANENT: StartupAlert("Car Unrecognized",
+                               "Check comma power connections",
+                               alert_status=AlertStatus.userPrompt),
   },
 
   EventName.dashcamMode: {
-    ET.PERMANENT: Alert(
-      "Dashcam Mode",
-      "",
-      AlertStatus.normal, AlertSize.small,
-      Priority.LOWEST, VisualAlert.none, AudibleAlert.none, .2),
+    ET.PERMANENT: NormalPermanentAlert("Dashcam Mode",
+                                       priority=Priority.LOWEST),
   },
 
   EventName.invalidLkasSetting: {
-    ET.PERMANENT: Alert(
-      "Stock LKAS is turned on",
-      "Turn off stock LKAS to engage",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOWER, VisualAlert.none, AudibleAlert.none, .2),
+    ET.PERMANENT: NormalPermanentAlert("Stock LKAS is turned on",
+                                       "Turn off stock LKAS to engage"),
   },
 
   EventName.cruiseMismatch: {
-    ET.PERMANENT: ImmediateDisableAlert("openpilot failed to cancel cruise"),
+    #ET.PERMANENT: ImmediateDisableAlert("openpilot failed to cancel cruise"),
   },
 
   # Some features or cars are marked as community features. If openpilot
   # detects the use of a community feature it switches to dashcam mode
   # until these features are allowed using a toggle in settings.
   EventName.communityFeatureDisallowed: {
-    # LOW priority to overcome Cruise Error
-    ET.PERMANENT: Alert(
-      "openpilot Not Available",
-      "Enable Community Features in Settings to Engage",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOW, VisualAlert.none, AudibleAlert.none, .2),
+    ET.PERMANENT: NormalPermanentAlert("openpilot Not Available",
+                                       "Enable Community Features in Settings to Engage"),
   },
 
   # openpilot doesn't recognize the car. This switches openpilot into a
   # read-only mode. This can be solved by adding your fingerprint.
   # See https://github.com/commaai/openpilot/wiki/Fingerprinting for more information
   EventName.carUnrecognized: {
-    ET.PERMANENT: Alert(
-      "Dashcam Mode",
-      "Car Unrecognized",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOWEST, VisualAlert.none, AudibleAlert.none, .2),
+    ET.PERMANENT: NormalPermanentAlert("Dashcam Mode",
+                                       "Car Unrecognized",
+                                       priority=Priority.LOWEST),
   },
 
   EventName.stockAeb: {
@@ -438,11 +413,6 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
   EventName.vehicleModelInvalid: {
     ET.NO_ENTRY: NoEntryAlert("Vehicle Parameter Identification Failed"),
     ET.SOFT_DISABLE: SoftDisableAlert("Vehicle Parameter Identification Failed"),
-    ET.WARNING: Alert(
-      "Vehicle Parameter Identification Failed",
-      "",
-      AlertStatus.normal, AlertSize.small,
-      Priority.LOWEST, VisualAlert.none, AudibleAlert.none, .1),
   },
 
   EventName.steerTempUnavailableSilent: {
@@ -820,21 +790,13 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
 
   EventName.steerUnavailable: {
     ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("LKAS Fault: Restart the Car"),
-    ET.PERMANENT: Alert(
-      "LKAS Fault: Restart the car to engage",
-      "",
-      AlertStatus.normal, AlertSize.small,
-      Priority.LOWER, VisualAlert.none, AudibleAlert.none, .2),
+    ET.PERMANENT: NormalPermanentAlert("LKAS Fault: Restart the car to engage"),
     ET.NO_ENTRY: NoEntryAlert("LKAS Fault: Restart the Car"),
   },
 
   EventName.brakeUnavailable: {
     ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("Cruise Fault: Restart the Car"),
-    ET.PERMANENT: Alert(
-      "Cruise Fault: Restart the car to engage",
-      "",
-      AlertStatus.normal, AlertSize.small,
-      Priority.LOWER, VisualAlert.none, AudibleAlert.none, .2),
+    ET.PERMANENT: NormalPermanentAlert("Cruise Fault: Restart the car to engage"),
     ET.NO_ENTRY: NoEntryAlert("Cruise Fault: Restart the Car"),
   },
 
@@ -896,19 +858,11 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
       "Model uncertain at this speed",
       AlertStatus.userPrompt, AlertSize.mid,
       Priority.HIGH, VisualAlert.steerRequired, AudibleAlert.chimeWarning2RepeatInfinite, 4.),
-    ET.NO_ENTRY: Alert(
-      "Speed Too High",
-      "Slow down to engage",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOW, VisualAlert.none, AudibleAlert.chimeError, 3.),
+    ET.NO_ENTRY: NoEntryAlert("Slow down to engage"),
   },
 
   EventName.lowSpeedLockout: {
-    ET.PERMANENT: Alert(
-      "Cruise Fault: Restart the car to engage",
-      "",
-      AlertStatus.normal, AlertSize.small,
-      Priority.LOWER, VisualAlert.none, AudibleAlert.none, .2),
+    ET.PERMANENT: NormalPermanentAlert("Cruise Fault: Restart the car to engage"),
     ET.NO_ENTRY: NoEntryAlert("Cruise Fault: Restart the Car"),
   },
 

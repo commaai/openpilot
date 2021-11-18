@@ -63,7 +63,7 @@ maneuvers = [
     speed_lead_values=[20., 20., 0.],
     prob_lead_values=[0., 1., 1.],
     cruise_values=[20., 20., 20.],
-    breakpoints=[2., 2.01, 8.51],
+    breakpoints=[2., 2.01, 8.8],
   ),
   Maneuver(
     "approach stopped car at 20m/s",
