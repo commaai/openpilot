@@ -24,8 +24,8 @@ from selfdrive.version import dirty, get_git_commit, version, origin, branch, co
 
 sys.path.append(os.path.join(BASEDIR, "pyextra"))
 
-
 def manager_init():
+
   # update system time from panda
   set_time(cloudlog)
 
@@ -105,11 +105,11 @@ def manager_cleanup():
   for p in managed_processes.values():
     p.stop()
 
-  cloudlog.warning("everything is dead")
+  cloudlog.info("everything is dead")
 
 
 def manager_thread():
-  cloudlog.warning("manager start")
+  cloudlog.info("manager start")
   cloudlog.info({"environ": os.environ})
 
   # save boot log
