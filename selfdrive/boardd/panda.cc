@@ -357,9 +357,9 @@ uint8_t Panda::len_to_dlc(uint8_t len) {
     return len;
   }
   if (len <= 24) {
-    return 8 + ((len - 8) / 4) + (len % 4) ? 1 : 0;
+    return 8 + ((len - 8) / 4) + ((len % 4) ? 1 : 0);
   } else {
-    return 11 + (len / 16) + (len % 16) ? 1 : 0;
+    return 11 + (len / 16) + ((len % 16) ? 1 : 0);
   }
 }
 
