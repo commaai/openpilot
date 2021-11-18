@@ -430,8 +430,6 @@ bool Panda::can_receive(std::vector<can_frame>& out_vec) {
     return false;
   }
 
-  out_vec.reserve(out_vec.size() + (recv / CANPACKET_HEAD_SIZE));
-
   static uint8_t tail[CANPACKET_MAX_SIZE];
   uint8_t tail_size = 0;
   uint8_t counter = 0;
@@ -453,9 +451,10 @@ bool Panda::can_receive(std::vector<can_frame>& out_vec) {
       uint8_t data_len = dlc_to_len[(chunk[pos] >> 4)];
       uint8_t pckt_len = CANPACKET_HEAD_SIZE + data_len;
       if (pckt_len <= (chunk_len - pos)) {
-        can_frame canData;
         can_header header;
         memcpy(&header, &chunk[pos], CANPACKET_HEAD_SIZE);
+
+        can_frame &canData = out_vec.emplace_back();
         canData.busTime = 0;
         canData.address = header.addr;
         canData.src = header.bus + bus_offset;
@@ -465,9 +464,6 @@ bool Panda::can_receive(std::vector<can_frame>& out_vec) {
         canData.dat.assign((char*)&chunk[pos+CANPACKET_HEAD_SIZE], data_len);
 
         pos += pckt_len;
-
-        // add to vector
-        out_vec.push_back(canData);
       } else {
         // Keep partial CAN packet until next USB packet
         tail_size = (chunk_len - pos);
