@@ -68,15 +68,7 @@ class LiveKalman():
                              0.01**2, 0.01**2, 0.01**2])
 
   # state covariance when resetting midway in a segment
-  reset_P_diag = np.array([1e16, 1e16, 1e16,
-                             1**2, 1**2, 1**2,
-                             10**2, 10**2, 10**2,
-                             1**2, 1**2, 1**2,
-                             1**2, 1**2, 1**2,
-                             0.02**2,
-                             1**2, 1**2, 1**2,
-                             0.01**2, 0.01**2, 0.01**2,
-                             0.01**2, 0.01**2, 0.01**2])
+  reset_orientation_diag = np.array([1**2, 1**2, 1**2])
 
   # process noise
   Q_diag = np.array([0.03**2, 0.03**2, 0.03**2,
@@ -252,7 +244,7 @@ class LiveKalman():
 
     live_kf_header += f"static const Eigen::VectorXd live_initial_x = {numpy2eigenstring(LiveKalman.initial_x)};\n"
     live_kf_header += f"static const Eigen::VectorXd live_initial_P_diag = {numpy2eigenstring(LiveKalman.initial_P_diag)};\n"
-    live_kf_header += f"static const Eigen::VectorXd live_reset_P_diag = {numpy2eigenstring(LiveKalman.reset_P_diag)};\n"
+    live_kf_header += f"static const Eigen::VectorXd live_reset_orientation_diag = {numpy2eigenstring(LiveKalman.reset_orientation_diag)};\n"
     live_kf_header += f"static const Eigen::VectorXd live_Q_diag = {numpy2eigenstring(LiveKalman.Q_diag)};\n"
     live_kf_header += "static const std::unordered_map<int, Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> live_obs_noise_diag = {\n"
     for kind, noise in LiveKalman.obs_noise_diag.items():
