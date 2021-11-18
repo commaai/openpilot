@@ -453,20 +453,20 @@ bool Panda::unpack_can_buffer(uint8_t *data, int size, std::vector<can_frame> &o
     size_left -= len;
   }
 
-  for (int pos = 0, pckt_len = 0; pos < recv_buf.size(); pos += pckt_len) {
-    const uint8_t data_len = dlc_to_len[(recv_buf[pos] >> 4)];
-    pckt_len = CANPACKET_HEAD_SIZE + data_len;
-
+  for (int pos = 0; pos < recv_buf.size(); /**/) {
     can_header header;
     memcpy(&header, &recv_buf[pos], CANPACKET_HEAD_SIZE);
-
+    
     can_frame &canData = out_vec.emplace_back();
     canData.busTime = 0;
     canData.address = header.addr;
     canData.src = header.bus + bus_offset;
     if (header.rejected) { canData.src += CANPACKET_REJECTED; }
     if (header.returned) { canData.src += CANPACKET_RETURNED; }
+
+    const uint8_t data_len = dlc_to_len[header.data_len_code];
     canData.dat.assign((char *)&recv_buf[pos + CANPACKET_HEAD_SIZE], data_len);
+    pos += CANPACKET_HEAD_SIZE + data_len;
   }
   return true;
 }
