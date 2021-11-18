@@ -162,6 +162,7 @@
 | Volkswagen| Passat 2016-18<sup>3</sup>    | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Polo 2020                     | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| T-Cross 2021<sup>4</sup>      | Driver Assistance | Stock            | 0mph               | 0mph         |
+| Volkswagen| T-Roc 2021<sup>4</sup>        | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Taos 2022<sup>4</sup>         | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Tiguan 2020                   | Driver Assistance | Stock            | 0mph               | 0mph         |
 | Volkswagen| Touran 2017                   | Driver Assistance | Stock            | 0mph               | 0mph         |
