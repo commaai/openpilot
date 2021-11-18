@@ -475,7 +475,7 @@ FW_VERSIONS = {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x8799110CL500\xf1\x00TMhe SCC FHCUP      1.00 1.00 99110-CL500         ',
     ],
-    (Ecu,eps, 0x7d4, None): [
+    (Ecu.eps, 0x7d4, None): [
       b'\xf1\x00TM  MDPS C 1.00 1.02 56310-CLAC0 4TSHC102',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
