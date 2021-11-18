@@ -36,6 +36,7 @@ private:
   QWidget *lane_widget;
   QHBoxLayout *lane_layout;
   bool error = false;
+  bool is_rhd = false;
 
 public:
   MapInstructions(QWidget * parent=nullptr);

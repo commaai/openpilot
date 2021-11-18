@@ -90,6 +90,7 @@ void HttpRequest::sendRequest(const QString &requestURL, const HttpRequest::Meth
 
   QNetworkRequest request;
   request.setUrl(QUrl(requestURL));
+  request.setRawHeader("User-Agent", getUserAgent().toUtf8());
 
   if (!token.isEmpty()) {
     request.setRawHeader(QByteArray("Authorization"), ("JWT " + token).toUtf8());
