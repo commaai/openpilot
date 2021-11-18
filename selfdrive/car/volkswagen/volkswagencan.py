@@ -47,3 +47,48 @@ def create_mqb_acc_buttons_control(packer, bus, buttonStatesToSend, CS, idx):
     "GRA_ButtonTypeInfo": CS.graButtonTypeInfo
   }
   return packer.make_can_msg("GRA_ACC_01", bus, values, idx)
+
+def create_mqb_acc_06_control(packer, bus, enabled, acc_status, accel, jerk, acc_stopping, acc_starting,
+                              idx):
+  values = {
+    "ACC_Typ": 2,  # FIXME: locked to stop and go, need to tweak for cars that only support follow-to-stop
+    "ACC_Status_ACC": acc_status,
+    "ACC_StartStopp_Info": enabled,
+    "ACC_Sollbeschleunigung_02": accel if enabled else 3.01,
+    "ACC_zul_Regelabw_unten": 0.2 if enabled else 0,  # FIXME: need comfort regulation logic here
+    "ACC_zul_Regelabw_oben": 0.1 if enabled else 0,  # FIXME: need comfort regulation logic here
+    "ACC_neg_Sollbeschl_Grad_02": jerk if enabled else 0,
+    "ACC_pos_Sollbeschl_Grad_02": jerk if enabled else 0,
+    "ACC_Anfahren": acc_starting,
+    "ACC_Anhalten": acc_stopping,
+  }
+
+  return packer.make_can_msg("ACC_06", bus, values, idx)
+
+def create_mqb_acc_07_control(packer, bus, enabled, accel, acc_stopping, acc_starting, acc_hold_request,
+                              acc_hold_release, weird_value, idx):
+  values = {
+    "XXX_Maybe_Engine_Start_Request": 2,  # TODO
+    "XXX_Always_1": 1,
+    "XXX_Maybe_Engine_Stop_Release": not acc_hold_request,  # TODO this isn't S/S, AHR but also slight delay past AHR
+    "XXX_Unknown": weird_value,  # FIXME: Should try to figure out what's really going on here
+    "ACC_Engaged": enabled,
+    "ACC_Anhalten": acc_stopping,
+    "ACC_Anhaltevorgang": acc_hold_request,
+    "ACC_Anfahrvorgang": acc_hold_release,
+    "ACC_Anfahren": acc_starting,
+    "XXX_Lead_Car_Relative_Speed": 0x65,
+    "ACC_Sollbeschleunigung_01": accel if enabled else 3.01,
+  }
+
+  return packer.make_can_msg("ACC_07", bus, values, idx)
+
+def create_mqb_acc_hud_control(packer, bus, acc_status, set_speed, idx):
+  values = {
+    "ACC_Status_Anzeige": acc_status,
+    "ACC_Wunschgeschw": 327.36 if set_speed == 0 else set_speed,
+    "ACC_Gesetzte_Zeitluecke": 3,
+    "ACC_Display_Prio": 3
+  }
+
+  return packer.make_can_msg("ACC_02", bus, values, idx)

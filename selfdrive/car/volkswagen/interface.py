@@ -1,8 +1,11 @@
 from cereal import car
+from common.params import Params
+from panda import Panda
 from selfdrive.car.volkswagen.values import CAR, BUTTON_STATES, CANBUS, NetworkLocation, TransmissionType, GearShifter
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
 
+ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
 
 
@@ -31,6 +34,14 @@ class CarInterface(CarInterfaceBase):
       ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.volkswagen)]
       ret.enableBsm = 0x30F in fingerprint[0]  # SWA_01
 
+      # Disable the radar and let openpilot control longitudinal
+      # WARNING: THIS DISABLES FACTORY FCW/AEB!
+      if Params().get_bool("DisableRadar"):
+        ret.pcmCruise = False
+        ret.openpilotLongitudinalControl = True
+        ret.directAccelControl = True
+        ret.safetyConfigs[0].safetyParam |= Panda.FLAG_VOLKSWAGEN_LONGITUDINAL
+
       if 0xAD in fingerprint[0]:  # Getriebe_11
         ret.transmissionType = TransmissionType.automatic
       elif 0x187 in fingerprint[0]:  # EV_Gearshift
@@ -43,7 +54,7 @@ class CarInterface(CarInterfaceBase):
       else:
         ret.networkLocation = NetworkLocation.fwdCamera
 
-    # Global tuning defaults, can be overridden per-vehicle
+    # Global lateral tuning defaults, can be overridden per-vehicle
 
     ret.steerActuatorDelay = 0.05
     ret.steerRateCost = 1.0
@@ -55,6 +66,17 @@ class CarInterface(CarInterfaceBase):
     ret.lateralTuning.pid.kf = 0.00006
     ret.lateralTuning.pid.kpV = [0.6]
     ret.lateralTuning.pid.kiV = [0.2]
+
+    # Global longitudinal tuning defaults, can be overridden per-vehicle
+
+    ret.longitudinalActuatorDelayUpperBound = 1.0  # s
+    ret.minSpeedCan = 0.0
+    ret.stoppingControl = True
+    ret.vEgoStopping = 1.0
+    ret.stopAccel = 0.0
+    ret.startAccel = 0.0
+    ret.longitudinalTuning.kpV = [0.1]
+    ret.longitudinalTuning.kiV = [0.0]
 
     # Per-chassis tuning values, override tuning defaults here if desired
 
@@ -181,11 +203,14 @@ class CarInterface(CarInterfaceBase):
         be.pressed = self.CS.buttonStates[button]
         buttonEvents.append(be)
 
-    events = self.create_common_events(ret, extra_gears=[GearShifter.eco, GearShifter.sport, GearShifter.manumatic])
+    events = self.create_common_events(ret, extra_gears=[GearShifter.eco, GearShifter.sport, GearShifter.manumatic],
+                                       pcm_enable=not self.CS.CP.openpilotLongitudinalControl)
 
     # Vehicle health and operation safety checks
     if self.CS.parkingBrakeSet:
       events.add(EventName.parkBrake)
+    if self.CS.tsk_status in [6, 7]:
+      events.add(EventName.accFaulted)
 
     # Low speed steer alert hysteresis logic
     if self.CP.minSteerSpeed > 0. and ret.vEgo < (self.CP.minSteerSpeed + 1.):
@@ -194,6 +219,15 @@ class CarInterface(CarInterfaceBase):
       self.low_speed_alert = False
     if self.low_speed_alert:
       events.add(EventName.belowSteerSpeed)
+
+    if self.CS.CP.openpilotLongitudinalControl:
+      for b in buttonEvents:
+        # do enable on falling edge of both accel and decel buttons
+        if b.type in [ButtonType.setCruise, ButtonType.resumeCruise] and not b.pressed:
+          events.add(EventName.buttonEnable)
+        # do disable on rising edge of cancel
+        if b.type == "cancel" and b.pressed:
+          events.add(EventName.buttonCancel)
 
     ret.events = events.to_msg()
     ret.buttonEvents = buttonEvents
@@ -211,6 +245,8 @@ class CarInterface(CarInterfaceBase):
                    c.hudControl.leftLaneVisible,
                    c.hudControl.rightLaneVisible,
                    c.hudControl.leftLaneDepart,
-                   c.hudControl.rightLaneDepart)
+                   c.hudControl.rightLaneDepart,
+                   c.hudControl.leadVisible,
+                   c.hudControl.setSpeed)
     self.frame += 1
     return can_sends
