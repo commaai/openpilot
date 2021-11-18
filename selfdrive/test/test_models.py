@@ -37,7 +37,7 @@ ignore_carstate_check = [
   CHRYSLER.PACIFICA_2017_HYBRID,
 ]
 
-@parameterized_class(('car_model'), [(car,) for i, car in enumerate(all_known_cars()) if i % NUM_JOBS == JOB_ID])
+@parameterized_class(('car_model'), [(car,) for i, car in enumerate(sorted(all_known_cars())) if i % NUM_JOBS == JOB_ID])
 class TestCarModel(unittest.TestCase):
 
   @classmethod
