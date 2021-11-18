@@ -1,7 +1,3 @@
-Version 0.8.12 (202X-XX-XX)
-========================
- * Volkswagen T-Roc 2021 support thanks to jyoung8607!
-
 Version 0.8.11 (2021-11-22)
 ========================
  * Support for an external panda on the comma three
@@ -11,6 +7,7 @@ Version 0.8.11 (2021-11-22)
  * Cadillac Escalade ESV 2016 support thanks to Gibby!
  * Mazda CX-9 2021 support thanks to Jacar!
  * Volkswagen Polo 2020 support thanks to jyoung8607!
+ * Volkswagen T-Roc 2021 support thanks to jyoung8607!
 
 Version 0.8.10 (2021-11-01)
 ========================
