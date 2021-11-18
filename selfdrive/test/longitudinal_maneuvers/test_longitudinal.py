@@ -3,6 +3,7 @@ import os
 import unittest
 
 from common.params import Params
+from common.op_params import opParams
 from selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
 
 
@@ -141,4 +142,5 @@ for k in range(len(maneuvers)):
           run_maneuver_worker(k))
 
 if __name__ == "__main__":
+  opParams().put("dynamic_follow", "traffic")
   unittest.main(failfast=True)

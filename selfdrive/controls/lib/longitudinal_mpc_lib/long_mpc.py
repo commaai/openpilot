@@ -313,9 +313,9 @@ class LongitudinalMpc():
     self.cruise_max_a = max_a
 
   def set_desired_TR(self, desired_TR):
-    if not gh_actions:
-      self.desired_TR = desired_TR
-      self.set_weights()
+    print(desired_TR)
+    self.desired_TR = desired_TR
+    self.set_weights()
 
   def update(self, carstate, radarstate, v_cruise):
     self.v_ego = carstate.vEgo
