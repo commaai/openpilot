@@ -61,7 +61,7 @@ void PandaTest::test_can_recv(capnp::List<cereal::CanData>::Reader can_data_list
   }
 }
 
-TEST_CASE("test can") {
+TEST_CASE("send/recv can packets") {
   auto can_list_size = GENERATE(1, 3, 5, 20, 40, 60, 80, 100, 200);
 
   MessageBuilder msg;

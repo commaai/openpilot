@@ -415,6 +415,7 @@ void Panda::build_can_packets(const capnp::List<cereal::CanData>::Reader &can_da
     }
   }
 }
+
 void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list) {
   build_can_packets(can_data_list, [=](uint8_t* data, size_t size) {
     usb_bulk_write(3, data, size, 5);
