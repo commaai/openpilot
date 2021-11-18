@@ -5,40 +5,53 @@ from selfdrive.car import dbc_dict
 Ecu = car.CarParams.Ecu
 
 class CarControllerParams():
-  STEER_MAX = 300  # Safety limit, not LKA max. Trucks use 600.
-  STEER_STEP = 2  # control frames per command
-  STEER_DELTA_UP = 7
-  STEER_DELTA_DOWN = 17
-  MIN_STEER_SPEED = 3.  # m/s
-  STEER_DRIVER_ALLOWANCE = 50
-  STEER_DRIVER_MULTIPLIER = 4
-  STEER_DRIVER_FACTOR = 100
-  NEAR_STOP_BRAKE_PHASE = 0.5  # m/s
+  def __init__(self, CP):  
+    self.STEER_MAX = 300  # Safety limit, not LKA max. Trucks use 600.
+    self.STEER_STEP = 2  # control frames per command
+    self.STEER_DELTA_UP = 7
+    self.STEER_DELTA_DOWN = 17
+    self.MIN_STEER_SPEED = 3.  # m/s
+    self.STEER_DRIVER_ALLOWANCE = 50
+    self.STEER_DRIVER_MULTIPLIER = 4
+    self.STEER_DRIVER_FACTOR = 100
+    self.NEAR_STOP_BRAKE_PHASE = 0.5  # m/s
 
-  # Heartbeat for dash "Service Adaptive Cruise" and "Service Front Camera"
-  ADAS_KEEPALIVE_STEP = 100
-  CAMERA_KEEPALIVE_STEP = 100
+    # Heartbeat for dash "Service Adaptive Cruise" and "Service Front Camera"
+    self.ADAS_KEEPALIVE_STEP = 100
+    self.CAMERA_KEEPALIVE_STEP = 100
 
-  # Volt gasbrake lookups
-  MAX_GAS = 3072 # Safety limit, not ACC max. Stock ACC >4096 from standstill.
-  ZERO_GAS = 2048 # Coasting
-  MAX_BRAKE = 350 # ~ -3.5 m/s^2 with regen
+    # Volt gasbrake lookups
+    self.MAX_GAS = 3072 # Safety limit, not ACC max. Stock ACC >4096 from standstill.
+    self.ZERO_GAS = 2048 # Coasting
+    self.MAX_BRAKE = 350 # ~ -3.5 m/s^2 with regen
 
-  # Allow small margin below -3.5 m/s^2 from ISO 15622:2018 since we
-  # perform the closed loop control, and might need some
-  # to apply some more braking if we're on a downhill slope.
-  # Our controller should still keep the 2 second average above
-  # -3.5 m/s^2 as per planner limits
+    # Allow small margin below -3.5 m/s^2 from ISO 15622:2018 since we
+    # perform the closed loop control, and might need some
+    # to apply some more braking if we're on a downhill slope.
+    # Our controller should still keep the 2 second average above
+    # -3.5 m/s^2 as per planner limits
 
-  # TODO if this bump works, it belongs in interface per car
-  ACCEL_MAX = 4. # m/s^2
-  ACCEL_MIN = -4. # m/s^2
+    # TODO if this bump works, it belongs in interface per car
+    self.ACCEL_MAX = 4. # m/s^2
+    self.ACCEL_MIN = -4. # m/s^2
+    
+    if CP.carFingerprint in NO_ASCM:
+      self.STEER_DELTA_UP = 3          # ~0.75s time to peak torque (255/50hz/0.75s)
+      self.STEER_DELTA_DOWN = 7       # ~0.3s from peak torque to zero
+    elif CP.carFingerprint in HIGH_TORQUE:
+      self.STEER_MAX = 600  # Safety limit, not LKA max. Trucks use 600.
+      self.STEER_DELTA_UP = 14
+      self.STEER_DELTA_DOWN = 34
+      self.STEER_DRIVER_ALLOWANCE = 100
+      self.STEER_DRIVER_MULTIPLIER = 4
+      self.STEER_DRIVER_FACTOR = 100
 
-  MAX_ACC_REGEN = 1404  # Max ACC regen is slightly less than max paddle regen
-  GAS_LOOKUP_BP = [-1., 0., ACCEL_MAX]
-  GAS_LOOKUP_V = [MAX_ACC_REGEN, ZERO_GAS, MAX_GAS]
-  BRAKE_LOOKUP_BP = [ACCEL_MIN, -1.]
-  BRAKE_LOOKUP_V = [MAX_BRAKE, 0.]
+    self.MAX_ACC_REGEN = 1404  # Max ACC regen is slightly less than max paddle regen
+    self.GAS_LOOKUP_BP = [-1., 0., self.ACCEL_MAX]
+    self.GAS_LOOKUP_V = [self.MAX_ACC_REGEN, self.ZERO_GAS, self.MAX_GAS]
+    self.BRAKE_LOOKUP_BP = [self.ACCEL_MIN, -1.]
+    self.BRAKE_LOOKUP_V = [self.MAX_BRAKE, 0.]
+
 
 STEER_THRESHOLD = 1.0
 
@@ -146,8 +159,8 @@ FINGERPRINTS = {
     170: 8, 188: 8, 189: 7, 190: 6, 192: 5, 193: 8, 197: 8, 201: 6, 209: 7, 211: 2, 241: 6, 289: 1, 290: 1, 298: 8, 304: 8, 309: 8, 311: 8, 313: 8, 320: 8, 322: 7, 328: 1, 352: 5, 353: 3, 368: 8, 381: 6, 384: 8, 386: 8, 388: 8, 390: 7, 407: 7, 417: 7, 419: 1, 451: 8, 452: 8, 453: 6, 454: 8, 456: 8, 458: 8, 463: 3, 479: 3, 481: 7, 485: 8, 489: 5, 493: 8, 495: 4, 497: 8, 499: 3, 500: 6, 501: 8, 503: 1, 508: 8, 512: 3, 514: 2, 516: 4, 519: 2, 521: 3, 528: 5, 530: 8, 532: 7, 537: 5, 539: 8, 542: 7, 546: 7, 550: 8, 554: 3, 558: 8, 560: 6, 562: 4, 563: 5, 564: 5, 565: 8, 566: 6, 567: 5, 568: 1, 569: 3, 573: 1, 577: 8, 608: 8, 609: 6, 610: 6, 611: 6, 612: 8, 613: 8, 647: 3, 707: 8, 711: 6, 717: 5, 753: 5, 761: 7, 800: 6, 810: 8, 832: 8, 840: 6, 842: 6, 844: 8, 866: 4, 869: 4, 872: 1, 961: 8, 967: 4, 969: 8, 977: 8, 979: 7, 985: 5, 988: 6, 989: 8, 995: 7, 1001: 5, 1003: 5, 1005: 6, 1009: 8, 1013: 3, 1017: 8, 1019: 2, 1020: 8, 1022: 1, 1105: 6, 1187: 4, 1217: 8, 1221: 5, 1223: 3, 1225: 7, 1227: 4, 1233: 8, 1243: 3, 1249: 8, 1257: 6, 1265: 8, 1275: 3, 1280: 4, 1300: 8, 1322: 6, 1328: 4, 1601: 8, 1904: 7, 1905: 7, 1906: 7, 1907: 7, 1912: 7, 1913: 7, 1927: 7, 2016: 8, 2020: 8, 2024: 8, 2028: 8
   },
   # Bolt EV Premier 2017 w Pedal
-  {
-    170: 8, 188: 8, 189: 7, 190: 6, 192: 5, 193: 8, 197: 8, 201: 6, 209: 7, 211: 2, 241: 6, 289: 1, 290: 1, 298: 8, 304: 8, 309: 8, 311: 8, 313: 8, 320: 8, 322: 7, 328: 1, 352: 5, 353: 3, 368: 8, 381: 6, 384: 8, 386: 8, 388: 8, 390: 7, 407: 7, 417: 7, 419: 1, 451: 8, 452: 8, 453: 6, 454: 8, 456: 8, 458: 8, 463: 3, 479: 3, 481: 7, 485: 8, 489: 5, 493: 8, 495: 4, 497: 8, 499: 3, 500: 6, 501: 8, 503: 1, 508: 8, 512: 3, 512: 6, 513: 6, 514: 2, 516: 4, 519: 2, 521: 3, 528: 5, 530: 8, 532: 7, 537: 5, 539: 8, 542: 7, 546: 7, 550: 8, 554: 3, 558: 8, 560: 6, 562: 4, 563: 5, 564: 5, 565: 8, 566: 6, 567: 5, 568: 1, 569: 3, 573: 1, 577: 8, 608: 8, 609: 6, 610: 6, 611: 6, 612: 8, 613: 8, 647: 3, 707: 8, 711: 6, 717: 5, 753: 5, 761: 7, 800: 6, 810: 8, 832: 8, 840: 6, 842: 6, 844: 8, 866: 4, 869: 4, 872: 1, 961: 8, 967: 4, 969: 8, 977: 8, 979: 7, 985: 5, 988: 6, 989: 8, 995: 7, 1001: 5, 1003: 5, 1005: 6, 1009: 8, 1013: 3, 1017: 8, 1019: 2, 1020: 8, 1022: 1, 1105: 6, 1187: 4, 1217: 8, 1221: 5, 1223: 3, 1225: 7, 1227: 4, 1233: 8, 1243: 3, 1249: 8, 1257: 6, 1265: 8, 1275: 3, 1280: 4, 1300: 8, 1322: 6, 1328: 4, 1601: 8, 1904: 7, 1905: 7, 1906: 7, 1907: 7, 1912: 7, 1913: 7, 1927: 7, 2016: 8, 2020: 8, 2024: 8, 2028: 8
+  { # pylint: disable=duplicate-key
+    170: 8, 188: 8, 189: 7, 190: 6, 192: 5, 193: 8, 197: 8, 201: 6, 209: 7, 211: 2, 241: 6, 289: 1, 290: 1, 298: 8, 304: 8, 309: 8, 311: 8, 313: 8, 320: 8, 322: 7, 328: 1, 352: 5, 353: 3, 368: 8, 381: 6, 384: 8, 386: 8, 388: 8, 390: 7, 407: 7, 417: 7, 419: 1, 451: 8, 452: 8, 453: 6, 454: 8, 456: 8, 458: 8, 463: 3, 479: 3, 481: 7, 485: 8, 489: 5, 493: 8, 495: 4, 497: 8, 499: 3, 500: 6, 501: 8, 503: 1, 508: 8, 512: 3, 512: 6, 513: 6, 514: 2, 516: 4, 519: 2, 521: 3, 528: 5, 530: 8, 532: 7, 537: 5, 539: 8, 542: 7, 546: 7, 550: 8, 554: 3, 558: 8, 560: 6, 562: 4, 563: 5, 564: 5, 565: 8, 566: 6, 567: 5, 568: 1, 569: 3, 573: 1, 577: 8, 608: 8, 609: 6, 610: 6, 611: 6, 612: 8, 613: 8, 647: 3, 707: 8, 711: 6, 717: 5, 753: 5, 761: 7, 800: 6, 810: 8, 832: 8, 840: 6, 842: 6, 844: 8, 866: 4, 869: 4, 872: 1, 961: 8, 967: 4, 969: 8, 977: 8, 979: 7, 985: 5, 988: 6, 989: 8, 995: 7, 1001: 5, 1003: 5, 1005: 6, 1009: 8, 1013: 3, 1017: 8, 1019: 2, 1020: 8, 1022: 1, 1105: 6, 1187: 4, 1217: 8, 1221: 5, 1223: 3, 1225: 7, 1227: 4, 1233: 8, 1243: 3, 1249: 8, 1257: 6, 1265: 8, 1275: 3, 1280: 4, 1300: 8, 1322: 6, 1328: 4, 1601: 8, 1904: 7, 1905: 7, 1906: 7, 1907: 7, 1912: 7, 1913: 7, 1927: 7, 2016: 8, 2020: 8, 2024: 8, 2028: 8 # pylint: disable=duplicate-key
   },
   # Bolt EV Premier 2017 2 w Pedal
   {
@@ -201,6 +214,7 @@ FINGERPRINTS = {
 
 EV_CAR = set([CAR.BOLT_NR, CAR.VOLT, CAR.VOLT_NR])
 NO_ASCM = set([CAR.VOLT_NR, CAR.MALIBU_NR, CAR.ACADIA_NR, CAR.BOLT_NR, CAR.EQUINOX_NR, CAR.TAHOE_NR, CAR.SILVERADO_NR])
+HIGH_TORQUE = set([CAR.BOLT_NR, CAR.VOLT, CAR.VOLT_NR])
 
 DBC = {
   CAR.HOLDEN_ASTRA: dbc_dict('gm_global_a_powertrain', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'),
