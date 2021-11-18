@@ -38,6 +38,11 @@ class CarInterface(CarInterfaceBase):
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.gm)]
     ret.pcmCruise = False  # stock cruise control is kept off
 
+    # TODO: safety param should be a bitmask so we can pass info about ACC type?
+    
+    # Default to normal torque limits
+    ret.safetyConfigs[0].safetyParam = 0
+    
     # Presence of a camera on the object bus is ok.
     # Have to go to read_only if ASCM is online (ACC-enabled cars),
     # or camera is on powertrain bus (LKA cars without ACC).
@@ -160,8 +165,8 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 3.745
       ret.steerRatio = 16.3 # From a 2019 SILVERADO
       ret.centerToFront = ret.wheelbase * 0.49
-      tire_stiffness_factor = 1.0
-
+      ret.safetyConfigs[0].safetyParam = 1 # set appropriate safety param for increased torque limits to match values.py
+          
     # TODO: get actual value, for now starting with reasonable value for
     # civic and scaling by mass and wheelbase
     ret.rotationalInertia = scale_rot_inertia(ret.mass, ret.wheelbase)
