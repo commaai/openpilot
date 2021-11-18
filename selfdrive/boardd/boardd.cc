@@ -237,6 +237,7 @@ void can_recv_thread(std::vector<Panda *> pandas) {
   // run at 100hz
   const uint64_t dt = 10000000ULL;
   uint64_t next_frame_time = nanos_since_boot() + dt;
+  std::vector<can_frame> raw_can_data;
 
   while (!do_exit) {
     if (!check_all_connected(pandas)){
@@ -244,8 +245,8 @@ void can_recv_thread(std::vector<Panda *> pandas) {
       break;
     }
 
-    std::vector<can_frame> raw_can_data;
     bool comms_healthy = true;
+    raw_can_data.clear();
     for (const auto& panda : pandas) {
       comms_healthy &= panda->can_receive(raw_can_data);
     }
