@@ -627,11 +627,7 @@ void pigeon_thread(Panda *panda) {
   delete pigeon;
 }
 
-int main(int argc, char* argv[]) {
-  std::vector<std::thread> threads;
-  std::vector<Panda *> pandas;
-  Panda *peripheral_panda;
-
+int main(int argc, char *argv[]) {
   LOGW("starting boardd");
 
   if (!Hardware::PC()) {
@@ -645,49 +641,42 @@ int main(int argc, char* argv[]) {
   LOGW("attempting to connect");
   PubMaster pm({"pandaStates", "peripheralState"});
 
-  // connect loop
-  while (!do_exit) {
-    std::vector<std::string> serials(argv + 1, argv + argc);
-    if (serials.size() == 0) serials.push_back("");
+  std::vector<std::string> serials(argv + 1, argv + argc);
+  if (serials.size() == 0) serials.push_back("");
 
-    // connect to all provided serials
-    for (int i=0; i<serials.size(); i++) {
-      Panda *p = usb_connect(serials[i], i);
-      if (p != NULL) {
-        pandas.push_back(p);
-      }
-    }
-
-    // send empty pandaState & peripheralState and try again
-    if (pandas.size() != serials.size()) {
+  // connect to all provided serials
+  std::vector<Panda *> pandas;
+  for (int i = 0; i < serials.size() && !do_exit; /**/) {
+    Panda *p = usb_connect(serials[i], i);
+    if (!p) {
+      // send empty pandaState & peripheralState and try again
       send_empty_panda_state(&pm);
       send_empty_peripheral_state(&pm);
       util::sleep_for(500);
-    } else {
-      break;
+      continue;
     }
+
+    pandas.push_back(p);
+    ++i;
   }
 
-  if (pandas.size() == 0) {
-    // do_exit was set while not connected to a panda
-    return 0;
+  if (!do_exit) {
+    LOGW("connected to board");
+    Panda *peripheral_panda = pandas[0];
+    std::vector<std::thread> threads;
+
+    threads.emplace_back(panda_state_thread, &pm, pandas, getenv("STARTED") != nullptr);
+    threads.emplace_back(peripheral_control_thread, peripheral_panda);
+    threads.emplace_back(pigeon_thread, peripheral_panda);
+
+    threads.emplace_back(can_send_thread, pandas, getenv("FAKESEND") != nullptr);
+    threads.emplace_back(can_recv_thread, pandas);
+
+    for (auto &t : threads) t.join();
   }
-
-  peripheral_panda = pandas[0];
-
-  LOGW("connected to board");
-
-  threads.emplace_back(panda_state_thread, &pm, pandas, getenv("STARTED") != nullptr);
-  threads.emplace_back(peripheral_control_thread, peripheral_panda);
-  threads.emplace_back(pigeon_thread, peripheral_panda);
-
-  threads.emplace_back(can_send_thread, pandas, getenv("FAKESEND") != nullptr);
-  threads.emplace_back(can_recv_thread, pandas);
-
-  for (auto &t : threads) t.join();
 
   // we have exited, clean up pandas
-  for (const auto& panda : pandas){
+  for (Panda *panda : pandas) {
     delete panda;
   }
 }
