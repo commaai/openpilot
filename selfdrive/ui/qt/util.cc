@@ -17,7 +17,8 @@ QString getBrandVersion() {
 }
 
 QString getUserAgent() {
-  return "openpilot-" + QString::fromStdString(Params().get("Version"));
+  static QString version =  QString::fromStdString(Params().get("Version");
+  return "openpilot-" + version);
 }
 
 std::optional<QString> getDongleId() {
