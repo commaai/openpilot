@@ -1,5 +1,6 @@
 Version 0.8.11 (2021-11-22)
 ========================
+ * Support for CAN FD on the red panda
  * Support for an external panda on the comma three
  * Navigation: Show more detailed instructions when approaching maneuver
  * Fixed occasional steering faults on GM cars thanks to jyoung8607!
