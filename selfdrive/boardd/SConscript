@@ -6,4 +6,4 @@ env.Library('libcan_list_to_can_capnp', ['can_list_to_can_capnp.cc'])
 
 envCython.Program('boardd_api_impl.so', 'boardd_api_impl.pyx', LIBS=["can_list_to_can_capnp", 'capnp', 'kj'] + envCython["LIBS"])
 if GetOption('test'):
-  env.Program('tests/test_boardd', ['tests/test_boardd.cc', 'panda.cc'], LIBS=libs)
+  env.Program('tests/test_panda', ['tests/test_panda.cc', 'panda.cc'], LIBS=libs)
