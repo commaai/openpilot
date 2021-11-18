@@ -9,8 +9,10 @@
 #include <QSurfaceFormat>
 #include <QWidget>
 
+QString getVersion();
 QString getBrand();
 QString getBrandVersion();
+QString getUserAgent();
 std::optional<QString> getDongleId();
 void configFont(QPainter &p, const QString &family, int size, const QString &style);
 void clearLayout(QLayout* layout);
