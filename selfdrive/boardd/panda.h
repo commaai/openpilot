@@ -117,7 +117,7 @@ class Panda {
 protected:
   // for unit tests
   Panda(uint32_t bus_offset) : bus_offset(bus_offset) {}
-  void write_can_packets(const capnp::List<cereal::CanData>::Reader &can_data_list,
+  void build_can_packets(const capnp::List<cereal::CanData>::Reader &can_data_list,
                          std::function<void(uint8_t *, size_t)> write_func);
   bool read_can_packets(uint8_t *data, int size, std::vector<can_frame> &out_vec);
 };

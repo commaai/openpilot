@@ -22,12 +22,12 @@ struct PandaTest : public Panda {
 
 void PandaTest::test_can_send(capnp::List<cereal::CanData>::Reader can_data_list, int total_pakets_size) {
   std::string unpacked_data;
-  this->write_can_packets(can_data_list, [&](uint8_t *data, size_t size) {
+  this->build_can_packets(can_data_list, [&](uint8_t *chunk, size_t size) {
     int size_left = size;
     for (int i = 0, counter = 0; i < size; i += CHUNK_SIZE, counter++) {
-      REQUIRE(data[i] == counter);
+      REQUIRE(chunk[i] == counter);
       const int len = std::min(CHUNK_SIZE - 1, size_left - 1);
-      unpacked_data.append((char *)&data[i + 1], len);
+      unpacked_data.append((char *)&chunk[i + 1], len);
       size_left -= (len + 1);
     }
   });
@@ -38,7 +38,10 @@ void PandaTest::test_can_send(capnp::List<cereal::CanData>::Reader can_data_list
   for (int pos = 0, pckt_len = 0; pos < unpacked_data.size(); pos += pckt_len) {
     const uint8_t data_len = dlc_to_len[(unpacked_data[pos] >> 4)];
     pckt_len = CANPACKET_HEAD_SIZE + data_len;
-    REQUIRE(*(uint32_t *)&unpacked_data[pos + 1] == cnt << 3);
+
+    can_header header;
+    memcpy(&header, &unpacked_data[pos], CANPACKET_HEAD_SIZE);
+    REQUIRE(header.addr == cnt);
     REQUIRE(memcmp(TEST_DATA.data(), &unpacked_data[pos + 5], TEST_DATA.size()) == 0);
     ++cnt;
   }
@@ -47,14 +50,13 @@ void PandaTest::test_can_send(capnp::List<cereal::CanData>::Reader can_data_list
 
 void PandaTest::test_can_recv(capnp::List<cereal::CanData>::Reader can_data_list) {
   std::vector<can_frame> frames;
-  this->write_can_packets(can_data_list, [&](uint8_t *data, size_t size) {
+  this->build_can_packets(can_data_list, [&](uint8_t *data, size_t size) {
     this->read_can_packets(data, size, frames);
   });
 
   REQUIRE(frames.size() == can_data_list.size());
   for (int i = 0; i < frames.size(); ++i) {
     REQUIRE(frames[i].address == i);
-    REQUIRE(frames[i].src == 1);
     REQUIRE(memcmp(TEST_DATA.data(), frames[i].dat.data(), TEST_DATA.size()) == 0);
   }
 }
@@ -68,8 +70,6 @@ TEST_CASE("test can") {
   for (uint8_t i = 0; i < can_list.size(); ++i) {
     auto can = can_list[i];
     can.setAddress(i);
-    can.setBusTime(i);
-    can.setSrc(1);
     can.setDat(kj::ArrayPtr((uint8_t *)TEST_DATA.data(), TEST_DATA.size()));
     total_pakets_size += CANPACKET_HEAD_SIZE + TEST_DATA.size();
   }

@@ -363,7 +363,8 @@ uint8_t Panda::len_to_dlc(uint8_t len) {
   }
 }
 
-void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list) {
+void Panda::build_can_packets(const capnp::List<cereal::CanData>::Reader &can_data_list,
+                         std::function<void(uint8_t *, size_t)> write_func) {
   if (send.size() < (can_data_list.size() * CANPACKET_MAX_SIZE)) {
     send.resize(can_data_list.size() * CANPACKET_MAX_SIZE);
   }
@@ -410,9 +411,14 @@ void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list) {
         ptr += copy_size + 1;
         counter++;
       }
-      usb_bulk_write(3, to_write, ptr, 5);
+      write_func(to_write, ptr);
     }
   }
+}
+void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list) {
+  build_can_packets(can_data_list, [=](uint8_t* data, size_t size) {
+    usb_bulk_write(3, data, size, 5);
+  });
 }
 
 bool Panda::can_receive(std::vector<can_frame>& out_vec) {
@@ -429,18 +435,21 @@ bool Panda::can_receive(std::vector<can_frame>& out_vec) {
   if (!comms_healthy) {
     return false;
   }
+  return read_can_packets(data, recv, out_vec);
+}
 
+bool Panda::read_can_packets(uint8_t *data, int size, std::vector<can_frame> &out_vec) {
   static uint8_t tail[CANPACKET_MAX_SIZE];
   uint8_t tail_size = 0;
   uint8_t counter = 0;
-  for (int i = 0; i < recv; i += 64) {
+  for (int i = 0; i < size; i += 64) {
     // Check for counter every 64 bytes (length of USB packet)
     if (counter != data[i]) {
       LOGE("CAN: MALFORMED USB RECV PACKET");
       break;
     }
     counter++;
-    uint8_t chunk_len = ((recv - i) > 64) ? 63 : (recv - i - 1); // as 1 is always reserved for counter
+    uint8_t chunk_len = ((size - i) > 64) ? 63 : (size - i - 1); // as 1 is always reserved for counter
     uint8_t chunk[CANPACKET_MAX_SIZE];
     memcpy(chunk, tail, tail_size);
     memcpy(&chunk[tail_size], &data[i+1], chunk_len);
