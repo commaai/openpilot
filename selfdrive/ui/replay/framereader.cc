@@ -1,6 +1,7 @@
 #include "selfdrive/ui/replay/framereader.h"
 
 #include <cassert>
+#include "libyuv.h"
 
 namespace {
 
@@ -227,13 +228,26 @@ AVFrame *FrameReader::decodeFrame(AVPacket *pkt) {
 }
 
 bool FrameReader::copyBuffers(AVFrame *f, uint8_t *rgb, uint8_t *yuv) {
-  // images is going to be written to output buffers, no alignment (align = 1)
   if (yuv) {
-    av_image_fill_arrays(sws_frame->data, sws_frame->linesize, yuv, AV_PIX_FMT_YUV420P, width, height, 1);
-    int ret = sws_scale(yuv_sws_ctx_, (const uint8_t **)f->data, f->linesize, 0, f->height, sws_frame->data, sws_frame->linesize);
-    if (ret < 0) return false;
+    if (sws_src_format == AV_PIX_FMT_NV12) {
+      // libswscale crash if height is not 16 bytes aligned for NV12->YUV420 conversion
+      assert(sws_src_format == AV_PIX_FMT_NV12);
+      uint8_t *u = yuv + width * height;
+      uint8_t *v = u + (width / 2) * (height / 2);
+      libyuv::NV12ToI420(f->data[0], f->linesize[0],
+                         f->data[1], f->linesize[1],
+                         yuv, width,
+                         u, width / 2,
+                         v, width / 2,
+                         width, height);
+    } else {
+      av_image_fill_arrays(sws_frame->data, sws_frame->linesize, yuv, AV_PIX_FMT_YUV420P, width, height, 1);
+      int ret = sws_scale(yuv_sws_ctx_, (const uint8_t **)f->data, f->linesize, 0, f->height, sws_frame->data, sws_frame->linesize);
+      if (ret < 0) return false;
+    }
   }
 
+  // images is going to be written to output buffers, no alignment (align = 1)
   av_image_fill_arrays(sws_frame->data, sws_frame->linesize, rgb, AV_PIX_FMT_BGR24, width, height, 1);
   int ret = sws_scale(rgb_sws_ctx_, (const uint8_t **)f->data, f->linesize, 0, f->height, sws_frame->data, sws_frame->linesize);
   return ret >= 0;

@@ -13,11 +13,12 @@
 #include "cereal/gen/cpp/car.capnp.h"
 #include "cereal/gen/cpp/log.capnp.h"
 
-// double the FIFO size
-#define RECV_SIZE (0x4000)
 #define TIMEOUT 0
 #define PANDA_BUS_CNT 4
-#define CANPACKET_HEAD_SIZE (0x5U)
+#define RECV_SIZE (0x4000U)
+#define USB_TX_SOFT_LIMIT   (0x100U)
+#define CANPACKET_HEAD_SIZE 5U
+#define CANPACKET_MAX_SIZE  72U
 #define CANPACKET_REJECTED  (0xC0U)
 #define CANPACKET_RETURNED  (0x80U)
 
@@ -42,6 +43,16 @@ struct __attribute__((packed)) health_t {
   uint8_t fault_status;
   uint8_t power_save_enabled;
   uint8_t heartbeat_lost;
+};
+
+struct __attribute__((packed)) can_header {
+  uint8_t reserved : 1;
+  uint8_t bus : 3;
+  uint8_t data_len_code : 4;
+  uint8_t rejected : 1;
+  uint8_t returned : 1;
+  uint8_t extended : 1;
+  uint32_t addr : 29;
 };
 
 struct can_frame {
