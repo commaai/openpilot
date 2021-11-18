@@ -80,8 +80,8 @@ class AlertManager:
       self.alert_type = self.alert.alert_type
       self.audible_alert = self.alert.audible_alert
       self.visual_alert = self.alert.visual_alert
-      self.alert_text_1 = self.alert_text_1
-      self.alert_text_2 = self.alert_text_2
-      self.alert_status = self.alert_status
-      self.alert_size = self.alert_size
-      self.alert_rate = self.alert_rate
+      self.alert_text_1 = self.alert.alert_text_1
+      self.alert_text_2 = self.alert.alert_text_2
+      self.alert_status = self.alert.alert_status
+      self.alert_size = self.alert.alert_size
+      self.alert_rate = self.alert.alert_rate

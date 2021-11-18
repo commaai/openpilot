@@ -41,7 +41,7 @@ void Sound::update() {
 
   // scale volume with speed
   if (sm.updated("carState")) {
-    float volume = util::map_val(sm["carState"].getCarState().getVEgo(), 0.f, 20.f,
+    float volume = util::map_val(sm["carState"].getCarState().getVEgo(), 0.f, 29.f,
                                  Hardware::MIN_VOLUME, Hardware::MAX_VOLUME);
     for (auto &[s, loops] : sounds) {
       s->setVolume(std::round(100 * volume) / 100);

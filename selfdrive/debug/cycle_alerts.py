@@ -23,8 +23,9 @@ def cycle_alerts(duration=200, is_metric=False):
     (EventName.buttonEnable, ET.ENABLE),
     (EventName.buttonCancel, ET.USER_DISABLE),
     (EventName.wrongGear, ET.NO_ENTRY),
-    (EventName.accFaulted, ET.IMMEDIATE_DISABLE),
+
     (EventName.vehicleModelInvalid, ET.SOFT_DISABLE),
+    (EventName.accFaulted, ET.IMMEDIATE_DISABLE),
 
     # DM sequence
     (EventName.preDriverDistracted, ET.WARNING),
@@ -58,6 +59,8 @@ def cycle_alerts(duration=200, is_metric=False):
       for _ in range(duration):
         dat = messaging.new_message()
         dat.init('controlsState')
+        dat.controlsState.enabled = True
+
         dat.controlsState.alertText1 = AM.alert_text_1
         dat.controlsState.alertText2 = AM.alert_text_2
         dat.controlsState.alertSize = AM.alert_size
