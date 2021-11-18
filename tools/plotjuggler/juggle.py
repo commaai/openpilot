@@ -116,4 +116,4 @@ if __name__ == "__main__":
   if args.stream:
     start_juggler(layout=args.layout)
   else:
-    juggle_route(args.route_name, args.segment_number, args.segment_count, args.qlog, args.can, args.layout)
+    juggle_route(args.route_name.strip(), args.segment_number, args.segment_count, args.qlog, args.can, args.layout)
