@@ -46,7 +46,7 @@
     "severity": 0
   },
   "Offroad_NoFirmware": {
-    "text": "openpilot was unable to identify your car. Ensure the comma power is fully inserted in the OBD-II port of the vehicle. Need help? Join discord.comma.ai.",
+    "text": "openpilot was unable to identify your car. Check integrity of cables and ensure all connections are secure, particularly that the comma power is fully inserted in the OBD-II port of the vehicle. Need help? Join discord.comma.ai.",
     "severity": 0
   }
 }
