@@ -9,6 +9,7 @@
 #include <QSurfaceFormat>
 #include <QWidget>
 
+QString getVersion();
 QString getBrand();
 QString getBrandVersion();
 QString getUserAgent();

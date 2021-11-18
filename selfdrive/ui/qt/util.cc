@@ -8,17 +8,21 @@
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/hardware/hw.h"
 
+QString getVersion() {
+  static QString version =  QString::fromStdString(Params().get("Version"));
+  return version;
+}
+
 QString getBrand() {
   return Params().getBool("Passive") ? "dashcam" : "openpilot";
 }
 
 QString getBrandVersion() {
-  return getBrand() + " v" + QString::fromStdString(Params().get("Version")).left(14).trimmed();
+  return getBrand() + " v" + getVersion().left(14).trimmed();
 }
 
 QString getUserAgent() {
-  static QString version =  QString::fromStdString(Params().get("Version"));
-  return "openpilot-" + version;
+  return "openpilot-" + getVersion();
 }
 
 std::optional<QString> getDongleId() {
