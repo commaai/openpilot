@@ -18,15 +18,7 @@ class CarController():
     self.lka_icon_status_last = (False, False)
     self.steer_rate_limited = False
 
-    self.params = CarControllerParams()
-
-    #TODO: confirm these values still apply. Based on Bolt Steering Column from 0.7.x
-    if CP.carFingerprint in NO_ASCM:
-      self.STEER_MAX = 300
-      self.STEER_STEP = 1
-      self.STEER_DELTA_UP = 3          # ~0.75s time to peak torque (255/50hz/0.75s)
-      self.STEER_DELTA_DOWN = 7       # ~0.3s from peak torque to zero
-      self.MIN_STEER_SPEED = 3.
+    self.params = CarControllerParams(CP)
 
     self.packer_pt = CANPacker(DBC[CP.carFingerprint]['pt'])
     self.packer_obj = CANPacker(DBC[CP.carFingerprint]['radar'])
