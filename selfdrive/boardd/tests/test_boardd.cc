@@ -16,16 +16,20 @@ int random_int(int min, int max) {
   return dist(rng);
 }
 
-class PandaTest : public Panda {
- public:
-  PandaTest(uint32_t bus_offset);
-  void test_can_send(const capnp::List<cereal::CanData>::Reader &can_data_list, int total_pakets_size);
-  void test_can_recv(const capnp::List<cereal::CanData>::Reader &can_data_list);
-  void benchmark(const capnp::List<cereal::CanData>::Reader &can_data_list);
+struct PandaTest : public Panda {
+  PandaTest(uint32_t bus_offset, int can_list_size);
+  void test_can_send();
+  void test_can_recv();
+
   std::map<int, std::string> test_data;
+  int can_list_size = 0;
+  int total_pakets_size = 0;
+  MessageBuilder msg;
+  capnp::List<cereal::CanData>::Reader can_data_list;
 };
 
-PandaTest::PandaTest(uint32_t buf_offset_) : Panda(buf_offset_) {
+PandaTest::PandaTest(uint32_t buf_offset_, int can_list_size) : can_list_size(can_list_size), Panda(buf_offset_) {
+  // prepare test data
   for (int i = 0; i < std::size(dlc_to_len); ++i) {
     std::random_device rd;
     std::independent_bits_engine<std::default_random_engine, CHAR_BIT, unsigned char> rbe(rd());
@@ -35,9 +39,35 @@ PandaTest::PandaTest(uint32_t buf_offset_) : Panda(buf_offset_) {
     std::generate(bytes.begin(), bytes.end(), std::ref(rbe));
     test_data[data_len] = bytes;
   }
+
+  // generate can messages for this panda
+  int other_panda_message_cnt = 3;
+  auto can_list = msg.initEvent().initSendcan(can_list_size + other_panda_message_cnt);
+  for (uint8_t i = 0; i < can_list_size; ++i) {
+    auto can = can_list[i];
+    uint32_t id = random_int(0, std::size(dlc_to_len) - 1);
+    const std::string &dat = test_data[dlc_to_len[id]];
+    can.setAddress(i);
+    can.setSrc(bus_offset);
+    can.setDat(kj::ArrayPtr((uint8_t *)dat.data(), dat.size()));
+    total_pakets_size += CANPACKET_HEAD_SIZE + dat.size();
+  }
+
+  // generate can messages from other panda
+  for (int i = can_list_size; i < can_list_size + other_panda_message_cnt; ++i) {
+    auto can = can_list[i];
+    uint32_t id = random_int(0, std::size(dlc_to_len) - 1);
+    const std::string &dat = test_data[dlc_to_len[id]];
+    can.setAddress(i);
+    can.setSrc(bus_offset + PANDA_BUS_CNT);
+    can.setDat(kj::ArrayPtr((uint8_t *)dat.data(), dat.size()));
+  }
+
+  can_data_list = can_list.asReader();
+  INFO("test " << can_list_size << " packets, total size " << total_pakets_size);
 }
 
-void PandaTest::test_can_send(const capnp::List<cereal::CanData>::Reader &can_data_list, int total_pakets_size) {
+void PandaTest::test_can_send() {
   std::vector<uint8_t> unpacked_data;
   this->pack_can_buffer(can_data_list, [&](uint8_t *chunk, size_t size) {
     int size_left = size;
@@ -60,22 +90,21 @@ void PandaTest::test_can_send(const capnp::List<cereal::CanData>::Reader &can_da
     pckt_len = CANPACKET_HEAD_SIZE + data_len;
 
     REQUIRE(header.addr == cnt);
-
     REQUIRE(test_data.find(data_len) != test_data.end());
     const std::string &dat = test_data[data_len];
     REQUIRE(memcmp(dat.data(), &unpacked_data[pos + 5], dat.size()) == 0);
     ++cnt;
   }
-  REQUIRE(cnt == can_data_list.size());
+  REQUIRE(cnt == can_list_size);
 }
 
-void PandaTest::test_can_recv(const capnp::List<cereal::CanData>::Reader &can_data_list) {
+void PandaTest::test_can_recv() {
   std::vector<can_frame> frames;
   this->pack_can_buffer(can_data_list, [&](uint8_t *data, size_t size) {
     this->unpack_can_buffer(data, size, frames);
   });
 
-  REQUIRE(frames.size() == can_data_list.size());
+  REQUIRE(frames.size() == can_list_size);
   for (int i = 0; i < frames.size(); ++i) {
     REQUIRE(frames[i].address == i);
     REQUIRE(test_data.find(frames[i].dat.size()) != test_data.end());
@@ -85,28 +114,14 @@ void PandaTest::test_can_recv(const capnp::List<cereal::CanData>::Reader &can_da
 }
 
 TEST_CASE("send/recv can packets") {
+  auto bus_offset = GENERATE(2, 4);
   auto can_list_size = GENERATE(1, 3, 5, 10, 30, 60, 100, 200);
-  PandaTest test(0);
-
-  size_t total_pakets_size = 0;
-  MessageBuilder msg;
-  auto can_list = msg.initEvent().initSendcan(can_list_size);
-  for (uint8_t i = 0; i < can_list.size(); ++i) {
-    auto can = can_list[i];
-    uint32_t id = random_int(0, std::size(dlc_to_len) - 1);
-    const std::string &dat = test.test_data[dlc_to_len[id]];
-    can.setAddress(i);
-    can.setDat(kj::ArrayPtr((uint8_t *)dat.data(), dat.size()));
-    total_pakets_size += CANPACKET_HEAD_SIZE + dat.size();
-  }
-
-  INFO("test " << can_list_size << " packets, total size " << total_pakets_size);
+  PandaTest test(bus_offset, can_list_size);
 
   SECTION("can_send") {
-    test.test_can_send(can_list.asReader(), total_pakets_size);
+    test.test_can_send();
   }
-
   SECTION("can_receive") {
-    test.test_can_recv(can_list.asReader());
+    test.test_can_recv();
   }
 }
