@@ -18,17 +18,22 @@ from selfdrive.hardware import TICI
 class KalmanParams():
   def __init__(self, dt):
     # Lead Kalman Filter params, calculating K from A, C, Q, R requires the control library.
-    # hardcoding a lookup table to compute K for values of radar_ts between 0.01s and 0.15s
-    # TODO: calculate new values for radar_ts > 0.1s
-    assert dt > .01 and dt < .15, "Radar time step must be between .01s and 0.15s"
+    # hardcoding a lookup table to compute K for values of radar_ts between 0.01s and 0.2s
+    assert dt > .01 and dt < .2, "Radar time step must be between .01s and 0.2s"
     self.A = [[1.0, dt], [0.0, 1.0]]
     self.C = [1.0, 0.0]
     #Q = np.matrix([[10., 0.0], [0.0, 100.]])
     #R = 1e3
     #K = np.matrix([[ 0.05705578], [ 0.03073241]])
-    dts = [dt * 0.01 for dt in range(1, 11)]
-    K0 = [0.12288, 0.14557, 0.16523, 0.18282, 0.19887, 0.21372, 0.22761, 0.24069, 0.2531, 0.26491]
-    K1 = [0.29666, 0.29331, 0.29043, 0.28787, 0.28555, 0.28342, 0.28144, 0.27958, 0.27783, 0.27617]
+    dts = [dt * 0.01 for dt in range(1, 21)]
+    K0 = [0.12287673, 0.14556536, 0.16522756, 0.18281627, 0.1988689,  0.21372394,
+          0.22761098, 0.24069424, 0.253096,   0.26491023, 0.27621103, 0.28705801,
+          0.29750003, 0.30757767, 0.31732515, 0.32677158, 0.33594201, 0.34485814,
+          0.35353899, 0.36200124]
+    K1 = [0.29666309, 0.29330885, 0.29042818, 0.28787125, 0.28555364, 0.28342219,
+          0.28144091, 0.27958406, 0.27783249, 0.27617149, 0.27458948, 0.27307714,
+          0.27162685, 0.27023228, 0.26888809, 0.26758976, 0.26633338, 0.26511557,
+          0.26393339, 0.26278425]
     self.K = [[interp(dt, dts, K0)], [interp(dt, dts, K1)]]
 
 
