@@ -23,7 +23,6 @@ const float MIN_PITCH = 0;
 const float MAP_SCALE = 2;
 
 const QString ICON_SUFFIX = ".png";
-const QString ICON_SUFFIX_RHD = "_rhd.png";
 
 MapWindow::MapWindow(const QMapboxGLSettings &settings) :
   m_settings(settings), velocity_filter(0, 10, 0.1) {
@@ -442,15 +441,22 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
     if (!modifier.isEmpty()) {
       fn += "_" + modifier;
     }
+    fn += ICON_SUFFIX;
     fn = fn.replace(' ', '_');
 
-    if (is_rhd && QFileInfo::exists(fn + ICON_SUFFIX_RHD)) {
-      fn = fn + ICON_SUFFIX_RHD;
-    } else {
-      fn = fn + ICON_SUFFIX;
+    // for rhd, reflect direction and then flip
+    if (is_rhd) {
+      if (fn.contains("left")) {
+        fn.replace(QString("left"), QString("right"));
+      } else if (fn.contains("right")) {
+        fn.replace(QString("right"), QString("left"));
+      }
     }
 
     QPixmap pix(fn);
+    if (is_rhd) {
+      pix = pix.transformed(QTransform().scale(-1, 1));
+    }
     icon_01->setPixmap(pix.scaledToWidth(200, Qt::SmoothTransformation));
     icon_01->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
     icon_01->setVisible(true);
