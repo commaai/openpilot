@@ -28,7 +28,7 @@ struct PandaTest : public Panda {
   capnp::List<cereal::CanData>::Reader can_data_list;
 };
 
-PandaTest::PandaTest(uint32_t buf_offset_, int can_list_size) : can_list_size(can_list_size), Panda(buf_offset_) {
+PandaTest::PandaTest(uint32_t bus_offset_, int can_list_size) : can_list_size(can_list_size), Panda(bus_offset_) {
   // prepare test data
   for (int i = 0; i < std::size(dlc_to_len); ++i) {
     std::random_device rd;
