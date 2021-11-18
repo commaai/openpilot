@@ -320,7 +320,6 @@ class LongitudinalMpc():
     self.cruise_max_a = max_a
 
   def set_desired_TR(self, desired_TR):
-    print(desired_TR)
     self.desired_TR = desired_TR
     self.set_weights()
 
