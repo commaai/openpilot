@@ -363,7 +363,7 @@ uint8_t Panda::len_to_dlc(uint8_t len) {
   }
 }
 
-void Panda::build_can_packets(const capnp::List<cereal::CanData>::Reader &can_data_list,
+void Panda::pack_can_buffer(const capnp::List<cereal::CanData>::Reader &can_data_list,
                          std::function<void(uint8_t *, size_t)> write_func) {
   if (send.size() < (can_data_list.size() * CANPACKET_MAX_SIZE)) {
     send.resize(can_data_list.size() * CANPACKET_MAX_SIZE);
@@ -417,7 +417,7 @@ void Panda::build_can_packets(const capnp::List<cereal::CanData>::Reader &can_da
 }
 
 void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list) {
-  build_can_packets(can_data_list, [=](uint8_t* data, size_t size) {
+  pack_can_buffer(can_data_list, [=](uint8_t* data, size_t size) {
     usb_bulk_write(3, data, size, 5);
   });
 }
@@ -436,10 +436,10 @@ bool Panda::can_receive(std::vector<can_frame>& out_vec) {
   if (!comms_healthy) {
     return false;
   }
-  return read_can_packets(data, recv, out_vec);
+  return unpack_can_buffer(data, recv, out_vec);
 }
 
-bool Panda::read_can_packets(uint8_t *data, int size, std::vector<can_frame> &out_vec) {
+bool Panda::unpack_can_buffer(uint8_t *data, int size, std::vector<can_frame> &out_vec) {
   static uint8_t tail[CANPACKET_MAX_SIZE];
   uint8_t tail_size = 0;
   uint8_t counter = 0;

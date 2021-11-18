@@ -22,7 +22,7 @@ struct PandaTest : public Panda {
 
 void PandaTest::test_can_send(capnp::List<cereal::CanData>::Reader can_data_list, int total_pakets_size) {
   std::string unpacked_data;
-  this->build_can_packets(can_data_list, [&](uint8_t *chunk, size_t size) {
+  this->pack_can_buffer(can_data_list, [&](uint8_t *chunk, size_t size) {
     int size_left = size;
     for (int i = 0, counter = 0; i < size; i += CHUNK_SIZE, counter++) {
       REQUIRE(chunk[i] == counter);
@@ -50,8 +50,8 @@ void PandaTest::test_can_send(capnp::List<cereal::CanData>::Reader can_data_list
 
 void PandaTest::test_can_recv(capnp::List<cereal::CanData>::Reader can_data_list) {
   std::vector<can_frame> frames;
-  this->build_can_packets(can_data_list, [&](uint8_t *data, size_t size) {
-    this->read_can_packets(data, size, frames);
+  this->pack_can_buffer(can_data_list, [&](uint8_t *data, size_t size) {
+    this->unpack_can_buffer(data, size, frames);
   });
 
   REQUIRE(frames.size() == can_data_list.size());
