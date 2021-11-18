@@ -1,5 +1,6 @@
 Version 0.8.12 (202X-XX-XX)
 ========================
+ * Hyundai Santa Fe Hybrid 2022 support thanks to sunnyhaibin!
 
 Version 0.8.11 (2021-11-22)
 ========================
