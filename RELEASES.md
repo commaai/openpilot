@@ -1,20 +1,22 @@
-Version 0.8.11-GM-0.2.8 (2021-11-15)
+Version 0.8.11-GM-0.3.0 (2021-11-18)
 ========================
  * Chevy Bolt EV Support (And several others)
- * TEST of cross-flashed Bolt Brake controller
+ * TEST ready for cross-flashed Bolt Brake controller
  * Non-ASCM (aka non-radar) GM support
  * GM longitudinal support using Pedal Interceptor (no braking on non-EV)
  * Grey & White Panda Support restored
  * WARNING: Pedal firmware is GM specific
- * (TODO REDO) Improved camera detection within Panda (will not forward if camera not detected)
- * (TODO REDO) Front Camera passthrough & forwarding
+ * Silverado with Cam ACC passthrough
+ * Robust and efficient camera detection for forwarding on Panda
+ * DBC groundwork for friction braking and AEB
+ * Reworked GM values.py with capability for conditional limits
+ * Panda now supports multiple limit profiles through safety_param
+ * Cleaned up radar settings
+ * ISSUE: several alerts are disabled (can error, comm error) - TODO: diagnose and re-enable
  * TODO: Pedal transform values configurable, store in flash
  * TODO: Pedal low-speed tuning
  * TODO: Auto-detection of B-mode
  * TODO: Auto-detection of B-mode zero-point
-
-Version 0.8.12 (202X-XX-XX)
-========================
 
 Version 0.8.11 (2021-11-22)
 ========================
