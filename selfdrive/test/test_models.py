@@ -178,7 +178,8 @@ class TestCarModel(unittest.TestCase):
       # check that openpilot and panda safety agree on the car's state
       checks['gasPressed'] += CS.gasPressed != safety.get_gas_pressed_prev()
       checks['brakePressed'] += CS.brakePressed != safety.get_brake_pressed_prev()
-      checks['controlsAllowed'] += not CS.cruiseState.enabled and safety.get_controls_allowed()
+      if self.CP.pcmCruise:
+        checks['controlsAllowed'] += not CS.cruiseState.enabled and safety.get_controls_allowed()
 
     # TODO: reduce tolerance to 0
     failed_checks = {k: v for k, v in checks.items() if v > 25}
