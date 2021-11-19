@@ -44,7 +44,6 @@ signals:
   void closeSettings();
 
   // forwarded signals
-  void displayPowerChanged(bool on);
   void update(const UIState &s);
   void offroadTransitionSignal(bool offroad);
 

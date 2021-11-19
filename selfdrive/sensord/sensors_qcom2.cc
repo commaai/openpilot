@@ -50,10 +50,10 @@ int sensor_loop() {
 
   // Sensor init
   std::vector<std::pair<Sensor *, bool>> sensors_init; // Sensor, required
-  sensors_init.push_back({&bmx055_accel, true});
-  sensors_init.push_back({&bmx055_gyro, true});
-  sensors_init.push_back({&bmx055_magn, true});
-  sensors_init.push_back({&bmx055_temp, true});
+  sensors_init.push_back({&bmx055_accel, false});
+  sensors_init.push_back({&bmx055_gyro, false});
+  sensors_init.push_back({&bmx055_magn, false});
+  sensors_init.push_back({&bmx055_temp, false});
 
   sensors_init.push_back({&lsm6ds3_accel, true});
   sensors_init.push_back({&lsm6ds3_gyro, true});
@@ -63,6 +63,7 @@ int sensor_loop() {
 
   sensors_init.push_back({&light, true});
 
+  bool has_magnetometer = false;
 
   // Initialize sensors
   std::vector<Sensor *> sensors;
@@ -75,8 +76,16 @@ int sensor_loop() {
         return -1;
       }
     } else {
+      if (sensor.first == &bmx055_magn || sensor.first == &mmc5603nj_magn) {
+        has_magnetometer = true;
+      }
       sensors.push_back(sensor.first);
     }
+  }
+
+  if (!has_magnetometer) {
+    LOGE("No magnetometer present");
+    return -1;
   }
 
   PubMaster pm({"sensorEvents"});

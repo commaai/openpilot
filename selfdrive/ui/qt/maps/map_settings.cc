@@ -138,7 +138,6 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
       HttpRequest* deleter = new HttpRequest(this);
 
       QObject::connect(repeater, &RequestRepeater::receivedResponse, [=](QString resp) {
-        auto params = Params();
         if (resp != "null") {
           if (params.get("NavDestination").empty()) {
             qWarning() << "Setting NavDestination from /next" << resp;

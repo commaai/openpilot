@@ -37,7 +37,7 @@ EOF"""
 
 def phone_steps(String device_type, steps) {
   lock(resource: "", label: device_type, inversePrecedence: true, variable: 'device_ip', quantity: 1) {
-    timeout(time: 150, unit: 'MINUTES') {
+    timeout(time: 60, unit: 'MINUTES') {
       phone(device_ip, "git checkout", readFile("selfdrive/test/setup_device_ci.sh"),)
       steps.each { item ->
         phone(device_ip, item[0], item[1])
@@ -53,7 +53,7 @@ pipeline {
     SOURCE_DIR = "/data/openpilot_source/"
   }
   options {
-      timeout(time: 3, unit: 'HOURS')
+      timeout(time: 4, unit: 'HOURS')
   }
 
   stages {
@@ -70,7 +70,7 @@ pipeline {
       }
       steps {
         phone_steps("eon-build", [
-          ["build release2-staging & dashcam-staging", "cd release && PUSH=1 ./build_release2.sh"],
+          ["build release2-staging & dashcam-staging", "PUSH=1 $SOURCE_DIR/release/build_release.sh"],
         ])
       }
     }
@@ -87,7 +87,7 @@ pipeline {
       }
       steps {
         phone_steps("tici", [
-          ["build release3-staging & dashcam3-staging", "PUSH=1 $SOURCE_DIR/release/build_release3.sh"],
+          ["build release3-staging & dashcam3-staging", "PUSH=1 $SOURCE_DIR/release/build_release.sh"],
         ])
       }
     }
@@ -213,10 +213,11 @@ pipeline {
                   }
                 }
 
-                stage('Unit Tests (tici)') {
+                stage('HW + Unit Tests (tici)') {
                   steps {
                     phone_steps("tici2", [
                       ["build", "cd selfdrive/manager && ./build.py"],
+                      ["test boardd loopback", "python selfdrive/boardd/tests/test_boardd_loopback.py"],
                       ["test loggerd", "python selfdrive/loggerd/tests/test_loggerd.py"],
                       ["test encoder", "LD_LIBRARY_PATH=/usr/local/lib python selfdrive/loggerd/tests/test_encoder.py"],
                     ])

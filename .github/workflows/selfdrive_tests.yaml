@@ -15,7 +15,7 @@ env:
       docker pull $DOCKER_REGISTRY/$BASE_IMAGE:latest || true
       docker build --cache-from $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $DOCKER_REGISTRY/$BASE_IMAGE:latest -t $BASE_IMAGE:latest -f Dockerfile.openpilot_base .
 
-  RUN: docker run --shm-size 1G -v $PWD:/tmp/openpilot -w /tmp/openpilot -e PYTHONPATH=/tmp/openpilot -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v /tmp/scons_cache:/tmp/scons_cache -v /tmp/comma_download_cache:/tmp/comma_download_cache $BASE_IMAGE /bin/sh -c
+  RUN: docker run --shm-size 1G -v $PWD:/tmp/openpilot -w /tmp/openpilot -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v /tmp/scons_cache:/tmp/scons_cache -v /tmp/comma_download_cache:/tmp/comma_download_cache $BASE_IMAGE /bin/sh -c
   UNIT_TEST: coverage run --append -m unittest discover
 
 jobs:
@@ -33,13 +33,18 @@ jobs:
     - name: Check submodules
       if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
       run: release/check-submodules.sh
-    - name: Cache dependencies
-      id: dependency-cache
-      uses: actions/cache@v2
+    - name: Cache scons
+      id: scons-cache
+      # TODO: Change the version to the released version when https://github.com/actions/cache/pull/489 (or 571) is merged.
+      uses: actions/cache@03e00da99d75a2204924908e1cca7902cafce66b
+      env:
+        CACHE_SKIP_SAVE: true
       with:
         path: /tmp/scons_cache
-        key: scons-cache-${{ hashFiles('selfdrive/**') }}
-        restore-keys: scons-cache-
+        key: scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
+        restore-keys: |
+          scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
+          scons-
     - name: Strip non-release files
       run: |
         mkdir $STRIPPED_DIR
@@ -177,7 +182,19 @@ jobs:
       uses: actions/cache@v2
       with:
         path: /tmp/comma_download_cache
-        key: ${{ hashFiles('.github/workflows/test.yaml', 'selfdrive/test/test_valgrind_replay.py') }}
+        key: ${{ hashFiles('.github/workflows/selfdrive_tests.yaml', 'selfdrive/test/test_valgrind_replay.py') }}
+    - name: Cache scons
+      id: scons-cache
+      # TODO: Change the version to the released version when https://github.com/actions/cache/pull/489 (or 571) is merged.
+      uses: actions/cache@03e00da99d75a2204924908e1cca7902cafce66b
+      env:
+        CACHE_SKIP_SAVE: true
+      with:
+        path: /tmp/scons_cache
+        key: scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
+        restore-keys: |
+          scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
+          scons-
     - name: Build Docker image
       run: eval "$BUILD"
     - name: Run valgrind
@@ -193,9 +210,26 @@ jobs:
     runs-on: ubuntu-20.04
     timeout-minutes: 50
     steps:
+    - name: Get current date
+      id: date
+      run: echo "::set-output name=time::$(date +'%s')"
+    - name: Output timestamp
+      run: echo $TIMESTAMP
+      env:
+        TIMESTAMP: ${{ steps.date.outputs.time }}
     - uses: actions/checkout@v2
       with:
         submodules: true
+    - name: Cache scons
+      id: scons-cache
+      # TODO: Change the version to the released version when https://github.com/actions/cache/pull/489 (or 571) is merged.
+      uses: actions/cache@03e00da99d75a2204924908e1cca7902cafce66b
+      env:
+        CACHE_SKIP_SAVE: ${{ github.ref != 'refs/heads/master' || github.repository != 'commaai/openpilot' }}
+      with:
+        path: /tmp/scons_cache
+        key: scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-${{ steps.date.outputs.time }}
+        restore-keys: scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
     - name: Build Docker image
       run: eval "$BUILD"
     - name: Run unit tests
@@ -211,7 +245,6 @@ jobs:
                         $UNIT_TEST selfdrive/car && \
                         $UNIT_TEST selfdrive/locationd && \
                         $UNIT_TEST selfdrive/athena && \
-                        nosetests -s selfdrive/athena/tests/test_athenad_old.py && \
                         $UNIT_TEST selfdrive/thermald && \
                         $UNIT_TEST tools/lib/tests && \
                         ./selfdrive/common/tests/test_util && \
@@ -235,7 +268,19 @@ jobs:
       uses: actions/cache@v2
       with:
         path: /tmp/comma_download_cache
-        key: ${{ hashFiles('.github/workflows/test.yaml', 'selfdrive/test/process_replay/test_processes.py') }}
+        key: ${{ hashFiles('.github/workflows/selfdrive_tests.yaml', 'selfdrive/test/process_replay/test_processes.py') }}
+    - name: Cache scons
+      id: scons-cache
+      # TODO: Change the version to the released version when https://github.com/actions/cache/pull/489 (or 571) is merged.
+      uses: actions/cache@03e00da99d75a2204924908e1cca7902cafce66b
+      env:
+        CACHE_SKIP_SAVE: true
+      with:
+        path: /tmp/scons_cache
+        key: scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
+        restore-keys: |
+          scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
+          scons-
     - name: Build Docker image
       run: eval "$BUILD"
     - name: Run replay
@@ -277,6 +322,18 @@ jobs:
     - uses: actions/checkout@v2
       with:
         submodules: true
+    - name: Cache scons
+      id: scons-cache
+      # TODO: Change the version to the released version when https://github.com/actions/cache/pull/489 (or 571) is merged.
+      uses: actions/cache@03e00da99d75a2204924908e1cca7902cafce66b
+      env:
+        CACHE_SKIP_SAVE: true
+      with:
+        path: /tmp/scons_cache
+        key: scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
+        restore-keys: |
+          scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
+          scons-
     - name: Build Docker image
       run: eval "$BUILD"
     - name: Test longitudinal
@@ -296,6 +353,9 @@ jobs:
     name: car models
     runs-on: ubuntu-20.04
     timeout-minutes: 50
+    strategy:
+      matrix:
+        job: [0, 1, 2, 3]
     steps:
     - uses: actions/checkout@v2
       with:
@@ -305,12 +365,47 @@ jobs:
       uses: actions/cache@v2
       with:
         path: /tmp/comma_download_cache
-        key: ${{ hashFiles('.github/workflows/test.yaml', 'selfdrive/test/test_routes.py') }}
+        key: car_models-${{ hashFiles('selfdrive/test/test_models.py', 'selfdrive/test/test_routes.py') }}-${{ matrix.job }}
+    - name: Cache scons
+      id: scons-cache
+      # TODO: Change the version to the released version when https://github.com/actions/cache/pull/489 (or 571) is merged.
+      uses: actions/cache@03e00da99d75a2204924908e1cca7902cafce66b
+      env:
+        CACHE_SKIP_SAVE: true
+      with:
+        path: /tmp/scons_cache
+        key: scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
+        restore-keys: |
+          scons-${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}-
+          scons-
     - name: Build Docker image
       run: eval "$BUILD"
     - name: Test car models
       run: |
-        ${{ env.RUN }} "scons -j$(nproc) && \
-                        coverage run selfdrive/test/test_models.py"
+        ${{ env.RUN }} "scons -j$(nproc) --test && \
+                        FILEREADER_CACHE=1 coverage run selfdrive/test/test_models.py && \
+                        chmod -R 777 /tmp/comma_download_cache"
+      env:
+        NUM_JOBS: 4
+        JOB_ID: ${{ matrix.job }}
     - name: Upload coverage to Codecov
       run: bash <(curl -s https://codecov.io/bash) -v -F test_car_models
+
+  docs:
+    name: build docs
+    runs-on: ubuntu-20.04
+    timeout-minutes: 50
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Build docker container
+      run: |
+        docker pull $DOCKER_REGISTRY/$BASE_IMAGE:latest || true
+        docker pull $DOCKER_REGISTRY/openpilot-docs:latest || true
+        DOCKER_BUILDKIT=1 docker build --cache-from $DOCKER_REGISTRY/openpilot-docs:latest -t $DOCKER_REGISTRY/openpilot-docs:latest -f docs/docker/Dockerfile .
+    - name: Push docker container
+      if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
+      run: |
+        $DOCKER_LOGIN
+        docker push $DOCKER_REGISTRY/openpilot-docs:latest

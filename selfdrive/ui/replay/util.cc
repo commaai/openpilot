@@ -1,16 +1,21 @@
 #include "selfdrive/ui/replay/util.h"
 
-#include <array>
+#include <bzlib.h>
+#include <curl/curl.h>
+#include <openssl/sha.h>
+
 #include <cassert>
+#include <iomanip>
 #include <iostream>
 #include <mutex>
 #include <numeric>
 
-#include <bzlib.h>
-#include <curl/curl.h>
-
 #include "selfdrive/common/timing.h"
 #include "selfdrive/common/util.h"
+
+namespace {
+
+static std::atomic<bool> enable_http_logging = false;
 
 struct CURLGlobalInitializer {
   CURLGlobalInitializer() { curl_global_init(CURL_GLOBAL_DEFAULT); }
@@ -18,25 +23,37 @@ struct CURLGlobalInitializer {
 };
 
 struct MultiPartWriter {
-  int64_t offset;
-  int64_t end;
-  int64_t written;
-  FILE *fp;
+  size_t offset;
+  size_t end;
+  size_t written;
+  std::ostream *os;
 };
 
-static size_t write_cb(char *data, size_t size, size_t count, void *userp) {
+size_t write_cb(char *data, size_t size, size_t count, void *userp) {
   MultiPartWriter *w = (MultiPartWriter *)userp;
-  fseek(w->fp, w->offset, SEEK_SET);
-  fwrite(data, size, count, w->fp);
+  w->os->seekp(w->offset);
   size_t bytes = size * count;
+  w->os->write(data, bytes);
   w->offset += bytes;
   w->written += bytes;
   return bytes;
 }
 
-static size_t dumy_write_cb(char *data, size_t size, size_t count, void *userp) { return size * count; }
+size_t dumy_write_cb(char *data, size_t size, size_t count, void *userp) { return size * count; }
 
-int64_t getRemoteFileSize(const std::string &url) {
+std::string formattedDataSize(size_t size) {
+  if (size < 1024) {
+    return std::to_string(size) + " B";
+  } else if (size < 1024 * 1024) {
+    return util::string_format("%.2f KB", (float)size / 1024);
+  } else {
+    return util::string_format("%.2f MB", (float)size / (1024 * 1024));
+  }
+}
+
+} // namespace
+
+size_t getRemoteFileSize(const std::string &url) {
   CURL *curl = curl_easy_init();
   if (!curl) return -1;
 
@@ -52,40 +69,26 @@ int64_t getRemoteFileSize(const std::string &url) {
     std::cout << "Download failed: error code: " << res << std::endl;
   }
   curl_easy_cleanup(curl);
-  return res == CURLE_OK ? (int64_t)content_length : -1;
+  return content_length > 0 ? content_length : 0;
 }
 
-std::string formattedDataSize(size_t size) {
-  if (size < 1024) {
-    return std::to_string(size) + " B";
-  } else if (size < 1024 * 1024) {
-    return util::string_format("%.2f KB", (float)size / 1024);
-  } else {
-    return util::string_format("%.2f MB", (float)size / (1024 * 1024));
-  }
+std::string getUrlWithoutQuery(const std::string &url) {
+  size_t idx = url.find("?");
+  return (idx == std::string::npos ? url : url.substr(0, idx));
 }
-
-static std::atomic<bool> enable_http_logging = false;
 
 void enableHttpLogging(bool enable) {
   enable_http_logging = enable;
 }
 
-bool httpMultiPartDownload(const std::string &url, const std::string &target_file, int parts, std::atomic<bool> *abort) {
+bool httpMultiPartDownload(const std::string &url, std::ostream &os, int parts, size_t content_length, std::atomic<bool> *abort) {
   static CURLGlobalInitializer curl_initializer;
   static std::mutex lock;
   static uint64_t total_written = 0, prev_total_written = 0;
   static double last_print_ts = 0;
 
-  int64_t content_length = getRemoteFileSize(url);
-  if (content_length <= 0) return false;
-
-  // create a tmp sparse file
-  const std::string tmp_file = target_file + ".tmp";
-  FILE *fp = fopen(tmp_file.c_str(), "wb");
-  assert(fp);
-  fseek(fp, content_length - 1, SEEK_SET);
-  fwrite("\0", 1, 1, fp);
+  os.seekp(content_length - 1);
+  os.write("\0", 1);
 
   CURLM *cm = curl_multi_init();
 
@@ -94,8 +97,8 @@ bool httpMultiPartDownload(const std::string &url, const std::string &target_fil
   for (int i = 0; i < parts; ++i) {
     CURL *eh = curl_easy_init();
     writers[eh] = {
-        .fp = fp,
-        .offset = i * part_size,
+        .os = &os,
+        .offset = (size_t)(i * part_size),
         .end = i == parts - 1 ? content_length - 1 : (i + 1) * part_size - 1,
     };
     curl_easy_setopt(eh, CURLOPT_WRITEFUNCTION, write_cb);
@@ -126,9 +129,7 @@ bool httpMultiPartDownload(const std::string &url, const std::string &target_fil
       if (enable_http_logging && last_print_ts > 0) {
         size_t average = (total_written - prev_total_written) / ((ts - last_print_ts) / 1000.);
         int progress = std::min<int>(100, 100.0 * (double)written / (double)content_length);
-
-        size_t idx = url.find("?");
-        std::cout << "downloading " << (idx == std::string::npos ? url : url.substr(0, idx)) << " - " << progress << "% (" << formattedDataSize(average) << "/s)" << std::endl;
+        std::cout << "downloading " << getUrlWithoutQuery(url) << " - " << progress << "% (" << formattedDataSize(average) << "/s)" << std::endl;
       }
       prev_total_written = total_written;
       last_print_ts = ts;
@@ -160,32 +161,34 @@ bool httpMultiPartDownload(const std::string &url, const std::string &target_fil
   }
 
   curl_multi_cleanup(cm);
-  fclose(fp);
-
-  bool ret = complete == parts;
-  ret = ret && ::rename(tmp_file.c_str(), target_file.c_str()) == 0;
-  return ret;
+  return complete == parts;
 }
 
-bool readBZ2File(const std::string_view file, std::ostream &stream) {
-  std::unique_ptr<FILE, decltype(&fclose)> f(fopen(file.data(), "r"), &fclose);
-  if (!f) return false;
+std::string decompressBZ2(const std::string &in) {
+  if (in.empty()) return {};
 
-  int bzerror = BZ_OK;
-  BZFILE *bz_file = BZ2_bzReadOpen(&bzerror, f.get(), 0, 0, nullptr, 0);
-  if (!bz_file) return false;
+  bz_stream strm = {};
+  int bzerror = BZ2_bzDecompressInit(&strm, 0, 0);
+  assert(bzerror == BZ_OK);
 
-  std::array<char, 64 * 1024> buf;
+  strm.next_in = (char *)in.data();
+  strm.avail_in = in.size();
+  std::string out(in.size() * 5, '\0');
   do {
-    int size = BZ2_bzRead(&bzerror, bz_file, buf.data(), buf.size());
-    if (bzerror == BZ_OK || bzerror == BZ_STREAM_END) {
-      stream.write(buf.data(), size);
+    strm.next_out = (char *)(&out[strm.total_out_lo32]);
+    strm.avail_out = out.size() - strm.total_out_lo32;
+    bzerror = BZ2_bzDecompress(&strm);
+    if (bzerror == BZ_OK && strm.avail_in > 0 && strm.avail_out == 0) {
+      out.resize(out.size() * 2);
     }
   } while (bzerror == BZ_OK);
 
-  bool success = (bzerror == BZ_STREAM_END);
-  BZ2_bzReadClose(&bzerror, bz_file);
-  return success;
+  BZ2_bzDecompressEnd(&strm);
+  if (bzerror == BZ_STREAM_END) {
+    out.resize(strm.total_out_lo32);
+    return out;
+  }
+  return {};
 }
 
 void precise_nano_sleep(long sleep_ns) {
@@ -204,4 +207,13 @@ void precise_nano_sleep(long sleep_ns) {
       usleep(0);
     }
   }
+}
+
+std::string sha256(const std::string &str) {
+  unsigned char hash[SHA256_DIGEST_LENGTH];
+  SHA256_CTX sha256;
+  SHA256_Init(&sha256);
+  SHA256_Update(&sha256, str.c_str(), str.size());
+  SHA256_Final(hash, &sha256);
+  return util::hexdump(hash, SHA256_DIGEST_LENGTH);
 }

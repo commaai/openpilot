@@ -1,3 +1,4 @@
+import os
 import time
 from functools import wraps
 
@@ -24,6 +25,13 @@ def phone_only(f):
     f(self, *args, **kwargs)
   return wrap
 
+def release_only(f):
+  @wraps(f)
+  def wrap(self, *args, **kwargs):
+    if "RELEASE" not in os.environ:
+      self.skipTest("This test is only for release branches")
+    f(self, *args, **kwargs)
+  return wrap
 
 def with_processes(processes, init_time=0, ignore_stopped=None):
   ignore_stopped = [] if ignore_stopped is None else ignore_stopped

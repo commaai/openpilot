@@ -35,6 +35,7 @@ from pathlib import Path
 from typing import List, Tuple, Optional
 
 from common.basedir import BASEDIR
+from common.markdown import parse_markdown
 from common.params import Params
 from selfdrive.hardware import EON, TICI, HARDWARE
 from selfdrive.swaglog import cloudlog
@@ -113,9 +114,11 @@ def set_params(new_version: bool, failed_count: int, exception: Optional[str]) -
   if new_version:
     try:
       with open(os.path.join(FINALIZED, "RELEASES.md"), "rb") as f:
-        r = f.read()
-      r = r[:r.find(b'\n\n')]  # Slice latest release notes
-      params.put("ReleaseNotes", r + b"\n")
+        r = f.read().split(b'\n\n', 1)[0]  # Slice latest release notes
+      try:
+        params.put("ReleaseNotes", parse_markdown(r.decode("utf-8")))
+      except Exception:
+        params.put("ReleaseNotes", r + b"\n")
     except Exception:
       params.put("ReleaseNotes", "")
     params.put_bool("UpdateAvailable", True)

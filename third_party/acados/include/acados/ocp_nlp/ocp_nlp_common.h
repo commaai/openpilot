@@ -135,6 +135,8 @@ typedef struct ocp_nlp_dims
     int *nz;  // number of algebraic variables
     int *ns;  // number of slack variables
     int N;    // number of shooting nodes
+
+    void *raw_memory; // Pointer to allocated memory, to be used for freeing
 } ocp_nlp_dims;
 
 //
@@ -203,6 +205,9 @@ typedef struct ocp_nlp_in
     /// Pointers to constraints functions (TBC).
     void **constraints;
 
+    /// Pointer to allocated memory, to be used for freeing.
+    void *raw_memory;
+
 } ocp_nlp_in;
 
 //
@@ -234,6 +239,8 @@ typedef struct ocp_nlp_out
     int qp_iter;
     double inf_norm_res;
     double total_time;
+
+    void *raw_memory; // Pointer to allocated memory, to be used for freeing
 
 } ocp_nlp_out;
 
