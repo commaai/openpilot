@@ -4,7 +4,6 @@ import random
 import time
 import unittest
 from collections import defaultdict
-from functools import wraps
 
 import cereal.messaging as messaging
 from cereal import car
