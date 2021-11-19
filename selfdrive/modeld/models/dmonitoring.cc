@@ -13,11 +13,22 @@
 #define MODEL_HEIGHT 640
 #define FULL_W 852 // should get these numbers from camerad
 
+static inline void init_yuv_buf(std::vector<uint8_t> &buf, const int width, int height) {
+  uint8_t *y = get_buffer(buf, width * height * 3 / 2);
+  uint8_t *u = y + width * height;
+  uint8_t *v = u + (width /2) * (height / 2);
+  // RGB (0,0,0)
+  memset(y, 16, width * height);
+  memset(u, 128, (width /2) * (height / 2));
+  memset(v, 128, (width /2) * (height / 2));
+}
+
 void dmonitoring_init(DMonitoringModelState* s) {
   s->is_rhd = Params().getBool("IsRHD");
   for (int x = 0; x < std::size(s->tensor); ++x) {
     s->tensor[x] = (x - 128.f) * 0.0078125f;
   }
+  init_yuv_buf(s->resized_buf, MODEL_WIDTH, MODEL_HEIGHT);
 
 #ifdef USE_ONNX_MODEL
   s->m = new ONNXModel("../../models/dmonitoring_model.onnx", &s->output[0], OUTPUT_SIZE, USE_DSP_RUNTIME);
@@ -32,16 +43,10 @@ static inline T *get_buffer(std::vector<T> &buf, const size_t size) {
   return buf.data();
 }
 
-static inline auto get_yuv_buf(std::vector<uint8_t> &buf, const int width, int height, bool set_all_black) {
+static inline auto get_yuv_buf(std::vector<uint8_t> &buf, const int width, int height) {
   uint8_t *y = get_buffer(buf, width * height * 3 / 2);
   uint8_t *u = y + width * height;
   uint8_t *v = u + (width /2) * (height / 2);
-  if (set_all_black) {
-    // RGB (0,0,0)
-    memset(y, 16, width * height);
-    memset(u, 128, (width /2) * (height / 2));
-    memset(v, 128, (width /2) * (height / 2));
-  }
   return std::make_tuple(y, u, v);
 }
 
@@ -86,11 +91,11 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
   int resized_width = MODEL_WIDTH;
   int resized_height = MODEL_HEIGHT;
 
-  auto [cropped_y, cropped_u, cropped_v] = get_yuv_buf(s->cropped_buf, crop_rect.w, crop_rect.h, false);
+  auto [cropped_y, cropped_u, cropped_v] = get_yuv_buf(s->cropped_buf, crop_rect.w, crop_rect.h);
   if (!s->is_rhd) {
     crop_yuv((uint8_t *)stream_buf, width, height, cropped_y, cropped_u, cropped_v, crop_rect);
   } else {
-    auto [mirror_y, mirror_u, mirror_v] = get_yuv_buf(s->premirror_cropped_buf, crop_rect.w, crop_rect.h, false);
+    auto [mirror_y, mirror_u, mirror_v] = get_yuv_buf(s->premirror_cropped_buf, crop_rect.w, crop_rect.h);
     crop_yuv((uint8_t *)stream_buf, width, height, mirror_y, mirror_u, mirror_v, crop_rect);
     libyuv::I420Mirror(mirror_y, crop_rect.w,
                        mirror_u, crop_rect.w / 2,
@@ -101,7 +106,7 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
                        crop_rect.w, crop_rect.h);
   }
 
-  auto [resized_buf, resized_u, resized_v] = get_yuv_buf(s->resized_buf, resized_width, resized_height, true);
+  auto [resized_buf, resized_u, resized_v] = get_yuv_buf(s->resized_buf, resized_width, resized_height);
   uint8_t *resized_y = resized_buf;
   libyuv::FilterMode mode = libyuv::FilterModeEnum::kFilterBilinear;
   if (Hardware::TICI()) {
