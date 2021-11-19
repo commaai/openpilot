@@ -41,26 +41,15 @@ PandaTest::PandaTest(uint32_t bus_offset_, int can_list_size) : can_list_size(ca
   }
 
   // generate can messages for this panda
-  int other_panda_message_cnt = 3;
-  auto can_list = msg.initEvent().initSendcan(can_list_size + other_panda_message_cnt);
+  auto can_list = msg.initEvent().initSendcan(can_list_size);
   for (uint8_t i = 0; i < can_list_size; ++i) {
     auto can = can_list[i];
     uint32_t id = random_int(0, std::size(dlc_to_len) - 1);
     const std::string &dat = test_data[dlc_to_len[id]];
     can.setAddress(i);
-    can.setSrc(bus_offset);
+    can.setSrc(random_int(0, 3) + bus_offset);
     can.setDat(kj::ArrayPtr((uint8_t *)dat.data(), dat.size()));
     total_pakets_size += CANPACKET_HEAD_SIZE + dat.size();
-  }
-
-  // generate can messages from other panda
-  for (int i = can_list_size; i < can_list_size + other_panda_message_cnt; ++i) {
-    auto can = can_list[i];
-    uint32_t id = random_int(0, std::size(dlc_to_len) - 1);
-    const std::string &dat = test_data[dlc_to_len[id]];
-    can.setAddress(i);
-    can.setSrc(bus_offset + PANDA_BUS_CNT);
-    can.setDat(kj::ArrayPtr((uint8_t *)dat.data(), dat.size()));
   }
 
   can_data_list = can_list.asReader();
