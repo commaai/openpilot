@@ -34,7 +34,7 @@ void dmonitoring_init(DMonitoringModelState* s) {
   for (int x = 0; x < std::size(s->tensor); ++x) {
     s->tensor[x] = (x - 128.f) * 0.0078125f;
   }
-  init_yuv_buf(s->resized_buf, MODEL_WIDTH, MODEL_HEIGHT);
+  init_yuv_buf(s->resized_buf, MODEL_WIDTH, MODEL_HEIGHT); // paddings need to be initted to black
 
 #ifdef USE_ONNX_MODEL
   s->m = new ONNXModel("../../models/dmonitoring_model.onnx", &s->output[0], OUTPUT_SIZE, USE_DSP_RUNTIME);
