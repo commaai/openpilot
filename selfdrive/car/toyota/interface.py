@@ -317,7 +317,7 @@ class CarInterface(CarInterfaceBase):
 
     # Default longitudinal tune
     ret.longitudinalTuning.kpBP = [0., 5., 10.]
-    ret.longitudinalTuning.kpV = [1.0, 1.0, 0.0]
+    ret.longitudinalTuning.kpV = [.5, .5, 0.0]
     ret.longitudinalTuning.kiBP = [0.]
     ret.longitudinalTuning.kiV = [0.]
     ret.longitudinalActuatorDelayLowerBound = 0.7
