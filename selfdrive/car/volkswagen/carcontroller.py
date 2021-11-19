@@ -23,7 +23,8 @@ class CarController():
     self.graMsgBusCounterPrev = 0
 
     self.steer_rate_limited = False
-    self.openpilot_stopping = False
+    self.acc_starting = False
+    self.acc_stopping = False
 
   def update(self, enabled, CS, frame, ext_bus, actuators, visual_alert, left_lane_visible, right_lane_visible, left_lane_depart,
              right_lane_depart, lead_visible, set_speed):
@@ -42,13 +43,16 @@ class CarController():
       accel = clip(actuators.accel, P.ACCEL_MIN, P.ACCEL_MAX) if enabled else 0
       jerk = clip(2.0 * (accel - CS.out.aEgo), -12.7, 12.7)
 
-      acc_stopping, acc_starting, acc_hold_request, acc_hold_release = False, False, False, False
+      acc_hold_request, acc_hold_release = False, False
       if actuators.longControlState == LongCtrlState.stopping:
         accel = -1.0
-        acc_stopping = True
+        self.acc_stopping = True
         acc_hold_request = not CS.esp_hold_confirmation
       elif enabled:
-        acc_starting = CS.out.vEgo < 0.2
+        if self.acc_stopping:
+          self.acc_starting = True
+          self.acc_stopping = False
+        self.acc_starting &= CS.out.vEgo < 0.2
         acc_hold_release = CS.esp_hold_confirmation
 
       if acc_hold_request:
@@ -61,9 +65,9 @@ class CarController():
       if frame % P.ACC_CONTROL_STEP == 0:
         idx = (frame / P.ACC_CONTROL_STEP) % 16
         can_sends.append(volkswagencan.create_mqb_acc_06_control(self.packer_pt, CANBUS.pt, enabled, acc_status,
-                                                                 accel, jerk, acc_stopping, acc_starting, idx))
+                                                                 accel, jerk, self.acc_stopping, self.acc_starting, idx))
         can_sends.append(volkswagencan.create_mqb_acc_07_control(self.packer_pt, CANBUS.pt, enabled,
-                                                                 accel, acc_stopping, acc_starting,
+                                                                 accel, self.acc_stopping, self.acc_starting,
                                                                  acc_hold_request, acc_hold_release, weird_value, idx))
 
     # **** Steering Controls ************************************************ #

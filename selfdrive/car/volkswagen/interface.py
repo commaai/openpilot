@@ -70,7 +70,6 @@ class CarInterface(CarInterfaceBase):
     # Global longitudinal tuning defaults, can be overridden per-vehicle
 
     ret.longitudinalActuatorDelayUpperBound = 1.0  # s
-    ret.minSpeedCan = 0.0
     ret.stoppingControl = True
     ret.vEgoStopping = 1.0
     ret.stopAccel = 0.0
