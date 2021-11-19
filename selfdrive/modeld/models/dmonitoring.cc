@@ -23,7 +23,7 @@ static inline void init_yuv_buf(std::vector<uint8_t> &buf, const int width, int 
   uint8_t *y = get_buffer(buf, width * height * 3 / 2);
   uint8_t *u = y + width * height;
   uint8_t *v = u + (width /2) * (height / 2);
-  // RGB (0,0,0)
+  // equivalent to RGB (0,0,0) in YUV space
   memset(y, 16, width * height);
   memset(u, 128, (width /2) * (height / 2));
   memset(v, 128, (width /2) * (height / 2));
