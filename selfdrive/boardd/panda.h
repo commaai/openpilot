@@ -69,7 +69,6 @@ class Panda {
   libusb_context *ctx = NULL;
   libusb_device_handle *dev_handle = NULL;
   std::mutex usb_lock;
-  std::vector<uint8_t> send;
   std::vector<uint8_t> recv_buf;
   void handle_usb_issue(int err, const char func[]);
   void cleanup();
@@ -122,4 +121,32 @@ protected:
   void pack_can_buffer(const capnp::List<cereal::CanData>::Reader &can_data_list,
                          std::function<void(uint8_t *, size_t)> write_func);
   bool unpack_can_buffer(uint8_t *data, int size, std::vector<can_frame> &out_vec);
+};
+
+struct PacketWriter {
+  PacketWriter(Panda *panda) : panda(panda){};
+  void write(const can_header *header, uint8_t *data, size_t size) {
+    if (pos < USB_TX_SOFT_LIMIT) {
+      write_bytes((uint8_t *)header, CANPACKET_HEAD_SIZE);
+      write_bytes(data, size);
+    } else {
+      panda->usb_bulk_write(3, to_write, pos, 5);
+      pos = 0;
+    }
+  }
+  void write_bytes(uint8_t *data, size_t size) {
+    for (int i = 0; i < size; ++i) {
+      if (pos % USBPACKET_MAX_SIZE == 0) {
+        to_write[pos] = pos / USBPACKET_MAX_SIZE;
+        pos++;
+      }
+      to_write[pos++] = data[i];
+    }
+  }
+  ~PacketWriter() {
+    if (pos > 0) panda->usb_bulk_write(3, to_write, pos, 5);
+  }
+  Panda *panda;
+  int pos = 0;
+  uint8_t to_write[USB_TX_SOFT_LIMIT + 128];
 };
