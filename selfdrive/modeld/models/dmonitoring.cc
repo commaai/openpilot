@@ -23,7 +23,9 @@ static inline void init_yuv_buf(std::vector<uint8_t> &buf, const int width, int 
   uint8_t *y = get_buffer(buf, width * height * 3 / 2);
   uint8_t *u = y + width * height;
   uint8_t *v = u + (width / 2) * (height / 2);
-  // equivalent to RGB (0,0,0) in YUV space
+
+  // needed on comma two to make the padded border black
+  // equivalent to RGB(0,0,0) in YUV space
   memset(y, 16, width * height);
   memset(u, 128, (width / 2) * (height / 2));
   memset(v, 128, (width / 2) * (height / 2));
@@ -34,7 +36,7 @@ void dmonitoring_init(DMonitoringModelState* s) {
   for (int x = 0; x < std::size(s->tensor); ++x) {
     s->tensor[x] = (x - 128.f) * 0.0078125f;
   }
-  init_yuv_buf(s->resized_buf, MODEL_WIDTH, MODEL_HEIGHT); // paddings need to be initted to black
+  init_yuv_buf(s->resized_buf, MODEL_WIDTH, MODEL_HEIGHT);
 
 #ifdef USE_ONNX_MODEL
   s->m = new ONNXModel("../../models/dmonitoring_model.onnx", &s->output[0], OUTPUT_SIZE, USE_DSP_RUNTIME);
