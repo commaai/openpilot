@@ -253,7 +253,7 @@ void UIState::update() {
     emit offroadTransition(!scene.started);
   }
 
-  if (ui_state.sm->frame % UI_FREQ == 0) {
+  if (sm->frame % UI_FREQ == 0) {
     watchdog_kick();
   }
   emit uiUpdate(*this);

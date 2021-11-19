@@ -149,7 +149,7 @@ public:
   UIStatus status;
   UIScene scene = {};
 
-  bool awake = true;
+  bool awake;
   bool has_prime = false;
 
   QTransform car_space_transform;
