@@ -303,17 +303,22 @@ void Device::updateBrightness(const UIState &s) {
 }
 
 void Device::updateWakefulness(const UIState &s) {
-  awake_timeout = std::max(awake_timeout - 1, 0);
-
-  bool should_wake = s.scene.started || s.scene.ignition;
-  if (!should_wake) {
+  static bool ignition_prev = false;
+  bool reset_timeout = false;
+  if (!s.scene.ignition) {
     // tap detection while display is off
     bool accel_trigger = abs(s.scene.accel_sensor - accel_prev) > 0.2;
     bool gyro_trigger = abs(s.scene.gyro_sensor - gyro_prev) > 0.15;
-    should_wake = accel_trigger && gyro_trigger;
+    reset_timeout = (accel_trigger && gyro_trigger) || ignition_prev;
     gyro_prev = s.scene.gyro_sensor;
     accel_prev = (accel_prev * (accel_samples - 1) + s.scene.accel_sensor) / accel_samples;
   }
+  ignition_prev = s.scene.ignition;
 
-  setAwake(awake_timeout, should_wake);
+  bool should_wake = s.scene.ignition || reset_timeout || awake_timeout > 0;
+  setAwake(should_wake, reset_timeout);
+
+  if (awake_timeout > 0 && --awake_timeout == 0) {
+    emit interactiveTimout();
+  }
 }

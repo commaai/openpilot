@@ -165,6 +165,7 @@ private:
 
 signals:
   void displayPowerChanged(bool on);
+  void interactiveTimout();
 
 public slots:
   void setAwake(bool on, bool reset);

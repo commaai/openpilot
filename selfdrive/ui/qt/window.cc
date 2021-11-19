@@ -44,7 +44,7 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
       closeSettings();
     }
   });
-  QObject::connect(&device, &Device::displayPowerChanged, [=]() {
+  QObject::connect(&device, &Device::interactiveTimout, [=]() {
      if(main_layout->currentWidget() != onboardingWindow) {
        closeSettings();
      }
