@@ -128,15 +128,18 @@ BO_ 742 LEAD_INFO: 8 DSU
 
 BO_ 835 ACC_CONTROL: 8 DSU
  SG_ ACCEL_CMD : 7|16@0- (0.001,0) [-20|20] "m/s2" HCU
+ SG_ ACC_MALFUNCTION : 18|1@0+ (1,0) [0|0] "" XXX
+ SG_ ACC_CUT_IN : 25|1@0+ (1,0) [0|1] "" XXX
+ SG_ ALLOW_LONG_PRESS : 17|2@0+ (1,0) [0|2] "" XXX
  SG_ ACC_TYPE : 23|2@0+ (1,0) [0|3] "" HCU
  SG_ DISTANCE : 20|1@0+ (1,0) [0|1] "" XXX
  SG_ MINI_CAR : 21|1@0+ (1,0) [0|1] "" XXX
- SG_ SET_ME_X3 : 19|4@0+ (1,0) [0|15] "" XXX
  SG_ PERMIT_BRAKING : 30|1@0+ (1,0) [0|1] "" HCU
  SG_ RELEASE_STANDSTILL : 31|1@0+ (1,0) [0|1] "" HCU
  SG_ CANCEL_REQ : 24|1@0+ (1,0) [0|1] "" HCU
  SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
  SG_ ACCEL_CMD_ALT : 47|8@0- (0.05,0) [0|0] "m/s^2" XXX
+ SG_ RADAR_DIRTY : 19|1@0+ (1,0) [0|1] "" XXX
 
 BO_ 836 PRE_COLLISION_2: 8 DSU
  SG_ CHECKSUM : 63|8@0+ (1,0) [0|0] "" XXX
@@ -160,6 +163,8 @@ BO_ 951 ESP_CONTROL: 8 ESP
  SG_ TC_DISABLED : 13|1@0+ (1,0) [0|1] "" XXX
  SG_ VSC_DISABLED : 12|2@0+ (1,0) [0|1] "" XXX
  SG_ BRAKE_LIGHTS_ACC : 18|1@0+ (1,0) [0|1] "" XXX
+ SG_ BRAKE_HOLD_ENABLED : 33|1@1+ (1,0) [0|1] "" XXX
+ SG_ BRAKE_HOLD_ACTIVE : 36|1@0+ (1,0) [0|1] "" XXX
 
 BO_ 1020 SOLAR_SENSOR: 8 XXX
  SG_ LUX_SENSOR : 55|13@0+ (1,0) [0|0] "" XXX
@@ -288,7 +293,7 @@ BO_ 1163 RSA3: 8 FCM
  SG_ OVSPVALM : 19|4@0+ (1,-5) [0|0] "" XXX
  SG_ OVSPVALH : 27|4@0+ (1,-5) [0|0] "" XXX
  SG_ TSRSPU : 33|2@0+ (1,0) [0|0] "" XXX
- 
+
 BO_ 1571 CENTRAL_GATEWAY_UNIT: 8 CGW
  SG_ DOOR_LOCK_FEEDBACK_LIGHT : 15|1@0+ (1,0) [0|0] "" XXX
  SG_ KEYFOB_LOCKING_FEEDBACK_LIGHT : 61|1@0+ (1,0) [0|0] "" XXX
@@ -311,6 +316,11 @@ CM_ SG_ 643 COUNTER "only used on cars that use this msg for cruise control";
 CM_ SG_ 643 BRAKE_STATUS "only used on cars that use this msg for cruise control";
 CM_ SG_ 643 PRECOLLISION_ACTIVE "set 0.5s before any braking";
 CM_ SG_ 835 ACC_TYPE "if 2, car is likely to have a permanent low speed lockout. 1 is ok";
+CM_ SG_ 835 RADAR_DIRTY "Display Clean Radar Sensor message on HUD";
+CM_ SG_ 835 ACC_MALFUNCTION "display ACC fault on dash if set to 1";
+CM_ SG_ 835 ACC_CUT_IN "Display blinking yellow lead if set to 1";
+CM_ SG_ 835 DISTANCE "Display Distance Bars on HUD Permanently";
+CM_ SG_ 835 ALLOW_LONG_PRESS "Enable Toyota's factory set speed increment behaviour, available on both metrics cars and imperial unit cars";
 CM_ SG_ 835 PERMIT_BRAKING "Original ACC has this going high when a car in front is detected. In openpilot and before the PERMIT_BRAKING name, this was 'SET_ME_1' and is hardcoded to be high. Unsure if only informational or has an effect though existing usage in openpilot is to always set it to 1. Originally 'PMTBRKG' in the leaked toyota_2017_ref_pt.dbc file and name expansion speculated to be PerMiT BRaKinG.";
 CM_ SG_ 835 ACCEL_CMD_ALT "Copy of main ACCEL_CMD, but across 8 bits instead of 16 bits like ACCEL_CMD. Unsure if only informational or has an effect. Likely informational as existing openpilot sets this to 0 and no loss of functionality observed. Originally 'AT_RAW' in leaked toyota_2017_ref_pt.dbc file.";
 CM_ SG_ 921 UI_SET_SPEED "set speed shown in UI with user set unit";
@@ -341,6 +351,9 @@ VAL_ 614 STATE 3 "enabled" 1 "disabled";
 VAL_ 614 DIRECTION_CMD 3 "right" 2 "center" 1 "left";
 VAL_ 643 STATE 0 "normal" 1 "adaptive_cruise_control" 3 "emergency_braking";
 VAL_ 835 ACC_TYPE 2 "permanent low speed lockout" 1 "ok";
+VAL_ 835 ACC_MALFUNCTION 1 "faulted" 0 "ok";
+VAL_ 835 ACC_CUT_IN 1 "CUT-IN Detected" 0 "clear";
+VAL_ 835 ALLOW_LONG_PRESS 2 "set speed increase by 5 speed units regardless" 1 "set speed increase by 1 speed unit on short press, 5 speed units on long press";
 VAL_ 921 CRUISE_CONTROL_STATE 2 "disabled" 11 "hold" 10 "hold_waiting_user_cmd" 6 "enabled" 5 "faulted";
 VAL_ 1041 PCS_INDICATOR 2 "PCS Faulted" 1 "PCS Turned Off By User" 0 "PCS Enabled";
 VAL_ 1041 PCS_SENSITIVITY 64 "high sensitivity"  128 "mid sensitivity" 192 "low sensitivity" 0 "off";

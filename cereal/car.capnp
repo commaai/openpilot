@@ -104,6 +104,7 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     wideRoadCameraError @102;
     localizerMalfunction @103;
     highCpuUsage @105;
+    cruiseMismatch @106;
 
     driverMonitorLowAccDEPRECATED @68;
     radarCanErrorDEPRECATED @15;
@@ -150,6 +151,7 @@ struct CarState {
   # brake pedal, 0.0-1.0
   brake @5 :Float32;      # this is user pedal only
   brakePressed @6 :Bool;  # this is user pedal only
+  brakeHoldActive @38 :Bool;
 
   # steering wheel
   steeringAngleDeg @7 :Float32;
@@ -289,6 +291,8 @@ struct CarControl {
   active @7 :Bool;
 
   actuators @6 :Actuators;
+  roll @8 :Float32;
+  pitch @9 :Float32;
 
   cruiseControl @4 :CruiseControl;
   hudControl @5 :HUDControl;
@@ -350,11 +354,11 @@ struct CarControl {
       chimeEngage @1;
       chimeDisengage @2;
       chimeError @3;
-      chimeWarning1 @4;
-      chimeWarning2 @5;
-      chimeWarningRepeat @6;
+      chimeWarning1 @4; # unused
+      chimeWarningRepeat @5;
+      chimeWarningRepeatInfinite @6;
       chimePrompt @7;
-      chimeWarning2Repeat @8;
+      chimeWarning2RepeatInfinite @8;
     }
   }
 

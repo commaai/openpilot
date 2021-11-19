@@ -113,28 +113,47 @@ struct LoggerdState {
   std::condition_variable rotate_cv;
   std::atomic<int> rotate_segment;
   std::atomic<double> last_camera_seen_tms;
-  std::atomic<int> waiting_rotate;
+  std::atomic<int> ready_to_rotate;  // count of encoders ready to rotate
   int max_waiting = 0;
-  double last_rotate_tms = 0.;
+  double last_rotate_tms = 0.;      // last rotate time in ms
 
   // Sync logic for startup
-  std::atomic<bool> encoders_synced;
-  std::atomic<int> encoders_ready;
-  std::atomic<uint32_t> start_frame_id;
-  std::atomic<uint32_t> latest_frame_id;
+  std::atomic<int> encoders_ready = 0;
+  std::atomic<uint32_t> start_frame_id = 0;
+  bool camera_ready[WideRoadCam + 1] = {};
+  bool camera_synced[WideRoadCam + 1] = {};
 };
 LoggerdState s;
+
+// Handle initial encoder syncing by waiting for all encoders to reach the same frame id
+bool sync_encoders(LoggerdState *state, CameraType cam_type, uint32_t frame_id) {
+  if (state->camera_synced[cam_type]) return true;
+
+  if (state->max_waiting > 1 && state->encoders_ready != state->max_waiting) {
+    // add a small margin to the start frame id in case one of the encoders already dropped the next frame
+    update_max_atomic(state->start_frame_id, frame_id + 2);
+    if (std::exchange(state->camera_ready[cam_type], true) == false) {
+      ++state->encoders_ready;
+      LOGE("camera %d encoder ready", cam_type);
+    }
+    return false;
+  } else {
+    if (state->max_waiting == 1) update_max_atomic(state->start_frame_id, frame_id);
+    bool synced = frame_id >= state->start_frame_id;
+    state->camera_synced[cam_type] = synced;
+    if (!synced) LOGE("camera %d waiting for frame %d, cur %d", cam_type, (int)state->start_frame_id, frame_id);
+    return synced;
+  }
+}
 
 void encoder_thread(const LogCameraInfo &cam_info) {
   set_thread_name(cam_info.filename);
 
-  int cnt = 0, cur_seg = -1;
+  int cur_seg = -1;
   int encode_idx = 0;
   LoggerHandle *lh = NULL;
   std::vector<Encoder *> encoders;
   VisionIpcClient vipc_client = VisionIpcClient("camerad", cam_info.stream_type, false);
-
-  bool ready = false;
 
   while (!do_exit) {
     if (!vipc_client.connect(false)) {
@@ -163,41 +182,28 @@ void encoder_thread(const LogCameraInfo &cam_info) {
       VisionBuf* buf = vipc_client.recv(&extra);
       if (buf == nullptr) continue;
 
-      if (cam_info.trigger_rotate && (s.max_waiting > 1)) {
-        if (!ready) {
-          LOGE("%s encoder ready", cam_info.filename);
-          ++s.encoders_ready;
-          ready = true;
-        }
-
-        if (!s.encoders_synced) {
-          update_max_atomic(s.latest_frame_id, extra.frame_id);
-          continue;
-        } else {
-          // Wait for all encoders to reach the same frame id
-          if (extra.frame_id < s.start_frame_id) {
-            LOGE("%s waiting for frame %d, cur %d", cam_info.filename, s.start_frame_id.load(), extra.frame_id);
-            continue;
-          }
-        }
-      }
-
       if (cam_info.trigger_rotate) {
         s.last_camera_seen_tms = millis_since_boot();
-      }
+        if (!sync_encoders(&s, cam_info.type, extra.frame_id)) {
+          continue;
+        }
 
-      if (cam_info.trigger_rotate && (cnt >= SEGMENT_LENGTH * MAIN_FPS)) {
-        // trigger rotate and wait logger rotated to new segment
-        ++s.waiting_rotate;
-        std::unique_lock lk(s.rotate_lock);
-        s.rotate_cv.wait(lk, [&] { return s.rotate_segment > cur_seg || do_exit; });
+        // check if we're ready to rotate
+        const int frames_per_seg = SEGMENT_LENGTH * MAIN_FPS;
+        if (cur_seg >= 0 && extra.frame_id >= ((cur_seg+1) * frames_per_seg) + s.start_frame_id) {
+          // trigger rotate and wait until the main logger has rotated to the new segment
+          ++s.ready_to_rotate;
+          std::unique_lock lk(s.rotate_lock);
+          s.rotate_cv.wait(lk, [&] {
+            return s.rotate_segment > cur_seg || do_exit;
+          });
+          if (do_exit) break;
+        }
       }
-      if (do_exit) break;
 
       // rotate the encoder if the logger is on a newer segment
       if (s.rotate_segment > cur_seg) {
         cur_seg = s.rotate_segment;
-        cnt = 0;
 
         LOGW("camera %d rotate encoder to %s", cam_info.type, s.segment_path);
         for (auto &e : encoders) {
@@ -214,7 +220,7 @@ void encoder_thread(const LogCameraInfo &cam_info) {
       for (int i = 0; i < encoders.size(); ++i) {
         int out_id = encoders[i]->encode_frame(buf->y, buf->u, buf->v,
                                                buf->width, buf->height, extra.timestamp_eof);
-        
+
         if (out_id == -1) {
           LOGE("Failed to encode frame. frame_id: %d encode_id: %d", extra.frame_id, encode_idx);
         }
@@ -223,8 +229,9 @@ void encoder_thread(const LogCameraInfo &cam_info) {
         if (i == 0 && out_id != -1) {
           MessageBuilder msg;
           // this is really ugly
-          auto eidx = cam_info.type == DriverCam ? msg.initEvent().initDriverEncodeIdx() :
-                     (cam_info.type == WideRoadCam ? msg.initEvent().initWideRoadEncodeIdx() : msg.initEvent().initRoadEncodeIdx());
+          bool valid = (buf->get_frame_id() == extra.frame_id);
+          auto eidx = cam_info.type == DriverCam ? msg.initEvent(valid).initDriverEncodeIdx() :
+                     (cam_info.type == WideRoadCam ? msg.initEvent(valid).initWideRoadEncodeIdx() : msg.initEvent(valid).initRoadEncodeIdx());
           eidx.setFrameId(extra.frame_id);
           eidx.setTimestampSof(extra.timestamp_sof);
           eidx.setTimestampEof(extra.timestamp_eof);
@@ -243,7 +250,6 @@ void encoder_thread(const LogCameraInfo &cam_info) {
         }
       }
 
-      cnt++;
       encode_idx++;
     }
 
@@ -279,7 +285,7 @@ void logger_rotate() {
     int err = logger_next(&s.logger, LOG_ROOT.c_str(), s.segment_path, sizeof(s.segment_path), &segment);
     assert(err == 0);
     s.rotate_segment = segment;
-    s.waiting_rotate = 0;
+    s.ready_to_rotate = 0;
     s.last_rotate_tms = millis_since_boot();
   }
   s.rotate_cv.notify_all();
@@ -287,7 +293,7 @@ void logger_rotate() {
 }
 
 void rotate_if_needed() {
-  if (s.waiting_rotate == s.max_waiting) {
+  if (s.ready_to_rotate == s.max_waiting) {
     logger_rotate();
   }
 
@@ -305,7 +311,7 @@ void rotate_if_needed() {
 int main(int argc, char** argv) {
   if (Hardware::EON()) {
     setpriority(PRIO_PROCESS, 0, -20);
-  } else {
+  } else if (Hardware::TICI()) {
     int ret;
     ret = set_core_affinity({0, 1, 2, 3});
     assert(ret == 0);
@@ -343,25 +349,16 @@ int main(int argc, char** argv) {
   // init encoders
   s.last_camera_seen_tms = millis_since_boot();
   std::vector<std::thread> encoder_threads;
-  for (const auto &ci : cameras_logged) {
-    if (ci.enable) {
-      encoder_threads.push_back(std::thread(encoder_thread, ci));
-      if (ci.trigger_rotate) s.max_waiting++;
+  for (const auto &cam : cameras_logged) {
+    if (cam.enable) {
+      encoder_threads.push_back(std::thread(encoder_thread, cam));
+      if (cam.trigger_rotate) s.max_waiting++;
     }
   }
 
   uint64_t msg_count = 0, bytes_count = 0;
   double start_ts = millis_since_boot();
   while (!do_exit) {
-    // Check if all encoders are ready and start encoding at the same time
-    if ((s.max_waiting > 1) && !s.encoders_synced && (s.encoders_ready == s.max_waiting)) {
-      // Small margin in case one of the encoders already dropped the next frame
-      s.start_frame_id = s.latest_frame_id + 2;
-      s.encoders_synced = true;
-      LOGE("starting encoders at frame id %d", s.start_frame_id.load());
-    }
-
-
     // poll for new messages on all sockets
     for (auto sock : poller->poll(1000)) {
       // drain socket

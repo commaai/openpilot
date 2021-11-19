@@ -586,13 +586,16 @@ class UdsClient():
       power_down_time = resp[0]
       return power_down_time
 
-  def security_access(self, access_type: ACCESS_TYPE, security_key: bytes = None):
+  def security_access(self, access_type: ACCESS_TYPE, security_key: bytes = b'', data_record: bytes = b''):
     request_seed = access_type % 2 != 0
-    if request_seed and security_key is not None:
+    if request_seed and len(security_key) != 0:
       raise ValueError('security_key not allowed')
-    if not request_seed and security_key is None:
+    if not request_seed and len(security_key) == 0:
       raise ValueError('security_key is missing')
-    resp = self._uds_request(SERVICE_TYPE.SECURITY_ACCESS, subfunction=access_type, data=security_key)
+    if not request_seed and len(data_record) != 0:
+      raise ValueError('data_record not allowed')
+    data = security_key + data_record
+    resp = self._uds_request(SERVICE_TYPE.SECURITY_ACCESS, subfunction=access_type, data=data)
     if request_seed:
       security_seed = resp
       return security_seed
@@ -792,7 +795,7 @@ class UdsClient():
     return resp
 
   def input_output_control_by_identifier(self, data_identifier_type: DATA_IDENTIFIER_TYPE, control_parameter_type: CONTROL_PARAMETER_TYPE,
-                                         control_option_record: bytes, control_enable_mask_record: bytes = b''):
+                                         control_option_record: bytes = b'', control_enable_mask_record: bytes = b''):
     data = struct.pack('!H', data_identifier_type) + bytes([control_parameter_type]) + control_option_record + control_enable_mask_record
     resp = self._uds_request(SERVICE_TYPE.INPUT_OUTPUT_CONTROL_BY_IDENTIFIER, subfunction=None, data=data)
     resp_id = struct.unpack('!H', resp[0:2])[0] if len(resp) >= 2 else None

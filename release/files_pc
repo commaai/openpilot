@@ -1,3 +1,5 @@
+selfdrive/ui/replay/*
+
 third_party/mapbox-gl-native-qt/x86_64/**
 
 third_party/qt-plugins/x86_64/**

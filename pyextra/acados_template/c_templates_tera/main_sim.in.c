@@ -41,6 +41,11 @@
 #include "acados_c/sim_interface.h"
 #include "acados_sim_solver_{{ model.name }}.h"
 
+#define NX     {{ model.name | upper }}_NX
+#define NZ     {{ model.name | upper }}_NZ
+#define NU     {{ model.name | upper }}_NU
+#define NP     {{ model.name | upper }}_NP
+
 
 int main()
 {
@@ -60,7 +65,7 @@ int main()
     void *acados_sim_dims = {{ model.name }}_acados_get_sim_dims(capsule);
 
     // initial condition
-    double x_current[{{ dims.nx }}];
+    double x_current[NX];
     {%- for i in range(end=dims.nx) %}
     x_current[{{ i }}] = 0.0;
     {%- endfor %}
@@ -78,19 +83,19 @@ int main()
 
 
     // initial value for control input
-    double u0[{{ dims.nu }}];
+    double u0[NU];
     {%- for i in range(end=dims.nu) %}
     u0[{{ i }}] = 0.0;
     {%- endfor %}
 
   {%- if dims.np > 0 %}
     // set parameters
-    double p[{{ dims.np }}];
-    {% for item in parameter_values %}
+    double p[NP];
+    {%- for item in parameter_values %}
     p[{{ loop.index0 }}] = {{ item }};
-    {% endfor %}
+    {%- endfor %}
 
-    {{ model.name }}_acados_sim_update_params(capsule, p, {{ dims.np }});
+    {{ model.name }}_acados_sim_update_params(capsule, p, NP);
   {% endif %}{# if np > 0 #}
 
     int n_sim_steps = 3;
@@ -110,7 +115,7 @@ int main()
                acados_sim_out, "x", x_current);
         
         printf("\nx_current, %d\n", ii);
-        for (int jj = 0; jj < {{ dims.nx }}; jj++)
+        for (int jj = 0; jj < NX; jj++)
         {
             printf("%e\n", x_current[jj]);
         }

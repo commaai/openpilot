@@ -4,28 +4,28 @@
 #define FDCAN_OFFSET_W 853UL // words for each FDCAN module
 #define FDCAN_END_ADDRESS 0x4000D3FCUL // Message RAM has a width of 4 Bytes
 
-// With this settings we can go up to 6Mbit/s
+// With this settings we can go up to 5Mbit/s
 #define CAN_SYNC_JW     1U // 1 to 4
 #define CAN_PHASE_SEG1  6U // =(PROP_SEG + PHASE_SEG1) , 1 to 16
 #define CAN_PHASE_SEG2  1U // 1 to 8
-#define CAN_PCLK 48000U // Sourced from PLL1Q
+#define CAN_PCLK 80000U // Sourced from PLL1Q
 #define CAN_QUANTA (1U + CAN_PHASE_SEG1 + CAN_PHASE_SEG2)
 // Valid speeds in kbps and their prescalers:
-// 10=600, 20=300, 50=120, 83.333=72, 100=60, 125=48, 250=24, 500=12, 1000=6, 2000=3, 3000=2, 6000=1
+// 10=1000, 20=500, 50=200, 83.333=120, 100=100, 125=80, 250=40, 500=20, 1000=10, 2000=5, 5000=2
 #define can_speed_to_prescaler(x) (CAN_PCLK / CAN_QUANTA * 10U / (x))
 
 // RX FIFO 0
-#define FDCAN_RX_FIFO_0_EL_CNT 32UL
+#define FDCAN_RX_FIFO_0_EL_CNT 24UL
 #define FDCAN_RX_FIFO_0_HEAD_SIZE 8UL // bytes
-#define FDCAN_RX_FIFO_0_DATA_SIZE 8UL // bytes
+#define FDCAN_RX_FIFO_0_DATA_SIZE 64UL // bytes
 #define FDCAN_RX_FIFO_0_EL_SIZE (FDCAN_RX_FIFO_0_HEAD_SIZE + FDCAN_RX_FIFO_0_DATA_SIZE)
 #define FDCAN_RX_FIFO_0_EL_W_SIZE (FDCAN_RX_FIFO_0_EL_SIZE / 4UL)
 #define FDCAN_RX_FIFO_0_OFFSET 0UL
 
 // TX FIFO
-#define FDCAN_TX_FIFO_EL_CNT 32UL
+#define FDCAN_TX_FIFO_EL_CNT 16UL
 #define FDCAN_TX_FIFO_HEAD_SIZE 8UL // bytes
-#define FDCAN_TX_FIFO_DATA_SIZE 8UL // bytes
+#define FDCAN_TX_FIFO_DATA_SIZE 64UL // bytes
 #define FDCAN_TX_FIFO_EL_SIZE (FDCAN_TX_FIFO_HEAD_SIZE + FDCAN_TX_FIFO_DATA_SIZE)
 #define FDCAN_TX_FIFO_EL_W_SIZE (FDCAN_TX_FIFO_EL_SIZE / 4UL)
 #define FDCAN_TX_FIFO_OFFSET (FDCAN_RX_FIFO_0_OFFSET + (FDCAN_RX_FIFO_0_EL_CNT * FDCAN_RX_FIFO_0_EL_W_SIZE))
@@ -33,13 +33,6 @@
 #define CAN_NAME_FROM_CANIF(CAN_DEV) (((CAN_DEV)==FDCAN1) ? "FDCAN1" : (((CAN_DEV) == FDCAN2) ? "FDCAN2" : "FDCAN3"))
 #define CAN_NUM_FROM_CANIF(CAN_DEV) (((CAN_DEV)==FDCAN1) ? 0UL : (((CAN_DEV) == FDCAN2) ? 1UL : 2UL))
 
-// For backwards compatibility with safety code
-typedef struct {
-  __IO uint32_t RIR;  /*!< CAN receive FIFO mailbox identifier register */
-  __IO uint32_t RDTR; /*!< CAN receive FIFO mailbox data length control and time stamp register */
-  __IO uint32_t RDLR; /*!< CAN receive FIFO mailbox data low register */
-  __IO uint32_t RDHR; /*!< CAN receive FIFO mailbox data high register */
-} CAN_FIFOMailBox_TypeDef;
 
 void puts(const char *a);
 
@@ -138,10 +131,10 @@ bool llcan_init(FDCAN_GlobalTypeDef *CANx) {
 
     // Set TX mode to FIFO
     CANx->TXBC &= ~(FDCAN_TXBC_TFQM);
-    // Configure TX element size (for now 8 bytes, no need to change)
-    //CANx->TXESC |= 0x000U;
-    //Configure RX FIFO0, FIFO1, RX buffer element sizes (no need for now, using classic 8 bytes)
-    register_set(&(CANx->RXESC), 0x0U, (FDCAN_RXESC_F0DS | FDCAN_RXESC_F1DS | FDCAN_RXESC_RBDS));
+    // Configure TX element data size
+    CANx->TXESC |= 0x7U << FDCAN_TXESC_TBDS_Pos; // 64 bytes
+    //Configure RX FIFO0 element data size
+    CANx->RXESC |= 0x7U << FDCAN_RXESC_F0DS_Pos;
     // Disable filtering, accept all valid frames received
     CANx->XIDFC &= ~(FDCAN_XIDFC_LSE); // No extended filters
     CANx->SIDFC &= ~(FDCAN_SIDFC_LSS); // No standard filters
@@ -154,13 +147,13 @@ bool llcan_init(FDCAN_GlobalTypeDef *CANx) {
     uint32_t TxFIFOSA = RxFIFO0SA + (FDCAN_RX_FIFO_0_EL_CNT * FDCAN_RX_FIFO_0_EL_SIZE);
 
     // RX FIFO 0
-    CANx->RXF0C = (FDCAN_RX_FIFO_0_OFFSET + (can_number * FDCAN_OFFSET_W)) << FDCAN_RXF0C_F0SA_Pos;
+    CANx->RXF0C |= (FDCAN_RX_FIFO_0_OFFSET + (can_number * FDCAN_OFFSET_W)) << FDCAN_RXF0C_F0SA_Pos;
     CANx->RXF0C |= FDCAN_RX_FIFO_0_EL_CNT << FDCAN_RXF0C_F0S_Pos;
     // RX FIFO 0 switch to non-blocking (overwrite) mode
     CANx->RXF0C |= FDCAN_RXF0C_F0OM;
 
     // TX FIFO (mode set earlier)
-    CANx->TXBC = (FDCAN_TX_FIFO_OFFSET + (can_number * FDCAN_OFFSET_W)) << FDCAN_TXBC_TBSA_Pos;
+    CANx->TXBC |= (FDCAN_TX_FIFO_OFFSET + (can_number * FDCAN_OFFSET_W)) << FDCAN_TXBC_TBSA_Pos;
     CANx->TXBC |= FDCAN_TX_FIFO_EL_CNT << FDCAN_TXBC_TFQS_Pos;
 
     // Flush allocated RAM

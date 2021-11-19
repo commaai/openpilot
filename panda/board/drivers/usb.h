@@ -23,7 +23,8 @@ typedef union _USB_Setup {
 }
 USB_Setup_TypeDef;
 
-#define MAX_CAN_MSGS_PER_BULK_TRANSFER 4U
+#define MAX_CAN_MSGS_PER_BULK_TRANSFER 51U
+#define MAX_EP1_CHUNK_PER_BULK_TRANSFER 16256 // max data stream chunk in bytes, shouldn't be higher than 16320 or counter will overflow
 
 bool usb_eopf_detected = false;
 
@@ -493,7 +494,7 @@ void usb_setup(void) {
                                USB_OTG_DOEPCTL_SD0PID_SEVNFRM | USB_OTG_DOEPCTL_USBAEP;
       USBx_OUTEP(2)->DOEPINT = 0xFF;
 
-      USBx_OUTEP(3)->DOEPTSIZ = (1U << 19) | 0x40U;
+      USBx_OUTEP(3)->DOEPTSIZ = (32U << 19) | 0x800U;
       USBx_OUTEP(3)->DOEPCTL = (0x40U & USB_OTG_DOEPCTL_MPSIZ) | (2U << 18) |
                                USB_OTG_DOEPCTL_SD0PID_SEVNFRM | USB_OTG_DOEPCTL_USBAEP;
       USBx_OUTEP(3)->DOEPINT = 0xFF;
@@ -934,7 +935,7 @@ void usb_irqhandler(void) {
 void usb_outep3_resume_if_paused(void) {
   ENTER_CRITICAL();
   if (!outep3_processing && (USBx_OUTEP(3)->DOEPCTL & USB_OTG_DOEPCTL_NAKSTS) != 0) {
-    USBx_OUTEP(3)->DOEPTSIZ = (1U << 19) | 0x40U;
+    USBx_OUTEP(3)->DOEPTSIZ = (32U << 19) | 0x800U;
     USBx_OUTEP(3)->DOEPCTL |= USB_OTG_DOEPCTL_EPENA | USB_OTG_DOEPCTL_CNAK;
   }
   EXIT_CRITICAL();

@@ -34,7 +34,7 @@ AddrCheckStruct gm_addr_checks[] = {
 #define GM_RX_CHECK_LEN (sizeof(gm_addr_checks) / sizeof(gm_addr_checks[0]))
 addr_checks gm_rx_checks = {gm_addr_checks, GM_RX_CHECK_LEN};
 
-static int gm_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
+static int gm_rx_hook(CANPacket_t *to_push) {
 
   bool valid = addr_safety_check(to_push, &gm_rx_checks, NULL, NULL, NULL);
 
@@ -104,16 +104,12 @@ static int gm_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 // else
 //     block all commands that produce actuation
 
-static int gm_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
+static int gm_tx_hook(CANPacket_t *to_send) {
 
   int tx = 1;
   int addr = GET_ADDR(to_send);
 
   if (!msg_allowed(to_send, GM_TX_MSGS, sizeof(GM_TX_MSGS)/sizeof(GM_TX_MSGS[0]))) {
-    tx = 0;
-  }
-
-  if (relay_malfunction) {
     tx = 0;
   }
 

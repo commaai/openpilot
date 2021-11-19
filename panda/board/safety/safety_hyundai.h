@@ -69,7 +69,7 @@ bool hyundai_longitudinal = false;
 
 addr_checks hyundai_rx_checks = {hyundai_addr_checks, HYUNDAI_ADDR_CHECK_LEN};
 
-static uint8_t hyundai_get_counter(CAN_FIFOMailBox_TypeDef *to_push) {
+static uint8_t hyundai_get_counter(CANPacket_t *to_push) {
   int addr = GET_ADDR(to_push);
 
   uint8_t cnt;
@@ -89,7 +89,7 @@ static uint8_t hyundai_get_counter(CAN_FIFOMailBox_TypeDef *to_push) {
   return cnt;
 }
 
-static uint8_t hyundai_get_checksum(CAN_FIFOMailBox_TypeDef *to_push) {
+static uint8_t hyundai_get_checksum(CANPacket_t *to_push) {
   int addr = GET_ADDR(to_push);
 
   uint8_t chksum;
@@ -107,7 +107,7 @@ static uint8_t hyundai_get_checksum(CAN_FIFOMailBox_TypeDef *to_push) {
   return chksum;
 }
 
-static uint8_t hyundai_compute_checksum(CAN_FIFOMailBox_TypeDef *to_push) {
+static uint8_t hyundai_compute_checksum(CANPacket_t *to_push) {
   int addr = GET_ADDR(to_push);
 
   uint8_t chksum = 0;
@@ -143,7 +143,7 @@ static uint8_t hyundai_compute_checksum(CAN_FIFOMailBox_TypeDef *to_push) {
   return chksum;
 }
 
-static int hyundai_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
+static int hyundai_rx_hook(CANPacket_t *to_push) {
 
   bool valid = addr_safety_check(to_push, &hyundai_rx_checks,
                                  hyundai_get_checksum, hyundai_compute_checksum,
@@ -223,7 +223,7 @@ static int hyundai_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   return valid;
 }
 
-static int hyundai_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
+static int hyundai_tx_hook(CANPacket_t *to_send) {
 
   int tx = 1;
   int addr = GET_ADDR(to_send);
@@ -232,10 +232,6 @@ static int hyundai_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
     tx = msg_allowed(to_send, HYUNDAI_LONG_TX_MSGS, sizeof(HYUNDAI_LONG_TX_MSGS)/sizeof(HYUNDAI_LONG_TX_MSGS[0]));
   } else {
     tx = msg_allowed(to_send, HYUNDAI_TX_MSGS, sizeof(HYUNDAI_TX_MSGS)/sizeof(HYUNDAI_TX_MSGS[0]));
-  }
-
-  if (relay_malfunction) {
-    tx = 0;
   }
 
   // FCA11: Block any potential actuation
@@ -342,19 +338,19 @@ static int hyundai_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
   return tx;
 }
 
-static int hyundai_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
+static int hyundai_fwd_hook(int bus_num, CANPacket_t *to_fwd) {
 
   int bus_fwd = -1;
   int addr = GET_ADDR(to_fwd);
+
   // forward cam to ccan and viceversa, except lkas cmd
-  if (!relay_malfunction) {
-    if (bus_num == 0) {
-      bus_fwd = 2;
-    }
-    if ((bus_num == 2) && (addr != 832) && (addr != 1157)) {
-      bus_fwd = 0;
-    }
+  if (bus_num == 0) {
+    bus_fwd = 2;
   }
+  if ((bus_num == 2) && (addr != 832) && (addr != 1157)) {
+    bus_fwd = 0;
+  }
+
   return bus_fwd;
 }
 

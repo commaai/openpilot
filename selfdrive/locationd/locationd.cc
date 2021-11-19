@@ -130,16 +130,16 @@ void Localizer::build_live_location(cereal::LiveLocationKalman::Builder& fix) {
   Vector3d nans = Vector3d(NAN, NAN, NAN);
 
   // write measurements to msg
-  init_measurement(fix.initPositionGeodetic(), fix_pos_geo_vec, nans, true);
-  init_measurement(fix.initPositionECEF(), fix_ecef, fix_ecef_std, true);
-  init_measurement(fix.initVelocityECEF(), vel_ecef, vel_ecef_std, true);
-  init_measurement(fix.initVelocityNED(), ned_vel, nans, true);
+  init_measurement(fix.initPositionGeodetic(), fix_pos_geo_vec, nans, this->last_gps_fix > 0);
+  init_measurement(fix.initPositionECEF(), fix_ecef, fix_ecef_std, this->last_gps_fix > 0);
+  init_measurement(fix.initVelocityECEF(), vel_ecef, vel_ecef_std, this->last_gps_fix > 0);
+  init_measurement(fix.initVelocityNED(), ned_vel, nans, this->last_gps_fix > 0);
   init_measurement(fix.initVelocityDevice(), vel_device, vel_device_std, true);
   init_measurement(fix.initAccelerationDevice(), accDevice, accDeviceErr, true);
-  init_measurement(fix.initOrientationECEF(), orientation_ecef, orientation_ecef_std, true);
-  init_measurement(fix.initCalibratedOrientationECEF(), calibrated_orientation_ecef, nans, this->calibrated);
-  init_measurement(fix.initOrientationNED(), orientation_ned, nans, true);
-  init_measurement(fix.initCalibratedOrientationNED(), calibrated_orientation_ned, nans, true);
+  init_measurement(fix.initOrientationECEF(), orientation_ecef, orientation_ecef_std, this->last_gps_fix > 0);
+  init_measurement(fix.initCalibratedOrientationECEF(), calibrated_orientation_ecef, nans, this->calibrated && this->last_gps_fix > 0);
+  init_measurement(fix.initOrientationNED(), orientation_ned, nans, this->last_gps_fix > 0);
+  init_measurement(fix.initCalibratedOrientationNED(), calibrated_orientation_ned, nans, this->calibrated && this->last_gps_fix > 0);
   init_measurement(fix.initAngularVelocityDevice(), angVelocityDevice, angVelocityDeviceErr, true);
   init_measurement(fix.initVelocityCalibrated(), vel_calib, vel_calib_std, this->calibrated);
   init_measurement(fix.initAngularVelocityCalibrated(), ang_vel_calib, ang_vel_calib_std, this->calibrated);
@@ -305,6 +305,7 @@ void Localizer::handle_car_state(double current_time, const cereal::CarState::Re
   this->car_speed = std::abs(log.getVEgo());
   if (log.getStandstill()) {
     this->kf->predict_and_observe(current_time, OBSERVATION_NO_ROT, { Vector3d(0.0, 0.0, 0.0) });
+    this->kf->predict_and_observe(current_time, OBSERVATION_NO_ACCEL, { Vector3d(0.0, 0.0, 0.0) });
   }
 }
 
@@ -335,7 +336,6 @@ void Localizer::handle_cam_odo(double current_time, const cereal::CameraOdometry
   rot_calib_std *= 10.0;
   MatrixXdr rot_device_cov = rotate_std(this->device_from_calib, rot_calib_std).array().square().matrix().asDiagonal();
   MatrixXdr trans_device_cov = rotate_std(this->device_from_calib, trans_calib_std).array().square().matrix().asDiagonal();
-  
   this->kf->predict_and_observe(current_time, OBSERVATION_CAMERA_ODO_ROTATION,
     { rot_device }, { rot_device_cov });
   this->kf->predict_and_observe(current_time, OBSERVATION_CAMERA_ODO_TRANSLATION,
@@ -344,12 +344,12 @@ void Localizer::handle_cam_odo(double current_time, const cereal::CameraOdometry
 
 void Localizer::handle_live_calib(double current_time, const cereal::LiveCalibrationData::Reader& log) {
   if (log.getRpyCalib().size() > 0) {
-    auto calib = floatlist2vector(log.getRpyCalib());
-    if ((calib.minCoeff() < -CALIB_RPY_SANITY_CHECK) || (calib.maxCoeff() > CALIB_RPY_SANITY_CHECK)) {
+    auto live_calib = floatlist2vector(log.getRpyCalib());
+    if ((live_calib.minCoeff() < -CALIB_RPY_SANITY_CHECK) || (live_calib.maxCoeff() > CALIB_RPY_SANITY_CHECK)) {
       return;
     }
 
-    this->calib = calib;
+    this->calib = live_calib;
     this->device_from_calib = euler2rot(this->calib);
     this->calib_from_device = this->device_from_calib.transpose();
     this->calibrated = log.getCalStatus() == 1;

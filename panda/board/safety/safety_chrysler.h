@@ -18,12 +18,12 @@ AddrCheckStruct chrysler_addr_checks[] = {
 #define CHRYSLER_ADDR_CHECK_LEN (sizeof(chrysler_addr_checks) / sizeof(chrysler_addr_checks[0]))
 addr_checks chrysler_rx_checks = {chrysler_addr_checks, CHRYSLER_ADDR_CHECK_LEN};
 
-static uint8_t chrysler_get_checksum(CAN_FIFOMailBox_TypeDef *to_push) {
+static uint8_t chrysler_get_checksum(CANPacket_t *to_push) {
   int checksum_byte = GET_LEN(to_push) - 1;
   return (uint8_t)(GET_BYTE(to_push, checksum_byte));
 }
 
-static uint8_t chrysler_compute_checksum(CAN_FIFOMailBox_TypeDef *to_push) {
+static uint8_t chrysler_compute_checksum(CANPacket_t *to_push) {
   /* This function does not want the checksum byte in the input data.
   jeep chrysler canbus checksum from http://illmatics.com/Remote%20Car%20Hacking.pdf */
   uint8_t checksum = 0xFFU;
@@ -56,12 +56,12 @@ static uint8_t chrysler_compute_checksum(CAN_FIFOMailBox_TypeDef *to_push) {
   return ~checksum;
 }
 
-static uint8_t chrysler_get_counter(CAN_FIFOMailBox_TypeDef *to_push) {
+static uint8_t chrysler_get_counter(CANPacket_t *to_push) {
   // Well defined counter only for 8 bytes messages
   return (uint8_t)(GET_BYTE(to_push, 6) >> 4);
 }
 
-static int chrysler_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
+static int chrysler_rx_hook(CANPacket_t *to_push) {
 
   bool valid = addr_safety_check(to_push, &chrysler_rx_checks,
                                  chrysler_get_checksum, chrysler_compute_checksum,
@@ -117,16 +117,12 @@ static int chrysler_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   return valid;
 }
 
-static int chrysler_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
+static int chrysler_tx_hook(CANPacket_t *to_send) {
 
   int tx = 1;
   int addr = GET_ADDR(to_send);
 
   if (!msg_allowed(to_send, CHRYSLER_TX_MSGS, sizeof(CHRYSLER_TX_MSGS) / sizeof(CHRYSLER_TX_MSGS[0]))) {
-    tx = 0;
-  }
-
-  if (relay_malfunction) {
     tx = 0;
   }
 
@@ -186,21 +182,21 @@ static int chrysler_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
   return tx;
 }
 
-static int chrysler_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
+static int chrysler_fwd_hook(int bus_num, CANPacket_t *to_fwd) {
 
   int bus_fwd = -1;
   int addr = GET_ADDR(to_fwd);
 
-  if (!relay_malfunction) {
-    // forward CAN 0 -> 2 so stock LKAS camera sees messages
-    if (bus_num == 0) {
-      bus_fwd = 2;
-    }
-    // forward all messages from camera except LKAS_COMMAND and LKAS_HUD
-    if ((bus_num == 2) && (addr != 658) && (addr != 678)) {
-      bus_fwd = 0;
-    }
+  // forward CAN 0 -> 2 so stock LKAS camera sees messages
+  if (bus_num == 0) {
+    bus_fwd = 2;
   }
+
+  // forward all messages from camera except LKAS_COMMAND and LKAS_HUD
+  if ((bus_num == 2) && (addr != 658) && (addr != 678)) {
+    bus_fwd = 0;
+  }
+
   return bus_fwd;
 }
 

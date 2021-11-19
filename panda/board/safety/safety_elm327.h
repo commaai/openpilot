@@ -1,4 +1,4 @@
-static int elm327_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
+static int elm327_tx_hook(CANPacket_t *to_send) {
 
   int tx = 1;
   int addr = GET_ADDR(to_send);

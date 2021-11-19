@@ -78,6 +78,10 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1551 + STD_CARGO_KG
       ret.wheelbase = 2.79
 
+    elif candidate == CAR.POLO_MK6:
+      ret.mass = 1230 + STD_CARGO_KG
+      ret.wheelbase = 2.55
+
     elif candidate == CAR.TAOS_MK1:
       ret.mass = 1498 + STD_CARGO_KG
       ret.wheelbase = 2.69
@@ -98,6 +102,10 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1926 + STD_CARGO_KG
       ret.wheelbase = 3.00  # SWB, LWB is 3.40, TBD how to detect difference
       ret.minSteerSpeed = 14.0
+
+    elif candidate == CAR.TROC_MK1:
+      ret.mass = 1413 + STD_CARGO_KG
+      ret.wheelbase = 2.63
 
     elif candidate == CAR.AUDI_A3_MK3:
       ret.mass = 1335 + STD_CARGO_KG

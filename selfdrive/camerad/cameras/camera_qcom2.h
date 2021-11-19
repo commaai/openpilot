@@ -8,7 +8,7 @@
 #include "selfdrive/common/util.h"
 
 #define FRAME_BUF_COUNT 4
-#define DEBAYER_LOCAL_WORKSIZE 16
+
 typedef struct CameraState {
   MultiCameraState *multi_cam_state;
   CameraInfo ci;

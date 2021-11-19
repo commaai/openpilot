@@ -1253,8 +1253,19 @@ BO_ 780 ACC_02: 8 XXX
  SG_ ACC_Status_Anzeige : 61|3@1+ (1.0,0.0) [0.0|7] ""  XXX
 
 BO_ 302 ACC_07: 8 XXX
- SG_ ACC_07_BZ : 8|4@1+ (1,0) [0|15] "" XXX
- SG_ ACC_07_CRC : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ XXX_Maybe_Engine_Start_Request : 12|2@1+ (1,0) [0|1] "" XXX
+ SG_ XXX_Always_1 : 14|1@1+ (1,0) [0|1] "" XXX
+ SG_ XXX_Maybe_Engine_Stop_Release : 15|1@1+ (1,0) [0|1] "" XXX
+ SG_ XXX_Unknown : 16|8@1+ (1,0) [0|255] "" XXX
+ SG_ ACC_Engaged : 27|1@1+ (1,0) [0|1] "Boolean" XXX
+ SG_ ACC_Anhalten : 28|1@1+ (1,0) [0|1] "Boolean" XXX
+ SG_ ACC_Anhaltevorgang : 29|1@1+ (1,0) [0|1] "Boolean" XXX
+ SG_ ACC_Anfahrvorgang : 30|1@1+ (1,0) [0|1] "Boolean" XXX
+ SG_ ACC_Anfahren : 31|1@1+ (1,0) [0|1] "Boolean" XXX
+ SG_ XXX_Lead_Car_Relative_Speed : 32|8@1+ (1,-153) [0|255] "" XXX
+ SG_ ACC_Sollbeschleunigung_01 : 53|11@1+ (0.005,-7.22) [-7.22|3.005] "Unit_MeterPerSeconSquar" XXX
 
 BO_ 264 Fahrwerk_01: 8 XXX
  SG_ Fahrwerk_01_BZ : 8|4@1+ (1,0) [0|15] "" XXX
@@ -1372,6 +1383,13 @@ CM_ SG_ 294 254 "May be zero when sent by older cameras";
 CM_ SG_ 294 Assist_Torque "Heading control input, torque";
 CM_ SG_ 294 Assist_VZ "Heading control input, direction (sign)";
 CM_ SG_ 294 HCA_Available "Must be 1 for steering rack to accept HCA commands";
+CM_ SG_ 302 XXX_Unknown "Weird format but changes with some other bits, maybe a data-level checksum?";
+CM_ SG_ 302 ACC_Engaged "ACC engaged and regulating speed";
+CM_ SG_ 302 ACC_Sollbeschleunigung_01 "Requested acceleration, mirrors ACC_06.ACC_Sollbeschleunigung_02";
+CM_ SG_ 302 ACC_Anfahren "Start up, mirrors ACC_06.Anfahren";
+CM_ SG_ 302 ACC_Anhaltevorgang "Triggers/requests ESP standstill, reflected in ESP_Anhaltevorgang_ACC_aktiv";
+CM_ SG_ 302 ACC_Anfahrvorgang "Releases ESP hold";
+CM_ SG_ 302 ACC_Anhalten "Halt, mirrors ACC_06.Anhalten";
 CM_ SG_ 870 Hazard_Switch "Four-way flashers active";
 CM_ SG_ 870 Comfort_Signal_Left "Comfort turn signal active, left";
 CM_ SG_ 870 Comfort_Signal_Right "Comfort turn signal active, right";

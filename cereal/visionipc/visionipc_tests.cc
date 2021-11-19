@@ -68,6 +68,7 @@ TEST_CASE("Send single buffer"){
 
   VisionIpcBufExtra extra = {0};
   extra.frame_id = 1337;
+  buf->set_frame_id(extra.frame_id);
 
   server.send(buf, &extra);
 
@@ -76,6 +77,7 @@ TEST_CASE("Send single buffer"){
   REQUIRE(recv_buf != nullptr);
   REQUIRE(*(uint64_t*)recv_buf->addr == 1234);
   REQUIRE(extra_recv.frame_id == extra.frame_id);
+  REQUIRE(recv_buf->get_frame_id() == extra.frame_id);
 }
 
 

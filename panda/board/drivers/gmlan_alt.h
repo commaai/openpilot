@@ -75,7 +75,7 @@ int append_int(char *in, int in_len, int val, int val_len) {
   return in_len_copy;
 }
 
-int get_bit_message(char *out, CAN_FIFOMailBox_TypeDef *to_bang) {
+int get_bit_message(char *out, CANPacket_t *to_bang) {
   char pkt[MAX_BITS_CAN_PACKET];
   char footer[] = {
     1,  // CRC delimiter
@@ -88,18 +88,18 @@ int get_bit_message(char *out, CAN_FIFOMailBox_TypeDef *to_bang) {
   int len = 0;
 
   // test packet
-  int dlc_len = to_bang->RDTR & 0xF;
+  int dlc_len = GET_LEN(to_bang);
   len = append_int(pkt, len, 0, 1);    // Start-of-frame
 
-  if ((to_bang->RIR & 4) != 0) {
+  if (to_bang->extended != 0) {
     // extended identifier
-    len = append_int(pkt, len, to_bang->RIR >> 21, 11);  // Identifier
+    len = append_int(pkt, len, GET_ADDR(to_bang) >> 18, 11);  // Identifier
     len = append_int(pkt, len, 3, 2);    // SRR+IDE
-    len = append_int(pkt, len, (to_bang->RIR >> 3) & ((1U << 18) - 1U), 18);  // Identifier
+    len = append_int(pkt, len, (GET_ADDR(to_bang)) & ((1U << 18) - 1U), 18);  // Identifier
     len = append_int(pkt, len, 0, 3);    // RTR+r1+r0
   } else {
     // standard identifier
-    len = append_int(pkt, len, to_bang->RIR >> 21, 11);  // Identifier
+    len = append_int(pkt, len, GET_ADDR(to_bang), 11);  // Identifier
     len = append_int(pkt, len, 0, 3);    // RTR+IDE+reserved
   }
 
@@ -107,8 +107,7 @@ int get_bit_message(char *out, CAN_FIFOMailBox_TypeDef *to_bang) {
 
   // append data
   for (int i = 0; i < dlc_len; i++) {
-    unsigned char dat = ((unsigned char *)(&(to_bang->RDLR)))[i];
-    len = append_int(pkt, len, dat, 8);
+    len = append_int(pkt, len, to_bang->data[i], 8);
   }
 
   // append crc
@@ -269,7 +268,7 @@ void TIM12_IRQ_Handler(void) {
   TIM12->SR = 0;
 }
 
-bool bitbang_gmlan(CAN_FIFOMailBox_TypeDef *to_bang) {
+bool bitbang_gmlan(CANPacket_t *to_bang) {
   gmlan_send_ok = true;
   gmlan_alt_mode = BITBANG;
 
