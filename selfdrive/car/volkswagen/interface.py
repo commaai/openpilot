@@ -63,7 +63,7 @@ class CarInterface(CarInterfaceBase):
     tire_stiffness_factor = 1.0  # Let the params learner figure this out
     ret.lateralTuning.pid.kpBP = [0.]
     ret.lateralTuning.pid.kiBP = [0.]
-    ret.lateralTuning.pid.kf = 0.00006
+    ret.lateralTuning.pid.kf = 0.00004
     ret.lateralTuning.pid.kpV = [0.6]
     ret.lateralTuning.pid.kiV = [0.2]
 
