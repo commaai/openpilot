@@ -25,8 +25,8 @@ static inline void init_yuv_buf(std::vector<uint8_t> &buf, const int width, int 
   uint8_t *v = u + (width / 2) * (height / 2);
   // equivalent to RGB (0,0,0) in YUV space
   memset(y, 16, width * height);
-  memset(u, 128, (width /2) * (height / 2));
-  memset(v, 128, (width /2) * (height / 2));
+  memset(u, 128, (width / 2) * (height / 2));
+  memset(v, 128, (width / 2) * (height / 2));
 }
 
 void dmonitoring_init(DMonitoringModelState* s) {
