@@ -57,7 +57,7 @@ class CarController():
 
       if acc_hold_request:
         weird_value = 0x88
-      elif acc_stopping:
+      elif self.acc_stopping:
         weird_value = 0x95
       else:
         weird_value = 0x7F
