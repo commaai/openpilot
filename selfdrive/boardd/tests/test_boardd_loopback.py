@@ -4,31 +4,16 @@ import random
 import time
 import unittest
 from collections import defaultdict
-from functools import wraps
 
 import cereal.messaging as messaging
 from cereal import car
 from common.params import Params
 from common.spinner import Spinner
 from common.timeout import Timeout
-from panda import Panda
 from selfdrive.boardd.boardd import can_list_to_can_capnp
 from selfdrive.car import make_can_msg
 from selfdrive.hardware import TICI
 from selfdrive.test.helpers import phone_only, with_processes
-
-
-def reset_pandas(f):
-  @wraps(f)
-  def wrapper(*args, **kwargs):
-    for serial in Panda.list():
-      p = Panda(serial)
-      for i in [0, 1, 2, 3, 0xFFFF]:
-        p.can_clear(i)
-      p.reset()
-      p.close()
-    f(*args, **kwargs)
-  return wrapper
 
 
 class TestBoardd(unittest.TestCase):
@@ -44,7 +29,6 @@ class TestBoardd(unittest.TestCase):
     cls.spinner.close()
 
   @phone_only
-  @reset_pandas
   @with_processes(['pandad'])
   def test_loopback(self):
     # wait for boardd to init
@@ -75,7 +59,7 @@ class TestBoardd(unittest.TestCase):
     can = messaging.sub_sock('can', conflate=False, timeout=100)
     time.sleep(0.2)
 
-    n = 1000
+    n = 200
     for i in range(n):
       self.spinner.update(f"boardd loopback {i}/{n}")
 
