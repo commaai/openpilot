@@ -145,10 +145,10 @@ pipeline {
           stages {
             stage('parallel tests') {
               parallel {
-                stage('Devel Tests') {
+                stage('C2: build') {
                   steps {
                     phone_steps("eon-build", [
-                      ["build devel", "cd $SOURCE_DIR/release && EXTRA_FILES='tools/' ./build_devel.sh"],
+                      ["build master-ci", "cd $SOURCE_DIR/release && EXTRA_FILES='tools/' ./build_devel.sh"],
                       ["build openpilot", "cd selfdrive/manager && ./build.py"],
                       ["test manager", "python selfdrive/manager/test/test_manager.py"],
                       ["onroad tests", "cd selfdrive/test/ && ./test_onroad.py"],
@@ -157,7 +157,7 @@ pipeline {
                   }
                 }
 
-                stage('Replay Tests') {
+                stage('C2: replay') {
                   steps {
                     phone_steps("eon2", [
                       ["build", "cd selfdrive/manager && ./build.py"],
@@ -166,7 +166,7 @@ pipeline {
                   }
                 }
 
-                stage('HW + Unit Tests') {
+                stage('C2: HW + Unit Tests') {
                   steps {
                     phone_steps("eon", [
                       ["build", "cd selfdrive/manager && ./build.py"],
@@ -201,19 +201,22 @@ pipeline {
                 }
                 */
 
-                stage('tici Build') {
+                stage('C3: build') {
                   environment {
                     R3_PUSH = "${env.BRANCH_NAME == 'master' ? '1' : ' '}"
                   }
                   steps {
                     phone_steps("tici", [
-                      ["build", "cd selfdrive/manager && ./build.py"],
+                      ["build master-ci", "cd $SOURCE_DIR/release && EXTRA_FILES='tools/' ./build_devel.sh"],
+                      ["build openpilot", "cd selfdrive/manager && ./build.py"],
+                      ["test manager", "python selfdrive/manager/test/test_manager.py"],
                       ["onroad tests", "cd selfdrive/test/ && ./test_onroad.py"],
+                      ["test car interfaces", "cd selfdrive/car/tests/ && ./test_car_interfaces.py"],
                     ])
                   }
                 }
 
-                stage('HW + Unit Tests (tici)') {
+                stage('C3: HW + Unit Tests') {
                   steps {
                     phone_steps("tici2", [
                       ["build", "cd selfdrive/manager && ./build.py"],
@@ -224,7 +227,7 @@ pipeline {
                   }
                 }
 
-                stage('EON camerad') {
+                stage('C2: camerad') {
                   steps {
                     phone_steps("eon-party", [
                       ["build", "cd selfdrive/manager && ./build.py"],
@@ -234,7 +237,7 @@ pipeline {
                   }
                 }
 
-                stage('tici camerad') {
+                stage('C3: camerad') {
                   steps {
                     phone_steps("tici-party", [
                       ["build", "cd selfdrive/manager && ./build.py"],

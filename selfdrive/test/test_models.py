@@ -7,6 +7,7 @@ from collections import defaultdict, Counter
 from parameterized import parameterized_class
 
 from cereal import log, car
+from common.params import Params
 from selfdrive.car.fingerprints import all_known_cars
 from selfdrive.car.car_helpers import interfaces
 from selfdrive.car.honda.values import HONDA_BOSCH
@@ -60,6 +61,9 @@ class TestCarModel(unittest.TestCase):
     if lr is None:
       raise Exception("Route not found. Is it uploaded?")
 
+    params = Params()
+    params.clear_all()
+
     can_msgs = []
     fingerprint = {i: dict() for i in range(3)}
     for msg in lr:
@@ -68,6 +72,10 @@ class TestCarModel(unittest.TestCase):
           if m.src < 128:
             fingerprint[m.src][m.address] = len(m.dat)
         can_msgs.append(msg)
+      elif msg.which() == "carParams":
+        if msg.carParams.openpilotLongitudinalControl:
+          params.put_bool("DisableRadar", True)
+
     cls.can_msgs = sorted(can_msgs, key=lambda msg: msg.logMonoTime)
 
     CarInterface, CarController, CarState = interfaces[cls.car_model]
@@ -170,7 +178,8 @@ class TestCarModel(unittest.TestCase):
       # check that openpilot and panda safety agree on the car's state
       checks['gasPressed'] += CS.gasPressed != safety.get_gas_pressed_prev()
       checks['brakePressed'] += CS.brakePressed != safety.get_brake_pressed_prev()
-      checks['controlsAllowed'] += not CS.cruiseState.enabled and safety.get_controls_allowed()
+      if self.CP.pcmCruise:
+        checks['controlsAllowed'] += not CS.cruiseState.enabled and safety.get_controls_allowed()
 
     # TODO: reduce tolerance to 0
     failed_checks = {k: v for k, v in checks.items() if v > 25}
