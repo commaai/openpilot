@@ -26,7 +26,7 @@ signals:
 class TogglesPanel : public ListWidget {
   Q_OBJECT
 public:
-  explicit TogglesPanel(SettingsWindow *parent = nullptr);
+  explicit TogglesPanel(SettingsWindow *parent);
 };
 
 class SoftwarePanel : public ListWidget {
