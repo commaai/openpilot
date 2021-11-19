@@ -34,16 +34,6 @@
 
 #define MAX_RESP_LEN 0x40U
 
-#define GET_BUS(msg) (((msg)->RDTR >> 4) & 0xFF)
-#define GET_LEN(msg) ((msg)->RDTR & 0xF)
-#define GET_ADDR(msg) ((((msg)->RIR & 4) != 0) ? ((msg)->RIR >> 3) : ((msg)->RIR >> 21))
-#define GET_BYTE(msg, b) (((int)(b) > 3) ? (((msg)->RDHR >> (8U * ((unsigned int)(b) % 4U))) & 0xFFU) : (((msg)->RDLR >> (8U * (unsigned int)(b))) & 0xFFU))
-#define GET_BYTES_04(msg) ((msg)->RDLR)
-#define GET_BYTES_48(msg) ((msg)->RDHR)
-#define GET_FLAG(value, mask) (((__typeof__(mask))(value) & (mask)) == (mask))
-
-#define CAN_INIT_TIMEOUT_MS 500U
-
 #include <stdbool.h>
 #ifdef STM32H7
   #include "stm32h7/stm32h7_config.h"

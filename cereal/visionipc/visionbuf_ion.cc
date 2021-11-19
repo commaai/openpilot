@@ -47,13 +47,13 @@ static void ion_init() {
   }
 }
 
-void VisionBuf::allocate(size_t len) {
+void VisionBuf::allocate(size_t length) {
   int err;
 
   ion_init();
 
   struct ion_allocation_data ion_alloc = {0};
-  ion_alloc.len = len + PADDING_CL;
+  ion_alloc.len = length + PADDING_CL + sizeof(uint64_t);
   ion_alloc.align = 4096;
   ion_alloc.heap_id_mask = 1 << ION_IOMMU_HEAP_ID;
   ion_alloc.flags = ION_FLAG_CACHED;
@@ -66,18 +66,19 @@ void VisionBuf::allocate(size_t len) {
   err = HANDLE_EINTR(ioctl(ion_fd, ION_IOC_SHARE, &ion_fd_data));
   assert(err == 0);
 
-  void *addr = mmap(NULL, ion_alloc.len,
-                    PROT_READ | PROT_WRITE,
-                    MAP_SHARED, ion_fd_data.fd, 0);
-  assert(addr != MAP_FAILED);
+  void *mmap_addr = mmap(NULL, ion_alloc.len,
+                         PROT_READ | PROT_WRITE,
+                         MAP_SHARED, ion_fd_data.fd, 0);
+  assert(mmap_addr != MAP_FAILED);
 
-  memset(addr, 0, ion_alloc.len);
+  memset(mmap_addr, 0, ion_alloc.len);
 
-  this->len = len;
+  this->len = length;
   this->mmap_len = ion_alloc.len;
-  this->addr = addr;
+  this->addr = mmap_addr;
   this->handle = ion_alloc.handle;
   this->fd = ion_fd_data.fd;
+  this->frame_id = (uint64_t*)((uint8_t*)this->addr + this->len + PADDING_CL);
 }
 
 void VisionBuf::import(){
@@ -95,6 +96,8 @@ void VisionBuf::import(){
   this->handle = fd_data.handle;
   this->addr = mmap(NULL, this->mmap_len, PROT_READ | PROT_WRITE, MAP_SHARED, this->fd, 0);
   assert(this->addr != MAP_FAILED);
+
+  this->frame_id = (uint64_t*)((uint8_t*)this->addr + this->len + PADDING_CL);
 }
 
 void VisionBuf::init_cl(cl_device_id device_id, cl_context ctx) {

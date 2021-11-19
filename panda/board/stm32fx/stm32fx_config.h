@@ -38,6 +38,10 @@
 #define PROVISION_CHUNK_ADDRESS 0x1FFF79E0U
 #define DEVICE_SERIAL_NUMBER_ADDRESS 0x1FFF79C0U
 
+#define CANPACKET_DATA_SIZE_MAX 8U
+
+#include "can_definitions.h"
+
 #ifndef BOOTSTUB
   #ifdef PANDA
     #include "main_declarations.h"

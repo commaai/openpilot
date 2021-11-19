@@ -11,7 +11,14 @@ const struct lookup_t NISSAN_LOOKUP_ANGLE_RATE_DOWN = {
 
 const int NISSAN_DEG_TO_CAN = 100;
 
-const CanMsg NISSAN_TX_MSGS[] = {{0x169, 0, 8}, {0x2b1, 0, 8}, {0x4cc, 0, 8}, {0x20b, 2, 6}, {0x20b, 1, 6}, {0x280, 2, 8}};
+const CanMsg NISSAN_TX_MSGS[] = {
+  {0x169, 0, 8},  // LKAS
+  {0x2b1, 0, 8},  // PROPILOT_HUD
+  {0x4cc, 0, 8},  // PROPILOT_HUD_INFO_MSG
+  {0x20b, 2, 6},  // CRUISE_THROTTLE (X-Trail)
+  {0x20b, 1, 6},  // CRUISE_THROTTLE (Altima)
+  {0x280, 2, 8}   // CANCEL_MSG (Leaf)
+};
 
 // Signals duplicated below due to the fact that these messages can come in on either CAN bus, depending on car model.
 AddrCheckStruct nissan_addr_checks[] = {
@@ -34,7 +41,7 @@ addr_checks nissan_rx_checks = {nissan_addr_checks, NISSAN_ADDR_CHECK_LEN};
 // EPS Location. false = V-CAN, true = C-CAN
 bool nissan_alt_eps = false;
 
-static int nissan_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
+static int nissan_rx_hook(CANPacket_t *to_push) {
 
   bool valid = addr_safety_check(to_push, &nissan_rx_checks, NULL, NULL, NULL);
 
@@ -71,12 +78,12 @@ static int nissan_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
       }
     }
 
-    // X-trail 0x454, Leaf  0x1cc
-    if ((addr == 0x454) || (addr == 0x1cc)) {
+    // X-trail 0x454, Leaf  0x239
+    if ((addr == 0x454) || (addr == 0x239)) {
       if (addr == 0x454){
         brake_pressed = (GET_BYTE(to_push, 2) & 0x80) != 0;
       } else {
-        brake_pressed = GET_BYTE(to_push, 0) > 3;
+        brake_pressed = ((GET_BYTE(to_push, 4) >> 5) & 1) != 0;
       }
     }
 
@@ -99,16 +106,12 @@ static int nissan_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 }
 
 
-static int nissan_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
+static int nissan_tx_hook(CANPacket_t *to_send) {
   int tx = 1;
   int addr = GET_ADDR(to_send);
   bool violation = 0;
 
   if (!msg_allowed(to_send, NISSAN_TX_MSGS, sizeof(NISSAN_TX_MSGS) / sizeof(NISSAN_TX_MSGS[0]))) {
-    tx = 0;
-  }
-
-  if (relay_malfunction) {
     tx = 0;
   }
 
@@ -163,7 +166,7 @@ static int nissan_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
 }
 
 
-static int nissan_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
+static int nissan_fwd_hook(int bus_num, CANPacket_t *to_fwd) {
   int bus_fwd = -1;
   int addr = GET_ADDR(to_fwd);
 
@@ -182,11 +185,6 @@ static int nissan_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
     }
   }
 
-  if (relay_malfunction) {
-    bus_fwd = -1;
-  }
-
-  // fallback to do not forward
   return bus_fwd;
 }
 

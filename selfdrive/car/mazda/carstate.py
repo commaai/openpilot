@@ -12,11 +12,10 @@ class CarState(CarStateBase):
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
     self.shifter_values = can_define.dv["GEAR"]["GEAR"]
 
-    self.cruise_speed = 0
+    self.crz_btns_counter = 0
     self.acc_active_last = False
-    self.low_speed_lockout = True
     self.low_speed_alert = False
-    self.lkas_allowed = False
+    self.lkas_allowed_speed = False
 
   def update(self, cp, cp_cam):
 
@@ -35,8 +34,11 @@ class CarState(CarStateBase):
     can_gear = int(cp.vl["GEAR"]["GEAR"])
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(can_gear, None))
 
-    ret.leftBlinker = cp.vl["BLINK_INFO"]["LEFT_BLINK"] == 1
-    ret.rightBlinker = cp.vl["BLINK_INFO"]["RIGHT_BLINK"] == 1
+    ret.genericToggle = bool(cp.vl["BLINK_INFO"]["HIGH_BEAMS"])
+    ret.leftBlindspot = cp.vl["BSM"]["LEFT_BS1"] == 1
+    ret.rightBlindspot = cp.vl["BSM"]["RIGHT_BS1"] == 1
+    ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_lamp(40, cp.vl["BLINK_INFO"]["LEFT_BLINK"] == 1,
+                                                                      cp.vl["BLINK_INFO"]["RIGHT_BLINK"] == 1)
 
     ret.steeringAngleDeg = cp.vl["STEER"]["STEER_ANGLE"]
     ret.steeringTorque = cp.vl["STEER_TORQUE"]["STEER_TORQUE_SENSOR"]
@@ -45,6 +47,7 @@ class CarState(CarStateBase):
     ret.steeringTorqueEps = cp.vl["STEER_TORQUE"]["STEER_TORQUE_MOTOR"]
     ret.steeringRateDeg = cp.vl["STEER_RATE"]["STEER_ANGLE_RATE"]
 
+    # TODO: this should be from 0 - 1.
     ret.brakePressed = cp.vl["PEDALS"]["BRAKE_ON"] == 1
     ret.brake = cp.vl["BRAKE"]["BRAKE_PRESSURE"]
 
@@ -52,39 +55,43 @@ class CarState(CarStateBase):
     ret.doorOpen = any([cp.vl["DOORS"]["FL"], cp.vl["DOORS"]["FR"],
                         cp.vl["DOORS"]["BL"], cp.vl["DOORS"]["BR"]])
 
+    # TODO: this should be from 0 - 1.
     ret.gas = cp.vl["ENGINE_DATA"]["PEDAL_GAS"]
     ret.gasPressed = ret.gas > 0
 
-    ret.leftBlindspot = cp.vl["BSM"]["LEFT_BS1"] == 1
-    ret.rightBlindspot = cp.vl["BSM"]["RIGHT_BS1"] == 1
+    # Either due to low speed or hands off
+    lkas_blocked = cp.vl["STEER_RATE"]["LKAS_BLOCK"] == 1
 
     # LKAS is enabled at 52kph going up and disabled at 45kph going down
-    if speed_kph > LKAS_LIMITS.ENABLE_SPEED:
-      self.lkas_allowed = True
+    # wait for LKAS_BLOCK signal to clear when going up since it lags behind the speed sometimes
+    if speed_kph > LKAS_LIMITS.ENABLE_SPEED and not lkas_blocked:
+      self.lkas_allowed_speed = True
     elif speed_kph < LKAS_LIMITS.DISABLE_SPEED:
-      self.lkas_allowed = False
+      self.lkas_allowed_speed = False
 
+    # TODO: the signal used for available seems to be the adaptive cruise signal, instead of the main on
+    #       it should be used for carState.cruiseState.nonAdaptive instead
     ret.cruiseState.available = cp.vl["CRZ_CTRL"]["CRZ_AVAILABLE"] == 1
     ret.cruiseState.enabled = cp.vl["CRZ_CTRL"]["CRZ_ACTIVE"] == 1
     ret.cruiseState.speed = cp.vl["CRZ_EVENTS"]["CRZ_SPEED"] * CV.KPH_TO_MS
 
     if ret.cruiseState.enabled:
-      if not self.lkas_allowed:
-        if not self.acc_active_last:
-          self.low_speed_lockout = True
-        else:
-          self.low_speed_alert = True
+      if not self.lkas_allowed_speed and self.acc_active_last:
+        self.low_speed_alert = True
       else:
-        self.low_speed_lockout = False
         self.low_speed_alert = False
 
     # Check if LKAS is disabled due to lack of driver torque when all other states indicate
-    # it should be enabled (steer lockout)
-    ret.steerWarning = self.lkas_allowed and (cp.vl["STEER_RATE"]["LKAS_BLOCK"] == 1)
+    # it should be enabled (steer lockout). Don't warn until we actually get lkas active
+    # and lose it again, i.e, after initial lkas activation
+
+    ret.steerWarning = self.lkas_allowed_speed and lkas_blocked
 
     self.acc_active_last = ret.cruiseState.enabled
 
     self.cam_lkas = cp_cam.vl["CAM_LKAS"]
+    self.cam_laneinfo = cp_cam.vl["CAM_LANEINFO"]
+    self.crz_btns_counter = cp.vl["CRZ_BTNS"]["CTR"]
     ret.steerError = cp_cam.vl["CAM_LKAS"]["ERR_BIT_1"] == 1
 
     return ret
@@ -96,6 +103,7 @@ class CarState(CarStateBase):
       # sig_name, sig_address, default
       ("LEFT_BLINK", "BLINK_INFO", 0),
       ("RIGHT_BLINK", "BLINK_INFO", 0),
+      ("HIGH_BEAMS", "BLINK_INFO", 0),
       ("STEER_ANGLE", "STEER", 0),
       ("STEER_ANGLE_RATE", "STEER_RATE", 0),
       ("STEER_TORQUE_SENSOR", "STEER_TORQUE", 0),
@@ -134,9 +142,6 @@ class CarState(CarStateBase):
         ("BR", "DOORS", 0),
         ("PEDAL_GAS", "ENGINE_DATA", 0),
         ("SPEED", "ENGINE_DATA", 0),
-        ("RES", "CRZ_BTNS", 0),
-        ("SET_P", "CRZ_BTNS", 0),
-        ("SET_M", "CRZ_BTNS", 0),
         ("CTR", "CRZ_BTNS", 0),
         ("LEFT_BS1", "BSM", 0),
         ("RIGHT_BS1", "BSM", 0),
@@ -165,21 +170,31 @@ class CarState(CarStateBase):
     if CP.carFingerprint in GEN1:
       signals += [
         # sig_name, sig_address, default
-        ("LKAS_REQUEST",     "CAM_LKAS", 0),
-        ("CTR",              "CAM_LKAS", 0),
-        ("ERR_BIT_1",        "CAM_LKAS", 0),
+        ("LKAS_REQUEST", "CAM_LKAS", 0),
+        ("CTR", "CAM_LKAS", 0),
+        ("ERR_BIT_1", "CAM_LKAS", 0),
         ("LINE_NOT_VISIBLE", "CAM_LKAS", 0),
-        ("LDW",              "CAM_LKAS", 0),
-        ("BIT_1",            "CAM_LKAS", 1),
-        ("ERR_BIT_2",        "CAM_LKAS", 0),
-        ("STEERING_ANGLE",   "CAM_LKAS", 0),
-        ("ANGLE_ENABLED",    "CAM_LKAS", 0),
-        ("CHKSUM",           "CAM_LKAS", 0),
+        ("BIT_1", "CAM_LKAS", 1),
+        ("ERR_BIT_2", "CAM_LKAS", 0),
+        ("STEERING_ANGLE", "CAM_LKAS", 0),
+        ("ANGLE_ENABLED", "CAM_LKAS", 0),
+        ("CHKSUM", "CAM_LKAS", 0),
+
+        ("LINE_VISIBLE", "CAM_LANEINFO", 0),
+        ("LINE_NOT_VISIBLE", "CAM_LANEINFO", 1),
+        ("LANE_LINES", "CAM_LANEINFO", 0),
+        ("BIT1", "CAM_LANEINFO", 0),
+        ("BIT2", "CAM_LANEINFO", 0),
+        ("BIT3", "CAM_LANEINFO", 0),
+        ("NO_ERR_BIT", "CAM_LANEINFO", 1),
+        ("S1", "CAM_LANEINFO", 0),
+        ("S1_HBEAM", "CAM_LANEINFO", 0),
       ]
 
       checks += [
         # sig_address, frequency
-        ("CAM_LKAS",      16),
+        ("CAM_LANEINFO", 2),
+        ("CAM_LKAS", 16),
       ]
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 2)

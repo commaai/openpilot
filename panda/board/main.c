@@ -20,11 +20,14 @@
   #include "drivers/bxcan.h"
 #endif
 
+#include "usb_protocol.h"
+
 #include "obj/gitversion.h"
 
 extern int _app_start[0xc000]; // Only first 3 sectors of size 0x4000 are used
 
 // When changing this struct, boardd and python/__init__.py needs to be kept up to date!
+#define HEALTH_PACKET_VERSION 1
 struct __attribute__((packed)) health_t {
   uint32_t uptime_pkt;
   uint32_t voltage_pkt;
@@ -192,15 +195,7 @@ int get_rtc_pkt(void *dat) {
   return sizeof(t);
 }
 
-int usb_cb_ep1_in(void *usbdata, int len, bool hardwired) {
-  UNUSED(hardwired);
-  CAN_FIFOMailBox_TypeDef *reply = (CAN_FIFOMailBox_TypeDef *)usbdata;
-  int ilen = 0;
-  while (ilen < MIN(len/0x10, 4) && can_pop(&can_rx_q, &reply[ilen])) {
-    ilen++;
-  }
-  return ilen*0x10;
-}
+
 
 // send on serial, first byte to select the ring
 void usb_cb_ep2_out(void *usbdata, int len, bool hardwired) {
@@ -215,23 +210,6 @@ void usb_cb_ep2_out(void *usbdata, int len, bool hardwired) {
         }
       }
     }
-  }
-}
-
-// send on CAN
-void usb_cb_ep3_out(void *usbdata, int len, bool hardwired) {
-  UNUSED(hardwired);
-  int dpkt = 0;
-  uint32_t *d32 = (uint32_t *)usbdata;
-  for (dpkt = 0; dpkt < (len / 4); dpkt += 4) {
-    CAN_FIFOMailBox_TypeDef to_push;
-    to_push.RDHR = d32[dpkt + 3];
-    to_push.RDLR = d32[dpkt + 2];
-    to_push.RDTR = d32[dpkt + 1];
-    to_push.RIR = d32[dpkt];
-
-    uint8_t bus_number = (to_push.RDTR >> 4) & CAN_BUS_NUM_MASK;
-    can_send(&to_push, bus_number, false);
   }
 }
 
@@ -454,24 +432,17 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, bool hardwired) 
         set_safety_mode(setup->b.wValue.w, (uint16_t) setup->b.wIndex.w);
       }
       break;
-    // **** 0xdd: enable can forwarding
+    // **** 0xdd: get healthpacket and CANPacket versions
     case 0xdd:
-      // wValue = Can Bus Num to forward from
-      // wIndex = Can Bus Num to forward to
-      if ((setup->b.wValue.w < BUS_MAX) && (setup->b.wIndex.w < BUS_MAX) &&
-          (setup->b.wValue.w != setup->b.wIndex.w)) { // set forwarding
-        can_set_forwarding(setup->b.wValue.w, setup->b.wIndex.w & CAN_BUS_NUM_MASK);
-      } else if((setup->b.wValue.w < BUS_MAX) && (setup->b.wIndex.w == 0xFFU)){ //Clear Forwarding
-        can_set_forwarding(setup->b.wValue.w, -1);
-      } else {
-        puts("Invalid CAN bus forwarding\n");
-      }
+      resp[0] = HEALTH_PACKET_VERSION;
+      resp[1] = CAN_PACKET_VERSION;
+      resp_len = 2;
       break;
     // **** 0xde: set can bitrate
     case 0xde:
       if (setup->b.wValue.w < BUS_MAX) {
         // TODO: add sanity check, ideally check if value is correct(from array of correct values)
-        can_speed[setup->b.wValue.w] = setup->b.wIndex.w;
+        bus_config[setup->b.wValue.w].can_speed = setup->b.wIndex.w;
         bool ret = can_init(CAN_NUM_FROM_BUS_NUM(setup->b.wValue.w));
         UNUSED(ret);
       }
@@ -628,9 +599,19 @@ int usb_cb_control_msg(USB_Setup_TypeDef *setup, uint8_t *resp, bool hardwired) 
     case 0xf9:
       if (setup->b.wValue.w < CAN_MAX) {
         // TODO: add sanity check, ideally check if value is correct(from array of correct values)
-        can_data_speed[setup->b.wValue.w] = setup->b.wIndex.w;
+        bus_config[setup->b.wValue.w].can_data_speed = setup->b.wIndex.w;
+        bus_config[setup->b.wValue.w].canfd_enabled = (setup->b.wIndex.w >= bus_config[setup->b.wValue.w].can_speed) ? true : false;
+        bus_config[setup->b.wValue.w].brs_enabled = (setup->b.wIndex.w > bus_config[setup->b.wValue.w].can_speed) ? true : false;
         bool ret = can_init(CAN_NUM_FROM_BUS_NUM(setup->b.wValue.w));
         UNUSED(ret);
+      }
+      break;
+    // **** 0xfa: check if CAN FD and BRS are enabled
+    case 0xfa:
+      if (setup->b.wValue.w < CAN_MAX) {
+        resp[0] =  bus_config[setup->b.wValue.w].canfd_enabled;
+        resp[1] = bus_config[setup->b.wValue.w].brs_enabled;
+        resp_len = 2;
       }
       break;
     default:

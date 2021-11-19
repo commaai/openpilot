@@ -37,6 +37,11 @@
 #include "acados_c/sim_interface.h"
 #include "acados_c/external_function_interface.h"
 
+#define {{ model.name | upper }}_NX     {{ dims.nx }}
+#define {{ model.name | upper }}_NZ     {{ dims.nz }}
+#define {{ model.name | upper }}_NU     {{ dims.nu }}
+#define {{ model.name | upper }}_NP     {{ dims.np }}
+
 #ifdef __cplusplus
 extern "C" {
 #endif

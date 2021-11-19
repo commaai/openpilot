@@ -180,6 +180,12 @@ SECTIONS
     . = ALIGN(8);
   } >DTCMRAM
 
+  .ram_d1 (NOLOAD) :
+  {
+    . = ALIGN(4);
+    *(.ram_d1*)
+  } >RAM_D1
+
   .ARM.attributes 0 : { *(.ARM.attributes) }
 }
 

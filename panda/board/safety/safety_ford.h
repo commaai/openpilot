@@ -8,7 +8,7 @@
 //      brake > 0mph
 
 
-static int ford_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
+static int ford_rx_hook(CANPacket_t *to_push) {
 
   int addr = GET_ADDR(to_push);
   int bus = GET_BUS(to_push);
@@ -65,7 +65,7 @@ static int ford_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
 // else
 //     block all commands that produce actuation
 
-static int ford_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
+static int ford_tx_hook(CANPacket_t *to_send) {
 
   int tx = 1;
   int addr = GET_ADDR(to_send);
@@ -78,10 +78,6 @@ static int ford_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
     pedal_pressed = pedal_pressed || gas_pressed_prev;
   }
   bool current_controls_allowed = controls_allowed && !(pedal_pressed);
-
-  if (relay_malfunction) {
-    tx = 0;
-  }
 
   // STEER: safety check
   if (addr == 0x3CA) {

@@ -43,10 +43,10 @@ EKFSym::EKFSym(std::string name, Map<MatrixXdr> Q, Map<VectorXd> x_initial, Map<
   this->init_state(x_initial, P_initial, NAN);
 }
 
-void EKFSym::init_state(Map<VectorXd> state, Map<MatrixXdr> covs, double filter_time) {
+void EKFSym::init_state(Map<VectorXd> state, Map<MatrixXdr> covs, double init_filter_time) {
   this->x = state;
   this->P = covs;
-  this->filter_time = filter_time;
+  this->filter_time = init_filter_time;
   this->augment_times = VectorXd::Zero(this->N);
   this->reset_rewind();
 }

@@ -2120,6 +2120,7 @@ class AcadosOcpOptions:
         self.__globalization = 'FIXED_STEP'
         self.__nlp_solver_step_length = 1.0                   # fixed Newton step length
         self.__levenberg_marquardt = 0.0
+        self.__collocation_type = 'GAUSS_LEGENDRE'
         self.__sim_method_num_stages  = 4                     # number of stages in the integrator
         self.__sim_method_num_steps   = 1                     # number of steps in the integrator
         self.__sim_method_newton_iter = 3                     # number of Newton iterations in simulation method
@@ -2194,6 +2195,15 @@ class AcadosOcpOptions:
         .. note:: preliminary implementation.
         """
         return self.__globalization
+
+    @property
+    def collocation_type(self):
+        """Collocation type: relevant for implicit integrators
+        -- string in {GAUSS_RADAU_IIA, GAUSS_LEGENDRE}.
+
+        Default: GAUSS_LEGENDRE
+        """
+        return self.__collocation_type
 
     @property
     def regularize_method(self):
@@ -2480,6 +2490,15 @@ class AcadosOcpOptions:
         else:
             raise Exception('Invalid regularize_method value. Possible values are:\n\n' \
                     + ',\n'.join(regularize_methods) + '.\n\nYou have: ' + regularize_method + '.\n\nExiting.')
+
+    @collocation_type.setter
+    def collocation_type(self, collocation_type):
+        collocation_types = ('GAUSS_RADAU_IIA', 'GAUSS_LEGENDRE')
+        if collocation_type in collocation_types:
+            self.__collocation_type = collocation_type
+        else:
+            raise Exception('Invalid collocation_type value. Possible values are:\n\n' \
+                    + ',\n'.join(collocation_types) + '.\n\nYou have: ' + collocation_type + '.\n\nExiting.')
 
     @hessian_approx.setter
     def hessian_approx(self, hessian_approx):

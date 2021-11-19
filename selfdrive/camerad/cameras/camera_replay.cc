@@ -23,8 +23,7 @@ std::string get_url(std::string route_name, const std::string &camera, int segme
 }
 
 void camera_init(VisionIpcServer *v, CameraState *s, int camera_id, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType rgb_type, VisionStreamType yuv_type, const std::string &url) {
-  // TODO: cache url file
-  s->frame = new FrameReader();
+  s->frame = new FrameReader(true);
   if (!s->frame->load(url)) {
     printf("failed to load stream from %s", url.c_str());
     assert(0);
@@ -49,12 +48,13 @@ void run_camera(CameraState *s) {
   uint32_t stream_frame_id = 0, frame_id = 0;
   size_t buf_idx = 0;
   std::unique_ptr<uint8_t[]> rgb_buf = std::make_unique<uint8_t[]>(s->frame->getRGBSize());
+  std::unique_ptr<uint8_t[]> yuv_buf = std::make_unique<uint8_t[]>(s->frame->getYUVSize());
   while (!do_exit) {
     if (stream_frame_id == s->frame->getFrameCount()) {
       // loop stream
       stream_frame_id = 0;
     }
-    if (s->frame->get(stream_frame_id++, rgb_buf.get(), nullptr)) {
+    if (s->frame->get(stream_frame_id++, rgb_buf.get(), yuv_buf.get())) {
       s->buf.camera_bufs_metadata[buf_idx] = {.frame_id = frame_id};
       auto &buf = s->buf.camera_bufs[buf_idx];
       CL_CHECK(clEnqueueWriteBuffer(buf.copy_q, buf.buf_cl, CL_TRUE, 0, s->frame->getRGBSize(), rgb_buf.get(), 0, NULL, NULL));

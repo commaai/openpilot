@@ -1,3 +1,9 @@
+#define GET_BIT(msg, b) (((msg)->data[(int)((b) / 8)] >> ((b) % 8)) & 0x1)
+#define GET_BYTE(msg, b) ((msg)->data[(b)])
+#define GET_BYTES_04(msg) ((msg)->data[0] | ((msg)->data[1] << 8) | ((msg)->data[2] << 16) | ((msg)->data[3] << 24))
+#define GET_BYTES_48(msg) ((msg)->data[4] | ((msg)->data[5] << 8) | ((msg)->data[6] << 16) | ((msg)->data[7] << 24))
+#define GET_FLAG(value, mask) (((__typeof__(mask))(value) & (mask)) == (mask))
+
 const int MAX_WRONG_COUNTERS = 5;
 const uint8_t MAX_MISSED_MSGS = 10U;
 
@@ -48,8 +54,8 @@ typedef struct {
   int len;
 } addr_checks;
 
-int safety_rx_hook(CAN_FIFOMailBox_TypeDef *to_push);
-int safety_tx_hook(CAN_FIFOMailBox_TypeDef *to_send);
+int safety_rx_hook(CANPacket_t *to_push);
+int safety_tx_hook(CANPacket_t *to_send);
 int safety_tx_lin_hook(int lin_num, uint8_t *data, int len);
 uint32_t get_ts_elapsed(uint32_t ts, uint32_t ts_last);
 int to_signed(int d, int bits);
@@ -63,25 +69,25 @@ bool driver_limit_check(int val, int val_last, struct sample_t *val_driver,
 bool rt_rate_limit_check(int val, int val_last, const int MAX_RT_DELTA);
 float interpolate(struct lookup_t xy, float x);
 void gen_crc_lookup_table(uint8_t poly, uint8_t crc_lut[]);
-bool msg_allowed(CAN_FIFOMailBox_TypeDef *to_send, const CanMsg msg_list[], int len);
-int get_addr_check_index(CAN_FIFOMailBox_TypeDef *to_push, AddrCheckStruct addr_list[], const int len);
+bool msg_allowed(CANPacket_t *to_send, const CanMsg msg_list[], int len);
+int get_addr_check_index(CANPacket_t *to_push, AddrCheckStruct addr_list[], const int len);
 void update_counter(AddrCheckStruct addr_list[], int index, uint8_t counter);
 void update_addr_timestamp(AddrCheckStruct addr_list[], int index);
 bool is_msg_valid(AddrCheckStruct addr_list[], int index);
-bool addr_safety_check(CAN_FIFOMailBox_TypeDef *to_push,
+bool addr_safety_check(CANPacket_t *to_push,
                        const addr_checks *rx_checks,
-                       uint8_t (*get_checksum)(CAN_FIFOMailBox_TypeDef *to_push),
-                       uint8_t (*compute_checksum)(CAN_FIFOMailBox_TypeDef *to_push),
-                       uint8_t (*get_counter)(CAN_FIFOMailBox_TypeDef *to_push));
+                       uint8_t (*get_checksum)(CANPacket_t *to_push),
+                       uint8_t (*compute_checksum)(CANPacket_t *to_push),
+                       uint8_t (*get_counter)(CANPacket_t *to_push));
 void generic_rx_checks(bool stock_ecu_detected);
 void relay_malfunction_set(void);
 void relay_malfunction_reset(void);
 
 typedef const addr_checks* (*safety_hook_init)(int16_t param);
-typedef int (*rx_hook)(CAN_FIFOMailBox_TypeDef *to_push);
-typedef int (*tx_hook)(CAN_FIFOMailBox_TypeDef *to_send);
+typedef int (*rx_hook)(CANPacket_t *to_push);
+typedef int (*tx_hook)(CANPacket_t *to_send);
 typedef int (*tx_lin_hook)(int lin_num, uint8_t *data, int len);
-typedef int (*fwd_hook)(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd);
+typedef int (*fwd_hook)(int bus_num, CANPacket_t *to_fwd);
 
 typedef struct {
   safety_hook_init init;
@@ -105,6 +111,7 @@ bool brake_pressed_prev = false;
 bool cruise_engaged_prev = false;
 float vehicle_speed = 0;
 bool vehicle_moving = false;
+bool acc_main_on = false;  // referred to as "ACC off" in ISO 15622:2018
 
 // for safety modes with torque steering control
 int desired_torque_last = 0;       // last desired steer torque

@@ -1,5 +1,6 @@
 // CAN msgs we care about
 #define MAZDA_LKAS          0x243
+#define MAZDA_LKAS_HUD      0x440
 #define MAZDA_CRZ_CTRL      0x21c
 #define MAZDA_CRZ_BTNS      0x09d
 #define MAZDA_STEER_TORQUE  0x240
@@ -23,12 +24,7 @@
 #define MAZDA_DRIVER_TORQUE_FACTOR 1
 #define MAZDA_MAX_TORQUE_ERROR 350
 
-// lkas enable speed 52kph, disable at 45kph
-#define MAZDA_LKAS_ENABLE_SPEED  5200
-#define MAZDA_LKAS_DISABLE_SPEED 4500
-
-const CanMsg MAZDA_TX_MSGS[] = {{MAZDA_LKAS, 0, 8}, {MAZDA_CRZ_BTNS, 0, 8}};
-bool mazda_lkas_allowed = false;
+const CanMsg MAZDA_TX_MSGS[] = {{MAZDA_LKAS, 0, 8}, {MAZDA_CRZ_BTNS, 0, 8}, {MAZDA_LKAS_HUD, 0, 8}};
 
 AddrCheckStruct mazda_addr_checks[] = {
   {.msg = {{MAZDA_CRZ_CTRL,     0, 8, .expected_timestep = 20000U}, { 0 }, { 0 }}},
@@ -41,7 +37,7 @@ AddrCheckStruct mazda_addr_checks[] = {
 addr_checks mazda_rx_checks = {mazda_addr_checks, MAZDA_ADDR_CHECKS_LEN};
 
 // track msgs coming from OP so that we know what CAM msgs to drop and what to forward
-static int mazda_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
+static int mazda_rx_hook(CANPacket_t *to_push) {
   bool valid = addr_safety_check(to_push, &mazda_rx_checks, NULL, NULL, NULL);
   if (valid && (GET_BUS(to_push) == MAZDA_MAIN)) {
     int addr = GET_ADDR(to_push);
@@ -49,17 +45,7 @@ static int mazda_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
     if (addr == MAZDA_ENGINE_DATA) {
       // sample speed: scale by 0.01 to get kph
       int speed = (GET_BYTE(to_push, 2) << 8) | GET_BYTE(to_push, 3);
-
       vehicle_moving = speed > 10; // moving when speed > 0.1 kph
-
-      // Enable LKAS at 52kph going up, disable at 45kph going down
-      if (speed > MAZDA_LKAS_ENABLE_SPEED) {
-        mazda_lkas_allowed = true;
-      } else if (speed < MAZDA_LKAS_DISABLE_SPEED) {
-        mazda_lkas_allowed = false;
-      } else {
-        // Misra-able appeasment block!
-      }
     }
 
     if (addr == MAZDA_STEER_TORQUE) {
@@ -73,13 +59,7 @@ static int mazda_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
       bool cruise_engaged = GET_BYTE(to_push, 0) & 8;
       if (cruise_engaged) {
         if (!cruise_engaged_prev) {
-          // do not engage until we hit the speed at which lkas is on
-          if (mazda_lkas_allowed) {
-            controls_allowed = 1;
-          } else {
-            controls_allowed = 0;
-            cruise_engaged = false;
-          }
+          controls_allowed = 1;
         }
       } else {
         controls_allowed = 0;
@@ -100,16 +80,12 @@ static int mazda_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   return valid;
 }
 
-static int mazda_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
+static int mazda_tx_hook(CANPacket_t *to_send) {
   int tx = 1;
   int addr = GET_ADDR(to_send);
   int bus = GET_BUS(to_send);
 
   if (!msg_allowed(to_send, MAZDA_TX_MSGS, sizeof(MAZDA_TX_MSGS)/sizeof(MAZDA_TX_MSGS[0]))) {
-    tx = 0;
-  }
-
-  if (relay_malfunction) {
     tx = 0;
   }
 
@@ -162,24 +138,36 @@ static int mazda_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
         tx = 0;
       }
     }
+
+    // cruise buttons check
+    if (addr == MAZDA_CRZ_BTNS) {
+      // allow resume spamming while controls allowed, but
+      // only allow cancel while contrls not allowed
+      bool cancel_cmd = (GET_BYTE(to_send, 0) == 0x1U);
+      if (!controls_allowed && !cancel_cmd) {
+        tx = 0;
+      }
+    }
   }
+
   return tx;
 }
 
-static int mazda_fwd_hook(int bus, CAN_FIFOMailBox_TypeDef *to_fwd) {
+static int mazda_fwd_hook(int bus, CANPacket_t *to_fwd) {
   int bus_fwd = -1;
-  if (!relay_malfunction) {
-    int addr = GET_ADDR(to_fwd);
-    if (bus == MAZDA_MAIN) {
-      bus_fwd = MAZDA_CAM;
-    } else if (bus == MAZDA_CAM) {
-      if (!(addr == MAZDA_LKAS)) {
-        bus_fwd = MAZDA_MAIN;
-      }
-    } else {
-      bus_fwd = -1;
+  int addr = GET_ADDR(to_fwd);
+
+  if (bus == MAZDA_MAIN) {
+    bus_fwd = MAZDA_CAM;
+  } else if (bus == MAZDA_CAM) {
+    bool block = (addr == MAZDA_LKAS) || (addr == MAZDA_LKAS_HUD);
+    if (!block) {
+      bus_fwd = MAZDA_MAIN;
     }
+  } else {
+    // don't fwd
   }
+
   return bus_fwd;
 }
 
@@ -187,7 +175,6 @@ static const addr_checks* mazda_init(int16_t param) {
   UNUSED(param);
   controls_allowed = false;
   relay_malfunction_reset();
-  mazda_lkas_allowed = false;
   return &mazda_rx_checks;
 }
 

@@ -43,7 +43,28 @@
 
 
 
-#if defined( TARGET_X64_INTEL_HASWELL )
+#if defined( TARGET_X64_INTEL_SKYLAKE_X )
+// common
+#define CACHE_LINE_SIZE 64 // data cache size: 64 bytes
+#define L1_CACHE_SIZE (32*1024) // L1 data cache size: 32 kB, 8-way
+#define L2_CACHE_SIZE (256*1024) //(1024*1024) // L2 data cache size: 1 MB ; DTLB1 64*4 kB = 256 kB
+#define LLC_CACHE_SIZE (6*1024*1024) //(8*1024*1024) // LLC cache size: 8 MB ; TLB 1536*4 kB = 6 MB
+// double
+#define D_PS 8 // panel size
+#define D_PLD 8 // 4 // GCD of panel length
+#define D_M_KERNEL 24 // max kernel size
+#define D_KC 128 //256 // 192
+#define D_NC 144 //72 //96 //72 // 120 // 512
+#define D_MC 2400 // 6000
+// single
+#define S_PS 16 // panel size
+#define S_PLD 4 // GCD of panel length TODO probably 16 when writing assebly
+#define S_M_KERNEL 32 // max kernel size
+#define S_KC 128 //256
+#define S_NC 128 //144
+#define S_MC 3000
+
+#elif defined( TARGET_X64_INTEL_HASWELL )
 // common
 #define CACHE_LINE_SIZE 64 // data cache size: 64 bytes
 #define L1_CACHE_SIZE (32*1024) // L1 data cache size: 32 kB, 8-way

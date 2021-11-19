@@ -58,22 +58,22 @@ int volkswagen_lane_msg = 0;
 uint8_t volkswagen_crc8_lut_8h2f[256]; // Static lookup table for CRC8 poly 0x2F, aka 8H2F/AUTOSAR
 
 
-static uint8_t volkswagen_get_checksum(CAN_FIFOMailBox_TypeDef *to_push) {
+static uint8_t volkswagen_get_checksum(CANPacket_t *to_push) {
   return (uint8_t)GET_BYTE(to_push, 0);
 }
 
-static uint8_t volkswagen_mqb_get_counter(CAN_FIFOMailBox_TypeDef *to_push) {
+static uint8_t volkswagen_mqb_get_counter(CANPacket_t *to_push) {
   // MQB message counters are consistently found at LSB 8.
   return (uint8_t)GET_BYTE(to_push, 1) & 0xFU;
 }
 
-static uint8_t volkswagen_pq_get_counter(CAN_FIFOMailBox_TypeDef *to_push) {
+static uint8_t volkswagen_pq_get_counter(CANPacket_t *to_push) {
   // Few PQ messages have counters, and their offsets are inconsistent. This
   // function works only for Lenkhilfe_3 at this time.
   return (uint8_t)(GET_BYTE(to_push, 1) & 0xF0U) >> 4;
 }
 
-static uint8_t volkswagen_mqb_compute_crc(CAN_FIFOMailBox_TypeDef *to_push) {
+static uint8_t volkswagen_mqb_compute_crc(CANPacket_t *to_push) {
   int addr = GET_ADDR(to_push);
   int len = GET_LEN(to_push);
 
@@ -108,7 +108,7 @@ static uint8_t volkswagen_mqb_compute_crc(CAN_FIFOMailBox_TypeDef *to_push) {
   return crc ^ 0xFFU;
 }
 
-static uint8_t volkswagen_pq_compute_checksum(CAN_FIFOMailBox_TypeDef *to_push) {
+static uint8_t volkswagen_pq_compute_checksum(CANPacket_t *to_push) {
   int len = GET_LEN(to_push);
   uint8_t checksum = 0U;
 
@@ -140,7 +140,7 @@ static const addr_checks* volkswagen_pq_init(int16_t param) {
   return &volkswagen_pq_rx_checks;
 }
 
-static int volkswagen_mqb_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
+static int volkswagen_mqb_rx_hook(CANPacket_t *to_push) {
 
   bool valid = addr_safety_check(to_push, &volkswagen_mqb_rx_checks,
                                  volkswagen_get_checksum, volkswagen_mqb_compute_crc, volkswagen_mqb_get_counter);
@@ -200,7 +200,7 @@ static int volkswagen_mqb_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
   return valid;
 }
 
-static int volkswagen_pq_rx_hook(CAN_FIFOMailBox_TypeDef *to_push) {
+static int volkswagen_pq_rx_hook(CANPacket_t *to_push) {
 
   bool valid = addr_safety_check(to_push, &volkswagen_pq_rx_checks,
                                 volkswagen_get_checksum, volkswagen_pq_compute_checksum, volkswagen_pq_get_counter);
@@ -297,11 +297,11 @@ static bool volkswagen_steering_check(int desired_torque) {
   return violation;
 }
 
-static int volkswagen_mqb_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
+static int volkswagen_mqb_tx_hook(CANPacket_t *to_send) {
   int addr = GET_ADDR(to_send);
   int tx = 1;
 
-  if (!msg_allowed(to_send, VOLKSWAGEN_MQB_TX_MSGS, VOLKSWAGEN_MQB_TX_MSGS_LEN) || relay_malfunction) {
+  if (!msg_allowed(to_send, VOLKSWAGEN_MQB_TX_MSGS, VOLKSWAGEN_MQB_TX_MSGS_LEN)) {
     tx = 0;
   }
 
@@ -333,11 +333,11 @@ static int volkswagen_mqb_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
   return tx;
 }
 
-static int volkswagen_pq_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
+static int volkswagen_pq_tx_hook(CANPacket_t *to_send) {
   int addr = GET_ADDR(to_send);
   int tx = 1;
 
-  if (!msg_allowed(to_send, VOLKSWAGEN_PQ_TX_MSGS, VOLKSWAGEN_PQ_TX_MSGS_LEN) || relay_malfunction) {
+  if (!msg_allowed(to_send, VOLKSWAGEN_PQ_TX_MSGS, VOLKSWAGEN_PQ_TX_MSGS_LEN)) {
     tx = 0;
   }
 
@@ -370,31 +370,30 @@ static int volkswagen_pq_tx_hook(CAN_FIFOMailBox_TypeDef *to_send) {
   return tx;
 }
 
-static int volkswagen_fwd_hook(int bus_num, CAN_FIFOMailBox_TypeDef *to_fwd) {
+static int volkswagen_fwd_hook(int bus_num, CANPacket_t *to_fwd) {
   int addr = GET_ADDR(to_fwd);
   int bus_fwd = -1;
 
-  if (!relay_malfunction) {
-    switch (bus_num) {
-      case 0:
-        // Forward all traffic from the Extended CAN onward
-        bus_fwd = 2;
-        break;
-      case 2:
-        if ((addr == volkswagen_torque_msg) || (addr == volkswagen_lane_msg)) {
-          // OP takes control of the Heading Control Assist and Lane Departure Warning messages from the camera
-          bus_fwd = -1;
-        } else {
-          // Forward all remaining traffic from Extended CAN devices to J533 gateway
-          bus_fwd = 0;
-        }
-        break;
-      default:
-        // No other buses should be in use; fallback to do-not-forward
+  switch (bus_num) {
+    case 0:
+      // Forward all traffic from the Extended CAN onward
+      bus_fwd = 2;
+      break;
+    case 2:
+      if ((addr == volkswagen_torque_msg) || (addr == volkswagen_lane_msg)) {
+        // OP takes control of the Heading Control Assist and Lane Departure Warning messages from the camera
         bus_fwd = -1;
-        break;
-    }
+      } else {
+        // Forward all remaining traffic from Extended CAN devices to J533 gateway
+        bus_fwd = 0;
+      }
+      break;
+    default:
+      // No other buses should be in use; fallback to do-not-forward
+      bus_fwd = -1;
+      break;
   }
+
   return bus_fwd;
 }
 

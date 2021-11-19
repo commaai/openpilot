@@ -83,7 +83,7 @@ BO_ 569 CRUISE_THROTTLE: 8 XXX
  SG_ FOLLOW_DISTANCE_BUTTON : 26|1@0+ (1,0) [0|1] "" XXX
  SG_ CANCEL_BUTTON : 25|1@0+ (1,0) [0|1] "" XXX
  SG_ PROPILOT_BUTTON : 24|1@0+ (1,0) [0|1] "" XXX
- SG_ unsure4 : 39|6@0+ (1,0) [0|63] "" XXX
+ SG_ USER_BRAKE_PRESSED : 37|1@0+ (1,0) [0|1] "" XXX
  SG_ COUNTER : 32|2@1+ (1,0) [0|3] "" XXX
  SG_ unsure5 : 47|8@0+ (1,0) [0|255] "" XXX
  SG_ unsure6 : 55|8@0+ (1,0) [0|255] "" XXX
