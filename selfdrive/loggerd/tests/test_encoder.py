@@ -102,8 +102,7 @@ class TestEncoder(unittest.TestCase):
 
         # TODO: this ffprobe call is really slow
         # check frame count
-        cmd = f"ffprobe -v error -count_packets -select_streams v:0 -show_entries stream=nb_read_frames \
-                -of default=nokey=1:noprint_wrappers=1 {file_path}"
+        cmd = f"ffprobe -v error -select_streams v:0 -count_packets -show_entries stream=nb_read_packets -of csv=p=0 {file_path}"
         if TICI:
           cmd = "LD_LIBRARY_PATH=/usr/local/lib " + cmd
 
