@@ -13,6 +13,12 @@
 #define MODEL_HEIGHT 640
 #define FULL_W 852 // should get these numbers from camerad
 
+template <class T>
+static inline T *get_buffer(std::vector<T> &buf, const size_t size) {
+  if (buf.size() < size) buf.resize(size);
+  return buf.data();
+}
+
 static inline void init_yuv_buf(std::vector<uint8_t> &buf, const int width, int height) {
   uint8_t *y = get_buffer(buf, width * height * 3 / 2);
   uint8_t *u = y + width * height;
@@ -35,12 +41,6 @@ void dmonitoring_init(DMonitoringModelState* s) {
 #else
   s->m = new SNPEModel("../../models/dmonitoring_model_q.dlc", &s->output[0], OUTPUT_SIZE, USE_DSP_RUNTIME);
 #endif
-}
-
-template <class T>
-static inline T *get_buffer(std::vector<T> &buf, const size_t size) {
-  if (buf.size() < size) buf.resize(size);
-  return buf.data();
 }
 
 static inline auto get_yuv_buf(std::vector<uint8_t> &buf, const int width, int height) {
