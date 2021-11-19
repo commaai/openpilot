@@ -43,6 +43,9 @@ class TestCarModel(unittest.TestCase):
 
   @classmethod
   def setUpClass(cls):
+    if "HONDA" not in cls.car_model:
+      raise unittest.SkipTest
+
     if cls.car_model not in ROUTES:
       # TODO: get routes for missing cars and remove this
       if cls.car_model in non_tested_cars:
@@ -155,6 +158,9 @@ class TestCarModel(unittest.TestCase):
     self.assertFalse(len(failed_addrs), f"panda safety RX check failed: {failed_addrs}")
 
   def test_panda_safety_carstate(self):
+    """
+      Assert that panda safety matches openpilot's carState
+    """
     if self.CP.dashcamOnly:
       self.skipTest("no need to check panda safety for dashcamOnly")
     if self.car_model in ignore_carstate_check:
@@ -181,8 +187,13 @@ class TestCarModel(unittest.TestCase):
       if self.CP.pcmCruise:
         checks['controlsAllowed'] += not CS.cruiseState.enabled and safety.get_controls_allowed()
 
+      # TODO: extend this to all cars
+      if self.CP.carName == "honda":
+        checks['mainOn'] += not CS.cruiseState.available and safety.get_acc_main_on()
+
     # TODO: reduce tolerance to 0
-    failed_checks = {k: v for k, v in checks.items() if v > 25}
+    #failed_checks = {k: v for k, v in checks.items() if v > 25}
+    failed_checks = {k: v for k, v in checks.items() if v > 0}
 
     # TODO: the panda and openpilot interceptor thresholds should match
     skip_gas_check = self.CP.carName == 'chrysler'
