@@ -87,7 +87,9 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
 
   };
 
-  if (Params().getBool("DisableRadar_Allow")) {
+  Params params;
+
+  if (params.getBool("DisableRadar_Allow")) {
     toggles.push_back({
       "DisableRadar",
       "openpilot Longitudinal Control",
@@ -96,7 +98,6 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
     });
   }
 
-  Params params;
   for (auto &[param, title, desc, icon] : toggles) {
     auto toggle = new ParamControl(param, title, desc, icon, this);
     bool locked = params.getBool((param + "Lock").toStdString());
