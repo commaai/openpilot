@@ -26,7 +26,7 @@ class CarInterface(CarInterfaceBase):
     ret.radarOffCan = RADAR_START_ADDR not in fingerprint[1]
 
     # WARNING: disabling radar also disables AEB (and we show the same warning on the instrument cluster as if you manually disabled AEB)
-    ret.openpilotLongitudinalControl = Params().get_bool("DisableRadar") and candidate in [CAR.SONATA, CAR.SONATA_HYBRID, CAR.PALISADE, CAR.SANTA_FE, CAR.ELANTRA_2021]
+    ret.openpilotLongitudinalControl = Params().get_bool("DisableRadar")
 
     ret.pcmCruise = not ret.openpilotLongitudinalControl
 
