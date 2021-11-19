@@ -6,7 +6,6 @@
 #include "cereal/messaging/messaging.h"
 #include "selfdrive/boardd/panda.h"
 
-const int CHUNK_SIZE = 64;
 const unsigned char dlc_to_len[] = {0U, 1U, 2U, 3U, 4U, 5U, 6U, 7U, 8U, 12U, 16U, 20U, 24U, 32U, 48U, 64U};
 
 int random_int(int min, int max) {
@@ -60,10 +59,10 @@ void PandaTest::test_can_send() {
   std::vector<uint8_t> unpacked_data;
   this->pack_can_buffer(can_data_list, [&](uint8_t *chunk, size_t size) {
     int size_left = size;
-    for (int i = 0, counter = 0; i < size; i += CHUNK_SIZE, counter++) {
+    for (int i = 0, counter = 0; i < size; i += USBPACKET_MAX_SIZE, counter++) {
       REQUIRE(chunk[i] == counter);
 
-      const int len = std::min(CHUNK_SIZE, size_left);
+      const int len = std::min(USBPACKET_MAX_SIZE, (uint32_t)size_left);
       unpacked_data.insert(unpacked_data.end(), &chunk[i + 1], &chunk[i + len]);
       size_left -= len;
     }
