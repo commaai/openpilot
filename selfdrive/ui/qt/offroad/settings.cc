@@ -26,63 +26,55 @@
 #include "selfdrive/ui/qt/qt_window.h"
 
 TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
-  // param, title, desc, icon, enabled
-  std::vector<std::tuple<QString, QString, QString, QString, bool>> toggles{
+  // param, title, desc, icon
+  std::vector<std::tuple<QString, QString, QString, QString>> toggles{
     {
       "OpenpilotEnabledToggle",
       "Enable openpilot",
       "Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.",
       "../assets/offroad/icon_openpilot.png",
-      true,
     },
     {
       "IsLdwEnabled",
       "Enable Lane Departure Warnings",
       "Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31mph (50kph).",
       "../assets/offroad/icon_warning.png",
-      true,
     },
     {
       "IsRHD",
       "Enable Right-Hand Drive",
       "Allow openpilot to obey left-hand traffic conventions and perform driver monitoring on right driver seat.",
       "../assets/offroad/icon_openpilot_mirrored.png",
-      true,
     },
     {
       "IsMetric",
       "Use Metric System",
       "Display speed in km/h instead of mph.",
       "../assets/offroad/icon_metric.png",
-      true,
     },
     {
       "CommunityFeaturesToggle",
       "Enable Community Features",
       "Use features, such as community supported hardware, from the open source community that are not maintained or supported by comma.ai and have not been confirmed to meet the standard safety model. Be extra cautious when using these features",
       "../assets/offroad/icon_shell.png",
-      true,
     },
     {
       "UploadRaw",
       "Upload Raw Logs",
       "Upload full logs and full resolution video by default while on Wi-Fi. If not enabled, individual logs can be marked for upload at useradmin.comma.ai.",
       "../assets/offroad/icon_network.png",
-      true,
     },
     {
       "RecordFront",
       "Record and Upload Driver Camera",
       "Upload data from the driver facing camera and help improve the driver monitoring algorithm.",
       "../assets/offroad/icon_monitoring.png",
-      Params().getBool("RecordFrontLock"),
     },
     {
       "EndToEndToggle",
       "\U0001f96c Disable use of lanelines (Alpha) \U0001f96c",
       "In this mode openpilot will ignore lanelines and just drive how it thinks a human would.",
       "../assets/offroad/icon_road.png",
-      true,
     },
 #ifdef ENABLE_MAPS
     {
@@ -90,7 +82,6 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       "Show ETA in 24h format",
       "Use 24h format instead of am/pm",
       "../assets/offroad/icon_metric.png",
-      true,
     },
 #endif
 
@@ -102,14 +93,15 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       "openpilot Longitudinal Control",
       "openpilot will disable the car's radar and will take over control of gas and brakes. Warning: this disables AEB!",
       "../assets/offroad/icon_speed_limit.png",
-      true,
     });
   }
 
-  for (auto &[param, title, desc, icon, enabled] : toggles) {
+  Params params;
+  for (auto &[param, title, desc, icon] : toggles) {
     auto toggle = new ParamControl(param, title, desc, icon, this);
-    toggle->setEnabled(enabled);
-    if (enabled) {
+    bool locked = params.getBool((param + "Lock").toStdString());
+    toggle->setEnabled(!locked);
+    if (!locked) {
       connect(parent, &SettingsWindow::offroadTransition, toggle, &ParamControl::setEnabled);
     }
     addItem(toggle);
