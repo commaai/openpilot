@@ -77,8 +77,8 @@ def create_mqb_acc_07_control(packer, bus, enabled, accel, acc_stopping, acc_sta
     "ACC_Anhaltevorgang": acc_hold_request,
     "ACC_Anfahrvorgang": acc_hold_release,
     "ACC_Anfahren": acc_starting,
-    "XXX_Lead_Car_Relative_Speed": 0x65,
     "ACC_Sollbeschleunigung_01": accel if enabled else 3.01,
+    "ACC_Sollbeschleunigung_03": accel if enabled else 0,
   }
 
   return packer.make_can_msg("ACC_07", bus, values, idx)
