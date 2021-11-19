@@ -32,10 +32,16 @@ static inline T *get_buffer(std::vector<T> &buf, const size_t size) {
   return buf.data();
 }
 
-static inline auto get_yuv_buf(std::vector<uint8_t> &buf, const int width, int height) {
+static inline auto get_yuv_buf(std::vector<uint8_t> &buf, const int width, int height, bool set_all_black) {
   uint8_t *y = get_buffer(buf, width * height * 3 / 2);
   uint8_t *u = y + width * height;
   uint8_t *v = u + (width /2) * (height / 2);
+  if (set_all_black) {
+    // RGB (0,0,0)
+    memset(y, 16, width * height);
+    memset(u, 128, (width /2) * (height / 2));
+    memset(v, 128, (width /2) * (height / 2));
+  }
   return std::make_tuple(y, u, v);
 }
 
@@ -80,11 +86,11 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
   int resized_width = MODEL_WIDTH;
   int resized_height = MODEL_HEIGHT;
 
-  auto [cropped_y, cropped_u, cropped_v] = get_yuv_buf(s->cropped_buf, crop_rect.w, crop_rect.h);
+  auto [cropped_y, cropped_u, cropped_v] = get_yuv_buf(s->cropped_buf, crop_rect.w, crop_rect.h, false);
   if (!s->is_rhd) {
     crop_yuv((uint8_t *)stream_buf, width, height, cropped_y, cropped_u, cropped_v, crop_rect);
   } else {
-    auto [mirror_y, mirror_u, mirror_v] = get_yuv_buf(s->premirror_cropped_buf, crop_rect.w, crop_rect.h);
+    auto [mirror_y, mirror_u, mirror_v] = get_yuv_buf(s->premirror_cropped_buf, crop_rect.w, crop_rect.h, false);
     crop_yuv((uint8_t *)stream_buf, width, height, mirror_y, mirror_u, mirror_v, crop_rect);
     libyuv::I420Mirror(mirror_y, crop_rect.w,
                        mirror_u, crop_rect.w / 2,
@@ -95,7 +101,7 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
                        crop_rect.w, crop_rect.h);
   }
 
-  auto [resized_buf, resized_u, resized_v] = get_yuv_buf(s->resized_buf, resized_width, resized_height);
+  auto [resized_buf, resized_u, resized_v] = get_yuv_buf(s->resized_buf, resized_width, resized_height, true);
   uint8_t *resized_y = resized_buf;
   libyuv::FilterMode mode = libyuv::FilterModeEnum::kFilterBilinear;
   if (Hardware::TICI()) {
