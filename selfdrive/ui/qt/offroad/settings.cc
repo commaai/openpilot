@@ -25,7 +25,7 @@
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/qt_window.h"
 
-TogglesPanel::TogglesPanel(QWidget *parent) : ListWidget(parent) {
+TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
   // param, title, desc, icon, enabled
   std::vector<std::tuple<QString, QString, QString, QString, bool>> toggles{
     {
@@ -109,7 +109,9 @@ TogglesPanel::TogglesPanel(QWidget *parent) : ListWidget(parent) {
   for (auto &[param, title, desc, icon, enabled] : toggles) {
     auto toggle = new ParamControl(param, title, desc, icon, this);
     toggle->setEnabled(enabled);
-    connect(parent, SIGNAL(offroadTransition(bool)), toggle, SLOT(setEnabled(bool)));
+    if (enabled) {
+      connect(parent, &SettingsWindow::offroadTransition, toggle, &ParamControl::setEnabled);
+    }
     addItem(toggle);
   }
 }

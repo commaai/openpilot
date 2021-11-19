@@ -12,6 +12,7 @@
 #include "selfdrive/ui/qt/widgets/controls.h"
 
 // ********** settings window + top-level panels **********
+class SettingsWindow;
 
 class DevicePanel : public ListWidget {
   Q_OBJECT
@@ -25,7 +26,7 @@ signals:
 class TogglesPanel : public ListWidget {
   Q_OBJECT
 public:
-  explicit TogglesPanel(QWidget *parent = nullptr);
+  explicit TogglesPanel(SettingsWindow *parent = nullptr);
 };
 
 class SoftwarePanel : public ListWidget {
