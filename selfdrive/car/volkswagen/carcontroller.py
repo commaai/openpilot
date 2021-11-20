@@ -41,7 +41,6 @@ class CarController():
         acc_status = CS.tsk_status
 
       accel = clip(actuators.accel, P.ACCEL_MIN, P.ACCEL_MAX) if enabled else 0
-      jerk = clip(2.0 * abs(accel - CS.out.aEgo), -12.7, 12.7)
 
       acc_hold_request, acc_hold_release = False, False
       if actuators.longControlState == LongCtrlState.stopping:
@@ -65,7 +64,7 @@ class CarController():
       if frame % P.ACC_CONTROL_STEP == 0:
         idx = (frame / P.ACC_CONTROL_STEP) % 16
         can_sends.append(volkswagencan.create_mqb_acc_06_control(self.packer_pt, CANBUS.pt, enabled, acc_status,
-                                                                 accel, jerk, self.acc_stopping, self.acc_starting, idx))
+                                                                 accel, self.acc_stopping, self.acc_starting, idx))
         can_sends.append(volkswagencan.create_mqb_acc_07_control(self.packer_pt, CANBUS.pt, enabled,
                                                                  accel, self.acc_stopping, self.acc_starting,
                                                                  acc_hold_request, acc_hold_release, weird_value, idx))
