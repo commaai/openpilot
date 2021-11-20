@@ -57,7 +57,7 @@ TEST_CASE("FileReader") {
 }
 
 TEST_CASE("Segment") {
-  auto flags = GENERATE(REPLAY_FLAG_NONE, REPLAY_FLAG_QCAMERA);
+  auto flags = GENERATE(REPLAY_FLAG_DCAM | REPLAY_FLAG_ECAM, REPLAY_FLAG_QCAMERA);
   Route demo_route(DEMO_ROUTE);
   REQUIRE(demo_route.load());
   REQUIRE(demo_route.segments().size() == 11);
@@ -68,21 +68,32 @@ TEST_CASE("Segment") {
     REQUIRE(segment.isLoaded() == true);
     REQUIRE(segment.log != nullptr);
     REQUIRE(segment.frames[RoadCam] != nullptr);
-    REQUIRE(segment.frames[DriverCam] == nullptr);
-    REQUIRE(segment.frames[WideRoadCam] == nullptr);
+    if (flags & REPLAY_FLAG_DCAM) {
+      REQUIRE(segment.frames[DriverCam] != nullptr);
+    }
+    if (flags & REPLAY_FLAG_ECAM) {
+      REQUIRE(segment.frames[WideRoadCam] == nullptr);
+    }
 
-    // LogReader & FrameReader
+    // test LogReader & FrameReader
     REQUIRE(segment.log->events.size() > 0);
     REQUIRE(std::is_sorted(segment.log->events.begin(), segment.log->events.end(), Event::lessThan()));
 
-    auto &fr = segment.frames[RoadCam];
-    REQUIRE(fr->getFrameCount() == 1200);
-    std::unique_ptr<uint8_t[]> rgb_buf = std::make_unique<uint8_t[]>(fr->getRGBSize());
-    std::unique_ptr<uint8_t[]> yuv_buf = std::make_unique<uint8_t[]>(fr->getYUVSize());
-    // sequence get 50 frames
-    for (int i = 0; i < 50; ++i) {
-      REQUIRE(fr->get(i, rgb_buf.get(), yuv_buf.get()));
+    for (auto cam : ALL_CAMERAS) {
+      auto &fr = segment.frames[cam];
+      if (!fr) continue;
+
+      if (cam == RoadCam || cam == WideRoadCam) {
+        REQUIRE(fr->getFrameCount() == 1200);
+      }
+      std::unique_ptr<uint8_t[]> rgb_buf = std::make_unique<uint8_t[]>(fr->getRGBSize());
+      std::unique_ptr<uint8_t[]> yuv_buf = std::make_unique<uint8_t[]>(fr->getYUVSize());
+      // sequence get 50 frames
+      for (int i = 0; i < 50; ++i) {
+        REQUIRE(fr->get(i, rgb_buf.get(), yuv_buf.get()));
+      }
     }
+
     loop.quit();
   });
   loop.exec();
