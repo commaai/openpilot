@@ -118,6 +118,7 @@ bool FrameReader::load(const std::string &url, bool no_cuda, std::atomic<bool> *
     // some stream seems to contian no keyframes
     key_frames_count_ += pkt->flags & AV_PKT_FLAG_KEY;
   }
+  valid_ = valid_ && !packets.empty();
   return valid_;
 }
 
