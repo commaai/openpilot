@@ -12,17 +12,12 @@ ACCEL_MIN_ISO = -3.5  # m/s^2
 ACCEL_MAX_ISO = 2.0  # m/s^2
 
 
-def long_control_state_trans(CP, active, long_control_state, v_ego, v_target_future, v_target,
+def long_control_state_trans(CP, active, long_control_state, v_ego, v_target_future,
                              output_accel, brake_pressed, cruise_standstill):
   """Update longitudinal control state machine"""
-  # TODO: may be overthinking this, but see if it's correct to have both vTarget and vTargetFuture, or if we can get by with just vTargetFuture
-  # My thinking is that if the lead is super far away and stopped, and we're 1-2 mph, vTargetFuture will say to stop in 10 seconds, but vTarget will say to move up slowly until then
-  # So we'll stop too soon
-  # But this is an edge case and can be fixed by changing vTargetFuture to 2 seconds instead of 10, like it was before
   stopping_condition = (v_ego < 2.0 and cruise_standstill) or \
                        (v_ego < CP.vEgoStopping and
-                        ((v_target < CP.vEgoStopping and v_target_future < CP.vEgoStopping) or
-                         brake_pressed))
+                        (v_target_future < CP.vEgoStopping or brake_pressed))
 
   starting_condition = v_target_future > CP.vEgoStarting and not cruise_standstill
 
@@ -92,7 +87,7 @@ class LongControl():
     # Update state machine
     output_accel = self.last_output_accel
     self.long_control_state = long_control_state_trans(CP, active, self.long_control_state, CS.vEgo,
-                                                       v_target_future, v_target, output_accel,
+                                                       v_target_future, output_accel,
                                                        CS.brakePressed, CS.cruiseState.standstill)
 
     if self.long_control_state == LongCtrlState.off or CS.gasPressed:
