@@ -1,4 +1,4 @@
-Version 0.8.11 (2021-11-22)
+Version 0.8.11 (2021-11-29)
 ========================
  * Support for CAN FD on the red panda
  * Support for an external panda on the comma three
