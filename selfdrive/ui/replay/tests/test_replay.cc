@@ -72,7 +72,7 @@ TEST_CASE("Segment") {
       REQUIRE(segment.frames[DriverCam] != nullptr);
     }
     if (flags & REPLAY_FLAG_ECAM) {
-      REQUIRE(segment.frames[WideRoadCam] == nullptr);
+      REQUIRE(segment.frames[WideRoadCam] != nullptr);
     }
 
     // test LogReader & FrameReader
