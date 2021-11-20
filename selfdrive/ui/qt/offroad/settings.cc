@@ -377,7 +377,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
 
   const int padding = panels.size() > 3 ? 25 : 35;
 
-  nav_btns = new QButtonGroup();
+  nav_btns = new QButtonGroup(this);
   for (auto &[name, panel] : panels) {
     QPushButton *btn = new QPushButton(name);
     btn->setCheckable(true);
