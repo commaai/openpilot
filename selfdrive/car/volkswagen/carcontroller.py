@@ -53,6 +53,8 @@ class CarController():
           self.acc_stopping = False
         self.acc_starting &= CS.out.vEgo < 0.2
         acc_hold_release = CS.esp_hold_confirmation
+      else:
+        self.acc_stopping, self.acc_starting = False, False
 
       if acc_hold_request:
         weird_value = 0x88
