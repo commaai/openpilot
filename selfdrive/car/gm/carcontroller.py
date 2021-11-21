@@ -2,7 +2,7 @@ from cereal import car
 from common.realtime import DT_CTRL
 from common.numpy_fast import interp, clip
 from selfdrive.config import Conversions as CV
-from selfdrive.car import apply_std_steer_torque_limits, create_gas_command
+from selfdrive.car import apply_std_steer_torque_limits, create_gas_interceptor_command
 from selfdrive.car.gm import gmcan
 from selfdrive.car.gm.values import DBC, NO_ASCM, CanBus, CarControllerParams
 from opendbc.can.packer import CANPacker
@@ -90,7 +90,7 @@ class CarController():
         idx = (frame // 4) % 4
         # send exactly zero if apply_gas is zero. Interceptor will send the max between read value and apply_gas.
         # This prevents unexpected pedal range rescaling
-        can_sends.append(create_gas_command(self.packer_pt, pedal_gas, idx))
+        can_sends.append(create_gas_interceptor_command(self.packer_pt, pedal_gas, idx))
 
         if CS.CP.carFingerprint in NO_ASCM:
           # TODO: Testing crossflashed brake controller
