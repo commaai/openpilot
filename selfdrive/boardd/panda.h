@@ -77,7 +77,8 @@ class Panda {
   ~Panda();
 
   std::string usb_serial;
-  inline static std::atomic<bool> connected = true;
+  std::atomic<bool> connected = true;
+  inline static std::atomic<bool> all_connected = true;
   std::atomic<bool> comms_healthy = true;
   cereal::PandaState::PandaType hw_type = cereal::PandaState::PandaType::UNKNOWN;
   bool has_rtc = false;

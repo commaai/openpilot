@@ -96,6 +96,7 @@ Panda::~Panda() {
   std::lock_guard lk(usb_lock);
   cleanup();
   connected = false;
+  Panda::all_connected = false;
 }
 
 void Panda::cleanup() {
