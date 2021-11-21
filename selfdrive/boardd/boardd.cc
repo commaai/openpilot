@@ -234,7 +234,7 @@ void can_recv_thread(std::vector<Panda *> pandas) {
 
     MessageBuilder msg;
     auto evt = msg.initEvent();
-    evt.setValid(comms_healthy);
+    evt.setValid(comms_healthy && Panda::connected);
     auto canData = evt.initCan(raw_can_data.size());
     for (uint i = 0; i<raw_can_data.size(); i++) {
       canData[i].setAddress(raw_can_data[i].address);
