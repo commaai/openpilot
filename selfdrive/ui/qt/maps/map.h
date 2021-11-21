@@ -29,6 +29,7 @@ private:
   QLabel *distance;
   QLabel *primary;
   QLabel *secondary;
+  QLabel *speed_limit;
   QLabel *icon_01;
   QWidget *lane_widget;
   QHBoxLayout *lane_layout;

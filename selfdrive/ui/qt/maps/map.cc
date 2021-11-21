@@ -340,6 +340,12 @@ MapInstructions::MapInstructions(QWidget * parent) : QWidget(parent) {
     QVBoxLayout *layout = new QVBoxLayout;
     icon_01 = new QLabel;
     layout->addWidget(icon_01);
+
+    speed_limit = new QLabel;
+    speed_limit->setStyleSheet(R"(font-size: 50px;)");
+    speed_limit->setAlignment(Qt::AlignCenter);
+    layout->addWidget(speed_limit);
+
     layout->addStretch();
     main_layout->addLayout(layout);
   }
@@ -419,6 +425,7 @@ void MapInstructions::showError(QString error_text) {
 
   secondary->setVisible(false);
   icon_01->setVisible(false);
+  speed_limit->setVisible(false);
 
   this->error = true;
   lane_widget->setVisible(false);
@@ -472,6 +479,11 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
     icon_01->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
     icon_01->setVisible(true);
   }
+
+  // Show speed limit
+  auto speed_limit_value = (int)round(instruction.getSpeedLimit() * (QUIState::ui_state.scene.is_metric ? MS_TO_KPH : MS_TO_MPH));
+  speed_limit->setText(QString("%1 %2").arg(speed_limit_value).arg(QUIState::ui_state.scene.is_metric ? "km/h" : "mph"));
+  speed_limit->setVisible(speed_limit_value > 0);
 
   // Show lanes
   bool has_lanes = false;
