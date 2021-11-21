@@ -1,3 +1,5 @@
 tracebox
+trace_*
+
 perfetto/
 configs/
