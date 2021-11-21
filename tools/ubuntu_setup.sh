@@ -153,3 +153,6 @@ echo
 echo "----   FINISH OPENPILOT SETUP   ----"
 echo "Configure your active shell env by running:"
 echo "source ~/.bashrc"
+echo
+echo "Activate the openpilot python environment with:"
+echo "pipenv shell"
