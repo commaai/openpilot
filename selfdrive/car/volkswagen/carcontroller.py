@@ -56,6 +56,9 @@ class CarController():
       else:
         self.acc_stopping, self.acc_starting = False, False
 
+      cb_pos = 0.0 if lead_visible else 0.1
+      cb_neg = 0.1
+
       if acc_hold_request:
         weird_value = 0x88
       elif self.acc_stopping:
@@ -66,7 +69,8 @@ class CarController():
       if frame % P.ACC_CONTROL_STEP == 0:
         idx = (frame / P.ACC_CONTROL_STEP) % 16
         can_sends.append(volkswagencan.create_mqb_acc_06_control(self.packer_pt, CANBUS.pt, enabled, acc_status,
-                                                                 accel, self.acc_stopping, self.acc_starting, idx))
+                                                                 accel, self.acc_stopping, self.acc_starting,
+                                                                 cb_pos, cb_neg, idx))
         can_sends.append(volkswagencan.create_mqb_acc_07_control(self.packer_pt, CANBUS.pt, enabled,
                                                                  accel, self.acc_stopping, self.acc_starting,
                                                                  acc_hold_request, acc_hold_release, weird_value, idx))
