@@ -1,4 +1,4 @@
-from common.numpy_fast import clip
+from common.numpy_fast import clip, interp
 from cereal import car
 from selfdrive.config import Conversions as CV
 from selfdrive.car import apply_std_steer_torque_limits
@@ -40,7 +40,12 @@ class CarController():
       else:
         acc_status = CS.tsk_status
 
-      accel = clip(actuators.accel, P.ACCEL_MIN, P.ACCEL_MAX) if enabled else 0
+      accel = actuators.accel if enabled else 0
+
+      if accel < 0:
+        accel = interp(accel - CS.out.aEgo, [-1.0, -0.5], [2 * accel, accel])
+
+      accel = clip(accel, P.ACCEL_MIN, P.ACCEL_MAX) if enabled else 0
 
       acc_hold_request, acc_hold_release = False, False
       if actuators.longControlState == LongCtrlState.stopping:
