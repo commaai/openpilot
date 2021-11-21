@@ -27,7 +27,7 @@ jobs:
     - name: setup
       run: tools/ubuntu_setup.sh
     - name: build
-      run: source ~/.bashrc && scons -j$(nproc)
+      run: source ~/.bashrc && pipenv shell && scons -j$(nproc)
 
   plotjuggler:
     name: plotjuggler
