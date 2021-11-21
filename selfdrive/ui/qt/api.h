@@ -37,7 +37,7 @@ protected:
   QNetworkReply *reply = nullptr;
 
 private:
-  QNetworkAccessManager *networkAccessManager = nullptr;
+  static QNetworkAccessManager *nam();
   QTimer *networkTimer = nullptr;
   bool create_jwt;
 
