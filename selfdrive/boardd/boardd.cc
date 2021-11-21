@@ -359,7 +359,7 @@ void send_peripheral_state(PubMaster *pm, Panda *panda) {
   // build msg
   MessageBuilder msg;
   auto evt = msg.initEvent();
-  evt.setValid(panda->comms_healthy);
+  evt.setValid(panda->comms_healthy && Panda::connected);
 
   auto ps = evt.initPeripheralState();
   ps.setPandaType(panda->hw_type);
