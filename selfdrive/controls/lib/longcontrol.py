@@ -17,7 +17,7 @@ def long_control_state_trans(CP, active, long_control_state, v_ego, v_target_fut
   """Update longitudinal control state machine"""
   stopping_condition = (v_ego < 2.0 and cruise_standstill) or \
                        (v_ego < CP.vEgoStopping and
-                        (v_target_future < CP.vEgoStopping or brake_pressed))
+                        (v_target_future < 0.31 or brake_pressed))
 
   starting_condition = v_target_future > CP.vEgoStarting and not cruise_standstill
 
