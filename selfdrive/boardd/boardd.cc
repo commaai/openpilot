@@ -315,9 +315,7 @@ bool send_panda_states(PubMaster *pm, const std::vector<Panda *> &pandas, bool s
     }
   #endif
 
-    if (!panda->comms_healthy) {
-      evt.setValid(false);
-    }
+    evt.setValid(panda->comms_healthy && Panda::connected);
 
     auto ps = pss[i];
     ps.setUptime(pandaState.uptime);
