@@ -16,18 +16,24 @@ class CarInterface(CarInterfaceBase):
     params = CarControllerParams(CP)
     return params.ACCEL_MIN, params.ACCEL_MAX
 
-  # Volt determined by iteratively plotting and minimizing error for f(angle, speed) = steer.
+  # Determined by iteratively plotting and minimizing error for f(angle, speed) = steer.
   @staticmethod
   def get_steer_feedforward_volt(desired_angle, v_ego):
-    # maps [-inf,inf] to [-1,1]: sigmoid(34.4 deg) = sigmoid(1) = 0.5
-    # 1 / 0.02904609 = 34.4 deg ~= 36 deg ~= 1/10 circle? Arbitrary?
     desired_angle *= 0.02904609
     sigmoid = desired_angle / (1 + fabs(desired_angle))
     return 0.10006696 * sigmoid * (v_ego + 3.12485927)
 
+  @staticmethod
+  def get_steer_feedforward_acadia(desired_angle, v_ego):
+    desired_angle *= 0.09760208
+    sigmoid = desired_angle / (1 + fabs(desired_angle))
+    return 0.04689655 * sigmoid * (v_ego + 10.028217)
+
   def get_steer_feedforward_function(self):
-    if self.CP.carFingerprint in [CAR.VOLT]:
+    if self.CP.carFingerprint == CAR.VOLT:
       return self.get_steer_feedforward_volt
+    elif self.CP.carFingerprint == CAR.ACADIA:
+      return self.get_steer_feedforward_acadia
     else:
       return CarInterfaceBase.get_steer_feedforward_default
 
@@ -112,8 +118,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 14.4  # end to end is 13.46
       ret.steerRatioRear = 0.
       ret.centerToFront = ret.wheelbase * 0.4
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.5], [0.1]] # using JYoung overrides
-      ret.lateralTuning.pid.kf = 0.00004   # Using JYoung value - full torque for 20 deg at 80mph means 0.00007818594
+      ret.lateralTuning.pid.kf = 1. # get_steer_feedforward_acadia()
 
     elif candidate == CAR.BUICK_REGAL:
       ret.minEnableSpeed = 18 * CV.MPH_TO_MS

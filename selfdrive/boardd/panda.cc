@@ -357,9 +357,9 @@ uint8_t Panda::len_to_dlc(uint8_t len) {
     return len;
   }
   if (len <= 24) {
-    return 8 + ((len - 8) / 4) + (len % 4) ? 1 : 0;
+    return 8 + ((len - 8) / 4) + ((len % 4) ? 1 : 0);
   } else {
-    return 11 + (len / 16) + (len % 16) ? 1 : 0;
+    return 11 + (len / 16) + ((len % 16) ? 1 : 0);
   }
 }
 
@@ -433,15 +433,15 @@ bool Panda::can_receive(std::vector<can_frame>& out_vec) {
   static uint8_t tail[CANPACKET_MAX_SIZE];
   uint8_t tail_size = 0;
   uint8_t counter = 0;
-  for (int i = 0; i < recv; i += 64) {
+  for (int i = 0; i < recv; i += USBPACKET_MAX_SIZE) {
     // Check for counter every 64 bytes (length of USB packet)
     if (counter != data[i]) {
       LOGE("CAN: MALFORMED USB RECV PACKET");
       break;
     }
     counter++;
-    uint8_t chunk_len = ((recv - i) > 64) ? 63 : (recv - i - 1); // as 1 is always reserved for counter
-    uint8_t chunk[CANPACKET_MAX_SIZE];
+    uint8_t chunk_len = ((recv - i) > USBPACKET_MAX_SIZE) ? 63 : (recv - i - 1); // as 1 is always reserved for counter
+    uint8_t chunk[USBPACKET_MAX_SIZE + CANPACKET_MAX_SIZE];
     memcpy(chunk, tail, tail_size);
     memcpy(&chunk[tail_size], &data[i+1], chunk_len);
     chunk_len += tail_size;
