@@ -334,7 +334,6 @@ bool send_panda_states(PubMaster *pm, const std::vector<Panda *> &pandas, bool s
     }
   #endif
 
-    // TODO: do we still need this?
     if (!panda->comms_healthy) {
       evt.setValid(false);
     }
