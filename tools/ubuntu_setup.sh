@@ -127,7 +127,7 @@ cd $OP_ROOT
 
 source ~/.bashrc
 if [ -z "$OPENPILOT_ENV" ]; then
-  printf "\nsource %s/tools/openpilot_env.sh" "$OP_ROOT" >> ~/.bashrc
+  printf "\nsource %s/tools/openpilot_env.sh\n" "$OP_ROOT" >> ~/.bashrc
   source ~/.bashrc
   echo "added openpilot_env to bashrc"
 fi
