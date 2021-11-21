@@ -28,7 +28,7 @@ jobs:
       run: tools/ubuntu_setup.sh
     - name: build
       shell: 'script -q -e -c "bash {0}"'
-      run: source tools/openpilot_env.sh && pipenv shell && scons -j$(nproc)
+      run: source ~/.bashrc && pipenv shell && scons -j$(nproc)
 
   plotjuggler:
     name: plotjuggler
