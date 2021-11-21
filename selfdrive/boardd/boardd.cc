@@ -68,13 +68,6 @@ std::string get_time_str(const struct tm &time) {
   return s;
 }
 
-bool check_all_connected(const std::vector<Panda *> &pandas) {
-  for (const auto& panda : pandas) {
-    if (!panda->connected) return false;
-  }
-  return true;
-}
-
 bool safety_setter_thread(std::vector<Panda *> pandas) {
   LOGD("Starting safety setter thread");
 
@@ -89,7 +82,7 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
 
   // switch to SILENT when CarVin param is read
   while (true) {
-    if (do_exit || !check_all_connected(pandas) || !ignition) {
+    if (do_exit || !Panda::connected || !ignition) {
       return false;
     }
 
@@ -108,10 +101,8 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
   std::string params;
   LOGW("waiting for params to set safety model");
   while (true) {
-    for (const auto& panda : pandas) {
-      if (do_exit || !panda->connected || !ignition) {
-        return false;
-      }
+    if (do_exit || !Panda::connected || !ignition) {
+      return false;
     }
 
     if (p.getBool("ControlsReady")) {
@@ -194,14 +185,9 @@ void can_send_thread(std::vector<Panda *> pandas, bool fake_send) {
   subscriber->setTimeout(100);
 
   // run as fast as messages come in
-  while (!do_exit) {
-    if (!check_all_connected(pandas)) {
-      do_exit = true;
-      break;
-    }
+  while (!do_exit && Panda::connected) {
 
     Message * msg = subscriber->receive();
-
     if (!msg) {
       if (errno == EINTR) {
         do_exit = true;
@@ -239,12 +225,7 @@ void can_recv_thread(std::vector<Panda *> pandas) {
   uint64_t next_frame_time = nanos_since_boot() + dt;
   std::vector<can_frame> raw_can_data;
 
-  while (!do_exit) {
-    if (!check_all_connected(pandas)){
-      do_exit = true;
-      break;
-    }
-
+  while (!do_exit && Panda::connected) {
     bool comms_healthy = true;
     raw_can_data.clear();
     for (const auto& panda : pandas) {
@@ -414,12 +395,7 @@ void panda_state_thread(PubMaster *pm, std::vector<Panda *> pandas, bool spoofin
   LOGD("start panda state thread");
 
   // run at 2hz
-  while (!do_exit) {
-    if(!check_all_connected(pandas)) {
-      do_exit = true;
-      break;
-    }
-
+  while (!do_exit && Panda::connected) {
     send_peripheral_state(pm, peripheral_panda);
     ignition = send_panda_states(pm, pandas, spoofing_started);
 
@@ -465,7 +441,7 @@ void peripheral_control_thread(Panda *panda) {
 
   FirstOrderFilter integ_lines_filter(0, 30.0, 0.05);
 
-  while (!do_exit && panda->connected) {
+  while (!do_exit && Panda::connected) {
     cnt++;
     sm.update(1000); // TODO: what happens if EINTR is sent while in sm.update?
 
@@ -562,7 +538,7 @@ void pigeon_thread(Panda *panda) {
     {(char)ublox::CLASS_RXM, int64_t(900000000ULL)}, // 0.9s
   };
 
-  while (!do_exit && panda->connected) {
+  while (!do_exit && Panda::connected) {
     bool need_reset = false;
     bool ignition_local = ignition;
     std::string recv = pigeon->receive();
@@ -661,6 +637,8 @@ int main(int argc, char *argv[]) {
 
   if (!do_exit) {
     LOGW("connected to board");
+
+    Panda::connected = true;
     Panda *peripheral_panda = pandas[0];
     std::vector<std::thread> threads;
 
