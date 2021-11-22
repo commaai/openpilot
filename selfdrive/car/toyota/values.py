@@ -58,6 +58,7 @@ class CAR:
   LEXUS_NX = "LEXUS NX 2018"
   LEXUS_NXH = "LEXUS NX HYBRID 2018"
   LEXUS_NX_TSS2 = "LEXUS NX 2020"
+  LEXUS_RC = "LEXUS RC 2020"
   LEXUS_RX = "LEXUS RX 2016"
   LEXUS_RXH = "LEXUS RX HYBRID 2017"
   LEXUS_RX_TSS2 = "LEXUS RX 2020"
@@ -804,10 +805,10 @@ FW_VERSIONS = {
       b'\x018966353M7100\x00\x00\x00\x00',
       b'\x018966353Q2000\x00\x00\x00\x00',
       b'\x018966353Q2300\x00\x00\x00\x00',
+      b'\x018966353Q4000\x00\x00\x00\x00',
       b'\x018966353R1100\x00\x00\x00\x00',
       b'\x018966353R7100\x00\x00\x00\x00',
       b'\x018966353R8100\x00\x00\x00\x00',
-      b'\x018966353Q4000\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\x0232480000\x00\x00\x00\x00\x00\x00\x00\x00A4701000\x00\x00\x00\x00\x00\x00\x00\x00',
@@ -1358,6 +1359,26 @@ FW_VERSIONS = {
       b'8646F7801100\x00\x00\x00\x00',
     ],
   },
+  CAR.LEXUS_RC: {
+    (Ecu.engine, 0x7e0, None): [
+      b'\x0232484000\x00\x00\x00\x00\x00\x00\x00\x0052422000\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.esp, 0x7b0, None): [
+      b'F152624221\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.dsu, 0x791, None): [
+      b'881512409100\x00\x00\x00\x00',
+    ],
+    (Ecu.eps, 0x7a1, None): [
+      b'8965B24081\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdRadar, 0x750, 0xf): [
+      b'8821F4702300\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdCamera, 0x750, 0x6d): [
+      b'8646F2402200\x00\x00\x00\x00',
+    ],
+  },
   CAR.LEXUS_RX: {
     (Ecu.engine, 0x700, None): [
       b'\x01896630E36200\x00\x00\x00\x00',
@@ -1558,6 +1579,7 @@ DBC = {
   CAR.RAV4: dbc_dict('toyota_rav4_2017_pt_generated', 'toyota_adas'),
   CAR.PRIUS: dbc_dict('toyota_prius_2017_pt_generated', 'toyota_adas'),
   CAR.COROLLA: dbc_dict('toyota_corolla_2017_pt_generated', 'toyota_adas'),
+  CAR.LEXUS_RC: dbc_dict('lexus_is_2018_pt_generated', 'toyota_adas'),
   CAR.LEXUS_RX: dbc_dict('lexus_rx_350_2016_pt_generated', 'toyota_adas'),
   CAR.LEXUS_RXH: dbc_dict('lexus_rx_hybrid_2017_pt_generated', 'toyota_adas'),
   CAR.LEXUS_RX_TSS2: dbc_dict('toyota_nodsu_pt_generated', 'toyota_tss2_adas'),

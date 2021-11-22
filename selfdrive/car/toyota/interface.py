@@ -186,6 +186,15 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 3736.8 * CV.LB_TO_KG + STD_CARGO_KG
       set_lat_tune(ret.lateralTuning, LatTunes.PID_L)
 
+    elif candidate == CAR.LEXUS_RC:
+      ret.safetyConfigs[0].safetyParam = 77
+      stop_and_go = False
+      ret.wheelbase = 2.73050
+      ret.steerRatio = 13.3
+      tire_stiffness_factor = 0.444
+      ret.mass = 3736.8 * CV.LB_TO_KG + STD_CARGO_KG
+      set_lat_tune(ret.lateralTuning, LatTunes.PID_L)
+
     elif candidate == CAR.LEXUS_CTH:
       ret.safetyConfigs[0].safetyParam = 100
       stop_and_go = True
