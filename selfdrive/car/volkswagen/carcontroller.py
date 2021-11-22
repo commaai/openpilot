@@ -41,25 +41,25 @@ class CarController():
         acc_status = CS.tsk_status
 
       accel = actuators.accel if enabled else 0
-
       accel = clip(accel, P.ACCEL_MIN, P.ACCEL_MAX) if enabled else 0
 
+      # FIXME: this needs to become a proper state machine
       acc_hold_request, acc_hold_release = False, False
       if actuators.longControlState == LongCtrlState.stopping:
-        accel = -1.0
         self.acc_stopping = True
-        acc_hold_request = not CS.esp_hold_confirmation
+        acc_hold_request = not CS.esp_hold_confirmation  # Send hold request for ABS/ESP brake-hold until acked
       elif enabled:
         if self.acc_stopping:
           self.acc_starting = True
           self.acc_stopping = False
-        self.acc_starting &= CS.out.vEgo < 0.2
-        acc_hold_release = CS.esp_hold_confirmation
+        self.acc_starting &= CS.out.vEgo < CS.CP.vEgoStarting
+        acc_hold_release = CS.esp_hold_confirmation  # Send release request for ABS/ESP brake-hold until acked
       else:
         self.acc_stopping, self.acc_starting = False, False
 
-      cb_pos = 0.0 if lead_visible else 0.1
-      cb_neg = 0.1
+      # Hopefully, have PI yank the lag out and let the drivetrain coordinator make it smooth again
+      cb_pos = 0.2
+      cb_neg = 0.2
 
       if acc_hold_request:
         weird_value = 0x88
