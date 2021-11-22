@@ -185,7 +185,7 @@ Panda *usb_connect(std::string serial="", uint32_t index=0) {
 }
 
 void can_send_thread(std::vector<Panda *> pandas, bool fake_send) {
-  LOGD("start send thread");
+  set_thread_name("boardd_can_send");
 
   AlignedBuffer aligned_buf;
   Context * context = Context::create();
@@ -229,7 +229,7 @@ void can_send_thread(std::vector<Panda *> pandas, bool fake_send) {
 }
 
 void can_recv_thread(std::vector<Panda *> pandas) {
-  LOGD("start recv thread");
+  set_thread_name("boardd_can_recv");
 
   // can = 8006
   PubMaster pm({"can"});
@@ -334,7 +334,6 @@ bool send_panda_states(PubMaster *pm, const std::vector<Panda *> &pandas, bool s
     }
   #endif
 
-    // TODO: do we still need this?
     if (!panda->comms_healthy) {
       evt.setValid(false);
     }
@@ -407,6 +406,8 @@ void send_peripheral_state(PubMaster *pm, Panda *panda) {
 }
 
 void panda_state_thread(PubMaster *pm, std::vector<Panda *> pandas, bool spoofing_started) {
+  set_thread_name("boardd_panda_state");
+
   Params params;
   Panda *peripheral_panda = pandas[0];
   bool ignition_last = false;
@@ -424,6 +425,7 @@ void panda_state_thread(PubMaster *pm, std::vector<Panda *> pandas, bool spoofin
     send_peripheral_state(pm, peripheral_panda);
     ignition = send_panda_states(pm, pandas, spoofing_started);
 
+    // TODO: make this check fast, currently takes 16ms
     // check if we have new pandas and are offroad
     if (!ignition && (pandas.size() != Panda::list().size())) {
       LOGW("Reconnecting to changed amount of pandas!");
@@ -454,7 +456,8 @@ void panda_state_thread(PubMaster *pm, std::vector<Panda *> pandas, bool spoofin
 
 
 void peripheral_control_thread(Panda *panda) {
-  LOGD("start peripheral control thread");
+  set_thread_name("boardd_peripheral_control");
+
   SubMaster sm({"deviceState", "driverCameraState"});
 
   uint64_t last_front_frame_t = 0;
@@ -552,6 +555,8 @@ static void pigeon_publish_raw(PubMaster &pm, const std::string &dat) {
 }
 
 void pigeon_thread(Panda *panda) {
+  set_thread_name("boardd_pigeon");
+
   PubMaster pm({"ubloxRaw"});
   bool ignition_last = false;
 

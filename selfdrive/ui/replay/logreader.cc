@@ -36,13 +36,12 @@ LogReader::LogReader(bool local_cache, int chunk_size, int retries, size_t memor
 }
 
 LogReader::~LogReader() {
-#ifdef HAS_MEMORY_RESOURCE
-  delete mbr_;
-  ::operator delete(pool_buffer_);
-#else
   for (Event *e : events) {
     delete e;
   }
+#ifdef HAS_MEMORY_RESOURCE
+  delete mbr_;
+  ::operator delete(pool_buffer_);
 #endif
 }
 
