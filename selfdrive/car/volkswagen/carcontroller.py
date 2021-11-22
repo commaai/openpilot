@@ -27,7 +27,7 @@ class CarController():
     self.acc_stopping = False
 
   def update(self, enabled, CS, frame, ext_bus, actuators, visual_alert, left_lane_visible, right_lane_visible, left_lane_depart,
-             right_lane_depart, lead_visible, set_speed):
+             right_lane_depart, lead_visible, set_speed, speed_visible):
     """ Controls thread """
 
     can_sends = []
@@ -80,7 +80,7 @@ class CarController():
       if frame % P.ACC_HUD_STEP == 0:
         idx = (frame / P.ACC_HUD_STEP) % 16
         can_sends.append(volkswagencan.create_mqb_acc_hud_control(self.packer_pt, CANBUS.pt, CS.tsk_status,
-                                                                  set_speed * CV.MS_TO_KPH, idx))
+                                                                  set_speed * CV.MS_TO_KPH, speed_visible, idx))
 
     # **** Steering Controls ************************************************ #
 
