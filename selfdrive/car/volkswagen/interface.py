@@ -37,9 +37,7 @@ class CarInterface(CarInterfaceBase):
       # Disable the radar and let openpilot control longitudinal
       # WARNING: THIS DISABLES FACTORY FCW/AEB!
       if Params().get_bool("DisableRadar"):
-        ret.pcmCruise = False
         ret.openpilotLongitudinalControl = True
-        ret.directAccelControl = True
         ret.safetyConfigs[0].safetyParam |= Panda.FLAG_VOLKSWAGEN_LONGITUDINAL
 
       if 0xAD in fingerprint[0]:  # Getriebe_11
@@ -69,6 +67,7 @@ class CarInterface(CarInterfaceBase):
 
     # Global longitudinal tuning defaults, can be overridden per-vehicle
 
+    ret.pcmCruise = not ret.openpilotLongitudinalControl
     ret.longitudinalActuatorDelayUpperBound = 1.0  # s
     ret.stoppingControl = True
     ret.vEgoStopping = 0.3
