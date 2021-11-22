@@ -1,4 +1,4 @@
-from common.numpy_fast import clip, interp
+from common.numpy_fast import clip
 from cereal import car
 from selfdrive.config import Conversions as CV
 from selfdrive.car import apply_std_steer_torque_limits
