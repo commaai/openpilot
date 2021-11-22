@@ -74,7 +74,7 @@ class CarInterface(CarInterfaceBase):
     ret.vEgoStopping = 0.3
     #ret.stopAccel = 0.0
     #ret.startAccel = 0.0
-    ret.longitudinalTuning.kpV = [0.1]
+    ret.longitudinalTuning.kpV = [0.3]
     ret.longitudinalTuning.kiV = [0.0]
 
     # Per-chassis tuning values, override tuning defaults here if desired

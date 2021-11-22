@@ -42,9 +42,6 @@ class CarController():
 
       accel = actuators.accel if enabled else 0
 
-      if accel < 0:
-        accel = interp(accel - CS.out.aEgo, [-1.0, -0.5], [2 * accel, accel])
-
       accel = clip(accel, P.ACCEL_MIN, P.ACCEL_MAX) if enabled else 0
 
       acc_hold_request, acc_hold_release = False, False
