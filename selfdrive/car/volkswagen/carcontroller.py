@@ -143,16 +143,15 @@ class CarController():
 
     # FIXME: this entire section is in desperate need of refactoring
 
-    if not CS.CP.openpilotLongitudinalControl:
+    if CS.CP.pcmCruise:
       if frame > self.graMsgStartFramePrev + P.GRA_VBP_STEP:
         if not enabled and CS.out.cruiseState.enabled:
           # Cancel ACC if it's engaged with OP disengaged.
           self.graButtonStatesToSend = BUTTON_STATES.copy()
           self.graButtonStatesToSend["cancel"] = True
-        elif enabled and CS.out.standstill and CS.esp_hold_confirmation:
+        elif enabled and CS.esp_hold_confirmation:
           # Blip the Resume button if we're engaged at standstill.
           # FIXME: This is a naive implementation, improve with visiond or radar input.
-          # A subset of MQBs like to "creep" too aggressively with this implementation.
           self.graButtonStatesToSend = BUTTON_STATES.copy()
           self.graButtonStatesToSend["resumeCruise"] = True
 

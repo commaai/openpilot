@@ -27,7 +27,7 @@ class CarState(CarStateBase):
 
     ret.vEgoRaw = float(np.mean([ret.wheelSpeeds.fl, ret.wheelSpeeds.fr, ret.wheelSpeeds.rl, ret.wheelSpeeds.rr]))
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
-    ret.standstill = ret.vEgoRaw < 0.1
+    ret.standstill = ret.vEgo < 0.1
 
     # Update steering angle, rate, yaw rate, and driver input torque. VW send
     # the sign/direction in a separate signal so they must be recombined.
@@ -109,9 +109,9 @@ class CarState(CarStateBase):
       ret.cruiseState.available = False
       ret.cruiseState.enabled = False
 
-    if not self.CP.openpilotLongitudinalControl:
-      # Update ACC setpoint. When the setpoint is zero or there's an error, the
-      # radar sends a set-speed of ~90.69 m/s / 203mph.
+    # Update ACC setpoint. When the setpoint is zero or there's an error, the
+    # radar sends a set-speed of ~90.69 m/s / 203mph.
+    if self.CP.pcmCruise:
       ret.cruiseState.speed = ext_cp.vl["ACC_02"]["ACC_Wunschgeschw"] * CV.KPH_TO_MS
       if ret.cruiseState.speed > 90:
         ret.cruiseState.speed = 0
