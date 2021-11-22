@@ -1,3 +1,7 @@
+Version 0.8.12 (2021-12-XX)
+========================
+ * Lexus RC 2020 support thanks to ErichMoraga!
+
 Version 0.8.11 (2021-11-29)
 ========================
  * Support for CAN FD on the red panda
