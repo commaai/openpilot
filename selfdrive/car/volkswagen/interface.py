@@ -34,12 +34,6 @@ class CarInterface(CarInterfaceBase):
       ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.volkswagen)]
       ret.enableBsm = 0x30F in fingerprint[0]  # SWA_01
 
-      # Disable the radar and let openpilot control longitudinal
-      # WARNING: THIS DISABLES FACTORY FCW/AEB!
-      if Params().get_bool("DisableRadar"):
-        ret.openpilotLongitudinalControl = True
-        ret.safetyConfigs[0].safetyParam |= Panda.FLAG_VOLKSWAGEN_LONGITUDINAL
-
       if 0xAD in fingerprint[0]:  # Getriebe_11
         ret.transmissionType = TransmissionType.automatic
       elif 0x187 in fingerprint[0]:  # EV_Gearshift
@@ -51,6 +45,10 @@ class CarInterface(CarInterfaceBase):
         ret.networkLocation = NetworkLocation.gateway
       else:
         ret.networkLocation = NetworkLocation.fwdCamera
+
+      if Params().get_bool("DisableRadar") and ret.networkLocation == NetworkLocation.gateway:
+        ret.openpilotLongitudinalControl = True
+        ret.safetyConfigs[0].safetyParam |= Panda.FLAG_VOLKSWAGEN_LONGITUDINAL
 
     # Global lateral tuning defaults, can be overridden per-vehicle
 
