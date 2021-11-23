@@ -52,7 +52,6 @@ prev_offroad_states: Dict[str, Tuple[bool, Optional[str]]] = {}
 def read_tz(x):
   if x is None:
     return 0
-  print(x)
 
   try:
     with open(f"/sys/devices/virtual/thermal/thermal_zone{x}/temp") as f:
