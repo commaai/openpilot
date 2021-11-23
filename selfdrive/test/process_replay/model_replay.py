@@ -11,8 +11,9 @@ from cereal import log
 from cereal.visionipc.visionipc_pyx import VisionIpcServer, VisionStreamType  # pylint: disable=no-name-in-module, import-error
 from common.spinner import Spinner
 from common.timeout import Timeout
-from common.transformations.camera import get_view_frame_from_road_frame, eon_f_frame_size, tici_f_frame_size
-from selfdrive.hardware import PC
+from common.transformations.camera import get_view_frame_from_road_frame, eon_f_frame_size, tici_f_frame_size, \
+                                                                        eon_d_frame_size, tici_d_frame_size
+from selfdrive.hardware import PC, TICI
 from selfdrive.manager.process_config import managed_processes
 from selfdrive.test.openpilotci import BASE_URL, get_url
 from selfdrive.test.process_replay.compare_logs import compare_logs, save_log
@@ -21,7 +22,17 @@ from selfdrive.version import get_git_commit
 from tools.lib.framereader import FrameReader
 from tools.lib.logreader import LogReader
 
-TEST_ROUTE = "99c94dc769b5d96e|2019-08-03--14-19-59"
+if TICI:
+  TEST_ROUTE = "0c7f0c7f0c7f0c7f|2021-10-13--13-00-00"
+else:
+  TEST_ROUTE = "0c7f0c7f0c7f0c7f|2021-10-13--13-00-00" # tbd
+
+LOCAL_DIR = "/home/batman/Downloads/"
+
+_VIPC_BUFS = [
+  (VisionStreamType.VISION_STREAM_YUV_BACK, 40, False, *(tici_f_frame_size if TICI else eon_f_frame_size)),
+  (VisionStreamType.VISION_STREAM_YUV_FRONT, 40, False, *(tici_d_frame_size if TICI else eon_d_frame_size))
+]
 
 
 def replace_calib(msg, calib):
@@ -31,18 +42,21 @@ def replace_calib(msg, calib):
   return msg
 
 
-def model_replay(lr, fr, desire=None, calib=None):
-
+def model_replay(lr, fr, dfr, desire=None, calib=None):
   spinner = Spinner()
   spinner.update("starting model replay")
 
-  vipc_server = None
-  pm = messaging.PubMaster(['roadCameraState', 'liveCalibration', 'lateralPlan'])
-  sm = messaging.SubMaster(['modelV2'])
+  vipc_server = VisionIpcServer("camerad")
+  for vipc_buf in _VIPC_BUFS:
+    vipc_server.create_buffers(*vipc_buf)
+  vipc_server.start_listener()
 
-  # TODO: add dmonitoringmodeld
+  pm = messaging.PubMaster(['roadCameraState', 'driverCameraState', 'liveCalibration', 'lateralPlan'])
+  sm = messaging.SubMaster(['modelV2', 'driverState'])
+
   try:
     managed_processes['modeld'].start()
+    managed_processes['dmonitoringmodeld'].start()
     time.sleep(5)
     sm.update(1000)
 
@@ -54,6 +68,8 @@ def model_replay(lr, fr, desire=None, calib=None):
 
     log_msgs = []
     frame_idx = 0
+    dframe_idx = 0
+
     for msg in tqdm(lr):
       if msg.which() == "liveCalibration":
         pm.send(msg.which(), replace_calib(msg, calib))
@@ -68,29 +84,39 @@ def model_replay(lr, fr, desire=None, calib=None):
         pm.send(msg.which(), f)
 
         img = fr.get(frame_idx, pix_fmt="yuv420p")[0]
-        if vipc_server is None:
-          w, h = {int(3*w*h/2): (w, h) for (w, h) in [tici_f_frame_size, eon_f_frame_size]}[len(img)]
-          vipc_server = VisionIpcServer("camerad")
-          vipc_server.create_buffers(VisionStreamType.VISION_STREAM_YUV_BACK, 40, False, w, h)
-          vipc_server.start_listener()
-          time.sleep(1) # wait for modeld to connect
-
         vipc_server.send(VisionStreamType.VISION_STREAM_YUV_BACK, img.flatten().tobytes(), f.roadCameraState.frameId,
                          f.roadCameraState.timestampSof, f.roadCameraState.timestampEof)
 
         with Timeout(seconds=15):
           log_msgs.append(messaging.recv_one(sm.sock['modelV2']))
 
-        spinner.update("modeld replay %d/%d" % (frame_idx, fr.frame_count))
-
         frame_idx += 1
         if frame_idx >= fr.frame_count:
           break
+
+      elif msg.which() == "driverCameraState":
+        f = msg.as_builder()
+        pm.send(msg.which(), f)
+
+        dimg = dfr.get(dframe_idx, pix_fmt="yuv420p")[0]
+        vipc_server.send(VisionStreamType.VISION_STREAM_YUV_FRONT, dimg.flatten().tobytes(), f.driverCameraState.frameId,
+                         f.driverCameraState.timestampSof, f.driverCameraState.timestampEof)
+
+        with Timeout(seconds=15):
+          log_msgs.append(messaging.recv_one(sm.sock['driverState']))
+
+        dframe_idx += 1
+        if dframe_idx >= dfr.frame_count:
+          break
+
+      spinner.update("models replay %d/%d, %d/%d" % (frame_idx, fr.frame_count, dframe_idx, dfr.frame_count))
+
   except KeyboardInterrupt:
     pass
   finally:
     spinner.close()
     managed_processes['modeld'].stop()
+    managed_processes['dmonitoringmodeld'].stop()
 
   return log_msgs
 
@@ -101,10 +127,15 @@ if __name__ == "__main__":
   replay_dir = os.path.dirname(os.path.abspath(__file__))
   ref_commit_fn = os.path.join(replay_dir, "model_replay_ref_commit")
 
-  lr = LogReader(get_url(TEST_ROUTE, 0))
-  fr = FrameReader(get_url(TEST_ROUTE, 0, log_type="fcamera"))
+  _ = get_url(TEST_ROUTE, 0)
+  # lr = LogReader(get_url(TEST_ROUTE, 0))
+  # fr = FrameReader(get_url(TEST_ROUTE, 0, log_type="fcamera"))
+  # dfr = FrameReader(get_url(TEST_ROUTE, 0, log_type="dcamera"))
+  lr = LogReader(LOCAL_DIR + TEST_ROUTE + '--%d--rlog.bz2' % 0)
+  fr = FrameReader(LOCAL_DIR + TEST_ROUTE + '--%d--fcamera.hevc' % 0)
+  dfr = FrameReader(LOCAL_DIR + TEST_ROUTE + '--%d--dcamera.hevc' % 0)
 
-  log_msgs = model_replay(list(lr), fr)
+  log_msgs = model_replay(list(lr), fr, dfr)
 
   failed = False
   if not update:
@@ -114,7 +145,9 @@ if __name__ == "__main__":
 
     ignore = ['logMonoTime', 'valid',
               'modelV2.frameDropPerc',
-              'modelV2.modelExecutionTime']
+              'modelV2.modelExecutionTime',
+              'driverState.modelExecutionTime',
+              'driverState.dspExecutionTime']
     tolerance = None if not PC else 1e-3
     results: Any = {TEST_ROUTE: {}}
     results[TEST_ROUTE]["modeld"] = compare_logs(cmp_log, log_msgs, tolerance=tolerance, ignore_fields=ignore)
