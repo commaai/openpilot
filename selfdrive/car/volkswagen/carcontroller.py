@@ -59,8 +59,8 @@ class CarController():
           self.acc_stopping, self.acc_starting = False, False
 
         # Hopefully, have PI yank the lag out and let the drivetrain coordinator make it smooth again
-        cb_pos = 0.2
-        cb_neg = 0.2
+        cb_pos = 0.0 if lead_visible or CS.out.vEgo < 2.0 else 0.2  # react faster to lead cars, also don't get hung up at DSG clutch release/kiss points when creeping to stop
+        cb_neg = 0.0 if accel < 0 else 0.2  # IDK why, but stock likes to zero this out when accel is negative
 
         if acc_hold_request:
           weird_value = 0x88
