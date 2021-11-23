@@ -243,9 +243,27 @@ void Localizer::handle_sensors(double current_time, const capnp::List<cereal::Se
   }
 }
 
+
+void Localizer::input_fake_gps_observations(double current_time) {
+  // This is done to make sure that the error estimate of the position does not blow up
+  // when the filter is in no-gps mode or in a tunnel
+  VectorXd current_x = this->kf->get_x();
+  MatrixXdr fake_P = this->kf->get_fake_P();
+  
+  VectorXd ecef_pos = current_x.segment<3>(0);
+  VectorXd ecef_vel = current_x.segment<3>(7);
+  MatrixXdr ecef_pos_R = fake_P.block<3,3>(0,0);
+  MatrixXdr ecef_vel_R = fake_P.block<3,3>(6,6);
+  
+  this->kf->predict_and_observe(current_time, OBSERVATION_ECEF_POS, { ecef_pos }, { ecef_pos_R });
+  this->kf->predict_and_observe(current_time, OBSERVATION_ECEF_VEL, { ecef_vel }, { ecef_vel_R });
+}
+
+
 void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::Reader& log) {
   // ignore the message if the fix is invalid
   if (log.getFlags() % 2 == 0) {
+    this->input_fake_gps_observations(current_time);
     return;
   }
 

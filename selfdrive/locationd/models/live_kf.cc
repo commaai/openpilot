@@ -33,6 +33,7 @@ LiveKalman::LiveKalman() {
 
   this->initial_x = live_initial_x;
   this->initial_P = live_initial_P_diag.asDiagonal();
+  this->fake_P = live_fake_P_diag.asDiagonal();
   this->reset_orientation_P = live_reset_orientation_diag.asDiagonal();
   this->Q = live_Q_diag.asDiagonal();
   for (auto& pair : live_obs_noise_diag) {
@@ -94,6 +95,10 @@ Eigen::VectorXd LiveKalman::get_initial_x() {
 
 MatrixXdr LiveKalman::get_initial_P() {
   return this->initial_P;
+}
+
+MatrixXdr LiveKalman::get_fake_P() {
+  return this->fake_P;
 }
 
 MatrixXdr LiveKalman::get_reset_orientation_P() {

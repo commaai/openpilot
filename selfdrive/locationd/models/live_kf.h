@@ -39,6 +39,7 @@ public:
 
   Eigen::VectorXd get_initial_x();
   MatrixXdr get_initial_P();
+  MatrixXdr get_fake_P();
   MatrixXdr get_reset_orientation_P();
 
   MatrixXdr H(Eigen::VectorXd in);
@@ -53,6 +54,7 @@ private:
 
   Eigen::VectorXd initial_x;
   MatrixXdr initial_P;
+  MatrixXdr fake_P;
   MatrixXdr reset_orientation_P;
   MatrixXdr Q;  // process noise
   std::unordered_map<int, MatrixXdr> obs_noise;

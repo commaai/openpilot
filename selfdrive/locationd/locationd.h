@@ -50,6 +50,8 @@ public:
   void handle_cam_odo(double current_time, const cereal::CameraOdometry::Reader& log);
   void handle_live_calib(double current_time, const cereal::LiveCalibrationData::Reader& log);
 
+  void input_fake_gps_observations(double current_time);
+
 private:
   std::unique_ptr<LiveKalman> kf;
 
