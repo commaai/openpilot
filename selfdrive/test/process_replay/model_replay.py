@@ -23,11 +23,11 @@ from tools.lib.framereader import FrameReader
 from tools.lib.logreader import LogReader
 
 if TICI:
-  TEST_ROUTE = "0c7f0c7f0c7f0c7f|2021-10-13--13-00-00"
+  TEST_ROUTE = "4cf7a6ad03080c90|2021-09-29--13-46-36"
 else:
-  TEST_ROUTE = "0c7f0c7f0c7f0c7f|2021-10-13--13-00-00" # tbd
+  TEST_ROUTE = "303055c0002aefd1|2021-11-22--18-36-32"
 
-LOCAL_DIR = "/home/batman/Downloads/"
+CACHE_DIR = os.getenv("CACHE_DIR", None)
 
 _VIPC_BUFS = [
   (VisionStreamType.VISION_STREAM_YUV_BACK, 40, False, *(tici_f_frame_size if TICI else eon_f_frame_size)),
@@ -128,13 +128,15 @@ if __name__ == "__main__":
   replay_dir = os.path.dirname(os.path.abspath(__file__))
   ref_commit_fn = os.path.join(replay_dir, "model_replay_ref_commit")
 
-  _ = get_url(TEST_ROUTE, 0)
-  # lr = LogReader(get_url(TEST_ROUTE, 0))
-  # fr = FrameReader(get_url(TEST_ROUTE, 0, log_type="fcamera"))
-  # dfr = FrameReader(get_url(TEST_ROUTE, 0, log_type="dcamera"))
-  lr = LogReader(LOCAL_DIR + TEST_ROUTE + '--%d--rlog.bz2' % 0)
-  fr = FrameReader(LOCAL_DIR + TEST_ROUTE + '--%d--fcamera.hevc' % 0)
-  dfr = FrameReader(LOCAL_DIR + TEST_ROUTE + '--%d--dcamera.hevc' % 0)
+  segnum = 0
+  if CACHE_DIR:
+    lr = LogReader(os.path.join(CACHE_DIR, '%s--%d--rlog.bz2' % (TEST_ROUTE.replace('|', '_'), segnum)))
+    fr = FrameReader(os.path.join(CACHE_DIR, '%s--%d--fcamera.hevc' % (TEST_ROUTE.replace('|', '_'), segnum)))
+    dfr = FrameReader(os.path.join(CACHE_DIR, '%s--%d--dcamera.hevc' % (TEST_ROUTE.replace('|', '_'), segnum)))
+  else:
+    lr = LogReader(get_url(TEST_ROUTE, segnum))
+    fr = FrameReader(get_url(TEST_ROUTE, segnum, log_type="fcamera"))
+    dfr = FrameReader(get_url(TEST_ROUTE, segnum, log_type="dcamera"))
 
   log_msgs = model_replay(list(lr), fr, dfr)
 
