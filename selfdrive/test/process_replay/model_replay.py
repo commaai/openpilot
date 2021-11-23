@@ -35,6 +35,9 @@ _VIPC_BUFS = [
 ]
 
 
+def get_log_fn(ref_commit):
+  return "%s_%s_%s.bz2" % (TEST_ROUTE, "model_tici" if TICI else "model", ref_commit)
+
 def replace_calib(msg, calib):
   msg = msg.as_builder()
   if calib is not None:
@@ -138,7 +141,7 @@ if __name__ == "__main__":
   failed = False
   if not update:
     ref_commit = open(ref_commit_fn).read().strip()
-    log_fn = "%s_%s_%s.bz2" % (TEST_ROUTE, "model", ref_commit)
+    log_fn = get_log_fn(ref_commit)
     cmp_log = LogReader(BASE_URL + log_fn)
 
     ignore = ['logMonoTime', 'valid',
@@ -148,7 +151,7 @@ if __name__ == "__main__":
               'driverState.dspExecutionTime']
     tolerance = None if not PC else 1e-3
     results: Any = {TEST_ROUTE: {}}
-    results[TEST_ROUTE]["modeld"] = compare_logs(cmp_log, log_msgs, tolerance=tolerance, ignore_fields=ignore)
+    results[TEST_ROUTE]["models"] = compare_logs(cmp_log, log_msgs, tolerance=tolerance, ignore_fields=ignore)
     diff1, diff2, failed = format_diff(results, ref_commit)
 
     print(diff2)
@@ -167,7 +170,7 @@ if __name__ == "__main__":
     print("Uploading new refs")
 
     new_commit = get_git_commit()
-    log_fn = "%s_%s_%s.bz2" % (TEST_ROUTE, "model", new_commit)
+    log_fn = get_log_fn(new_commit)
     save_log(log_fn, log_msgs)
     try:
       upload_file(log_fn, os.path.basename(log_fn))
