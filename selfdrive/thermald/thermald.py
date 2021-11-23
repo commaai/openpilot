@@ -24,9 +24,11 @@ from selfdrive.swaglog import cloudlog
 from selfdrive.thermald.power_monitoring import PowerMonitoring
 from selfdrive.version import tested_branch, terms_version, training_version
 
-ThermalStatus = log.DeviceState.ThermalStatus
 NetworkType = log.DeviceState.NetworkType
 NetworkStrength = log.DeviceState.NetworkStrength
+ThermalZone = log.DeviceState.ThermalZone
+ThermalStatus = log.DeviceState.ThermalStatus
+
 CURRENT_TAU = 15.   # 15s time constant
 TEMP_TAU = 5.   # 5s time constant
 DAYS_NO_CONNECTIVITY_MAX = 14     # do not allow to engage after this many days
@@ -49,16 +51,19 @@ OFFROAD_DANGER_TEMP = 79.5 if TICI else 70.0
 
 prev_offroad_states: Dict[str, Tuple[bool, Optional[str]]] = {}
 
-def read_tz(x):
-  if x is None:
-    return 0
-
+def read_tz(x: int) -> int:
   try:
     with open(f"/sys/devices/virtual/thermal/thermal_zone{x}/temp") as f:
       return int(f.read())
   except FileNotFoundError:
     return 0
 
+def read_tz_type(x: int) -> Optional[str]:
+  try:
+    with open(f"/sys/devices/virtual/thermal/thermal_zone{x}/type") as f:
+      return f.read().strip()
+  except FileNotFoundError:
+    return None
 
 def read_thermal(thermal_config):
   dat = messaging.new_message('deviceState')
@@ -66,6 +71,15 @@ def read_thermal(thermal_config):
   dat.deviceState.gpuTempC = [read_tz(z) / thermal_config.gpu[1] for z in thermal_config.gpu[0]]
   dat.deviceState.memoryTempC = read_tz(thermal_config.mem[0]) / thermal_config.mem[1]
   dat.deviceState.ambientTempC = read_tz(thermal_config.ambient[0]) / thermal_config.ambient[1]
+
+  if TICI:
+    tz = []
+    for z in range(71):
+      if read_tz_type(z) is not None:
+        tz.append(ThermalZone.new_message(name=read_tz_type(z), temp=read_tz(z)))
+    dat.deviceState.thermalZones = tz
+    print(dat)
+
   return dat
 
 
