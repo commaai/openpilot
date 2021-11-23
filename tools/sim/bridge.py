@@ -8,8 +8,11 @@ import threading
 from cereal import log
 from multiprocessing import Process, Queue
 from typing import Any
+import pyopencl as cl
+import pyopencl.array  as cl_array
 
 import cereal.messaging as messaging
+from cereal.visionipc.visionipc_pyx import VisionIpcServer, VisionStreamType  # pylint: disable=no-name-in-module, import-error
 from common.params import Params
 from common.numpy_fast import clip
 from common.realtime import Ratekeeper, DT_DMON
@@ -54,17 +57,65 @@ def steer_rate_limit(old, new):
     return new
 
 frame_id = 0
+vipc_server = None
+ctx = None
+queue = None
+krnl = None
+Wdiv4 = 0 
+Hdiv4 = 0 
 def cam_callback(image):
   global frame_id
+  global vipc_server
+  global ctx
+  global queue
+  global krnl
+  global Wdiv4
+  global Hdiv4
+
+  if vipc_server is None:
+    vipc_server = VisionIpcServer("camerad")
+     
+    # TODO: remove this once the last RGB vipc subscriber is removed
+    vipc_server.create_buffers(VisionStreamType.VISION_STREAM_RGB_BACK, 4, True, W, H)
+    
+    vipc_server.create_buffers(VisionStreamType.VISION_STREAM_YUV_BACK, 40, False, W, H)
+    vipc_server.start_listener()
+    
+    # set up pyopencl rgb to yuv conversion
+    ctx = cl.create_some_context()
+    print(ctx)
+    queue = cl.CommandQueue(ctx)
+    cl_arg = " -DHEIGHT="+str(H)+" -DWIDTH="+str(W)+" -DRGB_STRIDE="+str(W*3)+" -DUV_WIDTH="+str(W/2)+" -DUV_HEIGHT="+str(H/2)+" -DRGB_SIZE="+str(W*H)+" -DCL_DEBUG "
+    
+    # TODO: move rgb_to_yuv.cl to local dir once the frame stream camera is removed
+    prg = cl.Program(ctx, open('../../selfdrive/camerad/transforms/rgb_to_yuv.cl').read()).build(cl_arg)
+
+    krnl = prg.rgb_to_yuv
+    Wdiv4 = W/4 if (W % 4 == 0) else (W +(4 - W % 4))/4
+    Hdiv4 = H/4 if (H % 4 == 0) else (H +(4 - H % 4))/4
+    
   img = np.frombuffer(image.raw_data, dtype=np.dtype("uint8"))
   img = np.reshape(img, (H, W, 4))
   img = img[:, :, [0, 1, 2]].copy()
-
+  eof = frame_id * 0.05
+  
+  # TODO: remove this once the last RGB vipc subscriber is removed
+  vipc_server.send(VisionStreamType.VISION_STREAM_RGB_BACK, img.tobytes(), frame_id, eof, eof)
+  
+  # convert RGB frame to YUV, then send
+  rgb = np.reshape(img, (H,W*3))
+  rgb_cl = cl_array.to_device(queue, rgb)
+  yuv_cl = cl_array.empty_like(rgb_cl)
+  krnl(queue, (np.int32(Wdiv4), np.int32(Hdiv4)), None, rgb_cl.data, yuv_cl.data).wait()
+  yuv = np.resize(yuv_cl.get(), np.int32((rgb.size/2)))
+  vipc_server.send(VisionStreamType.VISION_STREAM_YUV_BACK, yuv.data.tobytes(), frame_id, eof, eof)
+  
   dat = messaging.new_message('roadCameraState')
   dat.roadCameraState = {
     "frameId": image.frame,
-    "image": img.tobytes(),
-    "transform": [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
+    "transform": [1.0, 0.0, 0.0,
+                  0.0, 1.0, 0.0, 
+                  0.0, 0.0, 1.0]
   }
   pm.send('roadCameraState', dat)
   frame_id += 1
