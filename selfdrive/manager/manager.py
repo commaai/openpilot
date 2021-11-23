@@ -108,7 +108,7 @@ def manager_cleanup():
 
   # ensure all are killed
   for p in managed_processes.values():
-    p.stop(block=False)
+    p.stop(block=True)
 
   cloudlog.info("everything is dead")
 
