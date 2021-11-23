@@ -159,7 +159,7 @@ pipeline {
 
                 stage('C2: replay') {
                   steps {
-                    phone_steps("eon2", [
+                    phone_steps("eon-replay", [
                       ["build", "cd selfdrive/manager && ./build.py"],
                       ["model replay", "cd selfdrive/test/process_replay && ./model_replay.py"],
                     ])
@@ -243,6 +243,15 @@ pipeline {
                       ["build", "cd selfdrive/manager && ./build.py"],
                       ["test camerad", "python selfdrive/camerad/test/test_camerad.py"],
                       ["test exposure", "python selfdrive/camerad/test/test_exposure.py"],
+                    ])
+                  }
+                }
+
+                stage('C3: replay') {
+                  steps {
+                    phone_steps("tici-replay", [
+                      ["build", "cd selfdrive/manager && ./build.py"],
+                      ["model replay", "cd selfdrive/test/process_replay && ./model_replay.py"],
                     ])
                   }
                 }
