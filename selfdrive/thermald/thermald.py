@@ -76,9 +76,8 @@ def read_thermal(thermal_config):
     tz = []
     for z in range(71):
       if read_tz_type(z) is not None:
-        tz.append(ThermalZone.new_message(name=read_tz_type(z), temp=read_tz(z)))
+        tz.append(ThermalZone.new_message(name=read_tz_type(z), temp=read_tz(z) / 1000.))
     dat.deviceState.thermalZones = tz
-    print(dat)
 
   return dat
 
