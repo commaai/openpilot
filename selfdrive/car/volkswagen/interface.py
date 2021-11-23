@@ -66,13 +66,15 @@ class CarInterface(CarInterfaceBase):
     # Global longitudinal tuning defaults, can be overridden per-vehicle
 
     ret.pcmCruise = not ret.openpilotLongitudinalControl
+    ret.longitudinalActuatorDelayLowerBound = 0.5  # s
     ret.longitudinalActuatorDelayUpperBound = 1.0  # s
     ret.stoppingControl = True
-    ret.vEgoStopping = 0.3
-    ret.vEgoStarting = 0.3
-    #ret.stopAccel = 0.0
-    #ret.startAccel = 0.0
-    ret.longitudinalTuning.kpV = [0.3]
+    ret.vEgoStopping = 0.2
+    ret.vEgoStarting = 0.2
+    ret.stopAccel = 0.0
+    ret.startAccel = 0.0
+    ret.startingAccelRate = 6.0
+    ret.longitudinalTuning.kpV = [0.1]
     ret.longitudinalTuning.kiV = [0.0]
 
     # Per-chassis tuning values, override tuning defaults here if desired
