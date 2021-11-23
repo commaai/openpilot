@@ -102,8 +102,13 @@ def manager_prepare():
 
 
 def manager_cleanup():
+  # send signals to kill all procs
   for p in managed_processes.values():
-    p.stop()
+    p.stop(block=False)
+
+  # ensure all are killed
+  for p in managed_processes.values():
+    p.stop(block=False)
 
   cloudlog.info("everything is dead")
 
