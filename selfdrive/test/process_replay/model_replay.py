@@ -41,6 +41,8 @@ def replace_calib(msg, calib):
     msg.liveCalibration.extrinsicMatrix = get_view_frame_from_road_frame(*calib, 1.22).flatten().tolist()
   return msg
 
+def update_spinner(s, fidx, fcnt, didx, dcnt):
+  s.update("replaying models:                    road %d/%d                    driver %d/%d" % (fidx, fcnt, didx, dcnt))
 
 def model_replay(lr, fr, dfr, desire=None, calib=None):
   spinner = Spinner()
@@ -86,30 +88,26 @@ def model_replay(lr, fr, dfr, desire=None, calib=None):
         img = fr.get(frame_idx, pix_fmt="yuv420p")[0]
         vipc_server.send(VisionStreamType.VISION_STREAM_YUV_BACK, img.flatten().tobytes(), f.roadCameraState.frameId,
                          f.roadCameraState.timestampSof, f.roadCameraState.timestampEof)
-
         with Timeout(seconds=15):
           log_msgs.append(messaging.recv_one(sm.sock['modelV2']))
 
         frame_idx += 1
         if frame_idx >= fr.frame_count:
           break
+        update_spinner(spinner, frame_idx, fr.frame_count, dframe_idx, dfr.frame_count)
 
       elif msg.which() == "driverCameraState":
         f = msg.as_builder()
-        pm.send(msg.which(), f)
-
         dimg = dfr.get(dframe_idx, pix_fmt="yuv420p")[0]
         vipc_server.send(VisionStreamType.VISION_STREAM_YUV_FRONT, dimg.flatten().tobytes(), f.driverCameraState.frameId,
                          f.driverCameraState.timestampSof, f.driverCameraState.timestampEof)
-
         with Timeout(seconds=15):
           log_msgs.append(messaging.recv_one(sm.sock['driverState']))
 
         dframe_idx += 1
         if dframe_idx >= dfr.frame_count:
           break
-
-      spinner.update("models replay %d/%d, %d/%d" % (frame_idx, fr.frame_count, dframe_idx, dfr.frame_count))
+        update_spinner(spinner, frame_idx, fr.frame_count, dframe_idx, dfr.frame_count)
 
   except KeyboardInterrupt:
     pass
