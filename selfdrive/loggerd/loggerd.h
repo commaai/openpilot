@@ -109,11 +109,10 @@ const LogCameraInfo qcam_info = {
 
 struct LoggerdState {
   Context *ctx;
-  LoggerState logger = {};
-  char segment_path[4096];
+  std::unique_ptr<LoggerManager> logger_manager;
+  std::shared_ptr<Logger> lh;
   std::mutex rotate_lock;
   std::condition_variable rotate_cv;
-  std::atomic<int> rotate_segment;
   std::atomic<double> last_camera_seen_tms;
   std::atomic<int> ready_to_rotate;  // count of encoders ready to rotate
   int max_waiting = 0;
