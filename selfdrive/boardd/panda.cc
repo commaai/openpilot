@@ -444,7 +444,7 @@ bool Panda::unpack_can_buffer(uint8_t *data, int size, std::vector<can_frame> &o
       LOGE("CAN: MALFORMED USB RECV PACKET");
       return true;
     }
-    int chunk_len = std::min(USBPACKET_MAX_SIZE, (uint32_t)(size - recv_buf.size()));
+    int chunk_len = std::min(USBPACKET_MAX_SIZE, (uint32_t)(size - i));
     recv_buf.insert(recv_buf.end(), &data[i + 1], &data[i + chunk_len]);
   }
 
