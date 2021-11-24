@@ -6,6 +6,7 @@ from tqdm import tqdm
 
 os.environ['FILEREADER_CACHE'] = '1'
 
+from common.basedir import BASEDIR
 from common.realtime import config_realtime_process, Ratekeeper, DT_CTRL
 from selfdrive.boardd.boardd import can_capnp_to_can_list
 from tools.lib.logreader import LogReader
@@ -81,6 +82,10 @@ def connect():
 
 
 if __name__ == "__main__":
+  if PandaJungle is None:
+    print("\33[31m", "WARNING: cannot connect to jungles. Clone the jungle library to enable support:", "\033[0m")
+    print("\033[34m", f"cd {BASEDIR} && git clone https://github.com/commaai/panda_jungle", "\033[0m")
+
   print("Loading log...")
   ROUTE = "77611a1fac303767/2020-03-24--09-50-38"
   REPLAY_SEGS = list(range(10, 16))  # route has 82 segments available
