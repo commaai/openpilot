@@ -7,7 +7,6 @@ from typing import Any
 from tqdm import tqdm
 
 import cereal.messaging as messaging
-from cereal import log
 from cereal.visionipc.visionipc_pyx import VisionIpcServer, VisionStreamType  # pylint: disable=no-name-in-module, import-error
 from common.spinner import Spinner
 from common.timeout import Timeout
@@ -45,9 +44,9 @@ def replace_calib(msg, calib):
   return msg
 
 def update_spinner(s, fidx, fcnt, didx, dcnt):
-  s.update("replaying models:                    road %d/%d                    driver %d/%d" % (fidx, fcnt, didx, dcnt))
+  s.update("replaying models:  road %d/%d,  driver %d/%d" % (fidx, fcnt, didx, dcnt))
 
-def model_replay(lr, fr, dfr, desire=None, calib=None):
+def model_replay(lr_list, fr, dfr):
   spinner = Spinner()
   spinner.update("starting model replay")
 
@@ -65,26 +64,18 @@ def model_replay(lr, fr, dfr, desire=None, calib=None):
     time.sleep(5)
     sm.update(1000)
 
-    desires_by_index = {v:k for k,v in log.LateralPlan.Desire.schema.enumerants.items()}
-
-    cal = [msg for msg in lr if msg.which() == "liveCalibration"]
-    for msg in cal[:5]:
-      pm.send(msg.which(), replace_calib(msg, calib))
-
     log_msgs = []
     frame_idx = 0
     dframe_idx = 0
 
-    for msg in tqdm(lr):
+    for msg in tqdm(lr_list):
       if msg.which() == "liveCalibration":
-        pm.send(msg.which(), replace_calib(msg, calib))
+        last_calib = list(msg.liveCalibration.rpyCalib)
+        pm.send(msg.which(), replace_calib(msg, last_calib))
+      elif msg.which() == "lateralPlan":
+        f = msg.as_builder()
+        pm.send(msg.which(), f)
       elif msg.which() == "roadCameraState":
-        if desire is not None:
-          for i in desire[frame_idx].nonzero()[0]:
-            dat = messaging.new_message('lateralPlan')
-            dat.lateralPlan.desire = desires_by_index[i]
-            pm.send('lateralPlan', dat)
-
         f = msg.as_builder()
         pm.send(msg.which(), f)
 
@@ -141,7 +132,8 @@ if __name__ == "__main__":
     fr = FrameReader(get_url(TEST_ROUTE, segnum, log_type="fcamera"))
     dfr = FrameReader(get_url(TEST_ROUTE, segnum, log_type="dcamera"))
 
-  log_msgs = model_replay(list(lr), fr, dfr)
+  lr_list = list(lr)
+  log_msgs = model_replay(lr_list, fr, dfr)
 
   failed = False
   if not update:
