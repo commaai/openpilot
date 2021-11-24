@@ -64,18 +64,26 @@ def model_replay(lr_list, fr, dfr):
     time.sleep(5)
     sm.update(1000)
 
+    last_desire = None
     log_msgs = []
     frame_idx = 0
     dframe_idx = 0
+
+    cal = [msg for msg in lr if msg.which() == "liveCalibration"]
+    for msg in cal[:5]:
+      pm.send(msg.which(), replace_calib(msg, None))
 
     for msg in tqdm(lr_list):
       if msg.which() == "liveCalibration":
         last_calib = list(msg.liveCalibration.rpyCalib)
         pm.send(msg.which(), replace_calib(msg, last_calib))
       elif msg.which() == "lateralPlan":
-        f = msg.as_builder()
-        pm.send(msg.which(), f)
+        last_desire = msg.lateralPlan.desire
       elif msg.which() == "roadCameraState":
+        if last_desire is not None:
+          dat = messaging.new_message('lateralPlan')
+          dat.lateralPlan.desire = last_desire
+          pm.send('lateralPlan', dat)
         f = msg.as_builder()
         pm.send(msg.which(), f)
 
