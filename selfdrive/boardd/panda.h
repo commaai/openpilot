@@ -145,7 +145,7 @@ struct PacketWriter {
   ~PacketWriter() {
     if (pos > 0) flush(to_write, pos);
   }
-  std::function<void(uint8_t *, size_t)> flush;
   int pos = 0;
   uint8_t to_write[USB_TX_SOFT_LIMIT + 128];
+  std::function<void(uint8_t *, size_t)> flush;
 };
