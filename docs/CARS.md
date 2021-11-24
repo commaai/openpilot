@@ -37,6 +37,7 @@
 | Lexus     | NX 2018                       | All               | Stock<sup>3</sup>| 0mph               | 0mph              |
 | Lexus     | NX 2020                       | All               | openpilot        | 0mph               | 0mph              |
 | Lexus     | NX Hybrid 2018-19             | All               | Stock<sup>3</sup>| 0mph               | 0mph              |
+| Lexus     | RC 2020                       | All               | Stock            | 22mph              | 0mph              |
 | Lexus     | RX 2016-18                    | All               | Stock<sup>3</sup>| 0mph               | 0mph              |
 | Lexus     | RX 2020-21                    | All               | openpilot        | 0mph               | 0mph              |
 | Lexus     | RX Hybrid 2016-19             | All               | Stock<sup>3</sup>| 0mph               | 0mph              |

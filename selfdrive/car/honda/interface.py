@@ -33,7 +33,7 @@ class CarInterface(CarInterfaceBase):
     ret.carName = "honda"
 
     if candidate in HONDA_BOSCH:
-      ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hondaBoschHarness)]
+      ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hondaBosch)]
       ret.radarOffCan = True
 
       # Disable the radar and let openpilot control longitudinal

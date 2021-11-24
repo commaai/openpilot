@@ -153,16 +153,21 @@ void CameraViewWidget::initializeGL() {
 
 void CameraViewWidget::showEvent(QShowEvent *event) {
   latest_frame = nullptr;
-  vipc_thread = new QThread();
-  connect(vipc_thread, &QThread::started, [=]() { vipcThread(); });
-  connect(vipc_thread, &QThread::finished, vipc_thread, &QObject::deleteLater);
-  vipc_thread->start();
+  if (!vipc_thread) {
+    vipc_thread = new QThread();
+    connect(vipc_thread, &QThread::started, [=]() { vipcThread(); });
+    connect(vipc_thread, &QThread::finished, vipc_thread, &QObject::deleteLater);
+    vipc_thread->start();
+  }
 }
 
 void CameraViewWidget::hideEvent(QHideEvent *event) {
-  vipc_thread->requestInterruption();
-  vipc_thread->quit();
-  vipc_thread->wait();
+  if (vipc_thread) {
+    vipc_thread->requestInterruption();
+    vipc_thread->quit();
+    vipc_thread->wait();
+    vipc_thread = nullptr;
+  }
 }
 
 void CameraViewWidget::updateFrameMat(int w, int h) {
