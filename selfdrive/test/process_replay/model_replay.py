@@ -125,6 +125,9 @@ if __name__ == "__main__":
 
   update = "--update" in sys.argv
 
+  if TICI:
+    os.system('sudo mount -o remount,size=200M /tmp') # c3 hevcs are 75M each
+
   replay_dir = os.path.dirname(os.path.abspath(__file__))
   ref_commit_fn = os.path.join(replay_dir, "model_replay_ref_commit")
 
