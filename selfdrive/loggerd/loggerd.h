@@ -115,4 +115,5 @@ struct LoggerdState {
   bool camera_synced[WideRoadCam + 1] = {};
 };
 
+bool sync_encoders(LoggerdState *state, CameraType cam_type, uint32_t frame_id);
 void loggerd_thread();
