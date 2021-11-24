@@ -71,7 +71,7 @@ class LiveKalman():
   reset_orientation_diag = np.array([1**2, 1**2, 1**2])
 
   # fake observation covariance, to ensure the uncertainty estimate of the filter is under control
-  fake_gps_pos_cov_diag = np.array([100**2, 100**2, 100**2])
+  fake_gps_pos_cov_diag = np.array([1000**2, 1000**2, 1000**2])
   fake_gps_vel_cov_diag = np.array([10**2, 10**2, 10**2])
 
   # process noise

@@ -90,6 +90,10 @@ std::optional<Estimate> LiveKalman::predict_and_observe(double t, int kind, std:
   return r;
 }
 
+void LiveKalman::predict(double t) {
+  this->filter->predict(t);
+}
+
 Eigen::VectorXd LiveKalman::get_initial_x() {
   return this->initial_x;
 }

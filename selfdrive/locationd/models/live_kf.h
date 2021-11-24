@@ -36,6 +36,7 @@ public:
   std::optional<Estimate> predict_and_update_odo_speed(std::vector<Eigen::VectorXd> speed, double t, int kind);
   std::optional<Estimate> predict_and_update_odo_trans(std::vector<Eigen::VectorXd> trans, double t, int kind);
   std::optional<Estimate> predict_and_update_odo_rot(std::vector<Eigen::VectorXd> rot, double t, int kind);
+  void predict(double t);
 
   Eigen::VectorXd get_initial_x();
   MatrixXdr get_initial_P();

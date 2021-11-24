@@ -33,6 +33,7 @@ public:
   void time_check(double current_time = NAN);
   void update_reset_tracker();
   bool isGpsOK();
+  void determine_gps_mode(double current_time);
 
   kj::ArrayPtr<capnp::byte> get_message_bytes(MessageBuilder& msg_builder, uint64_t logMonoTime,
     bool inputsOK, bool sensorsOK, bool gpsOK);
@@ -70,4 +71,5 @@ private:
   double last_gps_fix = 0;
   double reset_tracker = 0.0;
   bool device_fell = false;
+  bool gps_mode = false;
 };

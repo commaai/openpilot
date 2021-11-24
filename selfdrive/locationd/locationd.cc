@@ -18,6 +18,7 @@ const double MIN_STD_SANITY_CHECK = 1e-5; // m or rad
 const double VALID_TIME_SINCE_RESET = 1.0; // s
 const double VALID_POS_STD = 50.0; // m
 const double MAX_RESET_TRACKER = 5.0;
+const double SANE_GPS_UNCERTAINTY = 1000.0; // m
 
 static VectorXd floatlist2vector(const capnp::List<float, capnp::Kind::PRIMITIVE>::Reader& floatlist) {
   VectorXd res(floatlist.size());
@@ -130,16 +131,16 @@ void Localizer::build_live_location(cereal::LiveLocationKalman::Builder& fix) {
   Vector3d nans = Vector3d(NAN, NAN, NAN);
 
   // write measurements to msg
-  init_measurement(fix.initPositionGeodetic(), fix_pos_geo_vec, nans, this->last_gps_fix > 0);
-  init_measurement(fix.initPositionECEF(), fix_ecef, fix_ecef_std, this->last_gps_fix > 0);
-  init_measurement(fix.initVelocityECEF(), vel_ecef, vel_ecef_std, this->last_gps_fix > 0);
-  init_measurement(fix.initVelocityNED(), ned_vel, nans, this->last_gps_fix > 0);
+  init_measurement(fix.initPositionGeodetic(), fix_pos_geo_vec, nans, this->gps_mode);
+  init_measurement(fix.initPositionECEF(), fix_ecef, fix_ecef_std, this->gps_mode);
+  init_measurement(fix.initVelocityECEF(), vel_ecef, vel_ecef_std, this->gps_mode);
+  init_measurement(fix.initVelocityNED(), ned_vel, nans, this->gps_mode);
   init_measurement(fix.initVelocityDevice(), vel_device, vel_device_std, true);
   init_measurement(fix.initAccelerationDevice(), accDevice, accDeviceErr, true);
-  init_measurement(fix.initOrientationECEF(), orientation_ecef, orientation_ecef_std, this->last_gps_fix > 0);
-  init_measurement(fix.initCalibratedOrientationECEF(), calibrated_orientation_ecef, nans, this->calibrated && this->last_gps_fix > 0);
-  init_measurement(fix.initOrientationNED(), orientation_ned, nans, this->last_gps_fix > 0);
-  init_measurement(fix.initCalibratedOrientationNED(), calibrated_orientation_ned, nans, this->calibrated && this->last_gps_fix > 0);
+  init_measurement(fix.initOrientationECEF(), orientation_ecef, orientation_ecef_std, this->gps_mode);
+  init_measurement(fix.initCalibratedOrientationECEF(), calibrated_orientation_ecef, nans, this->calibrated && this->gps_mode);
+  init_measurement(fix.initOrientationNED(), orientation_ned, nans, this->gps_mode);
+  init_measurement(fix.initCalibratedOrientationNED(), calibrated_orientation_ned, nans, this->calibrated && this->gps_mode);
   init_measurement(fix.initAngularVelocityDevice(), angVelocityDevice, angVelocityDeviceErr, true);
   init_measurement(fix.initVelocityCalibrated(), vel_calib, vel_calib_std, this->calibrated);
   init_measurement(fix.initAngularVelocityCalibrated(), ang_vel_calib, ang_vel_calib_std, this->calibrated);
@@ -245,9 +246,11 @@ void Localizer::handle_sensors(double current_time, const capnp::List<cereal::Se
 
 void Localizer::input_fake_gps_observations(double current_time) {
   // This is done to make sure that the error estimate of the position does not blow up
-  // when the filter is in no-gps mode or in a tunnel
-  VectorXd current_x = this->kf->get_x();
-  
+  // when the filter is in no-gps mode
+  // Steps : first predict -> observe current obs with reasonable STD
+  this->kf->predict(current_time);
+
+  VectorXd current_x = this->kf->get_x();  
   VectorXd ecef_pos = current_x.segment<3>(0);
   VectorXd ecef_vel = current_x.segment<3>(7);
   MatrixXdr ecef_pos_R = this->kf->get_fake_gps_pos_cov();
@@ -259,26 +262,30 @@ void Localizer::input_fake_gps_observations(double current_time) {
 
 void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::Reader& log) {
   // ignore the message if the fix is invalid
-  if (log.getFlags() % 2 == 0) {
-    this->input_fake_gps_observations(current_time);
+  if ((log.getFlags() % 2 == 0) || (log.getAccuracy() >= SANE_GPS_UNCERTAINTY)) {
+    this->determine_gps_mode(current_time);
     return;
   }
 
   // Sanity checks
   if ((log.getVerticalAccuracy() <= 0) || (log.getSpeedAccuracy() <= 0) || (log.getBearingAccuracyDeg() <= 0)) {
+    this->determine_gps_mode(current_time);
     return;
   }
 
   if ((std::abs(log.getLatitude()) > 90) || (std::abs(log.getLongitude()) > 180) || (std::abs(log.getAltitude()) > ALTITUDE_SANITY_CHECK)) {
+    this->determine_gps_mode(current_time);
     return;
   }
 
   if (floatlist2vector(log.getVNED()).norm() > TRANS_SANITY_CHECK) {
+    this->determine_gps_mode(current_time);
     return;
   }
 
   // Process message
   this->last_gps_fix = current_time;
+  this->gps_mode = true;
   Geodetic geodetic = { log.getLatitude(), log.getLongitude(), log.getAltitude() };
   this->converter = std::make_unique<LocalCoord>(geodetic);
 
@@ -474,6 +481,22 @@ kj::ArrayPtr<capnp::byte> Localizer::get_message_bytes(MessageBuilder& msg_build
 
 bool Localizer::isGpsOK() {
   return this->kf->get_filter_time() - this->last_gps_fix < 1.0;
+}
+
+void Localizer::determine_gps_mode(double current_time) {
+  // 1. If the pos_std is greater than what's not acceptible and localizer is in gps-mode, reset to no-gps-mode
+  // 2. If the pos_std is greater than what's not acceptible and localizer is in no-gps-mode, fake obs
+  // 3. If the pos_std is smaller than what's not acceptible, let gps-mode be whatever it is
+  VectorXd current_pos_std = this->kf->get_P().block<3,3>(0,0).diagonal().array().sqrt();
+  if (current_pos_std.norm() > SANE_GPS_UNCERTAINTY){
+    if (this->gps_mode){
+      this->gps_mode = false;
+      this->reset_kalman(current_time);
+    }
+    else{
+      this->input_fake_gps_observations(current_time);
+    }
+  }
 }
 
 int Localizer::locationd_thread() {
