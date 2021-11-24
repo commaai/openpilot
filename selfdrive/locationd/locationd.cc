@@ -262,23 +262,14 @@ void Localizer::input_fake_gps_observations(double current_time) {
 
 void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::Reader& log) {
   // ignore the message if the fix is invalid
-  if ((log.getFlags() % 2 == 0) || (log.getAccuracy() >= SANE_GPS_UNCERTAINTY)) {
-    this->determine_gps_mode(current_time);
-    return;
-  }
 
-  // Sanity checks
-  if ((log.getVerticalAccuracy() <= 0) || (log.getSpeedAccuracy() <= 0) || (log.getBearingAccuracyDeg() <= 0)) {
-    this->determine_gps_mode(current_time);
-    return;
-  }
+  bool gps_invalid_flag = (log.getFlags() % 2 == 0);
+  bool gps_unreasonable = (log.getAccuracy() >= SANE_GPS_UNCERTAINTY);
+  bool gps_accuracy_insane = ((log.getVerticalAccuracy() <= 0) || (log.getSpeedAccuracy() <= 0) || (log.getBearingAccuracyDeg() <= 0));
+  bool gps_lat_lng_alt_insane = ((std::abs(log.getLatitude()) > 90) || (std::abs(log.getLongitude()) > 180) || (std::abs(log.getAltitude()) > ALTITUDE_SANITY_CHECK));
+  bool gps_vel_insane = (floatlist2vector(log.getVNED()).norm() > TRANS_SANITY_CHECK);
 
-  if ((std::abs(log.getLatitude()) > 90) || (std::abs(log.getLongitude()) > 180) || (std::abs(log.getAltitude()) > ALTITUDE_SANITY_CHECK)) {
-    this->determine_gps_mode(current_time);
-    return;
-  }
-
-  if (floatlist2vector(log.getVNED()).norm() > TRANS_SANITY_CHECK) {
+  if (gps_invalid_flag || gps_unreasonable || gps_accuracy_insane || gps_lat_lng_alt_insane || gps_vel_insane){
     this->determine_gps_mode(current_time);
     return;
   }
