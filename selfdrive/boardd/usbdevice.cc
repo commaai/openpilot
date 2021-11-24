@@ -92,22 +92,6 @@ std::vector<std::string> USBDevice::list() {
   return serials;
 }
 
-int USBDevice::write(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned int timeout) {
-  return control_transfer(LIBUSB_ENDPOINT_OUT, bRequest, wValue, wIndex, timeout);
-}
-
-int USBDevice::read(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, uint8_t *data, uint16_t wLength, unsigned int timeout) {
-  return control_transfer(LIBUSB_ENDPOINT_IN, bRequest, wValue, wIndex, timeout);
-}
-
-int USBDevice::bulk_write(uint8_t endpoint, uint8_t *data, int length, unsigned int timeout) {
-  return bulk_transfer(LIBUSB_ENDPOINT_OUT | endpoint, data, length, timeout);
-}
-
-int USBDevice::bulk_read(uint8_t endpoint, uint8_t *data, int length, unsigned int timeout) {
-  return bulk_transfer(LIBUSB_ENDPOINT_IN | endpoint, data, length, timeout);
-}
-
 int USBDevice::control_transfer(libusb_endpoint_direction dir, uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned int timeout) {
   int ret;
   const uint8_t bmRequestType = dir | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE;
