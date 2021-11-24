@@ -1,7 +1,6 @@
 #include "selfdrive/ui/replay/logreader.h"
 
-#include <sstream>
-#include "selfdrive/common/util.h"
+#include <algorithm>
 #include "selfdrive/ui/replay/util.h"
 
 Event::Event(const kj::ArrayPtr<const capnp::word> &amsg, bool frame) : reader(amsg), frame(frame) {
@@ -27,7 +26,7 @@ Event::Event(const kj::ArrayPtr<const capnp::word> &amsg, bool frame) : reader(a
 
 // class LogReader
 
-LogReader::LogReader(size_t memory_pool_block_size) {
+LogReader::LogReader(bool local_cache, int chunk_size, int retries, size_t memory_pool_block_size) : FileReader(local_cache, chunk_size, retries) {
 #ifdef HAS_MEMORY_RESOURCE
   const size_t buf_size = sizeof(Event) * memory_pool_block_size;
   pool_buffer_ = ::operator new(buf_size);
@@ -37,28 +36,18 @@ LogReader::LogReader(size_t memory_pool_block_size) {
 }
 
 LogReader::~LogReader() {
-#ifdef HAS_MEMORY_RESOURCE
-  delete mbr_;
-  ::operator delete(pool_buffer_);
-#else
   for (Event *e : events) {
     delete e;
   }
+#ifdef HAS_MEMORY_RESOURCE
+  delete mbr_;
+  ::operator delete(pool_buffer_);
 #endif
 }
 
-bool LogReader::load(const std::string &file) {
-  bool is_bz2 = file.rfind(".bz2") == file.length() - 4;
-  if (is_bz2) {
-    std::ostringstream stream;
-    if (!readBZ2File(file, stream)) {
-      LOGW("bz2 decompress failed");
-      return false;
-    }
-    raw_ = stream.str();
-  } else {
-    raw_ = util::read_file(file);
-  }
+bool LogReader::load(const std::string &file, std::atomic<bool> *abort) {
+  raw_ = decompressBZ2(read(file, abort));
+  if (raw_.empty()) return false;
 
   kj::ArrayPtr<const capnp::word> words((const capnp::word *)raw_.data(), raw_.size() / sizeof(capnp::word));
   while (words.size() > 0) {

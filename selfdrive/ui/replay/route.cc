@@ -1,15 +1,20 @@
 #include "selfdrive/ui/replay/route.h"
 
+#include <QDir>
 #include <QEventLoop>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QRegExp>
+#include <QtConcurrent>
 
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/qt/api.h"
+#include "selfdrive/ui/replay/replay.h"
 #include "selfdrive/ui/replay/util.h"
 
-Route::Route(const QString &route, const QString &data_dir) : route_(parseRoute(route)), data_dir_(data_dir) {}
+Route::Route(const QString &route, const QString &data_dir) : data_dir_(data_dir) {
+  route_ = parseRoute(route);
+}
 
 RouteIdentifier Route::parseRoute(const QString &str) {
   QRegExp rx(R"(^([a-z0-9]{16})([|_/])(\d{4}-\d{2}-\d{2}--\d{2}-\d{2}-\d{2})(?:(--|/)(\d*))?$)");
@@ -41,7 +46,7 @@ bool Route::loadFromServer() {
 
 bool Route::loadFromJson(const QString &json) {
   QRegExp rx(R"(\/(\d+)\/)");
-  for (const auto &value :  QJsonDocument::fromJson(json.trimmed().toUtf8()).object()) {
+  for (const auto &value : QJsonDocument::fromJson(json.trimmed().toUtf8()).object()) {
     for (const auto &url : value.toArray()) {
       QString url_str = url.toString();
       if (rx.indexIn(url_str) != -1) {
@@ -86,85 +91,46 @@ void Route::addFileToSegment(int n, const QString &file) {
 
 // class Segment
 
-Segment::Segment(int n, const SegmentFile &files, bool load_dcam, bool load_ecam) : seg_num(n) {
-  static std::once_flag once_flag;
-  std::call_once(once_flag, [=]() { if (!CACHE_DIR.exists()) QDir().mkdir(CACHE_DIR.absolutePath()); });
-
+Segment::Segment(int n, const SegmentFile &files, uint32_t flags) : seg_num(n), flags(flags) {
   // [RoadCam, DriverCam, WideRoadCam, log]. fallback to qcamera/qlog
   const QString file_list[] = {
-      files.road_cam.isEmpty() ? files.qcamera : files.road_cam,
-      load_dcam ? files.driver_cam : "",
-      load_ecam ? files.wide_road_cam : "",
+      (flags & REPLAY_FLAG_QCAMERA) || files.road_cam.isEmpty() ? files.qcamera : files.road_cam,
+      flags & REPLAY_FLAG_DCAM ? files.driver_cam : "",
+      flags & REPLAY_FLAG_ECAM ? files.wide_road_cam : "",
       files.rlog.isEmpty() ? files.qlog : files.rlog,
   };
   for (int i = 0; i < std::size(file_list); i++) {
     if (!file_list[i].isEmpty()) {
       loading_++;
-      QThread *t = new QThread();
-      QObject::connect(t, &QThread::started, [=]() { loadFile(i, file_list[i].toStdString()); });
-      loading_threads_.emplace_back(t)->start();
+      synchronizer_.addFuture(QtConcurrent::run([=] { loadFile(i, file_list[i].toStdString()); }));
     }
   }
 }
 
 Segment::~Segment() {
-  aborting_ = true;
-  for (QThread *t : loading_threads_) {
-    if (t->isRunning()) {
-      t->quit();
-      t->wait();
-    }
-    delete t;
-  }
+  disconnect();
+  abort_ = true;
+  synchronizer_.setCancelOnWait(true);
+  synchronizer_.waitForFinished();
 }
 
 void Segment::loadFile(int id, const std::string file) {
-  const bool is_remote = file.find("https://") == 0;
-  const std::string local_file = is_remote ? cacheFilePath(file) : file;
-  bool file_ready = util::file_exists(local_file);
-
-  if (!file_ready && is_remote) {
-    file_ready = downloadFile(id, file, local_file);
+  const bool local_cache = !(flags & REPLAY_FLAG_NO_FILE_CACHE);
+  bool success = false;
+  if (id < MAX_CAMERAS) {
+    frames[id] = std::make_unique<FrameReader>(local_cache, 20 * 1024 * 1024, 3);
+    success = frames[id]->load(file, flags & REPLAY_FLAG_NO_CUDA, &abort_);
+  } else {
+    log = std::make_unique<LogReader>(local_cache, -1, 3);
+    success = log->load(file, &abort_);
   }
 
-  if (!aborting_ && file_ready) {
-    if (id < MAX_CAMERAS) {
-      frames[id] = std::make_unique<FrameReader>();
-      success_ = success_ && frames[id]->load(local_file);
-    } else {
-      std::string decompressed = cacheFilePath(local_file + ".decompressed");
-      if (!util::file_exists(decompressed)) {
-        std::ofstream ostrm(decompressed, std::ios::binary);
-        readBZ2File(local_file, ostrm);
-      }
-      log = std::make_unique<LogReader>();
-      success_ = success_ && log->load(decompressed);
-    }
+  if (!success) {
+    // abort all loading jobs.
+    abort_ = true;
   }
 
-  if (!aborting_ && --loading_ == 0) {
-    emit loadFinished(success_);
+  if (--loading_ == 0) {
+    emit loadFinished(!abort_);
   }
-}
-
-bool Segment::downloadFile(int id, const std::string &url, const std::string local_file) {
-  bool ret = false;
-  int retries = 0;
-  while (!aborting_) {
-    ret = httpMultiPartDownload(url, local_file, id < MAX_CAMERAS ? 3 : 1, &aborting_);
-    if (ret || aborting_) break;
-
-    if (++retries > max_retries_) {
-      qInfo() << "download failed after retries" << max_retries_;
-      break;
-    }
-    qInfo() << "download failed, retrying" << retries;
-  }
-  return ret;
-}
-
-std::string Segment::cacheFilePath(const std::string &file) {
-  QString url_no_query = QUrl(file.c_str()).toString(QUrl::RemoveQuery);
-  QString sha256 = QCryptographicHash::hash(url_no_query.toUtf8(), QCryptographicHash::Sha256).toHex();
-  return CACHE_DIR.filePath(sha256 + "." + QFileInfo(url_no_query).suffix()).toStdString();
 }

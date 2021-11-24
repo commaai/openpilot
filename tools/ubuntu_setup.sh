@@ -104,7 +104,12 @@ if [ -f "/etc/os-release" ]; then
       ;;
     *)
       echo "$ID $VERSION_ID is unsupported. This setup script is written for Ubuntu 20.04."
-      exit 1
+      read -p "Would you like to attempt installation anyway? " -n 1 -r
+      echo ""
+      if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        exit 1
+      fi
+      install_ubuntu_lts_requirements
   esac
 else
   echo "No /etc/os-release in the system"
@@ -136,14 +141,13 @@ git submodule update
 PYENV_PYTHON_VERSION=$(cat $OP_ROOT/.python-version)
 PATH=$HOME/.pyenv/bin:$HOME/.pyenv/shims:$PATH
 pyenv install -s ${PYENV_PYTHON_VERSION}
-pyenv global ${PYENV_PYTHON_VERSION}
 pyenv rehash
 eval "$(pyenv init -)"
 
 # **** in python env ****
-pip install --upgrade pip==20.2.4
-pip install pipenv==2020.8.13
-pipenv install --dev --system --deploy
+pip install pip==21.3.1
+pip install pipenv==2021.5.29
+pipenv install --dev --deploy
 
 echo
 echo "----   FINISH OPENPILOT SETUP   ----"

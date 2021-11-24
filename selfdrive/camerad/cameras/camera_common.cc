@@ -28,8 +28,6 @@
 #include "selfdrive/camerad/cameras/camera_replay.h"
 #endif
 
-const int YUV_COUNT = 100;
-
 class Debayer {
 public:
   Debayer(cl_device_id device_id, cl_context context, const CameraBuf *b, const CameraState *s) {
@@ -75,11 +73,11 @@ private:
   cl_kernel krnl_;
 };
 
-void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType rgb_type, VisionStreamType yuv_type, release_cb release_callback) {
+void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType init_rgb_type, VisionStreamType init_yuv_type, release_cb init_release_callback) {
   vipc_server = v;
-  this->rgb_type = rgb_type;
-  this->yuv_type = yuv_type;
-  this->release_callback = release_callback;
+  this->rgb_type = init_rgb_type;
+  this->yuv_type = init_yuv_type;
+  this->release_callback = init_release_callback;
 
   const CameraInfo *ci = &s->ci;
   camera_state = s;
@@ -109,7 +107,7 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
   vipc_server->create_buffers(rgb_type, UI_BUF_COUNT, true, rgb_width, rgb_height);
   rgb_stride = vipc_server->get_buffer(rgb_type)->stride;
 
-  vipc_server->create_buffers(yuv_type, YUV_COUNT, false, rgb_width, rgb_height);
+  vipc_server->create_buffers(yuv_type, YUV_BUFFER_COUNT, false, rgb_width, rgb_height);
 
   if (ci->bayer) {
     debayer = new Debayer(device_id, context, this, s);

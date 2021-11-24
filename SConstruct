@@ -68,6 +68,7 @@ lenv = {
   "PYTHONPATH": Dir("#").abspath + ":" + Dir("#pyextra/").abspath,
 
   "ACADOS_SOURCE_DIR": Dir("#third_party/acados/acados").abspath,
+  "ACADOS_PYTHON_INTERFACE_PATH": Dir("#pyextra/acados_template").abspath,
   "TERA_PATH": Dir("#").abspath + f"/third_party/acados/{arch}/t_renderer",
 }
 
@@ -181,12 +182,14 @@ env = Environment(
     "-O2",
     "-Wunused",
     "-Werror",
+    "-Wshadow",
     "-Wno-unknown-warning-option",
     "-Wno-deprecated-register",
     "-Wno-register",
     "-Wno-inconsistent-missing-override",
     "-Wno-c99-designator",
     "-Wno-reorder-init-list",
+    "-Wno-error=unused-but-set-variable",
   ] + cflags + ccflags,
 
   CPPPATH=cpppath + [
@@ -267,7 +270,7 @@ def abspath(x):
 py_include = sysconfig.get_paths()['include']
 envCython = env.Clone()
 envCython["CPPPATH"] += [py_include, np.get_include()]
-envCython["CCFLAGS"] += ["-Wno-#warnings", "-Wno-deprecated-declarations"]
+envCython["CCFLAGS"] += ["-Wno-#warnings", "-Wno-shadow", "-Wno-deprecated-declarations"]
 
 envCython["LIBS"] = []
 if arch == "Darwin":
@@ -384,7 +387,7 @@ rednose_config = {
   },
 }
 
-if arch != "aarch64":
+if arch not in ["aarch64", "larch64"]:
   rednose_config['to_build'].update({
     'gnss': ('#selfdrive/locationd/models/gnss_kf.py', True, []),
     'loc_4': ('#selfdrive/locationd/models/loc_kf.py', True, []),

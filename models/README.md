@@ -76,3 +76,34 @@ To view the architecture of the ONNX networks, you can use [netron](https://netr
 [^1]: All probabilities are in logits, so you need to apply sigmoid or softmax functions to get actual probabilities
 [^2]: These outputs come directly from the vision blocks, they do not have access to temporal state or the desire input
 
+
+## Driver Monitoring Model
+* .onnx model can be run with onnx runtimes
+* .dlc file is a pre-quantized model and only runs on qualcomm DSPs
+
+### input format
+* single image (640 * 320 * 3 in RGB):
+  * full input size is 6 * 640/2 * 320/2 = 307200
+  * represented in YUV420 with 6 channels:
+    * Channels 0,1,2,3 represent the full-res Y channel and are represented in numpy as Y[::2, ::2], Y[::2, 1::2], Y[1::2, ::2], and Y[1::2, 1::2]
+    * Channel 4 represents the half-res U channel
+    * Channel 5 represents the half-res V channel
+  * normalized, ranging from -1.0 to 1.0
+
+### output format
+* 39 x float32 outputs ([parsing example](https://github.com/commaai/openpilot/blob/master/selfdrive/modeld/models/dmonitoring.cc#L165))
+  * face pose: 12 = 6 + 6
+    * face orientation [pitch, yaw, roll] in camera frame: 3
+    * face position [dx, dy] relative to image center: 2
+    * normalized face size: 1
+    * standard deviations for above outputs: 6
+  * face visible probability: 1
+  * eyes: 20 = (8 + 1) + (8 + 1) + 1 + 1
+    * eye position and size, and their standard deviations: 8
+    * eye visible probability: 1
+    * eye closed probability: 1
+  * wearing sunglasses probability: 1
+  * poor camera vision probability: 1
+  * face partially out-of-frame probability: 1
+  * (deprecated) distracted probabilities: 2
+  * face covered probability: 1

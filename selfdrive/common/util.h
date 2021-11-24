@@ -16,19 +16,26 @@
 #include <vector>
 
 // keep trying if x gets interrupted by a signal
-#define HANDLE_EINTR(x)                                       \
-  ({                                                          \
-    decltype(x) ret;                                          \
-    int try_cnt = 0;                                          \
-    do {                                                      \
-      ret = (x);                                              \
-    } while (ret == -1 && errno == EINTR && try_cnt++ < 100); \
-    ret;                                                      \
+#define HANDLE_EINTR(x)                                        \
+  ({                                                           \
+    decltype(x) ret_;                                          \
+    int try_cnt = 0;                                           \
+    do {                                                       \
+      ret_ = (x);                                              \
+    } while (ret_ == -1 && errno == EINTR && try_cnt++ < 100); \
+    ret_;                                                       \
   })
 
 #ifndef sighandler_t
 typedef void (*sighandler_t)(int sig);
 #endif
+
+const double MILE_TO_KM = 1.609344;
+const double KM_TO_MILE = 1. / MILE_TO_KM;
+const double MS_TO_KPH = 3.6;
+const double MS_TO_MPH = MS_TO_KPH * KM_TO_MILE;
+const double METER_TO_MILE = KM_TO_MILE / 1000.0;
+const double METER_TO_FOOT = 3.28084;
 
 void set_thread_name(const char* name);
 
@@ -66,9 +73,7 @@ std::string getenv(const char* key, const char* default_val = "");
 int getenv(const char* key, int default_val);
 float getenv(const char* key, float default_val);
 
-std::string tohex(const uint8_t* buf, size_t buf_size);
-std::string hexdump(const std::string& in);
-std::string base_name(std::string const& path);
+std::string hexdump(const uint8_t* in, const size_t size);
 std::string dir_name(std::string const& path);
 
 // **** file fhelpers *****
@@ -83,6 +88,8 @@ int safe_fflush(FILE *stream);
 std::string readlink(const std::string& path);
 bool file_exists(const std::string& fn);
 bool create_directories(const std::string &dir, mode_t mode);
+
+std::string check_output(const std::string& command);
 
 inline void sleep_for(const int milliseconds) {
   std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));

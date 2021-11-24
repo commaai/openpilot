@@ -3,7 +3,7 @@ from cereal import car
 from panda import Panda
 from common.numpy_fast import interp
 from common.params import Params
-from selfdrive.car.honda.values import CarControllerParams, CruiseButtons, CAR, HONDA_BOSCH, HONDA_BOSCH_ALT_BRAKE_SIGNAL
+from selfdrive.car.honda.values import CarControllerParams, CruiseButtons, CAR, HONDA_BOSCH, HONDA_NIDEC_ALT_SCM_MESSAGES, HONDA_BOSCH_ALT_BRAKE_SIGNAL
 from selfdrive.car import STD_CARGO_KG, CivicParams, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
 from selfdrive.car.disable_ecu import disable_ecu
@@ -33,7 +33,7 @@ class CarInterface(CarInterfaceBase):
     ret.carName = "honda"
 
     if candidate in HONDA_BOSCH:
-      ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hondaBoschHarness)]
+      ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hondaBosch)]
       ret.radarOffCan = True
 
       # Disable the radar and let openpilot control longitudinal
@@ -110,7 +110,7 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 1.
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.8], [0.24]]
 
-    elif candidate in (CAR.ACCORD, CAR.ACCORDH):
+    elif candidate in (CAR.ACCORD, CAR.ACCORD_2021, CAR.ACCORDH, CAR.ACCORDH_2021):
       stop_and_go = True
       ret.mass = 3279. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.83
@@ -252,6 +252,16 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.444
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.38], [0.11]]
 
+    elif candidate == CAR.PASSPORT:
+      stop_and_go = False
+      ret.mass = 4204. * CV.LB_TO_KG + STD_CARGO_KG  # average weight
+      ret.wheelbase = 2.82
+      ret.centerToFront = ret.wheelbase * 0.428
+      ret.steerRatio = 17.25  # as spec
+      ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
+      tire_stiffness_factor = 0.444
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.38], [0.11]]
+
     elif candidate == CAR.RIDGELINE:
       stop_and_go = False
       ret.mass = 4515. * CV.LB_TO_KG + STD_CARGO_KG
@@ -288,6 +298,10 @@ class CarInterface(CarInterfaceBase):
     # These cars use alternate user brake msg (0x1BE)
     if candidate in HONDA_BOSCH_ALT_BRAKE_SIGNAL:
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_HONDA_ALT_BRAKE
+
+    # These cars use alternate SCM messages (SCM_FEEDBACK AND SCM_BUTTON)
+    if candidate in HONDA_NIDEC_ALT_SCM_MESSAGES:
+      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_HONDA_NIDEC_ALT
 
     if ret.openpilotLongitudinalControl and candidate in HONDA_BOSCH:
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_HONDA_BOSCH_LONG
@@ -370,8 +384,6 @@ class CarInterface(CarInterfaceBase):
     events = self.create_common_events(ret, pcm_enable=False)
     if self.CS.brake_error:
       events.add(EventName.brakeUnavailable)
-    if self.CS.brake_hold and self.CS.CP.openpilotLongitudinalControl:
-      events.add(EventName.brakeHold)
     if self.CS.park_brake:
       events.add(EventName.parkBrake)
 

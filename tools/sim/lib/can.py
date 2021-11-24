@@ -62,6 +62,7 @@ def can_function(pm, speed, angle, idx, cruise_button, is_engaged):
   msg.append(packer.make_can_msg("CRUISE", 0, {}, idx))
   msg.append(packer.make_can_msg("SCM_FEEDBACK", 0, {"MAIN_ON": 1}, idx))
   msg.append(packer.make_can_msg("POWERTRAIN_DATA", 0, {"ACC_STATUS": int(is_engaged)}, idx))
+  msg.append(packer.make_can_msg("HUD_SETTING", 0, {}, idx))
 
   # *** cam bus ***
   msg.append(packer.make_can_msg("STEERING_CONTROL", 2, {}, idx))

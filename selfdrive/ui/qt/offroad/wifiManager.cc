@@ -9,7 +9,7 @@
 #include "selfdrive/ui/qt/util.h"
 
 template <typename T>
-T get_response(QDBusMessage response) {
+T get_response(const QDBusMessage &response) {
   QVariant first =  response.arguments().at(0);
   QDBusVariant dbvFirst = first.value<QDBusVariant>();
   QVariant vFirst = dbvFirst.variant();
@@ -416,19 +416,19 @@ void WifiManager::activateModemConnection(const QDBusObjectPath &path) {
 NetworkType WifiManager::currentNetworkType() {
   QDBusInterface nm(NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE_PROPERTIES, bus);
   nm.setTimeout(DBUS_TIMEOUT);
-  const QDBusObjectPath &path = get_response<QDBusObjectPath>(nm.call("Get", NM_DBUS_INTERFACE, "PrimaryConnection"));
+  const QDBusObjectPath &primary_conn = get_response<QDBusObjectPath>(nm.call("Get", NM_DBUS_INTERFACE, "PrimaryConnection"));
 
-  QDBusInterface nm2(NM_DBUS_SERVICE, path.path(), NM_DBUS_INTERFACE_PROPERTIES, bus);
+  QDBusInterface nm2(NM_DBUS_SERVICE, primary_conn.path(), NM_DBUS_INTERFACE_PROPERTIES, bus);
   nm.setTimeout(DBUS_TIMEOUT);
-  const QString &type = get_response<QString>(nm2.call("Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "Type"));
+  const QString &primary_type = get_response<QString>(nm2.call("Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "Type"));
 
-  if (type == "802-3-ethernet") {
+  if (primary_type == "802-3-ethernet") {
     return NetworkType::ETHERNET;
-  } else if (type == "802-11-wireless" && !isTetheringEnabled()) {
+  } else if (primary_type == "802-11-wireless" && !isTetheringEnabled()) {
     return NetworkType::WIFI;
   } else {
-    for (const QDBusObjectPath &path : get_active_connections()) {
-      QDBusInterface nm3(NM_DBUS_SERVICE, path.path(), NM_DBUS_INTERFACE_PROPERTIES, bus);
+    for (const QDBusObjectPath &conn : get_active_connections()) {
+      QDBusInterface nm3(NM_DBUS_SERVICE, conn.path(), NM_DBUS_INTERFACE_PROPERTIES, bus);
       nm3.setTimeout(DBUS_TIMEOUT);
       const QString &type = get_response<QString>(nm3.call("Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "Type"));
       if (type == "gsm") {

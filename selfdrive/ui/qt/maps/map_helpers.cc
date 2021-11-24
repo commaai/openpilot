@@ -50,6 +50,23 @@ QMapbox::CoordinatesCollections coordinate_to_collection(QMapbox::Coordinate c) 
   return collections;
 }
 
+QMapbox::CoordinatesCollections capnp_coordinate_list_to_collection(const capnp::List<cereal::NavRoute::Coordinate>::Reader& coordinate_list) {
+  QMapbox::Coordinates coordinates;
+
+  for (auto const &c: coordinate_list) {
+    QMapbox::Coordinate coordinate(c.getLatitude(), c.getLongitude());
+    coordinates.push_back(coordinate);
+  }
+
+  QMapbox::CoordinatesCollection collection;
+  collection.push_back(coordinates);
+
+  QMapbox::CoordinatesCollections collections;
+  collections.push_back(collection);
+  return collections;
+
+}
+
 QMapbox::CoordinatesCollections coordinate_list_to_collection(QList<QGeoCoordinate> coordinate_list) {
   QMapbox::Coordinates coordinates;
 
