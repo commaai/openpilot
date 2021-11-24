@@ -307,7 +307,7 @@ bool send_panda_states(PubMaster *pm, const std::vector<Panda *> &pandas, bool s
 
   for (uint32_t i=0; i<pandas.size(); i++) {
     auto panda = pandas[i];
-    auto pandaState = pandaStates[i];
+    const auto &pandaState = pandaStates[i];
 
     // Make sure CAN buses are live: safety_setter_thread does not work if Panda CAN are silent and there is only one other CAN node
     if (pandaState.safety_model == (uint8_t)(cereal::CarParams::SafetyModel::SILENT)) {
