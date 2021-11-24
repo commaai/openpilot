@@ -44,7 +44,7 @@ class CarController():
         accel = clip(actuators.accel, P.ACCEL_MIN, P.ACCEL_MAX) if enabled else 0
 
         # FIXME: this needs to become a proper state machine
-        acc_hold_request, acc_hold_release, acc_hold_type, stopping_distance = False, False, 0, 0
+        acc_hold_request, acc_hold_release, acc_hold_type, stopping_distance = False, False, 0, 20.46
         if actuators.longControlState == LongCtrlState.stopping and CS.out.vEgo < 0.2:
           self.acc_stopping = True
           acc_hold_request = True
@@ -61,7 +61,6 @@ class CarController():
           self.acc_starting &= CS.out.vEgo < 1.5
           acc_hold_release = self.acc_starting
           acc_hold_type = 4 if self.acc_starting and CS.out.vEgo < 0.1 else 0  # startup
-          stopping_distance = 20.46
         else:
           self.acc_stopping, self.acc_starting = False, False
 

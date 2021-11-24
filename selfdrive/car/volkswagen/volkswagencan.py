@@ -70,7 +70,7 @@ def create_mqb_acc_07_control(packer, bus, enabled, accel, acc_hold_request, acc
   values = {
     "ACC_Distance_to_Stop": stopping_distance,
     "ACC_Hold_Request": acc_hold_request,
-    "ACC_Freewheel_Type": 2,
+    "ACC_Freewheel_Type": 2 if enabled else 0,
     "ACC_Hold_Type": acc_hold_type,
     "ACC_Hold_Release": acc_hold_release,
     "ACC_Accel_Secondary": accel if enabled else 0,
