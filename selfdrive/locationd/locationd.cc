@@ -18,7 +18,7 @@ const double MIN_STD_SANITY_CHECK = 1e-5; // m or rad
 const double VALID_TIME_SINCE_RESET = 1.0; // s
 const double VALID_POS_STD = 50.0; // m
 const double MAX_RESET_TRACKER = 5.0;
-const double SANE_GPS_UNCERTAINTY = 1000.0; // m
+const double SANE_GPS_UNCERTAINTY = 1500.0; // m
 
 static VectorXd floatlist2vector(const capnp::List<float, capnp::Kind::PRIMITIVE>::Reader& floatlist) {
   VectorXd res(floatlist.size());
@@ -264,7 +264,7 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
   // ignore the message if the fix is invalid
 
   bool gps_invalid_flag = (log.getFlags() % 2 == 0);
-  bool gps_unreasonable = (log.getAccuracy() >= SANE_GPS_UNCERTAINTY);
+  bool gps_unreasonable = (Vector2d(log.getAccuracy(), log.getVerticalAccuracy()).norm() >= SANE_GPS_UNCERTAINTY);
   bool gps_accuracy_insane = ((log.getVerticalAccuracy() <= 0) || (log.getSpeedAccuracy() <= 0) || (log.getBearingAccuracyDeg() <= 0));
   bool gps_lat_lng_alt_insane = ((std::abs(log.getLatitude()) > 90) || (std::abs(log.getLongitude()) > 180) || (std::abs(log.getAltitude()) > ALTITUDE_SANITY_CHECK));
   bool gps_vel_insane = (floatlist2vector(log.getVNED()).norm() > TRANS_SANITY_CHECK);
