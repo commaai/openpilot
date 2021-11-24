@@ -435,17 +435,16 @@ bool Panda::can_receive(std::vector<can_frame>& out_vec) {
     return false;
   }
   return unpack_can_buffer(data, recv, out_vec);
-
 }
 
 bool Panda::unpack_can_buffer(uint8_t *data, int size, std::vector<can_frame> &out_vec) {
   recv_buf.clear();
-  for (int i = 0; i < recv; i += USBPACKET_MAX_SIZE) {
+  for (int i = 0; i < size; i += USBPACKET_MAX_SIZE) {
     if (data[i] != i / USBPACKET_MAX_SIZE) {
       LOGE("CAN: MALFORMED USB RECV PACKET");
       return true;
     }
-    int chunk_len = std::min(USBPACKET_MAX_SIZE, (uint32_t)(recv - recv_buf.size()));
+    int chunk_len = std::min(USBPACKET_MAX_SIZE, (uint32_t)(size - recv_buf.size()));
     recv_buf.insert(recv_buf.end(), &data[i + 1], &data[i + chunk_len]);
   }
 
