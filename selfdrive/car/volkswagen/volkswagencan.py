@@ -73,7 +73,7 @@ def create_mqb_acc_07_control(packer, bus, enabled, accel, acc_hold_request, acc
     "ACC_Freewheel_Type": 2 if enabled else 0,
     "ACC_Hold_Type": acc_hold_type,
     "ACC_Hold_Release": acc_hold_release,
-    "ACC_Accel_Secondary": accel if enabled else 0,
+    "ACC_Accel_Secondary": accel+0.01 if enabled else 3.02,
     "ACC_Accel_Primary": accel if enabled else 3.01,
   }
 
