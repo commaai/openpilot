@@ -12,7 +12,7 @@
 
 class USBDevice {
 public:
-  USBDevice();
+  USBDevice() = default;
   ~USBDevice();
   bool open(const std::string &serial);
   static std::vector<std::string> list();

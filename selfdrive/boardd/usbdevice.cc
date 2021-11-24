@@ -5,6 +5,8 @@
 
 #include "selfdrive/common/swaglog.h"
 
+namespace {
+
 libusb_context *init_usb_ctx() {
   libusb_context *context = nullptr;
   int err = libusb_init(&context);
@@ -48,7 +50,7 @@ struct DeviceIterator {
   libusb_device **dev_list = nullptr;
 };
 
-USBDevice::USBDevice() {}
+}  // namespace
 
 bool USBDevice::open(const std::string &serial) {
   ctx = init_usb_ctx();
