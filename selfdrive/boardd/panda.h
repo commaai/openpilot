@@ -126,13 +126,12 @@ protected:
 struct PacketWriter {
   PacketWriter(std::function<void(uint8_t *, size_t)> write_func) : flush(write_func){};
   void write(const can_header *header, uint8_t *data, size_t size) {
-    if (pos < USB_TX_SOFT_LIMIT) {
-      write_bytes((uint8_t *)header, CANPACKET_HEAD_SIZE);
-      write_bytes(data, size);
-    } else {
+    if (pos >= USB_TX_SOFT_LIMIT) {
       flush(to_write, pos);
       pos = 0;
     }
+    write_bytes((uint8_t *)header, CANPACKET_HEAD_SIZE);
+    write_bytes(data, size);
   }
   void write_bytes(uint8_t *data, size_t size) {
     for (int i = 0; i < size; ++i) {
