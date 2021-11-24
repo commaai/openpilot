@@ -41,41 +41,44 @@ class CarController():
         else:
           acc_status = CS.tsk_status
 
-        accel = actuators.accel if enabled else 0
-        accel = clip(accel, P.ACCEL_MIN, P.ACCEL_MAX) if enabled else 0
+        accel = clip(actuators.accel, P.ACCEL_MIN, P.ACCEL_MAX) if enabled else 0
 
         # FIXME: this needs to become a proper state machine
-        acc_hold_request, acc_hold_release = False, False
-        if actuators.longControlState == LongCtrlState.stopping:
+        acc_hold_request, acc_hold_release, acc_hold_type, stopping_distance = False, False, 0, 0
+        if actuators.longControlState == LongCtrlState.stopping and CS.out.vEgo < 0.2:
           self.acc_stopping = True
-          acc_hold_request = not CS.esp_hold_confirmation  # Send hold request for ABS/ESP brake-hold until acked
+          if CS.esp_hold_confirmation:
+            acc_hold_type = 1  # hold
+            stopping_distance = 3.5
+          else:
+            acc_hold_type = 3  # hold_standby
+            stopping_distance = 0.5
         elif enabled:
           if self.acc_stopping:
             self.acc_starting = True
             self.acc_stopping = False
-          self.acc_starting &= CS.out.vEgo < CS.CP.vEgoStarting
-          acc_hold_release = CS.esp_hold_confirmation  # Send release request for ABS/ESP brake-hold until acked
+          self.acc_starting &= CS.out.vEgo < 1.5
+          acc_hold_release = self.acc_starting
+          stopping_distance = 20.46
+          if CS.esp_hold_confirmation:
+            acc_hold_type = 4  # startup
+          else:
+            acc_hold_type = 0  # no_request
         else:
           self.acc_stopping, self.acc_starting = False, False
 
-        # Hopefully, have PI yank the lag out and let the drivetrain coordinator make it smooth again
-        cb_pos = 0.0 if lead_visible or CS.out.vEgo < 2.0 else 0.2  # react faster to lead cars, also don't get hung up at DSG clutch release/kiss points when creeping to stop
-        cb_neg = 0.0 if accel < 0 else 0.2  # IDK why, but stock likes to zero this out when accel is negative
+        acc_hold_request = self.acc_stopping or (self.acc_starting and CS.esp_hold_confirmation)
 
-        if acc_hold_request:
-          weird_value = 0x88
-        elif self.acc_stopping:
-          weird_value = 0x95
-        else:
-          weird_value = 0x7F
+        cb_pos = 0.0 if lead_visible or CS.out.vEgo < 2.0 else 0.1  # react faster to lead cars, also don't get hung up at DSG clutch release/kiss points when creeping to stop
+        cb_neg = 0.0 if accel < 0 else 0.2  # IDK why, but stock likes to zero this out when accel is negative
 
         idx = (frame / P.ACC_CONTROL_STEP) % 16
         can_sends.append(volkswagencan.create_mqb_acc_06_control(self.packer_pt, CANBUS.pt, enabled, acc_status,
                                                                  accel, self.acc_stopping, self.acc_starting,
                                                                  cb_pos, cb_neg, idx))
         can_sends.append(volkswagencan.create_mqb_acc_07_control(self.packer_pt, CANBUS.pt, enabled,
-                                                                 accel, self.acc_stopping, self.acc_starting,
-                                                                 acc_hold_request, acc_hold_release, weird_value, idx))
+                                                                 accel, acc_hold_request, acc_hold_release,
+                                                                 acc_hold_type, stopping_distance, idx))
 
       if frame % P.ACC_HUD_STEP == 0:
         idx = (frame / P.ACC_HUD_STEP) % 16

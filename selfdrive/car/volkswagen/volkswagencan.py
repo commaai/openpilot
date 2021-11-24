@@ -65,20 +65,16 @@ def create_mqb_acc_06_control(packer, bus, enabled, acc_status, accel, acc_stopp
 
   return packer.make_can_msg("ACC_06", bus, values, idx)
 
-def create_mqb_acc_07_control(packer, bus, enabled, accel, acc_stopping, acc_starting, acc_hold_request,
-                              acc_hold_release, weird_value, idx):
+def create_mqb_acc_07_control(packer, bus, enabled, accel, acc_hold_request, acc_hold_release,
+                              acc_hold_type, stopping_distance, idx):
   values = {
-    "XXX_Maybe_Engine_Start_Request": 2,  # TODO
-    "XXX_Always_1": 1,
-    "XXX_Maybe_Engine_Stop_Release": not acc_hold_request,  # TODO this isn't S/S, AHR but also slight delay past AHR
-    "XXX_Unknown": weird_value,  # FIXME: Should try to figure out what's really going on here
-    "ACC_Engaged": enabled,
-    "ACC_Anhalten": acc_stopping,
-    "ACC_Anhaltevorgang": acc_hold_request,
-    "ACC_Anfahrvorgang": acc_hold_release,
-    "ACC_Anfahren": acc_starting,
-    "ACC_Sollbeschleunigung_01": accel if enabled else 3.01,
-    "ACC_Sollbeschleunigung_03": accel if enabled else 0,
+    "ACC_Distance_to_Stop": stopping_distance,
+    "ACC_Hold_Request": acc_hold_request,
+    "ACC_Freewheel_Type": 2,
+    "ACC_Hold_Type": acc_hold_type,
+    "ACC_Hold_Release": acc_hold_release,
+    "ACC_Accel_Secondary": accel if enabled else 0,
+    "ACC_Accel_Primary": accel if enabled else 3.01,
   }
 
   return packer.make_can_msg("ACC_07", bus, values, idx)
