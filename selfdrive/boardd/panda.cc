@@ -363,8 +363,9 @@ uint8_t Panda::len_to_dlc(uint8_t len) {
   }
 }
 
-void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list) {
-  PacketWriter packet_writer(this);
+void Panda::pack_can_buffer(const capnp::List<cereal::CanData>::Reader &can_data_list,
+                         std::function<void(uint8_t *, size_t)> write_func) {
+  PacketWriter packet_writer(write_func);
   for (auto cmsg : can_data_list) {
     // check if the message is intended for this panda
     uint8_t bus = cmsg.getSrc();

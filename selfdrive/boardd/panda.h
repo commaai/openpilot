@@ -124,13 +124,13 @@ protected:
 };
 
 struct PacketWriter {
-  PacketWriter(Panda *panda) : panda(panda){};
+  PacketWriter(std::function<void(uint8_t *, size_t)> write_func) : flush(write_func){};
   void write(const can_header *header, uint8_t *data, size_t size) {
     if (pos < USB_TX_SOFT_LIMIT) {
       write_bytes((uint8_t *)header, CANPACKET_HEAD_SIZE);
       write_bytes(data, size);
     } else {
-      panda->usb_bulk_write(3, to_write, pos, 5);
+      flush(to_write, pos);
       pos = 0;
     }
   }
@@ -144,9 +144,9 @@ struct PacketWriter {
     }
   }
   ~PacketWriter() {
-    if (pos > 0) panda->usb_bulk_write(3, to_write, pos, 5);
+    if (pos > 0) flush(to_write, pos);
   }
-  Panda *panda;
+  std::function<void(uint8_t *, size_t)> flush;
   int pos = 0;
   uint8_t to_write[USB_TX_SOFT_LIMIT + 128];
 };
