@@ -21,7 +21,7 @@ class CAR:
   CX9 = "MAZDA CX-9"
   MAZDA3 = "MAZDA 3"
   MAZDA6 = "MAZDA 6"
-  CX9_2021 = "Mazda CX-9 2021"   # No Steer Lockout
+  CX9_2021 = "MAZDA CX-9 2021"   # No Steer Lockout
 
 class LKAS_LIMITS:
   STEER_THRESHOLD = 15
