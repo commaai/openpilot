@@ -39,7 +39,7 @@ def replace_calib(msg, calib):
     msg.liveCalibration.extrinsicMatrix = get_view_frame_from_road_frame(*calib, 1.22).flatten().tolist()
   return msg
 
-def process_frame(msg, pm, sm, vipc_server, spinner, frs, frame_idxs, last_desire):
+def process_frame(msg, pm, sm, log_msgs, vipc_server, spinner, frs, frame_idxs, last_desire):
   if msg.which() == "roadCameraState" and last_desire is not None:
     dat = messaging.new_message('lateralPlan')
     dat.lateralPlan.desire = last_desire
@@ -101,7 +101,7 @@ def model_replay(lr_list, frs):
       elif msg.which() == "lateralPlan":
         last_desire = msg.lateralPlan.desire
       elif msg.which() in ["roadCameraState", "driverCameraState"]:
-        ret = process_frame(msg, pm, sm, vipc_server, spinner, frs, frame_idxs, last_desire)
+        ret = process_frame(msg, pm, sm, log_msgs, vipc_server, spinner, frs, frame_idxs, last_desire)
         if ret is None:
           break
 
