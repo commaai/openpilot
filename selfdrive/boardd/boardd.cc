@@ -70,7 +70,10 @@ std::string get_time_str(const struct tm &time) {
 
 bool check_all_connected(const std::vector<Panda *> &pandas) {
   for (const auto& panda : pandas) {
-    if (!panda->connected) return false;
+    if (!panda->connected) {
+      do_exit = true;
+      return false;
+    }
   }
   return true;
 }
@@ -194,14 +197,8 @@ void can_send_thread(std::vector<Panda *> pandas, bool fake_send) {
   subscriber->setTimeout(100);
 
   // run as fast as messages come in
-  while (!do_exit) {
-    if (!check_all_connected(pandas)) {
-      do_exit = true;
-      break;
-    }
-
+  while (!do_exit && check_all_connected(pandas)) {
     Message * msg = subscriber->receive();
-
     if (!msg) {
       if (errno == EINTR) {
         do_exit = true;
@@ -239,12 +236,7 @@ void can_recv_thread(std::vector<Panda *> pandas) {
   uint64_t next_frame_time = nanos_since_boot() + dt;
   std::vector<can_frame> raw_can_data;
 
-  while (!do_exit) {
-    if (!check_all_connected(pandas)){
-      do_exit = true;
-      break;
-    }
-
+  while (!do_exit && check_all_connected(pandas)) {
     bool comms_healthy = true;
     raw_can_data.clear();
     for (const auto& panda : pandas) {
@@ -416,12 +408,8 @@ void panda_state_thread(PubMaster *pm, std::vector<Panda *> pandas, bool spoofin
   LOGD("start panda state thread");
 
   // run at 2hz
-  while (!do_exit) {
-    if(!check_all_connected(pandas)) {
-      do_exit = true;
-      break;
-    }
-
+  while (!do_exit && check_all_connected(pandas)) {
+    // send out peripheralState
     send_peripheral_state(pm, peripheral_panda);
     ignition = send_panda_states(pm, pandas, spoofing_started);
 
@@ -433,7 +421,7 @@ void panda_state_thread(PubMaster *pm, std::vector<Panda *> pandas, bool spoofin
       break;
     }
 
-    // clear VIN, CarParams, and set new safety on car start
+    // clear ignition-based params and set new safety on car start
     if (ignition && !ignition_last) {
       params.clearAll(CLEAR_ON_IGNITION_ON);
       if (!safety_future.valid() || safety_future.wait_for(0ms) == std::future_status::ready) {
