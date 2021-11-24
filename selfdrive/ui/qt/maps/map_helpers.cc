@@ -4,6 +4,7 @@
 #include <QJsonObject>
 
 #include "selfdrive/common/params.h"
+#include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/qt/api.h"
 
 QString get_mapbox_token() {
@@ -13,6 +14,18 @@ QString get_mapbox_token() {
 
 QGeoCoordinate to_QGeoCoordinate(const QMapbox::Coordinate &in) {
   return QGeoCoordinate(in.first, in.second);
+}
+
+QMapboxGLSettings get_mapbox_settings() {
+  QMapboxGLSettings settings;
+
+  if (!Hardware::PC()) {
+    settings.setCacheDatabasePath(MAPS_CACHE_PATH);
+  }
+  settings.setApiBaseUrl(MAPS_HOST);
+  settings.setAccessToken(get_mapbox_token());
+
+  return settings;
 }
 
 QMapbox::CoordinatesCollections model_to_collection(

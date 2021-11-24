@@ -68,16 +68,7 @@ void OnroadWindow::offroadTransition(bool offroad) {
 #ifdef ENABLE_MAPS
   if (!offroad) {
     if (map == nullptr && (QUIState::ui_state.has_prime || !MAPBOX_TOKEN.isEmpty())) {
-      QMapboxGLSettings settings;
-
-      if (!Hardware::PC()) {
-        settings.setCacheDatabasePath("/data/mbgl-cache.db");
-      }
-      settings.setApiBaseUrl(MAPS_HOST);
-      settings.setCacheDatabaseMaximumSize(20 * 1024 * 1024);
-      settings.setAccessToken(get_mapbox_token());
-
-      MapWindow * m = new MapWindow(settings);
+      MapWindow * m = new MapWindow(get_mapbox_settings());
       m->setFixedWidth(topWidget(this)->width() / 2);
       QObject::connect(this, &OnroadWindow::offroadTransitionSignal, m, &MapWindow::offroadTransition);
       split->addWidget(m, 0, Qt::AlignRight);

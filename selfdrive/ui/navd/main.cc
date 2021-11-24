@@ -38,18 +38,7 @@ int main(int argc, char *argv[]) {
   RouteEngine* route_engine = new RouteEngine();
 
   if (DRAW_MAP) {
-    QMapboxGLSettings settings;
-
-    // TODO: Check if the cache is safe to access from two processes
-    if (!Hardware::PC()) {
-      settings.setCacheDatabasePath("/data/mbgl-cache-navd.db");
-    }
-    settings.setApiBaseUrl(MAPS_HOST);
-    settings.setCacheDatabaseMaximumSize(20 * 1024 * 1024);
-    settings.setAccessToken(get_mapbox_token());
-
-    MapRenderer * m = new MapRenderer(settings);
-
+    MapRenderer * m = new MapRenderer(get_mapbox_settings());
     QObject::connect(route_engine, &RouteEngine::positionUpdated, m, &MapRenderer::updatePosition);
     QObject::connect(route_engine, &RouteEngine::routeUpdated, m, &MapRenderer::updateRoute);
   }
