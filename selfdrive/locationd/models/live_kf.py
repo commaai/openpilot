@@ -57,8 +57,8 @@ class LiveKalman():
                         0, 0, 0])
 
   # state covariance
-  initial_P_diag = np.array([1e3**2, 1e3**2, 1e3**2,
-                             0.5**2, 0.5**2, 0.5**2,
+  initial_P_diag = np.array([10**2, 10**2, 10**2,
+                             0.01**2, 0.01**2, 0.01**2,
                              10**2, 10**2, 10**2,
                              1**2, 1**2, 1**2,
                              1**2, 1**2, 1**2,
@@ -66,6 +66,13 @@ class LiveKalman():
                              100**2, 100**2, 100**2,
                              0.01**2, 0.01**2, 0.01**2,
                              0.01**2, 0.01**2, 0.01**2])
+
+  # state covariance when resetting midway in a segment
+  reset_orientation_diag = np.array([1**2, 1**2, 1**2])
+
+  # fake observation covariance, to ensure the uncertainty estimate of the filter is under control
+  fake_gps_pos_cov_diag = np.array([1000**2, 1000**2, 1000**2])
+  fake_gps_vel_cov_diag = np.array([10**2, 10**2, 10**2])
 
   # process noise
   Q_diag = np.array([0.03**2, 0.03**2, 0.03**2,
@@ -241,6 +248,9 @@ class LiveKalman():
 
     live_kf_header += f"static const Eigen::VectorXd live_initial_x = {numpy2eigenstring(LiveKalman.initial_x)};\n"
     live_kf_header += f"static const Eigen::VectorXd live_initial_P_diag = {numpy2eigenstring(LiveKalman.initial_P_diag)};\n"
+    live_kf_header += f"static const Eigen::VectorXd live_fake_gps_pos_cov_diag = {numpy2eigenstring(LiveKalman.fake_gps_pos_cov_diag)};\n"
+    live_kf_header += f"static const Eigen::VectorXd live_fake_gps_vel_cov_diag = {numpy2eigenstring(LiveKalman.fake_gps_vel_cov_diag)};\n"
+    live_kf_header += f"static const Eigen::VectorXd live_reset_orientation_diag = {numpy2eigenstring(LiveKalman.reset_orientation_diag)};\n"
     live_kf_header += f"static const Eigen::VectorXd live_Q_diag = {numpy2eigenstring(LiveKalman.Q_diag)};\n"
     live_kf_header += "static const std::unordered_map<int, Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> live_obs_noise_diag = {\n"
     for kind, noise in LiveKalman.obs_noise_diag.items():
