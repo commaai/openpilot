@@ -37,7 +37,7 @@ EOF"""
 
 def phone_steps(String device_type, steps) {
   lock(resource: "", label: device_type, inversePrecedence: true, variable: 'device_ip', quantity: 1) {
-    timeout(time: 150, unit: 'MINUTES') {
+    timeout(time: 60, unit: 'MINUTES') {
       phone(device_ip, "git checkout", readFile("selfdrive/test/setup_device_ci.sh"),)
       steps.each { item ->
         phone(device_ip, item[0], item[1])
@@ -53,7 +53,7 @@ pipeline {
     SOURCE_DIR = "/data/openpilot_source/"
   }
   options {
-      timeout(time: 3, unit: 'HOURS')
+      timeout(time: 4, unit: 'HOURS')
   }
 
   stages {
@@ -70,7 +70,7 @@ pipeline {
       }
       steps {
         phone_steps("eon-build", [
-          ["build release2-staging & dashcam-staging", "cd release && PUSH=1 ./build_release2.sh"],
+          ["build release2-staging & dashcam-staging", "PUSH=1 $SOURCE_DIR/release/build_release.sh"],
         ])
       }
     }
@@ -87,7 +87,7 @@ pipeline {
       }
       steps {
         phone_steps("tici", [
-          ["build release3-staging & dashcam3-staging", "PUSH=1 $SOURCE_DIR/release/build_release3.sh"],
+          ["build release3-staging & dashcam3-staging", "PUSH=1 $SOURCE_DIR/release/build_release.sh"],
         ])
       }
     }
@@ -145,10 +145,10 @@ pipeline {
           stages {
             stage('parallel tests') {
               parallel {
-                stage('Devel Tests') {
+                stage('C2: build') {
                   steps {
                     phone_steps("eon-build", [
-                      ["build devel", "cd $SOURCE_DIR/release && EXTRA_FILES='tools/' ./build_devel.sh"],
+                      ["build master-ci", "cd $SOURCE_DIR/release && EXTRA_FILES='tools/' ./build_devel.sh"],
                       ["build openpilot", "cd selfdrive/manager && ./build.py"],
                       ["test manager", "python selfdrive/manager/test/test_manager.py"],
                       ["onroad tests", "cd selfdrive/test/ && ./test_onroad.py"],
@@ -157,7 +157,7 @@ pipeline {
                   }
                 }
 
-                stage('Replay Tests') {
+                stage('C2: replay') {
                   steps {
                     phone_steps("eon2", [
                       ["build", "cd selfdrive/manager && ./build.py"],
@@ -166,17 +166,16 @@ pipeline {
                   }
                 }
 
-                stage('HW + Unit Tests') {
+                stage('C2: HW + Unit Tests') {
                   steps {
                     phone_steps("eon", [
                       ["build", "cd selfdrive/manager && ./build.py"],
-                      ["test athena", "nosetests -s selfdrive/athena/tests/test_athenad_old.py"],
-                      ["test sounds", "nosetests -s selfdrive/ui/tests/test_sounds.py"],
-                      ["test boardd loopback", "nosetests -s selfdrive/boardd/tests/test_boardd_loopback.py"],
+                      ["test sounds", "python selfdrive/ui/tests/test_soundd.py"],
+                      ["test boardd loopback", "python selfdrive/boardd/tests/test_boardd_loopback.py"],
                       ["test loggerd", "python selfdrive/loggerd/tests/test_loggerd.py"],
                       ["test encoder", "python selfdrive/loggerd/tests/test_encoder.py"],
                       ["test logcatd", "python selfdrive/logcatd/tests/test_logcatd_android.py"],
-                      //["test updater", "python installer/updater/test_updater.py"],
+                      ["test updater", "python selfdrive/hardware/eon/test_neos_updater.py"],
                     ])
                   }
                 }
@@ -202,29 +201,33 @@ pipeline {
                 }
                 */
 
-                stage('tici Build') {
+                stage('C3: build') {
                   environment {
                     R3_PUSH = "${env.BRANCH_NAME == 'master' ? '1' : ' '}"
                   }
                   steps {
                     phone_steps("tici", [
-                      ["build", "cd selfdrive/manager && ./build.py"],
+                      ["build master-ci", "cd $SOURCE_DIR/release && EXTRA_FILES='tools/' ./build_devel.sh"],
+                      ["build openpilot", "cd selfdrive/manager && ./build.py"],
+                      ["test manager", "python selfdrive/manager/test/test_manager.py"],
                       ["onroad tests", "cd selfdrive/test/ && ./test_onroad.py"],
+                      ["test car interfaces", "cd selfdrive/car/tests/ && ./test_car_interfaces.py"],
                     ])
                   }
                 }
 
-                stage('Unit Tests (tici)') {
+                stage('C3: HW + Unit Tests') {
                   steps {
                     phone_steps("tici2", [
                       ["build", "cd selfdrive/manager && ./build.py"],
+                      ["test boardd loopback", "python selfdrive/boardd/tests/test_boardd_loopback.py"],
                       ["test loggerd", "python selfdrive/loggerd/tests/test_loggerd.py"],
                       ["test encoder", "LD_LIBRARY_PATH=/usr/local/lib python selfdrive/loggerd/tests/test_encoder.py"],
                     ])
                   }
                 }
 
-                stage('camerad') {
+                stage('C2: camerad') {
                   steps {
                     phone_steps("eon-party", [
                       ["build", "cd selfdrive/manager && ./build.py"],
@@ -234,7 +237,7 @@ pipeline {
                   }
                 }
 
-                stage('Tici camerad') {
+                stage('C3: camerad') {
                   steps {
                     phone_steps("tici-party", [
                       ["build", "cd selfdrive/manager && ./build.py"],

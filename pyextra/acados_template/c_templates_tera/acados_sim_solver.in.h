@@ -37,6 +37,11 @@
 #include "acados_c/sim_interface.h"
 #include "acados_c/external_function_interface.h"
 
+#define {{ model.name | upper }}_NX     {{ dims.nx }}
+#define {{ model.name | upper }}_NZ     {{ dims.nz }}
+#define {{ model.name | upper }}_NU     {{ dims.nu }}
+#define {{ model.name | upper }}_NP     {{ dims.np }}
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -88,7 +93,7 @@ sim_opts * {{ model.name }}_acados_get_sim_opts(sim_solver_capsule *capsule);
 sim_solver * {{ model.name }}_acados_get_sim_solver(sim_solver_capsule *capsule);
 
 
-sim_solver_capsule * {{ model.name }}_acados_sim_solver_create_capsule();
+sim_solver_capsule * {{ model.name }}_acados_sim_solver_create_capsule(void);
 int {{ model.name }}_acados_sim_solver_free_capsule(sim_solver_capsule *capsule);
 
 #ifdef __cplusplus

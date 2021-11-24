@@ -666,6 +666,9 @@
         "nlp_solver_type": [
             "str"
         ],
+        "collocation_type": [
+            "str"
+        ],
         "globalization": [
             "str"
         ],
@@ -706,7 +709,10 @@
             "int"
         ],
         "sim_method_jac_reuse": [
-            "bool"
+            "ndarray",
+            [
+                "N"
+            ]
         ],
         "qp_solver_cond_N": [
             "int"

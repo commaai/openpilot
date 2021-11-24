@@ -49,6 +49,7 @@ class CarState(CarStateBase):
 
     # cruise state
     if self.CP.openpilotLongitudinalControl:
+      # These are not used for engage/disengage since openpilot keeps track of state using the buttons
       ret.cruiseState.available = cp.vl["TCS13"]["ACCEnable"] == 0
       ret.cruiseState.enabled = cp.vl["TCS13"]["ACC_REQ"] == 1
       ret.cruiseState.standstill = False
@@ -57,15 +58,16 @@ class CarState(CarStateBase):
       ret.cruiseState.enabled = cp.vl["SCC12"]["ACCMode"] != 0
       ret.cruiseState.standstill = cp.vl["SCC11"]["SCCInfoDisplay"] == 4.
 
-    if ret.cruiseState.enabled:
-      speed_conv = CV.MPH_TO_MS if cp.vl["CLU11"]["CF_Clu_SPEED_UNIT"] else CV.KPH_TO_MS
-      ret.cruiseState.speed = cp.vl["SCC11"]["VSetDis"] * speed_conv
-    else:
-      ret.cruiseState.speed = 0
+      if ret.cruiseState.enabled:
+        speed_conv = CV.MPH_TO_MS if cp.vl["CLU11"]["CF_Clu_SPEED_UNIT"] else CV.KPH_TO_MS
+        ret.cruiseState.speed = cp.vl["SCC11"]["VSetDis"] * speed_conv
+      else:
+        ret.cruiseState.speed = 0
 
     # TODO: Find brake pressure
     ret.brake = 0
     ret.brakePressed = cp.vl["TCS13"]["DriverBraking"] != 0
+    ret.brakeHoldActive = cp.vl["TCS15"]["AVH_LAMP"] == 2 # 0 OFF, 1 ERROR, 2 ACTIVE, 3 READY
 
     if self.CP.carFingerprint in (HYBRID_CAR | EV_CAR):
       if self.CP.carFingerprint in HYBRID_CAR:
@@ -90,12 +92,13 @@ class CarState(CarStateBase):
 
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(gear))
 
-    if self.CP.carFingerprint in FEATURES["use_fca"]:
-      ret.stockAeb = cp.vl["FCA11"]["FCA_CmdAct"] != 0
-      ret.stockFcw = cp.vl["FCA11"]["CF_VSM_Warn"] == 2
-    else:
-      ret.stockAeb = cp.vl["SCC12"]["AEB_CmdAct"] != 0
-      ret.stockFcw = cp.vl["SCC12"]["CF_VSM_Warn"] == 2
+    if not self.CP.openpilotLongitudinalControl:
+      if self.CP.carFingerprint in FEATURES["use_fca"]:
+        ret.stockAeb = cp.vl["FCA11"]["FCA_CmdAct"] != 0
+        ret.stockFcw = cp.vl["FCA11"]["CF_VSM_Warn"] == 2
+      else:
+        ret.stockAeb = cp.vl["SCC12"]["AEB_CmdAct"] != 0
+        ret.stockFcw = cp.vl["SCC12"]["CF_VSM_Warn"] == 2
 
     if self.CP.enableBsm:
       ret.leftBlindspot = cp.vl["LCA11"]["CF_Lca_IndLeft"] != 0
@@ -106,8 +109,6 @@ class CarState(CarStateBase):
     self.clu11 = copy.copy(cp.vl["CLU11"])
     self.park_brake = cp.vl["TCS13"]["PBRAKE_ACT"] == 1
     self.steer_state = cp.vl["MDPS12"]["CF_Mdps_ToiActive"]  # 0 NOT ACTIVE, 1 ACTIVE
-    self.lead_distance = cp.vl["SCC11"]["ACC_ObjDist"]
-    self.brake_hold = cp.vl["TCS15"]["AVH_LAMP"] == 2 # 0 OFF, 1 ERROR, 2 ACTIVE, 3 READY
     self.brake_error = cp.vl["TCS13"]["ACCEnable"] != 0 # 0 ACC CONTROL ENABLED, 1-3 ACC CONTROL DISABLED
     self.prev_cruise_buttons = self.cruise_buttons
     self.cruise_buttons = cp.vl["CLU11"]["CF_Clu_CruiseSwState"]
@@ -168,12 +169,6 @@ class CarState(CarStateBase):
 
       ("SAS_Angle", "SAS11", 0),
       ("SAS_Speed", "SAS11", 0),
-
-      ("MainMode_ACC", "SCC11", 0),
-      ("VSetDis", "SCC11", 0),
-      ("SCCInfoDisplay", "SCC11", 0),
-      ("ACC_ObjDist", "SCC11", 0),
-      ("ACCMode", "SCC12", 1),
     ]
 
     checks = [
@@ -191,10 +186,30 @@ class CarState(CarStateBase):
     ]
 
     if not CP.openpilotLongitudinalControl:
+      signals += [
+        ("MainMode_ACC", "SCC11", 0),
+        ("VSetDis", "SCC11", 0),
+        ("SCCInfoDisplay", "SCC11", 0),
+        ("ACC_ObjDist", "SCC11", 0),
+        ("ACCMode", "SCC12", 1),
+      ]
+
       checks += [
         ("SCC11", 50),
         ("SCC12", 50),
       ]
+
+      if CP.carFingerprint in FEATURES["use_fca"]:
+        signals += [
+          ("FCA_CmdAct", "FCA11", 0),
+          ("CF_VSM_Warn", "FCA11", 0),
+        ]
+        checks += [("FCA11", 50)]
+      else:
+        signals += [
+          ("AEB_CmdAct", "SCC12", 0),
+          ("CF_VSM_Warn", "SCC12", 0),
+        ]
 
     if CP.enableBsm:
       signals += [
@@ -248,19 +263,6 @@ class CarState(CarStateBase):
       ]
       checks += [
         ("LVR12", 100)
-      ]
-
-    if CP.carFingerprint in FEATURES["use_fca"]:
-      signals += [
-        ("FCA_CmdAct", "FCA11", 0),
-        ("CF_VSM_Warn", "FCA11", 0),
-      ]
-      if not CP.openpilotLongitudinalControl:
-        checks += [("FCA11", 50)]
-    else:
-      signals += [
-        ("AEB_CmdAct", "SCC12", 0),
-        ("CF_VSM_Warn", "SCC12", 0),
       ]
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 0)

@@ -4,8 +4,8 @@
 
 #include "selfdrive/ui/qt/util.h"
 
-void Sidebar::drawMetric(QPainter &p, const QString &label, const QString &val, QColor c, int y) {
-  const QRect rect = {30, y, 240, val.isEmpty() ? (label.contains("\n") ? 124 : 100) : 148};
+void Sidebar::drawMetric(QPainter &p, const QString &label, QColor c, int y) {
+  const QRect rect = {30, y, 240, label.contains("\n") ? 124 : 100};
 
   p.setPen(Qt::NoPen);
   p.setBrush(QBrush(c));
@@ -20,16 +20,9 @@ void Sidebar::drawMetric(QPainter &p, const QString &label, const QString &val, 
   p.drawRoundedRect(rect, 20, 20);
 
   p.setPen(QColor(0xff, 0xff, 0xff));
-  if (val.isEmpty()) {
-    configFont(p, "Open Sans", 35, "Bold");
-    const QRect r = QRect(rect.x() + 30, rect.y(), rect.width() - 40, rect.height());
-    p.drawText(r, Qt::AlignCenter, label);
-  } else {
-    configFont(p, "Open Sans", 58, "Bold");
-    p.drawText(rect.x() + 50, rect.y() + 71, val);
-    configFont(p, "Open Sans", 35, "Regular");
-    p.drawText(rect.x() + 50, rect.y() + 50 + 77, label);
-  }
+  configFont(p, "Open Sans", 35, "Bold");
+  const QRect r = QRect(rect.x() + 30, rect.y(), rect.width() - 40, rect.height());
+  p.drawText(r, Qt::AlignCenter, label);
 }
 
 Sidebar::Sidebar(QWidget *parent) : QFrame(parent) {
@@ -50,6 +43,8 @@ void Sidebar::mouseReleaseEvent(QMouseEvent *event) {
 }
 
 void Sidebar::updateState(const UIState &s) {
+  if (!isVisible()) return;
+
   auto &sm = *(s.sm);
 
   auto deviceState = sm["deviceState"].getDeviceState();
@@ -57,23 +52,23 @@ void Sidebar::updateState(const UIState &s) {
   int strength = (int)deviceState.getNetworkStrength();
   setProperty("netStrength", strength > 0 ? strength + 1 : 0);
 
-  ItemStatus connectstatus;
+  ItemStatus connectStatus;
   auto last_ping = deviceState.getLastAthenaPingTime();
   if (last_ping == 0) {
-    connectstatus = params.getBool("PrimeRedirected") ? ItemStatus{"NO\nPRIME", danger_color} : ItemStatus{"CONNECT\nOFFLINE", warning_color};
+    connectStatus = params.getBool("PrimeRedirected") ? ItemStatus{"NO\nPRIME", danger_color} : ItemStatus{"CONNECT\nOFFLINE", warning_color};
   } else {
-    connectstatus = nanos_since_boot() - last_ping < 80e9 ? ItemStatus{"CONNECT\nONLINE", good_color} : ItemStatus{"CONNECT\nERROR", danger_color};
+    connectStatus = nanos_since_boot() - last_ping < 80e9 ? ItemStatus{"CONNECT\nONLINE", good_color} : ItemStatus{"CONNECT\nERROR", danger_color};
   }
-  setProperty("connectStatus", QVariant::fromValue(connectstatus));
+  setProperty("connectStatus", QVariant::fromValue(connectStatus));
 
-  QColor tempColor = danger_color;
+  ItemStatus tempStatus = {"TEMP\nHIGH", danger_color};
   auto ts = deviceState.getThermalStatus();
   if (ts == cereal::DeviceState::ThermalStatus::GREEN) {
-    tempColor = good_color;
+    tempStatus = {"TEMP\nGOOD", good_color};
   } else if (ts == cereal::DeviceState::ThermalStatus::YELLOW) {
-    tempColor = warning_color;
+    tempStatus = {"TEMP\nOK", warning_color};
   }
-  setProperty("tempStatus", QVariant::fromValue(ItemStatus{QString("%1°C").arg((int)deviceState.getAmbientTempC()), tempColor}));
+  setProperty("tempStatus", QVariant::fromValue(tempStatus));
 
   ItemStatus pandaStatus = {"VEHICLE\nONLINE", good_color};
   if (s.scene.pandaType == cereal::PandaState::PandaType::UNKNOWN) {
@@ -112,7 +107,7 @@ void Sidebar::paintEvent(QPaintEvent *event) {
   p.drawText(r, Qt::AlignCenter, net_type);
 
   // metrics
-  drawMetric(p, "TEMP", temp_status.first, temp_status.second, 338);
-  drawMetric(p, panda_status.first, "", panda_status.second, 518);
-  drawMetric(p, connect_status.first, "", connect_status.second, 676);
+  drawMetric(p, temp_status.first, temp_status.second, 338);
+  drawMetric(p, panda_status.first, panda_status.second, 496);
+  drawMetric(p, connect_status.first, connect_status.second, 654);
 }

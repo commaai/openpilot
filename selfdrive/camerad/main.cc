@@ -22,7 +22,7 @@
 #elif WEBCAM
 #include "selfdrive/camerad/cameras/camera_webcam.h"
 #else
-#include "selfdrive/camerad/cameras/camera_frame_stream.h"
+#include "selfdrive/camerad/cameras/camera_replay.h"
 #endif
 
 ExitHandler do_exit;
@@ -44,11 +44,13 @@ void party(cl_device_id device_id, cl_context context) {
 #endif
 
 int main(int argc, char *argv[]) {
-  int err;
-  err = set_realtime_priority(53);
-  assert(err == 0);
-  err = set_core_affinity(Hardware::TICI() ? 6 : 2);
-  assert(err == 0);
+  if (!Hardware::PC()) {
+    int ret;
+    ret = set_realtime_priority(53);
+    assert(ret == 0);
+    ret = set_core_affinity({Hardware::EON() ? 2 : 6});
+    assert(ret == 0 || Params().getBool("IsOffroad")); // failure ok while offroad due to offlining cores
+  }
 
   cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
 

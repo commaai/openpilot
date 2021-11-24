@@ -38,6 +38,8 @@ public:
   void build_live_location(cereal::LiveLocationKalman::Builder& fix);
 
   Eigen::VectorXd get_position_geodetic();
+  Eigen::VectorXd get_state();
+  Eigen::VectorXd get_stdev();
 
   void handle_msg_bytes(const char *data, const size_t size);
   void handle_msg(const cereal::Event::Reader& log);

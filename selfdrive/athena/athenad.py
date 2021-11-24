@@ -26,7 +26,7 @@ from common.file_helpers import CallbackReader
 from common.basedir import PERSIST
 from common.params import Params
 from common.realtime import sec_since_boot
-from selfdrive.hardware import HARDWARE, PC, TICI
+from selfdrive.hardware import HARDWARE, PC
 from selfdrive.loggerd.config import ROOT
 from selfdrive.loggerd.xattr_cache import getxattr, setxattr
 from selfdrive.swaglog import cloudlog, SWAGLOG_DIR
@@ -253,7 +253,7 @@ def uploadFileToUrl(fn, url, headers):
 @dispatcher.add_method
 def listUploadQueue():
   items = list(upload_queue.queue) + list(cur_upload_items.values())
-  return [i._asdict() for i in items if i is not None]
+  return [i._asdict() for i in items if (i is not None) and (i.id not in cancelled_uploads)]
 
 
 @dispatcher.add_method
@@ -268,9 +268,6 @@ def cancelUpload(upload_id):
 
 @dispatcher.add_method
 def primeActivated(activated):
-  dongle_id = Params().get("DongleId", encoding='utf-8')
-  api = Api(dongle_id)
-  manage_tokens(api)
   return {"success": 1}
 
 
@@ -523,21 +520,6 @@ def backoff(retries):
   return random.randrange(0, min(128, int(2 ** retries)))
 
 
-def manage_tokens(api):
-  if not TICI:
-    return
-
-  try:
-    params = Params()
-    mapbox = api.get(f"/v1/tokens/mapbox/{api.dongle_id}/", timeout=5.0, access_token=api.get_token())
-    if mapbox.status_code == 200:
-      params.put("MapboxToken", mapbox.json()["token"])
-    else:
-      params.delete("MapboxToken")
-  except Exception:
-    cloudlog.exception("Failed to update tokens")
-
-
 def main():
   params = Params()
   dongle_id = params.get("DongleId", encoding='utf-8')
@@ -555,8 +537,6 @@ def main():
                              timeout=30.0)
       cloudlog.event("athenad.main.connected_ws", ws_uri=ws_uri)
       params.delete("PrimeRedirected")
-
-      manage_tokens(api)
 
       conn_retries = 0
       cur_upload_items.clear()

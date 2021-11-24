@@ -17,7 +17,6 @@
 #include <cutils/properties.h>
 #endif
 
-#include "cereal/messaging/messaging.h"
 #include "selfdrive/common/params.h"
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/version.h"
@@ -29,22 +28,6 @@ void append_property(const char* key, const char* value, void *cookie) {
     (std::vector<std::pair<std::string, std::string> > *)cookie;
 
   properties->push_back(std::make_pair(std::string(key), std::string(value)));
-}
-
-int logger_mkpath(char* file_path) {
-  assert(file_path && *file_path);
-  char* p;
-  for (p=strchr(file_path+1, '/'); p; p=strchr(p+1, '/')) {
-    *p = '\0';
-    if (mkdir(file_path, 0777)==-1) {
-      if (errno != EEXIST) {
-        *p = '/';
-        return -1;
-      }
-    }
-    *p = '/';
-  }
-  return 0;
 }
 
 // ***** log metadata *****
@@ -102,7 +85,7 @@ kj::Array<capnp::word> logger_build_init_data() {
   init.setGitRemote(params_map["GitRemote"]);
   init.setPassive(params.getBool("Passive"));
   init.setDongleId(params_map["DongleId"]);
-  
+
   auto lparams = init.initParams().initEntries(params_map.size());
   int i = 0;
   for (auto& [key, value] : params_map) {
@@ -132,21 +115,19 @@ void log_init_data(LoggerState *s) {
 }
 
 
-static void log_sentinel(LoggerState *s, cereal::Sentinel::SentinelType type, int signal=0) {
+static void lh_log_sentinel(LoggerHandle *h, SentinelType type) {
   MessageBuilder msg;
   auto sen = msg.initEvent().initSentinel();
   sen.setType(type);
-  sen.setSignal(signal);
+  sen.setSignal(h->exit_signal);
   auto bytes = msg.toBytes();
 
-  logger_log(s, bytes.begin(), bytes.size(), true);
+  lh_log(h, bytes.begin(), bytes.size(), true);
 }
 
 // ***** logging functions *****
 
 void logger_init(LoggerState *s, const char* log_name, bool has_qlog) {
-  umask(0);
-
   pthread_mutex_init(&s->lock, NULL);
 
   s->part = -1;
@@ -157,8 +138,6 @@ void logger_init(LoggerState *s, const char* log_name, bool has_qlog) {
 }
 
 static LoggerHandle* logger_open(LoggerState *s, const char* root_path) {
-  int err;
-
   LoggerHandle *h = NULL;
   for (int i=0; i<LOGGER_MAX_HANDLES; i++) {
     if (s->handles[i].refcnt == 0) {
@@ -174,9 +153,10 @@ static LoggerHandle* logger_open(LoggerState *s, const char* root_path) {
   snprintf(h->log_path, sizeof(h->log_path), "%s/%s.bz2", h->segment_path, s->log_name);
   snprintf(h->qlog_path, sizeof(h->qlog_path), "%s/qlog.bz2", h->segment_path);
   snprintf(h->lock_path, sizeof(h->lock_path), "%s.lock", h->log_path);
+  h->end_sentinel_type = SentinelType::END_OF_SEGMENT;
+  h->exit_signal = 0;
 
-  err = logger_mkpath(h->log_path);
-  if (err) return NULL;
+  if (!util::create_directories(h->segment_path, 0775)) return nullptr;
 
   FILE* lock_file = fopen(h->lock_path, "wb");
   if (lock_file == NULL) return NULL;
@@ -196,7 +176,6 @@ int logger_next(LoggerState *s, const char* root_path,
                             char* out_segment_path, size_t out_segment_path_len,
                             int* out_part) {
   bool is_start_of_route = !s->cur_handle;
-  if (!is_start_of_route) log_sentinel(s, cereal::Sentinel::SentinelType::END_OF_SEGMENT);
 
   pthread_mutex_lock(&s->lock);
   s->part++;
@@ -223,7 +202,7 @@ int logger_next(LoggerState *s, const char* root_path,
 
   // write beggining of log metadata
   log_init_data(s);
-  log_sentinel(s, is_start_of_route ? cereal::Sentinel::SentinelType::START_OF_ROUTE : cereal::Sentinel::SentinelType::START_OF_SEGMENT);
+  lh_log_sentinel(s->cur_handle, is_start_of_route ? SentinelType::START_OF_ROUTE : SentinelType::START_OF_SEGMENT);
   return 0;
 }
 
@@ -248,11 +227,10 @@ void logger_log(LoggerState *s, uint8_t* data, size_t data_size, bool in_qlog) {
 }
 
 void logger_close(LoggerState *s, ExitHandler *exit_handler) {
-  int signal = exit_handler == nullptr ? 0 : exit_handler->signal.load();
-  log_sentinel(s, cereal::Sentinel::SentinelType::END_OF_ROUTE, signal);
-
   pthread_mutex_lock(&s->lock);
   if (s->cur_handle) {
+    s->cur_handle->exit_signal = exit_handler && exit_handler->signal.load();
+    s->cur_handle->end_sentinel_type = SentinelType::END_OF_ROUTE;
     lh_close(s->cur_handle);
   }
   pthread_mutex_unlock(&s->lock);
@@ -271,6 +249,12 @@ void lh_log(LoggerHandle* h, uint8_t* data, size_t data_size, bool in_qlog) {
 void lh_close(LoggerHandle* h) {
   pthread_mutex_lock(&h->lock);
   assert(h->refcnt > 0);
+  if (h->refcnt == 1) {
+    // a very ugly hack. only here can guarantee sentinel is the last msg
+    pthread_mutex_unlock(&h->lock);
+    lh_log_sentinel(h, h->end_sentinel_type);
+    pthread_mutex_lock(&h->lock);
+  }
   h->refcnt--;
   if (h->refcnt == 0) {
     h->log.reset(nullptr);

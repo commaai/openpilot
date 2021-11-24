@@ -6,16 +6,16 @@ import struct
 import subprocess
 import tempfile
 import threading
+from enum import IntEnum
 from functools import wraps
 
 import numpy as np
-from aenum import Enum
 from lru import LRU
 
 import _io
 from tools.lib.cache import cache_path_for_file_path
 from tools.lib.exceptions import DataUnreadableError
-from tools.lib.file_helpers import atomic_write_in_dir
+from common.file_helpers import atomic_write_in_dir
 
 try:
   from xx.chffr.lib.filereader import FileReader
@@ -41,7 +41,7 @@ class DoNothingContextManager:
     pass
 
 
-class FrameType(Enum):
+class FrameType(IntEnum):
   raw = 1
   h265_stream = 2
 

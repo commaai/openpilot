@@ -11,7 +11,6 @@
 
 #include "selfdrive/common/clutil.h"
 #include "selfdrive/common/timing.h"
-
 //#define RUN_DISASSEMBLER
 //#define RUN_OPTIMIZER
 
@@ -21,7 +20,7 @@ map<pair<cl_kernel, int>, string> g_args;
 map<pair<cl_kernel, int>, int> g_args_size;
 map<cl_program, string> g_program_source;
 
-void hexdump(uint32_t *d, int len) {
+void hexdump(uint8_t *d, int len) {
   assert((len%4) == 0);
   printf("  dumping %p len 0x%x\n", d, len);
   for (int i = 0; i < len/4; i++) {
@@ -94,10 +93,10 @@ int ioctl(int filedes, unsigned long request, void *argp) {
         struct kgsl_device_getproperty *prop = (struct kgsl_device_getproperty *)argp;
         printf("IOCTL_KGSL_SETPROPERTY: 0x%x sizebytes:%zu\n", prop->type, prop->sizebytes);
         if (thneed->record & THNEED_VERBOSE_DEBUG) {
-          hexdump((uint32_t *)prop->value, prop->sizebytes);
+          hexdump((uint8_t *)prop->value, prop->sizebytes);
           if (prop->type == KGSL_PROP_PWR_CONSTRAINT) {
             struct kgsl_device_constraint *constraint = (struct kgsl_device_constraint *)prop->value;
-            hexdump((uint32_t *)constraint->data, constraint->size);
+            hexdump((uint8_t *)constraint->data, constraint->size);
           }
         }
       }
@@ -241,6 +240,7 @@ void Thneed::find_inputs_outputs() {
     for (int i = 0; i < k->num_args; i++) {
       if (k->name == "zero_pad_image_float" && k->arg_names[i] == "input") {
         cl_mem aa = *(cl_mem*)(k->args[i].data());
+        input_clmem.push_back(aa);
 
         size_t sz;
         clGetMemObjectInfo(aa, CL_MEM_SIZE, sizeof(sz), &sz, NULL);
@@ -262,7 +262,7 @@ void Thneed::copy_inputs(float **finputs) {
   //cl_int ret;
   for (int idx = 0; idx < inputs.size(); ++idx) {
     if (record & THNEED_DEBUG) printf("copying %lu -- %p -> %p\n", input_sizes[idx], finputs[idx], inputs[idx]);
-    memcpy(inputs[idx], finputs[idx], input_sizes[idx]);
+    if (finputs[idx] != NULL) memcpy(inputs[idx], finputs[idx], input_sizes[idx]);
   }
 }
 

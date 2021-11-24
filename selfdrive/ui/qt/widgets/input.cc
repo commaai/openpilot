@@ -12,7 +12,6 @@ QDialogBase::QDialogBase(QWidget *parent) : QDialog(parent) {
   Q_ASSERT(parent != nullptr);
   parent->installEventFilter(this);
 
-  setWindowFlags(Qt::Popup);
   setStyleSheet(R"(
     * {
       outline: none;
@@ -33,7 +32,6 @@ QDialogBase::QDialogBase(QWidget *parent) : QDialog(parent) {
     QPushButton:pressed {
       background-color: #444444;
     }
-
   )");
 }
 

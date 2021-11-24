@@ -46,7 +46,7 @@ from .acados_sim import AcadosSim
 from .acados_ocp import AcadosOcp
 from .acados_model import acados_model_strip_casadi_symbolics
 from .utils import is_column, render_template, format_class_dict, np_array_to_list,\
-     make_model_consistent, set_up_imported_gnsf_model
+     make_model_consistent, set_up_imported_gnsf_model, get_python_interface_path
 
 
 def make_sim_dims_consistent(acados_sim):
@@ -84,12 +84,11 @@ def make_sim_dims_consistent(acados_sim):
 
 
 def get_sim_layout():
-    current_module = sys.modules[__name__]
-    acados_path = os.path.dirname(current_module.__file__)
-    with open(acados_path + '/acados_sim_layout.json', 'r') as f:
+    python_interface_path = get_python_interface_path()
+    abs_path = os.path.join(python_interface_path, 'acados_sim_layout.json')
+    with open(abs_path, 'r') as f:
         sim_layout = json.load(f)
     return sim_layout
-
 
 
 def sim_formulation_json_dump(acados_sim, json_file='acados_sim.json'):
@@ -114,9 +113,7 @@ def sim_formulation_json_dump(acados_sim, json_file='acados_sim.json'):
 
 def sim_render_templates(json_file, model_name, code_export_dir):
     # setting up loader and environment
-    json_path = '{cwd}/{json_file}'.format(
-        cwd=os.getcwd(),
-        json_file=json_file)
+    json_path = os.path.join(os.getcwd(), json_file)
 
     if not os.path.exists(json_path):
         raise Exception(f"{json_path} not found!")
@@ -141,7 +138,7 @@ def sim_render_templates(json_file, model_name, code_export_dir):
     render_template(in_file, out_file, template_dir, json_path)
 
     ## folder model
-    template_dir = f'{code_export_dir}/{model_name}_model/'
+    template_dir = os.path.join(code_export_dir, model_name + '_model')
 
     in_file = 'model.in.h'
     out_file = f'{model_name}_model.h'

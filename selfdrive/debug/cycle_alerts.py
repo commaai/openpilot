@@ -5,7 +5,7 @@
 
 import time
 
-from cereal import car
+from cereal import car, log
 import cereal.messaging as messaging
 from selfdrive.car.honda.interface import CarInterface
 from selfdrive.controls.lib.events import ET, EVENTS, Events
@@ -17,14 +17,14 @@ def cycle_alerts(duration=2000, is_metric=False):
   alerts = list(EVENTS.keys())
   print(alerts)
 
-  #alerts = [EventName.preDriverDistracted, EventName.promptDriverDistracted, EventName.driverDistracted]
-  alerts = [EventName.preLaneChangeLeft, EventName.preLaneChangeRight]
+  alerts = [EventName.preDriverDistracted, EventName.promptDriverDistracted, EventName.driverDistracted]
+  #alerts = [EventName.preLaneChangeLeft, EventName.preLaneChangeRight]
 
   CP = CarInterface.get_params("HONDA CIVIC 2016")
-  sm = messaging.SubMaster(['deviceState', 'pandaState', 'roadCameraState', 'modelV2', 'liveCalibration',
+  sm = messaging.SubMaster(['deviceState', 'pandaStates', 'roadCameraState', 'modelV2', 'liveCalibration',
                             'driverMonitoringState', 'longitudinalPlan', 'lateralPlan', 'liveLocationKalman'])
 
-  pm = messaging.PubMaster(['controlsState', 'pandaState', 'deviceState'])
+  pm = messaging.PubMaster(['controlsState', 'pandaStates', 'deviceState'])
 
   events = Events()
   AM = AlertManager()
@@ -61,10 +61,10 @@ def cycle_alerts(duration=2000, is_metric=False):
     dat.deviceState.started = True
     pm.send('deviceState', dat)
 
-    dat = messaging.new_message()
-    dat.init('pandaState')
-    dat.pandaState.ignitionLine = True
-    pm.send('pandaState', dat)
+    dat = messaging.new_message('pandaStates', 1)
+    dat.pandaStates[0].ignitionLine = True
+    dat.pandaStates[0].pandaType = log.PandaState.PandaType.uno
+    pm.send('pandaStates', dat)
 
     time.sleep(0.01)
 

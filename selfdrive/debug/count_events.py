@@ -10,11 +10,23 @@ from tools.lib.logreader import LogReader
 if __name__ == "__main__":
   r = Route(sys.argv[1])
 
-  cnt: Counter = Counter()
+  cnt_valid: Counter = Counter()
+  cnt_events: Counter = Counter()
+
   for q in tqdm(r.qlog_paths()):
-    lr = LogReader(q)
-    car_events = [m for m in lr if m.which() == 'carEvents']
-    for car_event in car_events:
-      for e in car_event.carEvents:
-        cnt[e.name] += 1
-  pprint(cnt)
+    if q is None:
+      continue
+    lr = list(LogReader(q))
+    for msg in lr:
+      if msg.which() == 'carEvents':
+        for e in msg.carEvents:
+          cnt_events[e.name] += 1
+      if not msg.valid:
+        cnt_valid[msg.which()] += 1
+
+  print("Events")
+  pprint(cnt_events)
+
+  print("\n\n")
+  print("Not valid")
+  pprint(cnt_valid)

@@ -1,14 +1,15 @@
 #include "selfdrive/common/util.h"
 
 #include <sys/stat.h>
+#include <dirent.h>
 
 #include <cassert>
 #include <cerrno>
 #include <cstring>
 #include <dirent.h>
 #include <fstream>
-#include <sstream>
 #include <iomanip>
+#include <sstream>
 
 #ifdef __linux__
 #include <sys/prctl.h>
@@ -40,14 +41,16 @@ int set_realtime_priority(int level) {
 #endif
 }
 
-int set_core_affinity(int core) {
+int set_core_affinity(std::vector<int> cores) {
 #ifdef __linux__
   long tid = syscall(SYS_gettid);
-  cpu_set_t rt_cpu;
+  cpu_set_t cpu;
 
-  CPU_ZERO(&rt_cpu);
-  CPU_SET(core, &rt_cpu);
-  return sched_setaffinity(tid, sizeof(rt_cpu), &rt_cpu);
+  CPU_ZERO(&cpu);
+  for (const int n : cores) {
+    CPU_SET(n, &cpu);
+  }
+  return sched_setaffinity(tid, sizeof(cpu), &cpu);
 #else
   return -1;
 #endif
@@ -85,7 +88,7 @@ std::map<std::string, std::string> read_files_in_dir(const std::string &path) {
 
   struct dirent *de = NULL;
   while ((de = readdir(d))) {
-    if (isalnum(de->d_name[0])) {
+    if (de->d_type != DT_DIR) {
       ret[de->d_name] = util::read_file(path + "/" + de->d_name);
     }
   }
@@ -95,13 +98,39 @@ std::map<std::string, std::string> read_files_in_dir(const std::string &path) {
 }
 
 int write_file(const char* path, const void* data, size_t size, int flags, mode_t mode) {
-  int fd = open(path, flags, mode);
+  int fd = HANDLE_EINTR(open(path, flags, mode));
   if (fd == -1) {
     return -1;
   }
-  ssize_t n = write(fd, data, size);
+  ssize_t n = HANDLE_EINTR(write(fd, data, size));
   close(fd);
   return (n >= 0 && (size_t)n == size) ? 0 : -1;
+}
+
+FILE* safe_fopen(const char* filename, const char* mode) {
+  FILE* fp = NULL;
+  do {
+    fp = fopen(filename, mode);
+  } while ((nullptr == fp) && (errno == EINTR));
+  return fp;
+}
+
+size_t safe_fwrite(const void* ptr, size_t size, size_t count, FILE* stream) {
+  size_t written = 0;
+  do {
+    size_t ret = ::fwrite((void*)((char *)ptr + written * size), size, count - written, stream);
+    if (ret == 0 && errno != EINTR) break;
+    written += ret;
+  } while (written != count);
+  return written;
+}
+
+int safe_fflush(FILE *stream) {
+  int ret = EOF;
+  do {
+    ret = fflush(stream);
+  } while ((EOF == ret) && (errno == EINTR));
+  return ret;
 }
 
 std::string readlink(const std::string &path) {
@@ -119,6 +148,37 @@ bool file_exists(const std::string& fn) {
   return stat(fn.c_str(), &st) != -1;
 }
 
+static bool createDirectory(std::string dir, mode_t mode) {
+  auto verify_dir = [](const std::string& dir) -> bool {
+    struct stat st = {};
+    return (stat(dir.c_str(), &st) == 0 && (st.st_mode & S_IFMT) == S_IFDIR);
+  };
+  // remove trailing /'s
+  while (dir.size() > 1 && dir.back() == '/') {
+    dir.pop_back();
+  }
+  // try to mkdir this directory
+  if (mkdir(dir.c_str(), mode) == 0) return true;
+  if (errno == EEXIST) return verify_dir(dir);
+  if (errno != ENOENT) return false;
+
+  // mkdir failed because the parent dir doesn't exist, so try to create it
+  size_t slash = dir.rfind('/');
+  if ((slash == std::string::npos || slash < 1) ||
+      !createDirectory(dir.substr(0, slash), mode)) {
+    return false;
+  }
+
+  // try again
+  if (mkdir(dir.c_str(), mode) == 0) return true;
+  return errno == EEXIST && verify_dir(dir);
+}
+
+bool create_directories(const std::string& dir, mode_t mode) {
+  if (dir.empty()) return false;
+  return createDirectory(dir, mode);
+}
+
 std::string getenv(const char* key, const char* default_val) {
   const char* val = ::getenv(key);
   return val ? val : default_val;
@@ -134,34 +194,35 @@ float getenv(const char* key, float default_val) {
   return val ? atof(val) : default_val;
 }
 
-std::string tohex(const uint8_t *buf, size_t buf_size) {
-  std::unique_ptr<char[]> hexbuf(new char[buf_size * 2 + 1]);
-  for (size_t i = 0; i < buf_size; i++) {
-    sprintf(&hexbuf[i * 2], "%02x", buf[i]);
+std::string hexdump(const uint8_t* in, const size_t size) {
+  std::stringstream ss;
+  ss << std::hex << std::setfill('0');
+  for (size_t i = 0; i < size; i++) {
+    ss << std::setw(2) << static_cast<unsigned int>(in[i]);
   }
-  hexbuf[buf_size * 2] = 0;
-  return std::string(hexbuf.get(), hexbuf.get() + buf_size * 2);
-}
-
-std::string hexdump(const std::string& in) {
-    std::stringstream ss;
-    ss << std::hex << std::setfill('0');
-    for (size_t i = 0; i < in.size(); i++) {
-        ss << std::setw(2) << static_cast<unsigned int>(static_cast<unsigned char>(in[i]));
-    }
-    return ss.str();
-}
-
-std::string base_name(std::string const &path) {
-  size_t pos = path.find_last_of("/");
-  if (pos == std::string::npos) return path;
-  return path.substr(pos + 1);
+  return ss.str();
 }
 
 std::string dir_name(std::string const &path) {
   size_t pos = path.find_last_of("/");
   if (pos == std::string::npos) return "";
   return path.substr(0, pos);
+}
+
+std::string check_output(const std::string& command) {
+  char buffer[128];
+  std::string result;
+  std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(command.c_str(), "r"), pclose);
+
+  if (!pipe) {
+    return "";
+  }
+
+  while (fgets(buffer, std::size(buffer), pipe.get()) != nullptr) {
+    result += std::string(buffer);
+  }
+
+  return result;
 }
 
 struct tm get_time() {

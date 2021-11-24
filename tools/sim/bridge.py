@@ -11,6 +11,7 @@ from typing import Any
 
 import cereal.messaging as messaging
 from common.params import Params
+from common.numpy_fast import clip
 from common.realtime import Ratekeeper, DT_DMON
 from lib.can import can_function
 from selfdrive.car.honda.values import CruiseButtons
@@ -83,17 +84,32 @@ def imu_callback(imu, vehicle_state):
   pm.send('sensorEvents', dat)
 
 def panda_state_function(exit_event: threading.Event):
-  pm = messaging.PubMaster(['pandaState'])
+  pm = messaging.PubMaster(['pandaStates'])
   while not exit_event.is_set():
-    dat = messaging.new_message('pandaState')
+    dat = messaging.new_message('pandaStates', 1)
     dat.valid = True
-    dat.pandaState = {
+    dat.pandaStates[0] = {
       'ignitionLine': True,
       'pandaType': "blackPanda",
       'controlsAllowed': True,
       'safetyModel': 'hondaNidec'
     }
-    pm.send('pandaState', dat)
+    pm.send('pandaStates', dat)
+    time.sleep(0.5)
+
+def peripheral_state_function(exit_event: threading.Event):
+  pm = messaging.PubMaster(['peripheralState'])
+  while not exit_event.is_set():
+    dat = messaging.new_message('peripheralState')
+    dat.valid = True
+    # fake peripheral state data
+    dat.peripheralState = {
+      'pandaType': log.PandaState.PandaType.blackPanda,
+      'voltage': 12000,
+      'current': 5678,
+      'fanSpeedRpm': 1000
+    }
+    pm.send('peripheralState', dat)
     time.sleep(0.5)
 
 def gps_callback(gps, vehicle_state):
@@ -214,6 +230,7 @@ def bridge(q):
   threads = []
   exit_event = threading.Event()
   threads.append(threading.Thread(target=panda_state_function, args=(exit_event,)))
+  threads.append(threading.Thread(target=peripheral_state_function, args=(exit_event,)))
   threads.append(threading.Thread(target=fake_driver_monitoring, args=(exit_event,)))
   threads.append(threading.Thread(target=can_function_runner, args=(vehicle_state, exit_event,)))
   for t in threads:
@@ -295,9 +312,10 @@ def bridge(q):
 
     if is_openpilot_engaged:
       sm.update(0)
-      throttle_op = sm['carControl'].actuators.gas #[0,1]
-      brake_op = sm['carControl'].actuators.brake #[0,1]
-      steer_op = sm['carControl'].actuators.steeringAngleDeg 
+      # TODO gas and brake is deprecated
+      throttle_op = clip(sm['carControl'].actuators.accel/1.6, 0.0, 1.0)
+      brake_op = clip(-sm['carControl'].actuators.accel/4.0, 0.0, 1.0)
+      steer_op = sm['carControl'].actuators.steeringAngleDeg
 
       throttle_out = throttle_op
       steer_out = steer_op

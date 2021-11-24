@@ -1,132 +1,62 @@
 #include "selfdrive/ui/replay/filereader.h"
 
-#include <bzlib.h>
-#include <QtNetwork>
+#include <sys/stat.h>
 
-static bool decompressBZ2(std::vector<uint8_t> &dest, const char srcData[], size_t srcSize,
-                          size_t outputSizeIncrement = 0x100000U) {
-  bz_stream strm = {};
-  int ret = BZ2_bzDecompressInit(&strm, 0, 0);
-  assert(ret == BZ_OK);
+#include <cassert>
+#include <cmath>
+#include <fstream>
+#include <iostream>
+#include <sstream>
 
-  strm.next_in = const_cast<char *>(srcData);
-  strm.avail_in = srcSize;
-  do {
-    strm.next_out = (char *)&dest[strm.total_out_lo32];
-    strm.avail_out = dest.size() - strm.total_out_lo32;
-    ret = BZ2_bzDecompress(&strm);
-    if (ret == BZ_OK && strm.avail_in > 0 && strm.avail_out == 0) {
-      dest.resize(dest.size() + outputSizeIncrement);
+#include "selfdrive/common/util.h"
+#include "selfdrive/ui/replay/util.h"
+
+std::string cacheFilePath(const std::string &url) {
+  static std::string cache_path = [] {
+    const std::string comma_cache = util::getenv("COMMA_CACHE", "/tmp/comma_download_cache/");
+    util::create_directories(comma_cache, 0755);
+    return comma_cache.back() == '/' ? comma_cache : comma_cache + "/";
+  }();
+
+  return cache_path + sha256(getUrlWithoutQuery(url));
+}
+
+std::string FileReader::read(const std::string &file, std::atomic<bool> *abort) {
+  const bool is_remote = file.find("https://") == 0;
+  const std::string local_file = is_remote ? cacheFilePath(file) : file;
+  std::string result;
+
+  if ((!is_remote || cache_to_local_) && util::file_exists(local_file)) {
+    result = util::read_file(local_file);
+  } else if (is_remote) {
+    result = download(file, abort);
+    if (cache_to_local_ && !result.empty()) {
+      std::ofstream fs(local_file, fs.binary | fs.out);
+      fs.write(result.data(), result.size());
     }
-  } while (ret == BZ_OK);
-
-  BZ2_bzDecompressEnd(&strm);
-  dest.resize(strm.total_out_lo32);
-  return ret == BZ_STREAM_END;
+  }
+  return result;
 }
 
-// class FileReader
-
-FileReader::FileReader(const QString &fn, QObject *parent) : url_(fn), QObject(parent) {}
-
-void FileReader::read() {
-  if (url_.isLocalFile()) {
-    QFile file(url_.toLocalFile());
-    if (file.open(QIODevice::ReadOnly)) {
-      emit finished(file.readAll());
-    } else {
-      emit failed(QString("Failed to read file %1").arg(url_.toString()));
+std::string FileReader::download(const std::string &url, std::atomic<bool> *abort) {
+  std::string result;
+  size_t remote_file_size = 0;
+  for (int i = 0; i <= max_retries_ && !(abort && *abort); ++i) {
+    if (i > 0) {
+      std::cout << "download failed, retrying" << i << std::endl;
     }
-  } else {
-    startHttpRequest();
-  }
-}
-
-void FileReader::startHttpRequest() {
-  QNetworkAccessManager *qnam = new QNetworkAccessManager(this);
-  QNetworkRequest request(url_);
-  request.setAttribute(QNetworkRequest::FollowRedirectsAttribute, true);
-  reply_ = qnam->get(request);
-  connect(reply_, &QNetworkReply::finished, [=]() {
-    if (!reply_->error()) {
-      emit finished(reply_->readAll());
-    } else {
-      emit failed(reply_->errorString());
+    if (remote_file_size <= 0) {
+      remote_file_size = getRemoteFileSize(url);
     }
-    reply_->deleteLater();
-    reply_ = nullptr;
-  });
-}
-
-void FileReader::abort() {
-  if (reply_) reply_->abort();
-}
-
-// class LogReader
-
-LogReader::LogReader(const QString &file, QObject *parent) : QObject(parent) {
-  file_reader_ = new FileReader(file);
-  file_reader_->moveToThread(&thread_);
-  connect(&thread_, &QThread::started, file_reader_, &FileReader::read);
-  connect(&thread_, &QThread::finished, file_reader_, &FileReader::deleteLater);
-  connect(file_reader_, &FileReader::finished, [=](const QByteArray &dat) {
-    parseEvents(dat);
-  });
-  connect(file_reader_, &FileReader::failed, [=](const QString &err) {
-    qDebug() << err;
-  });
-  thread_.start();
-}
-
-LogReader::~LogReader() {
-  // wait until thread is finished.
-  exit_ = true;
-  file_reader_->abort();
-  thread_.quit();
-  thread_.wait();
-
-  // clear events
-  for (auto e : events) {
-    delete e;
-  }
-}
-
-void LogReader::parseEvents(const QByteArray &dat) {
-  raw_.resize(1024 * 1024 * 64);
-  if (!decompressBZ2(raw_, dat.data(), dat.size())) {
-    qWarning() << "bz2 decompress failed";
-  }
-
-  auto insertEidx = [&](CameraType type, const cereal::EncodeIndex::Reader &e) {
-    eidx[type][e.getFrameId()] = {e.getSegmentNum(), e.getSegmentId()};
-  };
-
-  valid_ = true;
-  kj::ArrayPtr<const capnp::word> words((const capnp::word *)raw_.data(), raw_.size() / sizeof(capnp::word));
-  while (!exit_ && words.size() > 0) {
-    try {
-      std::unique_ptr<Event> evt = std::make_unique<Event>(words);
-      switch (evt->which) {
-        case cereal::Event::ROAD_ENCODE_IDX:
-          insertEidx(RoadCam, evt->event.getRoadEncodeIdx());
-          break;
-        case cereal::Event::DRIVER_ENCODE_IDX:
-          insertEidx(DriverCam, evt->event.getDriverEncodeIdx());
-          break;
-        case cereal::Event::WIDE_ROAD_ENCODE_IDX:
-          insertEidx(WideRoadCam, evt->event.getWideRoadEncodeIdx());
-          break;
-        default:
-          break;
+    if (remote_file_size > 0 && !(abort && *abort)) {
+      std::ostringstream oss;
+      result.resize(remote_file_size);
+      oss.rdbuf()->pubsetbuf(result.data(), result.size());
+      int chunks = chunk_size_ > 0 ? std::max(1, (int)std::nearbyint(remote_file_size / (float)chunk_size_)) : 1;
+      if (httpMultiPartDownload(url, oss, chunks, remote_file_size, abort)) {
+        return result;
       }
-      words = kj::arrayPtr(evt->reader.getEnd(), words.end());
-      events.insert(evt->mono_time, evt.release());
-    } catch (const kj::Exception &e) {
-      valid_ = false;
-      break;
     }
   }
-  if (!exit_) {
-    emit finished(valid_);  
-  }
+  return {};
 }

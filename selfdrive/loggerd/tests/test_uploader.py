@@ -11,6 +11,7 @@ from common.xattr import getxattr
 
 from selfdrive.loggerd.tests.loggerd_tests_common import UploaderTestCase
 
+
 class TestLogHandler(logging.Handler):
   def __init__(self):
     logging.Handler.__init__(self)
@@ -22,7 +23,7 @@ class TestLogHandler(logging.Handler):
 
   def emit(self, record):
     try:
-      j = json.loads(record.message)
+      j = json.loads(record.getMessage())
       if j["event"] == "upload_success":
         self.upload_order.append(j["key"])
       if j["event"] == "upload_ignored":
@@ -32,6 +33,7 @@ class TestLogHandler(logging.Handler):
 
 log_handler = TestLogHandler()
 cloudlog.addHandler(log_handler)
+
 
 class TestUploader(UploaderTestCase):
   def setUp(self):

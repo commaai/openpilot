@@ -1,7 +1,6 @@
 #pragma once
 
 #include <QButtonGroup>
-#include <QMovie>
 #include <QVBoxLayout>
 #include <QWidget>
 
@@ -40,6 +39,7 @@ private:
   LabelControl* ipLabel;
   ToggleControl* tetheringToggle;
   WifiManager* wifi = nullptr;
+  Params params;
 
 signals:
   void backPress();

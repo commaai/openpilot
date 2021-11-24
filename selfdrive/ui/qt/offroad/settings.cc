@@ -25,82 +25,97 @@
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/qt_window.h"
 
-TogglesPanel::TogglesPanel(QWidget *parent) : QWidget(parent) {
-  QVBoxLayout *main_layout = new QVBoxLayout(this);
-
-  QList<ParamControl*> toggles;
-
-  toggles.append(new ParamControl("OpenpilotEnabledToggle",
-                                  "Enable openpilot",
-                                  "Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.",
-                                  "../assets/offroad/icon_openpilot.png",
-                                  this));
-  toggles.append(new ParamControl("IsLdwEnabled",
-                                  "Enable Lane Departure Warnings",
-                                  "Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31mph (50kph).",
-                                  "../assets/offroad/icon_warning.png",
-                                  this));
-  toggles.append(new ParamControl("IsRHD",
-                                  "Enable Right-Hand Drive",
-                                  "Allow openpilot to obey left-hand traffic conventions and perform driver monitoring on right driver seat.",
-                                  "../assets/offroad/icon_openpilot_mirrored.png",
-                                  this));
-  toggles.append(new ParamControl("IsMetric",
-                                  "Use Metric System",
-                                  "Display speed in km/h instead of mp/h.",
-                                  "../assets/offroad/icon_metric.png",
-                                  this));
-  toggles.append(new ParamControl("CommunityFeaturesToggle",
-                                  "Enable Community Features",
-                                  "Use features from the open source community that are not maintained or supported by comma.ai and have not been confirmed to meet the standard safety model. These features include community supported cars and community supported hardware. Be extra cautious when using these features",
-                                  "../assets/offroad/icon_shell.png",
-                                  this));
-
-  toggles.append(new ParamControl("UploadRaw",
-                                  "Upload Raw Logs",
-                                  "Upload full logs and full resolution video by default while on WiFi. If not enabled, individual logs can be marked for upload at my.comma.ai/useradmin.",
-                                  "../assets/offroad/icon_network.png",
-                                  this));
-
-  ParamControl *record_toggle = new ParamControl("RecordFront",
-                                                 "Record and Upload Driver Camera",
-                                                 "Upload data from the driver facing camera and help improve the driver monitoring algorithm.",
-                                                 "../assets/offroad/icon_monitoring.png",
-                                                 this);
-  toggles.append(record_toggle);
-  toggles.append(new ParamControl("EndToEndToggle",
-                                  "\U0001f96c Disable use of lanelines (Alpha) \U0001f96c",
-                                  "In this mode openpilot will ignore lanelines and just drive how it thinks a human would.",
-                                  "../assets/offroad/icon_road.png",
-                                  this));
-
+TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
+  // param, title, desc, icon
+  std::vector<std::tuple<QString, QString, QString, QString>> toggles{
+    {
+      "OpenpilotEnabledToggle",
+      "Enable openpilot",
+      "Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.",
+      "../assets/offroad/icon_openpilot.png",
+    },
+    {
+      "IsLdwEnabled",
+      "Enable Lane Departure Warnings",
+      "Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31mph (50kph).",
+      "../assets/offroad/icon_warning.png",
+    },
+    {
+      "IsRHD",
+      "Enable Right-Hand Drive",
+      "Allow openpilot to obey left-hand traffic conventions and perform driver monitoring on right driver seat.",
+      "../assets/offroad/icon_openpilot_mirrored.png",
+    },
+    {
+      "IsMetric",
+      "Use Metric System",
+      "Display speed in km/h instead of mph.",
+      "../assets/offroad/icon_metric.png",
+    },
+    {
+      "CommunityFeaturesToggle",
+      "Enable Community Features",
+      "Use features, such as community supported hardware, from the open source community that are not maintained or supported by comma.ai and have not been confirmed to meet the standard safety model. Be extra cautious when using these features",
+      "../assets/offroad/icon_shell.png",
+    },
+    {
+      "UploadRaw",
+      "Upload Raw Logs",
+      "Upload full logs and full resolution video by default while on Wi-Fi. If not enabled, individual logs can be marked for upload at useradmin.comma.ai.",
+      "../assets/offroad/icon_network.png",
+    },
+    {
+      "RecordFront",
+      "Record and Upload Driver Camera",
+      "Upload data from the driver facing camera and help improve the driver monitoring algorithm.",
+      "../assets/offroad/icon_monitoring.png",
+    },
+    {
+      "EndToEndToggle",
+      "\U0001f96c Disable use of lanelines (Alpha) \U0001f96c",
+      "In this mode openpilot will ignore lanelines and just drive how it thinks a human would.",
+      "../assets/offroad/icon_road.png",
+    },
 #ifdef ENABLE_MAPS
-  toggles.append(new ParamControl("NavSettingTime24h",
-                                  "Show ETA in 24h format",
-                                  "Use 24h format instead of am/pm",
-                                  "../assets/offroad/icon_metric.png",
-                                  this));
+    {
+      "NavSettingTime24h",
+      "Show ETA in 24h format",
+      "Use 24h format instead of am/pm",
+      "../assets/offroad/icon_metric.png",
+    },
 #endif
 
-  bool record_lock = Params().getBool("RecordFrontLock");
-  record_toggle->setEnabled(!record_lock);
+  };
 
-  for(ParamControl *toggle : toggles) {
-    if(main_layout->count() != 0) {
-      main_layout->addWidget(horizontal_line());
+  Params params;
+
+  if (params.getBool("DisableRadar_Allow")) {
+    toggles.push_back({
+      "DisableRadar",
+      "openpilot Longitudinal Control",
+      "openpilot will disable the car's radar and will take over control of gas and brakes. Warning: this disables AEB!",
+      "../assets/offroad/icon_speed_limit.png",
+    });
+  }
+
+  for (auto &[param, title, desc, icon] : toggles) {
+    auto toggle = new ParamControl(param, title, desc, icon, this);
+    bool locked = params.getBool((param + "Lock").toStdString());
+    toggle->setEnabled(!locked);
+    if (!locked) {
+      connect(parent, &SettingsWindow::offroadTransition, toggle, &ParamControl::setEnabled);
     }
-    main_layout->addWidget(toggle);
+    addItem(toggle);
   }
 }
 
-DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
-  QVBoxLayout *main_layout = new QVBoxLayout(this);
+DevicePanel::DevicePanel(QWidget* parent) : ListWidget(parent) {
+  setSpacing(50);
   Params params = Params();
-  main_layout->addWidget(new LabelControl("Dongle ID", getDongleId().value_or("N/A")));
-  main_layout->addWidget(horizontal_line());
+  addItem(new LabelControl("Dongle ID", getDongleId().value_or("N/A")));
 
   QString serial = QString::fromStdString(params.get("HardwareSerial", false));
-  main_layout->addWidget(new LabelControl("Serial", serial));
+  addItem(new LabelControl("Serial", serial));
 
   // offroad-only buttons
 
@@ -127,8 +142,8 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
           double pitch = calib.getRpyCalib()[1] * (180 / M_PI);
           double yaw = calib.getRpyCalib()[2] * (180 / M_PI);
           desc += QString(" Your device is pointed %1° %2 and %3° %4.")
-                                .arg(QString::number(std::abs(pitch), 'g', 1), pitch > 0 ? "up" : "down",
-                                     QString::number(std::abs(yaw), 'g', 1), yaw > 0 ? "right" : "left");
+                      .arg(QString::number(std::abs(pitch), 'g', 1), pitch > 0 ? "up" : "down",
+                           QString::number(std::abs(yaw), 'g', 1), yaw > 0 ? "right" : "left");
         }
       } catch (kj::Exception) {
         qInfo() << "invalid CalibrationParams";
@@ -142,7 +157,6 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
     retrainingBtn = new ButtonControl("Review Training Guide", "REVIEW", "Review the rules, features, and limitations of openpilot");
     connect(retrainingBtn, &ButtonControl::clicked, [=]() {
       if (ConfirmationDialog::confirm("Are you sure you want to review the training guide?", this)) {
-        Params().remove("CompletedTrainingVersion");
         emit reviewTrainingGuide();
       }
     });
@@ -152,16 +166,15 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
   if (Hardware::TICI()) {
     regulatoryBtn = new ButtonControl("Regulatory", "VIEW", "");
     connect(regulatoryBtn, &ButtonControl::clicked, [=]() {
-      const std::string txt = util::read_file(ASSET_PATH.toStdString() + "/offroad/fcc.html");
+      const std::string txt = util::read_file("../assets/offroad/fcc.html");
       RichTextDialog::alert(QString::fromStdString(txt), this);
     });
   }
 
   for (auto btn : {dcamBtn, resetCalibBtn, retrainingBtn, regulatoryBtn}) {
     if (btn) {
-      main_layout->addWidget(horizontal_line());
       connect(parent, SIGNAL(offroadTransition(bool)), btn, SLOT(setEnabled(bool)));
-      main_layout->addWidget(btn);
+      addItem(btn);
     }
   }
 
@@ -173,8 +186,15 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
   reboot_btn->setObjectName("reboot_btn");
   power_layout->addWidget(reboot_btn);
   QObject::connect(reboot_btn, &QPushButton::clicked, [=]() {
-    if (ConfirmationDialog::confirm("Are you sure you want to reboot?", this)) {
-      Hardware::reboot();
+    if (QUIState::ui_state.status == UIStatus::STATUS_DISENGAGED) {
+      if (ConfirmationDialog::confirm("Are you sure you want to reboot?", this)) {
+        // Check engaged again in case it changed while the dialog was open
+        if (QUIState::ui_state.status == UIStatus::STATUS_DISENGAGED) {
+          Params().putBool("DoReboot", true);
+        }
+      }
+    } else {
+      ConfirmationDialog::alert("Disengage to Reboot", this);
     }
   });
 
@@ -182,8 +202,15 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
   poweroff_btn->setObjectName("poweroff_btn");
   power_layout->addWidget(poweroff_btn);
   QObject::connect(poweroff_btn, &QPushButton::clicked, [=]() {
-    if (ConfirmationDialog::confirm("Are you sure you want to power off?", this)) {
-      Hardware::poweroff();
+    if (QUIState::ui_state.status == UIStatus::STATUS_DISENGAGED) {
+      if (ConfirmationDialog::confirm("Are you sure you want to power off?", this)) {
+        // Check engaged again in case it changed while the dialog was open
+        if (QUIState::ui_state.status == UIStatus::STATUS_DISENGAGED) {
+          Params().putBool("DoShutdown", true);
+        }
+      }
+    } else {
+      ConfirmationDialog::alert("Disengage to Power Off", this);
     }
   });
 
@@ -197,10 +224,10 @@ DevicePanel::DevicePanel(QWidget* parent) : QWidget(parent) {
     #poweroff_btn { background-color: #E22C2C; }
     #poweroff_btn:pressed { background-color: #FF2424; }
   )");
-  main_layout->addLayout(power_layout);
+  addItem(power_layout);
 }
 
-SoftwarePanel::SoftwarePanel(QWidget* parent) : QWidget(parent) {
+SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
   gitBranchLbl = new LabelControl("Git Branch");
   gitCommitLbl = new LabelControl("Git Commit");
   osVersionLbl = new LabelControl("OS Version");
@@ -209,21 +236,14 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : QWidget(parent) {
   updateBtn = new ButtonControl("Check for Update", "");
   connect(updateBtn, &ButtonControl::clicked, [=]() {
     if (params.getBool("IsOffroad")) {
-      const QString paramsPath = QString::fromStdString(params.getParamsPath());
-      fs_watch->addPath(paramsPath + "/d/LastUpdateTime");
-      fs_watch->addPath(paramsPath + "/d/UpdateFailedCount");
+      fs_watch->addPath(QString::fromStdString(params.getParamPath("LastUpdateTime")));
+      fs_watch->addPath(QString::fromStdString(params.getParamPath("UpdateFailedCount")));
       updateBtn->setText("CHECKING");
       updateBtn->setEnabled(false);
     }
     std::system("pkill -1 -f selfdrive.updated");
   });
 
-  QVBoxLayout *main_layout = new QVBoxLayout(this);
-  QWidget *widgets[] = {versionLbl, lastUpdateLbl, updateBtn, gitBranchLbl, gitCommitLbl, osVersionLbl};
-  for (int i = 0; i < std::size(widgets); ++i) {
-    main_layout->addWidget(widgets[i]);
-    main_layout->addWidget(horizontal_line());
-  }
 
   auto uninstallBtn = new ButtonControl("Uninstall " + getBrand(), "UNINSTALL");
   connect(uninstallBtn, &ButtonControl::clicked, [=]() {
@@ -232,12 +252,15 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : QWidget(parent) {
     }
   });
   connect(parent, SIGNAL(offroadTransition(bool)), uninstallBtn, SLOT(setEnabled(bool)));
-  main_layout->addWidget(uninstallBtn);
+
+  QWidget *widgets[] = {versionLbl, lastUpdateLbl, updateBtn, gitBranchLbl, gitCommitLbl, osVersionLbl, uninstallBtn};
+  for (QWidget* w : widgets) {
+    addItem(w);
+  }
 
   fs_watch = new QFileSystemWatcher(this);
   QObject::connect(fs_watch, &QFileSystemWatcher::fileChanged, [=](const QString path) {
-    int update_failed_count = params.get<int>("UpdateFailedCount").value_or(0);
-    if (path.contains("UpdateFailedCount") && update_failed_count > 0) {
+    if (path.contains("UpdateFailedCount") && std::atoi(params.get("UpdateFailedCount").c_str()) > 0) {
       lastUpdateLbl->setText("failed to fetch update");
       updateBtn->setText("CHECK");
       updateBtn->setEnabled(true);
@@ -271,24 +294,24 @@ QWidget * network_panel(QWidget * parent) {
 #ifdef QCOM
   QWidget *w = new QWidget(parent);
   QVBoxLayout *layout = new QVBoxLayout(w);
-  layout->setSpacing(30);
+  layout->setContentsMargins(50, 0, 50, 0);
 
+  ListWidget *list = new ListWidget();
+  list->setSpacing(30);
   // wifi + tethering buttons
-  auto wifiBtn = new ButtonControl("WiFi Settings", "OPEN");
+  auto wifiBtn = new ButtonControl("Wi-Fi Settings", "OPEN");
   QObject::connect(wifiBtn, &ButtonControl::clicked, [=]() { HardwareEon::launch_wifi(); });
-  layout->addWidget(wifiBtn);
-  layout->addWidget(horizontal_line());
+  list->addItem(wifiBtn);
 
   auto tetheringBtn = new ButtonControl("Tethering Settings", "OPEN");
   QObject::connect(tetheringBtn, &ButtonControl::clicked, [=]() { HardwareEon::launch_tethering(); });
-  layout->addWidget(tetheringBtn);
-  layout->addWidget(horizontal_line());
+  list->addItem(tetheringBtn);
 
   // SSH key management
-  layout->addWidget(new SshToggle());
-  layout->addWidget(horizontal_line());
-  layout->addWidget(new SshControl());
+  list->addItem(new SshToggle());
+  list->addItem(new SshControl());
 
+  layout->addWidget(list);
   layout->addStretch(1);
 #else
   Networking *w = new Networking(parent);
@@ -354,7 +377,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
 
   const int padding = panels.size() > 3 ? 25 : 35;
 
-  nav_btns = new QButtonGroup();
+  nav_btns = new QButtonGroup(this);
   for (auto &[name, panel] : panels) {
     QPushButton *btn = new QPushButton(name);
     btn->setCheckable(true);

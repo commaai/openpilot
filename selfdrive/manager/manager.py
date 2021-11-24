@@ -43,6 +43,9 @@ def manager_init():
   if params.get_bool("RecordFrontLock"):
     params.put_bool("RecordFront", True)
 
+  if not params.get_bool("DisableRadar_Allow"):
+    params.delete("DisableRadar")
+
   # set unset params
   for k, v in default_params:
     if params.get(k) is None:
@@ -54,8 +57,6 @@ def manager_init():
 
   if params.get("Passive") is None:
     raise Exception("Passive must be set to continue")
-
-  os.umask(0)  # Make sure we can create files with 777 permissions
 
   # Create folders needed for msgq
   try:
@@ -148,18 +149,24 @@ def manager_thread():
 
     started_prev = started
 
-    running_list = ["%s%s\u001b[0m" % ("\u001b[32m" if p.proc.is_alive() else "\u001b[31m", p.name)
-                    for p in managed_processes.values() if p.proc]
-    cloudlog.debug(' '.join(running_list))
+    running = ' '.join(["%s%s\u001b[0m" % ("\u001b[32m" if p.proc.is_alive() else "\u001b[31m", p.name)
+                       for p in managed_processes.values() if p.proc])
+    print(running)
+    cloudlog.debug(running)
 
     # send managerState
     msg = messaging.new_message('managerState')
     msg.managerState.processes = [p.get_process_state_msg() for p in managed_processes.values()]
     pm.send('managerState', msg)
 
-    # TODO: let UI handle this
-    # Exit main loop when uninstall is needed
-    if params.get_bool("DoUninstall"):
+    # Exit main loop when uninstall/shutdown/reboot is needed
+    shutdown = False
+    for param in ("DoUninstall", "DoShutdown", "DoReboot"):
+      if params.get_bool(param):
+        cloudlog.warning(f"Shutting down manager - {param} set")
+        shutdown = True
+
+    if shutdown:
       break
 
 
@@ -188,9 +195,16 @@ def main():
   finally:
     manager_cleanup()
 
-  if Params().get_bool("DoUninstall"):
+  params = Params()
+  if params.get_bool("DoUninstall"):
     cloudlog.warning("uninstalling")
     HARDWARE.uninstall()
+  elif params.get_bool("DoReboot"):
+    cloudlog.warning("reboot")
+    HARDWARE.reboot()
+  elif params.get_bool("DoShutdown"):
+    cloudlog.warning("shutdown")
+    HARDWARE.shutdown()
 
 
 if __name__ == "__main__":

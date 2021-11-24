@@ -19,14 +19,12 @@
 namespace CommaApi {
 
 QByteArray rsa_sign(const QByteArray &data) {
-  auto file = QFile(Path::rsa_file().c_str());
-  if (!file.open(QIODevice::ReadOnly)) {
+  static std::string key = util::read_file(Path::rsa_file());
+  if (key.empty()) {
     qDebug() << "No RSA private key found, please run manager.py or registration.py";
-    return QByteArray();
+    return {};
   }
-  auto key = file.readAll();
-  file.close();
-  file.deleteLater();
+
   BIO* mem = BIO_new_mem_buf(key.data(), key.size());
   assert(mem);
   RSA* rsa_private = PEM_read_bio_RSAPrivateKey(mem, NULL, NULL, NULL);
@@ -92,7 +90,11 @@ void HttpRequest::sendRequest(const QString &requestURL, const HttpRequest::Meth
 
   QNetworkRequest request;
   request.setUrl(QUrl(requestURL));
-  request.setRawHeader(QByteArray("Authorization"), ("JWT " + token).toUtf8());
+  request.setRawHeader("User-Agent", getUserAgent().toUtf8());
+
+  if (!token.isEmpty()) {
+    request.setRawHeader(QByteArray("Authorization"), ("JWT " + token).toUtf8());
+  }
 
   if (method == HttpRequest::Method::GET) {
     reply = networkAccessManager->get(request);
@@ -119,8 +121,11 @@ void HttpRequest::requestFinished() {
       success = true;
       emit receivedResponse(response);
     } else {
-      qDebug() << reply->errorString();
       emit failedResponse(reply->errorString());
+
+      if (reply->error() == QNetworkReply::ContentAccessDenied || reply->error() == QNetworkReply::AuthenticationRequiredError) {
+        qWarning() << ">>  Unauthorized. Authenticate with tools/lib/auth.py  <<";
+      }
     }
   } else {
     networkAccessManager->clearAccessCache();

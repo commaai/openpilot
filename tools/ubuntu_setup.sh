@@ -1,67 +1,121 @@
 #!/bin/bash -e
 
-sudo apt-get update && sudo apt-get install -y --no-install-recommends \
+OP_ROOT=$(git rev-parse --show-toplevel)
+
+# Install packages present in all supported versions of Ubuntu
+function install_ubuntu_common_requirements() {
+  sudo apt-get update
+  sudo apt-get install -y --no-install-recommends \
     autoconf \
     build-essential \
-    bzip2 \
-    capnproto \
-    cppcheck \
-    libcapnp-dev \
     clang \
     cmake \
-    curl \
-    ffmpeg \
-    git \
-    libavformat-dev libavcodec-dev libavdevice-dev libavutil-dev libswscale-dev libavresample-dev libavfilter-dev \
+    make \
+    cppcheck \
+    libtool \
+    libstdc++-arm-none-eabi-newlib \
+    gcc-arm-none-eabi \
+    bzip2 \
+    liblzma-dev \
     libarchive-dev \
     libbz2-dev \
+    capnproto \
+    libcapnp-dev \
+    curl \
     libcurl4-openssl-dev \
+    wget \
+    git \
+    git-lfs \
+    ffmpeg \
+    libavformat-dev \
+    libavcodec-dev \
+    libavdevice-dev \
+    libavutil-dev \
+    libavfilter-dev \
     libeigen3-dev \
     libffi-dev \
     libglew-dev \
     libgles2-mesa-dev \
     libglfw3-dev \
     libglib2.0-0 \
-    liblzma-dev \
     libomp-dev \
     libopencv-dev \
     libpng16-16 \
     libssl-dev \
-    libstdc++-arm-none-eabi-newlib \
     libsqlite3-dev \
-    libtool \
     libusb-1.0-0-dev \
     libzmq3-dev \
-    libsdl-image1.2-dev libsdl-mixer1.2-dev libsdl-ttf2.0-dev libsmpeg-dev \
-    libsdl1.2-dev  libportmidi-dev libswscale-dev libavformat-dev libavcodec-dev libfreetype6-dev \
+    libsdl1.2-dev \
+    libsdl-image1.2-dev \
+    libsdl-mixer1.2-dev \
+    libsdl-ttf2.0-dev \
+    libsmpeg-dev \
+    libportmidi-dev \
+    libfreetype6-dev \
     libsystemd-dev \
     locales \
+    opencl-headers \
     ocl-icd-libopencl1 \
     ocl-icd-opencl-dev \
-    opencl-headers \
+    clinfo \
     python-dev \
     python3-pip \
     qml-module-qtquick2 \
-    qt5-default \
     qtmultimedia5-dev \
     qtwebengine5-dev \
     qtlocation5-dev \
     qtpositioning5-dev \
     libqt5sql5-sqlite \
     libqt5svg5-dev \
-    screen \
-    sudo \
-    vim \
-    wget \
-    gcc-arm-none-eabi \
     libqt5x11extras5-dev \
-    libreadline-dev
+    libreadline-dev \
+    libdw1
+}
 
-# install git lfs
-if ! command -v "git-lfs" > /dev/null 2>&1; then
-  curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
-  sudo apt-get install git-lfs
+# Install Ubuntu 21.10 packages
+function install_ubuntu_latest_requirements() {
+  install_ubuntu_common_requirements
+
+  sudo apt-get install -y --no-install-recommends \
+    qtbase5-dev \
+    qtchooser \
+    qt5-qmake \
+    qtbase5-dev-tools
+}
+
+# Install Ubuntu 20.04 packages
+function install_ubuntu_lts_requirements() {
+  install_ubuntu_common_requirements
+
+  sudo apt-get install -y --no-install-recommends \
+    libavresample-dev \
+    qt5-default
+}
+
+# Detect OS using /etc/os-release file
+if [ -f "/etc/os-release" ]; then
+  source /etc/os-release
+  case "$ID $VERSION_ID" in
+    "ubuntu 21.10")
+      install_ubuntu_latest_requirements
+      ;;
+    "ubuntu 20.04")
+      install_ubuntu_lts_requirements
+      ;;
+    *)
+      echo "$ID $VERSION_ID is unsupported. This setup script is written for Ubuntu 20.04."
+      read -p "Would you like to attempt installation anyway? " -n 1 -r
+      echo ""
+      if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        exit 1
+      fi
+      install_ubuntu_lts_requirements
+  esac
+else
+  echo "No /etc/os-release in the system"
+  exit 1
 fi
+
 
 # install pyenv
 if ! command -v "pyenv" > /dev/null 2>&1; then
@@ -69,12 +123,11 @@ if ! command -v "pyenv" > /dev/null 2>&1; then
 fi
 
 # in the openpilot repo
-cd $HOME/openpilot
+cd $OP_ROOT
 
 source ~/.bashrc
 if [ -z "$OPENPILOT_ENV" ]; then
-  OP_DIR=$(git rev-parse --show-toplevel)
-  printf "\nsource %s/tools/openpilot_env.sh" "$OP_DIR" >> ~/.bashrc
+  printf "\nsource %s/tools/openpilot_env.sh" "$OP_ROOT" >> ~/.bashrc
   source ~/.bashrc
   echo "added openpilot_env to bashrc"
 fi
@@ -85,16 +138,16 @@ git submodule init
 git submodule update
 
 # install python
+PYENV_PYTHON_VERSION=$(cat $OP_ROOT/.python-version)
 PATH=$HOME/.pyenv/bin:$HOME/.pyenv/shims:$PATH
-pyenv install -s 3.8.5
-pyenv global 3.8.5
+pyenv install -s ${PYENV_PYTHON_VERSION}
 pyenv rehash
 eval "$(pyenv init -)"
 
 # **** in python env ****
-pip install --upgrade pip==20.2.4
-pip install pipenv==2020.8.13
-pipenv install --dev --system --deploy
+pip install pip==21.3.1
+pip install pipenv==2021.5.29
+pipenv install --dev --deploy
 
 echo
 echo "----   FINISH OPENPILOT SETUP   ----"

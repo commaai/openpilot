@@ -3,42 +3,54 @@
 #include <memory>
 
 #include <QOpenGLFunctions>
+#include <QOpenGLShaderProgram>
 #include <QOpenGLWidget>
-
+#include <QThread>
 #include "cereal/visionipc/visionipc_client.h"
-#include "selfdrive/common/glutil.h"
-#include "selfdrive/common/mat.h"
 #include "selfdrive/common/visionimg.h"
 #include "selfdrive/ui/ui.h"
 
 class CameraViewWidget : public QOpenGLWidget, protected QOpenGLFunctions {
-Q_OBJECT
+  Q_OBJECT
 
 public:
   using QOpenGLWidget::QOpenGLWidget;
-  explicit CameraViewWidget(VisionStreamType stream_type, QWidget* parent = nullptr);
+  explicit CameraViewWidget(VisionStreamType stream_type, bool zoom, QWidget* parent = nullptr);
   ~CameraViewWidget();
+  void setStreamType(VisionStreamType type) { stream_type = type; }
+  void setBackgroundColor(const QColor &color) { bg = color; }
 
 signals:
- void frameUpdated();
+  void clicked();
+  void vipcThreadConnected(VisionIpcClient *);
+  void vipcThreadFrameReceived(VisionBuf *);
 
 protected:
   void paintGL() override;
   void initializeGL() override;
+  void resizeGL(int w, int h) override { updateFrameMat(w, h); }
   void showEvent(QShowEvent *event) override;
   void hideEvent(QHideEvent *event) override;
+  void mouseReleaseEvent(QMouseEvent *event) override { emit clicked(); }
+  void updateFrameMat(int w, int h);
+  void vipcThread();
 
-protected slots:
-  void updateFrame();
-
-private:
+  bool zoomed_view;
   VisionBuf *latest_frame = nullptr;
   GLuint frame_vao, frame_vbo, frame_ibo;
   mat4 frame_mat;
-  std::unique_ptr<VisionIpcClient> vipc_client;
   std::unique_ptr<EGLImageTexture> texture[UI_BUF_COUNT];
-  std::unique_ptr<GLShader> gl_shader;
+  QOpenGLShaderProgram *program;
+  QColor bg = QColor("#000000");
 
-  VisionStreamType stream_type;
-  QTimer* timer;
+  int stream_width = 0;
+  int stream_height = 0;
+  std::atomic<VisionStreamType> stream_type;
+  QThread *vipc_thread = nullptr;
+
+  std::mutex texture_lock;
+
+protected slots:
+  void vipcConnected(VisionIpcClient *vipc_client);
+  void vipcFrameReceived(VisionBuf *buf);
 };

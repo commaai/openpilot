@@ -1,13 +1,12 @@
 from cereal import car
-from common.numpy_fast import clip
-from selfdrive.car import apply_toyota_steer_torque_limits, create_gas_command, make_can_msg
+from common.numpy_fast import clip, interp
+from selfdrive.car import apply_toyota_steer_torque_limits, create_gas_interceptor_command, make_can_msg
 from selfdrive.car.toyota.toyotacan import create_steer_command, create_ui_command, \
                                            create_accel_command, create_acc_cancel_command, \
                                            create_fcw_command, create_lta_steer_command
 from selfdrive.car.toyota.values import CAR, STATIC_DSU_MSGS, NO_STOP_TIMER_CAR, TSS2_CAR, \
-                                        MIN_ACC_SPEED, PEDAL_HYST_GAP, CarControllerParams
+                                        MIN_ACC_SPEED, PEDAL_HYST_GAP, PEDAL_SCALE, CarControllerParams
 from opendbc.can.packer import CANPacker
-
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 
@@ -38,14 +37,14 @@ class CarController():
 
     self.packer = CANPacker(dbc_name)
 
-  def update(self, enabled, CS, frame, actuators, pcm_cancel_cmd, hud_alert,
+  def update(self, enabled, active, CS, frame, actuators, pcm_cancel_cmd, hud_alert,
              left_line, right_line, lead, left_lane_depart, right_lane_depart):
 
     # *** compute control surfaces ***
 
     # gas and brake
     interceptor_gas_cmd = 0.
-    pcm_accel_cmd = actuators.gas - actuators.brake
+    pcm_accel_cmd = actuators.accel
 
     if CS.CP.enableGasInterceptor:
       # handle hysteresis when around the minimum acc speed
@@ -54,14 +53,15 @@ class CarController():
       elif CS.out.vEgo > MIN_ACC_SPEED + PEDAL_HYST_GAP:
         self.use_interceptor = False
 
-      if self.use_interceptor and enabled:
+      if self.use_interceptor and active:
         # only send negative accel when using interceptor. gas handles acceleration
-        # +0.06 offset to reduce ABS pump usage when OP is engaged
-        interceptor_gas_cmd = clip(actuators.gas, 0., 1.)
-        pcm_accel_cmd = 0.06 - actuators.brake
+        # +0.18 m/s^2 offset to reduce ABS pump usage when OP is engaged
+        MAX_INTERCEPTOR_GAS = interp(CS.out.vEgo, [0.0, MIN_ACC_SPEED], [0.2, 0.5])
+        interceptor_gas_cmd = clip(actuators.accel / PEDAL_SCALE, 0., MAX_INTERCEPTOR_GAS)
+        pcm_accel_cmd = 0.18 - max(0, -actuators.accel)
 
     pcm_accel_cmd, self.accel_steady = accel_hysteresis(pcm_accel_cmd, self.accel_steady, enabled)
-    pcm_accel_cmd = clip(pcm_accel_cmd * CarControllerParams.ACCEL_SCALE, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
+    pcm_accel_cmd = clip(pcm_accel_cmd, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
 
     # steer torque
     new_steer = int(round(actuators.steer * CarControllerParams.STEER_MAX))
@@ -75,8 +75,9 @@ class CarController():
     else:
       apply_steer_req = 1
 
+    # TODO: probably can delete this. CS.pcm_acc_status uses a different signal
+    # than CS.cruiseState.enabled. confirm they're not meaningfully different
     if not enabled and CS.pcm_acc_status:
-      # send pcm acc cancel cmd if drive is disabled but pcm is still on, or if the system can't be activated
       pcm_cancel_cmd = 1
 
     # on entering standstill, send standstill request
@@ -112,7 +113,7 @@ class CarController():
       lead = lead or CS.out.vEgo < 12.    # at low speed we always assume the lead is present do ACC can be engaged
 
       # Lexus IS uses a different cancellation message
-      if pcm_cancel_cmd and CS.CP.carFingerprint == CAR.LEXUS_IS:
+      if pcm_cancel_cmd and CS.CP.carFingerprint in [CAR.LEXUS_IS, CAR.LEXUS_RC]:
         can_sends.append(create_acc_cancel_command(self.packer))
       elif CS.CP.openpilotLongitudinalControl:
         can_sends.append(create_accel_command(self.packer, pcm_accel_cmd, pcm_cancel_cmd, self.standstill_req, lead, CS.acc_type))
@@ -122,7 +123,7 @@ class CarController():
     if frame % 2 == 0 and CS.CP.enableGasInterceptor:
       # send exactly zero if gas cmd is zero. Interceptor will send the max between read value and gas cmd.
       # This prevents unexpected pedal range rescaling
-      can_sends.append(create_gas_command(self.packer, interceptor_gas_cmd, frame // 2))
+      can_sends.append(create_gas_interceptor_command(self.packer, interceptor_gas_cmd, frame // 2))
 
     # ui mesg is at 100Hz but we send asap if:
     # - there is something to display

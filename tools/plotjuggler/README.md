@@ -31,7 +31,7 @@ optional arguments:
 
 Example:
 
-`./juggle.py "0982d79ebb0de295|2021-01-17--17-13-08"`
+`./juggle.py "4cf7a6ad03080c90|2021-09-29--13-46-36"`
 
 ## Streaming
 
@@ -47,7 +47,13 @@ If streaming to PlotJuggler from a replay on your PC, simply run: `./juggle.py -
 
 For a quick demo, go through the installation step and run this command:
 
-`./juggle.py "https://commadataci.blob.core.windows.net/openpilotci/d83f36766f8012a5/2020-02-05--18-42-21/0/rlog.bz2" --layout=demo_layout.xml`
+`./juggle.py "https://commadataci.blob.core.windows.net/openpilotci/d83f36766f8012a5/2020-02-05--18-42-21/0/rlog.bz2" --layout=layouts/demo.xml`
+
+## Tuning
+
+Use this layout to generate plots for tuning PRs. Also see tuning wiki and tuning PR template.
+
+`--layout layouts/tuning.xml`
 
 
 ![screenshot](https://i.imgur.com/cizHCH3.png)

@@ -30,12 +30,12 @@ public slots:
 protected:
   void paintEvent(QPaintEvent *event) override;
   void mouseReleaseEvent(QMouseEvent *event) override;
-  void drawMetric(QPainter &p, const QString &label, const QString &val, QColor c, int y);
+  void drawMetric(QPainter &p, const QString &label, QColor c, int y);
 
   QImage home_img, settings_img;
   const QMap<cereal::DeviceState::NetworkType, QString> network_type = {
     {cereal::DeviceState::NetworkType::NONE, "--"},
-    {cereal::DeviceState::NetworkType::WIFI, "WiFi"},
+    {cereal::DeviceState::NetworkType::WIFI, "Wi-Fi"},
     {cereal::DeviceState::NetworkType::ETHERNET, "ETH"},
     {cereal::DeviceState::NetworkType::CELL2_G, "2G"},
     {cereal::DeviceState::NetworkType::CELL3_G, "3G"},

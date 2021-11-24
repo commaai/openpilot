@@ -46,46 +46,46 @@ extern "C" {
 	{%- set hessian_approx = "GAUSS_NEWTON" %}
 {%- endif %}
 
-{% if solver_options.integrator_type == "IRK" %}
+{% if solver_options.integrator_type == "IRK" or solver_options.integrator_type == "LIFTED_IRK" %}
 // implicit ODE
 int {{ model.name }}_impl_dae_fun(const real_t** arg, real_t** res, int* iw, real_t* w, void *mem);
 int {{ model.name }}_impl_dae_fun_work(int *, int *, int *, int *);
 const int *{{ model.name }}_impl_dae_fun_sparsity_in(int);
 const int *{{ model.name }}_impl_dae_fun_sparsity_out(int);
-int {{ model.name }}_impl_dae_fun_n_in();
-int {{ model.name }}_impl_dae_fun_n_out();
+int {{ model.name }}_impl_dae_fun_n_in(void);
+int {{ model.name }}_impl_dae_fun_n_out(void);
 
 // implicit ODE
 int {{ model.name }}_impl_dae_fun_jac_x_xdot_z(const real_t** arg, real_t** res, int* iw, real_t* w, void *mem);
 int {{ model.name }}_impl_dae_fun_jac_x_xdot_z_work(int *, int *, int *, int *);
 const int *{{ model.name }}_impl_dae_fun_jac_x_xdot_z_sparsity_in(int);
 const int *{{ model.name }}_impl_dae_fun_jac_x_xdot_z_sparsity_out(int);
-int {{ model.name }}_impl_dae_fun_jac_x_xdot_z_n_in();
-int {{ model.name }}_impl_dae_fun_jac_x_xdot_z_n_out();
+int {{ model.name }}_impl_dae_fun_jac_x_xdot_z_n_in(void);
+int {{ model.name }}_impl_dae_fun_jac_x_xdot_z_n_out(void);
 
 // implicit ODE
 int {{ model.name }}_impl_dae_jac_x_xdot_u_z(const real_t** arg, real_t** res, int* iw, real_t* w, void *mem);
 int {{ model.name }}_impl_dae_jac_x_xdot_u_z_work(int *, int *, int *, int *);
 const int *{{ model.name }}_impl_dae_jac_x_xdot_u_z_sparsity_in(int);
 const int *{{ model.name }}_impl_dae_jac_x_xdot_u_z_sparsity_out(int);
-int {{ model.name }}_impl_dae_jac_x_xdot_u_z_n_in();
-int {{ model.name }}_impl_dae_jac_x_xdot_u_z_n_out();
+int {{ model.name }}_impl_dae_jac_x_xdot_u_z_n_in(void);
+int {{ model.name }}_impl_dae_jac_x_xdot_u_z_n_out(void);
 
-// // implicit ODE - for lifted_irk
-// int {{ model.name }}_impl_dae_fun_jac_x_xdot_u(const real_t** arg, real_t** res, int* iw, real_t* w, void *mem);
-// int {{ model.name }}_impl_dae_fun_jac_x_xdot_u_work(int *, int *, int *, int *);
-// const int *{{ model.name }}_impl_dae_fun_jac_x_xdot_u_sparsity_in(int);
-// const int *{{ model.name }}_impl_dae_fun_jac_x_xdot_u_sparsity_out(int);
-// int {{ model.name }}_impl_dae_fun_jac_x_xdot_u_n_in();
-// int {{ model.name }}_impl_dae_fun_jac_x_xdot_u_n_out();
+// implicit ODE - for lifted_irk
+int {{ model.name }}_impl_dae_fun_jac_x_xdot_u(const real_t** arg, real_t** res, int* iw, real_t* w, void *mem);
+int {{ model.name }}_impl_dae_fun_jac_x_xdot_u_work(int *, int *, int *, int *);
+const int *{{ model.name }}_impl_dae_fun_jac_x_xdot_u_sparsity_in(int);
+const int *{{ model.name }}_impl_dae_fun_jac_x_xdot_u_sparsity_out(int);
+int {{ model.name }}_impl_dae_fun_jac_x_xdot_u_n_in(void);
+int {{ model.name }}_impl_dae_fun_jac_x_xdot_u_n_out(void);
 
 {%- if hessian_approx == "EXACT" %}
 int {{ model.name }}_impl_dae_hess(const real_t** arg, real_t** res, int* iw, real_t* w, void *mem);
 int {{ model.name }}_impl_dae_hess_work(int *, int *, int *, int *);
 const int *{{ model.name }}_impl_dae_hess_sparsity_in(int);
 const int *{{ model.name }}_impl_dae_hess_sparsity_out(int);
-int {{ model.name }}_impl_dae_hess_n_in();
-int {{ model.name }}_impl_dae_hess_n_out();
+int {{ model.name }}_impl_dae_hess_n_in(void);
+int {{ model.name }}_impl_dae_hess_n_out(void);
 {%- endif %}
 
 {% elif solver_options.integrator_type == "GNSF" %}
@@ -95,40 +95,40 @@ int        {{ model.name }}_gnsf_get_matrices_fun(const double** arg, double** r
 int        {{ model.name }}_gnsf_get_matrices_fun_work(int *, int *, int *, int *);
 const int *{{ model.name }}_gnsf_get_matrices_fun_sparsity_in(int);
 const int *{{ model.name }}_gnsf_get_matrices_fun_sparsity_out(int);
-int        {{ model.name }}_gnsf_get_matrices_fun_n_in();
-int        {{ model.name }}_gnsf_get_matrices_fun_n_out();
+int        {{ model.name }}_gnsf_get_matrices_fun_n_in(void);
+int        {{ model.name }}_gnsf_get_matrices_fun_n_out(void);
 
 // phi_fun
 int        {{ model.name }}_gnsf_phi_fun(const double** arg, double** res, int* iw, double* w, void *mem);
 int        {{ model.name }}_gnsf_phi_fun_work(int *, int *, int *, int *);
 const int *{{ model.name }}_gnsf_phi_fun_sparsity_in(int);
 const int *{{ model.name }}_gnsf_phi_fun_sparsity_out(int);
-int        {{ model.name }}_gnsf_phi_fun_n_in();
-int        {{ model.name }}_gnsf_phi_fun_n_out();
+int        {{ model.name }}_gnsf_phi_fun_n_in(void);
+int        {{ model.name }}_gnsf_phi_fun_n_out(void);
 
 // phi_fun_jac_y
 int        {{ model.name }}_gnsf_phi_fun_jac_y(const double** arg, double** res, int* iw, double* w, void *mem);
 int        {{ model.name }}_gnsf_phi_fun_jac_y_work(int *, int *, int *, int *);
 const int *{{ model.name }}_gnsf_phi_fun_jac_y_sparsity_in(int);
 const int *{{ model.name }}_gnsf_phi_fun_jac_y_sparsity_out(int);
-int        {{ model.name }}_gnsf_phi_fun_jac_y_n_in();
-int        {{ model.name }}_gnsf_phi_fun_jac_y_n_out();
+int        {{ model.name }}_gnsf_phi_fun_jac_y_n_in(void);
+int        {{ model.name }}_gnsf_phi_fun_jac_y_n_out(void);
 
 // phi_jac_y_uhat
 int        {{ model.name }}_gnsf_phi_jac_y_uhat(const double** arg, double** res, int* iw, double* w, void *mem);
 int        {{ model.name }}_gnsf_phi_jac_y_uhat_work(int *, int *, int *, int *);
 const int *{{ model.name }}_gnsf_phi_jac_y_uhat_sparsity_in(int);
 const int *{{ model.name }}_gnsf_phi_jac_y_uhat_sparsity_out(int);
-int        {{ model.name }}_gnsf_phi_jac_y_uhat_n_in();
-int        {{ model.name }}_gnsf_phi_jac_y_uhat_n_out();
+int        {{ model.name }}_gnsf_phi_jac_y_uhat_n_in(void);
+int        {{ model.name }}_gnsf_phi_jac_y_uhat_n_out(void);
 
 // f_lo_fun_jac_x1k1uz
 int        {{ model.name }}_gnsf_f_lo_fun_jac_x1k1uz(const double** arg, double** res, int* iw, double* w, void *mem);
 int        {{ model.name }}_gnsf_f_lo_fun_jac_x1k1uz_work(int *, int *, int *, int *);
 const int *{{ model.name }}_gnsf_f_lo_fun_jac_x1k1uz_sparsity_in(int);
 const int *{{ model.name }}_gnsf_f_lo_fun_jac_x1k1uz_sparsity_out(int);
-int        {{ model.name }}_gnsf_f_lo_fun_jac_x1k1uz_n_in();
-int        {{ model.name }}_gnsf_f_lo_fun_jac_x1k1uz_n_out();
+int        {{ model.name }}_gnsf_f_lo_fun_jac_x1k1uz_n_in(void);
+int        {{ model.name }}_gnsf_f_lo_fun_jac_x1k1uz_n_out(void);
 
 {% elif solver_options.integrator_type == "ERK" %}
 /* explicit ODE */
@@ -138,32 +138,32 @@ int {{ model.name }}_expl_ode_fun(const real_t** arg, real_t** res, int* iw, rea
 int {{ model.name }}_expl_ode_fun_work(int *, int *, int *, int *);
 const int *{{ model.name }}_expl_ode_fun_sparsity_in(int);
 const int *{{ model.name }}_expl_ode_fun_sparsity_out(int);
-int {{ model.name }}_expl_ode_fun_n_in();
-int {{ model.name }}_expl_ode_fun_n_out();
+int {{ model.name }}_expl_ode_fun_n_in(void);
+int {{ model.name }}_expl_ode_fun_n_out(void);
 
 // explicit forward VDE
 int {{ model.name }}_expl_vde_forw(const real_t** arg, real_t** res, int* iw, real_t* w, void *mem);
 int {{ model.name }}_expl_vde_forw_work(int *, int *, int *, int *);
 const int *{{ model.name }}_expl_vde_forw_sparsity_in(int);
 const int *{{ model.name }}_expl_vde_forw_sparsity_out(int);
-int {{ model.name }}_expl_vde_forw_n_in();
-int {{ model.name }}_expl_vde_forw_n_out();
+int {{ model.name }}_expl_vde_forw_n_in(void);
+int {{ model.name }}_expl_vde_forw_n_out(void);
 
 // explicit adjoint VDE
 int {{ model.name }}_expl_vde_adj(const real_t** arg, real_t** res, int* iw, real_t* w, void *mem);
 int {{ model.name }}_expl_vde_adj_work(int *, int *, int *, int *);
 const int *{{ model.name }}_expl_vde_adj_sparsity_in(int);
 const int *{{ model.name }}_expl_vde_adj_sparsity_out(int);
-int {{ model.name }}_expl_vde_adj_n_in();
-int {{ model.name }}_expl_vde_adj_n_out();
+int {{ model.name }}_expl_vde_adj_n_in(void);
+int {{ model.name }}_expl_vde_adj_n_out(void);
 
 {%- if hessian_approx == "EXACT" %}
 int {{ model.name }}_expl_ode_hess(const real_t** arg, real_t** res, int* iw, real_t* w, void *mem);
 int {{ model.name }}_expl_ode_hess_work(int *, int *, int *, int *);
 const int *{{ model.name }}_expl_ode_hess_sparsity_in(int);
 const int *{{ model.name }}_expl_ode_hess_sparsity_out(int);
-int {{ model.name }}_expl_ode_hess_n_in();
-int {{ model.name }}_expl_ode_hess_n_out();
+int {{ model.name }}_expl_ode_hess_n_in(void);
+int {{ model.name }}_expl_ode_hess_n_out(void);
 {%- endif %}
 
 {% elif solver_options.integrator_type == "DISCRETE" %}
@@ -173,23 +173,23 @@ int {{ model.name }}_dyn_disc_phi_fun(const real_t** arg, real_t** res, int* iw,
 int {{ model.name }}_dyn_disc_phi_fun_work(int *, int *, int *, int *);
 const int *{{ model.name }}_dyn_disc_phi_fun_sparsity_in(int);
 const int *{{ model.name }}_dyn_disc_phi_fun_sparsity_out(int);
-int {{ model.name }}_dyn_disc_phi_fun_n_in();
-int {{ model.name }}_dyn_disc_phi_fun_n_out();
+int {{ model.name }}_dyn_disc_phi_fun_n_in(void);
+int {{ model.name }}_dyn_disc_phi_fun_n_out(void);
 
 int {{ model.name }}_dyn_disc_phi_fun_jac(const real_t** arg, real_t** res, int* iw, real_t* w, void *mem);
 int {{ model.name }}_dyn_disc_phi_fun_jac_work(int *, int *, int *, int *);
 const int *{{ model.name }}_dyn_disc_phi_fun_jac_sparsity_in(int);
 const int *{{ model.name }}_dyn_disc_phi_fun_jac_sparsity_out(int);
-int {{ model.name }}_dyn_disc_phi_fun_jac_n_in();
-int {{ model.name }}_dyn_disc_phi_fun_jac_n_out();
+int {{ model.name }}_dyn_disc_phi_fun_jac_n_in(void);
+int {{ model.name }}_dyn_disc_phi_fun_jac_n_out(void);
 
 {%- if hessian_approx == "EXACT" %}
 int {{ model.name }}_dyn_disc_phi_fun_jac_hess(const real_t** arg, real_t** res, int* iw, real_t* w, void *mem);
 int {{ model.name }}_dyn_disc_phi_fun_jac_hess_work(int *, int *, int *, int *);
 const int *{{ model.name }}_dyn_disc_phi_fun_jac_hess_sparsity_in(int);
 const int *{{ model.name }}_dyn_disc_phi_fun_jac_hess_sparsity_out(int);
-int {{ model.name }}_dyn_disc_phi_fun_jac_hess_n_in();
-int {{ model.name }}_dyn_disc_phi_fun_jac_hess_n_out();
+int {{ model.name }}_dyn_disc_phi_fun_jac_hess_n_in(void);
+int {{ model.name }}_dyn_disc_phi_fun_jac_hess_n_out(void);
 {%- endif %}
 {% else %}
   {%- if hessian_approx == "EXACT" %}

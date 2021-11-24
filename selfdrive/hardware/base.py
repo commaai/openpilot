@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from collections import namedtuple
 
-ThermalConfig = namedtuple('ThermalConfig', ['cpu', 'gpu', 'mem', 'bat', 'ambient'])
+ThermalConfig = namedtuple('ThermalConfig', ['cpu', 'gpu', 'mem', 'bat', 'ambient', 'pmic'])
 
 class HardwareBase:
   @staticmethod
@@ -111,6 +111,10 @@ class HardwareBase:
     pass
 
   @abstractmethod
+  def get_screen_brightness(self):
+    pass
+
+  @abstractmethod
   def set_power_save(self, powersave_enabled):
     pass
 
@@ -120,6 +124,14 @@ class HardwareBase:
 
   @abstractmethod
   def get_modem_version(self):
+    pass
+
+  @abstractmethod
+  def get_modem_temperatures(self):
+    pass
+
+  @abstractmethod
+  def get_nvme_temperatures(self):
     pass
 
   @abstractmethod

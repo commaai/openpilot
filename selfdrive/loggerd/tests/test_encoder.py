@@ -15,7 +15,6 @@ from common.params import Params
 from common.timeout import Timeout
 from selfdrive.hardware import EON, TICI
 from selfdrive.loggerd.config import ROOT
-from selfdrive.test.helpers import with_processes
 from selfdrive.manager.process_config import managed_processes
 from tools.lib.logreader import LogReader
 
@@ -66,9 +65,14 @@ class TestEncoder(unittest.TestCase):
 
   # TODO: this should run faster than real time
   @parameterized.expand([(True, ), (False, )])
-  @with_processes(['camerad', 'sensord', 'loggerd'], init_time=3, ignore_stopped=['loggerd'])
   def test_log_rotation(self, record_front):
-    Params().put("RecordFront", str(int(record_front)))
+    Params().put_bool("RecordFront", record_front)
+
+    managed_processes['sensord'].start()
+    managed_processes['loggerd'].start()
+
+    time.sleep(1.0)
+    managed_processes['camerad'].start()
 
     num_segments = int(os.getenv("SEGMENTS", random.randint(10, 15)))
 
@@ -84,6 +88,7 @@ class TestEncoder(unittest.TestCase):
     def check_seg(i):
       # check each camera file size
       counts = []
+      first_frames = []
       for camera, fps, size, encode_idx_name in CAMERAS:
         if not record_front and "dcamera" in camera:
           continue
@@ -92,15 +97,12 @@ class TestEncoder(unittest.TestCase):
 
         file_path = f"{route_prefix_path}--{i}/{camera}"
 
-        # check file size
-        self.assertTrue(os.path.exists(file_path))
-        file_size = os.path.getsize(file_path)
-        self.assertTrue(math.isclose(file_size, size, rel_tol=FILE_SIZE_TOLERANCE))
+        # check file exists
+        self.assertTrue(os.path.exists(file_path), f"segment #{i}: '{file_path}' missing")
 
         # TODO: this ffprobe call is really slow
         # check frame count
-        cmd = f"ffprobe -v error -count_frames -select_streams v:0 -show_entries stream=nb_read_frames \
-                -of default=nokey=1:noprint_wrappers=1 {file_path}"
+        cmd = f"ffprobe -v error -select_streams v:0 -count_packets -show_entries stream=nb_read_packets -of csv=p=0 {file_path}"
         if TICI:
           cmd = "LD_LIBRARY_PATH=/usr/local/lib " + cmd
 
@@ -111,14 +113,22 @@ class TestEncoder(unittest.TestCase):
         counts.append(frame_count)
 
         self.assertTrue(abs(expected_frames - frame_count) <= frame_tolerance,
-                        f"{camera} failed frame count check: expected {expected_frames}, got {frame_count}")
+                        f"segment #{i}: {camera} failed frame count check: expected {expected_frames}, got {frame_count}")
+
+        # sanity check file size
+        file_size = os.path.getsize(file_path)
+        self.assertTrue(math.isclose(file_size, size, rel_tol=FILE_SIZE_TOLERANCE))
 
         # Check encodeIdx
         if encode_idx_name is not None:
           rlog_path = f"{route_prefix_path}--{i}/rlog.bz2"
+          msgs = [m for m in LogReader(rlog_path) if m.which() == encode_idx_name]
+          encode_msgs = [getattr(m, encode_idx_name) for m in msgs]
 
-          segment_idxs = [getattr(m, encode_idx_name).segmentId for m in LogReader(rlog_path) if m.which() == encode_idx_name]
-          encode_idxs = [getattr(m, encode_idx_name).encodeId for m in LogReader(rlog_path) if m.which() == encode_idx_name]
+          valid = [m.valid for m in msgs]
+          segment_idxs = [m.segmentId for m in encode_msgs]
+          encode_idxs = [m.encodeId for m in encode_msgs]
+          frame_idxs = [m.frameId for m in encode_msgs]
 
           # Check frame count
           self.assertEqual(frame_count, len(segment_idxs))
@@ -128,22 +138,30 @@ class TestEncoder(unittest.TestCase):
           self.assertEqual(0, segment_idxs[0])
           self.assertEqual(len(set(segment_idxs)), len(segment_idxs))
 
+          self.assertTrue(all(valid))
+
           if not eon_dcam:
             self.assertEqual(expected_frames * i, encode_idxs[0])
+            first_frames.append(frame_idxs[0])
           self.assertEqual(len(set(encode_idxs)), len(encode_idxs))
+
+      self.assertEqual(1, len(set(first_frames)))
 
       if TICI:
         expected_frames = fps * SEGMENT_LENGTH
         self.assertEqual(min(counts), expected_frames)
       shutil.rmtree(f"{route_prefix_path}--{i}")
 
-    for i in trange(num_segments + 1):
-      # poll for next segment
-      with Timeout(int(SEGMENT_LENGTH*2), error_msg=f"timed out waiting for segment {i}"):
-        while Path(f"{route_prefix_path}--{i}") not in Path(ROOT).iterdir():
-          time.sleep(0.1)
-
-    managed_processes['loggerd'].stop()
+    try:
+      for i in trange(num_segments + 1):
+        # poll for next segment
+        with Timeout(int(SEGMENT_LENGTH*10), error_msg=f"timed out waiting for segment {i}"):
+          while Path(f"{route_prefix_path}--{i}") not in Path(ROOT).iterdir():
+            time.sleep(0.1)
+    finally:
+      managed_processes['loggerd'].stop()
+      managed_processes['camerad'].stop()
+      managed_processes['sensord'].stop()
 
     for i in trange(num_segments):
       check_seg(i)

@@ -1,5 +1,7 @@
 from cereal import car
 from common.numpy_fast import mean
+from common.filter_simple import FirstOrderFilter
+from common.realtime import DT_CTRL
 from opendbc.can.can_define import CANDefine
 from selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
@@ -18,7 +20,7 @@ class CarState(CarStateBase):
     # Need to apply an offset as soon as the steering angle measurements are both received
     self.needs_angle_offset = True
     self.accurate_steer_angle_seen = False
-    self.angle_offset = 0.
+    self.angle_offset = FirstOrderFilter(None, 60.0, DT_CTRL, initialized=False)
 
     self.low_speed_lockout = False
     self.acc_type = 1
@@ -31,6 +33,7 @@ class CarState(CarStateBase):
     ret.seatbeltUnlatched = cp.vl["SEATS_DOORS"]["SEATBELT_DRIVER_UNLATCHED"] != 0
 
     ret.brakePressed = cp.vl["BRAKE_MODULE"]["BRAKE_PRESSED"] != 0
+    ret.brakeHoldActive = cp.vl["ESP_CONTROL"]["BRAKE_HOLD_ACTIVE"] == 1
     if self.CP.enableGasInterceptor:
       ret.gas = (cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS"] + cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS2"]) / 2.
       ret.gasPressed = ret.gas > 15
@@ -47,19 +50,21 @@ class CarState(CarStateBase):
 
     ret.standstill = ret.vEgoRaw < 0.001
 
+    ret.steeringAngleDeg = cp.vl["STEER_ANGLE_SENSOR"]["STEER_ANGLE"] + cp.vl["STEER_ANGLE_SENSOR"]["STEER_FRACTION"]
+    torque_sensor_angle_deg = cp.vl["STEER_TORQUE_SENSOR"]["STEER_ANGLE"]
+
     # Some newer models have a more accurate angle measurement in the TORQUE_SENSOR message. Use if non-zero
-    if abs(cp.vl["STEER_TORQUE_SENSOR"]["STEER_ANGLE"]) > 1e-3:
+    if abs(torque_sensor_angle_deg) > 1e-3:
       self.accurate_steer_angle_seen = True
 
     if self.accurate_steer_angle_seen:
-      ret.steeringAngleDeg = cp.vl["STEER_TORQUE_SENSOR"]["STEER_ANGLE"] - self.angle_offset
-      if self.needs_angle_offset:
-        angle_wheel = cp.vl["STEER_ANGLE_SENSOR"]["STEER_ANGLE"] + cp.vl["STEER_ANGLE_SENSOR"]["STEER_FRACTION"]
-        if abs(angle_wheel) > 1e-3:
-          self.needs_angle_offset = False
-          self.angle_offset = ret.steeringAngleDeg - angle_wheel
-    else:
-      ret.steeringAngleDeg = cp.vl["STEER_ANGLE_SENSOR"]["STEER_ANGLE"] + cp.vl["STEER_ANGLE_SENSOR"]["STEER_FRACTION"]
+      # Offset seems to be invalid for large steering angles
+      if abs(ret.steeringAngleDeg) < 90:
+        self.angle_offset.update(torque_sensor_angle_deg - ret.steeringAngleDeg)
+
+      if self.angle_offset.initialized:
+        ret.steeringAngleOffsetDeg = self.angle_offset.x
+        ret.steeringAngleDeg = torque_sensor_angle_deg - self.angle_offset.x
 
     ret.steeringRateDeg = cp.vl["STEER_ANGLE_SENSOR"]["STEER_RATE"]
 
@@ -74,7 +79,7 @@ class CarState(CarStateBase):
     ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD
     ret.steerWarning = cp.vl["EPS_STATUS"]["LKA_STATE"] not in [1, 5]
 
-    if self.CP.carFingerprint == CAR.LEXUS_IS:
+    if self.CP.carFingerprint in [CAR.LEXUS_IS, CAR.LEXUS_RC]:
       ret.cruiseState.available = cp.vl["DSU_CRUISE"]["MAIN_ON"] != 0
       ret.cruiseState.speed = cp.vl["DSU_CRUISE"]["SET_SPEED"] * CV.KPH_TO_MS
     else:
@@ -86,9 +91,9 @@ class CarState(CarStateBase):
 
     # some TSS2 cars have low speed lockout permanently set, so ignore on those cars
     # these cars are identified by an ACC_TYPE value of 2.
-    # TODO: it may be possible to avoid the lockout and gain stop and go if you
+    # TODO: it is possible to avoid the lockout and gain stop and go if you
     # send your own ACC_CONTROL msg on startup with ACC_TYPE set to 1
-    if (self.CP.carFingerprint not in TSS2_CAR and self.CP.carFingerprint != CAR.LEXUS_IS) or \
+    if (self.CP.carFingerprint not in TSS2_CAR and self.CP.carFingerprint not in [CAR.LEXUS_IS, CAR.LEXUS_RC]) or \
        (self.CP.carFingerprint in TSS2_CAR and self.acc_type == 1):
       self.low_speed_lockout = cp.vl["PCM_CRUISE_2"]["LOW_SPEED_LOCKOUT"] == 2
 
@@ -134,6 +139,7 @@ class CarState(CarStateBase):
       ("DOOR_OPEN_RR", "SEATS_DOORS", 1),
       ("SEATBELT_DRIVER_UNLATCHED", "SEATS_DOORS", 1),
       ("TC_DISABLED", "ESP_CONTROL", 1),
+      ("BRAKE_HOLD_ACTIVE", "ESP_CONTROL", 1),
       ("STEER_FRACTION", "STEER_ANGLE_SENSOR", 0),
       ("STEER_RATE", "STEER_ANGLE_SENSOR", 0),
       ("CRUISE_ACTIVE", "PCM_CRUISE", 0),
@@ -162,7 +168,7 @@ class CarState(CarStateBase):
       ("STEER_TORQUE_SENSOR", 50),
     ]
 
-    if CP.carFingerprint == CAR.LEXUS_IS:
+    if CP.carFingerprint in [CAR.LEXUS_IS, CAR.LEXUS_RC]:
       signals.append(("MAIN_ON", "DSU_CRUISE", 0))
       signals.append(("SET_SPEED", "DSU_CRUISE", 0))
       checks.append(("DSU_CRUISE", 5))
