@@ -115,4 +115,4 @@ struct LoggerdState {
   bool camera_synced[WideRoadCam + 1] = {};
 };
 
-void start_logging();
+void loggerd_thread();

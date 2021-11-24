@@ -185,7 +185,7 @@ void rotate_if_needed() {
   }
 }
 
-void start_logging() {
+void loggerd_thread() {
   clear_locks();
 
   // setup messaging

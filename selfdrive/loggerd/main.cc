@@ -14,7 +14,7 @@ int main(int argc, char** argv) {
     //assert(ret == 0);
   }
 
-  start_logging();
+  loggerd_thread();
 
   return 0;
 }
