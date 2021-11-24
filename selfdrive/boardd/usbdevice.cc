@@ -95,9 +95,10 @@ std::vector<std::string> USBDevice::list() {
 }
 
 int USBDevice::control_transfer(libusb_endpoint_direction dir, uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned int timeout) {
-  int ret;
-  const uint8_t bmRequestType = dir | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE;
   std::lock_guard lk(usb_lock);
+
+  int ret = LIBUSB_ERROR_NO_DEVICE;
+  const uint8_t bmRequestType = dir | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE;
   while (connected) {
     ret = libusb_control_transfer(dev_handle, bmRequestType, bRequest, wValue, wIndex, NULL, 0, timeout);
     if (ret >= 0) break;
@@ -114,6 +115,7 @@ int USBDevice::control_transfer(libusb_endpoint_direction dir, uint8_t bRequest,
 
 int USBDevice::bulk_transfer(uint8_t endpoint, uint8_t *data, int length, unsigned int timeout) {
   std::lock_guard lk(usb_lock);
+
   int transferred = 0;
   while (connected) {
     int ret = libusb_bulk_transfer(dev_handle, endpoint, data, length, &transferred, timeout);
