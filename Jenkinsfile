@@ -159,7 +159,7 @@ pipeline {
 
                 stage('C2: replay') {
                   steps {
-                    phone_steps("eon-party", [
+                    phone_steps("eon2", [
                       ["build", "cd selfdrive/manager && ./build.py"],
                       ["model replay", "cd selfdrive/test/process_replay && ./model_replay.py"],
                     ])
