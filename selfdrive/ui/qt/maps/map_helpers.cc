@@ -12,10 +12,6 @@ QString get_mapbox_token() {
   return MAPBOX_TOKEN.isEmpty() ? CommaApi::create_jwt({}, 4 * 7 * 24 * 3600) : MAPBOX_TOKEN;
 }
 
-QGeoCoordinate to_QGeoCoordinate(const QMapbox::Coordinate &in) {
-  return QGeoCoordinate(in.first, in.second);
-}
-
 QMapboxGLSettings get_mapbox_settings() {
   QMapboxGLSettings settings;
 
@@ -26,6 +22,10 @@ QMapboxGLSettings get_mapbox_settings() {
   settings.setAccessToken(get_mapbox_token());
 
   return settings;
+}
+
+QGeoCoordinate to_QGeoCoordinate(const QMapbox::Coordinate &in) {
+  return QGeoCoordinate(in.first, in.second);
 }
 
 QMapbox::CoordinatesCollections model_to_collection(
