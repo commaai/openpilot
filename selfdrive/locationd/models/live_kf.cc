@@ -33,6 +33,9 @@ LiveKalman::LiveKalman() {
 
   this->initial_x = live_initial_x;
   this->initial_P = live_initial_P_diag.asDiagonal();
+  this->fake_gps_pos_cov = live_fake_gps_pos_cov_diag.asDiagonal();
+  this->fake_gps_vel_cov = live_fake_gps_vel_cov_diag.asDiagonal();
+  this->reset_orientation_P = live_reset_orientation_diag.asDiagonal();
   this->Q = live_Q_diag.asDiagonal();
   for (auto& pair : live_obs_noise_diag) {
     this->obs_noise[pair.first] = pair.second.asDiagonal();
@@ -87,12 +90,28 @@ std::optional<Estimate> LiveKalman::predict_and_observe(double t, int kind, std:
   return r;
 }
 
+void LiveKalman::predict(double t) {
+  this->filter->predict(t);
+}
+
 Eigen::VectorXd LiveKalman::get_initial_x() {
   return this->initial_x;
 }
 
 MatrixXdr LiveKalman::get_initial_P() {
   return this->initial_P;
+}
+
+MatrixXdr LiveKalman::get_fake_gps_pos_cov() {
+  return this->fake_gps_pos_cov;
+}
+
+MatrixXdr LiveKalman::get_fake_gps_vel_cov() {
+  return this->fake_gps_vel_cov;
+}
+
+MatrixXdr LiveKalman::get_reset_orientation_P() {
+  return this->reset_orientation_P;
 }
 
 MatrixXdr LiveKalman::H(VectorXd in) {
