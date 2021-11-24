@@ -28,11 +28,7 @@ else:
 
 CACHE_DIR = os.getenv("CACHE_DIR", None)
 
-_VIPC_BUFS = [
-  (VisionStreamType.VISION_STREAM_YUV_BACK, 40, False, *(tici_f_frame_size if TICI else eon_f_frame_size)),
-  (VisionStreamType.VISION_STREAM_YUV_FRONT, 40, False, *(tici_d_frame_size if TICI else eon_d_frame_size))
-]
-
+packet_from_camera = {"roadCameraState":"modelV2", "driverCameraState":"driverState"}
 
 def get_log_fn(ref_commit):
   return "%s_%s_%s.bz2" % (TEST_ROUTE, "model_tici" if TICI else "model", ref_commit)
@@ -43,16 +39,42 @@ def replace_calib(msg, calib):
     msg.liveCalibration.extrinsicMatrix = get_view_frame_from_road_frame(*calib, 1.22).flatten().tolist()
   return msg
 
+def process_frame(msg, pm, sm, vipc_server, spinner, frs, frame_idxs, last_desire):
+  if msg.which() == "roadCameraState" and last_desire is not None:
+    dat = messaging.new_message('lateralPlan')
+    dat.lateralPlan.desire = last_desire
+    pm.send('lateralPlan', dat)
+
+  f = msg.as_builder()
+  pm.send(msg.which(), f)
+
+  img = frs[msg.which()].get(frame_idxs[msg.which()], pix_fmt="yuv420p")[0]
+  if msg.which == "roadCameraState":
+    vipc_server.send(VisionStreamType.VISION_STREAM_YUV_BACK, img.flatten().tobytes(), f.roadCameraState.frameId,
+                      f.roadCameraState.timestampSof, f.roadCameraState.timestampEof)
+  else:
+    vipc_server.send(VisionStreamType.VISION_STREAM_YUV_FRONT, img.flatten().tobytes(), f.driverCameraState.frameId,
+                      f.driverCameraState.timestampSof, f.driverCameraState.timestampEof)
+  with Timeout(seconds=15):
+    log_msgs.append(messaging.recv_one(sm.sock[packet_from_camera[msg.which()]]))
+
+  frame_idxs[msg.which()] += 1
+  if frame_idxs[msg.which()] >= frs[msg.which()].frame_count:
+    return None
+  update_spinner(spinner, frame_idxs['roadCameraState'], frs['roadCameraState'].frame_count,
+                                         frame_idxs['driverCameraState'], frs['driverCameraState'].frame_count)
+  return 0
+
 def update_spinner(s, fidx, fcnt, didx, dcnt):
   s.update("replaying models:  road %d/%d,  driver %d/%d" % (fidx, fcnt, didx, dcnt))
 
-def model_replay(lr_list, fr, dfr):
+def model_replay(lr_list, frs):
   spinner = Spinner()
   spinner.update("starting model replay")
 
   vipc_server = VisionIpcServer("camerad")
-  for vipc_buf in _VIPC_BUFS:
-    vipc_server.create_buffers(*vipc_buf)
+  vipc_server.create_buffers(VisionStreamType.VISION_STREAM_YUV_BACK, 40, False, *(tici_f_frame_size if TICI else eon_f_frame_size))
+  vipc_server.create_buffers(VisionStreamType.VISION_STREAM_YUV_FRONT, 40, False, *(tici_d_frame_size if TICI else eon_d_frame_size))
   vipc_server.start_listener()
 
   pm = messaging.PubMaster(['roadCameraState', 'driverCameraState', 'liveCalibration', 'lateralPlan'])
@@ -66,8 +88,7 @@ def model_replay(lr_list, fr, dfr):
 
     last_desire = None
     log_msgs = []
-    frame_idx = 0
-    dframe_idx = 0
+    frame_idxs = dict.fromkeys(['roadCameraState','driverCameraState'], 0)
 
     cal = [msg for msg in lr if msg.which() == "liveCalibration"]
     for msg in cal[:5]:
@@ -79,37 +100,10 @@ def model_replay(lr_list, fr, dfr):
         pm.send(msg.which(), replace_calib(msg, last_calib))
       elif msg.which() == "lateralPlan":
         last_desire = msg.lateralPlan.desire
-      elif msg.which() == "roadCameraState":
-        if last_desire is not None:
-          dat = messaging.new_message('lateralPlan')
-          dat.lateralPlan.desire = last_desire
-          pm.send('lateralPlan', dat)
-        f = msg.as_builder()
-        pm.send(msg.which(), f)
-
-        img = fr.get(frame_idx, pix_fmt="yuv420p")[0]
-        vipc_server.send(VisionStreamType.VISION_STREAM_YUV_BACK, img.flatten().tobytes(), f.roadCameraState.frameId,
-                         f.roadCameraState.timestampSof, f.roadCameraState.timestampEof)
-        with Timeout(seconds=15):
-          log_msgs.append(messaging.recv_one(sm.sock['modelV2']))
-
-        frame_idx += 1
-        if frame_idx >= fr.frame_count:
+      elif msg.which() in ["roadCameraState", "driverCameraState"]:
+        ret = process_frame(msg, pm, sm, vipc_server, spinner, frs, frame_idxs, last_desire)
+        if ret is None:
           break
-        update_spinner(spinner, frame_idx, fr.frame_count, dframe_idx, dfr.frame_count)
-
-      elif msg.which() == "driverCameraState":
-        f = msg.as_builder()
-        dimg = dfr.get(dframe_idx, pix_fmt="yuv420p")[0]
-        vipc_server.send(VisionStreamType.VISION_STREAM_YUV_FRONT, dimg.flatten().tobytes(), f.driverCameraState.frameId,
-                         f.driverCameraState.timestampSof, f.driverCameraState.timestampEof)
-        with Timeout(seconds=15):
-          log_msgs.append(messaging.recv_one(sm.sock['driverState']))
-
-        dframe_idx += 1
-        if dframe_idx >= dfr.frame_count:
-          break
-        update_spinner(spinner, frame_idx, fr.frame_count, dframe_idx, dfr.frame_count)
 
   except KeyboardInterrupt:
     pass
@@ -131,17 +125,18 @@ if __name__ == "__main__":
   ref_commit_fn = os.path.join(replay_dir, "model_replay_ref_commit")
 
   segnum = 0
+  frs = {}
   if CACHE_DIR:
     lr = LogReader(os.path.join(CACHE_DIR, '%s--%d--rlog.bz2' % (TEST_ROUTE.replace('|', '_'), segnum)))
-    fr = FrameReader(os.path.join(CACHE_DIR, '%s--%d--fcamera.hevc' % (TEST_ROUTE.replace('|', '_'), segnum)))
-    dfr = FrameReader(os.path.join(CACHE_DIR, '%s--%d--dcamera.hevc' % (TEST_ROUTE.replace('|', '_'), segnum)))
+    frs['roadCameraState'] = FrameReader(os.path.join(CACHE_DIR, '%s--%d--fcamera.hevc' % (TEST_ROUTE.replace('|', '_'), segnum)))
+    frs['driverCameraState'] = FrameReader(os.path.join(CACHE_DIR, '%s--%d--dcamera.hevc' % (TEST_ROUTE.replace('|', '_'), segnum)))
   else:
     lr = LogReader(get_url(TEST_ROUTE, segnum))
-    fr = FrameReader(get_url(TEST_ROUTE, segnum, log_type="fcamera"))
-    dfr = FrameReader(get_url(TEST_ROUTE, segnum, log_type="dcamera"))
+    frs['roadCameraState'] = FrameReader(get_url(TEST_ROUTE, segnum, log_type="fcamera"))
+    frs['driverCameraState'] = FrameReader(get_url(TEST_ROUTE, segnum, log_type="dcamera"))
 
   lr_list = list(lr)
-  log_msgs = model_replay(lr_list, fr, dfr)
+  log_msgs = model_replay(lr_list, frs)
 
   failed = False
   if not update:
