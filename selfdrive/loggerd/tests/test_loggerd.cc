@@ -21,11 +21,12 @@ int get_synced_frame_id(LoggerdState *s, CameraType cam_type, int start_frame_id
 
 TEST_CASE("sync_encoders") {
   const int max_waiting = GENERATE(1, 2, 3);
+
   for (int test_cnt = 0; test_cnt < 10; ++test_cnt) {
     LoggerdState s{.max_waiting = max_waiting};
-
     std::vector<int> start_frames;
     std::vector<std::future<int>> futures;
+
     for (int i = 0; i < max_waiting; ++i) {
       int start_frame_id = random_int(0, 20);
       start_frames.push_back(start_frame_id);
