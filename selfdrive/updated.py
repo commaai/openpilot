@@ -40,6 +40,7 @@ from common.params import Params
 from selfdrive.hardware import EON, TICI, HARDWARE
 from selfdrive.swaglog import cloudlog
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
+from selfdrive.version import tested_branch
 
 LOCK_FILE = os.getenv("UPDATER_LOCK_FILE", "/tmp/safe_staging_overlay.lock")
 STAGING_ROOT = os.getenv("UPDATER_STAGING_ROOT", "/data/safe_staging")
@@ -51,6 +52,8 @@ OVERLAY_METADATA = os.path.join(STAGING_ROOT, "metadata")
 OVERLAY_MERGED = os.path.join(STAGING_ROOT, "merged")
 FINALIZED = os.path.join(STAGING_ROOT, "finalized")
 
+DAYS_NO_CONNECTIVITY_MAX = 14     # do not allow to engage after this many days
+DAYS_NO_CONNECTIVITY_PROMPT = 10  # send an offroad prompt after this many days
 
 class WaitTimeHelper:
   def __init__(self, proc):
@@ -111,6 +114,7 @@ def set_params(new_version: bool, failed_count: int, exception: Optional[str]) -
   else:
     params.put("LastUpdateException", exception)
 
+  # Write out release notes for new versions
   if new_version:
     try:
       with open(os.path.join(FINALIZED, "RELEASES.md"), "rb") as f:
@@ -122,6 +126,29 @@ def set_params(new_version: bool, failed_count: int, exception: Optional[str]) -
     except Exception:
       params.put("ReleaseNotes", "")
     params.put_bool("UpdateAvailable", True)
+
+  # Handle user prompt
+  now = datetime.datetime.utcnow()
+  try:
+    last_update = datetime.datetime.fromisoformat(params.get("LastUpdateTime", encoding='utf8'))
+  except (TypeError, ValueError):
+    last_update = now
+  dt = now - last_update
+
+  set_offroad_alert("Offroad_UpdateFailed", False)
+  set_offroad_alert("Offroad_ConnectivityNeeded", False)
+  set_offroad_alert("Offroad_ConnectivityNeededPrompt", False)
+  if failed_count > 15 and exception is not None:
+    if tested_branch:
+      extra_text = "Ensure the software is correctly installed"
+    else:
+      extra_text = exception
+    set_offroad_alert("Offroad_UpdateFailed", True, extra_text=extra_text)
+  elif dt.days > DAYS_NO_CONNECTIVITY_MAX and failed_count > 1:
+    set_offroad_alert("Offroad_ConnectivityNeeded", True)
+  elif dt.days > DAYS_NO_CONNECTIVITY_PROMPT:
+    remaining = max(DAYS_NO_CONNECTIVITY_MAX - dt.days, 1)
+    set_offroad_alert("Offroad_ConnectivityNeededPrompt", True, extra_text=f"{remaining} day{'' if remaining == 1 else 's'}.")
 
 
 def setup_git_options(cwd: str) -> None:
@@ -344,7 +371,8 @@ def main():
   params = Params()
 
   if params.get_bool("DisableUpdates"):
-    raise RuntimeError("updates are disabled by the DisableUpdates param")
+    print("updates are disabled by the DisableUpdates param")
+    exit(0)
 
   if EON and os.geteuid() != 0:
     raise RuntimeError("updated must be launched as root!")
