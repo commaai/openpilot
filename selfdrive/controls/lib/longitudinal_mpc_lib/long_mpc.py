@@ -54,10 +54,10 @@ MAX_BRAKE = 9.81
 
 
 def get_stopped_equivalence_factor(v_lead):
-  return -T_REACT * v_lead + (v_lead*v_lead) / (2 * 2.5)
+  return np.clip(v_lead**2 / (2*4.0) - .7 * v_lead, v_lead**2 / (2*3.0) - T_REACT * v_lead, np.inf)
 
 def get_safe_obstacle_distance(v_ego):
-  return (v_ego*v_ego) / (2 * 2.5) + 5.0
+  return (v_ego*v_ego) / (2 * 3.0) + 5.0
 
 def desired_follow_distance(v_ego, v_lead):
   return get_safe_obstacle_distance(v_ego) - get_stopped_equivalence_factor(v_lead)
