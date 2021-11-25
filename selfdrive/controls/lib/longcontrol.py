@@ -111,9 +111,7 @@ class LongControl():
       deadzone = interp(CS.vEgo, CP.longitudinalTuning.deadzoneBP, CP.longitudinalTuning.deadzoneV)
       freeze_integrator = prevent_overshoot
 
-      # TODO integrate feedfoward into PID D term correctly
-      feedforward = a_target + 0.75 * (long_plan.accels[0] - CS.aEgo)
-      output_accel = self.pid.update(self.v_pid, CS.vEgo, speed=CS.vEgo, deadzone=deadzone, feedforward=feedforward, freeze_integrator=freeze_integrator)
+      output_accel = self.pid.update(self.v_pid, CS.vEgo, speed=CS.vEgo, deadzone=deadzone, feedforward=a_target, freeze_integrator=freeze_integrator)
 
       if prevent_overshoot:
         output_accel = min(output_accel, 0.0)
