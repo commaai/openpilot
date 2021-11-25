@@ -1,14 +1,15 @@
 #include "selfdrive/ui/navd/map_renderer.h"
 
 #include <QApplication>
+#include <QBuffer>
 #include <QDebug>
 
 #include "selfdrive/ui/qt/maps/map_helpers.h"
 #include "selfdrive/common/timing.h"
 
-const float ZOOM = 14;
-const int WIDTH = 512;
-const int HEIGHT = 512;
+const float ZOOM = 13;
+const int WIDTH = 256;
+const int HEIGHT = WIDTH;
 
 const int NUM_VIPC_BUFFERS = 4;
 
@@ -47,6 +48,8 @@ MapRenderer::MapRenderer(const QMapboxGLSettings &settings, bool enable_vipc) : 
     vipc_server.reset(new VisionIpcServer("navd"));
     vipc_server->create_buffers(VisionStreamType::VISION_STREAM_RGB_MAP, NUM_VIPC_BUFFERS, true, WIDTH, HEIGHT);
     vipc_server->start_listener();
+
+    pm.reset(new PubMaster({"navThumbnail"}));
   }
 }
 
@@ -81,7 +84,7 @@ void MapRenderer::sendVipc() {
   uint64_t ts = nanos_since_boot();
   VisionBuf* buf = vipc_server->get_buffer(VisionStreamType::VISION_STREAM_RGB_MAP);
   VisionIpcBufExtra extra = {
-    .frame_id = frame_id++,
+    .frame_id = frame_id,
     .timestamp_sof = ts,
     .timestamp_eof = ts,
   };
@@ -89,6 +92,26 @@ void MapRenderer::sendVipc() {
   assert(cap.sizeInBytes() == buf->len);
   memcpy(buf->addr, cap.bits(), buf->len);
   vipc_server->send(buf, &extra);
+
+  if (frame_id % 100 == 0) {
+    // Write jpeg into buffer
+    QByteArray buffer_bytes;
+    QBuffer buffer(&buffer_bytes);
+    buffer.open(QIODevice::WriteOnly);
+    cap.save(&buffer, "JPG", 50);
+
+    kj::Array<capnp::byte> buffer_kj = kj::heapArray<capnp::byte>((const capnp::byte*)buffer_bytes.constData(), buffer_bytes.size());
+
+    // Send thumbnail
+    MessageBuilder msg;
+    auto thumbnaild = msg.initEvent().initNavThumbnail();
+    thumbnaild.setFrameId(frame_id);
+    thumbnaild.setTimestampEof(ts);
+    thumbnaild.setThumbnail(buffer_kj);
+    pm->send("navThumbnail", msg);
+  }
+
+  frame_id++;
 }
 
 uint8_t* MapRenderer::getImage() {

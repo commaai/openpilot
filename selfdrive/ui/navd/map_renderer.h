@@ -12,6 +12,7 @@
 #include <QOpenGLFramebufferObject>
 
 #include "cereal/visionipc/visionipc_server.h"
+#include "cereal/messaging/messaging.h"
 
 
 class MapRenderer : public QObject {
@@ -32,6 +33,7 @@ private:
   std::unique_ptr<QOpenGLFramebufferObject> fbo;
 
   std::unique_ptr<VisionIpcServer> vipc_server;
+  std::unique_ptr<PubMaster> pm;
   void sendVipc();
 
   QMapboxGLSettings m_settings;
