@@ -55,14 +55,14 @@ def read_tz(x: int) -> int:
   try:
     with open(f"/sys/devices/virtual/thermal/thermal_zone{x}/temp") as f:
       return int(f.read())
-  except FileNotFoundError:
+  except (FileNotFoundError, OSError):
     return 0
 
 def read_tz_type(x: int) -> Optional[str]:
   try:
     with open(f"/sys/devices/virtual/thermal/thermal_zone{x}/type") as f:
       return f.read().strip()
-  except FileNotFoundError:
+  except (FileNotFoundError, OSError):
     return None
 
 def read_thermal(thermal_config):
@@ -71,6 +71,7 @@ def read_thermal(thermal_config):
   dat.deviceState.gpuTempC = [read_tz(z) / thermal_config.gpu[1] for z in thermal_config.gpu[0]]
   dat.deviceState.memoryTempC = read_tz(thermal_config.mem[0]) / thermal_config.mem[1]
   dat.deviceState.ambientTempC = read_tz(thermal_config.ambient[0]) / thermal_config.ambient[1]
+  dat.deviceState.pmicTempC = [read_tz(z) / thermal_config.pmic[1] for z in thermal_config.pmic[0]]
 
   if TICI:
     tz = []
@@ -419,6 +420,8 @@ def thermald_thread():
     power_monitor.calculate(peripheralState, startup_conditions["ignition"])
     msg.deviceState.offroadPowerUsageUwh = power_monitor.get_power_used()
     msg.deviceState.carBatteryCapacityUwh = max(0, power_monitor.get_car_battery_capacity())
+    current_power_draw = HARDWARE.get_current_power_draw()  # pylint: disable=assignment-from-none
+    msg.deviceState.powerDrawW = current_power_draw if current_power_draw is not None else 0
 
     # Check if we need to disable charging (handled by boardd)
     msg.deviceState.chargingDisabled = power_monitor.should_disable_charging(startup_conditions["ignition"], in_car, off_ts)

@@ -197,6 +197,12 @@ class TestCarModel(unittest.TestCase):
       if failed_checks['brakePressed'] < 150:
         del failed_checks['brakePressed']
 
+    # TODO: use the same signal in panda and carState
+    # tolerate a small delay between the button press and PCM entering a cruise state
+    if self.car_model == HONDA.ACCORD_2021:
+      if failed_checks['controlsAllowed'] < 500:
+        del failed_checks['controlsAllowed']
+
     self.assertFalse(len(failed_checks), f"panda safety doesn't agree with CarState: {failed_checks}")
 
 if __name__ == "__main__":

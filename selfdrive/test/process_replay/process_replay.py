@@ -371,6 +371,7 @@ def python_replay_process(cfg, lr, fingerprint=None):
     "HONDA CIVIC 2016 TOURING": "HONDA CIVIC 2016",
     "HONDA ACCORD 2018 SPORT 2T": "HONDA ACCORD 2018",
     "HONDA ACCORD 2T 2018": "HONDA ACCORD 2018",
+    "Mazda CX-9 2021": "MAZDA CX-9 2021",
   }
 
   if fingerprint is not None:
