@@ -116,4 +116,6 @@ struct LoggerdState {
 };
 
 bool sync_encoders(LoggerdState *state, CameraType cam_type, uint32_t frame_id);
+bool trigger_rotate_if_needed(LoggerdState *state, int cur_seg, uint32_t frame_id);
+void rotate_if_needed(LoggerdState *state);
 void loggerd_thread();

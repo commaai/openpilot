@@ -25,6 +25,20 @@ bool sync_encoders(LoggerdState *state, CameraType cam_type, uint32_t frame_id) 
   }
 }
 
+bool trigger_rotate_if_needed(LoggerdState *state, int cur_seg, uint32_t frame_id) {
+  const int frames_per_seg = SEGMENT_LENGTH * MAIN_FPS;
+  if (cur_seg >= 0 && frame_id >= ((cur_seg + 1) * frames_per_seg) + state->start_frame_id) {
+    // trigger rotate and wait until the main logger has rotated to the new segment
+    ++state->ready_to_rotate;
+    std::unique_lock lk(state->rotate_lock);
+    state->rotate_cv.wait(lk, [&] {
+      return state->rotate_segment > cur_seg || do_exit;
+    });
+    return !do_exit;
+  }
+  return false;
+}
+
 void encoder_thread(const LogCameraInfo &cam_info) {
   set_thread_name(cam_info.filename);
 
@@ -68,16 +82,8 @@ void encoder_thread(const LogCameraInfo &cam_info) {
         }
 
         // check if we're ready to rotate
-        const int frames_per_seg = SEGMENT_LENGTH * MAIN_FPS;
-        if (cur_seg >= 0 && extra.frame_id >= ((cur_seg+1) * frames_per_seg) + s.start_frame_id) {
-          // trigger rotate and wait until the main logger has rotated to the new segment
-          ++s.ready_to_rotate;
-          std::unique_lock lk(s.rotate_lock);
-          s.rotate_cv.wait(lk, [&] {
-            return s.rotate_segment > cur_seg || do_exit;
-          });
-          if (do_exit) break;
-        }
+        trigger_rotate_if_needed(&s, cur_seg, extra.frame_id);
+        if (do_exit) break;
       }
 
       // rotate the encoder if the logger is on a newer segment
@@ -157,31 +163,31 @@ void clear_locks() {
   ftw(LOG_ROOT.c_str(), clear_locks_fn, 16);
 }
 
-void logger_rotate() {
+void logger_rotate(LoggerdState *state) {
   {
-    std::unique_lock lk(s.rotate_lock);
+    std::unique_lock lk(state->rotate_lock);
     int segment = -1;
-    int err = logger_next(&s.logger, LOG_ROOT.c_str(), s.segment_path, sizeof(s.segment_path), &segment);
+    int err = logger_next(&state->logger, LOG_ROOT.c_str(), state->segment_path, sizeof(state->segment_path), &segment);
     assert(err == 0);
-    s.rotate_segment = segment;
-    s.ready_to_rotate = 0;
-    s.last_rotate_tms = millis_since_boot();
+    state->rotate_segment = segment;
+    state->ready_to_rotate = 0;
+    state->last_rotate_tms = millis_since_boot();
   }
-  s.rotate_cv.notify_all();
-  LOGW((s.logger.part == 0) ? "logging to %s" : "rotated to %s", s.segment_path);
+  state->rotate_cv.notify_all();
+  LOGW((state->logger.part == 0) ? "logging to %s" : "rotated to %s", state->segment_path);
 }
 
-void rotate_if_needed() {
-  if (s.ready_to_rotate == s.max_waiting) {
-    logger_rotate();
+void rotate_if_needed(LoggerdState *state) {
+  if (state->ready_to_rotate == state->max_waiting) {
+    logger_rotate(state);
   }
 
   double tms = millis_since_boot();
-  if ((tms - s.last_rotate_tms) > SEGMENT_LENGTH * 1000 &&
-      (tms - s.last_camera_seen_tms) > NO_CAMERA_PATIENCE &&
+  if ((tms - state->last_rotate_tms) > SEGMENT_LENGTH * 1000 &&
+      (tms - state->last_camera_seen_tms) > NO_CAMERA_PATIENCE &&
       !LOGGERD_TEST) {
     LOGW("no camera packet seen. auto rotating");
-    logger_rotate();
+    logger_rotate(state);
   }
 }
 
@@ -209,7 +215,7 @@ void loggerd_thread() {
 
   // init logger
   logger_init(&s.logger, "rlog", true);
-  logger_rotate();
+  logger_rotate(&s);
   Params().put("CurrentRoute", s.logger.route_name);
 
   // init encoders
@@ -236,7 +242,7 @@ void loggerd_thread() {
         bytes_count += msg->getSize();
         delete msg;
 
-        rotate_if_needed();
+        rotate_if_needed(&s);
 
         if ((++msg_count % 1000) == 0) {
           double seconds = (millis_since_boot() - start_ts) / 1000.0;
