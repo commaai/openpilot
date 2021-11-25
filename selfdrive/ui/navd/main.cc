@@ -9,9 +9,7 @@
 #include "selfdrive/ui/navd/route_engine.h"
 #include "selfdrive/ui/navd/map_renderer.h"
 #include "selfdrive/hardware/hw.h"
-
-const bool DRAW_MAP = getenv("DRAW_MAP") != nullptr;
-
+#include "selfdrive/common/params.h"
 
 void sigHandler(int s) {
   qInfo() << "Shutting down";
@@ -37,7 +35,7 @@ int main(int argc, char *argv[]) {
 
   RouteEngine* route_engine = new RouteEngine();
 
-  if (DRAW_MAP) {
+  if (Params().getBool("NavdRender")) {
     MapRenderer * m = new MapRenderer(get_mapbox_settings());
     QObject::connect(route_engine, &RouteEngine::positionUpdated, m, &MapRenderer::updatePosition);
     QObject::connect(route_engine, &RouteEngine::routeUpdated, m, &MapRenderer::updateRoute);
