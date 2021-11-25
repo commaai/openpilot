@@ -69,8 +69,10 @@ bool USBDevice::open(const std::string &serial) {
     libusb_detach_kernel_driver(dev_handle, 0);
   }
 
-  if (libusb_set_configuration(dev_handle, 1) != 0) return false;
-  if (libusb_claim_interface(dev_handle, 0) != 0) return false;
+  if (libusb_set_configuration(dev_handle, 1) != 0 ||
+      libusb_claim_interface(dev_handle, 0) != 0) {
+    return false;
+  }
 
   return true;
 }
@@ -125,14 +127,12 @@ int USBDevice::bulk_transfer(uint8_t endpoint, uint8_t *data, int length, unsign
       LOGE_100("usb control_transfer error %d, \"%s\"", ret, libusb_strerror((enum libusb_error)ret));
       if (ret == LIBUSB_ERROR_NO_DEVICE) {
         connected = false;
-      } else if (ret == LIBUSB_ERROR_TIMEOUT) {
-        if (endpoint & LIBUSB_ENDPOINT_IN) {
-          // timeout is okay to exit, recv still happened
-          LOGW("bulk_transfer timeout");
-          break;
-        }
       } else if (ret == LIBUSB_ERROR_OVERFLOW) {
         comms_healthy = false;
+      } else if (ret == LIBUSB_ERROR_TIMEOUT && (endpoint & LIBUSB_ENDPOINT_IN)) {
+        // timeout is okay to exit, recv still happened
+        LOGW("bulk_transfer timeout");
+        break;
       }
     }
   };
