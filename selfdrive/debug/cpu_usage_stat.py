@@ -66,7 +66,7 @@ if __name__ == "__main__":
   for p in psutil.process_iter():
     if p == psutil.Process():
       continue
-    matched = any([l for l in p.cmdline() if any([pn for pn in monitored_proc_names if re.match(r'.*{}.*'.format(pn), l, re.M | re.I)])])
+    matched = any(l for l in p.cmdline() if any([pn for pn in monitored_proc_names if re.match(r'.*{}.*'.format(pn), l, re.M | re.I)]))
     if matched:
       k = ' '.join(p.cmdline())
       print('Add monitored proc:', k)
