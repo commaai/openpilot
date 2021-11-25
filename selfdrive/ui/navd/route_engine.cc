@@ -10,7 +10,6 @@
 
 const qreal REROUTE_DISTANCE = 25;
 const float MANEUVER_TRANSITION_THRESHOLD = 10;
-const float UPDATE_FREQ = 2.0;  // Hz
 
 static float get_time_typical(const QGeoRouteSegment &segment) {
   auto maneuver = segment.maneuver();
@@ -101,7 +100,7 @@ RouteEngine::RouteEngine() {
   // Timers
   route_timer = new QTimer(this);
   QObject::connect(route_timer, SIGNAL(timeout()), this, SLOT(routeUpdate()));
-  route_timer->start(1000 * 1 / UPDATE_FREQ);
+  route_timer->start(1000);
 
   msg_timer = new QTimer(this);
   QObject::connect(msg_timer, SIGNAL(timeout()), this, SLOT(msgUpdate()));
