@@ -115,7 +115,7 @@ struct LoggerdState {
   bool camera_synced[WideRoadCam + 1] = {};
 };
 
-bool sync_encoders(LoggerdState *state, CameraType cam_type, uint32_t frame_id);
-bool trigger_rotate_if_needed(LoggerdState *state, int cur_seg, uint32_t frame_id);
-void rotate_if_needed(LoggerdState *state);
+bool sync_encoders(LoggerdState *s, CameraType cam_type, uint32_t frame_id);
+bool trigger_rotate_if_needed(LoggerdState *s, int cur_seg, uint32_t frame_id);
+void rotate_if_needed(LoggerdState *s);
 void loggerd_thread();
