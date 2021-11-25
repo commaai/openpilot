@@ -18,6 +18,7 @@ def get_ffi():
   ffi.cdef("""
 void* map_renderer_init();
 void map_renderer_update_position(void *inst, float lat, float lon, float bearing);
+void map_renderer_update_route(void *inst, char *polyline);
 void map_renderer_update(void *inst);
 void map_renderer_process(void *inst);
 bool map_renderer_loaded(void *inst);
@@ -53,6 +54,10 @@ if __name__ == "__main__":
 
   ffi, lib = get_ffi()
   renderer = lib.map_renderer_init()
+  wait_ready(lib, renderer)
+
+  geometry = r"{yxk}@|obn~Eg@@eCFqc@J{RFw@?kA@gA?q|@Riu@NuJBgi@ZqVNcRBaPBkG@iSD{I@_H@cH?gG@mG@gG?aD@{LDgDDkVVyQLiGDgX@q_@@qI@qKhS{R~[}NtYaDbGoIvLwNfP_b@|f@oFnF_JxHel@bf@{JlIuxAlpAkNnLmZrWqFhFoh@jd@kX|TkJxH_RnPy^|[uKtHoZ~Um`DlkCorC``CuShQogCtwB_ThQcr@fk@sVrWgRhVmSb\\oj@jxA{Qvg@u]tbAyHzSos@xjBeKbWszAbgEc~@~jCuTrl@cYfo@mRn\\_m@v}@ij@jp@om@lk@y|A`pAiXbVmWzUod@xj@wNlTw}@|uAwSn\\kRfYqOdS_IdJuK`KmKvJoOhLuLbHaMzGwO~GoOzFiSrEsOhD}PhCqw@vJmnAxSczA`Vyb@bHk[fFgl@pJeoDdl@}}@zIyr@hG}X`BmUdBcM^aRR}Oe@iZc@mR_@{FScHxAn_@vz@zCzH~GjPxAhDlB~DhEdJlIbMhFfG|F~GlHrGjNjItLnGvQ~EhLnBfOn@p`@AzAAvn@CfC?fc@`@lUrArStCfSxEtSzGxM|ElFlBrOzJlEbDnC~BfDtCnHjHlLvMdTnZzHpObOf^pKla@~G|a@dErg@rCbj@zArYlj@ttJ~AfZh@r]LzYg@`TkDbj@gIdv@oE|i@kKzhA{CdNsEfOiGlPsEvMiDpLgBpHyB`MkB|MmArPg@|N?|P^rUvFz~AWpOCdAkB|PuB`KeFfHkCfGy@tAqC~AsBPkDs@uAiAcJwMe@s@eKkPMoXQux@EuuCoH?eI?Kas@}Dy@wAUkMOgDL"
+  lib.map_renderer_update_route(renderer, geometry.encode())
 
   POSITIONS = [
     (32.71569271952601, -117.16384270868463, 0), (32.71569271952601, -117.16384270868463, 45),  # San Diego

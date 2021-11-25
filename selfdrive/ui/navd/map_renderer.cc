@@ -173,6 +173,10 @@ extern "C" {
     QApplication::processEvents();
   }
 
+  void map_renderer_update_route(MapRenderer *inst, char* polyline) {
+    inst->updateRoute(polyline_to_coordinate_list(QString::fromUtf8(polyline)));
+  }
+
   void map_renderer_update(MapRenderer *inst) {
     inst->update();
   }
