@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Some Hyundai radars can be reconfigured to output (debug) radar points on bus 1.
 Reconfiguration is done over UDS by reading/writing to 0x0142 using the Read/Write Data By Identifier
-endpoints (0x22 & 0x2E). This script checks your radar firmware version against a list of known 
+endpoints (0x22 & 0x2E). This script checks your radar firmware version against a list of known
 firmware versions. If you want to try on a new radar make sure to note the default config value
 in case it's different from the other radars and you need to revert the changes.
 
-After changing the config the car should not show any faults when openpilot is not running. 
+After changing the config the car should not show any faults when openpilot is not running.
 These config changes are persistent accross car reboots. You need to run this script again
 to go back to the default values.
 
@@ -32,7 +32,7 @@ SUPPORTED_FW_VERSIONS = {
   b"DNhe SCC FHCUP      1.00 1.02 99110-L5000 \x01#\x15#    ": {
     "default_config": b"\x00\x00\x00\x01\x00\x00",
     "tracks_enabled": b"\x00\x00\x00\x01\x00\x01",
-  }, 
+  },
   # 2020 PALISADE
   b"LX2_ SCC FHCUP      1.00 1.04 99110-S8100\x19\x05\x02\x16V    ": {
     "default_config": b"\x00\x00\x00\x01\x00\x00",
@@ -42,7 +42,13 @@ SUPPORTED_FW_VERSIONS = {
   b"TM__ SCC F-CUP      1.00 1.03 99110-S2000\x19\x050\x13'    ": {
     "default_config": b"\x00\x00\x00\x01\x00\x00",
     "tracks_enabled": b"\x00\x00\x00\x01\x00\x01",
-  }
+  },
+
+  # 2020 GENESIS G70
+  b'IK__ SCC F-CUP      1.00 1.02 96400-G9100\x18\x07\x06\x17\x12    ': {
+    "default config": b"\x00\x00\x00\x01\x00\x00",
+    "tracks_enabled": b"\x00\x00\x00\x01\x00\x01",
+  },
 }
 
 if __name__ == "__main__":

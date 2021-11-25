@@ -40,24 +40,13 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 }
 
 void OnroadWindow::updateState(const UIState &s) {
-  SubMaster &sm = *(s.sm);
   QColor bgColor = bg_colors[s.status];
-  if (sm.updated("controlsState")) {
-    const cereal::ControlsState::Reader &cs = sm["controlsState"].getControlsState();
-    alerts->updateAlert({QString::fromStdString(cs.getAlertText1()),
-                 QString::fromStdString(cs.getAlertText2()),
-                 QString::fromStdString(cs.getAlertType()),
-                 cs.getAlertSize(), cs.getAlertSound()}, bgColor);
-  } else if ((sm.frame - s.scene.started_frame) > 5 * UI_FREQ) {
-    // Handle controls timeout
-    if (sm.rcv_frame("controlsState") < s.scene.started_frame) {
-      // car is started, but controlsState hasn't been seen at all
-      alerts->updateAlert(CONTROLS_WAITING_ALERT, bgColor);
-    } else if ((nanos_since_boot() - sm.rcv_time("controlsState")) / 1e9 > CONTROLS_TIMEOUT) {
-      // car is started, but controls is lagging or died
+  Alert alert = Alert::get(*(s.sm), s.scene.started_frame);
+  if (s.sm->updated("controlsState") || !alert.equal({})) {
+    if (alert.type == "controlsUnresponsive") {
       bgColor = bg_colors[STATUS_ALERT];
-      alerts->updateAlert(CONTROLS_UNRESPONSIVE_ALERT, bgColor);
     }
+    alerts->updateAlert(alert, bgColor);
   }
   if (bg != bgColor) {
     // repaint border
@@ -196,4 +185,10 @@ void NvgWindow::paintGL() {
     LOGW("slow frame time: %.2f", dt);
   }
   prev_draw_t = cur_draw_t;
+}
+
+void NvgWindow::showEvent(QShowEvent *event) {
+  CameraViewWidget::showEvent(event);
+  ui_update_params(&QUIState::ui_state);
+  prev_draw_t = millis_since_boot();
 }

@@ -67,7 +67,7 @@ typedef struct acados_timer_
     mach_timebase_info_data_t tinfo;
 } acados_timer;
 
-#elif defined(__DSPACE__)
+#elif defined(__MABX2__)
 
 #include <brtenv.h>
 

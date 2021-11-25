@@ -9,6 +9,7 @@
 
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/qt/api.h"
+#include "selfdrive/ui/replay/replay.h"
 #include "selfdrive/ui/replay/util.h"
 
 Route::Route(const QString &route, const QString &data_dir) : data_dir_(data_dir) {
@@ -90,18 +91,18 @@ void Route::addFileToSegment(int n, const QString &file) {
 
 // class Segment
 
-Segment::Segment(int n, const SegmentFile &files, bool load_dcam, bool load_ecam, bool local_cache) : seg_num(n) {
+Segment::Segment(int n, const SegmentFile &files, uint32_t flags) : seg_num(n), flags(flags) {
   // [RoadCam, DriverCam, WideRoadCam, log]. fallback to qcamera/qlog
   const QString file_list[] = {
-      files.road_cam.isEmpty() ? files.qcamera : files.road_cam,
-      load_dcam ? files.driver_cam : "",
-      load_ecam ? files.wide_road_cam : "",
+      (flags & REPLAY_FLAG_QCAMERA) || files.road_cam.isEmpty() ? files.qcamera : files.road_cam,
+      flags & REPLAY_FLAG_DCAM ? files.driver_cam : "",
+      flags & REPLAY_FLAG_ECAM ? files.wide_road_cam : "",
       files.rlog.isEmpty() ? files.qlog : files.rlog,
   };
   for (int i = 0; i < std::size(file_list); i++) {
     if (!file_list[i].isEmpty()) {
       loading_++;
-      synchronizer_.addFuture(QtConcurrent::run([=] { loadFile(i, file_list[i].toStdString(), local_cache); }));
+      synchronizer_.addFuture(QtConcurrent::run([=] { loadFile(i, file_list[i].toStdString()); }));
     }
   }
 }
@@ -113,11 +114,12 @@ Segment::~Segment() {
   synchronizer_.waitForFinished();
 }
 
-void Segment::loadFile(int id, const std::string file, bool local_cache) {
+void Segment::loadFile(int id, const std::string file) {
+  const bool local_cache = !(flags & REPLAY_FLAG_NO_FILE_CACHE);
   bool success = false;
   if (id < MAX_CAMERAS) {
     frames[id] = std::make_unique<FrameReader>(local_cache, 20 * 1024 * 1024, 3);
-    success = frames[id]->load(file, &abort_);
+    success = frames[id]->load(file, flags & REPLAY_FLAG_NO_CUDA, &abort_);
   } else {
     log = std::make_unique<LogReader>(local_cache, -1, 3);
     success = log->load(file, &abort_);

@@ -130,6 +130,7 @@ selfdrive/car/hyundai/carcontroller.py
 selfdrive/car/hyundai/hyundaican.py
 selfdrive/car/toyota/__init__.py
 selfdrive/car/toyota/carstate.py
+selfdrive/car/toyota/tunes.py
 selfdrive/car/toyota/interface.py
 selfdrive/car/toyota/radar_interface.py
 selfdrive/car/toyota/values.py
@@ -305,6 +306,8 @@ selfdrive/loggerd/omx_encoder.h
 selfdrive/loggerd/logger.cc
 selfdrive/loggerd/logger.h
 selfdrive/loggerd/loggerd.cc
+selfdrive/loggerd/loggerd.h
+selfdrive/loggerd/main.cc
 selfdrive/loggerd/bootlog.cc
 selfdrive/loggerd/raw_logger.cc
 selfdrive/loggerd/raw_logger.h
@@ -340,7 +343,10 @@ selfdrive/ui/*.h
 selfdrive/ui/ui
 selfdrive/ui/text
 selfdrive/ui/spinner
-selfdrive/ui/soundd
+selfdrive/ui/soundd/*.cc
+selfdrive/ui/soundd/*.h
+selfdrive/ui/soundd/soundd
+selfdrive/ui/soundd/.gitignore
 
 selfdrive/ui/qt/*.cc
 selfdrive/ui/qt/*.h
@@ -612,3 +618,4 @@ opendbc/vw_mqb_2010.dbc
 
 opendbc/tesla_can.dbc
 opendbc/tesla_radar.dbc
+opendbc/tesla_powertrain.dbc

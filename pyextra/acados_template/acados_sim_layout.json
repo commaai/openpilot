@@ -28,6 +28,9 @@
         "integrator_type": [
             "str"
         ],
+        "collocation_type": [
+            "str"
+        ],
         "Tsim": [
             "float"
         ],

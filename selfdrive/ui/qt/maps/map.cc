@@ -4,6 +4,7 @@
 
 #include <QDebug>
 #include <QPainterPath>
+#include <QFileInfo>
 
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/ui/ui.h"
@@ -21,13 +22,18 @@ const float MAX_PITCH = 50;
 const float MIN_PITCH = 0;
 const float MAP_SCALE = 2;
 
+const QString ICON_SUFFIX = ".png";
+
 MapWindow::MapWindow(const QMapboxGLSettings &settings) :
-  m_settings(settings), velocity_filter(0, 10, 0.1) {
+  m_settings(settings), velocity_filter(0, 10, 0.05) {
   sm = new SubMaster({"liveLocationKalman", "navInstruction", "navRoute"});
+
+  // Connect now, so any navRoutes sent while the map is initializing are not dropped
+  sm->update(0);
 
   timer = new QTimer(this);
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(timerUpdate()));
-  timer->start(100);
+  timer->start(50);
 
   // Instructions
   map_instructions = new MapInstructions(this);
@@ -50,6 +56,7 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) :
   }
 
   grabGesture(Qt::GestureType::PinchGesture);
+  qDebug() << "MapWindow initialized";
 }
 
 MapWindow::~MapWindow() {
@@ -112,13 +119,12 @@ void MapWindow::timerUpdate() {
   sm->update(0);
   if (sm->updated("liveLocationKalman")) {
     auto location = (*sm)["liveLocationKalman"].getLiveLocationKalman();
+    auto pos = location.getPositionGeodetic();
+    auto orientation = location.getCalibratedOrientationNED();
 
-    localizer_valid = location.getStatus() == cereal::LiveLocationKalman::Status::VALID;
+    localizer_valid = (location.getStatus() == cereal::LiveLocationKalman::Status::VALID) && pos.getValid();
 
     if (localizer_valid) {
-      auto pos = location.getPositionGeodetic();
-      auto orientation = location.getCalibratedOrientationNED();
-
       float velocity = location.getVelocityCalibrated().getValue()[0];
       float bearing = RAD2DEG(orientation.getValue()[2]);
       auto coordinate = QMapbox::Coordinate(pos.getValue()[0], pos.getValue()[1]);
@@ -179,7 +185,8 @@ void MapWindow::timerUpdate() {
     }
   }
 
-  if (sm->updated("navRoute")) {
+  if (sm->rcv_frame("navRoute") != route_rcv_frame) {
+    qWarning() << "Got new navRoute from navd";
     auto route = (*sm)["navRoute"].getNavRoute();
     auto route_points = capnp_coordinate_list_to_collection(route.getCoordinates());
     QMapbox::Feature feature(QMapbox::Feature::LineStringType, route_points, {}, {});
@@ -194,6 +201,7 @@ void MapWindow::timerUpdate() {
       setVisible(true); // Show map on destination set/change
       allow_open = false;
     }
+    route_rcv_frame = sm->rcv_frame("navRoute");
   }
 }
 
@@ -319,6 +327,7 @@ void MapWindow::offroadTransition(bool offroad) {
 }
 
 MapInstructions::MapInstructions(QWidget * parent) : QWidget(parent) {
+  is_rhd = Params().getBool("IsRHD");
   QHBoxLayout *main_layout = new QHBoxLayout(this);
   main_layout->setContentsMargins(11, 50, 11, 11);
   {
@@ -437,10 +446,22 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
     if (!modifier.isEmpty()) {
       fn += "_" + modifier;
     }
-    fn +=  + ".png";
+    fn += ICON_SUFFIX;
     fn = fn.replace(' ', '_');
 
+    // for rhd, reflect direction and then flip
+    if (is_rhd) {
+      if (fn.contains("left")) {
+        fn.replace(QString("left"), QString("right"));
+      } else if (fn.contains("right")) {
+        fn.replace(QString("right"), QString("left"));
+      }
+    }
+
     QPixmap pix(fn);
+    if (is_rhd) {
+      pix = pix.transformed(QTransform().scale(-1, 1));
+    }
     icon_01->setPixmap(pix.scaledToWidth(200, Qt::SmoothTransformation));
     icon_01->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
     icon_01->setVisible(true);
@@ -471,7 +492,7 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
       fn += "turn_straight";
     }
 
-    QPixmap pix(fn + ".png");
+    QPixmap pix(fn + ICON_SUFFIX);
     auto icon = new QLabel;
     int wh = active ? 125 : 75;
     icon->setPixmap(pix.scaled(wh, wh, Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
