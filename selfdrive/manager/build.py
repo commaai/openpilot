@@ -69,7 +69,7 @@ def build(spinner, dirty=False):
       else:
         # Build failed log errors
         errors = [line.decode('utf8', 'replace') for line in compile_output
-                  if any([err in line for err in [b'error: ', b'not found, needed by target']])]
+                  if any(err in line for err in [b'error: ', b'not found, needed by target'])]
         error_s = "\n".join(errors)
         add_file_handler(cloudlog)
         cloudlog.error("scons build failed\n" + error_s)
