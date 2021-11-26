@@ -62,6 +62,12 @@ std::atomic<bool> pigeon_active(false);
 
 ExitHandler do_exit;
 
+std::string get_time_str(const struct tm &time) {
+  char s[30] = {'\0'};
+  std::strftime(s, std::size(s), "%Y-%m-%d %H:%M:%S", &time);
+  return s;
+}
+
 bool check_all_connected(const std::vector<Panda *> &pandas) {
   for (const auto& panda : pandas) {
     if (!panda->connected) {
@@ -77,12 +83,6 @@ enum class SyncTimeDir { TO_PANDA, FROM_PANDA };
 void sync_time(Panda *panda, SyncTimeDir dir) {
   if (!panda->has_rtc) return;
 
-  auto get_time_str = [](const struct tm &time) {
-    char s[30] = {'\0'};
-    std::strftime(s, std::size(s), "%Y-%m-%d %H:%M:%S", &time);
-    return std::string(s);
-  };
-
   setenv("TZ", "UTC", 1);
   struct tm sys_time = util::get_time();
   struct tm rtc_time = panda->get_rtc();
@@ -94,7 +94,7 @@ void sync_time(Panda *panda, SyncTimeDir dir) {
       if (std::abs(seconds) > 1.1) {
         panda->set_rtc(sys_time);
         LOGW("Updating panda RTC. dt = %.2f System: %s RTC: %s",
-             seconds, get_time_str(sys_time).c_str(), get_time_str(rtc_time).c_str());
+              seconds, get_time_str(sys_time).c_str(), get_time_str(rtc_time).c_str());
       }
     }
   } else if (dir == SyncTimeDir::FROM_PANDA) {
