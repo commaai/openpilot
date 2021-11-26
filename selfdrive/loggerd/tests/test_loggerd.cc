@@ -58,7 +58,7 @@ std::pair<int, uint32_t> encoder_thread(LoggerdState *s) {
   while (cur_seg < MAX_SEGMENT_CNT) {
     ++frame_id;
     if (trigger_rotate_if_needed(s, cur_seg, frame_id)) {
-      cur_seg = s->rotate_segment;
+      cur_seg = s->lh->segment();
     }
     util::sleep_for(0);
   }
@@ -80,7 +80,7 @@ TEST_CASE("trigger_rotate") {
     futures.emplace_back(std::async(std::launch::async, encoder_thread, &s));
   }
 
-  while (s.rotate_segment < MAX_SEGMENT_CNT) {
+  while (s.lh->segment() < MAX_SEGMENT_CNT) {
     rotate_if_needed(&s);
     util::sleep_for(10);
   }

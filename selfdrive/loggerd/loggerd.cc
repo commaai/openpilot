@@ -30,7 +30,7 @@ bool trigger_rotate_if_needed(LoggerdState *s, int cur_seg, uint32_t frame_id) {
     ++s->ready_to_rotate;
     std::unique_lock lk(s->rotate_lock);
     s->rotate_cv.wait(lk, [&] {
-      return s->rotate_segment > cur_seg || do_exit;
+      return s->lh->segment() > cur_seg || do_exit;
     });
     return !do_exit;
   }
@@ -85,8 +85,8 @@ void encoder_thread(LoggerdState *s, const LogCameraInfo &cam_info) {
       }
 
       // rotate the encoder if the logger is on a newer segment
-      if (s.lh != lh) {
-        lh = s.lh;
+      if (s->lh != lh) {
+        lh = s->lh;
         cur_seg = lh->segment();
 
         LOGW("camera %d rotate encoder to %s", cam_info.type, lh->segmentPath().c_str());
@@ -140,7 +140,7 @@ void encoder_thread(LoggerdState *s, const LogCameraInfo &cam_info) {
 
 void logger_rotate(LoggerdState *s) {
   {
-    std::unique_lock lk(s-?rotate_lock);
+    std::unique_lock lk(s->rotate_lock);
     s->lh = s->logger_manager->next();
     s->ready_to_rotate = 0;
     s->last_rotate_tms = millis_since_boot();
