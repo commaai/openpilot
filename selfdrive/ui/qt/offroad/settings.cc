@@ -123,14 +123,14 @@ DevicePanel::DevicePanel(QWidget* parent) : ListWidget(parent) {
 
   QString resetCalibDesc = "openpilot requires the device to be mounted within 4° left or right and within 5° up or down. openpilot is continuously calibrating, resetting is rarely required.";
   auto resetCalibBtn = new ButtonControl("Reset Calibration", "RESET", resetCalibDesc);
-  connect(resetCalibBtn, &ButtonControl::clicked, [=]() {
+  connect(resetCalibBtn, &ButtonControl::clicked, [&]() {
     if (ConfirmationDialog::confirm("Are you sure you want to reset calibration?", this)) {
-      Params().remove("CalibrationParams");
+      params.remove("CalibrationParams");
     }
   });
-  connect(resetCalibBtn, &ButtonControl::showDescription, [=]() {
+  connect(resetCalibBtn, &ButtonControl::showDescription, [&]() {
     QString desc = resetCalibDesc;
-    std::string calib_bytes = Params().get("CalibrationParams");
+    std::string calib_bytes = params.get("CalibrationParams");
     if (!calib_bytes.empty()) {
       try {
         AlignedBuffer aligned_buf;
@@ -183,12 +183,12 @@ DevicePanel::DevicePanel(QWidget* parent) : ListWidget(parent) {
   QPushButton *reboot_btn = new QPushButton("Reboot");
   reboot_btn->setObjectName("reboot_btn");
   power_layout->addWidget(reboot_btn);
-  QObject::connect(reboot_btn, &QPushButton::clicked, [=]() {
+  QObject::connect(reboot_btn, &QPushButton::clicked, [&]() {
     if (QUIState::ui_state.status == UIStatus::STATUS_DISENGAGED) {
       if (ConfirmationDialog::confirm("Are you sure you want to reboot?", this)) {
         // Check engaged again in case it changed while the dialog was open
         if (QUIState::ui_state.status == UIStatus::STATUS_DISENGAGED) {
-          Params().putBool("DoReboot", true);
+          params.putBool("DoReboot", true);
         }
       }
     } else {
@@ -199,12 +199,12 @@ DevicePanel::DevicePanel(QWidget* parent) : ListWidget(parent) {
   QPushButton *poweroff_btn = new QPushButton("Power Off");
   poweroff_btn->setObjectName("poweroff_btn");
   power_layout->addWidget(poweroff_btn);
-  QObject::connect(poweroff_btn, &QPushButton::clicked, [=]() {
+  QObject::connect(poweroff_btn, &QPushButton::clicked, [&]() {
     if (QUIState::ui_state.status == UIStatus::STATUS_DISENGAGED) {
       if (ConfirmationDialog::confirm("Are you sure you want to power off?", this)) {
         // Check engaged again in case it changed while the dialog was open
         if (QUIState::ui_state.status == UIStatus::STATUS_DISENGAGED) {
-          Params().putBool("DoShutdown", true);
+          params.putBool("DoShutdown", true);
         }
       }
     } else {
@@ -244,9 +244,9 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
 
 
   auto uninstallBtn = new ButtonControl("Uninstall " + getBrand(), "UNINSTALL");
-  connect(uninstallBtn, &ButtonControl::clicked, [=]() {
+  connect(uninstallBtn, &ButtonControl::clicked, [&]() {
     if (ConfirmationDialog::confirm("Are you sure you want to uninstall?", this)) {
-      Params().putBool("DoUninstall", true);
+      params.putBool("DoUninstall", true);
     }
   });
   connect(parent, SIGNAL(offroadTransition(bool)), uninstallBtn, SLOT(setEnabled(bool)));
