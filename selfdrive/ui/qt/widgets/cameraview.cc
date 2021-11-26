@@ -278,15 +278,11 @@ void CameraViewWidget::vipcThread() {
         QThread::msleep(100);
         continue;
       }
-
-     
-
       emit vipcThreadConnected(vipc_client.get());
     }
 
     if (VisionBuf *buf = vipc_client->recv(nullptr, 1000)) {
-       emit vipcThreadFrameReceived(buf);
-     }
-    
+      emit vipcThreadFrameReceived(buf);
+    }
   }
 }

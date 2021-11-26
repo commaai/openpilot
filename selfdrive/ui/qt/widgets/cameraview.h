@@ -7,7 +7,6 @@
 #include <QOpenGLWidget>
 #include <QThread>
 #include "cereal/visionipc/visionipc_client.h"
-#include "selfdrive/common/visionimg.h"
 #include "selfdrive/ui/ui.h"
 
 class CameraViewWidget : public QOpenGLWidget, protected QOpenGLFunctions {
@@ -39,7 +38,6 @@ protected:
   VisionBuf *latest_frame = nullptr;
   GLuint frame_vao, frame_vbo, frame_ibo;
   mat4 frame_mat;
-  std::unique_ptr<EGLImageTexture> texture[UI_BUF_COUNT];
   QOpenGLShaderProgram *program;
   QColor bg = QColor("#000000");
 
