@@ -45,6 +45,7 @@ MapRenderer::MapRenderer(const QMapboxGLSettings &settings, bool enable_vipc) : 
   gl_functions->glViewport(0, 0, WIDTH, HEIGHT);
 
   if (enable_vipc) {
+    qWarning() << "Enabling navd map rendering";
     vipc_server.reset(new VisionIpcServer("navd"));
     vipc_server->create_buffers(VisionStreamType::VISION_STREAM_RGB_MAP, NUM_VIPC_BUFFERS, true, WIDTH, HEIGHT);
     vipc_server->start_listener();
