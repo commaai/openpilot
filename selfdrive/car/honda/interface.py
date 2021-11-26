@@ -54,7 +54,7 @@ class CarInterface(CarInterfaceBase):
 
     # Detect Bosch cars with new HUD msgs
     if any(0x33DA in f for f in fingerprint.values()):
-      ret.flags |= Flag.BOSCH_EXT_HUD
+      ret.flags |= Flag.BOSCH_EXT_HUD.value
 
     # Accord 1.5T CVT has different gearbox message
     if candidate == CAR.ACCORD and 0x191 in fingerprint[1]:
