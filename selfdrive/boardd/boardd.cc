@@ -78,26 +78,32 @@ bool check_all_connected(const std::vector<Panda *> &pandas) {
   return true;
 }
 
-void sync_time(Panda *panda) {
+enum SYNC_TIME_DIR { SYNC_TO_PANDA, SYNC_FROM_PANDA };
+
+void sync_time(Panda *panda, SYNC_TIME_DIR dir) {
   if (!panda->has_rtc) return;
 
   setenv("TZ", "UTC", 1);
   struct tm sys_time = util::get_time();
   struct tm rtc_time = panda->get_rtc();
 
-  if (util::time_valid(sys_time)) {
-    // Write time to RTC if it looks reasonable
-    double seconds = difftime(mktime(&rtc_time), mktime(&sys_time));
-    if (std::abs(seconds) > 1.1) {
-      panda->set_rtc(sys_time);
-      LOGW("Updating panda RTC. dt = %.2f System: %s RTC: %s",
-           seconds, get_time_str(sys_time).c_str(), get_time_str(rtc_time).c_str());
+  if (dir == SYNC_TO_PANDA) {
+    if (util::time_valid(sys_time)) {
+      // Write time to RTC if it looks reasonable
+      double seconds = difftime(mktime(&rtc_time), mktime(&sys_time));
+      if (std::abs(seconds) > 1.1) {
+        panda->set_rtc(sys_time);
+        LOGW("Updating panda RTC. dt = %.2f System: %s RTC: %s",
+              seconds, get_time_str(sys_time).c_str(), get_time_str(rtc_time).c_str());
+      }
     }
-  } else if (util::time_valid(rtc_time)) {
-    const struct timeval tv = {mktime(&rtc_time), 0};
-    settimeofday(&tv, 0);
-    LOGE("System time wrong, setting from RTC. System: %s RTC: %s",
-         get_time_str(sys_time).c_str(), get_time_str(rtc_time).c_str());
+  } else if (dir == SYNC_FROM_PANDA) {
+    if (!util::time_valid(sys_time) && util::time_valid(rtc_time)) {
+      const struct timeval tv = {mktime(&rtc_time), 0};
+      settimeofday(&tv, 0);
+      LOGE("System time wrong, setting from RTC. System: %s RTC: %s",
+           get_time_str(sys_time).c_str(), get_time_str(rtc_time).c_str());
+    }
   }
 }
 
@@ -194,7 +200,7 @@ Panda *usb_connect(std::string serial="", uint32_t index=0) {
   std::call_once(connected_once, &Panda::set_usb_power_mode, panda, cereal::PeripheralState::UsbPowerMode::CDP);
 #endif
 
-  sync_time(panda.get());
+  sync_time(panda.get(), SYNC_FROM_PANDA);
   return panda.release();
 }
 
@@ -528,7 +534,7 @@ void peripheral_control_thread(Panda *panda) {
 
     // Write to rtc once per minute when no ignition present
     if (!ignition && (cnt % 120 == 1)) {
-      sync_time(panda);
+      sync_time(panda, SYNC_TO_PANDA);
     }
   }
 }
