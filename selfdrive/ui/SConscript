@@ -116,7 +116,7 @@ if arch in ['x86_64', 'Darwin'] or GetOption('extras'):
   replay_lib_src = ["replay/replay.cc", "replay/camera.cc", "replay/filereader.cc", "replay/logreader.cc", "replay/framereader.cc", "replay/route.cc", "replay/util.cc"]
 
   replay_lib = qt_env.Library("qt_replay", replay_lib_src, LIBS=base_libs)
-  replay_libs = [replay_lib, 'avutil', 'avcodec', 'avformat', 'bz2', 'curl', 'swscale', 'yuv'] + qt_libs
+  replay_libs = [replay_lib, 'avutil', 'avcodec', 'avformat', 'bz2', 'curl', 'yuv'] + qt_libs
   qt_env.Program("replay/replay", ["replay/main.cc"], LIBS=replay_libs)
 
   qt_env.Program("watch3", ["watch3.cc"], LIBS=qt_libs + ['common', 'json11'])

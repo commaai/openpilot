@@ -9,8 +9,6 @@
 extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
-#include <libswscale/swscale.h>
-#include <libavutil/imgutils.h>
 }
 
 struct AVFrameDeleter {
@@ -42,9 +40,7 @@ private:
     bool failed = false;
   };
   std::vector<Frame> frames_;
-  AVPixelFormat sws_src_format = AV_PIX_FMT_YUV420P;
-  SwsContext *rgb_sws_ctx_ = nullptr, *yuv_sws_ctx_ = nullptr;
-  std::unique_ptr<AVFrame, AVFrameDeleter>av_frame_, sws_frame, hw_frame;
+  std::unique_ptr<AVFrame, AVFrameDeleter>av_frame_, hw_frame;
   AVFormatContext *input_ctx = nullptr;
   AVCodecContext *decoder_ctx = nullptr;
   int key_frames_count_ = 0;
@@ -53,4 +49,5 @@ private:
 
   AVPixelFormat hw_pix_fmt = AV_PIX_FMT_NONE;
   AVBufferRef *hw_device_ctx = nullptr;
+  std::vector<uint8_t> nv12toyuv_buffer;
 };
