@@ -62,7 +62,7 @@ std::atomic<bool> pigeon_active(false);
 
 ExitHandler do_exit;
 
-std::string get_time_str(const struct tm &time) {
+static std::string get_time_str(const struct tm &time) {
   char s[30] = {'\0'};
   std::strftime(s, std::size(s), "%Y-%m-%d %H:%M:%S", &time);
   return s;
