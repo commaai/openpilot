@@ -255,7 +255,7 @@ def bridge(q):
   blueprint = blueprint_library.find('sensor.camera.rgb')
   blueprint.set_attribute('image_size_x', str(W))
   blueprint.set_attribute('image_size_y', str(H))
-  blueprint.set_attribute('fov', '70')
+  blueprint.set_attribute('fov', '40')
   blueprint.set_attribute('sensor_tick', '0.05')
   transform = carla.Transform(carla.Location(x=0.8, z=1.13))
   camera = world.spawn_actor(blueprint, transform, attach_to=vehicle)
