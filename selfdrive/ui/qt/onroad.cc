@@ -210,22 +210,23 @@ void OnroadHud::paintEvent(QPaintEvent *event) {
   p.setPen(QPen(QColor(0xff, 0xff, 0xff, 100), 10));
   p.setBrush(QColor(0, 0, 0, 100));
   p.drawRoundedRect(rc, 20, 20);
+  p.setPen(Qt::NoPen);
 
   configFont(p, "Open Sans", 48, "Regular");
-  drawText(p, rc.center().x(), rc.top() + bdr_s + 10, Qt::AlignTop, "MAX", is_cruise_set ? 200 : 100);
+  drawText(p, rc.center().x(), 118, "MAX", is_cruise_set ? 200 : 100);
   if (is_cruise_set) {
     configFont(p, "Open Sans", 88, is_cruise_set ? "Bold" : "SemiBold");
-    drawText(p, rc.center().x(), rc.bottom() - bdr_s - 3, Qt::AlignBottom, maxSpeed, 255);
+    drawText(p, rc.center().x(), 212, maxSpeed, 255);
   } else {
     configFont(p, "Open Sans", 80, "SemiBold");
-    drawText(p, rc.center().x(), rc.bottom() - bdr_s - 3, Qt::AlignBottom, maxSpeed, 100);
+    drawText(p, rc.center().x(), 212, maxSpeed, 100);
   }
 
   // current speed
-  configFont(p, "Open Sans", 180, "Bold");
-  drawText(p, hud_rect.center().x(), rc.center().y(), Qt::AlignVCenter, speed);
-  configFont(p, "Open Sans", 65, "Regular");
-  drawText(p, hud_rect.center().x(), rc.bottom() - 22, Qt::AlignTop, speedUnit, 200);
+  configFont(p, "Open Sans", 176, "Bold");
+  drawText(p, hud_rect.center().x(), 210, speed);
+  configFont(p, "Open Sans", 66, "Regular");
+  drawText(p, hud_rect.center().x(), 290, speedUnit, 200);
 
   // engage-ability icon
   if (engageable) {
@@ -240,17 +241,14 @@ void OnroadHud::paintEvent(QPaintEvent *event) {
   }
 }
 
-void OnroadHud::drawText(QPainter &p, int x, int y, Qt::Alignment flag, const QString &text, int alpha) {
-  p.setPen(QColor(0xff, 0xff, 0xff, alpha));
+void OnroadHud::drawText(QPainter &p, int x, int y, const QString &text, int alpha) {
   QFontMetrics fm(p.font());
-  QRect r = fm.tightBoundingRect(text);
-  r.moveCenter({x - 4, y});
-  if (flag & Qt::AlignTop) {
-    r.moveTop(r.top() + r.height() / 2);
-  } else if (flag & Qt::AlignBottom) {
-    r.moveTop(r.top() - r.height() / 2);
-  }
-  p.drawText(r.x(), r.bottom(), text);
+  QRect init_rect = fm.boundingRect(text);
+  auto real_rect = fm.boundingRect(init_rect, 0, text);
+  real_rect.moveCenter({x, y - real_rect.height() / 2});
+
+  p.setPen(QColor(0xff, 0xff, 0xff, alpha));
+  p.drawText(real_rect.x(), real_rect.bottom(), text);
 }
 
 void OnroadHud::drawIcon(QPainter &p, int x, int y, QPixmap &img, QBrush bg, float opacity) {
