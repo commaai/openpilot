@@ -78,7 +78,7 @@ bool check_all_connected(const std::vector<Panda *> &pandas) {
   return true;
 }
 
-enum class SyncTimeDir { ToPanda, FromPanda };
+enum class SyncTimeDir { TO_PANDA, FROM_PANDA };
 
 void sync_time(Panda *panda, SyncTimeDir dir) {
   if (!panda->has_rtc) return;
@@ -87,7 +87,7 @@ void sync_time(Panda *panda, SyncTimeDir dir) {
   struct tm sys_time = util::get_time();
   struct tm rtc_time = panda->get_rtc();
 
-  if (dir == SyncTimeDir::ToPanda) {
+  if (dir == SyncTimeDir::TO_PANDA) {
     if (util::time_valid(sys_time)) {
       // Write time to RTC if it looks reasonable
       double seconds = difftime(mktime(&rtc_time), mktime(&sys_time));
@@ -97,7 +97,7 @@ void sync_time(Panda *panda, SyncTimeDir dir) {
               seconds, get_time_str(sys_time).c_str(), get_time_str(rtc_time).c_str());
       }
     }
-  } else if (dir == SyncTimeDir::FromPanda) {
+  } else if (dir == SyncTimeDir::FROM_PANDA) {
     if (!util::time_valid(sys_time) && util::time_valid(rtc_time)) {
       const struct timeval tv = {mktime(&rtc_time), 0};
       settimeofday(&tv, 0);
@@ -200,7 +200,7 @@ Panda *usb_connect(std::string serial="", uint32_t index=0) {
   std::call_once(connected_once, &Panda::set_usb_power_mode, panda, cereal::PeripheralState::UsbPowerMode::CDP);
 #endif
 
-  sync_time(panda.get(), SyncTimeDir::FromPanda);
+  sync_time(panda.get(), SyncTimeDir::FROM_PANDA);
   return panda.release();
 }
 
@@ -534,7 +534,7 @@ void peripheral_control_thread(Panda *panda) {
 
     // Write to rtc once per minute when no ignition present
     if (!ignition && (cnt % 120 == 1)) {
-      sync_time(panda, SyncTimeDir::ToPanda);
+      sync_time(panda, SyncTimeDir::TO_PANDA);
     }
   }
 }
