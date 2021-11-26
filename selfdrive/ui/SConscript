@@ -126,5 +126,8 @@ if arch in ['x86_64', 'Darwin'] or GetOption('extras'):
 
 # navd
 if maps:
-  navd_src = ["navd/main.cc", "navd/route_engine.cc"]
+  navd_src = ["navd/main.cc", "navd/route_engine.cc", "navd/map_renderer.cc"]
   qt_env.Program("navd/_navd", navd_src, LIBS=qt_libs + ['common', 'json11'])
+
+  if GetOption('extras'):
+    qt_env.SharedLibrary("navd/map_renderer", ["navd/map_renderer.cc"], LIBS=qt_libs + ['common', 'messaging'])
