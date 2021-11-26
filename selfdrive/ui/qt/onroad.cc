@@ -244,7 +244,7 @@ void OnroadHud::paintEvent(QPaintEvent *event) {
 void OnroadHud::drawText(QPainter &p, int x, int y, const QString &text, int alpha) {
   QFontMetrics fm(p.font());
   QRect init_rect = fm.boundingRect(text);
-  auto real_rect = fm.boundingRect(init_rect, 0, text);
+  QRect real_rect = fm.boundingRect(init_rect, 0, text);
   real_rect.moveCenter({x, y - real_rect.height() / 2});
 
   p.setPen(QColor(0xff, 0xff, 0xff, alpha));
