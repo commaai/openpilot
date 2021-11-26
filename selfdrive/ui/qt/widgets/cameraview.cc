@@ -20,24 +20,27 @@ const char frame_vertex_shader[] =
   "  vTexCoord = aTexCoord;\n"
   "}\n";
 
-const char yuv_fragment_shader[] = R"(
-#version 300 es
-precision highp float;
-in vec2 vTexCoord;  
-out vec4 fragColor;
-uniform lowp sampler2D texture_y;  
-uniform lowp sampler2D texture_u;  
-uniform lowp sampler2D texture_v;   
-void main() {  
-  float y = texture2D(texture_y, vTexCoord).r;  
-  float u = texture2D(texture_u, vTexCoord).r - 0.5;  
-  float v = texture2D(texture_v, vTexCoord).r - 0.5;  
-  float r = y + 1.402 * v;  
-  float g = y - 0.344 * u - 0.714 * v;  
-  float b = y + 1.772 * u;  
-  fragColor = vec4(r, g, b, 1.0);
-}
-)";
+const char yuv_fragment_shader[] =
+#ifdef NANOVG_GL3_IMPLEMENTATION
+    "#version 150 core\n"
+#else
+    "#version 300 es\n"
+#endif
+    "precision mediump float;\n"
+    "in vec2 vTexCoord;\n"
+    "out vec4 fragColor;\n"
+    "uniform sampler2D texture_y;\n"
+    "uniform sampler2D texture_u;\n"
+    "uniform sampler2D texture_v;\n"
+    "void main() {\n"
+    "  float y = texture(texture_y, vTexCoord).r;\n"
+    "  float u = texture(texture_u, vTexCoord).r - 0.5;\n"
+    "  float v = texture(texture_v, vTexCoord).r - 0.5;\n"
+    "  float r = y + 1.402 * v;\n"
+    "  float g = y - 0.344 * u - 0.714 * v;\n"
+    "  float b = y + 1.772 * u;\n"
+    "  fragColor = vec4(r, g, b, 1.0);\n"
+    "}\n";
 
 const mat4 device_transform = {{
   1.0,  0.0, 0.0, 0.0,
