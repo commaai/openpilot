@@ -91,7 +91,6 @@ static void parse_banner(cereal::NavInstruction::Builder &instruction, const QMa
       }
     }
   }
-
 }
 
 RouteEngine::RouteEngine() {
@@ -99,14 +98,17 @@ RouteEngine::RouteEngine() {
   pm = new PubMaster({"navInstruction", "navRoute"});
 
   // Timers
-  timer = new QTimer(this);
-  QObject::connect(timer, SIGNAL(timeout()), this, SLOT(timerUpdate()));
-  timer->start(1000);
+  route_timer = new QTimer(this);
+  QObject::connect(route_timer, SIGNAL(timeout()), this, SLOT(routeUpdate()));
+  route_timer->start(1000);
+
+  msg_timer = new QTimer(this);
+  QObject::connect(msg_timer, SIGNAL(timeout()), this, SLOT(msgUpdate()));
+  msg_timer->start(50);
 
   // Build routing engine
   QVariantMap parameters;
-  QString token = MAPBOX_TOKEN.isEmpty() ? CommaApi::create_jwt({}, 4 * 7 * 24 * 3600) : MAPBOX_TOKEN;
-  parameters["mapbox.access_token"] = token;
+  parameters["mapbox.access_token"] = get_mapbox_token();
   parameters["mapbox.directions_api_url"] = MAPS_HOST + "/directions/v5/mapbox/";
 
   geoservice_provider = new QGeoServiceProvider("mapbox", parameters);
@@ -124,11 +126,13 @@ RouteEngine::RouteEngine() {
   }
 }
 
-void RouteEngine::timerUpdate() {
-  sm->update(0);
+void RouteEngine::msgUpdate() {
+  sm->update(1000);
   if (!sm->updated("liveLocationKalman")) {
+    active = false;
     return;
   }
+
 
   if (sm->updated("managerState")) {
     for (auto const &p : (*sm)["managerState"].getManagerState().getProcesses()) {
@@ -153,6 +157,15 @@ void RouteEngine::timerUpdate() {
   if (localizer_valid) {
     last_bearing = RAD2DEG(orientation.getValue()[2]);
     last_position = QMapbox::Coordinate(pos.getValue()[0], pos.getValue()[1]);
+    emit positionUpdated(*last_position, *last_bearing);
+  }
+
+  active = true;
+}
+
+void RouteEngine::routeUpdate() {
+  if (!active) {
+    return;
   }
 
   recomputeRoute();
@@ -261,6 +274,10 @@ bool RouteEngine::shouldRecompute() {
 }
 
 void RouteEngine::recomputeRoute() {
+  if (!last_position) {
+    return;
+  }
+
   auto new_destination = coordinate_from_param("NavDestination");
   if (!new_destination) {
     clearRoute();
@@ -308,6 +325,9 @@ void RouteEngine::routeCalculated(QGeoRouteReply *reply) {
 
       route = reply->routes().at(0);
       segment = route.firstRouteSegment();
+
+      auto path = route.path();
+      emit routeUpdated(path);
     } else {
       qWarning() << "Got empty route response";
     }

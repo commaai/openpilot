@@ -20,9 +20,13 @@ if __name__ == "__main__":
   mkdirs_exists_ok(out_path)
 
   r = Route(args.route)
-  lr = list(LogReader(r.qlog_paths()[args.segment]))
+  path = r.log_paths()[args.segment] or r.qlog_paths()[args.segment]
+  lr = list(LogReader(path))
 
   for msg in tqdm(lr):
       if msg.which() == 'thumbnail':
           with open(os.path.join(out_path, f"{msg.thumbnail.frameId}.jpg"), 'wb') as f:
               f.write(msg.thumbnail.thumbnail)
+      elif msg.which() == 'navThumbnail':
+          with open(os.path.join(out_path, f"nav_{msg.navThumbnail.frameId}.jpg"), 'wb') as f:
+              f.write(msg.navThumbnail.thumbnail)

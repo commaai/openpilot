@@ -135,6 +135,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"LiveParameters", PERSISTENT},
     {"NavDestination", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_OFF},
     {"NavSettingTime24h", PERSISTENT},
+    {"NavdRender", PERSISTENT},
     {"OpenpilotEnabledToggle", PERSISTENT},
     {"PandaHeartbeatLost", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_OFF},
     {"Passive", PERSISTENT},
