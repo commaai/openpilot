@@ -42,6 +42,10 @@ public:
 signals:
   void reviewTrainingGuide();
   void showDriverView();
+
+private:
+  void poweroff();
+  void reboot();
 };
 
 class TogglesPanel : public ListWidget {

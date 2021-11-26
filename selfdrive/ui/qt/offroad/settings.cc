@@ -183,34 +183,12 @@ DevicePanel::DevicePanel(QWidget* parent) : ListWidget(parent) {
   QPushButton *reboot_btn = new QPushButton("Reboot");
   reboot_btn->setObjectName("reboot_btn");
   power_layout->addWidget(reboot_btn);
-  QObject::connect(reboot_btn, &QPushButton::clicked, [&]() {
-    if (QUIState::ui_state.status == UIStatus::STATUS_DISENGAGED) {
-      if (ConfirmationDialog::confirm("Are you sure you want to reboot?", this)) {
-        // Check engaged again in case it changed while the dialog was open
-        if (QUIState::ui_state.status == UIStatus::STATUS_DISENGAGED) {
-          params.putBool("DoReboot", true);
-        }
-      }
-    } else {
-      ConfirmationDialog::alert("Disengage to Reboot", this);
-    }
-  });
+  QObject::connect(reboot_btn, &QPushButton::clicked, this, &DevicePanel::reboot);
 
   QPushButton *poweroff_btn = new QPushButton("Power Off");
   poweroff_btn->setObjectName("poweroff_btn");
   power_layout->addWidget(poweroff_btn);
-  QObject::connect(poweroff_btn, &QPushButton::clicked, [&]() {
-    if (QUIState::ui_state.status == UIStatus::STATUS_DISENGAGED) {
-      if (ConfirmationDialog::confirm("Are you sure you want to power off?", this)) {
-        // Check engaged again in case it changed while the dialog was open
-        if (QUIState::ui_state.status == UIStatus::STATUS_DISENGAGED) {
-          params.putBool("DoShutdown", true);
-        }
-      }
-    } else {
-      ConfirmationDialog::alert("Disengage to Power Off", this);
-    }
-  });
+  QObject::connect(poweroff_btn, &QPushButton::clicked, this, &DevicePanel::poweroff);
 
   setStyleSheet(R"(
     QPushButton {
@@ -224,6 +202,33 @@ DevicePanel::DevicePanel(QWidget* parent) : ListWidget(parent) {
   )");
   addItem(power_layout);
 }
+
+void DevicePanel::reboot() {
+  if (QUIState::ui_state.status == UIStatus::STATUS_DISENGAGED) {
+    if (ConfirmationDialog::confirm("Are you sure you want to reboot?", this)) {
+      // Check engaged again in case it changed while the dialog was open
+      if (QUIState::ui_state.status == UIStatus::STATUS_DISENGAGED) {
+        Params().putBool("DoReboot", true);
+      }
+    }
+  } else {
+    ConfirmationDialog::alert("Disengage to Reboot", this);
+  }
+}
+
+void DevicePanel::poweroff() {
+  if (QUIState::ui_state.status == UIStatus::STATUS_DISENGAGED) {
+    if (ConfirmationDialog::confirm("Are you sure you want to power off?", this)) {
+      // Check engaged again in case it changed while the dialog was open
+      if (QUIState::ui_state.status == UIStatus::STATUS_DISENGAGED) {
+        Params().putBool("DoShutdown", true);
+      }
+    }
+  } else {
+    ConfirmationDialog::alert("Disengage to Power Off", this);
+  }
+}
+
 
 SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
   gitBranchLbl = new LabelControl("Git Branch");
