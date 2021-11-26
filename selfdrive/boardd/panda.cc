@@ -478,6 +478,7 @@ bool Panda::unpack_can_buffer(uint8_t *data, int size, std::vector<can_frame> &o
       } else {
         // Keep partial CAN packet until next USB packet
         tail_size = (chunk_len - pos);
+        assert(tail_size <= CANPACKET_MAX_SIZE);
         memcpy(tail, &chunk[pos], tail_size);
         break;
       }
