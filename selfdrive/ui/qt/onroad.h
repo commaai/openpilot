@@ -9,6 +9,45 @@
 
 // ***** onroad widgets *****
 
+class OnroadHud : public QWidget {
+  Q_OBJECT
+  Q_PROPERTY(QString speed MEMBER speed NOTIFY valueChanged);
+  Q_PROPERTY(QString speedUnit MEMBER speedUnit NOTIFY valueChanged);
+  Q_PROPERTY(QString maxSpeed MEMBER maxSpeed NOTIFY valueChanged);
+  Q_PROPERTY(bool is_cruise_set MEMBER is_cruise_set NOTIFY valueChanged);
+  Q_PROPERTY(bool engageable MEMBER engageable NOTIFY valueChanged);
+  Q_PROPERTY(bool dmActive MEMBER dmActive NOTIFY valueChanged);
+  Q_PROPERTY(bool hideDM MEMBER hideDM NOTIFY valueChanged);
+  Q_PROPERTY(int status MEMBER status NOTIFY valueChanged);
+
+public:
+  explicit OnroadHud(QWidget *parent);
+  void updateState(const UIState &s);
+  void setMapWidth(int width);
+
+private:
+  void drawIcon(QPainter &p, int x, int y, QPixmap &img, QBrush bg, float opacity);
+  void drawText(QPainter &p, int x, int y, Qt::Alignment flag, const QString &text, int alpha = 255);
+  void paintEvent(QPaintEvent *event) override;
+
+  QPixmap engage_img;
+  QPixmap dm_img;
+  const int radius = 192;
+  const int img_size = 135;
+  QString speed;
+  QString speedUnit;
+  QString maxSpeed;
+  bool is_cruise_set = false;
+  bool engageable = false;
+  bool dmActive = false;
+  bool hideDM = false;
+  int status = STATUS_DISENGAGED;
+  int map_width = 0;
+
+signals:
+  void valueChanged();
+};
+
 class OnroadAlerts : public QWidget {
   Q_OBJECT
 
@@ -49,6 +88,7 @@ public:
 private:
   void paintEvent(QPaintEvent *event);
   void mousePressEvent(QMouseEvent* e) override;
+  OnroadHud *hud;
   OnroadAlerts *alerts;
   NvgWindow *nvg;
   QColor bg = bg_colors[STATUS_DISENGAGED];

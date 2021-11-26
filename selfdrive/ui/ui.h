@@ -136,9 +136,6 @@ typedef struct UIState {
   int fb_w = 0, fb_h = 0;
   NVGcontext *vg;
 
-  // images
-  std::map<std::string, int> images;
-
   std::unique_ptr<SubMaster> sm;
 
   UIStatus status;
