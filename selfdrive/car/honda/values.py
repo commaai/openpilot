@@ -1,3 +1,5 @@
+from enum import IntFlag
+
 from cereal import car
 from selfdrive.car import dbc_dict
 
@@ -35,6 +37,11 @@ class CarControllerParams():
     assert(CP.lateralParams.torqueBP[0] == 0)
     self.STEER_LOOKUP_BP = [v * -1 for v in CP.lateralParams.torqueBP][1:][::-1] + list(CP.lateralParams.torqueBP)
     self.STEER_LOOKUP_V = [v * -1 for v in CP.lateralParams.torqueV][1:][::-1] + list(CP.lateralParams.torqueV)
+
+
+class Flag(IntFlag):
+  # Bosch models with alternate set of LKAS_HUD messages
+  BOSCH_EXT_HUD = 1
 
 
 # Car button codes
