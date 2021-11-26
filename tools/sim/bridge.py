@@ -31,7 +31,7 @@ parser.add_argument('--spawn_point', dest='num_selected_spawn_point', type=int, 
 
 args = parser.parse_args()
 
-W, H = 1164, 874
+W, H = 1928, 1208
 REPEAT_COUNTER = 5
 PRINT_DECIMATION = 100
 STEER_RATIO = 15.
