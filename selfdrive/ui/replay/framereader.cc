@@ -34,8 +34,6 @@ enum AVPixelFormat get_hw_format(AVCodecContext *ctx, const enum AVPixelFormat *
 }  // namespace
 
 FrameReader::FrameReader(bool local_cache, int chunk_size, int retries) : FileReader(local_cache, chunk_size, retries) {
-  input_ctx = avformat_alloc_context();
-  sws_frame.reset(av_frame_alloc());
 }
 
 FrameReader::~FrameReader() {
@@ -47,9 +45,6 @@ FrameReader::~FrameReader() {
   if (input_ctx) avformat_close_input(&input_ctx);
   if (hw_device_ctx) av_buffer_unref(&hw_device_ctx);
 
-  if (rgb_sws_ctx_) sws_freeContext(rgb_sws_ctx_);
-  if (yuv_sws_ctx_) sws_freeContext(yuv_sws_ctx_);
-
   if (avio_ctx_) {
     av_freep(&avio_ctx_->buffer);
     avio_context_free(&avio_ctx_);
@@ -59,6 +54,9 @@ FrameReader::~FrameReader() {
 bool FrameReader::load(const std::string &url, bool no_cuda, std::atomic<bool> *abort) {
   std::string content = read(url, abort);
   if (content.empty()) return false;
+
+  input_ctx = avformat_alloc_context();
+  if (!input_ctx) return false;
 
   struct buffer_data bd = {
     .data = (uint8_t *)content.data(),
@@ -99,17 +97,10 @@ bool FrameReader::load(const std::string &url, bool no_cuda, std::atomic<bool> *
   if (!no_cuda) {
     if (!initHardwareDecoder(AV_HWDEVICE_TYPE_CUDA)) {
       printf("No CUDA capable device was found. fallback to CPU decoding.\n");
+    } else {
+      nv12toyuv_buffer.resize(getYUVSize());
     }
   }
-
-  rgb_sws_ctx_ = sws_getContext(decoder_ctx->width, decoder_ctx->height, sws_src_format,
-                                width, height, AV_PIX_FMT_BGR24,
-                                SWS_BILINEAR, NULL, NULL, NULL);
-  if (!rgb_sws_ctx_) return false;
-  yuv_sws_ctx_ = sws_getContext(decoder_ctx->width, decoder_ctx->height, sws_src_format,
-                                width, height, AV_PIX_FMT_YUV420P,
-                                SWS_BILINEAR, NULL, NULL, NULL);
-  if (!yuv_sws_ctx_) return false;
 
   ret = avcodec_open2(decoder_ctx, decoder, NULL);
   if (ret < 0) return false;
@@ -148,17 +139,6 @@ bool FrameReader::initHardwareDecoder(AVHWDeviceType hw_device_type) {
     printf("Failed to create specified HW device %d.\n", ret);
     return false;
   }
-
-  // get sws source format
-  AVHWFramesConstraints *hw_frames_const = av_hwdevice_get_hwframe_constraints(hw_device_ctx, nullptr);
-  assert(hw_frames_const != 0);
-  for (AVPixelFormat *p = hw_frames_const->valid_sw_formats; *p != AV_PIX_FMT_NONE; p++) {
-    if (sws_isSupportedInput(*p)) {
-      sws_src_format = *p;
-      break;
-    }
-  }
-  av_hwframe_constraints_free(&hw_frames_const);
 
   decoder_ctx->hw_device_ctx = av_buffer_ref(hw_device_ctx);
   decoder_ctx->opaque = &hw_pix_fmt;
@@ -228,27 +208,26 @@ AVFrame *FrameReader::decodeFrame(AVPacket *pkt) {
 }
 
 bool FrameReader::copyBuffers(AVFrame *f, uint8_t *rgb, uint8_t *yuv) {
-  if (yuv) {
-    if (sws_src_format == AV_PIX_FMT_NV12) {
-      // libswscale crash if height is not 16 bytes aligned for NV12->YUV420 conversion
-      assert(sws_src_format == AV_PIX_FMT_NV12);
+  if (hw_pix_fmt == AV_PIX_FMT_CUDA) {
+    uint8_t *y = yuv ? yuv : nv12toyuv_buffer.data();
+    uint8_t *u = y + width * height;
+    uint8_t *v = u + (width / 2) * (height / 2);
+    libyuv::NV12ToI420(f->data[0], f->linesize[0], f->data[1], f->linesize[1],
+                       y, width, u, width / 2, v, width / 2, width, height);
+    libyuv::I420ToRGB24(y, width, u, width / 2, v, width / 2,
+                        rgb, width * 3, width, height);
+  } else {
+    if (yuv) {
       uint8_t *u = yuv + width * height;
       uint8_t *v = u + (width / 2) * (height / 2);
-      libyuv::NV12ToI420(f->data[0], f->linesize[0],
-                         f->data[1], f->linesize[1],
-                         yuv, width,
-                         u, width / 2,
-                         v, width / 2,
-                         width, height);
-    } else {
-      av_image_fill_arrays(sws_frame->data, sws_frame->linesize, yuv, AV_PIX_FMT_YUV420P, width, height, 1);
-      int ret = sws_scale(yuv_sws_ctx_, (const uint8_t **)f->data, f->linesize, 0, f->height, sws_frame->data, sws_frame->linesize);
-      if (ret < 0) return false;
+      memcpy(yuv, f->data[0], width * height);
+      memcpy(u, f->data[1], width / 2 * height / 2);
+      memcpy(v, f->data[2], width / 2 * height / 2);
     }
+    libyuv::I420ToRGB24(f->data[0], f->linesize[0],
+                        f->data[1], f->linesize[1],
+                        f->data[2], f->linesize[2],
+                        rgb, width * 3, width, height);
   }
-
-  // images is going to be written to output buffers, no alignment (align = 1)
-  av_image_fill_arrays(sws_frame->data, sws_frame->linesize, rgb, AV_PIX_FMT_BGR24, width, height, 1);
-  int ret = sws_scale(rgb_sws_ctx_, (const uint8_t **)f->data, f->linesize, 0, f->height, sws_frame->data, sws_frame->linesize);
-  return ret >= 0;
+  return true;
 }
