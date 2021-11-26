@@ -39,7 +39,6 @@ void main() {
 }
 )";
 
-
 const mat4 device_transform = {{
   1.0,  0.0, 0.0, 0.0,
   0.0,  1.0, 0.0, 0.0,
