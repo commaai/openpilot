@@ -78,7 +78,7 @@ bool check_all_connected(const std::vector<Panda *> &pandas) {
   return true;
 }
 
-enum SYNC_TIME_DIR { SYNC_TO_PANDA, SYNC_FROM_PANDA };
+enum class SyncTimeDir { SYNC_TO_PANDA, SYNC_FROM_PANDA };
 
 void sync_time(Panda *panda, SYNC_TIME_DIR dir) {
   if (!panda->has_rtc) return;
