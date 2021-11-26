@@ -43,9 +43,10 @@ signals:
   void reviewTrainingGuide();
   void showDriverView();
 
-private:
+private slots:
   void poweroff();
   void reboot();
+  void updateCalibDescription();
 };
 
 class TogglesPanel : public ListWidget {
