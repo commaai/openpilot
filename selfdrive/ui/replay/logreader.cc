@@ -86,8 +86,9 @@ bool LogReader::parseLog(const std::string &data) {
     }
   } catch (const kj::Exception &e) {
     std::cout << "failed to parse log : " << e.getDescription().cStr() << std::endl;
-    return false;
   }
+
+  if (events.empty()) return false;
 
   std::sort(events.begin(), events.end(), Event::lessThan());
   return true;
