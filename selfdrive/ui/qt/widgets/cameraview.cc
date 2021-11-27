@@ -98,7 +98,6 @@ CameraViewWidget::CameraViewWidget(std::string stream_name, VisionStreamType typ
                                    stream_name(stream_name), stream_type(type), zoomed_view(zoom), QOpenGLWidget(parent) {
   setAttribute(Qt::WA_OpaquePaintEvent);
   connect(this, &CameraViewWidget::vipcThreadConnected, this, &CameraViewWidget::vipcConnected, Qt::BlockingQueuedConnection);
-  connect(this, &CameraViewWidget::vipcThreadFrameReceived, this, &CameraViewWidget::vipcFrameReceived);
 }
 
 CameraViewWidget::~CameraViewWidget() {
@@ -152,7 +151,7 @@ void CameraViewWidget::initializeGL() {
 }
 
 void CameraViewWidget::showEvent(QShowEvent *event) {
-  latest_frame = nullptr;
+  latest_frame = -1;
   if (!vipc_thread) {
     vipc_thread = new QThread();
     connect(vipc_thread, &QThread::started, [=]() { vipcThread(); });
@@ -200,18 +199,17 @@ void CameraViewWidget::updateFrameMat(int w, int h) {
 }
 
 void CameraViewWidget::paintGL() {
-  if (!latest_frame) {
+  if (latest_frame == -1) {
     glClearColor(bg.redF(), bg.greenF(), bg.blueF(), bg.alphaF());
     glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
     return;
   }
-  std::unique_lock lk(texture_lock);
 
   glViewport(0, 0, width(), height());
 
   glBindVertexArray(frame_vao);
   glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, texture[latest_frame->idx]->frame_tex);
+  glBindTexture(GL_TEXTURE_2D, texture[latest_frame]->frame_tex);
 
   glUseProgram(program->programId());
   glUniform1i(program->uniformLocation("uTexture"), 0);
@@ -239,15 +237,10 @@ void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
     assert(glGetError() == GL_NO_ERROR);
   }
-  latest_frame = nullptr;
+  latest_frame = -1;
   stream_width = vipc_client->buffers[0].width;
   stream_height = vipc_client->buffers[0].height;
   updateFrameMat(width(), height());
-}
-
-void CameraViewWidget::vipcFrameReceived(VisionBuf *buf) {
-  latest_frame = buf;
-  repaint();
 }
 
 void CameraViewWidget::vipcThread() {
@@ -298,8 +291,8 @@ void CameraViewWidget::vipcThread() {
 
     if (VisionBuf *buf = vipc_client->recv(nullptr, 1000)) {
       if (!Hardware::EON()) {
-        std::unique_lock lk(texture_lock);
-
+        // std::unique_lock lk(texture_lock);
+        gl_buffer->bind();
         void *texture_buffer = gl_buffer->map(QOpenGLBuffer::WriteOnly);
         memcpy(texture_buffer, buf->addr, buf->len);
         gl_buffer->unmap();
@@ -309,13 +302,14 @@ void CameraViewWidget::vipcThread() {
         glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, buf->width, buf->height, GL_RGB, GL_UNSIGNED_BYTE, 0);
         glBindTexture(GL_TEXTURE_2D, 0);
         assert(glGetError() == GL_NO_ERROR);
-
-        emit vipcThreadFrameReceived(buf);
-
-        glFlush();
-      } else {
-        emit vipcThreadFrameReceived(buf);
+        glFinish();
       }
+      latest_frame = buf->idx;
+      // Schedule update. update() will be invoked on the gui thread.
+      QMetaObject::invokeMethod(this, "update");
+
+      // TODO: remove this after refactor DriverView
+      emit vipcThreadFrameReceived(buf);
     }
   }
 }
