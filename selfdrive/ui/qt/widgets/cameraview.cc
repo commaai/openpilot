@@ -300,6 +300,7 @@ void CameraViewWidget::vipcThread() {
         glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, buf->width, buf->height, GL_RGB, GL_UNSIGNED_BYTE, 0);
         glBindTexture(GL_TEXTURE_2D, 0);
         assert(glGetError() == GL_NO_ERROR);
+        // use glFinish to ensure that the texture has been uploaded.
         glFinish();
       }
       latest_frame = buf->idx;
