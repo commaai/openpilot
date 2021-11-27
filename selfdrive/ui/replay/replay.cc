@@ -25,10 +25,11 @@ Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *s
   qDebug() << "services " << s;
 
   if (sm == nullptr) {
-    pm = new PubMaster(s);
+    pm = std::make_unique<PubMaster>(s);
   }
   route_ = std::make_unique<Route>(route, data_dir);
-  events_ = new std::vector<Event *>();
+  events_ = std::make_unique<std::vector<Event *>>();
+  new_events_ = std::make_unique<std::vector<Event *>>();
 
   connect(this, &Replay::seekTo, this, &Replay::doSeek);
   connect(this, &Replay::segmentChanged, this, &Replay::queueSegment);
@@ -36,8 +37,6 @@ Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *s
 
 Replay::~Replay() {
   stop();
-  delete pm;
-  delete events_;
 }
 
 void Replay::stop() {
@@ -181,28 +180,27 @@ void Replay::queueSegment() {
 void Replay::mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::iterator &end) {
   // merge 3 segments in sequence.
   std::vector<int> segments_need_merge;
+  size_t new_events_size = 0;
   for (auto it = begin; it != end && it->second->isLoaded() && segments_need_merge.size() < 3; ++it) {
     segments_need_merge.push_back(it->first);
+    new_events_size += it->second->log->events.size();
   }
 
   if (segments_need_merge != segments_merged_) {
     qDebug() << "merge segments" << segments_need_merge;
-    std::vector<Event *> *new_events = new std::vector<Event *>();
-    new_events->reserve(std::accumulate(segments_need_merge.begin(), segments_need_merge.end(), 0,
-                                        [=](int v, int n) { return v + segments_[n]->log->events.size(); }));
+    new_events_->clear();
+    new_events_->reserve(new_events_size);
     for (int n : segments_need_merge) {
-      auto &e = segments_[n]->log->events;
-      auto middle = new_events->insert(new_events->end(), e.begin(), e.end());
-      std::inplace_merge(new_events->begin(), middle, new_events->end(), Event::lessThan());
+      const auto &e = segments_[n]->log->events;
+      auto middle = new_events_->insert(new_events_->end(), e.begin(), e.end());
+      std::inplace_merge(new_events_->begin(), middle, new_events_->end(), Event::lessThan());
     }
 
-    auto prev_events = events_;
     updateEvents([&]() {
-      events_ = new_events;
+      events_.swap(new_events_);
       segments_merged_ = segments_need_merge;
       return true;
     });
-    delete prev_events;
   }
 }
 
