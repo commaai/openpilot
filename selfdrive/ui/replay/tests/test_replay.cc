@@ -56,6 +56,26 @@ TEST_CASE("FileReader") {
   }
 }
 
+class testLogReader : public LogReader {
+ public:
+  testLogReader() : LogReader() {}
+
+  void test_parse(const std::string &data) {
+    parseLog(data);
+    REQUIRE(events.size() > 0);
+  }
+};
+
+TEST_CASE("LogReader") {
+  SECTION("corrupt log") {
+    FileReader reader(true);
+    std::string content = reader.read(TEST_RLOG_URL);
+    content.resize(content.length() / 2);
+    testLogReader log;
+    log.test_parse(content);
+  }
+}
+
 TEST_CASE("Segment") {
   auto flags = GENERATE(REPLAY_FLAG_DCAM | REPLAY_FLAG_ECAM, REPLAY_FLAG_QCAMERA);
   Route demo_route(DEMO_ROUTE);

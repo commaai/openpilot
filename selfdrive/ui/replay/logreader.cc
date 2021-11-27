@@ -47,9 +47,16 @@ LogReader::~LogReader() {
 }
 
 bool LogReader::load(const std::string &file, std::atomic<bool> *abort) {
-  raw_ = decompressBZ2(read(file, abort));
+  std::string data = read(file, abort);
+  if (data.empty()) return false;
+
+  return parseLog(data);
+}
+
+bool LogReader::parseLog(const std::string &data) {
+  raw_ = decompressBZ2(data);
   if (raw_.empty()) {
-    std::cout << "failed to decompress log " << file << std::endl;
+    std::cout << "failed to decompress log" << std::endl;
     return false;
   }
 
@@ -78,7 +85,7 @@ bool LogReader::load(const std::string &file, std::atomic<bool> *abort) {
       events.push_back(evt);
     }
   } catch (const kj::Exception &e) {
-    std::cout << "failed to parse log " << file << " : " << e.getDescription().cStr() << std::endl;
+    std::cout << "failed to parse log : " << e.getDescription().cStr() << std::endl;
     return false;
   }
 

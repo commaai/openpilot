@@ -54,6 +54,9 @@ public:
 
   std::vector<Event*> events;
 
+protected:
+  bool parseLog(const std::string &data);
+
 private:
   std::string raw_;
 #ifdef HAS_MEMORY_RESOURCE
