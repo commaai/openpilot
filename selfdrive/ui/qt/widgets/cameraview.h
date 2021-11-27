@@ -36,19 +36,19 @@ protected:
   void vipcThread();
 
   bool zoomed_view;
+  std::atomic<int> latest_frame = -1;
   GLuint frame_vao, frame_vbo, frame_ibo;
   mat4 frame_mat;
-
+  std::unique_ptr<EGLImageTexture> texture[UI_BUF_COUNT];
   QOpenGLShaderProgram *program;
   QColor bg = QColor("#000000");
+
   std::string stream_name;
   int stream_width = 0;
   int stream_height = 0;
   std::atomic<VisionStreamType> stream_type;
   QThread *vipc_thread = nullptr;
 
-  std::unique_ptr<EGLImageTexture> texture[UI_BUF_COUNT];
-  std::atomic<int> latest_frame = -1;
 
 protected slots:
   void vipcConnected(VisionIpcClient *vipc_client);

@@ -291,8 +291,6 @@ void CameraViewWidget::vipcThread() {
 
     if (VisionBuf *buf = vipc_client->recv(nullptr, 1000)) {
       if (!Hardware::EON()) {
-        // std::unique_lock lk(texture_lock);
-        gl_buffer->bind();
         void *texture_buffer = gl_buffer->map(QOpenGLBuffer::WriteOnly);
         memcpy(texture_buffer, buf->addr, buf->len);
         gl_buffer->unmap();
