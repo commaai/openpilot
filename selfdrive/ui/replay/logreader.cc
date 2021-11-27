@@ -40,6 +40,7 @@ LogReader::~LogReader() {
   for (Event *e : events) {
     delete e;
   }
+
 #ifdef HAS_MEMORY_RESOURCE
   delete mbr_;
   ::operator delete(pool_buffer_);
@@ -63,6 +64,7 @@ bool LogReader::parseLog(const std::string &data) {
   try {
     kj::ArrayPtr<const capnp::word> words((const capnp::word *)raw_.data(), raw_.size() / sizeof(capnp::word));
     while (words.size() > 0) {
+
 #ifdef HAS_MEMORY_RESOURCE
       Event *evt = new (mbr_) Event(words);
 #else
@@ -73,11 +75,13 @@ bool LogReader::parseLog(const std::string &data) {
       if (evt->which == cereal::Event::ROAD_ENCODE_IDX ||
           evt->which == cereal::Event::DRIVER_ENCODE_IDX ||
           evt->which == cereal::Event::WIDE_ROAD_ENCODE_IDX) {
+
 #ifdef HAS_MEMORY_RESOURCE
         Event *frame_evt = new (mbr_) Event(words, true);
 #else
         Event *frame_evt = new Event(words, true);
 #endif
+
         events.push_back(frame_evt);
       }
 
