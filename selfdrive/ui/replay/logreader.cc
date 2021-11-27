@@ -48,7 +48,10 @@ LogReader::~LogReader() {
 
 bool LogReader::load(const std::string &file, std::atomic<bool> *abort) {
   raw_ = decompressBZ2(read(file, abort));
-  if (raw_.empty()) return false;
+  if (raw_.empty()) {
+    std::cout << "failed to decompress log " << file << std::endl;
+    return false;
+  }
 
   try {
     kj::ArrayPtr<const capnp::word> words((const capnp::word *)raw_.data(), raw_.size() / sizeof(capnp::word));
@@ -75,7 +78,7 @@ bool LogReader::load(const std::string &file, std::atomic<bool> *abort) {
       events.push_back(evt);
     }
   } catch (const kj::Exception &e) {
-    std::cout << "failed to parse log " << file << " : " << e.getDescription().cStr();
+    std::cout << "failed to parse log " << file << " : " << e.getDescription().cStr() << std::endl;
     return false;
   }
 
