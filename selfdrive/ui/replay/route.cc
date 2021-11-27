@@ -118,8 +118,8 @@ void Segment::loadFile(int id, const std::string file) {
   const bool local_cache = !(flags & REPLAY_FLAG_NO_FILE_CACHE);
   bool success = false;
   if (id < MAX_CAMERAS) {
-    frames[id] = std::make_unique<FrameReader>(local_cache, 20 * 1024 * 1024, 3);
-    success = frames[id]->load(file, flags & REPLAY_FLAG_NO_CUDA, &abort_);
+    frames[id] = std::make_unique<FrameReader>();
+    success = frames[id]->load(file, flags & REPLAY_FLAG_NO_CUDA, &abort_, local_cache, 20 * 1024 * 1024, 3);
   } else {
     log = std::make_unique<LogReader>();
     success = log->load(file, &abort_, local_cache, -1, 3);

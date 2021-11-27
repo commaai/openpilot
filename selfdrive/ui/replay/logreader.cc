@@ -47,9 +47,9 @@ LogReader::~LogReader() {
 #endif
 }
 
-bool LogReader::load(const std::string &file, std::atomic<bool> *abort, bool local_cache, int chunk_size, int retries) {
+bool LogReader::load(const std::string &url, std::atomic<bool> *abort, bool local_cache, int chunk_size, int retries) {
   FileReader f(local_cache, chunk_size, retries);
-  std::string data = f.read(file, abort);
+  std::string data = f.read(url, abort);
   if (data.empty()) return false;
 
   return load((std::byte*)data.data(), data.size(), abort);

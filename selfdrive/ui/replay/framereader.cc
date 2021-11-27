@@ -33,8 +33,7 @@ enum AVPixelFormat get_hw_format(AVCodecContext *ctx, const enum AVPixelFormat *
 
 }  // namespace
 
-FrameReader::FrameReader(bool local_cache, int chunk_size, int retries) : FileReader(local_cache, chunk_size, retries) {
-}
+FrameReader::FrameReader() {}
 
 FrameReader::~FrameReader() {
   for (auto &f : frames_) {
@@ -51,17 +50,22 @@ FrameReader::~FrameReader() {
   }
 }
 
-bool FrameReader::load(const std::string &url, bool no_cuda, std::atomic<bool> *abort) {
-  std::string content = read(url, abort);
-  if (content.empty()) return false;
+bool FrameReader::load(const std::string &url, bool no_cuda, std::atomic<bool> *abort, bool local_cache, int chunk_size, int retries) {
+  FileReader f(local_cache, chunk_size, retries);
+  std::string data = f.read(url, abort);
+  if (data.empty()) return false;
 
+  return load((std::byte *)data.data(), data.size(), no_cuda, abort);
+}
+
+bool FrameReader::load(const std::byte *data, size_t size, bool no_cuda, std::atomic<bool> *abort) {
   input_ctx = avformat_alloc_context();
   if (!input_ctx) return false;
 
   struct buffer_data bd = {
-    .data = (uint8_t *)content.data(),
+    .data = (const uint8_t*)data,
     .offset = 0,
-    .size = content.size(),
+    .size = size,
   };
   const int avio_ctx_buffer_size = 64 * 1024;
   unsigned char *avio_ctx_buffer = (unsigned char *)av_malloc(avio_ctx_buffer_size);
@@ -69,11 +73,11 @@ bool FrameReader::load(const std::string &url, bool no_cuda, std::atomic<bool> *
   input_ctx->pb = avio_ctx_;
 
   input_ctx->probesize = 10 * 1024 * 1024;  // 10MB
-  int ret = avformat_open_input(&input_ctx, url.c_str(), NULL, NULL);
+  int ret = avformat_open_input(&input_ctx, nullptr, nullptr, nullptr);
   if (ret != 0) {
     char err_str[1024] = {0};
     av_strerror(ret, err_str, std::size(err_str));
-    printf("Error loading video - %s - %s\n", err_str, url.c_str());
+    printf("Error loading video - %s\n", err_str);
     return false;
   }
 
