@@ -62,7 +62,7 @@ TEST_CASE("LogReader") {
     std::string corrupt_content = reader.read(TEST_RLOG_URL);
     corrupt_content.resize(corrupt_content.length() / 2);
     LogReader log;
-    log.load(corrupt_content);
+    REQUIRE(log.load((std::byte *)corrupt_content.data(), corrupt_content.size()));
     REQUIRE(log.events.size() > 0);
   }
 }
