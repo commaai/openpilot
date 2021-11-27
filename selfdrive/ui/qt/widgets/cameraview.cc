@@ -151,7 +151,7 @@ void CameraViewWidget::initializeGL() {
 }
 
 void CameraViewWidget::showEvent(QShowEvent *event) {
-  latest_frame = -1;
+  latest_texture_id = -1;
   if (!vipc_thread) {
     vipc_thread = new QThread();
     connect(vipc_thread, &QThread::started, [=]() { vipcThread(); });
@@ -199,7 +199,7 @@ void CameraViewWidget::updateFrameMat(int w, int h) {
 }
 
 void CameraViewWidget::paintGL() {
-  if (latest_frame == -1) {
+  if (latest_texture_id == -1) {
     glClearColor(bg.redF(), bg.greenF(), bg.blueF(), bg.alphaF());
     glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
     return;
@@ -209,7 +209,7 @@ void CameraViewWidget::paintGL() {
 
   glBindVertexArray(frame_vao);
   glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, texture[latest_frame]->frame_tex);
+  glBindTexture(GL_TEXTURE_2D, texture[latest_texture_id]->frame_tex);
 
   glUseProgram(program->programId());
   glUniform1i(program->uniformLocation("uTexture"), 0);
@@ -237,7 +237,7 @@ void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
     assert(glGetError() == GL_NO_ERROR);
   }
-  latest_frame = -1;
+  latest_texture_id = -1;
   stream_width = vipc_client->buffers[0].width;
   stream_height = vipc_client->buffers[0].height;
   updateFrameMat(width(), height());
@@ -303,11 +303,11 @@ void CameraViewWidget::vipcThread() {
         // use glFinish to ensure that the texture has been uploaded.
         glFinish();
       }
-      latest_frame = buf->idx;
+      latest_texture_id = buf->idx;
       // Schedule update. update() will be invoked on the gui thread.
       QMetaObject::invokeMethod(this, "update");
 
-      // TODO: remove this after refactor DriverView
+      // TODO: remove later, it's only connected by DriverView.
       emit vipcThreadFrameReceived(buf);
     }
   }

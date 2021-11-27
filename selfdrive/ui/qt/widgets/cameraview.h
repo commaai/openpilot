@@ -36,7 +36,7 @@ protected:
   void vipcThread();
 
   bool zoomed_view;
-  std::atomic<int> latest_frame = -1;
+  std::atomic<int> latest_texture_id = -1;
   GLuint frame_vao, frame_vbo, frame_ibo;
   mat4 frame_mat;
   std::unique_ptr<EGLImageTexture> texture[UI_BUF_COUNT];
