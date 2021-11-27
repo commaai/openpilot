@@ -106,7 +106,7 @@ bool FrameReader::load(const std::byte *data, size_t size, bool no_cuda, std::at
     }
   }
 
-  ret = avcodec_open2(decoder_ctx, decoder, NULL);
+  ret = avcodec_open2(decoder_ctx, decoder, nullptr);
   if (ret < 0) return false;
 
   frames_.reserve(60 * 20);  // 20fps, one minute
