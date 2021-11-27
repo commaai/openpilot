@@ -1,6 +1,7 @@
 #include "selfdrive/ui/replay/logreader.h"
 
 #include <algorithm>
+#include <iostream>
 #include "selfdrive/ui/replay/util.h"
 
 Event::Event(const kj::ArrayPtr<const capnp::word> &amsg, bool frame) : reader(amsg), frame(frame) {
@@ -49,9 +50,9 @@ bool LogReader::load(const std::string &file, std::atomic<bool> *abort) {
   raw_ = decompressBZ2(read(file, abort));
   if (raw_.empty()) return false;
 
-  kj::ArrayPtr<const capnp::word> words((const capnp::word *)raw_.data(), raw_.size() / sizeof(capnp::word));
-  while (words.size() > 0) {
-    try {
+  try {
+    kj::ArrayPtr<const capnp::word> words((const capnp::word *)raw_.data(), raw_.size() / sizeof(capnp::word));
+    while (words.size() > 0) {
 #ifdef HAS_MEMORY_RESOURCE
       Event *evt = new (mbr_) Event(words);
 #else
@@ -72,10 +73,12 @@ bool LogReader::load(const std::string &file, std::atomic<bool> *abort) {
 
       words = kj::arrayPtr(evt->reader.getEnd(), words.end());
       events.push_back(evt);
-    } catch (const kj::Exception &e) {
-      return false;
     }
+  } catch (const kj::Exception &e) {
+    std::cout << "failed to parse log " << file << " : " << e.getDescription().cStr();
+    return false;
   }
+
   std::sort(events.begin(), events.end(), Event::lessThan());
   return true;
 }
