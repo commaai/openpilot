@@ -384,7 +384,7 @@ void Panda::pack_can_buffer(const capnp::List<cereal::CanData>::Reader &can_data
       }
       auto can_data = cmsg.getDat();
       uint8_t data_len_code = len_to_dlc(can_data.size());
-      assert(can_data.size() <= ((hw_type == cereal::PandaState::PandaType::RED_PANDA) ? 64 : 8));
+      assert(can_data.size() <= (hw_type == cereal::PandaState::PandaType::RED_PANDA) ? 64 : 8);
       assert(can_data.size() == dlc_to_len[data_len_code]);
 
       can_header header;
