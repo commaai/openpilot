@@ -177,7 +177,16 @@ std::string decompressBZ2(const std::string &in) {
   do {
     strm.next_out = (char *)(&out[strm.total_out_lo32]);
     strm.avail_out = out.size() - strm.total_out_lo32;
+
+    const char *prev_write_pos = strm.next_out;
     bzerror = BZ2_bzDecompress(&strm);
+    if (prev_write_pos == strm.next_out) {
+      // content is corrupt
+      bzerror = BZ_STREAM_END;
+      std::cout << "decompressBZ2 error : content is corrupt" << std::endl;
+      break;
+    }
+
     if (bzerror == BZ_OK && strm.avail_in > 0 && strm.avail_out == 0) {
       out.resize(out.size() * 2);
     }
