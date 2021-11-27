@@ -184,7 +184,7 @@ std::string decompressBZ2(const std::byte *in, size_t in_size) {
 
     const char *prev_write_pos = strm.next_out;
     bzerror = BZ2_bzDecompress(&strm);
-    if (prev_write_pos == strm.next_out) {
+    if (bzerror == BZ_OK && prev_write_pos == strm.next_out) {
       // content is corrupt
       bzerror = BZ_STREAM_END;
       std::cout << "decompressBZ2 error : content is corrupt" << std::endl;
