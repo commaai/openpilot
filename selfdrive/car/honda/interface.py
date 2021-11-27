@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
+from dataclasses import dataclass
+from functools import reduce
+from typing import Dict, Any
+
 from cereal import car
 from panda import Panda
 from common.numpy_fast import interp
 from common.params import Params
-from selfdrive.car.honda.values import CarControllerParams, CruiseButtons, CAR, HONDA_BOSCH, HONDA_NIDEC_ALT_SCM_MESSAGES, HONDA_BOSCH_ALT_BRAKE_SIGNAL
+from selfdrive.car.honda.values import CarControllerParams, CruiseButtons, CAR
 from selfdrive.car import STD_CARGO_KG, CivicParams, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
 from selfdrive.car.disable_ecu import disable_ecu
@@ -15,10 +19,39 @@ EventName = car.CarEvent.EventName
 TransmissionType = car.CarParams.TransmissionType
 
 
+@dataclass
+class HondaDetails:
+  "Honda-specific details associated with CarParams via DETAILS[CP]"
+
+  is_bosch: bool = False
+  is_bosch_alt_brake_signal: bool = False
+  is_bosch_legacy_brake_command: bool = False
+  is_nidec_alt_pcm_accel: bool = False
+  is_nidec_alt_scm_messages: bool = False
+  steer_threshold: int = 1200
+  # TODO: is this real?
+  speed_factor: float = 1.0
+
+
+DETAILS: Dict[Any, HondaDetails] = {}  # car_params : HondaDetails
+
+_DEFAULT_CAR_PARAMS = CarInterfaceBase.get_std_params('', gen_empty_fingerprint())
+
+
+def _set_if_unaltered(obj, prototype, items: Dict[str, Any]):
+  """set nested attributes of an object if they are unaltered vs. the prototype"""
+  for path, value in items.items():
+    *parent_path, name = path.split('.')
+    field_parent = reduce(getattr, parent_path, obj)
+    prototype_field_parent = reduce(getattr, parent_path, prototype)
+    if repr(getattr(field_parent, name)) == repr(getattr(prototype_field_parent, name)):
+      setattr(field_parent, name, value)
+
+
 class CarInterface(CarInterfaceBase):
   @staticmethod
   def get_pid_accel_limits(CP, current_speed, cruise_speed):
-    if CP.carFingerprint in HONDA_BOSCH:
+    if DETAILS[CP].is_bosch:
       return CarControllerParams.BOSCH_ACCEL_MIN, CarControllerParams.BOSCH_ACCEL_MAX
     else:
       # NIDECs don't allow acceleration near cruise_speed,
@@ -31,30 +64,7 @@ class CarInterface(CarInterfaceBase):
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=[]):  # pylint: disable=dangerous-default-value
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
     ret.carName = "honda"
-
-    if candidate in HONDA_BOSCH:
-      ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hondaBosch)]
-      ret.radarOffCan = True
-
-      # Disable the radar and let openpilot control longitudinal
-      # WARNING: THIS DISABLES AEB!
-      ret.openpilotLongitudinalControl = Params().get_bool("DisableRadar")
-
-      ret.pcmCruise = not ret.openpilotLongitudinalControl
-    else:
-      ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hondaNidec)]
-      ret.enableGasInterceptor = 0x201 in fingerprint[0]
-      ret.openpilotLongitudinalControl = True
-
-      ret.pcmCruise = not ret.enableGasInterceptor
-      ret.communityFeature = ret.enableGasInterceptor
-
-    if candidate == CAR.CRV_5G:
-      ret.enableBsm = 0x12f8bfa7 in fingerprint[0]
-
-    # Accord 1.5T CVT has different gearbox message
-    if candidate == CAR.ACCORD and 0x191 in fingerprint[1]:
-      ret.transmissionType = TransmissionType.cvt
+    details = DETAILS[ret] = HondaDetails()
 
     # Certain Hondas have an extra steering sensor at the bottom of the steering rack,
     # which improves controls quality as it removes the steering column torsion from feedback.
@@ -63,17 +73,6 @@ class CarInterface(CarInterfaceBase):
     ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0], [0]]
     ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
     ret.lateralTuning.pid.kf = 0.00006  # conservative feed-forward
-
-    if candidate in HONDA_BOSCH:
-      ret.longitudinalTuning.kpV = [0.25]
-      ret.longitudinalTuning.kiV = [0.05]
-      ret.longitudinalActuatorDelayUpperBound = 0.5 # s
-    else:
-      # default longitudinal tuning for all hondas
-      ret.longitudinalTuning.kpBP = [0., 5., 35.]
-      ret.longitudinalTuning.kpV = [1.2, 0.8, 0.5]
-      ret.longitudinalTuning.kiBP = [0., 35.]
-      ret.longitudinalTuning.kiV = [0.18, 0.12]
 
     eps_modified = False
     for fw in car_fw:
@@ -109,6 +108,8 @@ class CarInterface(CarInterfaceBase):
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
       tire_stiffness_factor = 1.
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.8], [0.24]]
+      details.is_bosch = True
+      details.is_bosch_legacy_brake_command = candidate == CAR.CIVIC_BOSCH
 
     elif candidate in (CAR.ACCORD, CAR.ACCORD_2021, CAR.ACCORDH, CAR.ACCORDH_2021):
       stop_and_go = True
@@ -119,10 +120,17 @@ class CarInterface(CarInterfaceBase):
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
       tire_stiffness_factor = 0.8467
 
+      # Accord 1.5T CVT has different gearbox message
+      if candidate == CAR.ACCORD and 0x191 in fingerprint[1]:
+        ret.transmissionType = TransmissionType.cvt
+
       if eps_modified:
         ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.3], [0.09]]
       else:
         ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.18]]
+
+      details.is_bosch = True
+      details.is_bosch_alt_brake_signal = candidate in (CAR.ACCORD, CAR.ACCORD_2021)
 
     elif candidate == CAR.ACURA_ILX:
       stop_and_go = False
@@ -133,6 +141,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 3840], [0, 3840]]  # TODO: determine if there is a dead zone at the top end
       tire_stiffness_factor = 0.72
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.8], [0.24]]
+      details.is_nidec_alt_scm_messages = True
 
     elif candidate in (CAR.CRV, CAR.CRV_EU):
       stop_and_go = False
@@ -143,6 +152,10 @@ class CarInterface(CarInterfaceBase):
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 1000], [0, 1000]]  # TODO: determine if there is a dead zone at the top end
       tire_stiffness_factor = 0.444
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.8], [0.24]]
+      details.is_nidec_alt_scm_messages = True
+      details.speed_factor = 1.025
+      if candidate == CAR.CRV_EU:
+        details.steer_threshold = 400
 
     elif candidate == CAR.CRV_5G:
       stop_and_go = True
@@ -150,6 +163,7 @@ class CarInterface(CarInterfaceBase):
       ret.wheelbase = 2.66
       ret.centerToFront = ret.wheelbase * 0.41
       ret.steerRatio = 16.0  # 12.3 is spec end-to-end
+      ret.enableBsm = 0x12f8bfa7 in fingerprint[0]
       if eps_modified:
         # stock request input values:     0x0000, 0x00DB, 0x01BB, 0x0296, 0x0377, 0x0454, 0x0532, 0x0610, 0x067F
         # stock request output values:    0x0000, 0x0500, 0x0A15, 0x0E6D, 0x1100, 0x1200, 0x129A, 0x134D, 0x1400
@@ -160,6 +174,9 @@ class CarInterface(CarInterfaceBase):
         ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 3840], [0, 3840]]
         ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.64], [0.192]]
       tire_stiffness_factor = 0.677
+      details.is_bosch = True
+      details.is_bosch_alt_brake_signal = True
+      details.speed_factor = 1.025
 
     elif candidate == CAR.CRV_HYBRID:
       stop_and_go = True
@@ -170,6 +187,8 @@ class CarInterface(CarInterfaceBase):
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
       tire_stiffness_factor = 0.677
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.18]]
+      details.is_bosch = True
+      details.speed_factor = 1.025
 
     elif candidate == CAR.FIT:
       stop_and_go = False
@@ -180,6 +199,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
       tire_stiffness_factor = 0.75
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2], [0.05]]
+      details.is_nidec_alt_scm_messages = True
 
     elif candidate == CAR.FREED:
       stop_and_go = False
@@ -191,6 +211,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]
       tire_stiffness_factor = 0.75
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2], [0.05]]
+      details.is_nidec_alt_scm_messages = True
 
     elif candidate == CAR.HRV:
       stop_and_go = False
@@ -201,6 +222,8 @@ class CarInterface(CarInterfaceBase):
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]
       tire_stiffness_factor = 0.5
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.16], [0.025]]
+      details.is_nidec_alt_scm_messages = True
+      details.speed_factor = 1.025
 
     elif candidate == CAR.ACURA_RDX:
       stop_and_go = False
@@ -211,6 +234,8 @@ class CarInterface(CarInterfaceBase):
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 1000], [0, 1000]]  # TODO: determine if there is a dead zone at the top end
       tire_stiffness_factor = 0.444
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.8], [0.24]]
+      details.is_nidec_alt_scm_messages = True
+      details.steer_threshold = 400
 
     elif candidate == CAR.ACURA_RDX_3G:
       stop_and_go = True
@@ -221,6 +246,8 @@ class CarInterface(CarInterfaceBase):
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 3840], [0, 3840]]
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.18]]
       tire_stiffness_factor = 0.677
+      details.is_bosch = True
+      details.is_bosch_alt_brake_signal = True
 
     elif candidate == CAR.ODYSSEY:
       stop_and_go = False
@@ -231,6 +258,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
       tire_stiffness_factor = 0.82
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.28], [0.08]]
+      details.is_nidec_alt_pcm_accel = True
 
     elif candidate == CAR.ODYSSEY_CHN:
       stop_and_go = False
@@ -241,6 +269,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 32767], [0, 32767]]  # TODO: determine if there is a dead zone at the top end
       tire_stiffness_factor = 0.82
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.28], [0.08]]
+      details.is_nidec_alt_scm_messages = True
 
     elif candidate in (CAR.PILOT, CAR.PILOT_2019):
       stop_and_go = False
@@ -251,6 +280,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
       tire_stiffness_factor = 0.444
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.38], [0.11]]
+      details.is_nidec_alt_scm_messages = True
 
     elif candidate == CAR.PASSPORT:
       stop_and_go = False
@@ -261,6 +291,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
       tire_stiffness_factor = 0.444
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.38], [0.11]]
+      details.is_nidec_alt_scm_messages = True
 
     elif candidate == CAR.RIDGELINE:
       stop_and_go = False
@@ -271,6 +302,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
       tire_stiffness_factor = 0.444
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.38], [0.11]]
+      details.is_nidec_alt_scm_messages = True
 
     elif candidate == CAR.INSIGHT:
       stop_and_go = True
@@ -281,6 +313,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
       tire_stiffness_factor = 0.82
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.18]]
+      details.is_bosch = True
 
     elif candidate == CAR.HONDA_E:
       stop_and_go = True
@@ -291,19 +324,53 @@ class CarInterface(CarInterfaceBase):
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
       tire_stiffness_factor = 0.82
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.18]] # TODO: can probably use some tuning
+      details.is_bosch = True
 
     else:
       raise ValueError("unsupported car %s" % candidate)
 
+    if details.is_bosch:
+      ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hondaBosch)]
+      ret.radarOffCan = True
+
+      # Disable the radar and let openpilot control longitudinal
+      # WARNING: THIS DISABLES AEB!
+      ret.openpilotLongitudinalControl = Params().get_bool("DisableRadar")
+
+      ret.pcmCruise = not ret.openpilotLongitudinalControl
+
+      # tuning defaults
+      # NOTE: Since the candidate cases above may have set specific values,
+      #  only override fields that are not altered vs. CarParam's default.
+      _set_if_unaltered(ret, _DEFAULT_CAR_PARAMS, {
+        'longitudinalTuning.kpV': [0.25],
+        'longitudinalTuning.kiV': [0.05],
+        'longitudinalActuatorDelayUpperBound': 0.5,  # s
+      })
+    else:
+      ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hondaNidec)]
+      ret.enableGasInterceptor = 0x201 in fingerprint[0]
+      ret.openpilotLongitudinalControl = True
+
+      ret.pcmCruise = not ret.enableGasInterceptor
+      ret.communityFeature = ret.enableGasInterceptor
+
+      _set_if_unaltered(ret, _DEFAULT_CAR_PARAMS, {
+        'longitudinalTuning.kpBP': [0., 5., 35.],
+        'longitudinalTuning.kpV': [1.2, 0.8, 0.5],
+        'longitudinalTuning.kiBP': [0., 35.],
+        'longitudinalTuning.kiV': [0.18, 0.12],
+      })
+
     # These cars use alternate user brake msg (0x1BE)
-    if candidate in HONDA_BOSCH_ALT_BRAKE_SIGNAL:
+    if details.is_bosch_alt_brake_signal:
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_HONDA_ALT_BRAKE
 
     # These cars use alternate SCM messages (SCM_FEEDBACK AND SCM_BUTTON)
-    if candidate in HONDA_NIDEC_ALT_SCM_MESSAGES:
+    if details.is_nidec_alt_scm_messages:
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_HONDA_NIDEC_ALT
 
-    if ret.openpilotLongitudinalControl and candidate in HONDA_BOSCH:
+    if ret.openpilotLongitudinalControl and details.is_bosch:
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_HONDA_BOSCH_LONG
 
     # min speed to enable ACC. if car can do stop and go, then set enabling speed
@@ -328,7 +395,7 @@ class CarInterface(CarInterfaceBase):
 
   @staticmethod
   def init(CP, logcan, sendcan):
-    if CP.carFingerprint in HONDA_BOSCH and CP.openpilotLongitudinalControl:
+    if DETAILS[CP].is_bosch and CP.openpilotLongitudinalControl:
       disable_ecu(logcan, sendcan, bus=1, addr=0x18DAB0F1, com_cont_req=b'\x28\x83\x03')
 
   # returns a car.CarState

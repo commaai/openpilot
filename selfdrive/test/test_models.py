@@ -10,7 +10,8 @@ from cereal import log, car
 from common.params import Params
 from selfdrive.car.fingerprints import all_known_cars
 from selfdrive.car.car_helpers import interfaces
-from selfdrive.car.honda.values import HONDA_BOSCH, CAR as HONDA
+from selfdrive.car.honda.interface import DETAILS
+from selfdrive.car.honda.values import CAR as HONDA
 from selfdrive.car.chrysler.values import CAR as CHRYSLER
 from selfdrive.car.hyundai.values import CAR as HYUNDAI
 from selfdrive.test.test_routes import routes, non_tested_cars
@@ -193,7 +194,7 @@ class TestCarModel(unittest.TestCase):
 
     # TODO: honda nidec: do same checks in carState and panda
     if "brakePressed" in failed_checks and self.CP.carName == 'honda' and \
-      (self.car_model not in HONDA_BOSCH or self.car_model in [HONDA.CRV_HYBRID, HONDA.HONDA_E]):
+      (not DETAILS[self.CP].is_bosch or self.car_model in (HONDA.CRV_HYBRID, HONDA.HONDA_E)):
       if failed_checks['brakePressed'] < 150:
         del failed_checks['brakePressed']
 
