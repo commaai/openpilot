@@ -56,23 +56,14 @@ TEST_CASE("FileReader") {
   }
 }
 
-class testLogReader : public LogReader {
- public:
-  testLogReader() : LogReader() {}
-
-  void test_parse(const std::string &data) {
-    parseLog(data);
-    REQUIRE(events.size() > 0);
-  }
-};
-
 TEST_CASE("LogReader") {
   SECTION("corrupt log") {
     FileReader reader(true);
-    std::string content = reader.read(TEST_RLOG_URL);
-    content.resize(content.length() / 2);
-    testLogReader log;
-    log.test_parse(content);
+    std::string corrupt_content = reader.read(TEST_RLOG_URL);
+    corrupt_content.resize(corrupt_content.length() / 2);
+    LogReader log;
+    log.load(corrupt_content);
+    REQUIRE(log.events.size() > 0);
   }
 }
 

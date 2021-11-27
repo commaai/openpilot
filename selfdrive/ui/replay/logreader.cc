@@ -27,7 +27,7 @@ Event::Event(const kj::ArrayPtr<const capnp::word> &amsg, bool frame) : reader(a
 
 // class LogReader
 
-LogReader::LogReader(bool local_cache, int chunk_size, int retries, size_t memory_pool_block_size) : FileReader(local_cache, chunk_size, retries) {
+LogReader::LogReader(size_t memory_pool_block_size) {
 #ifdef HAS_MEMORY_RESOURCE
   const size_t buf_size = sizeof(Event) * memory_pool_block_size;
   pool_buffer_ = ::operator new(buf_size);
@@ -47,15 +47,16 @@ LogReader::~LogReader() {
 #endif
 }
 
-bool LogReader::load(const std::string &file, std::atomic<bool> *abort) {
-  std::string data = read(file, abort);
+bool LogReader::load(const std::string &file, std::atomic<bool> *abort, bool local_cache, int chunk_size, int retries) {
+  FileReader f(local_cache, chunk_size, retries);
+  std::string data = f.read(file, abort);
   if (data.empty()) return false;
 
-  return parseLog(data);
+  return load((std::byte*)data.data(), data.size(), abort);
 }
 
-bool LogReader::parseLog(const std::string &data) {
-  raw_ = decompressBZ2(data);
+bool LogReader::load(const std::byte *data, size_t size, std::atomic<bool> *abort) {
+  raw_ = decompressBZ2(data, size);
   if (raw_.empty()) {
     std::cout << "failed to decompress log" << std::endl;
     return false;

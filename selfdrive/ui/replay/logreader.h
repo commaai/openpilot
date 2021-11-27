@@ -46,16 +46,14 @@ public:
   bool frame;
 };
 
-class LogReader : protected FileReader {
+class LogReader {
 public:
-  LogReader(bool local_cache = false, int chunk_size = -1, int retries = 0, size_t memory_pool_block_size = DEFAULT_EVENT_MEMORY_POOL_BLOCK_SIZE);
+  LogReader(size_t memory_pool_block_size = DEFAULT_EVENT_MEMORY_POOL_BLOCK_SIZE);
   ~LogReader();
-  bool load(const std::string &file, std::atomic<bool> *abort = nullptr);
+  bool load(const std::string &file, std::atomic<bool> *abort = nullptr, bool local_cache = false, int chunk_size = -1, int retries = 0);
+  bool load(const std::byte *data, size_t size, std::atomic<bool> *abort = nullptr);
 
   std::vector<Event*> events;
-
-protected:
-  bool parseLog(const std::string &data);
 
 private:
   std::string raw_;
