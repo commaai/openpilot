@@ -73,7 +73,9 @@ TEST_CASE("trigger_rotate") {
   LoggerdState s{
       .max_waiting = encoders,
       .start_frame_id = start_frame_id,
+      .logger_manager = std::make_unique<LoggerManager>(LOG_ROOT),
   };
+  s.lh = s.logger_manager->next();
 
   std::vector<std::future<std::pair<int, uint32_t>>> futures;
   for (int i = 0; i < encoders; ++i) {
