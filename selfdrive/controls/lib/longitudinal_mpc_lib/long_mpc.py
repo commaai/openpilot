@@ -8,7 +8,12 @@ from selfdrive.swaglog import cloudlog
 from selfdrive.modeld.constants import index_function
 from selfdrive.controls.lib.radar_helpers import _LEAD_ACCEL_TAU
 
-from pyextra.acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
+if __name__ == '__main__':  # generating code
+  from pyextra.acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
+else:
+  # from pyextra.acados_template import AcadosOcpSolver as AcadosOcpSolverFast
+  from selfdrive.controls.lib.longitudinal_mpc_lib.c_generated_code.acados_ocp_solver_pyx import AcadosOcpSolverFast  # pylint: disable=no-name-in-module, import-error
+
 from casadi import SX, vertcat
 
 LONG_MPC_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -19,15 +24,17 @@ SOURCES = ['lead0', 'lead1', 'cruise']
 
 X_DIM = 3
 U_DIM = 1
-COST_E_DIM = 4
+PARAM_DIM= 4
+COST_E_DIM = 5
 COST_DIM = COST_E_DIM + 1
 CONSTR_DIM = 4
 
 X_EGO_OBSTACLE_COST = 3.
-V_EGO_COST = 0.
 X_EGO_COST = 0.
+V_EGO_COST = 0.
 A_EGO_COST = 0.
-J_EGO_COST = 10.
+J_EGO_COST = 5.0
+A_CHANGE_COST = .5
 DANGER_ZONE_COST = 100.
 CRASH_DISTANCE = .5
 LIMIT_COST = 1e6
@@ -80,7 +87,8 @@ def gen_long_model():
   x_obstacle = SX.sym('x_obstacle')
   a_min = SX.sym('a_min')
   a_max = SX.sym('a_max')
-  model.p = vertcat(a_min, a_max, x_obstacle)
+  prev_a = SX.sym('prev_a')
+  model.p = vertcat(a_min, a_max, x_obstacle, prev_a)
 
   # dynamics model
   f_expl = vertcat(v_ego, a_ego, j_ego)
@@ -113,6 +121,7 @@ def gen_long_mpc_solver():
 
   a_min, a_max = ocp.model.p[0], ocp.model.p[1]
   x_obstacle = ocp.model.p[2]
+  prev_a = ocp.model.p[3]
 
   ocp.cost.yref = np.zeros((COST_DIM, ))
   ocp.cost.yref_e = np.zeros((COST_E_DIM, ))
@@ -127,6 +136,7 @@ def gen_long_mpc_solver():
            x_ego,
            v_ego,
            a_ego,
+           20*(a_ego - prev_a),
            j_ego]
   ocp.model.cost_y_expr = vertcat(*costs)
   ocp.model.cost_y_expr_e = vertcat(*costs[:-1])
@@ -143,7 +153,7 @@ def gen_long_mpc_solver():
 
   x0 = np.zeros(X_DIM)
   ocp.constraints.x0 = x0
-  ocp.parameter_values = np.array([-1.2, 1.2, 0.0])
+  ocp.parameter_values = np.array([-1.2, 1.2, 0.0, 0.0])
 
   # We put all constraint cost weights to 0 and only set them at runtime
   cost_weights = np.zeros(CONSTR_DIM)
@@ -166,6 +176,7 @@ def gen_long_mpc_solver():
   ocp.solver_options.hessian_approx = 'GAUSS_NEWTON'
   ocp.solver_options.integrator_type = 'ERK'
   ocp.solver_options.nlp_solver_type = 'SQP_RTI'
+  ocp.solver_options.qp_solver_cond_N = N//4
 
   # More iterations take too much time and less lead to inaccurate convergence in
   # some situations. Ideally we would run just 1 iteration to ensure fixed runtime.
@@ -189,16 +200,18 @@ class LongitudinalMpc():
     self.source = SOURCES[2]
 
   def reset(self):
-    self.solver = AcadosOcpSolver('long', N, EXPORT_DIR)
+    self.solver = AcadosOcpSolverFast('long', N, EXPORT_DIR)
     self.v_solution = [0.0 for i in range(N+1)]
     self.a_solution = [0.0 for i in range(N+1)]
+    self.prev_a = self.a_solution
     self.j_solution = [0.0 for i in range(N)]
     self.yref = np.zeros((N+1, COST_DIM))
-    self.solver.cost_set_slice(0, N, "yref", self.yref[:N])
-    self.solver.set(N, "yref", self.yref[N][:COST_E_DIM])
+    for i in range(N):
+      self.solver.cost_set(i, "yref", self.yref[i])
+    self.solver.cost_set(N, "yref", self.yref[N][:COST_E_DIM])
     self.x_sol = np.zeros((N+1, X_DIM))
     self.u_sol = np.zeros((N,1))
-    self.params = np.zeros((N+1,3))
+    self.params = np.zeros((N+1, PARAM_DIM))
     for i in range(N+1):
       self.solver.set(i, 'x', np.zeros(X_DIM))
     self.last_cloudlog_t = 0
@@ -215,30 +228,31 @@ class LongitudinalMpc():
       self.set_weights_for_lead_policy()
 
   def set_weights_for_lead_policy(self):
-    W = np.diag([X_EGO_OBSTACLE_COST, X_EGO_COST, V_EGO_COST, A_EGO_COST, J_EGO_COST])
-    Ws = np.tile(W[None], reps=(N,1,1))
-    self.solver.cost_set_slice(0, N, 'W', Ws, api='old')
+    W = np.asfortranarray(np.diag([X_EGO_OBSTACLE_COST, X_EGO_COST, V_EGO_COST, A_EGO_COST, A_CHANGE_COST, J_EGO_COST]))
+    for i in range(N):
+      W[4,4] = A_CHANGE_COST * np.interp(T_IDXS[i], [0.0, 1.0, 2.0], [1.0, 1.0, 0.0])
+      self.solver.cost_set(i, 'W', W)
     # Setting the slice without the copy make the array not contiguous,
     # causing issues with the C interface.
     self.solver.cost_set(N, 'W', np.copy(W[:COST_E_DIM, :COST_E_DIM]))
 
     # Set L2 slack cost on lower bound constraints
     Zl = np.array([LIMIT_COST, LIMIT_COST, LIMIT_COST, DANGER_ZONE_COST])
-    Zls = np.tile(Zl[None], reps=(N+1,1,1))
-    self.solver.cost_set_slice(0, N+1, 'Zl', Zls, api='old')
+    for i in range(N):
+      self.solver.cost_set(i, 'Zl', Zl)
 
   def set_weights_for_xva_policy(self):
-    W = np.diag([0., 10., 1., 10., 1.])
-    Ws = np.tile(W[None], reps=(N,1,1))
-    self.solver.cost_set_slice(0, N, 'W', Ws, api='old')
+    W = np.asfortranarray(np.diag([0., 10., 1., 10., 0.0, 1.]))
+    for i in range(N):
+      self.solver.cost_set(i, 'W', W)
     # Setting the slice without the copy make the array not contiguous,
     # causing issues with the C interface.
     self.solver.cost_set(N, 'W', np.copy(W[:COST_E_DIM, :COST_E_DIM]))
 
     # Set L2 slack cost on lower bound constraints
     Zl = np.array([LIMIT_COST, LIMIT_COST, LIMIT_COST, 0.0])
-    Zls = np.tile(Zl[None], reps=(N+1,1,1))
-    self.solver.cost_set_slice(0, N+1, 'Zl', Zls, api='old')
+    for i in range(N):
+      self.solver.cost_set(i, 'Zl', Zl)
 
   def set_cur_state(self, v, a):
     if abs(self.x0[1] - v) > 1.:
@@ -313,6 +327,7 @@ class LongitudinalMpc():
     x_obstacles = np.column_stack([lead_0_obstacle, lead_1_obstacle, cruise_obstacle])
     self.source = SOURCES[np.argmin(x_obstacles[0])]
     self.params[:,2] = np.min(x_obstacles, axis=1)
+    self.params[:,3] = np.copy(self.prev_a)
 
     self.run()
     if (np.any(lead_xv_0[:,0] - self.x_sol[:,0] < CRASH_DISTANCE) and
@@ -325,28 +340,34 @@ class LongitudinalMpc():
     self.yref[:,1] = x
     self.yref[:,2] = v
     self.yref[:,3] = a
-    self.solver.cost_set_slice(0, N, "yref", self.yref[:N], api='old')
-    self.solver.set(N, "yref", self.yref[N][:COST_E_DIM])
+    for i in range(N):
+      self.solver.cost_set(i, "yref", self.yref[i])
+    self.solver.cost_set(N, "yref", self.yref[N][:COST_E_DIM])
     self.accel_limit_arr[:,0] = -10.
     self.accel_limit_arr[:,1] = 10.
     x_obstacle = 1e5*np.ones((N+1))
     self.params = np.concatenate([self.accel_limit_arr,
-                             x_obstacle[:,None]], axis=1)
+                             x_obstacle[:,None],
+                             self.prev_a], axis=1)
     self.run()
 
 
   def run(self):
     for i in range(N+1):
-      self.solver.set_param(i, self.params[i])
+      self.solver.set(i, 'p', self.params[i])
     self.solver.constraints_set(0, "lbx", self.x0)
     self.solver.constraints_set(0, "ubx", self.x0)
     self.solution_status = self.solver.solve()
-    self.solver.fill_in_slice(0, N+1, 'x', self.x_sol)
-    self.solver.fill_in_slice(0, N, 'u', self.u_sol)
+    for i in range(N+1):
+      self.x_sol[i] = self.solver.get(i, 'x')
+    for i in range(N):
+      self.u_sol[i] = self.solver.get(i, 'u')
 
     self.v_solution = self.x_sol[:,1]
     self.a_solution = self.x_sol[:,2]
     self.j_solution = self.u_sol[:,0]
+
+    self.prev_a = interp(T_IDXS + 0.05, T_IDXS, self.a_solution)
 
     t = sec_since_boot()
     if self.solution_status != 0:

@@ -3,7 +3,7 @@ from cereal import car
 from panda import Panda
 from common.params import Params
 from selfdrive.config import Conversions as CV
-from selfdrive.car.hyundai.values import CAR, EV_CAR, HYBRID_CAR, Buttons, CarControllerParams
+from selfdrive.car.hyundai.values import CAR, EV_CAR, HYBRID_CAR, LEGACY_SAFETY_MODE_CAR, Buttons, CarControllerParams
 from selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
@@ -26,7 +26,7 @@ class CarInterface(CarInterfaceBase):
     ret.radarOffCan = RADAR_START_ADDR not in fingerprint[1]
 
     # WARNING: disabling radar also disables AEB (and we show the same warning on the instrument cluster as if you manually disabled AEB)
-    ret.openpilotLongitudinalControl = Params().get_bool("DisableRadar") and candidate in [CAR.SONATA, CAR.SONATA_HYBRID, CAR.PALISADE, CAR.SANTA_FE]
+    ret.openpilotLongitudinalControl = Params().get_bool("DisableRadar") and (candidate not in LEGACY_SAFETY_MODE_CAR)
 
     ret.pcmCruise = not ret.openpilotLongitudinalControl
 
@@ -45,7 +45,7 @@ class CarInterface(CarInterfaceBase):
 
     ret.longitudinalActuatorDelayUpperBound = 1.0 # s
 
-    if candidate in [CAR.SANTA_FE, CAR.SANTA_FE_2022]:
+    if candidate in [CAR.SANTA_FE, CAR.SANTA_FE_2022, CAR.SANTA_FE_HEV_2022]:
       ret.lateralTuning.pid.kf = 0.00005
       ret.mass = 3982. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.766
@@ -232,6 +232,13 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 1640.0 + STD_CARGO_KG
       ret.wheelbase = 2.84
       ret.steerRatio = 13.56
+    elif candidate == CAR.GENESIS_G70_2020:
+      ret.lateralTuning.pid.kf = 0.
+      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[0.], [0.]]
+      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.112], [0.004]]
+      ret.mass = 3673.0 * CV.LB_TO_KG + STD_CARGO_KG
+      ret.wheelbase = 2.83
+      ret.steerRatio = 12.9
     elif candidate == CAR.GENESIS_G80:
       ret.lateralTuning.pid.kf = 0.00005
       ret.mass = 2060. + STD_CARGO_KG
@@ -247,10 +254,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.16], [0.01]]
 
     # these cars require a special panda safety mode due to missing counters and checksums in the messages
-    if candidate in [CAR.HYUNDAI_GENESIS, CAR.IONIQ_EV_2020, CAR.IONIQ_EV_LTD, CAR.IONIQ_PHEV, CAR.IONIQ, CAR.KONA_EV, CAR.KIA_SORENTO,
-                     CAR.SONATA_LF, CAR.KIA_NIRO_EV, CAR.KIA_OPTIMA, CAR.VELOSTER, CAR.KIA_STINGER,
-                     CAR.GENESIS_G70, CAR.GENESIS_G80, CAR.KIA_CEED, CAR.ELANTRA, CAR.IONIQ_HEV_2022]:
-      assert not ret.openpilotLongitudinalControl  # Legacy safety mode doesn't support longitudinal
+    if candidate in LEGACY_SAFETY_MODE_CAR:
       ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hyundaiLegacy)]
 
     # set appropriate safety param for gas signal
@@ -294,8 +298,6 @@ class CarInterface(CarInterfaceBase):
 
     if self.CS.brake_error:
       events.add(EventName.brakeUnavailable)
-    if self.CS.brake_hold and self.CS.CP.openpilotLongitudinalControl:
-      events.add(EventName.brakeHold)
     if self.CS.park_brake:
       events.add(EventName.parkBrake)
 

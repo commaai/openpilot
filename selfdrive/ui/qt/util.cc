@@ -8,12 +8,21 @@
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/hardware/hw.h"
 
+QString getVersion() {
+  static QString version =  QString::fromStdString(Params().get("Version"));
+  return version;
+}
+
 QString getBrand() {
   return Params().getBool("Passive") ? "dashcam" : "openpilot";
 }
 
 QString getBrandVersion() {
-  return getBrand() + " v" + QString::fromStdString(Params().get("Version")).left(14).trimmed();
+  return getBrand() + " v" + getVersion().left(14).trimmed();
+}
+
+QString getUserAgent() {
+  return "openpilot-" + getVersion();
 }
 
 std::optional<QString> getDongleId() {
@@ -119,4 +128,10 @@ void swagLogMessageHandler(QtMsgType type, const QMessageLogContext &context, co
 
   auto bts = msg.toUtf8();
   cloudlog_e(levels[type], file.c_str(), context.line, function.c_str(), "%s", bts.constData());
+}
+
+
+QWidget* topWidget (QWidget* widget) {
+  while (widget->parentWidget() != nullptr) widget=widget->parentWidget();
+  return widget;
 }

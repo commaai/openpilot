@@ -3,7 +3,7 @@ from cereal import car
 from common.realtime import DT_CTRL
 from selfdrive.controls.lib.drive_helpers import rate_limit
 from common.numpy_fast import clip, interp
-from selfdrive.car import create_gas_command
+from selfdrive.car import create_gas_interceptor_command
 from selfdrive.car.honda import hondacan
 from selfdrive.car.honda.values import CruiseButtons, VISUAL_HUD, HONDA_BOSCH, HONDA_NIDEC_ALT_PCM_ACCEL, CarControllerParams
 from opendbc.can.packer import CANPacker
@@ -232,11 +232,11 @@ class CarController():
             # This prevents unexpected pedal range rescaling
             # Sending non-zero gas when OP is not enabled will cause the PCM not to respond to throttle as expected
             # when you do enable.
-            if enabled:
+            if active:
               apply_gas = clip(gas_mult * (gas - brake + wind_brake*3/4), 0., 1.)
             else:
               apply_gas = 0.0
-            can_sends.append(create_gas_command(self.packer, apply_gas, idx))
+            can_sends.append(create_gas_interceptor_command(self.packer, apply_gas, idx))
 
     hud = HUDData(int(pcm_accel), int(round(hud_v_cruise)), hud_car,
                   hud_lanes, fcw_display, acc_alert, steer_required)

@@ -3,6 +3,7 @@
 
 #include "json11.hpp"
 #include "selfdrive/common/util.h"
+#include "selfdrive/common/clutil.h"
 #include "selfdrive/modeld/thneed/thneed.h"
 using namespace json11;
 
@@ -61,44 +62,17 @@ void Thneed::load(const char *filename) {
   }
 
   map<string, cl_program> g_programs;
-  for (auto &obj : jdat["programs"].object_items()) {
-    const char *srcs[1];
-    srcs[0] = (const char *)obj.second.string_value().c_str();
-    size_t length = obj.second.string_value().size();
-
-    if (record & THNEED_DEBUG) printf("building %s with size %zu\n", obj.first.c_str(), length);
-
-    cl_program program = clCreateProgramWithSource(context, 1, srcs, &length, NULL);
-    int err_ = clBuildProgram(program, 1, &device_id, "", NULL, NULL);
-    if (err_ != 0) {
-      printf("got err %d\n", err_);
-      size_t length_;
-      char buffer[2048];
-      clGetProgramBuildInfo(program, device_id, CL_PROGRAM_BUILD_LOG, sizeof(buffer), buffer, &length_);
-      buffer[length_] = '\0';
-      printf("%s\n", buffer);
-    }
-    assert(err_ == 0);
-
-    g_programs[obj.first] = program;
+  for (const auto &[name, source] : jdat["programs"].object_items()) {
+    if (record & THNEED_DEBUG) printf("building %s with size %zu\n", name.c_str(), source.string_value().size());
+    g_programs[name] = cl_program_from_source(context, device_id, source.string_value());
   }
 
   for (auto &obj : jdat["binaries"].array_items()) {
     string name = obj["name"].string_value();
     size_t length = obj["length"].int_value();
-    const unsigned char *srcs[1];
-    srcs[0] = (const unsigned char *)&buf[ptr];
-    ptr += length;
-
     if (record & THNEED_DEBUG) printf("binary %s with size %zu\n", name.c_str(), length);
-
-    cl_int err_;
-    cl_program program = clCreateProgramWithBinary(context, 1, &device_id, &length, srcs, NULL, &err_);
-    assert(program != NULL && err_ == CL_SUCCESS);
-    err_ = clBuildProgram(program, 1, &device_id, "", NULL, NULL);
-    assert(err_ == CL_SUCCESS);
-
-    g_programs[name] = program;
+    g_programs[name] = cl_program_from_binary(context, device_id, (const uint8_t*)&buf[ptr], length);
+    ptr += length;
   }
 
   for (auto &obj : jdat["kernels"].array_items()) {
