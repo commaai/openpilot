@@ -26,14 +26,14 @@ struct CURLGlobalInitializer {
 
 template <class T>
 struct MultiPartWriter {
+  T *buf;
+  size_t *total_written;
   size_t offset;
   size_t end;
-  size_t written;
-  T *buf;
 
   size_t write(char *data, size_t size, size_t count) {
     size_t bytes = size * count;
-    if (offset + bytes > end) return 0;
+    if ((offset + bytes) > end) return 0;
 
     if constexpr (std::is_same<T, std::string>::value) {
       memcpy(buf->data() + offset, data, bytes);
@@ -43,14 +43,14 @@ struct MultiPartWriter {
     }
 
     offset += bytes;
-    written += bytes;
+    *total_written += bytes;
     return bytes;
   }
 };
 
 template <class T>
 size_t write_cb(char *data, size_t size, size_t count, void *userp) {
-  MultiPartWriter<T> *w = (MultiPartWriter<T> *)userp;
+  auto w = (MultiPartWriter<T> *)userp;
   return w->write(data, size, count);
 }
 
@@ -79,12 +79,12 @@ size_t getRemoteFileSize(const std::string &url) {
   CURLcode res = curl_easy_perform(curl);
   double content_length = -1;
   if (res == CURLE_OK) {
-    res = curl_easy_getinfo(curl, CURLINFO_CONTENT_LENGTH_DOWNLOAD, &content_length);
+    curl_easy_getinfo(curl, CURLINFO_CONTENT_LENGTH_DOWNLOAD, &content_length);
   } else {
     std::cout << "Download failed: error code: " << res << std::endl;
   }
   curl_easy_cleanup(curl);
-  return content_length > 0 ? content_length : 0;
+  return content_length > 0 ? (size_t)content_length : 0;
 }
 
 std::string getUrlWithoutQuery(const std::string &url) {
@@ -99,11 +99,6 @@ void enableHttpLogging(bool enable) {
 template <class T>
 bool httpDownload(const std::string &url, T &buf, size_t chunk_size, size_t content_length, std::atomic<bool> *abort) {
   static CURLGlobalInitializer curl_initializer;
-  static std::mutex lock;
-  static uint64_t total_written = 0, prev_total_written = 0;
-  static double last_print_ts = 0;
-
-  CURLM *cm = curl_multi_init();
 
   int parts = 1;
   if (chunk_size > 0 && content_length > 10 * 1024 * 1024) {
@@ -111,19 +106,22 @@ bool httpDownload(const std::string &url, T &buf, size_t chunk_size, size_t cont
     parts = std::clamp(parts, 1, 5);
   }
 
+  CURLM *cm = curl_multi_init();
+  size_t written = 0;
   std::map<CURL *, MultiPartWriter<T>> writers;
   const int part_size = content_length / parts;
   for (int i = 0; i < parts; ++i) {
     CURL *eh = curl_easy_init();
     writers[eh] = {
         .buf = &buf,
+        .total_written = &written,
         .offset = (size_t)(i * part_size),
-        .end = i == parts - 1 ? content_length - 1 : (i + 1) * part_size - 1,
+        .end = i == parts - 1 ? content_length : (i + 1) * part_size,
     };
     curl_easy_setopt(eh, CURLOPT_WRITEFUNCTION, write_cb<T>);
     curl_easy_setopt(eh, CURLOPT_WRITEDATA, (void *)(&writers[eh]));
     curl_easy_setopt(eh, CURLOPT_URL, url.c_str());
-    curl_easy_setopt(eh, CURLOPT_RANGE, util::string_format("%d-%d", writers[eh].offset, writers[eh].end).c_str());
+    curl_easy_setopt(eh, CURLOPT_RANGE, util::string_format("%d-%d", writers[eh].offset, writers[eh].end - 1).c_str());
     curl_easy_setopt(eh, CURLOPT_HTTPGET, 1);
     curl_easy_setopt(eh, CURLOPT_NOSIGNAL, 1);
     curl_easy_setopt(eh, CURLOPT_FOLLOWLOCATION, 1);
@@ -131,27 +129,22 @@ bool httpDownload(const std::string &url, T &buf, size_t chunk_size, size_t cont
     curl_multi_add_handle(cm, eh);
   }
 
-  int still_running = 1;
   size_t prev_written = 0;
+  double last_print = millis_since_boot();
+  int still_running = 1;
   while (still_running > 0 && !(abort && *abort)) {
     curl_multi_wait(cm, nullptr, 0, 1000, nullptr);
     curl_multi_perform(cm, &still_running);
 
-    size_t written = std::accumulate(writers.begin(), writers.end(), 0, [=](int v, auto &w) { return v + w.second.written; });
-    int cur_written = written - prev_written;
-    prev_written = written;
-
-    std::lock_guard lk(lock);
-    double ts = millis_since_boot();
-    total_written += cur_written;
-    if ((ts - last_print_ts) > 2 * 1000) {
-      if (enable_http_logging && last_print_ts > 0) {
-        size_t average = (total_written - prev_total_written) / ((ts - last_print_ts) / 1000.);
+    if (enable_http_logging) {
+      if (double ts = millis_since_boot(); (ts - last_print) > 2 * 1000) {
+        size_t average = (written - prev_written) / ((ts - last_print) / 1000.);
         int progress = std::min<int>(100, 100.0 * (double)written / (double)content_length);
-        std::cout << "downloading " << getUrlWithoutQuery(url) << " - " << progress << "% (" << formattedDataSize(average) << "/s)" << std::endl;
+        std::cout << "downloading " << getUrlWithoutQuery(url) << " - " << progress
+                  << "% (" << formattedDataSize(average) << "/s)" << std::endl;
+        last_print = ts;
+        prev_written = written;
       }
-      prev_total_written = total_written;
-      last_print_ts = ts;
     }
   }
 
@@ -174,12 +167,12 @@ bool httpDownload(const std::string &url, T &buf, size_t chunk_size, size_t cont
     }
   }
 
-  for (auto &[e, w] : writers) {
+  for (const auto &[e, w] : writers) {
     curl_multi_remove_handle(cm, e);
     curl_easy_cleanup(e);
   }
-
   curl_multi_cleanup(cm);
+
   return complete == parts;
 }
 
@@ -196,8 +189,7 @@ bool httpDownload(const std::string &url, const std::string &file, size_t chunk_
   if (size == 0) return false;
 
   std::ofstream of(file, std::ios::binary | std::ios::out);
-  of.seekp(size - 1);
-  of.write("\0", 1);
+  of.seekp(size - 1).write("\0", 1);
   return httpDownload(url, of, chunk_size, size, abort);
 }
 
