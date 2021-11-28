@@ -30,7 +30,7 @@ std::string FileReader::read(const std::string &file, std::atomic<bool> *abort) 
   } else if (is_remote) {
     result = download(file, abort);
     if (cache_to_local_ && !result.empty()) {
-      std::ofstream fs(local_file, std::ofstream::binary | std::ofstream::out);
+      std::ofstream fs(local_file, std::ios::binary | std::ios::out);
       fs.write(result.data(), result.size());
     }
   }
@@ -38,21 +38,13 @@ std::string FileReader::read(const std::string &file, std::atomic<bool> *abort) 
 }
 
 std::string FileReader::download(const std::string &url, std::atomic<bool> *abort) {
-  std::string result;
-  size_t remote_file_size = 0;
   for (int i = 0; i <= max_retries_ && !(abort && *abort); ++i) {
-    if (i > 0) {
-      std::cout << "download failed, retrying" << i << std::endl;
+    std::string result = httpGet(url, chunk_size_, abort);
+    if (!result.empty()) {
+      return result;
     }
-    if (remote_file_size <= 0) {
-      remote_file_size = getRemoteFileSize(url);
-    }
-    if (remote_file_size > 0 && !(abort && *abort)) {
-      int chunks = chunk_size_ > 0 ? std::max(1, (int)std::nearbyint(remote_file_size / (float)chunk_size_)) : 1;
-      result = httpGet(url, chunks, remote_file_size, abort);
-      if (!result.empty()) {
-        return result;
-      }
+    if (i != max_retries_) {
+      std::cout << "download failed, retrying " << i + 1 << std::endl;
     }
   }
   return {};

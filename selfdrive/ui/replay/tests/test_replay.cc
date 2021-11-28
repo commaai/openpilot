@@ -14,15 +14,14 @@ TEST_CASE("httpMultiPartDownload") {
   char filename[] = "/tmp/XXXXXX";
   close(mkstemp(filename));
 
+  const size_t chunk_size = 5 * 1024 * 1024;
   std::string content;
-  auto file_size = getRemoteFileSize(TEST_RLOG_URL);
-  REQUIRE(file_size > 0);
-  SECTION("5 connections, download to file") {
-    REQUIRE(httpDownload(TEST_RLOG_URL, filename, 5, file_size));
+  SECTION("download to file") {
+    REQUIRE(httpDownload(TEST_RLOG_URL, filename, chunk_size));
     content = util::read_file(filename);
   }
-  SECTION("5 connection, download to buffer") {
-    content = httpGet(TEST_RLOG_URL, 5, file_size);
+  SECTION("download to buffer") {
+    content = httpGet(TEST_RLOG_URL, chunk_size);
     REQUIRE(!content.empty());
   }
   REQUIRE(content.size() == 9112651);

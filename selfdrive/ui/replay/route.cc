@@ -121,7 +121,7 @@ void Segment::loadFile(int id, const std::string file) {
     frames[id] = std::make_unique<FrameReader>(local_cache, 20 * 1024 * 1024, 3);
     success = frames[id]->load(file, flags & REPLAY_FLAG_NO_CUDA, &abort_);
   } else {
-    log = std::make_unique<LogReader>(local_cache, -1, 3);
+    log = std::make_unique<LogReader>(local_cache, 0, 3);
     success = log->load(file, &abort_);
   }
 

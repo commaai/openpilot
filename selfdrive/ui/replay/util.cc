@@ -5,6 +5,7 @@
 #include <openssl/sha.h>
 
 #include <cassert>
+#include <cmath>
 #include <iomanip>
 #include <iostream>
 #include <mutex>
@@ -84,7 +85,7 @@ void enableHttpLogging(bool enable) {
   enable_http_logging = enable;
 }
 
-bool httpMultiPartDownload(const std::string &url, std::ostream &os, int parts, size_t content_length, std::atomic<bool> *abort) {
+bool httpMultiPartDownload(const std::string &url, std::ostream &os, size_t chunk_size, size_t content_length, std::atomic<bool> *abort) {
   static CURLGlobalInitializer curl_initializer;
   static std::mutex lock;
   static uint64_t total_written = 0, prev_total_written = 0;
@@ -94,6 +95,12 @@ bool httpMultiPartDownload(const std::string &url, std::ostream &os, int parts, 
   os.write("\0", 1);
 
   CURLM *cm = curl_multi_init();
+
+  int parts = 1;
+  if (chunk_size > 0 && content_length > 10 * 1024 * 1024) {
+    parts = std::nearbyint(content_length / (float)chunk_size);
+    parts = std::clamp(parts, 1, 5);
+  }
 
   std::map<CURL *, MultiPartWriter> writers;
   const int part_size = content_length / parts;
@@ -173,19 +180,25 @@ struct ostreambuf : public std::basic_streambuf<char, std::char_traits<char> > {
   }
 };
 
-std::string httpGet(const std::string &url, int parts, size_t content_length, std::atomic<bool> *abort) {
+std::string httpGet(const std::string &url, size_t chunk_size, std::atomic<bool> *abort) {
+  size_t content_length = getRemoteFileSize(url);
+  if (content_length == 0) return {};
+
   std::string result(content_length, '\0');
   ostreambuf stream_buf(result.data(), result.size());
   std::ostream oss(&stream_buf);
-  if (httpMultiPartDownload(url, oss, parts, content_length, abort)) {
+  if (httpMultiPartDownload(url, oss, chunk_size, content_length, abort)) {
     return result;
   }
   return {};
 }
 
-bool httpDownload(const std::string &url, const std::string &file, int parts, size_t content_length, std::atomic<bool> *abort) {
-  std::ofstream of(file, std::ofstream::binary | std::ofstream::out);
-  return httpMultiPartDownload(url, of, parts, content_length, abort);
+bool httpDownload(const std::string &url, const std::string &file, size_t chunk_size, std::atomic<bool> *abort) {
+  size_t content_length = getRemoteFileSize(url);
+  if (content_length == 0) return false;
+
+  std::ofstream of(file, std::ios::binary | std::ios::out);
+  return httpMultiPartDownload(url, of, chunk_size, content_length, abort);
 }
 
 std::string decompressBZ2(const std::string &in) {
