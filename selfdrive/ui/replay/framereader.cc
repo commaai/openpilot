@@ -27,8 +27,9 @@ enum AVPixelFormat get_hw_format(AVCodecContext *ctx, const enum AVPixelFormat *
     if (*p == *hw_pix_fmt) return *p;
   }
   printf("Please run replay with the --no-cuda flag!\n");
-  assert(0);
-  return AV_PIX_FMT_NONE;
+  // fallback to YUV420p
+  *hw_pix_fmt = AV_PIX_FMT_NONE;
+  return AV_PIX_FMT_YUV420P;
 }
 
 }  // namespace
@@ -94,7 +95,7 @@ bool FrameReader::load(const std::string &url, bool no_cuda, std::atomic<bool> *
   width = (decoder_ctx->width + 3) & ~3;
   height = decoder_ctx->height;
 
-  if (!no_cuda) {
+  if (has_cuda_device && !no_cuda) {
     if (!initHardwareDecoder(AV_HWDEVICE_TYPE_CUDA)) {
       printf("No CUDA capable device was found. fallback to CPU decoding.\n");
     } else {
@@ -136,6 +137,8 @@ bool FrameReader::initHardwareDecoder(AVHWDeviceType hw_device_type) {
 
   int ret = av_hwdevice_ctx_create(&hw_device_ctx, hw_device_type, nullptr, nullptr, 0);
   if (ret < 0) {
+    hw_pix_fmt = AV_PIX_FMT_NONE;
+    has_cuda_device = false;
     printf("Failed to create specified HW device %d.\n", ret);
     return false;
   }
