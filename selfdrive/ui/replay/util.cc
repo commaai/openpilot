@@ -4,6 +4,7 @@
 #include <curl/curl.h>
 #include <openssl/sha.h>
 
+#include <cstring>
 #include <cassert>
 #include <cmath>
 #include <iomanip>
@@ -26,21 +27,32 @@ struct CURLGlobalInitializer {
   ~CURLGlobalInitializer() { curl_global_cleanup(); }
 };
 
+template <class T>
 struct MultiPartWriter {
   size_t offset;
   size_t end;
   size_t written;
-  std::ostream *os;
+  T *buf;
+
+  size_t write(char *data, size_t size, size_t count) {
+    size_t bytes = size * count;
+    if constexpr (std::is_same<T, std::string>::value) {
+      memcpy(buf->data() + offset, data, bytes);
+    } else if constexpr (std::is_same<T, std::ofstream>::value) {
+      buf->seekp(offset);
+      buf->write(data, bytes);
+    }
+
+    offset += bytes;
+    written += bytes;
+    return bytes;
+  }
 };
 
+template <class T>
 size_t write_cb(char *data, size_t size, size_t count, void *userp) {
-  MultiPartWriter *w = (MultiPartWriter *)userp;
-  w->os->seekp(w->offset);
-  size_t bytes = size * count;
-  w->os->write(data, bytes);
-  w->offset += bytes;
-  w->written += bytes;
-  return bytes;
+  MultiPartWriter<T> *w = (MultiPartWriter<T> *)userp;
+  return w->write(data, size, count);
 }
 
 size_t dumy_write_cb(char *data, size_t size, size_t count, void *userp) { return size * count; }
@@ -85,14 +97,12 @@ void enableHttpLogging(bool enable) {
   enable_http_logging = enable;
 }
 
-bool httpMultiPartDownload(const std::string &url, std::ostream &os, size_t chunk_size, size_t content_length, std::atomic<bool> *abort) {
+template <class T>
+bool httpMultiPartDownload(const std::string &url, T &buf, size_t chunk_size, size_t content_length, std::atomic<bool> *abort) {
   static CURLGlobalInitializer curl_initializer;
   static std::mutex lock;
   static uint64_t total_written = 0, prev_total_written = 0;
   static double last_print_ts = 0;
-
-  os.seekp(content_length - 1);
-  os.write("\0", 1);
 
   CURLM *cm = curl_multi_init();
 
@@ -102,16 +112,16 @@ bool httpMultiPartDownload(const std::string &url, std::ostream &os, size_t chun
     parts = std::clamp(parts, 1, 5);
   }
 
-  std::map<CURL *, MultiPartWriter> writers;
+  std::map<CURL *, MultiPartWriter<T>> writers;
   const int part_size = content_length / parts;
   for (int i = 0; i < parts; ++i) {
     CURL *eh = curl_easy_init();
     writers[eh] = {
-        .os = &os,
+        .buf = &buf,
         .offset = (size_t)(i * part_size),
         .end = i == parts - 1 ? content_length - 1 : (i + 1) * part_size - 1,
     };
-    curl_easy_setopt(eh, CURLOPT_WRITEFUNCTION, write_cb);
+    curl_easy_setopt(eh, CURLOPT_WRITEFUNCTION, write_cb<T>);
     curl_easy_setopt(eh, CURLOPT_WRITEDATA, (void *)(&writers[eh]));
     curl_easy_setopt(eh, CURLOPT_URL, url.c_str());
     curl_easy_setopt(eh, CURLOPT_RANGE, util::string_format("%d-%d", writers[eh].offset, writers[eh].end).c_str());
@@ -174,20 +184,12 @@ bool httpMultiPartDownload(const std::string &url, std::ostream &os, size_t chun
   return complete == parts;
 }
 
-struct ostreambuf : public std::basic_streambuf<char, std::char_traits<char> > {
-  ostreambuf(char_type *buffer, std::streamsize size) {
-    setp(buffer, buffer + size);
-  }
-};
-
 std::string httpGet(const std::string &url, size_t chunk_size, std::atomic<bool> *abort) {
   size_t content_length = getRemoteFileSize(url);
   if (content_length == 0) return {};
 
   std::string result(content_length, '\0');
-  ostreambuf stream_buf(result.data(), result.size());
-  std::ostream oss(&stream_buf);
-  if (httpMultiPartDownload(url, oss, chunk_size, content_length, abort)) {
+  if (httpMultiPartDownload(url, result, chunk_size, content_length, abort)) {
     return result;
   }
   return {};
@@ -198,6 +200,8 @@ bool httpDownload(const std::string &url, const std::string &file, size_t chunk_
   if (content_length == 0) return false;
 
   std::ofstream of(file, std::ios::binary | std::ios::out);
+  of.seekp(content_length - 1);
+  of.write("\0", 1);
   return httpMultiPartDownload(url, of, chunk_size, content_length, abort);
 }
 
