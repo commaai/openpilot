@@ -1,7 +1,6 @@
 #pragma once
 
 #include <atomic>
-#include <ostream>
 #include <string>
 
 std::string sha256(const std::string &str);

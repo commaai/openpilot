@@ -7,13 +7,10 @@
 #include <cstring>
 #include <cassert>
 #include <cmath>
-#include <iomanip>
+#include <fstream>
 #include <iostream>
 #include <mutex>
 #include <numeric>
-#include <fstream>
-#include <ostream>
-#include <streambuf>
 
 #include "selfdrive/common/timing.h"
 #include "selfdrive/common/util.h"
