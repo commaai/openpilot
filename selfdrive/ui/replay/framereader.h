@@ -50,4 +50,5 @@ private:
   AVPixelFormat hw_pix_fmt = AV_PIX_FMT_NONE;
   AVBufferRef *hw_device_ctx = nullptr;
   std::vector<uint8_t> nv12toyuv_buffer;
+  inline static std::atomic<bool> has_cuda_device = true;
 };
