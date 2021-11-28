@@ -96,5 +96,3 @@ void logger_log(LoggerState *s, uint8_t* data, size_t data_size, bool in_qlog);
 
 void lh_log(LoggerHandle* h, uint8_t* data, size_t data_size, bool in_qlog);
 void lh_close(LoggerHandle* h);
-
-void clear_locks(const std::string &dir, const std::string &exclude_dir);

@@ -37,6 +37,25 @@ bool trigger_rotate_if_needed(LoggerdState *s, int cur_seg, uint32_t frame_id) {
   return false;
 }
 
+void clear_locks(const std::string &dir, const std::string &exclude_dir) {
+  DIR *d = opendir(dir.c_str());
+  if (!d) return;
+
+  struct dirent *entry;
+  std::string path;
+  while ((entry = readdir(d)) != nullptr) {
+    path = dir + "/" + entry->d_name;
+    if (entry->d_type == DT_DIR) {
+      if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0 && path != exclude_dir) {
+        clear_locks(path, exclude_dir);
+      }
+    } else if (path.rfind(".lock") == (path.length() - 5)) {
+      unlink(path.c_str());
+    }
+  }
+  closedir(d);
+}
+
 void encoder_thread(LoggerdState *s, const LogCameraInfo &cam_info) {
   set_thread_name(cam_info.filename);
 
@@ -201,7 +220,7 @@ void loggerd_thread() {
   // init logger
   logger_init(&s.logger, "rlog", true);
   logger_rotate(&s);
-  std::future<bool> clear_locks_future = std::async(std::launch::async, [=] {
+  std::future<bool> clear_locks_future = std::async(std::launch::async, [&s] {
     Params().put("CurrentRoute", s.logger.route_name);
     clear_locks(LOG_ROOT, s.segment_path);
     return true;

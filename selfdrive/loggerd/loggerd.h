@@ -1,12 +1,11 @@
 #pragma once
 
-#include <ftw.h>
-#include <unistd.h>
+#include <dirent.h>
 
 #include <atomic>
 #include <cassert>
-#include <cerrno>
 #include <condition_variable>
+#include <future>
 #include <mutex>
 #include <string>
 #include <thread>
@@ -115,6 +114,7 @@ struct LoggerdState {
   bool camera_synced[WideRoadCam + 1] = {};
 };
 
+void clear_locks(const std::string &dir, const std::string &exclude_dir);
 bool sync_encoders(LoggerdState *s, CameraType cam_type, uint32_t frame_id);
 bool trigger_rotate_if_needed(LoggerdState *s, int cur_seg, uint32_t frame_id);
 void rotate_if_needed(LoggerdState *s);

@@ -91,3 +91,31 @@ TEST_CASE("trigger_rotate") {
     REQUIRE(frame_id == start_frame_id + encoder_seg * (SEGMENT_LENGTH * MAIN_FPS));
   }
 }
+
+TEST_CASE("clear_locks") {
+  std::vector<std::string> dirs;
+  std::string current_segment;
+  for (int i = 0; i < 10; ++i) {
+    std::string &path = dirs.emplace_back(LOG_ROOT + "/" + std::to_string(i));
+    REQUIRE(util::create_directories(path, 0775));
+    std::ofstream{path + "/.lock"};
+    REQUIRE(util::file_exists(path + "/.lock"));
+    if (i == 0) current_segment = path;
+  }
+  {
+    std::future<bool> clear_locks_future = std::async(std::launch::async, [=] {
+      clear_locks(LOG_ROOT, current_segment.c_str());
+      return true;
+    });
+  }
+  for (const auto &dir : dirs) {
+    std::string lock_file = dir + "/.lock";
+    if (dir == current_segment) {
+      REQUIRE(util::file_exists(lock_file));
+      ::unlink(lock_file.c_str());
+    } else {
+      REQUIRE(util::file_exists(lock_file) == false);
+    }
+    rmdir(dir.c_str());
+  }
+}
