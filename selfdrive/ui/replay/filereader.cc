@@ -1,9 +1,5 @@
 #include "selfdrive/ui/replay/filereader.h"
 
-#include <sys/stat.h>
-
-#include <cassert>
-#include <cmath>
 #include <fstream>
 #include <iostream>
 
