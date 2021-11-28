@@ -221,13 +221,20 @@ def bridge(q):
   client.set_timeout(10.0)
   world = client.load_world(args.town)
 
+  settings = world.get_settings()
+  settings.synchronous_mode = True # Enables synchronous mode
+  settings.fixed_delta_seconds = 0.05
+  world.apply_settings(settings)
+
+  world.set_weather(carla.WeatherParameters.ClearSunset)
+
   if args.low_quality:
     world.unload_map_layer(carla.MapLayer.Foliage)
     world.unload_map_layer(carla.MapLayer.Buildings)
     world.unload_map_layer(carla.MapLayer.ParkedVehicles)
-    world.unload_map_layer(carla.MapLayer.Particles)
     world.unload_map_layer(carla.MapLayer.Props)
     world.unload_map_layer(carla.MapLayer.StreetLights)
+    world.unload_map_layer(carla.MapLayer.Particles)
 
   blueprint_library = world.get_blueprint_library()
 
@@ -413,6 +420,9 @@ def bridge(q):
 
     if rk.frame % PRINT_DECIMATION == 0:
       print("frame: ", "engaged:", is_openpilot_engaged, "; throttle: ", round(vc.throttle, 3), "; steer(c/deg): ", round(vc.steer, 3), round(steer_out, 3), "; brake: ", round(vc.brake, 3))
+
+    if rk.frame % 5 == 0:
+      world.tick()
 
     rk.keep_time()
 
