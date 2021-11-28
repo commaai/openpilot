@@ -6,7 +6,6 @@
 #include <cmath>
 #include <fstream>
 #include <iostream>
-#include <sstream>
 
 #include "selfdrive/common/util.h"
 #include "selfdrive/ui/replay/util.h"
@@ -31,7 +30,7 @@ std::string FileReader::read(const std::string &file, std::atomic<bool> *abort) 
   } else if (is_remote) {
     result = download(file, abort);
     if (cache_to_local_ && !result.empty()) {
-      std::ofstream fs(local_file, fs.binary | fs.out);
+      std::ofstream fs(local_file, std::ofstream::binary | std::ofstream::out);
       fs.write(result.data(), result.size());
     }
   }
@@ -49,11 +48,9 @@ std::string FileReader::download(const std::string &url, std::atomic<bool> *abor
       remote_file_size = getRemoteFileSize(url);
     }
     if (remote_file_size > 0 && !(abort && *abort)) {
-      std::ostringstream oss;
-      result.resize(remote_file_size);
-      oss.rdbuf()->pubsetbuf(result.data(), result.size());
       int chunks = chunk_size_ > 0 ? std::max(1, (int)std::nearbyint(remote_file_size / (float)chunk_size_)) : 1;
-      if (httpMultiPartDownload(url, oss, chunks, remote_file_size, abort)) {
+      result = httpGet(url, chunks, remote_file_size, abort);
+      if (!result.empty()) {
         return result;
       }
     }

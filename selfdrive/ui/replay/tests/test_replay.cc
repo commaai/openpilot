@@ -1,7 +1,5 @@
 #include <QDebug>
 #include <QEventLoop>
-#include <fstream>
-#include <sstream>
 
 #include "catch2/catch.hpp"
 #include "selfdrive/common/util.h"
@@ -20,15 +18,12 @@ TEST_CASE("httpMultiPartDownload") {
   auto file_size = getRemoteFileSize(TEST_RLOG_URL);
   REQUIRE(file_size > 0);
   SECTION("5 connections, download to file") {
-    std::ofstream of(filename, of.binary | of.out);
-    REQUIRE(httpMultiPartDownload(TEST_RLOG_URL, of, 5, file_size));
+    REQUIRE(httpDownload(TEST_RLOG_URL, filename, 5, file_size));
     content = util::read_file(filename);
   }
   SECTION("5 connection, download to buffer") {
-    std::ostringstream oss;
-    content.resize(file_size);
-    oss.rdbuf()->pubsetbuf(content.data(), content.size());
-    REQUIRE(httpMultiPartDownload(TEST_RLOG_URL, oss, 5, file_size));
+    content = httpGet(TEST_RLOG_URL, 5, file_size);
+    REQUIRE(!content.empty());
   }
   REQUIRE(content.size() == 9112651);
   REQUIRE(sha256(content) == TEST_RLOG_CHECKSUM);

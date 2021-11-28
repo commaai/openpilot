@@ -9,6 +9,9 @@
 #include <iostream>
 #include <mutex>
 #include <numeric>
+#include <fstream>
+#include <ostream>
+#include <streambuf>
 
 #include "selfdrive/common/timing.h"
 #include "selfdrive/common/util.h"
@@ -162,6 +165,27 @@ bool httpMultiPartDownload(const std::string &url, std::ostream &os, int parts, 
 
   curl_multi_cleanup(cm);
   return complete == parts;
+}
+
+struct ostreambuf : public std::basic_streambuf<char, std::char_traits<char> > {
+  ostreambuf(char_type *buffer, std::streamsize size) {
+    setp(buffer, buffer + size);
+  }
+};
+
+std::string httpGet(const std::string &url, int parts, size_t content_length, std::atomic<bool> *abort) {
+  std::string result(content_length, '\0');
+  ostreambuf stream_buf(result.data(), result.size());
+  std::ostream oss(&stream_buf);
+  if (httpMultiPartDownload(url, oss, parts, content_length, abort)) {
+    return result;
+  }
+  return {};
+}
+
+bool httpDownload(const std::string &url, const std::string &file, int parts, size_t content_length, std::atomic<bool> *abort) {
+  std::ofstream of(file, std::ofstream::binary | std::ofstream::out);
+  return httpMultiPartDownload(url, of, parts, content_length, abort);
 }
 
 std::string decompressBZ2(const std::string &in) {
