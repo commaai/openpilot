@@ -33,6 +33,8 @@ struct MultiPartWriter {
 
   size_t write(char *data, size_t size, size_t count) {
     size_t bytes = size * count;
+    if (offset + bytes > end) return 0;
+
     if constexpr (std::is_same<T, std::string>::value) {
       memcpy(buf->data() + offset, data, bytes);
     } else if constexpr (std::is_same<T, std::ofstream>::value) {
@@ -95,7 +97,7 @@ void enableHttpLogging(bool enable) {
 }
 
 template <class T>
-bool httpMultiPartDownload(const std::string &url, T &buf, size_t chunk_size, size_t content_length, std::atomic<bool> *abort) {
+bool httpDownload(const std::string &url, T &buf, size_t chunk_size, size_t content_length, std::atomic<bool> *abort) {
   static CURLGlobalInitializer curl_initializer;
   static std::mutex lock;
   static uint64_t total_written = 0, prev_total_written = 0;
@@ -182,24 +184,21 @@ bool httpMultiPartDownload(const std::string &url, T &buf, size_t chunk_size, si
 }
 
 std::string httpGet(const std::string &url, size_t chunk_size, std::atomic<bool> *abort) {
-  size_t content_length = getRemoteFileSize(url);
-  if (content_length == 0) return {};
+  size_t size = getRemoteFileSize(url);
+  if (size == 0) return {};
 
-  std::string result(content_length, '\0');
-  if (httpMultiPartDownload(url, result, chunk_size, content_length, abort)) {
-    return result;
-  }
-  return {};
+  std::string result(size, '\0');
+  return httpDownload(url, result, chunk_size, size, abort) ? result : "";
 }
 
 bool httpDownload(const std::string &url, const std::string &file, size_t chunk_size, std::atomic<bool> *abort) {
-  size_t content_length = getRemoteFileSize(url);
-  if (content_length == 0) return false;
+  size_t size = getRemoteFileSize(url);
+  if (size == 0) return false;
 
   std::ofstream of(file, std::ios::binary | std::ios::out);
-  of.seekp(content_length - 1);
+  of.seekp(size - 1);
   of.write("\0", 1);
-  return httpMultiPartDownload(url, of, chunk_size, content_length, abort);
+  return httpDownload(url, of, chunk_size, size, abort);
 }
 
 std::string decompressBZ2(const std::string &in) {
