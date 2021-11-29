@@ -4,6 +4,7 @@
 #include <openssl/pem.h>
 #include <openssl/rsa.h>
 
+#include <QApplication>
 #include <QCryptographicHash>
 #include <QDateTime>
 #include <QDebug>
@@ -62,8 +63,6 @@ QString create_jwt(const QJsonObject &payloads, int expiry) {
 }  // namespace CommaApi
 
 HttpRequest::HttpRequest(QObject *parent, bool create_jwt, int timeout) : create_jwt(create_jwt), QObject(parent) {
-  networkAccessManager = new QNetworkAccessManager(this);
-
   networkTimer = new QTimer(this);
   networkTimer->setSingleShot(true);
   networkTimer->setInterval(timeout);
@@ -101,9 +100,9 @@ void HttpRequest::sendRequest(const QString &requestURL, const HttpRequest::Meth
   }
 
   if (method == HttpRequest::Method::GET) {
-    reply = networkAccessManager->get(request);
+    reply = nam()->get(request);
   } else if (method == HttpRequest::Method::DELETE) {
-    reply = networkAccessManager->deleteResource(request);
+    reply = nam()->deleteResource(request);
   }
 
   networkTimer->start();
@@ -122,8 +121,8 @@ void HttpRequest::requestFinished() {
   } else {
     QString error;
     if (reply->error() == QNetworkReply::OperationCanceledError) {
-      networkAccessManager->clearAccessCache();
-      networkAccessManager->clearConnectionCache();
+      nam()->clearAccessCache();
+      nam()->clearConnectionCache();
       error = "Request timed out";
     } else {
       if (reply->error() == QNetworkReply::ContentAccessDenied || reply->error() == QNetworkReply::AuthenticationRequiredError) {
@@ -136,4 +135,9 @@ void HttpRequest::requestFinished() {
 
   reply->deleteLater();
   reply = nullptr;
+}
+
+QNetworkAccessManager *HttpRequest::nam() {
+  static QNetworkAccessManager *networkAccessManager = new QNetworkAccessManager(qApp);
+  return networkAccessManager;
 }
