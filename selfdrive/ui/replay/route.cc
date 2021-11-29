@@ -35,10 +35,8 @@ bool Route::load() {
 bool Route::loadFromServer() {
   QEventLoop loop;
   HttpRequest http(nullptr, !Hardware::PC());
-  QObject::connect(&http, &HttpRequest::failedResponse, [&] { loop.exit(0); });
-  QObject::connect(&http, &HttpRequest::timeoutResponse, [&] { loop.exit(0); });
-  QObject::connect(&http, &HttpRequest::receivedResponse, [&](const QString &json) {
-    loop.exit(loadFromJson(json));
+  QObject::connect(&http, &HttpRequest::requestDone, [&](const QString &json, bool success) {
+    loop.exit(success ? loadFromJson(json) : 0);
   });
   http.sendRequest("https://api.commadotai.com/v1/route/" + route_.str + "/files");
   return loop.exec();
