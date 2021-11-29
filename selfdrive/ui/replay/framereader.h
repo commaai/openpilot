@@ -15,11 +15,12 @@ struct AVFrameDeleter {
   void operator()(AVFrame* frame) const { av_frame_free(&frame); }
 };
 
-class FrameReader : protected FileReader {
+class FrameReader {
 public:
-  FrameReader(bool local_cache = false, int chunk_size = -1, int retries = 0);
+  FrameReader();
   ~FrameReader();
-  bool load(const std::string &url, bool no_cuda = false, std::atomic<bool> *abort = nullptr);
+  bool load(const std::string &url, bool no_cuda = false, std::atomic<bool> *abort = nullptr, bool local_cache = false, int chunk_size = -1, int retries = 0);
+  bool load(const std::byte *data, size_t size, bool no_cuda = false, std::atomic<bool> *abort = nullptr);
   bool get(int idx, uint8_t *rgb, uint8_t *yuv);
   int getRGBSize() const { return width * height * 3; }
   int getYUVSize() const { return width * height * 3 / 2; }

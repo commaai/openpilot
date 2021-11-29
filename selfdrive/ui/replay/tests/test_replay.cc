@@ -50,6 +50,17 @@ TEST_CASE("FileReader") {
   }
 }
 
+TEST_CASE("LogReader") {
+  SECTION("corrupt log") {
+    FileReader reader(true);
+    std::string corrupt_content = reader.read(TEST_RLOG_URL);
+    corrupt_content.resize(corrupt_content.length() / 2);
+    LogReader log;
+    REQUIRE(log.load((std::byte *)corrupt_content.data(), corrupt_content.size()));
+    REQUIRE(log.events.size() > 0);
+  }
+}
+
 TEST_CASE("Segment") {
   auto flags = GENERATE(REPLAY_FLAG_DCAM | REPLAY_FLAG_ECAM, REPLAY_FLAG_QCAMERA);
   Route demo_route(DEMO_ROUTE);
