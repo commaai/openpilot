@@ -132,7 +132,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"LastGPSPosition", PERSISTENT},
     {"LastUpdateException", PERSISTENT},
     {"LastUpdateTime", PERSISTENT},
-    {"LastControlledShutdown", CLEAR_ON_MANAGER_START},
+    {"LastPowerDropDetected", CLEAR_ON_MANAGER_START},
     {"LiveParameters", PERSISTENT},
     {"NavDestination", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_OFF},
     {"NavSettingTime24h", PERSISTENT},
