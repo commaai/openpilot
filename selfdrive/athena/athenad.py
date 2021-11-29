@@ -30,7 +30,7 @@ from selfdrive.hardware import HARDWARE, PC
 from selfdrive.loggerd.config import ROOT
 from selfdrive.loggerd.xattr_cache import getxattr, setxattr
 from selfdrive.swaglog import cloudlog, SWAGLOG_DIR
-from selfdrive.version import get_version, get_origin, get_branch, get_commit
+from selfdrive.version import get_version, get_origin, get_short_branch, get_commit
 
 ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
 HANDLER_THREADS = int(os.getenv('HANDLER_THREADS', "4"))
@@ -177,7 +177,7 @@ def getVersion():
   return {
     "version": get_version(),
     "remote": get_origin(),
-    "branch": get_branch(),
+    "branch": get_short_branch(),
     "commit": get_commit(),
   }
 
