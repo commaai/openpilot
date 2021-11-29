@@ -70,8 +70,12 @@ HttpRequest::HttpRequest(QObject *parent, bool create_jwt, int timeout) : create
   connect(networkTimer, &QTimer::timeout, this, &HttpRequest::requestTimeout);
 }
 
-bool HttpRequest::active() {
+bool HttpRequest::active() const {
   return reply != nullptr;
+}
+
+bool HttpRequest::timeout() const {
+  return reply && reply->error() == QNetworkReply::OperationCanceledError;
 }
 
 void HttpRequest::sendRequest(const QString &requestURL, const HttpRequest::Method method) {
@@ -110,29 +114,26 @@ void HttpRequest::requestTimeout() {
   reply->abort();
 }
 
-// This function should always emit something
 void HttpRequest::requestFinished() {
-  bool success = false;
-  if (reply->error() != QNetworkReply::OperationCanceledError) {
-    networkTimer->stop();
-    QString response = reply->readAll();
+  networkTimer->stop();
 
-    if (reply->error() == QNetworkReply::NoError) {
-      success = true;
-      emit receivedResponse(response);
+  if (reply->error() == QNetworkReply::NoError) {
+    emit requestDone(reply->readAll(), true);
+  } else {
+    QString error;
+    if (reply->error() == QNetworkReply::OperationCanceledError) {
+      networkAccessManager->clearAccessCache();
+      networkAccessManager->clearConnectionCache();
+      error = "Request timed out";
     } else {
-      emit failedResponse(reply->errorString());
-
       if (reply->error() == QNetworkReply::ContentAccessDenied || reply->error() == QNetworkReply::AuthenticationRequiredError) {
         qWarning() << ">>  Unauthorized. Authenticate with tools/lib/auth.py  <<";
       }
+      error = reply->errorString();
     }
-  } else {
-    networkAccessManager->clearAccessCache();
-    networkAccessManager->clearConnectionCache();
-    emit timeoutResponse("timeout");
+    emit requestDone(error, false);
   }
-  emit requestDone(success);
+
   reply->deleteLater();
   reply = nullptr;
 }

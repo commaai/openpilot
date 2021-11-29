@@ -24,7 +24,7 @@ public:
   bool get(int idx, uint8_t *rgb, uint8_t *yuv);
   int getRGBSize() const { return width * height * 3; }
   int getYUVSize() const { return width * height * 3 / 2; }
-  size_t getFrameCount() const { return frames_.size(); }
+  size_t getFrameCount() const { return packets.size(); }
   bool valid() const { return valid_; }
 
   int width = 0, height = 0;
@@ -35,12 +35,7 @@ private:
   AVFrame * decodeFrame(AVPacket *pkt);
   bool copyBuffers(AVFrame *f, uint8_t *rgb, uint8_t *yuv);
 
-  struct Frame {
-    AVPacket pkt = {};
-    int decoded = false;
-    bool failed = false;
-  };
-  std::vector<Frame> frames_;
+  std::vector<AVPacket*> packets;
   std::unique_ptr<AVFrame, AVFrameDeleter>av_frame_, hw_frame;
   AVFormatContext *input_ctx = nullptr;
   AVCodecContext *decoder_ctx = nullptr;
@@ -51,4 +46,6 @@ private:
   AVPixelFormat hw_pix_fmt = AV_PIX_FMT_NONE;
   AVBufferRef *hw_device_ctx = nullptr;
   std::vector<uint8_t> nv12toyuv_buffer;
+  int prev_idx = -1;
+  inline static std::atomic<bool> has_cuda_device = true;
 };

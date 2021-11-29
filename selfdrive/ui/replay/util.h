@@ -1,7 +1,6 @@
 #pragma once
 
 #include <atomic>
-#include <ostream>
 #include <string>
 
 std::string sha256(const std::string &str);
@@ -11,4 +10,5 @@ std::string decompressBZ2(const std::byte *in, size_t in_size);
 void enableHttpLogging(bool enable);
 std::string getUrlWithoutQuery(const std::string &url);
 size_t getRemoteFileSize(const std::string &url);
-bool httpMultiPartDownload(const std::string &url, std::ostream &os, int parts, size_t content_length, std::atomic<bool> *abort = nullptr);
+std::string httpGet(const std::string &url, size_t chunk_size = 0, std::atomic<bool> *abort = nullptr);
+bool httpDownload(const std::string &url, const std::string &file, size_t chunk_size = 0, std::atomic<bool> *abort = nullptr);
