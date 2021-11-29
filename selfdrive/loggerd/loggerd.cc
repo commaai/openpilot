@@ -157,8 +157,8 @@ int clear_locks_fn(const char* fpath, const struct stat *sb, int tyupeflag) {
   return 0;
 }
 
-void clear_locks() {
-  ftw(LOG_ROOT.c_str(), clear_locks_fn, 16);
+void clear_locks(const std::string log_root) {
+  ftw(log_root.c_str(), clear_locks_fn, 16);
 }
 
 void logger_rotate(LoggerdState *s) {
@@ -190,7 +190,7 @@ void rotate_if_needed(LoggerdState *s) {
 }
 
 void loggerd_thread() {
-  clear_locks();
+  clear_locks(LOG_ROOT);
 
   // setup messaging
   typedef struct QlogState {
