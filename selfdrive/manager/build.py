@@ -12,7 +12,7 @@ from common.spinner import Spinner
 from common.text_window import TextWindow
 from selfdrive.hardware import TICI
 from selfdrive.swaglog import cloudlog, add_file_handler
-from selfdrive.version import dirty
+from selfdrive.version import get_dirty
 
 MAX_CACHE_SIZE = 2e9
 CACHE_DIR = Path("/data/scons_cache" if TICI else "/tmp/scons_cache")
@@ -98,4 +98,4 @@ def build(spinner, dirty=False):
 if __name__ == "__main__" and not PREBUILT:
   spinner = Spinner()
   spinner.update_progress(0, 100)
-  build(spinner, dirty)
+  build(spinner, get_dirty())
