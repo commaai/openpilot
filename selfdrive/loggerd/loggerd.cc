@@ -149,18 +149,6 @@ void encoder_thread(LoggerdState *s, const LogCameraInfo &cam_info) {
   }
 }
 
-int clear_locks_fn(const char* fpath, const struct stat *sb, int tyupeflag) {
-  const char* dot = strrchr(fpath, '.');
-  if (dot && strcmp(dot, ".lock") == 0) {
-    unlink(fpath);
-  }
-  return 0;
-}
-
-void clear_locks(const std::string log_root) {
-  ftw(log_root.c_str(), clear_locks_fn, 16);
-}
-
 void logger_rotate(LoggerdState *s) {
   {
     std::unique_lock lk(s->rotate_lock);
@@ -190,8 +178,6 @@ void rotate_if_needed(LoggerdState *s) {
 }
 
 void loggerd_thread() {
-  clear_locks(LOG_ROOT);
-
   // setup messaging
   typedef struct QlogState {
     int counter, freq;
