@@ -46,4 +46,5 @@ private:
   AVBufferRef *hw_device_ctx = nullptr;
   std::vector<uint8_t> nv12toyuv_buffer;
   int prev_idx = -1;
+  inline static std::atomic<bool> has_cuda_device = true;
 };

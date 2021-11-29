@@ -35,10 +35,8 @@ bool Route::load() {
 bool Route::loadFromServer() {
   QEventLoop loop;
   HttpRequest http(nullptr, !Hardware::PC());
-  QObject::connect(&http, &HttpRequest::failedResponse, [&] { loop.exit(0); });
-  QObject::connect(&http, &HttpRequest::timeoutResponse, [&] { loop.exit(0); });
-  QObject::connect(&http, &HttpRequest::receivedResponse, [&](const QString &json) {
-    loop.exit(loadFromJson(json));
+  QObject::connect(&http, &HttpRequest::requestDone, [&](const QString &json, bool success) {
+    loop.exit(success ? loadFromJson(json) : 0);
   });
   http.sendRequest("https://api.commadotai.com/v1/route/" + route_.str + "/files");
   return loop.exec();
@@ -121,7 +119,7 @@ void Segment::loadFile(int id, const std::string file) {
     frames[id] = std::make_unique<FrameReader>(local_cache, 20 * 1024 * 1024, 3);
     success = frames[id]->load(file, flags & REPLAY_FLAG_NO_CUDA, &abort_);
   } else {
-    log = std::make_unique<LogReader>(local_cache, -1, 3);
+    log = std::make_unique<LogReader>(local_cache, 0, 3);
     success = log->load(file, &abort_);
   }
 
