@@ -9,6 +9,7 @@ class TestSound : public Sound {
 public:
   TestSound() : Sound() {
     for (auto i = sounds.constBegin(); i != sounds.constEnd(); ++i) {
+      sound_stats[i.key()] = {0, 0};
       QObject::connect(i.value().first, &QSoundEffect::playingChanged, [=, s = i.value().first, a = i.key()]() {
         if (s->isPlaying()) {
           sound_stats[a].first++;
