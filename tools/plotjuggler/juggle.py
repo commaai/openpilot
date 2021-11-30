@@ -10,11 +10,13 @@ from common.basedir import BASEDIR
 from selfdrive.test.process_replay.compare_logs import save_log
 from tools.lib.api import CommaApi
 from tools.lib.auth_config import get_token
-from tools.lib.logreader import LogReader
+from tools.lib.robust_logreader import RobustLogReader
 from tools.lib.route import Route
 from urllib.parse import urlparse, parse_qs
 
 juggle_dir = os.path.dirname(os.path.realpath(__file__))
+
+DEMO_ROUTE = "4cf7a6ad03080c90|2021-09-29--13-46-36"
 
 def load_segment(segment_name):
   print(f"Loading {segment_name}")
@@ -22,7 +24,7 @@ def load_segment(segment_name):
     return []
 
   try:
-    return list(LogReader(segment_name))
+    return list(RobustLogReader(segment_name))
   except ValueError as e:
     print(f"Error parsing {segment_name}: {e}")
     return []
@@ -94,12 +96,13 @@ def juggle_route(route_name, segment_number, segment_count, qlog, can, layout):
   start_juggler(tempfile.name, dbc, layout)
 
 def get_arg_parser():
-  parser = argparse.ArgumentParser(description="PlotJuggler plugin for reading openpilot logs",
+  parser = argparse.ArgumentParser(description="A helper to run PlotJuggler on openpilot routes",
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
+  parser.add_argument("--demo", action="store_true", help="Use the demo route instead of providing one")
   parser.add_argument("--qlog", action="store_true", help="Use qlogs")
   parser.add_argument("--can", action="store_true", help="Parse CAN data")
-  parser.add_argument("--stream", action="store_true", help="Start PlotJuggler without a route to stream data using Cereal")
+  parser.add_argument("--stream", action="store_true", help="Start PlotJuggler in streaming mode")
   parser.add_argument("--layout", nargs='?', help="Run PlotJuggler with a pre-defined layout")
   parser.add_argument("route_name", nargs='?', help="The route name to plot (cabana share URL accepted)")
   parser.add_argument("segment_number", type=int, nargs='?', help="The index of the segment to plot")
@@ -114,6 +117,7 @@ if __name__ == "__main__":
   args = arg_parser.parse_args(sys.argv[1:])
 
   if args.stream:
-    start_juggler()
+    start_juggler(layout=args.layout)
   else:
-    juggle_route(args.route_name, args.segment_number, args.segment_count, args.qlog, args.can, args.layout)
+    route = DEMO_ROUTE if args.demo else args.route_name.strip()
+    juggle_route(route, args.segment_number, args.segment_count, args.qlog, args.can, args.layout)

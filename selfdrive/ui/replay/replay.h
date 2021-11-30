@@ -14,6 +14,9 @@ enum REPLAY_FLAGS {
   REPLAY_FLAG_ECAM = 0x0004,
   REPLAY_FLAG_NO_LOOP = 0x0010,
   REPLAY_FLAG_NO_FILE_CACHE = 0x0020,
+  REPLAY_FLAG_QCAMERA = 0x0040,
+  REPLAY_FLAG_SEND_YUV = 0x0080,
+  REPLAY_FLAG_NO_CUDA = 0x0100,
 };
 
 class Replay : public QObject {
@@ -28,7 +31,6 @@ public:
   void stop();
   void pause(bool pause);
   bool isPaused() const { return paused_; }
-  inline bool hasFlag(REPLAY_FLAGS flag) { return flags_ & flag; };
 
 signals:
   void segmentChanged();

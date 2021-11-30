@@ -2,6 +2,7 @@
 
 #include <sys/stat.h>
 #include <unistd.h>
+#include <ftw.h>
 
 #include <cassert>
 #include <cerrno>
@@ -265,4 +266,16 @@ void lh_close(LoggerHandle* h) {
     return;
   }
   pthread_mutex_unlock(&h->lock);
+}
+
+int clear_locks_fn(const char* fpath, const struct stat *sb, int tyupeflag) {
+  const char* dot = strrchr(fpath, '.');
+  if (dot && strcmp(dot, ".lock") == 0) {
+    unlink(fpath);
+  }
+  return 0;
+}
+
+void clear_locks(const std::string log_root) {
+  ftw(log_root.c_str(), clear_locks_fn, 16);
 }

@@ -27,11 +27,13 @@ public:
   int locationd_thread();
 
   void reset_kalman(double current_time = NAN);
-  void reset_kalman(double current_time, Eigen::VectorXd init_orient, Eigen::VectorXd init_pos);
+  void reset_kalman(double current_time, Eigen::VectorXd init_orient, Eigen::VectorXd init_pos, Eigen::VectorXd init_vel, MatrixXdr init_pos_R, MatrixXdr init_vel_R);
+  void reset_kalman(double current_time, Eigen::VectorXd init_x, MatrixXdr init_P);
   void finite_check(double current_time = NAN);
   void time_check(double current_time = NAN);
   void update_reset_tracker();
   bool isGpsOK();
+  void determine_gps_mode(double current_time);
 
   kj::ArrayPtr<capnp::byte> get_message_bytes(MessageBuilder& msg_builder, uint64_t logMonoTime,
     bool inputsOK, bool sensorsOK, bool gpsOK);
@@ -48,6 +50,8 @@ public:
   void handle_car_state(double current_time, const cereal::CarState::Reader& log);
   void handle_cam_odo(double current_time, const cereal::CameraOdometry::Reader& log);
   void handle_live_calib(double current_time, const cereal::LiveCalibrationData::Reader& log);
+
+  void input_fake_gps_observations(double current_time);
 
 private:
   std::unique_ptr<LiveKalman> kf;
@@ -67,4 +71,5 @@ private:
   double last_gps_fix = 0;
   double reset_tracker = 0.0;
   bool device_fell = false;
+  bool gps_mode = false;
 };

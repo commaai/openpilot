@@ -1,6 +1,7 @@
 import importlib
 import os
 import signal
+import struct
 import time
 import subprocess
 from abc import ABC, abstractmethod
@@ -88,7 +89,7 @@ class ManagerProcess(ABC):
 
     try:
       fn = WATCHDOG_FN + str(self.proc.pid)
-      self.last_watchdog_time = int(open(fn).read())
+      self.last_watchdog_time = struct.unpack('Q', open(fn, "rb").read())[0]
     except Exception:
       pass
 

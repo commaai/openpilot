@@ -5,9 +5,9 @@
 #include "selfdrive/common/timing.h"
 #include "selfdrive/ui/paint.h"
 #include "selfdrive/ui/qt/util.h"
-#include "selfdrive/ui/qt/api.h"
 #ifdef ENABLE_MAPS
 #include "selfdrive/ui/qt/maps/map.h"
+#include "selfdrive/ui/qt/maps/map_helpers.h"
 #endif
 
 OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
@@ -40,24 +40,13 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
 }
 
 void OnroadWindow::updateState(const UIState &s) {
-  SubMaster &sm = *(s.sm);
   QColor bgColor = bg_colors[s.status];
-  if (sm.updated("controlsState")) {
-    const cereal::ControlsState::Reader &cs = sm["controlsState"].getControlsState();
-    alerts->updateAlert({QString::fromStdString(cs.getAlertText1()),
-                 QString::fromStdString(cs.getAlertText2()),
-                 QString::fromStdString(cs.getAlertType()),
-                 cs.getAlertSize(), cs.getAlertSound()}, bgColor);
-  } else if ((sm.frame - s.scene.started_frame) > 5 * UI_FREQ) {
-    // Handle controls timeout
-    if (sm.rcv_frame("controlsState") < s.scene.started_frame) {
-      // car is started, but controlsState hasn't been seen at all
-      alerts->updateAlert(CONTROLS_WAITING_ALERT, bgColor);
-    } else if ((nanos_since_boot() - sm.rcv_time("controlsState")) / 1e9 > CONTROLS_TIMEOUT) {
-      // car is started, but controls is lagging or died
+  Alert alert = Alert::get(*(s.sm), s.scene.started_frame);
+  if (s.sm->updated("controlsState") || !alert.equal({})) {
+    if (alert.type == "controlsUnresponsive") {
       bgColor = bg_colors[STATUS_ALERT];
-      alerts->updateAlert(CONTROLS_UNRESPONSIVE_ALERT, bgColor);
     }
+    alerts->updateAlert(alert, bgColor);
   }
   if (bg != bgColor) {
     // repaint border
@@ -79,19 +68,7 @@ void OnroadWindow::offroadTransition(bool offroad) {
 #ifdef ENABLE_MAPS
   if (!offroad) {
     if (map == nullptr && (QUIState::ui_state.has_prime || !MAPBOX_TOKEN.isEmpty())) {
-      QMapboxGLSettings settings;
-
-      // Valid for 4 weeks since we can't swap tokens on the fly
-      QString token = MAPBOX_TOKEN.isEmpty() ? CommaApi::create_jwt({}, 4 * 7 * 24 * 3600) : MAPBOX_TOKEN;
-
-      if (!Hardware::PC()) {
-        settings.setCacheDatabasePath("/data/mbgl-cache.db");
-      }
-      settings.setApiBaseUrl(MAPS_HOST);
-      settings.setCacheDatabaseMaximumSize(20 * 1024 * 1024);
-      settings.setAccessToken(token.trimmed());
-
-      MapWindow * m = new MapWindow(settings);
+      MapWindow * m = new MapWindow(get_mapbox_settings());
       m->setFixedWidth(topWidget(this)->width() / 2);
       QObject::connect(this, &OnroadWindow::offroadTransitionSignal, m, &MapWindow::offroadTransition);
       split->addWidget(m, 0, Qt::AlignRight);
@@ -196,4 +173,10 @@ void NvgWindow::paintGL() {
     LOGW("slow frame time: %.2f", dt);
   }
   prev_draw_t = cur_draw_t;
+}
+
+void NvgWindow::showEvent(QShowEvent *event) {
+  CameraViewWidget::showEvent(event);
+  ui_update_params(&QUIState::ui_state);
+  prev_draw_t = millis_since_boot();
 }

@@ -99,7 +99,7 @@ def crc8_pedal(data):
   return crc
 
 
-def create_gas_command(packer, gas_amount, idx):
+def create_gas_interceptor_command(packer, gas_amount, idx):
   # Common gas pedal msg generator
   enable = gas_amount > 0.001
 
