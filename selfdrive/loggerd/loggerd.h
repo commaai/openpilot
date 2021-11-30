@@ -44,7 +44,7 @@ const int SEGMENT_LENGTH = LOGGERD_TEST ? atoi(getenv("LOGGERD_SEGMENT_LENGTH"))
 const LogCameraInfo cameras_logged[] = {
   {
     .type = RoadCam,
-    .stream_type = VISION_STREAM_YUV_BACK,
+    .stream_type = VISION_STREAM_ROAD,
     .filename = "fcamera.hevc",
     .frame_packet_name = "roadCameraState",
     .fps = MAIN_FPS,
@@ -58,7 +58,7 @@ const LogCameraInfo cameras_logged[] = {
   },
   {
     .type = DriverCam,
-    .stream_type = VISION_STREAM_YUV_FRONT,
+    .stream_type = VISION_STREAM_DRIVER,
     .filename = "dcamera.hevc",
     .frame_packet_name = "driverCameraState",
     .fps = MAIN_FPS, // on EONs, more compressed this way
@@ -72,7 +72,7 @@ const LogCameraInfo cameras_logged[] = {
   },
   {
     .type = WideRoadCam,
-    .stream_type = VISION_STREAM_YUV_WIDE,
+    .stream_type = VISION_STREAM_WIDE_ROAD,
     .filename = "ecamera.hevc",
     .frame_packet_name = "wideRoadCameraState",
     .fps = MAIN_FPS,

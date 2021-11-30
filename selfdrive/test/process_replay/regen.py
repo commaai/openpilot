@@ -39,8 +39,8 @@ def replay_service(s, msgs):
 vs = None
 def replay_cameras(lr, frs):
   cameras = [
-    ("roadCameraState", DT_MDL, eon_f_frame_size, VisionStreamType.VISION_STREAM_YUV_BACK),
-    ("driverCameraState", DT_DMON, eon_d_frame_size, VisionStreamType.VISION_STREAM_YUV_FRONT),
+    ("roadCameraState", DT_MDL, eon_f_frame_size, VisionStreamType.VISION_STREAM_ROAD),
+    ("driverCameraState", DT_DMON, eon_d_frame_size, VisionStreamType.VISION_STREAM_DRIVER),
   ]
 
   def replay_camera(s, stream, dt, vipc_server, fr, size):
