@@ -1,7 +1,7 @@
 def phone(String ip, String step_label, String cmd) {
   withCredentials([file(credentialsId: 'id_rsa', variable: 'key_file')]) {
     def ssh_cmd = """
-ssh -tt -o StrictHostKeyChecking=no -i ${key_file} -p 8022 'comma@${ip}' /usr/bin/bash <<'EOF'
+ssh -tt -o StrictHostKeyChecking=no -i ${key_file} 'comma@${ip}' /usr/bin/bash <<'EOF'
 
 set -e
 
@@ -64,7 +64,7 @@ pipeline {
 
       parallel {
         stage('release2') {
-          agent { docker 'python:3.7.3' }
+          agent { docker 'kroniak/ssh-client' }
           steps {
             phone_steps("eon-build", [
               ["build release2-staging & dashcam-staging", "$SOURCE_DIR/release/build_release.sh"],
@@ -73,7 +73,7 @@ pipeline {
         }
 
         stage('release3') {
-          agent { docker 'python:3.7.3' }
+          agent { docker 'kroniak/ssh-client' }
           steps {
             phone_steps("tici", [
               ["build release3-staging & dashcam3-staging", "$SOURCE_DIR/release/build_release.sh"],
