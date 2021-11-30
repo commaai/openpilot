@@ -1,6 +1,8 @@
 #include "selfdrive/ui/soundd/sound.h"
 
 #include <QAudio>
+#include <QAudioDeviceInfo>
+#include <QDebug>
 
 #include "cereal/messaging/messaging.h"
 #include "selfdrive/common/util.h"
@@ -9,6 +11,8 @@
 // TODO: detect when we can't display the UI
 
 Sound::Sound(QObject *parent) : sm({"carState", "controlsState", "deviceState"}) {
+  qInfo() << "default audio device: " << QAudioDeviceInfo::defaultOutputDevice().deviceName();
+
   for (auto &[alert, fn, loops] : sound_list) {
     QSoundEffect *s = new QSoundEffect(this);
     QObject::connect(s, &QSoundEffect::statusChanged, [=]() {
