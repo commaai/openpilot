@@ -49,16 +49,14 @@ T_IDXS_LST = [index_function(idx, max_val=MAX_T, max_idx=N+1) for idx in range(N
 T_IDXS = np.array(T_IDXS_LST)
 T_DIFFS = np.diff(T_IDXS, prepend=[0.])
 MIN_ACCEL = -3.5
-T_REACT = 1.6
-MAX_BRAKE = 9.81
-
+T_REACT = 1.45
+COMFORT_BRAKE = 2.0
 
 def get_stopped_equivalence_factor(v_lead):
-  #return np.clip(v_lead**2 / (2*4.0) - .7 * v_lead, v_lead**2 / (2*3.0) - T_REACT * v_lead, np.inf)
-  return v_lead**2 / (2*2.0) - T_REACT * v_lead
+  return v_lead**2 / (2 * COMFORT_BRAKE) - T_REACT * v_lead
 
 def get_safe_obstacle_distance(v_ego):
-  return (v_ego*v_ego) / (2 * 2.0) + 5.0
+  return (v_ego*v_ego) / (2 * COMFORT_BRAKE) + 5.0
 
 def desired_follow_distance(v_ego, v_lead):
   return get_safe_obstacle_distance(v_ego) - get_stopped_equivalence_factor(v_lead)
