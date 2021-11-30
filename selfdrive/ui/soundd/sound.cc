@@ -59,7 +59,7 @@ void Sound::setAlert(const Alert &alert) {
     for (auto &[s, loops] : sounds) {
       // Only stop repeating sounds
       if (s->loopsRemaining() > 1 || s->loopsRemaining() == QSoundEffect::Infinite) {
-        s->stop();
+        s->setLoopCount(0);
       }
     }
 
