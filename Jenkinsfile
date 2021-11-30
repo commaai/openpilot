@@ -59,14 +59,14 @@ pipeline {
   stages {
     stage('build releases') {
       when {
-        branch 'parallel-release'
+        branch 'devel-staging'
       }
 
       parallel {
         stage('release2') {
           steps {
             phone_steps("eon-build", [
-              ["build release2-staging & dashcam-staging", "$SOURCE_DIR/release/build_release.sh"],
+              ["build release2-staging & dashcam-staging", "PUSH=1 $SOURCE_DIR/release/build_release.sh"],
             ])
           }
         }
@@ -74,11 +74,10 @@ pipeline {
         stage('release3') {
           steps {
             phone_steps("tici", [
-              ["build release3-staging & dashcam3-staging", "$SOURCE_DIR/release/build_release.sh"],
+              ["build release3-staging & dashcam3-staging", "PUSH=1 $SOURCE_DIR/release/build_release.sh"],
             ])
           }
         }
-
       }
     }
 
@@ -95,31 +94,6 @@ pipeline {
       }
 
       stages {
-
-        /*
-        stage('PC tests') {
-          agent {
-            dockerfile {
-              filename 'Dockerfile.openpilotci'
-              args '--privileged --shm-size=1G --user=root'
-            }
-          }
-          stages {
-            stage('Build') {
-              steps {
-                sh 'scons -j$(nproc)'
-              }
-            }
-          }
-          post {
-            always {
-              // fix permissions since docker runs as another user
-              sh "chmod -R 777 ."
-            }
-          }
-        }
-        */
-
         stage('On-device Tests') {
           stages {
             stage('parallel tests') {
