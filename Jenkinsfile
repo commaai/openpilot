@@ -64,7 +64,12 @@ pipeline {
 
       parallel {
         stage('release2') {
-          agent { docker 'kroniak/ssh-client' }
+          agent {
+            docker {
+              image 'kroniak/ssh-client'
+              args '--user=root'
+            }
+          }
           steps {
             phone_steps("eon-build", [
               ["build release2-staging & dashcam-staging", "$SOURCE_DIR/release/build_release.sh"],
@@ -73,7 +78,12 @@ pipeline {
         }
 
         stage('release3') {
-          agent { docker 'kroniak/ssh-client' }
+          agent {
+            docker {
+              image 'kroniak/ssh-client'
+              args '--user=root'
+            }
+          }
           steps {
             phone_steps("tici", [
               ["build release3-staging & dashcam3-staging", "$SOURCE_DIR/release/build_release.sh"],
