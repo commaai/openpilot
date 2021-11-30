@@ -51,5 +51,4 @@ protected:
 
 protected slots:
   void vipcConnected(VisionIpcClient *vipc_client);
-  void vipcFrameReceived(VisionBuf *buf);
 };

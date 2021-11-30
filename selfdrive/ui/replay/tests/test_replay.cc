@@ -1,7 +1,5 @@
 #include <QDebug>
 #include <QEventLoop>
-#include <fstream>
-#include <sstream>
 
 #include "catch2/catch.hpp"
 #include "selfdrive/common/util.h"
@@ -16,19 +14,15 @@ TEST_CASE("httpMultiPartDownload") {
   char filename[] = "/tmp/XXXXXX";
   close(mkstemp(filename));
 
+  const size_t chunk_size = 5 * 1024 * 1024;
   std::string content;
-  auto file_size = getRemoteFileSize(TEST_RLOG_URL);
-  REQUIRE(file_size > 0);
-  SECTION("5 connections, download to file") {
-    std::ofstream of(filename, of.binary | of.out);
-    REQUIRE(httpMultiPartDownload(TEST_RLOG_URL, of, 5, file_size));
+  SECTION("download to file") {
+    REQUIRE(httpDownload(TEST_RLOG_URL, filename, chunk_size));
     content = util::read_file(filename);
   }
-  SECTION("5 connection, download to buffer") {
-    std::ostringstream oss;
-    content.resize(file_size);
-    oss.rdbuf()->pubsetbuf(content.data(), content.size());
-    REQUIRE(httpMultiPartDownload(TEST_RLOG_URL, oss, 5, file_size));
+  SECTION("download to buffer") {
+    content = httpGet(TEST_RLOG_URL, chunk_size);
+    REQUIRE(!content.empty());
   }
   REQUIRE(content.size() == 9112651);
   REQUIRE(sha256(content) == TEST_RLOG_CHECKSUM);
@@ -53,6 +47,17 @@ TEST_CASE("FileReader") {
     REQUIRE(sha256(util::read_file(cache_file)) == TEST_RLOG_CHECKSUM);
   } else {
     REQUIRE(util::file_exists(cache_file) == false);
+  }
+}
+
+TEST_CASE("LogReader") {
+  SECTION("corrupt log") {
+    FileReader reader(true);
+    std::string corrupt_content = reader.read(TEST_RLOG_URL);
+    corrupt_content.resize(corrupt_content.length() / 2);
+    LogReader log;
+    REQUIRE(log.load((std::byte *)corrupt_content.data(), corrupt_content.size()));
+    REQUIRE(log.events.size() > 0);
   }
 }
 

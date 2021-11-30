@@ -27,18 +27,18 @@ enum AVPixelFormat get_hw_format(AVCodecContext *ctx, const enum AVPixelFormat *
     if (*p == *hw_pix_fmt) return *p;
   }
   printf("Please run replay with the --no-cuda flag!\n");
-  assert(0);
-  return AV_PIX_FMT_NONE;
+  // fallback to YUV420p
+  *hw_pix_fmt = AV_PIX_FMT_NONE;
+  return AV_PIX_FMT_YUV420P;
 }
 
 }  // namespace
 
-FrameReader::FrameReader(bool local_cache, int chunk_size, int retries) : FileReader(local_cache, chunk_size, retries) {
-}
+FrameReader::FrameReader() {}
 
 FrameReader::~FrameReader() {
-  for (auto &f : frames_) {
-    av_packet_unref(&f.pkt);
+  for (AVPacket *pkt : packets) {
+    av_packet_free(&pkt);
   }
 
   if (decoder_ctx) avcodec_free_context(&decoder_ctx);
@@ -51,17 +51,22 @@ FrameReader::~FrameReader() {
   }
 }
 
-bool FrameReader::load(const std::string &url, bool no_cuda, std::atomic<bool> *abort) {
-  std::string content = read(url, abort);
-  if (content.empty()) return false;
+bool FrameReader::load(const std::string &url, bool no_cuda, std::atomic<bool> *abort, bool local_cache, int chunk_size, int retries) {
+  FileReader f(local_cache, chunk_size, retries);
+  std::string data = f.read(url, abort);
+  if (data.empty()) return false;
 
+  return load((std::byte *)data.data(), data.size(), no_cuda, abort);
+}
+
+bool FrameReader::load(const std::byte *data, size_t size, bool no_cuda, std::atomic<bool> *abort) {
   input_ctx = avformat_alloc_context();
   if (!input_ctx) return false;
 
   struct buffer_data bd = {
-    .data = (uint8_t *)content.data(),
+    .data = (const uint8_t*)data,
     .offset = 0,
-    .size = content.size(),
+    .size = size,
   };
   const int avio_ctx_buffer_size = 64 * 1024;
   unsigned char *avio_ctx_buffer = (unsigned char *)av_malloc(avio_ctx_buffer_size);
@@ -69,11 +74,11 @@ bool FrameReader::load(const std::string &url, bool no_cuda, std::atomic<bool> *
   input_ctx->pb = avio_ctx_;
 
   input_ctx->probesize = 10 * 1024 * 1024;  // 10MB
-  int ret = avformat_open_input(&input_ctx, url.c_str(), NULL, NULL);
+  int ret = avformat_open_input(&input_ctx, nullptr, nullptr, nullptr);
   if (ret != 0) {
     char err_str[1024] = {0};
     av_strerror(ret, err_str, std::size(err_str));
-    printf("Error loading video - %s - %s\n", err_str, url.c_str());
+    printf("Error loading video - %s\n", err_str);
     return false;
   }
 
@@ -94,7 +99,7 @@ bool FrameReader::load(const std::string &url, bool no_cuda, std::atomic<bool> *
   width = (decoder_ctx->width + 3) & ~3;
   height = decoder_ctx->height;
 
-  if (!no_cuda) {
+  if (has_cuda_device && !no_cuda) {
     if (!initHardwareDecoder(AV_HWDEVICE_TYPE_CUDA)) {
       printf("No CUDA capable device was found. fallback to CPU decoding.\n");
     } else {
@@ -102,21 +107,23 @@ bool FrameReader::load(const std::string &url, bool no_cuda, std::atomic<bool> *
     }
   }
 
-  ret = avcodec_open2(decoder_ctx, decoder, NULL);
+  ret = avcodec_open2(decoder_ctx, decoder, nullptr);
   if (ret < 0) return false;
 
-  frames_.reserve(60 * 20);  // 20fps, one minute
+  packets.reserve(60 * 20);  // 20fps, one minute
   while (!(abort && *abort)) {
-    Frame &frame = frames_.emplace_back();
-    ret = av_read_frame(input_ctx, &frame.pkt);
+    AVPacket *pkt = av_packet_alloc();
+    ret = av_read_frame(input_ctx, pkt);
     if (ret < 0) {
-      frames_.pop_back();
+      av_packet_free(&pkt);
       valid_ = (ret == AVERROR_EOF);
       break;
     }
+    packets.push_back(pkt);
     // some stream seems to contian no keyframes
-    key_frames_count_ += frame.pkt.flags & AV_PKT_FLAG_KEY;
+    key_frames_count_ += pkt->flags & AV_PKT_FLAG_KEY;
   }
+  valid_ = valid_ && !packets.empty();
   return valid_;
 }
 
@@ -136,6 +143,8 @@ bool FrameReader::initHardwareDecoder(AVHWDeviceType hw_device_type) {
 
   int ret = av_hwdevice_ctx_create(&hw_device_ctx, hw_device_type, nullptr, nullptr, 0);
   if (ret < 0) {
+    hw_pix_fmt = AV_PIX_FMT_NONE;
+    has_cuda_device = false;
     printf("Failed to create specified HW device %d.\n", ret);
     return false;
   }
@@ -148,35 +157,29 @@ bool FrameReader::initHardwareDecoder(AVHWDeviceType hw_device_type) {
 
 bool FrameReader::get(int idx, uint8_t *rgb, uint8_t *yuv) {
   assert(rgb || yuv);
-  if (!valid_ || idx < 0 || idx >= frames_.size()) {
+  if (!valid_ || idx < 0 || idx >= packets.size()) {
     return false;
   }
   return decode(idx, rgb, yuv);
 }
 
 bool FrameReader::decode(int idx, uint8_t *rgb, uint8_t *yuv) {
-  auto get_keyframe = [=](int idx) {
-    for (int i = idx; i >= 0 && key_frames_count_ > 1; --i) {
-      if (frames_[i].pkt.flags & AV_PKT_FLAG_KEY) return i;
-    }
-    return idx;
-  };
-
   int from_idx = idx;
-  if (idx > 0 && !frames_[idx].decoded && !frames_[idx - 1].decoded) {
-    // find the previous keyframe
-    from_idx = get_keyframe(idx);
+  if (idx != prev_idx + 1 && key_frames_count_ > 1) {
+    // seeking to the nearest key frame
+    for (int i = idx; i >= 0; --i) {
+      if (packets[i]->flags & AV_PKT_FLAG_KEY) {
+        from_idx = i;
+        break;
+      }
+    }
   }
+  prev_idx = idx;
 
   for (int i = from_idx; i <= idx; ++i) {
-    Frame &frame = frames_[i];
-    if ((!frame.decoded || i == idx) && !frame.failed) {
-      AVFrame *f = decodeFrame(&frame.pkt);
-      frame.decoded = f != nullptr;
-      frame.failed = !frame.decoded;
-      if (frame.decoded && i == idx) {
-        return copyBuffers(f, rgb, yuv);
-      }
+    AVFrame *f = decodeFrame(packets[i]);
+    if (f && i == idx) {
+      return copyBuffers(f, rgb, yuv);
     }
   }
   return false;
