@@ -151,8 +151,8 @@ static LoggerHandle* logger_open(LoggerState *s, const char* root_path) {
   snprintf(h->segment_path, sizeof(h->segment_path),
           "%s/%s--%d", root_path, s->route_name.c_str(), s->part);
 
-  snprintf(h->log_path, sizeof(h->log_path), "%s/%s.bz2", h->segment_path, s->log_name);
-  snprintf(h->qlog_path, sizeof(h->qlog_path), "%s/qlog.bz2", h->segment_path);
+  snprintf(h->log_path, sizeof(h->log_path), "%s/%s", h->segment_path, s->log_name);
+  snprintf(h->qlog_path, sizeof(h->qlog_path), "%s/qlog", h->segment_path);
   snprintf(h->lock_path, sizeof(h->lock_path), "%s.lock", h->log_path);
   h->end_sentinel_type = SentinelType::END_OF_SEGMENT;
   h->exit_signal = 0;

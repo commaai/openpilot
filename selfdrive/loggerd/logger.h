@@ -25,37 +25,19 @@ class BZFile {
   BZFile(const char* path) {
     file = util::safe_fopen(path, "wb");
     assert(file != nullptr);
-    int bzerror;
-    bz_file = BZ2_bzWriteOpen(&bzerror, file, 9, 0, 30);
-    assert(bzerror == BZ_OK);
   }
   ~BZFile() {
-    int bzerror;
-    BZ2_bzWriteClose(&bzerror, bz_file, 0, nullptr, nullptr);
-    if (bzerror != BZ_OK) {
-      LOGE("BZ2_bzWriteClose error, bzerror=%d", bzerror);
-    }
     util::safe_fflush(file);
     int err = fclose(file);
     assert(err == 0);
   }
   inline void write(void* data, size_t size) {
-    int bzerror;
-    do {
-      BZ2_bzWrite(&bzerror, bz_file, data, size);
-    } while (bzerror == BZ_IO_ERROR && errno == EINTR);
-
-    if (bzerror != BZ_OK && !error_logged) {
-      LOGE("BZ2_bzWrite error, bzerror=%d", bzerror);
-      error_logged = true;
-    }
+    util::safe_fwrite(data, 1, size, file);
   }
   inline void write(kj::ArrayPtr<capnp::byte> array) { write(array.begin(), array.size()); }
 
  private:
-  bool error_logged = false;
   FILE* file = nullptr;
-  BZFILE* bz_file = nullptr;
 };
 
 typedef cereal::Sentinel::SentinelType SentinelType;
