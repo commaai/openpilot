@@ -45,9 +45,9 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
     }
   });
   QObject::connect(&device, &Device::interactiveTimout, [=]() {
-     if(main_layout->currentWidget() != onboardingWindow) {
-       closeSettings();
-     }
+    if (main_layout->currentWidget() == settingsWindow) {
+      closeSettings();
+    }
   });
 
   // load fonts
