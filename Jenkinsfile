@@ -58,37 +58,44 @@ pipeline {
 
   stages {
 
-    stage('Build release2') {
-      agent {
-        docker {
-          image 'python:3.7.3'
-          args '--user=root'
-        }
-      }
-      when {
-        branch 'devel-staging'
-      }
-      steps {
-        phone_steps("eon-build", [
-          ["build release2-staging & dashcam-staging", "PUSH=1 $SOURCE_DIR/release/build_release.sh"],
-        ])
-      }
-    }
+    stage('build release') {
 
-    stage('Build release3') {
-      agent {
-        docker {
-          image 'python:3.7.3'
-          args '--user=root'
+      parallel {
+
+        stage('Build release2') {
+          when {
+            branch 'devel-staging'
+          }
+          agent {
+            docker {
+              image 'python:3.7.3'
+              args '--user=root'
+            }
+          }
+          steps {
+            phone_steps("eon-build", [
+              ["build release2-staging & dashcam-staging", "PUSH=1 $SOURCE_DIR/release/build_release.sh"],
+            ])
+          }
         }
-      }
-      when {
-        branch 'devel-staging'
-      }
-      steps {
-        phone_steps("tici", [
-          ["build release3-staging & dashcam3-staging", "PUSH=1 $SOURCE_DIR/release/build_release.sh"],
-        ])
+
+        stage('Build release3') {
+          when {
+            branch 'devel-staging'
+          }
+          agent {
+            docker {
+              image 'python:3.7.3'
+              args '--user=root'
+            }
+          }
+          steps {
+            phone_steps("tici", [
+              ["build release3-staging & dashcam3-staging", "PUSH=1 $SOURCE_DIR/release/build_release.sh"],
+            ])
+          }
+        }
+
       }
     }
 
