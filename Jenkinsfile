@@ -64,7 +64,7 @@ pipeline {
 
         stage('Build release2') {
           when {
-            branch 'devel-staging'
+            branch 'parallel-release'
           }
           agent {
             docker {
@@ -74,14 +74,14 @@ pipeline {
           }
           steps {
             phone_steps("eon-build", [
-              ["build release2-staging & dashcam-staging", "PUSH=1 $SOURCE_DIR/release/build_release.sh"],
+              ["build release2-staging & dashcam-staging", "$SOURCE_DIR/release/build_release.sh"],
             ])
           }
         }
 
         stage('Build release3') {
           when {
-            branch 'devel-staging'
+            branch 'parallel-release'
           }
           agent {
             docker {
@@ -91,7 +91,7 @@ pipeline {
           }
           steps {
             phone_steps("tici", [
-              ["build release3-staging & dashcam3-staging", "PUSH=1 $SOURCE_DIR/release/build_release.sh"],
+              ["build release3-staging & dashcam3-staging", "$SOURCE_DIR/release/build_release.sh"],
             ])
           }
         }
