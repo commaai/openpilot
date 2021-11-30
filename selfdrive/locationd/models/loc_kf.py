@@ -159,7 +159,7 @@ class LocKalman():
     glonass_bias = state[States.GLONASS_BIAS, :]
     glonass_freq_slope = state[States.GLONASS_FREQ_SLOPE, :]
     ca = state[States.CLOCK_ACCELERATION, :]
-    accel_scale = state[States.ACCELEROMETER_SCALE, :]
+    # accel_scale = state[States.ACCELEROMETER_SCALE, :]
     accel_bias = state[States.ACCELEROMETER_BIAS, :]
 
     dt = sp.Symbol('dt')
@@ -296,7 +296,7 @@ class LocKalman():
     pos = sp.Matrix([x, y, z])
     # add 1 for stability, prevent division by 0
     gravity = quat_rot.T * ((EARTH_GM / ((x**2 + y**2 + z**2 + 1)**(3.0 / 2.0))) * pos)
-    h_acc_sym = imu_rot * (accel_scale[0] * (gravity + acceleration + accel_bias))
+    h_acc_sym = imu_rot * (gravity + acceleration + accel_bias)
     h_acc_stationary_sym = acceleration
     h_phone_rot_sym = sp.Matrix([vroll, vpitch, vyaw])
 
