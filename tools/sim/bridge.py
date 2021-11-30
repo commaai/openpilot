@@ -68,7 +68,7 @@ class Camerad:
 
     # TODO: remove RGB buffers once the last RGB vipc subscriber is removed
     self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_RGB_BACK, 4, True, W, H)
-    self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_YUV_BACK, 40, False, W, H)
+    self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_ROAD, 40, False, W, H)
     self.vipc_server.start_listener()
 
     # set up for pyopencl rgb to yuv conversion
@@ -98,7 +98,7 @@ class Camerad:
 
     # TODO: remove RGB send once the last RGB vipc subscriber is removed
     self.vipc_server.send(VisionStreamType.VISION_STREAM_RGB_BACK, img.tobytes(), self.frame_id, eof, eof)
-    self.vipc_server.send(VisionStreamType.VISION_STREAM_YUV_BACK, yuv.data.tobytes(), self.frame_id, eof, eof)
+    self.vipc_server.send(VisionStreamType.VISION_STREAM_ROAD, yuv.data.tobytes(), self.frame_id, eof, eof)
 
     dat = messaging.new_message('roadCameraState')
     dat.roadCameraState = {
