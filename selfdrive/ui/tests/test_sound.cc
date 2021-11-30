@@ -24,7 +24,11 @@ public:
 };
 
 void controls_thread(int loop_cnt) {
-  PubMaster pm({"controlsState"});
+  PubMaster pm({"controlsState", "deviceState"});
+  MessageBuilder deviceStateMsg;
+  auto deviceState = deviceStateMsg.initEvent().initDeviceState();
+  deviceState.setStarted(true);
+
   const int DT_CTRL = 10;  // ms
   for (int i = 0; i < loop_cnt; ++i) {
     for (auto &[alert, fn, loops] : sound_list) {
@@ -35,6 +39,7 @@ void controls_thread(int loop_cnt) {
         cs.setAlertSound(alert);
         cs.setAlertType(fn.toStdString());
         pm.send("controlsState", msg);
+        pm.send("deviceState", deviceStateMsg);
         QThread::msleep(DT_CTRL);
       }
     }
