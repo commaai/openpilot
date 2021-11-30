@@ -50,6 +50,8 @@ class States():
   CLOCK_ACCELERATION = slice(28, 29)  # clock acceleration in light-meters/s**2,
   ACCELEROMETER_SCALE = slice(29, 30)  # scale of mems accelerometer
   ACCELEROMETER_BIAS = slice(30, 33)  # bias of mems accelerometer
+  # We curently do not use ACCELEROMETER_SCALE to avoid instability due to too many free variables (ACCELEROMETER_SCALE, ACCELEROMETER_BIAS, IMU_OFFSET).
+  # From experiments we see that ACCELEROMETER_BIAS is more correct than ACCELEROMETER_SCALE
 
   # Error-state has different slices because it is an ESKF
   ECEF_POS_ERR = slice(0, 3)
@@ -159,7 +161,6 @@ class LocKalman():
     glonass_bias = state[States.GLONASS_BIAS, :]
     glonass_freq_slope = state[States.GLONASS_FREQ_SLOPE, :]
     ca = state[States.CLOCK_ACCELERATION, :]
-    # accel_scale = state[States.ACCELEROMETER_SCALE, :]
     accel_bias = state[States.ACCELEROMETER_BIAS, :]
 
     dt = sp.Symbol('dt')
