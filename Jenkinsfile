@@ -1,7 +1,7 @@
 def phone(String ip, String step_label, String cmd) {
   withCredentials([file(credentialsId: 'id_rsa', variable: 'key_file')]) {
     def ssh_cmd = """
-ssh -tt -o StrictHostKeyChecking=no -i ${key_file} -p 8022 'comma@${ip}' /usr/bin/bash <<'EOF'
+ssh -tt -o StrictHostKeyChecking=no -i ${key_file} 'comma@${ip}' /usr/bin/bash <<'EOF'
 
 set -e
 
@@ -47,7 +47,7 @@ def phone_steps(String device_type, steps) {
 }
 
 pipeline {
-  agent none
+  agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
   environment {
     TEST_DIR = "/data/openpilot"
     SOURCE_DIR = "/data/openpilot_source/"
@@ -57,38 +57,27 @@ pipeline {
   }
 
   stages {
-
-    stage('Build release2') {
-      agent {
-        docker {
-          image 'python:3.7.3'
-          args '--user=root'
-        }
-      }
+    stage('build releases') {
       when {
         branch 'devel-staging'
       }
-      steps {
-        phone_steps("eon-build", [
-          ["build release2-staging & dashcam-staging", "PUSH=1 $SOURCE_DIR/release/build_release.sh"],
-        ])
-      }
-    }
 
-    stage('Build release3') {
-      agent {
-        docker {
-          image 'python:3.7.3'
-          args '--user=root'
+      parallel {
+        stage('release2') {
+          steps {
+            phone_steps("eon-build", [
+              ["build release2-staging & dashcam-staging", "PUSH=1 $SOURCE_DIR/release/build_release.sh"],
+            ])
+          }
         }
-      }
-      when {
-        branch 'devel-staging'
-      }
-      steps {
-        phone_steps("tici", [
-          ["build release3-staging & dashcam3-staging", "PUSH=1 $SOURCE_DIR/release/build_release.sh"],
-        ])
+
+        stage('release3') {
+          steps {
+            phone_steps("tici", [
+              ["build release3-staging & dashcam3-staging", "PUSH=1 $SOURCE_DIR/release/build_release.sh"],
+            ])
+          }
+        }
       }
     }
 
@@ -105,43 +94,7 @@ pipeline {
       }
 
       stages {
-
-        /*
-        stage('PC tests') {
-          agent {
-            dockerfile {
-              filename 'Dockerfile.openpilotci'
-              args '--privileged --shm-size=1G --user=root'
-            }
-          }
-          stages {
-            stage('Build') {
-              steps {
-                sh 'scons -j$(nproc)'
-              }
-            }
-          }
-          post {
-            always {
-              // fix permissions since docker runs as another user
-              sh "chmod -R 777 ."
-            }
-          }
-        }
-        */
-
         stage('On-device Tests') {
-          agent {
-            docker {
-              /*
-              filename 'Dockerfile.ondevice_ci'
-              args "--privileged -v /dev:/dev --shm-size=1G --user=root"
-              */
-              image 'python:3.7.3'
-              args '--user=root'
-            }
-          }
-
           stages {
             stage('parallel tests') {
               parallel {
