@@ -128,7 +128,7 @@ void CameraViewWidget::initializeGL() {
   GLint frame_pos_loc = program->attributeLocation("aPosition");
   GLint frame_texcoord_loc = program->attributeLocation("aTexCoord");
 
-  auto [x1, x2, y1, y2] = stream_type == VISION_STREAM_YUV_FRONT ? std::tuple(0.f, 1.f, 1.f, 0.f) : std::tuple(1.f, 0.f, 1.f, 0.f);
+  auto [x1, x2, y1, y2] = stream_type == VISION_STREAM_DRIVER ? std::tuple(0.f, 1.f, 1.f, 0.f) : std::tuple(1.f, 0.f, 1.f, 0.f);
   const uint8_t frame_indicies[] = {0, 1, 2, 0, 2, 3};
   const float frame_coords[4][4] = {
     {-1.0, -1.0, x2, y1}, // bl
@@ -180,12 +180,12 @@ void CameraViewWidget::hideEvent(QHideEvent *event) {
 
 void CameraViewWidget::updateFrameMat(int w, int h) {
   if (zoomed_view) {
-    if (stream_type == VISION_STREAM_YUV_FRONT) {
+    if (stream_type == VISION_STREAM_DRIVER) {
       frame_mat = matmul(device_transform, get_driver_view_transform());
     } else {
-      auto intrinsic_matrix = stream_type == VISION_STREAM_YUV_WIDE ? ecam_intrinsic_matrix : fcam_intrinsic_matrix;
+      auto intrinsic_matrix = stream_type == VISION_STREAM_WIDE_ROAD ? ecam_intrinsic_matrix : fcam_intrinsic_matrix;
       float zoom = ZOOM / intrinsic_matrix.v[0];
-      if (stream_type == VISION_STREAM_YUV_WIDE) {
+      if (stream_type == VISION_STREAM_WIDE_ROAD) {
         zoom *= 0.5;
       }
       float zx = zoom * 2 * intrinsic_matrix.v[2] / width();

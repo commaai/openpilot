@@ -17,7 +17,7 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   stacked_layout->setStackingMode(QStackedLayout::StackAll);
   main_layout->addLayout(stacked_layout);
 
-  nvg = new NvgWindow(VISION_STREAM_YUV_BACK, this);
+  nvg = new NvgWindow(VISION_STREAM_ROAD, this);
 
   QWidget * split_wrapper = new QWidget;
   split = new QHBoxLayout(split_wrapper);
@@ -81,7 +81,7 @@ void OnroadWindow::offroadTransition(bool offroad) {
 
   // update stream type
   bool wide_cam = Hardware::TICI() && Params().getBool("EnableWideCamera");
-  nvg->setStreamType(wide_cam ? VISION_STREAM_YUV_WIDE : VISION_STREAM_YUV_BACK);
+  nvg->setStreamType(wide_cam ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD);
 }
 
 void OnroadWindow::paintEvent(QPaintEvent *event) {
