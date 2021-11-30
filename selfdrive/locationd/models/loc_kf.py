@@ -49,6 +49,7 @@ class States():
   GLONASS_FREQ_SLOPE = slice(27, 28)  # GLONASS bias in m expressed as bias + freq_num*freq_slope
   CLOCK_ACCELERATION = slice(28, 29)  # clock acceleration in light-meters/s**2,
   ACCELEROMETER_SCALE = slice(29, 30)  # scale of mems accelerometer
+  ACCELEROMETER_BIAS = slice(30, 33)  # bias of mems accelerometer
 
   # Error-state has different slices because it is an ESKF
   ECEF_POS_ERR = slice(0, 3)
@@ -66,6 +67,7 @@ class States():
   GLONASS_FREQ_SLOPE_ERR = slice(26, 27)
   CLOCK_ACCELERATION_ERR = slice(27, 28)
   ACCELEROMETER_SCALE_ERR = slice(28, 29)
+  ACCELEROMETER_BIAS_ERR = slice(29, 32)
 
 
 class LocKalman():
@@ -82,7 +84,8 @@ class LocKalman():
                         0, 0, 0,
                         0, 0,
                         0,
-                        1], dtype=np.float64)
+                        1,
+                        0, 0, 0], dtype=np.float64)
 
   # state covariance
   P_initial = np.diag([1e16, 1e16, 1e16,
@@ -97,7 +100,8 @@ class LocKalman():
                        (0.01)**2, (0.01)**2, (0.01)**2,
                        10**2, 1**2,
                        0.2**2,
-                       0.05**2])
+                       0.05**2,
+                       0.05**2, 0.05**2, 0.05**2])
 
   # process noise
   Q = np.diag([0.03**2, 0.03**2, 0.03**2,
@@ -112,7 +116,8 @@ class LocKalman():
                (0.05 / 60)**2, (0.05 / 60)**2, (0.05 / 60)**2,
                (.1)**2, (.01)**2,
                0.005**2,
-               (0.02 / 100)**2])
+               (0.02 / 100)**2,
+               (0.005 / 100)**2, (0.005 / 100)**2, (0.005 / 100)**2])
 
   # measurements that need to pass mahalanobis distance outlier rejector
   maha_test_kinds = [ObservationKind.ORB_FEATURES]  # , ObservationKind.PSEUDORANGE, ObservationKind.PSEUDORANGE_RATE]
@@ -154,7 +159,8 @@ class LocKalman():
     glonass_bias = state[States.GLONASS_BIAS, :]
     glonass_freq_slope = state[States.GLONASS_FREQ_SLOPE, :]
     ca = state[States.CLOCK_ACCELERATION, :]
-    accel_scale = state[States.ACCELEROMETER_SCALE, :]
+    # accel_scale = state[States.ACCELEROMETER_SCALE, :]
+    accel_bias = state[States.ACCELEROMETER_BIAS, :]
 
     dt = sp.Symbol('dt')
 
@@ -290,7 +296,8 @@ class LocKalman():
     pos = sp.Matrix([x, y, z])
     # add 1 for stability, prevent division by 0
     gravity = quat_rot.T * ((EARTH_GM / ((x**2 + y**2 + z**2 + 1)**(3.0 / 2.0))) * pos)
-    h_acc_sym = imu_rot * (accel_scale[0] * (gravity + acceleration))
+    h_acc_sym = imu_rot * (gravity + acceleration + accel_bias)
+    h_acc_stationary_sym = acceleration
     h_phone_rot_sym = sp.Matrix([vroll, vpitch, vyaw])
 
     speed = sp.sqrt(vx**2 + vy**2 + vz**2)
@@ -320,7 +327,8 @@ class LocKalman():
                [h_relative_motion, ObservationKind.CAMERA_ODO_TRANSLATION, None],
                [h_phone_rot_sym, ObservationKind.CAMERA_ODO_ROTATION, None],
                [h_imu_frame_sym, ObservationKind.IMU_FRAME, None],
-               [h_orb_point_sym, ObservationKind.ORB_POINT, orb_epos_sym]]
+               [h_orb_point_sym, ObservationKind.ORB_POINT, orb_epos_sym],
+               [h_acc_stationary_sym, ObservationKind.NO_ACCEL, None]]
 
     # MSCKF configuration
     if N > 0:
@@ -368,7 +376,8 @@ class LocKalman():
                       ObservationKind.CAMERA_ODO_ROTATION: np.diag([0.05**2, 0.05**2, 0.05**2]),
                       ObservationKind.IMU_FRAME: np.diag([0.05**2, 0.05**2, 0.05**2]),
                       ObservationKind.NO_ROT: np.diag([0.0025**2, 0.0025**2, 0.0025**2]),
-                      ObservationKind.ECEF_POS: np.diag([5**2, 5**2, 5**2])}
+                      ObservationKind.ECEF_POS: np.diag([5**2, 5**2, 5**2]),
+                      ObservationKind.NO_ACCEL: np.diag([0.0025**2, 0.0025**2, 0.0025**2])}
 
     # MSCKF stuff
     self.N = N
