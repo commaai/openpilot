@@ -36,7 +36,7 @@ class CarController():
       else:
         PEDAL_SCALE = interp(CS.out.vEgo, [0.0, MIN_ACC_SPEED, MIN_ACC_SPEED + PEDAL_TRANSITION], [0.4, 0.5, 0.0])
       pedal_offset = interp(CS.out.vEgo, [0.0, 3., MIN_ACC_SPEED + PEDAL_TRANSITION], [-.2, 0.2])
-      pedal_command = PEDAL_SCALE * actuators.accel + pedal_offset
+      pedal_command = PEDAL_SCALE * (actuators.accel + pedal_offset)
       interceptor_gas_cmd = clip(pedal_command, 0., MAX_INTERCEPTOR_GAS)
     else:
       interceptor_gas_cmd = 0.
