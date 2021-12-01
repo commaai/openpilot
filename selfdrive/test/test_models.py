@@ -42,6 +42,9 @@ class TestCarModel(unittest.TestCase):
 
   @classmethod
   def setUpClass(cls):
+    if "HONDA" not in cls.car_model:
+      raise unittest.SkipTest
+
     if cls.car_model not in ROUTES:
       # TODO: get routes for missing cars and remove this
       if cls.car_model in non_tested_cars:
@@ -141,14 +144,27 @@ class TestCarModel(unittest.TestCase):
     if self.CP.dashcamOnly:
       self.skipTest("no need to check panda safety for dashcamOnly")
 
+    start_ts = self.can_msgs[0].logMonoTime
+
     failed_addrs = Counter()
     for can in self.can_msgs:
+      # update panda timer
+      t = (can.logMonoTime - start_ts) / 1e3
+      self.safety.set_timer(int(t))
+
+      # run all msgs through the safety RX hook
       for msg in can.can:
         if msg.src >= 64:
           continue
+
         to_send = package_can_msg([msg.address, 0, msg.dat, msg.src])
         if self.safety.safety_rx_hook(to_send) != 1:
           failed_addrs[hex(msg.address)] += 1
+
+      # ensure all msgs defined in the addr checks are valid
+      self.safety.safety_tick_current_rx_checks()
+      if t > 1e6:
+        self.assertTrue(self.safety.addr_checks_valid())
     self.assertFalse(len(failed_addrs), f"panda safety RX check failed: {failed_addrs}")
 
   def test_panda_safety_carstate(self):
