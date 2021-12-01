@@ -68,7 +68,7 @@ class TestCarModel(unittest.TestCase):
     for msg in lr:
       if msg.which() == "can":
         for m in msg.can:
-          if m.src < 128:
+          if m.src < 64:
             fingerprint[m.src][m.address] = len(m.dat)
         can_msgs.append(msg)
       elif msg.which() == "carParams":
@@ -144,7 +144,7 @@ class TestCarModel(unittest.TestCase):
     failed_addrs = Counter()
     for can in self.can_msgs:
       for msg in can.can:
-        if msg.src >= 128:
+        if msg.src >= 64:
           continue
         to_send = package_can_msg([msg.address, 0, msg.dat, msg.src])
         if self.safety.safety_rx_hook(to_send) != 1:
@@ -164,7 +164,7 @@ class TestCarModel(unittest.TestCase):
     CC = car.CarControl.new_message()
     for can in self.can_msgs:
       for msg in can.can:
-        if msg.src >= 128:
+        if msg.src >= 64:
           continue
         to_send = package_can_msg([msg.address, 0, msg.dat, msg.src])
         ret = self.safety.safety_rx_hook(to_send)
