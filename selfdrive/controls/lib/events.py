@@ -139,11 +139,10 @@ class Alert:
 
 
 class NoEntryAlert(Alert):
-  def __init__(self, alert_text_2, audible_alert=AudibleAlert.refuse,
-               visual_alert=VisualAlert.none):
+  def __init__(self, alert_text_2, visual_alert=VisualAlert.none):
     super().__init__("openpilot Unavailable", alert_text_2, AlertStatus.normal,
                      AlertSize.mid, Priority.LOW, visual_alert,
-                     audible_alert, 3.)
+                     AudibleAlert.refuse, 3.)
 
 
 class SoftDisableAlert(Alert):
@@ -167,7 +166,7 @@ class EngagementAlert(Alert):
     super().__init__("", "",
                      AlertStatus.normal, AlertSize.none,
                      Priority.MID, VisualAlert.none,
-                     audible_alert, .05),
+                     audible_alert, .2),
 
 
 class NormalPermanentAlert(Alert):
@@ -627,14 +626,12 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
   # ten times the regular interval, or the average interval is more than 10% too high.
   EventName.commIssue: {
     ET.SOFT_DISABLE: SoftDisableAlert("Communication Issue between Processes"),
-    ET.NO_ENTRY: NoEntryAlert("Communication Issue between Processes",
-                              audible_alert=AudibleAlert.disengage),
+    ET.NO_ENTRY: NoEntryAlert("Communication Issue between Processes"),
   },
 
   # Thrown when manager detects a service exited unexpectedly while driving
   EventName.processNotRunning: {
-    ET.NO_ENTRY: NoEntryAlert("System Malfunction: Reboot Your Device",
-                              audible_alert=AudibleAlert.disengage),
+    ET.NO_ENTRY: NoEntryAlert("System Malfunction: Reboot Your Device"),
   },
 
   EventName.radarFault: {

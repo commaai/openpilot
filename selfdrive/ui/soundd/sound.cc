@@ -47,11 +47,10 @@ void Sound::update() {
 
   // scale volume with speed
   if (sm.updated("carState")) {
-    float volume = std::clamp(sm["carState"].getCarState().getVEgo() / 29.f, 0.15f, 1.0f);
+    float volume = std::clamp(sm["carState"].getCarState().getVEgo() / 29.f, 0.1f, 1.0f);
     volume = QAudio::convertVolume(volume, QAudio::LogarithmicVolumeScale, QAudio::LinearVolumeScale);
     volume = util::map_val(volume, 0.f, 1.f, Hardware::MIN_VOLUME, Hardware::MAX_VOLUME);
     for (auto &[s, loops] : sounds) {
-      printf("  setting volume to %.2f\n", volume);
       s->setVolume(std::round(100 * volume) / 100);
     }
   }
