@@ -20,6 +20,7 @@ SOUNDS = {
   AudibleAlert.refuse: 223,
   AudibleAlert.prompt: 217,
   AudibleAlert.promptRepeat: 475,
+  AudibleAlert.promptDistracted: 230,
   AudibleAlert.warningSoft: 477,
   AudibleAlert.warningImmediate: 468,
 }
@@ -39,7 +40,7 @@ class TestSoundd(unittest.TestCase):
     pm = messaging.PubMaster(['deviceState', 'controlsState'])
 
     # make sure they're all defined
-    alert_sounds = {v: k for k, v in car.CarControl.HUDControl.AudibleAlert.schema.enumerants.items() if not k.endswith('DEPRECATED')}
+    alert_sounds = {v: k for k, v in car.CarControl.HUDControl.AudibleAlert.schema.enumerants.items()}
     diff = set(SOUNDS.keys()).symmetric_difference(alert_sounds.keys())
     assert len(diff) == 0, f"not all sounds defined in test: {diff}"
 
