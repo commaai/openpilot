@@ -26,10 +26,8 @@ class States():
   ECEF_VELOCITY = slice(7, 10)  # ecef velocity in m/s
   ANGULAR_VELOCITY = slice(10, 13)  # roll, pitch and yaw rates in device frame in radians/s
   GYRO_BIAS = slice(13, 16)  # roll, pitch and yaw biases
-  ODO_SCALE = slice(16, 17)  # odometer scale
-  ACCELERATION = slice(17, 20)  # Acceleration in device frame in m/s**2
-  IMU_OFFSET = slice(20, 23)  # imu offset angles in radians
-  ACC_BIAS = slice(23, 26)  # Acceletometer bias in m/s**2
+  ACCELERATION = slice(16, 19)  # Acceleration in device frame in m/s**2
+  ACC_BIAS = slice(19, 22)  # Acceletometer bias in m/s**2
 
   # Error-state has different slices because it is an ESKF
   ECEF_POS_ERR = slice(0, 3)
@@ -37,10 +35,8 @@ class States():
   ECEF_VELOCITY_ERR = slice(6, 9)
   ANGULAR_VELOCITY_ERR = slice(9, 12)
   GYRO_BIAS_ERR = slice(12, 15)
-  ODO_SCALE_ERR = slice(15, 16)
-  ACCELERATION_ERR = slice(16, 19)
-  IMU_OFFSET_ERR = slice(19, 22)
-  ACC_BIAS_ERR = slice(22, 25)
+  ACCELERATION_ERR = slice(15, 18)
+  ACC_BIAS_ERR = slice(18, 21)
 
 
 class LiveKalman():
@@ -51,8 +47,6 @@ class LiveKalman():
                         0, 0, 0,
                         0, 0, 0,
                         0, 0, 0,
-                        1,
-                        0, 0, 0,
                         0, 0, 0,
                         0, 0, 0])
 
@@ -62,9 +56,7 @@ class LiveKalman():
                              10**2, 10**2, 10**2,
                              1**2, 1**2, 1**2,
                              1**2, 1**2, 1**2,
-                             0.02**2,
                              100**2, 100**2, 100**2,
-                             0.01**2, 0.01**2, 0.01**2,
                              0.01**2, 0.01**2, 0.01**2])
 
   # state covariance when resetting midway in a segment
@@ -80,9 +72,7 @@ class LiveKalman():
                      0.01**2, 0.01**2, 0.01**2,
                      0.1**2, 0.1**2, 0.1**2,
                      (0.005 / 100)**2, (0.005 / 100)**2, (0.005 / 100)**2,
-                     (0.02 / 100)**2,
                      3**2, 3**2, 3**2,
-                     (0.05 / 60)**2, (0.05 / 60)**2, (0.05 / 60)**2,
                      0.005**2, 0.005**2, 0.005**2])
 
   obs_noise_diag = {ObservationKind.PHONE_GYRO: np.array([0.025**2, 0.025**2, 0.025**2]),
@@ -143,7 +133,6 @@ class LiveKalman():
     v_err = state_err[States.ECEF_VELOCITY_ERR, :]
     omega_err = state_err[States.ANGULAR_VELOCITY_ERR, :]
     acceleration_err = state_err[States.ACCELERATION_ERR, :]
-
 
     # Time derivative of the state error as a function of state error and state
     quat_err_matrix = euler_rotate(quat_err[0], quat_err[1], quat_err[2])

@@ -410,7 +410,7 @@ void Localizer::reset_kalman(double current_time, VectorXd init_orient, VectorXd
   MatrixXdr current_P = this->kf->get_P();
   MatrixXdr init_P = this->kf->get_initial_P();
   MatrixXdr reset_orientation_P = this->kf->get_reset_orientation_P();
-  double non_ecef_state_err_len = init_P.rows() - (STATE_ECEF_POS_ERR_LEN + STATE_ECEF_ORIENTATION_ERR_LEN + STATE_ECEF_VELOCITY_ERR_LEN);
+  int non_ecef_state_err_len = init_P.rows() - (STATE_ECEF_POS_ERR_LEN + STATE_ECEF_ORIENTATION_ERR_LEN + STATE_ECEF_VELOCITY_ERR_LEN);
 
   current_x.segment<STATE_ECEF_ORIENTATION_LEN>(STATE_ECEF_ORIENTATION_START) = init_orient;
   current_x.segment<STATE_ECEF_VELOCITY_LEN>(STATE_ECEF_VELOCITY_START) = init_vel;
