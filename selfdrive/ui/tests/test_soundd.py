@@ -64,7 +64,7 @@ class TestSoundd(unittest.TestCase):
         pm.send('controlsState', msg)
         time.sleep(DT_CTRL)
 
-      tolerance = (expected_writes // 100) * 3
+      tolerance = expected_writes / 5
       actual_writes = get_total_writes() - start_writes
       assert abs(expected_writes - actual_writes) <= tolerance, f"{alert_sounds[sound]}: expected {expected_writes} writes, got {actual_writes}"
 
