@@ -39,7 +39,7 @@ class TestSoundd(unittest.TestCase):
     pm = messaging.PubMaster(['deviceState', 'controlsState'])
 
     # make sure they're all defined
-    alert_sounds = {v: k for k, v in car.CarControl.HUDControl.AudibleAlert.schema.enumerants.items()}
+    alert_sounds = {v: k for k, v in car.CarControl.HUDControl.AudibleAlert.schema.enumerants.items() if not k.endswith('DEPRECATED')}
     diff = set(SOUNDS.keys()).symmetric_difference(alert_sounds.keys())
     assert len(diff) == 0, f"not all sounds defined in test: {diff}"
 
@@ -64,7 +64,7 @@ class TestSoundd(unittest.TestCase):
         pm.send('controlsState', msg)
         time.sleep(DT_CTRL)
 
-      tolerance = (expected_writes % 100) * 2
+      tolerance = (expected_writes // 100) * 3
       actual_writes = get_total_writes() - start_writes
       assert abs(expected_writes - actual_writes) <= tolerance, f"{alert_sounds[sound]}: expected {expected_writes} writes, got {actual_writes}"
 
