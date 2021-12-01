@@ -299,7 +299,6 @@ class LongitudinalMpc():
 
   def update(self, carstate, radarstate, v_cruise, prev_accel_constraint=False):
     v_ego = self.x0[1]
-    a_ego = self.x0[2]
     self.status = radarstate.leadOne.status or radarstate.leadTwo.status
 
     lead_xv_0 = self.process_lead(radarstate.leadOne)
@@ -317,10 +316,8 @@ class LongitudinalMpc():
 
     # Fake an obstacle for cruise, this ensures smooth acceleration to set speed
     # when the leads are no factor.
-    a_lower = np.clip(a_ego - 0.5 * T_IDXS, self.cruise_min_a, 0.0)
-    a_upper = np.clip(a_ego + 0.5 * T_IDXS, 0.0, self.cruise_max_a)
-    v_lower = v_ego + np.cumsum(T_DIFFS * a_lower)
-    v_upper = v_ego + np.cumsum(T_DIFFS * a_upper)
+    v_lower = v_ego + (T_IDXS * self.cruise_min_a * 1.1)
+    v_upper = v_ego + (T_IDXS * self.cruise_max_a * 1.1)
     v_cruise_clipped = np.clip(v_cruise * np.ones(N+1),
                                v_lower,
                                v_upper)
