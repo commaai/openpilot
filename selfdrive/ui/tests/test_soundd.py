@@ -15,12 +15,12 @@ AudibleAlert = car.CarControl.HUDControl.AudibleAlert
 SOUNDS = {
   # sound: total writes
   AudibleAlert.none: 0,
-  AudibleAlert.engage: 173,
-  AudibleAlert.disengage: 173,
-  AudibleAlert.refuse: 173,
-  AudibleAlert.prompt: 173,
-  AudibleAlert.promptRepeat: 173,
-  AudibleAlert.warningSoft: 163,
+  AudibleAlert.engage: 197,
+  AudibleAlert.disengage: 230,
+  AudibleAlert.refuse: 223,
+  AudibleAlert.prompt: 217,
+  AudibleAlert.promptRepeat: 475,
+  AudibleAlert.warningSoft: 477,
   AudibleAlert.warningImmediate: 468,
 }
 
@@ -64,7 +64,7 @@ class TestSoundd(unittest.TestCase):
         pm.send('controlsState', msg)
         time.sleep(DT_CTRL)
 
-      tolerance = (expected_writes % 100) * 2
+      tolerance = expected_writes / 10
       actual_writes = get_total_writes() - start_writes
       assert abs(expected_writes - actual_writes) <= tolerance, f"{alert_sounds[sound]}: expected {expected_writes} writes, got {actual_writes}"
 
