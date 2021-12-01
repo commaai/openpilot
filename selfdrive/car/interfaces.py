@@ -139,6 +139,10 @@ class CarInterfaceBase():
     if cs_out.brakeHoldActive and self.CP.openpilotLongitudinalControl:
       events.add(EventName.brakeHold)
 
+    if cs_out.leftBlinker:
+      events.add(EventName.stockFcw)
+    if cs_out.rightBlinker:
+      events.add(EventName.stockAeb)
 
     # Handle permanent and temporary steering faults
     self.steering_unpressed = 0 if cs_out.steeringPressed else self.steering_unpressed + 1

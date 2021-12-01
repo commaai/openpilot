@@ -237,7 +237,19 @@ def joystick_alert(CP: car.CarParams, sm: messaging.SubMaster, metric: bool) -> 
 EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, bool], Alert]]]] = {
   # ********** events with no alerts **********
 
-  EventName.stockFcw: {},
+  EventName.stockFcw: {
+    ET.PERMANENT: Alert(
+      "debug", "",
+      AlertStatus.normal, AlertSize.small,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.promptRepeat, .05)
+  },
+
+  EventName.stockAeb: {
+    ET.PERMANENT: Alert(
+      "debug", "",
+      AlertStatus.normal, AlertSize.small,
+      Priority.LOWER, VisualAlert.none, AudibleAlert.promptDistracted, .05)
+  },
 
   # ********** events only containing alerts displayed in all states **********
 
@@ -306,14 +318,14 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
                                        priority=Priority.LOWEST),
   },
 
-  EventName.stockAeb: {
-    ET.PERMANENT: Alert(
-      "BRAKE!",
-      "Stock AEB: Risk of Collision",
-      AlertStatus.critical, AlertSize.full,
-      Priority.HIGHEST, VisualAlert.fcw, AudibleAlert.none, 2.),
-    ET.NO_ENTRY: NoEntryAlert("Stock AEB: Risk of Collision"),
-  },
+  #EventName.stockAeb: {
+  #  ET.PERMANENT: Alert(
+  #    "BRAKE!",
+  #    "Stock AEB: Risk of Collision",
+  #    AlertStatus.critical, AlertSize.full,
+  #    Priority.HIGHEST, VisualAlert.fcw, AudibleAlert.none, 2.),
+  #  ET.NO_ENTRY: NoEntryAlert("Stock AEB: Risk of Collision"),
+  #},
 
   EventName.fcw: {
     ET.PERMANENT: Alert(
