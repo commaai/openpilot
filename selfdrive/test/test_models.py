@@ -10,6 +10,7 @@ from cereal import log, car
 from common.params import Params
 from selfdrive.car.fingerprints import all_known_cars
 from selfdrive.car.car_helpers import interfaces
+from selfdrive.car.gm.values import CAR as GM
 from selfdrive.car.honda.values import HONDA_BOSCH, CAR as HONDA
 from selfdrive.car.chrysler.values import CAR as CHRYSLER
 from selfdrive.car.hyundai.values import CAR as HYUNDAI
@@ -35,6 +36,11 @@ ignore_can_valid = [
 ignore_carstate_check = [
   # TODO: chrysler gas state in panda also checks wheel speed, refactor so it's only gas
   CHRYSLER.PACIFICA_2017_HYBRID,
+]
+
+ignore_addr_checks_valid = [
+  GM.BUICK_REGAL,
+  HYUNDAI.GENESIS_G70_2020,
 ]
 
 @parameterized_class(('car_model'), [(car,) for i, car in enumerate(sorted(all_known_cars())) if i % NUM_JOBS == JOB_ID])
@@ -162,9 +168,10 @@ class TestCarModel(unittest.TestCase):
           failed_addrs[hex(msg.address)] += 1
 
       # ensure all msgs defined in the addr checks are valid
-      self.safety.safety_tick_current_rx_checks()
-      if t > 1e6:
-        self.assertTrue(self.safety.addr_checks_valid())
+      if self.car_model not in ignore_addr_checks_valid:
+        self.safety.safety_tick_current_rx_checks()
+        if t > 1e6:
+          self.assertTrue(self.safety.addr_checks_valid())
     self.assertFalse(len(failed_addrs), f"panda safety RX check failed: {failed_addrs}")
 
   def test_panda_safety_carstate(self):
