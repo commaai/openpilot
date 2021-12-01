@@ -21,16 +21,16 @@ What is openpilot?
 
 <table>
   <tr>
-    <td><a href="https://youtu.be/NmBfgOanCyk" title="YouTube" rel="noopener"><img src="https://i.imgur.com/1w8c6d2.jpg"></a></td>
-    <td><a href="https://youtu.be/VHKyqZ7t8Gw" title="YouTube" rel="noopener"><img src="https://i.imgur.com/LnBucik.jpg"></a></td>
-    <td><a href="https://youtu.be/VxiR4iyBruo" title="YouTube" rel="noopener"><img src="https://i.imgur.com/4Qoy48c.jpg"></a></td>
-    <td><a href="https://youtu.be/-IkImTe1NYE" title="YouTube" rel="noopener"><img src="https://i.imgur.com/04VNzPf.jpg"></a></td>
+    <td><a href="https://youtu.be/NmBfgOanCyk" title="Video By Greer Viau"><img src="https://i.imgur.com/1w8c6d2.jpg"></a></td>
+    <td><a href="https://youtu.be/VHKyqZ7t8Gw" title="Video By Logan LeGrand"><img src="https://i.imgur.com/LnBucik.jpg"></a></td>
+    <td><a href="https://youtu.be/VxiR4iyBruo" title="Video By Charlie Kim"><img src="https://i.imgur.com/4Qoy48c.jpg"></a></td>
+    <td><a href="https://youtu.be/-IkImTe1NYE" title="Video By Aragon"><img src="https://i.imgur.com/04VNzPf.jpg"></a></td>
   </tr>
   <tr>
-    <td><a href="https://youtu.be/iIUICQkdwFQ" title="YouTube" rel="noopener"><img src="https://i.imgur.com/b1LHQTy.jpg"></a></td>
-    <td><a href="https://youtu.be/XOsa0FsVIsg" title="YouTube" rel="noopener"><img src="https://i.imgur.com/6FG0Bd8.jpg"></a></td>
-    <td><a href="https://youtu.be/bCwcJ98R_Xw" title="YouTube" rel="noopener"><img src="https://i.imgur.com/zO18CbW.jpg"></a></td>
-    <td><a href="https://youtu.be/BQ0tF3MTyyc" title="YouTube" rel="noopener"><img src="https://i.imgur.com/eZzelq3.jpg"></a></td>
+    <td><a href="https://youtu.be/iIUICQkdwFQ" title="Video By Logan LeGrand"><img src="https://i.imgur.com/b1LHQTy.jpg"></a></td>
+    <td><a href="https://youtu.be/XOsa0FsVIsg" title="Video By PinoyDrives"><img src="https://i.imgur.com/6FG0Bd8.jpg"></a></td>
+    <td><a href="https://youtu.be/bCwcJ98R_Xw" title="Video By JS"><img src="https://i.imgur.com/zO18CbW.jpg"></a></td>
+    <td><a href="https://youtu.be/BQ0tF3MTyyc" title="Video By Tsai-Fi"><img src="https://i.imgur.com/eZzelq3.jpg"></a></td>
   </tr>
 </table>
 
