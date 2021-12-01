@@ -29,7 +29,7 @@ class States():
   ODO_SCALE = slice(16, 17)  # odometer scale
   ACCELERATION = slice(17, 20)  # Acceleration in device frame in m/s**2
   IMU_OFFSET = slice(20, 23)  # imu offset angles in radians
-  ACC_BIAS = slice(23, 26)
+  ACC_BIAS = slice(23, 26)  # Acceletometer bias in m/s**2
 
   # Error-state has different slices because it is an ESKF
   ECEF_POS_ERR = slice(0, 3)
@@ -85,11 +85,9 @@ class LiveKalman():
                      (0.05 / 60)**2, (0.05 / 60)**2, (0.05 / 60)**2,
                      0.005**2, 0.005**2, 0.005**2])
 
-  obs_noise_diag = {ObservationKind.ODOMETRIC_SPEED: np.array([0.2**2]),
-                    ObservationKind.PHONE_GYRO: np.array([0.025**2, 0.025**2, 0.025**2]),
+  obs_noise_diag = {ObservationKind.PHONE_GYRO: np.array([0.025**2, 0.025**2, 0.025**2]),
                     ObservationKind.PHONE_ACCEL: np.array([.5**2, .5**2, .5**2]),
                     ObservationKind.CAMERA_ODO_ROTATION: np.array([0.05**2, 0.05**2, 0.05**2]),
-                    ObservationKind.IMU_FRAME: np.array([0.05**2, 0.05**2, 0.05**2]),
                     ObservationKind.NO_ROT: np.array([0.005**2, 0.005**2, 0.005**2]),
                     ObservationKind.NO_ACCEL: np.array([0.05**2, 0.05**2, 0.05**2]),
                     ObservationKind.ECEF_POS: np.array([5**2, 5**2, 5**2]),
@@ -112,7 +110,6 @@ class LiveKalman():
     vroll, vpitch, vyaw = omega
     roll_bias, pitch_bias, yaw_bias = state[States.GYRO_BIAS, :]
     acceleration = state[States.ACCELERATION, :]
-    imu_angles = state[States.IMU_OFFSET, :]
     acc_bias = state[States.ACC_BIAS, :]
 
     dt = sp.Symbol('dt')
@@ -190,7 +187,6 @@ class LiveKalman():
     #
     # Observation functions
     #
-    # imu_rot = euler_rotate(*imu_angles)
     h_gyro_sym = sp.Matrix([
       vroll + roll_bias,
       vpitch + pitch_bias,
@@ -201,19 +197,12 @@ class LiveKalman():
     h_acc_sym = (gravity + acceleration + acc_bias)
     h_acc_stationary_sym = acceleration
     h_phone_rot_sym = sp.Matrix([vroll, vpitch, vyaw])
-
-    speed = sp.sqrt(vx**2 + vy**2 + vz**2 + 1e-6)
-    h_speed_sym = sp.Matrix([speed])
-
     h_pos_sym = sp.Matrix([x, y, z])
     h_vel_sym = sp.Matrix([vx, vy, vz])
     h_orientation_sym = q
-    h_imu_frame_sym = sp.Matrix(imu_angles)
-
     h_relative_motion = sp.Matrix(quat_rot.T * v)
 
-    obs_eqs = [[h_speed_sym, ObservationKind.ODOMETRIC_SPEED, None],
-               [h_gyro_sym, ObservationKind.PHONE_GYRO, None],
+    obs_eqs = [[h_gyro_sym, ObservationKind.PHONE_GYRO, None],
                [h_phone_rot_sym, ObservationKind.NO_ROT, None],
                [h_acc_sym, ObservationKind.PHONE_ACCEL, None],
                [h_pos_sym, ObservationKind.ECEF_POS, None],
@@ -221,12 +210,11 @@ class LiveKalman():
                [h_orientation_sym, ObservationKind.ECEF_ORIENTATION_FROM_GPS, None],
                [h_relative_motion, ObservationKind.CAMERA_ODO_TRANSLATION, None],
                [h_phone_rot_sym, ObservationKind.CAMERA_ODO_ROTATION, None],
-               [h_imu_frame_sym, ObservationKind.IMU_FRAME, None],
                [h_acc_stationary_sym, ObservationKind.NO_ACCEL, None]]
 
     # this returns a sympy routine for the jacobian of the observation function of the local vel
     in_vec = sp.MatrixSymbol('in_vec', 6, 1)  # roll, pitch, yaw, vx, vy, vz
-    h = euler_rotate(in_vec[0], in_vec[1], in_vec[2]).T*(sp.Matrix([in_vec[3], in_vec[4], in_vec[5]]))
+    h = euler_rotate(in_vec[0], in_vec[1], in_vec[2]).T * (sp.Matrix([in_vec[3], in_vec[4], in_vec[5]]))
     extra_routines = [('H', h.jacobian(in_vec), [in_vec])]
 
     gen_code(generated_dir, name, f_sym, dt, state_sym, obs_eqs, dim_state, dim_state_err, eskf_params, extra_routines=extra_routines)

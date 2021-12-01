@@ -251,8 +251,8 @@ void Localizer::input_fake_gps_observations(double current_time) {
   this->kf->predict(current_time);
 
   VectorXd current_x = this->kf->get_x();  
-  VectorXd ecef_pos = current_x.segment<3>(0);
-  VectorXd ecef_vel = current_x.segment<3>(7);
+  VectorXd ecef_pos = current_x.segment<STATE_ECEF_POS_LEN>(STATE_ECEF_POS_START);
+  VectorXd ecef_vel = current_x.segment<STATE_ECEF_VELOCITY_LEN>(STATE_ECEF_VELOCITY_START);
   MatrixXdr ecef_pos_R = this->kf->get_fake_gps_pos_cov();
   MatrixXdr ecef_vel_R = this->kf->get_fake_gps_vel_cov();
   
@@ -286,7 +286,7 @@ void Localizer::handle_gps(double current_time, const cereal::GpsLocationData::R
   MatrixXdr ecef_vel_R = Vector3d::Constant(std::pow(log.getSpeedAccuracy() * 10.0, 2)).asDiagonal();
   
   this->unix_timestamp_millis = log.getTimestamp();
-  double gps_est_error = (this->kf->get_x().head(3) - ecef_pos).norm();
+  double gps_est_error = (this->kf->get_x().segment<STATE_ECEF_POS_LEN>(STATE_ECEF_POS_START) - ecef_pos).norm();
 
   VectorXd orientation_ecef = quat2euler(vector2quat(this->kf->get_x().segment<STATE_ECEF_ORIENTATION_LEN>(STATE_ECEF_ORIENTATION_START)));
   VectorXd orientation_ned = ned_euler_from_ecef({ ecef_pos(0), ecef_pos(1), ecef_pos(2) }, orientation_ecef);
@@ -410,15 +410,16 @@ void Localizer::reset_kalman(double current_time, VectorXd init_orient, VectorXd
   MatrixXdr current_P = this->kf->get_P();
   MatrixXdr init_P = this->kf->get_initial_P();
   MatrixXdr reset_orientation_P = this->kf->get_reset_orientation_P();
+  double non_ecef_state_err_len = init_P.rows() - (STATE_ECEF_POS_ERR_LEN + STATE_ECEF_ORIENTATION_ERR_LEN + STATE_ECEF_VELOCITY_ERR_LEN);
 
-  current_x.segment<4>(3) = init_orient;
-  current_x.segment<3>(7) = init_vel;
-  current_x.head(3) = init_pos;
+  current_x.segment<STATE_ECEF_ORIENTATION_LEN>(STATE_ECEF_ORIENTATION_START) = init_orient;
+  current_x.segment<STATE_ECEF_VELOCITY_LEN>(STATE_ECEF_VELOCITY_START) = init_vel;
+  current_x.segment<STATE_ECEF_POS_LEN>(STATE_ECEF_POS_START) = init_pos;
 
-  init_P.block<3,3>(0,0).diagonal() = init_pos_R.diagonal();
-  init_P.block<3,3>(3,3).diagonal() = reset_orientation_P.diagonal();
-  init_P.block<3,3>(6,6).diagonal() = init_vel_R.diagonal();
-  init_P.block<16,16>(9,9).diagonal() = current_P.block<16,16>(9,9).diagonal();
+  init_P.block<STATE_ECEF_POS_ERR_LEN, STATE_ECEF_POS_ERR_LEN>(STATE_ECEF_POS_ERR_START, STATE_ECEF_POS_ERR_START).diagonal() = init_pos_R.diagonal();
+  init_P.block<STATE_ECEF_ORIENTATION_ERR_LEN, STATE_ECEF_ORIENTATION_ERR_LEN>(STATE_ECEF_ORIENTATION_ERR_START, STATE_ECEF_ORIENTATION_ERR_START).diagonal() = reset_orientation_P.diagonal();
+  init_P.block<STATE_ECEF_VELOCITY_ERR_LEN, STATE_ECEF_VELOCITY_ERR_LEN>(STATE_ECEF_VELOCITY_ERR_START, STATE_ECEF_VELOCITY_ERR_START).diagonal() = init_vel_R.diagonal();
+  init_P.block(STATE_ANGULAR_VELOCITY_ERR_START, STATE_ANGULAR_VELOCITY_ERR_START, non_ecef_state_err_len, non_ecef_state_err_len).diagonal() = current_P.block(STATE_ANGULAR_VELOCITY_ERR_START, STATE_ANGULAR_VELOCITY_ERR_START, non_ecef_state_err_len, non_ecef_state_err_len).diagonal();
   
   this->reset_kalman(current_time, current_x, init_P);
 }
@@ -478,7 +479,7 @@ void Localizer::determine_gps_mode(double current_time) {
   // 1. If the pos_std is greater than what's not acceptible and localizer is in gps-mode, reset to no-gps-mode
   // 2. If the pos_std is greater than what's not acceptible and localizer is in no-gps-mode, fake obs
   // 3. If the pos_std is smaller than what's not acceptible, let gps-mode be whatever it is
-  VectorXd current_pos_std = this->kf->get_P().block<3,3>(0,0).diagonal().array().sqrt();
+  VectorXd current_pos_std = this->kf->get_P().block<STATE_ECEF_POS_ERR_LEN, STATE_ECEF_POS_ERR_LEN>(STATE_ECEF_POS_ERR_START, STATE_ECEF_POS_ERR_START).diagonal().array().sqrt();
   if (current_pos_std.norm() > SANE_GPS_UNCERTAINTY){
     if (this->gps_mode){
       this->gps_mode = false;
