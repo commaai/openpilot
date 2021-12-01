@@ -48,6 +48,27 @@ def create_mqb_acc_buttons_control(packer, bus, buttonStatesToSend, CS, idx):
   }
   return packer.make_can_msg("GRA_ACC_01", bus, values, idx)
 
+
+def create_mqb_acc_02_control(packer, bus, acc_status, set_speed, speed_visible, lead_visible, idx):
+  values = {
+    "ACC_Status_Anzeige": acc_status,
+    "ACC_Wunschgeschw": 327.36 if not speed_visible else set_speed,
+    "ACC_Gesetzte_Zeitluecke": 3,
+    "ACC_Display_Prio": 3,
+    "ACC_Abstandsindex": 637 if lead_visible else 0,
+  }
+
+  return packer.make_can_msg("ACC_02", bus, values, idx)
+
+def create_mqb_acc_04_control(packer, bus, acc_04_stock_values):
+  values = acc_04_stock_values.copy()
+
+  # Suppress disengagement alert from stock radar when OP long is in use, but passthru FCW/AEB alerts
+  if values["ACC_Texte_braking_guard"] == 4:
+    values["ACC_Texte_braking_guard"] = 0
+
+  return packer.make_can_msg("ACC_04", bus, values)
+
 def create_mqb_acc_06_control(packer, bus, enabled, acc_status, accel, acc_stopping, acc_starting,
                               cb_pos, cb_neg, idx):
   values = {
@@ -74,18 +95,7 @@ def create_mqb_acc_07_control(packer, bus, enabled, accel, acc_hold_request, acc
     "ACC_Hold_Type": acc_hold_type,
     "ACC_Hold_Release": acc_hold_release,
     "ACC_Accel_Secondary": accel+0.01 if enabled else 3.02,
-    "ACC_Accel_Primary": accel if enabled else 3.01,
+    "ACC_Accel_TSK": accel if enabled else 3.01,
   }
 
   return packer.make_can_msg("ACC_07", bus, values, idx)
-
-def create_mqb_acc_hud_control(packer, bus, acc_status, set_speed, speed_visible, lead_visible, idx):
-  values = {
-    "ACC_Status_Anzeige": acc_status,
-    "ACC_Wunschgeschw": 327.36 if not speed_visible else set_speed,
-    "ACC_Gesetzte_Zeitluecke": 3,
-    "ACC_Display_Prio": 3,
-    "ACC_Abstandsindex": 637 if lead_visible else 0,
-  }
-
-  return packer.make_can_msg("ACC_02", bus, values, idx)
