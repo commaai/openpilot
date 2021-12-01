@@ -75,6 +75,7 @@ class TestCarModel(unittest.TestCase):
         if msg.carParams.openpilotLongitudinalControl:
           params.put_bool("DisableRadar", True)
 
+    assert len(can_msgs) > 0, "No CAN msgs in test segment"
     cls.can_msgs = sorted(can_msgs, key=lambda msg: msg.logMonoTime)
 
     cls.CarInterface, cls.CarController, cls.CarState = interfaces[cls.car_model]
@@ -108,6 +109,8 @@ class TestCarModel(unittest.TestCase):
         self.assertTrue(len(self.CP.lateralTuning.lqr.a))
       elif tuning == 'indi':
         self.assertTrue(len(self.CP.lateralTuning.indi.outerLoopGainV))
+      else:
+        raise Exception("unkown tuning")
 
   def test_car_interface(self):
     # TODO: also check for checkusm and counter violations from can parser
