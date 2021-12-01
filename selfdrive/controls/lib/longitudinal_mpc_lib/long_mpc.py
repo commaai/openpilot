@@ -317,11 +317,13 @@ class LongitudinalMpc():
 
     # Fake an obstacle for cruise, this ensures smooth acceleration to set speed
     # when the leads are no factor.
-    cruise_lower_bound = v_ego + (3/4) * self.cruise_min_a * T_IDXS
-    cruise_upper_bound = v_ego + (3/4) * self.cruise_max_a * T_IDXS
+    a_upper = np.clip(a_ego + 0.4 * T_IDXS, 0.0, self.cruise_max_a)
+    a_lower = np.clip(a_ego - 0.4 * T_IDXS, self.cruise_min_a, 0.0)
+    v_upper = v_ego + np.cumsum(T_DIFFS * a_upper)
+    v_lower = v_ego + np.cumsum(T_DIFFS * a_lower)
     v_cruise_clipped = np.clip(v_cruise * np.ones(N+1),
-                               cruise_lower_bound,
-                               cruise_upper_bound)
+                               v_lower,
+                               v_upper)
     cruise_obstacle = T_IDXS*v_cruise_clipped + get_safe_obstacle_distance(v_cruise_clipped)
 
     x_obstacles = np.column_stack([lead_0_obstacle, lead_1_obstacle, cruise_obstacle])
