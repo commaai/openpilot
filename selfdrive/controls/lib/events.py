@@ -139,7 +139,7 @@ class Alert:
 
 
 class NoEntryAlert(Alert):
-  def __init__(self, alert_text_2, audible_alert=AudibleAlert.errorRefuse,
+  def __init__(self, alert_text_2, audible_alert=AudibleAlert.refuse,
                visual_alert=VisualAlert.none):
     super().__init__("openpilot Unavailable", alert_text_2, AlertStatus.normal,
                      AlertSize.mid, Priority.LOW, visual_alert,
