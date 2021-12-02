@@ -258,7 +258,7 @@ void Device::setAwake(bool on) {
 }
 
 void Device::resetInteractiveTimout() {
-  interactive_timeout = 30 * UI_FREQ;
+  interactive_timeout = (ignition_on ? 10 : 30) * UI_FREQ;
 }
 
 void Device::updateBrightness(const UIState &s) {
@@ -317,7 +317,9 @@ bool Device::userClicked(const UIState &s) {
 }
 
 void Device::updateWakefulness(const UIState &s) {
-  bool ignition_just_turned_off = !s.scene.ignition && ignition_prev;
+  bool ignition_just_turned_off = !s.scene.ignition && ignition_on;
+  ignition_on = s.scene.ignition;
+
   if (ignition_just_turned_off || userClicked(s)) {
     resetInteractiveTimout();
   } else if (interactive_timeout > 0 && --interactive_timeout == 0) {
@@ -326,5 +328,5 @@ void Device::updateWakefulness(const UIState &s) {
 
   setAwake(s.scene.ignition || interactive_timeout > 0);
 
-  ignition_prev = s.scene.ignition;
+  
 }

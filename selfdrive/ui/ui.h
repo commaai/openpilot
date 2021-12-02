@@ -155,7 +155,7 @@ private:
   int interactive_timeout = 0;
   float accel_sensor = 0, accel_prev = 0;
   float gyro_sensor = 0, gyro_prev = 0;
-  bool ignition_prev = false;
+  bool ignition_on = false;
   int last_brightness = 0;
   FirstOrderFilter brightness_filter;
 
