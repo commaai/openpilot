@@ -428,7 +428,9 @@ bool Panda::can_receive(std::vector<can_frame>& out_vec) {
   if (!comms_healthy) {
     return false;
   }
-  if (recv == RECV_SIZE) { LOGW("Panda receive buffer full"); }
+  if (recv == RECV_SIZE) {
+    LOGW("Panda receive buffer full");
+  }
 
   return (recv <= 0) ? true : unpack_can_buffer(data, recv, out_vec);
 }
