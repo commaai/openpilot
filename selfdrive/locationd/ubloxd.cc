@@ -17,22 +17,17 @@ int main() {
 
   PubMaster pm({"ubloxGnss", "gpsLocationExternal"});
 
-  Context * context = Context::create();
-  SubSocket * subscriber = SubSocket::create(context, "ubloxRaw");
+  std::unique_ptr<Context> context(Context::create());
+  std::unique_ptr<SubSocket> subscriber(SubSocket::create(context.get(), "ubloxRaw"));
   assert(subscriber != NULL);
   subscriber->setTimeout(100);
 
 
   while (!do_exit) {
-    Message * msg = subscriber->receive();
-    if (!msg) {
-      if (errno == EINTR) {
-        do_exit = true;
-      }
-      continue;
-    }
+    std::unique_ptr<Message> msg(subscriber->receive());
+    if (!msg) continue;
 
-    capnp::FlatArrayMessageReader cmsg(aligned_buf.align(msg));
+    capnp::FlatArrayMessageReader cmsg(aligned_buf.align(msg.get()));
     cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
     auto ubloxRaw = event.getUbloxRaw();
 
@@ -58,11 +53,7 @@ int main() {
       }
       bytes_consumed += bytes_consumed_this_time;
     }
-    delete msg;
   }
-
-  delete subscriber;
-  delete context;
 
   return 0;
 }

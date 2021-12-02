@@ -208,22 +208,17 @@ void can_send_thread(std::vector<Panda *> pandas, bool fake_send) {
   set_thread_name("boardd_can_send");
 
   AlignedBuffer aligned_buf;
-  Context * context = Context::create();
-  SubSocket * subscriber = SubSocket::create(context, "sendcan");
+  std::unique_ptr<Context> context(Context::create());
+  std::unique_ptr<SubSocket> subscriber(SubSocket::create(context.get(), "sendcan"));
   assert(subscriber != NULL);
   subscriber->setTimeout(100);
 
   // run as fast as messages come in
   while (!do_exit && check_all_connected(pandas)) {
-    Message * msg = subscriber->receive();
-    if (!msg) {
-      if (errno == EINTR) {
-        do_exit = true;
-      }
-      continue;
-    }
+    std::unique_ptr<Message> msg(subscriber->receive());
+    if (!msg) continue;
 
-    capnp::FlatArrayMessageReader cmsg(aligned_buf.align(msg));
+    capnp::FlatArrayMessageReader cmsg(aligned_buf.align(msg.get()));
     cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
 
     //Dont send if older than 1 second
@@ -234,12 +229,7 @@ void can_send_thread(std::vector<Panda *> pandas, bool fake_send) {
         }
       }
     }
-
-    delete msg;
   }
-
-  delete subscriber;
-  delete context;
 }
 
 void can_recv_thread(std::vector<Panda *> pandas) {
