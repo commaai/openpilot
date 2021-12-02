@@ -81,7 +81,7 @@ class TestCarModel(unittest.TestCase):
         if msg.carParams.openpilotLongitudinalControl:
           params.put_bool("DisableRadar", True)
 
-    assert len(can_msgs) > 0, "No CAN msgs in test segment ({seg})"
+    assert len(can_msgs) > 0, f"No CAN msgs in test segment ({seg})"
     cls.can_msgs = sorted(can_msgs, key=lambda msg: msg.logMonoTime)
 
     cls.CarInterface, cls.CarController, cls.CarState = interfaces[cls.car_model]
