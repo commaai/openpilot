@@ -26,8 +26,8 @@ void Sidebar::drawMetric(QPainter &p, const QString &label, QColor c, int y) {
 }
 
 Sidebar::Sidebar(QWidget *parent) : QFrame(parent) {
-  home_img = QImage("../assets/images/button_home.png").scaled(180, 180, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-  settings_img = QImage("../assets/images/button_settings.png").scaled(settings_btn.width(), settings_btn.height(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+  home_img = scaledPixmap("../assets/images/button_home.png", {180, 180});
+  settings_img = scaledPixmap("../assets/images/button_settings.png", settings_btn.size(), Qt::IgnoreAspectRatio);
 
   connect(this, &Sidebar::valueChanged, [=] { update(); });
 
@@ -88,9 +88,9 @@ void Sidebar::paintEvent(QPaintEvent *event) {
 
   // static imgs
   p.setOpacity(0.65);
-  p.drawImage(settings_btn.x(), settings_btn.y(), settings_img);
+  p.drawPixmap(settings_btn.x(), settings_btn.y(), settings_img);
   p.setOpacity(1.0);
-  p.drawImage(60, 1080 - 180 - 40, home_img);
+  p.drawPixmap(60, 1080 - 180 - 40, home_img);
 
   // network
   int x = 58;

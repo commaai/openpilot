@@ -6,6 +6,7 @@
 #include <QLayout>
 #include <QMouseEvent>
 #include <QPainter>
+#include <QPixmap>
 #include <QSurfaceFormat>
 #include <QWidget>
 
@@ -22,6 +23,9 @@ void swagLogMessageHandler(QtMsgType type, const QMessageLogContext &context, co
 void initApp();
 QWidget* topWidget (QWidget* widget);
 
+inline QPixmap scaledPixmap(const QString &fileName, const QSize &size, Qt::AspectRatioMode aspectRatioMode = Qt::KeepAspectRatio) {
+  return QPixmap(fileName).scaled(size, aspectRatioMode, Qt::SmoothTransformation);
+}
 
 // convenience class for wrapping layouts
 class LayoutWidget : public QWidget {

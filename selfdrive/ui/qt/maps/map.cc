@@ -498,10 +498,9 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
       fn += "turn_straight";
     }
 
-    QPixmap pix(fn + ICON_SUFFIX);
     auto icon = new QLabel;
     int wh = active ? 125 : 75;
-    icon->setPixmap(pix.scaled(wh, wh, Qt::IgnoreAspectRatio, Qt::SmoothTransformation));
+    icon->setPixmap(scaledPixmap(fn + ICON_SUFFIX, {wh, wh}, Qt::IgnoreAspectRatio));
     icon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
     lane_layout->addWidget(icon);
   }
