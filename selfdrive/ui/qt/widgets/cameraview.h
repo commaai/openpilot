@@ -40,7 +40,7 @@ protected:
   GLuint frame_vao, frame_vbo, frame_ibo;
   mat4 frame_mat;
   std::unique_ptr<EGLImageTexture> texture[UI_BUF_COUNT];
-  QOpenGLShaderProgram *program;
+  std::unique_ptr<QOpenGLShaderProgram> program;
   QColor bg = QColor("#000000");
 
   std::string stream_name;
