@@ -290,7 +290,7 @@ void Device::updateBrightness(const UIState &s) {
 }
 
 bool Device::userClicked(const UIState &s) {
-  bool user_click = false;
+  bool user_clicked = false;
   // tap detection while display is off
   if (!awake && s.sm->updated("sensorEvents")) {
     for (auto sensor : (*s.sm)["sensorEvents"].getSensorEvents()) {
@@ -309,11 +309,11 @@ bool Device::userClicked(const UIState &s) {
 
     bool accel_trigger = abs(accel_sensor - accel_prev) > 0.2;
     bool gyro_trigger = abs(gyro_sensor - gyro_prev) > 0.15;
-    user_click = (accel_trigger && gyro_trigger);
+    user_clicked = (accel_trigger && gyro_trigger);
     gyro_prev = gyro_sensor;
     accel_prev = (accel_prev * (accel_samples - 1) + accel_sensor) / accel_samples;
   }
-  return user_click;
+  return user_clicked;
 }
 
 void Device::updateWakefulness(const UIState &s) {
@@ -327,6 +327,4 @@ void Device::updateWakefulness(const UIState &s) {
   }
 
   setAwake(s.scene.ignition || interactive_timeout > 0);
-
-  
 }
