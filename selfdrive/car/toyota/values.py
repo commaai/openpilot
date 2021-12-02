@@ -55,6 +55,7 @@ class CAR:
   LEXUS_ESH_TSS2 = "LEXUS ES HYBRID 2019"
   LEXUS_IS = "LEXUS IS 2018"
   LEXUS_NX = "LEXUS NX 2018"
+  LEXUS_NX = "LEXUS NX 2019"
   LEXUS_NXH = "LEXUS NX HYBRID 2018"
   LEXUS_NX_TSS2 = "LEXUS NX 2020"
   LEXUS_RC = "LEXUS RC 2020"
@@ -1296,6 +1297,7 @@ FW_VERSIONS = {
       b'\x01896637851000\x00\x00\x00\x00',
       b'\x01896637852000\x00\x00\x00\x00',
       b'\x01896637854000\x00\x00\x00\x00',
+      b'\x01896637878000\x00\x00\x00\x00',
     ],
     (Ecu.esp, 0x7b0, None): [
       b'F152678130\x00\x00\x00\x00\x00\x00',
@@ -1303,6 +1305,7 @@ FW_VERSIONS = {
     ],
     (Ecu.dsu, 0x791, None): [
       b'881517803100\x00\x00\x00\x00',
+      b'881517803300\x00\x00\x00\x00',
     ],
     (Ecu.eps, 0x7a1, None): [
       b'8965B78060\x00\x00\x00\x00\x00\x00',
@@ -1314,6 +1317,7 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdCamera, 0x750, 0x6d): [
       b'8646F7801100\x00\x00\x00\x00',
+      b'8646F7801300\x00\x00\x00\x00',
     ],
   },
   CAR.LEXUS_NX_TSS2: {
