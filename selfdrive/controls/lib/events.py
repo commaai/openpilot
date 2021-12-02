@@ -248,7 +248,7 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
     ET.PERMANENT: Alert(
       "debug", "",
       AlertStatus.normal, AlertSize.small,
-      Priority.LOWER, VisualAlert.none, AudibleAlert.prompt, .05)
+      Priority.LOWER, VisualAlert.none, AudibleAlert.promptDistracted, .05)
   },
 
   # ********** events only containing alerts displayed in all states **********
