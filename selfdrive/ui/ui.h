@@ -168,7 +168,7 @@ signals:
   void interactiveTimout();
 
 public slots:
-  void setAwake(bool on, bool reset);
+  void setAwake(bool on, bool reset_timeout = true);
   void update(const UIState &s);
 };
 

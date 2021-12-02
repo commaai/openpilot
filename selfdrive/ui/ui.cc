@@ -261,7 +261,7 @@ void Device::update(const UIState &s) {
   QUIState::ui_state.awake = awake;
 }
 
-void Device::setAwake(bool on, bool reset) {
+void Device::setAwake(bool on, bool reset_timeout) {
   if (on != awake) {
     awake = on;
     Hardware::set_display_power(awake);
@@ -269,7 +269,7 @@ void Device::setAwake(bool on, bool reset) {
     emit displayPowerChanged(awake);
   }
 
-  if (reset) {
+  if (reset_timeout) {
     awake_timeout = 30 * UI_FREQ;
   }
 }

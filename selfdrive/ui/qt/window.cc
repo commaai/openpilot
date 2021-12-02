@@ -37,7 +37,7 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
     main_layout->setCurrentWidget(onboardingWindow);
   }
 
-  device.setAwake(true, true);
+  device.setAwake(true);
   QObject::connect(&qs, &QUIState::uiUpdate, &device, &Device::update);
   QObject::connect(&qs, &QUIState::offroadTransition, [=](bool offroad) {
     if (!offroad) {
@@ -88,7 +88,7 @@ void MainWindow::closeSettings() {
 bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
   // wake screen on tap
   if (event->type() == QEvent::MouseButtonPress || event->type() == QEvent::TouchBegin) {
-    device.setAwake(true, true);
+    device.setAwake(true);
   }
 
 #ifdef QCOM
