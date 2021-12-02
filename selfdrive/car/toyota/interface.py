@@ -186,6 +186,15 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 3736.8 * CV.LB_TO_KG + STD_CARGO_KG
       set_lat_tune(ret.lateralTuning, LatTunes.PID_L)
 
+    elif candidate == CAR.LEXUS_RC:
+      ret.safetyConfigs[0].safetyParam = 77
+      stop_and_go = False
+      ret.wheelbase = 2.73050
+      ret.steerRatio = 13.3
+      tire_stiffness_factor = 0.444
+      ret.mass = 3736.8 * CV.LB_TO_KG + STD_CARGO_KG
+      set_lat_tune(ret.lateralTuning, LatTunes.PID_L)
+
     elif candidate == CAR.LEXUS_CTH:
       ret.safetyConfigs[0].safetyParam = 100
       stop_and_go = True
@@ -206,7 +215,7 @@ class CarInterface(CarInterfaceBase):
     elif candidate == CAR.PRIUS_TSS2:
       stop_and_go = True
       ret.wheelbase = 2.70002  # from toyota online sepc.
-      ret.steerRatio = 13.4   # True steerRation from older prius
+      ret.steerRatio = 13.4   # True steerRatio from older prius
       tire_stiffness_factor = 0.6371   # hand-tune
       ret.mass = 3115. * CV.LB_TO_KG + STD_CARGO_KG
       set_lat_tune(ret.lateralTuning, LatTunes.PID_N)

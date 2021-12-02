@@ -4,7 +4,6 @@ selfdrive/timezoned.py
 
 selfdrive/assets/navigation/*
 selfdrive/assets/training_wide/*
-selfdrive/assets/sounds_tici/*
 
 selfdrive/camerad/cameras/camera_qcom2.cc
 selfdrive/camerad/cameras/camera_qcom2.h

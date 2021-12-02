@@ -33,7 +33,7 @@ class CarInterface(CarInterfaceBase):
     ret.carName = "honda"
 
     if candidate in HONDA_BOSCH:
-      ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hondaBoschHarness)]
+      ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hondaBosch)]
       ret.radarOffCan = True
 
       # Disable the radar and let openpilot control longitudinal
@@ -110,7 +110,7 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 1.
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.8], [0.24]]
 
-    elif candidate in (CAR.ACCORD, CAR.ACCORDH):
+    elif candidate in (CAR.ACCORD, CAR.ACCORD_2021, CAR.ACCORDH, CAR.ACCORDH_2021):
       stop_and_go = True
       ret.mass = 3279. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.83

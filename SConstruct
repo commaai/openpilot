@@ -60,7 +60,6 @@ if arch == "aarch64" and TICI:
   arch = "larch64"
 
 USE_WEBCAM = os.getenv("USE_WEBCAM") is not None
-USE_FRAME_STREAM = os.getenv("USE_FRAME_STREAM") is not None
 
 lenv = {
   "PATH": os.environ['PATH'],
@@ -352,7 +351,7 @@ if GetOption("clazy"):
   qt_env['ENV']['CLAZY_IGNORE_DIRS'] = qt_dirs[0]
   qt_env['ENV']['CLAZY_CHECKS'] = ','.join(checks)
 
-Export('env', 'qt_env', 'arch', 'real_arch', 'SHARED', 'USE_WEBCAM', 'USE_FRAME_STREAM')
+Export('env', 'qt_env', 'arch', 'real_arch', 'SHARED', 'USE_WEBCAM')
 
 SConscript(['selfdrive/common/SConscript'])
 Import('_common', '_gpucommon', '_gpu_libs')
@@ -387,7 +386,7 @@ rednose_config = {
   },
 }
 
-if arch != "aarch64":
+if arch not in ["aarch64", "larch64"]:
   rednose_config['to_build'].update({
     'gnss': ('#selfdrive/locationd/models/gnss_kf.py', True, []),
     'loc_4': ('#selfdrive/locationd/models/loc_kf.py', True, []),

@@ -1,4 +1,4 @@
-Version 0.8.11-GM-0.3.0 (2021-11-21)
+Version 0.8.12-GM-0.3.0 (2021-11-21)
 ========================
  * Chevy Bolt EV Support (And several others)
  * TEST ready for cross-flashed Bolt Brake controller
@@ -18,8 +18,12 @@ Version 0.8.11-GM-0.3.0 (2021-11-21)
  * TODO: Auto-detection of B-mode
  * TODO: Auto-detection of B-mode zero-point
 
-Version 0.8.12 (202X-XX-XX)
+Version 0.8.12 (2021-12-XX)
 ========================
+ * New alert sounds
+ * Honda Accord 2021 support thanks to csouers!
+ * Honda Accord Hybrid 2021 support thanks to csouers!
+ * Lexus RC 2020 support thanks to ErichMoraga!
 
 Version 0.8.11 (2021-11-29)
 ========================

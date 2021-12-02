@@ -1,7 +1,6 @@
 #pragma once
 
 #include <QButtonGroup>
-#include <QMovie>
 #include <QVBoxLayout>
 #include <QWidget>
 
