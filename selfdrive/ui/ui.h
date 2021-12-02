@@ -159,8 +159,6 @@ private:
   int last_brightness = 0;
   FirstOrderFilter brightness_filter;
 
-  QTimer *timer;
-
   void updateBrightness(const UIState &s);
   void updateWakefulness(const UIState &s);
   bool userClicked(const UIState &s);
