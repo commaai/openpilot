@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 from enum import Enum
-from selfdrive.car.toyota.values import MIN_ACC_SPEED, PEDAL_HYST_GAP
 
 
 class LongTunes(Enum):
@@ -29,15 +28,8 @@ class LatTunes(Enum):
 
 ###### LONG ######
 def set_long_tune(tune, name):
-  if name == LongTunes.PEDAL:
-    tune.deadzoneBP = [0.]
-    tune.deadzoneV = [0.]
-    tune.kpBP = [0., 5., MIN_ACC_SPEED, MIN_ACC_SPEED + PEDAL_HYST_GAP, 35.]
-    tune.kpV = [1.2, 0.8, 0.765, 2.255, 1.5]
-    tune.kiBP = [0., MIN_ACC_SPEED, MIN_ACC_SPEED + PEDAL_HYST_GAP, 35.]
-    tune.kiV = [0.18, 0.165, 0.489, 0.36]
   # Improved longitudinal tune
-  elif name == LongTunes.TSS2:
+  if name == LongTunes.TSS2 or name == LongTunes.PEDAL:
     tune.deadzoneBP = [0., 8.05]
     tune.deadzoneV = [.0, .14]
     tune.kpBP = [0., 5., 20.]
