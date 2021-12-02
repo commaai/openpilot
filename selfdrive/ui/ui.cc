@@ -152,21 +152,6 @@ static void update_state(UIState *s) {
   if (sm.updated("carParams")) {
     scene.longitudinal_control = sm["carParams"].getCarParams().getOpenpilotLongitudinalControl();
   }
-  if (!scene.started && sm.updated("sensorEvents")) {
-    for (auto sensor : sm["sensorEvents"].getSensorEvents()) {
-      if (sensor.which() == cereal::SensorEventData::ACCELERATION) {
-        auto accel = sensor.getAcceleration().getV();
-        if (accel.totalSize().wordCount) { // TODO: sometimes empty lists are received. Figure out why
-          scene.accel_sensor = accel[2];
-        }
-      } else if (sensor.which() == cereal::SensorEventData::GYRO_UNCALIBRATED) {
-        auto gyro = sensor.getGyroUncalibrated().getV();
-        if (gyro.totalSize().wordCount) {
-          scene.gyro_sensor = gyro[1];
-        }
-      }
-    }
-  }
   if (sm.updated("roadCameraState")) {
     auto camera_state = sm["roadCameraState"].getRoadCameraState();
 
@@ -261,17 +246,17 @@ void Device::update(const UIState &s) {
   QUIState::ui_state.awake = awake;
 }
 
-void Device::setAwake(bool on, bool reset_timeout) {
+void Device::setAwake(bool on) {
   if (on != awake) {
     awake = on;
     Hardware::set_display_power(awake);
     LOGD("setting display power %d", awake);
     emit displayPowerChanged(awake);
   }
+}
 
-  if (reset_timeout) {
-    awake_timeout = 30 * UI_FREQ;
-  }
+void Device::resetInteractiveTimout() {
+  interactive_timeout = 30 * UI_FREQ;
 }
 
 void Device::updateBrightness(const UIState &s) {
@@ -302,23 +287,41 @@ void Device::updateBrightness(const UIState &s) {
   last_brightness = brightness;
 }
 
-void Device::updateWakefulness(const UIState &s) {
-  static bool ignition_prev = false;
-  bool reset_timeout = false;
-  if (!s.scene.ignition) {
-    // tap detection while display is off
-    bool accel_trigger = abs(s.scene.accel_sensor - accel_prev) > 0.2;
-    bool gyro_trigger = abs(s.scene.gyro_sensor - gyro_prev) > 0.15;
-    reset_timeout = (accel_trigger && gyro_trigger) || ignition_prev;
-    gyro_prev = s.scene.gyro_sensor;
-    accel_prev = (accel_prev * (accel_samples - 1) + s.scene.accel_sensor) / accel_samples;
+bool Device::userClicked(const UIState &s) {
+  bool user_click = false;
+  // tap detection while display is off
+  if (!awake && s.sm->updated("sensorEvents")) {
+    for (auto sensor : (*s.sm)["sensorEvents"].getSensorEvents()) {
+      if (sensor.which() == cereal::SensorEventData::ACCELERATION) {
+        auto accel = sensor.getAcceleration().getV();
+        if (accel.totalSize().wordCount) {  // TODO: sometimes empty lists are received. Figure out why
+          accel_sensor = accel[2];
+        }
+      } else if (sensor.which() == cereal::SensorEventData::GYRO_UNCALIBRATED) {
+        auto gyro = sensor.getGyroUncalibrated().getV();
+        if (gyro.totalSize().wordCount) {
+          gyro_sensor = gyro[1];
+        }
+      }
+    }
+
+    bool accel_trigger = abs(accel_sensor - accel_prev) > 0.2;
+    bool gyro_trigger = abs(gyro_sensor - gyro_prev) > 0.15;
+    user_click = (accel_trigger && gyro_trigger);
+    gyro_prev = gyro_sensor;
+    accel_prev = (accel_prev * (accel_samples - 1) + accel_sensor) / accel_samples;
   }
-  ignition_prev = s.scene.ignition;
+  return user_click;
+}
 
-  bool should_wake = s.scene.ignition || reset_timeout || awake_timeout > 0;
-  setAwake(should_wake, reset_timeout);
-
-  if (awake_timeout > 0 && --awake_timeout == 0) {
+void Device::updateWakefulness(const UIState &s) {
+  if ((!s.scene.ignition && ignition_prev) || userClicked(s)) {
+    resetInteractiveTimout();
+  } else if (interactive_timeout > 0 && --interactive_timeout == 0) {
     emit interactiveTimout();
   }
+
+  setAwake(s.scene.ignition || interactive_timeout > 0);
+
+  ignition_prev = s.scene.ignition;
 }

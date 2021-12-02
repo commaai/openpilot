@@ -96,7 +96,7 @@ typedef struct UIScene {
   // lead
   QPointF lead_vertices[2];
 
-  float light_sensor, accel_sensor, gyro_sensor;
+  float light_sensor;
   bool started, ignition, is_metric, longitudinal_control, end_to_end;
   uint64_t started_frame;
 } UIScene;
@@ -148,13 +148,15 @@ public:
   Device(QObject *parent = 0);
 
 private:
+
   // auto brightness
   const float accel_samples = 5*UI_FREQ;
 
   bool awake = false;
-  int awake_timeout = 0;
-  float accel_prev = 0;
-  float gyro_prev = 0;
+  int interactive_timeout = 0;
+  float accel_sensor = 0, accel_prev = 0;
+  float gyro_sensor = 0, gyro_prev = 0;
+  bool ignition_prev = false;
   int last_brightness = 0;
   FirstOrderFilter brightness_filter;
 
@@ -162,13 +164,15 @@ private:
 
   void updateBrightness(const UIState &s);
   void updateWakefulness(const UIState &s);
+  bool userClicked(const UIState &s);
+  void setAwake(bool on);
 
 signals:
   void displayPowerChanged(bool on);
   void interactiveTimout();
 
 public slots:
-  void setAwake(bool on, bool reset_timeout = true);
+  void resetInteractiveTimout();
   void update(const UIState &s);
 };
 
