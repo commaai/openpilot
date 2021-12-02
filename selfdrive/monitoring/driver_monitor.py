@@ -35,9 +35,7 @@ class DRIVER_MONITOR_SETTINGS():
     self._PITCH_WEIGHT = 1.35  # pitch matters a lot more
     self._POSESTD_THRESHOLD = 0.38 if TICI else 0.3
 
-    self._METRIC_THRESHOLD = 0.48
-    self._METRIC_THRESHOLD_SLACK = 0.66
-    self._METRIC_THRESHOLD_STRICT = self._METRIC_THRESHOLD
+    self._POSE_THRESHOLD = 0.48
     self._PITCH_NATURAL_OFFSET = 0.02  # people don't seem to look straight when they drive relaxed, rather a bit up
     self._YAW_NATURAL_OFFSET = 0.08  # people don't seem to look straight when they drive relaxed, rather a bit to the right (center of car)
 
@@ -170,24 +168,25 @@ class DriverStatus():
     pitch_error = 0 if pitch_error > 0 else abs(pitch_error) # no positive pitch limit
     yaw_error = abs(yaw_error)
 
-    if pitch_error*self.settings._PITCH_WEIGHT > self.settings._METRIC_THRESHOLD*pose.cfactor or \
-       yaw_error > self.settings._METRIC_THRESHOLD*pose.cfactor:
+    if pitch_error*self.settings._PITCH_WEIGHT > self.settings._POSE_THRESHOLD*pose.cfactor or \
+       yaw_error > self.settings._POSE_THRESHOLD*pose.cfactor:
       return DistractedType.BAD_POSE
     elif (blink.left_blink + blink.right_blink)*0.5 > self.settings._BLINK_THRESHOLD*blink.cfactor:
       return DistractedType.BAD_BLINK
     else:
       return DistractedType.NOT_DISTRACTED
 
-  def set_policy(self, model_data):
-    ep = min(model_data.meta.engagedProb, 0.8) / 0.8
-    self.pose.cfactor = interp(ep, [0, 0.5, 1],
-                                           [self.settings._METRIC_THRESHOLD_STRICT,
-                                            self.settings. _METRIC_THRESHOLD,
-                                            self.settings._METRIC_THRESHOLD_SLACK]) / self.settings._METRIC_THRESHOLD
+  def set_policy(self, model_data, car_speed):
+    ep = min(model_data.meta.engagedProb, 0.8) / 0.8 # engaged prob
+    bp = model_data.meta.disengagePredictions.brakeDisengageProbs[0] # brake disengage prob in next 2s
+    # TODO: retune adaptive blink
     self.blink.cfactor = interp(ep, [0, 0.5, 1],
                                            [self.settings._BLINK_THRESHOLD_STRICT,
                                             self.settings._BLINK_THRESHOLD,
                                             self.settings._BLINK_THRESHOLD_SLACK]) / self.settings._BLINK_THRESHOLD
+    bp = bp * 1.0
+    new_pose_thresh = 0.48
+    self.pose.cfactor = new_pose_thresh / self.settings._POSE_THRESHOLD
 
   def get_pose(self, driver_state, cal_rpy, car_speed, op_engaged):
     if not all(len(x) > 0 for x in [driver_state.faceOrientation, driver_state.facePosition,
