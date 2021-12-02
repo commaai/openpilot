@@ -85,7 +85,7 @@ def create_mqb_acc_06_control(packer, bus, enabled, acc_status, accel, acc_stopp
 
   return packer.make_can_msg("ACC_06", bus, values, idx)
 
-def create_mqb_acc_07_control(packer, bus, enabled, accel, acc_hold_request, acc_hold_release,
+def create_mqb_acc_07_control(packer, bus, enabled, accel, secondary_accel, acc_hold_request, acc_hold_release,
                               acc_hold_type, stopping_distance, idx):
   values = {
     "ACC_Distance_to_Stop": stopping_distance,
@@ -93,7 +93,7 @@ def create_mqb_acc_07_control(packer, bus, enabled, accel, acc_hold_request, acc
     "ACC_Freewheel_Type": 2 if enabled else 0,
     "ACC_Hold_Type": acc_hold_type,
     "ACC_Hold_Release": acc_hold_release,
-    "ACC_Accel_Secondary": accel+0.01 if enabled else 3.03,
+    "ACC_Accel_Secondary": secondary_accel+0.01 if enabled else 3.03,  # FIXME: think there are rounding/scaling issues here
     "ACC_Accel_TSK": accel if enabled else 3.01,
   }
 
