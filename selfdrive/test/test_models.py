@@ -56,36 +56,35 @@ class TestCarModel(unittest.TestCase):
       else:
         raise Exception(f"missing test route for car {cls.car_model}")
 
-    for seg in [2, 1, 0]:
-      try:
-        lr = LogReader(get_url(ROUTES[cls.car_model], seg))
-        break
-      except Exception:
-        lr = None
-
-    if lr is None:
-      raise Exception("Route not found. Is it uploaded?")
-
     params = Params()
     params.clear_all()
 
-    can_msgs = []
-    fingerprint = {i: dict() for i in range(3)}
-    for msg in lr:
-      if msg.which() == "can":
-        for m in msg.can:
-          if m.src < 64:
-            fingerprint[m.src][m.address] = len(m.dat)
-        can_msgs.append(msg)
-      elif msg.which() == "carParams":
-        if msg.carParams.openpilotLongitudinalControl:
-          params.put_bool("DisableRadar", True)
+    for seg in [2, 1, 0]:
+      try:
+        lr = LogReader(get_url(ROUTES[cls.car_model], seg))
+      except Exception:
+        continue
 
-    assert len(can_msgs) > 0, f"No CAN msgs in test segment ({seg})"
+      can_msgs = []
+      fingerprint = {i: dict() for i in range(3)}
+      for msg in lr:
+        if msg.which() == "can":
+          for m in msg.can:
+            if m.src < 64:
+              fingerprint[m.src][m.address] = len(m.dat)
+          can_msgs.append(msg)
+        elif msg.which() == "carParams":
+          if msg.carParams.openpilotLongitudinalControl:
+            params.put_bool("DisableRadar", True)
+
+      if len(can_msgs):
+        break
+    else:
+      raise Exception("Route not found or no CAN msgs found. Is it uploaded?")
+
     cls.can_msgs = sorted(can_msgs, key=lambda msg: msg.logMonoTime)
 
     cls.CarInterface, cls.CarController, cls.CarState = interfaces[cls.car_model]
-
     cls.CP = cls.CarInterface.get_params(cls.car_model, fingerprint, [])
     assert cls.CP
 
