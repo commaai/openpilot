@@ -425,16 +425,12 @@ void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list) {
 bool Panda::can_receive(std::vector<can_frame>& out_vec) {
   uint8_t data[RECV_SIZE];
   int recv = usb_bulk_read(0x81, (uint8_t*)data, RECV_SIZE);
-  // Not sure if this can happen
-  if (recv <= 0) return true;
-  if (recv == RECV_SIZE) {
-    LOGW("Receive buffer full");
-  }
-
   if (!comms_healthy) {
     return false;
   }
-  return unpack_can_buffer(data, recv, out_vec);
+  if (recv == RECV_SIZE) { LOGW("Panda receive buffer full"); }
+
+  return (recv <= 0) ? true : unpack_can_buffer(data, recv, out_vec);
 }
 
 bool Panda::unpack_can_buffer(uint8_t *data, int size, std::vector<can_frame> &out_vec) {
@@ -442,9 +438,10 @@ bool Panda::unpack_can_buffer(uint8_t *data, int size, std::vector<can_frame> &o
   for (int i = 0; i < size; i += USBPACKET_MAX_SIZE) {
     if (data[i] != i / USBPACKET_MAX_SIZE) {
       LOGE("CAN: MALFORMED USB RECV PACKET");
-      return true;
+      comms_healthy = false;
+      return false;
     }
-    int chunk_len = std::min(USBPACKET_MAX_SIZE, (uint32_t)(size - i));
+    int chunk_len = std::min(USBPACKET_MAX_SIZE, (size - i));
     recv_buf.insert(recv_buf.end(), &data[i + 1], &data[i + chunk_len]);
   }
 
