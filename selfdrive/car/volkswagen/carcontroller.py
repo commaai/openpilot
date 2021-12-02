@@ -79,7 +79,7 @@ class CarController():
         idx = (frame / P.ACC_HUD_STEP) % 16
         can_sends.append(volkswagencan.create_mqb_acc_02_control(self.packer_pt, CANBUS.pt, CS.tsk_status,
                                                                   set_speed * CV.MS_TO_KPH, speed_visible, lead_visible, idx))
-        can_sends.append(volkswagencan.create_mqb_acc_04_control(self.packer_pt, CANBUS.pt, CS.acc_04_stock_values))
+        can_sends.append(volkswagencan.create_mqb_acc_04_control(self.packer_pt, CANBUS.pt, CS.acc_04_stock_values, idx))
 
     # **** Steering Controls ************************************************ #
 

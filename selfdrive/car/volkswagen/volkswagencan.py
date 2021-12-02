@@ -48,7 +48,6 @@ def create_mqb_acc_buttons_control(packer, bus, buttonStatesToSend, CS, idx):
   }
   return packer.make_can_msg("GRA_ACC_01", bus, values, idx)
 
-
 def create_mqb_acc_02_control(packer, bus, acc_status, set_speed, speed_visible, lead_visible, idx):
   values = {
     "ACC_Status_Anzeige": acc_status,
@@ -60,14 +59,14 @@ def create_mqb_acc_02_control(packer, bus, acc_status, set_speed, speed_visible,
 
   return packer.make_can_msg("ACC_02", bus, values, idx)
 
-def create_mqb_acc_04_control(packer, bus, acc_04_stock_values):
+def create_mqb_acc_04_control(packer, bus, acc_04_stock_values, idx):
   values = acc_04_stock_values.copy()
 
   # Suppress disengagement alert from stock radar when OP long is in use, but passthru FCW/AEB alerts
   if values["ACC_Texte_braking_guard"] == 4:
     values["ACC_Texte_braking_guard"] = 0
 
-  return packer.make_can_msg("ACC_04", bus, values)
+  return packer.make_can_msg("ACC_04", bus, values, idx)
 
 def create_mqb_acc_06_control(packer, bus, enabled, acc_status, accel, acc_stopping, acc_starting,
                               cb_pos, cb_neg, idx):
@@ -78,8 +77,8 @@ def create_mqb_acc_06_control(packer, bus, enabled, acc_status, accel, acc_stopp
     "ACC_Sollbeschleunigung_02": accel if enabled else 3.01,
     "ACC_zul_Regelabw_unten": cb_neg,
     "ACC_zul_Regelabw_oben": cb_pos,
-    "ACC_neg_Sollbeschl_Grad_02": 5.0 if enabled else 0,
-    "ACC_pos_Sollbeschl_Grad_02": 5.0 if enabled else 0,
+    "ACC_neg_Sollbeschl_Grad_02": 4.0 if enabled else 0,
+    "ACC_pos_Sollbeschl_Grad_02": 4.0 if enabled else 0,
     "ACC_Anfahren": acc_starting,
     "ACC_Anhalten": acc_stopping,
   }
@@ -94,7 +93,7 @@ def create_mqb_acc_07_control(packer, bus, enabled, accel, acc_hold_request, acc
     "ACC_Freewheel_Type": 2 if enabled else 0,
     "ACC_Hold_Type": acc_hold_type,
     "ACC_Hold_Release": acc_hold_release,
-    "ACC_Accel_Secondary": accel+0.01 if enabled else 3.02,
+    "ACC_Accel_Secondary": accel+0.01 if enabled else 3.03,
     "ACC_Accel_TSK": accel if enabled else 3.01,
   }
 
