@@ -20,7 +20,7 @@ SOUNDS = {
   AudibleAlert.refuse: 223,
   AudibleAlert.prompt: 217,
   AudibleAlert.promptRepeat: 475,
-  AudibleAlert.promptDistracted: 230,
+  AudibleAlert.promptDistracted: 187,
   AudibleAlert.warningSoft: 477,
   AudibleAlert.warningImmediate: 468,
 }
