@@ -299,6 +299,7 @@ class LongitudinalMpc():
 
   def update(self, carstate, radarstate, v_cruise, prev_accel_constraint=False):
     v_ego = self.x0[1]
+    a_ego = self.x0[2]
     self.status = radarstate.leadOne.status or radarstate.leadTwo.status
 
     lead_xv_0 = self.process_lead(radarstate.leadOne)
