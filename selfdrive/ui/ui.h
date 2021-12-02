@@ -148,7 +148,6 @@ public:
   Device(QObject *parent = 0);
 
 private:
-
   // auto brightness
   const float accel_samples = 5*UI_FREQ;
 
