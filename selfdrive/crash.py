@@ -1,6 +1,6 @@
 """Install exception handler for process crash."""
 from selfdrive.swaglog import cloudlog
-from selfdrive.version import version
+from selfdrive.version import get_version
 
 import sentry_sdk
 from sentry_sdk.integrations.threading import ThreadingIntegration
@@ -24,4 +24,4 @@ def bind_extra(**kwargs) -> None:
 def init() -> None:
   sentry_sdk.init("https://a8dc76b5bfb34908a601d67e2aa8bcf9@o33823.ingest.sentry.io/77924",
                   default_integrations=False, integrations=[ThreadingIntegration(propagate_hub=True)],
-                  release=version)
+                  release=get_version())

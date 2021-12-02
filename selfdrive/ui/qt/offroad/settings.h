@@ -37,10 +37,15 @@ private:
 class DevicePanel : public ListWidget {
   Q_OBJECT
 public:
-  explicit DevicePanel(QWidget* parent = nullptr);
+  explicit DevicePanel(SettingsWindow *parent);
 signals:
   void reviewTrainingGuide();
   void showDriverView();
+
+private slots:
+  void poweroff();
+  void reboot();
+  void updateCalibDescription();
 };
 
 class TogglesPanel : public ListWidget {

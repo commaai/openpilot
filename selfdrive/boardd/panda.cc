@@ -384,7 +384,7 @@ void Panda::pack_can_buffer(const capnp::List<cereal::CanData>::Reader &can_data
       }
       auto can_data = cmsg.getDat();
       uint8_t data_len_code = len_to_dlc(can_data.size());
-      assert(can_data.size() <= (hw_type == cereal::PandaState::PandaType::RED_PANDA) ? 64 : 8);
+      assert(can_data.size() <= ((hw_type == cereal::PandaState::PandaType::RED_PANDA) ? 64 : 8));
       assert(can_data.size() == dlc_to_len[data_len_code]);
 
       can_header header;
@@ -478,6 +478,7 @@ bool Panda::unpack_can_buffer(uint8_t *data, int size, std::vector<can_frame> &o
       } else {
         // Keep partial CAN packet until next USB packet
         tail_size = (chunk_len - pos);
+        assert(tail_size <= CANPACKET_MAX_SIZE);
         memcpy(tail, &chunk[pos], tail_size);
         break;
       }

@@ -1,4 +1,4 @@
-Import('env', 'arch', 'cereal', 'messaging', 'common', 'gpucommon', 'visionipc', 'USE_WEBCAM', 'USE_FRAME_STREAM')
+Import('env', 'arch', 'cereal', 'messaging', 'common', 'gpucommon', 'visionipc', 'USE_WEBCAM')
 
 libs = ['m', 'pthread', common, 'jpeg', 'OpenCL', 'yuv', cereal, messaging, 'zmq', 'capnp', 'kj', visionipc, gpucommon]
 
@@ -18,15 +18,12 @@ else:
     env.Append(CFLAGS = '-DWEBCAM')
     env.Append(CPPPATH = ['/usr/include/opencv4', '/usr/local/include/opencv4'])
   else:
-    if USE_FRAME_STREAM:
-      cameras = ['cameras/camera_frame_stream.cc']
-    else:
-      libs += ['avutil', 'avcodec', 'avformat', 'bz2', 'ssl', 'curl', 'crypto']
-      # TODO: import replay_lib from root SConstruct
-      cameras = ['cameras/camera_replay.cc', 
-        env.Object('camera-util', '#/selfdrive/ui/replay/util.cc'),
-        env.Object('camera-framereader', '#/selfdrive/ui/replay/framereader.cc'),
-        env.Object('camera-filereader', '#/selfdrive/ui/replay/filereader.cc')]
+    libs += ['avutil', 'avcodec', 'avformat', 'bz2', 'ssl', 'curl', 'crypto']
+    # TODO: import replay_lib from root SConstruct
+    cameras = ['cameras/camera_replay.cc', 
+      env.Object('camera-util', '#/selfdrive/ui/replay/util.cc'),
+      env.Object('camera-framereader', '#/selfdrive/ui/replay/framereader.cc'),
+      env.Object('camera-filereader', '#/selfdrive/ui/replay/filereader.cc')]
 
   if arch == "Darwin":
     del libs[libs.index('OpenCL')]
