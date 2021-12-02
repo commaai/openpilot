@@ -57,7 +57,7 @@ class LongControl():
                             (CP.longitudinalTuning.kiBP, CP.longitudinalTuning.kiV),
                             rate=1/DT_CTRL,
                             sat_limit=0.8,
-                            i_decay_tau=3.0)
+                            i_decay_tau=5.0)
     self.v_pid = 0.0
     self.last_output_accel = 0.0
 
