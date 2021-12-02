@@ -4,6 +4,8 @@
 
 #include <QAudio>
 #include <QAudioDeviceInfo>
+#include <QAudioProbe>
+#include <QAudioRecorder>
 #include <QDebug>
 
 #include "cereal/messaging/messaging.h"
@@ -15,6 +17,7 @@
 Sound::Sound(QObject *parent) : sm({"carState", "controlsState", "deviceState"}) {
   qInfo() << "default audio device: " << QAudioDeviceInfo::defaultOutputDevice().deviceName();
 
+  // setup alert sounds
   for (auto &[alert, fn, loops] : sound_list) {
     QSoundEffect *s = new QSoundEffect(this);
     QObject::connect(s, &QSoundEffect::statusChanged, [=]() {
@@ -25,10 +28,34 @@ Sound::Sound(QObject *parent) : sm({"carState", "controlsState", "deviceState"})
     sounds[alert] = {s, loops};
   }
 
+  // setup recording
+  QAudioProbe *probe = new QAudioProbe(this);
+  QAudioRecorder *recorder = new QAudioRecorder(this);
+  {
+    qDebug() << recorder->supportedAudioCodecs();
+
+    bool ret = probe->setSource(recorder);
+    assert(ret);
+    connect(probe, &QAudioProbe::audioBufferProbed, this, &Sound::handleRecording);
+
+    QAudioEncoderSettings audioSettings;
+    audioSettings.setCodec("audio/AMR");
+    audioSettings.setQuality(QMultimedia::HighQuality);
+
+    recorder->setAudioSettings(audioSettings);
+    recorder->record();
+  }
+
   QTimer *timer = new QTimer(this);
   QObject::connect(timer, &QTimer::timeout, this, &Sound::update);
   timer->start(1000 / UI_FREQ);
 };
+
+void Sound::handleRecording(const QAudioBuffer buf) {
+  // ambient sound
+
+  qDebug() << "got recording" << buf.format() << buf.isValid() << buf.sampleCount() << buf.startTime() << buf.duration();
+}
 
 void Sound::update() {
   const bool started_prev = sm["deviceState"].getDeviceState().getStarted();
@@ -45,16 +72,6 @@ void Sound::update() {
   if (!started || crashed) {
     setAlert({});
     return;
-  }
-
-  // scale volume with speed
-  if (sm.updated("carState")) {
-    float volume = util::map_val(sm["carState"].getCarState().getVEgo(), 11.f, 20.f, 0.f, 1.0f);
-    volume = QAudio::convertVolume(volume, QAudio::LogarithmicVolumeScale, QAudio::LinearVolumeScale);
-    volume = util::map_val(volume, 0.f, 1.f, Hardware::MIN_VOLUME, Hardware::MAX_VOLUME);
-    for (auto &[s, loops] : sounds) {
-      s->setVolume(std::round(100 * volume) / 100);
-    }
   }
 
   setAlert(Alert::get(sm, started_frame));

@@ -1,3 +1,4 @@
+#include <QAudioBuffer>
 #include <QMap>
 #include <QSoundEffect>
 #include <QString>
@@ -26,6 +27,7 @@ public:
 protected:
   void update();
   void setAlert(const Alert &alert);
+  void handleRecording(const QAudioBuffer buf);
 
   Alert current_alert = {};
   QMap<AudibleAlert, QPair<QSoundEffect *, int>> sounds;
