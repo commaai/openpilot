@@ -17,7 +17,7 @@ SOUNDS = {
   AudibleAlert.none: 0,
   AudibleAlert.engage: 197,
   AudibleAlert.disengage: 230,
-  AudibleAlert.refuse: 223,
+  AudibleAlert.refuse: 189,
   AudibleAlert.prompt: 217,
   AudibleAlert.promptRepeat: 475,
   AudibleAlert.promptDistracted: 187,
