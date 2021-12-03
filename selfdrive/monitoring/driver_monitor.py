@@ -186,7 +186,7 @@ class DriverStatus():
                                            [self.settings._BLINK_THRESHOLD_STRICT,
                                             self.settings._BLINK_THRESHOLD,
                                             self.settings._BLINK_THRESHOLD_SLACK]) / self.settings._BLINK_THRESHOLD
-    k1 = max(-0.0028*((car_speed-20)**2)+0.6, 0.2)
+    k1 = max(-0.00156*((car_speed-16)**2)+0.6, 0.2)
     new_pose_thresh = interp(bp, [0, k1], [self.settings._POSE_THRESHOLD_SLACK, self.settings._POSE_THRESHOLD_STRICT])
     self.pose.cfactor = new_pose_thresh / self.settings._POSE_THRESHOLD
 
