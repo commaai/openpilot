@@ -211,6 +211,16 @@ class CarStateBase:
     v_ego_x = self.v_ego_kf.update(v_ego_raw)
     return float(v_ego_x[0]), float(v_ego_x[1])
 
+  def get_wheel_speeds(self, fl, fr, rl, rr, unit=CV.KPH_TO_MS):
+    factor = unit * self.CP.wheelSpeedFactor
+
+    wheelSpeeds = car.CarState.WheelSpeeds.new_message()
+    wheelSpeeds.fl = fl * factor
+    wheelSpeeds.fr = fr * factor
+    wheelSpeeds.rl = rl * factor
+    wheelSpeeds.rr = rr * factor
+    return wheelSpeeds
+
   def update_blinker_from_lamp(self, blinker_time: int, left_blinker_lamp: bool, right_blinker_lamp: bool):
     """Update blinkers from lights. Enable output when light was seen within the last `blinker_time`
     iterations"""

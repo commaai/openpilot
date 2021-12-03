@@ -10,10 +10,14 @@ WHEEL_RADIUS = 0.33
 class CarState(CarStateBase):
   def update(self, cp):
     ret = car.CarState.new_message()
-    ret.wheelSpeeds.rr = cp.vl["WheelSpeed_CG1"]["WhlRr_W_Meas"] * WHEEL_RADIUS
-    ret.wheelSpeeds.rl = cp.vl["WheelSpeed_CG1"]["WhlRl_W_Meas"] * WHEEL_RADIUS
-    ret.wheelSpeeds.fr = cp.vl["WheelSpeed_CG1"]["WhlFr_W_Meas"] * WHEEL_RADIUS
-    ret.wheelSpeeds.fl = cp.vl["WheelSpeed_CG1"]["WhlFl_W_Meas"] * WHEEL_RADIUS
+
+    ret.wheelSpeeds = self.get_wheel_speeds(
+      cp.vl["WheelSpeed_CG1"]["WhlFl_W_Meas"],
+      cp.vl["WheelSpeed_CG1"]["WhlFr_W_Meas"],
+      cp.vl["WheelSpeed_CG1"]["WhlRl_W_Meas"],
+      cp.vl["WheelSpeed_CG1"]["WhlRr_W_Meas"],
+      unit=WHEEL_RADIUS,
+    )
     ret.vEgoRaw = mean([ret.wheelSpeeds.rr, ret.wheelSpeeds.rl, ret.wheelSpeeds.fr, ret.wheelSpeeds.fl])
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
     ret.standstill = not ret.vEgoRaw > 0.001

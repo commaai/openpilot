@@ -213,10 +213,12 @@ class CarState(CarStateBase):
       self.brake_error = cp.vl["STANDSTILL"]["BRAKE_ERROR_1"] or cp.vl["STANDSTILL"]["BRAKE_ERROR_2"]
     ret.espDisabled = cp.vl["VSA_STATUS"]["ESP_DISABLED"] != 0
 
-    ret.wheelSpeeds.fl = cp.vl["WHEEL_SPEEDS"]["WHEEL_SPEED_FL"] * CV.KPH_TO_MS * self.CP.wheelSpeedFactor
-    ret.wheelSpeeds.fr = cp.vl["WHEEL_SPEEDS"]["WHEEL_SPEED_FR"] * CV.KPH_TO_MS * self.CP.wheelSpeedFactor
-    ret.wheelSpeeds.rl = cp.vl["WHEEL_SPEEDS"]["WHEEL_SPEED_RL"] * CV.KPH_TO_MS * self.CP.wheelSpeedFactor
-    ret.wheelSpeeds.rr = cp.vl["WHEEL_SPEEDS"]["WHEEL_SPEED_RR"] * CV.KPH_TO_MS * self.CP.wheelSpeedFactor
+    ret.wheelSpeeds = self.get_wheel_speeds(
+      cp.vl["WHEEL_SPEEDS"]["WHEEL_SPEED_FL"],
+      cp.vl["WHEEL_SPEEDS"]["WHEEL_SPEED_FR"],
+      cp.vl["WHEEL_SPEEDS"]["WHEEL_SPEED_RL"],
+      cp.vl["WHEEL_SPEEDS"]["WHEEL_SPEED_RR"],
+    )
     v_wheel = (ret.wheelSpeeds.fl + ret.wheelSpeeds.fr + ret.wheelSpeeds.rl + ret.wheelSpeeds.rr) / 4.0
 
     # blend in transmission speed at low speed, since it has more low speed accuracy
