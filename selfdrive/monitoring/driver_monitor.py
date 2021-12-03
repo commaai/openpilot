@@ -32,13 +32,15 @@ class DRIVER_MONITOR_SETTINGS():
     self._BLINK_THRESHOLD = 0.82 if TICI else 0.588
     self._BLINK_THRESHOLD_SLACK = 0.9 if TICI else 0.77
     self._BLINK_THRESHOLD_STRICT = self._BLINK_THRESHOLD
-    self._PITCH_WEIGHT = 1.35  # pitch matters a lot more
-    self._POSESTD_THRESHOLD = 0.38 if TICI else 0.3
 
-    self._POSE_THRESHOLD = 0.48
+    self._POSE_THRESHOLD = 0.25
+    self._POSE_THRESHOLD_SLACK = 0.66
+    self._POSE_THRESHOLD_STRICT = self._POSE_THRESHOLD
     self._PITCH_NATURAL_OFFSET = 0.02  # people don't seem to look straight when they drive relaxed, rather a bit up
     self._YAW_NATURAL_OFFSET = 0.08  # people don't seem to look straight when they drive relaxed, rather a bit to the right (center of car)
+    self._PITCH_WEIGHT = 1.35  # pitch matters a lot more
 
+    self._POSESTD_THRESHOLD = 0.38 if TICI else 0.3
     self._HI_STD_FALLBACK_TIME = int(10  / self._DT_DMON)  # fall back to wheel touch if model is uncertain for 10s
     self._DISTRACTED_FILTER_TS = 0.25  # 0.6Hz
 
@@ -184,8 +186,8 @@ class DriverStatus():
                                            [self.settings._BLINK_THRESHOLD_STRICT,
                                             self.settings._BLINK_THRESHOLD,
                                             self.settings._BLINK_THRESHOLD_SLACK]) / self.settings._BLINK_THRESHOLD
-    bp = bp * 1.0
-    new_pose_thresh = 0.48
+    k1 = max(-0.0028*((car_speed-20)**2)+0.6, 0.2)
+    new_pose_thresh = interp(bp, [0, k1], [self.settings._POSE_THRESHOLD_SLACK, self.settings._POSE_THRESHOLD_STRICT])
     self.pose.cfactor = new_pose_thresh / self.settings._POSE_THRESHOLD
 
   def get_pose(self, driver_state, cal_rpy, car_speed, op_engaged):
