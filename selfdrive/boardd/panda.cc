@@ -363,9 +363,20 @@ uint8_t Panda::len_to_dlc(uint8_t len) {
   }
 }
 
+static void write_packet(uint8_t *dest, int *write_pos, const uint8_t *src, size_t size) {
+  for (int i = 0, &pos = *write_pos; i < size; ++i, ++pos) {
+    if (pos % USBPACKET_MAX_SIZE == 0) {
+      dest[pos++] = pos / USBPACKET_MAX_SIZE;
+    }
+    dest[pos] = src[i];
+  }
+}
+
 void Panda::pack_can_buffer(const capnp::List<cereal::CanData>::Reader &can_data_list,
-                         std::function<void(uint8_t *, size_t)> write_func) {
-  PacketWriter packet_writer(write_func);
+                            std::function<void(uint8_t *, size_t)> write_func) {
+  int32_t pos = 0;
+  uint8_t send_buf[2 * USB_TX_SOFT_LIMIT];
+
   for (auto cmsg : can_data_list) {
     // check if the message is intended for this panda
     uint8_t bus = cmsg.getSrc();
@@ -382,8 +393,17 @@ void Panda::pack_can_buffer(const capnp::List<cereal::CanData>::Reader &can_data
     header.extended = (cmsg.getAddress() >= 0x800) ? 1 : 0;
     header.data_len_code = data_len_code;
     header.bus = bus - bus_offset;
-    packet_writer.write(&header, (uint8_t *)can_data.begin(), can_data.size());
+
+    write_packet(send_buf, &pos, (uint8_t *)&header, sizeof(can_header));
+    write_packet(send_buf, &pos, (uint8_t *)can_data.begin(), can_data.size());
+    if (pos >= USB_TX_SOFT_LIMIT) {
+      write_func(send_buf, pos);
+      pos = 0;
+    }
   }
+
+  // flush the remain packets
+  if (pos > 0) write_func(send_buf, pos);
 }
 
 void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list) {

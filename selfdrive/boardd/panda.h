@@ -122,31 +122,3 @@ protected:
                          std::function<void(uint8_t *, size_t)> write_func);
   bool unpack_can_buffer(uint8_t *data, int size, std::vector<can_frame> &out_vec);
 };
-
-struct PacketWriter {
-  PacketWriter(std::function<void(uint8_t *, size_t)> write_func) : flush(write_func){};
-  void write(const can_header *header, uint8_t *data, size_t size) {
-    if (pos >= USB_TX_SOFT_LIMIT) {
-      flush(to_write, pos);
-      pos = 0;
-    }
-    write_bytes((uint8_t *)header, CANPACKET_HEAD_SIZE);
-    write_bytes(data, size);
-  }
-  void write_bytes(uint8_t *data, size_t size) {
-    for (int i = 0; i < size; ++i) {
-      if (pos % USBPACKET_MAX_SIZE == 0) {
-        to_write[pos] = pos / USBPACKET_MAX_SIZE;
-        pos++;
-      }
-      to_write[pos++] = data[i];
-    }
-  }
-  ~PacketWriter() {
-    if (pos > 0) flush(to_write, pos);
-  }
-
-  int pos = 0;
-  uint8_t to_write[USB_TX_SOFT_LIMIT + 128];
-  std::function<void(uint8_t *, size_t)> flush;
-};
