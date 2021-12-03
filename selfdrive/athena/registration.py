@@ -1,14 +1,13 @@
-#!/usr/bin/env python3
-import os
+#/!/usr/bin/env python3
 import time
 import json
 import jwt
+from pathlib import Path
 
 from datetime import datetime, timedelta
 from common.api import api_get
 from common.params import Params
 from common.spinner import Spinner
-from common.file_helpers import mkdirs_exists_ok
 from common.basedir import PERSIST
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
 from selfdrive.hardware import HARDWARE
@@ -27,17 +26,10 @@ def register(show_spinner=False) -> str:
   dongle_id = params.get("DongleId", encoding='utf8')
   needs_registration = None in (IMEI, HardwareSerial, dongle_id)
 
-  # create a key for auth
-  # your private key is kept on your device persist partition and never sent to our servers
-  # do not erase your persist partition
-  if not os.path.isfile(PERSIST+"/comma/id_rsa.pub"):
-    needs_registration = True
-    cloudlog.warning("generating your personal RSA key")
-    mkdirs_exists_ok(PERSIST+"/comma")
-    assert os.system("openssl genrsa -out "+PERSIST+"/comma/id_rsa.tmp 2048") == 0
-    assert os.system("openssl rsa -in "+PERSIST+"/comma/id_rsa.tmp -pubout -out "+PERSIST+"/comma/id_rsa.tmp.pub") == 0
-    os.rename(PERSIST+"/comma/id_rsa.tmp", PERSIST+"/comma/id_rsa")
-    os.rename(PERSIST+"/comma/id_rsa.tmp.pub", PERSIST+"/comma/id_rsa.pub")
+  pubkey = Path(PERSIST+"/comma/id_rsa.pub")
+  if not pubkey.is_file():
+    cloudlog.warning(f"missing public key: {pubkey}")
+    return UNREGISTERED_DONGLE_ID
 
   if needs_registration:
     if show_spinner:
