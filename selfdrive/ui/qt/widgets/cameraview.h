@@ -38,7 +38,7 @@ protected:
   VisionBuf *latest_frame = nullptr;
   GLuint frame_vao, frame_vbo, frame_ibo;
   mat4 frame_mat;
-  QOpenGLShaderProgram *program;
+  std::unique_ptr<QOpenGLShaderProgram> program;
   QColor bg = QColor("#000000");
 
   std::string stream_name;

@@ -64,7 +64,7 @@ void PandaTest::test_can_send() {
     for (int i = 0, counter = 0; i < size; i += USBPACKET_MAX_SIZE, counter++) {
       REQUIRE(chunk[i] == counter);
 
-      const int len = std::min(USBPACKET_MAX_SIZE, (uint32_t)size_left);
+      const int len = std::min(USBPACKET_MAX_SIZE, size_left);
       unpacked_data.insert(unpacked_data.end(), &chunk[i + 1], &chunk[i + len]);
       size_left -= len;
     }

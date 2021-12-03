@@ -13,7 +13,7 @@ from cereal import log as capnp_log
 
 # this is an iterator itself, and uses private variables from LogReader
 class MultiLogIterator(object):
-  def __init__(self, log_paths, wraparound=True):
+  def __init__(self, log_paths, wraparound=False):
     self._log_paths = log_paths
     self._wraparound = wraparound
 

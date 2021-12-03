@@ -118,7 +118,7 @@ CameraViewWidget::~CameraViewWidget() {
 void CameraViewWidget::initializeGL() {
   initializeOpenGLFunctions();
 
-  program = new QOpenGLShaderProgram(context());
+  program = std::make_unique<QOpenGLShaderProgram>(context());
   bool ret = program->addShaderFromSourceCode(QOpenGLShader::Vertex, frame_vertex_shader);
   assert(ret);
   ret = program->addShaderFromSourceCode(QOpenGLShader::Fragment, yuv_fragment_shader);
