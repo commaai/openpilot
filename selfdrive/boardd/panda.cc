@@ -447,7 +447,8 @@ bool Panda::unpack_can_buffer(uint8_t *data, int size, std::vector<can_frame> &o
     recv_buf.insert(recv_buf.end(), &data[i + 1], &data[i + chunk_len]);
   }
 
-  for (int pos = 0; pos < recv_buf.size(); /**/) {
+  int pos = 0;
+  while (pos < recv_buf.size()) {
     can_header header;
     memcpy(&header, &recv_buf[pos], CANPACKET_HEAD_SIZE);
 
