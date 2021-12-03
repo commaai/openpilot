@@ -131,7 +131,7 @@ class TestLoggerd(unittest.TestCase):
       route_path = str(self._get_latest_log_dir()).rsplit("--", 1)[0]
       for n in range(num_segs):
         p = Path(f"{route_path}--{n}")
-        logged = set(f.name for f in p.iterdir() if f.is_file())
+        logged = {f.name for f in p.iterdir() if f.is_file()}
         diff = logged ^ expected_files
         self.assertEqual(len(diff), 0, f"didn't get all expected files. run={_} seg={n} {route_path=}, {diff=}\n{logged=} {expected_files=}")
 

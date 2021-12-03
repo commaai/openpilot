@@ -35,7 +35,7 @@ class TestFwFingerprint(unittest.TestCase):
     passed = True
     for car_model, ecus in FW_VERSIONS.items():
       for ecu, ecu_fw in ecus.items():
-        duplicates = set(fw for fw in ecu_fw if ecu_fw.count(fw) > 1)
+        duplicates = {fw for fw in ecu_fw if ecu_fw.count(fw) > 1}
         if len(duplicates):
           print(car_model, ECU_NAME[ecu[0]], duplicates)
           passed = False
