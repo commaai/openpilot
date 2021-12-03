@@ -126,7 +126,7 @@ Keyboard::Keyboard(QWidget *parent) : QFrame(parent) {
   std::vector<QVector<QString>> specials = {
     {"[","]","{","}","#","%","^","*","+","="},
     {"_","\\","|","~","<",">","€","£","¥","•"},
-    {"123",".",",","?","!","`",BACKSPACE_KEY},
+    {"123",".",",","?","!","'",BACKSPACE_KEY},
     {"ABC","  ",".",ENTER_KEY},
   };
   main_layout->addWidget(new KeyboardLayout(this, specials));

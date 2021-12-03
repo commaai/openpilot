@@ -47,7 +47,7 @@ def phone_steps(String device_type, steps) {
 }
 
 pipeline {
-  agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
+  agent none
   environment {
     TEST_DIR = "/data/openpilot"
     SOURCE_DIR = "/data/openpilot_source/"
@@ -64,6 +64,7 @@ pipeline {
 
       parallel {
         stage('release2') {
+          agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
           steps {
             phone_steps("eon-build", [
               ["build release2-staging & dashcam-staging", "PUSH=1 $SOURCE_DIR/release/build_release.sh"],
@@ -72,6 +73,7 @@ pipeline {
         }
 
         stage('release3') {
+          agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
           steps {
             phone_steps("tici", [
               ["build release3-staging & dashcam3-staging", "PUSH=1 $SOURCE_DIR/release/build_release.sh"],
@@ -95,6 +97,7 @@ pipeline {
 
       stages {
         stage('On-device Tests') {
+          agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
           stages {
             stage('parallel tests') {
               parallel {
