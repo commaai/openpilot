@@ -190,7 +190,7 @@ class TestOnroad(unittest.TestCase):
     total_size = sum(len(m.as_builder().to_bytes()) for m in msgs)
     self.assertLess(total_size, 3.5e5)
 
-    cnt = Counter([json.loads(m.logMessage)['filename'] for m in msgs])
+    cnt = Counter(json.loads(m.logMessage)['filename'] for m in msgs)
     big_logs = [f for f, n in cnt.most_common(3) if n / sum(cnt.values()) > 30.]
     self.assertEqual(len(big_logs), 0, f"Log spam: {big_logs}")
 

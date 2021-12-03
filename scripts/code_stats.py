@@ -4,7 +4,7 @@ import ast
 import stat
 import subprocess
 
-fouts = set([x.decode('utf-8') for x in subprocess.check_output(['git', 'ls-files']).strip().split()])
+fouts = set(x.decode('utf-8') for x in subprocess.check_output(['git', 'ls-files']).strip().split())
 
 pyf = []
 for d in ["cereal", "common", "scripts", "selfdrive", "tools"]:
