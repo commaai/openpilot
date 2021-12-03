@@ -41,6 +41,7 @@ class AlertManager:
     self.activealerts: Dict[str, AlertEntry] = defaultdict(AlertEntry)
 
   def reset(self) -> None:
+    self.alert: Optional[Alert] = None
     self.alert_type: str = ""
     self.alert_text_1: str = ""
     self.alert_text_2: str = ""
@@ -74,13 +75,13 @@ class AlertManager:
     # clear current alert
     self.reset()
 
-    a = current_alert.alert
-    if a is not None:
-      self.alert_type = a.alert_type
-      self.audible_alert = a.audible_alert
-      self.visual_alert = a.visual_alert
-      self.alert_text_1 = a.alert_text_1
-      self.alert_text_2 = a.alert_text_2
-      self.alert_status = a.alert_status
-      self.alert_size = a.alert_size
-      self.alert_rate = a.alert_rate
+    self.alert = current_alert.alert
+    if self.alert is not None:
+      self.alert_type = self.alert.alert_type
+      self.audible_alert = self.alert.audible_alert
+      self.visual_alert = self.alert.visual_alert
+      self.alert_text_1 = self.alert.alert_text_1
+      self.alert_text_2 = self.alert.alert_text_2
+      self.alert_status = self.alert.alert_status
+      self.alert_size = self.alert.alert_size
+      self.alert_rate = self.alert.alert_rate
