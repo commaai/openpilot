@@ -138,20 +138,17 @@ class TestOnroad(unittest.TestCase):
       cls.lr = list(LogReader(os.path.join(segs[-1], "rlog.bz2")))
       return
 
+    # setup env
     os.environ['REPLAY'] = "1"
     os.environ['SKIP_FW_QUERY'] = "1"
     os.environ['FINGERPRINT'] = "TOYOTA COROLLA TSS2 2019"
+
+    params = Params()
+    params.clear_all()
     set_params_enabled()
 
     # Make sure athena isn't running
-    Params().delete("DongleId")
-    Params().delete("AthenadPid")
     os.system("pkill -9 -f athena")
-
-    logger_root = Path(ROOT)
-    initial_segments = set()
-    if logger_root.exists():
-      initial_segments = set(Path(ROOT).iterdir())
 
     # start manager and run openpilot for a minute
     try:
@@ -164,15 +161,20 @@ class TestOnroad(unittest.TestCase):
           sm.update(1000)
 
       # make sure we get at least two full segments
+      route = None
+      logger_root = Path(ROOT)
       cls.segments = []
       with Timeout(300, "timed out waiting for logs"):
+        while route is None:
+          route = params.get("CurrentRoute")
+          time.sleep(0.1)
+
         while len(cls.segments) < 3:
-          new_paths = set()
+          segs = set()
           if logger_root.exists():
-            new_paths = set(logger_root.iterdir()) - initial_segments
-          segs = [p for p in new_paths if "--" in str(p)]
+            segs = set(logger_root.glob(f"{route}--*"))
           cls.segments = sorted(segs, key=lambda s: int(str(s).rsplit('--')[-1]))
-          time.sleep(5)
+          time.sleep(2)
 
     finally:
       proc.terminate()
