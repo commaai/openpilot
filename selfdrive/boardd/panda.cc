@@ -363,7 +363,8 @@ uint8_t Panda::len_to_dlc(uint8_t len) {
   }
 }
 
-void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list) {
+void Panda::pack_can_buffer(const capnp::List<cereal::CanData>::Reader &can_data_list,
+                         std::function<void(uint8_t *, size_t)> write_func) {
   if (send.size() < (can_data_list.size() * CANPACKET_MAX_SIZE)) {
     send.resize(can_data_list.size() * CANPACKET_MAX_SIZE);
   }
@@ -383,7 +384,7 @@ void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list) {
       }
       auto can_data = cmsg.getDat();
       uint8_t data_len_code = len_to_dlc(can_data.size());
-      assert(can_data.size() <= (hw_type == cereal::PandaState::PandaType::RED_PANDA) ? 64 : 8);
+      assert(can_data.size() <= ((hw_type == cereal::PandaState::PandaType::RED_PANDA) ? 64 : 8));
       assert(can_data.size() == dlc_to_len[data_len_code]);
 
       can_header header;
@@ -410,67 +411,58 @@ void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list) {
         ptr += copy_size + 1;
         counter++;
       }
-      usb_bulk_write(3, to_write, ptr, 5);
+      write_func(to_write, ptr);
     }
   }
+}
+
+void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list) {
+  pack_can_buffer(can_data_list, [=](uint8_t* data, size_t size) {
+    usb_bulk_write(3, data, size, 5);
+  });
 }
 
 bool Panda::can_receive(std::vector<can_frame>& out_vec) {
   uint8_t data[RECV_SIZE];
   int recv = usb_bulk_read(0x81, (uint8_t*)data, RECV_SIZE);
-
-  // Not sure if this can happen
-  if (recv < 0) recv = 0;
-
-  if (recv == RECV_SIZE) {
-    LOGW("Receive buffer full");
-  }
-
   if (!comms_healthy) {
     return false;
   }
+  if (recv == RECV_SIZE) {
+    LOGW("Panda receive buffer full");
+  }
 
-  static uint8_t tail[CANPACKET_MAX_SIZE];
-  uint8_t tail_size = 0;
-  uint8_t counter = 0;
-  for (int i = 0; i < recv; i += USBPACKET_MAX_SIZE) {
-    // Check for counter every 64 bytes (length of USB packet)
-    if (counter != data[i]) {
+  return (recv <= 0) ? true : unpack_can_buffer(data, recv, out_vec);
+}
+
+bool Panda::unpack_can_buffer(uint8_t *data, int size, std::vector<can_frame> &out_vec) {
+  recv_buf.clear();
+  for (int i = 0; i < size; i += USBPACKET_MAX_SIZE) {
+    if (data[i] != i / USBPACKET_MAX_SIZE) {
       LOGE("CAN: MALFORMED USB RECV PACKET");
-      break;
+      comms_healthy = false;
+      return false;
     }
-    counter++;
-    uint8_t chunk_len = ((recv - i) > USBPACKET_MAX_SIZE) ? 63 : (recv - i - 1); // as 1 is always reserved for counter
-    uint8_t chunk[USBPACKET_MAX_SIZE + CANPACKET_MAX_SIZE];
-    memcpy(chunk, tail, tail_size);
-    memcpy(&chunk[tail_size], &data[i+1], chunk_len);
-    chunk_len += tail_size;
-    tail_size = 0;
-    uint8_t pos = 0;
-    while (pos < chunk_len) {
-      uint8_t data_len = dlc_to_len[(chunk[pos] >> 4)];
-      uint8_t pckt_len = CANPACKET_HEAD_SIZE + data_len;
-      if (pckt_len <= (chunk_len - pos)) {
-        can_header header;
-        memcpy(&header, &chunk[pos], CANPACKET_HEAD_SIZE);
+    int chunk_len = std::min(USBPACKET_MAX_SIZE, (size - i));
+    recv_buf.insert(recv_buf.end(), &data[i + 1], &data[i + chunk_len]);
+  }
 
-        can_frame &canData = out_vec.emplace_back();
-        canData.busTime = 0;
-        canData.address = header.addr;
-        canData.src = header.bus + bus_offset;
+  int pos = 0;
+  while (pos < recv_buf.size()) {
+    can_header header;
+    memcpy(&header, &recv_buf[pos], CANPACKET_HEAD_SIZE);
 
-        if (header.rejected) { canData.src += CANPACKET_REJECTED; }
-        if (header.returned) { canData.src += CANPACKET_RETURNED; }
-        canData.dat.assign((char*)&chunk[pos+CANPACKET_HEAD_SIZE], data_len);
+    can_frame &canData = out_vec.emplace_back();
+    canData.busTime = 0;
+    canData.address = header.addr;
+    canData.src = header.bus + bus_offset;
+    if (header.rejected) { canData.src += CANPACKET_REJECTED; }
+    if (header.returned) { canData.src += CANPACKET_RETURNED; }
 
-        pos += pckt_len;
-      } else {
-        // Keep partial CAN packet until next USB packet
-        tail_size = (chunk_len - pos);
-        memcpy(tail, &chunk[pos], tail_size);
-        break;
-      }
-    }
+    const uint8_t data_len = dlc_to_len[header.data_len_code];
+    canData.dat.assign((char *)&recv_buf[pos + CANPACKET_HEAD_SIZE], data_len);
+
+    pos += CANPACKET_HEAD_SIZE + data_len;
   }
   return true;
 }

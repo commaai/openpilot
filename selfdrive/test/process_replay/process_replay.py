@@ -341,6 +341,15 @@ def replay_process(cfg, lr, fingerprint=None):
   else:
     return cpp_replay_process(cfg, lr, fingerprint)
 
+def setup_env():
+  params = Params()
+  params.clear_all()
+  params.put_bool("OpenpilotEnabledToggle", True)
+  params.put_bool("Passive", False)
+  params.put_bool("CommunityFeaturesToggle", True)
+
+  os.environ['NO_RADAR_SLEEP'] = "1"
+  os.environ["SIMULATION"] = "1"
 
 def python_replay_process(cfg, lr, fingerprint=None):
   sub_sockets = [s for _, sub in cfg.pub_sub.items() for s in sub]
@@ -356,21 +365,14 @@ def python_replay_process(cfg, lr, fingerprint=None):
   all_msgs = sorted(lr, key=lambda msg: msg.logMonoTime)
   pub_msgs = [msg for msg in all_msgs if msg.which() in list(cfg.pub_sub.keys())]
 
-  params = Params()
-  params.clear_all()
-  params.put_bool("OpenpilotEnabledToggle", True)
-  params.put_bool("Passive", False)
-  params.put_bool("CommunityFeaturesToggle", True)
-
-  os.environ['NO_RADAR_SLEEP'] = "1"
-  os.environ["SIMULATION"] = "1"
-
+  setup_env()
 
   # TODO: remove after getting new route for civic & accord
   migration = {
     "HONDA CIVIC 2016 TOURING": "HONDA CIVIC 2016",
     "HONDA ACCORD 2018 SPORT 2T": "HONDA ACCORD 2018",
     "HONDA ACCORD 2T 2018": "HONDA ACCORD 2018",
+    "Mazda CX-9 2021": "MAZDA CX-9 2021",
   }
 
   if fingerprint is not None:
@@ -383,7 +385,7 @@ def python_replay_process(cfg, lr, fingerprint=None):
       if msg.which() == 'carParams':
         car_fingerprint = migration.get(msg.carParams.carFingerprint, msg.carParams.carFingerprint)
         if len(msg.carParams.carFw) and (car_fingerprint in FW_VERSIONS):
-          params.put("CarParamsCache", msg.carParams.as_builder().to_bytes())
+          Params().put("CarParamsCache", msg.carParams.as_builder().to_bytes())
         else:
           os.environ['SKIP_FW_QUERY'] = "1"
           os.environ['FINGERPRINT'] = car_fingerprint
@@ -401,7 +403,7 @@ def python_replay_process(cfg, lr, fingerprint=None):
       can_sock = None
     cfg.init_callback(all_msgs, fsm, can_sock, fingerprint)
 
-  CP = car.CarParams.from_bytes(params.get("CarParams", block=True))
+  CP = car.CarParams.from_bytes(Params().get("CarParams", block=True))
 
   # wait for started process to be ready
   if 'can' in list(cfg.pub_sub.keys()):
@@ -445,6 +447,8 @@ def cpp_replay_process(cfg, lr, fingerprint=None):
   all_msgs = sorted(lr, key=lambda msg: msg.logMonoTime)
   pub_msgs = [msg for msg in all_msgs if msg.which() in list(cfg.pub_sub.keys())]
   log_msgs = []
+
+  setup_env()
 
   managed_processes[cfg.proc_name].prepare()
   managed_processes[cfg.proc_name].start()

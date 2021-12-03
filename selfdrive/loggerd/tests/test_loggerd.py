@@ -18,7 +18,7 @@ from selfdrive.hardware import PC, TICI
 from selfdrive.loggerd.config import ROOT
 from selfdrive.manager.process_config import managed_processes
 from selfdrive.test.helpers import with_processes
-from selfdrive.version import version as VERSION
+from selfdrive.version import get_version
 from tools.lib.logreader import LogReader
 
 SentinelType = log.Sentinel.SentinelType
@@ -95,7 +95,7 @@ class TestLoggerd(unittest.TestCase):
     initData = lr[0].initData
 
     self.assertTrue(initData.dirty != bool(os.environ["CLEAN"]))
-    self.assertEqual(initData.version, VERSION)
+    self.assertEqual(initData.version, get_version())
 
     if os.path.isfile("/proc/cmdline"):
       with open("/proc/cmdline") as f:

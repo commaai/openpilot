@@ -709,13 +709,13 @@ static void camera_open(CameraState *s) {
 
 void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
   camera_init(s, v, &s->road_cam, CAMERA_ID_AR0231, 1, 20, device_id, ctx,
-              VISION_STREAM_RGB_BACK, VISION_STREAM_YUV_BACK); // swap left/right
+              VISION_STREAM_RGB_BACK, VISION_STREAM_ROAD); // swap left/right
   printf("road camera initted \n");
   camera_init(s, v, &s->wide_road_cam, CAMERA_ID_AR0231, 0, 20, device_id, ctx,
-              VISION_STREAM_RGB_WIDE, VISION_STREAM_YUV_WIDE);
+              VISION_STREAM_RGB_WIDE, VISION_STREAM_WIDE_ROAD);
   printf("wide road camera initted \n");
   camera_init(s, v, &s->driver_cam, CAMERA_ID_AR0231, 2, 20, device_id, ctx,
-              VISION_STREAM_RGB_FRONT, VISION_STREAM_YUV_FRONT);
+              VISION_STREAM_RGB_FRONT, VISION_STREAM_DRIVER);
   printf("driver camera initted \n");
 
   s->sm = new SubMaster({"driverState"});

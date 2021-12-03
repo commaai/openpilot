@@ -36,7 +36,6 @@ common/filter_simple.py
 common/stat_live.py
 common/spinner.py
 common/text_window.py
-common/cython_hacks.py
 common/SConscript
 
 common/kalman/.gitignore
@@ -306,6 +305,8 @@ selfdrive/loggerd/omx_encoder.h
 selfdrive/loggerd/logger.cc
 selfdrive/loggerd/logger.h
 selfdrive/loggerd/loggerd.cc
+selfdrive/loggerd/loggerd.h
+selfdrive/loggerd/main.cc
 selfdrive/loggerd/bootlog.cc
 selfdrive/loggerd/raw_logger.cc
 selfdrive/loggerd/raw_logger.h
@@ -366,8 +367,6 @@ selfdrive/camerad/snapshot/*
 selfdrive/camerad/include/*
 selfdrive/camerad/cameras/camera_common.h
 selfdrive/camerad/cameras/camera_common.cc
-selfdrive/camerad/cameras/camera_frame_stream.cc
-selfdrive/camerad/cameras/camera_frame_stream.h
 selfdrive/camerad/cameras/camera_qcom.cc
 selfdrive/camerad/cameras/camera_qcom.h
 selfdrive/camerad/cameras/camera_replay.cc

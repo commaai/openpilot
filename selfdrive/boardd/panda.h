@@ -3,6 +3,7 @@
 #include <atomic>
 #include <cstdint>
 #include <ctime>
+#include <functional>
 #include <list>
 #include <mutex>
 #include <optional>
@@ -17,7 +18,7 @@
 #define PANDA_BUS_CNT 4
 #define RECV_SIZE (0x4000U)
 #define USB_TX_SOFT_LIMIT   (0x100U)
-#define USBPACKET_MAX_SIZE  (0x40U)
+#define USBPACKET_MAX_SIZE  (0x40)
 #define CANPACKET_HEAD_SIZE 5U
 #define CANPACKET_MAX_SIZE  72U
 #define CANPACKET_REJECTED  (0xC0U)
@@ -69,6 +70,7 @@ class Panda {
   libusb_device_handle *dev_handle = NULL;
   std::mutex usb_lock;
   std::vector<uint8_t> send;
+  std::vector<uint8_t> recv_buf;
   void handle_usb_issue(int err, const char func[]);
   void cleanup();
 
@@ -113,4 +115,11 @@ class Panda {
   uint8_t len_to_dlc(uint8_t len);
   void can_send(capnp::List<cereal::CanData>::Reader can_data_list);
   bool can_receive(std::vector<can_frame>& out_vec);
+
+protected:
+  // for unit tests
+  Panda(uint32_t bus_offset) : bus_offset(bus_offset) {}
+  void pack_can_buffer(const capnp::List<cereal::CanData>::Reader &can_data_list,
+                         std::function<void(uint8_t *, size_t)> write_func);
+  bool unpack_can_buffer(uint8_t *data, int size, std::vector<can_frame> &out_vec);
 };

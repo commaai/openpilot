@@ -24,4 +24,4 @@ docker run \
   -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
   -it \
   carlasim/carla:0.9.12 \
-  /bin/bash ./CarlaUE4.sh -opengl -nosound -RenderOffScreen -quality-level=Epic
+  /bin/bash ./CarlaUE4.sh -opengl -nosound -RenderOffScreen -benchmark -fps=20 -quality-level=High

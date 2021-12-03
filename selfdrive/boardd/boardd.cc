@@ -62,7 +62,7 @@ std::atomic<bool> pigeon_active(false);
 
 ExitHandler do_exit;
 
-std::string get_time_str(const struct tm &time) {
+static std::string get_time_str(const struct tm &time) {
   char s[30] = {'\0'};
   std::strftime(s, std::size(s), "%Y-%m-%d %H:%M:%S", &time);
   return s;
@@ -70,9 +70,41 @@ std::string get_time_str(const struct tm &time) {
 
 bool check_all_connected(const std::vector<Panda *> &pandas) {
   for (const auto& panda : pandas) {
-    if (!panda->connected) return false;
+    if (!panda->connected) {
+      do_exit = true;
+      return false;
+    }
   }
   return true;
+}
+
+enum class SyncTimeDir { TO_PANDA, FROM_PANDA };
+
+void sync_time(Panda *panda, SyncTimeDir dir) {
+  if (!panda->has_rtc) return;
+
+  setenv("TZ", "UTC", 1);
+  struct tm sys_time = util::get_time();
+  struct tm rtc_time = panda->get_rtc();
+
+  if (dir == SyncTimeDir::TO_PANDA) {
+    if (util::time_valid(sys_time)) {
+      // Write time to RTC if it looks reasonable
+      double seconds = difftime(mktime(&rtc_time), mktime(&sys_time));
+      if (std::abs(seconds) > 1.1) {
+        panda->set_rtc(sys_time);
+        LOGW("Updating panda RTC. dt = %.2f System: %s RTC: %s",
+              seconds, get_time_str(sys_time).c_str(), get_time_str(rtc_time).c_str());
+      }
+    }
+  } else if (dir == SyncTimeDir::FROM_PANDA) {
+    if (!util::time_valid(sys_time) && util::time_valid(rtc_time)) {
+      const struct timeval tv = {mktime(&rtc_time), 0};
+      settimeofday(&tv, 0);
+      LOGE("System time wrong, setting from RTC. System: %s RTC: %s",
+           get_time_str(sys_time).c_str(), get_time_str(rtc_time).c_str());
+    }
+  }
 }
 
 bool safety_setter_thread(std::vector<Panda *> pandas) {
@@ -168,19 +200,7 @@ Panda *usb_connect(std::string serial="", uint32_t index=0) {
   std::call_once(connected_once, &Panda::set_usb_power_mode, panda, cereal::PeripheralState::UsbPowerMode::CDP);
 #endif
 
-  if (panda->has_rtc) {
-    setenv("TZ","UTC",1);
-    struct tm sys_time = util::get_time();
-    struct tm rtc_time = panda->get_rtc();
-
-    if (!util::time_valid(sys_time) && util::time_valid(rtc_time)) {
-      LOGE("System time wrong, setting from RTC. System: %s RTC: %s",
-           get_time_str(sys_time).c_str(), get_time_str(rtc_time).c_str());
-      const struct timeval tv = {mktime(&rtc_time), 0};
-      settimeofday(&tv, 0);
-    }
-  }
-
+  sync_time(panda.get(), SyncTimeDir::FROM_PANDA);
   return panda.release();
 }
 
@@ -194,14 +214,8 @@ void can_send_thread(std::vector<Panda *> pandas, bool fake_send) {
   subscriber->setTimeout(100);
 
   // run as fast as messages come in
-  while (!do_exit) {
-    if (!check_all_connected(pandas)) {
-      do_exit = true;
-      break;
-    }
-
+  while (!do_exit && check_all_connected(pandas)) {
     Message * msg = subscriber->receive();
-
     if (!msg) {
       if (errno == EINTR) {
         do_exit = true;
@@ -239,12 +253,7 @@ void can_recv_thread(std::vector<Panda *> pandas) {
   uint64_t next_frame_time = nanos_since_boot() + dt;
   std::vector<can_frame> raw_can_data;
 
-  while (!do_exit) {
-    if (!check_all_connected(pandas)){
-      do_exit = true;
-      break;
-    }
-
+  while (!do_exit && check_all_connected(pandas)) {
     bool comms_healthy = true;
     raw_can_data.clear();
     for (const auto& panda : pandas) {
@@ -315,7 +324,7 @@ bool send_panda_states(PubMaster *pm, const std::vector<Panda *> &pandas, bool s
 
   for (uint32_t i=0; i<pandas.size(); i++) {
     auto panda = pandas[i];
-    auto pandaState = pandaStates[i];
+    const auto &pandaState = pandaStates[i];
 
     // Make sure CAN buses are live: safety_setter_thread does not work if Panda CAN are silent and there is only one other CAN node
     if (pandaState.safety_model == (uint8_t)(cereal::CarParams::SafetyModel::SILENT)) {
@@ -416,12 +425,8 @@ void panda_state_thread(PubMaster *pm, std::vector<Panda *> pandas, bool spoofin
   LOGD("start panda state thread");
 
   // run at 2hz
-  while (!do_exit) {
-    if(!check_all_connected(pandas)) {
-      do_exit = true;
-      break;
-    }
-
+  while (!do_exit && check_all_connected(pandas)) {
+    // send out peripheralState
     send_peripheral_state(pm, peripheral_panda);
     ignition = send_panda_states(pm, pandas, spoofing_started);
 
@@ -433,7 +438,7 @@ void panda_state_thread(PubMaster *pm, std::vector<Panda *> pandas, bool spoofin
       break;
     }
 
-    // clear VIN, CarParams, and set new safety on car start
+    // clear ignition-based params and set new safety on car start
     if (ignition && !ignition_last) {
       params.clearAll(CLEAR_ON_IGNITION_ON);
       if (!safety_future.valid() || safety_future.wait_for(0ms) == std::future_status::ready) {
@@ -528,21 +533,8 @@ void peripheral_control_thread(Panda *panda) {
     }
 
     // Write to rtc once per minute when no ignition present
-    if ((panda->has_rtc) && !ignition && (cnt % 120 == 1)) {
-      // Write time to RTC if it looks reasonable
-      setenv("TZ","UTC",1);
-      struct tm sys_time = util::get_time();
-
-      if (util::time_valid(sys_time)) {
-        struct tm rtc_time = panda->get_rtc();
-        double seconds = difftime(mktime(&rtc_time), mktime(&sys_time));
-
-        if (std::abs(seconds) > 1.1) {
-          panda->set_rtc(sys_time);
-          LOGW("Updating panda RTC. dt = %.2f System: %s RTC: %s",
-                seconds, get_time_str(sys_time).c_str(), get_time_str(rtc_time).c_str());
-        }
-      }
+    if (!ignition && (cnt % 120 == 1)) {
+      sync_time(panda, SyncTimeDir::TO_PANDA);
     }
   }
 }
