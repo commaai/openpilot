@@ -1,5 +1,6 @@
 #include "selfdrive/loggerd/logger.h"
 
+#include <ftw.h>
 #include <fstream>
 #ifdef QCOM
 #include <cutils/properties.h>
