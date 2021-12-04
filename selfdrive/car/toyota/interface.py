@@ -268,7 +268,12 @@ class CarInterface(CarInterfaceBase):
     ret.communityFeature = ret.enableGasInterceptor or ret.enableDsu or smartDsu
 
     if ret.enableGasInterceptor:
-      set_long_tune(ret.longitudinalTuning, LongTunes.PEDAL)
+      # these cars have full speed DRCC, use stock tune
+      if candidate in [CAR.PRIUS, CAR.HIGHLANDER, CAR.HIGHLANDERH, CAR.LEXUS_CTH, CAR.LEXUS_ESH,
+                       CAR.LEXUS_NX, CAR.LEXUS_NXH, CAR.LEXUS_RX, CAR.LEXUS_RXH]:
+        set_long_tune(ret.longitudinalTuning, LongTunes.TSS)
+      else:
+        set_long_tune(ret.longitudinalTuning, LongTunes.PEDAL)
     elif candidate in [CAR.COROLLA_TSS2, CAR.COROLLAH_TSS2, CAR.RAV4_TSS2, CAR.RAV4H_TSS2, CAR.LEXUS_NX_TSS2,
                        CAR.HIGHLANDER_TSS2, CAR.HIGHLANDERH_TSS2]:
       set_long_tune(ret.longitudinalTuning, LongTunes.TSS2)
