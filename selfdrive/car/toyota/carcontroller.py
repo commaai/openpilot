@@ -29,7 +29,7 @@ class CarController():
     if CS.CP.enableGasInterceptor and enabled:
       MAX_INTERCEPTOR_GAS = 0.5
       # RAV4 has very sensitive has pedal
-      if CS.CP.carFingerprint in [CAR.RAV4, CAR.RAV4H]:
+      if CS.CP.carFingerprint in [CAR.RAV4]:
         PEDAL_SCALE = interp(CS.out.vEgo, [0.0, MIN_ACC_SPEED, MIN_ACC_SPEED + PEDAL_TRANSITION], [0.15, 0.3, 0.0])
       elif CS.CP.carFingerprint in [CAR.COROLLA]:
         PEDAL_SCALE = interp(CS.out.vEgo, [0.0, MIN_ACC_SPEED, MIN_ACC_SPEED + PEDAL_TRANSITION], [0.3, 0.4, 0.0])
@@ -41,7 +41,7 @@ class CarController():
       # Prius, Kluger and most LSS Lexus have full speed ACC, but do not automatically resume
       # Send pedal briefly if car is in standstill and openpilot wants to accelerate to resume ACC
       # Pedal command is only sent very briefly, so no need to differentiate between Kluger and other cars
-      if CS.CP.carFingerprint in [CAR.PRIUS, CAR.HIGHLANDER, CAR.HIGHLANDERH, CAR.LEXUS_CTH, CAR.LEXUS_ESH, CAR.LEXUS_NX, CAR.LEXUS_NXH, CAR.LEXUS_RX, CAR.LEXUS_RXH]:
+      if CS.CP.carFingerprint in [CAR.PRIUS, CAR.RAV4H, CAR.HIGHLANDER, CAR.HIGHLANDERH, CAR.LEXUS_CTH, CAR.LEXUS_ESH, CAR.LEXUS_NX, CAR.LEXUS_NXH, CAR.LEXUS_RX, CAR.LEXUS_RXH]:
         if (actuators.accel > 0.1) and CS.pcm_acc_status == 7:
           interceptor_gas_cmd = 0.15
         else:

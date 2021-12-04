@@ -269,7 +269,7 @@ class CarInterface(CarInterfaceBase):
 
     if ret.enableGasInterceptor:
       # these cars have full speed DRCC, use stock tune
-      if candidate in [CAR.PRIUS, CAR.HIGHLANDER, CAR.HIGHLANDERH, CAR.LEXUS_CTH, CAR.LEXUS_ESH,
+      if candidate in [CAR.PRIUS, CAR.RAV4H, CAR.HIGHLANDER, CAR.HIGHLANDERH, CAR.LEXUS_CTH, CAR.LEXUS_ESH,
                        CAR.LEXUS_NX, CAR.LEXUS_NXH, CAR.LEXUS_RX, CAR.LEXUS_RXH]:
         set_long_tune(ret.longitudinalTuning, LongTunes.TSS)
       else:
