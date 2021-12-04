@@ -105,6 +105,18 @@ static void log_sentinel(Logger *h, SentinelType type, int signal = 0) {
   h->write(msg.toBytes(), true);
 }
 
+int clear_locks_fn(const char* fpath, const struct stat *sb, int tyupeflag) {
+  const char* dot = strrchr(fpath, '.');
+  if (dot && strcmp(dot, ".lock") == 0) {
+    unlink(fpath);
+  }
+  return 0;
+}
+
+void clear_locks(const std::string log_root) {
+  ftw(log_root.c_str(), clear_locks_fn, 16);
+}
+
 Logger::Logger(const std::string& route_path, int part, kj::ArrayPtr<kj::byte> init_data) : part_(part) {
   segment_path_ = route_path + "--" + std::to_string(part);
   bool ret = util::create_directories(segment_path_, 0775);
@@ -143,16 +155,4 @@ LoggerManager::LoggerManager(const std::string& log_root) {
 
 std::shared_ptr<Logger> LoggerManager::next() {
   return std::make_shared<Logger>(route_path_, ++part_, init_data_.asBytes());
-}
-
-int clear_locks_fn(const char* fpath, const struct stat *sb, int tyupeflag) {
-  const char* dot = strrchr(fpath, '.');
-  if (dot && strcmp(dot, ".lock") == 0) {
-    unlink(fpath);
-  }
-  return 0;
-}
-
-void clear_locks(const std::string log_root) {
-  ftw(log_root.c_str(), clear_locks_fn, 16);
 }
