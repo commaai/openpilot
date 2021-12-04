@@ -352,7 +352,7 @@ void Panda::set_data_speed_kbps(uint16_t bus, uint16_t speed) {
   usb_write(0xf9, bus, (speed * 10));
 }
 
-uint8_t Panda::len_to_dlc(uint8_t len) {
+static uint8_t len_to_dlc(uint8_t len) {
   if (len <= 8) {
     return len;
   }
