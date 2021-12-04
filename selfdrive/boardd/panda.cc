@@ -366,7 +366,8 @@ uint8_t Panda::len_to_dlc(uint8_t len) {
 static void write_packet(uint8_t *dest, int *write_pos, const uint8_t *src, size_t size) {
   for (int i = 0, &pos = *write_pos; i < size; ++i, ++pos) {
     if (pos % USBPACKET_MAX_SIZE == 0) {
-      dest[pos++] = pos / USBPACKET_MAX_SIZE;
+      dest[pos] = pos / USBPACKET_MAX_SIZE;
+      pos++;
     }
     dest[pos] = src[i];
   }
