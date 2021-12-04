@@ -403,7 +403,7 @@ void Panda::pack_can_buffer(const capnp::List<cereal::CanData>::Reader &can_data
     }
   }
 
-  // flush the remain packets
+  // send remaining packets
   if (pos > 0) write_func(send_buf, pos);
 }
 
