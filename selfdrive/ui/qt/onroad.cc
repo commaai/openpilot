@@ -17,18 +17,18 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   stacked_layout->setStackingMode(QStackedLayout::StackAll);
   main_layout->addLayout(stacked_layout);
 
-  QStackedLayout *hud_stacked_layout = new QStackedLayout;
-  hud_stacked_layout->setStackingMode(QStackedLayout::StackAll);
+  QStackedLayout *road_view_layout = new QStackedLayout;
+  road_view_layout->setStackingMode(QStackedLayout::StackAll);
   nvg = new NvgWindow(VISION_STREAM_RGB_BACK, this);
-  hud_stacked_layout->addWidget(nvg);
+  road_view_layout->addWidget(nvg);
   hud = new OnroadHud(this);
-  hud_stacked_layout->addWidget(hud);
+  road_view_layout->addWidget(hud);
 
   QWidget * split_wrapper = new QWidget;
   split = new QHBoxLayout(split_wrapper);
   split->setContentsMargins(0, 0, 0, 0);
   split->setSpacing(0);
-  split->addLayout(hud_stacked_layout);
+  split->addLayout(road_view_layout);
 
   stacked_layout->addWidget(split_wrapper);
 
