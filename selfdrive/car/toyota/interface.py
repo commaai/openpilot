@@ -2,7 +2,7 @@
 from cereal import car
 from selfdrive.config import Conversions as CV
 from selfdrive.car.toyota.tunes import LatTunes, LongTunes, set_long_tune, set_lat_tune
-from selfdrive.car.toyota.values import Ecu, CAR, TSS2_CAR, FULL_SPEED_DRCC_CAR, NO_DSU_CAR, MIN_ACC_SPEED, CarControllerParams
+from selfdrive.car.toyota.values import Ecu, CAR, TSS2_CAR, NO_AUTO_RESUME_CAR, NO_DSU_CAR, MIN_ACC_SPEED, CarControllerParams
 from selfdrive.car import STD_CARGO_KG, scale_rot_inertia, scale_tire_stiffness, gen_empty_fingerprint, get_safety_config
 from selfdrive.car.interfaces import CarInterfaceBase
 
@@ -269,7 +269,7 @@ class CarInterface(CarInterfaceBase):
 
     if ret.enableGasInterceptor:
       # these cars have full speed DRCC, use stock tune
-      if candidate in FULL_SPEED_DRCC_CAR:
+      if candidate in NO_AUTO_RESUME_CAR:
         set_long_tune(ret.longitudinalTuning, LongTunes.TSS)
       else:
         set_long_tune(ret.longitudinalTuning, LongTunes.PEDAL)
