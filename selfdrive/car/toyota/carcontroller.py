@@ -38,7 +38,7 @@ class CarController():
       # offset for creep and windbrake
       pedal_offset = interp(CS.out.vEgo, [0.0, 2.3, MIN_ACC_SPEED + PEDAL_TRANSITION], [-.4, 0.0, 0.2])
       pedal_command = PEDAL_SCALE * (actuators.accel + pedal_offset)
-      # Prius, Kluger and most LSS Lexus have full speed ACC, but do not automatically resume
+      # Prius, and most LSS Lexus have full speed DRCC, but do not automatically resume
       # Send pedal briefly if car is in standstill and openpilot wants to accelerate to resume ACC
       # Pedal command is only sent very briefly, so no need to differentiate between Kluger and other cars
       if CS.CP.carFingerprint in [CAR.PRIUS, CAR.RAV4H, CAR.HIGHLANDER, CAR.HIGHLANDERH, CAR.LEXUS_CTH, CAR.LEXUS_ESH, CAR.LEXUS_NX, CAR.LEXUS_NXH, CAR.LEXUS_RX, CAR.LEXUS_RXH]:
