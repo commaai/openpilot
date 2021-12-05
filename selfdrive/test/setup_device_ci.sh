@@ -24,6 +24,25 @@ if [ -f "/EON" ]; then
   rm -rf /data/safe_staging
 fi
 
+CONTINUE_PATH="/data/continue.sh"
+if [ -f "/EON" ]; then
+  CONTINUE_PATH="/data/data/com.termux/files/continue.sh"
+fi
+tee -a $CONTINUE_PATH << EOF
+#!/usr/bin/bash
+
+PARAMS_ROOT="/data/params/d"
+
+while true; do
+  mkdir -p $PARAMS_ROOT
+  cp /data/data/com.termux/files/home/setup_keys $PARAMS_ROOT/GithubSshKeys
+  echo -n 1 > $PARAMS_ROOT/SshEnabled
+  sleep 1m
+done
+
+sleep infinity
+EOF
+
 # set up environment
 cd $SOURCE_DIR
 git reset --hard

@@ -162,7 +162,6 @@ class TestOnroad(unittest.TestCase):
 
       # make sure we get at least two full segments
       route = None
-      logger_root = Path(ROOT)
       cls.segments = []
       with Timeout(300, "timed out waiting for logs"):
         while route is None:
@@ -171,8 +170,8 @@ class TestOnroad(unittest.TestCase):
 
         while len(cls.segments) < 3:
           segs = set()
-          if logger_root.exists():
-            segs = set(logger_root.glob(f"{route}--*"))
+          if Path(ROOT).exists():
+            segs = set(Path(ROOT).glob(f"{route}--*"))
           cls.segments = sorted(segs, key=lambda s: int(str(s).rsplit('--')[-1]))
           time.sleep(2)
 
