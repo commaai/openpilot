@@ -41,6 +41,23 @@ const int DCAM_BITRATE = Hardware::TICI() ? MAIN_BITRATE : 2500000;
 const bool LOGGERD_TEST = getenv("LOGGERD_TEST");
 const int SEGMENT_LENGTH = LOGGERD_TEST ? atoi(getenv("LOGGERD_SEGMENT_LENGTH")) : 60;
 
+struct LogCameraInfo {
+  CameraType type;
+  const char *filename;
+  const char *frame_packet_name;
+  const char *encode_idx_name;
+  VisionStreamType stream_type;
+  int frame_width, frame_height;
+  int fps;
+  int bitrate;
+  bool is_h265;
+  bool downscale;
+  bool has_qcamera;
+  bool trigger_rotate;
+  bool enable;
+  bool record;
+};
+
 const LogCameraInfo cameras_logged[] = {
   {
     .type = RoadCam,
