@@ -1,9 +1,7 @@
 #pragma once
 
-#include <map>
 #include <memory>
 #include <string>
-#include <optional>
 
 #include <QObject>
 #include <QTimer>
@@ -11,12 +9,9 @@
 #include <QTransform>
 
 #include "cereal/messaging/messaging.h"
-#include "common/transformations/orientation.hpp"
-#include "selfdrive/camerad/cameras/camera_common.h"
-#include "selfdrive/common/mat.h"
 #include "selfdrive/common/modeldata.h"
 #include "selfdrive/common/params.h"
-#include "selfdrive/common/util.h"
+#include "selfdrive/common/timing.h"
 
 const int bdr_s = 30;
 const int header_h = 420;

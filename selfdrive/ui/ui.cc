@@ -1,11 +1,11 @@
 #include "selfdrive/ui/ui.h"
 
-#include <unistd.h>
-
 #include <cassert>
 #include <cmath>
-#include <cstdio>
 
+#include "common/transformations/orientation.hpp"
+#include "selfdrive/common/params.h"
+#include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
 #include "selfdrive/common/watchdog.h"
 #include "selfdrive/hardware/hw.h"
@@ -13,7 +13,6 @@
 #define BACKLIGHT_DT 0.05
 #define BACKLIGHT_TS 10.00
 #define BACKLIGHT_OFFROAD 50
-
 
 // Projects a point in car to space to the corresponding point in full frame
 // image space.
