@@ -1,6 +1,5 @@
 #pragma once
 
-#include <ftw.h>
 #include <unistd.h>
 
 #include <atomic>
@@ -42,10 +41,27 @@ const int DCAM_BITRATE = Hardware::TICI() ? MAIN_BITRATE : 2500000;
 const bool LOGGERD_TEST = getenv("LOGGERD_TEST");
 const int SEGMENT_LENGTH = LOGGERD_TEST ? atoi(getenv("LOGGERD_SEGMENT_LENGTH")) : 60;
 
+struct LogCameraInfo {
+  CameraType type;
+  const char *filename;
+  const char *frame_packet_name;
+  const char *encode_idx_name;
+  VisionStreamType stream_type;
+  int frame_width, frame_height;
+  int fps;
+  int bitrate;
+  bool is_h265;
+  bool downscale;
+  bool has_qcamera;
+  bool trigger_rotate;
+  bool enable;
+  bool record;
+};
+
 const LogCameraInfo cameras_logged[] = {
   {
     .type = RoadCam,
-    .stream_type = VISION_STREAM_YUV_BACK,
+    .stream_type = VISION_STREAM_ROAD,
     .filename = "fcamera.hevc",
     .frame_packet_name = "roadCameraState",
     .fps = MAIN_FPS,
@@ -59,7 +75,7 @@ const LogCameraInfo cameras_logged[] = {
   },
   {
     .type = DriverCam,
-    .stream_type = VISION_STREAM_YUV_FRONT,
+    .stream_type = VISION_STREAM_DRIVER,
     .filename = "dcamera.hevc",
     .frame_packet_name = "driverCameraState",
     .fps = MAIN_FPS, // on EONs, more compressed this way
@@ -73,7 +89,7 @@ const LogCameraInfo cameras_logged[] = {
   },
   {
     .type = WideRoadCam,
-    .stream_type = VISION_STREAM_YUV_WIDE,
+    .stream_type = VISION_STREAM_WIDE_ROAD,
     .filename = "ecamera.hevc",
     .frame_packet_name = "wideRoadCameraState",
     .fps = MAIN_FPS,
@@ -115,5 +131,7 @@ struct LoggerdState {
   bool camera_synced[WideRoadCam + 1] = {};
 };
 
-bool sync_encoders(LoggerdState *state, CameraType cam_type, uint32_t frame_id);
+bool sync_encoders(LoggerdState *s, CameraType cam_type, uint32_t frame_id);
+bool trigger_rotate_if_needed(LoggerdState *s, int cur_seg, uint32_t frame_id);
+void rotate_if_needed(LoggerdState *s);
 void loggerd_thread();

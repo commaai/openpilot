@@ -171,7 +171,7 @@ class TestMonitoring(unittest.TestCase):
   #  - dm should stay quiet when not engaged
   def test_pure_dashcam_user(self):
     events, _ = self._run_seq(always_distracted, always_false, always_false, always_false)
-    self.assertTrue(np.sum([len(event) for event in events]) == 0)
+    self.assertTrue(sum(len(event) for event in events) == 0)
 
   # engaged, car stops at traffic light, down to orange, no action, then car starts moving
   #  - should only reach green when stopped, but continues counting down on launch

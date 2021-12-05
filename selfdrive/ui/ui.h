@@ -19,8 +19,6 @@
 #include "selfdrive/common/params.h"
 #include "selfdrive/common/util.h"
 
-#define COLOR_BLACK nvgRGBA(0, 0, 0, 255)
-#define COLOR_BLACK_ALPHA(x) nvgRGBA(0, 0, 0, x)
 #define COLOR_WHITE nvgRGBA(255, 255, 255, 255)
 #define COLOR_WHITE_ALPHA(x) nvgRGBA(255, 255, 255, x)
 #define COLOR_RED_ALPHA(x) nvgRGBA(201, 34, 49, x)
@@ -38,17 +36,6 @@ typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
 // TODO: choose based on frame input size
 const float y_offset = Hardware::EON() ? 0.0 : 150.0;
 const float ZOOM = Hardware::EON() ? 2138.5 : 2912.8;
-
-typedef struct Rect {
-  int x, y, w, h;
-  int centerX() const { return x + w / 2; }
-  int centerY() const { return y + h / 2; }
-  int right() const { return x + w; }
-  int bottom() const { return y + h; }
-  bool ptInRect(int px, int py) const {
-    return px >= x && px < (x + w) && py >= y && py < (y + h);
-  }
-} Rect;
 
 struct Alert {
   QString text1;
@@ -78,7 +65,7 @@ struct Alert {
         // car is started, but controls is lagging or died
         return {"TAKE CONTROL IMMEDIATELY", "Controls Unresponsive",
                 "controlsUnresponsive", cereal::ControlsState::AlertSize::FULL,
-                AudibleAlert::CHIME_WARNING_REPEAT};
+                AudibleAlert::WARNING_IMMEDIATE};
       }
     }
     return {};
@@ -122,8 +109,6 @@ typedef struct UIScene {
   line_vertices_data lane_line_vertices[4];
   line_vertices_data road_edge_vertices[2];
 
-  bool dm_active, engageable;
-
   // lead
   vertex_data lead_vertices[2];
 
@@ -135,9 +120,6 @@ typedef struct UIScene {
 typedef struct UIState {
   int fb_w = 0, fb_h = 0;
   NVGcontext *vg;
-
-  // images
-  std::map<std::string, int> images;
 
   std::unique_ptr<SubMaster> sm;
 
@@ -192,7 +174,7 @@ private:
   int awake_timeout = 0;
   float accel_prev = 0;
   float gyro_prev = 0;
-  float last_brightness = 0;
+  int last_brightness = 0;
   FirstOrderFilter brightness_filter;
 
   QTimer *timer;

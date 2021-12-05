@@ -15,7 +15,7 @@ class CameraViewWidget : public QOpenGLWidget, protected QOpenGLFunctions {
 
 public:
   using QOpenGLWidget::QOpenGLWidget;
-  explicit CameraViewWidget(VisionStreamType stream_type, bool zoom, QWidget* parent = nullptr);
+  explicit CameraViewWidget(std::string stream_name, VisionStreamType stream_type, bool zoom, QWidget* parent = nullptr);
   ~CameraViewWidget();
   void setStreamType(VisionStreamType type) { stream_type = type; }
   void setBackgroundColor(const QColor &color) { bg = color; }
@@ -36,21 +36,20 @@ protected:
   void vipcThread();
 
   bool zoomed_view;
-  VisionBuf *latest_frame = nullptr;
+  std::atomic<int> latest_texture_id = -1;
   GLuint frame_vao, frame_vbo, frame_ibo;
   mat4 frame_mat;
   std::unique_ptr<EGLImageTexture> texture[UI_BUF_COUNT];
-  QOpenGLShaderProgram *program;
+  std::unique_ptr<QOpenGLShaderProgram> program;
   QColor bg = QColor("#000000");
 
+  std::string stream_name;
   int stream_width = 0;
   int stream_height = 0;
   std::atomic<VisionStreamType> stream_type;
   QThread *vipc_thread = nullptr;
 
-  std::mutex texture_lock;
 
 protected slots:
   void vipcConnected(VisionIpcClient *vipc_client);
-  void vipcFrameReceived(VisionBuf *buf);
 };

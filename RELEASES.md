@@ -1,5 +1,7 @@
 Version 0.8.12 (2021-12-XX)
 ========================
+ * New alert sounds
+ * Audi Q3 2020-21 support thanks to jyoung8607!
  * Honda Accord 2021 support thanks to csouers!
  * Honda Accord Hybrid 2021 support thanks to csouers!
  * Lexus RC 2020 support thanks to ErichMoraga!

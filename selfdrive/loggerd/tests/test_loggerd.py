@@ -18,7 +18,7 @@ from selfdrive.hardware import PC, TICI
 from selfdrive.loggerd.config import ROOT
 from selfdrive.manager.process_config import managed_processes
 from selfdrive.test.helpers import with_processes
-from selfdrive.version import version as VERSION
+from selfdrive.version import get_version
 from tools.lib.logreader import LogReader
 
 SentinelType = log.Sentinel.SentinelType
@@ -95,7 +95,7 @@ class TestLoggerd(unittest.TestCase):
     initData = lr[0].initData
 
     self.assertTrue(initData.dirty != bool(os.environ["CLEAN"]))
-    self.assertEqual(initData.version, VERSION)
+    self.assertEqual(initData.version, get_version())
 
     if os.path.isfile("/proc/cmdline"):
       with open("/proc/cmdline") as f:
@@ -131,13 +131,13 @@ class TestLoggerd(unittest.TestCase):
       route_path = str(self._get_latest_log_dir()).rsplit("--", 1)[0]
       for n in range(num_segs):
         p = Path(f"{route_path}--{n}")
-        logged = set([f.name for f in p.iterdir() if f.is_file()])
+        logged = {f.name for f in p.iterdir() if f.is_file()}
         diff = logged ^ expected_files
         self.assertEqual(len(diff), 0, f"didn't get all expected files. run={_} seg={n} {route_path=}, {diff=}\n{logged=} {expected_files=}")
 
   def test_bootlog(self):
     # generate bootlog with fake launch log
-    launch_log = ''.join([str(random.choice(string.printable)) for _ in range(100)])
+    launch_log = ''.join(str(random.choice(string.printable)) for _ in range(100))
     with open("/tmp/launch_log", "w") as f:
       f.write(launch_log)
 

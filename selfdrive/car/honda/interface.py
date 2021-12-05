@@ -147,6 +147,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 1000], [0, 1000]]  # TODO: determine if there is a dead zone at the top end
       tire_stiffness_factor = 0.444
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.8], [0.24]]
+      ret.wheelSpeedFactor = 1.025
 
     elif candidate == CAR.CRV_5G:
       stop_and_go = True
@@ -164,6 +165,7 @@ class CarInterface(CarInterfaceBase):
         ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 3840], [0, 3840]]
         ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.64], [0.192]]
       tire_stiffness_factor = 0.677
+      ret.wheelSpeedFactor = 1.025
 
     elif candidate == CAR.CRV_HYBRID:
       stop_and_go = True
@@ -174,6 +176,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]  # TODO: determine if there is a dead zone at the top end
       tire_stiffness_factor = 0.677
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.6], [0.18]]
+      ret.wheelSpeedFactor = 1.025
 
     elif candidate == CAR.FIT:
       stop_and_go = False
@@ -205,6 +208,7 @@ class CarInterface(CarInterfaceBase):
       ret.lateralParams.torqueBP, ret.lateralParams.torqueV = [[0, 4096], [0, 4096]]
       tire_stiffness_factor = 0.5
       ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.16], [0.025]]
+      ret.wheelSpeedFactor = 1.025
 
     elif candidate == CAR.ACURA_RDX:
       stop_and_go = False

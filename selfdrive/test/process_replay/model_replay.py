@@ -17,7 +17,7 @@ from selfdrive.manager.process_config import managed_processes
 from selfdrive.test.openpilotci import BASE_URL, get_url
 from selfdrive.test.process_replay.compare_logs import compare_logs, save_log
 from selfdrive.test.process_replay.test_processes import format_diff
-from selfdrive.version import get_git_commit
+from selfdrive.version import get_commit
 from tools.lib.framereader import FrameReader
 from tools.lib.logreader import LogReader
 
@@ -50,10 +50,10 @@ def process_frame(msg, pm, sm, log_msgs, vipc_server, spinner, frs, frame_idxs, 
 
   img = frs[msg.which()].get(frame_idxs[msg.which()], pix_fmt="yuv420p")[0]
   if msg.which == "roadCameraState":
-    vipc_server.send(VisionStreamType.VISION_STREAM_YUV_BACK, img.flatten().tobytes(), f.roadCameraState.frameId,
+    vipc_server.send(VisionStreamType.VISION_STREAM_ROAD, img.flatten().tobytes(), f.roadCameraState.frameId,
                       f.roadCameraState.timestampSof, f.roadCameraState.timestampEof)
   else:
-    vipc_server.send(VisionStreamType.VISION_STREAM_YUV_FRONT, img.flatten().tobytes(), f.driverCameraState.frameId,
+    vipc_server.send(VisionStreamType.VISION_STREAM_DRIVER, img.flatten().tobytes(), f.driverCameraState.frameId,
                       f.driverCameraState.timestampSof, f.driverCameraState.timestampEof)
   with Timeout(seconds=15):
     log_msgs.append(messaging.recv_one(sm.sock[packet_from_camera[msg.which()]]))
@@ -73,8 +73,8 @@ def model_replay(lr_list, frs):
   spinner.update("starting model replay")
 
   vipc_server = VisionIpcServer("camerad")
-  vipc_server.create_buffers(VisionStreamType.VISION_STREAM_YUV_BACK, 40, False, *(tici_f_frame_size if TICI else eon_f_frame_size))
-  vipc_server.create_buffers(VisionStreamType.VISION_STREAM_YUV_FRONT, 40, False, *(tici_d_frame_size if TICI else eon_d_frame_size))
+  vipc_server.create_buffers(VisionStreamType.VISION_STREAM_ROAD, 40, False, *(tici_f_frame_size if TICI else eon_f_frame_size))
+  vipc_server.create_buffers(VisionStreamType.VISION_STREAM_DRIVER, 40, False, *(tici_d_frame_size if TICI else eon_d_frame_size))
   vipc_server.start_listener()
 
   pm = messaging.PubMaster(['roadCameraState', 'driverCameraState', 'liveCalibration', 'lateralPlan'])
@@ -169,7 +169,7 @@ if __name__ == "__main__":
 
     print("Uploading new refs")
 
-    new_commit = get_git_commit()
+    new_commit = get_commit()
     log_fn = get_log_fn(new_commit)
     save_log(log_fn, log_msgs)
     try:
