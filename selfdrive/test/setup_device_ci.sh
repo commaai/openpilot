@@ -53,6 +53,8 @@ if [ ! -d "$SOURCE_DIR" ]; then
   git clone https://github.com/commaai/openpilot.git $SOURCE_DIR
 fi
 cd $SOURCE_DIR
+
+rm -f .git/index.lock
 git reset --hard
 git fetch
 find . -maxdepth 1 -not -path './.git' -not -name '.' -not -name '..' -exec rm -rf '{}' \;
