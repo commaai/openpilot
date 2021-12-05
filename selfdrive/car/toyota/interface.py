@@ -269,7 +269,7 @@ class CarInterface(CarInterfaceBase):
 
     if ret.enableGasInterceptor and candidate in NO_AUTO_RESUME_CAR:
       set_long_tune(ret.longitudinalTuning, LongTunes.TSS)
-    elif ret.enableGasInterceptor and not candidate in NO_AUTO_RESUME_CAR:
+    elif ret.enableGasInterceptor and candidate not in NO_AUTO_RESUME_CAR:
       set_long_tune(ret.longitudinalTuning, LongTunes.PEDAL)
     elif candidate in [CAR.COROLLA_TSS2, CAR.COROLLAH_TSS2, CAR.RAV4_TSS2, CAR.RAV4H_TSS2, CAR.LEXUS_NX_TSS2,
                        CAR.HIGHLANDER_TSS2, CAR.HIGHLANDERH_TSS2]:
