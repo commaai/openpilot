@@ -44,6 +44,9 @@ sleep infinity
 EOF
 
 # set up environment
+if [ ! -d "$SOURCE_DIR" ]; then
+  git clone https://github.com/commaai/openpilot.git $SOURCE_DIR
+fi
 cd $SOURCE_DIR
 git reset --hard
 git fetch
