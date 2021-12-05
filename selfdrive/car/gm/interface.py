@@ -185,11 +185,13 @@ class CarInterface(CarInterfaceBase):
       ret.safetyConfigs[0].safetyParam = 1 # set appropriate safety param for increased torque limits to match values.py
 
     elif candidate == CAR.SILVERADO_NR:
-      ret.minEnableSpeed = -1.  # engage speed is decided by pcm
+      ret.minEnableSpeed = -1. # engage speed is decided by pcm
+      ret.minSteerSpeed = 0.
       ret.mass = 2241. + STD_CARGO_KG
       ret.wheelbase = 3.745
       ret.steerRatio = 16.3 # From a 2019 SILVERADO
       ret.centerToFront = ret.wheelbase * 0.49
+      ret.steerActuatorDelay = 0.075
       ret.safetyConfigs[0].safetyParam = 1 # set appropriate safety param for increased torque limits to match values.py
           
     # TODO: get actual value, for now starting with reasonable value for
@@ -283,8 +285,10 @@ class CarInterface(CarInterfaceBase):
     # For Openpilot, "enabled" includes pre-enable.
     # In GM, PCM faults out if ACC command overlaps user gas.
     # Does not apply when no built-in ACC
+    # TODO: This isn't working right... should maybe use unsafe blah blah
+    # pedal was disengaging
     if not self.CP.enableGasInterceptor or self.CP.carFingerprint in NO_ASCM:
-      enabled = c.enabled and not self.CS.out.gasPressed
+      enabled = c.enabled # and not self.CS.out.gasPressed
     else:
       enabled = c.enabled
 
