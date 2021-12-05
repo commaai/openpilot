@@ -374,17 +374,14 @@ def main():
   params = Params()
 
   if params.get_bool("DisableUpdates"):
-    print("updates are disabled by the DisableUpdates param")
+    cloudlog.warning("updates are disabled by the DisableUpdates param")
     exit(0)
-
-  if EON and os.geteuid() != 0:
-    raise RuntimeError("updated must be launched as root!")
 
   ov_lock_fd = open(LOCK_FILE, 'w')
   try:
     fcntl.flock(ov_lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
   except IOError as e:
-    raise RuntimeError("couldn't get overlay lock; is another updated running?") from e
+    raise RuntimeError("couldn't get overlay lock; is another instance running?") from e
 
   # Set low io priority
   proc = psutil.Process()
@@ -399,16 +396,19 @@ def main():
     t = datetime.datetime.utcnow().isoformat()
     params.put("InstallDate", t.encode('utf8'))
 
-  # Wait for IsOffroad to be set before our first update attempt
-  wait_helper = WaitTimeHelper(proc)
-  wait_helper.sleep(30)
-
   overlay_init = Path(os.path.join(BASEDIR, ".overlay_init"))
   overlay_init.unlink(missing_ok=True)
 
   first_run = True
   last_fetch_time = 0
   update_failed_count = 0
+
+  # Set initial params for offroad alerts
+  set_params(False, 0, None)
+
+  # Wait for IsOffroad to be set before our first update attempt
+  wait_helper = WaitTimeHelper(proc)
+  wait_helper.sleep(30)
 
   # Run the update loop
   #  * every 1m, do a lightweight internet/update check
