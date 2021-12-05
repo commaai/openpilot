@@ -142,7 +142,7 @@ static void ui_draw_vision(UIState *s) {
   if (scene->world_objects_visible) {
     ui_draw_world(s);
   }
-  // TODO: do we need this?
+  // TODO: move this to Qt
   ui_draw_vision_header(s);
 }
 
