@@ -400,7 +400,7 @@ def thermald_thread():
         started_ts = sec_since_boot()
         started_seen = True
     else:
-      if startup_conditions["ignition"] and (startup_conditions != startup_conditions_prev):
+      if onroad_conditions["ignition"] and (startup_conditions != startup_conditions_prev):
         cloudlog.event("Startup blocked", startup_conditions=startup_conditions, onroad_conditions=onroad_conditions)
 
       started_ts = None
