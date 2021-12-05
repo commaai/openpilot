@@ -40,7 +40,7 @@ from common.params import Params
 from selfdrive.hardware import EON, TICI, HARDWARE
 from selfdrive.swaglog import cloudlog
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
-from selfdrive.version import tested_branch
+from selfdrive.version import get_tested_branch
 
 LOCK_FILE = os.getenv("UPDATER_LOCK_FILE", "/tmp/safe_staging_overlay.lock")
 STAGING_ROOT = os.getenv("UPDATER_STAGING_ROOT", "/data/safe_staging")
@@ -105,9 +105,17 @@ def set_params(new_version: bool, failed_count: int, exception: Optional[str]) -
   params = Params()
 
   params.put("UpdateFailedCount", str(failed_count))
+
+  last_update = datetime.datetime.utcnow()
   if failed_count == 0:
-    t = datetime.datetime.utcnow().isoformat()
+    t = last_update.isoformat()
     params.put("LastUpdateTime", t.encode('utf8'))
+  else:
+    try:
+      t = params.get("LastUpdateTime", encoding='utf8')
+      last_update = datetime.datetime.fromisoformat(t)
+    except (TypeError, ValueError):
+      pass
 
   if exception is None:
     params.delete("LastUpdateException")
@@ -128,18 +136,13 @@ def set_params(new_version: bool, failed_count: int, exception: Optional[str]) -
     params.put_bool("UpdateAvailable", True)
 
   # Handle user prompt
-  now = datetime.datetime.utcnow()
-  try:
-    last_update = datetime.datetime.fromisoformat(params.get("LastUpdateTime", encoding='utf8'))
-  except (TypeError, ValueError):
-    last_update = now
-  dt = now - last_update
+  for alert in ("Offroad_UpdateFailed", "Offroad_ConnectivityNeeded", "Offroad_ConnectivityNeededPrompt"):
+    set_offroad_alert(alert, False)
 
-  set_offroad_alert("Offroad_UpdateFailed", False)
-  set_offroad_alert("Offroad_ConnectivityNeeded", False)
-  set_offroad_alert("Offroad_ConnectivityNeededPrompt", False)
+  now = datetime.datetime.utcnow()
+  dt = now - last_update
   if failed_count > 15 and exception is not None:
-    if tested_branch:
+    if get_tested_branch():
       extra_text = "Ensure the software is correctly installed"
     else:
       extra_text = exception
