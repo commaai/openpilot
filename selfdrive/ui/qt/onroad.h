@@ -23,7 +23,6 @@ class OnroadHud : public QWidget {
 public:
   explicit OnroadHud(QWidget *parent);
   void updateState(const UIState &s);
-  void setMapWidth(int width);
 
 private:
   void drawIcon(QPainter &p, int x, int y, QPixmap &img, QBrush bg, float opacity);
@@ -42,7 +41,6 @@ private:
   bool dmActive = false;
   bool hideDM = false;
   int status = STATUS_DISENGAGED;
-  int map_width = 0;
 
 signals:
   void valueChanged();

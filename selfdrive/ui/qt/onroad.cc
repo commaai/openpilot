@@ -17,26 +17,26 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   stacked_layout->setStackingMode(QStackedLayout::StackAll);
   main_layout->addLayout(stacked_layout);
 
+  QStackedLayout *hud_stacked_layout = new QStackedLayout;
+  hud_stacked_layout->setStackingMode(QStackedLayout::StackAll);
   nvg = new NvgWindow(VISION_STREAM_RGB_BACK, this);
+  hud_stacked_layout->addWidget(nvg);
+  hud = new OnroadHud(this);
+  hud_stacked_layout->addWidget(hud);
 
   QWidget * split_wrapper = new QWidget;
   split = new QHBoxLayout(split_wrapper);
   split->setContentsMargins(0, 0, 0, 0);
   split->setSpacing(0);
-  split->addWidget(nvg);
+  split->addLayout(hud_stacked_layout);
 
   stacked_layout->addWidget(split_wrapper);
-
-  hud = new OnroadHud(this);
-  hud->setAttribute(Qt::WA_TransparentForMouseEvents, true);
-  stacked_layout->addWidget(hud);
 
   alerts = new OnroadAlerts(this);
   alerts->setAttribute(Qt::WA_TransparentForMouseEvents, true);
   stacked_layout->addWidget(alerts);
 
   // setup stacking order
-  hud->raise();
   alerts->raise();
 
   setAttribute(Qt::WA_OpaquePaintEvent);
@@ -67,7 +67,6 @@ void OnroadWindow::mousePressEvent(QMouseEvent* e) {
   if (map != nullptr) {
     bool sidebarVisible = geometry().x() > 0;
     map->setVisible(!sidebarVisible && !map->isVisible());
-    hud->setMapWidth(map->isVisible() ? map->width() : 0);
   }
   // propagation event to parent(HomeWindow)
   QWidget::mousePressEvent(e);
@@ -168,11 +167,6 @@ OnroadHud::OnroadHud(QWidget *parent) : QWidget(parent) {
   connect(this, &OnroadHud::valueChanged, [=] { update(); });
 }
 
-void OnroadHud::setMapWidth(int width) {
-  map_width = width;
-  update();
-}
-
 void OnroadHud::updateState(const UIState &s) {
   auto getMaxSpeed = [&s](float maxspeed) {
     const int SET_SPEED_NA = 255;
@@ -202,8 +196,6 @@ void OnroadHud::updateState(const UIState &s) {
 void OnroadHud::paintEvent(QPaintEvent *event) {
   QPainter p(this);
   p.setRenderHint(QPainter::Antialiasing);
-  QRect hud_rect = rect();
-  hud_rect.setRight(hud_rect.right() - map_width);
 
   // max speed
   QRect rc(bdr_s * 2, bdr_s * 1.5, 184, 202);
@@ -224,19 +216,19 @@ void OnroadHud::paintEvent(QPaintEvent *event) {
 
   // current speed
   configFont(p, "Open Sans", 176, "Bold");
-  drawText(p, hud_rect.center().x(), 210, speed);
+  drawText(p, rect().center().x(), 210, speed);
   configFont(p, "Open Sans", 66, "Regular");
-  drawText(p, hud_rect.center().x(), 290, speedUnit, 200);
+  drawText(p, rect().center().x(), 290, speedUnit, 200);
 
   // engage-ability icon
   if (engageable) {
-    drawIcon(p, hud_rect.right() - radius / 2 - bdr_s * 2, radius / 2 + int(bdr_s * 1.5),
+    drawIcon(p, rect().right() - radius / 2 - bdr_s * 2, radius / 2 + int(bdr_s * 1.5),
              engage_img, bg_colors[status], 1.0);
   }
 
   // dm icon
   if (!hideDM) {
-    drawIcon(p, radius / 2 + (bdr_s * 2), hud_rect.bottom() - footer_h / 2,
+    drawIcon(p, radius / 2 + (bdr_s * 2), rect().bottom() - footer_h / 2,
              dm_img, QColor(0, 0, 0, 70), dmActive ? 1.0 : 0.2);
   }
 }
