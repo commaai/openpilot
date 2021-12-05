@@ -1,4 +1,4 @@
-from selfdrive.car.honda.values import Flag, HONDA_BOSCH, CAR, CarControllerParams
+from selfdrive.car.honda.values import HondaFlags, HONDA_BOSCH, CAR, CarControllerParams
 from selfdrive.config import Conversions as CV
 
 # CAN bus layout with relay
@@ -143,10 +143,10 @@ def create_ui_commands(packer, CP, pcm_speed, hud, is_metric, idx, stock_hud):
     'BEEP': 0,
   }
 
-  if CP.flags & Flag.BOSCH_EXT_HUD:
+  if CP.flags & HondaFlags.BOSCH_EXT_HUD:
     lkas_hud_values['SET_ME_X48'] = 0x48
 
-  if CP.flags & Flag.BOSCH_EXT_HUD and not CP.openpilotLongitudinalControl:
+  if CP.flags & HondaFlags.BOSCH_EXT_HUD and not CP.openpilotLongitudinalControl:
     commands.append(packer.make_can_msg('LKAS_HUD_A', bus_lkas, lkas_hud_values, idx))
     commands.append(packer.make_can_msg('LKAS_HUD_B', bus_lkas, lkas_hud_values, idx))
   else:
