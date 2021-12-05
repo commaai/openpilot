@@ -30,7 +30,7 @@ export CONTINUE_PATH="/data/continue.sh"
 if [ -f "/EON" ]; then
   export CONTINUE_PATH="/data/data/com.termux/files/continue.sh"
 fi
-tee $CONTINUE_PATH << ABC
+tee $CONTINUE_PATH << EOF
 #!/usr/bin/bash
 
 PARAMS_ROOT="/data/params/d"
@@ -43,7 +43,7 @@ while true; do
 done
 
 sleep infinity
-ABC
+EOF
 
 # set up environment
 if [ ! -d "$SOURCE_DIR" ]; then
