@@ -85,7 +85,6 @@ typedef struct {
 } line_vertices_data;
 
 typedef struct UIScene {
-
   mat3 view_from_calib;
   bool world_objects_visible;
 

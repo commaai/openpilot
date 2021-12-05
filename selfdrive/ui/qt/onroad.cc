@@ -358,19 +358,21 @@ void NvgWindow::paintGL() {
   CameraViewWidget::paintGL();
 
   UIState *s = &QUIState::ui_state;
-  QPainter painter(this);
-  painter.setRenderHint(QPainter::Antialiasing);
+  if (s->scene.world_objects_visible) {
+    QPainter painter(this);
+    painter.setRenderHint(QPainter::Antialiasing);
 
-  drawLaneLines(painter, s);
+    drawLaneLines(painter, s);
 
-  if (s->scene.longitudinal_control) {
-    auto lead_one = (*s->sm)["modelV2"].getModelV2().getLeadsV3()[0];
-    auto lead_two = (*s->sm)["modelV2"].getModelV2().getLeadsV3()[1];
-    if (lead_one.getProb() > .5) {
-      drawLead(painter, s, lead_one, s->scene.lead_vertices[0]);
-    }
-    if (lead_two.getProb() > .5 && (std::abs(lead_one.getX()[0] - lead_two.getX()[0]) > 3.0)) {
-      drawLead(painter, s, lead_two, s->scene.lead_vertices[1]);
+    if (s->scene.longitudinal_control) {
+      auto lead_one = (*s->sm)["modelV2"].getModelV2().getLeadsV3()[0];
+      auto lead_two = (*s->sm)["modelV2"].getModelV2().getLeadsV3()[1];
+      if (lead_one.getProb() > .5) {
+        drawLead(painter, s, lead_one, s->scene.lead_vertices[0]);
+      }
+      if (lead_two.getProb() > .5 && (std::abs(lead_one.getX()[0] - lead_two.getX()[0]) > 3.0)) {
+        drawLead(painter, s, lead_two, s->scene.lead_vertices[1]);
+      }
     }
   }
 
