@@ -168,20 +168,17 @@ OnroadHud::OnroadHud(QWidget *parent) : QWidget(parent) {
 }
 
 void OnroadHud::updateState(const UIState &s) {
-  auto getMaxSpeed = [&s](float maxspeed) {
-    const int SET_SPEED_NA = 255;
-    bool cruise_set = maxspeed > 0 && (int)maxspeed != SET_SPEED_NA;
-    if (cruise_set && !s.scene.is_metric) {
-      maxspeed *= KM_TO_MILE;
-    }
-    QString speed_str = cruise_set ? QString::number(std::nearbyint(maxspeed)) : "N/A";
-    return std::pair{cruise_set, speed_str};
-  };
-
+  const int SET_SPEED_NA = 255;
   const SubMaster &sm = *(s.sm);
-  float cur_speed = std::max(0.0, sm["carState"].getCarState().getVEgo() * (s.scene.is_metric ? MS_TO_KPH : MS_TO_MPH));
   const auto cs = sm["controlsState"].getControlsState();
-  auto [cruise_set, maxspeed_str] = getMaxSpeed(cs.getVCruise());
+
+  float maxspeed = cs.getVCruise();
+  bool cruise_set = maxspeed > 0 && (int)maxspeed != SET_SPEED_NA;
+  if (cruise_set && !s.scene.is_metric) {
+    maxspeed *= KM_TO_MILE;
+  }
+  QString maxspeed_str = cruise_set ? QString::number(std::nearbyint(maxspeed)) : "N/A";
+  float cur_speed = std::max(0.0, sm["carState"].getCarState().getVEgo() * (s.scene.is_metric ? MS_TO_KPH : MS_TO_MPH));
 
   setProperty("is_cruise_set", cruise_set);
   setProperty("speed", QString::number(std::nearbyint(cur_speed)));
