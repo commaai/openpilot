@@ -42,7 +42,7 @@ class CarController():
       # Send pedal briefly if car is in standstill and openpilot wants to accelerate to resume ACC
       # Pedal command is only sent very briefly, so no need to differentiate between Kluger and other cars
       if CS.CP.carFingerprint in NO_AUTO_RESUME_CAR:
-        if (actuators.accel > 0.1) and CS.pcm_acc_status == 7:
+        if (actuators.accel > 0.1) and CS.cruiseState.standstill:
           interceptor_gas_cmd = 0.15
         else:
           interceptor_gas_cmd = 0
