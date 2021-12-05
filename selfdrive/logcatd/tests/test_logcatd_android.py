@@ -22,10 +22,10 @@ class TestLogcatdAndroid(unittest.TestCase):
       # write some log messages
       sent_msgs = {}
       for __ in range(random.randint(5, 50)):
-        msg = ''.join([random.choice(string.ascii_letters) for _ in range(random.randrange(2, 50))])
+        msg = ''.join(random.choice(string.ascii_letters) for _ in range(random.randrange(2, 50)))
         if msg in sent_msgs:
           continue
-        sent_msgs[msg] = ''.join([random.choice(string.ascii_letters) for _ in range(random.randrange(2, 20))])
+        sent_msgs[msg] = ''.join(random.choice(string.ascii_letters) for _ in range(random.randrange(2, 20)))
         os.system(f"log -t '{sent_msgs[msg]}' '{msg}'")
 
       time.sleep(1)

@@ -65,7 +65,6 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 4387. * CV.LB_TO_KG + STD_CARGO_KG
       set_lat_tune(ret.lateralTuning, LatTunes.PID_B)
 
-
     elif candidate == CAR.LEXUS_RXH:
       stop_and_go = True
       ret.wheelbase = 2.79
@@ -81,6 +80,7 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.5533  # not optimized yet
       ret.mass = 4387. * CV.LB_TO_KG + STD_CARGO_KG
       set_lat_tune(ret.lateralTuning, LatTunes.PID_D)
+      ret.wheelSpeedFactor = 1.035
 
     elif candidate == CAR.LEXUS_RXH_TSS2:
       stop_and_go = True
@@ -89,6 +89,7 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.444  # not optimized yet
       ret.mass = 4481.0 * CV.LB_TO_KG + STD_CARGO_KG  # mean between min and max
       set_lat_tune(ret.lateralTuning, LatTunes.PID_E)
+      ret.wheelSpeedFactor = 1.035
 
     elif candidate in [CAR.CHR, CAR.CHRH]:
       stop_and_go = True
