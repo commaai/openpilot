@@ -1,4 +1,6 @@
-#!/usr/bin/bash -e
+#!/usr/bin/bash
+
+set -e
 
 if [ -z "$SOURCE_DIR" ]; then
   echo "SOURCE_DIR must be set"
@@ -24,11 +26,11 @@ if [ -f "/EON" ]; then
   rm -rf /data/safe_staging
 fi
 
-CONTINUE_PATH="/data/continue.sh"
+export CONTINUE_PATH="/data/continue.sh"
 if [ -f "/EON" ]; then
-  CONTINUE_PATH="/data/data/com.termux/files/continue.sh"
+  export CONTINUE_PATH="/data/data/com.termux/files/continue.sh"
 fi
-tee -a $CONTINUE_PATH << EOF
+tee $CONTINUE_PATH << ABC
 #!/usr/bin/bash
 
 PARAMS_ROOT="/data/params/d"
@@ -41,7 +43,7 @@ while true; do
 done
 
 sleep infinity
-EOF
+ABC
 
 # set up environment
 if [ ! -d "$SOURCE_DIR" ]; then
