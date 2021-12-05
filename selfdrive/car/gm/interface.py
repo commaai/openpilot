@@ -173,6 +173,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerRatio = 17.3 # guess for tourx
       ret.steerRatioRear = 0. # unknown online
       ret.centerToFront = 2.59  # ret.wheelbase * 0.4 # wild guess
+      ret.safetyConfigs[0].safetyParam = 1 # set appropriate safety param for increased torque limits to match values.py
 
     elif candidate == CAR.SILVERADO_NR:
       ret.minEnableSpeed = -1.  # engage speed is decided by pcm
