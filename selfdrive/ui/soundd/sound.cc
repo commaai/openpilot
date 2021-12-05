@@ -47,7 +47,7 @@ void Sound::update() {
 
   // scale volume with speed
   if (sm.updated("carState")) {
-    float volume = std::clamp(sm["carState"].getCarState().getVEgo() / 29.f, 0.1f, 1.0f);
+    float volume = util::map_val(sm["carState"].getCarState().getVEgo(), 11.f, 20.f, 0.f, 1.0f);
     volume = QAudio::convertVolume(volume, QAudio::LogarithmicVolumeScale, QAudio::LinearVolumeScale);
     volume = util::map_val(volume, 0.f, 1.f, Hardware::MIN_VOLUME, Hardware::MAX_VOLUME);
     for (auto &[s, loops] : sounds) {
@@ -65,7 +65,7 @@ void Sound::setAlert(const Alert &alert) {
     for (auto &[s, loops] : sounds) {
       // Only stop repeating sounds
       if (s->loopsRemaining() > 1 || s->loopsRemaining() == QSoundEffect::Infinite) {
-        s->stop();
+        s->setLoopCount(0);
       }
     }
 

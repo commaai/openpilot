@@ -67,10 +67,13 @@ class Planner:
     long_control_state = sm['controlsState'].longControlState
     force_slow_decel = sm['controlsState'].forceDecel
 
+    prev_accel_constraint = True
     enabled = (long_control_state == LongCtrlState.pid) or (long_control_state == LongCtrlState.stopping)
     if not enabled or sm['carState'].gasPressed:
       self.v_desired = v_ego
       self.a_desired = a_ego
+      # Smoothly changing between accel trajectory is only relevant when OP is driving
+      prev_accel_constraint = False
 
     # Prevent divergence, smooth in current v_ego
     self.v_desired = self.alpha * self.v_desired + (1 - self.alpha) * v_ego
@@ -87,7 +90,7 @@ class Planner:
     accel_limits_turns[1] = max(accel_limits_turns[1], self.a_desired - 0.05)
     self.mpc.set_accel_limits(accel_limits_turns[0], accel_limits_turns[1])
     self.mpc.set_cur_state(self.v_desired, self.a_desired)
-    self.mpc.update(sm['carState'], sm['radarState'], v_cruise)
+    self.mpc.update(sm['carState'], sm['radarState'], v_cruise, prev_accel_constraint=prev_accel_constraint)
     self.v_desired_trajectory = np.interp(T_IDXS[:CONTROL_N], T_IDXS_MPC, self.mpc.v_solution)
     self.a_desired_trajectory = np.interp(T_IDXS[:CONTROL_N], T_IDXS_MPC, self.mpc.a_solution)
     self.j_desired_trajectory = np.interp(T_IDXS[:CONTROL_N], T_IDXS_MPC[:-1], self.mpc.j_solution)

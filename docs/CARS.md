@@ -34,7 +34,7 @@
 | Lexus     | ES Hybrid 2017-18             | LSS               | Stock<sup>3</sup>| 0mph               | 0mph              |
 | Lexus     | ES Hybrid 2019-21             | All               | openpilot        | 0mph               | 0mph              |
 | Lexus     | IS 2017-2019                  | All               | Stock            | 22mph              | 0mph              |
-| Lexus     | NX 2018                       | All               | Stock<sup>3</sup>| 0mph               | 0mph              |
+| Lexus     | NX 2018-2019                  | All               | Stock<sup>3</sup>| 0mph               | 0mph              |
 | Lexus     | NX 2020                       | All               | openpilot        | 0mph               | 0mph              |
 | Lexus     | NX Hybrid 2018-19             | All               | Stock<sup>3</sup>| 0mph               | 0mph              |
 | Lexus     | RC 2020                       | All               | Stock            | 22mph              | 0mph              |
@@ -83,6 +83,7 @@
 | Audi      | A3 2014-19                    | ACC + Lane Assist | Stock            | 0mph               | 0mph         |
 | Audi      | A3 Sportback e-tron 2017-18   | ACC + Lane Assist | Stock            | 0mph               | 0mph         |
 | Audi      | Q2 2018                       | ACC + Lane Assist | Stock            | 0mph               | 0mph         |
+| Audi      | Q3 2020-21                    | ACC + Lane Assist | Stock            | 0mph               | 0mph         |
 | Audi      | S3 2015                       | ACC + Lane Assist | Stock            | 0mph               | 0mph         |
 | Buick     | Regal 2018<sup>1</sup>        | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
 | Cadillac  | ATS 2018<sup>1</sup>          | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |

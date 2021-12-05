@@ -79,6 +79,7 @@ class CAR:
   TROC_MK1 = "VOLKSWAGEN T-ROC 1ST GEN"             # Chassis A1, Mk1 VW VW T-Roc and variants
   AUDI_A3_MK3 = "AUDI A3 3RD GEN"                   # Chassis 8V/FF, Mk3 Audi A3 and variants
   AUDI_Q2_MK1 = "AUDI Q2 1ST GEN"                   # Chassis GA, Mk1 Audi Q2 (RoW) and Q2L (China only)
+  AUDI_Q3_MK2 = "AUDI Q3 2ND GEN"                   # Chassis 8U/F3/FS, Mk2 Audi Q3 and variants
   SEAT_ATECA_MK1 = "SEAT ATECA 1ST GEN"             # Chassis 5F, Mk1 SEAT Ateca and CUPRA Ateca
   SEAT_LEON_MK3 = "SEAT LEON 3RD GEN"               # Chassis 5F, Mk3 SEAT Leon and variants
   SKODA_KAMIQ_MK1 = "SKODA KAMIQ 1ST GEN"           # Chassis NW, Mk1 Skoda Kamiq
@@ -553,6 +554,28 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdRadar, 0x757, None): [
       b'\xf1\x872Q0907572M \xf1\x890233',
+    ],
+  },
+  CAR.AUDI_Q3_MK2: {
+    (Ecu.engine, 0x7e0, None): [
+      b'\xf1\x8705E906018N \xf1\x899970',
+      b'\xf1\x8783A906259  \xf1\x890001',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x8709G927158CN\xf1\x893608',
+      b'\xf1\x870GC300046F \xf1\x892701',
+    ],
+    (Ecu.srs, 0x715, None): [
+      b'\xf1\x875Q0959655BF\xf1\x890403\xf1\x82\x1321211111211200311121232152219321422111',
+      b'\xf1\x875Q0959655CC\xf1\x890421\xf1\x82\x131111111111120031111237116A119321532111',
+    ],
+    (Ecu.eps, 0x712, None): [
+      b'\xf1\x875Q0910143C \xf1\x892211\xf1\x82\x0567G6000300',
+      b'\xf1\x875Q0910143C \xf1\x892211\xf1\x82\x0567G6000800',
+    ],
+    (Ecu.fwdRadar, 0x757, None): [
+      b'\xf1\x872Q0907572R \xf1\x890372',
+      b'\xf1\x872Q0907572T \xf1\x890383',
     ],
   },
   CAR.SEAT_ATECA_MK1: {

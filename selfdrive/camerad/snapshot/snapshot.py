@@ -37,7 +37,7 @@ def extract_image(buf, w, h, stride):
 
 
 def rois_in_focus(lapres: List[float]) -> float:
-  return sum([1. / len(lapres) for sharpness in lapres if sharpness >= LM_THRESH])
+  return sum(1. / len(lapres) for sharpness in lapres if sharpness >= LM_THRESH)
 
 
 def get_snapshots(frame="roadCameraState", front_frame="driverCameraState", focus_perc_threshold=0.):
