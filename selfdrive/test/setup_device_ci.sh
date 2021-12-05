@@ -46,6 +46,7 @@ done
 
 sleep infinity
 EOF
+chmod +x $CONTINUE_PATH
 
 # set up environment
 if [ ! -d "$SOURCE_DIR" ]; then
