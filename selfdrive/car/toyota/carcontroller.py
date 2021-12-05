@@ -4,7 +4,7 @@ from selfdrive.car import apply_toyota_steer_torque_limits, create_gas_intercept
 from selfdrive.car.toyota.toyotacan import create_steer_command, create_ui_command, \
                                            create_accel_command, create_acc_cancel_command, \
                                            create_fcw_command, create_lta_steer_command
-from selfdrive.car.toyota.values import CAR, STATIC_DSU_MSGS, NO_STOP_TIMER_CAR, TSS2_CAR, \
+from selfdrive.car.toyota.values import CAR, STATIC_DSU_MSGS, NO_STOP_TIMER_CAR, FULL_SPEED_DRCC_CAR, TSS2_CAR, \
                                         MIN_ACC_SPEED, PEDAL_TRANSITION, CarControllerParams
 from opendbc.can.packer import CANPacker
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -41,7 +41,7 @@ class CarController():
       # Prius, and most LSS Lexus have full speed DRCC, but do not automatically resume
       # Send pedal briefly if car is in standstill and openpilot wants to accelerate to resume ACC
       # Pedal command is only sent very briefly, so no need to differentiate between Kluger and other cars
-      if CS.CP.carFingerprint in [CAR.PRIUS, CAR.RAV4H, CAR.HIGHLANDER, CAR.HIGHLANDERH, CAR.LEXUS_CTH, CAR.LEXUS_ESH, CAR.LEXUS_NX, CAR.LEXUS_NXH, CAR.LEXUS_RX, CAR.LEXUS_RXH]:
+      if CS.CP.carFingerprint in FULL_SPEED_DRCC_CAR:
         if (actuators.accel > 0.1) and CS.pcm_acc_status == 7:
           interceptor_gas_cmd = 0.15
         else:
