@@ -74,8 +74,8 @@ protected:
   void showEvent(QShowEvent *event) override;
   void updateFrameMat(int w, int h) override;
   void drawLine(QPainter &painter, const line_vertices_data &vd);
-  void drawLaneLines(QPainter &painter, UIState *s);
-  void drawLead(QPainter &painter, UIState *s, const cereal::ModelDataV2::LeadDataV3::Reader &lead_data, const QPointF &vd);
+  void drawLaneLines(QPainter &painter, const UIScene &scene);
+  void drawLead(QPainter &painter, const cereal::ModelDataV2::LeadDataV3::Reader &lead_data, const QPointF &vd);
   double prev_draw_t = 0;
 };
 

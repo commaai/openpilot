@@ -295,9 +295,7 @@ void NvgWindow::drawLine(QPainter &painter, const line_vertices_data &vd) {
   painter.drawPolygon(vd.v, vd.cnt);
 }
 
-void NvgWindow::drawLaneLines(QPainter &painter, UIState *s) {
-  const UIScene &scene = s->scene;
-  painter.setPen(Qt::NoPen);
+void NvgWindow::drawLaneLines(QPainter &painter, const UIScene &scene) {
   if (!scene.end_to_end) {
     // lanelines
     for (int i = 0; i < std::size(scene.lane_line_vertices); ++i) {
@@ -318,16 +316,13 @@ void NvgWindow::drawLaneLines(QPainter &painter, UIState *s) {
   drawLine(painter, scene.track_vertices);
 }
 
-void NvgWindow::drawLead(QPainter &painter, UIState *s, const cereal::ModelDataV2::LeadDataV3::Reader &lead_data, const QPointF &vd) {
-  // Draw lead car indicator
-  float x = vd.x();
-  float y = vd.y();
+void NvgWindow::drawLead(QPainter &painter, const cereal::ModelDataV2::LeadDataV3::Reader &lead_data, const QPointF &vd) {
+  const float speedBuff = 10.;
+  const float leadBuff = 40.;
+  const float d_rel = lead_data.getX()[0];
+  const float v_rel = lead_data.getV()[0];
 
   float fillAlpha = 0;
-  float speedBuff = 10.;
-  float leadBuff = 40.;
-  float d_rel = lead_data.getX()[0];
-  float v_rel = lead_data.getV()[0];
   if (d_rel < leadBuff) {
     fillAlpha = 255*(1.0-(d_rel/leadBuff));
     if (v_rel < 0) {
@@ -337,13 +332,12 @@ void NvgWindow::drawLead(QPainter &painter, UIState *s, const cereal::ModelDataV
   }
 
   float sz = std::clamp((25 * 30) / (d_rel / 3 + 30), 15.0f, 30.0f) * 2.35;
-  x = std::clamp(x, 0.f, s->fb_w - sz / 2);
-  y = std::fmin(s->fb_h - sz * .6, y);
+  float x = std::clamp((float)vd.x(), 0.f, width() - sz / 2);
+  float y = std::fmin(height() - sz * .6, (float)vd.y());
 
   float g_xo = sz/5;
   float g_yo = sz/10;
   
-  painter.setPen(Qt::NoPen);
   QPointF glow[] = {{x+(sz*1.35)+g_xo, y+sz+g_yo}, {x, y-g_xo}, {x-(sz*1.35)-g_xo, y+sz+g_yo}};
   painter.setBrush(QColor(218, 202, 37, 255));
   painter.drawPolygon(glow, std::size(glow));
@@ -361,17 +355,17 @@ void NvgWindow::paintGL() {
   if (s->scene.world_objects_visible) {
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
+    painter.setPen(Qt::NoPen);
 
-    drawLaneLines(painter, s);
+    drawLaneLines(painter, s->scene);
 
     if (s->scene.longitudinal_control) {
-      auto lead_one = (*s->sm)["modelV2"].getModelV2().getLeadsV3()[0];
-      auto lead_two = (*s->sm)["modelV2"].getModelV2().getLeadsV3()[1];
-      if (lead_one.getProb() > .5) {
-        drawLead(painter, s, lead_one, s->scene.lead_vertices[0]);
+      auto leads = (*s->sm)["modelV2"].getModelV2().getLeadsV3();
+      if (leads[0].getProb() > .5) {
+        drawLead(painter, leads[0], s->scene.lead_vertices[0]);
       }
-      if (lead_two.getProb() > .5 && (std::abs(lead_one.getX()[0] - lead_two.getX()[0]) > 3.0)) {
-        drawLead(painter, s, lead_two, s->scene.lead_vertices[1]);
+      if (leads[1].getProb() > .5 && (std::abs(leads[1].getX()[0] - leads[0].getX()[0]) > 3.0)) {
+        drawLead(painter, leads[1], s->scene.lead_vertices[1]);
       }
     }
   }
