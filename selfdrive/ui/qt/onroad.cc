@@ -271,6 +271,7 @@ void NvgWindow::initializeGL() {
 
 void NvgWindow::updateFrameMat(int w, int h) {
   CameraViewWidget::updateFrameMat(w, h);
+
   UIState *s = &QUIState::ui_state;
   s->fb_w = w;
   s->fb_h = h;
@@ -279,7 +280,6 @@ void NvgWindow::updateFrameMat(int w, int h) {
   if (s->wide_camera) {
     zoom *= 0.5;
   }
-
   // Apply transformation such that video pixel coordinates match video
   // 1) Put (0, 0) in the middle of the video
   // 2) Apply same scaling as video
@@ -324,9 +324,9 @@ void NvgWindow::drawLead(QPainter &painter, const cereal::ModelDataV2::LeadDataV
 
   float fillAlpha = 0;
   if (d_rel < leadBuff) {
-    fillAlpha = 255*(1.0-(d_rel/leadBuff));
+    fillAlpha = 255 * (1.0 - (d_rel / leadBuff));
     if (v_rel < 0) {
-      fillAlpha += 255*(-1*(v_rel/speedBuff));
+      fillAlpha += 255 * (-1 * (v_rel / speedBuff));
     }
     fillAlpha = (int)(fmin(fillAlpha, 255));
   }
@@ -335,15 +335,15 @@ void NvgWindow::drawLead(QPainter &painter, const cereal::ModelDataV2::LeadDataV
   float x = std::clamp((float)vd.x(), 0.f, width() - sz / 2);
   float y = std::fmin(height() - sz * .6, (float)vd.y());
 
-  float g_xo = sz/5;
-  float g_yo = sz/10;
-  
-  QPointF glow[] = {{x+(sz*1.35)+g_xo, y+sz+g_yo}, {x, y-g_xo}, {x-(sz*1.35)-g_xo, y+sz+g_yo}};
+  float g_xo = sz / 5;
+  float g_yo = sz / 10;
+
+  QPointF glow[] = {{x + (sz * 1.35) + g_xo, y + sz + g_yo}, {x, y - g_xo}, {x - (sz * 1.35) - g_xo, y + sz + g_yo}};
   painter.setBrush(QColor(218, 202, 37, 255));
   painter.drawPolygon(glow, std::size(glow));
 
   // chevron
-  QPointF chevron[] = {{x+(sz*1.25), y+sz}, {x, y}, {x-(sz*1.25), y+sz}};
+  QPointF chevron[] = {{x + (sz * 1.25), y + sz}, {x, y}, {x - (sz * 1.25), y + sz}};
   painter.setBrush(QColor(201, 34, 49, fillAlpha));
   painter.drawPolygon(chevron, std::size(chevron));
 }
@@ -381,6 +381,7 @@ void NvgWindow::paintGL() {
 
 void NvgWindow::showEvent(QShowEvent *event) {
   CameraViewWidget::showEvent(event);
+
   ui_update_params(&QUIState::ui_state);
   prev_draw_t = millis_since_boot();
 }
