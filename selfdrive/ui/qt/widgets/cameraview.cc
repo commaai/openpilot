@@ -6,7 +6,11 @@
 namespace {
 
 const char frame_vertex_shader[] =
+#ifdef __APPLE__
+  "#version 150 core\n"
+#else
   "#version 300 es\n"
+#endif
   "in vec4 aPosition;\n"
   "in vec4 aTexCoord;\n"
   "uniform mat4 uTransform;\n"
@@ -17,7 +21,11 @@ const char frame_vertex_shader[] =
   "}\n";
 
 const char frame_fragment_shader[] =
+#ifdef __APPLE__
+  "#version 150 core\n"
+#else
   "#version 300 es\n"
+#endif
   "precision mediump float;\n"
   "uniform sampler2D uTexture;\n"
   "in vec4 vTexCoord;\n"
@@ -198,6 +206,7 @@ void CameraViewWidget::paintGL() {
   }
 
   glViewport(0, 0, width(), height());
+
   glBindVertexArray(frame_vao);
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, texture[latest_texture_id]->frame_tex);
