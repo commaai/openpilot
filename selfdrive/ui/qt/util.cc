@@ -84,8 +84,8 @@ void setQtSurfaceFormat() {
   fmt.setRenderableType(QSurfaceFormat::OpenGL);
 #else
   fmt.setRenderableType(QSurfaceFormat::OpenGLES);
-  fmt.setSamples(16);
 #endif
+  fmt.setSamples(16);
   QSurfaceFormat::setDefaultFormat(fmt);
 }
 
