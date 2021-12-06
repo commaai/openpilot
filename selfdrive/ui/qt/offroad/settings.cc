@@ -1,6 +1,7 @@
 #include "selfdrive/ui/qt/offroad/settings.h"
 
 #include <cassert>
+#include <cmath>
 #include <string>
 
 #include <QDebug>
