@@ -127,23 +127,12 @@ static void ui_draw_world(UIState *s) {
   nvgResetScissor(s->vg);
 }
 
-static void ui_draw_vision_header(UIState *s) {
-  NVGpaint gradient = nvgLinearGradient(s->vg, 0, header_h - (header_h / 2.5), 0, header_h,
-                                        nvgRGBAf(0, 0, 0, 0.45), nvgRGBAf(0, 0, 0, 0));
-  nvgBeginPath(s->vg);
-  nvgRect(s->vg, 0, 0, s->fb_w, header_h);
-  nvgFillPaint(s->vg, gradient);
-  nvgFill(s->vg);
-}
-
 static void ui_draw_vision(UIState *s) {
   const UIScene *scene = &s->scene;
   // Draw augmented elements
   if (scene->world_objects_visible) {
     ui_draw_world(s);
   }
-  // TODO: move this to Qt
-  ui_draw_vision_header(s);
 }
 
 void ui_draw(UIState *s, int w, int h) {
