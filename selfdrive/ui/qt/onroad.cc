@@ -198,6 +198,12 @@ void OnroadHud::paintEvent(QPaintEvent *event) {
   QPainter p(this);
   p.setRenderHint(QPainter::Antialiasing);
 
+  // Header gradient
+  QLinearGradient bg(0, header_h - (header_h / 2.5), 0, header_h);
+  bg.setColorAt(0, QColor::fromRgbF(0, 0, 0, 0.45));
+  bg.setColorAt(1, QColor::fromRgbF(0, 0, 0, 0));
+  p.fillRect(0, 0, width(), header_h, bg);
+
   // max speed
   QRect rc(bdr_s * 2, bdr_s * 1.5, 184, 202);
   p.setPen(QPen(QColor(0xff, 0xff, 0xff, 100), 10));
