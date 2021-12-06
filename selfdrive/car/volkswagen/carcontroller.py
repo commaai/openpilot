@@ -66,21 +66,24 @@ class CarController():
 
         cb_pos = 0.0 if lead_visible or CS.out.vEgo < 2.0 else 0.1  # react faster to lead cars, also don't get hung up at DSG clutch release/kiss points when creeping to stop
         cb_neg = 0.0 if accel < 0 else 0.2  # IDK why, but stock likes to zero this out when accel is negative
-        secondary_accel = accel if lead_visible else 0  # try matching part of stock behavior, presumably drag/compression brake only if we can get away with it
 
         idx = (frame / P.ACC_CONTROL_STEP) % 16
         can_sends.append(volkswagencan.create_mqb_acc_06_control(self.packer_pt, CANBUS.pt, enabled, acc_status,
                                                                  accel, self.acc_stopping, self.acc_starting,
                                                                  cb_pos, cb_neg, idx))
         can_sends.append(volkswagencan.create_mqb_acc_07_control(self.packer_pt, CANBUS.pt, enabled,
-                                                                 accel, secondary_accel, acc_hold_request, acc_hold_release,
+                                                                 accel, acc_hold_request, acc_hold_release,
                                                                  acc_hold_type, stopping_distance, idx))
 
       if frame % P.ACC_HUD_STEP == 0:
         idx = (frame / P.ACC_HUD_STEP) % 16
         can_sends.append(volkswagencan.create_mqb_acc_02_control(self.packer_pt, CANBUS.pt, CS.tsk_status,
-                                                                  set_speed * CV.MS_TO_KPH, speed_visible, lead_visible, idx))
-        can_sends.append(volkswagencan.create_mqb_acc_04_control(self.packer_pt, CANBUS.pt, CS.acc_04_stock_values, idx))
+                                                                 set_speed * CV.MS_TO_KPH, speed_visible, lead_visible,
+                                                                 idx))
+        can_sends.append(volkswagencan.create_mqb_acc_04_control(self.packer_pt, CANBUS.pt, CS.acc_04_stock_values,
+                                                                 idx))
+        can_sends.append(volkswagencan.create_mqb_acc_13_control(self.packer_pt, CANBUS.pt, enabled,
+                                                                 CS.acc_13_stock_values))
 
     # **** Steering Controls ************************************************ #
 
