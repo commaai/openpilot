@@ -1,5 +1,7 @@
 #include "selfdrive/ui/qt/onroad.h"
 
+#include <cmath>
+
 #include <QDebug>
 
 #include "selfdrive/common/timing.h"
