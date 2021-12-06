@@ -290,30 +290,25 @@ void NvgWindow::updateFrameMat(int w, int h) {
       .translate(-intrinsic_matrix.v[2], -intrinsic_matrix.v[5]);
 }
 
-void NvgWindow::drawLine(QPainter &painter, const line_vertices_data &vd) {
-  if (vd.cnt == 0) return;
-  painter.drawPolygon(vd.v, vd.cnt);
-}
-
 void NvgWindow::drawLaneLines(QPainter &painter, const UIScene &scene) {
   if (!scene.end_to_end) {
     // lanelines
     for (int i = 0; i < std::size(scene.lane_line_vertices); ++i) {
       painter.setBrush(QColor::fromRgbF(1.0, 1.0, 1.0, scene.lane_line_probs[i]));
-      drawLine(painter, scene.lane_line_vertices[i]);
+      painter.drawPolygon(scene.lane_line_vertices[i].v, scene.lane_line_vertices[i].cnt);
     }
     // road edges
     for (int i = 0; i < std::size(scene.road_edge_vertices); ++i) {
       painter.setBrush(QColor::fromRgbF(1.0, 0, 0, std::clamp<float>(1.0 - scene.road_edge_stds[i], 0.0, 1.0)));
-      drawLine(painter, scene.road_edge_vertices[i]);
+      painter.drawPolygon(scene.road_edge_vertices[i].v, scene.road_edge_vertices[i].cnt);
     }
   }
   // paint path
   QLinearGradient bg(0, height(), 0, height() / 4);
-  bg.setColorAt(0, scene.end_to_end ? QColor(201, 34, 49) : QColor(255, 255, 255));
-  bg.setColorAt(1, scene.end_to_end ? QColor(201, 34, 49, 0) : QColor(255, 255, 255, 0));
+  bg.setColorAt(0, scene.end_to_end ? redColor() : QColor(255, 255, 255));
+  bg.setColorAt(1, scene.end_to_end ? redColor(0) : QColor(255, 255, 255, 0));
   painter.setBrush(bg);
-  drawLine(painter, scene.track_vertices);
+  painter.drawPolygon(scene.track_vertices.v, scene.track_vertices.cnt);
 }
 
 void NvgWindow::drawLead(QPainter &painter, const cereal::ModelDataV2::LeadDataV3::Reader &lead_data, const QPointF &vd) {
@@ -344,7 +339,7 @@ void NvgWindow::drawLead(QPainter &painter, const cereal::ModelDataV2::LeadDataV
 
   // chevron
   QPointF chevron[] = {{x + (sz * 1.25), y + sz}, {x, y}, {x - (sz * 1.25), y + sz}};
-  painter.setBrush(QColor(201, 34, 49, fillAlpha));
+  painter.setBrush(redColor(fillAlpha));
   painter.drawPolygon(chevron, std::size(chevron));
 }
 

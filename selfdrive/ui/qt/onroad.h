@@ -73,9 +73,9 @@ protected:
   void initializeGL() override;
   void showEvent(QShowEvent *event) override;
   void updateFrameMat(int w, int h) override;
-  void drawLine(QPainter &painter, const line_vertices_data &vd);
   void drawLaneLines(QPainter &painter, const UIScene &scene);
   void drawLead(QPainter &painter, const cereal::ModelDataV2::LeadDataV3::Reader &lead_data, const QPointF &vd);
+  inline QColor redColor(int alpha = 255) { return QColor(201, 34, 49, alpha); }
   double prev_draw_t = 0;
 };
 
