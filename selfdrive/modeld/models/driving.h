@@ -16,12 +16,14 @@
 #include "selfdrive/modeld/runners/run.h"
 
 constexpr int DESIRE_LEN = 8;
+constexpr int DESIRE_PRED_LEN = 4;
 constexpr int TRAFFIC_CONVENTION_LEN = 2;
 constexpr int MODEL_FREQ = 20;
 
 constexpr int DESIRE_PRED_SIZE = 32;
 constexpr int OTHER_META_SIZE = 48;
-constexpr int NUM_META_INTERVALS = 5;
+constexpr int DISENGAGE_LEN = 5;
+constexpr int BLINKER_LEN = 6;
 constexpr int META_STRIDE = 7;
 
 constexpr int PLAN_MHP_N = 5;
@@ -179,14 +181,56 @@ struct ModelDataRawPose {
 };
 static_assert(sizeof(ModelDataRawPose) == sizeof(ModelDataRawXYZ)*4);
 
+struct ModelDataRawDisengageProb {
+  float gas_disengage;
+  float brake_disengage;
+  float steer_override;
+  float brake_3ms2;
+  float brake_4ms2;
+  float brake_5ms2;
+  float gas_pressed;
+};
+static_assert(sizeof(ModelDataRawDisengageProb) == sizeof(float)*7);
+
+struct ModelDataRawBlinkerProb {
+  float left;
+  float right;
+};
+static_assert(sizeof(ModelDataRawBlinkerProb) == sizeof(float)*2);
+
+struct ModelDataRawDesireProb {
+  // TODO: why does static_assert() check fail?
+  //union {
+  //  float none;
+  //  float turn_left;
+  //  float turn_right;
+  //  float lane_change_left;
+  //  float lane_change_right;
+  //  float keep_left;
+  //  float keep_right;
+  //  float null;
+  //};
+  //union {
+    std::array<float, DESIRE_LEN> array;
+  //};
+};
+static_assert(sizeof(ModelDataRawDesireProb) == sizeof(float)*DESIRE_LEN);
+
+struct ModelDataRawMeta {
+  ModelDataRawDesireProb desire_state_prob;
+  float engaged_prob;
+  std::array<ModelDataRawDisengageProb, DISENGAGE_LEN> lat_long_prob;
+  std::array<ModelDataRawBlinkerProb, BLINKER_LEN> blinker_prob;
+  std::array<ModelDataRawDesireProb, DESIRE_PRED_LEN> desire_pred_prob;
+};
+static_assert(sizeof(ModelDataRawMeta) == sizeof(ModelDataRawDesireProb) + sizeof(float) + (sizeof(ModelDataRawDisengageProb)*DISENGAGE_LEN) + (sizeof(ModelDataRawBlinkerProb)*BLINKER_LEN) + (sizeof(ModelDataRawDesireProb)*DESIRE_PRED_LEN));
+
 struct ModelDataRaw {
   const ModelDataRawPlans *const plans;
   const ModelDataRawLaneLines *const lane_lines;
   const ModelDataRawRoadEdges *const road_edges;
   const ModelDataRawLeads *const leads;
-  const float *const desire_state;
-  const float *const meta;
-  const float *const desire_pred;
+  const ModelDataRawMeta *const meta;
   const ModelDataRawPose *const pose;
 };
 
