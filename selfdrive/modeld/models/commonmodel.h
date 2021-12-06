@@ -30,7 +30,7 @@ void softmax(const std::array<float, input_size> &input, std::array<float, outpu
   static_assert(input_size <= output_size);
   assert(output_offset + input_size <= output_size);
 
-  const float max_val = *std::max_element(input.data(), input.data() + input_size);
+  const float max_val = *std::max_element(input.data(), input.end());
   float denominator = 0;
   for(int i = 0; i < input_size; i++) {
     float const v_exp = expf(input[i] - max_val);
