@@ -199,20 +199,19 @@ struct ModelDataRawBlinkerProb {
 static_assert(sizeof(ModelDataRawBlinkerProb) == sizeof(float)*2);
 
 struct ModelDataRawDesireProb {
-  // TODO: why does static_assert() check fail?
-  //union {
-  //  float none;
-  //  float turn_left;
-  //  float turn_right;
-  //  float lane_change_left;
-  //  float lane_change_right;
-  //  float keep_left;
-  //  float keep_right;
-  //  float null;
-  //};
-  //union {
-    std::array<float, DESIRE_LEN> array;
-  //};
+  float none;
+  float turn_left;
+  float turn_right;
+  float lane_change_left;
+  float lane_change_right;
+  float keep_left;
+  float keep_right;
+  float null;
+
+  // TODO: wanted to use union std::array<float, DESIRE_LEN> but static assert fails, why?
+  constexpr const std::array<float, DESIRE_LEN> to_array() const {
+    return std::array<float, DESIRE_LEN> {none, turn_left, turn_right, lane_change_left, lane_change_right, keep_left, keep_right, null};
+  }
 };
 static_assert(sizeof(ModelDataRawDesireProb) == sizeof(float)*DESIRE_LEN);
 

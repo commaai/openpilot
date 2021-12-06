@@ -119,11 +119,11 @@ void fill_lead(cereal::ModelDataV2::LeadDataV3::Builder lead, const ModelDataRaw
 
 void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const ModelDataRawMeta &meta_data) {
   std::array<float, DESIRE_LEN> desire_state_softmax;
-  softmax(meta_data.desire_state_prob.array, desire_state_softmax);
+  softmax(meta_data.desire_state_prob.to_array(), desire_state_softmax);
 
   std::array<float, DESIRE_PRED_LEN * DESIRE_LEN> desire_pred_softmax;
   for (int i=0; i<DESIRE_PRED_LEN; i++) {
-    softmax(meta_data.desire_pred_prob[i].array, desire_pred_softmax, i * DESIRE_LEN);
+    softmax(meta_data.desire_pred_prob[i].to_array(), desire_pred_softmax, i * DESIRE_LEN);
   }
 
   std::array<float, DISENGAGE_LEN> lat_long_t = {2,4,6,8,10};
