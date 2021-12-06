@@ -36,8 +36,12 @@ class DRIVER_MONITOR_SETTINGS():
     self._POSE_THRESHOLD = 0.25
     self._POSE_THRESHOLD_SLACK = 0.66
     self._POSE_THRESHOLD_STRICT = self._POSE_THRESHOLD
-    self._PITCH_NATURAL_OFFSET = 0.02  # people don't seem to look straight when they drive relaxed, rather a bit up
-    self._YAW_NATURAL_OFFSET = 0.08  # people don't seem to look straight when they drive relaxed, rather a bit to the right (center of car)
+    self._PITCH_NATURAL_OFFSET = 0.124  # people don't seem to look straight when they drive relaxed, rather a bit up
+    self._YAW_NATURAL_OFFSET = 0.132  # people don't seem to look straight when they drive relaxed, rather a bit to the right (center of car)
+    self._PITCH_MAX_OFFSET = 0.336
+    self._PITCH_MIN_OFFSET = -0.0881
+    self._YAW_MAX_OFFSET = 0.289
+    self._YAW_MIN_OFFSET = -0.0246
     self._PITCH_WEIGHT = 1.35  # pitch matters a lot more
 
     self._POSESTD_THRESHOLD = 0.38 if TICI else 0.3
@@ -164,8 +168,10 @@ class DriverStatus():
       pitch_error = pose.pitch - self.settings._PITCH_NATURAL_OFFSET
       yaw_error = pose.yaw - self.settings._YAW_NATURAL_OFFSET
     else:
-      pitch_error = pose.pitch - self.pose.pitch_offseter.filtered_stat.mean()
-      yaw_error = pose.yaw - self.pose.yaw_offseter.filtered_stat.mean()
+      pitch_error = pose.pitch - min(max(self.pose.pitch_offseter.filtered_stat.mean(),
+                                                       self.settings._PITCH_MIN_OFFSET), self.settings._PITCH_MAX_OFFSET)
+      yaw_error = pose.yaw - min(max(self.pose.yaw_offseter.filtered_stat.mean(),
+                                                    self.settings._YAW_MIN_OFFSET), self.settings._YAW_MAX_OFFSET)
 
     pitch_error = 0 if pitch_error > 0 else abs(pitch_error) # no positive pitch limit
     yaw_error = abs(yaw_error)
