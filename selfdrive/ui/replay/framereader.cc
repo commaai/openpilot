@@ -13,7 +13,8 @@ struct buffer_data {
 
 int readPacket(void *opaque, uint8_t *buf, int buf_size) {
   struct buffer_data *bd = (struct buffer_data *)opaque;
-  buf_size = std::min((size_t)buf_size, bd->size - bd->offset);
+  assert(bd->offset <= bd->size);
+  buf_size = std::min((size_t)buf_size, (size_t)(bd->size - bd->offset));
   if (!buf_size) return AVERROR_EOF;
 
   memcpy(buf, bd->data + bd->offset, buf_size);
