@@ -118,7 +118,11 @@ class Uploader():
     upload_files = list(self.list_upload_files())
 
     for name, key, fn in upload_files:
-      if name in self.immediate_priority or any(f in fn for f in self.immediate_folders):
+      if any(f in fn for f in self.immediate_folders):
+        return (key, fn)
+
+    for name, key, fn in upload_files:
+      if name in self.immediate_priority:
         return (key, fn)
 
     return None
