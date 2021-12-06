@@ -52,18 +52,17 @@ TEST_CASE("sync_encoders") {
 const int MAX_SEGMENT_CNT = 100;
 
 std::pair<int, uint32_t> encoder_thread(LoggerdState *s) {
-  int cur_seg = 0;
   uint32_t frame_id = s->start_frame_id;
-
-  while (cur_seg < MAX_SEGMENT_CNT) {
+  auto lh = s->lh;
+  while (lh->segment() < MAX_SEGMENT_CNT) {
     ++frame_id;
-    if (trigger_rotate_if_needed(s, cur_seg, frame_id)) {
-      cur_seg = s->lh->segment();
+    if (trigger_rotate_if_needed(s, lh, frame_id)) {
+      lh = s->lh;
     }
     util::sleep_for(0);
   }
 
-  return {cur_seg, frame_id};
+  return {lh->segment(), frame_id};
 }
 
 TEST_CASE("trigger_rotate") {

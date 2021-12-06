@@ -23,14 +23,14 @@ bool sync_encoders(LoggerdState *s, CameraType cam_type, uint32_t frame_id) {
   }
 }
 
-bool trigger_rotate_if_needed(LoggerdState *s, int cur_seg, uint32_t frame_id) {
+bool trigger_rotate_if_needed(LoggerdState *s, std::shared_ptr<Logger> lh, uint32_t frame_id) {
   const int frames_per_seg = SEGMENT_LENGTH * MAIN_FPS;
-  if (cur_seg >= 0 && frame_id >= ((cur_seg + 1) * frames_per_seg) + s->start_frame_id) {
+  if (lh && frame_id >= ((lh->segment() + 1) * frames_per_seg) + s->start_frame_id) {
     // trigger rotate and wait until the main logger has rotated to the new segment
     ++s->ready_to_rotate;
     std::unique_lock lk(s->rotate_lock);
     s->rotate_cv.wait(lk, [&] {
-      return s->lh->segment() > cur_seg || do_exit;
+      return s->lh != lh || do_exit;
     });
     return !do_exit;
   }
@@ -40,7 +40,6 @@ bool trigger_rotate_if_needed(LoggerdState *s, int cur_seg, uint32_t frame_id) {
 void encoder_thread(LoggerdState *s, const LogCameraInfo &cam_info) {
   set_thread_name(cam_info.filename);
 
-  int cur_seg = -1;
   int encode_idx = 0;
   std::vector<Encoder *> encoders;
   VisionIpcClient vipc_client = VisionIpcClient("camerad", cam_info.stream_type, false);
@@ -80,15 +79,13 @@ void encoder_thread(LoggerdState *s, const LogCameraInfo &cam_info) {
         }
 
         // check if we're ready to rotate
-        trigger_rotate_if_needed(s, cur_seg, extra.frame_id);
+        trigger_rotate_if_needed(s, lh, extra.frame_id);
         if (do_exit) break;
       }
 
       // rotate the encoder if the logger is on a newer segment
       if (s->lh != lh) {
         lh = s->lh;
-        cur_seg = lh->segment();
-
         LOGW("camera %d rotate encoder to %s", cam_info.type, lh->segmentPath().c_str());
         for (auto &e : encoders) {
           e->encoder_close();
