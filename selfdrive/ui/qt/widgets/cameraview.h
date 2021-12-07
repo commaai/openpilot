@@ -31,7 +31,7 @@ protected:
   void showEvent(QShowEvent *event) override;
   void hideEvent(QHideEvent *event) override;
   void mouseReleaseEvent(QMouseEvent *event) override { emit clicked(); }
-  void updateFrameMat(int w, int h);
+  virtual void updateFrameMat(int w, int h);
   void vipcThread();
 
   bool zoomed_view;
