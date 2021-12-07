@@ -20,76 +20,50 @@ constexpr int DESIRE_PRED_LEN = 4;
 constexpr int TRAFFIC_CONVENTION_LEN = 2;
 constexpr int MODEL_FREQ = 20;
 
-constexpr int DESIRE_PRED_SIZE = 32;
-constexpr int OTHER_META_SIZE = 48;
 constexpr int DISENGAGE_LEN = 5;
 constexpr int BLINKER_LEN = 6;
 constexpr int META_STRIDE = 7;
 
 constexpr int PLAN_MHP_N = 5;
-constexpr int PLAN_MHP_VALS = 15*33;
-constexpr int PLAN_MHP_SELECTION = 1;
-constexpr int PLAN_MHP_GROUP_SIZE =  (2*PLAN_MHP_VALS + PLAN_MHP_SELECTION);
 
 constexpr int LEAD_MHP_N = 2;
 constexpr int LEAD_TRAJ_LEN = 6;
 constexpr int LEAD_PRED_DIM = 4;
-constexpr int LEAD_MHP_VALS = LEAD_PRED_DIM*LEAD_TRAJ_LEN;
 constexpr int LEAD_MHP_SELECTION = 3;
-constexpr int LEAD_MHP_GROUP_SIZE = (2*LEAD_MHP_VALS + LEAD_MHP_SELECTION);
 
-constexpr int POSE_SIZE = 12;
-
-constexpr int PLAN_IDX = 0;
-constexpr int LL_IDX = PLAN_IDX + PLAN_MHP_N*PLAN_MHP_GROUP_SIZE;
-constexpr int LL_PROB_IDX = LL_IDX + 4*2*2*33;
-constexpr int RE_IDX = LL_PROB_IDX + 8;
-constexpr int LEAD_IDX = RE_IDX + 2*2*2*33;
-constexpr int LEAD_PROB_IDX = LEAD_IDX + LEAD_MHP_N*(LEAD_MHP_GROUP_SIZE);
-constexpr int DESIRE_STATE_IDX = LEAD_PROB_IDX + 3;
-constexpr int META_IDX = DESIRE_STATE_IDX + DESIRE_LEN;
-constexpr int POSE_IDX = META_IDX + OTHER_META_SIZE + DESIRE_PRED_SIZE;
-constexpr int OUTPUT_SIZE =  POSE_IDX + POSE_SIZE;
-#ifdef TEMPORAL
-  constexpr int TEMPORAL_SIZE = 512;
-#else
-  constexpr int TEMPORAL_SIZE = 0;
-#endif
-constexpr int NET_OUTPUT_SIZE =  OUTPUT_SIZE + TEMPORAL_SIZE;
-
-struct ModelDataRawXYZ {
+struct ModelOutputXYZ {
   float x;
   float y;
   float z;
 };
-static_assert(sizeof(ModelDataRawXYZ) == sizeof(float)*3);
+static_assert(sizeof(ModelOutputXYZ) == sizeof(float)*3);
 
-struct ModelDataRawYZ {
+struct ModelOutputYZ {
   float y;
   float z;
 };
-static_assert(sizeof(ModelDataRawYZ) == sizeof(float)*2);
+static_assert(sizeof(ModelOutputYZ) == sizeof(float)*2);
 
-struct ModelDataRawPlanElement {
-  ModelDataRawXYZ position;
-  ModelDataRawXYZ velocity;
-  ModelDataRawXYZ acceleration;
-  ModelDataRawXYZ rotation;
-  ModelDataRawXYZ rotation_rate;
+struct ModelOutputPlanElement {
+  ModelOutputXYZ position;
+  ModelOutputXYZ velocity;
+  ModelOutputXYZ acceleration;
+  ModelOutputXYZ rotation;
+  ModelOutputXYZ rotation_rate;
 };
-static_assert(sizeof(ModelDataRawPlanElement) == sizeof(ModelDataRawXYZ)*5);
+static_assert(sizeof(ModelOutputPlanElement) == sizeof(ModelOutputXYZ)*5);
 
-struct ModelDataRawPlanPrediction {
-  std::array<ModelDataRawPlanElement, TRAJECTORY_SIZE> mean;
-  std::array<ModelDataRawPlanElement, TRAJECTORY_SIZE> std;
+struct ModelOutputPlanPrediction {
+  std::array<ModelOutputPlanElement, TRAJECTORY_SIZE> mean;
+  std::array<ModelOutputPlanElement, TRAJECTORY_SIZE> std;
   float prob;
 };
-static_assert(sizeof(ModelDataRawPlanPrediction) == (sizeof(ModelDataRawPlanElement)*TRAJECTORY_SIZE*2) + sizeof(float));
+static_assert(sizeof(ModelOutputPlanPrediction) == (sizeof(ModelOutputPlanElement)*TRAJECTORY_SIZE*2) + sizeof(float));
 
-struct ModelDataRawPlans {
-  std::array<ModelDataRawPlanPrediction, PLAN_MHP_N> prediction;
+struct ModelOutputPlans {
+  std::array<ModelOutputPlanPrediction, PLAN_MHP_N> prediction;
 
-  constexpr const ModelDataRawPlanPrediction &get_best_prediction() const {
+  constexpr const ModelOutputPlanPrediction &get_best_prediction() const {
     int max_idx = 0;
     for (int i = 1; i < prediction.size(); i++) {
       if (prediction[i].prob > prediction[max_idx].prob) {
@@ -99,69 +73,69 @@ struct ModelDataRawPlans {
     return prediction[max_idx];
   }
 };
-static_assert(sizeof(ModelDataRawPlans) == sizeof(ModelDataRawPlanPrediction)*PLAN_MHP_N);
+static_assert(sizeof(ModelOutputPlans) == sizeof(ModelOutputPlanPrediction)*PLAN_MHP_N);
 
-struct ModelDataRawLinesXY {
-  std::array<ModelDataRawYZ, TRAJECTORY_SIZE> left_far;
-  std::array<ModelDataRawYZ, TRAJECTORY_SIZE> left_near;
-  std::array<ModelDataRawYZ, TRAJECTORY_SIZE> right_near;
-  std::array<ModelDataRawYZ, TRAJECTORY_SIZE> right_far;
+struct ModelOutputLinesXY {
+  std::array<ModelOutputYZ, TRAJECTORY_SIZE> left_far;
+  std::array<ModelOutputYZ, TRAJECTORY_SIZE> left_near;
+  std::array<ModelOutputYZ, TRAJECTORY_SIZE> right_near;
+  std::array<ModelOutputYZ, TRAJECTORY_SIZE> right_far;
 };
-static_assert(sizeof(ModelDataRawLinesXY) == sizeof(ModelDataRawYZ)*TRAJECTORY_SIZE*4);
+static_assert(sizeof(ModelOutputLinesXY) == sizeof(ModelOutputYZ)*TRAJECTORY_SIZE*4);
 
-struct ModelDataRawLineProbVal {
+struct ModelOutputLineProbVal {
   float val_deprecated;
   float val;
 };
-static_assert(sizeof(ModelDataRawLineProbVal) == sizeof(float)*2);
+static_assert(sizeof(ModelOutputLineProbVal) == sizeof(float)*2);
 
-struct ModelDataRawLinesProb {
-  ModelDataRawLineProbVal left_far;
-  ModelDataRawLineProbVal left_near;
-  ModelDataRawLineProbVal right_near;
-  ModelDataRawLineProbVal right_far;
+struct ModelOutputLinesProb {
+  ModelOutputLineProbVal left_far;
+  ModelOutputLineProbVal left_near;
+  ModelOutputLineProbVal right_near;
+  ModelOutputLineProbVal right_far;
 };
-static_assert(sizeof(ModelDataRawLinesProb) == sizeof(ModelDataRawLineProbVal)*4);
+static_assert(sizeof(ModelOutputLinesProb) == sizeof(ModelOutputLineProbVal)*4);
 
-struct ModelDataRawLaneLines {
-  ModelDataRawLinesXY mean;
-  ModelDataRawLinesXY std;
-  ModelDataRawLinesProb prob;
+struct ModelOutputLaneLines {
+  ModelOutputLinesXY mean;
+  ModelOutputLinesXY std;
+  ModelOutputLinesProb prob;
 };
-static_assert(sizeof(ModelDataRawLaneLines) == (sizeof(ModelDataRawLinesXY)*2) + sizeof(ModelDataRawLinesProb));
+static_assert(sizeof(ModelOutputLaneLines) == (sizeof(ModelOutputLinesXY)*2) + sizeof(ModelOutputLinesProb));
 
-struct ModelDataRawEdgessXY {
-  std::array<ModelDataRawYZ, TRAJECTORY_SIZE> left;
-  std::array<ModelDataRawYZ, TRAJECTORY_SIZE> right;
+struct ModelOutputEdgessXY {
+  std::array<ModelOutputYZ, TRAJECTORY_SIZE> left;
+  std::array<ModelOutputYZ, TRAJECTORY_SIZE> right;
 };
-static_assert(sizeof(ModelDataRawEdgessXY) == sizeof(ModelDataRawYZ)*TRAJECTORY_SIZE*2);
+static_assert(sizeof(ModelOutputEdgessXY) == sizeof(ModelOutputYZ)*TRAJECTORY_SIZE*2);
 
-struct ModelDataRawRoadEdges {
-  ModelDataRawEdgessXY mean;
-  ModelDataRawEdgessXY std;
+struct ModelOutputRoadEdges {
+  ModelOutputEdgessXY mean;
+  ModelOutputEdgessXY std;
 };
-static_assert(sizeof(ModelDataRawRoadEdges) == (sizeof(ModelDataRawEdgessXY)*2));
+static_assert(sizeof(ModelOutputRoadEdges) == (sizeof(ModelOutputEdgessXY)*2));
 
-struct ModelDataRawLeadElement {
+struct ModelOutputLeadElement {
   float x;
   float y;
   float velocity;
   float acceleration;
 };
-static_assert(sizeof(ModelDataRawLeadElement) == sizeof(float)*4);
+static_assert(sizeof(ModelOutputLeadElement) == sizeof(float)*4);
 
-struct ModelDataRawLeadPrediction {
-  std::array<ModelDataRawLeadElement, LEAD_TRAJ_LEN> mean;
-  std::array<ModelDataRawLeadElement, LEAD_TRAJ_LEN> std;
+struct ModelOutputLeadPrediction {
+  std::array<ModelOutputLeadElement, LEAD_TRAJ_LEN> mean;
+  std::array<ModelOutputLeadElement, LEAD_TRAJ_LEN> std;
   std::array<float, LEAD_MHP_SELECTION> prob;
 };
-static_assert(sizeof(ModelDataRawLeadPrediction) == (sizeof(ModelDataRawLeadElement)*LEAD_TRAJ_LEN*2) + (sizeof(float)*LEAD_MHP_SELECTION));
+static_assert(sizeof(ModelOutputLeadPrediction) == (sizeof(ModelOutputLeadElement)*LEAD_TRAJ_LEN*2) + (sizeof(float)*LEAD_MHP_SELECTION));
 
-struct ModelDataRawLeads {
-  std::array<ModelDataRawLeadPrediction, LEAD_MHP_N> prediction;
+struct ModelOutputLeads {
+  std::array<ModelOutputLeadPrediction, LEAD_MHP_N> prediction;
   std::array<float, LEAD_MHP_SELECTION> prob;
 
-  constexpr const ModelDataRawLeadPrediction &get_best_prediction(int t_idx) const {
+  constexpr const ModelOutputLeadPrediction &get_best_prediction(int t_idx) const {
     int max_idx = 0;
     for (int i = 1; i < prediction.size(); i++) {
       if (prediction[i].prob[t_idx] > prediction[max_idx].prob[t_idx]) {
@@ -171,17 +145,17 @@ struct ModelDataRawLeads {
     return prediction[max_idx];
   }
 };
-static_assert(sizeof(ModelDataRawLeads) == (sizeof(ModelDataRawLeadPrediction)*LEAD_MHP_N) + (sizeof(float)*LEAD_MHP_SELECTION));
+static_assert(sizeof(ModelOutputLeads) == (sizeof(ModelOutputLeadPrediction)*LEAD_MHP_N) + (sizeof(float)*LEAD_MHP_SELECTION));
 
-struct ModelDataRawPose {
-  ModelDataRawXYZ velocity_mean;
-  ModelDataRawXYZ rotation_mean;
-  ModelDataRawXYZ velocity_std;
-  ModelDataRawXYZ rotation_std;
+struct ModelOutputPose {
+  ModelOutputXYZ velocity_mean;
+  ModelOutputXYZ rotation_mean;
+  ModelOutputXYZ velocity_std;
+  ModelOutputXYZ rotation_std;
 };
-static_assert(sizeof(ModelDataRawPose) == sizeof(ModelDataRawXYZ)*4);
+static_assert(sizeof(ModelOutputPose) == sizeof(ModelOutputXYZ)*4);
 
-struct ModelDataRawDisengageProb {
+struct ModelOutputDisengageProb {
   float gas_disengage;
   float brake_disengage;
   float steer_override;
@@ -190,15 +164,15 @@ struct ModelDataRawDisengageProb {
   float brake_5ms2;
   float gas_pressed;
 };
-static_assert(sizeof(ModelDataRawDisengageProb) == sizeof(float)*7);
+static_assert(sizeof(ModelOutputDisengageProb) == sizeof(float)*7);
 
-struct ModelDataRawBlinkerProb {
+struct ModelOutputBlinkerProb {
   float left;
   float right;
 };
-static_assert(sizeof(ModelDataRawBlinkerProb) == sizeof(float)*2);
+static_assert(sizeof(ModelOutputBlinkerProb) == sizeof(float)*2);
 
-struct ModelDataRawDesireProb {
+struct ModelOutputDesireProb {
   union {
     struct {
       float none;
@@ -215,25 +189,32 @@ struct ModelDataRawDesireProb {
     };
   };
 };
-static_assert(sizeof(ModelDataRawDesireProb) == sizeof(float)*DESIRE_LEN);
+static_assert(sizeof(ModelOutputDesireProb) == sizeof(float)*DESIRE_LEN);
 
-struct ModelDataRawMeta {
-  ModelDataRawDesireProb desire_state_prob;
+struct ModelOutputMeta {
+  ModelOutputDesireProb desire_state_prob;
   float engaged_prob;
-  std::array<ModelDataRawDisengageProb, DISENGAGE_LEN> lat_long_prob;
-  std::array<ModelDataRawBlinkerProb, BLINKER_LEN> blinker_prob;
-  std::array<ModelDataRawDesireProb, DESIRE_PRED_LEN> desire_pred_prob;
+  std::array<ModelOutputDisengageProb, DISENGAGE_LEN> lat_long_prob;
+  std::array<ModelOutputBlinkerProb, BLINKER_LEN> blinker_prob;
+  std::array<ModelOutputDesireProb, DESIRE_PRED_LEN> desire_pred_prob;
 };
-static_assert(sizeof(ModelDataRawMeta) == sizeof(ModelDataRawDesireProb) + sizeof(float) + (sizeof(ModelDataRawDisengageProb)*DISENGAGE_LEN) + (sizeof(ModelDataRawBlinkerProb)*BLINKER_LEN) + (sizeof(ModelDataRawDesireProb)*DESIRE_PRED_LEN));
+static_assert(sizeof(ModelOutputMeta) == sizeof(ModelOutputDesireProb) + sizeof(float) + (sizeof(ModelOutputDisengageProb)*DISENGAGE_LEN) + (sizeof(ModelOutputBlinkerProb)*BLINKER_LEN) + (sizeof(ModelOutputDesireProb)*DESIRE_PRED_LEN));
 
-struct ModelDataRaw {
-  const ModelDataRawPlans *const plans;
-  const ModelDataRawLaneLines *const lane_lines;
-  const ModelDataRawRoadEdges *const road_edges;
-  const ModelDataRawLeads *const leads;
-  const ModelDataRawMeta *const meta;
-  const ModelDataRawPose *const pose;
+struct ModelOutput {
+  const ModelOutputPlans *const plans;
+  const ModelOutputLaneLines *const lane_lines;
+  const ModelOutputRoadEdges *const road_edges;
+  const ModelOutputLeads *const leads;
+  const ModelOutputMeta *const meta;
+  const ModelOutputPose *const pose;
 };
+
+#ifdef TEMPORAL
+  constexpr int TEMPORAL_SIZE = 512;
+#else
+  constexpr int TEMPORAL_SIZE = 0;
+#endif
+constexpr int NET_OUTPUT_SIZE =  sizeof(ModelOutput) + TEMPORAL_SIZE;
 
 // TODO: convert remaining arrays to std::array and update model runners
 struct ModelState {
@@ -250,12 +231,12 @@ struct ModelState {
 };
 
 void model_init(ModelState* s, cl_device_id device_id, cl_context context);
-ModelDataRaw *model_eval_frame(ModelState* s, cl_mem yuv_cl, int width, int height,
+ModelOutput *model_eval_frame(ModelState* s, cl_mem yuv_cl, int width, int height,
                            const mat3 &transform, float *desire_in);
 void model_free(ModelState* s);
 void poly_fit(float *in_pts, float *in_stds, float *out);
 void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id, float frame_drop,
-                   const ModelDataRaw &net_outputs, uint64_t timestamp_eof,
+                   const ModelOutput &net_outputs, uint64_t timestamp_eof,
                    float model_execution_time, kj::ArrayPtr<const float> raw_pred);
 void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_dropped_frames,
-                     const ModelDataRaw &net_outputs, uint64_t timestamp_eof);
+                     const ModelOutput &net_outputs, uint64_t timestamp_eof);

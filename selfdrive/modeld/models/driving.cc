@@ -38,7 +38,7 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context) {
 #endif
 
 #ifdef TEMPORAL
-  s->m->addRecurrent(&s->output[OUTPUT_SIZE], TEMPORAL_SIZE);
+  s->m->addRecurrent(&s->output[sizeof(ModelOutput)], TEMPORAL_SIZE);
 #endif
 
 #ifdef DESIRE
@@ -52,7 +52,7 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context) {
 #endif
 }
 
-ModelDataRaw* model_eval_frame(ModelState* s, cl_mem yuv_cl, int width, int height,
+ModelOutput* model_eval_frame(ModelState* s, cl_mem yuv_cl, int width, int height,
                            const mat3 &transform, float *desire_in) {
 #ifdef DESIRE
   if (desire_in != NULL) {
@@ -73,14 +73,14 @@ ModelDataRaw* model_eval_frame(ModelState* s, cl_mem yuv_cl, int width, int heig
   auto net_input_buf = s->frame->prepare(yuv_cl, width, height, transform, static_cast<cl_mem*>(s->m->getInputBuf()));
   s->m->execute(net_input_buf, s->frame->buf_size);
 
-  return (ModelDataRaw*)&s->output;
+  return (ModelOutput*)&s->output;
 }
 
 void model_free(ModelState* s) {
   delete s->frame;
 }
 
-void fill_lead(cereal::ModelDataV2::LeadDataV3::Builder lead, const ModelDataRawLeads &leads, int t_idx, float prob_t) {
+void fill_lead(cereal::ModelDataV2::LeadDataV3::Builder lead, const ModelOutputLeads &leads, int t_idx, float prob_t) {
   std::array<float, LEAD_TRAJ_LEN> lead_t = {0.0, 2.0, 4.0, 6.0, 8.0, 10.0};
   const auto &best_prediction = leads.get_best_prediction(t_idx);
   lead.setProb(sigmoid(leads.prob[t_idx]));
@@ -108,7 +108,7 @@ void fill_lead(cereal::ModelDataV2::LeadDataV3::Builder lead, const ModelDataRaw
   lead.setAStd(to_kj_array_ptr(lead_a_std));
 }
 
-void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const ModelDataRawMeta &meta_data) {
+void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const ModelOutputMeta &meta_data) {
   std::array<float, DESIRE_LEN> desire_state_softmax;
   softmax(meta_data.desire_state_prob.array.data(), desire_state_softmax.data(), DESIRE_LEN);
 
@@ -178,7 +178,7 @@ void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const std::array<flo
   xyzt.setZStd(to_kj_array_ptr(z_std));
 }
 
-void fill_plan(cereal::ModelDataV2::Builder &framed, const ModelDataRawPlanPrediction &plan) {
+void fill_plan(cereal::ModelDataV2::Builder &framed, const ModelOutputPlanPrediction &plan) {
   std::array<float, TRAJECTORY_SIZE> pos_x, pos_y, pos_z;
   std::array<float, TRAJECTORY_SIZE> pos_x_std, pos_y_std, pos_z_std;
   std::array<float, TRAJECTORY_SIZE> vel_x, vel_y, vel_z;
@@ -210,7 +210,7 @@ void fill_plan(cereal::ModelDataV2::Builder &framed, const ModelDataRawPlanPredi
 }
 
 void fill_lane_lines(cereal::ModelDataV2::Builder &framed, const std::array<float, TRAJECTORY_SIZE> &plan_t,
-                     const ModelDataRawLaneLines &lanes) {
+                     const ModelOutputLaneLines &lanes) {
   std::array<float, TRAJECTORY_SIZE> left_far_y, left_far_z;
   std::array<float, TRAJECTORY_SIZE> left_near_y, left_near_z;
   std::array<float, TRAJECTORY_SIZE> right_near_y, right_near_z;
@@ -248,7 +248,7 @@ void fill_lane_lines(cereal::ModelDataV2::Builder &framed, const std::array<floa
 }
 
 void fill_road_edges(cereal::ModelDataV2::Builder &framed, const std::array<float, TRAJECTORY_SIZE> &plan_t,
-                     const ModelDataRawRoadEdges &edges) {
+                     const ModelOutputRoadEdges &edges) {
   std::array<float, TRAJECTORY_SIZE> left_y, left_z;
   std::array<float, TRAJECTORY_SIZE> right_y, right_z;
   for (int j=0; j<TRAJECTORY_SIZE; j++) {
@@ -268,7 +268,7 @@ void fill_road_edges(cereal::ModelDataV2::Builder &framed, const std::array<floa
   });
 }
 
-void fill_model(cereal::ModelDataV2::Builder &framed, const ModelDataRaw &net_outputs) {
+void fill_model(cereal::ModelDataV2::Builder &framed, const ModelOutput &net_outputs) {
   const auto &best_plan = net_outputs.plans->get_best_prediction();
   std::array<float, TRAJECTORY_SIZE> plan_t;
   std::fill_n(plan_t.data(), plan_t.size(), NAN);
@@ -307,7 +307,7 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelDataRaw &net_ou
 }
 
 void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id, float frame_drop,
-                   const ModelDataRaw &net_outputs, uint64_t timestamp_eof,
+                   const ModelOutput &net_outputs, uint64_t timestamp_eof,
                    float model_execution_time, kj::ArrayPtr<const float> raw_pred) {
   const uint32_t frame_age = (frame_id > vipc_frame_id) ? (frame_id - vipc_frame_id) : 0;
   MessageBuilder msg;
@@ -325,7 +325,7 @@ void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id, flo
 }
 
 void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_dropped_frames,
-                     const ModelDataRaw &net_outputs, uint64_t timestamp_eof) {
+                     const ModelOutput &net_outputs, uint64_t timestamp_eof) {
   MessageBuilder msg;
   auto v_mean = net_outputs.pose->velocity_mean;
   auto r_mean = net_outputs.pose->rotation_mean;
