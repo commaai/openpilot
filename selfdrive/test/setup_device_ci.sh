@@ -1,4 +1,6 @@
-#!/usr/bin/bash -e
+#!/usr/bin/bash
+
+set -e
 
 if [ -z "$SOURCE_DIR" ]; then
   echo "SOURCE_DIR must be set"
@@ -24,8 +26,35 @@ if [ -f "/EON" ]; then
   rm -rf /data/safe_staging
 fi
 
+export KEYS_PATH="/usr/comma/setup_keys"
+export CONTINUE_PATH="/data/continue.sh"
+if [ -f "/EON" ]; then
+  export KEYS_PATH="/data/data/com.termux/files/home/setup_keys"
+  export CONTINUE_PATH="/data/data/com.termux/files/continue.sh"
+fi
+tee $CONTINUE_PATH << EOF
+#!/usr/bin/bash
+
+PARAMS_ROOT="/data/params/d"
+
+while true; do
+  mkdir -p \$PARAMS_ROOT
+  cp $KEYS_PATH \$PARAMS_ROOT/GithubSshKeys
+  echo -n 1 > \$PARAMS_ROOT/SshEnabled
+  sleep 1m
+done
+
+sleep infinity
+EOF
+chmod +x $CONTINUE_PATH
+
 # set up environment
+if [ ! -d "$SOURCE_DIR" ]; then
+  git clone https://github.com/commaai/openpilot.git $SOURCE_DIR
+fi
 cd $SOURCE_DIR
+
+rm -f .git/index.lock
 git reset --hard
 git fetch
 find . -maxdepth 1 -not -path './.git' -not -name '.' -not -name '..' -exec rm -rf '{}' \;

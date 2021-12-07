@@ -1,6 +1,7 @@
 #include "selfdrive/ui/qt/offroad/settings.h"
 
 #include <cassert>
+#include <cmath>
 #include <string>
 
 #include <QDebug>
@@ -57,12 +58,6 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       "Enable Community Features",
       "Use features, such as community supported hardware, from the open source community that are not maintained or supported by comma.ai and have not been confirmed to meet the standard safety model. Be extra cautious when using these features",
       "../assets/offroad/icon_shell.png",
-    },
-    {
-      "UploadRaw",
-      "Upload Raw Logs",
-      "Upload full logs and full resolution video by default while on Wi-Fi. If not enabled, individual logs can be marked for upload at useradmin.comma.ai.",
-      "../assets/offroad/icon_network.png",
     },
     {
       "RecordFront",

@@ -242,7 +242,7 @@ class LongitudinalMpc():
       self.solver.cost_set(i, 'Zl', Zl)
 
   def set_weights_for_xva_policy(self):
-    W = np.asfortranarray(np.diag([0., 10., 1., 10., 1.]))
+    W = np.asfortranarray(np.diag([0., 10., 1., 10., 0.0, 1.]))
     for i in range(N):
       self.solver.cost_set(i, 'W', W)
     # Setting the slice without the copy make the array not contiguous,
@@ -255,7 +255,7 @@ class LongitudinalMpc():
       self.solver.cost_set(i, 'Zl', Zl)
 
   def set_cur_state(self, v, a):
-    if abs(self.x0[1] - v) > 1.:
+    if abs(self.x0[1] - v) > 2.:
       self.x0[1] = v
       self.x0[2] = a
       for i in range(0, N+1):
