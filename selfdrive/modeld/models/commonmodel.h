@@ -25,25 +25,7 @@ constexpr int MODEL_FRAME_SIZE = MODEL_WIDTH * MODEL_HEIGHT * 3 / 2;
 
 const bool send_raw_pred = getenv("SEND_RAW_PRED") != NULL;
 
-template<size_t input_size, size_t output_size>
-void softmax(const std::array<float, input_size> &input, std::array<float, output_size> &output, const int output_offset=0) {
-  static_assert(input_size <= output_size);
-  assert(output_offset + input_size <= output_size);
-
-  const float max_val = *std::max_element(input.data(), input.end());
-  float denominator = 0;
-  for(int i = 0; i < input_size; i++) {
-    float const v_exp = expf(input[i] - max_val);
-    denominator += v_exp;
-    output[output_offset + i] = v_exp;
-  }
-
-  const float inv_denominator = 1. / denominator;
-  for(int i = 0; i < input_size; i++) {
-    output[output_offset + i] *= inv_denominator;
-  }
-}
-
+void softmax(const float* input, float* output, size_t len);
 float softplus(float input);
 float sigmoid(float input);
 
