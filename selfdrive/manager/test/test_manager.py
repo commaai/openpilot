@@ -19,6 +19,7 @@ ALL_PROCESSES = [p.name for p in managed_processes.values() if (type(p) is not D
 class TestManager(unittest.TestCase):
   def setUp(self):
     os.environ['PASSIVE'] = '0'
+    HARDWARE.set_power_save(False)
 
   def tearDown(self):
     manager.manager_cleanup()
