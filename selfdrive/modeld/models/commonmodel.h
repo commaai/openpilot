@@ -1,9 +1,6 @@
 #pragma once
 
-#include <assert.h>
-#include <algorithm>
 #include <cfloat>
-#include <cmath>
 #include <cstdlib>
 
 #include <memory>
