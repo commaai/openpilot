@@ -41,7 +41,7 @@ class DRIVER_MONITOR_SETTINGS():
     self._POSE_YAW_THRESHOLD_STRICT = self._POSE_YAW_THRESHOLD
     self._PITCH_NATURAL_OFFSET = 0.124  # people don't seem to look straight when they drive relaxed, rather a bit up
     self._YAW_NATURAL_OFFSET = 0.132  # people don't seem to look straight when they drive relaxed, rather a bit to the right (center of car)
-    self._PITCH_MAX_OFFSET = 0.336
+    self._PITCH_MAX_OFFSET = self._PITCH_NATURAL_OFFSET
     self._PITCH_MIN_OFFSET = -0.0881
     self._YAW_MAX_OFFSET = 0.289
     self._YAW_MIN_OFFSET = -0.0246
