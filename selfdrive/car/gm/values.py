@@ -214,7 +214,7 @@ FINGERPRINTS = {
 
 EV_CAR = set([CAR.BOLT_NR, CAR.VOLT, CAR.VOLT_NR])
 NO_ASCM = set([CAR.VOLT_NR, CAR.MALIBU_NR, CAR.ACADIA_NR, CAR.BOLT_NR, CAR.EQUINOX_NR, CAR.TAHOE_NR, CAR.SILVERADO_NR])
-HIGH_TORQUE = set([CAR.SILVERADO_NR, CAR.ACADIA, CAR.ACADIA_NR, CAR.TAHOE_NR])
+HIGH_TORQUE = set([CAR.SILVERADO_NR, CAR.TAHOE_NR])
 
 DBC = {
   CAR.HOLDEN_ASTRA: dbc_dict('gm_global_a_powertrain_generated', 'gm_global_a_object', chassis_dbc='gm_global_a_chassis'),
