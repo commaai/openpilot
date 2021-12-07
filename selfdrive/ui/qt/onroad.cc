@@ -274,7 +274,7 @@ void NvgWindow::initializeGL() {
 void NvgWindow::updateFrameMat(int w, int h) {
   CameraViewWidget::updateFrameMat(w, h);
 
-  UIState *s = &QUIState::ui_state;
+  UIState *s = uiState();
   s->fb_w = w;
   s->fb_h = h;
   auto intrinsic_matrix = s->wide_camera ? ecam_intrinsic_matrix : fcam_intrinsic_matrix;
@@ -348,7 +348,7 @@ void NvgWindow::drawLead(QPainter &painter, const cereal::ModelDataV2::LeadDataV
 void NvgWindow::paintGL() {
   CameraViewWidget::paintGL();
 
-  UIState *s = &QUIState::ui_state;
+  UIState *s = uiState();
   if (s->scene.world_objects_visible) {
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
