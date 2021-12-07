@@ -49,15 +49,15 @@ T_IDXS_LST = [index_function(idx, max_val=MAX_T, max_idx=N+1) for idx in range(N
 T_IDXS = np.array(T_IDXS_LST)
 T_DIFFS = np.diff(T_IDXS, prepend=[0.])
 MIN_ACCEL = -3.5
-T_REACT = 1.8
-MAX_BRAKE = 9.81
-
+T_FOLLOW = 1.45
+COMFORT_BRAKE = 2.5
+STOP_DISTANCE = 6.0
 
 def get_stopped_equivalence_factor(v_lead):
-  return T_REACT * v_lead + (v_lead*v_lead) / (2 * MAX_BRAKE)
+  return (v_lead**2) / (2 * COMFORT_BRAKE)
 
 def get_safe_obstacle_distance(v_ego):
-  return 2 * T_REACT * v_ego + (v_ego*v_ego) / (2 * MAX_BRAKE) + 4.0
+  return (v_ego**2) / (2 * COMFORT_BRAKE) + T_FOLLOW * v_ego + STOP_DISTANCE
 
 def desired_follow_distance(v_ego, v_lead):
   return get_safe_obstacle_distance(v_ego) - get_stopped_equivalence_factor(v_lead)
@@ -255,7 +255,7 @@ class LongitudinalMpc():
       self.solver.cost_set(i, 'Zl', Zl)
 
   def set_cur_state(self, v, a):
-    if abs(self.x0[1] - v) > 1.:
+    if abs(self.x0[1] - v) > 2.:
       self.x0[1] = v
       self.x0[2] = a
       for i in range(0, N+1):
@@ -318,12 +318,12 @@ class LongitudinalMpc():
 
     # Fake an obstacle for cruise, this ensures smooth acceleration to set speed
     # when the leads are no factor.
-    cruise_lower_bound = v_ego + (3/4) * self.cruise_min_a * T_IDXS
-    cruise_upper_bound = v_ego + (3/4) * self.cruise_max_a * T_IDXS
+    v_lower = v_ego + (T_IDXS * self.cruise_min_a * 1.05)
+    v_upper = v_ego + (T_IDXS * self.cruise_max_a * 1.05)
     v_cruise_clipped = np.clip(v_cruise * np.ones(N+1),
-                               cruise_lower_bound,
-                               cruise_upper_bound)
-    cruise_obstacle = T_IDXS*v_cruise_clipped + get_safe_obstacle_distance(v_cruise_clipped)
+                               v_lower,
+                               v_upper)
+    cruise_obstacle = np.cumsum(T_DIFFS * v_cruise_clipped) + get_safe_obstacle_distance(v_cruise_clipped)
 
     x_obstacles = np.column_stack([lead_0_obstacle, lead_1_obstacle, cruise_obstacle])
     self.source = SOURCES[np.argmin(x_obstacles[0])]

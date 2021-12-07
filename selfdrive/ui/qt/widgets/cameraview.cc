@@ -1,12 +1,18 @@
 #include "selfdrive/ui/qt/widgets/cameraview.h"
 
+#ifdef __APPLE__
+#include <OpenGL/gl3.h>
+#else
+#include <GLES3/gl3.h>
+#endif
+
 #include <QOpenGLBuffer>
 #include <QOffscreenSurface>
 
 namespace {
 
 const char frame_vertex_shader[] =
-#ifdef NANOVG_GL3_IMPLEMENTATION
+#ifdef __APPLE__
   "#version 150 core\n"
 #else
   "#version 300 es\n"
@@ -21,7 +27,7 @@ const char frame_vertex_shader[] =
   "}\n";
 
 const char frame_fragment_shader[] =
-#ifdef NANOVG_GL3_IMPLEMENTATION
+#ifdef __APPLE__
   "#version 150 core\n"
 #else
   "#version 300 es\n"
@@ -113,7 +119,7 @@ CameraViewWidget::~CameraViewWidget() {
 void CameraViewWidget::initializeGL() {
   initializeOpenGLFunctions();
 
-  program = new QOpenGLShaderProgram(context());
+  program = std::make_unique<QOpenGLShaderProgram>(context());
   bool ret = program->addShaderFromSourceCode(QOpenGLShader::Vertex, frame_vertex_shader);
   assert(ret);
   ret = program->addShaderFromSourceCode(QOpenGLShader::Fragment, frame_fragment_shader);

@@ -7,6 +7,7 @@
 #include <QOpenGLWidget>
 #include <QThread>
 #include "cereal/visionipc/visionipc_client.h"
+#include "selfdrive/camerad/cameras/camera_common.h"
 #include "selfdrive/common/visionimg.h"
 #include "selfdrive/ui/ui.h"
 
@@ -32,7 +33,7 @@ protected:
   void showEvent(QShowEvent *event) override;
   void hideEvent(QHideEvent *event) override;
   void mouseReleaseEvent(QMouseEvent *event) override { emit clicked(); }
-  void updateFrameMat(int w, int h);
+  virtual void updateFrameMat(int w, int h);
   void vipcThread();
 
   bool zoomed_view;
@@ -40,7 +41,7 @@ protected:
   GLuint frame_vao, frame_vbo, frame_ibo;
   mat4 frame_mat;
   std::unique_ptr<EGLImageTexture> texture[UI_BUF_COUNT];
-  QOpenGLShaderProgram *program;
+  std::unique_ptr<QOpenGLShaderProgram> program;
   QColor bg = QColor("#000000");
 
   std::string stream_name;

@@ -1,3 +1,5 @@
+from enum import IntFlag
+
 from cereal import car
 from selfdrive.car import dbc_dict
 
@@ -35,6 +37,11 @@ class CarControllerParams():
     assert(CP.lateralParams.torqueBP[0] == 0)
     self.STEER_LOOKUP_BP = [v * -1 for v in CP.lateralParams.torqueBP][1:][::-1] + list(CP.lateralParams.torqueBP)
     self.STEER_LOOKUP_V = [v * -1 for v in CP.lateralParams.torqueV][1:][::-1] + list(CP.lateralParams.torqueV)
+
+
+class HondaFlags(IntFlag):
+  # Bosch models with alternate set of LKAS_HUD messages
+  BOSCH_EXT_HUD = 1
 
 
 # Car button codes
@@ -1097,6 +1104,7 @@ FW_VERSIONS = {
       b'36161-TG8-A830\x00\x00',
       b'36161-TGS-A130\x00\x00',
       b'36161-TGT-A030\x00\x00',
+      b'36161-TGT-A130\x00\x00',
     ],
     (Ecu.srs, 0x18da53f1, None): [
       b'77959-TG7-A210\x00\x00',
@@ -1112,6 +1120,7 @@ FW_VERSIONS = {
       b'78109-TG7-AP10\x00\x00',
       b'78109-TG7-AP20\x00\x00',
       b'78109-TG7-AS20\x00\x00',
+      b'78109-TG7-AT20\x00\x00',
       b'78109-TG7-AU20\x00\x00',
       b'78109-TG7-DJ10\x00\x00',
       b'78109-TG7-YK20\x00\x00',
@@ -1121,7 +1130,7 @@ FW_VERSIONS = {
       b'78109-TGS-AK20\x00\x00',
       b'78109-TGS-AP20\x00\x00',
       b'78109-TGT-AJ20\x00\x00',
-      b'78109-TG7-AT20\x00\x00',
+      b'78109-TGT-AK30\x00\x00',
     ],
     (Ecu.vsa, 0x18da28f1, None): [
       b'57114-TG7-A630\x00\x00',
@@ -1426,16 +1435,6 @@ STEER_THRESHOLD = {
   # default is 1200, overrides go here
   CAR.ACURA_RDX: 400,
   CAR.CRV_EU: 400,
-}
-
-# TODO: is this real?
-SPEED_FACTOR = {
-  # default is 1, overrides go here
-  CAR.CRV: 1.025,
-  CAR.CRV_5G: 1.025,
-  CAR.CRV_EU: 1.025,
-  CAR.CRV_HYBRID: 1.025,
-  CAR.HRV: 1.025,
 }
 
 HONDA_NIDEC_ALT_PCM_ACCEL = set([CAR.ODYSSEY])
