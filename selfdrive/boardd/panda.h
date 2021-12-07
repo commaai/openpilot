@@ -57,9 +57,9 @@ struct can_frame {
 };
 
 class Panda : public USBDevice{
- private:
-  std::vector<uint8_t> send;
+private:
   std::vector<uint8_t> recv_buf;
+
 public:
   Panda(std::string serial="", uint32_t bus_offset=0);
   ~Panda();
@@ -86,7 +86,6 @@ public:
   void send_heartbeat();
   void set_can_speed_kbps(uint16_t bus, uint16_t speed);
   void set_data_speed_kbps(uint16_t bus, uint16_t speed);
-  uint8_t len_to_dlc(uint8_t len);
   void can_send(capnp::List<cereal::CanData>::Reader can_data_list);
   bool can_receive(std::vector<can_frame>& out_vec);
 

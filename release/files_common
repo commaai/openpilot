@@ -445,9 +445,6 @@ selfdrive/assets/training/*
 
 third_party/SConscript
 
-third_party/nanovg/*.c
-third_party/nanovg/*.h
-
 third_party/libgralloc/**
 third_party/linux/**
 third_party/opencl/**

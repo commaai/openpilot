@@ -1,31 +1,17 @@
 #pragma once
 
-#include <map>
 #include <memory>
 #include <string>
-#include <optional>
 
 #include <QObject>
 #include <QTimer>
 #include <QColor>
 #include <QTransform>
-#include "nanovg.h"
 
 #include "cereal/messaging/messaging.h"
-#include "common/transformations/orientation.hpp"
-#include "selfdrive/camerad/cameras/camera_common.h"
-#include "selfdrive/common/mat.h"
 #include "selfdrive/common/modeldata.h"
 #include "selfdrive/common/params.h"
-#include "selfdrive/common/util.h"
-
-#define COLOR_BLACK nvgRGBA(0, 0, 0, 255)
-#define COLOR_BLACK_ALPHA(x) nvgRGBA(0, 0, 0, x)
-#define COLOR_WHITE nvgRGBA(255, 255, 255, 255)
-#define COLOR_WHITE_ALPHA(x) nvgRGBA(255, 255, 255, x)
-#define COLOR_RED_ALPHA(x) nvgRGBA(201, 34, 49, x)
-#define COLOR_YELLOW nvgRGBA(218, 202, 37, 255)
-#define COLOR_RED nvgRGBA(201, 34, 49, 255)
+#include "selfdrive/common/timing.h"
 
 const int bdr_s = 30;
 const int header_h = 420;
@@ -38,17 +24,6 @@ typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
 // TODO: choose based on frame input size
 const float y_offset = Hardware::EON() ? 0.0 : 150.0;
 const float ZOOM = Hardware::EON() ? 2138.5 : 2912.8;
-
-typedef struct Rect {
-  int x, y, w, h;
-  int centerX() const { return x + w / 2; }
-  int centerY() const { return y + h / 2; }
-  int right() const { return x + w; }
-  int bottom() const { return y + h; }
-  bool ptInRect(int px, int py) const {
-    return px >= x && px < (x + w) && py >= y && py < (y + h);
-  }
-} Rect;
 
 struct Alert {
   QString text1;
@@ -100,16 +75,11 @@ const QColor bg_colors [] = {
 };
 
 typedef struct {
-  float x, y;
-} vertex_data;
-
-typedef struct {
-  vertex_data v[TRAJECTORY_SIZE * 2];
+  QPointF v[TRAJECTORY_SIZE * 2];
   int cnt;
 } line_vertices_data;
 
 typedef struct UIScene {
-
   mat3 view_from_calib;
   bool world_objects_visible;
 
@@ -122,10 +92,8 @@ typedef struct UIScene {
   line_vertices_data lane_line_vertices[4];
   line_vertices_data road_edge_vertices[2];
 
-  bool dm_active, engageable;
-
   // lead
-  vertex_data lead_vertices[2];
+  QPointF lead_vertices[2];
 
   float light_sensor, accel_sensor, gyro_sensor;
   bool started, ignition, is_metric, longitudinal_control, end_to_end;
@@ -134,10 +102,6 @@ typedef struct UIScene {
 
 typedef struct UIState {
   int fb_w = 0, fb_h = 0;
-  NVGcontext *vg;
-
-  // images
-  std::map<std::string, int> images;
 
   std::unique_ptr<SubMaster> sm;
 
@@ -207,3 +171,5 @@ public slots:
   void setAwake(bool on, bool reset);
   void update(const UIState &s);
 };
+
+void ui_update_params(UIState *s);
