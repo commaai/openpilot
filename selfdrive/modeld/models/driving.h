@@ -199,19 +199,21 @@ struct ModelDataRawBlinkerProb {
 static_assert(sizeof(ModelDataRawBlinkerProb) == sizeof(float)*2);
 
 struct ModelDataRawDesireProb {
-  float none;
-  float turn_left;
-  float turn_right;
-  float lane_change_left;
-  float lane_change_right;
-  float keep_left;
-  float keep_right;
-  float null;
-
-  // TODO: wanted to use union std::array<float, DESIRE_LEN> but static assert fails, why?
-  constexpr const std::array<float, DESIRE_LEN> to_array() const {
-    return std::array<float, DESIRE_LEN> {none, turn_left, turn_right, lane_change_left, lane_change_right, keep_left, keep_right, null};
-  }
+  union {
+    struct {
+      float none;
+      float turn_left;
+      float turn_right;
+      float lane_change_left;
+      float lane_change_right;
+      float keep_left;
+      float keep_right;
+      float null;
+    };
+    struct {
+      std::array<float, DESIRE_LEN> array;
+    };
+  };
 };
 static_assert(sizeof(ModelDataRawDesireProb) == sizeof(float)*DESIRE_LEN);
 
@@ -248,7 +250,7 @@ struct ModelState {
 };
 
 void model_init(ModelState* s, cl_device_id device_id, cl_context context);
-ModelDataRaw model_eval_frame(ModelState* s, cl_mem yuv_cl, int width, int height,
+ModelDataRaw *model_eval_frame(ModelState* s, cl_mem yuv_cl, int width, int height,
                            const mat3 &transform, float *desire_in);
 void model_free(ModelState* s);
 void poly_fit(float *in_pts, float *in_stds, float *out);

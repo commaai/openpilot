@@ -52,7 +52,7 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context) {
 #endif
 }
 
-ModelDataRaw model_eval_frame(ModelState* s, cl_mem yuv_cl, int width, int height,
+ModelDataRaw* model_eval_frame(ModelState* s, cl_mem yuv_cl, int width, int height,
                            const mat3 &transform, float *desire_in) {
 #ifdef DESIRE
   if (desire_in != NULL) {
@@ -73,16 +73,7 @@ ModelDataRaw model_eval_frame(ModelState* s, cl_mem yuv_cl, int width, int heigh
   auto net_input_buf = s->frame->prepare(yuv_cl, width, height, transform, static_cast<cl_mem*>(s->m->getInputBuf()));
   s->m->execute(net_input_buf, s->frame->buf_size);
 
-  // TODO: eliminate (directly cast s->output and return after checking size)
-  ModelDataRaw net_outputs {
-    .plans = (ModelDataRawPlans*)&s->output[PLAN_IDX],
-    .lane_lines = (ModelDataRawLaneLines*)&s->output[LL_IDX],
-    .road_edges = (ModelDataRawRoadEdges*)&s->output[RE_IDX],
-    .leads = (ModelDataRawLeads*)&s->output[LEAD_IDX],
-    .meta = (ModelDataRawMeta*)&s->output[DESIRE_STATE_IDX],
-    .pose = (ModelDataRawPose*)&s->output[POSE_IDX],
-  };
-  return net_outputs;
+  return (ModelDataRaw*)&s->output;
 }
 
 void model_free(ModelState* s) {
@@ -119,11 +110,11 @@ void fill_lead(cereal::ModelDataV2::LeadDataV3::Builder lead, const ModelDataRaw
 
 void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const ModelDataRawMeta &meta_data) {
   std::array<float, DESIRE_LEN> desire_state_softmax;
-  softmax(meta_data.desire_state_prob.to_array(), desire_state_softmax);
+  softmax(meta_data.desire_state_prob.array, desire_state_softmax);
 
   std::array<float, DESIRE_PRED_LEN * DESIRE_LEN> desire_pred_softmax;
   for (int i=0; i<DESIRE_PRED_LEN; i++) {
-    softmax(meta_data.desire_pred_prob[i].to_array(), desire_pred_softmax, i * DESIRE_LEN);
+    softmax(meta_data.desire_pred_prob[i].array, desire_pred_softmax, i * DESIRE_LEN);
   }
 
   std::array<float, DISENGAGE_LEN> lat_long_t = {2,4,6,8,10};
