@@ -33,16 +33,18 @@ class DRIVER_MONITOR_SETTINGS():
     self._BLINK_THRESHOLD_SLACK = 0.9 if TICI else 0.77
     self._BLINK_THRESHOLD_STRICT = self._BLINK_THRESHOLD
 
-    self._POSE_THRESHOLD = 0.25
-    self._POSE_THRESHOLD_SLACK = 0.66
-    self._POSE_THRESHOLD_STRICT = self._POSE_THRESHOLD
+    self._POSE_PITCH_THRESHOLD = 0.293
+    self._POSE_PITCH_THRESHOLD_SLACK = 0.334
+    self._POSE_PITCH_THRESHOLD_STRICT = self._POSE_PITCH_THRESHOLD
+    self._POSE_YAW_THRESHOLD = 0.267
+    self._POSE_YAW_THRESHOLD_SLACK = 0.373
+    self._POSE_YAW_THRESHOLD_STRICT = self._POSE_YAW_THRESHOLD
     self._PITCH_NATURAL_OFFSET = 0.124  # people don't seem to look straight when they drive relaxed, rather a bit up
     self._YAW_NATURAL_OFFSET = 0.132  # people don't seem to look straight when they drive relaxed, rather a bit to the right (center of car)
     self._PITCH_MAX_OFFSET = 0.336
     self._PITCH_MIN_OFFSET = -0.0881
     self._YAW_MAX_OFFSET = 0.289
     self._YAW_MIN_OFFSET = -0.0246
-    self._PITCH_WEIGHT = 1.35  # pitch matters a lot more
 
     self._POSESTD_THRESHOLD = 0.38 if TICI else 0.3
     self._HI_STD_FALLBACK_TIME = int(10  / self._DT_DMON)  # fall back to wheel touch if model is uncertain for 10s
@@ -97,7 +99,8 @@ class DriverPose():
     self.pitch_offseter = RunningStatFilter(max_trackable=max_trackable)
     self.yaw_offseter = RunningStatFilter(max_trackable=max_trackable)
     self.low_std = True
-    self.cfactor = 1.
+    self.cfactor_pitch = 1.
+    self.cfactor_yaw = 1.
 
 class DriverBlink():
   def __init__(self):
@@ -176,8 +179,8 @@ class DriverStatus():
     pitch_error = 0 if pitch_error > 0 else abs(pitch_error) # no positive pitch limit
     yaw_error = abs(yaw_error)
 
-    if pitch_error*self.settings._PITCH_WEIGHT > self.settings._POSE_THRESHOLD*pose.cfactor or \
-       yaw_error > self.settings._POSE_THRESHOLD*pose.cfactor:
+    if pitch_error > self.settings._POSE_PITCH_THRESHOLD*pose.cfactor_pitch or \
+       yaw_error > self.settings._POSE_YAW_THRESHOLD*pose.cfactor_yaw:
       return DistractedType.BAD_POSE
     elif (blink.left_blink + blink.right_blink)*0.5 > self.settings._BLINK_THRESHOLD*blink.cfactor:
       return DistractedType.BAD_BLINK
@@ -193,8 +196,13 @@ class DriverStatus():
                                             self.settings._BLINK_THRESHOLD,
                                             self.settings._BLINK_THRESHOLD_SLACK]) / self.settings._BLINK_THRESHOLD
     k1 = max(-0.00156*((car_speed-16)**2)+0.6, 0.2)
-    new_pose_thresh = interp(bp, [0, k1], [self.settings._POSE_THRESHOLD_SLACK, self.settings._POSE_THRESHOLD_STRICT])
-    self.pose.cfactor = new_pose_thresh / self.settings._POSE_THRESHOLD
+    bp_normal = max(min(bp / k1, 0.5),0)
+    self.pose.cfactor_pitch = interp(bp_normal, [0, 0.5],
+                                           [self.settings._POSE_PITCH_THRESHOLD_SLACK,
+                                            self.settings._POSE_PITCH_THRESHOLD_STRICT]) / self.settings._POSE_PITCH_THRESHOLD
+    self.pose.cfactor_yaw = interp(bp_normal, [0, 0.5],
+                                           [self.settings._POSE_YAW_THRESHOLD_SLACK,
+                                            self.settings._POSE_YAW_THRESHOLD_STRICT]) / self.settings._POSE_YAW_THRESHOLD
 
   def get_pose(self, driver_state, cal_rpy, car_speed, op_engaged):
     if not all(len(x) > 0 for x in [driver_state.faceOrientation, driver_state.facePosition,
