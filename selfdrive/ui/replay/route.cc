@@ -35,10 +35,8 @@ bool Route::load() {
 bool Route::loadFromServer() {
   QEventLoop loop;
   HttpRequest http(nullptr, !Hardware::PC());
-  QObject::connect(&http, &HttpRequest::failedResponse, [&] { loop.exit(0); });
-  QObject::connect(&http, &HttpRequest::timeoutResponse, [&] { loop.exit(0); });
-  QObject::connect(&http, &HttpRequest::receivedResponse, [&](const QString &json) {
-    loop.exit(loadFromJson(json));
+  QObject::connect(&http, &HttpRequest::requestDone, [&](const QString &json, bool success) {
+    loop.exit(success ? loadFromJson(json) : 0);
   });
   http.sendRequest("https://api.commadotai.com/v1/route/" + route_.str + "/files");
   return loop.exec();
@@ -91,7 +89,7 @@ void Route::addFileToSegment(int n, const QString &file) {
 
 // class Segment
 
-Segment::Segment(int n, const SegmentFile &files, uint32_t flags) : seg_num(n) {
+Segment::Segment(int n, const SegmentFile &files, uint32_t flags) : seg_num(n), flags(flags) {
   // [RoadCam, DriverCam, WideRoadCam, log]. fallback to qcamera/qlog
   const QString file_list[] = {
       (flags & REPLAY_FLAG_QCAMERA) || files.road_cam.isEmpty() ? files.qcamera : files.road_cam,
@@ -102,7 +100,7 @@ Segment::Segment(int n, const SegmentFile &files, uint32_t flags) : seg_num(n) {
   for (int i = 0; i < std::size(file_list); i++) {
     if (!file_list[i].isEmpty()) {
       loading_++;
-      synchronizer_.addFuture(QtConcurrent::run([=] { loadFile(i, file_list[i].toStdString(), !(flags & REPLAY_FLAG_NO_FILE_CACHE)); }));
+      synchronizer_.addFuture(QtConcurrent::run([=] { loadFile(i, file_list[i].toStdString()); }));
     }
   }
 }
@@ -114,14 +112,15 @@ Segment::~Segment() {
   synchronizer_.waitForFinished();
 }
 
-void Segment::loadFile(int id, const std::string file, bool local_cache) {
+void Segment::loadFile(int id, const std::string file) {
+  const bool local_cache = !(flags & REPLAY_FLAG_NO_FILE_CACHE);
   bool success = false;
   if (id < MAX_CAMERAS) {
-    frames[id] = std::make_unique<FrameReader>(local_cache, 20 * 1024 * 1024, 3);
-    success = frames[id]->load(file, &abort_);
+    frames[id] = std::make_unique<FrameReader>();
+    success = frames[id]->load(file, flags & REPLAY_FLAG_NO_CUDA, &abort_, local_cache, 20 * 1024 * 1024, 3);
   } else {
-    log = std::make_unique<LogReader>(local_cache, -1, 3);
-    success = log->load(file, &abort_);
+    log = std::make_unique<LogReader>();
+    success = log->load(file, &abort_, local_cache, 0, 3);
   }
 
   if (!success) {

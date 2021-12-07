@@ -1,44 +1,51 @@
 #pragma once
 
+#include <memory>
 #include <string>
 #include <vector>
+
 #include "selfdrive/ui/replay/filereader.h"
 
 extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
-#include <libswscale/swscale.h>
-#include <libavutil/imgutils.h>
 }
 
-class FrameReader : protected FileReader {
+struct AVFrameDeleter {
+  void operator()(AVFrame* frame) const { av_frame_free(&frame); }
+};
+
+class FrameReader {
 public:
-  FrameReader(bool local_cache = false, int chunk_size = -1, int retries = 0);
+  FrameReader();
   ~FrameReader();
-  bool load(const std::string &url, std::atomic<bool> *abort = nullptr);
+  bool load(const std::string &url, bool no_cuda = false, std::atomic<bool> *abort = nullptr, bool local_cache = false, int chunk_size = -1, int retries = 0);
+  bool load(const std::byte *data, size_t size, bool no_cuda = false, std::atomic<bool> *abort = nullptr);
   bool get(int idx, uint8_t *rgb, uint8_t *yuv);
   int getRGBSize() const { return width * height * 3; }
   int getYUVSize() const { return width * height * 3 / 2; }
-  size_t getFrameCount() const { return frames_.size(); }
+  size_t getFrameCount() const { return packets.size(); }
   bool valid() const { return valid_; }
 
   int width = 0, height = 0;
 
 private:
+  bool initHardwareDecoder(AVHWDeviceType hw_device_type);
   bool decode(int idx, uint8_t *rgb, uint8_t *yuv);
-  bool decodeFrame(AVFrame *f, uint8_t *rgb, uint8_t *yuv);
+  AVFrame * decodeFrame(AVPacket *pkt);
+  bool copyBuffers(AVFrame *f, uint8_t *rgb, uint8_t *yuv);
 
-  struct Frame {
-    AVPacket pkt = {};
-    int decoded = false;
-    bool failed = false;
-  };
-  std::vector<Frame> frames_;
-  SwsContext *rgb_sws_ctx_ = nullptr, *yuv_sws_ctx_ = nullptr;
-  AVFrame *av_frame_, *rgb_frame_, *yuv_frame_ = nullptr;
-  AVFormatContext *pFormatCtx_ = nullptr;
-  AVCodecContext *pCodecCtx_ = nullptr;
+  std::vector<AVPacket*> packets;
+  std::unique_ptr<AVFrame, AVFrameDeleter>av_frame_, hw_frame;
+  AVFormatContext *input_ctx = nullptr;
+  AVCodecContext *decoder_ctx = nullptr;
   int key_frames_count_ = 0;
   bool valid_ = false;
   AVIOContext *avio_ctx_ = nullptr;
+
+  AVPixelFormat hw_pix_fmt = AV_PIX_FMT_NONE;
+  AVBufferRef *hw_device_ctx = nullptr;
+  std::vector<uint8_t> nv12toyuv_buffer;
+  int prev_idx = -1;
+  inline static std::atomic<bool> has_cuda_device = true;
 };

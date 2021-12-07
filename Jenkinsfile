@@ -1,7 +1,7 @@
 def phone(String ip, String step_label, String cmd) {
   withCredentials([file(credentialsId: 'id_rsa', variable: 'key_file')]) {
     def ssh_cmd = """
-ssh -tt -o StrictHostKeyChecking=no -i ${key_file} -p 8022 'comma@${ip}' /usr/bin/bash <<'EOF'
+ssh -tt -o StrictHostKeyChecking=no -i ${key_file} 'comma@${ip}' /usr/bin/bash <<'END'
 
 set -e
 
@@ -29,7 +29,7 @@ cd ${env.TEST_DIR} || true
 ${cmd}
 exit 0
 
-EOF"""
+END"""
 
     sh script: ssh_cmd, label: step_label
   }
@@ -37,7 +37,7 @@ EOF"""
 
 def phone_steps(String device_type, steps) {
   lock(resource: "", label: device_type, inversePrecedence: true, variable: 'device_ip', quantity: 1) {
-    timeout(time: 150, unit: 'MINUTES') {
+    timeout(time: 60, unit: 'MINUTES') {
       phone(device_ip, "git checkout", readFile("selfdrive/test/setup_device_ci.sh"),)
       steps.each { item ->
         phone(device_ip, item[0], item[1])
@@ -53,42 +53,33 @@ pipeline {
     SOURCE_DIR = "/data/openpilot_source/"
   }
   options {
-      timeout(time: 3, unit: 'HOURS')
+      timeout(time: 4, unit: 'HOURS')
   }
 
   stages {
-
-    stage('Build release2') {
-      agent {
-        docker {
-          image 'python:3.7.3'
-          args '--user=root'
-        }
-      }
+    stage('build releases') {
       when {
         branch 'devel-staging'
       }
-      steps {
-        phone_steps("eon-build", [
-          ["build release2-staging & dashcam-staging", "PUSH=1 $SOURCE_DIR/release/build_release.sh"],
-        ])
-      }
-    }
 
-    stage('Build release3') {
-      agent {
-        docker {
-          image 'python:3.7.3'
-          args '--user=root'
+      parallel {
+        stage('release2') {
+          agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
+          steps {
+            phone_steps("eon-build", [
+              ["build release2-staging & dashcam-staging", "PUSH=1 $SOURCE_DIR/release/build_release.sh"],
+            ])
+          }
         }
-      }
-      when {
-        branch 'devel-staging'
-      }
-      steps {
-        phone_steps("tici", [
-          ["build release3-staging & dashcam3-staging", "PUSH=1 $SOURCE_DIR/release/build_release.sh"],
-        ])
+
+        stage('release3') {
+          agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
+          steps {
+            phone_steps("tici", [
+              ["build release3-staging & dashcam3-staging", "PUSH=1 $SOURCE_DIR/release/build_release.sh"],
+            ])
+          }
+        }
       }
     }
 
@@ -105,50 +96,15 @@ pipeline {
       }
 
       stages {
-
-        /*
-        stage('PC tests') {
-          agent {
-            dockerfile {
-              filename 'Dockerfile.openpilotci'
-              args '--privileged --shm-size=1G --user=root'
-            }
-          }
-          stages {
-            stage('Build') {
-              steps {
-                sh 'scons -j$(nproc)'
-              }
-            }
-          }
-          post {
-            always {
-              // fix permissions since docker runs as another user
-              sh "chmod -R 777 ."
-            }
-          }
-        }
-        */
-
         stage('On-device Tests') {
-          agent {
-            docker {
-              /*
-              filename 'Dockerfile.ondevice_ci'
-              args "--privileged -v /dev:/dev --shm-size=1G --user=root"
-              */
-              image 'python:3.7.3'
-              args '--user=root'
-            }
-          }
-
+          agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
           stages {
             stage('parallel tests') {
               parallel {
-                stage('Devel Tests') {
+                stage('C2: build') {
                   steps {
                     phone_steps("eon-build", [
-                      ["build devel", "cd $SOURCE_DIR/release && EXTRA_FILES='tools/' ./build_devel.sh"],
+                      ["build master-ci", "cd $SOURCE_DIR/release && EXTRA_FILES='tools/' ./build_devel.sh"],
                       ["build openpilot", "cd selfdrive/manager && ./build.py"],
                       ["test manager", "python selfdrive/manager/test/test_manager.py"],
                       ["onroad tests", "cd selfdrive/test/ && ./test_onroad.py"],
@@ -157,7 +113,7 @@ pipeline {
                   }
                 }
 
-                stage('Replay Tests') {
+                stage('C2: replay') {
                   steps {
                     phone_steps("eon2", [
                       ["build", "cd selfdrive/manager && ./build.py"],
@@ -166,7 +122,7 @@ pipeline {
                   }
                 }
 
-                stage('HW + Unit Tests') {
+                stage('C2: HW + Unit Tests') {
                   steps {
                     phone_steps("eon", [
                       ["build", "cd selfdrive/manager && ./build.py"],
@@ -201,19 +157,22 @@ pipeline {
                 }
                 */
 
-                stage('tici Build') {
+                stage('C3: build') {
                   environment {
                     R3_PUSH = "${env.BRANCH_NAME == 'master' ? '1' : ' '}"
                   }
                   steps {
                     phone_steps("tici", [
-                      ["build", "cd selfdrive/manager && ./build.py"],
+                      ["build master-ci", "cd $SOURCE_DIR/release && EXTRA_FILES='tools/' ./build_devel.sh"],
+                      ["build openpilot", "cd selfdrive/manager && ./build.py"],
+                      ["test manager", "python selfdrive/manager/test/test_manager.py"],
                       ["onroad tests", "cd selfdrive/test/ && ./test_onroad.py"],
+                      ["test car interfaces", "cd selfdrive/car/tests/ && ./test_car_interfaces.py"],
                     ])
                   }
                 }
 
-                stage('HW + Unit Tests (tici)') {
+                stage('C3: HW + Unit Tests') {
                   steps {
                     phone_steps("tici2", [
                       ["build", "cd selfdrive/manager && ./build.py"],
@@ -224,7 +183,7 @@ pipeline {
                   }
                 }
 
-                stage('EON camerad') {
+                stage('C2: camerad') {
                   steps {
                     phone_steps("eon-party", [
                       ["build", "cd selfdrive/manager && ./build.py"],
@@ -234,12 +193,21 @@ pipeline {
                   }
                 }
 
-                stage('tici camerad') {
+                stage('C3: camerad') {
                   steps {
                     phone_steps("tici-party", [
                       ["build", "cd selfdrive/manager && ./build.py"],
                       ["test camerad", "python selfdrive/camerad/test/test_camerad.py"],
                       ["test exposure", "python selfdrive/camerad/test/test_exposure.py"],
+                    ])
+                  }
+                }
+
+                stage('C3: replay') {
+                  steps {
+                    phone_steps("tici-party", [
+                      ["build", "cd selfdrive/manager && ./build.py"],
+                      ["model replay", "cd selfdrive/test/process_replay && ./model_replay.py"],
                     ])
                   }
                 }

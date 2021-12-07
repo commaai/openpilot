@@ -102,6 +102,7 @@ int main(int argc, char *argv[]) {
       {"no-cache", REPLAY_FLAG_NO_FILE_CACHE, "turn off local cache"},
       {"qcam", REPLAY_FLAG_QCAMERA, "load qcamera"},
       {"yuv", REPLAY_FLAG_SEND_YUV, "send yuv frame"},
+      {"no-cuda", REPLAY_FLAG_NO_CUDA, "disable CUDA"},
   };
 
   QCommandLineParser parser;

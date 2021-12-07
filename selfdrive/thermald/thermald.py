@@ -22,15 +22,13 @@ from selfdrive.hardware import EON, TICI, PC, HARDWARE
 from selfdrive.loggerd.config import get_available_percent
 from selfdrive.swaglog import cloudlog
 from selfdrive.thermald.power_monitoring import PowerMonitoring
-from selfdrive.version import tested_branch, terms_version, training_version
+from selfdrive.version import terms_version, training_version
 
 ThermalStatus = log.DeviceState.ThermalStatus
 NetworkType = log.DeviceState.NetworkType
 NetworkStrength = log.DeviceState.NetworkStrength
 CURRENT_TAU = 15.   # 15s time constant
 TEMP_TAU = 5.   # 5s time constant
-DAYS_NO_CONNECTIVITY_MAX = 14     # do not allow to engage after this many days
-DAYS_NO_CONNECTIVITY_PROMPT = 10  # send an offroad prompt after this many days
 DISCONNECT_TIMEOUT = 5.  # wait 5 seconds before going offroad after disconnect so you get an alert
 
 ThermalBand = namedtuple("ThermalBand", ['min_temp', 'max_temp'])
@@ -66,6 +64,7 @@ def read_thermal(thermal_config):
   dat.deviceState.gpuTempC = [read_tz(z) / thermal_config.gpu[1] for z in thermal_config.gpu[0]]
   dat.deviceState.memoryTempC = read_tz(thermal_config.mem[0]) / thermal_config.mem[1]
   dat.deviceState.ambientTempC = read_tz(thermal_config.ambient[0]) / thermal_config.ambient[1]
+  dat.deviceState.pmicTempC = [read_tz(z) / thermal_config.pmic[1] for z in thermal_config.pmic[0]]
   return dat
 
 
@@ -126,9 +125,15 @@ def handle_fan_uno(controller, max_cpu_temp, fan_speed, ignition):
   return new_speed
 
 
+last_ignition = False
 def handle_fan_tici(controller, max_cpu_temp, fan_speed, ignition):
+  global last_ignition
+
   controller.neg_limit = -(80 if ignition else 30)
   controller.pos_limit = -(30 if ignition else 0)
+
+  if ignition != last_ignition:
+    controller.reset()
 
   fan_pwr_out = -int(controller.update(
                      setpoint=(75 if ignition else (OFFROAD_DANGER_TEMP - 2)),
@@ -136,6 +141,7 @@ def handle_fan_tici(controller, max_cpu_temp, fan_speed, ignition):
                      feedforward=interp(max_cpu_temp, [60.0, 100.0], [0, -80])
                   ))
 
+  last_ignition = ignition
   return fan_pwr_out
 
 
@@ -157,10 +163,11 @@ def thermald_thread():
   fan_speed = 0
   count = 0
 
-  startup_conditions = {
+  onroad_conditions = {
     "ignition": False,
   }
-  startup_conditions_prev = startup_conditions.copy()
+  startup_conditions = {}
+  startup_conditions_prev = {}
 
   off_ts = None
   started_ts = None
@@ -214,12 +221,12 @@ def thermald_thread():
       if pandaState.pandaType == log.PandaState.PandaType.unknown:
         no_panda_cnt += 1
         if no_panda_cnt > DISCONNECT_TIMEOUT / DT_TRML:
-          if startup_conditions["ignition"]:
+          if onroad_conditions["ignition"]:
             cloudlog.error("Lost panda connection while onroad")
-          startup_conditions["ignition"] = False
+          onroad_conditions["ignition"] = False
       else:
         no_panda_cnt = 0
-        startup_conditions["ignition"] = pandaState.ignitionLine or pandaState.ignitionCan
+        onroad_conditions["ignition"] = pandaState.ignitionLine or pandaState.ignitionCan
 
       in_car = pandaState.harnessStatus != log.PandaState.HarnessStatus.notConnected
       usb_power = peripheralState.usbPowerMode != log.PeripheralState.UsbPowerMode.client
@@ -298,7 +305,7 @@ def thermald_thread():
     )
 
     if handle_fan is not None:
-      fan_speed = handle_fan(controller, max_comp_temp, fan_speed, startup_conditions["ignition"])
+      fan_speed = handle_fan(controller, max_comp_temp, fan_speed, onroad_conditions["ignition"])
       msg.deviceState.fanSpeedPercentDesired = fan_speed
 
     is_offroad_for_5_min = (started_ts is None) and ((not started_seen) or (off_ts is None) or (sec_since_boot() - off_ts > 60 * 5))
@@ -316,46 +323,10 @@ def thermald_thread():
 
     # **** starting logic ****
 
-    # Check for last update time and display alerts if needed
+    # Ensure date/time are valid
     now = datetime.datetime.utcnow()
-
-    # show invalid date/time alert
     startup_conditions["time_valid"] = (now.year > 2020) or (now.year == 2020 and now.month >= 10)
     set_offroad_alert_if_changed("Offroad_InvalidTime", (not startup_conditions["time_valid"]))
-
-    # Show update prompt
-    try:
-      last_update = datetime.datetime.fromisoformat(params.get("LastUpdateTime", encoding='utf8'))
-    except (TypeError, ValueError):
-      last_update = now
-    dt = now - last_update
-
-    update_failed_count = params.get("UpdateFailedCount")
-    update_failed_count = 0 if update_failed_count is None else int(update_failed_count)
-    last_update_exception = params.get("LastUpdateException", encoding='utf8')
-
-    if update_failed_count > 15 and last_update_exception is not None:
-      if tested_branch:
-        extra_text = "Ensure the software is correctly installed"
-      else:
-        extra_text = last_update_exception
-
-      set_offroad_alert_if_changed("Offroad_ConnectivityNeeded", False)
-      set_offroad_alert_if_changed("Offroad_ConnectivityNeededPrompt", False)
-      set_offroad_alert_if_changed("Offroad_UpdateFailed", True, extra_text=extra_text)
-    elif dt.days > DAYS_NO_CONNECTIVITY_MAX and update_failed_count > 1:
-      set_offroad_alert_if_changed("Offroad_UpdateFailed", False)
-      set_offroad_alert_if_changed("Offroad_ConnectivityNeededPrompt", False)
-      set_offroad_alert_if_changed("Offroad_ConnectivityNeeded", True)
-    elif dt.days > DAYS_NO_CONNECTIVITY_PROMPT:
-      remaining_time = str(max(DAYS_NO_CONNECTIVITY_MAX - dt.days, 0))
-      set_offroad_alert_if_changed("Offroad_UpdateFailed", False)
-      set_offroad_alert_if_changed("Offroad_ConnectivityNeeded", False)
-      set_offroad_alert_if_changed("Offroad_ConnectivityNeededPrompt", True, extra_text=f"{remaining_time} days.")
-    else:
-      set_offroad_alert_if_changed("Offroad_UpdateFailed", False)
-      set_offroad_alert_if_changed("Offroad_ConnectivityNeeded", False)
-      set_offroad_alert_if_changed("Offroad_ConnectivityNeededPrompt", False)
 
     startup_conditions["up_to_date"] = params.get("Offroad_ConnectivityNeeded") is None or params.get_bool("DisableUpdates") or params.get_bool("SnoozeUpdate")
     startup_conditions["not_uninstalling"] = not params.get_bool("DoUninstall")
@@ -369,14 +340,17 @@ def thermald_thread():
     startup_conditions["not_taking_snapshot"] = not params.get_bool("IsTakingSnapshot")
     # if any CPU gets above 107 or the battery gets above 63, kill all processes
     # controls will warn with CPU above 95 or battery above 60
-    startup_conditions["device_temp_good"] = thermal_status < ThermalStatus.danger
-    set_offroad_alert_if_changed("Offroad_TemperatureTooHigh", (not startup_conditions["device_temp_good"]))
+    onroad_conditions["device_temp_good"] = thermal_status < ThermalStatus.danger
+    set_offroad_alert_if_changed("Offroad_TemperatureTooHigh", (not onroad_conditions["device_temp_good"]))
 
     if TICI:
       set_offroad_alert_if_changed("Offroad_StorageMissing", (not Path("/data/media").is_mount()))
 
     # Handle offroad/onroad transition
-    should_start = all(startup_conditions.values())
+    should_start = all(onroad_conditions.values())
+    if started_ts is None:
+      should_start = should_start and all(startup_conditions.values())
+
     if should_start != should_start_prev or (count == 0):
       params.put_bool("IsOnroad", should_start)
       params.put_bool("IsOffroad", not should_start)
@@ -388,23 +362,25 @@ def thermald_thread():
         started_ts = sec_since_boot()
         started_seen = True
     else:
-      if startup_conditions["ignition"] and (startup_conditions != startup_conditions_prev):
-        cloudlog.event("Startup blocked", startup_conditions=startup_conditions)
+      if onroad_conditions["ignition"] and (startup_conditions != startup_conditions_prev):
+        cloudlog.event("Startup blocked", startup_conditions=startup_conditions, onroad_conditions=onroad_conditions)
 
       started_ts = None
       if off_ts is None:
         off_ts = sec_since_boot()
 
     # Offroad power monitoring
-    power_monitor.calculate(peripheralState, startup_conditions["ignition"])
+    power_monitor.calculate(peripheralState, onroad_conditions["ignition"])
     msg.deviceState.offroadPowerUsageUwh = power_monitor.get_power_used()
     msg.deviceState.carBatteryCapacityUwh = max(0, power_monitor.get_car_battery_capacity())
+    current_power_draw = HARDWARE.get_current_power_draw()  # pylint: disable=assignment-from-none
+    msg.deviceState.powerDrawW = current_power_draw if current_power_draw is not None else 0
 
     # Check if we need to disable charging (handled by boardd)
-    msg.deviceState.chargingDisabled = power_monitor.should_disable_charging(startup_conditions["ignition"], in_car, off_ts)
+    msg.deviceState.chargingDisabled = power_monitor.should_disable_charging(onroad_conditions["ignition"], in_car, off_ts)
 
     # Check if we need to shut down
-    if power_monitor.should_shutdown(peripheralState, startup_conditions["ignition"], in_car, off_ts, started_seen):
+    if power_monitor.should_shutdown(peripheralState, onroad_conditions["ignition"], in_car, off_ts, started_seen):
       cloudlog.info(f"shutting device down, offroad since {off_ts}")
       # TODO: add function for blocking cloudlog instead of sleep
       time.sleep(10)

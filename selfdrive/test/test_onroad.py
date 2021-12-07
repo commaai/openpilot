@@ -56,7 +56,7 @@ if TICI:
     "./loggerd": 70.0,
     "selfdrive.controls.controlsd": 28.0,
     "./camerad": 31.0,
-    "./_ui": 21.0,
+    "./_ui": 30.2,
     "selfdrive.controls.plannerd": 11.7,
     "./_dmonitoringmodeld": 10.0,
     "selfdrive.locationd.paramsd": 5.0,
@@ -97,7 +97,8 @@ def cputime_total(ct):
 
 
 def check_cpu_usage(first_proc, last_proc):
-  result =  "------------------------------------------------\n"
+  result = "\n"
+  result += "------------------------------------------------\n"
   result += "------------------ CPU Usage -------------------\n"
   result += "------------------------------------------------\n"
 
@@ -112,10 +113,9 @@ def check_cpu_usage(first_proc, last_proc):
       cpu_usage = cpu_time / dt * 100.
       if cpu_usage > max(normal_cpu_usage * 1.15, normal_cpu_usage + 5.0):
         # cpu usage is high while playing sounds
-        if proc_name == "./_soundd" and cpu_usage < 65.:
-          continue
-        result += f"Warning {proc_name} using more CPU than normal\n"
-        r = False
+        if not (proc_name == "./_soundd" and cpu_usage < 65.):
+          result += f"Warning {proc_name} using more CPU than normal\n"
+          r = False
       elif cpu_usage < min(normal_cpu_usage * 0.65, max(normal_cpu_usage - 1.0, 0.0)):
         result += f"Warning {proc_name} using less CPU than normal\n"
         r = False
@@ -138,20 +138,17 @@ class TestOnroad(unittest.TestCase):
       cls.lr = list(LogReader(os.path.join(segs[-1], "rlog.bz2")))
       return
 
+    # setup env
     os.environ['REPLAY'] = "1"
     os.environ['SKIP_FW_QUERY'] = "1"
     os.environ['FINGERPRINT'] = "TOYOTA COROLLA TSS2 2019"
+
+    params = Params()
+    params.clear_all()
     set_params_enabled()
 
     # Make sure athena isn't running
-    Params().delete("DongleId")
-    Params().delete("AthenadPid")
     os.system("pkill -9 -f athena")
-
-    logger_root = Path(ROOT)
-    initial_segments = set()
-    if logger_root.exists():
-      initial_segments = set(Path(ROOT).iterdir())
 
     # start manager and run openpilot for a minute
     try:
@@ -164,15 +161,19 @@ class TestOnroad(unittest.TestCase):
           sm.update(1000)
 
       # make sure we get at least two full segments
+      route = None
       cls.segments = []
       with Timeout(300, "timed out waiting for logs"):
+        while route is None:
+          route = params.get("CurrentRoute", encoding="utf-8")
+          time.sleep(0.1)
+
         while len(cls.segments) < 3:
-          new_paths = set()
-          if logger_root.exists():
-            new_paths = set(logger_root.iterdir()) - initial_segments
-          segs = [p for p in new_paths if "--" in str(p)]
+          segs = set()
+          if Path(ROOT).exists():
+            segs = set(Path(ROOT).glob(f"{route}--*"))
           cls.segments = sorted(segs, key=lambda s: int(str(s).rsplit('--')[-1]))
-          time.sleep(5)
+          time.sleep(2)
 
     finally:
       proc.terminate()
@@ -190,7 +191,7 @@ class TestOnroad(unittest.TestCase):
     total_size = sum(len(m.as_builder().to_bytes()) for m in msgs)
     self.assertLess(total_size, 3.5e5)
 
-    cnt = Counter([json.loads(m.logMessage)['filename'] for m in msgs])
+    cnt = Counter(json.loads(m.logMessage)['filename'] for m in msgs)
     big_logs = [f for f, n in cnt.most_common(3) if n / sum(cnt.values()) > 30.]
     self.assertEqual(len(big_logs), 0, f"Log spam: {big_logs}")
 
@@ -201,7 +202,8 @@ class TestOnroad(unittest.TestCase):
     self.assertTrue(cpu_ok)
 
   def test_model_execution_timings(self):
-    result =  "------------------------------------------------\n"
+    result = "\n"
+    result += "------------------------------------------------\n"
     result += "----------------- Model Timing -----------------\n"
     result += "------------------------------------------------\n"
     # TODO: this went up when plannerd cpu usage increased, why?
@@ -212,12 +214,15 @@ class TestOnroad(unittest.TestCase):
       self.assertLess(np.mean(ts), avg_max, f"high avg '{s}' execution time: {np.mean(ts)}")
       result += f"'{s}' execution time: {min(ts)}\n"
       result += f"'{s}' avg execution time: {np.mean(ts)}\n"
+    result += "------------------------------------------------\n"
     print(result)
 
   def test_timings(self):
-
-    print("\n\n")
-    print("="*25, "service timings", "="*25)
+    passed = True
+    result = "\n"
+    result += "------------------------------------------------\n"
+    result += "----------------- Service Timings --------------\n"
+    result += "------------------------------------------------\n"
     for s, (maxmin, rsd) in TIMINGS.items():
       msgs = [m.logMonoTime for m in self.lr if m.which() == s]
       if not len(msgs):
@@ -226,12 +231,22 @@ class TestOnroad(unittest.TestCase):
       ts = np.diff(msgs) / 1e9
       dt = 1 / service_list[s].frequency
 
-      np.testing.assert_allclose(np.mean(ts), dt, rtol=0.03, err_msg=f"{s} - failed mean timing check")
-      np.testing.assert_allclose([np.max(ts), np.min(ts)], dt, rtol=maxmin, err_msg=f"{s} - failed max/min timing check")
-      self.assertLess(np.std(ts) / dt, rsd, msg=f"{s} - failed RSD timing check")
-      print(f"{s}: {np.array([np.mean(ts), np.max(ts), np.min(ts)])*1e3}")
-      print(f"     {np.max(np.absolute([np.max(ts)/dt, np.min(ts)/dt]))} {np.std(ts)/dt}")
-    print("="*67)
+      try:
+        np.testing.assert_allclose(np.mean(ts), dt, rtol=0.03, err_msg=f"{s} - failed mean timing check")
+        np.testing.assert_allclose([np.max(ts), np.min(ts)], dt, rtol=maxmin, err_msg=f"{s} - failed max/min timing check")
+      except Exception as e:
+        result += str(e) + "\n"
+        passed = False
+
+      if np.std(ts) / dt > rsd:
+        result += f"{s} - failed RSD timing check\n"
+        passed = False
+
+      result += f"{s.ljust(40)}: {np.array([np.mean(ts), np.max(ts), np.min(ts)])*1e3}\n"
+      result += f"{''.ljust(40)}  {np.max(np.absolute([np.max(ts)/dt, np.min(ts)/dt]))} {np.std(ts)/dt}\n"
+    result += "="*67
+    print(result)
+    self.assertTrue(passed)
 
   @release_only
   def test_startup(self):
