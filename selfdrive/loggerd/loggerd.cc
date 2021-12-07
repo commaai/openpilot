@@ -241,7 +241,7 @@ void loggerd_thread() {
         }
 
         count++;
-        if (count >= 50) {
+        if (count >= 200) {
           LOGE("large volume of '%s' messages", qs.name.c_str());
           break;
         }
