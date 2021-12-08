@@ -21,7 +21,6 @@ class QGeoRouteReplyMapbox : public QGeoRouteReply
 public:
     explicit QGeoRouteReplyMapbox(QObject *parent = 0);
     QGeoRouteReplyMapbox(QNetworkReply *reply, const QGeoRouteRequest &request, QObject *parent = 0);
-    ~QGeoRouteReplyMapbox();
     QList<QGeoRouteMapbox> routes() const;
 
 private slots:

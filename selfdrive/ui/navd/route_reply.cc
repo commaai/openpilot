@@ -10,35 +10,31 @@
 #include "selfdrive/ui/navd/route_parser.h"
 #include "selfdrive/ui/navd/routing_manager.h"
 
-QGeoRouteReplyMapbox::QGeoRouteReplyMapbox(QNetworkReply *reply, const QGeoRouteRequest &request,
-                                           QObject *parent)
+QGeoRouteReplyMapbox::QGeoRouteReplyMapbox(QNetworkReply *reply, const QGeoRouteRequest &request, QObject *parent)
     : QGeoRouteReply(request, parent)
 {
-    if (!reply)
-    {
+    if (!reply) {
         setError(UnknownError, QStringLiteral("Null reply"));
         return;
     }
     connect(reply, SIGNAL(finished()), this, SLOT(networkReplyFinished()));
-    connect(reply, SIGNAL(error(QNetworkReply::NetworkError)),
-            this, SLOT(networkReplyError(QNetworkReply::NetworkError)));
+    connect(reply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(networkReplyError(QNetworkReply::NetworkError)));
     connect(this, &QGeoRouteReply::aborted, reply, &QNetworkReply::abort);
     connect(this, &QObject::destroyed, reply, &QObject::deleteLater);
 }
 
-QGeoRouteReplyMapbox::~QGeoRouteReplyMapbox()
+QList<QGeoRouteMapbox> QGeoRouteReplyMapbox::routes() const
 {
-}
-
-QList<QGeoRouteMapbox> QGeoRouteReplyMapbox::routes() const {
     return m_routes;
 }
 
-void QGeoRouteReplyMapbox::setRoutes(const QList<QGeoRouteMapbox> &routes) {
+void QGeoRouteReplyMapbox::setRoutes(const QList<QGeoRouteMapbox> &routes)
+{
     m_routes = routes;
 }
 
-void QGeoRouteReplyMapbox::addRoutes(const QList<QGeoRouteMapbox> &routes) {
+void QGeoRouteReplyMapbox::addRoutes(const QList<QGeoRouteMapbox> &routes)
+{
     m_routes.append(routes);
 }
 
@@ -61,12 +57,10 @@ void QGeoRouteReplyMapbox::networkReplyFinished()
     QGeoRouteReply::Error error = parser->parseReply(routes, errorString, routeReply);
     qWarning() << "Parsed routes: " << routes.length();
     // Setting the request into the result
-    for (QGeoRoute &route : routes)
-    {
+    for (QGeoRoute &route : routes) {
         qWarning() << "Route: " << route.path().length();
         route.setRequest(request());
-        for (QGeoRoute &leg : route.routeLegs())
-        {
+        for (QGeoRoute &leg : route.routeLegs()) {
             leg.setRequest(request());
         }
     }
@@ -75,22 +69,17 @@ void QGeoRouteReplyMapbox::networkReplyFinished()
     metadata["osrm.reply-json"] = routeReply;
 
     QList<QGeoRouteMapbox> mapboxRoutes;
-    for (const QGeoRoute &route : routes.mid(0, request().numberAlternativeRoutes() + 1))
-    {
+    for (const QGeoRoute &route : routes.mid(0, request().numberAlternativeRoutes() + 1)) {
         QGeoRouteMapbox mapboxRoute(route, metadata);
         mapboxRoutes.append(mapboxRoute);
     }
 
-    if (error == QGeoRouteReply::NoError)
-    {
+    if (error == QGeoRouteReply::NoError) {
         qWarning() << "Setting routes: " << mapboxRoutes.length();
         qWarning() << "First route: " << mapboxRoutes.first().path().length();
         setRoutes(mapboxRoutes);
-        // setError(QGeoRouteReply::NoError, status);  // can't do this, or NoError is emitted and does damages
         setFinished(true);
-    }
-    else
-    {
+    } else {
         setError(error, errorString);
     }
 }

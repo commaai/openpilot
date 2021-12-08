@@ -111,17 +111,8 @@ RouteEngine::RouteEngine() {
   msg_timer->start(50);
 
   // Build routing engine
-  QVariantMap parameters;
-  parameters["mapbox.access_token"] = get_mapbox_token();
-  parameters["mapbox.directions_api_url"] = MAPS_HOST + "/directions/v5/mapbox/";
-
-  QGeoServiceProvider::Error error;
-  QString errorString;
-  routing_manager = new MapboxRoutingManager(parameters, &error, &errorString);
-  if (routing_manager == nullptr) {
-    qWarning() << errorString;
-    assert(routing_manager);
-  }
+  routing_manager = new MapboxRoutingManager();
+  assert(routing_manager);
   QObject::connect(routing_manager, &MapboxRoutingManager::finished, this, &RouteEngine::routeCalculated);
 
   // Get last gps position from params
@@ -387,14 +378,14 @@ void RouteEngine::sendRoute() {
   route_geometry_segments.clear();
   auto metadata = ((QGeoRouteMapbox *) &route)->metadata();
   const QByteArray &raw_reply = metadata["osrm.reply-json"].toByteArray();
-  QJsonArray osrm_routes = QJsonDocument::fromJson(raw_reply).object().value(QLatin1String("routes")).toArray();
+  QJsonArray osrm_routes = QJsonDocument::fromJson(raw_reply).object().value("routes").toArray();
 
   for (const auto &r : osrm_routes) {
     if (!r.isObject())
         continue;
 
     auto route_object = r.toObject();
-    auto route_distance = route_object.value(QLatin1String("distance")).toDouble();
+    auto route_distance = route_object.value("distance").toDouble();
     if (route_distance != route.distance()) {
         qWarning() << "Skipping route. Distance mismatch" << route_distance << route.distance();
         continue;
@@ -402,22 +393,22 @@ void RouteEngine::sendRoute() {
 
     qWarning() << "Route: " << route_object;
 
-    auto legs = route_object.value(QLatin1String("legs")).toArray();
+    auto legs = route_object.value("legs").toArray();
     for (const auto &l : legs) {
       auto leg = l.toObject();
-      auto annotation = leg.value(QLatin1String("annotation")).toObject();
-      auto distances = annotation.value(QLatin1String("distance")).toArray();
-      auto maxspeeds = annotation.value(QLatin1String("maxspeed")).toArray();
+      auto annotation = leg.value("annotation").toObject();
+      auto distances = annotation.value("distance").toArray();
+      auto maxspeeds = annotation.value("maxspeed").toArray();
       auto size = std::min(distances.size(), maxspeeds.size());
       for (int i = 0; i < size; i++) {
         auto max_speed = maxspeeds.at(i).toObject();
-        auto unknown = max_speed.value(QLatin1String("unknown")).toBool();
-        auto speed = max_speed.value(QLatin1String("speed")).toDouble();
-        auto unit = max_speed.value(QLatin1String("unit")).toString();
+        auto unknown = max_speed.value("unknown").toBool();
+        auto speed = max_speed.value("speed").toDouble();
+        auto unit = max_speed.value("unit").toString();
         auto speed_limit =
           unknown ? 0
-          : unit == QLatin1String("km/h") ? speed * KPH_TO_MS
-          : unit == QLatin1String("mph") ? speed * MPH_TO_MS
+          : unit == "km/h" ? speed * KPH_TO_MS
+          : unit == "mph" ? speed * MPH_TO_MS
           : 0;
 
         route_geometry_segments.append({ distances.at(i).toDouble(), speed_limit });
