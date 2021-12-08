@@ -7,9 +7,9 @@
 #include <QJsonValue>
 
 #include "selfdrive/ui/navd/routing_manager.h"
+#include "selfdrive/ui/qt/api.h"
 #include "selfdrive/ui/qt/maps/map.h"
 #include "selfdrive/ui/qt/maps/map_helpers.h"
-#include "selfdrive/ui/qt/api.h"
 
 #include "selfdrive/common/params.h"
 
@@ -33,8 +33,8 @@ static cereal::NavInstruction::Direction string_to_direction(QString d) {
 }
 
 RouteEngine::RouteEngine() {
-  sm = new SubMaster({"liveLocationKalman", "managerState"});
-  pm = new PubMaster({"navInstruction", "navRoute"});
+  sm = new SubMaster({ "liveLocationKalman", "managerState" });
+  pm = new PubMaster({ "navInstruction", "navRoute" });
 
   // Timers
   route_timer = new QTimer(this);
@@ -67,7 +67,7 @@ void RouteEngine::msgUpdate() {
   if (sm->updated("managerState")) {
     for (auto const &p : (*sm)["managerState"].getManagerState().getProcesses()) {
       if (p.getName() == "ui" && p.getRunning()) {
-        if (ui_pid && *ui_pid != p.getPid()){
+        if (ui_pid && *ui_pid != p.getPid()) {
           qWarning() << "UI restarting, sending route";
           QTimer::singleShot(5000, this, &RouteEngine::sendRoute);
         }
@@ -223,7 +223,7 @@ bool RouteEngine::shouldRecompute() {
   auto cur = to_QGeoCoordinate(*last_position);
   for (size_t i = 0; i < path.size() - 1; i++) {
     auto a = path[i];
-    auto b = path[i+1];
+    auto b = path[i + 1];
     if (a.distanceTo(b) < 1.0) {
       continue;
     }
@@ -251,7 +251,8 @@ void RouteEngine::recomputeRoute() {
     should_recompute = true;
   }
 
-  if (!gps_ok && segment.isValid()) return; // Don't recompute when gps drifts in tunnels
+  if (!gps_ok && segment.isValid())
+    return; // Don't recompute when gps drifts in tunnels
 
   if (recompute_countdown == 0 && should_recompute) {
     recompute_countdown = std::pow(2, recompute_backoff);
@@ -273,7 +274,7 @@ void RouteEngine::calculateRoute(QMapbox::Coordinate destination) {
     QVariantMap params;
     int bearing = ((int)(*last_bearing) + 360) % 360;
     params["bearing"] = bearing;
-    request.setWaypointsMetadata({params});
+    request.setWaypointsMetadata({ params });
   }
 
   routing_manager->calculateRoute(request);

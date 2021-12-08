@@ -7,16 +7,15 @@
 
 #include "selfdrive/ui/navd/route_reply.h"
 
-class RouteParser : public QObject
-{
-    Q_OBJECT
+class RouteParser : public QObject {
+  Q_OBJECT
 
 public:
-    RouteParser();
+  RouteParser();
 
-    RouteReply::Error parseReply(QList<Route> &routes, QString &errorString, const QByteArray &reply) const;
-    QUrl requestUrl(const QGeoRouteRequest &request, const QString &prefix) const;
+  RouteReply::Error parseReply(QList<Route> &routes, QString &errorString, const QByteArray &reply) const;
+  QUrl requestUrl(const QGeoRouteRequest &request, const QString &prefix) const;
 
 private:
-    RouteSegment parseStep(const QJsonObject &step, int legIndex, int stepIndex) const;
+  RouteSegment parseStep(const QJsonObject &step, int legIndex, int stepIndex) const;
 };

@@ -26,8 +26,8 @@ public:
   SubMaster *sm;
   PubMaster *pm;
 
-  QTimer* msg_timer;
-  QTimer* route_timer;
+  QTimer *msg_timer;
+  QTimer *route_timer;
 
   std::optional<int> ui_pid;
 

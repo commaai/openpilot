@@ -5,148 +5,144 @@
 #include <QNetworkReply>
 
 struct RouteManeuverLane {
-    bool active;
-    QString activeDirection;
-    QList<QString> directions;
+  bool active;
+  QString activeDirection;
+  QList<QString> directions;
 };
 
-class RouteManeuver
-{
+class RouteManeuver {
 public:
-    RouteManeuver() {}
+  RouteManeuver() { }
 
-    bool isValid() const { return m_valid; }
-    void setValid(bool valid) { m_valid = valid; }
-    
-    QGeoCoordinate position() const { return m_position; }
-    void setPosition(const QGeoCoordinate &position) { m_position = position; }
+  bool isValid() const { return m_valid; }
+  void setValid(bool valid) { m_valid = valid; }
 
-    QString type() const { return m_type; }
-    void setType(const QString &type) { m_type = type; }
+  QGeoCoordinate position() const { return m_position; }
+  void setPosition(const QGeoCoordinate &position) { m_position = position; }
 
-    QString modifier() const { return m_modifier; }
-    void setModifier(const QString &modifier) { m_modifier = modifier; }
+  QString type() const { return m_type; }
+  void setType(const QString &type) { m_type = type; }
 
-    QString primaryText() const { return m_primaryText; }
-    void setPrimaryText(const QString &text) { m_primaryText = text; }
+  QString modifier() const { return m_modifier; }
+  void setModifier(const QString &modifier) { m_modifier = modifier; }
 
-    QString secondaryText() const { return m_secondaryText; }
-    void setSecondaryText(const QString &text) { m_secondaryText = text; }
+  QString primaryText() const { return m_primaryText; }
+  void setPrimaryText(const QString &text) { m_primaryText = text; }
 
-    QList<RouteManeuverLane> lanes() const { return m_lanes; }
-    void setLanes(const QList<RouteManeuverLane> &lanes) { m_lanes = lanes; }
+  QString secondaryText() const { return m_secondaryText; }
+  void setSecondaryText(const QString &text) { m_secondaryText = text; }
 
-    float distanceAlongGeometry() const { return m_distanceAlongGeometry; }
-    void setDistanceAlongGeometry(float distance) { m_distanceAlongGeometry = distance; }
+  QList<RouteManeuverLane> lanes() const { return m_lanes; }
+  void setLanes(const QList<RouteManeuverLane> &lanes) { m_lanes = lanes; }
 
-    float typicalDuration() const { return m_typicalDuration; }
-    void setTypicalDuration(float duration) { m_typicalDuration = duration; }
+  float distanceAlongGeometry() const { return m_distanceAlongGeometry; }
+  void setDistanceAlongGeometry(float distance) { m_distanceAlongGeometry = distance; }
+
+  float typicalDuration() const { return m_typicalDuration; }
+  void setTypicalDuration(float duration) { m_typicalDuration = duration; }
 
 private:
-    bool m_valid;
-    QGeoCoordinate m_position;
-    QString m_primaryText;
-    QString m_type;
-    QString m_modifier;
-    QString m_secondaryText;
-    QList<RouteManeuverLane> m_lanes;
-    float m_distanceAlongGeometry;
-    float m_typicalDuration;
+  bool m_valid;
+  QGeoCoordinate m_position;
+  QString m_primaryText;
+  QString m_type;
+  QString m_modifier;
+  QString m_secondaryText;
+  QList<RouteManeuverLane> m_lanes;
+  float m_distanceAlongGeometry;
+  float m_typicalDuration;
 };
 
-class RouteSegment
-{
+class RouteSegment {
 public:
-    RouteSegment() {}
+  RouteSegment() { }
 
-    bool isValid() const { return m_valid; }
-    void setValid(bool valid) { m_valid = valid; }
+  bool isValid() const { return m_valid; }
+  void setValid(bool valid) { m_valid = valid; }
 
-    RouteSegment nextRouteSegment() const { return *m_nextRouteSegment; }
-    void setNextRouteSegment(const RouteSegment &routeSegment) { *m_nextRouteSegment = routeSegment; }
+  RouteSegment nextRouteSegment() const { return *m_nextRouteSegment; }
+  void setNextRouteSegment(const RouteSegment &routeSegment) { *m_nextRouteSegment = routeSegment; }
 
-    int travelTime() const { return m_travelTime; }
-    void setTravelTime(int secs) { m_travelTime = secs; }
+  int travelTime() const { return m_travelTime; }
+  void setTravelTime(int secs) { m_travelTime = secs; }
 
-    double distance() const { return m_distance; }
-    void setDistance(double distance) { m_distance = distance; }
+  double distance() const { return m_distance; }
+  void setDistance(double distance) { m_distance = distance; }
 
-    QList<QGeoCoordinate> path() const { return m_path; }
-    void setPath(const QList<QGeoCoordinate> &path) { m_path = path; }
+  QList<QGeoCoordinate> path() const { return m_path; }
+  void setPath(const QList<QGeoCoordinate> &path) { m_path = path; }
 
-    RouteManeuver maneuver() const { return m_maneuver; }
-    void setManeuver(const RouteManeuver &maneuver) { m_maneuver = maneuver; }
+  RouteManeuver maneuver() const { return m_maneuver; }
+  void setManeuver(const RouteManeuver &maneuver) { m_maneuver = maneuver; }
 
 private:
-    bool m_valid;
-    RouteSegment *m_nextRouteSegment;
-    int m_travelTime;
-    double m_distance;
-    QList<QGeoCoordinate> m_path;
-    RouteManeuver m_maneuver;
+  bool m_valid;
+  RouteSegment *m_nextRouteSegment;
+  int m_travelTime;
+  double m_distance;
+  QList<QGeoCoordinate> m_path;
+  RouteManeuver m_maneuver;
 };
 
-class Route
-{
+class Route {
 public:
-    Route() {}
+  Route() { }
 
-    void setFirstRouteSegment(const RouteSegment &routeSegment) { m_firstRouteSegment = routeSegment; }
-    RouteSegment firstRouteSegment() const { return m_firstRouteSegment; }
+  void setFirstRouteSegment(const RouteSegment &routeSegment) { m_firstRouteSegment = routeSegment; }
+  RouteSegment firstRouteSegment() const { return m_firstRouteSegment; }
 
-    void setTravelTime(int secs) { m_travelTime = secs; }
-    int travelTime() const { return m_travelTime; }
+  void setTravelTime(int secs) { m_travelTime = secs; }
+  int travelTime() const { return m_travelTime; }
 
-    void setDistance(double distance) { m_distance = distance; }
-    double distance() const { return m_distance; }
+  void setDistance(double distance) { m_distance = distance; }
+  double distance() const { return m_distance; }
 
-    void setPath(const QList<QGeoCoordinate> &path) { m_path = path; }
-    QList<QGeoCoordinate> path() const { return m_path; }
+  void setPath(const QList<QGeoCoordinate> &path) { m_path = path; }
+  QList<QGeoCoordinate> path() const { return m_path; }
 
 private:
-    RouteSegment m_firstRouteSegment = RouteSegment();
-    int m_travelTime;
-    double m_distance;
-    QList<QGeoCoordinate> m_path;
+  RouteSegment m_firstRouteSegment = RouteSegment();
+  int m_travelTime;
+  double m_distance;
+  QList<QGeoCoordinate> m_path;
 };
 
-class RouteReply : public QObject
-{
-    Q_OBJECT
+class RouteReply : public QObject {
+  Q_OBJECT
 
 public:
-    RouteReply(QNetworkReply *reply, const QGeoRouteRequest &request, QObject *parent = nullptr);
-    
-    enum Error {
-        NoError,
-        CommunicationError,
-        ParseError,
-        UnknownError,
-    };
-    Q_ENUM(Error)
+  RouteReply(QNetworkReply *reply, const QGeoRouteRequest &request, QObject *parent = nullptr);
 
-    Error error() const { return m_error; }
-    QString errorString() const { return m_errorString; }
+  enum Error {
+    NoError,
+    CommunicationError,
+    ParseError,
+    UnknownError,
+  };
+  Q_ENUM(Error)
 
-    QGeoRouteRequest request() const { return m_request; }
-    Route route() const { return m_route; }
+  Error error() const { return m_error; }
+  QString errorString() const { return m_errorString; }
+
+  QGeoRouteRequest request() const { return m_request; }
+  Route route() const { return m_route; }
 
 signals:
-    void finished();
-    void error(Error error, const QString &errorString = QString());
+  void finished();
+  void error(Error error, const QString &errorString = QString());
 
 private slots:
-    void networkReplyFinished();
-    void networkReplyError(QNetworkReply::NetworkError error);
+  void networkReplyFinished();
+  void networkReplyError(QNetworkReply::NetworkError error);
 
 private:
-    QGeoRouteRequest m_request;
+  QGeoRouteRequest m_request;
 
-    Route m_route;
-    void setRoute(const Route &route) { m_route = route; }
+  Route m_route;
+  void setRoute(const Route &route) { m_route = route; }
 
-    Error m_error = RouteReply::NoError;
-    QString m_errorString = QString();
+  Error m_error = RouteReply::NoError;
+  QString m_errorString = QString();
 
-    void setError(Error err, const QString &errorString);
+  void setError(Error err, const QString &errorString);
 };
