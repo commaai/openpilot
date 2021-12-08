@@ -19,8 +19,8 @@ MAX_ANGLE_OFFSET_DELTA = 20 * DT_MDL  # Max 20 deg/s
 ROLL_MIN, ROLL_MAX = math.radians(10), math.radians(-10)
 
 class ParamsLearner:
-  def __init__(self, CP, steer_ratio, stiffness_factor, angle_offset):
-    self.kf = CarKalman(GENERATED_DIR, steer_ratio, stiffness_factor, angle_offset)
+  def __init__(self, CP, steer_ratio, stiffness_factor, angle_offset, P_initial=None):
+    self.kf = CarKalman(GENERATED_DIR, steer_ratio, stiffness_factor, angle_offset, P_initial)
 
     self.kf.filter.set_global("mass", CP.mass)
     self.kf.filter.set_global("rotational_inertia", CP.rotationalInertia)
