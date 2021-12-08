@@ -279,7 +279,7 @@ void RouteEngine::routeUpdate() {
 }
 
 void RouteEngine::clearRoute() {
-  route = QGeoRoute();
+  route = QGeoRouteMapbox();
   segment = QGeoRouteSegment();
   nav_destination = QMapbox::Coordinate();
 }
@@ -356,8 +356,8 @@ void RouteEngine::calculateRoute(QMapbox::Coordinate destination) {
   routing_manager->calculateRoute(request);
 }
 
-void RouteEngine::routeCalculated(QGeoRouteReply *reply) {
-  if (reply->error() == QGeoRouteReply::NoError) {
+void RouteEngine::routeCalculated(QGeoRouteReplyMapbox *reply) {
+  if (reply->error() == QGeoRouteReplyMapbox::NoError) {
     if (reply->routes().size() != 0) {
       qWarning() << "Got route response";
 

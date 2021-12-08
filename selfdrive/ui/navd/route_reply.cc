@@ -10,44 +10,6 @@
 #include "selfdrive/ui/navd/route_parser.h"
 #include "selfdrive/ui/navd/routing_manager.h"
 
-class QGeoRouteMapbox : public QGeoRoute
-{
-public:
-    QGeoRouteMapbox(const QGeoRoute &other, const QVariantMap &metadata);
-    QVariantMap metadata() const;
-
-    QVariantMap m_metadata;
-
-    QString m_id;
-    QGeoRouteRequest m_request;
-
-    QGeoRectangle m_bounds;
-    mutable QList<QGeoRouteSegment> m_routeSegments;
-
-    int m_travelTime;
-    qreal m_distance;
-
-    QGeoRouteRequest::TravelMode m_travelMode;
-
-    QList<QGeoCoordinate> m_path;
-    QList<QGeoRouteLeg> m_legs;
-    QGeoRouteSegment m_firstSegment;
-    mutable int m_numSegments;
-    QScopedPointer<QGeoRoute> m_containingRoute;
-    int m_legIndex = 0;
-};
-
-QGeoRouteMapbox::QGeoRouteMapbox(const QGeoRoute &other, const QVariantMap &metadata)
-    : QGeoRoute(other),
-      m_metadata(metadata)
-{
-}
-
-QVariantMap QGeoRouteMapbox::metadata() const
-{
-    return m_metadata;
-}
-
 QGeoRouteReplyMapbox::QGeoRouteReplyMapbox(QNetworkReply *reply, const QGeoRouteRequest &request,
                                            QObject *parent)
     : QGeoRouteReply(request, parent)
@@ -66,6 +28,18 @@ QGeoRouteReplyMapbox::QGeoRouteReplyMapbox(QNetworkReply *reply, const QGeoRoute
 
 QGeoRouteReplyMapbox::~QGeoRouteReplyMapbox()
 {
+}
+
+QList<QGeoRouteMapbox> QGeoRouteReplyMapbox::routes() const {
+    return m_routes;
+}
+
+void QGeoRouteReplyMapbox::setRoutes(const QList<QGeoRouteMapbox> &routes) {
+    m_routes = routes;
+}
+
+void QGeoRouteReplyMapbox::addRoutes(const QList<QGeoRouteMapbox> &routes) {
+    m_routes.append(routes);
 }
 
 void QGeoRouteReplyMapbox::networkReplyFinished()
@@ -100,7 +74,7 @@ void QGeoRouteReplyMapbox::networkReplyFinished()
     QVariantMap metadata;
     metadata["osrm.reply-json"] = routeReply;
 
-    QList<QGeoRoute> mapboxRoutes;
+    QList<QGeoRouteMapbox> mapboxRoutes;
     for (const QGeoRoute &route : routes.mid(0, request().numberAlternativeRoutes() + 1))
     {
         QGeoRouteMapbox mapboxRoute(route, metadata);

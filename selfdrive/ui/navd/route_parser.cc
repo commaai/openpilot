@@ -1206,7 +1206,7 @@ QUrl MapboxRouteParser::requestUrl(const QGeoRouteRequest &request, const QStrin
     if (!m_accessToken.isEmpty())
         query.addQueryItem(QLatin1String("access_token"), m_accessToken);
 
-    query.addQueryItem(QLatin1String("annotations"), QLatin1String("duration,distance,speed,congestion"));
+    query.addQueryItem(QLatin1String("annotations"), QLatin1String("duration,distance,maxspeed,congestion"));
 
     query.addQueryItem(QLatin1String("voice_instructions"), QLatin1String("true"));
     query.addQueryItem(QLatin1String("banner_instructions"), QLatin1String("true"));

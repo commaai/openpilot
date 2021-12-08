@@ -51,7 +51,7 @@ MapboxRoutingManager::~MapboxRoutingManager()
 {
 }
 
-QGeoRouteReply* MapboxRoutingManager::calculateRoute(const QGeoRouteRequest &request)
+QGeoRouteReplyMapbox* MapboxRoutingManager::calculateRoute(const QGeoRouteRequest &request)
 {
     QNetworkRequest networkRequest;
     networkRequest.setHeader(QNetworkRequest::UserAgentHeader, m_userAgent);
@@ -96,7 +96,7 @@ const MapboxRouteParser *MapboxRoutingManager::routeParser() const
 
 void MapboxRoutingManager::replyFinished()
 {
-    QGeoRouteReply *reply = qobject_cast<QGeoRouteReply *>(sender());
+    QGeoRouteReplyMapbox *reply = qobject_cast<QGeoRouteReplyMapbox *>(sender());
     if (reply)
         emit finished(reply);
 }
@@ -104,7 +104,7 @@ void MapboxRoutingManager::replyFinished()
 void MapboxRoutingManager::replyError(QGeoRouteReply::Error errorCode,
                                              const QString &errorString)
 {
-    QGeoRouteReply *reply = qobject_cast<QGeoRouteReply *>(sender());
+    QGeoRouteReplyMapbox *reply = qobject_cast<QGeoRouteReplyMapbox *>(sender());
     if (reply)
         emit error(reply, errorCode, errorString);
 }
