@@ -3,7 +3,6 @@
 #include "libyuv.h"
 
 #include "selfdrive/common/mat.h"
-#include "selfdrive/common/modeldata.h"
 #include "selfdrive/common/params.h"
 #include "selfdrive/common/timing.h"
 #include "selfdrive/hardware/hw.h"
@@ -68,14 +67,21 @@ void crop_yuv(uint8_t *raw, int width, int height, uint8_t *y, uint8_t *u, uint8
 
 DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_buf, int width, int height) {
   Rect crop_rect;
-  if (width == TICI_CAM_WIDTH) {
-    const int cropped_height = tici_dm_crop::width / 1.33;
-    crop_rect = {tici_dm_crop::x_offset + (width - tici_dm_crop::width) / 2,
-                  tici_dm_crop::y_offset + (height - cropped_height) / 2,
-                  cropped_height / 2, cropped_height};
+  if (Hardware::TICI()) {
+    const int full_width_tici = 1928;
+    const int full_height_tici = 1208;
+    const int adapt_width_tici = 954;
+    const int x_offset_tici = -72;
+    const int y_offset_tici = -144;
+    const int cropped_height = adapt_width_tici / 1.33;
+    crop_rect = {full_width_tici / 2 - adapt_width_tici / 2 + x_offset_tici,
+                 full_height_tici / 2 - cropped_height / 2 + y_offset_tici,
+                 cropped_height / 2,
+                 cropped_height};
     if (!s->is_rhd) {
-      crop_rect.x += tici_dm_crop::width - crop_rect.w;
+      crop_rect.x += adapt_width_tici - crop_rect.w;
     }
+
   } else {
     const int adapt_width = 372;
     crop_rect = {0, 0, adapt_width, height};
