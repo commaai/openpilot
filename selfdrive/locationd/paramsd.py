@@ -16,7 +16,7 @@ from selfdrive.swaglog import cloudlog
 
 
 MAX_ANGLE_OFFSET_DELTA = 20 * DT_MDL  # Max 20 deg/s
-ROLL_MIN, ROLL_MAX = math.radians(10), math.radians(-10)
+ROLL_MIN, ROLL_MAX = math.radians(-10), math.radians(10)
 
 class ParamsLearner:
   def __init__(self, CP, steer_ratio, stiffness_factor, angle_offset, P_initial=None):
