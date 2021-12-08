@@ -185,7 +185,6 @@ void loggerd_thread() {
   } QlogState;
   std::unordered_map<SubSocket*, QlogState> qlog_states;
 
-  LoggerdState s;
   std::unique_ptr<Context> ctx(Context::create());
   std::unique_ptr<Poller> poller(Poller::create());
 
@@ -203,6 +202,7 @@ void loggerd_thread() {
     };
   }
 
+  LoggerdState s;
   // init logger
   logger_init(&s.logger, "rlog", true);
   logger_rotate(&s);
