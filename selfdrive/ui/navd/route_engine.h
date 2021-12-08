@@ -2,15 +2,11 @@
 
 #include <optional>
 
-#include <QThread>
 #include <QGeoCoordinate>
-#include <QGeoManeuver>
 #include <QGeoRouteRequest>
-#include <QGeoRouteSegment>
-#include <QGeoRoutingManager>
-#include <QGeoServiceProvider>
-#include <QTimer>
 #include <QMapboxGL>
+#include <QThread>
+#include <QTimer>
 
 #include "cereal/messaging/messaging.h"
 #include "selfdrive/ui/navd/route_reply.h"
@@ -37,9 +33,9 @@ public:
 
   // Route
   bool gps_ok = false;
-  MapboxRoutingManager *routing_manager;
-  QGeoRouteMapbox route;
-  QGeoRouteSegment segment;
+  RoutingManager *routing_manager;
+  Route route;
+  RouteSegment segment;
   QMapbox::Coordinate nav_destination;
   QList<RouteGeometrySegment> route_geometry_segments = {};
 
@@ -59,7 +55,7 @@ public:
 private slots:
   void routeUpdate();
   void msgUpdate();
-  void routeCalculated(QGeoRouteReplyMapbox *reply);
+  void routeCalculated(RouteReply *reply);
   void recomputeRoute();
   void sendRoute();
 

@@ -16,10 +16,8 @@
 const qreal REROUTE_DISTANCE = 25;
 const float MANEUVER_TRANSITION_THRESHOLD = 10;
 
-static float get_time_typical(const QGeoRouteSegment &segment) {
-  auto maneuver = segment.maneuver();
-  auto attrs = maneuver.extendedAttributes();
-  return attrs.contains("mapbox.duration_typical") ? attrs["mapbox.duration_typical"].toDouble() : segment.travelTime();
+static float get_time_typical(const RouteSegment &segment) {
+  return segment.maneuver().typicalDuration() || segment.travelTime();
 }
 
 static cereal::NavInstruction::Direction string_to_direction(QString d) {
@@ -32,69 +30,6 @@ static cereal::NavInstruction::Direction string_to_direction(QString d) {
   }
 
   return cereal::NavInstruction::Direction::NONE;
-}
-
-static void parse_banner(cereal::NavInstruction::Builder &instruction, const QMap<QString, QVariant> &banner, bool full) {
-  QString primary_str, secondary_str;
-
-  auto p = banner["primary"].toMap();
-  primary_str += p["text"].toString();
-
-  instruction.setShowFull(full);
-
-  if (p.contains("type")) {
-    instruction.setManeuverType(p["type"].toString().toStdString());
-  }
-
-  if (p.contains("modifier")) {
-    instruction.setManeuverModifier(p["modifier"].toString().toStdString());
-  }
-
-  if (banner.contains("secondary")) {
-    auto s = banner["secondary"].toMap();
-    secondary_str += s["text"].toString();
-  }
-
-  instruction.setManeuverPrimaryText(primary_str.toStdString());
-  instruction.setManeuverSecondaryText(secondary_str.toStdString());
-
-  if (banner.contains("sub")) {
-    auto s = banner["sub"].toMap();
-    auto components = s["components"].toList();
-
-    size_t num_lanes = 0;
-    for (auto &c : components) {
-      auto cc = c.toMap();
-      if (cc["type"].toString() == "lane") {
-        num_lanes += 1;
-      }
-    }
-
-    auto lanes = instruction.initLanes(num_lanes);
-
-    size_t i = 0;
-    for (auto &c : components) {
-      auto cc = c.toMap();
-      if (cc["type"].toString() == "lane") {
-        auto lane = lanes[i];
-        lane.setActive(cc["active"].toBool());
-
-        if (cc.contains("active_direction")) {
-          lane.setActiveDirection(string_to_direction(cc["active_direction"].toString()));
-        }
-
-        auto directions = lane.initDirections(cc["directions"].toList().size());
-
-        size_t j = 0;
-        for (auto &dir : cc["directions"].toList()) {
-          directions.set(j, string_to_direction(dir.toString()));
-          j++;
-        }
-
-        i++;
-      }
-    }
-  }
 }
 
 RouteEngine::RouteEngine() {
@@ -111,9 +46,9 @@ RouteEngine::RouteEngine() {
   msg_timer->start(50);
 
   // Build routing engine
-  routing_manager = new MapboxRoutingManager();
+  routing_manager = new RoutingManager();
   assert(routing_manager);
-  QObject::connect(routing_manager, &MapboxRoutingManager::finished, this, &RouteEngine::routeCalculated);
+  QObject::connect(routing_manager, &RoutingManager::finished, this, &RouteEngine::routeCalculated);
 
   // Get last gps position from params
   auto last_gps_position = coordinate_from_param("LastGPSPosition");
@@ -128,7 +63,6 @@ void RouteEngine::msgUpdate() {
     active = false;
     return;
   }
-
 
   if (sm->updated("managerState")) {
     for (auto const &p : (*sm)["managerState"].getManagerState().getProcesses()) {
@@ -172,49 +106,47 @@ void RouteEngine::routeUpdate() {
 
   // Show route instructions
   if (segment.isValid()) {
-    auto cur_maneuver = segment.maneuver();
-    auto attrs = cur_maneuver.extendedAttributes();
-    if (cur_maneuver.isValid() && attrs.contains("mapbox.banner_instructions")) {
+    auto maneuver = segment.maneuver();
+    if (maneuver.isValid()) {
       float along_geometry = distance_along_geometry(segment.path(), to_QGeoCoordinate(*last_position));
       float distance_to_maneuver_along_geometry = segment.distance() - along_geometry;
 
-      auto banners = attrs["mapbox.banner_instructions"].toList();
-      if (banners.size()) {
-        auto banner = banners[0].toMap();
+      instruction.setShowFull(distance_to_maneuver_along_geometry < maneuver.distanceAlongGeometry());
+      instruction.setManeuverType(maneuver.type().toStdString());
+      instruction.setManeuverModifier(maneuver.modifier().toStdString());
+      instruction.setManeuverPrimaryText(maneuver.primaryText().toStdString());
+      instruction.setManeuverSecondaryText(maneuver.secondaryText().toStdString());
+      instruction.setManeuverDistance(distance_to_maneuver_along_geometry);
 
-        for (auto &b : banners) {
-          auto bb = b.toMap();
-          if (distance_to_maneuver_along_geometry < bb["distance_along_geometry"].toDouble()) {
-            banner = bb;
-          }
+      auto lanes = instruction.initLanes(maneuver.lanes().size());
+      for (int i = 0; i < maneuver.lanes().size(); i++) {
+        auto &l = maneuver.lanes()[i];
+        auto lane = lanes[i];
+        lane.setActive(l.active);
+        lane.setActiveDirection(string_to_direction(l.activeDirection));
+        auto directions = lane.initDirections(l.directions.size());
+        for (int j = 0; j < l.directions.size(); j++) {
+          directions.set(j, string_to_direction(l.directions[j]));
         }
-
-        instruction.setManeuverDistance(distance_to_maneuver_along_geometry);
-        parse_banner(instruction, banner, distance_to_maneuver_along_geometry < banner["distance_along_geometry"].toDouble());
-
-        // ETA
-        float progress = distance_along_geometry(segment.path(), to_QGeoCoordinate(*last_position)) / segment.distance();
-        float total_distance = segment.distance() * (1.0 - progress);
-        float total_time = segment.travelTime() * (1.0 - progress);
-        float total_time_typical = get_time_typical(segment) * (1.0 - progress);
-
-        auto s = segment.nextRouteSegment();
-        while (s.isValid()) {
-          total_distance += s.distance();
-          total_time += s.travelTime();
-          total_time_typical += get_time_typical(s);
-
-          s = s.nextRouteSegment();
-        }
-        instruction.setTimeRemaining(total_time);
-        instruction.setTimeRemainingTypical(total_time_typical);
-        instruction.setDistanceRemaining(total_distance);
       }
 
-      // auto speed_limit = attrs["mapbox.banner_instructions"].toList();
-      for (auto &key : attrs.keys()) {
-        qWarning() << "Maneuver Extended Attributes: " << key << attrs[key];
+      // ETA
+      float progress = distance_along_geometry(segment.path(), to_QGeoCoordinate(*last_position)) / segment.distance();
+      float total_distance = segment.distance() * (1.0 - progress);
+      float total_time = segment.travelTime() * (1.0 - progress);
+      float total_time_typical = get_time_typical(segment) * (1.0 - progress);
+
+      auto s = segment.nextRouteSegment();
+      while (s.isValid()) {
+        total_distance += s.distance();
+        total_time += s.travelTime();
+        total_time_typical += get_time_typical(s);
+
+        s = s.nextRouteSegment();
       }
+      instruction.setTimeRemaining(total_time);
+      instruction.setTimeRemainingTypical(total_time_typical);
+      instruction.setDistanceRemaining(total_distance);
 
       // Transition to next route segment
       if (distance_to_maneuver_along_geometry < -MANEUVER_TRANSITION_THRESHOLD) {
@@ -237,41 +169,41 @@ void RouteEngine::routeUpdate() {
       }
     }
 
-    // would like to just use `distance_along_geometry(route.path(), ...)` but its coordinates can be in reversed order
-    float along_route = 0;
-    auto s = route.firstRouteSegment();
-    while (s.isValid()) {
-      if (s != segment) {
-        along_route += s.distance();
-        s = s.nextRouteSegment();
-      } else {
-        along_route += distance_along_geometry(segment.path(), to_QGeoCoordinate(*last_position));
-        break;
-      }
-    }
+    // // would like to just use `distance_along_geometry(route.path(), ...)` but its coordinates can be in reversed order
+    // float along_route = 0;
+    // auto s = route.firstRouteSegment();
+    // while (s.isValid()) {
+    //   if (s != segment) {
+    //     along_route += s.distance();
+    //     s = s.nextRouteSegment();
+    //   } else {
+    //     along_route += distance_along_geometry(segment.path(), to_QGeoCoordinate(*last_position));
+    //     break;
+    //   }
+    // }
 
-    float speed_limit = 0;
-    float distance = 0;
-    for (auto const &g : route_geometry_segments) {
-      distance += g.distance;
-      if (along_route < distance) {
-        speed_limit = g.speed_limit;
-        break;
-      }
-    }
-    qWarning() << "Along route: " << along_route;
-    qWarning() << "Distance: " << distance;
-    qWarning() << "Speed limit: " << speed_limit;
+    // float speed_limit = 0;
+    // float distance = 0;
+    // for (auto const &g : route_geometry_segments) {
+    //   distance += g.distance;
+    //   if (along_route < distance) {
+    //     speed_limit = g.speed_limit;
+    //     break;
+    //   }
+    // }
+    // qWarning() << "Along route: " << along_route;
+    // qWarning() << "Distance: " << distance;
+    // qWarning() << "Speed limit: " << speed_limit;
 
-    instruction.setSpeedLimit(speed_limit);
+    // instruction.setSpeedLimit(speed_limit);
   }
 
   pm->send("navInstruction", msg);
 }
 
 void RouteEngine::clearRoute() {
-  route = QGeoRouteMapbox();
-  segment = QGeoRouteSegment();
+  route = Route();
+  segment = RouteSegment();
   nav_destination = QMapbox::Coordinate();
 }
 
@@ -347,19 +279,13 @@ void RouteEngine::calculateRoute(QMapbox::Coordinate destination) {
   routing_manager->calculateRoute(request);
 }
 
-void RouteEngine::routeCalculated(QGeoRouteReplyMapbox *reply) {
-  if (reply->error() == QGeoRouteReplyMapbox::NoError) {
-    if (reply->routes().size() != 0) {
-      qWarning() << "Got route response";
-
-      route = reply->routes().at(0);
-      segment = route.firstRouteSegment();
-
-      auto path = route.path();
-      emit routeUpdated(path);
-    } else {
-      qWarning() << "Got empty route response";
-    }
+void RouteEngine::routeCalculated(RouteReply *reply) {
+  if (reply->error() == RouteReply::NoError) {
+    route = reply->route();
+    qWarning() << "Got route response";
+    segment = route.firstRouteSegment();
+    auto path = route.path();
+    emit routeUpdated(path);
   } else {
     qWarning() << "Got error in route reply" << reply->errorString();
   }
@@ -376,47 +302,47 @@ void RouteEngine::sendRoute() {
 
   qWarning() << "Distance: " << route.distance();
   route_geometry_segments.clear();
-  auto metadata = ((QGeoRouteMapbox *) &route)->metadata();
-  const QByteArray &raw_reply = metadata["osrm.reply-json"].toByteArray();
-  QJsonArray osrm_routes = QJsonDocument::fromJson(raw_reply).object().value("routes").toArray();
+  // auto metadata = ((Route *) &route)->metadata();
+  // const QByteArray &raw_reply = metadata["osrm.reply-json"].toByteArray();
+  // QJsonArray osrm_routes = QJsonDocument::fromJson(raw_reply).object().value("routes").toArray();
 
-  for (const auto &r : osrm_routes) {
-    if (!r.isObject())
-        continue;
+  // for (const auto &r : osrm_routes) {
+  //   if (!r.isObject())
+  //       continue;
 
-    auto route_object = r.toObject();
-    auto route_distance = route_object.value("distance").toDouble();
-    if (route_distance != route.distance()) {
-        qWarning() << "Skipping route. Distance mismatch" << route_distance << route.distance();
-        continue;
-    }
+  //   auto route_object = r.toObject();
+  //   auto route_distance = route_object.value("distance").toDouble();
+  //   if (route_distance != route.distance()) {
+  //       qWarning() << "Skipping route. Distance mismatch" << route_distance << route.distance();
+  //       continue;
+  //   }
 
-    qWarning() << "Route: " << route_object;
+  //   qWarning() << "Route: " << route_object;
 
-    auto legs = route_object.value("legs").toArray();
-    for (const auto &l : legs) {
-      auto leg = l.toObject();
-      auto annotation = leg.value("annotation").toObject();
-      auto distances = annotation.value("distance").toArray();
-      auto maxspeeds = annotation.value("maxspeed").toArray();
-      auto size = std::min(distances.size(), maxspeeds.size());
-      for (int i = 0; i < size; i++) {
-        auto max_speed = maxspeeds.at(i).toObject();
-        auto unknown = max_speed.value("unknown").toBool();
-        auto speed = max_speed.value("speed").toDouble();
-        auto unit = max_speed.value("unit").toString();
-        auto speed_limit =
-          unknown ? 0
-          : unit == "km/h" ? speed * KPH_TO_MS
-          : unit == "mph" ? speed * MPH_TO_MS
-          : 0;
+  //   auto legs = route_object.value("legs").toArray();
+  //   for (const auto &l : legs) {
+  //     auto leg = l.toObject();
+  //     auto annotation = leg.value("annotation").toObject();
+  //     auto distances = annotation.value("distance").toArray();
+  //     auto maxspeeds = annotation.value("maxspeed").toArray();
+  //     auto size = std::min(distances.size(), maxspeeds.size());
+  //     for (int i = 0; i < size; i++) {
+  //       auto max_speed = maxspeeds.at(i).toObject();
+  //       auto unknown = max_speed.value("unknown").toBool();
+  //       auto speed = max_speed.value("speed").toDouble();
+  //       auto unit = max_speed.value("unit").toString();
+  //       auto speed_limit =
+  //         unknown ? 0
+  //         : unit == "km/h" ? speed * KPH_TO_MS
+  //         : unit == "mph" ? speed * MPH_TO_MS
+  //         : 0;
 
-        route_geometry_segments.append({ distances.at(i).toDouble(), speed_limit });
-      }
-    }
+  //       route_geometry_segments.append({ distances.at(i).toDouble(), speed_limit });
+  //     }
+  //   }
 
-    break;
-  }
+  //   break;
+  // }
 
   // NOTE: Qt seems to create duplicate coordinates in the path when decoding the polyline, so the corresponding annotations don't match up
   auto path = route.path();

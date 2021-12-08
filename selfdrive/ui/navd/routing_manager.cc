@@ -10,13 +10,13 @@
 #include <QNetworkRequest>
 #include <QUrlQuery>
 
-MapboxRoutingManager::MapboxRoutingManager()
+RoutingManager::RoutingManager()
 {
     networkManager = new QNetworkAccessManager();
-    m_routeParser = new MapboxRouteParser();
+    m_routeParser = new RouteParser();
 }
 
-QGeoRouteReplyMapbox* MapboxRoutingManager::calculateRoute(const QGeoRouteRequest &request)
+RouteReply* RoutingManager::calculateRoute(const QGeoRouteRequest &request)
 {
     QNetworkRequest networkRequest;
     networkRequest.setHeader(QNetworkRequest::UserAgentHeader, getUserAgent().toUtf8());
@@ -37,29 +37,29 @@ QGeoRouteReplyMapbox* MapboxRoutingManager::calculateRoute(const QGeoRouteReques
     qWarning() << "Mapbox request: " << networkRequest.url();
 
     QNetworkReply *reply = networkManager->get(networkRequest);
-    QGeoRouteReplyMapbox *routeReply = new QGeoRouteReplyMapbox(reply, request, this);
+    RouteReply *routeReply = new RouteReply(reply, request, this);
 
     connect(routeReply, SIGNAL(finished()), this, SLOT(replyFinished()));
-    connect(routeReply, SIGNAL(error(QGeoRouteReply::Error, QString)), this, SLOT(replyError(QGeoRouteReply::Error, QString)));
+    connect(routeReply, SIGNAL(error(RouteReply::Error, QString)), this, SLOT(replyError(RouteReply::Error, QString)));
 
     return routeReply;
 }
 
-const MapboxRouteParser *MapboxRoutingManager::routeParser() const
+const RouteParser *RoutingManager::routeParser() const
 {
     return m_routeParser;
 }
 
-void MapboxRoutingManager::replyFinished()
+void RoutingManager::replyFinished()
 {
-    QGeoRouteReplyMapbox *reply = qobject_cast<QGeoRouteReplyMapbox *>(sender());
+    RouteReply *reply = qobject_cast<RouteReply *>(sender());
     if (reply)
         emit finished(reply);
 }
 
-void MapboxRoutingManager::replyError(QGeoRouteReply::Error errorCode, const QString &errorString)
+void RoutingManager::replyError(RouteReply::Error errorCode, const QString &errorString)
 {
-    QGeoRouteReplyMapbox *reply = qobject_cast<QGeoRouteReplyMapbox *>(sender());
+    RouteReply *reply = qobject_cast<RouteReply *>(sender());
     if (reply)
         emit error(reply, errorCode, errorString);
 }

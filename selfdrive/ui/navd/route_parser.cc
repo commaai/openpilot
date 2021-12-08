@@ -2,7 +2,6 @@
 
 #include <math.h>
 #include <QDebug>
-#include <QGeoManeuver>
 #include <QGeoPath>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -54,32 +53,6 @@ static QList<QGeoCoordinate> decodePolyline(const QString &polylineString)
     }
 
     return path;
-}
-
-static QVariantMap parseMapboxVoiceInstruction(const QJsonObject &voiceInstruction)
-{
-    QVariantMap map;
-
-    if (voiceInstruction.value("distanceAlongGeometry").isDouble())
-        map.insert("distance_along_geometry", voiceInstruction.value("distanceAlongGeometry").toDouble());
-
-    if (voiceInstruction.value("announcement").isString())
-        map.insert("announcement", voiceInstruction.value("announcement").toString());
-
-    if (voiceInstruction.value("ssmlAnnouncement").isString())
-        map.insert("ssml_announcement", voiceInstruction.value("ssmlAnnouncement").toString());
-
-    return map;
-}
-
-static QVariantList parseMapboxVoiceInstructions(const QJsonArray &voiceInstructions)
-{
-    QVariantList list;
-    for (const QJsonValue &voiceInstructionValue : voiceInstructions) {
-        if (voiceInstructionValue.isObject())
-            list.append(parseMapboxVoiceInstruction(voiceInstructionValue.toObject()));
-    }
-    return list;
 }
 
 static QVariantMap parseMapboxBannerComponent(const QJsonObject &bannerComponent)
@@ -165,30 +138,79 @@ static QVariantList parseMapboxBannerInstructions(const QJsonArray &bannerInstru
     return list;
 }
 
-MapboxRouteParser::MapboxRouteParser() {}
 
-void MapboxRouteParser::updateSegment(QGeoRouteSegment &segment, const QJsonObject &step, const QJsonObject &maneuver) const
-{
-    QGeoManeuver m = segment.maneuver();
-    QVariantMap extendedAttributes = m.extendedAttributes();
+// static void parse_banner(cereal::NavInstruction::Builder &instruction, const QMap<QString, QVariant> &banner, bool full) {
+//   QString primary_str, secondary_str;
 
-    if (step.value("voiceInstructions").isArray())
-        extendedAttributes.insert("mapbox.voice_instructions",
-                                  parseMapboxVoiceInstructions(step.value("voiceInstructions").toArray()));
-    if (step.value("bannerInstructions").isArray())
-        extendedAttributes.insert("mapbox.banner_instructions",
-                                  parseMapboxBannerInstructions(step.value("bannerInstructions").toArray()));
+//   auto p = banner["primary"].toMap();
+//   primary_str += p["text"].toString();
 
-    m.setExtendedAttributes(extendedAttributes);
-    segment.setManeuver(m);
-}
+//   instruction.setShowFull(full);
 
-MapboxRouteSegment MapboxRouteParser::parseStep(const QJsonObject &step, int legIndex, int stepIndex) const
+//   if (p.contains("type")) {
+//     instruction.setManeuverType(p["type"].toString().toStdString());
+//   }
+
+//   if (p.contains("modifier")) {
+//     instruction.setManeuverModifier(p["modifier"].toString().toStdString());
+//   }
+
+//   if (banner.contains("secondary")) {
+//     auto s = banner["secondary"].toMap();
+//     secondary_str += s["text"].toString();
+//   }
+
+//   instruction.setManeuverPrimaryText(primary_str.toStdString());
+//   instruction.setManeuverSecondaryText(secondary_str.toStdString());
+
+//   if (banner.contains("sub")) {
+//     auto s = banner["sub"].toMap();
+//     auto components = s["components"].toList();
+
+//     size_t num_lanes = 0;
+//     for (auto &c : components) {
+//       auto cc = c.toMap();
+//       if (cc["type"].toString() == "lane") {
+//         num_lanes += 1;
+//       }
+//     }
+
+//     auto lanes = instruction.initLanes(num_lanes);
+
+//     size_t i = 0;
+//     for (auto &c : components) {
+//       auto cc = c.toMap();
+//       if (cc["type"].toString() == "lane") {
+//         auto lane = lanes[i];
+//         lane.setActive(cc["active"].toBool());
+
+//         if (cc.contains("active_direction")) {
+//           lane.setActiveDirection(string_to_direction(cc["active_direction"].toString()));
+//         }
+
+//         auto directions = lane.initDirections(cc["directions"].toList().size());
+
+//         size_t j = 0;
+//         for (auto &dir : cc["directions"].toList()) {
+//           directions.set(j, string_to_direction(dir.toString()));
+//           j++;
+//         }
+
+//         i++;
+//       }
+//     }
+//   }
+// }
+
+
+RouteParser::RouteParser() {}
+
+RouteSegment RouteParser::parseStep(const QJsonObject &step, int legIndex, int stepIndex) const
 {
     // OSRM Instructions documentation: https://github.com/Project-OSRM/osrm-text-instructions
     // This goes on top of OSRM: https://github.com/Project-OSRM/osrm-backend/blob/master/docs/http.md
     // Mapbox however, includes this in the reply, under "instruction".
-    MapboxRouteSegment segment;
+    RouteSegment segment;
     if (!step.value("maneuver").isObject())
         return segment;
     QJsonObject maneuver = step.value("maneuver").toObject();
@@ -214,40 +236,21 @@ MapboxRouteSegment MapboxRouteParser::parseStep(const QJsonObject &step, int leg
     QString geometry = step.value("geometry").toString();
     QList<QGeoCoordinate> path = decodePolyline(geometry);
 
-    QGeoManeuver geoManeuver;
-    geoManeuver.setDistanceToNextInstruction(distance);
-    geoManeuver.setTimeToNextInstruction(time);
-    geoManeuver.setPosition(coord);
-    geoManeuver.setWaypoint(coord);
-
-    QVariantMap extraAttributes;
-    static const QStringList extras {
-        "bearing_before",
-        "bearing_after",
-        "instruction",
-        "type",
-        "modifier",
-    };
-    for (const QString &e : extras) {
-        if (maneuver.find(e) != maneuver.end())
-            extraAttributes.insert(e, maneuver.value(e).toVariant());
-    }
-    // These should be removed as soon as route leg support is introduced.
-    // Ref: http://project-osrm.org/docs/v5.15.2/api/#routeleg-object
-    extraAttributes.insert("leg_index", legIndex);
-    extraAttributes.insert("step_index", stepIndex);
-
-    geoManeuver.setExtendedAttributes(extraAttributes);
+    RouteManeuver routeManeuver;
+    routeManeuver.setPosition(coord);
+    // TODO parse banner
+    if (step.value("bannerInstructions").isArray())
+        parseMapboxBannerInstructions(step.value("bannerInstructions").toArray());
 
     segment.setDistance(distance);
     segment.setPath(path);
     segment.setTravelTime(time);
-    segment.setManeuver(geoManeuver);
-    this->updateSegment(segment, step, maneuver);
+    segment.setManeuver(routeManeuver);
+
     return segment;
 }
 
-QGeoRouteReply::Error MapboxRouteParser::parseReply(QList<QGeoRoute> &routes, QString &errorString, const QByteArray &reply) const
+RouteReply::Error RouteParser::parseReply(QList<Route> &routes, QString &errorString, const QByteArray &reply) const
 {
     // OSRM v5 specs: https://github.com/Project-OSRM/osrm-backend/blob/master/docs/http.md
     // Mapbox Directions API spec: https://www.mapbox.com/api-documentation/#directions
@@ -260,11 +263,11 @@ QGeoRouteReply::Error MapboxRouteParser::parseReply(QList<QGeoRoute> &routes, QS
         qWarning() << "status: " << status;
         if (status != "Ok") {
             errorString = status;
-            return QGeoRouteReply::UnknownError;
+            return RouteReply::UnknownError;
         }
         if (!object.value("routes").isArray()) {
             errorString = "No routes found";
-            return QGeoRouteReply::ParseError;
+            return RouteReply::ParseError;
         }
 
         QJsonArray osrmRoutes = object.value("routes").toArray();
@@ -284,16 +287,14 @@ QGeoRouteReply::Error MapboxRouteParser::parseReply(QList<QGeoRoute> &routes, QS
             qWarning() << "distance: " << distance;
             qWarning() << "Travel time: " << travelTime;
             bool error = false;
-            QList<QGeoRouteSegment> segments;
+            QList<RouteSegment> segments;
 
             QJsonArray legs = routeObject.value("legs").toArray();
-            QList<QGeoRouteLeg> routeLegs;
-            QGeoRoute route;
+            Route route;
             for (int legIndex = 0; legIndex < legs.size(); ++legIndex)
             {
                 const QJsonValue &l = legs.at(legIndex);
-                QGeoRouteLeg routeLeg;
-                QList<QGeoRouteSegment> legSegments;
+                QList<RouteSegment> legSegments;
                 if (!l.isObject()) {
                     error = true;
                     break;
@@ -303,10 +304,8 @@ QGeoRouteReply::Error MapboxRouteParser::parseReply(QList<QGeoRoute> &routes, QS
                     error = true;
                     break;
                 }
-                const double legDistance = leg.value("distance").toDouble();
-                const double legTravelTime = leg.value("duration").toDouble();
                 QJsonArray steps = leg.value("steps").toArray();
-                MapboxRouteSegment segment;
+                RouteSegment segment;
                 for (int stepIndex = 0; stepIndex < steps.size(); ++stepIndex) {
                     const QJsonValue &s = steps.at(stepIndex);
                     if (!s.isObject()) {
@@ -315,7 +314,6 @@ QGeoRouteReply::Error MapboxRouteParser::parseReply(QList<QGeoRoute> &routes, QS
                     }
                     segment = parseStep(s.toObject(), legIndex, stepIndex);
                     if (segment.isValid()) {
-                        // setNextRouteSegment done below for all segments in the route.
                         legSegments.append(segment);
                     } else {
                         error = true;
@@ -325,27 +323,12 @@ QGeoRouteReply::Error MapboxRouteParser::parseReply(QList<QGeoRoute> &routes, QS
                 if (error)
                     break;
 
-                segment.setLegLastSegment(true);
-
-                QList<QGeoCoordinate> path;
-                for (const QGeoRouteSegment &s : qAsConst(legSegments))
-                    path.append(s.path());
-                routeLeg.setLegIndex(legIndex);
-                routeLeg.setOverallRoute(route); // QGeoRoute::d_ptr is explicitlySharedDataPointer. Modifiers below won't detach it.
-                routeLeg.setDistance(legDistance);
-                routeLeg.setTravelTime(legTravelTime);
-                if (!path.isEmpty()) {
-                    routeLeg.setPath(path);
-                    routeLeg.setFirstRouteSegment(legSegments.first());
-                }
-                routeLegs.append(routeLeg);
-
                 segments.append(legSegments);
             }
 
             if (!error) {
                 QList<QGeoCoordinate> path;
-                for (const QGeoRouteSegment &s : segments)
+                for (const RouteSegment &s : segments)
                     path.append(s.path());
 
                 for (int i = segments.size() - 1; i > 0; --i)
@@ -358,33 +341,30 @@ QGeoRouteReply::Error MapboxRouteParser::parseReply(QList<QGeoRoute> &routes, QS
                 if (!path.isEmpty()) {
                     qWarning() << "Path: " << path;
                     route.setPath(path);
-                    route.setBounds(QGeoPath(path).boundingGeoRectangle());
                     qWarning() << "First segment: " << segments.first().distance();
                     route.setFirstRouteSegment(segments.first());
                 }
-                route.setRouteLegs(routeLegs);
                 routes.append(route);
             }
         }
 
-        return QGeoRouteReply::NoError;
+        return RouteReply::NoError;
     }
     else {
         errorString = "Couldn't parse json.";
-        return QGeoRouteReply::ParseError;
+        return RouteReply::ParseError;
     }
 }
 
-QUrl MapboxRouteParser::requestUrl(const QGeoRouteRequest &request, const QString &prefix) const
+QUrl RouteParser::requestUrl(const QGeoRouteRequest &request, const QString &prefix) const
 {
     QString routingUrl = prefix;
-    int notFirst = 0;
     QString bearings;
     const QList<QVariantMap> metadata = request.waypointsMetadata();
     const QList<QGeoCoordinate> waypoints = request.waypoints();
     for (int i = 0; i < waypoints.size(); i++) {
         const QGeoCoordinate &c = waypoints.at(i);
-        if (notFirst) {
+        if (i > 0) {
             routingUrl.append(';');
             bearings.append(';');
         }
@@ -399,29 +379,18 @@ QUrl MapboxRouteParser::requestUrl(const QGeoRouteRequest &request, const QStrin
                 bearings.append("0,180"); // 180 here means anywhere
             }
         }
-        ++notFirst;
     }
 
     QUrl url(routingUrl);
     QUrlQuery query;
+    query.addQueryItem("access_token", get_mapbox_token());
+    query.addQueryItem("annotations", "distance,maxspeed");
+    query.addQueryItem("bearings", bearings);
+    query.addQueryItem("geometries", "polyline6");
     query.addQueryItem("overview", "full");
     query.addQueryItem("steps", "true");
-    query.addQueryItem("geometries", "polyline6");
-    query.addQueryItem("alternatives", "true");
-    query.addQueryItem("bearings", bearings);
-
-    auto accessToken = get_mapbox_token();
-    if (!accessToken.isEmpty())
-        query.addQueryItem("access_token", accessToken);
-
-    query.addQueryItem("annotations", "distance,maxspeed,congestion");
-
-    query.addQueryItem("voice_instructions", "true");
     query.addQueryItem("banner_instructions", "true");
     query.addQueryItem("roundabout_exits", "true");
-
-    query.addQueryItem("voice_units", Params().getBool("IsMetric") ? "metric" : "imperial");
-
     url.setQuery(query);
     return url;
 }
