@@ -105,7 +105,6 @@ FW_VERSIONS = {
       b'37805-6A0-A750\x00\x00',
       b'37805-6A0-A840\x00\x00',
       b'37805-6A0-A850\x00\x00',
-      b'37805-6A0-AF30\x00\x00',
       b'37805-6A0-AG30\x00\x00',
       b'37805-6A0-C540\x00\x00',
       b'37805-6A1-H650\x00\x00',
@@ -132,7 +131,6 @@ FW_VERSIONS = {
       b'28101-6A7-A410\x00\x00',
       b'28101-6A7-A510\x00\x00',
       b'28101-6A7-A610\x00\x00',
-      b'28101-6A7-A710\x00\x00',
       b'28101-6A9-H140\x00\x00',
       b'28101-6A9-H420\x00\x00',
       b'28102-6B8-A560\x00\x00',
@@ -157,7 +155,6 @@ FW_VERSIONS = {
       b'57114-TVA-B040\x00\x00',
       b'57114-TVA-B050\x00\x00',
       b'57114-TVA-B060\x00\x00',
-      b'57114-TVA-B530\x00\x00',
       b'57114-TVA-C040\x00\x00',
       b'57114-TVA-C050\x00\x00',
       b'57114-TVA-C060\x00\x00',
@@ -169,7 +166,6 @@ FW_VERSIONS = {
       b'39990-TVA-A140\x00\x00',
       b'39990-TVA-A150\x00\x00',
       b'39990-TVA-A160\x00\x00',
-      b'39990-TVA-A340\x00\x00',
       b'39990-TVA-X030\x00\x00',
       b'39990-TVA-X040\x00\x00',
       b'39990-TVA,A150\x00\x00',
@@ -195,7 +191,6 @@ FW_VERSIONS = {
       b'78109-TVA-A120\x00\x00',
       b'78109-TVA-A210\x00\x00',
       b'78109-TVA-A220\x00\x00',
-      b'78109-TVA-A230\x00\x00',
       b'78109-TVA-A310\x00\x00',
       b'78109-TVA-C010\x00\x00',
       b'78109-TVA-L010\x00\x00',
@@ -225,8 +220,6 @@ FW_VERSIONS = {
       b'36802-TVA-A150\x00\x00',
       b'36802-TVA-A160\x00\x00',
       b'36802-TVA-A170\x00\x00',
-      b'36802-TVA-A330\x00\x00',
-      b'36802-TVC-A330\x00\x00',
       b'36802-TVE-H070\x00\x00',
       b'36802-TWA-A070\x00\x00',
       b'36802-TWA-A080\x00\x00',
@@ -234,7 +227,6 @@ FW_VERSIONS = {
     (Ecu.fwdCamera, 0x18dab5f1, None): [
       b'36161-TBX-H130\x00\x00',
       b'36161-TVA-A060\x00\x00',
-      b'36161-TVA-A330\x00\x00',
       b'36161-TVC-A330\x00\x00',
       b'36161-TVE-H050\x00\x00',
       b'36161-TWA-A070\x00\x00',
@@ -254,7 +246,6 @@ FW_VERSIONS = {
     (Ecu.vsa, 0x18da28f1, None): [
       b'57114-TWA-A040\x00\x00',
       b'57114-TWA-A050\x00\x00',
-      b'57114-TWA-A530\x00\x00',
       b'57114-TWA-B520\x00\x00',
     ],
     (Ecu.srs, 0x18da53f1, None): [
@@ -267,7 +258,6 @@ FW_VERSIONS = {
       b'78109-TWA-A030\x00\x00',
       b'78109-TWA-A110\x00\x00',
       b'78109-TWA-A120\x00\x00',
-      b'78109-TWA-A130\x00\x00',
       b'78109-TWA-A210\x00\x00',
       b'78109-TWA-A220\x00\x00',
       b'78109-TWA-A230\x00\x00',
@@ -283,24 +273,23 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdCamera, 0x18dab5f1, None): [
       b'36161-TWA-A070\x00\x00',
-      b'36161-TWA-A330\x00\x00',
     ],
     (Ecu.fwdRadar, 0x18dab0f1, None): [
       b'36802-TWA-A070\x00\x00',
       b'36802-TWA-A080\x00\x00',
-      b'36802-TWA-A330\x00\x00',
     ],
     (Ecu.eps, 0x18da30f1, None): [
       b'39990-TVA-A160\x00\x00',
       b'39990-TVA-A150\x00\x00',
-      b'39990-TVA-A340\x00\x00',
     ],
   },
   CAR.ACCORD_2021: {
     (Ecu.programmedFuelInjection, 0x18da10f1, None): [
+      b'37805-6A0-AF30\x00\x00',
       b'37805-6B2-C520\x00\x00',
     ],
     (Ecu.transmission, 0x18da1ef1, None): [
+      b'28101-6A7-A710\x00\x00',
       b'28102-6B8-A700\x00\x00',
     ],
     (Ecu.electricBrakeBooster, 0x18da2bf1, None): [
@@ -308,14 +297,17 @@ FW_VERSIONS = {
     ],
     (Ecu.gateway, 0x18daeff1, None): [
       b'38897-TVA-A020\x00\x00',
+      b'38897-TVA-A240\x00\x00',
     ],
     (Ecu.vsa, 0x18da28f1, None): [
+      b'57114-TVA-B530\x00\x00',
       b'57114-TVA-E520\x00\x00',
     ],
     (Ecu.srs, 0x18da53f1, None): [
       b'77959-TVA-L420\x00\x00',
     ],
     (Ecu.combinationMeter, 0x18da60f1, None): [
+      b'78109-TVA-A230\x00\x00',
       b'78109-TVC-A230\x00\x00',
     ],
     (Ecu.hud, 0x18da61f1, None): [
@@ -325,9 +317,11 @@ FW_VERSIONS = {
       b'54008-TVC-A910\x00\x00',
     ],
     (Ecu.fwdCamera, 0x18dab5f1, None): [
+      b'36161-TVA-A330\x00\x00',
       b'36161-TVC-A330\x00\x00',
     ],
     (Ecu.fwdRadar, 0x18dab0f1, None): [
+      b'36802-TVA-A330\x00\x00',
       b'36802-TVC-A330\x00\x00',
     ],
     (Ecu.eps, 0x18da30f1, None): [
@@ -350,6 +344,7 @@ FW_VERSIONS = {
     ],
     (Ecu.combinationMeter, 0x18da60f1, None): [
       b'78109-TWA-A030\x00\x00',
+      b'78109-TWA-A130\x00\x00',
       b'78109-TWA-A230\x00\x00',
     ],
     (Ecu.shiftByWire, 0x18da0bf1, None): [
