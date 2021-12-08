@@ -1,6 +1,8 @@
 #pragma once
 
 #include <array>
+#include "selfdrive/common/mat.h"
+#include "selfdrive/hardware/hw.h"
 
 const int  TRAJECTORY_SIZE = 33;
 const int LAT_MPC_N = 16;
@@ -36,10 +38,14 @@ const std::array<double, TRAJECTORY_SIZE> X_IDXS = {
        168.75  , 180.1875, 192.};
 const auto X_IDXS_FLOAT = convert_array_to_type<double, float, TRAJECTORY_SIZE>(X_IDXS);
 
-#ifdef __cplusplus
+const int TICI_CAM_WIDTH = 1928;
 
-#include "selfdrive/common/mat.h"
-#include "selfdrive/hardware/hw.h"
+namespace tici_dm_crop {
+  const int x_offset = -72;
+  const int y_offset = -144;
+  const int width = 954;
+};
+
 const mat3 fcam_intrinsic_matrix =
     Hardware::EON() ? (mat3){{910., 0., 1164.0 / 2,
                               0., 910., 874.0 / 2,
@@ -62,5 +68,3 @@ static inline mat3 get_model_yuv_transform(bool bayer = true) {
   }};
   return bayer ? transform_scale_buffer(transform, db_s) : transform;
 }
-
-#endif
