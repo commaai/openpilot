@@ -26,7 +26,7 @@ PROCS = {
   "./loggerd": 45.0,
   "./locationd": 9.1,
   "selfdrive.controls.plannerd": 22.6,
-  "./_ui": 15.0,
+  "./_ui": 20.0,
   "selfdrive.locationd.paramsd": 9.1,
   "./camerad": 7.07,
   "./_sensord": 6.17,
@@ -174,6 +174,9 @@ class TestOnroad(unittest.TestCase):
             segs = set(Path(ROOT).glob(f"{route}--*"))
           cls.segments = sorted(segs, key=lambda s: int(str(s).rsplit('--')[-1]))
           time.sleep(2)
+
+      # chop off last, incomplete segment
+      cls.segments = cls.segments[:-1]
 
     finally:
       proc.terminate()
