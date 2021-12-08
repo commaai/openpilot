@@ -352,7 +352,7 @@ class LongitudinalMpc():
     x_obstacle = 1e5*np.ones((N+1))
     self.params = np.concatenate([self.accel_limit_arr,
                              x_obstacle[:,None],
-                             self.prev_a], axis=1)
+                             self.prev_a[:,None]], axis=1)
     self.run()
 
 
