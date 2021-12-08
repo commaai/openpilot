@@ -6,6 +6,7 @@
 #include <QJsonObject>
 #include <QJsonValue>
 
+#include "selfdrive/ui/navd/routing_manager.h"
 #include "selfdrive/ui/qt/maps/map.h"
 #include "selfdrive/ui/qt/maps/map_helpers.h"
 #include "selfdrive/ui/qt/api.h"
@@ -114,13 +115,14 @@ RouteEngine::RouteEngine() {
   parameters["mapbox.access_token"] = get_mapbox_token();
   parameters["mapbox.directions_api_url"] = MAPS_HOST + "/directions/v5/mapbox/";
 
-  geoservice_provider = new QGeoServiceProvider("mapbox", parameters);
-  routing_manager = geoservice_provider->routingManager();
+  QGeoServiceProvider::Error error;
+  QString errorString;
+  routing_manager = new MapboxRoutingManager(parameters, &error, &errorString);
   if (routing_manager == nullptr) {
-    qWarning() << geoservice_provider->errorString();
+    qWarning() << errorString;
     assert(routing_manager);
   }
-  QObject::connect(routing_manager, &QGeoRoutingManager::finished, this, &RouteEngine::routeCalculated);
+  QObject::connect(routing_manager, &MapboxRoutingManager::finished, this, &RouteEngine::routeCalculated);
 
   // Get last gps position from params
   auto last_gps_position = coordinate_from_param("LastGPSPosition");

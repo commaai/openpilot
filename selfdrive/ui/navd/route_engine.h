@@ -13,6 +13,7 @@
 #include <QMapboxGL>
 
 #include "cereal/messaging/messaging.h"
+#include "selfdrive/ui/navd/routing_manager.h"
 
 class QGeoRoutePrivate : public QSharedData
 {
@@ -96,8 +97,7 @@ public:
 
   // Route
   bool gps_ok = false;
-  QGeoServiceProvider *geoservice_provider;
-  QGeoRoutingManager *routing_manager;
+  MapboxRoutingManager *routing_manager;
   QGeoRoute route;
   QGeoRouteSegment segment;
   QMapbox::Coordinate nav_destination;
