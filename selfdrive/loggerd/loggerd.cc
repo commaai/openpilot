@@ -186,14 +186,14 @@ void loggerd_thread() {
   std::unordered_map<SubSocket*, QlogState> qlog_states;
 
   LoggerdState s;
-  s.ctx = Context::create();
-  Poller * poller = Poller::create();
+  std::unique_ptr<Context> ctx(Context::create());
+  std::unique_ptr<Poller> poller(Poller::create());
 
   // subscribe to all socks
   for (const auto& it : services) {
     if (!it.should_log) continue;
 
-    SubSocket * sock = SubSocket::create(s.ctx, it.name);
+    SubSocket * sock = SubSocket::create(ctx.get(), it.name);
     assert(sock != NULL);
     poller->registerSocket(sock);
     qlog_states[sock] = {
@@ -266,6 +266,4 @@ void loggerd_thread() {
 
   // messaging cleanup
   for (auto &[sock, qs] : qlog_states) delete sock;
-  delete poller;
-  delete s.ctx;
 }
