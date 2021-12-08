@@ -158,14 +158,6 @@ class CarInterface(CarInterfaceBase):
       ret.centerToFront = 2.0828 #ret.wheelbase * 0.4 # wild guess
       tire_stiffness_factor = 1.0
       
-      # Borrowing from Volt... default seems pretty bad...
-      ret.lateralTuning.pid.kpBP = [0., 40.]
-      ret.lateralTuning.pid.kpV = [0., 0.17]
-      ret.lateralTuning.pid.kiBP = [0.]
-      ret.lateralTuning.pid.kiV = [0.]
-      ret.lateralTuning.pid.kf = 1. # get_steer_feedforward_volt()
-      ret.steerActuatorDelay = 0.2
-
     elif candidate == CAR.EQUINOX_NR:
       ret.minEnableSpeed = 18 * CV.MPH_TO_MS
       ret.mass = 3500. * CV.LB_TO_KG + STD_CARGO_KG # (3849+3708)/2
