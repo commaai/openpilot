@@ -6,7 +6,7 @@ from selfdrive.config import Conversions as CV
 from selfdrive.modeld.constants import T_IDXS
 
 # kph
-V_CRUISE_MAX = 135
+V_CRUISE_MAX = 145
 V_CRUISE_MIN = 8
 V_CRUISE_ENABLE_MIN = 40
 
