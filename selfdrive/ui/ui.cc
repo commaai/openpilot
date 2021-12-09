@@ -22,7 +22,7 @@ static bool calib_frame_to_full_frame(const UIState *s, float in_x, float in_y, 
 
   const vec3 pt = (vec3){{in_x, in_y, in_z}};
   const vec3 Ep = matvecmul3(s->scene.view_from_calib, pt);
-  const vec3 KEp = matvecmul3(s->wide_camera ? ecam_intrinsic_matrix : fcam_intrinsic_matrix, Ep);
+  const vec3 KEp = matvecmul3(s->cam_intrinsic_matrix, Ep);
 
   // Project.
   QPointF point = s->car_space_transform.map(QPointF{KEp.v[0] / KEp.v[2], KEp.v[1] / KEp.v[2]});
@@ -209,7 +209,6 @@ static void update_status(UIState *s) {
       s->status = STATUS_DISENGAGED;
       s->scene.started_frame = s->sm->frame;
       s->scene.end_to_end = Params().getBool("EndToEndToggle");
-      s->wide_camera = Hardware::TICI() ? Params().getBool("EnableWideCamera") : false;
     }
     // Invisible until we receive a calibration message.
     s->scene.world_objects_visible = false;
@@ -224,9 +223,7 @@ QUIState::QUIState(QObject *parent) : QObject(parent) {
     "pandaStates", "carParams", "driverMonitoringState", "sensorEvents", "carState", "liveLocationKalman",
   });
 
-  Params params;
-  ui_state.wide_camera = Hardware::TICI() ? params.getBool("EnableWideCamera") : false;
-  ui_state.has_prime = params.getBool("HasPrime");
+  ui_state.has_prime = Params().getBool("HasPrime");
 
   // update timer
   timer = new QTimer(this);

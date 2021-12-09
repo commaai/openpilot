@@ -4,9 +4,9 @@
 #include <string>
 #include <optional>
 
+#include <QColor>
 #include <QObject>
 #include <QTimer>
-#include <QColor>
 #include <QTransform>
 
 #include "cereal/messaging/messaging.h"
@@ -20,11 +20,6 @@ const int footer_h = 280;
 
 const int UI_FREQ = 20;   // Hz
 typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
-
-// TODO: this is also hardcoded in common/transformations/camera.py
-// TODO: choose based on frame input size
-const float y_offset = Hardware::EON() ? 0.0 : 150.0;
-const float ZOOM = Hardware::EON() ? 2138.5 : 2912.8;
 
 struct Alert {
   QString text1;
@@ -112,8 +107,8 @@ typedef struct UIState {
   bool awake;
   bool has_prime = false;
 
+  mat3 cam_intrinsic_matrix = {};
   QTransform car_space_transform;
-  bool wide_camera;
 } UIState;
 
 

@@ -39,6 +39,7 @@ const std::array<double, TRAJECTORY_SIZE> X_IDXS = {
 const auto X_IDXS_FLOAT = convert_array_to_type<double, float, TRAJECTORY_SIZE>(X_IDXS);
 
 const int TICI_CAM_WIDTH = 1928;
+const int TICI_QCAM_WIDTH = 526;
 
 namespace tici_dm_crop {
   const int x_offset = -72;
@@ -46,21 +47,39 @@ namespace tici_dm_crop {
   const int width = 954;
 };
 
-const mat3 fcam_intrinsic_matrix =
-    Hardware::EON() ? (mat3){{910., 0., 1164.0 / 2,
-                              0., 910., 874.0 / 2,
-                              0., 0., 1.}}
-                    : (mat3){{2648.0, 0.0, 1928.0 / 2,
-                              0.0, 2648.0, 1208.0 / 2,
-                              0.0, 0.0, 1.0}};
+inline mat3 get_intrinsic_matrix(int w, bool wide, float *y_offset = nullptr, float *zoom = nullptr) {
+  constexpr mat3 eon_fcam_intrinsics = {{910., 0., 1164.0 / 2,
+                                         0., 910., 874.0 / 2,
+                                         0., 0., 1.}};
+  constexpr mat3 tici_fcam_intrinsics = {{2648.0, 0.0, 1928.0 / 2,
+                                          0.0, 2648.0, 1208.0 / 2,
+                                          0.0, 0.0, 1.0}};
+  constexpr mat3 tici_ecam_intrinsics = {{620.0, 0.0, 1928.0 / 2,
+                                          0.0, 620.0, 1208.0 / 2,
+                                          0.0, 0.0, 1.0}};
+  mat3 mat = {};
+  bool is_tici = (w == TICI_CAM_WIDTH || w == TICI_QCAM_WIDTH);
+  if (is_tici) {
+    mat = wide ? tici_ecam_intrinsics : tici_fcam_intrinsics;
+  } else {
+    mat = eon_fcam_intrinsics;
+  }
 
-// without unwarp, focal length is for center portion only
-const mat3 ecam_intrinsic_matrix = (mat3){{620.0, 0.0, 1928.0 / 2,
-                                           0.0, 620.0, 1208.0 / 2,
-                                           0.0, 0.0, 1.0}};
+  if (y_offset) {
+    *y_offset = is_tici ? 150.0 : 0.0;
+  }
 
-static inline mat3 get_model_yuv_transform(bool bayer = true) {
-  float db_s = Hardware::EON() ? 0.5 : 1.0; // debayering does a 2x downscale on EON
+  if (zoom) {
+    *zoom = (is_tici ? 2912.8 : 2138.5) / mat.v[0];
+    if (wide) *zoom *= 0.5;
+  }
+
+  return mat;
+}
+
+static inline mat3 get_model_yuv_transform(int w, bool bayer = true) {
+  const bool is_tici = (w == TICI_CAM_WIDTH || w == TICI_QCAM_WIDTH);
+  float db_s = is_tici ? 1.0 : 0.5; // debayering does a 2x downscale on EON
   const mat3 transform = (mat3){{
     1.0, 0.0, 0.0,
     0.0, 1.0, 0.0,

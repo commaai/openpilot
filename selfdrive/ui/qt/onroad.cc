@@ -277,11 +277,9 @@ void NvgWindow::updateFrameMat(int w, int h) {
   UIState *s = &QUIState::ui_state;
   s->fb_w = w;
   s->fb_h = h;
-  auto intrinsic_matrix = s->wide_camera ? ecam_intrinsic_matrix : fcam_intrinsic_matrix;
-  float zoom = ZOOM / intrinsic_matrix.v[0];
-  if (s->wide_camera) {
-    zoom *= 0.5;
-  }
+
+  float y_offset, zoom;
+  s->cam_intrinsic_matrix = get_intrinsic_matrix(stream_width, stream_type == VISION_STREAM_RGB_WIDE, &y_offset, &zoom);
   // Apply transformation such that video pixel coordinates match video
   // 1) Put (0, 0) in the middle of the video
   // 2) Apply same scaling as video
@@ -289,7 +287,7 @@ void NvgWindow::updateFrameMat(int w, int h) {
   s->car_space_transform.reset();
   s->car_space_transform.translate(w / 2, h / 2 + y_offset)
       .scale(zoom, zoom)
-      .translate(-intrinsic_matrix.v[2], -intrinsic_matrix.v[5]);
+      .translate(-s->cam_intrinsic_matrix.v[2], -s->cam_intrinsic_matrix.v[5]);
 }
 
 void NvgWindow::drawLaneLines(QPainter &painter, const UIScene &scene) {

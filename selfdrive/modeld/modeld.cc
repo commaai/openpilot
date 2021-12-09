@@ -19,7 +19,7 @@ bool live_calib_seen;
 mat3 cur_transform;
 std::mutex transform_lock;
 
-void calibration_thread(bool wide_camera) {
+void calibration_thread(int w, bool wide_camera) {
   set_thread_name("calibration");
   set_realtime_priority(50);
 
@@ -37,8 +37,8 @@ void calibration_thread(bool wide_camera) {
     -1.09890110e-03, 0.00000000e+00, 2.81318681e-01,
     -1.84808520e-20, 9.00738606e-04,-4.28751576e-02;
 
-  Eigen::Matrix<float, 3, 3> cam_intrinsics = Eigen::Matrix<float, 3, 3, Eigen::RowMajor>(wide_camera ? ecam_intrinsic_matrix.v : fcam_intrinsic_matrix.v);
-  const mat3 yuv_transform = get_model_yuv_transform();
+  Eigen::Matrix<float, 3, 3> cam_intrinsics = Eigen::Matrix<float, 3, 3, Eigen::RowMajor>(get_intrinsic_matrix(w, wide_camera).v);
+  const mat3 yuv_transform = get_model_yuv_transform(w);
 
   while (!do_exit) {
     sm.update(100);
@@ -141,9 +141,6 @@ int main(int argc, char **argv) {
 
   bool wide_camera = Hardware::TICI() ? Params().getBool("EnableWideCamera") : false;
 
-  // start calibration thread
-  std::thread thread = std::thread(calibration_thread, wide_camera);
-
   // cl init
   cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
   cl_context context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
@@ -162,13 +159,17 @@ int main(int argc, char **argv) {
   // vipc_client.connected is false only when do_exit is true
   if (vipc_client.connected) {
     const VisionBuf *b = &vipc_client.buffers[0];
+    // start calibration thread
+    std::thread thread = std::thread(calibration_thread, b->width, wide_camera);
+    
     LOGW("connected with buffer size: %d (%d x %d)", b->len, b->width, b->height);
     run_model(model, vipc_client);
+
+    thread.join();
   }
 
   model_free(&model);
   LOG("joining calibration thread");
-  thread.join();
   CL_CHECK(clReleaseContext(context));
   return 0;
 }

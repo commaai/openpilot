@@ -102,7 +102,7 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
     rgb_height = ci->frame_height / 2;
   }
 
-  yuv_transform = get_model_yuv_transform(ci->bayer);
+  yuv_transform = get_model_yuv_transform(rgb_width, ci->bayer);
 
   vipc_server->create_buffers(rgb_type, UI_BUF_COUNT, true, rgb_width, rgb_height);
   rgb_stride = vipc_server->get_buffer(rgb_type)->stride;
