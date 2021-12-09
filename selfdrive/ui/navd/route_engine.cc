@@ -278,11 +278,10 @@ void RouteEngine::routeCalculated(RouteReply *reply) {
     segment = route->segments.first();
     segment_index = 0;
     emit routeUpdated(route->path);
+    sendRoute();
   } else {
     qWarning() << "Got error in route reply" << reply->error_string;
   }
-
-  sendRoute();
 
   reply->deleteLater();
 }
@@ -292,12 +291,14 @@ void RouteEngine::sendRoute() {
   cereal::Event::Builder evt = msg.initEvent();
   cereal::NavRoute::Builder nav_route = evt.initNavRoute();
 
-  auto coordinates = nav_route.initCoordinates(route->path.size());
-  size_t i = 0;
-  for (auto const &c : route->path) {
-    coordinates[i].setLatitude(c.latitude());
-    coordinates[i].setLongitude(c.longitude());
-    i++;
+  if (route) {
+    auto coordinates = nav_route.initCoordinates(route->path.size());
+    size_t i = 0;
+    for (auto const &c : route->path) {
+      coordinates[i].setLatitude(c.latitude());
+      coordinates[i].setLongitude(c.longitude());
+      i++;
+    }
   }
 
   pm->send("navRoute", msg);

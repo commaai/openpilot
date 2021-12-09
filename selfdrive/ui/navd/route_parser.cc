@@ -12,49 +12,6 @@
 #include "selfdrive/common/params.h"
 #include "selfdrive/ui/qt/maps/map_helpers.h"
 
-// TODO: this seems to create duplicate coordinates in the path when decoding the polyline, so the corresponding annotations don't match up by index
-static QList<QGeoCoordinate> decodePolyline(const QString &polyline) {
-  QList<QGeoCoordinate> path;
-  if (polyline.isEmpty())
-    return path;
-
-  QByteArray data = polyline.toLatin1();
-
-  bool parsing_latitude = true;
-
-  int shift = 0;
-  int value = 0;
-
-  QGeoCoordinate coord(0, 0);
-
-  for (int i = 0; i < data.length(); ++i) {
-    unsigned char c = data.at(i) - 63;
-
-    value |= (c & 0x1f) << shift;
-    shift += 5;
-
-    // another chunk
-    if (c & 0x20)
-      continue;
-
-    int diff = (value & 1) ? ~(value >> 1) : (value >> 1);
-
-    if (parsing_latitude) {
-      coord.setLatitude(coord.latitude() + (double)diff / 1e6);
-    } else {
-      coord.setLongitude(coord.longitude() + (double)diff / 1e6);
-      path.append(coord);
-    }
-
-    parsing_latitude = !parsing_latitude;
-
-    value = 0;
-    shift = 0;
-  }
-
-  return path;
-}
-
 static void parse_banner(RouteManeuver &maneuver, const QMap<QString, QVariant> &banner) {
   maneuver.distance_along_geometry = banner["distance_along_geometry"].toDouble();
 
@@ -101,7 +58,7 @@ static void parse_banner(RouteManeuver &maneuver, const QMap<QString, QVariant> 
 
 RouteParser::RouteParser() { }
 
-std::optional<RouteSegment> RouteParser::parseStep(const QJsonObject &step, int leg_index, int step_index) const {
+std::optional<RouteSegment> RouteParser::parseStep(QJsonObject const &step) const {
   if (!step.value("maneuver").isObject())
     return {};
   auto maneuver = step.value("maneuver").toObject();
@@ -124,9 +81,6 @@ std::optional<RouteSegment> RouteParser::parseStep(const QJsonObject &step, int 
   auto longitude = position[0].toDouble();
   QGeoCoordinate coord(latitude, longitude);
 
-  auto geometry = step.value("geometry").toString();
-  auto path = decodePolyline(geometry);
-
   RouteManeuver routeManeuver;
   routeManeuver.position = coord;
   routeManeuver.typical_duration = step.value("duration_typical").toDouble();
@@ -135,6 +89,14 @@ std::optional<RouteSegment> RouteParser::parseStep(const QJsonObject &step, int 
     auto const &banner = step.value("bannerInstructions").toArray().first();
     if (banner.isObject())
       parse_banner(routeManeuver, banner.toObject().toVariantMap());
+  }
+
+  QList<QGeoCoordinate> path;
+  auto geometry = step.value("geometry").toObject();
+  auto coords = geometry["coordinates"].toArray();
+  for (auto const &c : coords) {
+    auto cc = c.toArray();
+    path.append(QGeoCoordinate(cc[1].toDouble(), cc[0].toDouble()));
   }
 
   RouteSegment segment;
@@ -181,8 +143,7 @@ RouteReply::Error RouteParser::parseReply(QList<Route> &routes, QString &error_s
 
       auto legs = routeObject.value("legs").toArray();
       Route route;
-      for (int leg_index = 0; leg_index < legs.size(); ++leg_index) {
-        auto const &l = legs.at(leg_index);
+      for (auto const &l : legs) {
         QList<RouteSegment> leg_segments;
         if (!l.isObject()) {
           error = true;
@@ -193,14 +154,12 @@ RouteReply::Error RouteParser::parseReply(QList<Route> &routes, QString &error_s
           error = true;
           break;
         }
-        auto steps = leg.value("steps").toArray();
-        for (int step_index = 0; step_index < steps.size(); ++step_index) {
-          auto const &s = steps.at(step_index);
+        for (auto const &s : leg.value("steps").toArray()) {
           if (!s.isObject()) {
             error = true;
             break;
           }
-          auto segment = parseStep(s.toObject(), leg_index, step_index);
+          auto segment = parseStep(s.toObject());
           if (segment) {
             leg_segments.append(segment.value());
           } else {
@@ -291,7 +250,7 @@ QUrl RouteParser::requestUrl(const QGeoRouteRequest &request, const QString &pre
   query.addQueryItem("access_token", get_mapbox_token());
   query.addQueryItem("annotations", "distance,maxspeed");
   query.addQueryItem("bearings", bearings);
-  query.addQueryItem("geometries", "polyline6");
+  query.addQueryItem("geometries", "geojson");
   query.addQueryItem("overview", "full");
   query.addQueryItem("steps", "true");
   query.addQueryItem("banner_instructions", "true");
