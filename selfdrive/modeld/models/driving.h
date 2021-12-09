@@ -201,12 +201,13 @@ struct ModelOutputMeta {
 static_assert(sizeof(ModelOutputMeta) == sizeof(ModelOutputDesireProb) + sizeof(float) + (sizeof(ModelOutputDisengageProb)*DISENGAGE_LEN) + (sizeof(ModelOutputBlinkerProb)*BLINKER_LEN) + (sizeof(ModelOutputDesireProb)*DESIRE_PRED_LEN));
 
 struct ModelOutput {
-  const ModelOutputPlans *const plans;
-  const ModelOutputLaneLines *const lane_lines;
-  const ModelOutputRoadEdges *const road_edges;
-  const ModelOutputLeads *const leads;
-  const ModelOutputMeta *const meta;
-  const ModelOutputPose *const pose;
+  const ModelOutputPlans plans;
+  const ModelOutputLaneLines lane_lines;
+  const ModelOutputRoadEdges road_edges;
+  const ModelOutputLeads leads;
+  const ModelOutputMeta meta;
+  const ModelOutputPose pose;
+  const std::array<float, 512> recurrent_state;
 };
 
 #ifdef TEMPORAL

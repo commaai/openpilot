@@ -269,7 +269,7 @@ void fill_road_edges(cereal::ModelDataV2::Builder &framed, const std::array<floa
 }
 
 void fill_model(cereal::ModelDataV2::Builder &framed, const ModelOutput &net_outputs) {
-  const auto &best_plan = net_outputs.plans->get_best_prediction();
+  const auto &best_plan = net_outputs.plans.get_best_prediction();
   std::array<float, TRAJECTORY_SIZE> plan_t;
   std::fill_n(plan_t.data(), plan_t.size(), NAN);
   plan_t[0] = 0.0;
@@ -292,17 +292,17 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelOutput &net_out
   }
 
   fill_plan(framed, best_plan);
-  fill_lane_lines(framed, plan_t, *net_outputs.lane_lines);
-  fill_road_edges(framed, plan_t, *net_outputs.road_edges);
+  fill_lane_lines(framed, plan_t, net_outputs.lane_lines);
+  fill_road_edges(framed, plan_t, net_outputs.road_edges);
 
   // meta
-  fill_meta(framed.initMeta(), *net_outputs.meta);
+  fill_meta(framed.initMeta(), net_outputs.meta);
 
   // leads
   auto leads = framed.initLeadsV3(LEAD_MHP_SELECTION);
   std::array<float, LEAD_MHP_SELECTION> t_offsets = {0.0, 2.0, 4.0};
   for (int i=0; i<LEAD_MHP_SELECTION; i++) {
-    fill_lead(leads[i], *net_outputs.leads, i, t_offsets[i]);
+    fill_lead(leads[i], net_outputs.leads, i, t_offsets[i]);
   }
 }
 
@@ -327,10 +327,10 @@ void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id, flo
 void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_dropped_frames,
                      const ModelOutput &net_outputs, uint64_t timestamp_eof) {
   MessageBuilder msg;
-  auto v_mean = net_outputs.pose->velocity_mean;
-  auto r_mean = net_outputs.pose->rotation_mean;
-  auto v_std = net_outputs.pose->velocity_std;
-  auto r_std = net_outputs.pose->rotation_std;
+  auto v_mean = net_outputs.pose.velocity_mean;
+  auto r_mean = net_outputs.pose.rotation_mean;
+  auto v_std = net_outputs.pose.velocity_std;
+  auto r_std = net_outputs.pose.rotation_std;
 
   auto posenetd = msg.initEvent(vipc_dropped_frames < 1).initCameraOdometry();
   posenetd.setTrans({v_mean.x, v_mean.y, v_mean.z});
