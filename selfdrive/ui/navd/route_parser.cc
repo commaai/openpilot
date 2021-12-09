@@ -54,114 +54,22 @@ static QList<QGeoCoordinate> decodePolyline(const QString &polylineString) {
   return path;
 }
 
-static QVariantMap parseMapboxBannerComponent(const QJsonObject &bannerComponent) {
-  QVariantMap map;
-
-  if (bannerComponent.value("type").isString())
-    map.insert("type", bannerComponent.value("type").toString());
-
-  if (bannerComponent.value("text").isString())
-    map.insert("text", bannerComponent.value("text").toString());
-
-  if (bannerComponent.value("abbr").isString())
-    map.insert("abbr", bannerComponent.value("abbr").toString());
-
-  if (bannerComponent.value("abbr_priority").isDouble())
-    map.insert("abbr_priority", bannerComponent.value("abbr_priority").toInt());
-
-  return map;
-}
-
-static QVariantList parseMapboxBannerComponents(const QJsonArray &bannerComponents) {
-  QVariantList list;
-  for (const QJsonValue &bannerComponentValue : bannerComponents) {
-    if (bannerComponentValue.isObject())
-      list.append(parseMapboxBannerComponent(bannerComponentValue.toObject()));
-  }
-  return list;
-}
-
-static QVariantMap parseMapboxBanner(const QJsonObject &banner) {
-  QVariantMap map;
-
-  if (banner.value("text").isString())
-    map.insert("text", banner.value("text").toString());
-
-  if (banner.value("components").isArray())
-    map.insert("components", parseMapboxBannerComponents(banner.value("components").toArray()));
-
-  if (banner.value("type").isString())
-    map.insert("type", banner.value("type").toString());
-
-  if (banner.value("modifier").isString())
-    map.insert("modifier", banner.value("modifier").toString());
-
-  if (banner.value("degrees").isDouble())
-    map.insert("degrees", banner.value("degrees").toDouble());
-
-  if (banner.value("driving_side").isString())
-    map.insert("driving_side", banner.value("driving_side").toString());
-
-  return map;
-}
-
-static QVariantMap parseMapboxBannerInstruction(const QJsonObject &bannerInstruction) {
-  QVariantMap map;
-
-  if (bannerInstruction.value("distanceAlongGeometry").isDouble())
-    map.insert("distance_along_geometry", bannerInstruction.value("distanceAlongGeometry").toDouble());
-
-  if (bannerInstruction.value("primary").isObject())
-    map.insert("primary", parseMapboxBanner(bannerInstruction.value("primary").toObject()));
-
-  if (bannerInstruction.value("secondary").isObject())
-    map.insert("secondary", parseMapboxBanner(bannerInstruction.value("secondary").toObject()));
-
-  if (bannerInstruction.value("then").isObject())
-    map.insert("then", parseMapboxBanner(bannerInstruction.value("then").toObject()));
-
-  return map;
-}
-
-static QVariantList parseMapboxBannerInstructions(const QJsonArray &bannerInstructions) {
-  QVariantList list;
-  for (const QJsonValue &bannerInstructionValue : bannerInstructions) {
-    if (bannerInstructionValue.isObject())
-      list.append(parseMapboxBannerInstruction(bannerInstructionValue.toObject()));
-  }
-  return list;
-}
-
 static void parse_banner(RouteManeuver &maneuver, const QMap<QString, QVariant> &banner) {
-  if (bannerInstruction.value("distanceAlongGeometry").isDouble())
-    routeManeuver.setDistanceAlongGeometry(bannerInstruction.value("distanceAlongGeometry").toDouble());
+  maneuver.distanceAlongGeometry = banner["distance_along_geometry"].toDouble();
 
-  if (bannerInstruction.value("primary").isObject())
-    map.insert("primary", parseMapboxBanner(bannerInstruction.value("primary").toObject()));
+  auto primary = banner["primary"].toMap();
+  maneuver.primaryText = primary["text"].toString();
 
-  if (bannerInstruction.value("secondary").isObject())
-    map.insert("secondary", parseMapboxBanner(bannerInstruction.value("secondary").toObject()));
+  if (primary.contains("type"))
+    maneuver.type = primary["type"].toString();
 
-  QString primary_str, secondary_str;
-
-  auto p = banner["primary"].toMap();
-  primary_str += p["text"].toString();
-
-  if (p.contains("type")) {
-    instruction.setManeuverType(p["type"].toString().toStdString());
-  }
-
-  if (p.contains("modifier")) {
-    instruction.setManeuverModifier(p["modifier"].toString().toStdString());
-  }
+  if (primary.contains("modifier"))
+    maneuver.modifier = primary["modifier"].toString();
 
   if (banner.contains("secondary")) {
     auto s = banner["secondary"].toMap();
-    secondary_str += s["text"].toString();
+    maneuver.secondaryText = s["text"].toString();
   }
-
-  instruction.setManeuverPrimaryText(primary_str.toStdString());
-  instruction.setManeuverSecondaryText(secondary_str.toStdString());
 
   if (banner.contains("sub")) {
     auto s = banner["sub"].toMap();
@@ -175,55 +83,51 @@ static void parse_banner(RouteManeuver &maneuver, const QMap<QString, QVariant> 
       }
     }
 
-    auto lanes = instruction.initLanes(num_lanes);
+    auto lanes = QList<RouteManeuverLane>();
 
-    size_t i = 0;
     for (auto &c : components) {
-      auto cc = c.toMap();
-      if (cc["type"].toString() == "lane") {
-        auto lane = lanes[i];
-        lane.setActive(cc["active"].toBool());
+      auto component = c.toMap();
+      if (component["type"].toString() == "lane") {
+        auto lane = RouteManeuverLane();
+        lane.active = component["active"].toBool();
 
-        if (cc.contains("active_direction")) {
-          lane.setActiveDirection(string_to_direction(cc["active_direction"].toString()));
+        if (component.contains("active_direction")) {
+          lane.activeDirection = component["active_direction"].toString();
         }
 
-        auto directions = lane.initDirections(cc["directions"].toList().size());
-
-        size_t j = 0;
-        for (auto &dir : cc["directions"].toList()) {
-          directions.set(j, string_to_direction(dir.toString()));
-          j++;
+        auto directions = QList<QString>();
+        for (auto &dir : component["directions"].toList()) {
+          directions.append(dir.toString());
         }
 
-        i++;
+        lanes.append(lane);
       }
     }
+    maneuver.lanes = lanes;
   }
 }
 
 RouteParser::RouteParser() { }
 
-RouteSegment RouteParser::parseStep(const QJsonObject &step, int legIndex, int stepIndex) const {
-  RouteSegment segment;
+std::optional<RouteSegment> RouteParser::parseStep(const QJsonObject &step, int legIndex, int stepIndex) const {
   if (!step.value("maneuver").isObject())
-    return segment;
+    return {};
   QJsonObject maneuver = step.value("maneuver").toObject();
   if (!step.value("duration").isDouble())
-    return segment;
+    return {};
   if (!step.value("distance").isDouble())
-    return segment;
+    return {};
   if (!step.value("intersections").isArray())
-    return segment;
+    return {};
   if (!maneuver.value("location").isArray())
-    return segment;
+    return {};
 
   double time = step.value("duration").toDouble();
   double distance = step.value("distance").toDouble();
 
   QJsonArray position = maneuver.value("location").toArray();
   if (position.isEmpty())
-    return segment;
+    return {};
   double latitude = position[1].toDouble();
   double longitude = position[0].toDouble();
   QGeoCoordinate coord(latitude, longitude);
@@ -232,21 +136,19 @@ RouteSegment RouteParser::parseStep(const QJsonObject &step, int legIndex, int s
   QList<QGeoCoordinate> path = decodePolyline(geometry);
 
   RouteManeuver routeManeuver;
-  routeManeuver.setPosition(coord);
-  // TODO parse banner
+  routeManeuver.position = coord;
+
   if (step.value("bannerInstructions").isArray() && step.value("bannerInstructions").toArray().size() > 0) {
-    auto const &bannerInstructionValue = step.value("bannerInstructions").toArray().first();
-    if (bannerInstructionValue.isObject()) {
-      auto const &bannerInstruction = bannerInstructionValue.toObject();
-      parse_banner(&maneuver, bannerInstruction);
-    }
+    auto const &banner = step.value("bannerInstructions").toArray().first();
+    if (banner.isObject())
+      parse_banner(routeManeuver, banner.toObject().toVariantMap());
   }
 
-  segment.setDistance(distance);
-  segment.setPath(path);
-  segment.setTravelTime(time);
-  segment.setManeuver(routeManeuver);
-
+  RouteSegment segment;
+  segment.distance = distance;
+  segment.path = path;
+  segment.travelTime = time;
+  segment.maneuver = routeManeuver;
   return segment;
 }
 
@@ -302,16 +204,15 @@ RouteReply::Error RouteParser::parseReply(QList<Route> &routes, QString &errorSt
           break;
         }
         QJsonArray steps = leg.value("steps").toArray();
-        RouteSegment segment;
         for (int stepIndex = 0; stepIndex < steps.size(); ++stepIndex) {
           const QJsonValue &s = steps.at(stepIndex);
           if (!s.isObject()) {
             error = true;
             break;
           }
-          segment = parseStep(s.toObject(), legIndex, stepIndex);
-          if (segment.isValid()) {
-            legSegments.append(segment);
+          auto segment = parseStep(s.toObject(), legIndex, stepIndex);
+          if (segment) {
+            legSegments.append(segment.value());
           } else {
             error = true;
             break;
@@ -326,20 +227,17 @@ RouteReply::Error RouteParser::parseReply(QList<Route> &routes, QString &errorSt
       if (!error) {
         QList<QGeoCoordinate> path;
         for (const RouteSegment &s : segments)
-          path.append(s.path());
-
-        for (int i = segments.size() - 1; i > 0; --i)
-          segments[i - 1].setNextRouteSegment(segments[i]);
+          path.append(s.path);
 
         qWarning() << "distance: " << distance;
-        route.setDistance(distance);
+        route.distance = distance;
         qWarning() << "Travel time: " << travelTime;
-        route.setTravelTime(travelTime);
+        route.travelTime = travelTime;
         if (!path.isEmpty()) {
           qWarning() << "Path: " << path;
-          route.setPath(path);
-          qWarning() << "First segment: " << segments.first().distance();
-          route.setFirstRouteSegment(segments.first());
+          route.path = path;
+          qWarning() << "First segment: " << segments.first().distance;
+          route.segments = segments;
         }
         routes.append(route);
       }

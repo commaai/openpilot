@@ -17,5 +17,5 @@ public:
   QUrl requestUrl(const QGeoRouteRequest &request, const QString &prefix) const;
 
 private:
-  RouteSegment parseStep(const QJsonObject &step, int legIndex, int stepIndex) const;
+  std::optional<RouteSegment> parseStep(const QJsonObject &step, int legIndex, int stepIndex) const;
 };

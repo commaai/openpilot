@@ -34,9 +34,10 @@ public:
   // Route
   bool gps_ok = false;
   RoutingManager *routing_manager;
-  Route route;
-  RouteSegment segment;
-  QMapbox::Coordinate nav_destination;
+  std::optional<Route> route;
+  std::optional<RouteSegment> segment;
+  int segment_index = 0;
+  std::optional<QMapbox::Coordinate> nav_destination;
   QList<RouteGeometrySegment> route_geometry_segments = {};
 
   // Position

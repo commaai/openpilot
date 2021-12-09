@@ -16,6 +16,7 @@ RoutingManager::RoutingManager() {
 }
 
 RouteReply *RoutingManager::calculateRoute(const QGeoRouteRequest &request) {
+  qWarning() << "RoutingManager::calculateRoute";
   QNetworkRequest networkRequest;
   networkRequest.setHeader(QNetworkRequest::UserAgentHeader, getUserAgent().toUtf8());
 

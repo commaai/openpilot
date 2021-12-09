@@ -17,7 +17,7 @@ const qreal REROUTE_DISTANCE = 25;
 const float MANEUVER_TRANSITION_THRESHOLD = 10;
 
 static float get_time_typical(const RouteSegment &segment) {
-  return segment.maneuver().typicalDuration() || segment.travelTime();
+  return std::fmax(segment.maneuver.typicalDuration, segment.travelTime);
 }
 
 static cereal::NavInstruction::Direction string_to_direction(QString d) {
@@ -36,6 +36,7 @@ RouteEngine::RouteEngine() {
   sm = new SubMaster({ "liveLocationKalman", "managerState" });
   pm = new PubMaster({ "navInstruction", "navRoute" });
 
+  qWarning() << "RouteEngine::RouteEngine()";
   // Timers
   route_timer = new QTimer(this);
   QObject::connect(route_timer, SIGNAL(timeout()), this, SLOT(routeUpdate()));
@@ -101,26 +102,30 @@ void RouteEngine::routeUpdate() {
   recomputeRoute();
 
   MessageBuilder msg;
-  cereal::Event::Builder evt = msg.initEvent(segment.isValid());
+  cereal::Event::Builder evt = msg.initEvent(segment.has_value());
   cereal::NavInstruction::Builder instruction = evt.initNavInstruction();
 
   // Show route instructions
-  if (segment.isValid()) {
-    auto maneuver = segment.maneuver();
-    if (maneuver.isValid()) {
-      float along_geometry = distance_along_geometry(segment.path(), to_QGeoCoordinate(*last_position));
-      float distance_to_maneuver_along_geometry = segment.distance() - along_geometry;
+  if (segment) {
+    auto maneuver = segment->maneuver;
+    float along_geometry = distance_along_geometry(segment->path, to_QGeoCoordinate(*last_position));
+    float distance_to_maneuver_along_geometry = segment->distance - along_geometry;
 
-      instruction.setShowFull(distance_to_maneuver_along_geometry < maneuver.distanceAlongGeometry());
-      instruction.setManeuverType(maneuver.type().toStdString());
-      instruction.setManeuverModifier(maneuver.modifier().toStdString());
-      instruction.setManeuverPrimaryText(maneuver.primaryText().toStdString());
-      instruction.setManeuverSecondaryText(maneuver.secondaryText().toStdString());
-      instruction.setManeuverDistance(distance_to_maneuver_along_geometry);
+    instruction.setShowFull(distance_to_maneuver_along_geometry < maneuver.distanceAlongGeometry);
+    if (maneuver.type)
+      instruction.setManeuverType(maneuver.type->toStdString());
+    if (maneuver.modifier)
+      instruction.setManeuverModifier(maneuver.modifier->toStdString());
+    if (maneuver.primaryText)
+      instruction.setManeuverPrimaryText(maneuver.primaryText->toStdString());
+    if (maneuver.secondaryText)
+      instruction.setManeuverSecondaryText(maneuver.secondaryText->toStdString());
+    instruction.setManeuverDistance(distance_to_maneuver_along_geometry);
 
-      auto lanes = instruction.initLanes(maneuver.lanes().size());
-      for (int i = 0; i < maneuver.lanes().size(); i++) {
-        auto &l = maneuver.lanes()[i];
+    if (maneuver.lanes) {
+      auto lanes = instruction.initLanes(maneuver.lanes->size());
+      for (int i = 0; i < maneuver.lanes->size(); i++) {
+        auto &l = maneuver.lanes->at(i);
         auto lane = lanes[i];
         lane.setActive(l.active);
         lane.setActiveDirection(string_to_direction(l.activeDirection));
@@ -129,42 +134,40 @@ void RouteEngine::routeUpdate() {
           directions.set(j, string_to_direction(l.directions[j]));
         }
       }
+    }
 
-      // ETA
-      float progress = distance_along_geometry(segment.path(), to_QGeoCoordinate(*last_position)) / segment.distance();
-      float total_distance = segment.distance() * (1.0 - progress);
-      float total_time = segment.travelTime() * (1.0 - progress);
-      float total_time_typical = get_time_typical(segment) * (1.0 - progress);
+    // ETA
+    float progress = distance_along_geometry(segment->path, to_QGeoCoordinate(*last_position)) / segment->distance;
+    float total_distance = segment->distance * (1.0 - progress);
+    float total_time = segment->travelTime * (1.0 - progress);
+    float total_time_typical = get_time_typical(segment.value()) * (1.0 - progress);
 
-      auto s = segment.nextRouteSegment();
-      while (s.isValid()) {
-        total_distance += s.distance();
-        total_time += s.travelTime();
-        total_time_typical += get_time_typical(s);
+    for (int i = 0; i < segment_index; i++) {
+      auto &s = route->segments.at(i);
+      total_distance += s.distance;
+      total_time += s.travelTime;
+      total_time_typical += get_time_typical(s);
+    }
+    instruction.setTimeRemaining(total_time);
+    instruction.setTimeRemainingTypical(total_time_typical);
+    instruction.setDistanceRemaining(total_distance);
 
-        s = s.nextRouteSegment();
-      }
-      instruction.setTimeRemaining(total_time);
-      instruction.setTimeRemainingTypical(total_time_typical);
-      instruction.setDistanceRemaining(total_distance);
+    // Transition to next route segment
+    if (distance_to_maneuver_along_geometry < -MANEUVER_TRANSITION_THRESHOLD) {
+      if (segment_index + 1 < route->segments.size()) {
+        segment_index++;
+        segment = route->segments.at(segment_index);
 
-      // Transition to next route segment
-      if (distance_to_maneuver_along_geometry < -MANEUVER_TRANSITION_THRESHOLD) {
-        auto next_segment = segment.nextRouteSegment();
-        if (next_segment.isValid()) {
-          segment = next_segment;
+        recompute_backoff = std::max(0, recompute_backoff - 1);
+        recompute_countdown = 0;
+      } else {
+        qWarning() << "Destination reached";
+        Params().remove("NavDestination");
 
-          recompute_backoff = std::max(0, recompute_backoff - 1);
-          recompute_countdown = 0;
-        } else {
-          qWarning() << "Destination reached";
-          Params().remove("NavDestination");
-
-          // Clear route if driving away from destination
-          float d = segment.maneuver().position().distanceTo(to_QGeoCoordinate(*last_position));
-          if (d > REROUTE_DISTANCE) {
-            clearRoute();
-          }
+        // Clear route if driving away from destination
+        float d = segment->maneuver.position.distanceTo(to_QGeoCoordinate(*last_position));
+        if (d > REROUTE_DISTANCE) {
+          clearRoute();
         }
       }
     }
@@ -202,24 +205,24 @@ void RouteEngine::routeUpdate() {
 }
 
 void RouteEngine::clearRoute() {
-  route = Route();
-  segment = RouteSegment();
-  nav_destination = QMapbox::Coordinate();
+  route = {};
+  segment = {};
+  nav_destination = {};
 }
 
 bool RouteEngine::shouldRecompute() {
-  if (!segment.isValid()) {
+  if (!segment) {
     return true;
   }
 
   // Don't recompute in last segment, assume destination is reached
-  if (!segment.nextRouteSegment().isValid()) {
+  if (segment_index >= route->segments.size()) {
     return false;
   }
 
   // Compute closest distance to all line segments in the current path
   float min_d = REROUTE_DISTANCE + 1;
-  auto path = segment.path();
+  auto path = segment->path;
   auto cur = to_QGeoCoordinate(*last_position);
   for (size_t i = 0; i < path.size() - 1; i++) {
     auto a = path[i];
@@ -235,6 +238,7 @@ bool RouteEngine::shouldRecompute() {
 }
 
 void RouteEngine::recomputeRoute() {
+  qWarning() << "Recompute route";
   if (!last_position) {
     return;
   }
@@ -251,7 +255,7 @@ void RouteEngine::recomputeRoute() {
     should_recompute = true;
   }
 
-  if (!gps_ok && segment.isValid())
+  if (!gps_ok && segment)
     return; // Don't recompute when gps drifts in tunnels
 
   if (recompute_countdown == 0 && should_recompute) {
@@ -284,8 +288,8 @@ void RouteEngine::routeCalculated(RouteReply *reply) {
   if (reply->error() == RouteReply::NoError) {
     route = reply->route();
     qWarning() << "Got route response";
-    segment = route.firstRouteSegment();
-    auto path = route.path();
+    segment = route->segments.first();
+    auto path = route->path;
     emit routeUpdated(path);
   } else {
     qWarning() << "Got error in route reply" << reply->errorString();
@@ -301,7 +305,7 @@ void RouteEngine::sendRoute() {
   cereal::Event::Builder evt = msg.initEvent();
   cereal::NavRoute::Builder nav_route = evt.initNavRoute();
 
-  qWarning() << "Distance: " << route.distance();
+  qWarning() << "Distance: " << route->distance;
   route_geometry_segments.clear();
   // auto metadata = ((Route *) &route)->metadata();
   // const QByteArray &raw_reply = metadata["osrm.reply-json"].toByteArray();
@@ -346,11 +350,11 @@ void RouteEngine::sendRoute() {
   // }
 
   // NOTE: Qt seems to create duplicate coordinates in the path when decoding the polyline, so the corresponding annotations don't match up
-  auto path = route.path();
+  auto path = route->path;
   qWarning() << "Path: " << path;
   auto coordinates = nav_route.initCoordinates(path.size());
   size_t i = 0;
-  for (auto const &c : route.path()) {
+  for (auto const &c : route->path) {
     coordinates[i].setLatitude(c.latitude());
     coordinates[i].setLongitude(c.longitude());
     i++;
