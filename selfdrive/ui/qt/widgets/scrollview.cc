@@ -15,7 +15,6 @@ ScrollView::ScrollView(QWidget *w, QWidget *parent) : QScrollArea(parent) {
   setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   setFrameStyle(QFrame::NoFrame);
 
-
   QString style = R"(
     QScrollBar:vertical {
       border: none;
