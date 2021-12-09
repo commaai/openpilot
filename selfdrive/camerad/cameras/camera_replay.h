@@ -16,10 +16,7 @@ typedef struct CameraState {
   FrameReader *frame = nullptr;
 } CameraState;
 
-typedef struct MultiCameraState {
+struct MultiCameraState : public CameraServerBase {
   CameraState road_cam;
   CameraState driver_cam;
-
-  SubMaster *sm = nullptr;
-  PubMaster *pm = nullptr;
-} MultiCameraState;
+};

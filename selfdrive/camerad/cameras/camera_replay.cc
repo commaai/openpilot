@@ -6,8 +6,6 @@
 #include "selfdrive/common/clutil.h"
 #include "selfdrive/common/util.h"
 
-extern ExitHandler do_exit;
-
 void camera_autoexposure(CameraState *s, float grey_frac) {}
 
 namespace {
@@ -22,7 +20,7 @@ std::string get_url(std::string route_name, const std::string &camera, int segme
   return util::string_format("%s%s/%d/%s.hevc", BASE_URL, route_name.c_str(), segment_num, camera.c_str());
 }
 
-void camera_init(VisionIpcServer *v, CameraState *s, int camera_id, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType rgb_type, VisionStreamType yuv_type, const std::string &url) {
+void camera_init(MultiCameraState *server, CameraState *s, int camera_id, unsigned int fps, const std::string &url) {
   s->frame = new FrameReader();
   if (!s->frame->load(url)) {
     printf("failed to load stream from %s", url.c_str());
@@ -37,7 +35,7 @@ void camera_init(VisionIpcServer *v, CameraState *s, int camera_id, unsigned int
   s->ci = ci;
   s->camera_num = camera_id;
   s->fps = fps;
-  s->buf.init(device_id, ctx, s, v, FRAME_BUF_COUNT, rgb_type, yuv_type);
+  s->buf.init(server, s, FRAME_BUF_COUNT);
 }
 
 void camera_close(CameraState *s) {
@@ -96,12 +94,9 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
 
 }  // namespace
 
-void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
-  camera_init(v, &s->road_cam, CAMERA_ID_LGC920, 20, device_id, ctx,
-              VISION_STREAM_RGB_BACK, VISION_STREAM_ROAD, get_url(road_camera_route, "fcamera", 0));
-  // camera_init(v, &s->driver_cam, CAMERA_ID_LGC615, 10, device_id, ctx,
-  //             VISION_STREAM_RGB_FRONT, VISION_STREAM_DRIVER, get_url(driver_camera_route, "dcamera", 0));
-  s->pm = new PubMaster({"roadCameraState", "driverCameraState", "thumbnail"});
+void cameras_init(MultiCameraState *s) {
+  camera_init(s, &s->road_cam, CAMERA_ID_LGC920, 20, get_url(road_camera_route, "fcamera", 0));
+  // camera_init(s, &s->driver_cam, CAMERA_ID_LGC615, 10, get_url(driver_camera_route, "dcamera", 0));
 }
 
 void cameras_open(MultiCameraState *s) {}
@@ -109,7 +104,6 @@ void cameras_open(MultiCameraState *s) {}
 void cameras_close(MultiCameraState *s) {
   camera_close(&s->road_cam);
   camera_close(&s->driver_cam);
-  delete s->pm;
 }
 
 void cameras_run(MultiCameraState *s) {

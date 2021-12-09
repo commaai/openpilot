@@ -82,6 +82,18 @@ struct MultiCameraState;
 struct CameraState;
 class Debayer;
 
+class CameraServerBase {
+public:
+  CameraServerBase();
+  virtual ~CameraServerBase();
+
+  cl_device_id device_id;
+  cl_context context;
+  std::unique_ptr<VisionIpcServer> vipc_server;
+  SubMaster *sm = nullptr;
+  PubMaster *pm = nullptr;
+};
+
 class CameraBuf {
 private:
   VisionIpcServer *vipc_server;
@@ -111,7 +123,7 @@ public:
 
   CameraBuf() = default;
   ~CameraBuf();
-  void init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType rgb_type, VisionStreamType yuv_type, release_cb release_callback=nullptr);
+  void init(MultiCameraState *server, CameraState *s, int frame_cnt, release_cb release_callback=nullptr);
   bool acquire();
   void release();
   void queue(size_t buf_idx);
@@ -125,8 +137,12 @@ float set_exposure_target(const CameraBuf *b, int x_start, int x_end, int x_skip
 std::thread start_process_thread(MultiCameraState *cameras, CameraState *cs, process_thread_cb callback);
 void common_process_driver_camera(MultiCameraState *s, CameraState *c, int cnt);
 
-void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx);
+void cameras_init(MultiCameraState *s);
 void cameras_open(MultiCameraState *s);
 void cameras_run(MultiCameraState *s);
 void cameras_close(MultiCameraState *s);
 void camera_autoexposure(CameraState *s, float grey_frac);
+
+void start_camera_server();
+
+extern ExitHandler do_exit;
