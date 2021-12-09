@@ -167,9 +167,9 @@ float minimum_distance(QGeoCoordinate a, QGeoCoordinate b, QGeoCoordinate p) {
   return projection.distanceTo(p);
 }
 
-float distance_along_geometry(QList<QGeoCoordinate> geometry, QGeoCoordinate pos) {
+std::pair<float, size_t> distance_along_geometry(QList<QGeoCoordinate> geometry, QGeoCoordinate pos) {
   if (geometry.size() <= 2) {
-    return geometry[0].distanceTo(pos);
+    return { geometry[0].distanceTo(pos), 0 };
   }
 
   // 1. Find segment that is closest to current position
@@ -177,18 +177,20 @@ float distance_along_geometry(QList<QGeoCoordinate> geometry, QGeoCoordinate pos
   //    + all previous segments
   double total_distance = 0;
   double total_distance_closest = 0;
+  size_t closest_segment_index = 0;
   double closest_distance = std::numeric_limits<double>::max();
 
-  for (int i = 0; i < geometry.size() - 1; i++) {
+  for (size_t i = 0; i < geometry.size() - 1; i++) {
     double d = minimum_distance(geometry[i], geometry[i+1], pos);
     if (d < closest_distance) {
       closest_distance = d;
       total_distance_closest = total_distance + geometry[i].distanceTo(pos);
+      closest_segment_index = i;
     }
     total_distance += geometry[i].distanceTo(geometry[i+1]);
   }
 
-  return total_distance_closest;
+  return { total_distance_closest, closest_segment_index };
 }
 
 std::optional<QMapbox::Coordinate> coordinate_from_param(std::string param) {

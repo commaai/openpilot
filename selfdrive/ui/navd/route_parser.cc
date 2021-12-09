@@ -12,7 +12,17 @@
 #include "selfdrive/common/params.h"
 #include "selfdrive/ui/qt/maps/map_helpers.h"
 
-static void parse_banner(RouteManeuver &maneuver, const QMap<QString, QVariant> &banner) {
+static QList<QGeoCoordinate> decodeGeojson(QJsonObject const &geojson) {
+  QList<QGeoCoordinate> path;
+  auto coords = geojson["coordinates"].toArray();
+  for (auto const &c : coords) {
+    auto cc = c.toArray();
+    path.append(QGeoCoordinate(cc[1].toDouble(), cc[0].toDouble()));
+  }
+  return path;
+}
+
+static void parse_banner(RouteManeuver &maneuver, QMap<QString, QVariant> const &banner) {
   maneuver.distance_along_geometry = banner["distance_along_geometry"].toDouble();
 
   auto primary = banner["primary"].toMap();
@@ -73,6 +83,7 @@ std::optional<RouteSegment> RouteParser::parseStep(QJsonObject const &step) cons
 
   auto time = step.value("duration").toDouble();
   auto distance = step.value("distance").toDouble();
+  auto path = decodeGeojson(step.value("geometry").toObject());
 
   auto position = maneuver.value("location").toArray();
   if (position.isEmpty())
@@ -89,14 +100,6 @@ std::optional<RouteSegment> RouteParser::parseStep(QJsonObject const &step) cons
     auto const &banner = step.value("bannerInstructions").toArray().first();
     if (banner.isObject())
       parse_banner(routeManeuver, banner.toObject().toVariantMap());
-  }
-
-  QList<QGeoCoordinate> path;
-  auto geometry = step.value("geometry").toObject();
-  auto coords = geometry["coordinates"].toArray();
-  for (auto const &c : coords) {
-    auto cc = c.toArray();
-    path.append(QGeoCoordinate(cc[1].toDouble(), cc[0].toDouble()));
   }
 
   RouteSegment segment;
@@ -170,13 +173,11 @@ RouteReply::Error RouteParser::parseReply(QList<Route> &routes, QString &error_s
         if (error)
           break;
 
-        segments.append(leg_segments);
-
-        auto annotation = leg.value("annotation").toObject();
-        auto distances = annotation.value("distance").toArray();
-        auto maxspeeds = annotation.value("maxspeed").toArray();
-        auto size = std::min(distances.size(), maxspeeds.size());
-        for (int i = 0; i < size; i++) {
+        size_t seg_index = 0;
+        size_t path_index = 0;
+        auto a = leg.value("annotation").toObject();
+        auto maxspeeds = a.value("maxspeed").toArray();
+        for (size_t i = 0; i < maxspeeds.size(); i++) {
           auto max_speed = maxspeeds.at(i).toObject();
           auto unknown = max_speed.value("unknown").toBool();
           auto speed = max_speed.value("speed").toDouble();
@@ -186,18 +187,26 @@ RouteReply::Error RouteParser::parseReply(QList<Route> &routes, QString &error_s
               : unit == "mph"        ? speed * MPH_TO_MS
                                      : 0;
 
-          annotations.append({ distances.at(i).toDouble(), speed_limit });
+          RouteAnnotation annotation = { speed_limit };
+          annotations.append(annotation);
+
+          // add each annotation to the segment it applies to
+          if (leg_segments[seg_index].path.size() >= 2)
+            leg_segments[seg_index].annotations.append(annotation);
+          if (++path_index >= leg_segments[seg_index].path.size() - 1) {
+            ++seg_index;
+            path_index = 0;
+          }
         }
+
+        segments.append(leg_segments);
       }
 
       if (!error) {
         route.distance = distance;
         route.travel_time = travel_time;
 
-        QList<QGeoCoordinate> path;
-        for (auto const &s : segments)
-          path.append(s.path);
-
+        auto const path = decodeGeojson(routeObject.value("geometry").toObject());
         if (!path.isEmpty()) {
           route.path = path;
           route.segments = segments;
@@ -248,7 +257,7 @@ QUrl RouteParser::requestUrl(const QGeoRouteRequest &request, const QString &pre
   QUrl url(routing_url);
   QUrlQuery query;
   query.addQueryItem("access_token", get_mapbox_token());
-  query.addQueryItem("annotations", "distance,maxspeed");
+  query.addQueryItem("annotations", "maxspeed");
   query.addQueryItem("bearings", bearings);
   query.addQueryItem("geometries", "geojson");
   query.addQueryItem("overview", "full");

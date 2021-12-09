@@ -104,8 +104,8 @@ void RouteEngine::routeUpdate() {
 
   if (segment) {
     auto maneuver = segment->maneuver;
-    float along_geometry = distance_along_geometry(segment->path, to_QGeoCoordinate(*last_position));
-    float distance_to_maneuver_along_geometry = segment->distance - along_geometry;
+    auto along_geometry = distance_along_geometry(segment->path, to_QGeoCoordinate(*last_position));
+    float distance_to_maneuver_along_geometry = segment->distance - along_geometry.first;
 
     // Route instructions
     instruction.setShowFull(distance_to_maneuver_along_geometry < maneuver.distance_along_geometry);
@@ -118,6 +118,8 @@ void RouteEngine::routeUpdate() {
     if (maneuver.secondary_text)
       instruction.setManeuverSecondaryText(maneuver.secondary_text->toStdString());
     instruction.setManeuverDistance(distance_to_maneuver_along_geometry);
+    if (along_geometry.second < segment->annotations.size())
+      instruction.setSpeedLimit(segment->annotations[along_geometry.second].speed_limit);
 
     // Lanes
     if (maneuver.lanes) {
@@ -136,7 +138,7 @@ void RouteEngine::routeUpdate() {
     }
 
     // ETA
-    float progress = distance_along_geometry(segment->path, to_QGeoCoordinate(*last_position)) / segment->distance;
+    float progress = along_geometry.first / segment->distance;
     float total_distance = segment->distance * (1.0 - progress);
     float total_time = segment->travel_time * (1.0 - progress);
     float total_time_typical = get_time_typical(segment.value()) * (1.0 - progress);
@@ -170,23 +172,6 @@ void RouteEngine::routeUpdate() {
         }
       }
     }
-
-    // TODO would like to just use `distance_along_geometry(route->path, ...)` but its coordinates can be in reversed order
-    float along_route = distance_along_geometry(segment->path, to_QGeoCoordinate(*last_position));
-    for (int i = 0; i < segment_index; i++)
-      along_route += route->segments.at(i).distance;
-
-    float speed_limit = 0;
-    float distance = 0;
-    for (auto const &a : route->annotations) {
-      distance += a.distance;
-      if (along_route < distance) {
-        speed_limit = a.speed_limit;
-        break;
-      }
-    }
-
-    instruction.setSpeedLimit(speed_limit);
   }
 
   pm->send("navInstruction", msg);

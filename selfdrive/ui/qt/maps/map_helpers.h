@@ -28,4 +28,4 @@ QList<QGeoCoordinate> polyline_to_coordinate_list(const QString &polylineString)
 
 float minimum_distance(QGeoCoordinate a, QGeoCoordinate b, QGeoCoordinate p);
 std::optional<QMapbox::Coordinate> coordinate_from_param(std::string param);
-float distance_along_geometry(QList<QGeoCoordinate> geometry, QGeoCoordinate pos);
+std::pair<float, size_t> distance_along_geometry(QList<QGeoCoordinate> geometry, QGeoCoordinate pos);

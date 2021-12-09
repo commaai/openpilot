@@ -21,16 +21,16 @@ struct RouteManeuver {
   float typical_duration;
 };
 
+struct RouteAnnotation {
+  double speed_limit;
+};
+
 struct RouteSegment {
   int travel_time;
   double distance;
-  QList<QGeoCoordinate> path = {};
   RouteManeuver maneuver;
-};
-
-struct RouteAnnotation {
-  double distance;
-  double speed_limit;
+  QList<QGeoCoordinate> path = {};
+  QList<RouteAnnotation> annotations = {};
 };
 
 struct Route {
