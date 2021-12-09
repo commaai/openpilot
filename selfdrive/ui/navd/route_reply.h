@@ -6,13 +6,8 @@
 
 struct RouteManeuverLane {
   bool active;
-  QString activeDirection;
-  QList<QString> directions;
-};
-
-struct RouteAnnotation {
-  double distance;
-  double speed_limit;
+  std::optional<QString> activeDirection;
+  QList<QString> directions = {};
 };
 
 struct RouteManeuver {
@@ -31,6 +26,11 @@ struct RouteSegment {
   double distance;
   QList<QGeoCoordinate> path = {};
   RouteManeuver maneuver;
+};
+
+struct RouteAnnotation {
+  double distance;
+  double speed_limit;
 };
 
 struct Route {
@@ -53,7 +53,6 @@ public:
     ParseError,
     UnknownError,
   };
-  Q_ENUM(Error)
 
   Error routeError() const { return m_error; }
   QString errorString() const { return m_errorString; }
@@ -63,7 +62,7 @@ public:
 
 signals:
   void finished();
-  void error(Error error, const QString &errorString);
+  void error(RouteReply::Error error, const QString &errorString);
 
 private slots:
   void networkReplyFinished();

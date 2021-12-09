@@ -36,7 +36,6 @@ RouteEngine::RouteEngine() {
   sm = new SubMaster({ "liveLocationKalman", "managerState" });
   pm = new PubMaster({ "navInstruction", "navRoute" });
 
-  qWarning() << "RouteEngine::RouteEngine()";
   // Timers
   route_timer = new QTimer(this);
   QObject::connect(route_timer, SIGNAL(timeout()), this, SLOT(routeUpdate()));
@@ -105,12 +104,12 @@ void RouteEngine::routeUpdate() {
   cereal::Event::Builder evt = msg.initEvent(segment.has_value());
   cereal::NavInstruction::Builder instruction = evt.initNavInstruction();
 
-  // Show route instructions
   if (segment) {
     auto maneuver = segment->maneuver;
     float along_geometry = distance_along_geometry(segment->path, to_QGeoCoordinate(*last_position));
     float distance_to_maneuver_along_geometry = segment->distance - along_geometry;
 
+    // Route instructions
     instruction.setShowFull(distance_to_maneuver_along_geometry < maneuver.distanceAlongGeometry);
     if (maneuver.type)
       instruction.setManeuverType(maneuver.type->toStdString());
@@ -122,13 +121,15 @@ void RouteEngine::routeUpdate() {
       instruction.setManeuverSecondaryText(maneuver.secondaryText->toStdString());
     instruction.setManeuverDistance(distance_to_maneuver_along_geometry);
 
+    // Lanes
     if (maneuver.lanes) {
       auto lanes = instruction.initLanes(maneuver.lanes->size());
       for (int i = 0; i < maneuver.lanes->size(); i++) {
         auto &l = maneuver.lanes->at(i);
         auto lane = lanes[i];
         lane.setActive(l.active);
-        lane.setActiveDirection(string_to_direction(l.activeDirection));
+        if (l.activeDirection)
+          lane.setActiveDirection(string_to_direction(l.activeDirection.value()));
         auto directions = lane.initDirections(l.directions.size());
         for (int j = 0; j < l.directions.size(); j++) {
           directions.set(j, string_to_direction(l.directions[j]));
@@ -142,7 +143,7 @@ void RouteEngine::routeUpdate() {
     float total_time = segment->travelTime * (1.0 - progress);
     float total_time_typical = get_time_typical(segment.value()) * (1.0 - progress);
 
-    for (int i = 0; i < segment_index; i++) {
+    for (int i = segment_index + 1; i < route->segments.size(); i++) {
       auto &s = route->segments.at(i);
       total_distance += s.distance;
       total_time += s.travelTime;
@@ -172,16 +173,10 @@ void RouteEngine::routeUpdate() {
       }
     }
 
-    // would like to just use `distance_along_geometry(route.path(), ...)` but its coordinates can be in reversed order
-    float along_route = 0;
-    for (int i = 0; i < route->segments.size(); i++) {
-      if (i != segment_index) {
+    // TODO would like to just use `distance_along_geometry(route->path, ...)` but its coordinates can be in reversed order
+    float along_route = distance_along_geometry(segment->path, to_QGeoCoordinate(*last_position));
+    for (int i = 0; i < segment_index; i++)
         along_route += route->segments.at(i).distance;
-      } else {
-        along_route += distance_along_geometry(segment->path, to_QGeoCoordinate(*last_position));
-        break;
-      }
-    }
 
     float speed_limit = 0;
     float distance = 0;
@@ -192,9 +187,6 @@ void RouteEngine::routeUpdate() {
         break;
       }
     }
-    qWarning() << "Along route: " << along_route;
-    qWarning() << "Distance: " << distance;
-    qWarning() << "Speed limit: " << speed_limit;
 
     instruction.setSpeedLimit(speed_limit);
   }
@@ -215,7 +207,7 @@ bool RouteEngine::shouldRecompute() {
   }
 
   // Don't recompute in last segment, assume destination is reached
-  if (segment_index >= route->segments.size()) {
+  if (segment_index + 1 >= route->segments.size()) {
     return false;
   }
 
@@ -237,7 +229,6 @@ bool RouteEngine::shouldRecompute() {
 }
 
 void RouteEngine::recomputeRoute() {
-  qWarning() << "Recompute route";
   if (!last_position) {
     return;
   }
@@ -286,8 +277,8 @@ void RouteEngine::calculateRoute(QMapbox::Coordinate destination) {
 void RouteEngine::routeCalculated(RouteReply *reply) {
   if (reply->routeError() == RouteReply::NoError) {
     route = reply->route();
-    qWarning() << "Got route response";
     segment = route->segments.first();
+    segment_index = 0;
     auto path = route->path;
     emit routeUpdated(path);
   } else {
@@ -304,10 +295,7 @@ void RouteEngine::sendRoute() {
   cereal::Event::Builder evt = msg.initEvent();
   cereal::NavRoute::Builder nav_route = evt.initNavRoute();
 
-  qWarning() << "Distance: " << route->distance;
-
-  auto path = route->path;
-  auto coordinates = nav_route.initCoordinates(path.size());
+  auto coordinates = nav_route.initCoordinates(route->path.size());
   size_t i = 0;
   for (auto const &c : route->path) {
     coordinates[i].setLatitude(c.latitude());

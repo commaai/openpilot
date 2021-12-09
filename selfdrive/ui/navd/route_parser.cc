@@ -96,7 +96,7 @@ static void parse_banner(RouteManeuver &maneuver, const QMap<QString, QVariant> 
           lane.activeDirection = component["active_direction"].toString();
         }
 
-        auto directions = QList<QString>();
+        QList<QString> directions;
         for (auto &dir : component["directions"].toList()) {
           directions.append(dir.toString());
         }
@@ -138,6 +138,7 @@ std::optional<RouteSegment> RouteParser::parseStep(const QJsonObject &step, int 
 
   RouteManeuver routeManeuver;
   routeManeuver.position = coord;
+  routeManeuver.typicalDuration = step.value("duration_typical").toDouble();
 
   if (step.value("bannerInstructions").isArray() && step.value("bannerInstructions").toArray().size() > 0) {
     auto const &banner = step.value("bannerInstructions").toArray().first();
@@ -153,15 +154,13 @@ std::optional<RouteSegment> RouteParser::parseStep(const QJsonObject &step, int 
   return segment;
 }
 
+// Mapbox Directions API: https://docs.mapbox.com/api/navigation/directions/
 RouteReply::Error RouteParser::parseReply(QList<Route> &routes, QString &errorString, const QByteArray &reply) const {
-  // OSRM v5 specs: https://github.com/Project-OSRM/osrm-backend/blob/master/docs/http.md
-  // Mapbox Directions API spec: https://www.mapbox.com/api-documentation/#directions
   QJsonDocument document = QJsonDocument::fromJson(reply);
   if (document.isObject()) {
     QJsonObject object = document.object();
 
     QString status = object.value("code").toString();
-    qWarning() << "status: " << status;
     if (status != "Ok") {
       errorString = status;
       return RouteReply::UnknownError;
@@ -185,8 +184,6 @@ RouteReply::Error RouteParser::parseReply(QList<Route> &routes, QString &errorSt
 
       double distance = routeObject.value("distance").toDouble();
       double travelTime = routeObject.value("duration").toDouble();
-      qWarning() << "distance: " << distance;
-      qWarning() << "Travel time: " << travelTime;
       bool error = false;
       QList<RouteSegment> segments;
       QList<RouteAnnotation> annotations;
@@ -249,15 +246,17 @@ RouteReply::Error RouteParser::parseReply(QList<Route> &routes, QString &errorSt
         for (const RouteSegment &s : segments)
           path.append(s.path);
 
-        qWarning() << "distance: " << distance;
         route.distance = distance;
-        qWarning() << "Travel time: " << travelTime;
         route.travelTime = travelTime;
+        // qWarning() << "Route distance:" << distance;
+        // qWarning() << "Travel time:" << travelTime;
         if (!path.isEmpty()) {
           route.path = path;
-          qWarning() << "First segment distance: " << segments.first().distance;
           route.segments = segments;
           route.annotations = annotations;
+          // qWarning() << "Path size:" << path.size();
+          // qWarning() << "Segments size:" << segments.size();
+          // qWarning() << "Annotations size:" << annotations.size();
         }
         routes.append(route);
       }
@@ -267,7 +266,7 @@ RouteReply::Error RouteParser::parseReply(QList<Route> &routes, QString &errorSt
       errorString = "No routes found";
       return RouteReply::ParseError;
     } else {
-      qWarning() << "Found " << routes.size() << " routes";
+      qWarning() << "Found" << routes.size() << "route(s)";
     }
 
     return RouteReply::NoError;

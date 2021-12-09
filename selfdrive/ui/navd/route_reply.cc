@@ -10,9 +10,9 @@
 RouteReply::RouteReply(QNetworkReply *reply, const QGeoRouteRequest &request, QObject *parent)
     : QObject(parent)
     , m_request(request) {
-  connect(reply, SIGNAL(finished()), this, SLOT(networkReplyFinished()));
-  connect(reply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(networkReplyError(QNetworkReply::NetworkError)));
-  connect(this, &QObject::destroyed, reply, &QObject::deleteLater);
+  QObject::connect(reply, &QNetworkReply::finished, this, &RouteReply::networkReplyFinished);
+  QObject::connect(reply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(networkReplyError(QNetworkReply::NetworkError)));
+  QObject::connect(this, &QObject::destroyed, reply, &QObject::deleteLater);
 }
 
 void RouteReply::networkReplyFinished() {
@@ -30,7 +30,6 @@ void RouteReply::networkReplyFinished() {
   QList<Route> routes;
   QString errorString;
   RouteReply::Error error = parser->parseReply(routes, errorString, routeReply);
-  qWarning() << "Parsed routes: " << routes.length();
 
   if (error == RouteReply::NoError) {
     setRoute(routes.at(0));

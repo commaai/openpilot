@@ -20,7 +20,7 @@ private slots:
 
 signals:
   void finished(RouteReply *reply);
-  void error(RouteReply *reply, RouteReply::Error error, QString errorString = QString());
+  void error(RouteReply *reply, RouteReply::Error error, QString errorString);
 
 private:
   QNetworkAccessManager *networkManager;

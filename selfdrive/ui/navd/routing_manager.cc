@@ -16,7 +16,6 @@ RoutingManager::RoutingManager() {
 }
 
 RouteReply *RoutingManager::calculateRoute(const QGeoRouteRequest &request) {
-  qWarning() << "RoutingManager::calculateRoute";
   QNetworkRequest networkRequest;
   networkRequest.setHeader(QNetworkRequest::UserAgentHeader, getUserAgent().toUtf8());
 
@@ -37,8 +36,8 @@ RouteReply *RoutingManager::calculateRoute(const QGeoRouteRequest &request) {
   QNetworkReply *reply = networkManager->get(networkRequest);
   RouteReply *routeReply = new RouteReply(reply, request, this);
 
-  connect(routeReply, SIGNAL(finished()), this, SLOT(replyFinished()));
-  connect(routeReply, SIGNAL(error(RouteReply::Error, QString)), this, SLOT(replyError(RouteReply::Error, QString)));
+  QObject::connect(routeReply, &RouteReply::finished, this, &RoutingManager::replyFinished);
+  QObject::connect(routeReply, &RouteReply::error, this, &RoutingManager::replyError);
 
   return routeReply;
 }
