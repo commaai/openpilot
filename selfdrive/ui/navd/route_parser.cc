@@ -12,6 +12,7 @@
 #include "selfdrive/common/params.h"
 #include "selfdrive/ui/qt/maps/map_helpers.h"
 
+// TODO: this seems to create duplicate coordinates in the path when decoding the polyline, so the corresponding annotations don't match up by index
 static QList<QGeoCoordinate> decodePolyline(const QString &polylineString) {
   QList<QGeoCoordinate> path;
   if (polylineString.isEmpty())
@@ -188,6 +189,7 @@ RouteReply::Error RouteParser::parseReply(QList<Route> &routes, QString &errorSt
       qWarning() << "Travel time: " << travelTime;
       bool error = false;
       QList<RouteSegment> segments;
+      QList<RouteAnnotation> annotations;
 
       QJsonArray legs = routeObject.value("legs").toArray();
       Route route;
@@ -222,6 +224,24 @@ RouteReply::Error RouteParser::parseReply(QList<Route> &routes, QString &errorSt
           break;
 
         segments.append(legSegments);
+
+        auto annotation = leg.value("annotation").toObject();
+        auto distances = annotation.value("distance").toArray();
+        auto maxspeeds = annotation.value("maxspeed").toArray();
+        auto size = std::min(distances.size(), maxspeeds.size());
+        for (int i = 0; i < size; i++) {
+          auto max_speed = maxspeeds.at(i).toObject();
+          auto unknown = max_speed.value("unknown").toBool();
+          auto speed = max_speed.value("speed").toDouble();
+          auto unit = max_speed.value("unit").toString();
+          auto speed_limit =
+            unknown ? 0
+            : unit == "km/h" ? speed * KPH_TO_MS
+            : unit == "mph" ? speed * MPH_TO_MS
+            : 0;
+
+          annotations.append({ distances.at(i).toDouble(), speed_limit });
+        }
       }
 
       if (!error) {
@@ -234,13 +254,20 @@ RouteReply::Error RouteParser::parseReply(QList<Route> &routes, QString &errorSt
         qWarning() << "Travel time: " << travelTime;
         route.travelTime = travelTime;
         if (!path.isEmpty()) {
-          qWarning() << "Path: " << path;
           route.path = path;
-          qWarning() << "First segment: " << segments.first().distance;
+          qWarning() << "First segment distance: " << segments.first().distance;
           route.segments = segments;
+          route.annotations = annotations;
         }
         routes.append(route);
       }
+    }
+
+    if (routes.isEmpty()) {
+      errorString = "No routes found";
+      return RouteReply::ParseError;
+    } else {
+      qWarning() << "Found " << routes.size() << " routes";
     }
 
     return RouteReply::NoError;
@@ -282,7 +309,6 @@ QUrl RouteParser::requestUrl(const QGeoRouteRequest &request, const QString &pre
   query.addQueryItem("overview", "full");
   query.addQueryItem("steps", "true");
   query.addQueryItem("banner_instructions", "true");
-  query.addQueryItem("roundabout_exits", "true");
   url.setQuery(query);
   return url;
 }

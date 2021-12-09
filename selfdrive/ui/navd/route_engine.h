@@ -12,11 +12,6 @@
 #include "selfdrive/ui/navd/route_reply.h"
 #include "selfdrive/ui/navd/routing_manager.h"
 
-struct RouteGeometrySegment {
-  double distance;
-  double speed_limit;
-};
-
 class RouteEngine : public QObject {
   Q_OBJECT
 
@@ -38,7 +33,6 @@ public:
   std::optional<RouteSegment> segment;
   int segment_index = 0;
   std::optional<QMapbox::Coordinate> nav_destination;
-  QList<RouteGeometrySegment> route_geometry_segments = {};
 
   // Position
   std::optional<QMapbox::Coordinate> last_position;

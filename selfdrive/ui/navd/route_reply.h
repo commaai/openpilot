@@ -10,6 +10,11 @@ struct RouteManeuverLane {
   QList<QString> directions;
 };
 
+struct RouteAnnotation {
+  double distance;
+  double speed_limit;
+};
+
 struct RouteManeuver {
   QGeoCoordinate position;
   std::optional<QString> primaryText;
@@ -33,6 +38,7 @@ struct Route {
   int travelTime;
   QList<RouteSegment> segments = {};
   QList<QGeoCoordinate> path = {};
+  QList<RouteAnnotation> annotations = {};
 };
 
 class RouteReply : public QObject {
@@ -49,7 +55,7 @@ public:
   };
   Q_ENUM(Error)
 
-  Error error() const { return m_error; }
+  Error routeError() const { return m_error; }
   QString errorString() const { return m_errorString; }
 
   QGeoRouteRequest request() const { return m_request; }
@@ -57,7 +63,7 @@ public:
 
 signals:
   void finished();
-  void error(Error error, const QString &errorString = QString());
+  void error(Error error, const QString &errorString);
 
 private slots:
   void networkReplyFinished();

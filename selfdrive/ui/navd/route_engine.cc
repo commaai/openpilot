@@ -172,33 +172,31 @@ void RouteEngine::routeUpdate() {
       }
     }
 
-    // // would like to just use `distance_along_geometry(route.path(), ...)` but its coordinates can be in reversed order
-    // float along_route = 0;
-    // auto s = route.firstRouteSegment();
-    // while (s.isValid()) {
-    //   if (s != segment) {
-    //     along_route += s.distance();
-    //     s = s.nextRouteSegment();
-    //   } else {
-    //     along_route += distance_along_geometry(segment.path(), to_QGeoCoordinate(*last_position));
-    //     break;
-    //   }
-    // }
+    // would like to just use `distance_along_geometry(route.path(), ...)` but its coordinates can be in reversed order
+    float along_route = 0;
+    for (int i = 0; i < route->segments.size(); i++) {
+      if (i != segment_index) {
+        along_route += route->segments.at(i).distance;
+      } else {
+        along_route += distance_along_geometry(segment->path, to_QGeoCoordinate(*last_position));
+        break;
+      }
+    }
 
-    // float speed_limit = 0;
-    // float distance = 0;
-    // for (auto const &g : route_geometry_segments) {
-    //   distance += g.distance;
-    //   if (along_route < distance) {
-    //     speed_limit = g.speed_limit;
-    //     break;
-    //   }
-    // }
-    // qWarning() << "Along route: " << along_route;
-    // qWarning() << "Distance: " << distance;
-    // qWarning() << "Speed limit: " << speed_limit;
+    float speed_limit = 0;
+    float distance = 0;
+    for (auto const &a : route->annotations) {
+      distance += a.distance;
+      if (along_route < distance) {
+        speed_limit = a.speed_limit;
+        break;
+      }
+    }
+    qWarning() << "Along route: " << along_route;
+    qWarning() << "Distance: " << distance;
+    qWarning() << "Speed limit: " << speed_limit;
 
-    // instruction.setSpeedLimit(speed_limit);
+    instruction.setSpeedLimit(speed_limit);
   }
 
   pm->send("navInstruction", msg);
@@ -207,6 +205,7 @@ void RouteEngine::routeUpdate() {
 void RouteEngine::clearRoute() {
   route = {};
   segment = {};
+  segment_index = 0;
   nav_destination = {};
 }
 
@@ -285,7 +284,7 @@ void RouteEngine::calculateRoute(QMapbox::Coordinate destination) {
 }
 
 void RouteEngine::routeCalculated(RouteReply *reply) {
-  if (reply->error() == RouteReply::NoError) {
+  if (reply->routeError() == RouteReply::NoError) {
     route = reply->route();
     qWarning() << "Got route response";
     segment = route->segments.first();
@@ -306,52 +305,8 @@ void RouteEngine::sendRoute() {
   cereal::NavRoute::Builder nav_route = evt.initNavRoute();
 
   qWarning() << "Distance: " << route->distance;
-  route_geometry_segments.clear();
-  // auto metadata = ((Route *) &route)->metadata();
-  // const QByteArray &raw_reply = metadata["osrm.reply-json"].toByteArray();
-  // QJsonArray osrm_routes = QJsonDocument::fromJson(raw_reply).object().value("routes").toArray();
 
-  // for (const auto &r : osrm_routes) {
-  //   if (!r.isObject())
-  //       continue;
-
-  //   auto route_object = r.toObject();
-  //   auto route_distance = route_object.value("distance").toDouble();
-  //   if (route_distance != route.distance()) {
-  //       qWarning() << "Skipping route. Distance mismatch" << route_distance << route.distance();
-  //       continue;
-  //   }
-
-  //   qWarning() << "Route: " << route_object;
-
-  //   auto legs = route_object.value("legs").toArray();
-  //   for (const auto &l : legs) {
-  //     auto leg = l.toObject();
-  //     auto annotation = leg.value("annotation").toObject();
-  //     auto distances = annotation.value("distance").toArray();
-  //     auto maxspeeds = annotation.value("maxspeed").toArray();
-  //     auto size = std::min(distances.size(), maxspeeds.size());
-  //     for (int i = 0; i < size; i++) {
-  //       auto max_speed = maxspeeds.at(i).toObject();
-  //       auto unknown = max_speed.value("unknown").toBool();
-  //       auto speed = max_speed.value("speed").toDouble();
-  //       auto unit = max_speed.value("unit").toString();
-  //       auto speed_limit =
-  //         unknown ? 0
-  //         : unit == "km/h" ? speed * KPH_TO_MS
-  //         : unit == "mph" ? speed * MPH_TO_MS
-  //         : 0;
-
-  //       route_geometry_segments.append({ distances.at(i).toDouble(), speed_limit });
-  //     }
-  //   }
-
-  //   break;
-  // }
-
-  // NOTE: Qt seems to create duplicate coordinates in the path when decoding the polyline, so the corresponding annotations don't match up
   auto path = route->path;
-  qWarning() << "Path: " << path;
   auto coordinates = nav_route.initCoordinates(path.size());
   size_t i = 0;
   for (auto const &c : route->path) {
