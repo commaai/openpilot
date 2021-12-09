@@ -207,7 +207,6 @@ struct ModelOutput {
   const ModelOutputLeads leads;
   const ModelOutputMeta meta;
   const ModelOutputPose pose;
-  const std::array<float, 512> recurrent_state;
 };
 
 #ifdef TEMPORAL
