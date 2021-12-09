@@ -1100,9 +1100,6 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
   MessageBuilder msg;
   auto framed = msg.initEvent().initRoadCameraState();
   fill_frame_data(framed, b->cur_frame_data);
-  if (env_send_road) {
-    framed.setImage(get_frame_image(b));
-  }
   framed.setFocusVal(s->road_cam.focus);
   framed.setFocusConf(s->road_cam.confidence);
   framed.setRecoverState(s->road_cam.self_recover);

@@ -205,32 +205,6 @@ void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &fr
   framed.setLensTruePos(frame_data.lens_true_pos);
 }
 
-kj::Array<uint8_t> get_frame_image(const CameraBuf *b) {
-  static const int x_min = util::getenv("XMIN", 0);
-  static const int y_min = util::getenv("YMIN", 0);
-  static const int env_xmax = util::getenv("XMAX", -1);
-  static const int env_ymax = util::getenv("YMAX", -1);
-  static const int scale = util::getenv("SCALE", 1);
-
-  assert(b->cur_rgb_buf);
-
-  const int x_max = env_xmax != -1 ? env_xmax : b->rgb_width - 1;
-  const int y_max = env_ymax != -1 ? env_ymax : b->rgb_height - 1;
-  const int new_width = (x_max - x_min + 1) / scale;
-  const int new_height = (y_max - y_min + 1) / scale;
-  const uint8_t *dat = (const uint8_t *)b->cur_rgb_buf->addr;
-
-  kj::Array<uint8_t> frame_image = kj::heapArray<uint8_t>(new_width*new_height*3);
-  uint8_t *resized_dat = frame_image.begin();
-  int goff = x_min*3 + y_min*b->rgb_stride;
-  for (int r=0;r<new_height;r++) {
-    for (int c=0;c<new_width;c++) {
-      memcpy(&resized_dat[(r*new_width+c)*3], &dat[goff+r*b->rgb_stride*scale+c*3*scale], 3*sizeof(uint8_t));
-    }
-  }
-  return kj::mv(frame_image);
-}
-
 static kj::Array<capnp::byte> yuv420_to_jpeg(const CameraBuf *b, int thumbnail_width, int thumbnail_height) {
   // make the buffer big enough. jpeg_write_raw_data requires 16-pixels aligned height to be used.
   std::unique_ptr<uint8[]> buf(new uint8_t[(thumbnail_width * ((thumbnail_height + 15) & ~15) * 3) / 2]);
@@ -418,8 +392,5 @@ void common_process_driver_camera(SubMaster *sm, PubMaster *pm, CameraState *c, 
   auto framed = msg.initEvent().initDriverCameraState();
   framed.setFrameType(cereal::FrameData::FrameType::FRONT);
   fill_frame_data(framed, c->buf.cur_frame_data);
-  if (env_send_driver) {
-    framed.setImage(get_frame_image(&c->buf));
-  }
   pm->send("driverCameraState", msg);
 }

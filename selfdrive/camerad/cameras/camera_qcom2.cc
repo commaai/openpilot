@@ -999,9 +999,6 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
   MessageBuilder msg;
   auto framed = c == &s->road_cam ? msg.initEvent().initRoadCameraState() : msg.initEvent().initWideRoadCameraState();
   fill_frame_data(framed, b->cur_frame_data);
-  if ((c == &s->road_cam && env_send_road) || (c == &s->wide_road_cam && env_send_wide_road)) {
-    framed.setImage(get_frame_image(b));
-  }
   if (c == &s->road_cam) {
     framed.setTransform(b->yuv_transform.v);
   }
