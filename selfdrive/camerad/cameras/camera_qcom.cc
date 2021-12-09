@@ -3,25 +3,17 @@
 #include <fcntl.h>
 #include <poll.h>
 #include <sys/ioctl.h>
-#include <unistd.h>
 
 #include <algorithm>
-#include <atomic>
 #include <cassert>
 #include <cmath>
-#include <cstdio>
 
 #include <cutils/properties.h>
 #include <linux/media.h>
 
 #include "selfdrive/camerad/cameras/sensor_i2c.h"
-#include "selfdrive/camerad/include/msm_cam_sensor.h"
-#include "selfdrive/camerad/include/msmb_camera.h"
-#include "selfdrive/camerad/include/msmb_isp.h"
-#include "selfdrive/camerad/include/msmb_ispif.h"
 #include "selfdrive/common/clutil.h"
 #include "selfdrive/common/params.h"
-#include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/timing.h"
 #include "selfdrive/common/util.h"
 

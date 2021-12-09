@@ -1,19 +1,14 @@
 #pragma once
 
-#include <cstdint>
-#include <cstdlib>
 #include <memory>
 #include <thread>
 
 #include "cereal/messaging/messaging.h"
-#include "cereal/visionipc/visionbuf.h"
-#include "cereal/visionipc/visionipc.h"
 #include "cereal/visionipc/visionipc_server.h"
 #include "selfdrive/camerad/transforms/rgb_to_yuv.h"
 #include "selfdrive/common/mat.h"
 #include "selfdrive/common/queue.h"
 #include "selfdrive/common/swaglog.h"
-#include "selfdrive/common/visionimg.h"
 #include "selfdrive/hardware/hw.h"
 
 #define CAMERA_ID_IMX298 0
@@ -41,6 +36,7 @@ const bool env_send_driver = getenv("SEND_DRIVER") != NULL;
 const bool env_send_road = getenv("SEND_ROAD") != NULL;
 const bool env_send_wide_road = getenv("SEND_WIDE_ROAD") != NULL;
 
+extern ExitHandler do_exit;
 typedef void (*release_cb)(void *cookie, int buf_idx);
 
 typedef struct CameraInfo {
@@ -142,7 +138,4 @@ void cameras_open(MultiCameraState *s);
 void cameras_run(MultiCameraState *s);
 void cameras_close(MultiCameraState *s);
 void camera_autoexposure(CameraState *s, float grey_frac);
-
 void start_camera_server();
-
-extern ExitHandler do_exit;

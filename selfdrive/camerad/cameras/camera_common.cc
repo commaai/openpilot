@@ -1,8 +1,6 @@
 #include "selfdrive/camerad/cameras/camera_common.h"
 
 #include <cassert>
-#include <chrono>
-#include <thread>
 
 #include "libyuv.h"
 #include <jpeglib.h>
@@ -11,9 +9,7 @@
 #include "selfdrive/common/clutil.h"
 #include "selfdrive/common/modeldata.h"
 #include "selfdrive/common/params.h"
-#include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
-#include "selfdrive/hardware/hw.h"
 
 #ifdef QCOM
 #include "CL/cl_ext_qcom.h"

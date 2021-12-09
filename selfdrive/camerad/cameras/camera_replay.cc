@@ -1,7 +1,6 @@
 #include "selfdrive/camerad/cameras/camera_replay.h"
 
 #include <cassert>
-#include <thread>
 
 #include "selfdrive/common/clutil.h"
 #include "selfdrive/common/util.h"

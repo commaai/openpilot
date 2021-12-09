@@ -12,7 +12,6 @@
 #pragma clang diagnostic pop
 
 #include "selfdrive/common/clutil.h"
-#include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/timing.h"
 #include "selfdrive/common/util.h"
 
