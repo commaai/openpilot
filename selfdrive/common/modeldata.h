@@ -54,6 +54,7 @@ inline mat3 get_intrinsic_matrix(int w, bool wide, float *y_offset = nullptr, fl
   constexpr mat3 tici_fcam_intrinsics = {{2648.0, 0.0, 1928.0 / 2,
                                           0.0, 2648.0, 1208.0 / 2,
                                           0.0, 0.0, 1.0}};
+  // without unwarp, focal length is for center portion only
   constexpr mat3 tici_ecam_intrinsics = {{620.0, 0.0, 1928.0 / 2,
                                           0.0, 620.0, 1208.0 / 2,
                                           0.0, 0.0, 1.0}};
