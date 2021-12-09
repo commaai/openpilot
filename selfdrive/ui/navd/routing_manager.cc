@@ -11,49 +11,46 @@
 #include <QUrlQuery>
 
 RoutingManager::RoutingManager() {
-  networkManager = new QNetworkAccessManager();
-  m_routeParser = new RouteParser();
+  network_manager = new QNetworkAccessManager();
+  route_parser = new RouteParser();
+  QObject::connect(this, &QObject::destroyed, network_manager, &QObject::deleteLater);
+  QObject::connect(this, &QObject::destroyed, route_parser, &QObject::deleteLater);
 }
 
 RouteReply *RoutingManager::calculateRoute(const QGeoRouteRequest &request) {
-  QNetworkRequest networkRequest;
-  networkRequest.setHeader(QNetworkRequest::UserAgentHeader, getUserAgent().toUtf8());
+  QNetworkRequest network_request;
+  network_request.setHeader(QNetworkRequest::UserAgentHeader, getUserAgent().toUtf8());
 
-  QString url = MAPS_HOST + "/directions/v5/mapbox/";
+  auto url = MAPS_HOST + "/directions/v5/mapbox/";
 
-  auto trafficWeight = request.featureWeight(QGeoRouteRequest::TrafficFeature);
-  if (
-      request.featureTypes().contains(QGeoRouteRequest::TrafficFeature)
-      && (trafficWeight == QGeoRouteRequest::AvoidFeatureWeight || trafficWeight == QGeoRouteRequest::DisallowFeatureWeight)) {
+  auto traffic_weight = request.featureWeight(QGeoRouteRequest::TrafficFeature);
+  if (request.featureTypes().contains(QGeoRouteRequest::TrafficFeature)
+      && (traffic_weight == QGeoRouteRequest::AvoidFeatureWeight || traffic_weight == QGeoRouteRequest::DisallowFeatureWeight)) {
     url += QStringLiteral("driving-traffic/");
   } else {
     url += QStringLiteral("driving/");
   }
 
-  networkRequest.setUrl(m_routeParser->requestUrl(request, url));
-  qWarning() << "Mapbox request: " << networkRequest.url();
+  network_request.setUrl(route_parser->requestUrl(request, url));
+  qWarning() << "Mapbox request: " << network_request.url();
 
-  QNetworkReply *reply = networkManager->get(networkRequest);
-  RouteReply *routeReply = new RouteReply(reply, request, this);
+  auto *reply = network_manager->get(network_request);
+  auto *route_reply = new RouteReply(reply, request, this);
 
-  QObject::connect(routeReply, &RouteReply::finished, this, &RoutingManager::replyFinished);
-  QObject::connect(routeReply, &RouteReply::error, this, &RoutingManager::replyError);
+  QObject::connect(route_reply, &RouteReply::finished, this, &RoutingManager::replyFinished);
+  QObject::connect(route_reply, &RouteReply::error, this, &RoutingManager::replyError);
 
-  return routeReply;
-}
-
-const RouteParser *RoutingManager::routeParser() const {
-  return m_routeParser;
+  return route_reply;
 }
 
 void RoutingManager::replyFinished() {
-  RouteReply *reply = qobject_cast<RouteReply *>(sender());
+  auto *reply = qobject_cast<RouteReply *>(sender());
   if (reply)
     emit finished(reply);
 }
 
-void RoutingManager::replyError(RouteReply::Error errorCode, const QString &errorString) {
-  RouteReply *reply = qobject_cast<RouteReply *>(sender());
+void RoutingManager::replyError(RouteReply::Error errorCode, const QString &error_string) {
+  auto *reply = qobject_cast<RouteReply *>(sender());
   if (reply)
-    emit error(reply, errorCode, errorString);
+    emit error(reply, errorCode, error_string);
 }

@@ -1,7 +1,5 @@
 #pragma once
 
-#include <optional>
-
 #include <QGeoCoordinate>
 #include <QGeoRouteRequest>
 #include <QMapboxGL>

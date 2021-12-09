@@ -11,18 +11,17 @@ class RoutingManager : public QObject {
 
 public:
   RoutingManager();
+  RouteParser *route_parser;
   RouteReply *calculateRoute(const QGeoRouteRequest &request);
-  const RouteParser *routeParser() const;
 
 private slots:
   void replyFinished();
-  void replyError(RouteReply::Error errorCode, const QString &errorString);
+  void replyError(RouteReply::Error errorCode, const QString &error_string);
 
 signals:
   void finished(RouteReply *reply);
-  void error(RouteReply *reply, RouteReply::Error error, QString errorString);
+  void error(RouteReply *reply, RouteReply::Error error, QString error_string);
 
 private:
-  QNetworkAccessManager *networkManager;
-  RouteParser *m_routeParser;
+  QNetworkAccessManager *network_manager;
 };

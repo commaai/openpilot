@@ -17,7 +17,7 @@ const qreal REROUTE_DISTANCE = 25;
 const float MANEUVER_TRANSITION_THRESHOLD = 10;
 
 static float get_time_typical(const RouteSegment &segment) {
-  return std::fmax(segment.maneuver.typicalDuration, segment.travelTime);
+  return std::fmax(segment.maneuver.typical_duration, segment.travel_time);
 }
 
 static cereal::NavInstruction::Direction string_to_direction(QString d) {
@@ -45,9 +45,7 @@ RouteEngine::RouteEngine() {
   QObject::connect(msg_timer, SIGNAL(timeout()), this, SLOT(msgUpdate()));
   msg_timer->start(50);
 
-  // Build routing engine
   routing_manager = new RoutingManager();
-  assert(routing_manager);
   QObject::connect(routing_manager, &RoutingManager::finished, this, &RouteEngine::routeCalculated);
 
   // Get last gps position from params
@@ -110,15 +108,15 @@ void RouteEngine::routeUpdate() {
     float distance_to_maneuver_along_geometry = segment->distance - along_geometry;
 
     // Route instructions
-    instruction.setShowFull(distance_to_maneuver_along_geometry < maneuver.distanceAlongGeometry);
+    instruction.setShowFull(distance_to_maneuver_along_geometry < maneuver.distance_along_geometry);
     if (maneuver.type)
       instruction.setManeuverType(maneuver.type->toStdString());
     if (maneuver.modifier)
       instruction.setManeuverModifier(maneuver.modifier->toStdString());
-    if (maneuver.primaryText)
-      instruction.setManeuverPrimaryText(maneuver.primaryText->toStdString());
-    if (maneuver.secondaryText)
-      instruction.setManeuverSecondaryText(maneuver.secondaryText->toStdString());
+    if (maneuver.primary_text)
+      instruction.setManeuverPrimaryText(maneuver.primary_text->toStdString());
+    if (maneuver.secondary_text)
+      instruction.setManeuverSecondaryText(maneuver.secondary_text->toStdString());
     instruction.setManeuverDistance(distance_to_maneuver_along_geometry);
 
     // Lanes
@@ -128,8 +126,8 @@ void RouteEngine::routeUpdate() {
         auto &l = maneuver.lanes->at(i);
         auto lane = lanes[i];
         lane.setActive(l.active);
-        if (l.activeDirection)
-          lane.setActiveDirection(string_to_direction(l.activeDirection.value()));
+        if (l.active_direction)
+          lane.setActiveDirection(string_to_direction(l.active_direction.value()));
         auto directions = lane.initDirections(l.directions.size());
         for (int j = 0; j < l.directions.size(); j++) {
           directions.set(j, string_to_direction(l.directions[j]));
@@ -140,13 +138,13 @@ void RouteEngine::routeUpdate() {
     // ETA
     float progress = distance_along_geometry(segment->path, to_QGeoCoordinate(*last_position)) / segment->distance;
     float total_distance = segment->distance * (1.0 - progress);
-    float total_time = segment->travelTime * (1.0 - progress);
+    float total_time = segment->travel_time * (1.0 - progress);
     float total_time_typical = get_time_typical(segment.value()) * (1.0 - progress);
 
     for (int i = segment_index + 1; i < route->segments.size(); i++) {
       auto &s = route->segments.at(i);
       total_distance += s.distance;
-      total_time += s.travelTime;
+      total_time += s.travel_time;
       total_time_typical += get_time_typical(s);
     }
     instruction.setTimeRemaining(total_time);
@@ -176,7 +174,7 @@ void RouteEngine::routeUpdate() {
     // TODO would like to just use `distance_along_geometry(route->path, ...)` but its coordinates can be in reversed order
     float along_route = distance_along_geometry(segment->path, to_QGeoCoordinate(*last_position));
     for (int i = 0; i < segment_index; i++)
-        along_route += route->segments.at(i).distance;
+      along_route += route->segments.at(i).distance;
 
     float speed_limit = 0;
     float distance = 0;
@@ -275,14 +273,13 @@ void RouteEngine::calculateRoute(QMapbox::Coordinate destination) {
 }
 
 void RouteEngine::routeCalculated(RouteReply *reply) {
-  if (reply->routeError() == RouteReply::NoError) {
-    route = reply->route();
+  if (reply->reply_error == RouteReply::NoError) {
+    route = reply->route;
     segment = route->segments.first();
     segment_index = 0;
-    auto path = route->path;
-    emit routeUpdated(path);
+    emit routeUpdated(route->path);
   } else {
-    qWarning() << "Got error in route reply" << reply->errorString();
+    qWarning() << "Got error in route reply" << reply->error_string;
   }
 
   sendRoute();

@@ -13,14 +13,14 @@
 #include "selfdrive/ui/qt/maps/map_helpers.h"
 
 // TODO: this seems to create duplicate coordinates in the path when decoding the polyline, so the corresponding annotations don't match up by index
-static QList<QGeoCoordinate> decodePolyline(const QString &polylineString) {
+static QList<QGeoCoordinate> decodePolyline(const QString &polyline) {
   QList<QGeoCoordinate> path;
-  if (polylineString.isEmpty())
+  if (polyline.isEmpty())
     return path;
 
-  QByteArray data = polylineString.toLatin1();
+  QByteArray data = polyline.toLatin1();
 
-  bool parsingLatitude = true;
+  bool parsing_latitude = true;
 
   int shift = 0;
   int value = 0;
@@ -39,14 +39,14 @@ static QList<QGeoCoordinate> decodePolyline(const QString &polylineString) {
 
     int diff = (value & 1) ? ~(value >> 1) : (value >> 1);
 
-    if (parsingLatitude) {
+    if (parsing_latitude) {
       coord.setLatitude(coord.latitude() + (double)diff / 1e6);
     } else {
       coord.setLongitude(coord.longitude() + (double)diff / 1e6);
       path.append(coord);
     }
 
-    parsingLatitude = !parsingLatitude;
+    parsing_latitude = !parsing_latitude;
 
     value = 0;
     shift = 0;
@@ -56,10 +56,10 @@ static QList<QGeoCoordinate> decodePolyline(const QString &polylineString) {
 }
 
 static void parse_banner(RouteManeuver &maneuver, const QMap<QString, QVariant> &banner) {
-  maneuver.distanceAlongGeometry = banner["distance_along_geometry"].toDouble();
+  maneuver.distance_along_geometry = banner["distance_along_geometry"].toDouble();
 
   auto primary = banner["primary"].toMap();
-  maneuver.primaryText = primary["text"].toString();
+  maneuver.primary_text = primary["text"].toString();
 
   if (primary.contains("type"))
     maneuver.type = primary["type"].toString();
@@ -69,23 +69,14 @@ static void parse_banner(RouteManeuver &maneuver, const QMap<QString, QVariant> 
 
   if (banner.contains("secondary")) {
     auto s = banner["secondary"].toMap();
-    maneuver.secondaryText = s["text"].toString();
+    maneuver.secondary_text = s["text"].toString();
   }
 
   if (banner.contains("sub")) {
     auto s = banner["sub"].toMap();
     auto components = s["components"].toList();
 
-    size_t num_lanes = 0;
-    for (auto &c : components) {
-      auto cc = c.toMap();
-      if (cc["type"].toString() == "lane") {
-        num_lanes += 1;
-      }
-    }
-
     auto lanes = QList<RouteManeuverLane>();
-
     for (auto &c : components) {
       auto component = c.toMap();
       if (component["type"].toString() == "lane") {
@@ -93,7 +84,7 @@ static void parse_banner(RouteManeuver &maneuver, const QMap<QString, QVariant> 
         lane.active = component["active"].toBool();
 
         if (component.contains("active_direction")) {
-          lane.activeDirection = component["active_direction"].toString();
+          lane.active_direction = component["active_direction"].toString();
         }
 
         QList<QString> directions;
@@ -110,10 +101,10 @@ static void parse_banner(RouteManeuver &maneuver, const QMap<QString, QVariant> 
 
 RouteParser::RouteParser() { }
 
-std::optional<RouteSegment> RouteParser::parseStep(const QJsonObject &step, int legIndex, int stepIndex) const {
+std::optional<RouteSegment> RouteParser::parseStep(const QJsonObject &step, int leg_index, int step_index) const {
   if (!step.value("maneuver").isObject())
     return {};
-  QJsonObject maneuver = step.value("maneuver").toObject();
+  auto maneuver = step.value("maneuver").toObject();
   if (!step.value("duration").isDouble())
     return {};
   if (!step.value("distance").isDouble())
@@ -123,22 +114,22 @@ std::optional<RouteSegment> RouteParser::parseStep(const QJsonObject &step, int 
   if (!maneuver.value("location").isArray())
     return {};
 
-  double time = step.value("duration").toDouble();
-  double distance = step.value("distance").toDouble();
+  auto time = step.value("duration").toDouble();
+  auto distance = step.value("distance").toDouble();
 
-  QJsonArray position = maneuver.value("location").toArray();
+  auto position = maneuver.value("location").toArray();
   if (position.isEmpty())
     return {};
-  double latitude = position[1].toDouble();
-  double longitude = position[0].toDouble();
+  auto latitude = position[1].toDouble();
+  auto longitude = position[0].toDouble();
   QGeoCoordinate coord(latitude, longitude);
 
-  QString geometry = step.value("geometry").toString();
-  QList<QGeoCoordinate> path = decodePolyline(geometry);
+  auto geometry = step.value("geometry").toString();
+  auto path = decodePolyline(geometry);
 
   RouteManeuver routeManeuver;
   routeManeuver.position = coord;
-  routeManeuver.typicalDuration = step.value("duration_typical").toDouble();
+  routeManeuver.typical_duration = step.value("duration_typical").toDouble();
 
   if (step.value("bannerInstructions").isArray() && step.value("bannerInstructions").toArray().size() > 0) {
     auto const &banner = step.value("bannerInstructions").toArray().first();
@@ -149,32 +140,32 @@ std::optional<RouteSegment> RouteParser::parseStep(const QJsonObject &step, int 
   RouteSegment segment;
   segment.distance = distance;
   segment.path = path;
-  segment.travelTime = time;
+  segment.travel_time = time;
   segment.maneuver = routeManeuver;
   return segment;
 }
 
 // Mapbox Directions API: https://docs.mapbox.com/api/navigation/directions/
-RouteReply::Error RouteParser::parseReply(QList<Route> &routes, QString &errorString, const QByteArray &reply) const {
-  QJsonDocument document = QJsonDocument::fromJson(reply);
+RouteReply::Error RouteParser::parseReply(QList<Route> &routes, QString &error_string, const QByteArray &reply) const {
+  auto document = QJsonDocument::fromJson(reply);
   if (document.isObject()) {
-    QJsonObject object = document.object();
+    auto object = document.object();
 
-    QString status = object.value("code").toString();
+    auto status = object.value("code").toString();
     if (status != "Ok") {
-      errorString = status;
+      error_string = status;
       return RouteReply::UnknownError;
     }
     if (!object.value("routes").isArray()) {
-      errorString = "No routes found";
+      error_string = "No routes found";
       return RouteReply::ParseError;
     }
 
-    QJsonArray osrmRoutes = object.value("routes").toArray();
-    for (const QJsonValue &r : osrmRoutes) {
+    auto osrmRoutes = object.value("routes").toArray();
+    for (auto const &r : osrmRoutes) {
       if (!r.isObject())
         continue;
-      QJsonObject routeObject = r.toObject();
+      auto routeObject = r.toObject();
       if (!routeObject.value("legs").isArray())
         continue;
       if (!routeObject.value("duration").isDouble())
@@ -182,36 +173,36 @@ RouteReply::Error RouteParser::parseReply(QList<Route> &routes, QString &errorSt
       if (!routeObject.value("distance").isDouble())
         continue;
 
-      double distance = routeObject.value("distance").toDouble();
-      double travelTime = routeObject.value("duration").toDouble();
-      bool error = false;
+      auto distance = routeObject.value("distance").toDouble();
+      auto travel_time = routeObject.value("duration").toDouble();
+      auto error = false;
       QList<RouteSegment> segments;
       QList<RouteAnnotation> annotations;
 
-      QJsonArray legs = routeObject.value("legs").toArray();
+      auto legs = routeObject.value("legs").toArray();
       Route route;
-      for (int legIndex = 0; legIndex < legs.size(); ++legIndex) {
-        const QJsonValue &l = legs.at(legIndex);
-        QList<RouteSegment> legSegments;
+      for (int leg_index = 0; leg_index < legs.size(); ++leg_index) {
+        auto const &l = legs.at(leg_index);
+        QList<RouteSegment> leg_segments;
         if (!l.isObject()) {
           error = true;
           break;
         }
-        QJsonObject leg = l.toObject();
+        auto leg = l.toObject();
         if (!leg.value("steps").isArray()) {
           error = true;
           break;
         }
-        QJsonArray steps = leg.value("steps").toArray();
-        for (int stepIndex = 0; stepIndex < steps.size(); ++stepIndex) {
-          const QJsonValue &s = steps.at(stepIndex);
+        auto steps = leg.value("steps").toArray();
+        for (int step_index = 0; step_index < steps.size(); ++step_index) {
+          auto const &s = steps.at(step_index);
           if (!s.isObject()) {
             error = true;
             break;
           }
-          auto segment = parseStep(s.toObject(), legIndex, stepIndex);
+          auto segment = parseStep(s.toObject(), leg_index, step_index);
           if (segment) {
-            legSegments.append(segment.value());
+            leg_segments.append(segment.value());
           } else {
             error = true;
             break;
@@ -220,7 +211,7 @@ RouteReply::Error RouteParser::parseReply(QList<Route> &routes, QString &errorSt
         if (error)
           break;
 
-        segments.append(legSegments);
+        segments.append(leg_segments);
 
         auto annotation = leg.value("annotation").toObject();
         auto distances = annotation.value("distance").toArray();
@@ -231,39 +222,35 @@ RouteReply::Error RouteParser::parseReply(QList<Route> &routes, QString &errorSt
           auto unknown = max_speed.value("unknown").toBool();
           auto speed = max_speed.value("speed").toDouble();
           auto unit = max_speed.value("unit").toString();
-          auto speed_limit =
-            unknown ? 0
-            : unit == "km/h" ? speed * KPH_TO_MS
-            : unit == "mph" ? speed * MPH_TO_MS
-            : 0;
+          auto speed_limit = unknown ? 0
+              : unit == "km/h"       ? speed * KPH_TO_MS
+              : unit == "mph"        ? speed * MPH_TO_MS
+                                     : 0;
 
           annotations.append({ distances.at(i).toDouble(), speed_limit });
         }
       }
 
       if (!error) {
+        route.distance = distance;
+        route.travel_time = travel_time;
+
         QList<QGeoCoordinate> path;
-        for (const RouteSegment &s : segments)
+        for (auto const &s : segments)
           path.append(s.path);
 
-        route.distance = distance;
-        route.travelTime = travelTime;
-        // qWarning() << "Route distance:" << distance;
-        // qWarning() << "Travel time:" << travelTime;
         if (!path.isEmpty()) {
           route.path = path;
           route.segments = segments;
           route.annotations = annotations;
-          // qWarning() << "Path size:" << path.size();
-          // qWarning() << "Segments size:" << segments.size();
-          // qWarning() << "Annotations size:" << annotations.size();
         }
+
         routes.append(route);
       }
     }
 
     if (routes.isEmpty()) {
-      errorString = "No routes found";
+      error_string = "No routes found";
       return RouteReply::ParseError;
     } else {
       qWarning() << "Found" << routes.size() << "route(s)";
@@ -271,35 +258,35 @@ RouteReply::Error RouteParser::parseReply(QList<Route> &routes, QString &errorSt
 
     return RouteReply::NoError;
   } else {
-    errorString = "Couldn't parse json.";
+    error_string = "Couldn't parse json.";
     return RouteReply::ParseError;
   }
 }
 
 QUrl RouteParser::requestUrl(const QGeoRouteRequest &request, const QString &prefix) const {
-  QString routingUrl = prefix;
+  auto routing_url = prefix;
   QString bearings;
-  const QList<QVariantMap> metadata = request.waypointsMetadata();
-  const QList<QGeoCoordinate> waypoints = request.waypoints();
+  auto const metadata = request.waypointsMetadata();
+  auto const waypoints = request.waypoints();
   for (int i = 0; i < waypoints.size(); i++) {
-    const QGeoCoordinate &c = waypoints.at(i);
+    auto const &c = waypoints.at(i);
     if (i > 0) {
-      routingUrl.append(';');
+      routing_url.append(';');
       bearings.append(';');
     }
-    routingUrl.append(QString::number(c.longitude(), 'f', 7)).append(',').append(QString::number(c.latitude(), 'f', 7));
+    routing_url.append(QString::number(c.longitude(), 'f', 7)).append(',').append(QString::number(c.latitude(), 'f', 7));
     if (metadata.size() > i) {
-      const QVariantMap &meta = metadata.at(i);
+      auto const &meta = metadata.at(i);
       if (meta.contains("bearing")) {
-        qreal bearing = meta.value("bearing").toDouble();
-        bearings.append(QString::number(int(bearing))).append(',').append("90"); // 90 is the angle of maneuver allowed.
+        auto bearing = meta.value("bearing").toDouble();
+        bearings.append(QString::number(int(bearing))).append(',').append("90"); // 90 is the angle of maneuver allowed
       } else {
         bearings.append("0,180"); // 180 here means anywhere
       }
     }
   }
 
-  QUrl url(routingUrl);
+  QUrl url(routing_url);
   QUrlQuery query;
   query.addQueryItem("access_token", get_mapbox_token());
   query.addQueryItem("annotations", "distance,maxspeed");
