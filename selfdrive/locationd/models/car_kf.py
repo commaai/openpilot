@@ -64,9 +64,9 @@ class CarKalman(KalmanFilter):
     math.radians(0.25)**2,
 
     .1**2, .01**2,
+    0.1**2,
     math.radians(0.1)**2,
-    math.radians(0.1)**2,
-    math.radians(0.5)**2,
+    math.radians(1)**2,
   ])
   P_initial = Q.copy()
 
