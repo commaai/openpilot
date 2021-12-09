@@ -194,7 +194,7 @@ static_assert(sizeof(ModelOutputDesireProb) == sizeof(float)*DESIRE_LEN);
 struct ModelOutputMeta {
   ModelOutputDesireProb desire_state_prob;
   float engaged_prob;
-  std::array<ModelOutputDisengageProb, DISENGAGE_LEN> lat_long_prob;
+  std::array<ModelOutputDisengageProb, DISENGAGE_LEN> disengage_prob;
   std::array<ModelOutputBlinkerProb, BLINKER_LEN> blinker_prob;
   std::array<ModelOutputDesireProb, DESIRE_PRED_LEN> desire_pred_prob;
 };

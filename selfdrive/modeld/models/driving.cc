@@ -121,13 +121,13 @@ void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const ModelOutputMet
   std::array<float, DISENGAGE_LEN> gas_disengage_sigmoid, brake_disengage_sigmoid, steer_override_sigmoid,
                                    brake_3ms2_sigmoid, brake_4ms2_sigmoid, brake_5ms2_sigmoid;
   for (int i=0; i<DISENGAGE_LEN; i++) {
-    gas_disengage_sigmoid[i] = sigmoid(meta_data.lat_long_prob[i].gas_disengage);
-    brake_disengage_sigmoid[i] = sigmoid(meta_data.lat_long_prob[i].brake_disengage);
-    steer_override_sigmoid[i] = sigmoid(meta_data.lat_long_prob[i].steer_override);
-    brake_3ms2_sigmoid[i] = sigmoid(meta_data.lat_long_prob[i].brake_3ms2);
-    brake_4ms2_sigmoid[i] = sigmoid(meta_data.lat_long_prob[i].brake_4ms2);
-    brake_5ms2_sigmoid[i] = sigmoid(meta_data.lat_long_prob[i].brake_5ms2);
-    //gas_pressed_sigmoid[i] = sigmoid(meta_data.lat_long_prob[i].gas_pressed);
+    gas_disengage_sigmoid[i] = sigmoid(meta_data.disengage_prob[i].gas_disengage);
+    brake_disengage_sigmoid[i] = sigmoid(meta_data.disengage_prob[i].brake_disengage);
+    steer_override_sigmoid[i] = sigmoid(meta_data.disengage_prob[i].steer_override);
+    brake_3ms2_sigmoid[i] = sigmoid(meta_data.disengage_prob[i].brake_3ms2);
+    brake_4ms2_sigmoid[i] = sigmoid(meta_data.disengage_prob[i].brake_4ms2);
+    brake_5ms2_sigmoid[i] = sigmoid(meta_data.disengage_prob[i].brake_5ms2);
+    //gas_pressed_sigmoid[i] = sigmoid(meta_data.disengage_prob[i].gas_pressed);
   }
 
   std::memmove(prev_brake_5ms2_probs.data(), &prev_brake_5ms2_probs[1], 4*sizeof(float));
