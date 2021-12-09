@@ -376,10 +376,6 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
 
     const int lr_margin = name != "Network" ? 25 : 0;  // Network panel handles its own margins
     panel->setContentsMargins(lr_margin, 0, lr_margin, 0);
-    QPalette pal = palette();
-    pal.setColor(QPalette::Background, QColor(0x29, 0x29, 0x29));
-    panel->setAutoFillBackground(true);
-    panel->setPalette(pal);
 
     ScrollView *panel_frame = new ScrollView(panel, this);
     panel_widget->addWidget(panel_frame);

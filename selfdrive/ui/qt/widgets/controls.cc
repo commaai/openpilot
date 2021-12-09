@@ -9,7 +9,9 @@ QFrame *horizontal_line(QWidget *parent) {
   line->setStyleSheet(R"(
     margin-left: 40px;
     margin-right: 40px;
-    background-color:grey;
+    border-width: 1px;
+    border-bottom-style: solid;
+    border-color: gray;
   )");
   line->setFixedHeight(2);
   return line;
@@ -37,7 +39,7 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
   // title
   title_label = new QPushButton(title);
   title_label->setFixedHeight(120);
-  title_label->setStyleSheet("font-size: 50px; font-weight: 400; text-align: left");
+  title_label->setStyleSheet("border:none; font-size: 50px; font-weight: 400; text-align: left");
   hlayout->addWidget(title_label);
 
   main_layout->addLayout(hlayout);
