@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <string>
+#include <optional>
 
 #include <QObject>
 #include <QTimer>
@@ -113,8 +114,6 @@ typedef struct UIState {
 
   QTransform car_space_transform;
   bool wide_camera;
-  
-  float running_time;
 } UIState;
 
 

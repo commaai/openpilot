@@ -246,6 +246,7 @@ jobs:
                         $UNIT_TEST selfdrive/locationd && \
                         $UNIT_TEST selfdrive/athena && \
                         $UNIT_TEST selfdrive/thermald && \
+                        $UNIT_TEST selfdrive/hardware/tici && \
                         $UNIT_TEST tools/lib/tests && \
                         ./selfdrive/boardd/tests/test_boardd_usbprotocol && \
                         ./selfdrive/common/tests/test_util && \
