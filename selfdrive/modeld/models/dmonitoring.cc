@@ -70,9 +70,10 @@ DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_
   Rect crop_rect;
   if (width == TICI_CAM_WIDTH) {
     const int cropped_height = tici_dm_crop::width / 1.33;
-    crop_rect = {tici_dm_crop::x_offset + (width - tici_dm_crop::width) / 2,
-                  tici_dm_crop::y_offset + (height - cropped_height) / 2,
-                  cropped_height / 2, cropped_height};
+    crop_rect = {width / 2 - tici_dm_crop::width / 2 + tici_dm_crop::x_offset,
+                 height / 2 - cropped_height / 2 + tici_dm_crop::y_offset,
+                 cropped_height / 2,
+                 cropped_height};
     if (!s->is_rhd) {
       crop_rect.x += tici_dm_crop::width - crop_rect.w;
     }
