@@ -209,12 +209,13 @@ struct ModelOutput {
   const ModelOutputPose pose;
 };
 
+constexpr int OUTPUT_SIZE = sizeof(ModelOutput) / sizeof(float);
 #ifdef TEMPORAL
   constexpr int TEMPORAL_SIZE = 512;
 #else
   constexpr int TEMPORAL_SIZE = 0;
 #endif
-constexpr int NET_OUTPUT_SIZE =  sizeof(ModelOutput) + TEMPORAL_SIZE;
+constexpr int NET_OUTPUT_SIZE = OUTPUT_SIZE + TEMPORAL_SIZE;
 
 // TODO: convert remaining arrays to std::array and update model runners
 struct ModelState {

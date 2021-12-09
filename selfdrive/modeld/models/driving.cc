@@ -38,7 +38,7 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context) {
 #endif
 
 #ifdef TEMPORAL
-  s->m->addRecurrent(&s->output[sizeof(ModelOutput)], TEMPORAL_SIZE);
+  s->m->addRecurrent(&s->output[OUTPUT_SIZE], TEMPORAL_SIZE);
 #endif
 
 #ifdef DESIRE
