@@ -46,6 +46,9 @@ private slots:
   void poweroff();
   void reboot();
   void updateCalibDescription();
+
+private:
+  Params params;
 };
 
 class TogglesPanel : public ListWidget {

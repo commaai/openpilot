@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <string>
+#include <optional>
 
 #include <QObject>
 #include <QTimer>
@@ -118,7 +119,6 @@ public:
 
   QTransform car_space_transform;
   bool wide_camera;
-  float running_time;
 
 signals:
   void uiUpdate(const UIState &s);
