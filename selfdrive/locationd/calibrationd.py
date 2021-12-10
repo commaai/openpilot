@@ -77,7 +77,7 @@ class Calibrator():
     self.reset(rpy_init, valid_blocks)
     self.update_status()
 
-  def reset(self, rpy_init=RPY_INIT, valid_blocks=0, smooth_from=None):
+  def reset(self, rpy_init=RPY_INIT, valid_blocks=0):
     if not np.isfinite(rpy_init).all():
         self.rpy = copy.copy(RPY_INIT)
     else:
@@ -91,13 +91,6 @@ class Calibrator():
     self.idx = 0
     self.block_idx = 0
     self.v_ego = 0
-
-    if smooth_from is None:
-      self.old_rpy = RPY_INIT
-      self.old_rpy_weight = 0.0
-    else:
-      self.old_rpy = smooth_from
-      self.old_rpy_weight = 1.0
 
   def update_status(self):
     if self.valid_blocks > 0:
@@ -114,11 +107,6 @@ class Calibrator():
     else:
       self.cal_status = Calibration.INVALID
 
-    # If spread is too high, assume mounting was changed and reset to last block.
-    # Make the transition smooth. Abrupt transitions are not good foor feedback loop through supercombo model.
-    if max(self.calib_spread) > MAX_ALLOWED_SPREAD and self.cal_status == Calibration.CALIBRATED:
-      self.reset(self.rpys[self.block_idx - 1], valid_blocks=INPUTS_NEEDED, smooth_from=self.rpy)
-
     write_this_cycle = (self.idx == 0) and (self.block_idx % (INPUTS_WANTED//5) == 5)
     if self.param_put and write_this_cycle:
       put_nonblocking("CalibrationParams", self.get_msg().to_bytes())
@@ -126,14 +114,7 @@ class Calibrator():
   def handle_v_ego(self, v_ego):
     self.v_ego = v_ego
 
-  def get_smooth_rpy(self):
-    if self.old_rpy_weight > 0:
-      return self.old_rpy_weight * self.old_rpy + (1.0 - self.old_rpy_weight) * self.rpy
-    else:
-      return self.rpy
-
   def handle_cam_odom(self, trans, rot, trans_std, rot_std):
-    self.old_rpy_weight = min(0.0, self.old_rpy_weight - 1/SMOOTH_CYCLES)
 
     straight_and_fast = ((self.v_ego > MIN_SPEED_FILTER) and (trans[0] > MIN_SPEED_FILTER) and (abs(rot[2]) < MAX_YAW_RATE_FILTER))
     if self.wide_camera:
@@ -148,7 +129,8 @@ class Calibrator():
     observed_rpy = np.array([0,
                              -np.arctan2(trans[2], trans[0]),
                              np.arctan2(trans[1], trans[0])])
-    new_rpy = euler_from_rot(rot_from_euler(self.get_smooth_rpy()).dot(rot_from_euler(observed_rpy)))
+
+    new_rpy = euler_from_rot(rot_from_euler(self.rpy).dot(rot_from_euler(observed_rpy)))
     new_rpy = sanity_clip(new_rpy)
 
     self.rpys[self.block_idx] = (self.idx*self.rpys[self.block_idx] + (BLOCK_SIZE - self.idx) * new_rpy) / float(BLOCK_SIZE)
@@ -165,15 +147,14 @@ class Calibrator():
     return new_rpy
 
   def get_msg(self):
-    smooth_rpy = self.get_smooth_rpy()
-    extrinsic_matrix = get_view_frame_from_road_frame(0, smooth_rpy[1], smooth_rpy[2], model_height)
+    extrinsic_matrix = get_view_frame_from_road_frame(0, self.rpy[1], self.rpy[2], model_height)
 
     msg = messaging.new_message('liveCalibration')
     msg.liveCalibration.validBlocks = self.valid_blocks
     msg.liveCalibration.calStatus = self.cal_status
     msg.liveCalibration.calPerc = min(100 * (self.valid_blocks * BLOCK_SIZE + self.idx) // (INPUTS_NEEDED * BLOCK_SIZE), 100)
     msg.liveCalibration.extrinsicMatrix = [float(x) for x in extrinsic_matrix.flatten()]
-    msg.liveCalibration.rpyCalib = [float(x) for x in smooth_rpy]
+    msg.liveCalibration.rpyCalib = [float(x) for x in self.rpy]
     msg.liveCalibration.rpyCalibSpread = [float(x) for x in self.calib_spread]
     return msg
 
