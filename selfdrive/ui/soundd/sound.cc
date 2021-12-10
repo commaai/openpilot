@@ -33,6 +33,8 @@ Sound::Sound(QObject *parent) : current_volume(Hardware::MIN_VOLUME), sm({"carSt
       QObject::connect(s, &QSoundEffect::loopsRemainingChanged, [&sound = sounds[alert]]() {
         qreal volume = sound.sound->volume();
         int looped = sound.sound->loopCount() - sound.sound->loopsRemaining();
+        if (looped == 0) return;
+
         if (looped >= sound.loops_to_full_volume) {
           volume = 1.0;
         } else {

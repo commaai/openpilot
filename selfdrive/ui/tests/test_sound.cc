@@ -14,6 +14,7 @@ public:
       QObject::connect(s.sound, &QSoundEffect::playingChanged, [this, &s, a = i.key()]() {
         if (s.sound->isPlaying()) {
           sound_stats[a].first++;
+          REQUIRE(s.sound->volume() == current_volume);
         } else {
           sound_stats[a].second++;
           if (s.loops_to_full_volume > 0) {
