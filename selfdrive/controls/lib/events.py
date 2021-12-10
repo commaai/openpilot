@@ -157,7 +157,7 @@ class SoftDisableAlert(Alert):
 class UserSoftDisableAlert(SoftDisableAlert):
   def __init__(self, alert_text_2):
     super().__init__(alert_text_2),
-    self.alert_text_1 = "openpilot disabling soon"
+    self.alert_text_1 = "openpilot will disengage"
 
 
 class ImmediateDisableAlert(Alert):
