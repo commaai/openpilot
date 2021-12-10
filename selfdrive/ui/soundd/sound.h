@@ -1,3 +1,5 @@
+#pragma once
+
 #include <QMap>
 #include <QSoundEffect>
 #include <QString>
@@ -5,7 +7,7 @@
 #include "selfdrive/hardware/hw.h"
 #include "selfdrive/ui/ui.h"
 
-const std::tuple<AudibleAlert, QString, int, int> sound_list[] = {
+constexpr std::tuple<AudibleAlert, const char*, int, int> sound_list[] = {
   // AudibleAlert, file name, loop count, the number of loops to the full volume
   {AudibleAlert::ENGAGE, "engage.wav", 0, 0},
   {AudibleAlert::DISENGAGE, "disengage.wav", 0, 0},
@@ -33,9 +35,10 @@ protected:
     int loops_to_full_volume;
   };
 
-  QMap<AudibleAlert, SoundItem> sounds;
   Alert current_alert = {};
-  SubMaster sm;
-  uint64_t started_frame;
   qreal current_volume;
+  SubMaster sm;
+  QMap<AudibleAlert, SoundItem> sounds;
+  uint64_t started_frame = 0;
+  bool started_prev = false;
 };

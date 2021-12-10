@@ -16,31 +16,31 @@ Sound::Sound(QObject *parent) : current_volume(Hardware::MIN_VOLUME), sm({"carSt
   qInfo() << "default audio device: " << QAudioDeviceInfo::defaultOutputDevice().deviceName();
 
   for (auto &[alert, fn, loops, loops_to_full_volume] : sound_list) {
-    QSoundEffect *s = new QSoundEffect(this);
-    QObject::connect(s, &QSoundEffect::statusChanged, [=]() {
-      assert(s->status() != QSoundEffect::Error);
+    QSoundEffect *sound = new QSoundEffect(this);
+    QObject::connect(sound, &QSoundEffect::statusChanged, [=]() {
+      assert(sound->status() != QSoundEffect::Error);
     });
-    s->setVolume(current_volume);
-    s->setSource(QUrl::fromLocalFile("../../assets/sounds/" + fn));
+    sound->setVolume(current_volume);
+    sound->setSource(QUrl::fromLocalFile(QString("../../assets/sounds/") + fn));
 
     sounds[alert] = {
-        .sound = s,
-        .loops = loops == QSoundEffect::Infinite ? std::numeric_limits<int>::max() : loops,
-        .loops_to_full_volume = loops_to_full_volume,
+      .sound = sound,
+      .loops = loops == QSoundEffect::Infinite ? std::numeric_limits<int>::max() : loops,
+      .loops_to_full_volume = loops_to_full_volume,
     };
 
     if (loops_to_full_volume > 0) {
-      QObject::connect(s, &QSoundEffect::loopsRemainingChanged, [&sound = sounds[alert]]() {
-        qreal volume = sound.sound->volume();
-        int looped = sound.sound->loopCount() - sound.sound->loopsRemaining();
+      QObject::connect(sound, &QSoundEffect::loopsRemainingChanged, [&s = sounds[alert]]() {
+        int looped = s.sound->loopCount() - s.sound->loopsRemaining();
         if (looped == 0) return;
 
-        if (looped >= sound.loops_to_full_volume) {
+        qreal volume = s.sound->volume();
+        if (looped >= s.loops_to_full_volume) {
           volume = 1.0;
         } else {
-          volume += (1.0 - volume) / (sound.loops_to_full_volume - looped);
+          volume += (1.0 - volume) / (s.loops_to_full_volume - looped);
         }
-        sound.sound->setVolume(std::min(1.0, volume));
+        s.sound->setVolume(std::min(1.0, volume));
       });
     }
   }
@@ -51,13 +51,13 @@ Sound::Sound(QObject *parent) : current_volume(Hardware::MIN_VOLUME), sm({"carSt
 };
 
 void Sound::update() {
-  const bool started_prev = sm["deviceState"].getDeviceState().getStarted();
   sm.update(0);
 
   const bool started = sm["deviceState"].getDeviceState().getStarted();
   if (started && !started_prev) {
     started_frame = sm.frame;
   }
+  started_prev = started;
 
   // no sounds while offroad
   // also no sounds if nothing is alive in case thermald crashes while offroad

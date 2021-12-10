@@ -42,7 +42,7 @@ void controls_thread(int loop_cnt) {
         MessageBuilder msg;
         auto cs = msg.initEvent().initControlsState();
         cs.setAlertSound(alert);
-        cs.setAlertType(fn.toStdString());
+        cs.setAlertType(fn);
         pm.send("controlsState", msg);
         pm.send("deviceState", deviceStateMsg);
         QThread::msleep(DT_CTRL);
