@@ -632,8 +632,8 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
   # is thrown. This can mean a service crashed, did not broadcast a message for
   # ten times the regular interval, or the average interval is more than 10% too high.
   EventName.commIssue: {
-    ET.SOFT_DISABLE: SoftDisableAlert("System Malfunction"),
-    ET.NO_ENTRY: NoEntryAlert("System Malfunction: Reboot Your Device"),
+    ET.SOFT_DISABLE: SoftDisableAlert("Communication Issue between Processes"),
+    ET.NO_ENTRY: NoEntryAlert("Communication Issue between Processes"),
   },
 
   # Thrown when manager detects a service exited unexpectedly while driving
@@ -650,8 +650,8 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
   # is not processing frames fast enough they have to be dropped. This alert is
   # thrown when over 20% of frames are dropped.
   EventName.modeldLagging: {
-    ET.SOFT_DISABLE: SoftDisableAlert("System Malfunction"),
-    ET.NO_ENTRY: NoEntryAlert("System Malfunction"),
+    ET.SOFT_DISABLE: SoftDisableAlert("Driving model lagging"),
+    ET.NO_ENTRY: NoEntryAlert("Driving model lagging"),
   },
 
   # Besides predicting the path, lane lines and lead car data the model also
