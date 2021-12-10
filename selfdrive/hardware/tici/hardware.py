@@ -304,8 +304,11 @@ class Tici(HardwareBase):
       os.system(f"sudo su -c 'echo {val} > /sys/devices/system/cpu/cpu{i}/online'")
 
     for n in ('0', '4'):
-      gov = 'powersave' if powersave_enabled else 'performance'
+      gov = 'userspace' if powersave_enabled else 'performance'
       os.system(f"sudo su -c 'echo {gov} > /sys/devices/system/cpu/cpufreq/policy{n}/scaling_governor'")
+
+      if powersave_enabled:
+        os.system(f"sudo su -c 'echo 979200 > /sys/devices/system/cpu/cpufreq/policy{n}/scaling_setspeed'")
 
   def get_gpu_usage_percent(self):
     try:

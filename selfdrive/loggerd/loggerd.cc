@@ -223,6 +223,8 @@ void loggerd_thread() {
   while (!do_exit) {
     // poll for new messages on all sockets
     for (auto sock : poller->poll(1000)) {
+      if (do_exit) break;
+
       // drain socket
       int count = 0;
       QlogState &qs = qlog_states[sock];
@@ -241,7 +243,7 @@ void loggerd_thread() {
         }
 
         count++;
-        if (count >= 50) {
+        if (count >= 200) {
           LOGE("large volume of '%s' messages", qs.name.c_str());
           break;
         }

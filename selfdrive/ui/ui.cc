@@ -106,7 +106,6 @@ static void update_sockets(UIState *s) {
 static void update_state(UIState *s) {
   SubMaster &sm = *(s->sm);
   UIScene &scene = s->scene;
-  s->running_time = 1e-9 * (nanos_since_boot() - sm["deviceState"].getDeviceState().getStartedMonoTime());
 
   if (sm.updated("modelV2")) {
     update_model(s, sm["modelV2"].getModelV2());
@@ -290,16 +289,6 @@ void Device::updateBrightness(const UIState &s) {
 
     // Scale back to 10% to 100%
     clipped_brightness = std::clamp(100.0f * clipped_brightness, 10.0f, 100.0f);
-
-    // Limit brightness if running for too long
-    if (Hardware::TICI()) {
-      const float MAX_BRIGHTNESS_HOURS = 4;
-      const float HOURLY_BRIGHTNESS_DECREASE = 5;
-      float ui_running_hours = s.running_time / (60*60);
-      float anti_burnin_max_percent = std::clamp(100.0f - HOURLY_BRIGHTNESS_DECREASE * (ui_running_hours - MAX_BRIGHTNESS_HOURS),
-                                                 30.0f, 100.0f);
-      clipped_brightness = std::min(clipped_brightness, anti_burnin_max_percent);
-    }
   }
 
   int brightness = brightness_filter.update(clipped_brightness);

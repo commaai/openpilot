@@ -60,12 +60,6 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       "../assets/offroad/icon_shell.png",
     },
     {
-      "UploadRaw",
-      "Upload Raw Logs",
-      "Upload full logs and full resolution video by default while on Wi-Fi. If not enabled, individual logs can be marked for upload at useradmin.comma.ai.",
-      "../assets/offroad/icon_network.png",
-    },
-    {
       "RecordFront",
       "Record and Upload Driver Camera",
       "Upload data from the driver facing camera and help improve the driver monitoring algorithm.",
@@ -111,8 +105,6 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
 }
 
 DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
-  Params params = Params();
-
   setSpacing(50);
   addItem(new LabelControl("Dongle ID", getDongleId().value_or("N/A")));
   addItem(new LabelControl("Serial", params.get("HardwareSerial").c_str()));
@@ -173,13 +165,9 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   QObject::connect(poweroff_btn, &QPushButton::clicked, this, &DevicePanel::poweroff);
 
   setStyleSheet(R"(
-    QPushButton {
-      height: 120px;
-      border-radius: 15px;
-    }
-    #reboot_btn { background-color: #393939; }
+    #reboot_btn { height: 120px; border-radius: 15px; background-color: #393939; }
     #reboot_btn:pressed { background-color: #4a4a4a; }
-    #poweroff_btn { background-color: #E22C2C; }
+    #poweroff_btn { height: 120px; border-radius: 15px; background-color: #E22C2C; }
     #poweroff_btn:pressed { background-color: #FF2424; }
   )");
   addItem(power_layout);
