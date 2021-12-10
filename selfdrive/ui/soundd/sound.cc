@@ -73,7 +73,7 @@ void Sound::setAlert(const Alert &alert) {
     // stop sounds
     for (const auto &s : sounds) {
       // Only stop repeating sounds
-      if (s.sound->loopsRemaining() > 1) {
+      if (s.sound->loopsRemaining() > 0) {
         s.sound->setLoopCount(0);
       }
     }
