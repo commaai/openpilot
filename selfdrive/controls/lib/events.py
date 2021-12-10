@@ -332,9 +332,9 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
 
   EventName.ldw: {
     ET.PERMANENT: Alert(
-      "TAKE CONTROL",
       "Lane Departure Detected",
-      AlertStatus.userPrompt, AlertSize.mid,
+      "",
+      AlertStatus.userPrompt, AlertSize.small,
       Priority.LOW, VisualAlert.ldw, AudibleAlert.prompt, 3.),
   },
 
