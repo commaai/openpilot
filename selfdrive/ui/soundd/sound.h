@@ -26,14 +26,15 @@ public:
   explicit Sound(QObject *parent = 0);
 
 protected:
-  void update();
-  void setAlert(const Alert &alert);
-
-  struct SoundItem{
-    QSoundEffect * sound;
+  struct SoundItem {
+    QSoundEffect *sound;
     int loops;
     int loops_to_full_volume;
   };
+
+  void update();
+  void updateVolume(const SoundItem &s);
+  void setAlert(const Alert &alert);
 
   Alert current_alert = {};
   qreal current_volume;
