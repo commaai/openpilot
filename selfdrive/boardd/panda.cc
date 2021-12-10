@@ -337,11 +337,11 @@ void Panda::set_power_saving(bool power_saving) {
 }
 
 void Panda::set_usb_power_mode(cereal::PeripheralState::UsbPowerMode power_mode) {
-  usb_write(0xe6, (uint16_t)power_mode, 0);
+  usb_write(0xe6, power_mode, 0);
 }
 
-void Panda::send_heartbeat() {
-  usb_write(0xf3, 1, 0);
+void Panda::send_heartbeat(bool engaged) {
+  usb_write(0xf3, (uint16_t)engaged, 0);
 }
 
 void Panda::set_can_speed_kbps(uint16_t bus, uint16_t speed) {
