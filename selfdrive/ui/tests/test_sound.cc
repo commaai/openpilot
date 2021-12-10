@@ -11,11 +11,14 @@ public:
     for (auto i = sounds.constBegin(); i != sounds.constEnd(); ++i) {
       sound_stats[i.key()] = {0, 0};
       auto &s = i.value();
-      QObject::connect(s.sound, &QSoundEffect::playingChanged, [=, s = s.sound, a = i.key()]() {
-        if (s->isPlaying()) {
+      QObject::connect(s.sound, &QSoundEffect::playingChanged, [this, &s, a = i.key()]() {
+        if (s.sound->isPlaying()) {
           sound_stats[a].first++;
         } else {
           sound_stats[a].second++;
+          if (s.loops_to_full_volume > 0) {
+            REQUIRE(s.sound->volume() == 1.0);
+          }
         }
       });
     }
