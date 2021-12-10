@@ -15,14 +15,32 @@
 Sound::Sound(QObject *parent) : sm({"carState", "controlsState", "deviceState"}) {
   qInfo() << "default audio device: " << QAudioDeviceInfo::defaultOutputDevice().deviceName();
 
-  for (auto &[alert, fn, loops] : sound_list) {
+  for (auto &[alert, fn, loops, loops_to_full_volume] : sound_list) {
     QSoundEffect *s = new QSoundEffect(this);
     QObject::connect(s, &QSoundEffect::statusChanged, [=]() {
       assert(s->status() != QSoundEffect::Error);
     });
     s->setVolume(Hardware::MIN_VOLUME);
     s->setSource(QUrl::fromLocalFile("../../assets/sounds/" + fn));
-    sounds[alert] = {s, loops};
+
+    sounds[alert] = {
+        .sound = s,
+        .loops = loops == QSoundEffect::Infinite ? std::numeric_limits<int>::max() : loops,
+        .loops_to_full_volume = loops_to_full_volume,
+    };
+
+    if (loops_to_full_volume > 0) {
+      QObject::connect(s, &QSoundEffect::loopsRemainingChanged, [&sound = sounds[alert]]() {
+        qreal volume = sound.sound->volume();
+        int looped = sound.sound->loopCount() - sound.sound->loopsRemaining();
+        if (looped >= sound.loops_to_full_volume) {
+          volume = 1.0;
+        } else {
+          volume += (1.0 - volume) / (sound.loops_to_full_volume - looped);
+        }
+        sound.sound->setVolume(volume);
+      });
+    }
   }
 
   QTimer *timer = new QTimer(this);
@@ -52,8 +70,12 @@ void Sound::update() {
     float volume = util::map_val(sm["carState"].getCarState().getVEgo(), 11.f, 20.f, 0.f, 1.0f);
     volume = QAudio::convertVolume(volume, QAudio::LogarithmicVolumeScale, QAudio::LinearVolumeScale);
     volume = util::map_val(volume, 0.f, 1.f, Hardware::MIN_VOLUME, Hardware::MAX_VOLUME);
-    for (auto &[s, loops] : sounds) {
-      s->setVolume(std::round(100 * volume) / 100);
+    volume = std::round(100 * volume) / 100;
+    for (auto &s : sounds) {
+      bool ramping_up = s.loops_to_full_volume > 0 && s.sound->isPlaying();
+      if (!ramping_up || volume > s.sound->volume()) {
+        s.sound->setVolume(volume);
+      }
     }
   }
 
@@ -64,18 +86,18 @@ void Sound::setAlert(const Alert &alert) {
   if (!current_alert.equal(alert)) {
     current_alert = alert;
     // stop sounds
-    for (auto &[s, loops] : sounds) {
+    for (auto &s : sounds) {
       // Only stop repeating sounds
-      if (s->loopsRemaining() > 1 || s->loopsRemaining() == QSoundEffect::Infinite) {
-        s->stop();
+      if (s.sound->loopsRemaining() > 1) {
+        s.sound->setLoopCount(0);
       }
     }
 
     // play sound
     if (alert.sound != AudibleAlert::NONE) {
-      auto &[s, loops] = sounds[alert.sound];
-      s->setLoopCount(loops);
-      s->play();
+      auto &s = sounds[alert.sound];
+      s.sound->setLoopCount(s.loops);
+      s.sound->play();
     }
   }
 }
