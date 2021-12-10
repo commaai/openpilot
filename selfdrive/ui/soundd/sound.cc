@@ -12,7 +12,7 @@
 // TODO: detect when we can't play sounds
 // TODO: detect when we can't display the UI
 
-Sound::Sound(QObject *parent) : sm({"carState", "controlsState", "deviceState"}) {
+Sound::Sound(QObject *parent) : current_volume(Hardware::MIN_VOLUME), sm({"carState", "controlsState", "deviceState"}) {
   qInfo() << "default audio device: " << QAudioDeviceInfo::defaultOutputDevice().deviceName();
 
   for (auto &[alert, fn, loops, loops_to_full_volume] : sound_list) {
@@ -20,7 +20,7 @@ Sound::Sound(QObject *parent) : sm({"carState", "controlsState", "deviceState"})
     QObject::connect(s, &QSoundEffect::statusChanged, [=]() {
       assert(s->status() != QSoundEffect::Error);
     });
-    s->setVolume(Hardware::MIN_VOLUME);
+    s->setVolume(current_volume);
     s->setSource(QUrl::fromLocalFile("../../assets/sounds/" + fn));
 
     sounds[alert] = {
@@ -38,7 +38,7 @@ Sound::Sound(QObject *parent) : sm({"carState", "controlsState", "deviceState"})
         } else {
           volume += (1.0 - volume) / (sound.loops_to_full_volume - looped);
         }
-        sound.sound->setVolume(volume);
+        sound.sound->setVolume(std::min(1.0, volume));
       });
     }
   }
@@ -70,13 +70,7 @@ void Sound::update() {
     float volume = util::map_val(sm["carState"].getCarState().getVEgo(), 11.f, 20.f, 0.f, 1.0f);
     volume = QAudio::convertVolume(volume, QAudio::LogarithmicVolumeScale, QAudio::LinearVolumeScale);
     volume = util::map_val(volume, 0.f, 1.f, Hardware::MIN_VOLUME, Hardware::MAX_VOLUME);
-    volume = std::round(100 * volume) / 100;
-    for (auto &s : sounds) {
-      bool ramping_up = s.loops_to_full_volume > 0 && s.sound->isPlaying();
-      if (!ramping_up || volume > s.sound->volume()) {
-        s.sound->setVolume(volume);
-      }
-    }
+    current_volume = std::round(100 * volume) / 100;
   }
 
   setAlert(Alert::get(sm, started_frame));
@@ -96,6 +90,7 @@ void Sound::setAlert(const Alert &alert) {
     // play sound
     if (alert.sound != AudibleAlert::NONE) {
       auto &s = sounds[alert.sound];
+      s.sound->setVolume(current_volume);
       s.sound->setLoopCount(s.loops);
       s.sound->play();
     }

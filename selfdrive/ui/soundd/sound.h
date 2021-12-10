@@ -37,4 +37,5 @@ protected:
   Alert current_alert = {};
   SubMaster sm;
   uint64_t started_frame;
+  qreal current_volume;
 };

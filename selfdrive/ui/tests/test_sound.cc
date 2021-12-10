@@ -35,9 +35,9 @@ void controls_thread(int loop_cnt) {
 
   const int DT_CTRL = 10;  // ms
   for (int i = 0; i < loop_cnt; ++i) {
-    for (auto &[alert, fn, loops, ramp_up] : sound_list) {
+    for (auto &[alert, fn, loops, loops_to_max_volume] : sound_list) {
       printf("testing %s\n", qPrintable(fn));
-      for (int j = 0; j < (ramp_up ? 5000 : 1000) / DT_CTRL; ++j) {
+      for (int j = 0; j < (loops_to_max_volume > 0 ? loops_to_max_volume * 1000 : 1000) / DT_CTRL; ++j) {
         MessageBuilder msg;
         auto cs = msg.initEvent().initControlsState();
         cs.setAlertSound(alert);
