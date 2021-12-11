@@ -55,6 +55,7 @@ class VehicleModel:
     Args:
       sa: Steering wheel angle [rad]
       u: Speed [m/s]
+      roll: Road Roll [rad]
 
     Returns:
       2x1 matrix with steady state solution (lateral speed, rotational speed)
@@ -70,6 +71,7 @@ class VehicleModel:
     Args:
       sa: Steering wheel angle [rad]
       u: Speed [m/s]
+      roll: Road Roll [rad]
 
     Returns:
       Curvature factor [1/m]
@@ -95,6 +97,7 @@ class VehicleModel:
     Args:
       curv: Desired curvature [1/m]
       u: Speed [m/s]
+      roll: Road Roll [rad]
 
     Returns:
       Steering wheel angle [rad]
@@ -102,7 +105,16 @@ class VehicleModel:
 
     return (curv - self.roll_compensation(roll, u)) * self.sR * 1.0 / self.curvature_factor(u)
 
-  def roll_compensation(self, roll, u):
+  def roll_compensation(self, roll: float, u: float) -> float:
+    """Calculates the roll-compensation to curvature
+
+    Args:
+      roll: Road Roll [rad]
+      u: Speed [m/s]
+
+    Returns:
+      Roll compensation curvature [rad]
+    """
     sf = calc_slip_factor(self)
 
     if abs(sf) < 1e-6:
@@ -116,6 +128,7 @@ class VehicleModel:
     Args:
       yaw_rate: Desired yaw rate [rad/s]
       u: Speed [m/s]
+      roll: Road Roll [rad]
 
     Returns:
       Steering wheel angle [rad]
@@ -129,6 +142,7 @@ class VehicleModel:
     Args:
       sa: Steering wheel angle [rad]
       u: Speed [m/s]
+      roll: Road Roll [rad]
 
     Returns:
       Yaw rate [rad/s]
@@ -199,6 +213,7 @@ def dyn_ss_sol(sa: float, u: float, roll: float, VM: VehicleModel) -> np.ndarray
   Args:
     sa: Steering angle [rad]
     u: Speed [m/s]
+    roll: Road Roll [rad]
     VM: Vehicle model
 
   Returns:
