@@ -18,12 +18,12 @@ Sound::Sound(QObject *parent) : current_volume(Hardware::MIN_VOLUME), sm({"carSt
 
   for (auto &s : sounds) {
     s.sound = new QSoundEffect(this);
-    QObject::connect(s.sound, &QSoundEffect::statusChanged, [=]() {
-      assert(s.sound->status() != QSoundEffect::Error);
-    });
     s.sound->setVolume(current_volume);
     s.sound->setSource(QUrl::fromLocalFile(QString("../../assets/sounds/") + s.file));
 
+    QObject::connect(s.sound, &QSoundEffect::statusChanged, [=]() {
+      assert(s.sound->status() != QSoundEffect::Error);
+    });
     if (s.loops_to_full_volume > 0) {
       QObject::connect(s.sound, &QSoundEffect::loopsRemainingChanged, [this, &s]() { updateVolume(s); });
     }

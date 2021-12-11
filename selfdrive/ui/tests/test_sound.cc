@@ -38,7 +38,7 @@ TestSound::TestSound() : Sound() {
 }
 
 void TestSound::controls_thread() {
-  const int test_loop_cnt = 2;
+  const int loop_cnt = 2;
 
   PubMaster pm({"controlsState", "deviceState"});
   MessageBuilder deviceStateMsg;
@@ -72,8 +72,8 @@ void TestSound::controls_thread() {
 
   for (const AudibleAlert alert : sound_stats.keys()) {
     auto [play, stop] = sound_stats[alert];
-    REQUIRE(play == test_loop_cnt);
-    REQUIRE(stop == test_loop_cnt);
+    REQUIRE(play == loop_cnt);
+    REQUIRE(stop == loop_cnt);
   }
 
   QThread::currentThread()->quit();
