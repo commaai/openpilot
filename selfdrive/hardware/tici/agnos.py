@@ -5,6 +5,7 @@ import hashlib
 import requests
 import struct
 import subprocess
+import time
 import os
 from typing import Generator
 
@@ -224,7 +225,6 @@ def verify_agnos_update(manifest_path: str, target_slot_number: int) -> bool:
 
 if __name__ == "__main__":
   import logging
-  import time
   import argparse
 
   parser = argparse.ArgumentParser(description="Flash and verify AGNOS update",
