@@ -459,7 +459,11 @@ def main():
       exception = str(e)
       overlay_init.unlink(missing_ok=True)
 
-    set_params(new_version, update_failed_count, exception)
+    try:
+      set_params(new_version, update_failed_count, exception)
+    except Exception:
+      cloudlog.exception("uncaught updated exception while setting params, shouldn't happen")
+
     wait_helper.sleep(60)
 
   dismount_overlay()
