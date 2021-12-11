@@ -14,10 +14,10 @@ struct SoundItem {
 };
 
 class Sound : public QObject {
- public:
+public:
   explicit Sound(QObject *parent = 0);
 
- protected:
+protected:
   void update();
   void updateVolume(const SoundItem &s);
   void setAlert(const Alert &alert);

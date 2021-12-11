@@ -5,39 +5,41 @@
 #include "catch2/catch.hpp"
 #include "selfdrive/ui/soundd/sound.h"
 
-const int test_loop_cnt = 2;
-
 class TestSound : public Sound {
 public:
-  TestSound() : Sound() {
-    for (auto i = sounds.constBegin(); i != sounds.constEnd(); ++i) {
-      sound_stats[i.key()] = {0, 0};
-      auto &s = i.value();
-      QObject::connect(s.sound, &QSoundEffect::playingChanged, [this, &s, a = i.key()]() {
-        if (s.sound->isPlaying()) {
-          sound_stats[a].first++;
-          REQUIRE(s.sound->volume() == current_volume);
-        } else {
-          sound_stats[a].second++;
-          if (s.loops_to_full_volume > 0) {
-            REQUIRE(s.sound->volume() == 1.0);
-          }
-        }
-      });
-    }
-    QEventLoop loop;
-    QThread t;
-    QObject::connect(&t, &QThread::started, [=]() { controls_thread(test_loop_cnt); });
-    QObject::connect(&t, &QThread::finished, [&]() { loop.quit(); });
-    t.start();
-    loop.exec();
-  }
-
-  void controls_thread(int loop_cnt);
+  TestSound();
+  void controls_thread();
   QMap<AudibleAlert, std::pair<int, int>> sound_stats;
 };
 
-void TestSound::controls_thread(int loop_cnt) {
+TestSound::TestSound() : Sound() {
+  for (auto i = sounds.constBegin(); i != sounds.constEnd(); ++i) {
+    sound_stats[i.key()] = {0, 0};
+    auto &s = i.value();
+    QObject::connect(s.sound, &QSoundEffect::playingChanged, [this, &s, a = i.key()]() {
+      if (s.sound->isPlaying()) {
+        sound_stats[a].first++;
+        REQUIRE(s.sound->volume() == current_volume);
+      } else {
+        sound_stats[a].second++;
+        if (s.loops_to_full_volume > 0) {
+          REQUIRE(s.sound->volume() == 1.0);
+        }
+      }
+    });
+  }
+
+  QEventLoop loop;
+  QThread t;
+  QObject::connect(&t, &QThread::started, [=]() { controls_thread(); });
+  QObject::connect(&t, &QThread::finished, [&]() { loop.quit(); });
+  t.start();
+  loop.exec();
+}
+
+void TestSound::controls_thread() {
+  const int test_loop_cnt = 2;
+
   PubMaster pm({"controlsState", "deviceState"});
   MessageBuilder deviceStateMsg;
   auto deviceState = deviceStateMsg.initEvent().initDeviceState();
