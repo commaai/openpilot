@@ -1,5 +1,4 @@
 #include <QEventLoop>
-#include <QMap>
 #include <QThread>
 
 #include "catch2/catch.hpp"
@@ -38,13 +37,12 @@ TestSound::TestSound() : Sound() {
 }
 
 void TestSound::controls_thread() {
-  const int loop_cnt = 2;
-
   PubMaster pm({"controlsState", "deviceState"});
   MessageBuilder deviceStateMsg;
   auto deviceState = deviceStateMsg.initEvent().initDeviceState();
   deviceState.setStarted(true);
 
+  const int loop_cnt = 2;
   const int DT_CTRL = 10;  // ms
   for (int i = 0; i < loop_cnt; ++i) {
     for (auto it = sounds.begin(); it != sounds.end(); ++it) {
@@ -70,7 +68,7 @@ void TestSound::controls_thread() {
     QThread::msleep(DT_CTRL);
   }
 
-  for (const AudibleAlert alert : sound_stats.keys()) {
+  for (AudibleAlert alert : sound_stats.keys()) {
     auto [play, stop] = sound_stats[alert];
     REQUIRE(play == loop_cnt);
     REQUIRE(stop == loop_cnt);
