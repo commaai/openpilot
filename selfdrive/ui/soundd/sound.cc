@@ -8,6 +8,7 @@
 
 #include "cereal/messaging/messaging.h"
 #include "selfdrive/common/util.h"
+#include "selfdrive/hardware/hw.h"
 
 // TODO: detect when we can't play sounds
 // TODO: detect when we can't display the UI
@@ -15,22 +16,16 @@
 Sound::Sound(QObject *parent) : current_volume(Hardware::MIN_VOLUME), sm({"carState", "controlsState", "deviceState"}) {
   qInfo() << "default audio device: " << QAudioDeviceInfo::defaultOutputDevice().deviceName();
 
-  for (const auto [alert, fn, loops, loops_to_full_volume] : sound_list) {
-    QSoundEffect *sound = new QSoundEffect(this);
-    QObject::connect(sound, &QSoundEffect::statusChanged, [=]() {
-      assert(sound->status() != QSoundEffect::Error);
+  for (auto &s : sounds) {
+    s.sound = new QSoundEffect(this);
+    QObject::connect(s.sound, &QSoundEffect::statusChanged, [=]() {
+      assert(s.sound->status() != QSoundEffect::Error);
     });
-    sound->setVolume(current_volume);
-    sound->setSource(QUrl::fromLocalFile(QString("../../assets/sounds/") + fn));
+    s.sound->setVolume(current_volume);
+    s.sound->setSource(QUrl::fromLocalFile(QString("../../assets/sounds/") + s.file));
 
-    sounds[alert] = {
-      .sound = sound,
-      .loops = loops == QSoundEffect::Infinite ? std::numeric_limits<int>::max() : loops,
-      .loops_to_full_volume = loops_to_full_volume,
-    };
-
-    if (loops_to_full_volume > 0) {
-      QObject::connect(sound, &QSoundEffect::loopsRemainingChanged, [this, &s = sounds[alert]]() { updateVolume(s); });
+    if (s.loops_to_full_volume > 0) {
+      QObject::connect(s.sound, &QSoundEffect::loopsRemainingChanged, [this, &s]() { updateVolume(s); });
     }
   }
 

@@ -5,6 +5,8 @@
 #include "catch2/catch.hpp"
 #include "selfdrive/ui/soundd/sound.h"
 
+const int test_loop_cnt = 2;
+
 class TestSound : public Sound {
 public:
   TestSound() : Sound() {
@@ -23,12 +25,19 @@ public:
         }
       });
     }
+    QEventLoop loop;
+    QThread t;
+    QObject::connect(&t, &QThread::started, [=]() { controls_thread(test_loop_cnt); });
+    QObject::connect(&t, &QThread::finished, [&]() { loop.quit(); });
+    t.start();
+    loop.exec();
   }
 
+  void controls_thread(int loop_cnt);
   QMap<AudibleAlert, std::pair<int, int>> sound_stats;
 };
 
-void controls_thread(int loop_cnt) {
+void TestSound::controls_thread(int loop_cnt) {
   PubMaster pm({"controlsState", "deviceState"});
   MessageBuilder deviceStateMsg;
   auto deviceState = deviceStateMsg.initEvent().initDeviceState();
@@ -36,13 +45,14 @@ void controls_thread(int loop_cnt) {
 
   const int DT_CTRL = 10;  // ms
   for (int i = 0; i < loop_cnt; ++i) {
-    for (auto &[alert, fn, loops, loops_to_max_volume] : sound_list) {
-      printf("testing %s\n", qPrintable(fn));
-      for (int j = 0; j < (loops_to_max_volume > 0 ? loops_to_max_volume * 1000 : 1000) / DT_CTRL; ++j) {
+    for (auto it = sounds.begin(); it != sounds.end(); ++it) {
+      auto &s = it.value();
+      printf("testing %s\n", qPrintable(s.file));
+      for (int j = 0; j < (s.loops_to_full_volume > 0 ? s.loops_to_full_volume * 1000 : 1000) / DT_CTRL; ++j) {
         MessageBuilder msg;
         auto cs = msg.initEvent().initControlsState();
-        cs.setAlertSound(alert);
-        cs.setAlertType(fn);
+        cs.setAlertSound(it.key());
+        cs.setAlertType(s.file);
         pm.send("controlsState", msg);
         pm.send("deviceState", deviceStateMsg);
         QThread::msleep(DT_CTRL);
@@ -58,23 +68,15 @@ void controls_thread(int loop_cnt) {
     QThread::msleep(DT_CTRL);
   }
 
+  for (const AudibleAlert alert : sound_stats.keys()) {
+    auto [play, stop] = sound_stats[alert];
+    REQUIRE(play == test_loop_cnt);
+    REQUIRE(stop == test_loop_cnt);
+  }
+
   QThread::currentThread()->quit();
 }
 
 TEST_CASE("test soundd") {
-  QEventLoop loop;
   TestSound test_sound;
-  const int test_loop_cnt = 2;
-
-  QThread t;
-  QObject::connect(&t, &QThread::started, [=]() { controls_thread(test_loop_cnt); });
-  QObject::connect(&t, &QThread::finished, [&]() { loop.quit(); });
-  t.start();
-  loop.exec();
-
-  for (const AudibleAlert alert : test_sound.sound_stats.keys()) {
-    auto [play, stop] = test_sound.sound_stats[alert];
-    REQUIRE(play == test_loop_cnt);
-    REQUIRE(stop == test_loop_cnt);
-  }
 }
