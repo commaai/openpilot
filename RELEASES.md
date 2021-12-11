@@ -3,6 +3,7 @@ Version 0.8.12 (2021-12-15)
  * New driving model
    * Improved behavior around exits
  * Improved follow distance
+ * Better longitudinal policy, especially in low speed traffic
  * New alert sounds
  * AGNOS 3
    * Display burn in prevention
