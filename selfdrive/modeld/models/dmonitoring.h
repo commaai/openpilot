@@ -3,13 +3,12 @@
 #include <vector>
 
 #include "cereal/messaging/messaging.h"
-#include "selfdrive/common/util.h"
 #include "selfdrive/modeld/models/commonmodel.h"
 #include "selfdrive/modeld/runners/run.h"
 
-#define OUTPUT_SIZE 39
+const int OUTPUT_SIZE = 39;
 
-typedef struct DMonitoringResult {
+typedef struct DMResult {
   float face_orientation[3];
   float face_orientation_meta[3];
   float face_position[2];
@@ -26,21 +25,51 @@ typedef struct DMonitoringResult {
   float distracted_eyes;
   float occluded_prob;
   float dsp_execution_time;
-} DMonitoringResult;
+  float model_execution_time;
+} DMResult;
 
-typedef struct DMonitoringModelState {
-  RunModel *m;
+struct Rect {
+  int x, y, w, h;
+};
+
+class YUVBuf {
+public:
+  void init(int width, int height, bool black = false) {
+    buf.resize(width * height * 3 / 2);
+    y = buf.data();
+    u = y + width * height;
+    v = u + (width / 2) * (height / 2);
+    if (black) {
+      // needed on comma two to make the padded border black
+      // equivalent to RGB(0,0,0) in YUV space
+      memset(y, 16, width * height);
+      memset(u, 128, (width / 2) * (height / 2));
+      memset(v, 128, (width / 2) * (height / 2));
+    }
+  }
+  uint8_t *y, *u, *v;
+  std::vector<uint8_t> buf;
+};
+
+class DMModel {
+public:
+  DMModel(int width, int height);
+  DMResult eval_frame(uint8_t *stream_buf, int width, int height);
+  void publish(PubMaster &pm, uint32_t frame_id, const DMResult &res);
+
+private:
+  const YUVBuf &crop_yuv(uint8_t *raw, int width, int height);
+
+  const int MODEL_WIDTH = 320;
+  const int MODEL_HEIGHT = 640;
+
+  std::unique_ptr<RunModel> m;
   bool is_rhd;
   float output[OUTPUT_SIZE];
-  std::vector<uint8_t> resized_buf;
-  std::vector<uint8_t> cropped_buf;
-  std::vector<uint8_t> premirror_cropped_buf;
+  YUVBuf resized_buf;
+  YUVBuf cropped_buf;
+  YUVBuf premirror_cropped_buf;
   std::vector<float> net_input_buf;
   float tensor[UINT8_MAX + 1];
-} DMonitoringModelState;
-
-void dmonitoring_init(DMonitoringModelState* s);
-DMonitoringResult dmonitoring_eval_frame(DMonitoringModelState* s, void* stream_buf, int width, int height);
-void dmonitoring_publish(PubMaster &pm, uint32_t frame_id, const DMonitoringResult &res, float execution_time, kj::ArrayPtr<const float> raw_pred);
-void dmonitoring_free(DMonitoringModelState* s);
-
+  Rect crop_rect;
+};
