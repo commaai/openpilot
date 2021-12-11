@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-import unittest
 import random
+import unittest
 
 from selfdrive.controls.lib.events import Alert, EVENTS
 from selfdrive.controls.lib.alertmanager import AlertManager
@@ -20,23 +20,25 @@ class TestAlertManager(unittest.TestCase):
 
       alert.duration = duration
 
-      # only added for <= alert duration
-      AM = AlertManager()
-      add_duration = random.randint(1, duration)
-      for frame in range(duration+10):
-        if frame < add_duration:
-          AM.add_many(frame, [alert, ])
-        AM.process_alerts(frame)
-        self.assertEqual(AM.alert is not None, frame <= duration, msg=f"{frame=} {add_duration=} {duration=}")
+      # check two cases:
+      # - alert is added to AM for <= the alert's duration
+      # - alert is added to AM for > alert's duration
+      for greater in (True, False):
+        if greater:
+          add_duration = duration + random.randint(1, 10)
+        else:
+          add_duration = random.randint(1, duration)
+        show_duration = max(duration, add_duration)
 
-      # added for > alert duration
-      AM = AlertManager()
-      add_duration = duration + random.randint(1, 10)
-      for frame in range(add_duration+10):
-        if frame < add_duration:
-          AM.add_many(frame, [alert, ])
-        AM.process_alerts(frame)
-        self.assertEqual(AM.alert is not None, frame <= add_duration, msg=f"{frame=} {add_duration=} {duration=}")
+        AM = AlertManager()
+        for frame in range(duration+10):
+          if frame < add_duration:
+            AM.add_many(frame, [alert, ])
+          AM.process_alerts(frame)
+
+          shown = AM.alert is not None
+          should_show = frame <= show_duration
+          self.assertEqual(shown, should_show, msg=f"{frame=} {add_duration=} {duration=}")
 
 
 if __name__ == "__main__":
