@@ -43,7 +43,6 @@ class ParamsLearner:
       yaw_rate_std = msg.angularVelocityCalibrated.std[2]
 
       roll = msg.orientationNED.value[0]
-      # roll_std = msg.orientationNED.std[2]
       roll_valid = msg.orientationNED.valid and ROLL_MIN < roll < ROLL_MAX
 
       yaw_rate_valid = msg.angularVelocityCalibrated.valid
@@ -63,6 +62,10 @@ class ParamsLearner:
             self.kf.predict_and_observe(t,
                                         ObservationKind.ROAD_ROLL,
                                         np.array([[roll]]))
+          else:
+            # This is done to bound the road roll estimate when localizer values are invalid
+            self.kf.predict_and_observe(t, ObservationKind.ROAD_ROLL_INVALID, np.array([[0]]))
+
         self.kf.predict_and_observe(t, ObservationKind.ANGLE_OFFSET_FAST, np.array([[0]]))
 
     elif which == 'carState':
