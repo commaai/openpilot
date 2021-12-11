@@ -123,7 +123,7 @@ class Alert:
     self.visual_alert = visual_alert
     self.audible_alert = audible_alert
 
-    self.duration = duration
+    self.duration = int(duration / DT_CTRL)
 
     self.alert_rate = alert_rate
     self.creation_delay = creation_delay

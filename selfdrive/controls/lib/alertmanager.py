@@ -8,7 +8,6 @@ from typing import List, Dict, Optional
 from cereal import car, log
 from common.basedir import BASEDIR
 from common.params import Params
-from common.realtime import DT_CTRL
 from selfdrive.controls.lib.events import Alert
 
 
@@ -34,7 +33,7 @@ class AlertEntry:
   end_frame: int = -1
 
   def active(self, frame: int) -> bool:
-    return self.end_frame >= frame
+    return frame <= self.end_frame
 
 class AlertManager:
 
@@ -53,13 +52,13 @@ class AlertManager:
     self.audible_alert = car.CarControl.HUDControl.AudibleAlert.none
     self.alert_rate: float = 0.
 
-  def add_many(self, frame: int, alerts: List[Alert], enabled: bool = True) -> None:
+  def add_many(self, frame: int, alerts: List[Alert]) -> None:
     for alert in alerts:
       key = alert.alert_type
       self.alerts[key].alert = alert
       if not self.alerts[key].active(frame):
         self.alerts[key].start_frame = frame
-      min_end_frame = self.alerts[key].start_frame + int(alert.duration / DT_CTRL)
+      min_end_frame = self.alerts[key].start_frame + alert.duration
       self.alerts[key].end_frame = max(frame + 1, min_end_frame)
 
   def process_alerts(self, frame: int, clear_event_type=None) -> None:
@@ -68,7 +67,7 @@ class AlertManager:
       if v.alert is None:
         continue
 
-      if v.alert.event_type == clear_event_type:
+      if clear_event_type is not None and v.alert.event_type == clear_event_type:
         self.alerts[k].end_frame = -1
 
       # sort by priority first and then by start_frame
