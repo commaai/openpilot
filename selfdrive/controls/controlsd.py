@@ -632,11 +632,8 @@ class Controls:
     # Curvature & Steering angle
     params = self.sm['liveParameters']
 
-    orientation = self.sm['liveLocationKalman'].orientationNED
-    roll = orientation.value[0] if orientation.valid else 0
-
     steer_angle_without_offset = math.radians(CS.steeringAngleDeg - params.angleOffsetDeg)
-    curvature = -self.VM.calc_curvature(steer_angle_without_offset, CS.vEgo, roll)
+    curvature = -self.VM.calc_curvature(steer_angle_without_offset, CS.vEgo, params.roll)
 
     # controlsState
     dat = messaging.new_message('controlsState')
