@@ -38,7 +38,7 @@ class AlertManager:
 
   def __init__(self):
     self.reset()
-    self.activealerts: Dict[str, AlertEntry] = defaultdict(AlertEntry)
+    self.alerts: Dict[str, AlertEntry] = defaultdict(AlertEntry)
 
   def reset(self) -> None:
     self.alert: Optional[Alert] = None
@@ -53,21 +53,24 @@ class AlertManager:
 
   def add_many(self, frame: int, alerts: List[Alert], enabled: bool = True) -> None:
     for alert in alerts:
-      self.activealerts[alert.alert_type].alert = alert
-      self.activealerts[alert.alert_type].start_frame = frame
-      self.activealerts[alert.alert_type].end_frame = frame + int(alert.duration / DT_CTRL)
+      key = alert.alert_type
+      self.alerts[key].alert = alert
+      if self.alerts[key].end_frame < 0:
+        self.alerts[key].start_frame = frame
+      min_end_frame = self.alerts[key].start_frame + int(alert.duration / DT_CTRL)
+      self.alerts[key].end_frame = max(frame + 1, min_end_frame)
 
   def process_alerts(self, frame: int, clear_event_type=None) -> None:
     current_alert = AlertEntry()
-    for k, v in self.activealerts.items():
+    for k, v in self.alerts.items():
       if v.alert is None:
         continue
 
       if v.alert.event_type == clear_event_type:
-        self.activealerts[k].end_frame = -1
+        self.alerts[k].end_frame = -1
 
       # sort by priority first and then by start_frame
-      active = self.activealerts[k].end_frame > frame
+      active = self.alerts[k].end_frame > frame
       greater = current_alert.alert is None or (v.alert.priority, v.start_frame) > (current_alert.alert.priority, current_alert.start_frame)
       if active and greater:
         current_alert = v
