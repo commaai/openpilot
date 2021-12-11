@@ -33,6 +33,8 @@ class AlertEntry:
   start_frame: int = -1
   end_frame: int = -1
 
+  def active(self, frame: int) -> bool:
+    return self.end_frame >= frame
 
 class AlertManager:
 
@@ -55,7 +57,7 @@ class AlertManager:
     for alert in alerts:
       key = alert.alert_type
       self.alerts[key].alert = alert
-      if self.alerts[key].end_frame < 0:
+      if not self.alerts[key].active(frame):
         self.alerts[key].start_frame = frame
       min_end_frame = self.alerts[key].start_frame + int(alert.duration / DT_CTRL)
       self.alerts[key].end_frame = max(frame + 1, min_end_frame)
@@ -70,9 +72,8 @@ class AlertManager:
         self.alerts[k].end_frame = -1
 
       # sort by priority first and then by start_frame
-      active = self.alerts[k].end_frame > frame
       greater = current_alert.alert is None or (v.alert.priority, v.start_frame) > (current_alert.alert.priority, current_alert.start_frame)
-      if active and greater:
+      if v.active(frame) and greater:
         current_alert = v
 
     # clear current alert
