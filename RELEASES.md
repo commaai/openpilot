@@ -6,7 +6,7 @@ Version 0.8.12 (2021-12-15)
  * Better longitudinal policy, especially in low speed traffic
  * New alert sounds
  * AGNOS 3
-   * Display burn in prevention
+   * Display burn in mitigation
    * Improved audio amplifier configuration
    * System reliability improvements
    * Update Python to 3.8.10
