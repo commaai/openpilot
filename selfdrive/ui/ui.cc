@@ -294,16 +294,12 @@ bool Device::userClicked(const UIState &s) {
   // tap detection while display is off
   if (!awake && s.sm->updated("sensorEvents")) {
     for (auto sensor : (*s.sm)["sensorEvents"].getSensorEvents()) {
+      if (sensor.getTimestamp() == 0) continue;
+
       if (sensor.which() == cereal::SensorEventData::ACCELERATION) {
-        auto accel = sensor.getAcceleration().getV();
-        if (accel.totalSize().wordCount) {  // TODO: sometimes empty lists are received. Figure out why
-          accel_sensor = accel[2];
-        }
+        accel_sensor = sensor.getAcceleration().getV()[2];
       } else if (sensor.which() == cereal::SensorEventData::GYRO_UNCALIBRATED) {
-        auto gyro = sensor.getGyroUncalibrated().getV();
-        if (gyro.totalSize().wordCount) {
-          gyro_sensor = gyro[1];
-        }
+        gyro_sensor = sensor.getGyroUncalibrated().getV()[1];
       }
     }
 
