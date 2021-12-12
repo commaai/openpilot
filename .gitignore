@@ -8,6 +8,7 @@ venv/
 .overlay_consistent
 .sconsign.dblite
 .vscode*
+.devcontainer/
 model2.png
 a.out
 .hypothesis

@@ -7,11 +7,11 @@
 :caption: 'General'
 :maxdepth: 4
 
-CARS.md
-CONTRIBUTING.md
-INTEGRATION.md
-LIMITATIONS.md
-SAFETY.md
+docs/CARS.md
+docs/CONTRIBUTING.md
+docs/INTEGRATION.md
+docs/LIMITATIONS.md
+docs/SAFETY.md
 ```
 
 ```{toctree}

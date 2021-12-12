@@ -2,7 +2,7 @@ FROM ghcr.io/commaai/openpilot-base:latest
 
 ENV PYTHONUNBUFFERED 1
 
-ENV OPENPILOT_PATH /home/batman/openpilot/
+ENV OPENPILOT_PATH /home/batman/openpilot
 ENV PYTHONPATH ${OPENPILOT_PATH}:${PYTHONPATH}
 
 RUN mkdir -p ${OPENPILOT_PATH}
@@ -34,11 +34,13 @@ COPY ./*.md ${OPENPILOT_PATH}/
 
 RUN scons -j$(nproc)
 
+RUN apt update && apt install --no-recommends -y doxygen
+
 COPY ./docs ${OPENPILOT_PATH}/docs
 RUN git init .
 WORKDIR ${OPENPILOT_PATH}/docs
-RUN make html
+RUN mkdir build && cmake ../ && make -j$(nproc)
 
 FROM nginx:1.21
-COPY --from=0  /home/batman/openpilot/build/docs/html /usr/share/nginx/html
+COPY --from=0  /home/batman/openpilot/docs/build/docs/html /usr/share/nginx/html
 COPY ./docs/docker/nginx.conf /etc/nginx/conf.d/default.conf
