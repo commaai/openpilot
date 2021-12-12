@@ -45,6 +45,30 @@ locationd
 .. autodoxygenindex::
    :project: models
 
+ui
+^^
+.. autodoxygenindex::
+   :project: ui
+.. autodoxygenindex::
+   :project: soundd
+.. autodoxygenindex::
+   :project: navd
+.. autodoxygenindex::
+   :project: installer
+.. autodoxygenindex::
+   :project: replay
+
+qt
+""
+
+.. autodoxygenindex::
+   :project: setup
+
+.. autodoxygenindex::
+   :project: offroad
+.. autodoxygenindex::
+   :project: maps
+
 proclogd
 ^^^^^^^^
 .. autodoxygenindex::
