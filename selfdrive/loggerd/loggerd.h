@@ -41,12 +41,26 @@ const int DCAM_BITRATE = Hardware::TICI() ? MAIN_BITRATE : 2500000;
 const bool LOGGERD_TEST = getenv("LOGGERD_TEST");
 const int SEGMENT_LENGTH = LOGGERD_TEST ? atoi(getenv("LOGGERD_SEGMENT_LENGTH")) : 60;
 
+struct LogCameraInfo {
+  CameraType type;
+  const char *filename;
+  VisionStreamType stream_type;
+  int frame_width, frame_height;
+  int fps;
+  int bitrate;
+  bool is_h265;
+  bool downscale;
+  bool has_qcamera;
+  bool trigger_rotate;
+  bool enable;
+  bool record;
+};
+
 const LogCameraInfo cameras_logged[] = {
   {
     .type = RoadCam,
     .stream_type = VISION_STREAM_ROAD,
     .filename = "fcamera.hevc",
-    .frame_packet_name = "roadCameraState",
     .fps = MAIN_FPS,
     .bitrate = MAIN_BITRATE,
     .is_h265 = true,
@@ -60,7 +74,6 @@ const LogCameraInfo cameras_logged[] = {
     .type = DriverCam,
     .stream_type = VISION_STREAM_DRIVER,
     .filename = "dcamera.hevc",
-    .frame_packet_name = "driverCameraState",
     .fps = MAIN_FPS, // on EONs, more compressed this way
     .bitrate = DCAM_BITRATE,
     .is_h265 = true,
@@ -74,7 +87,6 @@ const LogCameraInfo cameras_logged[] = {
     .type = WideRoadCam,
     .stream_type = VISION_STREAM_WIDE_ROAD,
     .filename = "ecamera.hevc",
-    .frame_packet_name = "wideRoadCameraState",
     .fps = MAIN_FPS,
     .bitrate = MAIN_BITRATE,
     .is_h265 = true,

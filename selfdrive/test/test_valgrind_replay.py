@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import os
 import threading
 import time
@@ -53,9 +54,11 @@ class TestValgrind(unittest.TestCase):
     # Run valgrind on a process
     command = "valgrind --leak-check=full " + arg
     p = subprocess.Popen(command, stderr=subprocess.PIPE, shell=True, preexec_fn=os.setsid)  # pylint: disable=W1509
-    while not self.done:
+
+    while not self.replay_done:
       time.sleep(0.1)
 
+    # Kill valgrind and extract leak output
     os.killpg(os.getpgid(p.pid), signal.SIGINT)
     _, err = p.communicate()
     error_msg = str(err, encoding='utf-8')
@@ -91,18 +94,24 @@ class TestValgrind(unittest.TestCase):
       if config.wait_for_response:
         sm.update(100)
 
-    self.done = True
+    self.replay_done = True
 
   def test_config(self):
     open(os.path.join(BASEDIR, "selfdrive/test/valgrind_logs.txt"), "w").close()
 
     for cfg in CONFIGS:
-      self.done = False
+      self.leak = None
+      self.replay_done = False
+
       r, n = cfg.segment.rsplit("--", 1)
       lr = LogReader(get_url(r, n))
       self.replay_process(cfg, lr)
-      time.sleep(1)  # Wait for the logs to get written
+
+      while self.leak is None:
+        time.sleep(0.1)  # Wait for the valgrind to finish
+
       self.assertFalse(self.leak)
+
 
 if __name__ == "__main__":
   unittest.main()

@@ -28,8 +28,8 @@ std::vector<Eigen::Map<MatrixXdr>> get_vec_mapmat(std::vector<MatrixXdr>& mat_ve
 }
 
 LiveKalman::LiveKalman() {
-  this->dim_state = 26;
-  this->dim_state_err = 25;
+  this->dim_state = live_initial_x.rows();
+  this->dim_state_err = live_initial_P_diag.rows();
 
   this->initial_x = live_initial_x;
   this->initial_P = live_initial_P_diag.asDiagonal();

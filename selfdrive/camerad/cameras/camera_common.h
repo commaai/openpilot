@@ -30,7 +30,6 @@
 const int UI_BUF_COUNT = 4;
 const int YUV_BUFFER_COUNT = Hardware::EON() ? 100 : 40;
 
-
 enum CameraType {
   RoadCam = 0,
   DriverCam,
@@ -51,23 +50,6 @@ typedef struct CameraInfo {
   int bayer_flip;
   bool hdr;
 } CameraInfo;
-
-typedef struct LogCameraInfo {
-  CameraType type;
-  const char* filename;
-  const char* frame_packet_name;
-  const char* encode_idx_name;
-  VisionStreamType stream_type;
-  int frame_width, frame_height;
-  int fps;
-  int bitrate;
-  bool is_h265;
-  bool downscale;
-  bool has_qcamera;
-  bool trigger_rotate;
-  bool enable;
-  bool record;
-} LogCameraInfo;
 
 typedef struct FrameMetadata {
   uint32_t frame_id;

@@ -18,7 +18,7 @@
 #define PANDA_BUS_CNT 4
 #define RECV_SIZE (0x4000U)
 #define USB_TX_SOFT_LIMIT   (0x100U)
-#define USBPACKET_MAX_SIZE  (0x40U)
+#define USBPACKET_MAX_SIZE  (0x40)
 #define CANPACKET_HEAD_SIZE 5U
 #define CANPACKET_MAX_SIZE  72U
 #define CANPACKET_REJECTED  (0xC0U)
@@ -69,7 +69,7 @@ class Panda {
   libusb_context *ctx = NULL;
   libusb_device_handle *dev_handle = NULL;
   std::mutex usb_lock;
-  std::vector<uint8_t> send;
+  std::vector<uint8_t> recv_buf;
   void handle_usb_issue(int err, const char func[]);
   void cleanup();
 
@@ -111,7 +111,6 @@ class Panda {
   void send_heartbeat();
   void set_can_speed_kbps(uint16_t bus, uint16_t speed);
   void set_data_speed_kbps(uint16_t bus, uint16_t speed);
-  uint8_t len_to_dlc(uint8_t len);
   void can_send(capnp::List<cereal::CanData>::Reader can_data_list);
   bool can_receive(std::vector<can_frame>& out_vec);
 

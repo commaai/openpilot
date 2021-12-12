@@ -5,35 +5,18 @@ from selfdrive.car.toyota.toyotacan import create_steer_command, create_ui_comma
                                            create_accel_command, create_acc_cancel_command, \
                                            create_fcw_command, create_lta_steer_command
 from selfdrive.car.toyota.values import CAR, STATIC_DSU_MSGS, NO_STOP_TIMER_CAR, TSS2_CAR, \
-                                        MIN_ACC_SPEED, PEDAL_HYST_GAP, PEDAL_SCALE, CarControllerParams
+                                        MIN_ACC_SPEED, PEDAL_TRANSITION, CarControllerParams
 from opendbc.can.packer import CANPacker
 VisualAlert = car.CarControl.HUDControl.VisualAlert
-
-
-def accel_hysteresis(accel, accel_steady, enabled):
-
-  # for small accel oscillations within ACCEL_HYST_GAP, don't change the accel command
-  if not enabled:
-    # send 0 when disabled, otherwise acc faults
-    accel_steady = 0.
-  elif accel > accel_steady + CarControllerParams.ACCEL_HYST_GAP:
-    accel_steady = accel - CarControllerParams.ACCEL_HYST_GAP
-  elif accel < accel_steady - CarControllerParams.ACCEL_HYST_GAP:
-    accel_steady = accel + CarControllerParams.ACCEL_HYST_GAP
-  accel = accel_steady
-
-  return accel, accel_steady
 
 
 class CarController():
   def __init__(self, dbc_name, CP, VM):
     self.last_steer = 0
-    self.accel_steady = 0.
     self.alert_active = False
     self.last_standstill = False
     self.standstill_req = False
     self.steer_rate_limited = False
-    self.use_interceptor = False
 
     self.packer = CANPacker(dbc_name)
 
@@ -43,25 +26,22 @@ class CarController():
     # *** compute control surfaces ***
 
     # gas and brake
-    interceptor_gas_cmd = 0.
-    pcm_accel_cmd = actuators.accel
-
-    if CS.CP.enableGasInterceptor:
-      # handle hysteresis when around the minimum acc speed
-      if CS.out.vEgo < MIN_ACC_SPEED:
-        self.use_interceptor = True
-      elif CS.out.vEgo > MIN_ACC_SPEED + PEDAL_HYST_GAP:
-        self.use_interceptor = False
-
-      if self.use_interceptor and active:
-        # only send negative accel when using interceptor. gas handles acceleration
-        # +0.18 m/s^2 offset to reduce ABS pump usage when OP is engaged
-        MAX_INTERCEPTOR_GAS = interp(CS.out.vEgo, [0.0, MIN_ACC_SPEED], [0.2, 0.5])
-        interceptor_gas_cmd = clip(actuators.accel / PEDAL_SCALE, 0., MAX_INTERCEPTOR_GAS)
-        pcm_accel_cmd = 0.18 - max(0, -actuators.accel)
-
-    pcm_accel_cmd, self.accel_steady = accel_hysteresis(pcm_accel_cmd, self.accel_steady, enabled)
-    pcm_accel_cmd = clip(pcm_accel_cmd, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
+    if CS.CP.enableGasInterceptor and enabled:
+      MAX_INTERCEPTOR_GAS = 0.5
+      # RAV4 has very sensitive gas pedal
+      if CS.CP.carFingerprint in [CAR.RAV4, CAR.RAV4H, CAR.HIGHLANDER, CAR.HIGHLANDERH]:
+        PEDAL_SCALE = interp(CS.out.vEgo, [0.0, MIN_ACC_SPEED, MIN_ACC_SPEED + PEDAL_TRANSITION], [0.15, 0.3, 0.0])
+      elif CS.CP.carFingerprint in [CAR.COROLLA]:
+        PEDAL_SCALE = interp(CS.out.vEgo, [0.0, MIN_ACC_SPEED, MIN_ACC_SPEED + PEDAL_TRANSITION], [0.3, 0.4, 0.0])
+      else:
+        PEDAL_SCALE = interp(CS.out.vEgo, [0.0, MIN_ACC_SPEED, MIN_ACC_SPEED + PEDAL_TRANSITION], [0.4, 0.5, 0.0])
+      # offset for creep and windbrake
+      pedal_offset = interp(CS.out.vEgo, [0.0, 2.3, MIN_ACC_SPEED + PEDAL_TRANSITION], [-.4, 0.0, 0.2])
+      pedal_command = PEDAL_SCALE * (actuators.accel + pedal_offset)
+      interceptor_gas_cmd = clip(pedal_command, 0., MAX_INTERCEPTOR_GAS)
+    else:
+      interceptor_gas_cmd = 0.
+    pcm_accel_cmd = clip(actuators.accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
 
     # steer torque
     new_steer = int(round(actuators.steer * CarControllerParams.STEER_MAX))
@@ -88,7 +68,6 @@ class CarController():
       self.standstill_req = False
 
     self.last_steer = apply_steer
-    self.last_accel = pcm_accel_cmd
     self.last_standstill = CS.out.standstill
 
     can_sends = []

@@ -10,6 +10,6 @@ with open(os.path.join(BASEDIR, "docs/CARS.md")) as f:
   cars = [l for l in lines if l.strip().startswith("|") and l.strip().endswith("|") and
                               "Make" not in l and any(c.isalpha() for c in l)]
 
-  make_count = Counter([l.split('|')[1].split('|')[0].strip() for l in cars])
+  make_count = Counter(l.split('|')[1].split('|')[0].strip() for l in cars)
   print("\n", "*"*20, len(cars), "total", "*"*20, "\n")
   pprint(make_count)

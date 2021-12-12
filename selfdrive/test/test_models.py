@@ -10,6 +10,7 @@ from cereal import log, car
 from common.params import Params
 from selfdrive.car.fingerprints import all_known_cars
 from selfdrive.car.car_helpers import interfaces
+from selfdrive.car.gm.values import CAR as GM
 from selfdrive.car.honda.values import HONDA_BOSCH, CAR as HONDA
 from selfdrive.car.chrysler.values import CAR as CHRYSLER
 from selfdrive.car.hyundai.values import CAR as HYUNDAI
@@ -37,6 +38,11 @@ ignore_carstate_check = [
   CHRYSLER.PACIFICA_2017_HYBRID,
 ]
 
+ignore_addr_checks_valid = [
+  GM.BUICK_REGAL,
+  HYUNDAI.GENESIS_G70_2020,
+]
+
 @parameterized_class(('car_model'), [(car,) for i, car in enumerate(sorted(all_known_cars())) if i % NUM_JOBS == JOB_ID])
 class TestCarModel(unittest.TestCase):
 
@@ -50,35 +56,35 @@ class TestCarModel(unittest.TestCase):
       else:
         raise Exception(f"missing test route for car {cls.car_model}")
 
-    for seg in [2, 1, 0]:
-      try:
-        lr = LogReader(get_url(ROUTES[cls.car_model], seg))
-        break
-      except Exception:
-        lr = None
-
-    if lr is None:
-      raise Exception("Route not found. Is it uploaded?")
-
     params = Params()
     params.clear_all()
 
-    can_msgs = []
-    fingerprint = {i: dict() for i in range(3)}
-    for msg in lr:
-      if msg.which() == "can":
-        for m in msg.can:
-          if m.src < 128:
-            fingerprint[m.src][m.address] = len(m.dat)
-        can_msgs.append(msg)
-      elif msg.which() == "carParams":
-        if msg.carParams.openpilotLongitudinalControl:
-          params.put_bool("DisableRadar", True)
+    for seg in [2, 1, 0]:
+      try:
+        lr = LogReader(get_url(ROUTES[cls.car_model], seg))
+      except Exception:
+        continue
+
+      can_msgs = []
+      fingerprint = {i: dict() for i in range(3)}
+      for msg in lr:
+        if msg.which() == "can":
+          for m in msg.can:
+            if m.src < 64:
+              fingerprint[m.src][m.address] = len(m.dat)
+          can_msgs.append(msg)
+        elif msg.which() == "carParams":
+          if msg.carParams.openpilotLongitudinalControl:
+            params.put_bool("DisableRadar", True)
+
+      if len(can_msgs):
+        break
+    else:
+      raise Exception("Route not found or no CAN msgs found. Is it uploaded?")
 
     cls.can_msgs = sorted(can_msgs, key=lambda msg: msg.logMonoTime)
 
     cls.CarInterface, cls.CarController, cls.CarState = interfaces[cls.car_model]
-
     cls.CP = cls.CarInterface.get_params(cls.car_model, fingerprint, [])
     assert cls.CP
 
@@ -108,6 +114,8 @@ class TestCarModel(unittest.TestCase):
         self.assertTrue(len(self.CP.lateralTuning.lqr.a))
       elif tuning == 'indi':
         self.assertTrue(len(self.CP.lateralTuning.indi.outerLoopGainV))
+      else:
+        raise Exception("unkown tuning")
 
   def test_car_interface(self):
     # TODO: also check for checkusm and counter violations from can parser
@@ -141,14 +149,28 @@ class TestCarModel(unittest.TestCase):
     if self.CP.dashcamOnly:
       self.skipTest("no need to check panda safety for dashcamOnly")
 
+    start_ts = self.can_msgs[0].logMonoTime
+
     failed_addrs = Counter()
     for can in self.can_msgs:
+      # update panda timer
+      t = (can.logMonoTime - start_ts) / 1e3
+      self.safety.set_timer(int(t))
+
+      # run all msgs through the safety RX hook
       for msg in can.can:
-        if msg.src >= 128:
+        if msg.src >= 64:
           continue
+
         to_send = package_can_msg([msg.address, 0, msg.dat, msg.src])
         if self.safety.safety_rx_hook(to_send) != 1:
           failed_addrs[hex(msg.address)] += 1
+
+      # ensure all msgs defined in the addr checks are valid
+      if self.car_model not in ignore_addr_checks_valid:
+        self.safety.safety_tick_current_rx_checks()
+        if t > 1e6:
+          self.assertTrue(self.safety.addr_checks_valid())
     self.assertFalse(len(failed_addrs), f"panda safety RX check failed: {failed_addrs}")
 
   def test_panda_safety_carstate(self):
@@ -164,7 +186,7 @@ class TestCarModel(unittest.TestCase):
     CC = car.CarControl.new_message()
     for can in self.can_msgs:
       for msg in can.can:
-        if msg.src >= 128:
+        if msg.src >= 64:
           continue
         to_send = package_can_msg([msg.address, 0, msg.dat, msg.src])
         ret = self.safety.safety_rx_hook(to_send)
@@ -199,7 +221,7 @@ class TestCarModel(unittest.TestCase):
 
     # TODO: use the same signal in panda and carState
     # tolerate a small delay between the button press and PCM entering a cruise state
-    if self.car_model == HONDA.ACCORD_2021:
+    if self.car_model == HONDA.ACCORD:
       if failed_checks['controlsAllowed'] < 500:
         del failed_checks['controlsAllowed']
 
