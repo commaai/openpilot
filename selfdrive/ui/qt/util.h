@@ -23,8 +23,12 @@ void swagLogMessageHandler(QtMsgType type, const QMessageLogContext &context, co
 void initApp();
 QWidget* topWidget (QWidget* widget);
 
-inline QPixmap scaledPixmap(const QString &fileName, const QSize &size, Qt::AspectRatioMode aspectRatioMode = Qt::KeepAspectRatio) {
-  return QPixmap(fileName).scaled(size, aspectRatioMode, Qt::SmoothTransformation);
+inline QPixmap loadPixmap(const QString &fileName, const QSize &size = {}, Qt::AspectRatioMode aspectRatioMode = Qt::KeepAspectRatio) {
+  if (size.isEmpty()) {
+    return QPixmap(fileName); 
+  } else {
+    return QPixmap(fileName).scaled(size, aspectRatioMode, Qt::SmoothTransformation);
+  }
 }
 
 // convenience class for wrapping layouts
