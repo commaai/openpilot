@@ -5,7 +5,8 @@
 #   mkdir build && cd build && cmake ../ && cmake --build . -- -j$(nproc)
 #
 # instructions (docker build): http://localhost:3000/
-#   docker build -t ghcr.io/commaai/openpilot-docs:latest -f docs/docker/Dockerfile ..
+#   cd openpilot/
+#   docker build -t ghcr.io/commaai/openpilot-docs:latest -f docs/docker/Dockerfile .
 #   docker run --rm -d 3000:80 ghcr.io/commaai/openpilot-docs:latest
 ########################################################################
 

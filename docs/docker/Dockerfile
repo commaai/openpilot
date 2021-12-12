@@ -2,10 +2,10 @@ FROM ghcr.io/commaai/openpilot-base:latest
 
 ENV PYTHONUNBUFFERED 1
 
-ENV OPENPILOT_PATH /home/batman/openpilot/
+ENV OPENPILOT_PATH /home/batman/openpilot
 ENV PYTHONPATH ${OPENPILOT_PATH}:${PYTHONPATH}
 
-RUN mkdir -p ${OPENPILOT_PATH}
+RUN mkdir -p ${OPENPILOT_PATH}/
 WORKDIR ${OPENPILOT_PATH}
 
 COPY Pipfile Pipfile.lock $OPENPILOT_PATH
@@ -16,11 +16,7 @@ RUN pip install --no-cache-dir pipenv==2021.5.29 pip==21.3.1 && \
 
 COPY SConstruct ${OPENPILOT_PATH}
 
-COPY ./pyextra ${OPENPILOT_PATH}/pyextra
-COPY ./third_party ${OPENPILOT_PATH}/third_party
-COPY ./site_scons ${OPENPILOT_PATH}/site_scons
-COPY ./laika ${OPENPILOT_PATH}/laika
-COPY ./laika_repo ${OPENPILOT_PATH}/laika_repo
+COPY ./pyextra ${OPENPILOT_PATH}/pyextrae
 COPY ./rednose ${OPENPILOT_PATH}/rednose
 COPY ./rednose_repo ${OPENPILOT_PATH}/rednose_repo
 COPY ./tools ${OPENPILOT_PATH}/tools
@@ -34,7 +30,7 @@ COPY ./*.md ${OPENPILOT_PATH}/
 
 RUN scons -j$(nproc)
 
-RUN apt update && apt install --no-recommends -y doxygen
+RUN apt update && apt install -y doxygen
 
 COPY ./docs ${OPENPILOT_PATH}/docs
 RUN git init .
