@@ -89,8 +89,8 @@ execute_process(
 add_custom_command(
     OUTPUT rst_html
     COMMAND ${SPHINX_API_EXEC} -o ${CMAKE_CURRENT_BINARY_DIR} ${OPENPILOT_ROOT} ${SPHINX_API_RST_EXCLUDE}
-    COMMAND ${SPHINX_BUILD_EXEC} -b html -T -v ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_BINARY_DIR}/html
-        -Dbreathe_projects.c_docs=${DOXY_BUILD_DIR}
+    COMMAND ${SPHINX_BUILD_EXEC} -b html -T -v ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_BINARY_DIR}/html
+        -Dbreathe_projects.c_docs=${CMAKE_BINARY_DIR}/html/xml
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     COMMENT "generating rst files for sphinx..."
     VERBATIM
@@ -100,5 +100,3 @@ add_custom_target(sphinx_build
     ALL
     DEPENDS rst_html
 )
-
-install(DIRECTORY ${SPHINX_BUILDDIR} DESTINATION ${OPENPILOT_ROOT}/build/docs)

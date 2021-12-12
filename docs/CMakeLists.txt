@@ -1,7 +1,7 @@
 ########################################################################
 # CMake build nstructions for https://docs.comma.ai/
 #
-# instructions (local build): opening `index.html` in a browser
+# instructions (local build): opening `build/html/index.html` in a browser
 #   mkdir build && cd build && cmake ../ && cmake --build . -- -j$(nproc)
 #
 # instructions (docker build): http://localhost:3000/

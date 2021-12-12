@@ -20,10 +20,12 @@ set(DOXY_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/xml CACHE INTERNAL "Path to doxyg
 
 ########################################################################
 # setup doxy_build target
+# generates c/c++ .xml files -> copies to root html/xml
 ########################################################################
 add_custom_command(
-    OUTPUT ${DOXY_BUILD_DIR}
+    OUTPUT doxy_xml
     COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_BINARY_DIR}/xml ${CMAKE_BINARY_DIR}/html/xml
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     COMMENT "generating C/C++ documentation with doxygen..."
     VERBATIM
@@ -31,7 +33,5 @@ add_custom_command(
 
 add_custom_target(doxy_build
     ALL
-    DEPENDS ${DOXY_BUILD_DIR}
+    DEPENDS doxy_xml
 )
-
-install(DIRECTORY ${DOXY_BUILD_DIR} DESTINATION ${OPENPILOT_ROOT}/build/docs)

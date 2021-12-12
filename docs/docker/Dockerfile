@@ -2,7 +2,7 @@ FROM ghcr.io/commaai/openpilot-base:latest
 
 ENV PYTHONUNBUFFERED 1
 
-ENV OPENPILOT_PATH /home/batman/openpilot
+ENV OPENPILOT_PATH /home/batman/openpilot/
 ENV PYTHONPATH ${OPENPILOT_PATH}:${PYTHONPATH}
 
 RUN mkdir -p ${OPENPILOT_PATH}
