@@ -27,7 +27,6 @@ execute_process(
     OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 set(OPENPILOT_ROOT ${OPENPILOT_ROOT} CACHE INTERNAL "openpilot root directory")
-set(CMAKE_INSTALL_PREFIX ${OPENPILOT_ROOT})
 
-add_subdirectory(doxygen)
+# add_subdirectory(doxygen)
 add_subdirectory(sphinx)

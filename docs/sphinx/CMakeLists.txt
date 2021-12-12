@@ -8,51 +8,25 @@ find_package(Sphinx REQUIRED)
 option(SPHINXOPTS "sphinx-build options" "")
 set(SPHINX_BUILDDIR ${OPENPILOT_ROOT}/docs/build/sphinx/html CACHE INTERNAL "Sphinx build output path" )
 
+# sphinx config
 set(CONF_IN ${CMAKE_CURRENT_SOURCE_DIR}/conf.py)
 set(CONF_OUT ${CMAKE_CURRENT_BINARY_DIR}/conf.py)
+configure_file( ${CONF_IN} ${CONF_OUT} @ONLY)
 
-configure_file(
-    ${CONF_IN}
-    ${CONF_OUT}
-    @ONLY
-)
-
-set(RST_IN ${CMAKE_CURRENT_SOURCE_DIR}/overview.rst)
-set(RST_OUT ${CMAKE_CURRENT_BINARY_DIR}/overview.rst)
-
-configure_file(
-    ${RST_IN}
-    ${RST_OUT}
-    @ONLY
-)
-
+# homepage
 set(INDEX_IN ${CMAKE_CURRENT_SOURCE_DIR}/index.md)
 set(INDEX_OUT ${CMAKE_CURRENT_BINARY_DIR}/index.md)
+configure_file(${INDEX_IN} ${INDEX_OUT} @ONLY)
 
-configure_file(
-    ${INDEX_IN}
-    ${INDEX_OUT}
-    @ONLY
-)
+# markdown sub-pages
+set(RST_IN ${CMAKE_CURRENT_SOURCE_DIR}/overview.rst)
+set(RST_OUT ${CMAKE_CURRENT_BINARY_DIR}/overview.rst)
+configure_file( ${RST_IN} ${RST_OUT} @ONLY)
 
-# message(STATUS "Searching for Sphinx .rst docs & configs...")
-set(sphinx_deps_search_cmd "find ${OPENPILOT_ROOT} -type f \\( -name '*.md' -o -name '*.rst' -o -name '*.png' -o -name '*.jpg' \\) \\
-    -not -path '*/.*'   \\
-    -not -path './build/*' \\
-    -not -path './docs/*' \\
-    -not -path './xx/*'"
-)
-
-execute_process(
-    COMMAND bash -c ${sphinx_deps_search_cmd}
-    OUTPUT_VARIABLE SPHINX_DEPS_SRCS
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-
-string(REPLACE "\n" ";" SPHINX_DEPS_SRCS "${SPHINX_DEPS_SRCS}")
-set(SPHINX_DEPS_SRCS ${SPHINX_DEPS_SRCS} CACHE INTERNAL "sphinx base config files")
-# message(STATUS "DEPS_SRCS ${SPHINX_DEPS_SRCS}") # debug
-
+# c doxygen docs
+set(CDOCS_RST_IN ${CMAKE_CURRENT_SOURCE_DIR}/c_docs.rst)
+set(CDOCS_RST_OUT ${CMAKE_CURRENT_BINARY_DIR}/c_docs.rst)
+configure_file( ${CDOCS_RST_IN} ${CDOCS_RST_OUT} @ONLY)
 
 list(APPEND SPHINX_API_RST_EXCLUDE
     ${OPENPILOT_ROOT}/xx
@@ -90,7 +64,7 @@ add_custom_command(
     OUTPUT rst_html
     COMMAND ${SPHINX_API_EXEC} -o ${CMAKE_CURRENT_BINARY_DIR} ${OPENPILOT_ROOT} ${SPHINX_API_RST_EXCLUDE}
     COMMAND ${SPHINX_BUILD_EXEC} -b html -T -v ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_BINARY_DIR}/html
-        -Dbreathe_projects.c_docs=${CMAKE_BINARY_DIR}/html/xml
+        # -Dbreathe_projects.c_docs=${CMAKE_BINARY_DIR}/html/xml/breathe/doxygen
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     COMMENT "generating rst files for sphinx..."
     VERBATIM

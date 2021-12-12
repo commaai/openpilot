@@ -14,10 +14,12 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 import os
+from os.path import exists
+from pathlib import Path
 import sys
-# relative to build/sphinx/
+OPENPILOT_ROOT = os.path.abspath('../../../')           # relative to build/sphinx/
 sys.path.insert(0, os.path.abspath('.'))                # sphinx/build
-sys.path.insert(0, os.path.abspath('../../../'))        # openpilot/
+sys.path.insert(0, OPENPILOT_ROOT)
 
 
 
@@ -42,8 +44,50 @@ extensions = [
 ]
 
 # Breathe Configuration
-breathe_default_project = "c_docs"
+# breathe_default_project = "c_docs"
+breathe_build_directory = f"{OPENPILOT_ROOT}/docs/build/html/xml"
+breathe_separate_member_pages = True
 breathe_default_members = ('members', 'private-members', 'undoc-members')
+breathe_domain_by_extension = {
+        "h" : "cc",
+        }
+breathe_implementation_filename_extensions = ['.c', '.cc', '.cpp']
+breathe_doxygen_config_options = {}
+breathe_projects_source  = {
+        # "loggerd" : ("../../../selfdrive/loggerd", ["logger.h"])
+        }
+
+# only document files that have accompanying .cc files next to them
+print(f"~~~~~~~~~~searching for c_docs...")
+for root, dirs, files in os.walk(OPENPILOT_ROOT):
+        # print(f"root: {root}")
+        found = False
+        breath_src = {}
+        breathe_srcs_list = []
+
+        for file in files:
+                ccFile = os.path.join(root, file)[:-2] +".cc"
+
+                if file.endswith(".h") and exists(ccFile):
+                        f = os.path.join(root, file)
+                        parent_dir = os.path.basename(os.path.dirname(f))
+                        parent_dir_abs = os.path.dirname(f)
+                        print(f"\tFOUND: {f} in {parent_dir} ({parent_dir_abs})")
+
+                        breathe_srcs_list.append(file)
+                        # breathe_srcs_list.append(ccFile)
+                        found = True
+
+                # print(f"\tbreathe_srcs_list: {breathe_srcs_list}")
+
+                if found:
+                        breath_src[parent_dir] = (parent_dir_abs, breathe_srcs_list)
+                        breathe_projects_source.update(breath_src)
+
+print(f"breathe_projects_source: {breathe_projects_source.keys()}")
+# input("Press Enter to continue...")
+
+
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
