@@ -221,11 +221,13 @@ bool FrameReader::copyBuffers(AVFrame *f, uint8_t *rgb, uint8_t *yuv) {
                         rgb, width * 3, width, height);
   } else {
     if (yuv) {
-      libyuv::ConvertFromI420(f->data[0], f->linesize[0],
-                              f->data[1], f->linesize[1],
-                              f->data[2], f->linesize[2],
-                              yuv, width,
-                              width, height, libyuv::FOURCC_I420);
+      uint8_t *u = yuv + width * height;
+      uint8_t *v = u + (width / 2) * (height / 2);
+      libyuv::I420Copy(f->data[0], f->linesize[0],
+                       f->data[1], f->linesize[1],
+                       f->data[2], f->linesize[2],
+                       yuv, width, u, width / 2, v, width / 2,
+                       width, height);
     }
     libyuv::I420ToRGB24(f->data[0], f->linesize[0],
                         f->data[1], f->linesize[1],
