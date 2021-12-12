@@ -123,7 +123,7 @@ void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &fr
 kj::Array<uint8_t> get_frame_image(const CameraBuf *b);
 float set_exposure_target(const CameraBuf *b, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip);
 std::thread start_process_thread(MultiCameraState *cameras, CameraState *cs, process_thread_cb callback);
-void common_process_driver_camera(SubMaster *sm, PubMaster *pm, CameraState *c, int cnt);
+void common_process_driver_camera(MultiCameraState *s, CameraState *c, int cnt);
 
 void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx);
 void cameras_open(MultiCameraState *s);

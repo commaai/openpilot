@@ -408,11 +408,11 @@ static void driver_cam_auto_exposure(CameraState *c, SubMaster &sm) {
   camera_autoexposure(c, set_exposure_target(b, rect.x1, rect.x2, rect.x_skip, rect.y1, rect.y2, rect.y_skip));
 }
 
-void common_process_driver_camera(SubMaster *sm, PubMaster *pm, CameraState *c, int cnt) {
+void common_process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) {
   int j = Hardware::TICI() ? 1 : 3;
   if (cnt % j == 0) {
-    sm->update(0);
-    driver_cam_auto_exposure(c, *sm);
+    s->sm->update(0);
+    driver_cam_auto_exposure(c, *(s->sm));
   }
   MessageBuilder msg;
   auto framed = msg.initEvent().initDriverCameraState();
@@ -421,5 +421,5 @@ void common_process_driver_camera(SubMaster *sm, PubMaster *pm, CameraState *c, 
   if (env_send_driver) {
     framed.setImage(get_frame_image(&c->buf));
   }
-  pm->send("driverCameraState", msg);
+  s->pm->send("driverCameraState", msg);
 }
