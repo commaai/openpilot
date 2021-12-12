@@ -248,9 +248,9 @@ jobs:
                         $UNIT_TEST selfdrive/thermald && \
                         $UNIT_TEST selfdrive/hardware/tici && \
                         $UNIT_TEST tools/lib/tests && \
+                        ./selfdrive/common/tests/test_common && \
                         ./selfdrive/boardd/tests/test_boardd_usbprotocol && \
                         ./selfdrive/loggerd/tests/test_logger &&\
-                        ./selfdrive/common/tests/test_common && \
                         ./selfdrive/proclogd/tests/test_proclog && \
                         ./selfdrive/ui/replay/tests/test_replay && \
                         ./selfdrive/camerad/test/ae_gray_test"
