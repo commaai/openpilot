@@ -16,11 +16,6 @@
 
 #define LM_THRESH 120
 #define LM_PREC_THRESH 0.9 // 90 perc is blur
-
-// only apply to QCOM
-#define FULL_STRIDE_X 1280
-#define FULL_STRIDE_Y 896
-
 #define CONV_LOCAL_WORKSIZE 16
 
 class LapConv {
@@ -34,6 +29,7 @@ private:
   cl_program prg;
   cl_kernel krnl;
   const int width, height;
+  const int full_stride_x;
   std::vector<uint8_t> roi_buf;
   std::vector<int16_t> result_buf;
 };
