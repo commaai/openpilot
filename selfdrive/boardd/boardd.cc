@@ -205,7 +205,7 @@ Panda *usb_connect(std::string serial="", uint32_t index=0) {
 }
 
 void can_send_thread(std::vector<Panda *> pandas, bool fake_send) {
-  set_thread_name("boardd_can_send");
+  util::set_thread_name("boardd_can_send");
 
   AlignedBuffer aligned_buf;
   Context * context = Context::create();
@@ -243,7 +243,7 @@ void can_send_thread(std::vector<Panda *> pandas, bool fake_send) {
 }
 
 void can_recv_thread(std::vector<Panda *> pandas) {
-  set_thread_name("boardd_can_recv");
+  util::set_thread_name("boardd_can_recv");
 
   // can = 8006
   PubMaster pm({"can"});
@@ -415,7 +415,7 @@ void send_peripheral_state(PubMaster *pm, Panda *panda) {
 }
 
 void panda_state_thread(PubMaster *pm, std::vector<Panda *> pandas, bool spoofing_started) {
-  set_thread_name("boardd_panda_state");
+  util::set_thread_name("boardd_panda_state");
 
   Params params;
   Panda *peripheral_panda = pandas[0];
@@ -461,7 +461,7 @@ void panda_state_thread(PubMaster *pm, std::vector<Panda *> pandas, bool spoofin
 
 
 void peripheral_control_thread(Panda *panda) {
-  set_thread_name("boardd_peripheral_control");
+  util::set_thread_name("boardd_peripheral_control");
 
   SubMaster sm({"deviceState", "driverCameraState"});
 
@@ -547,7 +547,7 @@ static void pigeon_publish_raw(PubMaster &pm, const std::string &dat) {
 }
 
 void pigeon_thread(Panda *panda) {
-  set_thread_name("boardd_pigeon");
+  util::set_thread_name("boardd_pigeon");
 
   PubMaster pm({"ubloxRaw"});
   bool ignition_last = false;
@@ -629,9 +629,9 @@ int main(int argc, char *argv[]) {
 
   if (!Hardware::PC()) {
     int err;
-    err = set_realtime_priority(54);
+    err = util::set_realtime_priority(54);
     assert(err == 0);
-    err = set_core_affinity({Hardware::TICI() ? 4 : 3});
+    err = util::set_core_affinity({Hardware::TICI() ? 4 : 3});
     assert(err == 0);
   }
 

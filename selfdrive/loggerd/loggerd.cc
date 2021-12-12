@@ -38,7 +38,7 @@ bool trigger_rotate_if_needed(LoggerdState *s, int cur_seg, uint32_t frame_id) {
 }
 
 void encoder_thread(LoggerdState *s, const LogCameraInfo &cam_info) {
-  set_thread_name(cam_info.filename);
+  util::set_thread_name(cam_info.filename);
 
   int cur_seg = -1;
   int encode_idx = 0;
