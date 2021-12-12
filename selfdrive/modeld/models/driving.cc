@@ -16,8 +16,8 @@ constexpr float FCW_THRESHOLD_5MS2_HIGH = 0.15;
 constexpr float FCW_THRESHOLD_5MS2_LOW = 0.05;
 constexpr float FCW_THRESHOLD_3MS2 = 0.7;
 
-float prev_brake_5ms2_probs[5] = {0,0,0,0,0};
-float prev_brake_3ms2_probs[3] = {0,0,0};
+std::array<float, 5> prev_brake_5ms2_probs = {0,0,0,0,0};
+std::array<float, 3> prev_brake_3ms2_probs = {0,0,0};
 
 // #define DUMP_YUV
 
@@ -52,7 +52,7 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context) {
 #endif
 }
 
-ModelDataRaw model_eval_frame(ModelState* s, cl_mem yuv_cl, int width, int height,
+ModelOutput* model_eval_frame(ModelState* s, cl_mem yuv_cl, int width, int height,
                            const mat3 &transform, float *desire_in) {
 #ifdef DESIRE
   if (desire_in != NULL) {
@@ -69,35 +69,18 @@ ModelDataRaw model_eval_frame(ModelState* s, cl_mem yuv_cl, int width, int heigh
   }
 #endif
 
-  //for (int i = 0; i < NET_OUTPUT_SIZE; i++) { printf("%f ", s->output[i]); } printf("\n");
-
   // if getInputBuf is not NULL, net_input_buf will be
   auto net_input_buf = s->frame->prepare(yuv_cl, width, height, transform, static_cast<cl_mem*>(s->m->getInputBuf()));
   s->m->execute(net_input_buf, s->frame->buf_size);
 
-  // net outputs
-  ModelDataRaw net_outputs {
-    .plans = (ModelDataRawPlans*)&s->output[PLAN_IDX],
-    .lane_lines = (ModelDataRawLaneLines*)&s->output[LL_IDX],
-    .road_edges = (ModelDataRawRoadEdges*)&s->output[RE_IDX],
-    .leads = (ModelDataRawLeads*)&s->output[LEAD_IDX],
-    .meta = &s->output[DESIRE_STATE_IDX],
-    .pose = (ModelDataRawPose*)&s->output[POSE_IDX],
-  };
-  return net_outputs;
+  return (ModelOutput*)&s->output;
 }
 
 void model_free(ModelState* s) {
   delete s->frame;
 }
 
-void fill_sigmoid(const float *input, float *output, int len, int stride) {
-  for (int i=0; i<len; i++) {
-    output[i] = sigmoid(input[i*stride]);
-  }
-}
-
-void fill_lead(cereal::ModelDataV2::LeadDataV3::Builder lead, const ModelDataRawLeads &leads, int t_idx, float prob_t) {
+void fill_lead(cereal::ModelDataV2::LeadDataV3::Builder lead, const ModelOutputLeads &leads, int t_idx, float prob_t) {
   std::array<float, LEAD_TRAJ_LEN> lead_t = {0.0, 2.0, 4.0, 6.0, 8.0, 10.0};
   const auto &best_prediction = leads.get_best_prediction(t_idx);
   lead.setProb(sigmoid(leads.prob[t_idx]));
@@ -125,56 +108,54 @@ void fill_lead(cereal::ModelDataV2::LeadDataV3::Builder lead, const ModelDataRaw
   lead.setAStd(to_kj_array_ptr(lead_a_std));
 }
 
-void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const float *meta_data) {
-  float desire_state_softmax[DESIRE_LEN];
-  float desire_pred_softmax[4*DESIRE_LEN];
-  softmax(&meta_data[0], desire_state_softmax, DESIRE_LEN);
-  for (int i=0; i<4; i++) {
-    softmax(&meta_data[DESIRE_LEN + OTHER_META_SIZE + i*DESIRE_LEN],
-            &desire_pred_softmax[i*DESIRE_LEN], DESIRE_LEN);
+void fill_meta(cereal::ModelDataV2::MetaData::Builder meta, const ModelOutputMeta &meta_data) {
+  std::array<float, DESIRE_LEN> desire_state_softmax;
+  softmax(meta_data.desire_state_prob.array.data(), desire_state_softmax.data(), DESIRE_LEN);
+
+  std::array<float, DESIRE_PRED_LEN * DESIRE_LEN> desire_pred_softmax;
+  for (int i=0; i<DESIRE_PRED_LEN; i++) {
+    softmax(meta_data.desire_pred_prob[i].array.data(), desire_pred_softmax.data() + (i * DESIRE_LEN), DESIRE_LEN);
   }
 
-  float gas_disengage_sigmoid[NUM_META_INTERVALS];
-  float brake_disengage_sigmoid[NUM_META_INTERVALS];
-  float steer_override_sigmoid[NUM_META_INTERVALS];
-  float brake_3ms2_sigmoid[NUM_META_INTERVALS];
-  float brake_4ms2_sigmoid[NUM_META_INTERVALS];
-  float brake_5ms2_sigmoid[NUM_META_INTERVALS];
+  std::array<float, DISENGAGE_LEN> lat_long_t = {2,4,6,8,10};
+  std::array<float, DISENGAGE_LEN> gas_disengage_sigmoid, brake_disengage_sigmoid, steer_override_sigmoid,
+                                   brake_3ms2_sigmoid, brake_4ms2_sigmoid, brake_5ms2_sigmoid;
+  for (int i=0; i<DISENGAGE_LEN; i++) {
+    gas_disengage_sigmoid[i] = sigmoid(meta_data.disengage_prob[i].gas_disengage);
+    brake_disengage_sigmoid[i] = sigmoid(meta_data.disengage_prob[i].brake_disengage);
+    steer_override_sigmoid[i] = sigmoid(meta_data.disengage_prob[i].steer_override);
+    brake_3ms2_sigmoid[i] = sigmoid(meta_data.disengage_prob[i].brake_3ms2);
+    brake_4ms2_sigmoid[i] = sigmoid(meta_data.disengage_prob[i].brake_4ms2);
+    brake_5ms2_sigmoid[i] = sigmoid(meta_data.disengage_prob[i].brake_5ms2);
+    //gas_pressed_sigmoid[i] = sigmoid(meta_data.disengage_prob[i].gas_pressed);
+  }
 
-  fill_sigmoid(&meta_data[DESIRE_LEN+1], gas_disengage_sigmoid, NUM_META_INTERVALS, META_STRIDE);
-  fill_sigmoid(&meta_data[DESIRE_LEN+2], brake_disengage_sigmoid, NUM_META_INTERVALS, META_STRIDE);
-  fill_sigmoid(&meta_data[DESIRE_LEN+3], steer_override_sigmoid, NUM_META_INTERVALS, META_STRIDE);
-  fill_sigmoid(&meta_data[DESIRE_LEN+4], brake_3ms2_sigmoid, NUM_META_INTERVALS, META_STRIDE);
-  fill_sigmoid(&meta_data[DESIRE_LEN+5], brake_4ms2_sigmoid, NUM_META_INTERVALS, META_STRIDE);
-  fill_sigmoid(&meta_data[DESIRE_LEN+6], brake_5ms2_sigmoid, NUM_META_INTERVALS, META_STRIDE);
-  //fill_sigmoid(&meta_data[DESIRE_LEN+7], GAS PRESSED, NUM_META_INTERVALS, META_STRIDE);
-
-  std::memmove(prev_brake_5ms2_probs, &prev_brake_5ms2_probs[1], 4*sizeof(float));
-  std::memmove(prev_brake_3ms2_probs, &prev_brake_3ms2_probs[1], 2*sizeof(float));
+  std::memmove(prev_brake_5ms2_probs.data(), &prev_brake_5ms2_probs[1], 4*sizeof(float));
+  std::memmove(prev_brake_3ms2_probs.data(), &prev_brake_3ms2_probs[1], 2*sizeof(float));
   prev_brake_5ms2_probs[4] = brake_5ms2_sigmoid[0];
   prev_brake_3ms2_probs[2] = brake_3ms2_sigmoid[0];
 
   bool above_fcw_threshold = true;
-  for (int i=0; i<5; i++) {
+  for (int i=0; i<prev_brake_5ms2_probs.size(); i++) {
     float threshold = i < 2 ? FCW_THRESHOLD_5MS2_LOW : FCW_THRESHOLD_5MS2_HIGH;
     above_fcw_threshold = above_fcw_threshold && prev_brake_5ms2_probs[i] > threshold;
   }
-  for (int i=0; i<3; i++) {
+  for (int i=0; i<prev_brake_3ms2_probs.size(); i++) {
     above_fcw_threshold = above_fcw_threshold && prev_brake_3ms2_probs[i] > FCW_THRESHOLD_3MS2;
   }
 
   auto disengage = meta.initDisengagePredictions();
-  disengage.setT({2,4,6,8,10});
-  disengage.setGasDisengageProbs(gas_disengage_sigmoid);
-  disengage.setBrakeDisengageProbs(brake_disengage_sigmoid);
-  disengage.setSteerOverrideProbs(steer_override_sigmoid);
-  disengage.setBrake3MetersPerSecondSquaredProbs(brake_3ms2_sigmoid);
-  disengage.setBrake4MetersPerSecondSquaredProbs(brake_4ms2_sigmoid);
-  disengage.setBrake5MetersPerSecondSquaredProbs(brake_5ms2_sigmoid);
+  disengage.setT(to_kj_array_ptr(lat_long_t));
+  disengage.setGasDisengageProbs(to_kj_array_ptr(gas_disengage_sigmoid));
+  disengage.setBrakeDisengageProbs(to_kj_array_ptr(brake_disengage_sigmoid));
+  disengage.setSteerOverrideProbs(to_kj_array_ptr(steer_override_sigmoid));
+  disengage.setBrake3MetersPerSecondSquaredProbs(to_kj_array_ptr(brake_3ms2_sigmoid));
+  disengage.setBrake4MetersPerSecondSquaredProbs(to_kj_array_ptr(brake_4ms2_sigmoid));
+  disengage.setBrake5MetersPerSecondSquaredProbs(to_kj_array_ptr(brake_5ms2_sigmoid));
 
-  meta.setEngagedProb(sigmoid(meta_data[DESIRE_LEN]));
-  meta.setDesirePrediction(desire_pred_softmax);
-  meta.setDesireState(desire_state_softmax);
+  meta.setEngagedProb(sigmoid(meta_data.engaged_prob));
+  meta.setDesirePrediction(to_kj_array_ptr(desire_pred_softmax));
+  meta.setDesireState(to_kj_array_ptr(desire_state_softmax));
   meta.setHardBrakePredicted(above_fcw_threshold);
 }
 
@@ -197,7 +178,7 @@ void fill_xyzt(cereal::ModelDataV2::XYZTData::Builder xyzt, const std::array<flo
   xyzt.setZStd(to_kj_array_ptr(z_std));
 }
 
-void fill_plan(cereal::ModelDataV2::Builder &framed, const ModelDataRawPlanPrediction &plan) {
+void fill_plan(cereal::ModelDataV2::Builder &framed, const ModelOutputPlanPrediction &plan) {
   std::array<float, TRAJECTORY_SIZE> pos_x, pos_y, pos_z;
   std::array<float, TRAJECTORY_SIZE> pos_x_std, pos_y_std, pos_z_std;
   std::array<float, TRAJECTORY_SIZE> vel_x, vel_y, vel_z;
@@ -229,7 +210,7 @@ void fill_plan(cereal::ModelDataV2::Builder &framed, const ModelDataRawPlanPredi
 }
 
 void fill_lane_lines(cereal::ModelDataV2::Builder &framed, const std::array<float, TRAJECTORY_SIZE> &plan_t,
-                     const ModelDataRawLaneLines &lanes) {
+                     const ModelOutputLaneLines &lanes) {
   std::array<float, TRAJECTORY_SIZE> left_far_y, left_far_z;
   std::array<float, TRAJECTORY_SIZE> left_near_y, left_near_z;
   std::array<float, TRAJECTORY_SIZE> right_near_y, right_near_z;
@@ -267,7 +248,7 @@ void fill_lane_lines(cereal::ModelDataV2::Builder &framed, const std::array<floa
 }
 
 void fill_road_edges(cereal::ModelDataV2::Builder &framed, const std::array<float, TRAJECTORY_SIZE> &plan_t,
-                     const ModelDataRawRoadEdges &edges) {
+                     const ModelOutputRoadEdges &edges) {
   std::array<float, TRAJECTORY_SIZE> left_y, left_z;
   std::array<float, TRAJECTORY_SIZE> right_y, right_z;
   for (int j=0; j<TRAJECTORY_SIZE; j++) {
@@ -287,8 +268,8 @@ void fill_road_edges(cereal::ModelDataV2::Builder &framed, const std::array<floa
   });
 }
 
-void fill_model(cereal::ModelDataV2::Builder &framed, const ModelDataRaw &net_outputs) {
-  const auto &best_plan = net_outputs.plans->get_best_prediction();
+void fill_model(cereal::ModelDataV2::Builder &framed, const ModelOutput &net_outputs) {
+  const auto &best_plan = net_outputs.plans.get_best_prediction();
   std::array<float, TRAJECTORY_SIZE> plan_t;
   std::fill_n(plan_t.data(), plan_t.size(), NAN);
   plan_t[0] = 0.0;
@@ -311,8 +292,8 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelDataRaw &net_ou
   }
 
   fill_plan(framed, best_plan);
-  fill_lane_lines(framed, plan_t, *net_outputs.lane_lines);
-  fill_road_edges(framed, plan_t, *net_outputs.road_edges);
+  fill_lane_lines(framed, plan_t, net_outputs.lane_lines);
+  fill_road_edges(framed, plan_t, net_outputs.road_edges);
 
   // meta
   fill_meta(framed.initMeta(), net_outputs.meta);
@@ -321,12 +302,12 @@ void fill_model(cereal::ModelDataV2::Builder &framed, const ModelDataRaw &net_ou
   auto leads = framed.initLeadsV3(LEAD_MHP_SELECTION);
   std::array<float, LEAD_MHP_SELECTION> t_offsets = {0.0, 2.0, 4.0};
   for (int i=0; i<LEAD_MHP_SELECTION; i++) {
-    fill_lead(leads[i], *net_outputs.leads, i, t_offsets[i]);
+    fill_lead(leads[i], net_outputs.leads, i, t_offsets[i]);
   }
 }
 
 void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id, float frame_drop,
-                   const ModelDataRaw &net_outputs, uint64_t timestamp_eof,
+                   const ModelOutput &net_outputs, uint64_t timestamp_eof,
                    float model_execution_time, kj::ArrayPtr<const float> raw_pred) {
   const uint32_t frame_age = (frame_id > vipc_frame_id) ? (frame_id - vipc_frame_id) : 0;
   MessageBuilder msg;
@@ -344,12 +325,12 @@ void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id, flo
 }
 
 void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_dropped_frames,
-                     const ModelDataRaw &net_outputs, uint64_t timestamp_eof) {
+                     const ModelOutput &net_outputs, uint64_t timestamp_eof) {
   MessageBuilder msg;
-  auto v_mean = net_outputs.pose->velocity_mean;
-  auto r_mean = net_outputs.pose->rotation_mean;
-  auto v_std = net_outputs.pose->velocity_std;
-  auto r_std = net_outputs.pose->rotation_std;
+  auto v_mean = net_outputs.pose.velocity_mean;
+  auto r_mean = net_outputs.pose.rotation_mean;
+  auto v_std = net_outputs.pose.velocity_std;
+  auto r_std = net_outputs.pose.rotation_std;
 
   auto posenetd = msg.initEvent(vipc_dropped_frames < 1).initCameraOdometry();
   posenetd.setTrans({v_mean.x, v_mean.y, v_mean.z});

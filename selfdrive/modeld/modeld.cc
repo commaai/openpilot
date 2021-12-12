@@ -104,7 +104,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client) {
       }
 
       double mt1 = millis_since_boot();
-      ModelDataRaw model_buf = model_eval_frame(&model, buf->buf_cl, buf->width, buf->height,
+      ModelOutput *model_output = model_eval_frame(&model, buf->buf_cl, buf->width, buf->height,
                                                 model_transform, vec_desire);
       double mt2 = millis_since_boot();
       float model_execution_time = (mt2 - mt1) / 1000.0;
@@ -119,9 +119,9 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client) {
 
       float frame_drop_ratio = frames_dropped / (1 + frames_dropped);
 
-      model_publish(pm, extra.frame_id, frame_id, frame_drop_ratio, model_buf, extra.timestamp_eof, model_execution_time,
+      model_publish(pm, extra.frame_id, frame_id, frame_drop_ratio, *model_output, extra.timestamp_eof, model_execution_time,
                     kj::ArrayPtr<const float>(model.output.data(), model.output.size()));
-      posenet_publish(pm, extra.frame_id, vipc_dropped_frames, model_buf, extra.timestamp_eof);
+      posenet_publish(pm, extra.frame_id, vipc_dropped_frames, *model_output, extra.timestamp_eof);
 
       //printf("model process: %.2fms, from last %.2fms, vipc_frame_id %u, frame_id, %u, frame_drop %.3f\n", mt2 - mt1, mt1 - last, extra.frame_id, frame_id, frame_drop_ratio);
       last = mt1;
