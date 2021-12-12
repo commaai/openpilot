@@ -175,7 +175,9 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
   MessageBuilder msg;
   auto framed = msg.initEvent().initRoadCameraState();
   fill_frame_data(framed, b->cur_frame_data);
-  framed.setImage(kj::arrayPtr((const uint8_t *)b->cur_yuv_buf->addr, b->cur_yuv_buf->len));
+  if (env_send_road) {
+    framed.setImage(get_frame_image(&c->buf));
+  }
   framed.setTransform(b->yuv_transform.v);
   s->pm->send("roadCameraState", msg);
 }
