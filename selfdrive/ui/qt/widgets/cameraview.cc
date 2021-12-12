@@ -102,6 +102,10 @@ CameraViewWidget::CameraViewWidget(std::string stream_name, VisionStreamType typ
                                    stream_name(stream_name), stream_type(type), zoomed_view(zoom), QOpenGLWidget(parent) {
   setAttribute(Qt::WA_OpaquePaintEvent);
   connect(this, &CameraViewWidget::vipcThreadConnected, this, &CameraViewWidget::vipcConnected, Qt::BlockingQueuedConnection);
+  connect(this, &CameraViewWidget::vipcThreadFrameReceived, [=](VisionBuf *buf) {
+    latest_frame = buf;
+    update();
+  });
 }
 
 CameraViewWidget::~CameraViewWidget() {
@@ -153,6 +157,7 @@ void CameraViewWidget::initializeGL() {
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   glBindVertexArray(0);
 
+  glGenTextures(3, textures);
   glUseProgram(program->programId());
   glUniform1i(program->uniformLocation("texture_y"), 0);
   glUniform1i(program->uniformLocation("texture_u"), 1);
@@ -243,7 +248,6 @@ void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
   stream_height = vipc_client->buffers[0].height;
 
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-  glGenTextures(3, textures);
   for (int i = 0; i < 3; ++i) {
     glBindTexture(GL_TEXTURE_2D, textures[i]);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
