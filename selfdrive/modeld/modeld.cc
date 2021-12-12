@@ -20,8 +20,8 @@ mat3 cur_transform;
 std::mutex transform_lock;
 
 void calibration_thread(bool wide_camera) {
-  set_thread_name("calibration");
-  set_realtime_priority(50);
+  util::set_thread_name("calibration");
+  util::set_realtime_priority(50);
 
   SubMaster sm({"liveCalibration"});
 
@@ -133,9 +133,9 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client) {
 int main(int argc, char **argv) {
   if (!Hardware::PC()) {
     int ret;
-    ret = set_realtime_priority(54);
+    ret = util::set_realtime_priority(54);
     assert(ret == 0);
-    set_core_affinity({Hardware::EON() ? 2 : 7});
+    util::set_core_affinity({Hardware::EON() ? 2 : 7});
     assert(ret == 0);
   }
 

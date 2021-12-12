@@ -1045,7 +1045,7 @@ static void ops_thread(MultiCameraState *s) {
   CameraExpInfo road_cam_op;
   CameraExpInfo driver_cam_op;
 
-  set_thread_name("camera_settings");
+  util::set_thread_name("camera_settings");
   SubMaster sm({"sensorEvents"});
   while(!do_exit) {
     road_cam_op = road_cam_exp.load();
