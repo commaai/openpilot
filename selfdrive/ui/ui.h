@@ -96,7 +96,7 @@ typedef struct UIScene {
   // lead
   QPointF lead_vertices[2];
 
-  float light_sensor;
+  float light_sensor, accel_sensor, gyro_sensor;
   bool started, ignition, is_metric, longitudinal_control, end_to_end;
   uint64_t started_frame;
 } UIScene;
@@ -153,15 +153,13 @@ private:
 
   bool awake = false;
   int interactive_timeout = 0;
-  float accel_sensor = 0, accel_prev = 0;
-  float gyro_sensor = 0, gyro_prev = 0;
   bool ignition_on = false;
   int last_brightness = 0;
   FirstOrderFilter brightness_filter;
 
   void updateBrightness(const UIState &s);
   void updateWakefulness(const UIState &s);
-  bool userClicked(const UIState &s);
+  bool motionTriggered(const UIState &s);
   void setAwake(bool on);
 
 signals:

@@ -152,6 +152,21 @@ static void update_state(UIState *s) {
   if (sm.updated("carParams")) {
     scene.longitudinal_control = sm["carParams"].getCarParams().getOpenpilotLongitudinalControl();
   }
+  if (!scene.started && sm.updated("sensorEvents")) {
+    for (auto sensor : sm["sensorEvents"].getSensorEvents()) {
+      if (sensor.which() == cereal::SensorEventData::ACCELERATION) {
+        auto accel = sensor.getAcceleration().getV();
+        if (accel.totalSize().wordCount) { // TODO: sometimes empty lists are received. Figure out why
+          scene.accel_sensor = accel[2];
+        }
+      } else if (sensor.which() == cereal::SensorEventData::GYRO_UNCALIBRATED) {
+        auto gyro = sensor.getGyroUncalibrated().getV();
+        if (gyro.totalSize().wordCount) {
+          scene.gyro_sensor = gyro[1];
+        }
+      }
+    }
+  }
   if (sm.updated("roadCameraState")) {
     auto camera_state = sm["roadCameraState"].getRoadCameraState();
 
@@ -289,34 +304,28 @@ void Device::updateBrightness(const UIState &s) {
   last_brightness = brightness;
 }
 
-bool Device::userClicked(const UIState &s) {
-  bool user_clicked = false;
-  // tap detection while display is off
-  if (!awake && s.sm->updated("sensorEvents")) {
-    for (auto sensor : (*s.sm)["sensorEvents"].getSensorEvents()) {
-      if (sensor.getTimestamp() == 0) continue;
-
-      if (sensor.which() == cereal::SensorEventData::ACCELERATION) {
-        accel_sensor = sensor.getAcceleration().getV()[2];
-      } else if (sensor.which() == cereal::SensorEventData::GYRO_UNCALIBRATED) {
-        gyro_sensor = sensor.getGyroUncalibrated().getV()[1];
-      }
-    }
-
-    bool accel_trigger = abs(accel_sensor - accel_prev) > 0.2;
-    bool gyro_trigger = abs(gyro_sensor - gyro_prev) > 0.15;
-    user_clicked = (accel_trigger && gyro_trigger);
-    gyro_prev = gyro_sensor;
-    accel_prev = (accel_prev * (accel_samples - 1) + accel_sensor) / accel_samples;
+bool Device::motionTriggered(const UIState &s) {
+  if (awake) {
+    return false;
   }
-  return user_clicked;
+
+  static float accel_prev = 0;
+  static float gyro_prev = 0;
+
+  bool accel_trigger = abs(s.scene.accel_sensor - accel_prev) > 0.2;
+  bool gyro_trigger = abs(s.scene.gyro_sensor - gyro_prev) > 0.15;
+
+  gyro_prev = s.scene.gyro_sensor;
+  accel_prev = (accel_prev * (accel_samples - 1) + s.scene.accel_sensor) / accel_samples;
+
+  return (accel_trigger && gyro_trigger);
 }
 
 void Device::updateWakefulness(const UIState &s) {
   bool ignition_just_turned_off = !s.scene.ignition && ignition_on;
   ignition_on = s.scene.ignition;
 
-  if (ignition_just_turned_off || userClicked(s)) {
+  if (ignition_just_turned_off || motionTriggered(s)) {
     resetInteractiveTimout();
   } else if (interactive_timeout > 0 && --interactive_timeout == 0) {
     emit interactiveTimout();
