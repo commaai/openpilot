@@ -305,10 +305,6 @@ void Device::updateBrightness(const UIState &s) {
 }
 
 bool Device::motionTriggered(const UIState &s) {
-  if (awake) {
-    return false;
-  }
-
   static float accel_prev = 0;
   static float gyro_prev = 0;
 
@@ -318,7 +314,7 @@ bool Device::motionTriggered(const UIState &s) {
   gyro_prev = s.scene.gyro_sensor;
   accel_prev = (accel_prev * (accel_samples - 1) + s.scene.accel_sensor) / accel_samples;
 
-  return (accel_trigger && gyro_trigger);
+  return (!awake && accel_trigger && gyro_trigger);
 }
 
 void Device::updateWakefulness(const UIState &s) {
