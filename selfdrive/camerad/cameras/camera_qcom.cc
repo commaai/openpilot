@@ -227,7 +227,7 @@ void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_i
     s->stats_bufs[i].allocate(0xb80);
   }
   std::fill_n(s->lapres, std::size(s->lapres), 16160);
-  s->lap_conv = new LapConv(device_id, ctx, s->road_cam.buf.rgb_width, s->road_cam.buf.rgb_height, 3);
+  s->lap_conv = new LapConv(device_id, ctx, s->road_cam.buf.rgb_width, s->road_cam.buf.rgb_height, s->road_cam.buf.rgb_stride, 3);
 }
 
 static void set_exposure(CameraState *s, float exposure_frac, float gain_frac) {
