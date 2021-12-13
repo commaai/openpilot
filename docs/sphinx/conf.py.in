@@ -33,10 +33,25 @@ version = VERSION
 release = VERSION
 
 myst_html_meta = {
-    "description lang=en": "metadata description",
-    "description lang=fr": "description des métadonnées",
-    "keywords": "Sphinx, MyST",
-    "property=og:locale":  "en_US"
+   "description": "openpilot docs",
+   "keywords": "op, openpilot, docs, documentation, @VERSION@",
+   "robots": "all,follow",
+   "googlebot": "index,follow,snippet,archive",
+   "property=og:locale": "en_US",
+   "property=og:site_name": "docs.comma.ai",
+   "property=og:url": "https://docs.openpilot.ai",
+   "property=og:title": "openpilot docs",
+   "property=og:type": "website",
+   "property=og:image:type": "image/jpeg",
+   "property=og:image:width": "400",
+   "property=og:image": "https://docs.openpilot.ai/_static/logo.png",
+   "property=og:image:url": "https://docs.openpilot.ai/_static/logo.png",
+   "property=og:image:secure_url": "https://docs.openpilot.ai/_static/logo.png",
+   "property=og:description": "openpilot docs",
+   "property=twitter:card": "summary_large_image",
+   "property=twitter:logo": "https://docs.openpilot.ai/_static/logo.png",
+   "property=twitter:title": "openpilot docs",
+   "property=twitter:description": "openpilot API docs"
 }
 
 # -- General configuration ---------------------------------------------------
