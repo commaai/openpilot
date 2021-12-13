@@ -287,11 +287,15 @@ def listUploadQueue():
 
 @dispatcher.add_method
 def cancelUpload(upload_id):
-  upload_ids = {item.id for item in list(upload_queue.queue)}
-  if upload_id not in upload_ids:
+  if type(upload_id) != list:
+    upload_id = [upload_id]
+
+  uploading_ids = {item.id for item in list(upload_queue.queue)}
+  cancelled_ids = uploading_ids.intersection(upload_id)
+  if len(cancelled_ids) == 0:
     return 404
 
-  cancelled_uploads.add(upload_id)
+  cancelled_uploads.update(cancelled_ids)
   return {"success": 1}
 
 
