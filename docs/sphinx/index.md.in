@@ -25,7 +25,6 @@ overview.rst
 
 - {ref}`genindex`
 - {ref}`modindex`
-- {ref}`search`
 
 ```{toctree}
 :caption: 'Python API'

@@ -15,20 +15,29 @@
 #
 import os
 from os.path import exists
-from pathlib import Path
 import sys
-OPENPILOT_ROOT = os.path.abspath('../../../')           # relative to build/sphinx/
-sys.path.insert(0, os.path.abspath('.'))                # sphinx/build
+
+# paths setup by cmake
+OPENPILOT_ROOT = os.path.abspath(r'@OPENPILOT_ROOT@')
+VERSION = open(os.path.join(OPENPILOT_ROOT, 'selfdrive/common/version.h')).read().split()[2].strip('"')
+sys.path.insert(0, os.path.abspath(r'@conf_path@'))
 sys.path.insert(0, OPENPILOT_ROOT)
-
-
 
 # -- Project information -----------------------------------------------------
 
 project = 'openpilot'
 copyright = '2021, comma.ai'
 author = 'comma.ai'
+language = 'en'
+version = VERSION
+release = VERSION
 
+myst_html_meta = {
+    "description lang=en": "metadata description",
+    "description lang=fr": "description des métadonnées",
+    "keywords": "Sphinx, MyST",
+    "property=og:locale":  "en_US"
+}
 
 # -- General configuration ---------------------------------------------------
 
@@ -58,9 +67,8 @@ breathe_projects_source  = {
         }
 
 # only document files that have accompanying .cc files next to them
-print(f"~~~~~~~~~~searching for c_docs...")
+print("searching for c_docs...")
 for root, dirs, files in os.walk(OPENPILOT_ROOT):
-        # print(f"root: {root}")
         found = False
         breath_src = {}
         breathe_srcs_list = []
@@ -87,10 +95,8 @@ for root, dirs, files in os.walk(OPENPILOT_ROOT):
 print(f"breathe_projects_source: {breathe_projects_source.keys()}")
 # input("Press Enter to continue...")
 
-
-
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = ['@conf_path@/_templates']
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -104,8 +110,19 @@ exclude_patterns = []
 # a list of builtin themes.
 #
 html_theme = 'sphinx_rtd_theme'
+html_show_copyright = True
+
+github_url = 'https://github.com/commaai/openpilot'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+html_static_path = ['@conf_path@/_static']
+html_logo = '@conf_path@/_static/logo.png'
+html_favicon = '@conf_path@/_static/favicon.ico'
+html_theme_options = {
+    'logo_only': True,
+    'display_version': True,
+    'vcs_pageview_mode': 'blob',
+    'style_nav_header_background': '#000000',
+}

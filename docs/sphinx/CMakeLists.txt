@@ -9,23 +9,33 @@ option(SPHINXOPTS "sphinx-build options" "")
 set(ENV{SPHINXOPTS} ${SPHINXOPTS})
 set(SPHINX_BUILDDIR ${OPENPILOT_ROOT}/docs/build/sphinx/html CACHE INTERNAL "Sphinx build output path" )
 
+# vars to sub in .in files
+set(conf_path "${CMAKE_CURRENT_SOURCE_DIR}")
+
+execute_process(
+    COMMAND git rev-parse --short HEAD
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    OUTPUT_VARIABLE GIT_COMMIT_SHA
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
 # sphinx config
-set(CONF_IN ${CMAKE_CURRENT_SOURCE_DIR}/conf.py)
+set(CONF_IN ${CMAKE_CURRENT_SOURCE_DIR}/conf.py.in)
 set(CONF_OUT ${CMAKE_CURRENT_BINARY_DIR}/conf.py)
 configure_file( ${CONF_IN} ${CONF_OUT} @ONLY)
 
 # homepage
-set(INDEX_IN ${CMAKE_CURRENT_SOURCE_DIR}/index.md)
+set(INDEX_IN ${CMAKE_CURRENT_SOURCE_DIR}/index.md.in)
 set(INDEX_OUT ${CMAKE_CURRENT_BINARY_DIR}/index.md)
 configure_file(${INDEX_IN} ${INDEX_OUT} @ONLY)
 
 # markdown sub-pages
-set(RST_IN ${CMAKE_CURRENT_SOURCE_DIR}/overview.rst)
+set(RST_IN ${CMAKE_CURRENT_SOURCE_DIR}/overview.rst.in)
 set(RST_OUT ${CMAKE_CURRENT_BINARY_DIR}/overview.rst)
 configure_file( ${RST_IN} ${RST_OUT} @ONLY)
 
 # c doxygen docs
-set(CDOCS_RST_IN ${CMAKE_CURRENT_SOURCE_DIR}/c_docs.rst)
+set(CDOCS_RST_IN ${CMAKE_CURRENT_SOURCE_DIR}/c_docs.rst.in)
 set(CDOCS_RST_OUT ${CMAKE_CURRENT_BINARY_DIR}/c_docs.rst)
 configure_file( ${CDOCS_RST_IN} ${CDOCS_RST_OUT} @ONLY)
 
