@@ -137,7 +137,7 @@ void RouteEngine::routeUpdate() {
     }
 
     // ETA
-    float progress = along_geometry.first / segment->distance;
+    float progress = segment->distance == 0.f ? 1.0 : (along_geometry.first / segment->distance);
     float total_distance = segment->distance * (1.0 - progress);
     float total_time = segment->travel_time * (1.0 - progress);
     float total_time_typical = segment->travel_time_typical * (1.0 - progress);

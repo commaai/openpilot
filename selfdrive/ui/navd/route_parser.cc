@@ -24,7 +24,7 @@ static QList<QGeoCoordinate> decodeGeojson(QJsonObject const &geojson) {
 
 static RouteManeuver parseManeuver(QMap<QString, QVariant> const &banner) {
   RouteManeuver maneuver;
-  maneuver.distance_along_geometry = banner["distance_along_geometry"].toDouble();
+  maneuver.distance_along_geometry = banner["distanceAlongGeometry"].toDouble();
 
   auto primary = banner["primary"].toMap();
   maneuver.primary_text = primary["text"].toString();
