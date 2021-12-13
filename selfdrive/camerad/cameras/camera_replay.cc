@@ -67,12 +67,12 @@ void run_camera(CameraState *s) {
 }
 
 void road_camera_thread(CameraState *s) {
-  set_thread_name("replay_road_camera_thread");
+  util::set_thread_name("replay_road_camera_thread");
   run_camera(s);
 }
 
 // void driver_camera_thread(CameraState *s) {
-//   set_thread_name("replay_driver_camera_thread");
+//   util::set_thread_name("replay_driver_camera_thread");
 //   run_camera(s);
 // }
 

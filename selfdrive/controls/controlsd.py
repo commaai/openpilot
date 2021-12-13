@@ -28,6 +28,7 @@ from selfdrive.locationd.calibrationd import Calibration
 from selfdrive.hardware import HARDWARE, TICI, EON
 from selfdrive.manager.process_config import managed_processes
 
+SOFT_DISABLE_TIME = 3  # seconds
 LDW_MIN_SPEED = 31 * CV.MPH_TO_MS
 LANE_DEPARTURE_THRESHOLD = 0.1
 STEER_ANGLE_SATURATION_TIMEOUT = 1.0 / DT_CTRL
@@ -300,7 +301,7 @@ class Controls:
       # Check for mismatch between openpilot and car's PCM
       cruise_mismatch = CS.cruiseState.enabled and (not self.enabled or not self.CP.pcmCruise)
       self.cruise_mismatch_counter = self.cruise_mismatch_counter + 1 if cruise_mismatch else 0
-      if self.cruise_mismatch_counter > int(1. / DT_CTRL):
+      if self.cruise_mismatch_counter > int(3. / DT_CTRL):
         self.events.add(EventName.cruiseMismatch)
 
     # Check for FCW
@@ -430,7 +431,7 @@ class Controls:
         if self.state == State.enabled:
           if self.events.any(ET.SOFT_DISABLE):
             self.state = State.softDisabling
-            self.soft_disable_timer = int(3 / DT_CTRL)
+            self.soft_disable_timer = int(SOFT_DISABLE_TIME / DT_CTRL)
             self.current_alert_types.append(ET.SOFT_DISABLE)
 
         # SOFT DISABLING
@@ -613,7 +614,7 @@ class Controls:
       self.events.add(EventName.ldw)
 
     clear_event = ET.WARNING if ET.WARNING not in self.current_alert_types else None
-    alerts = self.events.create_alerts(self.current_alert_types, [self.CP, self.sm, self.is_metric])
+    alerts = self.events.create_alerts(self.current_alert_types, [self.CP, self.sm, self.is_metric, self.soft_disable_timer])
     self.AM.add_many(self.sm.frame, alerts)
     self.AM.process_alerts(self.sm.frame, clear_event)
     CC.hudControl.visualAlert = self.AM.visual_alert
