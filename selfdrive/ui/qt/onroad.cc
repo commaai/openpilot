@@ -78,7 +78,7 @@ void OnroadWindow::offroadTransition(bool offroad) {
   if (!offroad) {
     if (map == nullptr && (QUIState::ui_state.has_prime || !MAPBOX_TOKEN.isEmpty())) {
       MapWindow * m = new MapWindow(get_mapbox_settings());
-      m->setFixedWidth(topWidget(this)->width() / 2);
+      m->setFixedWidth(uiUtil::topWidget(this)->width() / 2);
       QObject::connect(this, &OnroadWindow::offroadTransitionSignal, m, &MapWindow::offroadTransition);
       split->addWidget(m, 0, Qt::AlignRight);
       map = m;
@@ -144,18 +144,18 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
   p.setPen(QColor(0xff, 0xff, 0xff));
   p.setRenderHint(QPainter::TextAntialiasing);
   if (alert.size == cereal::ControlsState::AlertSize::SMALL) {
-    configFont(p, "Open Sans", 74, "SemiBold");
+    uiUtil::configFont(p, "Open Sans", 74, "SemiBold");
     p.drawText(r, Qt::AlignCenter, alert.text1);
   } else if (alert.size == cereal::ControlsState::AlertSize::MID) {
-    configFont(p, "Open Sans", 88, "Bold");
+    uiUtil::configFont(p, "Open Sans", 88, "Bold");
     p.drawText(QRect(0, c.y() - 125, width(), 150), Qt::AlignHCenter | Qt::AlignTop, alert.text1);
-    configFont(p, "Open Sans", 66, "Regular");
+    uiUtil::configFont(p, "Open Sans", 66, "Regular");
     p.drawText(QRect(0, c.y() + 21, width(), 90), Qt::AlignHCenter, alert.text2);
   } else if (alert.size == cereal::ControlsState::AlertSize::FULL) {
     bool l = alert.text1.length() > 15;
-    configFont(p, "Open Sans", l ? 132 : 177, "Bold");
+    uiUtil::configFont(p, "Open Sans", l ? 132 : 177, "Bold");
     p.drawText(QRect(0, r.y() + (l ? 240 : 270), width(), 600), Qt::AlignHCenter | Qt::TextWordWrap, alert.text1);
-    configFont(p, "Open Sans", 88, "Regular");
+    uiUtil::configFont(p, "Open Sans", 88, "Regular");
     p.drawText(QRect(0, r.height() - (l ? 361 : 420), width(), 300), Qt::AlignHCenter | Qt::TextWordWrap, alert.text2);
   }
 }
@@ -212,20 +212,20 @@ void OnroadHud::paintEvent(QPaintEvent *event) {
   p.drawRoundedRect(rc, 20, 20);
   p.setPen(Qt::NoPen);
 
-  configFont(p, "Open Sans", 48, "Regular");
+  uiUtil::configFont(p, "Open Sans", 48, "Regular");
   drawText(p, rc.center().x(), 118, "MAX", is_cruise_set ? 200 : 100);
   if (is_cruise_set) {
-    configFont(p, "Open Sans", 88, is_cruise_set ? "Bold" : "SemiBold");
+    uiUtil::configFont(p, "Open Sans", 88, is_cruise_set ? "Bold" : "SemiBold");
     drawText(p, rc.center().x(), 212, maxSpeed, 255);
   } else {
-    configFont(p, "Open Sans", 80, "SemiBold");
+    uiUtil::configFont(p, "Open Sans", 80, "SemiBold");
     drawText(p, rc.center().x(), 212, maxSpeed, 100);
   }
 
   // current speed
-  configFont(p, "Open Sans", 176, "Bold");
+  uiUtil::configFont(p, "Open Sans", 176, "Bold");
   drawText(p, rect().center().x(), 210, speed);
-  configFont(p, "Open Sans", 66, "Regular");
+  uiUtil::configFont(p, "Open Sans", 66, "Regular");
   drawText(p, rect().center().x(), 290, speedUnit, 200);
 
   // engage-ability icon

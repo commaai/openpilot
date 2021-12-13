@@ -475,7 +475,7 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
 
   // Show lanes
   bool has_lanes = false;
-  clearLayout(lane_layout);
+  uiUtil::clearLayout(lane_layout);
   for (auto const &lane: instruction.getLanes()) {
     has_lanes = true;
     bool active = lane.getActive();

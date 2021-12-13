@@ -36,7 +36,7 @@ WifiManager::WifiManager(QWidget* parent) : QWidget(parent) {
 
   // Set tethering ssid as "weedle" + first 4 characters of a dongle id
   tethering_ssid = "weedle";
-  if (auto dongle_id = getDongleId()) {
+  if (auto dongle_id = uiUtil::getDongleId()) {
     tethering_ssid += "-" + dongle_id->left(4);
   }
 

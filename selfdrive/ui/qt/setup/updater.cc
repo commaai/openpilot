@@ -190,7 +190,7 @@ bool Updater::eventFilter(QObject *obj, QEvent *event) {
 }
 
 int main(int argc, char *argv[]) {
-  initApp();
+  uiUtil::initApp();
   QApplication a(argc, argv);
   Updater updater(argv[1], argv[2]);
   setMainWindow(&updater);

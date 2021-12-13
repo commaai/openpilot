@@ -6,22 +6,22 @@
 #include <QLayout>
 #include <QMouseEvent>
 #include <QPainter>
-#include <QSurfaceFormat>
 #include <QWidget>
 
-QString getVersion();
+namespace uiUtil {
+
 QString getBrand();
 QString getBrandVersion();
 QString getUserAgent();
 std::optional<QString> getDongleId();
 void configFont(QPainter &p, const QString &family, int size, const QString &style);
-void clearLayout(QLayout* layout);
-void setQtSurfaceFormat();
+void clearLayout(QLayout *layout);
 QString timeAgo(const QDateTime &date);
 void swagLogMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg);
 void initApp();
-QWidget* topWidget (QWidget* widget);
+QWidget *topWidget(QWidget *widget);
 
+}  // namespace uiUtil
 
 // convenience class for wrapping layouts
 class LayoutWidget : public QWidget {

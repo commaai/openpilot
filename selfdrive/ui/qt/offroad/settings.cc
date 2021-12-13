@@ -106,7 +106,7 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
 
 DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   setSpacing(50);
-  addItem(new LabelControl("Dongle ID", getDongleId().value_or("N/A")));
+  addItem(new LabelControl("Dongle ID", uiUtil::getDongleId().value_or("N/A")));
   addItem(new LabelControl("Serial", params.get("HardwareSerial").c_str()));
 
   // offroad-only buttons
@@ -241,7 +241,7 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
   });
 
 
-  auto uninstallBtn = new ButtonControl("Uninstall " + getBrand(), "UNINSTALL");
+  auto uninstallBtn = new ButtonControl("Uninstall " + uiUtil::getBrand(), "UNINSTALL");
   connect(uninstallBtn, &ButtonControl::clicked, [&]() {
     if (ConfirmationDialog::confirm("Are you sure you want to uninstall?", this)) {
       params.putBool("DoUninstall", true);
@@ -274,10 +274,10 @@ void SoftwarePanel::updateLabels() {
   QString lastUpdate = "";
   auto tm = params.get("LastUpdateTime");
   if (!tm.empty()) {
-    lastUpdate = timeAgo(QDateTime::fromString(QString::fromStdString(tm + "Z"), Qt::ISODate));
+    lastUpdate = uiUtil::timeAgo(QDateTime::fromString(QString::fromStdString(tm + "Z"), Qt::ISODate));
   }
 
-  versionLbl->setText(getBrandVersion());
+  versionLbl->setText(uiUtil::getBrandVersion());
   lastUpdateLbl->setText(lastUpdate);
   updateBtn->setText("CHECK");
   updateBtn->setEnabled(true);

@@ -45,7 +45,7 @@ QString create_jwt(const QJsonObject &payloads, int expiry) {
   QJsonObject header = {{"alg", "RS256"}};
 
   auto t = QDateTime::currentSecsSinceEpoch();
-  QJsonObject payload = {{"identity", getDongleId().value_or("")}, {"nbf", t}, {"iat", t}, {"exp", t + expiry}};
+  QJsonObject payload = {{"identity", uiUtil::getDongleId().value_or("")}, {"nbf", t}, {"iat", t}, {"exp", t + expiry}};
   for (auto it = payloads.begin(); it != payloads.end(); ++it) {
     payload.insert(it.key(), it.value());
   }
@@ -93,7 +93,7 @@ void HttpRequest::sendRequest(const QString &requestURL, const HttpRequest::Meth
 
   QNetworkRequest request;
   request.setUrl(QUrl(requestURL));
-  request.setRawHeader("User-Agent", getUserAgent().toUtf8());
+  request.setRawHeader("User-Agent", uiUtil::getUserAgent().toUtf8());
 
   if (!token.isEmpty()) {
     request.setRawHeader(QByteArray("Authorization"), ("JWT " + token).toUtf8());

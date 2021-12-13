@@ -257,7 +257,7 @@ WifiUI::WifiUI(QWidget *parent, WifiManager* wifi) : QWidget(parent), wifi(wifi)
 
 void WifiUI::refresh() {
   // TODO: don't rebuild this every time
-  clearLayout(main_layout);
+  uiUtil::clearLayout(main_layout);
 
   if (wifi->seenNetworks.size() == 0) {
     QLabel *scanning = new QLabel("Scanning for networks...");

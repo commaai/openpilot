@@ -3,13 +3,16 @@
 #include <QApplication>
 #include <QLayoutItem>
 #include <QStyleOption>
+#include <QSurfaceFormat>
 
 #include "selfdrive/common/params.h"
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/hardware/hw.h"
 
+namespace uiUtil {
+
 QString getVersion() {
-  static QString version =  QString::fromStdString(Params().get("Version"));
+  static QString version = QString::fromStdString(Params().get("Version"));
   return version;
 }
 
@@ -98,21 +101,6 @@ void initApp() {
   }
 }
 
-ClickableWidget::ClickableWidget(QWidget *parent) : QWidget(parent) { }
-
-void ClickableWidget::mouseReleaseEvent(QMouseEvent *event) {
-  emit clicked();
-}
-
-// Fix stylesheets
-void ClickableWidget::paintEvent(QPaintEvent *) {
-  QStyleOption opt;
-  opt.init(this);
-  QPainter p(this);
-  style()->drawPrimitive(QStyle::PE_Widget, &opt, &p, this);
-}
-
-
 void swagLogMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg) {
   static std::map<QtMsgType, int> levels = {
     {QtMsgType::QtDebugMsg, CLOUDLOG_DEBUG},
@@ -131,8 +119,23 @@ void swagLogMessageHandler(QtMsgType type, const QMessageLogContext &context, co
   cloudlog_e(levels[type], file.c_str(), context.line, function.c_str(), "%s", bts.constData());
 }
 
-
-QWidget* topWidget (QWidget* widget) {
-  while (widget->parentWidget() != nullptr) widget=widget->parentWidget();
+QWidget *topWidget(QWidget *widget) {
+  while (widget->parentWidget() != nullptr) widget = widget->parentWidget();
   return widget;
+}
+
+}  // namespace uiUtil
+
+ClickableWidget::ClickableWidget(QWidget *parent) : QWidget(parent) {}
+
+void ClickableWidget::mouseReleaseEvent(QMouseEvent *event) {
+  emit clicked();
+}
+
+// Fix stylesheets
+void ClickableWidget::paintEvent(QPaintEvent *) {
+  QStyleOption opt;
+  opt.init(this);
+  QPainter p(this);
+  style()->drawPrimitive(QStyle::PE_Widget, &opt, &p, this);
 }

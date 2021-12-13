@@ -122,7 +122,7 @@ MapPanel::MapPanel(QWidget* parent) : QWidget(parent) {
 
   clear();
 
-  if (auto dongle_id = getDongleId()) {
+  if (auto dongle_id = uiUtil::getDongleId()) {
     // Fetch favorite and recent locations
     {
       QString url = CommaApi::BASE_URL + "/v1/navigation/" + *dongle_id + "/locations";
@@ -168,7 +168,7 @@ void MapPanel::clear() {
   work_address->setText("No work\nlocation set");
   work_button->disconnect();
 
-  clearLayout(recent_layout);
+  uiUtil::clearLayout(recent_layout);
 }
 
 void MapPanel::updateCurrentRoute() {

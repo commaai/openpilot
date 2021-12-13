@@ -20,7 +20,7 @@ void sigHandler(int s) {
 
 
 int main(int argc, char *argv[]) {
-  qInstallMessageHandler(swagLogMessageHandler);
+  qInstallMessageHandler(uiUtil::swagLogMessageHandler);
 
   QApplication app(argc, argv);
   std::signal(SIGINT, sigHandler);

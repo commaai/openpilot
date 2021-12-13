@@ -158,7 +158,7 @@ PrimeUserWidget::PrimeUserWidget(QWidget* parent) : QWidget(parent) {
   mainLayout->addStretch();
 
   // set up API requests
-  if (auto dongleId = getDongleId()) {
+  if (auto dongleId = uiUtil::getDongleId()) {
     QString url = CommaApi::BASE_URL + "/v1/devices/" + *dongleId + "/owner";
     RequestRepeater *repeater = new RequestRepeater(this, url, "ApiCache_Owner", 6);
     QObject::connect(repeater, &RequestRepeater::requestDone, this, &PrimeUserWidget::replyFinished);
@@ -287,7 +287,7 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
   setSizePolicy(sp_retain);
 
   // set up API requests
-  if (auto dongleId = getDongleId()) {
+  if (auto dongleId = uiUtil::getDongleId()) {
     QString url = CommaApi::BASE_URL + "/v1.1/devices/" + *dongleId + "/";
     RequestRepeater* repeater = new RequestRepeater(this, url, "ApiCache_Device", 5);
 

@@ -11,7 +11,7 @@
 #include "selfdrive/ui/qt/widgets/scrollview.h"
 
 int main(int argc, char *argv[]) {
-  initApp();
+  uiUtil::initApp();
   QApplication a(argc, argv);
   QWidget window;
   setMainWindow(&window);

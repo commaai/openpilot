@@ -221,7 +221,7 @@ void Installer::cloneFinished(int exitCode, QProcess::ExitStatus exitStatus) {
 }
 
 int main(int argc, char *argv[]) {
-  initApp();
+  uiUtil::initApp();
   QApplication a(argc, argv);
   Installer installer;
   setMainWindow(&installer);

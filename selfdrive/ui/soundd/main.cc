@@ -10,7 +10,7 @@ void sigHandler(int s) {
 }
 
 int main(int argc, char **argv) {
-  qInstallMessageHandler(swagLogMessageHandler);
+  qInstallMessageHandler(uiUtil::swagLogMessageHandler);
   setpriority(PRIO_PROCESS, 0, -20);
 
   QApplication a(argc, argv);
