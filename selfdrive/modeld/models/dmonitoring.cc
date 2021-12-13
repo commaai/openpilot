@@ -10,9 +10,8 @@
 
 #include "selfdrive/modeld/models/dmonitoring.h"
 
-#define MODEL_WIDTH 320
-#define MODEL_HEIGHT 640
-#define FULL_W 852 // should get these numbers from camerad
+constexpr int MODEL_WIDTH = 320;
+constexpr int MODEL_HEIGHT = 640;
 
 template <class T>
 static inline T *get_buffer(std::vector<T> &buf, const size_t size) {
