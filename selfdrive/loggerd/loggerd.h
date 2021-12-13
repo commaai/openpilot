@@ -108,7 +108,6 @@ const LogCameraInfo qcam_info = {
 };
 
 struct LoggerdState {
-  Context *ctx;
   std::unique_ptr<LoggerManager> logger_manager;
   std::shared_ptr<Logger> lh;
   std::mutex rotate_lock;

@@ -497,8 +497,6 @@ int Localizer::locationd_thread() {
   PubMaster pm({ "liveLocationKalman" });
   SubMaster sm(service_list, nullptr, { "gpsLocationExternal" });
 
-  Params params;
-
   while (!do_exit) {
     sm.update();
     for (const char* service : service_list) {
@@ -523,8 +521,8 @@ int Localizer::locationd_thread() {
         std::string lastGPSPosJSON = util::string_format(
           "{\"latitude\": %.15f, \"longitude\": %.15f, \"altitude\": %.15f}", posGeo(0), posGeo(1), posGeo(2));
 
-        std::thread([&params] (const std::string gpsjson) {
-          params.put("LastGPSPosition", gpsjson);
+        std::thread([] (const std::string gpsjson) {
+          Params().put("LastGPSPosition", gpsjson);
         }, lastGPSPosJSON).detach();
       }
     }
@@ -533,7 +531,7 @@ int Localizer::locationd_thread() {
 }
 
 int main() {
-  set_realtime_priority(5);
+  util::set_realtime_priority(5);
 
   Localizer localizer;
   return localizer.locationd_thread();

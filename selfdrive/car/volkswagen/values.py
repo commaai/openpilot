@@ -122,6 +122,7 @@ FW_VERSIONS = {
       b'\xf1\x8703H906026F \xf1\x896696',
       b'\xf1\x8703H906026F \xf1\x899970',
       b'\xf1\x8703H906026J \xf1\x896026',
+      b'\xf1\x8703H906026J \xf1\x899971',
       b'\xf1\x8703H906026S \xf1\x896693',
       b'\xf1\x8703H906026S \xf1\x899970',
     ],
@@ -560,6 +561,7 @@ FW_VERSIONS = {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8705E906018N \xf1\x899970',
       b'\xf1\x8783A906259  \xf1\x890001',
+      b'\xf1\x8783A906259  \xf1\x890005',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x8709G927158CN\xf1\x893608',

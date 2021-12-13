@@ -38,7 +38,7 @@ bool trigger_rotate_if_needed(LoggerdState *s, std::shared_ptr<Logger> lh, uint3
 }
 
 void encoder_thread(LoggerdState *s, const LogCameraInfo &cam_info) {
-  set_thread_name(cam_info.filename);
+  util::set_thread_name(cam_info.filename);
 
   int encode_idx = 0;
   std::vector<Encoder *> encoders;
@@ -163,24 +163,29 @@ void rotate_if_needed(LoggerdState *s) {
 void loggerd_thread() {
   // setup messaging
   typedef struct QlogState {
+    std::string name;
     int counter, freq;
   } QlogState;
   std::unordered_map<SubSocket*, QlogState> qlog_states;
 
-  LoggerdState s;
-  s.ctx = Context::create();
-  Poller * poller = Poller::create();
+  std::unique_ptr<Context> ctx(Context::create());
+  std::unique_ptr<Poller> poller(Poller::create());
 
   // subscribe to all socks
   for (const auto& it : services) {
     if (!it.should_log) continue;
 
-    SubSocket * sock = SubSocket::create(s.ctx, it.name);
+    SubSocket * sock = SubSocket::create(ctx.get(), it.name);
     assert(sock != NULL);
     poller->registerSocket(sock);
-    qlog_states[sock] = {.counter = 0, .freq = it.decimation};
+    qlog_states[sock] = {
+      .name = it.name,
+      .counter = 0,
+      .freq = it.decimation,
+    };
   }
 
+  LoggerdState s;
   // init logger
   s.logger_manager = std::make_unique<LoggerManager>(LOG_ROOT);
   logger_rotate(&s);
@@ -201,7 +206,10 @@ void loggerd_thread() {
   while (!do_exit) {
     // poll for new messages on all sockets
     for (auto sock : poller->poll(1000)) {
+      if (do_exit) break;
+
       // drain socket
+      int count = 0;
       QlogState &qs = qlog_states[sock];
       Message *msg = nullptr;
       while (!do_exit && (msg = sock->receive(true))) {
@@ -215,6 +223,12 @@ void loggerd_thread() {
         if ((++msg_count % 1000) == 0) {
           double seconds = (millis_since_boot() - start_ts) / 1000.0;
           LOGD("%lu messages, %.2f msg/sec, %.2f KB/sec", msg_count, msg_count / seconds, bytes_count * 0.001 / seconds);
+        }
+
+        count++;
+        if (count >= 200) {
+          LOGE("large volume of '%s' messages", qs.name.c_str());
+          break;
         }
       }
     }
@@ -235,6 +249,4 @@ void loggerd_thread() {
 
   // messaging cleanup
   for (auto &[sock, qs] : qlog_states) delete sock;
-  delete poller;
-  delete s.ctx;
 }

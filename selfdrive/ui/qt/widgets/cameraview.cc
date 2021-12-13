@@ -1,12 +1,18 @@
 #include "selfdrive/ui/qt/widgets/cameraview.h"
 
+#ifdef __APPLE__
+#include <OpenGL/gl3.h>
+#else
+#include <GLES3/gl3.h>
+#endif
+
 #include <QOpenGLBuffer>
 #include <QOffscreenSurface>
 
 namespace {
 
 const char frame_vertex_shader[] =
-#ifdef NANOVG_GL3_IMPLEMENTATION
+#ifdef __APPLE__
   "#version 150 core\n"
 #else
   "#version 300 es\n"
@@ -21,7 +27,7 @@ const char frame_vertex_shader[] =
   "}\n";
 
 const char frame_fragment_shader[] =
-#ifdef NANOVG_GL3_IMPLEMENTATION
+#ifdef __APPLE__
   "#version 150 core\n"
 #else
   "#version 300 es\n"
@@ -45,28 +51,22 @@ const mat4 device_transform = {{
   0.0,  0.0, 0.0, 1.0,
 }};
 
-mat4 get_driver_view_transform() {
+mat4 get_driver_view_transform(int screen_width, int screen_height, int stream_width, int stream_height) {
   const float driver_view_ratio = 1.333;
   mat4 transform;
-  if (Hardware::TICI()) {
-    // from dmonitoring.cc
-    const int full_width_tici = 1928;
-    const int full_height_tici = 1208;
-    const int adapt_width_tici = 954;
-    const int crop_x_offset = -72;
-    const int crop_y_offset = -144;
-    const float yscale = full_height_tici * driver_view_ratio / adapt_width_tici;
-    const float xscale = yscale*(1080)/(2160)*full_width_tici/full_height_tici;
+  if (stream_width == TICI_CAM_WIDTH) {
+    const float yscale = stream_height * driver_view_ratio / tici_dm_crop::width;
+    const float xscale = yscale*screen_height/screen_width*stream_width/stream_height;
     transform = (mat4){{
-      xscale,  0.0, 0.0, xscale*crop_x_offset/full_width_tici*2,
-      0.0,  yscale, 0.0, yscale*crop_y_offset/full_height_tici*2,
+      xscale,  0.0, 0.0, xscale*tici_dm_crop::x_offset/stream_width*2,
+      0.0,  yscale, 0.0, yscale*tici_dm_crop::y_offset/stream_height*2,
       0.0,  0.0, 1.0, 0.0,
       0.0,  0.0, 0.0, 1.0,
     }};
   } else {
     // frame from 4/3 to 16/9 display
     transform = (mat4){{
-      driver_view_ratio*(1080)/(1920),  0.0, 0.0, 0.0,
+      driver_view_ratio * screen_height / screen_width,  0.0, 0.0, 0.0,
       0.0,  1.0, 0.0, 0.0,
       0.0,  0.0, 1.0, 0.0,
       0.0,  0.0, 0.0, 1.0,
@@ -172,7 +172,7 @@ void CameraViewWidget::hideEvent(QHideEvent *event) {
 void CameraViewWidget::updateFrameMat(int w, int h) {
   if (zoomed_view) {
     if (stream_type == VISION_STREAM_RGB_FRONT) {
-      frame_mat = matmul(device_transform, get_driver_view_transform());
+      frame_mat = matmul(device_transform, get_driver_view_transform(w, h, stream_width, stream_height));
     } else {
       auto intrinsic_matrix = stream_type == VISION_STREAM_RGB_WIDE ? ecam_intrinsic_matrix : fcam_intrinsic_matrix;
       float zoom = ZOOM / intrinsic_matrix.v[0];
