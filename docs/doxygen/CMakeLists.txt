@@ -1,3 +1,8 @@
+###############################################
+# build procedures to document _all_ c methods
+# `sphinx-build` may not play well sometimes...
+################################################
+
 find_package(Doxygen REQUIRED)
 
 file(TO_NATIVE_PATH ${OPENPILOT_ROOT} top_srcdir)

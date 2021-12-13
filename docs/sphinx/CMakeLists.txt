@@ -6,6 +6,7 @@
 find_package(Sphinx REQUIRED)
 
 option(SPHINXOPTS "sphinx-build options" "")
+set(ENV{SPHINXOPTS} ${SPHINXOPTS})
 set(SPHINX_BUILDDIR ${OPENPILOT_ROOT}/docs/build/sphinx/html CACHE INTERNAL "Sphinx build output path" )
 
 # sphinx config
@@ -56,7 +57,10 @@ set(SPHINX_API_RST_EXCLUDE ${SPHINX_API_RST_EXCLUDE} CACHE INTERNAL "sphinx .rst
 
 # copy OP docs to build directory (keep the same file struct)
 execute_process(
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/sphinx-config.sh ${OPENPILOT_ROOT} ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}
+    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/sphinx-config.sh
+        ${OPENPILOT_ROOT}
+        ${CMAKE_CURRENT_BINARY_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
 # build rst & html files (main target)
@@ -64,9 +68,9 @@ add_custom_command(
     OUTPUT rst_html
     COMMAND ${SPHINX_API_EXEC} -o ${CMAKE_CURRENT_BINARY_DIR} ${OPENPILOT_ROOT} ${SPHINX_API_RST_EXCLUDE}
     COMMAND ${SPHINX_BUILD_EXEC} -b html -T -v ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_BINARY_DIR}/html
-        # -Dbreathe_projects.c_docs=${CMAKE_BINARY_DIR}/html/xml/breathe/doxygen
+        # -Dbreathe_projects.c_docs=${CMAKE_BINARY_DIR}/html/xml/breathe/doxygen    # document all doxygen-generated docs
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    COMMENT "generating rst files for sphinx..."
+    COMMENT "building rst and html files..."
     VERBATIM
 )
 
