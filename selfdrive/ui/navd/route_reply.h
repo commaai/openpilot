@@ -11,34 +11,33 @@ struct RouteManeuverLane {
 };
 
 struct RouteManeuver {
-  QGeoCoordinate position;
-  std::optional<QString> primary_text;
+  float distance_along_geometry;
+  QString primary_text;
   std::optional<QString> type;
   std::optional<QString> modifier;
   std::optional<QString> secondary_text;
   std::optional<QList<RouteManeuverLane>> lanes;
-  float distance_along_geometry;
-  float typical_duration;
 };
 
 struct RouteAnnotation {
-  double speed_limit;
+  float speed_limit;
 };
 
 struct RouteSegment {
-  int travel_time;
-  double distance;
-  RouteManeuver maneuver;
+  float distance;
+  float travel_time;
+  float travel_time_typical;
   QList<QGeoCoordinate> path = {};
   QList<RouteAnnotation> annotations = {};
+  QList<RouteManeuver> maneuvers = {};
 };
 
 struct Route {
-  double distance;
-  int travel_time;
-  QList<RouteSegment> segments = {};
+  float distance;
+  float travel_time;
   QList<QGeoCoordinate> path = {};
   QList<RouteAnnotation> annotations = {};
+  QList<RouteSegment> segments = {};
 };
 
 class RouteReply : public QObject {

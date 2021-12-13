@@ -11,11 +11,8 @@ class RouteParser : public QObject {
   Q_OBJECT
 
 public:
-  RouteParser();
+  RouteParser() {}
 
   RouteReply::Error parseReply(QList<Route> &routes, QString &error_string, const QByteArray &reply) const;
   QUrl requestUrl(const QGeoRouteRequest &request, const QString &prefix) const;
-
-private:
-  std::optional<RouteSegment> parseStep(const QJsonObject &step) const;
 };

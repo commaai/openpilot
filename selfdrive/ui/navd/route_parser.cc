@@ -22,7 +22,8 @@ static QList<QGeoCoordinate> decodeGeojson(QJsonObject const &geojson) {
   return path;
 }
 
-static void parse_banner(RouteManeuver &maneuver, QMap<QString, QVariant> const &banner) {
+static RouteManeuver parseManeuver(QMap<QString, QVariant> const &banner) {
+  RouteManeuver maneuver;
   maneuver.distance_along_geometry = banner["distance_along_geometry"].toDouble();
 
   auto primary = banner["primary"].toMap();
@@ -41,72 +42,50 @@ static void parse_banner(RouteManeuver &maneuver, QMap<QString, QVariant> const 
 
   if (banner.contains("sub")) {
     auto s = banner["sub"].toMap();
-    auto components = s["components"].toList();
-
     auto lanes = QList<RouteManeuverLane>();
-    for (auto &c : components) {
+    for (auto &c : s["components"].toList()) {
       auto component = c.toMap();
       if (component["type"].toString() == "lane") {
         auto lane = RouteManeuverLane();
         lane.active = component["active"].toBool();
-
-        if (component.contains("active_direction")) {
+        if (component.contains("active_direction"))
           lane.active_direction = component["active_direction"].toString();
-        }
-
-        QList<QString> directions;
-        for (auto &dir : component["directions"].toList()) {
-          directions.append(dir.toString());
-        }
-
+        for (auto &dir : component["directions"].toList())
+          lane.directions.append(dir.toString());
         lanes.append(lane);
       }
     }
     maneuver.lanes = lanes;
   }
+
+  return maneuver;
 }
 
-RouteParser::RouteParser() { }
+static RouteSegment parseSegment(QJsonObject const &step) {
+  RouteSegment segment;
+  segment.distance = step.value("distance").toDouble();
+  segment.travel_time = step.value("duration").toDouble();
+  segment.travel_time_typical = step.contains("duration_typical") ? step.value("duration_typical").toDouble() : segment.travel_time;
+  segment.path = decodeGeojson(step.value("geometry").toObject());
 
-std::optional<RouteSegment> RouteParser::parseStep(QJsonObject const &step) const {
-  if (!step.value("maneuver").isObject())
-    return {};
-  auto maneuver = step.value("maneuver").toObject();
-  if (!step.value("duration").isDouble())
-    return {};
-  if (!step.value("distance").isDouble())
-    return {};
-  if (!step.value("intersections").isArray())
-    return {};
-  if (!maneuver.value("location").isArray())
-    return {};
-
-  auto time = step.value("duration").toDouble();
-  auto distance = step.value("distance").toDouble();
-  auto path = decodeGeojson(step.value("geometry").toObject());
-
-  auto position = maneuver.value("location").toArray();
-  if (position.isEmpty())
-    return {};
-  auto latitude = position[1].toDouble();
-  auto longitude = position[0].toDouble();
-  QGeoCoordinate coord(latitude, longitude);
-
-  RouteManeuver routeManeuver;
-  routeManeuver.position = coord;
-  routeManeuver.typical_duration = step.value("duration_typical").toDouble();
-
-  if (step.value("bannerInstructions").isArray() && step.value("bannerInstructions").toArray().size() > 0) {
-    auto const &banner = step.value("bannerInstructions").toArray().first();
+  // Mapbox's "banners" are generally more useful than their "maneuver", so prefer the banners, falling back to the maneuver
+  auto banners = step.value("bannerInstructions").toArray();
+  for (auto const &banner : banners) {
     if (banner.isObject())
-      parse_banner(routeManeuver, banner.toObject().toVariantMap());
+      segment.maneuvers.append(parseManeuver(banner.toObject().toVariantMap()));
   }
 
-  RouteSegment segment;
-  segment.distance = distance;
-  segment.path = path;
-  segment.travel_time = time;
-  segment.maneuver = routeManeuver;
+  if (segment.maneuvers.size() == 0) {
+    auto m = step.value("maneuver").toObject();
+    RouteManeuver maneuver;
+    maneuver.distance_along_geometry = segment.distance;
+    maneuver.primary_text = m.value("instruction").toString();
+    maneuver.type = m.value("type").toString();
+    if (m.contains("modifier"))
+      maneuver.modifier = m.value("modifier").toString();
+    segment.maneuvers.append(maneuver);
+  }
+
   return segment;
 }
 
@@ -138,8 +117,8 @@ RouteReply::Error RouteParser::parseReply(QList<Route> &routes, QString &error_s
       if (!routeObject.value("distance").isDouble())
         continue;
 
-      auto distance = routeObject.value("distance").toDouble();
       auto travel_time = routeObject.value("duration").toDouble();
+      auto distance = routeObject.value("distance").toDouble();
       auto error = false;
       QList<RouteSegment> segments;
       QList<RouteAnnotation> annotations;
@@ -162,13 +141,7 @@ RouteReply::Error RouteParser::parseReply(QList<Route> &routes, QString &error_s
             error = true;
             break;
           }
-          auto segment = parseStep(s.toObject());
-          if (segment) {
-            leg_segments.append(segment.value());
-          } else {
-            error = true;
-            break;
-          }
+          leg_segments.append(parseSegment(s.toObject()));
         }
         if (error)
           break;
@@ -182,7 +155,7 @@ RouteReply::Error RouteParser::parseReply(QList<Route> &routes, QString &error_s
           auto unknown = max_speed.value("unknown").toBool();
           auto speed = max_speed.value("speed").toDouble();
           auto unit = max_speed.value("unit").toString();
-          auto speed_limit = unknown ? 0
+          float const speed_limit = unknown ? 0
               : unit == "km/h"       ? speed * KPH_TO_MS
               : unit == "mph"        ? speed * MPH_TO_MS
                                      : 0;

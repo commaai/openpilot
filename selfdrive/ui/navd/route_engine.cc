@@ -16,10 +16,6 @@
 const qreal REROUTE_DISTANCE = 25;
 const float MANEUVER_TRANSITION_THRESHOLD = 10;
 
-static float get_time_typical(const RouteSegment &segment) {
-  return std::fmax(segment.maneuver.typical_duration, segment.travel_time);
-}
-
 static cereal::NavInstruction::Direction string_to_direction(QString d) {
   if (d.contains("left")) {
     return cereal::NavInstruction::Direction::LEFT;
@@ -103,21 +99,24 @@ void RouteEngine::routeUpdate() {
   cereal::NavInstruction::Builder instruction = evt.initNavInstruction();
 
   if (segment) {
-    auto maneuver = segment->maneuver;
     auto along_geometry = distance_along_geometry(segment->path, to_QGeoCoordinate(*last_position));
     float distance_to_maneuver_along_geometry = segment->distance - along_geometry.first;
 
+    auto& maneuver = segment->maneuvers[0];
+    for (auto const& m : segment->maneuvers)
+      if (distance_to_maneuver_along_geometry < m.distance_along_geometry)
+        maneuver = m;
+
     // Route instructions
     instruction.setShowFull(distance_to_maneuver_along_geometry < maneuver.distance_along_geometry);
+    instruction.setManeuverDistance(distance_to_maneuver_along_geometry);
+    instruction.setManeuverPrimaryText(maneuver.primary_text.toStdString());
     if (maneuver.type)
       instruction.setManeuverType(maneuver.type->toStdString());
     if (maneuver.modifier)
       instruction.setManeuverModifier(maneuver.modifier->toStdString());
-    if (maneuver.primary_text)
-      instruction.setManeuverPrimaryText(maneuver.primary_text->toStdString());
     if (maneuver.secondary_text)
       instruction.setManeuverSecondaryText(maneuver.secondary_text->toStdString());
-    instruction.setManeuverDistance(distance_to_maneuver_along_geometry);
     if (along_geometry.second < segment->annotations.size())
       instruction.setSpeedLimit(segment->annotations[along_geometry.second].speed_limit);
 
@@ -125,11 +124,11 @@ void RouteEngine::routeUpdate() {
     if (maneuver.lanes) {
       auto lanes = instruction.initLanes(maneuver.lanes->size());
       for (int i = 0; i < maneuver.lanes->size(); i++) {
-        auto &l = maneuver.lanes->at(i);
+        auto const &l = maneuver.lanes->at(i);
         auto lane = lanes[i];
         lane.setActive(l.active);
         if (l.active_direction)
-          lane.setActiveDirection(string_to_direction(l.active_direction.value()));
+          lane.setActiveDirection(string_to_direction(*l.active_direction));
         auto directions = lane.initDirections(l.directions.size());
         for (int j = 0; j < l.directions.size(); j++) {
           directions.set(j, string_to_direction(l.directions[j]));
@@ -141,13 +140,13 @@ void RouteEngine::routeUpdate() {
     float progress = along_geometry.first / segment->distance;
     float total_distance = segment->distance * (1.0 - progress);
     float total_time = segment->travel_time * (1.0 - progress);
-    float total_time_typical = get_time_typical(segment.value()) * (1.0 - progress);
+    float total_time_typical = segment->travel_time_typical * (1.0 - progress);
 
     for (int i = segment_index + 1; i < route->segments.size(); i++) {
       auto &s = route->segments.at(i);
       total_distance += s.distance;
       total_time += s.travel_time;
-      total_time_typical += get_time_typical(s);
+      total_time_typical += s.travel_time_typical;
     }
     instruction.setTimeRemaining(total_time);
     instruction.setTimeRemainingTypical(total_time_typical);
@@ -166,7 +165,7 @@ void RouteEngine::routeUpdate() {
         Params().remove("NavDestination");
 
         // Clear route if driving away from destination
-        float d = segment->maneuver.position.distanceTo(to_QGeoCoordinate(*last_position));
+        float d = segment->path.last().distanceTo(to_QGeoCoordinate(*last_position));
         if (d > REROUTE_DISTANCE) {
           clearRoute();
         }
