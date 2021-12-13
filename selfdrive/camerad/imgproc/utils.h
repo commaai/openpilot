@@ -20,7 +20,7 @@
 
 class LapConv {
 public:
-  LapConv(cl_device_id device_id, cl_context ctx, int rgb_width, int rgb_height, int filter_size);
+  LapConv(cl_device_id device_id, cl_context ctx, int rgb_width, int rgb_height, int rgb_stride, int filter_size);
   ~LapConv();
   uint16_t Update(cl_command_queue q, const uint8_t *rgb_buf, const int roi_id);
 
@@ -29,7 +29,7 @@ private:
   cl_program prg;
   cl_kernel krnl;
   const int width, height;
-  const int full_stride_x;
+  const int rgb_stride;
   std::vector<uint8_t> roi_buf;
   std::vector<int16_t> result_buf;
 };

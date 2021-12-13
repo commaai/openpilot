@@ -55,8 +55,8 @@ static cl_program build_conv_program(cl_device_id device_id, cl_context context,
   return cl_program_from_file(context, device_id, "imgproc/conv.cl", args);
 }
 
-LapConv::LapConv(cl_device_id device_id, cl_context ctx, int rgb_width, int rgb_height, int filter_size)
-    : width(rgb_width / NUM_SEGMENTS_X), height(rgb_height / NUM_SEGMENTS_Y), full_stride_x(rgb_width),
+LapConv::LapConv(cl_device_id device_id, cl_context ctx, int rgb_width, int rgb_height, int rgb_stride, int filter_size)
+    : width(rgb_width / NUM_SEGMENTS_X), height(rgb_height / NUM_SEGMENTS_Y), rgb_stride(rgb_stride),
       roi_buf(width * height * 3), result_buf(width * height) {
 
   prg = build_conv_program(device_id, ctx, width, height, filter_size);
@@ -81,9 +81,9 @@ uint16_t LapConv::Update(cl_command_queue q, const uint8_t *rgb_buf, const int r
   const int x_offset = ROI_X_MIN + roi_id % (ROI_X_MAX - ROI_X_MIN + 1);
   const int y_offset = ROI_Y_MIN + roi_id / (ROI_X_MAX - ROI_X_MIN + 1);
 
-  const uint8_t *rgb_offset = rgb_buf + y_offset * height * full_stride_x * 3 + x_offset * width * 3;
+  const uint8_t *rgb_offset = rgb_buf + y_offset * height * rgb_stride + x_offset * width * 3;
   for (int i = 0; i < height; ++i) {
-    memcpy(&roi_buf[i * width * 3], &rgb_offset[i * full_stride_x * 3], width * 3);
+    memcpy(&roi_buf[i * width * 3], &rgb_offset[i * rgb_stride], width * 3);
   }
 
   constexpr int local_mem_size = (CONV_LOCAL_WORKSIZE + 2 * (3 / 2)) * (CONV_LOCAL_WORKSIZE + 2 * (3 / 2)) * (3 * sizeof(uint8_t));
