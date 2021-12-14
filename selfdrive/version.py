@@ -62,7 +62,7 @@ def get_version() -> str:
 
 
 @cache
-def get_prebuilt() -> bool:
+def is_prebuilt() -> bool:
   return os.path.exists(os.path.join(BASEDIR, 'prebuilt'))
 
 
@@ -90,7 +90,7 @@ def is_dirty() -> bool:
   dirty = False
   try:
     # Actually check dirty files
-    if not get_prebuilt():
+    if not is_prebuilt():
       # This is needed otherwise touched files might show up as modified
       try:
         subprocess.check_call(["git", "update-index", "--refresh"])
@@ -130,4 +130,4 @@ if __name__ == "__main__":
   print("Origin: %s" % get_origin())
   print("Branch: %s" % get_branch())
   print("Short branch: %s" % get_short_branch())
-  print("Prebuilt: %s" % get_prebuilt())
+  print("Prebuilt: %s" % is_prebuilt())
