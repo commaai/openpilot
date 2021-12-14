@@ -5,7 +5,7 @@ import time
 import unittest
 
 import selfdrive.manager.manager as manager
-from selfdrive.hardware import EON
+from selfdrive.hardware import EON, TICI, HARDWARE
 from selfdrive.manager.process import DaemonProcess
 from selfdrive.manager.process_config import managed_processes
 
@@ -37,8 +37,8 @@ class TestManager(unittest.TestCase):
 
   # ensure all processes exit cleanly
   def test_clean_exit(self):
+    HARDWARE.set_power_save(False)
     manager.manager_prepare()
-
     for p in ALL_PROCESSES:
       managed_processes[p].start()
 
@@ -49,7 +49,7 @@ class TestManager(unittest.TestCase):
       self.assertTrue(state.running, f"{p} not running")
 
       exit_code = managed_processes[p].stop(retry=False)
-      if (p == 'ui') or (EON and p == 'logcatd'):
+      if (TICI and p in ['ui', 'navd']) or (EON and p == 'logcatd'):
         # TODO: make Qt UI exit gracefully
         continue
 

@@ -43,6 +43,8 @@ void Sidebar::mouseReleaseEvent(QMouseEvent *event) {
 }
 
 void Sidebar::updateState(const UIState &s) {
+  if (!isVisible()) return;
+
   auto &sm = *(s.sm);
 
   auto deviceState = sm["deviceState"].getDeviceState();

@@ -9,7 +9,7 @@
 #include "selfdrive/ui/qt/util.h"
 
 template <typename T>
-T get_response(QDBusMessage response) {
+T get_response(const QDBusMessage &response) {
   QVariant first =  response.arguments().at(0);
   QDBusVariant dbvFirst = first.value<QDBusVariant>();
   QVariant vFirst = dbvFirst.variant();

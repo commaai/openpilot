@@ -5,9 +5,11 @@
 #include <csignal>
 
 #include "selfdrive/ui/qt/util.h"
+#include "selfdrive/ui/qt/maps/map_helpers.h"
 #include "selfdrive/ui/navd/route_engine.h"
-
-RouteEngine* route_engine = nullptr;
+#include "selfdrive/ui/navd/map_renderer.h"
+#include "selfdrive/hardware/hw.h"
+#include "selfdrive/common/params.h"
 
 void sigHandler(int s) {
   qInfo() << "Shutting down";
@@ -30,7 +32,14 @@ int main(int argc, char *argv[]) {
   parser.process(app);
   const QStringList args = parser.positionalArguments();
 
-  route_engine = new RouteEngine();
+
+  RouteEngine* route_engine = new RouteEngine();
+
+  if (Params().getBool("NavdRender")) {
+    MapRenderer * m = new MapRenderer(get_mapbox_settings());
+    QObject::connect(route_engine, &RouteEngine::positionUpdated, m, &MapRenderer::updatePosition);
+    QObject::connect(route_engine, &RouteEngine::routeUpdated, m, &MapRenderer::updateRoute);
+  }
 
   return app.exec();
 }

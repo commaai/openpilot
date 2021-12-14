@@ -163,7 +163,7 @@ class Uploader():
 
   def do_upload(self, key, fn):
     try:
-      url_resp = self.api.get("v1.3/"+self.dongle_id+"/upload_url/", timeout=10, path=key, access_token=self.api.get_token())
+      url_resp = self.api.get("v1.4/"+self.dongle_id+"/upload_url/", timeout=10, path=key, access_token=self.api.get_token())
       if url_resp.status_code == 412:
         self.last_resp = url_resp
         return
@@ -171,7 +171,7 @@ class Uploader():
       url_resp_json = json.loads(url_resp.text)
       url = url_resp_json['url']
       headers = url_resp_json['headers']
-      cloudlog.debug("upload_url v1.3 %s %s", url, str(headers))
+      cloudlog.debug("upload_url v1.4 %s %s", url, str(headers))
 
       if fake_upload:
         cloudlog.debug("*** WARNING, THIS IS A FAKE UPLOAD TO %s ***" % url)

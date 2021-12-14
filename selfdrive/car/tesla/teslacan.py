@@ -1,13 +1,13 @@
 import copy
 import crcmod
-from opendbc.can.can_define import CANDefine
-from selfdrive.car.tesla.values import CANBUS
+from selfdrive.config import Conversions as CV
+from selfdrive.car.tesla.values import CANBUS, CarControllerParams
 
 
 class TeslaCAN:
-  def __init__(self, dbc_name, packer):
-    self.can_define = CANDefine(dbc_name)
+  def __init__(self, packer, pt_packer):
     self.packer = packer
+    self.pt_packer = pt_packer
     self.crc = crcmod.mkCrcFun(0x11d, initCrc=0x00, rev=False, xorOut=0xff)
 
   @staticmethod
@@ -39,3 +39,23 @@ class TeslaCAN:
     data = self.packer.make_can_msg("STW_ACTN_RQ", bus, values)[2]
     values["CRC_STW_ACTN_RQ"] = self.crc(data[:7])
     return self.packer.make_can_msg("STW_ACTN_RQ", bus, values)
+
+  def create_longitudinal_commands(self, acc_state, speed, min_accel, max_accel, cnt):
+    messages = []
+    values = {
+      "DAS_setSpeed": speed * CV.MS_TO_KPH,
+      "DAS_accState": acc_state,
+      "DAS_aebEvent": 0,
+      "DAS_jerkMin": CarControllerParams.JERK_LIMIT_MIN,
+      "DAS_jerkMax": CarControllerParams.JERK_LIMIT_MAX,
+      "DAS_accelMin": min_accel,
+      "DAS_accelMax": max_accel,
+      "DAS_controlCounter": (cnt % 8),
+      "DAS_controlChecksum": 0,
+    }
+
+    for packer, bus in [(self.packer, CANBUS.chassis), (self.pt_packer, CANBUS.powertrain)]:
+      data = packer.make_can_msg("DAS_control", bus, values)[2]
+      values["DAS_controlChecksum"] = self.checksum(0x2b9, data[:7])
+      messages.append(packer.make_can_msg("DAS_control", bus, values))
+    return messages

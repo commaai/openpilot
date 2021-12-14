@@ -22,7 +22,7 @@ from selfdrive.hardware import EON, TICI, PC, HARDWARE
 from selfdrive.loggerd.config import get_available_percent
 from selfdrive.swaglog import cloudlog
 from selfdrive.thermald.power_monitoring import PowerMonitoring
-from selfdrive.version import tested_branch, terms_version, training_version
+from selfdrive.version import get_tested_branch, terms_version, training_version
 
 ThermalStatus = log.DeviceState.ThermalStatus
 NetworkType = log.DeviceState.NetworkType
@@ -66,6 +66,7 @@ def read_thermal(thermal_config):
   dat.deviceState.gpuTempC = [read_tz(z) / thermal_config.gpu[1] for z in thermal_config.gpu[0]]
   dat.deviceState.memoryTempC = read_tz(thermal_config.mem[0]) / thermal_config.mem[1]
   dat.deviceState.ambientTempC = read_tz(thermal_config.ambient[0]) / thermal_config.ambient[1]
+  dat.deviceState.pmicTempC = [read_tz(z) / thermal_config.pmic[1] for z in thermal_config.pmic[0]]
   return dat
 
 
@@ -342,7 +343,7 @@ def thermald_thread():
     last_update_exception = params.get("LastUpdateException", encoding='utf8')
 
     if update_failed_count > 15 and last_update_exception is not None:
-      if tested_branch:
+      if get_tested_branch():
         extra_text = "Ensure the software is correctly installed"
       else:
         extra_text = last_update_exception
@@ -355,10 +356,10 @@ def thermald_thread():
       set_offroad_alert_if_changed("Offroad_ConnectivityNeededPrompt", False)
       set_offroad_alert_if_changed("Offroad_ConnectivityNeeded", True)
     elif dt.days > DAYS_NO_CONNECTIVITY_PROMPT:
-      remaining_time = str(max(DAYS_NO_CONNECTIVITY_MAX - dt.days, 0))
+      remaining = max(DAYS_NO_CONNECTIVITY_MAX - dt.days, 1)
       set_offroad_alert_if_changed("Offroad_UpdateFailed", False)
       set_offroad_alert_if_changed("Offroad_ConnectivityNeeded", False)
-      set_offroad_alert_if_changed("Offroad_ConnectivityNeededPrompt", True, extra_text=f"{remaining_time} days.")
+      set_offroad_alert_if_changed("Offroad_ConnectivityNeededPrompt", True, extra_text=f"{remaining} day{'' if remaining == 1 else 's'}.")
     else:
       set_offroad_alert_if_changed("Offroad_UpdateFailed", False)
       set_offroad_alert_if_changed("Offroad_ConnectivityNeeded", False)
@@ -406,6 +407,8 @@ def thermald_thread():
     power_monitor.calculate(peripheralState, startup_conditions["ignition"])
     msg.deviceState.offroadPowerUsageUwh = power_monitor.get_power_used()
     msg.deviceState.carBatteryCapacityUwh = max(0, power_monitor.get_car_battery_capacity())
+    current_power_draw = HARDWARE.get_current_power_draw()  # pylint: disable=assignment-from-none
+    msg.deviceState.powerDrawW = current_power_draw if current_power_draw is not None else 0
 
     # Check if we need to disable charging (handled by boardd)
     msg.deviceState.chargingDisabled = power_monitor.should_disable_charging(startup_conditions["ignition"], in_car, off_ts)

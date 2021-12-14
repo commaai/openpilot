@@ -3,11 +3,12 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <optional>
 
 #include <QObject>
 #include <QTimer>
 #include <QColor>
-
+#include <QTransform>
 #include "nanovg.h"
 
 #include "cereal/messaging/messaging.h"
@@ -77,7 +78,7 @@ struct Alert {
         // car is started, but controls is lagging or died
         return {"TAKE CONTROL IMMEDIATELY", "Controls Unresponsive",
                 "controlsUnresponsive", cereal::ControlsState::AlertSize::FULL,
-                AudibleAlert::CHIME_WARNING_REPEAT};
+                AudibleAlert::WARNING_IMMEDIATE};
       }
     }
     return {};
@@ -150,12 +151,11 @@ typedef struct UIState {
 
   bool awake;
   bool has_prime = false;
-
   bool enable_distance_btn = false;
 
-  float car_space_transform[6];
+  QTransform car_space_transform;
   bool wide_camera;
-  
+
   float running_time;
 } UIState;
 
@@ -195,11 +195,11 @@ private:
   // auto brightness
   const float accel_samples = 5*UI_FREQ;
 
-  bool awake;
+  bool awake = false;
   int awake_timeout = 0;
   float accel_prev = 0;
   float gyro_prev = 0;
-  float last_brightness = 0;
+  int last_brightness = 0;
   FirstOrderFilter brightness_filter;
 
   QTimer *timer;

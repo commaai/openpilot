@@ -1,7 +1,5 @@
 #include <QDebug>
 #include <QEventLoop>
-#include <fstream>
-#include <sstream>
 
 #include "catch2/catch.hpp"
 #include "selfdrive/common/util.h"
@@ -16,19 +14,15 @@ TEST_CASE("httpMultiPartDownload") {
   char filename[] = "/tmp/XXXXXX";
   close(mkstemp(filename));
 
+  const size_t chunk_size = 5 * 1024 * 1024;
   std::string content;
-  auto file_size = getRemoteFileSize(TEST_RLOG_URL);
-  REQUIRE(file_size > 0);
-  SECTION("5 connections, download to file") {
-    std::ofstream of(filename, of.binary | of.out);
-    REQUIRE(httpMultiPartDownload(TEST_RLOG_URL, of, 5, file_size));
+  SECTION("download to file") {
+    REQUIRE(httpDownload(TEST_RLOG_URL, filename, chunk_size));
     content = util::read_file(filename);
   }
-  SECTION("5 connection, download to buffer") {
-    std::ostringstream oss;
-    content.resize(file_size);
-    oss.rdbuf()->pubsetbuf(content.data(), content.size());
-    REQUIRE(httpMultiPartDownload(TEST_RLOG_URL, oss, 5, file_size));
+  SECTION("download to buffer") {
+    content = httpGet(TEST_RLOG_URL, chunk_size);
+    REQUIRE(!content.empty());
   }
   REQUIRE(content.size() == 9112651);
   REQUIRE(sha256(content) == TEST_RLOG_CHECKSUM);
@@ -56,8 +50,19 @@ TEST_CASE("FileReader") {
   }
 }
 
+TEST_CASE("LogReader") {
+  SECTION("corrupt log") {
+    FileReader reader(true);
+    std::string corrupt_content = reader.read(TEST_RLOG_URL);
+    corrupt_content.resize(corrupt_content.length() / 2);
+    LogReader log;
+    REQUIRE(log.load((std::byte *)corrupt_content.data(), corrupt_content.size()));
+    REQUIRE(log.events.size() > 0);
+  }
+}
+
 TEST_CASE("Segment") {
-  auto flags = GENERATE(REPLAY_FLAG_NONE, REPLAY_FLAG_QCAMERA);
+  auto flags = GENERATE(REPLAY_FLAG_DCAM | REPLAY_FLAG_ECAM, REPLAY_FLAG_QCAMERA);
   Route demo_route(DEMO_ROUTE);
   REQUIRE(demo_route.load());
   REQUIRE(demo_route.segments().size() == 11);
@@ -68,21 +73,32 @@ TEST_CASE("Segment") {
     REQUIRE(segment.isLoaded() == true);
     REQUIRE(segment.log != nullptr);
     REQUIRE(segment.frames[RoadCam] != nullptr);
-    REQUIRE(segment.frames[DriverCam] == nullptr);
-    REQUIRE(segment.frames[WideRoadCam] == nullptr);
+    if (flags & REPLAY_FLAG_DCAM) {
+      REQUIRE(segment.frames[DriverCam] != nullptr);
+    }
+    if (flags & REPLAY_FLAG_ECAM) {
+      REQUIRE(segment.frames[WideRoadCam] != nullptr);
+    }
 
-    // LogReader & FrameReader
+    // test LogReader & FrameReader
     REQUIRE(segment.log->events.size() > 0);
     REQUIRE(std::is_sorted(segment.log->events.begin(), segment.log->events.end(), Event::lessThan()));
 
-    auto &fr = segment.frames[RoadCam];
-    REQUIRE(fr->getFrameCount() == 1200);
-    std::unique_ptr<uint8_t[]> rgb_buf = std::make_unique<uint8_t[]>(fr->getRGBSize());
-    std::unique_ptr<uint8_t[]> yuv_buf = std::make_unique<uint8_t[]>(fr->getYUVSize());
-    // sequence get 50 frames
-    for (int i = 0; i < 50; ++i) {
-      REQUIRE(fr->get(i, rgb_buf.get(), yuv_buf.get()));
+    for (auto cam : ALL_CAMERAS) {
+      auto &fr = segment.frames[cam];
+      if (!fr) continue;
+
+      if (cam == RoadCam || cam == WideRoadCam) {
+        REQUIRE(fr->getFrameCount() == 1200);
+      }
+      std::unique_ptr<uint8_t[]> rgb_buf = std::make_unique<uint8_t[]>(fr->getRGBSize());
+      std::unique_ptr<uint8_t[]> yuv_buf = std::make_unique<uint8_t[]>(fr->getYUVSize());
+      // sequence get 50 frames
+      for (int i = 0; i < 50; ++i) {
+        REQUIRE(fr->get(i, rgb_buf.get(), yuv_buf.get()));
+      }
     }
+
     loop.quit();
   });
   loop.exec();
@@ -134,7 +150,7 @@ void TestReplay::test_seek() {
   stream_thread_ = new QThread(this);
   QEventLoop loop;
   std::thread thread = std::thread([&]() {
-    for (int i = 0; i < 100; ++i) {
+    for (int i = 0; i < 50; ++i) {
       testSeekTo(random_int(0, 3 * 60));
     }
     loop.quit();

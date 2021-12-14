@@ -73,6 +73,6 @@ private:
   PrimeUserWidget *primeUser;
 
 private slots:
-  void replyFinished(const QString &response);
+  void replyFinished(const QString &response, bool success);
   void showPrimeWidget(bool hasPrime);
 };

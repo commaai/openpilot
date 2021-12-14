@@ -28,8 +28,6 @@
 #include "selfdrive/camerad/cameras/camera_replay.h"
 #endif
 
-const int YUV_COUNT = 100;
-
 class Debayer {
 public:
   Debayer(cl_device_id device_id, cl_context context, const CameraBuf *b, const CameraState *s) {
@@ -109,7 +107,7 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
   vipc_server->create_buffers(rgb_type, UI_BUF_COUNT, true, rgb_width, rgb_height);
   rgb_stride = vipc_server->get_buffer(rgb_type)->stride;
 
-  vipc_server->create_buffers(yuv_type, YUV_COUNT, false, rgb_width, rgb_height);
+  vipc_server->create_buffers(yuv_type, YUV_BUFFER_COUNT, false, rgb_width, rgb_height);
 
   if (ci->bayer) {
     debayer = new Debayer(device_id, context, this, s);

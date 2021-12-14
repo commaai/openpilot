@@ -32,9 +32,9 @@ protected:
   void cameraThread(Camera &cam);
 
   Camera cameras_[MAX_CAMERAS] = {
-      {.type = RoadCam, .rgb_type = VISION_STREAM_RGB_BACK, .yuv_type = VISION_STREAM_YUV_BACK},
-      {.type = DriverCam, .rgb_type = VISION_STREAM_RGB_FRONT, .yuv_type = VISION_STREAM_YUV_FRONT},
-      {.type = WideRoadCam, .rgb_type = VISION_STREAM_RGB_WIDE, .yuv_type = VISION_STREAM_YUV_WIDE},
+      {.type = RoadCam, .rgb_type = VISION_STREAM_RGB_BACK, .yuv_type = VISION_STREAM_ROAD},
+      {.type = DriverCam, .rgb_type = VISION_STREAM_RGB_FRONT, .yuv_type = VISION_STREAM_DRIVER},
+      {.type = WideRoadCam, .rgb_type = VISION_STREAM_RGB_WIDE, .yuv_type = VISION_STREAM_WIDE_ROAD},
   };
   std::atomic<int> publishing_ = 0;
   std::unique_ptr<VisionIpcServer> vipc_server_;

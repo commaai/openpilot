@@ -14,6 +14,7 @@
 #include "selfdrive/common/queue.h"
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/visionimg.h"
+#include "selfdrive/hardware/hw.h"
 
 #define CAMERA_ID_IMX298 0
 #define CAMERA_ID_IMX179 1
@@ -26,7 +27,9 @@
 #define CAMERA_ID_AR0231 8
 #define CAMERA_ID_MAX 9
 
-#define UI_BUF_COUNT 4
+const int UI_BUF_COUNT = 4;
+const int YUV_BUFFER_COUNT = Hardware::EON() ? 100 : 40;
+
 
 enum CameraType {
   RoadCam = 0,
@@ -34,6 +37,7 @@ enum CameraType {
   WideRoadCam
 };
 
+// TODO: remove these once all the internal tools are moved to vipc
 const bool env_send_driver = getenv("SEND_DRIVER") != NULL;
 const bool env_send_road = getenv("SEND_ROAD") != NULL;
 const bool env_send_wide_road = getenv("SEND_WIDE_ROAD") != NULL;

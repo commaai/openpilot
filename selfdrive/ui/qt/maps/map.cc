@@ -4,6 +4,7 @@
 
 #include <QDebug>
 #include <QPainterPath>
+#include <QFileInfo>
 
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/ui/ui.h"
@@ -21,8 +22,10 @@ const float MAX_PITCH = 50;
 const float MIN_PITCH = 0;
 const float MAP_SCALE = 2;
 
+const QString ICON_SUFFIX = ".png";
+
 MapWindow::MapWindow(const QMapboxGLSettings &settings) :
-  m_settings(settings), velocity_filter(0, 10, 0.1) {
+  m_settings(settings), velocity_filter(0, 10, 0.05) {
   sm = new SubMaster({"liveLocationKalman", "navInstruction", "navRoute"});
 
   // Connect now, so any navRoutes sent while the map is initializing are not dropped
@@ -30,7 +33,7 @@ MapWindow::MapWindow(const QMapboxGLSettings &settings) :
 
   timer = new QTimer(this);
   QObject::connect(timer, SIGNAL(timeout()), this, SLOT(timerUpdate()));
-  timer->start(100);
+  timer->start(50);
 
   // Instructions
   map_instructions = new MapInstructions(this);
@@ -324,6 +327,7 @@ void MapWindow::offroadTransition(bool offroad) {
 }
 
 MapInstructions::MapInstructions(QWidget * parent) : QWidget(parent) {
+  is_rhd = Params().getBool("IsRHD");
   QHBoxLayout *main_layout = new QHBoxLayout(this);
   main_layout->setContentsMargins(11, 50, 11, 11);
   {
@@ -442,10 +446,22 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
     if (!modifier.isEmpty()) {
       fn += "_" + modifier;
     }
-    fn +=  + ".png";
+    fn += ICON_SUFFIX;
     fn = fn.replace(' ', '_');
 
+    // for rhd, reflect direction and then flip
+    if (is_rhd) {
+      if (fn.contains("left")) {
+        fn.replace(QString("left"), QString("right"));
+      } else if (fn.contains("right")) {
+        fn.replace(QString("right"), QString("left"));
+      }
+    }
+
     QPixmap pix(fn);
+    if (is_rhd) {
+      pix = pix.transformed(QTransform().scale(-1, 1));
+    }
     icon_01->setPixmap(pix.scaledToWidth(200, Qt::SmoothTransformation));
     icon_01->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
     icon_01->setVisible(true);
@@ -476,7 +492,7 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
       fn += "turn_straight";
     }
 
-    QPixmap pix(fn + ".png");
+    QPixmap pix(fn + ICON_SUFFIX);
     auto icon = new QLabel;
     int wh = active ? 125 : 75;
     icon->setPixmap(pix.scaled(wh, wh, Qt::IgnoreAspectRatio, Qt::SmoothTransformation));

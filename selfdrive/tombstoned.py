@@ -15,7 +15,7 @@ from common.file_helpers import mkdirs_exists_ok
 from selfdrive.hardware import TICI, HARDWARE
 from selfdrive.loggerd.config import ROOT
 from selfdrive.swaglog import cloudlog
-from selfdrive.version import branch, commit, dirty, origin, version
+from selfdrive.version import get_branch, get_commit, get_dirty, get_origin, get_version
 
 MAX_SIZE = 100000 * 10  # mal size is 40-100k, allow up to 1M
 if TICI:
@@ -109,7 +109,7 @@ def report_tombstone_android(fn):
   clean_path = executable.replace('./', '').replace('/', '_')
   date = datetime.datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
 
-  new_fn = f"{date}_{commit[:8]}_{safe_fn(clean_path)}"[:MAX_TOMBSTONE_FN_LEN]
+  new_fn = f"{date}_{get_commit(default='nocommit')[:8]}_{safe_fn(clean_path)}"[:MAX_TOMBSTONE_FN_LEN]
 
   crashlog_dir = os.path.join(ROOT, "crash")
   mkdirs_exists_ok(crashlog_dir)
@@ -183,7 +183,7 @@ def report_tombstone_apport(fn):
   clean_path = path.replace('/', '_')
   date = datetime.datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
 
-  new_fn = f"{date}_{commit[:8]}_{safe_fn(clean_path)}"[:MAX_TOMBSTONE_FN_LEN]
+  new_fn = f"{date}_{get_commit(default='nocommit')[:8]}_{safe_fn(clean_path)}"[:MAX_TOMBSTONE_FN_LEN]
 
   crashlog_dir = os.path.join(ROOT, "crash")
   mkdirs_exists_ok(crashlog_dir)
@@ -203,14 +203,14 @@ def main():
 
   sentry_sdk.utils.MAX_STRING_LENGTH = 8192
   sentry_sdk.init("https://a40f22e13cbc4261873333c125fc9d38@o33823.ingest.sentry.io/157615",
-                  default_integrations=False, release=version)
+                  default_integrations=False, release=get_version())
 
   dongle_id = Params().get("DongleId", encoding='utf-8')
   sentry_sdk.set_user({"id": dongle_id})
-  sentry_sdk.set_tag("dirty", dirty)
-  sentry_sdk.set_tag("origin", origin)
-  sentry_sdk.set_tag("branch", branch)
-  sentry_sdk.set_tag("commit", commit)
+  sentry_sdk.set_tag("dirty", get_dirty())
+  sentry_sdk.set_tag("origin", get_origin())
+  sentry_sdk.set_tag("branch", get_branch())
+  sentry_sdk.set_tag("commit", get_commit())
   sentry_sdk.set_tag("device", HARDWARE.get_device_type())
 
   while True:

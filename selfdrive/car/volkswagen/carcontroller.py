@@ -86,27 +86,28 @@ class CarController():
 
     # FIXME: this entire section is in desperate need of refactoring
 
-    if frame > self.graMsgStartFramePrev + P.GRA_VBP_STEP:
-      if not enabled and CS.out.cruiseState.enabled:
-        # Cancel ACC if it's engaged with OP disengaged.
-        self.graButtonStatesToSend = BUTTON_STATES.copy()
-        self.graButtonStatesToSend["cancel"] = True
-      elif enabled and CS.out.standstill:
-        # Blip the Resume button if we're engaged at standstill.
-        # FIXME: This is a naive implementation, improve with visiond or radar input.
-        self.graButtonStatesToSend = BUTTON_STATES.copy()
-        self.graButtonStatesToSend["resumeCruise"] = True
+    if CS.CP.pcmCruise:
+      if frame > self.graMsgStartFramePrev + P.GRA_VBP_STEP:
+        if not enabled and CS.out.cruiseState.enabled:
+          # Cancel ACC if it's engaged with OP disengaged.
+          self.graButtonStatesToSend = BUTTON_STATES.copy()
+          self.graButtonStatesToSend["cancel"] = True
+        elif enabled and CS.esp_hold_confirmation:
+          # Blip the Resume button if we're engaged at standstill.
+          # FIXME: This is a naive implementation, improve with visiond or radar input.
+          self.graButtonStatesToSend = BUTTON_STATES.copy()
+          self.graButtonStatesToSend["resumeCruise"] = True
 
-    if CS.graMsgBusCounter != self.graMsgBusCounterPrev:
-      self.graMsgBusCounterPrev = CS.graMsgBusCounter
-      if self.graButtonStatesToSend is not None:
-        if self.graMsgSentCount == 0:
-          self.graMsgStartFramePrev = frame
-        idx = (CS.graMsgBusCounter + 1) % 16
-        can_sends.append(volkswagencan.create_mqb_acc_buttons_control(self.packer_pt, ext_bus, self.graButtonStatesToSend, CS, idx))
-        self.graMsgSentCount += 1
-        if self.graMsgSentCount >= P.GRA_VBP_COUNT:
-          self.graButtonStatesToSend = None
-          self.graMsgSentCount = 0
+      if CS.graMsgBusCounter != self.graMsgBusCounterPrev:
+        self.graMsgBusCounterPrev = CS.graMsgBusCounter
+        if self.graButtonStatesToSend is not None:
+          if self.graMsgSentCount == 0:
+            self.graMsgStartFramePrev = frame
+          idx = (CS.graMsgBusCounter + 1) % 16
+          can_sends.append(volkswagencan.create_mqb_acc_buttons_control(self.packer_pt, ext_bus, self.graButtonStatesToSend, CS, idx))
+          self.graMsgSentCount += 1
+          if self.graMsgSentCount >= P.GRA_VBP_COUNT:
+            self.graButtonStatesToSend = None
+            self.graMsgSentCount = 0
 
     return can_sends

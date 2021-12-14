@@ -64,15 +64,15 @@ static void ui_draw_circle_image(const UIState *s, int center_x, int center_y, i
   ui_draw_circle_image(s, center_x, center_y, radius, image, nvgRGBA(0, 0, 0, (255 * bg_alpha)), img_alpha);
 }
 
-static void draw_lead(UIState *s, const cereal::ModelDataV2::LeadDataV3::Reader &lead_data, const vertex_data &vd) {
+static void draw_lead(UIState *s, const cereal::RadarState::LeadData::Reader &lead_data, const vertex_data &vd) {
   // Draw lead car indicator
   auto [x, y] = vd;
 
   float fillAlpha = 0;
   float speedBuff = 10.;
   float leadBuff = 40.;
-  float d_rel = lead_data.getX()[0];
-  float v_rel = lead_data.getV()[0];
+  float d_rel = lead_data.getDRel();
+  float v_rel = lead_data.getVRel();
   if (d_rel < leadBuff) {
     fillAlpha = 255*(1.0-(d_rel/leadBuff));
     if (v_rel < 0) {
@@ -159,12 +159,12 @@ static void ui_draw_world(UIState *s) {
 
   // Draw lead indicators if openpilot is handling longitudinal
   if (s->scene.longitudinal_control) {
-    auto lead_one = (*s->sm)["modelV2"].getModelV2().getLeadsV3()[0];
-    auto lead_two = (*s->sm)["modelV2"].getModelV2().getLeadsV3()[1];
-    if (lead_one.getProb() > .5) {
+    auto lead_one = (*s->sm)["radarState"].getRadarState().getLeadOne();
+    auto lead_two = (*s->sm)["radarState"].getRadarState().getLeadTwo();
+    if (lead_one.getStatus()) {
       draw_lead(s, lead_one, s->scene.lead_vertices[0]);
     }
-    if (lead_two.getProb() > .5 && (std::abs(lead_one.getX()[0] - lead_two.getX()[0]) > 3.0)) {
+    if (lead_two.getStatus() && (std::abs(lead_one.getDRel() - lead_two.getDRel()) > 3.0)) {
       draw_lead(s, lead_two, s->scene.lead_vertices[1]);
     }
   }
@@ -322,12 +322,10 @@ void ui_resize(UIState *s, int width, int height) {
 
   // Apply transformation such that video pixel coordinates match video
   // 1) Put (0, 0) in the middle of the video
-  nvgTranslate(s->vg, width / 2, height / 2 + y_offset);
   // 2) Apply same scaling as video
-  nvgScale(s->vg, zoom, zoom);
   // 3) Put (0, 0) in top left corner of video
-  nvgTranslate(s->vg, -intrinsic_matrix.v[2], -intrinsic_matrix.v[5]);
-
-  nvgCurrentTransform(s->vg, s->car_space_transform);
-  nvgResetTransform(s->vg);
+  s->car_space_transform.reset();
+  s->car_space_transform.translate(width / 2, height / 2 + y_offset)
+      .scale(zoom, zoom)
+      .translate(-intrinsic_matrix.v[2], -intrinsic_matrix.v[5]);
 }

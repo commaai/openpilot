@@ -1,6 +1,9 @@
 Import('env', 'envCython', 'common', 'cereal', 'messaging')
 
-env.Program('boardd', ['boardd.cc', 'panda.cc', 'pigeon.cc'], LIBS=['usb-1.0', common, cereal, messaging, 'pthread', 'zmq', 'capnp', 'kj'])
+libs = ['usb-1.0', common, cereal, messaging, 'pthread', 'zmq', 'capnp', 'kj']
+env.Program('boardd', ['boardd.cc', 'panda.cc', 'pigeon.cc'], LIBS=libs)
 env.Library('libcan_list_to_can_capnp', ['can_list_to_can_capnp.cc'])
 
 envCython.Program('boardd_api_impl.so', 'boardd_api_impl.pyx', LIBS=["can_list_to_can_capnp", 'capnp', 'kj'] + envCython["LIBS"])
+if GetOption('test'):
+  env.Program('tests/test_boardd_usbprotocol', ['tests/test_boardd_usbprotocol.cc', 'panda.cc'], LIBS=libs)

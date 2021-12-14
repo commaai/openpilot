@@ -6,10 +6,10 @@ import struct
 import subprocess
 import tempfile
 import threading
+from enum import IntEnum
 from functools import wraps
 
 import numpy as np
-from aenum import Enum
 from lru import LRU
 
 import _io
@@ -41,7 +41,7 @@ class DoNothingContextManager:
     pass
 
 
-class FrameType(Enum):
+class FrameType(IntEnum):
   raw = 1
   h265_stream = 2
 

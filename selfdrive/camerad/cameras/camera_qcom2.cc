@@ -551,7 +551,6 @@ int open_v4l_by_name_and_index(const char name[], int index, int flags = O_RDWR 
 }
 
 static void camera_open(CameraState *s) {
-  int ret;
   s->sensor_fd = open_v4l_by_name_and_index("cam-sensor-driver", s->camera_num);
   assert(s->sensor_fd >= 0);
   LOGD("opened sensor");
@@ -566,7 +565,7 @@ static void camera_open(CameraState *s) {
 
   // create session
   struct cam_req_mgr_session_info session_info = {}; 
-  ret = cam_control(s->multi_cam_state->video0_fd, CAM_REQ_MGR_CREATE_SESSION, &session_info, sizeof(session_info));
+  int ret = cam_control(s->multi_cam_state->video0_fd, CAM_REQ_MGR_CREATE_SESSION, &session_info, sizeof(session_info));
   LOGD("get session: %d 0x%X", ret, session_info.session_hdl);
   s->session_handle = session_info.session_hdl;
 
@@ -577,73 +576,59 @@ static void camera_open(CameraState *s) {
   s->sensor_dev_handle = *sensor_dev_handle;
   LOGD("acquire sensor dev");
 
-  static struct cam_isp_resource isp_resource = {0};
-  isp_resource.resource_id = CAM_ISP_RES_ID_PORT;
-  isp_resource.length = sizeof(struct cam_isp_in_port_info) + sizeof(struct cam_isp_out_port_info)*(1-1);
-  isp_resource.handle_type = CAM_HANDLE_USER_POINTER;
+  struct cam_isp_in_port_info in_port_info = {
+      .res_type = (uint32_t[]){CAM_ISP_IFE_IN_RES_PHY_0, CAM_ISP_IFE_IN_RES_PHY_1, CAM_ISP_IFE_IN_RES_PHY_2}[s->camera_num],
 
-  struct cam_isp_in_port_info *in_port_info = (struct cam_isp_in_port_info *)malloc(isp_resource.length);
-  isp_resource.res_hdl = (uint64_t)in_port_info;
+      .lane_type = CAM_ISP_LANE_TYPE_DPHY,
+      .lane_num = 4,
+      .lane_cfg = 0x3210,
 
-  switch (s->camera_num) {
-    case 0:
-      in_port_info->res_type = CAM_ISP_IFE_IN_RES_PHY_0;
-      break;
-    case 1:
-      in_port_info->res_type = CAM_ISP_IFE_IN_RES_PHY_1;
-      break;
-    case 2:
-      in_port_info->res_type = CAM_ISP_IFE_IN_RES_PHY_2;
-      break;
-  }
+      .vc = 0x0,
+      // .dt = 0x2C; //CSI_RAW12
+      .dt = 0x2B,  //CSI_RAW10
+      .format = CAM_FORMAT_MIPI_RAW_10,
 
-  in_port_info->lane_type = CAM_ISP_LANE_TYPE_DPHY;
-  in_port_info->lane_num = 4;
-  in_port_info->lane_cfg = 0x3210;
+      .test_pattern = 0x2,  // 0x3?
+      .usage_type = 0x0,
 
-  in_port_info->vc = 0x0;
-  //in_port_info->dt = 0x2C; //CSI_RAW12
-  //in_port_info->format = CAM_FORMAT_MIPI_RAW_12;
+      .left_start = 0,
+      .left_stop = FRAME_WIDTH - 1,
+      .left_width = FRAME_WIDTH,
 
-  in_port_info->dt = 0x2B; //CSI_RAW10
-  in_port_info->format = CAM_FORMAT_MIPI_RAW_10;
+      .right_start = 0,
+      .right_stop = FRAME_WIDTH - 1,
+      .right_width = FRAME_WIDTH,
 
-  in_port_info->test_pattern = 0x2; // 0x3?
-  in_port_info->usage_type = 0x0;
+      .line_start = 0,
+      .line_stop = FRAME_HEIGHT - 1,
+      .height = FRAME_HEIGHT,
 
-  in_port_info->left_start = 0x0;
-  in_port_info->left_stop = FRAME_WIDTH - 1;
-  in_port_info->left_width = FRAME_WIDTH;
+      .pixel_clk = 0x0,
+      .batch_size = 0x0,
+      .dsp_mode = 0x0,
+      .hbi_cnt = 0x0,
+      .custom_csid = 0x0,
 
-  in_port_info->right_start = 0x0;
-  in_port_info->right_stop = FRAME_WIDTH - 1;
-  in_port_info->right_width = FRAME_WIDTH;
-
-  in_port_info->line_start = 0x0;
-  in_port_info->line_stop = FRAME_HEIGHT - 1;
-  in_port_info->height = FRAME_HEIGHT;
-
-  in_port_info->pixel_clk = 0x0;
-  in_port_info->batch_size = 0x0;
-  in_port_info->dsp_mode = 0x0;
-  in_port_info->hbi_cnt = 0x0;
-  in_port_info->custom_csid = 0x0;
-
-  in_port_info->num_out_res = 0x1;
-  in_port_info->data[0] = (struct cam_isp_out_port_info){
-    .res_type = CAM_ISP_IFE_OUT_RES_RDI_0,
-    //.format = CAM_FORMAT_MIPI_RAW_12,
-    .format = CAM_FORMAT_MIPI_RAW_10,
-    .width = FRAME_WIDTH,
-    .height = FRAME_HEIGHT,
-    .comp_grp_id = 0x0, .split_point = 0x0, .secure_mode = 0x0,
+      .num_out_res = 0x1,
+      .data[0] = (struct cam_isp_out_port_info){
+          .res_type = CAM_ISP_IFE_OUT_RES_RDI_0,
+          .format = CAM_FORMAT_MIPI_RAW_10,
+          .width = FRAME_WIDTH,
+          .height = FRAME_HEIGHT,
+          .comp_grp_id = 0x0, .split_point = 0x0, .secure_mode = 0x0,
+      },
+  };
+  struct cam_isp_resource isp_resource = {
+      .resource_id = CAM_ISP_RES_ID_PORT,
+      .handle_type = CAM_HANDLE_USER_POINTER,
+      .res_hdl = (uint64_t)&in_port_info,
+      .length = sizeof(in_port_info),
   };
 
   auto isp_dev_handle = device_acquire(s->multi_cam_state->isp_fd, s->session_handle, &isp_resource);
   assert(isp_dev_handle);
   s->isp_dev_handle = *isp_dev_handle; 
   LOGD("acquire isp dev");
-  free(in_port_info);
 
   struct cam_csiphy_acquire_dev_info csiphy_acquire_dev_info = {.combo_mode = 0};
   auto csiphy_dev_handle = device_acquire(s->csiphy_fd, s->session_handle, &csiphy_acquire_dev_info);
@@ -651,19 +636,14 @@ static void camera_open(CameraState *s) {
   s->csiphy_dev_handle = *csiphy_dev_handle;
   LOGD("acquire csiphy dev");
 
-  // acquires done
-
   // config ISP
   alloc_w_mmu_hdl(s->multi_cam_state->video0_fd, 984480, (uint32_t*)&s->buf0_handle, 0x20, CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, s->multi_cam_state->device_iommu, s->multi_cam_state->cdm_iommu);
   config_isp(s, 0, 0, 1, s->buf0_handle, 0);
 
   LOG("-- Configuring sensor");
-  sensors_i2c(s, init_array_ar0231, sizeof(init_array_ar0231)/sizeof(struct i2c_random_wr_payload),
-    CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
-  //sensors_i2c(s, start_reg_array, sizeof(start_reg_array)/sizeof(struct i2c_random_wr_payload),
-    //CAM_SENSOR_PACKET_OPCODE_SENSOR_STREAMON);
-  //sensors_i2c(s, stop_reg_array, sizeof(stop_reg_array)/sizeof(struct i2c_random_wr_payload),
-    //CAM_SENSOR_PACKET_OPCODE_SENSOR_STREAMOFF);
+  sensors_i2c(s, init_array_ar0231, std::size(init_array_ar0231), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG);
+  //sensors_i2c(s, start_reg_array, std::size(start_reg_array), CAM_SENSOR_PACKET_OPCODE_SENSOR_STREAMON);
+  //sensors_i2c(s, stop_reg_array, std::size(stop_reg_array), CAM_SENSOR_PACKET_OPCODE_SENSOR_STREAMOFF);
 
   // config csiphy
   LOG("-- Config CSI PHY");
@@ -700,7 +680,7 @@ static void camera_open(CameraState *s) {
 
   // link devices
   LOG("-- Link devices");
-  static struct cam_req_mgr_link_info req_mgr_link_info = {0};
+  struct cam_req_mgr_link_info req_mgr_link_info = {0};
   req_mgr_link_info.session_hdl = s->session_handle;
   req_mgr_link_info.num_devices = 2;
   req_mgr_link_info.dev_hdls[0] = s->isp_dev_handle;
@@ -709,7 +689,7 @@ static void camera_open(CameraState *s) {
   LOGD("link: %d", ret);
   s->link_handle = req_mgr_link_info.link_hdl;
 
-  static struct cam_req_mgr_link_control req_mgr_link_control = {0};
+  struct cam_req_mgr_link_control req_mgr_link_control = {0};
   req_mgr_link_control.ops = CAM_REQ_MGR_LINK_ACTIVATE;
   req_mgr_link_control.session_hdl = s->session_handle;
   req_mgr_link_control.num_links = 1;
@@ -729,13 +709,13 @@ static void camera_open(CameraState *s) {
 
 void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
   camera_init(s, v, &s->road_cam, CAMERA_ID_AR0231, 1, 20, device_id, ctx,
-              VISION_STREAM_RGB_BACK, VISION_STREAM_YUV_BACK); // swap left/right
+              VISION_STREAM_RGB_BACK, VISION_STREAM_ROAD); // swap left/right
   printf("road camera initted \n");
   camera_init(s, v, &s->wide_road_cam, CAMERA_ID_AR0231, 0, 20, device_id, ctx,
-              VISION_STREAM_RGB_WIDE, VISION_STREAM_YUV_WIDE);
+              VISION_STREAM_RGB_WIDE, VISION_STREAM_WIDE_ROAD);
   printf("wide road camera initted \n");
   camera_init(s, v, &s->driver_cam, CAMERA_ID_AR0231, 2, 20, device_id, ctx,
-              VISION_STREAM_RGB_FRONT, VISION_STREAM_YUV_FRONT);
+              VISION_STREAM_RGB_FRONT, VISION_STREAM_DRIVER);
   printf("driver camera initted \n");
 
   s->sm = new SubMaster({"driverState"});

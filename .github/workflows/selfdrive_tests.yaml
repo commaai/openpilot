@@ -146,13 +146,6 @@ jobs:
     if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
 #    needs: static_analysis # hack to ensure slow tests run first since this and static_analysis are fast
     steps:
-    - name: Get current date
-      id: date
-      run: echo "::set-output name=time::$(date +'%s')"
-    - name: Output timestamp
-      run: echo $TIMESTAMP
-      env:
-        TIMESTAMP: ${{ steps.date.outputs.time }}
     - uses: actions/checkout@v2
       with:
         submodules: true
@@ -217,6 +210,13 @@ jobs:
     runs-on: ubuntu-20.04
     timeout-minutes: 50
     steps:
+    - name: Get current date
+      id: date
+      run: echo "::set-output name=time::$(date +'%s')"
+    - name: Output timestamp
+      run: echo $TIMESTAMP
+      env:
+        TIMESTAMP: ${{ steps.date.outputs.time }}
     - uses: actions/checkout@v2
       with:
         submodules: true
@@ -247,6 +247,7 @@ jobs:
                         $UNIT_TEST selfdrive/athena && \
                         $UNIT_TEST selfdrive/thermald && \
                         $UNIT_TEST tools/lib/tests && \
+                        ./selfdrive/boardd/tests/test_boardd_usbprotocol && \
                         ./selfdrive/common/tests/test_util && \
                         ./selfdrive/loggerd/tests/test_logger &&\
                         ./selfdrive/proclogd/tests/test_proclog && \
