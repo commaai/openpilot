@@ -286,8 +286,37 @@ void SoftwarePanel::updateLabels() {
   osVersionLbl->setText(QString::fromStdString(Hardware::get_os_version()).trimmed());
 }
 
+C2NetworkPanel::C2NetworkPanel(QWidget *parent) : QWidget(parent) {
+  QVBoxLayout *layout = new QVBoxLayout(this);
+  layout->setContentsMargins(50, 0, 50, 0);
+
+  ListWidget *list = new ListWidget();
+  list->setSpacing(30);
+  // wifi + tethering buttons
 #ifdef QCOM
-static QString get_ipv4_address() {
+  auto wifiBtn = new ButtonControl("Wi-Fi Settings", "OPEN");
+  QObject::connect(wifiBtn, &ButtonControl::clicked, [=]() { HardwareEon::launch_wifi(); });
+  list->addItem(wifiBtn);
+
+  auto tetheringBtn = new ButtonControl("Tethering Settings", "OPEN");
+  QObject::connect(tetheringBtn, &ButtonControl::clicked, [=]() { HardwareEon::launch_tethering(); });
+  list->addItem(tetheringBtn);
+#endif
+  ipaddress = new LabelControl("IP Address", "");
+  list->addItem(ipaddress);
+
+  // SSH key management
+  list->addItem(new SshToggle());
+  list->addItem(new SshControl());
+  layout->addWidget(list);
+  layout->addStretch(1);
+}
+
+void C2NetworkPanel::showEvent(QShowEvent *event) {
+  ipaddress->setText(getIPAddress());
+}
+
+QString C2NetworkPanel::getIPAddress() {
   std::string result = util::check_output("ifconfig wlan0");
   if (result.empty()) return "";
 
@@ -302,35 +331,13 @@ static QString get_ipv4_address() {
   return result.substr(begin, end - begin).c_str();
 }
 
-QWidget * network_panel(QWidget * parent) {
-  QWidget *w = new QWidget(parent);
-  QVBoxLayout *layout = new QVBoxLayout(w);
-  layout->setContentsMargins(50, 0, 50, 0);
-
-  ListWidget *list = new ListWidget();
-  list->setSpacing(30);
-  // wifi + tethering buttons
-  auto wifiBtn = new ButtonControl("Wi-Fi Settings", "OPEN");
-  QObject::connect(wifiBtn, &ButtonControl::clicked, [=]() { HardwareEon::launch_wifi(); });
-  list->addItem(wifiBtn);
-
-  auto tetheringBtn = new ButtonControl("Tethering Settings", "OPEN");
-  QObject::connect(tetheringBtn, &ButtonControl::clicked, [=]() { HardwareEon::launch_tethering(); });
-  list->addItem(tetheringBtn);
-
-  list->addItem(new LabelControl("IP Address", get_ipv4_address()));
-  // SSH key management
-  list->addItem(new SshToggle());
-  list->addItem(new SshControl());
-  layout->addWidget(list);
-  layout->addStretch(1);
-  return w;
+QWidget *network_panel(QWidget *parent) {
+  if (Hardware::EON()) {
+    return new C2NetworkPanel(parent);
+  } else {
+    return new Networking(parent);
+  }
 }
-#else
-QWidget * network_panel(QWidget * parent) {
-  return new Networking(parent);
-}
-#endif
 
 void SettingsWindow::showEvent(QShowEvent *event) {
   panel_widget->setCurrentIndex(0);
