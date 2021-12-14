@@ -67,7 +67,7 @@ def get_prebuilt() -> bool:
 
 
 @cache
-def get_comma_remote() -> bool:
+def is_comma_remote() -> bool:
   origin = get_origin()
   if origin is None:
     return False
@@ -76,12 +76,12 @@ def get_comma_remote() -> bool:
 
 
 @cache
-def get_tested_branch() -> bool:
+def is_tested_branch() -> bool:
   return get_short_branch() in TESTED_BRANCHES
 
 
 @cache
-def get_dirty() -> bool:
+def is_dirty() -> bool:
   origin = get_origin()
   branch = get_branch()
   if (origin is None) or (branch is None):
@@ -100,7 +100,7 @@ def get_dirty() -> bool:
       dirty = (subprocess.call(["git", "diff-index", "--quiet", branch, "--"]) != 0)
 
       # Log dirty files
-      if dirty and get_comma_remote():
+      if dirty and is_comma_remote():
         try:
           dirty_files = run_cmd(["git", "diff-index", branch, "--"])
           cloudlog.event("dirty comma branch", version=get_version(), dirty=dirty, origin=origin, branch=branch,
@@ -108,7 +108,7 @@ def get_dirty() -> bool:
         except subprocess.CalledProcessError:
           pass
 
-    dirty = dirty or (not get_comma_remote())
+    dirty = dirty or (not is_comma_remote())
     dirty = dirty or ('master' in branch)
 
   except subprocess.CalledProcessError:
@@ -125,7 +125,7 @@ if __name__ == "__main__":
   params.put("TermsVersion", terms_version)
   params.put("TrainingVersion", training_version)
 
-  print("Dirty: %s" % get_dirty())
+  print("Dirty: %s" % is_dirty())
   print("Version: %s" % get_version())
   print("Origin: %s" % get_origin())
   print("Branch: %s" % get_branch())

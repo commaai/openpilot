@@ -6,7 +6,7 @@ from multiprocessing import Process
 from common.params import Params
 from selfdrive.manager.process import launcher
 from selfdrive.swaglog import cloudlog
-from selfdrive.version import get_version, get_dirty
+from selfdrive.version import get_version, is_dirty
 
 ATHENA_MGR_PID_PARAM = "AthenadPid"
 
@@ -14,7 +14,7 @@ ATHENA_MGR_PID_PARAM = "AthenadPid"
 def main():
   params = Params()
   dongle_id = params.get("DongleId").decode('utf-8')
-  cloudlog.bind_global(dongle_id=dongle_id, version=get_version(), dirty=get_dirty())
+  cloudlog.bind_global(dongle_id=dongle_id, version=get_version(), dirty=is_dirty())
 
   try:
     while 1:
