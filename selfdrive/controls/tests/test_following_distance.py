@@ -29,7 +29,7 @@ class TestFollowingDistance(unittest.TestCase):
       simulation_steady_state = run_following_distance_simulation(v_lead)
       correct_steady_state = desired_follow_distance(v_lead, v_lead)
 
-      self.assertAlmostEqual(simulation_steady_state, correct_steady_state, delta=(correct_steady_state*.1 + 1.0))
+      self.assertAlmostEqual(simulation_steady_state, correct_steady_state, delta=(correct_steady_state*.1 + .5))
 
 
 if __name__ == "__main__":

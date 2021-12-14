@@ -18,11 +18,11 @@ SOUNDS = {
   AudibleAlert.engage: 197,
   AudibleAlert.disengage: 230,
   AudibleAlert.refuse: 189,
-  AudibleAlert.prompt: 217,
-  AudibleAlert.promptRepeat: 475,
+  AudibleAlert.prompt: 230,
+  AudibleAlert.promptRepeat: 468,
   AudibleAlert.promptDistracted: 187,
-  AudibleAlert.warningSoft: 477,
-  AudibleAlert.warningImmediate: 468,
+  AudibleAlert.warningSoft: 499,
+  AudibleAlert.warningImmediate: 496,
 }
 
 def get_total_writes():
@@ -51,22 +51,24 @@ class TestSoundd(unittest.TestCase):
       print(f"testing {alert_sounds[sound]}")
       start_writes = get_total_writes()
 
-      for _ in range(int(9 / DT_CTRL)):
+      for i in range(int(10 / DT_CTRL)):
         msg = messaging.new_message('deviceState')
         msg.deviceState.started = True
         pm.send('deviceState', msg)
 
         msg = messaging.new_message('controlsState')
-        msg.controlsState.alertSound = sound
-        msg.controlsState.alertType = str(sound)
-        msg.controlsState.alertText1 = "Testing Sounds"
-        msg.controlsState.alertText2 = f"playing {alert_sounds[sound]}"
-        msg.controlsState.alertSize = log.ControlsState.AlertSize.mid
+        if i < int(6 / DT_CTRL):
+          msg.controlsState.alertSound = sound
+          msg.controlsState.alertType = str(sound)
+          msg.controlsState.alertText1 = "Testing Sounds"
+          msg.controlsState.alertText2 = f"playing {alert_sounds[sound]}"
+          msg.controlsState.alertSize = log.ControlsState.AlertSize.mid
         pm.send('controlsState', msg)
         time.sleep(DT_CTRL)
 
       tolerance = expected_writes / 10
       actual_writes = get_total_writes() - start_writes
+      #print(f"  expected {expected_writes} writes, got {actual_writes}")
       assert abs(expected_writes - actual_writes) <= tolerance, f"{alert_sounds[sound]}: expected {expected_writes} writes, got {actual_writes}"
 
 if __name__ == "__main__":
