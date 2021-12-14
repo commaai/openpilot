@@ -33,17 +33,16 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
     main_layout->setCurrentWidget(onboardingWindow);
   }
 
-  device.setAwake(true, true);
   QObject::connect(uiState(), &UIState::uiUpdate, &device, &Device::update);
   QObject::connect(uiState(), &UIState::offroadTransition, [=](bool offroad) {
     if (!offroad) {
       closeSettings();
     }
   });
-  QObject::connect(&device, &Device::displayPowerChanged, [=]() {
-     if(main_layout->currentWidget() != onboardingWindow) {
-       closeSettings();
-     }
+  QObject::connect(&device, &Device::interactiveTimout, [=]() {
+    if (main_layout->currentWidget() == settingsWindow) {
+      closeSettings();
+    }
   });
 
   // load fonts
@@ -82,9 +81,8 @@ void MainWindow::closeSettings() {
 }
 
 bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
-  // wake screen on tap
   if (event->type() == QEvent::MouseButtonPress || event->type() == QEvent::TouchBegin) {
-    device.setAwake(true, true);
+    device.resetInteractiveTimout();
   }
 
 #ifdef QCOM

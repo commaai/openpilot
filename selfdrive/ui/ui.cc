@@ -251,6 +251,8 @@ void UIState::update() {
 }
 
 Device::Device(QObject *parent) : brightness_filter(BACKLIGHT_OFFROAD, BACKLIGHT_TS, BACKLIGHT_DT), QObject(parent) {
+  setAwake(true);
+  resetInteractiveTimout();
 }
 
 void Device::update(const UIState &s) {
@@ -261,17 +263,17 @@ void Device::update(const UIState &s) {
   uiState()->awake = awake;
 }
 
-void Device::setAwake(bool on, bool reset) {
+void Device::setAwake(bool on) {
   if (on != awake) {
     awake = on;
     Hardware::set_display_power(awake);
     LOGD("setting display power %d", awake);
     emit displayPowerChanged(awake);
   }
+}
 
-  if (reset) {
-    awake_timeout = 30 * UI_FREQ;
-  }
+void Device::resetInteractiveTimout() {
+  interactive_timeout = (ignition_on ? 10 : 30) * UI_FREQ;
 }
 
 void Device::updateBrightness(const UIState &s) {
@@ -302,20 +304,30 @@ void Device::updateBrightness(const UIState &s) {
   last_brightness = brightness;
 }
 
-void Device::updateWakefulness(const UIState &s) {
-  awake_timeout = std::max(awake_timeout - 1, 0);
+bool Device::motionTriggered(const UIState &s) {
+  static float accel_prev = 0;
+  static float gyro_prev = 0;
 
-  bool should_wake = s.scene.started || s.scene.ignition;
-  if (!should_wake) {
-    // tap detection while display is off
-    bool accel_trigger = abs(s.scene.accel_sensor - accel_prev) > 0.2;
-    bool gyro_trigger = abs(s.scene.gyro_sensor - gyro_prev) > 0.15;
-    should_wake = accel_trigger && gyro_trigger;
-    gyro_prev = s.scene.gyro_sensor;
-    accel_prev = (accel_prev * (accel_samples - 1) + s.scene.accel_sensor) / accel_samples;
+  bool accel_trigger = abs(s.scene.accel_sensor - accel_prev) > 0.2;
+  bool gyro_trigger = abs(s.scene.gyro_sensor - gyro_prev) > 0.15;
+
+  gyro_prev = s.scene.gyro_sensor;
+  accel_prev = (accel_prev * (accel_samples - 1) + s.scene.accel_sensor) / accel_samples;
+
+  return (!awake && accel_trigger && gyro_trigger);
+}
+
+void Device::updateWakefulness(const UIState &s) {
+  bool ignition_just_turned_off = !s.scene.ignition && ignition_on;
+  ignition_on = s.scene.ignition;
+
+  if (ignition_just_turned_off || motionTriggered(s)) {
+    resetInteractiveTimout();
+  } else if (interactive_timeout > 0 && --interactive_timeout == 0) {
+    emit interactiveTimout();
   }
 
-  setAwake(awake_timeout, should_wake);
+  setAwake(s.scene.ignition || interactive_timeout > 0);
 }
 
 UIState *uiState() {
