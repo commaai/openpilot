@@ -91,7 +91,7 @@ int get_bit_message(char *out, CANPacket_t *to_bang) {
   int dlc_len = GET_LEN(to_bang);
   len = append_int(pkt, len, 0, 1);    // Start-of-frame
 
-  if (to_bang->extended != 0) {
+  if (to_bang->extended != 0U) {
     // extended identifier
     len = append_int(pkt, len, GET_ADDR(to_bang) >> 18, 11);  // Identifier
     len = append_int(pkt, len, 3, 2);    // SRR+IDE

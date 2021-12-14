@@ -53,7 +53,7 @@ static int nissan_rx_hook(CANPacket_t *to_push) {
       if (addr == 0x2) {
         // Current steering angle
         // Factor -0.1, little endian
-        int angle_meas_new = (GET_BYTES_04(to_push) & 0xFFFF);
+        int angle_meas_new = (GET_BYTES_04(to_push) & 0xFFFFU);
         // Need to multiply by 10 here as LKAS and Steering wheel are different base unit
         angle_meas_new = to_signed(angle_meas_new, 16) * 10;
 
@@ -71,9 +71,9 @@ static int nissan_rx_hook(CANPacket_t *to_push) {
       // X-Trail 0x15c, Leaf 0x239
       if ((addr == 0x15c) || (addr == 0x239)) {
         if (addr == 0x15c){
-          gas_pressed = ((GET_BYTE(to_push, 5) << 2) | ((GET_BYTE(to_push, 6) >> 6) & 0x3)) > 3;
+          gas_pressed = ((GET_BYTE(to_push, 5) << 2) | ((GET_BYTE(to_push, 6) >> 6) & 0x3U)) > 3U;
         } else {
-          gas_pressed = GET_BYTE(to_push, 0) > 3;
+          gas_pressed = GET_BYTE(to_push, 0) > 3U;
         }
       }
     }
@@ -81,15 +81,15 @@ static int nissan_rx_hook(CANPacket_t *to_push) {
     // X-trail 0x454, Leaf  0x239
     if ((addr == 0x454) || (addr == 0x239)) {
       if (addr == 0x454){
-        brake_pressed = (GET_BYTE(to_push, 2) & 0x80) != 0;
+        brake_pressed = (GET_BYTE(to_push, 2) & 0x80U) != 0U;
       } else {
-        brake_pressed = ((GET_BYTE(to_push, 4) >> 5) & 1) != 0;
+        brake_pressed = ((GET_BYTE(to_push, 4) >> 5) & 1U) != 0U;
       }
     }
 
     // Handle cruise enabled
     if ((addr == 0x30f) && (((bus == 2) && (!nissan_alt_eps)) || ((bus == 1) && (nissan_alt_eps)))) {
-      bool cruise_engaged = (GET_BYTE(to_push, 0) >> 3) & 1;
+      bool cruise_engaged = (GET_BYTE(to_push, 0) >> 3) & 1U;
 
       if (cruise_engaged && !cruise_engaged_prev) {
         controls_allowed = 1;
@@ -117,8 +117,8 @@ static int nissan_tx_hook(CANPacket_t *to_send) {
 
   // steer cmd checks
   if (addr == 0x169) {
-    int desired_angle = ((GET_BYTE(to_send, 0) << 10) | (GET_BYTE(to_send, 1) << 2) | ((GET_BYTE(to_send, 2) >> 6) & 0x3));
-    bool lka_active = (GET_BYTE(to_send, 6) >> 4) & 1;
+    int desired_angle = ((GET_BYTE(to_send, 0) << 10) | (GET_BYTE(to_send, 1) << 2) | ((GET_BYTE(to_send, 2) >> 6) & 0x3U));
+    bool lka_active = (GET_BYTE(to_send, 6) >> 4) & 1U;
 
     // offeset 1310 * NISSAN_DEG_TO_CAN
     desired_angle =  desired_angle - 131000;
@@ -154,7 +154,7 @@ static int nissan_tx_hook(CANPacket_t *to_send) {
   // acc button check, only allow cancel button to be sent
   if (addr == 0x20b) {
     // Violation of any button other than cancel is pressed
-    violation |= ((GET_BYTE(to_send, 1) & 0x3d) > 0);
+    violation |= ((GET_BYTE(to_send, 1) & 0x3dU) > 0U);
   }
 
   if (violation) {

@@ -23,7 +23,8 @@ public:
   SubMaster *sm;
   PubMaster *pm;
 
-  QTimer* timer;
+  QTimer* msg_timer;
+  QTimer* route_timer;
 
   std::optional<int> ui_pid;
 
@@ -41,6 +42,7 @@ public:
   bool localizer_valid = false;
 
   // Route recompute
+  bool active = false;
   int recompute_backoff = 0;
   int recompute_countdown = 0;
   void calculateRoute(QMapbox::Coordinate destination);
@@ -48,8 +50,13 @@ public:
   bool shouldRecompute();
 
 private slots:
-  void timerUpdate();
+  void routeUpdate();
+  void msgUpdate();
   void routeCalculated(QGeoRouteReply *reply);
   void recomputeRoute();
   void sendRoute();
+
+signals:
+  void positionUpdated(QMapbox::Coordinate position, float bearing);
+  void routeUpdated(QList<QGeoCoordinate> coordinates);
 };

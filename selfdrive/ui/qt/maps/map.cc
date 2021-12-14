@@ -112,10 +112,6 @@ void MapWindow::timerUpdate() {
 
   update();
 
-  if (m_map.isNull()) {
-    return;
-  }
-
   sm->update(0);
   if (sm->updated("liveLocationKalman")) {
     auto location = (*sm)["liveLocationKalman"].getLiveLocationKalman();
@@ -134,6 +130,21 @@ void MapWindow::timerUpdate() {
       velocity_filter.update(velocity);
     }
   }
+
+  if (sm->updated("navRoute")) {
+    qWarning() << "Got new navRoute from navd. Opening map:" << allow_open;
+
+    // Only open the map on setting destination the first time
+    if (allow_open) {
+      setVisible(true); // Show map on destination set/change
+      allow_open = false;
+    }
+  }
+
+  if (m_map.isNull()) {
+    return;
+  }
+
   loaded_once = loaded_once || m_map->isFullyLoaded();
   if (!loaded_once) {
     map_instructions->showError("Map Loading");
@@ -186,7 +197,7 @@ void MapWindow::timerUpdate() {
   }
 
   if (sm->rcv_frame("navRoute") != route_rcv_frame) {
-    qWarning() << "Got new navRoute from navd";
+    qWarning() << "Updating navLayer with new route";
     auto route = (*sm)["navRoute"].getNavRoute();
     auto route_points = capnp_coordinate_list_to_collection(route.getCoordinates());
     QMapbox::Feature feature(QMapbox::Feature::LineStringType, route_points, {}, {});
@@ -196,11 +207,6 @@ void MapWindow::timerUpdate() {
     m_map->updateSource("navSource", navSource);
     m_map->setLayoutProperty("navLayer", "visibility", "visible");
 
-    // Only open the map on setting destination the first time
-    if (allow_open) {
-      setVisible(true); // Show map on destination set/change
-      allow_open = false;
-    }
     route_rcv_frame = sm->rcv_frame("navRoute");
   }
 }

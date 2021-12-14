@@ -9,10 +9,10 @@
 
 // CAN bus numbers
 #define MAZDA_MAIN 0
-#define MAZDA_AUX 1
-#define MAZDA_CAM 2
+#define MAZDA_AUX  1
+#define MAZDA_CAM  2
 
-#define MAZDA_MAX_STEER 2048
+#define MAZDA_MAX_STEER 2048U
 
 // max delta torque allowed for real time checks
 #define MAZDA_MAX_RT_DELTA 940
@@ -39,7 +39,7 @@ addr_checks mazda_rx_checks = {mazda_addr_checks, MAZDA_ADDR_CHECKS_LEN};
 // track msgs coming from OP so that we know what CAM msgs to drop and what to forward
 static int mazda_rx_hook(CANPacket_t *to_push) {
   bool valid = addr_safety_check(to_push, &mazda_rx_checks, NULL, NULL, NULL);
-  if (valid && (GET_BUS(to_push) == MAZDA_MAIN)) {
+  if (valid && ((int)GET_BUS(to_push) == MAZDA_MAIN)) {
     int addr = GET_ADDR(to_push);
 
     if (addr == MAZDA_ENGINE_DATA) {
@@ -49,14 +49,14 @@ static int mazda_rx_hook(CANPacket_t *to_push) {
     }
 
     if (addr == MAZDA_STEER_TORQUE) {
-      int torque_driver_new = GET_BYTE(to_push, 0) - 127;
+      int torque_driver_new = GET_BYTE(to_push, 0) - 127U;
       // update array of samples
       update_sample(&torque_driver, torque_driver_new);
     }
 
     // enter controls on rising edge of ACC, exit controls on ACC off
     if (addr == MAZDA_CRZ_CTRL) {
-      bool cruise_engaged = GET_BYTE(to_push, 0) & 8;
+      bool cruise_engaged = GET_BYTE(to_push, 0) & 0x8U;
       if (cruise_engaged) {
         if (!cruise_engaged_prev) {
           controls_allowed = 1;
@@ -68,11 +68,11 @@ static int mazda_rx_hook(CANPacket_t *to_push) {
     }
 
     if (addr == MAZDA_ENGINE_DATA) {
-      gas_pressed = (GET_BYTE(to_push, 4) || (GET_BYTE(to_push, 5) & 0xF0));
+      gas_pressed = (GET_BYTE(to_push, 4) || (GET_BYTE(to_push, 5) & 0xF0U));
     }
 
     if (addr == MAZDA_PEDALS) {
-      brake_pressed = (GET_BYTE(to_push, 0) & 0x10);
+      brake_pressed = (GET_BYTE(to_push, 0) & 0x10U);
     }
 
     generic_rx_checks((addr == MAZDA_LKAS));
@@ -94,7 +94,7 @@ static int mazda_tx_hook(CANPacket_t *to_send) {
 
     // steer cmd checks
     if (addr == MAZDA_LKAS) {
-      int desired_torque = (((GET_BYTE(to_send, 0) & 0x0f) << 8) | GET_BYTE(to_send, 1)) - MAZDA_MAX_STEER;
+      int desired_torque = (((GET_BYTE(to_send, 0) & 0x0FU) << 8) | GET_BYTE(to_send, 1)) - MAZDA_MAX_STEER;
       bool violation = 0;
       uint32_t ts = microsecond_timer_get();
 

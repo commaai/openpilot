@@ -55,7 +55,7 @@ bool VisionIpcClient::connect(bool blocking){
   VisionBuf bufs[VISIONIPC_MAX_FDS];
   r = ipc_sendrecv_with_fds(false, socket_fd, &bufs, sizeof(bufs), fds, VISIONIPC_MAX_FDS, &num_buffers);
 
-  assert(num_buffers > 0);
+  assert(num_buffers >= 0);
   assert(r == sizeof(VisionBuf) * num_buffers);
 
   // Import buffers

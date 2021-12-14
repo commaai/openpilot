@@ -60,13 +60,13 @@ void process_can(uint8_t can_number) {
         canfd_fifo *fifo;
         fifo = (canfd_fifo *)(TxFIFOSA + (tx_index * FDCAN_TX_FIFO_EL_SIZE));
 
-        fifo->header[0] = (to_send.extended << 30) | ((to_send.extended != 0) ? (to_send.addr) : (to_send.addr << 18));
+        fifo->header[0] = (to_send.extended << 30) | ((to_send.extended != 0U) ? (to_send.addr) : (to_send.addr << 18));
         fifo->header[1] = (to_send.data_len_code << 16) | (bus_config[can_number].canfd_enabled << 21) | (bus_config[can_number].brs_enabled << 20);
 
         uint8_t data_len_w = (dlc_to_len[to_send.data_len_code] / 4U);
-        data_len_w += ((dlc_to_len[to_send.data_len_code] % 4) > 0) ? 1U : 0U;
+        data_len_w += ((dlc_to_len[to_send.data_len_code] % 4U) > 0U) ? 1U : 0U;
         for (unsigned int i = 0; i < data_len_w; i++) {
-          BYTE_ARRAY_TO_WORD(fifo->data_word[i], &to_send.data[i*4]);
+          BYTE_ARRAY_TO_WORD(fifo->data_word[i], &to_send.data[i*4U]);
         }
 
         CANx->TXBAR = (1UL << tx_index);
@@ -142,14 +142,14 @@ void can_rx(uint8_t can_number) {
       to_push.returned = 0U;
       to_push.rejected = 0U;
       to_push.extended = (fifo->header[0] >> 30) & 0x1U;
-      to_push.addr = ((to_push.extended != 0) ? (fifo->header[0] & 0x1FFFFFFFU) : ((fifo->header[0] >> 18) & 0x7FFU));
+      to_push.addr = ((to_push.extended != 0U) ? (fifo->header[0] & 0x1FFFFFFFU) : ((fifo->header[0] >> 18) & 0x7FFU));
       to_push.bus = bus_number;
       to_push.data_len_code = ((fifo->header[1] >> 16) & 0xFU);
 
       uint8_t data_len_w = (dlc_to_len[to_push.data_len_code] / 4U);
-      data_len_w += ((dlc_to_len[to_push.data_len_code] % 4) > 0) ? 1U : 0U;
+      data_len_w += ((dlc_to_len[to_push.data_len_code] % 4U) > 0U) ? 1U : 0U;
       for (unsigned int i = 0; i < data_len_w; i++) {
-        WORD_TO_BYTE_ARRAY(&to_push.data[i*4], fifo->data_word[i]);
+        WORD_TO_BYTE_ARRAY(&to_push.data[i*4U], fifo->data_word[i]);
       }
 
       // forwarding (panda only)

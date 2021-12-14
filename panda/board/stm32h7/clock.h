@@ -10,6 +10,9 @@ void clock_init(void) {
   // enable external oscillator HSE
   register_set_bits(&(RCC->CR), RCC_CR_HSEON);
   while ((RCC->CR & RCC_CR_HSERDY) == 0);
+  // enable internal HSI48 for USB FS kernel
+  register_set_bits(&(RCC->CR), RCC_CR_HSI48ON);
+  while ((RCC->CR & RCC_CR_HSI48RDY) == 0);
   // Specify the frequency source for PLL1, divider for DIVM1, DIVM2, DIVM3 : HSE, 5, 5, 5
   register_set(&(RCC->PLLCKSELR), RCC_PLLCKSELR_PLLSRC_HSE | RCC_PLLCKSELR_DIVM1_0 | RCC_PLLCKSELR_DIVM1_2 | RCC_PLLCKSELR_DIVM2_0 | RCC_PLLCKSELR_DIVM2_2 | RCC_PLLCKSELR_DIVM3_0 | RCC_PLLCKSELR_DIVM3_2, 0x3F3F3F3U);
 
@@ -21,16 +24,6 @@ void clock_init(void) {
   // Enable PLL1
   register_set_bits(&(RCC->CR), RCC_CR_PLL1ON);
   while((RCC->CR & RCC_CR_PLL1RDY) == 0);
-  // *** PLL1 end ***
-
-  // *** PLL3 start ***
-  // Specify multiplier N and dividers P, Q, R for PLL1 : 48, 2, 5, 2 (PLL3Q 48Mhz for USB FS)
-  register_set(&(RCC->PLL3DIVR), 0x104022FU, 0x7F7FFFFFU);
-  // Specify the input and output frequency ranges, enable dividers for PLL1
-  register_set(&(RCC->PLLCFGR), RCC_PLLCFGR_PLL3RGE_2 | RCC_PLLCFGR_DIVP3EN | RCC_PLLCFGR_DIVQ3EN | RCC_PLLCFGR_DIVR3EN, 0x1C00C00U);
-  // Enable PLL1
-  register_set_bits(&(RCC->CR), RCC_CR_PLL3ON);
-  while((RCC->CR & RCC_CR_PLL3RDY) == 0);
   // *** PLL1 end ***
 
   //////////////OTHER CLOCKS////////////////////
@@ -49,8 +42,8 @@ void clock_init(void) {
   register_set_bits(&(RCC->AHB4ENR), RCC_APB4ENR_SYSCFGEN);
   //////////////END OTHER CLOCKS////////////////////
 
-  // Configure clock source for USB (PLL3Q at 48Mhz)
-  register_set(&(RCC->D2CCIP2R), RCC_D2CCIP2R_USBSEL_1, RCC_D2CCIP2R_USBSEL);
+  // Configure clock source for USB (HSI at 48Mhz)
+  register_set(&(RCC->D2CCIP2R), RCC_D2CCIP2R_USBSEL_1 | RCC_D2CCIP2R_USBSEL_0, RCC_D2CCIP2R_USBSEL);
   // Configure clock source for FDCAN (PLL1Q at 80Mhz)
   register_set(&(RCC->D2CCIP1R), RCC_D2CCIP1R_FDCANSEL_0, RCC_D2CCIP1R_FDCANSEL);
   // Configure clock source for ADC1,2,3 (per_ck(currently HSE))

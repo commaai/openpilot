@@ -64,6 +64,7 @@ services = {
   "uploaderState": (True, 0., 1),
   "navInstruction": (True, 0.),
   "navRoute": (True, 0.),
+  "navThumbnail": (True, 0.),
 
   # debug
   "testJoystick": (False, 0.),

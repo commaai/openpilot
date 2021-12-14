@@ -62,25 +62,25 @@ static int tesla_rx_hook(CANPacket_t *to_push) {
         if(addr == 0x370) {
           // Steering angle: (0.1 * val) - 819.2 in deg.
           // Store it 1/10 deg to match steering request
-          int angle_meas_new = (((GET_BYTE(to_push, 4) & 0x3F) << 8) | GET_BYTE(to_push, 5)) - 8192;
+          int angle_meas_new = (((GET_BYTE(to_push, 4) & 0x3FU) << 8) | GET_BYTE(to_push, 5)) - 8192U;
           update_sample(&angle_meas, angle_meas_new);
         }
       }
 
       if(addr == (tesla_powertrain ? 0x116 : 0x118)) {
         // Vehicle speed: ((0.05 * val) - 25) * MPH_TO_MPS
-        vehicle_speed = (((((GET_BYTE(to_push, 3) & 0x0F) << 8) | (GET_BYTE(to_push, 2))) * 0.05) - 25) * 0.447;
+        vehicle_speed = (((((GET_BYTE(to_push, 3) & 0x0FU) << 8) | (GET_BYTE(to_push, 2))) * 0.05) - 25) * 0.447;
         vehicle_moving = ABS(vehicle_speed) > 0.1;
       }
 
       if(addr == (tesla_powertrain ? 0x106 : 0x108)) {
         // Gas pressed
-        gas_pressed = (GET_BYTE(to_push, 6) != 0);
+        gas_pressed = (GET_BYTE(to_push, 6) != 0U);
       }
 
       if(addr == (tesla_powertrain ? 0x1f8 : 0x20a)) {
         // Brake pressed
-        brake_pressed = (((GET_BYTE(to_push, 0) & 0x0C) >> 2) != 1);
+        brake_pressed = (((GET_BYTE(to_push, 0) & 0x0CU) >> 2) != 1U);
       }
 
       if(addr == (tesla_powertrain ? 0x256 : 0x368)) {
@@ -129,7 +129,7 @@ static int tesla_tx_hook(CANPacket_t *to_send) {
   if(!tesla_powertrain && (addr == 0x488)) {
     // Steering control: (0.1 * val) - 1638.35 in deg.
     // We use 1/10 deg as a unit here
-    int raw_angle_can = (((GET_BYTE(to_send, 0) & 0x7F) << 8) | GET_BYTE(to_send, 1));
+    int raw_angle_can = (((GET_BYTE(to_send, 0) & 0x7FU) << 8) | GET_BYTE(to_send, 1));
     int desired_angle = raw_angle_can - 16384;
     int steer_control_type = GET_BYTE(to_send, 2) >> 6;
     bool steer_control_enabled = (steer_control_type != 0) &&  // NONE
@@ -164,7 +164,7 @@ static int tesla_tx_hook(CANPacket_t *to_send) {
 
   if(!tesla_powertrain && (addr == 0x45)) {
     // No button other than cancel can be sent by us
-    int control_lever_status = (GET_BYTE(to_send, 0) & 0x3F);
+    int control_lever_status = (GET_BYTE(to_send, 0) & 0x3FU);
     if((control_lever_status != 0) && (control_lever_status != 1)) {
       violation = true;
     }
@@ -174,14 +174,14 @@ static int tesla_tx_hook(CANPacket_t *to_send) {
     // DAS_control: longitudinal control message
     if (tesla_longitudinal) {
       // No AEB events may be sent by openpilot
-      int aeb_event = GET_BYTE(to_send, 2) & 0x03;
+      int aeb_event = GET_BYTE(to_send, 2) & 0x03U;
       if (aeb_event != 0) {
         violation = true;
       }
 
       // Don't allow any acceleration limits above the safety limits
-      int raw_accel_max = ((GET_BYTE(to_send, 6) & 0x1F) << 4) | (GET_BYTE(to_send, 5) >> 4);
-      int raw_accel_min = ((GET_BYTE(to_send, 5) & 0x0F) << 5) | (GET_BYTE(to_send, 4) >> 3);
+      int raw_accel_max = ((GET_BYTE(to_send, 6) & 0x1FU) << 4) | (GET_BYTE(to_send, 5) >> 4);
+      int raw_accel_min = ((GET_BYTE(to_send, 5) & 0x0FU) << 5) | (GET_BYTE(to_send, 4) >> 3);
       float accel_max = (0.04 * raw_accel_max) - 15;
       float accel_min = (0.04 * raw_accel_min) - 15;
 

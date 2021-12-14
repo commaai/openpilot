@@ -28,8 +28,6 @@
 #include "selfdrive/camerad/cameras/camera_replay.h"
 #endif
 
-const int YUV_COUNT = 100;
-
 class Debayer {
 public:
   Debayer(cl_device_id device_id, cl_context context, const CameraBuf *b, const CameraState *s) {
@@ -109,7 +107,7 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
   vipc_server->create_buffers(rgb_type, UI_BUF_COUNT, true, rgb_width, rgb_height);
   rgb_stride = vipc_server->get_buffer(rgb_type)->stride;
 
-  vipc_server->create_buffers(yuv_type, YUV_COUNT, false, rgb_width, rgb_height);
+  vipc_server->create_buffers(yuv_type, YUV_BUFFER_COUNT, false, rgb_width, rgb_height);
 
   if (ci->bayer) {
     debayer = new Debayer(device_id, context, this, s);
@@ -353,7 +351,7 @@ void *processing_thread(MultiCameraState *cameras, CameraState *cs, process_thre
   } else {
     thread_name = "WideRoadCamera";
   }
-  set_thread_name(thread_name);
+  util::set_thread_name(thread_name);
 
   uint32_t cnt = 0;
   while (!do_exit) {
@@ -410,11 +408,11 @@ static void driver_cam_auto_exposure(CameraState *c, SubMaster &sm) {
   camera_autoexposure(c, set_exposure_target(b, rect.x1, rect.x2, rect.x_skip, rect.y1, rect.y2, rect.y_skip));
 }
 
-void common_process_driver_camera(SubMaster *sm, PubMaster *pm, CameraState *c, int cnt) {
+void common_process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) {
   int j = Hardware::TICI() ? 1 : 3;
   if (cnt % j == 0) {
-    sm->update(0);
-    driver_cam_auto_exposure(c, *sm);
+    s->sm->update(0);
+    driver_cam_auto_exposure(c, *(s->sm));
   }
   MessageBuilder msg;
   auto framed = msg.initEvent().initDriverCameraState();
@@ -423,5 +421,5 @@ void common_process_driver_camera(SubMaster *sm, PubMaster *pm, CameraState *c, 
   if (env_send_driver) {
     framed.setImage(get_frame_image(&c->buf));
   }
-  pm->send("driverCameraState", msg);
+  s->pm->send("driverCameraState", msg);
 }

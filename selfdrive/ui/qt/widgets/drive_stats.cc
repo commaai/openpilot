@@ -48,7 +48,7 @@ DriveStats::DriveStats(QWidget* parent) : QFrame(parent) {
   if (auto dongleId = getDongleId()) {
     QString url = CommaApi::BASE_URL + "/v1.1/devices/" + *dongleId + "/stats";
     RequestRepeater* repeater = new RequestRepeater(this, url, "ApiCache_DriveStats", 30);
-    QObject::connect(repeater, &RequestRepeater::receivedResponse, this, &DriveStats::parseResponse);
+    QObject::connect(repeater, &RequestRepeater::requestDone, this, &DriveStats::parseResponse);
   }
 
   setStyleSheet(R"(
@@ -76,7 +76,9 @@ void DriveStats::updateStats() {
   update(json["week"].toObject(), week_);
 }
 
-void DriveStats::parseResponse(const QString& response) {
+void DriveStats::parseResponse(const QString& response, bool success) {
+  if (!success) return;
+
   QJsonDocument doc = QJsonDocument::fromJson(response.trimmed().toUtf8());
   if (doc.isNull()) {
     qDebug() << "JSON Parse failed on getting past drives statistics";

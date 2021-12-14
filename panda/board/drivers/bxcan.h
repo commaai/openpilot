@@ -112,7 +112,7 @@ void process_can(uint8_t can_number) {
           to_push.returned = 1U;
           to_push.rejected = 0U;
           to_push.extended = (CAN->sTxMailBox[0].TIR >> 2) & 0x1U;
-          to_push.addr = (to_push.extended != 0) ? (CAN->sTxMailBox[0].TIR >> 3) : (CAN->sTxMailBox[0].TIR >> 21);
+          to_push.addr = (to_push.extended != 0U) ? (CAN->sTxMailBox[0].TIR >> 3) : (CAN->sTxMailBox[0].TIR >> 21);
           to_push.data_len_code = CAN->sTxMailBox[0].TDTR & 0xFU;
           to_push.bus = bus_number;
           WORD_TO_BYTE_ARRAY(&to_push.data[0], CAN->sTxMailBox[0].TDLR);
@@ -141,7 +141,7 @@ void process_can(uint8_t can_number) {
       if (can_pop(can_queues[bus_number], &to_send)) {
         can_tx_cnt += 1;
         // only send if we have received a packet
-        CAN->sTxMailBox[0].TIR = ((to_send.extended != 0) ? (to_send.addr << 3) : (to_send.addr << 21)) | (to_send.extended << 2);
+        CAN->sTxMailBox[0].TIR = ((to_send.extended != 0U) ? (to_send.addr << 3) : (to_send.addr << 21)) | (to_send.extended << 2);
         CAN->sTxMailBox[0].TDTR = to_send.data_len_code;
         BYTE_ARRAY_TO_WORD(CAN->sTxMailBox[0].TDLR, &to_send.data[0]);
         BYTE_ARRAY_TO_WORD(CAN->sTxMailBox[0].TDHR, &to_send.data[4]);
@@ -173,7 +173,7 @@ void can_rx(uint8_t can_number) {
     to_push.returned = 0U;
     to_push.rejected = 0U;
     to_push.extended = (CAN->sFIFOMailBox[0].RIR >> 2) & 0x1U;
-    to_push.addr = (to_push.extended != 0) ? (CAN->sFIFOMailBox[0].RIR >> 3) : (CAN->sFIFOMailBox[0].RIR >> 21);
+    to_push.addr = (to_push.extended != 0U) ? (CAN->sFIFOMailBox[0].RIR >> 3) : (CAN->sFIFOMailBox[0].RIR >> 21);
     to_push.data_len_code = CAN->sFIFOMailBox[0].RDTR & 0xFU;
     to_push.bus = bus_number;
     WORD_TO_BYTE_ARRAY(&to_push.data[0], CAN->sFIFOMailBox[0].RDLR);

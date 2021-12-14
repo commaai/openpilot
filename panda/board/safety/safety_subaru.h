@@ -42,7 +42,7 @@ static uint8_t subaru_get_checksum(CANPacket_t *to_push) {
 }
 
 static uint8_t subaru_get_counter(CANPacket_t *to_push) {
-  return (uint8_t)(GET_BYTE(to_push, 1) & 0xF);
+  return (uint8_t)(GET_BYTE(to_push, 1) & 0xFU);
 }
 
 static uint8_t subaru_compute_checksum(CANPacket_t *to_push) {
@@ -60,18 +60,18 @@ static int subaru_rx_hook(CANPacket_t *to_push) {
   bool valid = addr_safety_check(to_push, &subaru_rx_checks,
                             subaru_get_checksum, subaru_compute_checksum, subaru_get_counter);
 
-  if (valid && (GET_BUS(to_push) == 0)) {
+  if (valid && (GET_BUS(to_push) == 0U)) {
     int addr = GET_ADDR(to_push);
     if (addr == 0x119) {
       int torque_driver_new;
-      torque_driver_new = ((GET_BYTES_04(to_push) >> 16) & 0x7FF);
+      torque_driver_new = ((GET_BYTES_04(to_push) >> 16) & 0x7FFU);
       torque_driver_new = -1 * to_signed(torque_driver_new, 11);
       update_sample(&torque_driver, torque_driver_new);
     }
 
     // enter controls on rising edge of ACC, exit controls on ACC off
     if (addr == 0x240) {
-      int cruise_engaged = ((GET_BYTES_48(to_push) >> 9) & 1);
+      int cruise_engaged = ((GET_BYTES_48(to_push) >> 9) & 1U);
       if (cruise_engaged && !cruise_engaged_prev) {
         controls_allowed = 1;
       }
@@ -83,18 +83,17 @@ static int subaru_rx_hook(CANPacket_t *to_push) {
 
     // sample wheel speed, averaging opposite corners
     if (addr == 0x13a) {
-      int subaru_speed = (GET_BYTES_04(to_push) >> 12) & 0x1FFF;  // FR
-      subaru_speed += (GET_BYTES_48(to_push) >> 6) & 0x1FFF;  // RL
+      int subaru_speed = ((GET_BYTES_04(to_push) >> 12) & 0x1FFFU) + ((GET_BYTES_48(to_push) >> 6) & 0x1FFFU);  // FR + RL
       subaru_speed /= 2;
       vehicle_moving = subaru_speed > SUBARU_STANDSTILL_THRSLD;
     }
 
     if (addr == 0x13c) {
-      brake_pressed = ((GET_BYTE(to_push, 7) >> 6) & 1);
+      brake_pressed = ((GET_BYTE(to_push, 7) >> 6) & 1U);
     }
 
     if (addr == 0x40) {
-      gas_pressed = GET_BYTE(to_push, 4) != 0;
+      gas_pressed = GET_BYTE(to_push, 4) != 0U;
     }
 
     generic_rx_checks((addr == 0x122));
@@ -106,7 +105,7 @@ static int subaru_legacy_rx_hook(CANPacket_t *to_push) {
 
   bool valid = addr_safety_check(to_push, &subaru_l_rx_checks, NULL, NULL, NULL);
 
-  if (valid && (GET_BUS(to_push) == 0)) {
+  if (valid && (GET_BUS(to_push) == 0U)) {
     int addr = GET_ADDR(to_push);
     if (addr == 0x371) {
       int torque_driver_new;
@@ -117,7 +116,7 @@ static int subaru_legacy_rx_hook(CANPacket_t *to_push) {
 
     // enter controls on rising edge of ACC, exit controls on ACC off
     if (addr == 0x144) {
-      int cruise_engaged = ((GET_BYTES_48(to_push) >> 17) & 1);
+      int cruise_engaged = ((GET_BYTES_48(to_push) >> 17) & 1U);
       if (cruise_engaged && !cruise_engaged_prev) {
         controls_allowed = 1;
       }
@@ -129,18 +128,17 @@ static int subaru_legacy_rx_hook(CANPacket_t *to_push) {
 
     // sample wheel speed, averaging opposite corners
     if (addr == 0xD4) {
-      int subaru_speed = (GET_BYTES_04(to_push) >> 16) & 0xFFFF;  // FR
-      subaru_speed += GET_BYTES_48(to_push) & 0xFFFF;  // RL
+      int subaru_speed = ((GET_BYTES_04(to_push) >> 16) & 0xFFFFU) + (GET_BYTES_48(to_push) & 0xFFFFU);  // FR + RL
       subaru_speed /= 2;
       vehicle_moving = subaru_speed > SUBARU_STANDSTILL_THRSLD;
     }
 
     if (addr == 0xD1) {
-      brake_pressed = ((GET_BYTES_04(to_push) >> 16) & 0xFF) > 0;
+      brake_pressed = ((GET_BYTES_04(to_push) >> 16) & 0xFFU) > 0U;
     }
 
     if (addr == 0x140) {
-      gas_pressed = GET_BYTE(to_push, 0) != 0;
+      gas_pressed = GET_BYTE(to_push, 0) != 0U;
     }
 
     generic_rx_checks((addr == 0x164));
@@ -158,7 +156,7 @@ static int subaru_tx_hook(CANPacket_t *to_send) {
 
   // steer cmd checks
   if (addr == 0x122) {
-    int desired_torque = ((GET_BYTES_04(to_send) >> 16) & 0x1FFF);
+    int desired_torque = ((GET_BYTES_04(to_send) >> 16) & 0x1FFFU);
     bool violation = 0;
     uint32_t ts = microsecond_timer_get();
 
@@ -218,7 +216,7 @@ static int subaru_legacy_tx_hook(CANPacket_t *to_send) {
 
   // steer cmd checks
   if (addr == 0x164) {
-    int desired_torque = ((GET_BYTES_04(to_send) >> 8) & 0x1FFF);
+    int desired_torque = ((GET_BYTES_04(to_send) >> 8) & 0x1FFFU);
     bool violation = 0;
     uint32_t ts = microsecond_timer_get();
 

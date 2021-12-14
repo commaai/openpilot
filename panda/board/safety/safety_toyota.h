@@ -24,7 +24,7 @@ const int TOYOTA_STANDSTILL_THRSLD = 100;  // 1kph
 // gas_norm2 = ((gain_dbc*gas2) + offset2_dbc)
 // In this safety: ((gas1 + gas2)/2) > THRESHOLD
 const int TOYOTA_GAS_INTERCEPTOR_THRSLD = 845;
-#define TOYOTA_GET_INTERCEPTOR(msg) (((GET_BYTE((msg), 0) << 8) + GET_BYTE((msg), 1) + (GET_BYTE((msg), 2) << 8) + GET_BYTE((msg), 3)) / 2) // avg between 2 tracks
+#define TOYOTA_GET_INTERCEPTOR(msg) (((GET_BYTE((msg), 0) << 8) + GET_BYTE((msg), 1) + (GET_BYTE((msg), 2) << 8) + GET_BYTE((msg), 3)) / 2U) // avg between 2 tracks
 
 const CanMsg TOYOTA_TX_MSGS[] = {{0x283, 0, 7}, {0x2E6, 0, 8}, {0x2E7, 0, 8}, {0x33E, 0, 7}, {0x344, 0, 8}, {0x365, 0, 7}, {0x366, 0, 7}, {0x4CB, 0, 8},  // DSU bus 0
                                  {0x128, 1, 6}, {0x141, 1, 4}, {0x160, 1, 8}, {0x161, 1, 7}, {0x470, 1, 4},  // DSU bus 1
@@ -55,7 +55,7 @@ static uint8_t toyota_compute_checksum(CANPacket_t *to_push) {
 }
 
 static uint8_t toyota_get_checksum(CANPacket_t *to_push) {
-  int checksum_byte = GET_LEN(to_push) - 1;
+  int checksum_byte = GET_LEN(to_push) - 1U;
   return (uint8_t)(GET_BYTE(to_push, checksum_byte));
 }
 
@@ -64,7 +64,7 @@ static int toyota_rx_hook(CANPacket_t *to_push) {
   bool valid = addr_safety_check(to_push, &toyota_rx_checks,
                                  toyota_get_checksum, toyota_compute_checksum, NULL);
 
-  if (valid && (GET_BUS(to_push) == 0)) {
+  if (valid && (GET_BUS(to_push) == 0U)) {
     int addr = GET_ADDR(to_push);
 
     // get eps motor torque (0.66 factor in dbc)
@@ -87,7 +87,7 @@ static int toyota_rx_hook(CANPacket_t *to_push) {
     // exit controls on rising edge of gas press
     if (addr == 0x1D2) {
       // 5th bit is CRUISE_ACTIVE
-      int cruise_engaged = GET_BYTE(to_push, 0) & 0x20;
+      int cruise_engaged = GET_BYTE(to_push, 0) & 0x20U;
       if (!cruise_engaged) {
         controls_allowed = 0;
       }
@@ -98,7 +98,7 @@ static int toyota_rx_hook(CANPacket_t *to_push) {
 
       // sample gas pedal
       if (!gas_interceptor_detected) {
-        gas_pressed = ((GET_BYTE(to_push, 0) >> 4) & 1) == 0;
+        gas_pressed = ((GET_BYTE(to_push, 0) >> 4) & 1U) == 0U;
       }
     }
 
@@ -106,9 +106,9 @@ static int toyota_rx_hook(CANPacket_t *to_push) {
     if (addr == 0xaa) {
       int speed = 0;
       // sum 4 wheel speeds
-      for (int i=0; i<8; i+=2) {
-        int next_byte = i + 1;  // hack to deal with misra 10.8
-        speed += (GET_BYTE(to_push, i) << 8) + GET_BYTE(to_push, next_byte) - 0x1a6f;
+      for (uint8_t i=0U; i<8U; i+=2U) {
+        int wheel_speed = (GET_BYTE(to_push, i) << 8U) + GET_BYTE(to_push, (i+1U));
+        speed += wheel_speed - 0x1a6f;
       }
       vehicle_moving = ABS(speed / 4) > TOYOTA_STANDSTILL_THRSLD;
     }
@@ -116,7 +116,7 @@ static int toyota_rx_hook(CANPacket_t *to_push) {
     // most cars have brake_pressed on 0x226, corolla and rav4 on 0x224
     if ((addr == 0x224) || (addr == 0x226)) {
       int byte = (addr == 0x224) ? 0 : 4;
-      brake_pressed = ((GET_BYTE(to_push, byte) >> 5) & 1) != 0;
+      brake_pressed = ((GET_BYTE(to_push, byte) >> 5) & 1U) != 0U;
     }
 
     // sample gas interceptor
@@ -176,8 +176,8 @@ static int toyota_tx_hook(CANPacket_t *to_send) {
     // only sent to prevent dash errors, no actuation is accepted
     if (addr == 0x191) {
       // check the STEER_REQUEST, STEER_REQUEST_2, and STEER_ANGLE_CMD signals
-      bool lta_request = (GET_BYTE(to_send, 0) & 1) != 0;
-      bool lta_request2 = ((GET_BYTE(to_send, 3) >> 1) & 1) != 0;
+      bool lta_request = (GET_BYTE(to_send, 0) & 1U) != 0U;
+      bool lta_request2 = ((GET_BYTE(to_send, 3) >> 1) & 1U) != 0U;
       int lta_angle = (GET_BYTE(to_send, 1) << 8) | GET_BYTE(to_send, 2);
       lta_angle = to_signed(lta_angle, 16);
 

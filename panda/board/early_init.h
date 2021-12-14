@@ -38,9 +38,9 @@ void early_initialization(void) {
 
   // if wrong chip, reboot
   volatile unsigned int id = DBGMCU->IDCODE;
-    if ((id & 0xFFFU) != MCU_IDCODE) {
-      enter_bootloader_mode = ENTER_BOOTLOADER_MAGIC;
-    }
+  if ((id & 0xFFFU) != MCU_IDCODE) {
+    enter_bootloader_mode = ENTER_BOOTLOADER_MAGIC;
+  }
 
   // setup interrupt table
   SCB->VTOR = (uint32_t)&g_pfnVectors;

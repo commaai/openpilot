@@ -30,7 +30,7 @@ from selfdrive.hardware import HARDWARE, PC
 from selfdrive.loggerd.config import ROOT
 from selfdrive.loggerd.xattr_cache import getxattr, setxattr
 from selfdrive.swaglog import cloudlog, SWAGLOG_DIR
-from selfdrive.version import version, get_version, get_git_remote, get_git_branch, get_git_commit
+from selfdrive.version import get_version, get_origin, get_short_branch, get_commit
 
 ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
 HANDLER_THREADS = int(os.getenv('HANDLER_THREADS', "4"))
@@ -176,17 +176,19 @@ def getMessage(service=None, timeout=1000):
 def getVersion():
   return {
     "version": get_version(),
-    "remote": get_git_remote(),
-    "branch": get_git_branch(),
-    "commit": get_git_commit(),
+    "remote": get_origin(),
+    "branch": get_short_branch(),
+    "commit": get_commit(),
   }
 
 
 @dispatcher.add_method
-def setNavDestination(latitude=0, longitude=0):
+def setNavDestination(latitude=0, longitude=0, place_name=None, place_details=None):
   destination = {
     "latitude": latitude,
     "longitude": longitude,
+    "place_name": place_name,
+    "place_details": place_details,
   }
   Params().put("NavDestination", json.dumps(destination))
 
@@ -551,7 +553,7 @@ def main():
     except socket.timeout:
       try:
         r = requests.get("http://api.commadotai.com/v1/me", allow_redirects=False,
-                         headers={"User-Agent": f"openpilot-{version}"}, timeout=15.0)
+                         headers={"User-Agent": f"openpilot-{get_version()}"}, timeout=15.0)
         if r.status_code == 302 and r.headers['Location'].startswith("http://u.web2go.com"):
           params.put_bool("PrimeRedirected", True)
       except Exception:

@@ -38,11 +38,11 @@ static int gm_rx_hook(CANPacket_t *to_push) {
 
   bool valid = addr_safety_check(to_push, &gm_rx_checks, NULL, NULL, NULL);
 
-  if (valid && (GET_BUS(to_push) == 0)) {
+  if (valid && (GET_BUS(to_push) == 0U)) {
     int addr = GET_ADDR(to_push);
 
     if (addr == 388) {
-      int torque_driver_new = ((GET_BYTE(to_push, 6) & 0x7) << 8) | GET_BYTE(to_push, 7);
+      int torque_driver_new = ((GET_BYTE(to_push, 6) & 0x7U) << 8) | GET_BYTE(to_push, 7);
       torque_driver_new = to_signed(torque_driver_new, 11);
       // update array of samples
       update_sample(&torque_driver, torque_driver_new);
@@ -56,7 +56,7 @@ static int gm_rx_hook(CANPacket_t *to_push) {
 
     // ACC steering wheel buttons
     if (addr == 481) {
-      int button = (GET_BYTE(to_push, 5) & 0x70) >> 4;
+      int button = (GET_BYTE(to_push, 5) & 0x70U) >> 4;
       switch (button) {
         case 2:  // resume
         case 3:  // set
@@ -74,16 +74,16 @@ static int gm_rx_hook(CANPacket_t *to_push) {
     if (addr == 241) {
       // Brake pedal's potentiometer returns near-zero reading
       // even when pedal is not pressed
-      brake_pressed = GET_BYTE(to_push, 1) >= 10;
+      brake_pressed = GET_BYTE(to_push, 1) >= 10U;
     }
 
     if (addr == 417) {
-      gas_pressed = GET_BYTE(to_push, 6) != 0;
+      gas_pressed = GET_BYTE(to_push, 6) != 0U;
     }
 
     // exit controls on regen paddle
     if (addr == 189) {
-      bool regen = GET_BYTE(to_push, 0) & 0x20;
+      bool regen = GET_BYTE(to_push, 0) & 0x20U;
       if (regen) {
         controls_allowed = 0;
       }

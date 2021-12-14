@@ -206,18 +206,18 @@ void ignition_can_hook(CANPacket_t *to_push) {
     // since the 0x1F1 signal can briefly go low immediately after ignition
     if ((addr == 0x160) && (len == 5)) {
       // this message isn't all zeros when ignition is on
-      ignition_cadillac = GET_BYTES_04(to_push) != 0;
+      ignition_cadillac = GET_BYTES_04(to_push) != 0U;
     }
     if ((addr == 0x1F1) && (len == 8)) {
       // Bit 5 is ignition "on"
-      bool ignition_gm = ((GET_BYTE(to_push, 0) & 0x20) != 0);
+      bool ignition_gm = ((GET_BYTE(to_push, 0) & 0x20U) != 0U);
       ignition_can = ignition_gm || ignition_cadillac;
     }
 
     // Tesla exception
     if ((addr == 0x348) && (len == 8)) {
       // GTW_status
-      ignition_can = (GET_BYTE(to_push, 0) & 0x1) != 0;
+      ignition_can = (GET_BYTE(to_push, 0) & 0x1U) != 0U;
     }
 
     // Mazda exception
