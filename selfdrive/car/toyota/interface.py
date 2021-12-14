@@ -181,7 +181,7 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.444  # not optimized yet
       ret.mass = 3060. * CV.LB_TO_KG + STD_CARGO_KG
 
-      if corollaTSS2_use_indi:  # birdman6450#7399's Corolla 2020 TSS2 Tune
+      if lat_params.corollaTSS2_use_indi:  # birdman6450#7399's Corolla 2020 TSS2 Tune
         ret.lateralTuning.init('indi')
         ret.lateralTuning.indi.innerLoopGainBP = [18, 22, 26]
         ret.lateralTuning.indi.innerLoopGainV = [9, 12, 15]
@@ -277,31 +277,6 @@ class CarInterface(CarInterfaceBase):
       tire_stiffness_factor = 0.444
       ret.mass = 4305. * CV.LB_TO_KG + STD_CARGO_KG
       set_lat_tune(ret.lateralTuning, lat_params, LatTunes.PID_J)
-
-    if use_steering_model:
-      ret.lateralTuning.init('model')
-      ret.lateralTuning.model.name = 'corolla_model_v5'
-      ret.lateralTuning.model.useRates = False
-      ret.lateralTuning.model.multiplier = 1.
-      # use kf from PID to calculate torque multiplier
-      # TODO: feed this into the model so it can extrapolate accurately
-      if ret.lateralTuning.which() == 'pid':
-        COROLLA_KF = 0.00006908923778520113
-        if not np.isclose(ret.lateralTuning.pid.kf, 0.):
-          ret.lateralTuning.model.multiplier = ret.lateralTuning.pid.kf / COROLLA_KF
-
-    elif use_lqr:
-      ret.lateralTuning.init('lqr')
-
-      ret.lateralTuning.lqr.scale = 1500.0
-      ret.lateralTuning.lqr.ki = 0.05
-
-      ret.lateralTuning.lqr.a = [0., 1., -0.22619643, 1.21822268]
-      ret.lateralTuning.lqr.b = [-1.92006585e-04, 3.95603032e-05]
-      ret.lateralTuning.lqr.c = [1., 0.]
-      ret.lateralTuning.lqr.k = [-110.73572306, 451.22718255]
-      ret.lateralTuning.lqr.l = [0.3233671, 0.3185757]
-      ret.lateralTuning.lqr.dcGain = 0.002237852961363602
 
     ret.centerToFront = ret.wheelbase * 0.44
 
