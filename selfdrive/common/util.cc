@@ -210,7 +210,7 @@ std::string dir_name(std::string const &path) {
 }
 
 std::string check_output(const std::string& command) {
-  char buffer[128];
+  char buffer[1024];
   std::string result;
   std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(command.c_str(), "r"), pclose);
 
