@@ -21,6 +21,7 @@ from selfdrive.athena.athenad import MAX_RETRY_COUNT, dispatcher
 from selfdrive.athena.tests.helpers import MockWebsocket, MockParams, MockApi, EchoSocket, with_http_server
 from cereal import messaging
 
+
 class TestAthenadMethods(unittest.TestCase):
   @classmethod
   def setUpClass(cls):

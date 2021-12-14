@@ -59,14 +59,14 @@ class MockParams():
 
   @staticmethod
   def restore_defaults():
-    MockParams.params = MockParams.default_params.copy() 
+    MockParams.params = MockParams.default_params.copy()
 
   def get(self, k, encoding=None):
     ret = MockParams.params.get(k)
     if ret is not None and encoding is not None:
       ret = ret.decode(encoding)
     return ret
-  
+
   def put(self, k, v):
     if k not in MockParams.params:
       raise KeyError(f"key: {k} not in MockParams")
