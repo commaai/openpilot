@@ -171,10 +171,10 @@ class EngagementAlert(Alert):
 
 
 class NormalPermanentAlert(Alert):
-  def __init__(self, alert_text_1: str, alert_text_2: str = "", duration: float = 0.2, priority: Priority = Priority.LOWER):
+  def __init__(self, alert_text_1: str, alert_text_2: str = "", duration: float = 0.2, priority: Priority = Priority.LOWER, creation_delay: float = 0.):
     super().__init__(alert_text_1, alert_text_2,
                      AlertStatus.normal, AlertSize.mid if len(alert_text_2) else AlertSize.small,
-                     priority, VisualAlert.none, AudibleAlert.none, duration),
+                     priority, VisualAlert.none, AudibleAlert.none, duration, creation_delay=creation_delay),
 
 
 class StartupAlert(Alert):
@@ -752,18 +752,21 @@ EVENTS: Dict[int, Dict[str, Union[Alert, Callable[[Any, messaging.SubMaster, boo
   },
 
   EventName.roadCameraError: {
-    ET.PERMANENT: NormalPermanentAlert("Road Camera Error", "",
-                                       duration=10.),
+    ET.PERMANENT: NormalPermanentAlert("Camera Error",
+                                       duration=1.,
+                                       creation_delay=30.),
   },
 
   EventName.driverCameraError: {
-    ET.PERMANENT: NormalPermanentAlert("Driver Camera Error", "",
-                                       duration=10.),
+    ET.PERMANENT: NormalPermanentAlert("Camera Error",
+                                       duration=1.,
+                                       creation_delay=30.),
   },
 
   EventName.wideRoadCameraError: {
-    ET.PERMANENT: NormalPermanentAlert("Wide Road Camera Error", "",
-                                       duration=10.),
+    ET.PERMANENT: NormalPermanentAlert("Camera Error",
+                                       duration=1.,
+                                       creation_delay=30.),
   },
 
   # Sometimes the USB stack on the device can get into a bad state

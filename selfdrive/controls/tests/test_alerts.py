@@ -76,11 +76,16 @@ class TestAlerts(unittest.TestCase):
   def test_alert_sanity_check(self):
     for a in ALERTS:
       if a.alert_size == AlertSize.none:
-        self.assertEqual(0, len(a.alert_text_1))
-        self.assertEqual(0, len(a.alert_text_2))
+        self.assertEqual(len(a.alert_text_1), 0)
+        self.assertEqual(len(a.alert_text_2), 0)
+      elif a.alert_size == AlertSize.small:
+        self.assertGreater(len(a.alert_text_1), 0)
+        self.assertEqual(len(a.alert_text_2), 0)
+      elif a.alert_size == AlertSize.mid:
+        self.assertGreater(len(a.alert_text_1), 0)
+        self.assertGreater(len(a.alert_text_2), 0)
       else:
-        if a.alert_size == AlertSize.small:
-          self.assertEqual(0, len(a.alert_text_2))
+        self.assertGreater(len(a.alert_text_1), 0)
 
       self.assertGreaterEqual(a.duration, 0.)
 

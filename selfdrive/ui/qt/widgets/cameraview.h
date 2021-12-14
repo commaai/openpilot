@@ -48,6 +48,8 @@ protected:
   std::atomic<VisionStreamType> stream_type;
   QThread *vipc_thread = nullptr;
 
+  std::mutex texture_lock;
+
 protected slots:
   void vipcConnected(VisionIpcClient *vipc_client);
   void vipcFrameReceived(VisionBuf *buf);
