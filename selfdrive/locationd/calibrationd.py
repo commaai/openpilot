@@ -99,16 +99,10 @@ class Calibrator():
       self.old_rpy = smooth_from
       self.old_rpy_weight = 1.0
 
-  def get_valid_idxs(self, ):
-    # exclude current block_idx from validity window
-    before_current = list(range(self.block_idx))
-    after_current = list(range(min(self.valid_blocks, self.block_idx + 1), self.valid_blocks))
-    return before_current + after_current
-
   def update_status(self):
     if self.valid_blocks > 0:
-      max_rpy_calib = np.array(np.max(self.rpys[self.get_valid_idxs()], axis=0))
-      min_rpy_calib = np.array(np.min(self.rpys[self.get_valid_idxs()], axis=0))
+      max_rpy_calib = np.array(np.max(self.rpys[:self.valid_blocks], axis=0))
+      min_rpy_calib = np.array(np.min(self.rpys[:self.valid_blocks], axis=0))
       self.calib_spread = np.abs(max_rpy_calib - min_rpy_calib)
     else:
       self.calib_spread = np.zeros(3)
@@ -164,7 +158,7 @@ class Calibrator():
       self.valid_blocks = max(self.block_idx, self.valid_blocks)
       self.block_idx = self.block_idx % INPUTS_WANTED
     if self.valid_blocks > 0:
-      self.rpy = np.mean(self.rpys[self.get_valid_idxs()], axis=0)
+      self.rpy = np.mean(self.rpys[:self.valid_blocks], axis=0)
 
     self.update_status()
 
