@@ -286,8 +286,23 @@ void SoftwarePanel::updateLabels() {
   osVersionLbl->setText(QString::fromStdString(Hardware::get_os_version()).trimmed());
 }
 
-QWidget * network_panel(QWidget * parent) {
 #ifdef QCOM
+static QString get_ipv4_address() {
+  std::string result = util::check_output("ifconfig wlan0");
+  if (result.empty()) return "";
+
+  const std::string inetaddrr = "inet addr:";
+  std::string::size_type begin = result.find(inetaddrr);
+  if (begin == std::string::npos) return "";
+
+  begin += inetaddrr.length();
+  std::string::size_type end = result.find(' ', begin);
+  if (end == std::string::npos) return "";
+
+  return result.substr(begin, end - begin).c_str();
+}
+
+QWidget * network_panel(QWidget * parent) {
   QWidget *w = new QWidget(parent);
   QVBoxLayout *layout = new QVBoxLayout(w);
   layout->setContentsMargins(50, 0, 50, 0);
@@ -303,17 +318,19 @@ QWidget * network_panel(QWidget * parent) {
   QObject::connect(tetheringBtn, &ButtonControl::clicked, [=]() { HardwareEon::launch_tethering(); });
   list->addItem(tetheringBtn);
 
+  list->addItem(new LabelControl("IP Address", get_ipv4_address()));
   // SSH key management
   list->addItem(new SshToggle());
   list->addItem(new SshControl());
-
   layout->addWidget(list);
   layout->addStretch(1);
-#else
-  Networking *w = new Networking(parent);
-#endif
   return w;
 }
+#else
+QWidget * network_panel(QWidget * parent) {
+  return new Networking(parent);
+}
+#endif
 
 void SettingsWindow::showEvent(QShowEvent *event) {
   panel_widget->setCurrentIndex(0);
