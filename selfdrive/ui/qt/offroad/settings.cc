@@ -332,11 +332,11 @@ QString C2NetworkPanel::getIPAddress() {
 }
 
 QWidget *network_panel(QWidget *parent) {
-  if (Hardware::EON()) {
-    return new C2NetworkPanel(parent);
-  } else {
-    return new Networking(parent);
-  }
+#ifdef QCOM
+  return new C2NetworkPanel(parent);
+#else
+  return new Networking(parent);
+#endif
 }
 
 void SettingsWindow::showEvent(QShowEvent *event) {
