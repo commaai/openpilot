@@ -33,13 +33,14 @@ class CarState(CarStateBase):
     if self.CP.carFingerprint in [CAR.ROGUE, CAR.XTRAIL, CAR.ALTIMA]:
       ret.brakePressed = bool(cp.vl["DOORS_LIGHTS"]["USER_BRAKE_PRESSED"])
     elif self.CP.carFingerprint in [CAR.LEAF, CAR.LEAF_IC]:
-      ret.brakePressed = bool(cp.vl["BRAKE_PEDAL"]["BRAKE_PEDAL"] > 3)
+      ret.brakePressed = bool(cp.vl["CRUISE_THROTTLE"]["USER_BRAKE_PRESSED"])
 
-    ret.wheelSpeeds.fl = cp.vl["WHEEL_SPEEDS_FRONT"]["WHEEL_SPEED_FL"] * CV.KPH_TO_MS
-    ret.wheelSpeeds.fr = cp.vl["WHEEL_SPEEDS_FRONT"]["WHEEL_SPEED_FR"] * CV.KPH_TO_MS
-    ret.wheelSpeeds.rl = cp.vl["WHEEL_SPEEDS_REAR"]["WHEEL_SPEED_RL"] * CV.KPH_TO_MS
-    ret.wheelSpeeds.rr = cp.vl["WHEEL_SPEEDS_REAR"]["WHEEL_SPEED_RR"] * CV.KPH_TO_MS
-
+    ret.wheelSpeeds = self.get_wheel_speeds(
+      cp.vl["WHEEL_SPEEDS_FRONT"]["WHEEL_SPEED_FL"],
+      cp.vl["WHEEL_SPEEDS_FRONT"]["WHEEL_SPEED_FR"],
+      cp.vl["WHEEL_SPEEDS_REAR"]["WHEEL_SPEED_RL"],
+      cp.vl["WHEEL_SPEEDS_REAR"]["WHEEL_SPEED_RR"],
+    )
     ret.vEgoRaw = (ret.wheelSpeeds.fl + ret.wheelSpeeds.fr + ret.wheelSpeeds.rl + ret.wheelSpeeds.rr) / 4.
 
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
@@ -184,8 +185,7 @@ class CarState(CarStateBase):
 
     elif CP.carFingerprint in [CAR.LEAF, CAR.LEAF_IC]:
       signals += [
-        ("BRAKE_PEDAL", "BRAKE_PEDAL", 0),
-
+        ("USER_BRAKE_PRESSED", "CRUISE_THROTTLE", 1),
         ("GAS_PEDAL", "CRUISE_THROTTLE", 0),
         ("CRUISE_AVAILABLE", "CRUISE_THROTTLE", 0),
         ("SPEED_MPH", "HUD_SETTINGS", 0),

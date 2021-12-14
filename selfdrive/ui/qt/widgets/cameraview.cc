@@ -1,9 +1,18 @@
 #include "selfdrive/ui/qt/widgets/cameraview.h"
 
+#ifdef __APPLE__
+#include <OpenGL/gl3.h>
+#else
+#include <GLES3/gl3.h>
+#endif
+
+#include <QOpenGLBuffer>
+#include <QOffscreenSurface>
+
 namespace {
 
 const char frame_vertex_shader[] =
-#ifdef NANOVG_GL3_IMPLEMENTATION
+#ifdef __APPLE__
   "#version 150 core\n"
 #else
   "#version 300 es\n"
@@ -18,7 +27,7 @@ const char frame_vertex_shader[] =
   "}\n";
 
 const char frame_fragment_shader[] =
-#ifdef NANOVG_GL3_IMPLEMENTATION
+#ifdef __APPLE__
   "#version 150 core\n"
 #else
   "#version 300 es\n"
@@ -42,28 +51,22 @@ const mat4 device_transform = {{
   0.0,  0.0, 0.0, 1.0,
 }};
 
-mat4 get_driver_view_transform() {
+mat4 get_driver_view_transform(int screen_width, int screen_height, int stream_width, int stream_height) {
   const float driver_view_ratio = 1.333;
   mat4 transform;
-  if (Hardware::TICI()) {
-    // from dmonitoring.cc
-    const int full_width_tici = 1928;
-    const int full_height_tici = 1208;
-    const int adapt_width_tici = 954;
-    const int crop_x_offset = -72;
-    const int crop_y_offset = -144;
-    const float yscale = full_height_tici * driver_view_ratio / adapt_width_tici;
-    const float xscale = yscale*(1080)/(2160)*full_width_tici/full_height_tici;
+  if (stream_width == TICI_CAM_WIDTH) {
+    const float yscale = stream_height * driver_view_ratio / tici_dm_crop::width;
+    const float xscale = yscale*screen_height/screen_width*stream_width/stream_height;
     transform = (mat4){{
-      xscale,  0.0, 0.0, xscale*crop_x_offset/full_width_tici*2,
-      0.0,  yscale, 0.0, yscale*crop_y_offset/full_height_tici*2,
+      xscale,  0.0, 0.0, xscale*tici_dm_crop::x_offset/stream_width*2,
+      0.0,  yscale, 0.0, yscale*tici_dm_crop::y_offset/stream_height*2,
       0.0,  0.0, 1.0, 0.0,
       0.0,  0.0, 0.0, 1.0,
     }};
   } else {
     // frame from 4/3 to 16/9 display
     transform = (mat4){{
-      driver_view_ratio*(1080)/(1920),  0.0, 0.0, 0.0,
+      driver_view_ratio * screen_height / screen_width,  0.0, 0.0, 0.0,
       0.0,  1.0, 0.0, 0.0,
       0.0,  0.0, 1.0, 0.0,
       0.0,  0.0, 0.0, 1.0,
@@ -91,13 +94,10 @@ mat4 get_fit_view_transform(float widget_aspect_ratio, float frame_aspect_ratio)
 
 } // namespace
 
-CameraViewWidget::CameraViewWidget(VisionStreamType stream_type, bool zoom, QWidget* parent) :
-                                   stream_type(stream_type), zoomed_view(zoom), QOpenGLWidget(parent) {
+CameraViewWidget::CameraViewWidget(std::string stream_name, VisionStreamType type, bool zoom, QWidget* parent) :
+                                   stream_name(stream_name), stream_type(type), zoomed_view(zoom), QOpenGLWidget(parent) {
   setAttribute(Qt::WA_OpaquePaintEvent);
-
-  QTimer *t = new QTimer(this);
-  connect(t, &QTimer::timeout, this, &CameraViewWidget::updateFrame);
-  t->start(10);
+  connect(this, &CameraViewWidget::vipcThreadConnected, this, &CameraViewWidget::vipcConnected, Qt::BlockingQueuedConnection);
 }
 
 CameraViewWidget::~CameraViewWidget() {
@@ -113,7 +113,7 @@ CameraViewWidget::~CameraViewWidget() {
 void CameraViewWidget::initializeGL() {
   initializeOpenGLFunctions();
 
-  program = new QOpenGLShaderProgram(context());
+  program = std::make_unique<QOpenGLShaderProgram>(context());
   bool ret = program->addShaderFromSourceCode(QOpenGLShader::Vertex, frame_vertex_shader);
   assert(ret);
   ret = program->addShaderFromSourceCode(QOpenGLShader::Fragment, frame_fragment_shader);
@@ -148,40 +148,31 @@ void CameraViewWidget::initializeGL() {
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(frame_indicies), frame_indicies, GL_STATIC_DRAW);
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   glBindVertexArray(0);
-
-  setStreamType(stream_type);
 }
 
-
-void CameraViewWidget::hideEvent(QHideEvent *event) {
-  vipc_client->connected = false;
-  latest_frame = nullptr;
-}
-
-void CameraViewWidget::mouseReleaseEvent(QMouseEvent *event) {
-  emit clicked();
-}
-
-void CameraViewWidget::resizeGL(int w, int h) {
-  updateFrameMat(w, h);
-}
-
-void CameraViewWidget::setStreamType(VisionStreamType type) {
-  if (!vipc_client || type != stream_type) {
-    stream_type = type;
-    vipc_client.reset(new VisionIpcClient("camerad", stream_type, true));
-    updateFrameMat(width(), height());
+void CameraViewWidget::showEvent(QShowEvent *event) {
+  latest_texture_id = -1;
+  if (!vipc_thread) {
+    vipc_thread = new QThread();
+    connect(vipc_thread, &QThread::started, [=]() { vipcThread(); });
+    connect(vipc_thread, &QThread::finished, vipc_thread, &QObject::deleteLater);
+    vipc_thread->start();
   }
 }
 
-void CameraViewWidget::setBackgroundColor(QColor color) {
-  bg = color;
+void CameraViewWidget::hideEvent(QHideEvent *event) {
+  if (vipc_thread) {
+    vipc_thread->requestInterruption();
+    vipc_thread->quit();
+    vipc_thread->wait();
+    vipc_thread = nullptr;
+  }
 }
 
 void CameraViewWidget::updateFrameMat(int w, int h) {
   if (zoomed_view) {
     if (stream_type == VISION_STREAM_RGB_FRONT) {
-      frame_mat = matmul(device_transform, get_driver_view_transform());
+      frame_mat = matmul(device_transform, get_driver_view_transform(w, h, stream_width, stream_height));
     } else {
       auto intrinsic_matrix = stream_type == VISION_STREAM_RGB_WIDE ? ecam_intrinsic_matrix : fcam_intrinsic_matrix;
       float zoom = ZOOM / intrinsic_matrix.v[0];
@@ -199,16 +190,16 @@ void CameraViewWidget::updateFrameMat(int w, int h) {
       }};
       frame_mat = matmul(device_transform, frame_transform);
     }
-  } else if (vipc_client->connected) {
+  } else if (stream_width > 0 && stream_height > 0) {
     // fit frame to widget size
-    float w  = (float)width() / height();
-    float f = (float)vipc_client->buffers[0].width  / vipc_client->buffers[0].height;
-    frame_mat = matmul(device_transform, get_fit_view_transform(w, f));
+    float widget_aspect_ratio = (float)width() / height();
+    float frame_aspect_ratio = (float)stream_width  / stream_height;
+    frame_mat = matmul(device_transform, get_fit_view_transform(widget_aspect_ratio, frame_aspect_ratio));
   }
 }
 
 void CameraViewWidget::paintGL() {
-  if (!latest_frame) {
+  if (latest_texture_id == -1) {
     glClearColor(bg.redF(), bg.greenF(), bg.blueF(), bg.alphaF());
     glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
     return;
@@ -218,13 +209,7 @@ void CameraViewWidget::paintGL() {
 
   glBindVertexArray(frame_vao);
   glActiveTexture(GL_TEXTURE0);
-
-  glBindTexture(GL_TEXTURE_2D, texture[latest_frame->idx]->frame_tex);
-  if (!Hardware::EON()) {
-    // this is handled in ion on QCOM
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, latest_frame->width, latest_frame->height,
-                  0, GL_RGB, GL_UNSIGNED_BYTE, latest_frame->addr);
-  }
+  glBindTexture(GL_TEXTURE_2D, texture[latest_texture_id]->frame_tex);
 
   glUseProgram(program->programId());
   glUniform1i(program->uniformLocation("uTexture"), 0);
@@ -237,40 +222,93 @@ void CameraViewWidget::paintGL() {
   glBindVertexArray(0);
 }
 
-void CameraViewWidget::updateFrame() {
-  if (!isVisible()) {
-    return;
+void CameraViewWidget::vipcConnected(VisionIpcClient *vipc_client) {
+  makeCurrent();
+  for (int i = 0; i < vipc_client->num_buffers; i++) {
+    texture[i].reset(new EGLImageTexture(&vipc_client->buffers[i]));
+
+    glBindTexture(GL_TEXTURE_2D, texture[i]->frame_tex);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+    // BGR
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_BLUE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
+    assert(glGetError() == GL_NO_ERROR);
+  }
+  latest_texture_id = -1;
+  stream_width = vipc_client->buffers[0].width;
+  stream_height = vipc_client->buffers[0].height;
+  updateFrameMat(width(), height());
+}
+
+void CameraViewWidget::vipcThread() {
+  VisionStreamType cur_stream_type = stream_type;
+  std::unique_ptr<VisionIpcClient> vipc_client;
+
+  std::unique_ptr<QOpenGLContext> ctx;
+  std::unique_ptr<QOffscreenSurface> surface;
+  std::unique_ptr<QOpenGLBuffer> gl_buffer;
+
+  if (!Hardware::EON()) {
+    ctx = std::make_unique<QOpenGLContext>();
+    ctx->setFormat(context()->format());
+    ctx->setShareContext(context());
+    ctx->create();
+    assert(ctx->isValid());
+
+    surface = std::make_unique<QOffscreenSurface>();
+    surface->setFormat(ctx->format());
+    surface->create();
+    ctx->makeCurrent(surface.get());
+    assert(QOpenGLContext::currentContext() == ctx.get());
+    initializeOpenGLFunctions();
   }
 
-  if (!vipc_client->connected) {
-    makeCurrent();
-    if (vipc_client->connect(false)) {
-      // init vision
-      for (int i = 0; i < vipc_client->num_buffers; i++) {
-        texture[i].reset(new EGLImageTexture(&vipc_client->buffers[i]));
-
-        glBindTexture(GL_TEXTURE_2D, texture[i]->frame_tex);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-        // BGR
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_BLUE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_G, GL_GREEN);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
-        assert(glGetError() == GL_NO_ERROR);
-      }
-      latest_frame = nullptr;
-      resizeGL(width(), height());
+  while (!QThread::currentThread()->isInterruptionRequested()) {
+    if (!vipc_client || cur_stream_type != stream_type) {
+      cur_stream_type = stream_type;
+      vipc_client.reset(new VisionIpcClient(stream_name, cur_stream_type, true));
     }
-  }
 
-  VisionBuf *buf = nullptr;
-  if (vipc_client->connected) {
-    buf = vipc_client->recv(nullptr, 0);
-    if (buf != nullptr) {
-      latest_frame = buf;
-      update();
-      emit frameUpdated();
+    if (!vipc_client->connected) {
+      if (!vipc_client->connect(false)) {
+        QThread::msleep(100);
+        continue;
+      }
+
+      if (!Hardware::EON()) {
+        gl_buffer.reset(new QOpenGLBuffer(QOpenGLBuffer::PixelUnpackBuffer));
+        gl_buffer->create();
+        gl_buffer->bind();
+        gl_buffer->setUsagePattern(QOpenGLBuffer::StreamDraw);
+        gl_buffer->allocate(vipc_client->buffers[0].len);
+      }
+
+      emit vipcThreadConnected(vipc_client.get());
+    }
+
+    if (VisionBuf *buf = vipc_client->recv(nullptr, 1000)) {
+      if (!Hardware::EON()) {
+        void *texture_buffer = gl_buffer->map(QOpenGLBuffer::WriteOnly);
+        memcpy(texture_buffer, buf->addr, buf->len);
+        gl_buffer->unmap();
+
+        // copy pixels from PBO to texture object
+        glBindTexture(GL_TEXTURE_2D, texture[buf->idx]->frame_tex);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, buf->width, buf->height, GL_RGB, GL_UNSIGNED_BYTE, 0);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        assert(glGetError() == GL_NO_ERROR);
+        // use glFinish to ensure that the texture has been uploaded.
+        glFinish();
+      }
+      latest_texture_id = buf->idx;
+      // Schedule update. update() will be invoked on the gui thread.
+      QMetaObject::invokeMethod(this, "update");
+
+      // TODO: remove later, it's only connected by DriverView.
+      emit vipcThreadFrameReceived(buf);
     }
   }
 }

@@ -23,7 +23,6 @@ std::string get_url(std::string route_name, const std::string &camera, int segme
 }
 
 void camera_init(VisionIpcServer *v, CameraState *s, int camera_id, unsigned int fps, cl_device_id device_id, cl_context ctx, VisionStreamType rgb_type, VisionStreamType yuv_type, const std::string &url) {
-  // TODO: cache url file
   s->frame = new FrameReader();
   if (!s->frame->load(url)) {
     printf("failed to load stream from %s", url.c_str());
@@ -68,12 +67,12 @@ void run_camera(CameraState *s) {
 }
 
 void road_camera_thread(CameraState *s) {
-  set_thread_name("replay_road_camera_thread");
+  util::set_thread_name("replay_road_camera_thread");
   run_camera(s);
 }
 
 // void driver_camera_thread(CameraState *s) {
-//   set_thread_name("replay_driver_camera_thread");
+//   util::set_thread_name("replay_driver_camera_thread");
 //   run_camera(s);
 // }
 
@@ -99,9 +98,9 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
 
 void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
   camera_init(v, &s->road_cam, CAMERA_ID_LGC920, 20, device_id, ctx,
-              VISION_STREAM_RGB_BACK, VISION_STREAM_YUV_BACK, get_url(road_camera_route, "fcamera", 0));
+              VISION_STREAM_RGB_BACK, VISION_STREAM_ROAD, get_url(road_camera_route, "fcamera", 0));
   // camera_init(v, &s->driver_cam, CAMERA_ID_LGC615, 10, device_id, ctx,
-  //             VISION_STREAM_RGB_FRONT, VISION_STREAM_YUV_FRONT, get_url(driver_camera_route, "dcamera", 0));
+  //             VISION_STREAM_RGB_FRONT, VISION_STREAM_DRIVER, get_url(driver_camera_route, "dcamera", 0));
   s->pm = new PubMaster({"roadCameraState", "driverCameraState", "thumbnail"});
 }
 

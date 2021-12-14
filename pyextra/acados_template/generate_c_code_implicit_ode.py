@@ -114,7 +114,7 @@ def generate_c_code_implicit_ode( model, opts ):
     model_dir = model_name + '_model'
     if not os.path.exists(model_dir):
         os.mkdir(model_dir)
-    model_dir_location = './' + model_dir
+    model_dir_location = os.path.join('.', model_dir)
     os.chdir(model_dir_location)
 
     fun_name = model_name + '_impl_dae_fun'

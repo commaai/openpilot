@@ -35,10 +35,12 @@ from pathlib import Path
 from typing import List, Tuple, Optional
 
 from common.basedir import BASEDIR
+from common.markdown import parse_markdown
 from common.params import Params
 from selfdrive.hardware import EON, TICI, HARDWARE
 from selfdrive.swaglog import cloudlog
 from selfdrive.controls.lib.alertmanager import set_offroad_alert
+from selfdrive.version import is_tested_branch
 
 LOCK_FILE = os.getenv("UPDATER_LOCK_FILE", "/tmp/safe_staging_overlay.lock")
 STAGING_ROOT = os.getenv("UPDATER_STAGING_ROOT", "/data/safe_staging")
@@ -50,6 +52,8 @@ OVERLAY_METADATA = os.path.join(STAGING_ROOT, "metadata")
 OVERLAY_MERGED = os.path.join(STAGING_ROOT, "merged")
 FINALIZED = os.path.join(STAGING_ROOT, "finalized")
 
+DAYS_NO_CONNECTIVITY_MAX = 14     # do not allow to engage after this many days
+DAYS_NO_CONNECTIVITY_PROMPT = 10  # send an offroad prompt after this many days
 
 class WaitTimeHelper:
   def __init__(self, proc):
@@ -101,24 +105,53 @@ def set_params(new_version: bool, failed_count: int, exception: Optional[str]) -
   params = Params()
 
   params.put("UpdateFailedCount", str(failed_count))
+
+  last_update = datetime.datetime.utcnow()
   if failed_count == 0:
-    t = datetime.datetime.utcnow().isoformat()
+    t = last_update.isoformat()
     params.put("LastUpdateTime", t.encode('utf8'))
+  else:
+    try:
+      t = params.get("LastUpdateTime", encoding='utf8')
+      last_update = datetime.datetime.fromisoformat(t)
+    except (TypeError, ValueError):
+      pass
 
   if exception is None:
     params.delete("LastUpdateException")
   else:
     params.put("LastUpdateException", exception)
 
+  # Write out release notes for new versions
   if new_version:
     try:
       with open(os.path.join(FINALIZED, "RELEASES.md"), "rb") as f:
-        r = f.read()
-      r = r[:r.find(b'\n\n')]  # Slice latest release notes
-      params.put("ReleaseNotes", r + b"\n")
+        r = f.read().split(b'\n\n', 1)[0]  # Slice latest release notes
+      try:
+        params.put("ReleaseNotes", parse_markdown(r.decode("utf-8")))
+      except Exception:
+        params.put("ReleaseNotes", r + b"\n")
     except Exception:
       params.put("ReleaseNotes", "")
     params.put_bool("UpdateAvailable", True)
+
+  # Handle user prompt
+  for alert in ("Offroad_UpdateFailed", "Offroad_ConnectivityNeeded", "Offroad_ConnectivityNeededPrompt"):
+    set_offroad_alert(alert, False)
+
+  now = datetime.datetime.utcnow()
+  dt = now - last_update
+  if failed_count > 15 and exception is not None:
+    if is_tested_branch():
+      extra_text = "Ensure the software is correctly installed"
+    else:
+      extra_text = exception
+    set_offroad_alert("Offroad_UpdateFailed", True, extra_text=extra_text)
+  elif dt.days > DAYS_NO_CONNECTIVITY_MAX and failed_count > 1:
+    set_offroad_alert("Offroad_ConnectivityNeeded", True)
+  elif dt.days > DAYS_NO_CONNECTIVITY_PROMPT:
+    remaining = max(DAYS_NO_CONNECTIVITY_MAX - dt.days, 1)
+    set_offroad_alert("Offroad_ConnectivityNeededPrompt", True, extra_text=f"{remaining} day{'' if remaining == 1 else 's'}.")
 
 
 def setup_git_options(cwd: str) -> None:
@@ -341,16 +374,14 @@ def main():
   params = Params()
 
   if params.get_bool("DisableUpdates"):
-    raise RuntimeError("updates are disabled by the DisableUpdates param")
-
-  if EON and os.geteuid() != 0:
-    raise RuntimeError("updated must be launched as root!")
+    cloudlog.warning("updates are disabled by the DisableUpdates param")
+    exit(0)
 
   ov_lock_fd = open(LOCK_FILE, 'w')
   try:
     fcntl.flock(ov_lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
   except IOError as e:
-    raise RuntimeError("couldn't get overlay lock; is another updated running?") from e
+    raise RuntimeError("couldn't get overlay lock; is another instance running?") from e
 
   # Set low io priority
   proc = psutil.Process()
@@ -365,16 +396,19 @@ def main():
     t = datetime.datetime.utcnow().isoformat()
     params.put("InstallDate", t.encode('utf8'))
 
-  # Wait for IsOffroad to be set before our first update attempt
-  wait_helper = WaitTimeHelper(proc)
-  wait_helper.sleep(30)
-
   overlay_init = Path(os.path.join(BASEDIR, ".overlay_init"))
   overlay_init.unlink(missing_ok=True)
 
   first_run = True
   last_fetch_time = 0
   update_failed_count = 0
+
+  # Set initial params for offroad alerts
+  set_params(False, 0, None)
+
+  # Wait for IsOffroad to be set before our first update attempt
+  wait_helper = WaitTimeHelper(proc)
+  wait_helper.sleep(30)
 
   # Run the update loop
   #  * every 1m, do a lightweight internet/update check
@@ -425,7 +459,11 @@ def main():
       exception = str(e)
       overlay_init.unlink(missing_ok=True)
 
-    set_params(new_version, update_failed_count, exception)
+    try:
+      set_params(new_version, update_failed_count, exception)
+    except Exception:
+      cloudlog.exception("uncaught updated exception while setting params, shouldn't happen")
+
     wait_helper.sleep(60)
 
   dismount_overlay()

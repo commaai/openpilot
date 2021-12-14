@@ -1,14 +1,15 @@
 import json
+import math
 import os
 import subprocess
-from functools import cached_property
 from enum import IntEnum
+from functools import cached_property
 from pathlib import Path
 
 from cereal import log
 from selfdrive.hardware.base import HardwareBase, ThermalConfig
-from selfdrive.hardware.tici.amplifier import Amplifier
 from selfdrive.hardware.tici import iwlist
+from selfdrive.hardware.tici.amplifier import Amplifier
 
 NM = 'org.freedesktop.NetworkManager'
 NM_CON_ACT = NM + '.Connection.Active'
@@ -158,8 +159,8 @@ class Tici(HardwareBase):
   def get_network_info(self):
     modem = self.get_modem()
     try:
-      info = modem.Command("AT+QNWINFO", int(TIMEOUT * 1000), dbus_interface=MM_MODEM, timeout=TIMEOUT)
-      extra = modem.Command('AT+QENG="servingcell"', int(TIMEOUT * 1000), dbus_interface=MM_MODEM, timeout=TIMEOUT)
+      info = modem.Command("AT+QNWINFO", math.ceil(TIMEOUT), dbus_interface=MM_MODEM, timeout=TIMEOUT)
+      extra = modem.Command('AT+QENG="servingcell"', math.ceil(TIMEOUT), dbus_interface=MM_MODEM, timeout=TIMEOUT)
       state = modem.Get(MM_MODEM, 'State', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
     except Exception:
       return None
@@ -225,10 +226,10 @@ class Tici(HardwareBase):
       return None
 
   def get_modem_temperatures(self):
-    modem = self.get_modem()
+    timeout = 0.2  # Default timeout is too short
     try:
-      command_timeout = 0.2
-      temps = modem.Command("AT+QTEMP", int(command_timeout * 1000), dbus_interface=MM_MODEM, timeout=command_timeout)
+      modem = self.get_modem()
+      temps = modem.Command("AT+QTEMP", math.ceil(timeout), dbus_interface=MM_MODEM, timeout=timeout)
       return list(map(int, temps.split(' ')[1].split(',')))
     except Exception:
       return []
@@ -274,7 +275,7 @@ class Tici(HardwareBase):
     os.system("sudo poweroff")
 
   def get_thermal_config(self):
-    return ThermalConfig(cpu=((1, 2, 3, 4, 5, 6, 7, 8), 1000), gpu=((48,49), 1000), mem=(15, 1000), bat=(None, 1), ambient=(65, 1000))
+    return ThermalConfig(cpu=((1, 2, 3, 4, 5, 6, 7, 8), 1000), gpu=((48,49), 1000), mem=(15, 1000), bat=(None, 1), ambient=(65, 1000), pmic=((35, 36), 1000))
 
   def set_screen_brightness(self, percentage):
     try:
@@ -301,6 +302,13 @@ class Tici(HardwareBase):
       # TODO: fix permissions with udev
       val = "0" if powersave_enabled else "1"
       os.system(f"sudo su -c 'echo {val} > /sys/devices/system/cpu/cpu{i}/online'")
+
+    for n in ('0', '4'):
+      gov = 'userspace' if powersave_enabled else 'performance'
+      os.system(f"sudo su -c 'echo {gov} > /sys/devices/system/cpu/cpufreq/policy{n}/scaling_governor'")
+
+      if powersave_enabled:
+        os.system(f"sudo su -c 'echo 979200 > /sys/devices/system/cpu/cpufreq/policy{n}/scaling_setspeed'")
 
   def get_gpu_usage_percent(self):
     try:

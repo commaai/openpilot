@@ -97,15 +97,12 @@ class TestEncoder(unittest.TestCase):
 
         file_path = f"{route_prefix_path}--{i}/{camera}"
 
-        # check file size
-        self.assertTrue(os.path.exists(file_path))
-        file_size = os.path.getsize(file_path)
-        self.assertTrue(math.isclose(file_size, size, rel_tol=FILE_SIZE_TOLERANCE))
+        # check file exists
+        self.assertTrue(os.path.exists(file_path), f"segment #{i}: '{file_path}' missing")
 
         # TODO: this ffprobe call is really slow
         # check frame count
-        cmd = f"ffprobe -v error -count_frames -select_streams v:0 -show_entries stream=nb_read_frames \
-                -of default=nokey=1:noprint_wrappers=1 {file_path}"
+        cmd = f"ffprobe -v error -select_streams v:0 -count_packets -show_entries stream=nb_read_packets -of csv=p=0 {file_path}"
         if TICI:
           cmd = "LD_LIBRARY_PATH=/usr/local/lib " + cmd
 
@@ -116,7 +113,11 @@ class TestEncoder(unittest.TestCase):
         counts.append(frame_count)
 
         self.assertTrue(abs(expected_frames - frame_count) <= frame_tolerance,
-                        f"{camera} failed frame count check: expected {expected_frames}, got {frame_count}")
+                        f"segment #{i}: {camera} failed frame count check: expected {expected_frames}, got {frame_count}")
+
+        # sanity check file size
+        file_size = os.path.getsize(file_path)
+        self.assertTrue(math.isclose(file_size, size, rel_tol=FILE_SIZE_TOLERANCE))
 
         # Check encodeIdx
         if encode_idx_name is not None:
@@ -151,15 +152,16 @@ class TestEncoder(unittest.TestCase):
         self.assertEqual(min(counts), expected_frames)
       shutil.rmtree(f"{route_prefix_path}--{i}")
 
-    for i in trange(num_segments + 1):
-      # poll for next segment
-      with Timeout(int(SEGMENT_LENGTH*10), error_msg=f"timed out waiting for segment {i}"):
-        while Path(f"{route_prefix_path}--{i}") not in Path(ROOT).iterdir():
-          time.sleep(0.1)
-
-    managed_processes['loggerd'].stop()
-    managed_processes['camerad'].stop()
-    managed_processes['sensord'].stop()
+    try:
+      for i in trange(num_segments + 1):
+        # poll for next segment
+        with Timeout(int(SEGMENT_LENGTH*10), error_msg=f"timed out waiting for segment {i}"):
+          while Path(f"{route_prefix_path}--{i}") not in Path(ROOT).iterdir():
+            time.sleep(0.1)
+    finally:
+      managed_processes['loggerd'].stop()
+      managed_processes['camerad'].stop()
+      managed_processes['sensord'].stop()
 
     for i in trange(num_segments):
       check_seg(i)

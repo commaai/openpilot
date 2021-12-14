@@ -550,6 +550,16 @@ void kernel_spotrf_nt_l_4x4_lib44cc(int kmax, float *A, float *B, float *C, int 
 void kernel_spotrf_nt_l_4x4_vs_lib44cc(int kmax, float *A, float *B, float *C, int ldc, float *D, int ldd, float *dD, int m1, int n1);
 
 // B panel-major bs=8; A, C, D column-major
+// 4x24
+void kernel_sgemm_nt_4x24_libc8cc(int kmax, float *alpha, float *A, int lda, float *B, int sdb, float *beta, float *C, int ldc, float *D, int ldd);
+void kernel_sgemm_nt_4x24_vs_libc8cc(int kmax, float *alpha, float *A, int lda, float *B, int sdb, float *beta, float *C, int ldc, float *D, int ldd, int m1, int n1);
+void kernel_sgemm_tt_4x24_libc8cc(int kmax, float *alpha, float *A, int lda, float *B, int sdb, float *beta, float *C, int ldc, float *D, int ldd);
+void kernel_sgemm_tt_4x24_vs_libc8cc(int kmax, float *alpha, float *A, int lda, float *B, int sdb, float *beta, float *C, int ldc, float *D, int ldd, int m1, int n1);
+// 4x16
+void kernel_sgemm_nt_4x16_libc8cc(int kmax, float *alpha, float *A, int lda, float *B, int sdb, float *beta, float *C, int ldc, float *D, int ldd);
+void kernel_sgemm_nt_4x16_vs_libc8cc(int kmax, float *alpha, float *A, int lda, float *B, int sdb, float *beta, float *C, int ldc, float *D, int ldd, int m1, int n1);
+void kernel_sgemm_tt_4x16_libc8cc(int kmax, float *alpha, float *A, int lda, float *B, int sdb, float *beta, float *C, int ldc, float *D, int ldd);
+void kernel_sgemm_tt_4x16_vs_libc8cc(int kmax, float *alpha, float *A, int lda, float *B, int sdb, float *beta, float *C, int ldc, float *D, int ldd, int m1, int n1);
 // 8x8
 void kernel_sgemm_nt_8x8_libc8cc(int kmax, float *alpha, float *A, int lda, float *B, float *beta, float *C, int ldc, float *D, int ldd);
 void kernel_sgemm_nt_8x8_vs_libc8cc(int kmax, float *alpha, float *A, int lda, float *B, float *beta, float *C, int ldc, float *D, int ldd, int m1, int n1);

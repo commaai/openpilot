@@ -1,6 +1,11 @@
 openpilot tools
 ============
 
+CTF
+============
+
+Learn about the openpilot ecosystem and tools by playing our [CTF](/tools/CTF.md).
+
 SSH
 ============
 

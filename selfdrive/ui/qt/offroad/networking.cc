@@ -23,7 +23,7 @@ Networking::Networking(QWidget* parent, bool show_advanced) : QFrame(parent) {
   connect(wifi, &WifiManager::refreshSignal, this, &Networking::refresh);
   connect(wifi, &WifiManager::wrongPassword, this, &Networking::wrongPassword);
 
-  QWidget* wifiScreen = new QWidget(this);
+  wifiScreen = new QWidget(this);
   QVBoxLayout* vlayout = new QVBoxLayout(wifiScreen);
   vlayout->setContentsMargins(20, 20, 20, 20);
   if (show_advanced) {

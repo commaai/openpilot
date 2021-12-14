@@ -227,10 +227,8 @@ int ocp_nlp_dynamics_model_set(ocp_nlp_config *config, ocp_nlp_dims *dims, ocp_n
 /// \param field The name of the field, either nls_res_jac,
 ///     y_ref, W (others TBC)
 /// \param value Cost values.
-int ocp_nlp_cost_model_set_slice(ocp_nlp_config *config, ocp_nlp_dims *dims, ocp_nlp_in *in,
-        int start_stage, int end_stage, const char *field, void *value, int dim);
 int ocp_nlp_cost_model_set(ocp_nlp_config *config, ocp_nlp_dims *dims, ocp_nlp_in *in,
-        int start_stage, const char *field, void *value);
+        int stage, const char *field, void *value);
 
 
 /// Sets the function pointers to the constraints functions for the given stage.
@@ -241,8 +239,6 @@ int ocp_nlp_cost_model_set(ocp_nlp_config *config, ocp_nlp_dims *dims, ocp_nlp_i
 /// \param stage Stage number.
 /// \param field The name of the field, either lb, ub (others TBC)
 /// \param value Constraints function or values.
-int ocp_nlp_constraints_model_set_slice(ocp_nlp_config *config, ocp_nlp_dims *dims, ocp_nlp_in *in,
-        int start_stage, int end_stage, const char *field, void *value, int dim);
 int ocp_nlp_constraints_model_set(ocp_nlp_config *config, ocp_nlp_dims *dims,
         ocp_nlp_in *in, int stage, const char *field, void *value);
 
@@ -283,9 +279,6 @@ void ocp_nlp_out_set(ocp_nlp_config *config, ocp_nlp_dims *dims, ocp_nlp_out *ou
 void ocp_nlp_out_get(ocp_nlp_config *config, ocp_nlp_dims *dims, ocp_nlp_out *out,
         int stage, const char *field, void *value);
 
-void ocp_nlp_out_get_slice(ocp_nlp_config *config, ocp_nlp_dims *dims, ocp_nlp_out *out,
-        int start_stage, int end_stage, const char *field, void *value);
-
 //
 void ocp_nlp_get_at_stage(ocp_nlp_config *config, ocp_nlp_dims *dims, ocp_nlp_solver *solver,
         int stage, const char *field, void *value);
@@ -300,6 +293,8 @@ void ocp_nlp_constraint_dims_get_from_attr(ocp_nlp_config *config, ocp_nlp_dims 
 void ocp_nlp_cost_dims_get_from_attr(ocp_nlp_config *config, ocp_nlp_dims *dims, ocp_nlp_out *out,
         int stage, const char *field, int *dims_out);
 
+void ocp_nlp_dynamics_dims_get_from_attr(ocp_nlp_config *config, ocp_nlp_dims *dims, ocp_nlp_out *out,
+        int stage, const char *field, int *dims_out);
 
 /* opts */
 
@@ -374,6 +369,8 @@ int ocp_nlp_precompute(ocp_nlp_solver *solver, ocp_nlp_in *nlp_in, ocp_nlp_out *
 /// \param nlp_out The output struct.
 void ocp_nlp_eval_cost(ocp_nlp_solver *solver, ocp_nlp_in *nlp_in, ocp_nlp_out *nlp_out);
 
+//
+void ocp_nlp_eval_residuals(ocp_nlp_solver *solver, ocp_nlp_in *nlp_in, ocp_nlp_out *nlp_out);
 
 //
 void ocp_nlp_eval_param_sens(ocp_nlp_solver *solver, char *field, int stage, int index, ocp_nlp_out *sens_nlp_out);

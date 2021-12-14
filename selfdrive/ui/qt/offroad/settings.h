@@ -12,20 +12,50 @@
 #include "selfdrive/ui/qt/widgets/controls.h"
 
 // ********** settings window + top-level panels **********
+class SettingsWindow : public QFrame {
+  Q_OBJECT
+
+public:
+  explicit SettingsWindow(QWidget *parent = 0);
+
+protected:
+  void hideEvent(QHideEvent *event) override;
+  void showEvent(QShowEvent *event) override;
+
+signals:
+  void closeSettings();
+  void offroadTransition(bool offroad);
+  void reviewTrainingGuide();
+  void showDriverView();
+
+private:
+  QPushButton *sidebar_alert_widget;
+  QWidget *sidebar_widget;
+  QButtonGroup *nav_btns;
+  QStackedWidget *panel_widget;
+};
 
 class DevicePanel : public ListWidget {
   Q_OBJECT
 public:
-  explicit DevicePanel(QWidget* parent = nullptr);
+  explicit DevicePanel(SettingsWindow *parent);
 signals:
   void reviewTrainingGuide();
   void showDriverView();
+
+private slots:
+  void poweroff();
+  void reboot();
+  void updateCalibDescription();
+
+private:
+  Params params;
 };
 
 class TogglesPanel : public ListWidget {
   Q_OBJECT
 public:
-  explicit TogglesPanel(QWidget *parent = nullptr);
+  explicit TogglesPanel(SettingsWindow *parent);
 };
 
 class SoftwarePanel : public ListWidget {
@@ -48,25 +78,13 @@ private:
   QFileSystemWatcher *fs_watch;
 };
 
-class SettingsWindow : public QFrame {
+class C2NetworkPanel: public QWidget {
   Q_OBJECT
-
 public:
-  explicit SettingsWindow(QWidget *parent = 0);
-
-protected:
-  void hideEvent(QHideEvent *event) override;
-  void showEvent(QShowEvent *event) override;
-
-signals:
-  void closeSettings();
-  void offroadTransition(bool offroad);
-  void reviewTrainingGuide();
-  void showDriverView();
+  explicit C2NetworkPanel(QWidget* parent = nullptr);
 
 private:
-  QPushButton *sidebar_alert_widget;
-  QWidget *sidebar_widget;
-  QButtonGroup *nav_btns;
-  QStackedWidget *panel_widget;
+  void showEvent(QShowEvent *event) override;
+  QString getIPAddress();
+  LabelControl *ipaddress;
 };

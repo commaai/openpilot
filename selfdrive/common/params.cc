@@ -1,19 +1,9 @@
 #include "selfdrive/common/params.h"
 
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif  // _GNU_SOURCE
-
 #include <dirent.h>
 #include <sys/file.h>
-#include <sys/stat.h>
-#include <unistd.h>
 
 #include <csignal>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <mutex>
 #include <unordered_map>
 
 #include "selfdrive/common/swaglog.h"
@@ -27,20 +17,15 @@ void params_sig_handler(int signal) {
   params_do_exit = 1;
 }
 
-int fsync_dir(const char* path) {
-  int fd = HANDLE_EINTR(open(path, O_RDONLY, 0755));
-  if (fd < 0) {
-    return -1;
-  }
-
-  int result = fsync(fd);
-  int result_close = close(fd);
-  if (result_close < 0) {
-    result = result_close;
+int fsync_dir(const std::string &path) {
+  int result = -1;
+  int fd = HANDLE_EINTR(open(path.c_str(), O_RDONLY, 0755));
+  if (fd >= 0) {
+    result = fsync(fd);
+    close(fd);
   }
   return result;
 }
-
 
 bool create_params_path(const std::string &param_path, const std::string &key_path) {
   // Make sure params path exists
@@ -51,9 +36,8 @@ bool create_params_path(const std::string &param_path, const std::string &key_pa
   // See if the symlink exists, otherwise create it
   if (!util::file_exists(key_path)) {
     // 1) Create temp folder
-    // 2) Set permissions
-    // 3) Symlink it to temp link
-    // 4) Move symlink to <params>/d
+    // 2) Symlink it to temp link
+    // 3) Move symlink to <params>/d
 
     std::string tmp_path = param_path + "/.tmp_XXXXXX";
     // this should be OK since mkdtemp just replaces characters in place
@@ -76,32 +60,26 @@ bool create_params_path(const std::string &param_path, const std::string &key_pa
   return true;
 }
 
-void ensure_params_path(const std::string &params_path) {
+std::string ensure_params_path(const std::string &path = {}) {
+  std::string params_path = path.empty() ? Path::params() : path;
   if (!create_params_path(params_path, params_path + "/d")) {
     throw std::runtime_error(util::string_format("Failed to ensure params path, errno=%d", errno));
   }
+  return params_path;
 }
 
 class FileLock {
- public:
-  FileLock(const std::string& file_name, int op) : fn_(file_name), op_(op) {}
-
-  void lock() {
-    fd_ = HANDLE_EINTR(open(fn_.c_str(), O_CREAT, 0775));
-    if (fd_ < 0) {
-      LOGE("Failed to open lock file %s, errno=%d", fn_.c_str(), errno);
-      return;
-    }
-    if (HANDLE_EINTR(flock(fd_, op_)) < 0) {
-      LOGE("Failed to lock file %s, errno=%d", fn_.c_str(), errno);
+public:
+  FileLock(const std::string &fn) {
+    fd_ = HANDLE_EINTR(open(fn.c_str(), O_CREAT, 0775));
+    if (fd_ < 0 || HANDLE_EINTR(flock(fd_, LOCK_EX)) < 0) {
+      LOGE("Failed to lock file %s, errno=%d", fn.c_str(), errno);
     }
   }
-
-  void unlock() { close(fd_); }
+  ~FileLock() { close(fd_); }
 
 private:
-  int fd_ = -1, op_;
-  std::string fn_;
+  int fd_ = -1;
 };
 
 std::unordered_map<std::string, uint32_t> keys = {
@@ -123,6 +101,8 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"DisableRadar", PERSISTENT}, // WARNING: THIS DISABLES AEB
     {"DisableUpdates", PERSISTENT},
     {"DongleId", PERSISTENT},
+    {"DoReboot", CLEAR_ON_MANAGER_START},
+    {"DoShutdown", CLEAR_ON_MANAGER_START},
     {"DoUninstall", CLEAR_ON_MANAGER_START},
     {"EnableWideCamera", CLEAR_ON_MANAGER_START},
     {"EndToEndToggle", PERSISTENT},
@@ -137,6 +117,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"GsmRoaming", PERSISTENT},
     {"HardwareSerial", PERSISTENT},
     {"HasAcceptedTerms", PERSISTENT},
+    {"HasPrime", PERSISTENT},
     {"IMEI", PERSISTENT},
     {"InstallDate", PERSISTENT},
     {"IsDriverViewEnabled", CLEAR_ON_MANAGER_START},
@@ -150,11 +131,13 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"JoystickDebugMode", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_OFF},
     {"LastAthenaPingTime", CLEAR_ON_MANAGER_START},
     {"LastGPSPosition", PERSISTENT},
+    {"LastPowerDropDetected", CLEAR_ON_MANAGER_START},
     {"LastUpdateException", PERSISTENT},
     {"LastUpdateTime", PERSISTENT},
     {"LiveParameters", PERSISTENT},
     {"NavDestination", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_OFF},
     {"NavSettingTime24h", PERSISTENT},
+    {"NavdRender", PERSISTENT},
     {"OpenpilotEnabledToggle", PERSISTENT},
     {"PandaHeartbeatLost", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_OFF},
     {"Passive", PERSISTENT},
@@ -163,6 +146,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"RecordFrontLock", PERSISTENT},  // for the internal fleet
     {"ReleaseNotes", PERSISTENT},
     {"ShouldDoUpdate", CLEAR_ON_MANAGER_START},
+    {"SnoozeUpdate", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_OFF},
     {"SshEnabled", PERSISTENT},
     {"SubscriberInfo", PERSISTENT},
     {"TermsVersion", PERSISTENT},
@@ -170,22 +154,21 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"TrainingVersion", PERSISTENT},
     {"UpdateAvailable", CLEAR_ON_MANAGER_START},
     {"UpdateFailedCount", CLEAR_ON_MANAGER_START},
-    {"UploadRaw", PERSISTENT},
     {"Version", PERSISTENT},
     {"VisionRadarToggle", PERSISTENT},
     {"ApiCache_Device", PERSISTENT},
     {"ApiCache_DriveStats", PERSISTENT},
     {"ApiCache_NavDestinations", PERSISTENT},
     {"ApiCache_Owner", PERSISTENT},
+    {"Offroad_CarUnrecognized", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_ON},
     {"Offroad_ChargeDisabled", CLEAR_ON_MANAGER_START | CLEAR_ON_PANDA_DISCONNECT},
     {"Offroad_ConnectivityNeeded", CLEAR_ON_MANAGER_START},
     {"Offroad_ConnectivityNeededPrompt", CLEAR_ON_MANAGER_START},
-    {"Offroad_HardwareUnsupported", CLEAR_ON_MANAGER_START},
     {"Offroad_InvalidTime", CLEAR_ON_MANAGER_START},
     {"Offroad_IsTakingSnapshot", CLEAR_ON_MANAGER_START},
     {"Offroad_NeosUpdate", CLEAR_ON_MANAGER_START},
+    {"Offroad_NoFirmware", CLEAR_ON_MANAGER_START | CLEAR_ON_IGNITION_ON},
     {"Offroad_StorageMissing", CLEAR_ON_MANAGER_START},
-    {"Offroad_PandaFirmwareMismatch", CLEAR_ON_MANAGER_START | CLEAR_ON_PANDA_DISCONNECT},
     {"Offroad_TemperatureTooHigh", CLEAR_ON_MANAGER_START},
     {"Offroad_UnofficialHardware", CLEAR_ON_MANAGER_START},
     {"Offroad_UpdateFailed", CLEAR_ON_MANAGER_START},
@@ -193,13 +176,9 @@ std::unordered_map<std::string, uint32_t> keys = {
 
 } // namespace
 
-Params::Params() : params_path(Path::params()) {
-  static std::once_flag once_flag;
-  std::call_once(once_flag, ensure_params_path, params_path);
-}
-
-Params::Params(const std::string &path) : params_path(path) {
-  ensure_params_path(params_path);
+Params::Params(const std::string &path) {
+  static std::string default_param_path = ensure_params_path();
+  params_path = path.empty() ? default_param_path : ensure_params_path(path);
 }
 
 bool Params::checkKey(const std::string &key) {
@@ -233,16 +212,13 @@ int Params::put(const char* key, const char* value, size_t value_size) {
     // fsync to force persist the changes.
     if ((result = fsync(tmp_fd)) < 0) break;
 
-    FileLock file_lock(params_path + "/.lock", LOCK_EX);
-    std::lock_guard<FileLock> lk(file_lock);
+    FileLock file_lock(params_path + "/.lock");
 
     // Move temp into place.
-    std::string path = params_path + "/d/" + std::string(key);
-    if ((result = rename(tmp_path.c_str(), path.c_str())) < 0) break;
+    if ((result = rename(tmp_path.c_str(), getParamPath(key).c_str())) < 0) break;
 
     // fsync parent directory
-    path = params_path + "/d";
-    result = fsync_dir(path.c_str());
+    result = fsync_dir(getParamPath());
   } while (false);
 
   close(tmp_fd);
@@ -250,24 +226,18 @@ int Params::put(const char* key, const char* value, size_t value_size) {
   return result;
 }
 
-int Params::remove(const char *key) {
-  FileLock file_lock(params_path + "/.lock", LOCK_EX);
-  std::lock_guard<FileLock> lk(file_lock);
-  // Delete value.
-  std::string path = params_path + "/d/" + key;
-  int result = unlink(path.c_str());
+int Params::remove(const std::string &key) {
+  FileLock file_lock(params_path + "/.lock");
+  int result = unlink(getParamPath(key).c_str());
   if (result != 0) {
     return result;
   }
-  // fsync parent directory
-  path = params_path + "/d";
-  return fsync_dir(path.c_str());
+  return fsync_dir(getParamPath());
 }
 
-std::string Params::get(const char *key, bool block) {
-  std::string path = params_path + "/d/" + key;
+std::string Params::get(const std::string &key, bool block) {
   if (!block) {
-    return util::read_file(path);
+    return util::read_file(getParamPath(key));
   } else {
     // blocking read until successful
     params_do_exit = 0;
@@ -276,7 +246,7 @@ std::string Params::get(const char *key, bool block) {
 
     std::string value;
     while (!params_do_exit) {
-      if (value = util::read_file(path); !value.empty()) {
+      if (value = util::read_file(getParamPath(key)); !value.empty()) {
         break;
       }
       util::sleep_for(100);  // 0.1 s
@@ -289,26 +259,19 @@ std::string Params::get(const char *key, bool block) {
 }
 
 std::map<std::string, std::string> Params::readAll() {
-  FileLock file_lock(params_path + "/.lock", LOCK_SH);
-  std::lock_guard<FileLock> lk(file_lock);
-
-  std::string key_path = params_path + "/d";
-  return util::read_files_in_dir(key_path);
+  FileLock file_lock(params_path + "/.lock");
+  return util::read_files_in_dir(getParamPath());
 }
 
 void Params::clearAll(ParamKeyType key_type) {
-  FileLock file_lock(params_path + "/.lock", LOCK_EX);
-  std::lock_guard<FileLock> lk(file_lock);
+  FileLock file_lock(params_path + "/.lock");
 
   std::string path;
   for (auto &[key, type] : keys) {
     if (type & key_type) {
-      path = params_path + "/d/" + key;
-      unlink(path.c_str());
+      unlink(getParamPath(key).c_str());
     }
   }
 
-  // fsync parent directory
-  path = params_path + "/d";
-  fsync_dir(path.c_str());
+  fsync_dir(getParamPath());
 }

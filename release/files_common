@@ -25,6 +25,7 @@ common/ffi_wrapper.py
 common/file_helpers.py
 common/logging_extra.py
 common/numpy_fast.py
+common/markdown.py
 common/params.py
 common/params_pyx.pyx
 common/xattr.py
@@ -35,7 +36,6 @@ common/filter_simple.py
 common/stat_live.py
 common/spinner.py
 common/text_window.py
-common/cython_hacks.py
 common/SConscript
 
 common/kalman/.gitignore
@@ -129,6 +129,7 @@ selfdrive/car/hyundai/carcontroller.py
 selfdrive/car/hyundai/hyundaican.py
 selfdrive/car/toyota/__init__.py
 selfdrive/car/toyota/carstate.py
+selfdrive/car/toyota/tunes.py
 selfdrive/car/toyota/interface.py
 selfdrive/car/toyota/radar_interface.py
 selfdrive/car/toyota/values.py
@@ -304,6 +305,8 @@ selfdrive/loggerd/omx_encoder.h
 selfdrive/loggerd/logger.cc
 selfdrive/loggerd/logger.h
 selfdrive/loggerd/loggerd.cc
+selfdrive/loggerd/loggerd.h
+selfdrive/loggerd/main.cc
 selfdrive/loggerd/bootlog.cc
 selfdrive/loggerd/raw_logger.cc
 selfdrive/loggerd/raw_logger.h
@@ -339,7 +342,10 @@ selfdrive/ui/*.h
 selfdrive/ui/ui
 selfdrive/ui/text
 selfdrive/ui/spinner
-selfdrive/ui/soundd
+selfdrive/ui/soundd/*.cc
+selfdrive/ui/soundd/*.h
+selfdrive/ui/soundd/soundd
+selfdrive/ui/soundd/.gitignore
 
 selfdrive/ui/qt/*.cc
 selfdrive/ui/qt/*.h
@@ -361,8 +367,6 @@ selfdrive/camerad/snapshot/*
 selfdrive/camerad/include/*
 selfdrive/camerad/cameras/camera_common.h
 selfdrive/camerad/cameras/camera_common.cc
-selfdrive/camerad/cameras/camera_frame_stream.cc
-selfdrive/camerad/cameras/camera_frame_stream.h
 selfdrive/camerad/cameras/camera_qcom.cc
 selfdrive/camerad/cameras/camera_qcom.h
 selfdrive/camerad/cameras/camera_replay.cc
@@ -438,9 +442,6 @@ selfdrive/assets/sounds/*
 selfdrive/assets/training/*
 
 third_party/SConscript
-
-third_party/nanovg/*.c
-third_party/nanovg/*.h
 
 third_party/libgralloc/**
 third_party/linux/**
@@ -611,3 +612,4 @@ opendbc/vw_mqb_2010.dbc
 
 opendbc/tesla_can.dbc
 opendbc/tesla_radar.dbc
+opendbc/tesla_powertrain.dbc

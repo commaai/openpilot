@@ -30,16 +30,16 @@ AbstractControl::AbstractControl(const QString &title, const QString &desc, cons
   // left icon
   if (!icon.isEmpty()) {
     QPixmap pix(icon);
-    QLabel *icon = new QLabel();
-    icon->setPixmap(pix.scaledToWidth(80, Qt::SmoothTransformation));
-    icon->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
-    hlayout->addWidget(icon);
+    QLabel *icon_label = new QLabel();
+    icon_label->setPixmap(pix.scaledToWidth(80, Qt::SmoothTransformation));
+    icon_label->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
+    hlayout->addWidget(icon_label);
   }
 
   // title
   title_label = new QPushButton(title);
   title_label->setFixedHeight(120);
-  title_label->setStyleSheet("font-size: 50px; font-weight: 400; text-align: left");
+  title_label->setStyleSheet("border:none; font-size: 50px; font-weight: 400; text-align: left");
   hlayout->addWidget(title_label);
 
   main_layout->addLayout(hlayout);
@@ -120,4 +120,18 @@ void ElidedLabel::paintEvent(QPaintEvent *event) {
   QStyleOption opt;
   opt.initFrom(this);
   style()->drawItemText(&painter, contentsRect(), alignment(), opt.palette, isEnabled(), elidedText_, foregroundRole());
+}
+
+ClickableWidget::ClickableWidget(QWidget *parent) : QWidget(parent) { }
+
+void ClickableWidget::mouseReleaseEvent(QMouseEvent *event) {
+  emit clicked();
+}
+
+// Fix stylesheets
+void ClickableWidget::paintEvent(QPaintEvent *) {
+  QStyleOption opt;
+  opt.init(this);
+  QPainter p(this);
+  style()->drawPrimitive(QStyle::PE_Widget, &opt, &p, this);
 }

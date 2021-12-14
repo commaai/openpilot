@@ -4,6 +4,7 @@
 #include <openssl/pem.h>
 #include <openssl/rsa.h>
 
+#include <QApplication>
 #include <QCryptographicHash>
 #include <QDateTime>
 #include <QDebug>
@@ -62,16 +63,18 @@ QString create_jwt(const QJsonObject &payloads, int expiry) {
 }  // namespace CommaApi
 
 HttpRequest::HttpRequest(QObject *parent, bool create_jwt, int timeout) : create_jwt(create_jwt), QObject(parent) {
-  networkAccessManager = new QNetworkAccessManager(this);
-
   networkTimer = new QTimer(this);
   networkTimer->setSingleShot(true);
   networkTimer->setInterval(timeout);
   connect(networkTimer, &QTimer::timeout, this, &HttpRequest::requestTimeout);
 }
 
-bool HttpRequest::active() {
+bool HttpRequest::active() const {
   return reply != nullptr;
+}
+
+bool HttpRequest::timeout() const {
+  return reply && reply->error() == QNetworkReply::OperationCanceledError;
 }
 
 void HttpRequest::sendRequest(const QString &requestURL, const HttpRequest::Method method) {
@@ -90,15 +93,16 @@ void HttpRequest::sendRequest(const QString &requestURL, const HttpRequest::Meth
 
   QNetworkRequest request;
   request.setUrl(QUrl(requestURL));
+  request.setRawHeader("User-Agent", getUserAgent().toUtf8());
 
   if (!token.isEmpty()) {
     request.setRawHeader(QByteArray("Authorization"), ("JWT " + token).toUtf8());
   }
 
   if (method == HttpRequest::Method::GET) {
-    reply = networkAccessManager->get(request);
+    reply = nam()->get(request);
   } else if (method == HttpRequest::Method::DELETE) {
-    reply = networkAccessManager->deleteResource(request);
+    reply = nam()->deleteResource(request);
   }
 
   networkTimer->start();
@@ -109,29 +113,31 @@ void HttpRequest::requestTimeout() {
   reply->abort();
 }
 
-// This function should always emit something
 void HttpRequest::requestFinished() {
-  bool success = false;
-  if (reply->error() != QNetworkReply::OperationCanceledError) {
-    networkTimer->stop();
-    QString response = reply->readAll();
+  networkTimer->stop();
 
-    if (reply->error() == QNetworkReply::NoError) {
-      success = true;
-      emit receivedResponse(response);
+  if (reply->error() == QNetworkReply::NoError) {
+    emit requestDone(reply->readAll(), true);
+  } else {
+    QString error;
+    if (reply->error() == QNetworkReply::OperationCanceledError) {
+      nam()->clearAccessCache();
+      nam()->clearConnectionCache();
+      error = "Request timed out";
     } else {
-      emit failedResponse(reply->errorString());
-
       if (reply->error() == QNetworkReply::ContentAccessDenied || reply->error() == QNetworkReply::AuthenticationRequiredError) {
         qWarning() << ">>  Unauthorized. Authenticate with tools/lib/auth.py  <<";
       }
+      error = reply->errorString();
     }
-  } else {
-    networkAccessManager->clearAccessCache();
-    networkAccessManager->clearConnectionCache();
-    emit timeoutResponse("timeout");
+    emit requestDone(error, false);
   }
-  emit requestDone(success);
+
   reply->deleteLater();
   reply = nullptr;
+}
+
+QNetworkAccessManager *HttpRequest::nam() {
+  static QNetworkAccessManager *networkAccessManager = new QNetworkAccessManager(qApp);
+  return networkAccessManager;
 }

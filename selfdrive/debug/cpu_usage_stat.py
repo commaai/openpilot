@@ -66,7 +66,7 @@ if __name__ == "__main__":
   for p in psutil.process_iter():
     if p == psutil.Process():
       continue
-    matched = any([l for l in p.cmdline() if any([pn for pn in monitored_proc_names if re.match(r'.*{}.*'.format(pn), l, re.M | re.I)])])
+    matched = any(l for l in p.cmdline() if any(pn for pn in monitored_proc_names if re.match(r'.*{}.*'.format(pn), l, re.M | re.I)))
     if matched:
       k = ' '.join(p.cmdline())
       print('Add monitored proc:', k)
@@ -119,5 +119,5 @@ if __name__ == "__main__":
       for x in l:
         print(x[2])
       print('avg sum: {0:.2%} over {1} samples {2} seconds\n'.format(
-        sum([stat['avg']['total'] for k, stat in stats.items()]), i, i * SLEEP_INTERVAL
+        sum(stat['avg']['total'] for k, stat in stats.items()), i, i * SLEEP_INTERVAL
       ))

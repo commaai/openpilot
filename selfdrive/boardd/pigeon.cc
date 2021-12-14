@@ -24,8 +24,8 @@ extern ExitHandler do_exit;
 
 const std::string ack = "\xb5\x62\x05\x01\x02\x00";
 const std::string nack = "\xb5\x62\x05\x00\x02\x00";
-const std::string sos_ack = "\xb5\x62\x09\x14\x08\x00\x02\x00\x00\x00\x01\x00\x00\x00";
-const std::string sos_nack = "\xb5\x62\x09\x14\x08\x00\x02\x00\x00\x00\x00\x00\x00\x00";
+const std::string sos_save_ack = "\xb5\x62\x09\x14\x08\x00\x02\x00\x00\x00\x01\x00\x00\x00";
+const std::string sos_save_nack = "\xb5\x62\x09\x14\x08\x00\x02\x00\x00\x00\x00\x00\x00\x00";
 
 Pigeon * Pigeon::connect(Panda * p) {
   PandaPigeon * pigeon = new PandaPigeon();
@@ -41,16 +41,16 @@ Pigeon * Pigeon::connect(const char * tty) {
   return pigeon;
 }
 
-bool Pigeon::wait_for_ack(const std::string &ack, const std::string &nack, int timeout_ms) {
+bool Pigeon::wait_for_ack(const std::string &ack_, const std::string &nack_, int timeout_ms) {
   std::string s;
   const double start_t = millis_since_boot();
   while (!do_exit) {
     s += receive();
 
-    if (s.find(ack) != std::string::npos) {
+    if (s.find(ack_) != std::string::npos) {
       LOGD("Received ACK from ublox");
       return true;
-    } else if (s.find(nack) != std::string::npos) {
+    } else if (s.find(nack_) != std::string::npos) {
       LOGE("Received NACK from ublox");
       return false;
     } else if (s.size() > 0x1000 || ((millis_since_boot() - start_t) > timeout_ms)) {
@@ -70,6 +70,25 @@ bool Pigeon::wait_for_ack() {
 bool Pigeon::send_with_ack(const std::string &cmd) {
   send(cmd);
   return wait_for_ack();
+}
+
+sos_restore_response Pigeon::wait_for_backup_restore_status(int timeout_ms) {
+  std::string s;
+  const double start_t = millis_since_boot();
+  while (!do_exit) {
+    s += receive();
+
+    size_t position = s.find("\xb5\x62\x09\x14\x08\x00\x03");
+    if (position != std::string::npos && s.size() >= (position + 11)) {
+      return static_cast<sos_restore_response>(s[position + 10]);
+    } else if (s.size() > 0x1000 || ((millis_since_boot() - start_t) > timeout_ms)) {
+      LOGE("No backup restore response from ublox");
+      return error;
+    }
+
+    util::sleep_for(1); // Allow other threads to be scheduled
+  }
+  return error;
 }
 
 void Pigeon::init() {
@@ -118,6 +137,22 @@ void Pigeon::init() {
     if (!send_with_ack("\xB5\x62\x06\x01\x03\x00\x0A\x09\x01\x1E\x70"s)) continue;
     if (!send_with_ack("\xB5\x62\x06\x01\x03\x00\x0A\x0B\x01\x20\x74"s)) continue;
 
+    // check the backup restore status
+    send("\xB5\x62\x09\x14\x00\x00\x1D\x60"s);
+    sos_restore_response restore_status = wait_for_backup_restore_status();
+    switch(restore_status) {
+      case restored:
+        LOGW("almanac backup restored");
+        // clear the backup
+        send_with_ack("\xB5\x62\x06\x01\x03\x00\x0A\x0B\x01\x20\x74"s);
+        break;
+      case no_backup:
+        LOGW("no almanac backup found");
+        break;
+      default:
+        LOGE("failed to restore almanac backup, status: %d", restore_status);
+    }
+
     auto time = util::get_time();
     if (util::time_valid(time)) {
       LOGW("Sending current time to ublox");
@@ -139,7 +174,7 @@ void Pigeon::stop() {
   // Store almanac in flash
   send("\xB5\x62\x09\x14\x04\x00\x00\x00\x00\x00\x21\xEC"s);
 
-  if (wait_for_ack(sos_ack, sos_nack)) {
+  if (wait_for_ack(sos_save_ack, sos_save_nack)) {
     LOGW("Done storing almanac");
   } else {
     LOGE("Error storing almanac");

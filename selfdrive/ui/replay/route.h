@@ -1,13 +1,10 @@
 #pragma once
 
-#include <QDir>
-#include <QThread>
+#include <QFutureSynchronizer>
 
-#include "selfdrive/common/util.h"
 #include "selfdrive/ui/replay/framereader.h"
 #include "selfdrive/ui/replay/logreader.h"
-
-const QDir CACHE_DIR(util::getenv("COMMA_CACHE", "/tmp/comma_download_cache/").c_str());
+#include "selfdrive/ui/replay/util.h"
 
 struct RouteIdentifier {
   QString dongle_id;
@@ -49,9 +46,9 @@ class Segment : public QObject {
   Q_OBJECT
 
 public:
-  Segment(int n, const SegmentFile &files, bool load_dcam, bool load_ecam);
+  Segment(int n, const SegmentFile &files, uint32_t flags);
   ~Segment();
-  inline bool isLoaded() const { return !loading_ && success_; }
+  inline bool isLoaded() const { return !loading_ && !abort_; }
 
   const int seg_num = 0;
   std::unique_ptr<LogReader> log;
@@ -62,11 +59,9 @@ signals:
 
 protected:
   void loadFile(int id, const std::string file);
-  bool downloadFile(int id, const std::string &url, const std::string local_file);
-  std::string cacheFilePath(const std::string &file);
 
-  std::atomic<bool> success_ = true, aborting_ = false;
+  std::atomic<bool> abort_ = false;
   std::atomic<int> loading_ = 0;
-  std::vector<QThread*> loading_threads_;
-  const int max_retries_ = 3;
+  QFutureSynchronizer<void> synchronizer_;
+  uint32_t flags;
 };

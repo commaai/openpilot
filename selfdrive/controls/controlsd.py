@@ -22,17 +22,19 @@ from selfdrive.controls.lib.latcontrol_indi import LatControlINDI
 from selfdrive.controls.lib.latcontrol_lqr import LatControlLQR
 from selfdrive.controls.lib.latcontrol_angle import LatControlAngle
 from selfdrive.controls.lib.events import Events, ET
-from selfdrive.controls.lib.alertmanager import AlertManager
+from selfdrive.controls.lib.alertmanager import AlertManager, set_offroad_alert
 from selfdrive.controls.lib.vehicle_model import VehicleModel
 from selfdrive.locationd.calibrationd import Calibration
 from selfdrive.hardware import HARDWARE, TICI, EON
 from selfdrive.manager.process_config import managed_processes
 
+SOFT_DISABLE_TIME = 3  # seconds
 LDW_MIN_SPEED = 31 * CV.MPH_TO_MS
 LANE_DEPARTURE_THRESHOLD = 0.1
 STEER_ANGLE_SATURATION_TIMEOUT = 1.0 / DT_CTRL
 STEER_ANGLE_SATURATION_THRESHOLD = 2.5  # Degrees
 
+REPLAY = "REPLAY" in os.environ
 SIMULATION = "SIMULATION" in os.environ
 NOSENSOR = "NOSENSOR" in os.environ
 IGNORE_PROCESSES = {"rtshield", "uploader", "deleter", "loggerd", "logmessaged", "tombstoned",
@@ -147,6 +149,7 @@ class Controls:
     self.v_cruise_kph = 255
     self.v_cruise_kph_last = 0
     self.mismatch_counter = 0
+    self.cruise_mismatch_counter = 0
     self.can_error_counter = 0
     self.last_blinker_frame = 0
     self.saturated_count = 0
@@ -168,6 +171,10 @@ class Controls:
       self.events.add(EventName.communityFeatureDisallowed, static=True)
     if not car_recognized:
       self.events.add(EventName.carUnrecognized, static=True)
+      if len(self.CP.carFw) > 0:
+        set_offroad_alert("Offroad_CarUnrecognized", True)
+      else:
+        set_offroad_alert("Offroad_NoFirmware", True)
     elif self.read_only:
       self.events.add(EventName.dashcamMode, static=True)
     elif self.joystick_mode:
@@ -260,9 +267,7 @@ class Controls:
       if log.PandaState.FaultType.relayMalfunction in pandaState.faults:
         self.events.add(EventName.relayMalfunction)
 
-    if not self.sm['liveParameters'].valid:
-      self.events.add(EventName.vehicleModelInvalid)
-
+    # Check for HW or system issues
     if len(self.sm['radarState'].radarErrors):
       self.events.add(EventName.radarFault)
     elif not self.sm.valid["pandaStates"]:
@@ -277,6 +282,8 @@ class Controls:
     else:
       self.logged_comm_issue = False
 
+    if not self.sm['liveParameters'].valid:
+      self.events.add(EventName.vehicleModelInvalid)
     if not self.sm['lateralPlan'].mpcSolutionValid:
       self.events.add(EventName.plannerError)
     if not self.sm['liveLocationKalman'].sensorsOK and not NOSENSOR:
@@ -290,6 +297,14 @@ class Controls:
       if log.PandaState.FaultType.relayMalfunction in pandaState.faults:
         self.events.add(EventName.relayMalfunction)
 
+    if not REPLAY:
+      # Check for mismatch between openpilot and car's PCM
+      cruise_mismatch = CS.cruiseState.enabled and (not self.enabled or not self.CP.pcmCruise)
+      self.cruise_mismatch_counter = self.cruise_mismatch_counter + 1 if cruise_mismatch else 0
+      if self.cruise_mismatch_counter > int(3. / DT_CTRL):
+        self.events.add(EventName.cruiseMismatch)
+
+    # Check for FCW
     stock_long_is_braking = self.enabled and not self.CP.openpilotLongitudinalControl and CS.aEgo < -1.5
     model_fcw = self.sm['modelV2'].meta.hardBrakePredicted and not CS.brakePressed and not stock_long_is_braking
     planner_fcw = self.sm['longitudinalPlan'].fcw and self.enabled
@@ -394,7 +409,7 @@ class Controls:
     elif self.CP.pcmCruise and CS.cruiseState.enabled:
       self.v_cruise_kph = CS.cruiseState.speed * CV.MS_TO_KPH
 
-    # decrease the soft disable timer at every step, as it's reset on
+    # decrement the soft disable timer at every step, as it's reset on
     # entrance in SOFT_DISABLING state
     self.soft_disable_timer = max(0, self.soft_disable_timer - 1)
 
@@ -416,7 +431,7 @@ class Controls:
         if self.state == State.enabled:
           if self.events.any(ET.SOFT_DISABLE):
             self.state = State.softDisabling
-            self.soft_disable_timer = 300   # 3s
+            self.soft_disable_timer = int(SOFT_DISABLE_TIME / DT_CTRL)
             self.current_alert_types.append(ET.SOFT_DISABLE)
 
         # SOFT DISABLING
@@ -526,8 +541,9 @@ class Controls:
 
       if len(lat_plan.dPathPoints):
         # Check if we deviated from the path
-        left_deviation = actuators.steer > 0 and lat_plan.dPathPoints[0] < -0.1
-        right_deviation = actuators.steer < 0 and lat_plan.dPathPoints[0] > 0.1
+        # TODO use desired vs actual curvature
+        left_deviation = actuators.steer > 0 and lat_plan.dPathPoints[0] < -0.20
+        right_deviation = actuators.steer < 0 and lat_plan.dPathPoints[0] > 0.20
 
         if left_deviation or right_deviation:
           self.events.add(EventName.steerSaturated)
@@ -562,6 +578,10 @@ class Controls:
     CC.active = self.active
     CC.actuators = actuators
 
+    if len(self.sm['liveLocationKalman'].orientationNED.value) > 2:
+      CC.roll = self.sm['liveLocationKalman'].orientationNED.value[0]
+      CC.pitch = self.sm['liveLocationKalman'].orientationNED.value[1]
+
     CC.cruiseControl.cancel = CS.cruiseState.enabled and (not self.enabled or not self.CP.pcmCruise)
     if self.joystick_mode and self.sm.rcv_frame['testJoystick'] > 0 and self.sm['testJoystick'].buttons[0]:
       CC.cruiseControl.cancel = True
@@ -594,8 +614,8 @@ class Controls:
       self.events.add(EventName.ldw)
 
     clear_event = ET.WARNING if ET.WARNING not in self.current_alert_types else None
-    alerts = self.events.create_alerts(self.current_alert_types, [self.CP, self.sm, self.is_metric])
-    self.AM.add_many(self.sm.frame, alerts, self.enabled)
+    alerts = self.events.create_alerts(self.current_alert_types, [self.CP, self.sm, self.is_metric, self.soft_disable_timer])
+    self.AM.add_many(self.sm.frame, alerts)
     self.AM.process_alerts(self.sm.frame, clear_event)
     CC.hudControl.visualAlert = self.AM.visual_alert
 

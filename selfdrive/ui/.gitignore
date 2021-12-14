@@ -3,7 +3,6 @@ moc_*
 
 watch3
 installer/installers/*
-tests/playsound
 replay/replay
 replay/tests/test_replay
 qt/text

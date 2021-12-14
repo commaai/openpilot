@@ -666,6 +666,9 @@
         "nlp_solver_type": [
             "str"
         ],
+        "collocation_type": [
+            "str"
+        ],
         "globalization": [
             "str"
         ],

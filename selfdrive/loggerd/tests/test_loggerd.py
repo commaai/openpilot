@@ -18,7 +18,7 @@ from selfdrive.hardware import PC, TICI
 from selfdrive.loggerd.config import ROOT
 from selfdrive.manager.process_config import managed_processes
 from selfdrive.test.helpers import with_processes
-from selfdrive.version import version as VERSION
+from selfdrive.version import get_version
 from tools.lib.logreader import LogReader
 
 SentinelType = log.Sentinel.SentinelType
@@ -95,7 +95,7 @@ class TestLoggerd(unittest.TestCase):
     initData = lr[0].initData
 
     self.assertTrue(initData.dirty != bool(os.environ["CLEAN"]))
-    self.assertEqual(initData.version, VERSION)
+    self.assertEqual(initData.version, get_version())
 
     if os.path.isfile("/proc/cmdline"):
       with open("/proc/cmdline") as f:
@@ -117,27 +117,27 @@ class TestLoggerd(unittest.TestCase):
       expected_files.add("ecamera.hevc")
 
     # give camerad time to start
-    time.sleep(5)
+    time.sleep(3)
 
     for _ in range(5):
-      num_segs = random.randint(1, 10)
-      length = random.randint(2, 5)
+      num_segs = random.randint(2, 5)
+      length = random.randint(1, 3)
       os.environ["LOGGERD_SEGMENT_LENGTH"] = str(length)
 
       managed_processes["loggerd"].start()
-      time.sleep((num_segs + 1) * length)
+      time.sleep(num_segs*length + 1)
       managed_processes["loggerd"].stop()
 
       route_path = str(self._get_latest_log_dir()).rsplit("--", 1)[0]
       for n in range(num_segs):
         p = Path(f"{route_path}--{n}")
-        logged = set([f.name for f in p.iterdir() if f.is_file()])
+        logged = {f.name for f in p.iterdir() if f.is_file()}
         diff = logged ^ expected_files
-        self.assertEqual(len(diff), 0, f"{_=} {route_path=} {n=}, {logged=} {expected_files=}")
+        self.assertEqual(len(diff), 0, f"didn't get all expected files. run={_} seg={n} {route_path=}, {diff=}\n{logged=} {expected_files=}")
 
   def test_bootlog(self):
     # generate bootlog with fake launch log
-    launch_log = ''.join([str(random.choice(string.printable)) for _ in range(100)])
+    launch_log = ''.join(str(random.choice(string.printable)) for _ in range(100))
     with open("/tmp/launch_log", "w") as f:
       f.write(launch_log)
 
@@ -177,7 +177,9 @@ class TestLoggerd(unittest.TestCase):
     # sleep enough for the first poll to time out
     # TOOD: fix loggerd bug dropping the msgs from the first poll
     managed_processes["loggerd"].start()
-    time.sleep(2)
+    for s in services:
+      while not pm.all_readers_updated(s):
+        time.sleep(0.1)
 
     sent_msgs = defaultdict(list)
     for _ in range(random.randint(2, 10) * 100):
@@ -220,9 +222,11 @@ class TestLoggerd(unittest.TestCase):
     pm = messaging.PubMaster(services)
 
     # sleep enough for the first poll to time out
-    # TOOD: fix loggerd bug dropping the msgs from the first poll
+    # TODO: fix loggerd bug dropping the msgs from the first poll
     managed_processes["loggerd"].start()
-    time.sleep(2)
+    for s in services:
+      while not pm.all_readers_updated(s):
+        time.sleep(0.1)
 
     sent_msgs = defaultdict(list)
     for _ in range(random.randint(2, 10) * 100):
@@ -233,9 +237,8 @@ class TestLoggerd(unittest.TestCase):
           m = messaging.new_message(s, random.randint(2, 10))
         pm.send(s, m)
         sent_msgs[s].append(m)
-      time.sleep(0.01)
 
-    time.sleep(1)
+    time.sleep(2)
     managed_processes["loggerd"].stop()
 
     lr = list(LogReader(os.path.join(self._get_latest_log_dir(), "rlog.bz2")))

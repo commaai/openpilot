@@ -2,6 +2,7 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <sstream>
 
 #include <QApplication>
 #include <QLabel>
@@ -168,7 +169,7 @@ QWidget * Setup::network_setup() {
 
   // setup timer for testing internet connection
   HttpRequest *request = new HttpRequest(this, false, 2500);
-  QObject::connect(request, &HttpRequest::requestDone, [=](bool success) {
+  QObject::connect(request, &HttpRequest::requestDone, [=](const QString &, bool success) {
     cont->setEnabled(success);
     if (success) {
       const bool cell = networking->wifi->currentNetworkType() == NetworkType::CELL;

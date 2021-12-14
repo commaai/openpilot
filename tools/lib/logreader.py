@@ -13,7 +13,7 @@ from cereal import log as capnp_log
 
 # this is an iterator itself, and uses private variables from LogReader
 class MultiLogIterator(object):
-  def __init__(self, log_paths, wraparound=True):
+  def __init__(self, log_paths, wraparound=False):
     self._log_paths = log_paths
     self._wraparound = wraparound
 
@@ -26,7 +26,6 @@ class MultiLogIterator(object):
   def _log_reader(self, i):
     if self._log_readers[i] is None and self._log_paths[i] is not None:
       log_path = self._log_paths[i]
-      print("LogReader:%s" % log_path)
       self._log_readers[i] = LogReader(log_path)
 
     return self._log_readers[i]

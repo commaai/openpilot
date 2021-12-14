@@ -4,7 +4,25 @@
 #include <QJsonObject>
 
 #include "selfdrive/common/params.h"
+#include "selfdrive/hardware/hw.h"
+#include "selfdrive/ui/qt/api.h"
 
+QString get_mapbox_token() {
+  // Valid for 4 weeks since we can't swap tokens on the fly
+  return MAPBOX_TOKEN.isEmpty() ? CommaApi::create_jwt({}, 4 * 7 * 24 * 3600) : MAPBOX_TOKEN;
+}
+
+QMapboxGLSettings get_mapbox_settings() {
+  QMapboxGLSettings settings;
+
+  if (!Hardware::PC()) {
+    settings.setCacheDatabasePath(MAPS_CACHE_PATH);
+  }
+  settings.setApiBaseUrl(MAPS_HOST);
+  settings.setAccessToken(get_mapbox_token());
+
+  return settings;
+}
 
 QGeoCoordinate to_QGeoCoordinate(const QMapbox::Coordinate &in) {
   return QGeoCoordinate(in.first, in.second);
@@ -50,6 +68,23 @@ QMapbox::CoordinatesCollections coordinate_to_collection(QMapbox::Coordinate c) 
   return collections;
 }
 
+QMapbox::CoordinatesCollections capnp_coordinate_list_to_collection(const capnp::List<cereal::NavRoute::Coordinate>::Reader& coordinate_list) {
+  QMapbox::Coordinates coordinates;
+
+  for (auto const &c: coordinate_list) {
+    QMapbox::Coordinate coordinate(c.getLatitude(), c.getLongitude());
+    coordinates.push_back(coordinate);
+  }
+
+  QMapbox::CoordinatesCollection collection;
+  collection.push_back(coordinates);
+
+  QMapbox::CoordinatesCollections collections;
+  collections.push_back(collection);
+  return collections;
+
+}
+
 QMapbox::CoordinatesCollections coordinate_list_to_collection(QList<QGeoCoordinate> coordinate_list) {
   QMapbox::Coordinates coordinates;
 
@@ -64,6 +99,48 @@ QMapbox::CoordinatesCollections coordinate_list_to_collection(QList<QGeoCoordina
   QMapbox::CoordinatesCollections collections;
   collections.push_back(collection);
   return collections;
+}
+
+QList<QGeoCoordinate> polyline_to_coordinate_list(const QString &polylineString) {
+  QList<QGeoCoordinate> path;
+  if (polylineString.isEmpty())
+      return path;
+
+  QByteArray data = polylineString.toLatin1();
+
+  bool parsingLatitude = true;
+
+  int shift = 0;
+  int value = 0;
+
+  QGeoCoordinate coord(0, 0);
+
+  for (int i = 0; i < data.length(); ++i) {
+      unsigned char c = data.at(i) - 63;
+
+      value |= (c & 0x1f) << shift;
+      shift += 5;
+
+      // another chunk
+      if (c & 0x20)
+          continue;
+
+      int diff = (value & 1) ? ~(value >> 1) : (value >> 1);
+
+      if (parsingLatitude) {
+          coord.setLatitude(coord.latitude() + (double)diff/1e6);
+      } else {
+          coord.setLongitude(coord.longitude() + (double)diff/1e6);
+          path.append(coord);
+      }
+
+      parsingLatitude = !parsingLatitude;
+
+      value = 0;
+      shift = 0;
+  }
+
+  return path;
 }
 
 static QGeoCoordinate sub(QGeoCoordinate v, QGeoCoordinate w) {

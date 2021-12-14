@@ -1,59 +1,60 @@
 #include "selfdrive/ui/replay/util.h"
 
-#include <array>
+#include <bzlib.h>
+#include <curl/curl.h>
+#include <openssl/sha.h>
+
+#include <cstring>
 #include <cassert>
+#include <cmath>
+#include <fstream>
 #include <iostream>
 #include <mutex>
 #include <numeric>
 
-#include <bzlib.h>
-#include <curl/curl.h>
-
 #include "selfdrive/common/timing.h"
 #include "selfdrive/common/util.h"
+
+namespace {
+
+static std::atomic<bool> enable_http_logging = false;
 
 struct CURLGlobalInitializer {
   CURLGlobalInitializer() { curl_global_init(CURL_GLOBAL_DEFAULT); }
   ~CURLGlobalInitializer() { curl_global_cleanup(); }
 };
 
+template <class T>
 struct MultiPartWriter {
-  int64_t offset;
-  int64_t end;
-  int64_t written;
-  FILE *fp;
+  T *buf;
+  size_t *total_written;
+  size_t offset;
+  size_t end;
+
+  size_t write(char *data, size_t size, size_t count) {
+    size_t bytes = size * count;
+    if ((offset + bytes) > end) return 0;
+
+    if constexpr (std::is_same<T, std::string>::value) {
+      memcpy(buf->data() + offset, data, bytes);
+    } else if constexpr (std::is_same<T, std::ofstream>::value) {
+      buf->seekp(offset);
+      buf->write(data, bytes);
+    }
+
+    offset += bytes;
+    *total_written += bytes;
+    return bytes;
+  }
 };
 
-static size_t write_cb(char *data, size_t size, size_t count, void *userp) {
-  MultiPartWriter *w = (MultiPartWriter *)userp;
-  fseek(w->fp, w->offset, SEEK_SET);
-  fwrite(data, size, count, w->fp);
-  size_t bytes = size * count;
-  w->offset += bytes;
-  w->written += bytes;
-  return bytes;
+template <class T>
+size_t write_cb(char *data, size_t size, size_t count, void *userp) {
+  auto w = (MultiPartWriter<T> *)userp;
+  return w->write(data, size, count);
 }
 
-static size_t dumy_write_cb(char *data, size_t size, size_t count, void *userp) { return size * count; }
-
-int64_t getRemoteFileSize(const std::string &url) {
-  CURL *curl = curl_easy_init();
-  if (!curl) return -1;
-
-  curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, dumy_write_cb);
-  curl_easy_setopt(curl, CURLOPT_HEADER, 1);
-  curl_easy_setopt(curl, CURLOPT_NOBODY, 1);
-  CURLcode res = curl_easy_perform(curl);
-  double content_length = -1;
-  if (res == CURLE_OK) {
-    res = curl_easy_getinfo(curl, CURLINFO_CONTENT_LENGTH_DOWNLOAD, &content_length);
-  } else {
-    std::cout << "Download failed: error code: " << res << std::endl;
-  }
-  curl_easy_cleanup(curl);
-  return res == CURLE_OK ? (int64_t)content_length : -1;
-}
+size_t dumy_write_cb(char *data, size_t size, size_t count, void *userp) { return size * count; }
 
 std::string formattedDataSize(size_t size) {
   if (size < 1024) {
@@ -65,43 +66,62 @@ std::string formattedDataSize(size_t size) {
   }
 }
 
-static std::atomic<bool> enable_http_logging = false;
+} // namespace
+
+size_t getRemoteFileSize(const std::string &url) {
+  CURL *curl = curl_easy_init();
+  if (!curl) return -1;
+
+  curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, dumy_write_cb);
+  curl_easy_setopt(curl, CURLOPT_HEADER, 1);
+  curl_easy_setopt(curl, CURLOPT_NOBODY, 1);
+  CURLcode res = curl_easy_perform(curl);
+  double content_length = -1;
+  if (res == CURLE_OK) {
+    curl_easy_getinfo(curl, CURLINFO_CONTENT_LENGTH_DOWNLOAD, &content_length);
+  } else {
+    std::cout << "Download failed: error code: " << res << std::endl;
+  }
+  curl_easy_cleanup(curl);
+  return content_length > 0 ? (size_t)content_length : 0;
+}
+
+std::string getUrlWithoutQuery(const std::string &url) {
+  size_t idx = url.find("?");
+  return (idx == std::string::npos ? url : url.substr(0, idx));
+}
 
 void enableHttpLogging(bool enable) {
   enable_http_logging = enable;
 }
 
-bool httpMultiPartDownload(const std::string &url, const std::string &target_file, int parts, std::atomic<bool> *abort) {
+template <class T>
+bool httpDownload(const std::string &url, T &buf, size_t chunk_size, size_t content_length, std::atomic<bool> *abort) {
   static CURLGlobalInitializer curl_initializer;
-  static std::mutex lock;
-  static uint64_t total_written = 0, prev_total_written = 0;
-  static double last_print_ts = 0;
 
-  int64_t content_length = getRemoteFileSize(url);
-  if (content_length <= 0) return false;
-
-  // create a tmp sparse file
-  const std::string tmp_file = target_file + ".tmp";
-  FILE *fp = fopen(tmp_file.c_str(), "wb");
-  assert(fp);
-  fseek(fp, content_length - 1, SEEK_SET);
-  fwrite("\0", 1, 1, fp);
+  int parts = 1;
+  if (chunk_size > 0 && content_length > 10 * 1024 * 1024) {
+    parts = std::nearbyint(content_length / (float)chunk_size);
+    parts = std::clamp(parts, 1, 5);
+  }
 
   CURLM *cm = curl_multi_init();
-
-  std::map<CURL *, MultiPartWriter> writers;
+  size_t written = 0;
+  std::map<CURL *, MultiPartWriter<T>> writers;
   const int part_size = content_length / parts;
   for (int i = 0; i < parts; ++i) {
     CURL *eh = curl_easy_init();
     writers[eh] = {
-        .fp = fp,
-        .offset = i * part_size,
-        .end = i == parts - 1 ? content_length - 1 : (i + 1) * part_size - 1,
+        .buf = &buf,
+        .total_written = &written,
+        .offset = (size_t)(i * part_size),
+        .end = i == parts - 1 ? content_length : (i + 1) * part_size,
     };
-    curl_easy_setopt(eh, CURLOPT_WRITEFUNCTION, write_cb);
+    curl_easy_setopt(eh, CURLOPT_WRITEFUNCTION, write_cb<T>);
     curl_easy_setopt(eh, CURLOPT_WRITEDATA, (void *)(&writers[eh]));
     curl_easy_setopt(eh, CURLOPT_URL, url.c_str());
-    curl_easy_setopt(eh, CURLOPT_RANGE, util::string_format("%d-%d", writers[eh].offset, writers[eh].end).c_str());
+    curl_easy_setopt(eh, CURLOPT_RANGE, util::string_format("%d-%d", writers[eh].offset, writers[eh].end - 1).c_str());
     curl_easy_setopt(eh, CURLOPT_HTTPGET, 1);
     curl_easy_setopt(eh, CURLOPT_NOSIGNAL, 1);
     curl_easy_setopt(eh, CURLOPT_FOLLOWLOCATION, 1);
@@ -109,29 +129,22 @@ bool httpMultiPartDownload(const std::string &url, const std::string &target_fil
     curl_multi_add_handle(cm, eh);
   }
 
-  int still_running = 1;
   size_t prev_written = 0;
+  double last_print = millis_since_boot();
+  int still_running = 1;
   while (still_running > 0 && !(abort && *abort)) {
     curl_multi_wait(cm, nullptr, 0, 1000, nullptr);
     curl_multi_perform(cm, &still_running);
 
-    size_t written = std::accumulate(writers.begin(), writers.end(), 0, [=](int v, auto &w) { return v + w.second.written; });
-    int cur_written = written - prev_written;
-    prev_written = written;
-
-    std::lock_guard lk(lock);
-    double ts = millis_since_boot();
-    total_written += cur_written;
-    if ((ts - last_print_ts) > 2 * 1000) {
-      if (enable_http_logging && last_print_ts > 0) {
-        size_t average = (total_written - prev_total_written) / ((ts - last_print_ts) / 1000.);
+    if (enable_http_logging) {
+      if (double ts = millis_since_boot(); (ts - last_print) > 2 * 1000) {
+        size_t average = (written - prev_written) / ((ts - last_print) / 1000.);
         int progress = std::min<int>(100, 100.0 * (double)written / (double)content_length);
-
-        size_t idx = url.find("?");
-        std::cout << "downloading " << (idx == std::string::npos ? url : url.substr(0, idx)) << " - " << progress << "% (" << formattedDataSize(average) << "/s)" << std::endl;
+        std::cout << "downloading " << getUrlWithoutQuery(url) << " - " << progress
+                  << "% (" << formattedDataSize(average) << "/s)" << std::endl;
+        last_print = ts;
+        prev_written = written;
       }
-      prev_total_written = total_written;
-      last_print_ts = ts;
     }
   }
 
@@ -154,38 +167,70 @@ bool httpMultiPartDownload(const std::string &url, const std::string &target_fil
     }
   }
 
-  for (auto &[e, w] : writers) {
+  for (const auto &[e, w] : writers) {
     curl_multi_remove_handle(cm, e);
     curl_easy_cleanup(e);
   }
-
   curl_multi_cleanup(cm);
-  fclose(fp);
 
-  bool ret = complete == parts;
-  ret = ret && ::rename(tmp_file.c_str(), target_file.c_str()) == 0;
-  return ret;
+  return complete == parts;
 }
 
-bool readBZ2File(const std::string_view file, std::ostream &stream) {
-  std::unique_ptr<FILE, decltype(&fclose)> f(fopen(file.data(), "r"), &fclose);
-  if (!f) return false;
+std::string httpGet(const std::string &url, size_t chunk_size, std::atomic<bool> *abort) {
+  size_t size = getRemoteFileSize(url);
+  if (size == 0) return {};
 
-  int bzerror = BZ_OK;
-  BZFILE *bz_file = BZ2_bzReadOpen(&bzerror, f.get(), 0, 0, nullptr, 0);
-  if (!bz_file) return false;
+  std::string result(size, '\0');
+  return httpDownload(url, result, chunk_size, size, abort) ? result : "";
+}
 
-  std::array<char, 64 * 1024> buf;
+bool httpDownload(const std::string &url, const std::string &file, size_t chunk_size, std::atomic<bool> *abort) {
+  size_t size = getRemoteFileSize(url);
+  if (size == 0) return false;
+
+  std::ofstream of(file, std::ios::binary | std::ios::out);
+  of.seekp(size - 1).write("\0", 1);
+  return httpDownload(url, of, chunk_size, size, abort);
+}
+
+std::string decompressBZ2(const std::string &in) {
+  return decompressBZ2((std::byte *)in.data(), in.size());
+}
+
+std::string decompressBZ2(const std::byte *in, size_t in_size) {
+  if (in_size == 0) return {};
+
+  bz_stream strm = {};
+  int bzerror = BZ2_bzDecompressInit(&strm, 0, 0);
+  assert(bzerror == BZ_OK);
+
+  strm.next_in = (char *)in;
+  strm.avail_in = in_size;
+  std::string out(in_size * 5, '\0');
   do {
-    int size = BZ2_bzRead(&bzerror, bz_file, buf.data(), buf.size());
-    if (bzerror == BZ_OK || bzerror == BZ_STREAM_END) {
-      stream.write(buf.data(), size);
+    strm.next_out = (char *)(&out[strm.total_out_lo32]);
+    strm.avail_out = out.size() - strm.total_out_lo32;
+
+    const char *prev_write_pos = strm.next_out;
+    bzerror = BZ2_bzDecompress(&strm);
+    if (bzerror == BZ_OK && prev_write_pos == strm.next_out) {
+      // content is corrupt
+      bzerror = BZ_STREAM_END;
+      std::cout << "decompressBZ2 error : content is corrupt" << std::endl;
+      break;
+    }
+
+    if (bzerror == BZ_OK && strm.avail_in > 0 && strm.avail_out == 0) {
+      out.resize(out.size() * 2);
     }
   } while (bzerror == BZ_OK);
 
-  bool success = (bzerror == BZ_STREAM_END);
-  BZ2_bzReadClose(&bzerror, bz_file);
-  return success;
+  BZ2_bzDecompressEnd(&strm);
+  if (bzerror == BZ_STREAM_END) {
+    out.resize(strm.total_out_lo32);
+    return out;
+  }
+  return {};
 }
 
 void precise_nano_sleep(long sleep_ns) {
@@ -204,4 +249,13 @@ void precise_nano_sleep(long sleep_ns) {
       usleep(0);
     }
   }
+}
+
+std::string sha256(const std::string &str) {
+  unsigned char hash[SHA256_DIGEST_LENGTH];
+  SHA256_CTX sha256;
+  SHA256_Init(&sha256);
+  SHA256_Update(&sha256, str.c_str(), str.size());
+  SHA256_Final(hash, &sha256);
+  return util::hexdump(hash, SHA256_DIGEST_LENGTH);
 }

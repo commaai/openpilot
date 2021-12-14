@@ -1,8 +1,38 @@
-Version 0.8.11 (2021-XX-XX)
+Version 0.8.13 (2022-XX-XX)
 ========================
+
+Version 0.8.12 (2021-12-15)
+========================
+ * New driving model
+   * Improved behavior around exits
+   * Better pose accuracy at high speeds, allowing max speed of 90mph
+   * Fully incorporated comma three data into all parts of training stack
+ * Improved follow distance
+ * Better longitudinal policy, especially in low speed traffic
+ * New alert sounds
+ * AGNOS 3
+   * Display burn in mitigation
+   * Improved audio amplifier configuration
+   * System reliability improvements
+   * Update Python to 3.8.10
+ * Raw logs upload moved to connect.comma.ai
+ * Fixed HUD alerts on newer Honda Bosch thanks to csouers!
+ * Audi Q3 2020-21 support thanks to jyoung8607!
+ * Lexus RC 2020 support thanks to ErichMoraga!
+
+Version 0.8.11 (2021-11-29)
+========================
+ * Support for CAN FD on the red panda
+ * Support for an external panda on the comma three
  * Navigation: Show more detailed instructions when approaching maneuver
+ * Fixed occasional steering faults on GM cars thanks to jyoung8607!
+ * Nissan ECU firmware fingerprinting thanks to robin-reckmann, martinl, and razem-io!
  * Cadillac Escalade ESV 2016 support thanks to Gibby!
+ * Genesis G70 2020 support thanks to tecandrew!
+ * Hyundai Santa Fe Hybrid 2022 support thanks to sunnyhaibin!
  * Mazda CX-9 2021 support thanks to Jacar!
+ * Volkswagen Polo 2020 support thanks to jyoung8607!
+ * Volkswagen T-Roc 2021 support thanks to jyoung8607!
 
 Version 0.8.10 (2021-11-01)
 ========================

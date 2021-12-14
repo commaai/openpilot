@@ -61,6 +61,7 @@ fi
 
 # install python
 PYENV_PYTHON_VERSION=$(cat $OP_ROOT/.python-version)
+PATH=$HOME/.pyenv/bin:$HOME/.pyenv/shims:$PATH
 pyenv install -s ${PYENV_PYTHON_VERSION}
 pyenv rehash
 eval "$(pyenv init -)"

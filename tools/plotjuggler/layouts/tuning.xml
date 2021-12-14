@@ -1,0 +1,291 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<root version="2.3.8">
+ <tabbed_widget parent="main_window" name="Main Window">
+  <Tab tab_name="Lateral" containers="1">
+   <Container>
+    <DockSplitter orientation="-" count="5" sizes="0.200458;0.199313;0.200458;0.199313;0.200458">
+     <DockArea name="Velocity [m/s]">
+      <plot style="Lines" mode="TimeSeries">
+       <range left="1.253354" top="29.954036" bottom="-0.841715" right="631.055584"/>
+       <limitY/>
+       <curve color="#0072b2" name="/carState/vEgo"/>
+      </plot>
+     </DockArea>
+     <DockArea name="Curvature [1/m] True [blue] Vehicle Model [purple] Plan [green]">
+      <plot style="Lines" mode="TimeSeries">
+       <range left="0.000000" top="0.006648" bottom="-0.003150" right="631.055209"/>
+       <limitY/>
+       <curve color="#009e73" name="engaged curvature plan"/>
+       <curve color="#785ef0" name="engaged curvature vehicle model"/>
+       <curve color="#0072b2" name="engaged curvature yaw"/>
+      </plot>
+     </DockArea>
+     <DockArea name="Roll [rad]">
+      <plot style="Lines" mode="TimeSeries">
+       <range left="0.000000" top="0.166067" bottom="-1.598381" right="631.038276"/>
+       <limitY/>
+       <curve color="#ffb000" name="/liveLocationKalman/calibratedOrientationNED/value/0"/>
+      </plot>
+     </DockArea>
+     <DockArea name="Engaged [green] Steering Pressed [blue]">
+      <plot style="Lines" mode="TimeSeries">
+       <range left="1.252984" top="1.025000" bottom="-0.025000" right="631.055584"/>
+       <limitY/>
+       <curve color="#009e73" name="/controlsState/enabled"/>
+       <curve color="#0072b2" name="/carState/steeringPressed"/>
+      </plot>
+     </DockArea>
+     <DockArea name="Steering Limited: Rate [orange] Saturated [magenta]">
+      <plot style="Lines" mode="TimeSeries">
+       <range left="1.253354" top="1.025000" bottom="-0.025000" right="631.055584"/>
+       <limitY/>
+       <curve name="/carState/steeringRateLimited" color="#ffb000"/>
+       <curve name="/controlsState/lateralControlState/pidState/saturated" color="#dc267f"/>
+      </plot>
+     </DockArea>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <Tab tab_name="Longitudinal" containers="1">
+   <Container>
+    <DockSplitter orientation="-" count="5" sizes="0.1875;0.1875;0.1875;0.1875;0.25">
+     <DockArea name="Velocity [m/s] True [blue] Plan [green] Cruise [magenta]">
+      <plot style="Lines" mode="TimeSeries">
+       <range left="0.000000" top="42.713492" bottom="-1.041792" right="631.055584"/>
+       <limitY/>
+       <curve color="#dc267f" name="/carState/cruiseState/speed"/>
+       <curve color="#009e73" name="/longitudinalPlan/speeds/0"/>
+       <curve color="#0072b2" name="/carState/vEgo"/>
+      </plot>
+     </DockArea>
+     <DockArea name="Acceleration [m/s^2] True [blue] Actuator [purple] Plan [green]">
+      <plot style="Lines" mode="TimeSeries">
+       <range left="1.253354" top="0.808303" bottom="-1.213305" right="631.055759"/>
+       <limitY/>
+       <curve color="#009e73" name="engaged_accel_plan"/>
+       <curve color="#785ef0" name="engaged_accel_actuator"/>
+       <curve color="#0072b2" name="engaged_accel_actual"/>
+      </plot>
+     </DockArea>
+     <DockArea name="Pitch [rad]">
+      <plot style="Lines" mode="TimeSeries">
+       <range left="0.000000" top="0.158854" bottom="-0.594843" right="631.038276"/>
+       <limitY/>
+       <curve color="#ffb000" name="/liveLocationKalman/calibratedOrientationNED/value/1"/>
+      </plot>
+     </DockArea>
+     <DockArea name="Engaged [green] Gas [orange] Brake [magenta]">
+      <plot style="Lines" mode="TimeSeries">
+       <range left="1.253354" top="1.025000" bottom="-0.025000" right="631.055759"/>
+       <limitY/>
+       <curve color="#009e73" name="/carControl/enabled"/>
+       <curve color="#ffb000" name="/carState/gasPressed"/>
+       <curve color="#dc267f" name="/carState/brakePressed"/>
+      </plot>
+     </DockArea>
+     <DockArea name="State [blue: off,pid,stop,start] Source [green: cruise,lead0,lead1,lead2,e2e]">
+      <plot style="Lines" mode="TimeSeries">
+       <range left="1.253620" top="5.125000" bottom="-0.125000" right="631.055759"/>
+       <limitY/>
+       <curve color="#0072b2" name="/carControl/actuators/longControlState"/>
+       <curve color="#009e73" name="/longitudinalPlan/longitudinalPlanSource"/>
+      </plot>
+     </DockArea>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <Tab tab_name="Lateral Debug" containers="1">
+   <Container>
+    <DockSplitter orientation="-" count="4" sizes="0.25;0.25;0.25;0.25">
+     <DockArea name="Controller F [magenta] P [purple] I [blue]">
+      <plot style="Lines" mode="TimeSeries">
+       <range left="0.000000" top="1.000000" bottom="0.000000" right="1.000000"/>
+       <limitY/>
+       <curve name="/controlsState/lateralControlState/pidState/f" color="#f14cc1"/>
+       <curve name="/controlsState/lateralControlState/pidState/p" color="#9467bd"/>
+       <curve name="/controlsState/lateralControlState/pidState/i" color="#17becf"/>
+      </plot>
+     </DockArea>
+     <DockArea name="Driver Torque [blue] EPS Torque [green]">
+      <plot style="Lines" mode="TimeSeries">
+       <range left="1.253354" top="2690.999030" bottom="-3450.198981" right="631.055584"/>
+       <limitY/>
+       <curve color="#009e73" name="/carState/steeringTorqueEps"/>
+       <curve color="#0072b2" name="/carState/steeringTorque"/>
+      </plot>
+     </DockArea>
+     <DockArea name="Engaged [green] Steering Pressed [blue]">
+      <plot style="Lines" mode="TimeSeries">
+       <range left="1.253354" top="1.025000" bottom="-0.025000" right="631.055759"/>
+       <limitY/>
+       <curve color="#009e73" name="/carControl/enabled"/>
+       <curve color="#0072b2" name="/carState/steeringPressed"/>
+      </plot>
+     </DockArea>
+     <DockArea name="Steering Limited: Rate [orange] Saturated [magenta]">
+      <plot style="Lines" mode="TimeSeries">
+       <range left="1.253354" top="1.025000" bottom="-0.025000" right="631.055584"/>
+       <limitY/>
+       <curve name="/carState/steeringRateLimited" color="#ffb000"/>
+       <curve name="/controlsState/lateralControlState/pidState/saturated" color="#dc267f"/>
+      </plot>
+     </DockArea>
+    </DockSplitter>
+   </Container>
+  </Tab>
+  <currentTabIndex index="0"/>
+ </tabbed_widget>
+ <use_relative_time_offset enabled="1"/>
+ <!-- - - - - - - - - - - - - - - -->
+ <!-- - - - - - - - - - - - - - - -->
+ <Plugins>
+  <plugin ID="DataLoad Rlog"/>
+  <plugin ID="Cereal Subscriber"/>
+ </Plugins>
+ <!-- - - - - - - - - - - - - - - -->
+ <!-- - - - - - - - - - - - - - - -->
+ <customMathEquations>
+  <snippet name="engaged curvature yaw">
+   <global>engage_delay = 5
+last_bad_time = -engage_delay</global>
+   <function>curvature = value / v3
+pressed = v1
+enabled = v2
+
+if (pressed == 1 or enabled == 0) then
+  last_bad_time = time
+end
+
+if (time > last_bad_time + engage_delay) then
+  return curvature
+else
+  return 0
+end</function>
+   <linkedSource>/liveLocationKalman/angularVelocityCalibrated/value/2</linkedSource>
+   <additionalSources>
+    <v1>/carState/steeringPressed</v1>
+    <v2>/carControl/enabled</v2>
+    <v3>/liveLocationKalman/velocityCalibrated/value/0</v3>
+   </additionalSources>
+  </snippet>
+  <snippet name="engaged curvature vehicle model">
+   <global>engage_delay = 5
+last_bad_time = -engage_delay</global>
+   <function>curvature = value
+pressed = v1
+enabled = v2
+
+if (pressed == 1 or enabled == 0) then
+  last_bad_time = time
+end
+
+if (time > last_bad_time + engage_delay) then
+  return value
+else
+  return 0
+end</function>
+   <linkedSource>/controlsState/curvature</linkedSource>
+   <additionalSources>
+    <v1>/carState/steeringPressed</v1>
+    <v2>/carControl/enabled</v2>
+   </additionalSources>
+  </snippet>
+  <snippet name="engaged curvature plan">
+   <global>engage_delay = 5
+last_bad_time = -engage_delay</global>
+   <function>curvature = value
+pressed = v1
+enabled = v2
+
+if (pressed == 1 or enabled == 0) then
+  last_bad_time = time
+end
+
+if (time > last_bad_time + engage_delay) then
+  return value
+else
+  return 0
+end</function>
+   <linkedSource>/lateralPlan/curvatures/0</linkedSource>
+   <additionalSources>
+    <v1>/carState/steeringPressed</v1>
+    <v2>/carControl/enabled</v2>
+   </additionalSources>
+  </snippet>
+  <snippet name="engaged_accel_actual">
+   <global>engage_delay = 5
+last_bad_time = -engage_delay</global>
+   <function>accel = value
+brake = v1
+gas = v2
+enabled = v3
+
+if (brake ~= 0 or gas ~= 0 or enabled == 0) then
+  last_bad_time = time
+end
+
+if (time > last_bad_time + engage_delay) then
+  return value
+else
+  return 0
+end</function>
+   <linkedSource>/carState/aEgo</linkedSource>
+   <additionalSources>
+    <v1>/carState/brakePressed</v1>
+    <v2>/carState/gasPressed</v2>
+    <v3>/carControl/enabled</v3>
+   </additionalSources>
+  </snippet>
+  <snippet name="engaged_accel_plan">
+   <global>engage_delay = 5
+last_bad_time = -engage_delay</global>
+   <function>accel = value
+brake = v1
+gas = v2
+enabled = v3
+
+if (brake ~= 0 or gas ~= 0 or enabled == 0) then
+  last_bad_time = time
+end
+
+if (time > last_bad_time + engage_delay) then
+  return value
+else
+  return 0
+end</function>
+   <linkedSource>/longitudinalPlan/accels/0</linkedSource>
+   <additionalSources>
+    <v1>/carState/brakePressed</v1>
+    <v2>/carState/gasPressed</v2>
+    <v3>/carControl/enabled</v3>
+   </additionalSources>
+  </snippet>
+  <snippet name="engaged_accel_actuator">
+   <global>engage_delay = 5
+last_bad_time = -engage_delay</global>
+   <function>accel = value
+brake = v1
+gas = v2
+enabled = v3
+
+if (brake ~= 0 or gas ~= 0 or enabled == 0) then
+  last_bad_time = time
+end
+
+if (time > last_bad_time + engage_delay) then
+  return value
+else
+  return 0
+end</function>
+   <linkedSource>/carControl/actuators/accel</linkedSource>
+   <additionalSources>
+    <v1>/carState/brakePressed</v1>
+    <v2>/carState/gasPressed</v2>
+    <v3>/carControl/enabled</v3>
+   </additionalSources>
+  </snippet>
+ </customMathEquations>
+ <snippets/>
+ <!-- - - - - - - - - - - - - - - -->
+</root>
+
