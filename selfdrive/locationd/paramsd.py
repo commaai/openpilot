@@ -64,7 +64,10 @@ class ParamsLearner:
                                         np.array([[roll]]))
           else:
             # This is done to bound the road roll estimate when localizer values are invalid
-            self.kf.predict_and_observe(t, ObservationKind.ROAD_ROLL_INVALID, np.array([[0]]))
+            self.kf.predict_and_observe(t,
+                                        ObservationKind.ROAD_ROLL,
+                                        np.array([[0.0]]),
+                                        np.array([np.atleast_2d(math.radians(10)**2)]))
 
         self.kf.predict_and_observe(t, ObservationKind.ANGLE_OFFSET_FAST, np.array([[0]]))
 
