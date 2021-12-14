@@ -61,17 +61,20 @@ class UploadQueueCache():
 
   @staticmethod
   def initialize(upload_queue):
-    upload_queue_json = UploadQueueCache.params.get("AthenadUploadQueue")
     try:
+      upload_queue_json = UploadQueueCache.params.get("AthenadUploadQueue")
       for item in json.loads(upload_queue_json):
         upload_queue.put(UploadItem(**item))
-    except json.JSONDecodeError:
+    except Exception:
       cloudlog.exception("athena.UploadQueueCache.initialize.exception")
 
   @staticmethod
   def cache(upload_queue):
-    items = [i._asdict() for i in upload_queue.queue if i.id not in cancelled_uploads]
-    UploadQueueCache.params.put("AthenadUploadQueue", json.dumps(items))
+    try:
+      items = [i._asdict() for i in upload_queue.queue if i.id not in cancelled_uploads]
+      UploadQueueCache.params.put("AthenadUploadQueue", json.dumps(items))
+    except Exception:
+      cloudlog.exception("athena.UploadQueueCache.cache.exception")
 
 
 def handle_long_poll(ws):
