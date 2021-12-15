@@ -72,4 +72,6 @@ class CarController():
         can_sends.append(subarucan.create_es_lkas(self.packer, CS.es_lkas_msg, enabled, visual_alert, left_line, right_line, left_lane_depart, right_lane_depart))
         self.es_lkas_cnt = CS.es_lkas_msg["Counter"]
 
+    new_actuators = actuators.copy()
+    new_actuators.steer = self.apply_steer_last / CarControllerParams.STEER_MAX
     return actuators, can_sends
