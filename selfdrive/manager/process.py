@@ -22,7 +22,7 @@ WATCHDOG_FN = "/dev/shm/wd_"
 ENABLE_WATCHDOG = os.getenv("NO_WATCHDOG") is None
 
 
-def launcher(proc):
+def launcher(proc, name):
   try:
     # import the process
     mod = importlib.import_module(proc)
@@ -32,6 +32,8 @@ def launcher(proc):
 
     # create new context since we forked
     messaging.context = messaging.Context()
+
+    cloudlog.bind(daemon=name)
 
     # exec the process
     mod.main()
@@ -223,7 +225,7 @@ class PythonProcess(ManagerProcess):
       return
 
     cloudlog.info("starting python %s" % self.module)
-    self.proc = Process(name=self.name, target=launcher, args=(self.module,))
+    self.proc = Process(name=self.name, target=launcher, args=(self.module, self.name))
     self.proc.start()
     self.watchdog_seen = False
     self.shutting_down = False
