@@ -27,7 +27,7 @@ else:
   TEST_ROUTE = "303055c0002aefd1|2021-11-22--18-36-32"
 SEGMENT = 0
 
-packet_from_camera = {"roadCameraState": "modelV2", "driverCameraState": "driverState"}
+SEND_EXTRA_INPUTS = bool(os.getenv("SEND_EXTRA_INPUTS", "0"))
 
 def get_log_fn(ref_commit):
   return "%s_%s_%s.bz2" % (TEST_ROUTE, "model_tici" if TICI else "model", ref_commit)
@@ -64,18 +64,20 @@ def model_replay(lr, frs):
     # init modeld with valid calibration
     cal_msgs = [msg for msg in lr if msg.which() == "liveCalibration"]
     for _ in range(5):
-      pm.send(cal_msgs[0].which(), cal_msgs[0])
+      pm.send(cal_msgs[0].which(), cal_msgs[0].as_builder())
       time.sleep(0.1)
 
     for msg in tqdm(lr):
-      if msg.which() == "liveCalibration":
-        last_calib = list(msg.liveCalibration.rpyCalib)
-        pm.send(msg.which(), replace_calib(msg, last_calib))
-      elif msg.which() == "lateralPlan":
-        last_desire = msg.lateralPlan.desire
-        dat = messaging.new_message('lateralPlan')
-        dat.lateralPlan.desire = last_desire
-        pm.send('lateralPlan', dat)
+      if SEND_EXTRA_INPUTS:
+        if msg.which() == "liveCalibration":
+          print("sending calibration")
+          last_calib = list(msg.liveCalibration.rpyCalib)
+          pm.send(msg.which(), replace_calib(msg, last_calib))
+        elif msg.which() == "lateralPlan":
+          last_desire = msg.lateralPlan.desire
+          dat = messaging.new_message('lateralPlan')
+          dat.lateralPlan.desire = last_desire
+          pm.send('lateralPlan', dat)
       elif msg.which() in ["roadCameraState", "driverCameraState"]:
         camera_state = getattr(msg, msg.which())
         stream = VisionStreamType.VISION_STREAM_ROAD if msg.which() == "roadCameraState" else VisionStreamType.VISION_STREAM_DRIVER
@@ -88,6 +90,7 @@ def model_replay(lr, frs):
 
         # wait for a response
         with Timeout(seconds=15):
+          packet_from_camera = {"roadCameraState": "modelV2", "driverCameraState": "driverState"}
           log_msgs.append(messaging.recv_one(sm.sock[packet_from_camera[msg.which()]]))
 
         frame_idxs[msg.which()] += 1
@@ -97,8 +100,6 @@ def model_replay(lr, frs):
         spinner.update("replaying models:  road %d/%d,  driver %d/%d" % (frame_idxs['roadCameraState'],
                        frs['roadCameraState'].frame_count, frame_idxs['driverCameraState'], frs['driverCameraState'].frame_count))
 
-  except KeyboardInterrupt:
-    pass
   finally:
     spinner.close()
     managed_processes['modeld'].stop()
