@@ -78,6 +78,6 @@ class CarInterface(CarInterfaceBase):
   def apply(self, c):
 
     if (self.CS.frame == -1):
-      return c.actuators, []  # if we haven't seen a frame 220, then do not update.
+      return car.CarControl.Actuators.new_message(), []  # if we haven't seen a frame 220, then do not update.
 
     return self.CC.update(c.enabled, self.CS, c.actuators, c.cruiseControl.cancel, c.hudControl.visualAlert)
