@@ -66,6 +66,7 @@ static void cloudlog_init() {
   char* dongle_id = getenv("DONGLE_ID");
   if (dongle_id) {
     cloudlog_bind_locked("dongle_id", dongle_id);
+    printf("dongle id %s\n", dongle_id);
   }
   cloudlog_bind_locked("version", COMMA_VERSION);
   s.ctx_j["dirty"] = !getenv("CLEAN");
