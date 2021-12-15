@@ -5,17 +5,22 @@ from cereal import car
 Ecu = car.CarParams.Ecu
 
 class CarControllerParams:
-  STEER_MAX = 2047              # max_steer 4095
-  STEER_STEP = 2                # how often we update the steer cmd
-  STEER_DELTA_UP = 50           # torque increase per refresh, 0.8s to max
-  STEER_DELTA_DOWN = 70         # torque decrease per refresh
-  STEER_DRIVER_ALLOWANCE = 60   # allowed driver torque before start limiting
-  STEER_DRIVER_MULTIPLIER = 10  # weight driver torque heavily
-  STEER_DRIVER_FACTOR = 1       # from dbc
+  def __init__(self, CP):
+    if CP.carFingerprint == CAR.IMPREZA_2020:
+      self.STEER_MAX = 1439
+    else:
+      self.STEER_MAX = 2047
+    self.STEER_STEP = 2                # how often we update the steer cmd
+    self.STEER_DELTA_UP = 50           # torque increase per refresh, 0.8s to max
+    self.STEER_DELTA_DOWN = 70         # torque decrease per refresh
+    self.STEER_DRIVER_ALLOWANCE = 60   # allowed driver torque before start limiting
+    self.STEER_DRIVER_MULTIPLIER = 10  # weight driver torque heavily
+    self.STEER_DRIVER_FACTOR = 1       # from dbc
 
 class CAR:
   ASCENT = "SUBARU ASCENT LIMITED 2019"
   IMPREZA = "SUBARU IMPREZA LIMITED 2019"
+  IMPREZA_2020 = "SUBARU IMPREZA SPORT 2020"
   FORESTER = "SUBARU FORESTER 2019"
   FORESTER_PREGLOBAL = "SUBARU FORESTER 2017 - 2018"
   LEGACY_PREGLOBAL = "SUBARU LEGACY 2015 - 2018"
@@ -29,6 +34,14 @@ FINGERPRINTS = {
   }],
   CAR.IMPREZA: [{
     2: 8, 64: 8, 65: 8, 72: 8, 73: 8, 280: 8, 281: 8, 290: 8, 312: 8, 313: 8, 314: 8, 315: 8, 316: 8, 326: 8, 372: 8, 544: 8, 545: 8, 546: 8, 552: 8, 554: 8, 557: 8, 576: 8, 577: 8, 722: 8, 801: 8, 802: 8, 805: 8, 808: 8, 811: 8, 816: 8, 826: 8, 827: 8, 837: 8, 838: 8, 839: 8, 842: 8, 912: 8, 915: 8, 940: 8, 1614: 8, 1617: 8, 1632: 8, 1650: 8, 1657: 8, 1658: 8, 1677: 8, 1697: 8, 1722: 8, 1743: 8, 1759: 8, 1786: 5, 1787: 5, 1788: 8, 1809: 8, 1813: 8, 1817: 8, 1821: 8, 1840: 8, 1848: 8, 1924: 8, 1932: 8, 1952: 8, 1960: 8
+  }],
+  CAR.IMPREZA_2020: [{
+  # SUBARU CROSSTREK SPORT 2020
+    2: 8, 64: 8, 65: 8, 72: 8, 73: 8, 280: 8, 281: 8, 282: 8, 290: 8, 312: 8, 313: 8, 314: 8, 315: 8, 316: 8, 326: 8, 372: 8, 544: 8, 545: 8, 546: 8, 552: 8, 554: 8, 557: 8, 576: 8, 577: 8, 722: 8, 801: 8, 802: 8, 803: 8, 805: 8, 808: 8, 816: 8, 826: 8, 837: 8, 838: 8, 839: 8, 842: 8, 912: 8, 915: 8, 940: 8, 1617: 8, 1632: 8, 1650: 8, 1677: 8, 1697: 8, 1722: 8, 1743: 8, 1759: 8, 1786: 5, 1787: 5, 1788: 8, 1809: 8, 1813: 8, 1817: 8, 1821: 8, 1840: 8, 1848: 8, 1924: 8, 1932: 8, 1952: 8, 1960: 8, 1968: 8, 1976: 8, 2015: 8, 2016: 8, 2024: 8
+  },
+  # IMPREZA 2020
+  {
+    2: 8, 64: 8, 65: 8, 72: 8, 73: 8, 280: 8, 281: 8, 282: 8, 290: 8, 312: 8, 313: 8, 314: 8, 315: 8, 316: 8, 326: 8, 544: 8, 545: 8, 546: 8, 554: 8, 557: 8, 576: 8, 577: 8, 801: 8, 802: 8, 803: 8, 805: 8, 808: 8, 816: 8, 826: 8, 837: 8, 838: 8, 839: 8, 842: 8, 912: 8, 915: 8, 940: 8, 1614: 8, 1617: 8, 1632: 8, 1657: 8, 1658: 8, 1677: 8, 1697: 8, 1743: 8, 1759: 8, 1786: 5, 1787: 5, 1788: 8, 1809: 8, 1813: 8, 1817: 8, 1821: 8, 1840: 8, 1848: 8, 1924: 8, 1932: 8, 1952: 8, 1960: 8
   }],
   CAR.FORESTER: [{
   # Forester 2019-2020
@@ -71,6 +84,7 @@ FINGERPRINTS = {
 STEER_THRESHOLD = {
   CAR.ASCENT: 80,
   CAR.IMPREZA: 80,
+  CAR.IMPREZA_2020: 80,
   CAR.FORESTER: 80,
   CAR.FORESTER_PREGLOBAL: 75,
   CAR.LEGACY_PREGLOBAL: 75,
@@ -81,6 +95,7 @@ STEER_THRESHOLD = {
 DBC = {
   CAR.ASCENT: dbc_dict('subaru_global_2017_generated', None),
   CAR.IMPREZA: dbc_dict('subaru_global_2017_generated', None),
+  CAR.IMPREZA_2020: dbc_dict('subaru_global_2017_generated', None),
   CAR.FORESTER: dbc_dict('subaru_global_2017_generated', None),
   CAR.FORESTER_PREGLOBAL: dbc_dict('subaru_forester_2017_generated', None),
   CAR.LEGACY_PREGLOBAL: dbc_dict('subaru_outback_2015_generated', None),
