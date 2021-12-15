@@ -345,23 +345,33 @@ void SettingsWindow::showEvent(QShowEvent *event) {
 }
 
 SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
-  QHBoxLayout *main_layout = new QHBoxLayout(this);
 
   // setup two main layouts
   sidebar_widget = new QWidget;
-  sidebar_widget->setFixedWidth(500);
   QVBoxLayout *sidebar_layout = new QVBoxLayout(sidebar_widget);
-  sidebar_layout->setContentsMargins(50, 50, 100, 50);
-  main_layout->addWidget(sidebar_widget);
-
+  sidebar_layout->setMargin(0);
   panel_widget = new QStackedWidget();
-  panel_widget->setObjectName("panel_widget");
-  panel_widget->setContentsMargins(25, 25, 25, 25);
-  main_layout->addWidget(panel_widget);
+  panel_widget->setStyleSheet(R"(
+    border-radius: 30px;
+    background-color: #292929;
+  )");
 
   // close button
   QPushButton *close_btn = new QPushButton("×");
-  close_btn->setObjectName("close_btn");
+  close_btn->setStyleSheet(R"(
+    QPushButton {
+      font-size: 140px;
+      padding-bottom: 20px;
+      font-weight: bold;
+      border 1px grey solid;
+      border-radius: 100px;
+      background-color: #292929;
+      font-weight: 400;
+    }
+    QPushButton:pressed {
+      background-color: #3B3B3B;
+    }
+  )");
   close_btn->setFixedSize(200, 200);
   sidebar_layout->addSpacing(45);
   sidebar_layout->addWidget(close_btn, 0, Qt::AlignCenter);
@@ -385,17 +395,36 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   QObject::connect(map_panel, &MapPanel::closeSettings, this, &SettingsWindow::closeSettings);
 #endif
 
+  const int padding = panels.size() > 3 ? 25 : 35;
+
   nav_btns = new QButtonGroup(this);
   for (auto &[name, panel] : panels) {
     QPushButton *btn = new QPushButton(name);
     btn->setCheckable(true);
     btn->setChecked(nav_btns->buttons().size() == 0);
-    btn->setProperty("type", "menu");
+    btn->setStyleSheet(QString(R"(
+      QPushButton {
+        color: grey;
+        border: none;
+        background: none;
+        font-size: 65px;
+        font-weight: 500;
+        padding-top: %1px;
+        padding-bottom: %1px;
+      }
+      QPushButton:checked {
+        color: white;
+      }
+      QPushButton:pressed {
+        color: #ADADAD;
+      }
+    )").arg(padding));
+
     nav_btns->addButton(btn);
     sidebar_layout->addWidget(btn, 0, Qt::AlignRight);
 
-    const int lr_margin = name != "Network" ? 25 : 0;  // Network panel handles its own margins
-    panel->setContentsMargins(lr_margin, 0, lr_margin, 0);
+    const int lr_margin = name != "Network" ? 50 : 0;  // Network panel handles its own margins
+    panel->setContentsMargins(lr_margin, 25, lr_margin, 25);
 
     ScrollView *panel_frame = new ScrollView(panel, this);
     panel_widget->addWidget(panel_frame);
@@ -405,9 +434,16 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
       panel_widget->setCurrentWidget(w);
     });
   }
+  sidebar_layout->setContentsMargins(50, 50, 100, 50);
 
-  const int padding = panels.size() > 3 ? 25 : 35;
-  setStyleSheet(QString(R"(
+  // main settings layout, sidebar + main panel
+  QHBoxLayout *main_layout = new QHBoxLayout(this);
+
+  sidebar_widget->setFixedWidth(500);
+  main_layout->addWidget(sidebar_widget);
+  main_layout->addWidget(panel_widget);
+
+  setStyleSheet(R"(
     * {
       color: white;
       font-size: 50px;
@@ -415,38 +451,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     SettingsWindow {
       background-color: black;
     }
-    #panel_widget{
-      border-radius: 30px;
-      background-color: #292929;
-    }
-    QPushButton#close_btn {
-      font-size: 140px;
-      padding-bottom: 20px;
-      font-weight: bold;
-      border 1px grey solid;
-      border-radius: 100px;
-      background-color: #292929;
-      font-weight: 400;
-    }
-    QPushButton#close_btn:pressed {
-      background-color: #3B3B3B;
-    }
-    QPushButton[type="menu"] {
-      color: grey;
-      border: none;
-      background: none;
-      font-size: 65px;
-      font-weight: 500;
-      padding-top: %1px;
-      padding-bottom: %1px;
-    }
-    QPushButton[type="menu"]:checked {
-      color: white;
-    }
-    QPushButton[type="menu"]:pressed {
-      color: #ADADAD;
-    }
-  )").arg(padding));
+  )");
 }
 
 void SettingsWindow::hideEvent(QHideEvent *event) {
