@@ -121,3 +121,11 @@ QWidget* topWidget (QWidget* widget) {
   while (widget->parentWidget() != nullptr) widget=widget->parentWidget();
   return widget;
 }
+
+QPixmap loadPixmap(const QString &fileName, const QSize &size, Qt::AspectRatioMode aspectRatioMode) {
+  if (size.isEmpty()) {
+    return QPixmap(fileName);
+  } else {
+    return QPixmap(fileName).scaled(size, aspectRatioMode, Qt::SmoothTransformation);
+  }
+}
