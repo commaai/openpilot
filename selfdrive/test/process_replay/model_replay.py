@@ -131,11 +131,13 @@ if __name__ == "__main__":
     log_fn = get_log_fn(ref_commit)
     cmp_log = LogReader(BASE_URL + log_fn)
 
-    ignore = ['logMonoTime', 'valid',
-              'modelV2.frameDropPerc',
-              'modelV2.modelExecutionTime',
-              'driverState.modelExecutionTime',
-              'driverState.dspExecutionTime']
+    ignore = [
+      'logMonoTime',
+      'modelV2.frameDropPerc',
+      'modelV2.modelExecutionTime',
+      'driverState.modelExecutionTime',
+      'driverState.dspExecutionTime'
+    ]
     tolerance = None if not PC else 1e-3
     results: Any = {TEST_ROUTE: {}}
     results[TEST_ROUTE]["models"] = compare_logs(cmp_log, log_msgs, tolerance=tolerance, ignore_fields=ignore)
