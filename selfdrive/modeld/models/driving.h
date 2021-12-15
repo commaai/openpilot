@@ -235,7 +235,6 @@ void model_init(ModelState* s, cl_device_id device_id, cl_context context);
 ModelOutput *model_eval_frame(ModelState* s, cl_mem yuv_cl, int width, int height,
                            const mat3 &transform, float *desire_in);
 void model_free(ModelState* s);
-void poly_fit(float *in_pts, float *in_stds, float *out);
 void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id, float frame_drop,
                    const ModelOutput &net_outputs, uint64_t timestamp_eof,
                    float model_execution_time, kj::ArrayPtr<const float> raw_pred, const bool valid);
