@@ -65,14 +65,13 @@ class CarState(CarStateBase):
     ret.steerError = cp.vl["Steering_Torque"]["Steer_Error_1"] == 1
 
     if self.car_fingerprint in PREGLOBAL_CARS:
-      self.cruise_button = cp_cam.vl["ES_CruiseThrottle"]["Cruise_Button"]
+      self.cruise_button = cp_cam.vl["ES_Distance"]["Cruise_Button"]
       self.ready = not cp_cam.vl["ES_DashStatus"]["Not_Ready_Startup"]
-      self.es_accel_msg = copy.copy(cp_cam.vl["ES_CruiseThrottle"])
     else:
       ret.steerWarning = cp.vl["Steering_Torque"]["Steer_Warning"] == 1
       ret.cruiseState.nonAdaptive = cp_cam.vl["ES_DashStatus"]["Conventional_Cruise"] == 1
-      self.es_distance_msg = copy.copy(cp_cam.vl["ES_Distance"])
       self.es_lkas_msg = copy.copy(cp_cam.vl["ES_LKAS_State"])
+    self.es_distance_msg = copy.copy(cp_cam.vl["ES_Distance"])
 
     return ret
 
@@ -168,28 +167,28 @@ class CarState(CarStateBase):
         ("Cruise_Set_Speed", "ES_DashStatus", 0),
         ("Not_Ready_Startup", "ES_DashStatus", 0),
 
-        ("Throttle_Cruise", "ES_CruiseThrottle", 0),
-        ("Signal1", "ES_CruiseThrottle", 0),
-        ("Cruise_Activated", "ES_CruiseThrottle", 0),
-        ("Signal2", "ES_CruiseThrottle", 0),
-        ("Brake_On", "ES_CruiseThrottle", 0),
-        ("Distance_Swap", "ES_CruiseThrottle", 0),
-        ("Standstill", "ES_CruiseThrottle", 0),
-        ("Signal3", "ES_CruiseThrottle", 0),
-        ("Close_Distance", "ES_CruiseThrottle", 0),
-        ("Signal4", "ES_CruiseThrottle", 0),
-        ("Standstill_2", "ES_CruiseThrottle", 0),
-        ("Cruise_Fault", "ES_CruiseThrottle", 0),
-        ("Signal5", "ES_CruiseThrottle", 0),
-        ("Counter", "ES_CruiseThrottle", 0),
-        ("Signal6", "ES_CruiseThrottle", 0),
-        ("Cruise_Button", "ES_CruiseThrottle", 0),
-        ("Signal7", "ES_CruiseThrottle", 0),
+        ("Cruise_Throttle", "ES_Distance", 0),
+        ("Signal1", "ES_Distance", 0),
+        ("Car_Follow", "ES_Distance", 0),
+        ("Signal2", "ES_Distance", 0),
+        ("Brake_On", "ES_Distance", 0),
+        ("Distance_Swap", "ES_Distance", 0),
+        ("Standstill", "ES_Distance", 0),
+        ("Signal3", "ES_Distance", 0),
+        ("Close_Distance", "ES_Distance", 0),
+        ("Signal4", "ES_Distance", 0),
+        ("Standstill_2", "ES_Distance", 0),
+        ("Cruise_Fault", "ES_Distance", 0),
+        ("Signal5", "ES_Distance", 0),
+        ("Counter", "ES_Distance", 0),
+        ("Signal6", "ES_Distance", 0),
+        ("Cruise_Button", "ES_Distance", 0),
+        ("Signal7", "ES_Distance", 0),
       ]
 
       checks = [
         ("ES_DashStatus", 20),
-        ("ES_CruiseThrottle", 20),
+        ("ES_Distance", 20),
       ]
     else:
       signals = [
