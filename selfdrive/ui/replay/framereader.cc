@@ -3,6 +3,8 @@
 #include <cassert>
 #include "libyuv.h"
 
+#include "selfdrive/common/modeldata.h"
+
 namespace {
 
 struct buffer_data {
@@ -96,7 +98,7 @@ bool FrameReader::load(const std::byte *data, size_t size, bool no_cuda, std::at
   ret = avcodec_parameters_to_context(decoder_ctx, video->codecpar);
   if (ret != 0) return false;
 
-  width = (decoder_ctx->width + 3) & ~3;
+  width = ALIGN(decoder_ctx->width, CAM_RGB_ALIGN);
   height = decoder_ctx->height;
 
   if (has_cuda_device && !no_cuda) {

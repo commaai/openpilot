@@ -38,8 +38,11 @@ const std::array<double, TRAJECTORY_SIZE> X_IDXS = {
        168.75  , 180.1875, 192.};
 const auto X_IDXS_FLOAT = convert_array_to_type<double, float, TRAJECTORY_SIZE>(X_IDXS);
 
+#define ALIGN(x, align) (((x) + (align)-1) & ~((align)-1))
+
+const int CAM_RGB_ALIGN = 4;
 const int TICI_CAM_WIDTH = 1928;
-const int TICI_QCAM_WIDTH = 526;
+const int TICI_QCAM_WIDTH = ALIGN(526, CAM_RGB_ALIGN); // same alignment as replay/FrameReader
 
 namespace tici_dm_crop {
   const int x_offset = -72;
