@@ -5,7 +5,7 @@ RequestRepeater::RequestRepeater(QObject *parent, const QString &requestURL, con
   timer = new QTimer(this);
   timer->setTimerType(Qt::VeryCoarseTimer);
   QObject::connect(timer, &QTimer::timeout, [=]() {
-    if ((!uiState()->scene.started || while_onroad) && uiState()->awake && !active()) {
+    if (uiState()->awake && !active()) {
       sendRequest(requestURL);
     }
   });
@@ -22,6 +22,12 @@ RequestRepeater::RequestRepeater(QObject *parent, const QString &requestURL, con
         params.put(cacheKey.toStdString(), resp.toStdString());
         prevResp = resp;
       }
+    });
+  }
+
+  if (!while_onroad) {
+    connect(uiState(), &UIState::offroadTransition, [=](bool offroad) {
+      offroad ? timer->start() : timer->stop();
     });
   }
 }
