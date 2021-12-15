@@ -156,7 +156,6 @@ class CarController():
 
     # Send CAN commands.
     can_sends = []
-    new_actuators = actuators.copy()
 
     # tester present - w/ no response (keeps radar disabled)
     if CS.CP.carFingerprint in HONDA_BOSCH and CS.CP.openpilotLongitudinalControl:
@@ -257,6 +256,7 @@ class CarController():
         if not CS.CP.enableGasInterceptor:
           self.gas = pcm_accel / 0xc6
 
+    new_actuators = actuators.copy()
     new_actuators.speed = self.speed
     new_actuators.accel = self.accel
     new_actuators.gas = self.gas
