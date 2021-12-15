@@ -11,7 +11,7 @@ from cereal.visionipc.visionipc_pyx import VisionIpcServer, VisionStreamType  # 
 from common.spinner import Spinner
 from common.timeout import Timeout
 from common.transformations.camera import get_view_frame_from_road_frame, eon_f_frame_size, tici_f_frame_size, \
-                                                                        eon_d_frame_size, tici_d_frame_size
+                                          eon_d_frame_size, tici_d_frame_size
 from selfdrive.hardware import PC, TICI
 from selfdrive.manager.process_config import managed_processes
 from selfdrive.test.openpilotci import BASE_URL, get_url
@@ -29,8 +29,10 @@ SEGMENT = 0
 
 SEND_EXTRA_INPUTS = bool(os.getenv("SEND_EXTRA_INPUTS", "0"))
 
+
 def get_log_fn(ref_commit):
   return "%s_%s_%s.bz2" % (TEST_ROUTE, "model_tici" if TICI else "model", ref_commit)
+
 
 def replace_calib(msg, calib):
   msg = msg.as_builder()
@@ -70,7 +72,6 @@ def model_replay(lr, frs):
     for msg in tqdm(lr):
       if SEND_EXTRA_INPUTS:
         if msg.which() == "liveCalibration":
-          print("sending calibration")
           last_calib = list(msg.liveCalibration.rpyCalib)
           pm.send(msg.which(), replace_calib(msg, last_calib))
         elif msg.which() == "lateralPlan":
@@ -78,7 +79,8 @@ def model_replay(lr, frs):
           dat = messaging.new_message('lateralPlan')
           dat.lateralPlan.desire = last_desire
           pm.send('lateralPlan', dat)
-      elif msg.which() in ["roadCameraState", "driverCameraState"]:
+
+      if msg.which() in ["roadCameraState", "driverCameraState"]:
         camera_state = getattr(msg, msg.which())
         stream = VisionStreamType.VISION_STREAM_ROAD if msg.which() == "roadCameraState" else VisionStreamType.VISION_STREAM_DRIVER
         img = frs[msg.which()].get(frame_idxs[msg.which()], pix_fmt="yuv420p")[0]
@@ -105,7 +107,9 @@ def model_replay(lr, frs):
     managed_processes['modeld'].stop()
     managed_processes['dmonitoringmodeld'].stop()
 
+
   return log_msgs
+
 
 if __name__ == "__main__":
 
