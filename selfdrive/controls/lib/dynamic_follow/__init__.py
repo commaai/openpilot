@@ -12,7 +12,9 @@ from selfdrive.controls.lib.dynamic_follow.auto_df import predict
 from selfdrive.controls.lib.dynamic_follow.df_manager import dfManager
 from selfdrive.controls.lib.dynamic_follow.support import LeadData, CarData, dfData, dfProfiles
 from common.data_collector import DataCollector
+
 travis = False
+DEFAULT_TR = 1.45
 
 
 class DistanceModController:
@@ -71,7 +73,6 @@ class DynamicFollow:
     self.model_input_len = round(45 / DT_MDL)
 
     # Dynamic follow variables
-    self.default_TR = 1.8
     self.TR = 1.8
     self.v_ego_retention = 2.5
     self.v_rel_retention = 1.75
@@ -90,9 +91,9 @@ class DynamicFollow:
     self.data_collector = DataCollector(file_path='/data/df_data', keys=['v_ego', 'a_ego', 'a_lead', 'v_lead', 'x_lead', 'left_lane_speeds', 'middle_lane_speeds', 'right_lane_speeds', 'left_lane_distances', 'middle_lane_distances', 'right_lane_distances', 'profile', 'time'], log_data=self.log_auto_df)
 
   def _setup_changing_variables(self):
-    self.TR = self.default_TR
-    self.user_profile = self.df_profiles.relaxed  # just a starting point
-    self.model_profile = self.df_profiles.relaxed
+    self.TR = DEFAULT_TR
+    self.user_profile = self.df_profiles.stock  # just a starting point
+    self.model_profile = self.df_profiles.stock
 
     self.last_effective_profile = self.user_profile
     self.profile_change_time = 0
@@ -116,7 +117,7 @@ class DynamicFollow:
       self._gather_data()
 
     if not self.lead_data.status:
-      self.TR = self.default_TR
+      self.TR = DEFAULT_TR
     else:
       self._store_df_data()
       self.TR = self._get_TR()
@@ -252,7 +253,7 @@ class DynamicFollow:
 
     x_vel = [0.0, 1.8627, 3.7253, 5.588, 7.4507, 9.3133, 11.5598, 13.645, 22.352, 31.2928, 33.528, 35.7632, 40.2336]  # velocities
     if df_profile == self.df_profiles.stock:
-      return 1.8
+      return 1.45
     elif df_profile == self.df_profiles.traffic:  # for in congested traffic
       x_vel = [0.0, 1.892, 3.7432, 5.8632, 8.0727, 10.7301, 14.343, 17.6275, 22.4049, 28.6752, 34.8858, 40.35]
       y_dist = [1.3781, 1.3791, 1.3457, 1.3134, 1.3145, 1.318, 1.3485, 1.257, 1.144, 0.979, 0.9461, 0.9156]
