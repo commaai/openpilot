@@ -58,4 +58,4 @@ class CarController():
     # send steering command
     can_sends.append(mazdacan.create_steering_control(self.packer, CS.CP.carFingerprint,
                                                       frame, apply_steer, CS.cam_lkas))
-    return can_sends
+    return c.actuators, can_sends

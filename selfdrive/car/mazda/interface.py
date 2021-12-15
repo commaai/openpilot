@@ -95,6 +95,6 @@ class CarInterface(CarInterfaceBase):
     return self.CS.out
 
   def apply(self, c):
-    can_sends = self.CC.update(c, self.CS, self.frame)
+    ret = self.CC.update(c, self.CS, self.frame)
     self.frame += 1
-    return can_sends
+    return ret

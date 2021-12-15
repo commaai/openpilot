@@ -116,4 +116,4 @@ class CarController():
     if frame % 50 == 0 and CS.CP.openpilotLongitudinalControl:
       can_sends.append(create_frt_radar_opt(self.packer))
 
-    return can_sends
+    return actuators, can_sends

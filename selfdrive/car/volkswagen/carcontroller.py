@@ -110,4 +110,4 @@ class CarController():
             self.graButtonStatesToSend = None
             self.graMsgSentCount = 0
 
-    return can_sends
+    return actuators, can_sends
