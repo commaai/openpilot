@@ -250,6 +250,7 @@ jobs:
                         $UNIT_TEST tools/lib/tests && \
                         ./selfdrive/boardd/tests/test_boardd_usbprotocol && \
                         ./selfdrive/common/tests/test_util && \
+                        ./selfdrive/common/tests/test_swaglog && \
                         ./selfdrive/loggerd/tests/test_logger &&\
                         ./selfdrive/proclogd/tests/test_proclog && \
                         ./selfdrive/ui/replay/tests/test_replay && \
