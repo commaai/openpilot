@@ -14,6 +14,9 @@ class CarController():
   def __init__(self, dbc_name, CP, VM):
     self.start_time = 0.
     self.apply_steer_last = 0
+    self.apply_gas = 0
+    self.apply_brake = 0
+
     self.lka_steering_cmd_counter_last = -1
     self.lka_icon_status_last = (False, False)
     self.steer_rate_limited = False
@@ -31,6 +34,7 @@ class CarController():
 
     # Send CAN commands.
     can_sends = []
+    new_actuators = actuators.copy()
 
     # Steering (50Hz)
     # Avoid GM EPS faults when transmitting messages too close together: skip this transmit if we just received the
@@ -52,23 +56,27 @@ class CarController():
       idx = (CS.lka_steering_cmd_counter + 1) % 4
 
       can_sends.append(gmcan.create_steering_control(self.packer_pt, CanBus.POWERTRAIN, apply_steer, idx, lkas_enabled))
-
-    if not enabled:
-      # Stock ECU sends max regen when not enabled.
-      apply_gas = P.MAX_ACC_REGEN
-      apply_brake = 0
-    else:
-      apply_gas = int(round(interp(actuators.accel, P.GAS_LOOKUP_BP, P.GAS_LOOKUP_V)))
-      apply_brake = int(round(interp(actuators.accel, P.BRAKE_LOOKUP_BP, P.BRAKE_LOOKUP_V)))
+    new_actuators.steer = self.apply_steer_last / P.STEER_MAX
 
     # Gas/regen and brakes - all at 25Hz
     if (frame % 4) == 0:
+      if not enabled:
+        # Stock ECU sends max regen when not enabled.
+        self.apply_gas = P.MAX_ACC_REGEN
+        self.apply_brake = 0
+      else:
+        self.apply_gas = int(round(interp(actuators.accel, P.GAS_LOOKUP_BP, P.GAS_LOOKUP_V)))
+        self.apply_brake = int(round(interp(actuators.accel, P.BRAKE_LOOKUP_BP, P.BRAKE_LOOKUP_V)))
+
       idx = (frame // 4) % 4
 
       at_full_stop = enabled and CS.out.standstill
       near_stop = enabled and (CS.out.vEgo < P.NEAR_STOP_BRAKE_PHASE)
-      can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, CanBus.CHASSIS, apply_brake, idx, near_stop, at_full_stop))
-      can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, apply_gas, idx, enabled, at_full_stop))
+      can_sends.append(gmcan.create_friction_brake_command(self.packer_ch, CanBus.CHASSIS, self.apply_brake, idx, near_stop, at_full_stop))
+      can_sends.append(gmcan.create_gas_regen_command(self.packer_pt, CanBus.POWERTRAIN, self.apply_gas, idx, enabled, at_full_stop))
+
+    new_actuators.gas = self.apply_gas
+    new_actuators.brake = self.apply_brake
 
     # Send dashboard UI commands (ACC status), 25hz
     if (frame % 4) == 0:
@@ -106,4 +114,4 @@ class CarController():
       can_sends.append(gmcan.create_lka_icon_command(CanBus.SW_GMLAN, lka_active, lka_critical, steer_alert))
       self.lka_icon_status_last = lka_icon_status
 
-    return actuators, can_sends
+    return new_actuators, can_sends
