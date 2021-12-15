@@ -66,7 +66,6 @@ static void cloudlog_init() {
   char* dongle_id = getenv("DONGLE_ID");
   if (dongle_id) {
     cloudlog_bind_locked("dongle_id", dongle_id);
-    printf("dongle id %s\n", dongle_id);
   }
   cloudlog_bind_locked("version", COMMA_VERSION);
   s.ctx_j["dirty"] = !getenv("CLEAN");
@@ -84,8 +83,6 @@ static void cloudlog_init() {
 }
 
 void log(int levelnum, const char* filename, int lineno, const char* func, const char* msg, const std::string& log_s) {
-  std::lock_guard lk(s.lock);
-  cloudlog_init();
   if (levelnum >= s.print_level) {
     printf("%s: %s\n", filename, msg);
   }
@@ -102,6 +99,9 @@ void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func
   va_end(args);
 
   if (!msg_buf) return;
+
+  std::lock_guard lk(s.lock);
+  cloudlog_init();
 
   json11::Json log_j = json11::Json::object {
     {"msg", msg_buf},
