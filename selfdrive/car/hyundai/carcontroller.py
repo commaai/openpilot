@@ -66,8 +66,6 @@ class CarController():
                         left_lane, right_lane, left_lane_depart, right_lane_depart)
 
     can_sends = []
-    new_actuators = actuators.copy()
-    new_actuators.steer = apply_steer / self.p.STEER_MAX
 
     # tester present - w/ no response (keeps radar disabled)
     if CS.CP.openpilotLongitudinalControl:
@@ -120,5 +118,8 @@ class CarController():
     if frame % 50 == 0 and CS.CP.openpilotLongitudinalControl:
       can_sends.append(create_frt_radar_opt(self.packer))
 
+    new_actuators = actuators.copy()
+    new_actuators.steer = apply_steer / self.p.STEER_MAX
     new_actuators.accel = self.accel
-    return actuators, can_sends
+
+    return new_actuators, can_sends
