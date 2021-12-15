@@ -148,7 +148,6 @@ int main(int argc, char **argv) {
   }
 
   model_free(&model);
-  LOG("joining calibration thread");
   CL_CHECK(clReleaseContext(context));
   return 0;
 }
