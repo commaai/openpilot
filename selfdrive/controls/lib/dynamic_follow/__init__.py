@@ -73,11 +73,11 @@ class DynamicFollow:
     self.model_input_len = round(45 / DT_MDL)
 
     # Dynamic follow variables
-    self.TR = 1.8
+    self.TR = DEFAULT_TR
     self.v_ego_retention = 2.5
     self.v_rel_retention = 1.75
 
-    self.sng_TR = 1.8  # reacceleration stop and go TR
+    self.sng_TR = DEFAULT_TR  # reacceleration stop and go TR
     self.sng_speed = 18.0 * CV.MPH_TO_MS
 
     self._setup_collector()
