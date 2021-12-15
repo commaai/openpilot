@@ -200,7 +200,6 @@ void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &fr
   framed.setMeasuredGreyFraction(frame_data.measured_grey_fraction);
   framed.setTargetGreyFraction(frame_data.target_grey_fraction);
   framed.setLensPos(frame_data.lens_pos);
-  framed.setLensSag(frame_data.lens_sag);
   framed.setLensErr(frame_data.lens_err);
   framed.setLensTruePos(frame_data.lens_true_pos);
 }
@@ -351,7 +350,7 @@ void *processing_thread(MultiCameraState *cameras, CameraState *cs, process_thre
   } else {
     thread_name = "WideRoadCamera";
   }
-  set_thread_name(thread_name);
+  util::set_thread_name(thread_name);
 
   uint32_t cnt = 0;
   while (!do_exit) {
@@ -408,11 +407,11 @@ static void driver_cam_auto_exposure(CameraState *c, SubMaster &sm) {
   camera_autoexposure(c, set_exposure_target(b, rect.x1, rect.x2, rect.x_skip, rect.y1, rect.y2, rect.y_skip));
 }
 
-void common_process_driver_camera(SubMaster *sm, PubMaster *pm, CameraState *c, int cnt) {
+void common_process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) {
   int j = Hardware::TICI() ? 1 : 3;
   if (cnt % j == 0) {
-    sm->update(0);
-    driver_cam_auto_exposure(c, *sm);
+    s->sm->update(0);
+    driver_cam_auto_exposure(c, *(s->sm));
   }
   MessageBuilder msg;
   auto framed = msg.initEvent().initDriverCameraState();
@@ -421,5 +420,5 @@ void common_process_driver_camera(SubMaster *sm, PubMaster *pm, CameraState *c, 
   if (env_send_driver) {
     framed.setImage(get_frame_image(&c->buf));
   }
-  pm->send("driverCameraState", msg);
+  s->pm->send("driverCameraState", msg);
 }
