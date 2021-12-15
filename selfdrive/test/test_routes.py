@@ -21,6 +21,7 @@ non_tested_cars = [
   HYUNDAI.ELANTRA_GT_I30,
   HYUNDAI.GENESIS_G90,
   HYUNDAI.KIA_OPTIMA_H,
+  SUBARU.IMPREZA_2020,
 ]
 
 TestRoute = namedtuple('TestRoute', ['route', 'car_fingerprint'])
@@ -171,6 +172,7 @@ routes = [
   TestRoute("3c8f0c502e119c1c|2020-06-30--12-58-02", SUBARU.ASCENT),
   TestRoute("c321c6b697c5a5ff|2020-06-23--11-04-33", SUBARU.FORESTER),
   TestRoute("791340bc01ed993d|2019-03-10--16-28-08", SUBARU.IMPREZA),
+  TestRoute("8bf7e79a3ce64055|2021-05-24--09-36-27", SUBARU.IMPREZA_2020),
   # Dashcam
   TestRoute("95441c38ae8c130e|2020-06-08--12-10-17", SUBARU.FORESTER_PREGLOBAL),
   # Dashcam
