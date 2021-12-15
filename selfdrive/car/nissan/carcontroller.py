@@ -87,4 +87,4 @@ class CarController():
           self.packer, lkas_hud_info_msg, steer_hud_alert
         ))
 
-    return can_sends
+    return actuators, can_sends

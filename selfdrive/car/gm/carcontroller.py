@@ -106,4 +106,4 @@ class CarController():
       can_sends.append(gmcan.create_lka_icon_command(CanBus.SW_GMLAN, lka_active, lka_critical, steer_alert))
       self.lka_icon_status_last = lka_icon_status
 
-    return can_sends
+    return actuators, can_sends

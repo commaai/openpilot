@@ -103,7 +103,7 @@ class CarInterfaceBase():
   def update(self, c, can_strings):
     raise NotImplementedError
 
-  # return sendcan, pass in a car.CarControl
+  # returns (car.CarControl.Actuators, sendcan), pass in a car.CarControl
   def apply(self, c):
     raise NotImplementedError
 

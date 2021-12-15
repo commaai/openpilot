@@ -62,4 +62,4 @@ class CarController():
 
     # TODO: HUD control
 
-    return can_sends
+    return actuators, can_sends
