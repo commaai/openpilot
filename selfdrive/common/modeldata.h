@@ -48,22 +48,22 @@ namespace tici_dm_crop {
 };
 
 inline mat3 get_intrinsic_matrix(int w, bool wide, float *y_offset = nullptr, float *zoom = nullptr) {
-  constexpr mat3 eon_fcam_intrinsics = {{910., 0., 1164.0 / 2,
-                                         0., 910., 874.0 / 2,
-                                         0., 0., 1.}};
-  constexpr mat3 tici_fcam_intrinsics = {{2648.0, 0.0, 1928.0 / 2,
-                                          0.0, 2648.0, 1208.0 / 2,
-                                          0.0, 0.0, 1.0}};
+  constexpr mat3 eon_cam_intrinsics = {{910., 0., 1164.0 / 2,
+                                        0., 910., 874.0 / 2,
+                                        0., 0., 1.}};
+  constexpr mat3 tici_cam_intrinsics = {{2648.0, 0.0, 1928.0 / 2,
+                                         0.0, 2648.0, 1208.0 / 2,
+                                         0.0, 0.0, 1.0}};
   // without unwarp, focal length is for center portion only
-  constexpr mat3 tici_ecam_intrinsics = {{620.0, 0.0, 1928.0 / 2,
-                                          0.0, 620.0, 1208.0 / 2,
-                                          0.0, 0.0, 1.0}};
+  constexpr mat3 tici_wide_cam_intrinsics = {{620.0, 0.0, 1928.0 / 2,
+                                              0.0, 620.0, 1208.0 / 2,
+                                              0.0, 0.0, 1.0}};
   mat3 mat = {};
   bool is_tici = (w == TICI_CAM_WIDTH || w == TICI_QCAM_WIDTH);
   if (is_tici) {
-    mat = wide ? tici_ecam_intrinsics : tici_fcam_intrinsics;
+    mat = wide ? tici_wide_cam_intrinsics : tici_cam_intrinsics;
   } else {
-    mat = eon_fcam_intrinsics;
+    mat = eon_cam_intrinsics;
   }
 
   if (y_offset) {
