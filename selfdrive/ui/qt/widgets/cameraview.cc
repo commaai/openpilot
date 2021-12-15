@@ -199,11 +199,12 @@ void CameraViewWidget::updateFrameMat(int w, int h) {
 }
 
 void CameraViewWidget::paintGL() {
-  if (latest_texture_id == -1) {
+  if (latest_texture_id == -1 || stream_type == VISION_STREAM_RGB_FRONT) {
     glClearColor(bg.redF(), bg.greenF(), bg.blueF(), bg.alphaF());
     glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-    return;
   }
+
+  if (latest_texture_id == -1) return;
 
   glViewport(0, 0, width(), height());
 
