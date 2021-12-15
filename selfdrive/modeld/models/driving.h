@@ -238,6 +238,6 @@ void model_free(ModelState* s);
 void poly_fit(float *in_pts, float *in_stds, float *out);
 void model_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t frame_id, float frame_drop,
                    const ModelOutput &net_outputs, uint64_t timestamp_eof,
-                   float model_execution_time, kj::ArrayPtr<const float> raw_pred);
+                   float model_execution_time, kj::ArrayPtr<const float> raw_pred, const bool valid);
 void posenet_publish(PubMaster &pm, uint32_t vipc_frame_id, uint32_t vipc_dropped_frames,
-                     const ModelOutput &net_outputs, uint64_t timestamp_eof);
+                     const ModelOutput &net_outputs, uint64_t timestamp_eof, const bool valid);
