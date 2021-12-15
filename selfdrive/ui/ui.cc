@@ -253,6 +253,8 @@ void UIState::update() {
 Device::Device(QObject *parent) : brightness_filter(BACKLIGHT_OFFROAD, BACKLIGHT_TS, BACKLIGHT_DT), QObject(parent) {
   setAwake(true);
   resetInteractiveTimout();
+
+  QObject::connect(uiState(), &UIState::uiUpdate, this, &Device::update);
 }
 
 void Device::update(const UIState &s) {
