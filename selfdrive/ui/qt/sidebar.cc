@@ -34,6 +34,8 @@ Sidebar::Sidebar(QWidget *parent) : QFrame(parent) {
   setAttribute(Qt::WA_OpaquePaintEvent);
   setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
   setFixedWidth(300);
+
+  QObject::connect(uiState(), &UIState::uiUpdate, this, &Sidebar::updateState);
 }
 
 void Sidebar::mouseReleaseEvent(QMouseEvent *event) {
