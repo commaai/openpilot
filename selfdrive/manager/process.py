@@ -33,6 +33,7 @@ def launcher(proc, name):
     # create new context since we forked
     messaging.context = messaging.Context()
 
+    # add daemon name to cloudlog ctx
     cloudlog.bind(daemon=name)
 
     # exec the process
