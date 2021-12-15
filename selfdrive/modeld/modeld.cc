@@ -30,8 +30,8 @@ mat3 update_calibration(cereal::LiveCalibrationData::Reader live_calib, bool wid
     return tmp;
   }();
 
-  auto cam_intrinsics = Eigen::Matrix<float, 3, 3, Eigen::RowMajor>(wide_camera ? ecam_intrinsic_matrix.v : fcam_intrinsic_matrix.v);
-  const mat3 yuv_transform = get_model_yuv_transform();
+  static const auto cam_intrinsics = Eigen::Matrix<float, 3, 3, Eigen::RowMajor>(wide_camera ? ecam_intrinsic_matrix.v : fcam_intrinsic_matrix.v);
+  static const mat3 yuv_transform = get_model_yuv_transform();
 
   auto extrinsic_matrix = live_calib.getExtrinsicMatrix();
   Eigen::Matrix<float, 3, 4> extrinsic_matrix_eigen;
