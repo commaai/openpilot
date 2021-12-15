@@ -36,7 +36,6 @@ common/filter_simple.py
 common/stat_live.py
 common/spinner.py
 common/text_window.py
-common/cython_hacks.py
 common/SConscript
 
 common/kalman/.gitignore
@@ -368,8 +367,6 @@ selfdrive/camerad/snapshot/*
 selfdrive/camerad/include/*
 selfdrive/camerad/cameras/camera_common.h
 selfdrive/camerad/cameras/camera_common.cc
-selfdrive/camerad/cameras/camera_frame_stream.cc
-selfdrive/camerad/cameras/camera_frame_stream.h
 selfdrive/camerad/cameras/camera_qcom.cc
 selfdrive/camerad/cameras/camera_qcom.h
 selfdrive/camerad/cameras/camera_replay.cc
@@ -445,9 +442,6 @@ selfdrive/assets/sounds/*
 selfdrive/assets/training/*
 
 third_party/SConscript
-
-third_party/nanovg/*.c
-third_party/nanovg/*.h
 
 third_party/libgralloc/**
 third_party/linux/**

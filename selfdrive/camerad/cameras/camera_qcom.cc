@@ -211,12 +211,12 @@ void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_i
               /*fps*/ 20,
 #endif
               device_id, ctx,
-              VISION_STREAM_RGB_BACK, VISION_STREAM_YUV_BACK);
+              VISION_STREAM_RGB_BACK, VISION_STREAM_ROAD);
 
   camera_init(v, &s->driver_cam, CAMERA_ID_OV8865, 1,
               /*pixel_clock=*/72000000, /*line_length_pclk=*/1602,
               /*max_gain=*/510, 10, device_id, ctx,
-              VISION_STREAM_RGB_FRONT, VISION_STREAM_YUV_FRONT);
+              VISION_STREAM_RGB_FRONT, VISION_STREAM_DRIVER);
 
   s->sm = new SubMaster({"driverState"});
   s->pm = new PubMaster({"roadCameraState", "driverCameraState", "thumbnail"});
@@ -227,7 +227,7 @@ void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_i
     s->stats_bufs[i].allocate(0xb80);
   }
   std::fill_n(s->lapres, std::size(s->lapres), 16160);
-  s->lap_conv = new LapConv(device_id, ctx, s->road_cam.buf.rgb_width, s->road_cam.buf.rgb_height, 3);
+  s->lap_conv = new LapConv(device_id, ctx, s->road_cam.buf.rgb_width, s->road_cam.buf.rgb_height, s->road_cam.buf.rgb_stride, 3);
 }
 
 static void set_exposure(CameraState *s, float exposure_frac, float gain_frac) {
@@ -852,21 +852,7 @@ static void parse_autofocus(CameraState *s, uint8_t *d) {
   s->focus_err = max_focus*1.0;
 }
 
-static std::optional<float> get_accel_z(SubMaster *sm) {
-  sm->update(0);
-  if(sm->updated("sensorEvents")) {
-    for (auto event : (*sm)["sensorEvents"].getSensorEvents()) {
-      if (event.which() == cereal::SensorEventData::ACCELERATION) {
-        if (auto v = event.getAcceleration().getV(); v.size() >= 3)
-          return -v[2];
-        break;
-      }
-    }
-  }
-  return std::nullopt;
-}
-
-static void do_autofocus(CameraState *s, SubMaster *sm) {
+static void do_autofocus(CameraState *s) {
   float lens_true_pos = s->lens_true_pos.load();
   if (!isnan(s->focus_err)) {
     // learn lens_true_pos
@@ -874,23 +860,10 @@ static void do_autofocus(CameraState *s, SubMaster *sm) {
     lens_true_pos -= s->focus_err*focus_kp;
   }
 
-  if (auto accel_z = get_accel_z(sm)) {
-    s->last_sag_acc_z = *accel_z;
-  }
-  const float sag = (s->last_sag_acc_z / 9.8) * 128;
   // stay off the walls
   lens_true_pos = std::clamp(lens_true_pos, float(LP3_AF_DAC_DOWN), float(LP3_AF_DAC_UP));
-  int target = std::clamp(lens_true_pos - sag, float(LP3_AF_DAC_DOWN), float(LP3_AF_DAC_UP));
   s->lens_true_pos.store(lens_true_pos);
-
-  /*char debug[4096];
-  char *pdebug = debug;
-  pdebug += sprintf(pdebug, "focus ");
-  for (int i = 0; i < NUM_FOCUS; i++) pdebug += sprintf(pdebug, "%2x(%4d) ", s->confidence[i], s->focus[i]);
-  pdebug += sprintf(pdebug, "  err: %7.2f  offset: %6.2f sag: %6.2f lens_true_pos: %6.2f  cur_lens_pos: %4d->%4d", err * focus_kp, offset, sag, s->lens_true_pos, s->cur_lens_pos, target);
-  LOGD(debug);*/
-
-  actuator_move(s, target);
+  actuator_move(s, lens_true_pos);
 }
 
 void camera_autoexposure(CameraState *s, float grey_frac) {
@@ -1045,13 +1018,12 @@ static void ops_thread(MultiCameraState *s) {
   CameraExpInfo road_cam_op;
   CameraExpInfo driver_cam_op;
 
-  set_thread_name("camera_settings");
-  SubMaster sm({"sensorEvents"});
+  util::set_thread_name("camera_settings");
   while(!do_exit) {
     road_cam_op = road_cam_exp.load();
     if (road_cam_op.op_id != last_road_cam_op_id) {
       do_autoexposure(&s->road_cam, road_cam_op.grey_frac);
-      do_autofocus(&s->road_cam, &sm);
+      do_autofocus(&s->road_cam);
       last_road_cam_op_id = road_cam_op.op_id;
     }
 
@@ -1086,10 +1058,6 @@ static void setup_self_recover(CameraState *c, const uint16_t *lapres, size_t la
   c->self_recover.store(self_recover);
 }
 
-void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) {
-  common_process_driver_camera(s->sm, s->pm, c, cnt);
-}
-
 // called by processing_thread
 void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
   const CameraBuf *b = &c->buf;
@@ -1121,7 +1089,7 @@ void cameras_run(MultiCameraState *s) {
   std::vector<std::thread> threads;
   threads.push_back(std::thread(ops_thread, s));
   threads.push_back(start_process_thread(s, &s->road_cam, process_road_camera));
-  threads.push_back(start_process_thread(s, &s->driver_cam, process_driver_camera));
+  threads.push_back(start_process_thread(s, &s->driver_cam, common_process_driver_camera));
 
   CameraState* cameras[2] = {&s->road_cam, &s->driver_cam};
 
@@ -1169,7 +1137,6 @@ void cameras_run(MultiCameraState *s) {
             .frame_length = (uint32_t)c->frame_length,
             .integ_lines = (uint32_t)c->cur_integ_lines,
             .lens_pos = c->cur_lens_pos,
-            .lens_sag = c->last_sag_acc_z,
             .lens_err = c->focus_err,
             .lens_true_pos = c->lens_true_pos,
             .gain = c->cur_gain_frac,

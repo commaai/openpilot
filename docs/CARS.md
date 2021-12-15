@@ -7,8 +7,8 @@
 | Acura     | ILX 2016-19                   | AcuraWatch Plus   | openpilot        | 25mph<sup>1</sup>  | 25mph             |
 | Acura     | RDX 2016-18                   | AcuraWatch Plus   | openpilot        | 25mph<sup>1</sup>  | 12mph             |
 | Acura     | RDX 2019-21                   | All               | Stock            | 0mph               | 3mph              |
-| Honda     | Accord 2018-20                | All               | Stock            | 0mph               | 3mph              |
-| Honda     | Accord Hybrid 2018-20         | All               | Stock            | 0mph               | 3mph              |
+| Honda     | Accord 2018-21                | All               | Stock            | 0mph               | 3mph              |
+| Honda     | Accord Hybrid 2018-21         | All               | Stock            | 0mph               | 3mph              |
 | Honda     | Civic Hatchback 2017-21       | Honda Sensing     | Stock            | 0mph               | 12mph             |
 | Honda     | Civic Coupe 2016-18           | Honda Sensing     | openpilot        | 0mph               | 12mph             |
 | Honda     | Civic Coupe 2019-20           | All               | Stock            | 0mph               | 2mph<sup>2</sup>  |
@@ -34,7 +34,7 @@
 | Lexus     | ES Hybrid 2017-18             | LSS               | Stock<sup>3</sup>| 0mph               | 0mph              |
 | Lexus     | ES Hybrid 2019-21             | All               | openpilot        | 0mph               | 0mph              |
 | Lexus     | IS 2017-2019                  | All               | Stock            | 22mph              | 0mph              |
-| Lexus     | NX 2018                       | All               | Stock<sup>3</sup>| 0mph               | 0mph              |
+| Lexus     | NX 2018-2019                  | All               | Stock<sup>3</sup>| 0mph               | 0mph              |
 | Lexus     | NX 2020                       | All               | openpilot        | 0mph               | 0mph              |
 | Lexus     | NX Hybrid 2018-19             | All               | Stock<sup>3</sup>| 0mph               | 0mph              |
 | Lexus     | RC 2020                       | All               | Stock            | 22mph              | 0mph              |
@@ -50,7 +50,7 @@
 | Toyota    | Camry 2021-22                 | All               | openpilot        | 0mph<sup>4</sup>   | 0mph              |
 | Toyota    | Camry Hybrid 2018-20          | All               | Stock            | 0mph<sup>4</sup>   | 0mph              |
 | Toyota    | Camry Hybrid 2021-22          | All               | openpilot        | 0mph               | 0mph              |
-| Toyota    | C-HR 2017-20                  | All               | Stock            | 0mph               | 0mph              |
+| Toyota    | C-HR 2017-21                  | All               | Stock            | 0mph               | 0mph              |
 | Toyota    | C-HR Hybrid 2017-19           | All               | Stock            | 0mph               | 0mph              |
 | Toyota    | Corolla 2017-19               | All               | Stock<sup>3</sup>| 20mph<sup>1</sup>  | 0mph              |
 | Toyota    | Corolla 2020-22               | All               | openpilot        | 0mph               | 0mph              |
@@ -83,6 +83,7 @@
 | Audi      | A3 2014-19                    | ACC + Lane Assist | Stock            | 0mph               | 0mph         |
 | Audi      | A3 Sportback e-tron 2017-18   | ACC + Lane Assist | Stock            | 0mph               | 0mph         |
 | Audi      | Q2 2018                       | ACC + Lane Assist | Stock            | 0mph               | 0mph         |
+| Audi      | Q3 2020-21                    | ACC + Lane Assist | Stock            | 0mph               | 0mph         |
 | Audi      | S3 2015                       | ACC + Lane Assist | Stock            | 0mph               | 0mph         |
 | Buick     | Regal 2018<sup>1</sup>        | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
 | Cadillac  | ATS 2018<sup>1</sup>          | Adaptive Cruise   | openpilot        | 0mph               | 7mph         |
@@ -121,7 +122,7 @@
 | Jeep      | Grand Cherokee 2019-20        | Adaptive Cruise   | Stock            | 0mph               | 39mph        |
 | Kia       | Ceed 2019                     | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Kia       | Forte 2018-21                 | SCC + LKAS        | Stock            | 0mph               | 0mph         |
-| Kia       | K5 2021                       | SCC + LFA         | Stock            | 0mph               | 0mph         |
+| Kia       | K5 2021-22                    | SCC + LFA         | Stock            | 0mph               | 0mph         |
 | Kia       | Niro EV 2019-21               | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Kia       | Niro Hybrid 2021              | SCC + LKAS        | Stock            | 0mph               | 0mph         |
 | Kia       | Niro PHEV 2019                | SCC + LKAS        | Stock            | 10mph              | 32mph        |

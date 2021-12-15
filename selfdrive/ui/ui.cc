@@ -1,11 +1,11 @@
 #include "selfdrive/ui/ui.h"
 
-#include <unistd.h>
-
 #include <cassert>
 #include <cmath>
-#include <cstdio>
 
+#include "common/transformations/orientation.hpp"
+#include "selfdrive/common/params.h"
+#include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
 #include "selfdrive/common/watchdog.h"
 #include "selfdrive/hardware/hw.h"
@@ -14,10 +14,9 @@
 #define BACKLIGHT_TS 10.00
 #define BACKLIGHT_OFFROAD 50
 
-
 // Projects a point in car to space to the corresponding point in full frame
 // image space.
-static bool calib_frame_to_full_frame(const UIState *s, float in_x, float in_y, float in_z, vertex_data *out) {
+static bool calib_frame_to_full_frame(const UIState *s, float in_x, float in_y, float in_z, QPointF *out) {
   const float margin = 500.0f;
   const QRectF clip_region{-margin, -margin, s->fb_w + 2 * margin, s->fb_h + 2 * margin};
 
@@ -28,8 +27,7 @@ static bool calib_frame_to_full_frame(const UIState *s, float in_x, float in_y, 
   // Project.
   QPointF point = s->car_space_transform.map(QPointF{KEp.v[0] / KEp.v[2], KEp.v[1] / KEp.v[2]});
   if (clip_region.contains(point)) {
-    out->x = point.x();
-    out->y = point.y();
+    *out = point;
     return true;
   }
   return false;
@@ -57,7 +55,7 @@ static void update_leads(UIState *s, const cereal::RadarState::Reader &radar_sta
 static void update_line_data(const UIState *s, const cereal::ModelDataV2::XYZTData::Reader &line,
                              float y_off, float z_off, line_vertices_data *pvd, int max_idx) {
   const auto line_x = line.getX(), line_y = line.getY(), line_z = line.getZ();
-  vertex_data *v = &pvd->v[0];
+  QPointF *v = &pvd->v[0];
   for (int i = 0; i <= max_idx; i++) {
     v += calib_frame_to_full_frame(s, line_x[i], line_y[i] - y_off, line_z[i] + z_off, v);
   }
@@ -108,18 +106,11 @@ static void update_sockets(UIState *s) {
 static void update_state(UIState *s) {
   SubMaster &sm = *(s->sm);
   UIScene &scene = s->scene;
-  s->running_time = 1e-9 * (nanos_since_boot() - sm["deviceState"].getDeviceState().getStartedMonoTime());
 
-  // update engageability and DM icons at 2Hz
-  if (sm.frame % (UI_FREQ / 2) == 0) {
-    auto cs = sm["controlsState"].getControlsState();
-    scene.engageable = cs.getEngageable() || cs.getEnabled();
-    scene.dm_active = sm["driverMonitoringState"].getDriverMonitoringState().getIsActiveMode();
-  }
-  if (sm.updated("modelV2") && s->vg) {
+  if (sm.updated("modelV2")) {
     update_model(s, sm["modelV2"].getModelV2());
   }
-  if (sm.updated("radarState") && s->vg) {
+  if (sm.updated("radarState")) {
     std::optional<cereal::ModelDataV2::XYZTData::Reader> line;
     if (sm.rcv_frame("modelV2") > 0) {
       line = sm["modelV2"].getModelV2().getPosition();
@@ -260,6 +251,8 @@ void QUIState::update() {
 }
 
 Device::Device(QObject *parent) : brightness_filter(BACKLIGHT_OFFROAD, BACKLIGHT_TS, BACKLIGHT_DT), QObject(parent) {
+  setAwake(true);
+  resetInteractiveTimout();
 }
 
 void Device::update(const UIState &s) {
@@ -270,17 +263,17 @@ void Device::update(const UIState &s) {
   QUIState::ui_state.awake = awake;
 }
 
-void Device::setAwake(bool on, bool reset) {
+void Device::setAwake(bool on) {
   if (on != awake) {
     awake = on;
     Hardware::set_display_power(awake);
     LOGD("setting display power %d", awake);
     emit displayPowerChanged(awake);
   }
+}
 
-  if (reset) {
-    awake_timeout = 30 * UI_FREQ;
-  }
+void Device::resetInteractiveTimout() {
+  interactive_timeout = (ignition_on ? 10 : 30) * UI_FREQ;
 }
 
 void Device::updateBrightness(const UIState &s) {
@@ -298,16 +291,6 @@ void Device::updateBrightness(const UIState &s) {
 
     // Scale back to 10% to 100%
     clipped_brightness = std::clamp(100.0f * clipped_brightness, 10.0f, 100.0f);
-
-    // Limit brightness if running for too long
-    if (Hardware::TICI()) {
-      const float MAX_BRIGHTNESS_HOURS = 4;
-      const float HOURLY_BRIGHTNESS_DECREASE = 5;
-      float ui_running_hours = s.running_time / (60*60);
-      float anti_burnin_max_percent = std::clamp(100.0f - HOURLY_BRIGHTNESS_DECREASE * (ui_running_hours - MAX_BRIGHTNESS_HOURS),
-                                                 30.0f, 100.0f);
-      clipped_brightness = std::min(clipped_brightness, anti_burnin_max_percent);
-    }
   }
 
   int brightness = brightness_filter.update(clipped_brightness);
@@ -321,18 +304,28 @@ void Device::updateBrightness(const UIState &s) {
   last_brightness = brightness;
 }
 
-void Device::updateWakefulness(const UIState &s) {
-  awake_timeout = std::max(awake_timeout - 1, 0);
+bool Device::motionTriggered(const UIState &s) {
+  static float accel_prev = 0;
+  static float gyro_prev = 0;
 
-  bool should_wake = s.scene.started || s.scene.ignition;
-  if (!should_wake) {
-    // tap detection while display is off
-    bool accel_trigger = abs(s.scene.accel_sensor - accel_prev) > 0.2;
-    bool gyro_trigger = abs(s.scene.gyro_sensor - gyro_prev) > 0.15;
-    should_wake = accel_trigger && gyro_trigger;
-    gyro_prev = s.scene.gyro_sensor;
-    accel_prev = (accel_prev * (accel_samples - 1) + s.scene.accel_sensor) / accel_samples;
+  bool accel_trigger = abs(s.scene.accel_sensor - accel_prev) > 0.2;
+  bool gyro_trigger = abs(s.scene.gyro_sensor - gyro_prev) > 0.15;
+
+  gyro_prev = s.scene.gyro_sensor;
+  accel_prev = (accel_prev * (accel_samples - 1) + s.scene.accel_sensor) / accel_samples;
+
+  return (!awake && accel_trigger && gyro_trigger);
+}
+
+void Device::updateWakefulness(const UIState &s) {
+  bool ignition_just_turned_off = !s.scene.ignition && ignition_on;
+  ignition_on = s.scene.ignition;
+
+  if (ignition_just_turned_off || motionTriggered(s)) {
+    resetInteractiveTimout();
+  } else if (interactive_timeout > 0 && --interactive_timeout == 0) {
+    emit interactiveTimout();
   }
 
-  setAwake(awake_timeout, should_wake);
+  setAwake(s.scene.ignition || interactive_timeout > 0);
 }

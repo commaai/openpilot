@@ -60,7 +60,6 @@ if arch == "aarch64" and TICI:
   arch = "larch64"
 
 USE_WEBCAM = os.getenv("USE_WEBCAM") is not None
-USE_FRAME_STREAM = os.getenv("USE_FRAME_STREAM") is not None
 
 lenv = {
   "PATH": os.environ['PATH'],
@@ -91,7 +90,6 @@ if arch == "aarch64" or arch == "larch64":
     "/usr/lib",
     "/system/vendor/lib64",
     "/system/comma/usr/lib",
-    "#third_party/nanovg",
     f"#third_party/acados/{arch}/lib",
   ]
 
@@ -210,7 +208,6 @@ env = Environment(
     "#third_party/linux/include",
     "#third_party/snpe/include",
     "#third_party/mapbox-gl-native-qt/include",
-    "#third_party/nanovg",
     "#third_party/qrcode",
     "#third_party",
     "#cereal",
@@ -352,7 +349,7 @@ if GetOption("clazy"):
   qt_env['ENV']['CLAZY_IGNORE_DIRS'] = qt_dirs[0]
   qt_env['ENV']['CLAZY_CHECKS'] = ','.join(checks)
 
-Export('env', 'qt_env', 'arch', 'real_arch', 'SHARED', 'USE_WEBCAM', 'USE_FRAME_STREAM')
+Export('env', 'qt_env', 'arch', 'real_arch', 'SHARED', 'USE_WEBCAM')
 
 SConscript(['selfdrive/common/SConscript'])
 Import('_common', '_gpucommon', '_gpu_libs')

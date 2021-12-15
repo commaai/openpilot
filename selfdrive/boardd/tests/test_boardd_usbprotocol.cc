@@ -16,7 +16,7 @@ int random_int(int min, int max) {
 }
 
 struct PandaTest : public Panda {
-  PandaTest(uint32_t bus_offset, int can_list_size);
+  PandaTest(uint32_t bus_offset, int can_list_size, cereal::PandaState::PandaType hw_type);
   void test_can_send();
   void test_can_recv();
 
@@ -27,9 +27,11 @@ struct PandaTest : public Panda {
   capnp::List<cereal::CanData>::Reader can_data_list;
 };
 
-PandaTest::PandaTest(uint32_t bus_offset_, int can_list_size) : can_list_size(can_list_size), Panda(bus_offset_) {
+PandaTest::PandaTest(uint32_t bus_offset_, int can_list_size, cereal::PandaState::PandaType hw_type) : can_list_size(can_list_size), Panda(bus_offset_) {
+  this->hw_type = hw_type;
+  int data_limit = ((hw_type == cereal::PandaState::PandaType::RED_PANDA) ? std::size(dlc_to_len) : 8);
   // prepare test data
-  for (int i = 0; i < std::size(dlc_to_len); ++i) {
+  for (int i = 0; i < data_limit; ++i) {
     std::random_device rd;
     std::independent_bits_engine<std::default_random_engine, CHAR_BIT, unsigned char> rbe(rd());
 
@@ -62,7 +64,7 @@ void PandaTest::test_can_send() {
     for (int i = 0, counter = 0; i < size; i += USBPACKET_MAX_SIZE, counter++) {
       REQUIRE(chunk[i] == counter);
 
-      const int len = std::min(USBPACKET_MAX_SIZE, (uint32_t)size_left);
+      const int len = std::min(USBPACKET_MAX_SIZE, size_left);
       unpacked_data.insert(unpacked_data.end(), &chunk[i + 1], &chunk[i + len]);
       size_left -= len;
     }
@@ -101,10 +103,23 @@ void PandaTest::test_can_recv() {
   }
 }
 
-TEST_CASE("send/recv can packets") {
+TEST_CASE("send/recv CAN 2.0 packets") {
   auto bus_offset = GENERATE(0, 4);
   auto can_list_size = GENERATE(1, 3, 5, 10, 30, 60, 100, 200);
-  PandaTest test(bus_offset, can_list_size);
+  PandaTest test(bus_offset, can_list_size, cereal::PandaState::PandaType::DOS);
+
+  SECTION("can_send") {
+    test.test_can_send();
+  }
+  SECTION("can_receive") {
+    test.test_can_recv();
+  }
+}
+
+TEST_CASE("send/recv CAN FD packets") {
+  auto bus_offset = GENERATE(0, 4);
+  auto can_list_size = GENERATE(1, 3, 5, 10, 30, 60, 100, 200);
+  PandaTest test(bus_offset, can_list_size, cereal::PandaState::PandaType::RED_PANDA);
 
   SECTION("can_send") {
     test.test_can_send();

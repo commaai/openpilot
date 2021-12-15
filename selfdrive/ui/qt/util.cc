@@ -85,6 +85,7 @@ void setQtSurfaceFormat() {
 #else
   fmt.setRenderableType(QSurfaceFormat::OpenGLES);
 #endif
+  fmt.setSamples(16);
   QSurfaceFormat::setDefaultFormat(fmt);
 }
 
@@ -96,21 +97,6 @@ void initApp() {
     QApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
   }
 }
-
-ClickableWidget::ClickableWidget(QWidget *parent) : QWidget(parent) { }
-
-void ClickableWidget::mouseReleaseEvent(QMouseEvent *event) {
-  emit clicked();
-}
-
-// Fix stylesheets
-void ClickableWidget::paintEvent(QPaintEvent *) {
-  QStyleOption opt;
-  opt.init(this);
-  QPainter p(this);
-  style()->drawPrimitive(QStyle::PE_Widget, &opt, &p, this);
-}
-
 
 void swagLogMessageHandler(QtMsgType type, const QMessageLogContext &context, const QString &msg) {
   static std::map<QtMsgType, int> levels = {

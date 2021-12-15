@@ -11,6 +11,8 @@ static kj::Array<capnp::word> build_boot_log() {
   if (Hardware::TICI()) {
     bootlog_commands.push_back("journalctl");
     bootlog_commands.push_back("sudo nvme smart-log --output-format=json /dev/nvme0");
+  } else if (Hardware::EON()) {
+    bootlog_commands.push_back("logcat -d");
   }
 
   MessageBuilder msg;
@@ -56,6 +58,7 @@ static kj::Array<capnp::word> build_boot_log() {
 }
 
 int main(int argc, char** argv) {
+  clear_locks(LOG_ROOT);
 
   const std::string path = LOG_ROOT + "/boot/" + logger_get_route_name() + ".bz2";
   LOGW("bootlog to %s", path.c_str());

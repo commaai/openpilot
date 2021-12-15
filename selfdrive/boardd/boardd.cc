@@ -62,7 +62,7 @@ std::atomic<bool> pigeon_active(false);
 
 ExitHandler do_exit;
 
-std::string get_time_str(const struct tm &time) {
+static std::string get_time_str(const struct tm &time) {
   char s[30] = {'\0'};
   std::strftime(s, std::size(s), "%Y-%m-%d %H:%M:%S", &time);
   return s;
@@ -76,6 +76,35 @@ bool check_all_connected(const std::vector<Panda *> &pandas) {
     }
   }
   return true;
+}
+
+enum class SyncTimeDir { TO_PANDA, FROM_PANDA };
+
+void sync_time(Panda *panda, SyncTimeDir dir) {
+  if (!panda->has_rtc) return;
+
+  setenv("TZ", "UTC", 1);
+  struct tm sys_time = util::get_time();
+  struct tm rtc_time = panda->get_rtc();
+
+  if (dir == SyncTimeDir::TO_PANDA) {
+    if (util::time_valid(sys_time)) {
+      // Write time to RTC if it looks reasonable
+      double seconds = difftime(mktime(&rtc_time), mktime(&sys_time));
+      if (std::abs(seconds) > 1.1) {
+        panda->set_rtc(sys_time);
+        LOGW("Updating panda RTC. dt = %.2f System: %s RTC: %s",
+              seconds, get_time_str(sys_time).c_str(), get_time_str(rtc_time).c_str());
+      }
+    }
+  } else if (dir == SyncTimeDir::FROM_PANDA) {
+    if (!util::time_valid(sys_time) && util::time_valid(rtc_time)) {
+      const struct timeval tv = {mktime(&rtc_time), 0};
+      settimeofday(&tv, 0);
+      LOGE("System time wrong, setting from RTC. System: %s RTC: %s",
+           get_time_str(sys_time).c_str(), get_time_str(rtc_time).c_str());
+    }
+  }
 }
 
 bool safety_setter_thread(std::vector<Panda *> pandas) {
@@ -171,34 +200,22 @@ Panda *usb_connect(std::string serial="", uint32_t index=0) {
   std::call_once(connected_once, &Panda::set_usb_power_mode, panda, cereal::PeripheralState::UsbPowerMode::CDP);
 #endif
 
-  if (panda->has_rtc) {
-    setenv("TZ","UTC",1);
-    struct tm sys_time = util::get_time();
-    struct tm rtc_time = panda->get_rtc();
-
-    if (!util::time_valid(sys_time) && util::time_valid(rtc_time)) {
-      LOGE("System time wrong, setting from RTC. System: %s RTC: %s",
-           get_time_str(sys_time).c_str(), get_time_str(rtc_time).c_str());
-      const struct timeval tv = {mktime(&rtc_time), 0};
-      settimeofday(&tv, 0);
-    }
-  }
-
+  sync_time(panda.get(), SyncTimeDir::FROM_PANDA);
   return panda.release();
 }
 
 void can_send_thread(std::vector<Panda *> pandas, bool fake_send) {
-  set_thread_name("boardd_can_send");
+  util::set_thread_name("boardd_can_send");
 
   AlignedBuffer aligned_buf;
-  Context * context = Context::create();
-  SubSocket * subscriber = SubSocket::create(context, "sendcan");
+  std::unique_ptr<Context> context(Context::create());
+  std::unique_ptr<SubSocket> subscriber(SubSocket::create(context.get(), "sendcan"));
   assert(subscriber != NULL);
   subscriber->setTimeout(100);
 
   // run as fast as messages come in
   while (!do_exit && check_all_connected(pandas)) {
-    Message * msg = subscriber->receive();
+    std::unique_ptr<Message> msg(subscriber->receive());
     if (!msg) {
       if (errno == EINTR) {
         do_exit = true;
@@ -206,27 +223,20 @@ void can_send_thread(std::vector<Panda *> pandas, bool fake_send) {
       continue;
     }
 
-    capnp::FlatArrayMessageReader cmsg(aligned_buf.align(msg));
+    capnp::FlatArrayMessageReader cmsg(aligned_buf.align(msg.get()));
     cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
 
     //Dont send if older than 1 second
-    if (nanos_since_boot() - event.getLogMonoTime() < 1e9) {
-      if (!fake_send) {
-        for (const auto& panda : pandas) {
-          panda->can_send(event.getSendcan());
-        }
+    if ((nanos_since_boot() - event.getLogMonoTime() < 1e9) && !fake_send) {
+      for (const auto& panda : pandas) {
+        panda->can_send(event.getSendcan());
       }
     }
-
-    delete msg;
   }
-
-  delete subscriber;
-  delete context;
 }
 
 void can_recv_thread(std::vector<Panda *> pandas) {
-  set_thread_name("boardd_can_recv");
+  util::set_thread_name("boardd_can_recv");
 
   // can = 8006
   PubMaster pm({"can"});
@@ -307,7 +317,7 @@ bool send_panda_states(PubMaster *pm, const std::vector<Panda *> &pandas, bool s
 
   for (uint32_t i=0; i<pandas.size(); i++) {
     auto panda = pandas[i];
-    auto pandaState = pandaStates[i];
+    const auto &pandaState = pandaStates[i];
 
     // Make sure CAN buses are live: safety_setter_thread does not work if Panda CAN are silent and there is only one other CAN node
     if (pandaState.safety_model == (uint8_t)(cereal::CarParams::SafetyModel::SILENT)) {
@@ -398,7 +408,7 @@ void send_peripheral_state(PubMaster *pm, Panda *panda) {
 }
 
 void panda_state_thread(PubMaster *pm, std::vector<Panda *> pandas, bool spoofing_started) {
-  set_thread_name("boardd_panda_state");
+  util::set_thread_name("boardd_panda_state");
 
   Params params;
   Panda *peripheral_panda = pandas[0];
@@ -444,7 +454,7 @@ void panda_state_thread(PubMaster *pm, std::vector<Panda *> pandas, bool spoofin
 
 
 void peripheral_control_thread(Panda *panda) {
-  set_thread_name("boardd_peripheral_control");
+  util::set_thread_name("boardd_peripheral_control");
 
   SubMaster sm({"deviceState", "driverCameraState"});
 
@@ -516,21 +526,8 @@ void peripheral_control_thread(Panda *panda) {
     }
 
     // Write to rtc once per minute when no ignition present
-    if ((panda->has_rtc) && !ignition && (cnt % 120 == 1)) {
-      // Write time to RTC if it looks reasonable
-      setenv("TZ","UTC",1);
-      struct tm sys_time = util::get_time();
-
-      if (util::time_valid(sys_time)) {
-        struct tm rtc_time = panda->get_rtc();
-        double seconds = difftime(mktime(&rtc_time), mktime(&sys_time));
-
-        if (std::abs(seconds) > 1.1) {
-          panda->set_rtc(sys_time);
-          LOGW("Updating panda RTC. dt = %.2f System: %s RTC: %s",
-                seconds, get_time_str(sys_time).c_str(), get_time_str(rtc_time).c_str());
-        }
-      }
+    if (!ignition && (cnt % 120 == 1)) {
+      sync_time(panda, SyncTimeDir::TO_PANDA);
     }
   }
 }
@@ -543,12 +540,12 @@ static void pigeon_publish_raw(PubMaster &pm, const std::string &dat) {
 }
 
 void pigeon_thread(Panda *panda) {
-  set_thread_name("boardd_pigeon");
+  util::set_thread_name("boardd_pigeon");
 
   PubMaster pm({"ubloxRaw"});
   bool ignition_last = false;
 
-  Pigeon *pigeon = Hardware::TICI() ? Pigeon::connect("/dev/ttyHS0") : Pigeon::connect(panda);
+  std::unique_ptr<Pigeon> pigeon(Hardware::TICI() ? Pigeon::connect("/dev/ttyHS0") : Pigeon::connect(panda));
 
   std::unordered_map<char, uint64_t> last_recv_time;
   std::unordered_map<char, int64_t> cls_max_dt = {
@@ -616,8 +613,6 @@ void pigeon_thread(Panda *panda) {
     // 10ms - 100 Hz
     util::sleep_for(10);
   }
-
-  delete pigeon;
 }
 
 int main(int argc, char *argv[]) {
@@ -625,9 +620,9 @@ int main(int argc, char *argv[]) {
 
   if (!Hardware::PC()) {
     int err;
-    err = set_realtime_priority(54);
+    err = util::set_realtime_priority(54);
     assert(err == 0);
-    err = set_core_affinity({Hardware::TICI() ? 4 : 3});
+    err = util::set_core_affinity({Hardware::TICI() ? 4 : 3});
     assert(err == 0);
   }
 

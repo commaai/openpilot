@@ -30,7 +30,7 @@ from selfdrive.hardware import HARDWARE, PC
 from selfdrive.loggerd.config import ROOT
 from selfdrive.loggerd.xattr_cache import getxattr, setxattr
 from selfdrive.swaglog import cloudlog, SWAGLOG_DIR
-from selfdrive.version import version, get_version, get_git_remote, get_git_branch, get_git_commit
+from selfdrive.version import get_version, get_origin, get_short_branch, get_commit
 
 ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
 HANDLER_THREADS = int(os.getenv('HANDLER_THREADS', "4"))
@@ -54,6 +54,28 @@ cancelled_uploads: Any = set()
 UploadItem = namedtuple('UploadItem', ['path', 'url', 'headers', 'created_at', 'id', 'retry_count', 'current', 'progress'], defaults=(0, False, 0))
 
 cur_upload_items = {}
+
+
+class UploadQueueCache():
+  params = Params()
+
+  @staticmethod
+  def initialize(upload_queue):
+    try:
+      upload_queue_json = UploadQueueCache.params.get("AthenadUploadQueue")
+      if upload_queue_json is not None:
+        for item in json.loads(upload_queue_json):
+          upload_queue.put(UploadItem(**item))
+    except Exception:
+      cloudlog.exception("athena.UploadQueueCache.initialize.exception")
+
+  @staticmethod
+  def cache(upload_queue):
+    try:
+      items = [i._asdict() for i in upload_queue.queue if i.id not in cancelled_uploads]
+      UploadQueueCache.params.put("AthenadUploadQueue", json.dumps(items))
+    except Exception:
+      cloudlog.exception("athena.UploadQueueCache.cache.exception")
 
 
 def handle_long_poll(ws):
@@ -111,6 +133,7 @@ def upload_handler(end_event):
 
     try:
       cur_upload_items[tid] = upload_queue.get(timeout=1)._replace(current=True)
+
       if cur_upload_items[tid].id in cancelled_uploads:
         cancelled_uploads.remove(cur_upload_items[tid].id)
         continue
@@ -120,6 +143,7 @@ def upload_handler(end_event):
           cur_upload_items[tid] = cur_upload_items[tid]._replace(progress=cur / sz if sz else 1)
 
         _do_upload(cur_upload_items[tid], cb)
+        UploadQueueCache.cache(upload_queue)
       except (requests.exceptions.Timeout, requests.exceptions.ConnectionError, requests.exceptions.SSLError) as e:
         cloudlog.warning(f"athena.upload_handler.retry {e} {cur_upload_items[tid]}")
 
@@ -131,6 +155,8 @@ def upload_handler(end_event):
             current=False
           )
           upload_queue.put_nowait(item)
+          UploadQueueCache.cache(upload_queue)
+
           cur_upload_items[tid] = None
 
           for _ in range(RETRY_DELAY):
@@ -176,17 +202,19 @@ def getMessage(service=None, timeout=1000):
 def getVersion():
   return {
     "version": get_version(),
-    "remote": get_git_remote(),
-    "branch": get_git_branch(),
-    "commit": get_git_commit(),
+    "remote": get_origin(),
+    "branch": get_short_branch(),
+    "commit": get_commit(),
   }
 
 
 @dispatcher.add_method
-def setNavDestination(latitude=0, longitude=0):
+def setNavDestination(latitude=0, longitude=0, place_name=None, place_details=None):
   destination = {
     "latitude": latitude,
     "longitude": longitude,
+    "place_name": place_name,
+    "place_details": place_details,
   }
   Params().put("NavDestination", json.dumps(destination))
 
@@ -246,6 +274,7 @@ def uploadFileToUrl(fn, url, headers):
   item = item._replace(id=upload_id)
 
   upload_queue.put_nowait(item)
+  UploadQueueCache.cache(upload_queue)
 
   return {"enqueued": 1, "item": item._asdict()}
 
@@ -278,8 +307,7 @@ def startLocalProxy(global_end_event, remote_ws_uri, local_port):
 
     cloudlog.debug("athena.startLocalProxy.starting")
 
-    params = Params()
-    dongle_id = params.get("DongleId").decode('utf8')
+    dongle_id = Params().get("DongleId").decode('utf8')
     identity_token = Api(dongle_id).get_token()
     ws = create_connection(remote_ws_uri,
                            cookie="jwt=" + identity_token,
@@ -523,6 +551,7 @@ def backoff(retries):
 def main():
   params = Params()
   dongle_id = params.get("DongleId", encoding='utf-8')
+  UploadQueueCache.initialize(upload_queue)
 
   ws_uri = ATHENA_HOST + "/ws/v2/" + dongle_id
   api = Api(dongle_id)
@@ -551,7 +580,7 @@ def main():
     except socket.timeout:
       try:
         r = requests.get("http://api.commadotai.com/v1/me", allow_redirects=False,
-                         headers={"User-Agent": f"openpilot-{version}"}, timeout=15.0)
+                         headers={"User-Agent": f"openpilot-{get_version()}"}, timeout=15.0)
         if r.status_code == 302 and r.headers['Location'].startswith("http://u.web2go.com"):
           params.put_bool("PrimeRedirected", True)
       except Exception:
