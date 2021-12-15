@@ -82,7 +82,7 @@ static void cloudlog_init() {
   s.inited = true;
 }
 
-void log(int levelnum, const char* filename, int lineno, const char* func, const char* msg, const std::string& log_s) {
+static void log(int levelnum, const char* filename, int lineno, const char* func, const char* msg, const std::string& log_s) {
   if (levelnum >= s.print_level) {
     printf("%s: %s\n", filename, msg);
   }
@@ -95,10 +95,10 @@ void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func
   char* msg_buf = nullptr;
   va_list args;
   va_start(args, fmt);
-  vasprintf(&msg_buf, fmt, args);
+  int ret = vasprintf(&msg_buf, fmt, args);
   va_end(args);
 
-  if (!msg_buf) return;
+  if (ret <= 0 || !msg_buf) return;
 
   std::lock_guard lk(s.lock);
   cloudlog_init();
