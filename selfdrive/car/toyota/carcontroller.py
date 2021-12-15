@@ -38,8 +38,8 @@ class CarController():
       # offset for creep and windbrake
       pedal_offset = interp(CS.out.vEgo, [0.0, 2.3, MIN_ACC_SPEED + PEDAL_TRANSITION], [-.4, 0.0, 0.2])
       pedal_command = PEDAL_SCALE * (actuators.accel + pedal_offset)
-      # Prius, and most LSS Lexus have full speed DRCC, but do not automatically resume
-      # Send pedal briefly if car is in standstill and openpilot wants to accelerate to resume ACC
+      # Some cars, like the Prius, have full speed cruise, but require a button or pedal press to resume from standstill
+      # For these cars, only use the pedal to resume from the standstill cruise state
       if CS.CP.carFingerprint in NO_AUTO_RESUME_CAR:
         if (actuators.accel > 0.1) and CS.cruiseState.standstill:
           interceptor_gas_cmd = 0.15
