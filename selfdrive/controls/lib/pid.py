@@ -59,7 +59,7 @@ class PIController():
     self.saturated = False
     self.control = 0
 
-  def update(self, setpoint, measurement, last_output, speed=0.0, check_saturation=True, override=False, feedforward=0., deadzone=0., freeze_integrator=False):
+  def update(self, setpoint, measurement, last_output, speed=0.0, check_saturation=True, feedforward=0., deadzone=0.):
     self.speed = speed
 
     i_bf = self.i_unwind_rate * (self.p + self.i + self.f - last_output)
