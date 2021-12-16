@@ -116,19 +116,19 @@ void Replay::doSeek(int seconds, bool relative) {
 void Replay::doSeekToFlag(FindFlag flag) {
   if (flag == FindFlag::nextEngagement) {
     qInfo() << "seeking to the next engagement...";  
-  } else {
+  } else if (flag == FindFlag::nextEngagement) {
     qInfo() << "seeking to the disengagement...";  
   }
 
   updateEvents([&]() {
-    auto next = find(flag);
-    if (next) {
+    if (auto next = find(flag)) {
       cur_mono_time_ = *next;
       current_segment_ = currentSeconds() / 60;
       return isSegmentMerged(current_segment_);
+    } else {
+      qWarning() << "seeking failed";
+      return true;
     }
-    qWarning() << "seeking failed";
-    return true;
   });
 
   queueSegment();
@@ -139,7 +139,8 @@ std::optional<uint64_t> Replay::find(FindFlag flag) {
     if (n < current_segment_) continue;
 
     LogReader log;
-    if (!log.load(route_->at(n).qlog.toStdString(), nullptr, true, 0, 3)) continue;
+    bool cache_to_local = true; // cache qlog to local for fast seek
+    if (!log.load(route_->at(n).qlog.toStdString(), nullptr, cache_to_local, 0, 3)) continue;
 
     for (auto evt : log.events) {
       if (evt->mono_time > cur_mono_time_) {
