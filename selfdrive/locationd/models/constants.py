@@ -72,7 +72,6 @@ class ObservationKind:
     'Steer Ratio',
     'Road Frame x speed',
     'Road Roll',
-    'Road Roll (Invalid in locationd)'
   ]
 
   @classmethod
