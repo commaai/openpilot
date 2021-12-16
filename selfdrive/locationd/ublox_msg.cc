@@ -37,11 +37,11 @@ inline bool UbloxMsgParser::valid_cheksum() {
     ck_b = (ck_b + ck_a) & 0xFF;
   }
   if(ck_a != msg_parse_buf[bytes_in_parse_buf - 2]) {
-    LOGD("Checksum a mismtach: %02X, %02X", ck_a, msg_parse_buf[6]);
+    LOGD("Checksum a mismatch: %02X, %02X", ck_a, msg_parse_buf[6]);
     return false;
   }
   if(ck_b != msg_parse_buf[bytes_in_parse_buf - 1]) {
-    LOGD("Checksum b mismtach: %02X, %02X", ck_b, msg_parse_buf[7]);
+    LOGD("Checksum b mismatch: %02X, %02X", ck_b, msg_parse_buf[7]);
     return false;
   }
   return true;

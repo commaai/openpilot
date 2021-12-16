@@ -43,7 +43,7 @@ def dmonitoringd_thread(sm=None, pm=None):
       v_cruise_last = v_cruise
 
     if sm.updated['modelV2']:
-      driver_status.set_policy(sm['modelV2'])
+      driver_status.set_policy(sm['modelV2'], sm['carState'].vEgo)
 
     # Get data from dmonitoringmodeld
     events = Events()

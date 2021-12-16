@@ -20,8 +20,8 @@ mat3 cur_transform;
 std::mutex transform_lock;
 
 void calibration_thread(bool wide_camera) {
-  set_thread_name("calibration");
-  set_realtime_priority(50);
+  util::set_thread_name("calibration");
+  util::set_realtime_priority(50);
 
   SubMaster sm({"liveCalibration"});
 
@@ -87,7 +87,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client) {
 
     transform_lock.lock();
     mat3 model_transform = cur_transform;
-    const bool run_model_this_iter = live_calib_seen;
+    bool valid = live_calib_seen;
     transform_lock.unlock();
 
     // TODO: path planner timeout?
@@ -95,47 +95,44 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client) {
     int desire = ((int)sm["lateralPlan"].getLateralPlan().getDesire());
     frame_id = sm["roadCameraState"].getRoadCameraState().getFrameId();
 
-    if (run_model_this_iter) {
-      run_count++;
-
-      float vec_desire[DESIRE_LEN] = {0};
-      if (desire >= 0 && desire < DESIRE_LEN) {
-        vec_desire[desire] = 1.0;
-      }
-
-      double mt1 = millis_since_boot();
-      ModelDataRaw model_buf = model_eval_frame(&model, buf->buf_cl, buf->width, buf->height,
-                                                model_transform, vec_desire);
-      double mt2 = millis_since_boot();
-      float model_execution_time = (mt2 - mt1) / 1000.0;
-
-      // tracked dropped frames
-      uint32_t vipc_dropped_frames = extra.frame_id - last_vipc_frame_id - 1;
-      float frames_dropped = frame_dropped_filter.update((float)std::min(vipc_dropped_frames, 10U));
-      if (run_count < 10) { // let frame drops warm up
-        frame_dropped_filter.reset(0);
-        frames_dropped = 0.;
-      }
-
-      float frame_drop_ratio = frames_dropped / (1 + frames_dropped);
-
-      model_publish(pm, extra.frame_id, frame_id, frame_drop_ratio, model_buf, extra.timestamp_eof, model_execution_time,
-                    kj::ArrayPtr<const float>(model.output.data(), model.output.size()));
-      posenet_publish(pm, extra.frame_id, vipc_dropped_frames, model_buf, extra.timestamp_eof);
-
-      //printf("model process: %.2fms, from last %.2fms, vipc_frame_id %u, frame_id, %u, frame_drop %.3f\n", mt2 - mt1, mt1 - last, extra.frame_id, frame_id, frame_drop_ratio);
-      last = mt1;
-      last_vipc_frame_id = extra.frame_id;
+    float vec_desire[DESIRE_LEN] = {0};
+    if (desire >= 0 && desire < DESIRE_LEN) {
+      vec_desire[desire] = 1.0;
     }
+
+    double mt1 = millis_since_boot();
+    ModelOutput *model_output = model_eval_frame(&model, buf->buf_cl, buf->width, buf->height,
+                                              model_transform, vec_desire);
+    double mt2 = millis_since_boot();
+    float model_execution_time = (mt2 - mt1) / 1000.0;
+
+    // tracked dropped frames
+    uint32_t vipc_dropped_frames = extra.frame_id - last_vipc_frame_id - 1;
+    float frames_dropped = frame_dropped_filter.update((float)std::min(vipc_dropped_frames, 10U));
+    if (run_count < 10) { // let frame drops warm up
+      frame_dropped_filter.reset(0);
+      frames_dropped = 0.;
+    }
+    run_count++;
+
+    float frame_drop_ratio = frames_dropped / (1 + frames_dropped);
+
+    model_publish(pm, extra.frame_id, frame_id, frame_drop_ratio, *model_output, extra.timestamp_eof, model_execution_time,
+                  kj::ArrayPtr<const float>(model.output.data(), model.output.size()), valid);
+    posenet_publish(pm, extra.frame_id, vipc_dropped_frames, *model_output, extra.timestamp_eof, valid);
+
+    //printf("model process: %.2fms, from last %.2fms, vipc_frame_id %u, frame_id, %u, frame_drop %.3f\n", mt2 - mt1, mt1 - last, extra.frame_id, frame_id, frame_drop_ratio);
+    last = mt1;
+    last_vipc_frame_id = extra.frame_id;
   }
 }
 
 int main(int argc, char **argv) {
   if (!Hardware::PC()) {
     int ret;
-    ret = set_realtime_priority(54);
+    ret = util::set_realtime_priority(54);
     assert(ret == 0);
-    set_core_affinity({Hardware::EON() ? 2 : 7});
+    util::set_core_affinity({Hardware::EON() ? 2 : 7});
     assert(ret == 0);
   }
 
