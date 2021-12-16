@@ -1633,7 +1633,7 @@ TSS2_CAR = set([CAR.RAV4_TSS2, CAR.COROLLA_TSS2, CAR.COROLLAH_TSS2, CAR.LEXUS_ES
 NO_DSU_CAR = TSS2_CAR | set([CAR.CHR, CAR.CHRH, CAR.CAMRY, CAR.CAMRYH])
 
 # these cars have full speed ACC, but require a resume button or gas pedal press to resume from a standstill
-NO_AUTO_RESUME_CAR = set([CAR.PRIUS, CAR.LEXUS_CTH, CAR.LEXUS_NX, CAR.LEXUS_NXH, CAR.LEXUS_RX, CAR.LEXUS_RXH])
+NO_AUTO_RESUME_CAR = set([CAR.PRIUS])
 
 # no resume button press required
 NO_STOP_TIMER_CAR = TSS2_CAR | set([CAR.RAV4H, CAR.HIGHLANDERH, CAR.HIGHLANDER, CAR.SIENNA, CAR.LEXUS_ESH])
