@@ -122,12 +122,7 @@ void Replay::doSeekToFlag(FindFlag flag) {
 
   updateEvents([&]() {
     if (auto next = find(flag)) {
-      double tm = *next - 2 * 1e9; // seek to 2 seconds before next
-      if (tm <= cur_mono_time_ && flag == FindFlag::nextEngagement) {
-        qInfo() << "already in engagement";
-      }
-
-      cur_mono_time_ = tm;
+      cur_mono_time_ = *next - 2 * 1e9; // seek to 2 seconds before next;
       current_segment_ = currentSeconds() / 60;
       return isSegmentMerged(current_segment_);
     } else {
