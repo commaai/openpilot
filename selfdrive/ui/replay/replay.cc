@@ -31,7 +31,9 @@ Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *s
   events_ = std::make_unique<std::vector<Event *>>();
   new_events_ = std::make_unique<std::vector<Event *>>();
 
+  qRegisterMetaType<FindFlag>("FindFlag");
   connect(this, &Replay::seekTo, this, &Replay::doSeek);
+  connect(this, &Replay::seekToFlag, this, &Replay::doSeekToFlag);
   connect(this, &Replay::segmentChanged, this, &Replay::queueSegment);
 }
 
@@ -109,6 +111,54 @@ void Replay::doSeek(int seconds, bool relative) {
     return isSegmentMerged(seg);
   });
   queueSegment();
+}
+
+void Replay::doSeekToFlag(FindFlag flag) {
+  if (flag == FindFlag::nextEngagement) {
+    qInfo() << "seeking to next engagement...";  
+  } else {
+    qInfo() << "seeking to next disengagement...";  
+  }
+
+  updateEvents([&]() {
+    auto next = find(flag);
+    if (next) {
+      cur_mono_time_ = *next;
+      current_segment_ = currentSeconds() / 60;
+      return isSegmentMerged(current_segment_);
+    }
+    qWarning() << "seeking failed";
+    return true;
+  });
+
+  queueSegment();
+}
+
+std::optional<uint64_t> Replay::find(FindFlag flag) {
+  for (auto &[n, seg] : segments_) {
+    if (n < current_segment_) continue;
+
+    LogReader log;
+    if (log.load(route_->at(n).qlog.toStdString(), nullptr, true, 0, 3)) {
+      for (auto evt : log.events) {
+        if (evt->mono_time > cur_mono_time_) {
+          if (flag == FindFlag::nextEngagement) {
+            if (evt->which == cereal::Event::Which::CONTROLS_STATE && evt->event.getControlsState().getEnabled()) {
+              return evt->mono_time - 2 * 1e9;
+            }
+          } else if (flag == FindFlag::nextDisEngagement) {
+            if (evt->which == cereal::Event::Which::CONTROLS_STATE && !evt->event.getControlsState().getEnabled()) {
+              return evt->mono_time - 2 * 1e9;
+            }
+          }
+        }
+      }
+    }
+  }
+  return std::nullopt;
+}
+
+void Replay::nextDisengagement() {
 }
 
 void Replay::pause(bool pause) {

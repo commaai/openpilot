@@ -19,6 +19,11 @@ enum REPLAY_FLAGS {
   REPLAY_FLAG_NO_CUDA = 0x0100,
 };
 
+enum class FindFlag {
+  nextEngagement,
+  nextDisEngagement
+};
+
 class Replay : public QObject {
   Q_OBJECT
 
@@ -31,18 +36,23 @@ public:
   void stop();
   void pause(bool pause);
   bool isPaused() const { return paused_; }
+  void nextEngagement();
+  void nextDisengagement();
 
 signals:
   void segmentChanged();
   void seekTo(int seconds, bool relative);
+  void seekToFlag(FindFlag flag);
 
 protected slots:
   void queueSegment();
   void doSeek(int seconds, bool relative);
+  void doSeekToFlag(FindFlag flag);
   void segmentLoadFinished(bool sucess);
 
 protected:
   typedef std::map<int, std::unique_ptr<Segment>> SegmentMap;
+  std::optional<uint64_t> find(FindFlag flag);
   void startStream(const Segment *cur_segment);
   void stream();
   void setCurrentSegment(int n);
