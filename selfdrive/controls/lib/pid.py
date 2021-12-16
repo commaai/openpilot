@@ -61,6 +61,10 @@ class PIController():
     self.control = 0
 
   def update(self, setpoint, measurement, last_output=None, speed=0.0, check_saturation=True, override=False, feedforward=0., deadzone=0., freeze_integrator=False):
+    # Clip integrator based on the last output value
+    if last_output is not None:
+      self.i = last_output - self.p - self.f
+
     self.speed = speed
 
     error = float(apply_deadzone(setpoint - measurement, deadzone))
@@ -70,9 +74,7 @@ class PIController():
     if override:
       self.i -= self.i_unwind_rate * float(np.sign(self.i))
     else:
-      i_bf = 0.0 if (last_output is None) else self.i_unwind_rate * (self.p + self.i + self.f - last_output)
-
-      i = self.i + error * self.k_i * self.i_rate - i_bf
+      i = self.i + error * self.k_i * self.i_rate
       control = self.p + self.f + i
 
       # Update when changing i will move the control away from the limits
