@@ -251,14 +251,13 @@ class DynamicFollow:
       self.profile_change_time = sec_since_boot()
     self.last_effective_profile = df_profile
 
-    x_vel = [0.0, 1.8627, 3.7253, 5.588, 7.4507, 9.3133, 11.5598, 13.645, 22.352, 31.2928, 33.528, 35.7632, 40.2336]  # velocities
-    if df_profile == self.df_profiles.stock:
-      return 1.45
-    elif df_profile == self.df_profiles.traffic:  # for in congested traffic
-      x_vel = [0.0, 1.892, 3.7432, 5.8632, 8.0727, 10.7301, 14.343, 17.6275, 22.4049, 28.6752, 34.8858, 40.35]
+    if df_profile == self.df_profiles.traffic:  # for in congested traffic
+      x_vel = [0.0, 1.892, 3.7432, 5.8632, 8.0727, 10.7301, 14.343, 17.6275, 22.4049, 28.6752, 34.8858, 40.35]  # velocities
       y_dist = [1.3781, 1.3791, 1.3457, 1.3134, 1.3145, 1.318, 1.3485, 1.257, 1.144, 0.979, 0.9461, 0.9156]
-    elif df_profile == self.df_profiles.relaxed:  # default to relaxed/stock
-      y_dist = [1.411, 1.418, 1.428, 1.441, 1.461, 1.49, 1.535, 1.561, 1.589, 1.612, 1.621, 1.632, 1.648]
+    elif df_profile == self.df_profiles.stock:  # default to stock
+      return 1.45
+    elif df_profile == self.df_profiles.roadtrip:  # previous stock following distance
+      return 1.8
     else:
       raise Exception('Unknown profile type: {}'.format(df_profile))
 

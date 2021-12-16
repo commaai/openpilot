@@ -16,7 +16,7 @@
 #define BACKLIGHT_OFFROAD 50
 
 std::map<std::string, int> LS_TO_IDX = {{"off", 0}, {"audible", 1}, {"silent", 2}};
-std::map<std::string, int> DF_TO_IDX = {{"traffic", 0}, {"relaxed", 1}, {"stock", 2}, {"auto", 3}};
+std::map<std::string, int> DF_TO_IDX = {{"traffic", 0}, {"stock", 1}, {"roadtrip", 2}, {"auto", 3}};
 
 void saInit(UIState *s) {
   s->scene.mlButtonEnabled = false;  // reset on ignition
