@@ -74,4 +74,4 @@ class CarController():
 
     new_actuators = actuators.copy()
     new_actuators.steer = self.apply_steer_last / self.p.STEER_MAX
-    return actuators, can_sends
+    return new_actuators, can_sends
