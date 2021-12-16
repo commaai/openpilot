@@ -116,7 +116,7 @@ void Replay::doSeek(int seconds, bool relative) {
 void Replay::doSeekToFlag(FindFlag flag) {
   if (flag == FindFlag::nextEngagement) {
     qInfo() << "seeking to the next engagement...";  
-  } else if (flag == FindFlag::nextEngagement) {
+  } else if (flag == FindFlag::nextDisEngagement) {
     qInfo() << "seeking to the disengagement...";  
   }
 
