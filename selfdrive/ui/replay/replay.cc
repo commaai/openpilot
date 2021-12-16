@@ -115,9 +115,9 @@ void Replay::doSeek(int seconds, bool relative) {
 
 void Replay::doSeekToFlag(FindFlag flag) {
   if (flag == FindFlag::nextEngagement) {
-    qInfo() << "seeking to next engagement...";  
+    qInfo() << "seeking to the next engagement...";  
   } else {
-    qInfo() << "seeking to next disengagement...";  
+    qInfo() << "seeking to the disengagement...";  
   }
 
   updateEvents([&]() {
@@ -135,21 +135,21 @@ void Replay::doSeekToFlag(FindFlag flag) {
 }
 
 std::optional<uint64_t> Replay::find(FindFlag flag) {
-  for (auto &[n, seg] : segments_) {
+  for (auto &[n, _] : segments_) {
     if (n < current_segment_) continue;
 
     LogReader log;
-    if (log.load(route_->at(n).qlog.toStdString(), nullptr, true, 0, 3)) {
-      for (auto evt : log.events) {
-        if (evt->mono_time > cur_mono_time_) {
-          if (flag == FindFlag::nextEngagement) {
-            if (evt->which == cereal::Event::Which::CONTROLS_STATE && evt->event.getControlsState().getEnabled()) {
-              return evt->mono_time - 2 * 1e9;
-            }
-          } else if (flag == FindFlag::nextDisEngagement) {
-            if (evt->which == cereal::Event::Which::CONTROLS_STATE && !evt->event.getControlsState().getEnabled()) {
-              return evt->mono_time - 2 * 1e9;
-            }
+    if (!log.load(route_->at(n).qlog.toStdString(), nullptr, true, 0, 3)) continue;
+
+    for (auto evt : log.events) {
+      if (evt->mono_time > cur_mono_time_) {
+        if (flag == FindFlag::nextEngagement) {
+          if (evt->which == cereal::Event::Which::CONTROLS_STATE && evt->event.getControlsState().getEnabled()) {
+            return evt->mono_time - 2 * 1e9;
+          }
+        } else if (flag == FindFlag::nextDisEngagement) {
+          if (evt->which == cereal::Event::Which::CONTROLS_STATE && !evt->event.getControlsState().getEnabled()) {
+            return evt->mono_time - 2 * 1e9;
           }
         }
       }
