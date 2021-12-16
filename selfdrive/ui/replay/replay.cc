@@ -158,9 +158,6 @@ std::optional<uint64_t> Replay::find(FindFlag flag) {
   return std::nullopt;
 }
 
-void Replay::nextDisengagement() {
-}
-
 void Replay::pause(bool pause) {
   updateEvents([=]() {
     qInfo() << (pause ? "paused..." : "resuming");

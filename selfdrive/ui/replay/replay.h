@@ -36,8 +36,6 @@ public:
   void stop();
   void pause(bool pause);
   bool isPaused() const { return paused_; }
-  void nextEngagement();
-  void nextDisengagement();
 
 signals:
   void segmentChanged();
