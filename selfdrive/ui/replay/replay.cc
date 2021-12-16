@@ -151,15 +151,15 @@ std::optional<uint64_t> Replay::find(FindFlag flag) {
     bool cache_to_local = true;  // cache qlog to local for fast seek
     if (!log.load(route_->at(n).qlog.toStdString(), nullptr, cache_to_local, 0, 3)) continue;
 
-    for (const Event *evt : log.events) {
-      if (evt->mono_time > cur_mono_time_) {
+    for (const Event *e : log.events) {
+      if (e->mono_time > cur_mono_time_) {
         if (flag == FindFlag::nextEngagement) {
-          if (evt->which == cereal::Event::Which::CONTROLS_STATE && evt->event.getControlsState().getEnabled()) {
-            return evt->mono_time;
+          if (e->which == cereal::Event::Which::CONTROLS_STATE && e->event.getControlsState().getEnabled()) {
+            return e->mono_time;
           }
         } else if (flag == FindFlag::nextDisEngagement) {
-          if (evt->which == cereal::Event::Which::CONTROLS_STATE && !evt->event.getControlsState().getEnabled()) {
-            return evt->mono_time;
+          if (e->which == cereal::Event::Which::CONTROLS_STATE && !e->event.getControlsState().getEnabled()) {
+            return e->mono_time;
           }
         }
       }
