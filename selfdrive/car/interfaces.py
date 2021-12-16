@@ -1,6 +1,7 @@
 import os
 import time
-from typing import Dict
+from abc import abstractmethod
+from typing import Dict, Tuple, List
 
 from cereal import car
 from common.kalman.simple_kalman import KF1D
@@ -48,8 +49,9 @@ class CarInterfaceBase():
     return ACCEL_MIN, ACCEL_MAX
 
   @staticmethod
+  @abstractmethod
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=None):
-    raise NotImplementedError
+    pass
 
   @staticmethod
   def init(CP, logcan, sendcan):
@@ -99,13 +101,13 @@ class CarInterfaceBase():
     ret.longitudinalActuatorDelayUpperBound = 0.15
     return ret
 
-  # returns a car.CarState, pass in car.CarControl
-  def update(self, c, can_strings):
-    raise NotImplementedError
+  @abstractmethod
+  def update(self, c: car.CarControl, can_strings: List[bytes]) -> car.CarState:
+    pass
 
-  # returns (car.CarControl.Actuators, sendcan), pass in a car.CarControl
-  def apply(self, c):
-    raise NotImplementedError
+  @abstractmethod
+  def apply(self, c: car.CarControl) -> Tuple[car.CarControl.Actuators, List[bytes]]:
+    pass
 
   def create_common_events(self, cs_out, extra_gears=None, gas_resume_speed=-1, pcm_enable=True):
     events = Events()
