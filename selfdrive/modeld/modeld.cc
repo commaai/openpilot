@@ -22,13 +22,10 @@ mat3 update_calibration(cereal::LiveCalibrationData::Reader live_calib, bool wid
      medmodel_frame_from_ground = medmodel_frame_from_road_frame[:, (0, 1, 3)]
      ground_from_medmodel_frame = np.linalg.inv(medmodel_frame_from_ground)
   */
-  static const Eigen::Matrix<float, 3, 3> ground_from_medmodel_frame = [] {
-    Eigen::Matrix<float, 3, 3> tmp;
-    tmp << 0.00000000e+00, 0.00000000e+00, 1.00000000e+00,
-          -1.09890110e-03, 0.00000000e+00, 2.81318681e-01,
-          -1.84808520e-20, 9.00738606e-04, -4.28751576e-02;
-    return tmp;
-  }();
+  static const auto ground_from_medmodel_frame = (Eigen::Matrix<float, 3, 3>() << 
+    0.00000000e+00, 0.00000000e+00, 1.00000000e+00,
+    -1.09890110e-03, 0.00000000e+00, 2.81318681e-01,
+    -1.84808520e-20, 9.00738606e-04, -4.28751576e-02).finished();
 
   static const auto cam_intrinsics = Eigen::Matrix<float, 3, 3, Eigen::RowMajor>(wide_camera ? ecam_intrinsic_matrix.v : fcam_intrinsic_matrix.v);
   static const mat3 yuv_transform = get_model_yuv_transform();
