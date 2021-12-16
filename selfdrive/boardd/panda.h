@@ -7,12 +7,9 @@
 #include "cereal/gen/cpp/log.capnp.h"
 #include "selfdrive/boardd/usbdevice.h"
 
-#define PANDA_BUS_CNT 4
-#define RECV_SIZE (0x4000U)
-#define USB_TX_SOFT_LIMIT   (0x100U)
-#define USBPACKET_MAX_SIZE  (0x40)
-#define CANPACKET_HEAD_SIZE 5U
-#define CANPACKET_MAX_SIZE  72U
+#define RECV_SIZE (MAX_EP1_CHUNK_PER_BULK_TRANSFER + 128U)
+#define USB_TX_SOFT_LIMIT   (USBPACKET_MAX_SIZE * 4)
+#define CANPACKET_MAX_SIZE  (CANPACKET_HEAD_SIZE + CANPACKET_DATA_SIZE_MAX)
 #define CANPACKET_REJECTED  (0xC0U)
 #define CANPACKET_RETURNED  (0x80U)
 

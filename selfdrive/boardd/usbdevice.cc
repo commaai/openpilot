@@ -28,7 +28,7 @@ struct DeviceIterator {
     for (ssize_t i = 0; i < num_devices; ++i) {
       libusb_device_descriptor desc = {};
       int ret = libusb_get_device_descriptor(dev_list[i], &desc);
-      if (ret < 0 || desc.idVendor != PANDA_VENDOR_ID || desc.idProduct != PANDA_PRODUCT_ID) continue;
+      if (ret < 0 || desc.idVendor != USB_VID || desc.idProduct != USB_PID) continue;
 
       libusb_device_handle *handle = nullptr;
       if (libusb_open(dev_list[i], &handle) == 0) {

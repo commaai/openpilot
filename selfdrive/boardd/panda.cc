@@ -160,7 +160,7 @@ void Panda::pack_can_buffer(const capnp::List<cereal::CanData>::Reader &can_data
   for (auto cmsg : can_data_list) {
     // check if the message is intended for this panda
     uint8_t bus = cmsg.getSrc();
-    if (bus < bus_offset || bus >= (bus_offset + PANDA_BUS_CNT)) {
+    if (bus < bus_offset || bus >= (bus_offset + BUS_CNT)) {
       continue;
     }
     auto can_data = cmsg.getDat();
@@ -213,7 +213,7 @@ bool Panda::unpack_can_buffer(uint8_t *data, int size, std::vector<can_frame> &o
       comms_healthy = false;
       return false;
     }
-    int chunk_len = std::min(USBPACKET_MAX_SIZE, (size - i));
+    int chunk_len = std::min((int)USBPACKET_MAX_SIZE, (size - i));
     recv_buf.insert(recv_buf.end(), &data[i + 1], &data[i + chunk_len]);
   }
 
