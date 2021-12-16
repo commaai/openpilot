@@ -57,7 +57,7 @@ def generate_c_code_discrete_dynamics( model, opts ):
     elif isinstance(phi, casadi.SX):
         symbol = SX.sym
     else:
-        Exception(f"generate_c_code_disc_dyn: disc_dyn_expr must be a CasADi expression, you have type: {type(phi)}")
+        Exception("generate_c_code_disc_dyn: disc_dyn_expr must be a CasADi expression, you have type: {}".format(type(phi)))
 
     # assume nx1 = nx !!!
     lam = symbol('lam', nx, 1)
