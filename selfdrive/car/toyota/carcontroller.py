@@ -19,11 +19,11 @@ class CarController():
     self.steer_rate_limited = False
 
     self.packer = CANPacker(dbc_name)
+    self.gas = 0
+    self.accel = 0
 
   def update(self, enabled, active, CS, frame, actuators, pcm_cancel_cmd, hud_alert,
              left_line, right_line, lead, left_lane_depart, right_lane_depart):
-
-    # *** compute control surfaces ***
 
     # gas and brake
     if CS.CP.enableGasInterceptor and enabled:
@@ -96,6 +96,7 @@ class CarController():
         can_sends.append(create_acc_cancel_command(self.packer))
       elif CS.CP.openpilotLongitudinalControl:
         can_sends.append(create_accel_command(self.packer, pcm_accel_cmd, pcm_cancel_cmd, self.standstill_req, lead, CS.acc_type))
+        self.accel = pcm_accel_cmd
       else:
         can_sends.append(create_accel_command(self.packer, 0, pcm_cancel_cmd, False, lead, CS.acc_type))
 
@@ -103,6 +104,7 @@ class CarController():
       # send exactly zero if gas cmd is zero. Interceptor will send the max between read value and gas cmd.
       # This prevents unexpected pedal range rescaling
       can_sends.append(create_gas_interceptor_command(self.packer, interceptor_gas_cmd, frame // 2))
+      self.gas = interceptor_gas_cmd
 
     # ui mesg is at 100Hz but we send asap if:
     # - there is something to display
@@ -125,10 +127,14 @@ class CarController():
     if frame % 100 == 0 and CS.CP.enableDsu:
       can_sends.append(create_fcw_command(self.packer, fcw_alert))
 
-    #*** static msgs ***
-
+    # *** static msgs ***
     for (addr, cars, bus, fr_step, vl) in STATIC_DSU_MSGS:
       if frame % fr_step == 0 and CS.CP.enableDsu and CS.CP.carFingerprint in cars:
         can_sends.append(make_can_msg(addr, vl, bus))
 
-    return can_sends
+    new_actuators = actuators.copy()
+    new_actuators.steer = apply_steer / CarControllerParams.STEER_MAX
+    new_actuators.accel = self.accel
+    new_actuators.gas = self.gas
+
+    return new_actuators, can_sends

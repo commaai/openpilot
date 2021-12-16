@@ -83,4 +83,4 @@ class CarController():
     self.main_on_last = CS.out.cruiseState.available
     self.steer_alert_last = steer_alert
 
-    return can_sends
+    return actuators, can_sends
