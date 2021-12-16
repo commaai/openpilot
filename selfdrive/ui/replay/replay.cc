@@ -144,14 +144,14 @@ void Replay::doSeekToFlag(FindFlag flag) {
 
 std::optional<uint64_t> Replay::find(FindFlag flag) {
   // Search in all segments
-  for (auto &[n, _] : segments_) {
+  for (const auto &[n, _] : segments_) {
     if (n < current_segment_) continue;
 
     LogReader log;
-    bool cache_to_local = true; // cache qlog to local for fast seek
+    bool cache_to_local = true;  // cache qlog to local for fast seek
     if (!log.load(route_->at(n).qlog.toStdString(), nullptr, cache_to_local, 0, 3)) continue;
 
-    for (auto evt : log.events) {
+    for (const Event *evt : log.events) {
       if (evt->mono_time > cur_mono_time_) {
         if (flag == FindFlag::nextEngagement) {
           if (evt->which == cereal::Event::Which::CONTROLS_STATE && evt->event.getControlsState().getEnabled()) {
