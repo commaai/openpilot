@@ -27,7 +27,7 @@ class PIController():
 
     self.sat_count_rate = 1.0 / rate
     self.i_unwind_rate = 0.3 / rate
-    self.i_bf_rate = 1.0 / rate
+    self.i_bf_rate = 2.0 / rate
     self.i_rate = 1.0 / rate
     self.sat_limit = sat_limit
 
@@ -71,8 +71,8 @@ class PIController():
     # Clip integrator based on the last output value
     if last_output is not None:
       if not freeze_integrator:
-        i_bf = self.i_bf_rate * (self.p + self.i + self.f - last_output)
-        self.i = self.i + error * self.k_i * self.i_rate - i_bf
+        i_bf = self.p + self.i + self.f - last_output
+        self.i = self.i +  self.k_i * (error * self.i_rate - i_bf * self.i_bf_rate)
     else:
         if override:
           self.i -= self.i_unwind_rate * float(np.sign(self.i))
