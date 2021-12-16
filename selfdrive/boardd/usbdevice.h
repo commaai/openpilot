@@ -5,7 +5,7 @@
 #include <vector>
 
 #include <libusb-1.0/libusb.h>
-#include "panda/board/global_definitions.h"
+#include "panda/board/panda.h"
 
 #define TIMEOUT 0
 
