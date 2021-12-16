@@ -64,4 +64,5 @@ class CarController():
 
     new_actuators = actuators.copy()
     new_actuators.steeringAngleDeg = apply_angle
+
     return actuators, can_sends
