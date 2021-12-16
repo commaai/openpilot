@@ -122,7 +122,12 @@ void Replay::doSeekToFlag(FindFlag flag) {
 
   updateEvents([&]() {
     if (auto next = find(flag)) {
-      cur_mono_time_ = *next;
+      double tm = *next - 2 * 1e9; // seek to 2 seconds before next
+      if (tm <= cur_mono_time_ && flag == FindFlag::nextEngagement) {
+        qInfo() << "already in engagement";
+      }
+
+      cur_mono_time_ = tm;
       current_segment_ = currentSeconds() / 60;
       return isSegmentMerged(current_segment_);
     } else {
@@ -135,6 +140,7 @@ void Replay::doSeekToFlag(FindFlag flag) {
 }
 
 std::optional<uint64_t> Replay::find(FindFlag flag) {
+  // Search in all segments
   for (auto &[n, _] : segments_) {
     if (n < current_segment_) continue;
 
@@ -146,11 +152,11 @@ std::optional<uint64_t> Replay::find(FindFlag flag) {
       if (evt->mono_time > cur_mono_time_) {
         if (flag == FindFlag::nextEngagement) {
           if (evt->which == cereal::Event::Which::CONTROLS_STATE && evt->event.getControlsState().getEnabled()) {
-            return evt->mono_time - 2 * 1e9;
+            return evt->mono_time;
           }
         } else if (flag == FindFlag::nextDisEngagement) {
           if (evt->which == cereal::Event::Which::CONTROLS_STATE && !evt->event.getControlsState().getEnabled()) {
-            return evt->mono_time - 2 * 1e9;
+            return evt->mono_time;
           }
         }
       }
