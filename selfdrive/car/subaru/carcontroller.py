@@ -73,5 +73,5 @@ class CarController():
         self.es_lkas_cnt = CS.es_lkas_msg["Counter"]
 
     new_actuators = actuators.copy()
-    new_actuators.steer = self.apply_steer_last / CarControllerParams.STEER_MAX
+    new_actuators.steer = self.apply_steer_last / self.p.STEER_MAX
     return actuators, can_sends
