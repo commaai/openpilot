@@ -16,6 +16,7 @@ from selfdrive.swaglog import cloudlog
 
 
 MAX_ANGLE_OFFSET_DELTA = 20 * DT_MDL  # Max 20 deg/s
+ROLL_MAX_DELTA = np.radians(20.0) * DT_MDL  # 20deg in 1 second is well within curvature limits
 ROLL_MIN, ROLL_MAX = math.radians(-10), math.radians(10)
 
 class ParamsLearner:
@@ -31,9 +32,10 @@ class ParamsLearner:
 
     self.active = False
 
-    self.speed = 0
+    self.speed = 0.0
+    self.roll = 0.0
     self.steering_pressed = False
-    self.steering_angle = 0
+    self.steering_angle = 0.0
 
     self.valid = True
 
@@ -42,8 +44,16 @@ class ParamsLearner:
       yaw_rate = msg.angularVelocityCalibrated.value[2]
       yaw_rate_std = msg.angularVelocityCalibrated.std[2]
 
-      roll = msg.orientationNED.value[0]
-      roll_valid = msg.orientationNED.valid and ROLL_MIN < roll < ROLL_MAX
+      localizer_roll = msg.orientationNED.value[0]
+      roll_valid = msg.orientationNED.valid and ROLL_MIN < localizer_roll < ROLL_MAX
+      if roll_valid:
+        roll = localizer_roll
+        roll_std = np.radians(1.0)
+      else:
+        # This is done to bound the road roll estimate when localizer values are invalid
+        roll = 0.0
+        roll_std = np.radians(10.0)
+      self.roll = clip(roll, self.roll - ROLL_MAX_DELTA, self.roll + ROLL_MAX_DELTA)
 
       yaw_rate_valid = msg.angularVelocityCalibrated.valid
       yaw_rate_valid = yaw_rate_valid and 0 < yaw_rate_std < 10  # rad/s
@@ -58,17 +68,10 @@ class ParamsLearner:
                                         np.array([[-yaw_rate]]),
                                         np.array([np.atleast_2d(yaw_rate_std**2)]))
 
-          if roll_valid:
-            self.kf.predict_and_observe(t,
-                                        ObservationKind.ROAD_ROLL,
-                                        np.array([[roll]]))
-          else:
-            # This is done to bound the road roll estimate when localizer values are invalid
-            self.kf.predict_and_observe(t,
-                                        ObservationKind.ROAD_ROLL,
-                                        np.array([[0.0]]),
-                                        np.array([np.atleast_2d(math.radians(10)**2)]))
-
+          self.kf.predict_and_observe(t,
+                                      ObservationKind.ROAD_ROLL,
+                                      np.array([[self.roll]]),
+                                      np.array([np.atleast_2d(roll_std**2)]))
         self.kf.predict_and_observe(t, ObservationKind.ANGLE_OFFSET_FAST, np.array([[0]]))
 
     elif which == 'carState':
