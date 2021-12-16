@@ -31,7 +31,7 @@ SEND_EXTRA_INPUTS = bool(os.getenv("SEND_EXTRA_INPUTS", "0"))
 
 
 def get_log_fn(ref_commit):
-  return "%s_%s_%s.bz2" % (TEST_ROUTE, "model_tici" if TICI else "model", ref_commit)
+  return f"{TEST_ROUTE}_{'model_tici' if TICI else 'model'}_{ref_commit}.bz2"
 
 
 def replace_calib(msg, calib):

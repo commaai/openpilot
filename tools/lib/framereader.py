@@ -50,7 +50,7 @@ def fingerprint_video(fn):
   with FileReader(fn) as f:
     header = f.read(4)
   if len(header) == 0:
-    raise DataUnreadableError("%s is empty" % fn)
+    raise DataUnreadableError(f"{fn} is empty")
   elif header == b"\x00\xc0\x12\x00":
     return FrameType.raw
   elif header == b"\x00\x00\x00\x01":
@@ -90,7 +90,7 @@ def vidindex(fn, typ):
     try:
       subprocess.check_call([vidindex, typ, fn, prefix_f.name, index_f.name])
     except subprocess.CalledProcessError:
-      raise DataUnreadableError("vidindex failed on file %s" % fn)
+      raise DataUnreadableError(f"vidindex failed on file {fn}")
     with open(index_f.name, "rb") as f:
       index = f.read()
     with open(prefix_f.name, "rb") as f:
@@ -308,7 +308,7 @@ class RawFrameReader(BaseFrameReader):
     assert num+count <= self.frame_count
 
     if pix_fmt not in ("yuv420p", "rgb24"):
-      raise ValueError("Unsupported pixel format %r" % pix_fmt)
+      raise ValueError(f"Unsupported pixel format {pix_fmt!r}")
 
     app = []
     for i in range(num, num+count):
@@ -548,10 +548,10 @@ class GOPFrameReader(BaseFrameReader):
     assert self.frame_count is not None
 
     if num + count > self.frame_count:
-      raise ValueError("{} > {}".format(num + count, self.frame_count))
+      raise ValueError(f"{num + count} > {self.frame_count}")
 
     if pix_fmt not in ("yuv420p", "rgb24", "yuv444p"):
-      raise ValueError("Unsupported pixel format %r" % pix_fmt)
+      raise ValueError(f"Unsupported pixel format {pix_fmt!r}")
 
     ret = [self._get_one(num + i, pix_fmt) for i in range(count)]
 
