@@ -37,7 +37,7 @@ public:
 private:
   int control_transfer(libusb_endpoint_direction dir, uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned int timeout = TIMEOUT);
   int bulk_transfer(uint8_t endpoint, uint8_t *data, int length, unsigned int timeout = TIMEOUT);
-  
+
   std::mutex usb_lock;
   libusb_context *ctx = nullptr;
   libusb_device_handle *dev_handle = nullptr;
