@@ -15,10 +15,11 @@
 #
 import os
 import sys
+import selfdrive.version as v
 sys.path.insert(0, os.path.abspath('.'))
 sys.path.insert(0, os.path.abspath('..'))
 OPENPILOT_ROOT = os.path.abspath('../../')      # from openpilot/build/docs
-VERSION = open(os.path.join(OPENPILOT_ROOT, 'selfdrive/common/version.h')).read().split()[2].strip('"')
+VERSION = v.get_version()
 
 
 # -- Project information -----------------------------------------------------
