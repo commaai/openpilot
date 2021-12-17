@@ -18,7 +18,7 @@ class LatControlAngle():
       angle_steers_des = float(CS.steeringAngleDeg)
     else:
       angle_log.active = True
-      angle_steers_des = math.degrees(VM.get_steer_from_curvature(-desired_curvature, CS.vEgo))
+      angle_steers_des = math.degrees(VM.get_steer_from_curvature(-desired_curvature, CS.vEgo, params.roll))
       angle_steers_des += params.angleOffsetDeg
 
     angle_log.saturated = False
