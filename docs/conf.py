@@ -43,7 +43,7 @@ extensions = [
 
 myst_html_meta = {
    "description": "openpilot docs",
-   "keywords": "op, openpilot, docs, documentation, @VERSION@",
+   "keywords": "op, openpilot, docs, documentation",
    "robots": "all,follow",
    "googlebot": "index,follow,snippet,archive",
    "property=og:locale": "en_US",
