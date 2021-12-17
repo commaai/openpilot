@@ -129,6 +129,7 @@ int USBDevice::bulk_transfer(uint8_t endpoint, uint8_t *data, int length, unsign
         connected = false;
       } else if (ret == LIBUSB_ERROR_OVERFLOW) {
         comms_healthy = false;
+        LOGE_100("overflow got 0x%x", transferred);
       } else if (ret == LIBUSB_ERROR_TIMEOUT && (endpoint & LIBUSB_ENDPOINT_OUT)) {
         // timeout is okay to exit, recv still happened
         LOGW("bulk_transfer timeout");
