@@ -27,5 +27,5 @@ while True:
 
   fingerprint = ', '.join("%d: %d" % v for v in sorted(msgs.items()))
 
-  print("number of messages {0}:".format(len(msgs)))
-  print("fingerprint {0}".format(fingerprint))
+  print(f"number of messages {len(msgs)}:")
+  print(f"fingerprint {fingerprint}")
