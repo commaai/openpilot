@@ -31,17 +31,26 @@ int main(int argc, char *argv[]) {
     scroll->verticalScrollBar()->setValue(scroll->verticalScrollBar()->maximum());
   });
 
-  QPushButton *btn = new QPushButton();
-#ifdef __aarch64__
-  btn->setText("Reboot");
-  QObject::connect(btn, &QPushButton::clicked, [=]() {
-    Hardware::reboot();
-  });
-#else
-  btn->setText("Exit");
-  QObject::connect(btn, &QPushButton::clicked, &a, &QApplication::quit);
+  QHBoxLayout *button_layout = new QHBoxLayout();
+  if (!Hardware::PC()) {
+#ifdef QCOM
+    QPushButton *wifiBtn = new QPushButton("Wi-Fi Settings");
+    QObject::connect(wifiBtn, &ButtonControl::clicked, [=]() { 
+      HardwareEon::launch_wifi(); 
+    });
+    button_layout->addWidget(wifiBtn);
 #endif
-  main_layout->addWidget(btn, 0, 0, Qt::AlignRight | Qt::AlignBottom);
+    QPushButton *btn = new QPushButton("Reboot");
+    QObject::connect(btn, &QPushButton::clicked, [=]() {
+      Hardware::reboot();
+    });
+    button_layout->addWidget(btn);
+  } else {
+    QPushButton *btn = new QPushButton("Exit");
+    QObject::connect(btn, &QPushButton::clicked, &a, &QApplication::quit);
+    button_layout->addWidget(btn);
+  }
+  main_layout->addLayout(button_layout, 0, 0, Qt::AlignRight | Qt::AlignBottom);
 
   window.setStyleSheet(R"(
     * {
