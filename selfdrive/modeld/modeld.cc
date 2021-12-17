@@ -15,34 +15,34 @@
 
 ExitHandler do_exit;
 
-mat3 update_calibration(cereal::LiveCalibrationData::Reader live_calib, bool wide_camera) {
+mat3 update_calibration(Eigen::Matrix<float, 3, 4> &extrinsics, bool wide_camera, bool bigmodel_frame) {
   /*
      import numpy as np
      from common.transformations.model import medmodel_frame_from_road_frame
      medmodel_frame_from_ground = medmodel_frame_from_road_frame[:, (0, 1, 3)]
      ground_from_medmodel_frame = np.linalg.inv(medmodel_frame_from_ground)
   */
-  static const auto ground_from_medmodel_frame = (Eigen::Matrix<float, 3, 3>() << 
-    0.00000000e+00, 0.00000000e+00, 1.00000000e+00,
+  static const auto ground_from_medmodel_frame = (Eigen::Matrix<float, 3, 3>() <<
+     0.00000000e+00, 0.00000000e+00, 1.00000000e+00,
     -1.09890110e-03, 0.00000000e+00, 2.81318681e-01,
     -1.84808520e-20, 9.00738606e-04, -4.28751576e-02).finished();
+
+  static const auto ground_from_sbigmodel_frame = (Eigen::Matrix<float, 3, 3>() <<
+     0.00000000e+00,  7.31372216e-19,  1.00000000e+00,
+    -2.19780220e-03,  4.11497335e-19,  5.62637363e-01,
+    -5.46146580e-20,  1.80147721e-03, -2.73464241e-01).finished();
 
   static const auto cam_intrinsics = Eigen::Matrix<float, 3, 3, Eigen::RowMajor>(wide_camera ? ecam_intrinsic_matrix.v : fcam_intrinsic_matrix.v);
   static const mat3 yuv_transform = get_model_yuv_transform();
 
-  auto extrinsic_matrix = live_calib.getExtrinsicMatrix();
-  Eigen::Matrix<float, 3, 4> extrinsic_matrix_eigen;
-  for (int i = 0; i < 4*3; i++) {
-    extrinsic_matrix_eigen(i / 4, i % 4) = extrinsic_matrix[i];
-  }
-
-  auto camera_frame_from_road_frame = cam_intrinsics * extrinsic_matrix_eigen;
+  auto ground_from_model_frame = bigmodel_frame ? ground_from_sbigmodel_frame : ground_from_medmodel_frame;
+  auto camera_frame_from_road_frame = cam_intrinsics * extrinsics;
   Eigen::Matrix<float, 3, 3> camera_frame_from_ground;
   camera_frame_from_ground.col(0) = camera_frame_from_road_frame.col(0);
   camera_frame_from_ground.col(1) = camera_frame_from_road_frame.col(1);
   camera_frame_from_ground.col(2) = camera_frame_from_road_frame.col(3);
 
-  auto warp_matrix = camera_frame_from_ground * ground_from_medmodel_frame;
+  auto warp_matrix = camera_frame_from_ground * ground_from_model_frame;
   mat3 transform = {};
   for (int i=0; i<3*3; i++) {
     transform.v[i] = warp_matrix(i / 3, i % 3);
@@ -50,7 +50,7 @@ mat3 update_calibration(cereal::LiveCalibrationData::Reader live_calib, bool wid
   return matmul3(yuv_transform, transform);
 }
 
-void run_model(ModelState &model, VisionIpcClient &vipc_client, bool wide_camera) {
+void run_model(ModelState &model, VisionIpcClient &vipc_client, VisionIpcClient &vipc_client_wide, bool wide_camera) {
   // messaging
   PubMaster pm({"modelV2", "cameraOdometry"});
   SubMaster sm({"lateralPlan", "roadCameraState", "liveCalibration"});
@@ -63,6 +63,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client, bool wide_camera
   uint32_t run_count = 0;
 
   mat3 model_transform = {};
+  mat3 model_transform_wide = {};
   bool live_calib_seen = false;
 
   while (!do_exit) {
@@ -70,12 +71,23 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client, bool wide_camera
     VisionBuf *buf = vipc_client.recv(&extra);
     if (buf == nullptr) continue;
 
+    VisionIpcBufExtra extra_wide = {};
+    VisionBuf *buf_wide = vipc_client_wide.recv(&extra_wide);
+    if (buf_wide == nullptr) continue;
+
     // TODO: path planner timeout?
     sm.update(0);
     int desire = ((int)sm["lateralPlan"].getLateralPlan().getDesire());
     frame_id = sm["roadCameraState"].getRoadCameraState().getFrameId();
     if (sm.updated("liveCalibration")) {
-      model_transform = update_calibration(sm["liveCalibration"].getLiveCalibration(), wide_camera);
+      auto extrinsic_matrix = sm["liveCalibration"].getLiveCalibration().getExtrinsicMatrix();
+      Eigen::Matrix<float, 3, 4> extrinsic_matrix_eigen;
+      for (int i = 0; i < 4*3; i++) {
+        extrinsic_matrix_eigen(i / 4, i % 4) = extrinsic_matrix[i];
+      }
+
+      model_transform = update_calibration(extrinsic_matrix_eigen, wide_camera, false);
+      model_transform_wide = update_calibration(extrinsic_matrix_eigen, Hardware::TICI(), true);
       live_calib_seen = true;
     }
 
@@ -86,7 +98,7 @@ void run_model(ModelState &model, VisionIpcClient &vipc_client, bool wide_camera
 
     double mt1 = millis_since_boot();
     ModelOutput *model_output = model_eval_frame(&model, buf->buf_cl, buf->width, buf->height,
-                                              model_transform, vec_desire);
+                                                 model_transform, model_transform_wide, vec_desire);
     double mt2 = millis_since_boot();
     float model_execution_time = (mt2 - mt1) / 1000.0;
 
@@ -136,12 +148,20 @@ int main(int argc, char **argv) {
     util::sleep_for(100);
   }
 
+  // TODO: Make this TICI only
+  VisionIpcClient vipc_client_wide = VisionIpcClient("camerad", VISION_STREAM_WIDE_ROAD, true, device_id, context);
+  while (!do_exit && !vipc_client_wide.connect(false)) {
+    util::sleep_for(100);
+  }
+
   // run the models
   // vipc_client.connected is false only when do_exit is true
   if (vipc_client.connected) {
     const VisionBuf *b = &vipc_client.buffers[0];
-    LOGW("connected with buffer size: %d (%d x %d)", b->len, b->width, b->height);
-    run_model(model, vipc_client, wide_camera);
+    const VisionBuf *wb = &vipc_client_wide.buffers[0];
+    LOGW("connected narrow cam with buffer size: %d (%d x %d)", b->len, b->width, b->height);
+    LOGW("connected wide cam with buffer size: %d (%d x %d)", wb->len, wb->width, wb->height);
+    run_model(model, vipc_client, vipc_client_wide, wide_camera);
   }
 
   model_free(&model);
