@@ -213,11 +213,10 @@ void CameraViewWidget::updateFrameMat(int w, int h) {
 }
 
 void CameraViewWidget::paintGL() {
-  if (latest_frame == nullptr) {
-    glClearColor(bg.redF(), bg.greenF(), bg.blueF(), bg.alphaF());
-    glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-    return;
-  }
+  glClearColor(bg.redF(), bg.greenF(), bg.blueF(), bg.alphaF());
+  glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+
+  if (latest_frame == nullptr) return;
 
   glViewport(0, 0, width(), height());
   glBindVertexArray(frame_vao);

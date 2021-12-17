@@ -4,16 +4,11 @@
 #include <QScroller>
 
 ScrollView::ScrollView(QWidget *w, QWidget *parent) : QScrollArea(parent) {
-  QPalette pal = palette();
-  pal.setColor(QPalette::Background, QColor(0x29, 0x29, 0x29));
-  w->setAutoFillBackground(true);
-  w->setPalette(pal);
-
   setWidget(w);
   setWidgetResizable(true);
   setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  setFrameStyle(QFrame::NoFrame);
+  setStyleSheet("background-color: transparent;");
 
   QString style = R"(
     QScrollBar:vertical {

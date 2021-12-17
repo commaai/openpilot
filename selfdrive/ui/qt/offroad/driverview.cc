@@ -26,7 +26,7 @@ void DriverViewWindow::mouseReleaseEvent(QMouseEvent* e) {
 }
 
 DriverViewScene::DriverViewScene(QWidget* parent) : sm({"driverState"}), QWidget(parent) {
-  face_img = QImage("../assets/img_driver_face.png").scaled(FACE_IMG_SIZE, FACE_IMG_SIZE, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+  face_img = loadPixmap("../assets/img_driver_face.png", {FACE_IMG_SIZE, FACE_IMG_SIZE});
 }
 
 void DriverViewScene::showEvent(QShowEvent* event) {
@@ -97,5 +97,5 @@ void DriverViewScene::paintEvent(QPaintEvent* event) {
   const int img_x = is_rhd ? rect2.right() - FACE_IMG_SIZE - img_offset : rect2.left() + img_offset;
   const int img_y = rect2.bottom() - FACE_IMG_SIZE - img_offset;
   p.setOpacity(face_detected ? 1.0 : 0.3);
-  p.drawImage(img_x, img_y, face_img);
+  p.drawPixmap(img_x, img_y, face_img);
 }

@@ -1,7 +1,15 @@
+Version 0.8.13 (2022-XX-XX)
+========================
+ * Improved driver monitoring
+ * Improved camera focus on the comma two
+ * Subaru Impreza 2020 support thanks to martinl!
+
 Version 0.8.12 (2021-12-15)
 ========================
  * New driving model
    * Improved behavior around exits
+   * Better pose accuracy at high speeds, allowing max speed of 90mph
+   * Fully incorporated comma three data into all parts of training stack
  * Improved follow distance
  * Better longitudinal policy, especially in low speed traffic
  * New alert sounds

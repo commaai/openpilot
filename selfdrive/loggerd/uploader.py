@@ -140,7 +140,7 @@ class Uploader():
       cloudlog.debug("upload_url v1.4 %s %s", url, str(headers))
 
       if fake_upload:
-        cloudlog.debug("*** WARNING, THIS IS A FAKE UPLOAD TO %s ***" % url)
+        cloudlog.debug(f"*** WARNING, THIS IS A FAKE UPLOAD TO {url} ***")
 
         class FakeResponse():
           def __init__(self):
