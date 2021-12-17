@@ -186,8 +186,8 @@ void PandaPigeon::connect(Panda * p) {
 }
 
 void PandaPigeon::set_baud(int baud) {
-  panda->usb_write(0xe2, 1, 0);
-  panda->usb_write(0xe4, 1, baud/300);
+  panda->write(0xe2, 1, 0);
+  panda->write(0xe4, 1, baud/300);
 }
 
 void PandaPigeon::send(const std::string &s) {
@@ -200,7 +200,7 @@ void PandaPigeon::send(const std::string &s) {
     int ll = std::min(0x20, len-i);
     memcpy(&a[1], &dat[i], ll);
 
-    panda->usb_bulk_write(2, a, ll+1);
+    panda->bulk_write(2, a, ll+1);
   }
 }
 
@@ -209,7 +209,7 @@ std::string PandaPigeon::receive() {
   r.reserve(0x1000 + 0x40);
   unsigned char dat[0x40];
   while (r.length() < 0x1000) {
-    int len = panda->usb_read(0xe0, 1, 0, dat, sizeof(dat));
+    int len = panda->read(0xe0, 1, 0, dat, sizeof(dat));
     if (len <= 0) break;
     r.append((char*)dat, len);
   }
@@ -218,7 +218,7 @@ std::string PandaPigeon::receive() {
 }
 
 void PandaPigeon::set_power(bool power) {
-  panda->usb_write(0xd9, power, 0);
+  panda->write(0xd9, power, 0);
 }
 
 PandaPigeon::~PandaPigeon() {
