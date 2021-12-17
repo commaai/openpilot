@@ -22,16 +22,6 @@ class CarInterface(CarInterfaceBase):
   def get_params(candidate, fingerprint=gen_empty_fingerprint(), car_fw=[]):  # pylint: disable=dangerous-default-value
     ret = CarInterfaceBase.get_std_params(candidate, fingerprint)
 
-    op_params = opParams()
-    lat_params = LatParams(
-      use_steering_model := op_params.get('use_steering_model'),
-      not use_steering_model and op_params.get('use_lqr'),
-      use_steering_model or op_params.get('prius_use_pid'),  # want to get kf from prius if steering model
-      not use_steering_model and op_params.get('corollaTSS2_use_indi'),
-      not use_steering_model and op_params.get('rav4TSS2_use_indi'),
-      ret.hasZss,
-    )
-
     ret.carName = "toyota"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.toyota)]
 
@@ -44,6 +34,16 @@ class CarInterface(CarInterfaceBase):
 
     # Most cars use this default safety param
     ret.safetyConfigs[0].safetyParam = 73
+
+    op_params = opParams()
+    lat_params = LatParams(
+      use_steering_model := op_params.get('use_steering_model'),
+      not use_steering_model and op_params.get('use_lqr'),
+      use_steering_model or op_params.get('prius_use_pid'),  # want to get kf from prius if steering model
+      not use_steering_model and op_params.get('corollaTSS2_use_indi'),
+      not use_steering_model and op_params.get('rav4TSS2_use_indi'),
+      ret.hasZss,
+    )
 
     if candidate == CAR.PRIUS:
       ret.safetyConfigs[0].safetyParam = 66  # see conversion factor for STEER_TORQUE_EPS in dbc file
