@@ -27,6 +27,7 @@ brew "openssl"
 brew "pyenv"
 brew "qt@5"
 brew "zeromq"
+brew "doxygen"
 cask "gcc-arm-embedded"
 EOS
 

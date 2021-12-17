@@ -29,6 +29,7 @@ reverse_geocoder = "*"
 scipy = "*"
 sphinx = "*"
 sphinx-rtd-theme = "*"
+breathe = "*"
 subprocess32 = "*"
 tenacity = "*"
 

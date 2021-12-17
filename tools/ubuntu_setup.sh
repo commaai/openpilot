@@ -69,7 +69,8 @@ function install_ubuntu_common_requirements() {
     libqt5svg5-dev \
     libqt5x11extras5-dev \
     libreadline-dev \
-    libdw1
+    libdw1 \
+    doxygen
 }
 
 # Install Ubuntu 21.10 packages
