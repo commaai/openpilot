@@ -3,6 +3,9 @@
 #include <cmath>
 
 #include <QDebug>
+#include <QGraphicsItem>
+#include <QPaintDevice>
+#include <QPaintEngine>
 
 #include "selfdrive/common/timing.h"
 #include "selfdrive/ui/qt/util.h"
@@ -12,33 +15,16 @@
 #endif
 
 OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
-  QVBoxLayout *main_layout  = new QVBoxLayout(this);
+  QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setMargin(bdr_s);
-  QStackedLayout *stacked_layout = new QStackedLayout;
-  stacked_layout->setStackingMode(QStackedLayout::StackAll);
-  main_layout->addLayout(stacked_layout);
-
-  QStackedLayout *road_view_layout = new QStackedLayout;
-  road_view_layout->setStackingMode(QStackedLayout::StackAll);
-  nvg = new NvgWindow(VISION_STREAM_RGB_BACK, this);
-  road_view_layout->addWidget(nvg);
-  hud = new OnroadHud(this);
-  road_view_layout->addWidget(hud);
-
-  QWidget * split_wrapper = new QWidget;
+  onroad_view = new OnroadGraphicsView(this);
+  QWidget *split_wrapper = new QWidget;
   split = new QHBoxLayout(split_wrapper);
   split->setContentsMargins(0, 0, 0, 0);
   split->setSpacing(0);
-  split->addLayout(road_view_layout);
+  split->addWidget(onroad_view);
 
-  stacked_layout->addWidget(split_wrapper);
-
-  alerts = new OnroadAlerts(this);
-  alerts->setAttribute(Qt::WA_TransparentForMouseEvents, true);
-  stacked_layout->addWidget(alerts);
-
-  // setup stacking order
-  alerts->raise();
+  main_layout->addWidget(split_wrapper);
 
   setAttribute(Qt::WA_OpaquePaintEvent);
   QObject::connect(uiState(), &UIState::uiUpdate, this, &OnroadWindow::updateState);
@@ -54,10 +40,8 @@ void OnroadWindow::updateState(const UIState &s) {
     } else if (alert.type == "controlsUnresponsivePermanent") {
       bgColor = bg_colors[STATUS_DISENGAGED];
     }
-    alerts->updateAlert(alert, bgColor);
+    onroad_view->updateAlert(alert, bgColor);
   }
-
-  hud->updateState(s);
 
   if (bg != bgColor) {
     // repaint border
@@ -88,12 +72,7 @@ void OnroadWindow::offroadTransition(bool offroad) {
     }
   }
 #endif
-
-  alerts->updateAlert({}, bg);
-
-  // update stream type
-  bool wide_cam = Hardware::TICI() && Params().getBool("EnableWideCamera");
-  nvg->setStreamType(wide_cam ? VISION_STREAM_RGB_WIDE : VISION_STREAM_RGB_BACK);
+  onroad_view->updateAlert({}, bg);
 }
 
 void OnroadWindow::paintEvent(QPaintEvent *event) {
@@ -104,6 +83,11 @@ void OnroadWindow::paintEvent(QPaintEvent *event) {
 // ***** onroad widgets *****
 
 // OnroadAlerts
+
+OnroadAlerts::OnroadAlerts(QGraphicsItem *parent) : QGraphicsWidget(parent) {
+  setAttribute(Qt::WA_OpaquePaintEvent);
+}
+
 void OnroadAlerts::updateAlert(const Alert &a, const QColor &color) {
   if (!alert.equal(a) || color != bg) {
     alert = a;
@@ -112,19 +96,20 @@ void OnroadAlerts::updateAlert(const Alert &a, const QColor &color) {
   }
 }
 
-void OnroadAlerts::paintEvent(QPaintEvent *event) {
+void OnroadAlerts::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) {
   if (alert.size == cereal::ControlsState::AlertSize::NONE) {
     return;
   }
   static std::map<cereal::ControlsState::AlertSize, const int> alert_sizes = {
     {cereal::ControlsState::AlertSize::SMALL, 271},
     {cereal::ControlsState::AlertSize::MID, 420},
-    {cereal::ControlsState::AlertSize::FULL, height()},
+    {cereal::ControlsState::AlertSize::FULL, rect().height()},
   };
   int h = alert_sizes[alert.size];
-  QRect r = QRect(0, height() - h, width(), h);
+  QRect r = QRect(0, rect().height() - h, rect().width(), h);
 
-  QPainter p(this);
+  auto &p = *painter;
+  assert(p.device()->paintEngine()->type() == QPaintEngine::OpenGL2);
 
   // draw background + gradient
   p.setPen(Qt::NoPen);
@@ -151,24 +136,25 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
     p.drawText(r, Qt::AlignCenter, alert.text1);
   } else if (alert.size == cereal::ControlsState::AlertSize::MID) {
     configFont(p, "Open Sans", 88, "Bold");
-    p.drawText(QRect(0, c.y() - 125, width(), 150), Qt::AlignHCenter | Qt::AlignTop, alert.text1);
+    p.drawText(QRect(0, c.y() - 125, rect().width(), 150), Qt::AlignHCenter | Qt::AlignTop, alert.text1);
     configFont(p, "Open Sans", 66, "Regular");
-    p.drawText(QRect(0, c.y() + 21, width(), 90), Qt::AlignHCenter, alert.text2);
+    p.drawText(QRect(0, c.y() + 21, rect().width(), 90), Qt::AlignHCenter, alert.text2);
   } else if (alert.size == cereal::ControlsState::AlertSize::FULL) {
     bool l = alert.text1.length() > 15;
     configFont(p, "Open Sans", l ? 132 : 177, "Bold");
-    p.drawText(QRect(0, r.y() + (l ? 240 : 270), width(), 600), Qt::AlignHCenter | Qt::TextWordWrap, alert.text1);
+    p.drawText(QRect(0, r.y() + (l ? 240 : 270), rect().width(), 600), Qt::AlignHCenter | Qt::TextWordWrap, alert.text1);
     configFont(p, "Open Sans", 88, "Regular");
-    p.drawText(QRect(0, r.height() - (l ? 361 : 420), width(), 300), Qt::AlignHCenter | Qt::TextWordWrap, alert.text2);
+    p.drawText(QRect(0, r.height() - (l ? 361 : 420), rect().width(), 300), Qt::AlignHCenter | Qt::TextWordWrap, alert.text2);
   }
 }
 
 // OnroadHud
-OnroadHud::OnroadHud(QWidget *parent) : QWidget(parent) {
+OnroadHud::OnroadHud(QGraphicsItem *parent) : QGraphicsWidget(parent) {
   engage_img = loadPixmap("../assets/img_chffr_wheel.png", {img_size, img_size});
   dm_img = loadPixmap("../assets/img_driver_face.png", {img_size, img_size});
 
   connect(this, &OnroadHud::valueChanged, [=] { update(); });
+  setAttribute(Qt::WA_OpaquePaintEvent);
 }
 
 void OnroadHud::updateState(const UIState &s) {
@@ -198,15 +184,15 @@ void OnroadHud::updateState(const UIState &s) {
   }
 }
 
-void OnroadHud::paintEvent(QPaintEvent *event) {
-  QPainter p(this);
+void OnroadHud::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget) {
+  auto &p = *painter;
+  assert(p.device()->paintEngine()->type() == QPaintEngine::OpenGL2);
   p.setRenderHint(QPainter::Antialiasing);
-
   // Header gradient
   QLinearGradient bg(0, header_h - (header_h / 2.5), 0, header_h);
   bg.setColorAt(0, QColor::fromRgbF(0, 0, 0, 0.45));
   bg.setColorAt(1, QColor::fromRgbF(0, 0, 0, 0));
-  p.fillRect(0, 0, width(), header_h, bg);
+  p.fillRect(0, 0, rect().width(), header_h, bg);
 
   // max speed
   QRect rc(bdr_s * 2, bdr_s * 1.5, 184, 202);
@@ -275,6 +261,7 @@ void NvgWindow::initializeGL() {
 }
 
 void NvgWindow::updateFrameMat(int w, int h) {
+  printf("update frame mat w %d h %d\n", w, h);
   CameraViewWidget::updateFrameMat(w, h);
 
   UIState *s = uiState();
@@ -348,24 +335,23 @@ void NvgWindow::drawLead(QPainter &painter, const cereal::ModelDataV2::LeadDataV
   painter.drawPolygon(chevron, std::size(chevron));
 }
 
-void NvgWindow::paintGL() {
-  CameraViewWidget::paintGL();
-
+void NvgWindow::doPaint(QPainter *painter) {
+  CameraViewWidget::doPaint();
+  // return;
   UIState *s = uiState();
   if (s->worldObjectsVisible()) {
-    QPainter painter(this);
-    painter.setRenderHint(QPainter::Antialiasing);
-    painter.setPen(Qt::NoPen);
+    // painter.setRenderHint(QPainter::Antialiasing);
+    painter->setPen(Qt::NoPen);
 
-    drawLaneLines(painter, s->scene);
+    drawLaneLines(*painter, s->scene);
 
     if (s->scene.longitudinal_control) {
       auto leads = (*s->sm)["modelV2"].getModelV2().getLeadsV3();
       if (leads[0].getProb() > .5) {
-        drawLead(painter, leads[0], s->scene.lead_vertices[0]);
+        drawLead(*painter, leads[0], s->scene.lead_vertices[0]);
       }
       if (leads[1].getProb() > .5 && (std::abs(leads[1].getX()[0] - leads[0].getX()[0]) > 3.0)) {
-        drawLead(painter, leads[1], s->scene.lead_vertices[1]);
+        drawLead(*painter, leads[1], s->scene.lead_vertices[1]);
       }
     }
   }
@@ -384,4 +370,56 @@ void NvgWindow::showEvent(QShowEvent *event) {
 
   ui_update_params(uiState());
   prev_draw_t = millis_since_boot();
+}
+
+// OnroadGraphicsView
+OnroadGraphicsView::OnroadGraphicsView(QWidget *parent) : QGraphicsView(parent) {
+  nvg = new NvgWindow(VISION_STREAM_RGB_BACK, nullptr);
+  setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+  setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+  setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
+  setFrameStyle(0);
+  auto scene = new QGraphicsScene;
+  hud = new OnroadHud(nullptr);
+  scene->addItem(hud);
+  alerts = new OnroadAlerts(nullptr);
+  scene->addItem(alerts);
+  // foreach (QGraphicsItem *item, scene->items()) {
+  //   item->setFlag(QGraphicsItem::ItemIsMovable);
+  //   item->setCacheMode(QGraphicsItem::DeviceCoordinateCache);
+  // }
+  setViewport(nvg);
+  setScene(scene);
+  connect(nvg, &CameraViewWidget::vipcThreadFrameReceived, [=]() {
+    viewport()->update();
+  });
+
+  setAttribute(Qt::WA_OpaquePaintEvent);
+
+  QObject::connect(uiState(), &UIState::uiUpdate, this, &OnroadGraphicsView::updateState);
+  QObject::connect(uiState(), &UIState::offroadTransition, this, &OnroadGraphicsView::offroadTransition);
+}
+
+void OnroadGraphicsView::updateState(const UIState &s) {
+  hud->updateState(s);
+}
+
+void OnroadGraphicsView::offroadTransition(bool offroad) {
+  // update stream type
+  bool wide_cam = Hardware::TICI() && Params().getBool("EnableWideCamera");
+  nvg->setStreamType(wide_cam ? VISION_STREAM_RGB_WIDE : VISION_STREAM_RGB_BACK);
+}
+
+void OnroadGraphicsView::resizeEvent(QResizeEvent *event) {
+  QRect rc(QRect(QPoint(0, 0), event->size()));
+  scene()->setSceneRect(rc);
+  hud->setGeometry(rc);
+  alerts->setGeometry(rc);
+  nvg->updateFrameMat(event->size().width(), event->size().height());
+  QGraphicsView::resizeEvent(event);
+}
+
+void OnroadGraphicsView::drawBackground(QPainter *painter, const QRectF &rect) {
+  QGraphicsView::drawBackground(painter, rect);
+  nvg->doPaint(painter);
 }

@@ -20,6 +20,8 @@ public:
   ~CameraViewWidget();
   void setStreamType(VisionStreamType type) { stream_type = type; }
   void setBackgroundColor(const QColor &color) { bg = color; }
+  virtual void doPaint();
+  virtual void updateFrameMat(int w, int h);
 
 signals:
   void clicked();
@@ -33,7 +35,6 @@ protected:
   void showEvent(QShowEvent *event) override;
   void hideEvent(QHideEvent *event) override;
   void mouseReleaseEvent(QMouseEvent *event) override { emit clicked(); }
-  virtual void updateFrameMat(int w, int h);
   void vipcThread();
 
   bool zoomed_view;

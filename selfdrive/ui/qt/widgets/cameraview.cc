@@ -179,12 +179,12 @@ void CameraViewWidget::updateFrameMat(int w, int h) {
       if (stream_type == VISION_STREAM_RGB_WIDE) {
         zoom *= 0.5;
       }
-      float zx = zoom * 2 * intrinsic_matrix.v[2] / width();
-      float zy = zoom * 2 * intrinsic_matrix.v[5] / height();
+      float zx = zoom * 2 * intrinsic_matrix.v[2] / w;
+      float zy = zoom * 2 * intrinsic_matrix.v[5] / h;
 
       const mat4 frame_transform = {{
         zx, 0.0, 0.0, 0.0,
-        0.0, zy, 0.0, -y_offset / height() * 2,
+        0.0, zy, 0.0, -y_offset / h * 2,
         0.0, 0.0, 1.0, 0.0,
         0.0, 0.0, 0.0, 1.0,
       }};
@@ -192,13 +192,17 @@ void CameraViewWidget::updateFrameMat(int w, int h) {
     }
   } else if (stream_width > 0 && stream_height > 0) {
     // fit frame to widget size
-    float widget_aspect_ratio = (float)width() / height();
+    float widget_aspect_ratio = (float)w / h;
     float frame_aspect_ratio = (float)stream_width  / stream_height;
     frame_mat = matmul(device_transform, get_fit_view_transform(widget_aspect_ratio, frame_aspect_ratio));
   }
 }
 
 void CameraViewWidget::paintGL() {
+  doPaint();
+}
+
+void CameraViewWidget::doPaint() {
   glClearColor(bg.redF(), bg.greenF(), bg.blueF(), bg.alphaF());
   glClear(GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
@@ -306,7 +310,6 @@ void CameraViewWidget::vipcThread() {
       // Schedule update. update() will be invoked on the gui thread.
       QMetaObject::invokeMethod(this, "update");
 
-      // TODO: remove later, it's only connected by DriverView.
       emit vipcThreadFrameReceived(buf);
     }
   }
