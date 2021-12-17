@@ -1,7 +1,10 @@
 #include "selfdrive/boardd/panda.h"
 
+#include <unistd.h>
+
 #include <cassert>
 #include <stdexcept>
+#include <vector>
 
 #include "cereal/messaging/messaging.h"
 #include "panda/board/dlc_to_len.h"
@@ -9,44 +12,263 @@
 #include "selfdrive/common/swaglog.h"
 #include "selfdrive/common/util.h"
 
-Panda::Panda(std::string serial, uint32_t bus_offset) : bus_offset(bus_offset) {
-  if (!open(serial)) {
-    throw std::runtime_error("Error connecting to panda");
+static int init_usb_ctx(libusb_context **context) {
+  assert(context != nullptr);
+
+  int err = libusb_init(context);
+  if (err != 0) {
+    LOGE("libusb initialization error");
+    return err;
   }
+
+#if LIBUSB_API_VERSION >= 0x01000106
+  libusb_set_option(*context, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_INFO);
+#else
+  libusb_set_debug(*context, 3);
+#endif
+
+  return err;
+}
+
+
+Panda::Panda(std::string serial, uint32_t bus_offset) : bus_offset(bus_offset) {
+  // init libusb
+  ssize_t num_devices;
+  libusb_device **dev_list = NULL;
+  int err = init_usb_ctx(&ctx);
+  if (err != 0) { goto fail; }
+
+  // connect by serial
+  num_devices = libusb_get_device_list(ctx, &dev_list);
+  if (num_devices < 0) { goto fail; }
+  for (size_t i = 0; i < num_devices; ++i) {
+    libusb_device_descriptor desc;
+    libusb_get_device_descriptor(dev_list[i], &desc);
+    if (desc.idVendor == 0xbbaa && desc.idProduct == 0xddcc) {
+      libusb_open(dev_list[i], &dev_handle);
+      if (dev_handle == NULL) { goto fail; }
+
+      unsigned char desc_serial[26] = { 0 };
+      int ret = libusb_get_string_descriptor_ascii(dev_handle, desc.iSerialNumber, desc_serial, std::size(desc_serial));
+      if (ret < 0) { goto fail; }
+
+      usb_serial = std::string((char *)desc_serial, ret).c_str();
+      if (serial.empty() || serial == usb_serial) {
+        break;
+      }
+      libusb_close(dev_handle);
+      dev_handle = NULL;
+    }
+  }
+  if (dev_handle == NULL) goto fail;
+  libusb_free_device_list(dev_list, 1);
+  dev_list = nullptr;
+
+  if (libusb_kernel_driver_active(dev_handle, 0) == 1) {
+    libusb_detach_kernel_driver(dev_handle, 0);
+  }
+
+  err = libusb_set_configuration(dev_handle, 1);
+  if (err != 0) { goto fail; }
+
+  err = libusb_claim_interface(dev_handle, 0);
+  if (err != 0) { goto fail; }
+
   hw_type = get_hw_type();
+
   assert((hw_type != cereal::PandaState::PandaType::WHITE_PANDA) &&
          (hw_type != cereal::PandaState::PandaType::GREY_PANDA));
 
   has_rtc = (hw_type == cereal::PandaState::PandaType::UNO) ||
             (hw_type == cereal::PandaState::PandaType::DOS);
+
+  return;
+
+fail:
+  if (dev_list != NULL) {
+    libusb_free_device_list(dev_list, 1);
+  }
+  cleanup();
+  throw std::runtime_error("Error connecting to panda");
 }
 
-Panda::~Panda() {}
+Panda::~Panda() {
+  std::lock_guard lk(usb_lock);
+  cleanup();
+  connected = false;
+}
+
+void Panda::cleanup() {
+  if (dev_handle) {
+    libusb_release_interface(dev_handle, 0);
+    libusb_close(dev_handle);
+  }
+
+  if (ctx) {
+    libusb_exit(ctx);
+  }
+}
+
+std::vector<std::string> Panda::list() {
+  // init libusb
+  ssize_t num_devices;
+  libusb_context *context = NULL;
+  libusb_device **dev_list = NULL;
+  std::vector<std::string> serials;
+
+  int err = init_usb_ctx(&context);
+  if (err != 0) { return serials; }
+
+  num_devices = libusb_get_device_list(context, &dev_list);
+  if (num_devices < 0) {
+    LOGE("libusb can't get device list");
+    goto finish;
+  }
+  for (size_t i = 0; i < num_devices; ++i) {
+    libusb_device *device = dev_list[i];
+    libusb_device_descriptor desc;
+    libusb_get_device_descriptor(device, &desc);
+    if (desc.idVendor == 0xbbaa && desc.idProduct == 0xddcc) {
+      libusb_device_handle *handle = NULL;
+      libusb_open(device, &handle);
+      unsigned char desc_serial[26] = { 0 };
+      int ret = libusb_get_string_descriptor_ascii(handle, desc.iSerialNumber, desc_serial, std::size(desc_serial));
+      libusb_close(handle);
+
+      if (ret < 0) { goto finish; }
+      serials.push_back(std::string((char *)desc_serial, ret).c_str());
+    }
+  }
+
+finish:
+  if (dev_list != NULL) {
+    libusb_free_device_list(dev_list, 1);
+  }
+  if (context) {
+    libusb_exit(context);
+  }
+  return serials;
+}
+
+void Panda::handle_usb_issue(int err, const char func[]) {
+  LOGE_100("usb error %d \"%s\" in %s", err, libusb_strerror((enum libusb_error)err), func);
+  if (err == LIBUSB_ERROR_NO_DEVICE) {
+    LOGE("lost connection");
+    connected = false;
+  }
+  // TODO: check other errors, is simply retrying okay?
+}
+
+int Panda::usb_write(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned int timeout) {
+  int err;
+  const uint8_t bmRequestType = LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE;
+
+  if (!connected) {
+    return LIBUSB_ERROR_NO_DEVICE;
+  }
+
+  std::lock_guard lk(usb_lock);
+  do {
+    err = libusb_control_transfer(dev_handle, bmRequestType, bRequest, wValue, wIndex, NULL, 0, timeout);
+    if (err < 0) handle_usb_issue(err, __func__);
+  } while (err < 0 && connected);
+
+  return err;
+}
+
+int Panda::usb_read(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned char *data, uint16_t wLength, unsigned int timeout) {
+  int err;
+  const uint8_t bmRequestType = LIBUSB_ENDPOINT_IN | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE;
+
+  if (!connected) {
+    return LIBUSB_ERROR_NO_DEVICE;
+  }
+
+  std::lock_guard lk(usb_lock);
+  do {
+    err = libusb_control_transfer(dev_handle, bmRequestType, bRequest, wValue, wIndex, data, wLength, timeout);
+    if (err < 0) handle_usb_issue(err, __func__);
+  } while (err < 0 && connected);
+
+  return err;
+}
+
+int Panda::usb_bulk_write(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout) {
+  int err;
+  int transferred = 0;
+
+  if (!connected) {
+    return 0;
+  }
+
+  std::lock_guard lk(usb_lock);
+  do {
+    // Try sending can messages. If the receive buffer on the panda is full it will NAK
+    // and libusb will try again. After 5ms, it will time out. We will drop the messages.
+    err = libusb_bulk_transfer(dev_handle, endpoint, data, length, &transferred, timeout);
+
+    if (err == LIBUSB_ERROR_TIMEOUT) {
+      LOGW("Transmit buffer full");
+      break;
+    } else if (err != 0 || length != transferred) {
+      handle_usb_issue(err, __func__);
+    }
+  } while(err != 0 && connected);
+
+  return transferred;
+}
+
+int Panda::usb_bulk_read(unsigned char endpoint, unsigned char* data, int length, unsigned int timeout) {
+  int err;
+  int transferred = 0;
+
+  if (!connected) {
+    return 0;
+  }
+
+  std::lock_guard lk(usb_lock);
+
+  do {
+    err = libusb_bulk_transfer(dev_handle, endpoint, data, length, &transferred, timeout);
+
+    if (err == LIBUSB_ERROR_TIMEOUT) {
+      break; // timeout is okay to exit, recv still happened
+    } else if (err == LIBUSB_ERROR_OVERFLOW) {
+      comms_healthy = false;
+      LOGE_100("overflow got 0x%x", transferred);
+    } else if (err != 0) {
+      handle_usb_issue(err, __func__);
+    }
+
+  } while(err != 0 && connected);
+
+  return transferred;
+}
 
 void Panda::set_safety_model(cereal::CarParams::SafetyModel safety_model, int safety_param) {
-  write(0xdc, (uint16_t)safety_model, safety_param);
+  usb_write(0xdc, (uint16_t)safety_model, safety_param);
 }
 
 void Panda::set_unsafe_mode(uint16_t unsafe_mode) {
-  write(0xdf, unsafe_mode, 0);
+  usb_write(0xdf, unsafe_mode, 0);
 }
 
 cereal::PandaState::PandaType Panda::get_hw_type() {
   unsigned char hw_query[1] = {0};
 
-  read(0xc1, 0, 0, hw_query, 1);
+  usb_read(0xc1, 0, 0, hw_query, 1);
   return (cereal::PandaState::PandaType)(hw_query[0]);
 }
 
 void Panda::set_rtc(struct tm sys_time) {
   // tm struct has year defined as years since 1900
-  write(0xa1, (uint16_t)(1900 + sys_time.tm_year), 0);
-  write(0xa2, (uint16_t)(1 + sys_time.tm_mon), 0);
-  write(0xa3, (uint16_t)sys_time.tm_mday, 0);
-  // write(0xa4, (uint16_t)(1 + sys_time.tm_wday), 0);
-  write(0xa5, (uint16_t)sys_time.tm_hour, 0);
-  write(0xa6, (uint16_t)sys_time.tm_min, 0);
-  write(0xa7, (uint16_t)sys_time.tm_sec, 0);
+  usb_write(0xa1, (uint16_t)(1900 + sys_time.tm_year), 0);
+  usb_write(0xa2, (uint16_t)(1 + sys_time.tm_mon), 0);
+  usb_write(0xa3, (uint16_t)sys_time.tm_mday, 0);
+  // usb_write(0xa4, (uint16_t)(1 + sys_time.tm_wday), 0);
+  usb_write(0xa5, (uint16_t)sys_time.tm_hour, 0);
+  usb_write(0xa6, (uint16_t)sys_time.tm_min, 0);
+  usb_write(0xa7, (uint16_t)sys_time.tm_sec, 0);
 }
 
 struct tm Panda::get_rtc() {
@@ -60,7 +282,7 @@ struct tm Panda::get_rtc() {
     uint8_t second;
   } rtc_time = {0};
 
-  read(0xa0, 0, 0, (unsigned char*)&rtc_time, sizeof(rtc_time));
+  usb_read(0xa0, 0, 0, (unsigned char*)&rtc_time, sizeof(rtc_time));
 
   struct tm new_time = { 0 };
   new_time.tm_year = rtc_time.year - 1900; // tm struct has year defined as years since 1900
@@ -74,60 +296,60 @@ struct tm Panda::get_rtc() {
 }
 
 void Panda::set_fan_speed(uint16_t fan_speed) {
-  write(0xb1, fan_speed, 0);
+  usb_write(0xb1, fan_speed, 0);
 }
 
 uint16_t Panda::get_fan_speed() {
   uint16_t fan_speed_rpm = 0;
-  read(0xb2, 0, 0, (unsigned char*)&fan_speed_rpm, sizeof(fan_speed_rpm));
+  usb_read(0xb2, 0, 0, (unsigned char*)&fan_speed_rpm, sizeof(fan_speed_rpm));
   return fan_speed_rpm;
 }
 
 void Panda::set_ir_pwr(uint16_t ir_pwr) {
-  write(0xb0, ir_pwr, 0);
+  usb_write(0xb0, ir_pwr, 0);
 }
 
 health_t Panda::get_state() {
   health_t health {0};
-  read(0xd2, 0, 0, (unsigned char*)&health, sizeof(health));
+  usb_read(0xd2, 0, 0, (unsigned char*)&health, sizeof(health));
   return health;
 }
 
 void Panda::set_loopback(bool loopback) {
-  write(0xe5, loopback, 0);
+  usb_write(0xe5, loopback, 0);
 }
 
 std::optional<std::vector<uint8_t>> Panda::get_firmware_version() {
   std::vector<uint8_t> fw_sig_buf(128);
-  int read_1 = read(0xd3, 0, 0, &fw_sig_buf[0], 64);
-  int read_2 = read(0xd4, 0, 0, &fw_sig_buf[64], 64);
+  int read_1 = usb_read(0xd3, 0, 0, &fw_sig_buf[0], 64);
+  int read_2 = usb_read(0xd4, 0, 0, &fw_sig_buf[64], 64);
   return ((read_1 == 64) && (read_2 == 64)) ? std::make_optional(fw_sig_buf) : std::nullopt;
 }
 
 std::optional<std::string> Panda::get_serial() {
   char serial_buf[17] = {'\0'};
-  int err = read(0xd0, 0, 0, (uint8_t*)serial_buf, 16);
+  int err = usb_read(0xd0, 0, 0, (uint8_t*)serial_buf, 16);
   return err >= 0 ? std::make_optional(serial_buf) : std::nullopt;
 }
 
 void Panda::set_power_saving(bool power_saving) {
-  write(0xe7, power_saving, 0);
+  usb_write(0xe7, power_saving, 0);
 }
 
 void Panda::set_usb_power_mode(cereal::PeripheralState::UsbPowerMode power_mode) {
-  write(0xe6, (uint16_t)power_mode, 0);
+  usb_write(0xe6, (uint16_t)power_mode, 0);
 }
 
 void Panda::send_heartbeat(bool engaged) {
-  write(0xf3, engaged, 0);
+  usb_write(0xf3, engaged, 0);
 }
 
 void Panda::set_can_speed_kbps(uint16_t bus, uint16_t speed) {
-  write(0xde, bus, (speed * 10));
+  usb_write(0xde, bus, (speed * 10));
 }
 
 void Panda::set_data_speed_kbps(uint16_t bus, uint16_t speed) {
-  write(0xf9, bus, (speed * 10));
+  usb_write(0xf9, bus, (speed * 10));
 }
 
 static uint8_t len_to_dlc(uint8_t len) {
@@ -160,7 +382,7 @@ void Panda::pack_can_buffer(const capnp::List<cereal::CanData>::Reader &can_data
   for (auto cmsg : can_data_list) {
     // check if the message is intended for this panda
     uint8_t bus = cmsg.getSrc();
-    if (bus < bus_offset || bus >= (bus_offset + BUS_CNT)) {
+    if (bus < bus_offset || bus >= (bus_offset + PANDA_BUS_CNT)) {
       continue;
     }
     auto can_data = cmsg.getDat();
@@ -188,13 +410,13 @@ void Panda::pack_can_buffer(const capnp::List<cereal::CanData>::Reader &can_data
 
 void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list) {
   pack_can_buffer(can_data_list, [=](uint8_t* data, size_t size) {
-    bulk_write(3, data, size, 5);
+    usb_bulk_write(3, data, size, 5);
   });
 }
 
 bool Panda::can_receive(std::vector<can_frame>& out_vec) {
   uint8_t data[RECV_SIZE];
-  int recv = bulk_read(0x81, (uint8_t*)data, RECV_SIZE);
+  int recv = usb_bulk_read(0x81, (uint8_t*)data, RECV_SIZE);
   if (!comms_healthy) {
     return false;
   }
@@ -213,7 +435,7 @@ bool Panda::unpack_can_buffer(uint8_t *data, int size, std::vector<can_frame> &o
       comms_healthy = false;
       return false;
     }
-    int chunk_len = std::min((int)USBPACKET_MAX_SIZE, (size - i));
+    int chunk_len = std::min(USBPACKET_MAX_SIZE, (size - i));
     recv_buf.insert(recv_buf.end(), &data[i + 1], &data[i + chunk_len]);
   }
 

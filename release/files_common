@@ -92,8 +92,6 @@ selfdrive/boardd/boardd_api_impl.pyx
 selfdrive/boardd/can_list_to_can_capnp.cc
 selfdrive/boardd/panda.cc
 selfdrive/boardd/panda.h
-selfdrive/boardd/usbdevice.cc
-selfdrive/boardd/usbdevice.h
 selfdrive/boardd/pigeon.cc
 selfdrive/boardd/pigeon.h
 selfdrive/boardd/set_time.py
