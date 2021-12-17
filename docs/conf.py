@@ -14,10 +14,11 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 import os
+from os.path import exists
 import sys
 sys.path.insert(0, os.path.abspath('.'))
 sys.path.insert(0, os.path.abspath('..'))
-
+OPENPILOT_ROOT = os.path.abspath(r'../../') # from openpilot/build/docs
 
 
 # -- Project information -----------------------------------------------------
@@ -37,6 +38,7 @@ extensions = [
         'sphinx.ext.viewcode',  # Add view code link to modules
         'sphinx_rtd_theme',     # Read The Docs theme
         'myst_parser',          # Markdown parsing
+        'breathe',              # Doxygen C/C++ integration
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -47,6 +49,51 @@ templates_path = ['_templates']
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = []
 
+
+# -- c docs configuration ---------------------------------------------------
+
+# Breathe Configuration
+# breathe_default_project = "c_docs"
+breathe_build_directory = f"{OPENPILOT_ROOT}/build/docs/html/xml"
+breathe_separate_member_pages = True
+breathe_default_members = ('members', 'private-members', 'undoc-members')
+breathe_domain_by_extension = {
+        "h" : "cc",
+        }
+breathe_implementation_filename_extensions = ['.c', '.cc', '.cpp']
+breathe_doxygen_config_options = {}
+breathe_projects_source  = {
+        # "loggerd" : ("../../../selfdrive/loggerd", ["logger.h"])
+        }
+
+# only document files that have accompanying .cc files next to them
+print("searching for c_docs...")
+for root, dirs, files in os.walk(OPENPILOT_ROOT):
+        found = False
+        breath_src = {}
+        breathe_srcs_list = []
+
+        for file in files:
+                ccFile = os.path.join(root, file)[:-2] +".cc"
+
+                if file.endswith(".h") and exists(ccFile):
+                        f = os.path.join(root, file)
+                        parent_dir = os.path.basename(os.path.dirname(f))
+                        parent_dir_abs = os.path.dirname(f)
+                        print(f"\tFOUND: {f} in {parent_dir} ({parent_dir_abs})")
+
+                        breathe_srcs_list.append(file)
+                        # breathe_srcs_list.append(ccFile)
+                        found = True
+
+                # print(f"\tbreathe_srcs_list: {breathe_srcs_list}")
+
+                if found:
+                        breath_src[parent_dir] = (parent_dir_abs, breathe_srcs_list)
+                        breathe_projects_source.update(breath_src)
+
+print(f"breathe_projects_source: {breathe_projects_source.keys()}")
+# input("Press Enter to continue...")
 
 # -- Options for HTML output -------------------------------------------------
 
