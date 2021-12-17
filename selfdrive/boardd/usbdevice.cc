@@ -124,7 +124,7 @@ int USBDevice::bulk_transfer(uint8_t endpoint, uint8_t *data, int length, unsign
     if (ret == 0 && length == transferred) break;
 
     if (ret != 0) {
-      LOGE_100("usb control_transfer error %d, \"%s\"", ret, libusb_strerror((enum libusb_error)ret));
+      LOGE_100("usb bulk_transfer error %d, \"%s\"", ret, libusb_strerror((enum libusb_error)ret));
       if (ret == LIBUSB_ERROR_NO_DEVICE) {
         connected = false;
       } else if (ret == LIBUSB_ERROR_OVERFLOW) {
