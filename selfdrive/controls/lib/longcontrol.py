@@ -136,6 +136,7 @@ class LongControl():
     elif self.long_control_state == LongCtrlState.starting:
       if output_accel < CP.startAccel:
         output_accel += CP.startingAccelRate * DT_CTRL
+      output_accel = min(output_accel, CP.startAccel)
       self.reset(CS.vEgo)
 
     self.last_output_accel = output_accel
