@@ -15,6 +15,8 @@ class CarControllerParams:
   HCA_STEP = 2                   # HCA_01 message frequency 50Hz
   LDW_STEP = 10                  # LDW_02 message frequency 10Hz
   GRA_ACC_STEP = 3               # GRA_ACC_01 message frequency 33Hz
+  ACC_CONTROL_STEP = 2           # ACC_06 message frequency 50Hz
+  ACC_HUD_STEP = 6               # ACC_02 message frequency 16Hz
 
   GRA_VBP_STEP = 100             # Send ACC virtual button presses once a second
   GRA_VBP_COUNT = 16             # Send VBP messages for ~0.5s (GRA_ACC_STEP * 16)
@@ -28,6 +30,9 @@ class CarControllerParams:
   STEER_DRIVER_ALLOWANCE = 80
   STEER_DRIVER_MULTIPLIER = 3    # weight driver torque heavily
   STEER_DRIVER_FACTOR = 1        # from dbc
+
+  ACCEL_MAX = 2.0                # 2.0 m/s max acceleration
+  ACCEL_MIN = -3.5               # 3.5 m/s max deceleration
 
 class CANBUS:
   pt = 0

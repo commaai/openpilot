@@ -1,10 +1,13 @@
+from common.numpy_fast import clip
 from cereal import car
+from selfdrive.config import Conversions as CV
 from selfdrive.car import apply_std_steer_torque_limits
 from selfdrive.car.volkswagen import volkswagencan
 from selfdrive.car.volkswagen.values import DBC_FILES, CANBUS, MQB_LDW_MESSAGES, BUTTON_STATES, CarControllerParams as P
 from opendbc.can.packer import CANPacker
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
+LongCtrlState = car.CarControl.Actuators.LongControlState
 
 class CarController():
   def __init__(self, dbc_name, CP, VM):
@@ -20,11 +23,67 @@ class CarController():
     self.graMsgBusCounterPrev = 0
 
     self.steer_rate_limited = False
+    self.acc_starting = False
+    self.acc_stopping = False
 
-  def update(self, enabled, CS, frame, ext_bus, actuators, visual_alert, left_lane_visible, right_lane_visible, left_lane_depart, right_lane_depart):
+  def update(self, enabled, CS, frame, ext_bus, actuators, visual_alert, left_lane_visible, right_lane_visible, left_lane_depart,
+             right_lane_depart, lead_visible, set_speed, speed_visible):
     """ Controls thread """
 
     can_sends = []
+
+    # **** Acceleration and Braking Controls ******************************** #
+
+    if CS.CP.openpilotLongitudinalControl:
+      if frame % P.ACC_CONTROL_STEP == 0:
+        if CS.tsk_status in [2, 3, 4, 5]:
+          acc_status = 3 if enabled else 2
+        else:
+          acc_status = CS.tsk_status
+
+        accel = clip(actuators.accel, P.ACCEL_MIN, P.ACCEL_MAX) if enabled else 0
+
+        # FIXME: this needs to become a proper state machine
+        acc_hold_request, acc_hold_release, acc_hold_type, stopping_distance = False, False, 0, 20.46
+        if actuators.longControlState == LongCtrlState.stopping and CS.out.vEgo < 0.2:
+          self.acc_stopping = True
+          acc_hold_request = True
+          if CS.esp_hold_confirmation:
+            acc_hold_type = 1  # hold
+            stopping_distance = 3.5
+          else:
+            acc_hold_type = 3  # hold_standby
+            stopping_distance = 0.5
+        elif enabled:
+          if self.acc_stopping:
+            self.acc_starting = True
+            self.acc_stopping = False
+          self.acc_starting &= CS.out.vEgo < 1.5
+          acc_hold_release = self.acc_starting
+          acc_hold_type = 4 if self.acc_starting and CS.out.vEgo < 0.1 else 0  # startup
+        else:
+          self.acc_stopping, self.acc_starting = False, False
+
+        cb_pos = 0.0 if lead_visible or CS.out.vEgo < 2.0 else 0.1  # react faster to lead cars, also don't get hung up at DSG clutch release/kiss points when creeping to stop
+        cb_neg = 0.0 if accel < 0 else 0.2  # IDK why, but stock likes to zero this out when accel is negative
+
+        idx = (frame / P.ACC_CONTROL_STEP) % 16
+        can_sends.append(volkswagencan.create_mqb_acc_06_control(self.packer_pt, CANBUS.pt, enabled, acc_status,
+                                                                 accel, self.acc_stopping, self.acc_starting,
+                                                                 cb_pos, cb_neg, idx))
+        can_sends.append(volkswagencan.create_mqb_acc_07_control(self.packer_pt, CANBUS.pt, enabled,
+                                                                 accel, acc_hold_request, acc_hold_release,
+                                                                 acc_hold_type, stopping_distance, idx))
+
+      if frame % P.ACC_HUD_STEP == 0:
+        idx = (frame / P.ACC_HUD_STEP) % 16
+        can_sends.append(volkswagencan.create_mqb_acc_02_control(self.packer_pt, CANBUS.pt, CS.tsk_status,
+                                                                 set_speed * CV.MS_TO_KPH, speed_visible, lead_visible,
+                                                                 idx))
+        can_sends.append(volkswagencan.create_mqb_acc_04_control(self.packer_pt, CANBUS.pt, CS.acc_04_stock_values,
+                                                                 idx))
+        can_sends.append(volkswagencan.create_mqb_acc_13_control(self.packer_pt, CANBUS.pt, enabled,
+                                                                 CS.acc_13_stock_values))
 
     # **** Steering Controls ************************************************ #
 
