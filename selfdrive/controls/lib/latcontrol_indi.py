@@ -93,11 +93,11 @@ class LatControlINDI():
     indi_log.steeringRateDeg = math.degrees(self.x[1])
     indi_log.steeringAccelDeg = math.degrees(self.x[2])
 
-    steers_des = VM.get_steer_from_curvature(-curvature, CS.vEgo)
+    steers_des = VM.get_steer_from_curvature(-curvature, CS.vEgo, params.roll)
     steers_des += math.radians(params.angleOffsetDeg)
     indi_log.steeringAngleDesiredDeg = math.degrees(steers_des)
 
-    rate_des = VM.get_steer_from_curvature(-curvature_rate, CS.vEgo)
+    rate_des = VM.get_steer_from_curvature(-curvature_rate, CS.vEgo, 0)
     indi_log.steeringRateDesiredDeg = math.degrees(rate_des)
 
     if CS.vEgo < 0.3 or not active:
