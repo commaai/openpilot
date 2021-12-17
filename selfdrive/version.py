@@ -9,7 +9,7 @@ from selfdrive.swaglog import cloudlog
 
 
 TESTED_BRANCHES = ['devel', 'release2-staging', 'release3-staging', 'dashcam-staging', 'release2', 'release3', 'dashcam']
-FORK_BRANCHES = ['stock_additions', 'SA-master']  # tested SA branches
+FORK_BRANCHES = ['stock_additions', 'SA-master', 'SA-master-acados']  # tested SA branches
 FORK_BRANCHES += [f'{prefix}_{brnch}' for brnch in FORK_BRANCHES for prefix in ['shanesmiskol', 'sshane']]  # usernames
 
 training_version: bytes = b"0.2.0"
