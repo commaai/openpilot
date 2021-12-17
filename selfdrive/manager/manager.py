@@ -78,7 +78,7 @@ def manager_init():
   params.put("GitRemote", get_origin(default=""))
 
   # set dongle id
-  reg_res = register(show_spinner=True)
+  reg_res = "9999"#register(show_spinner=True)
   if reg_res:
     dongle_id = reg_res
   else:
