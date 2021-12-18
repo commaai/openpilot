@@ -104,6 +104,7 @@ class UIState : public QObject {
 
 public:
   UIState(QObject* parent = 0);
+  void updateStatus();
   inline bool worldObjectsVisible() const { 
     return sm->rcv_frame("liveCalibration") > scene.started_frame;
   };
