@@ -14,27 +14,31 @@ Once you've cloned and are in openpilot, this command will download PlotJuggler 
 
 ```
 $ ./juggle.py -h
-usage: juggle.py [-h] [--demo] [--qlog] [--can] [--stream] [--layout [LAYOUT]] [route_name] [segment_number] [segment_count]
+usage: juggle.py [-h] [--demo] [--qlog] [--can] [--stream] [--layout [LAYOUT]] [route_or_segment_name] [segment_count]
 
 A helper to run PlotJuggler on openpilot routes
 
 positional arguments:
-  route_name         The route name to plot (cabana share URL accepted) (default: None)
-  segment_number     The index of the segment to plot (default: None)
-  segment_count      The number of segments to plot (default: 1)
+  route_or_segment_name
+                        The route or segment name to plot (cabana share URL accepted) (default: None)
+  segment_count         The number of segments to plot (default: None)
 
 optional arguments:
-  -h, --help         show this help message and exit
-  --demo             Use the demo route instead of providing one (default: False)
-  --qlog             Use qlogs (default: False)
-  --can              Parse CAN data (default: False)
-  --stream           Start PlotJuggler in streaming mode (default: False)
-  --layout [LAYOUT]  Run PlotJuggler with a pre-defined layout (default: None)
+  -h, --help            show this help message and exit
+  --demo                Use the demo route instead of providing one (default: False)
+  --qlog                Use qlogs (default: False)
+  --can                 Parse CAN data (default: False)
+  --stream              Start PlotJuggler in streaming mode (default: False)
+  --layout [LAYOUT]     Run PlotJuggler with a pre-defined layout (default: None)
 ```
 
-Example:
+Examples using route name:
 
 `./juggle.py "4cf7a6ad03080c90|2021-09-29--13-46-36"`
+
+Examples using segment name:
+
+`./juggle.py "4cf7a6ad03080c90|2021-09-29--13-46-36--1"`
 
 ## Streaming
 
