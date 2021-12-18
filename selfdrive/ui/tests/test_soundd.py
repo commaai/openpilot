@@ -28,7 +28,7 @@ SOUNDS = {
 def get_total_writes():
   audio_flinger = subprocess.check_output('dumpsys media.audio_flinger', shell=True, encoding='utf-8').strip()
   write_lines = [l for l in audio_flinger.split('\n') if l.strip().startswith('Total writes')]
-  return sum([int(l.split(':')[1]) for l in write_lines])
+  return sum(int(l.split(':')[1]) for l in write_lines)
 
 class TestSoundd(unittest.TestCase):
   def test_sound_card_init(self):

@@ -119,5 +119,5 @@ if __name__ == "__main__":
       for x in l:
         print(x[2])
       print('avg sum: {0:.2%} over {1} samples {2} seconds\n'.format(
-        sum([stat['avg']['total'] for k, stat in stats.items()]), i, i * SLEEP_INTERVAL
+        sum(stat['avg']['total'] for k, stat in stats.items()), i, i * SLEEP_INTERVAL
       ))
