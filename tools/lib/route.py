@@ -7,7 +7,8 @@ from itertools import chain
 from tools.lib.auth_config import get_token
 from tools.lib.api import CommaApi
 
-SEGMENT_NAME_RE = r'[a-z0-9]{16}[|_][0-9]{4}-[0-9]{2}-[0-9]{2}--[0-9]{2}-[0-9]{2}-[0-9]{2}--[0-9]+'
+ROUTE_NAME_RE = r'[a-z0-9]{16}[|_][0-9]{4}-[0-9]{2}-[0-9]{2}--[0-9]{2}-[0-9]{2}-[0-9]{2}'
+SEGMENT_NAME_RE = r'{}--[0-9]+'.format(ROUTE_NAME_RE)
 EXPLORER_FILE_RE = r'^({})--([a-z]+\.[a-z0-9]+)$'.format(SEGMENT_NAME_RE)
 OP_SEGMENT_DIR_RE = r'^({})$'.format(SEGMENT_NAME_RE)
 
@@ -178,6 +179,10 @@ class RouteSegmentName(object):
     self._segment_name_str = name_str
     self._route_name_str, num_str = self._segment_name_str.rsplit("--", 1)
     self._num = int(num_str)
+
+  @property
+  def route_name(self):
+    return self._route_name_str
 
   @property
   def segment_num(self):
