@@ -73,6 +73,9 @@ if GetOption('extras'):
   # buidl updater UI
   qt_env.Program("qt/setup/updater", ["qt/setup/updater.cc", asset_obj], LIBS=qt_libs)
 
+  # build mui
+  qt_env.Program("_mui", ["mui.cc"], LIBS=qt_libs)
+
   # build installers
   senv = qt_env.Clone()
   senv['LINKFLAGS'].append('-Wl,-strip-debug')
