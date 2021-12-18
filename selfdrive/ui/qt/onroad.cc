@@ -84,9 +84,7 @@ void OnroadWindow::paintEvent(QPaintEvent *event) {
 
 // OnroadAlerts
 
-OnroadAlerts::OnroadAlerts(QGraphicsItem *parent) : QGraphicsWidget(parent) {
-  setAttribute(Qt::WA_OpaquePaintEvent);
-}
+OnroadAlerts::OnroadAlerts(QGraphicsItem *parent) : QGraphicsWidget(parent) {}
 
 void OnroadAlerts::updateAlert(const Alert &a, const QColor &color) {
   if (!alert.equal(a) || color != bg) {
@@ -154,7 +152,6 @@ OnroadHud::OnroadHud(QGraphicsItem *parent) : QGraphicsWidget(parent) {
   dm_img = loadPixmap("../assets/img_driver_face.png", {img_size, img_size});
 
   connect(this, &OnroadHud::valueChanged, [=] { update(); });
-  setAttribute(Qt::WA_OpaquePaintEvent);
 }
 
 void OnroadHud::updateState(const UIState &s) {
@@ -337,7 +334,7 @@ void NvgWindow::drawLead(QPainter &painter, const cereal::ModelDataV2::LeadDataV
 
 void NvgWindow::doPaint(QPainter *painter) {
   CameraViewWidget::doPaint();
-  // return;
+
   UIState *s = uiState();
   if (s->worldObjectsVisible()) {
     // painter.setRenderHint(QPainter::Antialiasing);
@@ -384,10 +381,10 @@ OnroadGraphicsView::OnroadGraphicsView(QWidget *parent) : QGraphicsView(parent) 
   scene->addItem(hud);
   alerts = new OnroadAlerts(nullptr);
   scene->addItem(alerts);
-  // foreach (QGraphicsItem *item, scene->items()) {
-  //   item->setFlag(QGraphicsItem::ItemIsMovable);
-  //   item->setCacheMode(QGraphicsItem::DeviceCoordinateCache);
-  // }
+  foreach (QGraphicsItem *item, scene->items()) {
+    item->setFlag(QGraphicsItem::ItemIgnoresTransformations);
+    // item->setCacheMode(QGraphicsItem::DeviceCoordinateCache);
+  }
   setViewport(nvg);
   setScene(scene);
   connect(nvg, &CameraViewWidget::vipcThreadFrameReceived, [=]() {
